@@ -1,0 +1,192 @@
+[
+ {
+  "key": "potion",
+  "name": "Potion",
+  "description": "Restores 20 HP to one Pokémon.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/potion.png",
+  "price": 15,
+  "effect": {
+   "kind": "heal",
+   "amount": 20
+  },
+  "inShop": true,
+  "shopBadges": 0
+ },
+ {
+  "key": "super-potion",
+  "name": "Super Potion",
+  "description": "Restores 50 HP to one Pokémon.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/super-potion.png",
+  "price": 35,
+  "effect": {
+   "kind": "heal",
+   "amount": 50
+  },
+  "inShop": true,
+  "shopBadges": 1
+ },
+ {
+  "key": "hyper-potion",
+  "name": "Hyper Potion",
+  "description": "Restores 120 HP to one Pokémon.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/hyper-potion.png",
+  "price": 80,
+  "effect": {
+   "kind": "heal",
+   "amount": 120
+  },
+  "inShop": true,
+  "shopBadges": 4
+ },
+ {
+  "key": "antidote",
+  "name": "Antidote",
+  "description": "Cures a poisoned Pokémon. In battle.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/antidote.png",
+  "price": 10,
+  "effect": {
+   "kind": "cure",
+   "statuses": [
+    "poison"
+   ]
+  },
+  "inShop": true,
+  "shopBadges": 0
+ },
+ {
+  "key": "paralyze-heal",
+  "name": "Paralyze Heal",
+  "description": "Cures paralysis — the Pokémon can act this very turn. In battle.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/paralyze-heal.png",
+  "price": 12,
+  "effect": {
+   "kind": "cure",
+   "statuses": [
+    "paralyze"
+   ]
+  },
+  "inShop": true,
+  "shopBadges": 0
+ },
+ {
+  "key": "burn-heal",
+  "name": "Burn Heal",
+  "description": "Cures a burn. In battle.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/burn-heal.png",
+  "price": 12,
+  "effect": {
+   "kind": "cure",
+   "statuses": [
+    "burn"
+   ]
+  },
+  "inShop": true,
+  "shopBadges": 1
+ },
+ {
+  "key": "ice-heal",
+  "name": "Ice Heal",
+  "description": "Thaws a frozen Pokémon — it can act this very turn. In battle.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/ice-heal.png",
+  "price": 12,
+  "effect": {
+   "kind": "cure",
+   "statuses": [
+    "frozen"
+   ]
+  },
+  "inShop": true,
+  "shopBadges": 2
+ },
+ {
+  "key": "ether",
+  "name": "Ether",
+  "description": "Gives the Pokémon in battle one reroll back (up to its maximum).",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/ether.png",
+  "price": 40,
+  "effect": {
+   "kind": "rerolls",
+   "amount": 1
+  },
+  "inShop": true,
+  "shopBadges": 3
+ },
+ {
+  "key": "max-ether",
+  "name": "Max Ether",
+  "description": "Gives the Pokémon in battle three rerolls back (up to its maximum).",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/max-ether.png",
+  "price": 100,
+  "effect": {
+   "kind": "rerolls",
+   "amount": 3
+  },
+  "inShop": true,
+  "shopBadges": 6
+ },
+ {
+  "key": "rare-candy",
+  "name": "Rare Candy",
+  "description": "Raises a Pokémon by one level. Use it from the Team screen.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/rare-candy.png",
+  "price": 300,
+  "effect": {
+   "kind": "level",
+   "amount": 1
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "poke-ball",
+  "name": "Poké Ball",
+  "description": "Adds 1 to the catch die.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png",
+  "price": 20,
+  "effect": {
+   "kind": "ball",
+   "bonus": 1
+  },
+  "inShop": true,
+  "shopBadges": 0
+ },
+ {
+  "key": "great-ball",
+  "name": "Great Ball",
+  "description": "A good ball: adds 2 to the catch die.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/great-ball.png",
+  "price": 50,
+  "effect": {
+   "kind": "ball",
+   "bonus": 2
+  },
+  "inShop": true,
+  "shopBadges": 2
+ },
+ {
+  "key": "ultra-ball",
+  "name": "Ultra Ball",
+  "description": "A high-performance ball: adds 3 to the catch die.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/ultra-ball.png",
+  "price": 100,
+  "effect": {
+   "kind": "ball",
+   "bonus": 3
+  },
+  "inShop": true,
+  "shopBadges": 4
+ },
+ {
+  "key": "master-ball",
+  "name": "Master Ball",
+  "description": "The best ball there is. It never misses.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/master-ball.png",
+  "price": 1000,
+  "effect": {
+   "kind": "ball",
+   "bonus": 9
+  },
+  "inShop": false,
+  "shopBadges": 0
+ }
+]

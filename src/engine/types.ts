@@ -1,0 +1,374 @@
+// Core domain types shared by the engine, the seed script and the UI.
+// Pure declarations — no runtime dependencies.
+
+export const POKE_TYPES = [
+  'normal',
+  'fire',
+  'water',
+  'electric',
+  'grass',
+  'ice',
+  'fighting',
+  'poison',
+  'ground',
+  'flying',
+  'psychic',
+  'bug',
+  'rock',
+  'ghost',
+  'dragon',
+  'dark',
+  'steel',
+  'fairy',
+] as const
+export type PokeType = (typeof POKE_TYPES)[number]
+export type DieType = PokeType | 'base'
+export const DIE_TYPES: readonly DieType[] = ['base', ...POKE_TYPES]
+
+/** 'heal' is a self-effect (Grass): it never sits on a Pokémon, it resolves on the attack that rolled it. */
+export const STATUS_KINDS = ['burn', 'poison', 'frozen', 'paralyze', 'confuse', 'heal'] as const
+export type StatusKind = (typeof STATUS_KINDS)[number]
+
+export type Face = { kind: 'number'; value: number } | { kind: 'status'; status: StatusKind; value: number }
+
+export interface DiceTypeDef {
+  type: DieType
+  label: string
+  color: string
+  faces: Face[]
+  upgradeable: boolean
+  countsForMajority: boolean
+  sortOrder: number
+}
+
+export interface DiceEntry {
+  type: DieType
+  count: number
+}
+
+export type MilestoneEffect = 'UPGRADE_DIE' | 'ADD_REROLL' | 'ADD_DIE' | 'ADD_HP' | 'EVOLVE'
+export interface Milestone {
+  level: number
+  effect: MilestoneEffect
+  /** UPGRADE_DIE / ADD_DIE target type; defaults to the species' Type 1. */
+  dieType?: DieType
+  /** ADD_REROLL / ADD_HP amount; defaults to 1 / 0. */
+  amount?: number
+}
+
+export interface Evolution {
+  toDex: number
+  level: number
+}
+
+export interface Species {
+  dex: number
+  name: string
+  type1: PokeType
+  type2: PokeType | null
+  baseHp: number
+  maxHp: number
+  speed: number
+  spriteUrl: string
+  dice: DiceEntry[]
+  rerolls: number
+  /** 1 (always caught) … 9 (legendary): the catch die plus a ball's bonus must reach it. */
+  catchValue: number
+  evolutions: Evolution[]
+  milestones: Milestone[]
+  notes?: string | null
+}
+
+export interface TypeChartRow {
+  attacking: PokeType
+  defending: PokeType
+  multiplier: number
+}
+
+export const COMBO_KEYS = [
+  'pair',
+  'two_pair',
+  'three_kind',
+  'small_straight',
+  'full_house',
+  'four_kind',
+  'full_straight',
+  'five_kind',
+] as const
+export type ComboKey = (typeof COMBO_KEYS)[number]
+
+export const COMBO_NAMES: Record<ComboKey, string> = {
+  pair: 'Pair',
+  two_pair: 'Two Pair',
+  three_kind: 'Three of a Kind',
+  small_straight: 'Small Straight',
+  full_house: 'Full House',
+  four_kind: 'Four of a Kind',
+  full_straight: 'Full Straight',
+  five_kind: 'Five of a Kind',
+}
+
+export interface ComboUpgradeRow {
+  comboKey: ComboKey
+  level: number
+  bonus: number
+  cost: number
+}
+
+export interface DieUpgradeRow {
+  dieType: PokeType
+  level: number
+  bonus: number
+  cost: number
+}
+
+export const ENCOUNTER_KINDS = ['wild', 'trainer', 'center', 'item'] as const
+export type EncounterKind = (typeof ENCOUNTER_KINDS)[number]
+/** Cards in an area's encounter deck; 'legend' is a fled legendary coming back (one per deck until it's caught). */
+export type DeckCard = EncounterKind | 'legend'
+
+export interface WildPoolEntry {
+  id: string
+  dex: number
+  weight: number
+  minLevel: number
+  maxLevel: number
+}
+
+export interface TrainerPoolEntry {
+  id: string
+  trainerId: string
+  weight: number
+}
+
+/** One line of an area's loot table: an item (or Pokédollars, itemKey 'money'), how often, how many, once or not. */
+export interface LootEntry {
+  id: string
+  itemKey: string
+  weight: number
+  /** Found once per save: struck off the area's table after that. */
+  unique: boolean
+  /** Quantity found (for money: the ₽ amount), drawn between these. */
+  minQty: number
+  maxQty: number
+}
+
+export interface BossDef {
+  dex: number
+  level: number
+  /** Victory Road style: the boss triggers when the team's average level reaches this, instead of the gauge. */
+  teamAvgThreshold?: number
+}
+
+export interface Area {
+  id: string
+  orderIndex: number
+  name: string
+  bannerUrl: string | null
+  xpToUnlockNext: number | null
+  minLevel: number
+  maxLevel: number
+  encounterWeights: Record<EncounterKind, number>
+  backtrackMultiplier: number
+  legendaryBoss: BossDef[] | null
+  scalesToTeam: boolean
+  /** Easy areas send a Center next whenever a team member is K.O. */
+  easyMode: boolean
+  /** Hidden areas sit outside the linear chain and unlock when every condition holds. */
+  hidden: boolean
+  unlockConditions: UnlockCondition[] | null
+  /** Gym / Elite trainers fought in order once the gauge is full; all must fall for the area to clear. */
+  gyms: string[]
+  wildPool: WildPoolEntry[]
+  trainerPool: TrainerPoolEntry[]
+  lootPool: LootEntry[]
+}
+
+export type UnlockCondition = { kind: 'pokedex'; count: number } | { kind: 'maxLevel'; level: number }
+
+export interface TrainerMon {
+  dex: number
+  level: number
+}
+
+export type TrainerRole = 'trainer' | 'leader' | 'elite' | 'champion'
+
+export interface Trainer {
+  id: string
+  name: string
+  spriteUrl: string | null
+  team: TrainerMon[]
+  role: TrainerRole
+  /** Gym leaders award a badge. */
+  badge: string | null
+}
+
+export type CurableStatus = 'burn' | 'poison' | 'frozen' | 'paralyze' | 'confuse'
+
+export type ItemEffect =
+  /** HP, in battle or from the Team screen. */
+  | { kind: 'heal'; amount: number }
+  /** Status heals — battle only (statuses clear when a battle ends). */
+  | { kind: 'cure'; statuses: CurableStatus[] }
+  /** Ether / Max Ether: rerolls back, up to the Pokémon's max — battle only. */
+  | { kind: 'rerolls'; amount: number }
+  /** Rare Candy: levels, from the Team screen. */
+  | { kind: 'level'; amount: number }
+  /** Poké Balls: added to the catch die. */
+  | { kind: 'ball'; bonus: number }
+
+export interface ItemDef {
+  key: string
+  name: string
+  description: string | null
+  spriteUrl: string | null
+  price: number
+  effect: ItemEffect
+  /** Sold in the Poké Mart… */
+  inShop: boolean
+  /** …once the player holds this many badges. */
+  shopBadges: number
+}
+
+export interface StatusRules {
+  burn: { threshold: number; damagePerStack: number; duration: number }
+  poison: { threshold: number; damage: number; duration: number }
+  frozen: { threshold: number; stunTurns: number }
+  paralyze: { threshold: number; stunTurns: number }
+  confuse: { threshold: number }
+  /** Heal faces: at the threshold the attacker heals itself, on top of the damage it deals. */
+  heal: { threshold: number; amount: 'rollTotal' | 'healFaces' }
+}
+
+export type SkipPolicy = 'free' | 'once' | 'none'
+
+export interface GameConfig {
+  configVersion: number
+  xpCurve: { A: number; B: number; C: number }
+  xpShareMode: 'fighter' | 'team'
+  regenPercentPerHour: number
+  maxTeamSize: number
+  maxLevel: number
+  maxDice: number
+  comboPayoutMode: 'highestDamage' | 'highestRank'
+  skipPolicy: SkipPolicy
+  starters: number[]
+  starterLevel: number
+  /**
+   * × every Pokémon's max HP, the player's and the foes' — the fight-length knob. Damage is never scaled: a hit is
+   * exactly what the dice show.
+   */
+  hpMultiplier: number
+  /** Global multiplier on trainer gold — the economy's pacing knob (Phase 10). */
+  goldMultiplier: number
+  /** Extra gold multiplier for gym leaders, the Elite Four and the Champion. */
+  gymGoldMultiplier: number
+  /** First encounter of an area is a Center when anyone is hurt. */
+  forcedCenterWhenHurt: boolean
+  /**
+   * 'deck': each area deals its encounters from a shuffled deck, so every deck holds the area's exact mix and a Center
+   * is never more than two decks away. 'random': every encounter is rolled independently from the weights.
+   */
+  encounterMode: 'deck' | 'random'
+  /** A new game's bag, item key → quantity. */
+  startInventory: Record<string, number>
+  /** scalesToTeam areas draw enemy levels from teamAverage ± this. */
+  scaleLevelSpread: number
+  /** Combo and die track level used by every wild/trainer Pokémon (the player's tracks are theirs alone). */
+  enemyUpgradeLevel: number
+  /** Switching the active Pokémon on your own turn (costs the turn). Switching after a faint is always free. */
+  allowVoluntarySwitch: boolean
+  /** Safety valve: two Pokémon immune to each other's every die would otherwise fight forever. Ends in a stalemate. */
+  maxBattleTurns: number
+  /** Multi EXP: team members who didn't fight get this fraction of each K.O.'s XP (0 = feature off). Players toggle it. */
+  multiExpShare: number
+  /** × the XP a K.O. gives Pokémon (the foe's level × this). The area gauge still fills by the foe's level. */
+  xpMultiplier: number
+  /** Show each area's "Recommended types" (attacking types that hit its foes hard) on the Map and area screens. */
+  showRecommendedTypes: boolean
+  /** Show the round gauge on the area screen: one segment per card of the area's deck, icons for those already met. */
+  showRoundGauge: boolean
+  status: StatusRules
+  ai: { samples: number; rerollGainThreshold: number }
+}
+
+// ---------------------------------------------------------------- save data (01-GAME-SPEC §9)
+
+export interface PokemonInstance {
+  id: string
+  dex: number
+  level: number
+  /** XP accumulated towards the next level. */
+  xp: number
+  currentHp: number
+  caughtAt: number
+  /** Fractional HP carried between passive-regen applications, so frequent loads never lose regen. */
+  regenCarry?: number
+}
+
+export interface AreaProgress {
+  xp: number
+  cleared: boolean
+  bossDefeated: boolean
+  /** Dex numbers of this area's legendary bosses already beaten. */
+  bossesDefeated: number[]
+  /** Trainer ids of this area's gym / Elite battles already won. */
+  gymsDefeated: string[]
+  /** Encounter cards left in this area's current deck (drawn from the end). Dealt afresh when empty. */
+  deck?: DeckCard[]
+  /** Loot entry ids left in this area's loot deck. */
+  lootDeck?: string[]
+  /** Unique loot entries already found here. */
+  uniqueFound?: string[]
+  /** The gauge when the current round began: a wipe loses the round and goes back to it (0 before any round; a full gauge stays). */
+  roundStartXp?: number
+  /** Rounds started here. A round is one full encounter deck, opened by a Pokémon Center when one would help. */
+  round?: number
+  /** Cards met so far this round, in order (the round gauge shows them). */
+  drawn?: DeckCard[]
+}
+
+export interface SaveData {
+  version: 1
+  updatedAt: number
+  lastRegenTick: number
+  gold: number
+  pokedex: number[]
+  box: PokemonInstance[]
+  team: string[]
+  inventory: Record<string, number>
+  comboLevels: Record<ComboKey, number>
+  dieLevels: Record<PokeType, number>
+  currentAreaId: string
+  areaProgress: Record<string, AreaProgress>
+  settings: { sfx: boolean; reducedMotion: boolean; multiExp: boolean }
+  /** The hpMultiplier current HP was last measured against (absent = ×1), so a change keeps every HP %. */
+  hpScale?: number
+}
+
+/** The raw bundle — exactly the shape of src/data/*.json (camelCase DB rows). */
+export interface BundleRaw {
+  pokemon: Species[]
+  typeChart: TypeChartRow[]
+  diceTypes: DiceTypeDef[]
+  areas: Area[]
+  trainers: Trainer[]
+  upgrades: { combos: ComboUpgradeRow[]; dice: DieUpgradeRow[] }
+  items: ItemDef[]
+  config: Record<string, unknown>
+}
+
+/** Compiled, lookup-friendly form every engine function receives. */
+export interface GameData {
+  species: Record<number, Species>
+  speciesList: Species[]
+  diceTypes: Record<DieType, DiceTypeDef>
+  /** key `${attacking}>${defending}`, absent = 1 */
+  typeChart: Record<string, number>
+  comboUpgrades: Record<ComboKey, ComboUpgradeRow[]>
+  dieUpgrades: Record<PokeType, DieUpgradeRow[]>
+  items: Record<string, ItemDef>
+  areas: Area[]
+  trainers: Record<string, Trainer>
+  config: GameConfig
+}

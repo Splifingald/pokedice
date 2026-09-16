@@ -1,0 +1,654 @@
+[
+ {
+  "type": "base",
+  "label": "Base",
+  "color": "#f7f2e0",
+  "faces": [
+   {
+    "kind": "number",
+    "value": 1
+   },
+   {
+    "kind": "number",
+    "value": 2
+   },
+   {
+    "kind": "number",
+    "value": 3
+   },
+   {
+    "kind": "number",
+    "value": 4
+   },
+   {
+    "kind": "number",
+    "value": 5
+   },
+   {
+    "kind": "number",
+    "value": 6
+   }
+  ],
+  "upgradeable": false,
+  "countsForMajority": false,
+  "sortOrder": 0
+ },
+ {
+  "type": "normal",
+  "label": "Normal",
+  "color": "#c8b88a",
+  "faces": [
+   {
+    "kind": "number",
+    "value": 1
+   },
+   {
+    "kind": "number",
+    "value": 2
+   },
+   {
+    "kind": "number",
+    "value": 3
+   },
+   {
+    "kind": "number",
+    "value": 4
+   },
+   {
+    "kind": "number",
+    "value": 5
+   },
+   {
+    "kind": "number",
+    "value": 6
+   }
+  ],
+  "upgradeable": true,
+  "countsForMajority": true,
+  "sortOrder": 1
+ },
+ {
+  "type": "fire",
+  "label": "Fire",
+  "color": "#ca6e29",
+  "faces": [
+   {
+    "kind": "status",
+    "status": "burn",
+    "value": 1
+   },
+   {
+    "kind": "number",
+    "value": 2
+   },
+   {
+    "kind": "number",
+    "value": 3
+   },
+   {
+    "kind": "number",
+    "value": 4
+   },
+   {
+    "kind": "number",
+    "value": 5
+   },
+   {
+    "kind": "number",
+    "value": 6
+   }
+  ],
+  "upgradeable": true,
+  "countsForMajority": true,
+  "sortOrder": 2
+ },
+ {
+  "type": "water",
+  "label": "Water",
+  "color": "#547acc",
+  "faces": [
+   {
+    "kind": "number",
+    "value": 2
+   },
+   {
+    "kind": "number",
+    "value": 3
+   },
+   {
+    "kind": "number",
+    "value": 3
+   },
+   {
+    "kind": "number",
+    "value": 4
+   },
+   {
+    "kind": "number",
+    "value": 4
+   },
+   {
+    "kind": "number",
+    "value": 5
+   }
+  ],
+  "upgradeable": true,
+  "countsForMajority": true,
+  "sortOrder": 3
+ },
+ {
+  "type": "electric",
+  "label": "Electric",
+  "color": "#d2b125",
+  "faces": [
+   {
+    "kind": "number",
+    "value": 1
+   },
+   {
+    "kind": "number",
+    "value": 2
+   },
+   {
+    "kind": "number",
+    "value": 3
+   },
+   {
+    "kind": "status",
+    "status": "paralyze",
+    "value": 4
+   },
+   {
+    "kind": "number",
+    "value": 5
+   },
+   {
+    "kind": "number",
+    "value": 6
+   }
+  ],
+  "upgradeable": true,
+  "countsForMajority": true,
+  "sortOrder": 4
+ },
+ {
+  "type": "grass",
+  "label": "Grass",
+  "color": "#68a941",
+  "faces": [
+   {
+    "kind": "number",
+    "value": 1
+   },
+   {
+    "kind": "number",
+    "value": 2
+   },
+   {
+    "kind": "status",
+    "status": "heal",
+    "value": 3
+   },
+   {
+    "kind": "number",
+    "value": 4
+   },
+   {
+    "kind": "number",
+    "value": 5
+   },
+   {
+    "kind": "number",
+    "value": 6
+   }
+  ],
+  "upgradeable": true,
+  "countsForMajority": true,
+  "sortOrder": 5
+ },
+ {
+  "type": "ice",
+  "label": "Ice",
+  "color": "#80b8b6",
+  "faces": [
+   {
+    "kind": "status",
+    "status": "frozen",
+    "value": 1
+   },
+   {
+    "kind": "number",
+    "value": 2
+   },
+   {
+    "kind": "number",
+    "value": 3
+   },
+   {
+    "kind": "number",
+    "value": 4
+   },
+   {
+    "kind": "number",
+    "value": 5
+   },
+   {
+    "kind": "number",
+    "value": 6
+   }
+  ],
+  "upgradeable": true,
+  "countsForMajority": true,
+  "sortOrder": 6
+ },
+ {
+  "type": "fighting",
+  "label": "Fighting",
+  "color": "#a52722",
+  "faces": [
+   {
+    "kind": "number",
+    "value": 2
+   },
+   {
+    "kind": "number",
+    "value": 3
+   },
+   {
+    "kind": "number",
+    "value": 4
+   },
+   {
+    "kind": "number",
+    "value": 5
+   },
+   {
+    "kind": "number",
+    "value": 6
+   },
+   {
+    "kind": "number",
+    "value": 7
+   }
+  ],
+  "upgradeable": true,
+  "countsForMajority": true,
+  "sortOrder": 7
+ },
+ {
+  "type": "poison",
+  "label": "Poison",
+  "color": "#8b3589",
+  "faces": [
+   {
+    "kind": "status",
+    "status": "poison",
+    "value": 1
+   },
+   {
+    "kind": "number",
+    "value": 2
+   },
+   {
+    "kind": "number",
+    "value": 3
+   },
+   {
+    "kind": "number",
+    "value": 4
+   },
+   {
+    "kind": "number",
+    "value": 5
+   },
+   {
+    "kind": "number",
+    "value": 6
+   }
+  ],
+  "upgradeable": true,
+  "countsForMajority": true,
+  "sortOrder": 8
+ },
+ {
+  "type": "ground",
+  "label": "Ground",
+  "color": "#c0a256",
+  "faces": [
+   {
+    "kind": "number",
+    "value": 0
+   },
+   {
+    "kind": "number",
+    "value": 1
+   },
+   {
+    "kind": "number",
+    "value": 1
+   },
+   {
+    "kind": "number",
+    "value": 4
+   },
+   {
+    "kind": "number",
+    "value": 4
+   },
+   {
+    "kind": "number",
+    "value": 8
+   }
+  ],
+  "upgradeable": true,
+  "countsForMajority": true,
+  "sortOrder": 9
+ },
+ {
+  "type": "flying",
+  "label": "Flying",
+  "color": "#907acf",
+  "faces": [
+   {
+    "kind": "number",
+    "value": 1
+   },
+   {
+    "kind": "number",
+    "value": 2
+   },
+   {
+    "kind": "number",
+    "value": 3
+   },
+   {
+    "kind": "number",
+    "value": 4
+   },
+   {
+    "kind": "number",
+    "value": 4
+   },
+   {
+    "kind": "number",
+    "value": 7
+   }
+  ],
+  "upgradeable": true,
+  "countsForMajority": true,
+  "sortOrder": 10
+ },
+ {
+  "type": "psychic",
+  "label": "Psychic",
+  "color": "#d44873",
+  "faces": [
+   {
+    "kind": "number",
+    "value": 1
+   },
+   {
+    "kind": "number",
+    "value": 2
+   },
+   {
+    "kind": "number",
+    "value": 3
+   },
+   {
+    "kind": "number",
+    "value": 4
+   },
+   {
+    "kind": "number",
+    "value": 5
+   },
+   {
+    "kind": "status",
+    "status": "confuse",
+    "value": 2
+   }
+  ],
+  "upgradeable": true,
+  "countsForMajority": true,
+  "sortOrder": 11
+ },
+ {
+  "type": "bug",
+  "label": "Bug",
+  "color": "#8d9d16",
+  "faces": [
+   {
+    "kind": "number",
+    "value": 1
+   },
+   {
+    "kind": "number",
+    "value": 1
+   },
+   {
+    "kind": "number",
+    "value": 1
+   },
+   {
+    "kind": "number",
+    "value": 4
+   },
+   {
+    "kind": "number",
+    "value": 4
+   },
+   {
+    "kind": "number",
+    "value": 4
+   }
+  ],
+  "upgradeable": true,
+  "countsForMajority": true,
+  "sortOrder": 12
+ },
+ {
+  "type": "rock",
+  "label": "Rock",
+  "color": "#9b892e",
+  "faces": [
+   {
+    "kind": "number",
+    "value": 2
+   },
+   {
+    "kind": "number",
+    "value": 2
+   },
+   {
+    "kind": "number",
+    "value": 2
+   },
+   {
+    "kind": "number",
+    "value": 4
+   },
+   {
+    "kind": "number",
+    "value": 5
+   },
+   {
+    "kind": "number",
+    "value": 6
+   }
+  ],
+  "upgradeable": true,
+  "countsForMajority": true,
+  "sortOrder": 13
+ },
+ {
+  "type": "ghost",
+  "label": "Ghost",
+  "color": "#624a80",
+  "faces": [
+   {
+    "kind": "number",
+    "value": 0
+   },
+   {
+    "kind": "number",
+    "value": 0
+   },
+   {
+    "kind": "number",
+    "value": 3
+   },
+   {
+    "kind": "number",
+    "value": 5
+   },
+   {
+    "kind": "number",
+    "value": 6
+   },
+   {
+    "kind": "number",
+    "value": 7
+   }
+  ],
+  "upgradeable": true,
+  "countsForMajority": true,
+  "sortOrder": 14
+ },
+ {
+  "type": "dragon",
+  "label": "Dragon",
+  "color": "#5e2dd6",
+  "faces": [
+   {
+    "kind": "number",
+    "value": 2
+   },
+   {
+    "kind": "number",
+    "value": 3
+   },
+   {
+    "kind": "number",
+    "value": 4
+   },
+   {
+    "kind": "number",
+    "value": 5
+   },
+   {
+    "kind": "number",
+    "value": 6
+   },
+   {
+    "kind": "number",
+    "value": 8
+   }
+  ],
+  "upgradeable": true,
+  "countsForMajority": true,
+  "sortOrder": 15
+ },
+ {
+  "type": "dark",
+  "label": "Dark",
+  "color": "#5f4a3c",
+  "faces": [
+   {
+    "kind": "number",
+    "value": 1
+   },
+   {
+    "kind": "number",
+    "value": 1
+   },
+   {
+    "kind": "number",
+    "value": 3
+   },
+   {
+    "kind": "number",
+    "value": 4
+   },
+   {
+    "kind": "number",
+    "value": 5
+   },
+   {
+    "kind": "number",
+    "value": 7
+   }
+  ],
+  "upgradeable": true,
+  "countsForMajority": true,
+  "sortOrder": 16
+ },
+ {
+  "type": "steel",
+  "label": "Steel",
+  "color": "#9c9caf",
+  "faces": [
+   {
+    "kind": "number",
+    "value": 3
+   },
+   {
+    "kind": "number",
+    "value": 3
+   },
+   {
+    "kind": "number",
+    "value": 3
+   },
+   {
+    "kind": "number",
+    "value": 4
+   },
+   {
+    "kind": "number",
+    "value": 4
+   },
+   {
+    "kind": "number",
+    "value": 4
+   }
+  ],
+  "upgradeable": true,
+  "countsForMajority": true,
+  "sortOrder": 17
+ },
+ {
+  "type": "fairy",
+  "label": "Fairy",
+  "color": "#b67193",
+  "faces": [
+   {
+    "kind": "number",
+    "value": 0
+   },
+   {
+    "kind": "number",
+    "value": 2
+   },
+   {
+    "kind": "number",
+    "value": 2
+   },
+   {
+    "kind": "number",
+    "value": 4
+   },
+   {
+    "kind": "number",
+    "value": 4
+   },
+   {
+    "kind": "number",
+    "value": 6
+   }
+  ],
+  "upgradeable": true,
+  "countsForMajority": true,
+  "sortOrder": 18
+ }
+]

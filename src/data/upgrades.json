@@ -1,0 +1,1566 @@
+{
+ "combos": [
+  {
+   "comboKey": "pair",
+   "level": 1,
+   "bonus": 2,
+   "cost": 0
+  },
+  {
+   "comboKey": "pair",
+   "level": 2,
+   "bonus": 3,
+   "cost": 5
+  },
+  {
+   "comboKey": "pair",
+   "level": 3,
+   "bonus": 4,
+   "cost": 8
+  },
+  {
+   "comboKey": "pair",
+   "level": 4,
+   "bonus": 5,
+   "cost": 12
+  },
+  {
+   "comboKey": "pair",
+   "level": 5,
+   "bonus": 6,
+   "cost": 19
+  },
+  {
+   "comboKey": "pair",
+   "level": 6,
+   "bonus": 7,
+   "cost": 29
+  },
+  {
+   "comboKey": "pair",
+   "level": 7,
+   "bonus": 8,
+   "cost": 45
+  },
+  {
+   "comboKey": "pair",
+   "level": 8,
+   "bonus": 9,
+   "cost": 69
+  },
+  {
+   "comboKey": "pair",
+   "level": 9,
+   "bonus": 10,
+   "cost": 107
+  },
+  {
+   "comboKey": "pair",
+   "level": 10,
+   "bonus": 11,
+   "cost": 167
+  },
+  {
+   "comboKey": "two_pair",
+   "level": 1,
+   "bonus": 5,
+   "cost": 0
+  },
+  {
+   "comboKey": "two_pair",
+   "level": 2,
+   "bonus": 6,
+   "cost": 12
+  },
+  {
+   "comboKey": "two_pair",
+   "level": 3,
+   "bonus": 7,
+   "cost": 19
+  },
+  {
+   "comboKey": "two_pair",
+   "level": 4,
+   "bonus": 8,
+   "cost": 29
+  },
+  {
+   "comboKey": "two_pair",
+   "level": 5,
+   "bonus": 9,
+   "cost": 45
+  },
+  {
+   "comboKey": "two_pair",
+   "level": 6,
+   "bonus": 10,
+   "cost": 69
+  },
+  {
+   "comboKey": "two_pair",
+   "level": 7,
+   "bonus": 11,
+   "cost": 107
+  },
+  {
+   "comboKey": "two_pair",
+   "level": 8,
+   "bonus": 12,
+   "cost": 166
+  },
+  {
+   "comboKey": "two_pair",
+   "level": 9,
+   "bonus": 13,
+   "cost": 258
+  },
+  {
+   "comboKey": "two_pair",
+   "level": 10,
+   "bonus": 14,
+   "cost": 400
+  },
+  {
+   "comboKey": "three_kind",
+   "level": 1,
+   "bonus": 6,
+   "cost": 0
+  },
+  {
+   "comboKey": "three_kind",
+   "level": 2,
+   "bonus": 8,
+   "cost": 15
+  },
+  {
+   "comboKey": "three_kind",
+   "level": 3,
+   "bonus": 10,
+   "cost": 23
+  },
+  {
+   "comboKey": "three_kind",
+   "level": 4,
+   "bonus": 12,
+   "cost": 36
+  },
+  {
+   "comboKey": "three_kind",
+   "level": 5,
+   "bonus": 14,
+   "cost": 56
+  },
+  {
+   "comboKey": "three_kind",
+   "level": 6,
+   "bonus": 16,
+   "cost": 87
+  },
+  {
+   "comboKey": "three_kind",
+   "level": 7,
+   "bonus": 18,
+   "cost": 134
+  },
+  {
+   "comboKey": "three_kind",
+   "level": 8,
+   "bonus": 20,
+   "cost": 208
+  },
+  {
+   "comboKey": "three_kind",
+   "level": 9,
+   "bonus": 22,
+   "cost": 322
+  },
+  {
+   "comboKey": "three_kind",
+   "level": 10,
+   "bonus": 24,
+   "cost": 500
+  },
+  {
+   "comboKey": "small_straight",
+   "level": 1,
+   "bonus": 8,
+   "cost": 0
+  },
+  {
+   "comboKey": "small_straight",
+   "level": 2,
+   "bonus": 10,
+   "cost": 20
+  },
+  {
+   "comboKey": "small_straight",
+   "level": 3,
+   "bonus": 12,
+   "cost": 31
+  },
+  {
+   "comboKey": "small_straight",
+   "level": 4,
+   "bonus": 14,
+   "cost": 48
+  },
+  {
+   "comboKey": "small_straight",
+   "level": 5,
+   "bonus": 16,
+   "cost": 74
+  },
+  {
+   "comboKey": "small_straight",
+   "level": 6,
+   "bonus": 18,
+   "cost": 115
+  },
+  {
+   "comboKey": "small_straight",
+   "level": 7,
+   "bonus": 20,
+   "cost": 179
+  },
+  {
+   "comboKey": "small_straight",
+   "level": 8,
+   "bonus": 22,
+   "cost": 277
+  },
+  {
+   "comboKey": "small_straight",
+   "level": 9,
+   "bonus": 24,
+   "cost": 430
+  },
+  {
+   "comboKey": "small_straight",
+   "level": 10,
+   "bonus": 26,
+   "cost": 666
+  },
+  {
+   "comboKey": "full_house",
+   "level": 1,
+   "bonus": 10,
+   "cost": 0
+  },
+  {
+   "comboKey": "full_house",
+   "level": 2,
+   "bonus": 13,
+   "cost": 25
+  },
+  {
+   "comboKey": "full_house",
+   "level": 3,
+   "bonus": 16,
+   "cost": 39
+  },
+  {
+   "comboKey": "full_house",
+   "level": 4,
+   "bonus": 19,
+   "cost": 60
+  },
+  {
+   "comboKey": "full_house",
+   "level": 5,
+   "bonus": 22,
+   "cost": 93
+  },
+  {
+   "comboKey": "full_house",
+   "level": 6,
+   "bonus": 25,
+   "cost": 144
+  },
+  {
+   "comboKey": "full_house",
+   "level": 7,
+   "bonus": 28,
+   "cost": 224
+  },
+  {
+   "comboKey": "full_house",
+   "level": 8,
+   "bonus": 31,
+   "cost": 347
+  },
+  {
+   "comboKey": "full_house",
+   "level": 9,
+   "bonus": 34,
+   "cost": 537
+  },
+  {
+   "comboKey": "full_house",
+   "level": 10,
+   "bonus": 37,
+   "cost": 833
+  },
+  {
+   "comboKey": "four_kind",
+   "level": 1,
+   "bonus": 14,
+   "cost": 0
+  },
+  {
+   "comboKey": "four_kind",
+   "level": 2,
+   "bonus": 17,
+   "cost": 35
+  },
+  {
+   "comboKey": "four_kind",
+   "level": 3,
+   "bonus": 20,
+   "cost": 54
+  },
+  {
+   "comboKey": "four_kind",
+   "level": 4,
+   "bonus": 23,
+   "cost": 84
+  },
+  {
+   "comboKey": "four_kind",
+   "level": 5,
+   "bonus": 26,
+   "cost": 130
+  },
+  {
+   "comboKey": "four_kind",
+   "level": 6,
+   "bonus": 29,
+   "cost": 202
+  },
+  {
+   "comboKey": "four_kind",
+   "level": 7,
+   "bonus": 32,
+   "cost": 313
+  },
+  {
+   "comboKey": "four_kind",
+   "level": 8,
+   "bonus": 35,
+   "cost": 485
+  },
+  {
+   "comboKey": "four_kind",
+   "level": 9,
+   "bonus": 38,
+   "cost": 752
+  },
+  {
+   "comboKey": "four_kind",
+   "level": 10,
+   "bonus": 41,
+   "cost": 1166
+  },
+  {
+   "comboKey": "full_straight",
+   "level": 1,
+   "bonus": 18,
+   "cost": 0
+  },
+  {
+   "comboKey": "full_straight",
+   "level": 2,
+   "bonus": 22,
+   "cost": 45
+  },
+  {
+   "comboKey": "full_straight",
+   "level": 3,
+   "bonus": 26,
+   "cost": 70
+  },
+  {
+   "comboKey": "full_straight",
+   "level": 4,
+   "bonus": 30,
+   "cost": 108
+  },
+  {
+   "comboKey": "full_straight",
+   "level": 5,
+   "bonus": 34,
+   "cost": 168
+  },
+  {
+   "comboKey": "full_straight",
+   "level": 6,
+   "bonus": 38,
+   "cost": 260
+  },
+  {
+   "comboKey": "full_straight",
+   "level": 7,
+   "bonus": 42,
+   "cost": 403
+  },
+  {
+   "comboKey": "full_straight",
+   "level": 8,
+   "bonus": 46,
+   "cost": 624
+  },
+  {
+   "comboKey": "full_straight",
+   "level": 9,
+   "bonus": 50,
+   "cost": 967
+  },
+  {
+   "comboKey": "full_straight",
+   "level": 10,
+   "bonus": 54,
+   "cost": 1499
+  },
+  {
+   "comboKey": "five_kind",
+   "level": 1,
+   "bonus": 25,
+   "cost": 0
+  },
+  {
+   "comboKey": "five_kind",
+   "level": 2,
+   "bonus": 30,
+   "cost": 60
+  },
+  {
+   "comboKey": "five_kind",
+   "level": 3,
+   "bonus": 35,
+   "cost": 93
+  },
+  {
+   "comboKey": "five_kind",
+   "level": 4,
+   "bonus": 40,
+   "cost": 144
+  },
+  {
+   "comboKey": "five_kind",
+   "level": 5,
+   "bonus": 45,
+   "cost": 223
+  },
+  {
+   "comboKey": "five_kind",
+   "level": 6,
+   "bonus": 50,
+   "cost": 346
+  },
+  {
+   "comboKey": "five_kind",
+   "level": 7,
+   "bonus": 55,
+   "cost": 537
+  },
+  {
+   "comboKey": "five_kind",
+   "level": 8,
+   "bonus": 60,
+   "cost": 832
+  },
+  {
+   "comboKey": "five_kind",
+   "level": 9,
+   "bonus": 65,
+   "cost": 1290
+  },
+  {
+   "comboKey": "five_kind",
+   "level": 10,
+   "bonus": 70,
+   "cost": 1999
+  }
+ ],
+ "dice": [
+  {
+   "dieType": "normal",
+   "level": 1,
+   "bonus": 0,
+   "cost": 0
+  },
+  {
+   "dieType": "normal",
+   "level": 2,
+   "bonus": 1,
+   "cost": 10
+  },
+  {
+   "dieType": "normal",
+   "level": 3,
+   "bonus": 2,
+   "cost": 16
+  },
+  {
+   "dieType": "normal",
+   "level": 4,
+   "bonus": 3,
+   "cost": 24
+  },
+  {
+   "dieType": "normal",
+   "level": 5,
+   "bonus": 4,
+   "cost": 37
+  },
+  {
+   "dieType": "normal",
+   "level": 6,
+   "bonus": 6,
+   "cost": 58
+  },
+  {
+   "dieType": "normal",
+   "level": 7,
+   "bonus": 8,
+   "cost": 89
+  },
+  {
+   "dieType": "normal",
+   "level": 8,
+   "bonus": 10,
+   "cost": 139
+  },
+  {
+   "dieType": "normal",
+   "level": 9,
+   "bonus": 12,
+   "cost": 215
+  },
+  {
+   "dieType": "normal",
+   "level": 10,
+   "bonus": 15,
+   "cost": 333
+  },
+  {
+   "dieType": "fire",
+   "level": 1,
+   "bonus": 0,
+   "cost": 0
+  },
+  {
+   "dieType": "fire",
+   "level": 2,
+   "bonus": 1,
+   "cost": 10
+  },
+  {
+   "dieType": "fire",
+   "level": 3,
+   "bonus": 2,
+   "cost": 16
+  },
+  {
+   "dieType": "fire",
+   "level": 4,
+   "bonus": 3,
+   "cost": 24
+  },
+  {
+   "dieType": "fire",
+   "level": 5,
+   "bonus": 4,
+   "cost": 37
+  },
+  {
+   "dieType": "fire",
+   "level": 6,
+   "bonus": 6,
+   "cost": 58
+  },
+  {
+   "dieType": "fire",
+   "level": 7,
+   "bonus": 8,
+   "cost": 89
+  },
+  {
+   "dieType": "fire",
+   "level": 8,
+   "bonus": 10,
+   "cost": 139
+  },
+  {
+   "dieType": "fire",
+   "level": 9,
+   "bonus": 12,
+   "cost": 215
+  },
+  {
+   "dieType": "fire",
+   "level": 10,
+   "bonus": 15,
+   "cost": 333
+  },
+  {
+   "dieType": "water",
+   "level": 1,
+   "bonus": 0,
+   "cost": 0
+  },
+  {
+   "dieType": "water",
+   "level": 2,
+   "bonus": 1,
+   "cost": 10
+  },
+  {
+   "dieType": "water",
+   "level": 3,
+   "bonus": 2,
+   "cost": 16
+  },
+  {
+   "dieType": "water",
+   "level": 4,
+   "bonus": 3,
+   "cost": 24
+  },
+  {
+   "dieType": "water",
+   "level": 5,
+   "bonus": 4,
+   "cost": 37
+  },
+  {
+   "dieType": "water",
+   "level": 6,
+   "bonus": 6,
+   "cost": 58
+  },
+  {
+   "dieType": "water",
+   "level": 7,
+   "bonus": 8,
+   "cost": 89
+  },
+  {
+   "dieType": "water",
+   "level": 8,
+   "bonus": 10,
+   "cost": 139
+  },
+  {
+   "dieType": "water",
+   "level": 9,
+   "bonus": 12,
+   "cost": 215
+  },
+  {
+   "dieType": "water",
+   "level": 10,
+   "bonus": 15,
+   "cost": 333
+  },
+  {
+   "dieType": "electric",
+   "level": 1,
+   "bonus": 0,
+   "cost": 0
+  },
+  {
+   "dieType": "electric",
+   "level": 2,
+   "bonus": 1,
+   "cost": 10
+  },
+  {
+   "dieType": "electric",
+   "level": 3,
+   "bonus": 2,
+   "cost": 16
+  },
+  {
+   "dieType": "electric",
+   "level": 4,
+   "bonus": 3,
+   "cost": 24
+  },
+  {
+   "dieType": "electric",
+   "level": 5,
+   "bonus": 4,
+   "cost": 37
+  },
+  {
+   "dieType": "electric",
+   "level": 6,
+   "bonus": 6,
+   "cost": 58
+  },
+  {
+   "dieType": "electric",
+   "level": 7,
+   "bonus": 8,
+   "cost": 89
+  },
+  {
+   "dieType": "electric",
+   "level": 8,
+   "bonus": 10,
+   "cost": 139
+  },
+  {
+   "dieType": "electric",
+   "level": 9,
+   "bonus": 12,
+   "cost": 215
+  },
+  {
+   "dieType": "electric",
+   "level": 10,
+   "bonus": 15,
+   "cost": 333
+  },
+  {
+   "dieType": "grass",
+   "level": 1,
+   "bonus": 0,
+   "cost": 0
+  },
+  {
+   "dieType": "grass",
+   "level": 2,
+   "bonus": 1,
+   "cost": 10
+  },
+  {
+   "dieType": "grass",
+   "level": 3,
+   "bonus": 2,
+   "cost": 16
+  },
+  {
+   "dieType": "grass",
+   "level": 4,
+   "bonus": 3,
+   "cost": 24
+  },
+  {
+   "dieType": "grass",
+   "level": 5,
+   "bonus": 4,
+   "cost": 37
+  },
+  {
+   "dieType": "grass",
+   "level": 6,
+   "bonus": 6,
+   "cost": 58
+  },
+  {
+   "dieType": "grass",
+   "level": 7,
+   "bonus": 8,
+   "cost": 89
+  },
+  {
+   "dieType": "grass",
+   "level": 8,
+   "bonus": 10,
+   "cost": 139
+  },
+  {
+   "dieType": "grass",
+   "level": 9,
+   "bonus": 12,
+   "cost": 215
+  },
+  {
+   "dieType": "grass",
+   "level": 10,
+   "bonus": 15,
+   "cost": 333
+  },
+  {
+   "dieType": "ice",
+   "level": 1,
+   "bonus": 0,
+   "cost": 0
+  },
+  {
+   "dieType": "ice",
+   "level": 2,
+   "bonus": 1,
+   "cost": 10
+  },
+  {
+   "dieType": "ice",
+   "level": 3,
+   "bonus": 2,
+   "cost": 16
+  },
+  {
+   "dieType": "ice",
+   "level": 4,
+   "bonus": 3,
+   "cost": 24
+  },
+  {
+   "dieType": "ice",
+   "level": 5,
+   "bonus": 4,
+   "cost": 37
+  },
+  {
+   "dieType": "ice",
+   "level": 6,
+   "bonus": 6,
+   "cost": 58
+  },
+  {
+   "dieType": "ice",
+   "level": 7,
+   "bonus": 8,
+   "cost": 89
+  },
+  {
+   "dieType": "ice",
+   "level": 8,
+   "bonus": 10,
+   "cost": 139
+  },
+  {
+   "dieType": "ice",
+   "level": 9,
+   "bonus": 12,
+   "cost": 215
+  },
+  {
+   "dieType": "ice",
+   "level": 10,
+   "bonus": 15,
+   "cost": 333
+  },
+  {
+   "dieType": "fighting",
+   "level": 1,
+   "bonus": 0,
+   "cost": 0
+  },
+  {
+   "dieType": "fighting",
+   "level": 2,
+   "bonus": 1,
+   "cost": 10
+  },
+  {
+   "dieType": "fighting",
+   "level": 3,
+   "bonus": 2,
+   "cost": 16
+  },
+  {
+   "dieType": "fighting",
+   "level": 4,
+   "bonus": 3,
+   "cost": 24
+  },
+  {
+   "dieType": "fighting",
+   "level": 5,
+   "bonus": 4,
+   "cost": 37
+  },
+  {
+   "dieType": "fighting",
+   "level": 6,
+   "bonus": 6,
+   "cost": 58
+  },
+  {
+   "dieType": "fighting",
+   "level": 7,
+   "bonus": 8,
+   "cost": 89
+  },
+  {
+   "dieType": "fighting",
+   "level": 8,
+   "bonus": 10,
+   "cost": 139
+  },
+  {
+   "dieType": "fighting",
+   "level": 9,
+   "bonus": 12,
+   "cost": 215
+  },
+  {
+   "dieType": "fighting",
+   "level": 10,
+   "bonus": 15,
+   "cost": 333
+  },
+  {
+   "dieType": "poison",
+   "level": 1,
+   "bonus": 0,
+   "cost": 0
+  },
+  {
+   "dieType": "poison",
+   "level": 2,
+   "bonus": 1,
+   "cost": 10
+  },
+  {
+   "dieType": "poison",
+   "level": 3,
+   "bonus": 2,
+   "cost": 16
+  },
+  {
+   "dieType": "poison",
+   "level": 4,
+   "bonus": 3,
+   "cost": 24
+  },
+  {
+   "dieType": "poison",
+   "level": 5,
+   "bonus": 4,
+   "cost": 37
+  },
+  {
+   "dieType": "poison",
+   "level": 6,
+   "bonus": 6,
+   "cost": 58
+  },
+  {
+   "dieType": "poison",
+   "level": 7,
+   "bonus": 8,
+   "cost": 89
+  },
+  {
+   "dieType": "poison",
+   "level": 8,
+   "bonus": 10,
+   "cost": 139
+  },
+  {
+   "dieType": "poison",
+   "level": 9,
+   "bonus": 12,
+   "cost": 215
+  },
+  {
+   "dieType": "poison",
+   "level": 10,
+   "bonus": 15,
+   "cost": 333
+  },
+  {
+   "dieType": "ground",
+   "level": 1,
+   "bonus": 0,
+   "cost": 0
+  },
+  {
+   "dieType": "ground",
+   "level": 2,
+   "bonus": 1,
+   "cost": 10
+  },
+  {
+   "dieType": "ground",
+   "level": 3,
+   "bonus": 2,
+   "cost": 16
+  },
+  {
+   "dieType": "ground",
+   "level": 4,
+   "bonus": 3,
+   "cost": 24
+  },
+  {
+   "dieType": "ground",
+   "level": 5,
+   "bonus": 4,
+   "cost": 37
+  },
+  {
+   "dieType": "ground",
+   "level": 6,
+   "bonus": 6,
+   "cost": 58
+  },
+  {
+   "dieType": "ground",
+   "level": 7,
+   "bonus": 8,
+   "cost": 89
+  },
+  {
+   "dieType": "ground",
+   "level": 8,
+   "bonus": 10,
+   "cost": 139
+  },
+  {
+   "dieType": "ground",
+   "level": 9,
+   "bonus": 12,
+   "cost": 215
+  },
+  {
+   "dieType": "ground",
+   "level": 10,
+   "bonus": 15,
+   "cost": 333
+  },
+  {
+   "dieType": "flying",
+   "level": 1,
+   "bonus": 0,
+   "cost": 0
+  },
+  {
+   "dieType": "flying",
+   "level": 2,
+   "bonus": 1,
+   "cost": 10
+  },
+  {
+   "dieType": "flying",
+   "level": 3,
+   "bonus": 2,
+   "cost": 16
+  },
+  {
+   "dieType": "flying",
+   "level": 4,
+   "bonus": 3,
+   "cost": 24
+  },
+  {
+   "dieType": "flying",
+   "level": 5,
+   "bonus": 4,
+   "cost": 37
+  },
+  {
+   "dieType": "flying",
+   "level": 6,
+   "bonus": 6,
+   "cost": 58
+  },
+  {
+   "dieType": "flying",
+   "level": 7,
+   "bonus": 8,
+   "cost": 89
+  },
+  {
+   "dieType": "flying",
+   "level": 8,
+   "bonus": 10,
+   "cost": 139
+  },
+  {
+   "dieType": "flying",
+   "level": 9,
+   "bonus": 12,
+   "cost": 215
+  },
+  {
+   "dieType": "flying",
+   "level": 10,
+   "bonus": 15,
+   "cost": 333
+  },
+  {
+   "dieType": "psychic",
+   "level": 1,
+   "bonus": 0,
+   "cost": 0
+  },
+  {
+   "dieType": "psychic",
+   "level": 2,
+   "bonus": 1,
+   "cost": 10
+  },
+  {
+   "dieType": "psychic",
+   "level": 3,
+   "bonus": 2,
+   "cost": 16
+  },
+  {
+   "dieType": "psychic",
+   "level": 4,
+   "bonus": 3,
+   "cost": 24
+  },
+  {
+   "dieType": "psychic",
+   "level": 5,
+   "bonus": 4,
+   "cost": 37
+  },
+  {
+   "dieType": "psychic",
+   "level": 6,
+   "bonus": 6,
+   "cost": 58
+  },
+  {
+   "dieType": "psychic",
+   "level": 7,
+   "bonus": 8,
+   "cost": 89
+  },
+  {
+   "dieType": "psychic",
+   "level": 8,
+   "bonus": 10,
+   "cost": 139
+  },
+  {
+   "dieType": "psychic",
+   "level": 9,
+   "bonus": 12,
+   "cost": 215
+  },
+  {
+   "dieType": "psychic",
+   "level": 10,
+   "bonus": 15,
+   "cost": 333
+  },
+  {
+   "dieType": "bug",
+   "level": 1,
+   "bonus": 0,
+   "cost": 0
+  },
+  {
+   "dieType": "bug",
+   "level": 2,
+   "bonus": 1,
+   "cost": 10
+  },
+  {
+   "dieType": "bug",
+   "level": 3,
+   "bonus": 2,
+   "cost": 16
+  },
+  {
+   "dieType": "bug",
+   "level": 4,
+   "bonus": 3,
+   "cost": 24
+  },
+  {
+   "dieType": "bug",
+   "level": 5,
+   "bonus": 4,
+   "cost": 37
+  },
+  {
+   "dieType": "bug",
+   "level": 6,
+   "bonus": 6,
+   "cost": 58
+  },
+  {
+   "dieType": "bug",
+   "level": 7,
+   "bonus": 8,
+   "cost": 89
+  },
+  {
+   "dieType": "bug",
+   "level": 8,
+   "bonus": 10,
+   "cost": 139
+  },
+  {
+   "dieType": "bug",
+   "level": 9,
+   "bonus": 12,
+   "cost": 215
+  },
+  {
+   "dieType": "bug",
+   "level": 10,
+   "bonus": 15,
+   "cost": 333
+  },
+  {
+   "dieType": "rock",
+   "level": 1,
+   "bonus": 0,
+   "cost": 0
+  },
+  {
+   "dieType": "rock",
+   "level": 2,
+   "bonus": 1,
+   "cost": 10
+  },
+  {
+   "dieType": "rock",
+   "level": 3,
+   "bonus": 2,
+   "cost": 16
+  },
+  {
+   "dieType": "rock",
+   "level": 4,
+   "bonus": 3,
+   "cost": 24
+  },
+  {
+   "dieType": "rock",
+   "level": 5,
+   "bonus": 4,
+   "cost": 37
+  },
+  {
+   "dieType": "rock",
+   "level": 6,
+   "bonus": 6,
+   "cost": 58
+  },
+  {
+   "dieType": "rock",
+   "level": 7,
+   "bonus": 8,
+   "cost": 89
+  },
+  {
+   "dieType": "rock",
+   "level": 8,
+   "bonus": 10,
+   "cost": 139
+  },
+  {
+   "dieType": "rock",
+   "level": 9,
+   "bonus": 12,
+   "cost": 215
+  },
+  {
+   "dieType": "rock",
+   "level": 10,
+   "bonus": 15,
+   "cost": 333
+  },
+  {
+   "dieType": "ghost",
+   "level": 1,
+   "bonus": 0,
+   "cost": 0
+  },
+  {
+   "dieType": "ghost",
+   "level": 2,
+   "bonus": 1,
+   "cost": 10
+  },
+  {
+   "dieType": "ghost",
+   "level": 3,
+   "bonus": 2,
+   "cost": 16
+  },
+  {
+   "dieType": "ghost",
+   "level": 4,
+   "bonus": 3,
+   "cost": 24
+  },
+  {
+   "dieType": "ghost",
+   "level": 5,
+   "bonus": 4,
+   "cost": 37
+  },
+  {
+   "dieType": "ghost",
+   "level": 6,
+   "bonus": 6,
+   "cost": 58
+  },
+  {
+   "dieType": "ghost",
+   "level": 7,
+   "bonus": 8,
+   "cost": 89
+  },
+  {
+   "dieType": "ghost",
+   "level": 8,
+   "bonus": 10,
+   "cost": 139
+  },
+  {
+   "dieType": "ghost",
+   "level": 9,
+   "bonus": 12,
+   "cost": 215
+  },
+  {
+   "dieType": "ghost",
+   "level": 10,
+   "bonus": 15,
+   "cost": 333
+  },
+  {
+   "dieType": "dragon",
+   "level": 1,
+   "bonus": 0,
+   "cost": 0
+  },
+  {
+   "dieType": "dragon",
+   "level": 2,
+   "bonus": 1,
+   "cost": 10
+  },
+  {
+   "dieType": "dragon",
+   "level": 3,
+   "bonus": 2,
+   "cost": 16
+  },
+  {
+   "dieType": "dragon",
+   "level": 4,
+   "bonus": 3,
+   "cost": 24
+  },
+  {
+   "dieType": "dragon",
+   "level": 5,
+   "bonus": 4,
+   "cost": 37
+  },
+  {
+   "dieType": "dragon",
+   "level": 6,
+   "bonus": 6,
+   "cost": 58
+  },
+  {
+   "dieType": "dragon",
+   "level": 7,
+   "bonus": 8,
+   "cost": 89
+  },
+  {
+   "dieType": "dragon",
+   "level": 8,
+   "bonus": 10,
+   "cost": 139
+  },
+  {
+   "dieType": "dragon",
+   "level": 9,
+   "bonus": 12,
+   "cost": 215
+  },
+  {
+   "dieType": "dragon",
+   "level": 10,
+   "bonus": 15,
+   "cost": 333
+  },
+  {
+   "dieType": "dark",
+   "level": 1,
+   "bonus": 0,
+   "cost": 0
+  },
+  {
+   "dieType": "dark",
+   "level": 2,
+   "bonus": 1,
+   "cost": 10
+  },
+  {
+   "dieType": "dark",
+   "level": 3,
+   "bonus": 2,
+   "cost": 16
+  },
+  {
+   "dieType": "dark",
+   "level": 4,
+   "bonus": 3,
+   "cost": 24
+  },
+  {
+   "dieType": "dark",
+   "level": 5,
+   "bonus": 4,
+   "cost": 37
+  },
+  {
+   "dieType": "dark",
+   "level": 6,
+   "bonus": 6,
+   "cost": 58
+  },
+  {
+   "dieType": "dark",
+   "level": 7,
+   "bonus": 8,
+   "cost": 89
+  },
+  {
+   "dieType": "dark",
+   "level": 8,
+   "bonus": 10,
+   "cost": 139
+  },
+  {
+   "dieType": "dark",
+   "level": 9,
+   "bonus": 12,
+   "cost": 215
+  },
+  {
+   "dieType": "dark",
+   "level": 10,
+   "bonus": 15,
+   "cost": 333
+  },
+  {
+   "dieType": "steel",
+   "level": 1,
+   "bonus": 0,
+   "cost": 0
+  },
+  {
+   "dieType": "steel",
+   "level": 2,
+   "bonus": 1,
+   "cost": 10
+  },
+  {
+   "dieType": "steel",
+   "level": 3,
+   "bonus": 2,
+   "cost": 16
+  },
+  {
+   "dieType": "steel",
+   "level": 4,
+   "bonus": 3,
+   "cost": 24
+  },
+  {
+   "dieType": "steel",
+   "level": 5,
+   "bonus": 4,
+   "cost": 37
+  },
+  {
+   "dieType": "steel",
+   "level": 6,
+   "bonus": 6,
+   "cost": 58
+  },
+  {
+   "dieType": "steel",
+   "level": 7,
+   "bonus": 8,
+   "cost": 89
+  },
+  {
+   "dieType": "steel",
+   "level": 8,
+   "bonus": 10,
+   "cost": 139
+  },
+  {
+   "dieType": "steel",
+   "level": 9,
+   "bonus": 12,
+   "cost": 215
+  },
+  {
+   "dieType": "steel",
+   "level": 10,
+   "bonus": 15,
+   "cost": 333
+  },
+  {
+   "dieType": "fairy",
+   "level": 1,
+   "bonus": 0,
+   "cost": 0
+  },
+  {
+   "dieType": "fairy",
+   "level": 2,
+   "bonus": 1,
+   "cost": 10
+  },
+  {
+   "dieType": "fairy",
+   "level": 3,
+   "bonus": 2,
+   "cost": 16
+  },
+  {
+   "dieType": "fairy",
+   "level": 4,
+   "bonus": 3,
+   "cost": 24
+  },
+  {
+   "dieType": "fairy",
+   "level": 5,
+   "bonus": 4,
+   "cost": 37
+  },
+  {
+   "dieType": "fairy",
+   "level": 6,
+   "bonus": 6,
+   "cost": 58
+  },
+  {
+   "dieType": "fairy",
+   "level": 7,
+   "bonus": 8,
+   "cost": 89
+  },
+  {
+   "dieType": "fairy",
+   "level": 8,
+   "bonus": 10,
+   "cost": 139
+  },
+  {
+   "dieType": "fairy",
+   "level": 9,
+   "bonus": 12,
+   "cost": 215
+  },
+  {
+   "dieType": "fairy",
+   "level": 10,
+   "bonus": 15,
+   "cost": 333
+  }
+ ]
+}

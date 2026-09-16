@@ -1,0 +1,63 @@
+{
+  "name": "pokedice",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Pokédice — a dice-battler fan game over the original 151. Personal, non-commercial.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.node.json && vite build",
+    "preview": "vite preview",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "coverage": "vitest run --coverage",
+    "seed": "tsx scripts/seed.ts",
+    "art": "tsx scripts/art.ts",
+    "sim": "tsx scripts/sim.ts",
+    "balance": "tsx scripts/balance.ts",
+    "import-bundle": "tsx scripts/import-bundle.ts",
+    "e2e": "playwright test"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.4",
+    "framer-motion": "^11.11.0",
+    "immer": "^10.1.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.27.0",
+    "zod": "^3.23.8",
+    "zustand": "^5.0.0"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
+    "@eslint/js": "^9.13.0",
+    "@playwright/test": "^1.48.0",
+    "@types/node": "^22.7.0",
+    "@types/pngjs": "^6.0.5",
+    "@types/react": "^18.3.11",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.2",
+    "@vitest/coverage-v8": "^2.1.3",
+    "autoprefixer": "^10.4.20",
+    "eslint": "^9.13.0",
+    "eslint-plugin-react-hooks": "^5.0.0",
+    "eslint-plugin-react-refresh": "^0.4.13",
+    "globals": "^15.11.0",
+    "pngjs": "^7.0.0",
+    "postcss": "^8.4.47",
+    "prettier": "^3.3.3",
+    "tailwindcss": "^3.4.14",
+    "tsx": "^4.19.1",
+    "typescript": "~5.6.3",
+    "typescript-eslint": "^8.10.0",
+    "vite": "^5.4.9",
+    "vitest": "^2.1.3"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
+  }
+}

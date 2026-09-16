@@ -1,0 +1,350 @@
+// Run flow: map → area → encounter preview → battle → rewards → next. Thin glue over the pure engine.
+import {
+  applyCatch,
+  applyHp,
+  applyVictory,
+  applyWipe,
+  ballBonus,
+  battleOutcome,
+  canSkip,
+  catchTarget,
+  catchValueOf,
+  centerHeal,
+  centerWouldHelp,
+  challengeEncounter,
+  consumeItem,
+  MONEY,
+  pickUpItem,
+  recordDraws,
+  rollCatch,
+  createBattle,
+  createRng,
+  hasAbleTeam,
+  hasFaintedMember,
+  isAreaUnlocked,
+  isTeamHurt,
+  newSave,
+  nextEncounter,
+  progressOf,
+  randomSeed,
+  reduce,
+  swapIntoTeam,
+  teamAverageLevel,
+  teamOf,
+  uniformLevels,
+  type BattleEvent,
+  type BattleKind,
+  type ForceKind,
+  type RunEvent,
+  type SaveData,
+} from '@/engine'
+import { commitSave, initialRun, mutateSave, pushToast, useGame, type RunState } from './game'
+
+let runRng = createRng(randomSeed())
+let battleRng = createRng(randomSeed())
+let battleSeq = 0
+
+export const newId = (): string =>
+  typeof crypto !== 'undefined' && 'randomUUID' in crypto
+    ? crypto.randomUUID()
+    : `${Date.now().toString(36)}-${Math.floor(Math.random() * 1e9).toString(36)}`
+
+/** Tests only: make every roll reproducible. */
+export function seedRun(seed: number) {
+  runRng = createRng(seed)
+  battleRng = createRng(seed ^ 0x9e3779b9)
+}
+
+const setRun = (patch: Partial<RunState>) => useGame.setState((s) => ({ run: { ...s.run, ...patch } }))
+
+export function startNewGame(starterDex: number) {
+  const { data } = useGame.getState()
+  commitSave(newSave(starterDex, data, Date.now(), newId))
+  useGame.setState({ run: initialRun(), battle: null })
+}
+
+export function deleteSave() {
+  commitSave(null)
+  useGame.setState({ run: initialRun(), battle: null })
+}
+
+export function enterArea(areaId: string): boolean {
+  const { save, data } = useGame.getState()
+  if (!save || !isAreaUnlocked(save, areaId, data)) return false
+  if (save.currentAreaId !== areaId) commitSave({ ...save, currentAreaId: areaId })
+  useGame.setState({ run: { ...initialRun(), areaId, firstInArea: true, forceNext: useGame.getState().run.forceNext }, battle: null })
+  return true
+}
+
+export function leaveArea() {
+  useGame.setState((s) => ({ run: { ...initialRun(), forceNext: s.run.forceNext }, battle: null }))
+}
+
+/** Roll the next encounter and show its preview card. */
+export function rollNext() {
+  const { save, data, run } = useGame.getState()
+  if (!save || !run.areaId) return
+  const area = data.areas.find((a) => a.id === run.areaId)
+  if (!area) return
+  // Nobody able to fight (e.g. after a stalemate) → the Center is the only sensible next stop.
+  const forceKind = !hasAbleTeam(save) ? 'center' : run.forceNext
+  const roll = nextEncounter(
+    {
+      area,
+      progress: progressOf(save, area.id),
+      data,
+      teamAvgLevel: teamAverageLevel(save),
+      teamHurt: isTeamHurt(save, data),
+      teamFainted: hasFaintedMember(save),
+      isFirstInArea: run.firstInArea,
+      pokedex: save.pokedex,
+      forceKind,
+      centerUseful: centerWouldHelp(save, data),
+    },
+    runRng,
+  )
+  const encounter = roll.encounter
+  // The decks live in the save, so reloading the page can't reshuffle them.
+  if (roll.deck || roll.lootDeck) commitSave(recordDraws(save, area.id, roll))
+  setRun({ phase: 'preview', encounter, firstInArea: false, forceNext: forceKind === run.forceNext ? null : run.forceNext })
+}
+
+/** CHALLENGE: bring on the gym battle (or legendary) waiting at the full gauge — only when the player chooses to. */
+export function challenge() {
+  const { save, data, run } = useGame.getState()
+  if (!save || !run.areaId || run.phase !== 'idle') return
+  const area = data.areas.find((a) => a.id === run.areaId)
+  const encounter = area ? challengeEncounter(area, progressOf(save, area.id), data, teamAverageLevel(save)) : null
+  if (encounter) setRun({ phase: 'preview', encounter, firstInArea: false, skipsUsed: 0 })
+}
+
+/** NOT YET: back out of a challenge you picked. Nothing is used up; the gauge stays full. */
+export function declineChallenge() {
+  setRun({ phase: 'idle', encounter: null })
+}
+
+export function canSkipCurrent(): boolean {
+  const { run, data } = useGame.getState()
+  return !!run.encounter && canSkip(run.encounter, data.config.skipPolicy, run.skipsUsed)
+}
+
+export function skipEncounter() {
+  if (!canSkipCurrent()) return
+  const skips = useGame.getState().run.skipsUsed + 1
+  rollNext()
+  setRun({ skipsUsed: skips })
+}
+
+function startBattle(kind: BattleKind, enemy: { dex: number; level: number }, leadUid?: string) {
+  const { save, data } = useGame.getState()
+  if (!save) return
+  const team = teamOf(save).map((p) => ({ uid: p.id, dex: p.dex, level: p.level, hp: p.currentHp }))
+  battleRng = createRng(randomSeed() ^ battleRng.getState())
+  const { state, log } = createBattle(
+    {
+      kind,
+      team,
+      leadUid,
+      enemy,
+      playerLevels: { comboLevels: save.comboLevels, dieLevels: save.dieLevels },
+      enemyLevels: uniformLevels(data.config.enemyUpgradeLevel),
+    },
+    data,
+  )
+  useGame.setState((s) => ({ battle: { state, log, id: ++battleSeq }, run: { ...s.run, phase: 'battle' } }))
+}
+
+/** ENGAGE the previewed encounter (with the chosen lead for fights). */
+export function engage(leadUid?: string) {
+  const { run, save, data } = useGame.getState()
+  const enc = run.encounter
+  if (!enc || !save) return
+  setRun({ skipsUsed: 0 })
+  switch (enc.kind) {
+    case 'center':
+      commitSave(centerHeal(save, data))
+      setRun({ phase: 'center' })
+      return
+    case 'wild':
+      return startBattle('wild', { dex: enc.dex, level: enc.level }, leadUid)
+    case 'boss':
+      return startBattle('boss', { dex: enc.dex, level: enc.level }, leadUid)
+    case 'trainer':
+    case 'gym': {
+      const first = enc.team[0]
+      if (!first) return
+      setRun({ trainer: { index: 0, gold: 0 } })
+      return startBattle('trainer', first, leadUid)
+    }
+    case 'item': {
+      if (!run.areaId) return
+      commitSave(pickUpItem(save, run.areaId, enc, data))
+      const what =
+        enc.itemKey === MONEY ? `₽${enc.qty.toLocaleString('en')}` : `${data.items[enc.itemKey]?.name ?? enc.itemKey}${enc.qty > 1 ? ` ×${enc.qty}` : ''}`
+      pushToast(`You found ${what}!`, 'good')
+      setRun({ phase: 'idle', encounter: null })
+      return
+    }
+  }
+}
+
+/** Every battle input goes through the engine reducer; rewards are settled the moment the battle ends. */
+export function dispatchBattle(e: BattleEvent) {
+  const { battle, save, data } = useGame.getState()
+  if (!battle || !save) return
+  if (e.t === 'USE_ITEM' && (save.inventory[e.key] ?? 0) <= 0) return
+  const r = reduce(battle.state, e, data, battleRng)
+  if (r.state === battle.state) return
+  if (e.t === 'USE_ITEM' && r.log.some((l) => l.kind === 'item')) mutateSave((s) => consumeItem(s, e.key))
+  useGame.setState({ battle: { ...battle, state: r.state, log: [...battle.log, ...r.log] } })
+  const phase = r.state.phase
+  if (phase === 'won' || phase === 'lost' || phase === 'fled') settleBattle(r.log.some((l) => l.kind === 'end' && l.reason === 'stalemate'))
+}
+
+function settleBattle(stalemate: boolean) {
+  const { battle, run, data } = useGame.getState()
+  const save = useGame.getState().save
+  if (!battle || !save || !run.areaId) return
+  const s = battle.state
+  const out = battleOutcome(s)
+  const withHp = applyHp(save, out.hp)
+
+  if (out.result === 'won') {
+    const enc = run.encounter
+    const gym = enc?.kind === 'gym'
+    const res = applyVictory(
+      withHp,
+      {
+        areaId: run.areaId,
+        kind: gym ? 'gym' : s.kind,
+        enemyDex: s.enemy.dex,
+        enemyLevel: s.enemy.level,
+        fighterUid: out.fighterUid,
+        gymTrainerId: gym ? enc.trainerId : undefined,
+        gymComplete: gym && !!run.trainer && run.trainer.index + 1 >= enc.team.length,
+      },
+      data,
+      runRng,
+      Date.now(),
+      newId,
+    )
+    commitSave(res.save)
+    const gold = res.events.reduce((g, e) => (e.kind === 'gold' ? g + e.amount : g), 0)
+    // A wild or legendary K.O. that can be caught goes to the catch throw first; the rewards screen follows it.
+    const kind = s.kind === 'wild' || s.kind === 'boss' ? s.kind : null
+    const target = kind ? catchTarget(res.save, s.enemy.dex, s.enemy.level, kind, data) : null
+    setRun({
+      phase: target ? 'catch' : 'victory',
+      events: res.events,
+      pendingCatchId: null,
+      catch: target && kind ? { dex: s.enemy.dex, level: s.enemy.level, kind, target, result: null } : null,
+      trainer: run.trainer ? { ...run.trainer, gold: run.trainer.gold + gold } : null,
+    })
+    return
+  }
+  if (out.result === 'lost') {
+    commitSave(applyWipe(withHp, run.areaId, data))
+    setRun({ phase: 'wipe', trainer: null, events: [] })
+    return
+  }
+  // fled / stalemate: damage is kept, no rewards
+  commitSave(withHp)
+  if (stalemate) {
+    setRun({ phase: 'stalemate', trainer: null })
+    return
+  }
+  useGame.setState({ battle: null })
+  setRun({ trainer: null })
+  pushToast('Got away safely!')
+  rollNext()
+}
+
+/** Throw the catch die, with one ball from the bag (or none). The result waits in run.catch until finishCatch(). */
+export function throwBall(ballKey: string | null) {
+  const { run, save, data } = useGame.getState()
+  const c = run.catch
+  if (!c || c.result || !save) return
+  const ball = ballKey ? data.items[ballKey] : undefined
+  if (ballKey && (!ball || ball.effect.kind !== 'ball' || (save.inventory[ballKey] ?? 0) <= 0)) return
+  let next = ballKey ? (consumeItem(save, ballKey) ?? save) : save
+  const roll = rollCatch(catchValueOf(data, c.dex), ballBonus(ball), runRng)
+  let events: RunEvent[] = [{ kind: 'fled', dex: c.dex }]
+  let pendingCatchId: string | null = null
+  if (roll.caught) {
+    const res = applyCatch(next, { dex: c.dex, level: c.level }, c.target, data, Date.now(), newId)
+    next = res.save
+    events = res.events
+    if (res.needsTeamChoice) pendingCatchId = res.caughtId
+  }
+  commitSave(next)
+  setRun({ catch: { ...c, result: { ...roll, ballKey, events, pendingCatchId } } })
+}
+
+/** Leave the throw for the rewards screen, which now lists the catch (or the flight) too. */
+export function finishCatch() {
+  const { run } = useGame.getState()
+  const r = run.catch?.result
+  if (!r) return
+  setRun({ phase: 'victory', events: [...run.events, ...r.events], pendingCatchId: r.pendingCatchId, catch: null })
+}
+
+/** Don't throw: straight to the rewards. */
+export function skipCatch() {
+  const { run } = useGame.getState()
+  if (!run.catch || run.catch.result) return
+  setRun({ phase: 'victory', catch: null })
+}
+
+/** The trainer still has Pokémon left after this victory? */
+export function trainerHasNext(): boolean {
+  const { run } = useGame.getState()
+  const enc = run.encounter
+  return !!(run.trainer && (enc?.kind === 'trainer' || enc?.kind === 'gym') && run.trainer.index + 1 < enc.team.length)
+}
+
+/** Leave the victory screen: next trainer Pokémon (with a freely chosen lead) or back to the area. */
+export function continueAfterVictory(leadUid?: string) {
+  const { run } = useGame.getState()
+  if (run.pendingCatchId) return
+  if (trainerHasNext() && (run.encounter?.kind === 'trainer' || run.encounter?.kind === 'gym') && run.trainer) {
+    const index = run.trainer.index + 1
+    setRun({ trainer: { ...run.trainer, index }, events: [] })
+    startBattle('trainer', run.encounter.team[index]!, leadUid)
+    return
+  }
+  if (run.trainer && run.trainer.gold > 0) pushToast(`Trainer defeated! +₽${run.trainer.gold}`, 'good')
+  useGame.setState({ battle: null })
+  setRun({ phase: 'idle', encounter: null, events: [], trainer: null })
+}
+
+/** "Add to team?" — swap the new catch in for `replaceId`, or send it to the Box (null). */
+export function resolveCatch(replaceId: string | null) {
+  const { run, data } = useGame.getState()
+  if (!run.pendingCatchId) return
+  if (replaceId) mutateSave((s) => swapIntoTeam(s, run.pendingCatchId!, replaceId, data))
+  setRun({ pendingCatchId: null })
+}
+
+export function afterWipe() {
+  useGame.setState((s) => ({ battle: null, run: { ...initialRun(), areaId: s.run.areaId, firstInArea: true } }))
+}
+
+export function afterStalemate() {
+  useGame.setState({ battle: null })
+  setRun({ phase: 'idle', encounter: null })
+}
+
+export function finishCenter() {
+  setRun({ phase: 'idle', encounter: null })
+}
+
+export function setForceNext(kind: ForceKind | null) {
+  setRun({ forceNext: kind })
+}
+
+export function replaceSave(save: SaveData) {
+  commitSave(save)
+  useGame.setState({ run: initialRun(), battle: null })
+}
+
+export const rewardEvents = (): RunEvent[] => useGame.getState().run.events

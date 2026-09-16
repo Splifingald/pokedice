@@ -1,0 +1,157 @@
+// Gyms, the linear chain, secret areas and area type profiles.
+import { describe, expect, it } from 'vitest'
+import { applyCatch } from '@/engine'
+import {
+  applyVictory,
+  areaTypeProfile,
+  badgeCase,
+  canSkip,
+  challengeEncounter,
+  conditionStatus,
+  createRng,
+  dueGym,
+  emptyProgress,
+  isAreaUnlocked,
+  linearAreas,
+  newSave,
+  progressOf,
+  rollEncounter,
+  trainerSpecialty,
+  unlockedHiddenAreas,
+  type Area,
+  type SaveData,
+} from '@/engine'
+import { data, newId } from '../fixtures'
+
+const byName = (name: string): Area => data.areas.find((a) => a.name === name)!
+const chain = linearAreas(data)
+const FOREST = byName('Viridian Forest')
+const ROUTE3 = byName('Route 3')
+const INDIGO = byName('Indigo Plateau')
+const POWER = byName('Power Plant')
+const CAVE = byName('Cerulean Cave')
+const FARAWAY = byName('Faraway Island')
+
+const fresh = () => newSave(1, data, 0, newId)
+const withProgress = (s: SaveData, area: Area, p: Partial<ReturnType<typeof emptyProgress>>): SaveData => ({
+  ...s,
+  areaProgress: { ...s.areaProgress, [area.id]: { ...emptyProgress(), ...s.areaProgress[area.id], ...p } },
+})
+const withDex = (s: SaveData, n: number): SaveData => ({ ...s, pokedex: Array.from({ length: n }, (_, i) => i + 1) })
+
+describe('linear chain', () => {
+  it('each area opens when the previous one is cleared; hidden areas are skipped', () => {
+    let s = fresh()
+    expect(chain.filter((a) => isAreaUnlocked(s, a.id, data)).map((a) => a.name)).toEqual(['Route 1'])
+    for (const a of chain.slice(0, 5)) s = withProgress(s, a, { cleared: true })
+    expect(isAreaUnlocked(s, chain[5]!.id, data)).toBe(true)
+    expect(isAreaUnlocked(s, chain[6]!.id, data)).toBe(false)
+    expect(chain.some((a) => a.hidden)).toBe(false)
+  })
+})
+
+describe('gyms', () => {
+  it('once the gauge is full the gym leader is a challenge the player picks — never dealt, never skipped', () => {
+    const s = fresh()
+    expect(dueGym(FOREST, { ...emptyProgress(), xp: 109 }, data)).toBeNull()
+    const p = { ...emptyProgress(), xp: 110 }
+    expect(dueGym(FOREST, p, data)?.name).toBe('Brock')
+    const ctx = { area: FOREST, progress: p, data, teamAvgLevel: 10, teamHurt: false, isFirstInArea: false, pokedex: s.pokedex }
+    expect(rollEncounter(ctx, createRng(1)).kind).not.toBe('gym')
+    const enc = challengeEncounter(FOREST, p, data, 10)!
+    expect(enc).toMatchObject({ kind: 'gym', name: 'Brock', role: 'leader', badge: 'Boulder Badge', index: 1, total: 1 })
+    expect(canSkip(enc, 'free', 0)).toBe(false)
+  })
+
+  it('a full gauge is not enough: the area clears when the leader falls, awarding the badge and double gold', () => {
+    const brock = dueGym(FOREST, { ...emptyProgress(), xp: 200 }, data)!
+    let s = withProgress(fresh(), FOREST, { xp: 200 })
+    const hit = (dex: number, level: number, last: boolean) =>
+      applyVictory(
+        s,
+        { areaId: FOREST.id, kind: 'gym', enemyDex: dex, enemyLevel: level, fighterUid: s.team[0]!, gymTrainerId: brock.id, gymComplete: last },
+        data,
+        createRng(1),
+        0,
+        newId,
+      )
+    const r1 = hit(74, 12, false)
+    expect(r1.events).toContainEqual({ kind: 'gold', amount: 24 })
+    expect(progressOf(r1.save, FOREST.id).cleared).toBe(false)
+    s = r1.save
+    const r2 = hit(95, 14, true)
+    expect(r2.events).toContainEqual({ kind: 'gym_defeated', trainerId: brock.id, name: 'Brock', badge: 'Boulder Badge', role: 'leader' })
+    expect(r2.events).toContainEqual({ kind: 'area_cleared', areaId: FOREST.id, nextAreaId: ROUTE3.id })
+    expect(isAreaUnlocked(r2.save, ROUTE3.id, data)).toBe(true)
+    expect(badgeCase(r2.save, data).filter((b) => b.earned).map((b) => b.badge)).toEqual(['Boulder Badge'])
+  })
+
+  it('the Elite Four come one after another, then the Champion', () => {
+    const full = { ...emptyProgress(), xp: 999 }
+    const order: string[] = []
+    let p = full
+    for (let i = 0; i < 5; i++) {
+      const t = dueGym(INDIGO, p, data)!
+      order.push(t.name)
+      p = { ...p, gymsDefeated: [...p.gymsDefeated, t.id] }
+    }
+    expect(order).toEqual(['Elite Four Lorelei', 'Elite Four Bruno', 'Elite Four Agatha', 'Elite Four Lance', 'Champion Blue'])
+    expect(dueGym(INDIGO, p, data)).toBeNull()
+  })
+
+  it('the badge case lists the 8 badges in chain order', () => {
+    expect(badgeCase(fresh(), data)).toHaveLength(8)
+    expect(badgeCase(fresh(), data).every((b) => !b.earned)).toBe(true)
+  })
+})
+
+describe('secret areas', () => {
+  it('open on their conditions: Pokédex count or highest level', () => {
+    const s = fresh()
+    expect(isAreaUnlocked(s, POWER.id, data)).toBe(false)
+    expect(isAreaUnlocked(withDex(s, 50), POWER.id, data)).toBe(true)
+    expect(isAreaUnlocked(withDex(s, 149), FARAWAY.id, data)).toBe(false)
+    expect(isAreaUnlocked(withDex(s, 150), FARAWAY.id, data)).toBe(true)
+    const strong = { ...s, box: s.box.map((p) => ({ ...p, level: 55 })) }
+    expect(isAreaUnlocked(strong, CAVE.id, data)).toBe(true)
+    expect(unlockedHiddenAreas(strong, data)).toEqual([CAVE.id])
+    expect(conditionStatus({ kind: 'maxLevel', level: 55 }, s)).toMatchObject({ met: false, current: 5, target: 55 })
+  })
+
+  it('announce themselves the moment a catch meets the condition', () => {
+    const s = withDex(fresh(), 49)
+    const r = applyCatch(s, { dex: 60, level: 3 }, { mode: 'new' }, data, 0, newId)
+    expect(r.events).toContainEqual({ kind: 'secret_unlocked', areaId: POWER.id })
+  })
+
+  it('Mew can be challenged on Faraway Island from the first visit', () => {
+    expect(challengeEncounter(FARAWAY, emptyProgress(), data, 70)).toEqual({ kind: 'boss', dex: 151, level: 65 })
+  })
+})
+
+describe('area type profiles', () => {
+  it('Viridian Forest is mostly Bug, and Fire/Flying hit it hard', () => {
+    const p = areaTypeProfile(FOREST, data)
+    expect(p.main[0]).toBe('bug')
+    expect(p.main.length).toBeGreaterThanOrEqual(2)
+    expect(p.main.length).toBeLessThanOrEqual(3)
+    expect(p.strong).toEqual(expect.arrayContaining(['fire']))
+  })
+
+  it('trainer-only areas use their trainers; an empty area has no profile', () => {
+    expect(areaTypeProfile(byName('Silph Co.'), data).main.length).toBeGreaterThan(0)
+    expect(areaTypeProfile(FARAWAY, data)).toEqual({ main: [], shares: {}, strong: [] })
+  })
+
+  it("names a trainer's specialty", () => {
+    const brock = dueGym(FOREST, { ...emptyProgress(), xp: 999 }, data)!
+    expect(trainerSpecialty(brock, data)).toBe('rock')
+  })
+
+  it('shows no specialty for a mixed team (under 40 %), and breaks ties by how many Pokémon carry the type', () => {
+    const byTrainer = (name: string) => Object.values(data.trainers).find((t) => t.name === name)!
+    expect(trainerSpecialty(byTrainer('Champion Blue'), data)).toBeNull() // Charizard, Gyarados, Pidgeot
+    expect(trainerSpecialty(byTrainer('Elite Four Lorelei'), data)).toBe('ice') // water 2 = ice 2, but 3 carry ice
+    expect(trainerSpecialty(byTrainer('Elite Four Bruno'), data)).toBe('fighting')
+  })
+})

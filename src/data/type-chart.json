@@ -1,0 +1,602 @@
+[
+ {
+  "attacking": "bug",
+  "defending": "dark",
+  "multiplier": 2
+ },
+ {
+  "attacking": "bug",
+  "defending": "fairy",
+  "multiplier": 0.5
+ },
+ {
+  "attacking": "bug",
+  "defending": "fighting",
+  "multiplier": 0.5
+ },
+ {
+  "attacking": "bug",
+  "defending": "fire",
+  "multiplier": 0.5
+ },
+ {
+  "attacking": "bug",
+  "defending": "flying",
+  "multiplier": 0.5
+ },
+ {
+  "attacking": "bug",
+  "defending": "ghost",
+  "multiplier": 0.5
+ },
+ {
+  "attacking": "bug",
+  "defending": "grass",
+  "multiplier": 2
+ },
+ {
+  "attacking": "bug",
+  "defending": "poison",
+  "multiplier": 0.5
+ },
+ {
+  "attacking": "bug",
+  "defending": "psychic",
+  "multiplier": 2
+ },
+ {
+  "attacking": "bug",
+  "defending": "steel",
+  "multiplier": 0.5
+ },
+ {
+  "attacking": "dark",
+  "defending": "dark",
+  "multiplier": 0.5
+ },
+ {
+  "attacking": "dark",
+  "defending": "fairy",
+  "multiplier": 0.5
+ },
+ {
+  "attacking": "dark",
+  "defending": "fighting",
+  "multiplier": 0.5
+ },
+ {
+  "attacking": "dark",
+  "defending": "ghost",
+  "multiplier": 2
+ },
+ {
+  "attacking": "dark",
+  "defending": "psychic",
+  "multiplier": 2
+ },
+ {
+  "attacking": "dragon",
+  "defending": "dragon",
+  "multiplier": 2
+ },
+ {
+  "attacking": "dragon",
+  "defending": "fairy",
+  "multiplier": 0
+ },
+ {
+  "attacking": "dragon",
+  "defending": "steel",
+  "multiplier": 0.5
+ },
+ {
+  "attacking": "electric",
+  "defending": "dragon",
+  "multiplier": 0.5
+ },
+ {
+  "attacking": "electric",
+  "defending": "electric",
+  "multiplier": 0.5
+ },
+ {
+  "attacking": "electric",
+  "defending": "flying",
+  "multiplier": 2
+ },
+ {
+  "attacking": "electric",
+  "defending": "grass",
+  "multiplier": 0.5
+ },
+ {
+  "attacking": "electric",
+  "defending": "ground",
+  "multiplier": 0
+ },
+ {
+  "attacking": "electric",
+  "defending": "water",
+  "multiplier": 2
+ },
+ {
+  "attacking": "fairy",
+  "defending": "dark",
+  "multiplier": 2
+ },
+ {
+  "attacking": "fairy",
+  "defending": "dragon",
+  "multiplier": 2
+ },
+ {
+  "attacking": "fairy",
+  "defending": "fighting",
+  "multiplier": 2
+ },
+ {
+  "attacking": "fairy",
+  "defending": "fire",
+  "multiplier": 0.5
+ },
+ {
+  "attacking": "fairy",
+  "defending": "poison",
+  "multiplier": 0.5
+ },
+ {
+  "attacking": "fairy",
+  "defending": "steel",
+  "multiplier": 0.5
+ },
+ {
+  "attacking": "fighting",
+  "defending": "bug",
+  "multiplier": 0.5
+ },
+ {
+  "attacking": "fighting",
+  "defending": "dark",
+  "multiplier": 2
+ },
+ {
+  "attacking": "fighting",
+  "defending": "fairy",
+  "multiplier": 0.5
+ },
+ {
+  "attacking": "fighting",
+  "defending": "flying",
+  "multiplier": 0.5
+ },
+ {
+  "attacking": "fighting",
+  "defending": "ghost",
+  "multiplier": 0
+ },
+ {
+  "attacking": "fighting",
+  "defending": "ice",
+  "multiplier": 2
+ },
+ {
+  "attacking": "fighting",
+  "defending": "normal",
+  "multiplier": 2
+ },
+ {
+  "attacking": "fighting",
+  "defending": "poison",
+  "multiplier": 0.5
+ },
+ {
+  "attacking": "fighting",
+  "defending": "psychic",
+  "multiplier": 0.5
+ },
+ {
+  "attacking": "fighting",
+  "defending": "rock",
+  "multiplier": 2
+ },
+ {
+  "attacking": "fighting",
+  "defending": "steel",
+  "multiplier": 2
+ },
+ {
+  "attacking": "fire",
+  "defending": "bug",
+  "multiplier": 2
+ },
+ {
+  "attacking": "fire",
+  "defending": "dragon",
+  "multiplier": 0.5
+ },
+ {
+  "attacking": "fire",
+  "defending": "fire",
+  "multiplier": 0.5
+ },
+ {
+  "attacking": "fire",
+  "defending": "grass",
+  "multiplier": 2
+ },
+ {
+  "attacking": "fire",
+  "defending": "ice",
+  "multiplier": 2
+ },
+ {
+  "attacking": "fire",
+  "defending": "rock",
+  "multiplier": 0.5
+ },
+ {
+  "attacking": "fire",
+  "defending": "steel",
+  "multiplier": 2
+ },
+ {
+  "attacking": "fire",
+  "defending": "water",
+  "multiplier": 0.5
+ },
+ {
+  "attacking": "flying",
+  "defending": "bug",
+  "multiplier": 2
+ },
+ {
+  "attacking": "flying",
+  "defending": "electric",
+  "multiplier": 0.5
+ },
+ {
+  "attacking": "flying",
+  "defending": "fighting",
+  "multiplier": 2
+ },
+ {
+  "attacking": "flying",
+  "defending": "grass",
+  "multiplier": 2
+ },
+ {
+  "attacking": "flying",
+  "defending": "rock",
+  "multiplier": 0.5
+ },
+ {
+  "attacking": "flying",
+  "defending": "steel",
+  "multiplier": 0.5
+ },
+ {
+  "attacking": "ghost",
+  "defending": "dark",
+  "multiplier": 0.5
+ },
+ {
+  "attacking": "ghost",
+  "defending": "ghost",
+  "multiplier": 2
+ },
+ {
+  "attacking": "ghost",
+  "defending": "normal",
+  "multiplier": 0
+ },
+ {
+  "attacking": "ghost",
+  "defending": "psychic",
+  "multiplier": 2
+ },
+ {
+  "attacking": "grass",
+  "defending": "bug",
+  "multiplier": 0.5
+ },
+ {
+  "attacking": "grass",
+  "defending": "dragon",
+  "multiplier": 0.5
+ },
+ {
+  "attacking": "grass",
+  "defending": "fire",
+  "multiplier": 0.5
+ },
+ {
+  "attacking": "grass",
+  "defending": "flying",
+  "multiplier": 0.5
+ },
+ {
+  "attacking": "grass",
+  "defending": "grass",
+  "multiplier": 0.5
+ },
+ {
+  "attacking": "grass",
+  "defending": "ground",
+  "multiplier": 2
+ },
+ {
+  "attacking": "grass",
+  "defending": "poison",
+  "multiplier": 0.5
+ },
+ {
+  "attacking": "grass",
+  "defending": "rock",
+  "multiplier": 2
+ },
+ {
+  "attacking": "grass",
+  "defending": "steel",
+  "multiplier": 0.5
+ },
+ {
+  "attacking": "grass",
+  "defending": "water",
+  "multiplier": 2
+ },
+ {
+  "attacking": "ground",
+  "defending": "bug",
+  "multiplier": 0.5
+ },
+ {
+  "attacking": "ground",
+  "defending": "electric",
+  "multiplier": 2
+ },
+ {
+  "attacking": "ground",
+  "defending": "fire",
+  "multiplier": 2
+ },
+ {
+  "attacking": "ground",
+  "defending": "flying",
+  "multiplier": 0
+ },
+ {
+  "attacking": "ground",
+  "defending": "grass",
+  "multiplier": 0.5
+ },
+ {
+  "attacking": "ground",
+  "defending": "poison",
+  "multiplier": 2
+ },
+ {
+  "attacking": "ground",
+  "defending": "rock",
+  "multiplier": 2
+ },
+ {
+  "attacking": "ground",
+  "defending": "steel",
+  "multiplier": 2
+ },
+ {
+  "attacking": "ice",
+  "defending": "dragon",
+  "multiplier": 2
+ },
+ {
+  "attacking": "ice",
+  "defending": "fire",
+  "multiplier": 0.5
+ },
+ {
+  "attacking": "ice",
+  "defending": "flying",
+  "multiplier": 2
+ },
+ {
+  "attacking": "ice",
+  "defending": "grass",
+  "multiplier": 2
+ },
+ {
+  "attacking": "ice",
+  "defending": "ground",
+  "multiplier": 2
+ },
+ {
+  "attacking": "ice",
+  "defending": "ice",
+  "multiplier": 0.5
+ },
+ {
+  "attacking": "ice",
+  "defending": "steel",
+  "multiplier": 0.5
+ },
+ {
+  "attacking": "ice",
+  "defending": "water",
+  "multiplier": 0.5
+ },
+ {
+  "attacking": "normal",
+  "defending": "ghost",
+  "multiplier": 0
+ },
+ {
+  "attacking": "normal",
+  "defending": "rock",
+  "multiplier": 0.5
+ },
+ {
+  "attacking": "normal",
+  "defending": "steel",
+  "multiplier": 0.5
+ },
+ {
+  "attacking": "poison",
+  "defending": "fairy",
+  "multiplier": 2
+ },
+ {
+  "attacking": "poison",
+  "defending": "ghost",
+  "multiplier": 0.5
+ },
+ {
+  "attacking": "poison",
+  "defending": "grass",
+  "multiplier": 2
+ },
+ {
+  "attacking": "poison",
+  "defending": "ground",
+  "multiplier": 0.5
+ },
+ {
+  "attacking": "poison",
+  "defending": "poison",
+  "multiplier": 0.5
+ },
+ {
+  "attacking": "poison",
+  "defending": "rock",
+  "multiplier": 0.5
+ },
+ {
+  "attacking": "poison",
+  "defending": "steel",
+  "multiplier": 0
+ },
+ {
+  "attacking": "psychic",
+  "defending": "dark",
+  "multiplier": 0
+ },
+ {
+  "attacking": "psychic",
+  "defending": "fighting",
+  "multiplier": 2
+ },
+ {
+  "attacking": "psychic",
+  "defending": "poison",
+  "multiplier": 2
+ },
+ {
+  "attacking": "psychic",
+  "defending": "psychic",
+  "multiplier": 0.5
+ },
+ {
+  "attacking": "psychic",
+  "defending": "steel",
+  "multiplier": 0.5
+ },
+ {
+  "attacking": "rock",
+  "defending": "bug",
+  "multiplier": 2
+ },
+ {
+  "attacking": "rock",
+  "defending": "fighting",
+  "multiplier": 0.5
+ },
+ {
+  "attacking": "rock",
+  "defending": "fire",
+  "multiplier": 2
+ },
+ {
+  "attacking": "rock",
+  "defending": "flying",
+  "multiplier": 2
+ },
+ {
+  "attacking": "rock",
+  "defending": "ground",
+  "multiplier": 0.5
+ },
+ {
+  "attacking": "rock",
+  "defending": "ice",
+  "multiplier": 2
+ },
+ {
+  "attacking": "rock",
+  "defending": "steel",
+  "multiplier": 0.5
+ },
+ {
+  "attacking": "steel",
+  "defending": "electric",
+  "multiplier": 0.5
+ },
+ {
+  "attacking": "steel",
+  "defending": "fairy",
+  "multiplier": 2
+ },
+ {
+  "attacking": "steel",
+  "defending": "fire",
+  "multiplier": 0.5
+ },
+ {
+  "attacking": "steel",
+  "defending": "ice",
+  "multiplier": 2
+ },
+ {
+  "attacking": "steel",
+  "defending": "rock",
+  "multiplier": 2
+ },
+ {
+  "attacking": "steel",
+  "defending": "steel",
+  "multiplier": 0.5
+ },
+ {
+  "attacking": "steel",
+  "defending": "water",
+  "multiplier": 0.5
+ },
+ {
+  "attacking": "water",
+  "defending": "dragon",
+  "multiplier": 0.5
+ },
+ {
+  "attacking": "water",
+  "defending": "fire",
+  "multiplier": 2
+ },
+ {
+  "attacking": "water",
+  "defending": "grass",
+  "multiplier": 0.5
+ },
+ {
+  "attacking": "water",
+  "defending": "ground",
+  "multiplier": 2
+ },
+ {
+  "attacking": "water",
+  "defending": "rock",
+  "multiplier": 2
+ },
+ {
+  "attacking": "water",
+  "defending": "water",
+  "multiplier": 0.5
+ }
+]

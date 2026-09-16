@@ -1,0 +1,43 @@
+import type { GameConfig } from './types'
+
+/** Starting values for every game_config key. Anything missing from the DB/bundle falls back to these. */
+export const DEFAULT_CONFIG: GameConfig = {
+  configVersion: 1,
+  xpCurve: { A: 2, B: 1.15, C: 3 },
+  xpShareMode: 'fighter',
+  regenPercentPerHour: 5,
+  maxTeamSize: 3,
+  maxLevel: 100,
+  maxDice: 6,
+  comboPayoutMode: 'highestDamage',
+  skipPolicy: 'free',
+  starters: [1, 4, 7],
+  starterLevel: 5,
+  // Tuned with `pnpm balance` on the full Kanto content: ×1.4 HP keeps main-chain fights at ~2–3.5 turns while every
+  // hit stays exactly what the dice show (v1.4); ×0.5 trainer gold paces the upgrades (v1.3).
+  hpMultiplier: 1.4,
+  goldMultiplier: 0.5,
+  gymGoldMultiplier: 2,
+  forcedCenterWhenHurt: true,
+  encounterMode: 'deck',
+  // Professor Oak's parting gift.
+  startInventory: { 'poke-ball': 5, potion: 2 },
+  scaleLevelSpread: 3,
+  enemyUpgradeLevel: 1,
+  allowVoluntarySwitch: true,
+  maxBattleTurns: 150,
+  multiExpShare: 0.3,
+  // v1.6: the level curve felt too slow — Pokémon earn the foe's level × 2 per K.O. (the gauge is unchanged).
+  xpMultiplier: 2,
+  showRecommendedTypes: true,
+  showRoundGauge: true,
+  status: {
+    burn: { threshold: 1, damagePerStack: 1, duration: 3 },
+    poison: { threshold: 2, damage: 3, duration: 3 },
+    frozen: { threshold: 3, stunTurns: 2 },
+    paralyze: { threshold: 2, stunTurns: 1 },
+    confuse: { threshold: 2 },
+    heal: { threshold: 2, amount: 'rollTotal' },
+  },
+  ai: { samples: 200, rerollGainThreshold: 0.08 },
+}

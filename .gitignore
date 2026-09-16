@@ -1,0 +1,14 @@
+node_modules
+dist
+coverage
+*.local
+.env
+.env.*
+!.env.example
+scripts/.cache
+playwright-report
+test-results
+.DS_Store
+.vscode/*
+!.vscode/extensions.json
+.idea

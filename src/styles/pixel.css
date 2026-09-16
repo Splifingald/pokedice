@@ -1,0 +1,141 @@
+/* GBC cartridge framing: 3px ink border, 2px inner light border, hard drop shadow, radius <= 2px. */
+
+.pixel-panel {
+  background: #f7f2e0;
+  border: 3px solid #2a2438;
+  border-radius: 2px;
+  box-shadow:
+    inset 0 0 0 2px #ffffff,
+    4px 4px 0 0 #2a2438;
+}
+
+.pixel-panel-dark {
+  background: #2a2438;
+  color: #f7f2e0;
+  border: 3px solid #2a2438;
+  border-radius: 2px;
+  box-shadow:
+    inset 0 0 0 2px #6b6480,
+    4px 4px 0 0 #6b6480;
+}
+
+.pixel-dialogue {
+  background: #f7f2e0;
+  border: 3px solid #2a2438;
+  border-radius: 2px;
+  box-shadow:
+    inset 0 0 0 2px #f7f2e0,
+    inset 0 0 0 4px #6b6480,
+    4px 4px 0 0 #2a2438;
+}
+
+.pixel-btn {
+  border: 3px solid #2a2438;
+  border-radius: 2px;
+  box-shadow:
+    inset 0 -3px 0 0 rgba(0, 0, 0, 0.18),
+    inset 0 2px 0 0 rgba(255, 255, 255, 0.45),
+    3px 3px 0 0 #2a2438;
+  transition:
+    transform 60ms steps(2),
+    box-shadow 60ms steps(2);
+  user-select: none;
+}
+.pixel-btn:not(:disabled):active {
+  transform: translate(2px, 2px);
+  box-shadow:
+    inset 0 -3px 0 0 rgba(0, 0, 0, 0.18),
+    inset 0 2px 0 0 rgba(255, 255, 255, 0.45),
+    1px 1px 0 0 #2a2438;
+}
+/*
+ * Disabled / unavailable: hatched and dashed, text kept at 5.9:1 (fading to 45 % read as broken and failed contrast).
+ * `.hatched` is the same look for things that aren't form controls (a fainted Pokémon card, menus locked mid-fight).
+ */
+.hatched,
+.pixel-btn:disabled,
+.pixel-btn[aria-disabled='true'],
+.pixel-panel:disabled {
+  color: #554d6a;
+  background-color: #ece5d0;
+  background-image: repeating-linear-gradient(135deg, rgba(42, 36, 56, 0.1) 0 3px, transparent 3px 8px);
+  border-style: dashed;
+  box-shadow: none;
+  cursor: not-allowed;
+}
+/* Focus rings live in index.css (one rule for every focusable element). */
+
+/* Dice */
+.die {
+  border: 3px solid #2a2438;
+  border-radius: 2px;
+  box-shadow:
+    inset 0 -4px 0 0 rgba(0, 0, 0, 0.2),
+    inset 0 3px 0 0 rgba(255, 255, 255, 0.35),
+    3px 3px 0 0 #2a2438;
+}
+
+/* Mini dice (faces laid out flat): a thinner border and no shadow, so the digit gets the room. */
+.die-mini {
+  border: 2px solid #2a2438;
+  border-radius: 2px;
+}
+
+.pixel-scroll::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+.pixel-scroll::-webkit-scrollbar-thumb {
+  background: #6b6480;
+  border: 2px solid #f7f2e0;
+}
+.pixel-scroll::-webkit-scrollbar-track {
+  background: #e8e0c8;
+}
+
+.scanlines {
+  background-image: repeating-linear-gradient(to bottom, rgba(42, 36, 56, 0.05) 0 1px, transparent 1px 3px);
+}
+
+@keyframes shake {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  20% {
+    transform: translate(calc(var(--shake, 4px) * -1), 1px);
+  }
+  40% {
+    transform: translate(var(--shake, 4px), -1px);
+  }
+  60% {
+    transform: translate(calc(var(--shake, 4px) * -0.6), 0);
+  }
+  80% {
+    transform: translate(calc(var(--shake, 4px) * 0.6), 1px);
+  }
+}
+.shake {
+  animation: shake 360ms steps(8);
+}
+
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
+}
+.blink {
+  animation: blink 1s steps(1) infinite;
+}
+
+@keyframes flash-white {
+  0% {
+    opacity: 0;
+  }
+  30% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
