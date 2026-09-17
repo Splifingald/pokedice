@@ -3,7 +3,8 @@ import type { GameConfig } from './types'
 /** Starting values for every game_config key. Anything missing from the DB/bundle falls back to these. */
 export const DEFAULT_CONFIG: GameConfig = {
   configVersion: 1,
-  xpCurve: { A: 2, B: 1.15, C: 3 },
+  // v1.7: about a quarter of the v1.6 curve (XP per K.O. is the foe's level).
+  xpCurve: { A: 0.5, B: 1.15, C: 1 },
   xpShareMode: 'fighter',
   regenPercentPerHour: 5,
   maxTeamSize: 3,
@@ -28,8 +29,8 @@ export const DEFAULT_CONFIG: GameConfig = {
   allowVoluntarySwitch: true,
   maxBattleTurns: 150,
   multiExpShare: 0.3,
-  // v1.6: the level curve felt too slow — Pokémon earn the foe's level × 2 per K.O.; since v1.7 the exploration bar gets the same amount.
-  xpMultiplier: 2,
+  // XP per K.O. = the foe's level × this, for the Pokémon and the exploration bar alike.
+  xpMultiplier: 1,
   showRoundGauge: true,
   showRoundPreview: false,
   status: {

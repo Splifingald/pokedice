@@ -101,15 +101,19 @@ export function setAreaDeck(save: SaveData, areaId: string, deck: DeckCard[]): S
 /**
  * Store what's left of the decks an encounter was drawn from (encounter deck, loot deck), and the round: a fresh deck
  * starts a new one — its number goes up and the gauge is noted as the round's start (where a wipe returns) — and the
- * cards turned over join the round's record.
+ * cards turned over join the round's record. Call it for every encounter met (challenges too): it also notes whether
+ * this one was a Pokémon Center, so the next one isn't.
  */
 export function recordDraws(
   save: SaveData,
   areaId: string,
-  roll: { deck: DeckCard[] | null; lootDeck?: string[] | null; drawn?: DeckCard[]; newRound?: boolean },
+  roll: { encounter?: { kind: string }; deck: DeckCard[] | null; lootDeck?: string[] | null; drawn?: DeckCard[]; newRound?: boolean },
 ): SaveData {
-  if (!roll.deck && !roll.lootDeck) return save
   const p = progressOf(save, areaId)
+  const lastCenter = roll.encounter ? roll.encounter.kind === 'center' : p.lastCenter
+  if (!roll.deck && !roll.lootDeck) {
+    return !!lastCenter === !!p.lastCenter ? save : withProgress(save, areaId, { ...p, lastCenter })
+  }
   const round = roll.newRound ? (p.round ?? 0) + 1 : p.round
   const drawn = roll.newRound ? (roll.drawn ?? []) : roll.drawn ? [...(p.drawn ?? []), ...roll.drawn] : p.drawn
   return withProgress(save, areaId, {
@@ -119,6 +123,7 @@ export function recordDraws(
     ...(round != null ? { round } : {}),
     ...(drawn ? { drawn } : {}),
     ...(roll.newRound ? { roundStartXp: p.xp } : {}),
+    lastCenter,
   })
 }
 

@@ -7,19 +7,26 @@ export function HpBar({
   showNumbers = true,
   className,
   height = 10,
+  collapsible = false,
 }: {
   hp: number
   max: number
   showNumbers?: boolean
   className?: string
   height?: number
+  /**
+   * Drop the bar and keep "HP 20/35" when the component is too narrow for the bar to say anything. Only for spots
+   * with a set width (it uses a CSS container query, which can't size itself to its content).
+   */
+  collapsible?: boolean
 }) {
   const pct = max > 0 ? Math.max(0, Math.min(1, hp / max)) : 0
+  const collapse = collapsible && showNumbers
   return (
-    <div className={cx('flex items-center gap-2', className)}>
+    <div className={cx('flex items-center gap-2', collapse && 'hp-collapsible justify-between', className)}>
       <span className="text-sm leading-none text-ink">HP</span>
       <div
-        className="relative flex-1 overflow-hidden border-2 border-ink bg-ink"
+        className="hp-track relative flex-1 overflow-hidden border-2 border-ink bg-ink"
         style={{ height, borderRadius: 2 }}
         role="meter"
         aria-valuemin={0}

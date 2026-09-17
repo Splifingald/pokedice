@@ -2,7 +2,7 @@ import { motion } from 'framer-motion'
 import type { DieType, Face } from '@/engine/types'
 import { PALETTE } from '@/theme/colors'
 import { cx, shade, textOn, typeColor } from '@/theme/util'
-import { PixelIcon, STATUS_ICON } from './icons'
+import { PixelIcon, STATUS_GLYPH } from './icons'
 
 const PIPS: Record<number, [number, number][]> = {
   1: [[1, 1]],
@@ -45,12 +45,8 @@ function FaceArt({ face, size, color, ink }: { face: Face; size: number; color: 
   if (face.kind === 'status') {
     return (
       <div className="relative flex h-full w-full items-center justify-center">
-        <span
-          className="flex items-center justify-center border-2 border-ink bg-panel"
-          style={{ width: size * 0.56, height: size * 0.56, borderRadius: 2 }}
-        >
-          <PixelIcon name={STATUS_ICON[face.status] ?? 'star'} size={size * 0.4} />
-        </span>
+        {/* A plain black silhouette, no plate: it reads on every die colour. */}
+        <PixelIcon name={STATUS_GLYPH[face.status] ?? 'star'} size={size * 0.56} color={PALETTE.ink} />
         {/* The number a status face counts as. Too small to read on small dice — the die's label carries it there. */}
         {size >= 40 && (
           <span

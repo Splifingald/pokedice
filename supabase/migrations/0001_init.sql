@@ -54,6 +54,7 @@ create table if not exists areas (
   legendary_boss jsonb,
   scales_to_team boolean not null default false,
   easy_mode boolean not null default false,    -- a Center comes next whenever a team member is K.O.
+  enemy_upgrade_level int,                     -- foes' dice/combo upgrade level; null = game_config.enemyUpgradeLevel
   hidden boolean not null default false,       -- hidden areas unlock by condition, outside the linear chain
   unlock_conditions jsonb,                     -- null | [{kind:'pokedex',count} | {kind:'maxLevel',level}]
   gyms jsonb not null default '[]'             -- trainer ids fought in order once the gauge is full
@@ -74,7 +75,8 @@ create table if not exists trainers (
   sprite_url text,
   team jsonb not null,                          -- [{dex, level}] 1..3
   role text not null default 'trainer',         -- trainer | leader | elite | champion
-  badge text                                    -- gym leaders only
+  badge text,                                   -- gym leaders only
+  upgrade_level int                             -- this trainer's upgrade level; null = the area's
 );
 
 -- v1.3 columns, for databases created before them (no-ops on a fresh install).

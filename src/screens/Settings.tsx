@@ -7,7 +7,9 @@ import { isSupabaseConfigured } from '@/lib/supabase'
 import { parseSave } from '@/save/schema'
 import { pushToast, setSettings, useGame } from '@/store/game'
 import { deleteSave, replaceSave } from '@/store/run'
-import { checkContent, signInWithGoogle, signOut } from '@/store/sync'
+import { useIsAdmin } from '@/store/hooks'
+import { checkContent } from '@/store/sync'
+import { GoogleAccountButton } from '@/components/GoogleAccountButton'
 
 function Toggle({ label, on, onChange, hint }: { label: string; on: boolean; onChange: (v: boolean) => void; hint?: string }) {
   return (
@@ -33,6 +35,7 @@ export function SettingsScreen() {
   const settings = useGame((s) => s.settings)
   const save = useGame((s) => s.save)
   const auth = useGame((s) => s.auth)
+  const isAdmin = useIsAdmin()
   const data = useGame((s) => s.data)
   const source = useGame((s) => s.contentSource)
   const navigate = useNavigate()
@@ -90,6 +93,17 @@ export function SettingsScreen() {
         />
       </Panel>
 
+      {/* Phones have no side bar, so the admin link lives here (admins only). */}
+      {isAdmin && (
+        <div className="md:hidden">
+          <Panel title="Admin">
+            <Link to="/admin" className="pixel-btn inline-flex min-h-[44px] items-center bg-ink px-4 text-2xl leading-none text-panel">
+              Open the admin
+            </Link>
+          </Panel>
+        </div>
+      )}
+
       <Panel title="Cloud backup">
         {!isSupabaseConfigured || auth.status === 'unavailable' ? (
           <p className="copy text-muted">
@@ -98,19 +112,14 @@ export function SettingsScreen() {
               How to set it up
             </Link>
           </p>
-        ) : auth.status === 'signed_in' ? (
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <span className="text-xl">Backed up as {auth.email}</span>
-            <PixelButton size="sm" onClick={() => void signOut()}>
-              Sign out
-            </PixelButton>
-          </div>
         ) : (
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <span className="copy">Sign in to back up your save and play on other devices. Optional.</span>
-            <PixelButton size="sm" variant="primary" onClick={() => void signInWithGoogle()}>
-              Back up with Google
-            </PixelButton>
+            <span className="copy">
+              {auth.status === 'signed_in'
+                ? `Backed up as ${auth.email ?? 'your Google account'}.`
+                : 'Connect to back up your save and play on other devices. Optional.'}
+            </span>
+            <GoogleAccountButton size="sm" />
           </div>
         )}
       </Panel>

@@ -1,9 +1,9 @@
 {
  "configVersion": 1,
  "xpCurve": {
-  "A": 2,
+  "A": 0.5,
   "B": 1.15,
-  "C": 3
+  "C": 1
  },
  "xpShareMode": "fighter",
  "regenPercentPerHour": 5,
@@ -33,7 +33,7 @@
  "allowVoluntarySwitch": true,
  "maxBattleTurns": 150,
  "multiExpShare": 0.3,
- "xpMultiplier": 2,
+ "xpMultiplier": 1,
  "showRoundGauge": true,
  "showRoundPreview": false,
  "status": {

@@ -4,7 +4,7 @@
   "orderIndex": 1,
   "name": "Route 1",
   "bannerUrl": "/banners/route-1.png",
-  "xpToUnlockNext": 50,
+  "xpToUnlockNext": 15,
   "minLevel": 2,
   "maxLevel": 5,
   "encounterWeights": {
@@ -17,6 +17,7 @@
   "legendaryBoss": null,
   "scalesToTeam": false,
   "easyMode": false,
+  "enemyUpgradeLevel": 1,
   "hidden": false,
   "unlockConditions": null,
   "gyms": [],
@@ -93,7 +94,7 @@
   "orderIndex": 2,
   "name": "Routes 22 & 2",
   "bannerUrl": "/banners/routes-22-2.png",
-  "xpToUnlockNext": 80,
+  "xpToUnlockNext": 20,
   "minLevel": 3,
   "maxLevel": 7,
   "encounterWeights": {
@@ -106,6 +107,7 @@
   "legendaryBoss": null,
   "scalesToTeam": false,
   "easyMode": false,
+  "enemyUpgradeLevel": 1,
   "hidden": false,
   "unlockConditions": null,
   "gyms": [],
@@ -224,7 +226,7 @@
   "orderIndex": 3,
   "name": "Viridian Forest",
   "bannerUrl": "/banners/viridian-forest.png",
-  "xpToUnlockNext": 110,
+  "xpToUnlockNext": 30,
   "minLevel": 4,
   "maxLevel": 8,
   "encounterWeights": {
@@ -237,6 +239,7 @@
   "legendaryBoss": null,
   "scalesToTeam": false,
   "easyMode": false,
+  "enemyUpgradeLevel": 1,
   "hidden": false,
   "unlockConditions": null,
   "gyms": [
@@ -389,7 +392,7 @@
   "orderIndex": 4,
   "name": "Route 3",
   "bannerUrl": "/banners/route-3.png",
-  "xpToUnlockNext": 150,
+  "xpToUnlockNext": 40,
   "minLevel": 5,
   "maxLevel": 10,
   "encounterWeights": {
@@ -402,6 +405,7 @@
   "legendaryBoss": null,
   "scalesToTeam": false,
   "easyMode": false,
+  "enemyUpgradeLevel": 2,
   "hidden": false,
   "unlockConditions": null,
   "gyms": [],
@@ -547,7 +551,7 @@
   "orderIndex": 5,
   "name": "Mt. Moon",
   "bannerUrl": "/banners/mt-moon.png",
-  "xpToUnlockNext": 190,
+  "xpToUnlockNext": 50,
   "minLevel": 7,
   "maxLevel": 12,
   "encounterWeights": {
@@ -560,6 +564,7 @@
   "legendaryBoss": null,
   "scalesToTeam": false,
   "easyMode": false,
+  "enemyUpgradeLevel": 2,
   "hidden": false,
   "unlockConditions": null,
   "gyms": [],
@@ -750,7 +755,7 @@
   "orderIndex": 6,
   "name": "Route 4 & Nugget Bridge",
   "bannerUrl": "/banners/route-4-nugget-bridge.png",
-  "xpToUnlockNext": 230,
+  "xpToUnlockNext": 60,
   "minLevel": 9,
   "maxLevel": 15,
   "encounterWeights": {
@@ -763,6 +768,7 @@
   "legendaryBoss": null,
   "scalesToTeam": false,
   "easyMode": false,
+  "enemyUpgradeLevel": 2,
   "hidden": false,
   "unlockConditions": null,
   "gyms": [
@@ -1010,7 +1016,7 @@
   "orderIndex": 7,
   "name": "Routes 5 & 6",
   "bannerUrl": "/banners/routes-5-6.png",
-  "xpToUnlockNext": 280,
+  "xpToUnlockNext": 70,
   "minLevel": 12,
   "maxLevel": 18,
   "encounterWeights": {
@@ -1023,6 +1029,7 @@
   "legendaryBoss": null,
   "scalesToTeam": false,
   "easyMode": false,
+  "enemyUpgradeLevel": 3,
   "hidden": false,
   "unlockConditions": null,
   "gyms": [
@@ -1247,7 +1254,7 @@
   "orderIndex": 8,
   "name": "Diglett's Cave & Route 11",
   "bannerUrl": "/banners/digletts-cave-route-11.png",
-  "xpToUnlockNext": 320,
+  "xpToUnlockNext": 80,
   "minLevel": 13,
   "maxLevel": 22,
   "encounterWeights": {
@@ -1260,6 +1267,7 @@
   "legendaryBoss": null,
   "scalesToTeam": false,
   "easyMode": false,
+  "enemyUpgradeLevel": 4,
   "hidden": false,
   "unlockConditions": null,
   "gyms": [],
@@ -1434,7 +1442,7 @@
   "orderIndex": 9,
   "name": "Routes 9 & 10",
   "bannerUrl": "/banners/routes-9-10.png",
-  "xpToUnlockNext": 340,
+  "xpToUnlockNext": 85,
   "minLevel": 14,
   "maxLevel": 22,
   "encounterWeights": {
@@ -1447,6 +1455,7 @@
   "legendaryBoss": null,
   "scalesToTeam": false,
   "easyMode": false,
+  "enemyUpgradeLevel": 4,
   "hidden": false,
   "unlockConditions": null,
   "gyms": [],
@@ -1649,7 +1658,7 @@
   "orderIndex": 10,
   "name": "Rock Tunnel",
   "bannerUrl": "/banners/rock-tunnel.png",
-  "xpToUnlockNext": 360,
+  "xpToUnlockNext": 90,
   "minLevel": 15,
   "maxLevel": 23,
   "encounterWeights": {
@@ -1662,6 +1671,7 @@
   "legendaryBoss": null,
   "scalesToTeam": false,
   "easyMode": false,
+  "enemyUpgradeLevel": 4,
   "hidden": false,
   "unlockConditions": null,
   "gyms": [],
@@ -1872,7 +1882,7 @@
   "orderIndex": 11,
   "name": "Routes 7 & 8",
   "bannerUrl": "/banners/routes-7-8.png",
-  "xpToUnlockNext": 420,
+  "xpToUnlockNext": 105,
   "minLevel": 17,
   "maxLevel": 26,
   "encounterWeights": {
@@ -1885,6 +1895,7 @@
   "legendaryBoss": null,
   "scalesToTeam": false,
   "easyMode": false,
+  "enemyUpgradeLevel": 4,
   "hidden": false,
   "unlockConditions": null,
   "gyms": [
@@ -2153,7 +2164,7 @@
   "orderIndex": 12,
   "name": "Pokémon Tower",
   "bannerUrl": "/banners/pokemon-tower.png",
-  "xpToUnlockNext": 420,
+  "xpToUnlockNext": 105,
   "minLevel": 15,
   "maxLevel": 25,
   "encounterWeights": {
@@ -2166,6 +2177,7 @@
   "legendaryBoss": null,
   "scalesToTeam": false,
   "easyMode": false,
+  "enemyUpgradeLevel": 5,
   "hidden": false,
   "unlockConditions": null,
   "gyms": [],
@@ -2338,7 +2350,7 @@
   "orderIndex": 13,
   "name": "Routes 12–15",
   "bannerUrl": "/banners/routes-12-15.png",
-  "xpToUnlockNext": 480,
+  "xpToUnlockNext": 120,
   "minLevel": 22,
   "maxLevel": 30,
   "encounterWeights": {
@@ -2351,6 +2363,7 @@
   "legendaryBoss": null,
   "scalesToTeam": false,
   "easyMode": false,
+  "enemyUpgradeLevel": 5,
   "hidden": false,
   "unlockConditions": null,
   "gyms": [],
@@ -2611,7 +2624,7 @@
   "orderIndex": 14,
   "name": "Cycling Road",
   "bannerUrl": "/banners/cycling-road.png",
-  "xpToUnlockNext": 520,
+  "xpToUnlockNext": 130,
   "minLevel": 24,
   "maxLevel": 32,
   "encounterWeights": {
@@ -2624,6 +2637,7 @@
   "legendaryBoss": null,
   "scalesToTeam": false,
   "easyMode": false,
+  "enemyUpgradeLevel": 5,
   "hidden": false,
   "unlockConditions": null,
   "gyms": [],
@@ -2821,7 +2835,7 @@
   "orderIndex": 15,
   "name": "Safari Zone",
   "bannerUrl": "/banners/safari-zone.png",
-  "xpToUnlockNext": 560,
+  "xpToUnlockNext": 140,
   "minLevel": 24,
   "maxLevel": 33,
   "encounterWeights": {
@@ -2834,6 +2848,7 @@
   "legendaryBoss": null,
   "scalesToTeam": false,
   "easyMode": false,
+  "enemyUpgradeLevel": 5,
   "hidden": false,
   "unlockConditions": null,
   "gyms": [
@@ -3143,7 +3158,7 @@
   "orderIndex": 16,
   "name": "Silph Co.",
   "bannerUrl": "/banners/silph-co.png",
-  "xpToUnlockNext": 500,
+  "xpToUnlockNext": 125,
   "minLevel": 29,
   "maxLevel": 41,
   "encounterWeights": {
@@ -3156,6 +3171,7 @@
   "legendaryBoss": null,
   "scalesToTeam": false,
   "easyMode": false,
+  "enemyUpgradeLevel": 6,
   "hidden": false,
   "unlockConditions": null,
   "gyms": [
@@ -3341,7 +3357,7 @@
   "orderIndex": 17,
   "name": "Sea Routes 19 & 20",
   "bannerUrl": "/banners/sea-routes-19-20.png",
-  "xpToUnlockNext": 600,
+  "xpToUnlockNext": 150,
   "minLevel": 28,
   "maxLevel": 38,
   "encounterWeights": {
@@ -3354,6 +3370,7 @@
   "legendaryBoss": null,
   "scalesToTeam": false,
   "easyMode": false,
+  "enemyUpgradeLevel": 7,
   "hidden": false,
   "unlockConditions": null,
   "gyms": [],
@@ -3591,7 +3608,7 @@
   "orderIndex": 18,
   "name": "Seafoam Islands",
   "bannerUrl": "/banners/seafoam-islands.png",
-  "xpToUnlockNext": 640,
+  "xpToUnlockNext": 160,
   "minLevel": 30,
   "maxLevel": 40,
   "encounterWeights": {
@@ -3609,6 +3626,7 @@
   ],
   "scalesToTeam": false,
   "easyMode": false,
+  "enemyUpgradeLevel": 7,
   "hidden": false,
   "unlockConditions": null,
   "gyms": [],
@@ -3817,7 +3835,7 @@
   "orderIndex": 19,
   "name": "Pokémon Mansion",
   "bannerUrl": "/banners/pokemon-mansion.png",
-  "xpToUnlockNext": 700,
+  "xpToUnlockNext": 175,
   "minLevel": 32,
   "maxLevel": 42,
   "encounterWeights": {
@@ -3830,6 +3848,7 @@
   "legendaryBoss": null,
   "scalesToTeam": false,
   "easyMode": false,
+  "enemyUpgradeLevel": 7,
   "hidden": false,
   "unlockConditions": null,
   "gyms": [
@@ -4072,7 +4091,7 @@
   "orderIndex": 20,
   "name": "Route 21",
   "bannerUrl": "/banners/route-21.png",
-  "xpToUnlockNext": 720,
+  "xpToUnlockNext": 180,
   "minLevel": 30,
   "maxLevel": 40,
   "encounterWeights": {
@@ -4085,6 +4104,7 @@
   "legendaryBoss": null,
   "scalesToTeam": false,
   "easyMode": false,
+  "enemyUpgradeLevel": 8,
   "hidden": false,
   "unlockConditions": null,
   "gyms": [
@@ -4303,7 +4323,7 @@
   "orderIndex": 21,
   "name": "Victory Road",
   "bannerUrl": "/banners/victory-road.png",
-  "xpToUnlockNext": 820,
+  "xpToUnlockNext": 205,
   "minLevel": 38,
   "maxLevel": 47,
   "encounterWeights": {
@@ -4321,6 +4341,7 @@
   ],
   "scalesToTeam": false,
   "easyMode": false,
+  "enemyUpgradeLevel": 9,
   "hidden": false,
   "unlockConditions": null,
   "gyms": [],
@@ -4583,7 +4604,7 @@
   "orderIndex": 22,
   "name": "Indigo Plateau",
   "bannerUrl": "/banners/indigo-plateau.png",
-  "xpToUnlockNext": 400,
+  "xpToUnlockNext": 100,
   "minLevel": 45,
   "maxLevel": 55,
   "encounterWeights": {
@@ -4596,6 +4617,7 @@
   "legendaryBoss": null,
   "scalesToTeam": false,
   "easyMode": false,
+  "enemyUpgradeLevel": 9,
   "hidden": false,
   "unlockConditions": null,
   "gyms": [
@@ -4729,7 +4751,7 @@
   "orderIndex": 101,
   "name": "Power Plant",
   "bannerUrl": "/banners/power-plant.png",
-  "xpToUnlockNext": 300,
+  "xpToUnlockNext": 75,
   "minLevel": 25,
   "maxLevel": 36,
   "encounterWeights": {
@@ -4747,6 +4769,7 @@
   ],
   "scalesToTeam": false,
   "easyMode": false,
+  "enemyUpgradeLevel": 5,
   "hidden": true,
   "unlockConditions": [
    {
@@ -4944,6 +4967,7 @@
   ],
   "scalesToTeam": true,
   "easyMode": false,
+  "enemyUpgradeLevel": 9,
   "hidden": true,
   "unlockConditions": [
    {
@@ -6091,6 +6115,7 @@
   ],
   "scalesToTeam": false,
   "easyMode": false,
+  "enemyUpgradeLevel": 9,
   "hidden": true,
   "unlockConditions": [
    {

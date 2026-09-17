@@ -65,9 +65,10 @@ create table areas (
   max_level int not null,
   encounter_weights jsonb not null,          -- {wild:60, trainer:25, center:10, item:0}
   backtrack_multiplier numeric not null default 0.5,
-  legendary_boss jsonb,                      -- null | {dex:145, level:25} | [{dex,level,teamAvgThreshold}]
+  legendary_boss jsonb,                      -- null | {dex:145, level:25} | [{dex,level,teamAvgThreshold,upgradeLevel}]
   scales_to_team boolean not null default false,
-  easy_mode boolean not null default false   -- a Center comes next whenever a team member is K.O. (migration 0002)
+  easy_mode boolean not null default false,  -- a Center comes next whenever a team member is K.O. (migration 0002)
+  enemy_upgrade_level int                   -- foes' dice/combo upgrade level; null = game_config.enemyUpgradeLevel (v1.7)
 );
 
 create table area_wild_pool (
@@ -83,7 +84,8 @@ create table trainers (
   id uuid primary key default gen_random_uuid(),
   name text not null,
   sprite_url text,
-  team jsonb not null                        -- [{dex:16, level:7}, ...] 1..3 entries
+  team jsonb not null,                       -- [{dex:16, level:7}, ...] 1..3 entries
+  upgrade_level int                         -- this trainer's dice/combo upgrade level; null = the area's (v1.7)
 );
 
 create table area_trainer_pool (
@@ -142,7 +144,7 @@ create table game_config (
 --              ({poke-ball:5, potion:2}), hpMultiplier (1.4), xpCurve {A,B,C}, xpShareMode,
 --              regenPercentPerHour, maxTeamSize, maxLevel, comboPayoutMode,
 --              skipPolicy, starters, starterLevel, configVersion, multiExpShare (0.3),
---              xpMultiplier (2: XP = foe level × this, for Pokémon and the exploration bar alike),
+--              xpMultiplier (1: XP = foe level × this, for Pokémon and the exploration bar alike),
 -- Keys missing from a database fall back to the bundled defaults, so older databases need no migration.
 
 -- ============ PLAYER DATA ============

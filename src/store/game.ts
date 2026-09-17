@@ -67,6 +67,8 @@ export interface AuthState {
   status: 'unknown' | 'signed_out' | 'signed_in' | 'unavailable'
   userId: string | null
   email: string | null
+  /** Google profile picture, when the provider gives one. */
+  avatarUrl?: string | null
 }
 
 export interface GameStore {

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  buildDeck,
   createRng,
   deckAbilities,
   centerWouldHelp,
@@ -164,5 +165,43 @@ describe('easy areas', () => {
     // Not in a normal area, and not in an easy one while everybody stands.
     expect(nextEncounter(ctx(ko, ROUTE1, { teamFainted: true }), createRng(1)).deck).not.toBeNull()
     expect(nextEncounter(ctx(base, easy), createRng(1)).deck).not.toBeNull()
+  })
+})
+
+describe('never two Pokémon Centers in a row', () => {
+  const CENTERY: Area = { ...ROUTE1, encounterWeights: { wild: 4, trainer: 0, center: 3, item: 0 } }
+
+  it('deals decks with the Centers apart, and none on top when asked', () => {
+    for (let seed = 1; seed <= 200; seed++) {
+      const deck = buildDeck(CENTERY, data, createRng(seed), [], { noCenterFirst: seed % 2 === 0 })
+      expect(deck.filter((c) => c === 'center')).toHaveLength(3)
+      for (let i = 1; i < deck.length; i++) expect(deck[i] === 'center' && deck[i - 1] === 'center', deck.join()).toBe(false)
+      if (seed % 2 === 0) expect(deck.at(-1)).not.toBe('center') // drawn first
+    }
+  })
+
+  it('holds across rounds, round-opening Centers and forced ones', () => {
+    const rng = createRng(5)
+    let save = newSave(4, data, 0, newId)
+    let prev = ''
+    for (let i = 0; i < 400; i++) {
+      const roll = nextEncounter(
+        ctx(save, CENTERY, { centerUseful: rng.next() < 0.7, teamHurt: rng.next() < 0.5, isFirstInArea: rng.next() < 0.2 }),
+        rng,
+      )
+      const kind = roll.encounter.kind
+      expect(prev === 'center' && kind === 'center', `encounter ${i}`).toBe(false)
+      save = recordDraws(save, CENTERY.id, roll)
+      prev = kind
+    }
+  })
+
+  it('meets another card first when the top card is a Center right after one', () => {
+    let save = newSave(4, data, 0, newId)
+    save = setAreaDeck(save, ROUTE1.id, ['wild', 'center'])
+    save = recordDraws(save, ROUTE1.id, { encounter: { kind: 'center' }, deck: null })
+    const roll = nextEncounter(ctx(save, ROUTE1), createRng(3))
+    expect(roll.encounter.kind).toBe('wild')
+    expect(roll.deck).toEqual(['center'])
   })
 })

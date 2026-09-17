@@ -14,8 +14,9 @@ async function handleSession(client: SupabaseClient, session: Session | null) {
     useGame.setState({ auth: { status: 'signed_out', userId: null, email: null } })
     return
   }
-  const { id, email } = session.user
-  useGame.setState({ auth: { status: 'signed_in', userId: id, email: email ?? null } })
+  const { id, email, user_metadata: meta } = session.user
+  const avatarUrl = (meta?.avatar_url ?? meta?.picture ?? null) as string | null
+  useGame.setState({ auth: { status: 'signed_in', userId: id, email: email ?? null, avatarUrl } })
   if (syncedUser === id) return
   syncedUser = id
   try {

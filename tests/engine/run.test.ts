@@ -119,9 +119,9 @@ describe('encounters', () => {
   })
 
   it('offers the gauge legendary as a challenge when the gauge is full, once', () => {
-    const p = { ...emptyProgress(), xp: 640 }
+    const p = { ...emptyProgress(), xp: SEAFOAM.xpToUnlockNext! }
     expect(dueBoss(SEAFOAM, p, 10)).toMatchObject({ dex: 144, level: 50 })
-    expect(dueBoss(SEAFOAM, { ...p, xp: 639 }, 10)).toBeNull()
+    expect(dueBoss(SEAFOAM, { ...p, xp: p.xp - 1 }, 10)).toBeNull()
     expect(dueBoss(SEAFOAM, { ...p, bossesDefeated: [144] }, 10)).toBeNull()
     expect(dueBoss(A1, p, 10)).toBeNull()
     expect(rollEncounter(ctx(fresh(), { area: SEAFOAM, progress: p }), createRng(1)).kind).not.toBe('boss') // offered, not dealt
@@ -255,18 +255,18 @@ describe('wipe, center, team, shop, upgrades', () => {
       areaProgress: { ...s.areaProgress, [A1.id]: { ...progressOf(s, A1.id), xp, ...extra } },
     })
     // No round yet → back to 0.
-    const w = applyWipe(ko(at(s0, 41)), A1.id, data)
+    const w = applyWipe(ko(at(s0, 14)), A1.id, data)
     expect(progressOf(w, A1.id).xp).toBe(0)
     expect(w.gold).toBe(99)
     expect(teamOf(w)[0]!.currentHp).toBe(instanceMaxHp(teamOf(w)[0]!, data))
     expect(teamOf(w)[0]!.level).toBe(5)
-    // A round that began at 30, half played, gauge now 41 → back to 30, and the next encounter deals a new round.
-    const mid = at(s0, 41, { roundStartXp: 30, round: 2, deck: ['wild', 'wild', 'item'], drawn: ['wild', 'center'] })
+    // A round that began at 10, half played, gauge now 14 → back to 10, and the next encounter deals a new round.
+    const mid = at(s0, 14, { roundStartXp: 10, round: 2, deck: ['wild', 'wild', 'item'], drawn: ['wild', 'center'] })
     const lost = progressOf(applyWipe(ko(mid), A1.id, data), A1.id)
-    expect(lost).toMatchObject({ xp: 30, deck: [], drawn: [], round: 2 })
+    expect(lost).toMatchObject({ xp: 10, deck: [], drawn: [], round: 2 })
     // A full gauge stays full.
     const full = A1.xpToUnlockNext!
-    expect(progressOf(applyWipe(ko(at(s0, full, { roundStartXp: 30, deck: ['wild'] })), A1.id, data), A1.id).xp).toBe(full)
+    expect(progressOf(applyWipe(ko(at(s0, full, { roundStartXp: 10, deck: ['wild'] })), A1.id, data), A1.id).xp).toBe(full)
   })
 
   it('a full gauge offers the gym as a challenge instead of forcing it', () => {
@@ -340,7 +340,7 @@ describe('config & data plumbing', () => {
     const c = mergeConfig({ goldMultiplier: 2, xpCurve: { A: 3 }, status: { burn: { duration: 5 } } })
     expect(c.goldMultiplier).toBe(2)
     expect(c.encounterMode).toBe('deck')
-    expect(c.xpCurve).toEqual({ A: 3, B: 1.15, C: 3 })
+    expect(c.xpCurve).toEqual({ A: 3, B: 1.15, C: 1 })
     expect(c.status.burn).toEqual({ threshold: 1, damagePerStack: 1, duration: 5 })
     expect(mergeConfig(undefined).maxTeamSize).toBe(3)
   })

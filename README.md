@@ -74,8 +74,8 @@ supabase/    migrations/0001_init.sql, seed.sql (generated)
   cave (and nowhere else), so 151/151 is reachable.
 - **Area insights & help** — each area shows its encounter types (the "recommended types" were removed in v1.7); the `?` button in the top bar opens the rules and the
   type chart.
-- **XP ×2 (v1.6)** — a K.O. gives the foe's level × `xpMultiplier` (2), to the Pokémon and (since v1.7) to the area's
-  exploration bar alike.
+- **XP (v1.7)** — a K.O. gives the foe's level × `xpMultiplier` (1), to the Pokémon and to the area's exploration bar
+  alike; the level curve (A 0.5, C 1) and the exploration targets are about ¼ of v1.6's.
 - **v1.7** — Speed is the base stat ÷ 10 (rounded down; ties go to the player); `noEscape` (on by default) removes
   FLEE / AVOID / RUN; `showRoundPreview` (off by default) shows the cards ahead; each die type has a short description.
 - **Deck weights are copies (v1.6)** — an area's encounter weights and loot weights are the number of copies of each

@@ -10,6 +10,7 @@ import {
   conditionStatus,
   createRng,
   dueGym,
+  enemyUpgradeLevelFor,
   emptyProgress,
   isAreaUnlocked,
   linearAreas,
@@ -53,8 +54,9 @@ describe('linear chain', () => {
 describe('gyms', () => {
   it('once the gauge is full the gym leader is a challenge the player picks — never dealt, never skipped', () => {
     const s = fresh()
-    expect(dueGym(FOREST, { ...emptyProgress(), xp: 109 }, data)).toBeNull()
-    const p = { ...emptyProgress(), xp: 110 }
+    const full = FOREST.xpToUnlockNext!
+    expect(dueGym(FOREST, { ...emptyProgress(), xp: full - 1 }, data)).toBeNull()
+    const p = { ...emptyProgress(), xp: full }
     expect(dueGym(FOREST, p, data)?.name).toBe('Brock')
     const ctx = { area: FOREST, progress: p, data, teamAvgLevel: 10, teamHurt: false, isFirstInArea: false, pokedex: s.pokedex }
     expect(rollEncounter(ctx, createRng(1)).kind).not.toBe('gym')
@@ -152,5 +154,27 @@ describe('area type profiles', () => {
     expect(trainerSpecialty(byTrainer('Champion Blue'), data)).toBeNull() // Charizard, Gyarados, Pidgeot
     expect(trainerSpecialty(byTrainer('Elite Four Lorelei'), data)).toBe('ice') // water 2 = ice 2, but 3 carry ice
     expect(trainerSpecialty(byTrainer('Elite Four Bruno'), data)).toBe('fighting')
+  })
+})
+
+describe('enemy upgrade levels', () => {
+  it('start at 1 and rise by one after each Gym Leader area; secret areas follow the main route', () => {
+    const lv = (name: string) => byName(name).enemyUpgradeLevel
+    expect([lv('Route 1'), lv('Viridian Forest'), lv('Route 3'), lv('Routes 5 & 6'), lv('Victory Road')]).toEqual([1, 1, 2, 3, 9])
+    expect([lv('Power Plant'), lv('Cerulean Cave')]).toEqual([5, 9])
+  })
+
+  it('a trainer or legendary override beats the area, the area beats the global setting', () => {
+    const brock = dueGym(FOREST, { ...emptyProgress(), xp: 999 }, data)!
+    const gym = challengeEncounter(FOREST, { ...emptyProgress(), xp: 999 }, data, 10)!
+    expect(enemyUpgradeLevelFor(gym, FOREST, data)).toBe(1)
+    const withTrainer = { ...data, trainers: { ...data.trainers, [brock.id]: { ...brock, upgradeLevel: 4 } } }
+    expect(enemyUpgradeLevelFor(gym, FOREST, withTrainer)).toBe(4)
+    const seafoam = byName('Seafoam Islands')
+    const boss = { kind: 'boss', dex: 144, level: 50 } as const
+    expect(enemyUpgradeLevelFor(boss, seafoam, data)).toBe(7)
+    const override = { ...seafoam, legendaryBoss: seafoam.legendaryBoss!.map((b) => ({ ...b, upgradeLevel: 10 })) }
+    expect(enemyUpgradeLevelFor(boss, override, data)).toBe(10)
+    expect(enemyUpgradeLevelFor({ kind: 'wild', dex: 16, level: 3, isNew: true }, { ...FOREST, enemyUpgradeLevel: null }, data)).toBe(data.config.enemyUpgradeLevel)
   })
 })

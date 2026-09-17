@@ -58,10 +58,10 @@ test('sign-in flow (mocked Supabase)', async ({ page }) => {
   await page.addInitScript((s) => localStorage.setItem('pokedice.settings', s), FAST)
   await page.goto('/')
 
-  // 1. "Back up your save" starts the Google OAuth redirect through Supabase.
+  // 1. CONNECT starts the Google OAuth redirect through Supabase.
   const [req] = await Promise.all([
     page.waitForRequest(/\/auth\/v1\/authorize\?provider=google/),
-    page.getByRole('button', { name: /Back up your save/ }).click(),
+    page.getByRole('button', { name: /Connect with Google/ }).click(),
   ])
   expect(req.url()).toContain('redirect_to=')
 
@@ -80,8 +80,9 @@ test('sign-in flow (mocked Supabase)', async ({ page }) => {
   await expect(page.getByRole('link', { name: 'Admin' })).toBeVisible()
   await expect.poll(() => calls.some((c) => c.startsWith('POST /rest/v1/saves'))).toBe(true)
 
-  // 3. Signing out keeps the local save.
-  await page.getByRole('main').getByRole('button', { name: 'Sign out' }).click()
+  // 3. CONNECTED asks first; disconnecting keeps the local save.
+  await page.getByRole('main').getByRole('button', { name: /Connected with Google/ }).click()
+  await page.getByRole('dialog').getByRole('button', { name: 'Disconnect' }).click()
   await expect(page.getByText(/local save is kept/)).toBeVisible()
   await page.goto('/map')
   await expect(page.getByRole('heading', { name: 'Kanto' })).toBeVisible()

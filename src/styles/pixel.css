@@ -139,3 +139,13 @@
     opacity: 0;
   }
 }
+
+/* HpBar collapsible: under ~140px there is no room for a readable bar, so only "HP 20/35" stays. */
+.hp-collapsible {
+  container-type: inline-size;
+}
+@container (max-width: 140px) {
+  .hp-track {
+    display: none;
+  }
+}

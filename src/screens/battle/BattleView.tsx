@@ -30,6 +30,7 @@ import { cx, typeColor } from '@/theme/util'
 import { useBattleAnimator } from './useBattleAnimator'
 import { CatchView } from './CatchView'
 import { VictoryView, WipeView, StalemateView } from './VictoryView'
+import { BattleHistory, BattleHistoryList, DamageRecap } from './BattleHistory'
 
 function BattlerPanel({
   b,
@@ -171,7 +172,7 @@ export function BattleView({ battle }: { battle: BattleSlice }) {
   const scene = useRef<HTMLDivElement>(null)
   const enemyAnchor = useRef<HTMLDivElement>(null)
   const playerAnchor = useRef<HTMLDivElement>(null)
-  const [menu, setMenu] = useState<null | 'item' | 'switch'>(null)
+  const [menu, setMenu] = useState<null | 'item' | 'switch' | 'history'>(null)
   const [itemKey, setItemKey] = useState<string | null>(null)
   const [showBreakdown, setShowBreakdown] = useState(false)
   const [intro, setIntro] = useState(st.kind === 'boss' && !reduced)
@@ -357,7 +358,7 @@ export function BattleView({ battle }: { battle: BattleSlice }) {
               extra={
                 <div className="mt-1 flex items-center justify-between text-base">
                   <span className="flex items-center gap-1">
-                    <PixelIcon name="reroll" size={16} /> {active.rerollsLeft}/{active.rerolls} rerolls
+                    <PixelIcon name="reroll" size={14} /> {active.rerollsLeft}/{active.rerolls} rerolls
                   </span>
                   <span className="flex gap-0.5">
                     {st.player.map((p) => (
@@ -371,6 +372,18 @@ export function BattleView({ battle }: { battle: BattleSlice }) {
         </div>
 
         <ParticleCanvas ref={particles} className="absolute inset-0 h-full w-full" />
+
+        {/* Phones: no room under the battle, so the history opens in a sheet from here. */}
+        {!desktop && (
+          <button
+            type="button"
+            onClick={() => setMenu('history')}
+            aria-label="Battle history"
+            className="pixel-btn absolute left-2 top-1/2 z-20 flex h-11 w-11 -translate-y-1/2 items-center justify-center bg-panel/90"
+          >
+            <PixelIcon name="history" size={18} />
+          </button>
+        )}
 
         <AnimatePresence>
           {fx.banner && (
@@ -465,10 +478,10 @@ export function BattleView({ battle }: { battle: BattleSlice }) {
               aria-expanded={showBreakdown}
               aria-label={`${preview.r.final} damage — ${showBreakdown ? 'hide' : 'show'} details`}
               title="Damage — click for details"
-              className="inline-flex min-h-[44px] items-center gap-1.5 px-1 text-2xl md:min-h-[32px]"
+              className={cx('inline-flex min-h-[44px] min-w-[44px] items-center justify-center gap-1.5 px-1 leading-none md:min-h-[32px]', short ? 'text-xl' : 'text-2xl')}
               onClick={() => setShowBreakdown((v) => !v)}
             >
-              <PixelIcon name="sword" size={20} /> {preview.r.final}
+              <PixelIcon name="sword" size={short ? 16 : 20} /> {preview.r.final}
             </button>
             {preview.statuses.map((s) => (
               <span key={s.status} className="inline-flex items-center gap-1 border-2 border-ink bg-panel px-1 text-base">
@@ -479,21 +492,7 @@ export function BattleView({ battle }: { battle: BattleSlice }) {
             ))}
           </div>
         )}
-        {ready && preview && showBreakdown && (
-          <div className="grid grid-cols-2 gap-x-4 font-mono text-xs sm:grid-cols-3">
-            {preview.r.perDie.map((p, i) => (
-              <span key={i}>
-                {p.value}
-                {p.bonus ? `+${p.bonus}` : ''} {p.type.toUpperCase()} ×{p.multiplier} = {p.damage}
-              </span>
-            ))}
-            {preview.r.combo && (
-              <span>
-                combo +{preview.r.combo.bonus} ×{preview.r.combo.multiplier} = {preview.r.combo.damage}
-              </span>
-            )}
-          </div>
-        )}
+        {ready && preview && showBreakdown && <DamageRecap result={preview.r} />}
 
         {/* Controls */}
         {stunned && (
@@ -506,16 +505,19 @@ export function BattleView({ battle }: { battle: BattleSlice }) {
             <div className="flex flex-col gap-1">
               <PixelButton
                 size={mainSize}
-                className="min-h-[48px] px-2"
+                // Icon + label must stay on one line in a half-width column on narrow phones.
+                className="min-h-[48px] gap-1 whitespace-nowrap px-2 max-[400px]:text-xl"
                 disabled={!canAct || active.rerollsLeft <= 0 || !st.selected.some(Boolean)}
                 onClick={() => dispatchBattle({ t: 'REROLL' })}
                 quiet
               >
                 <PixelIcon name="reroll" size={18} /> REROLL ({active.rerollsLeft})
               </PixelButton>
-              {active.rerollsLeft > 0 && <span className="text-center text-base leading-tight text-muted">Select dice to reroll</span>}
+              {active.rerollsLeft > 0 && (
+                <span className={cx('text-center leading-tight text-muted', short ? 'whitespace-nowrap text-sm' : 'text-base')}>Select dice to reroll</span>
+              )}
             </div>
-            <PixelButton variant="primary" size={mainSize} className="min-h-[48px] px-2" disabled={!canAct} onClick={() => dispatchBattle({ t: 'ATTACK' })}>
+            <PixelButton variant="primary" size={mainSize} className="min-h-[48px] gap-1 whitespace-nowrap px-2 max-[400px]:text-xl" disabled={!canAct} onClick={() => dispatchBattle({ t: 'ATTACK' })}>
               <PixelIcon name="sword" size={18} /> ATTACK
             </PixelButton>
           </div>
@@ -548,6 +550,11 @@ export function BattleView({ battle }: { battle: BattleSlice }) {
           <div className="text-center text-sm text-muted">Keys: 1–6 select · R reroll · Space {rolling ? 'attack' : 'roll'}</div>
         )}
       </div>
+
+      {desktop && <BattleHistory battle={battle} cursor={fx.cursor} defaultOpen />}
+      <Modal open={menu === 'history'} onClose={() => setMenu(null)} title="Battle history">
+        <BattleHistoryList battle={battle} cursor={fx.cursor} />
+      </Modal>
 
       {/* Forced switch after a faint (free) */}
       <Modal open={ready && st.phase === 'player_switch'} dismissable={false} title="Choose your next Pokémon">

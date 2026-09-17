@@ -19,6 +19,7 @@ import {
   rollCatch,
   createBattle,
   createRng,
+  enemyUpgradeLevelFor,
   hasAbleTeam,
   hasFaintedMember,
   isAreaUnlocked,
@@ -105,7 +106,9 @@ export function rollNext() {
   )
   const encounter = roll.encounter
   // The decks live in the save, so reloading the page can't reshuffle them.
-  if (roll.deck || roll.lootDeck) commitSave(recordDraws(save, area.id, roll))
+  // Always recorded: besides the decks, the area notes whether this was a Center (never two in a row).
+  const recorded = recordDraws(save, area.id, roll)
+  if (recorded !== save) commitSave(recorded)
   setRun({ phase: 'preview', encounter, firstInArea: false, forceNext: forceKind === run.forceNext ? null : run.forceNext })
 }
 
@@ -139,8 +142,10 @@ export function skipEncounter() {
 }
 
 function startBattle(kind: BattleKind, enemy: { dex: number; level: number }, leadUid?: string) {
-  const { save, data } = useGame.getState()
+  const { save, data, run } = useGame.getState()
   if (!save) return
+  const area = data.areas.find((a) => a.id === run.areaId)
+  const upgradeLevel = run.encounter ? enemyUpgradeLevelFor(run.encounter, area, data) : (area?.enemyUpgradeLevel ?? data.config.enemyUpgradeLevel)
   const team = teamOf(save).map((p) => ({ uid: p.id, dex: p.dex, level: p.level, hp: p.currentHp }))
   battleRng = createRng(randomSeed() ^ battleRng.getState())
   const { state, log } = createBattle(
@@ -150,7 +155,7 @@ function startBattle(kind: BattleKind, enemy: { dex: number; level: number }, le
       leadUid,
       enemy,
       playerLevels: { comboLevels: save.comboLevels, dieLevels: save.dieLevels },
-      enemyLevels: uniformLevels(data.config.enemyUpgradeLevel),
+      enemyLevels: uniformLevels(upgradeLevel),
     },
     data,
   )
@@ -163,6 +168,11 @@ export function engage(leadUid?: string) {
   const enc = run.encounter
   if (!enc || !save) return
   setRun({ skipsUsed: 0 })
+  // A challenge (gym, legendary) skipped the deck: note it as the area's latest encounter once it's actually fought.
+  if (run.areaId && (enc.kind === 'gym' || enc.kind === 'boss')) {
+    const recorded = recordDraws(save, run.areaId, { encounter: enc, deck: null })
+    if (recorded !== save) commitSave(recorded)
+  }
   switch (enc.kind) {
     case 'center':
       commitSave(centerHeal(save, data))
@@ -289,13 +299,6 @@ export function finishCatch() {
   const r = run.catch?.result
   if (!r) return
   setRun({ phase: 'victory', events: [...run.events, ...r.events], pendingCatchId: r.pendingCatchId, catch: null })
-}
-
-/** Don't throw: straight to the rewards. */
-export function skipCatch() {
-  const { run } = useGame.getState()
-  if (!run.catch || run.catch.result) return
-  setRun({ phase: 'victory', catch: null })
 }
 
 /** The trainer still has Pokémon left after this victory? */

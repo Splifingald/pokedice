@@ -15,7 +15,7 @@ import { StatChip } from '@/components/StatChip'
 import { milestoneText, money, trainerTitle } from '@/lib/format'
 import { BadgeIcon } from '@/components/BadgeIcon'
 import { useGame } from '@/store/game'
-import { afterStalemate, afterWipe, continueAfterVictory, resolveCatch, trainerHasNext } from '@/store/run'
+import { afterStalemate, afterWipe, continueAfterVictory, enterArea, resolveCatch, trainerHasNext } from '@/store/run'
 import { cx } from '@/theme/util'
 
 function Overlay({ children, onAdvance }: { children: ReactNode; onAdvance?: () => void }) {
@@ -304,6 +304,9 @@ export function VictoryView() {
   const nextMon =
     hasNext && (enc?.kind === 'trainer' || enc?.kind === 'gym') && run.trainer ? enc.team[run.trainer.index + 1] : null
   const trainerLabel = enc?.kind === 'gym' || enc?.kind === 'trainer' ? trainerTitle(enc) : 'The trainer'
+  // This fight cleared the area: offer the newly opened one straight away.
+  const clearedTo = run.events.flatMap((e) => (e.kind === 'area_cleared' && e.nextAreaId ? [e.nextAreaId] : []))[0]
+  const nextArea = clearedTo ? data.areas.find((a) => a.id === clearedTo) : undefined
 
   return (
     // Tap anywhere on the card to show the next reward right away.
@@ -353,6 +356,24 @@ export function VictoryView() {
                 NEXT BATTLE
               </PixelButton>
             </>
+          ) : nextArea ? (
+            <div className="flex flex-col gap-2">
+              <PixelButton
+                variant="primary"
+                size="lg"
+                className="whitespace-nowrap"
+                onClick={() => {
+                  continueAfterVictory()
+                  enterArea(nextArea.id)
+                }}
+              >
+                <PixelIcon name="map" size={22} />
+                GO TO NEW AREA
+              </PixelButton>
+              <PixelButton onClick={() => continueAfterVictory()}>
+                STAY HERE
+              </PixelButton>
+            </div>
           ) : (
             <PixelButton variant="primary" size="lg" onClick={() => continueAfterVictory()}>
               CONTINUE

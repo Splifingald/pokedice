@@ -82,11 +82,12 @@ export const ROW_SCHEMAS: Record<TableName, z.ZodTypeAny> = {
     }),
     backtrack_multiplier: z.number().min(0).max(1),
     legendary_boss: z
-      .array(z.object({ dex: int(1), level: int(1, 100), teamAvgThreshold: z.number().optional() }))
+      .array(z.object({ dex: int(1), level: int(1, 100), teamAvgThreshold: z.number().optional(), upgradeLevel: int(1, 10).nullable().optional() }))
       .nullable(),
     scales_to_team: z.boolean(),
     // Optional so a database created before migration 0002 still loads.
     easy_mode: z.boolean().optional(),
+    enemy_upgrade_level: int(1, 10).nullable().optional(),
     hidden: z.boolean(),
     unlock_conditions: z
       .array(
@@ -108,6 +109,7 @@ export const ROW_SCHEMAS: Record<TableName, z.ZodTypeAny> = {
     team: z.array(z.object({ dex: int(1), level: int(1, 100) })).min(1, '1–3 Pokémon').max(3, '1–3 Pokémon'),
     role: z.enum(['trainer', 'leader', 'elite', 'champion']),
     badge: z.string().nullable(),
+    upgrade_level: int(1, 10).nullable().optional(),
   }),
   area_trainer_pool: z.object({ id: uuid, area_id: uuid, trainer_id: uuid, weight: int(0) }),
   area_loot_pool: z

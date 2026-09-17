@@ -160,12 +160,34 @@ export const deckAbilities = (area: Area) => ({
   item: area.lootPool.length > 0,
 })
 
-/** A freshly shuffled deck for the area (plus any `extra` cards, e.g. a returning legendary). */
-export function buildDeck(area: Area, data: GameData, rng: Rng, extra: readonly DeckCard[] = []): DeckCard[] {
+/**
+ * A freshly shuffled deck for the area (plus any `extra` cards, e.g. a returning legendary). No two Centers are dealt
+ * back to back, and with `noCenterFirst` (the round opens with a Center, or one was just met) the first card isn't
+ * one — as long as the deck has enough other cards to keep them apart. Cards are drawn from the end of the array.
+ */
+export function buildDeck(
+  area: Area,
+  data: GameData,
+  rng: Rng,
+  extra: readonly DeckCard[] = [],
+  opts: { noCenterFirst?: boolean } = {},
+): DeckCard[] {
   void data
   const c = deckCounts(area.encounterWeights, deckAbilities(area))
-  const cards: DeckCard[] = [...DECK_KINDS.flatMap((k) => Array.from({ length: c[k] }, (): DeckCard => k)), ...extra]
-  return shuffle(cards, rng)
+  const others = shuffle([...DECK_KINDS.filter((k) => k !== 'center').flatMap((k) => Array.from({ length: c[k] }, (): DeckCard => k)), ...extra], rng)
+  // Centers go into distinct gaps between the other cards (gap i = just before the i-th card drawn).
+  const gaps = shuffle(Array.from({ length: others.length + 1 }, (_, i) => i).filter((i) => !opts.noCenterFirst || i > 0 || others.length === 0), rng)
+  const perGap = new Map<number, number>()
+  for (let n = 0; n < c.center; n++) {
+    const g = gaps.length ? gaps[n % gaps.length]! : 0 // more Centers than gaps: some have to touch
+    perGap.set(g, (perGap.get(g) ?? 0) + 1)
+  }
+  const order: DeckCard[] = [] // draw order
+  for (let i = 0; i <= others.length; i++) {
+    for (let k = 0; k < (perGap.get(i) ?? 0); k++) order.push('center')
+    if (i < others.length) order.push(others[i]!)
+  }
+  return order.reverse()
 }
 
 export interface EncounterRoll {
@@ -195,13 +217,15 @@ export function nextEncounter(ctx: EncounterContext, rng: Rng): EncounterRoll {
     const forced = forcedEncounter(ctx, ctx.forceKind, rng)
     if (forced) return fixed(forced)
   }
+  // Never two Pokémon Centers in a row: after one, the next encounter is something else.
+  const afterCenter = !!ctx.progress.lastCenter
   // A round is one full deck. A new one opens with a Pokémon Center, outside the deck — unless it would do nothing.
-  if (data.config.encounterMode !== 'random' && !ctx.progress.deck?.length && ctx.centerUseful) {
-    const deck = buildDeck(area, data, rng, legendCards(ctx))
+  if (data.config.encounterMode !== 'random' && !ctx.progress.deck?.length && ctx.centerUseful && !afterCenter) {
+    const deck = buildDeck(area, data, rng, legendCards(ctx), { noCenterFirst: true })
     return { encounter: { kind: 'center', forced: true, reason: 'round' }, deck, lootDeck: null, drawn: [], newRound: true }
   }
-  if (ctx.isFirstInArea && ctx.teamHurt && data.config.forcedCenterWhenHurt) return fixed({ kind: 'center', forced: true })
-  if (area.easyMode && ctx.teamFainted) return fixed({ kind: 'center', forced: true, reason: 'fainted' })
+  if (!afterCenter && ctx.isFirstInArea && ctx.teamHurt && data.config.forcedCenterWhenHurt) return fixed({ kind: 'center', forced: true })
+  if (!afterCenter && area.easyMode && ctx.teamFainted) return fixed({ kind: 'center', forced: true, reason: 'fainted' })
   return data.config.encounterMode === 'random' ? rollWeighted(ctx, rng) : drawFromDeck(ctx, rng)
 }
 
@@ -240,18 +264,32 @@ const cardEncounter = (card: 'wild' | 'trainer' | 'center', ctx: EncounterContex
 const legendCards = (ctx: EncounterContext): DeckCard[] => (fledLegendary(ctx.area, ctx.progress, ctx.pokedex) ? ['legend'] : [])
 
 function drawFromDeck(ctx: EncounterContext, rng: Rng): EncounterRoll {
+  const afterCenter = !!ctx.progress.lastCenter
+  const deal = () => buildDeck(ctx.area, ctx.data, rng, legendCards(ctx), { noCenterFirst: afterCenter })
   let newRound = !ctx.progress.deck?.length
-  let deck = newRound ? buildDeck(ctx.area, ctx.data, rng, legendCards(ctx)) : [...ctx.progress.deck!]
+  let deck = newRound ? deal() : [...ctx.progress.deck!]
   let drawn: DeckCard[] = []
   // A card the area can no longer produce (content edited since the deal, a legendary caught) is discarded.
   const tries = 2 * (deck.length + deckSize(ctx.area) + 1)
   for (let i = 0; i < tries; i++) {
     if (!deck.length) {
-      deck = buildDeck(ctx.area, ctx.data, rng, legendCards(ctx))
+      deck = deal()
       newRound = true
       drawn = []
     }
-    const card = deck.pop()!
+    let card = deck.pop()!
+    if (card === 'center' && afterCenter) {
+      // A Center right after a Center (e.g. a forced one came first): meet the next other card now, keep the Center
+      // on top for later. Only Centers left → this one is set aside.
+      let j = deck.length - 1
+      while (j >= 0 && deck[j] === 'center') j--
+      if (j < 0) {
+        drawn.push(card)
+        continue
+      }
+      card = deck.splice(j, 1)[0]!
+      deck.push('center')
+    }
     drawn.push(card)
     if (card === 'item') {
       const found = findItem(ctx, rng)
@@ -312,4 +350,15 @@ export function canSkip(enc: Encounter, policy: SkipPolicy, skipsThisEncounter: 
   if (policy === 'none') return false
   if (policy === 'once') return skipsThisEncounter < 1
   return true
+}
+
+/**
+ * The upgrade level (dice and combos) foes fight at: a trainer's or legendary's own override, else the area's level,
+ * else game_config.enemyUpgradeLevel.
+ */
+export function enemyUpgradeLevelFor(enc: Encounter, area: Area | undefined, data: GameData): number {
+  let own: number | null | undefined
+  if (enc.kind === 'trainer' || enc.kind === 'gym') own = data.trainers[enc.trainerId]?.upgradeLevel
+  else if (enc.kind === 'boss') own = area?.legendaryBoss?.find((b) => b.dex === enc.dex)?.upgradeLevel
+  return own ?? area?.enemyUpgradeLevel ?? data.config.enemyUpgradeLevel
 }

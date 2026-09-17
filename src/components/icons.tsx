@@ -99,7 +99,93 @@ export const ICONS = {
     '..rrr...kkk.',
     '...r..kkkk..',
   ],
+  // Status glyphs for dice faces: one colour, details cut out as holes, so they read as silhouettes on any die.
+  glyphBurn: [
+    '....k.....',
+    '....kk....',
+    '...kkk..k.',
+    '...kkkk.k.',
+    '..kkkkkkk.',
+    '.kkkk.kkkk',
+    '.kkk...kkk',
+    '.kkk...kkk',
+    '..kkk.kkk.',
+    '...kkkkk..',
+  ],
+  glyphPoison: [
+    '..kkkkkk..',
+    '.kkkkkkkk.',
+    'kkkkkkkkkk',
+    'k...kk...k',
+    'k...kk...k',
+    'kkkkkkkkkk',
+    '.kkk..kkk.',
+    '..kkkkkk..',
+    '..k.kk.k..',
+    '..kkkkkk..',
+  ],
+  glyphFrozen: [
+    '....kk....',
+    '.k..kk..k.',
+    '..k.kk.k..',
+    '...kkkk...',
+    'kkkkkkkkkk',
+    'kkkkkkkkkk',
+    '...kkkk...',
+    '..k.kk.k..',
+    '.k..kk..k.',
+    '....kk....',
+  ],
+  glyphParalyze: [
+    '.....kkkk.',
+    '....kkkk..',
+    '...kkkk...',
+    '..kkkk....',
+    '.kkkkkkkk.',
+    '.....kkk..',
+    '....kkk...',
+    '...kkk....',
+    '..kk......',
+    '.k........',
+  ],
+  glyphConfuse: [
+    'kkkkkkkkk.',
+    'k.......k.',
+    'k.kkkkk.k.',
+    'k.k...k.k.',
+    'k.k.k.k.k.',
+    'k.k.kkk.k.',
+    'k.k.....k.',
+    'k.kkkkkkk.',
+    'k.........',
+    'kkkkkkkkkk',
+  ],
+  glyphHeal: [
+    '...kkkk...',
+    '...kkkk...',
+    '...kkkk...',
+    'kkkkkkkkkk',
+    'kkkkkkkkkk',
+    'kkkkkkkkkk',
+    'kkkkkkkkkk',
+    '...kkkk...',
+    '...kkkk...',
+    '...kkkk...',
+  ],
   // Line icons use 2px strokes on a 12px grid so they stay legible at small sizes.
+  history: [
+    'kk.kkkkkkkkk',
+    'kk.kkkkkkkkk',
+    '............',
+    'kk.kkkkkkkkk',
+    'kk.kkkkkkkkk',
+    '............',
+    'kk.kkkkkkkkk',
+    'kk.kkkkkkkkk',
+    '............',
+    'kk.kkkkkkkkk',
+    'kk.kkkkkkkkk',
+  ],
   dice: [
     'kkkkkkkkkk.',
     'kwwwwwwwwkk',
@@ -187,12 +273,15 @@ export function PixelIcon({
   className,
   style,
   title,
+  color,
 }: {
   name: IconName
   size?: number
   className?: string
   style?: CSSProperties
   title?: string
+  /** Draw every pixel in this one colour: a silhouette (e.g. status faces on dice). */
+  color?: string
 }) {
   const rows = ICONS[name]
   const h = rows.length
@@ -210,10 +299,20 @@ export function PixelIcon({
       aria-label={title}
     >
       {rows.flatMap((row, y) =>
-        [...row].map((ch, x) => (ch === '.' ? null : <rect key={`${x}-${y}`} x={x} y={y} width={1} height={1} fill={PAL[ch]} />)),
+        [...row].map((ch, x) => (ch === '.' ? null : <rect key={`${x}-${y}`} x={x} y={y} width={1} height={1} fill={color ?? PAL[ch]} />)),
       )}
     </svg>
   )
+}
+
+/** The one-colour glyph a status face shows on a die. */
+export const STATUS_GLYPH: Record<string, IconName> = {
+  burn: 'glyphBurn',
+  frozen: 'glyphFrozen',
+  paralyze: 'glyphParalyze',
+  poison: 'glyphPoison',
+  confuse: 'glyphConfuse',
+  heal: 'glyphHeal',
 }
 
 export const STATUS_ICON: Record<string, IconName> = {

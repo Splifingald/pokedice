@@ -152,15 +152,18 @@ function AreaHeader({ area, progress, teamAvg }: { area: Area; progress: AreaPro
   ].filter(Boolean)
   return (
     <section className="pixel-panel overflow-hidden p-0" aria-labelledby="area-title">
-      <AreaTypes area={area} className="border-b-[3px] border-ink bg-parchment px-3 py-1.5" />
-      {area.bannerUrl && (
-        <img
-          src={area.bannerUrl}
-          alt=""
-          className="pixelated block h-14 w-full object-cover sm:h-20"
-          style={{ imageRendering: 'pixelated' }}
-        />
-      )}
+      {/* The encounter types sit on the banner's top right corner. */}
+      <div className="relative">
+        {area.bannerUrl && (
+          <img
+            src={area.bannerUrl}
+            alt=""
+            className="pixelated block h-14 w-full object-cover sm:h-20"
+            style={{ imageRendering: 'pixelated' }}
+          />
+        )}
+        <AreaTypes area={area} className={area.bannerUrl ? 'absolute left-2 right-2 top-2' : 'px-3 pt-2'} />
+      </div>
       <div className="flex flex-col gap-1.5 px-3 pb-3 pt-2">
         <div className="flex items-baseline justify-between gap-3">
           <h1 id="area-title" className="min-w-0 text-4xl leading-none">
@@ -212,7 +215,7 @@ function TeamStrip({ onOpen }: { onOpen: (p: PokemonInstance) => void }) {
                 <SpriteImg dex={p.dex} size={48} className={fainted ? 'grayscale' : ''} />
                 <span className="w-full truncate text-center text-lg leading-none">{data.species[p.dex]?.name}</span>
                 <span className="text-base leading-none">Lv.{p.level}</span>
-                <HpBar hp={p.currentHp} max={instanceMaxHp(p, data)} height={6} className="w-full" />
+                <HpBar hp={p.currentHp} max={instanceMaxHp(p, data)} height={6} className="w-full" collapsible />
               </button>
             </li>
           )
@@ -279,17 +282,20 @@ export function AreaScreen() {
             <PixelButton variant={gym || boss ? 'secondary' : 'primary'} size="lg" onClick={rollNext} disabled={run.phase !== 'idle'}>
               {run.firstInArea ? 'EXPLORE' : 'NEXT ENCOUNTER'}
             </PixelButton>
-            <PixelButton
-              size="lg"
-              disabled={run.phase !== 'idle'}
-              onClick={() => {
-                leaveArea()
-                navigate('/map')
-              }}
-            >
-              MAP
-            </PixelButton>
           </div>
+          <PixelButton
+            size="sm"
+            variant="ghost"
+            className="self-center"
+            disabled={run.phase !== 'idle'}
+            onClick={() => {
+              leaveArea()
+              navigate('/map')
+            }}
+          >
+            <PixelIcon name="map" size={16} />
+            BACK TO MAP
+          </PixelButton>
           {(gym || boss) && <p className="text-lg leading-tight text-muted">Or keep exploring first — your exploration stays complete.</p>}
           {nextGym && (
             <p className="text-lg leading-tight">

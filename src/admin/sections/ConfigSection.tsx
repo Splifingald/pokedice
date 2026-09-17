@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { DEFAULT_CONFIG, xpToNext, type GameConfig } from '@/engine'
+import { DEFAULT_CONFIG, xpToNext, type GameConfig, type StatusRules } from '@/engine'
 import { SpriteImg } from '@/components/SpriteImg'
 import { DataTable } from '../DataTable'
 import { addRows, rowKey, updateRow, useAdmin, useAdminData } from '../store'
@@ -91,6 +91,54 @@ function JsonField<K extends keyof GameConfig>({ k }: { k: K }) {
   )
 }
 
+/** Every status effect's numbers: how many faces trigger it, and what it does. Read live by battles and the help. */
+function StatusRulesBox() {
+  const [rules, setRules] = useConfigRow('status')
+  const r = { ...DEFAULT_CONFIG.status, ...rules }
+  const patch = <K extends keyof StatusRules>(k: K, p: Partial<StatusRules[K]>) => setRules({ ...r, [k]: { ...r[k], ...p } })
+  const num = (v: number | null | undefined, fallback: number, min = 0) => Math.max(min, v ?? fallback)
+  const faces = 'faces needed in one roll'
+  return (
+    <Box title="Status effects" hint="The dice faces that trigger each effect, and what it does. The help screen and the Upgrades screen quote these numbers.">
+      <div className="grid gap-3 sm:grid-cols-2">
+        <fieldset className="flex flex-col gap-1 border-2 border-ink p-2">
+          <legend className="px-1 text-lg">Burn (Fire)</legend>
+          <Field label="threshold" hint={faces}><NumInput value={r.burn.threshold} min={1} onChange={(v) => patch('burn', { threshold: num(v, 1, 1) })} /></Field>
+          <Field label="damagePerStack" hint="damage per stack, each foe turn"><NumInput value={r.burn.damagePerStack} min={0} onChange={(v) => patch('burn', { damagePerStack: num(v, 1) })} /></Field>
+          <Field label="duration" hint="turns (refreshed by a new burn)"><NumInput value={r.burn.duration} min={1} onChange={(v) => patch('burn', { duration: num(v, 3, 1) })} /></Field>
+        </fieldset>
+        <fieldset className="flex flex-col gap-1 border-2 border-ink p-2">
+          <legend className="px-1 text-lg">Poison (Poison)</legend>
+          <Field label="threshold" hint={faces}><NumInput value={r.poison.threshold} min={1} onChange={(v) => patch('poison', { threshold: num(v, 2, 1) })} /></Field>
+          <Field label="damage" hint="damage each foe turn"><NumInput value={r.poison.damage} min={0} onChange={(v) => patch('poison', { damage: num(v, 3) })} /></Field>
+          <Field label="duration" hint="turns"><NumInput value={r.poison.duration} min={1} onChange={(v) => patch('poison', { duration: num(v, 3, 1) })} /></Field>
+        </fieldset>
+        <fieldset className="flex flex-col gap-1 border-2 border-ink p-2">
+          <legend className="px-1 text-lg">Frozen (Ice)</legend>
+          <Field label="threshold" hint={faces}><NumInput value={r.frozen.threshold} min={1} onChange={(v) => patch('frozen', { threshold: num(v, 3, 1) })} /></Field>
+          <Field label="stunTurns" hint="turns the foe skips"><NumInput value={r.frozen.stunTurns} min={1} onChange={(v) => patch('frozen', { stunTurns: num(v, 2, 1) })} /></Field>
+        </fieldset>
+        <fieldset className="flex flex-col gap-1 border-2 border-ink p-2">
+          <legend className="px-1 text-lg">Paralyze (Electric)</legend>
+          <Field label="threshold" hint={faces}><NumInput value={r.paralyze.threshold} min={1} onChange={(v) => patch('paralyze', { threshold: num(v, 2, 1) })} /></Field>
+          <Field label="stunTurns" hint="turns the foe skips"><NumInput value={r.paralyze.stunTurns} min={1} onChange={(v) => patch('paralyze', { stunTurns: num(v, 1, 1) })} /></Field>
+        </fieldset>
+        <fieldset className="flex flex-col gap-1 border-2 border-ink p-2">
+          <legend className="px-1 text-lg">Confuse (Psychic)</legend>
+          <Field label="threshold" hint={`${faces}; the foe's next attack hits itself`}><NumInput value={r.confuse.threshold} min={1} onChange={(v) => patch('confuse', { threshold: num(v, 2, 1) })} /></Field>
+        </fieldset>
+        <fieldset className="flex flex-col gap-1 border-2 border-ink p-2">
+          <legend className="px-1 text-lg">Heal (Grass)</legend>
+          <Field label="threshold" hint={faces}><NumInput value={r.heal.threshold} min={1} onChange={(v) => patch('heal', { threshold: num(v, 2, 1) })} /></Field>
+          <Field label="amount" hint="rollTotal: the total of the dice rolled · healFaces: the Heal faces' values">
+            <Select value={r.heal.amount} options={['rollTotal', 'healFaces'] as const} onChange={(v) => patch('heal', { amount: v })} />
+          </Field>
+        </fieldset>
+      </div>
+    </Box>
+  )
+}
+
 export function ConfigSection() {
   const data = useAdminData()
   const [encounterMode, setEncounterMode] = useConfigRow('encounterMode')
@@ -178,7 +226,7 @@ export function ConfigSection() {
             <Field label="comboPayoutMode">
               <Select value={payout} options={['highestDamage', 'highestRank'] as const} onChange={setPayout} />
             </Field>
-            <Field label="enemyUpgradeLevel" hint="upgrade track level of every wild/trainer Pokémon">
+            <Field label="enemyUpgradeLevel" hint="foes' dice/combo upgrade level where the area (and the trainer / legendary) sets none">
               <NumInput value={enemyLv} min={1} max={10} onChange={(v) => setEnemyLv(v ?? 1)} />
             </Field>
             <Field label="maxBattleTurns" hint="stalemate safety valve">
@@ -245,8 +293,9 @@ export function ConfigSection() {
         </div>
       </section>
 
+      <StatusRulesBox />
+
       <section className="grid gap-3 md:grid-cols-2">
-        <JsonField k="status" />
         <JsonField k="ai" />
         <JsonField k="startInventory" />
       </section>

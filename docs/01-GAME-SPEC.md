@@ -1,6 +1,6 @@
 # Pokédice — Game Design Specification
 
-**Version:** 1.7 · **Author:** Grégoire · **Status:** built · v1.2 added the Grass Heal face, Multi EXP and starters in the catch-all pool; v1.3 added full Kanto, gyms, secret areas, area type insights and the in-game help; v1.4 added encounter decks, easy areas, and HP-based pacing (damage is exactly the dice); v1.5 added item finds with loot decks, the classic items, one-item-per-turn battles, dice-based catching with Poké Balls, and Pokédollars (₽); v1.6 doubled Pokémon XP (`xpMultiplier`), rolls the dice automatically at the start of each turn, allows a voluntary switch after the roll, and reworked the UI (side / bottom bar, encounter pop-up, Pokédex "where to find it"); v1.7 made Speed the base stat ÷ 10 (rounded down), gave the exploration bar the same XP as the Pokémon, added dice descriptions, the `noEscape` rule (on by default) and the optional `showRoundPreview`
+**Version:** 1.7 · **Author:** Grégoire · **Status:** built · v1.2 added the Grass Heal face, Multi EXP and starters in the catch-all pool; v1.3 added full Kanto, gyms, secret areas, area type insights and the in-game help; v1.4 added encounter decks, easy areas, and HP-based pacing (damage is exactly the dice); v1.5 added item finds with loot decks, the classic items, one-item-per-turn battles, dice-based catching with Poké Balls, and Pokédollars (₽); v1.6 doubled Pokémon XP (`xpMultiplier`), rolls the dice automatically at the start of each turn, allows a voluntary switch after the roll, and reworked the UI (side / bottom bar, encounter pop-up, Pokédex "where to find it"); v1.7 made Speed the base stat ÷ 10 (rounded down), set XP per K.O. back to the foe's level for the Pokémon and the exploration bar alike with every XP requirement about ÷ 4, added dice descriptions, the `noEscape` rule (on by default) and the optional `showRoundPreview`
 **Nature:** personal, non-commercial fan project. No monetisation; Nintendo assets are referenced as public sprite URLs, never redistributed.
 
 This document is the single source of truth for *rules*. `02-DATA-MODEL.md` covers storage and seeding, `03-BUILD-PLAN.md` covers implementation.
@@ -30,6 +30,7 @@ Goal      →  clear the areas, then 151/151 in the Pokédex
 - **Encounter deck** (`game_config.encounterMode = 'deck'`, the default): an area's weight for each kind **is the number of copies of that card in its deck** (v1.6 — e.g. wild 8, Center 1, item 1 is a 10-card deck); kinds the area can't produce (no wild pool / no trainers / no loot) get none. The deck is shuffled, one card is drawn per encounter, and what's left is saved per area; a fresh deck is dealt when it runs out. Every deck therefore holds the area's exact mix, and a Center is never more than 18 encounters away with the bundled 10-card decks. With `encounterMode = 'random'` each encounter is rolled independently from the weights instead (at 10 % Centers, 1 run in 100 goes 43+ encounters without one).
 - Forced encounters — the entry Center, an easy-area Center and dev-tool picks — and the challenges the player chooses (gym battles and due legendaries, taken with CHALLENGE / FACE IT on the area screen, or put off with NOT YET) come on top of the deck and use no card. A skipped encounter has used its card.
 - **Rounds** (v1.6): going through an area's whole deck is a **round**; the next round deals a fresh, shuffled deck. Every round **opens with a Pokémon Center**, outside the deck (the Center cards inside it still count), unless it would do nothing — every Pokémon, team and Box, at full HP and nobody in the Box to swap in. The area screen's **round gauge** shows one segment per card, with an icon for each encounter already met this round and blanks for what's to come (`game_config.showRoundGauge` hides it). With `showRoundPreview` (off by default, v1.7) a row under it reveals the cards still to come and the gym badge / legendary waiting at the end. `AreaProgress.round` counts rounds; `drawn` holds the cards met this round; `roundStartXp` is the gauge when it began. A wipe loses the round (§6.4).
+- **Never two Pokémon Centers in a row** (v1.7): decks are dealt with their Centers apart, a round that opens with a Center doesn't turn a Center over first, and after any Center (round-opening, forced or from the deck) the next encounter is something else — a Center card on top waits one encounter. `AreaProgress.lastCenter` remembers the last one.
 - **Forced Center:** the *first* encounter on entering an area is a **Pokémon Center** if and only if at least one team member is below full HP. Otherwise it is drawn normally.
 - **Easy areas** (`easyMode`, set per area in admin): whenever a team member is at 0 HP, the next encounter is a Center.
 - **Preview before commit.** Every rolled encounter is first shown in a pop-up — wild: sprite, name, level, types, and whether it is a new catch; trainer: name, sprite, and the team size with levels — with the team to pick a lead from. The player then chooses:
@@ -213,16 +214,16 @@ Evolution is **automatic and cannot be cancelled**. It plays on the victory scre
 
 ### 4.3 XP and levelling
 
-- **XP from a K.O. = the defeated Pokémon's level × `xpMultiplier`** (default **×2** since v1.6 — the curve felt too slow at ×1).
-- It goes to the **Pokémon that fought**. The **Area Gauge** fills by the defeated Pokémon's level, *not* multiplied, so areas last as long as before while Pokémon level twice as fast. (`game_config.xpShareMode = 'fighter' | 'team'`, default `'fighter'`.)
+- **XP from a K.O. = the defeated Pokémon's level × `xpMultiplier`** (default **×1**; v1.6 used ×2, v1.7 went back to ×1 and divided every XP requirement by about 4).
+- It goes to the **Pokémon that fought**. The **exploration bar** (area gauge) gets the same amount (v1.7). (`game_config.xpShareMode = 'fighter' | 'team'`, default `'fighter'`.)
 - **Multi EXP** (v1.2): team members who didn't fight and aren't fainted get an additional `multiExpShare` (default **30 %**, min 1) of that XP. The gauge still counts the K.O. once. Players toggle it in Settings (**on by default**); the share is a `game_config` value (0 disables the feature).
 - **Catching**: XP is awarded for the K.O. as usual; the catch throw comes after it (§4.4). **No Pokédollars.**
-- `xpToNext(L) = ceil(A × L^B) + C`, defaults **A = 2, B = 1.15, C = 3**, all in `game_config` with a plotted curve in admin.
+- `xpToNext(L) = ceil(A × L^B) + C`, defaults **A = 0.5, B = 1.15, C = 1** (v1.7; e.g. 5 XP at Lv.5, 46 at Lv.50), all in `game_config` with a plotted curve in admin.
 - Max level **100**; overflow XP is discarded.
 
 ### 4.4 Catching
 
-- After a wild (or legendary) Pokémon is K.O.'d, the player may throw the **catch die** — a d6 — with **one ball** from the bag: Poké Ball +1, Great Ball +2, Ultra Ball +3, Master Ball +9. If `die + bonus ≥ catch value` the Pokémon is caught; otherwise it **flees**. The player may also let it go without throwing.
+- After a wild (or legendary) Pokémon is K.O.'d, the player may throw the **catch die** — a d6 — with **one ball** from the bag: Poké Ball +1, Great Ball +2, Ultra Ball +3, Master Ball +9. If `die + bonus ≥ catch value` the Pokémon is caught; otherwise it **flees**. There is no way to skip the throw (v1.7): the player always throws, with or without a ball.
 - Every species has a **catch value** 1–9 (`pokemon.catch_value`, admin-editable; 1 = always caught). It is seeded from the Gen 1 capture rate: ≥ 255 → 1, ≥ 190 → 2, ≥ 120 → 3, ≥ 75 → 4, ≥ 45 → 5, ≥ 30 → 6, ≥ 20 → 7, ≥ 10 → 8, below → 9 (the legendary birds and Mewtwo). With a bare d6, values 7–9 need a ball.
 - **Who can be caught:** a species not in the Pokédex yet, or — wild only — a **stronger copy** of one you own (higher level than your weakest copy). That catch **replaces** the weaker copy in place: same team slot, the new level, full HP, XP reset.
 - Caught **at the level it was met**, at full HP.
@@ -331,32 +332,32 @@ Areas unlock in order; any unlocked area is replayable from the Map at reduced r
 ### 7.1 Seeded content — Kanto in order of discovery (v1.3)
 
 Rosters follow Red/Blue/FireRed/LeafGreen (version exclusives merged; gifts and static Pokémon such as Eevee, Lapras,
-Snorlax, the fossils or Porygon are rare wild encounters nearby). Gauges are sized for ~15–20 K.O.s per area.
+Snorlax, the fossils or Porygon are rare wild encounters nearby). Exploration targets (v1.7: the v1.6 values ÷ 4, rounded to 5) are sized for a handful of K.O.s per area.
 
 | # | Area | Wild Lv | Gauge | Gate |
 |---|---|---|---|---|
-| 1 | Route 1 | 2–5 | 50 | — |
-| 2 | Routes 22 & 2 | 3–7 | 80 | — |
-| 3 | Viridian Forest | 4–8 | 110 | **Brock** (Boulder Badge) |
-| 4 | Route 3 | 5–10 | 150 | — |
-| 5 | Mt. Moon | 7–12 | 190 | — |
-| 6 | Route 4 & Nugget Bridge | 9–15 | 230 | **Misty** (Cascade) |
-| 7 | Routes 5 & 6 (S.S. Anne) | 12–18 | 280 | **Lt. Surge** (Thunder) |
-| 8 | Diglett's Cave & Route 11 | 13–22 | 320 | — |
-| 9 | Routes 9 & 10 | 14–22 | 340 | — |
-| 10 | Rock Tunnel | 15–23 | 360 | — |
-| 11 | Routes 7 & 8 (Celadon, Rocket Hideout) | 17–26 | 420 | **Erika** (Rainbow) |
-| 12 | Pokémon Tower | 15–25 | 420 | — |
-| 13 | Routes 12–15 | 22–30 | 480 | — |
-| 14 | Cycling Road | 24–32 | 520 | — |
-| 15 | Safari Zone (Fuchsia) | 24–33 | 560 | **Koga** (Soul) |
-| 16 | Silph Co. — trainers only | 29–41 | 500 | **Sabrina** (Marsh) |
-| 17 | Sea Routes 19 & 20 | 28–38 | 600 | — |
-| 18 | Seafoam Islands | 30–40 | 640 | **Articuno** Lv.50 |
-| 19 | Pokémon Mansion (Cinnabar) | 32–42 | 700 | **Blaine** (Volcano) |
-| 20 | Route 21 (Viridian Gym) | 30–40 | 720 | **Giovanni** (Earth) |
-| 21 | Victory Road | 38–47 | 820 | **Moltres** Lv.50 |
-| 22 | Indigo Plateau — trainers only | 45–55 | 400 | **Elite Four** Lorelei → Bruno → Agatha → Lance → **Champion** Blue |
+| 1 | Route 1 | 2–5 | 15 | — |
+| 2 | Routes 22 & 2 | 3–7 | 20 | — |
+| 3 | Viridian Forest | 4–8 | 30 | **Brock** (Boulder Badge) |
+| 4 | Route 3 | 5–10 | 40 | — |
+| 5 | Mt. Moon | 7–12 | 50 | — |
+| 6 | Route 4 & Nugget Bridge | 9–15 | 60 | **Misty** (Cascade) |
+| 7 | Routes 5 & 6 (S.S. Anne) | 12–18 | 70 | **Lt. Surge** (Thunder) |
+| 8 | Diglett's Cave & Route 11 | 13–22 | 80 | — |
+| 9 | Routes 9 & 10 | 14–22 | 85 | — |
+| 10 | Rock Tunnel | 15–23 | 90 | — |
+| 11 | Routes 7 & 8 (Celadon, Rocket Hideout) | 17–26 | 105 | **Erika** (Rainbow) |
+| 12 | Pokémon Tower | 15–25 | 105 | — |
+| 13 | Routes 12–15 | 22–30 | 120 | — |
+| 14 | Cycling Road | 24–32 | 130 | — |
+| 15 | Safari Zone (Fuchsia) | 24–33 | 140 | **Koga** (Soul) |
+| 16 | Silph Co. — trainers only | 29–41 | 125 | **Sabrina** (Marsh) |
+| 17 | Sea Routes 19 & 20 | 28–38 | 150 | — |
+| 18 | Seafoam Islands | 30–40 | 160 | **Articuno** Lv.50 |
+| 19 | Pokémon Mansion (Cinnabar) | 32–42 | 175 | **Blaine** (Volcano) |
+| 20 | Route 21 (Viridian Gym) | 30–40 | 180 | **Giovanni** (Earth) |
+| 21 | Victory Road | 38–47 | 205 | **Moltres** Lv.50 |
+| 22 | Indigo Plateau — trainers only | 45–55 | 100 | **Elite Four** Lorelei → Bruno → Agatha → Lance → **Champion** Blue |
 
 **Secret areas** (hidden, condition-based):
 
@@ -367,6 +368,8 @@ Snorlax, the fossils or Porygon are rare wild encounters nearby). Gauges are siz
 | Faraway Island | 150 Pokémon in the Pokédex | **Mew** Lv.65 waits on arrival |
 
 Cerulean Cave is the grinding ground, the gold farm and the guaranteed place to finish the Pokédex.
+
+**Foe upgrade levels** (v1.7): every foe fights with all of its dice and combo tracks at one upgrade level (§5.2 tables), taken from — first found wins — the trainer's or legendary's own `upgradeLevel`, the area's `enemyUpgradeLevel`, then `game_config.enemyUpgradeLevel` (1). The bundled content sets it per area as a balancing rule, not a game rule: 1 up to and including Viridian Forest, then one more after each Gym Leader's area (Route 3 = 2 … Route 21 = 8, Victory Road and Indigo Plateau = 9); a secret area copies the last main-route area whose minimum level is at or below its own (Power Plant 5, Cerulean Cave and Faraway Island 9). No trainer or legendary override is set yet.
 
 ### 7.2 Gyms
 

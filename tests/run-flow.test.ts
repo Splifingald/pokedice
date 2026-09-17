@@ -126,15 +126,15 @@ describe('run flow', () => {
     const a1 = data.areas[0]!
     enterArea(a1.id)
     const s = useGame.getState().save!
-    // Mid-round: it began at 12, the gauge is at 30, a wild Pokémon is the next card.
+    // Mid-round: it began at 6, the gauge is at 14 (of 15), a wild Pokémon is the next card.
     useGame.setState({
       save: {
         ...s,
         gold: 42,
         areaProgress: {
           [a1.id]: {
-            xp: 30,
-            roundStartXp: 12,
+            xp: 14,
+            roundStartXp: 6,
             round: 1,
             deck: ['center', 'item', 'wild', 'wild'],
             drawn: ['wild'],
@@ -174,7 +174,7 @@ describe('run flow', () => {
     expect(useGame.getState().run.phase).toBe('wipe')
     const after = useGame.getState().save!
     expect(after.gold).toBe(42)
-    expect(progressOf(after, a1.id)).toMatchObject({ xp: 12, deck: [], drawn: [] }) // next encounter: a new round
+    expect(progressOf(after, a1.id)).toMatchObject({ xp: 6, deck: [], drawn: [] }) // next encounter: a new round
     for (const p of teamOf(after)) expect(p.currentHp).toBe(instanceMaxHp(p, data))
     afterWipe()
     expect(useGame.getState().run.firstInArea).toBe(true)

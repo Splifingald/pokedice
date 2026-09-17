@@ -5,7 +5,7 @@ import { battleOutcome, createBattle, type BattleKind } from './battle'
 import { uniformLevels } from './damage'
 import { linearAreas } from './data'
 import { maxComboLevel, maxDieLevel, nextComboCost, nextDieCost } from './economy'
-import { challengeEncounter, nextEncounter, type EncounterRoll } from './encounters'
+import { challengeEncounter, enemyUpgradeLevelFor, nextEncounter, type EncounterRoll } from './encounters'
 import { applyCatch, catchChance, catchTarget, catchValueOf, rollCatch } from './catching'
 import { ballBonus } from './items'
 import { createInstance, instanceStats } from './progression'
@@ -240,14 +240,21 @@ export function* runCampaign(data: GameData, opts: CampaignOptions): Generator<n
     r.catches++
   }
 
-  const fight = (area: Area, r: AreaReport, kind: BattleKind, enemy: { dex: number; level: number }, gym?: { trainerId: string; last: boolean }) => {
+  const fight = (
+    area: Area,
+    r: AreaReport,
+    kind: BattleKind,
+    enemy: { dex: number; level: number },
+    upgradeLevel: number,
+    gym?: { trainerId: string; last: boolean },
+  ) => {
     const created = createBattle(
       {
         kind,
         team: teamOf(save).map((p) => ({ uid: p.id, dex: p.dex, level: p.level, hp: p.currentHp })),
         enemy,
         playerLevels: { comboLevels: save.comboLevels, dieLevels: save.dieLevels },
-        enemyLevels: uniformLevels(data.config.enemyUpgradeLevel),
+        enemyLevels: uniformLevels(upgradeLevel),
       },
       data,
     )
@@ -338,10 +345,10 @@ export function* runCampaign(data: GameData, opts: CampaignOptions): Generator<n
     else if (enc.kind === 'trainer' || enc.kind === 'gym') {
       for (let k = 0; k < enc.team.length; k++) {
         const gym = enc.kind === 'gym' ? { trainerId: enc.trainerId, last: k === enc.team.length - 1 } : undefined
-        if (fight(area, r, 'trainer', enc.team[k]!, gym) !== 'won') break
+        if (fight(area, r, 'trainer', enc.team[k]!, enemyUpgradeLevelFor(enc, area, data), gym) !== 'won') break
       }
       if (opts.spend) save = spend(save, data)
-    } else fight(area, r, enc.kind === 'boss' ? 'boss' : 'wild', { dex: enc.dex, level: enc.level })
+    } else fight(area, r, enc.kind === 'boss' ? 'boss' : 'wild', { dex: enc.dex, level: enc.level }, enemyUpgradeLevelFor(enc, area, data))
 
     if (!wasCleared && r.toClear == null && progressOf(save, area.id).cleared) {
       r.toClear = i - (arrivedAt.get(area.id) ?? i) + 1

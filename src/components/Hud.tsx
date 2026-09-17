@@ -2,12 +2,11 @@ import { Link, NavLink, useLocation } from 'react-router-dom'
 import { isSupabaseConfigured } from '@/lib/supabase'
 import { useGame } from '@/store/game'
 import { useInFight, useIsAdmin } from '@/store/hooks'
-import { signInWithGoogle, signOut } from '@/store/sync'
+import { GoogleAccountButton } from './GoogleAccountButton'
 import { cx } from '@/theme/util'
 import { GoldPill } from './GoldPill'
 import { HelpButton } from './HelpButton'
 import { PixelIcon, type IconName } from './icons'
-import { PixelButton } from './PixelButton'
 
 interface NavItem {
   to: string
@@ -131,25 +130,10 @@ function AccountBox() {
     )
   }
   if (auth.status === 'unknown') return null
-  if (auth.status === 'signed_in') {
-    return (
-      <div className="pixel-panel flex flex-col gap-1.5 p-2">
-        <span className="text-lg leading-none">Signed in with Google</span>
-        <span className="truncate font-mono text-xs" title={auth.email ?? undefined}>
-          {auth.email}
-        </span>
-        <PixelButton size="sm" onClick={() => void signOut()}>
-          Sign out
-        </PixelButton>
-      </div>
-    )
-  }
   return (
-    <div className="pixel-panel flex flex-col gap-2 p-2">
-      <p className="copy text-sm">Back up your save and play on any device.</p>
-      <PixelButton size="sm" variant="primary" onClick={() => void signInWithGoogle()}>
-        Sign in with Google
-      </PixelButton>
+    <div className="flex flex-col gap-1.5">
+      {auth.status === 'signed_out' && <p className="copy text-sm text-muted">Back up your save and play on any device.</p>}
+      <GoogleAccountButton size="sm" className="w-full" />
     </div>
   )
 }

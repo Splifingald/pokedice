@@ -15,9 +15,10 @@ import {
 } from '@/engine'
 import { sfx } from '@/audio/sfx'
 import { Die, DieFaces } from '@/components/Die'
+import { PixelIcon } from '@/components/icons'
 import { PixelButton } from '@/components/PixelButton'
 import { TypeBadge } from '@/components/TypeBadge'
-import { COMBO_EXAMPLES, comboExampleText, money } from '@/lib/format'
+import { COMBO_EXAMPLES, comboExampleText, money, statusEffects } from '@/lib/format'
 import { upgradeCombo, upgradeDie } from '@/store/actions'
 import { useGame } from '@/store/game'
 import { cx } from '@/theme/util'
@@ -34,6 +35,28 @@ function ComboExample({ k }: { k: ComboKey }) {
         </span>
       ))}
     </div>
+  )
+}
+
+/** What a die's status faces do, with the live rules — only for dice that have one. */
+function DieEffects({ type }: { type: PokeType }) {
+  const data = useGame((s) => s.data)
+  const statuses = new Set(
+    (data.diceTypes[type]?.faces ?? []).flatMap((f) => (f.kind === 'status' ? [f.status] : [])),
+  )
+  const effects = statusEffects(data.config.status).filter((e) => statuses.has(e.status))
+  if (!effects.length) return null
+  return (
+    <ul className="copy w-full text-base">
+      {effects.map((e) => (
+        <li key={e.status} className="flex items-start gap-1.5">
+          <PixelIcon name={e.icon} size={16} className="mt-1" />
+          <span>
+            <b>{e.name}</b> — {e.when} in one roll: {e.what}
+          </span>
+        </li>
+      ))}
+    </ul>
   )
 }
 
@@ -181,6 +204,7 @@ export function UpgradesScreen() {
                       <span className={cx('text-base', carriers[t] ? 'text-ink' : 'text-muted')}>
                         {carriers[t]} of your Pokémon carry it
                       </span>
+                      <DieEffects type={t} />
                     </div>
                   }
                   level={lv}

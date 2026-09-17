@@ -74,6 +74,11 @@ function BossCard({ b, data, onChange, onRemove }: { b: BossDef; data: GameData;
             <NumInput className="w-20" value={b.teamAvgThreshold ?? 1} min={1} max={100} onChange={(v) => onChange({ ...b, teamAvgThreshold: v ?? 1 })} />
           )}
         </div>
+        <label className="flex flex-wrap items-center gap-2 text-lg" title="Dice and combo upgrade level for this legendary; empty = the area's">
+          Upgrade level
+          <NumInput className="w-20" nullable value={b.upgradeLevel ?? null} min={1} max={10} onChange={(v) => onChange({ ...b, upgradeLevel: v })} />
+          <span className="text-sm text-muted">empty = the area's</span>
+        </label>
       </div>
       <PixelButton size="sm" variant="danger" onClick={onRemove}>
         Remove
@@ -134,6 +139,9 @@ function AreaEditor({ area }: { area: Row }) {
             </Field>
             <Field label="Max level">
               <NumInput value={n(area.max_level)} onChange={(v) => patch({ max_level: v ?? 1 })} />
+            </Field>
+            <Field label="Foe upgrade level" hint={`dice & combos, 1–10 · empty = global (${data.config.enemyUpgradeLevel})`}>
+              <NumInput nullable min={1} max={10} value={area.enemy_upgrade_level as number | null} onChange={(v) => patch({ enemy_upgrade_level: v })} />
             </Field>
             <Field label="Banner URL" className="col-span-2">
               <TextInput value={s(area.banner_url)} onChange={(v) => patch({ banner_url: v || null })} />

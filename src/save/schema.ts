@@ -25,6 +25,7 @@ const progressSchema = z.object({
   roundStartXp: z.number().min(0).optional(),
   round: z.number().int().min(0).optional(),
   drawn: z.array(z.enum(['wild', 'trainer', 'center', 'item', 'legend'])).optional(),
+  lastCenter: z.boolean().optional(),
 })
 
 const levelRecord = <K extends string>(keys: readonly K[]) =>

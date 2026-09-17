@@ -27,9 +27,11 @@ describe('HP curve', () => {
 })
 
 describe('xp curve', () => {
-  it('is ceil(A·L^B)+C and strictly increasing', () => {
-    expect(xpToNext(1, data.config)).toBe(5)
-    for (let l = 1; l < 100; l++) expect(xpToNext(l + 1, data.config)).toBeGreaterThan(xpToNext(l, data.config))
+  // At the v1.7 scale (A 0.5) neighbouring low levels can cost the same, so the curve only has to never go down.
+  it('is ceil(A·L^B)+C, never decreasing, and grows every 10 levels', () => {
+    expect(xpToNext(1, data.config)).toBe(2) // ceil(0.5 × 1) + 1
+    for (let l = 1; l < 100; l++) expect(xpToNext(l + 1, data.config)).toBeGreaterThanOrEqual(xpToNext(l, data.config))
+    for (let l = 1; l <= 90; l++) expect(xpToNext(l + 10, data.config)).toBeGreaterThan(xpToNext(l, data.config))
   })
 })
 

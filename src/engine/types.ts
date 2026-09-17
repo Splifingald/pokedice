@@ -160,6 +160,8 @@ export interface BossDef {
   level: number
   /** Victory Road style: the boss triggers when the team's average level reaches this, instead of the gauge. */
   teamAvgThreshold?: number
+  /** Upgrade level this legendary fights at; unset = the area's. */
+  upgradeLevel?: number | null
 }
 
 export interface Area {
@@ -176,6 +178,8 @@ export interface Area {
   scalesToTeam: boolean
   /** Easy areas send a Center next whenever a team member is K.O. */
   easyMode: boolean
+  /** Upgrade level (dice and combos) of every foe here; null = game_config.enemyUpgradeLevel. */
+  enemyUpgradeLevel: number | null
   /** Hidden areas sit outside the linear chain and unlock when every condition holds. */
   hidden: boolean
   unlockConditions: UnlockCondition[] | null
@@ -203,6 +207,8 @@ export interface Trainer {
   role: TrainerRole
   /** Gym leaders award a badge. */
   badge: string | null
+  /** Upgrade level this trainer's Pokémon fight at; null = the area's. */
+  upgradeLevel: number | null
 }
 
 export type CurableStatus = 'burn' | 'poison' | 'frozen' | 'paralyze' | 'confuse'
@@ -330,6 +336,8 @@ export interface AreaProgress {
   round?: number
   /** Cards met so far this round, in order (the round gauge shows them). */
   drawn?: DeckCard[]
+  /** The last encounter here was a Pokémon Center: the next one can't be (no two Centers in a row). */
+  lastCenter?: boolean
 }
 
 export interface SaveData {

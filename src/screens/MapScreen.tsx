@@ -74,7 +74,6 @@ function AreaCard({ area, index, prevName, delay = 0 }: { area: Area; index: num
       animate={{ x: 0 }}
       transition={{ delay }}
     >
-      <AreaTypes area={area} className="border-b-[3px] border-ink bg-parchment px-3 py-1.5" />
       <div className="relative">
         {area.bannerUrl && (
           <img
@@ -85,8 +84,9 @@ function AreaCard({ area, index, prevName, delay = 0 }: { area: Area; index: num
           />
         )}
         <span className="absolute left-2 top-2 border-2 border-ink bg-panel px-2 text-xl leading-tight">{index}</span>
+        <AreaTypes area={area} className={area.bannerUrl ? 'absolute left-12 right-2 top-2' : 'p-2 pl-12'} />
         {p.cleared && (
-          <span className="absolute right-2 top-2 border-2 border-ink bg-hp-green px-2 text-lg leading-tight">
+          <span className="absolute bottom-2 right-2 border-2 border-ink bg-hp-green px-2 text-lg leading-tight">
             CLEARED · rewards ×{area.backtrackMultiplier}
           </span>
         )}

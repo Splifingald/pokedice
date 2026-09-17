@@ -8,7 +8,7 @@ import { SpriteImg } from '@/components/SpriteImg'
 import { teamOf } from '@/engine'
 import { isSupabaseConfigured } from '@/lib/supabase'
 import { useGame } from '@/store/game'
-import { signInWithGoogle, signOut } from '@/store/sync'
+import { GoogleAccountButton } from '@/components/GoogleAccountButton'
 import type { DieType } from '@/engine/types'
 
 const DECOR: DieType[] = ['fire', 'water', 'grass', 'electric', 'psychic']
@@ -21,7 +21,7 @@ export function Title() {
   const corrupt = useGame((s) => s.corruptSaveArchived)
   const runArea = useGame((s) => s.run.areaId)
   const [confirmNew, setConfirmNew] = useState(false)
-  const team = save ? teamOf(save) : []
+  const lead = save ? teamOf(save)[0] : undefined
 
   return (
     <main className="scanlines flex min-h-screen flex-col items-center justify-center gap-8 px-4 py-10">
@@ -37,7 +37,6 @@ export function Title() {
         >
           POKÉ<span className="text-danger">DICE</span>
         </h1>
-        <p className="mt-3 text-2xl text-muted">A dice battler · the original 151</p>
       </motion.div>
 
       <div className="flex gap-3" aria-hidden>
@@ -52,14 +51,10 @@ export function Title() {
             variant="primary"
             size="lg"
             onClick={() => navigate(runArea ? '/area' : '/map')}
-            aria-label={`Continue with ${team.map((p) => data.species[p.dex]?.name).join(', ')}`}
+            aria-label={lead ? `Continue with ${data.species[lead.dex]?.name}` : 'Continue'}
           >
-            <span className="flex items-center" aria-hidden>
-              {team.map((p) => (
-                // Sprites carry wide transparent margins: draw them big and let them overflow the button's padding.
-                <SpriteImg key={p.id} dex={p.dex} size={64} className="-my-5 -mx-3" />
-              ))}
-            </span>
+            {/* Sprites carry wide transparent margins: draw it big and let it overflow the button's padding. */}
+            {lead && <SpriteImg dex={lead.dex} size={64} className="-mx-3 -my-5" alt="" />}
             CONTINUE
           </PixelButton>
         )}
@@ -69,19 +64,7 @@ export function Title() {
         <PixelButton size="md" variant="ghost" onClick={() => navigate('/help')}>
           HOW TO PLAY
         </PixelButton>
-        {isSupabaseConfigured && auth.status === 'signed_out' && (
-          <PixelButton size="md" variant="ghost" onClick={() => void signInWithGoogle()}>
-            Back up your save (Google)
-          </PixelButton>
-        )}
-        {auth.status === 'signed_in' && (
-          <div className="text-center text-lg text-muted">
-            Backed up as {auth.email} ·{' '}
-            <button type="button" className="underline" onClick={() => void signOut()}>
-              sign out
-            </button>
-          </div>
-        )}
+        {isSupabaseConfigured && <GoogleAccountButton />}
       </div>
 
       {corrupt && (

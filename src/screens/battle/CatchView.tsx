@@ -8,7 +8,7 @@ import { PixelIcon } from '@/components/icons'
 import { PixelButton } from '@/components/PixelButton'
 import { SpriteImg } from '@/components/SpriteImg'
 import { useGame } from '@/store/game'
-import { finishCatch, skipCatch, throwBall } from '@/store/run'
+import { finishCatch, throwBall } from '@/store/run'
 import { cx } from '@/theme/util'
 
 export function CatchView() {
@@ -105,14 +105,9 @@ export function CatchView() {
                 })}
               </div>
             </fieldset>
-            <div className="flex flex-wrap justify-center gap-2">
-              <PixelButton variant="primary" size="lg" onClick={() => throwBall(chosen.key)}>
-                THROW
-              </PixelButton>
-              <PixelButton size="lg" onClick={skipCatch}>
-                Let it go
-              </PixelButton>
-            </div>
+            <PixelButton variant="primary" size="lg" onClick={() => throwBall(chosen.key)}>
+              THROW
+            </PixelButton>
           </>
         ) : (
           <>

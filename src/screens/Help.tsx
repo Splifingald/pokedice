@@ -3,10 +3,10 @@ import { useState, type ReactNode } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { COMBO_KEYS, COMBO_NAMES, comboBonus, POKE_TYPES, typeMultiplier, type PokeType } from '@/engine'
 import { DieFaces } from '@/components/Die'
-import { PixelIcon, type IconName } from '@/components/icons'
+import { PixelIcon } from '@/components/icons'
 import { PixelButton } from '@/components/PixelButton'
 import { TypeBadge } from '@/components/TypeBadge'
-import { comboExampleText, DIE_ABBR } from '@/lib/format'
+import { comboExampleText, DIE_ABBR, statusEffects } from '@/lib/format'
 import { useGame } from '@/store/game'
 import { badgeColors, cx, typeColor } from '@/theme/util'
 
@@ -23,14 +23,7 @@ function Section({ id, title, children }: { id: string; title: string; children:
 
 function StatusTable() {
   const r = useGame((s) => s.data.config.status)
-  const rows: { icon: IconName; name: string; die: PokeType; when: string; what: string }[] = [
-    { icon: 'burn', name: 'Burn', die: 'fire', when: `${r.burn.threshold}+ Burn face`, what: `${r.burn.damagePerStack} damage per stack at the start of the foe's turn for ${r.burn.duration} turns. Stacks.` },
-    { icon: 'poison', name: 'Poison', die: 'poison', when: `${r.poison.threshold}+ Poison faces`, what: `${r.poison.damage} damage at the start of the foe's turn for ${r.poison.duration} turns.` },
-    { icon: 'frozen', name: 'Frozen', die: 'ice', when: `${r.frozen.threshold}+ Frozen faces`, what: `The foe skips ${r.frozen.stunTurns} turns.` },
-    { icon: 'paralyze', name: 'Paralyze', die: 'electric', when: `${r.paralyze.threshold}+ Paralyze faces`, what: `The foe skips ${r.paralyze.stunTurns} turn.` },
-    { icon: 'confuse', name: 'Confuse', die: 'psychic', when: `${r.confuse.threshold}+ Confuse faces`, what: "The foe's next attack hits itself." },
-    { icon: 'heal', name: 'Heal', die: 'grass', when: `${r.heal.threshold}+ Heal faces`, what: 'You heal HP equal to the total of your dice, on top of your damage.' },
-  ]
+  const rows = statusEffects(r)
   return (
     <div className="overflow-x-auto">
       <table className="w-full border-collapse text-lg">

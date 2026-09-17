@@ -70,6 +70,7 @@ export function TrainersSection() {
           team: [{ dex: 16, level: 5 }],
           role: 'trainer',
           badge: null,
+          upgrade_level: null,
         })}
         duplicate={(r) => ({ ...r, id: newUuid(), name: `${s(r.name)} II` })}
         columns={[
@@ -84,6 +85,7 @@ export function TrainersSection() {
           { key: 'name', label: 'Name', kind: 'text' },
           { key: 'role', label: 'Role', kind: 'enum', options: ['trainer', 'leader', 'elite', 'champion'] },
           { key: 'badge', label: 'Badge', kind: 'text', nullable: true },
+          { key: 'upgrade_level', label: 'Upgrade Lv (empty = area)', kind: 'number', nullable: true, width: 110 },
           {
             key: 'specialty',
             label: 'Type',

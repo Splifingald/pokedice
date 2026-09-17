@@ -503,6 +503,7 @@ function buildAreasAndTrainers(pokemon: Species[]): { areas: Area[]; trainers: T
         team: team.map(([dex, level]) => ({ dex, level })),
         role: 'trainer',
         badge: null,
+        upgradeLevel: null,
       })
       return { id: stableUuid(`trainerpool:${plan.key}:${i}:${tp.name}`), trainerId, weight: 10 }
     })
@@ -518,6 +519,7 @@ function buildAreasAndTrainers(pokemon: Species[]): { areas: Area[]; trainers: T
         team: g.team.map(([dex, level]) => ({ dex, level })),
         role: g.role,
         badge: g.badge ?? null,
+        upgradeLevel: null,
       })
       return id
     })
@@ -541,6 +543,7 @@ function buildAreasAndTrainers(pokemon: Species[]): { areas: Area[]; trainers: T
       legendaryBoss: plan.bosses,
       scalesToTeam: plan.scalesToTeam,
       easyMode: !!plan.easyMode,
+      enemyUpgradeLevel: null, // set below, once every area is known
       hidden: !!plan.hidden,
       unlockConditions: plan.conditions ?? null,
       gyms,
@@ -549,7 +552,27 @@ function buildAreasAndTrainers(pokemon: Species[]): { areas: Area[]; trainers: T
       lootPool,
     })
   }
+  assignEnemyUpgradeLevels(areas, trainers)
   return { areas, trainers }
+}
+
+/**
+ * Balancing rule (not a game rule): foes fight at upgrade level 1 until the first badge can be won, then one level
+ * higher after each area that holds a Gym Leader. A secret area takes the level of the last main-route area whose
+ * minimum level is at or below its own.
+ */
+export function assignEnemyUpgradeLevels(areas: Area[], trainers: Trainer[]) {
+  const byId = new Map(trainers.map((t) => [t.id, t]))
+  const chain = areas.filter((a) => !a.hidden).sort((a, b) => a.orderIndex - b.orderIndex)
+  let badges = 0
+  for (const a of chain) {
+    a.enemyUpgradeLevel = 1 + badges
+    badges += a.gyms.filter((id) => byId.get(id)?.role === 'leader' && byId.get(id)?.badge).length
+  }
+  for (const a of areas.filter((x) => x.hidden)) {
+    const like = chain.filter((c) => c.minLevel <= a.minLevel).at(-1) ?? chain[0]
+    a.enemyUpgradeLevel = like?.enemyUpgradeLevel ?? 1
+  }
 }
 
 // ---------------------------------------------------------------- SQL emission
@@ -648,6 +671,7 @@ export function buildSql(b: {
         'legendary_boss',
         'scales_to_team',
         'easy_mode',
+        'enemy_upgrade_level',
         'hidden',
         'unlock_conditions',
         'gyms',
@@ -665,6 +689,7 @@ export function buildSql(b: {
         a.legendaryBoss,
         a.scalesToTeam,
         a.easyMode,
+        a.enemyUpgradeLevel,
         a.hidden,
         a.unlockConditions,
         a.gyms,
@@ -673,8 +698,8 @@ export function buildSql(b: {
     ),
     upsert(
       'trainers',
-      ['id', 'name', 'sprite_url', 'team', 'role', 'badge'],
-      b.trainers.map((t) => [t.id, t.name, t.spriteUrl, t.team, t.role, t.badge]),
+      ['id', 'name', 'sprite_url', 'team', 'role', 'badge', 'upgrade_level'],
+      b.trainers.map((t) => [t.id, t.name, t.spriteUrl, t.team, t.role, t.badge, t.upgradeLevel]),
       ['id'],
     ),
     upsert(
