@@ -25,10 +25,12 @@ export default {
         ...typeTokens,
       },
       fontFamily: {
-        pixel: ['"Jersey 25"', 'ui-monospace', 'monospace'],
-        'pixel-sm': ['"Jersey 15"', '"Jersey 25"', 'ui-monospace', 'monospace'],
-        body: ['"Atkinson Hyperlegible Next"', '"Segoe UI"', 'system-ui', 'sans-serif'],
-        mono: ['ui-monospace', 'SFMono-Regular', 'Consolas', 'monospace'],
+        // Jersey only, everywhere (sans/serif/mono included so no utility or preflight default reaches a system font).
+        pixel: ['"Jersey 25"', '"Jersey 15"'],
+        'pixel-sm': ['"Jersey 15"', '"Jersey 25"'],
+        sans: ['"Jersey 25"', '"Jersey 15"'],
+        serif: ['"Jersey 25"', '"Jersey 15"'],
+        mono: ['"Jersey 15"', '"Jersey 25"'],
       },
       borderRadius: {
         px2: '2px',

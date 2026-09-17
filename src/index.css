@@ -43,28 +43,6 @@
     U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
 }
 
-/* Body face for multi-line copy: Atkinson Hyperlegible Next (OFL), variable weight, self-hosted. */
-@font-face {
-  font-family: 'Atkinson Hyperlegible Next';
-  font-style: normal;
-  font-weight: 200 800;
-  font-display: swap;
-  src: url('/fonts/atkinson-next-latin.woff2') format('woff2');
-  unicode-range:
-    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F,
-    U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
-}
-@font-face {
-  font-family: 'Atkinson Hyperlegible Next';
-  font-style: normal;
-  font-weight: 200 800;
-  font-display: swap;
-  src: url('/fonts/atkinson-next-latin-ext.woff2') format('woff2');
-  unicode-range:
-    U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020,
-    U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
-}
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -90,7 +68,7 @@ body {
   margin: 0;
   background: #e8e0c8;
   color: #2a2438;
-  font-family: 'Jersey 25', ui-monospace, monospace;
+  font-family: 'Jersey 25', 'Jersey 15';
   font-size: 20px;
   line-height: 1.2;
   letter-spacing: 0.02em;
@@ -118,19 +96,15 @@ button {
 }
 
 /*
- * Paragraphs of two lines or more: the readable body face at 16px. Jersey 25 stays for headings, buttons, numbers.
+ * Paragraphs of two lines or more: Jersey 15, the Jersey cut drawn for small text. Jersey 25 stays for headings, buttons, numbers.
  * In the components layer so a text-* utility can still bump the size (e.g. `copy text-lg` in dialogs).
  */
 @layer components {
   .copy {
-    font-family: 'Atkinson Hyperlegible Next', 'Segoe UI', system-ui, sans-serif;
-    font-size: 16px;
-    line-height: 1.55;
-    letter-spacing: 0;
-  }
-  .copy b,
-  .copy strong {
-    font-weight: 700;
+    font-family: 'Jersey 15', 'Jersey 25';
+    font-size: 20px;
+    line-height: 1.35;
+    letter-spacing: 0.02em;
   }
 }
 

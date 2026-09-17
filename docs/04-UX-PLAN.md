@@ -9,7 +9,7 @@ colour contrast included (was 1,577 serious nodes), and **no text under 12px on 
   undersized targets → 0), ink/gold focus ring.
 - Phase 2: text-safe `muted` (#554d6a), darker `danger` (#a8341f), `good` (#2f6b36) and `danger-light` (#ea7a5e, on ink)
   tokens; type badges and chart headers get a per-type fill computed to clear 4.5:1 (`badgeColors` in `theme/util.ts`);
-  12px floor; Atkinson Hyperlegible Next (self-hosted) for paragraphs via `.copy`; type-coloured pips replace the
+  12px floor; paragraphs via `.copy` (Atkinson Hyperlegible Next at first, Jersey 15 since v1.8 — the app uses only the Jersey fonts, guarded by `e2e/layout.spec.ts`); type-coloured pips replace the
   3-letter dice chips; status-die corner values only on dice ≥ 40px, as an ink-on-panel chip; disabled = hatched +
   dashed at full text contrast (`.hatched`), with the reason where there is one ("need 120 more" on Upgrades).
 

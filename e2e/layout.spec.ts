@@ -58,6 +58,17 @@ function smallControls(page: Page) {
   )
 }
 
+/** Visible text rendered in any face other than the Jersey fonts (the only fonts the app ships). */
+function nonJerseyText(page: Page) {
+  return page.evaluate(() =>
+    Array.from(document.querySelectorAll<HTMLElement>('body *'))
+      .filter((el) => Array.from(el.childNodes).some((n) => n.nodeType === Node.TEXT_NODE && n.textContent!.trim()) || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName))
+      .filter((el) => el.getClientRects().length > 0 && !/^"?Jersey (15|25)"?(,|$)/.test(getComputedStyle(el).fontFamily))
+      .map((el) => `${el.tagName} "${(el.textContent || '').trim().slice(0, 20)}": ${getComputedStyle(el).fontFamily}`)
+      .slice(0, 10),
+  )
+}
+
 const ROUTES = ['/map', '/area', '/team', '/shop', '/upgrades', '/pokedex', '/settings']
 const SIZES = [
   { width: 360, height: 640, phone: true },
@@ -75,6 +86,7 @@ for (const size of SIZES) {
       await expect(page.getByRole('heading', { level: 1 }).first()).toBeVisible()
       const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)
       expect(overflow, `${route} scrolls sideways`).toBeLessThanOrEqual(0)
+      expect(await nonJerseyText(page), `${route}: fonts`).toEqual([])
       if (size.phone) expect(await smallControls(page), `${route}: controls under 44px`).toEqual([])
       if (size.width === 375 || size.width === 1280) {
         const axe = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze()
@@ -84,6 +96,16 @@ for (const size of SIZES) {
     }
   })
 }
+
+test('the title, help, setup and admin pages use only the Jersey fonts', async ({ page }) => {
+  await boot(page)
+  for (const route of ['/', '/new', '/help', '/setup', '/admin']) {
+    await page.goto(route)
+    await page.waitForLoadState('networkidle')
+    await expect(page.locator('body')).not.toHaveText('Loading…')
+    expect(await nonJerseyText(page), `${route}: fonts`).toEqual([])
+  }
+})
 
 test('a battle fits a 360×640 phone', async ({ page }) => {
   await page.setViewportSize({ width: 360, height: 640 })
@@ -102,6 +124,7 @@ test('a battle fits a 360×640 phone', async ({ page }) => {
   }
   await expect(attack).toBeEnabled()
   await page.waitForTimeout(1200) // let the thrown dice settle before measuring them
+  expect(await nonJerseyText(page), 'battle: fonts').toEqual([])
   const box = await attack.boundingBox()
   expect(box!.y + box!.height, 'ATTACK is on screen').toBeLessThanOrEqual(640)
   const dims = await page.evaluate(() => {
