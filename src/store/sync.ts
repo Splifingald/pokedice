@@ -1,5 +1,6 @@
 // Auth + cloud save sync + background content hot-swap. Never blocks the UI on the network.
 import type { Session, SupabaseClient } from '@supabase/supabase-js'
+import { startAnalytics, trackLogin } from '@/analytics/track'
 import { fetchContentUpdate } from '@/config/remote'
 import { getSupabase } from '@/lib/supabase'
 import { decideSync, pullCloudSave, pushCloudSave, sameSave, schedulePush } from '@/save/cloud'
@@ -22,6 +23,7 @@ async function handleSession(client: SupabaseClient, session: Session | null) {
   const { id, email, user_metadata: meta } = session.user
   const avatarUrl = (meta?.avatar_url ?? meta?.picture ?? null) as string | null
   useGame.setState({ auth: { status: 'signed_in', userId: id, email: email ?? null, avatarUrl } })
+  trackLogin(id)
   if (syncedUser === id) return
   syncedUser = id
   pushAllowed = false
@@ -133,6 +135,7 @@ let started = false
 export function startBackgroundServices() {
   if (started) return
   started = true
+  startAnalytics()
   void initAuth()
   void checkContent()
   setInterval(() => tickRegen(), 60_000)

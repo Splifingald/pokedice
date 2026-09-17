@@ -140,7 +140,7 @@ export function dismissToast(id: number) {
   useGame.setState((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) }))
 }
 
-type SaveListener = (save: SaveData | null) => void
+type SaveListener = (save: SaveData | null, prev: SaveData | null) => void
 const saveListeners = new Set<SaveListener>()
 /** Cloud sync subscribes here so it only sees real player mutations, not cloud pulls. */
 export function onSaveCommitted(fn: SaveListener) {
@@ -150,13 +150,13 @@ export function onSaveCommitted(fn: SaveListener) {
 
 /** Every save mutation goes through here: stamps updatedAt, persists (debounced), notifies sync. */
 export function commitSave(next: SaveData | null, opts: { silent?: boolean; keepTimestamp?: boolean } = {}) {
-  const { settings, data } = useGame.getState()
+  const { settings, data, save: prev } = useGame.getState()
   // Whatever arrives here (cloud pull, import, new game) is brought to the current HP scale.
   const scaled = next ? syncXpCurve(syncHpScale(next, data), data) : null
   const stamped = scaled ? { ...scaled, settings, updatedAt: opts.keepTimestamp ? scaled.updatedAt : Date.now() } : null
   useGame.setState({ save: stamped })
   scheduleWrite(stamped)
-  if (!opts.silent) for (const fn of saveListeners) fn(stamped)
+  if (!opts.silent) for (const fn of saveListeners) fn(stamped, prev)
 }
 
 export function mutateSave(fn: (s: SaveData) => SaveData | null | undefined): boolean {

@@ -8,6 +8,7 @@ import { useGame } from '@/store/game'
 import { useIsAdmin } from '@/store/hooks'
 import { signInWithGoogle, signOut } from '@/store/sync'
 import { cx } from '@/theme/util'
+import { AnalyticsSection } from './sections/AnalyticsSection'
 import { AreasSection } from './sections/AreasSection'
 import { ConfigSection } from './sections/ConfigSection'
 import { DevToolsSection } from './sections/DevToolsSection'
@@ -27,6 +28,7 @@ const SECTIONS: { id: string; label: string; C: ComponentType }[] = [
   { id: 'typechart', label: 'Type Chart', C: TypeChartSection },
   { id: 'config', label: 'Config', C: ConfigSection },
   { id: 'simulator', label: 'Simulator', C: SimulatorSection },
+  { id: 'analytics', label: 'Analytics', C: AnalyticsSection },
   { id: 'devtools', label: 'Dev Tools', C: DevToolsSection },
 ]
 
