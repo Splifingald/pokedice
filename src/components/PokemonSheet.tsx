@@ -9,16 +9,16 @@ import { HpBar } from './HpBar'
 import { PixelIcon, type IconName } from './icons'
 import { XpBar } from './MonCard'
 import { SpriteImg } from './SpriteImg'
+import { STAT_INFO, StatChip, type StatKind } from './StatChip'
 import { TypeBadge } from './TypeBadge'
 
-function StatTile({ icon, label, value, hint }: { icon: IconName; label: string; value: number; hint: string }) {
+function StatTile({ stat, value }: { stat: StatKind; value: ReactNode }) {
+  const { icon, label, hint } = STAT_INFO[stat]
   return (
     <div className="pixel-panel flex items-center gap-2 px-2 py-1.5" title={hint}>
       <PixelIcon name={icon} size={24} />
-      <div className="ml-auto text-right leading-none">
-        <div className="font-mono text-xl tabular-nums">{value}</div>
-        <div className="font-pixel-sm text-sm text-muted">{label}</div>
-      </div>
+      <span className="sr-only">{label}</span>
+      <div className="ml-auto font-mono text-xl leading-none tabular-nums">{value}</div>
     </div>
   )
 }
@@ -140,14 +140,14 @@ export function PokemonSheet({
         </div>
       ) : (
         <div className="text-lg">
-          HP {effectiveStats(species, 1, data).maxHp} at Lv.1 → {effectiveStats(species, 100, data).maxHp} at Lv.100
+          <StatChip stat="hp" size={18} value={`${effectiveStats(species, 1, data).maxHp} at Lv.1 → ${effectiveStats(species, 100, data).maxHp} at Lv.100`} />
         </div>
       )}
 
       <div className="grid grid-cols-3 gap-2">
-        <StatTile icon="speed" label="Speed" value={species.speed} hint="Speed: the faster Pokémon acts first" />
-        <StatTile icon="reroll" label="Rerolls" value={stats.rerolls} hint="Rerolls: how many times per battle it can reroll dice" />
-        <StatTile icon="ball" label="Catch" value={species.catchValue} hint="Catch value: the catch die plus a ball must reach this (1 = always)" />
+        <StatTile stat="speed" value={species.speed} />
+        <StatTile stat="rerolls" value={stats.rerolls} />
+        <StatTile stat="catch" value={species.catchValue} />
       </div>
 
       <section>
@@ -156,8 +156,11 @@ export function PokemonSheet({
         <div className="mt-2 flex flex-col gap-1.5">
           {uniqueTypes.map((t) => (
             <div key={t} className="flex items-center gap-2">
-              <span className="w-16 text-base uppercase">{t}</span>
-              <DieFaces type={t} faces={data.diceTypes[t]?.faces ?? []} size={28} />
+              <span className="w-16 shrink-0 text-base uppercase">{t}</span>
+              <div>
+                <DieFaces type={t} faces={data.diceTypes[t]?.faces ?? []} size={28} />
+                {data.diceTypes[t]?.description && <div className="copy text-sm text-muted">{data.diceTypes[t]!.description}</div>}
+              </div>
             </div>
           ))}
         </div>

@@ -6,7 +6,7 @@
   "type2": "poison",
   "baseHp": 12,
   "maxHp": 231,
-  "speed": 45,
+  "speed": 4,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/1.png",
   "dice": [
    {
@@ -56,7 +56,7 @@
   "type2": "poison",
   "baseHp": 12,
   "maxHp": 261,
-  "speed": 60,
+  "speed": 6,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/2.png",
   "dice": [
    {
@@ -110,7 +110,7 @@
   "type2": "poison",
   "baseHp": 12,
   "maxHp": 301,
-  "speed": 80,
+  "speed": 8,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/3.png",
   "dice": [
    {
@@ -155,7 +155,7 @@
   "type2": null,
   "baseHp": 12,
   "maxHp": 219,
-  "speed": 65,
+  "speed": 6,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/4.png",
   "dice": [
    {
@@ -205,7 +205,7 @@
   "type2": null,
   "baseHp": 12,
   "maxHp": 257,
-  "speed": 80,
+  "speed": 8,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/5.png",
   "dice": [
    {
@@ -255,7 +255,7 @@
   "type2": "flying",
   "baseHp": 12,
   "maxHp": 297,
-  "speed": 100,
+  "speed": 10,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/6.png",
   "dice": [
    {
@@ -300,7 +300,7 @@
   "type2": null,
   "baseHp": 12,
   "maxHp": 229,
-  "speed": 43,
+  "speed": 4,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/7.png",
   "dice": [
    {
@@ -350,7 +350,7 @@
   "type2": null,
   "baseHp": 12,
   "maxHp": 259,
-  "speed": 58,
+  "speed": 5,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/8.png",
   "dice": [
    {
@@ -400,7 +400,7 @@
   "type2": null,
   "baseHp": 12,
   "maxHp": 299,
-  "speed": 78,
+  "speed": 7,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/9.png",
   "dice": [
    {
@@ -441,7 +441,7 @@
   "type2": null,
   "baseHp": 12,
   "maxHp": 231,
-  "speed": 45,
+  "speed": 4,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/10.png",
   "dice": [
    {
@@ -486,7 +486,7 @@
   "type2": null,
   "baseHp": 12,
   "maxHp": 241,
-  "speed": 30,
+  "speed": 3,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/11.png",
   "dice": [
    {
@@ -531,7 +531,7 @@
   "type2": "flying",
   "baseHp": 12,
   "maxHp": 261,
-  "speed": 70,
+  "speed": 7,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/12.png",
   "dice": [
    {
@@ -576,7 +576,7 @@
   "type2": "poison",
   "baseHp": 12,
   "maxHp": 221,
-  "speed": 50,
+  "speed": 5,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/13.png",
   "dice": [
    {
@@ -621,7 +621,7 @@
   "type2": "poison",
   "baseHp": 12,
   "maxHp": 231,
-  "speed": 35,
+  "speed": 3,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/14.png",
   "dice": [
    {
@@ -666,7 +666,7 @@
   "type2": "poison",
   "baseHp": 12,
   "maxHp": 271,
-  "speed": 75,
+  "speed": 7,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/15.png",
   "dice": [
    {
@@ -711,7 +711,7 @@
   "type2": "flying",
   "baseHp": 12,
   "maxHp": 221,
-  "speed": 56,
+  "speed": 5,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/16.png",
   "dice": [
    {
@@ -761,7 +761,7 @@
   "type2": "flying",
   "baseHp": 12,
   "maxHp": 267,
-  "speed": 71,
+  "speed": 7,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/17.png",
   "dice": [
    {
@@ -815,7 +815,7 @@
   "type2": "flying",
   "baseHp": 12,
   "maxHp": 307,
-  "speed": 101,
+  "speed": 10,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/18.png",
   "dice": [
    {
@@ -860,7 +860,7 @@
   "type2": null,
   "baseHp": 11,
   "maxHp": 201,
-  "speed": 72,
+  "speed": 7,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/19.png",
   "dice": [
    {
@@ -910,7 +910,7 @@
   "type2": null,
   "baseHp": 12,
   "maxHp": 251,
-  "speed": 97,
+  "speed": 9,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/20.png",
   "dice": [
    {
@@ -951,7 +951,7 @@
   "type2": "flying",
   "baseHp": 12,
   "maxHp": 221,
-  "speed": 70,
+  "speed": 7,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/21.png",
   "dice": [
    {
@@ -1001,7 +1001,7 @@
   "type2": "flying",
   "baseHp": 12,
   "maxHp": 271,
-  "speed": 100,
+  "speed": 10,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/22.png",
   "dice": [
    {
@@ -1046,7 +1046,7 @@
   "type2": null,
   "baseHp": 12,
   "maxHp": 211,
-  "speed": 55,
+  "speed": 5,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/23.png",
   "dice": [
    {
@@ -1096,7 +1096,7 @@
   "type2": null,
   "baseHp": 12,
   "maxHp": 261,
-  "speed": 80,
+  "speed": 8,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/24.png",
   "dice": [
    {
@@ -1137,7 +1137,7 @@
   "type2": null,
   "baseHp": 12,
   "maxHp": 211,
-  "speed": 90,
+  "speed": 9,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/25.png",
   "dice": [
    {
@@ -1187,7 +1187,7 @@
   "type2": null,
   "baseHp": 12,
   "maxHp": 261,
-  "speed": 110,
+  "speed": 11,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/26.png",
   "dice": [
    {
@@ -1228,7 +1228,7 @@
   "type2": null,
   "baseHp": 12,
   "maxHp": 241,
-  "speed": 40,
+  "speed": 4,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/27.png",
   "dice": [
    {
@@ -1278,7 +1278,7 @@
   "type2": null,
   "baseHp": 12,
   "maxHp": 291,
-  "speed": 65,
+  "speed": 6,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/28.png",
   "dice": [
    {
@@ -1319,7 +1319,7 @@
   "type2": null,
   "baseHp": 12,
   "maxHp": 251,
-  "speed": 41,
+  "speed": 4,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/29.png",
   "dice": [
    {
@@ -1369,7 +1369,7 @@
   "type2": null,
   "baseHp": 12,
   "maxHp": 281,
-  "speed": 56,
+  "speed": 5,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/30.png",
   "dice": [
    {
@@ -1419,7 +1419,7 @@
   "type2": "ground",
   "baseHp": 13,
   "maxHp": 321,
-  "speed": 76,
+  "speed": 7,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/31.png",
   "dice": [
    {
@@ -1464,7 +1464,7 @@
   "type2": null,
   "baseHp": 12,
   "maxHp": 233,
-  "speed": 50,
+  "speed": 5,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/32.png",
   "dice": [
    {
@@ -1514,7 +1514,7 @@
   "type2": null,
   "baseHp": 12,
   "maxHp": 263,
-  "speed": 65,
+  "speed": 6,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/33.png",
   "dice": [
    {
@@ -1564,7 +1564,7 @@
   "type2": "ground",
   "baseHp": 12,
   "maxHp": 303,
-  "speed": 85,
+  "speed": 8,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/34.png",
   "dice": [
    {
@@ -1609,7 +1609,7 @@
   "type2": null,
   "baseHp": 12,
   "maxHp": 281,
-  "speed": 35,
+  "speed": 3,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/35.png",
   "dice": [
    {
@@ -1659,7 +1659,7 @@
   "type2": null,
   "baseHp": 13,
   "maxHp": 331,
-  "speed": 60,
+  "speed": 6,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/36.png",
   "dice": [
    {
@@ -1700,7 +1700,7 @@
   "type2": null,
   "baseHp": 12,
   "maxHp": 217,
-  "speed": 65,
+  "speed": 6,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/37.png",
   "dice": [
    {
@@ -1750,7 +1750,7 @@
   "type2": null,
   "baseHp": 12,
   "maxHp": 287,
-  "speed": 100,
+  "speed": 10,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/38.png",
   "dice": [
    {
@@ -1791,7 +1791,7 @@
   "type2": "fairy",
   "baseHp": 13,
   "maxHp": 371,
-  "speed": 20,
+  "speed": 2,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/39.png",
   "dice": [
    {
@@ -1841,7 +1841,7 @@
   "type2": "fairy",
   "baseHp": 14,
   "maxHp": 421,
-  "speed": 45,
+  "speed": 4,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/40.png",
   "dice": [
    {
@@ -1886,7 +1886,7 @@
   "type2": "flying",
   "baseHp": 12,
   "maxHp": 221,
-  "speed": 55,
+  "speed": 5,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/41.png",
   "dice": [
    {
@@ -1936,7 +1936,7 @@
   "type2": "flying",
   "baseHp": 12,
   "maxHp": 291,
-  "speed": 90,
+  "speed": 9,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/42.png",
   "dice": [
    {
@@ -1981,7 +1981,7 @@
   "type2": "poison",
   "baseHp": 12,
   "maxHp": 231,
-  "speed": 30,
+  "speed": 3,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/43.png",
   "dice": [
    {
@@ -2031,7 +2031,7 @@
   "type2": "poison",
   "baseHp": 12,
   "maxHp": 261,
-  "speed": 40,
+  "speed": 4,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/44.png",
   "dice": [
    {
@@ -2085,7 +2085,7 @@
   "type2": "poison",
   "baseHp": 12,
   "maxHp": 291,
-  "speed": 50,
+  "speed": 5,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/45.png",
   "dice": [
    {
@@ -2130,7 +2130,7 @@
   "type2": "grass",
   "baseHp": 12,
   "maxHp": 211,
-  "speed": 25,
+  "speed": 2,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/46.png",
   "dice": [
    {
@@ -2180,7 +2180,7 @@
   "type2": "grass",
   "baseHp": 12,
   "maxHp": 261,
-  "speed": 30,
+  "speed": 3,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/47.png",
   "dice": [
    {
@@ -2225,7 +2225,7 @@
   "type2": "poison",
   "baseHp": 12,
   "maxHp": 261,
-  "speed": 45,
+  "speed": 4,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/48.png",
   "dice": [
    {
@@ -2275,7 +2275,7 @@
   "type2": "poison",
   "baseHp": 12,
   "maxHp": 281,
-  "speed": 90,
+  "speed": 9,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/49.png",
   "dice": [
    {
@@ -2320,7 +2320,7 @@
   "type2": null,
   "baseHp": 11,
   "maxHp": 161,
-  "speed": 95,
+  "speed": 9,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/50.png",
   "dice": [
    {
@@ -2370,7 +2370,7 @@
   "type2": null,
   "baseHp": 12,
   "maxHp": 211,
-  "speed": 120,
+  "speed": 12,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/51.png",
   "dice": [
    {
@@ -2411,7 +2411,7 @@
   "type2": null,
   "baseHp": 12,
   "maxHp": 221,
-  "speed": 90,
+  "speed": 9,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/52.png",
   "dice": [
    {
@@ -2461,7 +2461,7 @@
   "type2": null,
   "baseHp": 12,
   "maxHp": 271,
-  "speed": 115,
+  "speed": 11,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/53.png",
   "dice": [
    {
@@ -2502,7 +2502,7 @@
   "type2": null,
   "baseHp": 12,
   "maxHp": 241,
-  "speed": 55,
+  "speed": 5,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/54.png",
   "dice": [
    {
@@ -2552,7 +2552,7 @@
   "type2": null,
   "baseHp": 12,
   "maxHp": 301,
-  "speed": 85,
+  "speed": 8,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/55.png",
   "dice": [
    {
@@ -2593,7 +2593,7 @@
   "type2": null,
   "baseHp": 12,
   "maxHp": 221,
-  "speed": 70,
+  "speed": 7,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/56.png",
   "dice": [
    {
@@ -2643,7 +2643,7 @@
   "type2": null,
   "baseHp": 12,
   "maxHp": 271,
-  "speed": 95,
+  "speed": 9,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/57.png",
   "dice": [
    {
@@ -2684,7 +2684,7 @@
   "type2": null,
   "baseHp": 12,
   "maxHp": 251,
-  "speed": 60,
+  "speed": 6,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/58.png",
   "dice": [
    {
@@ -2734,7 +2734,7 @@
   "type2": null,
   "baseHp": 13,
   "maxHp": 321,
-  "speed": 95,
+  "speed": 9,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/59.png",
   "dice": [
    {
@@ -2775,7 +2775,7 @@
   "type2": null,
   "baseHp": 12,
   "maxHp": 221,
-  "speed": 90,
+  "speed": 9,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/60.png",
   "dice": [
    {
@@ -2825,7 +2825,7 @@
   "type2": null,
   "baseHp": 12,
   "maxHp": 271,
-  "speed": 90,
+  "speed": 9,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/61.png",
   "dice": [
    {
@@ -2875,7 +2875,7 @@
   "type2": "fighting",
   "baseHp": 13,
   "maxHp": 321,
-  "speed": 70,
+  "speed": 7,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/62.png",
   "dice": [
    {
@@ -2920,7 +2920,7 @@
   "type2": null,
   "baseHp": 11,
   "maxHp": 191,
-  "speed": 90,
+  "speed": 9,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/63.png",
   "dice": [
    {
@@ -2970,7 +2970,7 @@
   "type2": null,
   "baseHp": 12,
   "maxHp": 221,
-  "speed": 105,
+  "speed": 10,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/64.png",
   "dice": [
    {
@@ -3020,7 +3020,7 @@
   "type2": null,
   "baseHp": 12,
   "maxHp": 251,
-  "speed": 120,
+  "speed": 12,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/65.png",
   "dice": [
    {
@@ -3061,7 +3061,7 @@
   "type2": null,
   "baseHp": 12,
   "maxHp": 281,
-  "speed": 35,
+  "speed": 3,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/66.png",
   "dice": [
    {
@@ -3111,7 +3111,7 @@
   "type2": null,
   "baseHp": 12,
   "maxHp": 301,
-  "speed": 45,
+  "speed": 4,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/67.png",
   "dice": [
    {
@@ -3161,7 +3161,7 @@
   "type2": null,
   "baseHp": 13,
   "maxHp": 321,
-  "speed": 55,
+  "speed": 5,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/68.png",
   "dice": [
    {
@@ -3202,7 +3202,7 @@
   "type2": "poison",
   "baseHp": 12,
   "maxHp": 241,
-  "speed": 40,
+  "speed": 4,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/69.png",
   "dice": [
    {
@@ -3252,7 +3252,7 @@
   "type2": "poison",
   "baseHp": 12,
   "maxHp": 271,
-  "speed": 55,
+  "speed": 5,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/70.png",
   "dice": [
    {
@@ -3306,7 +3306,7 @@
   "type2": "poison",
   "baseHp": 12,
   "maxHp": 301,
-  "speed": 70,
+  "speed": 7,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/71.png",
   "dice": [
    {
@@ -3351,7 +3351,7 @@
   "type2": "poison",
   "baseHp": 12,
   "maxHp": 221,
-  "speed": 70,
+  "speed": 7,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/72.png",
   "dice": [
    {
@@ -3405,7 +3405,7 @@
   "type2": "poison",
   "baseHp": 12,
   "maxHp": 301,
-  "speed": 100,
+  "speed": 10,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/73.png",
   "dice": [
    {
@@ -3450,7 +3450,7 @@
   "type2": "ground",
   "baseHp": 12,
   "maxHp": 221,
-  "speed": 20,
+  "speed": 2,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/74.png",
   "dice": [
    {
@@ -3500,7 +3500,7 @@
   "type2": "ground",
   "baseHp": 12,
   "maxHp": 251,
-  "speed": 35,
+  "speed": 3,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/75.png",
   "dice": [
    {
@@ -3554,7 +3554,7 @@
   "type2": "ground",
   "baseHp": 12,
   "maxHp": 301,
-  "speed": 45,
+  "speed": 4,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/76.png",
   "dice": [
    {
@@ -3599,7 +3599,7 @@
   "type2": null,
   "baseHp": 12,
   "maxHp": 241,
-  "speed": 90,
+  "speed": 9,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/77.png",
   "dice": [
    {
@@ -3649,7 +3649,7 @@
   "type2": null,
   "baseHp": 12,
   "maxHp": 271,
-  "speed": 105,
+  "speed": 10,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/78.png",
   "dice": [
    {
@@ -3690,7 +3690,7 @@
   "type2": "psychic",
   "baseHp": 13,
   "maxHp": 321,
-  "speed": 15,
+  "speed": 1,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/79.png",
   "dice": [
    {
@@ -3740,7 +3740,7 @@
   "type2": "psychic",
   "baseHp": 13,
   "maxHp": 331,
-  "speed": 30,
+  "speed": 3,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/80.png",
   "dice": [
    {
@@ -3785,7 +3785,7 @@
   "type2": "steel",
   "baseHp": 11,
   "maxHp": 191,
-  "speed": 45,
+  "speed": 4,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/81.png",
   "dice": [
    {
@@ -3835,7 +3835,7 @@
   "type2": "steel",
   "baseHp": 12,
   "maxHp": 241,
-  "speed": 70,
+  "speed": 7,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/82.png",
   "dice": [
    {
@@ -3880,7 +3880,7 @@
   "type2": "flying",
   "baseHp": 12,
   "maxHp": 245,
-  "speed": 60,
+  "speed": 6,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/83.png",
   "dice": [
    {
@@ -3925,7 +3925,7 @@
   "type2": "flying",
   "baseHp": 12,
   "maxHp": 211,
-  "speed": 75,
+  "speed": 7,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/84.png",
   "dice": [
    {
@@ -3975,7 +3975,7 @@
   "type2": "flying",
   "baseHp": 12,
   "maxHp": 261,
-  "speed": 110,
+  "speed": 11,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/85.png",
   "dice": [
    {
@@ -4020,7 +4020,7 @@
   "type2": null,
   "baseHp": 12,
   "maxHp": 271,
-  "speed": 45,
+  "speed": 4,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/86.png",
   "dice": [
    {
@@ -4070,7 +4070,7 @@
   "type2": "ice",
   "baseHp": 13,
   "maxHp": 321,
-  "speed": 70,
+  "speed": 7,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/87.png",
   "dice": [
    {
@@ -4115,7 +4115,7 @@
   "type2": null,
   "baseHp": 12,
   "maxHp": 301,
-  "speed": 25,
+  "speed": 2,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/88.png",
   "dice": [
    {
@@ -4165,7 +4165,7 @@
   "type2": null,
   "baseHp": 13,
   "maxHp": 351,
-  "speed": 50,
+  "speed": 5,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/89.png",
   "dice": [
    {
@@ -4206,7 +4206,7 @@
   "type2": null,
   "baseHp": 11,
   "maxHp": 201,
-  "speed": 40,
+  "speed": 4,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/90.png",
   "dice": [
    {
@@ -4256,7 +4256,7 @@
   "type2": "ice",
   "baseHp": 12,
   "maxHp": 241,
-  "speed": 70,
+  "speed": 7,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/91.png",
   "dice": [
    {
@@ -4301,7 +4301,7 @@
   "type2": "poison",
   "baseHp": 11,
   "maxHp": 201,
-  "speed": 80,
+  "speed": 8,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/92.png",
   "dice": [
    {
@@ -4351,7 +4351,7 @@
   "type2": "poison",
   "baseHp": 12,
   "maxHp": 231,
-  "speed": 95,
+  "speed": 9,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/93.png",
   "dice": [
    {
@@ -4405,7 +4405,7 @@
   "type2": "poison",
   "baseHp": 12,
   "maxHp": 261,
-  "speed": 110,
+  "speed": 11,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/94.png",
   "dice": [
    {
@@ -4450,7 +4450,7 @@
   "type2": "ground",
   "baseHp": 12,
   "maxHp": 211,
-  "speed": 70,
+  "speed": 7,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/95.png",
   "dice": [
    {
@@ -4495,7 +4495,7 @@
   "type2": null,
   "baseHp": 12,
   "maxHp": 261,
-  "speed": 42,
+  "speed": 4,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/96.png",
   "dice": [
    {
@@ -4545,7 +4545,7 @@
   "type2": null,
   "baseHp": 13,
   "maxHp": 311,
-  "speed": 67,
+  "speed": 6,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/97.png",
   "dice": [
    {
@@ -4586,7 +4586,7 @@
   "type2": null,
   "baseHp": 11,
   "maxHp": 201,
-  "speed": 50,
+  "speed": 5,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/98.png",
   "dice": [
    {
@@ -4636,7 +4636,7 @@
   "type2": null,
   "baseHp": 12,
   "maxHp": 251,
-  "speed": 75,
+  "speed": 7,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/99.png",
   "dice": [
    {
@@ -4677,7 +4677,7 @@
   "type2": null,
   "baseHp": 12,
   "maxHp": 221,
-  "speed": 100,
+  "speed": 10,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/100.png",
   "dice": [
    {
@@ -4727,7 +4727,7 @@
   "type2": null,
   "baseHp": 12,
   "maxHp": 261,
-  "speed": 150,
+  "speed": 15,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/101.png",
   "dice": [
    {
@@ -4768,7 +4768,7 @@
   "type2": "psychic",
   "baseHp": 12,
   "maxHp": 261,
-  "speed": 40,
+  "speed": 4,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/102.png",
   "dice": [
    {
@@ -4818,7 +4818,7 @@
   "type2": "psychic",
   "baseHp": 13,
   "maxHp": 331,
-  "speed": 55,
+  "speed": 5,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/103.png",
   "dice": [
    {
@@ -4863,7 +4863,7 @@
   "type2": null,
   "baseHp": 12,
   "maxHp": 241,
-  "speed": 35,
+  "speed": 3,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/104.png",
   "dice": [
    {
@@ -4913,7 +4913,7 @@
   "type2": null,
   "baseHp": 12,
   "maxHp": 261,
-  "speed": 45,
+  "speed": 4,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/105.png",
   "dice": [
    {
@@ -4954,7 +4954,7 @@
   "type2": null,
   "baseHp": 12,
   "maxHp": 241,
-  "speed": 87,
+  "speed": 8,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/106.png",
   "dice": [
    {
@@ -4995,7 +4995,7 @@
   "type2": null,
   "baseHp": 12,
   "maxHp": 241,
-  "speed": 76,
+  "speed": 7,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/107.png",
   "dice": [
    {
@@ -5036,7 +5036,7 @@
   "type2": null,
   "baseHp": 13,
   "maxHp": 321,
-  "speed": 30,
+  "speed": 3,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/108.png",
   "dice": [
    {
@@ -5077,7 +5077,7 @@
   "type2": null,
   "baseHp": 12,
   "maxHp": 221,
-  "speed": 35,
+  "speed": 3,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/109.png",
   "dice": [
    {
@@ -5127,7 +5127,7 @@
   "type2": null,
   "baseHp": 12,
   "maxHp": 271,
-  "speed": 60,
+  "speed": 6,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/110.png",
   "dice": [
    {
@@ -5168,7 +5168,7 @@
   "type2": "rock",
   "baseHp": 12,
   "maxHp": 301,
-  "speed": 25,
+  "speed": 2,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/111.png",
   "dice": [
    {
@@ -5222,7 +5222,7 @@
   "type2": "rock",
   "baseHp": 13,
   "maxHp": 351,
-  "speed": 40,
+  "speed": 4,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/112.png",
   "dice": [
    {
@@ -5267,7 +5267,7 @@
   "type2": null,
   "baseHp": 16,
   "maxHp": 641,
-  "speed": 50,
+  "speed": 5,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/113.png",
   "dice": [
    {
@@ -5308,7 +5308,7 @@
   "type2": null,
   "baseHp": 12,
   "maxHp": 271,
-  "speed": 60,
+  "speed": 6,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/114.png",
   "dice": [
    {
@@ -5349,7 +5349,7 @@
   "type2": null,
   "baseHp": 13,
   "maxHp": 351,
-  "speed": 90,
+  "speed": 9,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/115.png",
   "dice": [
    {
@@ -5390,7 +5390,7 @@
   "type2": null,
   "baseHp": 11,
   "maxHp": 201,
-  "speed": 60,
+  "speed": 6,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/116.png",
   "dice": [
    {
@@ -5440,7 +5440,7 @@
   "type2": null,
   "baseHp": 12,
   "maxHp": 251,
-  "speed": 85,
+  "speed": 8,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/117.png",
   "dice": [
    {
@@ -5481,7 +5481,7 @@
   "type2": null,
   "baseHp": 12,
   "maxHp": 231,
-  "speed": 63,
+  "speed": 6,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/118.png",
   "dice": [
    {
@@ -5531,7 +5531,7 @@
   "type2": null,
   "baseHp": 12,
   "maxHp": 301,
-  "speed": 68,
+  "speed": 6,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/119.png",
   "dice": [
    {
@@ -5572,7 +5572,7 @@
   "type2": null,
   "baseHp": 11,
   "maxHp": 201,
-  "speed": 85,
+  "speed": 8,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/120.png",
   "dice": [
    {
@@ -5622,7 +5622,7 @@
   "type2": "psychic",
   "baseHp": 12,
   "maxHp": 261,
-  "speed": 115,
+  "speed": 11,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/121.png",
   "dice": [
    {
@@ -5667,7 +5667,7 @@
   "type2": "fairy",
   "baseHp": 12,
   "maxHp": 221,
-  "speed": 90,
+  "speed": 9,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/122.png",
   "dice": [
    {
@@ -5712,7 +5712,7 @@
   "type2": "flying",
   "baseHp": 12,
   "maxHp": 281,
-  "speed": 105,
+  "speed": 10,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/123.png",
   "dice": [
    {
@@ -5757,7 +5757,7 @@
   "type2": "psychic",
   "baseHp": 12,
   "maxHp": 271,
-  "speed": 95,
+  "speed": 9,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/124.png",
   "dice": [
    {
@@ -5802,7 +5802,7 @@
   "type2": null,
   "baseHp": 12,
   "maxHp": 271,
-  "speed": 105,
+  "speed": 10,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/125.png",
   "dice": [
    {
@@ -5843,7 +5843,7 @@
   "type2": null,
   "baseHp": 12,
   "maxHp": 271,
-  "speed": 93,
+  "speed": 9,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/126.png",
   "dice": [
    {
@@ -5884,7 +5884,7 @@
   "type2": null,
   "baseHp": 12,
   "maxHp": 271,
-  "speed": 85,
+  "speed": 8,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/127.png",
   "dice": [
    {
@@ -5925,7 +5925,7 @@
   "type2": null,
   "baseHp": 12,
   "maxHp": 291,
-  "speed": 110,
+  "speed": 11,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/128.png",
   "dice": [
    {
@@ -5966,7 +5966,7 @@
   "type2": null,
   "baseHp": 11,
   "maxHp": 181,
-  "speed": 80,
+  "speed": 8,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/129.png",
   "dice": [
    {
@@ -6016,7 +6016,7 @@
   "type2": "flying",
   "baseHp": 13,
   "maxHp": 331,
-  "speed": 81,
+  "speed": 8,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/130.png",
   "dice": [
    {
@@ -6061,7 +6061,7 @@
   "type2": "ice",
   "baseHp": 13,
   "maxHp": 401,
-  "speed": 60,
+  "speed": 6,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/131.png",
   "dice": [
    {
@@ -6106,7 +6106,7 @@
   "type2": null,
   "baseHp": 12,
   "maxHp": 237,
-  "speed": 48,
+  "speed": 4,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/132.png",
   "dice": [
    {
@@ -6147,7 +6147,7 @@
   "type2": null,
   "baseHp": 12,
   "maxHp": 251,
-  "speed": 55,
+  "speed": 5,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/133.png",
   "dice": [
    {
@@ -6205,7 +6205,7 @@
   "type2": null,
   "baseHp": 13,
   "maxHp": 401,
-  "speed": 65,
+  "speed": 6,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/134.png",
   "dice": [
    {
@@ -6246,7 +6246,7 @@
   "type2": null,
   "baseHp": 12,
   "maxHp": 271,
-  "speed": 130,
+  "speed": 13,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/135.png",
   "dice": [
    {
@@ -6287,7 +6287,7 @@
   "type2": null,
   "baseHp": 12,
   "maxHp": 271,
-  "speed": 65,
+  "speed": 6,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/136.png",
   "dice": [
    {
@@ -6328,7 +6328,7 @@
   "type2": null,
   "baseHp": 12,
   "maxHp": 271,
-  "speed": 40,
+  "speed": 4,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/137.png",
   "dice": [
    {
@@ -6369,7 +6369,7 @@
   "type2": "water",
   "baseHp": 12,
   "maxHp": 211,
-  "speed": 35,
+  "speed": 3,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/138.png",
   "dice": [
    {
@@ -6423,7 +6423,7 @@
   "type2": "water",
   "baseHp": 12,
   "maxHp": 281,
-  "speed": 55,
+  "speed": 5,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/139.png",
   "dice": [
    {
@@ -6468,7 +6468,7 @@
   "type2": "water",
   "baseHp": 11,
   "maxHp": 201,
-  "speed": 55,
+  "speed": 5,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/140.png",
   "dice": [
    {
@@ -6522,7 +6522,7 @@
   "type2": "water",
   "baseHp": 12,
   "maxHp": 261,
-  "speed": 80,
+  "speed": 8,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/141.png",
   "dice": [
    {
@@ -6567,7 +6567,7 @@
   "type2": "flying",
   "baseHp": 12,
   "maxHp": 301,
-  "speed": 130,
+  "speed": 13,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/142.png",
   "dice": [
    {
@@ -6612,7 +6612,7 @@
   "type2": null,
   "baseHp": 14,
   "maxHp": 461,
-  "speed": 30,
+  "speed": 3,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/143.png",
   "dice": [
    {
@@ -6653,7 +6653,7 @@
   "type2": "flying",
   "baseHp": 13,
   "maxHp": 321,
-  "speed": 85,
+  "speed": 8,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/144.png",
   "dice": [
    {
@@ -6693,7 +6693,7 @@
   "type2": "flying",
   "baseHp": 13,
   "maxHp": 321,
-  "speed": 100,
+  "speed": 10,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/145.png",
   "dice": [
    {
@@ -6733,7 +6733,7 @@
   "type2": "flying",
   "baseHp": 13,
   "maxHp": 321,
-  "speed": 90,
+  "speed": 9,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/146.png",
   "dice": [
    {
@@ -6773,7 +6773,7 @@
   "type2": null,
   "baseHp": 12,
   "maxHp": 223,
-  "speed": 50,
+  "speed": 5,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/147.png",
   "dice": [
    {
@@ -6823,7 +6823,7 @@
   "type2": null,
   "baseHp": 12,
   "maxHp": 263,
-  "speed": 70,
+  "speed": 7,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/148.png",
   "dice": [
    {
@@ -6873,7 +6873,7 @@
   "type2": "flying",
   "baseHp": 13,
   "maxHp": 323,
-  "speed": 80,
+  "speed": 8,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/149.png",
   "dice": [
    {
@@ -6913,7 +6913,7 @@
   "type2": null,
   "baseHp": 13,
   "maxHp": 353,
-  "speed": 130,
+  "speed": 13,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/150.png",
   "dice": [
    {
@@ -6949,7 +6949,7 @@
   "type2": null,
   "baseHp": 13,
   "maxHp": 341,
-  "speed": 100,
+  "speed": 10,
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/151.png",
   "dice": [
    {

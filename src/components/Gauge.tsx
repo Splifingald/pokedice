@@ -4,12 +4,12 @@ import { cx } from '@/theme/util'
 export function Gauge({
   value,
   max,
-  label = 'GAUGE',
+  label = 'EXPLORATION',
   className,
   labelClassName,
   segments = 12,
   color = '#e8b44a',
-  name = 'Area gauge',
+  name = 'Exploration',
   mark,
   markText,
 }: {

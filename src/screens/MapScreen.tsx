@@ -74,6 +74,7 @@ function AreaCard({ area, index, prevName, delay = 0 }: { area: Area; index: num
       animate={{ x: 0 }}
       transition={{ delay }}
     >
+      <AreaTypes area={area} className="border-b-[3px] border-ink bg-parchment px-3 py-1.5" />
       <div className="relative">
         {area.bannerUrl && (
           <img
@@ -98,29 +99,28 @@ function AreaCard({ area, index, prevName, delay = 0 }: { area: Area; index: num
       <div className="flex flex-wrap items-center gap-3 p-3">
         {/* On a phone the details take the full width and ENTER drops below them. */}
         <div className="min-w-0 flex-1 basis-[17rem]">
-          <div className="flex items-baseline justify-between gap-3">
-            <h2 className="flex min-w-0 items-center gap-2 text-3xl leading-none">
-              <span className="min-w-0 break-words">{area.name}</span>
-              {complete && (
-                <span className="shrink-0 self-center border-2 border-hp-green bg-panel p-0.5">
-                  <PixelIcon name="check" size={16} title="Every species here is caught" />
-                </span>
-              )}
-            </h2>
-            <span className="shrink-0 text-2xl leading-none">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            <h2 className="min-w-0 break-words text-3xl leading-none">{area.name}</h2>
+            {current && (
+              <span className="shrink-0 border-2 border-ink bg-gold px-1.5 text-lg leading-tight text-ink">◀ you are here</span>
+            )}
+            <span className="ml-auto shrink-0 text-2xl leading-none">
               {area.scalesToTeam ? 'Lv. = team' : `Lv.${area.minLevel}–${area.maxLevel}`}
             </span>
           </div>
-          {current && (
-            <span className="mt-1 inline-block border-2 border-ink bg-gold px-1.5 text-lg leading-tight text-ink">◀ you are here</span>
-          )}
           <div className="text-lg text-muted">
-            {species.length ? `${caught}/${species.length} species caught` : 'trainers only'}
+            {species.length ? (
+              <span className={cx(complete && 'inline-flex items-center gap-1 text-good')}>
+                {caught}/{species.length} species caught
+                {complete && <PixelIcon name="check" size={16} title="Every species here is caught" />}
+              </span>
+            ) : (
+              'trainers only'
+            )}
             {area.trainerPool.length ? ` · ${area.trainerPool.length} trainers` : ''}
             {area.scalesToTeam ? ' · endless, foes scale to your team' : ''}
             {area.easyMode ? ' · easy: a Center after any K.O.' : ''}
           </div>
-          <AreaTypes area={area} className="mt-1" />
           <GymRow area={area} />
           {bosses.length > 0 && (
             <div className="mt-1 flex items-center gap-1">
@@ -135,7 +135,6 @@ function AreaCard({ area, index, prevName, delay = 0 }: { area: Area; index: num
               })}
             </div>
           )}
-          {unlocked && <Gauge value={p.xp} max={area.xpToUnlockNext} className="mt-1 max-w-md" />}
         </div>
         <PixelButton
           variant="primary"
@@ -147,6 +146,7 @@ function AreaCard({ area, index, prevName, delay = 0 }: { area: Area; index: num
         >
           {!unlocked ? 'LOCKED' : exploring ? 'CONTINUE' : 'ENTER'}
         </PixelButton>
+        {unlocked && <Gauge value={p.xp} max={area.xpToUnlockNext} className="w-full" />}
       </div>
     </motion.li>
   )

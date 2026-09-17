@@ -100,6 +100,7 @@ export function ConfigSection() {
   const [regen, setRegen] = useConfigRow('regenPercentPerHour')
   const [share, setShare] = useConfigRow('xpShareMode')
   const [skip, setSkip] = useConfigRow('skipPolicy')
+  const [noEscape, setNoEscape] = useConfigRow('noEscape')
   const [payout, setPayout] = useConfigRow('comboPayoutMode')
   const [enemyLv, setEnemyLv] = useConfigRow('enemyUpgradeLevel')
   const [maxTurns, setMaxTurns] = useConfigRow('maxBattleTurns')
@@ -111,8 +112,8 @@ export function ConfigSection() {
   const [version] = useConfigRow('configVersion')
   const [multiExp, setMultiExp] = useConfigRow('multiExpShare')
   const [xpMult, setXpMult] = useConfigRow('xpMultiplier')
-  const [showRec, setShowRec] = useConfigRow('showRecommendedTypes')
   const [showRound, setShowRound] = useConfigRow('showRoundGauge')
+  const [showAhead, setShowAhead] = useConfigRow('showRoundPreview')
   const [fph, setFph] = useState(80)
   const curve = useMemo(() => ({ ...DEFAULT_CONFIG.xpCurve, ...xpCurve }), [xpCurve])
 
@@ -129,7 +130,7 @@ export function ConfigSection() {
             <Field label="hpMultiplier" hint="× every Pokémon's HP, yours and foes' — the fight-length knob">
               <NumInput step={0.05} value={hpMultiplier} min={0.1} onChange={(v) => setHpMultiplier(Math.max(0.1, v ?? 1))} />
             </Field>
-            <Field label="xpMultiplier" hint="× the XP a K.O. gives Pokémon (foe's level × this); the area gauge isn't multiplied">
+            <Field label="xpMultiplier" hint="× the XP a K.O. gives (foe's level × this) — to the Pokémon and to the area's exploration alike">
               <NumInput step={0.25} value={xpMult} min={0.1} onChange={(v) => setXpMult(Math.max(0.1, v ?? 1))} />
             </Field>
             <Field label="goldMultiplier" hint="× trainer gold — the economy knob">
@@ -152,6 +153,9 @@ export function ConfigSection() {
             <Field label="scaleLevelSpread" hint="areas that scale to the team: its average ± this">
               <NumInput value={spread} onChange={(v) => setSpread(v ?? 3)} />
             </Field>
+            <label className="flex items-center gap-2 text-lg" title="Players can't FLEE / AVOID an encounter or RUN from a battle (overrides skipPolicy)">
+              <input type="checkbox" checked={!!noEscape} onChange={(e) => setNoEscape(e.target.checked)} /> noEscape
+            </label>
             <label className="flex items-center gap-2 text-lg" title="The first encounter of an area is a Center when anyone is hurt">
               <input type="checkbox" checked={!!forced} onChange={(e) => setForced(e.target.checked)} /> forcedCenterWhenHurt
             </label>
@@ -188,22 +192,22 @@ export function ConfigSection() {
 
         <Box title="Player help" hint="What the game shows players while they plan.">
           <label className="flex items-start gap-2 text-lg">
-            <input type="checkbox" className="mt-1.5" checked={!!showRec} onChange={(e) => setShowRec(e.target.checked)} />
-            <span>
-              showRecommendedTypes
-              <span className="block text-sm text-muted">
-                The “Recommended types” (the attacking types that hit an area's foes hardest) on the Map and area screens.
-                The “Encounter types” always show.
-              </span>
-            </span>
-          </label>
-          <label className="flex items-start gap-2 text-lg">
             <input type="checkbox" className="mt-1.5" checked={!!showRound} onChange={(e) => setShowRound(e.target.checked)} />
             <span>
               showRoundGauge
               <span className="block text-sm text-muted">
                 The round gauge on the area screen: one segment per card of the area's deck, with an icon for each encounter
                 already met this round. Rounds (and their opening Pokémon Center) happen either way.
+              </span>
+            </span>
+          </label>
+          <label className="flex items-start gap-2 text-lg">
+            <input type="checkbox" className="mt-1.5" checked={!!showAhead} onChange={(e) => setShowAhead(e.target.checked)} />
+            <span>
+              showRoundPreview
+              <span className="block text-sm text-muted">
+                Under the round gauge, show what's ahead: an icon for each card still in the deck (battle, find, wild
+                Pokémon, Center, legendary) and the gym badge or legendary waiting at the full gauge. Needs showRoundGauge.
               </span>
             </span>
           </label>

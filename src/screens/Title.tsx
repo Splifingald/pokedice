@@ -4,6 +4,8 @@ import { motion } from 'framer-motion'
 import { Die } from '@/components/Die'
 import { Modal } from '@/components/Modal'
 import { PixelButton } from '@/components/PixelButton'
+import { SpriteImg } from '@/components/SpriteImg'
+import { teamOf } from '@/engine'
 import { isSupabaseConfigured } from '@/lib/supabase'
 import { useGame } from '@/store/game'
 import { signInWithGoogle, signOut } from '@/store/sync'
@@ -19,6 +21,7 @@ export function Title() {
   const corrupt = useGame((s) => s.corruptSaveArchived)
   const runArea = useGame((s) => s.run.areaId)
   const [confirmNew, setConfirmNew] = useState(false)
+  const team = save ? teamOf(save) : []
 
   return (
     <main className="scanlines flex min-h-screen flex-col items-center justify-center gap-8 px-4 py-10">
@@ -45,7 +48,18 @@ export function Title() {
 
       <div className="flex w-full max-w-xs flex-col gap-3">
         {save && (
-          <PixelButton variant="primary" size="lg" onClick={() => navigate(runArea ? '/area' : '/map')}>
+          <PixelButton
+            variant="primary"
+            size="lg"
+            onClick={() => navigate(runArea ? '/area' : '/map')}
+            aria-label={`Continue with ${team.map((p) => data.species[p.dex]?.name).join(', ')}`}
+          >
+            <span className="flex items-center" aria-hidden>
+              {team.map((p) => (
+                // Sprites carry wide transparent margins: draw them big and let them overflow the button's padding.
+                <SpriteImg key={p.id} dex={p.dex} size={64} className="-my-5 -mx-3" />
+              ))}
+            </span>
             CONTINUE
           </PixelButton>
         )}

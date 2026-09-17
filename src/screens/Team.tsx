@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { teamOf, type PokemonInstance } from '@/engine'
+import { PixelIcon } from '@/components/icons'
 import { ItemPanel } from '@/components/ItemPanel'
 import { MonCard } from '@/components/MonCard'
 import { PixelButton } from '@/components/PixelButton'
@@ -73,7 +74,7 @@ export function TeamScreen() {
               showXp
               showDice
               onClick={() => open(p)}
-              badge={i === 0 ? <span className="border-2 border-ink bg-gold px-1 text-sm leading-tight text-ink">LEAD</span> : null}
+              badge={i === 0 ? <PixelIcon name="crown" size={20} title="Lead: sent out first" /> : null}
             >
               <div className="flex flex-col gap-1">
                 <PixelButton size="sm" disabled={i === 0} onClick={() => move(i, -1)} aria-label={`Move ${name(p)} up`}>

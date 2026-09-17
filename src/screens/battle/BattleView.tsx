@@ -164,6 +164,8 @@ export function BattleView({ battle }: { battle: BattleSlice }) {
   const reduced = useGame((s) => s.settings.reducedMotion)
   const desktop = useIsDesktop()
   const short = useMediaQuery('(max-height: 700px)')
+  // Desktop screens under 1000px tall get a lower scene so the controls below stay in view.
+  const roomy = useMediaQuery('(min-height: 1000px)')
   const st = battle.state
   const particles = useRef<ParticleHandle>(null)
   const scene = useRef<HTMLDivElement>(null)
@@ -274,8 +276,8 @@ export function BattleView({ battle }: { battle: BattleSlice }) {
   }, [stunned, menu, stunChoice])
 
   // Short phones (≤ 700px tall) shrink the scene so the tray and controls still fit without scrolling.
-  const enemySize = desktop ? 208 : short ? 84 : 112
-  const playerSize = desktop ? 232 : short ? 96 : 128
+  const enemySize = desktop ? (roomy ? 160 : 120) : short ? 84 : 112
+  const playerSize = desktop ? (roomy ? 176 : 136) : short ? 96 : 128
   const mainSize = desktop ? 'lg' : 'md'
   const minorSize = desktop ? 'md' : 'sm'
   // Dice fill the tray: sized by how many are thrown (up to 64px), never under a 44px tap target.
@@ -308,7 +310,7 @@ export function BattleView({ battle }: { battle: BattleSlice }) {
         className="pixel-panel relative overflow-hidden p-0"
         style={{
           background: 'linear-gradient(#c6e7ef 0%, #e8f3df 48%, #cfe3a8 48%, #b8d68e 100%)',
-          minHeight: desktop ? 380 : short ? 188 : 232,
+          minHeight: desktop ? (roomy ? 300 : 240) : short ? 188 : 232,
         }}
       >
         <div className="absolute inset-0 scanlines" aria-hidden />
@@ -355,7 +357,7 @@ export function BattleView({ battle }: { battle: BattleSlice }) {
               extra={
                 <div className="mt-1 flex items-center justify-between text-base">
                   <span className="flex items-center gap-1">
-                    <PixelIcon name="dice" size={14} /> {active.rerollsLeft}/{active.rerolls} rerolls
+                    <PixelIcon name="reroll" size={16} /> {active.rerollsLeft}/{active.rerolls} rerolls
                   </span>
                   <span className="flex gap-0.5">
                     {st.player.map((p) => (
@@ -461,10 +463,12 @@ export function BattleView({ battle }: { battle: BattleSlice }) {
             <button
               type="button"
               aria-expanded={showBreakdown}
-              className="pixel-btn inline-flex min-h-[44px] items-center gap-1.5 bg-panel px-2 text-xl md:min-h-[32px]"
+              aria-label={`${preview.r.final} damage — ${showBreakdown ? 'hide' : 'show'} details`}
+              title="Damage — click for details"
+              className="inline-flex min-h-[44px] items-center gap-1.5 px-1 text-2xl md:min-h-[32px]"
               onClick={() => setShowBreakdown((v) => !v)}
             >
-              ≈ {preview.r.final} dmg <span className="font-pixel-sm text-base text-muted">{showBreakdown ? 'hide' : 'why?'}</span>
+              <PixelIcon name="sword" size={20} /> {preview.r.final}
             </button>
             {preview.statuses.map((s) => (
               <span key={s.status} className="inline-flex items-center gap-1 border-2 border-ink bg-panel px-1 text-base">
@@ -507,7 +511,7 @@ export function BattleView({ battle }: { battle: BattleSlice }) {
                 onClick={() => dispatchBattle({ t: 'REROLL' })}
                 quiet
               >
-                REROLL ({active.rerollsLeft})
+                <PixelIcon name="reroll" size={18} /> REROLL ({active.rerollsLeft})
               </PixelButton>
               {active.rerollsLeft > 0 && <span className="text-center text-base leading-tight text-muted">Select dice to reroll</span>}
             </div>

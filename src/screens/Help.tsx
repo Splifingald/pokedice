@@ -207,10 +207,10 @@ export function HelpContent() {
 
       <Section id="explore" title="Exploring">
         <ul className="ml-5 list-disc">
-          <li>Each area has a <b>gauge</b>. Every Pokémon you knock out fills it by the foe's level.</li>
+          <li>Each area has an <b>exploration</b> bar. Every Pokémon you knock out fills it by the foe's level.</li>
           <li>
             When it's full, <b>CHALLENGE</b> the area's Gym Leader (or legendary) whenever you're ready — or keep exploring
-            first: a full gauge stays full. Win to open the next area.
+            first: a complete exploration stays complete. Win to open the next area.
           </li>
           <li>
             You see every encounter before it starts: <b>FIGHT</b> it, <b>FLEE</b> a wild Pokémon, or <b>AVOID</b> an
@@ -233,7 +233,7 @@ export function HelpContent() {
             <li>
               Encounters are dealt from each area's <b>shuffled deck</b> (about ten cards). Going through it is a{' '}
               <b>round</b>; every new round opens with a Pokémon Center whenever you have someone to heal or swap. The
-              round gauge under the area gauge shows how far into the round you are.
+              round bar under the exploration bar shows how far into the round you are.
             </li>
           )}
           <li>
@@ -244,14 +244,7 @@ export function HelpContent() {
             enough).
           </li>
           <li>
-            The Map shows each area's <b>encounter types</b>
-            {cfg.showRecommendedTypes && (
-              <>
-                {' '}
-                and the <b>recommended types</b> that hit them hard
-              </>
-            )}
-            : build your team for it.
+            The type badges at the top right of each area are its <b>encounter types</b>: build your team for them.
           </li>
         </ul>
       </Section>
@@ -341,8 +334,8 @@ export function HelpContent() {
           </li>
           <li>HP carries over between fights. Hurt Pokémon recover {cfg.regenPercentPerHour} % of their HP per hour, or fully at a Center.</li>
           <li>
-            If your whole team faints, the <b>round is lost</b>: the area gauge goes back to where it stood when the round
-            began (the red mark on it; a full gauge stays full) and a new, freshly shuffled round starts. Your team is
+            If your whole team faints, the <b>round is lost</b>: exploration goes back to where it stood when the round
+            began (the red mark on it; a complete exploration stays complete) and a new, freshly shuffled round starts. Your team is
             healed, and you keep your Pokédollars, items and your Pokémon's levels.
           </li>
         </ul>

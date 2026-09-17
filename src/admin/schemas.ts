@@ -32,6 +32,7 @@ export const ROW_SCHEMAS: Record<TableName, z.ZodTypeAny> = {
     label: z.string().min(1),
     color: z.string().regex(/^#[0-9a-fA-F]{6}$/, 'hex colour like #aa8844'),
     faces: z.array(face).length(6, 'exactly 6 faces'),
+    description: z.string().max(40, 'keep it short (40 characters max)'),
     upgradeable: z.boolean(),
     counts_for_majority: z.boolean(),
     sort_order: int(),

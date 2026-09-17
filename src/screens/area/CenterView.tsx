@@ -122,7 +122,7 @@ export function CenterView() {
               <MonCard
                 inst={p}
                 onClick={() => open(p)}
-                badge={i === 0 ? <span className="border-2 border-ink bg-gold px-1 text-sm leading-tight text-ink">LEAD</span> : null}
+                badge={i === 0 ? <PixelIcon name="crown" size={20} title="Lead: sent out first" /> : null}
               />
             </li>
           ))}

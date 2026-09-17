@@ -36,6 +36,8 @@ export interface DiceTypeDef {
   label: string
   color: string
   faces: Face[]
+  /** A few words on what the die does, shown under its faces ("Stacking burn"). */
+  description: string
   upgradeable: boolean
   countsForMajority: boolean
   sortOrder: number
@@ -252,6 +254,8 @@ export interface GameConfig {
   maxDice: number
   comboPayoutMode: 'highestDamage' | 'highestRank'
   skipPolicy: SkipPolicy
+  /** No way out of a fight: no FLEE / AVOID on the encounter pop-up and no RUN in battle (overrides skipPolicy). */
+  noEscape: boolean
   starters: number[]
   starterLevel: number
   /**
@@ -282,12 +286,12 @@ export interface GameConfig {
   maxBattleTurns: number
   /** Multi EXP: team members who didn't fight get this fraction of each K.O.'s XP (0 = feature off). Players toggle it. */
   multiExpShare: number
-  /** × the XP a K.O. gives Pokémon (the foe's level × this). The area gauge still fills by the foe's level. */
+  /** × the XP a K.O. gives (the foe's level × this), to the Pokémon and to the area's exploration alike. */
   xpMultiplier: number
-  /** Show each area's "Recommended types" (attacking types that hit its foes hard) on the Map and area screens. */
-  showRecommendedTypes: boolean
   /** Show the round gauge on the area screen: one segment per card of the area's deck, icons for those already met. */
   showRoundGauge: boolean
+  /** Under the round gauge, reveal what's ahead: an icon for each card still in the deck, and the gym / legendary at the end. */
+  showRoundPreview: boolean
   status: StatusRules
   ai: { samples: number; rerollGainThreshold: number }
 }

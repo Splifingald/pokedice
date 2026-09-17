@@ -125,14 +125,17 @@ export function declineChallenge() {
 
 export function canSkipCurrent(): boolean {
   const { run, data } = useGame.getState()
-  return !!run.encounter && canSkip(run.encounter, data.config.skipPolicy, run.skipsUsed)
+  return !!run.encounter && !data.config.noEscape && canSkip(run.encounter, data.config.skipPolicy, run.skipsUsed)
 }
 
+/** FLEE / AVOID: back to the area screen (heal, check the team…); the next encounter waits for NEXT ENCOUNTER. */
 export function skipEncounter() {
   if (!canSkipCurrent()) return
-  const skips = useGame.getState().run.skipsUsed + 1
-  rollNext()
-  setRun({ skipsUsed: skips })
+  const { run } = useGame.getState()
+  const trainer = run.encounter?.kind === 'trainer'
+  // skipsUsed survives until a fight is engaged, so skipPolicy 'once' still allows one skip in a row.
+  setRun({ phase: 'idle', encounter: null, skipsUsed: run.skipsUsed + 1 })
+  pushToast(trainer ? 'You slipped past the trainer.' : 'Got away safely!')
 }
 
 function startBattle(kind: BattleKind, enemy: { dex: number; level: number }, leadUid?: string) {

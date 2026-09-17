@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { useState } from 'react'
+import { Fragment, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { effectiveStats, getSpecies } from '@/engine'
 import { Dialogue } from '@/components/Dialogue'
@@ -8,6 +8,7 @@ import { DieFaces } from '@/components/Die'
 import { Modal } from '@/components/Modal'
 import { PixelButton } from '@/components/PixelButton'
 import { SpriteImg } from '@/components/SpriteImg'
+import { StatChip } from '@/components/StatChip'
 import { TypeBadge } from '@/components/TypeBadge'
 import { useGame } from '@/store/game'
 import { enterArea, startNewGame } from '@/store/run'
@@ -39,8 +40,19 @@ export function NewGame() {
     <main className="scanlines min-h-screen px-3 py-8">
       <div className="mx-auto flex max-w-5xl flex-col gap-6">
         {!picking ? (
-          <div className="mx-auto mt-[20vh] w-full max-w-2xl">
+          <div className="mx-auto mt-[12vh] w-full max-w-2xl">
             <h1 className="sr-only">New game</h1>
+            <motion.img
+              src="/characters/prof-oak.png"
+              alt="Professor Oak"
+              width={168}
+              height={168}
+              className="mx-auto mb-2 block"
+              style={{ imageRendering: 'pixelated' }}
+              initial={{ y: 12, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+            />
+            <div className="font-pixel-sm mb-1 inline-block bg-ink px-2 py-0.5 text-lg text-parchment">PROF. OAK</div>
             <Dialogue key={line} text={INTRO[line]} />
             <div className="mt-3 flex justify-between">
               <PixelButton size="sm" variant="ghost" onClick={() => setLine(INTRO.length)}>
@@ -75,19 +87,25 @@ export function NewGame() {
                       <TypeBadge type={sp.type1} />
                       {sp.type2 && <TypeBadge type={sp.type2} />}
                     </div>
-                    <div className="text-xl">
-                      Lv.{level} · HP {stats.maxHp} · Speed {sp.speed}
+                    <div className="flex items-center gap-4 text-xl">
+                      <span>Lv.{level}</span>
+                      <StatChip stat="hp" value={stats.maxHp} size={18} />
+                      <StatChip stat="speed" value={sp.speed} size={18} />
+                      <StatChip stat="rerolls" value={stats.rerolls} size={18} />
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="grid grid-cols-[auto_auto] items-center gap-x-2 gap-y-1">
+                      <span className="text-sm uppercase">Dice</span>
                       <DiceSet dice={stats.dice} size={28} />
-                      <span className="text-xl">🎲×{stats.rerolls}</span>
-                    </div>
-                    <div className="flex flex-col gap-1">
                       {[...new Set(stats.dice)].map((t) => (
-                        <div key={t} className="flex items-center gap-2">
-                          <span className="w-12 text-sm uppercase">{t}</span>
-                          <DieFaces type={t} faces={data.diceTypes[t]?.faces ?? []} size={22} />
-                        </div>
+                        <Fragment key={t}>
+                          <span className="text-sm uppercase">{t}</span>
+                          <div>
+                            <DieFaces type={t} faces={data.diceTypes[t]?.faces ?? []} size={22} />
+                            {data.diceTypes[t]?.description && (
+                              <div className="copy text-sm text-muted">{data.diceTypes[t]!.description}</div>
+                            )}
+                          </div>
+                        </Fragment>
                       ))}
                     </div>
                   </motion.button>

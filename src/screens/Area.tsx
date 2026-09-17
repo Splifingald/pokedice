@@ -15,6 +15,7 @@ import {
   type PokemonInstance,
 } from '@/engine'
 import { AreaTypes } from '@/components/AreaTypes'
+import { BadgeIcon } from '@/components/BadgeIcon'
 import { Gauge } from '@/components/Gauge'
 import { HpBar } from '@/components/HpBar'
 import { PixelIcon, type IconName } from '@/components/icons'
@@ -30,7 +31,7 @@ import { BattleView } from './battle/BattleView'
 import { CenterView } from './area/CenterView'
 import { EncounterPreview } from './area/EncounterPreview'
 
-const CARD_ICON: Record<DeckCard, IconName> = { wild: 'ball', trainer: 'sword', center: 'heal', item: 'potion', legend: 'star' }
+const CARD_ICON: Record<DeckCard, IconName> = { wild: 'ball', trainer: 'vs', center: 'heart', item: 'box', legend: 'masterball' }
 const CARD_NAME: Record<DeckCard, string> = {
   wild: 'a wild Pokémon',
   trainer: 'a trainer',
@@ -47,7 +48,7 @@ function roundMark(area: Area, progress: AreaProgress): number | null {
 }
 
 /** Both gauges share a label column so their bars line up. */
-const GAUGE_LABEL = 'w-[4.5rem] shrink-0'
+const GAUGE_LABEL = 'w-[6.5rem] shrink-0'
 
 /**
  * The round gauge, laid out like the area gauge above it: ROUND n · one tile per card of the area's deck · n/total.
@@ -56,7 +57,8 @@ const GAUGE_LABEL = 'w-[4.5rem] shrink-0'
  * encounters aren't dealt from a deck.
  */
 function RoundGauge({ area, progress }: { area: Area; progress: AreaProgress }) {
-  const cfg = useGame((s) => s.data.config)
+  const data = useGame((s) => s.data)
+  const cfg = data.config
   if (!cfg.showRoundGauge || cfg.encounterMode !== 'deck') return null
   const remaining = progress.deck?.length ?? 0
   const met = progress.drawn ?? []
@@ -67,7 +69,13 @@ function RoundGauge({ area, progress }: { area: Area; progress: AreaProgress }) 
   const total = inRound ? (progress.drawn ? met.length + remaining : Math.max(deckSize(area), remaining)) : justDone ? met.length : deckSize(area)
   const metCount = inRound ? total - remaining : justDone ? total : 0
   const unknown = Math.max(0, metCount - met.length)
-  return (
+  // Preview (admin option): the deck is drawn from the end, so the next card is its last one.
+  const ahead = cfg.showRoundPreview && inRound ? [...progress.deck!].reverse() : []
+  const gymId = cfg.showRoundPreview ? area.gyms.find((id) => !progress.gymsDefeated.includes(id) && data.trainers[id]) : undefined
+  const gym = gymId ? data.trainers[gymId] : undefined
+  const boss = cfg.showRoundPreview && !gym ? (area.legendaryBoss ?? []).find((b) => !progress.bossesDefeated.includes(b.dex)) : undefined
+  const finale = gym ? (gym.badge ? `${gym.name} (${gym.badge})` : gym.name) : boss ? (data.species[boss.dex]?.name ?? 'a legendary') : null
+  const gauge = (
     <div
       className="flex items-center gap-2"
       role="img"
@@ -101,9 +109,40 @@ function RoundGauge({ area, progress }: { area: Area; progress: AreaProgress }) 
       </span>
     </div>
   )
+  if (!ahead.length && !finale) return gauge
+  return (
+    <>
+      {gauge}
+      <div className="flex items-center gap-2">
+        <span className={cx('text-sm leading-none', GAUGE_LABEL)}>AHEAD</span>
+        <ol
+          className="flex min-w-0 flex-1 gap-[2px]"
+          aria-label={`Still to come this round: ${ahead.map((c) => CARD_NAME[c]).join(', ') || 'nothing'}`}
+        >
+          {Array.from({ length: total }, (_, i) => {
+            const card = i >= metCount ? ahead[i - metCount] : undefined
+            return (
+              <li key={i} className="flex h-6 min-w-0 flex-1 items-center justify-center" title={card ? CARD_NAME[card] : undefined}>
+                {card && <PixelIcon name={CARD_ICON[card]} size={16} />}
+              </li>
+            )
+          })}
+        </ol>
+        <span className="flex min-w-[6ch] justify-end" title={finale ? `When exploration is complete: ${finale}` : undefined}>
+          {gym?.badge ? (
+            <BadgeIcon badge={gym.badge} earned size={18} />
+          ) : gym ? (
+            <PixelIcon name="vs" size={18} title={`Gym: ${gym.name}`} />
+          ) : boss ? (
+            <PixelIcon name="masterball" size={18} title={`Legendary: ${finale}`} />
+          ) : null}
+        </span>
+      </div>
+    </>
+  )
 }
 
-/** Encounter / recommended types, a slim banner, then the name with its levels, the gauge and the round gauge. */
+/** Encounter types, a slim banner, then the name with its levels, the gauge and the round gauge. */
 function AreaHeader({ area, progress, teamAvg }: { area: Area; progress: AreaProgress; teamAvg: number }) {
   const spread = useGame((s) => s.data.config.scaleLevelSpread)
   const notes = [
@@ -222,7 +261,7 @@ export function AreaScreen() {
         <div className="pixel-panel flex flex-col items-center gap-3 p-5 text-center">
           <p className="text-2xl">
             {gym
-              ? `The gauge is full — ${trainerTitle(gym)} is ready when you are.`
+              ? `Exploration complete — ${trainerTitle(gym)} is ready when you are.`
               : boss
                 ? 'The ground trembles. Something powerful is waiting…'
                 : run.firstInArea
@@ -251,10 +290,10 @@ export function AreaScreen() {
               MAP
             </PixelButton>
           </div>
-          {(gym || boss) && <p className="text-lg leading-tight text-muted">Or keep exploring first — the gauge stays full.</p>}
+          {(gym || boss) && <p className="text-lg leading-tight text-muted">Or keep exploring first — your exploration stays complete.</p>}
           {nextGym && (
             <p className="text-lg leading-tight">
-              {trainerTitle(nextGym)} waits at the end of the gauge ({progress.xp}/{area.xpToUnlockNext ?? '∞'})
+              {trainerTitle(nextGym)} waits at the end of the exploration ({progress.xp}/{area.xpToUnlockNext ?? '∞'})
             </p>
           )}
         </div>

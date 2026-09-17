@@ -12,6 +12,7 @@
  "maxDice": 6,
  "comboPayoutMode": "highestDamage",
  "skipPolicy": "free",
+ "noEscape": true,
  "starters": [
   1,
   4,
@@ -33,8 +34,8 @@
  "maxBattleTurns": 150,
  "multiExpShare": 0.3,
  "xpMultiplier": 2,
- "showRecommendedTypes": true,
  "showRoundGauge": true,
+ "showRoundPreview": false,
  "status": {
   "burn": {
    "threshold": 1,

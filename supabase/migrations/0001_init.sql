@@ -17,6 +17,7 @@ create table if not exists dice_types (
   label text not null,
   color text not null,
   faces jsonb not null,             -- [{kind:'number',value:4} | {kind:'status',status:'burn',value:1}] x6
+  description text not null default '', -- a few words shown under the faces ('Stacking burn')
   upgradeable boolean not null default true,
   counts_for_majority boolean not null default true,
   sort_order int not null default 0
@@ -29,7 +30,7 @@ create table if not exists pokemon (
   type2 text,
   base_hp int not null,
   max_hp int not null,
-  speed int not null,
+  speed int not null,               -- base Speed stat ÷ 10, rounded down
   sprite_url text not null,
   dice jsonb not null,
   rerolls int not null,

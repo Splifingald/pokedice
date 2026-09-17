@@ -226,12 +226,35 @@ const FACES: Record<DieType, Face[]> = {
 
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
 
+const DIE_DESCRIPTIONS: Record<DieType, string> = {
+  base: 'Plain 1 to 6',
+  normal: 'Steady 1 to 6',
+  fire: 'Stacking burn',
+  water: 'Reliable, no 1s or 6s',
+  electric: 'Chance to paralyze',
+  grass: 'Chance to heal',
+  ice: 'Chance to freeze',
+  fighting: 'Hard hitter, 2 to 7',
+  poison: 'Chance to poison',
+  ground: 'All or nothing',
+  flying: 'Chance of a big 7',
+  psychic: 'Chance to confuse',
+  bug: 'Only 1s and 4s',
+  rock: 'Low but sturdy',
+  ghost: 'Blanks or big hits',
+  dragon: 'Strong, up to 8',
+  dark: 'Risky, up to 7',
+  steel: 'Always 3 or 4',
+  fairy: 'Even numbers only',
+}
+
 function buildDiceTypes(): DiceTypeDef[] {
   return DIE_TYPES.map((type, i) => ({
     type,
     label: cap(type),
     color: TYPE_COLORS[type],
     faces: FACES[type],
+    description: DIE_DESCRIPTIONS[type],
     upgradeable: type !== 'base',
     countsForMajority: type !== 'base',
     sortOrder: i,
@@ -367,7 +390,7 @@ async function fetchSpecies(): Promise<Species[]> {
       type2,
       baseHp: hpAtLevel(hpStat, 1),
       maxHp: hpAtLevel(hpStat, 100),
-      speed: stat('speed'),
+      speed: Math.floor(stat('speed') / 10), // game Speed = base Speed ÷ 10, rounded down
       spriteUrl: SPRITE(dex),
       dice: composeDice(diceCount, type1, type2),
       rerolls: diceCount,
@@ -570,8 +593,8 @@ export function buildSql(b: {
     ),
     upsert(
       'dice_types',
-      ['type', 'label', 'color', 'faces', 'upgradeable', 'counts_for_majority', 'sort_order'],
-      b.diceTypes.map((d) => [d.type, d.label, d.color, d.faces, d.upgradeable, d.countsForMajority, d.sortOrder]),
+      ['type', 'label', 'color', 'faces', 'description', 'upgradeable', 'counts_for_majority', 'sort_order'],
+      b.diceTypes.map((d) => [d.type, d.label, d.color, d.faces, d.description, d.upgradeable, d.countsForMajority, d.sortOrder]),
       ['type'],
     ),
     upsert(

@@ -37,12 +37,7 @@ export function trainerGoldFor(enemyLevel: number, area: Area, cleared: boolean,
   return Math.round(enemyLevel * data.config.goldMultiplier * bonus * rewardMultiplier(area, cleared))
 }
 
-/** Area-gauge fill from a K.O.: the foe's level (× backtrack). */
-export function scaledXp(enemyLevel: number, area: Area, cleared: boolean): number {
-  return Math.max(1, Math.round(enemyLevel * rewardMultiplier(area, cleared)))
-}
-
-/** Pokémon XP from a K.O.: the foe's level × `xpMultiplier` (× backtrack). The gauge is not multiplied. */
+/** XP from a K.O. — to the Pokémon and to the area's exploration alike: the foe's level × `xpMultiplier` (× backtrack). */
 export function pokemonXp(enemyLevel: number, area: Area, cleared: boolean, data: GameData): number {
   return Math.max(1, Math.round(enemyLevel * data.config.xpMultiplier * rewardMultiplier(area, cleared)))
 }

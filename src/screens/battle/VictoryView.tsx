@@ -11,6 +11,7 @@ import { LeadPicker, defaultLead } from '@/components/LeadPicker'
 import { MonCard, XpBar } from '@/components/MonCard'
 import { PixelButton } from '@/components/PixelButton'
 import { SpriteImg } from '@/components/SpriteImg'
+import { StatChip } from '@/components/StatChip'
 import { milestoneText, money, trainerTitle } from '@/lib/format'
 import { BadgeIcon } from '@/components/BadgeIcon'
 import { useGame } from '@/store/game'
@@ -89,8 +90,8 @@ function EvolutionSequence({ uid, fromDex, toDex }: { uid: string; fromDex: numb
       {stage === 3 && stats && (
         <div className="flex flex-wrap items-center justify-center gap-3 text-lg">
           <DiceSet dice={stats.dice} size={24} />
-          <span>🎲×{stats.rerolls}</span>
-          <span>HP {inst!.currentHp}/{stats.maxHp}</span>
+          <StatChip stat="rerolls" value={stats.rerolls} />
+          <StatChip stat="hp" value={`${inst!.currentHp}/${stats.maxHp}`} />
         </div>
       )}
     </div>
@@ -377,7 +378,7 @@ export function WipeView() {
       <p className="copy mb-3 text-lg">
         You hurried back to the start of {area?.name}. Your Pokémon have been fully healed, and you keep your Pokédollars,
         items and your Pokémon's levels.{' '}
-        {full ? 'The round is lost, but the gauge stays full.' : `The round is lost: the gauge is back to ${xp}, where it stood when the round began.`}{' '}
+        {full ? 'The round is lost, but your exploration stays complete.' : `The round is lost: exploration is back to ${xp}, where it stood when the round began.`}{' '}
         A new round starts with a freshly shuffled deck.
       </p>
       {area && <Gauge value={xp} max={area.xpToUnlockNext} className="mb-4" />}

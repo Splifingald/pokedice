@@ -130,17 +130,16 @@ describe('secret areas', () => {
 })
 
 describe('area type profiles', () => {
-  it('Viridian Forest is mostly Bug, and Fire/Flying hit it hard', () => {
+  it('Viridian Forest is mostly Bug', () => {
     const p = areaTypeProfile(FOREST, data)
     expect(p.main[0]).toBe('bug')
     expect(p.main.length).toBeGreaterThanOrEqual(2)
     expect(p.main.length).toBeLessThanOrEqual(3)
-    expect(p.strong).toEqual(expect.arrayContaining(['fire']))
   })
 
   it('trainer-only areas use their trainers; an empty area has no profile', () => {
     expect(areaTypeProfile(byName('Silph Co.'), data).main.length).toBeGreaterThan(0)
-    expect(areaTypeProfile(FARAWAY, data)).toEqual({ main: [], shares: {}, strong: [] })
+    expect(areaTypeProfile(FARAWAY, data)).toEqual({ main: [], shares: {} })
   })
 
   it("names a trainer's specialty", () => {

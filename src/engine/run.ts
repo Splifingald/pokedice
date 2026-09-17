@@ -1,6 +1,6 @@
 // Pure state transitions on the save: new game, rewards, catches, wipes, center, team, shop, upgrades.
 import { getSpecies, linearAreas } from './data'
-import { nextComboCost, nextDieCost, pokemonXp, scaledXp, trainerGoldFor, healAmount } from './economy'
+import { nextComboCost, nextDieCost, pokemonXp, trainerGoldFor, healAmount } from './economy'
 import { MONEY, usableIn } from './items'
 import { averageLevel, createInstance, gainXp, instanceMaxHp, xpToNext, type ProgressEvent } from './progression'
 import type { Rng } from './rng'
@@ -268,9 +268,9 @@ export function applyVictory(
   const hiddenBefore = new Set(unlockedHiddenAreas(save, data))
   let next: SaveData = { ...save, pokedex: [...save.pokedex] }
 
-  // XP: Pokémon get the foe's level × xpMultiplier; the gauge gets the foe's level.
+  // XP: the foe's level × xpMultiplier, the same amount for the Pokémon and for the area's exploration.
   const xp = pokemonXp(input.enemyLevel, area, progress.cleared, data)
-  const gaugeXp = scaledXp(input.enemyLevel, area, progress.cleared)
+  const gaugeXp = xp
   const award = (uid: string, amount: number, shared: boolean) => {
     const inst = getInstance(next, uid)
     if (!inst) return

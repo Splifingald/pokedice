@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { ballBonus, catchChance, catchValueOf } from '@/engine'
 import { sfx } from '@/audio/sfx'
 import { Die } from '@/components/Die'
+import { PixelIcon } from '@/components/icons'
 import { PixelButton } from '@/components/PixelButton'
 import { SpriteImg } from '@/components/SpriteImg'
 import { useGame } from '@/store/game'
@@ -42,7 +43,7 @@ export function CatchView() {
   const chosen = options.find((o) => o.key === ball) ?? options[0]!
   const pct = (bonus: number) => Math.round(catchChance(value, bonus) * 100)
   const title = revealed && result ? (result.caught ? 'Gotcha!' : `${name} fled!`) : `${c.kind === 'boss' ? 'The legendary' : 'The wild'} ${name} is worn out!`
-  const ballName = result?.ballKey ? (data.items[result.ballKey]?.name ?? 'ball') : null
+
 
   return (
     <motion.div className="fixed inset-0 z-[80] flex items-start justify-center overflow-auto bg-ink/70 p-3 sm:items-center" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
@@ -63,34 +64,45 @@ export function CatchView() {
         >
           <SpriteImg dex={c.dex} size={128} className="border-[3px] border-ink bg-parchment" />
         </motion.div>
-        <p className="copy">
-          Catch value <b>{value}</b>: the die plus your ball must reach {value}.
-          {c.target.mode === 'replace' && ` You have a Lv.${c.target.level} ${name} — catching this Lv.${c.level} one replaces it.`}
-        </p>
+        {c.target.mode === 'replace' && !result && (
+          <p className="copy text-muted">Replaces your Lv.{c.target.level} {name}.</p>
+        )}
 
         {!result ? (
           <>
-            <fieldset className="flex w-full flex-col gap-2">
-              <legend className="mb-1 text-xl">Throw with</legend>
-              <div className="grid gap-2 sm:grid-cols-2">
-                {options.map((o) => (
-                  <button
-                    key={o.key ?? 'none'}
-                    type="button"
-                    aria-pressed={chosen.key === o.key}
-                    onClick={() => setBall(o.key)}
-                    className={cx('pixel-btn flex items-center justify-between gap-2 px-3 py-2 text-left text-lg', chosen.key === o.key ? 'bg-gold' : 'bg-panel')}
-                  >
-                    <span>
-                      {o.label}
-                      {o.n != null && <span className="font-mono text-base"> ×{o.n}</span>}
-                    </span>
-                    <span className="font-mono text-base">
-                      {o.bonus ? `+${o.bonus} · ` : ''}
-                      {pct(o.bonus)} %
-                    </span>
-                  </button>
-                ))}
+            <div aria-live="polite">
+              <div className="text-xl leading-none">Catch chance</div>
+              <div className="text-6xl leading-none tabular-nums">{pct(chosen.bonus)}%</div>
+            </div>
+            <fieldset className="w-full">
+              <legend className="sr-only">Ball</legend>
+              <div className="flex flex-wrap justify-center gap-2">
+                {options.map((o) => {
+                  const icon = o.key ? data.items[o.key]?.spriteUrl : null
+                  return (
+                    <button
+                      key={o.key ?? 'none'}
+                      type="button"
+                      aria-pressed={chosen.key === o.key}
+                      aria-label={`${o.label}${o.n != null ? `, ${o.n} left` : ''}, +${o.bonus}`}
+                      title={o.label}
+                      onClick={() => setBall(o.key)}
+                      className={cx('pixel-btn relative flex w-20 flex-col items-center px-1 pb-1 pt-2', chosen.key === o.key ? 'bg-gold' : 'bg-panel')}
+                    >
+                      {o.key == null ? (
+                        <span className="flex h-10 items-center text-lg leading-none">None</span>
+                      ) : icon ? (
+                        <img src={icon} alt="" width={40} height={40} style={{ imageRendering: 'pixelated' }} />
+                      ) : (
+                        <span className="flex h-10 items-center">
+                          <PixelIcon name="ball" size={28} />
+                        </span>
+                      )}
+                      <span className="text-xl leading-none">+{o.bonus}</span>
+                      {o.n != null && <span className="absolute right-1 top-0.5 font-mono text-sm">×{o.n}</span>}
+                    </button>
+                  )
+                })}
               </div>
             </fieldset>
             <div className="flex flex-wrap justify-center gap-2">
@@ -107,7 +119,9 @@ export function CatchView() {
             <Die type="base" face={{ kind: 'number', value: result.die }} size={80} rollKey="catch-throw" label={`Catch die: ${result.die}`} />
             <p className="text-2xl" aria-live="polite">
               {revealed
-                ? `${result.die}${result.bonus ? ` + ${result.bonus} (${ballName})` : ''} = ${result.total} — needed ${result.need}. ${result.caught ? `${name} was caught!` : `${name} broke free and fled…`}`
+                ? result.caught
+                  ? `${name} was caught!`
+                  : `MISSED! You needed at least ${Math.max(1, result.need - result.bonus)}.`
                 : 'The die is rolling…'}
             </p>
             {revealed && (

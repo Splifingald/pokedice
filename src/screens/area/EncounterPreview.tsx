@@ -10,6 +10,7 @@ import { PixelIcon } from '@/components/icons'
 import { LeadPicker, defaultLead } from '@/components/LeadPicker'
 import { PixelButton } from '@/components/PixelButton'
 import { SpriteImg } from '@/components/SpriteImg'
+import { StatChip } from '@/components/StatChip'
 import { TypeBadge } from '@/components/TypeBadge'
 import { useGame } from '@/store/game'
 import { canSkipCurrent, declineChallenge, engage, skipEncounter } from '@/store/run'
@@ -36,12 +37,10 @@ function WildCard({ enc }: { enc: Extract<Encounter, { kind: 'wild' | 'boss' }> 
           <span className="text-3xl leading-none sm:text-4xl">{sp.name}</span>
           {enc.kind === 'wild' &&
             (enc.isNew ? (
-              <span className="inline-flex items-center gap-1 border-2 border-ink bg-gold px-1.5 text-lg leading-tight text-ink">
-                <PixelIcon name="star" size={12} /> NEW!
-              </span>
+              <span className="border-2 border-ink bg-gold px-1.5 text-lg leading-tight text-ink">NEW!</span>
             ) : (
               <span className="inline-flex items-center gap-1 text-lg text-muted">
-                <PixelIcon name="check" size={12} /> caught
+                <PixelIcon name="ball" size={16} /> caught
               </span>
             ))}
         </div>
@@ -52,9 +51,7 @@ function WildCard({ enc }: { enc: Extract<Encounter, { kind: 'wild' | 'boss' }> 
         </div>
         <div className="flex items-center gap-2">
           <DiceSet dice={stats.dice} size={22} />
-          <span className="flex items-center gap-1 text-lg">
-            <PixelIcon name="reroll" size={14} />×{stats.rerolls}
-          </span>
+          <StatChip stat="rerolls" value={stats.rerolls} size={18} className="text-lg" />
         </div>
         <CatchHint dex={enc.dex} level={enc.level} kind={boss ? 'boss' : 'wild'} />
       </div>
@@ -69,8 +66,8 @@ function CatchHint({ dex, level, kind }: { dex: number; level: number; kind: 'wi
   if (!save) return null
   const target = catchTarget(save, dex, level, kind, data)
   return (
-    <div className="text-lg leading-tight">
-      Catch value {catchValueOf(data, dex)}
+    <div className="flex flex-wrap items-center gap-x-1 text-lg leading-tight">
+      <StatChip stat="catch" value={catchValueOf(data, dex)} size={18} />
       {target?.mode === 'replace' && ` · stronger than your Lv.${target.level}: a catch replaces it`}
       {!target && ' · no catch (yours is as strong)'}
     </div>
@@ -83,7 +80,7 @@ function ItemCard({ enc }: { enc: Extract<Encounter, { kind: 'item' }> }) {
   const item = data.items[enc.itemKey]
   return (
     <div className="flex flex-col items-center gap-2 text-center">
-      <div className="text-lg tracking-[0.3em] text-muted">SOMETHING ON THE GROUND</div>
+
       {isMoney ? (
         <span className="text-6xl leading-none" aria-hidden>
           ₽
@@ -203,12 +200,12 @@ function CenterCard({ enc }: { enc: Extract<Encounter, { kind: 'center' }> }) {
 }
 
 const TITLES: Record<Encounter['kind'], string> = {
-  wild: 'A wild Pokémon appears',
-  boss: 'A legendary Pokémon appears',
-  trainer: 'A trainer wants to battle',
+  wild: 'You encountered a wild Pokémon!',
+  boss: 'A legendary Pokémon appears!',
+  trainer: 'A trainer wants to battle!',
   gym: 'A gym battle',
-  item: 'You found something',
-  center: 'A Pokémon Center',
+  item: 'You found something on the ground!',
+  center: 'You reached a Pokémon Center!',
 }
 
 /** The encounter, in a pop-up (a bottom sheet on phones): the opponent, who to send out, FIGHT or FLEE (AVOID a trainer). */
@@ -237,7 +234,8 @@ export function EncounterPreview({ enc }: { enc: Encounter }) {
         initial={{ y: 40, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
       >
-        <h2 id={titleId} className="sr-only">
+        {/* Gym and legendary cards carry their own banner, so their title is for screen readers only. */}
+        <h2 id={titleId} className={dark ? 'sr-only' : 'border-b-[3px] border-ink px-3 py-2 text-center text-2xl leading-tight sm:text-3xl'}>
           {TITLES[enc.kind]}
         </h2>
         <div className="pixel-scroll flex flex-col gap-3 overflow-y-auto p-3 sm:p-4">

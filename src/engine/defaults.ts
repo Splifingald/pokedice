@@ -11,6 +11,7 @@ export const DEFAULT_CONFIG: GameConfig = {
   maxDice: 6,
   comboPayoutMode: 'highestDamage',
   skipPolicy: 'free',
+  noEscape: true,
   starters: [1, 4, 7],
   starterLevel: 5,
   // Tuned with `pnpm balance` on the full Kanto content: ×1.4 HP keeps main-chain fights at ~2–3.5 turns while every
@@ -27,10 +28,10 @@ export const DEFAULT_CONFIG: GameConfig = {
   allowVoluntarySwitch: true,
   maxBattleTurns: 150,
   multiExpShare: 0.3,
-  // v1.6: the level curve felt too slow — Pokémon earn the foe's level × 2 per K.O. (the gauge is unchanged).
+  // v1.6: the level curve felt too slow — Pokémon earn the foe's level × 2 per K.O.; since v1.7 the exploration bar gets the same amount.
   xpMultiplier: 2,
-  showRecommendedTypes: true,
   showRoundGauge: true,
+  showRoundPreview: false,
   status: {
     burn: { threshold: 1, damagePerStack: 1, duration: 3 },
     poison: { threshold: 2, damage: 3, duration: 3 },

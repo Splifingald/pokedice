@@ -96,6 +96,29 @@ describe('run flow', () => {
     expect(wipes).toBeGreaterThanOrEqual(0)
   })
 
+  it('fleeing goes back to the area screen instead of dealing the next encounter', () => {
+    seedRun(11)
+    startNewGame(4)
+    const { data } = useGame.getState()
+    data.config.noEscape = false
+    try {
+      enterArea(data.areas[0]!.id)
+      for (let i = 0; i < 50 && useGame.getState().run.encounter?.kind !== 'wild'; i++) {
+        rollNext()
+        const kind = useGame.getState().run.encounter?.kind
+        if (kind === 'center') {
+          engage()
+          finishCenter()
+        } else if (kind !== 'wild') useGame.setState((s) => ({ run: { ...s.run, phase: 'idle', encounter: null } }))
+      }
+      expect(canSkipCurrent()).toBe(true)
+      skipEncounter()
+      expect(useGame.getState().run).toMatchObject({ phase: 'idle', encounter: null })
+    } finally {
+      data.config.noEscape = true
+    }
+  })
+
   it('a wipe loses the round: the gauge goes back to the round start, gold kept, team healed', () => {
     seedRun(7)
     startNewGame(1)

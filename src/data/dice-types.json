@@ -29,6 +29,7 @@
     "value": 6
    }
   ],
+  "description": "Plain 1 to 6",
   "upgradeable": false,
   "countsForMajority": false,
   "sortOrder": 0
@@ -63,6 +64,7 @@
     "value": 6
    }
   ],
+  "description": "Steady 1 to 6",
   "upgradeable": true,
   "countsForMajority": true,
   "sortOrder": 1
@@ -98,6 +100,7 @@
     "value": 6
    }
   ],
+  "description": "Stacking burn",
   "upgradeable": true,
   "countsForMajority": true,
   "sortOrder": 2
@@ -132,6 +135,7 @@
     "value": 5
    }
   ],
+  "description": "Reliable, no 1s or 6s",
   "upgradeable": true,
   "countsForMajority": true,
   "sortOrder": 3
@@ -167,6 +171,7 @@
     "value": 6
    }
   ],
+  "description": "Chance to paralyze",
   "upgradeable": true,
   "countsForMajority": true,
   "sortOrder": 4
@@ -202,6 +207,7 @@
     "value": 6
    }
   ],
+  "description": "Chance to heal",
   "upgradeable": true,
   "countsForMajority": true,
   "sortOrder": 5
@@ -237,6 +243,7 @@
     "value": 6
    }
   ],
+  "description": "Chance to freeze",
   "upgradeable": true,
   "countsForMajority": true,
   "sortOrder": 6
@@ -271,6 +278,7 @@
     "value": 7
    }
   ],
+  "description": "Hard hitter, 2 to 7",
   "upgradeable": true,
   "countsForMajority": true,
   "sortOrder": 7
@@ -306,6 +314,7 @@
     "value": 6
    }
   ],
+  "description": "Chance to poison",
   "upgradeable": true,
   "countsForMajority": true,
   "sortOrder": 8
@@ -340,6 +349,7 @@
     "value": 8
    }
   ],
+  "description": "All or nothing",
   "upgradeable": true,
   "countsForMajority": true,
   "sortOrder": 9
@@ -374,6 +384,7 @@
     "value": 7
    }
   ],
+  "description": "Chance of a big 7",
   "upgradeable": true,
   "countsForMajority": true,
   "sortOrder": 10
@@ -409,6 +420,7 @@
     "value": 2
    }
   ],
+  "description": "Chance to confuse",
   "upgradeable": true,
   "countsForMajority": true,
   "sortOrder": 11
@@ -443,6 +455,7 @@
     "value": 4
    }
   ],
+  "description": "Only 1s and 4s",
   "upgradeable": true,
   "countsForMajority": true,
   "sortOrder": 12
@@ -477,6 +490,7 @@
     "value": 6
    }
   ],
+  "description": "Low but sturdy",
   "upgradeable": true,
   "countsForMajority": true,
   "sortOrder": 13
@@ -511,6 +525,7 @@
     "value": 7
    }
   ],
+  "description": "Blanks or big hits",
   "upgradeable": true,
   "countsForMajority": true,
   "sortOrder": 14
@@ -545,6 +560,7 @@
     "value": 8
    }
   ],
+  "description": "Strong, up to 8",
   "upgradeable": true,
   "countsForMajority": true,
   "sortOrder": 15
@@ -579,6 +595,7 @@
     "value": 7
    }
   ],
+  "description": "Risky, up to 7",
   "upgradeable": true,
   "countsForMajority": true,
   "sortOrder": 16
@@ -613,6 +630,7 @@
     "value": 4
    }
   ],
+  "description": "Always 3 or 4",
   "upgradeable": true,
   "countsForMajority": true,
   "sortOrder": 17
@@ -647,6 +665,7 @@
     "value": 6
    }
   ],
+  "description": "Even numbers only",
   "upgradeable": true,
   "countsForMajority": true,
   "sortOrder": 18

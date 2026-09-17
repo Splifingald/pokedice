@@ -172,7 +172,7 @@ export function createBattle(opts: CreateBattleOptions, data: GameData): { state
     playerLevels: opts.playerLevels,
     enemyLevels: opts.enemyLevels,
     participants: [lead.uid],
-    canRun: opts.kind === 'wild',
+    canRun: opts.kind === 'wild' && !data.config.noEscape,
     lastDamage: null,
     itemUsedThisTurn: false,
   }

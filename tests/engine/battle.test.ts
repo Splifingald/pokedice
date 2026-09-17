@@ -209,14 +209,26 @@ describe('turn flow', () => {
     expect(reduce(full, { t: 'USE_ITEM', key: 'nope' }, data, createRng(1)).state).toBe(full)
   })
 
-  it('RUN works in wild battles only', () => {
+  it('noEscape (the default) blocks RUN', () => {
+    expect(data.config.noEscape).toBe(true)
     const w = start('wild', { dex: 74, level: 5 }).state
-    const r = reduce(w, { t: 'RUN' }, data, createRng(1))
-    expect(r.state.phase).toBe('fled')
-    expect(r.log).toContainEqual({ kind: 'end', result: 'fled' })
-    expect(reduce(r.state, { t: 'ROLL' }, data, createRng(1)).state).toBe(r.state)
-    const t = start('trainer', { dex: 74, level: 5 }).state
-    expect(reduce(t, { t: 'RUN' }, data, createRng(1)).state).toBe(t)
+    expect(w.canRun).toBe(false)
+    expect(reduce(w, { t: 'RUN' }, data, createRng(1)).state).toBe(w)
+  })
+
+  it('without noEscape, RUN works in wild battles only', () => {
+    data.config.noEscape = false
+    try {
+      const w = start('wild', { dex: 74, level: 5 }).state
+      const r = reduce(w, { t: 'RUN' }, data, createRng(1))
+      expect(r.state.phase).toBe('fled')
+      expect(r.log).toContainEqual({ kind: 'end', result: 'fled' })
+      expect(reduce(r.state, { t: 'ROLL' }, data, createRng(1)).state).toBe(r.state)
+      const t = start('trainer', { dex: 74, level: 5 }).state
+      expect(reduce(t, { t: 'RUN' }, data, createRng(1)).state).toBe(t)
+    } finally {
+      data.config.noEscape = true
+    }
   })
 
   it('winning reports the fighter and remaining HP', () => {

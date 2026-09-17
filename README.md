@@ -72,11 +72,12 @@ supabase/    migrations/0001_init.sql, seed.sql (generated)
   areas** open on conditions: Power Plant (50 caught), Cerulean Cave (a Lv.55 Pokémon), Faraway Island (150 caught).
 - **Starters in Cerulean Cave** — Bulbasaur, Charmander and Squirtle are rare encounters in the post-game catch-all
   cave (and nowhere else), so 151/151 is reachable.
-- **Area insights & help** — the Map shows each area's encounter types and the recommended types that hit them hard
-  (`showRecommendedTypes` in admin turns the recommendation off); the `?` button in the top bar opens the rules and the
+- **Area insights & help** — each area shows its encounter types (the "recommended types" were removed in v1.7); the `?` button in the top bar opens the rules and the
   type chart.
-- **XP ×2 (v1.6)** — a K.O. gives Pokémon the foe's level × `xpMultiplier` (2); the area gauge still fills by the foe's
-  level.
+- **XP ×2 (v1.6)** — a K.O. gives the foe's level × `xpMultiplier` (2), to the Pokémon and (since v1.7) to the area's
+  exploration bar alike.
+- **v1.7** — Speed is the base stat ÷ 10 (rounded down; ties go to the player); `noEscape` (on by default) removes
+  FLEE / AVOID / RUN; `showRoundPreview` (off by default) shows the cards ahead; each die type has a short description.
 - **Deck weights are copies (v1.6)** — an area's encounter weights and loot weights are the number of copies of each
   card in its deck (the old `encounterDeckSize` / `lootDeckSize` scaling is gone).
 - **Pacing** — `hpMultiplier` 1.4 (fight length) and `goldMultiplier` 0.5 (economy), tuned with `pnpm balance` on the Kanto content. Damage has no global multiplier: a hit is exactly what the dice show (× type effectiveness, + the combo bonus).

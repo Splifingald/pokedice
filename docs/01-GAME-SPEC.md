@@ -1,6 +1,6 @@
 # Pokédice — Game Design Specification
 
-**Version:** 1.6 · **Author:** Grégoire · **Status:** built · v1.2 added the Grass Heal face, Multi EXP and starters in the catch-all pool; v1.3 added full Kanto, gyms, secret areas, area type insights and the in-game help; v1.4 added encounter decks, easy areas, and HP-based pacing (damage is exactly the dice); v1.5 added item finds with loot decks, the classic items, one-item-per-turn battles, dice-based catching with Poké Balls, and Pokédollars (₽); v1.6 doubled Pokémon XP (`xpMultiplier`), rolls the dice automatically at the start of each turn, allows a voluntary switch after the roll, and reworked the UI (side / bottom bar, encounter pop-up, Pokédex "where to find it")
+**Version:** 1.7 · **Author:** Grégoire · **Status:** built · v1.2 added the Grass Heal face, Multi EXP and starters in the catch-all pool; v1.3 added full Kanto, gyms, secret areas, area type insights and the in-game help; v1.4 added encounter decks, easy areas, and HP-based pacing (damage is exactly the dice); v1.5 added item finds with loot decks, the classic items, one-item-per-turn battles, dice-based catching with Poké Balls, and Pokédollars (₽); v1.6 doubled Pokémon XP (`xpMultiplier`), rolls the dice automatically at the start of each turn, allows a voluntary switch after the roll, and reworked the UI (side / bottom bar, encounter pop-up, Pokédex "where to find it"); v1.7 made Speed the base stat ÷ 10 (rounded down), gave the exploration bar the same XP as the Pokémon, added dice descriptions, the `noEscape` rule (on by default) and the optional `showRoundPreview`
 **Nature:** personal, non-commercial fan project. No monetisation; Nintendo assets are referenced as public sprite URLs, never redistributed.
 
 This document is the single source of truth for *rules*. `02-DATA-MODEL.md` covers storage and seeding, `03-BUILD-PLAN.md` covers implementation.
@@ -29,7 +29,7 @@ Goal      →  clear the areas, then 151/151 in the Pokédex
 - Each area defines weights for `wild`, `trainer`, `center`, `item`.
 - **Encounter deck** (`game_config.encounterMode = 'deck'`, the default): an area's weight for each kind **is the number of copies of that card in its deck** (v1.6 — e.g. wild 8, Center 1, item 1 is a 10-card deck); kinds the area can't produce (no wild pool / no trainers / no loot) get none. The deck is shuffled, one card is drawn per encounter, and what's left is saved per area; a fresh deck is dealt when it runs out. Every deck therefore holds the area's exact mix, and a Center is never more than 18 encounters away with the bundled 10-card decks. With `encounterMode = 'random'` each encounter is rolled independently from the weights instead (at 10 % Centers, 1 run in 100 goes 43+ encounters without one).
 - Forced encounters — the entry Center, an easy-area Center and dev-tool picks — and the challenges the player chooses (gym battles and due legendaries, taken with CHALLENGE / FACE IT on the area screen, or put off with NOT YET) come on top of the deck and use no card. A skipped encounter has used its card.
-- **Rounds** (v1.6): going through an area's whole deck is a **round**; the next round deals a fresh, shuffled deck. Every round **opens with a Pokémon Center**, outside the deck (the Center cards inside it still count), unless it would do nothing — every Pokémon, team and Box, at full HP and nobody in the Box to swap in. The area screen's **round gauge** shows one segment per card, with an icon for each encounter already met this round and blanks for what's to come (`game_config.showRoundGauge` hides it). `AreaProgress.round` counts rounds; `drawn` holds the cards met this round; `roundStartXp` is the gauge when it began. A wipe loses the round (§6.4).
+- **Rounds** (v1.6): going through an area's whole deck is a **round**; the next round deals a fresh, shuffled deck. Every round **opens with a Pokémon Center**, outside the deck (the Center cards inside it still count), unless it would do nothing — every Pokémon, team and Box, at full HP and nobody in the Box to swap in. The area screen's **round gauge** shows one segment per card, with an icon for each encounter already met this round and blanks for what's to come (`game_config.showRoundGauge` hides it). With `showRoundPreview` (off by default, v1.7) a row under it reveals the cards still to come and the gym badge / legendary waiting at the end. `AreaProgress.round` counts rounds; `drawn` holds the cards met this round; `roundStartXp` is the gauge when it began. A wipe loses the round (§6.4).
 - **Forced Center:** the *first* encounter on entering an area is a **Pokémon Center** if and only if at least one team member is below full HP. Otherwise it is drawn normally.
 - **Easy areas** (`easyMode`, set per area in admin): whenever a team member is at 0 HP, the next encounter is a Center.
 - **Preview before commit.** Every rolled encounter is first shown in a pop-up — wild: sprite, name, level, types, and whether it is a new catch; trainer: name, sprite, and the team size with levels — with the team to pick a lead from. The player then chooses:
@@ -51,7 +51,7 @@ Title → a short intro → pick one of **Bulbasaur, Charmander, Squirtle at lev
 ### 2.1 Setup
 
 - Player team = up to **3 active Pokémon**. Before each fight the player picks which one to send.
-- **Speed** (real base Speed stat) decides who acts first. Tie → player.
+- **Speed** (base Speed stat ÷ 10, rounded down — v1.7) decides who acts first. Tie → player. With `noEscape` (the default, v1.7) there is no FLEE / AVOID before a fight and no RUN during one.
 - Each Pokémon enters with a **reroll budget = its `rerolls` stat**, spent over the whole battle, not per turn.
 
 ### 2.2 A turn
@@ -191,7 +191,7 @@ Each Pokémon's set is a list of `{type, count}` where `type` may be `base` or a
 | Dex no., Name, Type 1, Type 2 | PokeAPI |
 | Base HP | real HP stat at **level 1** |
 | Max HP | real HP stat at **level 100** |
-| Speed | real base Speed stat |
+| Speed | base Speed stat ÷ 10, rounded down (Bulbasaur 4, Charmander 6, Squirtle 4) |
 | Sprite | `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/{dex}.png` |
 | Dice | generated, editable |
 | Rerolls | generated = dice count, editable |
@@ -386,8 +386,7 @@ clears when its gauge is full **and** every gym battle and gauge legendary is wo
 ### 7.4 Area insights
 
 The Map and the area header show each area's **Encounter types** — its 2–3 main types, weighted over its wild pool and
-trainer teams — and the **Recommended types**: the attacking types that hit those foes hardest, to help build a team
-(`game_config.showRecommendedTypes` switches the recommendation off for everyone). A gym trainer's type is shown on the
+trainer teams (v1.7: shown as badges only, top right of the area; the old "Recommended types" were removed). A gym trainer's type is shown on the
 Map only when it makes up at least 40 % of its team (a primary type counts 1, a secondary ½), so a mixed team such as
 Champion Blue's shows none. An area whose wild species are all caught gets a check mark and a green outline.
 

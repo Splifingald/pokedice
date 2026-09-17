@@ -33,6 +33,7 @@ create table dice_types (
   color text not null,              -- hex, used for the die and its particles
   faces jsonb not null,             -- [{kind:'number',value:4} | {kind:'status',status:'burn',value:1}] x6
   upgradeable boolean not null default true,  -- FALSE for 'base' only
+  description text not null default '',  -- a few words under the faces ('Stacking burn')
   counts_for_majority boolean not null default true, -- FALSE for 'base' only
   sort_order int not null default 0
 );
@@ -44,7 +45,7 @@ create table pokemon (
   type2 text,
   base_hp int not null,             -- HP stat at level 1
   max_hp int not null,              -- HP stat at level 100
-  speed int not null,               -- base Speed stat
+  speed int not null,               -- base Speed stat ÷ 10, rounded down
   sprite_url text not null,
   dice jsonb not null,              -- [{type:'fire',count:2},{type:'flying',count:1},{type:'normal',count:2}]
   rerolls int not null,
@@ -141,8 +142,7 @@ create table game_config (
 --              ({poke-ball:5, potion:2}), hpMultiplier (1.4), xpCurve {A,B,C}, xpShareMode,
 --              regenPercentPerHour, maxTeamSize, maxLevel, comboPayoutMode,
 --              skipPolicy, starters, starterLevel, configVersion, multiExpShare (0.3),
---              xpMultiplier (2: Pokémon XP = foe level × this; the gauge isn't multiplied),
---              showRecommendedTypes (true: the "Recommended types" on the Map and area screens)
+--              xpMultiplier (2: XP = foe level × this, for Pokémon and the exploration bar alike),
 -- Keys missing from a database fall back to the bundled defaults, so older databases need no migration.
 
 -- ============ PLAYER DATA ============

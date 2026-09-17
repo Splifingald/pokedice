@@ -268,6 +268,10 @@ export function DiceSection() {
                   <FaceSlot key={i} face={f} type={type} color={s(r.color)} onChange={(nf) => patch({ faces: faces.map((x, j) => (j === i ? nf : x)) })} />
                 ))}
               </div>
+              <label className="flex items-center gap-2 text-base">
+                Description
+                <TextInput className="flex-1" value={s(r.description)} onChange={(v) => patch({ description: v })} />
+              </label>
               <div className="flex gap-4 text-base">
                 <label className="flex items-center gap-1">
                   <input type="checkbox" checked={!!r.upgradeable} onChange={(e) => patch({ upgradeable: e.target.checked })} /> upgradeable
