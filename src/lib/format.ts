@@ -49,6 +49,8 @@ export function milestoneText(m: Milestone, type1: DieType): string {
   switch (m.effect) {
     case 'UPGRADE_DIE':
       return `BASE DIE → ${(m.dieType ?? type1).toUpperCase()} DIE`
+    case 'REPLACE_DIE':
+      return `${(m.fromDieType ?? 'base').toUpperCase()} DIE → ${(m.dieType ?? type1).toUpperCase()} DIE`
     case 'ADD_REROLL':
       return `+${m.amount ?? 1} REROLL!`
     case 'ADD_DIE':

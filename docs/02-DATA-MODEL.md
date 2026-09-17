@@ -272,7 +272,7 @@ for each later die:  { level, 'ADD_DIE', dieType }  +  { level, 'ADD_REROLL', am
 if it evolves:       { level: E, effect: 'EVOLVE' }
 ```
 
-`UPGRADE_DIE` and `ADD_HP` still exist for hand-edited milestones in admin.
+`UPGRADE_DIE`, `REPLACE_DIE` and `ADD_HP` still exist for hand-edited milestones in admin — `REPLACE_DIE` swaps any die type for another (`fromDieType` → `dieType`), e.g. re-typing a Pokémon that changes type on evolution.
 
 Evolution levels come from PokeAPI's `min_level`. For non-level evolutions the script assigns:
 

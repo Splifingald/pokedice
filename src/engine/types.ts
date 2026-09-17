@@ -48,12 +48,14 @@ export interface DiceEntry {
   count: number
 }
 
-export type MilestoneEffect = 'UPGRADE_DIE' | 'ADD_REROLL' | 'ADD_DIE' | 'ADD_HP' | 'EVOLVE'
+export type MilestoneEffect = 'UPGRADE_DIE' | 'REPLACE_DIE' | 'ADD_REROLL' | 'ADD_DIE' | 'ADD_HP' | 'EVOLVE'
 export interface Milestone {
   level: number
   effect: MilestoneEffect
-  /** UPGRADE_DIE / ADD_DIE target type; defaults to the species' Type 1. */
+  /** UPGRADE_DIE / REPLACE_DIE / ADD_DIE target type; defaults to the species' Type 1. */
   dieType?: DieType
+  /** REPLACE_DIE source type — the die that gets swapped out; defaults to 'base'. */
+  fromDieType?: DieType
   /** ADD_REROLL / ADD_HP amount; defaults to 1 / 0. */
   amount?: number
 }

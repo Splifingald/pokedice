@@ -59,8 +59,9 @@ export const ROW_SCHEMAS: Record<TableName, z.ZodTypeAny> = {
       milestones: z.array(
         z.object({
           level: int(1, 100),
-          effect: z.enum(['UPGRADE_DIE', 'ADD_REROLL', 'ADD_DIE', 'ADD_HP', 'EVOLVE']),
+          effect: z.enum(['UPGRADE_DIE', 'REPLACE_DIE', 'ADD_REROLL', 'ADD_DIE', 'ADD_HP', 'EVOLVE']),
           dieType: dieType.optional(),
+          fromDieType: dieType.optional(),
           amount: int(0).optional(),
         }),
       ),

@@ -211,6 +211,7 @@ Each Pokémon's set is a list of `{type, count}` where `type` may be `base` or a
 Every level raises HP by the interpolation above. Specific levels additionally do one of:
 
 - `UPGRADE_DIE` — replace one **base** die with a typed die
+- `REPLACE_DIE` — replace one die of `fromDieType` (defaults to `base`) with a `dieType` die; skipped if that type is absent from the set or the two types match. Typed dice stay ahead of base dice in the tray.
 - `ADD_REROLL` — +1 reroll budget
 - `ADD_DIE` — append a die (type specified; defaults to Type 1)
 - `EVOLVE` — become another species: dice set, types, HP curve and rerolls are replaced by the new species'; level, XP and current HP **percentage** carry over

@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { effectiveStats, getSpecies, type GameData, type Milestone, type PokemonInstance, type Species } from '@/engine'
+import { effectiveStats, getSpecies, type DieType, type GameData, type Milestone, type PokemonInstance, type Species } from '@/engine'
 import { cap, dexNo } from '@/lib/format'
 import { useGame } from '@/store/game'
 import { cx, typeColor } from '@/theme/util'
@@ -28,6 +28,8 @@ function milestoneLabel(m: Milestone, species: Species, data: GameData): string 
   switch (m.effect) {
     case 'UPGRADE_DIE':
       return `Base die → ${die} die`
+    case 'REPLACE_DIE':
+      return `${cap(m.fromDieType ?? 'base')} die → ${die} die`
     case 'ADD_DIE':
       return `+1 ${die} die`
     case 'ADD_REROLL':
@@ -39,15 +41,22 @@ function milestoneLabel(m: Milestone, species: Species, data: GameData): string 
   }
 }
 
+function DieSwatch({ type }: { type: DieType }) {
+  return <span className="inline-block h-4 w-4 shrink-0 border-2 border-ink" style={{ background: typeColor(type), borderRadius: 2 }} aria-hidden />
+}
+
 function MilestoneGlyph({ m, species }: { m: Milestone; species: Species }) {
-  if (m.effect === 'UPGRADE_DIE' || m.effect === 'ADD_DIE') {
+  if (m.effect === 'REPLACE_DIE') {
     return (
-      <span
-        className="inline-block h-4 w-4 shrink-0 border-2 border-ink"
-        style={{ background: typeColor(m.dieType ?? species.type1), borderRadius: 2 }}
-        aria-hidden
-      />
+      <span className="inline-flex shrink-0 items-center gap-0.5" aria-hidden>
+        <DieSwatch type={m.fromDieType ?? 'base'} />
+        <span className="font-mono text-xs leading-none">→</span>
+        <DieSwatch type={m.dieType ?? species.type1} />
+      </span>
     )
+  }
+  if (m.effect === 'UPGRADE_DIE' || m.effect === 'ADD_DIE') {
+    return <DieSwatch type={m.dieType ?? species.type1} />
   }
   const icon: IconName = m.effect === 'ADD_REROLL' ? 'reroll' : m.effect === 'ADD_HP' ? 'heart' : 'up'
   return <PixelIcon name={icon} size={16} />

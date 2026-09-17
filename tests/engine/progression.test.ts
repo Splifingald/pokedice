@@ -64,6 +64,42 @@ describe('milestones', () => {
     expect(s.applied.map((m) => m.effect)).toEqual(['ADD_HP'])
     expect(s.maxHp).toBe(hpCurve(fake, 10) + 7)
   })
+
+  it('REPLACE_DIE swaps one die of the source type and keeps base dice last', () => {
+    const fake: Species = {
+      ...getSpecies(data, 150),
+      type1: 'psychic',
+      dice: [
+        { type: 'psychic', count: 2 },
+        { type: 'base', count: 2 },
+      ],
+      milestones: [
+        { level: 2, effect: 'REPLACE_DIE', fromDieType: 'base', dieType: 'fire' },
+        { level: 3, effect: 'REPLACE_DIE', fromDieType: 'psychic', dieType: 'base' },
+      ],
+    }
+    const at2 = effectiveStats(fake, 2, data)
+    expect(at2.dice).toEqual(['psychic', 'psychic', 'fire', 'base'])
+    const at3 = effectiveStats(fake, 3, data)
+    expect(at3.dice).toEqual(['psychic', 'fire', 'base', 'base'])
+    expect(at3.applied).toHaveLength(2)
+  })
+
+  it('REPLACE_DIE is skipped when the source type is absent or equals the target', () => {
+    const fake: Species = {
+      ...getSpecies(data, 150),
+      type1: 'psychic',
+      dice: [{ type: 'psychic', count: 3 }],
+      milestones: [
+        { level: 2, effect: 'REPLACE_DIE', fromDieType: 'water', dieType: 'fire' },
+        { level: 3, effect: 'REPLACE_DIE', fromDieType: 'psychic', dieType: 'psychic' },
+        { level: 4, effect: 'REPLACE_DIE', dieType: 'fire' }, // source defaults to 'base' — none left
+      ],
+    }
+    const s = effectiveStats(fake, 10, data)
+    expect(s.dice).toEqual(['psychic', 'psychic', 'psychic'])
+    expect(s.applied).toHaveLength(0)
+  })
 })
 
 describe('levelling & evolution', () => {

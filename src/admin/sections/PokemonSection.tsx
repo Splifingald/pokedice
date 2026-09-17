@@ -71,9 +71,10 @@ function DiceEditor({ value, onChange, types, data }: { value: DiceEntry[]; onCh
   )
 }
 
-const EFFECTS: MilestoneEffect[] = ['UPGRADE_DIE', 'ADD_REROLL', 'ADD_DIE', 'ADD_HP', 'EVOLVE']
+const EFFECTS: MilestoneEffect[] = ['UPGRADE_DIE', 'REPLACE_DIE', 'ADD_REROLL', 'ADD_DIE', 'ADD_HP', 'EVOLVE']
 const EFFECT_COLOR: Record<MilestoneEffect, string> = {
   UPGRADE_DIE: '#d44873',
+  REPLACE_DIE: '#a2478f',
   ADD_REROLL: '#547acc',
   ADD_DIE: '#e8b44a',
   ADD_HP: '#4aa84a',
@@ -119,7 +120,19 @@ function MilestoneEditor({ value, onChange }: { value: Milestone[]; onChange: (m
               <option key={ef}>{ef}</option>
             ))}
           </select>
-          {(m.effect === 'UPGRADE_DIE' || m.effect === 'ADD_DIE') && (
+          {m.effect === 'REPLACE_DIE' && (
+            <>
+              <TypePicker
+                className="w-36"
+                allowBase
+                nullable
+                value={m.fromDieType ?? null}
+                onChange={(t) => onChange(value.map((x, j) => (j === i ? { ...x, fromDieType: t ?? undefined } : x)))}
+              />
+              <span aria-hidden>→</span>
+            </>
+          )}
+          {(m.effect === 'UPGRADE_DIE' || m.effect === 'REPLACE_DIE' || m.effect === 'ADD_DIE') && (
             <TypePicker className="w-36" allowBase nullable value={m.dieType ?? null} onChange={(t) => onChange(value.map((x, j) => (j === i ? { ...x, dieType: t ?? undefined } : x)))} />
           )}
           {(m.effect === 'ADD_REROLL' || m.effect === 'ADD_HP') && (

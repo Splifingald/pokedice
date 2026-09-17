@@ -36,10 +36,17 @@ export function effectiveStats(species: Species, level: number, data: GameData):
   const ms = [...species.milestones].filter((m) => m.level <= level).sort((a, b) => a.level - b.level)
   for (const m of ms) {
     switch (m.effect) {
-      case 'UPGRADE_DIE': {
-        const i = dice.indexOf('base')
-        if (i < 0) break
-        dice[i] = m.dieType ?? species.type1
+      // UPGRADE_DIE is REPLACE_DIE with 'base' as the source — kept so older data still loads.
+      case 'UPGRADE_DIE':
+      case 'REPLACE_DIE': {
+        const from = m.effect === 'UPGRADE_DIE' ? 'base' : (m.fromDieType ?? 'base')
+        const to = m.dieType ?? species.type1
+        const i = dice.indexOf(from)
+        if (i < 0 || from === to) break
+        dice.splice(i, 1)
+        // Keep base dice at the end so the tray reads typed-first.
+        if (to === 'base') dice.push(to)
+        else dice.splice(dice.filter((d) => d !== 'base').length, 0, to)
         applied.push(m)
         break
       }
