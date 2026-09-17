@@ -52,7 +52,7 @@ export interface ComboResult {
 
 /**
  * One combo pays per roll. Default mode pays the single most *damaging* combo (its upgrade level and the
- * majority-type multiplier), not the highest rank. Ties go to the higher rank.
+ * attack-type multiplier), not the highest rank. Ties go to the higher rank.
  */
 export function selectCombo(
   found: readonly ComboKey[],

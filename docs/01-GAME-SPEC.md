@@ -1,6 +1,6 @@
 # Pokédice — Game Design Specification
 
-**Version:** 1.8 · **Author:** Grégoire · **Status:** built · v1.2 added the Grass Heal face, Multi EXP and starters in the catch-all pool; v1.3 added full Kanto, gyms, secret areas, area type insights and the in-game help; v1.4 added encounter decks, easy areas, and HP-based pacing (damage is exactly the dice); v1.5 added item finds with loot decks, the classic items, one-item-per-turn battles, dice-based catching with Poké Balls, and Pokédollars (₽); v1.6 doubled Pokémon XP (`xpMultiplier`), rolls the dice automatically at the start of each turn, allows a voluntary switch after the roll, and reworked the UI (side / bottom bar, encounter pop-up, Pokédex "where to find it"); v1.7 made Speed the base stat ÷ 10 (rounded down), set XP per K.O. back to the foe's level for the Pokémon and the exploration bar alike with every XP requirement about ÷ 4, added dice descriptions, the `noEscape` rule (on by default) and the optional `showRoundPreview`; v1.8 made dice grow with levels and evolutions (§4.2 dice schedule, 1–5 dice)
+**Version:** 1.8 · **Author:** Grégoire · **Status:** built · v1.2 added the Grass Heal face, Multi EXP and starters in the catch-all pool; v1.3 added full Kanto, gyms, secret areas, area type insights and the in-game help; v1.4 added encounter decks, easy areas, and HP-based pacing (damage is exactly the dice); v1.5 added item finds with loot decks, the classic items, one-item-per-turn battles, dice-based catching with Poké Balls, and Pokédollars (₽); v1.6 doubled Pokémon XP (`xpMultiplier`), rolls the dice automatically at the start of each turn, allows a voluntary switch after the roll, and reworked the UI (side / bottom bar, encounter pop-up, Pokédex "where to find it"); v1.7 made Speed the base stat ÷ 10 (rounded down), set XP per K.O. back to the foe's level for the Pokémon and the exploration bar alike with every XP requirement about ÷ 4, added dice descriptions, the `noEscape` rule (on by default) and the optional `showRoundPreview`; v1.8 made dice grow with levels and evolutions (§4.2 dice schedule, 1–5 dice) and gave each attack a single type, its most effective dice type (§2.3)
 **Nature:** personal, non-commercial fan project. No monetisation; Nintendo assets are referenced as public sprite URLs, never redistributed.
 
 This document is the single source of truth for *rules*. `02-DATA-MODEL.md` covers storage and seeding, `03-BUILD-PLAN.md` covers implementation.
@@ -71,21 +71,26 @@ A Pokémon at 0 HP faints. Player side: if another active Pokémon is alive, the
 
 ### 2.3 Damage formula
 
-Damage is computed **per die**, because dice carry their own type.
+The attack **as a whole** takes one type (v1.8): the one among the Pokémon's dice types that hits the defender hardest.
 
 ```
-dieDamage(d)   = (faceValue(d) + dieUpgradeBonus(d.type)) × typeMultiplier(d.type, defender)
-comboDamage    = comboBonus(bestCombo) × typeMultiplier(majorityDieType, defender)
-rawDamage      = Σ dieDamage(d) + comboDamage
+attackType     = the dice type with the highest typeMultiplier(type, defender)
+dieDamage(d)   = (faceValue(d) + dieUpgradeBonus(d.type)) × typeMultiplier(attackType, defender)
+comboDamage    = comboBonus(bestCombo) × typeMultiplier(attackType, defender)
+rawDamage      = Σ dieDamage(d) + comboDamage          (base dice included)
 finalDamage    = max(1, round(rawDamage))
 ```
 
+Example: Kabuto (2 water dice, 1 rock die, 1 base die) vs Pidgeotto (Normal/Flying) attacks as **Rock**: every die, the base die included, is ×2.
+
 - `faceValue` — the rolled face's number. Status faces use their **fallback value** (§3.1).
 - `dieUpgradeBonus` — account-wide die track (§5.2), applied **per die, before** the type multiplier. **Base dice have no track and always contribute +0.**
-- `typeMultiplier` — Gen 6+ 18-type chart, product over the defender's types: `mult(atk,def1) × mult(atk,def2)` ∈ `{0, 0.25, 0.5, 1, 2, 4}`. A die the defender is immune to contributes **0**.
-- `majorityDieType` — the type most represented among the dice in this roll. **Base dice never count as the majority type.** Ties break to: Type 1, then Type 2, then the type of the highest-value die. If the Pokémon rolled only base dice, the combo bonus is untyped (×1).
+- `typeMultiplier` — Gen 6+ 18-type chart, product over the defender's types: `mult(atk,def1) × mult(atk,def2)` ∈ `{0, 0.25, 0.5, 1, 2, 4}`.
+- `attackType` — **base dice never set it** (`countsForMajority` = false, the column keeps its old name). Equal multipliers break to: the type with the most dice, then Type 1, Type 2, then the highest-value die. Only base dice → untyped (×1).
+- **Immunity:** when the attack type's multiplier is 0 (every dice type is useless), the attack does 0 and inflicts **no status**. A Normal-only Pokémon can't touch a Ghost at all.
+- **Deadlock:** if the foe can't hurt the active Pokémon, no teammate can hurt the foe, and no burn / poison / confusion is pending, the battle ends at once as a stalemate (no rewards, no wipe) instead of at `maxBattleTurns`.
 - **No global multiplier.** What the dice show (after upgrades and type) is what hits — never a hidden scale on the result (v1.4 removed the old `damageScale` knob). Fight length is tuned through HP instead: `hpMultiplier` (§4, default 1 since v1.8, 1.4 before; admin-editable), plus dice counts and the upgrade tracks.
-- Floored at 1, *unless* every die multiplier was 0 — then damage is 0 and the UI says "It doesn't affect [name]…".
+- Floored at 1, *unless* the attack type's multiplier is 0 — then damage is 0 and the UI says "It doesn't affect [name]…".
 
 **There is deliberately no level term in the damage formula.** A Pokémon's raw output comes only from its dice; the player's damage growth comes from the **upgrade tracks**. Levels give HP, which means an un-upgraded player's fights get steadily *longer* as they progress, and buying upgrades is what pulls them back. That tension is the economy.
 
@@ -119,7 +124,7 @@ Evaluated over the full dice set, using fallback values for status faces.
 | `full_straight` | Full Straight | 5 consecutive values | +18 | +4 |
 | `five_kind` | Five of a Kind | 5 dice equal | +25 | +5 |
 
-**Payout rule — highest *damage*, not highest rank.** Every combo present in the roll is detected, each one's current damage is computed (its upgrade level **and** the majority-type multiplier), and the **single most damaging** one pays. This is deliberate: a player who has taken Pair to level 9 and left Two Pair at level 1 should see their Pair fire.
+**Payout rule — highest *damage*, not highest rank.** Every combo present in the roll is detected, each one's current damage is computed (its upgrade level **and** the attack-type multiplier), and the **single most damaging** one pays. This is deliberate: a player who has taken Pair to level 9 and left Two Pair at level 1 should see their Pair fire.
 
 One combo pays per roll. Straights are scanned over the **distinct sorted face values**, so duplicates don't break them and non-1..6 values participate (`4-5-6-7` is a valid small straight; Ghost's 0 and Ground's 8 can extend runs).
 
@@ -129,7 +134,7 @@ One combo pays per roll. Straights are scanned over the **distinct sorted face v
 
 Every Pokémon owns 1–5 dice (v1.8; `maxDice` 5), gained by level and evolution (§4.2). Two categories:
 
-- **Base die** — the plain filler die, faces `1,2,3,4,5,6`. It has **no upgrade track and can never be upgraded**, and it never counts toward the majority type. Off-white with grey pips.
+- **Base die** — the plain filler die, faces `1,2,3,4,5,6`. It has **no upgrade track and can never be upgraded**, and it never sets the attack type (but takes its multiplier, v1.8). Off-white with grey pips.
 - **Typed dice** — one per type, 18 of them (Normal included). Each has its own 10-level upgrade track and its own colour.
 
 ### 3.1 Die faces

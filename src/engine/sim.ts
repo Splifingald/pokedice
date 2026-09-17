@@ -1,6 +1,6 @@
 // Headless battles: both sides driven by the §8 AI. Powers the admin simulator and the balance scripts.
 import { aiRerollMask } from './ai'
-import { activeBattler, createBattle, reduce, type BattleState, type LogEntry } from './battle'
+import { activeBattler, canHurt, createBattle, reduce, type BattleState, type LogEntry } from './battle'
 import { computeDamage, uniformLevels, type UpgradeLevels } from './damage'
 import { getSpecies } from './data'
 import { rollAll, rerollMasked } from './dice'
@@ -29,12 +29,18 @@ export function autoStep(state: BattleState, data: GameData, rng: Rng): { state:
   switch (state.phase) {
     case 'enemy_turn':
       return reduce(state, { t: 'AI_TURN' }, data, rng)
-    case 'player_roll':
+    case 'player_roll': {
+      // Like a player would: a Pokémon that can't touch the foe (Normal vs Ghost) makes way for one that can.
+      const a = activeBattler(state)
+      const better = !canHurt(a, state.enemy, data) && state.player.find((b) => b.hp > 0 && canHurt(b, state.enemy, data))
+      if (better && data.config.allowVoluntarySwitch) return reduce(state, { t: 'SWITCH', instanceId: better.uid }, data, rng)
       return reduce(state, { t: 'ROLL' }, data, rng)
+    }
     case 'player_stunned':
       return reduce(state, { t: 'PASS' }, data, rng)
     case 'player_switch': {
-      const next = state.player.find((b, i) => b.hp > 0 && i !== state.activeIndex)
+      const alive = state.player.filter((b, i) => b.hp > 0 && i !== state.activeIndex)
+      const next = alive.find((b) => canHurt(b, state.enemy, data)) ?? alive[0]
       return next ? reduce(state, { t: 'SWITCH', instanceId: next.uid }, data, rng) : { state, log: [] }
     }
     case 'player_reroll': {

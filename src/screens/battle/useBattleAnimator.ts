@@ -126,7 +126,7 @@ function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): Step {
       const banner =
         e.selfHit ? 'CONFUSED!' : tone === 'super' ? 'SUPER EFFECTIVE!' : tone === 'weak' ? 'Not very effective…' : tone === 'immune' ? 'NO EFFECT' : null
       const power = tone === 'super' ? (eff >= 3 ? 10 : 7) : tone === 'weak' ? 2 : tone === 'immune' ? 0 : 4
-      const color = ctx.colorOf(r.majority ?? r.perDie[0]?.type ?? 'base')
+      const color = ctx.colorOf(r.attackType ?? r.perDie[0]?.type ?? 'base')
       return {
         delay: 1300,
         sound: tone === 'super' ? 'super' : tone === 'immune' ? 'error' : 'hit',

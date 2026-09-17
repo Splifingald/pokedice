@@ -9,7 +9,7 @@ import type { BattleSlice } from '@/store/game'
 import { useGame } from '@/store/game'
 import { cx } from '@/theme/util'
 
-/** How a hit's damage adds up: each die (value + upgrade bonus × type multiplier), the combo, the total. */
+/** How a hit's damage adds up: each die (value + upgrade bonus × the attack type's multiplier), the combo, the total. */
 export function DamageRecap({ result, dice, className }: { result: DamageResult; dice?: readonly RolledDie[]; className?: string }) {
   const data = useGame((s) => s.data)
   return (
@@ -21,11 +21,14 @@ export function DamageRecap({ result, dice, className }: { result: DamageResult;
           ))}
         </div>
       )}
+      <div className="font-mono text-xs">
+        {result.attackType ? `${result.attackType.toUpperCase()} attack` : 'Untyped attack'} ×{result.perDie[0]?.multiplier ?? 1}
+      </div>
       <div className="grid grid-cols-2 gap-x-4 font-mono text-xs sm:grid-cols-3">
         {result.perDie.map((p, i) => (
           <span key={i}>
             {p.value}
-            {p.bonus ? `+${p.bonus}` : ''} {p.type.toUpperCase()} ×{p.multiplier} = {p.damage}
+            {p.bonus ? `+${p.bonus}` : ''} ({p.type}) ×{p.multiplier} = {p.damage}
           </span>
         ))}
         {result.combo && (

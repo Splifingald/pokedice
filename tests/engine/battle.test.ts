@@ -278,12 +278,12 @@ describe('headless simulation', () => {
     expect(finished).toBe(1000)
   })
 
-  it('two mutually-immune Pokémon end in a stalemate instead of looping forever', () => {
-    // Rattata Lv.4 (1 Normal die) vs Gastly Lv.4 (1 Ghost die): 0 damage both ways.
-    const r = simulateBattle({ dex: 19, level: 4 }, { dex: 92, level: 4 }, uniformLevels(1), uniformLevels(1), data, createRng(1))
+  it('two mutually-immune Pokémon end in a stalemate at once instead of looping', () => {
+    // Rattata Lv.10 (Normal + base dice) vs Gastly Lv.4 (1 Ghost die): the whole attack is Normal / Ghost, 0 both ways.
+    const r = simulateBattle({ dex: 19, level: 10 }, { dex: 92, level: 4 }, uniformLevels(1), uniformLevels(1), data, createRng(1))
     expect(r.finished).toBe(true)
     expect(r.winner).toBe('draw')
-    expect(r.turns).toBe(data.config.maxBattleTurns)
+    expect(r.turns).toBeLessThanOrEqual(1)
   })
 
   it('an even mirror match is roughly a coin flip', () => {

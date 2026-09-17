@@ -34,7 +34,7 @@ create table dice_types (
   faces jsonb not null,             -- [{kind:'number',value:4} | {kind:'status',status:'burn',value:1}] x6
   upgradeable boolean not null default true,  -- FALSE for 'base' only
   description text not null default '',  -- a few words under the faces ('Stacking burn')
-  counts_for_majority boolean not null default true, -- FALSE for 'base' only
+  counts_for_majority boolean not null default true, -- can set the attack type (v1.8); FALSE for 'base' only
   sort_order int not null default 0
 );
 

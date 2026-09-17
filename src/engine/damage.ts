@@ -26,12 +26,14 @@ export function dieUpgradeBonus(type: DieType, levels: UpgradeLevels, data: Game
 }
 
 /**
- * The type most represented among the typed dice. Base dice never count.
- * Ties → attacker's Type 1, then Type 2, then the type of the highest-value die.
+ * The attack's type (v1.8): among the typed dice, the type that hits this defender hardest. Base dice never count.
+ * Ties (same multiplier) → the type with the most dice, then the attacker's Type 1, Type 2, then the highest die.
+ * Null when only base dice were rolled (untyped, ×1).
  */
-export function majorityType(
+export function attackType(
   dice: readonly RolledDie[],
   attackerTypes: readonly PokeType[],
+  defenderTypes: readonly PokeType[],
   data: GameData,
 ): PokeType | null {
   const counts = new Map<PokeType, number>()
@@ -43,13 +45,18 @@ export function majorityType(
     best.set(t, Math.max(best.get(t) ?? -Infinity, dieValue(d, data)))
   }
   if (!counts.size) return null
-  const top = Math.max(...counts.values())
-  const tied = [...counts.keys()].filter((t) => counts.get(t) === top)
-  if (tied.length === 1) return tied[0]!
   const [t1, t2] = attackerTypes
-  if (t1 && tied.includes(t1)) return t1
-  if (t2 && tied.includes(t2)) return t2
-  return tied.reduce((a, b) => ((best.get(b) ?? 0) > (best.get(a) ?? 0) ? b : a))
+  const score = (t: PokeType) => [typeMultiplier(data.typeChart, t, defenderTypes), counts.get(t)!, t === t1 ? 2 : t === t2 ? 1 : 0, best.get(t)!]
+  const better = (a: number[], b: number[]) => {
+    for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return a[i]! > b[i]!
+    return false
+  }
+  return [...counts.keys()].reduce((a, b) => (better(score(b), score(a)) ? b : a))
+}
+
+/** The multiplier the whole attack gets: its attack type vs the defender (×1 when untyped). */
+export function attackMultiplier(type: PokeType | null, defenderTypes: readonly PokeType[], data: GameData): number {
+  return type ? typeMultiplier(data.typeChart, type, defenderTypes) : 1
 }
 
 export interface DieBreakdown {
@@ -63,18 +70,19 @@ export interface DieBreakdown {
 export interface DamageResult {
   perDie: DieBreakdown[]
   combo: ComboResult | null
-  majority: PokeType | null
+  /** The type the whole attack takes (v1.8); null = untyped. */
+  attackType: PokeType | null
   raw: number
   final: number
-  /** Every die multiplier was 0 — "It doesn't affect…" */
+  /** The attack type's multiplier was 0 — "It doesn't affect…" */
   immune: boolean
   /** raw ÷ neutral raw: > 1 super effective, < 1 resisted, 0 immune. */
   effectiveness: number
 }
 
 /**
- * 01-GAME-SPEC §2.3 — per die: (face + upgrade) × type multiplier; plus the best combo × majority-type multiplier;
- * rounded, floored at 1 unless immune. No global multiplier and no level term: what the dice show is what hits.
+ * 01-GAME-SPEC §2.3 — (Σ (face + upgrade) + best combo) × the attack type's multiplier (the dice type that hits the
+ * defender hardest); rounded, floored at 1 unless immune. No global multiplier and no level term: what the dice show is what hits.
  */
 export function computeDamage(
   dice: readonly RolledDie[],
@@ -83,25 +91,24 @@ export function computeDamage(
   levels: UpgradeLevels,
   data: GameData,
 ): DamageResult {
+  const type = attackType(dice, attackerTypes, defenderTypes, data)
+  const multiplier = attackMultiplier(type, defenderTypes, data)
   const perDie: DieBreakdown[] = dice.map((d) => {
     const value = dieValue(d, data)
     const bonus = dieUpgradeBonus(d.type, levels, data)
-    const multiplier = typeMultiplier(data.typeChart, d.type, defenderTypes)
     return { type: d.type, value, bonus, multiplier, damage: (value + bonus) * multiplier }
   })
   const values = perDie.map((p) => p.value)
-  const majority = majorityType(dice, attackerTypes, data)
-  const comboMult = majority ? typeMultiplier(data.typeChart, majority, defenderTypes) : 1
-  const combo = selectCombo(detectCombos(values), levels.comboLevels, comboMult, data)
+  const combo = selectCombo(detectCombos(values), levels.comboLevels, multiplier, data)
 
   const raw = perDie.reduce((s, p) => s + p.damage, 0) + (combo?.damage ?? 0)
   const neutral = perDie.reduce((s, p) => s + p.value + p.bonus, 0) + (combo?.bonus ?? 0)
-  const immune = perDie.length > 0 && perDie.every((p) => p.multiplier === 0)
+  const immune = perDie.length > 0 && multiplier === 0
   const final = immune ? 0 : Math.max(1, Math.round(raw))
   return {
     perDie,
     combo,
-    majority,
+    attackType: type,
     raw,
     final,
     immune,

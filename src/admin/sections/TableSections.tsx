@@ -279,7 +279,7 @@ export function DiceSection() {
                   <input type="checkbox" checked={!!r.upgradeable} onChange={(e) => patch({ upgradeable: e.target.checked })} /> upgradeable
                 </label>
                 <label className="flex items-center gap-1">
-                  <input type="checkbox" checked={!!r.counts_for_majority} onChange={(e) => patch({ counts_for_majority: e.target.checked })} /> counts for majority
+                  <input type="checkbox" checked={!!r.counts_for_majority} onChange={(e) => patch({ counts_for_majority: e.target.checked })} /> can set attack typeority
                 </label>
               </div>
             </div>

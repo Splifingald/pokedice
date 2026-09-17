@@ -80,6 +80,8 @@ supabase/    migrations/0001_init.sql, seed.sql (generated)
   FLEE / AVOID / RUN; `showRoundPreview` (off by default) shows the cards ahead; each die type has a short description.
 - **v1.8 dice schedule** — Pokémon start with 1 die and gain dice by level and evolution (2nd at Lv.5, Lv.6–8 for weak
   species; 3-stage lines 1–2 → 3 → 4 → 5th at Lv.50; Caterpie / Weedle 1 → 2 → 3 → 4th at Lv.36; legendaries 5; max 5).
+- **v1.8 attack type** — a whole attack (every die, base dice and the combo) takes the effectiveness of the Pokémon's
+  best dice type against the foe; a no-effect attack inflicts no status; hopeless fights end as a stalemate at once.
 - **Deck weights are copies (v1.6)** — an area's encounter weights and loot weights are the number of copies of each
   card in its deck (the old `encounterDeckSize` / `lootDeckSize` scaling is gone).
 - **Pacing** — `hpMultiplier` 1 (fight length; 1.4 before the v1.8 dice schedule) and `goldMultiplier` 0.5 (economy), tuned with `pnpm balance` on the Kanto content. Damage has no global multiplier: a hit is exactly what the dice show (× type effectiveness, + the combo bonus).

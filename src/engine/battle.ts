@@ -1,7 +1,7 @@
 // The battle reducer. The UI dispatches events and renders the returned log — it never recomputes rules.
 import { aiRerollMask } from './ai'
 import { getSpecies } from './data'
-import { computeDamage, type DamageResult, type UpgradeLevels } from './damage'
+import { attackMultiplier, attackType, computeDamage, type DamageResult, type UpgradeLevels } from './damage'
 import { rerollMasked, rollAll, type RolledDie } from './dice'
 import { effectiveStats } from './progression'
 import type { Rng } from './rng'
@@ -213,11 +213,30 @@ function checkKnockouts(s: BattleState, log: LogEntry[]): boolean {
   return false
 }
 
+/** Whether `atk`'s attacks can hurt `def` at all (v1.8: the whole attack takes its best dice type's effectiveness). */
+export function canHurt(atk: Battler, def: Battler, data: GameData): boolean {
+  const dice = atk.dice.map((type) => ({ type, faceIndex: 0 }))
+  return attackMultiplier(attackType(dice, atk.types, def.types, data), def.types, data) > 0
+}
+
+/**
+ * Nobody can ever lose: the foe can't hurt the active Pokémon, no Pokémon on the team can hurt the foe, and no
+ * burn / poison / confusion is left to change that. The fight ends as a stalemate at once instead of at the turn cap.
+ */
+function deadlocked(s: BattleState, data: GameData): boolean {
+  const me = activeBattler(s)
+  const foe = s.enemy
+  if (me.hp <= 0 || foe.hp <= 0) return false
+  const pending = (b: Battler) => !!b.status.burn || !!b.status.poison || b.status.confused
+  if (pending(me) || pending(foe) || canHurt(foe, me, data)) return false
+  return !s.player.some((p) => p.hp > 0 && canHurt(p, foe, data))
+}
+
 /** Turn start: DoT tick (can K.O.), then the stun check (skips the turn), then the actor may act. */
 function beginTurn(s: BattleState, side: Side, data: GameData, log: LogEntry[]) {
   const rules = data.config.status
   for (let guard = 0; guard < 50; guard++) {
-    if (s.turn >= data.config.maxBattleTurns) {
+    if (s.turn >= data.config.maxBattleTurns || deadlocked(s, data)) {
       // No rewards, no wipe; HP damage is kept like a RUN.
       finish(s, 'fled', log, 'stalemate')
       return
@@ -308,7 +327,8 @@ function resolveAttack(s: BattleState, side: Side, data: GameData, log: LogEntry
     })
     const all = statusesFromRoll(dice, data)
     const apps = all.filter((a) => a.status !== 'heal')
-    if (def.hp > 0 && apps.length) {
+    // An attack with no effect inflicts nothing either.
+    if (def.hp > 0 && apps.length && !result.immune) {
       def.status = applyStatuses(def.status, apps, data.config.status)
       for (const a of apps)
         log.push({ kind: 'status', target: other(side), targetUid: def.uid, status: a.status, stacks: a.stacks, turns: a.turns })

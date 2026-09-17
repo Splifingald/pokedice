@@ -1,10 +1,9 @@
 // 01-GAME-SPEC §8 — greedy reroll heuristic, shared by wild/trainer Pokémon and the simulator.
 import { comboBonus, detectCombos, longestRun } from './combos'
-import { computeDamage, dieUpgradeBonus, majorityType, type UpgradeLevels } from './damage'
+import { attackMultiplier, attackType, computeDamage, dieUpgradeBonus, type UpgradeLevels } from './damage'
 import { dieValue, facesOf, type RolledDie } from './dice'
 import type { Rng } from './rng'
 import { satisfiedStatusMask } from './status'
-import { typeMultiplier } from './typechart'
 import { COMBO_KEYS, type ComboKey, type GameData, type PokeType } from './types'
 
 export interface AiInput {
@@ -71,9 +70,11 @@ export function candidateKeepSets(dice: readonly RolledDie[], data: GameData): b
 /** Cheap Monte-Carlo estimate of final damage after rethrowing every die not in `keep`. */
 export function expectedDamage(input: AiInput, keep: readonly boolean[], samples: number): number {
   const { dice, data, levels, rng } = input
+  // The attack type depends on which types the dice have, not on the faces, so a reroll never changes it.
+  const comboMult = attackMultiplier(attackType(dice, input.attackerTypes, input.defenderTypes, data), input.defenderTypes, data)
   const slots = dice.map((d) => {
     const bonus = dieUpgradeBonus(d.type, levels, data)
-    const mult = typeMultiplier(data.typeChart, d.type, input.defenderTypes)
+    const mult = comboMult
     const faces = facesOf(d.type, data)
     const keptValue = dieValue(d, data)
     return {
@@ -85,8 +86,6 @@ export function expectedDamage(input: AiInput, keep: readonly boolean[], samples
     }
   })
   if (slots.length && slots.every((s) => s.mult === 0)) return 0
-  const majority = majorityType(dice, input.attackerTypes, data)
-  const comboMult = majority ? typeMultiplier(data.typeChart, majority, input.defenderTypes) : 1
   const bonusOf = {} as Record<ComboKey, number>
   for (const k of COMBO_KEYS) bonusOf[k] = comboBonus(k, levels.comboLevels[k] ?? 1, data)
   const byRank = data.config.comboPayoutMode === 'highestRank'

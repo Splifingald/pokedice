@@ -109,7 +109,7 @@ function reduce(state: BattleState, e: BattleEvent, cfg: Config, rng: Rng): { st
 - combos: every one of the 8 detected correctly; straights over non-contiguous duplicate values; **payout picks highest damage, not highest rank** (test: Pair at L9 beats Two Pair at L1 in the same roll)
 - status: burn stacks and poison doesn't; frozen needs 3 in one roll; paralyze needs 2; **confuse needs 2**; DoT ticks before the stun check and can K.O.; a stun does not consume a pending confusion; everything clears at battle end
 - fallback values: burn=1, frozen=1, paralyze=4, **confuse=2**, poison=1, and that they participate in combo detection
-- base dice: contribute +0 upgrade bonus always, and never become the majority type; an all-base roll gives an untyped (×1) combo bonus
+- base dice: contribute +0 upgrade bonus always, and never set the attack type (v1.8: they still take its multiplier); an all-base roll is untyped (×1)
 - rerolls: budget is per battle, one press = one reroll regardless of dice selected
 - progression: HP interpolation endpoints, xp curve monotonic, milestone application, evolution swaps species and keeps HP %, branching evolution picks uniformly under a fixed seed
 - AI: never rerolls a satisfied status threshold; is deterministic under a fixed seed

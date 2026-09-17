@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { computeDamage, dieUpgradeBonus, majorityType, typeMultiplier, uniformLevels, makeBattler } from '@/engine'
+import { attackType, computeDamage, dieUpgradeBonus, typeMultiplier, uniformLevels, makeBattler } from '@/engine'
 import { data, die, sdie } from '../fixtures'
 
 const L1 = uniformLevels(1)
@@ -15,12 +15,22 @@ describe('type multiplier', () => {
 })
 
 describe('damage formula', () => {
-  it('types every die separately', () => {
-    // fire 6 vs grass = 12, base 3 = 3, no combo
+  it('the whole attack takes the type that hits hardest (v1.8)', () => {
+    // fire 6 vs grass = 12, base 3 also ×2 = 6, no combo
     const r = computeDamage([die('fire', 6), die('base', 3)], ['fire'], ['grass'], L1, data)
-    expect(r.perDie.map((p) => p.damage)).toEqual([12, 3])
+    expect(r.attackType).toBe('fire')
+    expect(r.perDie.map((p) => p.damage)).toEqual([12, 6])
     expect(r.combo).toBeNull()
-    expect(r.final).toBe(15)
+    expect(r.final).toBe(18)
+  })
+
+  it('Kabuto (2 water, 1 rock) attacks Pidgeotto as rock, whatever the dice count', () => {
+    const roll = [die('water', 2), die('water', 5), die('rock', 6), die('base', 1)] // no combo
+    const r = computeDamage(roll, ['rock', 'water'], ['normal', 'flying'], L1, data)
+    expect(r.attackType).toBe('rock')
+    expect(r.perDie.every((p) => p.multiplier === 2)).toBe(true)
+    expect(r.final).toBe((2 + 5 + 6 + 1) * 2)
+    expect(r.effectiveness).toBe(2)
   })
 
   it('stacks 4× on dual weaknesses', () => {
@@ -29,16 +39,16 @@ describe('damage formula', () => {
     expect(r.final).toBe(20)
   })
 
-  it('immune dice contribute 0 and an all-immune roll deals 0', () => {
-    const r = computeDamage([die('normal', 6), die('normal', 6)], ['normal'], ['ghost'], L1, data)
+  it('is immune only when every dice type is — another type takes over otherwise', () => {
+    const r = computeDamage([die('normal', 6), die('normal', 6), die('base', 2)], ['normal'], ['ghost'], L1, data)
     expect(r.immune).toBe(true)
     expect(r.final).toBe(0)
     expect(r.effectiveness).toBe(0)
-    // one untyped base die breaks total immunity
-    const r2 = computeDamage([die('normal', 6), die('base', 2)], ['normal'], ['ghost'], L1, data)
+    // Gastly-like: ghost is useless vs normal, so the poison die carries the whole attack at ×1
+    const r2 = computeDamage([die('ghost', 5), die('poison', 2), die('base', 3)], ['ghost', 'poison'], ['normal'], L1, data)
+    expect(r2.attackType).toBe('poison')
     expect(r2.immune).toBe(false)
-    expect(r2.perDie[0]!.damage).toBe(0)
-    expect(r2.final).toBe(2)
+    expect(r2.final).toBe(10)
   })
 
   it('floors at 1 when not immune', () => {
@@ -49,8 +59,8 @@ describe('damage formula', () => {
 
   it('deals exactly what the dice show: no global multiplier', () => {
     const r = computeDamage([die('fire', 6), die('base', 3)], ['fire'], ['grass'], L1, data)
-    expect(r.raw).toBe(15) // 6 × 2 + 3
-    expect(r.final).toBe(15)
+    expect(r.raw).toBe(18) // (6 + 3) × 2
+    expect(r.final).toBe(18)
     expect(computeDamage([die('fire', 5)], ['fire'], ['water'], L1, data).final).toBe(3) // round(2.5)
   })
 
@@ -84,33 +94,35 @@ describe('base dice', () => {
     expect(dieUpgradeBonus('normal', uniformLevels(10), data)).toBe(15)
   })
 
-  it('never become the majority type', () => {
+  it('never set the attack type', () => {
     const roll = [die('base', 1), die('base', 2), die('base', 3), die('fire', 2)]
-    expect(majorityType(roll, ['fire'], data)).toBe('fire')
+    expect(attackType(roll, ['fire'], ['water'], data)).toBe('fire')
   })
 
   it('an all-base roll pays an untyped (×1) combo, even vs a ghost', () => {
     const r = computeDamage([die('base', 5), die('base', 5)], ['normal'], ['ghost'], L1, data)
-    expect(r.majority).toBeNull()
+    expect(r.attackType).toBeNull()
     expect(r.combo).toMatchObject({ key: 'pair', multiplier: 1, damage: 2 })
     expect(r.final).toBe(12)
   })
 })
 
-describe('majority type', () => {
-  it('ties break to Type 1, then Type 2, then the highest die', () => {
+describe('attack type', () => {
+  it('picks the best multiplier, then the most dice, Type 1, Type 2, the highest die', () => {
+    expect(attackType([die('fire', 2), die('flying', 7)], ['fire', 'flying'], ['grass'], data)).toBe('fire') // 2× vs 2×: Type 1
+    expect(attackType([die('fire', 2), die('flying', 7)], ['fire', 'flying'], ['fighting'], data)).toBe('flying') // 2× vs 1×
+    expect(attackType([die('fire', 2), die('flying', 7), die('flying', 1)], ['fire', 'flying'], ['normal'], data)).toBe('flying') // most dice
     const tie = [die('fire', 2), die('flying', 7)]
-    expect(majorityType(tie, ['fire', 'flying'], data)).toBe('fire')
-    expect(majorityType(tie, ['flying', 'fire'], data)).toBe('flying')
-    expect(majorityType(tie, ['water', 'fire'], data)).toBe('fire')
-    expect(majorityType(tie, ['water'], data)).toBe('flying') // highest-value die
-    expect(majorityType([die('base', 3)], ['water'], data)).toBeNull()
+    expect(attackType(tie, ['flying', 'fire'], ['normal'], data)).toBe('flying')
+    expect(attackType(tie, ['water', 'fire'], ['normal'], data)).toBe('fire')
+    expect(attackType(tie, ['water'], ['normal'], data)).toBe('flying') // highest-value die
+    expect(attackType([die('base', 3)], ['water'], ['normal'], data)).toBeNull()
   })
 
-  it('multiplies the combo by the majority type vs the defender', () => {
-    // fire, fire, flying → majority fire; pair of 4s vs grass → 2 × 2 = 4
+  it('multiplies the combo by the attack type vs the defender', () => {
+    // fire, fire, flying vs grass → fire (2×); pair of 4s → 2 × 2 = 4
     const r = computeDamage([die('fire', 4), die('fire', 4), die('flying', 1)], ['fire', 'flying'], ['grass'], L1, data)
-    expect(r.majority).toBe('fire')
+    expect(r.attackType).toBe('fire')
     expect(r.combo).toMatchObject({ key: 'pair', multiplier: 2, damage: 4 })
   })
 })

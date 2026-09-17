@@ -261,8 +261,10 @@ export function HelpContent() {
 
       <Section id="damage" title="Damage">
         <p>
-          Every die deals its <b>number</b> (+ your upgrades), multiplied by how effective its <b>type</b> is against the
-          foe. Then your <b>best combo</b> adds a bonus. Levels give HP, not damage: upgrades are what make you hit harder.
+          Add up your dice <b>numbers</b> (+ your upgrades) and your <b>best combo</b>. The whole attack then takes the
+          most effective <b>type</b> among your dice against the foe: a Kabuto with water and rock dice hits a Pidgeotto as
+          Rock, ×2. If none of your types can touch the foe, the attack does nothing. Levels give HP, not damage: upgrades
+          are what make you hit harder.
         </p>
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-2">
@@ -270,7 +272,7 @@ export function HelpContent() {
             <DieFaces type="base" faces={data.diceTypes.base?.faces ?? []} size={28} />
           </div>
           <p className="copy text-muted">
-            White <b>Base</b> dice have no type (always ×1) and can't be upgraded. Coloured dice carry a type and have their
+            White <b>Base</b> dice have no type of their own (they follow the attack's type) and can't be upgraded. Coloured dice carry a type and have their
             own faces. The Pokédex shows each Pokémon's dice.
           </p>
         </div>
