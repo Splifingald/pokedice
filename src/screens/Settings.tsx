@@ -10,6 +10,8 @@ import { deleteSave, replaceSave } from '@/store/run'
 import { useIsAdmin } from '@/store/hooks'
 import { checkContent } from '@/store/sync'
 import { GoogleAccountButton } from '@/components/GoogleAccountButton'
+import { SaveFacts } from '@/components/SyncConflictModal'
+import { backupSave, readBackups } from '@/save/storage'
 
 function Toggle({ label, on, onChange, hint }: { label: string; on: boolean; onChange: (v: boolean) => void; hint?: string }) {
   return (
@@ -147,6 +149,8 @@ export function SettingsScreen() {
         </details>
       </Panel>
 
+      <BackupsPanel />
+
       <Panel title="Content">
         <p className="text-lg">
           Game data: <b>{source === 'remote' ? 'live (Supabase)' : 'bundled'}</b> · version {data.config.configVersion}
@@ -179,5 +183,43 @@ export function SettingsScreen() {
         </div>
       </Modal>
     </div>
+  )
+}
+
+/** Saves replaced by a cloud sync (or a restore) on this device — a wrong choice can be undone here. */
+function BackupsPanel() {
+  const [list, setList] = useState(() => readBackups())
+  const [confirm, setConfirm] = useState<number | null>(null)
+  if (!list.length) return null
+  return (
+    <Panel title="Save backups">
+      <p className="copy mb-2 text-muted">Saves replaced on this device, newest first. Restoring one replaces your current save (which is kept here too).</p>
+      <ul className="flex flex-col gap-2">
+        {list.map((b) => (
+          <li key={b.at} className="flex flex-wrap items-center gap-3 border-2 border-ink bg-panel p-2">
+            <div className="min-w-0 flex-1">
+              <div className="text-lg leading-tight">{b.reason}</div>
+              <div className="text-base text-muted">Saved aside {new Date(b.at).toLocaleString()}</div>
+              <SaveFacts save={b.save} />
+            </div>
+            <PixelButton
+              size="sm"
+              variant={confirm === b.at ? 'danger' : 'secondary'}
+              onClick={() => {
+                if (confirm !== b.at) return setConfirm(b.at)
+                const current = useGame.getState().save
+                if (current) backupSave(current, 'Your save before restoring a backup')
+                replaceSave({ ...b.save, updatedAt: Date.now() })
+                setConfirm(null)
+                setList(readBackups())
+                pushToast('Backup restored', 'good')
+              }}
+            >
+              {confirm === b.at ? 'Replace my save?' : 'Restore'}
+            </PixelButton>
+          </li>
+        ))}
+      </ul>
+    </Panel>
   )
 }

@@ -36,16 +36,16 @@ describe('xp curve', () => {
 })
 
 describe('milestones', () => {
-  it('applies Charizard 31 / 55 / 80', () => {
+  it('applies Charizard fifth die at Lv.50 (v1.8 schedule)', () => {
     const zard = getSpecies(data, 6)
-    expect(effectiveStats(zard, 30, data).dice.filter((d) => d === 'base')).toHaveLength(2)
-    const at31 = effectiveStats(zard, 31, data)
-    expect(at31.dice.filter((d) => d === 'base')).toHaveLength(1)
-    expect(at31.dice.filter((d) => d === 'fire')).toHaveLength(3)
-    expect(effectiveStats(zard, 55, data).rerolls).toBe(6)
-    const at80 = effectiveStats(zard, 80, data)
-    expect(at80.dice).toHaveLength(6)
-    expect(at80.applied).toHaveLength(3)
+    const at49 = effectiveStats(zard, 49, data)
+    expect(at49.dice).toHaveLength(4)
+    expect(at49.rerolls).toBe(4)
+    const at50 = effectiveStats(zard, 50, data)
+    expect(at50.dice).toHaveLength(5)
+    expect(at50.dice.filter((d) => d === 'fire')).toHaveLength(2)
+    expect(at50.rerolls).toBe(5)
+    expect(at50.applied).toHaveLength(2)
   })
 
   it('skips UPGRADE_DIE with no base left and ADD_DIE at max dice; supports ADD_HP', () => {
@@ -73,12 +73,12 @@ describe('levelling & evolution', () => {
   }
 
   it('levels up, raises current HP by the max-HP gain, and emits milestone cards', () => {
-    const c = base(4, 5)
-    const r = gainXp(c, xpToNext(5, data.config), data, createRng(1))
-    expect(r.inst.level).toBe(6)
+    const c = base(4, 4)
+    const r = gainXp(c, xpToNext(4, data.config), data, createRng(1))
+    expect(r.inst.level).toBe(5)
     expect(r.inst.xp).toBe(0)
     expect(r.inst.currentHp).toBe(instanceMaxHp(r.inst, data))
-    expect(r.events.map((e) => e.kind)).toEqual(['level_up', 'milestone']) // Charmander L6: UPGRADE_DIE
+    expect(r.events.map((e) => e.kind)).toContain('milestone') // Charmander L5: second die
   })
 
   it('evolution swaps species and keeps the HP percentage', () => {

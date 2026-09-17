@@ -12,13 +12,9 @@
    {
     "type": "grass",
     "count": 1
-   },
-   {
-    "type": "base",
-    "count": 1
    }
   ],
-  "rerolls": 2,
+  "rerolls": 1,
   "catchValue": 5,
   "evolutions": [
    {
@@ -28,19 +24,14 @@
   ],
   "milestones": [
    {
-    "level": 6,
-    "effect": "UPGRADE_DIE",
-    "dieType": "grass"
+    "level": 5,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 9,
+    "level": 5,
     "effect": "ADD_REROLL",
     "amount": 1
-   },
-   {
-    "level": 13,
-    "effect": "ADD_DIE",
-    "dieType": "grass"
    },
    {
     "level": 16,
@@ -82,21 +73,6 @@
   ],
   "milestones": [
    {
-    "level": 10,
-    "effect": "UPGRADE_DIE",
-    "dieType": "grass"
-   },
-   {
-    "level": 18,
-    "effect": "ADD_REROLL",
-    "amount": 1
-   },
-   {
-    "level": 26,
-    "effect": "ADD_DIE",
-    "dieType": "grass"
-   },
-   {
     "level": 32,
     "effect": "EVOLVE"
    }
@@ -115,7 +91,7 @@
   "dice": [
    {
     "type": "grass",
-    "count": 2
+    "count": 1
    },
    {
     "type": "poison",
@@ -126,24 +102,19 @@
     "count": 2
    }
   ],
-  "rerolls": 5,
+  "rerolls": 4,
   "catchValue": 5,
   "evolutions": [],
   "milestones": [
    {
-    "level": 31,
-    "effect": "UPGRADE_DIE",
-    "dieType": "grass"
-   },
-   {
-    "level": 55,
-    "effect": "ADD_REROLL",
-    "amount": 1
-   },
-   {
-    "level": 80,
+    "level": 50,
     "effect": "ADD_DIE",
     "dieType": "grass"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_REROLL",
+    "amount": 1
    }
   ],
   "notes": "BST 525"
@@ -161,13 +132,9 @@
    {
     "type": "fire",
     "count": 1
-   },
-   {
-    "type": "base",
-    "count": 1
    }
   ],
-  "rerolls": 2,
+  "rerolls": 1,
   "catchValue": 5,
   "evolutions": [
    {
@@ -177,19 +144,14 @@
   ],
   "milestones": [
    {
-    "level": 6,
-    "effect": "UPGRADE_DIE",
-    "dieType": "fire"
+    "level": 5,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 9,
+    "level": 5,
     "effect": "ADD_REROLL",
     "amount": 1
-   },
-   {
-    "level": 13,
-    "effect": "ADD_DIE",
-    "dieType": "fire"
    },
    {
     "level": 16,
@@ -227,21 +189,6 @@
   ],
   "milestones": [
    {
-    "level": 12,
-    "effect": "UPGRADE_DIE",
-    "dieType": "fire"
-   },
-   {
-    "level": 20,
-    "effect": "ADD_REROLL",
-    "amount": 1
-   },
-   {
-    "level": 29,
-    "effect": "ADD_DIE",
-    "dieType": "fire"
-   },
-   {
     "level": 36,
     "effect": "EVOLVE"
    }
@@ -260,7 +207,7 @@
   "dice": [
    {
     "type": "fire",
-    "count": 2
+    "count": 1
    },
    {
     "type": "flying",
@@ -271,24 +218,19 @@
     "count": 2
    }
   ],
-  "rerolls": 5,
+  "rerolls": 4,
   "catchValue": 5,
   "evolutions": [],
   "milestones": [
    {
-    "level": 31,
-    "effect": "UPGRADE_DIE",
-    "dieType": "fire"
-   },
-   {
-    "level": 55,
-    "effect": "ADD_REROLL",
-    "amount": 1
-   },
-   {
-    "level": 80,
+    "level": 50,
     "effect": "ADD_DIE",
     "dieType": "fire"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_REROLL",
+    "amount": 1
    }
   ],
   "notes": "BST 534"
@@ -306,13 +248,9 @@
    {
     "type": "water",
     "count": 1
-   },
-   {
-    "type": "base",
-    "count": 1
    }
   ],
-  "rerolls": 2,
+  "rerolls": 1,
   "catchValue": 5,
   "evolutions": [
    {
@@ -322,19 +260,14 @@
   ],
   "milestones": [
    {
-    "level": 6,
-    "effect": "UPGRADE_DIE",
-    "dieType": "water"
+    "level": 5,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 9,
+    "level": 5,
     "effect": "ADD_REROLL",
     "amount": 1
-   },
-   {
-    "level": 13,
-    "effect": "ADD_DIE",
-    "dieType": "water"
    },
    {
     "level": 16,
@@ -372,21 +305,6 @@
   ],
   "milestones": [
    {
-    "level": 12,
-    "effect": "UPGRADE_DIE",
-    "dieType": "water"
-   },
-   {
-    "level": 20,
-    "effect": "ADD_REROLL",
-    "amount": 1
-   },
-   {
-    "level": 29,
-    "effect": "ADD_DIE",
-    "dieType": "water"
-   },
-   {
     "level": 36,
     "effect": "EVOLVE"
    }
@@ -405,31 +323,26 @@
   "dice": [
    {
     "type": "water",
-    "count": 3
+    "count": 2
    },
    {
     "type": "base",
     "count": 2
    }
   ],
-  "rerolls": 5,
+  "rerolls": 4,
   "catchValue": 5,
   "evolutions": [],
   "milestones": [
    {
-    "level": 31,
-    "effect": "UPGRADE_DIE",
-    "dieType": "water"
-   },
-   {
-    "level": 55,
-    "effect": "ADD_REROLL",
-    "amount": 1
-   },
-   {
-    "level": 80,
+    "level": 50,
     "effect": "ADD_DIE",
     "dieType": "water"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_REROLL",
+    "amount": 1
    }
   ],
   "notes": "BST 530"
@@ -447,13 +360,9 @@
    {
     "type": "bug",
     "count": 1
-   },
-   {
-    "type": "base",
-    "count": 1
    }
   ],
-  "rerolls": 2,
+  "rerolls": 1,
   "catchValue": 1,
   "evolutions": [
    {
@@ -462,16 +371,6 @@
    }
   ],
   "milestones": [
-   {
-    "level": 3,
-    "effect": "UPGRADE_DIE",
-    "dieType": "bug"
-   },
-   {
-    "level": 4,
-    "effect": "ADD_REROLL",
-    "amount": 1
-   },
    {
     "level": 7,
     "effect": "EVOLVE"
@@ -508,16 +407,6 @@
   ],
   "milestones": [
    {
-    "level": 4,
-    "effect": "UPGRADE_DIE",
-    "dieType": "bug"
-   },
-   {
-    "level": 6,
-    "effect": "ADD_REROLL",
-    "amount": 1
-   },
-   {
     "level": 10,
     "effect": "EVOLVE"
    }
@@ -552,19 +441,14 @@
   "evolutions": [],
   "milestones": [
    {
-    "level": 31,
-    "effect": "UPGRADE_DIE",
-    "dieType": "bug"
+    "level": 36,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 55,
+    "level": 36,
     "effect": "ADD_REROLL",
     "amount": 1
-   },
-   {
-    "level": 80,
-    "effect": "ADD_DIE",
-    "dieType": "bug"
    }
   ],
   "notes": "BST 395"
@@ -582,13 +466,9 @@
    {
     "type": "bug",
     "count": 1
-   },
-   {
-    "type": "base",
-    "count": 1
    }
   ],
-  "rerolls": 2,
+  "rerolls": 1,
   "catchValue": 1,
   "evolutions": [
    {
@@ -597,16 +477,6 @@
    }
   ],
   "milestones": [
-   {
-    "level": 3,
-    "effect": "UPGRADE_DIE",
-    "dieType": "bug"
-   },
-   {
-    "level": 4,
-    "effect": "ADD_REROLL",
-    "amount": 1
-   },
    {
     "level": 7,
     "effect": "EVOLVE"
@@ -643,16 +513,6 @@
   ],
   "milestones": [
    {
-    "level": 4,
-    "effect": "UPGRADE_DIE",
-    "dieType": "bug"
-   },
-   {
-    "level": 6,
-    "effect": "ADD_REROLL",
-    "amount": 1
-   },
-   {
     "level": 10,
     "effect": "EVOLVE"
    }
@@ -687,19 +547,14 @@
   "evolutions": [],
   "milestones": [
    {
-    "level": 31,
-    "effect": "UPGRADE_DIE",
-    "dieType": "bug"
+    "level": 36,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 55,
+    "level": 36,
     "effect": "ADD_REROLL",
     "amount": 1
-   },
-   {
-    "level": 80,
-    "effect": "ADD_DIE",
-    "dieType": "bug"
    }
   ],
   "notes": "BST 395"
@@ -717,13 +572,9 @@
    {
     "type": "normal",
     "count": 1
-   },
-   {
-    "type": "base",
-    "count": 1
    }
   ],
-  "rerolls": 2,
+  "rerolls": 1,
   "catchValue": 1,
   "evolutions": [
    {
@@ -733,19 +584,14 @@
   ],
   "milestones": [
    {
-    "level": 6,
-    "effect": "UPGRADE_DIE",
-    "dieType": "normal"
+    "level": 8,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 10,
+    "level": 8,
     "effect": "ADD_REROLL",
     "amount": 1
-   },
-   {
-    "level": 15,
-    "effect": "ADD_DIE",
-    "dieType": "normal"
    },
    {
     "level": 18,
@@ -787,21 +633,6 @@
   ],
   "milestones": [
    {
-    "level": 12,
-    "effect": "UPGRADE_DIE",
-    "dieType": "normal"
-   },
-   {
-    "level": 20,
-    "effect": "ADD_REROLL",
-    "amount": 1
-   },
-   {
-    "level": 29,
-    "effect": "ADD_DIE",
-    "dieType": "normal"
-   },
-   {
     "level": 36,
     "effect": "EVOLVE"
    }
@@ -836,19 +667,14 @@
   "evolutions": [],
   "milestones": [
    {
-    "level": 31,
-    "effect": "UPGRADE_DIE",
-    "dieType": "normal"
-   },
-   {
-    "level": 55,
-    "effect": "ADD_REROLL",
-    "amount": 1
-   },
-   {
-    "level": 80,
+    "level": 50,
     "effect": "ADD_DIE",
     "dieType": "normal"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_REROLL",
+    "amount": 1
    }
   ],
   "notes": "BST 479"
@@ -866,13 +692,9 @@
    {
     "type": "normal",
     "count": 1
-   },
-   {
-    "type": "base",
-    "count": 1
    }
   ],
-  "rerolls": 2,
+  "rerolls": 1,
   "catchValue": 1,
   "evolutions": [
    {
@@ -882,19 +704,14 @@
   ],
   "milestones": [
    {
-    "level": 7,
-    "effect": "UPGRADE_DIE",
-    "dieType": "normal"
+    "level": 8,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 11,
+    "level": 8,
     "effect": "ADD_REROLL",
     "amount": 1
-   },
-   {
-    "level": 16,
-    "effect": "ADD_DIE",
-    "dieType": "normal"
    },
    {
     "level": 20,
@@ -927,19 +744,14 @@
   "evolutions": [],
   "milestones": [
    {
-    "level": 31,
-    "effect": "UPGRADE_DIE",
-    "dieType": "normal"
+    "level": 36,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 55,
+    "level": 36,
     "effect": "ADD_REROLL",
     "amount": 1
-   },
-   {
-    "level": 80,
-    "effect": "ADD_DIE",
-    "dieType": "normal"
    }
   ],
   "notes": "BST 413"
@@ -957,13 +769,9 @@
    {
     "type": "normal",
     "count": 1
-   },
-   {
-    "type": "base",
-    "count": 1
    }
   ],
-  "rerolls": 2,
+  "rerolls": 1,
   "catchValue": 1,
   "evolutions": [
    {
@@ -974,18 +782,13 @@
   "milestones": [
    {
     "level": 7,
-    "effect": "UPGRADE_DIE",
-    "dieType": "normal"
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 11,
+    "level": 7,
     "effect": "ADD_REROLL",
     "amount": 1
-   },
-   {
-    "level": 16,
-    "effect": "ADD_DIE",
-    "dieType": "normal"
    },
    {
     "level": 20,
@@ -1014,27 +817,22 @@
    },
    {
     "type": "base",
-    "count": 2
+    "count": 1
    }
   ],
-  "rerolls": 4,
+  "rerolls": 3,
   "catchValue": 4,
   "evolutions": [],
   "milestones": [
    {
-    "level": 31,
-    "effect": "UPGRADE_DIE",
-    "dieType": "normal"
+    "level": 36,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 55,
+    "level": 36,
     "effect": "ADD_REROLL",
     "amount": 1
-   },
-   {
-    "level": 80,
-    "effect": "ADD_DIE",
-    "dieType": "normal"
    }
   ],
   "notes": "BST 442"
@@ -1052,13 +850,9 @@
    {
     "type": "poison",
     "count": 1
-   },
-   {
-    "type": "base",
-    "count": 1
    }
   ],
-  "rerolls": 2,
+  "rerolls": 1,
   "catchValue": 1,
   "evolutions": [
    {
@@ -1068,19 +862,14 @@
   ],
   "milestones": [
    {
-    "level": 7,
-    "effect": "UPGRADE_DIE",
-    "dieType": "poison"
+    "level": 6,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 13,
+    "level": 6,
     "effect": "ADD_REROLL",
     "amount": 1
-   },
-   {
-    "level": 18,
-    "effect": "ADD_DIE",
-    "dieType": "poison"
    },
    {
     "level": 22,
@@ -1105,27 +894,22 @@
    },
    {
     "type": "base",
-    "count": 2
+    "count": 1
    }
   ],
-  "rerolls": 4,
+  "rerolls": 3,
   "catchValue": 4,
   "evolutions": [],
   "milestones": [
    {
-    "level": 31,
-    "effect": "UPGRADE_DIE",
-    "dieType": "poison"
+    "level": 36,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 55,
+    "level": 36,
     "effect": "ADD_REROLL",
     "amount": 1
-   },
-   {
-    "level": 80,
-    "effect": "ADD_DIE",
-    "dieType": "poison"
    }
   ],
   "notes": "BST 448"
@@ -1143,13 +927,9 @@
    {
     "type": "electric",
     "count": 1
-   },
-   {
-    "type": "base",
-    "count": 1
    }
   ],
-  "rerolls": 2,
+  "rerolls": 1,
   "catchValue": 2,
   "evolutions": [
    {
@@ -1159,19 +939,14 @@
   ],
   "milestones": [
    {
-    "level": 9,
-    "effect": "UPGRADE_DIE",
-    "dieType": "electric"
+    "level": 5,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 16,
+    "level": 5,
     "effect": "ADD_REROLL",
     "amount": 1
-   },
-   {
-    "level": 23,
-    "effect": "ADD_DIE",
-    "dieType": "electric"
    },
    {
     "level": 28,
@@ -1196,27 +971,32 @@
    },
    {
     "type": "base",
-    "count": 2
+    "count": 1
    }
   ],
-  "rerolls": 4,
+  "rerolls": 3,
   "catchValue": 4,
   "evolutions": [],
   "milestones": [
    {
-    "level": 31,
-    "effect": "UPGRADE_DIE",
-    "dieType": "electric"
+    "level": 36,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 55,
+    "level": 36,
     "effect": "ADD_REROLL",
     "amount": 1
    },
    {
-    "level": 80,
+    "level": 50,
     "effect": "ADD_DIE",
     "dieType": "electric"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_REROLL",
+    "amount": 1
    }
   ],
   "notes": "BST 485"
@@ -1234,13 +1014,9 @@
    {
     "type": "ground",
     "count": 1
-   },
-   {
-    "type": "base",
-    "count": 1
    }
   ],
-  "rerolls": 2,
+  "rerolls": 1,
   "catchValue": 1,
   "evolutions": [
    {
@@ -1250,19 +1026,14 @@
   ],
   "milestones": [
    {
-    "level": 7,
-    "effect": "UPGRADE_DIE",
-    "dieType": "ground"
+    "level": 5,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 13,
+    "level": 5,
     "effect": "ADD_REROLL",
     "amount": 1
-   },
-   {
-    "level": 18,
-    "effect": "ADD_DIE",
-    "dieType": "ground"
    },
    {
     "level": 22,
@@ -1287,27 +1058,32 @@
    },
    {
     "type": "base",
-    "count": 2
+    "count": 1
    }
   ],
-  "rerolls": 4,
+  "rerolls": 3,
   "catchValue": 4,
   "evolutions": [],
   "milestones": [
    {
-    "level": 31,
-    "effect": "UPGRADE_DIE",
-    "dieType": "ground"
+    "level": 36,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 55,
+    "level": 36,
     "effect": "ADD_REROLL",
     "amount": 1
    },
    {
-    "level": 80,
+    "level": 50,
     "effect": "ADD_DIE",
     "dieType": "ground"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_REROLL",
+    "amount": 1
    }
   ],
   "notes": "BST 450"
@@ -1325,13 +1101,9 @@
    {
     "type": "poison",
     "count": 1
-   },
-   {
-    "type": "base",
-    "count": 1
    }
   ],
-  "rerolls": 2,
+  "rerolls": 1,
   "catchValue": 2,
   "evolutions": [
    {
@@ -1341,19 +1113,14 @@
   ],
   "milestones": [
    {
-    "level": 6,
-    "effect": "UPGRADE_DIE",
-    "dieType": "poison"
+    "level": 7,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 9,
+    "level": 7,
     "effect": "ADD_REROLL",
     "amount": 1
-   },
-   {
-    "level": 13,
-    "effect": "ADD_DIE",
-    "dieType": "poison"
    },
    {
     "level": 16,
@@ -1391,21 +1158,6 @@
   ],
   "milestones": [
    {
-    "level": 9,
-    "effect": "UPGRADE_DIE",
-    "dieType": "poison"
-   },
-   {
-    "level": 16,
-    "effect": "ADD_REROLL",
-    "amount": 1
-   },
-   {
-    "level": 23,
-    "effect": "ADD_DIE",
-    "dieType": "poison"
-   },
-   {
     "level": 28,
     "effect": "EVOLVE"
    }
@@ -1424,7 +1176,7 @@
   "dice": [
    {
     "type": "poison",
-    "count": 2
+    "count": 1
    },
    {
     "type": "ground",
@@ -1435,24 +1187,19 @@
     "count": 2
    }
   ],
-  "rerolls": 5,
+  "rerolls": 4,
   "catchValue": 5,
   "evolutions": [],
   "milestones": [
    {
-    "level": 31,
-    "effect": "UPGRADE_DIE",
-    "dieType": "poison"
-   },
-   {
-    "level": 55,
-    "effect": "ADD_REROLL",
-    "amount": 1
-   },
-   {
-    "level": 80,
+    "level": 50,
     "effect": "ADD_DIE",
     "dieType": "poison"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_REROLL",
+    "amount": 1
    }
   ],
   "notes": "BST 505"
@@ -1470,13 +1217,9 @@
    {
     "type": "poison",
     "count": 1
-   },
-   {
-    "type": "base",
-    "count": 1
    }
   ],
-  "rerolls": 2,
+  "rerolls": 1,
   "catchValue": 2,
   "evolutions": [
    {
@@ -1486,19 +1229,14 @@
   ],
   "milestones": [
    {
-    "level": 6,
-    "effect": "UPGRADE_DIE",
-    "dieType": "poison"
+    "level": 7,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 9,
+    "level": 7,
     "effect": "ADD_REROLL",
     "amount": 1
-   },
-   {
-    "level": 13,
-    "effect": "ADD_DIE",
-    "dieType": "poison"
    },
    {
     "level": 16,
@@ -1536,21 +1274,6 @@
   ],
   "milestones": [
    {
-    "level": 9,
-    "effect": "UPGRADE_DIE",
-    "dieType": "poison"
-   },
-   {
-    "level": 16,
-    "effect": "ADD_REROLL",
-    "amount": 1
-   },
-   {
-    "level": 23,
-    "effect": "ADD_DIE",
-    "dieType": "poison"
-   },
-   {
     "level": 28,
     "effect": "EVOLVE"
    }
@@ -1569,7 +1292,7 @@
   "dice": [
    {
     "type": "poison",
-    "count": 2
+    "count": 1
    },
    {
     "type": "ground",
@@ -1580,24 +1303,19 @@
     "count": 2
    }
   ],
-  "rerolls": 5,
+  "rerolls": 4,
   "catchValue": 5,
   "evolutions": [],
   "milestones": [
    {
-    "level": 31,
-    "effect": "UPGRADE_DIE",
-    "dieType": "poison"
-   },
-   {
-    "level": 55,
-    "effect": "ADD_REROLL",
-    "amount": 1
-   },
-   {
-    "level": 80,
+    "level": 50,
     "effect": "ADD_DIE",
     "dieType": "poison"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_REROLL",
+    "amount": 1
    }
   ],
   "notes": "BST 505"
@@ -1615,13 +1333,9 @@
    {
     "type": "fairy",
     "count": 1
-   },
-   {
-    "type": "base",
-    "count": 1
    }
   ],
-  "rerolls": 2,
+  "rerolls": 1,
   "catchValue": 3,
   "evolutions": [
    {
@@ -1631,19 +1345,14 @@
   ],
   "milestones": [
    {
-    "level": 9,
-    "effect": "UPGRADE_DIE",
-    "dieType": "fairy"
+    "level": 5,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 16,
+    "level": 5,
     "effect": "ADD_REROLL",
     "amount": 1
-   },
-   {
-    "level": 23,
-    "effect": "ADD_DIE",
-    "dieType": "fairy"
    },
    {
     "level": 28,
@@ -1668,27 +1377,32 @@
    },
    {
     "type": "base",
-    "count": 2
+    "count": 1
    }
   ],
-  "rerolls": 4,
+  "rerolls": 3,
   "catchValue": 7,
   "evolutions": [],
   "milestones": [
    {
-    "level": 31,
-    "effect": "UPGRADE_DIE",
-    "dieType": "fairy"
+    "level": 36,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 55,
+    "level": 36,
     "effect": "ADD_REROLL",
     "amount": 1
    },
    {
-    "level": 80,
+    "level": 50,
     "effect": "ADD_DIE",
     "dieType": "fairy"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_REROLL",
+    "amount": 1
    }
   ],
   "notes": "BST 483"
@@ -1706,13 +1420,9 @@
    {
     "type": "fire",
     "count": 1
-   },
-   {
-    "type": "base",
-    "count": 1
    }
   ],
-  "rerolls": 2,
+  "rerolls": 1,
   "catchValue": 2,
   "evolutions": [
    {
@@ -1722,19 +1432,14 @@
   ],
   "milestones": [
    {
-    "level": 9,
-    "effect": "UPGRADE_DIE",
-    "dieType": "fire"
+    "level": 6,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 16,
+    "level": 6,
     "effect": "ADD_REROLL",
     "amount": 1
-   },
-   {
-    "level": 23,
-    "effect": "ADD_DIE",
-    "dieType": "fire"
    },
    {
     "level": 28,
@@ -1755,31 +1460,36 @@
   "dice": [
    {
     "type": "fire",
-    "count": 3
+    "count": 2
    },
    {
     "type": "base",
-    "count": 2
+    "count": 1
    }
   ],
-  "rerolls": 5,
+  "rerolls": 3,
   "catchValue": 4,
   "evolutions": [],
   "milestones": [
    {
-    "level": 31,
-    "effect": "UPGRADE_DIE",
-    "dieType": "fire"
+    "level": 36,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 55,
+    "level": 36,
     "effect": "ADD_REROLL",
     "amount": 1
    },
    {
-    "level": 80,
+    "level": 50,
     "effect": "ADD_DIE",
     "dieType": "fire"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_REROLL",
+    "amount": 1
    }
   ],
   "notes": "BST 505"
@@ -1797,13 +1507,9 @@
    {
     "type": "normal",
     "count": 1
-   },
-   {
-    "type": "base",
-    "count": 1
    }
   ],
-  "rerolls": 2,
+  "rerolls": 1,
   "catchValue": 3,
   "evolutions": [
    {
@@ -1813,19 +1519,14 @@
   ],
   "milestones": [
    {
-    "level": 9,
-    "effect": "UPGRADE_DIE",
-    "dieType": "normal"
+    "level": 7,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 16,
+    "level": 7,
     "effect": "ADD_REROLL",
     "amount": 1
-   },
-   {
-    "level": 23,
-    "effect": "ADD_DIE",
-    "dieType": "normal"
    },
    {
     "level": 28,
@@ -1854,27 +1555,22 @@
    },
    {
     "type": "base",
-    "count": 2
+    "count": 1
    }
   ],
-  "rerolls": 4,
+  "rerolls": 3,
   "catchValue": 5,
   "evolutions": [],
   "milestones": [
    {
-    "level": 31,
-    "effect": "UPGRADE_DIE",
-    "dieType": "normal"
+    "level": 36,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 55,
+    "level": 36,
     "effect": "ADD_REROLL",
     "amount": 1
-   },
-   {
-    "level": 80,
-    "effect": "ADD_DIE",
-    "dieType": "normal"
    }
   ],
   "notes": "BST 435"
@@ -1892,13 +1588,9 @@
    {
     "type": "poison",
     "count": 1
-   },
-   {
-    "type": "base",
-    "count": 1
    }
   ],
-  "rerolls": 2,
+  "rerolls": 1,
   "catchValue": 1,
   "evolutions": [
    {
@@ -1908,19 +1600,14 @@
   ],
   "milestones": [
    {
-    "level": 7,
-    "effect": "UPGRADE_DIE",
-    "dieType": "poison"
+    "level": 8,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 13,
+    "level": 8,
     "effect": "ADD_REROLL",
     "amount": 1
-   },
-   {
-    "level": 18,
-    "effect": "ADD_DIE",
-    "dieType": "poison"
    },
    {
     "level": 22,
@@ -1949,27 +1636,32 @@
    },
    {
     "type": "base",
-    "count": 2
+    "count": 1
    }
   ],
-  "rerolls": 4,
+  "rerolls": 3,
   "catchValue": 4,
   "evolutions": [],
   "milestones": [
    {
-    "level": 31,
-    "effect": "UPGRADE_DIE",
-    "dieType": "poison"
+    "level": 36,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 55,
+    "level": 36,
     "effect": "ADD_REROLL",
     "amount": 1
    },
    {
-    "level": 80,
+    "level": 50,
     "effect": "ADD_DIE",
     "dieType": "poison"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_REROLL",
+    "amount": 1
    }
   ],
   "notes": "BST 455"
@@ -1987,13 +1679,9 @@
    {
     "type": "grass",
     "count": 1
-   },
-   {
-    "type": "base",
-    "count": 1
    }
   ],
-  "rerolls": 2,
+  "rerolls": 1,
   "catchValue": 1,
   "evolutions": [
    {
@@ -2003,19 +1691,14 @@
   ],
   "milestones": [
    {
-    "level": 7,
-    "effect": "UPGRADE_DIE",
-    "dieType": "grass"
+    "level": 5,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 12,
+    "level": 5,
     "effect": "ADD_REROLL",
     "amount": 1
-   },
-   {
-    "level": 17,
-    "effect": "ADD_DIE",
-    "dieType": "grass"
    },
    {
     "level": 21,
@@ -2057,21 +1740,6 @@
   ],
   "milestones": [
    {
-    "level": 9,
-    "effect": "UPGRADE_DIE",
-    "dieType": "grass"
-   },
-   {
-    "level": 16,
-    "effect": "ADD_REROLL",
-    "amount": 1
-   },
-   {
-    "level": 23,
-    "effect": "ADD_DIE",
-    "dieType": "grass"
-   },
-   {
     "level": 28,
     "effect": "EVOLVE"
    }
@@ -2106,19 +1774,14 @@
   "evolutions": [],
   "milestones": [
    {
-    "level": 31,
-    "effect": "UPGRADE_DIE",
-    "dieType": "grass"
-   },
-   {
-    "level": 55,
-    "effect": "ADD_REROLL",
-    "amount": 1
-   },
-   {
-    "level": 80,
+    "level": 50,
     "effect": "ADD_DIE",
     "dieType": "grass"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_REROLL",
+    "amount": 1
    }
   ],
   "notes": "BST 490"
@@ -2136,13 +1799,9 @@
    {
     "type": "bug",
     "count": 1
-   },
-   {
-    "type": "base",
-    "count": 1
    }
   ],
-  "rerolls": 2,
+  "rerolls": 1,
   "catchValue": 2,
   "evolutions": [
    {
@@ -2152,19 +1811,14 @@
   ],
   "milestones": [
    {
-    "level": 8,
-    "effect": "UPGRADE_DIE",
-    "dieType": "bug"
+    "level": 6,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 14,
+    "level": 6,
     "effect": "ADD_REROLL",
     "amount": 1
-   },
-   {
-    "level": 19,
-    "effect": "ADD_DIE",
-    "dieType": "bug"
    },
    {
     "level": 24,
@@ -2201,19 +1855,14 @@
   "evolutions": [],
   "milestones": [
    {
-    "level": 31,
-    "effect": "UPGRADE_DIE",
-    "dieType": "bug"
+    "level": 36,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 55,
+    "level": 36,
     "effect": "ADD_REROLL",
     "amount": 1
-   },
-   {
-    "level": 80,
-    "effect": "ADD_DIE",
-    "dieType": "bug"
    }
   ],
   "notes": "BST 405"
@@ -2231,13 +1880,9 @@
    {
     "type": "bug",
     "count": 1
-   },
-   {
-    "type": "base",
-    "count": 1
    }
   ],
-  "rerolls": 2,
+  "rerolls": 1,
   "catchValue": 2,
   "evolutions": [
    {
@@ -2247,19 +1892,14 @@
   ],
   "milestones": [
    {
-    "level": 10,
-    "effect": "UPGRADE_DIE",
-    "dieType": "bug"
+    "level": 5,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 18,
+    "level": 5,
     "effect": "ADD_REROLL",
     "amount": 1
-   },
-   {
-    "level": 25,
-    "effect": "ADD_DIE",
-    "dieType": "bug"
    },
    {
     "level": 31,
@@ -2288,27 +1928,32 @@
    },
    {
     "type": "base",
-    "count": 2
+    "count": 1
    }
   ],
-  "rerolls": 4,
+  "rerolls": 3,
   "catchValue": 4,
   "evolutions": [],
   "milestones": [
    {
-    "level": 31,
-    "effect": "UPGRADE_DIE",
-    "dieType": "bug"
+    "level": 36,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 55,
+    "level": 36,
     "effect": "ADD_REROLL",
     "amount": 1
    },
    {
-    "level": 80,
+    "level": 50,
     "effect": "ADD_DIE",
     "dieType": "bug"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_REROLL",
+    "amount": 1
    }
   ],
   "notes": "BST 450"
@@ -2326,13 +1971,9 @@
    {
     "type": "ground",
     "count": 1
-   },
-   {
-    "type": "base",
-    "count": 1
    }
   ],
-  "rerolls": 2,
+  "rerolls": 1,
   "catchValue": 1,
   "evolutions": [
    {
@@ -2342,19 +1983,14 @@
   ],
   "milestones": [
    {
-    "level": 9,
-    "effect": "UPGRADE_DIE",
-    "dieType": "ground"
+    "level": 7,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 15,
+    "level": 7,
     "effect": "ADD_REROLL",
     "amount": 1
-   },
-   {
-    "level": 21,
-    "effect": "ADD_DIE",
-    "dieType": "ground"
    },
    {
     "level": 26,
@@ -2387,19 +2023,14 @@
   "evolutions": [],
   "milestones": [
    {
-    "level": 31,
-    "effect": "UPGRADE_DIE",
-    "dieType": "ground"
+    "level": 36,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 55,
+    "level": 36,
     "effect": "ADD_REROLL",
     "amount": 1
-   },
-   {
-    "level": 80,
-    "effect": "ADD_DIE",
-    "dieType": "ground"
    }
   ],
   "notes": "BST 425"
@@ -2417,13 +2048,9 @@
    {
     "type": "normal",
     "count": 1
-   },
-   {
-    "type": "base",
-    "count": 1
    }
   ],
-  "rerolls": 2,
+  "rerolls": 1,
   "catchValue": 1,
   "evolutions": [
    {
@@ -2433,19 +2060,14 @@
   ],
   "milestones": [
    {
-    "level": 9,
-    "effect": "UPGRADE_DIE",
-    "dieType": "normal"
+    "level": 6,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 16,
+    "level": 6,
     "effect": "ADD_REROLL",
     "amount": 1
-   },
-   {
-    "level": 23,
-    "effect": "ADD_DIE",
-    "dieType": "normal"
    },
    {
     "level": 28,
@@ -2470,27 +2092,22 @@
    },
    {
     "type": "base",
-    "count": 2
+    "count": 1
    }
   ],
-  "rerolls": 4,
+  "rerolls": 3,
   "catchValue": 4,
   "evolutions": [],
   "milestones": [
    {
-    "level": 31,
-    "effect": "UPGRADE_DIE",
-    "dieType": "normal"
+    "level": 36,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 55,
+    "level": 36,
     "effect": "ADD_REROLL",
     "amount": 1
-   },
-   {
-    "level": 80,
-    "effect": "ADD_DIE",
-    "dieType": "normal"
    }
   ],
   "notes": "BST 440"
@@ -2508,13 +2125,9 @@
    {
     "type": "water",
     "count": 1
-   },
-   {
-    "type": "base",
-    "count": 1
    }
   ],
-  "rerolls": 2,
+  "rerolls": 1,
   "catchValue": 2,
   "evolutions": [
    {
@@ -2524,19 +2137,14 @@
   ],
   "milestones": [
    {
-    "level": 11,
-    "effect": "UPGRADE_DIE",
-    "dieType": "water"
+    "level": 5,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 19,
+    "level": 5,
     "effect": "ADD_REROLL",
     "amount": 1
-   },
-   {
-    "level": 27,
-    "effect": "ADD_DIE",
-    "dieType": "water"
    },
    {
     "level": 33,
@@ -2557,31 +2165,36 @@
   "dice": [
    {
     "type": "water",
-    "count": 3
+    "count": 2
    },
    {
     "type": "base",
-    "count": 2
+    "count": 1
    }
   ],
-  "rerolls": 5,
+  "rerolls": 3,
   "catchValue": 4,
   "evolutions": [],
   "milestones": [
    {
-    "level": 31,
-    "effect": "UPGRADE_DIE",
-    "dieType": "water"
+    "level": 36,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 55,
+    "level": 36,
     "effect": "ADD_REROLL",
     "amount": 1
    },
    {
-    "level": 80,
+    "level": 50,
     "effect": "ADD_DIE",
     "dieType": "water"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_REROLL",
+    "amount": 1
    }
   ],
   "notes": "BST 500"
@@ -2599,13 +2212,9 @@
    {
     "type": "fighting",
     "count": 1
-   },
-   {
-    "type": "base",
-    "count": 1
    }
   ],
-  "rerolls": 2,
+  "rerolls": 1,
   "catchValue": 2,
   "evolutions": [
    {
@@ -2615,19 +2224,14 @@
   ],
   "milestones": [
    {
-    "level": 9,
-    "effect": "UPGRADE_DIE",
-    "dieType": "fighting"
+    "level": 5,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 16,
+    "level": 5,
     "effect": "ADD_REROLL",
     "amount": 1
-   },
-   {
-    "level": 23,
-    "effect": "ADD_DIE",
-    "dieType": "fighting"
    },
    {
     "level": 28,
@@ -2652,27 +2256,32 @@
    },
    {
     "type": "base",
-    "count": 2
+    "count": 1
    }
   ],
-  "rerolls": 4,
+  "rerolls": 3,
   "catchValue": 4,
   "evolutions": [],
   "milestones": [
    {
-    "level": 31,
-    "effect": "UPGRADE_DIE",
-    "dieType": "fighting"
+    "level": 36,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 55,
+    "level": 36,
     "effect": "ADD_REROLL",
     "amount": 1
    },
    {
-    "level": 80,
+    "level": 50,
     "effect": "ADD_DIE",
     "dieType": "fighting"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_REROLL",
+    "amount": 1
    }
   ],
   "notes": "BST 455"
@@ -2689,14 +2298,10 @@
   "dice": [
    {
     "type": "fire",
-    "count": 2
-   },
-   {
-    "type": "base",
     "count": 1
    }
   ],
-  "rerolls": 3,
+  "rerolls": 1,
   "catchValue": 2,
   "evolutions": [
    {
@@ -2706,19 +2311,14 @@
   ],
   "milestones": [
    {
-    "level": 9,
-    "effect": "UPGRADE_DIE",
-    "dieType": "fire"
+    "level": 5,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 16,
+    "level": 5,
     "effect": "ADD_REROLL",
     "amount": 1
-   },
-   {
-    "level": 23,
-    "effect": "ADD_DIE",
-    "dieType": "fire"
    },
    {
     "level": 28,
@@ -2739,31 +2339,36 @@
   "dice": [
    {
     "type": "fire",
-    "count": 3
+    "count": 2
    },
    {
     "type": "base",
-    "count": 2
+    "count": 1
    }
   ],
-  "rerolls": 5,
+  "rerolls": 3,
   "catchValue": 4,
   "evolutions": [],
   "milestones": [
    {
-    "level": 31,
-    "effect": "UPGRADE_DIE",
-    "dieType": "fire"
+    "level": 36,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 55,
+    "level": 36,
     "effect": "ADD_REROLL",
     "amount": 1
    },
    {
-    "level": 80,
+    "level": 50,
     "effect": "ADD_DIE",
     "dieType": "fire"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_REROLL",
+    "amount": 1
    }
   ],
   "notes": "BST 555"
@@ -2781,13 +2386,9 @@
    {
     "type": "water",
     "count": 1
-   },
-   {
-    "type": "base",
-    "count": 1
    }
   ],
-  "rerolls": 2,
+  "rerolls": 1,
   "catchValue": 1,
   "evolutions": [
    {
@@ -2797,19 +2398,14 @@
   ],
   "milestones": [
    {
-    "level": 8,
-    "effect": "UPGRADE_DIE",
-    "dieType": "water"
+    "level": 5,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 14,
+    "level": 5,
     "effect": "ADD_REROLL",
     "amount": 1
-   },
-   {
-    "level": 20,
-    "effect": "ADD_DIE",
-    "dieType": "water"
    },
    {
     "level": 25,
@@ -2847,21 +2443,6 @@
   ],
   "milestones": [
    {
-    "level": 9,
-    "effect": "UPGRADE_DIE",
-    "dieType": "water"
-   },
-   {
-    "level": 16,
-    "effect": "ADD_REROLL",
-    "amount": 1
-   },
-   {
-    "level": 23,
-    "effect": "ADD_DIE",
-    "dieType": "water"
-   },
-   {
     "level": 28,
     "effect": "EVOLVE"
    }
@@ -2880,7 +2461,7 @@
   "dice": [
    {
     "type": "water",
-    "count": 2
+    "count": 1
    },
    {
     "type": "fighting",
@@ -2891,24 +2472,19 @@
     "count": 2
    }
   ],
-  "rerolls": 5,
+  "rerolls": 4,
   "catchValue": 5,
   "evolutions": [],
   "milestones": [
    {
-    "level": 31,
-    "effect": "UPGRADE_DIE",
-    "dieType": "water"
-   },
-   {
-    "level": 55,
-    "effect": "ADD_REROLL",
-    "amount": 1
-   },
-   {
-    "level": 80,
+    "level": 50,
     "effect": "ADD_DIE",
     "dieType": "water"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_REROLL",
+    "amount": 1
    }
   ],
   "notes": "BST 510"
@@ -2926,13 +2502,9 @@
    {
     "type": "psychic",
     "count": 1
-   },
-   {
-    "type": "base",
-    "count": 1
    }
   ],
-  "rerolls": 2,
+  "rerolls": 1,
   "catchValue": 2,
   "evolutions": [
    {
@@ -2942,19 +2514,14 @@
   ],
   "milestones": [
    {
-    "level": 6,
-    "effect": "UPGRADE_DIE",
-    "dieType": "psychic"
+    "level": 5,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 9,
+    "level": 5,
     "effect": "ADD_REROLL",
     "amount": 1
-   },
-   {
-    "level": 13,
-    "effect": "ADD_DIE",
-    "dieType": "psychic"
    },
    {
     "level": 16,
@@ -2992,21 +2559,6 @@
   ],
   "milestones": [
    {
-    "level": 11,
-    "effect": "UPGRADE_DIE",
-    "dieType": "psychic"
-   },
-   {
-    "level": 19,
-    "effect": "ADD_REROLL",
-    "amount": 1
-   },
-   {
-    "level": 27,
-    "effect": "ADD_DIE",
-    "dieType": "psychic"
-   },
-   {
     "level": 34,
     "effect": "EVOLVE"
    }
@@ -3025,31 +2577,26 @@
   "dice": [
    {
     "type": "psychic",
-    "count": 3
+    "count": 2
    },
    {
     "type": "base",
     "count": 2
    }
   ],
-  "rerolls": 5,
+  "rerolls": 4,
   "catchValue": 5,
   "evolutions": [],
   "milestones": [
    {
-    "level": 31,
-    "effect": "UPGRADE_DIE",
-    "dieType": "psychic"
-   },
-   {
-    "level": 55,
-    "effect": "ADD_REROLL",
-    "amount": 1
-   },
-   {
-    "level": 80,
+    "level": 50,
     "effect": "ADD_DIE",
     "dieType": "psychic"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_REROLL",
+    "amount": 1
    }
   ],
   "notes": "BST 500"
@@ -3067,13 +2614,9 @@
    {
     "type": "fighting",
     "count": 1
-   },
-   {
-    "type": "base",
-    "count": 1
    }
   ],
-  "rerolls": 2,
+  "rerolls": 1,
   "catchValue": 3,
   "evolutions": [
    {
@@ -3083,19 +2626,14 @@
   ],
   "milestones": [
    {
-    "level": 9,
-    "effect": "UPGRADE_DIE",
-    "dieType": "fighting"
+    "level": 5,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 16,
+    "level": 5,
     "effect": "ADD_REROLL",
     "amount": 1
-   },
-   {
-    "level": 23,
-    "effect": "ADD_DIE",
-    "dieType": "fighting"
    },
    {
     "level": 28,
@@ -3133,21 +2671,6 @@
   ],
   "milestones": [
    {
-    "level": 11,
-    "effect": "UPGRADE_DIE",
-    "dieType": "fighting"
-   },
-   {
-    "level": 19,
-    "effect": "ADD_REROLL",
-    "amount": 1
-   },
-   {
-    "level": 27,
-    "effect": "ADD_DIE",
-    "dieType": "fighting"
-   },
-   {
     "level": 34,
     "effect": "EVOLVE"
    }
@@ -3166,31 +2689,26 @@
   "dice": [
    {
     "type": "fighting",
-    "count": 3
+    "count": 2
    },
    {
     "type": "base",
     "count": 2
    }
   ],
-  "rerolls": 5,
+  "rerolls": 4,
   "catchValue": 5,
   "evolutions": [],
   "milestones": [
    {
-    "level": 31,
-    "effect": "UPGRADE_DIE",
-    "dieType": "fighting"
-   },
-   {
-    "level": 55,
-    "effect": "ADD_REROLL",
-    "amount": 1
-   },
-   {
-    "level": 80,
+    "level": 50,
     "effect": "ADD_DIE",
     "dieType": "fighting"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_REROLL",
+    "amount": 1
    }
   ],
   "notes": "BST 505"
@@ -3208,13 +2726,9 @@
    {
     "type": "grass",
     "count": 1
-   },
-   {
-    "type": "base",
-    "count": 1
    }
   ],
-  "rerolls": 2,
+  "rerolls": 1,
   "catchValue": 1,
   "evolutions": [
    {
@@ -3224,19 +2738,14 @@
   ],
   "milestones": [
    {
-    "level": 7,
-    "effect": "UPGRADE_DIE",
-    "dieType": "grass"
+    "level": 5,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 12,
+    "level": 5,
     "effect": "ADD_REROLL",
     "amount": 1
-   },
-   {
-    "level": 17,
-    "effect": "ADD_DIE",
-    "dieType": "grass"
    },
    {
     "level": 21,
@@ -3278,21 +2787,6 @@
   ],
   "milestones": [
    {
-    "level": 9,
-    "effect": "UPGRADE_DIE",
-    "dieType": "grass"
-   },
-   {
-    "level": 16,
-    "effect": "ADD_REROLL",
-    "amount": 1
-   },
-   {
-    "level": 23,
-    "effect": "ADD_DIE",
-    "dieType": "grass"
-   },
-   {
     "level": 28,
     "effect": "EVOLVE"
    }
@@ -3327,19 +2821,14 @@
   "evolutions": [],
   "milestones": [
    {
-    "level": 31,
-    "effect": "UPGRADE_DIE",
-    "dieType": "grass"
-   },
-   {
-    "level": 55,
-    "effect": "ADD_REROLL",
-    "amount": 1
-   },
-   {
-    "level": 80,
+    "level": 50,
     "effect": "ADD_DIE",
     "dieType": "grass"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_REROLL",
+    "amount": 1
    }
   ],
   "notes": "BST 490"
@@ -3357,17 +2846,9 @@
    {
     "type": "water",
     "count": 1
-   },
-   {
-    "type": "poison",
-    "count": 1
-   },
-   {
-    "type": "base",
-    "count": 1
    }
   ],
-  "rerolls": 3,
+  "rerolls": 1,
   "catchValue": 2,
   "evolutions": [
    {
@@ -3377,19 +2858,14 @@
   ],
   "milestones": [
    {
-    "level": 10,
-    "effect": "UPGRADE_DIE",
-    "dieType": "water"
+    "level": 5,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 17,
+    "level": 5,
     "effect": "ADD_REROLL",
     "amount": 1
-   },
-   {
-    "level": 24,
-    "effect": "ADD_DIE",
-    "dieType": "water"
    },
    {
     "level": 30,
@@ -3410,7 +2886,7 @@
   "dice": [
    {
     "type": "water",
-    "count": 2
+    "count": 1
    },
    {
     "type": "poison",
@@ -3418,27 +2894,32 @@
    },
    {
     "type": "base",
-    "count": 2
+    "count": 1
    }
   ],
-  "rerolls": 5,
+  "rerolls": 3,
   "catchValue": 5,
   "evolutions": [],
   "milestones": [
    {
-    "level": 31,
-    "effect": "UPGRADE_DIE",
-    "dieType": "water"
+    "level": 36,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 55,
+    "level": 36,
     "effect": "ADD_REROLL",
     "amount": 1
    },
    {
-    "level": 80,
+    "level": 50,
     "effect": "ADD_DIE",
     "dieType": "water"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_REROLL",
+    "amount": 1
    }
   ],
   "notes": "BST 515"
@@ -3456,13 +2937,9 @@
    {
     "type": "rock",
     "count": 1
-   },
-   {
-    "type": "base",
-    "count": 1
    }
   ],
-  "rerolls": 2,
+  "rerolls": 1,
   "catchValue": 1,
   "evolutions": [
    {
@@ -3472,19 +2949,14 @@
   ],
   "milestones": [
    {
-    "level": 8,
-    "effect": "UPGRADE_DIE",
-    "dieType": "rock"
+    "level": 5,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 14,
+    "level": 5,
     "effect": "ADD_REROLL",
     "amount": 1
-   },
-   {
-    "level": 20,
-    "effect": "ADD_DIE",
-    "dieType": "rock"
    },
    {
     "level": 25,
@@ -3526,21 +2998,6 @@
   ],
   "milestones": [
    {
-    "level": 11,
-    "effect": "UPGRADE_DIE",
-    "dieType": "rock"
-   },
-   {
-    "level": 19,
-    "effect": "ADD_REROLL",
-    "amount": 1
-   },
-   {
-    "level": 27,
-    "effect": "ADD_DIE",
-    "dieType": "rock"
-   },
-   {
     "level": 34,
     "effect": "EVOLVE"
    }
@@ -3575,19 +3032,14 @@
   "evolutions": [],
   "milestones": [
    {
-    "level": 31,
-    "effect": "UPGRADE_DIE",
-    "dieType": "rock"
-   },
-   {
-    "level": 55,
-    "effect": "ADD_REROLL",
-    "amount": 1
-   },
-   {
-    "level": 80,
+    "level": 50,
     "effect": "ADD_DIE",
     "dieType": "rock"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_REROLL",
+    "amount": 1
    }
   ],
   "notes": "BST 495"
@@ -3604,14 +3056,10 @@
   "dice": [
    {
     "type": "fire",
-    "count": 2
-   },
-   {
-    "type": "base",
     "count": 1
    }
   ],
-  "rerolls": 3,
+  "rerolls": 1,
   "catchValue": 2,
   "evolutions": [
    {
@@ -3621,19 +3069,14 @@
   ],
   "milestones": [
    {
-    "level": 13,
-    "effect": "UPGRADE_DIE",
-    "dieType": "fire"
+    "level": 5,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 22,
+    "level": 5,
     "effect": "ADD_REROLL",
     "amount": 1
-   },
-   {
-    "level": 32,
-    "effect": "ADD_DIE",
-    "dieType": "fire"
    },
    {
     "level": 40,
@@ -3654,31 +3097,36 @@
   "dice": [
    {
     "type": "fire",
-    "count": 3
+    "count": 2
    },
    {
     "type": "base",
-    "count": 2
+    "count": 1
    }
   ],
-  "rerolls": 5,
+  "rerolls": 3,
   "catchValue": 5,
   "evolutions": [],
   "milestones": [
    {
-    "level": 31,
-    "effect": "UPGRADE_DIE",
-    "dieType": "fire"
+    "level": 36,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 55,
+    "level": 36,
     "effect": "ADD_REROLL",
     "amount": 1
    },
    {
-    "level": 80,
+    "level": 50,
     "effect": "ADD_DIE",
     "dieType": "fire"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_REROLL",
+    "amount": 1
    }
   ],
   "notes": "BST 500"
@@ -3696,13 +3144,9 @@
    {
     "type": "water",
     "count": 1
-   },
-   {
-    "type": "base",
-    "count": 1
    }
   ],
-  "rerolls": 2,
+  "rerolls": 1,
   "catchValue": 2,
   "evolutions": [
    {
@@ -3712,19 +3156,14 @@
   ],
   "milestones": [
    {
-    "level": 12,
-    "effect": "UPGRADE_DIE",
-    "dieType": "water"
+    "level": 5,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 21,
+    "level": 5,
     "effect": "ADD_REROLL",
     "amount": 1
-   },
-   {
-    "level": 30,
-    "effect": "ADD_DIE",
-    "dieType": "water"
    },
    {
     "level": 37,
@@ -3753,27 +3192,32 @@
    },
    {
     "type": "base",
-    "count": 2
+    "count": 1
    }
   ],
-  "rerolls": 4,
+  "rerolls": 3,
   "catchValue": 4,
   "evolutions": [],
   "milestones": [
    {
-    "level": 31,
-    "effect": "UPGRADE_DIE",
-    "dieType": "water"
+    "level": 36,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 55,
+    "level": 36,
     "effect": "ADD_REROLL",
     "amount": 1
    },
    {
-    "level": 80,
+    "level": 50,
     "effect": "ADD_DIE",
     "dieType": "water"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_REROLL",
+    "amount": 1
    }
   ],
   "notes": "BST 490"
@@ -3791,13 +3235,9 @@
    {
     "type": "electric",
     "count": 1
-   },
-   {
-    "type": "base",
-    "count": 1
    }
   ],
-  "rerolls": 2,
+  "rerolls": 1,
   "catchValue": 2,
   "evolutions": [
    {
@@ -3807,19 +3247,14 @@
   ],
   "milestones": [
    {
-    "level": 10,
-    "effect": "UPGRADE_DIE",
-    "dieType": "electric"
+    "level": 5,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 17,
+    "level": 5,
     "effect": "ADD_REROLL",
     "amount": 1
-   },
-   {
-    "level": 24,
-    "effect": "ADD_DIE",
-    "dieType": "electric"
    },
    {
     "level": 30,
@@ -3848,27 +3283,32 @@
    },
    {
     "type": "base",
-    "count": 2
+    "count": 1
    }
   ],
-  "rerolls": 4,
+  "rerolls": 3,
   "catchValue": 5,
   "evolutions": [],
   "milestones": [
    {
-    "level": 31,
-    "effect": "UPGRADE_DIE",
-    "dieType": "electric"
+    "level": 36,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 55,
+    "level": 36,
     "effect": "ADD_REROLL",
     "amount": 1
    },
    {
-    "level": 80,
+    "level": 50,
     "effect": "ADD_DIE",
     "dieType": "electric"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_REROLL",
+    "amount": 1
    }
   ],
   "notes": "BST 465"
@@ -3886,34 +3326,31 @@
    {
     "type": "normal",
     "count": 1
-   },
-   {
-    "type": "flying",
-    "count": 1
-   },
-   {
-    "type": "base",
-    "count": 1
    }
   ],
-  "rerolls": 3,
+  "rerolls": 1,
   "catchValue": 5,
   "evolutions": [],
   "milestones": [
    {
-    "level": 31,
-    "effect": "UPGRADE_DIE",
-    "dieType": "normal"
+    "level": 5,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 55,
+    "level": 5,
     "effect": "ADD_REROLL",
     "amount": 1
    },
    {
-    "level": 80,
+    "level": 20,
     "effect": "ADD_DIE",
-    "dieType": "normal"
+    "dieType": "flying"
+   },
+   {
+    "level": 20,
+    "effect": "ADD_REROLL",
+    "amount": 1
    }
   ],
   "notes": "BST 377"
@@ -3931,13 +3368,9 @@
    {
     "type": "normal",
     "count": 1
-   },
-   {
-    "type": "base",
-    "count": 1
    }
   ],
-  "rerolls": 2,
+  "rerolls": 1,
   "catchValue": 2,
   "evolutions": [
    {
@@ -3947,19 +3380,14 @@
   ],
   "milestones": [
    {
-    "level": 10,
-    "effect": "UPGRADE_DIE",
-    "dieType": "normal"
+    "level": 5,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 18,
+    "level": 5,
     "effect": "ADD_REROLL",
     "amount": 1
-   },
-   {
-    "level": 25,
-    "effect": "ADD_DIE",
-    "dieType": "normal"
    },
    {
     "level": 31,
@@ -3988,27 +3416,32 @@
    },
    {
     "type": "base",
-    "count": 2
+    "count": 1
    }
   ],
-  "rerolls": 4,
+  "rerolls": 3,
   "catchValue": 5,
   "evolutions": [],
   "milestones": [
    {
-    "level": 31,
-    "effect": "UPGRADE_DIE",
-    "dieType": "normal"
+    "level": 36,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 55,
+    "level": 36,
     "effect": "ADD_REROLL",
     "amount": 1
    },
    {
-    "level": 80,
+    "level": 50,
     "effect": "ADD_DIE",
     "dieType": "normal"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_REROLL",
+    "amount": 1
    }
   ],
   "notes": "BST 470"
@@ -4026,13 +3459,9 @@
    {
     "type": "water",
     "count": 1
-   },
-   {
-    "type": "base",
-    "count": 1
    }
   ],
-  "rerolls": 2,
+  "rerolls": 1,
   "catchValue": 2,
   "evolutions": [
    {
@@ -4042,19 +3471,14 @@
   ],
   "milestones": [
    {
-    "level": 11,
-    "effect": "UPGRADE_DIE",
-    "dieType": "water"
+    "level": 5,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 19,
+    "level": 5,
     "effect": "ADD_REROLL",
     "amount": 1
-   },
-   {
-    "level": 27,
-    "effect": "ADD_DIE",
-    "dieType": "water"
    },
    {
     "level": 34,
@@ -4083,27 +3507,32 @@
    },
    {
     "type": "base",
-    "count": 2
+    "count": 1
    }
   ],
-  "rerolls": 4,
+  "rerolls": 3,
   "catchValue": 4,
   "evolutions": [],
   "milestones": [
    {
-    "level": 31,
-    "effect": "UPGRADE_DIE",
-    "dieType": "water"
+    "level": 36,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 55,
+    "level": 36,
     "effect": "ADD_REROLL",
     "amount": 1
    },
    {
-    "level": 80,
+    "level": 50,
     "effect": "ADD_DIE",
     "dieType": "water"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_REROLL",
+    "amount": 1
    }
   ],
   "notes": "BST 475"
@@ -4121,13 +3550,9 @@
    {
     "type": "poison",
     "count": 1
-   },
-   {
-    "type": "base",
-    "count": 1
    }
   ],
-  "rerolls": 2,
+  "rerolls": 1,
   "catchValue": 2,
   "evolutions": [
    {
@@ -4137,19 +3562,14 @@
   ],
   "milestones": [
    {
-    "level": 12,
-    "effect": "UPGRADE_DIE",
-    "dieType": "poison"
+    "level": 5,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 21,
+    "level": 5,
     "effect": "ADD_REROLL",
     "amount": 1
-   },
-   {
-    "level": 31,
-    "effect": "ADD_DIE",
-    "dieType": "poison"
    },
    {
     "level": 38,
@@ -4170,31 +3590,36 @@
   "dice": [
    {
     "type": "poison",
-    "count": 3
+    "count": 2
    },
    {
     "type": "base",
-    "count": 2
+    "count": 1
    }
   ],
-  "rerolls": 5,
+  "rerolls": 3,
   "catchValue": 4,
   "evolutions": [],
   "milestones": [
    {
-    "level": 31,
-    "effect": "UPGRADE_DIE",
-    "dieType": "poison"
+    "level": 36,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 55,
+    "level": 36,
     "effect": "ADD_REROLL",
     "amount": 1
    },
    {
-    "level": 80,
+    "level": 50,
     "effect": "ADD_DIE",
     "dieType": "poison"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_REROLL",
+    "amount": 1
    }
   ],
   "notes": "BST 500"
@@ -4212,13 +3637,9 @@
    {
     "type": "water",
     "count": 1
-   },
-   {
-    "type": "base",
-    "count": 1
    }
   ],
-  "rerolls": 2,
+  "rerolls": 1,
   "catchValue": 2,
   "evolutions": [
    {
@@ -4228,19 +3649,14 @@
   ],
   "milestones": [
    {
-    "level": 9,
-    "effect": "UPGRADE_DIE",
-    "dieType": "water"
+    "level": 5,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 16,
+    "level": 5,
     "effect": "ADD_REROLL",
     "amount": 1
-   },
-   {
-    "level": 23,
-    "effect": "ADD_DIE",
-    "dieType": "water"
    },
    {
     "level": 28,
@@ -4261,7 +3677,7 @@
   "dice": [
    {
     "type": "water",
-    "count": 2
+    "count": 1
    },
    {
     "type": "ice",
@@ -4269,27 +3685,32 @@
    },
    {
     "type": "base",
-    "count": 2
+    "count": 1
    }
   ],
-  "rerolls": 5,
+  "rerolls": 3,
   "catchValue": 5,
   "evolutions": [],
   "milestones": [
    {
-    "level": 31,
-    "effect": "UPGRADE_DIE",
-    "dieType": "water"
+    "level": 36,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 55,
+    "level": 36,
     "effect": "ADD_REROLL",
     "amount": 1
    },
    {
-    "level": 80,
+    "level": 50,
     "effect": "ADD_DIE",
     "dieType": "water"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_REROLL",
+    "amount": 1
    }
   ],
   "notes": "BST 525"
@@ -4307,13 +3728,9 @@
    {
     "type": "ghost",
     "count": 1
-   },
-   {
-    "type": "base",
-    "count": 1
    }
   ],
-  "rerolls": 2,
+  "rerolls": 1,
   "catchValue": 2,
   "evolutions": [
    {
@@ -4323,19 +3740,14 @@
   ],
   "milestones": [
    {
-    "level": 8,
-    "effect": "UPGRADE_DIE",
-    "dieType": "ghost"
+    "level": 5,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 14,
+    "level": 5,
     "effect": "ADD_REROLL",
     "amount": 1
-   },
-   {
-    "level": 20,
-    "effect": "ADD_DIE",
-    "dieType": "ghost"
    },
    {
     "level": 25,
@@ -4377,21 +3789,6 @@
   ],
   "milestones": [
    {
-    "level": 11,
-    "effect": "UPGRADE_DIE",
-    "dieType": "ghost"
-   },
-   {
-    "level": 19,
-    "effect": "ADD_REROLL",
-    "amount": 1
-   },
-   {
-    "level": 27,
-    "effect": "ADD_DIE",
-    "dieType": "ghost"
-   },
-   {
     "level": 34,
     "effect": "EVOLVE"
    }
@@ -4410,7 +3807,7 @@
   "dice": [
    {
     "type": "ghost",
-    "count": 2
+    "count": 1
    },
    {
     "type": "poison",
@@ -4421,24 +3818,19 @@
     "count": 2
    }
   ],
-  "rerolls": 5,
+  "rerolls": 4,
   "catchValue": 5,
   "evolutions": [],
   "milestones": [
    {
-    "level": 31,
-    "effect": "UPGRADE_DIE",
-    "dieType": "ghost"
-   },
-   {
-    "level": 55,
-    "effect": "ADD_REROLL",
-    "amount": 1
-   },
-   {
-    "level": 80,
+    "level": 50,
     "effect": "ADD_DIE",
     "dieType": "ghost"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_REROLL",
+    "amount": 1
    }
   ],
   "notes": "BST 500"
@@ -4456,34 +3848,31 @@
    {
     "type": "rock",
     "count": 1
-   },
-   {
-    "type": "ground",
-    "count": 1
-   },
-   {
-    "type": "base",
-    "count": 1
    }
   ],
-  "rerolls": 3,
+  "rerolls": 1,
   "catchValue": 5,
   "evolutions": [],
   "milestones": [
    {
-    "level": 31,
-    "effect": "UPGRADE_DIE",
-    "dieType": "rock"
+    "level": 5,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 55,
+    "level": 5,
     "effect": "ADD_REROLL",
     "amount": 1
    },
    {
-    "level": 80,
+    "level": 20,
     "effect": "ADD_DIE",
-    "dieType": "rock"
+    "dieType": "ground"
+   },
+   {
+    "level": 20,
+    "effect": "ADD_REROLL",
+    "amount": 1
    }
   ],
   "notes": "BST 385"
@@ -4501,13 +3890,9 @@
    {
     "type": "psychic",
     "count": 1
-   },
-   {
-    "type": "base",
-    "count": 1
    }
   ],
-  "rerolls": 2,
+  "rerolls": 1,
   "catchValue": 2,
   "evolutions": [
    {
@@ -4517,19 +3902,14 @@
   ],
   "milestones": [
    {
-    "level": 9,
-    "effect": "UPGRADE_DIE",
-    "dieType": "psychic"
+    "level": 5,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 15,
+    "level": 5,
     "effect": "ADD_REROLL",
     "amount": 1
-   },
-   {
-    "level": 21,
-    "effect": "ADD_DIE",
-    "dieType": "psychic"
    },
    {
     "level": 26,
@@ -4554,27 +3934,32 @@
    },
    {
     "type": "base",
-    "count": 2
+    "count": 1
    }
   ],
-  "rerolls": 4,
+  "rerolls": 3,
   "catchValue": 4,
   "evolutions": [],
   "milestones": [
    {
-    "level": 31,
-    "effect": "UPGRADE_DIE",
-    "dieType": "psychic"
+    "level": 36,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 55,
+    "level": 36,
     "effect": "ADD_REROLL",
     "amount": 1
    },
    {
-    "level": 80,
+    "level": 50,
     "effect": "ADD_DIE",
     "dieType": "psychic"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_REROLL",
+    "amount": 1
    }
   ],
   "notes": "BST 483"
@@ -4592,13 +3977,9 @@
    {
     "type": "water",
     "count": 1
-   },
-   {
-    "type": "base",
-    "count": 1
    }
   ],
-  "rerolls": 2,
+  "rerolls": 1,
   "catchValue": 2,
   "evolutions": [
    {
@@ -4608,19 +3989,14 @@
   ],
   "milestones": [
    {
-    "level": 9,
-    "effect": "UPGRADE_DIE",
-    "dieType": "water"
+    "level": 5,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 16,
+    "level": 5,
     "effect": "ADD_REROLL",
     "amount": 1
-   },
-   {
-    "level": 23,
-    "effect": "ADD_DIE",
-    "dieType": "water"
    },
    {
     "level": 28,
@@ -4645,27 +4021,32 @@
    },
    {
     "type": "base",
-    "count": 2
+    "count": 1
    }
   ],
-  "rerolls": 4,
+  "rerolls": 3,
   "catchValue": 5,
   "evolutions": [],
   "milestones": [
    {
-    "level": 31,
-    "effect": "UPGRADE_DIE",
-    "dieType": "water"
+    "level": 36,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 55,
+    "level": 36,
     "effect": "ADD_REROLL",
     "amount": 1
    },
    {
-    "level": 80,
+    "level": 50,
     "effect": "ADD_DIE",
     "dieType": "water"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_REROLL",
+    "amount": 1
    }
   ],
   "notes": "BST 475"
@@ -4682,14 +4063,10 @@
   "dice": [
    {
     "type": "electric",
-    "count": 2
-   },
-   {
-    "type": "base",
     "count": 1
    }
   ],
-  "rerolls": 3,
+  "rerolls": 1,
   "catchValue": 2,
   "evolutions": [
    {
@@ -4699,19 +4076,14 @@
   ],
   "milestones": [
    {
-    "level": 10,
-    "effect": "UPGRADE_DIE",
-    "dieType": "electric"
+    "level": 5,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 17,
+    "level": 5,
     "effect": "ADD_REROLL",
     "amount": 1
-   },
-   {
-    "level": 24,
-    "effect": "ADD_DIE",
-    "dieType": "electric"
    },
    {
     "level": 30,
@@ -4736,27 +4108,32 @@
    },
    {
     "type": "base",
-    "count": 2
+    "count": 1
    }
   ],
-  "rerolls": 4,
+  "rerolls": 3,
   "catchValue": 5,
   "evolutions": [],
   "milestones": [
    {
-    "level": 31,
-    "effect": "UPGRADE_DIE",
-    "dieType": "electric"
+    "level": 36,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 55,
+    "level": 36,
     "effect": "ADD_REROLL",
     "amount": 1
    },
    {
-    "level": 80,
+    "level": 50,
     "effect": "ADD_DIE",
     "dieType": "electric"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_REROLL",
+    "amount": 1
    }
   ],
   "notes": "BST 490"
@@ -4774,13 +4151,9 @@
    {
     "type": "grass",
     "count": 1
-   },
-   {
-    "type": "base",
-    "count": 1
    }
   ],
-  "rerolls": 2,
+  "rerolls": 1,
   "catchValue": 4,
   "evolutions": [
    {
@@ -4790,19 +4163,14 @@
   ],
   "milestones": [
    {
-    "level": 9,
-    "effect": "UPGRADE_DIE",
-    "dieType": "grass"
+    "level": 5,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 16,
+    "level": 5,
     "effect": "ADD_REROLL",
     "amount": 1
-   },
-   {
-    "level": 23,
-    "effect": "ADD_DIE",
-    "dieType": "grass"
    },
    {
     "level": 28,
@@ -4823,7 +4191,7 @@
   "dice": [
    {
     "type": "grass",
-    "count": 2
+    "count": 1
    },
    {
     "type": "psychic",
@@ -4831,27 +4199,32 @@
    },
    {
     "type": "base",
-    "count": 2
+    "count": 1
    }
   ],
-  "rerolls": 5,
+  "rerolls": 3,
   "catchValue": 5,
   "evolutions": [],
   "milestones": [
    {
-    "level": 31,
-    "effect": "UPGRADE_DIE",
-    "dieType": "grass"
+    "level": 36,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 55,
+    "level": 36,
     "effect": "ADD_REROLL",
     "amount": 1
    },
    {
-    "level": 80,
+    "level": 50,
     "effect": "ADD_DIE",
     "dieType": "grass"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_REROLL",
+    "amount": 1
    }
   ],
   "notes": "BST 530"
@@ -4869,13 +4242,9 @@
    {
     "type": "ground",
     "count": 1
-   },
-   {
-    "type": "base",
-    "count": 1
    }
   ],
-  "rerolls": 2,
+  "rerolls": 1,
   "catchValue": 2,
   "evolutions": [
    {
@@ -4885,19 +4254,14 @@
   ],
   "milestones": [
    {
-    "level": 9,
-    "effect": "UPGRADE_DIE",
-    "dieType": "ground"
+    "level": 5,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 16,
+    "level": 5,
     "effect": "ADD_REROLL",
     "amount": 1
-   },
-   {
-    "level": 23,
-    "effect": "ADD_DIE",
-    "dieType": "ground"
    },
    {
     "level": 28,
@@ -4930,19 +4294,14 @@
   "evolutions": [],
   "milestones": [
    {
-    "level": 31,
-    "effect": "UPGRADE_DIE",
-    "dieType": "ground"
+    "level": 36,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 55,
+    "level": 36,
     "effect": "ADD_REROLL",
     "amount": 1
-   },
-   {
-    "level": 80,
-    "effect": "ADD_DIE",
-    "dieType": "ground"
    }
   ],
   "notes": "BST 425"
@@ -4959,31 +4318,52 @@
   "dice": [
    {
     "type": "fighting",
-    "count": 2
-   },
-   {
-    "type": "base",
-    "count": 2
+    "count": 1
    }
   ],
-  "rerolls": 4,
+  "rerolls": 1,
   "catchValue": 5,
   "evolutions": [],
   "milestones": [
    {
-    "level": 31,
-    "effect": "UPGRADE_DIE",
-    "dieType": "fighting"
+    "level": 5,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 55,
+    "level": 5,
     "effect": "ADD_REROLL",
     "amount": 1
    },
    {
-    "level": 80,
+    "level": 20,
     "effect": "ADD_DIE",
     "dieType": "fighting"
+   },
+   {
+    "level": 20,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   },
+   {
+    "level": 36,
+    "effect": "ADD_DIE",
+    "dieType": "base"
+   },
+   {
+    "level": 36,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   },
+   {
+    "level": 50,
+    "effect": "ADD_DIE",
+    "dieType": "fighting"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_REROLL",
+    "amount": 1
    }
   ],
   "notes": "BST 455"
@@ -5000,31 +4380,52 @@
   "dice": [
    {
     "type": "fighting",
-    "count": 2
-   },
-   {
-    "type": "base",
-    "count": 2
+    "count": 1
    }
   ],
-  "rerolls": 4,
+  "rerolls": 1,
   "catchValue": 5,
   "evolutions": [],
   "milestones": [
    {
-    "level": 31,
-    "effect": "UPGRADE_DIE",
-    "dieType": "fighting"
+    "level": 5,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 55,
+    "level": 5,
     "effect": "ADD_REROLL",
     "amount": 1
    },
    {
-    "level": 80,
+    "level": 20,
     "effect": "ADD_DIE",
     "dieType": "fighting"
+   },
+   {
+    "level": 20,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   },
+   {
+    "level": 36,
+    "effect": "ADD_DIE",
+    "dieType": "base"
+   },
+   {
+    "level": 36,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   },
+   {
+    "level": 50,
+    "effect": "ADD_DIE",
+    "dieType": "fighting"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_REROLL",
+    "amount": 1
    }
   ],
   "notes": "BST 455"
@@ -5041,31 +4442,32 @@
   "dice": [
    {
     "type": "normal",
-    "count": 2
-   },
-   {
-    "type": "base",
     "count": 1
    }
   ],
-  "rerolls": 3,
+  "rerolls": 1,
   "catchValue": 5,
   "evolutions": [],
   "milestones": [
    {
-    "level": 31,
-    "effect": "UPGRADE_DIE",
-    "dieType": "normal"
+    "level": 5,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 55,
+    "level": 5,
     "effect": "ADD_REROLL",
     "amount": 1
    },
    {
-    "level": 80,
+    "level": 20,
     "effect": "ADD_DIE",
     "dieType": "normal"
+   },
+   {
+    "level": 20,
+    "effect": "ADD_REROLL",
+    "amount": 1
    }
   ],
   "notes": "BST 385"
@@ -5082,14 +4484,10 @@
   "dice": [
    {
     "type": "poison",
-    "count": 2
-   },
-   {
-    "type": "base",
     "count": 1
    }
   ],
-  "rerolls": 3,
+  "rerolls": 1,
   "catchValue": 2,
   "evolutions": [
    {
@@ -5099,19 +4497,14 @@
   ],
   "milestones": [
    {
-    "level": 11,
-    "effect": "UPGRADE_DIE",
-    "dieType": "poison"
+    "level": 5,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 20,
+    "level": 5,
     "effect": "ADD_REROLL",
     "amount": 1
-   },
-   {
-    "level": 28,
-    "effect": "ADD_DIE",
-    "dieType": "poison"
    },
    {
     "level": 35,
@@ -5136,27 +4529,32 @@
    },
    {
     "type": "base",
-    "count": 2
+    "count": 1
    }
   ],
-  "rerolls": 4,
+  "rerolls": 3,
   "catchValue": 5,
   "evolutions": [],
   "milestones": [
    {
-    "level": 31,
-    "effect": "UPGRADE_DIE",
-    "dieType": "poison"
+    "level": 36,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 55,
+    "level": 36,
     "effect": "ADD_REROLL",
     "amount": 1
    },
    {
-    "level": 80,
+    "level": 50,
     "effect": "ADD_DIE",
     "dieType": "poison"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_REROLL",
+    "amount": 1
    }
   ],
   "notes": "BST 490"
@@ -5174,17 +4572,9 @@
    {
     "type": "ground",
     "count": 1
-   },
-   {
-    "type": "rock",
-    "count": 1
-   },
-   {
-    "type": "base",
-    "count": 1
    }
   ],
-  "rerolls": 3,
+  "rerolls": 1,
   "catchValue": 3,
   "evolutions": [
    {
@@ -5194,19 +4584,14 @@
   ],
   "milestones": [
    {
-    "level": 13,
-    "effect": "UPGRADE_DIE",
-    "dieType": "ground"
+    "level": 5,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 24,
+    "level": 5,
     "effect": "ADD_REROLL",
     "amount": 1
-   },
-   {
-    "level": 34,
-    "effect": "ADD_DIE",
-    "dieType": "ground"
    },
    {
     "level": 42,
@@ -5235,27 +4620,32 @@
    },
    {
     "type": "base",
-    "count": 2
+    "count": 1
    }
   ],
-  "rerolls": 4,
+  "rerolls": 3,
   "catchValue": 5,
   "evolutions": [],
   "milestones": [
    {
-    "level": 31,
-    "effect": "UPGRADE_DIE",
-    "dieType": "ground"
+    "level": 36,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 55,
+    "level": 36,
     "effect": "ADD_REROLL",
     "amount": 1
    },
    {
-    "level": 80,
+    "level": 50,
     "effect": "ADD_DIE",
     "dieType": "ground"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_REROLL",
+    "amount": 1
    }
   ],
   "notes": "BST 485"
@@ -5272,31 +4662,52 @@
   "dice": [
    {
     "type": "normal",
-    "count": 2
-   },
-   {
-    "type": "base",
-    "count": 2
+    "count": 1
    }
   ],
-  "rerolls": 4,
+  "rerolls": 1,
   "catchValue": 6,
   "evolutions": [],
   "milestones": [
    {
-    "level": 31,
-    "effect": "UPGRADE_DIE",
-    "dieType": "normal"
+    "level": 5,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 55,
+    "level": 5,
     "effect": "ADD_REROLL",
     "amount": 1
    },
    {
-    "level": 80,
+    "level": 20,
     "effect": "ADD_DIE",
     "dieType": "normal"
+   },
+   {
+    "level": 20,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   },
+   {
+    "level": 36,
+    "effect": "ADD_DIE",
+    "dieType": "base"
+   },
+   {
+    "level": 36,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   },
+   {
+    "level": 50,
+    "effect": "ADD_DIE",
+    "dieType": "normal"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_REROLL",
+    "amount": 1
    }
   ],
   "notes": "BST 450"
@@ -5313,31 +4724,32 @@
   "dice": [
    {
     "type": "grass",
-    "count": 2
-   },
-   {
-    "type": "base",
-    "count": 2
+    "count": 1
    }
   ],
-  "rerolls": 4,
+  "rerolls": 1,
   "catchValue": 5,
   "evolutions": [],
   "milestones": [
    {
-    "level": 31,
-    "effect": "UPGRADE_DIE",
-    "dieType": "grass"
+    "level": 5,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 55,
+    "level": 5,
     "effect": "ADD_REROLL",
     "amount": 1
    },
    {
-    "level": 80,
+    "level": 20,
     "effect": "ADD_DIE",
     "dieType": "grass"
+   },
+   {
+    "level": 20,
+    "effect": "ADD_REROLL",
+    "amount": 1
    }
   ],
   "notes": "BST 435"
@@ -5354,31 +4766,52 @@
   "dice": [
    {
     "type": "normal",
-    "count": 2
-   },
-   {
-    "type": "base",
-    "count": 2
+    "count": 1
    }
   ],
-  "rerolls": 4,
+  "rerolls": 1,
   "catchValue": 5,
   "evolutions": [],
   "milestones": [
    {
-    "level": 31,
-    "effect": "UPGRADE_DIE",
-    "dieType": "normal"
+    "level": 5,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 55,
+    "level": 5,
     "effect": "ADD_REROLL",
     "amount": 1
    },
    {
-    "level": 80,
+    "level": 20,
     "effect": "ADD_DIE",
     "dieType": "normal"
+   },
+   {
+    "level": 20,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   },
+   {
+    "level": 36,
+    "effect": "ADD_DIE",
+    "dieType": "base"
+   },
+   {
+    "level": 36,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   },
+   {
+    "level": 50,
+    "effect": "ADD_DIE",
+    "dieType": "normal"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_REROLL",
+    "amount": 1
    }
   ],
   "notes": "BST 490"
@@ -5396,13 +4829,9 @@
    {
     "type": "water",
     "count": 1
-   },
-   {
-    "type": "base",
-    "count": 1
    }
   ],
-  "rerolls": 2,
+  "rerolls": 1,
   "catchValue": 2,
   "evolutions": [
    {
@@ -5412,19 +4841,14 @@
   ],
   "milestones": [
    {
-    "level": 10,
-    "effect": "UPGRADE_DIE",
-    "dieType": "water"
+    "level": 6,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 18,
+    "level": 6,
     "effect": "ADD_REROLL",
     "amount": 1
-   },
-   {
-    "level": 26,
-    "effect": "ADD_DIE",
-    "dieType": "water"
    },
    {
     "level": 32,
@@ -5449,27 +4873,22 @@
    },
    {
     "type": "base",
-    "count": 2
+    "count": 1
    }
   ],
-  "rerolls": 4,
+  "rerolls": 3,
   "catchValue": 4,
   "evolutions": [],
   "milestones": [
    {
-    "level": 31,
-    "effect": "UPGRADE_DIE",
-    "dieType": "water"
+    "level": 36,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 55,
+    "level": 36,
     "effect": "ADD_REROLL",
     "amount": 1
-   },
-   {
-    "level": 80,
-    "effect": "ADD_DIE",
-    "dieType": "water"
    }
   ],
   "notes": "BST 440"
@@ -5487,13 +4906,9 @@
    {
     "type": "water",
     "count": 1
-   },
-   {
-    "type": "base",
-    "count": 1
    }
   ],
-  "rerolls": 2,
+  "rerolls": 1,
   "catchValue": 2,
   "evolutions": [
    {
@@ -5503,19 +4918,14 @@
   ],
   "milestones": [
    {
-    "level": 11,
-    "effect": "UPGRADE_DIE",
-    "dieType": "water"
+    "level": 5,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 19,
+    "level": 5,
     "effect": "ADD_REROLL",
     "amount": 1
-   },
-   {
-    "level": 27,
-    "effect": "ADD_DIE",
-    "dieType": "water"
    },
    {
     "level": 33,
@@ -5540,27 +4950,32 @@
    },
    {
     "type": "base",
-    "count": 2
+    "count": 1
    }
   ],
-  "rerolls": 4,
+  "rerolls": 3,
   "catchValue": 5,
   "evolutions": [],
   "milestones": [
    {
-    "level": 31,
-    "effect": "UPGRADE_DIE",
-    "dieType": "water"
+    "level": 36,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 55,
+    "level": 36,
     "effect": "ADD_REROLL",
     "amount": 1
    },
    {
-    "level": 80,
+    "level": 50,
     "effect": "ADD_DIE",
     "dieType": "water"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_REROLL",
+    "amount": 1
    }
   ],
   "notes": "BST 450"
@@ -5577,14 +4992,10 @@
   "dice": [
    {
     "type": "water",
-    "count": 2
-   },
-   {
-    "type": "base",
     "count": 1
    }
   ],
-  "rerolls": 3,
+  "rerolls": 1,
   "catchValue": 2,
   "evolutions": [
    {
@@ -5594,19 +5005,14 @@
   ],
   "milestones": [
    {
-    "level": 9,
-    "effect": "UPGRADE_DIE",
-    "dieType": "water"
+    "level": 5,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 16,
+    "level": 5,
     "effect": "ADD_REROLL",
     "amount": 1
-   },
-   {
-    "level": 23,
-    "effect": "ADD_DIE",
-    "dieType": "water"
    },
    {
     "level": 28,
@@ -5627,7 +5033,7 @@
   "dice": [
    {
     "type": "water",
-    "count": 2
+    "count": 1
    },
    {
     "type": "psychic",
@@ -5635,27 +5041,32 @@
    },
    {
     "type": "base",
-    "count": 2
+    "count": 1
    }
   ],
-  "rerolls": 5,
+  "rerolls": 3,
   "catchValue": 5,
   "evolutions": [],
   "milestones": [
    {
-    "level": 31,
-    "effect": "UPGRADE_DIE",
-    "dieType": "water"
+    "level": 36,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 55,
+    "level": 36,
     "effect": "ADD_REROLL",
     "amount": 1
    },
    {
-    "level": 80,
+    "level": 50,
     "effect": "ADD_DIE",
     "dieType": "water"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_REROLL",
+    "amount": 1
    }
   ],
   "notes": "BST 520"
@@ -5673,34 +5084,51 @@
    {
     "type": "psychic",
     "count": 1
-   },
-   {
-    "type": "fairy",
-    "count": 1
-   },
-   {
-    "type": "base",
-    "count": 2
    }
   ],
-  "rerolls": 4,
+  "rerolls": 1,
   "catchValue": 5,
   "evolutions": [],
   "milestones": [
    {
-    "level": 31,
-    "effect": "UPGRADE_DIE",
-    "dieType": "psychic"
+    "level": 5,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 55,
+    "level": 5,
     "effect": "ADD_REROLL",
     "amount": 1
    },
    {
-    "level": 80,
+    "level": 20,
+    "effect": "ADD_DIE",
+    "dieType": "fairy"
+   },
+   {
+    "level": 20,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   },
+   {
+    "level": 36,
+    "effect": "ADD_DIE",
+    "dieType": "base"
+   },
+   {
+    "level": 36,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   },
+   {
+    "level": 50,
     "effect": "ADD_DIE",
     "dieType": "psychic"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_REROLL",
+    "amount": 1
    }
   ],
   "notes": "BST 460"
@@ -5717,35 +5145,52 @@
   "dice": [
    {
     "type": "bug",
-    "count": 2
-   },
-   {
-    "type": "flying",
     "count": 1
-   },
-   {
-    "type": "base",
-    "count": 2
    }
   ],
-  "rerolls": 5,
+  "rerolls": 1,
   "catchValue": 5,
   "evolutions": [],
   "milestones": [
    {
-    "level": 31,
-    "effect": "UPGRADE_DIE",
-    "dieType": "bug"
+    "level": 5,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 55,
+    "level": 5,
     "effect": "ADD_REROLL",
     "amount": 1
    },
    {
-    "level": 80,
+    "level": 20,
+    "effect": "ADD_DIE",
+    "dieType": "flying"
+   },
+   {
+    "level": 20,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   },
+   {
+    "level": 36,
+    "effect": "ADD_DIE",
+    "dieType": "base"
+   },
+   {
+    "level": 36,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   },
+   {
+    "level": 50,
     "effect": "ADD_DIE",
     "dieType": "bug"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_REROLL",
+    "amount": 1
    }
   ],
   "notes": "BST 500"
@@ -5763,34 +5208,51 @@
    {
     "type": "ice",
     "count": 1
-   },
-   {
-    "type": "psychic",
-    "count": 1
-   },
-   {
-    "type": "base",
-    "count": 2
    }
   ],
-  "rerolls": 4,
+  "rerolls": 1,
   "catchValue": 5,
   "evolutions": [],
   "milestones": [
    {
-    "level": 31,
-    "effect": "UPGRADE_DIE",
-    "dieType": "ice"
+    "level": 5,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 55,
+    "level": 5,
     "effect": "ADD_REROLL",
     "amount": 1
    },
    {
-    "level": 80,
+    "level": 20,
+    "effect": "ADD_DIE",
+    "dieType": "psychic"
+   },
+   {
+    "level": 20,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   },
+   {
+    "level": 36,
+    "effect": "ADD_DIE",
+    "dieType": "base"
+   },
+   {
+    "level": 36,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   },
+   {
+    "level": 50,
     "effect": "ADD_DIE",
     "dieType": "ice"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_REROLL",
+    "amount": 1
    }
   ],
   "notes": "BST 455"
@@ -5807,31 +5269,52 @@
   "dice": [
    {
     "type": "electric",
-    "count": 2
-   },
-   {
-    "type": "base",
-    "count": 2
+    "count": 1
    }
   ],
-  "rerolls": 4,
+  "rerolls": 1,
   "catchValue": 5,
   "evolutions": [],
   "milestones": [
    {
-    "level": 31,
-    "effect": "UPGRADE_DIE",
-    "dieType": "electric"
+    "level": 5,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 55,
+    "level": 5,
     "effect": "ADD_REROLL",
     "amount": 1
    },
    {
-    "level": 80,
+    "level": 20,
     "effect": "ADD_DIE",
     "dieType": "electric"
+   },
+   {
+    "level": 20,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   },
+   {
+    "level": 36,
+    "effect": "ADD_DIE",
+    "dieType": "base"
+   },
+   {
+    "level": 36,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   },
+   {
+    "level": 50,
+    "effect": "ADD_DIE",
+    "dieType": "electric"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_REROLL",
+    "amount": 1
    }
   ],
   "notes": "BST 490"
@@ -5848,31 +5331,52 @@
   "dice": [
    {
     "type": "fire",
-    "count": 2
-   },
-   {
-    "type": "base",
-    "count": 2
+    "count": 1
    }
   ],
-  "rerolls": 4,
+  "rerolls": 1,
   "catchValue": 5,
   "evolutions": [],
   "milestones": [
    {
-    "level": 31,
-    "effect": "UPGRADE_DIE",
-    "dieType": "fire"
+    "level": 5,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 55,
+    "level": 5,
     "effect": "ADD_REROLL",
     "amount": 1
    },
    {
-    "level": 80,
+    "level": 20,
     "effect": "ADD_DIE",
     "dieType": "fire"
+   },
+   {
+    "level": 20,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   },
+   {
+    "level": 36,
+    "effect": "ADD_DIE",
+    "dieType": "base"
+   },
+   {
+    "level": 36,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   },
+   {
+    "level": 50,
+    "effect": "ADD_DIE",
+    "dieType": "fire"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_REROLL",
+    "amount": 1
    }
   ],
   "notes": "BST 495"
@@ -5889,31 +5393,52 @@
   "dice": [
    {
     "type": "bug",
-    "count": 3
-   },
-   {
-    "type": "base",
-    "count": 2
+    "count": 1
    }
   ],
-  "rerolls": 5,
+  "rerolls": 1,
   "catchValue": 5,
   "evolutions": [],
   "milestones": [
    {
-    "level": 31,
-    "effect": "UPGRADE_DIE",
-    "dieType": "bug"
+    "level": 5,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 55,
+    "level": 5,
     "effect": "ADD_REROLL",
     "amount": 1
    },
    {
-    "level": 80,
+    "level": 20,
     "effect": "ADD_DIE",
     "dieType": "bug"
+   },
+   {
+    "level": 20,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   },
+   {
+    "level": 36,
+    "effect": "ADD_DIE",
+    "dieType": "base"
+   },
+   {
+    "level": 36,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   },
+   {
+    "level": 50,
+    "effect": "ADD_DIE",
+    "dieType": "bug"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_REROLL",
+    "amount": 1
    }
   ],
   "notes": "BST 500"
@@ -5930,31 +5455,52 @@
   "dice": [
    {
     "type": "normal",
-    "count": 2
-   },
-   {
-    "type": "base",
-    "count": 2
+    "count": 1
    }
   ],
-  "rerolls": 4,
+  "rerolls": 1,
   "catchValue": 5,
   "evolutions": [],
   "milestones": [
    {
-    "level": 31,
-    "effect": "UPGRADE_DIE",
-    "dieType": "normal"
+    "level": 5,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 55,
+    "level": 5,
     "effect": "ADD_REROLL",
     "amount": 1
    },
    {
-    "level": 80,
+    "level": 20,
     "effect": "ADD_DIE",
     "dieType": "normal"
+   },
+   {
+    "level": 20,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   },
+   {
+    "level": 36,
+    "effect": "ADD_DIE",
+    "dieType": "base"
+   },
+   {
+    "level": 36,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   },
+   {
+    "level": 50,
+    "effect": "ADD_DIE",
+    "dieType": "normal"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_REROLL",
+    "amount": 1
    }
   ],
   "notes": "BST 490"
@@ -5972,13 +5518,9 @@
    {
     "type": "water",
     "count": 1
-   },
-   {
-    "type": "base",
-    "count": 1
    }
   ],
-  "rerolls": 2,
+  "rerolls": 1,
   "catchValue": 1,
   "evolutions": [
    {
@@ -5987,21 +5529,6 @@
    }
   ],
   "milestones": [
-   {
-    "level": 7,
-    "effect": "UPGRADE_DIE",
-    "dieType": "water"
-   },
-   {
-    "level": 11,
-    "effect": "ADD_REROLL",
-    "amount": 1
-   },
-   {
-    "level": 16,
-    "effect": "ADD_DIE",
-    "dieType": "water"
-   },
    {
     "level": 20,
     "effect": "EVOLVE"
@@ -6021,7 +5548,7 @@
   "dice": [
    {
     "type": "water",
-    "count": 2
+    "count": 1
    },
    {
     "type": "flying",
@@ -6029,27 +5556,32 @@
    },
    {
     "type": "base",
-    "count": 2
+    "count": 1
    }
   ],
-  "rerolls": 5,
+  "rerolls": 3,
   "catchValue": 5,
   "evolutions": [],
   "milestones": [
    {
-    "level": 31,
-    "effect": "UPGRADE_DIE",
-    "dieType": "water"
+    "level": 36,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 55,
+    "level": 36,
     "effect": "ADD_REROLL",
     "amount": 1
    },
    {
-    "level": 80,
+    "level": 50,
     "effect": "ADD_DIE",
     "dieType": "water"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_REROLL",
+    "amount": 1
    }
   ],
   "notes": "BST 540"
@@ -6066,35 +5598,52 @@
   "dice": [
    {
     "type": "water",
-    "count": 2
-   },
-   {
-    "type": "ice",
     "count": 1
-   },
-   {
-    "type": "base",
-    "count": 2
    }
   ],
-  "rerolls": 5,
+  "rerolls": 1,
   "catchValue": 5,
   "evolutions": [],
   "milestones": [
    {
-    "level": 31,
-    "effect": "UPGRADE_DIE",
-    "dieType": "water"
+    "level": 5,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 55,
+    "level": 5,
     "effect": "ADD_REROLL",
     "amount": 1
    },
    {
-    "level": 80,
+    "level": 20,
+    "effect": "ADD_DIE",
+    "dieType": "ice"
+   },
+   {
+    "level": 20,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   },
+   {
+    "level": 36,
+    "effect": "ADD_DIE",
+    "dieType": "base"
+   },
+   {
+    "level": 36,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   },
+   {
+    "level": 50,
     "effect": "ADD_DIE",
     "dieType": "water"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_REROLL",
+    "amount": 1
    }
   ],
   "notes": "BST 535"
@@ -6112,30 +5661,31 @@
    {
     "type": "normal",
     "count": 1
-   },
-   {
-    "type": "base",
-    "count": 1
    }
   ],
-  "rerolls": 2,
+  "rerolls": 1,
   "catchValue": 6,
   "evolutions": [],
   "milestones": [
    {
-    "level": 31,
-    "effect": "UPGRADE_DIE",
-    "dieType": "normal"
+    "level": 6,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 55,
+    "level": 6,
     "effect": "ADD_REROLL",
     "amount": 1
    },
    {
-    "level": 80,
+    "level": 20,
     "effect": "ADD_DIE",
     "dieType": "normal"
+   },
+   {
+    "level": 20,
+    "effect": "ADD_REROLL",
+    "amount": 1
    }
   ],
   "notes": "BST 288"
@@ -6153,13 +5703,9 @@
    {
     "type": "normal",
     "count": 1
-   },
-   {
-    "type": "base",
-    "count": 1
    }
   ],
-  "rerolls": 2,
+  "rerolls": 1,
   "catchValue": 5,
   "evolutions": [
    {
@@ -6177,19 +5723,14 @@
   ],
   "milestones": [
    {
-    "level": 9,
-    "effect": "UPGRADE_DIE",
-    "dieType": "normal"
+    "level": 5,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 16,
+    "level": 5,
     "effect": "ADD_REROLL",
     "amount": 1
-   },
-   {
-    "level": 23,
-    "effect": "ADD_DIE",
-    "dieType": "normal"
    },
    {
     "level": 28,
@@ -6210,31 +5751,36 @@
   "dice": [
    {
     "type": "water",
-    "count": 3
+    "count": 2
    },
    {
     "type": "base",
-    "count": 2
+    "count": 1
    }
   ],
-  "rerolls": 5,
+  "rerolls": 3,
   "catchValue": 5,
   "evolutions": [],
   "milestones": [
    {
-    "level": 31,
-    "effect": "UPGRADE_DIE",
-    "dieType": "water"
+    "level": 36,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 55,
+    "level": 36,
     "effect": "ADD_REROLL",
     "amount": 1
    },
    {
-    "level": 80,
+    "level": 50,
     "effect": "ADD_DIE",
     "dieType": "water"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_REROLL",
+    "amount": 1
    }
   ],
   "notes": "BST 525"
@@ -6251,31 +5797,36 @@
   "dice": [
    {
     "type": "electric",
-    "count": 3
+    "count": 2
    },
    {
     "type": "base",
-    "count": 2
+    "count": 1
    }
   ],
-  "rerolls": 5,
+  "rerolls": 3,
   "catchValue": 5,
   "evolutions": [],
   "milestones": [
    {
-    "level": 31,
-    "effect": "UPGRADE_DIE",
-    "dieType": "electric"
+    "level": 36,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 55,
+    "level": 36,
     "effect": "ADD_REROLL",
     "amount": 1
    },
    {
-    "level": 80,
+    "level": 50,
     "effect": "ADD_DIE",
     "dieType": "electric"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_REROLL",
+    "amount": 1
    }
   ],
   "notes": "BST 525"
@@ -6292,31 +5843,36 @@
   "dice": [
    {
     "type": "fire",
-    "count": 3
+    "count": 2
    },
    {
     "type": "base",
-    "count": 2
+    "count": 1
    }
   ],
-  "rerolls": 5,
+  "rerolls": 3,
   "catchValue": 5,
   "evolutions": [],
   "milestones": [
    {
-    "level": 31,
-    "effect": "UPGRADE_DIE",
-    "dieType": "fire"
+    "level": 36,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 55,
+    "level": 36,
     "effect": "ADD_REROLL",
     "amount": 1
    },
    {
-    "level": 80,
+    "level": 50,
     "effect": "ADD_DIE",
     "dieType": "fire"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_REROLL",
+    "amount": 1
    }
   ],
   "notes": "BST 525"
@@ -6333,31 +5889,32 @@
   "dice": [
    {
     "type": "normal",
-    "count": 2
-   },
-   {
-    "type": "base",
     "count": 1
    }
   ],
-  "rerolls": 3,
+  "rerolls": 1,
   "catchValue": 5,
   "evolutions": [],
   "milestones": [
    {
-    "level": 31,
-    "effect": "UPGRADE_DIE",
-    "dieType": "normal"
+    "level": 5,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 55,
+    "level": 5,
     "effect": "ADD_REROLL",
     "amount": 1
    },
    {
-    "level": 80,
+    "level": 20,
     "effect": "ADD_DIE",
     "dieType": "normal"
+   },
+   {
+    "level": 20,
+    "effect": "ADD_REROLL",
+    "amount": 1
    }
   ],
   "notes": "BST 395"
@@ -6377,15 +5934,11 @@
     "count": 1
    },
    {
-    "type": "water",
-    "count": 1
-   },
-   {
     "type": "base",
     "count": 1
    }
   ],
-  "rerolls": 3,
+  "rerolls": 2,
   "catchValue": 5,
   "evolutions": [
    {
@@ -6394,21 +5947,6 @@
    }
   ],
   "milestones": [
-   {
-    "level": 13,
-    "effect": "UPGRADE_DIE",
-    "dieType": "rock"
-   },
-   {
-    "level": 22,
-    "effect": "ADD_REROLL",
-    "amount": 1
-   },
-   {
-    "level": 32,
-    "effect": "ADD_DIE",
-    "dieType": "rock"
-   },
    {
     "level": 40,
     "effect": "EVOLVE"
@@ -6436,27 +5974,32 @@
    },
    {
     "type": "base",
-    "count": 2
+    "count": 1
    }
   ],
-  "rerolls": 4,
+  "rerolls": 3,
   "catchValue": 5,
   "evolutions": [],
   "milestones": [
    {
-    "level": 31,
-    "effect": "UPGRADE_DIE",
-    "dieType": "rock"
+    "level": 36,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 55,
+    "level": 36,
     "effect": "ADD_REROLL",
     "amount": 1
    },
    {
-    "level": 80,
+    "level": 50,
     "effect": "ADD_DIE",
     "dieType": "rock"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_REROLL",
+    "amount": 1
    }
   ],
   "notes": "BST 495"
@@ -6476,15 +6019,11 @@
     "count": 1
    },
    {
-    "type": "water",
-    "count": 1
-   },
-   {
     "type": "base",
     "count": 1
    }
   ],
-  "rerolls": 3,
+  "rerolls": 2,
   "catchValue": 5,
   "evolutions": [
    {
@@ -6493,21 +6032,6 @@
    }
   ],
   "milestones": [
-   {
-    "level": 13,
-    "effect": "UPGRADE_DIE",
-    "dieType": "rock"
-   },
-   {
-    "level": 22,
-    "effect": "ADD_REROLL",
-    "amount": 1
-   },
-   {
-    "level": 32,
-    "effect": "ADD_DIE",
-    "dieType": "rock"
-   },
    {
     "level": 40,
     "effect": "EVOLVE"
@@ -6535,27 +6059,32 @@
    },
    {
     "type": "base",
-    "count": 2
+    "count": 1
    }
   ],
-  "rerolls": 4,
+  "rerolls": 3,
   "catchValue": 5,
   "evolutions": [],
   "milestones": [
    {
-    "level": 31,
-    "effect": "UPGRADE_DIE",
-    "dieType": "rock"
+    "level": 36,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 55,
+    "level": 36,
     "effect": "ADD_REROLL",
     "amount": 1
    },
    {
-    "level": 80,
+    "level": 50,
     "effect": "ADD_DIE",
     "dieType": "rock"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_REROLL",
+    "amount": 1
    }
   ],
   "notes": "BST 495"
@@ -6572,7 +6101,7 @@
   "dice": [
    {
     "type": "rock",
-    "count": 2
+    "count": 1
    },
    {
     "type": "flying",
@@ -6583,24 +6112,19 @@
     "count": 2
    }
   ],
-  "rerolls": 5,
+  "rerolls": 4,
   "catchValue": 5,
   "evolutions": [],
   "milestones": [
    {
-    "level": 31,
-    "effect": "UPGRADE_DIE",
-    "dieType": "rock"
-   },
-   {
-    "level": 55,
-    "effect": "ADD_REROLL",
-    "amount": 1
-   },
-   {
-    "level": 80,
+    "level": 50,
     "effect": "ADD_DIE",
     "dieType": "rock"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_REROLL",
+    "amount": 1
    }
   ],
   "notes": "BST 515"
@@ -6617,31 +6141,52 @@
   "dice": [
    {
     "type": "normal",
-    "count": 3
-   },
-   {
-    "type": "base",
-    "count": 2
+    "count": 1
    }
   ],
-  "rerolls": 5,
+  "rerolls": 1,
   "catchValue": 7,
   "evolutions": [],
   "milestones": [
    {
-    "level": 31,
-    "effect": "UPGRADE_DIE",
-    "dieType": "normal"
+    "level": 5,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 55,
+    "level": 5,
     "effect": "ADD_REROLL",
     "amount": 1
    },
    {
-    "level": 80,
+    "level": 20,
     "effect": "ADD_DIE",
     "dieType": "normal"
+   },
+   {
+    "level": 20,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   },
+   {
+    "level": 36,
+    "effect": "ADD_DIE",
+    "dieType": "base"
+   },
+   {
+    "level": 36,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   },
+   {
+    "level": 50,
+    "effect": "ADD_DIE",
+    "dieType": "normal"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_REROLL",
+    "amount": 1
    }
   ],
   "notes": "BST 540"
@@ -6658,7 +6203,7 @@
   "dice": [
    {
     "type": "ice",
-    "count": 3
+    "count": 2
    },
    {
     "type": "flying",
@@ -6669,21 +6214,10 @@
     "count": 2
    }
   ],
-  "rerolls": 6,
+  "rerolls": 5,
   "catchValue": 9,
   "evolutions": [],
-  "milestones": [
-   {
-    "level": 31,
-    "effect": "UPGRADE_DIE",
-    "dieType": "ice"
-   },
-   {
-    "level": 55,
-    "effect": "ADD_REROLL",
-    "amount": 1
-   }
-  ],
+  "milestones": [],
   "notes": "BST 580"
  },
  {
@@ -6698,7 +6232,7 @@
   "dice": [
    {
     "type": "electric",
-    "count": 3
+    "count": 2
    },
    {
     "type": "flying",
@@ -6709,21 +6243,10 @@
     "count": 2
    }
   ],
-  "rerolls": 6,
+  "rerolls": 5,
   "catchValue": 9,
   "evolutions": [],
-  "milestones": [
-   {
-    "level": 31,
-    "effect": "UPGRADE_DIE",
-    "dieType": "electric"
-   },
-   {
-    "level": 55,
-    "effect": "ADD_REROLL",
-    "amount": 1
-   }
-  ],
+  "milestones": [],
   "notes": "BST 580"
  },
  {
@@ -6738,7 +6261,7 @@
   "dice": [
    {
     "type": "fire",
-    "count": 3
+    "count": 2
    },
    {
     "type": "flying",
@@ -6749,21 +6272,10 @@
     "count": 2
    }
   ],
-  "rerolls": 6,
+  "rerolls": 5,
   "catchValue": 9,
   "evolutions": [],
-  "milestones": [
-   {
-    "level": 31,
-    "effect": "UPGRADE_DIE",
-    "dieType": "fire"
-   },
-   {
-    "level": 55,
-    "effect": "ADD_REROLL",
-    "amount": 1
-   }
-  ],
+  "milestones": [],
   "notes": "BST 580"
  },
  {
@@ -6779,13 +6291,9 @@
    {
     "type": "dragon",
     "count": 1
-   },
-   {
-    "type": "base",
-    "count": 1
    }
   ],
-  "rerolls": 2,
+  "rerolls": 1,
   "catchValue": 5,
   "evolutions": [
    {
@@ -6795,19 +6303,14 @@
   ],
   "milestones": [
    {
-    "level": 10,
-    "effect": "UPGRADE_DIE",
-    "dieType": "dragon"
+    "level": 5,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 17,
+    "level": 5,
     "effect": "ADD_REROLL",
     "amount": 1
-   },
-   {
-    "level": 24,
-    "effect": "ADD_DIE",
-    "dieType": "dragon"
    },
    {
     "level": 30,
@@ -6845,19 +6348,14 @@
   ],
   "milestones": [
    {
-    "level": 17,
-    "effect": "UPGRADE_DIE",
-    "dieType": "dragon"
+    "level": 40,
+    "effect": "ADD_DIE",
+    "dieType": "base"
    },
    {
-    "level": 31,
+    "level": 40,
     "effect": "ADD_REROLL",
     "amount": 1
-   },
-   {
-    "level": 44,
-    "effect": "ADD_DIE",
-    "dieType": "dragon"
    },
    {
     "level": 55,
@@ -6878,7 +6376,7 @@
   "dice": [
    {
     "type": "dragon",
-    "count": 3
+    "count": 1
    },
    {
     "type": "flying",
@@ -6889,17 +6387,17 @@
     "count": 2
    }
   ],
-  "rerolls": 6,
+  "rerolls": 4,
   "catchValue": 5,
   "evolutions": [],
   "milestones": [
    {
-    "level": 31,
-    "effect": "UPGRADE_DIE",
+    "level": 50,
+    "effect": "ADD_DIE",
     "dieType": "dragon"
    },
    {
-    "level": 55,
+    "level": 50,
     "effect": "ADD_REROLL",
     "amount": 1
    }
@@ -6918,28 +6416,17 @@
   "dice": [
    {
     "type": "psychic",
-    "count": 4
+    "count": 3
    },
    {
     "type": "base",
     "count": 2
    }
   ],
-  "rerolls": 6,
+  "rerolls": 5,
   "catchValue": 9,
   "evolutions": [],
-  "milestones": [
-   {
-    "level": 31,
-    "effect": "UPGRADE_DIE",
-    "dieType": "psychic"
-   },
-   {
-    "level": 55,
-    "effect": "ADD_REROLL",
-    "amount": 1
-   }
-  ],
+  "milestones": [],
   "notes": "BST 680"
  },
  {
@@ -6954,24 +6441,24 @@
   "dice": [
    {
     "type": "psychic",
-    "count": 4
+    "count": 2
    },
    {
     "type": "base",
     "count": 2
    }
   ],
-  "rerolls": 6,
+  "rerolls": 4,
   "catchValue": 5,
   "evolutions": [],
   "milestones": [
    {
-    "level": 31,
-    "effect": "UPGRADE_DIE",
+    "level": 40,
+    "effect": "ADD_DIE",
     "dieType": "psychic"
    },
    {
-    "level": 55,
+    "level": 40,
     "effect": "ADD_REROLL",
     "amount": 1
    }

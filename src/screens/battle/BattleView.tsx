@@ -373,18 +373,6 @@ export function BattleView({ battle }: { battle: BattleSlice }) {
 
         <ParticleCanvas ref={particles} className="absolute inset-0 h-full w-full" />
 
-        {/* Phones: no room under the battle, so the history opens in a sheet from here. */}
-        {!desktop && (
-          <button
-            type="button"
-            onClick={() => setMenu('history')}
-            aria-label="Battle history"
-            className="pixel-btn absolute left-2 top-1/2 z-20 flex h-11 w-11 -translate-y-1/2 items-center justify-center bg-panel/90"
-          >
-            <PixelIcon name="history" size={18} />
-          </button>
-        )}
-
         <AnimatePresence>
           {fx.banner && (
             <motion.div
@@ -551,6 +539,12 @@ export function BattleView({ battle }: { battle: BattleSlice }) {
         )}
       </div>
 
+      {/* Phones: the history sits on its own, below the message, dice and controls; it opens in a sheet. */}
+      {!desktop && (
+        <PixelButton size="sm" variant="ghost" className="w-full" onClick={() => setMenu('history')}>
+          <PixelIcon name="history" size={16} /> Battle history
+        </PixelButton>
+      )}
       {desktop && <BattleHistory battle={battle} cursor={fx.cursor} defaultOpen />}
       <Modal open={menu === 'history'} onClose={() => setMenu(null)} title="Battle history">
         <BattleHistoryList battle={battle} cursor={fx.cursor} />

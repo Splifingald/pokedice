@@ -5,6 +5,7 @@ import {
   applyRegen,
   compileGameData,
   syncHpScale,
+  syncXpCurve,
   type BattleState,
   type BundleRaw,
   type CatchRoll,
@@ -81,6 +82,13 @@ export interface GameStore {
   battle: BattleSlice | null
   auth: AuthState
   toasts: Toast[]
+  /** The first cloud sync found two saves and the newer one has less progress: the player picks one. */
+  syncConflict: SyncConflict | null
+}
+
+export interface SyncConflict {
+  local: SaveData
+  cloud: SaveData
 }
 
 export const initialRun = (): RunState => ({
@@ -103,7 +111,7 @@ function boot(): Pick<GameStore, 'data' | 'save' | 'corruptSaveArchived' | 'sett
   if (!save) return { data, save: null, corruptSaveArchived: corrupt, settings }
   // Bring HP to the current hpMultiplier (keeps every HP %), then regen, before the first render.
   const now = Date.now()
-  const synced = syncHpScale(save, data)
+  const synced = syncXpCurve(syncHpScale(save, data), data)
   const regen = applyRegen(synced.box, synced.lastRegenTick, now, data)
   return { data, save: { ...synced, box: regen.instances, lastRegenTick: regen.lastTick }, corruptSaveArchived: corrupt, settings }
 }
@@ -115,6 +123,7 @@ export const useGame = create<GameStore>()(() => ({
   battle: null,
   auth: { status: 'unknown', userId: null, email: null },
   toasts: [],
+  syncConflict: null,
 }))
 
 // ---------------------------------------------------------------- core actions
@@ -142,7 +151,7 @@ export function onSaveCommitted(fn: SaveListener) {
 export function commitSave(next: SaveData | null, opts: { silent?: boolean; keepTimestamp?: boolean } = {}) {
   const { settings, data } = useGame.getState()
   // Whatever arrives here (cloud pull, import, new game) is brought to the current HP scale.
-  const scaled = next ? syncHpScale(next, data) : null
+  const scaled = next ? syncXpCurve(syncHpScale(next, data), data) : null
   const stamped = scaled ? { ...scaled, settings, updatedAt: opts.keepTimestamp ? scaled.updatedAt : Date.now() } : null
   useGame.setState({ save: stamped })
   scheduleWrite(stamped)
@@ -175,7 +184,7 @@ export function setContent(raw: BundleRaw, source: 'bundle' | 'remote') {
   const data = compileGameData(raw)
   useGame.setState((s) => {
     // A new hpMultiplier keeps every HP % (syncHpScale); an admin may also have removed the area the player was in.
-    const save = s.save ? syncHpScale(s.save, data) : null
+    const save = s.save ? syncXpCurve(syncHpScale(s.save, data), data) : null
     const areaOk = !save || data.areas.some((a) => a.id === save.currentAreaId)
     return {
       data,
@@ -192,6 +201,7 @@ export function tickRegen(now = Date.now()) {
   if (!save || battle) return
   const regen = applyRegen(save.box, save.lastRegenTick, now, data)
   const changed = regen.instances.some((p, i) => p.currentHp !== save.box[i]!.currentHp)
-  if (changed) commitSave({ ...save, box: regen.instances, lastRegenTick: regen.lastTick })
+  // Regen is passive: it must not make this save look newer than a cloud save with real progress.
+  if (changed) commitSave({ ...save, box: regen.instances, lastRegenTick: regen.lastTick }, { keepTimestamp: true })
   else useGame.setState({ save: { ...save, box: regen.instances, lastRegenTick: regen.lastTick } })
 }

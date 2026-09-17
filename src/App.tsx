@@ -4,6 +4,7 @@ import { MotionConfig } from 'framer-motion'
 import { setSfxEnabled } from '@/audio/sfx'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { GameLayout } from '@/components/GameLayout'
+import { SyncConflictModal } from '@/components/SyncConflictModal'
 import { ToastStack } from '@/components/Toast'
 import { AreaScreen } from '@/screens/Area'
 import { MapScreen } from '@/screens/MapScreen'
@@ -62,6 +63,7 @@ export function App() {
           </Routes>
         </BrowserRouter>
         <ToastStack />
+        <SyncConflictModal />
       </ErrorBoundary>
     </MotionConfig>
   )

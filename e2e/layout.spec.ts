@@ -108,6 +108,9 @@ test('a battle fits a 360×640 phone', async ({ page }) => {
     const h = (sel: string) => Math.round(document.querySelector(sel)?.getBoundingClientRect().height ?? -1)
     return { page: document.documentElement.scrollHeight, view: window.innerHeight, header: h('header'), scene: h('.scanlines'), dialogue: h('.pixel-dialogue') }
   })
-  expect(dims.page - dims.view, `the battle scrolls: ${JSON.stringify(dims)}`).toBeLessThanOrEqual(0)
+  // Everything up to the controls fits; only the separate "Battle history" row may sit just below the fold.
+  const history = await page.getByRole('button', { name: 'Battle history' }).boundingBox()
+  expect(history, 'the history button is there').not.toBeNull()
+  expect(dims.page - dims.view, `the battle scrolls: ${JSON.stringify(dims)}`).toBeLessThanOrEqual(history!.height + 8)
   expect(await smallControls(page), 'battle controls under 44px').toEqual([])
 })

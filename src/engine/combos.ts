@@ -75,3 +75,15 @@ export function selectCombo(
     return a
   })
 }
+
+/** How many dice a roll needs to make each combo (an upgrade is pointless without a Pokémon that has them). */
+export const COMBO_MIN_DICE: Record<ComboKey, number> = {
+  pair: 2,
+  two_pair: 4,
+  three_kind: 3,
+  small_straight: 4,
+  full_house: 5,
+  four_kind: 4,
+  full_straight: 5,
+  five_kind: 5,
+}

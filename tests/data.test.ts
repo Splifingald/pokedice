@@ -22,8 +22,8 @@ describe('pokemon.json', () => {
   it('has 151 complete entries', () => {
     expect(species).toHaveLength(151)
     for (const p of species) {
-      expect(total(p.dice)).toBeGreaterThanOrEqual(2)
-      expect(total(p.dice)).toBeLessThanOrEqual(6)
+      expect(total(p.dice)).toBeGreaterThanOrEqual(1)
+      expect(total(p.dice)).toBeLessThanOrEqual(5)
       expect(p.spriteUrl).toMatch(/^https:\/\/raw\.githubusercontent\.com\/PokeAPI\/sprites\/.*\/\d+\.png$/)
       expect(p.baseHp).toBeGreaterThan(0)
       expect(p.maxHp).toBeGreaterThan(p.baseHp)
@@ -32,28 +32,24 @@ describe('pokemon.json', () => {
     }
   })
 
-  it('matches the worked examples', () => {
-    const squirtle = byDex(7)
-    expect(count(squirtle.dice, 'water')).toBe(1)
-    expect(count(squirtle.dice, 'base')).toBe(1)
-    expect(total(squirtle.dice)).toBe(2)
+  it('matches the worked examples (dice grow with the evolution stage)', () => {
+    const squirtle = byDex(7) // first stage: one die of its main type
+    expect(squirtle.dice).toEqual([{ type: 'water', count: 1 }])
+    expect(squirtle.rerolls).toBe(1)
 
-    const charizard = byDex(6)
-    expect(count(charizard.dice, 'fire')).toBe(2)
+    expect(total(byDex(5).dice)).toBe(3) // Charmeleon: the 3rd die on evolving
+
+    const charizard = byDex(6) // final of three: 4 dice on evolving
+    expect(count(charizard.dice, 'fire')).toBe(1)
     expect(count(charizard.dice, 'flying')).toBe(1)
     expect(count(charizard.dice, 'base')).toBe(2)
-    expect(charizard.rerolls).toBe(5)
+    expect(charizard.rerolls).toBe(4)
 
-    const mewtwo = byDex(150)
-    expect(count(mewtwo.dice, 'psychic')).toBe(4)
+    const mewtwo = byDex(150) // legendaries: 5 dice
+    expect(count(mewtwo.dice, 'psychic')).toBe(3)
     expect(count(mewtwo.dice, 'base')).toBe(2)
 
-    expect(total(byDex(5).dice)).toBe(3)
-
-    const snorlax = byDex(143)
-    expect(count(snorlax.dice, 'normal')).toBe(3)
-    expect(count(snorlax.dice, 'base')).toBe(2)
-
+    expect(byDex(143).dice).toEqual([{ type: 'normal', count: 1 }]) // Snorlax: single stage, grows by level
     expect(count(byDex(149).dice, 'dragon')).toBeGreaterThan(0)
   })
 
@@ -64,8 +60,10 @@ describe('pokemon.json', () => {
     expect(byDex(133).evolutions.map((e) => e.toDex).sort()).toEqual([134, 135, 136])
     expect(byDex(133).evolutions.every((e) => e.level === 28)).toBe(true)
     expect(byDex(64).evolutions).toEqual([{ toDex: 65, level: 34 }]) // trade
-    expect(byDex(6).milestones.map((m) => m.level)).toEqual([31, 55, 80])
-    expect(byDex(6).milestones[1]!.effect).toBe('ADD_REROLL')
+    expect(byDex(6).milestones).toEqual([
+      { level: 50, effect: 'ADD_DIE', dieType: 'fire' },
+      { level: 50, effect: 'ADD_REROLL', amount: 1 },
+    ])
   })
 })
 

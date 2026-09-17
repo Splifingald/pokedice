@@ -1,6 +1,6 @@
 # Pokédice — Game Design Specification
 
-**Version:** 1.7 · **Author:** Grégoire · **Status:** built · v1.2 added the Grass Heal face, Multi EXP and starters in the catch-all pool; v1.3 added full Kanto, gyms, secret areas, area type insights and the in-game help; v1.4 added encounter decks, easy areas, and HP-based pacing (damage is exactly the dice); v1.5 added item finds with loot decks, the classic items, one-item-per-turn battles, dice-based catching with Poké Balls, and Pokédollars (₽); v1.6 doubled Pokémon XP (`xpMultiplier`), rolls the dice automatically at the start of each turn, allows a voluntary switch after the roll, and reworked the UI (side / bottom bar, encounter pop-up, Pokédex "where to find it"); v1.7 made Speed the base stat ÷ 10 (rounded down), set XP per K.O. back to the foe's level for the Pokémon and the exploration bar alike with every XP requirement about ÷ 4, added dice descriptions, the `noEscape` rule (on by default) and the optional `showRoundPreview`
+**Version:** 1.8 · **Author:** Grégoire · **Status:** built · v1.2 added the Grass Heal face, Multi EXP and starters in the catch-all pool; v1.3 added full Kanto, gyms, secret areas, area type insights and the in-game help; v1.4 added encounter decks, easy areas, and HP-based pacing (damage is exactly the dice); v1.5 added item finds with loot decks, the classic items, one-item-per-turn battles, dice-based catching with Poké Balls, and Pokédollars (₽); v1.6 doubled Pokémon XP (`xpMultiplier`), rolls the dice automatically at the start of each turn, allows a voluntary switch after the roll, and reworked the UI (side / bottom bar, encounter pop-up, Pokédex "where to find it"); v1.7 made Speed the base stat ÷ 10 (rounded down), set XP per K.O. back to the foe's level for the Pokémon and the exploration bar alike with every XP requirement about ÷ 4, added dice descriptions, the `noEscape` rule (on by default) and the optional `showRoundPreview`; v1.8 made dice grow with levels and evolutions (§4.2 dice schedule, 1–5 dice)
 **Nature:** personal, non-commercial fan project. No monetisation; Nintendo assets are referenced as public sprite URLs, never redistributed.
 
 This document is the single source of truth for *rules*. `02-DATA-MODEL.md` covers storage and seeding, `03-BUILD-PLAN.md` covers implementation.
@@ -84,18 +84,18 @@ finalDamage    = max(1, round(rawDamage))
 - `dieUpgradeBonus` — account-wide die track (§5.2), applied **per die, before** the type multiplier. **Base dice have no track and always contribute +0.**
 - `typeMultiplier` — Gen 6+ 18-type chart, product over the defender's types: `mult(atk,def1) × mult(atk,def2)` ∈ `{0, 0.25, 0.5, 1, 2, 4}`. A die the defender is immune to contributes **0**.
 - `majorityDieType` — the type most represented among the dice in this roll. **Base dice never count as the majority type.** Ties break to: Type 1, then Type 2, then the type of the highest-value die. If the Pokémon rolled only base dice, the combo bonus is untyped (×1).
-- **No global multiplier.** What the dice show (after upgrades and type) is what hits — never a hidden scale on the result (v1.4 removed the old `damageScale` knob). Fight length is tuned through HP instead: `hpMultiplier` (§4, default 1.4, admin-editable), plus dice counts and the upgrade tracks.
+- **No global multiplier.** What the dice show (after upgrades and type) is what hits — never a hidden scale on the result (v1.4 removed the old `damageScale` knob). Fight length is tuned through HP instead: `hpMultiplier` (§4, default 1 since v1.8, 1.4 before; admin-editable), plus dice counts and the upgrade tracks.
 - Floored at 1, *unless* every die multiplier was 0 — then damage is 0 and the UI says "It doesn't affect [name]…".
 
 **There is deliberately no level term in the damage formula.** A Pokémon's raw output comes only from its dice; the player's damage growth comes from the **upgrade tracks**. Levels give HP, which means an un-upgraded player's fights get steadily *longer* as they progress, and buying upgrades is what pulls them back. That tension is the economy.
 
-**Verified by simulation** — turns to kill in a neutral mirror match, by how far the player has pushed both upgrade tracks (2500 rolls per cell, greedy reroll AI, HP at `hpMultiplier` 1 — at the default 1.4 every HP and turn count is ~1.4× larger):
+**Verified by simulation** — turns to kill in a neutral mirror match, by how far the player has pushed both upgrade tracks (2500 rolls per cell, greedy reroll AI, HP at `hpMultiplier` 1, the default since v1.8):
 
 | Matchup | HP | track 1 | track 3 | track 5 | track 7 | track 10 |
 |---|---|---|---|---|---|---|
 | Charmander L5 (2 dice) | 20 | 2.3 | 1.8 | 1.4 | 1.1 | 0.8 |
 | Charmeleon L20 (3 dice) | 59 | 4.0 | 2.9 | 2.2 | 1.6 | 1.1 |
-| Charizard L40 (5 dice) | 124 | 4.1 | 3.1 | 2.4 | 1.8 | 1.3 |
+| Charizard L40 (5 dice; since v1.8 that is Charizard L50) | 124 | 4.1 | 3.1 | 2.4 | 1.8 | 1.3 |
 | Charizard L60 | 182 | 6.0 | 4.5 | 3.6 | 2.7 | 1.9 |
 | Snorlax L50 (5 dice) | 235 | 7.4 | 5.5 | 4.3 | 3.3 | 2.4 |
 | Mewtwo L80 (6 dice) | 284 | 7.5 | 5.3 | 4.2 | 3.1 | 2.2 |
@@ -127,7 +127,7 @@ One combo pays per roll. Straights are scanned over the **distinct sorted face v
 
 ## 3. Dice
 
-Every Pokémon owns 2–6 dice. Two categories:
+Every Pokémon owns 1–5 dice (v1.8; `maxDice` 5), gained by level and evolution (§4.2). Two categories:
 
 - **Base die** — the plain filler die, faces `1,2,3,4,5,6`. It has **no upgrade track and can never be upgraded**, and it never counts toward the majority type. Off-white with grey pips.
 - **Typed dice** — one per type, 18 of them (Normal included). Each has its own 10-level upgrade track and its own colour.
@@ -195,11 +195,11 @@ Each Pokémon's set is a list of `{type, count}` where `type` may be `base` or a
 | Speed | base Speed stat ÷ 10, rounded down (Bulbasaur 4, Charmander 6, Squirtle 4) |
 | Sprite | `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/{dex}.png` |
 | Dice | generated, editable |
-| Rerolls | generated = dice count, editable |
+| Rerolls | generated = dice count on arrival, +1 with every die gained later, editable |
 | Evolutions | `[{toDex, level}]`; **multiple entries → the target is rolled at random** |
 | Milestones | `[{level, effect}]` |
 
-**HP at level L** = `round((baseHp + (maxHp − baseHp) × (L − 1) / 99 + milestone +HP) × hpMultiplier)`. `hpMultiplier` (game_config, default 1.4, admin-editable) is the fight-length knob: HP is what gets scaled, never damage. When it changes, every saved Pokémon keeps its HP %.
+**HP at level L** = `round((baseHp + (maxHp − baseHp) × (L − 1) / 99 + milestone +HP) × hpMultiplier)`. `hpMultiplier` (game_config, default 1 since v1.8 — 1.4 before — admin-editable) is the fight-length knob: HP is what gets scaled, never damage. When it changes, every saved Pokémon keeps its HP %.
 
 ### 4.2 Level milestones
 
@@ -209,6 +209,25 @@ Every level raises HP by the interpolation above. Specific levels additionally d
 - `ADD_REROLL` — +1 reroll budget
 - `ADD_DIE` — append a die (type specified; defaults to Type 1)
 - `EVOLVE` — become another species: dice set, types, HP curve and rerolls are replaced by the new species'; level, XP and current HP **percentage** carry over
+
+**Dice schedule (v1.8).** Dice come with levels and evolutions, and every die gained later brings +1 reroll (`ADD_DIE` + `ADD_REROLL` at the same level). The first die is always Type 1; the next ones follow the §3 split (Data model §3.4).
+
+| Pokémon | Dice on arrival | Dice gained later |
+|---|---|---|
+| Before its first evolution (or a lone stage of a line) | 1 | 2nd at Lv.5 — weak species wait: BST < 300 → Lv.6, < 280 → Lv.7, < 260 → Lv.8 (Rattata, Pidgey…) |
+| Middle stage of a 3-stage line | 3 | — |
+| Final stage of a 3-stage line | 4 | 5th at Lv.50 |
+| Final stage of a 2-stage line | 3 | 4th at Lv.36; 5th at Lv.50 if BST ≥ 450 |
+| No evolution at all | 1 | 2nd as above, 3rd at Lv.20; if BST ≥ 450 also 4th at Lv.36 and 5th at Lv.50 (weaker ones — Onix, Ditto, Porygon… — stop at 3) |
+| Caterpie & Weedle lines | 1 / 2 / 3 by stage | 4th at Lv.36 on the final stage, no 5th |
+| Legendaries (birds, Mewtwo) | 5 | — |
+| Mew | 4 | 5th at Lv.40 |
+| Magikarp | 1 | never (Gyarados follows the 2-stage rule) |
+| Dragonair | 3 | 4th at Lv.40 (Dragonite: 4 on arrival, 5th at Lv.50) |
+| Omanyte, Kabuto (revived) | 2 | — (their evolutions follow the 2-stage rule) |
+| Aerodactyl (revived) | 4 | 5th at Lv.50 |
+
+Examples: Bulbasaur 1 die → 2 at Lv.5, Ivysaur 3, Venusaur 4 → 5 at Lv.50; Pidgey gets its 2nd die at Lv.8; Snorlax grows 1 → 5 over Lv.5 / 20 / 36 / 50; Mewtwo has 5 from the start.
 
 Evolution is **automatic and cannot be cancelled**. It plays on the victory screen: silhouette → flash → new sprite → "X evolved into Y!" → a card showing the new dice set, rerolls and HP. When a species has several evolution targets the game rolls one at random and the animation is the reveal — there is no choice prompt.
 

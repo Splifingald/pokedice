@@ -9,15 +9,15 @@ export const DEFAULT_CONFIG: GameConfig = {
   regenPercentPerHour: 5,
   maxTeamSize: 3,
   maxLevel: 100,
-  maxDice: 6,
+  maxDice: 5,
   comboPayoutMode: 'highestDamage',
   skipPolicy: 'free',
   noEscape: true,
   starters: [1, 4, 7],
   starterLevel: 5,
-  // Tuned with `pnpm balance` on the full Kanto content: ×1.4 HP keeps main-chain fights at ~2–3.5 turns while every
-  // hit stays exactly what the dice show (v1.4); ×0.5 trainer gold paces the upgrades (v1.3).
-  hpMultiplier: 1.4,
+  // Tuned with `pnpm balance` on the full Kanto content: ×1 HP keeps main-chain fights at ~3 turns with the v1.8 dice
+  // schedule (×1.4 before it) while every hit stays exactly what the dice show; ×0.5 trainer gold paces the upgrades (v1.3).
+  hpMultiplier: 1,
   goldMultiplier: 0.5,
   gymGoldMultiplier: 2,
   forcedCenterWhenHurt: true,

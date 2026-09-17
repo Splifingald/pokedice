@@ -5,6 +5,7 @@ import { parseSave } from './schema'
 export const SAVE_KEY = 'pokedice.save'
 export const CORRUPT_KEY = 'pokedice.save.corrupt'
 export const SETTINGS_KEY = 'pokedice.settings'
+export const BACKUPS_KEY = 'pokedice.save.backups'
 
 export interface Settings {
   sfx: boolean
@@ -92,5 +93,34 @@ export function writeSettings(s: Settings) {
     storage()?.setItem(SETTINGS_KEY, JSON.stringify(s))
   } catch {
     /* ignore */
+  }
+}
+
+export interface SaveBackup {
+  at: number
+  reason: string
+  save: SaveData
+}
+
+/** Saves replaced by a sync or a restore on this device, newest first (the last 5) — a wrong choice can be undone. */
+export function readBackups(): SaveBackup[] {
+  try {
+    const raw = storage()?.getItem(BACKUPS_KEY)
+    const list = raw ? (JSON.parse(raw) as { at: number; reason: string; save: unknown }[]) : []
+    return list.flatMap((b) => {
+      const res = parseSave(b.save)
+      return res.ok ? [{ at: b.at, reason: b.reason, save: res.save }] : []
+    })
+  } catch {
+    return []
+  }
+}
+
+export function backupSave(save: SaveData, reason: string) {
+  try {
+    const list = [{ at: Date.now(), reason, save }, ...readBackups()].slice(0, 5)
+    storage()?.setItem(BACKUPS_KEY, JSON.stringify(list))
+  } catch (err) {
+    console.warn('[save] backup failed', err)
   }
 }

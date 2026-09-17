@@ -90,9 +90,9 @@ describe('battle setup', () => {
 
   it('each battler enters with rerolls = its rerolls stat', () => {
     const b = makeBattler({ uid: 'z', dex: 6, level: 36, hp: 10 }, data)
-    expect(b.rerolls).toBe(5)
-    expect(b.rerollsLeft).toBe(5)
-    expect(b.dice).toHaveLength(5)
+    expect(b.rerolls).toBe(4)
+    expect(b.rerollsLeft).toBe(4)
+    expect(b.dice).toHaveLength(4)
   })
 })
 
@@ -279,8 +279,8 @@ describe('headless simulation', () => {
   })
 
   it('two mutually-immune Pokémon end in a stalemate instead of looping forever', () => {
-    // Rattata Lv.10 (2 Normal dice after its Lv.7 milestone) vs Gastly Lv.10 (2 Ghost dice): 0 damage both ways.
-    const r = simulateBattle({ dex: 19, level: 10 }, { dex: 92, level: 10 }, uniformLevels(1), uniformLevels(1), data, createRng(1))
+    // Rattata Lv.4 (1 Normal die) vs Gastly Lv.4 (1 Ghost die): 0 damage both ways.
+    const r = simulateBattle({ dex: 19, level: 4 }, { dex: 92, level: 4 }, uniformLevels(1), uniformLevels(1), data, createRng(1))
     expect(r.finished).toBe(true)
     expect(r.winner).toBe('draw')
     expect(r.turns).toBe(data.config.maxBattleTurns)
@@ -295,16 +295,16 @@ describe('headless simulation', () => {
   })
 
   it('reproduces the §2.3 turns-to-kill table with its per-roll methodology', () => {
-    // Spec: Charizard L40 vs 124 HP → 4.1 at track 1, 1.3 at track 10.
-    const t1 = turnsToKill({ dex: 6, level: 40 }, ['normal'], 124, 1, 600, data, 7, 'perRoll')
-    const t10 = turnsToKill({ dex: 6, level: 40 }, ['normal'], 124, 10, 600, data, 7, 'perRoll')
+    // Spec: Charizard L50 (5 dice since v1.8) vs 124 HP → 4.1 at track 1, 1.3 at track 10.
+    const t1 = turnsToKill({ dex: 6, level: 50 }, ['normal'], 124, 1, 600, data, 7, 'perRoll')
+    const t10 = turnsToKill({ dex: 6, level: 50 }, ['normal'], 124, 10, 600, data, 7, 'perRoll')
     expect(t1).toBeGreaterThan(3.3)
     expect(t1).toBeLessThan(4.9)
     expect(t10).toBeGreaterThan(1)
     expect(t10).toBeLessThan(1.7)
     // Played out with the per-battle budget, fights are longer — and upgrades still pull them back.
-    const real1 = turnsToKill({ dex: 6, level: 40 }, ['normal'], 124, 1, 200, data)
-    const real10 = turnsToKill({ dex: 6, level: 40 }, ['normal'], 124, 10, 200, data)
+    const real1 = turnsToKill({ dex: 6, level: 50 }, ['normal'], 124, 1, 200, data)
+    const real10 = turnsToKill({ dex: 6, level: 50 }, ['normal'], 124, 10, 200, data)
     expect(real1).toBeGreaterThan(t1)
     expect(real10).toBeLessThan(real1 / 2)
   })

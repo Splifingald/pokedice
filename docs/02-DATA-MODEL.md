@@ -141,7 +141,7 @@ create table game_config (
   value jsonb not null
 );
 -- seeded keys: encounterMode ('deck'), startInventory
---              ({poke-ball:5, potion:2}), hpMultiplier (1.4), xpCurve {A,B,C}, xpShareMode,
+--              ({poke-ball:5, potion:2}), hpMultiplier (1), xpCurve {A,B,C}, xpShareMode,
 --              regenPercentPerHour, maxTeamSize, maxLevel, comboPayoutMode,
 --              skipPolicy, starters, starterLevel, configVersion, multiExpShare (0.3),
 --              xpMultiplier (1: XP = foe level × this, for Pokémon and the exploration bar alike),
@@ -215,19 +215,16 @@ Special case **Shedinja**-style: none in Kanto, ignore.
 
 > Sanity: Charizard 11 → 297. Magikarp (base 20) 11 → 181. Chansey (base 250) 16 → 641. Chansey is a wall — intentional and funny, leave it.
 
-### 3.3 Dice count from Base Stat Total
+### 3.3 Dice count (v1.8 schedule)
+
+Dice no longer come from BST alone: `applyDiceSchedule` (`scripts/seed.ts`) reads each species' place in its evolution line (stage, line length) and its BST, and `dicePlan` returns the dice it arrives with plus the levels where it gains more (game spec §4.2 table). BST only decides:
 
 ```
-BST = sum of the 6 base stats
-
-BST  <  330  →  2 dice
-330 – 429    →  3 dice
-430 – 499    →  4 dice
-500 – 569    →  5 dice
-BST >= 570   →  6 dice
+2nd die level (first stage / no evolution):  BST < 260 → 8 · < 280 → 7 · < 300 → 6 · else 5
+5th die at Lv.50 for 2-stage finals and non-evolvers:  BST >= 450
 ```
 
-**Verified against your examples:** Squirtle (314) → 2 ✔ · Charmeleon (405) → 3 ✔ · Charizard (534) → 5 ✔ · Mewtwo (680) → 6 ✔
+Caterpie / Weedle lines (dex 10–15) are fixed at 1 / 2 / 3 dice by stage, +1 at Lv.36 on the final stage. Legendaries have 5 dice. Non-evolvers under BST 450 stop at 3 dice. Per-family overrides (`FAMILY_PLANS`): Magikarp 1 die for good, Omanyte / Kabuto 2, Aerodactyl 4 (+Lv.50), Dragonair 3 (+Lv.40), Mew 4 (+Lv.40). `maxDice` = 5.
 
 ### 3.4 Typed vs normal split
 
@@ -237,6 +234,7 @@ The filler die is the **`base`** die (unupgradeable). Typed dice come from the P
 baseCount  = max(1, ceil(diceCount / 3))
 typedCount = diceCount - baseCount
 
+(n = 1 → one Type 1 die, v1.8)
 if type2 exists AND typedCount >= 2:
     type2Count = max(1, floor(typedCount / 3))
     type1Count = typedCount - type2Count
@@ -252,34 +250,29 @@ else:
 | 5 | 2 | 3 | 2 + 1 |
 | 6 | 2 | 4 | 3 + 1 |
 
-**Verified against the brief:** Charizard 5 dice → 2 fire + 1 flying + 2 base ✔ · Squirtle 2 dice → 1 water + 1 base ✔ · Mewtwo 6 dice → 4 psychic + 2 base ✔ · Charmeleon 3 dice ✔.
+A die gained later is the one the split adds when going from n−1 to n dice (Charizard's 5th at Lv.50 is fire). **Examples (v1.8):** Squirtle 1 water · Charmeleon 3 dice · Charizard 4 dice (fire, flying, 2 base) → 5 at Lv.50 · Mewtwo 5 dice (3 psychic + 2 base).
 
-**Mono-Normal Pokémon need no special case.** Their Type 1 is Normal, so the algorithm gives them **Normal-type** dice — which have a full upgrade track — alongside their base dice. Snorlax (BST 540) → 5 dice = 3 normal + 2 base, of which 3 are upgradeable. Exactly the intent.
+**Mono-Normal Pokémon need no special case.** Their Type 1 is Normal, so the algorithm gives them **Normal-type** dice — which have a full upgrade track — alongside their base dice. Snorlax ends at 5 dice = 3 normal + 2 base, of which 3 are upgradeable. Exactly the intent.
 
 **Dragon:** Dratini / Dragonair / Dragonite use the Dragon die `2,3,4,5,6,8` (`01-GAME-SPEC.md` §3.1) — the strongest in the game.
 
 ### 3.5 Rerolls
 
 ```
-rerolls = diceCount
+rerolls = dice on arrival   (+1 ADD_REROLL with every ADD_DIE milestone)
 ```
-**Verified:** Charmander (2 dice) → 2 rerolls ✔ · Charizard (5 dice) → 5 rerolls ✔, and the level-60 milestone below gives him a 6th ✔.
+**Examples:** Charmander 1 → 2 at Lv.5 · Charizard 4 → 5 at Lv.50.
 
 ### 3.6 Milestones
 
-For each species, let `E` = its evolution level if it has one, else 100.
+Since v1.8 the generated milestones are only the dice schedule (§3.3) and the evolution:
 
 ```
-span   = E - 1
-marks  = [ round(1 + span*0.30), round(1 + span*0.55), round(1 + span*0.80) ]
-        (deduplicated, clamped to 2..99, skipped if E - mark < 3)
-
-mark[0] → UPGRADE_DIE   (replace one BASE die with a die of Type 1; skipped if no base die left)
-mark[1] → ADD_REROLL
-mark[2] → ADD_DIE       (of Type 1; skipped if already at 6 dice)
-
-if it evolves:  milestone { level: E, effect: 'EVOLVE' }
+for each later die:  { level, 'ADD_DIE', dieType }  +  { level, 'ADD_REROLL', amount: 1 }
+if it evolves:       { level: E, effect: 'EVOLVE' }
 ```
+
+`UPGRADE_DIE` and `ADD_HP` still exist for hand-edited milestones in admin.
 
 Evolution levels come from PokeAPI's `min_level`. For non-level evolutions the script assigns:
 

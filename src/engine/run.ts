@@ -3,7 +3,7 @@ import { getSpecies, linearAreas } from './data'
 import { nextComboCost, nextDieCost, pokemonXp, trainerGoldFor, healAmount } from './economy'
 import { MONEY, usableIn } from './items'
 import { averageLevel, createInstance, gainXp, instanceMaxHp, xpToNext, type ProgressEvent } from './progression'
-import type { Rng } from './rng'
+import { createRng, type Rng } from './rng'
 import {
   COMBO_KEYS,
   POKE_TYPES,
@@ -459,4 +459,23 @@ export function buyDieUpgrade(save: SaveData, type: PokeType, data: GameData): S
 
 export function speciesName(data: GameData, dex: number): string {
   return data.species[dex] ? getSpecies(data, dex).name : `#${dex}`
+}
+
+/**
+ * Settle XP left over from an older, steeper level curve: a Pokémon already holding a level's worth levels up (and may
+ * evolve) right away, so a victory screen only ever shows what that fight earned.
+ */
+export function syncXpCurve(save: SaveData, data: GameData): SaveData {
+  const cfg = data.config
+  const due = (p: PokemonInstance) => p.level < cfg.maxLevel && p.xp >= xpToNext(p.level, cfg)
+  if (!save.box.some(due)) return save
+  const rng = createRng(save.updatedAt || 1)
+  const pokedex = new Set(save.pokedex)
+  const box = save.box.map((p) => {
+    if (!due(p)) return p
+    const res = gainXp(p, 0, data, rng)
+    for (const e of res.events) if (e.kind === 'evolve') pokedex.add(e.toDex)
+    return res.inst
+  })
+  return { ...save, box, pokedex: [...pokedex] }
 }

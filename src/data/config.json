@@ -9,7 +9,7 @@
  "regenPercentPerHour": 5,
  "maxTeamSize": 3,
  "maxLevel": 100,
- "maxDice": 6,
+ "maxDice": 5,
  "comboPayoutMode": "highestDamage",
  "skipPolicy": "free",
  "noEscape": true,
@@ -19,7 +19,7 @@
   7
  ],
  "starterLevel": 5,
- "hpMultiplier": 1.4,
+ "hpMultiplier": 1,
  "goldMultiplier": 0.5,
  "gymGoldMultiplier": 2,
  "forcedCenterWhenHurt": true,

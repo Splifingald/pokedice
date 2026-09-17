@@ -1,6 +1,7 @@
 import { useId, useMemo, useState } from 'react'
 import {
   COMBO_KEYS,
+  COMBO_MIN_DICE,
   COMBO_NAMES,
   comboBonusAt,
   dieBonusAt,
@@ -81,6 +82,7 @@ function Row({
   gold,
   onBuy,
   extra,
+  locked,
 }: {
   title: React.ReactNode
   level: number
@@ -91,13 +93,20 @@ function Row({
   gold: number
   onBuy: () => void
   extra?: React.ReactNode
+  /** Why no Pokémon you own would benefit yet — the row is greyed out and can't be bought. */
+  locked?: string | null
 }) {
-  const short = cost != null && gold < cost
+  const short = !locked && cost != null && gold < cost
   const reasonId = useId()
   return (
-    <div className="pixel-panel flex flex-wrap items-center gap-x-4 gap-y-2 p-2">
+    <div className={cx('pixel-panel flex flex-wrap items-center gap-x-4 gap-y-2 p-2', locked && 'hatched')}>
       <div className="min-w-[150px] flex-1">
         <div className="text-2xl leading-none">{title}</div>
+        {locked && (
+          <div className="mt-1 flex items-center gap-1.5 text-lg leading-tight">
+            <PixelIcon name="lock" size={14} /> {locked}
+          </div>
+        )}
         {extra}
       </div>
       <div className="flex flex-col gap-1">
@@ -110,12 +119,12 @@ function Row({
       <div className="flex flex-col items-center gap-0.5">
         <PixelButton
           variant="primary"
-          disabled={cost == null || short}
+          disabled={!!locked || cost == null || short}
           className="min-w-[120px]"
           onClick={onBuy}
           aria-describedby={short ? `${reasonId}` : undefined}
         >
-          {cost == null ? 'MAX' : money(cost)}
+          {locked ? 'LOCKED' : cost == null ? 'MAX' : money(cost)}
         </PixelButton>
         {short && (
           <span id={reasonId} className="text-base leading-none text-muted">
@@ -142,6 +151,8 @@ export function UpgradesScreen() {
     }
     return out
   }, [save, data])
+  // The most dice any Pokémon you own throws: a combo needing more can't happen yet.
+  const maxDice = useMemo(() => Math.max(0, ...(save?.box ?? []).map((p) => instanceStats(p, data).dice.length)), [save, data])
 
   if (!save) return null
   const buyAnd = (ok: boolean) => ok && sfx('levelup')
@@ -179,6 +190,11 @@ export function UpgradesScreen() {
                 cost={cost}
                 gold={save.gold}
                 onBuy={() => buyAnd(upgradeCombo(k))}
+                locked={
+                  maxDice < COMBO_MIN_DICE[k]
+                    ? `Needs a Pokémon with ${COMBO_MIN_DICE[k]}+ dice (yours throw up to ${maxDice})`
+                    : null
+                }
               />
             )
           })}
@@ -201,9 +217,7 @@ export function UpgradesScreen() {
                   extra={
                     <div className="mt-1 flex flex-wrap items-center gap-2">
                       <DieFaces type={t} faces={data.diceTypes[t]?.faces ?? []} size={26} />
-                      <span className={cx('text-base', carriers[t] ? 'text-ink' : 'text-muted')}>
-                        {carriers[t]} of your Pokémon carry it
-                      </span>
+                      {carriers[t] > 0 && <span className="text-base">{carriers[t]} of your Pokémon carry it</span>}
                       <DieEffects type={t} />
                     </div>
                   }
@@ -214,6 +228,7 @@ export function UpgradesScreen() {
                   cost={cost}
                   gold={save.gold}
                   onBuy={() => buyAnd(upgradeDie(t))}
+                  locked={carriers[t] ? null : 'None of your Pokémon has this die yet'}
                 />
               )
             })}

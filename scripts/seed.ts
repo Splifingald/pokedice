@@ -160,30 +160,114 @@ export function composeDice(diceCount: number, type1: PokeType, type2: PokeType 
   return dice
 }
 
-export function buildMilestones(
-  type1: PokeType,
-  diceCount: number,
-  evolutions: Evolution[],
-  maxDice: number,
-): Milestone[] {
-  const E = evolutions.length ? Math.min(...evolutions.map((e) => e.level)) : 100
-  const span = E - 1
-  const marks = [0.3, 0.55, 0.8].map((f) => Math.round(1 + span * f))
-  const effects = ['UPGRADE_DIE', 'ADD_REROLL', 'ADD_DIE'] as const
-  const seen = new Set<number>()
-  const out: Milestone[] = []
-  marks.forEach((raw, i) => {
-    const level = Math.min(99, Math.max(2, raw))
-    if (seen.has(level)) return
-    if (E - level < 3) return
-    const effect = effects[i]!
-    if (effect === 'ADD_DIE' && diceCount >= maxDice) return
-    seen.add(level)
-    if (effect === 'ADD_REROLL') out.push({ level, effect, amount: 1 })
-    else out.push({ level, effect, dieType: type1 })
-  })
-  if (evolutions.length) out.push({ level: E, effect: 'EVOLVE' })
+// ---------------------------------------------------------------- dice schedule (v1.8)
+// A Pokémon's dice grow with its evolution stage and level; every new die comes with a reroll.
+
+/** Caterpie and Weedle: their lines gain dice by evolving. */
+export const BUG_LINES = new Set([10, 11, 12, 13, 14, 15])
+
+/** Per-family choices (v1.8): Dragonair grows while it waits for Lv.55, Magikarp stays at 1 die, revived fossils start
+ * stronger, Mew grows into its 5th die. */
+const FAMILY_PLANS: Record<number, DicePlan> = {
+  129: { start: 1, adds: [] }, // Magikarp
+  138: { start: 2, adds: [] }, // Omanyte
+  140: { start: 2, adds: [] }, // Kabuto
+  142: { start: 4, adds: [50] }, // Aerodactyl
+  148: { start: 3, adds: [40] }, // Dragonair
+  151: { start: 4, adds: [40] }, // Mew
+}
+
+/** The dice of an n-dice set: 1 = the main type, then the usual mix (base, second type, base, main type…). */
+export function diceForCount(n: number, type1: PokeType, type2: PokeType | null): DieType[] {
+  if (n <= 1) return [type1]
+  return composeDice(n, type1, type2).flatMap((d) => Array.from({ length: d.count }, () => d.type))
+}
+
+/** Level a first-stage Pokémon gets its 2nd die: 5, later for weak ones (Rattata, Pidgey, Magikarp…). */
+export function secondDieLevel(bst: number): number {
+  return bst < 260 ? 8 : bst < 280 ? 7 : bst < 300 ? 6 : 5
+}
+
+export interface DicePlan {
+  /** Dice on arrival (hatched, caught at any level, or right after evolving). */
+  start: number
+  /** Levels at which one more die comes, in order. */
+  adds: number[]
+}
+
+/**
+ * How many dice a species has and when it gains more.
+ * - first stage of a line: 1 die, a 2nd at Lv.5 (weak ones later); more only by evolving
+ * - middle of a 3-stage line: 3 dice on evolving
+ * - final of a 3-stage line: 4 dice on evolving, a 5th at Lv.50
+ * - Caterpie / Weedle lines: 1 → 2 → 3 by evolving, a 4th at Lv.36, no 5th
+ * - final of a 2-stage line: 3 dice, a 4th at Lv.36, a 5th at Lv.50 when strong (BST ≥ 450)
+ * - single-stage Pokémon: 1 die, then Lv.5 (weak ones later) / 20 / 36 / 50 when strong; weak ones stop at 3 (Lv.20)
+ * - legendaries: 5 dice
+ * - FAMILY_PLANS overrides: Magikarp, fossils, Dragonair, Mew
+ */
+export function dicePlan(dex: number, stage: number, lineLength: number, bst: number, legendary: boolean): DicePlan {
+  const strong = bst >= 450
+  const family = FAMILY_PLANS[dex]
+  if (family) return { start: family.start, adds: [...family.adds] }
+  if (legendary) return { start: 5, adds: [] }
+  if (BUG_LINES.has(dex)) return stage === 1 ? { start: 1, adds: [] } : stage === 2 ? { start: 2, adds: [] } : { start: 3, adds: [36] }
+  const second = secondDieLevel(bst)
+  // Non-evolvers: strong ones reach 5 dice by Lv.50, weaker ones (Onix, Ditto, Porygon…) stop at 3.
+  if (lineLength === 1) return { start: 1, adds: strong ? [second, 20, 36, 50] : [second, 20] }
+  if (stage === 1) return { start: 1, adds: [second] }
+  if (lineLength >= 3 && stage === 2) return { start: 3, adds: [] }
+  if (lineLength >= 3) return { start: 4, adds: [50] }
+  return { start: 3, adds: [36, ...(strong ? [50] : [])] }
+}
+
+const groupDice = (dice: DieType[]): DiceEntry[] => {
+  const out: DiceEntry[] = []
+  for (const t of dice) {
+    const e = out.find((d) => d.type === t)
+    if (e) e.count += 1
+    else out.push({ type: t, count: 1 })
+  }
   return out
+}
+
+/** The one die `after` has that `before` doesn't. */
+const addedDie = (before: DieType[], after: DieType[]): DieType => {
+  const left = [...before]
+  for (const t of after) {
+    const i = left.indexOf(t)
+    if (i < 0) return t
+    left.splice(i, 1)
+  }
+  return after[after.length - 1]!
+}
+
+export function diceSchedule(
+  s: Pick<Species, 'type1' | 'type2' | 'evolutions'>,
+  plan: DicePlan,
+): Pick<Species, 'dice' | 'rerolls' | 'milestones'> {
+  const milestones: Milestone[] = []
+  plan.adds.forEach((level, i) => {
+    const dieType = addedDie(diceForCount(plan.start + i, s.type1, s.type2), diceForCount(plan.start + i + 1, s.type1, s.type2))
+    milestones.push({ level, effect: 'ADD_DIE', dieType }, { level, effect: 'ADD_REROLL', amount: 1 })
+  })
+  if (s.evolutions.length) milestones.push({ level: Math.min(...s.evolutions.map((e) => e.level)), effect: 'EVOLVE' })
+  return { dice: groupDice(diceForCount(plan.start, s.type1, s.type2)), rerolls: plan.start, milestones }
+}
+
+/** Apply the dice schedule to every species (stages come from the evolution graph). */
+export function applyDiceSchedule(list: Species[], bstOf: (dex: number) => number): Species[] {
+  const parent = new Map<number, number>()
+  for (const s of list) for (const e of s.evolutions) parent.set(e.toDex, s.dex)
+  const byDex = new Map(list.map((s) => [s.dex, s]))
+  const stageOf = (dex: number): number => (parent.has(dex) ? 1 + stageOf(parent.get(dex)!) : 1)
+  const rootOf = (dex: number): number => (parent.has(dex) ? rootOf(parent.get(dex)!) : dex)
+  const depth = (dex: number): number => 1 + Math.max(0, ...(byDex.get(dex)?.evolutions ?? []).map((e) => depth(e.toDex)))
+  const legendary = new Set<number>(LEGENDARIES)
+  return list.map((s) => ({
+    ...s,
+    ...diceSchedule(s, dicePlan(s.dex, stageOf(s.dex), depth(rootOf(s.dex)), bstOf(s.dex), legendary.has(s.dex))),
+  }))
 }
 
 function evolutionLevel(details: ApiEvoDetail[]): { level: number; note: string } {
@@ -370,12 +454,14 @@ async function fetchSpecies(): Promise<Species[]> {
   }
   chains.forEach((c) => walk(c.chain))
 
-  return mons.map((mon, i) => {
+  const bstOf = new Map<number, number>()
+  const list = mons.map((mon, i) => {
     const sp = species[i]!
     const dex = mon.id
     const types = [...mon.types].sort((a, b) => a.slot - b.slot).map((t) => t.type.name as PokeType)
     const stat = (name: string) => mon.stats.find((s) => s.stat.name === name)?.base_stat ?? 0
     const bst = mon.stats.reduce((sum, s) => sum + s.base_stat, 0)
+    bstOf.set(mon.id, bst)
     const hpStat = stat('hp')
     const type1 = types[0]!
     const type2 = types[1] ?? null
@@ -396,10 +482,12 @@ async function fetchSpecies(): Promise<Species[]> {
       rerolls: diceCount,
       catchValue: catchValueFromRate(sp.capture_rate),
       evolutions: evos,
-      milestones: buildMilestones(type1, diceCount, evos, DEFAULT_CONFIG.maxDice),
+      milestones: [],
       notes,
     } satisfies Species
   })
+  // Dice, rerolls and milestones follow the evolution stage (see dicePlan).
+  return applyDiceSchedule(list, (dex) => bstOf.get(dex) ?? 0)
 }
 
 async function fetchTypeChart(): Promise<TypeChartRow[]> {

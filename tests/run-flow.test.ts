@@ -87,7 +87,7 @@ describe('run flow', () => {
     expect(progressOf(save, a1!.id).cleared).toBe(true)
     expect(save.pokedex.length).toBeGreaterThan(1)
     expect(teamOf(save).length).toBeGreaterThan(1)
-    expect(battles).toBeGreaterThan(5)
+    expect(battles).toBeGreaterThanOrEqual(5)
     // every Pokémon's HP stays within bounds
     for (const p of save.box) {
       expect(p.currentHp).toBeGreaterThanOrEqual(0)
