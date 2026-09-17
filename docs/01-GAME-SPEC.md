@@ -478,7 +478,7 @@ Validated with Zod on load; a failure falls back to a fresh save and archives th
 - Palette: parchment `#e8e0c8`, ink `#2a2438`, panel `#f7f2e0`, shadow `#6b6480`, gold `#e8b44a`, danger `#c2452d`, HP green `#4aa84a` → yellow `#e8c44a` → red `#c2452d`.
 - Panels: 3 px `#2a2438` border, 2 px inner light border, hard drop shadow, border-radius ≤ 2 px. Dialogue-box framing for all narration.
 - 18 type colours (standard Pokémon type colours darkened ~15 % to sit on parchment) drive dice, badges and particles. Base dice are off-white with grey pips; Normal-type dice are warm tan — visibly different at a glance.
-- **Art assets are generated, not sourced.** Five 1024×256 area banners are drawn programmatically in the GBC palette (original work, committed as PNGs in `public/banners/`). Trainers get a generic pixel silhouette badge tinted by their specialty type. Both are plain URL fields in admin, so real art can replace them at any time without a code change.
+- **Art assets are generated, not sourced.** Area banners are 118×16 pixel strips (`graphics/banners`, published to `public/banners/` by `pnpm art`); areas share scenes, and a `#flip` suffix on the URL mirrors one so it reads as a new place. Trainers get a generic pixel silhouette badge tinted by their specialty type. Both are plain URL fields in admin, so real art can replace them at any time without a code change.
 - Sprites: `image-rendering: pixelated`, 3× desktop / 2× mobile.
 - Animations: dice tumble-and-settle (CSS 3D, ~600 ms staggered), damage numbers punch and float, HP bars drain on an eased tween, type-coloured particle burst on hit, screen shake scaled by effectiveness, white flash on K.O.
 - `prefers-reduced-motion` and the in-game setting collapse everything to instant transitions.

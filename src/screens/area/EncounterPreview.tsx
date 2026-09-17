@@ -9,8 +9,9 @@ import { DiceSet } from '@/components/DiceSet'
 import { PixelIcon } from '@/components/icons'
 import { LeadPicker, defaultLead } from '@/components/LeadPicker'
 import { PixelButton } from '@/components/PixelButton'
-import { SpriteImg } from '@/components/SpriteImg'
+import { MiniSprite, SpriteImg } from '@/components/SpriteImg'
 import { StatChip } from '@/components/StatChip'
+import { TrainerSprite } from '@/components/TrainerArt'
 import { TypeBadge } from '@/components/TypeBadge'
 import { useGame } from '@/store/game'
 import { canSkipCurrent, declineChallenge, engage, skipEncounter } from '@/store/run'
@@ -29,12 +30,17 @@ function WildCard({ enc }: { enc: Extract<Encounter, { kind: 'wild' | 'boss' }> 
         animate={{ scale: 1, opacity: 1 }}
         className={cx('shrink-0', boss ? 'border-[3px] border-gold bg-ink' : 'border-[3px] border-ink bg-parchment')}
       >
-        <SpriteImg dex={enc.dex} size={desktop ? 144 : 104} />
+        <SpriteImg dex={enc.dex} size={desktop ? 144 : 104} shiny={enc.kind === 'wild' && enc.shiny} />
       </motion.div>
       <div className="flex min-w-0 flex-col gap-1">
         {boss && <div className="text-lg leading-none tracking-[0.35em] text-gold">LEGENDARY</div>}
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
           <span className="text-3xl leading-none sm:text-4xl">{sp.name}</span>
+          {enc.kind === 'wild' && enc.shiny && (
+            <span className="inline-flex items-center gap-1 border-2 border-ink bg-panel px-1.5 text-lg leading-tight text-ink">
+              <PixelIcon name="star" size={14} /> SHINY
+            </span>
+          )}
           {enc.kind === 'wild' &&
             (enc.isNew ? (
               <span className="border-2 border-ink bg-gold px-1.5 text-lg leading-tight text-ink">NEW!</span>
@@ -96,31 +102,42 @@ function ItemCard({ enc }: { enc: Extract<Encounter, { kind: 'item' }> }) {
   )
 }
 
+/** The trainer steps in from the side of the pop-up. */
+function TrainerIntro({ src, size }: { src: string | null | undefined; size: number }) {
+  return (
+    <motion.div
+      className="-my-2 shrink-0 self-end"
+      initial={{ x: -48, opacity: 0 }}
+      animate={{ x: 0, opacity: 1 }}
+      transition={{ type: 'spring', stiffness: 420, damping: 26 }}
+    >
+      <TrainerSprite src={src} size={size} />
+    </motion.div>
+  )
+}
+
 function TrainerCard({ enc }: { enc: Extract<Encounter, { kind: 'trainer' }> }) {
   const data = useGame((s) => s.data)
   const desktop = useIsDesktop()
   return (
     <div className="flex items-center gap-3">
-      <img
-        src={enc.spriteUrl ?? '/trainers/default.png'}
-        alt=""
-        width={desktop ? 112 : 80}
-        height={desktop ? 112 : 80}
-        className="pixelated shrink-0 border-[3px] border-ink bg-parchment"
-        style={{ imageRendering: 'pixelated' }}
-      />
+      <TrainerIntro src={enc.spriteUrl} size={desktop ? 192 : 128} />
       <div className="flex min-w-0 flex-col gap-1">
         <div className="text-3xl leading-none sm:text-4xl">{enc.name}</div>
         <div className="text-xl leading-tight text-muted">wants to battle! ({enc.team.length} Pokémon)</div>
         <div className="flex flex-wrap gap-1.5">
           {enc.team.map((m, i) => (
             <div key={i} className="flex flex-col items-center border-2 border-ink bg-panel px-1 py-0.5">
-              <SpriteImg dex={m.dex} size={36} silhouette />
+              <MiniSprite dex={m.dex} size={36} silhouette />
               <span className="text-base leading-none">Lv.{m.level}</span>
             </div>
           ))}
         </div>
-        <div className="text-base leading-tight text-muted">Pays Pokédollars for every Pokémon you defeat. No running once the battle starts.</div>
+        <div className="text-base leading-tight text-muted">
+          Pays Pokédollars for every Pokémon you defeat.
+          {/* Only worth saying when wild battles can be fled. */}
+          {!data.config.noEscape && ' No running once the battle starts.'}
+        </div>
         <div className="sr-only">{enc.team.map((m) => data.species[m.dex]?.name).join(', ')}</div>
       </div>
     </div>
@@ -140,14 +157,7 @@ function GymCard({ enc }: { enc: Extract<Encounter, { kind: 'gym' }> }) {
     <div className="flex flex-col gap-2">
       <div className="text-center text-xl tracking-[0.35em] text-gold">{title}</div>
       <div className="flex items-center gap-3">
-        <img
-          src={enc.spriteUrl ?? '/trainers/default.png'}
-          alt=""
-          width={desktop ? 112 : 80}
-          height={desktop ? 112 : 80}
-          className="pixelated shrink-0 border-[3px] border-gold bg-panel"
-          style={{ imageRendering: 'pixelated' }}
-        />
+        <TrainerIntro src={enc.spriteUrl} size={desktop ? 192 : 128} />
         <div className="flex min-w-0 flex-col gap-1">
           <div className="text-3xl leading-none sm:text-4xl">{enc.role === 'leader' ? `Gym Leader ${enc.name}` : enc.name}</div>
           {enc.badge && (
@@ -160,7 +170,7 @@ function GymCard({ enc }: { enc: Extract<Encounter, { kind: 'gym' }> }) {
       <div className="flex flex-wrap gap-2">
         {enc.team.map((m, i) => (
           <div key={i} className="flex items-center gap-1 border-2 border-gold bg-panel px-1.5 py-0.5 text-ink">
-            <SpriteImg dex={m.dex} size={40} />
+            <MiniSprite dex={m.dex} size={40} />
             <span className="text-base leading-tight">
               {data.species[m.dex]?.name}
               <br />
@@ -170,7 +180,7 @@ function GymCard({ enc }: { enc: Extract<Encounter, { kind: 'gym' }> }) {
         ))}
       </div>
       <div className="text-base leading-tight">
-        No running once it starts · pays ×{data.config.gymGoldMultiplier} Pokédollars · switch freely between their Pokémon
+        {data.config.noEscape ? 'Pays' : 'No running once it starts · pays'} ×{data.config.gymGoldMultiplier} Pokédollars · switch freely between their Pokémon
       </div>
     </div>
   )

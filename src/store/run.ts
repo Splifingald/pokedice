@@ -36,6 +36,7 @@ import {
   type BattleEvent,
   type BattleKind,
   type ForceKind,
+  type PlayerProfile,
   type RunEvent,
   type SaveData,
 } from '@/engine'
@@ -58,9 +59,9 @@ export function seedRun(seed: number) {
 
 const setRun = (patch: Partial<RunState>) => useGame.setState((s) => ({ run: { ...s.run, ...patch } }))
 
-export function startNewGame(starterDex: number) {
+export function startNewGame(starterDex: number, player?: PlayerProfile) {
   const { data } = useGame.getState()
-  commitSave(newSave(starterDex, data, Date.now(), newId))
+  commitSave(newSave(starterDex, data, Date.now(), newId, player))
   useGame.setState({ run: initialRun(), battle: null })
 }
 
@@ -141,12 +142,12 @@ export function skipEncounter() {
   pushToast(trainer ? 'You slipped past the trainer.' : 'Got away safely!')
 }
 
-function startBattle(kind: BattleKind, enemy: { dex: number; level: number }, leadUid?: string) {
+function startBattle(kind: BattleKind, enemy: { dex: number; level: number; shiny?: boolean }, leadUid?: string) {
   const { save, data, run } = useGame.getState()
   if (!save) return
   const area = data.areas.find((a) => a.id === run.areaId)
   const upgradeLevel = run.encounter ? enemyUpgradeLevelFor(run.encounter, area, data) : (area?.enemyUpgradeLevel ?? data.config.enemyUpgradeLevel)
-  const team = teamOf(save).map((p) => ({ uid: p.id, dex: p.dex, level: p.level, hp: p.currentHp }))
+  const team = teamOf(save).map((p) => ({ uid: p.id, dex: p.dex, level: p.level, hp: p.currentHp, shiny: p.shiny }))
   battleRng = createRng(randomSeed() ^ battleRng.getState())
   const { state, log } = createBattle(
     {
@@ -179,7 +180,7 @@ export function engage(leadUid?: string) {
       setRun({ phase: 'center' })
       return
     case 'wild':
-      return startBattle('wild', { dex: enc.dex, level: enc.level }, leadUid)
+      return startBattle('wild', { dex: enc.dex, level: enc.level, shiny: enc.shiny }, leadUid)
     case 'boss':
       return startBattle('boss', { dex: enc.dex, level: enc.level }, leadUid)
     case 'trainer':
@@ -250,7 +251,7 @@ function settleBattle(stalemate: boolean) {
       phase: target ? 'catch' : 'victory',
       events: res.events,
       pendingCatchId: null,
-      catch: target && kind ? { dex: s.enemy.dex, level: s.enemy.level, kind, target, result: null } : null,
+      catch: target && kind ? { dex: s.enemy.dex, level: s.enemy.level, shiny: s.enemy.shiny, kind, target, result: null } : null,
       trainer: run.trainer ? { ...run.trainer, gold: run.trainer.gold + gold } : null,
     })
     return
@@ -284,7 +285,7 @@ export function throwBall(ballKey: string | null) {
   let events: RunEvent[] = [{ kind: 'fled', dex: c.dex }]
   let pendingCatchId: string | null = null
   if (roll.caught) {
-    const res = applyCatch(next, { dex: c.dex, level: c.level }, c.target, data, Date.now(), newId)
+    const res = applyCatch(next, { dex: c.dex, level: c.level, shiny: c.shiny }, c.target, data, Date.now(), newId)
     next = res.save
     events = res.events
     if (res.needsTeamChoice) pendingCatchId = res.caughtId

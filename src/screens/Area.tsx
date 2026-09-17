@@ -22,7 +22,7 @@ import { PixelIcon, type IconName } from '@/components/icons'
 import { ItemPanel } from '@/components/ItemPanel'
 import { PixelButton } from '@/components/PixelButton'
 import { SheetModal, type SheetView } from '@/components/SheetModal'
-import { preloadSprites, SpriteImg } from '@/components/SpriteImg'
+import { MiniSprite, preloadSprites } from '@/components/SpriteImg'
 import { trainerTitle } from '@/lib/format'
 import { useGame } from '@/store/game'
 import { challenge, enterArea, leaveArea, rollNext } from '@/store/run'
@@ -30,6 +30,7 @@ import { cx } from '@/theme/util'
 import { BattleView } from './battle/BattleView'
 import { CenterView } from './area/CenterView'
 import { EncounterPreview } from './area/EncounterPreview'
+import { AreaBanner } from '@/components/AreaBanner'
 
 const CARD_ICON: Record<DeckCard, IconName> = { wild: 'ball', trainer: 'vs', center: 'heart', item: 'box', legend: 'masterball' }
 const CARD_NAME: Record<DeckCard, string> = {
@@ -155,12 +156,7 @@ function AreaHeader({ area, progress, teamAvg }: { area: Area; progress: AreaPro
       {/* The encounter types sit on the banner's top right corner. */}
       <div className="relative">
         {area.bannerUrl && (
-          <img
-            src={area.bannerUrl}
-            alt=""
-            className="pixelated block h-14 w-full object-cover sm:h-20"
-            style={{ imageRendering: 'pixelated' }}
-          />
+          <AreaBanner url={area.bannerUrl} className="h-14 sm:h-24" />
         )}
         <AreaTypes area={area} className={area.bannerUrl ? 'absolute left-2 right-2 top-2' : 'px-3 pt-2'} />
       </div>
@@ -212,9 +208,15 @@ function TeamStrip({ onOpen }: { onOpen: (p: PokemonInstance) => void }) {
                 onClick={() => onOpen(p)}
                 className={cx('pixel-panel flex w-full flex-col items-center gap-1 p-1.5 hover:bg-white', fainted && 'hatched')}
               >
-                <SpriteImg dex={p.dex} size={48} className={fainted ? 'grayscale' : ''} />
-                <span className="w-full truncate text-center text-lg leading-none">{data.species[p.dex]?.name}</span>
-                <span className="text-base leading-none">Lv.{p.level}</span>
+                {/* Sprite (nudged up — party icons sit low in their box) and name, level on the right; the level
+                    only wraps under them when a narrow card has no room for it. */}
+                <span className="flex w-full min-w-0 flex-wrap items-center gap-x-1 gap-y-0.5">
+                  <span className="flex min-w-0 items-center gap-0.5">
+                    <MiniSprite dex={p.dex} size={36} className={cx('relative -top-[3px] -my-2', fainted && 'grayscale')} />
+                    <span className="min-w-0 truncate text-left text-lg leading-none">{data.species[p.dex]?.name}</span>
+                  </span>
+                  <span className="ml-auto shrink-0 pr-0.5 text-base leading-none">Lv.{p.level}</span>
+                </span>
                 <HpBar hp={p.currentHp} max={instanceMaxHp(p, data)} height={6} className="w-full" collapsible />
               </button>
             </li>

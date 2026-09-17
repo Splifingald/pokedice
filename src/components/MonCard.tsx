@@ -5,7 +5,7 @@ import { cx } from '@/theme/util'
 import { DiceSet } from './DiceSet'
 import { HpBar } from './HpBar'
 import { PixelIcon } from './icons'
-import { SpriteImg } from './SpriteImg'
+import { MiniSprite } from './SpriteImg'
 import { TypeBadge } from './TypeBadge'
 
 export function XpBar({ inst, className }: { inst: PokemonInstance; className?: string }) {
@@ -65,17 +65,24 @@ export function MonCard({
   )
   const body = (
     <>
-      <SpriteImg dex={inst.dex} size={56} silhouette={false} className={fainted ? 'grayscale' : ''} />
       <div className="min-w-0 flex-1">
-        <div className="flex items-baseline justify-between gap-2">
-          <span className="truncate text-xl leading-none">{species.name}</span>
+        {/* Types follow the name when they fit, else wrap under it — always in the column right of the sprite. */}
+        <div className="flex items-start gap-2">
+          {/* Party icons sit low in their box: pull it up so the creature lines up with the name. */}
+          <MiniSprite dex={inst.dex} size={40} className={cx('-mb-2 -ml-1 -mt-4 shrink-0', fainted && 'grayscale')} />
+          <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1">
+            <span className="flex min-w-0 items-center gap-1">
+              <span className="truncate text-xl leading-none">{species.name}</span>
+              {inst.shiny && <PixelIcon name="star" size={12} title="Shiny" className="shrink-0" />}
+            </span>
+            <span className="flex flex-wrap items-center gap-1">
+              <TypeBadge type={species.type1} size="sm" />
+              {species.type2 && <TypeBadge type={species.type2} size="sm" />}
+              {fainted && <span className="text-sm text-danger">FAINTED</span>}
+              {badge}
+            </span>
+          </div>
           <span className="shrink-0 text-lg leading-none">Lv.{inst.level}</span>
-        </div>
-        <div className="mt-1 flex items-center gap-1">
-          <TypeBadge type={species.type1} size="sm" />
-          {species.type2 && <TypeBadge type={species.type2} size="sm" />}
-          {fainted && <span className="text-sm text-danger">FAINTED</span>}
-          {badge}
         </div>
         <HpBar hp={inst.currentHp} max={stats.maxHp} className="mt-1" height={8} />
         {showXp && <XpBar inst={inst} className="mt-1" />}

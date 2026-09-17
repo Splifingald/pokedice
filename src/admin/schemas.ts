@@ -1,9 +1,10 @@
 // Zod row schemas for every config table (snake_case, as stored). Errors are shown in the cell; saving is blocked.
 import { z } from 'zod'
 import type { Row, TableName } from '@/config/mapping'
-import { COMBO_KEYS, POKE_TYPES, STATUS_KINDS } from '@/engine/types'
+import { BATTLE_BACKGROUNDS, COMBO_KEYS, POKE_TYPES, STATUS_KINDS } from '@/engine/types'
 
 const pokeType = z.enum(POKE_TYPES)
+const background = z.enum(BATTLE_BACKGROUNDS)
 const dieType = z.enum(['base', ...POKE_TYPES] as [string, ...string[]])
 const int = (min = Number.MIN_SAFE_INTEGER, max = Number.MAX_SAFE_INTEGER) =>
   z.number({ invalid_type_error: 'must be a number' }).int('must be a whole number').min(min).max(max)
@@ -82,12 +83,14 @@ export const ROW_SCHEMAS: Record<TableName, z.ZodTypeAny> = {
     }),
     backtrack_multiplier: z.number().min(0).max(1),
     legendary_boss: z
-      .array(z.object({ dex: int(1), level: int(1, 100), teamAvgThreshold: z.number().optional(), upgradeLevel: int(1, 10).nullable().optional() }))
+      .array(z.object({ dex: int(1), level: int(1, 100), teamAvgThreshold: z.number().optional(), upgradeLevel: int(1, 10).nullable().optional(), battleBackground: background.nullable().optional() }))
       .nullable(),
     scales_to_team: z.boolean(),
     // Optional so a database created before migration 0002 still loads.
     easy_mode: z.boolean().optional(),
     enemy_upgrade_level: int(1, 10).nullable().optional(),
+    // Optional so a database created before migration 0005 still loads.
+    battle_background: background.nullable().optional(),
     hidden: z.boolean(),
     unlock_conditions: z
       .array(
@@ -110,6 +113,7 @@ export const ROW_SCHEMAS: Record<TableName, z.ZodTypeAny> = {
     role: z.enum(['trainer', 'leader', 'elite', 'champion']),
     badge: z.string().nullable(),
     upgrade_level: int(1, 10).nullable().optional(),
+    battle_background: background.nullable().optional(),
   }),
   area_trainer_pool: z.object({ id: uuid, area_id: uuid, trainer_id: uuid, weight: int(0) }),
   area_loot_pool: z

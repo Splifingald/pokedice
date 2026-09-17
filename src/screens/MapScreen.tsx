@@ -15,11 +15,12 @@ import { BadgeIcon } from '@/components/BadgeIcon'
 import { Gauge } from '@/components/Gauge'
 import { PixelIcon } from '@/components/icons'
 import { PixelButton } from '@/components/PixelButton'
-import { SpriteImg } from '@/components/SpriteImg'
+import { MiniSprite } from '@/components/SpriteImg'
 import { TypeBadge } from '@/components/TypeBadge'
 import { useGame } from '@/store/game'
 import { enterArea } from '@/store/run'
 import { cx } from '@/theme/util'
+import { AreaBanner } from '@/components/AreaBanner'
 
 /** How many areas of the main chain the map shows by default, from the one you're working on. */
 const WINDOW = 3
@@ -76,12 +77,7 @@ function AreaCard({ area, index, prevName, delay = 0 }: { area: Area; index: num
     >
       <div className="relative">
         {area.bannerUrl && (
-          <img
-            src={area.bannerUrl}
-            alt=""
-            className={cx('pixelated block h-20 w-full object-cover sm:h-28', !unlocked && 'opacity-40')}
-            style={{ imageRendering: 'pixelated' }}
-          />
+          <AreaBanner url={area.bannerUrl} className={cx('h-20 sm:h-28', !unlocked && 'opacity-40')} />
         )}
         <span className="absolute left-2 top-2 border-2 border-ink bg-panel px-2 text-xl leading-tight">{index}</span>
         <AreaTypes area={area} className={area.bannerUrl ? 'absolute left-12 right-2 top-2' : 'p-2 pl-12'} />
@@ -128,7 +124,7 @@ function AreaCard({ area, index, prevName, delay = 0 }: { area: Area; index: num
                 const beaten = p.bossesDefeated.includes(b.dex)
                 return (
                   <span key={b.dex} className="flex items-center gap-1 text-base" title={beaten ? data.species[b.dex]?.name : 'A legendary awaits'}>
-                    <SpriteImg dex={b.dex} size={36} silhouette={!beaten} />
+                    <MiniSprite dex={b.dex} size={36} silhouette={!beaten} />
                     {beaten ? data.species[b.dex]?.name : 'Legendary'}
                   </span>
                 )
@@ -177,12 +173,7 @@ function SecretCard({ area }: { area: Area }) {
     <li className="pixel-panel-dark overflow-hidden p-0">
       <div className="relative h-20 overflow-hidden sm:h-28">
         {area.bannerUrl && (
-          <img
-            src={area.bannerUrl}
-            alt=""
-            className="pixelated block h-full w-full object-cover opacity-25 blur-[1px] grayscale"
-            style={{ imageRendering: 'pixelated' }}
-          />
+          <AreaBanner url={area.bannerUrl} className="h-full opacity-25 blur-[1px] grayscale" />
         )}
         <div className="absolute inset-0 flex items-center justify-center text-5xl text-gold">???</div>
       </div>

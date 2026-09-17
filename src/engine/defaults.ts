@@ -33,6 +33,7 @@ export const DEFAULT_CONFIG: GameConfig = {
   xpMultiplier: 1,
   showRoundGauge: true,
   showRoundPreview: false,
+  shinyChance: 0.01,
   status: {
     burn: { threshold: 1, damagePerStack: 1, duration: 3 },
     poison: { threshold: 2, damage: 3, duration: 3 },

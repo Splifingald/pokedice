@@ -12,6 +12,7 @@ import {
   type ComboKey,
   type GameData,
   type PokeType,
+  type PlayerProfile,
   type PokemonInstance,
   type DeckCard,
   type SaveData,
@@ -27,7 +28,7 @@ export const emptyProgress = (): AreaProgress => ({
   gymsDefeated: [],
 })
 
-export function newSave(starterDex: number, data: GameData, now: number, newId: () => string): SaveData {
+export function newSave(starterDex: number, data: GameData, now: number, newId: () => string, player?: PlayerProfile): SaveData {
   const inst = createInstance(starterDex, data.config.starterLevel, data, newId(), now)
   const comboLevels = Object.fromEntries(COMBO_KEYS.map((k) => [k, 1])) as Record<ComboKey, number>
   const dieLevels = Object.fromEntries(POKE_TYPES.map((t) => [t, 1])) as Record<PokeType, number>
@@ -46,6 +47,7 @@ export function newSave(starterDex: number, data: GameData, now: number, newId: 
     areaProgress: {},
     settings: { sfx: false, reducedMotion: false, multiExp: true },
     hpScale: data.config.hpMultiplier,
+    ...(player ? { player } : {}),
   }
 }
 

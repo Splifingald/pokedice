@@ -8,6 +8,7 @@ export function HpBar({
   className,
   height = 10,
   collapsible = false,
+  approximate = false,
 }: {
   hp: number
   max: number
@@ -19,6 +20,8 @@ export function HpBar({
    * with a set width (it uses a CSS container query, which can't size itself to its content).
    */
   collapsible?: boolean
+  /** A foe's bar: screen readers get "high / half / low", never the exact HP. */
+  approximate?: boolean
 }) {
   const pct = max > 0 ? Math.max(0, Math.min(1, hp / max)) : 0
   const collapse = collapsible && showNumbers
@@ -30,8 +33,9 @@ export function HpBar({
         style={{ height, borderRadius: 2 }}
         role="meter"
         aria-valuemin={0}
-        aria-valuemax={max}
-        aria-valuenow={hp}
+        aria-valuemax={approximate ? 100 : max}
+        aria-valuenow={approximate ? Math.ceil(pct * 4) * 25 : hp}
+        aria-valuetext={approximate ? (pct > 0.5 ? 'high' : pct > 0.2 ? 'half' : pct > 0 ? 'low' : 'none') : undefined}
         aria-label="HP"
       >
         <div

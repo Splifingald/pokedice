@@ -3,7 +3,7 @@
 import { createInstance, instanceMaxHp } from './progression'
 import type { Rng } from './rng'
 import { getInstance, unlockedHiddenAreas, type RunEvent } from './run'
-import type { GameData, SaveData } from './types'
+import type { GameData, PokemonInstance, SaveData } from './types'
 
 export const CATCH_DIE = 6
 
@@ -55,7 +55,7 @@ export interface CatchResult {
 /** Keep the catch: a new Pokémon joins the team (or waits in the Box); a stronger copy replaces the weaker one in place. */
 export function applyCatch(
   save: SaveData,
-  caught: { dex: number; level: number },
+  caught: { dex: number; level: number; shiny?: boolean },
   target: CatchTarget,
   data: GameData,
   now: number,
@@ -68,13 +68,16 @@ export function applyCatch(
   let needsTeamChoice = false
   const old = target.mode === 'replace' ? getInstance(save, target.uid) : undefined
   if (old) {
-    const upgraded = { ...old, level: caught.level, xp: 0, regenCarry: 0, caughtAt: now }
+    // The stronger copy is the one just caught, colours included.
+    const { shiny: _oldShiny, ...rest } = old
+    const upgraded: PokemonInstance = { ...rest, level: caught.level, xp: 0, regenCarry: 0, caughtAt: now, ...(caught.shiny && { shiny: true }) }
     upgraded.currentHp = instanceMaxHp(upgraded, data)
     next = { ...save, box: save.box.map((p) => (p.id === old.id ? upgraded : p)) }
     caughtId = old.id
     events.push({ kind: 'caught', uid: old.id, dex: caught.dex, level: caught.level, joinedTeam: save.team.includes(old.id), replacedLevel: old.level })
   } else {
     const inst = createInstance(caught.dex, caught.level, data, newId(), now)
+    if (caught.shiny) inst.shiny = true
     const joined = save.team.length < data.config.maxTeamSize
     next = {
       ...save,

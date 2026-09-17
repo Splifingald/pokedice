@@ -162,6 +162,7 @@ export function ConfigSection() {
   const [xpMult, setXpMult] = useConfigRow('xpMultiplier')
   const [showRound, setShowRound] = useConfigRow('showRoundGauge')
   const [showAhead, setShowAhead] = useConfigRow('showRoundPreview')
+  const [shiny, setShiny] = useConfigRow('shinyChance')
   const [fph, setFph] = useState(80)
   const curve = useMemo(() => ({ ...DEFAULT_CONFIG.xpCurve, ...xpCurve }), [xpCurve])
 
@@ -200,6 +201,9 @@ export function ConfigSection() {
             </Field>
             <Field label="scaleLevelSpread" hint="areas that scale to the team: its average ± this">
               <NumInput value={spread} onChange={(v) => setSpread(v ?? 3)} />
+            </Field>
+            <Field label="shinyChance" hint={`chance a wild Pokémon is shiny (only its sprites change) · 0.01 = 1 in 100${Number(shiny) > 0 ? ` · now 1 in ${Math.round(1 / Number(shiny))}` : ' · now off'}`}>
+              <NumInput step={0.005} value={shiny} min={0} max={1} onChange={(v) => setShiny(Math.max(0, Math.min(1, v ?? 0)))} />
             </Field>
             <label className="flex items-center gap-2 text-lg" title="Players can't FLEE / AVOID an encounter or RUN from a battle (overrides skipPolicy)">
               <input type="checkbox" checked={!!noEscape} onChange={(e) => setNoEscape(e.target.checked)} /> noEscape

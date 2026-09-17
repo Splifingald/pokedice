@@ -17,6 +17,7 @@ import {
   DIE_TYPES,
   POKE_TYPES,
   type Area,
+  type BattleBackground,
   type ComboKey,
   type ComboUpgradeRow,
   type DiceEntry,
@@ -34,15 +35,45 @@ import {
   type TypeChartRow,
 } from '../src/engine/types'
 import { AREAS, LEGENDARIES, lootPlanFor, RARE_IN_CATCH_ALL, STARTERS, type Mon } from './content'
+import { trainerSprite } from './trainer-sprites'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const CACHE_DIR = path.join(ROOT, 'scripts', '.cache')
 const DATA_DIR = path.join(ROOT, 'src', 'data')
 const SQL_FILE = path.join(ROOT, 'supabase', 'seed.sql')
 const API = 'https://pokeapi.co/api/v2'
-const SPRITE = (dex: number) => `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${dex}.png`
+const SPRITE = (dex: number) => `/pokemon/${String(dex).padStart(3, '0')}_front.png`
 const ITEM_SPRITE = (key: string) => `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/${key}.png`
 const KANTO = 151
+
+/** Battle scene per area: grass on routes and forests, sea on sea routes, water on lakes, rock in caves, default indoors. */
+const AREA_BACKGROUNDS: Record<string, BattleBackground> = {
+  'Route 1': 'grass',
+  'Routes 22 & 2': 'grass',
+  'Viridian Forest': 'grass',
+  'Route 3': 'grass',
+  'Mt. Moon': 'rock',
+  'Route 4 & Nugget Bridge': 'grass',
+  'Routes 5 & 6': 'grass',
+  "Diglett's Cave & Route 11": 'rock',
+  'Routes 9 & 10': 'grass',
+  'Rock Tunnel': 'rock',
+  'Routes 7 & 8': 'grass',
+  'Pokémon Tower': 'default',
+  'Routes 12–15': 'grass',
+  'Cycling Road': 'grass',
+  'Safari Zone': 'grass',
+  'Silph Co.': 'default',
+  'Sea Routes 19 & 20': 'sea',
+  'Seafoam Islands': 'water',
+  'Pokémon Mansion': 'default',
+  'Route 21': 'sea',
+  'Victory Road': 'rock',
+  'Indigo Plateau': 'default',
+  'Power Plant': 'default',
+  'Cerulean Cave': 'rock',
+  'Faraway Island': 'grass',
+}
 
 // ---------------------------------------------------------------- PokeAPI access (cached)
 
@@ -544,11 +575,6 @@ function buildAreasAndTrainers(pokemon: Species[]): { areas: Area[]; trainers: T
       const s = byDex.get(dex)!
       return s.type2 ? [s.type1, s.type2] : [s.type1]
     }
-    const specialtyOf = (team: Mon[]): PokeType => {
-      const c = new Map<PokeType, number>()
-      for (const [dex] of team) typesOf(dex).forEach((t, k) => c.set(t, (c.get(t) ?? 0) + (k === 0 ? 1 : 0.5)))
-      return [...c].sort((a, b) => b[1] - a[1])[0]![0]
-    }
     const checkTeam = (who: string, team: Mon[]) => {
       if (!team.length || team.length > 3) throw new Error(`${plan.name} / ${who}: teams have 1–3 Pokémon`)
       for (const [dex, level] of team) {
@@ -587,11 +613,12 @@ function buildAreasAndTrainers(pokemon: Species[]): { areas: Area[]; trainers: T
       trainers.push({
         id: trainerId,
         name: tp.name,
-        spriteUrl: `/trainers/${tp.specialty ?? specialtyOf(team)}.png`,
+        spriteUrl: trainerSprite(tp.name),
         team: team.map(([dex, level]) => ({ dex, level })),
         role: 'trainer',
         badge: null,
         upgradeLevel: null,
+        battleBackground: null,
       })
       return { id: stableUuid(`trainerpool:${plan.key}:${i}:${tp.name}`), trainerId, weight: 10 }
     })
@@ -603,11 +630,13 @@ function buildAreasAndTrainers(pokemon: Species[]): { areas: Area[]; trainers: T
       trainers.push({
         id,
         name: g.name,
-        spriteUrl: `/trainers/leader-${g.specialty}.png`,
+        spriteUrl: trainerSprite(g.name, g.role),
         team: g.team.map(([dex, level]) => ({ dex, level })),
         role: g.role,
         badge: g.badge ?? null,
         upgradeLevel: null,
+        // Gyms, the Elite Four and the Champion fight indoors.
+        battleBackground: 'default',
       })
       return id
     })
@@ -622,7 +651,7 @@ function buildAreasAndTrainers(pokemon: Species[]): { areas: Area[]; trainers: T
       id: areaId,
       orderIndex: plan.orderIndex,
       name: plan.name,
-      bannerUrl: `/banners/${plan.key}.png`,
+      bannerUrl: `/banners/${plan.banner.scene}.png${plan.banner.flip ? '#flip' : ''}`,
       xpToUnlockNext: plan.xpToUnlockNext,
       minLevel: plan.minLevel,
       maxLevel: plan.maxLevel,
@@ -632,6 +661,7 @@ function buildAreasAndTrainers(pokemon: Species[]): { areas: Area[]; trainers: T
       scalesToTeam: plan.scalesToTeam,
       easyMode: !!plan.easyMode,
       enemyUpgradeLevel: null, // set below, once every area is known
+      battleBackground: AREA_BACKGROUNDS[plan.name] ?? 'default',
       hidden: !!plan.hidden,
       unlockConditions: plan.conditions ?? null,
       gyms,
@@ -760,6 +790,7 @@ export function buildSql(b: {
         'scales_to_team',
         'easy_mode',
         'enemy_upgrade_level',
+        'battle_background',
         'hidden',
         'unlock_conditions',
         'gyms',
@@ -778,6 +809,7 @@ export function buildSql(b: {
         a.scalesToTeam,
         a.easyMode,
         a.enemyUpgradeLevel,
+        a.battleBackground,
         a.hidden,
         a.unlockConditions,
         a.gyms,
@@ -786,8 +818,8 @@ export function buildSql(b: {
     ),
     upsert(
       'trainers',
-      ['id', 'name', 'sprite_url', 'team', 'role', 'badge', 'upgrade_level'],
-      b.trainers.map((t) => [t.id, t.name, t.spriteUrl, t.team, t.role, t.badge, t.upgradeLevel]),
+      ['id', 'name', 'sprite_url', 'team', 'role', 'badge', 'upgrade_level', 'battle_background'],
+      b.trainers.map((t) => [t.id, t.name, t.spriteUrl, t.team, t.role, t.badge, t.upgradeLevel, t.battleBackground]),
       ['id'],
     ),
     upsert(

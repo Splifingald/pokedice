@@ -3,7 +3,7 @@ import { PixelButton } from '@/components/PixelButton'
 import { SearchSelect } from '@/components/SearchSelect'
 import { SpriteImg } from '@/components/SpriteImg'
 import { TypeBadge, TypeSwatch } from '@/components/TypeBadge'
-import { DIE_TYPES, POKE_TYPES, type DieType, type GameData, type Species } from '@/engine'
+import { BATTLE_BACKGROUNDS, DIE_TYPES, POKE_TYPES, type BattleBackground, type DieType, type GameData, type Species } from '@/engine'
 import { dexNo } from '@/lib/format'
 import { cx } from '@/theme/util'
 
@@ -89,6 +89,37 @@ export function Field({ label, hint, children, className }: { label: string; hin
       {children}
       {hint && <span className="text-sm text-muted">{hint}</span>}
     </label>
+  )
+}
+
+/** Battle scene picker with a thumbnail; `emptyLabel` names what an empty choice falls back to. */
+export function BackgroundPicker({
+  value,
+  onChange,
+  emptyLabel,
+}: {
+  value: BattleBackground | null | undefined
+  onChange: (v: BattleBackground | null) => void
+  emptyLabel: string
+}) {
+  return (
+    <div className="flex items-center gap-2">
+      <select
+        className={cx(inputCls, 'w-auto')}
+        value={value ?? ''}
+        onChange={(e) => onChange((e.target.value || null) as BattleBackground | null)}
+      >
+        <option value="">{emptyLabel}</option>
+        {BATTLE_BACKGROUNDS.map((b) => (
+          <option key={b} value={b}>
+            {b}
+          </option>
+        ))}
+      </select>
+      {value && (
+        <img src={`/battle/${value}.png`} alt="" width={96} height={45} className="border-2 border-ink" style={{ imageRendering: 'pixelated' }} />
+      )}
+    </div>
   )
 }
 

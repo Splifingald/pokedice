@@ -4,6 +4,7 @@ import type { Rng } from './rng'
 import type {
   Area,
   AreaProgress,
+  BattleBackground,
   BossDef,
   DeckCard,
   EncounterKind,
@@ -15,7 +16,7 @@ import type {
 } from './types'
 
 export type Encounter =
-  | { kind: 'wild'; dex: number; level: number; isNew: boolean }
+  | { kind: 'wild'; dex: number; level: number; isNew: boolean; shiny?: boolean }
   | { kind: 'trainer'; trainerId: string; name: string; spriteUrl: string | null; team: TrainerMon[] }
   | {
       kind: 'gym'
@@ -115,7 +116,9 @@ export function rollWild(ctx: EncounterContext, rng: Rng): Encounter | null {
   const entry = rng.weighted(ctx.area.wildPool, (w) => (ctx.data.species[w.dex] ? w.weight : 0))
   if (!entry) return null
   const level = enemyLevel(rng.int(entry.minLevel, Math.max(entry.minLevel, entry.maxLevel)), ctx, rng)
-  return { kind: 'wild', dex: entry.dex, level, isNew: !ctx.pokedex.includes(entry.dex) }
+  const chance = ctx.data.config.shinyChance ?? 0
+  const shiny = chance > 0 && rng.next() < chance
+  return { kind: 'wild', dex: entry.dex, level, isNew: !ctx.pokedex.includes(entry.dex), ...(shiny && { shiny }) }
 }
 
 export function rollTrainer(ctx: EncounterContext, rng: Rng): Encounter | null {
@@ -361,4 +364,12 @@ export function enemyUpgradeLevelFor(enc: Encounter, area: Area | undefined, dat
   if (enc.kind === 'trainer' || enc.kind === 'gym') own = data.trainers[enc.trainerId]?.upgradeLevel
   else if (enc.kind === 'boss') own = area?.legendaryBoss?.find((b) => b.dex === enc.dex)?.upgradeLevel
   return own ?? area?.enemyUpgradeLevel ?? data.config.enemyUpgradeLevel
+}
+
+/** Battle scene: the trainer's or legendary's own, else the area's, else the plain indoor one. */
+export function battleBackgroundFor(enc: Encounter | null, area: Area | undefined, data: GameData): BattleBackground {
+  let own: BattleBackground | null | undefined
+  if (enc?.kind === 'trainer' || enc?.kind === 'gym') own = data.trainers[enc.trainerId]?.battleBackground
+  else if (enc?.kind === 'boss') own = area?.legendaryBoss?.find((b) => b.dex === enc.dex)?.battleBackground
+  return own ?? area?.battleBackground ?? 'default'
 }

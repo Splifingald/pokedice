@@ -24,7 +24,9 @@ describe('pokemon.json', () => {
     for (const p of species) {
       expect(total(p.dice)).toBeGreaterThanOrEqual(1)
       expect(total(p.dice)).toBeLessThanOrEqual(5)
-      expect(p.spriteUrl).toMatch(/^https:\/\/raw\.githubusercontent\.com\/PokeAPI\/sprites\/.*\/\d+\.png$/)
+      expect(p.spriteUrl).toBe(`/pokemon/${String(p.dex).padStart(3, '0')}_front.png`)
+      for (const view of ['front', 'front_shiny', 'back', 'back_shiny', 'mini_1', 'mini_2'])
+        expect(existsSync(path.join('public/pokemon', `${String(p.dex).padStart(3, '0')}_${view}.png`)), `${p.dex} ${view}`).toBe(true)
       expect(p.baseHp).toBeGreaterThan(0)
       expect(p.maxHp).toBeGreaterThan(p.baseHp)
       expect(Array.isArray(p.milestones)).toBe(true)
@@ -190,7 +192,14 @@ describe('Kanto structure', () => {
     ])
     const indigo = linear[21]!.gyms.map((id) => tById.get(id)!)
     expect(indigo.map((t) => t.role)).toEqual(['elite', 'elite', 'elite', 'elite', 'champion'])
-    for (const t of [...leaders, ...indigo]) expect(t.spriteUrl).toMatch(/^\/trainers\/leader-/)
+    for (const t of [...leaders, ...indigo]) expect(t.spriteUrl).toMatch(/^\/trainers\/classes\/(champion|elite|blue)-/)
+  })
+
+  it('gives every trainer a sprite cut from the trainer sheet', () => {
+    for (const t of trainers as Trainer[]) {
+      expect(t.spriteUrl, t.name).toMatch(/^\/trainers\/classes\//)
+      expect(existsSync(path.join('public', t.spriteUrl!)), t.spriteUrl!).toBe(true)
+    }
   })
 
   it('keeps gym trainers out of the random trainer pools', () => {
@@ -226,7 +235,7 @@ describe('dice & upgrades', () => {
 describe('generated art', () => {
   const root = path.resolve(__dirname, '..')
   it('banners and badges exist', () => {
-    for (const a of areas as Area[]) expect(existsSync(path.join(root, 'public', a.bannerUrl!))).toBe(true)
+    for (const a of areas as Area[]) expect(existsSync(path.join(root, 'public', a.bannerUrl!.replace(/#flip$/, '')))).toBe(true)
     for (const t of trainers as Trainer[]) expect(existsSync(path.join(root, 'public', t.spriteUrl!))).toBe(true)
   })
 })

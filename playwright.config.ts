@@ -1,7 +1,7 @@
 import { defineConfig } from '@playwright/test'
 
 // The dev server gets a fake Supabase URL; every request to it is intercepted by the tests (see e2e/helpers.ts).
-const PORT = 5174
+const PORT = Number(process.env.E2E_PORT ?? 5174)
 
 export default defineConfig({
   testDir: 'e2e',

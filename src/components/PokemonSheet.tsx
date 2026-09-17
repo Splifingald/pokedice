@@ -121,7 +121,7 @@ export function PokemonSheet({
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center gap-3">
-        <SpriteImg dex={dex} size={128} className="border-[3px] border-ink bg-parchment" />
+        <SpriteImg dex={dex} size={128} shiny={inst?.shiny} className="border-[3px] border-ink bg-parchment" />
         <div className="min-w-0">
           <div className="font-mono text-sm text-muted">{dexNo(dex)}</div>
           <div className="text-4xl leading-none">{species.name}</div>
@@ -129,7 +129,16 @@ export function PokemonSheet({
             <TypeBadge type={species.type1} />
             {species.type2 && <TypeBadge type={species.type2} />}
           </div>
-          {inst && <div className="mt-1 text-xl">Lv.{inst.level}</div>}
+          {inst && (
+            <div className="mt-1 flex items-center gap-2 text-xl">
+              Lv.{inst.level}
+              {inst.shiny && (
+                <span className="inline-flex items-center gap-1 border-2 border-ink px-1 text-base leading-tight">
+                  <PixelIcon name="star" size={12} /> SHINY
+                </span>
+              )}
+            </div>
+          )}
         </div>
       </div>
 

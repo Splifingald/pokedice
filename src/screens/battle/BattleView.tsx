@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from 'react'
 import {
   activeBattler,
+  battleBackgroundFor,
   COMBO_NAMES,
   computeDamage,
   effectText,
@@ -10,6 +11,7 @@ import {
   hasStatus,
   statusesFromRoll,
   usableIn,
+  type BattleBackground,
   type Battler,
   type Side,
 } from '@/engine'
@@ -19,44 +21,68 @@ import { PixelIcon, STATUS_ICON } from '@/components/icons'
 import { Modal } from '@/components/Modal'
 import { ParticleCanvas, type ParticleHandle } from '@/components/ParticleCanvas'
 import { PixelButton } from '@/components/PixelButton'
-import { SpriteImg } from '@/components/SpriteImg'
+import { MiniSprite, SpriteImg } from '@/components/SpriteImg'
+import { playerOf, PokeBall, ThrowSprite, TrainerSprite } from '@/components/TrainerArt'
 import { StatusIcons } from '@/components/StatusIcons'
 import { TypeBadge } from '@/components/TypeBadge'
 import { trainerTitle } from '@/lib/format'
 import { useIsDesktop, useMediaQuery } from '@/lib/useMediaQuery'
 import { useGame, type BattleSlice } from '@/store/game'
 import { dispatchBattle } from '@/store/run'
+import spriteMetrics from '@/data/sprite-metrics.json'
 import { cx, typeColor } from '@/theme/util'
 import { useBattleAnimator } from './useBattleAnimator'
 import { CatchView } from './CatchView'
 import { VictoryView, WipeView, StalemateView } from './VictoryView'
 import { BattleHistory, BattleHistoryList, DamageRecap } from './BattleHistory'
 
+/**
+ * The info box: name, level, types, status and HP. The foe's HP is a bar only — never its exact numbers. `compact`
+ * (phones) packs it into two rows so both boxes fit around the Pokémon on a small scene.
+ */
 function BattlerPanel({
   b,
   hp,
   side,
-  extra,
+  compact,
+  badges,
+  footer,
+  className,
 }: {
   b: Battler
   hp: number
   side: Side
-  extra?: React.ReactNode
+  compact: boolean
+  /** Poké Ball pips (the trainer's team / yours). */
+  badges?: React.ReactNode
+  footer?: React.ReactNode
+  className?: string
 }) {
+  const foe = side === 'enemy'
+  const bar = <HpBar hp={hp} max={b.maxHp} showNumbers={!foe} approximate={foe} height={foe ? 10 : 8} className={compact && foe ? 'min-w-[72px] flex-1' : 'mt-1'} />
   return (
-    <div className={cx('pixel-panel w-full max-w-[340px] p-1.5 sm:p-2', side === 'enemy' ? '' : 'ml-auto')}>
-      <div className="flex items-baseline justify-between gap-2">
+    <div className={cx('pixel-panel', compact ? 'px-1.5 py-1' : 'p-2', className)}>
+      {/* Name, then its level; the Poké Ball pips (and your status on phones) sit at the far right. */}
+      <div className="flex items-center gap-1.5">
         <span className="truncate text-xl leading-none sm:text-2xl">{b.name}</span>
+        {b.shiny && <PixelIcon name="star" size={12} title="Shiny" className="shrink-0" />}
         <span className="shrink-0 text-lg leading-none sm:text-xl">Lv.{b.level}</span>
+        <span className="ml-auto flex shrink-0 items-center gap-1">
+          {compact && !foe && <StatusIcons status={b.status} />}
+          {(foe || compact) && badges}
+        </span>
       </div>
-      <div className="mt-1 flex flex-wrap items-center gap-1">
-        {b.types.map((t) => (
-          <TypeBadge key={t} type={t} size="sm" />
-        ))}
-        <StatusIcons status={b.status} />
-      </div>
-      <HpBar hp={hp} max={b.maxHp} className="mt-1.5" />
-      {extra}
+      {foe && (
+        <div className="mt-1 flex flex-wrap items-center gap-1">
+          {b.types.map((t) => (
+            <TypeBadge key={t} type={t} size="sm" />
+          ))}
+          <StatusIcons status={b.status} />
+          {compact && bar}
+        </div>
+      )}
+      {!(compact && foe) && bar}
+      {!compact && footer}
     </div>
   )
 }
@@ -81,38 +107,125 @@ function useShake(ref: RefObject<HTMLElement>, shake: { id: number; power: numbe
 
 const POP_COLOR = { super: '#e8b44a', weak: '#f7f2e0', immune: '#9c9caf', normal: '#f7f2e0', heal: '#4aa84a' }
 
+// The scene is drawn in the backgrounds' own pixels (240×112) and scaled to fit; sprites are 64×64 cells on that grid.
+const SCENE_W = 240
+const SCENE_H = 112
+const CELL = 64
+/** The foe stands on the far platform (centred at 176, 64); your Pokémon, seen from behind, on the near one. */
+const FOE_SPOT = { x: 176, feet: 70 }
+const OWN_SPOT = { x: 72, feet: 116 }
+/** Phones: your box takes more of the width, so your Pokémon stands further left to stay clear of it. */
+const OWN_SPOT_COMPACT = { x: 48, feet: 116 }
+/** Phones: a strip of sky above the background holds the foe's box. Colour = the backgrounds' flat sky (row 24). */
+const SKY_BAND = 34
+const SKY: Record<BattleBackground, string> = { default: '#e8e8e8', grass: '#e8f0f0', rock: '#a08850', sea: '#f8f8f8', water: '#f8f8f8' }
+const METRICS = spriteMetrics as Record<string, { front: number; back: number } | undefined>
+
+/** Where a sprite cell goes (scene pixels): centred on the spot, its lowest opaque row on the spot's feet line. */
+function cellBox(dex: number, side: Side, compact: boolean) {
+  const spot = side === 'enemy' ? FOE_SPOT : compact ? OWN_SPOT_COMPACT : OWN_SPOT
+  const gap = METRICS[dex]?.[side === 'enemy' ? 'front' : 'back'] ?? 0
+  return { left: spot.x - CELL / 2, top: spot.feet - CELL + gap }
+}
+
+function useWidth(ref: RefObject<HTMLElement>) {
+  const [w, setW] = useState(0)
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    setW(el.clientWidth)
+    if (typeof ResizeObserver === 'undefined') return
+    const ro = new ResizeObserver(() => setW(el.clientWidth))
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [ref])
+  return w
+}
+
+/** A shiny's entrance: a ring of stars twinkles around it. */
+function ShinySparkle({ size, delay }: { size: number; delay: number }) {
+  const stars = [
+    [0.2, 0.25],
+    [0.78, 0.2],
+    [0.5, 0.08],
+    [0.85, 0.62],
+    [0.15, 0.7],
+    [0.55, 0.5],
+  ]
+  const star = Math.max(10, Math.round(size / 6))
+  return (
+    <div className="pointer-events-none absolute inset-0" aria-hidden>
+      {stars.map(([x, y], i) => (
+        <motion.div
+          key={i}
+          className="absolute"
+          style={{ left: x! * size - star / 2, top: y! * size - star / 2 }}
+          initial={{ scale: 0, opacity: 0, rotate: 0 }}
+          animate={{ scale: [0, 1.3, 0], opacity: [0, 1, 0], rotate: 90 }}
+          transition={{ duration: 0.45, delay: delay + i * 0.12, times: [0, 0.5, 1], ease: 'easeOut' }}
+        >
+          <svg width={star} height={star} viewBox="0 0 8 8" shapeRendering="crispEdges">
+            <path d="M3 0h2v3h3v2H5v3H3V5H0V3h3z" fill="#fff8c8" />
+            <path d="M3.5 1h1v2.5H7v1H4.5V7h-1V4.5H1v-1h2.5z" fill="#e8b44a" />
+          </svg>
+        </motion.div>
+      ))}
+    </div>
+  )
+}
+
 function SpriteStage({
-  dex,
+  battler,
   side,
   fainted,
-  size,
+  scale,
   fx,
   anchorRef,
+  hidden,
+  compact,
 }: {
-  dex: number
+  battler: Battler
   side: Side
   fainted: boolean
-  size: number
+  /** Screen pixels per scene pixel. */
+  scale: number
   fx: ReturnType<typeof useBattleAnimator>['fx']
   anchorRef: RefObject<HTMLDivElement>
+  /** Held back (the trainer is still on the field): the entrance plays once this clears. */
+  hidden?: boolean
+  /** Phone layout (your Pokémon stands further left). */
+  compact: boolean
 }) {
   const reduced = useGame((s) => s.settings.reducedMotion)
+  const { dex, shiny } = battler
+  const size = Math.round(CELL * scale)
+  const box = cellBox(dex, side, compact)
+  const enter = side === 'enemy' ? 60 : -60
   return (
-    <div ref={anchorRef} className="relative" style={{ width: size, height: size }}>
-      {/* ground shadow */}
-      <div
-        className="absolute bottom-[6%] left-1/2 h-[14%] w-[70%] -translate-x-1/2 rounded-[50%] bg-ink/20"
-        aria-hidden
-      />
+    <div
+      ref={anchorRef}
+      className="absolute"
+      style={{ left: box.left * scale, top: box.top * scale, width: size, height: size }}
+    >
       <motion.div
-        key={dex}
-        initial={{ opacity: 0, x: side === 'enemy' ? 60 : -60 }}
-        animate={fainted ? { opacity: 0, y: size * 0.4 } : { opacity: 1, x: 0, y: 0 }}
-        transition={{ duration: fainted ? 0.7 : 0.45 }}
+        key={`${battler.uid}:${dex}`}
+        // The foe slides in; yours pops out of the ball (with a flash) once the send-out throw lands.
+        initial={reduced ? false : side === 'enemy' ? { opacity: 0, x: enter } : { opacity: 0, scale: 0, filter: 'brightness(4)' }}
+        animate={
+          fainted
+            ? { opacity: 0, y: size * 0.4, transition: { duration: 0.7 } }
+            : hidden
+              ? { opacity: 0, scale: 0, transition: { duration: 0 } }
+              : side === 'enemy'
+                ? { opacity: 1, x: 0, y: 0, scale: 1, transition: { duration: reduced ? 0 : 0.45 } }
+                : { opacity: 1, y: 0, scale: 1, filter: 'brightness(1)', transition: { duration: reduced ? 0 : 0.22, ease: 'backOut' } }
+        }
         className="absolute inset-0"
+        style={{ transformOrigin: '50% 90%' }}
       >
-        <SpriteImg dex={dex} size={size} back={side === 'player'} />
+        <SpriteImg dex={dex} size={size} back={side === 'player'} shiny={shiny} alt="" />
       </motion.div>
+      {shiny && !hidden && !fainted && !reduced && <ShinySparkle key={`${battler.uid}:${dex}`} size={size} delay={0.45} />}
       <AnimatePresence>
         {fx.flash?.target === side && (
           <motion.div
@@ -139,18 +252,73 @@ function SpriteStage({
         {fx.pop?.target === side && (
           <motion.div
             key={fx.pop.id}
-            className="pointer-events-none absolute left-1/2 top-[25%] -translate-x-1/2 font-pixel leading-none"
+            className="pointer-events-none absolute left-1/2 top-[25%] z-20 -translate-x-1/2 font-pixel leading-none"
             initial={{ opacity: 0, y: 10, scale: 0.4 }}
             animate={{ opacity: [0, 1, 1, 0], y: [10, -20, -34, -48], scale: [0.4, 1.7, 1.2, 1] }}
             transition={{ duration: reduced ? 0 : 1.1 }}
             style={{
-              fontSize: size * 0.28,
+              fontSize: Math.max(24, size * 0.28),
               color: POP_COLOR[fx.pop.tone],
               textShadow: '3px 3px 0 #2a2438, -2px -2px 0 #2a2438, 2px -2px 0 #2a2438, -2px 2px 0 #2a2438',
             }}
           >
             {fx.pop.tone === 'heal' ? '+' : fx.pop.amount === 0 ? '' : '−'}
             {fx.pop.amount}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  )
+}
+
+const TRAINER_INTRO_MS = 850
+
+// Sending a Pokémon out: the player's 5-frame throw, the ball's short arc, then the Pokémon pops out.
+const SEND_FRAME_MS = 55
+const SEND_BALL_AT = 110
+const SEND_BALL_MS = 260
+const SEND_OUT_POP_MS = SEND_BALL_AT + SEND_BALL_MS
+
+function SendOut({ character, size }: { character: 'red' | 'green'; size: number }) {
+  const [frame, setFrame] = useState(0)
+  const [ball, setBall] = useState(false)
+  const [gone, setGone] = useState(false)
+  useEffect(() => {
+    const timers = [
+      ...[1, 2, 3, 4].map((f, i) => setTimeout(() => setFrame(f), i * SEND_FRAME_MS)),
+      setTimeout(() => setBall(true), SEND_BALL_AT),
+      setTimeout(() => setBall(false), SEND_OUT_POP_MS),
+      setTimeout(() => setGone(true), SEND_OUT_POP_MS - 60),
+    ]
+    return () => timers.forEach(clearTimeout)
+  }, [])
+  const px = Math.max(64, Math.round(size / 64 - 0.2) * 64)
+  const ballSize = Math.round(size / 6)
+  return (
+    <div className="pointer-events-none absolute inset-0 z-10" aria-hidden>
+      <motion.div
+        className="absolute bottom-0 left-0"
+        initial={{ x: -px * 0.35, opacity: 1 }}
+        animate={gone ? { x: -px, opacity: 0 } : { x: -px * 0.35, opacity: 1 }}
+        transition={{ duration: 0.2, ease: 'easeIn' }}
+      >
+        <ThrowSprite character={character} frame={frame} size={px} />
+      </motion.div>
+      <AnimatePresence>
+        {ball && (
+          <motion.div
+            key="ball"
+            className="absolute left-0 top-0"
+            initial={{ x: px * 0.25, y: size - px * 0.7, rotate: 0 }}
+            animate={{
+              x: [px * 0.25, size * 0.35, size / 2 - ballSize / 2],
+              y: [size - px * 0.7, size * 0.1, size * 0.62],
+              rotate: 540,
+            }}
+            exit={{ scale: 1.8, opacity: 0, transition: { duration: 0.15 } }}
+            transition={{ duration: SEND_BALL_MS / 1000, ease: 'linear' }}
+          >
+            <PokeBall size={ballSize} />
           </motion.div>
         )}
       </AnimatePresence>
@@ -175,10 +343,13 @@ export function BattleView({ battle }: { battle: BattleSlice }) {
   const [menu, setMenu] = useState<null | 'item' | 'switch' | 'history'>(null)
   const [itemKey, setItemKey] = useState<string | null>(null)
   const [showBreakdown, setShowBreakdown] = useState(false)
-  const [intro, setIntro] = useState(st.kind === 'boss' && !reduced)
+  const [bossIntro, setBossIntro] = useState(st.kind === 'boss' && !reduced)
 
   const enc = run.encounter
   const isTrainerFight = enc?.kind === 'trainer' || enc?.kind === 'gym'
+  // Before each of their Pokémon, the trainer steps onto the field, then makes way for it.
+  const [trainerIntro, setTrainerIntro] = useState(isTrainerFight && !reduced)
+  const intro = bossIntro || trainerIntro
   const trainerName = isTrainerFight ? trainerTitle(enc) : null
   const onHit = useCallback((target: Side, color: string, power: number) => {
     const anchor = (target === 'enemy' ? enemyAnchor : playerAnchor).current
@@ -203,10 +374,15 @@ export function BattleView({ battle }: { battle: BattleSlice }) {
   }, [])
 
   useEffect(() => {
-    if (!intro) return
-    const t = setTimeout(() => setIntro(false), 1900)
+    if (!bossIntro) return
+    const t = setTimeout(() => setBossIntro(false), 1900)
     return () => clearTimeout(t)
-  }, [intro])
+  }, [bossIntro])
+  useEffect(() => {
+    if (!trainerIntro) return
+    const t = setTimeout(() => setTrainerIntro(false), TRAINER_INTRO_MS)
+    return () => clearTimeout(t)
+  }, [trainerIntro])
 
   // The enemy acts on its own once the log has caught up.
   useEffect(() => {
@@ -276,9 +452,32 @@ export function BattleView({ battle }: { battle: BattleSlice }) {
     return () => clearTimeout(t)
   }, [stunned, menu, stunChoice])
 
-  // Short phones (≤ 700px tall) shrink the scene so the tray and controls still fit without scrolling.
-  const enemySize = desktop ? (roomy ? 160 : 120) : short ? 84 : 112
-  const playerSize = desktop ? (roomy ? 176 : 136) : short ? 96 : 128
+  // Each of your Pokémon comes out of a ball thrown by the player (first send-out and every switch).
+  const character = playerOf(save).character
+  const [sendingUid, setSendingUid] = useState<string | null>(reduced ? null : active.uid)
+  const lastUid = useRef(active.uid)
+  useEffect(() => {
+    if (active.uid === lastUid.current) return
+    lastUid.current = active.uid
+    if (!reduced) setSendingUid(active.uid)
+  }, [active.uid, reduced])
+  useEffect(() => {
+    if (!sendingUid) return
+    const t = setTimeout(() => setSendingUid(null), SEND_OUT_POP_MS)
+    return () => clearTimeout(t)
+  }, [sendingUid])
+  const compact = !desktop
+  const teamPips = (
+    <span className="flex gap-0.5" aria-label={`${st.player.filter((p) => p.hp > 0).length} of ${st.player.length} able`}>
+      {st.player.map((p) => (
+        <PixelIcon key={p.uid} name="ball" size={12} style={{ opacity: p.hp > 0 ? 1 : 0.3 }} />
+      ))}
+    </span>
+  )
+  const sceneWidth = useWidth(scene)
+  const scale = sceneWidth / SCENE_W
+  const area = data.areas.find((a) => a.id === run.areaId)
+  const background = battleBackgroundFor(enc, area, data)
   const mainSize = desktop ? 'lg' : 'md'
   const minorSize = desktop ? 'md' : 'sm'
   // Dice fill the tray: sized by how many are thrown (up to 64px), never under a 44px tap target.
@@ -300,118 +499,168 @@ export function BattleView({ battle }: { battle: BattleSlice }) {
   const terminal = st.phase === 'won' || st.phase === 'lost' || st.phase === 'fled'
 
   return (
-    <div className="relative mx-auto flex max-w-5xl flex-col gap-2 sm:gap-3">
+    // The scene keeps the backgrounds' 240×112 shape, so its width sets its height: capped on desktop so the tray and
+    // controls stay in view (shorter desktops get a narrower column).
+    <div className={cx('relative mx-auto flex w-full flex-col gap-2 sm:gap-3', desktop ? (roomy ? 'max-w-3xl' : 'max-w-[640px]') : 'max-w-5xl')}>
       <h1 className="sr-only">
         Battle: {active.name} against {trainerName ? `${trainerName}'s ` : st.kind === 'wild' ? 'a wild ' : ''}
         {st.enemy.name}
       </h1>
-      {/* Scene */}
-      <div
-        ref={scene}
-        className="pixel-panel relative overflow-hidden p-0"
-        style={{
-          background: 'linear-gradient(#c6e7ef 0%, #e8f3df 48%, #cfe3a8 48%, #b8d68e 100%)',
-          minHeight: desktop ? (roomy ? 300 : 240) : short ? 188 : 232,
-        }}
-      >
-        <div className="absolute inset-0 scanlines" aria-hidden />
-        {/* enemy row */}
-        <div className={cx('relative flex items-start justify-between gap-2', short ? 'p-2' : 'p-3')}>
-          <div className="z-10 w-[55%] sm:w-auto">
-            <BattlerPanel
-              b={st.enemy}
-              hp={fx.hp[st.enemy.uid] ?? st.enemy.hp}
-              side="enemy"
-              extra={
-                trainerLeft > 0 && (
-                  <div className="mt-1 flex items-center gap-1 text-sm">
-                    {trainerTeam.map((_, i) => (
-                        <PixelIcon key={i} name="ball" size={12} style={{ opacity: i < (run.trainer?.index ?? 0) ? 0.3 : 1 }} />
-                      ))}
+      {/* Scene: the area's battle background, the foe on the far platform, yours from behind on the near one. */}
+      <div className="pixel-panel overflow-hidden p-0">
+        <div ref={scene} className="relative w-full" style={{ paddingTop: compact ? SKY_BAND : 0 }} data-background={background}>
+          {compact && (
+            <div
+              className="absolute inset-x-0 top-0"
+              style={{ height: SKY_BAND, backgroundImage: `url(/battle/${background}.png)`, backgroundSize: '100% auto', imageRendering: 'pixelated' }}
+              aria-hidden
+            />
+          )}
+          <div
+            className="relative w-full overflow-hidden"
+            style={{
+              aspectRatio: `${SCENE_W} / ${SCENE_H}`,
+              backgroundImage: `url(/battle/${background}.png)`,
+              backgroundSize: '100% 100%',
+              imageRendering: 'pixelated',
+            }}
+          >
+            {/* Under the sky strip, the background's own striped top would show twice: flatten it. */}
+            {compact && <div className="absolute inset-x-0 top-0" style={{ height: 20 * scale, background: SKY[background] }} aria-hidden />}
+            {scale > 0 && (
+              <>
+                <SpriteStage
+                  battler={st.enemy}
+                  side="enemy"
+                  fainted={!!fx.fainted[st.enemy.uid]}
+                  scale={scale}
+                  compact={compact}
+                  fx={fx}
+                  anchorRef={enemyAnchor}
+                  hidden={trainerIntro}
+                />
+                <AnimatePresence>
+                  {trainerIntro && isTrainerFight && (
+                    <motion.div
+                      key="trainer"
+                      className="absolute z-10"
+                      style={{
+                        left: (FOE_SPOT.x - CELL / 2) * scale,
+                        top: (FOE_SPOT.feet - CELL + 2) * scale,
+                        width: CELL * scale,
+                        height: CELL * scale,
+                      }}
+                      initial={{ x: 90, opacity: 0 }}
+                      animate={{ x: 0, opacity: 1 }}
+                      exit={{ x: 110, opacity: 0, transition: { duration: 0.2, ease: 'easeIn' } }}
+                      transition={{ duration: 0.22, ease: 'easeOut' }}
+                      aria-hidden
+                    >
+                      <TrainerSprite src={enc.spriteUrl} size={Math.round(CELL * scale)} />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+                <SpriteStage
+                  battler={active}
+                  side="player"
+                  fainted={!!fx.fainted[active.uid]}
+                  scale={scale}
+                  compact={compact}
+                  fx={fx}
+                  anchorRef={playerAnchor}
+                  hidden={sendingUid === active.uid}
+                />
+                {sendingUid === active.uid && (
+                  <div
+                    key={sendingUid}
+                    className="absolute"
+                    style={{ left: ((compact ? OWN_SPOT_COMPACT : OWN_SPOT).x - CELL / 2) * scale, top: (SCENE_H - CELL) * scale, width: CELL * scale, height: CELL * scale }}
+                  >
+                    <SendOut character={character} size={Math.round(CELL * scale)} />
                   </div>
-                )
-              }
-            />
-          </div>
-          <div className="relative mr-2 mt-2">
-            <div
-              className="absolute bottom-2 left-1/2 h-8 w-[110%] -translate-x-1/2 rounded-[50%] bg-[#a6c97a] shadow-[inset_0_-4px_0_#8fb35f]"
-              aria-hidden
-            />
-            <SpriteStage dex={st.enemy.dex} side="enemy" fainted={!!fx.fainted[st.enemy.uid]} size={enemySize} fx={fx} anchorRef={enemyAnchor} />
-          </div>
-        </div>
-        {/* player row */}
-        <div className={cx('relative flex items-end justify-between gap-2', short ? 'px-2 pb-2' : 'px-3 pb-3')}>
-          <div className="relative -mb-3 ml-1">
-            <div
-              className="absolute bottom-3 left-1/2 h-10 w-[115%] -translate-x-1/2 rounded-[50%] bg-[#a6c97a] shadow-[inset_0_-4px_0_#8fb35f]"
-              aria-hidden
-            />
-            <SpriteStage dex={active.dex} side="player" fainted={!!fx.fainted[active.uid]} size={playerSize} fx={fx} anchorRef={playerAnchor} />
-          </div>
-          <div className="z-10 w-[55%] sm:w-auto">
-            <BattlerPanel
-              b={active}
-              hp={fx.hp[active.uid] ?? active.hp}
-              side="player"
-              extra={
-                <div className="mt-1 flex items-center justify-between text-base">
-                  <span className="flex items-center gap-1">
-                    <PixelIcon name="reroll" size={14} /> {active.rerollsLeft}/{active.rerolls} rerolls
-                  </span>
-                  <span className="flex gap-0.5">
-                    {st.player.map((p) => (
-                      <PixelIcon key={p.uid} name="ball" size={12} style={{ opacity: p.hp > 0 ? 1 : 0.3 }} />
-                    ))}
-                  </span>
-                </div>
-              }
-            />
-          </div>
-        </div>
-
-        <ParticleCanvas ref={particles} className="absolute inset-0 h-full w-full" />
-
-        <AnimatePresence>
-          {fx.banner && (
-            <motion.div
-              key={fx.banner.id}
-              className="pointer-events-none absolute inset-x-0 top-[42%] z-20 flex justify-center"
-              initial={{ scale: 0.3, opacity: 0 }}
-              animate={{ scale: [0.3, 1.25, 1], opacity: [0, 1, 1, 0] }}
-              transition={{ duration: 1.2, times: [0, 0.2, 0.8, 1] }}
-            >
-              <span
-                className={cx(
-                  'border-[3px] border-ink px-4 py-1 text-3xl shadow-hard',
-                  fx.banner.tone === 'super' && 'bg-gold text-ink',
-                  fx.banner.tone === 'weak' && 'bg-shadow text-panel',
-                  fx.banner.tone === 'immune' && 'bg-ink text-panel',
-                  fx.banner.tone === 'info' && 'bg-panel text-ink',
                 )}
+              </>
+            )}
+          </div>
+
+          <BattlerPanel
+            b={st.enemy}
+            hp={fx.hp[st.enemy.uid] ?? st.enemy.hp}
+            side="enemy"
+            compact={compact}
+            className={cx('absolute z-10', compact ? 'left-[3px] top-[3px] w-[60%]' : 'left-[2%] top-[3%] w-[46%]')}
+            badges={
+              trainerLeft > 0 && (
+                <span className="flex items-center gap-0.5">
+                  {trainerTeam.map((_, i) => (
+                    <PixelIcon key={i} name="ball" size={12} style={{ opacity: i < (run.trainer?.index ?? 0) ? 0.3 : 1 }} />
+                  ))}
+                </span>
+              )
+            }
+          />
+          <BattlerPanel
+            b={active}
+            hp={fx.hp[active.uid] ?? active.hp}
+            side="player"
+            compact={compact}
+            className={cx('absolute z-10', compact ? 'bottom-[3px] right-[3px] w-[57%]' : 'bottom-[3%] right-[2%] w-[46%]')}
+            badges={teamPips}
+            footer={
+              <div className="mt-1 flex items-center justify-between gap-1 text-base leading-none">
+                <span className="flex items-center gap-1 whitespace-nowrap" title="Rerolls left">
+                  <PixelIcon name="reroll" size={12} /> {active.rerollsLeft}/{active.rerolls} rerolls
+                </span>
+                <StatusIcons status={active.status} />
+                {teamPips}
+              </div>
+            }
+          />
+
+          <ParticleCanvas ref={particles} className="pointer-events-none absolute inset-0 z-20 h-full w-full" />
+
+          <AnimatePresence>
+            {fx.banner && (
+              <motion.div
+                key={fx.banner.id}
+                className="pointer-events-none absolute inset-x-0 top-[38%] z-20 flex justify-center"
+                initial={{ scale: 0.3, opacity: 0 }}
+                animate={{ scale: [0.3, 1.25, 1], opacity: [0, 1, 1, 0] }}
+                transition={{ duration: 1.2, times: [0, 0.2, 0.8, 1] }}
               >
-                {fx.banner.text}
-              </span>
+                <span
+                  className={cx(
+                    'border-[3px] border-ink px-4 py-1 text-2xl shadow-hard sm:text-3xl',
+                    fx.banner.tone === 'super' && 'bg-gold text-ink',
+                    fx.banner.tone === 'weak' && 'bg-shadow text-panel',
+                    fx.banner.tone === 'immune' && 'bg-ink text-panel',
+                    fx.banner.tone === 'info' && 'bg-panel text-ink',
+                  )}
+                >
+                  {fx.banner.text}
+                </span>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {bossIntro && (
+            <motion.div
+              className="absolute inset-0 z-30 flex items-center justify-center gap-3 bg-ink text-panel sm:gap-6"
+              initial={{ opacity: 1 }}
+              animate={{ opacity: [1, 1, 0] }}
+              transition={{ duration: 1.9, times: [0, 0.8, 1] }}
+            >
+              <motion.div initial={{ scale: 0.6 }} animate={{ scale: 1 }} transition={{ duration: 1.2 }}>
+                <SpriteImg dex={st.enemy.dex} size={Math.round(CELL * scale * 1.3)} silhouette />
+              </motion.div>
+              <div className="flex flex-col items-center">
+                <div className="text-lg tracking-[0.4em] text-gold sm:text-xl">LEGENDARY</div>
+                <div className="text-4xl sm:text-5xl">{st.enemy.name}</div>
+                <div className="text-xl sm:text-2xl">Lv.{st.enemy.level}</div>
+              </div>
             </motion.div>
           )}
-        </AnimatePresence>
-
-        {intro && (
-          <motion.div
-            className="absolute inset-0 z-30 flex flex-col items-center justify-center gap-3 bg-ink text-panel"
-            initial={{ opacity: 1 }}
-            animate={{ opacity: [1, 1, 0] }}
-            transition={{ duration: 1.9, times: [0, 0.8, 1] }}
-          >
-            <motion.div initial={{ scale: 0.6 }} animate={{ scale: 1 }} transition={{ duration: 1.2 }}>
-              <SpriteImg dex={st.enemy.dex} size={180} silhouette />
-            </motion.div>
-            <div className="text-xl tracking-[0.4em] text-gold">LEGENDARY</div>
-            <div className="text-5xl">{st.enemy.name}</div>
-            <div className="text-2xl">Lv.{st.enemy.level}</div>
-          </motion.div>
-        )}
+        </div>
       </div>
 
       {/* Message + tray */}
@@ -644,10 +893,12 @@ function SwitchRow({ b, onPick, disabled }: { b: Battler; onPick: () => void; di
       onClick={onPick}
       className="pixel-panel flex w-full items-center gap-2 p-2 text-left enabled:hover:bg-white"
     >
-      <SpriteImg dex={b.dex} size={48} />
       <div className="min-w-0 flex-1">
-        <div className="flex justify-between text-xl leading-none">
-          <span>{b.name}</span>
+        <div className="flex items-center justify-between text-xl leading-none">
+          <span className="flex items-center gap-1">
+            <MiniSprite dex={b.dex} size={40} className="-my-2" />
+            {b.name}
+          </span>
           <span>Lv.{b.level}</span>
         </div>
         <HpBar hp={b.hp} max={b.maxHp} height={8} className="mt-1" />

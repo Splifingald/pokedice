@@ -10,7 +10,8 @@ import { PixelIcon } from '@/components/icons'
 import { LeadPicker, defaultLead } from '@/components/LeadPicker'
 import { MonCard, XpBar } from '@/components/MonCard'
 import { PixelButton } from '@/components/PixelButton'
-import { SpriteImg } from '@/components/SpriteImg'
+import { TrainerSprite } from '@/components/TrainerArt'
+import { MiniSprite, SpriteImg } from '@/components/SpriteImg'
 import { StatChip } from '@/components/StatChip'
 import { milestoneText, money, trainerTitle } from '@/lib/format'
 import { BadgeIcon } from '@/components/BadgeIcon'
@@ -100,17 +101,17 @@ function EvolutionSequence({ uid, fromDex, toDex }: { uid: string; fromDex: numb
 
 function CatchCard({ uid, dex, level, joined, replacedLevel }: { uid: string; dex: number; level: number; joined: boolean; replacedLevel?: number }) {
   const name = useGame((s) => s.data.species[dex]?.name ?? '???')
-  void uid
+  const shiny = useGame((s) => !!s.save?.box.find((p) => p.id === uid)?.shiny)
   return (
     <div className="flex items-center gap-3 border-[3px] border-ink bg-gold/40 p-2">
       <motion.div initial={{ rotate: -30, y: -20 }} animate={{ rotate: [0, -15, 15, -8, 0], y: 0 }} transition={{ duration: 0.9 }}>
         <PixelIcon name="ball" size={36} />
       </motion.div>
-      <SpriteImg dex={dex} size={72} />
+      <SpriteImg dex={dex} size={72} shiny={shiny} />
       <div>
         <div className="text-3xl leading-none">Gotcha!</div>
         <div className="text-xl">
-          {name} (Lv.{level}) was caught!
+          {shiny ? 'Shiny ' : ''}{name} (Lv.{level}) was caught!
         </div>
         <div className="text-lg">
           {replacedLevel != null
@@ -164,7 +165,7 @@ function useCards(events: RunEvent[]): { key: string; node: ReactNode; sound?: '
             key: k,
             node: (
               <div className="flex items-center gap-2">
-                <SpriteImg dex={inst.dex} size={48} />
+                <MiniSprite dex={inst.dex} size={48} />
                 <div className="flex-1">
                   <div className="text-xl">
                     {data.species[inst.dex]?.name} gained <span className="border-b-[3px] border-type-water">{e.amount} XP</span>
@@ -347,9 +348,14 @@ export function VictoryView() {
         <div className="mt-4 flex flex-col gap-3">
           {hasNext && nextMon ? (
             <>
-              <div className="text-center text-xl">
-                {trainerLabel} is about to send out{' '}
-                {data.species[nextMon.dex]?.name} (Lv.{nextMon.level}). Switch freely:
+              <div className="flex items-center gap-2">
+                <motion.div className="shrink-0" initial={reduced ? false : { x: -30, opacity: 0 }} animate={{ x: 0, opacity: 1 }}>
+                  <TrainerSprite src={enc?.kind === 'trainer' || enc?.kind === 'gym' ? enc.spriteUrl : null} size={96} />
+                </motion.div>
+                <div className="text-xl">
+                  {trainerLabel} is about to send out{' '}
+                  {data.species[nextMon.dex]?.name} (Lv.{nextMon.level}). Switch freely:
+                </div>
               </div>
               <LeadPicker value={lead} onChange={setLead} />
               <PixelButton variant="primary" size="lg" onClick={() => continueAfterVictory(lead ?? defaultLead())}>

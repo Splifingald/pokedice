@@ -132,6 +132,7 @@ export function rowsToBundle(r: TableRows): BundleRaw {
         scalesToTeam: !!x.scales_to_team,
         easyMode: !!x.easy_mode,
         enemyUpgradeLevel: x.enemy_upgrade_level == null ? null : num(x.enemy_upgrade_level),
+        battleBackground: (x.battle_background as Area['battleBackground'] | undefined) ?? null,
         hidden: !!x.hidden,
         unlockConditions: (x.unlock_conditions as Area['unlockConditions']) ?? null,
         gyms: (x.gyms as string[] | null) ?? [],
@@ -149,6 +150,7 @@ export function rowsToBundle(r: TableRows): BundleRaw {
         role: (x.role as Trainer['role'] | null) ?? 'trainer',
         badge: (x.badge as string | null) ?? null,
         upgradeLevel: x.upgrade_level == null ? null : num(x.upgrade_level),
+        battleBackground: (x.battle_background as Trainer['battleBackground'] | undefined) ?? null,
       }),
     ),
     upgrades: {
@@ -228,6 +230,7 @@ export function bundleToRows(b: BundleRaw): TableRows {
       scales_to_team: x.scalesToTeam,
       easy_mode: x.easyMode,
       enemy_upgrade_level: x.enemyUpgradeLevel,
+      battle_background: x.battleBackground ?? null,
       hidden: x.hidden,
       unlock_conditions: x.unlockConditions,
       gyms: x.gyms,
@@ -250,6 +253,7 @@ export function bundleToRows(b: BundleRaw): TableRows {
       role: x.role,
       badge: x.badge,
       upgrade_level: x.upgradeLevel,
+      battle_background: x.battleBackground ?? null,
     })),
     area_trainer_pool: b.areas.flatMap((a) =>
       a.trainerPool.map((t) => ({ id: t.id, area_id: a.id, trainer_id: t.trainerId, weight: t.weight })),

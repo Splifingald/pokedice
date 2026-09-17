@@ -4,14 +4,35 @@
     {
       "name": "pokedice-dev",
       "runtimeExecutable": "pnpm",
-      "runtimeArgs": ["dev", "--port", "5173", "--strictPort"],
+      "runtimeArgs": [
+        "dev",
+        "--port",
+        "5173",
+        "--strictPort"
+      ],
       "port": 5173
     },
     {
       "name": "pokedice-dev-2",
       "runtimeExecutable": "pnpm",
-      "runtimeArgs": ["dev", "--port", "5174", "--strictPort"],
+      "runtimeArgs": [
+        "dev",
+        "--port",
+        "5174",
+        "--strictPort"
+      ],
       "port": 5174
+    },
+    {
+      "name": "pokedice-dev-3",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": [
+        "dev",
+        "--port",
+        "5175",
+        "--strictPort"
+      ],
+      "port": 5175
     }
   ]
 }

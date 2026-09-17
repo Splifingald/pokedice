@@ -5,7 +5,7 @@ import { resolveSyncConflict } from '@/store/sync'
 import { cx } from '@/theme/util'
 import { Modal } from './Modal'
 import { PixelButton } from './PixelButton'
-import { SpriteImg } from './SpriteImg'
+import { MiniSprite } from './SpriteImg'
 
 /** One line per fact that tells two saves apart. */
 export function SaveFacts({ save }: { save: SaveData }) {
@@ -38,7 +38,7 @@ function SaveCard({ label, save, more, onKeep }: { label: string; save: SaveData
       <div className="flex gap-1" aria-hidden>
         {teamOf(save).map((p) => (
           <span key={p.id} className="flex flex-col items-center text-base leading-none">
-            <SpriteImg dex={p.dex} size={48} />
+            <MiniSprite dex={p.dex} size={48} />
             Lv.{p.level}
           </span>
         ))}

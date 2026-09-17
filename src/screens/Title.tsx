@@ -4,7 +4,7 @@ import { motion } from 'framer-motion'
 import { Die } from '@/components/Die'
 import { Modal } from '@/components/Modal'
 import { PixelButton } from '@/components/PixelButton'
-import { SpriteImg } from '@/components/SpriteImg'
+import { MiniSprite } from '@/components/SpriteImg'
 import { teamOf } from '@/engine'
 import { isSupabaseConfigured } from '@/lib/supabase'
 import { useGame } from '@/store/game'
@@ -53,8 +53,7 @@ export function Title() {
             onClick={() => navigate(runArea ? '/area' : '/map')}
             aria-label={lead ? `Continue with ${data.species[lead.dex]?.name}` : 'Continue'}
           >
-            {/* Sprites carry wide transparent margins: draw it big and let it overflow the button's padding. */}
-            {lead && <SpriteImg dex={lead.dex} size={64} className="-mx-3 -my-5" alt="" />}
+            {lead && <MiniSprite dex={lead.dex} size={48} className="-my-3 -ml-2" />}
             CONTINUE
           </PixelButton>
         )}

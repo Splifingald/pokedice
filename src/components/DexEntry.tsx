@@ -9,6 +9,7 @@ import { PixelIcon } from './icons'
 import { PixelButton } from './PixelButton'
 import { PokemonSheet } from './PokemonSheet'
 import { SpriteImg } from './SpriteImg'
+import { AreaBanner } from '@/components/AreaBanner'
 
 interface Spot {
   area: Area
@@ -59,12 +60,7 @@ function SpotCard({ spot, onTravel }: { spot: Spot; onTravel?: () => void }) {
   return (
     <li className="pixel-panel overflow-hidden p-0">
       {area.bannerUrl && (
-        <img
-          src={area.bannerUrl}
-          alt=""
-          className={cx('pixelated block h-16 w-full object-cover', !unlocked && 'opacity-70 grayscale', secret && 'blur-[1px]')}
-          style={{ imageRendering: 'pixelated' }}
-        />
+        <AreaBanner url={area.bannerUrl} className={cx('h-16', !unlocked && 'opacity-70 grayscale', secret && 'blur-[1px]')} />
       )}
       <div className="flex flex-wrap items-center gap-2 p-2">
         <div className="min-w-0 flex-1">

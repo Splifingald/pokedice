@@ -155,6 +155,10 @@ export interface LootEntry {
   maxQty: number
 }
 
+/** Battle scenes (public/battle/*.png). */
+export const BATTLE_BACKGROUNDS = ['grass', 'sea', 'water', 'rock', 'default'] as const
+export type BattleBackground = (typeof BATTLE_BACKGROUNDS)[number]
+
 export interface BossDef {
   dex: number
   level: number
@@ -162,6 +166,8 @@ export interface BossDef {
   teamAvgThreshold?: number
   /** Upgrade level this legendary fights at; unset = the area's. */
   upgradeLevel?: number | null
+  /** Battle scene for this legendary; unset = the area's. */
+  battleBackground?: BattleBackground | null
 }
 
 export interface Area {
@@ -180,6 +186,8 @@ export interface Area {
   easyMode: boolean
   /** Upgrade level (dice and combos) of every foe here; null = game_config.enemyUpgradeLevel. */
   enemyUpgradeLevel: number | null
+  /** Battle scene of every fight here (trainers and legendaries may override it); null = 'default'. */
+  battleBackground: BattleBackground | null
   /** Hidden areas sit outside the linear chain and unlock when every condition holds. */
   hidden: boolean
   unlockConditions: UnlockCondition[] | null
@@ -209,6 +217,8 @@ export interface Trainer {
   badge: string | null
   /** Upgrade level this trainer's Pokémon fight at; null = the area's. */
   upgradeLevel: number | null
+  /** Battle scene for this trainer's fights (a gym's floor…); null = the area's. */
+  battleBackground: BattleBackground | null
 }
 
 export type CurableStatus = 'burn' | 'poison' | 'frozen' | 'paralyze' | 'confuse'
@@ -298,6 +308,8 @@ export interface GameConfig {
   showRoundGauge: boolean
   /** Under the round gauge, reveal what's ahead: an icon for each card still in the deck, and the gym / legendary at the end. */
   showRoundPreview: boolean
+  /** Chance (0–1) that a wild Pokémon is shiny: only its sprites change. */
+  shinyChance: number
   status: StatusRules
   ai: { samples: number; rerollGainThreshold: number }
 }
@@ -314,6 +326,8 @@ export interface PokemonInstance {
   caughtAt: number
   /** Fractional HP carried between passive-regen applications, so frequent loads never lose regen. */
   regenCarry?: number
+  /** Shiny colours (cosmetic only). */
+  shiny?: boolean
 }
 
 export interface AreaProgress {
@@ -356,6 +370,14 @@ export interface SaveData {
   settings: { sfx: boolean; reducedMotion: boolean; multiExp: boolean }
   /** The hpMultiplier current HP was last measured against (absent = ×1), so a change keeps every HP %. */
   hpScale?: number
+  /** Who the player is: a name and one of the two trainer sprites (absent on older saves = Red, no name). */
+  player?: PlayerProfile
+}
+
+export type PlayerCharacter = 'red' | 'green'
+export interface PlayerProfile {
+  name: string
+  character: PlayerCharacter
 }
 
 /** The raw bundle — exactly the shape of src/data/*.json (camelCase DB rows). */

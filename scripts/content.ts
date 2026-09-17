@@ -9,30 +9,36 @@ import type { BossDef, EncounterKind, PokeType, UnlockCondition } from '../src/e
 export const LEGENDARIES = [144, 145, 146, 150, 151]
 export const STARTERS = [1, 4, 7]
 
-/** Banner scene drawn by scripts/art.ts. */
-export type Biome =
-  | 'meadow'
-  | 'spring'
-  | 'autumn'
-  | 'dusk'
-  | 'coast'
-  | 'forest'
-  | 'mountain'
-  | 'cave'
-  | 'dirtcave'
-  | 'crystal'
-  | 'ice'
-  | 'bridge'
-  | 'cycling'
-  | 'sea'
-  | 'tower'
-  | 'city'
-  | 'plateau'
-  | 'plant'
-  | 'mansion'
-  | 'safari'
-  | 'victory'
-  | 'island'
+/** Banner scenes: 118×16 pixel strips in graphics/banners, published to public/banners by scripts/art.ts. */
+export const BANNER_SCENES = [
+  'beach',
+  'bridge',
+  'cave',
+  'cave_dark',
+  'city',
+  'crystal_cave',
+  'default',
+  'dunes',
+  'factory',
+  'flowers',
+  'forest',
+  'haunted',
+  'mountains',
+  'ocean',
+  'plains',
+  'sky',
+  'snow_mountains',
+  'sunset',
+  'swamp',
+  'volcano',
+] as const
+export type BannerScene = (typeof BANNER_SCENES)[number]
+
+/** An area's banner; `flip` mirrors it horizontally so a shared scene reads as a new place. */
+export interface BannerPlan {
+  scene: BannerScene
+  flip?: boolean
+}
 
 /** [dex, level] */
 export type Mon = [number, number]
@@ -57,7 +63,7 @@ export interface AreaPlan {
   key: string
   name: string
   orderIndex: number
-  biome: Biome
+  banner: BannerPlan
   xpToUnlockNext: number | null
   minLevel: number
   maxLevel: number
@@ -189,7 +195,7 @@ export const AREAS: AreaPlan[] = [
     key: 'route-1',
     name: 'Route 1',
     orderIndex: 1,
-    biome: 'meadow',
+    banner: { scene: 'plains' },
     xpToUnlockNext: 15,
     minLevel: 2,
     maxLevel: 5,
@@ -204,7 +210,7 @@ export const AREAS: AreaPlan[] = [
     key: 'routes-22-2',
     name: 'Routes 22 & 2',
     orderIndex: 2,
-    biome: 'spring',
+    banner: { scene: 'flowers' },
     xpToUnlockNext: 20,
     minLevel: 3,
     maxLevel: 7,
@@ -225,7 +231,7 @@ export const AREAS: AreaPlan[] = [
     key: 'viridian-forest',
     name: 'Viridian Forest',
     orderIndex: 3,
-    biome: 'forest',
+    banner: { scene: 'forest' },
     xpToUnlockNext: 30,
     minLevel: 4,
     maxLevel: 8,
@@ -253,7 +259,7 @@ export const AREAS: AreaPlan[] = [
     key: 'route-3',
     name: 'Route 3',
     orderIndex: 4,
-    biome: 'meadow',
+    banner: { scene: 'mountains' },
     xpToUnlockNext: 40,
     minLevel: 5,
     maxLevel: 10,
@@ -281,7 +287,7 @@ export const AREAS: AreaPlan[] = [
     key: 'mt-moon',
     name: 'Mt. Moon',
     orderIndex: 5,
-    biome: 'mountain',
+    banner: { scene: 'cave' },
     xpToUnlockNext: 50,
     minLevel: 7,
     maxLevel: 12,
@@ -310,7 +316,7 @@ export const AREAS: AreaPlan[] = [
     key: 'route-4-nugget-bridge',
     name: 'Route 4 & Nugget Bridge',
     orderIndex: 6,
-    biome: 'bridge',
+    banner: { scene: 'bridge' },
     xpToUnlockNext: 60,
     minLevel: 9,
     maxLevel: 15,
@@ -349,7 +355,7 @@ export const AREAS: AreaPlan[] = [
     key: 'routes-5-6',
     name: 'Routes 5 & 6',
     orderIndex: 7,
-    biome: 'coast',
+    banner: { scene: 'plains', flip: true },
     xpToUnlockNext: 70,
     minLevel: 12,
     maxLevel: 18,
@@ -389,7 +395,7 @@ export const AREAS: AreaPlan[] = [
     key: 'digletts-cave-route-11',
     name: "Diglett's Cave & Route 11",
     orderIndex: 8,
-    biome: 'dirtcave',
+    banner: { scene: 'cave', flip: true },
     xpToUnlockNext: 80,
     minLevel: 13,
     maxLevel: 22,
@@ -418,7 +424,7 @@ export const AREAS: AreaPlan[] = [
     key: 'routes-9-10',
     name: 'Routes 9 & 10',
     orderIndex: 9,
-    biome: 'autumn',
+    banner: { scene: 'mountains', flip: true },
     xpToUnlockNext: 85,
     minLevel: 14,
     maxLevel: 22,
@@ -451,7 +457,7 @@ export const AREAS: AreaPlan[] = [
     key: 'rock-tunnel',
     name: 'Rock Tunnel',
     orderIndex: 10,
-    biome: 'cave',
+    banner: { scene: 'cave_dark' },
     xpToUnlockNext: 90,
     minLevel: 15,
     maxLevel: 23,
@@ -482,7 +488,7 @@ export const AREAS: AreaPlan[] = [
     key: 'routes-7-8',
     name: 'Routes 7 & 8',
     orderIndex: 11,
-    biome: 'dusk',
+    banner: { scene: 'sunset' },
     xpToUnlockNext: 105,
     minLevel: 17,
     maxLevel: 26,
@@ -524,7 +530,7 @@ export const AREAS: AreaPlan[] = [
     key: 'pokemon-tower',
     name: 'Pokémon Tower',
     orderIndex: 12,
-    biome: 'tower',
+    banner: { scene: 'haunted' },
     xpToUnlockNext: 105,
     minLevel: 15,
     maxLevel: 25,
@@ -549,7 +555,7 @@ export const AREAS: AreaPlan[] = [
     key: 'routes-12-15',
     name: 'Routes 12–15',
     orderIndex: 13,
-    biome: 'coast',
+    banner: { scene: 'flowers', flip: true },
     xpToUnlockNext: 120,
     minLevel: 22,
     maxLevel: 30,
@@ -588,7 +594,7 @@ export const AREAS: AreaPlan[] = [
     key: 'cycling-road',
     name: 'Cycling Road',
     orderIndex: 14,
-    biome: 'cycling',
+    banner: { scene: 'bridge', flip: true },
     xpToUnlockNext: 130,
     minLevel: 24,
     maxLevel: 32,
@@ -618,7 +624,7 @@ export const AREAS: AreaPlan[] = [
     key: 'safari-zone',
     name: 'Safari Zone',
     orderIndex: 15,
-    biome: 'safari',
+    banner: { scene: 'swamp' },
     xpToUnlockNext: 140,
     minLevel: 24,
     maxLevel: 33,
@@ -663,7 +669,7 @@ export const AREAS: AreaPlan[] = [
     key: 'silph-co',
     name: 'Silph Co.',
     orderIndex: 16,
-    biome: 'city',
+    banner: { scene: 'city' },
     xpToUnlockNext: 125,
     minLevel: 29,
     maxLevel: 41,
@@ -690,7 +696,7 @@ export const AREAS: AreaPlan[] = [
     key: 'sea-routes-19-20',
     name: 'Sea Routes 19 & 20',
     orderIndex: 17,
-    biome: 'sea',
+    banner: { scene: 'ocean' },
     xpToUnlockNext: 150,
     minLevel: 28,
     maxLevel: 38,
@@ -726,7 +732,7 @@ export const AREAS: AreaPlan[] = [
     key: 'seafoam-islands',
     name: 'Seafoam Islands',
     orderIndex: 18,
-    biome: 'ice',
+    banner: { scene: 'snow_mountains' },
     xpToUnlockNext: 160,
     minLevel: 30,
     maxLevel: 40,
@@ -754,7 +760,7 @@ export const AREAS: AreaPlan[] = [
     key: 'pokemon-mansion',
     name: 'Pokémon Mansion',
     orderIndex: 19,
-    biome: 'mansion',
+    banner: { scene: 'volcano' },
     xpToUnlockNext: 175,
     minLevel: 32,
     maxLevel: 42,
@@ -790,7 +796,7 @@ export const AREAS: AreaPlan[] = [
     key: 'route-21',
     name: 'Route 21',
     orderIndex: 20,
-    biome: 'coast',
+    banner: { scene: 'beach' },
     xpToUnlockNext: 180,
     minLevel: 30,
     maxLevel: 40,
@@ -824,7 +830,7 @@ export const AREAS: AreaPlan[] = [
     key: 'victory-road',
     name: 'Victory Road',
     orderIndex: 21,
-    biome: 'victory',
+    banner: { scene: 'cave_dark', flip: true },
     xpToUnlockNext: 205,
     minLevel: 38,
     maxLevel: 47,
@@ -862,7 +868,7 @@ export const AREAS: AreaPlan[] = [
     key: 'indigo-plateau',
     name: 'Indigo Plateau',
     orderIndex: 22,
-    biome: 'plateau',
+    banner: { scene: 'sky' },
     xpToUnlockNext: 100,
     minLevel: 45,
     maxLevel: 55,
@@ -889,7 +895,7 @@ export const AREAS: AreaPlan[] = [
     key: 'power-plant',
     name: 'Power Plant',
     orderIndex: 101,
-    biome: 'plant',
+    banner: { scene: 'factory' },
     hidden: true,
     conditions: [{ kind: 'pokedex', count: 50 }],
     xpToUnlockNext: 75,
@@ -914,7 +920,7 @@ export const AREAS: AreaPlan[] = [
     key: 'cerulean-cave',
     name: 'Cerulean Cave',
     orderIndex: 102,
-    biome: 'crystal',
+    banner: { scene: 'crystal_cave' },
     hidden: true,
     conditions: [{ kind: 'maxLevel', level: 55 }],
     xpToUnlockNext: null,
@@ -937,7 +943,7 @@ export const AREAS: AreaPlan[] = [
     key: 'faraway-island',
     name: 'Faraway Island',
     orderIndex: 103,
-    biome: 'island',
+    banner: { scene: 'beach', flip: true },
     hidden: true,
     conditions: [{ kind: 'pokedex', count: 150 }],
     xpToUnlockNext: null,

@@ -32,6 +32,7 @@ export type RunPhase = 'idle' | 'preview' | 'battle' | 'catch' | 'victory' | 'ce
 export interface CatchState {
   dex: number
   level: number
+  shiny?: boolean
   kind: 'wild' | 'boss'
   target: CatchTarget
   result: (CatchRoll & { ballKey: string | null; events: RunEvent[]; pendingCatchId: string | null }) | null

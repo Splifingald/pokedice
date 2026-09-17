@@ -4,6 +4,7 @@ import {
   deckCounts,
   lootCopies,
   trainerSpecialty,
+  type BattleBackground,
   type BossDef,
   type DeckCounts,
   type EncounterKind,
@@ -17,7 +18,8 @@ import { TypeBadge } from '@/components/TypeBadge'
 import { cx, textOn } from '@/theme/util'
 import { DataTable } from '../DataTable'
 import { addRows, newUuid, removeRows, rowKey, setTable, updateRow, useAdmin, useAdminData } from '../store'
-import { Box, Field, NumInput, PokemonPicker, Stepper, TextInput, inputCls, n, s } from '../widgets'
+import { BackgroundPicker, Box, Field, NumInput, PokemonPicker, Stepper, TextInput, inputCls, n, s } from '../widgets'
+import { AreaBanner } from '@/components/AreaBanner'
 
 const KINDS: EncounterKind[] = ['wild', 'trainer', 'center', 'item']
 const CARD: Record<EncounterKind, { label: string; color: string }> = {
@@ -78,6 +80,10 @@ function BossCard({ b, data, onChange, onRemove }: { b: BossDef; data: GameData;
           Upgrade level
           <NumInput className="w-20" nullable value={b.upgradeLevel ?? null} min={1} max={10} onChange={(v) => onChange({ ...b, upgradeLevel: v })} />
           <span className="text-sm text-muted">empty = the area's</span>
+        </label>
+        <label className="flex flex-wrap items-center gap-2 text-lg">
+          Battle scene
+          <BackgroundPicker value={b.battleBackground} emptyLabel="the area's" onChange={(v) => onChange({ ...b, battleBackground: v })} />
         </label>
       </div>
       <PixelButton size="sm" variant="danger" onClick={onRemove}>
@@ -143,7 +149,14 @@ function AreaEditor({ area }: { area: Row }) {
             <Field label="Foe upgrade level" hint={`dice & combos, 1–10 · empty = global (${data.config.enemyUpgradeLevel})`}>
               <NumInput nullable min={1} max={10} value={area.enemy_upgrade_level as number | null} onChange={(v) => patch({ enemy_upgrade_level: v })} />
             </Field>
-            <Field label="Banner URL" className="col-span-2">
+            <Field label="Battle scene" hint="grass: routes, forests · sea · water: lakes · rock: caves, mountains · default: indoors" className="col-span-2">
+              <BackgroundPicker
+                value={area.battle_background as BattleBackground | null}
+                emptyLabel="default"
+                onChange={(v) => patch({ battle_background: v })}
+              />
+            </Field>
+            <Field label="Banner URL (#flip mirrors it)" className="col-span-2">
               <TextInput value={s(area.banner_url)} onChange={(v) => patch({ banner_url: v || null })} />
             </Field>
           </div>
@@ -166,7 +179,7 @@ function AreaEditor({ area }: { area: Row }) {
             </label>
           </div>
           {!!area.banner_url && (
-            <img src={s(area.banner_url)} alt="" className="pixelated h-20 w-full border-2 border-ink object-cover" style={{ imageRendering: 'pixelated' }} />
+            <AreaBanner url={s(area.banner_url)} className="h-20 border-2 border-ink" />
           )}
         </Box>
 
@@ -501,7 +514,7 @@ export function AreasSection() {
               >
                 <button type="button" className="flex min-w-0 flex-1 items-center gap-2 text-left" onClick={() => setSelected(aid)} aria-current={isCurrent || undefined}>
                   {a.banner_url ? (
-                    <img src={s(a.banner_url)} alt="" className="pixelated h-8 w-14 shrink-0 border border-ink object-cover" style={{ imageRendering: 'pixelated' }} />
+                    <AreaBanner url={s(a.banner_url)} className="h-8 !w-14 shrink-0 border border-ink" />
                   ) : (
                     <span className="h-8 w-14 shrink-0 border border-ink bg-parchment" />
                   )}

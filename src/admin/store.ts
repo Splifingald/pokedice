@@ -5,9 +5,11 @@ import { BUNDLE } from '@/config/bundle'
 import { bundleToRows, PRIMARY_KEYS, rowsToBundle, TABLES, type Row, type TableName, type TableRows } from '@/config/mapping'
 import { fetchAllRows } from '@/config/remote'
 import { compileGameData, type GameData } from '@/engine'
+import type { BundleRaw } from '@/engine/types'
 import { getSupabase, isSupabaseConfigured } from '@/lib/supabase'
 import { pushToast, setContent } from '@/store/game'
 import { downloadText } from './csv'
+import { checkRemote, type RemoteCheck } from './remoteCheck'
 import { validateRow } from './schemas'
 
 export const rowKey = (t: TableName, r: Row) => PRIMARY_KEYS[t].map((k) => String(r[k] ?? '')).join('|')
@@ -256,6 +258,23 @@ export function applyToGame() {
 export function exportBundle() {
   downloadText('pokedice-bundle.json', JSON.stringify(rowsToBundle(get().base), null, 1), 'application/json')
   pushToast('Bundle downloaded — run `pnpm import-bundle <file>` and commit', 'info', 5000)
+}
+
+/** Dev only: reads Supabase fresh (ignores the working copy) and checks it can safely replace src/data/*.json. */
+export async function checkRemoteForPull(): Promise<RemoteCheck> {
+  const client = await getSupabase()
+  if (!client) throw new Error('Supabase client unavailable')
+  return checkRemote(await fetchAllRows(client), BUNDLE)
+}
+
+/** Dev only: the Vite dev server writes the bundle to src/data/*.json + supabase/seed.sql, then HMR reloads it. */
+export async function writeLocalBundle(bundle: BundleRaw) {
+  const res = await fetch('/__dev/write-bundle', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(bundle),
+  })
+  if (!res.ok) throw new Error((await res.text()) || `Dev server answered ${res.status}`)
 }
 
 /** The working copy compiled for previews and the simulator (null while it doesn't compile). */

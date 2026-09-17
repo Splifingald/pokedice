@@ -11,6 +11,7 @@ import { cx } from '@/theme/util'
 import { AreasSection } from './sections/AreasSection'
 import { ConfigSection } from './sections/ConfigSection'
 import { DevToolsSection } from './sections/DevToolsSection'
+import { PullRemoteButton } from './PullRemoteButton'
 import { PokemonSection } from './sections/PokemonSection'
 import { SimulatorSection } from './sections/SimulatorSection'
 import { DiceSection, ItemsSection, TrainersSection, TypeChartSection, UpgradesSection } from './sections/TableSections'
@@ -80,6 +81,7 @@ function SaveBar() {
   const dirty = useDirtyTables()
   const saving = useAdmin((s) => s.saving)
   const undo = useAdmin((s) => s.undo)
+  const mode = useAdmin((s) => s.mode)
   return (
     <section aria-label="Save changes" className="fixed inset-x-0 bottom-0 z-40 border-t-[3px] border-ink bg-panel px-3 py-2 shadow-[0_-3px_0_#6b6480]">
       <div className="mx-auto flex max-w-[1400px] flex-wrap items-center gap-2">
@@ -103,6 +105,7 @@ function SaveBar() {
         <PixelButton size="sm" onClick={exportBundle} title="Download the saved state as the bundle JSON">
           Export bundle
         </PixelButton>
+        {import.meta.env.DEV && mode === 'remote' && <PullRemoteButton />}
       </div>
     </section>
   )

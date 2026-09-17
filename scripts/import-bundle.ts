@@ -11,10 +11,8 @@ import { buildSql } from './seed'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 
-async function main() {
-  const file = process.argv[2]
-  if (!file) throw new Error('Usage: pnpm import-bundle <pokedice-bundle.json>')
-  const b = JSON.parse(await readFile(path.resolve(file), 'utf8')) as BundleRaw
+/** Also used by the dev server's "Pull from Supabase" admin button (vite.config.ts). */
+export async function writeBundleFiles(b: BundleRaw) {
   const need = ['pokemon', 'typeChart', 'diceTypes', 'areas', 'trainers', 'upgrades', 'items', 'config'] as const
   for (const k of need) if (!(k in b)) throw new Error(`Bundle is missing "${k}"`)
   const out: Record<string, unknown> = {
@@ -30,10 +28,20 @@ async function main() {
   for (const [name, data] of Object.entries(out))
     await writeFile(path.join(ROOT, 'src', 'data', name), JSON.stringify(data, null, 1) + '\n')
   await writeFile(path.join(ROOT, 'supabase', 'seed.sql'), buildSql(b))
+}
+
+async function main() {
+  const file = process.argv[2]
+  if (!file) throw new Error('Usage: pnpm import-bundle <pokedice-bundle.json>')
+  const b = JSON.parse(await readFile(path.resolve(file), 'utf8')) as BundleRaw
+  await writeBundleFiles(b)
   console.log(`✓ imported ${b.pokemon.length} pokemon, ${b.areas.length} areas → src/data/*.json + supabase/seed.sql`)
 }
 
-main().catch((err) => {
-  console.error(err instanceof Error ? err.message : err)
-  process.exit(1)
-})
+const isMain = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)
+if (isMain) {
+  main().catch((err) => {
+    console.error(err instanceof Error ? err.message : err)
+    process.exit(1)
+  })
+}

@@ -45,6 +45,7 @@ export interface Battler {
   rerollsLeft: number
   status: StatusState
   spriteUrl: string
+  shiny: boolean
 }
 
 export interface BattleState {
@@ -112,6 +113,7 @@ export interface BattlerSeed {
   dex: number
   level: number
   hp: number
+  shiny?: boolean
 }
 
 export function makeBattler(seed: BattlerSeed, data: GameData): Battler {
@@ -131,6 +133,7 @@ export function makeBattler(seed: BattlerSeed, data: GameData): Battler {
     rerollsLeft: stats.rerolls,
     status: emptyStatus(),
     spriteUrl: species.spriteUrl,
+    shiny: !!seed.shiny,
   }
 }
 
@@ -138,7 +141,7 @@ export interface CreateBattleOptions {
   kind: BattleKind
   team: BattlerSeed[]
   leadUid?: string
-  enemy: { dex: number; level: number; hp?: number }
+  enemy: { dex: number; level: number; hp?: number; shiny?: boolean }
   playerLevels: UpgradeLevels
   enemyLevels: UpgradeLevels
 }
@@ -153,7 +156,7 @@ export function createBattle(opts: CreateBattleOptions, data: GameData): { state
   if (activeIndex < 0) throw new Error('No able Pokémon to send out')
   const enemyMax = effectiveStats(getSpecies(data, opts.enemy.dex), opts.enemy.level, data).maxHp
   const enemy = makeBattler(
-    { uid: 'enemy', dex: opts.enemy.dex, level: opts.enemy.level, hp: opts.enemy.hp ?? enemyMax },
+    { uid: 'enemy', dex: opts.enemy.dex, level: opts.enemy.level, hp: opts.enemy.hp ?? enemyMax, shiny: opts.enemy.shiny },
     data,
   )
   const lead = player[activeIndex]!

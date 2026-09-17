@@ -4,7 +4,7 @@ import { useMemo, useState, type ReactNode } from 'react'
 import { COMBO_NAMES, type Battler, type DamageResult, type LogEntry, type RolledDie, type Side } from '@/engine'
 import { Die } from '@/components/Die'
 import { PixelIcon, STATUS_ICON } from '@/components/icons'
-import { SpriteImg } from '@/components/SpriteImg'
+import { MiniSprite } from '@/components/SpriteImg'
 import type { BattleSlice } from '@/store/game'
 import { useGame } from '@/store/game'
 import { cx } from '@/theme/util'
@@ -125,7 +125,7 @@ function HistoryRow({ r }: { r: Row }) {
   const [open, setOpen] = useState(false)
   const body: ReactNode = (
     <>
-      <SpriteImg dex={r.dex} size={36} className="-my-1" />
+      <MiniSprite dex={r.dex} size={32} className="-my-1" />
       <span className="min-w-0 flex-1 leading-tight">
         <b className={r.foe ? 'text-danger' : undefined}>{r.foe ? `Foe ${r.name}` : r.name}</b> {r.text}
       </span>

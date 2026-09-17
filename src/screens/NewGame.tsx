@@ -9,7 +9,10 @@ import { Modal } from '@/components/Modal'
 import { PixelButton } from '@/components/PixelButton'
 import { SpriteImg } from '@/components/SpriteImg'
 import { StatChip } from '@/components/StatChip'
+import { PLAYER_CHARACTERS, TrainerSprite } from '@/components/TrainerArt'
 import { TypeBadge } from '@/components/TypeBadge'
+import type { PlayerCharacter, PlayerProfile } from '@/engine'
+import { cx } from '@/theme/util'
 import { useGame } from '@/store/game'
 import { enterArea, startNewGame } from '@/store/run'
 
@@ -25,12 +28,13 @@ export function NewGame() {
   const navigate = useNavigate()
   const [line, setLine] = useState(0)
   const [choice, setChoice] = useState<number | null>(null)
+  const [player, setPlayer] = useState<PlayerProfile | null>(null)
   const level = data.config.starterLevel
   const starters = data.config.starters.filter((d) => data.species[d])
   const picking = line >= INTRO.length
 
   const begin = (dex: number) => {
-    startNewGame(dex)
+    startNewGame(dex, player ?? undefined)
     const first = data.areas[0]
     if (first) enterArea(first.id)
     navigate('/area')
@@ -63,6 +67,8 @@ export function NewGame() {
               </PixelButton>
             </div>
           </div>
+        ) : !player ? (
+          <CharacterSelect onDone={setPlayer} />
         ) : (
           <>
             <h1 className="text-center text-5xl">Choose your partner</h1>
@@ -131,5 +137,66 @@ export function NewGame() {
         )}
       </Modal>
     </main>
+  )
+}
+
+/** "Select your character": one of the two trainer sprites, and a name. */
+export function CharacterSelect({
+  onDone,
+  initial,
+  submitLabel = 'NEXT ▸',
+  compact = false,
+}: {
+  onDone: (p: PlayerProfile) => void
+  initial?: PlayerProfile
+  submitLabel?: string
+  /** Inside a panel (Settings): no page heading. */
+  compact?: boolean
+}) {
+  const [character, setCharacter] = useState<PlayerCharacter>(initial?.character ?? 'red')
+  const [name, setName] = useState(initial?.name ?? '')
+  const trimmed = name.trim()
+  return (
+    <form
+      className="mx-auto flex w-full max-w-xl flex-col items-center gap-5"
+      onSubmit={(e) => {
+        e.preventDefault()
+        if (trimmed) onDone({ name: trimmed, character })
+      }}
+    >
+      {compact ? <p className="text-center text-2xl">Select your character</p> : <h1 className="text-center text-5xl">Select your character</h1>}
+      <div role="radiogroup" aria-label="Character" className="flex justify-center gap-4">
+        {PLAYER_CHARACTERS.map((c, i) => (
+          <motion.button
+            key={c}
+            type="button"
+            role="radio"
+            aria-checked={character === c}
+            aria-label={`Character ${i + 1}`}
+            onClick={() => setCharacter(c)}
+            className={cx('pixel-panel p-2', character === c ? 'bg-gold' : 'hover:bg-white')}
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: character === c ? -6 : 0, opacity: 1 }}
+            transition={{ delay: i * 0.08 }}
+          >
+            <TrainerSprite src={`/characters/${c}.png`} size={compact ? 96 : 128} />
+          </motion.button>
+        ))}
+      </div>
+      <label className="flex w-full max-w-xs flex-col gap-1 text-xl">
+        Your name
+        <input
+          value={name}
+          onChange={(e) => setName(e.target.value.slice(0, 12))}
+          maxLength={12}
+          autoComplete="nickname"
+          className="min-h-[44px] w-full border-[3px] border-ink bg-panel px-2 text-2xl"
+          required
+        />
+      </label>
+      <PixelButton type="submit" variant="primary" size="lg" disabled={!trimmed}>
+        {submitLabel}
+      </PixelButton>
+    </form>
   )
 }

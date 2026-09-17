@@ -5,13 +5,15 @@ import { Panel } from '@/components/Panel'
 import { PixelButton } from '@/components/PixelButton'
 import { isSupabaseConfigured } from '@/lib/supabase'
 import { parseSave } from '@/save/schema'
-import { pushToast, setSettings, useGame } from '@/store/game'
+import { mutateSave, pushToast, setSettings, useGame } from '@/store/game'
 import { deleteSave, replaceSave } from '@/store/run'
 import { useIsAdmin } from '@/store/hooks'
 import { checkContent } from '@/store/sync'
 import { GoogleAccountButton } from '@/components/GoogleAccountButton'
 import { SaveFacts } from '@/components/SyncConflictModal'
 import { backupSave, readBackups } from '@/save/storage'
+import { playerOf, TrainerSprite } from '@/components/TrainerArt'
+import { CharacterSelect } from './NewGame'
 
 function Toggle({ label, on, onChange, hint }: { label: string; on: boolean; onChange: (v: boolean) => void; hint?: string }) {
   return (
@@ -94,6 +96,8 @@ export function SettingsScreen() {
           onChange={(v) => setSettings({ reducedMotion: v })}
         />
       </Panel>
+
+      {save && <CharacterPanel />}
 
       {/* Phones have no side bar, so the admin link lives here (admins only). */}
       {isAdmin && (
@@ -220,6 +224,33 @@ function BackupsPanel() {
           </li>
         ))}
       </ul>
+    </Panel>
+  )
+}
+
+function CharacterPanel() {
+  const save = useGame((s) => s.save)
+  const [editing, setEditing] = useState(false)
+  const me = playerOf(save)
+  return (
+    <Panel title="Your character">
+      {editing ? (
+        <CharacterSelect
+          initial={save?.player}
+          submitLabel="SAVE"
+          compact
+          onDone={(player) => {
+            mutateSave((s) => ({ ...s, player }))
+            setEditing(false)
+          }}
+        />
+      ) : (
+        <div className="flex items-center gap-3">
+          <TrainerSprite src={`/characters/${me.character}.png`} size={64} />
+          <span className="flex-1 text-2xl">{me.name || 'No name yet'}</span>
+          <PixelButton onClick={() => setEditing(true)}>CHANGE</PixelButton>
+        </div>
+      )}
     </Panel>
   )
 }

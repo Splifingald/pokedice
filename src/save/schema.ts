@@ -11,6 +11,7 @@ const instanceSchema = z.object({
   currentHp: z.number().min(0),
   caughtAt: z.number(),
   regenCarry: z.number().min(0).optional(),
+  shiny: z.boolean().optional(),
 })
 
 const progressSchema = z.object({
@@ -48,6 +49,7 @@ export const saveSchema = z.object({
   areaProgress: z.record(progressSchema),
   settings: z.object({ sfx: z.boolean(), reducedMotion: z.boolean(), multiExp: z.boolean().default(true) }),
   hpScale: z.number().positive().optional(),
+  player: z.object({ name: z.string().max(12), character: z.enum(['red', 'green']) }).optional(),
 })
 
 /**
