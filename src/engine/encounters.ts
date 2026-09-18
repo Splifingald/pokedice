@@ -36,6 +36,8 @@ export type Encounter =
   | { kind: 'boss'; dex: number; level: number; returning?: boolean }
   /** Something on the ground: `qty` of an item, or Pokédollars (itemKey 'money', qty = ₽). */
   | { kind: 'item'; entryId: string; itemKey: string; qty: number }
+  /** The Game Corner: play the slot machine as long as you like. */
+  | { kind: 'casino' }
 
 export type ForceKind = EncounterKind | 'boss' | 'gym'
 
@@ -134,7 +136,7 @@ export function rollTrainer(ctx: EncounterContext, rng: Rng): Encounter | null {
   }
 }
 
-const DECK_KINDS = ['wild', 'trainer', 'center', 'item'] as const
+const DECK_KINDS = ['wild', 'trainer', 'center', 'item', 'casino'] as const
 export type DeckCounts = Record<(typeof DECK_KINDS)[number], number>
 
 /**
@@ -150,8 +152,8 @@ export function deckCounts(
     (k === 'wild' && !can.wild) || (k === 'trainer' && !can.trainer) || (k === 'item' && !can.item)
       ? 0
       : Math.max(0, Math.round(Number(weights[k]) || 0))
-  const c = { wild: copies('wild'), trainer: copies('trainer'), center: copies('center'), item: copies('item') }
-  return c.wild + c.trainer + c.center + c.item > 0 ? c : { wild: 0, trainer: 0, center: 1, item: 0 }
+  const c = { wild: copies('wild'), trainer: copies('trainer'), center: copies('center'), item: copies('item'), casino: copies('casino') }
+  return c.wild + c.trainer + c.center + c.item + c.casino > 0 ? c : { wild: 0, trainer: 0, center: 1, item: 0, casino: 0 }
 }
 
 /** Cards in one freshly dealt encounter deck of the area. */
@@ -260,8 +262,14 @@ function returningLegend(ctx: EncounterContext): Encounter | null {
   return b ? { kind: 'boss', dex: b.dex, level: b.level, returning: true } : null
 }
 
-const cardEncounter = (card: 'wild' | 'trainer' | 'center', ctx: EncounterContext, rng: Rng): Encounter | null =>
-  card === 'wild' ? rollWild(ctx, rng) : card === 'trainer' ? rollTrainer(ctx, rng) : { kind: 'center', forced: false }
+const cardEncounter = (card: 'wild' | 'trainer' | 'center' | 'casino', ctx: EncounterContext, rng: Rng): Encounter | null =>
+  card === 'wild'
+    ? rollWild(ctx, rng)
+    : card === 'trainer'
+      ? rollTrainer(ctx, rng)
+      : card === 'casino'
+        ? { kind: 'casino' }
+        : { kind: 'center', forced: false }
 
 /** The extra card a fled legendary adds to every deck dealt until it's caught. */
 const legendCards = (ctx: EncounterContext): DeckCard[] => (fledLegendary(ctx.area, ctx.progress, ctx.pokedex) ? ['legend'] : [])
@@ -308,11 +316,12 @@ function drawFromDeck(ctx: EncounterContext, rng: Rng): EncounterRoll {
 function rollWeighted(ctx: EncounterContext, rng: Rng): EncounterRoll {
   const w = ctx.area.encounterWeights
   const can = deckAbilities(ctx.area)
-  const kinds: { kind: 'wild' | 'trainer' | 'center' | 'item'; weight: number }[] = [
+  const kinds: { kind: 'wild' | 'trainer' | 'center' | 'item' | 'casino'; weight: number }[] = [
     { kind: 'wild', weight: can.wild ? w.wild : 0 },
     { kind: 'trainer', weight: can.trainer ? w.trainer : 0 },
     { kind: 'center', weight: w.center },
     { kind: 'item', weight: can.item ? (w.item ?? 0) : 0 },
+    { kind: 'casino', weight: w.casino ?? 0 },
   ]
   for (let attempt = 0; attempt < 10; attempt++) {
     const pick = rng.weighted(kinds, (k) => k.weight)?.kind ?? 'wild'
@@ -339,6 +348,8 @@ function forcedEncounter(ctx: EncounterContext, kind: ForceKind, rng: Rng): Enco
       return rollTrainer(ctx, rng)
     case 'center':
       return { kind: 'center', forced: false }
+    case 'casino':
+      return { kind: 'casino' }
     case 'boss': {
       const b = (ctx.area.legendaryBoss ?? []).find((x) => !ctx.progress.bossesDefeated.includes(x.dex))
       return b ? { kind: 'boss', dex: b.dex, level: b.level } : returningLegend(ctx)

@@ -26,7 +26,7 @@ export interface Toast {
   tone: ToastTone
 }
 
-export type RunPhase = 'idle' | 'preview' | 'battle' | 'catch' | 'victory' | 'center' | 'wipe' | 'stalemate'
+export type RunPhase = 'idle' | 'preview' | 'battle' | 'catch' | 'victory' | 'center' | 'casino' | 'wipe' | 'stalemate'
 
 /** The catch throw after a wild / legendary K.O. `result` is set once the die is thrown. */
 export interface CatchState {

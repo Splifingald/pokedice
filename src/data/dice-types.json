@@ -76,8 +76,8 @@
   "faces": [
    {
     "kind": "status",
-    "status": "burn",
-    "value": 1
+    "value": 1,
+    "status": "burn"
    },
    {
     "kind": "number",
@@ -159,8 +159,8 @@
    },
    {
     "kind": "status",
-    "status": "paralyze",
-    "value": 4
+    "value": 4,
+    "status": "paralyze"
    },
    {
     "kind": "number",
@@ -191,8 +191,8 @@
    },
    {
     "kind": "status",
-    "status": "heal",
-    "value": 3
+    "value": 3,
+    "status": "heal"
    },
    {
     "kind": "number",
@@ -219,8 +219,8 @@
   "faces": [
    {
     "kind": "status",
-    "status": "frozen",
-    "value": 1
+    "value": 1,
+    "status": "frozen"
    },
    {
     "kind": "number",
@@ -290,8 +290,8 @@
   "faces": [
    {
     "kind": "status",
-    "status": "poison",
-    "value": 1
+    "value": 1,
+    "status": "poison"
    },
    {
     "kind": "number",
@@ -416,8 +416,8 @@
    },
    {
     "kind": "status",
-    "status": "confuse",
-    "value": 2
+    "value": 2,
+    "status": "confuse"
    }
   ],
   "description": "Chance to confuse",

@@ -29,6 +29,8 @@ function deepMerge<T>(base: T, over: unknown): T {
   return out as T
 }
 
+const NO_CARDS: Area['encounterWeights'] = { wild: 0, trainer: 0, center: 0, item: 0, casino: 0 }
+
 /** game_config rows over the defaults — missing keys never break the game. */
 export function mergeConfig(raw: Record<string, unknown> | undefined): GameConfig {
   return deepMerge(DEFAULT_CONFIG, raw ?? {})
@@ -78,6 +80,8 @@ export function compileGameData(raw: BundleRaw): GameData {
       hidden: !!a.hidden,
       easyMode: !!a.easyMode,
       unlockConditions: Array.isArray(a.unlockConditions) && a.unlockConditions.length ? a.unlockConditions : null,
+      // Areas saved before the Game Corner have no casino count.
+      encounterWeights: { ...NO_CARDS, ...(a.encounterWeights as Partial<Area['encounterWeights']>) },
       gyms: Array.isArray(a.gyms) ? a.gyms : [],
       lootPool: Array.isArray(a.lootPool) ? a.lootPool : [],
     }))

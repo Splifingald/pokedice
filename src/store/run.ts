@@ -17,6 +17,7 @@ import {
   pickUpItem,
   recordDraws,
   rollCatch,
+  spinSlots,
   createBattle,
   createRng,
   enemyUpgradeLevelFor,
@@ -39,6 +40,7 @@ import {
   type PlayerProfile,
   type RunEvent,
   type SaveData,
+  type SpinResult,
 } from '@/engine'
 import { commitSave, initialRun, mutateSave, pushToast, useGame, type RunState } from './game'
 
@@ -178,6 +180,9 @@ export function engage(leadUid?: string) {
     case 'center':
       commitSave(centerHeal(save, data))
       setRun({ phase: 'center' })
+      return
+    case 'casino':
+      setRun({ phase: 'casino' })
       return
     case 'wild':
       return startBattle('wild', { dex: enc.dex, level: enc.level, shiny: enc.shiny }, leadUid)
@@ -342,6 +347,23 @@ export function afterStalemate() {
 }
 
 export function finishCenter() {
+  setRun({ phase: 'idle', encounter: null })
+}
+
+/** One pull of the Game Corner slot machine; null (and a toast) when the player can't pay for it. */
+export function spinSlotMachine(): SpinResult | null {
+  const { save, data, run } = useGame.getState()
+  if (!save || run.phase !== 'casino') return null
+  const res = spinSlots(save, data, runRng, Date.now(), newId)
+  if (!res) {
+    pushToast('Not enough Pokédollars', 'bad')
+    return null
+  }
+  commitSave(res.save)
+  return res
+}
+
+export function leaveCasino() {
   setRun({ phase: 'idle', encounter: null })
 }
 

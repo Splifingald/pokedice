@@ -67,7 +67,8 @@ export interface AreaPlan {
   xpToUnlockNext: number | null
   minLevel: number
   maxLevel: number
-  weights: Record<EncounterKind, number>
+  /** Copies of each card; kinds left out get none. */
+  weights: Partial<Record<EncounterKind, number>>
   backtrackMultiplier: number
   bosses: BossDef[] | null
   scalesToTeam: boolean
@@ -179,7 +180,7 @@ const ONCE_ONLY: Record<string, LootPlan[]> = {
 export function lootPlanFor(plan: AreaPlan): LootPlan[] {
   if (plan.key === 'faraway-island') return []
   const tier: 1 | 2 | 3 | 4 | 5 =
-    plan.key === 'cerulean-cave' ? 5 : plan.key === 'power-plant' ? 4 : plan.orderIndex <= 4 ? 1 : plan.orderIndex <= 9 ? 2 : plan.orderIndex <= 15 ? 3 : 4
+    plan.key === 'cerulean-cave' ? 5 : plan.key === 'power-plant' ? 4 : plan.key === 'rocket-hideout' ? 3 : plan.orderIndex <= 4 ? 1 : plan.orderIndex <= 9 ? 2 : plan.orderIndex <= 15 ? 3 : 4
   return [...LOOT_TIERS[tier], ...(ONCE_ONLY[plan.key] ?? [])]
 }
 
@@ -953,6 +954,31 @@ export const AREAS: AreaPlan[] = [
     bosses: [{ dex: 151, level: 65, teamAvgThreshold: 0 }], // Mew — waits for you on arrival
     wild: [],
     trainers: [],
+  }),
+  // Behind the Game Corner poster in Celadon: Rocket Grunts and the slot machine. Opens once Routes 7 & 8 (Celadon) is
+  // reached; an 'area' condition names the area by its plan key (the seed turns it into the area's id).
+  area({
+    key: 'rocket-hideout',
+    name: 'Rocket Hideout',
+    orderIndex: 104,
+    banner: { scene: 'city', flip: true },
+    hidden: true,
+    conditions: [{ kind: 'area', areaId: 'routes-7-8' }],
+    xpToUnlockNext: null,
+    minLevel: 19,
+    maxLevel: 24,
+    weights: { wild: 0, trainer: 5, center: 1, item: 1, casino: 3 },
+    wild: [],
+    trainers: [
+      { name: 'Rocket Grunt', team: [[19, 19], [20, 20]] },
+      { name: 'Rocket Grunt', team: [[41, 19], [23, 19], [41, 19]] },
+      { name: 'Rocket Grunt', team: [[96, 20], [66, 20]] },
+      { name: 'Rocket Grunt', team: [[88, 21], [109, 21]] },
+      { name: 'Rocket Grunt', team: [[27, 21], [28, 22]] },
+      { name: 'Rocket Grunt', team: [[23, 22], [24, 23]] },
+      { name: 'Rocket Grunt', team: [[41, 23], [42, 24]] },
+      { name: 'Rocket Grunt', team: [[109, 24], [110, 24]] },
+    ],
   }),
 ]
 

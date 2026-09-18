@@ -1,6 +1,19 @@
 import { useMemo, useState } from 'react'
-import { DEFAULT_CONFIG, xpToNext, type GameConfig, type StatusRules } from '@/engine'
+import {
+  DEFAULT_CONFIG,
+  eggSpecies,
+  slotOdds,
+  slotReturnPerSpin,
+  xpToNext,
+  type DayCareConfig,
+  type GameConfig,
+  type SlotMachineConfig,
+  type SlotOutcomeKey,
+  type StatusRules,
+} from '@/engine'
+import { PixelIcon } from '@/components/icons'
 import { SpriteImg } from '@/components/SpriteImg'
+import { cx } from '@/theme/util'
 import { DataTable } from '../DataTable'
 import { addRows, rowKey, updateRow, useAdmin, useAdminData } from '../store'
 import { Box, Field, NumInput, PokemonPicker, inputCls } from '../widgets'
@@ -14,6 +27,136 @@ function useConfigRow<K extends keyof GameConfig>(key: K): [GameConfig[K], (v: G
     else addRows('game_config', [{ key, value: v }])
   }
   return [value, set]
+}
+
+const SLOT_ROWS: { key: SlotOutcomeKey; balls: number; label: string }[] = [
+  { key: 'oneBall', balls: 1, label: '1 Poké Ball' },
+  { key: 'twoBalls', balls: 2, label: '2 Poké Balls' },
+  { key: 'threeBalls', balls: 3, label: '3 Poké Balls' },
+  { key: 'jackpot', balls: 0, label: '3 prize Pokémon (jackpot)' },
+]
+
+/** Game Corner (Rocket Hideout): the slot machine's price, what each result pays, and how often it comes up. */
+function SlotMachineBox() {
+  const data = useAdminData()
+  const [raw, setRaw] = useConfigRow('slotMachine')
+  const cfg: SlotMachineConfig = { ...DEFAULT_CONFIG.slotMachine, ...raw }
+  const odds = slotOdds(cfg)
+  const back = slotReturnPerSpin(cfg)
+  const set = (patch: Partial<SlotMachineConfig>) => setRaw({ ...cfg, ...patch })
+  const setOutcome = (k: SlotOutcomeKey, patch: Partial<SlotMachineConfig[SlotOutcomeKey]>) => set({ [k]: { ...cfg[k], ...patch } })
+  const prize = data?.species[cfg.prizeDex]?.name ?? `#${cfg.prizeDex}`
+  const pct = (x: number) => `${Math.round(x * 1000) / 10} %`
+  return (
+    <Box
+      title="Game Corner — slot machine"
+      hint="Played on the Game Corner cards (Areas → Encounter deck). The result is drawn from these weights, then the reels are laid out to show it."
+    >
+      <div className="grid gap-3 sm:grid-cols-3">
+        <Field label="Cost per spin (₽)">
+          <NumInput min={0} value={cfg.cost} onChange={(v) => set({ cost: Math.max(0, v ?? 0) })} />
+        </Field>
+        <Field label="Prize Pokémon" className="sm:col-span-2">
+          {data && <PokemonPicker data={data} value={cfg.prizeDex} onChange={(dex) => set({ prizeDex: dex })} />}
+        </Field>
+        <Field label="Prize level">
+          <NumInput min={1} max={100} value={cfg.prizeLevel} onChange={(v) => set({ prizeLevel: Math.max(1, Math.min(100, v ?? 1)) })} />
+        </Field>
+      </div>
+      <table className="w-full text-lg">
+        <thead>
+          <tr className="text-left">
+            <th className="font-normal">Result</th>
+            <th className="font-normal">Weight</th>
+            <th className="font-normal">Chance</th>
+            <th className="font-normal">Pays (₽)</th>
+          </tr>
+        </thead>
+        <tbody>
+          {SLOT_ROWS.map((r) => (
+            <tr key={r.key} className="border-t border-shadow/40">
+              <td className="py-1 pr-2">
+                <span className="flex items-center gap-1">
+                  {r.balls
+                    ? Array.from({ length: r.balls }, (_, j) => <PixelIcon key={j} name="ball" size={16} />)
+                    : [0, 1, 2].map((j) => <SpriteImg key={j} dex={cfg.prizeDex} size={24} />)}
+                  <span className="ml-1">{r.label}</span>
+                </span>
+              </td>
+              <td className="pr-2">
+                <NumInput className="w-24" min={0} value={cfg[r.key].weight} onChange={(v) => setOutcome(r.key, { weight: Math.max(0, v ?? 0) })} />
+              </td>
+              <td className="pr-2 font-mono">{pct(odds[r.key])}</td>
+              <td>
+                <NumInput className="w-24" min={0} value={cfg[r.key].gold} onChange={(v) => setOutcome(r.key, { gold: Math.max(0, v ?? 0) })} />
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <p className="text-base text-muted">
+        Weights are relative (they needn't add up to 100). The jackpot gives {prize} Lv.{cfg.prizeLevel}: it joins the team
+        (or the Box), or replaces a weaker {prize} you own. Its gold is paid only when you already have {prize} at that
+        level or above.
+      </p>
+      <p className={cx('text-lg', back >= cfg.cost ? 'text-danger' : '')}>
+        Pays back <b>₽{back.toFixed(2)}</b> per ₽{cfg.cost} spin on average ({cfg.cost ? pct(back / cfg.cost) : '—'}
+        ){odds.jackpot > 0 && <> · {prize} about every {Math.round(1 / odds.jackpot)} spins</>}
+        {back >= cfg.cost && ' · players make money on this machine!'}
+      </p>
+    </Box>
+  )
+}
+
+/** Pokémon Day Care: when it opens, how fast residents train, and what Eggs cost and hatch into. */
+function DayCareBox() {
+  const data = useAdminData()
+  const [raw, setRaw] = useConfigRow('dayCare')
+  const cfg: DayCareConfig = { ...DEFAULT_CONFIG.dayCare, ...raw }
+  const set = (patch: Partial<DayCareConfig>) => setRaw({ ...cfg, ...patch })
+  const num = (k: keyof DayCareConfig, min = 0) => (
+    <NumInput min={min} value={cfg[k]} onChange={(v) => set({ [k]: Math.max(min, v ?? min) })} />
+  )
+  const perDay = cfg.tickMinutes > 0 ? (cfg.xpPerTick * 24 * 60) / cfg.tickMinutes : 0
+  const pool = data ? eggSpecies(data) : []
+  return (
+    <Box title="Pokémon Day Care" hint="A secret place on the Map (not an area): Pokémon train in real time, and Eggs hatch on the spot.">
+      <div className="grid gap-3 sm:grid-cols-3">
+        <Field label="Opens at (Pokédex)" hint="species caught; a free Egg waits on the first visit">
+          {num('unlockPokedex', 0)}
+        </Field>
+        <Field label="Slots">{num('slots', 1)}</Field>
+        <Field label="Max XP per stay">{num('maxXp', 0)}</Field>
+        <Field label="XP per tick">{num('xpPerTick', 0)}</Field>
+        <Field label="Tick (minutes)">{num('tickMinutes', 1)}</Field>
+        <Field label="Egg price (₽)">{num('eggPrice', 0)}</Field>
+      </div>
+      <p className="text-lg">
+        {perDay.toFixed(1)} XP per day · the {cfg.maxXp} XP cap is reached after{' '}
+        {perDay > 0 ? `${(cfg.maxXp / perDay).toFixed(1)} days` : 'never'}. Residents level up but never evolve here.
+      </p>
+      <div className="grid gap-3 sm:grid-cols-4">
+        <Field label="Unowned weight" hint="× odds of a species not in the Pokédex (owned = 1)">
+          {num('unownedWeight', 0)}
+        </Field>
+        <Field label="Hatch: rank" hint="the n-th highest level owned">
+          {num('hatchRank', 1)}
+        </Field>
+        <Field label="Hatch: minus">{num('hatchOffset', 0)}</Field>
+        <Field label="Hatch: at least">{num('hatchMinLevel', 1)}</Field>
+      </div>
+      <div>
+        <p className="text-base text-muted">
+          Eggs hatch into the first form of a line that evolves, starters excluded ({pool.length} species):
+        </p>
+        <div className="mt-1 flex flex-wrap gap-0.5">
+          {pool.map((sp) => (
+            <SpriteImg key={sp.dex} dex={sp.dex} size={32} alt={sp.name} />
+          ))}
+        </div>
+      </div>
+    </Box>
+  )
 }
 
 function XpPlot({ A, B, C, fightsPerHour, mult }: { A: number; B: number; C: number; fightsPerHour: number; mult: number }) {
@@ -296,6 +439,10 @@ export function ConfigSection() {
           </Field>
         </div>
       </section>
+
+      <SlotMachineBox />
+
+      <DayCareBox />
 
       <StatusRulesBox />
 

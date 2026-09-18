@@ -4,6 +4,9 @@ import { useNavigate } from 'react-router-dom'
 import {
   badgeCase,
   conditionStatus,
+  dayCareOf,
+  dayCareXp,
+  isDayCareOpen,
   isAreaUnlocked,
   linearAreas,
   progressOf,
@@ -21,6 +24,7 @@ import { useGame } from '@/store/game'
 import { enterArea } from '@/store/run'
 import { cx } from '@/theme/util'
 import { AreaBanner } from '@/components/AreaBanner'
+import { EggSprite } from './DayCareScreen'
 
 /** How many areas of the main chain the map shows by default, from the one you're working on. */
 const WINDOW = 3
@@ -114,6 +118,7 @@ function AreaCard({ area, index, prevName, delay = 0 }: { area: Area; index: num
               'trainers only'
             )}
             {area.trainerPool.length ? ` · ${area.trainerPool.length} trainers` : ''}
+            {area.encounterWeights.casino > 0 ? ' · Game Corner' : ''}
             {area.scalesToTeam ? ' · endless, foes scale to your team' : ''}
             {area.easyMode ? ' · easy: a Center after any K.O.' : ''}
           </div>
@@ -168,7 +173,7 @@ function SecretCard({ area }: { area: Area }) {
   const save = useGame((s) => s.save)!
   const data = useGame((s) => s.data)
   if (isAreaUnlocked(save, area.id, data)) return <AreaCard area={area} index="★" />
-  const conds = (area.unlockConditions ?? []).map((c) => conditionStatus(c, save))
+  const conds = (area.unlockConditions ?? []).map((c) => conditionStatus(c, save, data))
   return (
     <li className="pixel-panel-dark overflow-hidden p-0">
       <div className="relative h-20 overflow-hidden sm:h-28">
@@ -193,6 +198,62 @@ function SecretCard({ area }: { area: Area }) {
           </div>
         ))}
       </div>
+    </li>
+  )
+}
+
+/** The Day Care sits with the secret areas: a locked card until enough species are caught, then its own screen. */
+function DayCareCard() {
+  const save = useGame((s) => s.save)!
+  const data = useGame((s) => s.data)
+  const navigate = useNavigate()
+  const cfg = data.config.dayCare
+  if (!isDayCareOpen(save, data)) {
+    const current = new Set(save.pokedex).size
+    return (
+      <li className="pixel-panel-dark flex flex-col gap-2 p-3">
+        <div className="flex items-center gap-3">
+          <EggSprite size={40} className="opacity-40 grayscale" />
+          <div className="text-2xl">A secret place</div>
+        </div>
+        <div className="text-lg">
+          <div className="flex justify-between gap-2">
+            <span>Catch {cfg.unlockPokedex} Pokémon</span>
+            <span className="font-mono text-base">
+              {Math.min(current, cfg.unlockPokedex)}/{cfg.unlockPokedex}
+            </span>
+          </div>
+          <div className="mt-0.5 h-2 border border-panel bg-ink">
+            <div className="h-full bg-gold" style={{ width: `${Math.min(100, (current / Math.max(1, cfg.unlockPokedex)) * 100)}%` }} />
+          </div>
+        </div>
+      </li>
+    )
+  }
+  const dc = dayCareOf(save)
+  const now = Date.now()
+  const full = dc.residents.filter((r) => dayCareXp(r, now, data) >= cfg.maxXp).length
+  return (
+    <li className="pixel-panel flex flex-wrap items-center gap-3 p-3">
+      <EggSprite size={48} />
+      <div className="min-w-0 flex-1 basis-[12rem]">
+        <h2 className="text-3xl leading-none">Pokémon Day Care</h2>
+        <div className="text-lg text-muted">
+          {dc.residents.length}/{cfg.slots} staying
+          {full > 0 && ` · ${full} ready to pick up`}
+          {!dc.eggClaimed ? ' · an Egg is waiting for you!' : ` · Eggs ₽${cfg.eggPrice}`}
+        </div>
+        {dc.residents.length > 0 && (
+          <div className="mt-1 flex gap-1">
+            {dc.residents.map((r) => (
+              <MiniSprite key={r.inst.id} dex={r.inst.dex} size={32} />
+            ))}
+          </div>
+        )}
+      </div>
+      <PixelButton variant="primary" className="w-full sm:w-auto" onClick={() => navigate('/daycare')}>
+        ENTER
+      </PixelButton>
     </li>
   )
 }
@@ -244,17 +305,16 @@ export function MapScreen() {
           {showAll ? `SHOW THE NEXT ${WINDOW} ONLY` : `VIEW ALL ${chain.length} AREAS`}
         </PixelButton>
       )}
-      {secrets.length > 0 && (
-        <section className="flex flex-col gap-2">
-          <h2 className="text-4xl">Secret areas</h2>
-          <p className="copy text-muted">Hidden places open up once you meet their conditions — keep catching and training.</p>
-          <ol className="grid gap-4 md:grid-cols-2">
-            {secrets.map((a) => (
-              <SecretCard key={a.id} area={a} />
-            ))}
-          </ol>
-        </section>
-      )}
+      <section className="flex flex-col gap-2">
+        <h2 className="text-4xl">Secret areas</h2>
+        <p className="copy text-muted">Hidden places open up once you meet their conditions — keep catching and training.</p>
+        <ol className="grid gap-4 md:grid-cols-2">
+          {secrets.map((a) => (
+            <SecretCard key={a.id} area={a} />
+          ))}
+          <DayCareCard />
+        </ol>
+      </section>
     </div>
   )
 }

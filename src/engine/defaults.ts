@@ -43,4 +43,27 @@ export const DEFAULT_CONFIG: GameConfig = {
     heal: { threshold: 2, amount: 'rollTotal' },
   },
   ai: { samples: 200, rerollGainThreshold: 0.08 },
+  // Game Corner: every spin shows something. Returns 8.5 ₽ per 10 ₽ on average, plus the Porygon jackpot; a jackpot
+  // when Porygon Lv.30+ is already yours refunds the spin, so the machine never becomes a money printer.
+  slotMachine: {
+    cost: 10,
+    oneBall: { weight: 50, gold: 1 },
+    twoBalls: { weight: 30, gold: 10 },
+    threeBalls: { weight: 10, gold: 50 },
+    jackpot: { weight: 10, gold: 10 },
+    prizeDex: 137,
+    prizeLevel: 30,
+  },
+  dayCare: {
+    unlockPokedex: 20,
+    slots: 2,
+    xpPerTick: 1,
+    tickMinutes: 30,
+    maxXp: 500,
+    eggPrice: 50,
+    unownedWeight: 3,
+    hatchRank: 3,
+    hatchOffset: 2,
+    hatchMinLevel: 5,
+  },
 }

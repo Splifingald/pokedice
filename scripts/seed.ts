@@ -541,7 +541,7 @@ async function fetchTypeChart(): Promise<TypeChartRow[]> {
   return rows
 }
 
-function buildAreasAndTrainers(pokemon: Species[]): { areas: Area[]; trainers: Trainer[] } {
+export function buildAreasAndTrainers(pokemon: Species[]): { areas: Area[]; trainers: Trainer[] } {
   const rng = createRng(20260913)
   const byDex = new Map(pokemon.map((p) => [p.dex, p]))
   const legendaries = new Set(LEGENDARIES)
@@ -655,7 +655,7 @@ function buildAreasAndTrainers(pokemon: Species[]): { areas: Area[]; trainers: T
       xpToUnlockNext: plan.xpToUnlockNext,
       minLevel: plan.minLevel,
       maxLevel: plan.maxLevel,
-      encounterWeights: plan.weights,
+      encounterWeights: { wild: 0, trainer: 0, center: 0, item: 0, casino: 0, ...plan.weights },
       backtrackMultiplier: plan.backtrackMultiplier,
       legendaryBoss: plan.bosses,
       scalesToTeam: plan.scalesToTeam,
@@ -663,7 +663,7 @@ function buildAreasAndTrainers(pokemon: Species[]): { areas: Area[]; trainers: T
       enemyUpgradeLevel: null, // set below, once every area is known
       battleBackground: AREA_BACKGROUNDS[plan.name] ?? 'default',
       hidden: !!plan.hidden,
-      unlockConditions: plan.conditions ?? null,
+      unlockConditions: plan.conditions?.map((c) => (c.kind === 'area' ? { ...c, areaId: stableUuid(`area:${c.areaId}`) } : c)) ?? null,
       gyms,
       wildPool,
       trainerPool,

@@ -483,126 +483,6 @@
  ],
  "dice": [
   {
-   "dieType": "normal",
-   "level": 1,
-   "bonus": 0,
-   "cost": 0
-  },
-  {
-   "dieType": "normal",
-   "level": 2,
-   "bonus": 1,
-   "cost": 10
-  },
-  {
-   "dieType": "normal",
-   "level": 3,
-   "bonus": 2,
-   "cost": 16
-  },
-  {
-   "dieType": "normal",
-   "level": 4,
-   "bonus": 3,
-   "cost": 24
-  },
-  {
-   "dieType": "normal",
-   "level": 5,
-   "bonus": 4,
-   "cost": 37
-  },
-  {
-   "dieType": "normal",
-   "level": 6,
-   "bonus": 6,
-   "cost": 58
-  },
-  {
-   "dieType": "normal",
-   "level": 7,
-   "bonus": 8,
-   "cost": 89
-  },
-  {
-   "dieType": "normal",
-   "level": 8,
-   "bonus": 10,
-   "cost": 139
-  },
-  {
-   "dieType": "normal",
-   "level": 9,
-   "bonus": 12,
-   "cost": 215
-  },
-  {
-   "dieType": "normal",
-   "level": 10,
-   "bonus": 15,
-   "cost": 333
-  },
-  {
-   "dieType": "fire",
-   "level": 1,
-   "bonus": 0,
-   "cost": 0
-  },
-  {
-   "dieType": "fire",
-   "level": 2,
-   "bonus": 1,
-   "cost": 10
-  },
-  {
-   "dieType": "fire",
-   "level": 3,
-   "bonus": 2,
-   "cost": 16
-  },
-  {
-   "dieType": "fire",
-   "level": 4,
-   "bonus": 3,
-   "cost": 24
-  },
-  {
-   "dieType": "fire",
-   "level": 5,
-   "bonus": 4,
-   "cost": 37
-  },
-  {
-   "dieType": "fire",
-   "level": 6,
-   "bonus": 6,
-   "cost": 58
-  },
-  {
-   "dieType": "fire",
-   "level": 7,
-   "bonus": 8,
-   "cost": 89
-  },
-  {
-   "dieType": "fire",
-   "level": 8,
-   "bonus": 10,
-   "cost": 139
-  },
-  {
-   "dieType": "fire",
-   "level": 9,
-   "bonus": 12,
-   "cost": 215
-  },
-  {
-   "dieType": "fire",
-   "level": 10,
-   "bonus": 15,
-   "cost": 333
-  },
-  {
    "dieType": "water",
    "level": 1,
    "bonus": 0,
@@ -849,6 +729,126 @@
    "cost": 0
   },
   {
+   "dieType": "normal",
+   "level": 1,
+   "bonus": 0,
+   "cost": 0
+  },
+  {
+   "dieType": "normal",
+   "level": 2,
+   "bonus": 1,
+   "cost": 10
+  },
+  {
+   "dieType": "normal",
+   "level": 3,
+   "bonus": 2,
+   "cost": 16
+  },
+  {
+   "dieType": "normal",
+   "level": 4,
+   "bonus": 3,
+   "cost": 24
+  },
+  {
+   "dieType": "normal",
+   "level": 5,
+   "bonus": 4,
+   "cost": 37
+  },
+  {
+   "dieType": "normal",
+   "level": 6,
+   "bonus": 6,
+   "cost": 58
+  },
+  {
+   "dieType": "normal",
+   "level": 7,
+   "bonus": 8,
+   "cost": 89
+  },
+  {
+   "dieType": "normal",
+   "level": 8,
+   "bonus": 10,
+   "cost": 139
+  },
+  {
+   "dieType": "normal",
+   "level": 9,
+   "bonus": 12,
+   "cost": 215
+  },
+  {
+   "dieType": "normal",
+   "level": 10,
+   "bonus": 15,
+   "cost": 333
+  },
+  {
+   "dieType": "fire",
+   "level": 1,
+   "bonus": 0,
+   "cost": 0
+  },
+  {
+   "dieType": "fire",
+   "level": 2,
+   "bonus": 1,
+   "cost": 10
+  },
+  {
+   "dieType": "fire",
+   "level": 3,
+   "bonus": 2,
+   "cost": 16
+  },
+  {
+   "dieType": "fire",
+   "level": 4,
+   "bonus": 3,
+   "cost": 24
+  },
+  {
+   "dieType": "fire",
+   "level": 5,
+   "bonus": 4,
+   "cost": 37
+  },
+  {
+   "dieType": "fire",
+   "level": 6,
+   "bonus": 6,
+   "cost": 58
+  },
+  {
+   "dieType": "fire",
+   "level": 7,
+   "bonus": 8,
+   "cost": 89
+  },
+  {
+   "dieType": "fire",
+   "level": 8,
+   "bonus": 10,
+   "cost": 139
+  },
+  {
+   "dieType": "fire",
+   "level": 9,
+   "bonus": 12,
+   "cost": 215
+  },
+  {
+   "dieType": "fire",
+   "level": 10,
+   "bonus": 15,
+   "cost": 333
+  },
+  {
    "dieType": "fighting",
    "level": 2,
    "bonus": 1,
@@ -955,6 +955,246 @@
    "level": 9,
    "bonus": 12,
    "cost": 215
+  },
+  {
+   "dieType": "dragon",
+   "level": 1,
+   "bonus": 0,
+   "cost": 0
+  },
+  {
+   "dieType": "dragon",
+   "level": 2,
+   "bonus": 1,
+   "cost": 10
+  },
+  {
+   "dieType": "dragon",
+   "level": 3,
+   "bonus": 2,
+   "cost": 16
+  },
+  {
+   "dieType": "dragon",
+   "level": 4,
+   "bonus": 3,
+   "cost": 24
+  },
+  {
+   "dieType": "dragon",
+   "level": 5,
+   "bonus": 4,
+   "cost": 37
+  },
+  {
+   "dieType": "dragon",
+   "level": 6,
+   "bonus": 6,
+   "cost": 58
+  },
+  {
+   "dieType": "dragon",
+   "level": 7,
+   "bonus": 8,
+   "cost": 89
+  },
+  {
+   "dieType": "dragon",
+   "level": 8,
+   "bonus": 10,
+   "cost": 139
+  },
+  {
+   "dieType": "dragon",
+   "level": 9,
+   "bonus": 12,
+   "cost": 215
+  },
+  {
+   "dieType": "dragon",
+   "level": 10,
+   "bonus": 15,
+   "cost": 333
+  },
+  {
+   "dieType": "dark",
+   "level": 1,
+   "bonus": 0,
+   "cost": 0
+  },
+  {
+   "dieType": "dark",
+   "level": 2,
+   "bonus": 1,
+   "cost": 10
+  },
+  {
+   "dieType": "dark",
+   "level": 3,
+   "bonus": 2,
+   "cost": 16
+  },
+  {
+   "dieType": "dark",
+   "level": 4,
+   "bonus": 3,
+   "cost": 24
+  },
+  {
+   "dieType": "dark",
+   "level": 5,
+   "bonus": 4,
+   "cost": 37
+  },
+  {
+   "dieType": "dark",
+   "level": 6,
+   "bonus": 6,
+   "cost": 58
+  },
+  {
+   "dieType": "dark",
+   "level": 7,
+   "bonus": 8,
+   "cost": 89
+  },
+  {
+   "dieType": "dark",
+   "level": 8,
+   "bonus": 10,
+   "cost": 139
+  },
+  {
+   "dieType": "dark",
+   "level": 9,
+   "bonus": 12,
+   "cost": 215
+  },
+  {
+   "dieType": "dark",
+   "level": 10,
+   "bonus": 15,
+   "cost": 333
+  },
+  {
+   "dieType": "steel",
+   "level": 1,
+   "bonus": 0,
+   "cost": 0
+  },
+  {
+   "dieType": "steel",
+   "level": 2,
+   "bonus": 1,
+   "cost": 10
+  },
+  {
+   "dieType": "steel",
+   "level": 3,
+   "bonus": 2,
+   "cost": 16
+  },
+  {
+   "dieType": "steel",
+   "level": 4,
+   "bonus": 3,
+   "cost": 24
+  },
+  {
+   "dieType": "steel",
+   "level": 5,
+   "bonus": 4,
+   "cost": 37
+  },
+  {
+   "dieType": "steel",
+   "level": 6,
+   "bonus": 6,
+   "cost": 58
+  },
+  {
+   "dieType": "steel",
+   "level": 7,
+   "bonus": 8,
+   "cost": 89
+  },
+  {
+   "dieType": "steel",
+   "level": 8,
+   "bonus": 10,
+   "cost": 139
+  },
+  {
+   "dieType": "steel",
+   "level": 9,
+   "bonus": 12,
+   "cost": 215
+  },
+  {
+   "dieType": "steel",
+   "level": 10,
+   "bonus": 15,
+   "cost": 333
+  },
+  {
+   "dieType": "fairy",
+   "level": 1,
+   "bonus": 0,
+   "cost": 0
+  },
+  {
+   "dieType": "fairy",
+   "level": 2,
+   "bonus": 1,
+   "cost": 10
+  },
+  {
+   "dieType": "fairy",
+   "level": 3,
+   "bonus": 2,
+   "cost": 16
+  },
+  {
+   "dieType": "fairy",
+   "level": 4,
+   "bonus": 3,
+   "cost": 24
+  },
+  {
+   "dieType": "fairy",
+   "level": 5,
+   "bonus": 4,
+   "cost": 37
+  },
+  {
+   "dieType": "fairy",
+   "level": 6,
+   "bonus": 6,
+   "cost": 58
+  },
+  {
+   "dieType": "fairy",
+   "level": 7,
+   "bonus": 8,
+   "cost": 89
+  },
+  {
+   "dieType": "fairy",
+   "level": 8,
+   "bonus": 10,
+   "cost": 139
+  },
+  {
+   "dieType": "fairy",
+   "level": 9,
+   "bonus": 12,
+   "cost": 215
+  },
+  {
+   "dieType": "fairy",
+   "level": 10,
+   "bonus": 15,
+   "cost": 333
   },
   {
    "dieType": "poison",
@@ -1318,246 +1558,6 @@
   },
   {
    "dieType": "ghost",
-   "level": 10,
-   "bonus": 15,
-   "cost": 333
-  },
-  {
-   "dieType": "dragon",
-   "level": 1,
-   "bonus": 0,
-   "cost": 0
-  },
-  {
-   "dieType": "dragon",
-   "level": 2,
-   "bonus": 1,
-   "cost": 10
-  },
-  {
-   "dieType": "dragon",
-   "level": 3,
-   "bonus": 2,
-   "cost": 16
-  },
-  {
-   "dieType": "dragon",
-   "level": 4,
-   "bonus": 3,
-   "cost": 24
-  },
-  {
-   "dieType": "dragon",
-   "level": 5,
-   "bonus": 4,
-   "cost": 37
-  },
-  {
-   "dieType": "dragon",
-   "level": 6,
-   "bonus": 6,
-   "cost": 58
-  },
-  {
-   "dieType": "dragon",
-   "level": 7,
-   "bonus": 8,
-   "cost": 89
-  },
-  {
-   "dieType": "dragon",
-   "level": 8,
-   "bonus": 10,
-   "cost": 139
-  },
-  {
-   "dieType": "dragon",
-   "level": 9,
-   "bonus": 12,
-   "cost": 215
-  },
-  {
-   "dieType": "dragon",
-   "level": 10,
-   "bonus": 15,
-   "cost": 333
-  },
-  {
-   "dieType": "dark",
-   "level": 1,
-   "bonus": 0,
-   "cost": 0
-  },
-  {
-   "dieType": "dark",
-   "level": 2,
-   "bonus": 1,
-   "cost": 10
-  },
-  {
-   "dieType": "dark",
-   "level": 3,
-   "bonus": 2,
-   "cost": 16
-  },
-  {
-   "dieType": "dark",
-   "level": 4,
-   "bonus": 3,
-   "cost": 24
-  },
-  {
-   "dieType": "dark",
-   "level": 5,
-   "bonus": 4,
-   "cost": 37
-  },
-  {
-   "dieType": "dark",
-   "level": 6,
-   "bonus": 6,
-   "cost": 58
-  },
-  {
-   "dieType": "dark",
-   "level": 7,
-   "bonus": 8,
-   "cost": 89
-  },
-  {
-   "dieType": "dark",
-   "level": 8,
-   "bonus": 10,
-   "cost": 139
-  },
-  {
-   "dieType": "dark",
-   "level": 9,
-   "bonus": 12,
-   "cost": 215
-  },
-  {
-   "dieType": "dark",
-   "level": 10,
-   "bonus": 15,
-   "cost": 333
-  },
-  {
-   "dieType": "steel",
-   "level": 1,
-   "bonus": 0,
-   "cost": 0
-  },
-  {
-   "dieType": "steel",
-   "level": 2,
-   "bonus": 1,
-   "cost": 10
-  },
-  {
-   "dieType": "steel",
-   "level": 3,
-   "bonus": 2,
-   "cost": 16
-  },
-  {
-   "dieType": "steel",
-   "level": 4,
-   "bonus": 3,
-   "cost": 24
-  },
-  {
-   "dieType": "steel",
-   "level": 5,
-   "bonus": 4,
-   "cost": 37
-  },
-  {
-   "dieType": "steel",
-   "level": 6,
-   "bonus": 6,
-   "cost": 58
-  },
-  {
-   "dieType": "steel",
-   "level": 7,
-   "bonus": 8,
-   "cost": 89
-  },
-  {
-   "dieType": "steel",
-   "level": 8,
-   "bonus": 10,
-   "cost": 139
-  },
-  {
-   "dieType": "steel",
-   "level": 9,
-   "bonus": 12,
-   "cost": 215
-  },
-  {
-   "dieType": "steel",
-   "level": 10,
-   "bonus": 15,
-   "cost": 333
-  },
-  {
-   "dieType": "fairy",
-   "level": 1,
-   "bonus": 0,
-   "cost": 0
-  },
-  {
-   "dieType": "fairy",
-   "level": 2,
-   "bonus": 1,
-   "cost": 10
-  },
-  {
-   "dieType": "fairy",
-   "level": 3,
-   "bonus": 2,
-   "cost": 16
-  },
-  {
-   "dieType": "fairy",
-   "level": 4,
-   "bonus": 3,
-   "cost": 24
-  },
-  {
-   "dieType": "fairy",
-   "level": 5,
-   "bonus": 4,
-   "cost": 37
-  },
-  {
-   "dieType": "fairy",
-   "level": 6,
-   "bonus": 6,
-   "cost": 58
-  },
-  {
-   "dieType": "fairy",
-   "level": 7,
-   "bonus": 8,
-   "cost": 89
-  },
-  {
-   "dieType": "fairy",
-   "level": 8,
-   "bonus": 10,
-   "cost": 139
-  },
-  {
-   "dieType": "fairy",
-   "level": 9,
-   "bonus": 12,
-   "cost": 215
-  },
-  {
-   "dieType": "fairy",
    "level": 10,
    "bonus": 15,
    "cost": 333

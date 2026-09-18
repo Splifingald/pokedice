@@ -36,16 +36,16 @@ describe('xp curve', () => {
 })
 
 describe('milestones', () => {
-  it('applies Charizard fifth die at Lv.50 (v1.8 schedule)', () => {
+  it('applies each Charizard milestone at its level, whatever order they are stored in', () => {
     const zard = getSpecies(data, 6)
-    const at49 = effectiveStats(zard, 49, data)
-    expect(at49.dice).toHaveLength(4)
-    expect(at49.rerolls).toBe(4)
-    const at50 = effectiveStats(zard, 50, data)
-    expect(at50.dice).toHaveLength(5)
-    expect(at50.dice.filter((d) => d === 'fire')).toHaveLength(2)
-    expect(at50.rerolls).toBe(5)
-    expect(at50.applied).toHaveLength(2)
+    const levels = [...new Set(zard.milestones.filter((m) => m.effect !== 'EVOLVE').map((m) => m.level))]
+    expect(levels.length).toBeGreaterThan(0)
+    for (const lv of levels) {
+      const before = effectiveStats(zard, lv - 1, data).applied.length
+      const at = effectiveStats(zard, lv, data).applied.length
+      expect(at - before, `Lv.${lv}`).toBe(zard.milestones.filter((m) => m.effect !== 'EVOLVE' && m.level === lv).length)
+    }
+    expect(effectiveStats(zard, 100, data).dice.length).toBeLessThanOrEqual(5)
   })
 
   it('skips UPGRADE_DIE with no base left and ADD_DIE at max dice; supports ADD_HP', () => {
@@ -109,12 +109,17 @@ describe('levelling & evolution', () => {
   }
 
   it('levels up, raises current HP by the max-HP gain, and emits milestone cards', () => {
-    const c = base(4, 4)
-    const r = gainXp(c, xpToNext(4, data.config), data, createRng(1))
-    expect(r.inst.level).toBe(5)
+    // Any species with a dice/reroll milestone before it evolves (milestones are tuned in admin).
+    const sp = data.speciesList.find((s) =>
+      s.milestones.some((m) => m.effect !== 'EVOLVE' && m.level > 1 && s.evolutions.every((e) => e.level > m.level)),
+    )!
+    const lv = sp.milestones.find((m) => m.effect !== 'EVOLVE' && m.level > 1)!.level
+    const c = base(sp.dex, lv - 1)
+    const r = gainXp(c, xpToNext(lv - 1, data.config), data, createRng(1))
+    expect(r.inst.level).toBe(lv)
     expect(r.inst.xp).toBe(0)
     expect(r.inst.currentHp).toBe(instanceMaxHp(r.inst, data))
-    expect(r.events.map((e) => e.kind)).toContain('milestone') // Charmander L5: second die
+    expect(r.events.map((e) => e.kind)).toContain('milestone')
   })
 
   it('evolution swaps species and keeps the HP percentage', () => {

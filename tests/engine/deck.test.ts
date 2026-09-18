@@ -40,19 +40,22 @@ describe('deckCounts', () => {
   const both = { wild: true, trainer: true }
 
   it('an encounter weight is the number of copies of that card in the deck', () => {
-    expect(deckCounts({ wild: 7, trainer: 2, center: 1 }, both)).toEqual({ wild: 7, trainer: 2, center: 1, item: 0 })
-    expect(deckCounts({ wild: 5, trainer: 3, center: 1, item: 1 }, { ...both, item: true })).toEqual({ wild: 5, trainer: 3, center: 1, item: 1 })
-    expect(deckCounts({ wild: 2.6, trainer: 0, center: 1 }, both)).toEqual({ wild: 3, trainer: 0, center: 1, item: 0 })
+    expect(deckCounts({ wild: 7, trainer: 2, center: 1 }, both)).toEqual({ wild: 7, trainer: 2, center: 1, item: 0, casino: 0 })
+    expect(deckCounts({ wild: 5, trainer: 3, center: 1, item: 1 }, { ...both, item: true })).toEqual({ wild: 5, trainer: 3, center: 1, item: 1, casino: 0 })
+    expect(deckCounts({ wild: 2.6, trainer: 0, center: 1 }, both)).toEqual({ wild: 3, trainer: 0, center: 1, item: 0, casino: 0 })
   })
 
   it('gives no cards to kinds the area cannot produce, and a lone Center to an empty deck', () => {
-    expect(deckCounts({ wild: 6, trainer: 3, center: 1 }, { wild: true, trainer: false })).toEqual({ wild: 6, trainer: 0, center: 1, item: 0 })
-    expect(deckCounts({ wild: 0, trainer: 0, center: 0 }, both)).toEqual({ wild: 0, trainer: 0, center: 1, item: 0 })
+    expect(deckCounts({ wild: 6, trainer: 3, center: 1 }, { wild: true, trainer: false })).toEqual({ wild: 6, trainer: 0, center: 1, item: 0, casino: 0 })
+    expect(deckCounts({ wild: 0, trainer: 0, center: 0 }, both)).toEqual({ wild: 0, trainer: 0, center: 1, item: 0, casino: 0 })
     expect(deckCounts({ wild: 8, center: 1, item: 1 }, both).item).toBe(0) // no loot table → no item cards
   })
 
-  it('the bundled areas keep the 10-card decks they had before weights became copies', () => {
-    for (const a of data.areas.filter((x) => x.wildPool.length || x.trainerPool.length)) expect(deckSize(a), a.name).toBe(10)
+  it('the bundled areas deal decks of a sensible size (tuned per area in admin)', () => {
+    for (const a of data.areas.filter((x) => x.wildPool.length || x.trainerPool.length)) {
+      expect(deckSize(a), a.name).toBeGreaterThanOrEqual(3)
+      expect(deckSize(a), a.name).toBeLessThanOrEqual(20)
+    }
   })
 })
 
@@ -169,7 +172,7 @@ describe('easy areas', () => {
 })
 
 describe('never two Pokémon Centers in a row', () => {
-  const CENTERY: Area = { ...ROUTE1, encounterWeights: { wild: 4, trainer: 0, center: 3, item: 0 } }
+  const CENTERY: Area = { ...ROUTE1, encounterWeights: { wild: 4, trainer: 0, center: 3, item: 0, casino: 0 } }
 
   it('deals decks with the Centers apart, and none on top when asked', () => {
     for (let seed = 1; seed <= 200; seed++) {

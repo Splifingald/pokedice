@@ -7,6 +7,7 @@ import { GameLayout } from '@/components/GameLayout'
 import { SyncConflictModal } from '@/components/SyncConflictModal'
 import { ToastStack } from '@/components/Toast'
 import { AreaScreen } from '@/screens/Area'
+import { DayCareScreen } from '@/screens/DayCareScreen'
 import { MapScreen } from '@/screens/MapScreen'
 import { NewGame } from '@/screens/NewGame'
 import { PokedexScreen } from '@/screens/Pokedex'
@@ -52,6 +53,7 @@ export function App() {
             {import.meta.env.DEV && <Route path="/kitchen-sink" element={<Lazy><KitchenSink /></Lazy>} />}
             <Route element={<GameLayout />}>
               <Route path="/map" element={<MapScreen />} />
+              <Route path="/daycare" element={<DayCareScreen />} />
               <Route path="/area" element={<AreaScreen />} />
               <Route path="/team" element={<TeamScreen />} />
               <Route path="/shop" element={<ShopScreen />} />

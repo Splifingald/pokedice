@@ -1,12 +1,42 @@
 {
- "configVersion": 1,
+ "showRecommendedTypes": true,
+ "shinyChance": 0.02,
+ "status": {
+  "burn": {
+   "duration": 3,
+   "threshold": 1,
+   "damagePerStack": 2
+  },
+  "heal": {
+   "amount": "rollTotal",
+   "threshold": 2
+  },
+  "frozen": {
+   "stunTurns": 2,
+   "threshold": 3
+  },
+  "poison": {
+   "damage": 5,
+   "duration": 3,
+   "threshold": 2
+  },
+  "confuse": {
+   "threshold": 2
+  },
+  "paralyze": {
+   "stunTurns": 1,
+   "threshold": 2
+  }
+ },
+ "showRoundPreview": false,
+ "regenPercentPerHour": 20,
+ "configVersion": 10,
  "xpCurve": {
   "A": 0.5,
   "B": 1.15,
   "C": 1
  },
  "xpShareMode": "fighter",
- "regenPercentPerHour": 5,
  "maxTeamSize": 3,
  "maxLevel": 100,
  "maxDice": 5,
@@ -25,8 +55,8 @@
  "forcedCenterWhenHurt": true,
  "encounterMode": "deck",
  "startInventory": {
-  "poke-ball": 5,
-  "potion": 2
+  "potion": 2,
+  "poke-ball": 5
  },
  "scaleLevelSpread": 3,
  "enemyUpgradeLevel": 1,
@@ -35,37 +65,41 @@
  "multiExpShare": 0.3,
  "xpMultiplier": 1,
  "showRoundGauge": true,
- "showRoundPreview": false,
- "shinyChance": 0.01,
- "status": {
-  "burn": {
-   "threshold": 1,
-   "damagePerStack": 1,
-   "duration": 3
-  },
-  "poison": {
-   "threshold": 2,
-   "damage": 3,
-   "duration": 3
-  },
-  "frozen": {
-   "threshold": 3,
-   "stunTurns": 2
-  },
-  "paralyze": {
-   "threshold": 2,
-   "stunTurns": 1
-  },
-  "confuse": {
-   "threshold": 2
-  },
-  "heal": {
-   "threshold": 2,
-   "amount": "rollTotal"
-  }
- },
  "ai": {
   "samples": 200,
   "rerollGainThreshold": 0.08
+ },
+ "slotMachine": {
+  "cost": 10,
+  "oneBall": {
+   "weight": 50,
+   "gold": 1
+  },
+  "twoBalls": {
+   "weight": 30,
+   "gold": 10
+  },
+  "threeBalls": {
+   "weight": 10,
+   "gold": 50
+  },
+  "jackpot": {
+   "weight": 10,
+   "gold": 10
+  },
+  "prizeDex": 137,
+  "prizeLevel": 30
+ },
+ "dayCare": {
+  "unlockPokedex": 20,
+  "slots": 2,
+  "xpPerTick": 1,
+  "tickMinutes": 30,
+  "maxXp": 500,
+  "eggPrice": 50,
+  "unownedWeight": 3,
+  "hatchRank": 3,
+  "hatchOffset": 2,
+  "hatchMinLevel": 5
  }
 }

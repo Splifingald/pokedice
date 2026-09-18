@@ -117,7 +117,7 @@ describe('secret areas', () => {
     const strong = { ...s, box: s.box.map((p) => ({ ...p, level: 55 })) }
     expect(isAreaUnlocked(strong, CAVE.id, data)).toBe(true)
     expect(unlockedHiddenAreas(strong, data)).toEqual([CAVE.id])
-    expect(conditionStatus({ kind: 'maxLevel', level: 55 }, s)).toMatchObject({ met: false, current: 5, target: 55 })
+    expect(conditionStatus({ kind: 'maxLevel', level: 55 }, s, data)).toMatchObject({ met: false, current: 5, target: 55 })
   })
 
   it('announce themselves the moment a catch meets the condition', () => {

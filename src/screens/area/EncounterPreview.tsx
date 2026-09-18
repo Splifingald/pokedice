@@ -209,6 +209,24 @@ function CenterCard({ enc }: { enc: Extract<Encounter, { kind: 'center' }> }) {
   )
 }
 
+function CasinoCard() {
+  const slots = useGame((s) => s.data.config.slotMachine)
+  const prize = useGame((s) => s.data.species[s.data.config.slotMachine.prizeDex]?.name ?? 'prize Pokémon')
+  return (
+    <div className="flex flex-col items-center gap-2 text-center">
+      <div className="flex items-center gap-1">
+        <PixelIcon name="ball" size={32} />
+        <SpriteImg dex={slots.prizeDex} size={48} />
+        <PixelIcon name="ball" size={32} />
+      </div>
+      <div className="text-4xl">Game Corner</div>
+      <div className="text-xl text-muted">
+        Behind a poster, Team Rocket runs a slot machine. ₽{slots.cost} a spin — line up three {prize} to win one!
+      </div>
+    </div>
+  )
+}
+
 const TITLES: Record<Encounter['kind'], string> = {
   wild: 'You encountered a wild Pokémon!',
   boss: 'A legendary Pokémon appears!',
@@ -216,6 +234,7 @@ const TITLES: Record<Encounter['kind'], string> = {
   gym: 'A gym battle',
   item: 'You found something on the ground!',
   center: 'You reached a Pokémon Center!',
+  casino: 'The Game Corner!',
 }
 
 /** The encounter, in a pop-up (a bottom sheet on phones): the opponent, who to send out, FIGHT or FLEE (AVOID a trainer). */
@@ -225,7 +244,7 @@ export function EncounterPreview({ enc }: { enc: Encounter }) {
   const save = useGame((s) => s.save)
   const titleId = useId()
   const skippable = canSkipCurrent()
-  const fight = enc.kind !== 'center' && enc.kind !== 'item'
+  const fight = enc.kind !== 'center' && enc.kind !== 'item' && enc.kind !== 'casino'
   const dark = enc.kind === 'boss' || enc.kind === 'gym'
   if (typeof document === 'undefined') return null
 
@@ -266,6 +285,7 @@ export function EncounterPreview({ enc }: { enc: Encounter }) {
           {enc.kind === 'trainer' && <TrainerCard enc={enc} />}
           {enc.kind === 'item' && <ItemCard enc={enc} />}
           {enc.kind === 'center' && <CenterCard enc={enc} />}
+          {enc.kind === 'casino' && <CasinoCard />}
 
           {fight && save && (
             <div className={dark ? 'bg-panel p-2 text-ink' : undefined}>
@@ -286,7 +306,7 @@ export function EncounterPreview({ enc }: { enc: Encounter }) {
             onClick={() => engage(fight ? (lead ?? defaultLead()) : undefined)}
           >
             {fight && <PixelIcon name="sword" size={22} />}
-            {enc.kind === 'center' ? 'ENTER' : enc.kind === 'item' ? 'PICK IT UP' : 'FIGHT'}
+            {enc.kind === 'center' || enc.kind === 'casino' ? 'ENTER' : enc.kind === 'item' ? 'PICK IT UP' : 'FIGHT'}
           </PixelButton>
           {skippable && (
             <PixelButton size="lg" className="flex-1" onClick={skipEncounter}>

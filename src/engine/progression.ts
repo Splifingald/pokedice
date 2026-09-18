@@ -107,12 +107,16 @@ export function evolve(inst: PokemonInstance, toDex: number, data: GameData): Po
   return next
 }
 
-/** Level-ups, milestone cards and automatic (uncancellable) evolution. Branching evolutions are rolled uniformly. */
+/**
+ * Level-ups, milestone cards and automatic (uncancellable) evolution. Branching evolutions are rolled uniformly.
+ * `evolve: false` (Day Care XP) levels up without evolving; the next level-up in battle then evolves it.
+ */
 export function gainXp(
   inst: PokemonInstance,
   amount: number,
   data: GameData,
   rng: Rng,
+  opts: { evolve?: boolean } = {},
 ): { inst: PokemonInstance; events: ProgressEvent[] } {
   const cfg = data.config
   const events: ProgressEvent[] = []
@@ -132,7 +136,7 @@ export function gainXp(
       events.push({ kind: 'milestone', uid: cur.id, dex: cur.dex, level: cur.level, milestone: m })
     }
     const species = getSpecies(data, cur.dex)
-    const ready = species.evolutions.filter((e) => e.level <= cur.level && data.species[e.toDex])
+    const ready = opts.evolve === false ? [] : species.evolutions.filter((e) => e.level <= cur.level && data.species[e.toDex])
     if (ready.length) {
       const target = ready.length === 1 ? ready[0]! : rng.pick(ready)
       const fromDex = cur.dex

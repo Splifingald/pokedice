@@ -152,7 +152,13 @@ export function pickUpItem(save: SaveData, areaId: string, find: { entryId: stri
   return next
 }
 
-export const maxOwnedLevel = (save: SaveData) => save.box.reduce((m, p) => Math.max(m, p.level), 0)
+/** Every Pokémon the player owns: the Box (team included) and the Day Care's residents. */
+export const ownedPokemon = (save: SaveData): PokemonInstance[] => [
+  ...save.box,
+  ...(save.dayCare?.residents.map((r) => r.inst) ?? []),
+]
+
+export const maxOwnedLevel = (save: SaveData) => ownedPokemon(save).reduce((m, p) => Math.max(m, p.level), 0)
 
 export interface ConditionStatus {
   cond: UnlockCondition
@@ -162,7 +168,13 @@ export interface ConditionStatus {
   label: string
 }
 
-export function conditionStatus(cond: UnlockCondition, save: SaveData): ConditionStatus {
+export function conditionStatus(cond: UnlockCondition, save: SaveData, data: GameData, depth = 0): ConditionStatus {
+  if (cond.kind === 'area') {
+    const area = data.areas.find((a) => a.id === cond.areaId)
+    // depth: two secret areas that require each other must not loop forever.
+    const met = !!area && depth < 8 && isAreaUnlocked(save, area.id, data, depth + 1)
+    return { cond, current: met ? 1 : 0, target: 1, met, label: `Reach ${area?.name ?? 'an unknown area'}` }
+  }
   if (cond.kind === 'pokedex') {
     const current = new Set(save.pokedex).size
     return { cond, current, target: cond.count, met: current >= cond.count, label: `Catch ${cond.count} Pokémon` }
@@ -175,10 +187,10 @@ export function conditionStatus(cond: UnlockCondition, save: SaveData): Conditio
  * Linear areas open when the previous linear area is cleared (the first is always open).
  * Hidden areas open when every unlock condition holds.
  */
-export function isAreaUnlocked(save: SaveData, areaId: string, data: GameData): boolean {
+export function isAreaUnlocked(save: SaveData, areaId: string, data: GameData, depth = 0): boolean {
   const area = data.areas.find((a) => a.id === areaId)
   if (!area) return false
-  if (area.hidden) return (area.unlockConditions ?? []).every((c) => conditionStatus(c, save).met)
+  if (area.hidden) return (area.unlockConditions ?? []).every((c) => conditionStatus(c, save, data, depth).met)
   const chain = linearAreas(data)
   const idx = chain.findIndex((a) => a.id === areaId)
   if (idx <= 0) return idx === 0

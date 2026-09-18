@@ -1,6 +1,7 @@
 // Cloud backup of the same save blob. Never blocks the UI. The newest `updatedAt` wins — unless it has less progress
 // than the other save, and then the player chooses (see decideSync).
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { ownedPokemon } from '@/engine/run'
 import type { SaveData } from '@/engine/types'
 import { parseSave } from './schema'
 
@@ -46,7 +47,7 @@ function progressTuple(s: SaveData): number[] {
     areas.filter((p) => p.cleared).length,
     areas.reduce((n, p) => n + (p.gymsDefeated?.length ?? 0), 0),
     new Set(s.pokedex).size,
-    s.box.reduce((n, p) => n + p.level, 0),
+    ownedPokemon(s).reduce((n, p) => n + p.level, 0),
   ]
 }
 

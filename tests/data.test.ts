@@ -8,6 +8,8 @@ import diceTypes from '@/data/dice-types.json'
 import areas from '@/data/areas.json'
 import trainers from '@/data/trainers.json'
 import upgrades from '@/data/upgrades.json'
+import { BUNDLE } from '@/config/bundle'
+import { compileGameData, effectiveStats } from '@/engine'
 import type { Area, DiceEntry, Species, Trainer } from '@/engine/types'
 import { composeDice, diceCountFromBst, hpAtLevel, stableUuid } from '../scripts/seed'
 
@@ -30,31 +32,19 @@ describe('pokemon.json', () => {
       expect(p.baseHp).toBeGreaterThan(0)
       expect(p.maxHp).toBeGreaterThan(p.baseHp)
       expect(Array.isArray(p.milestones)).toBe(true)
-      expect(p.rerolls).toBe(total(p.dice))
+      expect(p.rerolls).toBeGreaterThanOrEqual(1) // tuned per species in admin
     }
   })
 
-  it('matches the worked examples (dice grow with the evolution stage)', () => {
-    const squirtle = byDex(7) // first stage: one die of its main type
-    expect(squirtle.dice).toEqual([{ type: 'water', count: 1 }])
-    expect(squirtle.rerolls).toBe(1)
-
-    expect(total(byDex(5).dice)).toBe(3) // Charmeleon: the 3rd die on evolving
-
-    const charizard = byDex(6) // final of three: 4 dice on evolving
-    expect(count(charizard.dice, 'fire')).toBe(1)
-    expect(count(charizard.dice, 'flying')).toBe(1)
-    expect(count(charizard.dice, 'base')).toBe(2)
-    expect(charizard.rerolls).toBe(4)
-
-    const mewtwo = byDex(150) // legendaries: 5 dice
-    expect(count(mewtwo.dice, 'psychic')).toBe(3)
-    expect(count(mewtwo.dice, 'base')).toBe(2)
-
-    expect(byDex(143).dice).toEqual([{ type: 'normal', count: 1 }]) // Snorlax: single stage, grows by level
+  // Dice and milestones are tuned per species in admin (Supabase is the source), so only their bounds are checked here;
+  // the seed's schedule itself is covered by tests/dice-schedule.test.ts.
+  it('keeps every species within the dice rules at every level', () => {
+    const d = compileGameData(BUNDLE)
+    for (const p of species) {
+      expect(effectiveStats(d.species[p.dex]!, 100, d).dice.length, p.name).toBeLessThanOrEqual(5)
+    }
     expect(count(byDex(149).dice, 'dragon')).toBeGreaterThan(0)
   })
-
   it('computes HP curves and evolutions from PokeAPI', () => {
     expect(byDex(6).baseHp).toBe(12)
     expect(byDex(6).maxHp).toBe(297)
@@ -62,10 +52,6 @@ describe('pokemon.json', () => {
     expect(byDex(133).evolutions.map((e) => e.toDex).sort()).toEqual([134, 135, 136])
     expect(byDex(133).evolutions.every((e) => e.level === 28)).toBe(true)
     expect(byDex(64).evolutions).toEqual([{ toDex: 65, level: 34 }]) // trade
-    expect(byDex(6).milestones).toEqual([
-      { level: 50, effect: 'ADD_DIE', dieType: 'fire' },
-      { level: 50, effect: 'ADD_REROLL', amount: 1 },
-    ])
   })
 })
 
@@ -120,7 +106,7 @@ describe('areas & trainers', () => {
   const allTrainers = trainers as Trainer[]
 
   it('has 5 areas with valid dex references', () => {
-    expect(allAreas).toHaveLength(25)
+    expect(allAreas).toHaveLength(26)
     for (const a of allAreas) for (const w of a.wildPool) expect(w.dex).toBeGreaterThanOrEqual(1)
     for (const a of allAreas) for (const w of a.wildPool) expect(w.dex).toBeLessThanOrEqual(151)
     for (const t of allTrainers) for (const m of t.team) expect(m.dex).toBeGreaterThanOrEqual(1)
@@ -164,13 +150,15 @@ describe('Kanto structure', () => {
   const linear = allAreas.filter((a) => !a.hidden).sort((a, b) => a.orderIndex - b.orderIndex)
   const hidden = allAreas.filter((a) => a.hidden)
 
-  it('has 22 linear areas in order, Route 1 → Indigo Plateau, and 3 secret areas with conditions', () => {
+  it('has 22 linear areas in order, Route 1 → Indigo Plateau, and 4 secret areas with conditions', () => {
     expect(linear.map((a) => a.orderIndex)).toEqual(Array.from({ length: 22 }, (_, i) => i + 1))
     expect(linear[0]!.name).toBe('Route 1')
     expect(linear[21]!.name).toBe('Indigo Plateau')
-    expect(hidden.map((a) => a.name).sort()).toEqual(['Cerulean Cave', 'Faraway Island', 'Power Plant'])
+    expect(hidden.map((a) => a.name).sort()).toEqual(['Cerulean Cave', 'Faraway Island', 'Power Plant', 'Rocket Hideout'])
     for (const a of hidden) expect(a.unlockConditions?.length).toBeGreaterThan(0)
     expect(allAreas.find((a) => a.name === 'Faraway Island')!.unlockConditions).toEqual([{ kind: 'pokedex', count: 150 }])
+    const celadon = allAreas.find((a) => a.name === 'Routes 7 & 8')!
+    expect(allAreas.find((a) => a.name === 'Rocket Hideout')!.unlockConditions).toEqual([{ kind: 'area', areaId: celadon.id }])
   })
 
   it('has the 8 gym leaders with their badges, then the Elite Four and the Champion', () => {

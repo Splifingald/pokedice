@@ -28,16 +28,25 @@ import { useGame } from '@/store/game'
 import { challenge, enterArea, leaveArea, rollNext } from '@/store/run'
 import { cx } from '@/theme/util'
 import { BattleView } from './battle/BattleView'
+import { CasinoView } from './area/CasinoView'
 import { CenterView } from './area/CenterView'
 import { EncounterPreview } from './area/EncounterPreview'
 import { AreaBanner } from '@/components/AreaBanner'
 
-const CARD_ICON: Record<DeckCard, IconName> = { wild: 'ball', trainer: 'vs', center: 'heart', item: 'box', legend: 'masterball' }
+const CARD_ICON: Record<DeckCard, IconName> = {
+  wild: 'ball',
+  trainer: 'vs',
+  center: 'heart',
+  item: 'box',
+  casino: 'coin',
+  legend: 'masterball',
+}
 const CARD_NAME: Record<DeckCard, string> = {
   wild: 'a wild Pokémon',
   trainer: 'a trainer',
   center: 'a Pokémon Center',
   item: 'a find',
+  casino: 'the Game Corner',
   legend: 'a legendary',
 }
 
@@ -309,6 +318,7 @@ export function AreaScreen() {
       {between && <TeamStrip onOpen={(p) => setView({ kind: 'inst', id: p.id })} />}
       {run.phase === 'preview' && run.encounter && <EncounterPreview enc={run.encounter} />}
       {run.phase === 'center' && <CenterView />}
+      {run.phase === 'casino' && <CasinoView />}
 
       <SheetModal view={view} onClose={() => setView(null)} instExtra={(p) => <ItemPanel inst={p} />} />
     </div>

@@ -1,11 +1,31 @@
 import { BUNDLE } from '@/config/bundle'
-import { compileGameData, type DieType, type GameConfig, type GameData, type RolledDie, type StatusKind } from '@/engine'
+import {
+  compileGameData,
+  DEFAULT_CONFIG,
+  type DieType,
+  type GameConfig,
+  type GameData,
+  type RolledDie,
+  type StatusKind,
+} from '@/engine'
 
-/** Rules tests pin the pacing knobs to neutral (×1) so their arithmetic documents the formulas, not the tuning. */
+/**
+ * Rules tests pin the pacing knobs to neutral (×1), and regen, status effects and the shiny rate to the defaults, so
+ * their arithmetic documents the formulas, not the tuning done in admin.
+ */
 export function makeData(config: Partial<GameConfig> = {}): GameData {
   return compileGameData({
     ...BUNDLE,
-    config: { ...BUNDLE.config, goldMultiplier: 1, hpMultiplier: 1, xpMultiplier: 1, ...config },
+    config: {
+      ...BUNDLE.config,
+      goldMultiplier: 1,
+      hpMultiplier: 1,
+      xpMultiplier: 1,
+      regenPercentPerHour: DEFAULT_CONFIG.regenPercentPerHour,
+      shinyChance: DEFAULT_CONFIG.shinyChance,
+      status: DEFAULT_CONFIG.status,
+      ...config,
+    },
   })
 }
 

@@ -21,12 +21,20 @@ import { addRows, newUuid, removeRows, rowKey, setTable, updateRow, useAdmin, us
 import { BackgroundPicker, Box, Field, NumInput, PokemonPicker, Stepper, TextInput, inputCls, n, s } from '../widgets'
 import { AreaBanner } from '@/components/AreaBanner'
 
-const KINDS: EncounterKind[] = ['wild', 'trainer', 'center', 'item']
+const KINDS: EncounterKind[] = ['wild', 'trainer', 'center', 'item', 'casino']
 const CARD: Record<EncounterKind, { label: string; color: string }> = {
   wild: { label: 'Wild', color: '#4aa84a' },
   trainer: { label: 'Trainer', color: '#c2452d' },
   center: { label: 'Center', color: '#d44873' },
   item: { label: 'Item', color: '#e8b44a' },
+  casino: { label: 'Game Corner', color: '#6b3fa0' },
+}
+
+/** A fresh condition of each kind, for the kind picker. */
+function newCondition(kind: string, areas: Row[], self: string): UnlockCondition {
+  if (kind === 'pokedex') return { kind: 'pokedex', count: 50 }
+  if (kind === 'area') return { kind: 'area', areaId: s(areas.find((a) => s(a.id) !== self)?.id) }
+  return { kind: 'maxLevel', level: 50 }
 }
 
 /** The deck as cards, in kind order — what a shuffle is dealt from. */
@@ -99,10 +107,11 @@ function AreaEditor({ area }: { area: Row }) {
   const tpool = useAdmin((st) => st.rows.area_trainer_pool)
   const lootRows = useAdmin((st) => st.rows.area_loot_pool)
   const trainers = useAdmin((st) => st.rows.trainers)
+  const allAreas = useAdmin((st) => st.rows.areas)
   const key = rowKey('areas', area)
   const id = s(area.id)
   const patch = (p: Row) => updateRow('areas', key, p)
-  const weights = (area.encounter_weights as Record<EncounterKind, number>) ?? { wild: 0, trainer: 0, center: 0, item: 0 }
+  const weights = (area.encounter_weights as Record<EncounterKind, number>) ?? { wild: 0, trainer: 0, center: 0, item: 0, casino: 0 }
   const bosses = (area.legendary_boss as BossDef[] | null) ?? []
   const gyms = (area.gyms as string[] | null) ?? []
   const conditions = (area.unlock_conditions as UnlockCondition[] | null) ?? []
@@ -116,7 +125,7 @@ function AreaEditor({ area }: { area: Row }) {
   if (!data) return null
   const can = { wild: wildHere.length > 0, trainer: tHere.length > 0, item: lootHere.length > 0 }
   const deck = deckCounts(weights, can)
-  const deckTotal = deck.wild + deck.trainer + deck.center + deck.item
+  const deckTotal = deck.wild + deck.trainer + deck.center + deck.item + deck.casino
   const missing: Partial<Record<EncounterKind, string>> = {
     wild: can.wild ? undefined : 'the wild pool is empty',
     trainer: can.trainer ? undefined : 'the trainer pool is empty',
@@ -187,7 +196,7 @@ function AreaEditor({ area }: { area: Row }) {
           title="Encounter deck"
           hint="Each number is how many copies of that card go in the area's deck. Going through the deck is a round; a new round deals it again, shuffled, and opens with a Pokémon Center when one would help (on top of the Center cards here). Gym battles and legendaries are challenges the player picks, on top of the deck."
         >
-          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
             {KINDS.map((k) => (
               <div key={k} className="flex flex-col gap-1">
                 <span className="flex items-center gap-1.5 text-lg leading-none">
@@ -311,38 +320,39 @@ function AreaEditor({ area }: { area: Row }) {
             </PixelButton>
           }
         >
-          {conditions.map((c, i) => (
+          {conditions.map((c, i) => {
+            const setAt = (next: UnlockCondition) => patch({ unlock_conditions: conditions.map((x, j) => (j !== i ? x : next)) })
+            return (
             <div key={i} className="flex flex-wrap items-center gap-2">
-              <select
-                className={cx(inputCls, 'w-auto')}
-                value={c.kind}
-                onChange={(e) =>
-                  patch({
-                    unlock_conditions: conditions.map((x, j) =>
-                      j !== i ? x : e.target.value === 'pokedex' ? { kind: 'pokedex', count: 50 } : { kind: 'maxLevel', level: 50 },
-                    ),
-                  })
-                }
-              >
+              <select className={cx(inputCls, 'w-auto')} value={c.kind} onChange={(e) => setAt(newCondition(e.target.value, allAreas, id))}>
                 <option value="pokedex">Pokédex count ≥</option>
                 <option value="maxLevel">Highest Pokémon level ≥</option>
+                <option value="area">Area reached</option>
               </select>
-              <NumInput
-                className="w-24"
-                value={c.kind === 'pokedex' ? c.count : c.level}
-                onChange={(v) =>
-                  patch({
-                    unlock_conditions: conditions.map((x, j) =>
-                      j !== i ? x : x.kind === 'pokedex' ? { kind: 'pokedex', count: v ?? 1 } : { kind: 'maxLevel', level: v ?? 1 },
-                    ),
-                  })
-                }
-              />
+              {c.kind === 'area' ? (
+                <select className={cx(inputCls, 'w-auto')} value={c.areaId} onChange={(e) => setAt({ kind: 'area', areaId: e.target.value })} aria-label="Area">
+                  {[...allAreas]
+                    .filter((a) => s(a.id) !== id)
+                    .sort((a, b) => n(a.order_index) - n(b.order_index))
+                    .map((a) => (
+                      <option key={s(a.id)} value={s(a.id)}>
+                        {s(a.name)}
+                      </option>
+                    ))}
+                </select>
+              ) : (
+                <NumInput
+                  className="w-24"
+                  value={c.kind === 'pokedex' ? c.count : c.level}
+                  onChange={(v) => setAt(c.kind === 'pokedex' ? { kind: 'pokedex', count: v ?? 1 } : { kind: 'maxLevel', level: v ?? 1 })}
+                />
+              )}
               <PixelButton size="sm" variant="danger" onClick={() => patch({ unlock_conditions: conditions.filter((_, j) => j !== i) })} aria-label="Remove condition">
                 ✕
               </PixelButton>
             </div>
-          ))}
+            )
+          })}
         </Box>
       )}
 

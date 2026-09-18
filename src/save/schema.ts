@@ -20,12 +20,12 @@ const progressSchema = z.object({
   bossDefeated: z.boolean(),
   bossesDefeated: z.array(z.number().int()).default([]),
   gymsDefeated: z.array(z.string()).default([]),
-  deck: z.array(z.enum(['wild', 'trainer', 'center', 'item', 'legend'])).optional(),
+  deck: z.array(z.enum(['wild', 'trainer', 'center', 'item', 'casino', 'legend'])).optional(),
   lootDeck: z.array(z.string()).optional(),
   uniqueFound: z.array(z.string()).optional(),
   roundStartXp: z.number().min(0).optional(),
   round: z.number().int().min(0).optional(),
-  drawn: z.array(z.enum(['wild', 'trainer', 'center', 'item', 'legend'])).optional(),
+  drawn: z.array(z.enum(['wild', 'trainer', 'center', 'item', 'casino', 'legend'])).optional(),
   lastCenter: z.boolean().optional(),
 })
 
@@ -50,6 +50,12 @@ export const saveSchema = z.object({
   settings: z.object({ sfx: z.boolean(), reducedMotion: z.boolean(), multiExp: z.boolean().default(true) }),
   hpScale: z.number().positive().optional(),
   player: z.object({ name: z.string().max(12), character: z.enum(['red', 'green']) }).optional(),
+  dayCare: z
+    .object({
+      residents: z.array(z.object({ inst: instanceSchema, since: z.number() })),
+      eggClaimed: z.boolean().default(false),
+    })
+    .optional(),
 })
 
 /**
@@ -75,5 +81,7 @@ export function parseSave(raw: unknown): ParseResult {
   const team = [...new Set(s.team)].filter((id) => ids.has(id))
   if (!team.length && s.box.length) team.push(s.box[0]!.id)
   if (!s.box.length) return { ok: false, error: 'box is empty' }
-  return { ok: true, save: { ...s, team, pokedex: [...new Set(s.pokedex)] } }
+  // A Pokémon is either in the Box or at the Day Care, never both.
+  const dayCare = s.dayCare && { ...s.dayCare, residents: s.dayCare.residents.filter((r) => !ids.has(r.inst.id)) }
+  return { ok: true, save: { ...s, team, pokedex: [...new Set(s.pokedex)], ...(dayCare && { dayCare }) } }
 }

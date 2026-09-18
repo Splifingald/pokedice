@@ -126,7 +126,8 @@ export interface DieUpgradeRow {
   cost: number
 }
 
-export const ENCOUNTER_KINDS = ['wild', 'trainer', 'center', 'item'] as const
+/** 'casino': the Game Corner — a slot machine the player can play as long as they like (Rocket Hideout). */
+export const ENCOUNTER_KINDS = ['wild', 'trainer', 'center', 'item', 'casino'] as const
 export type EncounterKind = (typeof ENCOUNTER_KINDS)[number]
 /** Cards in an area's encounter deck; 'legend' is a fled legendary coming back (one per deck until it's caught). */
 export type DeckCard = EncounterKind | 'legend'
@@ -200,7 +201,54 @@ export interface Area {
   lootPool: LootEntry[]
 }
 
-export type UnlockCondition = { kind: 'pokedex'; count: number } | { kind: 'maxLevel'; level: number }
+export type UnlockCondition =
+  | { kind: 'pokedex'; count: number }
+  | { kind: 'maxLevel'; level: number }
+  /** Another area is open (reached) — e.g. the Rocket Hideout once Celadon's area is. */
+  | { kind: 'area'; areaId: string }
+
+/** One slot machine result: its share of spins (a weight) and the Pokédollars it pays. */
+export interface SlotOutcome {
+  weight: number
+  gold: number
+}
+
+/**
+ * The Game Corner slot machine. Three reels of Poké Balls and the prize Pokémon; the result is drawn from these
+ * weights first, then the reels are laid out to show it (1, 2 or 3 balls — or 3 prize Pokémon, the jackpot).
+ */
+export interface SlotMachineConfig {
+  /** Pokédollars per spin. */
+  cost: number
+  oneBall: SlotOutcome
+  twoBalls: SlotOutcome
+  threeBalls: SlotOutcome
+  /** Three prize Pokémon: the prize joins you (its gold is paid instead when you already own one at that level or above). */
+  jackpot: SlotOutcome
+  prizeDex: number
+  prizeLevel: number
+}
+
+/** The Pokémon Day Care: a secret place where Pokémon gain XP in real time, and where Eggs are sold. */
+export interface DayCareConfig {
+  /** Opens (on the Map, with a free Egg) once this many species are in the Pokédex. */
+  unlockPokedex: number
+  /** How many Pokémon can stay at once. */
+  slots: number
+  /** XP a resident gains every `tickMinutes` of real time… */
+  xpPerTick: number
+  tickMinutes: number
+  /** …up to this much per stay (it stops gaining until it's picked up). */
+  maxXp: number
+  /** Pokédollars for an Egg (the first one is free). */
+  eggPrice: number
+  /** Eggs favour species missing from the Pokédex: their weight is this, an owned species' is 1. */
+  unownedWeight: number
+  /** A hatchling's level: the `hatchRank`-th highest level you own, minus `hatchOffset`, never below `hatchMinLevel`. */
+  hatchRank: number
+  hatchOffset: number
+  hatchMinLevel: number
+}
 
 export interface TrainerMon {
   dex: number
@@ -314,6 +362,8 @@ export interface GameConfig {
   shinyChance: number
   status: StatusRules
   ai: { samples: number; rerollGainThreshold: number }
+  slotMachine: SlotMachineConfig
+  dayCare: DayCareConfig
 }
 
 // ---------------------------------------------------------------- save data (01-GAME-SPEC §9)
@@ -374,6 +424,19 @@ export interface SaveData {
   hpScale?: number
   /** Who the player is: a name and one of the two trainer sprites (absent on older saves = Red, no name). */
   player?: PlayerProfile
+  /** The Day Care: who's staying (out of the team and the Box meanwhile), and whether the free Egg was taken. */
+  dayCare?: DayCareState
+}
+
+export interface DayCareResident {
+  inst: PokemonInstance
+  /** When it was dropped off (ms): XP accrues from here, in real time. */
+  since: number
+}
+
+export interface DayCareState {
+  residents: DayCareResident[]
+  eggClaimed: boolean
 }
 
 export type PlayerCharacter = 'red' | 'green'
