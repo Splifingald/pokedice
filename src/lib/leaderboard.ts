@@ -93,6 +93,13 @@ export function parseLeaderboard(raw: RawRow[]): LeaderboardRow[] {
   }))
 }
 
+/** A short reason for the error line. PGRST202 = the database has no leaderboard() (migration 0011 not run). */
+export function leaderboardError(err: unknown): string {
+  const e = (err ?? {}) as { code?: string; message?: string }
+  if (e.code === 'PGRST202' || e.code === '42883') return 'The leaderboard() function is missing from the database (run 0011_leaderboard.sql).'
+  return [e.code, e.message].filter(Boolean).join(' — ') || String(err)
+}
+
 /** null when the cloud isn't configured on this site. */
 export async function fetchLeaderboard(): Promise<LeaderboardRow[] | null> {
   const client = await getSupabase()

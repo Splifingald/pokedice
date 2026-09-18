@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { GoogleAccountButton } from '@/components/GoogleAccountButton'
 import { PixelIcon } from '@/components/icons'
 import { MiniSprite } from '@/components/SpriteImg'
-import { fetchLeaderboard, rankLeaderboard, type LeaderboardRow, type LeaderboardTab } from '@/lib/leaderboard'
+import { fetchLeaderboard, leaderboardError, rankLeaderboard, type LeaderboardRow, type LeaderboardTab } from '@/lib/leaderboard'
 import { visitLeaderboard } from '@/store/actions'
 import { useGame } from '@/store/game'
 import { cx } from '@/theme/util'
@@ -16,7 +16,7 @@ const TABS: { id: LeaderboardTab; label: string }[] = [
 /** Gold, silver and bronze for the podium. */
 const PODIUM = ['bg-gold', 'bg-[#c9c6d4]', 'bg-[#d9a066]']
 
-type Load = { state: 'loading' } | { state: 'ready'; rows: LeaderboardRow[] } | { state: 'offline' } | { state: 'error' }
+type Load = { state: 'loading' } | { state: 'ready'; rows: LeaderboardRow[] } | { state: 'offline' } | { state: 'error'; why: string }
 
 export function LeaderboardScreen() {
   const data = useGame((s) => s.data)
@@ -33,7 +33,7 @@ export function LeaderboardScreen() {
       .then((rows) => live && setLoad(rows ? { state: 'ready', rows } : { state: 'offline' }))
       .catch((err) => {
         console.warn('[leaderboard] fetch failed', err)
-        if (live) setLoad({ state: 'error' })
+        if (live) setLoad({ state: 'error', why: leaderboardError(err) })
       })
     return () => {
       live = false
@@ -74,7 +74,12 @@ export function LeaderboardScreen() {
 
       <div role="tabpanel" aria-label={TABS.find((t) => t.id === tab)!.label}>
         {load.state === 'loading' && <p className="p-4 text-center text-2xl text-muted">Loading…</p>}
-        {load.state === 'error' && <p className="p-4 text-center text-2xl text-danger">Couldn't load the leaderboard. Try again later.</p>}
+        {load.state === 'error' && (
+          <div className="flex flex-col items-center gap-1 p-4 text-center">
+            <p className="text-2xl text-danger">Couldn't load the leaderboard. Try again later.</p>
+            <p className="font-pixel-sm text-base text-muted">{load.why}</p>
+          </div>
+        )}
         {load.state === 'offline' && (
           <p className="p-4 text-center text-2xl text-muted">The leaderboard needs the cloud, which isn't set up on this site.</p>
         )}
