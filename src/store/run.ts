@@ -12,6 +12,7 @@ import {
   centerHeal,
   centerWouldHelp,
   challengeEncounter,
+  playerSideOf,
   consumeItem,
   MONEY,
   pickUpItem,
@@ -104,6 +105,7 @@ export function rollNext() {
       pokedex: save.pokedex,
       forceKind,
       centerUseful: centerWouldHelp(save, data),
+      player: playerSideOf(save),
     },
     runRng,
   )
@@ -120,7 +122,7 @@ export function challenge() {
   const { save, data, run } = useGame.getState()
   if (!save || !run.areaId || run.phase !== 'idle') return
   const area = data.areas.find((a) => a.id === run.areaId)
-  const encounter = area ? challengeEncounter(area, progressOf(save, area.id), data, teamAverageLevel(save)) : null
+  const encounter = area ? challengeEncounter(area, progressOf(save, area.id), data, teamAverageLevel(save), playerSideOf(save)) : null
   if (encounter) setRun({ phase: 'preview', encounter, firstInArea: false, skipsUsed: 0 })
 }
 
@@ -144,7 +146,7 @@ export function skipEncounter() {
   pushToast(trainer ? 'You slipped past the trainer.' : 'Got away safely!')
 }
 
-function startBattle(kind: BattleKind, enemy: { dex: number; level: number; shiny?: boolean }, leadUid?: string) {
+function startBattle(kind: BattleKind, enemy: { dex: number; level: number; shiny?: boolean; item?: string }, leadUid?: string) {
   const { save, data, run } = useGame.getState()
   if (!save) return
   const area = data.areas.find((a) => a.id === run.areaId)
@@ -251,7 +253,7 @@ function settleBattle(stalemate: boolean) {
     const gold = res.events.reduce((g, e) => (e.kind === 'gold' ? g + e.amount : g), 0)
     // A wild or legendary K.O. that can be caught goes to the catch throw first; the rewards screen follows it.
     const kind = s.kind === 'wild' || s.kind === 'boss' ? s.kind : null
-    const target = kind ? catchTarget(res.save, s.enemy.dex, s.enemy.level, kind, data) : null
+    const target = kind ? catchTarget(res.save, s.enemy.dex, s.enemy.level, kind, data, s.enemy.shiny) : null
     setRun({
       phase: target ? 'catch' : 'victory',
       events: res.events,

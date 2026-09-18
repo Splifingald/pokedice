@@ -9,6 +9,7 @@ import { challengeEncounter, enemyUpgradeLevelFor, nextEncounter, type Encounter
 import { applyCatch, catchChance, catchTarget, catchValueOf, rollCatch } from './catching'
 import { ballBonus } from './items'
 import { createInstance, instanceStats } from './progression'
+import { playerSideOf } from './rival'
 import { createRng } from './rng'
 import {
   applyHp,
@@ -244,7 +245,7 @@ export function* runCampaign(data: GameData, opts: CampaignOptions): Generator<n
     area: Area,
     r: AreaReport,
     kind: BattleKind,
-    enemy: { dex: number; level: number },
+    enemy: { dex: number; level: number; item?: string },
     upgradeLevel: number,
     gym?: { trainerId: string; last: boolean },
   ) => {
@@ -314,7 +315,7 @@ export function* runCampaign(data: GameData, opts: CampaignOptions): Generator<n
     // a Center has to come first (arriving hurt, nobody standing, a K.O. in an easy area).
     const needsCenter =
       (firstInArea && isTeamHurt(save, data)) || teamOf(save).every((p) => p.currentHp <= 0) || (area.easyMode && hasFaintedMember(save))
-    const challenge = needsCenter ? null : challengeEncounter(area, progressOf(save, area.id), data, teamAverageLevel(save))
+    const challenge = needsCenter ? null : challengeEncounter(area, progressOf(save, area.id), data, teamAverageLevel(save), playerSideOf(save))
     const roll: EncounterRoll = challenge ? { encounter: challenge, deck: null, lootDeck: null } : nextEncounter(
       {
         area,
@@ -328,6 +329,7 @@ export function* runCampaign(data: GameData, opts: CampaignOptions): Generator<n
         // Nobody able to fight (e.g. after a stalemate) → the Center is the only sensible next stop.
         forceKind: teamOf(save).every((p) => p.currentHp <= 0) ? 'center' : null,
         centerUseful: centerWouldHelp(save, data),
+        player: playerSideOf(save),
       },
       rng,
     )

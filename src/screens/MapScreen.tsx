@@ -2,13 +2,16 @@ import { motion } from 'framer-motion'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
+  asSeenBy,
   badgeCase,
   conditionStatus,
   dayCareOf,
   dayCareXp,
+  gymsFor,
   isDayCareOpen,
   isAreaUnlocked,
   linearAreas,
+  playerSideOf,
   progressOf,
   trainerSpecialty,
   type Area,
@@ -36,9 +39,10 @@ function GymRow({ area }: { area: Area }) {
   const p = progressOf(save, area.id)
   return (
     <div className="mt-1 flex flex-wrap items-center gap-2 text-base">
-      {area.gyms.map((id) => {
-        const t = data.trainers[id]
-        if (!t) return null
+      {gymsFor(area, data, playerSideOf(save)).map((id) => {
+        const raw = data.trainers[id]
+        if (!raw) return null
+        const t = asSeenBy(raw, playerSideOf(save))
         const beaten = p.gymsDefeated.includes(id)
         const type = trainerSpecialty(t, data)
         return (

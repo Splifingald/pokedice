@@ -151,6 +151,8 @@ export function rowsToBundle(r: TableRows): BundleRaw {
         badge: (x.badge as string | null) ?? null,
         upgradeLevel: x.upgrade_level == null ? null : num(x.upgrade_level),
         battleBackground: (x.battle_background as Trainer['battleBackground'] | undefined) ?? null,
+        ...(x.rival_of != null && { rivalOf: num(x.rival_of) }),
+        ...(Array.isArray(x.items) && x.items.length > 0 && { items: (x.items as unknown[]).map(String) }),
       }),
     ),
     upgrades: {
@@ -254,6 +256,8 @@ export function bundleToRows(b: BundleRaw): TableRows {
       badge: x.badge,
       upgrade_level: x.upgradeLevel,
       battle_background: x.battleBackground ?? null,
+      rival_of: x.rivalOf ?? null,
+      items: x.items ?? [],
     })),
     area_trainer_pool: b.areas.flatMap((a) =>
       a.trainerPool.map((t) => ({ id: t.id, area_id: a.id, trainer_id: t.trainerId, weight: t.weight })),

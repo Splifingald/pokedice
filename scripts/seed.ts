@@ -70,6 +70,8 @@ const AREA_BACKGROUNDS: Record<string, BattleBackground> = {
   'Route 21': 'sea',
   'Victory Road': 'rock',
   'Indigo Plateau': 'default',
+  'Victory Road II': 'rock',
+  'Indigo Plateau II': 'default',
   'Power Plant': 'default',
   'Cerulean Cave': 'rock',
   'Faraway Island': 'grass',
@@ -630,13 +632,16 @@ export function buildAreasAndTrainers(pokemon: Species[]): { areas: Area[]; trai
       trainers.push({
         id,
         name: g.name,
-        spriteUrl: trainerSprite(g.name, g.role),
+        // A rival version shows as the character the player didn't pick (resolved in play); Green by default.
+        spriteUrl: g.rivalOf != null ? '/characters/green.png' : trainerSprite(g.name, g.role),
         team: g.team.map(([dex, level]) => ({ dex, level })),
         role: g.role,
         badge: g.badge ?? null,
         upgradeLevel: null,
         // Gyms, the Elite Four and the Champion fight indoors.
         battleBackground: 'default',
+        ...(g.rivalOf != null && { rivalOf: g.rivalOf }),
+        ...(gymPotions(g.role, g.badge) && { items: [gymPotions(g.role, g.badge)!] }),
       })
       return id
     })
@@ -710,6 +715,20 @@ function upsert(table: string, cols: string[], rows: unknown[][], conflict: stri
     ? `on conflict (${conflict.join(', ')}) do update set ${updates.map((c) => `${c} = excluded.${c}`).join(', ')}`
     : `on conflict (${conflict.join(', ')}) do nothing`
   return `insert into ${table} (${cols.join(', ')}) values\n${values}\n${onConflict};\n`
+}
+
+/** Kanto's gyms in order: the badge tells which gym a leader holds. */
+const GYM_BADGES = ['Boulder', 'Cascade', 'Thunder', 'Rainbow', 'Soul', 'Marsh', 'Volcano', 'Earth'].map((b) => `${b} Badge`)
+
+/**
+ * The potion a gym battle carries by default (user's balancing, 2026-09-18): gyms 1–3 none, 4–5 a Potion, 6–7 a Super
+ * Potion, the 8th gym, the Elite Four and the Champion a Hyper Potion. Plain trainers carry none.
+ */
+export function gymPotions(role: string, badge: string | null | undefined): string | null {
+  if (role === 'elite' || role === 'champion') return 'hyper-potion'
+  if (role !== 'leader') return null
+  const gym = badge ? GYM_BADGES.indexOf(badge) + 1 : 0
+  return gym >= 8 ? 'hyper-potion' : gym >= 6 ? 'super-potion' : gym >= 4 ? 'potion' : null
 }
 
 export function buildSql(b: {
@@ -818,8 +837,8 @@ export function buildSql(b: {
     ),
     upsert(
       'trainers',
-      ['id', 'name', 'sprite_url', 'team', 'role', 'badge', 'upgrade_level', 'battle_background'],
-      b.trainers.map((t) => [t.id, t.name, t.spriteUrl, t.team, t.role, t.badge, t.upgradeLevel, t.battleBackground]),
+      ['id', 'name', 'sprite_url', 'team', 'role', 'badge', 'upgrade_level', 'battle_background', 'rival_of', 'items'],
+      b.trainers.map((t) => [t.id, t.name, t.spriteUrl, t.team, t.role, t.badge, t.upgradeLevel, t.battleBackground, t.rivalOf ?? null, t.items ?? []]),
       ['id'],
     ),
     upsert(

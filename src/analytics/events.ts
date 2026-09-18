@@ -1,6 +1,6 @@
 // Analytics events, derived by comparing each committed save with the one before it — so every level-up, purchase or
 // badge is caught however it happened (battle, bag, shop, dev tools), without hooks scattered through the actions.
-import { isAreaUnlocked } from '@/engine/run'
+import { badgeCase, isAreaUnlocked } from '@/engine/run'
 import type { GameData, SaveData } from '@/engine/types'
 
 export type AnalyticsEvent =
@@ -18,6 +18,32 @@ export type AnalyticsEvent =
     }
 
 export type AnalyticsKind = AnalyticsEvent['kind']
+
+/** What the player has right now: sent at start and whenever it changes, so admin can see guests too. */
+export interface PlayerSnapshot {
+  /** Pokédex, sorted dex numbers. */
+  dex: number[]
+  areaId: string
+  area: string
+  team: { dex: number; level: number; shiny?: boolean }[]
+  /** Pokémon in the Box (team excluded) and at the Day Care. */
+  box: number
+  dayCare: { dex: number; level: number }[]
+  gold: number
+  inventory: Record<string, number>
+  badges: number
+}
+
+/**
+ * Background events, not player actions: they stay out of the feed, the tiles and retention.
+ * playtime: seconds actually played (tab visible, touched in the last 2 min) since the previous one.
+ */
+export type SystemEvent =
+  | { kind: 'playtime'; params: { seconds: number } }
+  | { kind: 'snapshot'; params: PlayerSnapshot }
+export type SystemKind = SystemEvent['kind']
+export const SYSTEM_KINDS: SystemKind[] = ['playtime', 'snapshot']
+export type TrackedEvent = AnalyticsEvent | SystemEvent
 export type UseContext = 'battle' | 'catch' | 'field'
 
 export const ANALYTICS_KINDS: AnalyticsKind[] = [
@@ -108,4 +134,19 @@ export function diffSaves(
       })
 
   return out
+}
+
+export function snapshotOf(save: SaveData, data: GameData): PlayerSnapshot {
+  const team = save.team.map((id) => save.box.find((p) => p.id === id)).filter((p) => !!p)
+  return {
+    dex: [...new Set(save.pokedex)].sort((a, b) => a - b),
+    areaId: save.currentAreaId,
+    area: data.areas.find((a) => a.id === save.currentAreaId)?.name ?? '',
+    team: team.map((p) => ({ dex: p.dex, level: p.level, ...(p.shiny && { shiny: true }) })),
+    box: save.box.length - team.length,
+    dayCare: (save.dayCare?.residents ?? []).map((r) => ({ dex: r.inst.dex, level: r.inst.level })),
+    gold: save.gold,
+    inventory: Object.fromEntries(Object.entries(save.inventory).filter(([, n]) => n > 0)),
+    badges: badgeCase(save, data).filter((b) => b.earned).length,
+  }
 }

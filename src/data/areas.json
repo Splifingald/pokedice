@@ -6315,5 +6315,396 @@
     "maxQty": 100
    }
   ]
+ },
+ {
+  "id": "35c40458-61da-5321-adda-6df33b930671",
+  "orderIndex": 23,
+  "name": "Victory Road II",
+  "bannerUrl": "/banners/cave_dark.png",
+  "xpToUnlockNext": 400,
+  "minLevel": 55,
+  "maxLevel": 66,
+  "encounterWeights": {
+   "wild": 5,
+   "trainer": 4,
+   "center": 1,
+   "item": 1,
+   "casino": 0
+  },
+  "backtrackMultiplier": 0.5,
+  "legendaryBoss": null,
+  "scalesToTeam": false,
+  "easyMode": false,
+  "enemyUpgradeLevel": 9,
+  "battleBackground": "rock",
+  "hidden": false,
+  "unlockConditions": null,
+  "gyms": [],
+  "wildPool": [
+   {
+    "id": "01b793e0-cd5b-5611-b53a-48baf0582050",
+    "dex": 68,
+    "weight": 8,
+    "minLevel": 58,
+    "maxLevel": 62
+   },
+   {
+    "id": "1d6030cf-4fae-5efd-b8d0-8a2e277f5587",
+    "dex": 75,
+    "weight": 8,
+    "minLevel": 55,
+    "maxLevel": 58
+   },
+   {
+    "id": "db818092-b915-51c2-a8b4-c7ee6d452dce",
+    "dex": 76,
+    "weight": 6,
+    "minLevel": 58,
+    "maxLevel": 62
+   },
+   {
+    "id": "e0f86dcc-3114-57e6-a56b-7db377def482",
+    "dex": 95,
+    "weight": 6,
+    "minLevel": 55,
+    "maxLevel": 60
+   },
+   {
+    "id": "25867c6e-882a-5b8c-8d06-0fec1291d20f",
+    "dex": 111,
+    "weight": 6,
+    "minLevel": 55,
+    "maxLevel": 58
+   },
+   {
+    "id": "25c2f057-165a-53a3-8093-3a83e9efd719",
+    "dex": 112,
+    "weight": 5,
+    "minLevel": 60,
+    "maxLevel": 64
+   },
+   {
+    "id": "49a7e572-3d52-5253-b3fe-e8742ed6b304",
+    "dex": 105,
+    "weight": 6,
+    "minLevel": 58,
+    "maxLevel": 62
+   },
+   {
+    "id": "68551cf2-f7f2-5674-be3b-848e0367b68b",
+    "dex": 42,
+    "weight": 8,
+    "minLevel": 55,
+    "maxLevel": 60
+   },
+   {
+    "id": "9004d6f9-f640-5746-b7ef-7337dff226ed",
+    "dex": 57,
+    "weight": 6,
+    "minLevel": 58,
+    "maxLevel": 62
+   },
+   {
+    "id": "4aa8f96a-62de-531f-a6b5-8bccdbcf25f3",
+    "dex": 28,
+    "weight": 6,
+    "minLevel": 56,
+    "maxLevel": 60
+   },
+   {
+    "id": "1c29ab28-145a-5417-b2c4-fe1f6302ffd3",
+    "dex": 34,
+    "weight": 4,
+    "minLevel": 60,
+    "maxLevel": 64
+   },
+   {
+    "id": "7e14f80a-7676-52f2-801e-895d4ba4688f",
+    "dex": 31,
+    "weight": 4,
+    "minLevel": 60,
+    "maxLevel": 64
+   },
+   {
+    "id": "e515c255-025b-5d48-9819-5e971c56147d",
+    "dex": 106,
+    "weight": 2,
+    "minLevel": 60,
+    "maxLevel": 64
+   },
+   {
+    "id": "0621f5ef-37cf-5d87-af3c-14d6953484a5",
+    "dex": 107,
+    "weight": 2,
+    "minLevel": 60,
+    "maxLevel": 64
+   },
+   {
+    "id": "54983a10-049b-5cf7-bc86-01799989f4a9",
+    "dex": 126,
+    "weight": 3,
+    "minLevel": 60,
+    "maxLevel": 64
+   },
+   {
+    "id": "290fc22e-60a1-5ae0-a976-763a44f7c793",
+    "dex": 125,
+    "weight": 3,
+    "minLevel": 60,
+    "maxLevel": 64
+   },
+   {
+    "id": "37c95dd7-74ed-5c89-bdbf-b0274e80576a",
+    "dex": 148,
+    "weight": 2,
+    "minLevel": 60,
+    "maxLevel": 64
+   },
+   {
+    "id": "a4dff521-2feb-51ff-b341-bbc1644e8f3c",
+    "dex": 142,
+    "weight": 2,
+    "minLevel": 62,
+    "maxLevel": 66
+   },
+   {
+    "id": "94b1c89d-36d6-5fa7-8313-9da751ca066c",
+    "dex": 132,
+    "weight": 2,
+    "minLevel": 58,
+    "maxLevel": 62
+   }
+  ],
+  "trainerPool": [
+   {
+    "id": "57b277af-9fd4-56fb-9529-7dfd1dd34dc1",
+    "trainerId": "9697fac8-b43a-58a4-a236-df4de262bc1c",
+    "weight": 10
+   },
+   {
+    "id": "a5a70397-c52e-5374-af3c-09e300b1abff",
+    "trainerId": "d8e2e6a7-71ad-547e-83de-8b7cd3cb4787",
+    "weight": 10
+   },
+   {
+    "id": "62b412b6-0f2d-533d-a62c-3652a4995ab4",
+    "trainerId": "ecc0aa97-c40e-5259-8f19-55e684884f91",
+    "weight": 10
+   },
+   {
+    "id": "73614b00-65bb-508e-a624-562a0112dfb0",
+    "trainerId": "2d341389-ef51-5e36-a66f-f56ef5b469e3",
+    "weight": 10
+   },
+   {
+    "id": "186c674c-cbd0-5635-88ba-6e1e1b131586",
+    "trainerId": "7784ea47-f71c-5d29-9c1f-20e33e278d51",
+    "weight": 10
+   },
+   {
+    "id": "91d0f087-2006-5d47-aa13-de4037334dba",
+    "trainerId": "24917f8f-c4b1-58a7-a500-149c41f512e5",
+    "weight": 10
+   },
+   {
+    "id": "65449b10-05a5-5540-b5c1-4f9ae0c6e097",
+    "trainerId": "3b4cae6d-7299-56f9-8aae-4d781515805f",
+    "weight": 10
+   },
+   {
+    "id": "e0026518-b8e6-5bc3-ad67-51de964cc211",
+    "trainerId": "1ea3126a-c054-5e04-a1e4-e043bb66000d",
+    "weight": 10
+   },
+   {
+    "id": "f8e1ee6a-a218-540d-aca4-1b2c22c428cc",
+    "trainerId": "43e5423e-66fa-5907-bded-9fab062d4c5d",
+    "weight": 10
+   }
+  ],
+  "lootPool": [
+   {
+    "id": "db803985-4a37-560f-99df-4dc5f44149fa",
+    "itemKey": "hyper-potion",
+    "weight": 2,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "b5d6ec55-3ea2-5ed7-b5a6-d25bc5bfd09e",
+    "itemKey": "ultra-ball",
+    "weight": 2,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "c4767d4e-355f-5d4f-b2d8-b2f0306c6e44",
+    "itemKey": "max-ether",
+    "weight": 1,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "2c9de8f3-a7d7-5655-a2b3-0fcf6c4df885",
+    "itemKey": "ether",
+    "weight": 1,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "5a22edb2-4331-5e58-93a4-50aad7a933e2",
+    "itemKey": "rare-candy",
+    "weight": 1,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "b5c3f32c-414d-532d-bc61-56bd242d8457",
+    "itemKey": "money",
+    "weight": 2,
+    "unique": false,
+    "minQty": 200,
+    "maxQty": 400
+   },
+   {
+    "id": "51ca9dd4-7542-527b-8b61-3fe070d96245",
+    "itemKey": "rare-candy",
+    "weight": 1,
+    "unique": true,
+    "minQty": 2,
+    "maxQty": 2
+   }
+  ]
+ },
+ {
+  "id": "2737f8c1-713a-54d8-986e-30b92f7c4a8f",
+  "orderIndex": 24,
+  "name": "Indigo Plateau II",
+  "bannerUrl": "/banners/sky.png#flip",
+  "xpToUnlockNext": 140,
+  "minLevel": 65,
+  "maxLevel": 72,
+  "encounterWeights": {
+   "wild": 0,
+   "trainer": 8,
+   "center": 1,
+   "item": 1,
+   "casino": 0
+  },
+  "backtrackMultiplier": 0.5,
+  "legendaryBoss": null,
+  "scalesToTeam": false,
+  "easyMode": false,
+  "enemyUpgradeLevel": 9,
+  "battleBackground": "default",
+  "hidden": false,
+  "unlockConditions": null,
+  "gyms": [
+   "cfb99aaf-c791-57e2-ba5a-fe18ea911818",
+   "c0e5fab6-1e0f-5c87-99f4-cd1dcbeaadc9",
+   "d6693b0f-dd30-5e46-b58b-34801c8e89e4",
+   "2fda80de-eba9-579b-a75d-a86af7c69ad3",
+   "a568ca36-fc30-599e-9e78-b4fb211fb606",
+   "2a51f07a-53f5-5fe6-a875-8e8428d78db6",
+   "599bb09c-3765-5356-b5e1-27a6cf741358"
+  ],
+  "wildPool": [],
+  "trainerPool": [
+   {
+    "id": "3712713c-d0aa-58ff-a294-e8143399746f",
+    "trainerId": "2510d308-bcd5-5b2b-a1fc-df9a07cfea2e",
+    "weight": 10
+   },
+   {
+    "id": "88886440-c654-572d-9997-02c2d0fd0aa6",
+    "trainerId": "9e65b296-17f3-566c-8148-add7ac5956d0",
+    "weight": 10
+   },
+   {
+    "id": "99cf2c92-7dc9-5ec7-8ea3-0a87779fdad2",
+    "trainerId": "32aac824-7f02-58b9-8a83-3847371a4700",
+    "weight": 10
+   },
+   {
+    "id": "9bf0df90-d94d-5c2b-af1e-962e2c89436b",
+    "trainerId": "5fc3b44e-3023-5a8e-94c1-71eb245785dc",
+    "weight": 10
+   },
+   {
+    "id": "58eb4c74-99ef-5d6d-aba9-ebbbd7edd7e2",
+    "trainerId": "2d4a65c8-9b0c-5479-9658-ab6a8b709be5",
+    "weight": 10
+   },
+   {
+    "id": "128fbe08-8863-599a-8b87-43dc74fac469",
+    "trainerId": "7ad13d36-f10e-596a-9f38-b7fe419b3e04",
+    "weight": 10
+   },
+   {
+    "id": "16aae6aa-7867-54d6-8cdc-7c99cf988fa9",
+    "trainerId": "232ef32b-595b-5ae7-b8d2-4e2c52ef7c58",
+    "weight": 10
+   },
+   {
+    "id": "5c81ea3c-534e-59f1-baba-415805c478c0",
+    "trainerId": "8b9007d7-a5f0-549c-b437-a445bf0b970c",
+    "weight": 10
+   }
+  ],
+  "lootPool": [
+   {
+    "id": "b028bcbf-ae48-57a2-a5ff-94da4a93dce6",
+    "itemKey": "hyper-potion",
+    "weight": 2,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "667873fb-da90-5634-ba35-ba7b6bc2fb5b",
+    "itemKey": "ultra-ball",
+    "weight": 1,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "d7c12988-7bf3-5292-b4b8-0e9b11baf47f",
+    "itemKey": "max-ether",
+    "weight": 1,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "86d88c83-717c-5776-9449-cf6fbe29e8eb",
+    "itemKey": "rare-candy",
+    "weight": 1,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "c4ee25bd-bf7e-5119-8c1c-c9d4df6c2a61",
+    "itemKey": "money",
+    "weight": 2,
+    "unique": false,
+    "minQty": 300,
+    "maxQty": 500
+   },
+   {
+    "id": "3dfefa1c-e794-5e7f-9c8a-2913919814eb",
+    "itemKey": "rare-candy",
+    "weight": 1,
+    "unique": true,
+    "minQty": 3,
+    "maxQty": 3
+   }
+  ]
  }
 ]

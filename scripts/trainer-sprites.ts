@@ -28,7 +28,7 @@ const slug = (s: string) =>
 export function trainerSprite(name: string, role = 'trainer'): string {
   const file = (s: string) => `/trainers/classes/${s}.png`
   const first = name.split(' ').slice(-1)[0] ?? ''
-  const female = /^(Mary|Naomi|Alexa|Sara|Nina|Nadia)$/.test(first)
+  const female = /^(Mary|Naomi|Alexa|Sara|Nina|Nadia|Lena|Ivy|Claire|Rosa|Yuki|Mira)$/.test(first)
   const leaders: Record<string, string> = {
     Brock: 'champion-brock',
     Misty: 'champion-misty',

@@ -57,6 +57,8 @@ export interface GymPlan {
   badge?: string
   specialty: PokeType
   team: Mon[]
+  /** Rival version for players who picked this starter (see Trainer.rivalOf); fought as the character they didn't pick. */
+  rivalOf?: number
 }
 
 export interface AreaPlan {
@@ -76,6 +78,8 @@ export interface AreaPlan {
   easyMode?: boolean
   hidden?: boolean
   conditions?: UnlockCondition[]
+  /** Explicit loot table (copies per deck, like the admin's), instead of the stage's. */
+  loot?: LootPlan[]
   /** [dex, weight, minLevel, maxLevel] — or 'ALL' for every non-legendary species (starters included, rare). */
   wild: [number, number, number, number][] | 'ALL'
   trainers: TrainerPlan[]
@@ -178,6 +182,7 @@ const ONCE_ONLY: Record<string, LootPlan[]> = {
 
 /** An area's loot table: its stage's finds plus its one-time extras (Faraway Island has none). */
 export function lootPlanFor(plan: AreaPlan): LootPlan[] {
+  if (plan.loot) return plan.loot
   if (plan.key === 'faraway-island') return []
   const tier: 1 | 2 | 3 | 4 | 5 =
     plan.key === 'cerulean-cave' ? 5 : plan.key === 'power-plant' ? 4 : plan.key === 'rocket-hideout' ? 3 : plan.orderIndex <= 4 ? 1 : plan.orderIndex <= 9 ? 2 : plan.orderIndex <= 15 ? 3 : 4
@@ -888,6 +893,102 @@ export const AREAS: AreaPlan[] = [
       { name: 'Elite Four Agatha', role: 'elite', specialty: 'ghost', team: [[94, 58], [24, 56], [42, 54]] },
       { name: 'Elite Four Lance', role: 'elite', specialty: 'dragon', team: [[149, 60], [142, 58], [148, 54]] },
       { name: 'Champion Blue', role: 'champion', specialty: 'normal', team: [[6, 63], [130, 61], [18, 59]] },
+    ],
+  }),
+
+
+  // ---------------------------------------------------------------- endgame (after the Champion)
+  // A second lap: a stronger Victory Road to level up for a second Indigo Plateau (Elite Four ~70). Its Champion is
+  // the rival — the character the player didn't pick — with the starter strong against theirs at Lv.80.
+  area({
+    key: 'victory-road-2',
+    name: 'Victory Road II',
+    orderIndex: 23,
+    banner: { scene: 'cave_dark' },
+    xpToUnlockNext: 400,
+    minLevel: 55,
+    maxLevel: 66,
+    weights: { wild: 5, trainer: 4, center: 1, item: 1 },
+    wild: [
+      [68, 8, 58, 62], // Machamp
+      [75, 8, 55, 58], // Graveler
+      [76, 6, 58, 62], // Golem
+      [95, 6, 55, 60], // Onix
+      [111, 6, 55, 58], // Rhyhorn
+      [112, 5, 60, 64], // Rhydon
+      [105, 6, 58, 62], // Marowak
+      [42, 8, 55, 60], // Golbat
+      [57, 6, 58, 62], // Primeape
+      [28, 6, 56, 60], // Sandslash
+      [34, 4, 60, 64], // Nidoking
+      [31, 4, 60, 64], // Nidoqueen
+      [106, 2, 60, 64], // Hitmonlee
+      [107, 2, 60, 64], // Hitmonchan
+      [126, 3, 60, 64], // Magmar
+      [125, 3, 60, 64], // Electabuzz
+      [148, 2, 60, 64], // Dragonair
+      [142, 2, 62, 66], // Aerodactyl
+      [132, 2, 58, 62], // Ditto
+    ],
+    trainers: [
+      { name: 'Cooltrainer Aiden', team: [[59, 60], [121, 60], [103, 60]] },
+      { name: 'Cooltrainer Lena', team: [[36, 60], [124, 60], [65, 61]] },
+      { name: 'Black Belt Kenji', team: [[106, 60], [107, 60], [68, 62]] },
+      { name: 'Hiker Dwayne', team: [[95, 60], [112, 61], [76, 62]] },
+      { name: 'Bird Keeper Ross', team: [[22, 60], [85, 61], [18, 60]] },
+      { name: 'Psychic Tyron', team: [[64, 60], [97, 60], [65, 62]] },
+      { name: 'Tamer Rex', team: [[128, 61], [115, 61], [143, 63]] },
+      { name: 'Cooltrainer Ivy', team: [[87, 60], [91, 60], [131, 62]] },
+      { name: 'Pokémaniac Hugo', team: [[80, 60], [108, 61], [112, 62]] },
+    ],
+    loot: [
+      ['hyper-potion', 2, 1, 2],
+      ['ultra-ball', 2, 1, 2],
+      ['max-ether', 1, 1, 1],
+      ['ether', 1, 1, 2],
+      ['rare-candy', 1, 1, 1],
+      ['money', 2, 200, 400],
+      ['rare-candy', 1, 2, 2, true],
+    ],
+  }),
+  area({
+    key: 'indigo-plateau-2',
+    name: 'Indigo Plateau II',
+    orderIndex: 24,
+    banner: { scene: 'sky', flip: true },
+    xpToUnlockNext: 140,
+    minLevel: 65,
+    maxLevel: 72,
+    weights: { trainer: 8, center: 1, item: 1 },
+    wild: [],
+    trainers: [
+      { name: 'Ace Trainer Blake', team: [[135, 67], [59, 67], [130, 68]] },
+      { name: 'Ace Trainer Claire', team: [[36, 67], [134, 67], [121, 68]] },
+      { name: 'Ace Trainer Marcus', team: [[99, 67], [68, 67], [112, 68]] },
+      { name: 'Ace Trainer Rosa', team: [[136, 67], [26, 67], [3, 68]] },
+      { name: 'Ace Trainer Dante', team: [[123, 67], [142, 69], [149, 68]] },
+      { name: 'Ace Trainer Yuki', team: [[87, 68], [124, 68], [131, 69]] },
+      { name: 'Ace Trainer Leon', team: [[128, 68], [65, 68], [143, 70]] },
+      { name: 'Ace Trainer Mira', team: [[97, 68], [65, 69], [94, 69]] },
+    ],
+    // Aces last, so each battle builds to its strongest Pokémon.
+    gyms: [
+      { name: 'Elite Four Lorelei', role: 'elite', specialty: 'ice', team: [[91, 68], [124, 69], [131, 70]] },
+      { name: 'Elite Four Bruno', role: 'elite', specialty: 'fighting', team: [[95, 69], [107, 69], [68, 71]] },
+      { name: 'Elite Four Agatha', role: 'elite', specialty: 'ghost', team: [[42, 70], [24, 70], [94, 72]] },
+      { name: 'Elite Four Lance', role: 'elite', specialty: 'dragon', team: [[130, 71], [142, 71], [149, 73]] },
+      // One per starter; the player meets only theirs. Bulbasaur → Charizard, Charmander → Blastoise, Squirtle → Venusaur.
+      { name: 'Champion Rival', role: 'champion', specialty: 'fire', rivalOf: 1, team: [[26, 75], [130, 76], [6, 80]] },
+      { name: 'Champion Rival', role: 'champion', specialty: 'water', rivalOf: 4, team: [[26, 75], [59, 76], [9, 80]] },
+      { name: 'Champion Rival', role: 'champion', specialty: 'grass', rivalOf: 7, team: [[26, 75], [59, 76], [3, 80]] },
+    ],
+    loot: [
+      ['hyper-potion', 2, 1, 2],
+      ['ultra-ball', 1, 1, 2],
+      ['max-ether', 1, 1, 1],
+      ['rare-candy', 1, 1, 1],
+      ['money', 2, 300, 500],
+      ['rare-candy', 1, 3, 3, true],
     ],
   }),
 

@@ -4,6 +4,7 @@ import { getSpecies } from './data'
 import { attackMultiplier, attackType, computeDamage, type DamageResult, type UpgradeLevels } from './damage'
 import { rerollMasked, rollAll, type RolledDie } from './dice'
 import { effectiveStats } from './progression'
+import { potionHeal, shouldUsePotion } from './trainerItems'
 import type { Rng } from './rng'
 import {
   applyStatuses,
@@ -46,6 +47,8 @@ export interface Battler {
   status: StatusState
   spriteUrl: string
   shiny: boolean
+  /** A trainer Pokémon's potion, used once (null when used or never given). */
+  item?: string | null
 }
 
 export interface BattleState {
@@ -104,7 +107,8 @@ export type LogEntry =
   | { kind: 'stunned'; side: Side; uid: string; status: 'frozen' | 'paralyze'; pending?: boolean }
   | { kind: 'faint'; side: Side; uid: string; dex: number }
   | { kind: 'switch'; uid: string; free: boolean }
-  | { kind: 'item'; key: string; targetUid: string; amount: number; hpAfter: number; cured?: CurableStatus[]; rerolls?: number }
+  /** `side` 'enemy': a trainer's potion (absent = the player's item). */
+  | { kind: 'item'; key: string; targetUid: string; amount: number; hpAfter: number; cured?: CurableStatus[]; rerolls?: number; side?: Side }
   | { kind: 'heal'; side: Side; uid: string; amount: number; hpAfter: number }
   | { kind: 'end'; result: 'won' | 'lost' | 'fled'; reason?: 'stalemate' }
 
@@ -114,6 +118,7 @@ export interface BattlerSeed {
   level: number
   hp: number
   shiny?: boolean
+  item?: string
 }
 
 export function makeBattler(seed: BattlerSeed, data: GameData): Battler {
@@ -134,6 +139,7 @@ export function makeBattler(seed: BattlerSeed, data: GameData): Battler {
     status: emptyStatus(),
     spriteUrl: species.spriteUrl,
     shiny: !!seed.shiny,
+    ...(seed.item && { item: seed.item }),
   }
 }
 
@@ -141,7 +147,7 @@ export interface CreateBattleOptions {
   kind: BattleKind
   team: BattlerSeed[]
   leadUid?: string
-  enemy: { dex: number; level: number; hp?: number; shiny?: boolean }
+  enemy: { dex: number; level: number; hp?: number; shiny?: boolean; item?: string }
   playerLevels: UpgradeLevels
   enemyLevels: UpgradeLevels
 }
@@ -156,7 +162,7 @@ export function createBattle(opts: CreateBattleOptions, data: GameData): { state
   if (activeIndex < 0) throw new Error('No able Pokémon to send out')
   const enemyMax = effectiveStats(getSpecies(data, opts.enemy.dex), opts.enemy.level, data).maxHp
   const enemy = makeBattler(
-    { uid: 'enemy', dex: opts.enemy.dex, level: opts.enemy.level, hp: opts.enemy.hp ?? enemyMax, shiny: opts.enemy.shiny },
+    { uid: 'enemy', dex: opts.enemy.dex, level: opts.enemy.level, hp: opts.enemy.hp ?? enemyMax, shiny: opts.enemy.shiny, item: opts.enemy.item },
     data,
   )
   const lead = player[activeIndex]!
@@ -456,6 +462,28 @@ export function reduce(
       if (s.phase !== 'enemy_turn') return NOOP(state)
       const en = s.enemy
       const target = activeBattler(s)
+      // A trainer's potion goes down first, once, when the next hit could K.O. — it doesn't cost the turn.
+      const heal = en.item ? potionHeal(en.item, data) : 0
+      if (
+        heal > 0 &&
+        shouldUsePotion(
+          {
+            hp: en.hp,
+            maxHp: en.maxHp,
+            attackerDice: target.dice,
+            attackerTypes: target.types,
+            defenderTypes: en.types,
+            attackerLevels: s.playerLevels,
+          },
+          data,
+          rng,
+        )
+      ) {
+        const amount = Math.min(heal, en.maxHp - en.hp)
+        en.hp += amount
+        log.push({ kind: 'item', key: en.item!, targetUid: en.uid, amount, hpAfter: en.hp, side: 'enemy' })
+        en.item = null
+      }
       s.dice = rollAll(en.dice, data, rng)
       log.push({ kind: 'roll', side: 'enemy', dice: s.dice })
       // A confused AI knows the hit comes back at it — it doesn't dig deeper.

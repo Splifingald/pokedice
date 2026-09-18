@@ -47,7 +47,7 @@ export const saveSchema = z.object({
   dieLevels: levelRecord<PokeType>(POKE_TYPES),
   currentAreaId: z.string(),
   areaProgress: z.record(progressSchema),
-  settings: z.object({ sfx: z.boolean(), reducedMotion: z.boolean(), multiExp: z.boolean().default(true) }),
+  settings: z.object({ sfx: z.boolean(), reducedMotion: z.boolean(), multiExp: z.boolean().default(true), autoMode: z.boolean().optional() }),
   hpScale: z.number().positive().optional(),
   player: z.object({ name: z.string().max(12), character: z.enum(['red', 'green']) }).optional(),
   dayCare: z

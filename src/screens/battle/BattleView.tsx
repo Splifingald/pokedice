@@ -3,12 +3,16 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from 'react'
 import {
   activeBattler,
+  autoEvents,
   battleBackgroundFor,
   COMBO_NAMES,
   computeDamage,
+  createRng,
   effectText,
   faceOf,
   hasStatus,
+  progressOf,
+  randomSeed,
   statusesFromRoll,
   usableIn,
   type BattleBackground,
@@ -27,7 +31,7 @@ import { StatusIcons } from '@/components/StatusIcons'
 import { TypeBadge } from '@/components/TypeBadge'
 import { trainerTitle } from '@/lib/format'
 import { useIsDesktop, useMediaQuery } from '@/lib/useMediaQuery'
-import { useGame, type BattleSlice } from '@/store/game'
+import { setSettings, useGame, type BattleSlice } from '@/store/game'
 import { dispatchBattle } from '@/store/run'
 import spriteMetrics from '@/data/sprite-metrics.json'
 import { cx, typeColor } from '@/theme/util'
@@ -326,6 +330,11 @@ function SendOut({ character, size }: { character: 'red' | 'green'; size: number
   )
 }
 
+// Auto-mode's picks sample rolls (like the enemy AI); its own stream keeps the battle's rolls untouched.
+const autoRng = createRng(randomSeed())
+/** How long auto-mode shows its dice selection before the reroll. */
+const AUTO_SELECT_MS = 450
+
 export function BattleView({ battle }: { battle: BattleSlice }) {
   const data = useGame((s) => s.data)
   const save = useGame((s) => s.save)
@@ -344,6 +353,10 @@ export function BattleView({ battle }: { battle: BattleSlice }) {
   const [itemKey, setItemKey] = useState<string | null>(null)
   const [showBreakdown, setShowBreakdown] = useState(false)
   const [bossIntro, setBossIntro] = useState(st.kind === 'boss' && !reduced)
+
+  // Auto-mode (cleared areas only): the player's side plays itself, like the enemy's.
+  const autoOn = useGame((s) => !!s.settings.autoMode)
+  const auto = autoOn && !!save && !!run.areaId && progressOf(save, run.areaId).cleared
 
   const enc = run.encounter
   const isTrainerFight = enc?.kind === 'trainer' || enc?.kind === 'gym'
@@ -422,7 +435,7 @@ export function BattleView({ battle }: { battle: BattleSlice }) {
   // Keyboard: 1..6 toggle, R reroll, Space roll/attack.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (!(canAct || stunned) || menu || (e.target as HTMLElement)?.tagName === 'INPUT') return
+      if (!(canAct || stunned) || auto || menu || (e.target as HTMLElement)?.tagName === 'INPUT') return
       if (e.key === ' ' || e.key === 'Enter') {
         e.preventDefault()
         dispatchBattle(stunned ? { t: 'PASS' } : st.phase === 'player_roll' ? { t: 'ROLL' } : { t: 'ATTACK' })
@@ -431,14 +444,38 @@ export function BattleView({ battle }: { battle: BattleSlice }) {
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [canAct, stunned, menu, rolling, st.phase])
+  }, [canAct, stunned, auto, menu, rolling, st.phase])
 
   // Every turn starts with the throw, so the dice roll themselves (items, switching and running still work after it).
   useEffect(() => {
-    if (!ready || intro || menu || st.phase !== 'player_roll') return
+    if (auto || !ready || intro || menu || st.phase !== 'player_roll') return
     const t = setTimeout(() => dispatchBattle({ t: 'ROLL' }), reduced ? 0 : 400)
     return () => clearTimeout(t)
-  }, [ready, intro, menu, st.phase, reduced, battle.log.length])
+  }, [auto, ready, intro, menu, st.phase, reduced, battle.log.length])
+
+  // Auto-mode: every player move once the log has caught up. A reroll shows its selected dice for a moment first.
+  const autoPhase = st.phase === 'player_roll' || st.phase === 'player_reroll' || st.phase === 'player_stunned' || st.phase === 'player_switch'
+  useEffect(() => {
+    if (!auto || !ready || intro || menu || !autoPhase) return
+    let inner: ReturnType<typeof setTimeout> | undefined
+    const t = setTimeout(
+      () => {
+        const b = useGame.getState().battle
+        if (!b) return
+        const events = autoEvents(b.state, data, autoRng)
+        const last = events.pop()
+        if (!last) return
+        events.forEach(dispatchBattle)
+        if (events.length && !reduced) inner = setTimeout(() => dispatchBattle(last), AUTO_SELECT_MS)
+        else dispatchBattle(last)
+      },
+      reduced ? 0 : st.phase === 'player_reroll' ? 350 : 400,
+    )
+    return () => {
+      clearTimeout(t)
+      clearTimeout(inner)
+    }
+  }, [auto, ready, intro, menu, autoPhase, st.phase, data, reduced, battle.log.length])
 
   const usefulItems = ownedItems.filter(([k]) => st.player.some((p) => itemHelps(k, p)))
   const showItem = usefulItems.length > 0
@@ -447,10 +484,10 @@ export function BattleView({ battle }: { battle: BattleSlice }) {
   // Stunned with no item that could help: nothing to do but lose the turn.
   const stunChoice = canItem && showItem
   useEffect(() => {
-    if (!stunned || menu || stunChoice) return
+    if (auto || !stunned || menu || stunChoice) return
     const t = setTimeout(() => dispatchBattle({ t: 'PASS' }), 900)
     return () => clearTimeout(t)
-  }, [stunned, menu, stunChoice])
+  }, [auto, stunned, menu, stunChoice])
 
   // Each of your Pokémon comes out of a ball thrown by the player (first send-out and every switch).
   const character = playerOf(save).character
@@ -692,7 +729,7 @@ export function BattleView({ battle }: { battle: BattleSlice }) {
                 rollKey={tray.keys[i]}
                 delay={i * 0.06}
                 selected={ready && rolling && !!st.selected[i]}
-                onClick={canAct && rolling ? () => dispatchBattle({ t: 'TOGGLE_DIE', i }) : undefined}
+                onClick={canAct && rolling && !auto ? () => dispatchBattle({ t: 'TOGGLE_DIE', i }) : undefined}
                 locked={tray.side === 'enemy'}
                 asButton={tray.side === 'player'}
               />
@@ -731,13 +768,23 @@ export function BattleView({ battle }: { battle: BattleSlice }) {
         )}
         {ready && preview && showBreakdown && <DamageRecap result={preview.r} />}
 
-        {/* Controls */}
-        {stunned && (
+        {/* Controls — auto-mode plays them itself and only offers STOP. */}
+        {auto && !terminal && (
+          <div className="flex flex-wrap items-center justify-center gap-2" role="status">
+            <span className="flex items-center gap-1 text-xl">
+              <PixelIcon name="dice" size={18} /> AUTO-MODE
+            </span>
+            <PixelButton size={minorSize} onClick={() => setSettings({ autoMode: false })}>
+              STOP
+            </PixelButton>
+          </div>
+        )}
+        {!auto && stunned && (
           <PixelButton variant="primary" size={mainSize} className="self-center" onClick={() => dispatchBattle({ t: 'PASS' })}>
             SKIP TURN
           </PixelButton>
         )}
-        {rolling && (
+        {!auto && rolling && (
           <div className="grid w-full grid-cols-2 items-start gap-2 sm:mx-auto sm:max-w-md">
             <div className="flex flex-col gap-1">
               <PixelButton
@@ -759,7 +806,7 @@ export function BattleView({ battle }: { battle: BattleSlice }) {
             </PixelButton>
           </div>
         )}
-        {!terminal && (showItem || showSwitch || st.canRun) && (
+        {!auto && !terminal && (showItem || showSwitch || st.canRun) && (
           <div className="flex flex-wrap items-center justify-center gap-2">
             {showItem && (
               <PixelButton
@@ -783,7 +830,7 @@ export function BattleView({ battle }: { battle: BattleSlice }) {
             )}
           </div>
         )}
-        {desktop && canAct && (
+        {desktop && canAct && !auto && (
           <div className="text-center text-sm text-muted">Keys: 1–6 select · R reroll · Space {rolling ? 'attack' : 'roll'}</div>
         )}
       </div>
@@ -800,7 +847,7 @@ export function BattleView({ battle }: { battle: BattleSlice }) {
       </Modal>
 
       {/* Forced switch after a faint (free) */}
-      <Modal open={ready && st.phase === 'player_switch'} dismissable={false} title="Choose your next Pokémon">
+      <Modal open={ready && !auto && st.phase === 'player_switch'} dismissable={false} title="Choose your next Pokémon">
         <div className="flex flex-col gap-2">
           {switchTargets.map((p) => (
             <SwitchRow key={p.uid} b={p} onPick={() => dispatchBattle({ t: 'SWITCH', instanceId: p.uid })} />

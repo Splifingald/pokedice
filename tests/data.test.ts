@@ -106,7 +106,7 @@ describe('areas & trainers', () => {
   const allTrainers = trainers as Trainer[]
 
   it('has 5 areas with valid dex references', () => {
-    expect(allAreas).toHaveLength(26)
+    expect(allAreas).toHaveLength(28)
     for (const a of allAreas) for (const w of a.wildPool) expect(w.dex).toBeGreaterThanOrEqual(1)
     for (const a of allAreas) for (const w of a.wildPool) expect(w.dex).toBeLessThanOrEqual(151)
     for (const t of allTrainers) for (const m of t.team) expect(m.dex).toBeGreaterThanOrEqual(1)
@@ -150,10 +150,10 @@ describe('Kanto structure', () => {
   const linear = allAreas.filter((a) => !a.hidden).sort((a, b) => a.orderIndex - b.orderIndex)
   const hidden = allAreas.filter((a) => a.hidden)
 
-  it('has 22 linear areas in order, Route 1 → Indigo Plateau, and 4 secret areas with conditions', () => {
-    expect(linear.map((a) => a.orderIndex)).toEqual(Array.from({ length: 22 }, (_, i) => i + 1))
+  it('has 24 linear areas in order, Route 1 → Indigo Plateau → the endgame lap, and 4 secret areas with conditions', () => {
+    expect(linear.map((a) => a.orderIndex)).toEqual(Array.from({ length: 24 }, (_, i) => i + 1))
     expect(linear[0]!.name).toBe('Route 1')
-    expect(linear[21]!.name).toBe('Indigo Plateau')
+    expect(linear.slice(21).map((a) => a.name)).toEqual(['Indigo Plateau', 'Victory Road II', 'Indigo Plateau II'])
     expect(hidden.map((a) => a.name).sort()).toEqual(['Cerulean Cave', 'Faraway Island', 'Power Plant', 'Rocket Hideout'])
     for (const a of hidden) expect(a.unlockConditions?.length).toBeGreaterThan(0)
     expect(allAreas.find((a) => a.name === 'Faraway Island')!.unlockConditions).toEqual([{ kind: 'pokedex', count: 150 }])
@@ -183,9 +183,20 @@ describe('Kanto structure', () => {
     for (const t of [...leaders, ...indigo]) expect(t.spriteUrl).toMatch(/^\/trainers\/classes\/(champion|elite|blue)-/)
   })
 
+  it('ends with an Elite Four around Lv.70 and a rival Champion per starter, their counter starter at Lv.80', () => {
+    const gyms = linear[23]!.gyms.map((id) => tById.get(id)!)
+    expect(gyms.map((t) => t.role)).toEqual(['elite', 'elite', 'elite', 'elite', 'champion', 'champion', 'champion'])
+    for (const t of gyms.slice(0, 4)) for (const m of t.team) expect(Math.abs(m.level - 70)).toBeLessThanOrEqual(3)
+    const rival = (starter: number) => gyms.find((t) => t.rivalOf === starter)!.team.map((m) => [m.dex, m.level])
+    expect(rival(1)).toEqual([[26, 75], [130, 76], [6, 80]]) // Bulbasaur → Raichu, Gyarados, Charizard
+    expect(rival(4)).toEqual([[26, 75], [59, 76], [9, 80]]) // Charmander → Raichu, Arcanine, Blastoise
+    expect(rival(7)).toEqual([[26, 75], [59, 76], [3, 80]]) // Squirtle → Raichu, Arcanine, Venusaur
+  })
+
   it('gives every trainer a sprite cut from the trainer sheet', () => {
     for (const t of trainers as Trainer[]) {
-      expect(t.spriteUrl, t.name).toMatch(/^\/trainers\/classes\//)
+      // Rival versions show as the character the player didn't pick.
+      expect(t.spriteUrl, t.name).toMatch(t.rivalOf != null ? /^\/characters\/(red|green)\.png$/ : /^\/trainers\/classes\//)
       expect(existsSync(path.join('public', t.spriteUrl!)), t.spriteUrl!).toBe(true)
     }
   })

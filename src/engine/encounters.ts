@@ -1,6 +1,8 @@
 import { shuffle } from './deal'
 import { drawLoot } from './items'
+import { asSeenBy, gymsFor, type PlayerSide } from './rival'
 import type { Rng } from './rng'
+import { dealTrainerItems } from './trainerItems'
 import type {
   Area,
   AreaProgress,
@@ -58,33 +60,36 @@ export interface EncounterContext {
    * opens with one. Unset = no round Center.
    */
   centerUseful?: boolean
+  /** The player's starter and character: picks the rival version of a trainer. */
+  player?: PlayerSide | null
 }
 
 const gaugeFull = (area: Area, progress: AreaProgress) =>
   area.xpToUnlockNext != null && progress.xp >= area.xpToUnlockNext
 
 /** The next gym / Elite battle once the gauge is full, in order; each is fought until won. */
-export function dueGym(area: Area, progress: AreaProgress, data: GameData): Trainer | null {
+export function dueGym(area: Area, progress: AreaProgress, data: GameData, side?: PlayerSide | null): Trainer | null {
   if (!area.gyms.length || !gaugeFull(area, progress)) return null
-  for (const id of area.gyms) {
+  for (const id of gymsFor(area, data, side)) {
     if (progress.gymsDefeated.includes(id)) continue
     const t = data.trainers[id]
-    if (t && t.team.length) return t
+    if (t && t.team.length) return asSeenBy(t, side)
   }
   return null
 }
 
-function gymEncounter(area: Area, t: Trainer): Encounter {
+function gymEncounter(area: Area, t: Trainer, data: GameData, side?: PlayerSide | null): Encounter {
+  const gyms = gymsFor(area, data, side)
   return {
     kind: 'gym',
     trainerId: t.id,
     name: t.name,
     spriteUrl: t.spriteUrl,
-    team: t.team.map((m) => ({ ...m })),
+    team: dealTrainerItems(t.team, t.items, data),
     role: t.role,
     badge: t.badge,
-    index: area.gyms.indexOf(t.id) + 1,
-    total: area.gyms.length,
+    index: gyms.indexOf(t.id) + 1,
+    total: gyms.length,
   }
 }
 
@@ -132,7 +137,11 @@ export function rollTrainer(ctx: EncounterContext, rng: Rng): Encounter | null {
     trainerId: trainer.id,
     name: trainer.name,
     spriteUrl: trainer.spriteUrl,
-    team: trainer.team.map((m) => ({ dex: m.dex, level: enemyLevel(m.level, ctx, rng) })),
+    team: dealTrainerItems(
+      trainer.team.map((m) => ({ dex: m.dex, level: enemyLevel(m.level, ctx, rng) })),
+      trainer.items,
+      ctx.data,
+    ),
   }
 }
 
@@ -238,9 +247,15 @@ export function nextEncounter(ctx: EncounterContext, rng: Rng): EncounterRoll {
  * The challenge waiting in this area, if any: the next gym / Elite battle once the gauge is full, else a legendary
  * that's due. The player picks it (CHALLENGE on the area screen) whenever they're ready, or keeps exploring.
  */
-export function challengeEncounter(area: Area, progress: AreaProgress, data: GameData, teamAvgLevel: number): Encounter | null {
-  const gym = dueGym(area, progress, data)
-  if (gym) return gymEncounter(area, gym)
+export function challengeEncounter(
+  area: Area,
+  progress: AreaProgress,
+  data: GameData,
+  teamAvgLevel: number,
+  side?: PlayerSide | null,
+): Encounter | null {
+  const gym = dueGym(area, progress, data, side)
+  if (gym) return gymEncounter(area, gym, data, side)
   const boss = dueBoss(area, progress, teamAvgLevel)
   return boss ? { kind: 'boss', dex: boss.dex, level: boss.level } : null
 }
@@ -339,8 +354,10 @@ function rollWeighted(ctx: EncounterContext, rng: Rng): EncounterRoll {
 function forcedEncounter(ctx: EncounterContext, kind: ForceKind, rng: Rng): Encounter | null {
   switch (kind) {
     case 'gym': {
-      const t = ctx.area.gyms.map((id) => ctx.data.trainers[id]).find((x) => x && !ctx.progress.gymsDefeated.includes(x.id))
-      return t ? gymEncounter(ctx.area, t) : null
+      const t = gymsFor(ctx.area, ctx.data, ctx.player)
+        .map((id) => ctx.data.trainers[id])
+        .find((x) => x && !ctx.progress.gymsDefeated.includes(x.id))
+      return t ? gymEncounter(ctx.area, asSeenBy(t, ctx.player), ctx.data, ctx.player) : null
     }
     case 'wild':
       return rollWild(ctx, rng)

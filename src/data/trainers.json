@@ -233,7 +233,10 @@
   "role": "elite",
   "badge": null,
   "upgradeLevel": null,
-  "battleBackground": "default"
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ]
  },
  {
   "id": "5be0ce71-8b9a-5d00-9fc7-55c868dcaae9",
@@ -256,7 +259,10 @@
   "role": "elite",
   "badge": null,
   "upgradeLevel": null,
-  "battleBackground": "default"
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ]
  },
  {
   "id": "9c8e8be2-905e-565f-8845-8643678a03fb",
@@ -279,7 +285,10 @@
   "role": "elite",
   "badge": null,
   "upgradeLevel": null,
-  "battleBackground": "default"
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ]
  },
  {
   "id": "68c66414-3244-5821-b8a1-2ca72dcf17a6",
@@ -526,7 +535,10 @@
   "role": "elite",
   "badge": null,
   "upgradeLevel": null,
-  "battleBackground": "default"
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ]
  },
  {
   "id": "2330f93e-5d26-56bd-b875-59351aac91bb",
@@ -549,7 +561,10 @@
   "role": "champion",
   "badge": null,
   "upgradeLevel": null,
-  "battleBackground": "default"
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ]
  },
  {
   "id": "10a639ea-ad88-5fc1-bda0-b937ee800c35",
@@ -2031,7 +2046,10 @@
   "role": "leader",
   "badge": "Rainbow Badge",
   "upgradeLevel": null,
-  "battleBackground": "default"
+  "battleBackground": "default",
+  "items": [
+   "potion"
+  ]
  },
  {
   "id": "49793a15-edd3-50b9-98da-09ef8d49cafc",
@@ -2691,7 +2709,10 @@
   "role": "leader",
   "badge": "Soul Badge",
   "upgradeLevel": null,
-  "battleBackground": "default"
+  "battleBackground": "default",
+  "items": [
+   "potion"
+  ]
  },
  {
   "id": "c934008b-6a8a-5fa6-a898-14b05a4890da",
@@ -3012,7 +3033,10 @@
   "role": "leader",
   "badge": "Marsh Badge",
   "upgradeLevel": null,
-  "battleBackground": "default"
+  "battleBackground": "default",
+  "items": [
+   "super-potion"
+  ]
  },
  {
   "id": "ee400cfc-1a89-5eef-961e-0c2eb5e34649",
@@ -3405,7 +3429,10 @@
   "role": "leader",
   "badge": "Volcano Badge",
   "upgradeLevel": null,
-  "battleBackground": "default"
+  "battleBackground": "default",
+  "items": [
+   "super-potion"
+  ]
  },
  {
   "id": "2cda95ea-a306-5dab-a5ad-fa1f27c64cb9",
@@ -3607,7 +3634,10 @@
   "role": "leader",
   "badge": "Earth Badge",
   "upgradeLevel": null,
-  "battleBackground": "default"
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ]
  },
  {
   "id": "0d3a7850-59db-5260-8e56-1a94677e0b4c",
@@ -4116,5 +4146,581 @@
   "badge": null,
   "upgradeLevel": null,
   "battleBackground": null
+ },
+ {
+  "id": "9697fac8-b43a-58a4-a236-df4de262bc1c",
+  "name": "Cooltrainer Aiden",
+  "spriteUrl": "/trainers/classes/cooltrainer-m.png",
+  "team": [
+   {
+    "dex": 59,
+    "level": 60
+   },
+   {
+    "dex": 121,
+    "level": 60
+   },
+   {
+    "dex": 103,
+    "level": 60
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "d8e2e6a7-71ad-547e-83de-8b7cd3cb4787",
+  "name": "Cooltrainer Lena",
+  "spriteUrl": "/trainers/classes/cooltrainer-f.png",
+  "team": [
+   {
+    "dex": 36,
+    "level": 60
+   },
+   {
+    "dex": 124,
+    "level": 60
+   },
+   {
+    "dex": 65,
+    "level": 61
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "ecc0aa97-c40e-5259-8f19-55e684884f91",
+  "name": "Black Belt Kenji",
+  "spriteUrl": "/trainers/classes/black-belt.png",
+  "team": [
+   {
+    "dex": 106,
+    "level": 60
+   },
+   {
+    "dex": 107,
+    "level": 60
+   },
+   {
+    "dex": 68,
+    "level": 62
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "2d341389-ef51-5e36-a66f-f56ef5b469e3",
+  "name": "Hiker Dwayne",
+  "spriteUrl": "/trainers/classes/hiker.png",
+  "team": [
+   {
+    "dex": 95,
+    "level": 60
+   },
+   {
+    "dex": 112,
+    "level": 61
+   },
+   {
+    "dex": 76,
+    "level": 62
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "7784ea47-f71c-5d29-9c1f-20e33e278d51",
+  "name": "Bird Keeper Ross",
+  "spriteUrl": "/trainers/classes/bird-keeper.png",
+  "team": [
+   {
+    "dex": 22,
+    "level": 60
+   },
+   {
+    "dex": 85,
+    "level": 61
+   },
+   {
+    "dex": 18,
+    "level": 60
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "24917f8f-c4b1-58a7-a500-149c41f512e5",
+  "name": "Psychic Tyron",
+  "spriteUrl": "/trainers/classes/psychic-m.png",
+  "team": [
+   {
+    "dex": 64,
+    "level": 60
+   },
+   {
+    "dex": 97,
+    "level": 60
+   },
+   {
+    "dex": 65,
+    "level": 62
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "3b4cae6d-7299-56f9-8aae-4d781515805f",
+  "name": "Tamer Rex",
+  "spriteUrl": "/trainers/classes/tamer.png",
+  "team": [
+   {
+    "dex": 128,
+    "level": 61
+   },
+   {
+    "dex": 115,
+    "level": 61
+   },
+   {
+    "dex": 143,
+    "level": 63
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "1ea3126a-c054-5e04-a1e4-e043bb66000d",
+  "name": "Cooltrainer Ivy",
+  "spriteUrl": "/trainers/classes/cooltrainer-f.png",
+  "team": [
+   {
+    "dex": 87,
+    "level": 60
+   },
+   {
+    "dex": 91,
+    "level": 60
+   },
+   {
+    "dex": 131,
+    "level": 62
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "43e5423e-66fa-5907-bded-9fab062d4c5d",
+  "name": "Pokémaniac Hugo",
+  "spriteUrl": "/trainers/classes/pokemaniac.png",
+  "team": [
+   {
+    "dex": 80,
+    "level": 60
+   },
+   {
+    "dex": 108,
+    "level": 61
+   },
+   {
+    "dex": 112,
+    "level": 62
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "2510d308-bcd5-5b2b-a1fc-df9a07cfea2e",
+  "name": "Ace Trainer Blake",
+  "spriteUrl": "/trainers/classes/cooltrainer-m.png",
+  "team": [
+   {
+    "dex": 135,
+    "level": 67
+   },
+   {
+    "dex": 59,
+    "level": 67
+   },
+   {
+    "dex": 130,
+    "level": 68
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "9e65b296-17f3-566c-8148-add7ac5956d0",
+  "name": "Ace Trainer Claire",
+  "spriteUrl": "/trainers/classes/cooltrainer-f.png",
+  "team": [
+   {
+    "dex": 36,
+    "level": 67
+   },
+   {
+    "dex": 134,
+    "level": 67
+   },
+   {
+    "dex": 121,
+    "level": 68
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "32aac824-7f02-58b9-8a83-3847371a4700",
+  "name": "Ace Trainer Marcus",
+  "spriteUrl": "/trainers/classes/cooltrainer-m.png",
+  "team": [
+   {
+    "dex": 99,
+    "level": 67
+   },
+   {
+    "dex": 68,
+    "level": 67
+   },
+   {
+    "dex": 112,
+    "level": 68
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "5fc3b44e-3023-5a8e-94c1-71eb245785dc",
+  "name": "Ace Trainer Rosa",
+  "spriteUrl": "/trainers/classes/cooltrainer-f.png",
+  "team": [
+   {
+    "dex": 136,
+    "level": 67
+   },
+   {
+    "dex": 26,
+    "level": 67
+   },
+   {
+    "dex": 3,
+    "level": 68
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "2d4a65c8-9b0c-5479-9658-ab6a8b709be5",
+  "name": "Ace Trainer Dante",
+  "spriteUrl": "/trainers/classes/cooltrainer-m.png",
+  "team": [
+   {
+    "dex": 123,
+    "level": 67
+   },
+   {
+    "dex": 142,
+    "level": 69
+   },
+   {
+    "dex": 149,
+    "level": 68
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "7ad13d36-f10e-596a-9f38-b7fe419b3e04",
+  "name": "Ace Trainer Yuki",
+  "spriteUrl": "/trainers/classes/cooltrainer-f.png",
+  "team": [
+   {
+    "dex": 87,
+    "level": 68
+   },
+   {
+    "dex": 124,
+    "level": 68
+   },
+   {
+    "dex": 131,
+    "level": 69
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "232ef32b-595b-5ae7-b8d2-4e2c52ef7c58",
+  "name": "Ace Trainer Leon",
+  "spriteUrl": "/trainers/classes/cooltrainer-m.png",
+  "team": [
+   {
+    "dex": 128,
+    "level": 68
+   },
+   {
+    "dex": 65,
+    "level": 68
+   },
+   {
+    "dex": 143,
+    "level": 70
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "8b9007d7-a5f0-549c-b437-a445bf0b970c",
+  "name": "Ace Trainer Mira",
+  "spriteUrl": "/trainers/classes/cooltrainer-f.png",
+  "team": [
+   {
+    "dex": 97,
+    "level": 68
+   },
+   {
+    "dex": 65,
+    "level": 69
+   },
+   {
+    "dex": 94,
+    "level": 69
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "cfb99aaf-c791-57e2-ba5a-fe18ea911818",
+  "name": "Elite Four Lorelei",
+  "spriteUrl": "/trainers/classes/elite-lorelei.png",
+  "team": [
+   {
+    "dex": 91,
+    "level": 68
+   },
+   {
+    "dex": 124,
+    "level": 69
+   },
+   {
+    "dex": 131,
+    "level": 70
+   }
+  ],
+  "role": "elite",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ]
+ },
+ {
+  "id": "c0e5fab6-1e0f-5c87-99f4-cd1dcbeaadc9",
+  "name": "Elite Four Bruno",
+  "spriteUrl": "/trainers/classes/elite-bruno.png",
+  "team": [
+   {
+    "dex": 95,
+    "level": 69
+   },
+   {
+    "dex": 107,
+    "level": 69
+   },
+   {
+    "dex": 68,
+    "level": 71
+   }
+  ],
+  "role": "elite",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ]
+ },
+ {
+  "id": "d6693b0f-dd30-5e46-b58b-34801c8e89e4",
+  "name": "Elite Four Agatha",
+  "spriteUrl": "/trainers/classes/elite-agatha.png",
+  "team": [
+   {
+    "dex": 42,
+    "level": 70
+   },
+   {
+    "dex": 24,
+    "level": 70
+   },
+   {
+    "dex": 94,
+    "level": 72
+   }
+  ],
+  "role": "elite",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ]
+ },
+ {
+  "id": "2fda80de-eba9-579b-a75d-a86af7c69ad3",
+  "name": "Elite Four Lance",
+  "spriteUrl": "/trainers/classes/elite-lance.png",
+  "team": [
+   {
+    "dex": 130,
+    "level": 71
+   },
+   {
+    "dex": 142,
+    "level": 71
+   },
+   {
+    "dex": 149,
+    "level": 73
+   }
+  ],
+  "role": "elite",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ]
+ },
+ {
+  "id": "a568ca36-fc30-599e-9e78-b4fb211fb606",
+  "name": "Champion Rival",
+  "spriteUrl": "/characters/green.png",
+  "team": [
+   {
+    "dex": 26,
+    "level": 75
+   },
+   {
+    "dex": 130,
+    "level": 76
+   },
+   {
+    "dex": 6,
+    "level": 80
+   }
+  ],
+  "role": "champion",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "rivalOf": 1,
+  "items": [
+   "hyper-potion"
+  ]
+ },
+ {
+  "id": "2a51f07a-53f5-5fe6-a875-8e8428d78db6",
+  "name": "Champion Rival",
+  "spriteUrl": "/characters/green.png",
+  "team": [
+   {
+    "dex": 26,
+    "level": 75
+   },
+   {
+    "dex": 59,
+    "level": 76
+   },
+   {
+    "dex": 9,
+    "level": 80
+   }
+  ],
+  "role": "champion",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "rivalOf": 4,
+  "items": [
+   "hyper-potion"
+  ]
+ },
+ {
+  "id": "599bb09c-3765-5356-b5e1-27a6cf741358",
+  "name": "Champion Rival",
+  "spriteUrl": "/characters/green.png",
+  "team": [
+   {
+    "dex": 26,
+    "level": 75
+   },
+   {
+    "dex": 59,
+    "level": 76
+   },
+   {
+    "dex": 3,
+    "level": 80
+   }
+  ],
+  "role": "champion",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "rivalOf": 7,
+  "items": [
+   "hyper-potion"
+  ]
  }
 ]

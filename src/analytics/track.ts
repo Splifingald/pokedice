@@ -2,7 +2,7 @@
 // offline (capped), and any failure just retries on the next flush.
 import { getSupabase, isSupabaseConfigured } from '@/lib/supabase'
 import { onSaveCommitted, useGame } from '@/store/game'
-import { diffSaves, type AnalyticsEvent } from './events'
+import { diffSaves, snapshotOf, SYSTEM_KINDS, type SystemKind, type TrackedEvent } from './events'
 
 const QUEUE_KEY = 'pokedice.analytics.queue'
 const DEVICE_KEY = 'pokedice.analytics.device'
@@ -15,8 +15,8 @@ interface QueuedRow {
   device_id: string
   player_name: string | null
   email: string | null
-  kind: AnalyticsEvent['kind']
-  params: AnalyticsEvent['params']
+  kind: TrackedEvent['kind']
+  params: TrackedEvent['params']
 }
 
 const store = (): Storage | null => {
@@ -60,7 +60,7 @@ const persistQueue = () => {
   }
 }
 
-export function track(events: AnalyticsEvent[]) {
+export function track(events: TrackedEvent[]) {
   if (!isSupabaseConfigured || !events.length) return
   const { auth, save } = useGame.getState()
   const signedIn = auth.status === 'signed_in'
@@ -84,6 +84,13 @@ export async function flushAnalytics() {
     const client = await getSupabase()
     if (!client) return
     const { error } = await client.from('analytics_events').insert(batch)
+    // A database without migration 0008 refuses the background kinds (check violation, 23514): drop those rows so
+    // they can't hold up the player's real events, which go out on the next flush.
+    if (error?.code === '23514' && batch.some((r) => SYSTEM_KINDS.includes(r.kind as SystemKind))) {
+      queue = queue.filter((r) => !SYSTEM_KINDS.includes(r.kind as SystemKind))
+      persistQueue()
+      return
+    }
     if (error) throw error
     queue = queue.slice(batch.length)
     persistQueue()
@@ -103,6 +110,48 @@ export function trackLogin(userId: string) {
   void flushAnalytics()
 }
 
+// ---------------------------------------------------------------- playtime & snapshots
+
+const TICK_S = 15
+/** Played time counts while the tab is visible and the player touched or typed in the last 2 minutes. */
+const IDLE_MS = 2 * 60_000
+const PLAYTIME_EVERY_S = 5 * 60
+const SNAPSHOT_EVERY_MS = 10 * 60_000
+
+let lastInput = Date.now()
+let unsent = 0
+let lastSnapshot = ''
+
+function sendPlaytime(min = 1) {
+  if (unsent < min) return
+  track([{ kind: 'playtime', params: { seconds: unsent } }])
+  unsent = 0
+}
+
+/** The player's current state, only when it changed since the last one sent. */
+function sendSnapshot() {
+  const { save, data } = useGame.getState()
+  if (!save) return
+  const snap = snapshotOf(save, data)
+  const key = JSON.stringify(snap)
+  if (key === lastSnapshot) return
+  lastSnapshot = key
+  track([{ kind: 'snapshot', params: snap }])
+}
+
+function startPlaytime() {
+  const input = () => (lastInput = Date.now())
+  for (const ev of ['pointerdown', 'keydown', 'touchstart', 'wheel'])
+    window.addEventListener(ev, input, { passive: true, capture: true })
+  setInterval(() => {
+    if (document.visibilityState !== 'visible' || Date.now() - lastInput > IDLE_MS) return
+    unsent += TICK_S
+    if (unsent >= PLAYTIME_EVERY_S) sendPlaytime()
+  }, TICK_S * 1000)
+  setTimeout(sendSnapshot, 5_000)
+  setInterval(sendSnapshot, SNAPSHOT_EVERY_MS)
+}
+
 let started = false
 export function startAnalytics() {
   if (started || !isSupabaseConfigured) return
@@ -115,7 +164,11 @@ export function startAnalytics() {
   })
   setInterval(() => void flushAnalytics(), FLUSH_MS)
   document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'hidden') void flushAnalytics()
+    if (document.visibilityState !== 'hidden') return
+    sendPlaytime()
+    sendSnapshot()
+    void flushAnalytics()
   })
+  startPlaytime()
   void flushAnalytics()
 }

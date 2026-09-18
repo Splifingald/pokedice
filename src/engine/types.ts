@@ -253,6 +253,8 @@ export interface DayCareConfig {
 export interface TrainerMon {
   dex: number
   level: number
+  /** The potion this Pokémon holds in a fight (at most one): dealt from the trainer's `items` to its strongest. */
+  item?: string
 }
 
 export type TrainerRole = 'trainer' | 'leader' | 'elite' | 'champion'
@@ -269,6 +271,16 @@ export interface Trainer {
   upgradeLevel: number | null
   /** Battle scene for this trainer's fights (a gym's floor…); null = the area's. */
   battleBackground: BattleBackground | null
+  /**
+   * Potions the trainer carries (item keys; other items are ignored). Each goes to one Pokémon, highest level first —
+   * the best potion to the strongest — and it drinks it when a hit could K.O. it. Missing or empty = none.
+   */
+  items?: string[] | null
+  /**
+   * Rival version: this trainer only appears to players who started with this Pokémon (1, 4 or 7), under the name and
+   * sprite of the character the player didn't pick. An area lists one version per starter; the others are skipped.
+   */
+  rivalOf?: number | null
 }
 
 export type CurableStatus = 'burn' | 'poison' | 'frozen' | 'paralyze' | 'confuse'
@@ -423,7 +435,7 @@ export interface SaveData {
   dieLevels: Record<PokeType, number>
   currentAreaId: string
   areaProgress: Record<string, AreaProgress>
-  settings: { sfx: boolean; reducedMotion: boolean; multiExp: boolean }
+  settings: { sfx: boolean; reducedMotion: boolean; multiExp: boolean; autoMode?: boolean }
   /** The hpMultiplier current HP was last measured against (absent = ×1), so a change keeps every HP %. */
   hpScale?: number
   /** Who the player is: a name and one of the two trainer sprites (absent on older saves = Red, no name). */

@@ -34,6 +34,10 @@ function TeamEditor({ id, onClose }: { id: string; onClose: () => void }) {
   if (!row || !data) return null
   const team = (row.team as TrainerMon[]) ?? []
   const set = (t: TrainerMon[]) => updateRow('trainers', rowKey('trainers', row), { team: t })
+  // Trainers only use potions (heal items), one per Pokémon.
+  const items = (row.items as string[] | null) ?? []
+  const potions = Object.values(data.items).filter((it) => it.effect.kind === 'heal')
+  const setItems = (k: string[]) => updateRow('trainers', rowKey('trainers', row), { items: k })
   return (
     <Modal open onClose={onClose} title={s(row.name)}>
       <div className="flex flex-col gap-2">
@@ -49,6 +53,36 @@ function TeamEditor({ id, onClose }: { id: string; onClose: () => void }) {
         ))}
         <PixelButton size="sm" className="self-start" disabled={team.length >= 3} onClick={() => set([...team, { dex: 16, level: 10 }])}>
           + Pokémon
+        </PixelButton>
+        <h3 className="mt-2 text-xl">Potions</h3>
+        <p className="text-sm text-muted">
+          One per Pokémon at most: the best potion goes to the highest level one, which drinks it when a hit could K.O. it.
+        </p>
+        {items.map((k, i) => (
+          <div key={i} className="flex items-center gap-2">
+            <select
+              className="flex-1 border-2 border-ink bg-panel px-2 py-1"
+              value={k}
+              onChange={(e) => setItems(items.map((x, j) => (j === i ? e.target.value : x)))}
+            >
+              {potions.map((it) => (
+                <option key={it.key} value={it.key}>
+                  {it.name} ({effectText(it)})
+                </option>
+              ))}
+            </select>
+            <button type="button" onClick={() => setItems(items.filter((_, j) => j !== i))}>
+              ✕
+            </button>
+          </div>
+        ))}
+        <PixelButton
+          size="sm"
+          className="self-start"
+          disabled={items.length >= team.length || !potions.length}
+          onClick={() => setItems([...items, potions[0]!.key])}
+        >
+          + Potion
         </PixelButton>
       </div>
     </Modal>
@@ -73,6 +107,8 @@ export function TrainersSection() {
           badge: null,
           upgrade_level: null,
           battle_background: null,
+          rival_of: null,
+          items: [],
         })}
         duplicate={(r) => ({ ...r, id: newUuid(), name: `${s(r.name)} II` })}
         columns={[
@@ -88,6 +124,7 @@ export function TrainersSection() {
           { key: 'role', label: 'Role', kind: 'enum', options: ['trainer', 'leader', 'elite', 'champion'] },
           { key: 'badge', label: 'Badge', kind: 'text', nullable: true },
           { key: 'upgrade_level', label: 'Upgrade Lv (empty = area)', kind: 'number', nullable: true, width: 110 },
+          { key: 'rival_of', label: "Rival of player's starter (dex)", kind: 'number', nullable: true, width: 110 },
           { key: 'battle_background', label: 'Scene (— = area)', kind: 'enum', options: [...BATTLE_BACKGROUNDS], nullable: true, width: 110 },
           {
             key: 'specialty',
@@ -98,6 +135,16 @@ export function TrainersSection() {
               const t = data?.trainers[s(r.id)]
               const type = t && data ? trainerSpecialty(t, data) : null
               return type ? <TypeBadge type={type} size="sm" /> : <span className="text-sm text-muted">mixed</span>
+            },
+          },
+          {
+            key: 'items',
+            label: 'Potions',
+            readOnly: true,
+            width: 120,
+            render: (r) => {
+              const keys = (r.items as string[] | null) ?? []
+              return keys.length ? keys.map((k) => data?.items[k]?.name ?? k).join(', ') : <span className="text-sm text-muted">—</span>
             },
           },
           {

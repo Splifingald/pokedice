@@ -205,11 +205,14 @@ function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): Step {
     case 'item': {
       const who = nameOf(e.targetUid)
       const item = ctx.itemName(e.key)
-      const text = e.cured?.length
-        ? `Used a ${item}! ${who} is cured.`
-        : e.rerolls
-          ? `Used an ${item}! ${who} got ${e.rerolls} reroll${e.rerolls === 1 ? '' : 's'} back.`
-          : `Used a ${item} on ${who}! +${e.amount} HP`
+      const text =
+        e.side === 'enemy'
+          ? `${ctx.trainerName ?? 'The foe'} used a ${item} on ${who}! +${e.amount} HP`
+          : e.cured?.length
+            ? `Used a ${item}! ${who} is cured.`
+            : e.rerolls
+              ? `Used an ${item}! ${who} got ${e.rerolls} reroll${e.rerolls === 1 ? '' : 's'} back.`
+              : `Used a ${item} on ${who}! +${e.amount} HP`
       // Items don't end the turn, so the dice on the tray stay put.
       return {
         delay: 900,
@@ -218,7 +221,7 @@ function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): Step {
           ...f,
           message: text,
           hp: { ...f.hp, [e.targetUid]: e.hpAfter },
-          pop: e.amount ? { id: nextId(), target: 'player', amount: e.amount, tone: 'heal' } : f.pop,
+          pop: e.amount ? { id: nextId(), target: e.side ?? 'player', amount: e.amount, tone: 'heal' } : f.pop,
         }),
       }
     }

@@ -63,6 +63,19 @@ describe('shiny Pokémon', () => {
     const replaced = applyCatch(caught.save, { dex: 16, level: 9 }, target, data, 2, newId)
     expect(replaced.save.box.find((p) => p.id === pidgey.id)).not.toHaveProperty('shiny')
   })
+
+  it('a wild shiny is catchable even when yours is as strong: it joins as an extra copy', () => {
+    const s = applyCatch(newSave(4, data, 0, newId), { dex: 16, level: 9 }, { mode: 'new' }, data, 1, newId).save
+    expect(catchTarget(s, 16, 5, 'wild', data)).toBeNull()
+    const target = catchTarget(s, 16, 5, 'wild', data, true)
+    expect(target).toEqual({ mode: 'new' })
+    const res = applyCatch(s, { dex: 16, level: 5, shiny: true }, target!, data, 2, newId)
+    expect(res.save.box.filter((p) => p.dex === 16).map((p) => [p.level, !!p.shiny])).toEqual([[9, false], [5, true]])
+    expect(res.save.pokedex.filter((d) => d === 16)).toHaveLength(1)
+    // Stronger than your weakest copy: still an upgrade in place. Legendaries stay one of a kind.
+    expect(catchTarget(s, 16, 12, 'wild', data, true)).toMatchObject({ mode: 'replace', level: 9 })
+    expect(catchTarget(s, 16, 5, 'boss', data, true)).toBeNull()
+  })
 })
 
 describe('battle backgrounds', () => {

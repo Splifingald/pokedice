@@ -12,6 +12,8 @@ export interface Settings {
   reducedMotion: boolean
   /** Multi EXP — on by default. */
   multiExp: boolean
+  /** Auto-mode: fights in cleared areas play themselves — off by default. */
+  autoMode?: boolean
 }
 export const DEFAULT_SETTINGS: Settings = { sfx: false, reducedMotion: false, multiExp: true }
 
@@ -82,7 +84,7 @@ export function readSettings(): Settings {
     const raw = storage()?.getItem(SETTINGS_KEY)
     if (!raw) return { ...DEFAULT_SETTINGS }
     const s = JSON.parse(raw) as Partial<Settings>
-    return { sfx: !!s.sfx, reducedMotion: !!s.reducedMotion, multiExp: s.multiExp !== false }
+    return { sfx: !!s.sfx, reducedMotion: !!s.reducedMotion, multiExp: s.multiExp !== false, autoMode: !!s.autoMode }
   } catch {
     return { ...DEFAULT_SETTINGS }
   }

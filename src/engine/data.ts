@@ -70,7 +70,7 @@ export function compileGameData(raw: BundleRaw): GameData {
   for (const i of raw.items) items[i.key] = { ...i, inShop: i.inShop ?? true, shopBadges: i.shopBadges ?? 0 }
 
   const trainers: Record<string, Trainer> = {}
-  for (const t of raw.trainers) trainers[t.id] = { ...t, role: t.role ?? 'trainer', badge: t.badge ?? null }
+  for (const t of raw.trainers) trainers[t.id] = { ...t, role: t.role ?? 'trainer', badge: t.badge ?? null, rivalOf: t.rivalOf ?? null }
 
   // Older bundles / DB rows may lack the v1.3 columns: default them.
   const areas: Area[] = [...raw.areas]

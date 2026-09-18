@@ -59,22 +59,23 @@ function WildCard({ enc }: { enc: Extract<Encounter, { kind: 'wild' | 'boss' }> 
           <DiceSet dice={stats.dice} size={22} />
           <StatChip stat="rerolls" value={stats.rerolls} size={18} className="text-lg" />
         </div>
-        <CatchHint dex={enc.dex} level={enc.level} kind={boss ? 'boss' : 'wild'} />
+        <CatchHint dex={enc.dex} level={enc.level} kind={boss ? 'boss' : 'wild'} shiny={enc.kind === 'wild' && enc.shiny} />
       </div>
     </div>
   )
 }
 
 /** What a catch would mean here: its catch value, and whether it's new, an upgrade, or not catchable. */
-function CatchHint({ dex, level, kind }: { dex: number; level: number; kind: 'wild' | 'boss' }) {
+function CatchHint({ dex, level, kind, shiny }: { dex: number; level: number; kind: 'wild' | 'boss'; shiny?: boolean }) {
   const save = useGame((s) => s.save)
   const data = useGame((s) => s.data)
   if (!save) return null
-  const target = catchTarget(save, dex, level, kind, data)
+  const target = catchTarget(save, dex, level, kind, data, shiny)
   return (
     <div className="flex flex-wrap items-center gap-x-1 text-lg leading-tight">
       <StatChip stat="catch" value={catchValueOf(data, dex)} size={18} />
       {target?.mode === 'replace' && ` · stronger than your Lv.${target.level}: a catch replaces it`}
+      {target?.mode === 'new' && shiny && save.pokedex.includes(dex) && ' · shiny: a catch joins as an extra copy'}
       {!target && ' · no catch (yours is as strong)'}
     </div>
   )

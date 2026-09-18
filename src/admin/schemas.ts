@@ -115,6 +115,8 @@ export const ROW_SCHEMAS: Record<TableName, z.ZodTypeAny> = {
     badge: z.string().nullable(),
     upgrade_level: int(1, 10).nullable().optional(),
     battle_background: background.nullable().optional(),
+    rival_of: int(1).nullable().optional(),
+    items: z.array(z.string().min(1)).max(3, 'one potion per Pokémon').nullable().optional(),
   }),
   area_trainer_pool: z.object({ id: uuid, area_id: uuid, trainer_id: uuid, weight: int(0) }),
   area_loot_pool: z

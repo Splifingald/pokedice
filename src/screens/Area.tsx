@@ -4,6 +4,9 @@ import {
   deckSize,
   dueBoss,
   dueGym,
+  asSeenBy,
+  gymsFor,
+  playerSideOf,
   instanceMaxHp,
   isAreaUnlocked,
   progressOf,
@@ -24,7 +27,8 @@ import { PixelButton } from '@/components/PixelButton'
 import { SheetModal, type SheetView } from '@/components/SheetModal'
 import { MiniSprite, preloadSprites } from '@/components/SpriteImg'
 import { trainerTitle } from '@/lib/format'
-import { useGame } from '@/store/game'
+import { OakTip, useOneTimeTip } from '@/components/OakTip'
+import { setSettings, useGame } from '@/store/game'
 import { challenge, enterArea, leaveArea, rollNext } from '@/store/run'
 import { cx } from '@/theme/util'
 import { BattleView } from './battle/BattleView'
@@ -68,6 +72,7 @@ const GAUGE_LABEL = 'w-[6.5rem] shrink-0'
  */
 function RoundGauge({ area, progress }: { area: Area; progress: AreaProgress }) {
   const data = useGame((s) => s.data)
+  const save = useGame((s) => s.save)
   const cfg = data.config
   if (!cfg.showRoundGauge || cfg.encounterMode !== 'deck') return null
   const remaining = progress.deck?.length ?? 0
@@ -81,8 +86,9 @@ function RoundGauge({ area, progress }: { area: Area; progress: AreaProgress }) 
   const unknown = Math.max(0, metCount - met.length)
   // Preview (admin option): the deck is drawn from the end, so the next card is its last one.
   const ahead = cfg.showRoundPreview && inRound ? [...progress.deck!].reverse() : []
-  const gymId = cfg.showRoundPreview ? area.gyms.find((id) => !progress.gymsDefeated.includes(id) && data.trainers[id]) : undefined
-  const gym = gymId ? data.trainers[gymId] : undefined
+  const side = save ? playerSideOf(save) : null
+  const gymId = cfg.showRoundPreview ? gymsFor(area, data, side).find((id) => !progress.gymsDefeated.includes(id) && data.trainers[id]) : undefined
+  const gym = gymId ? asSeenBy(data.trainers[gymId]!, side) : undefined
   const boss = cfg.showRoundPreview && !gym ? (area.legendaryBoss ?? []).find((b) => !progress.bossesDefeated.includes(b.dex)) : undefined
   const finale = gym ? (gym.badge ? `${gym.name} (${gym.badge})` : gym.name) : boss ? (data.species[boss.dex]?.name ?? 'a legendary') : null
   const gauge = (
@@ -194,6 +200,36 @@ function AreaHeader({ area, progress, teamAvg }: { area: Area; progress: AreaPro
   )
 }
 
+// Professor Oak explains auto-mode the first time a cleared area offers it (per device).
+const AUTO_TIP_KEY = 'pokedice.tip.auto'
+
+/** Cleared areas only: fights play themselves on both sides while it's on. Off by default; the choice is saved. */
+function AutoModeToggle() {
+  const on = useGame((s) => !!s.settings.autoMode)
+  const [tip, closeTip] = useOneTimeTip(AUTO_TIP_KEY)
+  return (
+    <>
+      {tip && (
+        <OakTip onClose={closeTip}>
+          You've cleared this area, so <b>AUTO-MODE</b> is open to you here! Turn it on and your Pokémon fight by
+          themselves: they roll, reroll, attack and switch in on their own, just like the foes do. Items stay in your
+          bag, and catches and rewards still wait for you. Tap AUTO-MODE again, or STOP in a battle, to take back
+          control.
+        </OakTip>
+      )}
+      <PixelButton
+        size="sm"
+        variant={on ? 'success' : 'ghost'}
+        aria-pressed={on}
+        onClick={() => setSettings({ autoMode: !on })}
+      >
+        <PixelIcon name="dice" size={16} />
+        AUTO-MODE: {on ? 'ON' : 'OFF'}
+      </PixelButton>
+    </>
+  )
+}
+
 /** The team at a glance between fights: HP for each, tap to open the sheet (and heal). */
 function TeamStrip({ onOpen }: { onOpen: (p: PokemonInstance) => void }) {
   const save = useGame((s) => s.save)
@@ -260,11 +296,12 @@ export function AreaScreen() {
 
   const progress = progressOf(save, area.id)
   const teamAvg = teamAverageLevel(save)
-  const gym = dueGym(area, progress, data)
+  const side = playerSideOf(save)
+  const gym = dueGym(area, progress, data, side)
   const boss = dueBoss(area, progress, teamAvg)
   // The gym battle waiting at the end of the gauge (before it's full).
-  const nextGymId = !gym ? area.gyms.find((id) => !progress.gymsDefeated.includes(id) && data.trainers[id]) : undefined
-  const nextGym = nextGymId ? data.trainers[nextGymId] : undefined
+  const nextGymId = !gym ? gymsFor(area, data, side).find((id) => !progress.gymsDefeated.includes(id) && data.trainers[id]) : undefined
+  const nextGym = nextGymId ? asSeenBy(data.trainers[nextGymId]!, side) : undefined
   const between = run.phase === 'idle' || run.phase === 'preview'
 
   return (
@@ -307,6 +344,7 @@ export function AreaScreen() {
             <PixelIcon name="map" size={16} />
             BACK TO MAP
           </PixelButton>
+          {progress.cleared && <AutoModeToggle />}
           {(gym || boss) && <p className="text-lg leading-tight text-muted">Or keep exploring first — your exploration stays complete.</p>}
           {nextGym && (
             <p className="text-lg leading-tight">

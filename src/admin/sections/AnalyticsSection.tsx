@@ -1,6 +1,12 @@
 // Admin → Analytics: what players do, read from analytics_events (admin-only via RLS).
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
-import { ANALYTICS_KINDS, type AnalyticsKind } from '@/analytics/events'
+import { ANALYTICS_KINDS, SYSTEM_KINDS, type AnalyticsKind } from '@/analytics/events'
+import {
+  averageDailyPlaytime,
+  formatDuration,
+  type AveragePlaytime,
+  type PlaytimeEvent,
+} from '@/analytics/playtime'
 import {
   dayOneRetention,
   RETENTION_MIN_FIRST_DAY_EVENTS,
@@ -17,6 +23,7 @@ import { getSupabase, isSupabaseConfigured } from '@/lib/supabase'
 import { useGame } from '@/store/game'
 import { cx, typeColor } from '@/theme/util'
 import { inputCls } from '../widgets'
+import { PlayerPanel, PlaytimeHero } from './AnalyticsPlayer'
 
 interface EventRow {
   id: number
@@ -67,6 +74,7 @@ async function fetchEvents(
   to: Date | null,
   columns = '*',
   max = 20_000,
+  kinds: { only?: readonly string[]; exclude?: readonly string[] } = {},
 ): Promise<EventRow[]> {
   const client = await getSupabase()
   if (!client) throw new Error('Supabase client unavailable')
@@ -76,6 +84,8 @@ async function fetchEvents(
     let q = client.from('analytics_events').select(columns).order('created_at', { ascending: false })
     if (from) q = q.gte('created_at', from.toISOString())
     if (to) q = q.lt('created_at', to.toISOString())
+    if (kinds.only) q = q.in('kind', [...kinds.only])
+    if (kinds.exclude) q = q.not('kind', 'in', `(${kinds.exclude.join(',')})`)
     const { data, error } = await q.range(offset, offset + page - 1)
     if (error) throw error
     out.push(...((data ?? []) as unknown as EventRow[]))
@@ -282,7 +292,7 @@ function RetentionHero({ retention: r }: { retention: Retention | null }) {
   )
 }
 
-type PlayerSort = 'name' | 'events' | 'last' | 'levels' | 'badges' | 'spent'
+type PlayerSort = 'name' | 'events' | 'last' | 'levels' | 'badges' | 'spent' | 'playtime'
 type EventSort = 'time' | 'player' | 'kind'
 
 function SortTh({
@@ -335,6 +345,9 @@ export function AnalyticsSection() {
   const [customTo, setCustomTo] = useState(() => dayInput(new Date()))
   const [rows, setRows] = useState<EventRow[]>([])
   const [retention, setRetention] = useState<Retention | null>(null)
+  const [playtime, setPlaytime] = useState<PlaytimeEvent[]>([])
+  const [avgPlay, setAvgPlay] = useState<AveragePlaytime | null>(null)
+  const [range, setRange] = useState<{ from: Date | null; to: Date | null }>({ from: null, to: null })
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading')
   const [error, setError] = useState<string | null>(null)
   const [player, setPlayer] = useState<string>('all')
@@ -351,10 +364,20 @@ export function AnalyticsSection() {
       const from = frame === 'custom' ? localDay(customFrom) : f.ms ? new Date(Date.now() - f.ms) : null
       const to = frame === 'custom' ? localDay(customTo, 1) : null
       // Retention needs every player's whole history (their first day may predate the frame): who and when only.
-      const [events, history] = await Promise.all([
-        fetchEvents(from, to),
-        fetchEvents(null, null, 'user_id,device_id,created_at', 200_000),
+      // Playtime and snapshots are background events: out of the feed and of retention.
+      const [events, history, played] = await Promise.all([
+        fetchEvents(from, to, '*', 20_000, { exclude: SYSTEM_KINDS }),
+        fetchEvents(null, null, 'user_id,device_id,created_at', 200_000, { exclude: SYSTEM_KINDS }),
+        fetchEvents(from, to, 'user_id,device_id,created_at,params', 100_000, { only: ['playtime'] }),
       ])
+      const pt: PlaytimeEvent[] = played.map((r) => ({
+        player: playerKey(r),
+        at: new Date(r.created_at),
+        seconds: num(r.params?.seconds),
+      }))
+      setPlaytime(pt)
+      setAvgPlay(averageDailyPlaytime(pt))
+      setRange({ from, to })
       setRows(events)
       const light: RetentionEvent[] = history.map((r) => ({
         player: playerKey(r),
@@ -413,14 +436,17 @@ export function AnalyticsSection() {
       if (r.kind === 'item_bought' || r.kind === 'upgrade') p.spent += num(r.params.cost)
       by.set(key, p)
     }
+    const played = new Map<string, number>()
+    for (const e of playtime) played.set(e.player, (played.get(e.player) ?? 0) + e.seconds)
     const list = [...by.values()].map((p) => ({
       ...p,
       name: p.name || p.email?.split('@')[0] || `Guest ${p.key.slice(-4)}`,
+      playtime: played.get(p.key) ?? 0,
     }))
     const val = (p: (typeof list)[number]) =>
       pSort.key === 'name' ? p.name.toLowerCase() : pSort.key === 'last' ? p.last : p[pSort.key]
     return list.sort((a, b) => (val(a) < val(b) ? -1 : val(a) > val(b) ? 1 : 0) * pSort.dir)
-  }, [rows, pSort.key, pSort.dir])
+  }, [rows, playtime, pSort.key, pSort.dir])
   const nameOf = useMemo(() => new Map(players.map((p) => [p.key, p])), [players])
 
   const inPlayer = useMemo(
@@ -516,7 +542,20 @@ export function AnalyticsSection() {
         </PixelButton>
       </div>
 
-      <RetentionHero retention={status === 'loading' ? null : retention} />
+      <div className="grid gap-3 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+        <RetentionHero retention={status === 'loading' ? null : retention} />
+        <PlaytimeHero avg={status === 'loading' ? null : avgPlay} />
+      </div>
+
+      {selected && (
+        <PlayerPanel
+          player={player}
+          name={selected.name}
+          playtime={playtime}
+          from={range.from}
+          to={range.to}
+        />
+      )}
 
       {status === 'error' && (
         <div className="pixel-panel p-3 text-lg">
@@ -606,6 +645,13 @@ export function AnalyticsSection() {
                   onClick={() => pSort.toggle('spent')}
                 />
                 <SortTh
+                  label="Played"
+                  right
+                  active={pSort.key === 'playtime'}
+                  dir={pSort.dir}
+                  onClick={() => pSort.toggle('playtime')}
+                />
+                <SortTh
                   label="Last seen"
                   right
                   active={pSort.key === 'last'}
@@ -643,6 +689,7 @@ export function AnalyticsSection() {
                   <td className="px-2 text-right text-good">{p.levels ? `+${p.levels}` : '–'}</td>
                   <td className="px-2 text-right">{p.badges || '–'}</td>
                   <td className="px-2 text-right">{p.spent ? p.spent.toLocaleString() : '–'}</td>
+                  <td className="px-2 text-right">{p.playtime ? formatDuration(p.playtime) : '–'}</td>
                   <td className="px-2 text-right text-muted" title={new Date(p.last).toLocaleString()}>
                     {ago(p.last)}
                   </td>
@@ -650,7 +697,7 @@ export function AnalyticsSection() {
               ))}
               {status === 'ready' && !players.length && (
                 <tr>
-                  <td colSpan={6} className="px-3 py-4 text-center text-muted">
+                  <td colSpan={7} className="px-3 py-4 text-center text-muted">
                     No player activity in this time frame.
                   </td>
                 </tr>

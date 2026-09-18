@@ -5,6 +5,7 @@ import { ballBonus, catchChance, catchValueOf } from '@/engine'
 import { sfx } from '@/audio/sfx'
 import { Die } from '@/components/Die'
 import { PixelIcon } from '@/components/icons'
+import { OakTip, useOneTimeTip } from '@/components/OakTip'
 import { PixelButton } from '@/components/PixelButton'
 import { SpriteImg } from '@/components/SpriteImg'
 import { playerOf, PokeBall, ThrowSprite } from '@/components/TrainerArt'
@@ -14,42 +15,13 @@ import { cx } from '@/theme/util'
 
 // Professor Oak's one-time tip on the first catch screen (per device).
 const CATCH_TIP_KEY = 'pokedice.tip.catch'
-const tipSeen = () => {
-  try {
-    return localStorage.getItem(CATCH_TIP_KEY) === '1'
-  } catch {
-    return true
-  }
-}
-const markTipSeen = () => {
-  try {
-    localStorage.setItem(CATCH_TIP_KEY, '1')
-  } catch {
-    /* private mode: the tip may show again */
-  }
-}
 
-function OakTip({ onClose }: { onClose: () => void }) {
+function CatchTip({ onClose }: { onClose: () => void }) {
   return (
-    <div className="flex w-full items-start gap-2 border-[3px] border-ink bg-parchment p-2 text-left">
-      <img
-        src="/characters/prof-oak.png"
-        alt="Professor Oak"
-        width={56}
-        height={56}
-        className="shrink-0"
-        style={{ imageRendering: 'pixelated' }}
-      />
-      <div className="flex min-w-0 flex-1 flex-col gap-1">
-        <p className="text-lg leading-snug">
-          <b>PROF. OAK:</b> Balls only help the catch die! A tired, weak Pokémon can often be caught with no ball
-          at all. Save them for the tough ones.
-        </p>
-        <PixelButton size="sm" className="self-end" onClick={onClose}>
-          GOT IT
-        </PixelButton>
-      </div>
-    </div>
+    <OakTip onClose={onClose}>
+      Balls only help the catch die! A tired, weak Pokémon can often be caught with no ball at all. Save them for the
+      tough ones.
+    </OakTip>
   )
 }
 
@@ -208,7 +180,7 @@ export function CatchView() {
   const save = useGame((s) => s.save)
   const [ball, setBall] = useState<string | null>(null)
   const [revealed, setRevealed] = useState(false)
-  const [tip, setTip] = useState(() => !tipSeen())
+  const [tip, closeTip] = useOneTimeTip(CATCH_TIP_KEY)
   const result = c?.result ?? null
 
   useEffect(() => {
@@ -237,10 +209,6 @@ export function CatchView() {
   const sure = catchChance(value, 0) >= 1
   const notNeeded = (o: (typeof options)[number]) =>
     o.key != null && options.some((w) => w.bonus < o.bonus && catchChance(value, w.bonus) >= 1)
-  const closeTip = () => {
-    markTipSeen()
-    setTip(false)
-  }
   const title = revealed && result ? (result.caught ? 'Gotcha!' : `${name} fled!`) : `${c.kind === 'boss' ? 'The legendary' : 'The wild'} ${name} is worn out!`
 
 
@@ -277,7 +245,7 @@ export function CatchView() {
                 <div className="text-6xl leading-none">100%</div>
                 <p className="mt-1 text-2xl">It's exhausted: no ball needed!</p>
               </div>
-              {tip && <OakTip onClose={closeTip} />}
+              {tip && <CatchTip onClose={closeTip} />}
               <PixelButton variant="primary" size="lg" onClick={() => throwBall(null)}>
                 CATCH
               </PixelButton>
@@ -288,7 +256,7 @@ export function CatchView() {
                 <div className="text-xl leading-none">Catch chance</div>
                 <div className="text-6xl leading-none tabular-nums">{pct(chosen.bonus)}%</div>
               </div>
-              {tip && <OakTip onClose={closeTip} />}
+              {tip && <CatchTip onClose={closeTip} />}
               <fieldset className="w-full">
                 <legend className="sr-only">Ball</legend>
                 <div className="flex flex-wrap justify-center gap-2">

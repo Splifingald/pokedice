@@ -11,14 +11,23 @@ export type CatchTarget = { mode: 'new' } | { mode: 'replace'; uid: string; leve
 
 /**
  * Can this K.O.'d Pokémon be caught? A species not in the Pokédex yet, or — wild ones only — a stronger copy of one you
- * own, which then replaces your weakest copy. A legendary is one of a kind.
+ * own, which then replaces your weakest copy. A wild shiny can always be caught: if it isn't stronger, it joins as an
+ * extra copy. A legendary is one of a kind.
  */
-export function catchTarget(save: SaveData, dex: number, level: number, kind: 'wild' | 'boss', data: GameData): CatchTarget | null {
+export function catchTarget(
+  save: SaveData,
+  dex: number,
+  level: number,
+  kind: 'wild' | 'boss',
+  data: GameData,
+  shiny = false,
+): CatchTarget | null {
   if (!data.species[dex]) return null
   if (!save.pokedex.includes(dex)) return { mode: 'new' }
   if (kind !== 'wild') return null
   const weakest = save.box.filter((p) => p.dex === dex).sort((a, b) => a.level - b.level)[0]
-  return weakest && weakest.level < level ? { mode: 'replace', uid: weakest.id, level: weakest.level } : null
+  if (weakest && weakest.level < level) return { mode: 'replace', uid: weakest.id, level: weakest.level }
+  return shiny ? { mode: 'new' } : null
 }
 
 export const catchValueOf = (data: GameData, dex: number): number =>

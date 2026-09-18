@@ -78,7 +78,9 @@ create table if not exists trainers (
   role text not null default 'trainer',         -- trainer | leader | elite | champion
   badge text,                                   -- gym leaders only
   upgrade_level int,                            -- this trainer's upgrade level; null = the area's
-  battle_background text                        -- battle scene override; null = the area's
+  battle_background text,                       -- battle scene override; null = the area's
+  rival_of int,                                 -- rival version: only for players whose starter is this dex
+  items jsonb not null default '[]'             -- potions (item keys), one per Pokémon, strongest first
 );
 
 -- v1.3 columns, for databases created before them (no-ops on a fresh install).

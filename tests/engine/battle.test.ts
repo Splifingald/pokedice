@@ -9,6 +9,7 @@ import {
   simulateMany,
   turnsToKill,
   uniformLevels,
+  autoEvents,
   autoStep,
   makeBattler,
   type BattleState,
@@ -307,5 +308,35 @@ describe('headless simulation', () => {
     const real10 = turnsToKill({ dex: 6, level: 50 }, ['normal'], 124, 10, 200, data)
     expect(real1).toBeGreaterThan(t1)
     expect(real10).toBeLessThan(real1 / 2)
+  })
+})
+
+describe('auto-mode (autoEvents)', () => {
+  it('rolls on a fresh turn and passes a stunned one', () => {
+    const s = start().state
+    expect(autoEvents({ ...s, phase: 'player_roll', actor: 'player' }, data, createRng(1))).toEqual([{ t: 'ROLL' }])
+    expect(autoEvents({ ...s, phase: 'player_stunned', actor: 'player' }, data, createRng(1))).toEqual([{ t: 'PASS' }])
+    expect(autoEvents({ ...s, phase: 'enemy_turn' }, data, createRng(1))).toEqual([])
+  })
+
+  it('sends in an able Pokémon after a faint, never a fainted one', () => {
+    const s = start().state
+    const evs = autoEvents({ ...s, phase: 'player_switch', actor: 'player' }, data, createRng(1))
+    expect(evs).toEqual([{ t: 'SWITCH', instanceId: 'b' }])
+  })
+
+  it('ends every reroll turn with REROLL or ATTACK, and each plan is legal', () => {
+    for (let seed = 1; seed <= 30; seed++) {
+      const rng = createRng(seed)
+      let s = atReroll(start().state, [die('water', 2), die('base', 1), die('water', 5)])
+      const evs = autoEvents(s, data, rng)
+      const last = evs[evs.length - 1]!
+      expect(['REROLL', 'ATTACK']).toContain(last.t)
+      for (const e of evs) {
+        const r = reduce(s, e, data, rng)
+        expect(r.state).not.toBe(s)
+        s = r.state
+      }
+    }
   })
 })

@@ -1,5 +1,6 @@
 // Pure state transitions on the save: new game, rewards, catches, wipes, center, team, shop, upgrades.
 import { getSpecies, linearAreas } from './data'
+import { asSeenBy, gymsFor, playerSideOf } from './rival'
 import { nextComboCost, nextDieCost, pokemonXp, trainerGoldFor, healAmount, multiExpShareFor } from './economy'
 import { MONEY, usableIn } from './items'
 import { averageLevel, createInstance, gainXp, instanceMaxHp, xpToNext, type ProgressEvent } from './progression'
@@ -338,7 +339,8 @@ export function applyVictory(
 
   // Gym / Elite battle won (after its last Pokémon falls)
   if (input.kind === 'gym' && input.gymComplete && input.gymTrainerId) {
-    const t = data.trainers[input.gymTrainerId]
+    const raw = data.trainers[input.gymTrainerId]
+    const t = raw && asSeenBy(raw, playerSideOf(save))
     if (!progress.gymsDefeated.includes(input.gymTrainerId))
       progress = { ...progress, gymsDefeated: [...progress.gymsDefeated, input.gymTrainerId] }
     if (t) events.push({ kind: 'gym_defeated', trainerId: t.id, name: t.name, badge: t.badge, role: t.role })
@@ -347,7 +349,7 @@ export function applyVictory(
   // Clear: gauge full + every gym beaten + every gauge legendary beaten → the next linear area opens.
   if (!progress.cleared && area.xpToUnlockNext != null && progress.xp >= area.xpToUnlockNext) {
     const gaugeBosses = (area.legendaryBoss ?? []).filter((b) => b.teamAvgThreshold == null)
-    const gymsDone = area.gyms.every((id) => progress.gymsDefeated.includes(id) || !data.trainers[id])
+    const gymsDone = gymsFor(area, data, playerSideOf(save)).every((id) => progress.gymsDefeated.includes(id) || !data.trainers[id])
     if (gymsDone && gaugeBosses.every((b) => progress.bossesDefeated.includes(b.dex))) {
       progress = { ...progress, cleared: true }
       const chain = linearAreas(data)

@@ -1,6 +1,6 @@
 // Headless battles: both sides driven by the §8 AI. Powers the admin simulator and the balance scripts.
 import { aiRerollMask } from './ai'
-import { activeBattler, canHurt, createBattle, reduce, type BattleState, type LogEntry } from './battle'
+import { activeBattler, canHurt, createBattle, reduce, type BattleEvent, type BattleState, type LogEntry } from './battle'
 import { computeDamage, uniformLevels, type UpgradeLevels } from './damage'
 import { getSpecies } from './data'
 import { rollAll, rerollMasked } from './dice'
@@ -24,24 +24,25 @@ export interface SimResult {
   enemyDamage: number[]
 }
 
-/** One automatic step for whoever must act — the player side uses the same greedy AI as enemies. */
-export function autoStep(state: BattleState, data: GameData, rng: Rng): { state: BattleState; log: LogEntry[] } {
+/**
+ * The events the player side would send right now, in order — the same greedy AI as enemies. Reroll turns come as
+ * die toggles then REROLL (or ATTACK). Empty when it isn't the player's move. Powers the sims and the battle's auto-mode.
+ */
+export function autoEvents(state: BattleState, data: GameData, rng: Rng): BattleEvent[] {
   switch (state.phase) {
-    case 'enemy_turn':
-      return reduce(state, { t: 'AI_TURN' }, data, rng)
     case 'player_roll': {
       // Like a player would: a Pokémon that can't touch the foe (Normal vs Ghost) makes way for one that can.
       const a = activeBattler(state)
       const better = !canHurt(a, state.enemy, data) && state.player.find((b) => b.hp > 0 && canHurt(b, state.enemy, data))
-      if (better && data.config.allowVoluntarySwitch) return reduce(state, { t: 'SWITCH', instanceId: better.uid }, data, rng)
-      return reduce(state, { t: 'ROLL' }, data, rng)
+      if (better && data.config.allowVoluntarySwitch) return [{ t: 'SWITCH', instanceId: better.uid }]
+      return [{ t: 'ROLL' }]
     }
     case 'player_stunned':
-      return reduce(state, { t: 'PASS' }, data, rng)
+      return [{ t: 'PASS' }]
     case 'player_switch': {
       const alive = state.player.filter((b, i) => b.hp > 0 && i !== state.activeIndex)
       const next = alive.find((b) => canHurt(b, state.enemy, data)) ?? alive[0]
-      return next ? reduce(state, { t: 'SWITCH', instanceId: next.uid }, data, rng) : { state, log: [] }
+      return next ? [{ t: 'SWITCH', instanceId: next.uid }] : []
     }
     case 'player_reroll': {
       const a = activeBattler(state)
@@ -56,18 +57,28 @@ export function autoStep(state: BattleState, data: GameData, rng: Rng): { state:
               rng,
             })
           : null
-      if (mask && mask.some(Boolean)) {
-        let s = state
-        mask.forEach((m, i) => {
-          if (m !== !!s.selected[i]) s = reduce(s, { t: 'TOGGLE_DIE', i }, data, rng).state
-        })
-        return reduce(s, { t: 'REROLL' }, data, rng)
-      }
-      return reduce(state, { t: 'ATTACK' }, data, rng)
+      if (!mask?.some(Boolean)) return [{ t: 'ATTACK' }]
+      const toggles: BattleEvent[] = mask.flatMap((m, i) => (m !== !!state.selected[i] ? [{ t: 'TOGGLE_DIE' as const, i }] : []))
+      return [...toggles, { t: 'REROLL' }]
     }
     default:
-      return { state, log: [] }
+      return []
   }
+}
+
+/** One automatic step for whoever must act — the player side uses the same greedy AI as enemies. */
+export function autoStep(state: BattleState, data: GameData, rng: Rng): { state: BattleState; log: LogEntry[] } {
+  if (state.phase === 'enemy_turn') return reduce(state, { t: 'AI_TURN' }, data, rng)
+  const events = autoEvents(state, data, rng)
+  if (!events.length) return { state, log: [] }
+  let s = state
+  const log: LogEntry[] = []
+  for (const e of events) {
+    const r = reduce(s, e, data, rng)
+    s = r.state
+    log.push(...r.log)
+  }
+  return { state: s, log }
 }
 
 export function simulateBattle(
