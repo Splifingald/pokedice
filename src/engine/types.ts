@@ -453,6 +453,8 @@ export interface DayCareResident {
 export interface DayCareState {
   residents: DayCareResident[]
   eggClaimed: boolean
+  /** The player has been to the Day Care screen (the unlock tutorial sends them there once). */
+  visited?: boolean
 }
 
 export type PlayerCharacter = 'red' | 'green'

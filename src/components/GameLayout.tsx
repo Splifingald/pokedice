@@ -2,6 +2,7 @@ import { Navigate, Outlet } from 'react-router-dom'
 import { useGame } from '@/store/game'
 import { useInFight } from '@/store/hooks'
 import { cx } from '@/theme/util'
+import { DayCareTutorial } from './DayCareTutorial'
 import { BottomNav, Header, SideNav } from './Hud'
 
 /** In-game shell: top bar, side bar (desktop) or bottom bar (phones), and the screen. No save → back to the title. */
@@ -19,6 +20,7 @@ export function GameLayout() {
         </main>
       </div>
       <BottomNav />
+      <DayCareTutorial />
     </div>
   )
 }

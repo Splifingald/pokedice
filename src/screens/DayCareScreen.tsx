@@ -18,7 +18,7 @@ import { MonCard } from '@/components/MonCard'
 import { PixelButton } from '@/components/PixelButton'
 import { SpriteImg } from '@/components/SpriteImg'
 import { TypeBadge } from '@/components/TypeBadge'
-import { hatchDayCareEgg, leaveAtDayCare, pickUpFromDayCare } from '@/store/actions'
+import { hatchDayCareEgg, leaveAtDayCare, pickUpFromDayCare, visitDayCare } from '@/store/actions'
 import { useGame } from '@/store/game'
 import { cx } from '@/theme/util'
 
@@ -256,6 +256,10 @@ export function DayCareScreen() {
   const [depositing, setDepositing] = useState(false)
   const [hatch, setHatch] = useState<Hatch | null>(null)
   const [pickup, setPickup] = useState<Pickup | null>(null)
+  const open = !!save && isDayCareOpen(save, data)
+  useEffect(() => {
+    if (open) visitDayCare()
+  }, [open])
   if (!save) return <Navigate to="/" replace />
   if (!isDayCareOpen(save, data)) return <Navigate to="/map" replace />
   const cfg = data.config.dayCare

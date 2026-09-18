@@ -13,6 +13,19 @@ export const dayCareOf = (save: SaveData): DayCareState => save.dayCare ?? { res
 export const isDayCareOpen = (save: SaveData, data: GameData) =>
   new Set(save.pokedex).size >= data.config.dayCare.unlockPokedex
 
+/**
+ * The unlock tutorial is due: the Day Care is open and the player has never been in. Saves that already used it
+ * (a resident or the free Egg) count as visited.
+ */
+export function dayCareTutorialDue(save: SaveData, data: GameData): boolean {
+  if (!isDayCareOpen(save, data)) return false
+  const dc = dayCareOf(save)
+  return !dc.visited && !dc.eggClaimed && dc.residents.length === 0
+}
+
+export const markDayCareVisited = (save: SaveData): SaveData =>
+  dayCareOf(save).visited ? save : { ...save, dayCare: { ...dayCareOf(save), visited: true } }
+
 const tickMs = (data: GameData) => Math.max(1, data.config.dayCare.tickMinutes) * MINUTE
 
 /** XP earned so far this stay: xpPerTick for each full tick since drop-off, up to maxXp. */

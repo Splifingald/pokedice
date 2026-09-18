@@ -3,6 +3,7 @@ import {
   createInstance,
   createRng,
   dayCareOf,
+  dayCareTutorialDue,
   dayCareXp,
   depositError,
   depositPokemon,
@@ -11,6 +12,7 @@ import {
   hatchEgg,
   hatchLevel,
   isDayCareOpen,
+  markDayCareVisited,
   newSave,
   nextDayCareTick,
   residentNow,
@@ -33,6 +35,17 @@ describe('Day Care', () => {
     const s = newSave(4, data, 0, newId)
     expect(isDayCareOpen(s, data)).toBe(false)
     expect(isDayCareOpen({ ...s, pokedex: Array.from({ length: cfg.unlockPokedex }, (_, i) => i + 1) }, data)).toBe(true)
+  })
+
+  it('sends the player there once when it opens: due until the first visit, never for saves that used it', () => {
+    const closed = newSave(4, data, 0, newId)
+    expect(dayCareTutorialDue(closed, data)).toBe(false)
+    const open = { ...closed, pokedex: Array.from({ length: cfg.unlockPokedex }, (_, i) => i + 1) }
+    expect(dayCareTutorialDue(open, data)).toBe(true)
+    const visited = markDayCareVisited(open)
+    expect(dayCareTutorialDue(visited, data)).toBe(false)
+    expect(markDayCareVisited(visited)).toBe(visited)
+    expect(dayCareTutorialDue({ ...open, dayCare: { residents: [], eggClaimed: true } }, data)).toBe(false)
   })
 
   it('takes Pokémon out of the team and the Box, 2 at most, never the last team member', () => {

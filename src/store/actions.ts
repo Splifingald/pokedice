@@ -8,9 +8,11 @@ import {
   randomSeed,
   setTeam,
   swapIntoTeam,
+  dayCareOf,
   depositError,
   depositPokemon,
   hatchEgg,
+  markDayCareVisited,
   withdrawPokemon,
   type ComboKey,
   type DepositError,
@@ -75,6 +77,11 @@ const DEPOSIT_REFUSED: Record<DepositError, string> = {
   full: 'The Day Care is full',
   last: 'Keep at least one Pokémon in your team',
   missing: 'That Pokémon is not with you',
+}
+
+/** The first visit ends the unlock tutorial. */
+export function visitDayCare(): void {
+  mutateSave((s) => (dayCareOf(s).visited ? null : markDayCareVisited(s)))
 }
 
 /** Leave a Pokémon at the Day Care: it leaves the team and the Box, and starts gaining XP. */

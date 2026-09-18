@@ -54,6 +54,7 @@ export const saveSchema = z.object({
     .object({
       residents: z.array(z.object({ inst: instanceSchema, since: z.number() })),
       eggClaimed: z.boolean().default(false),
+      visited: z.boolean().optional(),
     })
     .optional(),
 })
