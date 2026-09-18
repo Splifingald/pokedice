@@ -13,6 +13,7 @@ import {
   type Retention,
   type RetentionEvent,
 } from '@/analytics/retention'
+import { playerProgress, type ProgressEvent } from '@/analytics/progress'
 import { AreaBanner } from '@/components/AreaBanner'
 import { BadgeIcon } from '@/components/BadgeIcon'
 import { PixelIcon, type IconName } from '@/components/icons'
@@ -292,7 +293,7 @@ function RetentionHero({ retention: r }: { retention: Retention | null }) {
   )
 }
 
-type PlayerSort = 'name' | 'events' | 'last' | 'levels' | 'badges' | 'spent' | 'playtime'
+type PlayerSort = 'name' | 'events' | 'last' | 'levels' | 'topLevel' | 'area' | 'badges' | 'spent' | 'playtime'
 type EventSort = 'time' | 'player' | 'kind'
 
 function SortTh({
@@ -325,14 +326,15 @@ function SortTh({
   )
 }
 
-function useSort<K extends string>(initial: K, initialDir: 1 | -1 = -1) {
+/** A new column sorts highest first, except the `ascFirst` ones (names: A → Z). */
+function useSort<K extends string>(initial: K, initialDir: 1 | -1 = -1, ascFirst: readonly K[] = []) {
   const [key, setKey] = useState<K>(initial)
   const [dir, setDir] = useState<1 | -1>(initialDir)
   const toggle = (k: K) => {
     if (k === key) setDir((d) => (d === 1 ? -1 : 1))
     else {
       setKey(k)
-      setDir(-1)
+      setDir(ascFirst.includes(k) ? 1 : -1)
     }
   }
   return { key, dir, toggle }
@@ -346,6 +348,8 @@ export function AnalyticsSection() {
   const [rows, setRows] = useState<EventRow[]>([])
   const [retention, setRetention] = useState<Retention | null>(null)
   const [playtime, setPlaytime] = useState<PlaytimeEvent[]>([])
+  const [reached, setReached] = useState<ProgressEvent[]>([])
+  const progress = useMemo(() => playerProgress(reached, data), [reached, data])
   const [avgPlay, setAvgPlay] = useState<AveragePlaytime | null>(null)
   const [range, setRange] = useState<{ from: Date | null; to: Date | null }>({ from: null, to: null })
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading')
@@ -353,7 +357,7 @@ export function AnalyticsSection() {
   const [player, setPlayer] = useState<string>('all')
   const [kinds, setKinds] = useState<Set<AnalyticsKind>>(() => new Set(ANALYTICS_KINDS))
   const [shown, setShown] = useState(200)
-  const pSort = useSort<PlayerSort>('last')
+  const pSort = useSort<PlayerSort>('last', -1, ['name'])
   const eSort = useSort<EventSort>('time')
 
   const load = useCallback(async () => {
@@ -365,11 +369,16 @@ export function AnalyticsSection() {
       const to = frame === 'custom' ? localDay(customTo, 1) : null
       // Retention needs every player's whole history (their first day may predate the frame): who and when only.
       // Playtime and snapshots are background events: out of the feed and of retention.
-      const [events, history, played] = await Promise.all([
+      // Top level and furthest area are all time, whatever the frame.
+      const [events, history, played, progressRows] = await Promise.all([
         fetchEvents(from, to, '*', 20_000, { exclude: SYSTEM_KINDS }),
         fetchEvents(null, null, 'user_id,device_id,created_at', 200_000, { exclude: SYSTEM_KINDS }),
         fetchEvents(from, to, 'user_id,device_id,created_at,params', 100_000, { only: ['playtime'] }),
+        fetchEvents(null, null, 'user_id,device_id,created_at,kind,params', 50_000, {
+          only: ['level_up', 'area_unlocked', 'snapshot'],
+        }),
       ])
+      setReached(progressRows.map((r) => ({ player: playerKey(r), kind: r.kind, params: r.params })))
       const pt: PlaytimeEvent[] = played.map((r) => ({
         player: playerKey(r),
         at: new Date(r.created_at),
@@ -442,11 +451,14 @@ export function AnalyticsSection() {
       ...p,
       name: p.name || p.email?.split('@')[0] || `Guest ${p.key.slice(-4)}`,
       playtime: played.get(p.key) ?? 0,
+      topLevel: progress.get(p.key)?.topLevel ?? 0,
+      area: progress.get(p.key)?.areaRank ?? -1,
+      areaName: progress.get(p.key)?.areaName ?? '',
     }))
     const val = (p: (typeof list)[number]) =>
       pSort.key === 'name' ? p.name.toLowerCase() : pSort.key === 'last' ? p.last : p[pSort.key]
     return list.sort((a, b) => (val(a) < val(b) ? -1 : val(a) > val(b) ? 1 : 0) * pSort.dir)
-  }, [rows, playtime, pSort.key, pSort.dir])
+  }, [rows, playtime, progress, pSort.key, pSort.dir])
   const nameOf = useMemo(() => new Map(players.map((p) => [p.key, p])), [players])
 
   const inPlayer = useMemo(
@@ -631,6 +643,19 @@ export function AnalyticsSection() {
                   onClick={() => pSort.toggle('levels')}
                 />
                 <SortTh
+                  label="Top Lv."
+                  right
+                  active={pSort.key === 'topLevel'}
+                  dir={pSort.dir}
+                  onClick={() => pSort.toggle('topLevel')}
+                />
+                <SortTh
+                  label="Furthest area"
+                  active={pSort.key === 'area'}
+                  dir={pSort.dir}
+                  onClick={() => pSort.toggle('area')}
+                />
+                <SortTh
                   label="Badges"
                   right
                   active={pSort.key === 'badges'}
@@ -687,6 +712,10 @@ export function AnalyticsSection() {
                   </td>
                   <td className="px-2 text-right">{p.events}</td>
                   <td className="px-2 text-right text-good">{p.levels ? `+${p.levels}` : '–'}</td>
+                  <td className="px-2 text-right">{p.topLevel || '–'}</td>
+                  <td className="max-w-[180px] truncate px-2" title={p.areaName}>
+                    {p.areaName || '–'}
+                  </td>
                   <td className="px-2 text-right">{p.badges || '–'}</td>
                   <td className="px-2 text-right">{p.spent ? p.spent.toLocaleString() : '–'}</td>
                   <td className="px-2 text-right">{p.playtime ? formatDuration(p.playtime) : '–'}</td>
@@ -697,7 +726,7 @@ export function AnalyticsSection() {
               ))}
               {status === 'ready' && !players.length && (
                 <tr>
-                  <td colSpan={7} className="px-3 py-4 text-center text-muted">
+                  <td colSpan={9} className="px-3 py-4 text-center text-muted">
                     No player activity in this time frame.
                   </td>
                 </tr>
