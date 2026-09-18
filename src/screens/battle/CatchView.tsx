@@ -12,6 +12,47 @@ import { useGame } from '@/store/game'
 import { finishCatch, throwBall } from '@/store/run'
 import { cx } from '@/theme/util'
 
+// Professor Oak's one-time tip on the first catch screen (per device).
+const CATCH_TIP_KEY = 'pokedice.tip.catch'
+const tipSeen = () => {
+  try {
+    return localStorage.getItem(CATCH_TIP_KEY) === '1'
+  } catch {
+    return true
+  }
+}
+const markTipSeen = () => {
+  try {
+    localStorage.setItem(CATCH_TIP_KEY, '1')
+  } catch {
+    /* private mode: the tip may show again */
+  }
+}
+
+function OakTip({ onClose }: { onClose: () => void }) {
+  return (
+    <div className="flex w-full items-start gap-2 border-[3px] border-ink bg-parchment p-2 text-left">
+      <img
+        src="/characters/prof-oak.png"
+        alt="Professor Oak"
+        width={56}
+        height={56}
+        className="shrink-0"
+        style={{ imageRendering: 'pixelated' }}
+      />
+      <div className="flex min-w-0 flex-1 flex-col gap-1">
+        <p className="text-lg leading-snug">
+          <b>PROF. OAK:</b> Balls only help the catch die! A tired, weak Pokémon can often be caught with no ball
+          at all. Save them for the tough ones.
+        </p>
+        <PixelButton size="sm" className="self-end" onClick={onClose}>
+          GOT IT
+        </PixelButton>
+      </div>
+    </div>
+  )
+}
+
 // The throw, in ms from THROW: the arm swings, the ball flies, swallows the Pokémon, drops and wobbles until the reveal.
 const FRAME_MS = 55
 const FLY_AT = 130
@@ -167,6 +208,7 @@ export function CatchView() {
   const save = useGame((s) => s.save)
   const [ball, setBall] = useState<string | null>(null)
   const [revealed, setRevealed] = useState(false)
+  const [tip, setTip] = useState(() => !tipSeen())
   const result = c?.result ?? null
 
   useEffect(() => {
@@ -191,6 +233,14 @@ export function CatchView() {
   ]
   const chosen = options.find((o) => o.key === ball) ?? options[0]!
   const pct = (bonus: number) => Math.round(catchChance(value, bonus) * 100)
+  // A ball adds nothing once a weaker option (or no ball) is already certain.
+  const sure = catchChance(value, 0) >= 1
+  const notNeeded = (o: (typeof options)[number]) =>
+    o.key != null && options.some((w) => w.bonus < o.bonus && catchChance(value, w.bonus) >= 1)
+  const closeTip = () => {
+    markTipSeen()
+    setTip(false)
+  }
   const title = revealed && result ? (result.caught ? 'Gotcha!' : `${name} fled!`) : `${c.kind === 'boss' ? 'The legendary' : 'The wild'} ${name} is worn out!`
 
 
@@ -221,46 +271,69 @@ export function CatchView() {
         )}
 
         {!result ? (
-          <>
-            <div aria-live="polite">
-              <div className="text-xl leading-none">Catch chance</div>
-              <div className="text-6xl leading-none tabular-nums">{pct(chosen.bonus)}%</div>
-            </div>
-            <fieldset className="w-full">
-              <legend className="sr-only">Ball</legend>
-              <div className="flex flex-wrap justify-center gap-2">
-                {options.map((o) => {
-                  const icon = o.key ? data.items[o.key]?.spriteUrl : null
-                  return (
-                    <button
-                      key={o.key ?? 'none'}
-                      type="button"
-                      aria-pressed={chosen.key === o.key}
-                      aria-label={`${o.label}${o.n != null ? `, ${o.n} left` : ''}, +${o.bonus}`}
-                      title={o.label}
-                      onClick={() => setBall(o.key)}
-                      className={cx('pixel-btn relative flex w-20 flex-col items-center px-1 pb-1 pt-2', chosen.key === o.key ? 'bg-gold' : 'bg-panel')}
-                    >
-                      {o.key == null ? (
-                        <span className="flex h-10 items-center text-lg leading-none">None</span>
-                      ) : icon ? (
-                        <img src={icon} alt="" width={40} height={40} style={{ imageRendering: 'pixelated' }} />
-                      ) : (
-                        <span className="flex h-10 items-center">
-                          <PixelIcon name="ball" size={28} />
-                        </span>
-                      )}
-                      <span className="text-xl leading-none">+{o.bonus}</span>
-                      {o.n != null && <span className="absolute right-1 top-0.5 font-mono text-sm">×{o.n}</span>}
-                    </button>
-                  )
-                })}
+          sure ? (
+            <>
+              <div aria-live="polite">
+                <div className="text-6xl leading-none">100%</div>
+                <p className="mt-1 text-2xl">It's exhausted: no ball needed!</p>
               </div>
-            </fieldset>
-            <PixelButton variant="primary" size="lg" onClick={() => throwBall(chosen.key)}>
-              THROW
-            </PixelButton>
-          </>
+              {tip && <OakTip onClose={closeTip} />}
+              <PixelButton variant="primary" size="lg" onClick={() => throwBall(null)}>
+                CATCH
+              </PixelButton>
+            </>
+          ) : (
+            <>
+              <div aria-live="polite">
+                <div className="text-xl leading-none">Catch chance</div>
+                <div className="text-6xl leading-none tabular-nums">{pct(chosen.bonus)}%</div>
+              </div>
+              {tip && <OakTip onClose={closeTip} />}
+              <fieldset className="w-full">
+                <legend className="sr-only">Ball</legend>
+                <div className="flex flex-wrap justify-center gap-2">
+                  {options.map((o) => {
+                    const icon = o.key ? data.items[o.key]?.spriteUrl : null
+                    const useless = notNeeded(o)
+                    return (
+                      <button
+                        key={o.key ?? 'none'}
+                        type="button"
+                        aria-pressed={chosen.key === o.key}
+                        aria-label={`${o.label}${o.n != null ? `, ${o.n} left` : ''}: ${pct(o.bonus)}% chance${useless ? ', not needed' : ''}`}
+                        title={useless ? `${o.label}: not needed, a weaker option is already certain` : o.label}
+                        onClick={() => setBall(o.key)}
+                        className={cx(
+                          'pixel-btn relative flex w-24 flex-col items-center gap-0.5 px-1 pb-1 pt-2',
+                          chosen.key === o.key ? 'bg-gold' : 'bg-panel',
+                          useless && chosen.key !== o.key && 'opacity-50',
+                        )}
+                      >
+                        {o.key == null ? (
+                          <span className="flex h-10 items-center">
+                            <PixelIcon name="dice" size={28} />
+                          </span>
+                        ) : icon ? (
+                          <img src={icon} alt="" width={40} height={40} style={{ imageRendering: 'pixelated' }} />
+                        ) : (
+                          <span className="flex h-10 items-center">
+                            <PixelIcon name="ball" size={28} />
+                          </span>
+                        )}
+                        <span className="text-base leading-none">{o.key == null ? 'No ball' : `+${o.bonus}`}</span>
+                        <span className="text-2xl leading-none tabular-nums">{pct(o.bonus)}%</span>
+                        {useless && <span className="text-sm leading-none text-muted">not needed</span>}
+                        {o.n != null && <span className="absolute right-1 top-0.5 font-mono text-sm">×{o.n}</span>}
+                      </button>
+                    )
+                  })}
+                </div>
+              </fieldset>
+              <PixelButton variant="primary" size="lg" onClick={() => throwBall(chosen.key)}>
+                ROLL TO CATCH
+              </PixelButton>
+            </>
+          )
         ) : (
           <>
             <Die type="base" face={{ kind: 'number', value: result.die }} size={80} rollKey="catch-throw" label={`Catch die: ${result.die}`} />

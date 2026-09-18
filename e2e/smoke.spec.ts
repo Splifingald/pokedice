@@ -29,7 +29,7 @@ test('new game → first battle → win', async ({ page }) => {
 
   for (let i = 0; i < 400; i++) {
     if (await page.getByText('VICTORY!').isVisible()) break
-    await clickAny(page, ['EXPLORE', 'NEXT ENCOUNTER', 'ENTER', 'PICK IT UP', 'THROW', 'CONTINUE', 'TRY AGAIN', 'FIGHT', 'SKIP TURN', 'ATTACK'])
+    await clickAny(page, ['EXPLORE', 'NEXT ENCOUNTER', 'ENTER', 'PICK IT UP', 'ROLL TO CATCH', 'CATCH', 'CONTINUE', 'TRY AGAIN', 'FIGHT', 'SKIP TURN', 'ATTACK'])
     await page.waitForTimeout(60)
   }
   await expect(page.getByText('VICTORY!')).toBeVisible()
