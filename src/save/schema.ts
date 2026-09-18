@@ -57,6 +57,7 @@ export const saveSchema = z.object({
       visited: z.boolean().optional(),
     })
     .optional(),
+  adminEditAt: z.number().optional(),
 })
 
 /**

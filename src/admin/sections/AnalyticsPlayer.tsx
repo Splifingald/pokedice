@@ -14,6 +14,7 @@ import { SpriteImg } from '@/components/SpriteImg'
 import { getSupabase } from '@/lib/supabase'
 import { useGame } from '@/store/game'
 import { cx } from '@/theme/util'
+import { PlayerCheats } from './PlayerCheats'
 
 const BAR = '#4aa84a'
 
@@ -278,6 +279,10 @@ export function PlayerPanel({
           </Block>
         </div>
       )}
+
+      <Block title="Cheats">
+        <PlayerCheats player={player} name={name} />
+      </Block>
     </section>
   )
 }

@@ -442,6 +442,8 @@ export interface SaveData {
   player?: PlayerProfile
   /** The Day Care: who's staying (out of the team and the Box meanwhile), and whether the free Egg was taken. */
   dayCare?: DayCareState
+  /** When the admin last edited this save (cheats): that cloud save then wins the next sync, even with less progress. */
+  adminEditAt?: number
 }
 
 export interface DayCareResident {

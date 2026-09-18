@@ -70,6 +70,8 @@ export function decideSync(local: SaveData | null, cloud: SaveData | null): Sync
   if (!cloud) return 'local'
   if (!local) return 'cloud'
   const cloudNewer = cloud.updatedAt > local.updatedAt
+  // An admin edit (e.g. a Pokémon taken away) is applied as is, without asking.
+  if (cloudNewer && (cloud.adminEditAt ?? 0) > local.updatedAt) return 'cloud'
   const newer = cloudNewer ? cloud : local
   const older = cloudNewer ? local : cloud
   if (compareProgress(older, newer) > 0) return 'ask'
