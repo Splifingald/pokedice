@@ -1,6 +1,6 @@
 // Pure state transitions on the save: new game, rewards, catches, wipes, center, team, shop, upgrades.
 import { getSpecies, linearAreas } from './data'
-import { nextComboCost, nextDieCost, pokemonXp, trainerGoldFor, healAmount } from './economy'
+import { nextComboCost, nextDieCost, pokemonXp, trainerGoldFor, healAmount, multiExpShareFor } from './economy'
 import { MONEY, usableIn } from './items'
 import { averageLevel, createInstance, gainXp, instanceMaxHp, xpToNext, type ProgressEvent } from './progression'
 import { createRng, type Rng } from './rng'
@@ -301,16 +301,18 @@ export function applyVictory(
       if (ev.kind === 'evolve' && !next.pokedex.includes(ev.toDex)) next.pokedex.push(ev.toDex)
   }
   const recipients = data.config.xpShareMode === 'team' ? next.team : [input.fighterUid]
+  // Multi EXP compares levels from before this K.O.'s XP.
+  const fighterLevel = getInstance(next, input.fighterUid)?.level ?? 1
   for (const uid of recipients) award(uid, xp, false)
 
-  // Multi EXP: team members who didn't fight (and are still standing) get a share.
-  const share = data.config.multiExpShare
-  if (share > 0 && next.settings?.multiExp !== false && data.config.xpShareMode !== 'team') {
-    const bonus = Math.max(1, Math.round(xp * share))
+  // Multi EXP: team members who didn't fight (and are still standing) get a share, bigger the further behind they are.
+  if (data.config.multiExpShare > 0 && next.settings?.multiExp !== false && data.config.xpShareMode !== 'team') {
     for (const uid of [...next.team]) {
       if (recipients.includes(uid)) continue
       const inst = getInstance(next, uid)
-      if (inst && inst.currentHp > 0) award(uid, bonus, true)
+      if (!inst || inst.currentHp <= 0) continue
+      const share = multiExpShareFor(fighterLevel, inst.level, data)
+      if (share > 0) award(uid, Math.max(1, Math.round(xp * share)), true)
     }
   }
 

@@ -29,6 +29,9 @@ export const DEFAULT_CONFIG: GameConfig = {
   allowVoluntarySwitch: true,
   maxBattleTurns: 150,
   multiExpShare: 0.3,
+  // A bench Pokémon 14+ levels behind the fighter gets as much XP as the fighter did.
+  multiExpGapBonus: 0.05,
+  multiExpMaxShare: 1,
   // XP per K.O. = the foe's level × this, for the Pokémon and the exploration bar alike.
   xpMultiplier: 1,
   showRoundGauge: true,

@@ -302,6 +302,8 @@ export function ConfigSection() {
   const [forced, setForced] = useConfigRow('forcedCenterWhenHurt')
   const [version] = useConfigRow('configVersion')
   const [multiExp, setMultiExp] = useConfigRow('multiExpShare')
+  const [multiGap, setMultiGap] = useConfigRow('multiExpGapBonus')
+  const [multiMax, setMultiMax] = useConfigRow('multiExpMaxShare')
   const [xpMult, setXpMult] = useConfigRow('xpMultiplier')
   const [showRound, setShowRound] = useConfigRow('showRoundGauge')
   const [showAhead, setShowAhead] = useConfigRow('showRoundPreview')
@@ -364,6 +366,15 @@ export function ConfigSection() {
             </Field>
             <Field label="multiExpShare" hint="Multi EXP: bench share of K.O. XP (0 = off; players can toggle)">
               <NumInput step={0.05} value={multiExp} min={0} max={1} onChange={(v) => setMultiExp(Math.max(0, Math.min(1, v ?? 0)))} />
+            </Field>
+            <Field label="multiExpGapBonus" hint="+ this share per level the bench Pokémon is below the fighter (catch-up)">
+              <NumInput step={0.01} value={multiGap} min={0} max={1} onChange={(v) => setMultiGap(Math.max(0, Math.min(1, v ?? 0)))} />
+            </Field>
+            <Field
+              label="multiExpMaxShare"
+              hint={`cap on the bench share (1 = as much as the fighter)${Number(multiGap) > 0 ? ` · reached ${Math.ceil(Math.max(0, Number(multiMax) - Number(multiExp)) / Number(multiGap))} levels behind` : ''}`}
+            >
+              <NumInput step={0.05} value={multiMax} min={0} max={1} onChange={(v) => setMultiMax(Math.max(0, Math.min(1, v ?? 1)))} />
             </Field>
           </div>
         </Box>

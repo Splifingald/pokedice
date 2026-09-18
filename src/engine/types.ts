@@ -352,6 +352,10 @@ export interface GameConfig {
   maxBattleTurns: number
   /** Multi EXP: team members who didn't fight get this fraction of each K.O.'s XP (0 = feature off). Players toggle it. */
   multiExpShare: number
+  /** …plus this much per level the bench Pokémon is below the fighter (catch-up)… */
+  multiExpGapBonus: number
+  /** …up to this share (1 = as much as the fighter). */
+  multiExpMaxShare: number
   /** × the XP a K.O. gives (the foe's level × this), to the Pokémon and to the area's exploration alike. */
   xpMultiplier: number
   /** Show the round gauge on the area screen: one segment per card of the area's deck, icons for those already met. */

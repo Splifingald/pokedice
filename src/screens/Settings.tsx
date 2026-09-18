@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { Modal } from '@/components/Modal'
 import { Panel } from '@/components/Panel'
 import { PixelButton } from '@/components/PixelButton'
+import { multiExpText } from '@/engine'
 import { isSupabaseConfigured } from '@/lib/supabase'
 import { parseSave } from '@/save/schema'
 import { mutateSave, pushToast, setSettings, useGame } from '@/store/game'
@@ -83,7 +84,7 @@ export function SettingsScreen() {
           label="Multi EXP"
           hint={
             data.config.multiExpShare > 0
-              ? `Team members who didn't fight still get ${Math.round(data.config.multiExpShare * 100)} % of the XP.`
+              ? `Team members who didn't fight still get ${multiExpText(data)}.`
               : 'Disabled by the game settings right now.'
           }
           on={settings.multiExp}

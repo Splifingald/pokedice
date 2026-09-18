@@ -1,7 +1,7 @@
 // The rules in plain words, plus the type chart. Numbers come from the live game data.
 import { useState, type ReactNode } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { COMBO_KEYS, COMBO_NAMES, comboBonus, POKE_TYPES, typeMultiplier, type PokeType } from '@/engine'
+import { COMBO_KEYS, COMBO_NAMES, comboBonus, multiExpText, POKE_TYPES, typeMultiplier, type PokeType } from '@/engine'
 import { DieFaces } from '@/components/Die'
 import { PixelIcon } from '@/components/icons'
 import { PixelButton } from '@/components/PixelButton'
@@ -318,7 +318,7 @@ export function HelpContent() {
         <ul className="ml-5 list-disc">
           <li>The Pokémon that lands the K.O. gets XP. Levels raise HP; some levels add a die or a reroll, and many Pokémon evolve.</li>
           <li>
-            <b>Multi EXP</b> (Settings): team members who didn't fight still get {Math.round(cfg.multiExpShare * 100)} % of the XP.
+            <b>Multi EXP</b> (Settings): team members who didn't fight still get {multiExpText(data)}.
           </li>
           <li>
             Trainers pay <b>Pokédollars (₽)</b>. Gym Leaders, the Elite Four and the Champion pay ×{cfg.gymGoldMultiplier}.

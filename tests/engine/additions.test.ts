@@ -7,6 +7,8 @@ import {
   createBattle,
   createInstance,
   createRng,
+  multiExpShareFor,
+  multiExpText,
   newSave,
   reduce,
   statusesFromRoll,
@@ -101,6 +103,29 @@ describe('Multi EXP', () => {
     expect(win(teamOfThree(false)).events.filter((e) => e.kind === 'xp')).toHaveLength(1)
     const d = makeData({ multiExpShare: 0 })
     expect(win(teamOfThree(true), d).events.filter((e) => e.kind === 'xp')).toHaveLength(1)
+  })
+
+  it('gives more to Pokémon far behind the fighter: +5 % per level, up to 100 %', () => {
+    expect(multiExpShareFor(30, 30, data)).toBeCloseTo(0.3)
+    expect(multiExpShareFor(30, 35, data)).toBeCloseTo(0.3) // ahead of the fighter: the base share
+    expect(multiExpShareFor(30, 25, data)).toBeCloseTo(0.55)
+    expect(multiExpShareFor(30, 16, data)).toBeCloseTo(1)
+    expect(multiExpShareFor(30, 10, data)).toBeCloseTo(1) // capped
+    expect(multiExpShareFor(30, 10, makeData({ multiExpMaxShare: 0.6 }))).toBeCloseTo(0.6)
+    expect(multiExpShareFor(30, 10, makeData({ multiExpGapBonus: 0 }))).toBeCloseTo(0.3)
+    expect(multiExpText(data)).toBe("30 % of the XP, +5 % for each level they're behind the fighter (up to 100 %)")
+  })
+
+  it('shares by the level gap from before the K.O., the fighter never out-earned', () => {
+    // Fighter Lv.30, bench Lv.5 and Lv.25; a Lv.20 foe gives 20 XP.
+    const s = teamOfThree()
+    const strong = { ...s, box: s.box.map((p) => (p.id === s.team[0] ? { ...p, level: 30 } : p.id === 'bench-b' ? { ...p, level: 25 } : p)) }
+    const r = applyVictory(strong, { areaId: area.id, kind: 'wild', enemyDex: 16, enemyLevel: 20, fighterUid: s.team[0]! }, data, createRng(1), 1, newId)
+    expect(r.events.filter((e) => e.kind === 'xp')).toEqual([
+      { kind: 'xp', uid: s.team[0], amount: 20 },
+      { kind: 'xp', uid: 'bench-a', amount: 20, shared: true }, // 25 levels behind: capped at 100 %
+      { kind: 'xp', uid: 'bench-b', amount: 11, shared: true }, // 5 behind: 55 %
+    ])
   })
 
   it('never rounds a share down to nothing', () => {
