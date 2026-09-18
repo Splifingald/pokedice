@@ -14,6 +14,7 @@ import { TrainerSprite } from '@/components/TrainerArt'
 import { MiniSprite, SpriteImg } from '@/components/SpriteImg'
 import { StatChip } from '@/components/StatChip'
 import { milestoneText, money, trainerTitle } from '@/lib/format'
+import { usePace } from '@/lib/pace'
 import { BadgeIcon } from '@/components/BadgeIcon'
 import { useGame } from '@/store/game'
 import { afterStalemate, afterWipe, continueAfterVictory, enterArea, resolveCatch, trainerHasNext } from '@/store/run'
@@ -284,6 +285,7 @@ export function VictoryView() {
   const data = useGame((s) => s.data)
   const reduced = useGame((s) => s.settings.reducedMotion)
   const cards = useCards(run.events)
+  const pace = usePace()
   const [shown, setShown] = useState(reduced ? Number.MAX_SAFE_INTEGER : 1)
   const [lead, setLead] = useState<string | null>(null)
   const allShown = shown >= cards.length
@@ -295,9 +297,9 @@ export function VictoryView() {
     const t = setTimeout(() => {
       setShown((s) => s + 1)
       if (card?.sound) sfx(card.sound)
-    }, isEvo ? 3000 : 650)
+    }, isEvo ? 3000 : 650 * pace)
     return () => clearTimeout(t)
-  }, [shown, allShown, cards])
+  }, [shown, allShown, cards, pace])
 
   const enemy = battle?.state.enemy
   const hasNext = trainerHasNext()

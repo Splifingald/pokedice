@@ -1,5 +1,6 @@
 // Cheap pixel particle bursts (Framer can't do 200 particles cheaply). Square pixels, gravity, drag, fade.
 import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react'
+import { usePace } from '@/lib/pace'
 import { useGame } from '@/store/game'
 
 interface Particle {
@@ -26,6 +27,8 @@ export const ParticleCanvas = forwardRef<ParticleHandle, { className?: string }>
   const reduced = useGame((s) => s.settings.reducedMotion)
   const reducedRef = useRef(reduced)
   reducedRef.current = reduced
+  const paceRef = useRef(1)
+  paceRef.current = usePace()
 
   useEffect(() => {
     const el = canvas.current
@@ -84,7 +87,7 @@ export const ParticleCanvas = forwardRef<ParticleHandle, { className?: string }>
       for (let i = 0; i < count && particles.current.length < MAX_PARTICLES; i++) {
         const a = Math.random() * Math.PI * 2
         const sp = (1.5 + Math.random() * 4.5) * power
-        const life = 28 + Math.random() * 26
+        const life = (28 + Math.random() * 26) * paceRef.current
         particles.current.push({
           x,
           y,

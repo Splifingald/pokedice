@@ -260,7 +260,13 @@ function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): Step {
 }
 
 /** Returns the display state and whether every log entry has been played (inputs unlock only then). */
-export function useBattleAnimator(battle: BattleSlice, reduced: boolean, ctx: AnimatorContext): { fx: Fx; ready: boolean } {
+export function useBattleAnimator(
+  battle: BattleSlice,
+  reduced: boolean,
+  ctx: AnimatorContext,
+  /** Multiplies every step's delay (auto-mode plays faster). */
+  pace = 1,
+): { fx: Fx; ready: boolean } {
   const [fx, setFx] = useState(() => initFx(battle))
   const ctxRef = useRef(ctx)
   ctxRef.current = ctx
@@ -276,7 +282,7 @@ export function useBattleAnimator(battle: BattleSlice, reduced: boolean, ctx: An
     step.effect?.()
     const t = setTimeout(
       () => setFx((f) => (f.cursor === cursor ? { ...f, cursor: cursor + 1 } : f)),
-      reduced ? 0 : step.delay,
+      reduced ? 0 : step.delay * pace,
     )
     return () => clearTimeout(t)
     // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -34,6 +34,7 @@ import { playerOf, PokeBall, ThrowSprite, TrainerSprite } from '@/components/Tra
 import { StatusIcons } from '@/components/StatusIcons'
 import { TypeBadge } from '@/components/TypeBadge'
 import { cap, trainerTitle } from '@/lib/format'
+import { AUTO_PACE, PaceContext, usePace } from '@/lib/pace'
 import { useIsDesktop, useMediaQuery } from '@/lib/useMediaQuery'
 import { setSettings, useGame, type BattleSlice } from '@/store/game'
 import { dispatchBattle } from '@/store/run'
@@ -95,7 +96,7 @@ function BattlerPanel({
   )
 }
 
-function useShake(ref: RefObject<HTMLElement>, shake: { id: number; power: number } | null, reduced: boolean) {
+function useShake(ref: RefObject<HTMLElement>, shake: { id: number; power: number } | null, reduced: boolean, pace: number) {
   useEffect(() => {
     if (!shake || reduced || !ref.current?.animate) return
     const p = shake.power
@@ -108,7 +109,7 @@ function useShake(ref: RefObject<HTMLElement>, shake: { id: number; power: numbe
         { transform: `translate(${p * 0.6}px, ${p / 4}px)` },
         { transform: 'translate(0,0)' },
       ],
-      { duration: 360, easing: 'steps(6)' },
+      { duration: 360 * pace, easing: 'steps(6)' },
     )
   }, [shake?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 }
@@ -167,6 +168,7 @@ function useWidth(ref: RefObject<HTMLElement>) {
 
 /** A shiny's entrance: a ring of stars twinkles around it. */
 function ShinySparkle({ size, delay }: { size: number; delay: number }) {
+  const pace = usePace()
   const stars = [
     [0.2, 0.25],
     [0.78, 0.2],
@@ -185,7 +187,7 @@ function ShinySparkle({ size, delay }: { size: number; delay: number }) {
           style={{ left: x! * size - star / 2, top: y! * size - star / 2 }}
           initial={{ scale: 0, opacity: 0, rotate: 0 }}
           animate={{ scale: [0, 1.3, 0], opacity: [0, 1, 0], rotate: 90 }}
-          transition={{ duration: 0.45, delay: delay + i * 0.12, times: [0, 0.5, 1], ease: 'easeOut' }}
+          transition={{ duration: 0.45 * pace, delay: (delay + i * 0.12) * pace, times: [0, 0.5, 1], ease: 'easeOut' }}
         >
           <svg width={star} height={star} viewBox="0 0 8 8" shapeRendering="crispEdges">
             <path d="M3 0h2v3h3v2H5v3H3V5H0V3h3z" fill="#fff8c8" />
@@ -220,6 +222,7 @@ function SpriteStage({
   compact: boolean
 }) {
   const reduced = useGame((s) => s.settings.reducedMotion)
+  const pace = usePace()
   const { dex, shiny } = battler
   const size = Math.round(CELL * scale)
   const box = cellBox(dex, side, compact)
@@ -236,12 +239,12 @@ function SpriteStage({
         initial={reduced ? false : side === 'enemy' ? { opacity: 0, x: enter } : { opacity: 0, scale: 0, filter: 'brightness(4)' }}
         animate={
           fainted
-            ? { opacity: 0, y: size * 0.4, transition: { duration: 0.7 } }
+            ? { opacity: 0, y: size * 0.4, transition: { duration: 0.7 * pace } }
             : hidden
               ? { opacity: 0, scale: 0, transition: { duration: 0 } }
               : side === 'enemy'
-                ? { opacity: 1, x: 0, y: 0, scale: 1, transition: { duration: reduced ? 0 : 0.45 } }
-                : { opacity: 1, y: 0, scale: 1, filter: 'brightness(1)', transition: { duration: reduced ? 0 : 0.22, ease: 'backOut' } }
+                ? { opacity: 1, x: 0, y: 0, scale: 1, transition: { duration: reduced ? 0 : 0.45 * pace } }
+                : { opacity: 1, y: 0, scale: 1, filter: 'brightness(1)', transition: { duration: reduced ? 0 : 0.22 * pace, ease: 'backOut' } }
         }
         className="absolute inset-0"
         style={{ transformOrigin: '50% 90%' }}
@@ -257,7 +260,7 @@ function SpriteStage({
             initial={{ opacity: 0 }}
             animate={{ opacity: [0, 1, 0] }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.5 }}
+            transition={{ duration: 0.5 * pace }}
             style={{ mixBlendMode: 'screen' }}
           />
         )}
@@ -267,7 +270,7 @@ function SpriteStage({
             className="absolute inset-0 flex items-center justify-center"
             initial={{ opacity: 0, scale: 0.4 }}
             animate={{ opacity: [0, 1, 1, 0], scale: [0.4, 1.3, 1.1, 1], rotate: fx.status.status === 'confuse' ? 360 : 0 }}
-            transition={{ duration: 0.85 }}
+            transition={{ duration: 0.85 * pace }}
           >
             <PixelIcon name={STATUS_ICON[fx.status.status] ?? 'star'} size={size * 0.35} />
           </motion.div>
@@ -278,7 +281,7 @@ function SpriteStage({
             className="pointer-events-none absolute left-1/2 top-[25%] z-20 -translate-x-1/2 font-pixel leading-none"
             initial={{ opacity: 0, y: 10, scale: 0.4 }}
             animate={{ opacity: [0, 1, 1, 0], y: [10, -20, -34, -48], scale: [0.4, 1.7, 1.2, 1] }}
-            transition={{ duration: reduced ? 0 : 1.1 }}
+            transition={{ duration: reduced ? 0 : 1.1 * pace }}
             style={{
               fontSize: Math.max(24, size * 0.28),
               color: POP_COLOR[fx.pop.tone],
@@ -306,15 +309,16 @@ function SendOut({ character, size }: { character: 'red' | 'green'; size: number
   const [frame, setFrame] = useState(0)
   const [ball, setBall] = useState(false)
   const [gone, setGone] = useState(false)
+  const pace = usePace()
   useEffect(() => {
     const timers = [
-      ...[1, 2, 3, 4].map((f, i) => setTimeout(() => setFrame(f), i * SEND_FRAME_MS)),
-      setTimeout(() => setBall(true), SEND_BALL_AT),
-      setTimeout(() => setBall(false), SEND_OUT_POP_MS),
-      setTimeout(() => setGone(true), SEND_OUT_POP_MS - 60),
+      ...[1, 2, 3, 4].map((f, i) => setTimeout(() => setFrame(f), i * SEND_FRAME_MS * pace)),
+      setTimeout(() => setBall(true), SEND_BALL_AT * pace),
+      setTimeout(() => setBall(false), SEND_OUT_POP_MS * pace),
+      setTimeout(() => setGone(true), (SEND_OUT_POP_MS - 60) * pace),
     ]
     return () => timers.forEach(clearTimeout)
-  }, [])
+  }, [pace])
   const px = Math.max(64, Math.round(size / 64 - 0.2) * 64)
   const ballSize = Math.round(size / 6)
   return (
@@ -323,7 +327,7 @@ function SendOut({ character, size }: { character: 'red' | 'green'; size: number
         className="absolute bottom-0 left-0"
         initial={{ x: -px * 0.35, opacity: 1 }}
         animate={gone ? { x: -px, opacity: 0 } : { x: -px * 0.35, opacity: 1 }}
-        transition={{ duration: 0.2, ease: 'easeIn' }}
+        transition={{ duration: 0.2 * pace, ease: 'easeIn' }}
       >
         <ThrowSprite character={character} frame={frame} size={px} />
       </motion.div>
@@ -338,8 +342,8 @@ function SendOut({ character, size }: { character: 'red' | 'green'; size: number
               y: [size - px * 0.7, size * 0.1, size * 0.62],
               rotate: 540,
             }}
-            exit={{ scale: 1.8, opacity: 0, transition: { duration: 0.15 } }}
-            transition={{ duration: SEND_BALL_MS / 1000, ease: 'linear' }}
+            exit={{ scale: 1.8, opacity: 0, transition: { duration: 0.15 * pace } }}
+            transition={{ duration: (SEND_BALL_MS / 1000) * pace, ease: 'linear' }}
           >
             <PokeBall size={ballSize} />
           </motion.div>
@@ -376,6 +380,8 @@ export function BattleView({ battle }: { battle: BattleSlice }) {
   // Auto-mode (cleared areas only): the player's side plays itself, like the enemy's.
   const autoOn = useGame((s) => !!s.settings.autoMode)
   const auto = autoOn && !!save && !!run.areaId && progressOf(save, run.areaId).cleared
+  // Auto-mode plays the whole fight 50% faster: animations, dice and timers.
+  const pace = auto ? AUTO_PACE : 1
 
   const enc = run.encounter
   const isTrainerFight = enc?.kind === 'trainer' || enc?.kind === 'gym'
@@ -398,8 +404,8 @@ export function BattleView({ battle }: { battle: BattleSlice }) {
     itemName: (k) => data.items[k]?.name ?? k,
     colorOf: (t) => data.diceTypes[t as keyof typeof data.diceTypes]?.color ?? typeColor(t),
     onHit,
-  })
-  useShake(scene, fx.shake, reduced)
+  }, pace)
+  useShake(scene, fx.shake, reduced, pace)
 
   useEffect(() => {
     window.scrollTo({ top: 0 })
@@ -407,21 +413,21 @@ export function BattleView({ battle }: { battle: BattleSlice }) {
 
   useEffect(() => {
     if (!bossIntro) return
-    const t = setTimeout(() => setBossIntro(false), 1900)
+    const t = setTimeout(() => setBossIntro(false), 1900 * pace)
     return () => clearTimeout(t)
-  }, [bossIntro])
+  }, [bossIntro, pace])
   useEffect(() => {
     if (!trainerIntro) return
-    const t = setTimeout(() => setTrainerIntro(false), TRAINER_INTRO_MS)
+    const t = setTimeout(() => setTrainerIntro(false), TRAINER_INTRO_MS * pace)
     return () => clearTimeout(t)
-  }, [trainerIntro])
+  }, [trainerIntro, pace])
 
   // The enemy acts on its own once the log has caught up.
   useEffect(() => {
     if (!ready || intro || st.phase !== 'enemy_turn') return
-    const t = setTimeout(() => dispatchBattle({ t: 'AI_TURN' }), reduced ? 0 : 450)
+    const t = setTimeout(() => dispatchBattle({ t: 'AI_TURN' }), reduced ? 0 : 450 * pace)
     return () => clearTimeout(t)
-  }, [ready, intro, st.phase, reduced, battle.log.length])
+  }, [ready, intro, st.phase, reduced, pace, battle.log.length])
 
   const active = st.player.find((p) => p.uid === fx.activeUid) ?? activeBattler(st)
   const canAct = ready && !intro && (st.phase === 'player_roll' || st.phase === 'player_reroll')
@@ -497,16 +503,16 @@ export function BattleView({ battle }: { battle: BattleSlice }) {
         const last = events.pop()
         if (!last) return
         events.forEach(dispatchBattle)
-        if (events.length && !reduced) inner = setTimeout(() => dispatchBattle(last), AUTO_SELECT_MS)
+        if (events.length && !reduced) inner = setTimeout(() => dispatchBattle(last), AUTO_SELECT_MS * pace)
         else dispatchBattle(last)
       },
-      reduced ? 0 : st.phase === 'player_reroll' ? 350 : 400,
+      reduced ? 0 : (st.phase === 'player_reroll' ? 350 : 400) * pace,
     )
     return () => {
       clearTimeout(t)
       clearTimeout(inner)
     }
-  }, [auto, ready, intro, menu, autoPhase, st.phase, data, reduced, battle.log.length])
+  }, [auto, ready, intro, menu, autoPhase, st.phase, data, reduced, pace, battle.log.length])
 
   const usefulItems = ownedItems.filter(([k]) => st.player.some((p) => itemHelps(k, p)))
   const showItem = usefulItems.length > 0
@@ -531,9 +537,9 @@ export function BattleView({ battle }: { battle: BattleSlice }) {
   }, [active.uid, reduced])
   useEffect(() => {
     if (!sendingUid) return
-    const t = setTimeout(() => setSendingUid(null), SEND_OUT_POP_MS)
+    const t = setTimeout(() => setSendingUid(null), SEND_OUT_POP_MS * pace)
     return () => clearTimeout(t)
-  }, [sendingUid])
+  }, [sendingUid, pace])
   const compact = !desktop
   const teamPips = (
     <span className="flex gap-0.5" aria-label={`${st.player.filter((p) => p.hp > 0).length} of ${st.player.length} able`}>
@@ -569,8 +575,9 @@ export function BattleView({ battle }: { battle: BattleSlice }) {
   const terminal = st.phase === 'won' || st.phase === 'lost' || st.phase === 'fled'
 
   return (
-    // The scene keeps the backgrounds' 240×112 shape, so its width sets its height: capped on desktop so the tray and
-    // controls stay in view (shorter desktops get a narrower column).
+    <PaceContext.Provider value={pace}>
+    {/* The scene keeps the backgrounds' 240×112 shape, so its width sets its height: capped on desktop so the tray and
+        controls stay in view (shorter desktops get a narrower column). */}
     <div className={cx('relative mx-auto flex w-full flex-col gap-2 sm:gap-3', desktop ? (roomy ? 'max-w-3xl' : 'max-w-[640px]') : 'max-w-5xl')}>
       <h1 className="sr-only">
         Battle: {active.name} against {trainerName ? `${trainerName}'s ` : st.kind === 'wild' ? 'a wild ' : ''}
@@ -622,8 +629,8 @@ export function BattleView({ battle }: { battle: BattleSlice }) {
                       }}
                       initial={{ x: 90, opacity: 0 }}
                       animate={{ x: 0, opacity: 1 }}
-                      exit={{ x: 110, opacity: 0, transition: { duration: 0.2, ease: 'easeIn' } }}
-                      transition={{ duration: 0.22, ease: 'easeOut' }}
+                      exit={{ x: 110, opacity: 0, transition: { duration: 0.2 * pace, ease: 'easeIn' } }}
+                      transition={{ duration: 0.22 * pace, ease: 'easeOut' }}
                       aria-hidden
                     >
                       <TrainerSprite src={enc.spriteUrl} size={Math.round(CELL * scale)} />
@@ -696,7 +703,7 @@ export function BattleView({ battle }: { battle: BattleSlice }) {
                 className="pointer-events-none absolute inset-x-0 top-[38%] z-20 flex justify-center"
                 initial={{ scale: 0.3, opacity: 0 }}
                 animate={{ scale: [0.3, 1.25, 1], opacity: [0, 1, 1, 0] }}
-                transition={{ duration: 1.2, times: [0, 0.2, 0.8, 1] }}
+                transition={{ duration: 1.2 * pace, times: [0, 0.2, 0.8, 1] }}
               >
                 <span
                   className={cx(
@@ -718,9 +725,9 @@ export function BattleView({ battle }: { battle: BattleSlice }) {
               className="absolute inset-0 z-30 flex items-center justify-center gap-3 bg-ink text-panel sm:gap-6"
               initial={{ opacity: 1 }}
               animate={{ opacity: [1, 1, 0] }}
-              transition={{ duration: 1.9, times: [0, 0.8, 1] }}
+              transition={{ duration: 1.9 * pace, times: [0, 0.8, 1] }}
             >
-              <motion.div initial={{ scale: 0.6 }} animate={{ scale: 1 }} transition={{ duration: 1.2 }}>
+              <motion.div initial={{ scale: 0.6 }} animate={{ scale: 1 }} transition={{ duration: 1.2 * pace }}>
                 <SpriteImg dex={st.enemy.dex} size={Math.round(CELL * scale * 1.3)} silhouette />
               </motion.div>
               <div className="flex flex-col items-center">
@@ -751,7 +758,7 @@ export function BattleView({ battle }: { battle: BattleSlice }) {
           className={cx('flex flex-wrap items-center justify-center gap-2 sm:gap-3', short ? 'min-h-[64px]' : 'min-h-[72px]')}
           initial={false}
           animate={fx.fly && !reduced ? { y: fx.fly.to === 'enemy' ? -140 : 60, opacity: 0, scale: 0.6 } : { y: 0, opacity: 1, scale: 1 }}
-          transition={{ duration: 0.35, ease: 'easeIn' }}
+          transition={{ duration: 0.35 * pace, ease: 'easeIn' }}
         >
           {tray?.dice.map((d, i) => (
             <div key={i} className="flex flex-col items-center gap-0.5">
@@ -760,7 +767,7 @@ export function BattleView({ battle }: { battle: BattleSlice }) {
                 face={faceOf(d, data)}
                 size={dieSize}
                 rollKey={tray.keys[i]}
-                delay={i * 0.06}
+                delay={i * 0.06 * pace}
                 selected={ready && rolling && !!st.selected[i]}
                 onClick={canAct && rolling && !auto ? () => dispatchBattle({ t: 'TOGGLE_DIE', i }) : undefined}
                 locked={tray.side === 'enemy'}
@@ -993,6 +1000,7 @@ export function BattleView({ battle }: { battle: BattleSlice }) {
       {ready && run.phase === 'wipe' && <WipeView />}
       {ready && run.phase === 'stalemate' && <StalemateView />}
     </div>
+    </PaceContext.Provider>
   )
 }
 

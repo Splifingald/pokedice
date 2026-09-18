@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion'
 import type { DieType, Face } from '@/engine/types'
+import { usePace } from '@/lib/pace'
 import { PALETTE } from '@/theme/colors'
 import { cx, shade, textOn, typeColor } from '@/theme/util'
 import { PixelIcon, STATUS_GLYPH } from './icons'
@@ -113,6 +114,7 @@ export interface DieProps {
 export function Die({ type, face, size = 56, selected, locked, rollKey, delay = 0, color, onClick, asButton, label, className }: DieProps) {
   const bg = typeColor(type, color)
   const mini = size < MINI
+  const pace = usePace()
   // Base dice have grey pips; a mini digit needs full ink to be read.
   const ink = type === 'base' && !mini ? PALETTE.muted : type === 'base' ? PALETTE.ink : textOn(bg)
   const interactive = !!onClick && !locked
@@ -131,8 +133,8 @@ export function Die({ type, face, size = 56, selected, locked, rollKey, delay = 
     initial: rollKey !== undefined ? { rotateX: 540, rotateZ: 200, y: -size * 1.2, scale: 0.6, opacity: 0 } : (false as const),
     animate: { rotateX: 0, rotateZ: 0, y: selected ? -8 : 0, scale: 1, opacity: locked ? 0.55 : 1 },
     transition: {
-      default: { duration: 0.6, delay, ease: [0.2, 0.9, 0.3, 1.2] },
-      y: { duration: 0.12 },
+      default: { duration: 0.6 * pace, delay, ease: [0.2, 0.9, 0.3, 1.2] },
+      y: { duration: 0.12 * pace },
     },
   }
   const content = face ? (

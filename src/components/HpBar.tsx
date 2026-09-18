@@ -1,3 +1,4 @@
+import { usePace } from '@/lib/pace'
 import { cx, hpColor } from '@/theme/util'
 
 /** HP bar with an eased drain and a lagging damage trail. Colour: green > 50 % > yellow > 20 % > red. */
@@ -23,6 +24,7 @@ export function HpBar({
   /** A foe's bar: screen readers get "high / half / low", never the exact HP. */
   approximate?: boolean
 }) {
+  const pace = usePace()
   const pct = max > 0 ? Math.max(0, Math.min(1, hp / max)) : 0
   const collapse = collapsible && showNumbers
   return (
@@ -40,7 +42,7 @@ export function HpBar({
       >
         <div
           className="absolute inset-y-0 left-0 bg-danger/80"
-          style={{ width: `${pct * 100}%`, transition: 'width 900ms cubic-bezier(.2,.8,.2,1) 250ms' }}
+          style={{ width: `${pct * 100}%`, transition: `width ${900 * pace}ms cubic-bezier(.2,.8,.2,1) ${250 * pace}ms` }}
         />
         <div
           className="absolute inset-y-0 left-0"
@@ -48,7 +50,7 @@ export function HpBar({
             width: `${pct * 100}%`,
             background: hpColor(pct),
             boxShadow: 'inset 0 2px 0 rgba(255,255,255,0.35)',
-            transition: 'width 600ms cubic-bezier(.2,.8,.2,1), background-color 300ms',
+            transition: `width ${600 * pace}ms cubic-bezier(.2,.8,.2,1), background-color ${300 * pace}ms`,
           }}
         />
       </div>
