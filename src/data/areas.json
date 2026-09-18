@@ -1257,6 +1257,169 @@
   ]
  },
  {
+  "id": "b64f2ae7-b9ae-5707-b904-f1e31aa66253",
+  "orderIndex": 104,
+  "name": "Rocket Hideout",
+  "bannerUrl": "/banners/city.png#flip",
+  "xpToUnlockNext": null,
+  "minLevel": 19,
+  "maxLevel": 24,
+  "encounterWeights": {
+   "item": 1,
+   "wild": 0,
+   "casino": 3,
+   "center": 1,
+   "trainer": 5
+  },
+  "backtrackMultiplier": 0.5,
+  "legendaryBoss": null,
+  "scalesToTeam": false,
+  "easyMode": false,
+  "enemyUpgradeLevel": 5,
+  "battleBackground": "default",
+  "hidden": true,
+  "unlockConditions": [
+   {
+    "kind": "area",
+    "areaId": "8cf87ee3-f7a5-568e-bc22-54f643572535"
+   }
+  ],
+  "gyms": [],
+  "wildPool": [],
+  "trainerPool": [
+   {
+    "id": "02cc9388-132f-5f5d-85e3-f6854e508fa4",
+    "trainerId": "6f7868fd-ec4a-5e75-8d83-06b82ae39cba",
+    "weight": 10
+   },
+   {
+    "id": "aa4ef699-dcc5-54a5-8030-07cd75d6189c",
+    "trainerId": "5d0842da-08fb-5241-b46d-592f7582acb7",
+    "weight": 10
+   },
+   {
+    "id": "90c4a6c1-c1f0-5e71-9e61-59b228ce6b0c",
+    "trainerId": "4414b20e-deac-5628-a3de-d9db0de435d3",
+    "weight": 10
+   },
+   {
+    "id": "2d825d77-3603-5f07-a349-98fef96787a8",
+    "trainerId": "566c92de-ff27-5967-9ab9-8e510ae7098f",
+    "weight": 10
+   },
+   {
+    "id": "1135ead8-a397-5401-8c09-6f7b7578aabc",
+    "trainerId": "dfe1aca1-da40-5852-83dd-2d53fa865956",
+    "weight": 10
+   },
+   {
+    "id": "816bd375-d34c-5481-a006-fa8579b82d89",
+    "trainerId": "1ed9b25b-18ca-5817-8236-79dd4a357cf7",
+    "weight": 10
+   },
+   {
+    "id": "15086bdf-8530-5fcf-992b-d4b4821e4155",
+    "trainerId": "485e83ae-4eed-5d37-acc2-b454f5630b72",
+    "weight": 10
+   },
+   {
+    "id": "5f39dab3-d1b2-51a7-90f9-77da5182a272",
+    "trainerId": "4d6a9103-5b65-5193-b803-b2dd0038b8a6",
+    "weight": 10
+   }
+  ],
+  "lootPool": [
+   {
+    "id": "f4981f85-a4a8-58e2-8641-b6e453dff5a7",
+    "itemKey": "super-potion",
+    "weight": 20,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "52a92695-66d4-51d8-8efb-0cbe851de56a",
+    "itemKey": "poke-ball",
+    "weight": 10,
+    "unique": false,
+    "minQty": 2,
+    "maxQty": 3
+   },
+   {
+    "id": "d897f3ee-16f2-561b-bb63-7b07565315a3",
+    "itemKey": "great-ball",
+    "weight": 16,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "275b3722-95b8-5f20-8652-6f698b7bd21a",
+    "itemKey": "ultra-ball",
+    "weight": 4,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "b9aed1c2-41be-544e-9387-dce3a333bda0",
+    "itemKey": "antidote",
+    "weight": 5,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "aa186624-8bd8-5429-9a30-157770151272",
+    "itemKey": "paralyze-heal",
+    "weight": 5,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "b3019290-40ab-5db8-ad67-cb5346bcd0b7",
+    "itemKey": "burn-heal",
+    "weight": 5,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "3e2e0167-f3ba-5a45-8083-89ae628ec39a",
+    "itemKey": "ice-heal",
+    "weight": 5,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "abc6c39c-1ec0-54a9-b6df-cbcb9566a69c",
+    "itemKey": "ether",
+    "weight": 8,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "0421e377-998c-53e1-a8a0-a85d04f34010",
+    "itemKey": "max-ether",
+    "weight": 3,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "f03a8ef4-eff8-5136-839c-ea8eb7f22e17",
+    "itemKey": "money",
+    "weight": 16,
+    "unique": false,
+    "minQty": 50,
+    "maxQty": 100
+   }
+  ]
+ },
+ {
   "id": "f319e2ef-f0d1-5f2d-a7cb-cf92aeb8bca7",
   "orderIndex": 10,
   "name": "Rock Tunnel",
@@ -1332,21 +1495,6 @@
   ],
   "trainerPool": [
    {
-    "id": "0410c403-60a5-52a3-a461-759dde6cb3b9",
-    "trainerId": "70ffa587-b53e-5280-9e54-e0bae998f745",
-    "weight": 10
-   },
-   {
-    "id": "6e3d92d3-7137-54e7-a86c-4e22e95d357e",
-    "trainerId": "b280a998-7bae-5acf-b1aa-8682873b2f68",
-    "weight": 10
-   },
-   {
-    "id": "9a54e6c2-165a-5795-a136-734f8fb2217e",
-    "trainerId": "507c89e3-9ca4-5e1f-baf0-4db53d6e1db0",
-    "weight": 10
-   },
-   {
     "id": "03eb9fcc-e74f-506c-bc84-5785613478f9",
     "trainerId": "24f8a88c-9c4d-592c-933c-6b67ea0fe9f4",
     "weight": 10
@@ -1380,9 +1528,64 @@
     "id": "2f4d97da-319d-5d8d-86ba-6e173ecb083a",
     "trainerId": "bbc6a77d-e85c-5f92-8eb8-d5c994dae7b6",
     "weight": 10
+   },
+   {
+    "id": "0410c403-60a5-52a3-a461-759dde6cb3b9",
+    "trainerId": "70ffa587-b53e-5280-9e54-e0bae998f745",
+    "weight": 10
+   },
+   {
+    "id": "6e3d92d3-7137-54e7-a86c-4e22e95d357e",
+    "trainerId": "b280a998-7bae-5acf-b1aa-8682873b2f68",
+    "weight": 10
+   },
+   {
+    "id": "9a54e6c2-165a-5795-a136-734f8fb2217e",
+    "trainerId": "507c89e3-9ca4-5e1f-baf0-4db53d6e1db0",
+    "weight": 10
    }
   ],
   "lootPool": [
+   {
+    "id": "db37acb0-072f-5f3a-bded-836e7c5143c4",
+    "itemKey": "ice-heal",
+    "weight": 1,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "d2d8ce12-a003-58bc-b56b-f6cc70097509",
+    "itemKey": "ether",
+    "weight": 1,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "4c4b5552-5bc5-5078-80b7-03f223b91ba9",
+    "itemKey": "max-ether",
+    "weight": 1,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "0f118ad9-1ea1-5fa9-8f4d-987b453a1f73",
+    "itemKey": "money",
+    "weight": 1,
+    "unique": false,
+    "minQty": 50,
+    "maxQty": 100
+   },
+   {
+    "id": "0b252a68-ded0-52bc-a8d7-21a534c28b21",
+    "itemKey": "rare-candy",
+    "weight": 1,
+    "unique": true,
+    "minQty": 1,
+    "maxQty": 1
+   },
    {
     "id": "db745288-9f38-5802-b8a8-cf13207b8db7",
     "itemKey": "super-potion",
@@ -1436,46 +1639,6 @@
     "itemKey": "burn-heal",
     "weight": 1,
     "unique": false,
-    "minQty": 1,
-    "maxQty": 1
-   },
-   {
-    "id": "db37acb0-072f-5f3a-bded-836e7c5143c4",
-    "itemKey": "ice-heal",
-    "weight": 1,
-    "unique": false,
-    "minQty": 1,
-    "maxQty": 1
-   },
-   {
-    "id": "d2d8ce12-a003-58bc-b56b-f6cc70097509",
-    "itemKey": "ether",
-    "weight": 1,
-    "unique": false,
-    "minQty": 1,
-    "maxQty": 1
-   },
-   {
-    "id": "4c4b5552-5bc5-5078-80b7-03f223b91ba9",
-    "itemKey": "max-ether",
-    "weight": 1,
-    "unique": false,
-    "minQty": 1,
-    "maxQty": 1
-   },
-   {
-    "id": "0f118ad9-1ea1-5fa9-8f4d-987b453a1f73",
-    "itemKey": "money",
-    "weight": 1,
-    "unique": false,
-    "minQty": 50,
-    "maxQty": 100
-   },
-   {
-    "id": "0b252a68-ded0-52bc-a8d7-21a534c28b21",
-    "itemKey": "rare-candy",
-    "weight": 1,
-    "unique": true,
     "minQty": 1,
     "maxQty": 1
    }
@@ -1557,16 +1720,6 @@
   ],
   "trainerPool": [
    {
-    "id": "5caaea34-9f1c-5c2b-8946-672f66fadd16",
-    "trainerId": "289f9ee6-d6a6-5cbe-b051-29c699379033",
-    "weight": 10
-   },
-   {
-    "id": "e2739996-7d4e-5afd-94d6-21ed0f5e0983",
-    "trainerId": "990f3d06-f1e1-56ee-bf32-507c39e8321e",
-    "weight": 10
-   },
-   {
     "id": "06e35c56-eb72-5026-8d6d-4bf8f9750ebd",
     "trainerId": "856173ec-550e-5af4-8aaf-47992e8e971e",
     "weight": 10
@@ -1599,6 +1752,16 @@
    {
     "id": "0f97f486-ea45-5766-9caf-5e36e72f10a8",
     "trainerId": "8ab715d3-44c5-525a-8ad7-bac9821e6b81",
+    "weight": 10
+   },
+   {
+    "id": "5caaea34-9f1c-5c2b-8946-672f66fadd16",
+    "trainerId": "289f9ee6-d6a6-5cbe-b051-29c699379033",
+    "weight": 10
+   },
+   {
+    "id": "e2739996-7d4e-5afd-94d6-21ed0f5e0983",
+    "trainerId": "990f3d06-f1e1-56ee-bf32-507c39e8321e",
     "weight": 10
    }
   ],
@@ -1979,6 +2142,11 @@
   ],
   "trainerPool": [
    {
+    "id": "8a8aaea5-34d2-5cf2-834e-70b7abb6d8e4",
+    "trainerId": "1c8c5bc8-0734-5dc7-a29f-58a2658d2b9a",
+    "weight": 10
+   },
+   {
     "id": "06bbf47b-29a4-5ba5-b252-8fc2c4ed25fb",
     "trainerId": "f6693b54-53fd-566b-a00e-5063add4daf1",
     "weight": 10
@@ -2016,11 +2184,6 @@
    {
     "id": "122b85e1-926a-5c1d-b2d3-8671478ce3b0",
     "trainerId": "f7d16385-b081-5853-8826-4c4156e0f4cc",
-    "weight": 10
-   },
-   {
-    "id": "8a8aaea5-34d2-5cf2-834e-70b7abb6d8e4",
-    "trainerId": "1c8c5bc8-0734-5dc7-a29f-58a2658d2b9a",
     "weight": 10
    }
   ],
@@ -2215,13 +2378,6 @@
     "weight": 2,
     "minLevel": 25,
     "maxLevel": 25
-   },
-   {
-    "id": "74cd15a8-7380-53fc-9f37-83a7de063c6d",
-    "dex": 137,
-    "weight": 2,
-    "minLevel": 26,
-    "maxLevel": 26
    }
   ],
   "trainerPool": [
@@ -2594,6 +2750,41 @@
   "gyms": [],
   "wildPool": [
    {
+    "id": "79bec00a-1093-54bc-b680-f31f7e19fef7",
+    "dex": 129,
+    "weight": 7,
+    "minLevel": 15,
+    "maxLevel": 25
+   },
+   {
+    "id": "4eeea5a6-127c-524a-afe3-365b3e36cda8",
+    "dex": 72,
+    "weight": 6,
+    "minLevel": 20,
+    "maxLevel": 25
+   },
+   {
+    "id": "251e8d66-5dcf-5b76-8775-74c1f092119f",
+    "dex": 116,
+    "weight": 5,
+    "minLevel": 20,
+    "maxLevel": 25
+   },
+   {
+    "id": "e9093e0c-6ca9-581c-8e99-75309914f776",
+    "dex": 98,
+    "weight": 5,
+    "minLevel": 20,
+    "maxLevel": 25
+   },
+   {
+    "id": "abf3f198-5837-579e-be06-ebd28f1b3c03",
+    "dex": 118,
+    "weight": 5,
+    "minLevel": 20,
+    "maxLevel": 25
+   },
+   {
     "id": "dd2a6cbd-52c7-50b4-80b6-093cbefb3740",
     "dex": 143,
     "weight": 2,
@@ -2669,41 +2860,6 @@
     "weight": 5,
     "minLevel": 23,
     "maxLevel": 28
-   },
-   {
-    "id": "79bec00a-1093-54bc-b680-f31f7e19fef7",
-    "dex": 129,
-    "weight": 7,
-    "minLevel": 15,
-    "maxLevel": 25
-   },
-   {
-    "id": "4eeea5a6-127c-524a-afe3-365b3e36cda8",
-    "dex": 72,
-    "weight": 6,
-    "minLevel": 20,
-    "maxLevel": 25
-   },
-   {
-    "id": "251e8d66-5dcf-5b76-8775-74c1f092119f",
-    "dex": 116,
-    "weight": 5,
-    "minLevel": 20,
-    "maxLevel": 25
-   },
-   {
-    "id": "e9093e0c-6ca9-581c-8e99-75309914f776",
-    "dex": 98,
-    "weight": 5,
-    "minLevel": 20,
-    "maxLevel": 25
-   },
-   {
-    "id": "abf3f198-5837-579e-be06-ebd28f1b3c03",
-    "dex": 118,
-    "weight": 5,
-    "minLevel": 20,
-    "maxLevel": 25
    }
   ],
   "trainerPool": [
@@ -2841,6 +2997,154 @@
     "unique": false,
     "minQty": 50,
     "maxQty": 100
+   }
+  ]
+ },
+ {
+  "id": "bbe7e459-a138-5106-bd01-fce7ff422e7f",
+  "orderIndex": 22,
+  "name": "Indigo Plateau",
+  "bannerUrl": "/banners/sky.png",
+  "xpToUnlockNext": 100,
+  "minLevel": 45,
+  "maxLevel": 55,
+  "encounterWeights": {
+   "item": 1,
+   "wild": 0,
+   "center": 1,
+   "trainer": 8
+  },
+  "backtrackMultiplier": 0.5,
+  "legendaryBoss": null,
+  "scalesToTeam": false,
+  "easyMode": false,
+  "enemyUpgradeLevel": 9,
+  "battleBackground": "default",
+  "hidden": false,
+  "unlockConditions": null,
+  "gyms": [
+   "8f2e2f31-b802-5fa0-a53a-6972a066c2ca",
+   "5be0ce71-8b9a-5d00-9fc7-55c868dcaae9",
+   "9c8e8be2-905e-565f-8845-8643678a03fb",
+   "eb27f123-dbfb-5520-85bb-06f54a8dfb09",
+   "2330f93e-5d26-56bd-b875-59351aac91bb"
+  ],
+  "wildPool": [],
+  "trainerPool": [
+   {
+    "id": "ae9e297e-4ada-5ead-8411-62d28e1c380b",
+    "trainerId": "ba6fe0af-4442-5766-9c65-33f123af0476",
+    "weight": 10
+   },
+   {
+    "id": "db13f8f2-8a4a-5a57-98c9-f8716407826b",
+    "trainerId": "8822fdd1-cf54-573b-ac5c-ceb7b95035a4",
+    "weight": 10
+   },
+   {
+    "id": "8243e6b9-a001-5fbd-95c9-9fce07449395",
+    "trainerId": "f2ec2fc9-17ec-5429-84a3-f8b03edb6e71",
+    "weight": 10
+   },
+   {
+    "id": "74083b82-305b-5d01-a816-545880bc7f02",
+    "trainerId": "6dc10021-5a83-5dfe-85b8-02ddb794da1c",
+    "weight": 10
+   },
+   {
+    "id": "1373b5b5-3ff1-5a95-aa51-a6ff8613c90c",
+    "trainerId": "8d3fb724-1e34-53c4-ba95-d0067611a69d",
+    "weight": 10
+   }
+  ],
+  "lootPool": [
+   {
+    "id": "200f394c-5d9f-522f-a0a4-39b7e85189c7",
+    "itemKey": "super-potion",
+    "weight": 1,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "d6efa6f2-4e49-5c19-afac-5793751d79ba",
+    "itemKey": "hyper-potion",
+    "weight": 1,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "b8245fe7-97fa-50b0-841b-7197b8babe6a",
+    "itemKey": "great-ball",
+    "weight": 1,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "0f903b69-42ce-5b65-819b-6502f946177d",
+    "itemKey": "ultra-ball",
+    "weight": 1,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "50d92f4d-ff89-5b57-915f-1b1e3de1ddea",
+    "itemKey": "paralyze-heal",
+    "weight": 1,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "5178ce7d-0ada-53da-abbc-01289244cf0b",
+    "itemKey": "burn-heal",
+    "weight": 1,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "d5976fef-41ef-58a3-afcd-730a6675f177",
+    "itemKey": "ice-heal",
+    "weight": 1,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "30b4f72b-b193-5092-b4e7-4d1af84ba5e1",
+    "itemKey": "ether",
+    "weight": 1,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "92435df9-522f-55fd-bdf1-160013477e7c",
+    "itemKey": "max-ether",
+    "weight": 1,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "0daccf1f-5715-5bc6-8673-03eb6357d3d0",
+    "itemKey": "rare-candy",
+    "weight": 1,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "d73ce663-3d05-50b1-ab5f-405e7fa30cd9",
+    "itemKey": "money",
+    "weight": 1,
+    "unique": false,
+    "minQty": 100,
+    "maxQty": 200
    }
   ]
  },
@@ -3849,1124 +4153,6 @@
   ]
  },
  {
-  "id": "cff05c73-329a-55d0-a476-ba7c5683e6ae",
-  "orderIndex": 19,
-  "name": "Pokémon Mansion",
-  "bannerUrl": "/banners/volcano.png",
-  "xpToUnlockNext": 175,
-  "minLevel": 32,
-  "maxLevel": 42,
-  "encounterWeights": {
-   "item": 1,
-   "wild": 4,
-   "center": 1,
-   "trainer": 4
-  },
-  "backtrackMultiplier": 0.5,
-  "legendaryBoss": null,
-  "scalesToTeam": false,
-  "easyMode": false,
-  "enemyUpgradeLevel": 7,
-  "battleBackground": "default",
-  "hidden": false,
-  "unlockConditions": null,
-  "gyms": [
-   "7f8c6bce-6401-50a6-9443-8b584cc99b4d"
-  ],
-  "wildPool": [
-   {
-    "id": "5081fdd5-b222-5c14-8824-3c7f26a6ee74",
-    "dex": 88,
-    "weight": 12,
-    "minLevel": 28,
-    "maxLevel": 32
-   },
-   {
-    "id": "a5783a13-8e7e-57a8-9fb3-4532120b0eac",
-    "dex": 89,
-    "weight": 4,
-    "minLevel": 36,
-    "maxLevel": 38
-   },
-   {
-    "id": "092be396-75fc-5958-83a8-2ec75469ddd7",
-    "dex": 109,
-    "weight": 12,
-    "minLevel": 28,
-    "maxLevel": 32
-   },
-   {
-    "id": "a2d1cf9e-1dbb-54e0-ba6b-059ecbd325b6",
-    "dex": 110,
-    "weight": 4,
-    "minLevel": 36,
-    "maxLevel": 38
-   },
-   {
-    "id": "6b547d6b-04fc-5fcc-bde0-4bb14230b1a1",
-    "dex": 77,
-    "weight": 10,
-    "minLevel": 28,
-    "maxLevel": 34
-   },
-   {
-    "id": "1881fb9b-905b-5c2c-99cb-37b789fa50ac",
-    "dex": 58,
-    "weight": 8,
-    "minLevel": 30,
-    "maxLevel": 34
-   },
-   {
-    "id": "ec5da755-55a1-582d-bb0f-0a9236e00780",
-    "dex": 37,
-    "weight": 8,
-    "minLevel": 30,
-    "maxLevel": 34
-   },
-   {
-    "id": "838d1167-9990-55e5-aa87-0023ac4f54c8",
-    "dex": 126,
-    "weight": 3,
-    "minLevel": 34,
-    "maxLevel": 38
-   },
-   {
-    "id": "e30fe30a-d385-548d-989c-a7936ef92ee8",
-    "dex": 19,
-    "weight": 8,
-    "minLevel": 28,
-    "maxLevel": 32
-   },
-   {
-    "id": "7319e694-ae7a-529f-9f71-59adcfc0e882",
-    "dex": 20,
-    "weight": 8,
-    "minLevel": 32,
-    "maxLevel": 36
-   },
-   {
-    "id": "04a669ae-2f85-52d3-b15c-fa83fce94e49",
-    "dex": 132,
-    "weight": 5,
-    "minLevel": 30,
-    "maxLevel": 34
-   },
-   {
-    "id": "f7588d25-ac8a-5e92-8408-3351a760b5a3",
-    "dex": 142,
-    "weight": 2,
-    "minLevel": 30,
-    "maxLevel": 30
-   }
-  ],
-  "trainerPool": [
-   {
-    "id": "9414bda0-408c-5f2f-90ff-2e9f323c8e16",
-    "trainerId": "94cf8361-1315-514c-a9fc-c21e4f1e4d59",
-    "weight": 10
-   },
-   {
-    "id": "36158106-756c-5861-ae5e-74bacb5b9e54",
-    "trainerId": "95e59c6e-db14-53b8-836a-45a58a953c4b",
-    "weight": 10
-   },
-   {
-    "id": "5fc952bd-8336-5194-9d96-4163bd4ce544",
-    "trainerId": "8298dbfa-30e3-512c-ace5-3818a740136f",
-    "weight": 10
-   },
-   {
-    "id": "f0199373-336b-58c7-a180-a45924969bbc",
-    "trainerId": "dc1252ba-591c-5634-a129-115319e6c40a",
-    "weight": 10
-   },
-   {
-    "id": "afc5b095-e197-5b89-983b-83f5b7e9bd40",
-    "trainerId": "bbbfef06-aa68-549e-81e3-77edd255f1ec",
-    "weight": 10
-   },
-   {
-    "id": "9a9e8626-c8f0-55ee-9b9c-d24323f2311a",
-    "trainerId": "29ce0f12-4a23-5c08-be0e-c5668d1f95c6",
-    "weight": 10
-   },
-   {
-    "id": "2c60519d-3014-5c03-a801-b14d509de87f",
-    "trainerId": "cebabf84-c737-5b68-a9c7-cf55a48f6bc6",
-    "weight": 10
-   },
-   {
-    "id": "161a5810-f1cb-5f3a-a8da-b26be7f20c6f",
-    "trainerId": "0840a8fb-7b00-5345-ab8c-e5fcf9347ad9",
-    "weight": 10
-   },
-   {
-    "id": "03a0025f-8083-5e65-90f5-3f9a9df2b619",
-    "trainerId": "6a35431d-2b64-59f2-837c-5fb3bbaf81dd",
-    "weight": 10
-   }
-  ],
-  "lootPool": [
-   {
-    "id": "8c50427c-d6eb-599a-80de-f05944e7e4cf",
-    "itemKey": "super-potion",
-    "weight": 1,
-    "unique": false,
-    "minQty": 1,
-    "maxQty": 2
-   },
-   {
-    "id": "0e54e423-79ba-5be2-9f73-72e4a5a379ef",
-    "itemKey": "hyper-potion",
-    "weight": 1,
-    "unique": false,
-    "minQty": 1,
-    "maxQty": 1
-   },
-   {
-    "id": "8f478e70-aa4a-5e2e-8c79-e17218b1062d",
-    "itemKey": "great-ball",
-    "weight": 1,
-    "unique": false,
-    "minQty": 1,
-    "maxQty": 2
-   },
-   {
-    "id": "437c79cf-b8fb-5748-8b76-092afc5533f1",
-    "itemKey": "ultra-ball",
-    "weight": 1,
-    "unique": false,
-    "minQty": 1,
-    "maxQty": 1
-   },
-   {
-    "id": "dbf7e920-b6d1-51c3-a2ae-29c098b8d67c",
-    "itemKey": "paralyze-heal",
-    "weight": 1,
-    "unique": false,
-    "minQty": 1,
-    "maxQty": 1
-   },
-   {
-    "id": "12459b91-5446-5048-9364-be81888f0b37",
-    "itemKey": "burn-heal",
-    "weight": 1,
-    "unique": false,
-    "minQty": 1,
-    "maxQty": 1
-   },
-   {
-    "id": "d6525813-eab9-5df4-be58-13118794fe9c",
-    "itemKey": "ice-heal",
-    "weight": 1,
-    "unique": false,
-    "minQty": 1,
-    "maxQty": 1
-   },
-   {
-    "id": "120635ad-754d-5dda-bb52-27be407e30bd",
-    "itemKey": "ether",
-    "weight": 1,
-    "unique": false,
-    "minQty": 1,
-    "maxQty": 2
-   },
-   {
-    "id": "9bb3c642-6c50-5476-96db-45419dd78287",
-    "itemKey": "max-ether",
-    "weight": 1,
-    "unique": false,
-    "minQty": 1,
-    "maxQty": 1
-   },
-   {
-    "id": "67cb3a3c-6b5e-5455-abc9-1f0f63a8e288",
-    "itemKey": "rare-candy",
-    "weight": 1,
-    "unique": false,
-    "minQty": 1,
-    "maxQty": 1
-   },
-   {
-    "id": "813fbf68-636b-5163-90cc-4c9be78b047a",
-    "itemKey": "money",
-    "weight": 1,
-    "unique": false,
-    "minQty": 100,
-    "maxQty": 200
-   },
-   {
-    "id": "3d04e443-9de2-5280-9dfc-019b84cec38c",
-    "itemKey": "rare-candy",
-    "weight": 1,
-    "unique": true,
-    "minQty": 1,
-    "maxQty": 1
-   }
-  ]
- },
- {
-  "id": "6d47ad48-bf44-5cb5-83fd-8db581b4a715",
-  "orderIndex": 20,
-  "name": "Route 21",
-  "bannerUrl": "/banners/beach.png",
-  "xpToUnlockNext": 180,
-  "minLevel": 30,
-  "maxLevel": 40,
-  "encounterWeights": {
-   "item": 1,
-   "wild": 4,
-   "center": 1,
-   "trainer": 4
-  },
-  "backtrackMultiplier": 0.5,
-  "legendaryBoss": null,
-  "scalesToTeam": false,
-  "easyMode": false,
-  "enemyUpgradeLevel": 8,
-  "battleBackground": "sea",
-  "hidden": false,
-  "unlockConditions": null,
-  "gyms": [
-   "1c772786-a75c-59cb-a34d-c7d2bf345250"
-  ],
-  "wildPool": [
-   {
-    "id": "1a4fcc54-8ebd-5daf-9cda-e8cb9913d1ed",
-    "dex": 17,
-    "weight": 12,
-    "minLevel": 28,
-    "maxLevel": 32
-   },
-   {
-    "id": "876d2ad5-efbd-5047-be5a-c232531fddaf",
-    "dex": 20,
-    "weight": 10,
-    "minLevel": 28,
-    "maxLevel": 32
-   },
-   {
-    "id": "c0f36a1a-c65d-5da7-a02e-e87d19030824",
-    "dex": 114,
-    "weight": 10,
-    "minLevel": 28,
-    "maxLevel": 32
-   },
-   {
-    "id": "08a255d3-ffd4-599a-a1fc-5dfad0016a49",
-    "dex": 72,
-    "weight": 15,
-    "minLevel": 25,
-    "maxLevel": 35
-   },
-   {
-    "id": "f367f69f-8a07-57b6-8157-b49e07203a2a",
-    "dex": 73,
-    "weight": 4,
-    "minLevel": 35,
-    "maxLevel": 40
-   },
-   {
-    "id": "22048871-d95c-51aa-bf83-919ef2ee6db6",
-    "dex": 129,
-    "weight": 6,
-    "minLevel": 15,
-    "maxLevel": 25
-   },
-   {
-    "id": "6a9e258d-4e40-57f2-81b7-4b604b64378a",
-    "dex": 130,
-    "weight": 2,
-    "minLevel": 30,
-    "maxLevel": 35
-   },
-   {
-    "id": "c335c744-5346-5caa-80c7-20119220badf",
-    "dex": 118,
-    "weight": 5,
-    "minLevel": 25,
-    "maxLevel": 30
-   },
-   {
-    "id": "205a3d69-2d62-56ee-a80a-3f2636fce693",
-    "dex": 119,
-    "weight": 3,
-    "minLevel": 30,
-    "maxLevel": 35
-   }
-  ],
-  "trainerPool": [
-   {
-    "id": "b38c5702-6655-5856-a388-880d829b9737",
-    "trainerId": "2cda95ea-a306-5dab-a5ad-fa1f27c64cb9",
-    "weight": 10
-   },
-   {
-    "id": "f0c4d4a4-7ade-56a1-b391-eb329a46716c",
-    "trainerId": "ba9670b9-81e5-5f13-b457-77c94430e1bd",
-    "weight": 10
-   },
-   {
-    "id": "0ea71e29-d49b-523c-bdd7-7ed33a8fa34f",
-    "trainerId": "da2588cc-57e2-5b19-9dd0-8eeb9a3ab8c4",
-    "weight": 10
-   },
-   {
-    "id": "a6b8ea0c-d16c-5fb6-892c-71e34b2f7868",
-    "trainerId": "b89dc7ea-659d-5b22-be11-28b617633cc3",
-    "weight": 10
-   },
-   {
-    "id": "a042ccec-bad3-50a0-a695-dfe573b144ec",
-    "trainerId": "06dbe8a4-9bab-500e-aeb1-116c92df48fb",
-    "weight": 10
-   },
-   {
-    "id": "aa083977-58dd-5f8f-954c-13758e788bfd",
-    "trainerId": "13cde369-08f3-5ec9-861e-f74e90220137",
-    "weight": 10
-   },
-   {
-    "id": "30d83d64-8425-5981-848a-cdf43276c53d",
-    "trainerId": "0593ea33-ee23-5e04-a332-8d3ec204dbd6",
-    "weight": 10
-   },
-   {
-    "id": "bd9b3126-df01-518b-9466-a55768725304",
-    "trainerId": "9e3b504c-fb0f-5f43-a0fa-d664ed739d46",
-    "weight": 10
-   },
-   {
-    "id": "3096dd4e-bfae-537e-9147-e9bf441b1f82",
-    "trainerId": "794320b1-6fab-5ee5-9d8b-cced405aa0b6",
-    "weight": 10
-   },
-   {
-    "id": "a911432a-8081-539e-ac5e-5d18422cff2b",
-    "trainerId": "6ac38397-5c00-59e9-8f21-94cc37a63be0",
-    "weight": 10
-   }
-  ],
-  "lootPool": [
-   {
-    "id": "946ab025-3e48-5593-b2ee-06ce8418b0b9",
-    "itemKey": "super-potion",
-    "weight": 1,
-    "unique": false,
-    "minQty": 1,
-    "maxQty": 2
-   },
-   {
-    "id": "8dd111f8-4e92-5015-8f9b-1696ce676f3d",
-    "itemKey": "hyper-potion",
-    "weight": 1,
-    "unique": false,
-    "minQty": 1,
-    "maxQty": 1
-   },
-   {
-    "id": "9f19a407-ee2c-513d-87e2-9bae7d975d0e",
-    "itemKey": "great-ball",
-    "weight": 1,
-    "unique": false,
-    "minQty": 1,
-    "maxQty": 2
-   },
-   {
-    "id": "9f4d7914-d3d0-55ca-a0a7-e67e2d706f19",
-    "itemKey": "ultra-ball",
-    "weight": 1,
-    "unique": false,
-    "minQty": 1,
-    "maxQty": 1
-   },
-   {
-    "id": "e7c11eb7-ead3-5f9d-872e-f6cb85421bd1",
-    "itemKey": "paralyze-heal",
-    "weight": 1,
-    "unique": false,
-    "minQty": 1,
-    "maxQty": 1
-   },
-   {
-    "id": "73bc812c-aa93-5dbd-8451-65598d10d542",
-    "itemKey": "burn-heal",
-    "weight": 1,
-    "unique": false,
-    "minQty": 1,
-    "maxQty": 1
-   },
-   {
-    "id": "fc6d1bb5-3073-5027-9770-c7e784142eb5",
-    "itemKey": "ice-heal",
-    "weight": 1,
-    "unique": false,
-    "minQty": 1,
-    "maxQty": 1
-   },
-   {
-    "id": "a808157a-6976-5d40-a199-3eba1ce99c53",
-    "itemKey": "ether",
-    "weight": 1,
-    "unique": false,
-    "minQty": 1,
-    "maxQty": 2
-   },
-   {
-    "id": "cb436e56-cd5d-5a78-bead-5a6945275f12",
-    "itemKey": "max-ether",
-    "weight": 1,
-    "unique": false,
-    "minQty": 1,
-    "maxQty": 1
-   },
-   {
-    "id": "0484bce0-f514-52a5-9778-d4c33b0ec587",
-    "itemKey": "rare-candy",
-    "weight": 1,
-    "unique": false,
-    "minQty": 1,
-    "maxQty": 1
-   },
-   {
-    "id": "c6722e5a-6f98-5d02-8024-e77b6175d4fd",
-    "itemKey": "money",
-    "weight": 1,
-    "unique": false,
-    "minQty": 100,
-    "maxQty": 200
-   }
-  ]
- },
- {
-  "id": "6ce5603a-9b36-52df-b8bc-3e9efb0686c3",
-  "orderIndex": 21,
-  "name": "Victory Road",
-  "bannerUrl": "/banners/cave_dark.png#flip",
-  "xpToUnlockNext": 205,
-  "minLevel": 38,
-  "maxLevel": 47,
-  "encounterWeights": {
-   "item": 1,
-   "wild": 4,
-   "center": 1,
-   "trainer": 4
-  },
-  "backtrackMultiplier": 0.5,
-  "legendaryBoss": [
-   {
-    "dex": 146,
-    "level": 50
-   }
-  ],
-  "scalesToTeam": false,
-  "easyMode": false,
-  "enemyUpgradeLevel": 9,
-  "battleBackground": "rock",
-  "hidden": false,
-  "unlockConditions": null,
-  "gyms": [],
-  "wildPool": [
-   {
-    "id": "06f4d06b-b5fe-50c9-ad23-ca56c004fc44",
-    "dex": 66,
-    "weight": 10,
-    "minLevel": 38,
-    "maxLevel": 42
-   },
-   {
-    "id": "dda8eb7d-c77c-5a7e-8fd6-e8ce20c9b140",
-    "dex": 67,
-    "weight": 8,
-    "minLevel": 40,
-    "maxLevel": 44
-   },
-   {
-    "id": "388876b9-57c4-5a4b-98f1-f7748625c55a",
-    "dex": 74,
-    "weight": 10,
-    "minLevel": 38,
-    "maxLevel": 42
-   },
-   {
-    "id": "26a213fb-39cf-5920-a0ed-6469ee8a78b5",
-    "dex": 75,
-    "weight": 6,
-    "minLevel": 40,
-    "maxLevel": 44
-   },
-   {
-    "id": "70a91bd3-e359-5fa7-a406-6741b2da4d32",
-    "dex": 95,
-    "weight": 8,
-    "minLevel": 38,
-    "maxLevel": 44
-   },
-   {
-    "id": "235af3e4-d52b-5b92-b079-2c183ad248e5",
-    "dex": 41,
-    "weight": 6,
-    "minLevel": 36,
-    "maxLevel": 40
-   },
-   {
-    "id": "4ee9870e-d45f-54e1-8200-3cdd860c7121",
-    "dex": 42,
-    "weight": 8,
-    "minLevel": 40,
-    "maxLevel": 44
-   },
-   {
-    "id": "51f19dc7-5b80-5da7-8591-98363c5caac9",
-    "dex": 49,
-    "weight": 5,
-    "minLevel": 40,
-    "maxLevel": 44
-   },
-   {
-    "id": "f63311cb-fc9a-5782-9d93-d08302645e1b",
-    "dex": 105,
-    "weight": 5,
-    "minLevel": 40,
-    "maxLevel": 44
-   },
-   {
-    "id": "2d35e93e-cd82-5c8b-b628-f816367a7772",
-    "dex": 24,
-    "weight": 4,
-    "minLevel": 40,
-    "maxLevel": 44
-   },
-   {
-    "id": "8dc12962-04d6-5c00-b28d-bc30fd4a34e3",
-    "dex": 28,
-    "weight": 4,
-    "minLevel": 40,
-    "maxLevel": 44
-   },
-   {
-    "id": "4698b745-8d51-5625-b94f-5b0b077c32a3",
-    "dex": 57,
-    "weight": 5,
-    "minLevel": 40,
-    "maxLevel": 44
-   },
-   {
-    "id": "760da985-13a0-554b-8e8c-48982309441f",
-    "dex": 22,
-    "weight": 4,
-    "minLevel": 40,
-    "maxLevel": 44
-   },
-   {
-    "id": "66d0cd3a-d029-59e9-a455-94bf0f360452",
-    "dex": 132,
-    "weight": 3,
-    "minLevel": 38,
-    "maxLevel": 42
-   }
-  ],
-  "trainerPool": [
-   {
-    "id": "c09c1792-0819-5be5-8493-2e30190ceff0",
-    "trainerId": "0d3a7850-59db-5260-8e56-1a94677e0b4c",
-    "weight": 10
-   },
-   {
-    "id": "d4d94567-401f-58ea-af3d-6d489e9dc2a7",
-    "trainerId": "621a283f-d9a4-53e2-b4fc-6d3c9d392c43",
-    "weight": 10
-   },
-   {
-    "id": "aeb506fe-07bf-5ed9-9b7a-9a628e05a80e",
-    "trainerId": "0535de9e-58b7-5a69-9693-4af023093d77",
-    "weight": 10
-   },
-   {
-    "id": "f662d3fc-4cd1-5df3-ba74-ef0652ddfaf2",
-    "trainerId": "de7137e2-0f43-575d-812f-a2d65b5848a5",
-    "weight": 10
-   },
-   {
-    "id": "ea371b1a-029d-5bbd-982a-13de0db8d858",
-    "trainerId": "f5e8578d-dbda-503c-aa5b-353849dd1a06",
-    "weight": 10
-   },
-   {
-    "id": "60c24d45-0628-5d29-adc2-ff6fe91da0f7",
-    "trainerId": "c87e1c1a-fe30-5634-8285-acd64a38f8f1",
-    "weight": 10
-   },
-   {
-    "id": "89063cd6-6840-5786-b317-d2ef82676ed2",
-    "trainerId": "21ccb47b-82dd-5ab3-bdc8-767cb3f6755b",
-    "weight": 10
-   },
-   {
-    "id": "3ca7ae45-4dbf-578b-841b-419e583cf646",
-    "trainerId": "1f25a3bf-369e-5f80-a7e1-c890232399d6",
-    "weight": 10
-   },
-   {
-    "id": "e124f1b1-7c2b-59ff-bf8a-60d6844e40b1",
-    "trainerId": "a6d3946e-e942-58a2-bfca-0efc0f3a7a6a",
-    "weight": 10
-   }
-  ],
-  "lootPool": [
-   {
-    "id": "8a1649f0-d1dd-5b6d-ace2-b03b54289ee9",
-    "itemKey": "ether",
-    "weight": 1,
-    "unique": false,
-    "minQty": 1,
-    "maxQty": 2
-   },
-   {
-    "id": "959dd41e-3307-520f-abf5-7bc3ebbfbb33",
-    "itemKey": "max-ether",
-    "weight": 1,
-    "unique": false,
-    "minQty": 1,
-    "maxQty": 1
-   },
-   {
-    "id": "2ce2dd8d-87b9-5174-9c1b-adfe24f1ad5f",
-    "itemKey": "rare-candy",
-    "weight": 1,
-    "unique": false,
-    "minQty": 1,
-    "maxQty": 1
-   },
-   {
-    "id": "64f89450-257a-56c9-80d9-4b0e3d292dbb",
-    "itemKey": "money",
-    "weight": 1,
-    "unique": false,
-    "minQty": 100,
-    "maxQty": 200
-   },
-   {
-    "id": "32d7c1a4-2403-5ea0-b255-ef91b6274b6c",
-    "itemKey": "rare-candy",
-    "weight": 1,
-    "unique": true,
-    "minQty": 1,
-    "maxQty": 1
-   },
-   {
-    "id": "603f5921-7c35-5456-8488-b1b7d21462e2",
-    "itemKey": "max-ether",
-    "weight": 1,
-    "unique": true,
-    "minQty": 1,
-    "maxQty": 1
-   },
-   {
-    "id": "324b2ae5-4154-5d0c-9947-9bdb42e7a6d0",
-    "itemKey": "super-potion",
-    "weight": 1,
-    "unique": false,
-    "minQty": 1,
-    "maxQty": 2
-   },
-   {
-    "id": "69143c76-3cd2-5bfa-9a4c-2b51b2a0fc70",
-    "itemKey": "hyper-potion",
-    "weight": 1,
-    "unique": false,
-    "minQty": 1,
-    "maxQty": 1
-   },
-   {
-    "id": "994c4245-4b82-5ec7-a0be-f2b175fb3292",
-    "itemKey": "great-ball",
-    "weight": 1,
-    "unique": false,
-    "minQty": 1,
-    "maxQty": 2
-   },
-   {
-    "id": "7c35981c-c569-514d-8fd6-01a4cd33c2e6",
-    "itemKey": "ultra-ball",
-    "weight": 1,
-    "unique": false,
-    "minQty": 1,
-    "maxQty": 1
-   },
-   {
-    "id": "ae688fb7-64b5-565c-a789-ed1e00ba2972",
-    "itemKey": "paralyze-heal",
-    "weight": 1,
-    "unique": false,
-    "minQty": 1,
-    "maxQty": 1
-   },
-   {
-    "id": "50078ba3-4cb6-589a-8b05-73a51a6c864e",
-    "itemKey": "burn-heal",
-    "weight": 1,
-    "unique": false,
-    "minQty": 1,
-    "maxQty": 1
-   },
-   {
-    "id": "4fae2714-f9d0-5fc9-99d4-9f71db8ddd5c",
-    "itemKey": "ice-heal",
-    "weight": 1,
-    "unique": false,
-    "minQty": 1,
-    "maxQty": 1
-   }
-  ]
- },
- {
-  "id": "bbe7e459-a138-5106-bd01-fce7ff422e7f",
-  "orderIndex": 22,
-  "name": "Indigo Plateau",
-  "bannerUrl": "/banners/sky.png",
-  "xpToUnlockNext": 100,
-  "minLevel": 45,
-  "maxLevel": 55,
-  "encounterWeights": {
-   "item": 1,
-   "wild": 0,
-   "center": 1,
-   "trainer": 8
-  },
-  "backtrackMultiplier": 0.5,
-  "legendaryBoss": null,
-  "scalesToTeam": false,
-  "easyMode": false,
-  "enemyUpgradeLevel": 9,
-  "battleBackground": "default",
-  "hidden": false,
-  "unlockConditions": null,
-  "gyms": [
-   "8f2e2f31-b802-5fa0-a53a-6972a066c2ca",
-   "5be0ce71-8b9a-5d00-9fc7-55c868dcaae9",
-   "9c8e8be2-905e-565f-8845-8643678a03fb",
-   "eb27f123-dbfb-5520-85bb-06f54a8dfb09",
-   "2330f93e-5d26-56bd-b875-59351aac91bb"
-  ],
-  "wildPool": [],
-  "trainerPool": [
-   {
-    "id": "ae9e297e-4ada-5ead-8411-62d28e1c380b",
-    "trainerId": "ba6fe0af-4442-5766-9c65-33f123af0476",
-    "weight": 10
-   },
-   {
-    "id": "db13f8f2-8a4a-5a57-98c9-f8716407826b",
-    "trainerId": "8822fdd1-cf54-573b-ac5c-ceb7b95035a4",
-    "weight": 10
-   },
-   {
-    "id": "8243e6b9-a001-5fbd-95c9-9fce07449395",
-    "trainerId": "f2ec2fc9-17ec-5429-84a3-f8b03edb6e71",
-    "weight": 10
-   },
-   {
-    "id": "74083b82-305b-5d01-a816-545880bc7f02",
-    "trainerId": "6dc10021-5a83-5dfe-85b8-02ddb794da1c",
-    "weight": 10
-   },
-   {
-    "id": "1373b5b5-3ff1-5a95-aa51-a6ff8613c90c",
-    "trainerId": "8d3fb724-1e34-53c4-ba95-d0067611a69d",
-    "weight": 10
-   }
-  ],
-  "lootPool": [
-   {
-    "id": "200f394c-5d9f-522f-a0a4-39b7e85189c7",
-    "itemKey": "super-potion",
-    "weight": 1,
-    "unique": false,
-    "minQty": 1,
-    "maxQty": 2
-   },
-   {
-    "id": "d6efa6f2-4e49-5c19-afac-5793751d79ba",
-    "itemKey": "hyper-potion",
-    "weight": 1,
-    "unique": false,
-    "minQty": 1,
-    "maxQty": 1
-   },
-   {
-    "id": "b8245fe7-97fa-50b0-841b-7197b8babe6a",
-    "itemKey": "great-ball",
-    "weight": 1,
-    "unique": false,
-    "minQty": 1,
-    "maxQty": 2
-   },
-   {
-    "id": "0f903b69-42ce-5b65-819b-6502f946177d",
-    "itemKey": "ultra-ball",
-    "weight": 1,
-    "unique": false,
-    "minQty": 1,
-    "maxQty": 1
-   },
-   {
-    "id": "50d92f4d-ff89-5b57-915f-1b1e3de1ddea",
-    "itemKey": "paralyze-heal",
-    "weight": 1,
-    "unique": false,
-    "minQty": 1,
-    "maxQty": 1
-   },
-   {
-    "id": "5178ce7d-0ada-53da-abbc-01289244cf0b",
-    "itemKey": "burn-heal",
-    "weight": 1,
-    "unique": false,
-    "minQty": 1,
-    "maxQty": 1
-   },
-   {
-    "id": "d5976fef-41ef-58a3-afcd-730a6675f177",
-    "itemKey": "ice-heal",
-    "weight": 1,
-    "unique": false,
-    "minQty": 1,
-    "maxQty": 1
-   },
-   {
-    "id": "30b4f72b-b193-5092-b4e7-4d1af84ba5e1",
-    "itemKey": "ether",
-    "weight": 1,
-    "unique": false,
-    "minQty": 1,
-    "maxQty": 2
-   },
-   {
-    "id": "92435df9-522f-55fd-bdf1-160013477e7c",
-    "itemKey": "max-ether",
-    "weight": 1,
-    "unique": false,
-    "minQty": 1,
-    "maxQty": 1
-   },
-   {
-    "id": "0daccf1f-5715-5bc6-8673-03eb6357d3d0",
-    "itemKey": "rare-candy",
-    "weight": 1,
-    "unique": false,
-    "minQty": 1,
-    "maxQty": 1
-   },
-   {
-    "id": "d73ce663-3d05-50b1-ab5f-405e7fa30cd9",
-    "itemKey": "money",
-    "weight": 1,
-    "unique": false,
-    "minQty": 100,
-    "maxQty": 200
-   }
-  ]
- },
- {
-  "id": "bf32fe1a-051d-517b-83c3-55bd24b8e077",
-  "orderIndex": 101,
-  "name": "Power Plant",
-  "bannerUrl": "/banners/factory.png",
-  "xpToUnlockNext": 75,
-  "minLevel": 25,
-  "maxLevel": 36,
-  "encounterWeights": {
-   "item": 1,
-   "wild": 8,
-   "center": 1,
-   "trainer": 0
-  },
-  "backtrackMultiplier": 0.5,
-  "legendaryBoss": [
-   {
-    "dex": 145,
-    "level": 50
-   }
-  ],
-  "scalesToTeam": false,
-  "easyMode": false,
-  "enemyUpgradeLevel": 5,
-  "battleBackground": "default",
-  "hidden": true,
-  "unlockConditions": [
-   {
-    "kind": "pokedex",
-    "count": 50
-   }
-  ],
-  "gyms": [],
-  "wildPool": [
-   {
-    "id": "67821c4d-d04c-5ba3-bef5-002fecb3f894",
-    "dex": 100,
-    "weight": 20,
-    "minLevel": 25,
-    "maxLevel": 32
-   },
-   {
-    "id": "f140bbe7-4d71-5c84-bdb8-8b63763bddeb",
-    "dex": 101,
-    "weight": 6,
-    "minLevel": 33,
-    "maxLevel": 36
-   },
-   {
-    "id": "32e0bc97-9b4b-5090-8327-420d071cbf32",
-    "dex": 81,
-    "weight": 20,
-    "minLevel": 25,
-    "maxLevel": 32
-   },
-   {
-    "id": "5055e7f4-ed26-56bf-ac99-effc863597dd",
-    "dex": 82,
-    "weight": 6,
-    "minLevel": 33,
-    "maxLevel": 36
-   },
-   {
-    "id": "f0ddbd96-054c-59f4-8134-642c0748c7ec",
-    "dex": 25,
-    "weight": 10,
-    "minLevel": 25,
-    "maxLevel": 30
-   },
-   {
-    "id": "6ff1beaa-b265-5fee-9327-748fe68603e5",
-    "dex": 26,
-    "weight": 3,
-    "minLevel": 33,
-    "maxLevel": 36
-   },
-   {
-    "id": "9e5bd7cd-73b5-558b-a239-744d5eb8ac54",
-    "dex": 125,
-    "weight": 4,
-    "minLevel": 33,
-    "maxLevel": 36
-   },
-   {
-    "id": "fd4e41e1-e599-5d40-b9ab-f5fdcb78020f",
-    "dex": 88,
-    "weight": 6,
-    "minLevel": 25,
-    "maxLevel": 30
-   },
-   {
-    "id": "52a2cc4c-e421-5155-927b-0aefd2932e29",
-    "dex": 89,
-    "weight": 3,
-    "minLevel": 33,
-    "maxLevel": 36
-   }
-  ],
-  "trainerPool": [],
-  "lootPool": [
-   {
-    "id": "c520eaea-726e-592f-9898-80782df09de7",
-    "itemKey": "super-potion",
-    "weight": 1,
-    "unique": false,
-    "minQty": 1,
-    "maxQty": 2
-   },
-   {
-    "id": "1b4db672-6f98-5884-a652-5cb9491c5d9f",
-    "itemKey": "hyper-potion",
-    "weight": 1,
-    "unique": false,
-    "minQty": 1,
-    "maxQty": 1
-   },
-   {
-    "id": "002b69fe-3a80-5e36-8a8c-206278ede74d",
-    "itemKey": "great-ball",
-    "weight": 1,
-    "unique": false,
-    "minQty": 1,
-    "maxQty": 2
-   },
-   {
-    "id": "de4e80bf-0871-5990-951d-d9e6d534a985",
-    "itemKey": "ultra-ball",
-    "weight": 1,
-    "unique": false,
-    "minQty": 1,
-    "maxQty": 1
-   },
-   {
-    "id": "dff05d0a-c451-55ce-be55-214d59638a84",
-    "itemKey": "paralyze-heal",
-    "weight": 1,
-    "unique": false,
-    "minQty": 1,
-    "maxQty": 1
-   },
-   {
-    "id": "8c054adb-62c0-5d3d-814b-8f9c567cbf8e",
-    "itemKey": "burn-heal",
-    "weight": 1,
-    "unique": false,
-    "minQty": 1,
-    "maxQty": 1
-   },
-   {
-    "id": "d4fd8428-4c3e-5adf-95a2-7617125d01dd",
-    "itemKey": "ice-heal",
-    "weight": 1,
-    "unique": false,
-    "minQty": 1,
-    "maxQty": 1
-   },
-   {
-    "id": "18045ca6-c828-551a-8dd0-a3252ac13789",
-    "itemKey": "ether",
-    "weight": 1,
-    "unique": false,
-    "minQty": 1,
-    "maxQty": 2
-   },
-   {
-    "id": "dea2956c-63d9-55dc-b1fd-c6553bb190dc",
-    "itemKey": "max-ether",
-    "weight": 1,
-    "unique": false,
-    "minQty": 1,
-    "maxQty": 1
-   },
-   {
-    "id": "07024093-f398-59dd-8987-f0d5a753557a",
-    "itemKey": "rare-candy",
-    "weight": 1,
-    "unique": false,
-    "minQty": 1,
-    "maxQty": 1
-   },
-   {
-    "id": "05960d62-028f-5bf5-a035-40b0634d5be7",
-    "itemKey": "money",
-    "weight": 1,
-    "unique": false,
-    "minQty": 100,
-    "maxQty": 200
-   },
-   {
-    "id": "01a626ad-cdb9-50a8-8647-d73100fcb574",
-    "itemKey": "max-ether",
-    "weight": 1,
-    "unique": true,
-    "minQty": 1,
-    "maxQty": 1
-   }
-  ]
- },
- {
   "id": "a5d11263-453f-5181-9a73-2c30df79d3fc",
   "orderIndex": 102,
   "name": "Cerulean Cave",
@@ -4996,53 +4182,11 @@
   "unlockConditions": [
    {
     "kind": "maxLevel",
-    "level": 55
+    "level": 64
    }
   ],
   "gyms": [],
   "wildPool": [
-   {
-    "id": "b9866510-dd65-58ff-8f70-2445e165a4be",
-    "dex": 77,
-    "weight": 10,
-    "minLevel": 50,
-    "maxLevel": 70
-   },
-   {
-    "id": "37a0e356-6ef9-5e96-a098-8c15147b7e7d",
-    "dex": 78,
-    "weight": 10,
-    "minLevel": 50,
-    "maxLevel": 70
-   },
-   {
-    "id": "48e6f0d9-8dd5-507d-8bd8-5bd4fd03eee7",
-    "dex": 79,
-    "weight": 10,
-    "minLevel": 50,
-    "maxLevel": 70
-   },
-   {
-    "id": "83a6b86a-f77c-5a06-aaba-a0941b6cb02b",
-    "dex": 80,
-    "weight": 10,
-    "minLevel": 50,
-    "maxLevel": 70
-   },
-   {
-    "id": "b4ea9440-ee3e-5ce0-90ab-4e89c7211995",
-    "dex": 81,
-    "weight": 10,
-    "minLevel": 50,
-    "maxLevel": 70
-   },
-   {
-    "id": "f6e65094-8f8f-581e-9e63-7431c042f216",
-    "dex": 82,
-    "weight": 10,
-    "minLevel": 50,
-    "maxLevel": 70
-   },
    {
     "id": "c8af9eb2-d23c-50a1-9378-95d8c913223e",
     "dex": 83,
@@ -5954,13 +5098,6 @@
     "maxLevel": 70
    },
    {
-    "id": "4c3a253f-bbdd-5da5-9856-872cb22a3e16",
-    "dex": 137,
-    "weight": 3,
-    "minLevel": 50,
-    "maxLevel": 70
-   },
-   {
     "id": "b282738c-f95b-591d-8c02-cbd77aef50c5",
     "dex": 138,
     "weight": 3,
@@ -6020,6 +5157,48 @@
     "id": "c573548d-4da3-5d49-8eb8-cb8a67971f62",
     "dex": 149,
     "weight": 3,
+    "minLevel": 50,
+    "maxLevel": 70
+   },
+   {
+    "id": "b9866510-dd65-58ff-8f70-2445e165a4be",
+    "dex": 77,
+    "weight": 10,
+    "minLevel": 50,
+    "maxLevel": 70
+   },
+   {
+    "id": "37a0e356-6ef9-5e96-a098-8c15147b7e7d",
+    "dex": 78,
+    "weight": 10,
+    "minLevel": 50,
+    "maxLevel": 70
+   },
+   {
+    "id": "48e6f0d9-8dd5-507d-8bd8-5bd4fd03eee7",
+    "dex": 79,
+    "weight": 10,
+    "minLevel": 50,
+    "maxLevel": 70
+   },
+   {
+    "id": "83a6b86a-f77c-5a06-aaba-a0941b6cb02b",
+    "dex": 80,
+    "weight": 10,
+    "minLevel": 50,
+    "maxLevel": 70
+   },
+   {
+    "id": "b4ea9440-ee3e-5ce0-90ab-4e89c7211995",
+    "dex": 81,
+    "weight": 10,
+    "minLevel": 50,
+    "maxLevel": 70
+   },
+   {
+    "id": "f6e65094-8f8f-581e-9e63-7431c042f216",
+    "dex": 82,
+    "weight": 10,
     "minLevel": 50,
     "maxLevel": 70
    }
@@ -6116,6 +5295,694 @@
   ]
  },
  {
+  "id": "bf32fe1a-051d-517b-83c3-55bd24b8e077",
+  "orderIndex": 101,
+  "name": "Power Plant",
+  "bannerUrl": "/banners/factory.png",
+  "xpToUnlockNext": 75,
+  "minLevel": 25,
+  "maxLevel": 36,
+  "encounterWeights": {
+   "item": 1,
+   "wild": 8,
+   "center": 1,
+   "trainer": 0
+  },
+  "backtrackMultiplier": 0.5,
+  "legendaryBoss": [
+   {
+    "dex": 145,
+    "level": 50
+   }
+  ],
+  "scalesToTeam": false,
+  "easyMode": false,
+  "enemyUpgradeLevel": 5,
+  "battleBackground": "default",
+  "hidden": true,
+  "unlockConditions": [
+   {
+    "kind": "pokedex",
+    "count": 60
+   }
+  ],
+  "gyms": [],
+  "wildPool": [
+   {
+    "id": "67821c4d-d04c-5ba3-bef5-002fecb3f894",
+    "dex": 100,
+    "weight": 20,
+    "minLevel": 25,
+    "maxLevel": 32
+   },
+   {
+    "id": "f140bbe7-4d71-5c84-bdb8-8b63763bddeb",
+    "dex": 101,
+    "weight": 6,
+    "minLevel": 33,
+    "maxLevel": 36
+   },
+   {
+    "id": "32e0bc97-9b4b-5090-8327-420d071cbf32",
+    "dex": 81,
+    "weight": 20,
+    "minLevel": 25,
+    "maxLevel": 32
+   },
+   {
+    "id": "5055e7f4-ed26-56bf-ac99-effc863597dd",
+    "dex": 82,
+    "weight": 6,
+    "minLevel": 33,
+    "maxLevel": 36
+   },
+   {
+    "id": "f0ddbd96-054c-59f4-8134-642c0748c7ec",
+    "dex": 25,
+    "weight": 10,
+    "minLevel": 25,
+    "maxLevel": 30
+   },
+   {
+    "id": "6ff1beaa-b265-5fee-9327-748fe68603e5",
+    "dex": 26,
+    "weight": 3,
+    "minLevel": 33,
+    "maxLevel": 36
+   },
+   {
+    "id": "9e5bd7cd-73b5-558b-a239-744d5eb8ac54",
+    "dex": 125,
+    "weight": 4,
+    "minLevel": 33,
+    "maxLevel": 36
+   },
+   {
+    "id": "fd4e41e1-e599-5d40-b9ab-f5fdcb78020f",
+    "dex": 88,
+    "weight": 6,
+    "minLevel": 25,
+    "maxLevel": 30
+   },
+   {
+    "id": "52a2cc4c-e421-5155-927b-0aefd2932e29",
+    "dex": 89,
+    "weight": 3,
+    "minLevel": 33,
+    "maxLevel": 36
+   }
+  ],
+  "trainerPool": [],
+  "lootPool": [
+   {
+    "id": "002b69fe-3a80-5e36-8a8c-206278ede74d",
+    "itemKey": "great-ball",
+    "weight": 1,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "de4e80bf-0871-5990-951d-d9e6d534a985",
+    "itemKey": "ultra-ball",
+    "weight": 1,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "dff05d0a-c451-55ce-be55-214d59638a84",
+    "itemKey": "paralyze-heal",
+    "weight": 1,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "8c054adb-62c0-5d3d-814b-8f9c567cbf8e",
+    "itemKey": "burn-heal",
+    "weight": 1,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "d4fd8428-4c3e-5adf-95a2-7617125d01dd",
+    "itemKey": "ice-heal",
+    "weight": 1,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "18045ca6-c828-551a-8dd0-a3252ac13789",
+    "itemKey": "ether",
+    "weight": 1,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "dea2956c-63d9-55dc-b1fd-c6553bb190dc",
+    "itemKey": "max-ether",
+    "weight": 1,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "07024093-f398-59dd-8987-f0d5a753557a",
+    "itemKey": "rare-candy",
+    "weight": 1,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "05960d62-028f-5bf5-a035-40b0634d5be7",
+    "itemKey": "money",
+    "weight": 1,
+    "unique": false,
+    "minQty": 100,
+    "maxQty": 200
+   },
+   {
+    "id": "01a626ad-cdb9-50a8-8647-d73100fcb574",
+    "itemKey": "max-ether",
+    "weight": 1,
+    "unique": true,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "c520eaea-726e-592f-9898-80782df09de7",
+    "itemKey": "super-potion",
+    "weight": 1,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "1b4db672-6f98-5884-a652-5cb9491c5d9f",
+    "itemKey": "hyper-potion",
+    "weight": 1,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   }
+  ]
+ },
+ {
+  "id": "cff05c73-329a-55d0-a476-ba7c5683e6ae",
+  "orderIndex": 19,
+  "name": "Pokémon Mansion",
+  "bannerUrl": "/banners/volcano.png",
+  "xpToUnlockNext": 175,
+  "minLevel": 32,
+  "maxLevel": 42,
+  "encounterWeights": {
+   "item": 1,
+   "wild": 4,
+   "center": 1,
+   "trainer": 4
+  },
+  "backtrackMultiplier": 0.5,
+  "legendaryBoss": null,
+  "scalesToTeam": false,
+  "easyMode": false,
+  "enemyUpgradeLevel": 7,
+  "battleBackground": "default",
+  "hidden": false,
+  "unlockConditions": null,
+  "gyms": [
+   "7f8c6bce-6401-50a6-9443-8b584cc99b4d"
+  ],
+  "wildPool": [
+   {
+    "id": "5081fdd5-b222-5c14-8824-3c7f26a6ee74",
+    "dex": 88,
+    "weight": 12,
+    "minLevel": 28,
+    "maxLevel": 32
+   },
+   {
+    "id": "a5783a13-8e7e-57a8-9fb3-4532120b0eac",
+    "dex": 89,
+    "weight": 4,
+    "minLevel": 36,
+    "maxLevel": 38
+   },
+   {
+    "id": "092be396-75fc-5958-83a8-2ec75469ddd7",
+    "dex": 109,
+    "weight": 12,
+    "minLevel": 28,
+    "maxLevel": 32
+   },
+   {
+    "id": "a2d1cf9e-1dbb-54e0-ba6b-059ecbd325b6",
+    "dex": 110,
+    "weight": 4,
+    "minLevel": 36,
+    "maxLevel": 38
+   },
+   {
+    "id": "6b547d6b-04fc-5fcc-bde0-4bb14230b1a1",
+    "dex": 77,
+    "weight": 10,
+    "minLevel": 28,
+    "maxLevel": 34
+   },
+   {
+    "id": "1881fb9b-905b-5c2c-99cb-37b789fa50ac",
+    "dex": 58,
+    "weight": 8,
+    "minLevel": 30,
+    "maxLevel": 34
+   },
+   {
+    "id": "ec5da755-55a1-582d-bb0f-0a9236e00780",
+    "dex": 37,
+    "weight": 8,
+    "minLevel": 30,
+    "maxLevel": 34
+   },
+   {
+    "id": "838d1167-9990-55e5-aa87-0023ac4f54c8",
+    "dex": 126,
+    "weight": 3,
+    "minLevel": 34,
+    "maxLevel": 38
+   },
+   {
+    "id": "e30fe30a-d385-548d-989c-a7936ef92ee8",
+    "dex": 19,
+    "weight": 8,
+    "minLevel": 28,
+    "maxLevel": 32
+   },
+   {
+    "id": "7319e694-ae7a-529f-9f71-59adcfc0e882",
+    "dex": 20,
+    "weight": 8,
+    "minLevel": 32,
+    "maxLevel": 36
+   },
+   {
+    "id": "04a669ae-2f85-52d3-b15c-fa83fce94e49",
+    "dex": 132,
+    "weight": 5,
+    "minLevel": 30,
+    "maxLevel": 34
+   },
+   {
+    "id": "f7588d25-ac8a-5e92-8408-3351a760b5a3",
+    "dex": 142,
+    "weight": 2,
+    "minLevel": 30,
+    "maxLevel": 30
+   }
+  ],
+  "trainerPool": [
+   {
+    "id": "9414bda0-408c-5f2f-90ff-2e9f323c8e16",
+    "trainerId": "94cf8361-1315-514c-a9fc-c21e4f1e4d59",
+    "weight": 10
+   },
+   {
+    "id": "36158106-756c-5861-ae5e-74bacb5b9e54",
+    "trainerId": "95e59c6e-db14-53b8-836a-45a58a953c4b",
+    "weight": 10
+   },
+   {
+    "id": "5fc952bd-8336-5194-9d96-4163bd4ce544",
+    "trainerId": "8298dbfa-30e3-512c-ace5-3818a740136f",
+    "weight": 10
+   },
+   {
+    "id": "f0199373-336b-58c7-a180-a45924969bbc",
+    "trainerId": "dc1252ba-591c-5634-a129-115319e6c40a",
+    "weight": 10
+   },
+   {
+    "id": "afc5b095-e197-5b89-983b-83f5b7e9bd40",
+    "trainerId": "bbbfef06-aa68-549e-81e3-77edd255f1ec",
+    "weight": 10
+   },
+   {
+    "id": "9a9e8626-c8f0-55ee-9b9c-d24323f2311a",
+    "trainerId": "29ce0f12-4a23-5c08-be0e-c5668d1f95c6",
+    "weight": 10
+   },
+   {
+    "id": "2c60519d-3014-5c03-a801-b14d509de87f",
+    "trainerId": "cebabf84-c737-5b68-a9c7-cf55a48f6bc6",
+    "weight": 10
+   },
+   {
+    "id": "161a5810-f1cb-5f3a-a8da-b26be7f20c6f",
+    "trainerId": "0840a8fb-7b00-5345-ab8c-e5fcf9347ad9",
+    "weight": 10
+   },
+   {
+    "id": "03a0025f-8083-5e65-90f5-3f9a9df2b619",
+    "trainerId": "6a35431d-2b64-59f2-837c-5fb3bbaf81dd",
+    "weight": 10
+   }
+  ],
+  "lootPool": [
+   {
+    "id": "8c50427c-d6eb-599a-80de-f05944e7e4cf",
+    "itemKey": "super-potion",
+    "weight": 1,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "0e54e423-79ba-5be2-9f73-72e4a5a379ef",
+    "itemKey": "hyper-potion",
+    "weight": 1,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "8f478e70-aa4a-5e2e-8c79-e17218b1062d",
+    "itemKey": "great-ball",
+    "weight": 1,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "437c79cf-b8fb-5748-8b76-092afc5533f1",
+    "itemKey": "ultra-ball",
+    "weight": 1,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "dbf7e920-b6d1-51c3-a2ae-29c098b8d67c",
+    "itemKey": "paralyze-heal",
+    "weight": 1,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "12459b91-5446-5048-9364-be81888f0b37",
+    "itemKey": "burn-heal",
+    "weight": 1,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "d6525813-eab9-5df4-be58-13118794fe9c",
+    "itemKey": "ice-heal",
+    "weight": 1,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "120635ad-754d-5dda-bb52-27be407e30bd",
+    "itemKey": "ether",
+    "weight": 1,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "9bb3c642-6c50-5476-96db-45419dd78287",
+    "itemKey": "max-ether",
+    "weight": 1,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "67cb3a3c-6b5e-5455-abc9-1f0f63a8e288",
+    "itemKey": "rare-candy",
+    "weight": 1,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "813fbf68-636b-5163-90cc-4c9be78b047a",
+    "itemKey": "money",
+    "weight": 1,
+    "unique": false,
+    "minQty": 100,
+    "maxQty": 200
+   },
+   {
+    "id": "3d04e443-9de2-5280-9dfc-019b84cec38c",
+    "itemKey": "rare-candy",
+    "weight": 1,
+    "unique": true,
+    "minQty": 1,
+    "maxQty": 1
+   }
+  ]
+ },
+ {
+  "id": "6d47ad48-bf44-5cb5-83fd-8db581b4a715",
+  "orderIndex": 20,
+  "name": "Route 21",
+  "bannerUrl": "/banners/beach.png",
+  "xpToUnlockNext": 180,
+  "minLevel": 30,
+  "maxLevel": 40,
+  "encounterWeights": {
+   "item": 1,
+   "wild": 4,
+   "center": 1,
+   "trainer": 4
+  },
+  "backtrackMultiplier": 0.5,
+  "legendaryBoss": null,
+  "scalesToTeam": false,
+  "easyMode": false,
+  "enemyUpgradeLevel": 8,
+  "battleBackground": "sea",
+  "hidden": false,
+  "unlockConditions": null,
+  "gyms": [
+   "1c772786-a75c-59cb-a34d-c7d2bf345250"
+  ],
+  "wildPool": [
+   {
+    "id": "1a4fcc54-8ebd-5daf-9cda-e8cb9913d1ed",
+    "dex": 17,
+    "weight": 12,
+    "minLevel": 28,
+    "maxLevel": 32
+   },
+   {
+    "id": "876d2ad5-efbd-5047-be5a-c232531fddaf",
+    "dex": 20,
+    "weight": 10,
+    "minLevel": 28,
+    "maxLevel": 32
+   },
+   {
+    "id": "c0f36a1a-c65d-5da7-a02e-e87d19030824",
+    "dex": 114,
+    "weight": 10,
+    "minLevel": 28,
+    "maxLevel": 32
+   },
+   {
+    "id": "08a255d3-ffd4-599a-a1fc-5dfad0016a49",
+    "dex": 72,
+    "weight": 15,
+    "minLevel": 25,
+    "maxLevel": 35
+   },
+   {
+    "id": "f367f69f-8a07-57b6-8157-b49e07203a2a",
+    "dex": 73,
+    "weight": 4,
+    "minLevel": 35,
+    "maxLevel": 40
+   },
+   {
+    "id": "22048871-d95c-51aa-bf83-919ef2ee6db6",
+    "dex": 129,
+    "weight": 6,
+    "minLevel": 15,
+    "maxLevel": 25
+   },
+   {
+    "id": "6a9e258d-4e40-57f2-81b7-4b604b64378a",
+    "dex": 130,
+    "weight": 2,
+    "minLevel": 30,
+    "maxLevel": 35
+   },
+   {
+    "id": "c335c744-5346-5caa-80c7-20119220badf",
+    "dex": 118,
+    "weight": 5,
+    "minLevel": 25,
+    "maxLevel": 30
+   },
+   {
+    "id": "205a3d69-2d62-56ee-a80a-3f2636fce693",
+    "dex": 119,
+    "weight": 3,
+    "minLevel": 30,
+    "maxLevel": 35
+   }
+  ],
+  "trainerPool": [
+   {
+    "id": "b38c5702-6655-5856-a388-880d829b9737",
+    "trainerId": "2cda95ea-a306-5dab-a5ad-fa1f27c64cb9",
+    "weight": 10
+   },
+   {
+    "id": "f0c4d4a4-7ade-56a1-b391-eb329a46716c",
+    "trainerId": "ba9670b9-81e5-5f13-b457-77c94430e1bd",
+    "weight": 10
+   },
+   {
+    "id": "0ea71e29-d49b-523c-bdd7-7ed33a8fa34f",
+    "trainerId": "da2588cc-57e2-5b19-9dd0-8eeb9a3ab8c4",
+    "weight": 10
+   },
+   {
+    "id": "a6b8ea0c-d16c-5fb6-892c-71e34b2f7868",
+    "trainerId": "b89dc7ea-659d-5b22-be11-28b617633cc3",
+    "weight": 10
+   },
+   {
+    "id": "a042ccec-bad3-50a0-a695-dfe573b144ec",
+    "trainerId": "06dbe8a4-9bab-500e-aeb1-116c92df48fb",
+    "weight": 10
+   },
+   {
+    "id": "aa083977-58dd-5f8f-954c-13758e788bfd",
+    "trainerId": "13cde369-08f3-5ec9-861e-f74e90220137",
+    "weight": 10
+   },
+   {
+    "id": "30d83d64-8425-5981-848a-cdf43276c53d",
+    "trainerId": "0593ea33-ee23-5e04-a332-8d3ec204dbd6",
+    "weight": 10
+   },
+   {
+    "id": "bd9b3126-df01-518b-9466-a55768725304",
+    "trainerId": "9e3b504c-fb0f-5f43-a0fa-d664ed739d46",
+    "weight": 10
+   },
+   {
+    "id": "3096dd4e-bfae-537e-9147-e9bf441b1f82",
+    "trainerId": "794320b1-6fab-5ee5-9d8b-cced405aa0b6",
+    "weight": 10
+   },
+   {
+    "id": "a911432a-8081-539e-ac5e-5d18422cff2b",
+    "trainerId": "6ac38397-5c00-59e9-8f21-94cc37a63be0",
+    "weight": 10
+   }
+  ],
+  "lootPool": [
+   {
+    "id": "946ab025-3e48-5593-b2ee-06ce8418b0b9",
+    "itemKey": "super-potion",
+    "weight": 1,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "8dd111f8-4e92-5015-8f9b-1696ce676f3d",
+    "itemKey": "hyper-potion",
+    "weight": 1,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "9f19a407-ee2c-513d-87e2-9bae7d975d0e",
+    "itemKey": "great-ball",
+    "weight": 1,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "9f4d7914-d3d0-55ca-a0a7-e67e2d706f19",
+    "itemKey": "ultra-ball",
+    "weight": 1,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "e7c11eb7-ead3-5f9d-872e-f6cb85421bd1",
+    "itemKey": "paralyze-heal",
+    "weight": 1,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "73bc812c-aa93-5dbd-8451-65598d10d542",
+    "itemKey": "burn-heal",
+    "weight": 1,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "fc6d1bb5-3073-5027-9770-c7e784142eb5",
+    "itemKey": "ice-heal",
+    "weight": 1,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "a808157a-6976-5d40-a199-3eba1ce99c53",
+    "itemKey": "ether",
+    "weight": 1,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "cb436e56-cd5d-5a78-bead-5a6945275f12",
+    "itemKey": "max-ether",
+    "weight": 1,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "0484bce0-f514-52a5-9778-d4c33b0ec587",
+    "itemKey": "rare-candy",
+    "weight": 1,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "c6722e5a-6f98-5d02-8024-e77b6175d4fd",
+    "itemKey": "money",
+    "weight": 1,
+    "unique": false,
+    "minQty": 100,
+    "maxQty": 200
+   }
+  ]
+ },
+ {
   "id": "050ff505-ff8e-5251-8499-842a2cfc2986",
   "orderIndex": 103,
   "name": "Faraway Island",
@@ -6154,165 +6021,284 @@
   "lootPool": []
  },
  {
-  "id": "b64f2ae7-b9ae-5707-b904-f1e31aa66253",
-  "orderIndex": 104,
-  "name": "Rocket Hideout",
-  "bannerUrl": "/banners/city.png#flip",
-  "xpToUnlockNext": null,
-  "minLevel": 19,
-  "maxLevel": 24,
+  "id": "6ce5603a-9b36-52df-b8bc-3e9efb0686c3",
+  "orderIndex": 21,
+  "name": "Victory Road",
+  "bannerUrl": "/banners/cave_dark.png#flip",
+  "xpToUnlockNext": 205,
+  "minLevel": 38,
+  "maxLevel": 47,
   "encounterWeights": {
-   "wild": 0,
-   "trainer": 5,
-   "center": 1,
-   "item": 1,
-   "casino": 3
+   "item": 2,
+   "wild": 6,
+   "center": 0,
+   "trainer": 4
   },
   "backtrackMultiplier": 0.5,
-  "legendaryBoss": null,
-  "scalesToTeam": false,
-  "easyMode": false,
-  "enemyUpgradeLevel": 5,
-  "battleBackground": "default",
-  "hidden": true,
-  "unlockConditions": [
+  "legendaryBoss": [
    {
-    "kind": "area",
-    "areaId": "8cf87ee3-f7a5-568e-bc22-54f643572535"
+    "dex": 146,
+    "level": 50
    }
   ],
+  "scalesToTeam": false,
+  "easyMode": false,
+  "enemyUpgradeLevel": 9,
+  "battleBackground": "rock",
+  "hidden": false,
+  "unlockConditions": null,
   "gyms": [],
-  "wildPool": [],
+  "wildPool": [
+   {
+    "id": "06f4d06b-b5fe-50c9-ad23-ca56c004fc44",
+    "dex": 66,
+    "weight": 10,
+    "minLevel": 38,
+    "maxLevel": 42
+   },
+   {
+    "id": "dda8eb7d-c77c-5a7e-8fd6-e8ce20c9b140",
+    "dex": 67,
+    "weight": 8,
+    "minLevel": 40,
+    "maxLevel": 44
+   },
+   {
+    "id": "388876b9-57c4-5a4b-98f1-f7748625c55a",
+    "dex": 74,
+    "weight": 10,
+    "minLevel": 38,
+    "maxLevel": 42
+   },
+   {
+    "id": "26a213fb-39cf-5920-a0ed-6469ee8a78b5",
+    "dex": 75,
+    "weight": 6,
+    "minLevel": 40,
+    "maxLevel": 44
+   },
+   {
+    "id": "70a91bd3-e359-5fa7-a406-6741b2da4d32",
+    "dex": 95,
+    "weight": 8,
+    "minLevel": 38,
+    "maxLevel": 44
+   },
+   {
+    "id": "235af3e4-d52b-5b92-b079-2c183ad248e5",
+    "dex": 41,
+    "weight": 6,
+    "minLevel": 36,
+    "maxLevel": 40
+   },
+   {
+    "id": "4ee9870e-d45f-54e1-8200-3cdd860c7121",
+    "dex": 42,
+    "weight": 8,
+    "minLevel": 40,
+    "maxLevel": 44
+   },
+   {
+    "id": "51f19dc7-5b80-5da7-8591-98363c5caac9",
+    "dex": 49,
+    "weight": 5,
+    "minLevel": 40,
+    "maxLevel": 44
+   },
+   {
+    "id": "f63311cb-fc9a-5782-9d93-d08302645e1b",
+    "dex": 105,
+    "weight": 5,
+    "minLevel": 40,
+    "maxLevel": 44
+   },
+   {
+    "id": "2d35e93e-cd82-5c8b-b628-f816367a7772",
+    "dex": 24,
+    "weight": 4,
+    "minLevel": 40,
+    "maxLevel": 44
+   },
+   {
+    "id": "8dc12962-04d6-5c00-b28d-bc30fd4a34e3",
+    "dex": 28,
+    "weight": 4,
+    "minLevel": 40,
+    "maxLevel": 44
+   },
+   {
+    "id": "4698b745-8d51-5625-b94f-5b0b077c32a3",
+    "dex": 57,
+    "weight": 5,
+    "minLevel": 40,
+    "maxLevel": 44
+   },
+   {
+    "id": "760da985-13a0-554b-8e8c-48982309441f",
+    "dex": 22,
+    "weight": 4,
+    "minLevel": 40,
+    "maxLevel": 44
+   },
+   {
+    "id": "66d0cd3a-d029-59e9-a455-94bf0f360452",
+    "dex": 132,
+    "weight": 3,
+    "minLevel": 38,
+    "maxLevel": 42
+   }
+  ],
   "trainerPool": [
    {
-    "id": "02cc9388-132f-5f5d-85e3-f6854e508fa4",
-    "trainerId": "6f7868fd-ec4a-5e75-8d83-06b82ae39cba",
+    "id": "c09c1792-0819-5be5-8493-2e30190ceff0",
+    "trainerId": "0d3a7850-59db-5260-8e56-1a94677e0b4c",
     "weight": 10
    },
    {
-    "id": "aa4ef699-dcc5-54a5-8030-07cd75d6189c",
-    "trainerId": "5d0842da-08fb-5241-b46d-592f7582acb7",
+    "id": "d4d94567-401f-58ea-af3d-6d489e9dc2a7",
+    "trainerId": "621a283f-d9a4-53e2-b4fc-6d3c9d392c43",
     "weight": 10
    },
    {
-    "id": "90c4a6c1-c1f0-5e71-9e61-59b228ce6b0c",
-    "trainerId": "4414b20e-deac-5628-a3de-d9db0de435d3",
+    "id": "aeb506fe-07bf-5ed9-9b7a-9a628e05a80e",
+    "trainerId": "0535de9e-58b7-5a69-9693-4af023093d77",
     "weight": 10
    },
    {
-    "id": "2d825d77-3603-5f07-a349-98fef96787a8",
-    "trainerId": "566c92de-ff27-5967-9ab9-8e510ae7098f",
+    "id": "f662d3fc-4cd1-5df3-ba74-ef0652ddfaf2",
+    "trainerId": "de7137e2-0f43-575d-812f-a2d65b5848a5",
     "weight": 10
    },
    {
-    "id": "1135ead8-a397-5401-8c09-6f7b7578aabc",
-    "trainerId": "dfe1aca1-da40-5852-83dd-2d53fa865956",
+    "id": "ea371b1a-029d-5bbd-982a-13de0db8d858",
+    "trainerId": "f5e8578d-dbda-503c-aa5b-353849dd1a06",
     "weight": 10
    },
    {
-    "id": "816bd375-d34c-5481-a006-fa8579b82d89",
-    "trainerId": "1ed9b25b-18ca-5817-8236-79dd4a357cf7",
+    "id": "60c24d45-0628-5d29-adc2-ff6fe91da0f7",
+    "trainerId": "c87e1c1a-fe30-5634-8285-acd64a38f8f1",
     "weight": 10
    },
    {
-    "id": "15086bdf-8530-5fcf-992b-d4b4821e4155",
-    "trainerId": "485e83ae-4eed-5d37-acc2-b454f5630b72",
+    "id": "89063cd6-6840-5786-b317-d2ef82676ed2",
+    "trainerId": "21ccb47b-82dd-5ab3-bdc8-767cb3f6755b",
     "weight": 10
    },
    {
-    "id": "5f39dab3-d1b2-51a7-90f9-77da5182a272",
-    "trainerId": "4d6a9103-5b65-5193-b803-b2dd0038b8a6",
+    "id": "3ca7ae45-4dbf-578b-841b-419e583cf646",
+    "trainerId": "1f25a3bf-369e-5f80-a7e1-c890232399d6",
+    "weight": 10
+   },
+   {
+    "id": "e124f1b1-7c2b-59ff-bf8a-60d6844e40b1",
+    "trainerId": "a6d3946e-e942-58a2-bfca-0efc0f3a7a6a",
     "weight": 10
    }
   ],
   "lootPool": [
    {
-    "id": "f4981f85-a4a8-58e2-8641-b6e453dff5a7",
-    "itemKey": "super-potion",
-    "weight": 20,
-    "unique": false,
-    "minQty": 1,
-    "maxQty": 2
-   },
-   {
-    "id": "52a92695-66d4-51d8-8efb-0cbe851de56a",
-    "itemKey": "poke-ball",
-    "weight": 10,
-    "unique": false,
-    "minQty": 2,
-    "maxQty": 3
-   },
-   {
-    "id": "d897f3ee-16f2-561b-bb63-7b07565315a3",
-    "itemKey": "great-ball",
-    "weight": 16,
-    "unique": false,
-    "minQty": 1,
-    "maxQty": 2
-   },
-   {
-    "id": "275b3722-95b8-5f20-8652-6f698b7bd21a",
-    "itemKey": "ultra-ball",
-    "weight": 4,
-    "unique": false,
-    "minQty": 1,
-    "maxQty": 1
-   },
-   {
-    "id": "b9aed1c2-41be-544e-9387-dce3a333bda0",
-    "itemKey": "antidote",
-    "weight": 5,
-    "unique": false,
-    "minQty": 1,
-    "maxQty": 1
-   },
-   {
-    "id": "aa186624-8bd8-5429-9a30-157770151272",
-    "itemKey": "paralyze-heal",
-    "weight": 5,
-    "unique": false,
-    "minQty": 1,
-    "maxQty": 1
-   },
-   {
-    "id": "b3019290-40ab-5db8-ad67-cb5346bcd0b7",
-    "itemKey": "burn-heal",
-    "weight": 5,
-    "unique": false,
-    "minQty": 1,
-    "maxQty": 1
-   },
-   {
-    "id": "3e2e0167-f3ba-5a45-8083-89ae628ec39a",
-    "itemKey": "ice-heal",
-    "weight": 5,
-    "unique": false,
-    "minQty": 1,
-    "maxQty": 1
-   },
-   {
-    "id": "abc6c39c-1ec0-54a9-b6df-cbcb9566a69c",
+    "id": "8a1649f0-d1dd-5b6d-ace2-b03b54289ee9",
     "itemKey": "ether",
-    "weight": 8,
+    "weight": 1,
     "unique": false,
     "minQty": 1,
-    "maxQty": 1
+    "maxQty": 2
    },
    {
-    "id": "0421e377-998c-53e1-a8a0-a85d04f34010",
+    "id": "959dd41e-3307-520f-abf5-7bc3ebbfbb33",
     "itemKey": "max-ether",
-    "weight": 3,
+    "weight": 1,
     "unique": false,
     "minQty": 1,
     "maxQty": 1
    },
    {
-    "id": "f03a8ef4-eff8-5136-839c-ea8eb7f22e17",
-    "itemKey": "money",
-    "weight": 16,
+    "id": "2ce2dd8d-87b9-5174-9c1b-adfe24f1ad5f",
+    "itemKey": "rare-candy",
+    "weight": 1,
     "unique": false,
-    "minQty": 50,
-    "maxQty": 100
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "64f89450-257a-56c9-80d9-4b0e3d292dbb",
+    "itemKey": "money",
+    "weight": 1,
+    "unique": false,
+    "minQty": 100,
+    "maxQty": 200
+   },
+   {
+    "id": "32d7c1a4-2403-5ea0-b255-ef91b6274b6c",
+    "itemKey": "rare-candy",
+    "weight": 1,
+    "unique": true,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "603f5921-7c35-5456-8488-b1b7d21462e2",
+    "itemKey": "max-ether",
+    "weight": 1,
+    "unique": true,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "324b2ae5-4154-5d0c-9947-9bdb42e7a6d0",
+    "itemKey": "super-potion",
+    "weight": 1,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "69143c76-3cd2-5bfa-9a4c-2b51b2a0fc70",
+    "itemKey": "hyper-potion",
+    "weight": 1,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "994c4245-4b82-5ec7-a0be-f2b175fb3292",
+    "itemKey": "great-ball",
+    "weight": 1,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "7c35981c-c569-514d-8fd6-01a4cd33c2e6",
+    "itemKey": "ultra-ball",
+    "weight": 1,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "ae688fb7-64b5-565c-a789-ed1e00ba2972",
+    "itemKey": "paralyze-heal",
+    "weight": 1,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "50078ba3-4cb6-589a-8b05-73a51a6c864e",
+    "itemKey": "burn-heal",
+    "weight": 1,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "4fae2714-f9d0-5fc9-99d4-9f71db8ddd5c",
+    "itemKey": "ice-heal",
+    "weight": 1,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
    }
   ]
  },

@@ -30,7 +30,6 @@
  },
  "showRoundPreview": false,
  "regenPercentPerHour": 20,
- "configVersion": 10,
  "xpCurve": {
   "A": 0.5,
   "B": 1.15,
@@ -71,35 +70,36 @@
  },
  "slotMachine": {
   "cost": 10,
-  "oneBall": {
-   "weight": 50,
-   "gold": 1
-  },
-  "twoBalls": {
-   "weight": 30,
-   "gold": 10
-  },
-  "threeBalls": {
-   "weight": 10,
-   "gold": 50
-  },
   "jackpot": {
-   "weight": 10,
-   "gold": 10
+   "gold": 10,
+   "weight": 10
+  },
+  "oneBall": {
+   "gold": 1,
+   "weight": 50
   },
   "prizeDex": 137,
-  "prizeLevel": 30
+  "twoBalls": {
+   "gold": 10,
+   "weight": 30
+  },
+  "prizeLevel": 30,
+  "threeBalls": {
+   "gold": 50,
+   "weight": 10
+  }
  },
  "dayCare": {
-  "unlockPokedex": 20,
-  "slots": 2,
-  "xpPerTick": 1,
-  "tickMinutes": 30,
   "maxXp": 500,
+  "slots": 2,
   "eggPrice": 50,
-  "unownedWeight": 3,
   "hatchRank": 3,
+  "xpPerTick": 1,
   "hatchOffset": 2,
-  "hatchMinLevel": 5
- }
+  "tickMinutes": 30,
+  "hatchMinLevel": 5,
+  "unlockPokedex": 20,
+  "unownedWeight": 3
+ },
+ "configVersion": 15
 }

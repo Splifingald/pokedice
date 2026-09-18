@@ -108,21 +108,28 @@ describe('gyms', () => {
 })
 
 describe('secret areas', () => {
+  // Thresholds are tuned in admin: read them from the data.
+  const cond = <K extends 'pokedex' | 'maxLevel'>(a: Area, kind: K) =>
+    a.unlockConditions!.find((c): c is Extract<typeof c, { kind: K }> => c.kind === kind)!
+  const POWER_DEX = cond(POWER, 'pokedex').count
+  const CAVE_LEVEL = cond(CAVE, 'maxLevel').level
+
   it('open on their conditions: Pokédex count or highest level', () => {
     const s = fresh()
     expect(isAreaUnlocked(s, POWER.id, data)).toBe(false)
-    expect(isAreaUnlocked(withDex(s, 50), POWER.id, data)).toBe(true)
+    expect(isAreaUnlocked(withDex(s, POWER_DEX - 1), POWER.id, data)).toBe(false)
+    expect(isAreaUnlocked(withDex(s, POWER_DEX), POWER.id, data)).toBe(true)
     expect(isAreaUnlocked(withDex(s, 149), FARAWAY.id, data)).toBe(false)
     expect(isAreaUnlocked(withDex(s, 150), FARAWAY.id, data)).toBe(true)
-    const strong = { ...s, box: s.box.map((p) => ({ ...p, level: 55 })) }
+    const strong = { ...s, box: s.box.map((p) => ({ ...p, level: CAVE_LEVEL })) }
     expect(isAreaUnlocked(strong, CAVE.id, data)).toBe(true)
     expect(unlockedHiddenAreas(strong, data)).toEqual([CAVE.id])
-    expect(conditionStatus({ kind: 'maxLevel', level: 55 }, s, data)).toMatchObject({ met: false, current: 5, target: 55 })
+    expect(conditionStatus({ kind: 'maxLevel', level: CAVE_LEVEL }, s, data)).toMatchObject({ met: false, current: 5, target: CAVE_LEVEL })
   })
 
   it('announce themselves the moment a catch meets the condition', () => {
-    const s = withDex(fresh(), 49)
-    const r = applyCatch(s, { dex: 60, level: 3 }, { mode: 'new' }, data, 0, newId)
+    const s = withDex(fresh(), POWER_DEX - 1)
+    const r = applyCatch(s, { dex: POWER_DEX, level: 3 }, { mode: 'new' }, data, 0, newId)
     expect(r.events).toContainEqual({ kind: 'secret_unlocked', areaId: POWER.id })
   })
 

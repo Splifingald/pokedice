@@ -1,44 +1,5 @@
 [
  {
-  "key": "potion",
-  "name": "Potion",
-  "description": "Restores 20 HP to one Pokémon.",
-  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/potion.png",
-  "price": 15,
-  "effect": {
-   "kind": "heal",
-   "amount": 20
-  },
-  "inShop": true,
-  "shopBadges": 0
- },
- {
-  "key": "super-potion",
-  "name": "Super Potion",
-  "description": "Restores 50 HP to one Pokémon.",
-  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/super-potion.png",
-  "price": 35,
-  "effect": {
-   "kind": "heal",
-   "amount": 50
-  },
-  "inShop": true,
-  "shopBadges": 1
- },
- {
-  "key": "hyper-potion",
-  "name": "Hyper Potion",
-  "description": "Restores 120 HP to one Pokémon.",
-  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/hyper-potion.png",
-  "price": 80,
-  "effect": {
-   "kind": "heal",
-   "amount": 120
-  },
-  "inShop": true,
-  "shopBadges": 4
- },
- {
   "key": "antidote",
   "name": "Antidote",
   "description": "Cures a poisoned Pokémon. In battle.",
@@ -188,5 +149,44 @@
   },
   "inShop": false,
   "shopBadges": 0
+ },
+ {
+  "key": "potion",
+  "name": "Potion",
+  "description": "Restores 20 HP to one Pokémon.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/potion.png",
+  "price": 15,
+  "effect": {
+   "kind": "heal",
+   "amount": 20
+  },
+  "inShop": true,
+  "shopBadges": 0
+ },
+ {
+  "key": "super-potion",
+  "name": "Super Potion",
+  "description": "Restores 50 HP to one Pokémon.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/super-potion.png",
+  "price": 35,
+  "effect": {
+   "kind": "heal",
+   "amount": 50
+  },
+  "inShop": true,
+  "shopBadges": 1
+ },
+ {
+  "key": "hyper-potion",
+  "name": "Hyper Potion",
+  "description": "Restores 120 HP to one Pokémon.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/hyper-potion.png",
+  "price": 80,
+  "effect": {
+   "kind": "heal",
+   "amount": 120
+  },
+  "inShop": true,
+  "shopBadges": 4
  }
 ]

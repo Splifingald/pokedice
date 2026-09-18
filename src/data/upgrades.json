@@ -729,6 +729,288 @@
    "cost": 0
   },
   {
+   "dieType": "flying",
+   "level": 4,
+   "bonus": 3,
+   "cost": 24
+  },
+  {
+   "dieType": "flying",
+   "level": 5,
+   "bonus": 4,
+   "cost": 37
+  },
+  {
+   "dieType": "flying",
+   "level": 6,
+   "bonus": 6,
+   "cost": 58
+  },
+  {
+   "dieType": "flying",
+   "level": 7,
+   "bonus": 8,
+   "cost": 89
+  },
+  {
+   "dieType": "flying",
+   "level": 8,
+   "bonus": 10,
+   "cost": 139
+  },
+  {
+   "dieType": "flying",
+   "level": 9,
+   "bonus": 12,
+   "cost": 215
+  },
+  {
+   "dieType": "flying",
+   "level": 10,
+   "bonus": 15,
+   "cost": 333
+  },
+  {
+   "dieType": "psychic",
+   "level": 1,
+   "bonus": 0,
+   "cost": 0
+  },
+  {
+   "dieType": "psychic",
+   "level": 2,
+   "bonus": 1,
+   "cost": 10
+  },
+  {
+   "dieType": "psychic",
+   "level": 3,
+   "bonus": 2,
+   "cost": 16
+  },
+  {
+   "dieType": "psychic",
+   "level": 4,
+   "bonus": 3,
+   "cost": 24
+  },
+  {
+   "dieType": "psychic",
+   "level": 5,
+   "bonus": 4,
+   "cost": 37
+  },
+  {
+   "dieType": "psychic",
+   "level": 6,
+   "bonus": 6,
+   "cost": 58
+  },
+  {
+   "dieType": "psychic",
+   "level": 7,
+   "bonus": 8,
+   "cost": 89
+  },
+  {
+   "dieType": "psychic",
+   "level": 8,
+   "bonus": 10,
+   "cost": 139
+  },
+  {
+   "dieType": "psychic",
+   "level": 9,
+   "bonus": 12,
+   "cost": 215
+  },
+  {
+   "dieType": "psychic",
+   "level": 10,
+   "bonus": 15,
+   "cost": 333
+  },
+  {
+   "dieType": "bug",
+   "level": 1,
+   "bonus": 0,
+   "cost": 0
+  },
+  {
+   "dieType": "bug",
+   "level": 2,
+   "bonus": 1,
+   "cost": 10
+  },
+  {
+   "dieType": "bug",
+   "level": 3,
+   "bonus": 2,
+   "cost": 16
+  },
+  {
+   "dieType": "bug",
+   "level": 4,
+   "bonus": 3,
+   "cost": 24
+  },
+  {
+   "dieType": "bug",
+   "level": 5,
+   "bonus": 4,
+   "cost": 37
+  },
+  {
+   "dieType": "bug",
+   "level": 6,
+   "bonus": 6,
+   "cost": 58
+  },
+  {
+   "dieType": "bug",
+   "level": 7,
+   "bonus": 8,
+   "cost": 89
+  },
+  {
+   "dieType": "bug",
+   "level": 8,
+   "bonus": 10,
+   "cost": 139
+  },
+  {
+   "dieType": "bug",
+   "level": 9,
+   "bonus": 12,
+   "cost": 215
+  },
+  {
+   "dieType": "bug",
+   "level": 10,
+   "bonus": 15,
+   "cost": 333
+  },
+  {
+   "dieType": "rock",
+   "level": 1,
+   "bonus": 0,
+   "cost": 0
+  },
+  {
+   "dieType": "rock",
+   "level": 2,
+   "bonus": 1,
+   "cost": 10
+  },
+  {
+   "dieType": "rock",
+   "level": 3,
+   "bonus": 2,
+   "cost": 16
+  },
+  {
+   "dieType": "rock",
+   "level": 4,
+   "bonus": 3,
+   "cost": 24
+  },
+  {
+   "dieType": "rock",
+   "level": 5,
+   "bonus": 4,
+   "cost": 37
+  },
+  {
+   "dieType": "rock",
+   "level": 6,
+   "bonus": 6,
+   "cost": 58
+  },
+  {
+   "dieType": "rock",
+   "level": 7,
+   "bonus": 8,
+   "cost": 89
+  },
+  {
+   "dieType": "rock",
+   "level": 8,
+   "bonus": 10,
+   "cost": 139
+  },
+  {
+   "dieType": "rock",
+   "level": 9,
+   "bonus": 12,
+   "cost": 215
+  },
+  {
+   "dieType": "rock",
+   "level": 10,
+   "bonus": 15,
+   "cost": 333
+  },
+  {
+   "dieType": "ghost",
+   "level": 1,
+   "bonus": 0,
+   "cost": 0
+  },
+  {
+   "dieType": "ghost",
+   "level": 2,
+   "bonus": 1,
+   "cost": 10
+  },
+  {
+   "dieType": "ghost",
+   "level": 3,
+   "bonus": 2,
+   "cost": 16
+  },
+  {
+   "dieType": "ghost",
+   "level": 4,
+   "bonus": 3,
+   "cost": 24
+  },
+  {
+   "dieType": "ghost",
+   "level": 5,
+   "bonus": 4,
+   "cost": 37
+  },
+  {
+   "dieType": "ghost",
+   "level": 6,
+   "bonus": 6,
+   "cost": 58
+  },
+  {
+   "dieType": "ghost",
+   "level": 7,
+   "bonus": 8,
+   "cost": 89
+  },
+  {
+   "dieType": "ghost",
+   "level": 8,
+   "bonus": 10,
+   "cost": 139
+  },
+  {
+   "dieType": "ghost",
+   "level": 9,
+   "bonus": 12,
+   "cost": 215
+  },
+  {
+   "dieType": "ghost",
+   "level": 10,
+   "bonus": 15,
+   "cost": 333
+  },
+  {
    "dieType": "normal",
    "level": 1,
    "bonus": 0,
@@ -1279,288 +1561,6 @@
    "level": 3,
    "bonus": 2,
    "cost": 16
-  },
-  {
-   "dieType": "flying",
-   "level": 4,
-   "bonus": 3,
-   "cost": 24
-  },
-  {
-   "dieType": "flying",
-   "level": 5,
-   "bonus": 4,
-   "cost": 37
-  },
-  {
-   "dieType": "flying",
-   "level": 6,
-   "bonus": 6,
-   "cost": 58
-  },
-  {
-   "dieType": "flying",
-   "level": 7,
-   "bonus": 8,
-   "cost": 89
-  },
-  {
-   "dieType": "flying",
-   "level": 8,
-   "bonus": 10,
-   "cost": 139
-  },
-  {
-   "dieType": "flying",
-   "level": 9,
-   "bonus": 12,
-   "cost": 215
-  },
-  {
-   "dieType": "flying",
-   "level": 10,
-   "bonus": 15,
-   "cost": 333
-  },
-  {
-   "dieType": "psychic",
-   "level": 1,
-   "bonus": 0,
-   "cost": 0
-  },
-  {
-   "dieType": "psychic",
-   "level": 2,
-   "bonus": 1,
-   "cost": 10
-  },
-  {
-   "dieType": "psychic",
-   "level": 3,
-   "bonus": 2,
-   "cost": 16
-  },
-  {
-   "dieType": "psychic",
-   "level": 4,
-   "bonus": 3,
-   "cost": 24
-  },
-  {
-   "dieType": "psychic",
-   "level": 5,
-   "bonus": 4,
-   "cost": 37
-  },
-  {
-   "dieType": "psychic",
-   "level": 6,
-   "bonus": 6,
-   "cost": 58
-  },
-  {
-   "dieType": "psychic",
-   "level": 7,
-   "bonus": 8,
-   "cost": 89
-  },
-  {
-   "dieType": "psychic",
-   "level": 8,
-   "bonus": 10,
-   "cost": 139
-  },
-  {
-   "dieType": "psychic",
-   "level": 9,
-   "bonus": 12,
-   "cost": 215
-  },
-  {
-   "dieType": "psychic",
-   "level": 10,
-   "bonus": 15,
-   "cost": 333
-  },
-  {
-   "dieType": "bug",
-   "level": 1,
-   "bonus": 0,
-   "cost": 0
-  },
-  {
-   "dieType": "bug",
-   "level": 2,
-   "bonus": 1,
-   "cost": 10
-  },
-  {
-   "dieType": "bug",
-   "level": 3,
-   "bonus": 2,
-   "cost": 16
-  },
-  {
-   "dieType": "bug",
-   "level": 4,
-   "bonus": 3,
-   "cost": 24
-  },
-  {
-   "dieType": "bug",
-   "level": 5,
-   "bonus": 4,
-   "cost": 37
-  },
-  {
-   "dieType": "bug",
-   "level": 6,
-   "bonus": 6,
-   "cost": 58
-  },
-  {
-   "dieType": "bug",
-   "level": 7,
-   "bonus": 8,
-   "cost": 89
-  },
-  {
-   "dieType": "bug",
-   "level": 8,
-   "bonus": 10,
-   "cost": 139
-  },
-  {
-   "dieType": "bug",
-   "level": 9,
-   "bonus": 12,
-   "cost": 215
-  },
-  {
-   "dieType": "bug",
-   "level": 10,
-   "bonus": 15,
-   "cost": 333
-  },
-  {
-   "dieType": "rock",
-   "level": 1,
-   "bonus": 0,
-   "cost": 0
-  },
-  {
-   "dieType": "rock",
-   "level": 2,
-   "bonus": 1,
-   "cost": 10
-  },
-  {
-   "dieType": "rock",
-   "level": 3,
-   "bonus": 2,
-   "cost": 16
-  },
-  {
-   "dieType": "rock",
-   "level": 4,
-   "bonus": 3,
-   "cost": 24
-  },
-  {
-   "dieType": "rock",
-   "level": 5,
-   "bonus": 4,
-   "cost": 37
-  },
-  {
-   "dieType": "rock",
-   "level": 6,
-   "bonus": 6,
-   "cost": 58
-  },
-  {
-   "dieType": "rock",
-   "level": 7,
-   "bonus": 8,
-   "cost": 89
-  },
-  {
-   "dieType": "rock",
-   "level": 8,
-   "bonus": 10,
-   "cost": 139
-  },
-  {
-   "dieType": "rock",
-   "level": 9,
-   "bonus": 12,
-   "cost": 215
-  },
-  {
-   "dieType": "rock",
-   "level": 10,
-   "bonus": 15,
-   "cost": 333
-  },
-  {
-   "dieType": "ghost",
-   "level": 1,
-   "bonus": 0,
-   "cost": 0
-  },
-  {
-   "dieType": "ghost",
-   "level": 2,
-   "bonus": 1,
-   "cost": 10
-  },
-  {
-   "dieType": "ghost",
-   "level": 3,
-   "bonus": 2,
-   "cost": 16
-  },
-  {
-   "dieType": "ghost",
-   "level": 4,
-   "bonus": 3,
-   "cost": 24
-  },
-  {
-   "dieType": "ghost",
-   "level": 5,
-   "bonus": 4,
-   "cost": 37
-  },
-  {
-   "dieType": "ghost",
-   "level": 6,
-   "bonus": 6,
-   "cost": 58
-  },
-  {
-   "dieType": "ghost",
-   "level": 7,
-   "bonus": 8,
-   "cost": 89
-  },
-  {
-   "dieType": "ghost",
-   "level": 8,
-   "bonus": 10,
-   "cost": 139
-  },
-  {
-   "dieType": "ghost",
-   "level": 9,
-   "bonus": 12,
-   "cost": 215
-  },
-  {
-   "dieType": "ghost",
-   "level": 10,
-   "bonus": 15,
-   "cost": 333
   }
  ]
 }

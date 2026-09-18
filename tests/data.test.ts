@@ -129,7 +129,8 @@ describe('areas & trainers', () => {
       }
     }
     for (const t of allTrainers) for (const m of t.team) expect(STARTERS).not.toContain(m.dex)
-    const catchable = new Set([...allAreas.flatMap((a) => a.wildPool.map((w) => w.dex)), ...LEGENDARIES])
+    // The Game Corner jackpot prize (Porygon) counts too.
+    const catchable = new Set([...allAreas.flatMap((a) => a.wildPool.map((w) => w.dex)), ...LEGENDARIES, (BUNDLE.config.slotMachine as { prizeDex: number }).prizeDex])
     expect(catchable.size).toBe(151)
   })
 
