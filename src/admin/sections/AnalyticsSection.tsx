@@ -1,6 +1,12 @@
 // Admin → Analytics: what players do, read from analytics_events (admin-only via RLS).
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { ANALYTICS_KINDS, type AnalyticsKind } from '@/analytics/events'
+import {
+  dayOneRetention,
+  RETENTION_MIN_FIRST_DAY_EVENTS,
+  type Retention,
+  type RetentionEvent,
+} from '@/analytics/retention'
 import { AreaBanner } from '@/components/AreaBanner'
 import { BadgeIcon } from '@/components/BadgeIcon'
 import { PixelIcon, type IconName } from '@/components/icons'
@@ -48,20 +54,31 @@ type FrameId = (typeof FRAMES)[number]['id']
 const playerKey = (r: EventRow) => r.user_id ?? `device:${r.device_id}`
 const num = (v: unknown) => Number(v) || 0
 const str = (v: unknown) => (v == null ? '' : String(v))
-const dayInput = (d: Date) => d.toISOString().slice(0, 10)
+const dayInput = (d: Date) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+/** A date input's value as local midnight (not UTC), so days match the viewer's calendar. */
+const localDay = (v: string, plusDays = 0) => {
+  const [y, m, d] = v.split('-').map(Number)
+  return new Date(y!, m! - 1, d! + plusDays)
+}
 
-async function fetchEvents(from: Date | null, to: Date | null): Promise<EventRow[]> {
+async function fetchEvents(
+  from: Date | null,
+  to: Date | null,
+  columns = '*',
+  max = 20_000,
+): Promise<EventRow[]> {
   const client = await getSupabase()
   if (!client) throw new Error('Supabase client unavailable')
   const out: EventRow[] = []
   const page = 1000
-  for (let offset = 0; offset < 20_000; offset += page) {
-    let q = client.from('analytics_events').select('*').order('created_at', { ascending: false })
+  for (let offset = 0; offset < max; offset += page) {
+    let q = client.from('analytics_events').select(columns).order('created_at', { ascending: false })
     if (from) q = q.gte('created_at', from.toISOString())
     if (to) q = q.lt('created_at', to.toISOString())
     const { data, error } = await q.range(offset, offset + page - 1)
     if (error) throw error
-    out.push(...((data ?? []) as EventRow[]))
+    out.push(...((data ?? []) as unknown as EventRow[]))
     if (!data || data.length < page) break
   }
   return out
@@ -212,6 +229,59 @@ function Details({ row, data }: { row: EventRow; data: GameData }) {
   }
 }
 
+function RetentionHero({ retention: r }: { retention: Retention | null }) {
+  const pct = r?.rate == null ? null : Math.round(r.rate * 100)
+  const color = pct == null ? '#6b6480' : pct >= 40 ? '#4aa84a' : pct >= 20 ? '#e8b44a' : '#c2452d'
+  const left = r
+    ? [
+        r.pending > 0 && `${r.pending} whose next day isn't over yet`,
+        r.tooFewEvents > 0 &&
+          `${r.tooFewEvents} with fewer than ${RETENTION_MIN_FIRST_DAY_EVENTS} events on day one`,
+      ].filter(Boolean)
+    : []
+  return (
+    <section
+      className="pixel-panel-dark flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:gap-6"
+      aria-label="Retention"
+    >
+      <div className="flex shrink-0 flex-col">
+        <span className="text-xl uppercase tracking-wider text-gold">Day-1 retention</span>
+        <span className="text-7xl leading-none sm:text-8xl" style={{ color }}>
+          {r == null ? '…' : pct == null ? '–' : `${pct}%`}
+        </span>
+      </div>
+      <div className="flex min-w-0 flex-1 flex-col gap-2">
+        {r && (
+          <>
+            <div
+              className="h-6 w-full border-2 border-panel bg-ink"
+              role="img"
+              aria-label={`${r.returned} of ${r.cohort} players came back`}
+            >
+              <div className="h-full" style={{ width: `${pct ?? 0}%`, background: color }} />
+            </div>
+            <p className="text-2xl leading-tight">
+              {r.cohort ? (
+                <>
+                  <b className="text-gold">{r.returned}</b> of <b className="text-gold">{r.cohort}</b> new
+                  players came back the next day
+                </>
+              ) : (
+                'No new players to measure yet in this time frame'
+              )}
+            </p>
+          </>
+        )}
+        <p className="text-base leading-snug opacity-80">
+          New players whose first day falls in this time frame, with at least {RETENTION_MIN_FIRST_DAY_EVENTS}{' '}
+          events that day, who had at least 1 event the next calendar day.
+          {left.length > 0 && ` Not counted: ${left.join(', ')}.`}
+        </p>
+      </div>
+    </section>
+  )
+}
+
 type PlayerSort = 'name' | 'events' | 'last' | 'levels' | 'badges' | 'spent'
 type EventSort = 'time' | 'player' | 'kind'
 
@@ -264,6 +334,7 @@ export function AnalyticsSection() {
   const [customFrom, setCustomFrom] = useState(() => dayInput(new Date(Date.now() - 30 * 864e5)))
   const [customTo, setCustomTo] = useState(() => dayInput(new Date()))
   const [rows, setRows] = useState<EventRow[]>([])
+  const [retention, setRetention] = useState<Retention | null>(null)
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading')
   const [error, setError] = useState<string | null>(null)
   const [player, setPlayer] = useState<string>('all')
@@ -277,9 +348,19 @@ export function AnalyticsSection() {
     setError(null)
     try {
       const f = FRAMES.find((x) => x.id === frame)!
-      const from = frame === 'custom' ? new Date(customFrom) : f.ms ? new Date(Date.now() - f.ms) : null
-      const to = frame === 'custom' ? new Date(new Date(customTo).getTime() + 864e5) : null
-      setRows(await fetchEvents(from, to))
+      const from = frame === 'custom' ? localDay(customFrom) : f.ms ? new Date(Date.now() - f.ms) : null
+      const to = frame === 'custom' ? localDay(customTo, 1) : null
+      // Retention needs every player's whole history (their first day may predate the frame): who and when only.
+      const [events, history] = await Promise.all([
+        fetchEvents(from, to),
+        fetchEvents(null, null, 'user_id,device_id,created_at', 200_000),
+      ])
+      setRows(events)
+      const light: RetentionEvent[] = history.map((r) => ({
+        player: playerKey(r),
+        at: new Date(r.created_at),
+      }))
+      setRetention(dayOneRetention(light, from, to))
       setStatus('ready')
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err))
@@ -434,6 +515,8 @@ export function AnalyticsSection() {
           {status === 'loading' ? 'Loading…' : 'Refresh'}
         </PixelButton>
       </div>
+
+      <RetentionHero retention={status === 'loading' ? null : retention} />
 
       {status === 'error' && (
         <div className="pixel-panel p-3 text-lg">
