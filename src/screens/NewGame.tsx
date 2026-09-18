@@ -1,14 +1,12 @@
 import { motion } from 'framer-motion'
-import { Fragment, useState } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { effectiveStats, getSpecies } from '@/engine'
+import { createInstance, getSpecies } from '@/engine'
 import { Dialogue } from '@/components/Dialogue'
-import { DiceSet } from '@/components/DiceSet'
-import { DieFaces } from '@/components/Die'
 import { Modal } from '@/components/Modal'
 import { PixelButton } from '@/components/PixelButton'
+import { PokemonSheet } from '@/components/PokemonSheet'
 import { SpriteImg } from '@/components/SpriteImg'
-import { StatChip } from '@/components/StatChip'
 import { PLAYER_CHARACTERS, TrainerSprite } from '@/components/TrainerArt'
 import { TypeBadge } from '@/components/TypeBadge'
 import type { PlayerCharacter, PlayerProfile } from '@/engine'
@@ -28,6 +26,7 @@ export function NewGame() {
   const navigate = useNavigate()
   const [line, setLine] = useState(0)
   const [choice, setChoice] = useState<number | null>(null)
+  const [info, setInfo] = useState<number | null>(null)
   const [player, setPlayer] = useState<PlayerProfile | null>(null)
   const level = data.config.starterLevel
   const starters = data.config.starters.filter((d) => data.species[d])
@@ -72,55 +71,65 @@ export function NewGame() {
         ) : (
           <>
             <h1 className="text-center text-5xl">Choose your partner</h1>
-            <div className="grid gap-4 md:grid-cols-3">
+            <div className="mx-auto grid w-full max-w-3xl grid-cols-3 gap-1.5 sm:gap-4">
               {starters.map((dex, i) => {
                 const sp = getSpecies(data, dex)
-                const stats = effectiveStats(sp, level, data)
                 return (
-                  <motion.button
+                  <motion.div
                     key={dex}
-                    type="button"
-                    onClick={() => setChoice(dex)}
-                    className="pixel-panel flex flex-col items-center gap-2 p-4 text-left hover:bg-white"
+                    className="pixel-panel relative flex flex-col items-center"
                     initial={{ y: 30, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
                     transition={{ delay: i * 0.12 }}
                     whileHover={{ y: -4 }}
                   >
-                    <SpriteImg dex={dex} size={144} />
-                    <div className="text-4xl leading-none">{sp.name}</div>
-                    <div className="flex gap-1">
-                      <TypeBadge type={sp.type1} />
-                      {sp.type2 && <TypeBadge type={sp.type2} />}
-                    </div>
-                    <div className="flex items-center gap-4 text-xl">
-                      <span>Lv.{level}</span>
-                      <StatChip stat="hp" value={stats.maxHp} size={18} />
-                      <StatChip stat="speed" value={sp.speed} size={18} />
-                      <StatChip stat="rerolls" value={stats.rerolls} size={18} />
-                    </div>
-                    <div className="grid grid-cols-[auto_auto] items-center gap-x-2 gap-y-1">
-                      <span className="text-sm uppercase">Dice</span>
-                      <DiceSet dice={stats.dice} size={28} />
-                      {[...new Set(stats.dice)].map((t) => (
-                        <Fragment key={t}>
-                          <span className="text-sm uppercase">{t}</span>
-                          <div>
-                            <DieFaces type={t} faces={data.diceTypes[t]?.faces ?? []} size={22} />
-                            {data.diceTypes[t]?.description && (
-                              <div className="copy text-sm text-muted">{data.diceTypes[t]!.description}</div>
-                            )}
-                          </div>
-                        </Fragment>
-                      ))}
-                    </div>
-                  </motion.button>
+                    <button
+                      type="button"
+                      onClick={() => setChoice(dex)}
+                      className="flex w-full flex-col items-center gap-1 px-1 pb-3 pt-2 hover:bg-white sm:gap-2 sm:p-4"
+                    >
+                      <SpriteImg dex={dex} size={144} className="aspect-square !h-auto !w-full max-w-[144px]" />
+                      <span className="max-w-full truncate text-xl leading-none sm:text-4xl">{sp.name}</span>
+                      <span className="flex flex-wrap justify-center gap-1">
+                        <TypeBadge type={sp.type1} size="sm" />
+                        {sp.type2 && <TypeBadge type={sp.type2} size="sm" />}
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setInfo(dex)}
+                      aria-label={`${sp.name} info`}
+                      title="Info"
+                      className="absolute right-0 top-0 flex h-11 w-11 items-center justify-center"
+                    >
+                      <span className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-ink bg-panel text-xl leading-none shadow-hard-sm hover:bg-gold">
+                        i
+                      </span>
+                    </button>
+                  </motion.div>
                 )
               })}
             </div>
           </>
         )}
       </div>
+
+      <Modal open={info != null} onClose={() => setInfo(null)} label="Pokémon details">
+        {info != null && (
+          <PokemonSheet dex={info} inst={createInstance(info, level, data, 'starter-preview', 0)}>
+            <PixelButton
+              variant="primary"
+              className="self-center"
+              onClick={() => {
+                setInfo(null)
+                setChoice(info)
+              }}
+            >
+              Choose {data.species[info]?.name}
+            </PixelButton>
+          </PokemonSheet>
+        )}
+      </Modal>
 
       <Modal open={choice != null} onClose={() => setChoice(null)} title={choice ? `${data.species[choice]?.name}?` : ''}>
         {choice && (
