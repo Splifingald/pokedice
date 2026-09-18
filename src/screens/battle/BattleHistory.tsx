@@ -1,12 +1,24 @@
 // What happened so far in this battle, newest first: attacks (tap for the damage recap), statuses, skipped turns,
 // switches, items and heals. Only what the animation has already shown.
 import { useMemo, useState, type ReactNode } from 'react'
-import { COMBO_NAMES, type Battler, type DamageResult, type LogEntry, type RolledDie, type Side } from '@/engine'
+import {
+  COMBO_NAMES,
+  faceOf,
+  statusCounts,
+  STATUS_KINDS,
+  type Battler,
+  type DamageResult,
+  type GameData,
+  type LogEntry,
+  type RolledDie,
+  type Side,
+} from '@/engine'
 import { Die } from '@/components/Die'
 import { PixelIcon, STATUS_ICON } from '@/components/icons'
 import { MiniSprite } from '@/components/SpriteImg'
 import type { BattleSlice } from '@/store/game'
 import { useGame } from '@/store/game'
+import { cap } from '@/lib/format'
 import { cx } from '@/theme/util'
 
 /** How a hit's damage adds up: each die (value + upgrade bonus × the attack type's multiplier), the combo, the total. */
@@ -54,10 +66,23 @@ interface Row {
   icon?: Parameters<typeof PixelIcon>[0]['name']
   amount?: number
   heal?: boolean
+  /** Status faces that landed short of their threshold: "1/2 Poison faces — counted as 1". */
+  note?: string
   recap?: { result: DamageResult; dice: RolledDie[] }
 }
 
-function buildRows(log: readonly LogEntry[], player: readonly Battler[], enemy: Battler, itemName: (k: string) => string): Row[] {
+/** Status faces in a roll that didn't reach their threshold, so they only counted as a number. */
+function nearMisses(dice: readonly RolledDie[], data: GameData): string | undefined {
+  const counts = statusCounts(dice, data)
+  const bits = STATUS_KINDS.filter((k) => counts[k] > 0 && counts[k] < data.config.status[k].threshold).map((k) => {
+    const value = dice.map((d) => faceOf(d, data)).find((f) => f.kind === 'status' && f.status === k)?.value ?? 0
+    return `${counts[k]}/${data.config.status[k].threshold} ${cap(k)} faces, no ${k} (counted as ${value})`
+  })
+  return bits.length ? bits.join(' · ') : undefined
+}
+
+function buildRows(log: readonly LogEntry[], player: readonly Battler[], enemy: Battler, data: GameData): Row[] {
+  const itemName = (k: string) => data.items[k]?.name ?? k
   const who = (uid: string) => {
     const b = uid === enemy.uid ? enemy : player.find((p) => p.uid === uid)
     return { dex: b?.dex ?? 0, name: b?.name ?? '???', foe: uid === enemy.uid }
@@ -82,6 +107,7 @@ function buildRows(log: readonly LogEntry[], player: readonly Battler[], enemy: 
           text: e.selfHit ? 'hurt itself in its confusion' : `attacked ${target.name}${e.result.combo ? ` · ${COMBO_NAMES[e.result.combo.key]}` : ''}`,
           icon: 'sword',
           amount: e.amount,
+          note: e.selfHit ? undefined : nearMisses(e.dice, data),
           recap: { result: e.result, dice: e.dice },
         })
         return
@@ -128,6 +154,7 @@ function HistoryRow({ r }: { r: Row }) {
       <MiniSprite dex={r.dex} size={32} className="-my-1" />
       <span className="min-w-0 flex-1 leading-tight">
         <b className={r.foe ? 'text-danger' : undefined}>{r.foe ? `Foe ${r.name}` : r.name}</b> {r.text}
+        {r.note && <span className="block text-sm text-muted">{r.note}</span>}
       </span>
       {r.amount != null && (
         <span className={cx('flex shrink-0 items-center gap-1 font-mono', r.heal && 'text-good')}>
@@ -163,8 +190,8 @@ function HistoryRow({ r }: { r: Row }) {
 export function BattleHistoryList({ battle, cursor }: { battle: BattleSlice; cursor: number }) {
   const data = useGame((s) => s.data)
   const rows = useMemo(
-    () => buildRows(battle.log.slice(0, cursor), battle.state.player, battle.state.enemy, (k) => data.items[k]?.name ?? k),
-    [battle.log, battle.state.player, battle.state.enemy, cursor, data.items],
+    () => buildRows(battle.log.slice(0, cursor), battle.state.player, battle.state.enemy, data),
+    [battle.log, battle.state.player, battle.state.enemy, cursor, data],
   )
   if (!rows.length) return <p className="copy px-1 text-muted">Nothing has happened yet.</p>
   return <ol aria-label="Battle history, newest first">{rows.map((r) => <HistoryRow key={r.key} r={r} />)}</ol>

@@ -13,23 +13,27 @@ import {
   hasStatus,
   progressOf,
   randomSeed,
+  statusCounts,
   statusesFromRoll,
+  STATUS_KINDS,
   usableIn,
   type BattleBackground,
   type Battler,
   type Side,
+  type StatusKind,
 } from '@/engine'
 import { Die } from '@/components/Die'
 import { HpBar } from '@/components/HpBar'
 import { PixelIcon, STATUS_ICON } from '@/components/icons'
 import { Modal } from '@/components/Modal'
+import { OakTip, useOneTimeTip } from '@/components/OakTip'
 import { ParticleCanvas, type ParticleHandle } from '@/components/ParticleCanvas'
 import { PixelButton } from '@/components/PixelButton'
 import { MiniSprite, SpriteImg } from '@/components/SpriteImg'
 import { playerOf, PokeBall, ThrowSprite, TrainerSprite } from '@/components/TrainerArt'
 import { StatusIcons } from '@/components/StatusIcons'
 import { TypeBadge } from '@/components/TypeBadge'
-import { trainerTitle } from '@/lib/format'
+import { cap, trainerTitle } from '@/lib/format'
 import { useIsDesktop, useMediaQuery } from '@/lib/useMediaQuery'
 import { setSettings, useGame, type BattleSlice } from '@/store/game'
 import { dispatchBattle } from '@/store/run'
@@ -107,6 +111,21 @@ function useShake(ref: RefObject<HTMLElement>, shake: { id: number; power: numbe
       { duration: 360, easing: 'steps(6)' },
     )
   }, [shake?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+}
+
+// Professor Oak explains thresholds the first time a status face lands short of one (per device).
+const STATUS_TIP_KEY = 'pokedice.tip.statusThreshold'
+
+/** One square per face a status needs in the roll, filled for each that landed: full = it triggers. */
+function StatusPips({ have, need, status }: { have: number; need: number; status: StatusKind }) {
+  const met = have >= need
+  return (
+    <span className="flex gap-0.5" role="img" aria-label={`${status}: ${Math.min(have, need)} of ${need} faces${met ? ', triggers' : ''}`}>
+      {Array.from({ length: need }, (_, i) => (
+        <span key={i} className={cx('h-2.5 w-2.5 border border-ink', i < have ? (met ? 'bg-gold' : 'bg-ink') : 'bg-panel')} />
+      ))}
+    </span>
+  )
 }
 
 const POP_COLOR = { super: '#e8b44a', weak: '#f7f2e0', immune: '#9c9caf', normal: '#f7f2e0', heal: '#4aa84a' }
@@ -417,8 +436,20 @@ export function BattleView({ battle }: { battle: BattleSlice }) {
     const confused = a.status.confused
     const r = computeDamage(st.dice, a.types, confused ? a.types : st.enemy.types, st.playerLevels, data)
     const statuses = confused ? [] : statusesFromRoll(st.dice, data)
-    return { r, statuses, confused }
+    // Status faces short of their threshold: they only count as a number this roll.
+    const counts = statusCounts(st.dice, data)
+    const rules = data.config.status
+    const almost = confused
+      ? []
+      : STATUS_KINDS.filter((k) => counts[k] > 0 && counts[k] < rules[k].threshold).map((k) => ({
+          status: k,
+          have: counts[k],
+          need: rules[k].threshold,
+          value: st.dice.map((d) => faceOf(d, data)).find((f) => f.kind === 'status' && f.status === k)?.value ?? 0,
+        }))
+    return { r, statuses, almost, confused }
   }, [rolling, st, data])
+  const [statusTip, closeStatusTip] = useOneTimeTip(STATUS_TIP_KEY)
 
   const inventory = save?.inventory ?? {}
   const ownedItems = Object.entries(inventory).filter(([k, n]) => n > 0 && usableIn(data.items[k], 'battle'))
@@ -530,6 +561,8 @@ export function BattleView({ battle }: { battle: BattleSlice }) {
           keys: fx.tray?.side === 'player' && fx.tray.dice.length === st.dice.length ? fx.tray.keys : st.dice.map((_, i) => `s${i}`),
         }
       : fx.tray
+  // Each status die shows how many faces of its kind landed against how many it needs (Poison 2, Frozen 3…).
+  const trayCounts = tray ? statusCounts(tray.dice, data) : null
 
   const trainerTeam = isTrainerFight ? enc.team : []
   const trainerLeft = isTrainerFight && run.trainer ? trainerTeam.length - run.trainer.index : 0
@@ -733,6 +766,12 @@ export function BattleView({ battle }: { battle: BattleSlice }) {
                 locked={tray.side === 'enemy'}
                 asButton={tray.side === 'player'}
               />
+              {(() => {
+                const f = faceOf(d, data)
+                if (f.kind !== 'status' || !trayCounts) return null
+                const need = data.config.status[f.status].threshold
+                return need > 1 ? <StatusPips have={trayCounts[f.status]} need={need} status={f.status} /> : null
+              })()}
               {desktop && ready && rolling && <span className="font-mono text-xs text-muted">{i + 1}</span>}
             </div>
           ))}
@@ -764,7 +803,32 @@ export function BattleView({ battle }: { battle: BattleSlice }) {
                 {s.stacks && s.stacks > 1 ? ` ×${s.stacks}` : ''}
               </span>
             ))}
+            {preview.almost.map((s) => (
+              <span
+                key={s.status}
+                className="inline-flex items-center gap-1 border-2 border-dashed border-muted px-1 text-base text-muted"
+                title={`${cap(s.status)} needs ${s.need} ${cap(s.status)} faces in one roll`}
+              >
+                <PixelIcon name={STATUS_ICON[s.status] ?? 'star'} size={12} />
+                {s.status.toUpperCase()} {s.have}/{s.need}
+              </span>
+            ))}
           </div>
+        )}
+        {ready && preview && !auto && statusTip && preview.almost[0] && (
+          <OakTip onClose={closeStatusTip}>
+            {(() => {
+              const s = preview.almost[0]!
+              const name = cap(s.status)
+              return (
+                <>
+                  A status face only works in numbers! {name} needs <b>{s.need} {name} faces in the same roll</b>. You have{' '}
+                  {s.have}, so {s.have === 1 ? `it just counts as ${s.value} damage` : `they just count as ${s.value} damage each`}. Reroll the other dice to chase
+                  the rest — the dots under each die show how close you are.
+                </>
+              )
+            })()}
+          </OakTip>
         )}
         {ready && preview && showBreakdown && <DamageRecap result={preview.r} />}
 
