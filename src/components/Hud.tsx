@@ -76,7 +76,7 @@ function NavEntry({ n, variant }: { n: NavItem; variant: 'side' | 'bottom' }) {
   )
 }
 
-/** Top bar: logo, Pokédollars, help and settings. The menus live in the side / bottom bar; sound is in Settings. */
+/** Top bar: logo, Pokédollars, leaderboard, help and settings. The menus live in the side / bottom bar; sound is in Settings. */
 export function Header() {
   const save = useGame((s) => s.save)
   const runArea = useGame((s) => s.run.areaId)
@@ -84,6 +84,7 @@ export function Header() {
   const { pathname } = useLocation()
   if (!save) return null
   const onSettings = pathname === '/settings'
+  const onBoard = pathname === '/leaderboard'
   return (
     <header className="sticky top-0 z-40 border-b-[3px] border-ink bg-panel shadow-[0_3px_0_#6b6480]">
       <div className="flex h-14 items-center gap-2 px-3">
@@ -95,6 +96,21 @@ export function Header() {
           POKÉ<span className="text-danger">DICE</span>
         </Link>
         <GoldPill amount={save.gold} />
+        <Link
+          to={inFight ? '#' : '/leaderboard'}
+          aria-label="Leaderboard"
+          aria-current={onBoard ? 'page' : undefined}
+          aria-disabled={inFight || undefined}
+          onClick={(e) => inFight && e.preventDefault()}
+          title={inFight ? 'Finish the fight first' : 'Leaderboard'}
+          className={cx(
+            'pixel-btn flex h-11 w-11 items-center justify-center md:h-9 md:w-9',
+            onBoard ? 'bg-gold' : 'bg-panel',
+            inFight && 'hatched pointer-events-none',
+          )}
+        >
+          <PixelIcon name="trophy" size={20} />
+        </Link>
         <HelpButton />
         <Link
           to={inFight ? '#' : '/settings'}

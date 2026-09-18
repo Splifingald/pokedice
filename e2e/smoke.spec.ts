@@ -26,6 +26,10 @@ test('new game → first battle → win', async ({ page }) => {
   await page.getByRole('button', { name: /Squirtle/ }).first().click()
   await page.getByRole('button', { name: 'YES!' }).click()
   await expect(page).toHaveURL(/\/area$/)
+  // Prof. Oak shows the leaderboard first.
+  await page.getByRole('button', { name: 'SEE THE LEADERBOARD' }).click()
+  await expect(page.getByRole('heading', { name: 'Leaderboard', level: 1 })).toBeVisible()
+  await page.goto('/area')
 
   for (let i = 0; i < 400; i++) {
     if (await page.getByText('VICTORY!').isVisible()) break

@@ -79,6 +79,11 @@ const DEPOSIT_REFUSED: Record<DepositError, string> = {
   missing: 'That Pokémon is not with you',
 }
 
+/** The first visit ends Prof. Oak's leaderboard tutorial. */
+export function visitLeaderboard(): void {
+  mutateSave((s) => (s.leaderboardVisited ? null : { ...s, leaderboardVisited: true }))
+}
+
 /** The first visit ends the unlock tutorial. */
 export function visitDayCare(): void {
   mutateSave((s) => (dayCareOf(s).visited ? null : markDayCareVisited(s)))

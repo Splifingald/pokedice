@@ -444,6 +444,8 @@ export interface SaveData {
   dayCare?: DayCareState
   /** When the admin last edited this save (cheats): that cloud save then wins the next sync, even with less progress. */
   adminEditAt?: number
+  /** The player has opened the leaderboard (Prof. Oak sends them there once). */
+  leaderboardVisited?: boolean
 }
 
 export interface DayCareResident {

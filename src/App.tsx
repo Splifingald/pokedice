@@ -8,6 +8,7 @@ import { SyncConflictModal } from '@/components/SyncConflictModal'
 import { ToastStack } from '@/components/Toast'
 import { AreaScreen } from '@/screens/Area'
 import { DayCareScreen } from '@/screens/DayCareScreen'
+import { LeaderboardScreen } from '@/screens/Leaderboard'
 import { MapScreen } from '@/screens/MapScreen'
 import { NewGame } from '@/screens/NewGame'
 import { PokedexScreen } from '@/screens/Pokedex'
@@ -59,6 +60,7 @@ export function App() {
               <Route path="/shop" element={<ShopScreen />} />
               <Route path="/upgrades" element={<UpgradesScreen />} />
               <Route path="/pokedex" element={<PokedexScreen />} />
+              <Route path="/leaderboard" element={<LeaderboardScreen />} />
               <Route path="/settings" element={<SettingsScreen />} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />

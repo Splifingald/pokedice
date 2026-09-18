@@ -58,6 +58,7 @@ export const saveSchema = z.object({
     })
     .optional(),
   adminEditAt: z.number().optional(),
+  leaderboardVisited: z.boolean().optional(),
 })
 
 /**
