@@ -244,7 +244,7 @@ export interface DayCareConfig {
   eggPrice: number
   /** Eggs favour species missing from the Pokédex: their weight is this, an owned species' is 1. */
   unownedWeight: number
-  /** A hatchling's level: the `hatchRank`-th highest level you own, minus `hatchOffset`, never below `hatchMinLevel`. */
+  /** A hatchling's level: the `hatchRank`-th lowest level you own, minus `hatchOffset`, never below `hatchMinLevel`. */
   hatchRank: number
   hatchOffset: number
   hatchMinLevel: number

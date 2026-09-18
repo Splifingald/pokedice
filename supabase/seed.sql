@@ -1730,7 +1730,7 @@ insert into game_config (key, value) values
   ('showRoundGauge', 'true'::jsonb),
   ('ai', '{"samples":200,"rerollGainThreshold":0.08}'::jsonb),
   ('slotMachine', '{"cost":10,"jackpot":{"gold":10,"weight":10},"oneBall":{"gold":1,"weight":50},"prizeDex":137,"twoBalls":{"gold":10,"weight":30},"prizeLevel":30,"threeBalls":{"gold":50,"weight":10}}'::jsonb),
-  ('dayCare', '{"maxXp":500,"slots":2,"eggPrice":50,"hatchRank":3,"xpPerTick":1,"hatchOffset":2,"tickMinutes":30,"hatchMinLevel":5,"unlockPokedex":20,"unownedWeight":3}'::jsonb),
+  ('dayCare', '{"maxXp":500,"slots":2,"eggPrice":50,"hatchRank":3,"xpPerTick":1,"hatchOffset":5,"tickMinutes":30,"hatchMinLevel":5,"unlockPokedex":20,"unownedWeight":3}'::jsonb),
   ('configVersion', '15'::jsonb)
 on conflict (key) do update set value = excluded.value;
 

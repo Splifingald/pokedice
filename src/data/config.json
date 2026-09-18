@@ -96,7 +96,7 @@
   "eggPrice": 50,
   "hatchRank": 3,
   "xpPerTick": 1,
-  "hatchOffset": 2,
+  "hatchOffset": 5,
   "tickMinutes": 30,
   "hatchMinLevel": 5,
   "unlockPokedex": 20,

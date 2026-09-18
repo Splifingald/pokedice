@@ -234,7 +234,11 @@ function HatchModal({ hatch, onClose }: { hatch: Hatch | null; onClose: () => vo
                 {hatch.isNew && <span className="border-2 border-ink bg-gold px-1.5 leading-tight">NEW</span>}
               </div>
               <p className="text-lg text-muted">
-                {hatch.joinedTeam ? 'It joined your team.' : 'Your team is full: it went to the Box.'}
+                {!hatch.kept
+                  ? `You already have a stronger ${sp.name}: the Day Care couple will look after this one.`
+                  : `${hatch.replaced ? `It replaced your Lv.${hatch.replaced.level} ${sp.name}. ` : ''}${
+                      hatch.joinedTeam ? 'It joined your team.' : 'Your team is full: it went to the Box.'
+                    }`}
               </p>
               <PixelButton variant="primary" onClick={onClose}>
                 OK

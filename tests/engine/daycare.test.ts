@@ -103,17 +103,39 @@ describe('Day Care', () => {
     expect(odds.find((o) => o.species.dex === 19)!.weight).toBe(cfg.unownedWeight)
   })
 
-  it('hatches at the 3rd-highest owned level minus 2, never below 5', () => {
-    expect(hatchLevel(withMons([40, 30, 25, 10]), data)).toBe(23)
+  it('hatches at the 3rd-lowest owned level minus 5, never below 5', () => {
+    expect(hatchLevel(withMons([40, 30, 25, 10]), data)).toBe(25)
     expect(hatchLevel(withMons([8, 7, 6]), data)).toBe(5)
-    expect(hatchLevel(withMons([30, 20]), data)).toBe(18) // fewer than 3: the lowest one
+    expect(hatchLevel(withMons([30, 20]), data)).toBe(25) // fewer than 3: the highest one
+  })
+
+  it('keeps only the highest-level copy of a species', () => {
+    const s = withMons([30, 30, 30])
+    const dex = hatchEgg(s, data, createRng(1), 0, newId, { free: true })!.inst.dex
+    const weak = createInstance(dex, 10, data, 'weak', 0)
+    const strong = createInstance(dex, 40, data, 'strong', 0)
+
+    const replaced = hatchEgg({ ...s, box: [...s.box, weak] }, data, createRng(1), 0, newId, { free: true })!
+    expect(replaced.kept).toBe(true)
+    expect(replaced.replaced?.id).toBe('weak')
+    expect(replaced.save.box.filter((p) => p.dex === dex).map((p) => p.level)).toEqual([25])
+
+    const inTeam = { ...s, box: [...s.box, weak], team: [s.team[0]!, s.team[1]!, 'weak'] }
+    const slot = hatchEgg(inTeam, data, createRng(1), 0, newId, { free: true })!
+    expect(slot.joinedTeam).toBe(true)
+    expect(slot.save.team).toEqual([s.team[0], s.team[1], slot.inst.id])
+
+    const dropped = hatchEgg({ ...s, box: [...s.box, strong] }, data, createRng(1), 0, newId, { free: true })!
+    expect(dropped.kept).toBe(false)
+    expect(dropped.save.box.filter((p) => p.dex === dex).map((p) => p.id)).toEqual(['strong'])
+    expect(dropped.save.dayCare?.eggClaimed).toBe(true)
   })
 
   it('gives one free Egg, then sells them', () => {
     const s = withMons([30, 30, 30])
     const free = hatchEgg(s, data, createRng(1), 0, newId, { free: true })!
     expect(free.paid).toBe(0)
-    expect(free.inst.level).toBe(28)
+    expect(free.inst.level).toBe(25)
     expect(free.save.box).toHaveLength(4)
     expect(free.joinedTeam).toBe(false) // team of 3 is full → Box
     expect(free.save.pokedex).toContain(free.inst.dex)

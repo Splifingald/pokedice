@@ -66,7 +66,7 @@ export const DEFAULT_CONFIG: GameConfig = {
     eggPrice: 50,
     unownedWeight: 3,
     hatchRank: 3,
-    hatchOffset: 2,
+    hatchOffset: 5,
     hatchMinLevel: 5,
   },
 }

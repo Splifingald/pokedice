@@ -139,7 +139,7 @@ function DayCareBox() {
         <Field label="Unowned weight" hint="× odds of a species not in the Pokédex (owned = 1)">
           {num('unownedWeight', 0)}
         </Field>
-        <Field label="Hatch: rank" hint="the n-th highest level owned">
+        <Field label="Hatch: rank" hint="the n-th lowest level owned">
           {num('hatchRank', 1)}
         </Field>
         <Field label="Hatch: minus">{num('hatchOffset', 0)}</Field>

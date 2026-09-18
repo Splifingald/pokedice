@@ -114,12 +114,12 @@ export function eggOdds(save: SaveData, data: GameData): { species: Species; wei
   return eggSpecies(data).map((species) => ({ species, weight: dex.has(species.dex) ? 1 : unowned }))
 }
 
-/** The hatchling's level: the hatchRank-th highest level owned (or the lowest, with fewer Pokémon), minus hatchOffset. */
+/** The hatchling's level: the hatchRank-th lowest level owned (or the highest, with fewer Pokémon), minus hatchOffset. */
 export function hatchLevel(save: SaveData, data: GameData): number {
   const cfg = data.config.dayCare
   const levels = ownedPokemon(save)
     .map((p) => p.level)
-    .sort((a, b) => b - a)
+    .sort((a, b) => a - b)
   const ref = levels[Math.min(Math.max(1, cfg.hatchRank), levels.length) - 1] ?? cfg.hatchMinLevel
   return Math.max(1, Math.min(data.config.maxLevel, Math.max(cfg.hatchMinLevel, ref - cfg.hatchOffset)))
 }
@@ -128,11 +128,18 @@ export interface Hatch {
   save: SaveData
   inst: PokemonInstance
   isNew: boolean
+  /** False when you already own that species at a level at least as high: the hatchling isn't kept. */
+  kept: boolean
+  /** The weaker copy the hatchling replaced (it takes its team slot). */
+  replaced?: PokemonInstance
   joinedTeam: boolean
   paid: number
 }
 
-/** Hatch an Egg: the free one (once) or a bought one. Null when it isn't available or affordable. */
+/**
+ * Hatch an Egg: the free one (once) or a bought one. Null when it isn't available or affordable. Only one copy of a
+ * species is kept: a hatchling stronger than every copy you own replaces the weakest one, otherwise it isn't kept.
+ */
 export function hatchEgg(
   save: SaveData,
   data: GameData,
@@ -147,20 +154,35 @@ export function hatchEgg(
   const pick = rng.weighted(eggOdds(save, data), (o) => o.weight)
   if (!pick) return null
   const inst = createInstance(pick.species.dex, hatchLevel(save, data), data, newId(), now)
-  const joinedTeam = save.team.length < data.config.maxTeamSize
   const isNew = !save.pokedex.includes(inst.dex)
   const paid = opts.free ? 0 : price
+  const copies = ownedPokemon(save).filter((p) => p.dex === inst.dex)
+  const kept = copies.every((p) => p.level < inst.level)
+  const replaced = kept ? copies.sort((a, b) => a.level - b.level)[0] : undefined
+  const paidSave: SaveData = {
+    ...save,
+    gold: save.gold - paid,
+    pokedex: isNew ? [...save.pokedex, inst.dex] : save.pokedex,
+    dayCare: { ...dc, eggClaimed: dc.eggClaimed || opts.free },
+  }
+  if (!kept) return { save: paidSave, inst, isNew, kept, joinedTeam: false, paid }
+  const inTeam = replaced ? save.team.includes(replaced.id) : false
+  const box = save.box.filter((p) => p.id !== replaced?.id)
+  const team = inTeam
+    ? save.team.map((id) => (id === replaced!.id ? inst.id : id))
+    : save.team.filter((id) => id !== replaced?.id)
+  const joinedTeam = inTeam || team.length < data.config.maxTeamSize
   return {
     save: {
-      ...save,
-      gold: save.gold - paid,
-      box: [...save.box, inst],
-      team: joinedTeam ? [...save.team, inst.id] : save.team,
-      pokedex: isNew ? [...save.pokedex, inst.dex] : save.pokedex,
-      dayCare: { ...dc, eggClaimed: dc.eggClaimed || opts.free },
+      ...paidSave,
+      box: [...box, inst],
+      team: joinedTeam && !inTeam ? [...team, inst.id] : team,
+      dayCare: { ...paidSave.dayCare!, residents: dc.residents.filter((r) => r.inst.id !== replaced?.id) },
     },
     inst,
     isNew,
+    kept,
+    replaced,
     joinedTeam,
     paid,
   }
