@@ -42,7 +42,7 @@ export const DEFAULT_CONFIG: GameConfig = {
     poison: { threshold: 2, damage: 3, duration: 3 },
     frozen: { threshold: 3, stunTurns: 2 },
     paralyze: { threshold: 2, stunTurns: 1 },
-    confuse: { threshold: 2 },
+    confuse: { threshold: 2, recoilPercent: 10 },
     heal: { threshold: 2, amount: 'rollTotal' },
   },
   ai: { samples: 200, rerollGainThreshold: 0.08 },

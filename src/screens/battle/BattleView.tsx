@@ -7,6 +7,7 @@ import {
   battleBackgroundFor,
   COMBO_NAMES,
   computeDamage,
+  confusionRecoil,
   createRng,
   effectText,
   faceOf,
@@ -439,21 +440,19 @@ export function BattleView({ battle }: { battle: BattleSlice }) {
   const preview = useMemo(() => {
     if (!rolling || !st.dice.length) return null
     const a = activeBattler(st)
-    const confused = a.status.confused
-    const r = computeDamage(st.dice, a.types, confused ? a.types : st.enemy.types, st.playerLevels, data)
-    const statuses = confused ? [] : statusesFromRoll(st.dice, data)
+    const recoil = a.status.confused ? confusionRecoil(a.maxHp, data) : 0
+    const r = computeDamage(st.dice, a.types, st.enemy.types, st.playerLevels, data)
+    const statuses = statusesFromRoll(st.dice, data)
     // Status faces short of their threshold: they only count as a number this roll.
     const counts = statusCounts(st.dice, data)
     const rules = data.config.status
-    const almost = confused
-      ? []
-      : STATUS_KINDS.filter((k) => counts[k] > 0 && counts[k] < rules[k].threshold).map((k) => ({
-          status: k,
-          have: counts[k],
-          need: rules[k].threshold,
-          value: st.dice.map((d) => faceOf(d, data)).find((f) => f.kind === 'status' && f.status === k)?.value ?? 0,
-        }))
-    return { r, statuses, almost, confused }
+    const almost = STATUS_KINDS.filter((k) => counts[k] > 0 && counts[k] < rules[k].threshold).map((k) => ({
+      status: k,
+      have: counts[k],
+      need: rules[k].threshold,
+      value: st.dice.map((d) => faceOf(d, data)).find((f) => f.kind === 'status' && f.status === k)?.value ?? 0,
+    }))
+    return { r, statuses, almost, recoil }
   }, [rolling, st, data])
   const [statusTip, closeStatusTip] = useOneTimeTip(STATUS_TIP_KEY)
 
@@ -789,7 +788,7 @@ export function BattleView({ battle }: { battle: BattleSlice }) {
         {/* Live combo readout */}
         {ready && preview && (
           <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-xl">
-            {preview.confused && <span className="text-danger">CONFUSED — this hit will strike {active.name}!</span>}
+            {preview.recoil > 0 && <span className="text-danger">CONFUSED — {active.name} takes {preview.recoil} recoil after this hit!</span>}
             <span className={preview.r.combo ? 'text-ink' : 'text-muted'}>
               {preview.r.combo ? `${COMBO_NAMES[preview.r.combo.key].toUpperCase()} — +${preview.r.combo.bonus}` : 'NO COMBO'}
             </span>

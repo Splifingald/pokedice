@@ -47,7 +47,7 @@ export function autoEvents(state: BattleState, data: GameData, rng: Rng): Battle
     case 'player_reroll': {
       const a = activeBattler(state)
       const mask =
-        a.rerollsLeft > 0 && !a.status.confused
+        a.rerollsLeft > 0
           ? aiRerollMask({
               dice: state.dice,
               attackerTypes: a.types,
@@ -107,7 +107,7 @@ export function simulateBattle(
   let playerTurns = 0
   const record = (log: LogEntry[]) => {
     for (const e of log) {
-      if (e.kind === 'damage' && !e.selfHit) (e.side === 'player' ? playerDamage : enemyDamage).push(e.amount)
+      if (e.kind === 'damage') (e.side === 'player' ? playerDamage : enemyDamage).push(e.amount)
       if (e.kind === 'turn' && e.side === 'player') playerTurns++
     }
   }

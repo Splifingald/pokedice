@@ -104,10 +104,10 @@ function buildRows(log: readonly LogEntry[], player: readonly Battler[], enemy: 
         rows.push({
           key,
           ...attacker,
-          text: e.selfHit ? 'hurt itself in its confusion' : `attacked ${target.name}${e.result.combo ? ` · ${COMBO_NAMES[e.result.combo.key]}` : ''}`,
+          text: `attacked ${target.name}${e.result.combo ? ` · ${COMBO_NAMES[e.result.combo.key]}` : ''}`,
           icon: 'sword',
           amount: e.amount,
-          note: e.selfHit ? undefined : nearMisses(e.dice, data),
+          note: nearMisses(e.dice, data),
           recap: { result: e.result, dice: e.dice },
         })
         return
@@ -141,6 +141,9 @@ function buildRows(log: readonly LogEntry[], player: readonly Battler[], enemy: 
       }
       case 'heal':
         rows.push({ key, ...who(e.uid), text: 'healed', icon: 'heal', amount: e.amount, heal: true })
+        return
+      case 'recoil':
+        rows.push({ key, ...who(e.uid), text: 'took confusion recoil', icon: STATUS_ICON.confuse, amount: e.amount })
         return
     }
   })

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   applyStatuses,
+  confusionRecoil,
   consumeStun,
   createBattle,
   emptyStatus,
@@ -134,19 +135,32 @@ describe('status in battle', () => {
     expect(r.state.phase).toBe('player_roll') // turn came straight back
   })
 
-  it('a confused attacker hits itself, then the confusion clears', () => {
+  it('a confused attacker still hits the foe, takes recoil (% of its max HP), then the confusion clears', () => {
     const s = battle()
     s.phase = 'player_reroll'
     s.dice = [die('water', 5)]
     s.selected = [false]
+    s.enemy.hp = 500
+    s.enemy.maxHp = 500
+    s.player[0]!.maxHp = 60
+    s.player[0]!.hp = 60
     s.player[0]!.status = { ...emptyStatus(), confused: true }
-    const before = s.player[0]!.hp
+    const pct = data.config.status.confuse.recoilPercent
     const r = reduce(s, { t: 'ATTACK' }, data, createRng(1))
     const hit = r.log.find((l) => l.kind === 'damage')
-    expect(hit && hit.kind === 'damage' && hit.selfHit).toBe(true)
-    expect(r.state.player[0]!.hp).toBe(before - 3) // water vs water ×0.5 → 2.5 → round 3
+    expect(hit && hit.kind === 'damage' && hit.targetUid).toBe(s.enemy.uid)
+    expect(r.state.enemy.hp).toBe(500 - (hit && hit.kind === 'damage' ? hit.amount : 0))
+    expect(r.state.enemy.hp).toBeLessThan(500)
+    const recoil = Math.max(1, Math.round((60 * pct) / 100))
+    expect(r.log.find((l) => l.kind === 'recoil')).toMatchObject({ side: 'player', amount: recoil })
+    expect(r.state.player[0]!.hp).toBe(60 - recoil)
     expect(r.state.player[0]!.status.confused).toBe(false)
-    expect(r.state.enemy.hp).toBe(r.state.enemy.maxHp)
+  })
+
+  it('confusion recoil follows the admin percentage and never drops below 1', () => {
+    const d = { ...data, config: { ...data.config, status: { ...data.config.status, confuse: { threshold: 2, recoilPercent: 25 } } } }
+    expect(confusionRecoil(80, d)).toBe(20)
+    expect(confusionRecoil(2, data)).toBe(1)
   })
 
   it('every status clears when the battle ends', () => {

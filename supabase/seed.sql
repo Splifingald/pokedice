@@ -1702,7 +1702,7 @@ on conflict (key) do update set name = excluded.name, description = excluded.des
 insert into game_config (key, value) values
   ('showRecommendedTypes', 'true'::jsonb),
   ('shinyChance', '0.02'::jsonb),
-  ('status', '{"burn":{"duration":3,"threshold":1,"damagePerStack":2},"heal":{"amount":"rollTotal","threshold":2},"frozen":{"stunTurns":2,"threshold":3},"poison":{"damage":5,"duration":3,"threshold":2},"confuse":{"threshold":2},"paralyze":{"stunTurns":1,"threshold":2}}'::jsonb),
+  ('status', '{"burn":{"duration":3,"threshold":1,"damagePerStack":2},"heal":{"amount":"rollTotal","threshold":2},"frozen":{"stunTurns":2,"threshold":3},"poison":{"damage":5,"duration":3,"threshold":2},"confuse":{"threshold":2,"recoilPercent":10},"paralyze":{"stunTurns":1,"threshold":2}}'::jsonb),
   ('showRoundPreview', 'false'::jsonb),
   ('regenPercentPerHour', '20'::jsonb),
   ('xpCurve', '{"A":0.5,"B":1.15,"C":1}'::jsonb),

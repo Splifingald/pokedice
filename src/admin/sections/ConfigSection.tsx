@@ -268,7 +268,8 @@ function StatusRulesBox() {
         </fieldset>
         <fieldset className="flex flex-col gap-1 border-2 border-ink p-2">
           <legend className="px-1 text-lg">Confuse (Psychic)</legend>
-          <Field label="threshold" hint={`${faces}; the foe's next attack hits itself`}><NumInput value={r.confuse.threshold} min={1} onChange={(v) => patch('confuse', { threshold: num(v, 2, 1) })} /></Field>
+          <Field label="threshold" hint={`${faces}; the foe's next attack takes recoil`}><NumInput value={r.confuse.threshold} min={1} onChange={(v) => patch('confuse', { threshold: num(v, 2, 1) })} /></Field>
+          <Field label="recoilPercent" hint="% of the confused attacker's max HP it loses after its attack (min 1)"><NumInput value={r.confuse.recoilPercent} min={0} onChange={(v) => patch('confuse', { recoilPercent: num(v, 10, 0) })} /></Field>
         </fieldset>
         <fieldset className="flex flex-col gap-1 border-2 border-ink p-2">
           <legend className="px-1 text-lg">Heal (Grass)</legend>

@@ -315,7 +315,8 @@ export interface StatusRules {
   poison: { threshold: number; damage: number; duration: number }
   frozen: { threshold: number; stunTurns: number }
   paralyze: { threshold: number; stunTurns: number }
-  confuse: { threshold: number }
+  /** Confusion: the victim's next attack still lands, then it takes `recoilPercent`% of its max HP as recoil. */
+  confuse: { threshold: number; recoilPercent: number }
   /** Heal faces: at the threshold the attacker heals itself, on top of the damage it deals. */
   heal: { threshold: number; amount: 'rollTotal' | 'healFaces' }
 }

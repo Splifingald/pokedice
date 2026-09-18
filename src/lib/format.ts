@@ -82,7 +82,7 @@ export function statusEffects(r: StatusRules): { status: StatusKind; icon: IconN
     { status: 'poison', icon: 'poison', name: 'Poison', die: 'poison', when: faces(r.poison.threshold, 'Poison'), what: `${r.poison.damage} damage at the start of the foe's turn for ${turns(r.poison.duration)}. Doesn't stack.` },
     { status: 'frozen', icon: 'frozen', name: 'Frozen', die: 'ice', when: faces(r.frozen.threshold, 'Frozen'), what: `The foe skips ${turns(r.frozen.stunTurns)}.` },
     { status: 'paralyze', icon: 'paralyze', name: 'Paralyze', die: 'electric', when: faces(r.paralyze.threshold, 'Paralyze'), what: `The foe skips ${turns(r.paralyze.stunTurns)}.` },
-    { status: 'confuse', icon: 'confuse', name: 'Confuse', die: 'psychic', when: faces(r.confuse.threshold, 'Confuse'), what: "The foe's next attack hits itself." },
+    { status: 'confuse', icon: 'confuse', name: 'Confuse', die: 'psychic', when: faces(r.confuse.threshold, 'Confuse'), what: `The foe's next attack still lands, but it takes ${r.confuse.recoilPercent}% of its max HP as recoil.` },
     {
       status: 'heal',
       icon: 'heal',

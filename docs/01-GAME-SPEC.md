@@ -175,8 +175,8 @@ All statuses **clear when the battle ends**. HP damage persists (§6).
 | **Poison** | **≥2** Poison faces | 3 damage at the start of the victim's turn, 3 turns | **Does not stack.** Re-applying only refreshes the duration. Below the threshold the face is worth 1. |
 | **Frozen** | **≥3** Frozen faces in one roll | victim stunned 2 turns | Refreshes, doesn't stack. Below threshold the face is worth 1. |
 | **Paralyze** | **≥2** Paralyze faces | victim stunned 1 turn | Refreshes. Below threshold the face is worth 4. |
-| **Confuse** | **≥2** Confuse faces | the victim's **next attack** is dealt to itself (full damage, multipliers computed against itself), then confusion clears | Refreshes. Below threshold the face is worth 2. |
-| **Heal** | **≥2** Heal faces | a *self*-effect: the **attacker** heals HP equal to the total value of the dice rolled (fallbacks included, no upgrades/multipliers), on top of the damage it deals; capped at max HP. `status.heal.amount = 'healFaces'` heals only the Heal faces' values instead | Nothing to stack. Below threshold the face is worth 3. Does not trigger on a confused self-hit. |
+| **Confuse** | **≥2** Confuse faces | the victim's **next attack** still hits its target normally, then the victim takes **recoil** equal to `status.confuse.recoilPercent`% (default 10%) of its own max HP (rounded, min 1), and confusion clears | Refreshes. Below threshold the face is worth 2. |
+| **Heal** | **≥2** Heal faces | a *self*-effect: the **attacker** heals HP equal to the total value of the dice rolled (fallbacks included, no upgrades/multipliers), on top of the damage it deals; capped at max HP. `status.heal.amount = 'healFaces'` heals only the Heal faces' values instead | Nothing to stack. Below threshold the face is worth 3. |
 
 - DoT ticks at the **start of the victim's turn**, before the stun check, and can K.O.
 - A stunned Pokémon still ticks DoT and still burns down its stun counter.

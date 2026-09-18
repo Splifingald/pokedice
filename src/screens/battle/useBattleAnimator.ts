@@ -119,12 +119,11 @@ function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): Step {
       const combo = r.combo ? `${COMBO_NAMES[r.combo.key].toUpperCase()}! ` : ''
       const textFor = (f: Fx) => {
         const attacker = e.side === 'enemy' ? st.enemy.name : nameOf(f.activeUid)
-        if (e.selfHit) return `${attacker} hurt itself in its confusion! ${e.amount} damage.`
         if (r.immune) return `It doesn't affect ${target}…`
         return `${combo}${attacker} dealt ${e.amount} damage!`
       }
       const banner =
-        e.selfHit ? 'CONFUSED!' : tone === 'super' ? 'SUPER EFFECTIVE!' : tone === 'weak' ? 'Not very effective…' : tone === 'immune' ? 'NO EFFECT' : null
+        tone === 'super' ? 'SUPER EFFECTIVE!' : tone === 'weak' ? 'Not very effective…' : tone === 'immune' ? 'NO EFFECT' : null
       const power = tone === 'super' ? (eff >= 3 ? 10 : 7) : tone === 'weak' ? 2 : tone === 'immune' ? 0 : 4
       const color = ctx.colorOf(r.attackType ?? r.perDie[0]?.type ?? 'base')
       return {
@@ -235,6 +234,19 @@ function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): Step {
           hp: { ...f.hp, [e.uid]: e.hpAfter },
           pop: { id: nextId(), target: e.side, amount: e.amount, tone: 'heal' },
           status: { id: nextId(), target: e.side, status: 'heal' },
+        }),
+      }
+    case 'recoil':
+      return {
+        delay: 1000,
+        sound: 'hit',
+        apply: (f) => ({
+          ...f,
+          message: `${nameOf(e.uid)} is hurt by the recoil of its confusion! −${e.amount}`,
+          hp: { ...f.hp, [e.uid]: e.hpAfter },
+          pop: { id: nextId(), target: e.side, amount: e.amount, tone: 'normal' },
+          status: { id: nextId(), target: e.side, status: 'confuse' },
+          shake: { id: nextId(), power: 3 },
         }),
       }
     case 'end':

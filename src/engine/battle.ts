@@ -97,7 +97,6 @@ export type LogEntry =
       targetUid: string
       amount: number
       hpAfter: number
-      selfHit: boolean
       dice: RolledDie[]
       result: DamageResult
     }
@@ -110,6 +109,8 @@ export type LogEntry =
   /** `side` 'enemy': a trainer's potion (absent = the player's item). */
   | { kind: 'item'; key: string; targetUid: string; amount: number; hpAfter: number; cured?: CurableStatus[]; rerolls?: number; side?: Side }
   | { kind: 'heal'; side: Side; uid: string; amount: number; hpAfter: number }
+  /** Confusion recoil: the confused attacker hurts itself after its attack. */
+  | { kind: 'recoil'; side: Side; uid: string; amount: number; hpAfter: number }
   | { kind: 'end'; result: 'won' | 'lost' | 'fled'; reason?: 'stalemate' }
 
 export interface BattlerSeed {
@@ -296,59 +297,51 @@ function afterAction(s: BattleState, side: Side, data: GameData, log: LogEntry[]
   beginTurn(s, other(side), data, log)
 }
 
+/** Recoil a confused attacker takes after its attack: `status.confuse.recoilPercent` of its max HP, at least 1. */
+export function confusionRecoil(maxHp: number, data: GameData): number {
+  return Math.max(1, Math.round((maxHp * data.config.status.confuse.recoilPercent) / 100))
+}
+
 function resolveAttack(s: BattleState, side: Side, data: GameData, log: LogEntry[]) {
   const atk = side === 'player' ? activeBattler(s) : s.enemy
   const def = side === 'player' ? s.enemy : activeBattler(s)
   const levels = side === 'player' ? s.playerLevels : s.enemyLevels
   const dice = s.dice
 
+  const result = computeDamage(dice, atk.types, def.types, levels, data)
+  def.hp = Math.max(0, def.hp - result.final)
+  s.lastDamage = result
+  log.push({
+    kind: 'damage',
+    side,
+    target: other(side),
+    targetUid: def.uid,
+    amount: result.final,
+    hpAfter: def.hp,
+    dice,
+    result,
+  })
+  const all = statusesFromRoll(dice, data)
+  const apps = all.filter((a) => a.status !== 'heal')
+  // An attack with no effect inflicts nothing either.
+  if (def.hp > 0 && apps.length && !result.immune) {
+    def.status = applyStatuses(def.status, apps, data.config.status)
+    for (const a of apps)
+      log.push({ kind: 'status', target: other(side), targetUid: def.uid, status: a.status, stacks: a.stacks, turns: a.turns })
+  }
+  // Heal faces: the attacker restores HP on top of the damage it dealt.
+  const heal = all.find((a) => a.status === 'heal')
+  if (heal?.amount && atk.hp > 0 && atk.hp < atk.maxHp) {
+    const before = atk.hp
+    atk.hp = Math.min(atk.maxHp, atk.hp + heal.amount)
+    log.push({ kind: 'heal', side, uid: atk.uid, amount: atk.hp - before, hpAfter: atk.hp })
+  }
+  // Confusion: the attack still lands, then the attacker takes recoil (a % of its max HP) and the confusion clears.
   if (atk.status.confused) {
-    // Confusion: this attack is dealt to the attacker itself, multipliers against its own types, then clears.
-    const result = computeDamage(dice, atk.types, atk.types, levels, data)
-    atk.hp = Math.max(0, atk.hp - result.final)
     atk.status = { ...atk.status, confused: false }
-    s.lastDamage = result
-    log.push({
-      kind: 'damage',
-      side,
-      target: side,
-      targetUid: atk.uid,
-      amount: result.final,
-      hpAfter: atk.hp,
-      selfHit: true,
-      dice,
-      result,
-    })
-  } else {
-    const result = computeDamage(dice, atk.types, def.types, levels, data)
-    def.hp = Math.max(0, def.hp - result.final)
-    s.lastDamage = result
-    log.push({
-      kind: 'damage',
-      side,
-      target: other(side),
-      targetUid: def.uid,
-      amount: result.final,
-      hpAfter: def.hp,
-      selfHit: false,
-      dice,
-      result,
-    })
-    const all = statusesFromRoll(dice, data)
-    const apps = all.filter((a) => a.status !== 'heal')
-    // An attack with no effect inflicts nothing either.
-    if (def.hp > 0 && apps.length && !result.immune) {
-      def.status = applyStatuses(def.status, apps, data.config.status)
-      for (const a of apps)
-        log.push({ kind: 'status', target: other(side), targetUid: def.uid, status: a.status, stacks: a.stacks, turns: a.turns })
-    }
-    // Heal faces: the attacker restores HP on top of the damage it dealt.
-    const heal = all.find((a) => a.status === 'heal')
-    if (heal?.amount && atk.hp > 0 && atk.hp < atk.maxHp) {
-      const before = atk.hp
-      atk.hp = Math.min(atk.maxHp, atk.hp + heal.amount)
-      log.push({ kind: 'heal', side, uid: atk.uid, amount: atk.hp - before, hpAfter: atk.hp })
-    }
+    const amount = confusionRecoil(atk.maxHp, data)
+    atk.hp = Math.max(0, atk.hp - amount)
+    log.push({ kind: 'recoil', side, uid: atk.uid, amount, hpAfter: atk.hp })
   }
   s.dice = []
   s.selected = []
@@ -486,8 +479,7 @@ export function reduce(
       }
       s.dice = rollAll(en.dice, data, rng)
       log.push({ kind: 'roll', side: 'enemy', dice: s.dice })
-      // A confused AI knows the hit comes back at it — it doesn't dig deeper.
-      for (let guard = 0; guard < 20 && en.rerollsLeft > 0 && !en.status.confused; guard++) {
+      for (let guard = 0; guard < 20 && en.rerollsLeft > 0; guard++) {
         const mask = aiRerollMask({
           dice: s.dice,
           attackerTypes: en.types,

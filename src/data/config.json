@@ -21,7 +21,8 @@
    "threshold": 2
   },
   "confuse": {
-   "threshold": 2
+   "threshold": 2,
+   "recoilPercent": 10
   },
   "paralyze": {
    "stunTurns": 1,
