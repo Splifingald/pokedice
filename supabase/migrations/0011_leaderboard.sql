@@ -1,4 +1,14 @@
--- Leaderboard: one row per cloud save, so only players signed in with Google appear. Saves stay private (own_save);
+-- Players the admin banned from the leaderboard (Admin → Analytics → player → Leaderboard). Their game is untouched.
+create table if not exists leaderboard_bans (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  banned_at timestamptz not null default now()
+);
+alter table leaderboard_bans enable row level security;
+drop policy if exists leaderboard_bans_admin on leaderboard_bans;
+create policy leaderboard_bans_admin on leaderboard_bans for all using (is_admin()) with check (is_admin());
+grant select, insert, delete on leaderboard_bans to authenticated;
+
+-- Leaderboard: one row per cloud save (banned players left out), so only players signed in with Google appear. Saves stay private (own_save);
 -- this function reads them as the owner and returns only what the board shows: name, team, Pokédex size, best level
 -- and campaign progress. Anyone may call it (guests see the board too, with an invitation to connect).
 create or replace function leaderboard()
@@ -39,6 +49,7 @@ language sql stable security definer set search_path = public as $$
       from jsonb_each(coalesce(s.data -> 'areaProgress', '{}')) e(k, v)
     ), '{}')
   from saves s
+  where not exists (select 1 from leaderboard_bans b where b.user_id = s.user_id)
   order by s.updated_at desc
   limit 1000
 $$;
