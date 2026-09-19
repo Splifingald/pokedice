@@ -29,6 +29,7 @@ import {
   mergeConfig,
   newSave,
   progressOf,
+  releaseDuplicates,
   rollEncounter,
   setTeam,
   speciesName,
@@ -285,6 +286,29 @@ describe('wipe, center, team, shop, upgrades', () => {
     expect(isTeamHurt(s, data)).toBe(true)
     expect(hasAbleTeam(s)).toBe(false)
     expect(isTeamHurt(centerHeal(s, data), data)).toBe(false)
+  })
+
+  it('keeps one copy per species in the Box: the highest level; shiny and team members are spared', () => {
+    const s = fresh() // team: Charmander (4) Lv.5
+    const mon = (id: string, dex: number, level: number, extra: object = {}) => ({ ...createInstance(dex, level, data, id, 0), ...extra })
+    // Two Ivysaur in the Box (one just evolved): the higher level stays, wherever it sits.
+    const evolved = { ...s, box: [...s.box, mon('a', 2, 16), mon('b', 2, 22)] }
+    const r = releaseDuplicates(evolved)
+    expect(r.save.box.map((p) => p.id)).toEqual([s.team[0], 'b'])
+    expect(r.released.map((p) => p.id)).toEqual(['a'])
+    // Same level: the most XP, then the one that was there first.
+    expect(releaseDuplicates({ ...s, box: [...s.box, mon('a', 2, 16), mon('b', 2, 16, { xp: 3 })] }).released.map((p) => p.id)).toEqual(['a'])
+    expect(releaseDuplicates({ ...s, box: [...s.box, mon('a', 2, 16), mon('b', 2, 16)] }).released.map((p) => p.id)).toEqual(['b'])
+    // Shiny copies never go and never push another out.
+    const shiny = { ...s, box: [...s.box, mon('a', 2, 16), mon('b', 2, 30, { shiny: true })] }
+    expect(releaseDuplicates(shiny).save).toBe(shiny)
+    // A team member is never let go, even when weaker; a Box copy no stronger than it is.
+    const team = { ...s, box: [...s.box, mon('t', 5, 20), mon('a', 5, 30), mon('b', 5, 20)], team: [s.team[0]!, 't'] }
+    expect(releaseDuplicates(team).released.map((p) => p.id)).toEqual(['b'])
+    // Back in the Box, the weaker one goes.
+    const back = releaseDuplicates(setTeam(releaseDuplicates(team).save, [s.team[0]!], data))
+    expect(back.released.map((p) => p.id)).toEqual(['t'])
+    expect(back.save.box.map((p) => p.id)).toEqual([s.team[0], 'a'])
   })
 
   it('team edits are validated', () => {

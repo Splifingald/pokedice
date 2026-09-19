@@ -4,6 +4,7 @@ import { BUNDLE } from '@/config/bundle'
 import {
   applyRegen,
   compileGameData,
+  releaseDuplicates,
   syncHpScale,
   syncXpCurve,
   type BattleState,
@@ -105,14 +106,22 @@ export const initialRun = (): RunState => ({
   forceNext: null,
 })
 
+/**
+ * Every save that enters the store is brought up to date: HP to the current hpMultiplier (keeps every HP %), XP to the
+ * current curve, and one copy per species in the Box (releaseDuplicates). `released` lists the copies let go.
+ */
+function settle(save: SaveData, data: GameData) {
+  return releaseDuplicates(syncXpCurve(syncHpScale(save, data), data))
+}
+
 function boot(): Pick<GameStore, 'data' | 'save' | 'corruptSaveArchived' | 'settings'> {
   const data = compileGameData(BUNDLE)
   const { save, corrupt } = readSave()
   const settings = save?.settings ?? readSettings()
   if (!save) return { data, save: null, corruptSaveArchived: corrupt, settings }
-  // Bring HP to the current hpMultiplier (keeps every HP %), then regen, before the first render.
+  // Settle the save (HP scale, XP curve, duplicates), then regen, before the first render.
   const now = Date.now()
-  const synced = syncXpCurve(syncHpScale(save, data), data)
+  const synced = settle(save, data).save
   const regen = applyRegen(synced.box, synced.lastRegenTick, now, data)
   return { data, save: { ...synced, box: regen.instances, lastRegenTick: regen.lastTick }, corruptSaveArchived: corrupt, settings }
 }
@@ -151,12 +160,15 @@ export function onSaveCommitted(fn: SaveListener) {
 /** Every save mutation goes through here: stamps updatedAt, persists (debounced), notifies sync. */
 export function commitSave(next: SaveData | null, opts: { silent?: boolean; keepTimestamp?: boolean } = {}) {
   const { settings, data, save: prev } = useGame.getState()
-  // Whatever arrives here (cloud pull, import, new game) is brought to the current HP scale.
-  const scaled = next ? syncXpCurve(syncHpScale(next, data), data) : null
+  // Whatever arrives here (cloud pull, import, new game) is settled: HP scale, XP curve, one copy per species.
+  const settled = next ? settle(next, data) : null
+  const scaled = settled?.save ?? null
   const stamped = scaled ? { ...scaled, settings, updatedAt: opts.keepTimestamp ? scaled.updatedAt : Date.now() } : null
   useGame.setState({ save: stamped })
   scheduleWrite(stamped)
   if (!opts.silent) for (const fn of saveListeners) fn(stamped, prev)
+  for (const p of settled?.released ?? [])
+    pushToast(`${data.species[p.dex]?.name ?? `#${p.dex}`} Lv.${p.level} left: you have a stronger one`, 'info', 4000)
 }
 
 export function mutateSave(fn: (s: SaveData) => SaveData | null | undefined): boolean {
@@ -185,7 +197,7 @@ export function setContent(raw: BundleRaw, source: 'bundle' | 'remote') {
   const data = compileGameData(raw)
   useGame.setState((s) => {
     // A new hpMultiplier keeps every HP % (syncHpScale); an admin may also have removed the area the player was in.
-    const save = s.save ? syncXpCurve(syncHpScale(s.save, data), data) : null
+    const save = s.save ? settle(s.save, data).save : null
     const areaOk = !save || data.areas.some((a) => a.id === save.currentAreaId)
     return {
       data,
