@@ -31,6 +31,8 @@ import {
   progressOf,
   releaseDuplicates,
   rollEncounter,
+  rollTrainer,
+  scaledLevelSpan,
   setTeam,
   speciesName,
   swapIntoTeam,
@@ -54,6 +56,8 @@ const [A1, A2] = linearAreas(data) as [Area, Area]
 const FOREST = byName('Viridian Forest')
 const SEAFOAM = byName('Seafoam Islands')
 const CAVE = byName('Cerulean Cave')
+/** Seafoam with a gauge legendary (due at the full gauge, needed to clear): the bundled one may be admin-tuned otherwise. */
+const SEAFOAM_GAUGE: Area = { ...SEAFOAM, legendaryBoss: [{ dex: 144, level: 50 }] }
 const FARAWAY = byName('Faraway Island')
 
 const fresh = () => newSave(4, data, 1000, newId)
@@ -108,7 +112,7 @@ describe('encounters', () => {
       }
     }
     expect(seen.has('trainer')).toBe(false) // Route 1 has no trainers
-    expect(seen.has('center')).toBe(true)
+    expect(seen.has('center')).toBe(A1.encounterWeights.center > 0)
   })
 
   it('offers trainers in Viridian Forest', () => {
@@ -120,6 +124,7 @@ describe('encounters', () => {
   })
 
   it('offers the gauge legendary as a challenge when the gauge is full, once', () => {
+    const SEAFOAM = SEAFOAM_GAUGE
     const p = { ...emptyProgress(), xp: SEAFOAM.xpToUnlockNext! }
     expect(dueBoss(SEAFOAM, p, 10)).toMatchObject({ dex: 144, level: 50 })
     expect(dueBoss(SEAFOAM, { ...p, xp: p.xp - 1 }, 10)).toBeNull()
@@ -131,8 +136,9 @@ describe('encounters', () => {
 
   it('team-average bosses (Cerulean Cave) and arrival bosses (Faraway Island)', () => {
     const p = emptyProgress()
-    expect(dueBoss(CAVE, p, 59)).toBeNull()
-    expect(dueBoss(CAVE, p, 60)?.dex).toBe(150)
+    const at = CAVE.legendaryBoss![0]!.teamAvgThreshold!
+    expect(dueBoss(CAVE, p, at - 1)).toBeNull()
+    expect(dueBoss(CAVE, p, at)?.dex).toBe(150)
     expect(dueBoss(CAVE, { ...p, bossesDefeated: [150] }, 90)).toBeNull()
     expect(dueBoss(FARAWAY, p, 1)?.dex).toBe(151)
   })
@@ -145,6 +151,28 @@ describe('encounters', () => {
       expect(lv).toBeLessThanOrEqual(33)
     }
     expect(enemyLevel(7, { area: A1, data, teamAvgLevel: 30 }, rng)).toBe(7)
+    expect(scaledLevelSpan(CAVE, 30, data)).toEqual({ min: 27, max: 33 })
+  })
+
+  it('a scaling area can set its own wild and trainer ranges around the team average', () => {
+    const area: Area = { ...CAVE, scaleOffsets: { wild: { min: -15, max: -10 }, trainer: { min: -10, max: -5 } } }
+    const rng = createRng(8)
+    const wild = new Set<number>()
+    const trainer = new Set<number>()
+    for (let i = 0; i < 200; i++) {
+      wild.add(enemyLevel(5, { area, data, teamAvgLevel: 50 }, rng, 'wild'))
+      trainer.add(enemyLevel(5, { area, data, teamAvgLevel: 50 }, rng, 'trainer'))
+    }
+    expect([...wild].sort((a, b) => a - b)).toEqual([35, 36, 37, 38, 39, 40])
+    expect([...trainer].sort((a, b) => a - b)).toEqual([40, 41, 42, 43, 44, 45])
+    expect(scaledLevelSpan(area, 50, data)).toEqual({ min: 35, max: 45 })
+    // Only the wild range set: trainers keep ± scaleLevelSpread. Never below Lv.1.
+    const wildOnly: Area = { ...CAVE, scaleOffsets: { wild: { min: -15, max: -10 } } }
+    expect(scaledLevelSpan(wildOnly, 50, data)).toEqual({ min: 35, max: 53 })
+    expect(enemyLevel(5, { area: wildOnly, data, teamAvgLevel: 5 }, rng)).toBe(1)
+    // Trainer Pokémon rolled in the area use the trainer range.
+    const enc = rollTrainer({ area, data, teamAvgLevel: 50, progress: emptyProgress(), teamHurt: false, isFirstInArea: false, pokedex: [] }, rng)
+    expect(enc?.kind === 'trainer' && enc.team.every((m) => m.level >= 40 && m.level <= 45)).toBe(true)
   })
 
   it('dev tools can force the encounter type', () => {
@@ -169,8 +197,8 @@ describe('encounters', () => {
 })
 
 describe('victory rewards', () => {
-  const win = (s: SaveData, over: Partial<Parameters<typeof applyVictory>[1]>) =>
-    applyVictory(s, { areaId: A1.id, kind: 'wild', enemyDex: 16, enemyLevel: 4, fighterUid: s.team[0]!, ...over }, data, createRng(1), 5, newId)
+  const win = (s: SaveData, over: Partial<Parameters<typeof applyVictory>[1]>, d = data) =>
+    applyVictory(s, { areaId: A1.id, kind: 'wild', enemyDex: 16, enemyLevel: 4, fighterUid: s.team[0]!, ...over }, d, createRng(1), 5, newId)
 
   it('wild win: XP to the fighter and the gauge, no Pokédollars, no automatic catch', () => {
     const s = fresh()
@@ -219,10 +247,12 @@ describe('victory rewards', () => {
   })
 
   it('an area with a legendary unlocks only after it (catching it is a separate throw)', () => {
-    const s = { ...fresh(), areaProgress: { [SEAFOAM.id]: { ...emptyProgress(), xp: 650 } } }
-    const r = win(s, { areaId: SEAFOAM.id, enemyDex: 86, enemyLevel: 30 })
+    const SEAFOAM = SEAFOAM_GAUGE
+    const d = { ...data, areas: data.areas.map((a) => (a.id === SEAFOAM.id ? SEAFOAM : a)) }
+    const s = { ...fresh(), areaProgress: { [SEAFOAM.id]: { ...emptyProgress(), xp: SEAFOAM.xpToUnlockNext! } } }
+    const r = win(s, { areaId: SEAFOAM.id, enemyDex: 86, enemyLevel: 30 }, d)
     expect(progressOf(r.save, SEAFOAM.id).cleared).toBe(false)
-    const b = win(r.save, { areaId: SEAFOAM.id, kind: 'boss', enemyDex: 144, enemyLevel: 50 })
+    const b = win(r.save, { areaId: SEAFOAM.id, kind: 'boss', enemyDex: 144, enemyLevel: 50 }, d)
     const p = progressOf(b.save, SEAFOAM.id)
     expect(p.bossesDefeated).toEqual([144])
     expect(p.bossDefeated).toBe(true)
@@ -365,7 +395,7 @@ describe('config & data plumbing', () => {
     expect(c.goldMultiplier).toBe(2)
     expect(c.encounterMode).toBe('deck')
     expect(c.xpCurve).toEqual({ A: 3, B: 1.15, C: 1 })
-    expect(c.status.burn).toEqual({ threshold: 1, damagePerStack: 1, duration: 5 })
+    expect(c.status.burn).toEqual({ threshold: 1, percentPerStack: 4, duration: 5 })
     expect(mergeConfig(undefined).maxTeamSize).toBe(3)
   })
 

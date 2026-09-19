@@ -1,6 +1,6 @@
 # Pokédice — Game Design Specification
 
-**Version:** 1.8 · **Author:** Grégoire · **Status:** built · v1.2 added the Grass Heal face, Multi EXP and starters in the catch-all pool; v1.3 added full Kanto, gyms, secret areas, area type insights and the in-game help; v1.4 added encounter decks, easy areas, and HP-based pacing (damage is exactly the dice); v1.5 added item finds with loot decks, the classic items, one-item-per-turn battles, dice-based catching with Poké Balls, and Pokédollars (₽); v1.6 doubled Pokémon XP (`xpMultiplier`), rolls the dice automatically at the start of each turn, allows a voluntary switch after the roll, and reworked the UI (side / bottom bar, encounter pop-up, Pokédex "where to find it"); v1.7 made Speed the base stat ÷ 10 (rounded down), set XP per K.O. back to the foe's level for the Pokémon and the exploration bar alike with every XP requirement about ÷ 4, added dice descriptions, the `noEscape` rule (on by default) and the optional `showRoundPreview`; v1.8 made dice grow with levels and evolutions (§4.2 dice schedule, 1–5 dice) and gave each attack a single type, its most effective dice type (§2.3)
+**Version:** 1.8 · **Author:** Grégoire · **Status:** built · v1.2 added the Grass Heal face, Multi EXP and starters in the catch-all pool; v1.3 added full Kanto, gyms, secret areas, area type insights and the in-game help; v1.4 added encounter decks, easy areas, and HP-based pacing (damage is exactly the dice); v1.5 added item finds with loot decks, the classic items, one-item-per-turn battles, dice-based catching with Poké Balls, and Pokédollars (₽); v1.6 doubled Pokémon XP (`xpMultiplier`), rolls the dice automatically at the start of each turn, allows a voluntary switch after the roll, and reworked the UI (side / bottom bar, encounter pop-up, Pokédex "where to find it"); v1.7 made Speed the base stat ÷ 10 (rounded down), set XP per K.O. back to the foe's level for the Pokémon and the exploration bar alike with every XP requirement about ÷ 4, added dice descriptions, the `noEscape` rule (on by default) and the optional `showRoundPreview`; v1.8 made dice grow with levels and evolutions (§4.2 dice schedule, 1–5 dice) and gave each attack a single type, its most effective dice type (§2.3); v1.9 added Revive / Max Revive, selling to the Mart, energy (§5.5), status dice drawn as numbers with a coloured outline, and shiny trainer Pokémon
 **Nature:** personal, non-commercial fan project. No monetisation; Nintendo assets are referenced as public sprite URLs, never redistributed.
 
 This document is the single source of truth for *rules*. `02-DATA-MODEL.md` covers storage and seeding, `03-BUILD-PLAN.md` covers implementation.
@@ -171,8 +171,8 @@ All statuses **clear when the battle ends**. HP damage persists (§6).
 
 | Status | Trigger | Effect | Stacking |
 |---|---|---|---|
-| **Burn** | ≥1 Burn face | 1 damage per stack at the start of the victim's turn, 3 turns | **Stacks.** 3 Burn faces in one roll = 3 stacks. Duration refreshes. |
-| **Poison** | **≥2** Poison faces | 3 damage at the start of the victim's turn, 3 turns | **Does not stack.** Re-applying only refreshes the duration. Below the threshold the face is worth 1. |
+| **Burn** | ≥1 Burn face | 4 % of the victim's max HP per stack (at least 1) at the start of its turn, 3 turns | **Stacks.** 3 Burn faces in one roll = 3 stacks. Duration refreshes. |
+| **Poison** | **≥2** Poison faces | 10 % of the victim's max HP (at least 1) at the start of its turn, 3 turns | **Does not stack.** Re-applying only refreshes the duration. Below the threshold the face is worth 1. |
 | **Frozen** | **≥3** Frozen faces in one roll | victim stunned 2 turns | Refreshes, doesn't stack. Below threshold the face is worth 1. |
 | **Paralyze** | **≥2** Paralyze faces | victim stunned 1 turn | Refreshes. Below threshold the face is worth 4. |
 | **Confuse** | **≥2** Confuse faces | the victim's **next attack** still hits its target normally, then the victim takes **recoil** equal to `status.confuse.recoilPercent`% (default 10%) of its own max HP (rounded, min 1), and confusion clears | Refreshes. Below threshold the face is worth 2. |
@@ -299,6 +299,8 @@ Each item has `in_shop` and `shop_badges` (admin-editable, with its effect and p
 | Potion | +20 HP | battle, Team screen | 15 | 0 |
 | Super Potion | +50 HP | battle, Team screen | 35 | 1 |
 | Hyper Potion | +120 HP | battle, Team screen | 80 | 4 |
+| Revive (v1.9) | revives a K.O.'d Pokémon with half its max HP | battle, Team screen | 200 | 6 |
+| Max Revive (v1.9) | revives a K.O.'d Pokémon with all its HP | battle, Team screen | 350 | 8 |
 | Antidote | cures poison | battle | 10 | 0 |
 | Paralyze Heal | cures paralysis | battle | 12 | 0 |
 | Burn Heal | cures a burn | battle | 12 | 1 |
@@ -314,6 +316,16 @@ Each item has `in_shop` and `shop_badges` (admin-editable, with its effect and p
 - **In battle: one item per turn** — before or after the roll, or while stunned — and it **doesn't end the turn**. A frozen or paralyzed Pokémon gets a choice when its turn starts: cure it (Ice Heal / Paralyze Heal — the turn then goes ahead) or skip the turn.
 - A new game starts with **5 Poké Balls and 2 Potions** (`game_config.startInventory`).
 - Inventory is part of the save.
+- **Selling** (v1.9): the Mart's **Sell · Bag** tab lists every item held (it doubles as the bag) and buys back anything the Mart stocks (`in_shop`, whatever the badges) for **half its price, rounded down**. Found-only items (Rare Candy, Master Ball) can't be sold.
+- **Revives in battle** go on a K.O.'d teammate on the bench (it can be sent in afterwards); like any item, no turn is used.
+
+### 5.5 Energy (v1.9)
+
+- `game_config.energy = { enabled, max, minutesPerEnergy }`, default **on, 50, 30 min** (admin: Config → Energy). Off = no cost and no counter.
+- **Discovering an encounter costs 1 energy** (NEXT ENCOUNTER / EXPLORE). Free: gym / Elite Four / Champion battles and legendaries (CHALLENGE / FACE IT, or a fled legendary's card), and **every Pokémon Center** (round-opening, forced or from the deck), as is any encounter when nobody can fight.
+- A save starts full; energy comes back **1 per `minutesPerEnergy`** in real time, offline too, up to `max` (`SaveData.energy = { value, at }`; absent = full). A wipe refunds nothing.
+- At 0, NEXT ENCOUNTER is disabled with a countdown to the next point (unless the next encounter is known to be a Center: one the game sends, or a Center card on top of the deck). The top bar shows `⚡ n/max`; tapping it gives the next point and full-refill times. The rules moved from the top bar's "?" to Settings → How to play.
+- **New session** (v1.9): coming back to the tab after 24 h or more away (hidden, or the device asleep) reloads the page for the latest build and content — once the current fight is over, if one is running.
 
 ### 5.4 Item finds
 
@@ -344,6 +356,7 @@ Each item has `in_shop` and `shop_badges` (admin-editable, with its effect and p
 | `backtrackMultiplier` | default 0.5 |
 | `legendaryBossDex` | optional, §4.5 |
 | `scalesToTeam` | boolean — if true, enemy levels track the team's average (Cerulean Cave) |
+| `scaleOffsets` | scaling areas only: `{ wild, trainer: { min, max } }`, levels relative to the team average (e.g. wild −15…−10, trainers −10…−5); a kind left empty keeps ± `scaleLevelSpread` |
 | `easyMode` | boolean — a Center comes next whenever a team member is K.O. (§1.1) |
 | `hidden`, `unlockConditions` | secret areas outside the linear chain, opened by conditions (§7.3) |
 | `gyms` | ordered trainer ids (gym leader / Elite Four / Champion), challenged once the gauge is full (§7.2) |

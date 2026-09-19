@@ -4686,7 +4686,7 @@
    }
   ],
   "rerolls": 5,
-  "catchValue": 9,
+  "catchValue": 7,
   "evolutions": [],
   "milestones": [
    {
@@ -6202,7 +6202,7 @@
    }
   ],
   "rerolls": 5,
-  "catchValue": 9,
+  "catchValue": 6,
   "evolutions": [],
   "milestones": [],
   "notes": "BST 580"
@@ -6227,7 +6227,7 @@
    }
   ],
   "rerolls": 5,
-  "catchValue": 9,
+  "catchValue": 6,
   "evolutions": [],
   "milestones": [],
   "notes": "BST 580"
@@ -6252,7 +6252,7 @@
    }
   ],
   "rerolls": 5,
-  "catchValue": 9,
+  "catchValue": 6,
   "evolutions": [],
   "milestones": [],
   "notes": "BST 580"

@@ -37,9 +37,10 @@ export const DEFAULT_CONFIG: GameConfig = {
   showRoundGauge: true,
   showRoundPreview: false,
   shinyChance: 0.01,
+  energy: { enabled: true, max: 50, minutesPerEnergy: 30 },
   status: {
-    burn: { threshold: 1, damagePerStack: 1, duration: 3 },
-    poison: { threshold: 2, damage: 3, duration: 3 },
+    burn: { threshold: 1, percentPerStack: 4, duration: 3 },
+    poison: { threshold: 2, percent: 10, duration: 3 },
     frozen: { threshold: 3, stunTurns: 2 },
     paralyze: { threshold: 2, stunTurns: 1 },
     confuse: { threshold: 2, recoilPercent: 10 },

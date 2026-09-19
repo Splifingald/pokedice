@@ -130,6 +130,8 @@ export function rowsToBundle(r: TableRows): BundleRaw {
         backtrackMultiplier: num(x.backtrack_multiplier),
         legendaryBoss: (x.legendary_boss as Area['legendaryBoss']) ?? null,
         scalesToTeam: !!x.scales_to_team,
+        // Only when set, so bundled areas without it round-trip unchanged.
+        ...(x.scale_offsets != null && { scaleOffsets: x.scale_offsets as NonNullable<Area['scaleOffsets']> }),
         easyMode: !!x.easy_mode,
         enemyUpgradeLevel: x.enemy_upgrade_level == null ? null : num(x.enemy_upgrade_level),
         battleBackground: (x.battle_background as Area['battleBackground'] | undefined) ?? null,
@@ -230,6 +232,7 @@ export function bundleToRows(b: BundleRaw): TableRows {
       backtrack_multiplier: x.backtrackMultiplier,
       legendary_boss: x.legendaryBoss,
       scales_to_team: x.scalesToTeam,
+      scale_offsets: x.scaleOffsets ?? null,
       easy_mode: x.easyMode,
       enemy_upgrade_level: x.enemyUpgradeLevel,
       battle_background: x.battleBackground ?? null,

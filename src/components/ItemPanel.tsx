@@ -3,7 +3,7 @@ import { applyBagItem } from '@/store/actions'
 import { useGame } from '@/store/game'
 import { PixelButton } from './PixelButton'
 
-/** "Use an item" inside a Pokémon's sheet: the bag items that work outside battle (potions, Rare Candy). */
+/** "Use an item" inside a Pokémon's sheet: the bag items that work outside battle (potions, revives, Rare Candy). */
 export function ItemPanel({ inst }: { inst: PokemonInstance }) {
   const data = useGame((s) => s.data)
   const inventory = useGame((s) => s.save?.inventory)
@@ -11,6 +11,7 @@ export function ItemPanel({ inst }: { inst: PokemonInstance }) {
   if (!bag.length) return null
   const helps = (key: string) => {
     const fx = data.items[key]?.effect
+    if (fx?.kind === 'revive') return inst.currentHp <= 0
     if (fx?.kind === 'heal') return inst.currentHp > 0 && inst.currentHp < instanceMaxHp(inst, data)
     if (fx?.kind === 'level') return inst.level < data.config.maxLevel
     return false

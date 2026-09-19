@@ -174,6 +174,7 @@ function GymCard({ enc }: { enc: Extract<Encounter, { kind: 'gym' }> }) {
             <MiniSprite dex={m.dex} size={40} />
             <span className="text-base leading-tight">
               {data.species[m.dex]?.name}
+              {m.shiny && <PixelIcon name="star" size={12} className="ml-1 inline-block" title="Shiny" />}
               <br />
               Lv.{m.level}
             </span>

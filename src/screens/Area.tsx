@@ -10,6 +10,7 @@ import {
   instanceMaxHp,
   isAreaUnlocked,
   progressOf,
+  scaledLevelSpan,
   teamAverageLevel,
   teamOf,
   type Area,
@@ -26,10 +27,11 @@ import { ItemPanel } from '@/components/ItemPanel'
 import { PixelButton } from '@/components/PixelButton'
 import { SheetModal, type SheetView } from '@/components/SheetModal'
 import { MiniSprite, preloadSprites } from '@/components/SpriteImg'
-import { trainerTitle } from '@/lib/format'
+import { countdown, trainerTitle } from '@/lib/format'
 import { OakTip, useOneTimeTip } from '@/components/OakTip'
 import { setSettings, useGame } from '@/store/game'
-import { challenge, enterArea, leaveArea, rollNext } from '@/store/run'
+import { challenge, enterArea, leaveArea, outOfEnergy, rollNext } from '@/store/run'
+import { useEnergy } from '@/store/hooks'
 import { cx } from '@/theme/util'
 import { BattleView } from './battle/BattleView'
 import { CasinoView } from './area/CasinoView'
@@ -160,7 +162,8 @@ function RoundGauge({ area, progress }: { area: Area; progress: AreaProgress }) 
 
 /** Encounter types, a slim banner, then the name with its levels, the gauge and the round gauge. */
 function AreaHeader({ area, progress, teamAvg }: { area: Area; progress: AreaProgress; teamAvg: number }) {
-  const spread = useGame((s) => s.data.config.scaleLevelSpread)
+  const data = useGame((s) => s.data)
+  const span = area.scalesToTeam ? scaledLevelSpan(area, teamAvg, data) : { min: area.minLevel, max: area.maxLevel }
   const notes = [
     area.scalesToTeam && 'Foes scale to your team',
     progress.cleared && `Cleared — rewards ×${area.backtrackMultiplier}`,
@@ -181,7 +184,7 @@ function AreaHeader({ area, progress, teamAvg }: { area: Area; progress: AreaPro
             {area.name}
           </h1>
           <span className="shrink-0 text-2xl leading-none">
-            {area.scalesToTeam ? `Lv.${Math.round(teamAvg)} ±${spread}` : `Lv.${area.minLevel}–${area.maxLevel}`}
+            {span.min === span.max ? `Lv.${span.min}` : `Lv.${span.min}–${span.max}`}
           </span>
         </div>
         {notes.length > 0 && <div className="text-lg leading-tight text-muted">{notes.join(' · ')}</div>}
@@ -272,6 +275,26 @@ function TeamStrip({ onOpen }: { onOpen: (p: PokemonInstance) => void }) {
   )
 }
 
+/** NEXT ENCOUNTER (EXPLORE on arrival): costs 1 energy; out of energy, it waits with a countdown. */
+function NextEncounterButton({ secondary }: { secondary: boolean }) {
+  const run = useGame((s) => s.run)
+  const energy = useEnergy()
+  // Re-checked every second (useEnergy ticks): a Center the game sends next is free even at 0.
+  const empty = !!energy && energy.value < 1 && outOfEnergy()
+  return (
+    <div className="flex flex-col items-center gap-1">
+      <PixelButton variant={secondary ? 'secondary' : 'primary'} size="lg" onClick={rollNext} disabled={run.phase !== 'idle' || empty}>
+        {run.firstInArea ? 'EXPLORE' : 'NEXT ENCOUNTER'}
+      </PixelButton>
+      {empty && energy.nextAt != null && (
+        <p className="text-lg leading-tight text-danger" role="status">
+          Out of energy · next in {countdown(energy.nextAt - energy.now)}
+        </p>
+      )}
+    </div>
+  )
+}
+
 export function AreaScreen() {
   const save = useGame((s) => s.save)
   const data = useGame((s) => s.data)
@@ -327,9 +350,7 @@ export function AreaScreen() {
                 {gym ? `CHALLENGE ${gym.name.toUpperCase()}` : 'FACE IT'}
               </PixelButton>
             )}
-            <PixelButton variant={gym || boss ? 'secondary' : 'primary'} size="lg" onClick={rollNext} disabled={run.phase !== 'idle'}>
-              {run.firstInArea ? 'EXPLORE' : 'NEXT ENCOUNTER'}
-            </PixelButton>
+            <NextEncounterButton secondary={!!(gym || boss)} />
           </div>
           <PixelButton
             size="sm"

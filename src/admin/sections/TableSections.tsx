@@ -46,6 +46,14 @@ function TeamEditor({ id, onClose }: { id: string; onClose: () => void }) {
             <PokemonPicker className="flex-1" data={data} value={m.dex} onChange={(d) => set(team.map((x, j) => (j === i ? { ...x, dex: d } : x)))} />
             <span>Lv.</span>
             <NumInput className="w-20" value={m.level} onChange={(v) => set(team.map((x, j) => (j === i ? { ...x, level: v ?? 1 } : x)))} />
+            <label className="flex items-center gap-1" title="Shiny colours (cosmetic only)">
+              <input
+                type="checkbox"
+                checked={!!m.shiny}
+                onChange={(e) => set(team.map((x, j) => (j === i ? { dex: x.dex, level: x.level, ...(e.target.checked && { shiny: true }) } : x)))}
+              />
+              shiny
+            </label>
             <button type="button" disabled={team.length <= 1} onClick={() => set(team.filter((_, j) => j !== i))}>
               ✕
             </button>
@@ -155,8 +163,11 @@ export function TrainersSection() {
               <span className="flex gap-1">
                 {((r.team as TrainerMon[]) ?? []).map((m, i) => (
                   <span key={i} className="flex items-center">
-                    <SpriteImg dex={m.dex} size={28} />
-                    <span className="text-sm">{m.level}</span>
+                    <SpriteImg dex={m.dex} size={28} shiny={m.shiny} />
+                    <span className="text-sm">
+                      {m.level}
+                      {m.shiny && ' ★'}
+                    </span>
                   </span>
                 ))}
               </span>
@@ -174,6 +185,7 @@ export function TrainersSection() {
 const CURABLE: CurableStatus[] = ['burn', 'poison', 'frozen', 'paralyze', 'confuse']
 const EFFECT_DEFAULTS: Record<ItemEffect['kind'], ItemEffect> = {
   heal: { kind: 'heal', amount: 20 },
+  revive: { kind: 'revive', percent: 50 },
   cure: { kind: 'cure', statuses: ['poison'] },
   rerolls: { kind: 'rerolls', amount: 1 },
   level: { kind: 'level', amount: 1 },
@@ -194,6 +206,7 @@ function EffectEditor({ value, onDone }: { value: ItemEffect | undefined; onDone
     <div className="flex min-w-[220px] flex-col gap-1 border-2 border-ink bg-panel p-1">
       <select className="border border-ink bg-panel text-lg" value={draft.kind} onChange={(e) => setDraft(EFFECT_DEFAULTS[e.target.value as ItemEffect['kind']])}>
         <option value="heal">heal HP</option>
+        <option value="revive">revive a K.O.'d Pokémon (% of max HP)</option>
         <option value="cure">cure status (battle)</option>
         <option value="rerolls">give rerolls back (battle)</option>
         <option value="level">raise level (Team screen)</option>
@@ -212,6 +225,8 @@ function EffectEditor({ value, onDone }: { value: ItemEffect | undefined; onDone
             </label>
           ))}
         </div>
+      ) : draft.kind === 'revive' ? (
+        <NumInput value={draft.percent} min={1} max={100} onChange={(v) => setDraft({ kind: 'revive', percent: v ?? 50 })} />
       ) : draft.kind === 'ball' ? (
         <NumInput value={draft.bonus} min={0} max={9} onChange={(v) => setDraft({ kind: 'ball', bonus: v ?? 0 })} />
       ) : (

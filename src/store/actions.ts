@@ -4,6 +4,7 @@ import {
   buyComboUpgrade,
   buyDieUpgrade,
   buyItem,
+  sellItem,
   createRng,
   randomSeed,
   setTeam,
@@ -28,6 +29,10 @@ export function buy(key: string, qty = 1): boolean {
   const ok = mutateSave((s) => buyItem(s, key, qty, data))
   if (!ok) pushToast('Not enough Pokédollars', 'bad')
   return ok
+}
+
+export function sell(key: string, qty = 1): boolean {
+  return mutateSave((s) => sellItem(s, key, qty, useGame.getState().data))
 }
 
 export function upgradeCombo(key: ComboKey): boolean {

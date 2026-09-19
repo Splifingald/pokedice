@@ -15,6 +15,7 @@ export type ItemUse = 'battle' | 'field' | 'catch'
 export function itemUses(item: ItemDef): ItemUse[] {
   switch (item.effect.kind) {
     case 'heal':
+    case 'revive':
       return ['battle', 'field']
     case 'cure':
     case 'rerolls':
@@ -45,6 +46,8 @@ export function effectText(item: ItemDef): string {
   switch (e.kind) {
     case 'heal':
       return `+${e.amount} HP`
+    case 'revive':
+      return e.percent >= 100 ? 'Revives, full HP' : `Revives, ${e.percent} % HP`
     case 'cure':
       return `Cures ${e.statuses.map((s) => CURE_NAMES[s]).join(', ')}`
     case 'rerolls':
@@ -55,6 +58,9 @@ export function effectText(item: ItemDef): string {
       return e.bonus >= 9 ? 'Never misses' : `+${e.bonus} to the catch die`
   }
 }
+
+/** What the Mart pays for one: half its price, rounded down. Only items the Mart sells can be sold back (0 = can't). */
+export const sellPrice = (item: ItemDef | undefined): number => (item?.inShop ? Math.floor(item.price / 2) : 0)
 
 /** The Poké Mart's stock, by badge tier then price; `unlocked` once the player holds enough badges. */
 export function shopStock(data: GameData, badges: number): { item: ItemDef; unlocked: boolean }[] {

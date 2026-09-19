@@ -1,34 +1,4 @@
 {
- "showRecommendedTypes": true,
- "shinyChance": 0.02,
- "status": {
-  "burn": {
-   "duration": 3,
-   "threshold": 1,
-   "damagePerStack": 2
-  },
-  "heal": {
-   "amount": "rollTotal",
-   "threshold": 2
-  },
-  "frozen": {
-   "stunTurns": 2,
-   "threshold": 3
-  },
-  "poison": {
-   "damage": 5,
-   "duration": 3,
-   "threshold": 2
-  },
-  "confuse": {
-   "threshold": 2,
-   "recoilPercent": 10
-  },
-  "paralyze": {
-   "stunTurns": 1,
-   "threshold": 2
-  }
- },
  "showRoundPreview": false,
  "regenPercentPerHour": 20,
  "xpCurve": {
@@ -51,7 +21,36 @@
  "starterLevel": 5,
  "hpMultiplier": 1,
  "goldMultiplier": 0.5,
+ "status": {
+  "burn": {
+   "duration": 3,
+   "threshold": 1,
+   "percentPerStack": 4
+  },
+  "heal": {
+   "amount": "rollTotal",
+   "threshold": 2
+  },
+  "frozen": {
+   "stunTurns": 2,
+   "threshold": 3
+  },
+  "poison": {
+   "duration": 3,
+   "threshold": 2,
+   "percent": 10
+  },
+  "confuse": {
+   "threshold": 2,
+   "recoilPercent": 20
+  },
+  "paralyze": {
+   "stunTurns": 1,
+   "threshold": 2
+  }
+ },
  "gymGoldMultiplier": 2,
+ "configVersion": 22,
  "forcedCenterWhenHurt": true,
  "encounterMode": "deck",
  "startInventory": {
@@ -59,6 +58,8 @@
   "poke-ball": 5
  },
  "scaleLevelSpread": 3,
+ "showRecommendedTypes": true,
+ "shinyChance": 0.02,
  "enemyUpgradeLevel": 1,
  "allowVoluntarySwitch": true,
  "maxBattleTurns": 150,
@@ -100,7 +101,11 @@
   "tickMinutes": 30,
   "hatchMinLevel": 5,
   "unlockPokedex": 20,
-  "unownedWeight": 3
+  "unownedWeight": 4
  },
- "configVersion": 15
+ "energy": {
+  "enabled": true,
+  "max": 50,
+  "minutesPerEnergy": 30
+ }
 }

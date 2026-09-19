@@ -63,6 +63,10 @@ export function multiExpText(data: GameData): string {
 }
 
 export function healAmount(item: ItemDef, hp: number, maxHp: number): number {
+  if (item.effect.kind === 'revive') return hp > 0 ? 0 : reviveHp(item.effect.percent, maxHp)
   if (item.effect.kind !== 'heal' || hp <= 0 || hp >= maxHp) return 0
   return Math.min(item.effect.amount, maxHp - hp)
 }
+
+/** HP a revive brings a K.O.'d Pokémon back with: `percent` of its max HP, rounded down, at least 1. */
+export const reviveHp = (percent: number, maxHp: number): number => Math.max(1, Math.min(maxHp, Math.floor((maxHp * percent) / 100)))

@@ -6,6 +6,7 @@ import {
   slotReturnPerSpin,
   xpToNext,
   type DayCareConfig,
+  type EnergyConfig,
   type GameConfig,
   type SlotMachineConfig,
   type SlotOutcomeKey,
@@ -103,6 +104,35 @@ function SlotMachineBox() {
         Pays back <b>₽{back.toFixed(2)}</b> per ₽{cfg.cost} spin on average ({cfg.cost ? pct(back / cfg.cost) : '—'}
         ){odds.jackpot > 0 && <> · {prize} about every {Math.round(1 / odds.jackpot)} spins</>}
         {back >= cfg.cost && ' · players make money on this machine!'}
+      </p>
+    </Box>
+  )
+}
+
+/** Energy: the cost of exploring. 1 per encounter discovered; gyms, legendaries and Pokémon Centers are free. */
+function EnergyBox() {
+  const [raw, setRaw] = useConfigRow('energy')
+  const cfg: EnergyConfig = { ...DEFAULT_CONFIG.energy, ...raw }
+  const set = (patch: Partial<EnergyConfig>) => setRaw({ ...cfg, ...patch })
+  const perDay = cfg.minutesPerEnergy > 0 ? (24 * 60) / cfg.minutesPerEnergy : 0
+  return (
+    <Box
+      title="Energy"
+      hint="Each encounter discovered costs 1 (not gym / Elite / Champion battles, legendaries or Pokémon Centers). Refills in real time, offline too."
+    >
+      <div className="grid gap-3 sm:grid-cols-3">
+        <label className="flex items-center gap-2 text-lg">
+          <input type="checkbox" checked={!!cfg.enabled} onChange={(e) => set({ enabled: e.target.checked })} /> enabled
+        </label>
+        <Field label="Max (and start)">
+          <NumInput min={1} value={cfg.max} onChange={(v) => set({ max: Math.max(1, v ?? 50) })} />
+        </Field>
+        <Field label="Minutes per energy">
+          <NumInput min={1} value={cfg.minutesPerEnergy} onChange={(v) => set({ minutesPerEnergy: Math.max(1, v ?? 30) })} />
+        </Field>
+      </div>
+      <p className="text-lg">
+        {perDay.toFixed(1)} energy per day · empty to full in {((cfg.max * cfg.minutesPerEnergy) / 60).toFixed(1)} h
       </p>
     </Box>
   )
@@ -237,7 +267,10 @@ function JsonField<K extends keyof GameConfig>({ k }: { k: K }) {
 /** Every status effect's numbers: how many faces trigger it, and what it does. Read live by battles and the help. */
 function StatusRulesBox() {
   const [rules, setRules] = useConfigRow('status')
-  const r = { ...DEFAULT_CONFIG.status, ...rules }
+  // Per effect, so a stored row missing a newer field (e.g. burn.percentPerStack) shows the default.
+  const r = Object.fromEntries(
+    Object.entries(DEFAULT_CONFIG.status).map(([k, v]) => [k, { ...v, ...(rules as Partial<StatusRules> | undefined)?.[k as keyof StatusRules] }]),
+  ) as unknown as StatusRules
   const patch = <K extends keyof StatusRules>(k: K, p: Partial<StatusRules[K]>) => setRules({ ...r, [k]: { ...r[k], ...p } })
   const num = (v: number | null | undefined, fallback: number, min = 0) => Math.max(min, v ?? fallback)
   const faces = 'faces needed in one roll'
@@ -247,13 +280,13 @@ function StatusRulesBox() {
         <fieldset className="flex flex-col gap-1 border-2 border-ink p-2">
           <legend className="px-1 text-lg">Burn (Fire)</legend>
           <Field label="threshold" hint={faces}><NumInput value={r.burn.threshold} min={1} onChange={(v) => patch('burn', { threshold: num(v, 1, 1) })} /></Field>
-          <Field label="damagePerStack" hint="damage per stack, each foe turn"><NumInput value={r.burn.damagePerStack} min={0} onChange={(v) => patch('burn', { damagePerStack: num(v, 1) })} /></Field>
+          <Field label="percentPerStack" hint="% of the victim's max HP per stack, each of its turns (min 1)"><NumInput value={r.burn.percentPerStack} min={0} onChange={(v) => patch('burn', { percentPerStack: num(v, 4) })} /></Field>
           <Field label="duration" hint="turns (refreshed by a new burn)"><NumInput value={r.burn.duration} min={1} onChange={(v) => patch('burn', { duration: num(v, 3, 1) })} /></Field>
         </fieldset>
         <fieldset className="flex flex-col gap-1 border-2 border-ink p-2">
           <legend className="px-1 text-lg">Poison (Poison)</legend>
           <Field label="threshold" hint={faces}><NumInput value={r.poison.threshold} min={1} onChange={(v) => patch('poison', { threshold: num(v, 2, 1) })} /></Field>
-          <Field label="damage" hint="damage each foe turn"><NumInput value={r.poison.damage} min={0} onChange={(v) => patch('poison', { damage: num(v, 3) })} /></Field>
+          <Field label="percent" hint="% of the victim's max HP, each of its turns (min 1)"><NumInput value={r.poison.percent} min={0} onChange={(v) => patch('poison', { percent: num(v, 10) })} /></Field>
           <Field label="duration" hint="turns"><NumInput value={r.poison.duration} min={1} onChange={(v) => patch('poison', { duration: num(v, 3, 1) })} /></Field>
         </fieldset>
         <fieldset className="flex flex-col gap-1 border-2 border-ink p-2">
@@ -451,6 +484,8 @@ export function ConfigSection() {
           </Field>
         </div>
       </section>
+
+      <EnergyBox />
 
       <SlotMachineBox />
 

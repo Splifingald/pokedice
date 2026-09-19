@@ -21,6 +21,16 @@ export const PALETTE = {
   hpRed: '#c2452d',
 } as const
 
+/** Status effects: the outline of a die face that carries one, and its counter under the tray. */
+export const STATUS_COLORS = {
+  burn: '#f07a2a',
+  poison: '#b04db0',
+  frozen: '#5fc0e0',
+  paralyze: '#f0cc28',
+  confuse: '#ec5f9e',
+  heal: '#52c052',
+} as const
+
 /** Standard type colours darkened ~15 % to sit on parchment. Normal is the spec's warm tan. */
 export const TYPE_COLORS = {
   base: '#f7f2e0',

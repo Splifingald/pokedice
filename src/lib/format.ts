@@ -65,6 +65,15 @@ export function milestoneText(m: Milestone, type1: DieType): string {
 export const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
 
 /** Pokédollars: ₽1,250 */
+/** A countdown: "4:05" under an hour, "2h 05m" above. */
+export function countdown(ms: number): string {
+  const s = Math.max(0, Math.ceil(ms / 1000))
+  const h = Math.floor(s / 3600)
+  const m = Math.floor((s % 3600) / 60)
+  if (h > 0) return `${h}h ${String(m).padStart(2, '0')}m`
+  return `${m}:${String(s % 60).padStart(2, '0')}`
+}
+
 export const money = (n: number) => `₽${Math.round(n).toLocaleString('en')}`
 
 /** "Gym Leader Brock", "Elite Four Lorelei", "Bug Catcher Rick"… */
@@ -78,8 +87,8 @@ const turns = (n: number) => `${n} turn${n === 1 ? '' : 's'}`
 export function statusEffects(r: StatusRules): { status: StatusKind; icon: IconName; name: string; die: PokeType; when: string; what: string }[] {
   const faces = (n: number, face: string) => `${n}+ ${face} face${n === 1 ? '' : 's'}`
   return [
-    { status: 'burn', icon: 'burn', name: 'Burn', die: 'fire', when: faces(r.burn.threshold, 'Burn'), what: `${r.burn.damagePerStack} damage per stack at the start of the foe's turn for ${turns(r.burn.duration)}. Each Burn face adds a stack.` },
-    { status: 'poison', icon: 'poison', name: 'Poison', die: 'poison', when: faces(r.poison.threshold, 'Poison'), what: `${r.poison.damage} damage at the start of the foe's turn for ${turns(r.poison.duration)}. Doesn't stack.` },
+    { status: 'burn', icon: 'burn', name: 'Burn', die: 'fire', when: faces(r.burn.threshold, 'Burn'), what: `The foe loses ${r.burn.percentPerStack}% of its max HP per stack at the start of its turn, for ${turns(r.burn.duration)}. Each Burn face adds a stack.` },
+    { status: 'poison', icon: 'poison', name: 'Poison', die: 'poison', when: faces(r.poison.threshold, 'Poison'), what: `The foe loses ${r.poison.percent}% of its max HP at the start of its turn, for ${turns(r.poison.duration)}. Doesn't stack.` },
     { status: 'frozen', icon: 'frozen', name: 'Frozen', die: 'ice', when: faces(r.frozen.threshold, 'Frozen'), what: `The foe skips ${turns(r.frozen.stunTurns)}.` },
     { status: 'paralyze', icon: 'paralyze', name: 'Paralyze', die: 'electric', when: faces(r.paralyze.threshold, 'Paralyze'), what: `The foe skips ${turns(r.paralyze.stunTurns)}.` },
     { status: 'confuse', icon: 'confuse', name: 'Confuse', die: 'psychic', when: faces(r.confuse.threshold, 'Confuse'), what: `The foe's next attack still lands, but it takes ${r.confuse.recoilPercent}% of its max HP as recoil.` },

@@ -94,17 +94,20 @@ export interface DotTick {
   amount: number
 }
 
-/** Damage-over-time at the start of the victim's turn. */
-export function tickDot(state: StatusState, rules: StatusRules): { state: StatusState; ticks: DotTick[] } {
+/** A share of max HP, at least 1 (0 only when the share is 0). */
+const hpShare = (maxHp: number, percent: number) => (percent > 0 ? Math.max(1, Math.round((maxHp * percent) / 100)) : 0)
+
+/** Damage-over-time at the start of the victim's turn, as a share of its max HP (Burn: per stack). */
+export function tickDot(state: StatusState, rules: StatusRules, maxHp: number): { state: StatusState; ticks: DotTick[] } {
   const s: StatusState = { ...state }
   const ticks: DotTick[] = []
   if (state.burn) {
-    ticks.push({ status: 'burn', amount: state.burn.stacks * rules.burn.damagePerStack })
+    ticks.push({ status: 'burn', amount: hpShare(maxHp, state.burn.stacks * rules.burn.percentPerStack) })
     const turns = state.burn.turns - 1
     s.burn = turns > 0 ? { stacks: state.burn.stacks, turns } : null
   }
   if (state.poison) {
-    ticks.push({ status: 'poison', amount: rules.poison.damage })
+    ticks.push({ status: 'poison', amount: hpShare(maxHp, rules.poison.percent) })
     const turns = state.poison.turns - 1
     s.poison = turns > 0 ? { turns } : null
   }

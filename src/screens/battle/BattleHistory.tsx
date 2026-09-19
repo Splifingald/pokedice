@@ -132,6 +132,7 @@ function buildRows(log: readonly LogEntry[], player: readonly Battler[], enemy: 
         return
       case 'item': {
         const bits = [
+          e.revived ? 'revived' : '',
           e.amount > 0 ? `+${e.amount} HP` : '',
           e.cured?.length ? `cured ${e.cured.join(', ')}` : '',
           e.rerolls ? `+${e.rerolls} reroll${e.rerolls === 1 ? '' : 's'}` : '',

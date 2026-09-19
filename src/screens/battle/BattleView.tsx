@@ -11,6 +11,7 @@ import {
   createRng,
   effectText,
   faceOf,
+  facesOf,
   hasStatus,
   progressOf,
   randomSeed,
@@ -21,7 +22,6 @@ import {
   type BattleBackground,
   type Battler,
   type Side,
-  type StatusKind,
 } from '@/engine'
 import { Die } from '@/components/Die'
 import { HpBar } from '@/components/HpBar'
@@ -40,6 +40,7 @@ import { useIsDesktop, useMediaQuery } from '@/lib/useMediaQuery'
 import { setSettings, useGame, type BattleSlice } from '@/store/game'
 import { dispatchBattle } from '@/store/run'
 import spriteMetrics from '@/data/sprite-metrics.json'
+import { STATUS_COLORS } from '@/theme/colors'
 import { cx, typeColor } from '@/theme/util'
 import { useBattleAnimator } from './useBattleAnimator'
 import { CatchView } from './CatchView'
@@ -119,17 +120,6 @@ function useShake(ref: RefObject<HTMLElement>, shake: { id: number; power: numbe
 const STATUS_TIP_KEY = 'pokedice.tip.statusThreshold'
 
 /** One square per face a status needs in the roll, filled for each that landed: full = it triggers. */
-function StatusPips({ have, need, status }: { have: number; need: number; status: StatusKind }) {
-  const met = have >= need
-  return (
-    <span className="flex gap-0.5" role="img" aria-label={`${status}: ${Math.min(have, need)} of ${need} faces${met ? ', triggers' : ''}`}>
-      {Array.from({ length: need }, (_, i) => (
-        <span key={i} className={cx('h-2.5 w-2.5 border border-ink', i < have ? (met ? 'bg-gold' : 'bg-ink') : 'bg-panel')} />
-      ))}
-    </span>
-  )
-}
-
 const POP_COLOR = { super: '#e8b44a', weak: '#f7f2e0', immune: '#9c9caf', normal: '#f7f2e0', heal: '#4aa84a' }
 
 // The scene is drawn in the backgrounds' own pixels (240×112) and scaled to fit; sprites are 64×64 cells on that grid.
@@ -443,10 +433,12 @@ export function BattleView({ battle }: { battle: BattleSlice }) {
     const recoil = a.status.confused ? confusionRecoil(a.maxHp, data) : 0
     const r = computeDamage(st.dice, a.types, st.enemy.types, st.playerLevels, data)
     const statuses = statusesFromRoll(st.dice, data)
-    // Status faces short of their threshold: they only count as a number this roll.
+    // Every status the Pokémon's dice can land, short of its threshold (0 included): the faces only count as a number
+    // this roll, and the counter shows how close it is.
     const counts = statusCounts(st.dice, data)
     const rules = data.config.status
-    const almost = STATUS_KINDS.filter((k) => counts[k] > 0 && counts[k] < rules[k].threshold).map((k) => ({
+    const possible = new Set(a.dice.flatMap((t) => facesOf(t, data).flatMap((f) => (f.kind === 'status' ? [f.status] : []))))
+    const almost = STATUS_KINDS.filter((k) => possible.has(k) && counts[k] < rules[k].threshold).map((k) => ({
       status: k,
       have: counts[k],
       need: rules[k].threshold,
@@ -460,7 +452,9 @@ export function BattleView({ battle }: { battle: BattleSlice }) {
   const ownedItems = Object.entries(inventory).filter(([k, n]) => n > 0 && usableIn(data.items[k], 'battle'))
   const itemHelps = (key: string, p: Battler) => {
     const fx = data.items[key]?.effect
-    if (!fx || p.hp <= 0) return false
+    if (!fx) return false
+    if (fx.kind === 'revive') return p.hp <= 0
+    if (p.hp <= 0) return false
     if (fx.kind === 'heal') return p.hp < p.maxHp
     if (fx.kind === 'cure') return fx.statuses.some((k) => hasStatus(p.status, k))
     if (fx.kind === 'rerolls') return p.rerollsLeft < p.rerolls
@@ -566,8 +560,6 @@ export function BattleView({ battle }: { battle: BattleSlice }) {
           keys: fx.tray?.side === 'player' && fx.tray.dice.length === st.dice.length ? fx.tray.keys : st.dice.map((_, i) => `s${i}`),
         }
       : fx.tray
-  // Each status die shows how many faces of its kind landed against how many it needs (Poison 2, Frozen 3…).
-  const trayCounts = tray ? statusCounts(tray.dice, data) : null
 
   const trainerTeam = isTrainerFight ? enc.team : []
   const trainerLeft = isTrainerFight && run.trainer ? trainerTeam.length - run.trainer.index : 0
@@ -772,12 +764,6 @@ export function BattleView({ battle }: { battle: BattleSlice }) {
                 locked={tray.side === 'enemy'}
                 asButton={tray.side === 'player'}
               />
-              {(() => {
-                const f = faceOf(d, data)
-                if (f.kind !== 'status' || !trayCounts) return null
-                const need = data.config.status[f.status].threshold
-                return need > 1 ? <StatusPips have={trayCounts[f.status]} need={need} status={f.status} /> : null
-              })()}
               {desktop && ready && rolling && <span className="font-mono text-xs text-muted">{i + 1}</span>}
             </div>
           ))}
@@ -812,7 +798,8 @@ export function BattleView({ battle }: { battle: BattleSlice }) {
             {preview.almost.map((s) => (
               <span
                 key={s.status}
-                className="inline-flex items-center gap-1 border-2 border-dashed border-muted px-1 text-base text-muted"
+                className="inline-flex items-center gap-1 border-2 border-dashed px-1 text-base text-muted"
+                style={{ borderColor: STATUS_COLORS[s.status] }}
                 title={`${cap(s.status)} needs ${s.need} ${cap(s.status)} faces in one roll`}
               >
                 <PixelIcon name={STATUS_ICON[s.status] ?? 'star'} size={12} />
@@ -821,16 +808,16 @@ export function BattleView({ battle }: { battle: BattleSlice }) {
             ))}
           </div>
         )}
-        {ready && preview && !auto && statusTip && preview.almost[0] && (
+        {ready && preview && !auto && statusTip && preview.almost.some((s) => s.have > 0) && (
           <OakTip onClose={closeStatusTip}>
             {(() => {
-              const s = preview.almost[0]!
+              const s = preview.almost.find((x) => x.have > 0)!
               const name = cap(s.status)
               return (
                 <>
                   A status face only works in numbers! {name} needs <b>{s.need} {name} faces in the same roll</b>. You have{' '}
                   {s.have}, so {s.have === 1 ? `it just counts as ${s.value} damage` : `they just count as ${s.value} damage each`}. Reroll the other dice to chase
-                  the rest — the dots under each die show how close you are.
+                  the rest — the counter under the dice shows how close you are.
                 </>
               )
             })()}

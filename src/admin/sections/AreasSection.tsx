@@ -9,6 +9,8 @@ import {
   type DeckCounts,
   type EncounterKind,
   type GameData,
+  type LevelOffsetRange,
+  type ScaleOffsets,
   type UnlockCondition,
 } from '@/engine'
 import { PixelButton } from '@/components/PixelButton'
@@ -170,7 +172,7 @@ function AreaEditor({ area }: { area: Row }) {
             </Field>
           </div>
           <div className="flex flex-wrap gap-x-5 gap-y-1">
-            <label className="flex items-center gap-2 text-lg" title="Foes use the team's average level ± scaleLevelSpread">
+            <label className="flex items-center gap-2 text-lg" title="Foes use the team's average level, within the ranges below (± scaleLevelSpread when empty)">
               <input type="checkbox" checked={!!area.scales_to_team} onChange={(e) => patch({ scales_to_team: e.target.checked })} /> Scales to team
             </label>
             <label className="flex items-center gap-2 text-lg" title="A Center comes next whenever a team member is K.O.">
@@ -187,6 +189,32 @@ function AreaEditor({ area }: { area: Row }) {
               Secret (unlocks on conditions)
             </label>
           </div>
+          {!!area.scales_to_team && (
+            <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+              {(['wild', 'trainer'] as const).flatMap((kind) =>
+                (['min', 'max'] as const).map((end) => {
+                  const offsets = (area.scale_offsets as ScaleOffsets | null | undefined) ?? {}
+                  const range = offsets[kind] ?? null
+                  const set = (v: number | null) => {
+                    // A range needs both ends: the first one typed fills the other, empty clears the kind.
+                    const other = end === 'min' ? 'max' : 'min'
+                    const next = v == null ? null : { ...(range ?? { [other]: v }), [end]: v } as LevelOffsetRange
+                    const merged = { ...offsets, [kind]: next }
+                    patch({ scale_offsets: merged.wild || merged.trainer ? merged : null })
+                  }
+                  return (
+                    <Field
+                      key={`${kind}-${end}`}
+                      label={`${kind === 'wild' ? 'Wild' : 'Trainer'} Lv. ${end}`}
+                      hint={`vs team average, −15 = 15 below · empty = ±${data.config.scaleLevelSpread}`}
+                    >
+                      <NumInput nullable min={-99} max={99} value={range?.[end] ?? null} onChange={set} />
+                    </Field>
+                  )
+                }),
+              )}
+            </div>
+          )}
           {!!area.banner_url && (
             <AreaBanner url={s(area.banner_url)} className="h-20 border-2 border-ink" />
           )}

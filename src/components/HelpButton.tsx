@@ -4,7 +4,7 @@ import { PixelButton } from './PixelButton'
 
 const HelpContent = lazy(() => import('@/screens/Help').then((m) => ({ default: m.HelpContent })))
 
-/** "?" — opens the rules and the type chart in a modal, usable anywhere (even mid-battle). */
+/** "?" — opens the rules and the type chart in a modal (Settings → How to play). */
 export function HelpButton({ size = 'sm', label = false }: { size?: 'sm' | 'md' | 'lg'; label?: boolean }) {
   const [open, setOpen] = useState(false)
   return (

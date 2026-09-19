@@ -188,5 +188,31 @@
   },
   "inShop": true,
   "shopBadges": 4
+ },
+ {
+  "key": "revive",
+  "name": "Revive",
+  "description": "Revives a fainted Pokémon with half its max HP. In battle or from the Team screen.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/revive.png",
+  "price": 200,
+  "effect": {
+   "kind": "revive",
+   "percent": 50
+  },
+  "inShop": true,
+  "shopBadges": 6
+ },
+ {
+  "key": "max-revive",
+  "name": "Max Revive",
+  "description": "Revives a fainted Pokémon with all its HP. In battle or from the Team screen.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/max-revive.png",
+  "price": 350,
+  "effect": {
+   "kind": "revive",
+   "percent": 100
+  },
+  "inShop": true,
+  "shopBadges": 8
  }
 ]

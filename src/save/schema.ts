@@ -57,6 +57,7 @@ export const saveSchema = z.object({
       visited: z.boolean().optional(),
     })
     .optional(),
+  energy: z.object({ value: z.number().min(0), at: z.number() }).optional(),
   adminEditAt: z.number().optional(),
   leaderboardVisited: z.boolean().optional(),
 })

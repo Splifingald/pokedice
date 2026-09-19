@@ -207,7 +207,9 @@ function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): Step {
       const text =
         e.side === 'enemy'
           ? `${ctx.trainerName ?? 'The foe'} used a ${item} on ${who}! +${e.amount} HP`
-          : e.cured?.length
+          : e.revived
+            ? `Used a ${item}! ${who} is back with ${e.amount} HP!`
+            : e.cured?.length
             ? `Used a ${item}! ${who} is cured.`
             : e.rerolls
               ? `Used an ${item}! ${who} got ${e.rerolls} reroll${e.rerolls === 1 ? '' : 's'} back.`
@@ -220,6 +222,7 @@ function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): Step {
           ...f,
           message: text,
           hp: { ...f.hp, [e.targetUid]: e.hpAfter },
+          fainted: e.revived ? { ...f.fainted, [e.targetUid]: false } : f.fainted,
           pop: e.amount ? { id: nextId(), target: e.side ?? 'player', amount: e.amount, tone: 'heal' } : f.pop,
         }),
       }

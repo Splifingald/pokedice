@@ -4,19 +4,19 @@
   "orderIndex": 1,
   "name": "Route 1",
   "bannerUrl": "/banners/plains.png",
-  "xpToUnlockNext": 15,
+  "xpToUnlockNext": 20,
   "minLevel": 2,
   "maxLevel": 5,
   "encounterWeights": {
    "item": 1,
-   "wild": 5,
-   "center": 1,
+   "wild": 4,
+   "center": 0,
    "trainer": 0
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,
   "scalesToTeam": false,
-  "easyMode": false,
+  "easyMode": true,
   "enemyUpgradeLevel": 1,
   "battleBackground": "grass",
   "hidden": false,
@@ -95,19 +95,19 @@
   "orderIndex": 2,
   "name": "Routes 22 & 2",
   "bannerUrl": "/banners/flowers.png",
-  "xpToUnlockNext": 20,
+  "xpToUnlockNext": 30,
   "minLevel": 3,
   "maxLevel": 7,
   "encounterWeights": {
    "item": 1,
-   "wild": 6,
-   "center": 1,
+   "wild": 4,
+   "center": 0,
    "trainer": 0
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,
   "scalesToTeam": false,
-  "easyMode": false,
+  "easyMode": true,
   "enemyUpgradeLevel": 1,
   "battleBackground": "grass",
   "hidden": false,
@@ -228,12 +228,12 @@
   "orderIndex": 3,
   "name": "Viridian Forest",
   "bannerUrl": "/banners/forest.png",
-  "xpToUnlockNext": 30,
+  "xpToUnlockNext": 40,
   "minLevel": 4,
   "maxLevel": 8,
   "encounterWeights": {
    "item": 1,
-   "wild": 4,
+   "wild": 3,
    "center": 0,
    "trainer": 1
   },
@@ -395,7 +395,7 @@
   "orderIndex": 5,
   "name": "Mt. Moon",
   "bannerUrl": "/banners/cave.png",
-  "xpToUnlockNext": 50,
+  "xpToUnlockNext": 70,
   "minLevel": 7,
   "maxLevel": 12,
   "encounterWeights": {
@@ -600,7 +600,7 @@
   "orderIndex": 4,
   "name": "Route 3",
   "bannerUrl": "/banners/mountains.png",
-  "xpToUnlockNext": 40,
+  "xpToUnlockNext": 50,
   "minLevel": 5,
   "maxLevel": 10,
   "encounterWeights": {
@@ -760,14 +760,14 @@
   "orderIndex": 6,
   "name": "Route 4 & Nugget Bridge",
   "bannerUrl": "/banners/bridge.png",
-  "xpToUnlockNext": 60,
+  "xpToUnlockNext": 90,
   "minLevel": 9,
   "maxLevel": 15,
   "encounterWeights": {
-   "item": 1,
-   "wild": 4,
-   "center": 1,
-   "trainer": 4
+   "item": 0,
+   "wild": 2,
+   "center": 0,
+   "trainer": 2
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,
@@ -1022,14 +1022,14 @@
   "orderIndex": 7,
   "name": "Routes 5 & 6",
   "bannerUrl": "/banners/plains.png#flip",
-  "xpToUnlockNext": 70,
+  "xpToUnlockNext": 100,
   "minLevel": 12,
   "maxLevel": 18,
   "encounterWeights": {
    "item": 1,
-   "wild": 4,
+   "wild": 3,
    "center": 1,
-   "trainer": 4
+   "trainer": 3
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,
@@ -1424,7 +1424,7 @@
   "orderIndex": 10,
   "name": "Rock Tunnel",
   "bannerUrl": "/banners/cave_dark.png",
-  "xpToUnlockNext": 90,
+  "xpToUnlockNext": 100,
   "minLevel": 15,
   "maxLevel": 23,
   "encounterWeights": {
@@ -1649,7 +1649,7 @@
   "orderIndex": 14,
   "name": "Cycling Road",
   "bannerUrl": "/banners/bridge.png#flip",
-  "xpToUnlockNext": 130,
+  "xpToUnlockNext": 200,
   "minLevel": 24,
   "maxLevel": 32,
   "encounterWeights": {
@@ -1861,7 +1861,7 @@
   "orderIndex": 8,
   "name": "Diglett's Cave & Route 11",
   "bannerUrl": "/banners/cave.png#flip",
-  "xpToUnlockNext": 80,
+  "xpToUnlockNext": 100,
   "minLevel": 13,
   "maxLevel": 22,
   "encounterWeights": {
@@ -2050,7 +2050,7 @@
   "orderIndex": 9,
   "name": "Routes 9 & 10",
   "bannerUrl": "/banners/mountains.png#flip",
-  "xpToUnlockNext": 85,
+  "xpToUnlockNext": 125,
   "minLevel": 14,
   "maxLevel": 22,
   "encounterWeights": {
@@ -2267,7 +2267,7 @@
   "orderIndex": 11,
   "name": "Routes 7 & 8",
   "bannerUrl": "/banners/sunset.png",
-  "xpToUnlockNext": 105,
+  "xpToUnlockNext": 150,
   "minLevel": 17,
   "maxLevel": 26,
   "encounterWeights": {
@@ -2543,7 +2543,7 @@
   "orderIndex": 12,
   "name": "Pokémon Tower",
   "bannerUrl": "/banners/haunted.png",
-  "xpToUnlockNext": 105,
+  "xpToUnlockNext": 150,
   "minLevel": 15,
   "maxLevel": 25,
   "encounterWeights": {
@@ -2730,7 +2730,7 @@
   "orderIndex": 13,
   "name": "Routes 12–15",
   "bannerUrl": "/banners/flowers.png#flip",
-  "xpToUnlockNext": 120,
+  "xpToUnlockNext": 200,
   "minLevel": 22,
   "maxLevel": 30,
   "encounterWeights": {
@@ -3005,7 +3005,7 @@
   "orderIndex": 22,
   "name": "Indigo Plateau",
   "bannerUrl": "/banners/sky.png",
-  "xpToUnlockNext": 100,
+  "xpToUnlockNext": 250,
   "minLevel": 45,
   "maxLevel": 55,
   "encounterWeights": {
@@ -3153,7 +3153,7 @@
   "orderIndex": 15,
   "name": "Safari Zone",
   "bannerUrl": "/banners/swamp.png",
-  "xpToUnlockNext": 140,
+  "xpToUnlockNext": 200,
   "minLevel": 24,
   "maxLevel": 33,
   "encounterWeights": {
@@ -3477,7 +3477,7 @@
   "orderIndex": 16,
   "name": "Silph Co.",
   "bannerUrl": "/banners/city.png",
-  "xpToUnlockNext": 125,
+  "xpToUnlockNext": 200,
   "minLevel": 29,
   "maxLevel": 41,
   "encounterWeights": {
@@ -3677,7 +3677,7 @@
   "orderIndex": 17,
   "name": "Sea Routes 19 & 20",
   "bannerUrl": "/banners/ocean.png",
-  "xpToUnlockNext": 150,
+  "xpToUnlockNext": 250,
   "minLevel": 28,
   "maxLevel": 38,
   "encounterWeights": {
@@ -3929,7 +3929,7 @@
   "orderIndex": 18,
   "name": "Seafoam Islands",
   "bannerUrl": "/banners/snow_mountains.png",
-  "xpToUnlockNext": 160,
+  "xpToUnlockNext": 300,
   "minLevel": 30,
   "maxLevel": 40,
   "encounterWeights": {
@@ -3942,7 +3942,8 @@
   "legendaryBoss": [
    {
     "dex": 144,
-    "level": 50
+    "level": 50,
+    "teamAvgThreshold": 50
    }
   ],
   "scalesToTeam": false,
@@ -4162,16 +4163,17 @@
   "maxLevel": 70,
   "encounterWeights": {
    "item": 1,
-   "wild": 5,
+   "wild": 6,
    "center": 1,
-   "trainer": 3
+   "trainer": 2
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": [
    {
     "dex": 150,
     "level": 70,
-    "teamAvgThreshold": 60
+    "battleBackground": "default",
+    "teamAvgThreshold": 65
    }
   ],
   "scalesToTeam": true,
@@ -4182,7 +4184,7 @@
   "unlockConditions": [
    {
     "kind": "maxLevel",
-    "level": 64
+    "level": 70
    }
   ],
   "gyms": [],
@@ -5299,7 +5301,7 @@
   "orderIndex": 101,
   "name": "Power Plant",
   "bannerUrl": "/banners/factory.png",
-  "xpToUnlockNext": 75,
+  "xpToUnlockNext": 200,
   "minLevel": 25,
   "maxLevel": 36,
   "encounterWeights": {
@@ -5312,7 +5314,8 @@
   "legendaryBoss": [
    {
     "dex": 145,
-    "level": 50
+    "level": 50,
+    "teamAvgThreshold": 50
    }
   ],
   "scalesToTeam": false,
@@ -5497,7 +5500,7 @@
   "orderIndex": 19,
   "name": "Pokémon Mansion",
   "bannerUrl": "/banners/volcano.png",
-  "xpToUnlockNext": 175,
+  "xpToUnlockNext": 300,
   "minLevel": 32,
   "maxLevel": 42,
   "encounterWeights": {
@@ -5754,7 +5757,7 @@
   "orderIndex": 20,
   "name": "Route 21",
   "bannerUrl": "/banners/beach.png",
-  "xpToUnlockNext": 180,
+  "xpToUnlockNext": 300,
   "minLevel": 30,
   "maxLevel": 40,
   "encounterWeights": {
@@ -6025,7 +6028,7 @@
   "orderIndex": 21,
   "name": "Victory Road",
   "bannerUrl": "/banners/cave_dark.png#flip",
-  "xpToUnlockNext": 205,
+  "xpToUnlockNext": 400,
   "minLevel": 38,
   "maxLevel": 47,
   "encounterWeights": {
@@ -6038,7 +6041,8 @@
   "legendaryBoss": [
    {
     "dex": 146,
-    "level": 50
+    "level": 50,
+    "teamAvgThreshold": 50
    }
   ],
   "scalesToTeam": false,
@@ -6307,15 +6311,15 @@
   "orderIndex": 23,
   "name": "Victory Road II",
   "bannerUrl": "/banners/cave_dark.png",
-  "xpToUnlockNext": 400,
+  "xpToUnlockNext": 1000,
   "minLevel": 55,
   "maxLevel": 66,
   "encounterWeights": {
-   "wild": 5,
-   "trainer": 4,
-   "center": 1,
    "item": 1,
-   "casino": 0
+   "wild": 5,
+   "casino": 0,
+   "center": 1,
+   "trainer": 4
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,
@@ -6572,15 +6576,15 @@
   "orderIndex": 24,
   "name": "Indigo Plateau II",
   "bannerUrl": "/banners/sky.png#flip",
-  "xpToUnlockNext": 140,
+  "xpToUnlockNext": 500,
   "minLevel": 65,
   "maxLevel": 72,
   "encounterWeights": {
-   "wild": 0,
-   "trainer": 8,
-   "center": 1,
    "item": 1,
-   "casino": 0
+   "wild": 0,
+   "casino": 0,
+   "center": 1,
+   "trainer": 6
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,

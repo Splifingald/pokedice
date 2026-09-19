@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { HelpButton } from '@/components/HelpButton'
 import { Modal } from '@/components/Modal'
 import { Panel } from '@/components/Panel'
 import { PixelButton } from '@/components/PixelButton'
@@ -72,6 +73,13 @@ export function SettingsScreen() {
   return (
     <div className="flex max-w-2xl flex-col gap-4">
       <h1 className="text-5xl">Settings</h1>
+
+      <Panel title="How to play">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="copy text-muted">The rules, the dice, status effects and the type chart.</p>
+          <HelpButton size="md" label />
+        </div>
+      </Panel>
 
       <Panel title="Game">
         <Toggle

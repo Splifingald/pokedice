@@ -166,7 +166,7 @@ describe('easy areas', () => {
       lootDeck: null,
     })
     // Not in a normal area, and not in an easy one while everybody stands.
-    expect(nextEncounter(ctx(ko, ROUTE1, { teamFainted: true }), createRng(1)).deck).not.toBeNull()
+    expect(nextEncounter(ctx(ko, { ...ROUTE1, easyMode: false }, { teamFainted: true }), createRng(1)).deck).not.toBeNull()
     expect(nextEncounter(ctx(base, easy), createRng(1)).deck).not.toBeNull()
   })
 })

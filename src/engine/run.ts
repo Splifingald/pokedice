@@ -2,7 +2,7 @@
 import { getSpecies, linearAreas } from './data'
 import { asSeenBy, gymsFor, playerSideOf } from './rival'
 import { nextComboCost, nextDieCost, pokemonXp, trainerGoldFor, healAmount, multiExpShareFor } from './economy'
-import { MONEY, usableIn } from './items'
+import { MONEY, sellPrice, usableIn } from './items'
 import { averageLevel, createInstance, gainXp, instanceMaxHp, xpToNext, type ProgressEvent } from './progression'
 import { createRng, type Rng } from './rng'
 import {
@@ -412,6 +412,14 @@ export function buyItem(save: SaveData, key: string, qty: number, data: GameData
   return { ...save, gold: save.gold - cost, inventory: { ...save.inventory, [key]: (save.inventory[key] ?? 0) + qty } }
 }
 
+/** Sells `qty` of an item back to the Mart for `sellPrice` each. Null when it can't be sold or the bag has too few. */
+export function sellItem(save: SaveData, key: string, qty: number, data: GameData): SaveData | null {
+  const price = sellPrice(data.items[key])
+  const have = save.inventory[key] ?? 0
+  if (price <= 0 || qty <= 0 || have < qty) return null
+  return { ...save, gold: save.gold + price * qty, inventory: { ...save.inventory, [key]: have - qty } }
+}
+
 export function consumeItem(save: SaveData, key: string): SaveData | null {
   const have = save.inventory[key] ?? 0
   if (have <= 0) return null
@@ -444,7 +452,7 @@ export function applyFieldItem(
   const item = data.items[key]
   const inst = getInstance(save, instId)
   if (!item || !inst || !usableIn(item, 'field') || (save.inventory[key] ?? 0) <= 0) return null
-  if (item.effect.kind === 'heal') {
+  if (item.effect.kind === 'heal' || item.effect.kind === 'revive') {
     const healed = applyItemToInstance(save, key, instId, data)
     return healed ? { save: healed, events: [] } : null
   }

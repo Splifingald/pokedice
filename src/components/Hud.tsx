@@ -5,7 +5,7 @@ import { useInFight, useIsAdmin } from '@/store/hooks'
 import { GoogleAccountButton } from './GoogleAccountButton'
 import { cx } from '@/theme/util'
 import { GoldPill } from './GoldPill'
-import { HelpButton } from './HelpButton'
+import { EnergyPill } from './EnergyPill'
 import { PixelIcon, type IconName } from './icons'
 
 interface NavItem {
@@ -76,7 +76,7 @@ function NavEntry({ n, variant }: { n: NavItem; variant: 'side' | 'bottom' }) {
   )
 }
 
-/** Top bar: logo, Pokédollars, leaderboard, help and settings. The menus live in the side / bottom bar; sound is in Settings. */
+/** Top bar: logo, energy, Pokédollars, leaderboard and settings (the rules are in Settings). The menus live in the side / bottom bar; sound is in Settings. */
 export function Header() {
   const save = useGame((s) => s.save)
   const runArea = useGame((s) => s.run.areaId)
@@ -87,15 +87,16 @@ export function Header() {
   const onBoard = pathname === '/leaderboard'
   return (
     <header className="sticky top-0 z-40 border-b-[3px] border-ink bg-panel shadow-[0_3px_0_#6b6480]">
-      <div className="flex h-14 items-center gap-2 px-3">
+      <div className="flex h-14 items-center gap-1.5 px-3 sm:gap-2">
         <Link
           to={runArea ? '/area' : '/map'}
-          className="mr-auto flex min-h-[44px] items-center text-2xl leading-none tracking-wider"
+          className="mr-auto flex min-h-[44px] min-w-0 items-center text-xl leading-none tracking-wider sm:text-2xl"
           aria-label="Pokédice — back to the game"
         >
           POKÉ<span className="text-danger">DICE</span>
         </Link>
-        <GoldPill amount={save.gold} />
+        <EnergyPill />
+        <GoldPill amount={save.gold} className="shrink-0" />
         <Link
           to={inFight ? '#' : '/leaderboard'}
           aria-label="Leaderboard"
@@ -104,14 +105,13 @@ export function Header() {
           onClick={(e) => inFight && e.preventDefault()}
           title={inFight ? 'Finish the fight first' : 'Leaderboard'}
           className={cx(
-            'pixel-btn flex h-11 w-11 items-center justify-center md:h-9 md:w-9',
+            'pixel-btn flex h-11 w-11 shrink-0 items-center justify-center md:h-9 md:w-9',
             onBoard ? 'bg-gold' : 'bg-panel',
             inFight && 'hatched pointer-events-none',
           )}
         >
           <PixelIcon name="trophy" size={20} />
         </Link>
-        <HelpButton />
         <Link
           to={inFight ? '#' : '/settings'}
           aria-label="Settings"
@@ -120,7 +120,7 @@ export function Header() {
           onClick={(e) => inFight && e.preventDefault()}
           title={inFight ? 'Finish the fight first' : 'Settings'}
           className={cx(
-            'pixel-btn flex h-11 w-11 items-center justify-center md:h-9 md:w-9',
+            'pixel-btn flex h-11 w-11 shrink-0 items-center justify-center md:h-9 md:w-9',
             onSettings ? 'bg-gold' : 'bg-panel',
             inFight && 'hatched pointer-events-none',
           )}

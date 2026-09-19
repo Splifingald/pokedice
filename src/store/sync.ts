@@ -131,6 +131,38 @@ export async function checkContent() {
   pushToast('Content updated', 'info')
 }
 
+/** Back after this long away (tab hidden, or the device asleep): a new session, so the page reloads for the latest build and content. */
+const NEW_SESSION_MS = 24 * 60 * 60 * 1000
+let lastSeen = Date.now()
+let reloading = false
+
+/** Reload now — or, mid-fight, as soon as the fight is over (a reload would lose it). The save is written first. */
+function reloadForNewSession() {
+  if (reloading) return
+  reloading = true
+  const inFight = () => {
+    const phase = useGame.getState().run.phase
+    return phase === 'battle' || phase === 'catch' || phase === 'victory'
+  }
+  const go = () => {
+    flushWrite()
+    window.location.reload()
+  }
+  if (!inFight()) return go()
+  const stop = useGame.subscribe(() => {
+    if (inFight()) return
+    stop()
+    go()
+  })
+}
+
+/** Called while the page is visible (on return, and every minute): a gap of a day or more starts a new session. */
+function checkNewSession() {
+  const now = Date.now()
+  if (now - lastSeen >= NEW_SESSION_MS) reloadForNewSession()
+  else lastSeen = now
+}
+
 let started = false
 export function startBackgroundServices() {
   if (started) return
@@ -138,10 +170,19 @@ export function startBackgroundServices() {
   startAnalytics()
   void initAuth()
   void checkContent()
-  setInterval(() => tickRegen(), 60_000)
+  setInterval(() => {
+    // A timer that fires a day late means the device slept: same as coming back to the tab.
+    if (document.visibilityState === 'visible') checkNewSession()
+    tickRegen()
+  }, 60_000)
   window.addEventListener('pagehide', flushWrite)
   document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'hidden') flushWrite()
-    else tickRegen()
+    if (document.visibilityState === 'hidden') {
+      lastSeen = Date.now()
+      flushWrite()
+    } else {
+      checkNewSession()
+      tickRegen()
+    }
   })
 }

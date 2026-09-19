@@ -3,6 +3,7 @@ import { aiRerollMask } from './ai'
 import { getSpecies } from './data'
 import { attackMultiplier, attackType, computeDamage, type DamageResult, type UpgradeLevels } from './damage'
 import { rerollMasked, rollAll, type RolledDie } from './dice'
+import { reviveHp } from './economy'
 import { effectiveStats } from './progression'
 import { potionHeal, shouldUsePotion } from './trainerItems'
 import type { Rng } from './rng'
@@ -107,7 +108,7 @@ export type LogEntry =
   | { kind: 'faint'; side: Side; uid: string; dex: number }
   | { kind: 'switch'; uid: string; free: boolean }
   /** `side` 'enemy': a trainer's potion (absent = the player's item). */
-  | { kind: 'item'; key: string; targetUid: string; amount: number; hpAfter: number; cured?: CurableStatus[]; rerolls?: number; side?: Side }
+  | { kind: 'item'; key: string; targetUid: string; amount: number; hpAfter: number; cured?: CurableStatus[]; rerolls?: number; side?: Side; revived?: boolean }
   | { kind: 'heal'; side: Side; uid: string; amount: number; hpAfter: number }
   /** Confusion recoil: the confused attacker hurts itself after its attack. */
   | { kind: 'recoil'; side: Side; uid: string; amount: number; hpAfter: number }
@@ -259,7 +260,7 @@ function beginTurn(s: BattleState, side: Side, data: GameData, log: LogEntry[]) 
     const b = side === 'player' ? activeBattler(s) : s.enemy
     log.push({ kind: 'turn', side, turn: s.turn, uid: b.uid })
 
-    const { state, ticks } = tickDot(b.status, rules)
+    const { state, ticks } = tickDot(b.status, rules, b.maxHp)
     b.status = state
     for (const t of ticks) {
       b.hp = Math.max(0, b.hp - t.amount)
@@ -398,9 +399,15 @@ export function reduce(
       if (!phaseOk || s.itemUsedThisTurn) return NOOP(state)
       const item = data.items[e.key]
       const target = s.player.find((b) => b.uid === (e.targetUid ?? activeBattler(s).uid))
-      if (!item || !target || target.hp <= 0) return NOOP(state)
+      if (!item || !target) return NOOP(state)
       const fx = item.effect
-      if (fx.kind === 'heal') {
+      // Only a revive works on a K.O.'d Pokémon (a benched one: the active can't be K.O. on your turn), and only on one.
+      if ((fx.kind === 'revive') !== target.hp <= 0) return NOOP(state)
+      if (fx.kind === 'revive') {
+        target.hp = reviveHp(fx.percent, target.maxHp)
+        target.status = emptyStatus()
+        log.push({ kind: 'item', key: item.key, targetUid: target.uid, amount: target.hp, hpAfter: target.hp, revived: true })
+      } else if (fx.kind === 'heal') {
         if (target.hp >= target.maxHp) return NOOP(state)
         const amount = Math.min(fx.amount, target.maxHp - target.hp)
         target.hp += amount

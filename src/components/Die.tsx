@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion'
 import type { DieType, Face } from '@/engine/types'
 import { usePace } from '@/lib/pace'
-import { PALETTE } from '@/theme/colors'
+import { PALETTE, STATUS_COLORS } from '@/theme/colors'
 import { cx, shade, textOn, typeColor } from '@/theme/util'
 import { PixelIcon, STATUS_GLYPH } from './icons'
 
@@ -42,25 +42,12 @@ const PIPS: Record<number, [number, number][]> = {
 /** Under this size a die is "mini" (faces laid out flat): digits instead of pips, which can't be read that small. */
 const MINI = 40
 
+/** A status face's colour, or null for a plain number. */
+const statusColor = (face: Face | null | undefined): string | null =>
+  face?.kind === 'status' ? (STATUS_COLORS[face.status as keyof typeof STATUS_COLORS] ?? PALETTE.gold) : null
+
+/** A status face is drawn like any other (its number) — the die's coloured outline and corner tag say it's special. */
 function FaceArt({ face, size, color, ink }: { face: Face; size: number; color: string; ink: string }) {
-  if (face.kind === 'status') {
-    return (
-      <div className="relative flex h-full w-full items-center justify-center">
-        {/* A plain black silhouette, no plate: it reads on every die colour. */}
-        <PixelIcon name={STATUS_GLYPH[face.status] ?? 'star'} size={size * 0.56} color={PALETTE.ink} />
-        {/* The number a status face counts as. Too small to read on small dice — the die's label carries it there. */}
-        {size >= 40 && (
-          <span
-            className="absolute bottom-0 right-0 border-l-2 border-t-2 border-ink bg-panel px-0.5 font-mono font-bold leading-none text-ink"
-            style={{ fontSize: Math.max(12, Math.round(size * 0.22)) }}
-            aria-hidden
-          >
-            {face.value}
-          </span>
-        )}
-      </div>
-    )
-  }
   const mini = size < MINI
   const pips = mini ? undefined : PIPS[face.value]
   if (!pips) {
@@ -118,6 +105,8 @@ export function Die({ type, face, size = 56, selected, locked, rollKey, delay = 
   // Base dice have grey pips; a mini digit needs full ink to be read.
   const ink = type === 'base' && !mini ? PALETTE.muted : type === 'base' ? PALETTE.ink : textOn(bg)
   const interactive = !!onClick && !locked
+  const special = statusColor(face)
+  const ring = mini ? 2 : 3
   const name = label ?? `${type} die${face ? `, ${face.kind === 'status' ? `${face.status} (${face.value})` : face.value}` : ''}`
   const base = {
     className: cx(mini ? 'die-mini' : 'die', 'relative flex select-none items-center justify-center', interactive && 'cursor-pointer', className),
@@ -126,7 +115,11 @@ export function Die({ type, face, size = 56, selected, locked, rollKey, delay = 
       height: size,
       background: `linear-gradient(135deg, ${shade(bg, 1.08)} 0%, ${bg} 55%, ${shade(bg, 0.88)} 100%)`,
       outline: selected ? '3px dashed #e8b44a' : undefined,
-      outlineOffset: 3,
+      outlineOffset: special ? ring + 5 : 3,
+      // A status face: a ring in its colour, edged in ink, round the die (in place of the drop shadow).
+      boxShadow: special
+        ? `inset 0 -4px 0 0 rgba(0, 0, 0, 0.2), inset 0 3px 0 0 rgba(255, 255, 255, 0.35), 0 0 0 ${ring}px ${special}, 0 0 0 ${ring + 2}px ${PALETTE.ink}`
+        : undefined,
       opacity: locked ? 0.55 : 1,
       transformStyle: 'preserve-3d' as const,
     },
@@ -138,7 +131,18 @@ export function Die({ type, face, size = 56, selected, locked, rollKey, delay = 
     },
   }
   const content = face ? (
-    <FaceArt face={face} size={size} color={bg} ink={ink} />
+    <>
+      <FaceArt face={face} size={size} color={bg} ink={ink} />
+      {special && face.kind === 'status' && size >= MINI && (
+        <span
+          className="absolute flex items-center justify-center border-2 border-ink"
+          style={{ top: -ring - 6, right: -ring - 6, width: size * 0.36, height: size * 0.36, background: special, borderRadius: 2 }}
+          aria-hidden
+        >
+          <PixelIcon name={STATUS_GLYPH[face.status] ?? 'star'} size={size * 0.24} color={PALETTE.ink} />
+        </span>
+      )}
+    </>
   ) : (
     <span className="font-pixel text-muted" style={{ fontSize: size * 0.5 }} aria-hidden>
       ?

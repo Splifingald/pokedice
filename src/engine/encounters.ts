@@ -11,6 +11,7 @@ import type {
   DeckCard,
   EncounterKind,
   GameData,
+  LevelOffsetRange,
   SkipPolicy,
   Trainer,
   TrainerMon,
@@ -113,10 +114,39 @@ export function fledLegendary(area: Area, progress: AreaProgress, pokedex: reado
 
 const clampLevel = (lv: number, data: GameData) => Math.max(1, Math.min(data.config.maxLevel, Math.round(lv)))
 
-export function enemyLevel(base: number, ctx: Pick<EncounterContext, 'area' | 'data' | 'teamAvgLevel'>, rng: Rng) {
+/**
+ * Where a scalesToTeam area puts its wild or trainer Pokémon, as offsets from the team average: the area's own range
+ * for that kind, else ± game_config.scaleLevelSpread.
+ */
+export function scaleOffsetRange(area: Area, kind: 'wild' | 'trainer', data: GameData): LevelOffsetRange {
+  const own = area.scaleOffsets?.[kind]
+  if (own) return { min: Math.min(own.min, own.max), max: Math.max(own.min, own.max) }
+  const spread = data.config.scaleLevelSpread
+  return { min: -spread, max: spread }
+}
+
+/**
+ * The levels a scalesToTeam area's foes can have right now: the lowest to the highest over the kinds it deals (wild,
+ * trainers), around the team average.
+ */
+export function scaledLevelSpan(area: Area, teamAvgLevel: number, data: GameData): { min: number; max: number } {
+  const kinds = (['wild', 'trainer'] as const).filter((k) => (k === 'wild' ? area.wildPool : area.trainerPool).length > 0)
+  const ranges = (kinds.length ? kinds : (['wild'] as const)).map((k) => scaleOffsetRange(area, k, data))
+  return {
+    min: clampLevel(teamAvgLevel + Math.min(...ranges.map((r) => r.min)), data),
+    max: clampLevel(teamAvgLevel + Math.max(...ranges.map((r) => r.max)), data),
+  }
+}
+
+export function enemyLevel(
+  base: number,
+  ctx: Pick<EncounterContext, 'area' | 'data' | 'teamAvgLevel'>,
+  rng: Rng,
+  kind: 'wild' | 'trainer' = 'wild',
+) {
   if (!ctx.area.scalesToTeam) return clampLevel(base, ctx.data)
-  const spread = ctx.data.config.scaleLevelSpread
-  return clampLevel(ctx.teamAvgLevel + rng.int(-spread, spread), ctx.data)
+  const { min, max } = scaleOffsetRange(ctx.area, kind, ctx.data)
+  return clampLevel(ctx.teamAvgLevel + rng.int(min, max), ctx.data)
 }
 
 export function rollWild(ctx: EncounterContext, rng: Rng): Encounter | null {
@@ -138,7 +168,7 @@ export function rollTrainer(ctx: EncounterContext, rng: Rng): Encounter | null {
     name: trainer.name,
     spriteUrl: trainer.spriteUrl,
     team: dealTrainerItems(
-      trainer.team.map((m) => ({ dex: m.dex, level: enemyLevel(m.level, ctx, rng) })),
+      trainer.team.map((m) => ({ dex: m.dex, level: enemyLevel(m.level, ctx, rng, 'trainer'), ...(m.shiny && { shiny: true }) })),
       trainer.items,
       ctx.data,
     ),
@@ -217,6 +247,30 @@ export interface EncounterRoll {
 }
 
 /**
+ * The Pokémon Center the game sends next on its own, if any (dev-forced types aside): a new round opens with one when
+ * it would help, entering an area hurt, or after a K.O. in an easy area. Never two Centers in a row.
+ */
+export function dueCenter(ctx: EncounterContext): 'round' | 'hurt' | 'fainted' | null {
+  const { area, data } = ctx
+  if (ctx.progress.lastCenter) return null
+  // A round is one full deck. A new one opens with a Pokémon Center, outside the deck — unless it would do nothing.
+  if (data.config.encounterMode !== 'random' && !ctx.progress.deck?.length && ctx.centerUseful) return 'round'
+  if (ctx.isFirstInArea && ctx.teamHurt && data.config.forcedCenterWhenHurt) return 'hurt'
+  if (area.easyMode && ctx.teamFainted) return 'fainted'
+  return null
+}
+
+/**
+ * The next encounter is a Pokémon Center, known without drawing: one the game sends (`dueCenter`), or a Center card
+ * on top of the deck (none right after a Center). Centers cost no energy, so this is what 0 energy still allows.
+ */
+export function centerIsNext(ctx: EncounterContext): boolean {
+  if (dueCenter(ctx)) return true
+  const deck = ctx.progress.deck
+  return ctx.data.config.encounterMode !== 'random' && !ctx.progress.lastCenter && !!deck?.length && deck[deck.length - 1] === 'center'
+}
+
+/**
  * Dev-forced type → a new round's opening Center (when one would help) → forced Center (entering hurt; a K.O. in an
  * easy area) → the area's encounter deck (or, in 'random' mode, a weighted roll over {wild, trainer, center, item}).
  * A due gym battle or legendary is never dealt here: the player takes it on when ready (`challengeEncounter`).
@@ -231,15 +285,13 @@ export function nextEncounter(ctx: EncounterContext, rng: Rng): EncounterRoll {
     const forced = forcedEncounter(ctx, ctx.forceKind, rng)
     if (forced) return fixed(forced)
   }
-  // Never two Pokémon Centers in a row: after one, the next encounter is something else.
-  const afterCenter = !!ctx.progress.lastCenter
-  // A round is one full deck. A new one opens with a Pokémon Center, outside the deck — unless it would do nothing.
-  if (data.config.encounterMode !== 'random' && !ctx.progress.deck?.length && ctx.centerUseful && !afterCenter) {
+  const due = dueCenter(ctx)
+  if (due === 'round') {
     const deck = buildDeck(area, data, rng, legendCards(ctx), { noCenterFirst: true })
     return { encounter: { kind: 'center', forced: true, reason: 'round' }, deck, lootDeck: null, drawn: [], newRound: true }
   }
-  if (!afterCenter && ctx.isFirstInArea && ctx.teamHurt && data.config.forcedCenterWhenHurt) return fixed({ kind: 'center', forced: true })
-  if (!afterCenter && area.easyMode && ctx.teamFainted) return fixed({ kind: 'center', forced: true, reason: 'fainted' })
+  if (due === 'hurt') return fixed({ kind: 'center', forced: true })
+  if (due === 'fainted') return fixed({ kind: 'center', forced: true, reason: 'fainted' })
   return data.config.encounterMode === 'random' ? rollWeighted(ctx, rng) : drawFromDeck(ctx, rng)
 }
 

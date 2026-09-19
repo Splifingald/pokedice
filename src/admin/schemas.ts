@@ -9,6 +9,10 @@ const dieType = z.enum(['base', ...POKE_TYPES] as [string, ...string[]])
 const int = (min = Number.MIN_SAFE_INTEGER, max = Number.MAX_SAFE_INTEGER) =>
   z.number({ invalid_type_error: 'must be a number' }).int('must be a whole number').min(min).max(max)
 const uuid = z.string().uuid('must be a UUID')
+/** Levels vs the team average (negative = below), min ≤ max. */
+const levelOffsets = z
+  .object({ min: int(-99, 99), max: int(-99, 99) })
+  .refine((r) => r.max >= r.min, { message: 'max below min', path: ['max'] })
 const face = z.union([
   z.object({ kind: z.literal('number'), value: int(0, 99) }),
   z.object({ kind: z.literal('status'), status: z.enum(STATUS_KINDS), value: int(0, 99) }),
@@ -16,6 +20,7 @@ const face = z.union([
 
 const itemEffect = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('heal'), amount: int(1) }),
+  z.object({ kind: z.literal('revive'), percent: int(1, 100) }),
   z.object({ kind: z.literal('cure'), statuses: z.array(z.enum(['burn', 'poison', 'frozen', 'paralyze', 'confuse'])).min(1, 'pick a status') }),
   z.object({ kind: z.literal('rerolls'), amount: int(1) }),
   z.object({ kind: z.literal('level'), amount: int(1, 10) }),
@@ -87,6 +92,11 @@ export const ROW_SCHEMAS: Record<TableName, z.ZodTypeAny> = {
       .array(z.object({ dex: int(1), level: int(1, 100), teamAvgThreshold: z.number().optional(), upgradeLevel: int(1, 10).nullable().optional(), battleBackground: background.nullable().optional() }))
       .nullable(),
     scales_to_team: z.boolean(),
+    // Optional so a database created before migration 0012 still loads.
+    scale_offsets: z
+      .object({ wild: levelOffsets.nullable().optional(), trainer: levelOffsets.nullable().optional() })
+      .nullable()
+      .optional(),
     // Optional so a database created before migration 0002 still loads.
     easy_mode: z.boolean().optional(),
     enemy_upgrade_level: int(1, 10).nullable().optional(),
@@ -110,7 +120,7 @@ export const ROW_SCHEMAS: Record<TableName, z.ZodTypeAny> = {
     id: uuid,
     name: z.string().min(1),
     sprite_url: z.string().nullable(),
-    team: z.array(z.object({ dex: int(1), level: int(1, 100) })).min(1, '1–3 Pokémon').max(3, '1–3 Pokémon'),
+    team: z.array(z.object({ dex: int(1), level: int(1, 100), shiny: z.boolean().optional() })).min(1, '1–3 Pokémon').max(3, '1–3 Pokémon'),
     role: z.enum(['trainer', 'leader', 'elite', 'champion']),
     badge: z.string().nullable(),
     upgrade_level: int(1, 10).nullable().optional(),

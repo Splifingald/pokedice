@@ -29,6 +29,7 @@ export const ICONS = {
   paralyze: ['....kkk.', '...keek.', '..keek..', '.keeeek.', '.kkeek..', '..kek...', '..kk....', '.k......'],
   poison: ['......k.', '.kk..kPk', 'kppk..k.', 'kpPpk...', 'kpppk.kk', '.kkk.kPk', '.....kpk', '......k.'],
   confuse: ['.kkkkk..', 'km....k.', 'k.kkk.k.', 'k.k.k.k.', 'k.k...k.', 'k.kkkk..', 'k.......', '.kkkkkk.'],
+  energy: ['....kkk.', '...kYyk.', '..kYyk..', '.kYyyyk.', '.kkkyk..', '..kyk...', '.kyk....', '.kk.....'],
   heal: ['..kkkk..', '..kggk..', 'kkkggkkk', 'kgggwggk', 'kggggggk', 'kkkggkkk', '..kggk..', '..kkkk..'],
   sound: ['...k....', '..kk..k.', 'kkwk.k..', 'kwwk.k.k', 'kwwk.k.k', 'kkwk.k..', '..kk..k.', '...k....'],
   mute: ['...k....', '..kk....', 'kkwk.k.k', 'kwwk..k.', 'kwwk.k.k', 'kkwk....', '..kk....', '...k....'],

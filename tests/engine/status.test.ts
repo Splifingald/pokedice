@@ -49,26 +49,28 @@ describe('status thresholds', () => {
 describe('status application', () => {
   it('burn stacks and refreshes; poison only refreshes', () => {
     let s = applyStatuses(emptyStatus(), [{ status: 'burn', stacks: 2 }], rules)
-    s = tickDot(s, rules).state
+    s = tickDot(s, rules, 100).state
     expect(s.burn).toEqual({ stacks: 2, turns: 2 })
     s = applyStatuses(s, [{ status: 'burn', stacks: 1 }], rules)
     expect(s.burn).toEqual({ stacks: 3, turns: 3 })
 
     let p = applyStatuses(emptyStatus(), [{ status: 'poison' }], rules)
-    p = tickDot(p, rules).state
+    p = tickDot(p, rules, 100).state
     p = applyStatuses(p, [{ status: 'poison' }], rules)
     expect(p.poison).toEqual({ turns: 3 })
-    expect(tickDot(p, rules).ticks).toEqual([{ status: 'poison', amount: 3 }])
+    expect(tickDot(p, rules, 100).ticks).toEqual([{ status: 'poison', amount: 10 }])
   })
 
-  it('DoT deals stacks × 1 for burn, 3 for poison, and expires', () => {
+  it('DoT deals a share of max HP (burn 4 % per stack, poison 10 %), at least 1, and expires', () => {
     let s = applyStatuses(emptyStatus(), [{ status: 'burn', stacks: 3 }, { status: 'poison' }], rules)
-    const t1 = tickDot(s, rules)
+    const t1 = tickDot(s, rules, 100)
     expect(t1.ticks).toEqual([
-      { status: 'burn', amount: 3 },
-      { status: 'poison', amount: 3 },
+      { status: 'burn', amount: 12 },
+      { status: 'poison', amount: 10 },
     ])
-    s = tickDot(tickDot(t1.state, rules).state, rules).state
+    expect(tickDot(s, rules, 250).ticks.map((t) => t.amount)).toEqual([30, 25])
+    expect(tickDot(s, rules, 5).ticks.map((t) => t.amount)).toEqual([1, 1])
+    s = tickDot(tickDot(t1.state, rules, 100).state, rules, 100).state
     expect(s.burn).toBeNull()
     expect(s.poison).toBeNull()
   })

@@ -12,6 +12,11 @@ import {
   centerHeal,
   centerWouldHelp,
   challengeEncounter,
+  centerIsNext,
+  encounterEnergyCost,
+  energyNow,
+  spendEnergy,
+  type EncounterContext,
   playerSideOf,
   consumeItem,
   MONEY,
@@ -85,34 +90,60 @@ export function leaveArea() {
   useGame.setState((s) => ({ run: { ...initialRun(), forceNext: s.run.forceNext }, battle: null }))
 }
 
+/** Everything `nextEncounter` needs about the save and the area, as things stand. */
+function encounterContext(save: SaveData, areaId: string, forceKind: ForceKind | null): EncounterContext | null {
+  const { data, run } = useGame.getState()
+  const area = data.areas.find((a) => a.id === areaId)
+  if (!area) return null
+  return {
+    area,
+    progress: progressOf(save, area.id),
+    data,
+    teamAvgLevel: teamAverageLevel(save),
+    teamHurt: isTeamHurt(save, data),
+    teamFainted: hasFaintedMember(save),
+    isFirstInArea: run.firstInArea,
+    pokedex: save.pokedex,
+    forceKind,
+    centerUseful: centerWouldHelp(save, data),
+    player: playerSideOf(save),
+  }
+}
+
+/**
+ * NEXT ENCOUNTER needs energy, unless what comes next is free anyway (a Pokémon Center, or nobody can fight).
+ * False when the energy system is off.
+ */
+export function outOfEnergy(): boolean {
+  const { save, data, run } = useGame.getState()
+  if (!save || !data.config.energy.enabled || energyNow(save, data.config.energy, Date.now()).value >= 1) return false
+  if (!hasAbleTeam(save) || !run.areaId) return false
+  const ctx = encounterContext(save, run.areaId, null)
+  return !ctx || !centerIsNext(ctx)
+}
+
 /** Roll the next encounter and show its preview card. */
 export function rollNext() {
   const { save, data, run } = useGame.getState()
   if (!save || !run.areaId) return
-  const area = data.areas.find((a) => a.id === run.areaId)
-  if (!area) return
+  if (outOfEnergy()) {
+    setRun({ phase: 'idle', encounter: null })
+    pushToast('Out of energy — it refills over time.', 'bad')
+    return
+  }
   // Nobody able to fight (e.g. after a stalemate) → the Center is the only sensible next stop.
-  const forceKind = !hasAbleTeam(save) ? 'center' : run.forceNext
-  const roll = nextEncounter(
-    {
-      area,
-      progress: progressOf(save, area.id),
-      data,
-      teamAvgLevel: teamAverageLevel(save),
-      teamHurt: isTeamHurt(save, data),
-      teamFainted: hasFaintedMember(save),
-      isFirstInArea: run.firstInArea,
-      pokedex: save.pokedex,
-      forceKind,
-      centerUseful: centerWouldHelp(save, data),
-      player: playerSideOf(save),
-    },
-    runRng,
-  )
+  const noneAble = !hasAbleTeam(save)
+  const forceKind = noneAble ? 'center' : run.forceNext
+  const ctx = encounterContext(save, run.areaId, forceKind)
+  if (!ctx) return
+  const area = ctx.area
+  const roll = nextEncounter(ctx, runRng)
   const encounter = roll.encounter
   // The decks live in the save, so reloading the page can't reshuffle them.
   // Always recorded: besides the decks, the area notes whether this was a Center (never two in a row).
-  const recorded = recordDraws(save, area.id, roll)
+  let recorded = recordDraws(save, area.id, roll)
+  const cost = data.config.energy.enabled && !noneAble ? encounterEnergyCost(encounter) : 0
+  if (cost > 0) recorded = spendEnergy(recorded, data.config.energy, Date.now(), cost) ?? recorded
   if (recorded !== save) commitSave(recorded)
   setRun({ phase: 'preview', encounter, firstInArea: false, forceNext: forceKind === run.forceNext ? null : run.forceNext })
 }

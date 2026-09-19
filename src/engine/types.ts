@@ -173,6 +173,18 @@ export interface BossDef {
   battleBackground?: BattleBackground | null
 }
 
+/** Levels relative to the team average, both ends included: { min: -15, max: -10 } = 15 to 10 levels below. */
+export interface LevelOffsetRange {
+  min: number
+  max: number
+}
+
+/** Per kind of foe; a kind left out (or null) keeps ± game_config.scaleLevelSpread. */
+export interface ScaleOffsets {
+  wild?: LevelOffsetRange | null
+  trainer?: LevelOffsetRange | null
+}
+
 export interface Area {
   id: string
   orderIndex: number
@@ -185,6 +197,8 @@ export interface Area {
   backtrackMultiplier: number
   legendaryBoss: BossDef[] | null
   scalesToTeam: boolean
+  /** scalesToTeam areas: where foe levels fall around the team average. Unset = ± game_config.scaleLevelSpread. */
+  scaleOffsets?: ScaleOffsets | null
   /** Easy areas send a Center next whenever a team member is K.O. */
   easyMode: boolean
   /** Upgrade level (dice and combos) of every foe here; null = game_config.enemyUpgradeLevel. */
@@ -255,6 +269,8 @@ export interface TrainerMon {
   level: number
   /** The potion this Pokémon holds in a fight (at most one): dealt from the trainer's `items` to its strongest. */
   item?: string
+  /** Shiny colours (cosmetic only), set per trainer in the admin. */
+  shiny?: boolean
 }
 
 export type TrainerRole = 'trainer' | 'leader' | 'elite' | 'champion'
@@ -292,6 +308,8 @@ export type ItemEffect =
   | { kind: 'cure'; statuses: CurableStatus[] }
   /** Ether / Max Ether: rerolls back, up to the Pokémon's max — battle only. */
   | { kind: 'rerolls'; amount: number }
+  /** Revive / Max Revive: brings a K.O.'d Pokémon back with this % of its max HP, in battle or from the Team screen. */
+  | { kind: 'revive'; percent: number }
   /** Rare Candy: levels, from the Team screen. */
   | { kind: 'level'; amount: number }
   /** Poké Balls: added to the catch die. */
@@ -311,8 +329,9 @@ export interface ItemDef {
 }
 
 export interface StatusRules {
-  burn: { threshold: number; damagePerStack: number; duration: number }
-  poison: { threshold: number; damage: number; duration: number }
+  /** Burn and Poison hurt by a share of the victim's max HP each turn (at least 1): Burn `percentPerStack`% per stack. */
+  burn: { threshold: number; percentPerStack: number; duration: number }
+  poison: { threshold: number; percent: number; duration: number }
   frozen: { threshold: number; stunTurns: number }
   paralyze: { threshold: number; stunTurns: number }
   /** Confusion: the victim's next attack still lands, then it takes `recoilPercent`% of its max HP as recoil. */
@@ -322,6 +341,15 @@ export interface StatusRules {
 }
 
 export type SkipPolicy = 'free' | 'once' | 'none'
+
+export interface EnergyConfig {
+  /** Off = encounters are free and the counter is hidden. */
+  enabled: boolean
+  /** The cap, and what a new save starts with. */
+  max: number
+  /** Real-time minutes per point regained (offline too). */
+  minutesPerEnergy: number
+}
 
 export interface GameConfig {
   configVersion: number
@@ -377,6 +405,8 @@ export interface GameConfig {
   showRoundPreview: boolean
   /** Chance (0–1) that a wild Pokémon is shiny: only its sprites change. */
   shinyChance: number
+  /** Energy: 1 per encounter discovered (not gyms, legendaries or Pokémon Centers), refilled over time. */
+  energy: EnergyConfig
   status: StatusRules
   ai: { samples: number; rerollGainThreshold: number }
   slotMachine: SlotMachineConfig
@@ -445,6 +475,8 @@ export interface SaveData {
   dayCare?: DayCareState
   /** When the admin last edited this save (cheats): that cloud save then wins the next sync, even with less progress. */
   adminEditAt?: number
+  /** Energy held at `at` (ms); it refills from there (see engine/energy). Absent = full. */
+  energy?: { value: number; at: number }
   /** The player has opened the leaderboard (Prof. Oak sends them there once). */
   leaderboardVisited?: boolean
 }

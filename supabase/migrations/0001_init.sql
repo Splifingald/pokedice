@@ -53,6 +53,7 @@ create table if not exists areas (
   backtrack_multiplier numeric not null default 0.5,
   legendary_boss jsonb,
   scales_to_team boolean not null default false,
+  scale_offsets jsonb,                         -- scaling areas: {wild,trainer: {min,max}} levels vs team avg; null = ± spread
   easy_mode boolean not null default false,    -- a Center comes next whenever a team member is K.O.
   enemy_upgrade_level int,                     -- foes' dice/combo upgrade level; null = game_config.enemyUpgradeLevel
   battle_background text,                      -- grass | sea | water | rock | default; null = default
@@ -129,7 +130,7 @@ create table if not exists items (
   description text,
   sprite_url text,
   price int not null,
-  effect jsonb not null,                        -- {kind:'heal'|'cure'|'rerolls'|'level'|'ball', …}
+  effect jsonb not null,                        -- {kind:'heal'|'revive'|'cure'|'rerolls'|'level'|'ball', …}
   in_shop boolean not null default true,
   shop_badges int not null default 0            -- sold once the player holds this many badges
 );
