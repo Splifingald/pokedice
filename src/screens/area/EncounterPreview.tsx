@@ -202,7 +202,7 @@ function CenterCard({ enc }: { enc: Extract<Encounter, { kind: 'center' }> }) {
           ? enc.reason === 'round'
             ? 'A new round begins — it opens with a Pokémon Center.'
             : enc.reason === 'fainted'
-            ? 'One of your Pokémon is K.O. — in this easy area, a Center comes straight away.'
+            ? 'One of your Pokémon is K.O. — a Center comes straight away.'
             : 'Your team is hurt — a Center is the first stop in this area.'
           : 'A place to rest.'}{' '}
         Full heal for your team and Box, and a chance to change your team.

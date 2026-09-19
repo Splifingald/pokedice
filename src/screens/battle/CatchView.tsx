@@ -207,6 +207,8 @@ export function CatchView() {
   const pct = (bonus: number) => Math.round(catchChance(value, bonus) * 100)
   // A ball adds nothing once a weaker option (or no ball) is already certain.
   const sure = catchChance(value, 0) >= 1
+  // The throw that was made could not miss.
+  const certain = !!result && catchChance(value, result.bonus) >= 1
   const notNeeded = (o: (typeof options)[number]) =>
     o.key != null && options.some((w) => w.bonus < o.bonus && catchChance(value, w.bonus) >= 1)
   const title = revealed && result ? (result.caught ? 'Gotcha!' : `${name} fled!`) : `${c.kind === 'boss' ? 'The legendary' : 'The wild'} ${name} is worn out!`
@@ -304,13 +306,18 @@ export function CatchView() {
           )
         ) : (
           <>
-            <Die type="base" face={{ kind: 'number', value: result.die }} size={80} rollKey="catch-throw" label={`Catch die: ${result.die}`} />
+            {/* A certain catch (no ball needed, or a ball that can't miss) skips the die: only the ball is thrown. */}
+            {!certain && (
+              <Die type="base" face={{ kind: 'number', value: result.die }} size={80} rollKey="catch-throw" label={`Catch die: ${result.die}`} />
+            )}
             <p className="text-2xl" aria-live="polite">
               {revealed
                 ? result.caught
                   ? `${name} was caught!`
                   : `MISSED! You needed at least ${Math.max(1, result.need - result.bonus)}.`
-                : 'The die is rolling…'}
+                : certain
+                  ? `Throwing the ${result.ballKey ? (data.items[result.ballKey]?.name ?? 'ball') : 'Poké Ball'}…`
+                  : 'The die is rolling…'}
             </p>
             {revealed && (
               <PixelButton variant="primary" size="lg" onClick={finishCatch}>

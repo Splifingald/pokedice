@@ -37,7 +37,6 @@ import { CasinoView } from './area/CasinoView'
 import { CenterView } from './area/CenterView'
 import { EncounterPreview } from './area/EncounterPreview'
 import { AreaBanner } from '@/components/AreaBanner'
-import { RoundsCounter } from '@/components/RoundsCounter'
 
 const CARD_ICON: Record<DeckCard, IconName> = {
   wild: 'ball',
@@ -56,11 +55,8 @@ const CARD_NAME: Record<DeckCard, string> = {
   legend: 'a legendary',
 }
 
-/** Both rows share a label column so their bars line up. */
-const GAUGE_LABEL = 'w-[6.5rem] shrink-0'
-
 /**
- * The round gauge, laid out like the rounds counter above it: ROUND n · one tile per card of the area's deck · n/total.
+ * The round gauge, under the area name (no label): one tile per card of the current round's deck · n/total.
  * Met cards show their icon, the next one has a gold edge, the rest stay dark (nothing ahead is given away). A lost
  * round (wipe) or a finished one leaves the next round waiting, empty. Hidden with game_config.showRoundGauge, or when
  * encounters aren't dealt from a deck.
@@ -74,7 +70,6 @@ function RoundGauge({ area, progress }: { area: Area; progress: AreaProgress }) 
   const met = progress.drawn ?? []
   const inRound = remaining > 0
   const justDone = !inRound && met.length > 0 // the round's last card was just met
-  const round = inRound || justDone ? (progress.round ?? 1) : (progress.round ?? 0) + 1
   // Saves from before rounds were tracked know how many cards are left, not which were met.
   const total = inRound ? (progress.drawn ? met.length + remaining : Math.max(deckSize(area), remaining)) : justDone ? met.length : deckSize(area)
   const metCount = inRound ? total - remaining : justDone ? total : 0
@@ -90,11 +85,8 @@ function RoundGauge({ area, progress }: { area: Area; progress: AreaProgress }) 
     <div
       className="flex items-center gap-2"
       role="img"
-      aria-label={justDone ? `Round ${round} complete` : `Round ${round}: ${metCount} of ${total} encounters done`}
+      aria-label={justDone ? 'This round is complete' : `This round: ${metCount} of ${total} encounters done`}
     >
-      <span className={cx('text-sm leading-none', GAUGE_LABEL)} aria-hidden>
-        ROUND {round}
-      </span>
       <ol className="flex min-w-0 flex-1 gap-[2px]" aria-hidden>
         {Array.from({ length: total }, (_, i) => {
           const done = i < metCount
@@ -125,7 +117,7 @@ function RoundGauge({ area, progress }: { area: Area; progress: AreaProgress }) 
     <>
       {gauge}
       <div className="flex items-center gap-2">
-        <span className={cx('text-sm leading-none', GAUGE_LABEL)}>AHEAD</span>
+        <span className="sr-only">Ahead</span>
         <ol
           className="flex min-w-0 flex-1 gap-[2px]"
           aria-label={`Still to come this round: ${ahead.map((c) => CARD_NAME[c]).join(', ') || 'nothing'}`}
@@ -153,15 +145,17 @@ function RoundGauge({ area, progress }: { area: Area; progress: AreaProgress }) 
   )
 }
 
-/** Encounter types, a slim banner, then the name with its levels, the rounds counter and the round gauge. */
+/** Encounter types, a slim banner, then the name with its round (or a checkmark) and levels, and the round gauge. */
 function AreaHeader({ area, progress, teamAvg }: { area: Area; progress: AreaProgress; teamAvg: number }) {
   const data = useGame((s) => s.data)
   const span = area.scalesToTeam ? scaledLevelSpan(area, teamAvg, data) : { min: area.minLevel, max: area.maxLevel }
   const notes = [
     area.scalesToTeam && 'Foes scale to your team',
     progress.cleared && `Cleared — rewards ×${area.backtrackMultiplier}`,
-    area.easyMode && 'Easy: a Center comes after any K.O.',
   ].filter(Boolean)
+  // "Round 2/3" while rounds are still needed; a checkmark once they're all done (secret areas: nothing).
+  const need = area.roundsToClear
+  const done = progress.roundsDone ?? 0
   return (
     <section className="pixel-panel overflow-hidden p-0" aria-labelledby="area-title">
       {/* The encounter types sit on the banner's top right corner. */}
@@ -173,15 +167,31 @@ function AreaHeader({ area, progress, teamAvg }: { area: Area; progress: AreaPro
       </div>
       <div className="flex flex-col gap-1.5 px-3 pb-3 pt-2">
         <div className="flex items-baseline justify-between gap-3">
-          <h1 id="area-title" className="min-w-0 text-4xl leading-none">
-            {area.name}
-          </h1>
+          <div className="flex min-w-0 flex-wrap items-baseline gap-x-2.5">
+            <h1 id="area-title" className="min-w-0 text-4xl leading-none">
+              {area.name}
+            </h1>
+            {need != null &&
+              (done >= need ? (
+                <span
+                  className="self-center border-2 border-ink bg-hp-green px-1.5 text-xl leading-tight text-ink"
+                  style={{ borderRadius: 2 }}
+                  title={`All ${need} round${need === 1 ? '' : 's'} done`}
+                  aria-label={`All ${need} round${need === 1 ? '' : 's'} done`}
+                >
+                  ✓
+                </span>
+              ) : (
+                <span className="shrink-0 text-2xl leading-none text-muted">
+                  Round {Math.min(done + 1, need)}/{need}
+                </span>
+              ))}
+          </div>
           <span className="shrink-0 text-2xl leading-none">
             {span.min === span.max ? `Lv.${span.min}` : `Lv.${span.min}–${span.max}`}
           </span>
         </div>
         {notes.length > 0 && <div className="text-lg leading-tight text-muted">{notes.join(' · ')}</div>}
-        <RoundsCounter area={area} progress={progress} labelClassName={GAUGE_LABEL} />
         <RoundGauge area={area} progress={progress} />
       </div>
     </section>

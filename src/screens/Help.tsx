@@ -232,9 +232,6 @@ export function HelpContent() {
             </li>
           )}
           <li>
-            In <b>easy</b> areas (marked on the Map), a Center comes next whenever one of your Pokémon is K.O.
-          </li>
-          <li>
             <b>Secret areas</b> appear on the Map when you meet their conditions (catch enough Pokémon, or raise one high
             enough).
           </li>

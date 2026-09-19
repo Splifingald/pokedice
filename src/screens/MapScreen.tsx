@@ -124,7 +124,6 @@ function AreaCard({ area, index, prevName, delay = 0 }: { area: Area; index: num
             {area.trainerPool.length ? ` · ${area.trainerPool.length} trainers` : ''}
             {area.encounterWeights.casino > 0 ? ' · Game Corner' : ''}
             {area.scalesToTeam ? ' · endless, foes scale to your team' : ''}
-            {area.easyMode ? ' · easy: a Center after any K.O.' : ''}
           </div>
           <GymRow area={area} />
           {bosses.length > 0 && (
