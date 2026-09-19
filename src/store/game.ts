@@ -3,6 +3,8 @@ import { create } from 'zustand'
 import { BUNDLE } from '@/config/bundle'
 import {
   compileGameData,
+  getRegion,
+  mergeEarlierRegions,
   migrateRounds,
   reviveFossils,
   releaseDuplicates,
@@ -114,8 +116,11 @@ export const initialRun = (): RunState => ({
 function settle(save: SaveData, data: GameData) {
   // Fossils due by now revive first, so they count as the species they are.
   const fossils = reviveFossils(migrateRounds(save, data), data, Date.now())
-  const dup = releaseDuplicates(syncXpCurve(syncHpScale(fossils.save, data), data))
-  return { ...dup, revived: fossils.revived }
+  // A league that has just fallen gives the earlier regions' things back. Doing it here means it happens on every
+  // route into a save — play, a cloud pull, an import — and `save.merged` keeps it to once.
+  const region = mergeEarlierRegions(syncXpCurve(syncHpScale(fossils.save, data), data), data)
+  const dup = releaseDuplicates(region.save)
+  return { ...dup, revived: fossils.revived, merged: region.merged, gained: region.gained }
 }
 
 function boot(): Pick<GameStore, 'data' | 'save' | 'corruptSaveArchived' | 'settings'> {
@@ -172,6 +177,10 @@ export function commitSave(next: SaveData | null, opts: { silent?: boolean; keep
     pushToast(`${data.species[p.dex]?.name ?? `#${p.dex}`} was revived from its fossil!`, 'good', 4500)
   for (const p of settled?.released ?? [])
     pushToast(`${data.species[p.dex]?.name ?? `#${p.dex}`} Lv.${p.level} left: you have a stronger one`, 'info', 4000)
+  if (settled?.merged.length) {
+    const names = settled.merged.map((id) => getRegion(data, id)?.name ?? id).join(' and ')
+    pushToast(`Everything you left in ${names} is yours again — ${settled.gained} Pokémon, your bag and your ₽`, 'good', 6000)
+  }
 }
 
 export function mutateSave(fn: (s: SaveData) => SaveData | null | undefined): boolean {

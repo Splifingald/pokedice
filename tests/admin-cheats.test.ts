@@ -1,7 +1,15 @@
 // Admin cheats: give or take away a Pokémon on a player's save, and make that edit win the player's next sync.
 import { describe, expect, it } from 'vitest'
-import { adminAddPokemon, adminRemovePokemon } from '@/admin/playerSave'
-import { newSave, type SaveData } from '@/engine'
+import {
+  adminAddPokemon,
+  adminCompleteLeague,
+  adminGiveItem,
+  adminMergeRegions,
+  adminRemovePokemon,
+  adminStartRegion,
+  adminStartRoamers,
+} from '@/admin/playerSave'
+import { leagueDone, newSave, offeredRegion, regionOf, type SaveData } from '@/engine'
 import { decideSync } from '@/save/cloud'
 import { parseSave } from '@/save/schema'
 import { data, newId } from './fixtures'
@@ -44,5 +52,59 @@ describe('admin cheats', () => {
     expect(decideSync(local, cloud)).toBe('cloud')
     // Once the player has played past it, the flag no longer matters.
     expect(decideSync({ ...local, updatedAt: 4000 }, cloud)).not.toBe('cloud')
+  })
+})
+
+describe('admin region cheats', () => {
+  const johto = data.regions.find((r) => r.id === 'johto')!
+
+  it('starts a region, then switches back to it instead of restarting it', () => {
+    const started = adminStartRegion(base, data, 2000, 'johto', newId)
+    expect(regionOf(started)).toBe('johto')
+    expect(started.box.map((p) => p.dex)).toEqual([johto.starters[0]])
+    expect(started.parked!.kanto!.box).toEqual(base.box)
+
+    const back = adminStartRegion(started, data, 3000, 'kanto', newId)
+    expect(regionOf(back)).toBe('kanto')
+    const again = adminStartRegion(back, data, 4000, 'johto', newId)
+    // The Johto Pokémon is the one from before: going back is not a fresh start.
+    expect(again.box.map((p) => p.id)).toEqual(started.box.map((p) => p.id))
+    expect(parseSave(again).ok).toBe(true)
+  })
+
+  it('completes a league, which is what puts the next region on offer', () => {
+    expect(offeredRegion(base, data)).toBeNull()
+    const done = adminCompleteLeague(base, data, 2000)
+    expect(leagueDone(done, data, 'kanto')).toBe(true)
+    expect(offeredRegion(done, data)?.id).toBe('johto')
+    expect(parseSave(done).ok).toBe(true)
+  })
+
+  it('completes a parked region’s league too, and refuses one never started', () => {
+    const inJohto = adminStartRegion(base, data, 2000, 'johto', newId)
+    const done = adminCompleteLeague(inJohto, data, 3000, 'kanto')
+    expect(leagueDone(done, data, 'kanto')).toBe(true)
+    expect(regionOf(done)).toBe('johto')
+    expect(() => adminCompleteLeague(base, data, 3000, 'hoenn')).toThrow()
+  })
+
+  it('merges the earlier regions early, and refuses when there is nothing to merge', () => {
+    expect(() => adminMergeRegions(base, data, 2000)).toThrow()
+    const inJohto = adminStartRegion(adminCompleteLeague(base, data, 2000), data, 2000, 'johto', newId)
+    const withLeague = adminCompleteLeague(inJohto, data, 3000)
+    const { save, merged } = adminMergeRegions(withLeague, data, 4000)
+    expect(merged).toEqual(['kanto'])
+    expect(save.box.map((p) => p.dex).sort((a, b) => a - b)).toEqual([4, johto.starters[0]!].sort((a, b) => a - b))
+    expect(parseSave(save).ok).toBe(true)
+  })
+
+  it('gives items, and opens the roamer gate', () => {
+    const withItem = adminGiveItem(base, data, 2000, 'sun-stone', 2)
+    expect(withItem.inventory['sun-stone']).toBe(2)
+    expect(() => adminGiveItem(base, data, 2000, 'nope', 1)).toThrow()
+
+    const roaming = adminStartRoamers(base, data, 2000)
+    for (const dex of data.config.roamers.requires) expect(roaming.pokedex).toContain(dex)
+    expect(parseSave(roaming).ok).toBe(true)
   })
 })

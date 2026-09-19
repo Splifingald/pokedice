@@ -2,12 +2,23 @@
 import { useEffect, useState } from 'react'
 import { PixelButton } from '@/components/PixelButton'
 import { SpriteImg } from '@/components/SpriteImg'
+import { regionOf } from '@/engine'
 import type { PokemonInstance, SaveData } from '@/engine/types'
 import { getSupabase } from '@/lib/supabase'
 import { pushToast, useGame } from '@/store/game'
 import { newId } from '@/store/run'
-import { adminAddPokemon, adminRemovePokemon, fetchPlayerSave, pushPlayerSave } from '../playerSave'
-import { NumInput, PokemonPicker } from '../widgets'
+import {
+  adminAddPokemon,
+  adminCompleteLeague,
+  adminGiveItem,
+  adminMergeRegions,
+  adminRemovePokemon,
+  adminStartRegion,
+  adminStartRoamers,
+  fetchPlayerSave,
+  pushPlayerSave,
+} from '../playerSave'
+import { inputCls, NumInput, PokemonPicker } from '../widgets'
 
 type Where = 'Team' | 'Box' | 'Day Care'
 
@@ -20,6 +31,9 @@ export function PlayerCheats({ player, name }: { player: string; name: string })
   const [dex, setDex] = useState<number | null>(null)
   const [level, setLevel] = useState(5)
   const [shiny, setShiny] = useState(false)
+  const [region, setRegion] = useState('kanto')
+  const [itemKey, setItemKey] = useState('rare-candy')
+  const [qty, setQty] = useState(1)
 
   useEffect(() => {
     if (guest) return
@@ -39,7 +53,11 @@ export function PlayerCheats({ player, name }: { player: string; name: string })
   }, [player, guest])
 
   if (guest) {
-    return <p className="text-lg text-muted">Guest player: their save only lives on their device, so there is nothing to edit.</p>
+    return (
+      <p className="text-lg text-muted">
+        Guest player: their save only lives on their device, so there is nothing to edit.
+      </p>
+    )
   }
 
   const apply = async (edit: (s: SaveData) => SaveData, done: string) => {
@@ -78,7 +96,10 @@ export function PlayerCheats({ player, name }: { player: string; name: string })
 
   const mons: { p: PokemonInstance; where: Where }[] = save
     ? [
-        ...save.team.map((id) => save.box.find((p) => p.id === id)).filter((p): p is PokemonInstance => !!p).map((p) => ({ p, where: 'Team' as const })),
+        ...save.team
+          .map((id) => save.box.find((p) => p.id === id))
+          .filter((p): p is PokemonInstance => !!p)
+          .map((p) => ({ p, where: 'Team' as const })),
         ...save.box.filter((p) => !save.team.includes(p.id)).map((p) => ({ p, where: 'Box' as const })),
         ...(save.dayCare?.residents ?? []).map((r) => ({ p: r.inst, where: 'Day Care' as const })),
       ]
@@ -87,8 +108,8 @@ export function PlayerCheats({ player, name }: { player: string; name: string })
   return (
     <div className="flex flex-col gap-3">
       <p className="text-base leading-snug text-muted">
-        Edits {name}'s cloud save. They get it the next time they open the game: if they're playing right now, their
-        game will overwrite it, so do this while they're away.
+        Edits {name}'s cloud save. They get it the next time they open the game: if they're playing right now,
+        their game will overwrite it, so do this while they're away.
       </p>
       {err && <p className="text-danger">Could not load this player's save: {err}</p>}
       {save === undefined && !err && <p className="text-lg text-muted">Loading save…</p>}
@@ -110,6 +131,89 @@ export function PlayerCheats({ player, name }: { player: string; name: string })
             </label>
             <PixelButton size="sm" variant="success" disabled={!dex || busy} onClick={add}>
               Give Pokémon
+            </PixelButton>
+          </div>
+          <div className="flex flex-wrap items-end gap-2 border-t-[3px] border-ink pt-2">
+            <label className="flex w-40 flex-col text-base">
+              Region
+              <select className={inputCls} value={region} onChange={(e) => setRegion(e.target.value)}>
+                {data.regions.map((r) => (
+                  <option key={r.id} value={r.id}>
+                    {r.name}
+                    {regionOf(save) === r.id ? ' (here)' : save.parked?.[r.id] ? ' (parked)' : ''}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <PixelButton
+              size="sm"
+              disabled={busy}
+              onClick={() =>
+                void apply(
+                  (s) => adminStartRegion(s, data, Date.now(), region, newId),
+                  `${name} moved to ${region}`,
+                )
+              }
+            >
+              Start / go to
+            </PixelButton>
+            <PixelButton
+              size="sm"
+              disabled={busy}
+              onClick={() =>
+                void apply(
+                  (s) => adminCompleteLeague(s, data, Date.now(), region),
+                  `${region}'s league marked beaten`,
+                )
+              }
+            >
+              Complete league
+            </PixelButton>
+            <PixelButton
+              size="sm"
+              disabled={busy}
+              onClick={() =>
+                void apply((s) => adminMergeRegions(s, data, Date.now()).save, 'Earlier regions merged in')
+              }
+            >
+              Merge earlier
+            </PixelButton>
+            <PixelButton
+              size="sm"
+              disabled={busy}
+              onClick={() =>
+                void apply((s) => adminStartRoamers(s, data, Date.now()), 'The beasts are roaming')
+              }
+            >
+              Start roamers
+            </PixelButton>
+          </div>
+          <div className="flex flex-wrap items-end gap-2">
+            <label className="flex w-52 flex-col text-base">
+              Item
+              <select className={inputCls} value={itemKey} onChange={(e) => setItemKey(e.target.value)}>
+                {Object.values(data.items).map((i) => (
+                  <option key={i.key} value={i.key}>
+                    {i.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="flex w-24 flex-col text-base">
+              Qty
+              <NumInput value={qty} min={1} max={99} onChange={(v) => setQty(v ?? 1)} />
+            </label>
+            <PixelButton
+              size="sm"
+              disabled={busy}
+              onClick={() =>
+                void apply(
+                  (s) => adminGiveItem(s, data, Date.now(), itemKey, qty),
+                  `${qty} × ${itemKey} given`,
+                )
+              }
+            >
+              Give item
             </PixelButton>
           </div>
           <ul className="pixel-scroll flex max-h-80 flex-col gap-1 overflow-auto">

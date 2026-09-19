@@ -234,7 +234,7 @@ function EffectEditor({ value, onDone }: { value: ItemEffect | undefined; onDone
       ) : draft.kind === 'stone' ? null : draft.kind === 'fossil' ? (
         <div className="flex flex-col gap-1 text-base">
           <label className="flex items-center gap-1">
-            dex <NumInput value={draft.dex} min={1} max={151} onChange={(v) => setDraft({ ...draft, dex: v ?? 138 })} />
+            dex <NumInput value={draft.dex} min={1} max={386} onChange={(v) => setDraft({ ...draft, dex: v ?? 138 })} />
           </label>
           <label className="flex items-center gap-1">
             Lv. <NumInput value={draft.level} min={1} max={100} onChange={(v) => setDraft({ ...draft, level: v ?? 20 })} />

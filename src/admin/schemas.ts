@@ -21,12 +21,15 @@ const face = z.union([
 const itemEffect = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('heal'), amount: int(1) }),
   z.object({ kind: z.literal('revive'), percent: int(1, 100) }),
-  z.object({ kind: z.literal('cure'), statuses: z.array(z.enum(['burn', 'poison', 'frozen', 'paralyze', 'confuse'])).min(1, 'pick a status') }),
+  z.object({
+    kind: z.literal('cure'),
+    statuses: z.array(z.enum(['burn', 'poison', 'frozen', 'paralyze', 'confuse'])).min(1, 'pick a status'),
+  }),
   z.object({ kind: z.literal('rerolls'), amount: int(1) }),
   z.object({ kind: z.literal('level'), amount: int(1, 10) }),
   z.object({ kind: z.literal('stone') }),
-  z.object({ kind: z.literal('fossil'), dex: int(1, 151), level: int(1, 100), hours: z.number().min(0) }),
-  z.object({ kind: z.literal('ball'), bonus: int(0, 9) }),
+  z.object({ kind: z.literal('fossil'), dex: int(1, 386), level: int(1, 100), hours: z.number().min(0) }),
+  z.object({ kind: z.literal('ball'), bonus: int(0, 12) }),
 ])
 
 export const ROW_SCHEMAS: Record<TableName, z.ZodTypeAny> = {
@@ -62,7 +65,9 @@ export const ROW_SCHEMAS: Record<TableName, z.ZodTypeAny> = {
       rerolls: int(0, 20),
       // Optional so a database created before migration 0003 still loads.
       catch_value: int(1, 9).optional(),
-      evolutions: z.array(z.object({ toDex: int(1), level: int(1, 100).nullable(), item: z.string().nullable().optional() })),
+      evolutions: z.array(
+        z.object({ toDex: int(1), level: int(1, 100).nullable(), item: z.string().nullable().optional() }),
+      ),
       milestones: z.array(
         z.object({
           level: int(1, 100),
@@ -75,9 +80,22 @@ export const ROW_SCHEMAS: Record<TableName, z.ZodTypeAny> = {
       notes: z.string().nullable(),
     })
     .refine((r) => r.max_hp >= r.base_hp, { message: 'max_hp must be ≥ base_hp', path: ['max_hp'] }),
+  regions: z.object({
+    id: z.string().min(1),
+    name: z.string().min(1),
+    order_index: int(0),
+    dex_range: z.tuple([int(1), int(1)]),
+    starters: z.array(int(1)).min(1),
+    starter_level: int(1, 100),
+    league_area_id: uuid,
+    next_region: z.string().nullable(),
+    // Kanto is where a new game begins, so it can never be switched off.
+    enabled: z.boolean(),
+  }),
   areas: z.object({
     id: uuid,
     order_index: int(1),
+    region_id: z.string().min(1),
     name: z.string().min(1),
     banner_url: z.string().nullable(),
     // Optional so a database created before migration 0014 still loads.
@@ -92,7 +110,15 @@ export const ROW_SCHEMAS: Record<TableName, z.ZodTypeAny> = {
     }),
     backtrack_multiplier: z.number().min(0).max(1),
     legendary_boss: z
-      .array(z.object({ dex: int(1), level: int(1, 100), teamAvgThreshold: z.number().optional(), upgradeLevel: int(1, 10).nullable().optional(), battleBackground: background.nullable().optional() }))
+      .array(
+        z.object({
+          dex: int(1),
+          level: int(1, 100),
+          teamAvgThreshold: z.number().optional(),
+          upgradeLevel: int(1, 10).nullable().optional(),
+          battleBackground: background.nullable().optional(),
+        }),
+      )
       .nullable(),
     scales_to_team: z.boolean(),
     // Optional so a database created before migration 0012 still loads.
@@ -109,7 +135,7 @@ export const ROW_SCHEMAS: Record<TableName, z.ZodTypeAny> = {
     unlock_conditions: z
       .array(
         z.union([
-          z.object({ kind: z.literal('pokedex'), count: int(1, 151) }),
+          z.object({ kind: z.literal('pokedex'), count: int(1, 386) }),
           z.object({ kind: z.literal('maxLevel'), level: int(1, 100) }),
         ]),
       )
@@ -117,13 +143,23 @@ export const ROW_SCHEMAS: Record<TableName, z.ZodTypeAny> = {
     gyms: z.array(uuid),
   }),
   area_wild_pool: z
-    .object({ id: uuid, area_id: uuid, dex: int(1), weight: int(0), min_level: int(1, 100), max_level: int(1, 100) })
+    .object({
+      id: uuid,
+      area_id: uuid,
+      dex: int(1),
+      weight: int(0),
+      min_level: int(1, 100),
+      max_level: int(1, 100),
+    })
     .refine((r) => r.max_level >= r.min_level, { message: 'max below min', path: ['max_level'] }),
   trainers: z.object({
     id: uuid,
     name: z.string().min(1),
     sprite_url: z.string().nullable(),
-    team: z.array(z.object({ dex: int(1), level: int(1, 100), shiny: z.boolean().optional() })).min(1, '1–3 Pokémon').max(3, '1–3 Pokémon'),
+    team: z
+      .array(z.object({ dex: int(1), level: int(1, 100), shiny: z.boolean().optional() }))
+      .min(1, '1–3 Pokémon')
+      .max(3, '1–3 Pokémon'),
     role: z.enum(['trainer', 'leader', 'elite', 'champion']),
     badge: z.string().nullable(),
     upgrade_level: int(1, 10).nullable().optional(),

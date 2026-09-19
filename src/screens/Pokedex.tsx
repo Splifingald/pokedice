@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion'
 import { useMemo, useState } from 'react'
-import { isAreaUnlocked } from '@/engine'
+import { isAreaUnlocked, regionOf, regionOfArea, regionSpecies, unlockedRegions } from '@/engine'
 import { PixelIcon } from '@/components/icons'
 import { SheetModal, type SheetView } from '@/components/SheetModal'
 import { SpriteImg } from '@/components/SpriteImg'
@@ -24,6 +24,8 @@ export function PokedexScreen() {
   const [view, setView] = useState<SheetView | null>(null)
   const [filter, setFilter] = useState<Filter>('all')
   const [q, setQ] = useState('')
+  // A page per region the player has been to, plus 'all'. One region = no tabs at all.
+  const [page, setPage] = useState<string>(() => (save ? regionOf(save) : 'all'))
 
   const owned = useMemo(() => {
     const m = new Map<number, number>()
@@ -36,7 +38,8 @@ export function PokedexScreen() {
     const set = new Set<number>()
     if (!save) return set
     for (const a of data.areas) {
-      if (!isAreaUnlocked(save, a.id, data)) continue
+      // "Catchable now" means without leaving: an unlocked area of the region you are standing in.
+      if (regionOfArea(a) !== regionOf(save) || !isAreaUnlocked(save, a.id, data)) continue
       for (const w of a.wildPool) if (w.weight > 0 && !save.pokedex.includes(w.dex)) set.add(w.dex)
       for (const b of a.legendaryBoss ?? []) if (!save.pokedex.includes(b.dex)) set.add(b.dex)
     }
@@ -45,20 +48,37 @@ export function PokedexScreen() {
 
   if (!save) return null
   const caught = new Set(save.pokedex)
-  const total = data.speciesList.length
-  const n = data.speciesList.filter((s) => caught.has(s.dex)).length
+  const pages = unlockedRegions(save, data)
+  // Every region's page counts only what that region can actually give you — its pools, bosses and starters.
+  const inPage = page === 'all' ? null : regionSpecies(data, page)
+  const pageList = inPage ? data.speciesList.filter((s) => inPage.has(s.dex)) : data.speciesList
+  const total = pageList.length
+  const n = pageList.filter((s) => caught.has(s.dex)).length
   const needle = q.trim().toLowerCase()
   const asNumber = /^#?\d+$/.test(needle) ? Number(needle.replace('#', '')) : null
-  const list = data.speciesList
+  const list = pageList
     .filter((s) =>
-      filter === 'all' ? true : filter === 'caught' ? caught.has(s.dex) : filter === 'missing' ? !caught.has(s.dex) : catchable.has(s.dex),
+      filter === 'all'
+        ? true
+        : filter === 'caught'
+          ? caught.has(s.dex)
+          : filter === 'missing'
+            ? !caught.has(s.dex)
+            : catchable.has(s.dex),
     )
     // Uncaught names stay hidden: searching by name only finds what you've caught.
-    .filter((s) => !needle || (asNumber != null ? s.dex === asNumber : caught.has(s.dex) && s.name.toLowerCase().includes(needle)))
+    .filter(
+      (s) =>
+        !needle ||
+        (asNumber != null ? s.dex === asNumber : caught.has(s.dex) && s.name.toLowerCase().includes(needle)),
+    )
 
   const jump = (from: number) => {
     const target = list.find((s) => s.dex >= from) ?? list[list.length - 1]
-    if (target) document.getElementById(`dex-${target.dex}`)?.scrollIntoView({ block: 'start', behavior: reduced ? 'auto' : 'smooth' })
+    if (target)
+      document
+        .getElementById(`dex-${target.dex}`)
+        ?.scrollIntoView({ block: 'start', behavior: reduced ? 'auto' : 'smooth' })
   }
 
   return (
@@ -69,8 +89,26 @@ export function PokedexScreen() {
           {n}/{total}
         </div>
       </div>
+      {pages.length > 1 && (
+        <div className="flex flex-wrap gap-1.5" role="group" aria-label="Pokédex">
+          {[...pages.map((r) => ({ id: r.id, label: r.name })), { id: 'all', label: 'All' }].map((t) => (
+            <button
+              key={t.id}
+              type="button"
+              onClick={() => setPage(t.id)}
+              aria-pressed={page === t.id}
+              className={cx('pixel-btn min-h-[40px] px-3 text-xl', page === t.id ? 'bg-gold' : 'bg-panel')}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+      )}
       <div className="h-4 border-2 border-ink bg-ink p-[2px]">
-        <div className="h-full bg-danger" style={{ width: `${(n / total) * 100}%`, transition: 'width 600ms' }} />
+        <div
+          className="h-full bg-danger"
+          style={{ width: `${(n / total) * 100}%`, transition: 'width 600ms' }}
+        />
       </div>
 
       {n >= total && (
@@ -81,7 +119,10 @@ export function PokedexScreen() {
         >
           <PixelIcon name="star" size={40} />
           <div className="text-5xl text-gold">POKÉDEX COMPLETE!</div>
-          <div className="text-2xl">All {total} Pokémon caught. You are a true Pokédice Master.</div>
+          <div className="text-2xl">
+            All {total} Pokémon caught{page === 'all' ? '' : ` in ${pages.find((r) => r.id === page)?.name}`}.
+            You are a true Pokédice Master.
+          </div>
         </motion.div>
       )}
 
@@ -106,7 +147,10 @@ export function PokedexScreen() {
                 type="button"
                 onClick={() => setFilter(f.id)}
                 aria-pressed={filter === f.id}
-                className={cx('pixel-btn min-h-[44px] min-w-[44px] px-2 text-lg md:min-h-[36px]', filter === f.id ? 'bg-gold' : 'bg-panel')}
+                className={cx(
+                  'pixel-btn min-h-[44px] min-w-[44px] px-2 text-lg md:min-h-[36px]',
+                  filter === f.id ? 'bg-gold' : 'bg-panel',
+                )}
               >
                 {f.label}
                 {f.id === 'catchable' && <span className="font-pixel-sm text-base"> ({catchable.size})</span>}
@@ -145,13 +189,20 @@ export function PokedexScreen() {
               id={`dex-${s.dex}`}
               type="button"
               onClick={() => setView({ kind: 'dex', dex: s.dex })}
-              className={cx('pixel-panel flex scroll-mt-48 flex-col items-center p-1 hover:bg-white', !has && 'bg-parchment')}
+              className={cx(
+                'pixel-panel flex scroll-mt-48 flex-col items-center p-1 hover:bg-white',
+                !has && 'bg-parchment',
+              )}
               title={has ? s.name : '??? — where to find it'}
             >
               <span className="self-start font-mono text-xs text-muted">{dexNo(s.dex)}</span>
               <SpriteImg dex={s.dex} size={64} silhouette={!has} />
-              <span className="w-full truncate text-center text-base leading-none">{has ? s.name : '???'}</span>
-              <span className="text-sm leading-none text-muted">{has ? (lv ? `Lv.${lv}` : 'seen') : catchable.has(s.dex) ? 'nearby' : ' '}</span>
+              <span className="w-full truncate text-center text-base leading-none">
+                {has ? s.name : '???'}
+              </span>
+              <span className="text-sm leading-none text-muted">
+                {has ? (lv ? `Lv.${lv}` : 'seen') : catchable.has(s.dex) ? 'nearby' : ' '}
+              </span>
             </button>
           )
         })}

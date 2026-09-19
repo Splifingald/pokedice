@@ -15,7 +15,9 @@ import {
   type ComboKey,
   type ForceKind,
   type PokeType,
+  type SaveData,
 } from '@/engine'
+import { adminCompleteLeague, adminMergeRegions, adminStartRegion, adminStartRoamers } from '../playerSave'
 import { Panel } from '@/components/Panel'
 import { PixelButton } from '@/components/PixelButton'
 import { parseSave } from '@/save/schema'
@@ -23,7 +25,13 @@ import { mutateSave, pushToast, useGame } from '@/store/game'
 import { deleteSave, newId, replaceSave, setForceNext } from '@/store/run'
 import { Field, NumInput, PokemonPicker, inputCls } from '../widgets'
 
-const emptyProgress = (): AreaProgress => ({ roundsDone: 0, cleared: false, bossDefeated: false, bossesDefeated: [], gymsDefeated: [] })
+const emptyProgress = (): AreaProgress => ({
+  roundsDone: 0,
+  cleared: false,
+  bossDefeated: false,
+  bossesDefeated: [],
+  gymsDefeated: [],
+})
 
 export function DevToolsSection() {
   const save = useGame((s) => s.save)
@@ -31,6 +39,7 @@ export function DevToolsSection() {
   const run = useGame((s) => s.run)
   const navigate = useNavigate()
   const [gold, setGold] = useState(1000)
+  const [regionPick, setRegionPick] = useState(() => regionOf(useGame.getState().save!))
   const [catchDex, setCatchDex] = useState(25)
   const [catchLevel, setCatchLevel] = useState(10)
   const [instId, setInstId] = useState<string>('')
@@ -40,7 +49,11 @@ export function DevToolsSection() {
   if (!save)
     return (
       <p className="text-xl">
-        No save yet — <Link to="/new" className="underline">start a game</Link> first.
+        No save yet —{' '}
+        <Link to="/new" className="underline">
+          start a game
+        </Link>{' '}
+        first.
       </p>
     )
 
@@ -55,7 +68,9 @@ export function DevToolsSection() {
         .slice(0, -1)
         .forEach((a) => {
           const p = { ...emptyProgress(), ...areaProgress[a.id] }
-          const roundBosses = (a.legendaryBoss ?? []).filter((b) => b.teamAvgThreshold == null).map((b) => b.dex)
+          const roundBosses = (a.legendaryBoss ?? [])
+            .filter((b) => b.teamAvgThreshold == null)
+            .map((b) => b.dex)
           areaProgress[a.id] = {
             ...p,
             roundsDone: Math.max(p.roundsDone ?? 0, a.roundsToClear ?? 0),
@@ -66,13 +81,24 @@ export function DevToolsSection() {
           }
         })
       return { ...s, areaProgress }
-    }) && pushToast('Every area of the main chain unlocked (secret areas still need their conditions)', 'good', 4500)
+    }) &&
+    pushToast(
+      'Every area of the main chain unlocked (secret areas still need their conditions)',
+      'good',
+      4500,
+    )
 
   const fillGauge = () =>
     area &&
     mutateSave((s) => {
       const p = { ...emptyProgress(), ...s.areaProgress[area.id] }
-      return { ...s, areaProgress: { ...s.areaProgress, [area.id]: { ...p, roundsDone: Math.max(p.roundsDone ?? 0, area.roundsToClear ?? 0) } } }
+      return {
+        ...s,
+        areaProgress: {
+          ...s.areaProgress,
+          [area.id]: { ...p, roundsDone: Math.max(p.roundsDone ?? 0, area.roundsToClear ?? 0) },
+        },
+      }
     }) &&
     pushToast(`${area.name}: every round done`, 'good')
 
@@ -87,18 +113,38 @@ export function DevToolsSection() {
     inst &&
     mutateSave((s) => ({
       ...s,
-      box: s.box.map((p) => (p.id === inst.id ? { ...p, level, xp: 0, currentHp: instanceMaxHp({ dex: p.dex, level }, data) } : p)),
+      box: s.box.map((p) =>
+        p.id === inst.id ? { ...p, level, xp: 0, currentHp: instanceMaxHp({ dex: p.dex, level }, data) } : p,
+      ),
     }))
 
   const setAllUpgrades = (max: boolean) =>
     mutateSave((s) => ({
       ...s,
-      comboLevels: Object.fromEntries(COMBO_KEYS.map((k) => [k, max ? maxComboLevel(k, data) : 1])) as Record<ComboKey, number>,
-      dieLevels: Object.fromEntries(POKE_TYPES.map((t) => [t, max ? maxDieLevel(t, data) : 1])) as Record<PokeType, number>,
+      comboLevels: Object.fromEntries(COMBO_KEYS.map((k) => [k, max ? maxComboLevel(k, data) : 1])) as Record<
+        ComboKey,
+        number
+      >,
+      dieLevels: Object.fromEntries(POKE_TYPES.map((t) => [t, max ? maxDieLevel(t, data) : 1])) as Record<
+        PokeType,
+        number
+      >,
     }))
 
+  /** Runs a save cheat, turning a thrown reason into a toast rather than a blank screen. */
+  const cheat = (edit: (s: SaveData) => SaveData, done: string) => {
+    try {
+      if (mutateSave(edit)) pushToast(done, 'good')
+    } catch (e) {
+      pushToast(e instanceof Error ? e.message : String(e), 'bad')
+    }
+  }
+
   const hurtAll = () => {
-    mutateSave((s) => ({ ...s, box: s.box.map((p) => ({ ...p, currentHp: Math.floor(instanceMaxHp(p, data) * 0.2) })) }))
+    mutateSave((s) => ({
+      ...s,
+      box: s.box.map((p) => ({ ...p, currentHp: Math.floor(instanceMaxHp(p, data) * 0.2) })),
+    }))
     pushToast('Every Pokémon set to 20 % HP', 'good')
   }
 
@@ -125,6 +171,57 @@ export function DevToolsSection() {
           </div>
         </Panel>
 
+        <Panel title="Regions">
+          <p className="mb-2 text-base text-muted">
+            How a region gets tested without playing to it. Everything here edits your own save.
+          </p>
+          <div className="flex flex-wrap items-end gap-2">
+            <Field label="Region">
+              <select className={inputCls} value={regionPick} onChange={(e) => setRegionPick(e.target.value)}>
+                {data.regions.map((r) => (
+                  <option key={r.id} value={r.id}>
+                    {r.name}
+                    {r.enabled ? '' : ' (off)'}
+                  </option>
+                ))}
+              </select>
+            </Field>
+            <PixelButton
+              size="sm"
+              onClick={() =>
+                cheat(
+                  (s) => adminStartRegion(s, data, Date.now(), regionPick, newId),
+                  `Moved to ${regionPick}`,
+                )
+              }
+            >
+              Start / go to
+            </PixelButton>
+            <PixelButton
+              size="sm"
+              onClick={() =>
+                cheat((s) => adminCompleteLeague(s, data, Date.now(), regionPick), 'League marked beaten')
+              }
+            >
+              Complete its league
+            </PixelButton>
+            <PixelButton
+              size="sm"
+              onClick={() =>
+                cheat((s) => adminMergeRegions(s, data, Date.now()).save, 'Earlier regions merged in')
+              }
+            >
+              Merge earlier regions
+            </PixelButton>
+            <PixelButton
+              size="sm"
+              onClick={() => cheat((s) => adminStartRoamers(s, data, Date.now()), 'The beasts are roaming')}
+            >
+              Start the roamers
+            </PixelButton>
+          </div>
+        </Panel>
+
         <Panel title="Progress">
           <div className="flex flex-wrap gap-2">
             <PixelButton size="sm" onClick={unlockAll}>
@@ -142,7 +239,11 @@ export function DevToolsSection() {
           </div>
           <div className="mt-2 flex items-end gap-2">
             <Field label="Force next encounter">
-              <select className={inputCls} value={run.forceNext ?? ''} onChange={(e) => setForceNext((e.target.value || null) as ForceKind | null)}>
+              <select
+                className={inputCls}
+                value={run.forceNext ?? ''}
+                onChange={(e) => setForceNext((e.target.value || null) as ForceKind | null)}
+              >
                 <option value="">— normal —</option>
                 <option value="wild">wild</option>
                 <option value="trainer">trainer</option>
@@ -157,9 +258,18 @@ export function DevToolsSection() {
 
         <Panel title="Catch any Pokémon">
           <div className="flex flex-wrap items-end gap-2">
-            <PokemonPicker className="min-w-[240px] flex-1" data={data} value={catchDex} onChange={setCatchDex} />
+            <PokemonPicker
+              className="min-w-[240px] flex-1"
+              data={data}
+              value={catchDex}
+              onChange={setCatchDex}
+            />
             <Field label="Level">
-              <NumInput className="w-20" value={catchLevel} onChange={(v) => setCatchLevel(Math.max(1, Math.min(100, v ?? 1)))} />
+              <NumInput
+                className="w-20"
+                value={catchLevel}
+                onChange={(v) => setCatchLevel(Math.max(1, Math.min(100, v ?? 1)))}
+              />
             </Field>
             <PixelButton size="sm" variant="primary" onClick={catchOne}>
               Catch
@@ -169,7 +279,11 @@ export function DevToolsSection() {
 
         <Panel title="Set a Pokémon's level">
           <div className="flex flex-wrap items-end gap-2">
-            <select className={`${inputCls} flex-1`} value={inst?.id ?? ''} onChange={(e) => setInstId(e.target.value)}>
+            <select
+              className={`${inputCls} flex-1`}
+              value={inst?.id ?? ''}
+              onChange={(e) => setInstId(e.target.value)}
+            >
               {save.box.map((p) => (
                 <option key={p.id} value={p.id}>
                   {data.species[p.dex]?.name} Lv.{p.level}
@@ -178,7 +292,11 @@ export function DevToolsSection() {
               ))}
             </select>
             <Field label="Level">
-              <NumInput className="w-20" value={level} onChange={(v) => setLevel(Math.max(1, Math.min(100, v ?? 1)))} />
+              <NumInput
+                className="w-20"
+                value={level}
+                onChange={(v) => setLevel(Math.max(1, Math.min(100, v ?? 1)))}
+              />
             </Field>
             <PixelButton size="sm" variant="primary" onClick={setInstLevel}>
               Set
