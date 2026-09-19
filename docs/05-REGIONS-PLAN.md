@@ -169,6 +169,8 @@ interface Region {
   starterLevel: number
   /** Beating this area's gyms is "the league is done": it unlocks the next region. */
   leagueAreaKey: string
+  /** Off = the region is invisible everywhere (no prompt, switcher chip, dex tab or board). Kanto is always on. */
+  enabled: boolean
   /** Region unlocked by finishing this region's league; null for the last one. */
   nextRegion: string | null
 }
@@ -190,8 +192,36 @@ Path · **Blackthorn City (Clair)** · Dragon's Den · Victory Road · **Indigo 
 (Lv.45–55) · post-league **Mt. Silver** (Lv.55–70, catch-all pool, Red as the final trainer).
 
 Hidden areas: **Whirl Islands** (Lugia, Lv.45), **Bell Tower** (Ho-Oh, Lv.45), **Ruins of Alph** (Unown; the only
-source), **Ilex Shrine** (Celebi), **Tin Tower / roaming beasts** (Raikou, Entei, Suicune as bosses gated on team
-average). Unlock conditions reuse `{kind:'pokedex'|'level'|'area'}` exactly as Kanto's secrets do.
+source), **Ilex Shrine** (Celebi). Unlock conditions reuse `{kind:'pokedex'|'level'|'area'}` exactly as Kanto's
+secrets do.
+
+### The roaming beasts
+
+Raikou, Entei and Suicune get **no area of their own** — they roam, as they do in the originals. Once **both Ho-Oh and
+Lugia have been caught**, every wild encounter anywhere in Johto has an independent chance of turning up a beast
+instead of its rolled species. Each beast can be caught **once**; after that it stops appearing. Flee from one or lose
+the catch throw and it goes back into the pool, so it can be met again.
+
+Config, so the rate is tunable without a redeploy (`game_config`, defaults shown):
+
+```jsonc
+"roamers": {
+  "regionId": "johto",
+  "requires": [249, 250],        // both caught — not merely defeated
+  "chance": 0.02,                // each, per wild encounter: ~6% for at least one while all three roam
+  "level": 40,
+  "dex": [243, 244, 245]
+}
+```
+
+Implementation sits in `src/engine/encounters.ts`, in the wild branch only: after a wild encounter is rolled, if the
+region matches and every `requires` dex is in the Pokédex, roll each uncaught roamer in turn at `chance` and replace
+the encounter with that legendary on a hit. It is a `boss`-kind encounter so the existing legendary catch flow, the
+single-copy rule in `catchTarget` and the "one of a kind" guard all apply unchanged. Because the gate is *caught*
+rather than *defeated*, a player who knocks Lugia out and misses the throw does not unlock the roamers.
+
+**Acceptance:** a seeded test asserts no roamer appears before both birds are in the Pokédex, that the rate matches
+`chance` over 100k rolls within tolerance, that a caught roamer never appears again, and that a fled one does.
 
 Special events: Game Corner in Goldenrod (the existing `casino` card, prize Pokémon Abra/Dratini), Bug-Catching Contest
 in National Park (a `casino`-style one-off, or plain trainer gauntlet if it needs new UI — decide in step 4), Day Care
@@ -278,6 +308,42 @@ interface SaveData {
 - **Migration**: `save.version` 1 → 2 in `src/save/schema.ts` — wrap an old save as `{region:'kanto', parked:{}}`.
   Zod schema and `parseSave`'s integrity repair run per block.
 
+### Turning a region on and off
+
+Each region carries an `enabled` flag, so an unfinished or misbehaving region can be withdrawn without a redeploy —
+the same lever `game_config` already gives everything else. It lives on the region row (`regions.enabled`, mirrored in
+`src/data/regions.json`) and is editable in Admin → Config.
+
+- A disabled region is **invisible**: no unlock prompt, no chip in the region switcher, no Pokédex tab, no
+  leaderboard. `regionsFor(data, save)` is the single accessor every screen uses, and it filters on the flag.
+- A player **already in** a disabled region is not stranded, which is the case that matters: they are moved back to
+  their most recent enabled region on load, with a toast, and their block stays parked untouched. Turning the region
+  back on returns everything exactly as it was.
+- Kanto cannot be disabled — it is the region a new save starts in. The admin form refuses it.
+
+### Cheats
+
+The cheats are how a region gets tested without playing 20 hours to reach it, so they grow with the feature. Admin →
+Analytics → player → Cheats (`src/admin/sections/PlayerCheats.tsx`, editing the cloud save through `playerSave.ts`)
+and the local Dev Tools (`src/admin/sections/DevToolsSection.tsx`) both gain:
+
+| Cheat | What it does |
+|---|---|
+| **Unlock region** | Marks a region unlocked and creates its block if absent, so the switcher offers it. Does not move the player. |
+| **Switch to region** | `switchRegion(save, id)` — parks the current block and activates another, with the mid-run guard. |
+| **Complete league** | Marks the current region's `leagueAreaKey` cleared with every gym beaten: the unlock prompt for the next region fires exactly as it would in play. |
+| **Merge previous regions** | Runs the merge early, to test the Box and bag collision path (duplicate species, upgrade-track max) without beating two leagues. |
+| **Unlock every area** | The existing cheat, scoped to the active region instead of the whole area list. |
+| **Give item** | Extended to the new stones and fossils, so evolution and fossil paths are testable in any region. |
+| **Catch legendary / roamer** | Puts a legendary straight in the Box, and flips the roamer gate (both birds caught) so the beasts start appearing. |
+
+`adminAddPokemon` / `adminRemovePokemon` already operate on the active block, so they keep working unchanged once the
+save is region-aware. Every new cheat goes through the same `apply()` path, which re-fetches the latest cloud save
+before editing and stamps `adminEditAt` so the edit wins the next sync.
+
+**Acceptance:** a test drives each cheat over a save and asserts the invariants hold afterwards (`parseSave` still
+accepts it, no duplicate species, the active block is consistent), plus the disabled-region rescue path.
+
 ### Engine
 
 - `linearAreas(data, regionId)` and `isAreaUnlocked` / `badgeCase` / `clearIfDone` / `finishRound` scoped to the
@@ -362,3 +428,7 @@ encounters-per-area inside Kanto's envelope, and the report is committed under `
 5. **Leaderboards** — one per region, unlocked with the region, following the region switcher (§4).
 6. **Kanto post-game** (Victory Road II / Indigo Plateau II) stays Kanto content, reachable any time via the region
    switcher, and is *not* required to unlock Johto.
+7. **The roaming beasts** have no area: after both Ho-Oh and Lugia are *caught*, each has a configurable 2% chance of
+   replacing any Johto wild encounter, and can be caught once (§3, Johto).
+8. **Regions can be switched off** from Admin → Config, and the cheats cover unlocking, switching, completing a league
+   and merging, so a region is testable without playing to it (§4).
