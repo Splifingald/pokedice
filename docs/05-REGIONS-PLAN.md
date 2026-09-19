@@ -37,22 +37,41 @@ Target, per species, unchanged from today: `front`, `front_shiny`, `back`, `back
 `public/pokemon/NNN_*.png`, plus `src/data/sprite-metrics.json` (bottom transparent rows, so each sprite stands on its
 platform).
 
-Two viable sources, and the choice changes the work:
+**Decided: cut the attached sheets.** The three Polar Koala sheets (Gen 1, 2 and 3, all in the Ruby/Sapphire style)
+become the single source for all 386, replacing today's FRLG cuts for Kanto so the whole Pokédex shares one art style,
+and keeping the 32×32 GBA box icons as minis.
 
-- **A — PokeAPI sprite repo (recommended).** `raw.githubusercontent.com/PokeAPI/sprites` serves the same Gen 3 art,
-  lossless, already cut and background-free: `versions/generation-iii/emerald/{dex}.png` + `/shiny/`,
-  `versions/generation-iii/firered-leafgreen/back/{dex}.png` + `/back/shiny/`, all verified 200 for 152–386. Minis come
-  from `versions/generation-vii/icons/{dex}.png`. A new `scripts/pokemon-sprites.ts --fetch` mode downloads, trims,
-  pads to 64×64 and writes the same six files. Deterministic, cached, no sheet geometry to reverse-engineer.
-  Caveat: the Gen 7 icons are a different style from today's 32×32 GBA box icons — either accept the swap for all three
-  generations (consistent), or keep GBA icons only where a sheet provides them.
-- **B — the attached sheets.** Extend `scripts/pokemon-sprites.ts` with the Polar Koala layout. Fast to write (the
-  flood-fill background clear and the publish path already exist) but the output is upscaled-from-40px and
-  colour-noised; Kanto would get *worse* than it is today. Only worth it if the original full-size PNG sheets are
-  supplied.
+`scripts/pokemon-sprites.ts` gains a second layout alongside the existing MishaK9 one: flat-orange cells, front /
+front-shiny / back / back-shiny per species plus two mini frames, with the geometry measured from the sheet rather
+than hardcoded (see §1c). The flood-fill background clear, the `isEmpty` guard, the `bottomGap` metric and the
+`--publish` path are reused as they are.
 
-Either way: `pnpm pokemon-sprites --publish` stays the one command that fills `public/pokemon/`, and
-`scripts/seed.ts`'s `SPRITE()` helper needs no change.
+The sheets as supplied are lossy WebP at roughly ⅔ scale (~40px cells against a native 64px), so the extractor has to
+undo that damage rather than assume clean pixels — §1c. If the original full-size PNG sheets turn up later, the same
+code path takes them with only the measured constants changing.
+
+`pnpm pokemon-sprites --publish` stays the one command that fills `public/pokemon/`, and `scripts/seed.ts`'s
+`SPRITE()` helper needs no change.
+
+### 1c. Getting clean pixels out of a lossy sheet
+
+Four passes, in order, each verifiable on Kanto against the sprites already in `graphics/pokemon/`:
+
+1. **Measure the grid.** Detect the cell backdrop by modal colour, find cell edges by scanning for runs of backdrop,
+   and derive origin / pitch / block stride from the detected edges instead of trusting constants. Assert the detected
+   block count matches the species count for that sheet.
+2. **De-noise.** Quantise each cell to the GBA's 15-colour palette: cluster the cell's pixels, snap each to its
+   cluster centroid, drop clusters under a pixel-count floor (they are compression ringing). This restores flat
+   colour fields and hard edges.
+3. **Re-align to the pixel grid.** With the sheet at ~⅔ scale, one source pixel is ~1.5 sheet pixels. Detect the true
+   scale from run-lengths along sprite edges, then resample nearest-neighbour onto the native grid so a sprite pixel
+   is one pixel again, and pad to 64×64 (32×32 for minis) around the measured content box.
+4. **Background clear**, exactly as today: flood-fill from the border plus the interior-holes sweep.
+
+**If a sprite still fails the quality bar after these passes**, the fallback for *that species only* is the lossless
+PokeAPI sprite (`raw.githubusercontent.com/PokeAPI/sprites`, `versions/generation-iii/…`, verified reachable), logged
+so the list is visible. Better a handful of mixed-provenance sprites — it is the same Gen 3 art — than a Pokédex of
+blurred ones.
 
 ### 1b. Trainers
 
@@ -115,9 +134,8 @@ currently a Silph Co. one-time find. Three changes:
   values ever grow).
 - It moves to the **Rocket Hideout** loot table as a rare, once-per-save find: `['master-ball', 2, 1, 1, true]` against
   a deck of ~100 copies — roughly a 2% card, and gone from the table once found. Silph Co. keeps its Rare Candy.
-- **It survives a region change.** `switchRegion`/`startRegion` (§4) carry the Master Ball count across instead of
-  resetting it with the rest of the bag — the one exception to "the bag resets". Johto's Rocket HQ and Hoenn's
-  Magma/Aqua Hideout each hold one of their own on the same rare terms, so a completionist can bank three.
+- **It resets with the bag**, like everything else — no special case in `switchRegion`. Johto's Rocket HQ and Hoenn's
+  Magma/Aqua Hideout each hide one of their own on the same rare terms, so every region has exactly one to find.
 
 **Acceptance:** `pnpm seed` writes 386 species offline from cache; `pnpm test` green; a new test asserts every species
 has ≥1 die, ≤`maxDice`, a non-empty sprite path, and that every `evolutions[].item` exists in `items.json`.
@@ -321,14 +339,14 @@ encounters-per-area inside Kanto's envelope, and the report is committed under `
 
 ---
 
-## Open decisions
+## Decisions taken
 
-1. **Sprite source** (§1a): PokeAPI's lossless Gen 3 sprites (recommended) vs. cutting the attached WebP sheets.
-2. **Upgrade tracks on region change**: this plan resets combo/die levels with everything else and takes the max on
-   merge. The alternative — keeping them global — makes region 2 and 3 markedly easier.
-3. **Day Care and energy**: planned as per-region (Day Care is a Johto/Hoenn location too) and global (energy),
-   respectively.
-4. **Master Ball carry-over** (§2b): read as "the same Master Ball is still yours in the next region". If it was meant
-   only as "the item exists in Gen 2/3 content too", say so and it resets with the rest of the bag.
-5. **Kanto post-game** (Victory Road II / Indigo Plateau II) currently sits after Indigo Plateau I. It stays Kanto
-   content, reachable any time via the region switcher, and is *not* required to unlock Johto.
+1. **Sprite source** — the attached sheets, for all three generations, with a per-species PokeAPI fallback for any cut
+   that fails the quality bar (§1a, §1c).
+2. **Upgrade tracks** — reset with everything else on a region change; the merge takes the max across merged regions.
+3. **Day Care** — per-region: each region has its own, and residents stay in the region they were left in. Energy
+   stays global.
+4. **Master Ball** — resets with the bag; one to find per region (§2b).
+5. **Leaderboards** — one per region, unlocked with the region, following the region switcher (§4).
+6. **Kanto post-game** (Victory Road II / Indigo Plateau II) stays Kanto content, reachable any time via the region
+   switcher, and is *not* required to unlock Johto.
