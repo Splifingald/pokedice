@@ -11,6 +11,7 @@ import {
   isDayCareOpen,
   isAreaUnlocked,
   linearAreas,
+  regionOf,
   playerSideOf,
   progressOf,
   trainerSpecialty,
@@ -266,7 +267,7 @@ export function MapScreen() {
   const data = useGame((s) => s.data)
   const [showAll, setShowAll] = useState(false)
   if (!save) return null
-  const chain = linearAreas(data)
+  const chain = linearAreas(data, regionOf(save))
   const secrets = data.areas.filter((a) => a.hidden)
   const badges = badgeCase(save, data)
   const earned = badges.filter((b) => b.earned).length

@@ -34,8 +34,8 @@ import {
   type Trainer,
   type TypeChartRow,
 } from '../src/engine/types'
-import { AREAS, LEGENDARIES, lootPlanFor, RARE_IN_CATCH_ALL, STARTERS, type Mon } from './content'
-import { trainerSprite } from './trainer-sprites'
+import { AREAS, LEGENDARIES, lootPlanFor, RARE_IN_CATCH_ALL, STARTERS, type AreaPlan, type Mon } from './content'
+import { trainerSprite, type SpriteRegion } from './trainer-sprites'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const CACHE_DIR = path.join(ROOT, 'scripts', '.cache')
@@ -547,22 +547,44 @@ async function fetchTypeChart(): Promise<TypeChartRow[]> {
   return rows
 }
 
-export function buildAreasAndTrainers(pokemon: Species[]): { areas: Area[]; trainers: Trainer[] } {
+/** What changes from one region to the next; everything omitted is Kanto's. */
+export interface BuildOptions {
+  /** The area plans to build. Defaults to Kanto's. */
+  plans?: AreaPlan[]
+  /** Stamped on every area built here. */
+  regionId?: string
+  /** This region's starters, kept out of every hand-written wild pool and every trainer team. */
+  starters?: number[]
+  /** Which species the catch-all ('ALL') pool may draw from; defaults to every non-legendary. */
+  catchAll?: (dex: number) => boolean
+  /** Sprite set for this region's trainers. */
+  spriteRegion?: SpriteRegion
+  /** Battle scene by area name; falls back to Kanto's table, then 'default'. */
+  backgrounds?: Record<string, BattleBackground>
+  /** Item keys loot may name. Defaults to this script's ITEMS, which the committed bundle has since grown past. */
+  itemKeys?: Set<string>
+}
+
+export function buildAreasAndTrainers(pokemon: Species[], opts: BuildOptions = {}): { areas: Area[]; trainers: Trainer[] } {
+  const plans = opts.plans ?? AREAS
+  const regionId = opts.regionId ?? 'kanto'
+  const spriteRegion = opts.spriteRegion ?? 'kanto'
+  const backgrounds = opts.backgrounds ?? AREA_BACKGROUNDS
   const rng = createRng(20260913)
   const byDex = new Map(pokemon.map((p) => [p.dex, p]))
   const legendaries = new Set(LEGENDARIES)
-  const starters = new Set(STARTERS)
+  const starters = new Set(opts.starters ?? STARTERS)
   const areas: Area[] = []
   const trainers: Trainer[] = []
 
-  for (const plan of AREAS) {
+  for (const plan of plans) {
     const areaId = stableUuid(`area:${plan.key}`)
     // The catch-all pool (Cerulean Cave) includes the starters so 151/151 is reachable; hand-written pools don't.
     const wildRows =
       plan.wild === 'ALL'
         ? pokemon
-            .filter((p) => !legendaries.has(p.dex))
-            .map((p) => [p.dex, RARE_IN_CATCH_ALL.has(p.dex) ? 3 : 10, plan.minLevel, plan.maxLevel] as const)
+            .filter((p) => !legendaries.has(p.dex) && (opts.catchAll?.(p.dex) ?? true))
+            .map((p) => [p.dex, RARE_IN_CATCH_ALL.has(p.dex) || starters.has(p.dex) ? 3 : 10, plan.minLevel, plan.maxLevel] as const)
         : plan.wild
     for (const [dex] of wildRows) {
       if (legendaries.has(dex)) throw new Error(`${plan.name}: #${dex} is a legendary`)
@@ -619,7 +641,7 @@ export function buildAreasAndTrainers(pokemon: Species[]): { areas: Area[]; trai
       trainers.push({
         id: trainerId,
         name: tp.name,
-        spriteUrl: trainerSprite(tp.name),
+        spriteUrl: trainerSprite(tp.name, 'trainer', spriteRegion),
         team: team.map(([dex, level]) => ({ dex, level })),
         role: 'trainer',
         badge: null,
@@ -637,7 +659,7 @@ export function buildAreasAndTrainers(pokemon: Species[]): { areas: Area[]; trai
         id,
         name: g.name,
         // A rival version shows as the character the player didn't pick (resolved in play); Green by default.
-        spriteUrl: g.rivalOf != null ? '/characters/green.png' : trainerSprite(g.name, g.role),
+        spriteUrl: g.rivalOf != null ? '/characters/green.png' : trainerSprite(g.name, g.role, spriteRegion),
         team: g.team.map(([dex, level]) => ({ dex, level })),
         role: g.role,
         badge: g.badge ?? null,
@@ -650,7 +672,7 @@ export function buildAreasAndTrainers(pokemon: Species[]): { areas: Area[]; trai
       return id
     })
 
-    const itemKeys = new Set(ITEMS.map((i) => i.key))
+    const itemKeys = opts.itemKeys ?? new Set(ITEMS.map((i) => i.key))
     const lootPool = lootPlanFor(plan).map(([itemKey, weight, minQty, maxQty, once], i) => {
       if (itemKey !== 'money' && !itemKeys.has(itemKey)) throw new Error(`${plan.name}: unknown loot item ${itemKey}`)
       return { id: stableUuid(`loot:${plan.key}:${i}:${itemKey}`), itemKey, weight, unique: !!once, minQty, maxQty }
@@ -659,6 +681,7 @@ export function buildAreasAndTrainers(pokemon: Species[]): { areas: Area[]; trai
     areas.push({
       id: areaId,
       orderIndex: plan.orderIndex,
+      regionId,
       name: plan.name,
       bannerUrl: `/banners/${plan.banner.scene}.png${plan.banner.flip ? '#flip' : ''}`,
       roundsToClear: plan.roundsToClear,
@@ -670,7 +693,7 @@ export function buildAreasAndTrainers(pokemon: Species[]): { areas: Area[]; trai
       scalesToTeam: plan.scalesToTeam,
       easyMode: !!plan.easyMode,
       enemyUpgradeLevel: null, // set below, once every area is known
-      battleBackground: AREA_BACKGROUNDS[plan.name] ?? 'default',
+      battleBackground: backgrounds[plan.name] ?? AREA_BACKGROUNDS[plan.name] ?? 'default',
       hidden: !!plan.hidden,
       unlockConditions: plan.conditions?.map((c) => (c.kind === 'area' ? { ...c, areaId: stableUuid(`area:${c.areaId}`) } : c)) ?? null,
       gyms,

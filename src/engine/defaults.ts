@@ -48,6 +48,14 @@ export const DEFAULT_CONFIG: GameConfig = {
   ai: { samples: 200, rerollGainThreshold: 0.08 },
   // Game Corner: every spin shows something. Returns 8.5 ₽ per 10 ₽ on average, plus the Porygon jackpot; a jackpot
   // when Porygon Lv.30+ is already yours refunds the spin, so the machine never becomes a money printer.
+  // Raikou, Entei and Suicune, once both tower legendaries are caught: ~2% each per Johto wild encounter.
+  roamers: {
+    regionId: 'johto',
+    requires: [249, 250],
+    chance: 0.02,
+    level: 40,
+    dex: [243, 244, 245],
+  },
   slotMachine: {
     cost: 10,
     oneBall: { weight: 50, gold: 1 },

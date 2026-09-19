@@ -18,12 +18,16 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import {
   applyDiceSchedule,
+  buildAreasAndTrainers,
   catchValueFromRate,
   composeDice,
   diceCountFromBst,
   hpAtLevel,
 } from './seed'
-import type { Evolution, ItemDef, PokeType, Species } from '../src/engine/types'
+import { HOENN_AREAS, HOENN_STARTERS } from './content-hoenn'
+import { JOHTO_AREAS, JOHTO_STARTERS } from './content-johto'
+import type { AreaPlan } from './content'
+import type { Area, BattleBackground, Evolution, ItemDef, PokeType, Region, Species, Trainer } from '../src/engine/types'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const CACHE_DIR = path.join(ROOT, 'scripts', '.cache')
@@ -338,6 +342,166 @@ function bstOfExisting(s: Species): number {
 const readJson = async <T>(name: string): Promise<T> => JSON.parse(await readFile(path.join(DATA_DIR, name), 'utf8')) as T
 const writeJson = (name: string, data: unknown) => writeFile(path.join(DATA_DIR, name), JSON.stringify(data, null, 1) + '\n')
 
+// ---------------------------------------------------------------- areas, trainers, regions
+
+interface RegionPlan {
+  id: string
+  name: string
+  orderIndex: number
+  dexRange: [number, number]
+  starters: number[]
+  plans: AreaPlan[]
+  spriteRegion: 'johto' | 'hoenn'
+  /** Key of the area whose clearing is "the league is done". */
+  leagueKey: string
+  nextRegion: string | null
+  backgrounds: Record<string, BattleBackground>
+}
+
+const REGION_PLANS: RegionPlan[] = [
+  {
+    id: 'johto',
+    name: 'Johto',
+    orderIndex: 1,
+    dexRange: [152, 251],
+    starters: JOHTO_STARTERS,
+    plans: JOHTO_AREAS,
+    spriteRegion: 'johto',
+    leagueKey: 'jo-indigo-plateau',
+    nextRegion: 'hoenn',
+    backgrounds: {
+      'Route 29': 'grass',
+      'Routes 30 & 31': 'grass',
+      'Violet City & Sprout Tower': 'default',
+      'Route 32': 'grass',
+      'Union Cave': 'rock',
+      'Route 33 & Slowpoke Well': 'rock',
+      'Azalea Town': 'grass',
+      'Ilex Forest': 'grass',
+      'Route 34 & the Day Care': 'grass',
+      'Goldenrod City': 'default',
+      'Routes 35–37': 'grass',
+      'National Park': 'grass',
+      'Ecruteak City & the Burned Tower': 'default',
+      'Routes 38 & 39': 'grass',
+      'Olivine City & the Lighthouse': 'sea',
+      'Routes 40 & 41': 'sea',
+      'Cianwood City': 'sea',
+      'Routes 42 & 43 and the Lake of Rage': 'water',
+      'Mahogany Town & the Rocket Hideout': 'default',
+      'Route 44 & the Ice Path': 'rock',
+      "Blackthorn City & the Dragon's Den": 'rock',
+      'Victory Road': 'rock',
+      'Indigo Plateau': 'default',
+      'Mt. Silver': 'rock',
+      'Ruins of Alph': 'rock',
+      'Whirl Islands': 'water',
+      'Bell Tower': 'default',
+      'Ilex Shrine': 'grass',
+    },
+  },
+  {
+    id: 'hoenn',
+    name: 'Hoenn',
+    orderIndex: 2,
+    dexRange: [252, 386],
+    starters: HOENN_STARTERS,
+    plans: HOENN_AREAS,
+    spriteRegion: 'hoenn',
+    leagueKey: 'ho-ever-grande',
+    nextRegion: null,
+    backgrounds: {
+      'Route 101': 'grass',
+      'Routes 102 & 103': 'grass',
+      'Petalburg Woods & Route 104': 'grass',
+      'Rustboro City': 'default',
+      'Route 116 & Rusturf Tunnel': 'rock',
+      'Dewford Town & Granite Cave': 'rock',
+      'Routes 105–107': 'sea',
+      'Slateport City & Route 110': 'sea',
+      'Mauville City': 'default',
+      'Route 111 Desert & Mirage Tower': 'rock',
+      'Route 112, Fiery Path & Mt. Chimney': 'rock',
+      'Lavaridge Town': 'rock',
+      'Routes 113–115 & Meteor Falls': 'rock',
+      'Petalburg City': 'grass',
+      'Routes 118 & 119': 'grass',
+      'Fortree City & Routes 120–121': 'grass',
+      'Safari Zone': 'grass',
+      'Mt. Pyre & Routes 122–123': 'default',
+      'The Magma & Aqua Hideouts': 'default',
+      'Lilycove, Route 124 & Shoal Cave': 'water',
+      'Mossdeep City & the Space Center': 'sea',
+      'Routes 125–128 & Seafloor Cavern': 'sea',
+      'Sootopolis City & the Cave of Origin': 'water',
+      'Victory Road': 'rock',
+      'Ever Grande City': 'default',
+      'The Battle Frontier': 'grass',
+      'The Cave of Origin Depths': 'rock',
+      'The Seafloor Cavern Depths': 'water',
+      'Sky Pillar': 'default',
+      'The Sealed Chambers': 'rock',
+      'Southern Island': 'grass',
+      'Birth Island': 'grass',
+    },
+  },
+]
+
+/**
+ * What the region's late-game catch-all area may offer: every species that turns up anywhere else in the region,
+ * plus its own generation and its own starters. That is what makes "an area with every Pokémon to catch" true —
+ * a region's routes borrow freely from earlier generations, and the Pokédex has to be finishable without them.
+ */
+function catchAllFor(region: RegionPlan): (dex: number) => boolean {
+  const reachable = new Set<number>(region.starters)
+  for (let d = region.dexRange[0]; d <= region.dexRange[1]; d++) reachable.add(d)
+  for (const plan of region.plans) {
+    if (plan.wild === 'ALL') continue
+    for (const [dex] of plan.wild) reachable.add(dex)
+  }
+  // A fossil Pokémon is never wild, anywhere — the fossil is its only source, as it is in Kanto. Their evolutions go
+  // too, or the fossil would be pointless for the Pokédex.
+  for (const dex of FOSSIL_ONLY) reachable.delete(dex)
+  return (dex) => reachable.has(dex)
+}
+
+/** Lileep and Anorith come out of the Root and Claw Fossil on Route 111, and their evolutions out of those. */
+const FOSSIL_ONLY = new Set([345, 346, 347, 348])
+
+function buildRegions(pokemon: Species[], keptAreas: Area[], keptTrainers: Trainer[], itemKeys: Set<string>) {
+  const areas: Area[] = [...keptAreas]
+  const trainers: Trainer[] = [...keptTrainers]
+  const regions: Region[] = []
+
+  for (const region of REGION_PLANS) {
+    const built = buildAreasAndTrainers(pokemon, {
+      plans: region.plans,
+      regionId: region.id,
+      starters: region.starters,
+      catchAll: catchAllFor(region),
+      spriteRegion: region.spriteRegion,
+      backgrounds: region.backgrounds,
+      itemKeys,
+    })
+    areas.push(...built.areas)
+    trainers.push(...built.trainers)
+    const league = built.areas.find((a) => a.name === region.plans.find((p) => p.key === region.leagueKey)?.name)
+    if (!league) throw new Error(`${region.id}: league area ${region.leagueKey} not found`)
+    regions.push({
+      id: region.id,
+      name: region.name,
+      orderIndex: region.orderIndex,
+      dexRange: region.dexRange,
+      starters: region.starters,
+      starterLevel: 5,
+      leagueAreaId: league.id,
+      nextRegion: region.nextRegion,
+      enabled: true,
+    })
+  }
+  return { areas, trainers, regions }
+}
+
 async function main() {
   await mkdir(CACHE_DIR, { recursive: true })
   const pokemon = await readJson<Species[]>('pokemon.json')
@@ -361,12 +525,41 @@ async function main() {
   const master = items.find((i) => i.key === 'master-ball')
   if (master && master.effect.kind === 'ball') master.effect.bonus = 10
 
+  // Areas and trainers: Kanto's rows are kept exactly as they are, the regions' are appended.
+  const allAreas = await readJson<Area[]>('areas.json')
+  const allTrainers = await readJson<Trainer[]>('trainers.json')
+  const keptAreas = allAreas.filter((a) => (a.regionId ?? 'kanto') === 'kanto')
+  const keptTrainerIds = new Set(keptAreas.flatMap((a) => [...a.gyms, ...a.trainerPool.map((t) => t.trainerId)]))
+  const keptTrainers = allTrainers.filter((t) => keptTrainerIds.has(t.id))
+  const built = buildRegions(out, keptAreas, keptTrainers, new Set(items.map((i) => i.key)))
+
+  const kantoLeague = keptAreas.find((a) => a.name === 'Indigo Plateau')
+  const regions: Region[] = [
+    {
+      id: 'kanto',
+      name: 'Kanto',
+      orderIndex: 0,
+      dexRange: [1, 151],
+      starters: [1, 4, 7],
+      starterLevel: 5,
+      leagueAreaId: kantoLeague?.id ?? '',
+      nextRegion: 'johto',
+      enabled: true,
+    },
+    ...built.regions,
+  ]
+
   await writeJson('pokemon.json', out)
   await writeJson('items.json', items)
+  await writeJson('areas.json', built.areas)
+  await writeJson('trainers.json', built.trainers)
+  await writeJson('regions.json', regions)
 
   const added = out.length - kept.length
-  console.log(`✓ ${out.length} species (${added} added) · ${items.length} items · wrote src/data/pokemon.json, items.json`)
-  console.log('  supabase/seed.sql is regenerated with the region content in step 3.')
+  const byRegion = regions.map((r) => `${r.name} ${built.areas.filter((a) => (a.regionId ?? 'kanto') === r.id).length}`).join(' · ')
+  console.log(`✓ ${out.length} species (${added} added) · ${items.length} items`)
+  console.log(`✓ ${built.areas.length} areas (${byRegion}) · ${built.trainers.length} trainers · ${regions.length} regions`)
+  console.log('  wrote src/data/{pokemon,items,areas,trainers,regions}.json')
 }
 
 const isMain = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)

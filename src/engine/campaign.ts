@@ -4,6 +4,7 @@
 import { battleOutcome, createBattle, type BattleKind } from './battle'
 import { uniformLevels } from './damage'
 import { linearAreas } from './data'
+import { regionOf, regionOfArea } from './regions'
 import { maxComboLevel, maxDieLevel, nextComboCost, nextDieCost } from './economy'
 import { challengeEncounter, enemyUpgradeLevelFor, nextEncounter, type EncounterRoll } from './encounters'
 import { applyCatch, catchChance, catchTarget, catchValueOf, rollCatch } from './catching'
@@ -108,10 +109,12 @@ export interface CampaignResult {
 
 /** Push along the main chain; once it's all cleared, grind an unlocked scaling secret area (Cerulean Cave). */
 function chainArea(save: SaveData, data: GameData): Area {
-  const chain = linearAreas(data)
+  // A campaign is a run through one region; it never wanders into the next one's chain.
+  const region = regionOf(save)
+  const chain = linearAreas(data, region)
   let furthest = [...chain].reverse().find((a) => isAreaUnlocked(save, a.id, data)) ?? chain[0] ?? data.areas[0]!
   if (progressOf(save, furthest.id).cleared) {
-    const endgame = data.areas.find((a) => a.hidden && a.scalesToTeam && isAreaUnlocked(save, a.id, data))
+    const endgame = data.areas.find((a) => a.hidden && a.scalesToTeam && regionOfArea(a) === region && isAreaUnlocked(save, a.id, data))
     if (endgame) furthest = endgame
   }
   return furthest

@@ -7,6 +7,7 @@ import {
   createInstance,
   instanceMaxHp,
   linearAreas,
+  regionOf,
   maxComboLevel,
   maxDieLevel,
   POKE_TYPES,
@@ -50,7 +51,7 @@ export function DevToolsSection() {
   const unlockAll = () =>
     mutateSave((s) => {
       const areaProgress = { ...s.areaProgress }
-      linearAreas(data)
+      linearAreas(data, regionOf(save))
         .slice(0, -1)
         .forEach((a) => {
           const p = { ...emptyProgress(), ...areaProgress[a.id] }

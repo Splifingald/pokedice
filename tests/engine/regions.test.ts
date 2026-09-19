@@ -29,7 +29,7 @@ import { newId } from '../fixtures'
  * hand-written Johto content. Ids are rewritten so the two chains never collide.
  */
 function twoRegionData(opts: { johtoEnabled?: boolean } = {}): GameData {
-  const kanto = BUNDLE.areas as Area[]
+  const kanto = (BUNDLE.areas as Area[]).filter((a) => (a.regionId ?? 'kanto') === 'kanto')
   const johto = kanto.map((a) => ({
     ...a,
     id: `j-${a.id}`,

@@ -40,6 +40,23 @@ export function regionAreas(data: GameData, regionId: RegionId) {
   return linearAreas(data).filter((a) => regionOfArea(a) === regionId)
 }
 
+/**
+ * Every species a region can give you: its wild pools, its legendaries and its starters. This — not a dex number
+ * range — is what a region's Pokédex page counts, because a region's routes borrow freely from earlier generations
+ * and a player should be able to see everything they can actually catch here.
+ */
+export function regionSpecies(data: GameData, regionId: RegionId): Set<number> {
+  const out = new Set<number>(getRegion(data, regionId)?.starters ?? [])
+  for (const area of data.areas) {
+    if (regionOfArea(area) !== regionId) continue
+    for (const w of area.wildPool) if (w.weight > 0) out.add(w.dex)
+    for (const b of area.legendaryBoss ?? []) out.add(b.dex)
+  }
+  // The roamers belong to their region without sitting in any one area (see engine/encounters.ts).
+  for (const dex of data.config.roamers?.regionId === regionId ? (data.config.roamers?.dex ?? []) : []) out.add(dex)
+  return out
+}
+
 /** Has this region's league been beaten? — its league area cleared. */
 export function leagueDone(save: SaveData, data: GameData, regionId = regionOf(save)): boolean {
   const region = getRegion(data, regionId)

@@ -227,6 +227,21 @@ export type UnlockCondition =
   /** Another area is open (reached) — e.g. the Rocket Hideout once Celadon's area is. */
   | { kind: 'area'; areaId: string }
 
+/**
+ * The roaming legendaries. They have no area of their own: once every Pokémon in `requires` has been **caught**, each
+ * one that is still uncaught has `chance` of replacing any wild encounter in `regionId`. Catch it and it stops
+ * appearing; let it flee and it goes back into the pool.
+ */
+export interface RoamerConfig {
+  regionId: RegionId
+  /** Species that must be in the Pokédex first — caught, not merely beaten. */
+  requires: number[]
+  /** Per roamer, per wild encounter. */
+  chance: number
+  level: number
+  dex: number[]
+}
+
 /** One slot machine result: its share of spins (a weight) and the Pokédollars it pays. */
 export interface SlotOutcome {
   weight: number
@@ -422,6 +437,7 @@ export interface GameConfig {
   ai: { samples: number; rerollGainThreshold: number }
   slotMachine: SlotMachineConfig
   dayCare: DayCareConfig
+  roamers: RoamerConfig
 }
 
 // ---------------------------------------------------------------- save data (01-GAME-SPEC §9)

@@ -18,6 +18,10 @@ const byDex = (dex: number) => species.find((p) => p.dex === dex)!
 const count = (dice: DiceEntry[], type: string) => dice.filter((d) => d.type === type).reduce((s, d) => s + d.count, 0)
 const total = (dice: DiceEntry[]) => dice.reduce((s, d) => s + d.count, 0)
 const LEGENDARIES = [144, 145, 146, 150, 151]
+/** Every region's legendaries and mythicals. */
+const ALL_LEGENDARIES = [
+  144, 145, 146, 150, 151, 243, 244, 245, 249, 250, 251, 377, 378, 379, 380, 381, 382, 383, 384, 385, 386,
+]
 const STARTERS = [1, 4, 7]
 
 describe('pokemon.json', () => {
@@ -110,21 +114,24 @@ describe('type-chart.json', () => {
 })
 
 describe('areas & trainers', () => {
-  const allAreas = areas as Area[]
+  const everyArea = areas as Area[]
   const allTrainers = trainers as Trainer[]
+  const allAreas = everyArea.filter((a) => (a.regionId ?? 'kanto') === 'kanto')
 
-  it('has 5 areas with valid dex references', () => {
+  it('has 28 Kanto areas with valid dex references', () => {
     expect(allAreas).toHaveLength(28)
     for (const a of allAreas) for (const w of a.wildPool) expect(w.dex).toBeGreaterThanOrEqual(1)
     for (const a of allAreas) for (const w of a.wildPool) expect(w.dex).toBeLessThanOrEqual(151)
     for (const t of allTrainers) for (const m of t.team) expect(m.dex).toBeGreaterThanOrEqual(1)
   })
 
-  it('keeps legendaries out of wild pools and attaches each as a boss', () => {
-    const wild = new Set(allAreas.flatMap((a) => a.wildPool.map((w) => w.dex)))
-    for (const l of LEGENDARIES) expect(wild.has(l)).toBe(false)
-    const bosses = allAreas.flatMap((a) => a.legendaryBoss ?? []).map((b) => b.dex)
-    expect(bosses.sort((x, y) => x - y)).toEqual(LEGENDARIES)
+  it('keeps legendaries out of every wild pool, in every region', () => {
+    const wild = new Set(everyArea.flatMap((a) => a.wildPool.filter((w) => w.weight > 0).map((w) => w.dex)))
+    for (const l of ALL_LEGENDARIES) expect(wild.has(l), `#${l}`).toBe(false)
+    // Each is attached to an area as a boss — except the three roamers, which have no area at all.
+    const bosses = new Set(everyArea.flatMap((a) => a.legendaryBoss ?? []).map((b) => b.dex))
+    const roamers = new Set(BUNDLE.config.roamers ? (BUNDLE.config.roamers as { dex: number[] }).dex : [])
+    for (const l of ALL_LEGENDARIES) expect(bosses.has(l) || roamers.has(l), `#${l}`).toBe(true)
   })
 
   it('puts the starters in Victory Road only (rare), never in trainer teams — so 151/151 is reachable', () => {
@@ -144,7 +151,8 @@ describe('areas & trainers', () => {
 
   it('every trainer referenced exists and has 1–3 Pokémon', () => {
     const ids = new Set(allTrainers.map((t) => t.id))
-    for (const a of allAreas) for (const p of a.trainerPool) expect(ids.has(p.trainerId)).toBe(true)
+    for (const a of everyArea) for (const p of a.trainerPool) expect(ids.has(p.trainerId)).toBe(true)
+    for (const a of everyArea) for (const g of a.gyms) expect(ids.has(g), `${a.name}: ${g}`).toBe(true)
     for (const t of allTrainers) {
       expect(t.team.length).toBeGreaterThanOrEqual(1)
       expect(t.team.length).toBeLessThanOrEqual(3)
@@ -153,7 +161,7 @@ describe('areas & trainers', () => {
 })
 
 describe('Kanto structure', () => {
-  const allAreas = areas as Area[]
+  const allAreas = (areas as Area[]).filter((a) => (a.regionId ?? 'kanto') === 'kanto')
   const allTrainers = trainers as Trainer[]
   const tById = new Map(allTrainers.map((t) => [t.id, t]))
   const linear = allAreas.filter((a) => !a.hidden).sort((a, b) => a.orderIndex - b.orderIndex)

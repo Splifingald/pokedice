@@ -92,14 +92,39 @@ export interface AreaPlan {
   conditions?: UnlockCondition[]
   /** Explicit loot table (copies per deck, like the admin's), instead of the stage's. */
   loot?: LootPlan[]
+  /** Which stage of the journey this area's finds come from. Kanto derives it from orderIndex; regions set it. */
+  tier?: 1 | 2 | 3 | 4 | 5
+  /** One-time finds on top of the tier's, for regions (Kanto keeps its own table, keyed by area). */
+  once?: LootPlan[]
   /** [dex, weight, minLevel, maxLevel] — or 'ALL' for every non-legendary species (starters included, rare). */
   wild: [number, number, number, number][] | 'ALL'
   trainers: TrainerPlan[]
   gyms?: GymPlan[]
 }
 
+/**
+ * Deck shapes for the regions, as **card counts** — which is what an area's encounterWeights are, and what Kanto's
+ * committed areas were long since tuned to (4–11 cards). The percentages in `W` below predate that tuning and are
+ * kept only because Kanto's rows no longer come from them.
+ */
+export const DECK = {
+  wildOnly: { wild: 4, trainer: 0, center: 0, item: 1 },
+  light: { wild: 3, trainer: 1, center: 0, item: 1 },
+  mixed: { wild: 3, trainer: 2, center: 1, item: 1 },
+  busy: { wild: 2, trainer: 3, center: 1, item: 1 },
+  trainersOnly: { wild: 0, trainer: 2, center: 1, item: 1 },
+  /** A town with a Game Corner. */
+  casino: { wild: 2, trainer: 3, center: 1, item: 1, casino: 2 },
+  /** The late-game catch-all area: a longer deck, mostly wild. */
+  endgame: { wild: 6, trainer: 2, center: 1, item: 1 },
+  /** A secret area that is only its legendary and a way to heal. */
+  shrine: { wild: 0, trainer: 0, center: 6, item: 2 },
+  /** A secret area whose draw is the wild pool around its legendary. */
+  lair: { wild: 8, trainer: 0, center: 1, item: 1 },
+}
+
 // With a 10-card deck: wildOnly 8/0/1/1, light 5/3/1/1, mixed 5/3/1/1, busy 4/4/1/1, trainersOnly 0/8/1/1.
-const W = {
+export const W = {
   wildOnly: { wild: 78, trainer: 0, center: 12, item: 10 },
   light: { wild: 52, trainer: 26, center: 12, item: 10 },
   mixed: { wild: 46, trainer: 32, center: 12, item: 10 },
@@ -197,11 +222,12 @@ export function lootPlanFor(plan: AreaPlan): LootPlan[] {
   if (plan.loot) return plan.loot
   if (plan.key === 'faraway-island') return []
   const tier: 1 | 2 | 3 | 4 | 5 =
-    plan.key === 'cerulean-cave' ? 5 : plan.key === 'power-plant' ? 4 : plan.key === 'rocket-hideout' ? 3 : plan.orderIndex <= 4 ? 1 : plan.orderIndex <= 9 ? 2 : plan.orderIndex <= 15 ? 3 : 4
-  return [...LOOT_TIERS[tier], ...(ONCE_ONLY[plan.key] ?? [])]
+    plan.tier ??
+    (plan.key === 'cerulean-cave' ? 5 : plan.key === 'power-plant' ? 4 : plan.key === 'rocket-hideout' ? 3 : plan.orderIndex <= 4 ? 1 : plan.orderIndex <= 9 ? 2 : plan.orderIndex <= 15 ? 3 : 4)
+  return [...LOOT_TIERS[tier], ...(ONCE_ONLY[plan.key] ?? []), ...(plan.once ?? [])]
 }
 
-const area = (p: Omit<AreaPlan, 'backtrackMultiplier' | 'bosses' | 'scalesToTeam'> & Partial<AreaPlan>): AreaPlan => ({
+export const area = (p: Omit<AreaPlan, 'backtrackMultiplier' | 'bosses' | 'scalesToTeam'> & Partial<AreaPlan>): AreaPlan => ({
   backtrackMultiplier: 0.5,
   bosses: null,
   scalesToTeam: false,

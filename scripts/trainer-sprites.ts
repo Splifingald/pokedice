@@ -76,6 +76,10 @@ const REGION_NAMED: Record<Exclude<SpriteRegion, 'kanto'>, Record<string, string
 const REGION_CLASSES: Record<Exclude<SpriteRegion, 'kanto'>, [prefix: string, sprite: string][]> = {
   johto: [
     ['Bug Catcher', 'bug-catcher'],
+    ['Pokémaniac', 'super-nerd'],
+    ['Firebreather', 'firebreather'],
+    ['Sailor', 'swimmer-m'],
+    ['Twins', 'twins'],
     ['Bird Keeper', 'bird-keeper'],
     ['Black Belt', 'black-belt'],
     ['Kimono Girl', 'kimono-girl'],
@@ -87,9 +91,10 @@ const REGION_CLASSES: Record<Exclude<SpriteRegion, 'kanto'>, [prefix: string, sp
     ['Ace Trainer', 'schoolboy'],
     ['Cooltrainer', 'schoolboy'],
     ['School Kid', 'schoolboy'],
+    ['Schoolboy', 'schoolboy'],
+    ['Schoolgirl', 'schoolgirl'],
     ['Psychic', 'psychic-m'],
     ['Swimmer', 'swimmer-m'],
-    ['Firebreather', 'firebreather'],
     ['Guitarist', 'guitarist'],
     ['Officer', 'officer'],
     ['Scientist', 'scientist'],
@@ -111,6 +116,8 @@ const REGION_CLASSES: Record<Exclude<SpriteRegion, 'kanto'>, [prefix: string, sp
   ],
   hoenn: [
     ['Bug Catcher', 'bug-catcher'],
+    ['Ruin Maniac', 'hiker'],
+    ['Pokéfan', 'collector'],
     ['Bird Keeper', 'bird-keeper'],
     ['Black Belt', 'black-belt'],
     ['Battle Girl', 'battle-girl'],

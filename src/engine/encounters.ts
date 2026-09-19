@@ -1,4 +1,5 @@
 import { shuffle } from './deal'
+import { regionOfArea } from './regions'
 import { drawLoot } from './items'
 import { asSeenBy, gymsFor, type PlayerSide } from './rival'
 import type { Rng } from './rng'
@@ -150,7 +151,30 @@ export function enemyLevel(
   return clampLevel(ctx.teamAvgLevel + rng.int(min, max), ctx.data)
 }
 
+/**
+ * The roaming legendaries — Raikou, Entei and Suicune. They have no area: once every Pokémon the config `requires`
+ * has been **caught**, each one still uncaught has `chance` of turning up instead of the wild Pokémon that was
+ * rolled, anywhere in its region. It arrives as a boss, so the legendary catch flow and the one-of-a-kind rule apply
+ * unchanged; miss the throw and it goes back into the pool for next time.
+ *
+ * The gate is *caught*, not defeated, so knocking Lugia out and missing the ball does not start the beasts roaming.
+ */
+export function rollRoamer(ctx: EncounterContext, rng: Rng): Encounter | null {
+  const roamers = ctx.data.config.roamers
+  if (!roamers?.dex.length || roamers.chance <= 0) return null
+  if (regionOfArea(ctx.area) !== roamers.regionId) return null
+  const caught = new Set(ctx.pokedex)
+  if (!roamers.requires.every((dex) => caught.has(dex))) return null
+  for (const dex of roamers.dex) {
+    if (caught.has(dex) || !ctx.data.species[dex]) continue
+    if (rng.next() < roamers.chance) return { kind: 'boss', dex, level: clampLevel(roamers.level, ctx.data) }
+  }
+  return null
+}
+
 export function rollWild(ctx: EncounterContext, rng: Rng): Encounter | null {
+  const roamer = rollRoamer(ctx, rng)
+  if (roamer) return roamer
   const entry = rng.weighted(ctx.area.wildPool, (w) => (ctx.data.species[w.dex] ? w.weight : 0))
   if (!entry) return null
   const level = enemyLevel(rng.int(entry.minLevel, Math.max(entry.minLevel, entry.maxLevel)), ctx, rng)

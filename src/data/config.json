@@ -106,5 +106,19 @@
   "enabled": false,
   "max": 50,
   "minutesPerEnergy": 30
+ },
+ "roamers": {
+  "regionId": "johto",
+  "requires": [
+   249,
+   250
+  ],
+  "chance": 0.02,
+  "level": 40,
+  "dex": [
+   243,
+   244,
+   245
+  ]
  }
 }

@@ -24,8 +24,9 @@ import {
 } from '@/engine'
 import { data, newId } from '../fixtures'
 
-const byName = (name: string): Area => data.areas.find((a) => a.name === name)!
-const chain = linearAreas(data)
+// Names repeat across regions ("Victory Road", "Indigo Plateau"), so this file looks in Kanto only.
+const byName = (name: string): Area => data.areas.find((a) => a.name === name && (a.regionId ?? 'kanto') === 'kanto')!
+const chain = linearAreas(data, 'kanto')
 const FOREST = byName('Viridian Forest')
 const ROUTE3 = byName('Route 3')
 const INDIGO = byName('Indigo Plateau')
