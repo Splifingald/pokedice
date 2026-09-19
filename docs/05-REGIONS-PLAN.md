@@ -93,36 +93,49 @@ without visual regression on Kanto; every seeded trainer resolves to an existing
 
 ## Step 2 — Species data for 152–386
 
-`scripts/seed.ts` becomes generation-aware:
+**`scripts/seed.ts` is stale and must not be re-run.** The committed bundle is ahead of it: `items.json` holds 8 items
+the seeder never emits (`fire/water/thunder/leaf/moon-stone`, `helix-fossil`, `dome-fossil`, `old-amber`) and
+`pokemon.json` holds stone evolutions in a shape it never writes (`level: null, item: 'leaf-stone'`), because
+`783a918` synced admin tuning back from Supabase. `pnpm seed` would delete all of it. So Gen 2 and 3 arrive through a
+**new, additive** `scripts/seed-regions.ts` that treats `src/data/*.json` as the source of truth:
 
-1. `API` gets a mirror fallback: `https://raw.githubusercontent.com/PokeAPI/api-data/master/data/api/v2` (same JSON
-   shape, `index.json` suffix), kept behind the existing `scripts/.cache/` so re-runs are offline and idempotent.
-2. `KANTO = 151` → `DEX_MAX = 386`; `fetchSpecies()` loops 1..386. Evolution chains, the type chart (Gen 6+, already
-   fairy-aware) and capture rates come through unchanged.
-3. **Dice schedule** (`dicePlan`, spec §4.2) is generation-agnostic already — it reads stage, line length and BST. Spot
-   checks needed for shapes Kanto lacks: baby Pokémon (Pichu/Igglybuff/Tyrogue → 3-stage lines), Wurmple's split,
-   Shedinja (1 HP — it is the Gen 1 note's "none in Kanto"; give it a floor of 1 and a `FAMILY_PLAN` override),
-   Wobbuffet, and the pseudo-legendaries (Tyranitar, Salamence, Metagross → 5 dice like Dragonite).
-4. **Legendary dice/catch values**: Ho-Oh, Lugia, the beasts, Celebi, the Regis, Latios/Latias, Groudon, Kyogre,
-   Rayquaza, Jirachi, Deoxys get the Mewtwo treatment (5 dice, `catchValue` 9).
-5. **Evolution triggers without a day/night cycle or trading** — assigned levels follow the Kanto table (stone 28,
-   trade 34, happiness/other 30), with trade-evolutions re-pointed at the new evolution items below:
+1. Read the existing bundle. Every existing row is preserved byte-for-byte; the script only appends.
+2. Fetch 152–386 from the PokeAPI static mirror
+   (`raw.githubusercontent.com/PokeAPI/api-data/master/data/api/v2/<endpoint>/index.json` — `pokeapi.co` itself is
+   blocked), cached under `scripts/.cache/` so re-runs are offline and idempotent. The mirror returns **relative**
+   `url` fields, so every link is normalised to an endpoint path before fetching.
+3. Build the new species with the seeder's own exported pure helpers — `hpAtLevel`, `catchValueFromRate`,
+   `diceCountFromBst`, `composeDice`, `applyDiceSchedule` — so Gen 2 and 3 are balanced by exactly the rules Kanto was.
+4. **Cross-generation evolution lines** (Pichu→Pikachu, Cleffa, Igglybuff, Tyrogue, Elekid, Magby, Smoochum, Azurill,
+   Wynaut) mean the stage graph spans all three regions. The dice schedule is therefore computed over the merged
+   1–386 list, but **applied only to dex ≥ 152**: the babies get the right stage, and no Kanto row moves. Without
+   this, adding Pichu would silently re-plan Pikachu and Raichu and shift Kanto's balance.
+5. `applyDiceSchedule` needs no change — it reads stage, line length and BST. Spot checks for shapes Kanto lacks:
+   babies (3-stage lines), Wurmple's split, Shedinja (a `FAMILY_PLAN` override with a 1 HP floor), Wobbuffet, and the
+   pseudo-legendaries (Tyranitar, Salamence, Metagross → 5 dice like Dragonite).
+6. **Legendary dice/catch values**: Ho-Oh, Lugia, the beasts, Celebi, the Regis, Latios/Latias, Groudon, Kyogre,
+   Rayquaza, Jirachi, Deoxys get the Mewtwo treatment (5 dice, `catchValue` 9) via `LEGENDARIES` in `content.ts`.
+7. **Evolution triggers without a day/night cycle or trading** follow Kanto's convention — a stone evolution is
+   `{level: null, item}`, everything else gets an assigned level (trade 34, happiness/other 30):
 
 | Trigger | Species | Becomes |
 |---|---|---|
-| Metal Coat | Onix, Scyther | item evolution, level-free |
-| King's Rock | Poliwhirl, Slowpoke | item evolution (branching with the level ones — see §4) |
-| Dragon Scale | Seadra | item evolution |
-| Up-Grade | Porygon | item evolution |
-| Sun Stone | Gloom, Sunkern | item evolution |
-| Deepseatooth / Deepseascale | Clamperl | item evolution, two branches |
-| Happiness | Golbat, Chansey, Eevee→Espeon/Umbreon, Togepi, Azurill… | level 30 (Eevee 28, joining the existing branch set) |
+| Metal Coat | Onix, Scyther | `item: 'metal-coat'` |
+| King's Rock | Poliwhirl, Slowpoke | `item: 'kings-rock'` (a second branch beside their level evolution) |
+| Dragon Scale | Seadra | `item: 'dragon-scale'` |
+| Up-Grade | Porygon | `item: 'up-grade'` |
+| Sun Stone | Gloom, Sunkern | `item: 'sun-stone'` |
+| Deepseatooth / Deepseascale | Clamperl | two item branches |
+| Happiness → Espeon / Umbreon | Eevee | `sun-stone` / `moon-stone` — keeps all five Eevee branches item-driven, so a levelling Eevee never pre-empts the stones. Day and night become two stones, which is the no-cycle rule applied literally |
+| Happiness | Golbat, Chansey, Togepi, the babies | level 30 (babies evolve by levelling, as they should) |
 | Beauty | Feebas → Milotic | level 30 |
-| Level-up w/ empty slot | Nincada → Ninjask (+Shedinja) | level 20; Shedinja handled as a second branch |
+| Level-up w/ empty slot | Nincada → Ninjask (+Shedinja) | level 20, Shedinja as a second branch |
 
-6. **New items** in `scripts/seed.ts`'s `ITEMS`: `sun-stone`, `kings-rock`, `metal-coat`, `dragon-scale`, `up-grade`,
+8. **New items** appended to `items.json`: `sun-stone`, `kings-rock`, `metal-coat`, `dragon-scale`, `up-grade`,
    `deepseatooth`, `deepseascale`, `root-fossil`, `claw-fossil`. Prices and shop gating mirror the Kanto stones;
-   fossils use the existing `{kind:'fossil', dex, level, hours}` effect (`src/engine/fossils.ts` needs no change).
+   fossils use the existing `{kind:'fossil', dex, level, hours}` effect, so `src/engine/fossils.ts` needs no change.
+9. `supabase/seed.sql` is regenerated from the merged bundle at the end of step 3 (it is a set of upserts keyed by id,
+   so a live database takes it without losing admin edits).
 
 ### 2b. The Master Ball
 
