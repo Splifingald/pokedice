@@ -37,7 +37,7 @@ test('new game → first battle → win', async ({ page }) => {
     await page.waitForTimeout(60)
   }
   await expect(page.getByText('VICTORY!')).toBeVisible()
-  await expect(page.getByText(/gained \d+ XP/).first()).toBeVisible()
+  await expect(page.getByText(/\+\d+ XP/).first()).toBeVisible()
 })
 
 test('buy an upgrade', async ({ page }) => {

@@ -2,8 +2,11 @@
 import { getSpecies, linearAreas } from './data'
 import { asSeenBy, gymsFor, playerSideOf } from './rival'
 import { nextComboCost, nextDieCost, pokemonXp, trainerGoldFor, healAmount, multiExpShareFor } from './economy'
+import { roundsComplete } from './encounters'
+import { addFossil, isReviving } from './fossils'
+import { LEGACY_GAUGE } from './legacyGauge'
 import { MONEY, sellPrice, usableIn } from './items'
-import { averageLevel, createInstance, gainXp, instanceMaxHp, xpToNext, type ProgressEvent } from './progression'
+import { averageLevel, createInstance, evolve, gainXp, instanceMaxHp, stoneEvolution, xpToNext, type ProgressEvent } from './progression'
 import { createRng, type Rng } from './rng'
 import {
   COMBO_KEYS,
@@ -22,7 +25,7 @@ import {
 } from './types'
 
 export const emptyProgress = (): AreaProgress => ({
-  xp: 0,
+  roundsDone: 0,
   cleared: false,
   bossDefeated: false,
   bossesDefeated: [],
@@ -36,7 +39,6 @@ export function newSave(starterDex: number, data: GameData, now: number, newId: 
   return {
     version: 1,
     updatedAt: now,
-    lastRegenTick: now,
     gold: 0,
     pokedex: [starterDex],
     box: [inst],
@@ -103,8 +105,7 @@ export function setAreaDeck(save: SaveData, areaId: string, deck: DeckCard[]): S
 
 /**
  * Store what's left of the decks an encounter was drawn from (encounter deck, loot deck), and the round: a fresh deck
- * starts a new one — its number goes up and the gauge is noted as the round's start (where a wipe returns) — and the
- * cards turned over join the round's record. Call it for every encounter met (challenges too): it also notes whether
+ * starts a new one (its number goes up) and the cards turned over join the round's record. Call it for every encounter met (challenges too): it also notes whether
  * this one was a Pokémon Center, so the next one isn't.
  */
 export function recordDraws(
@@ -125,7 +126,7 @@ export function recordDraws(
     ...(roll.lootDeck ? { lootDeck: roll.lootDeck } : {}),
     ...(round != null ? { round } : {}),
     ...(drawn ? { drawn } : {}),
-    ...(roll.newRound ? { roundStartXp: p.xp } : {}),
+    ...(roll.newRound ? { roundCounted: false } : {}),
     lastCenter,
   })
 }
@@ -136,14 +137,24 @@ export function centerWouldHelp(save: SaveData, data: GameData): boolean {
 }
 
 /** Take a find: an item into the bag, or Pokédollars. A one-time find is struck off the area's loot table. */
-export function pickUpItem(save: SaveData, areaId: string, find: { entryId: string; itemKey: string; qty: number }, data: GameData): SaveData {
+export function pickUpItem(
+  save: SaveData,
+  areaId: string,
+  find: { entryId: string; itemKey: string; qty: number },
+  data: GameData,
+  now = Date.now(),
+  newId: () => string = () => `fossil-${now}`,
+): SaveData {
   const qty = Math.max(0, Math.floor(find.qty))
+  const item = data.items[find.itemKey]
   let next: SaveData =
     find.itemKey === MONEY
       ? { ...save, gold: save.gold + qty }
-      : data.items[find.itemKey]
-        ? { ...save, inventory: { ...save.inventory, [find.itemKey]: (save.inventory[find.itemKey] ?? 0) + qty } }
-        : save
+      : item?.effect.kind === 'fossil'
+        ? addFossil(save, item, data, now, newId()) // straight to the Box, reviving
+        : item
+          ? { ...save, inventory: { ...save.inventory, [find.itemKey]: (save.inventory[find.itemKey] ?? 0) + qty } }
+          : save
   const entry = data.areas.find((a) => a.id === areaId)?.lootPool.find((e) => e.id === find.entryId)
   if (entry?.unique) {
     const p = progressOf(next, areaId)
@@ -244,7 +255,6 @@ export function applyHp(save: SaveData, hpByUid: Record<string, number>): SaveDa
 export type RunEvent =
   | ProgressEvent
   | { kind: 'xp'; uid: string; amount: number; shared?: boolean }
-  | { kind: 'gauge'; areaId: string; amount: number; xp: number; target: number | null }
   | { kind: 'gold'; amount: number }
   /** `replacedLevel`: a stronger copy replaced the one you had at that level. */
   | { kind: 'caught'; uid: string; dex: number; level: number; joinedTeam: boolean; replacedLevel?: number }
@@ -271,7 +281,7 @@ export interface VictoryResult {
 }
 
 /**
- * Everything a K.O. pays out: XP to the fighter (or team), the gauge, trainer Pokédollars, boss, area unlock.
+ * Everything a K.O. pays out: XP to the fighter (or team), trainer Pokédollars, boss, area unlock.
  * Catching is its own step afterwards — the catch die (catching.ts).
  */
 export function applyVictory(
@@ -288,9 +298,8 @@ export function applyVictory(
   const hiddenBefore = new Set(unlockedHiddenAreas(save, data))
   let next: SaveData = { ...save, pokedex: [...save.pokedex] }
 
-  // XP: the foe's level × xpMultiplier, the same amount for the Pokémon and for the area's exploration.
+  // XP: the foe's level × xpMultiplier.
   const xp = pokemonXp(input.enemyLevel, area, progress.cleared, data)
-  const gaugeXp = xp
   const award = (uid: string, amount: number, shared: boolean) => {
     const inst = getInstance(next, uid)
     if (!inst) return
@@ -317,10 +326,6 @@ export function applyVictory(
     }
   }
 
-  // Gauge
-  progress = { ...progress, xp: progress.xp + gaugeXp }
-  events.push({ kind: 'gauge', areaId: area.id, amount: gaugeXp, xp: progress.xp, target: area.xpToUnlockNext })
-
   // Gold — trainers only (gym leaders, the Elite Four and the Champion pay extra)
   if (input.kind === 'trainer' || input.kind === 'gym') {
     const gold = trainerGoldFor(input.enemyLevel, area, progress.cleared, data, input.kind === 'gym')
@@ -346,17 +351,9 @@ export function applyVictory(
     if (t) events.push({ kind: 'gym_defeated', trainerId: t.id, name: t.name, badge: t.badge, role: t.role })
   }
 
-  // Clear: gauge full + every gym beaten + every gauge legendary beaten → the next linear area opens.
-  if (!progress.cleared && area.xpToUnlockNext != null && progress.xp >= area.xpToUnlockNext) {
-    const gaugeBosses = (area.legendaryBoss ?? []).filter((b) => b.teamAvgThreshold == null)
-    const gymsDone = gymsFor(area, data, playerSideOf(save)).every((id) => progress.gymsDefeated.includes(id) || !data.trainers[id])
-    if (gymsDone && gaugeBosses.every((b) => progress.bossesDefeated.includes(b.dex))) {
-      progress = { ...progress, cleared: true }
-      const chain = linearAreas(data)
-      const idx = chain.findIndex((a) => a.id === area.id)
-      events.push({ kind: 'area_cleared', areaId: area.id, nextAreaId: idx >= 0 ? (chain[idx + 1]?.id ?? null) : null })
-    }
-  }
+  const cleared = clearIfDone(area, progress, save, data)
+  progress = cleared.progress
+  if (cleared.event) events.push(cleared.event)
 
   next = withProgress(next, area.id, progress)
 
@@ -369,36 +366,98 @@ export function applyVictory(
 }
 
 /**
- * Wipe: the round is lost. Back to the start of the area, team fully healed; the area gauge returns to where it stood
- * when the round began (0 before any round) — but a full gauge stays full — and the deck is dropped, so the next
- * encounter starts a new, freshly shuffled round. Pokémon levels and XP, items and Pokédollars are all kept.
+ * Saves from before rounds (v1.10) measured exploration in XP: turn it into rounds done — a cleared area has them all,
+ * otherwise the share of the old gauge filled, rounded down — and drop the XP. Nothing to do on a newer save.
+ */
+export function migrateRounds(save: SaveData, data: GameData): SaveData {
+  const entries = Object.entries(save.areaProgress)
+  if (!entries.some(([, p]) => p.xp !== undefined)) return save
+  const areaProgress = Object.fromEntries(
+    entries.map(([id, p]) => {
+      if (p.xp === undefined) return [id, p]
+      const { xp = 0, ...rest } = p
+      const rounds = data.areas.find((a) => a.id === id)?.roundsToClear
+      const gauge = LEGACY_GAUGE[id]
+      // Content without round counts yet (older database content): keep the XP until there's something to convert to.
+      if (rounds == null && gauge) return [id, p]
+      const done = rounds == null ? 0 : p.cleared ? rounds : gauge ? Math.min(rounds, Math.floor((rounds * xp) / gauge)) : 0
+      return [id, { ...rest, roundsDone: Math.max(rest.roundsDone ?? 0, done) }]
+    }),
+  )
+  return { ...save, areaProgress }
+}
+
+/**
+ * Clear: every round done + every gym beaten + every round legendary beaten → the next linear area opens.
+ */
+function clearIfDone(
+  area: Area,
+  progress: AreaProgress,
+  save: SaveData,
+  data: GameData,
+): { progress: AreaProgress; event: Extract<RunEvent, { kind: 'area_cleared' }> | null } {
+  if (progress.cleared || !roundsComplete(area, progress)) return { progress, event: null }
+  const roundBosses = (area.legendaryBoss ?? []).filter((b) => b.teamAvgThreshold == null)
+  const gymsDone = gymsFor(area, data, playerSideOf(save)).every((id) => progress.gymsDefeated.includes(id) || !data.trainers[id])
+  if (!gymsDone || !roundBosses.every((b) => progress.bossesDefeated.includes(b.dex))) return { progress, event: null }
+  const chain = linearAreas(data)
+  const idx = chain.findIndex((a) => a.id === area.id)
+  return {
+    progress: { ...progress, cleared: true },
+    event: { kind: 'area_cleared', areaId: area.id, nextAreaId: idx >= 0 ? (chain[idx + 1]?.id ?? null) : null },
+  }
+}
+
+/**
+ * The encounter just met is over (won, healed, picked up…). If it was the last card of the round's deck, the round
+ * counts — once — and the area may clear. A wipe drops the deck before this can happen, so a lost round never counts.
+ */
+export function finishRound(
+  save: SaveData,
+  areaId: string,
+  data: GameData,
+): { save: SaveData; roundDone: boolean; cleared: Extract<RunEvent, { kind: 'area_cleared' }> | null } {
+  const area = data.areas.find((a) => a.id === areaId)
+  const p = progressOf(save, areaId)
+  if (!area || !p.deck || p.deck.length > 0 || !p.drawn?.length || p.roundCounted) return { save, roundDone: false, cleared: null }
+  const done = clearIfDone(area, { ...p, roundsDone: (p.roundsDone ?? 0) + 1, roundCounted: true }, save, data)
+  return { save: withProgress(save, areaId, done.progress), roundDone: true, cleared: done.event }
+}
+
+/**
+ * Wipe: the round is lost. Back to the start of the area, team fully healed; the deck is dropped, so the round in
+ * progress never counts and the next encounter starts a new, freshly shuffled round. Rounds already done stay done.
+ * Pokémon levels and XP, items and Pokédollars are all kept.
  */
 export function applyWipe(save: SaveData, areaId: string, data: GameData): SaveData {
   const p = progressOf(save, areaId)
-  const area = data.areas.find((a) => a.id === areaId)
-  const full = area?.xpToUnlockNext != null && p.xp >= area.xpToUnlockNext
-  const xp = full ? p.xp : Math.min(p.xp, p.roundStartXp ?? 0)
   const healed = new Set(save.team)
   return {
-    ...withProgress(save, areaId, { ...p, xp, deck: [], drawn: [] }),
+    ...withProgress(save, areaId, { ...p, deck: [], drawn: [] }),
     box: save.box.map((inst) => (healed.has(inst.id) ? { ...inst, currentHp: instanceMaxHp(inst, data) } : inst)),
   }
 }
 
 /** Pokémon Center: full heal for team and box. */
 export function centerHeal(save: SaveData, data: GameData): SaveData {
-  return { ...save, box: save.box.map((inst) => ({ ...inst, currentHp: instanceMaxHp(inst, data), regenCarry: 0 })) }
+  return { ...save, box: save.box.map((inst) => ({ ...inst, currentHp: instanceMaxHp(inst, data) })) }
 }
 
 export function setTeam(save: SaveData, ids: readonly string[], data: GameData): SaveData {
-  const valid = [...new Set(ids)].filter((id) => getInstance(save, id)).slice(0, data.config.maxTeamSize)
+  const valid = [...new Set(ids)]
+    .filter((id) => {
+      const p = getInstance(save, id)
+      return !!p && !isReviving(p)
+    })
+    .slice(0, data.config.maxTeamSize)
   if (!valid.length) return save
   return { ...save, team: valid }
 }
 
 /** Put `inId` into the team in place of `outId` (or append if there is room). */
 export function swapIntoTeam(save: SaveData, inId: string, outId: string | null, data: GameData): SaveData {
-  if (!getInstance(save, inId) || save.team.includes(inId)) return save
+  const inst = getInstance(save, inId)
+  if (!inst || isReviving(inst) || save.team.includes(inId)) return save
   if (outId && save.team.includes(outId)) return setTeam(save, save.team.map((id) => (id === outId ? inId : id)), data)
   if (save.team.length < data.config.maxTeamSize) return setTeam(save, [...save.team, inId], data)
   return save
@@ -451,10 +510,18 @@ export function applyFieldItem(
 ): { save: SaveData; events: ProgressEvent[] } | null {
   const item = data.items[key]
   const inst = getInstance(save, instId)
-  if (!item || !inst || !usableIn(item, 'field') || (save.inventory[key] ?? 0) <= 0) return null
+  if (!item || !inst || isReviving(inst) || !usableIn(item, 'field') || (save.inventory[key] ?? 0) <= 0) return null
   if (item.effect.kind === 'heal' || item.effect.kind === 'revive') {
     const healed = applyItemToInstance(save, key, instId, data)
     return healed ? { save: healed, events: [] } : null
+  }
+  if (item.effect.kind === 'stone') {
+    const toDex = stoneEvolution(inst, key, data)
+    if (toDex == null) return null
+    const evolved = evolve(inst, toDex, data)
+    let next = replaceInstance(consumeItem(save, key)!, evolved)
+    if (!next.pokedex.includes(toDex)) next = { ...next, pokedex: [...next.pokedex, toDex] }
+    return { save: next, events: [{ kind: 'evolve', uid: inst.id, fromDex: inst.dex, toDex, level: inst.level }] }
   }
   if (item.effect.kind !== 'level' || inst.level >= data.config.maxLevel) return null
   let cur = inst
@@ -518,11 +585,11 @@ export function releaseDuplicates(save: SaveData): { save: SaveData; released: P
   const best = new Map<number, PokemonInstance>()
   // Team members first, so a Box copy has to beat them outright to stay.
   for (const p of [...teamOf(save), ...save.box.filter((p) => !inTeam.has(p.id))]) {
-    if (p.shiny) continue
+    if (p.shiny || isReviving(p)) continue
     const cur = best.get(p.dex)
     if (!cur || stronger(p, cur)) best.set(p.dex, p)
   }
-  const released = save.box.filter((p) => !p.shiny && !inTeam.has(p.id) && best.get(p.dex) !== p)
+  const released = save.box.filter((p) => !p.shiny && !isReviving(p) && !inTeam.has(p.id) && best.get(p.dex) !== p)
   if (!released.length) return { save, released }
   const gone = new Set(released.map((p) => p.id))
   return { save: { ...save, box: save.box.filter((p) => !gone.has(p.id)) }, released }

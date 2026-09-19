@@ -322,7 +322,6 @@ export function ConfigSection() {
   const [hpMultiplier, setHpMultiplier] = useConfigRow('hpMultiplier')
   const [goldMultiplier, setGold] = useConfigRow('goldMultiplier')
   const [xpCurve, setXpCurve] = useConfigRow('xpCurve')
-  const [regen, setRegen] = useConfigRow('regenPercentPerHour')
   const [share, setShare] = useConfigRow('xpShareMode')
   const [skip, setSkip] = useConfigRow('skipPolicy')
   const [noEscape, setNoEscape] = useConfigRow('noEscape')
@@ -363,9 +362,6 @@ export function ConfigSection() {
             </Field>
             <Field label="goldMultiplier" hint="× trainer gold — the economy knob">
               <NumInput step={0.1} value={goldMultiplier} onChange={(v) => setGold(v ?? 1)} />
-            </Field>
-            <Field label="regenPercentPerHour" hint="passive healing, % of max HP per real hour">
-              <NumInput value={regen} onChange={(v) => setRegen(v ?? 0)} />
             </Field>
           </div>
         </Box>
@@ -447,7 +443,7 @@ export function ConfigSection() {
               showRoundPreview
               <span className="block text-sm text-muted">
                 Under the round gauge, show what's ahead: an icon for each card still in the deck (battle, find, wild
-                Pokémon, Center, legendary) and the gym badge or legendary waiting at the full gauge. Needs showRoundGauge.
+                Pokémon, Center, legendary) and the gym badge or legendary waiting once every round is done. Needs showRoundGauge.
               </span>
             </span>
           </label>

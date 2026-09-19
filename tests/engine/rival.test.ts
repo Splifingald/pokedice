@@ -23,10 +23,10 @@ const INDIGO2 = byName('Indigo Plateau II')
 
 const save = (starter: number, character?: 'red' | 'green'): SaveData =>
   newSave(starter, data, 0, newId, character ? { name: 'ASH', character } : undefined)
-/** Gauge full and the Elite Four beaten: the Champion is next. */
+/** Every round done and the Elite Four beaten: the Champion is next. */
 const atChampion = (s: SaveData): SaveData => {
   const elite = INDIGO2.gyms.filter((id) => data.trainers[id]!.role === 'elite')
-  return { ...s, areaProgress: { [INDIGO2.id]: { ...emptyProgress(), xp: INDIGO2.xpToUnlockNext!, gymsDefeated: elite } } }
+  return { ...s, areaProgress: { [INDIGO2.id]: { ...emptyProgress(), roundsDone: INDIGO2.roundsToClear!, gymsDefeated: elite } } }
 }
 
 describe('endgame chain', () => {

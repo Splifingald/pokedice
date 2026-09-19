@@ -1,6 +1,5 @@
 {
  "showRoundPreview": false,
- "regenPercentPerHour": 20,
  "xpCurve": {
   "A": 0.5,
   "B": 1.15,
@@ -50,7 +49,7 @@
   }
  },
  "gymGoldMultiplier": 2,
- "configVersion": 22,
+ "configVersion": 23,
  "forcedCenterWhenHurt": true,
  "encounterMode": "deck",
  "startInventory": {
@@ -104,7 +103,7 @@
   "unownedWeight": 4
  },
  "energy": {
-  "enabled": true,
+  "enabled": false,
   "max": 50,
   "minutesPerEnergy": 30
  }

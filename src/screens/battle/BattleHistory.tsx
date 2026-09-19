@@ -98,6 +98,9 @@ function buildRows(log: readonly LogEntry[], player: readonly Battler[], enemy: 
         active = { ...active, player: e.uid }
         rows.push({ key, ...who(e.uid), text: e.free ? 'was sent out' : 'was switched in', icon: 'ball' })
         return
+      case 'transform':
+        rows.push({ key, ...who(e.uid), text: `copied ${who(e.fromUid).name}'s dice`, icon: 'reroll' })
+        return
       case 'damage': {
         const attacker = who(active[e.side])
         const target = who(e.targetUid)

@@ -317,7 +317,7 @@ export function EncounterPreview({ enc }: { enc: Encounter }) {
               {data.config.skipPolicy === 'once' && <span className="text-base"> (1)</span>}
             </PixelButton>
           )}
-          {/* A challenge the player picked (gym, or a legendary due at the full gauge) can wait. */}
+          {/* A challenge the player picked (gym, or a legendary due once every round is done) can wait. */}
           {(enc.kind === 'gym' || (enc.kind === 'boss' && !enc.returning)) && (
             <PixelButton size="lg" className="flex-1" onClick={declineChallenge}>
               NOT YET

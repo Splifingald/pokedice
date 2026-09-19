@@ -443,7 +443,7 @@ export function AreaTestSim({ data }: { data: GameData }) {
         </Field>
         {area && (
           <span className="pb-1 text-lg text-muted">
-            {area.scalesToTeam ? 'foes scale to the team' : `foes Lv.${area.minLevel}–${area.maxLevel}`} · gauge {area.xpToUnlockNext ?? '∞'}
+            {area.scalesToTeam ? 'foes scale to the team' : `foes Lv.${area.minLevel}–${area.maxLevel}`} · {area.roundsToClear ?? '∞'} round{area.roundsToClear === 1 ? '' : 's'}
           </span>
         )}
       </div>

@@ -10,7 +10,7 @@ import {
 } from '@/engine'
 
 /**
- * Rules tests pin the pacing knobs to neutral (×1), and regen, status effects and the shiny rate to the defaults, so
+ * Rules tests pin the pacing knobs to neutral (×1), and status effects and the shiny rate to the defaults, so
  * their arithmetic documents the formulas, not the tuning done in admin.
  */
 export function makeData(config: Partial<GameConfig> = {}): GameData {
@@ -21,7 +21,6 @@ export function makeData(config: Partial<GameConfig> = {}): GameData {
       goldMultiplier: 1,
       hpMultiplier: 1,
       xpMultiplier: 1,
-      regenPercentPerHour: DEFAULT_CONFIG.regenPercentPerHour,
       shinyChance: DEFAULT_CONFIG.shinyChance,
       status: DEFAULT_CONFIG.status,
       ...config,

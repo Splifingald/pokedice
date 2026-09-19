@@ -50,7 +50,8 @@ describe('pokemon.json', () => {
     expect(byDex(6).maxHp).toBe(297)
     expect(byDex(4).evolutions).toEqual([{ toDex: 5, level: 16 }])
     expect(byDex(133).evolutions.map((e) => e.toDex).sort()).toEqual([134, 135, 136])
-    expect(byDex(133).evolutions.every((e) => e.level === 28)).toBe(true)
+    // v1.10: Eevee's forms come from the stones (Water, Thunder, Fire).
+    expect(byDex(133).evolutions.map((e) => e.item).sort()).toEqual(['fire-stone', 'thunder-stone', 'water-stone'])
     expect(byDex(64).evolutions).toEqual([{ toDex: 65, level: 34 }]) // trade
   })
 })

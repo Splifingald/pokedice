@@ -79,7 +79,7 @@ function BossCard({ b, data, onChange, onRemove }: { b: BossDef; data: GameData;
               onChange(rest)
             }}
           >
-            <option value="gauge">appears when the gauge is full</option>
+            <option value="gauge">appears once every round is done</option>
             <option value="team">appears when the team's average level reaches…</option>
           </select>
           {byTeam && (
@@ -145,8 +145,8 @@ function AreaEditor({ area }: { area: Row }) {
             <Field label="Name" className="col-span-2">
               <TextInput value={s(area.name)} onChange={(v) => patch({ name: v })} />
             </Field>
-            <Field label="Gauge (XP to clear)" hint="empty = endless">
-              <NumInput nullable value={area.xp_to_unlock_next as number | null} onChange={(v) => patch({ xp_to_unlock_next: v })} />
+            <Field label="Rounds to clear" hint="full decks; empty = never clears">
+              <NumInput nullable min={1} max={20} value={area.rounds_to_clear as number | null} onChange={(v) => patch({ rounds_to_clear: v })} />
             </Field>
             <Field label="Backtrack ×" hint="rewards once cleared">
               <NumInput step={0.05} value={n(area.backtrack_multiplier)} onChange={(v) => patch({ backtrack_multiplier: v ?? 0 })} />
@@ -274,7 +274,7 @@ function AreaEditor({ area }: { area: Row }) {
 
         <Box
           title="Gym / Elite battles"
-          hint="Fought in this order once the gauge is full; the area clears when all are beaten."
+          hint="Fought in this order once every round is done; the area clears when all are beaten."
           actions={
             <PixelButton
               size="sm"
@@ -591,7 +591,7 @@ export function AreasSection() {
                   order_index: sorted.length + 1,
                   name: 'New Area',
                   banner_url: null,
-                  xp_to_unlock_next: 100,
+                  rounds_to_clear: 1,
                   min_level: 10,
                   max_level: 15,
                   encounter_weights: { wild: 6, trainer: 2, center: 1, item: 1 },

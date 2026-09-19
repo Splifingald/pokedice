@@ -123,7 +123,7 @@ export function rowsToBundle(r: TableRows): BundleRaw {
         orderIndex: num(x.order_index),
         name: String(x.name),
         bannerUrl: (x.banner_url as string | null) ?? null,
-        xpToUnlockNext: x.xp_to_unlock_next == null ? null : num(x.xp_to_unlock_next),
+        roundsToClear: x.rounds_to_clear == null ? null : num(x.rounds_to_clear),
         minLevel: num(x.min_level),
         maxLevel: num(x.max_level),
         encounterWeights: x.encounter_weights as Area['encounterWeights'],
@@ -185,6 +185,8 @@ export function rowsToBundle(r: TableRows): BundleRaw {
         effect: x.effect as ItemDef['effect'],
         inShop: x.in_shop == null ? true : !!x.in_shop,
         shopBadges: x.shop_badges == null ? 0 : num(x.shop_badges),
+        // Only when set, so bundled items without it round-trip unchanged.
+        ...(x.shop_area != null && { shopArea: String(x.shop_area) }),
       }),
     ),
     config: Object.fromEntries(r.game_config.map((x) => [String(x.key), x.value])),
@@ -225,7 +227,7 @@ export function bundleToRows(b: BundleRaw): TableRows {
       order_index: x.orderIndex,
       name: x.name,
       banner_url: x.bannerUrl,
-      xp_to_unlock_next: x.xpToUnlockNext,
+      rounds_to_clear: x.roundsToClear,
       min_level: x.minLevel,
       max_level: x.maxLevel,
       encounter_weights: x.encounterWeights,
@@ -287,6 +289,7 @@ export function bundleToRows(b: BundleRaw): TableRows {
       effect: x.effect,
       in_shop: x.inShop ?? true,
       shop_badges: x.shopBadges ?? 0,
+      shop_area: x.shopArea ?? null,
     })),
     game_config: Object.entries(b.config).map(([key, value]) => ({ key, value })),
   }
@@ -294,5 +297,12 @@ export function bundleToRows(b: BundleRaw): TableRows {
 
 /** Minimal sanity check before hot-swapping remote content in. */
 export function isPlayableBundle(b: BundleRaw): boolean {
-  return b.pokemon.length > 0 && b.areas.length > 0 && b.diceTypes.length > 0 && b.areas.some((a) => a.wildPool.length > 0)
+  return (
+    b.pokemon.length > 0 &&
+    b.areas.length > 0 &&
+    b.diceTypes.length > 0 &&
+    b.areas.some((a) => a.wildPool.length > 0) &&
+    // Content from before rounds (v1.10) has no round counts: no area could ever clear.
+    b.areas.some((a) => a.roundsToClear != null)
+  )
 }

@@ -24,7 +24,7 @@ import { dexNo } from '@/lib/format'
 import { cx, typeColor } from '@/theme/util'
 import { DataTable } from '../DataTable'
 import { rowKey, updateRow, useAdmin, useAdminData } from '../store'
-import { Field, NumInput, PokemonPicker, TextInput, TypePicker, n, s } from '../widgets'
+import { Field, NumInput, PokemonPicker, TextInput, TypePicker, inputCls, n, s } from '../widgets'
 
 /** Mean final damage of one roll (no rerolls, track 1) against a typeless target. */
 function averageRoll(dice: DiceEntry[], types: string[], data: GameData): number {
@@ -148,14 +148,30 @@ function MilestoneEditor({ value, onChange }: { value: Milestone[]; onChange: (m
 }
 
 function EvolutionEditor({ value, onChange, data }: { value: Evolution[]; onChange: (e: Evolution[]) => void; data: GameData }) {
+  const stones = Object.values(data.items).filter((it) => it.effect.kind === 'stone')
   return (
     <div className="flex flex-col gap-2">
       {value.map((ev, i) => (
         <div key={i} className="flex flex-wrap items-center gap-2">
           <SpriteImg dex={ev.toDex} size={40} />
           <PokemonPicker className="min-w-[220px] flex-1" data={data} value={ev.toDex} onChange={(d) => onChange(value.map((x, j) => (j === i ? { ...x, toDex: d } : x)))} />
-          <span>at Lv.</span>
-          <NumInput className="w-20" value={ev.level} min={1} max={100} onChange={(v) => onChange(value.map((x, j) => (j === i ? { ...x, level: v ?? 1 } : x)))} />
+          <select
+            className={cx(inputCls, 'w-auto')}
+            value={ev.item ?? ''}
+            onChange={(e) =>
+              onChange(value.map((x, j) => (j === i ? (e.target.value ? { toDex: x.toDex, level: null, item: e.target.value } : { toDex: x.toDex, level: x.level ?? 30 }) : x)))
+            }
+          >
+            <option value="">at level</option>
+            {stones.map((it) => (
+              <option key={it.key} value={it.key}>
+                with a {it.name}
+              </option>
+            ))}
+          </select>
+          {!ev.item && (
+            <NumInput className="w-20" value={ev.level ?? 30} min={1} max={100} onChange={(v) => onChange(value.map((x, j) => (j === i ? { ...x, level: v ?? 1 } : x)))} />
+          )}
           <button type="button" onClick={() => onChange(value.filter((_, j) => j !== i))} aria-label="Remove">
             ✕
           </button>

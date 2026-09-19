@@ -18,7 +18,7 @@ import {
 } from '@/engine'
 import { AreaTypes } from '@/components/AreaTypes'
 import { BadgeIcon } from '@/components/BadgeIcon'
-import { Gauge } from '@/components/Gauge'
+import { RoundsCounter } from '@/components/RoundsCounter'
 import { PixelIcon } from '@/components/icons'
 import { PixelButton } from '@/components/PixelButton'
 import { MiniSprite } from '@/components/SpriteImg'
@@ -151,7 +151,7 @@ function AreaCard({ area, index, prevName, delay = 0 }: { area: Area; index: num
         >
           {!unlocked ? 'LOCKED' : exploring ? 'CONTINUE' : 'ENTER'}
         </PixelButton>
-        {unlocked && <Gauge value={p.xp} max={area.xpToUnlockNext} className="w-full" />}
+        {unlocked && <RoundsCounter area={area} progress={p} className="w-full" />}
       </div>
     </motion.li>
   )

@@ -6,7 +6,6 @@ export const DEFAULT_CONFIG: GameConfig = {
   // v1.7: about a quarter of the v1.6 curve (XP per K.O. is the foe's level).
   xpCurve: { A: 0.5, B: 1.15, C: 1 },
   xpShareMode: 'fighter',
-  regenPercentPerHour: 5,
   maxTeamSize: 3,
   maxLevel: 100,
   maxDice: 5,

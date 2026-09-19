@@ -142,7 +142,7 @@ create table game_config (
 );
 -- seeded keys: encounterMode ('deck'), startInventory
 --              ({poke-ball:5, potion:2}), hpMultiplier (1), xpCurve {A,B,C}, xpShareMode,
---              regenPercentPerHour, maxTeamSize, maxLevel, comboPayoutMode,
+--              maxTeamSize, maxLevel, comboPayoutMode,
 --              skipPolicy, starters, starterLevel, configVersion, multiExpShare (0.3),
 --              xpMultiplier (1: XP = foe level × this, for Pokémon and the exploration bar alike),
 -- Keys missing from a database fall back to the bundled defaults, so older databases need no migration.

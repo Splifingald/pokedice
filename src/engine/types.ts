@@ -62,7 +62,10 @@ export interface Milestone {
 
 export interface Evolution {
   toDex: number
-  level: number
+  /** Evolves on reaching this level… */
+  level: number | null
+  /** …or when this item (an evolution stone's key) is used on it — then `level` is null. */
+  item?: string | null
 }
 
 export interface Species {
@@ -165,7 +168,7 @@ export type BattleBackground = (typeof BATTLE_BACKGROUNDS)[number]
 export interface BossDef {
   dex: number
   level: number
-  /** Victory Road style: the boss triggers when the team's average level reaches this, instead of the gauge. */
+  /** Victory Road style: the boss triggers when the team's average level reaches this, instead of once every round is done. */
   teamAvgThreshold?: number
   /** Upgrade level this legendary fights at; unset = the area's. */
   upgradeLevel?: number | null
@@ -190,7 +193,8 @@ export interface Area {
   orderIndex: number
   name: string
   bannerUrl: string | null
-  xpToUnlockNext: number | null
+  /** Rounds (full encounter decks) to complete before the gym / legendary waits and the area can clear. Null = never clears (secret areas). */
+  roundsToClear: number | null
   minLevel: number
   maxLevel: number
   encounterWeights: Record<EncounterKind, number>
@@ -208,7 +212,7 @@ export interface Area {
   /** Hidden areas sit outside the linear chain and unlock when every condition holds. */
   hidden: boolean
   unlockConditions: UnlockCondition[] | null
-  /** Gym / Elite trainers fought in order once the gauge is full; all must fall for the area to clear. */
+  /** Gym / Elite trainers fought in order once every round is done; all must fall for the area to clear. */
   gyms: string[]
   wildPool: WildPoolEntry[]
   trainerPool: TrainerPoolEntry[]
@@ -310,6 +314,10 @@ export type ItemEffect =
   | { kind: 'rerolls'; amount: number }
   /** Revive / Max Revive: brings a K.O.'d Pokémon back with this % of its max HP, in battle or from the Team screen. */
   | { kind: 'revive'; percent: number }
+  /** Evolution stones: evolve a Pokémon whose evolution names this item, from the Team screen. */
+  | { kind: 'stone' }
+  /** Fossils: found, never bought or sold. The Pokémon goes straight to the Box at `level` and revives after `hours`. */
+  | { kind: 'fossil'; dex: number; level: number; hours: number }
   /** Rare Candy: levels, from the Team screen. */
   | { kind: 'level'; amount: number }
   /** Poké Balls: added to the catch die. */
@@ -324,8 +332,10 @@ export interface ItemDef {
   effect: ItemEffect
   /** Sold in the Poké Mart… */
   inShop: boolean
-  /** …once the player holds this many badges. */
+  /** …once the player holds this many badges… */
   shopBadges: number
+  /** …and, when set, once this area is unlocked (e.g. Celadon's Dept. Store on Routes 7 & 8). */
+  shopArea?: string | null
 }
 
 export interface StatusRules {
@@ -355,7 +365,6 @@ export interface GameConfig {
   configVersion: number
   xpCurve: { A: number; B: number; C: number }
   xpShareMode: 'fighter' | 'team'
-  regenPercentPerHour: number
   maxTeamSize: number
   maxLevel: number
   maxDice: number
@@ -423,14 +432,21 @@ export interface PokemonInstance {
   xp: number
   currentHp: number
   caughtAt: number
-  /** Fractional HP carried between passive-regen applications, so frequent loads never lose regen. */
-  regenCarry?: number
   /** Shiny colours (cosmetic only). */
   shiny?: boolean
+  /** A fossil being revived: it waits in the Box until this time (ms) — no team, no items, no Day Care, not in the Pokédex yet. */
+  revivesAt?: number
+  /** The fossil item it came from (for its picture while it revives). */
+  fossil?: string
 }
 
 export interface AreaProgress {
-  xp: number
+  /** Rounds completed here (a round counts once its last card is dealt with; a wipe loses the round in progress). */
+  roundsDone: number
+  /** The current round has already been counted (its deck ran out): don't count it twice. */
+  roundCounted?: boolean
+  /** Exploration XP from before rounds replaced the gauge: converted to `roundsDone` on load, then dropped. */
+  xp?: number
   cleared: boolean
   bossDefeated: boolean
   /** Dex numbers of this area's legendary bosses already beaten. */
@@ -443,8 +459,6 @@ export interface AreaProgress {
   lootDeck?: string[]
   /** Unique loot entries already found here. */
   uniqueFound?: string[]
-  /** The gauge when the current round began: a wipe loses the round and goes back to it (0 before any round; a full gauge stays). */
-  roundStartXp?: number
   /** Rounds started here. A round is one full encounter deck, opened by a Pokémon Center when one would help. */
   round?: number
   /** Cards met so far this round, in order (the round gauge shows them). */
@@ -456,7 +470,6 @@ export interface AreaProgress {
 export interface SaveData {
   version: 1
   updatedAt: number
-  lastRegenTick: number
   gold: number
   pokedex: number[]
   box: PokemonInstance[]

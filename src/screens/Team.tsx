@@ -90,8 +90,8 @@ export function TeamScreen() {
       </ol>
       <p className="copy text-muted">
         Tap a Pokémon for its details — make it lead, or use Potions and Rare Candy from there. Team changes happen at a
-        Pokémon Center (or when a catch offers a swap). Fainted Pokémon regain {data.config.regenPercentPerHour} % of their HP
-        every hour, or heal fully at a Center.
+        Pokémon Center (or when a catch offers a swap). HP only comes back at a Center or with items — Revives bring
+        fainted Pokémon back.
       </p>
 
       <section className="flex flex-col gap-2" aria-labelledby="box-title">

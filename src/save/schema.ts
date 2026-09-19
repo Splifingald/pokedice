@@ -10,12 +10,16 @@ const instanceSchema = z.object({
   xp: z.number().min(0),
   currentHp: z.number().min(0),
   caughtAt: z.number(),
-  regenCarry: z.number().min(0).optional(),
   shiny: z.boolean().optional(),
+  revivesAt: z.number().optional(),
+  fossil: z.string().optional(),
 })
 
 const progressSchema = z.object({
-  xp: z.number().min(0),
+  roundsDone: z.number().int().min(0).optional(),
+  roundCounted: z.boolean().optional(),
+  // Saves from before rounds replaced the exploration gauge (converted on load).
+  xp: z.number().min(0).optional(),
   cleared: z.boolean(),
   bossDefeated: z.boolean(),
   bossesDefeated: z.array(z.number().int()).default([]),
@@ -23,7 +27,6 @@ const progressSchema = z.object({
   deck: z.array(z.enum(['wild', 'trainer', 'center', 'item', 'casino', 'legend'])).optional(),
   lootDeck: z.array(z.string()).optional(),
   uniqueFound: z.array(z.string()).optional(),
-  roundStartXp: z.number().min(0).optional(),
   round: z.number().int().min(0).optional(),
   drawn: z.array(z.enum(['wild', 'trainer', 'center', 'item', 'casino', 'legend'])).optional(),
   lastCenter: z.boolean().optional(),
@@ -37,7 +40,6 @@ const levelRecord = <K extends string>(keys: readonly K[]) =>
 export const saveSchema = z.object({
   version: z.literal(1),
   updatedAt: z.number(),
-  lastRegenTick: z.number(),
   gold: z.number().min(0),
   pokedex: z.array(z.number().int().min(1)),
   box: z.array(instanceSchema),

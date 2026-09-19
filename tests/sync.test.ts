@@ -30,7 +30,7 @@ describe('decideSync', () => {
     const areaId = Object.keys(base.areaProgress)[0] ?? data.areas[0]!.id
     const cleared: SaveData = {
       ...base,
-      areaProgress: { ...base.areaProgress, [areaId]: { xp: 0, cleared: true, bossDefeated: false, bossesDefeated: [], gymsDefeated: [] } },
+      areaProgress: { ...base.areaProgress, [areaId]: { roundsDone: 1, cleared: true, bossDefeated: false, bossesDefeated: [], gymsDefeated: [] } },
     }
     expect(compareProgress(cleared, further)).toBeGreaterThan(0)
     expect(compareProgress(further, base)).toBeGreaterThan(0)
@@ -38,7 +38,8 @@ describe('decideSync', () => {
   })
 
   it('ignores bookkeeping when comparing saves', () => {
-    expect(sameSave(at(base, 1), { ...at(base, 9), lastRegenTick: 42 })).toBe(true)
+    // Saves from before passive regen was removed still carry lastRegenTick: not progress either.
+    expect(sameSave(at(base, 1), { ...at(base, 9), lastRegenTick: 42 } as typeof base)).toBe(true)
     expect(sameSave(base, further)).toBe(false)
   })
 })

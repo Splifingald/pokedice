@@ -2,8 +2,9 @@
 import { create } from 'zustand'
 import { BUNDLE } from '@/config/bundle'
 import {
-  applyRegen,
   compileGameData,
+  migrateRounds,
+  reviveFossils,
   releaseDuplicates,
   syncHpScale,
   syncXpCurve,
@@ -111,7 +112,10 @@ export const initialRun = (): RunState => ({
  * current curve, and one copy per species in the Box (releaseDuplicates). `released` lists the copies let go.
  */
 function settle(save: SaveData, data: GameData) {
-  return releaseDuplicates(syncXpCurve(syncHpScale(save, data), data))
+  // Fossils due by now revive first, so they count as the species they are.
+  const fossils = reviveFossils(migrateRounds(save, data), data, Date.now())
+  const dup = releaseDuplicates(syncXpCurve(syncHpScale(fossils.save, data), data))
+  return { ...dup, revived: fossils.revived }
 }
 
 function boot(): Pick<GameStore, 'data' | 'save' | 'corruptSaveArchived' | 'settings'> {
@@ -119,11 +123,8 @@ function boot(): Pick<GameStore, 'data' | 'save' | 'corruptSaveArchived' | 'sett
   const { save, corrupt } = readSave()
   const settings = save?.settings ?? readSettings()
   if (!save) return { data, save: null, corruptSaveArchived: corrupt, settings }
-  // Settle the save (HP scale, XP curve, duplicates), then regen, before the first render.
-  const now = Date.now()
-  const synced = settle(save, data).save
-  const regen = applyRegen(synced.box, synced.lastRegenTick, now, data)
-  return { data, save: { ...synced, box: regen.instances, lastRegenTick: regen.lastTick }, corruptSaveArchived: corrupt, settings }
+  // Settle the save (HP scale, XP curve, duplicates) before the first render.
+  return { data, save: settle(save, data).save, corruptSaveArchived: corrupt, settings }
 }
 
 export const useGame = create<GameStore>()(() => ({
@@ -167,6 +168,8 @@ export function commitSave(next: SaveData | null, opts: { silent?: boolean; keep
   useGame.setState({ save: stamped })
   scheduleWrite(stamped)
   if (!opts.silent) for (const fn of saveListeners) fn(stamped, prev)
+  for (const p of settled?.revived ?? [])
+    pushToast(`${data.species[p.dex]?.name ?? `#${p.dex}`} was revived from its fossil!`, 'good', 4500)
   for (const p of settled?.released ?? [])
     pushToast(`${data.species[p.dex]?.name ?? `#${p.dex}`} Lv.${p.level} left: you have a stronger one`, 'info', 4000)
 }
@@ -208,13 +211,8 @@ export function setContent(raw: BundleRaw, source: 'bundle' | 'remote') {
   })
 }
 
-/** Periodic passive regen while the app is open (paused during battles — battle HP is authoritative there). */
-export function tickRegen(now = Date.now()) {
-  const { save, battle, data } = useGame.getState()
-  if (!save || battle) return
-  const regen = applyRegen(save.box, save.lastRegenTick, now, data)
-  const changed = regen.instances.some((p, i) => p.currentHp !== save.box[i]!.currentHp)
-  // Regen is passive: it must not make this save look newer than a cloud save with real progress.
-  if (changed) commitSave({ ...save, box: regen.instances, lastRegenTick: regen.lastTick }, { keepTimestamp: true })
-  else useGame.setState({ save: { ...save, box: regen.instances, lastRegenTick: regen.lastTick } })
+/** A fossil in the Box may be due: settle the save (reviveFossils) — only when one is, to keep saves quiet. */
+export function tickFossils(now = Date.now()) {
+  const { save } = useGame.getState()
+  if (save?.box.some((p) => p.revivesAt != null && p.revivesAt <= now)) commitSave(save, { keepTimestamp: false })
 }

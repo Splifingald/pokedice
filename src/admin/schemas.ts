@@ -24,6 +24,8 @@ const itemEffect = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('cure'), statuses: z.array(z.enum(['burn', 'poison', 'frozen', 'paralyze', 'confuse'])).min(1, 'pick a status') }),
   z.object({ kind: z.literal('rerolls'), amount: int(1) }),
   z.object({ kind: z.literal('level'), amount: int(1, 10) }),
+  z.object({ kind: z.literal('stone') }),
+  z.object({ kind: z.literal('fossil'), dex: int(1, 151), level: int(1, 100), hours: z.number().min(0) }),
   z.object({ kind: z.literal('ball'), bonus: int(0, 9) }),
 ])
 
@@ -60,7 +62,7 @@ export const ROW_SCHEMAS: Record<TableName, z.ZodTypeAny> = {
       rerolls: int(0, 20),
       // Optional so a database created before migration 0003 still loads.
       catch_value: int(1, 9).optional(),
-      evolutions: z.array(z.object({ toDex: int(1), level: int(1, 100) })),
+      evolutions: z.array(z.object({ toDex: int(1), level: int(1, 100).nullable(), item: z.string().nullable().optional() })),
       milestones: z.array(
         z.object({
           level: int(1, 100),
@@ -78,7 +80,8 @@ export const ROW_SCHEMAS: Record<TableName, z.ZodTypeAny> = {
     order_index: int(1),
     name: z.string().min(1),
     banner_url: z.string().nullable(),
-    xp_to_unlock_next: int(1).nullable(),
+    // Optional so a database created before migration 0014 still loads.
+    rounds_to_clear: int(1, 20).nullable().optional(),
     min_level: int(1, 100),
     max_level: int(1, 100),
     encounter_weights: z.object({
@@ -151,6 +154,8 @@ export const ROW_SCHEMAS: Record<TableName, z.ZodTypeAny> = {
     effect: itemEffect,
     in_shop: z.boolean().optional(),
     shop_badges: int(0, 8).optional(),
+    // Optional so a database created before migration 0015 still loads.
+    shop_area: uuid.nullable().optional(),
   }),
   game_config: z.object({ key: z.string().min(1), value: z.unknown() }),
 }

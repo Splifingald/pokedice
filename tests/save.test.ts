@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { applyRegen, instanceMaxHp, newSave } from '@/engine'
+import { newSave } from '@/engine'
 import { parseSave, migrate } from '@/save/schema'
 import { pickNewest } from '@/save/cloud'
 import { bundleToRows, isPlayableBundle, rowsToBundle } from '@/config/mapping'
@@ -41,15 +41,16 @@ describe('save schema', () => {
   })
 })
 
-describe('regen on load', () => {
-  it('heals when lastRegenTick is faked two hours back', () => {
+describe('no passive regen', () => {
+  it('a save from before its removal still loads, its HP untouched and the old fields dropped', () => {
     const s = newSave(4, data, 0, newId)
-    const hurt = { ...s, box: s.box.map((p) => ({ ...p, currentHp: 1 })) }
-    const now = 2 * 3.6e6
-    const r = applyRegen(hurt.box, 0, now, data)
-    const max = instanceMaxHp(hurt.box[0]!, data)
-    expect(r.instances[0]!.currentHp).toBe(Math.min(max, 1 + Math.floor(2 * 0.05 * max)))
-    expect(r.lastTick).toBe(now)
+    const old = { ...s, lastRegenTick: 0, box: s.box.map((p) => ({ ...p, currentHp: 1, regenCarry: 0.5 })) }
+    const res = parseSave(JSON.parse(JSON.stringify(old)))
+    expect(res.ok).toBe(true)
+    if (!res.ok) return
+    expect(res.save.box[0]!.currentHp).toBe(1)
+    expect('lastRegenTick' in res.save).toBe(false)
+    expect('regenCarry' in res.save.box[0]!).toBe(false)
   })
 })
 

@@ -5,7 +5,7 @@ import { fetchContentUpdate } from '@/config/remote'
 import { getSupabase } from '@/lib/supabase'
 import { decideSync, pullCloudSave, pushCloudSave, sameSave, schedulePush } from '@/save/cloud'
 import { backupSave, flushWrite } from '@/save/storage'
-import { commitSave, initialRun, onSaveCommitted, pushToast, setContent, tickRegen, useGame } from './game'
+import { commitSave, initialRun, onSaveCommitted, pushToast, setContent, tickFossils, useGame } from './game'
 
 let syncedUser: string | null = null
 /** Nothing is pushed until the first sync for the signed-in user is settled — no overwrite while we compare. */
@@ -173,7 +173,7 @@ export function startBackgroundServices() {
   setInterval(() => {
     // A timer that fires a day late means the device slept: same as coming back to the tab.
     if (document.visibilityState === 'visible') checkNewSession()
-    tickRegen()
+    tickFossils()
   }, 60_000)
   window.addEventListener('pagehide', flushWrite)
   document.addEventListener('visibilitychange', () => {
@@ -182,7 +182,7 @@ export function startBackgroundServices() {
       flushWrite()
     } else {
       checkNewSession()
-      tickRegen()
+      tickFossils()
     }
   })
 }

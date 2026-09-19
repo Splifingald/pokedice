@@ -4,6 +4,9 @@ import {
   applyHp,
   applyVictory,
   applyWipe,
+  finishRound,
+  migrateRounds,
+  recordDraws,
   buyComboUpgrade,
   buyDieUpgrade,
   buyItem,
@@ -56,7 +59,7 @@ const [A1, A2] = linearAreas(data) as [Area, Area]
 const FOREST = byName('Viridian Forest')
 const SEAFOAM = byName('Seafoam Islands')
 const CAVE = byName('Cerulean Cave')
-/** Seafoam with a gauge legendary (due at the full gauge, needed to clear): the bundled one may be admin-tuned otherwise. */
+/** Seafoam with a round legendary (due once every round is done, needed to clear): the bundled one may be admin-tuned otherwise. */
 const SEAFOAM_GAUGE: Area = { ...SEAFOAM, legendaryBoss: [{ dex: 144, level: 50 }] }
 const FARAWAY = byName('Faraway Island')
 
@@ -123,11 +126,11 @@ describe('encounters', () => {
     expect(t!.team.length).toBeGreaterThanOrEqual(1)
   })
 
-  it('offers the gauge legendary as a challenge when the gauge is full, once', () => {
+  it('offers the round legendary as a challenge once every round is done, once', () => {
     const SEAFOAM = SEAFOAM_GAUGE
-    const p = { ...emptyProgress(), xp: SEAFOAM.xpToUnlockNext! }
+    const p = { ...emptyProgress(), roundsDone: SEAFOAM.roundsToClear! }
     expect(dueBoss(SEAFOAM, p, 10)).toMatchObject({ dex: 144, level: 50 })
-    expect(dueBoss(SEAFOAM, { ...p, xp: p.xp - 1 }, 10)).toBeNull()
+    expect(dueBoss(SEAFOAM, { ...p, roundsDone: p.roundsDone - 1 }, 10)).toBeNull()
     expect(dueBoss(SEAFOAM, { ...p, bossesDefeated: [144] }, 10)).toBeNull()
     expect(dueBoss(A1, p, 10)).toBeNull()
     expect(rollEncounter(ctx(fresh(), { area: SEAFOAM, progress: p }), createRng(1)).kind).not.toBe('boss') // offered, not dealt
@@ -200,12 +203,11 @@ describe('victory rewards', () => {
   const win = (s: SaveData, over: Partial<Parameters<typeof applyVictory>[1]>, d = data) =>
     applyVictory(s, { areaId: A1.id, kind: 'wild', enemyDex: 16, enemyLevel: 4, fighterUid: s.team[0]!, ...over }, d, createRng(1), 5, newId)
 
-  it('wild win: XP to the fighter and the gauge, no Pokédollars, no automatic catch', () => {
+  it('wild win: XP to the fighter, no Pokédollars, no automatic catch', () => {
     const s = fresh()
     const fighter = s.team[0]!
     const r = win(s, {})
     expect(r.save.gold).toBe(0)
-    expect(progressOf(r.save, A1.id).xp).toBe(4)
     expect(r.save.box.find((p) => p.id === fighter)!.xp).toBe(4)
     // Catching is its own throw now (catching.ts): a K.O. alone adds nobody.
     expect(r.save.team).toHaveLength(1)
@@ -238,8 +240,8 @@ describe('victory rewards', () => {
     expect(r.events).toContainEqual({ kind: 'xp', uid: s.team[0], amount: 4 })
   })
 
-  it('filling a gauge with no gym or legendary clears the area and unlocks the next', () => {
-    const s = { ...fresh(), areaProgress: { [A1.id]: { ...emptyProgress(), xp: 48 } } }
+  it('every round done with no gym or legendary: the area clears and unlocks the next', () => {
+    const s = { ...fresh(), areaProgress: { [A1.id]: { ...emptyProgress(), roundsDone: A1.roundsToClear! } } }
     const r = win(s, { enemyLevel: 3 })
     expect(progressOf(r.save, A1.id).cleared).toBe(true)
     expect(r.events).toContainEqual({ kind: 'area_cleared', areaId: A1.id, nextAreaId: A2.id })
@@ -249,7 +251,7 @@ describe('victory rewards', () => {
   it('an area with a legendary unlocks only after it (catching it is a separate throw)', () => {
     const SEAFOAM = SEAFOAM_GAUGE
     const d = { ...data, areas: data.areas.map((a) => (a.id === SEAFOAM.id ? SEAFOAM : a)) }
-    const s = { ...fresh(), areaProgress: { [SEAFOAM.id]: { ...emptyProgress(), xp: SEAFOAM.xpToUnlockNext! } } }
+    const s = { ...fresh(), areaProgress: { [SEAFOAM.id]: { ...emptyProgress(), roundsDone: SEAFOAM.roundsToClear! } } }
     const r = win(s, { areaId: SEAFOAM.id, enemyDex: 86, enemyLevel: 30 }, d)
     expect(progressOf(r.save, SEAFOAM.id).cleared).toBe(false)
     const b = win(r.save, { areaId: SEAFOAM.id, kind: 'boss', enemyDex: 144, enemyLevel: 50 }, d)
@@ -278,36 +280,71 @@ describe('victory rewards', () => {
 })
 
 describe('wipe, center, team, shop, upgrades', () => {
-  it('a wipe loses the round: the gauge goes back to the round start, the deck is dropped, a full gauge stays', () => {
+  it('a wipe loses the round in progress: the deck is dropped, rounds already done stay done', () => {
     const s0 = fresh()
     const ko = (s: SaveData): SaveData => ({ ...s, gold: 99, box: s.box.map((p) => ({ ...p, currentHp: 0 })) })
-    const at = (s: SaveData, xp: number, extra: Partial<SaveData['areaProgress'][string]> = {}): SaveData => ({
+    const at = (s: SaveData, extra: Partial<SaveData['areaProgress'][string]> = {}): SaveData => ({
       ...s,
-      areaProgress: { ...s.areaProgress, [A1.id]: { ...progressOf(s, A1.id), xp, ...extra } },
+      areaProgress: { ...s.areaProgress, [A1.id]: { ...progressOf(s, A1.id), ...extra } },
     })
-    // No round yet → back to 0.
-    const w = applyWipe(ko(at(s0, 14)), A1.id, data)
-    expect(progressOf(w, A1.id).xp).toBe(0)
+    const w = applyWipe(ko(at(s0)), A1.id, data)
+    expect(progressOf(w, A1.id).roundsDone).toBe(0)
     expect(w.gold).toBe(99)
     expect(teamOf(w)[0]!.currentHp).toBe(instanceMaxHp(teamOf(w)[0]!, data))
     expect(teamOf(w)[0]!.level).toBe(5)
-    // A round that began at 10, half played, gauge now 14 → back to 10, and the next encounter deals a new round.
-    const mid = at(s0, 14, { roundStartXp: 10, round: 2, deck: ['wild', 'wild', 'item'], drawn: ['wild', 'center'] })
+    // Round 2 half played, one round done → the deck is dropped (the next encounter deals a new round), 1 stays done.
+    const mid = at(s0, { roundsDone: 1, round: 2, deck: ['wild', 'wild', 'item'], drawn: ['wild', 'center'] })
     const lost = progressOf(applyWipe(ko(mid), A1.id, data), A1.id)
-    expect(lost).toMatchObject({ xp: 10, deck: [], drawn: [], round: 2 })
-    // A full gauge stays full.
-    const full = A1.xpToUnlockNext!
-    expect(progressOf(applyWipe(ko(at(s0, full, { roundStartXp: 10, deck: ['wild'] })), A1.id, data), A1.id).xp).toBe(full)
+    expect(lost).toMatchObject({ roundsDone: 1, deck: [], drawn: [], round: 2 })
+    // Nothing left to count: the lost round never completes.
+    expect(finishRound(applyWipe(ko(mid), A1.id, data), A1.id, data).roundDone).toBe(false)
   })
 
-  it('a full gauge offers the gym as a challenge instead of forcing it', () => {
+  it('the last card of a deck completes the round, once, and the last round clears the area', () => {
+    const s0 = fresh()
+    const need = A1.roundsToClear!
+    const at = (extra: Partial<SaveData['areaProgress'][string]>): SaveData => ({
+      ...s0,
+      areaProgress: { ...s0.areaProgress, [A1.id]: { ...progressOf(s0, A1.id), round: 1, ...extra } },
+    })
+    // Cards still in the deck: not yet.
+    expect(finishRound(at({ deck: ['wild'], drawn: ['wild'] }), A1.id, data).roundDone).toBe(false)
+    const one = finishRound(at({ deck: [], drawn: ['wild', 'item'], roundsDone: need - 1 }), A1.id, data)
+    expect(one.roundDone).toBe(true)
+    expect(progressOf(one.save, A1.id)).toMatchObject({ roundsDone: need, roundCounted: true, cleared: true })
+    expect(one.cleared).toMatchObject({ kind: 'area_cleared', areaId: A1.id })
+    // Called again (another screen closing): counted once.
+    expect(finishRound(one.save, A1.id, data).roundDone).toBe(false)
+    // A new deck resets the flag.
+    const next = recordDraws(one.save, A1.id, { deck: ['wild'], drawn: ['wild'], newRound: true })
+    expect(progressOf(next, A1.id).roundCounted).toBe(false)
+  })
+
+  it('saves from before rounds: the old exploration XP turns into rounds done', () => {
+    const s0 = fresh()
     const forest = data.areas.find((a) => a.name === 'Viridian Forest')!
-    const progress = { ...emptyProgress(), xp: forest.xpToUnlockNext! }
+    const old = {
+      ...s0,
+      areaProgress: {
+        [A1.id]: { ...emptyProgress(), xp: 999, cleared: true },
+        [forest.id]: { ...emptyProgress(), xp: 1 },
+      },
+    } as SaveData
+    const m = migrateRounds(old, data)
+    expect(progressOf(m, A1.id)).toMatchObject({ roundsDone: A1.roundsToClear, cleared: true })
+    expect(progressOf(m, A1.id).xp).toBeUndefined()
+    expect(progressOf(m, forest.id).roundsDone).toBe(0)
+    expect(migrateRounds(m, data)).toBe(m)
+  })
+
+  it('with every round done, the gym is a challenge instead of being forced', () => {
+    const forest = data.areas.find((a) => a.name === 'Viridian Forest')!
+    const progress = { ...emptyProgress(), roundsDone: forest.roundsToClear! }
     const ctx = { area: forest, progress, data, teamAvgLevel: 5, teamHurt: false, isFirstInArea: false, pokedex: [] as number[] }
     const rng = createRng(9)
     for (let i = 0; i < 30; i++) expect(rollEncounter(ctx, rng).kind).not.toBe('gym')
     expect(challengeEncounter(forest, progress, data, 5)).toMatchObject({ kind: 'gym', name: 'Brock' })
-    expect(challengeEncounter(forest, { ...progress, xp: 0 }, data, 5)).toBeNull()
+    expect(challengeEncounter(forest, { ...progress, roundsDone: 0 }, data, 5)).toBeNull()
   })
 
   it('the Center heals team and box, fainted included', () => {

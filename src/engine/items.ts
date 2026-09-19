@@ -21,9 +21,12 @@ export function itemUses(item: ItemDef): ItemUse[] {
     case 'rerolls':
       return ['battle']
     case 'level':
+    case 'stone':
       return ['field']
     case 'ball':
       return ['catch']
+    case 'fossil':
+      return []
   }
 }
 
@@ -54,6 +57,10 @@ export function effectText(item: ItemDef): string {
       return `+${e.amount} reroll${e.amount === 1 ? '' : 's'}`
     case 'level':
       return `+${e.amount} level${e.amount === 1 ? '' : 's'}`
+    case 'stone':
+      return 'Makes certain Pokémon evolve'
+    case 'fossil':
+      return `Revives in ${e.hours} h`
     case 'ball':
       return e.bonus >= 9 ? 'Never misses' : `+${e.bonus} to the catch die`
   }
@@ -62,12 +69,19 @@ export function effectText(item: ItemDef): string {
 /** What the Mart pays for one: half its price, rounded down. Only items the Mart sells can be sold back (0 = can't). */
 export const sellPrice = (item: ItemDef | undefined): number => (item?.inShop ? Math.floor(item.price / 2) : 0)
 
-/** The Poké Mart's stock, by badge tier then price; `unlocked` once the player holds enough badges. */
-export function shopStock(data: GameData, badges: number): { item: ItemDef; unlocked: boolean }[] {
+/**
+ * The Poké Mart's stock, by badge tier then price; `unlocked` once the player holds enough badges and has reached the
+ * item's area, if it names one (`areaOpen` answers that; without it, area-bound items stay locked).
+ */
+export function shopStock(
+  data: GameData,
+  badges: number,
+  areaOpen: (areaId: string) => boolean = () => false,
+): { item: ItemDef; unlocked: boolean }[] {
   return Object.values(data.items)
     .filter((i) => i.inShop)
     .sort((a, b) => a.shopBadges - b.shopBadges || a.price - b.price || a.name.localeCompare(b.name))
-    .map((item) => ({ item, unlocked: badges >= item.shopBadges }))
+    .map((item) => ({ item, unlocked: badges >= item.shopBadges && (!item.shopArea || areaOpen(item.shopArea)) }))
 }
 
 /** Loot still to be found in this area: a unique find already made is gone for good. */

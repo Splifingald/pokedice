@@ -7,7 +7,7 @@ import { enterArea } from '@/store/run'
 import { cx } from '@/theme/util'
 import { PixelIcon } from './icons'
 import { PixelButton } from './PixelButton'
-import { PokemonSheet } from './PokemonSheet'
+import { evolutionHow, PokemonSheet } from './PokemonSheet'
 import { SpriteImg } from './SpriteImg'
 import { AreaBanner } from '@/components/AreaBanner'
 
@@ -136,7 +136,7 @@ function MissingEntry({ dex, onOpenDex, onTravel }: { dex: number; onOpenDex?: (
             >
               <SpriteImg dex={species.dex} size={48} silhouette={!known} />
               <span className="text-xl leading-tight">
-                Evolves from {known ? species.name : '???'} at Lv.{evo!.level}
+                Evolves from {known ? species.name : '???'} {evo!.item ? `with a ${evolutionHow(evo!, data)}` : `at ${evolutionHow(evo!, data)}`}
               </span>
             </button>
           )

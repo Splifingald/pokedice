@@ -14,6 +14,7 @@ import {
   challengeEncounter,
   centerIsNext,
   encounterEnergyCost,
+  finishRound,
   energyNow,
   spendEnergy,
   type EncounterContext,
@@ -90,6 +91,33 @@ export function leaveArea() {
   useGame.setState((s) => ({ run: { ...initialRun(), forceNext: s.run.forceNext }, battle: null }))
 }
 
+/**
+ * An encounter is over and the player is back on the area screen: if it was the round's last card, the round counts
+ * (once) and the area may clear. Safe to call more than once.
+ */
+function settleRound() {
+  const { save, data, run } = useGame.getState()
+  if (!save || !run.areaId) return
+  const r = finishRound(save, run.areaId, data)
+  if (!r.roundDone) return
+  commitSave(r.save)
+  const area = data.areas.find((a) => a.id === run.areaId)
+  if (r.cleared) {
+    const next = r.cleared.nextAreaId ? data.areas.find((a) => a.id === r.cleared!.nextAreaId)?.name : null
+    pushToast(`${area?.name ?? 'Area'} cleared!${next ? ` ${next} is open.` : ''}`, 'good', 4500)
+    return
+  }
+  const need = area?.roundsToClear
+  const done = progressOf(r.save, run.areaId).roundsDone ?? 0
+  pushToast(need != null && done <= need ? `Round ${done}/${need} complete!` : `Round ${done} complete!`, 'good')
+}
+
+/** Back to the area screen after an encounter: the round may be complete. */
+function backToArea() {
+  setRun({ phase: 'idle', encounter: null })
+  settleRound()
+}
+
 /** Everything `nextEncounter` needs about the save and the area, as things stand. */
 function encounterContext(save: SaveData, areaId: string, forceKind: ForceKind | null): EncounterContext | null {
   const { data, run } = useGame.getState()
@@ -124,6 +152,7 @@ export function outOfEnergy(): boolean {
 
 /** Roll the next encounter and show its preview card. */
 export function rollNext() {
+  settleRound()
   const { save, data, run } = useGame.getState()
   if (!save || !run.areaId) return
   if (outOfEnergy()) {
@@ -173,7 +202,8 @@ export function skipEncounter() {
   const { run } = useGame.getState()
   const trainer = run.encounter?.kind === 'trainer'
   // skipsUsed survives until a fight is engaged, so skipPolicy 'once' still allows one skip in a row.
-  setRun({ phase: 'idle', encounter: null, skipsUsed: run.skipsUsed + 1 })
+  setRun({ skipsUsed: run.skipsUsed + 1 })
+  backToArea()
   pushToast(trainer ? 'You slipped past the trainer.' : 'Got away safely!')
 }
 
@@ -230,11 +260,13 @@ export function engage(leadUid?: string) {
     }
     case 'item': {
       if (!run.areaId) return
-      commitSave(pickUpItem(save, run.areaId, enc, data))
-      const what =
-        enc.itemKey === MONEY ? `₽${enc.qty.toLocaleString('en')}` : `${data.items[enc.itemKey]?.name ?? enc.itemKey}${enc.qty > 1 ? ` ×${enc.qty}` : ''}`
-      pushToast(`You found ${what}!`, 'good')
-      setRun({ phase: 'idle', encounter: null })
+      commitSave(pickUpItem(save, run.areaId, enc, data, Date.now(), newId))
+      const item = data.items[enc.itemKey]
+      const what = enc.itemKey === MONEY ? `₽${enc.qty.toLocaleString('en')}` : `${item?.name ?? enc.itemKey}${enc.qty > 1 ? ` ×${enc.qty}` : ''}`
+      if (item?.effect.kind === 'fossil')
+        pushToast(`You found a ${item.name}! ${data.species[item.effect.dex]?.name ?? 'Its Pokémon'} will be revived in ${item.effect.hours} h — it's waiting in your Box.`, 'good', 6000)
+      else pushToast(`You found ${what}!`, 'good')
+      backToArea()
       return
     }
   }
@@ -359,7 +391,8 @@ export function continueAfterVictory(leadUid?: string) {
   }
   if (run.trainer && run.trainer.gold > 0) pushToast(`Trainer defeated! +₽${run.trainer.gold}`, 'good')
   useGame.setState({ battle: null })
-  setRun({ phase: 'idle', encounter: null, events: [], trainer: null })
+  setRun({ events: [], trainer: null })
+  backToArea()
 }
 
 /** "Add to team?" — swap the new catch in for `replaceId`, or send it to the Box (null). */
@@ -376,11 +409,11 @@ export function afterWipe() {
 
 export function afterStalemate() {
   useGame.setState({ battle: null })
-  setRun({ phase: 'idle', encounter: null })
+  backToArea()
 }
 
 export function finishCenter() {
-  setRun({ phase: 'idle', encounter: null })
+  backToArea()
 }
 
 /** One pull of the Game Corner slot machine; null (and a toast) when the player can't pay for it. */
@@ -397,7 +430,7 @@ export function spinSlotMachine(): SpinResult | null {
 }
 
 export function leaveCasino() {
-  setRun({ phase: 'idle', encounter: null })
+  backToArea()
 }
 
 export function setForceNext(kind: ForceKind | null) {

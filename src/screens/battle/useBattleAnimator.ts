@@ -201,6 +201,11 @@ function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): Step {
           tray: null,
         }),
       }
+    case 'transform':
+      return {
+        delay: 900,
+        apply: (f) => ({ ...f, message: `${nameOf(e.uid)} copied ${nameOf(e.fromUid)}'s dice!` }),
+      }
     case 'item': {
       const who = nameOf(e.targetUid)
       const item = ctx.itemName(e.key)

@@ -50,7 +50,13 @@ export interface Battler {
   shiny: boolean
   /** A trainer Pokémon's potion, used once (null when used or never given). */
   item?: string | null
+  /** Ditto: its dice are a copy of the opponent's, taken again whenever the opponent changes. `ownDice` = its own set. */
+  copiesFoe?: boolean
+  ownDice?: DieType[]
 }
+
+/** Species that fight with a copy of their opponent's dice (Ditto), rolled on their own and with their own upgrades. */
+export const COPIES_FOE_DICE: ReadonlySet<number> = new Set([132])
 
 export interface BattleState {
   kind: BattleKind
@@ -107,6 +113,8 @@ export type LogEntry =
   | { kind: 'stunned'; side: Side; uid: string; status: 'frozen' | 'paralyze'; pending?: boolean }
   | { kind: 'faint'; side: Side; uid: string; dex: number }
   | { kind: 'switch'; uid: string; free: boolean }
+  /** Ditto took a copy of its opponent's dice. */
+  | { kind: 'transform'; side: Side; uid: string; fromUid: string; dice: DieType[] }
   /** `side` 'enemy': a trainer's potion (absent = the player's item). */
   | { kind: 'item'; key: string; targetUid: string; amount: number; hpAfter: number; cured?: CurableStatus[]; rerolls?: number; side?: Side; revived?: boolean }
   | { kind: 'heal'; side: Side; uid: string; amount: number; hpAfter: number }
@@ -142,6 +150,24 @@ export function makeBattler(seed: BattlerSeed, data: GameData): Battler {
     spriteUrl: species.spriteUrl,
     shiny: !!seed.shiny,
     ...(seed.item && { item: seed.item }),
+    ...(COPIES_FOE_DICE.has(seed.dex) && { copiesFoe: true, ownDice: stats.dice }),
+  }
+}
+
+/**
+ * Ditto copies whoever it faces: the dice of the opponent now in front of it (a copying opponent lends its own set).
+ * Called when a battle starts and whenever either side's active Pokémon changes.
+ */
+function copyFoeDice(s: BattleState, log: LogEntry[]) {
+  const mine = activeBattler(s)
+  for (const [side, b, foe] of [
+    ['player', mine, s.enemy],
+    ['enemy', s.enemy, mine],
+  ] as const) {
+    if (!b.copiesFoe || b.hp <= 0) continue
+    const dice = [...(foe.copiesFoe ? (foe.ownDice ?? foe.dice) : foe.dice)]
+    b.dice = dice
+    log.push({ kind: 'transform', side, uid: b.uid, fromUid: foe.uid, dice })
   }
 }
 
@@ -188,6 +214,7 @@ export function createBattle(opts: CreateBattleOptions, data: GameData): { state
     itemUsedThisTurn: false,
   }
   const log: LogEntry[] = [{ kind: 'start', first }]
+  copyFoeDice(state, log)
   beginTurn(state, first, data, log)
   return { state, log }
 }
@@ -443,12 +470,14 @@ export function reduce(
         s.activeIndex = idx
         if (!s.participants.includes(target.uid)) s.participants.push(target.uid)
         log.push({ kind: 'switch', uid: target.uid, free: true })
+        copyFoeDice(s, log)
         beginTurn(s, s.nextActor, data, log)
       } else if ((s.phase === 'player_roll' || s.phase === 'player_reroll') && data.config.allowVoluntarySwitch) {
         // Before or after the roll (the UI rolls for you): the dice are dropped and the turn ends.
         s.activeIndex = idx
         if (!s.participants.includes(target.uid)) s.participants.push(target.uid)
         log.push({ kind: 'switch', uid: target.uid, free: false })
+        copyFoeDice(s, log)
         afterAction(s, 'player', data, log)
       } else return NOOP(state)
       break

@@ -20,7 +20,6 @@ import {
 } from '@/engine'
 import { AreaTypes } from '@/components/AreaTypes'
 import { BadgeIcon } from '@/components/BadgeIcon'
-import { Gauge } from '@/components/Gauge'
 import { HpBar } from '@/components/HpBar'
 import { PixelIcon, type IconName } from '@/components/icons'
 import { ItemPanel } from '@/components/ItemPanel'
@@ -38,6 +37,7 @@ import { CasinoView } from './area/CasinoView'
 import { CenterView } from './area/CenterView'
 import { EncounterPreview } from './area/EncounterPreview'
 import { AreaBanner } from '@/components/AreaBanner'
+import { RoundsCounter } from '@/components/RoundsCounter'
 
 const CARD_ICON: Record<DeckCard, IconName> = {
   wild: 'ball',
@@ -56,18 +56,11 @@ const CARD_NAME: Record<DeckCard, string> = {
   legend: 'a legendary',
 }
 
-/** The round's start on the area gauge — only while a round is under way and the gauge isn't full. */
-function roundMark(area: Area, progress: AreaProgress): number | null {
-  const full = area.xpToUnlockNext != null && progress.xp >= area.xpToUnlockNext
-  if (full || !progress.deck?.length) return null
-  return progress.roundStartXp ?? 0
-}
-
-/** Both gauges share a label column so their bars line up. */
+/** Both rows share a label column so their bars line up. */
 const GAUGE_LABEL = 'w-[6.5rem] shrink-0'
 
 /**
- * The round gauge, laid out like the area gauge above it: ROUND n · one tile per card of the area's deck · n/total.
+ * The round gauge, laid out like the rounds counter above it: ROUND n · one tile per card of the area's deck · n/total.
  * Met cards show their icon, the next one has a gold edge, the rest stay dark (nothing ahead is given away). A lost
  * round (wipe) or a finished one leaves the next round waiting, empty. Hidden with game_config.showRoundGauge, or when
  * encounters aren't dealt from a deck.
@@ -146,7 +139,7 @@ function RoundGauge({ area, progress }: { area: Area; progress: AreaProgress }) 
             )
           })}
         </ol>
-        <span className="flex min-w-[6ch] justify-end" title={finale ? `When exploration is complete: ${finale}` : undefined}>
+        <span className="flex min-w-[6ch] justify-end" title={finale ? `When every round is done: ${finale}` : undefined}>
           {gym?.badge ? (
             <BadgeIcon badge={gym.badge} earned size={18} />
           ) : gym ? (
@@ -160,7 +153,7 @@ function RoundGauge({ area, progress }: { area: Area; progress: AreaProgress }) 
   )
 }
 
-/** Encounter types, a slim banner, then the name with its levels, the gauge and the round gauge. */
+/** Encounter types, a slim banner, then the name with its levels, the rounds counter and the round gauge. */
 function AreaHeader({ area, progress, teamAvg }: { area: Area; progress: AreaProgress; teamAvg: number }) {
   const data = useGame((s) => s.data)
   const span = area.scalesToTeam ? scaledLevelSpan(area, teamAvg, data) : { min: area.minLevel, max: area.maxLevel }
@@ -188,15 +181,7 @@ function AreaHeader({ area, progress, teamAvg }: { area: Area; progress: AreaPro
           </span>
         </div>
         {notes.length > 0 && <div className="text-lg leading-tight text-muted">{notes.join(' · ')}</div>}
-        <Gauge
-          value={progress.xp}
-          max={area.xpToUnlockNext}
-          className="w-full"
-          labelClassName={GAUGE_LABEL}
-          // The red mark: where a wipe would bring the gauge back (the start of this round). A full gauge stays full.
-          mark={roundMark(area, progress)}
-          markText={`a wipe brings it back to ${progress.roundStartXp ?? 0}, where this round began`}
-        />
+        <RoundsCounter area={area} progress={progress} labelClassName={GAUGE_LABEL} />
         <RoundGauge area={area} progress={progress} />
       </div>
     </section>
@@ -322,7 +307,7 @@ export function AreaScreen() {
   const side = playerSideOf(save)
   const gym = dueGym(area, progress, data, side)
   const boss = dueBoss(area, progress, teamAvg)
-  // The gym battle waiting at the end of the gauge (before it's full).
+  // The gym battle waiting once every round is done (before they are).
   const nextGymId = !gym ? gymsFor(area, data, side).find((id) => !progress.gymsDefeated.includes(id) && data.trainers[id]) : undefined
   const nextGym = nextGymId ? asSeenBy(data.trainers[nextGymId]!, side) : undefined
   const between = run.phase === 'idle' || run.phase === 'preview'
@@ -335,7 +320,7 @@ export function AreaScreen() {
         <div className="pixel-panel flex flex-col items-center gap-3 p-5 text-center">
           <p className="text-2xl">
             {gym
-              ? `Exploration complete — ${trainerTitle(gym)} is ready when you are.`
+              ? `Every round done — ${trainerTitle(gym)} is ready when you are.`
               : boss
                 ? 'The ground trembles. Something powerful is waiting…'
                 : run.firstInArea
@@ -343,7 +328,7 @@ export function AreaScreen() {
                   : 'Where to next?'}
           </p>
           <div className="flex flex-wrap justify-center gap-2">
-            {/* A full gauge never forces the fight: challenge now, or keep exploring (the gauge stays full). */}
+            {/* Finishing the rounds never forces the fight: challenge now, or keep exploring (the rounds stay done). */}
             {(gym || boss) && (
               <PixelButton variant="primary" size="lg" onClick={challenge} disabled={run.phase !== 'idle'}>
                 <PixelIcon name="sword" size={22} />
@@ -366,10 +351,10 @@ export function AreaScreen() {
             BACK TO MAP
           </PixelButton>
           {progress.cleared && <AutoModeToggle />}
-          {(gym || boss) && <p className="text-lg leading-tight text-muted">Or keep exploring first — your exploration stays complete.</p>}
+          {(gym || boss) && <p className="text-lg leading-tight text-muted">Or keep exploring first — your rounds stay done.</p>}
           {nextGym && (
             <p className="text-lg leading-tight">
-              {trainerTitle(nextGym)} waits at the end of the exploration ({progress.xp}/{area.xpToUnlockNext ?? '∞'})
+              {trainerTitle(nextGym)} waits after round {area.roundsToClear ?? '∞'} ({progress.roundsDone ?? 0}/{area.roundsToClear ?? '∞'} done)
             </p>
           )}
         </div>

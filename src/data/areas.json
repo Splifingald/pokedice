@@ -4,7 +4,7 @@
   "orderIndex": 1,
   "name": "Route 1",
   "bannerUrl": "/banners/plains.png",
-  "xpToUnlockNext": 20,
+  "roundsToClear": 2,
   "minLevel": 2,
   "maxLevel": 5,
   "encounterWeights": {
@@ -95,7 +95,7 @@
   "orderIndex": 2,
   "name": "Routes 22 & 2",
   "bannerUrl": "/banners/flowers.png",
-  "xpToUnlockNext": 30,
+  "roundsToClear": 2,
   "minLevel": 3,
   "maxLevel": 7,
   "encounterWeights": {
@@ -228,7 +228,7 @@
   "orderIndex": 3,
   "name": "Viridian Forest",
   "bannerUrl": "/banners/forest.png",
-  "xpToUnlockNext": 40,
+  "roundsToClear": 1,
   "minLevel": 4,
   "maxLevel": 8,
   "encounterWeights": {
@@ -395,7 +395,7 @@
   "orderIndex": 5,
   "name": "Mt. Moon",
   "bannerUrl": "/banners/cave.png",
-  "xpToUnlockNext": 70,
+  "roundsToClear": 1,
   "minLevel": 7,
   "maxLevel": 12,
   "encounterWeights": {
@@ -445,14 +445,14 @@
    {
     "id": "129460d0-0592-5717-84cc-0c6d6efbc7cd",
     "dex": 138,
-    "weight": 2,
+    "weight": 0,
     "minLevel": 10,
     "maxLevel": 12
    },
    {
     "id": "b1652ddb-300a-5577-be36-3b3b82549307",
     "dex": 140,
-    "weight": 2,
+    "weight": 0,
     "minLevel": 10,
     "maxLevel": 12
    }
@@ -592,6 +592,30 @@
     "unique": true,
     "minQty": 150,
     "maxQty": 150
+   },
+   {
+    "id": "b9453531-c6b1-488c-9326-fef5461017b2",
+    "itemKey": "moon-stone",
+    "weight": 1,
+    "unique": true,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "8a5e5c57-27b2-4ed8-be47-afccd9f61822",
+    "itemKey": "helix-fossil",
+    "weight": 1,
+    "unique": true,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "44a72ece-e77a-430f-92ec-7e3c6e7a29e4",
+    "itemKey": "dome-fossil",
+    "weight": 1,
+    "unique": true,
+    "minQty": 1,
+    "maxQty": 1
    }
   ]
  },
@@ -600,14 +624,14 @@
   "orderIndex": 4,
   "name": "Route 3",
   "bannerUrl": "/banners/mountains.png",
-  "xpToUnlockNext": 50,
+  "roundsToClear": 1,
   "minLevel": 5,
   "maxLevel": 10,
   "encounterWeights": {
    "item": 1,
-   "wild": 5,
+   "wild": 3,
    "center": 1,
-   "trainer": 3
+   "trainer": 2
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,
@@ -760,7 +784,7 @@
   "orderIndex": 6,
   "name": "Route 4 & Nugget Bridge",
   "bannerUrl": "/banners/bridge.png",
-  "xpToUnlockNext": 90,
+  "roundsToClear": 1,
   "minLevel": 9,
   "maxLevel": 15,
   "encounterWeights": {
@@ -1022,14 +1046,14 @@
   "orderIndex": 7,
   "name": "Routes 5 & 6",
   "bannerUrl": "/banners/plains.png#flip",
-  "xpToUnlockNext": 100,
+  "roundsToClear": 1,
   "minLevel": 12,
   "maxLevel": 18,
   "encounterWeights": {
    "item": 1,
-   "wild": 3,
+   "wild": 2,
    "center": 1,
-   "trainer": 3
+   "trainer": 2
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,
@@ -1261,7 +1285,7 @@
   "orderIndex": 104,
   "name": "Rocket Hideout",
   "bannerUrl": "/banners/city.png#flip",
-  "xpToUnlockNext": null,
+  "roundsToClear": null,
   "minLevel": 19,
   "maxLevel": 24,
   "encounterWeights": {
@@ -1416,6 +1440,14 @@
     "unique": false,
     "minQty": 50,
     "maxQty": 100
+   },
+   {
+    "id": "8485ba5d-6d04-42dd-bd27-7ae9ee786299",
+    "itemKey": "moon-stone",
+    "weight": 1,
+    "unique": true,
+    "minQty": 1,
+    "maxQty": 1
    }
   ]
  },
@@ -1424,7 +1456,7 @@
   "orderIndex": 10,
   "name": "Rock Tunnel",
   "bannerUrl": "/banners/cave_dark.png",
-  "xpToUnlockNext": 100,
+  "roundsToClear": 1,
   "minLevel": 15,
   "maxLevel": 23,
   "encounterWeights": {
@@ -1649,14 +1681,14 @@
   "orderIndex": 14,
   "name": "Cycling Road",
   "bannerUrl": "/banners/bridge.png#flip",
-  "xpToUnlockNext": 200,
+  "roundsToClear": 1,
   "minLevel": 24,
   "maxLevel": 32,
   "encounterWeights": {
    "item": 1,
    "wild": 2,
    "center": 1,
-   "trainer": 3
+   "trainer": 2
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,
@@ -1861,14 +1893,14 @@
   "orderIndex": 8,
   "name": "Diglett's Cave & Route 11",
   "bannerUrl": "/banners/cave.png#flip",
-  "xpToUnlockNext": 100,
+  "roundsToClear": 1,
   "minLevel": 13,
   "maxLevel": 22,
   "encounterWeights": {
    "item": 1,
-   "wild": 5,
+   "wild": 3,
    "center": 1,
-   "trainer": 3
+   "trainer": 2
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,
@@ -2050,14 +2082,14 @@
   "orderIndex": 9,
   "name": "Routes 9 & 10",
   "bannerUrl": "/banners/mountains.png#flip",
-  "xpToUnlockNext": 125,
+  "roundsToClear": 1,
   "minLevel": 14,
   "maxLevel": 22,
   "encounterWeights": {
    "item": 1,
-   "wild": 5,
+   "wild": 3,
    "center": 1,
-   "trainer": 3
+   "trainer": 2
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,
@@ -2267,14 +2299,14 @@
   "orderIndex": 11,
   "name": "Routes 7 & 8",
   "bannerUrl": "/banners/sunset.png",
-  "xpToUnlockNext": 150,
+  "roundsToClear": 1,
   "minLevel": 17,
   "maxLevel": 26,
   "encounterWeights": {
    "item": 1,
-   "wild": 4,
+   "wild": 2,
    "center": 1,
-   "trainer": 4
+   "trainer": 2
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,
@@ -2543,14 +2575,14 @@
   "orderIndex": 12,
   "name": "Pokémon Tower",
   "bannerUrl": "/banners/haunted.png",
-  "xpToUnlockNext": 150,
+  "roundsToClear": 1,
   "minLevel": 15,
   "maxLevel": 25,
   "encounterWeights": {
    "item": 1,
-   "wild": 5,
+   "wild": 3,
    "center": 1,
-   "trainer": 3
+   "trainer": 2
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,
@@ -2730,14 +2762,14 @@
   "orderIndex": 13,
   "name": "Routes 12–15",
   "bannerUrl": "/banners/flowers.png#flip",
-  "xpToUnlockNext": 200,
+  "roundsToClear": 1,
   "minLevel": 22,
   "maxLevel": 30,
   "encounterWeights": {
    "item": 1,
-   "wild": 5,
+   "wild": 3,
    "center": 1,
-   "trainer": 3
+   "trainer": 2
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,
@@ -3005,14 +3037,14 @@
   "orderIndex": 22,
   "name": "Indigo Plateau",
   "bannerUrl": "/banners/sky.png",
-  "xpToUnlockNext": 250,
+  "roundsToClear": 1,
   "minLevel": 45,
   "maxLevel": 55,
   "encounterWeights": {
    "item": 1,
    "wild": 0,
    "center": 1,
-   "trainer": 8
+   "trainer": 2
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,
@@ -3153,7 +3185,7 @@
   "orderIndex": 15,
   "name": "Safari Zone",
   "bannerUrl": "/banners/swamp.png",
-  "xpToUnlockNext": 200,
+  "roundsToClear": 2,
   "minLevel": 24,
   "maxLevel": 33,
   "encounterWeights": {
@@ -3469,6 +3501,14 @@
     "unique": true,
     "minQty": 3,
     "maxQty": 3
+   },
+   {
+    "id": "c42c0cb5-afec-4768-b710-5d26739d8d5b",
+    "itemKey": "leaf-stone",
+    "weight": 1,
+    "unique": true,
+    "minQty": 1,
+    "maxQty": 1
    }
   ]
  },
@@ -3477,14 +3517,14 @@
   "orderIndex": 16,
   "name": "Silph Co.",
   "bannerUrl": "/banners/city.png",
-  "xpToUnlockNext": 200,
+  "roundsToClear": 1,
   "minLevel": 29,
   "maxLevel": 41,
   "encounterWeights": {
    "item": 1,
    "wild": 0,
    "center": 1,
-   "trainer": 8
+   "trainer": 2
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,
@@ -3669,6 +3709,14 @@
     "unique": true,
     "minQty": 1,
     "maxQty": 1
+   },
+   {
+    "id": "fbfff291-388c-4ab9-ba66-4f28ae5f9458",
+    "itemKey": "old-amber",
+    "weight": 1,
+    "unique": true,
+    "minQty": 1,
+    "maxQty": 1
    }
   ]
  },
@@ -3677,14 +3725,14 @@
   "orderIndex": 17,
   "name": "Sea Routes 19 & 20",
   "bannerUrl": "/banners/ocean.png",
-  "xpToUnlockNext": 250,
+  "roundsToClear": 1,
   "minLevel": 28,
   "maxLevel": 38,
   "encounterWeights": {
    "item": 1,
-   "wild": 4,
+   "wild": 3,
    "center": 1,
-   "trainer": 4
+   "trainer": 3
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,
@@ -3929,7 +3977,7 @@
   "orderIndex": 18,
   "name": "Seafoam Islands",
   "bannerUrl": "/banners/snow_mountains.png",
-  "xpToUnlockNext": 300,
+  "roundsToClear": 1,
   "minLevel": 30,
   "maxLevel": 40,
   "encounterWeights": {
@@ -4150,6 +4198,14 @@
     "unique": true,
     "minQty": 2,
     "maxQty": 2
+   },
+   {
+    "id": "f4f3420c-8da9-42aa-a7a0-800f02d30c7a",
+    "itemKey": "water-stone",
+    "weight": 1,
+    "unique": true,
+    "minQty": 1,
+    "maxQty": 1
    }
   ]
  },
@@ -4158,7 +4214,7 @@
   "orderIndex": 102,
   "name": "Cerulean Cave",
   "bannerUrl": "/banners/crystal_cave.png",
-  "xpToUnlockNext": null,
+  "roundsToClear": null,
   "minLevel": 50,
   "maxLevel": 70,
   "encounterWeights": {
@@ -5102,7 +5158,7 @@
    {
     "id": "b282738c-f95b-591d-8c02-cbd77aef50c5",
     "dex": 138,
-    "weight": 3,
+    "weight": 0,
     "minLevel": 50,
     "maxLevel": 70
    },
@@ -5116,7 +5172,7 @@
    {
     "id": "d53505a7-7210-5cd6-a6eb-103037201f95",
     "dex": 140,
-    "weight": 3,
+    "weight": 0,
     "minLevel": 50,
     "maxLevel": 70
    },
@@ -5130,7 +5186,7 @@
    {
     "id": "063aced0-7c04-57f1-997d-39817477c593",
     "dex": 142,
-    "weight": 3,
+    "weight": 0,
     "minLevel": 50,
     "maxLevel": 70
    },
@@ -5301,12 +5357,12 @@
   "orderIndex": 101,
   "name": "Power Plant",
   "bannerUrl": "/banners/factory.png",
-  "xpToUnlockNext": 200,
+  "roundsToClear": 1,
   "minLevel": 25,
   "maxLevel": 36,
   "encounterWeights": {
    "item": 1,
-   "wild": 8,
+   "wild": 7,
    "center": 1,
    "trainer": 0
   },
@@ -5492,6 +5548,14 @@
     "unique": false,
     "minQty": 1,
     "maxQty": 1
+   },
+   {
+    "id": "29dd30e1-df85-4efd-9f4b-abe4af63216d",
+    "itemKey": "thunder-stone",
+    "weight": 1,
+    "unique": true,
+    "minQty": 1,
+    "maxQty": 1
    }
   ]
  },
@@ -5500,14 +5564,14 @@
   "orderIndex": 19,
   "name": "Pokémon Mansion",
   "bannerUrl": "/banners/volcano.png",
-  "xpToUnlockNext": 300,
+  "roundsToClear": 1,
   "minLevel": 32,
   "maxLevel": 42,
   "encounterWeights": {
    "item": 1,
-   "wild": 4,
+   "wild": 3,
    "center": 1,
-   "trainer": 4
+   "trainer": 3
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,
@@ -5601,7 +5665,7 @@
    {
     "id": "f7588d25-ac8a-5e92-8408-3351a760b5a3",
     "dex": 142,
-    "weight": 2,
+    "weight": 0,
     "minLevel": 30,
     "maxLevel": 30
    }
@@ -5749,6 +5813,14 @@
     "unique": true,
     "minQty": 1,
     "maxQty": 1
+   },
+   {
+    "id": "ed31bb1e-0a07-4225-af59-2903d433962e",
+    "itemKey": "fire-stone",
+    "weight": 1,
+    "unique": true,
+    "minQty": 1,
+    "maxQty": 1
    }
   ]
  },
@@ -5757,14 +5829,14 @@
   "orderIndex": 20,
   "name": "Route 21",
   "bannerUrl": "/banners/beach.png",
-  "xpToUnlockNext": 300,
+  "roundsToClear": 1,
   "minLevel": 30,
   "maxLevel": 40,
   "encounterWeights": {
    "item": 1,
-   "wild": 4,
+   "wild": 3,
    "center": 1,
-   "trainer": 4
+   "trainer": 3
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,
@@ -5990,7 +6062,7 @@
   "orderIndex": 103,
   "name": "Faraway Island",
   "bannerUrl": "/banners/beach.png#flip",
-  "xpToUnlockNext": null,
+  "roundsToClear": null,
   "minLevel": 60,
   "maxLevel": 70,
   "encounterWeights": {
@@ -6028,14 +6100,14 @@
   "orderIndex": 21,
   "name": "Victory Road",
   "bannerUrl": "/banners/cave_dark.png#flip",
-  "xpToUnlockNext": 400,
+  "roundsToClear": 1,
   "minLevel": 38,
   "maxLevel": 47,
   "encounterWeights": {
-   "item": 2,
-   "wild": 6,
+   "item": 1,
+   "wild": 3,
    "center": 0,
-   "trainer": 4
+   "trainer": 2
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": [
@@ -6311,7 +6383,7 @@
   "orderIndex": 23,
   "name": "Victory Road II",
   "bannerUrl": "/banners/cave_dark.png",
-  "xpToUnlockNext": 1000,
+  "roundsToClear": 1,
   "minLevel": 55,
   "maxLevel": 66,
   "encounterWeights": {
@@ -6453,7 +6525,7 @@
    {
     "id": "a4dff521-2feb-51ff-b341-bbc1644e8f3c",
     "dex": 142,
-    "weight": 2,
+    "weight": 0,
     "minLevel": 62,
     "maxLevel": 66
    },
@@ -6576,7 +6648,7 @@
   "orderIndex": 24,
   "name": "Indigo Plateau II",
   "bannerUrl": "/banners/sky.png#flip",
-  "xpToUnlockNext": 500,
+  "roundsToClear": 1,
   "minLevel": 65,
   "maxLevel": 72,
   "encounterWeights": {
@@ -6584,7 +6656,7 @@
    "wild": 0,
    "casino": 0,
    "center": 1,
-   "trainer": 6
+   "trainer": 2
   },
   "backtrackMultiplier": 0.5,
   "legendaryBoss": null,

@@ -52,11 +52,11 @@ describe('linear chain', () => {
 })
 
 describe('gyms', () => {
-  it('once the gauge is full the gym leader is a challenge the player picks — never dealt, never skipped', () => {
+  it('once every round is done the gym leader is a challenge the player picks — never dealt, never skipped', () => {
     const s = fresh()
-    const full = FOREST.xpToUnlockNext!
-    expect(dueGym(FOREST, { ...emptyProgress(), xp: full - 1 }, data)).toBeNull()
-    const p = { ...emptyProgress(), xp: full }
+    const full = FOREST.roundsToClear!
+    expect(dueGym(FOREST, { ...emptyProgress(), roundsDone: full - 1 }, data)).toBeNull()
+    const p = { ...emptyProgress(), roundsDone: full }
     expect(dueGym(FOREST, p, data)?.name).toBe('Brock')
     const ctx = { area: FOREST, progress: p, data, teamAvgLevel: 10, teamHurt: false, isFirstInArea: false, pokedex: s.pokedex }
     expect(rollEncounter(ctx, createRng(1)).kind).not.toBe('gym')
@@ -65,9 +65,9 @@ describe('gyms', () => {
     expect(canSkip(enc, 'free', 0)).toBe(false)
   })
 
-  it('a full gauge is not enough: the area clears when the leader falls, awarding the badge and double gold', () => {
-    const brock = dueGym(FOREST, { ...emptyProgress(), xp: 200 }, data)!
-    let s = withProgress(fresh(), FOREST, { xp: 200 })
+  it('every round done is not enough: the area clears when the leader falls, awarding the badge and double gold', () => {
+    const brock = dueGym(FOREST, { ...emptyProgress(), roundsDone: 99 }, data)!
+    let s = withProgress(fresh(), FOREST, { roundsDone: 99 })
     const hit = (dex: number, level: number, last: boolean) =>
       applyVictory(
         s,
@@ -89,7 +89,7 @@ describe('gyms', () => {
   })
 
   it('the Elite Four come one after another, then the Champion', () => {
-    const full = { ...emptyProgress(), xp: 999 }
+    const full = { ...emptyProgress(), roundsDone: 99 }
     const order: string[] = []
     let p = full
     for (let i = 0; i < 5; i++) {
@@ -152,7 +152,7 @@ describe('area type profiles', () => {
   })
 
   it("names a trainer's specialty", () => {
-    const brock = dueGym(FOREST, { ...emptyProgress(), xp: 999 }, data)!
+    const brock = dueGym(FOREST, { ...emptyProgress(), roundsDone: 99 }, data)!
     expect(trainerSpecialty(brock, data)).toBe('rock')
   })
 
@@ -172,8 +172,8 @@ describe('enemy upgrade levels', () => {
   })
 
   it('a trainer or legendary override beats the area, the area beats the global setting', () => {
-    const brock = dueGym(FOREST, { ...emptyProgress(), xp: 999 }, data)!
-    const gym = challengeEncounter(FOREST, { ...emptyProgress(), xp: 999 }, data, 10)!
+    const brock = dueGym(FOREST, { ...emptyProgress(), roundsDone: 99 }, data)!
+    const gym = challengeEncounter(FOREST, { ...emptyProgress(), roundsDone: 99 }, data, 10)!
     expect(enemyUpgradeLevelFor(gym, FOREST, data)).toBe(1)
     const withTrainer = { ...data, trainers: { ...data.trainers, [brock.id]: { ...brock, upgradeLevel: 4 } } }
     expect(enemyUpgradeLevelFor(gym, FOREST, withTrainer)).toBe(4)

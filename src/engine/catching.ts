@@ -81,7 +81,7 @@ export function applyCatch(
   if (old) {
     // The stronger copy is the one just caught, colours included.
     const { shiny: _oldShiny, ...rest } = old
-    const upgraded: PokemonInstance = { ...rest, level: caught.level, xp: 0, regenCarry: 0, caughtAt: now, ...(caught.shiny && { shiny: true }) }
+    const upgraded: PokemonInstance = { ...rest, level: caught.level, xp: 0, caughtAt: now, ...(caught.shiny && { shiny: true }) }
     upgraded.currentHp = instanceMaxHp(upgraded, data)
     next = { ...save, box: save.box.map((p) => (p.id === old.id ? upgraded : p)) }
     caughtId = old.id

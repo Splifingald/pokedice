@@ -214,5 +214,115 @@
   },
   "inShop": true,
   "shopBadges": 8
+ },
+ {
+  "key": "fire-stone",
+  "name": "Fire Stone",
+  "description": "Makes certain Pokémon evolve: Vulpix, Growlithe, Eevee (Flareon). Use it from the Team screen.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/fire-stone.png",
+  "price": 200,
+  "effect": {
+   "kind": "stone"
+  },
+  "inShop": true,
+  "shopBadges": 0,
+  "shopArea": "8cf87ee3-f7a5-568e-bc22-54f643572535"
+ },
+ {
+  "key": "water-stone",
+  "name": "Water Stone",
+  "description": "Makes certain Pokémon evolve: Poliwhirl, Shellder, Staryu, Eevee (Vaporeon). Use it from the Team screen.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/water-stone.png",
+  "price": 200,
+  "effect": {
+   "kind": "stone"
+  },
+  "inShop": true,
+  "shopBadges": 0,
+  "shopArea": "8cf87ee3-f7a5-568e-bc22-54f643572535"
+ },
+ {
+  "key": "thunder-stone",
+  "name": "Thunder Stone",
+  "description": "Makes certain Pokémon evolve: Pikachu, Eevee (Jolteon). Use it from the Team screen.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/thunder-stone.png",
+  "price": 200,
+  "effect": {
+   "kind": "stone"
+  },
+  "inShop": true,
+  "shopBadges": 0,
+  "shopArea": "8cf87ee3-f7a5-568e-bc22-54f643572535"
+ },
+ {
+  "key": "leaf-stone",
+  "name": "Leaf Stone",
+  "description": "Makes certain Pokémon evolve: Gloom, Weepinbell, Exeggcute. Use it from the Team screen.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/leaf-stone.png",
+  "price": 200,
+  "effect": {
+   "kind": "stone"
+  },
+  "inShop": true,
+  "shopBadges": 0,
+  "shopArea": "8cf87ee3-f7a5-568e-bc22-54f643572535"
+ },
+ {
+  "key": "moon-stone",
+  "name": "Moon Stone",
+  "description": "Makes certain Pokémon evolve: Nidorina, Nidorino, Clefairy, Jigglypuff. Use it from the Team screen.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/moon-stone.png",
+  "price": 200,
+  "effect": {
+   "kind": "stone"
+  },
+  "inShop": true,
+  "shopBadges": 0,
+  "shopArea": "8cf87ee3-f7a5-568e-bc22-54f643572535"
+ },
+ {
+  "key": "helix-fossil",
+  "name": "Helix Fossil",
+  "description": "A fossil of an ancient Pokémon. Omanyte waits in your Box and is revived after 24 hours, at Lv.20.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/helix-fossil.png",
+  "price": 0,
+  "effect": {
+   "kind": "fossil",
+   "dex": 138,
+   "level": 20,
+   "hours": 24
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "dome-fossil",
+  "name": "Dome Fossil",
+  "description": "A fossil of an ancient Pokémon. Kabuto waits in your Box and is revived after 24 hours, at Lv.20.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/dome-fossil.png",
+  "price": 0,
+  "effect": {
+   "kind": "fossil",
+   "dex": 140,
+   "level": 20,
+   "hours": 24
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "old-amber",
+  "name": "Old Amber",
+  "description": "A fossil of an ancient Pokémon. Aerodactyl waits in your Box and is revived after 24 hours, at Lv.20.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/old-amber.png",
+  "price": 0,
+  "effect": {
+   "kind": "fossil",
+   "dex": 142,
+   "level": 20,
+   "hours": 24
+  },
+  "inShop": false,
+  "shopBadges": 0
  }
 ]

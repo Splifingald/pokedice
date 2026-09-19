@@ -90,8 +90,6 @@ describe('Multi EXP', () => {
       { kind: 'xp', uid: 'bench-a', amount: 3, shared: true },
       { kind: 'xp', uid: 'bench-b', amount: 3, shared: true },
     ])
-    // the gauge only counts the K.O. once
-    expect(r.save.areaProgress[area.id]!.xp).toBe(10)
   })
 
   it('skips fainted bench members', () => {

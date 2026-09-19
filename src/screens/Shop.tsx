@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { badgeCase, effectText, sellPrice, shopStock, type ItemDef } from '@/engine'
+import { badgeCase, effectText, isAreaUnlocked, sellPrice, shopStock, type ItemDef } from '@/engine'
 import { sfx } from '@/audio/sfx'
 import { PixelButton } from '@/components/PixelButton'
 import { money } from '@/lib/format'
@@ -11,6 +11,7 @@ const GROUPS: { title: string; kinds: ItemDef['effect']['kind'][] }[] = [
   { title: 'Healing', kinds: ['heal', 'revive'] },
   { title: 'Status cures', kinds: ['cure'] },
   { title: 'Battle', kinds: ['rerolls', 'level'] },
+  { title: 'Evolution stones', kinds: ['stone'] },
   { title: 'Poké Balls', kinds: ['ball'] },
 ]
 const QTY = [1, 5, 10] as const
@@ -214,13 +215,19 @@ function SellTab() {
 
 function BuyTab({ badges }: { badges: number }) {
   const data = useGame((s) => s.data)
-  const stock = shopStock(data, badges)
+  const save = useGame((s) => s.save)
+  const stock = shopStock(data, badges, (id) => !!save && isAreaUnlocked(save, id, data))
+  // What a locked item waits for: badges first, then reaching its area.
+  const needs = (it: ItemDef) =>
+    badges < it.shopBadges
+      ? `${it.shopBadges} badge${it.shopBadges === 1 ? '' : 's'}`
+      : `Reach ${data.areas.find((a) => a.id === it.shopArea)?.name ?? 'a new area'}`
   const open = stock.filter((s) => s.unlocked).map((s) => s.item)
   const later = stock.filter((s) => !s.unlocked)
   return (
     <>
       <p className="copy text-muted">
-        New stock arrives with your badges ({badges} so far). Tap an item for details and to buy 5 or 10 at once; the
+        New stock arrives with your badges ({badges} so far) and as you travel. Tap an item for details and to buy 5 or 10 at once; the
         price button asks once to confirm.
       </p>
       {GROUPS.map((g) => {
@@ -239,15 +246,13 @@ function BuyTab({ badges }: { badges: number }) {
       })}
       {later.length > 0 && (
         <section className="flex flex-col gap-2">
-          <h2 className="text-3xl">Coming with more badges</h2>
+          <h2 className="text-3xl">Coming later</h2>
           <ul className="flex flex-col gap-1.5">
             {later.map(({ item: it }) => (
               <li key={it.key} className="hatched flex items-center gap-3 border-[3px] px-2 py-1">
                 {it.spriteUrl && <img src={it.spriteUrl} alt="" width={32} height={32} className="pixelated" style={{ imageRendering: 'pixelated' }} />}
                 <span className="flex-1 text-xl">{it.name}</span>
-                <span className="text-lg">
-                  {it.shopBadges} badge{it.shopBadges === 1 ? '' : 's'}
-                </span>
+                <span className="text-lg">{needs(it)}</span>
               </li>
             ))}
           </ul>

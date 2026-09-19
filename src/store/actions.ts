@@ -47,21 +47,23 @@ export function upgradeDie(type: PokeType): boolean {
   return ok
 }
 
-/** A bag item used on a Pokémon outside battle (potions, Rare Candy). Level-ups and evolutions are announced. */
-export function applyBagItem(key: string, instId: string): boolean {
+/**
+ * A bag item used on a Pokémon outside battle (potions, revives, stones, Rare Candy). A level-up is announced; an
+ * evolution is returned for the caller to play (the evolution scene). Null when it had no effect.
+ */
+export function applyBagItem(key: string, instId: string): { evolved: { uid: string; fromDex: number; toDex: number } | null } | null {
   const { data, save } = useGame.getState()
-  if (!save) return false
+  if (!save) return null
   const res = applyFieldItem(save, key, instId, data, createRng(randomSeed()))
   if (!res) {
     pushToast("It won't have any effect.", 'bad')
-    return false
+    return null
   }
   mutateSave(() => res.save)
   const evo = res.events.find((e) => e.kind === 'evolve')
   const up = [...res.events].reverse().find((e) => e.kind === 'level_up')
-  if (evo && evo.kind === 'evolve') pushToast(`${data.species[evo.fromDex]?.name} evolved into ${data.species[evo.toDex]?.name}!`, 'good')
-  else if (up && up.kind === 'level_up') pushToast(`${data.species[up.dex]?.name} grew to Lv.${up.level}!`, 'good')
-  return true
+  if (up && up.kind === 'level_up') pushToast(`${data.species[up.dex]?.name} grew to Lv.${up.level}!`, 'good')
+  return { evolved: evo && evo.kind === 'evolve' ? { uid: evo.uid, fromDex: evo.fromDex, toDex: evo.toDex } : null }
 }
 
 export function reorderTeam(ids: string[]) {
@@ -82,6 +84,7 @@ const DEPOSIT_REFUSED: Record<DepositError, string> = {
   full: 'The Day Care is full',
   last: 'Keep at least one Pokémon in your team',
   missing: 'That Pokémon is not with you',
+  fossil: 'It is still being revived',
 }
 
 /** The first visit ends Prof. Oak's leaderboard tutorial. */

@@ -123,14 +123,14 @@ describe('encounter deck', () => {
 describe('rounds', () => {
   it('a new round opens with a Pokémon Center when one would help, and records the cards met', () => {
     const base = newSave(4, data, 0, newId)
-    let save: SaveData = { ...base, areaProgress: { ...base.areaProgress, [ROUTE1.id]: { ...progressOf(base, ROUTE1.id), xp: 17 } } }
+    let save: SaveData = { ...base, areaProgress: { ...base.areaProgress, [ROUTE1.id]: { ...progressOf(base, ROUTE1.id), roundsDone: 1 } } }
     const rng = createRng(21)
     const first = nextEncounter(ctx(save, ROUTE1, { centerUseful: true }), rng)
     expect(first.encounter).toEqual({ kind: 'center', forced: true, reason: 'round' })
     expect(first.newRound).toBe(true)
     save = recordDraws(save, ROUTE1.id, first)
     const size = deckSize(ROUTE1)
-    expect(progressOf(save, ROUTE1.id)).toMatchObject({ round: 1, drawn: [], roundStartXp: 17 }) // where a wipe returns
+    expect(progressOf(save, ROUTE1.id)).toMatchObject({ round: 1, drawn: [], roundCounted: false, roundsDone: 1 })
     expect(progressOf(save, ROUTE1.id).deck).toHaveLength(size) // the Center was outside the deck
     for (let i = 0; i < size; i++) save = recordDraws(save, ROUTE1.id, nextEncounter(ctx(save, ROUTE1, { centerUseful: true }), rng))
     expect(progressOf(save, ROUTE1.id).drawn).toHaveLength(size)

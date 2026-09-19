@@ -200,10 +200,13 @@ export function HelpContent() {
 
       <Section id="explore" title="Exploring">
         <ul className="ml-5 list-disc">
-          <li>Each area has an <b>exploration</b> bar. Every Pokémon you knock out fills it by the foe's level.</li>
           <li>
-            When it's full, <b>CHALLENGE</b> the area's Gym Leader (or legendary) whenever you're ready — or keep exploring
-            first: a complete exploration stays complete. Win to open the next area.
+            Encounters are dealt from each area's <b>shuffled deck</b>. Going through the whole deck is a <b>round</b>, and
+            each area asks for a number of rounds (<b>ROUNDS 1/2</b> on the area screen).
+          </li>
+          <li>
+            Once every round is done, <b>CHALLENGE</b> the area's Gym Leader (or legendary) whenever you're ready — or keep
+            exploring first: finished rounds stay finished. Win to open the next area.
           </li>
           <li>
             You see every encounter before it starts: <b>FIGHT</b> it, <b>FLEE</b> a wild Pokémon, or <b>AVOID</b> an
@@ -224,9 +227,8 @@ export function HelpContent() {
           <li>A <b>Pokémon Center</b> heals everyone and lets you change your team.</li>
           {cfg.encounterMode === 'deck' && (
             <li>
-              Encounters are dealt from each area's <b>shuffled deck</b> (about ten cards). Going through it is a{' '}
-              <b>round</b>; every new round opens with a Pokémon Center whenever you have someone to heal or swap. The
-              round bar under the exploration bar shows how far into the round you are.
+              Every new round opens with a Pokémon Center whenever you have someone to heal or swap. The round bar under
+              the rounds counter shows how far into the round you are.
             </li>
           )}
           <li>
@@ -327,11 +329,11 @@ export function HelpContent() {
             Spend them on <b>Upgrades</b> (every Pokémon benefits) and at the <b>Poké Mart</b>, whose stock grows with your
             badges.
           </li>
-          <li>HP carries over between fights. Hurt Pokémon recover {cfg.regenPercentPerHour} % of their HP per hour, or fully at a Center.</li>
+          <li>HP carries over between fights and doesn't come back by itself: heal at a Pokémon Center or with items.</li>
           <li>
-            If your whole team faints, the <b>round is lost</b>: exploration goes back to where it stood when the round
-            began (the red mark on it; a complete exploration stays complete) and a new, freshly shuffled round starts. Your team is
-            healed, and you keep your Pokédollars, items and your Pokémon's levels.
+            If your whole team faints, the <b>round is lost</b>: it won't count, and a new, freshly shuffled round starts
+            (rounds you had already finished stay finished). Your team is healed, and you keep your Pokédollars, items and
+            your Pokémon's levels.
           </li>
         </ul>
       </Section>

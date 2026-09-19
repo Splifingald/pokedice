@@ -142,16 +142,12 @@
   "catchValue": 3,
   "evolutions": [
    {
-    "level": 30,
-    "toDex": 34
+    "toDex": 34,
+    "level": null,
+    "item": "moon-stone"
    }
   ],
-  "milestones": [
-   {
-    "level": 30,
-    "effect": "EVOLVE"
-   }
-  ],
+  "milestones": [],
   "notes": "BST 365 · → #34: moon-stone → assigned Lv.28"
  },
  {
@@ -172,18 +168,7 @@
   "rerolls": 2,
   "catchValue": 6,
   "evolutions": [],
-  "milestones": [
-   {
-    "level": 20,
-    "effect": "ADD_DIE",
-    "dieType": "normal"
-   },
-   {
-    "level": 20,
-    "amount": 1,
-    "effect": "ADD_REROLL"
-   }
-  ],
+  "milestones": [],
   "notes": "BST 288"
  },
  {
@@ -536,8 +521,9 @@
   "catchValue": 2,
   "evolutions": [
    {
-    "level": 28,
-    "toDex": 121
+    "toDex": 121,
+    "level": null,
+    "item": "water-stone"
    }
   ],
   "milestones": [
@@ -550,10 +536,6 @@
     "level": 5,
     "amount": 1,
     "effect": "ADD_REROLL"
-   },
-   {
-    "level": 28,
-    "effect": "EVOLVE"
    },
    {
     "level": 20,
@@ -857,15 +839,12 @@
   "catchValue": 3,
   "evolutions": [
    {
-    "level": 28,
-    "toDex": 36
+    "toDex": 36,
+    "level": null,
+    "item": "moon-stone"
    }
   ],
   "milestones": [
-   {
-    "level": 28,
-    "effect": "EVOLVE"
-   },
    {
     "level": 20,
     "amount": 1,
@@ -944,15 +923,12 @@
   "catchValue": 2,
   "evolutions": [
    {
-    "level": 28,
-    "toDex": 38
+    "toDex": 38,
+    "level": null,
+    "item": "fire-stone"
    }
   ],
   "milestones": [
-   {
-    "level": 28,
-    "effect": "EVOLVE"
-   },
    {
     "level": 18,
     "effect": "REPLACE_DIE",
@@ -1031,15 +1007,12 @@
   "catchValue": 3,
   "evolutions": [
    {
-    "level": 28,
-    "toDex": 40
+    "toDex": 40,
+    "level": null,
+    "item": "moon-stone"
    }
   ],
   "milestones": [
-   {
-    "level": 28,
-    "effect": "EVOLVE"
-   },
    {
     "level": 18,
     "effect": "REPLACE_DIE",
@@ -1248,15 +1221,12 @@
   "catchValue": 3,
   "evolutions": [
    {
-    "level": 32,
-    "toDex": 45
+    "toDex": 45,
+    "level": null,
+    "item": "leaf-stone"
    }
   ],
   "milestones": [
-   {
-    "level": 32,
-    "effect": "EVOLVE"
-   },
    {
     "level": 24,
     "effect": "REPLACE_DIE",
@@ -1504,16 +1474,12 @@
   "catchValue": 3,
   "evolutions": [
    {
-    "level": 30,
-    "toDex": 31
+    "toDex": 31,
+    "level": null,
+    "item": "moon-stone"
    }
   ],
-  "milestones": [
-   {
-    "level": 30,
-    "effect": "EVOLVE"
-   }
-  ],
+  "milestones": [],
   "notes": "BST 365 · → #31: moon-stone → assigned Lv.28"
  },
  {
@@ -2061,16 +2027,12 @@
   "catchValue": 2,
   "evolutions": [
    {
-    "level": 30,
-    "toDex": 59
+    "toDex": 59,
+    "level": null,
+    "item": "fire-stone"
    }
   ],
-  "milestones": [
-   {
-    "level": 30,
-    "effect": "EVOLVE"
-   }
-  ],
+  "milestones": [],
   "notes": "BST 350 · → #59: fire-stone → assigned Lv.28"
  },
  {
@@ -2641,16 +2603,19 @@
   "catchValue": 5,
   "evolutions": [
    {
-    "level": 28,
-    "toDex": 134
+    "toDex": 134,
+    "level": null,
+    "item": "water-stone"
    },
    {
-    "level": 28,
-    "toDex": 135
+    "toDex": 135,
+    "level": null,
+    "item": "thunder-stone"
    },
    {
-    "level": 28,
-    "toDex": 136
+    "toDex": 136,
+    "level": null,
+    "item": "fire-stone"
    }
   ],
   "milestones": [
@@ -2663,10 +2628,6 @@
     "level": 5,
     "amount": 1,
     "effect": "ADD_REROLL"
-   },
-   {
-    "level": 28,
-    "effect": "EVOLVE"
    },
    {
     "level": 16,
@@ -3073,15 +3034,12 @@
   "catchValue": 3,
   "evolutions": [
    {
-    "level": 32,
-    "toDex": 71
+    "toDex": 71,
+    "level": null,
+    "item": "leaf-stone"
    }
   ],
   "milestones": [
-   {
-    "level": 32,
-    "effect": "EVOLVE"
-   },
    {
     "level": 26,
     "effect": "REPLACE_DIE",
@@ -3803,16 +3761,12 @@
   "catchValue": 2,
   "evolutions": [
    {
-    "level": 28,
-    "toDex": 91
+    "toDex": 91,
+    "level": null,
+    "item": "water-stone"
    }
   ],
-  "milestones": [
-   {
-    "level": 28,
-    "effect": "EVOLVE"
-   }
-  ],
+  "milestones": [],
   "notes": "BST 305 · → #91: water-stone → assigned Lv.28"
  },
  {
@@ -4201,8 +4155,9 @@
   "catchValue": 4,
   "evolutions": [
    {
-    "level": 28,
-    "toDex": 103
+    "toDex": 103,
+    "level": null,
+    "item": "leaf-stone"
    }
   ],
   "milestones": [
@@ -4210,10 +4165,6 @@
     "level": 7,
     "effect": "ADD_DIE",
     "dieType": "base"
-   },
-   {
-    "level": 28,
-    "effect": "EVOLVE"
    },
    {
     "level": 18,
@@ -4879,15 +4830,12 @@
   "catchValue": 2,
   "evolutions": [
    {
-    "level": 28,
-    "toDex": 26
+    "toDex": 26,
+    "level": null,
+    "item": "thunder-stone"
    }
   ],
   "milestones": [
-   {
-    "level": 28,
-    "effect": "EVOLVE"
-   },
    {
     "level": 18,
     "amount": 1,
@@ -5532,16 +5480,12 @@
   "catchValue": 3,
   "evolutions": [
    {
-    "level": 28,
-    "toDex": 62
+    "toDex": 62,
+    "level": null,
+    "item": "water-stone"
    }
   ],
-  "milestones": [
-   {
-    "level": 28,
-    "effect": "EVOLVE"
-   }
-  ],
+  "milestones": [],
   "notes": "BST 385 · → #62: water-stone → assigned Lv.28"
  },
  {

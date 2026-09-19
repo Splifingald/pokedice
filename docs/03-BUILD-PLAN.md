@@ -52,7 +52,7 @@ pokedice/
 │   ├── data/               # generated JSON bundle (committed)
 │   ├── config/             # runtime config loader: bundle → supabase hot-swap
 │   ├── store/              # zustand slices: save, run, battle, ui
-│   ├── save/               # localStorage io, zod schema, migrations, cloud sync, hp regen
+│   ├── save/               # localStorage io, zod schema, migrations, cloud sync
 │   ├── lib/supabase.ts
 │   ├── components/         # Panel, PixelButton, Die, HpBar, TypeBadge, SpriteImg, Toast…
 │   ├── screens/            # Title, Map, Area, Battle, Center, Shop, Upgrades, Box, Pokedex, Settings

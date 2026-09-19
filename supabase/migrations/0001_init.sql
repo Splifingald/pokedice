@@ -46,7 +46,8 @@ create table if not exists areas (
   order_index int not null constraint areas_order_index_key unique deferrable initially deferred,
   name text not null,
   banner_url text,
-  xp_to_unlock_next int,
+  xp_to_unlock_next int,                       -- unused since v1.10 (rounds_to_clear replaced the exploration gauge)
+  rounds_to_clear int,                         -- rounds (full encounter decks) to clear the area; null = never (secret areas)
   min_level int not null,
   max_level int not null,
   encounter_weights jsonb not null,
@@ -130,9 +131,10 @@ create table if not exists items (
   description text,
   sprite_url text,
   price int not null,
-  effect jsonb not null,                        -- {kind:'heal'|'revive'|'cure'|'rerolls'|'level'|'ball', …}
+  effect jsonb not null,                        -- {kind:'heal'|'revive'|'cure'|'rerolls'|'level'|'stone'|'fossil'|'ball', …}
   in_shop boolean not null default true,
-  shop_badges int not null default 0            -- sold once the player holds this many badges
+  shop_badges int not null default 0,           -- sold once the player holds this many badges
+  shop_area uuid                                -- …and once this area is unlocked (null = no area needed)
 );
 
 create table if not exists game_config (

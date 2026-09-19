@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { effectiveStats, getSpecies, type DieType, type GameData, type Milestone, type PokemonInstance, type Species } from '@/engine'
+import { COPIES_FOE_DICE, effectiveStats, getSpecies, type DieType, type GameData, type Milestone, type PokemonInstance, type Species } from '@/engine'
 import { cap, dexNo } from '@/lib/format'
 import { useGame } from '@/store/game'
 import { cx, typeColor } from '@/theme/util'
@@ -21,6 +21,12 @@ function StatTile({ stat, value }: { stat: StatKind; value: ReactNode }) {
       <div className="ml-auto font-mono text-xl leading-none tabular-nums">{value}</div>
     </div>
   )
+}
+
+/** "Lv.28", or the stone that does it ("Thunder Stone"). */
+export function evolutionHow(e: { level: number | null; item?: string | null }, data: GameData): string {
+  if (e.item) return data.items[e.item]?.name ?? e.item
+  return `Lv.${e.level ?? '?'}`
 }
 
 function milestoneLabel(m: Milestone, species: Species, data: GameData): string {
@@ -170,6 +176,12 @@ export function PokemonSheet({
 
       <section>
         <h3 className="mb-1 text-xl">Dice ({stats.dice.length})</h3>
+        {COPIES_FOE_DICE.has(species.dex) && (
+          <p className="copy mb-1.5 text-base">
+            <b>Transform:</b> in battle it copies its opponent's dice (again whenever the opponent changes), rolls them
+            itself and uses your upgrades. It never gains dice of its own.
+          </p>
+        )}
         <DiceSet dice={stats.dice} size={30} />
         <div className="mt-2 flex flex-col gap-1.5">
           {uniqueTypes.map((t) => (
@@ -192,11 +204,12 @@ export function PokemonSheet({
           <div className="flex flex-wrap gap-2">
             {species.evolutions.map((e) => {
               const name = data.species[e.toDex]?.name ?? `#${e.toDex}`
+              const how = evolutionHow(e, data)
               const content = (
                 <>
                   <SpriteImg dex={e.toDex} size={96} />
                   <span className="text-xl leading-none">{name}</span>
-                  <span className="text-base text-muted">Lv.{e.level}</span>
+                  <span className="text-base text-muted">{how}</span>
                 </>
               )
               return onOpenDex ? (
@@ -205,7 +218,7 @@ export function PokemonSheet({
                   type="button"
                   onClick={() => onOpenDex(e.toDex)}
                   className="pixel-panel flex flex-col items-center px-3 pb-1.5 pt-1 hover:bg-white"
-                  aria-label={`${name} (Lv.${e.level}) — open its Pokédex entry`}
+                  aria-label={`${name} (${how}) — open its Pokédex entry`}
                 >
                   {content}
                 </button>
@@ -216,7 +229,7 @@ export function PokemonSheet({
               )
             })}
           </div>
-          {species.evolutions.length > 1 && <p className="mt-1 text-base text-muted">One is chosen at random.</p>}
+          {species.evolutions.filter((e) => e.level != null).length > 1 && <p className="mt-1 text-base text-muted">One is chosen at random.</p>}
         </section>
       )}
       {children}

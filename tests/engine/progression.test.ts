@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest'
 import {
-  applyRegen,
   averageLevel,
   createInstance,
   createRng,
@@ -111,7 +110,7 @@ describe('levelling & evolution', () => {
   it('levels up, raises current HP by the max-HP gain, and emits milestone cards', () => {
     // Any species with a dice/reroll milestone before it evolves (milestones are tuned in admin).
     const sp = data.speciesList.find((s) =>
-      s.milestones.some((m) => m.effect !== 'EVOLVE' && m.level > 1 && s.evolutions.every((e) => e.level > m.level)),
+      s.milestones.some((m) => m.effect !== 'EVOLVE' && m.level > 1 && s.evolutions.every((e) => (e.level ?? 999) > m.level)),
     )!
     const lv = sp.milestones.find((m) => m.effect !== 'EVOLVE' && m.level > 1)!.level
     const c = base(sp.dex, lv - 1)
@@ -140,9 +139,12 @@ describe('levelling & evolution', () => {
   })
 
   it('branching evolution picks uniformly under a fixed seed', () => {
+    // A branching level evolution (Eevee's own come from stones since v1.10).
+    const eeveeByLevel = { ...data.species[133]!, evolutions: [134, 135, 136].map((toDex) => ({ toDex, level: 28 })) }
+    const d = { ...data, species: { ...data.species, 133: eeveeByLevel } }
     const eevee = base(133, 27)
     const need = xpToNext(27, data.config)
-    const once = (seed: number) => gainXp(eevee, need, data, createRng(seed)).inst.dex
+    const once = (seed: number) => gainXp(eevee, need, d, createRng(seed)).inst.dex
     expect(once(11)).toBe(once(11))
     const counts: Record<number, number> = {}
     for (let seed = 0; seed < 900; seed++) counts[once(seed)] = (counts[once(seed)] ?? 0) + 1
@@ -164,36 +166,7 @@ describe('levelling & evolution', () => {
   })
 })
 
-describe('passive regen', () => {
-  it('heals 5 %/h of max HP, revives fainted Pokémon, and carries fractions', () => {
-    const snorlax = createInstance(143, 50, data, 's', 0)
-    const max = instanceMaxHp(snorlax, data)
-    const hurt = { ...snorlax, currentHp: 0 }
-    const two = applyRegen([hurt], 0, 2 * 3.6e6, data)
-    expect(two.instances[0]!.currentHp).toBe(Math.floor(2 * 0.05 * max))
-    expect(two.lastTick).toBe(2 * 3.6e6)
-
-    // many tiny ticks add up to the same as one long one
-    const tiny = createInstance(10, 3, data, 't', 0)
-    let list = [{ ...tiny, currentHp: 1 }]
-    let tick = 0
-    for (let i = 1; i <= 60; i++) {
-      const r = applyRegen(list, tick, i * 60_000 * 10, data)
-      list = r.instances
-      tick = r.lastTick
-    }
-    const oneShot = applyRegen([{ ...tiny, currentHp: 1 }], 0, 600 * 60_000, data).instances[0]!
-    expect(list[0]!.currentHp).toBe(oneShot.currentHp)
-  })
-
-  it('caps at max HP and ignores a clock that went backwards', () => {
-    const p = createInstance(16, 5, data, 'p', 0)
-    expect(applyRegen([{ ...p, currentHp: 1 }], 0, 100 * 3.6e6, data).instances[0]!.currentHp).toBe(
-      instanceMaxHp(p, data),
-    )
-    expect(applyRegen([p], 10, 5, data).lastTick).toBe(10)
-  })
-
+describe('averageLevel', () => {
   it('averages levels', () => {
     expect(averageLevel([])).toBe(1)
     expect(averageLevel([10, 20])).toBe(15)

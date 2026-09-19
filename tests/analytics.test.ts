@@ -56,7 +56,7 @@ describe('diffSaves', () => {
     const chain = linearAreas(data)
     const gymArea = chain.find((a) => a.gyms.some((id) => data.trainers[id]?.badge))!
     const gymId = gymArea.gyms.find((id) => data.trainers[id]?.badge)!
-    const progress = { xp: 0, cleared: true, bossDefeated: false, bossesDefeated: [], gymsDefeated: [gymId] }
+    const progress = { roundsDone: 1, cleared: true, bossDefeated: false, bossesDefeated: [], gymsDefeated: [gymId] }
     const next = { ...s, areaProgress: { ...s.areaProgress, [gymArea.id]: progress } }
     const events = diffSaves(s, next, data)
     const t = data.trainers[gymId]!

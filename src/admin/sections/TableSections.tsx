@@ -186,6 +186,8 @@ const CURABLE: CurableStatus[] = ['burn', 'poison', 'frozen', 'paralyze', 'confu
 const EFFECT_DEFAULTS: Record<ItemEffect['kind'], ItemEffect> = {
   heal: { kind: 'heal', amount: 20 },
   revive: { kind: 'revive', percent: 50 },
+  stone: { kind: 'stone' },
+  fossil: { kind: 'fossil', dex: 138, level: 20, hours: 24 },
   cure: { kind: 'cure', statuses: ['poison'] },
   rerolls: { kind: 'rerolls', amount: 1 },
   level: { kind: 'level', amount: 1 },
@@ -210,6 +212,8 @@ function EffectEditor({ value, onDone }: { value: ItemEffect | undefined; onDone
         <option value="cure">cure status (battle)</option>
         <option value="rerolls">give rerolls back (battle)</option>
         <option value="level">raise level (Team screen)</option>
+        <option value="fossil">fossil: a Pokémon that revives in the Box</option>
+        <option value="stone">evolution stone (Team screen; set the item on the Pokémon's evolution)</option>
         <option value="ball">ball: catch-die bonus</option>
       </select>
       {draft.kind === 'cure' ? (
@@ -227,6 +231,18 @@ function EffectEditor({ value, onDone }: { value: ItemEffect | undefined; onDone
         </div>
       ) : draft.kind === 'revive' ? (
         <NumInput value={draft.percent} min={1} max={100} onChange={(v) => setDraft({ kind: 'revive', percent: v ?? 50 })} />
+      ) : draft.kind === 'stone' ? null : draft.kind === 'fossil' ? (
+        <div className="flex flex-col gap-1 text-base">
+          <label className="flex items-center gap-1">
+            dex <NumInput value={draft.dex} min={1} max={151} onChange={(v) => setDraft({ ...draft, dex: v ?? 138 })} />
+          </label>
+          <label className="flex items-center gap-1">
+            Lv. <NumInput value={draft.level} min={1} max={100} onChange={(v) => setDraft({ ...draft, level: v ?? 20 })} />
+          </label>
+          <label className="flex items-center gap-1">
+            hours <NumInput value={draft.hours} min={0} onChange={(v) => setDraft({ ...draft, hours: v ?? 24 })} />
+          </label>
+        </div>
       ) : draft.kind === 'ball' ? (
         <NumInput value={draft.bonus} min={0} max={9} onChange={(v) => setDraft({ kind: 'ball', bonus: v ?? 0 })} />
       ) : (
@@ -240,6 +256,7 @@ function EffectEditor({ value, onDone }: { value: ItemEffect | undefined; onDone
 }
 
 export function ItemsSection() {
+  const data = useAdminData()
   return (
     <DataTable
       table="items"
@@ -270,6 +287,24 @@ export function ItemsSection() {
         { key: 'price', label: 'Price ₽', kind: 'number' },
         { key: 'in_shop', label: 'In shop', kind: 'bool' },
         { key: 'shop_badges', label: 'Badges needed', kind: 'number' },
+        {
+          key: 'shop_area',
+          label: 'Area needed',
+          width: 170,
+          render: (r) => (r.shop_area ? (data?.areas.find((a) => a.id === r.shop_area)?.name ?? '?') : '—'),
+          editor: (v, set) => (
+            <select className="border border-ink bg-panel text-lg" value={(v as string | null) ?? ''} onChange={(e) => set(e.target.value || null)}>
+              <option value="">— none —</option>
+              {[...(data?.areas ?? [])]
+                .sort((a, b) => a.orderIndex - b.orderIndex)
+                .map((a) => (
+                  <option key={a.id} value={a.id}>
+                    {a.name}
+                  </option>
+                ))}
+            </select>
+          ),
+        },
       ]}
     />
   )

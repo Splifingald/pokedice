@@ -55,6 +55,8 @@ export function CenterView() {
               Send to the Box
             </PixelButton>
           </div>
+        ) : inst.revivesAt != null ? (
+          <p className="copy text-muted">Still being revived from its fossil — it can join your team once it wakes up.</p>
         ) : !full ? (
           <PixelButton
             variant="primary"

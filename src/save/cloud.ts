@@ -78,7 +78,7 @@ export function decideSync(local: SaveData | null, cloud: SaveData | null): Sync
   return cloudNewer ? 'cloud' : 'local'
 }
 
-/** Same game state, ignoring bookkeeping (timestamps, settings, regen clock). */
+/** Same game state, ignoring bookkeeping (timestamps, settings; `lastRegenTick` from saves made before regen was removed). */
 export function sameSave(a: SaveData, b: SaveData): boolean {
   const strip = (s: SaveData) => JSON.stringify({ ...s, updatedAt: 0, lastRegenTick: 0, settings: null })
   return strip(a) === strip(b)

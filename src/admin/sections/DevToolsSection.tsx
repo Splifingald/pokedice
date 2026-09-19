@@ -18,11 +18,11 @@ import {
 import { Panel } from '@/components/Panel'
 import { PixelButton } from '@/components/PixelButton'
 import { parseSave } from '@/save/schema'
-import { mutateSave, pushToast, tickRegen, useGame } from '@/store/game'
+import { mutateSave, pushToast, useGame } from '@/store/game'
 import { deleteSave, newId, replaceSave, setForceNext } from '@/store/run'
 import { Field, NumInput, PokemonPicker, inputCls } from '../widgets'
 
-const emptyProgress = (): AreaProgress => ({ xp: 0, cleared: false, bossDefeated: false, bossesDefeated: [], gymsDefeated: [] })
+const emptyProgress = (): AreaProgress => ({ roundsDone: 0, cleared: false, bossDefeated: false, bossesDefeated: [], gymsDefeated: [] })
 
 export function DevToolsSection() {
   const save = useGame((s) => s.save)
@@ -54,12 +54,12 @@ export function DevToolsSection() {
         .slice(0, -1)
         .forEach((a) => {
           const p = { ...emptyProgress(), ...areaProgress[a.id] }
-          const gaugeBosses = (a.legendaryBoss ?? []).filter((b) => b.teamAvgThreshold == null).map((b) => b.dex)
+          const roundBosses = (a.legendaryBoss ?? []).filter((b) => b.teamAvgThreshold == null).map((b) => b.dex)
           areaProgress[a.id] = {
             ...p,
-            xp: Math.max(p.xp, a.xpToUnlockNext ?? p.xp),
+            roundsDone: Math.max(p.roundsDone ?? 0, a.roundsToClear ?? 0),
             cleared: true,
-            bossesDefeated: [...new Set([...p.bossesDefeated, ...gaugeBosses])],
+            bossesDefeated: [...new Set([...p.bossesDefeated, ...roundBosses])],
             bossDefeated: true,
             gymsDefeated: [...new Set([...p.gymsDefeated, ...a.gyms])],
           }
@@ -71,9 +71,9 @@ export function DevToolsSection() {
     area &&
     mutateSave((s) => {
       const p = { ...emptyProgress(), ...s.areaProgress[area.id] }
-      return { ...s, areaProgress: { ...s.areaProgress, [area.id]: { ...p, xp: area.xpToUnlockNext ?? p.xp + 100 } } }
+      return { ...s, areaProgress: { ...s.areaProgress, [area.id]: { ...p, roundsDone: Math.max(p.roundsDone ?? 0, area.roundsToClear ?? 0) } } }
     }) &&
-    pushToast(`${area.name} gauge filled`, 'good')
+    pushToast(`${area.name}: every round done`, 'good')
 
   const catchOne = () =>
     mutateSave((s) => {
@@ -96,14 +96,9 @@ export function DevToolsSection() {
       dieLevels: Object.fromEntries(POKE_TYPES.map((t) => [t, max ? maxDieLevel(t, data) : 1])) as Record<PokeType, number>,
     }))
 
-  const hurtAndRewind = () => {
-    mutateSave((s) => ({
-      ...s,
-      box: s.box.map((p) => ({ ...p, currentHp: Math.floor(instanceMaxHp(p, data) * 0.2) })),
-      lastRegenTick: Date.now() - 2 * 3.6e6,
-    }))
-    tickRegen()
-    pushToast('Team set to 20 % HP, then 2 h of regen applied (+10 %)', 'good', 4500)
+  const hurtAll = () => {
+    mutateSave((s) => ({ ...s, box: s.box.map((p) => ({ ...p, currentHp: Math.floor(instanceMaxHp(p, data) * 0.2) })) }))
+    pushToast('Every Pokémon set to 20 % HP', 'good')
   }
 
   return (
@@ -135,13 +130,13 @@ export function DevToolsSection() {
               Unlock all areas
             </PixelButton>
             <PixelButton size="sm" disabled={!area} onClick={fillGauge}>
-              Fill {area?.name ?? 'current'} gauge
+              Finish {area?.name ?? 'current'} rounds
             </PixelButton>
             <PixelButton size="sm" onClick={() => mutateSave((s) => centerHeal(s, data))}>
               Heal everything
             </PixelButton>
-            <PixelButton size="sm" onClick={hurtAndRewind}>
-              Test regen (−2 h)
+            <PixelButton size="sm" onClick={hurtAll}>
+              Hurt everyone (20 % HP)
             </PixelButton>
           </div>
           <div className="mt-2 flex items-end gap-2">

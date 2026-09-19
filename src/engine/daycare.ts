@@ -48,11 +48,13 @@ export function residentNow(res: DayCareResident, now: number, data: GameData): 
   return gainXp(res.inst, dayCareXp(res, now, data), data, createRng(0), { evolve: false }).inst
 }
 
-export type DepositError = 'full' | 'last' | 'missing'
+export type DepositError = 'full' | 'last' | 'missing' | 'fossil'
 
 /** Why this Pokémon can't be left here, or null when it can (keeps at least one Pokémon in the team). */
 export function depositError(save: SaveData, uid: string, data: GameData): DepositError | null {
-  if (!save.box.some((p) => p.id === uid)) return 'missing'
+  const inst = save.box.find((p) => p.id === uid)
+  if (!inst) return 'missing'
+  if (inst.revivesAt != null) return 'fossil'
   if (dayCareOf(save).residents.length >= data.config.dayCare.slots) return 'full'
   if (save.team.includes(uid) && save.team.length <= 1) return 'last'
   return null
@@ -84,7 +86,7 @@ export function withdrawPokemon(save: SaveData, uid: string, data: GameData, now
   const res = dc.residents.find((r) => r.inst.id === uid)
   if (!res) return null
   const grown = residentNow(res, now, data)
-  const inst = { ...grown, currentHp: instanceMaxHp(grown, data), regenCarry: 0 }
+  const inst = { ...grown, currentHp: instanceMaxHp(grown, data) }
   const joinedTeam = save.team.length < data.config.maxTeamSize
   return {
     save: {

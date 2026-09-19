@@ -1,6 +1,6 @@
 # Pokédice — Game Design Specification
 
-**Version:** 1.8 · **Author:** Grégoire · **Status:** built · v1.2 added the Grass Heal face, Multi EXP and starters in the catch-all pool; v1.3 added full Kanto, gyms, secret areas, area type insights and the in-game help; v1.4 added encounter decks, easy areas, and HP-based pacing (damage is exactly the dice); v1.5 added item finds with loot decks, the classic items, one-item-per-turn battles, dice-based catching with Poké Balls, and Pokédollars (₽); v1.6 doubled Pokémon XP (`xpMultiplier`), rolls the dice automatically at the start of each turn, allows a voluntary switch after the roll, and reworked the UI (side / bottom bar, encounter pop-up, Pokédex "where to find it"); v1.7 made Speed the base stat ÷ 10 (rounded down), set XP per K.O. back to the foe's level for the Pokémon and the exploration bar alike with every XP requirement about ÷ 4, added dice descriptions, the `noEscape` rule (on by default) and the optional `showRoundPreview`; v1.8 made dice grow with levels and evolutions (§4.2 dice schedule, 1–5 dice) and gave each attack a single type, its most effective dice type (§2.3); v1.9 added Revive / Max Revive, selling to the Mart, energy (§5.5), status dice drawn as numbers with a coloured outline, and shiny trainer Pokémon
+**Version:** 1.10 · **Author:** Grégoire · **Status:** built · v1.2 added the Grass Heal face, Multi EXP and starters in the catch-all pool; v1.3 added full Kanto, gyms, secret areas, area type insights and the in-game help; v1.4 added encounter decks, easy areas, and HP-based pacing (damage is exactly the dice); v1.5 added item finds with loot decks, the classic items, one-item-per-turn battles, dice-based catching with Poké Balls, and Pokédollars (₽); v1.6 doubled Pokémon XP (`xpMultiplier`), rolls the dice automatically at the start of each turn, allows a voluntary switch after the roll, and reworked the UI (side / bottom bar, encounter pop-up, Pokédex "where to find it"); v1.7 made Speed the base stat ÷ 10 (rounded down), set XP per K.O. back to the foe's level for the Pokémon and the exploration bar alike with every XP requirement about ÷ 4, added dice descriptions, the `noEscape` rule (on by default) and the optional `showRoundPreview`; v1.8 made dice grow with levels and evolutions (§4.2 dice schedule, 1–5 dice) and gave each attack a single type, its most effective dice type (§2.3); v1.9 added Revive / Max Revive, selling to the Mart, energy (§5.5), status dice drawn as numbers with a coloured outline, and shiny trainer Pokémon, and removed passive HP regen; v1.10 replaced the exploration gauge with rounds (§1.1), gave Ditto its Transform (§2.5), added evolution stones and fossils (§5.3, §4.6) and a phone-first victory recap (§10.3)
 **Nature:** personal, non-commercial fan project. No monetisation; Nintendo assets are referenced as public sprite URLs, never redistributed.
 
 This document is the single source of truth for *rules*. `02-DATA-MODEL.md` covers storage and seeding, `03-BUILD-PLAN.md` covers implementation.
@@ -16,10 +16,10 @@ Map       →  pick an unlocked Area
                   ├─ Wild Pokémon    → battle → catch throw (d6 + ball ≥ catch value)
                   ├─ Trainer         → 1–3 battles in a row → Pokédollars
                   ├─ Pokémon Center  → full heal + team swap
-                  ├─ Legendary boss  → fixed, once, challenged when the gauge is full
+                  ├─ Legendary boss  → fixed, once, challenged once every round is done
                   └─ Item find       → an item or Pokédollars from the area's loot deck
-             └─ XP from every K.O. fills the Area Gauge
-             └─ Gauge full → next Area unlocked
+             └─ Going through the whole deck is a round; an area asks for 1–2 rounds
+             └─ Rounds done (+ its gym / legendary beaten) → next Area unlocked
 ₽         →  Upgrade menu (dice + combos, account-wide) and the Poké Mart (stock grows with badges)
 Goal      →  clear the areas, then 151/151 in the Pokédex
 ```
@@ -38,7 +38,8 @@ Goal      →  clear the areas, then 151/151 in the Pokédex
   - **FLEE** (a wild Pokémon) / **AVOID** (an ordinary trainer) — discard it and roll a different encounter before the battle starts. Free. Not available for the Pokémon Center, a gym battle or a legendary boss.
   - `game_config.skipPolicy` (`'free'` | `'once'` | `'none'`, default `'free'`) exists because free unlimited skipping lets a player fish for ideal matchups. If playtesting shows that's a problem, switch it to `'once'` (one skip per encounter, the second roll is committed).
 - **RUN** is additionally available *inside* a wild battle: it ends the encounter immediately with no XP, no Pokédollars, no catch, and rolls the next encounter. Damage taken is kept. Trainer battles and legendary bosses cannot be fled.
-- The chain is endless — the player continues until the gauge fills or they leave via the Map.
+- The chain is endless — the player continues until every round is done, or leaves via the Map.
+- **Rounds to clear** (v1.10, replacing the exploration gauge): each area has `roundsToClear` (DB `areas.rounds_to_clear`; null = never clears, the secret areas). A round counts once the last card of its deck is dealt with (won, healed, picked up…); a wipe drops the deck, so the round in progress never counts, and rounds already done are never lost. The area screen shows **ROUNDS n/N** above the round gauge; a toast says "Round 1/2 complete!" or "… cleared!". Balancing (v1.10): areas that used to clear in under one deck got smaller decks (same mix, fewer copies) and 1 round; Route 1, Routes 22 & 2 and Safari Zone need 2 — about 180 main-route encounters against ~163 before. Saves from before convert: a cleared area has all its rounds, otherwise the share of the old gauge filled, rounded down (`LEGACY_GAUGE`). Content without round counts (an old database) is refused as not playable. In `encounterMode: 'random'` no rounds are dealt, so areas don't clear there.
 - Map, Team, Shop, Upgrades, Pokédex and Settings are reachable **between** encounters at any time.
 
 ### 1.2 Starting the game
@@ -129,6 +130,10 @@ Evaluated over the full dice set, using fallback values for status faces.
 One combo pays per roll. Straights are scanned over the **distinct sorted face values**, so duplicates don't break them and non-1..6 values participate (`4-5-6-7` is a valid small straight; Ghost's 0 and Ground's 8 can extend runs).
 
 ---
+
+### 2.5 Ditto's Transform (v1.10)
+
+Ditto never gains dice of its own. When a battle starts, and again whenever its opponent changes (a switch, a trainer's next Pokémon), it copies the opponent's dice — a copying opponent lends its own set — and rolls them itself, with its own rerolls and its own side's upgrade levels. A foe's Ditto copies your active Pokémon. The battle log says "Ditto copied X's dice!".
 
 ## 3. Dice
 
@@ -240,7 +245,7 @@ Evolution is **automatic and cannot be cancelled**. It plays on the victory scre
 ### 4.3 XP and levelling
 
 - **XP from a K.O. = the defeated Pokémon's level × `xpMultiplier`** (default **×1**; v1.6 used ×2, v1.7 went back to ×1 and divided every XP requirement by about 4).
-- It goes to the **Pokémon that fought**. The **exploration bar** (area gauge) gets the same amount (v1.7). (`game_config.xpShareMode = 'fighter' | 'team'`, default `'fighter'`.)
+- It goes to the **Pokémon that fought**. (v1.7–1.9 also filled the exploration gauge with it; rounds replaced the gauge in v1.10.) (`game_config.xpShareMode = 'fighter' | 'team'`, default `'fighter'`.)
 - **Multi EXP** (v1.2): team members who didn't fight and aren't fainted get an additional `multiExpShare` (default **30 %**, min 1) of that XP. The gauge still counts the K.O. once. Players toggle it in Settings (**on by default**); the share is a `game_config` value (0 disables the feature).
 - **Catching**: XP is awarded for the K.O. as usual; the catch throw comes after it (§4.4). **No Pokédollars.**
 - `xpToNext(L) = ceil(A × L^B) + C`, defaults **A = 0.5, B = 1.15, C = 1** (v1.7; e.g. 5 XP at Lv.5, 46 at Lv.50), all in `game_config` with a plotted curve in admin.
@@ -263,10 +268,15 @@ Evolution is **automatic and cannot be cancelled**. It plays on the victory scre
 Articuno, Zapdos, Moltres, Mewtwo and Mew are **not** in wild pools. Each is attached to one area as a `legendaryBossDex`. When that area's gauge reaches 100 %, the next encounter is **forced** to be that legendary, at a fixed level, un-skippable and un-fleeable, with a dedicated intro (darkened screen, cry, name card).
 
 - Win → XP awarded, the area's next-area unlock is granted, then the catch throw (catch value 9: an Ultra Ball with a 6, or a Master Ball). **If it flees, it comes back:** until it's caught, every encounter deck dealt in that area holds one extra "legend" card that brings it back at the same level.
-- Lose → normal wipe handling (§6.4), and the boss can be challenged again right away (a full gauge stays full). It is never missable.
-- An area with no `legendaryBossDex` simply unlocks the next area when the gauge fills.
+- Lose → normal wipe handling (§6.4), and the boss can be challenged again right away (finished rounds stay finished). It is never missable.
+- An area with no `legendaryBossDex` simply unlocks the next area once every round is done.
 
 ---
+
+### 4.6 Fossils (v1.10)
+
+- Helix Fossil and Dome Fossil are once-only finds in Mt. Moon, Old Amber in Silph Co. (`effect: {kind: 'fossil', dex, level: 20, hours: 24}`). They're never bought or sold, and wild Omanyte, Kabuto and Aerodactyl are gone (weight 0).
+- Found, the fossil goes straight to the Box as its Pokémon at Lv.20, reviving (`PokemonInstance.revivesAt`, `fossil`): a timer gauge replaces its HP; it can't join the team, go to the Day Care or take items, and isn't in the Pokédex or counted for duplicates yet. After 24 h (checked on load and every minute) it revives at full HP and joins the Pokédex.
 
 ## 5. Economy & upgrades
 
@@ -311,6 +321,8 @@ Each item has `in_shop` and `shop_badges` (admin-editable, with its effect and p
 | Great Ball | +2 | catch | 50 | 2 |
 | Ultra Ball | +3 | catch | 100 | 4 |
 | Rare Candy | +1 level (with milestones and evolution) | Team screen | — | found only |
+| Fire / Water / Thunder / Leaf / Moon Stone (v1.10) | evolves the Pokémon that needs it | Team screen | 200 | once Routes 7 & 8 (Celadon) is reached (`shopArea`) |
+| Helix Fossil / Dome Fossil / Old Amber (v1.10) | Omanyte / Kabuto / Aerodactyl, revived in 24 h (§4.6) | — | — | found only, can't be sold |
 | Master Ball | never misses (+9) | catch | — | found only (Silph Co.) |
 
 - **In battle: one item per turn** — before or after the roll, or while stunned — and it **doesn't end the turn**. A frozen or paralyzed Pokémon gets a choice when its turn starts: cure it (Ice Heal / Paralyze Heal — the turn then goes ahead) or skip the turn.
@@ -327,6 +339,8 @@ Each item has `in_shop` and `shop_badges` (admin-editable, with its effect and p
 - At 0, NEXT ENCOUNTER is disabled with a countdown to the next point (unless the next encounter is known to be a Center: one the game sends, or a Center card on top of the deck). The top bar shows `⚡ n/max`; tapping it gives the next point and full-refill times. The rules moved from the top bar's "?" to Settings → How to play.
 - **New session** (v1.9): coming back to the tab after 24 h or more away (hidden, or the device asleep) reloads the page for the latest build and content — once the current fight is over, if one is running.
 
+- **Evolution stones** (v1.10): stone Pokémon evolve only with their stone, as in the originals — Pikachu (Thunder), Clefairy, Jigglypuff, Nidorina, Nidorino (Moon), Vulpix, Growlithe (Fire), Poliwhirl, Shellder, Staryu (Water), Gloom, Weepinbell, Exeggcute (Leaf), and Eevee, whose stone picks the form (Water → Vaporeon, Thunder → Jolteon, Fire → Flareon). An evolution entry holds `item` instead of `level`. Used from the Team screen, it plays the evolution scene. Found once each: Moon Stone in Mt. Moon and the Rocket Hideout, Fire Stone in the Pokémon Mansion, Thunder Stone in the Power Plant, Water Stone in Seafoam Islands, Leaf Stone in the Safari Zone. An item's `shopArea` (DB `items.shop_area`) keeps it out of the Mart until that area is unlocked.
+
 ### 5.4 Item finds
 
 - `item` is a fourth encounter kind — default **1 card per 10-card encounter deck**. An item find draws from the area's **loot deck**: its loot table (`area_loot_pool`: an item or `money`, weight, quantity range, once-only flag) where each weight is that find's number of copies (a once-only find: one), shuffled exactly like the encounter deck; what's left is saved per area.
@@ -339,8 +353,8 @@ Each item has `in_shop` and `shop_badges` (admin-editable, with its effect and p
 
 1. **HP persists** across encounters and across areas.
 2. **Pokémon Center** encounter: full heal for team and box, team-swap UI, then continue. Forced as the first encounter of an area when anyone is hurt, and — in easy areas — whenever a team member is K.O. (§1.1).
-3. **Passive regen: +5 % of max HP per hour**, wall-clock, applied on load to every Pokémon including fainted ones. A fainted Pokémon that regens above 0 revives.
-4. **Wipe** (all 3 active at 0 HP): **the round is lost**. Return to the **start of the current area**, **team fully healed**; the area gauge goes back to where it stood **when the round began** (`AreaProgress.roundStartXp`, noted each time a deck is dealt; 0 before any round), and **a full gauge stays full**. The deck is dropped, so the next encounter starts a **new, freshly shuffled round**. Pokémon levels and XP, items and Pokédollars are all kept. The area gauge shows the round's start as a red mark. (v1.6; it used to cost half the gauge.)
+3. **No passive regen** (removed in v1.9): HP never comes back by itself. Healing = Pokémon Centers, potions, Revives (§5.3), Grass Heal faces in battle, and the full heal after a wipe.
+4. **Wipe** (all 3 active at 0 HP): **the round is lost**. Return to the **start of the current area**, **team fully healed**; the round in progress doesn't count, and rounds already done stay done (v1.10). The deck is dropped, so the next encounter starts a **new, freshly shuffled round**. Pokémon levels and XP, items and Pokédollars are all kept.
 
 ---
 
@@ -350,7 +364,7 @@ Each item has `in_shop` and `shop_badges` (admin-editable, with its effect and p
 |---|---|
 | `orderIndex` | position in the chain |
 | `name`, `bannerUrl` | display |
-| `xpToUnlockNext` | gauge target (`null` = endless) |
+| `roundsToClear` | rounds (full decks) to clear the area (`null` = never; v1.10 replaced `xpToUnlockNext`) |
 | `minLevel` / `maxLevel` | wild encounter band |
 | `encounterWeights` | `{wild, trainer, center, item}` — the mix of each encounter deck (§1.1); admin shows the resulting card counts |
 | `backtrackMultiplier` | default 0.5 |
@@ -359,7 +373,7 @@ Each item has `in_shop` and `shop_badges` (admin-editable, with its effect and p
 | `scaleOffsets` | scaling areas only: `{ wild, trainer: { min, max } }`, levels relative to the team average (e.g. wild −15…−10, trainers −10…−5); a kind left empty keeps ± `scaleLevelSpread` |
 | `easyMode` | boolean — a Center comes next whenever a team member is K.O. (§1.1) |
 | `hidden`, `unlockConditions` | secret areas outside the linear chain, opened by conditions (§7.3) |
-| `gyms` | ordered trainer ids (gym leader / Elite Four / Champion), challenged once the gauge is full (§7.2) |
+| `gyms` | ordered trainer ids (gym leader / Elite Four / Champion), challenged once every round is done (§7.2) |
 | wild pool | `[{dex, weight, minLevel, maxLevel}]` |
 | trainer pool | `[{trainerId, weight}]` |
 
@@ -370,7 +384,7 @@ Areas unlock in order; any unlocked area is replayable from the Map at reduced r
 ### 7.1 Seeded content — Kanto in order of discovery (v1.3)
 
 Rosters follow Red/Blue/FireRed/LeafGreen (version exclusives merged; gifts and static Pokémon such as Eevee, Lapras,
-Snorlax, the fossils or Porygon are rare wild encounters nearby). Exploration targets (v1.7: the v1.6 values ÷ 4, rounded to 5) are sized for a handful of K.O.s per area.
+Snorlax or Porygon are rare wild encounters nearby; since v1.10 the fossils are finds, §4.6). The Gauge column below is the pre-v1.10 exploration target (v1.7: the v1.6 values ÷ 4); rounds replaced it (§1.1).
 
 | # | Area | Wild Lv | Gauge | Gate |
 |---|---|---|---|---|
@@ -412,10 +426,10 @@ Cerulean Cave is the grinding ground, the gold farm and the guaranteed place to 
 ### 7.2 Gyms
 
 Gym leaders, the Elite Four and the Champion are trainers with a `role` (`leader` / `elite` / `champion`) listed in an
-area's ordered `gyms`. Once the gauge is full the player can **CHALLENGE** them, one after another, whenever they choose — or keep exploring first: a full gauge stays full (v1.6). Once a gym battle starts there's no running,
+area's ordered `gyms`. Once every round is done the player can **CHALLENGE** them, one after another, whenever they choose — or keep exploring first: finished rounds stay finished (v1.6). Once a gym battle starts there's no running,
 fought as a trainer gauntlet (switch freely between their Pokémon). Each uses its real top-3 team. Leaders award their
 **badge**; every gym battle pays `gymGoldMultiplier` (×2) gold. Losing is a normal wipe; they wait for a rematch. An area
-clears when its gauge is full **and** every gym battle and gauge legendary is won.
+clears when every round is done **and** every gym battle and round legendary is won.
 
 ### 7.3 Unlocks
 
@@ -457,7 +471,6 @@ Local-first. `localStorage` is always written. When signed in with Google the sa
 type Save = {
   version: 1
   updatedAt: number              // epoch ms
-  lastRegenTick: number          // epoch ms, for the 5%/h regen
   gold: number
   pokedex: number[]              // dex numbers caught
   box: PokemonInstance[]         // every caught Pokémon
@@ -517,3 +530,7 @@ Access requires Google sign-in **and** email `gregoire.ftn@gmail.com`, enforced 
 - Music
 - Multiplayer, leaderboards
 - Pokémon beyond #151
+
+### 10.3 Victory recap (v1.10)
+
+Built for phones: the recap scrolls inside its card and the action button (SKIP while rewards appear, then CONTINUE / NEXT BATTLE / NEW AREA + STAY, always yellow) stays pinned at the bottom. One row per Pokémon — sprite, name, level, XP gained and its XP bar — with one line under it for what it earned: LEVEL UP (the sprite pulses and pixel confetti flies), new dice and milestones, "Evolving into …". Gold, catches, badges and area news follow. Evolutions play after CONTINUE, one after another, before the game moves on; a stone used from the Team screen plays the same scene. The wipe and stalemate screens pin their button the same way.

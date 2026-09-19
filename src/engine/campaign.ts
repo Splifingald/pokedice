@@ -20,6 +20,7 @@ import {
   centerHeal,
   centerWouldHelp,
   consumeItem,
+  finishRound,
   hasFaintedMember,
   isAreaUnlocked,
   isTeamHurt,
@@ -343,7 +344,7 @@ export function* runCampaign(data: GameData, opts: CampaignOptions): Generator<n
     else if (enc.kind === 'casino') {
       // The simulated player walks past the Game Corner.
     } else if (enc.kind === 'item') {
-      save = pickUpItem(save, area.id, enc, data)
+      save = pickUpItem(save, area.id, enc, data, 0, newId)
       r.itemsFound++
     }
     else if (enc.kind === 'trainer' || enc.kind === 'gym') {
@@ -353,6 +354,8 @@ export function* runCampaign(data: GameData, opts: CampaignOptions): Generator<n
       }
       if (opts.spend) save = spend(save, data)
     } else fight(area, r, enc.kind === 'boss' ? 'boss' : 'wild', { dex: enc.dex, level: enc.level }, enemyUpgradeLevelFor(enc, area, data))
+    // The encounter is over: the last card of a deck completes the round (a wipe dropped the deck, so it won't).
+    save = finishRound(save, area.id, data).save
 
     if (!wasCleared && r.toClear == null && progressOf(save, area.id).cleared) {
       r.toClear = i - (arrivedAt.get(area.id) ?? i) + 1

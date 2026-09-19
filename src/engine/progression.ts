@@ -96,6 +96,12 @@ export type ProgressEvent =
   | { kind: 'evolve'; uid: string; fromDex: number; toDex: number; level: number }
 
 /** Species change: dice, types, HP curve and rerolls follow the new species; level, XP and HP % carry over. */
+/** The evolution this item (a stone) triggers on this Pokémon, if any. */
+export function stoneEvolution(inst: PokemonInstance, itemKey: string, data: GameData): number | null {
+  const e = data.species[inst.dex]?.evolutions.find((x) => x.item === itemKey && data.species[x.toDex])
+  return e ? e.toDex : null
+}
+
 export function evolve(inst: PokemonInstance, toDex: number, data: GameData): PokemonInstance {
   const oldMax = instanceMaxHp(inst, data)
   const next = { ...inst, dex: toDex }
@@ -108,7 +114,8 @@ export function evolve(inst: PokemonInstance, toDex: number, data: GameData): Po
 }
 
 /**
- * Level-ups, milestone cards and automatic (uncancellable) evolution. Branching evolutions are rolled uniformly.
+ * Level-ups, milestone cards and automatic (uncancellable) evolution by level (stone evolutions wait for their stone).
+ * Branching evolutions are rolled uniformly.
  * `evolve: false` (Day Care XP) levels up without evolving; the next level-up in battle then evolves it.
  */
 export function gainXp(
@@ -136,7 +143,7 @@ export function gainXp(
       events.push({ kind: 'milestone', uid: cur.id, dex: cur.dex, level: cur.level, milestone: m })
     }
     const species = getSpecies(data, cur.dex)
-    const ready = opts.evolve === false ? [] : species.evolutions.filter((e) => e.level <= cur.level && data.species[e.toDex])
+    const ready = opts.evolve === false ? [] : species.evolutions.filter((e) => e.level != null && e.level <= cur.level && data.species[e.toDex])
     if (ready.length) {
       const target = ready.length === 1 ? ready[0]! : rng.pick(ready)
       const fromDex = cur.dex
@@ -146,30 +153,6 @@ export function gainXp(
   }
   if (cur.level >= cfg.maxLevel) cur.xp = 0 // overflow is discarded
   return { inst: cur, events }
-}
-
-/**
- * Passive regen: +regenPercentPerHour of max HP per wall-clock hour, for every Pokémon including fainted ones
- * (which revive once above 0). Fractions carry per Pokémon so frequent loads lose nothing.
- */
-export function applyRegen(
-  instances: readonly PokemonInstance[],
-  lastTick: number,
-  now: number,
-  data: GameData,
-): { instances: PokemonInstance[]; lastTick: number } {
-  const hours = Math.max(0, (now - lastTick) / 3.6e6)
-  if (hours <= 0) return { instances: [...instances], lastTick: Math.max(lastTick, now) }
-  const rate = data.config.regenPercentPerHour / 100
-  const out = instances.map((inst) => {
-    const max = instanceMaxHp(inst, data)
-    if (inst.currentHp >= max) return inst.regenCarry ? { ...inst, regenCarry: 0 } : inst
-    const exact = hours * rate * max + (inst.regenCarry ?? 0)
-    const heal = Math.floor(exact + 1e-9) // absorb float drift from many small ticks
-    const hp = Math.min(max, inst.currentHp + heal)
-    return { ...inst, currentHp: hp, regenCarry: hp >= max ? 0 : Math.max(0, exact - heal) }
-  })
-  return { instances: out, lastTick: now }
 }
 
 export function averageLevel(levels: readonly number[]): number {

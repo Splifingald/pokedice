@@ -65,12 +65,13 @@ export interface EncounterContext {
   player?: PlayerSide | null
 }
 
-const gaugeFull = (area: Area, progress: AreaProgress) =>
-  area.xpToUnlockNext != null && progress.xp >= area.xpToUnlockNext
+/** Every round the area asks for is done: its gym / legendary waits, and the area can clear. */
+export const roundsComplete = (area: Area, progress: AreaProgress) =>
+  area.roundsToClear != null && (progress.roundsDone ?? 0) >= area.roundsToClear
 
-/** The next gym / Elite battle once the gauge is full, in order; each is fought until won. */
+/** The next gym / Elite battle once every round is done, in order; each is fought until won. */
 export function dueGym(area: Area, progress: AreaProgress, data: GameData, side?: PlayerSide | null): Trainer | null {
-  if (!area.gyms.length || !gaugeFull(area, progress)) return null
+  if (!area.gyms.length || !roundsComplete(area, progress)) return null
   for (const id of gymsFor(area, data, side)) {
     if (progress.gymsDefeated.includes(id)) continue
     const t = data.trainers[id]
@@ -95,14 +96,14 @@ function gymEncounter(area: Area, t: Trainer, data: GameData, side?: PlayerSide 
 }
 
 /**
- * The legendary that can be challenged next, if any. Gauge bosses are due at 100 % gauge; Victory Road style bosses
+ * The legendary that can be challenged next, if any. Round bosses are due once every round is done; Victory Road style bosses
  * at their team-average threshold, strictly in order. A defeated boss is never re-offered this way.
  */
 export function dueBoss(area: Area, progress: AreaProgress, teamAvgLevel: number): BossDef | null {
   for (const b of area.legendaryBoss ?? []) {
     if (progress.bossesDefeated.includes(b.dex)) continue
     if (b.teamAvgThreshold != null) return teamAvgLevel >= b.teamAvgThreshold ? b : null
-    return gaugeFull(area, progress) ? b : null
+    return roundsComplete(area, progress) ? b : null
   }
   return null
 }
@@ -296,7 +297,7 @@ export function nextEncounter(ctx: EncounterContext, rng: Rng): EncounterRoll {
 }
 
 /**
- * The challenge waiting in this area, if any: the next gym / Elite battle once the gauge is full, else a legendary
+ * The challenge waiting in this area, if any: the next gym / Elite battle once every round is done, else a legendary
  * that's due. The player picks it (CHALLENGE on the area screen) whenever they're ready, or keeps exploring.
  */
 export function challengeEncounter(

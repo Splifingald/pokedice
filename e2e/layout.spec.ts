@@ -18,7 +18,7 @@ function midGameSave(): SaveData {
   for (const a of chain.slice(0, 6)) {
     areaProgress[a.id] = {
       ...progressOf(base, a.id),
-      xp: a.xpToUnlockNext ?? 0,
+      roundsDone: a.roundsToClear ?? 0,
       cleared: true,
       gymsDefeated: [...a.gyms],
       bossDefeated: true,
