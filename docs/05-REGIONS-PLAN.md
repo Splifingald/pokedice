@@ -21,7 +21,8 @@ anywhere in the UI.
 | Area unlock = "previous linear area cleared" | `src/engine/run.ts:202` | Works unchanged once the chain is scoped to a region |
 | Only ~8 places hardcode 151 | `setup/SetupPage.tsx:62`, `admin/schemas.ts`, `admin/sections/TableSections.tsx:237`, `screens/Help.tsx:197`, `scripts/*` | Cheap to generalise to `data.pokemon.length` |
 | PokeAPI (`pokeapi.co`) is **blocked** by the sandbox network policy | `pnpm seed` step 2 | Use the static mirror `raw.githubusercontent.com/PokeAPI/api-data/master/data/api/v2/…`, verified reachable and byte-identical |
-| The attached Gen 2 / Gen 3 Pokémon sheets are **lossy WebP at ~40px cells** (native is 64px, and flat background colours have compression noise) | `images/1.webp`, `2.webp`, `5.webp` | They cannot yield sprites matching today's quality — see §1 for the two options |
+| Chat attachments are capped at 2000px and re-encoded to lossy WebP, so the Pokémon sheets arrive at ~⅔ scale (41px cells against a native 64px) — two separate uploads were byte-identical | `images/1.webp`, `2.webp`, `5.webp` | Sheets cannot be a sprite source over chat, and re-uploading cannot fix it; §1a uses the `pret/pokeemerald` decomp instead |
+| `spriters-resource.com` is **blocked** by the sandbox network policy (403 at the proxy) | any sheet URL | Originals cannot be fetched directly either; only the allowlist (raw.githubusercontent, npm, PyPI) is reachable |
 | The attached trainer sheets are **lossless PNG at native scale** (HGSS 973×1798, RSE 651×726, flat backgrounds) | `images/3.png`, `4.png` | Usable as-is by a variant of `scripts/trainer-sprites.ts` |
 
 Kanto's shape, for balancing reference: 22 linear areas + 6 hidden/post-game, level band 2→72, `enemyUpgradeLevel`
@@ -37,50 +38,48 @@ Target, per species, unchanged from today: `front`, `front_shiny`, `back`, `back
 `public/pokemon/NNN_*.png`, plus `src/data/sprite-metrics.json` (bottom transparent rows, so each sprite stands on its
 platform).
 
-**Decided: cut the attached sheets.** The three Polar Koala sheets (Gen 1, 2 and 3, all in the Ruby/Sapphire style)
-become the single source for all 386, replacing today's FRLG cuts for Kanto so the whole Pokédex shares one art style,
-and keeping the 32×32 GBA box icons as minis.
+**Decided: the `pret/pokeemerald` decomp**, on raw.githubusercontent, is the single source for all 386 — the actual
+game assets, lossless, replacing today's FRLG cuts for Kanto so the whole Pokédex shares one art style.
 
-`scripts/pokemon-sprites.ts` gains a second layout alongside the existing MishaK9 one: flat-orange cells, front /
-front-shiny / back / back-shiny per species plus two mini frames, with the geometry measured from the sheet rather
-than hardcoded (see §1c). The flood-fill background clear, the `isEmpty` guard, the `bottomGap` metric and the
-`--publish` path are reused as they are.
+Why not the attached sheets: the chat attachment pipeline caps uploads at 2000px and re-encodes them to lossy WebP, so
+the sheets arrive at ~⅔ scale (41px cells against a native 64px) with the 1px black outline blended away. That damage
+happens on upload and cannot be undone or re-uploaded around. Spriters Resource is blocked by the sandbox network
+policy (403 at the proxy), so the originals cannot be fetched either. PokeAPI's sprite repo is lossless and reachable
+but has no GBA box icons, which would cost the minis' two-frame hop.
 
-The sheets as supplied are lossy WebP at roughly ⅔ scale (~40px cells against a native 64px), so the extractor has to
-undo that damage rather than assume clean pixels — §1c. If the original full-size PNG sheets turn up later, the same
-code path takes them with only the measured constants changing.
+Per species, `graphics/pokemon/<name>/` in the decomp gives:
+
+| File | What it is | Becomes |
+|---|---|---|
+| `front.png` | 64×64 indexed PNG | `front` (with `normal.pal`), `front_shiny` (with `shiny.pal`) |
+| `back.png` | 64×64 indexed PNG | `back`, `back_shiny`, same palette swap |
+| `normal.pal` / `shiny.pal` | 16-colour JASC-PAL | the two palettes; index 0 is the transparent backdrop |
+| `icon.png` | 32×64 indexed, two frames stacked | `mini_1` (top), `mini_2` (bottom) |
+
+`scripts/pokemon-sprites.ts` gains a `--fetch` mode: for each species in `src/data/pokemon.json`, download the four
+files (cached under `scripts/.cache/`, so re-runs are offline and idempotent), apply each palette, map index 0 to
+alpha 0, split the icon into its two frames, and write the same six PNGs into `graphics/pokemon/` that the sheet cut
+used to produce. `--publish` then copies them to `public/pokemon/` and writes `sprite-metrics.json`, exactly as today.
+Shinies are a palette swap rather than a second image, so a shiny can never drift from its normal form.
+
+Folder names are the slugified English species name (`nidoran_f`, `mr_mime`, `ho_oh`, `farfetchd`, `porygon2`,
+`deoxys`); the script asserts all 386 resolve and names any that do not, rather than silently writing a hole.
 
 `pnpm pokemon-sprites --publish` stays the one command that fills `public/pokemon/`, and `scripts/seed.ts`'s
-`SPRITE()` helper needs no change.
-
-### 1c. Getting clean pixels out of a lossy sheet
-
-Four passes, in order, each verifiable on Kanto against the sprites already in `graphics/pokemon/`:
-
-1. **Measure the grid.** Detect the cell backdrop by modal colour, find cell edges by scanning for runs of backdrop,
-   and derive origin / pitch / block stride from the detected edges instead of trusting constants. Assert the detected
-   block count matches the species count for that sheet.
-2. **De-noise.** Quantise each cell to the GBA's 15-colour palette: cluster the cell's pixels, snap each to its
-   cluster centroid, drop clusters under a pixel-count floor (they are compression ringing). This restores flat
-   colour fields and hard edges.
-3. **Re-align to the pixel grid.** With the sheet at ~⅔ scale, one source pixel is ~1.5 sheet pixels. Detect the true
-   scale from run-lengths along sprite edges, then resample nearest-neighbour onto the native grid so a sprite pixel
-   is one pixel again, and pad to 64×64 (32×32 for minis) around the measured content box.
-4. **Background clear**, exactly as today: flood-fill from the border plus the interior-holes sweep.
-
-**If a sprite still fails the quality bar after these passes**, the fallback for *that species only* is the lossless
-PokeAPI sprite (`raw.githubusercontent.com/PokeAPI/sprites`, `versions/generation-iii/…`, verified reachable), logged
-so the list is visible. Better a handful of mixed-provenance sprites — it is the same Gen 3 art — than a Pokédex of
-blurred ones.
+`SPRITE()` helper needs no change. Because the fetch reads `pokemon.json` for its species list, **step 2 runs before
+step 1a** — the only ordering change in this plan.
 
 ### 1b. Trainers
 
 `scripts/trainer-sprites.ts` gains two sheets:
 
-- `graphics/trainers/hgss.png` (from `images/3.png`) — labelled rows: Ethan/Lyra/Silver, eight "other trainers" blocks,
-  then Falkner→Clair, Will→Karen, the Kanto leaders, Lance, Red, Team Rocket, Giovanni, Frontier Brains. Cell pitch
-  reads as ~74px on a blue/green backdrop; cut per labelled band, not one uniform grid.
-- `graphics/trainers/rse.png` (from `images/4.png`) — 10 columns × ~65px on the green backdrop, RSE trainer classes.
+- `graphics/trainers/hgss.png` (from `images/3.png`, already in the repo) — **measured**: 80×80 cells, 81px column
+  pitch from x=1, 98px row pitch from y=18 (the 18px bands are the section labels), 12 × 19 = 228 cells. The labelled
+  bands run Ethan/Lyra/Silver, eight "other trainers" blocks, Falkner→Clair, Will→Karen, the Kanto leaders, Lance,
+  Red, Team Rocket, Giovanni, then the Frontier Brains — so cells are mapped per band by position, not by one uniform
+  grid over the whole sheet.
+- `graphics/trainers/rse.png` (from `images/4.png`, already in the repo) — **measured**: 64×64 cells on a 65px pitch
+  from (1,1), 10 × 11 = 110 cells on the green backdrop, RSE trainer classes.
 
 Output `public/trainers/classes/johto/*.png` and `…/hoenn/*.png`, and extend `trainerSprite(name, role, region)` with a
 name→sprite table per region (same pattern as the Kanto one). Frames the player characters are not used: the player
@@ -341,8 +340,8 @@ encounters-per-area inside Kanto's envelope, and the report is committed under `
 
 ## Decisions taken
 
-1. **Sprite source** — the attached sheets, for all three generations, with a per-species PokeAPI fallback for any cut
-   that fails the quality bar (§1a, §1c).
+1. **Sprite source** — the `pret/pokeemerald` decomp for all three generations: the real game assets, lossless,
+   shinies by palette swap, and the two-frame GBA box icons kept (§1a).
 2. **Upgrade tracks** — reset with everything else on a region change; the merge takes the max across merged regions.
 3. **Day Care** — per-region: each region has its own, and residents stay in the region they were left in. Energy
    stays global.
