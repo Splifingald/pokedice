@@ -14,6 +14,7 @@ import {
   type GameData,
   type ItemDef,
   type PokeType,
+  type Region,
   type Species,
   type Trainer,
 } from './types'
@@ -76,6 +77,8 @@ export function compileGameData(raw: BundleRaw): GameData {
   const areas: Area[] = [...raw.areas]
     .map((a) => ({
       ...a,
+      // Areas from before the second region belong to Kanto.
+      regionId: a.regionId ?? 'kanto',
       legendaryBoss: normaliseBoss(a.legendaryBoss),
       hidden: !!a.hidden,
       easyMode: !!a.easyMode,
@@ -98,12 +101,40 @@ export function compileGameData(raw: BundleRaw): GameData {
     areas,
     trainers,
     config: mergeConfig(raw.config),
+    regions: compileRegions(raw.regions, areas),
   }
 }
 
-/** The main chain, in order (hidden areas excluded). */
-export function linearAreas(data: GameData): Area[] {
-  return data.areas.filter((a) => !a.hidden)
+/** The default region list, for bundles and databases from before the second region: Kanto alone, always on. */
+function compileRegions(raw: BundleRaw['regions'], areas: Area[]): Region[] {
+  if (raw?.length) {
+    return [...raw]
+      .map((r) => ({ ...r, enabled: r.id === 'kanto' ? true : r.enabled !== false }))
+      .sort((a, b) => a.orderIndex - b.orderIndex)
+  }
+  const chain = areas.filter((a) => !a.hidden)
+  return [
+    {
+      id: 'kanto',
+      name: 'Kanto',
+      orderIndex: 0,
+      dexRange: [1, 151],
+      starters: [1, 4, 7],
+      starterLevel: 5,
+      // The league is the first area with a Champion in it; falling back to the last of the chain.
+      leagueAreaId: chain.find((a) => a.name.startsWith('Indigo Plateau'))?.id ?? chain[chain.length - 1]?.id ?? '',
+      nextRegion: null,
+      enabled: true,
+    },
+  ]
+}
+
+/**
+ * The main chain, in order (hidden areas excluded). With a region, only that region's chain — which is what area
+ * unlocking, clearing and the badge case all want, since a region is a self-contained run.
+ */
+export function linearAreas(data: GameData, regionId?: string): Area[] {
+  return data.areas.filter((a) => !a.hidden && (regionId === undefined || (a.regionId ?? 'kanto') === regionId))
 }
 
 export function getSpecies(data: GameData, dex: number): Species {

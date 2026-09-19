@@ -191,6 +191,8 @@ export interface ScaleOffsets {
 export interface Area {
   id: string
   orderIndex: number
+  /** Which region's chain this area belongs to. Absent in older data = 'kanto' (see `regionOfArea`). */
+  regionId?: RegionId
   name: string
   bannerUrl: string | null
   /** Rounds (full encounter decks) to complete before the gym / legendary waits and the area can clear. Null = never clears (secret areas). */
@@ -492,6 +494,29 @@ export interface SaveData {
   energy?: { value: number; at: number }
   /** The player has opened the leaderboard (Prof. Oak sends them there once). */
   leaderboardVisited?: boolean
+  /** The region being played. Absent on saves from before the second region = 'kanto'. */
+  region?: RegionId
+  /** The regions not being played, each holding everything that region owns. */
+  parked?: Partial<Record<RegionId, RegionSave>>
+  /** Regions whose Box, bag and ₽ have already been merged forward, so a merge never doubles. */
+  merged?: RegionId[]
+}
+
+/**
+ * Everything a region owns. The live region's copy is the top level of `SaveData` — so no engine or screen code
+ * needs to know regions exist — and the others sit parked in `SaveData.parked`.
+ */
+export interface RegionSave {
+  gold: number
+  pokedex: number[]
+  box: PokemonInstance[]
+  team: string[]
+  inventory: Record<string, number>
+  comboLevels: Record<ComboKey, number>
+  dieLevels: Record<PokeType, number>
+  currentAreaId: string
+  areaProgress: Record<string, AreaProgress>
+  dayCare?: DayCareState
 }
 
 export interface DayCareResident {
@@ -523,6 +548,30 @@ export interface BundleRaw {
   upgrades: { combos: ComboUpgradeRow[]; dice: DieUpgradeRow[] }
   items: ItemDef[]
   config: Record<string, unknown>
+  /** Absent in bundles from before the second region: everything is then Kanto. */
+  regions?: Region[]
+}
+
+export type RegionId = string
+
+/**
+ * A region is a self-contained run of the game: its own chain of areas, its own starters, its own Pokédex page and
+ * leaderboard. The player keeps only their character when they move on.
+ */
+export interface Region {
+  id: RegionId
+  name: string
+  orderIndex: number
+  /** The National Dex span this region's Pokédex page shows, inclusive. */
+  dexRange: [number, number]
+  starters: number[]
+  starterLevel: number
+  /** Clearing this area (every gym and round done) is "the league is done": it offers the next region. */
+  leagueAreaId: string
+  /** The region this one's league unlocks; null for the last. */
+  nextRegion: RegionId | null
+  /** Off = invisible everywhere: no prompt, no switcher chip, no Pokédex page, no board. Kanto is always on. */
+  enabled: boolean
 }
 
 /** Compiled, lookup-friendly form every engine function receives. */
@@ -538,4 +587,6 @@ export interface GameData {
   areas: Area[]
   trainers: Record<string, Trainer>
   config: GameConfig
+  /** Every region, in order. Always at least Kanto. */
+  regions: Region[]
 }

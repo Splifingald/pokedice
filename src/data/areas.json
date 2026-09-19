@@ -2,6 +2,7 @@
  {
   "id": "3585c2a5-43bc-50c9-9818-e148404cabf8",
   "orderIndex": 1,
+  "regionId": "kanto",
   "name": "Route 1",
   "bannerUrl": "/banners/plains.png",
   "roundsToClear": 2,
@@ -93,6 +94,7 @@
  {
   "id": "9cd5143b-e280-5a1f-85d4-d7f9933616b1",
   "orderIndex": 2,
+  "regionId": "kanto",
   "name": "Routes 22 & 2",
   "bannerUrl": "/banners/flowers.png",
   "roundsToClear": 2,
@@ -226,6 +228,7 @@
  {
   "id": "41f856c1-6df1-53e1-96b5-463362d595a6",
   "orderIndex": 3,
+  "regionId": "kanto",
   "name": "Viridian Forest",
   "bannerUrl": "/banners/forest.png",
   "roundsToClear": 1,
@@ -393,6 +396,7 @@
  {
   "id": "665e8d04-8cda-5960-9a8a-0e843c5a095e",
   "orderIndex": 5,
+  "regionId": "kanto",
   "name": "Mt. Moon",
   "bannerUrl": "/banners/cave.png",
   "roundsToClear": 1,
@@ -622,6 +626,7 @@
  {
   "id": "829a4b14-5248-5410-8b66-60d96d873160",
   "orderIndex": 4,
+  "regionId": "kanto",
   "name": "Route 3",
   "bannerUrl": "/banners/mountains.png",
   "roundsToClear": 1,
@@ -782,6 +787,7 @@
  {
   "id": "e378fb03-6702-51fd-89ba-18ffc912a300",
   "orderIndex": 6,
+  "regionId": "kanto",
   "name": "Route 4 & Nugget Bridge",
   "bannerUrl": "/banners/bridge.png",
   "roundsToClear": 1,
@@ -1044,6 +1050,7 @@
  {
   "id": "bec52d1b-4c7c-5503-810a-5d4b8e5336ec",
   "orderIndex": 7,
+  "regionId": "kanto",
   "name": "Routes 5 & 6",
   "bannerUrl": "/banners/plains.png#flip",
   "roundsToClear": 1,
@@ -1283,6 +1290,7 @@
  {
   "id": "b64f2ae7-b9ae-5707-b904-f1e31aa66253",
   "orderIndex": 104,
+  "regionId": "kanto",
   "name": "Rocket Hideout",
   "bannerUrl": "/banners/city.png#flip",
   "roundsToClear": null,
@@ -1454,6 +1462,7 @@
  {
   "id": "f319e2ef-f0d1-5f2d-a7cb-cf92aeb8bca7",
   "orderIndex": 10,
+  "regionId": "kanto",
   "name": "Rock Tunnel",
   "bannerUrl": "/banners/cave_dark.png",
   "roundsToClear": 1,
@@ -1679,6 +1688,7 @@
  {
   "id": "e7d8c094-5b1f-51d5-b205-3951e8be98ab",
   "orderIndex": 14,
+  "regionId": "kanto",
   "name": "Cycling Road",
   "bannerUrl": "/banners/bridge.png#flip",
   "roundsToClear": 1,
@@ -1891,6 +1901,7 @@
  {
   "id": "1df761a4-cf28-58ca-88f5-17f794f27b79",
   "orderIndex": 8,
+  "regionId": "kanto",
   "name": "Diglett's Cave & Route 11",
   "bannerUrl": "/banners/cave.png#flip",
   "roundsToClear": 1,
@@ -2080,6 +2091,7 @@
  {
   "id": "1ef28784-b335-528e-afea-f89700680d7e",
   "orderIndex": 9,
+  "regionId": "kanto",
   "name": "Routes 9 & 10",
   "bannerUrl": "/banners/mountains.png#flip",
   "roundsToClear": 1,
@@ -2297,6 +2309,7 @@
  {
   "id": "8cf87ee3-f7a5-568e-bc22-54f643572535",
   "orderIndex": 11,
+  "regionId": "kanto",
   "name": "Routes 7 & 8",
   "bannerUrl": "/banners/sunset.png",
   "roundsToClear": 1,
@@ -2573,6 +2586,7 @@
  {
   "id": "1e08b1b8-cda6-5046-a40f-5041361f6736",
   "orderIndex": 12,
+  "regionId": "kanto",
   "name": "Pokémon Tower",
   "bannerUrl": "/banners/haunted.png",
   "roundsToClear": 1,
@@ -2760,6 +2774,7 @@
  {
   "id": "ff3f0086-1b99-559e-a646-e88006eec749",
   "orderIndex": 13,
+  "regionId": "kanto",
   "name": "Routes 12–15",
   "bannerUrl": "/banners/flowers.png#flip",
   "roundsToClear": 1,
@@ -3035,6 +3050,7 @@
  {
   "id": "bbe7e459-a138-5106-bd01-fce7ff422e7f",
   "orderIndex": 22,
+  "regionId": "kanto",
   "name": "Indigo Plateau",
   "bannerUrl": "/banners/sky.png",
   "roundsToClear": 1,
@@ -3183,6 +3199,7 @@
  {
   "id": "2238f26a-2629-5f28-af07-e74cb41d5f7a",
   "orderIndex": 15,
+  "regionId": "kanto",
   "name": "Safari Zone",
   "bannerUrl": "/banners/swamp.png",
   "roundsToClear": 2,
@@ -3515,6 +3532,7 @@
  {
   "id": "0451cbfb-2955-5b42-a816-3e6affb72c35",
   "orderIndex": 16,
+  "regionId": "kanto",
   "name": "Silph Co.",
   "bannerUrl": "/banners/city.png",
   "roundsToClear": 1,
@@ -3723,6 +3741,7 @@
  {
   "id": "6be7fc24-0db6-59e6-b9f0-81cbefc90ab4",
   "orderIndex": 17,
+  "regionId": "kanto",
   "name": "Sea Routes 19 & 20",
   "bannerUrl": "/banners/ocean.png",
   "roundsToClear": 1,
@@ -3975,6 +3994,7 @@
  {
   "id": "51bb91b2-9c10-508c-bd4d-0f9e39e3f30d",
   "orderIndex": 18,
+  "regionId": "kanto",
   "name": "Seafoam Islands",
   "bannerUrl": "/banners/snow_mountains.png",
   "roundsToClear": 1,
@@ -4212,6 +4232,7 @@
  {
   "id": "a5d11263-453f-5181-9a73-2c30df79d3fc",
   "orderIndex": 102,
+  "regionId": "kanto",
   "name": "Cerulean Cave",
   "bannerUrl": "/banners/crystal_cave.png",
   "roundsToClear": null,
@@ -5355,6 +5376,7 @@
  {
   "id": "bf32fe1a-051d-517b-83c3-55bd24b8e077",
   "orderIndex": 101,
+  "regionId": "kanto",
   "name": "Power Plant",
   "bannerUrl": "/banners/factory.png",
   "roundsToClear": 1,
@@ -5562,6 +5584,7 @@
  {
   "id": "cff05c73-329a-55d0-a476-ba7c5683e6ae",
   "orderIndex": 19,
+  "regionId": "kanto",
   "name": "Pokémon Mansion",
   "bannerUrl": "/banners/volcano.png",
   "roundsToClear": 1,
@@ -5827,6 +5850,7 @@
  {
   "id": "6d47ad48-bf44-5cb5-83fd-8db581b4a715",
   "orderIndex": 20,
+  "regionId": "kanto",
   "name": "Route 21",
   "bannerUrl": "/banners/beach.png",
   "roundsToClear": 1,
@@ -6060,6 +6084,7 @@
  {
   "id": "050ff505-ff8e-5251-8499-842a2cfc2986",
   "orderIndex": 103,
+  "regionId": "kanto",
   "name": "Faraway Island",
   "bannerUrl": "/banners/beach.png#flip",
   "roundsToClear": null,
@@ -6098,6 +6123,7 @@
  {
   "id": "6ce5603a-9b36-52df-b8bc-3e9efb0686c3",
   "orderIndex": 21,
+  "regionId": "kanto",
   "name": "Victory Road",
   "bannerUrl": "/banners/cave_dark.png#flip",
   "roundsToClear": 1,
@@ -6381,6 +6407,7 @@
  {
   "id": "35c40458-61da-5321-adda-6df33b930671",
   "orderIndex": 23,
+  "regionId": "kanto",
   "name": "Victory Road II",
   "bannerUrl": "/banners/cave_dark.png",
   "roundsToClear": 1,
@@ -6646,6 +6673,7 @@
  {
   "id": "2737f8c1-713a-54d8-986e-30b92f7c4a8f",
   "orderIndex": 24,
+  "regionId": "kanto",
   "name": "Indigo Plateau II",
   "bannerUrl": "/banners/sky.png#flip",
   "roundsToClear": 1,

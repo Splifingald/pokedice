@@ -1,0 +1,20 @@
+[
+ {
+  "id": "kanto",
+  "name": "Kanto",
+  "orderIndex": 0,
+  "dexRange": [
+   1,
+   151
+  ],
+  "starters": [
+   1,
+   4,
+   7
+  ],
+  "starterLevel": 5,
+  "leagueAreaId": "bbe7e459-a138-5106-bd01-fce7ff422e7f",
+  "nextRegion": null,
+  "enabled": true
+ }
+]

@@ -1,5 +1,6 @@
 // Pure state transitions on the save: new game, rewards, catches, wipes, center, team, shop, upgrades.
 import { getSpecies, linearAreas } from './data'
+import { KANTO, regionOf, regionOfArea } from './regions'
 import { asSeenBy, gymsFor, playerSideOf } from './rival'
 import { nextComboCost, nextDieCost, pokemonXp, trainerGoldFor, healAmount, multiExpShareFor } from './economy'
 import { roundsComplete } from './encounters'
@@ -46,10 +47,13 @@ export function newSave(starterDex: number, data: GameData, now: number, newId: 
     inventory: Object.fromEntries(Object.entries(data.config.startInventory ?? {}).filter(([k, q]) => data.items[k] && q > 0)),
     comboLevels,
     dieLevels,
-    currentAreaId: linearAreas(data)[0]?.id ?? data.areas[0]?.id ?? '',
+    currentAreaId: linearAreas(data, data.regions[0]?.id)[0]?.id ?? data.areas[0]?.id ?? '',
     areaProgress: {},
     settings: { sfx: false, reducedMotion: false, multiExp: true },
     hpScale: data.config.hpMultiplier,
+    // A new game starts in the first region, with none parked behind it.
+    region: data.regions[0]?.id ?? KANTO,
+    parked: {},
     ...(player ? { player } : {}),
   }
 }
@@ -203,7 +207,8 @@ export function isAreaUnlocked(save: SaveData, areaId: string, data: GameData, d
   const area = data.areas.find((a) => a.id === areaId)
   if (!area) return false
   if (area.hidden) return (area.unlockConditions ?? []).every((c) => conditionStatus(c, save, data, depth).met)
-  const chain = linearAreas(data)
+  // A region is a run of its own: an area opens behind the one before it *in its own region*, never across a border.
+  const chain = linearAreas(data, regionOfArea(area))
   const idx = chain.findIndex((a) => a.id === areaId)
   if (idx <= 0) return idx === 0
   return progressOf(save, chain[idx - 1]!.id).cleared
@@ -223,7 +228,7 @@ export interface BadgeInfo {
 /** Every gym badge in chain order, and whether it's been won. */
 export function badgeCase(save: SaveData, data: GameData): BadgeInfo[] {
   const out: BadgeInfo[] = []
-  for (const a of linearAreas(data)) {
+  for (const a of linearAreas(data, regionOf(save))) {
     const p = progressOf(save, a.id)
     for (const id of a.gyms) {
       const t = data.trainers[id]
@@ -400,7 +405,7 @@ function clearIfDone(
   const roundBosses = (area.legendaryBoss ?? []).filter((b) => b.teamAvgThreshold == null)
   const gymsDone = gymsFor(area, data, playerSideOf(save)).every((id) => progress.gymsDefeated.includes(id) || !data.trainers[id])
   if (!gymsDone || !roundBosses.every((b) => progress.bossesDefeated.includes(b.dex))) return { progress, event: null }
-  const chain = linearAreas(data)
+  const chain = linearAreas(data, regionOfArea(area))
   const idx = chain.findIndex((a) => a.id === area.id)
   return {
     progress: { ...progress, cleared: true },

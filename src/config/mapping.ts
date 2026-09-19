@@ -121,6 +121,7 @@ export function rowsToBundle(r: TableRows): BundleRaw {
       (x): Area => ({
         id: String(x.id),
         orderIndex: num(x.order_index),
+        regionId: (x.region_id as string | null) ?? 'kanto',
         name: String(x.name),
         bannerUrl: (x.banner_url as string | null) ?? null,
         roundsToClear: x.rounds_to_clear == null ? null : num(x.rounds_to_clear),
@@ -225,6 +226,7 @@ export function bundleToRows(b: BundleRaw): TableRows {
     areas: b.areas.map((x) => ({
       id: x.id,
       order_index: x.orderIndex,
+      region_id: x.regionId ?? 'kanto',
       name: x.name,
       banner_url: x.bannerUrl,
       rounds_to_clear: x.roundsToClear,

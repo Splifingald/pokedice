@@ -7,6 +7,7 @@ import trainers from '@/data/trainers.json'
 import upgrades from '@/data/upgrades.json'
 import items from '@/data/items.json'
 import config from '@/data/config.json'
+import regions from '@/data/regions.json'
 import type { BundleRaw } from '@/engine/types'
 
 export const BUNDLE: BundleRaw = {
@@ -18,4 +19,5 @@ export const BUNDLE: BundleRaw = {
   upgrades,
   items,
   config,
+  regions,
 } as unknown as BundleRaw
