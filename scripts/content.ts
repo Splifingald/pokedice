@@ -6,7 +6,18 @@
 
 import type { BossDef, EncounterKind, PokeType, UnlockCondition } from '../src/engine/types'
 
-export const LEGENDARIES = [144, 145, 146, 150, 151]
+/**
+ * Legendaries and mythicals across the three regions: 5 dice, catch value 9, never in a wild pool — each one is
+ * attached to an area as a `legendary_boss` instead.
+ */
+export const LEGENDARIES = [
+  // Kanto
+  144, 145, 146, 150, 151,
+  // Johto: the beasts, the tower duo, Celebi
+  243, 244, 245, 249, 250, 251,
+  // Hoenn: the Regis, the Eon duo, the weather trio, Jirachi, Deoxys
+  377, 378, 379, 380, 381, 382, 383, 384, 385, 386,
+]
 export const STARTERS = [1, 4, 7]
 
 /** Banner scenes: 118×16 pixel strips in graphics/banners, published to public/banners by scripts/art.ts. */

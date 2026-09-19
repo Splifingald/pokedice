@@ -1,17 +1,23 @@
 /**
- * Pokémon sprites, cut from graphics/pokemon/pokemon.png (MishaK9's FireRed/LeafGreen sheet).
- * `pnpm pokemon-sprites [outDir] [sheet]` writes 6 transparent PNGs per Pokémon into outDir
- * (default graphics/pokemon/sprites): 001_Bulbasaur_front.png, _back, _front_shiny, _back_shiny, _miniature_1, _miniature_2.
+ * Pokémon sprites — the same 6 PNGs per Pokémon, from either of two sources.
+ *
+ * `pnpm pokemon-sprites --fetch` (all 386, the current source) pulls the real game assets from the pret/pokeemerald
+ * decomp and writes them into graphics/pokemon. Per species the decomp holds `front.png` and `back.png` as 64×64
+ * indexed PNGs plus `normal.pal` / `shiny.pal`, so a shiny is a palette swap rather than a second image, and
+ * `icon.png` as a 32×64 pair of box-icon frames. Responses are cached under scripts/.cache, so re-runs are offline.
+ *
+ * `pnpm pokemon-sprites [outDir] [sheet]` is the older path: cuts graphics/pokemon/pokemon.png (MishaK9's
+ * FireRed/LeafGreen sheet), 151 only. Kept because it still works, but the decomp covers all three regions.
+ * Sheet layout: 1px black grid lines, 64×64 cells on a 65px pitch from (11, 11). 15 Pokémon per row, each a block of
+ * 2 cells wide × (34px header + 2 cells): header = name label + two 32×32 mini frames, then front | front shiny over
+ * back | back shiny. Each cell has a flat background colour, which becomes transparent.
  *
  * `pnpm pokemon-sprites --publish [srcDir]` copies those files (default graphics/pokemon) into public/pokemon with short
  * names (001_front.png, 001_back_shiny.png, 001_mini_1.png…) and writes src/data/sprite-metrics.json: the transparent
  * rows under each front / back sprite, so the battle scene can stand every Pokémon on its platform.
- *
- * Sheet layout: 1px black grid lines, 64×64 cells on a 65px pitch from (11, 11). 15 Pokémon per row, each a block of
- * 2 cells wide × (34px header + 2 cells): header = name label + two 32×32 mini frames, then front | front shiny over
- * back | back shiny. Each cell has a flat background colour, which becomes transparent.
  */
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
+import { existsSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { PNG } from 'pngjs'
@@ -103,6 +109,177 @@ function bottomGap(img: PNG): number {
   return 0
 }
 
+// ---------------------------------------------------------------- the decomp source (--fetch)
+
+const DECOMP = 'https://raw.githubusercontent.com/pret/pokeemerald/master/graphics/pokemon'
+const CACHE_DIR = path.join(ROOT, 'scripts', '.cache', 'decomp')
+
+/**
+ * The decomp's folder for a species: its English name, lowercased, with anything that isn't a letter or digit turned
+ * into an underscore (`Nidoran♀` → `nidoran_f`, `Mr. Mime` → `mr_mime`, `Ho-Oh` → `ho_oh`, `Farfetch'd` →
+ * `farfetchd`). Unown is the one species kept in per-letter folders.
+ */
+export function decompDir(name: string): string {
+  return name
+    .replace(/♀/g, ' f')
+    .replace(/♂/g, ' m')
+    .replace(/['’.]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_|_$/g, '')
+}
+
+export interface DecompPaths {
+  front: string
+  back: string
+  normal: string
+  shiny: string
+  icon: string
+}
+
+/**
+ * Where each of a species' five files lives. Nearly always side by side in one folder, but the two species with
+ * alternate forms split them: Unown keeps a folder per letter with the palettes one level up, and Castform keeps its
+ * artwork under the weather form it is in while the icon stays at the top.
+ */
+export function decompPaths(name: string): DecompPaths {
+  const d = decompDir(name)
+  const all = (dir: string): DecompPaths => ({
+    front: `${dir}/front.png`,
+    back: `${dir}/back.png`,
+    normal: `${dir}/normal.pal`,
+    shiny: `${dir}/shiny.pal`,
+    icon: `${dir}/icon.png`,
+  })
+  if (name === 'Unown') return { ...all('unown/a'), normal: 'unown/normal.pal', shiny: 'unown/shiny.pal' }
+  if (name === 'Castform') return { ...all('castform/normal'), icon: 'castform/icon.png' }
+  return all(d)
+}
+
+async function fetchFile(rel: string): Promise<Buffer> {
+  const file = path.join(CACHE_DIR, rel.replace(/\//g, '_'))
+  if (existsSync(file)) return readFile(file)
+  let lastErr: unknown
+  for (let attempt = 0; attempt < 5; attempt++) {
+    try {
+      const res = await fetch(`${DECOMP}/${rel}`)
+      if (!res.ok) throw new Error(`${res.status} ${res.statusText} for ${rel}`)
+      const buf = Buffer.from(await res.arrayBuffer())
+      await writeFile(file, buf)
+      return buf
+    } catch (err) {
+      lastErr = err
+      await new Promise((r) => setTimeout(r, 300 * 2 ** attempt))
+    }
+  }
+  throw lastErr
+}
+
+type Rgb = [number, number, number]
+
+/** JASC-PAL: a 3-line header ("JASC-PAL", "0100", count) then one "r g b" per colour. */
+function parsePal(text: string): Rgb[] {
+  const lines = text.split(/\r?\n/)
+  const n = Number(lines[2])
+  return Array.from({ length: n }, (_, i) => lines[3 + i]!.trim().split(/\s+/).map(Number) as Rgb)
+}
+
+const key = ([r, g, b]: Rgb) => (r << 16) | (g << 8) | b
+
+/**
+ * Re-colours an indexed sprite. The decomp's PNG carries the normal palette, so each pixel is matched back to its
+ * index in `from` and re-emitted from `to` — which is exactly how the game makes a shiny. Index 0 is the backdrop
+ * and becomes transparent. A colour that isn't in the palette (there shouldn't be any) is left as it is.
+ */
+function recolour(buf: Buffer, from: Rgb[], to: Rgb[]): PNG {
+  const read = PNG.sync.read(buf)
+  // A few species (Blaziken, Swampert, Rayquaza, Deoxys…) ship front.png as a vertical strip of animation frames.
+  // The first frame is the sprite the game shows at rest; the rest are the idle animation, which this game has not.
+  const img = read.height > CELL ? crop(read, 0, 0, CELL, CELL) : read
+  // Lowest index wins: several palettes repeat a colour, and the repeat must not shadow index 0 — which is the
+  // backdrop, and the only thing telling us which pixels are background at all.
+  const index = new Map<number, number>()
+  from.forEach((c, i) => {
+    if (!index.has(key(c))) index.set(key(c), i)
+  })
+  const backdrop = key(from[0]!)
+  const { data } = img
+  for (let i = 0; i < data.length; i += 4) {
+    const colour = (data[i]! << 16) | (data[i + 1]! << 8) | data[i + 2]!
+    if (colour === backdrop) {
+      data[i + 3] = 0
+      continue
+    }
+    const idx = index.get(colour)
+    if (idx === undefined) continue
+    const [r, g, b] = to[idx] ?? from[idx]!
+    data[i] = r
+    data[i + 1] = g
+    data[i + 2] = b
+    data[i + 3] = 255
+  }
+  return img
+}
+
+/** One frame of a 32×64 box icon, with the icon palette's index 0 (its own backdrop colour) cleared. */
+function iconFrame(buf: Buffer, frame: 0 | 1): PNG {
+  const src = PNG.sync.read(buf)
+  const out = new PNG({ width: MINI, height: MINI })
+  PNG.bitblt(src, out, 0, frame * MINI, MINI, MINI, 0, 0)
+  const bg = (out.data[0]! << 16) | (out.data[1]! << 8) | out.data[2]!
+  for (let i = 0; i < out.data.length; i += 4) {
+    if (((out.data[i]! << 16) | (out.data[i + 1]! << 8) | out.data[i + 2]!) === bg) out.data[i + 3] = 0
+  }
+  return out
+}
+
+async function fetchAll(outDir: string) {
+  await mkdir(CACHE_DIR, { recursive: true })
+  await mkdir(outDir, { recursive: true })
+  const failed: string[] = []
+  let n = 0
+  for (const p of pokemon) {
+    const paths = decompPaths(p.name)
+    try {
+      const [front, back, normal, shiny, icon] = await Promise.all([
+        fetchFile(paths.front),
+        fetchFile(paths.back),
+        fetchFile(paths.normal),
+        fetchFile(paths.shiny),
+        fetchFile(paths.icon),
+      ])
+      const pal = parsePal(normal.toString('utf8'))
+      const shinyPal = parsePal(shiny.toString('utf8'))
+      const sprites: Record<string, PNG> = {
+        front: recolour(front, pal, pal),
+        front_shiny: recolour(front, pal, shinyPal),
+        back: recolour(back, pal, pal),
+        back_shiny: recolour(back, pal, shinyPal),
+        miniature_1: iconFrame(icon, 0),
+        miniature_2: iconFrame(icon, 1),
+      }
+      const prefix = `${String(p.dex).padStart(3, '0')}_${fileName(p.name)}`
+      for (const [kind, img] of Object.entries(sprites)) {
+        if (isEmpty(img)) {
+          failed.push(`${p.dex} ${p.name} ${kind}: empty`)
+          continue
+        }
+        await writeFile(path.join(outDir, `${prefix}_${kind}.png`), PNG.sync.write(img))
+        n++
+      }
+    } catch (err) {
+      failed.push(`${p.dex} ${p.name} (${paths.front}): ${(err as Error).message}`)
+    }
+    if (p.dex % 50 === 0) console.log(`  … ${p.dex}/${pokemon.length}`)
+  }
+  console.log(`${n} sprites written to ${outDir}`)
+  if (failed.length) {
+    console.error(`\n${failed.length} failures:`)
+    for (const f of failed) console.error(`  ${f}`)
+    process.exitCode = 1
+  }
+}
+
 async function publish(srcDir: string) {
   const outDir = path.join(ROOT, 'public/pokemon')
   await mkdir(outDir, { recursive: true })
@@ -133,6 +310,7 @@ async function publish(srcDir: string) {
 }
 
 async function main() {
+  if (process.argv[2] === '--fetch') return fetchAll(path.resolve(process.argv[3] ?? path.join(ROOT, 'graphics/pokemon')))
   if (process.argv[2] === '--publish') return publish(path.resolve(process.argv[3] ?? path.join(ROOT, 'graphics/pokemon')))
   const outDir = path.resolve(process.argv[2] ?? path.join(ROOT, 'graphics/pokemon/sprites'))
   const sheetPath = path.resolve(process.argv[3] ?? path.join(ROOT, 'graphics/pokemon/pokemon.png'))

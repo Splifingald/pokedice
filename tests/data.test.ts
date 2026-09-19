@@ -21,8 +21,8 @@ const LEGENDARIES = [144, 145, 146, 150, 151]
 const STARTERS = [1, 4, 7]
 
 describe('pokemon.json', () => {
-  it('has 151 complete entries', () => {
-    expect(species).toHaveLength(151)
+  it('has 386 complete entries — Kanto, Johto and Hoenn', () => {
+    expect(species).toHaveLength(386)
     for (const p of species) {
       expect(total(p.dice)).toBeGreaterThanOrEqual(1)
       expect(total(p.dice)).toBeLessThanOrEqual(5)
@@ -49,9 +49,16 @@ describe('pokemon.json', () => {
     expect(byDex(6).baseHp).toBe(12)
     expect(byDex(6).maxHp).toBe(297)
     expect(byDex(4).evolutions).toEqual([{ toDex: 5, level: 16 }])
-    expect(byDex(133).evolutions.map((e) => e.toDex).sort()).toEqual([134, 135, 136])
-    // v1.10: Eevee's forms come from the stones (Water, Thunder, Fire).
-    expect(byDex(133).evolutions.map((e) => e.item).sort()).toEqual(['fire-stone', 'thunder-stone', 'water-stone'])
+    expect(byDex(133).evolutions.map((e) => e.toDex).sort((a, b) => a - b)).toEqual([134, 135, 136, 196, 197])
+    // v1.10: Eevee's forms come from the stones (Water, Thunder, Fire) — and, with Johto, Espeon and Umbreon, which
+    // evolve on happiness by day and by night in the originals and on the Sun and Moon Stone here (no day/night cycle).
+    expect(byDex(133).evolutions.map((e) => e.item).sort()).toEqual([
+      'fire-stone',
+      'moon-stone',
+      'sun-stone',
+      'thunder-stone',
+      'water-stone',
+    ])
     expect(byDex(64).evolutions).toEqual([{ toDex: 65, level: 34 }]) // trade
   })
 })

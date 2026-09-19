@@ -145,7 +145,7 @@
   "price": 1000,
   "effect": {
    "kind": "ball",
-   "bonus": 9
+   "bonus": 10
   },
   "inShop": false,
   "shopBadges": 0
@@ -319,6 +319,120 @@
   "effect": {
    "kind": "fossil",
    "dex": 142,
+   "level": 20,
+   "hours": 24
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "sun-stone",
+  "name": "Sun Stone",
+  "description": "Makes certain Pokémon evolve: Gloom (Bellossom), Sunkern, Eevee (Espeon). Use it from the Team screen.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/sun-stone.png",
+  "price": 200,
+  "effect": {
+   "kind": "stone"
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "kings-rock",
+  "name": "King's Rock",
+  "description": "Makes certain Pokémon evolve: Poliwhirl (Politoed), Slowpoke (Slowking). Use it from the Team screen.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/kings-rock.png",
+  "price": 200,
+  "effect": {
+   "kind": "stone"
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "metal-coat",
+  "name": "Metal Coat",
+  "description": "Makes certain Pokémon evolve: Onix (Steelix), Scyther (Scizor). Use it from the Team screen.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/metal-coat.png",
+  "price": 200,
+  "effect": {
+   "kind": "stone"
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "dragon-scale",
+  "name": "Dragon Scale",
+  "description": "Makes certain Pokémon evolve: Seadra (Kingdra). Use it from the Team screen.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/dragon-scale.png",
+  "price": 200,
+  "effect": {
+   "kind": "stone"
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "up-grade",
+  "name": "Up-Grade",
+  "description": "Makes certain Pokémon evolve: Porygon (Porygon2). Use it from the Team screen.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/up-grade.png",
+  "price": 200,
+  "effect": {
+   "kind": "stone"
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "deep-sea-tooth",
+  "name": "Deep Sea Tooth",
+  "description": "Makes certain Pokémon evolve: Clamperl (Huntail). Use it from the Team screen.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/deep-sea-tooth.png",
+  "price": 200,
+  "effect": {
+   "kind": "stone"
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "deep-sea-scale",
+  "name": "Deep Sea Scale",
+  "description": "Makes certain Pokémon evolve: Clamperl (Gorebyss). Use it from the Team screen.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/deep-sea-scale.png",
+  "price": 200,
+  "effect": {
+   "kind": "stone"
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "root-fossil",
+  "name": "Root Fossil",
+  "description": "A fossil of an ancient Pokémon. Lileep waits in your Box and is revived after 24 hours, at Lv.20.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/root-fossil.png",
+  "price": 0,
+  "effect": {
+   "kind": "fossil",
+   "dex": 345,
+   "level": 20,
+   "hours": 24
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "claw-fossil",
+  "name": "Claw Fossil",
+  "description": "A fossil of an ancient Pokémon. Anorith waits in your Box and is revived after 24 hours, at Lv.20.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/claw-fossil.png",
+  "price": 0,
+  "effect": {
+   "kind": "fossil",
+   "dex": 347,
    "level": 20,
    "hours": 24
   },
