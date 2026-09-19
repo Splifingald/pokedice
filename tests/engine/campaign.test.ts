@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { linearAreas, mergeAreaReports, runCampaign, runCampaignSync, type CampaignOptions } from '@/engine'
-import { makeData } from '../fixtures'
+import { data, makeData } from '../fixtures'
 
 // Fewer AI samples keep these runs quick; the loop is what's under test, not the AI.
 const fast = makeData({ ai: { samples: 20, rerollGainThreshold: 0.08 } })
@@ -52,5 +52,27 @@ describe('campaign simulator', () => {
     expect(first.visits).toBe(2)
     expect(first.encounters).toBe(runs[0]![0]!.encounters + runs[1]![0]!.encounters)
     expect(first.turns).toHaveLength(runs[0]![0]!.turns.length + runs[1]![0]!.turns.length)
+  })
+})
+
+describe('a mutual knock-out', () => {
+  it('ends a trainer gauntlet instead of sending out nobody', () => {
+    // Kanto on these seeds used to throw "No able Pokémon to send out": the last team member fainted as it won the
+    // gauntlet's second battle, and the third started with nobody standing.
+    for (const [starterDex, seed] of [[1, 6], [7, 1], [7, 4]] as const) {
+      expect(() =>
+        runCampaignSync(data, { encounters: 900, seed, starterDex, spend: true, multiExp: true, regionId: 'kanto' }),
+      ).not.toThrow()
+    }
+  })
+
+  it('runs every region on every starter without throwing', () => {
+    for (const region of data.regions) {
+      for (const starterDex of region.starters) {
+        expect(() =>
+          runCampaignSync(data, { encounters: 200, seed: 3, starterDex, spend: true, multiExp: true, regionId: region.id }),
+        ).not.toThrow()
+      }
+    }
   })
 })

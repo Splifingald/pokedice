@@ -1,7 +1,7 @@
 import { getSpecies } from './data'
 import { expandDice } from './dice'
 import type { Rng } from './rng'
-import type { DieType, GameConfig, GameData, Milestone, PokeType, PokemonInstance, Species } from './types'
+import type { DieType, Evolution, GameConfig, GameData, Milestone, PokeType, PokemonInstance, Species } from './types'
 
 /** xpToNext(L) = ceil(A × L^B) + C */
 export function xpToNext(level: number, cfg: GameConfig): number {
@@ -114,8 +114,20 @@ export function evolve(inst: PokemonInstance, toDex: number, data: GameData): Po
 }
 
 /**
+ * A branching evolution prefers a species the player has not caught yet — Eevee, Tyrogue, Wurmple, Nincada and the
+ * rest. Once every branch is owned they are all equally likely again, so a full Pokédex still sees variety. With no
+ * Pokédex to consult (the simulator, the Day Care) every branch stays on the table.
+ */
+export function preferUnowned(ready: Evolution[], owned?: readonly number[]): Evolution[] {
+  if (!owned) return ready
+  const set = new Set(owned)
+  const fresh = ready.filter((e) => !set.has(e.toDex))
+  return fresh.length ? fresh : ready
+}
+
+/**
  * Level-ups, milestone cards and automatic (uncancellable) evolution by level (stone evolutions wait for their stone).
- * Branching evolutions are rolled uniformly.
+ * A branching evolution prefers a species not yet in the Pokédex (see preferUnowned).
  * `evolve: false` (Day Care XP) levels up without evolving; the next level-up in battle then evolves it.
  */
 export function gainXp(
@@ -123,7 +135,7 @@ export function gainXp(
   amount: number,
   data: GameData,
   rng: Rng,
-  opts: { evolve?: boolean } = {},
+  opts: { evolve?: boolean; owned?: readonly number[] } = {},
 ): { inst: PokemonInstance; events: ProgressEvent[] } {
   const cfg = data.config
   const events: ProgressEvent[] = []
@@ -145,7 +157,7 @@ export function gainXp(
     const species = getSpecies(data, cur.dex)
     const ready = opts.evolve === false ? [] : species.evolutions.filter((e) => e.level != null && e.level <= cur.level && data.species[e.toDex])
     if (ready.length) {
-      const target = ready.length === 1 ? ready[0]! : rng.pick(ready)
+      const target = ready.length === 1 ? ready[0]! : rng.pick(preferUnowned(ready, opts.owned))
       const fromDex = cur.dex
       cur = evolve(cur, target.toDex, data)
       events.push({ kind: 'evolve', uid: cur.id, fromDex, toDex: cur.dex, level: cur.level })

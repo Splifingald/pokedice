@@ -309,7 +309,7 @@ export function applyVictory(
     const inst = getInstance(next, uid)
     if (!inst) return
     events.push(shared ? { kind: 'xp', uid, amount, shared } : { kind: 'xp', uid, amount })
-    const res = gainXp(inst, amount, data, rng)
+    const res = gainXp(inst, amount, data, rng, { owned: save.pokedex })
     next = replaceInstance(next, res.inst)
     events.push(...res.events)
     for (const ev of res.events)
@@ -532,7 +532,7 @@ export function applyFieldItem(
   let cur = inst
   const events: ProgressEvent[] = []
   for (let i = 0; i < item.effect.amount && cur.level < data.config.maxLevel; i++) {
-    const res = gainXp(cur, xpToNext(cur.level, data.config) - cur.xp, data, rng)
+    const res = gainXp(cur, xpToNext(cur.level, data.config) - cur.xp, data, rng, { owned: save.pokedex })
     cur = res.inst
     events.push(...res.events)
   }
@@ -571,7 +571,7 @@ export function syncXpCurve(save: SaveData, data: GameData): SaveData {
   const pokedex = new Set(save.pokedex)
   const box = save.box.map((p) => {
     if (!due(p)) return p
-    const res = gainXp(p, 0, data, rng)
+    const res = gainXp(p, 0, data, rng, { owned: save.pokedex })
     for (const e of res.events) if (e.kind === 'evolve') pokedex.add(e.toDex)
     return res.inst
   })

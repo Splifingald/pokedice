@@ -373,10 +373,15 @@ export function finishCatch() {
 }
 
 /** The trainer still has Pokémon left after this victory? */
+/**
+ * Is there another Pokémon in this trainer's team to face? Not if nobody can face it: a mutual K.O. — the last team
+ * member fainting as it wins — ends the gauntlet there, rather than sending out nobody.
+ */
 export function trainerHasNext(): boolean {
-  const { run } = useGame.getState()
+  const { run, save, data } = useGame.getState()
   const enc = run.encounter
-  return !!(run.trainer && (enc?.kind === 'trainer' || enc?.kind === 'gym') && run.trainer.index + 1 < enc.team.length)
+  if (!run.trainer || (enc?.kind !== 'trainer' && enc?.kind !== 'gym') || run.trainer.index + 1 >= enc.team.length) return false
+  return !!save && teamOf(save).some((p) => p.currentHp > 0 && data.species[p.dex])
 }
 
 /** Leave the victory screen: next trainer Pokémon (with a freely chosen lead) or back to the area. */
