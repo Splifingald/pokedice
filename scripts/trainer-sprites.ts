@@ -24,8 +24,159 @@ const slug = (s: string) =>
     .replace(/-+/g, '-')
     .replace(/^-|-$/g, '')
 
+export type SpriteRegion = 'kanto' | 'johto' | 'hoenn'
+
+/**
+ * Named characters per region: gym leaders, the Elite Four, the Champion, the rival and the villainous teams. The
+ * files come from `pnpm region-trainers` (public/trainers/classes/<region>/), so a miss here is a missing file, not a
+ * wrong-looking sprite — `regionTrainerSprite` falls back to the shared default.
+ */
+const REGION_NAMED: Record<Exclude<SpriteRegion, 'kanto'>, Record<string, string>> = {
+  johto: {
+    Falkner: 'falkner',
+    Bugsy: 'bugsy',
+    Whitney: 'whitney',
+    Morty: 'morty',
+    Chuck: 'chuck',
+    Jasmine: 'jasmine',
+    Pryce: 'pryce',
+    Clair: 'clair',
+    'Elite Four Will': 'elite-will',
+    'Elite Four Koga': 'elite-koga',
+    'Elite Four Bruno': 'elite-bruno',
+    'Elite Four Karen': 'elite-karen',
+    'Champion Lance': 'champion-lance',
+    Red: 'red',
+    'Rival Silver': 'silver',
+    Silver: 'silver',
+  },
+  hoenn: {
+    Roxanne: 'roxanne',
+    Brawly: 'brawly',
+    Wattson: 'wattson',
+    Flannery: 'flannery',
+    Norman: 'norman',
+    Winona: 'winona',
+    'Tate & Liza': 'tate-and-liza',
+    Juan: 'juan',
+    'Elite Four Sidney': 'elite-sidney',
+    'Elite Four Phoebe': 'elite-phoebe',
+    'Elite Four Glacia': 'elite-glacia',
+    'Elite Four Drake': 'elite-drake',
+    'Champion Wallace': 'champion-wallace',
+    Steven: 'steven',
+    Wally: 'wally',
+    'Rival Wally': 'wally',
+    Maxie: 'magma-leader-maxie',
+    Archie: 'aqua-leader-archie',
+  },
+}
+
+/** Class prefixes per region, longest-first at match time so "Ace Trainer" beats "Ace". */
+const REGION_CLASSES: Record<Exclude<SpriteRegion, 'kanto'>, [prefix: string, sprite: string][]> = {
+  johto: [
+    ['Bug Catcher', 'bug-catcher'],
+    ['Bird Keeper', 'bird-keeper'],
+    ['Black Belt', 'black-belt'],
+    ['Kimono Girl', 'kimono-girl'],
+    ['Super Nerd', 'super-nerd'],
+    ['Team Rocket Grunt', 'team-rocket-m'],
+    ['Rocket Executive', 'rocket-executive'],
+    ['Rocket Boss', 'boss-giovanni'],
+    ['Rocket', 'team-rocket-m'],
+    ['Ace Trainer', 'schoolboy'],
+    ['Cooltrainer', 'schoolboy'],
+    ['School Kid', 'schoolboy'],
+    ['Psychic', 'psychic-m'],
+    ['Swimmer', 'swimmer-m'],
+    ['Firebreather', 'firebreather'],
+    ['Guitarist', 'guitarist'],
+    ['Officer', 'officer'],
+    ['Scientist', 'scientist'],
+    ['Gentleman', 'gentleman'],
+    ['Picnicker', 'picnicker'],
+    ['Pokéfan', 'pokefan'],
+    ['Youngster', 'youngster'],
+    ['Fisherman', 'fisherman'],
+    ['Camper', 'camper'],
+    ['Cyclist', 'cyclist'],
+    ['Skier', 'skier'],
+    ['Biker', 'biker'],
+    ['Beauty', 'beauty'],
+    ['Hiker', 'hiker'],
+    ['Sage', 'sage'],
+    ['Twins', 'twins'],
+    ['Lass', 'lass'],
+    ['Lady', 'lady'],
+  ],
+  hoenn: [
+    ['Bug Catcher', 'bug-catcher'],
+    ['Bird Keeper', 'bird-keeper'],
+    ['Black Belt', 'black-belt'],
+    ['Battle Girl', 'battle-girl'],
+    ['Dragon Tamer', 'dragon-tamer'],
+    ['Hex Maniac', 'hex-maniac'],
+    ['Parasol Lady', 'parasol-lady'],
+    ['Aroma Lady', 'aroma-lady'],
+    ['Ninja Boy', 'ninja-boy'],
+    ['Rich Boy', 'rich-boy'],
+    ['Team Magma Grunt', 'magma-grunt-m'],
+    ['Team Aqua Grunt', 'aqua-grunt-m'],
+    ['Magma', 'magma-grunt-m'],
+    ['Aqua', 'aqua-grunt-m'],
+    ['Ace Trainer', 'collector'],
+    ['Cooltrainer', 'collector'],
+    ['Pokémaniac', 'pokemaniac'],
+    ['Psychic', 'psychic-m'],
+    ['Swimmer', 'swimmer-m'],
+    ['Triathlete', 'triathlete'],
+    ['Guitarist', 'guitarist'],
+    ['Collector', 'collector'],
+    ['Gentleman', 'gentleman'],
+    ['Picnicker', 'picnicker'],
+    ['Youngster', 'youngster'],
+    ['Fisherman', 'fisherman'],
+    ['Kindler', 'kindler'],
+    ['Sailor', 'sailor'],
+    ['Camper', 'camper'],
+    ['Tuber', 'tuber-m'],
+    ['Beauty', 'beauty'],
+    ['Hiker', 'hiker'],
+    ['Lass', 'lass'],
+    ['Lady', 'lady'],
+  ],
+}
+
+/** Female first names, so a mixed class ("Swimmer Nina") picks the right sprite where both exist. */
+const FEMALE = /^(Mary|Naomi|Alexa|Sara|Nina|Nadia|Lena|Ivy|Claire|Rosa|Yuki|Mira|Dana|Tara|Elle|Nell|Kate|Erin|Amy|Beth)$/
+
+/**
+ * Sprite for a trainer in Johto or Hoenn. Named characters first, then the class prefix, then the shared default —
+ * a trainer never renders as a broken image.
+ */
+export function regionTrainerSprite(name: string, region: Exclude<SpriteRegion, 'kanto'>): string {
+  const file = (s: string) => `/trainers/classes/${region}/${s}.png`
+  const named = REGION_NAMED[region][name]
+  if (named) return file(named)
+  const first = name.split(' ').slice(-1)[0] ?? ''
+  const classes = [...REGION_CLASSES[region]].sort((a, b) => b[0].length - a[0].length)
+  for (const [prefix, sprite] of classes) {
+    if (!name.startsWith(prefix)) continue
+    // Where the sheet has both, a female first name takes the female pose.
+    if (FEMALE.test(first)) {
+      if (sprite === 'swimmer-m') return file('swimmer-f')
+      if (sprite === 'psychic-m') return file('psychic-f')
+      if (sprite === 'schoolboy') return file('schoolgirl')
+      if (sprite === 'team-rocket-m') return file('team-rocket-f')
+    }
+    return file(sprite)
+  }
+  return '/trainers/default.png'
+}
+
 /** Class sprite path for a trainer, from its display name (and role for gym leaders / Elite Four / Champion). */
-export function trainerSprite(name: string, role = 'trainer'): string {
+export function trainerSprite(name: string, role = 'trainer', region: SpriteRegion = 'kanto'): string {
+  if (region !== 'kanto') return regionTrainerSprite(name, region)
   const file = (s: string) => `/trainers/classes/${s}.png`
   const first = name.split(' ').slice(-1)[0] ?? ''
   const female = /^(Mary|Naomi|Alexa|Sara|Nina|Nadia|Lena|Ivy|Claire|Rosa|Yuki|Mira)$/.test(first)

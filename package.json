@@ -17,6 +17,7 @@
     "seed-regions": "tsx scripts/seed-regions.ts",
     "art": "tsx scripts/art.ts",
     "trainer-sprites": "tsx scripts/trainer-sprites.ts",
+    "region-trainers": "tsx scripts/region-trainers.ts",
     "pokemon-sprites": "tsx scripts/pokemon-sprites.ts",
     "sim": "tsx scripts/sim.ts",
     "balance": "tsx scripts/balance.ts",
