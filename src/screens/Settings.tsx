@@ -90,12 +90,15 @@ export function SettingsScreen() {
           on={settings.multiExp}
           onChange={(v) => setSettings({ multiExp: v })}
         />
-        <Toggle
-          label="Reduced motion"
-          hint="Instant transitions, no shake or particles. Your OS setting is respected too."
-          on={settings.reducedMotion}
-          onChange={(v) => setSettings({ reducedMotion: v })}
-        />
+        {/* Admins only — but a player who already turned it on still sees it, so they can turn it off. */}
+        {(isAdmin || settings.reducedMotion) && (
+          <Toggle
+            label="Reduced motion"
+            hint="Instant transitions, no shake or particles. Your OS setting is respected too."
+            on={settings.reducedMotion}
+            onChange={(v) => setSettings({ reducedMotion: v })}
+          />
+        )}
       </Panel>
 
       {save && <CharacterPanel />}
