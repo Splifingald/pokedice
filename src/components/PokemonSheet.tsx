@@ -1,5 +1,16 @@
-import type { ReactNode } from 'react'
-import { COPIES_FOE_DICE, effectiveStats, getSpecies, type DieType, type GameData, type Milestone, type PokemonInstance, type Species } from '@/engine'
+import { useMemo, type ReactNode } from 'react'
+import {
+  COPIES_FOE_DICE,
+  effectiveStats,
+  evolutionGate,
+  getSpecies,
+  type DieType,
+  type Evolution,
+  type GameData,
+  type Milestone,
+  type PokemonInstance,
+  type Species,
+} from '@/engine'
 import { dexNo, typeName } from '@/lib/format'
 import { t } from '@/i18n'
 import { useT } from '@/i18n/react'
@@ -32,7 +43,7 @@ export function evolutionHow(e: { level: number | null; item?: string | null }, 
   return t('ui.common.level.short', { n: e.level ?? '?' })
 }
 
-function milestoneLabel(m: Milestone, species: Species, data: GameData): string {
+function milestoneLabel(m: Milestone, species: Species, data: GameData, evolutions: Evolution[]): string {
   const to = typeName(m.dieType ?? species.type1)
   switch (m.effect) {
     case 'UPGRADE_DIE':
@@ -47,7 +58,7 @@ function milestoneLabel(m: Milestone, species: Species, data: GameData): string 
       return t('ui.sheet.msAddHp', { amount: m.amount ?? 0 })
     case 'EVOLVE':
       return t('ui.sheet.msEvolve', {
-        names: species.evolutions.map((e) => data.species[e.toDex]?.name ?? `#${e.toDex}`).join(' / '),
+        names: evolutions.map((e) => data.species[e.toDex]?.name ?? `#${e.toDex}`).join(' / '),
       })
   }
 }
@@ -98,17 +109,33 @@ function MilestoneGlyph({ m, species }: { m: Milestone; species: Species }) {
 }
 
 /**
+ * The evolutions this save may see. A branch into a later generation — Golbat into Crobat, Chansey into Blissey — is
+ * held until that region is unlocked, so the sheet must not name it either: it would spoil a region the player has
+ * not been offered and promise an evolution that will not happen.
+ */
+function useVisibleEvolutions(species: Species): Evolution[] {
+  const data = useGame((s) => s.data)
+  const save = useGame((s) => s.save)
+  return useMemo(() => {
+    if (!save) return species.evolutions
+    const allowed = evolutionGate(save, data)
+    return species.evolutions.filter((e) => allowed(e.toDex))
+  }, [species, save, data])
+}
+
+/**
  * Milestones on a side gauge that fills in blue up to the Pokémon's level. An EVOLVE milestone shows what it becomes
  * (animated mini + name, tappable); a stone evolution has no level, so it gets a row of its own at the end.
  */
 function MilestoneTrack({ species, level, onOpenDex }: { species: Species; level: number | null; onOpenDex?: (dex: number) => void }) {
   const { t } = useT()
   const data = useGame((s) => s.data)
+  const evolutions = useVisibleEvolutions(species)
   const ms = [...species.milestones].sort((a, b) => a.level - b.level)
   const next = level == null ? undefined : ms.find((m) => m.level > level)
-  const byLevel = species.evolutions.filter((e) => e.level != null)
-  const byStone = species.evolutions.filter((e) => e.level == null)
-  const evoNames = (evos: typeof species.evolutions) =>
+  const byLevel = evolutions.filter((e) => e.level != null)
+  const byStone = evolutions.filter((e) => e.level == null)
+  const evoNames = (evos: Evolution[]) =>
     evos.map((e, i) => (
       <span key={e.toDex}>
         {i > 0 && ' / '}
@@ -141,12 +168,12 @@ function MilestoneTrack({ species, level, onOpenDex }: { species: Species; level
                   <MilestoneGlyph m={m} species={species} />
                   <span className="min-w-0">
                     <span className="font-mono text-sm">{t('ui.common.level.short', { n: m.level })}</span>{' '}
-                    {m.effect === 'EVOLVE' ? (
+                    {m.effect === 'EVOLVE' && byLevel.length > 0 ? (
                       <>
                         {t('ui.sheet.evolvesInto')} {evoNames(byLevel)}
                       </>
                     ) : (
-                      milestoneLabel(m, species, data)
+                      milestoneLabel(m, species, data, evolutions)
                     )}
                     <span className="sr-only">{reached ? t('ui.sheet.reached') : ''}</span>
                   </span>

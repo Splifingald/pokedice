@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { instanceMaxHp, stoneEvolution, usableIn, type PokemonInstance } from '@/engine'
+import { evolutionGate, instanceMaxHp, stoneEvolution, usableIn, type PokemonInstance } from '@/engine'
 import { effectText } from '@/i18n/text'
 import { useT } from '@/i18n/react'
 import { applyBagItem } from '@/store/actions'
@@ -13,6 +13,7 @@ export function ItemPanel({ inst }: { inst: PokemonInstance }) {
   const { t } = useT()
   const data = useGame((s) => s.data)
   const inventory = useGame((s) => s.save?.inventory)
+  const save = useGame((s) => s.save)
   // An evolution (a stone, a Rare Candy level) plays its scene — kept even if that used up the last usable item.
   const [evolving, setEvolving] = useState<EvolutionShow | null>(null)
   const scene = evolving && <EvolutionQueue items={[evolving]} onDone={() => setEvolving(null)} />
@@ -20,7 +21,8 @@ export function ItemPanel({ inst }: { inst: PokemonInstance }) {
   if (!bag.length || inst.revivesAt != null) return scene || null
   const helps = (key: string) => {
     const fx = data.items[key]?.effect
-    if (fx?.kind === 'stone') return stoneEvolution(inst, key, data) != null
+    // A stone whose only branch is a later generation's does nothing yet, so it must not offer to be used.
+    if (fx?.kind === 'stone') return !!save && stoneEvolution(inst, key, data, evolutionGate(save, data)) != null
     if (fx?.kind === 'revive') return inst.currentHp <= 0
     if (fx?.kind === 'heal') return inst.currentHp > 0 && inst.currentHp < instanceMaxHp(inst, data)
     if (fx?.kind === 'level') return inst.level < data.config.maxLevel

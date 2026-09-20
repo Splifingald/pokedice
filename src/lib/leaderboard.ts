@@ -1,13 +1,16 @@
 // The leaderboard: every cloud save (Google-signed-in players only), ranked by best level, campaign progress or
 // Pokédex. The rows come from the `leaderboard()` SQL function; ranking happens here, against the game data.
 import { linearAreas } from '@/engine/data'
-import type { GameData } from '@/engine/types'
+import { regionSpecies } from '@/engine/regions'
+import type { GameData, RegionId } from '@/engine/types'
 import { getSupabase } from './supabase'
 import { t } from '@/i18n'
 
 export type LeaderboardTab = 'level' | 'progress' | 'dex'
 
 export interface LeaderboardRow {
+  /** Which region this row is about: a player who has played several appears once per region. */
+  region: RegionId
   isMe: boolean
   name: string
   character: 'red' | 'green'
@@ -24,17 +27,20 @@ export interface RankedRow extends LeaderboardRow {
   score: string
 }
 
-/** How far into the campaign: main-route areas cleared, then gym / Elite Four battles won. */
+/** How far into this region: its main-route areas cleared, then gym / Elite Four battles won. */
 function progressKey(row: LeaderboardRow, data: GameData): [number, number] {
   let cleared = 0
-  for (const a of linearAreas(data)) if (row.progress[a.id]?.cleared) cleared++
-  const gyms = Object.values(row.progress).reduce((n, p) => n + (p.gyms || 0), 0)
+  let gyms = 0
+  for (const a of linearAreas(data, row.region)) {
+    if (row.progress[a.id]?.cleared) cleared++
+    gyms += row.progress[a.id]?.gyms ?? 0
+  }
   return [cleared, gyms]
 }
 
-/** The area the player is working on: the first main-route area not cleared yet. */
+/** The area the player is working on: the first area of their region's chain not cleared yet. */
 export function frontierArea(row: LeaderboardRow, data: GameData): string {
-  const chain = linearAreas(data)
+  const chain = linearAreas(data, row.region)
   const next = chain.find((a) => !row.progress[a.id]?.cleared)
   return next ? next.name : 'Hall of Fame'
 }
@@ -58,10 +64,15 @@ const compare = (a: number[], b: number[]) => {
   return 0
 }
 
-export function rankLeaderboard(rows: LeaderboardRow[], tab: LeaderboardTab, data: GameData): RankedRow[] {
-  const keyed = rows.map((row) => ({ row, key: sortKey(row, tab, data) }))
+/**
+ * One board per region: the rows are filtered to `region` before they are ranked, so a Johto board ranks Johto Boxes,
+ * Johto Pokédex completion and Johto progress only. A player who has played several regions appears on each.
+ */
+export function rankLeaderboard(rows: LeaderboardRow[], tab: LeaderboardTab, data: GameData, region: RegionId): RankedRow[] {
+  const keyed = rows.filter((r) => r.region === region).map((row) => ({ row, key: sortKey(row, tab, data) }))
   keyed.sort((a, b) => compare(a.key, b.key) || a.row.name.localeCompare(b.row.name))
-  const total = data.speciesList.length
+  // The dex score is out of what this region actually holds, not the National Dex.
+  const total = regionSpecies(data, region).size || data.speciesList.length
   let rank = 0
   return keyed.map(({ row, key }, i) => {
     // Ties share a rank on the tab's own measure and its tie-breakers.
@@ -71,6 +82,7 @@ export function rankLeaderboard(rows: LeaderboardRow[], tab: LeaderboardTab, dat
 }
 
 interface RawRow {
+  region: string | null
   is_me: boolean | null
   name: string | null
   character: string | null
@@ -82,6 +94,8 @@ interface RawRow {
 
 export function parseLeaderboard(raw: RawRow[]): LeaderboardRow[] {
   return raw.map((r) => ({
+    // Rows from a database that predates regions are Kanto's.
+    region: r.region || 'kanto',
     isMe: !!r.is_me,
     name: r.name || 'Trainer',
     character: r.character === 'green' ? 'green' : 'red',

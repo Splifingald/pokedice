@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { COMBO_KEYS, POKE_TYPES, type ComboKey, type PokeType, type SaveData } from '@/engine/types'
+import { COMBO_KEYS, POKE_TYPES, type ComboKey, type PokeType, type RegionSave, type SaveData } from '@/engine/types'
 import { LANGS } from '@/i18n/langs'
 
 export const CURRENT_SAVE_VERSION = 1
@@ -33,10 +33,31 @@ const progressSchema = z.object({
   lastCenter: z.boolean().optional(),
 })
 
+/** One parked region's block: the same fields the live region keeps at the top level of the save. */
+const regionBlockSchema = () =>
+  z.object({
+    gold: z.number().min(0),
+    pokedex: z.array(z.number().int().min(1)),
+    box: z.array(instanceSchema),
+    team: z.array(z.string()),
+    inventory: z.record(z.number().int().min(0)),
+    comboLevels: levelRecord<ComboKey>(COMBO_KEYS),
+    dieLevels: levelRecord<PokeType>(POKE_TYPES),
+    currentAreaId: z.string(),
+    areaProgress: z.record(progressSchema),
+    dayCare: dayCareSchema.optional(),
+  })
+
 const levelRecord = <K extends string>(keys: readonly K[]) =>
   z
     .record(z.number().int().min(1).max(10))
     .transform((r) => Object.fromEntries(keys.map((k) => [k, r[k] ?? 1])) as Record<K, number>)
+
+const dayCareSchema = z.object({
+  residents: z.array(z.object({ inst: instanceSchema, since: z.number() })),
+  eggClaimed: z.boolean().default(false),
+  visited: z.boolean().optional(),
+})
 
 export const saveSchema = z.object({
   version: z.literal(1),
@@ -59,16 +80,13 @@ export const saveSchema = z.object({
   }),
   hpScale: z.number().positive().optional(),
   player: z.object({ name: z.string().max(12), character: z.enum(['red', 'green']) }).optional(),
-  dayCare: z
-    .object({
-      residents: z.array(z.object({ inst: instanceSchema, since: z.number() })),
-      eggClaimed: z.boolean().default(false),
-      visited: z.boolean().optional(),
-    })
-    .optional(),
+  dayCare: dayCareSchema.optional(),
   energy: z.object({ value: z.number().min(0), at: z.number() }).optional(),
   adminEditAt: z.number().optional(),
   leaderboardVisited: z.boolean().optional(),
+  region: z.string().optional(),
+  parked: z.record(regionBlockSchema()).optional(),
+  merged: z.array(z.string()).optional(),
 })
 
 /**
@@ -85,6 +103,15 @@ export function migrate(raw: unknown): unknown {
 
 export type ParseResult = { ok: true; save: SaveData } | { ok: false; error: string }
 
+/** A parked region, made self-consistent: team ids that exist in its Box, no duplicate Pokédex entries. */
+function repairBlock(block: RegionSave): RegionSave {
+  const ids = new Set(block.box.map((p) => p.id))
+  const team = [...new Set(block.team)].filter((id) => ids.has(id))
+  if (!team.length && block.box.length) team.push(block.box[0]!.id)
+  const dayCare = block.dayCare && { ...block.dayCare, residents: block.dayCare.residents.filter((r) => !ids.has(r.inst.id)) }
+  return { ...block, team, pokedex: [...new Set(block.pokedex)], ...(dayCare && { dayCare }) }
+}
+
 /** Migrate → validate → repair referential integrity (team ids must exist in the box, pokédex unique). */
 export function parseSave(raw: unknown): ParseResult {
   const parsed = saveSchema.safeParse(migrate(raw))
@@ -96,5 +123,11 @@ export function parseSave(raw: unknown): ParseResult {
   if (!s.box.length) return { ok: false, error: 'box is empty' }
   // A Pokémon is either in the Box or at the Day Care, never both.
   const dayCare = s.dayCare && { ...s.dayCare, residents: s.dayCare.residents.filter((r) => !ids.has(r.inst.id)) }
-  return { ok: true, save: { ...s, team, pokedex: [...new Set(s.pokedex)], ...(dayCare && { dayCare }) } }
+  // Parked regions get the same repair: their team ids must exist in their own Box, their Pokédex must be unique.
+  // A parked Box can be legitimately empty — that is what a region looks like after its things were merged forward.
+  const parked = s.parked && Object.fromEntries(Object.entries(s.parked).map(([id, b]) => [id, repairBlock(b!)]))
+  return {
+    ok: true,
+    save: { ...s, region: s.region ?? 'kanto', team, pokedex: [...new Set(s.pokedex)], ...(dayCare && { dayCare }), ...(parked && { parked }) },
+  }
 }

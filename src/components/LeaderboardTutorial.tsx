@@ -1,7 +1,7 @@
 // Prof. Oak's leaderboard tutorial: the first time the player is in the game (between fights), he points them to the
 // trophy button. The pop-up's only button opens the leaderboard, and that first visit ends it (saved, so it syncs).
 import { useLocation, useNavigate } from 'react-router-dom'
-import { dayCareTutorialDue } from '@/engine'
+import { leaderboardTutorialDue } from '@/engine'
 import { useT } from '@/i18n/react'
 import { useGame } from '@/store/game'
 import { PixelIcon } from './icons'
@@ -13,7 +13,7 @@ export function LeaderboardTutorial() {
   const navigate = useNavigate()
   const { pathname } = useLocation()
   // The Day Care tutorial goes first when both are due.
-  const due = useGame((s) => !!s.save && !s.save.leaderboardVisited && !dayCareTutorialDue(s.save, s.data))
+  const due = useGame((s) => !!s.save && leaderboardTutorialDue(s.save, s.data))
   const idle = useGame((s) => s.run.phase === 'idle')
   const open = due && idle && pathname !== '/leaderboard'
   return (

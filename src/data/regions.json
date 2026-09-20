@@ -1,0 +1,56 @@
+[
+ {
+  "id": "kanto",
+  "name": "Kanto",
+  "orderIndex": 0,
+  "dexRange": [
+   1,
+   151
+  ],
+  "starters": [
+   1,
+   4,
+   7
+  ],
+  "starterLevel": 5,
+  "leagueAreaId": "bbe7e459-a138-5106-bd01-fce7ff422e7f",
+  "nextRegion": "johto",
+  "enabled": true
+ },
+ {
+  "id": "johto",
+  "name": "Johto",
+  "orderIndex": 1,
+  "dexRange": [
+   152,
+   251
+  ],
+  "starters": [
+   152,
+   155,
+   158
+  ],
+  "starterLevel": 5,
+  "leagueAreaId": "1ab44ea6-29c0-51c0-9a1f-e1a4b77cfc74",
+  "nextRegion": "hoenn",
+  "enabled": true
+ },
+ {
+  "id": "hoenn",
+  "name": "Hoenn",
+  "orderIndex": 2,
+  "dexRange": [
+   252,
+   386
+  ],
+  "starters": [
+   252,
+   255,
+   258
+  ],
+  "starterLevel": 5,
+  "leagueAreaId": "a95b1329-0b92-511e-905b-f6616ed8f907",
+  "nextRegion": null,
+  "enabled": true
+ }
+]

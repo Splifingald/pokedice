@@ -1,5 +1,13 @@
 /**
- * pnpm seed — PokeAPI → src/data/*.json (the offline bundle) + supabase/seed.sql.
+ * pnpm seed — compares what this generator would produce (PokeAPI + content.ts, Kanto only) against the committed
+ * bundle in src/data, and reports the difference. It writes nothing.
+ *
+ * It used to *be* the bundle: fetch the 151, lay out Kanto, write src/data/*.json and supabase/seed.sql. The bundle
+ * has since moved on — decks and loot retuned in the admin, items added, and Johto and Hoenn seeded on top by
+ * `seed-regions` — so a plain re-run would have rolled all of that back. Writing is now behind `--force`.
+ *
+ * Its exported helpers (dice maths, `buildAreasAndTrainers`, `buildSql`) are still the real thing, and are what
+ * `scripts/seed-regions.ts` builds the later regions with.
  *
  * Idempotent and re-runnable: every PokeAPI response is cached in scripts/.cache/, every random choice is seeded,
  * and every generated UUID is derived from a stable name. It never touches a live database.
@@ -29,13 +37,14 @@ import {
   type ItemDef,
   type Milestone,
   type PokeType,
+  type Region,
   type Species,
   type StatusKind,
   type Trainer,
   type TypeChartRow,
 } from '../src/engine/types'
-import { AREAS, LEGENDARIES, lootPlanFor, RARE_IN_CATCH_ALL, STARTERS, type Mon } from './content'
-import { trainerSprite } from './trainer-sprites'
+import { AREAS, LEGENDARIES, lootPlanFor, RARE_IN_CATCH_ALL, STARTERS, type AreaPlan, type Mon } from './content'
+import { trainerSprite, type SpriteRegion } from './trainer-sprites'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const CACHE_DIR = path.join(ROOT, 'scripts', '.cache')
@@ -115,14 +124,32 @@ interface ApiType {
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
+/**
+ * pokeapi.co refuses connections from CI and from a sandboxed checkout, so nothing is fetched from it directly.
+ * PokeAPI publishes the identical JSON as a static export — one `index.json` per endpoint — and that is what we read.
+ * URLs stay in `${API}/…` form because the API's own responses cross-reference each other that way, and the cache key
+ * is still derived from the API-relative path, so a cache filled by `seed-regions` is a cache this script hits too.
+ */
+const MIRROR = 'https://raw.githubusercontent.com/PokeAPI/api-data/master/data/api/v2'
+const mirrorUrl = (url: string) => {
+  // Cross-references come back absolute from the live API and root-relative from the static export; accept both.
+  const pathname = url.startsWith('/') ? url : new URL(url).pathname
+  return `${MIRROR}${pathname.replace(/^\/api\/v2/, '').replace(/\/$/, '')}/index.json`
+}
+
 async function getJson<T>(url: string): Promise<T> {
-  const key = url.replace(API, '').replace(/[^a-z0-9]+/gi, '_').replace(/^_|_$/g, '') + '.json'
+  const key =
+    url
+      .replace(API, '')
+      .replace(/^\/api\/v2/, '')
+      .replace(/[^a-z0-9]+/gi, '_')
+      .replace(/^_|_$/g, '') + '.json'
   const file = path.join(CACHE_DIR, key)
   if (existsSync(file)) return JSON.parse(await readFile(file, 'utf8')) as T
   let lastErr: unknown
   for (let attempt = 0; attempt < 5; attempt++) {
     try {
-      const res = await fetch(url)
+      const res = await fetch(mirrorUrl(url))
       if (!res.ok) throw new Error(`${res.status} ${res.statusText} for ${url}`)
       const json = (await res.json()) as T
       await writeFile(file, JSON.stringify(json))
@@ -529,7 +556,14 @@ async function fetchSpecies(): Promise<Species[]> {
 
 async function fetchTypeChart(): Promise<TypeChartRow[]> {
   console.log('· fetching 18 types…')
-  const types = await mapPool([...POKE_TYPES], 6, (t) => getJson<ApiType>(`${API}/type/${t}`))
+  // The static export indexes resources by id, not by name, so resolve the names through the endpoint's own index.
+  const index = await getJson<{ results: { name: string; url: string }[] }>(`${API}/type`)
+  const urlOf = new Map(index.results.map((r) => [r.name, r.url]))
+  const types = await mapPool([...POKE_TYPES], 6, (t) => {
+    const url = urlOf.get(t)
+    if (!url) throw new Error(`no such type: ${t}`)
+    return getJson<ApiType>(url)
+  })
   const valid = new Set<string>(POKE_TYPES)
   const rows: TypeChartRow[] = []
   for (const t of types) {
@@ -547,24 +581,51 @@ async function fetchTypeChart(): Promise<TypeChartRow[]> {
   return rows
 }
 
-export function buildAreasAndTrainers(pokemon: Species[]): { areas: Area[]; trainers: Trainer[] } {
+/** What changes from one region to the next; everything omitted is Kanto's. */
+export interface BuildOptions {
+  /** The area plans to build. Defaults to Kanto's. */
+  plans?: AreaPlan[]
+  /** Stamped on every area built here. */
+  regionId?: string
+  /** This region's starters, kept out of every hand-written wild pool and every trainer team. */
+  starters?: number[]
+  /** Which species the catch-all ('ALL') pool may draw from; defaults to every non-legendary. */
+  catchAll?: (dex: number) => boolean
+  /** Sprite set for this region's trainers. */
+  spriteRegion?: SpriteRegion
+  /** Battle scene by area name; falls back to Kanto's table, then 'default'. */
+  backgrounds?: Record<string, BattleBackground>
+  /** Item keys loot may name. Defaults to this script's ITEMS, which the committed bundle has since grown past. */
+  itemKeys?: Set<string>
+}
+
+export function buildAreasAndTrainers(pokemon: Species[], opts: BuildOptions = {}): { areas: Area[]; trainers: Trainer[] } {
+  const plans = opts.plans ?? AREAS
+  const regionId = opts.regionId ?? 'kanto'
+  const spriteRegion = opts.spriteRegion ?? 'kanto'
+  const backgrounds = opts.backgrounds ?? AREA_BACKGROUNDS
   const rng = createRng(20260913)
   const byDex = new Map(pokemon.map((p) => [p.dex, p]))
   const legendaries = new Set(LEGENDARIES)
-  const starters = new Set(STARTERS)
+  const starters = new Set(opts.starters ?? STARTERS)
   const areas: Area[] = []
   const trainers: Trainer[] = []
 
-  for (const plan of AREAS) {
+  for (const plan of plans) {
     const areaId = stableUuid(`area:${plan.key}`)
     // The catch-all pool (Cerulean Cave) includes the starters so 151/151 is reachable; hand-written pools don't.
     const wildRows =
       plan.wild === 'ALL'
         ? pokemon
-            .filter((p) => !legendaries.has(p.dex))
-            .map((p) => [p.dex, RARE_IN_CATCH_ALL.has(p.dex) ? 3 : 10, plan.minLevel, plan.maxLevel] as const)
+            .filter((p) => !legendaries.has(p.dex) && (opts.catchAll?.(p.dex) ?? true))
+            .map((p) => [p.dex, RARE_IN_CATCH_ALL.has(p.dex) || starters.has(p.dex) ? 3 : 10, plan.minLevel, plan.maxLevel] as const)
         : plan.wild
+    // Pool ids are derived from `wild:<area>:<dex>`, so the same species twice in one pool collides on one id — a
+    // duplicate primary key the database would reject and the admin would show as permanently unsaved.
+    const dexSeen = new Set<number>()
     for (const [dex] of wildRows) {
+      if (dexSeen.has(dex)) throw new Error(`${plan.name}: #${dex} is in the wild pool twice`)
+      dexSeen.add(dex)
       if (legendaries.has(dex)) throw new Error(`${plan.name}: #${dex} is a legendary`)
       if (plan.wild !== 'ALL' && starters.has(dex)) throw new Error(`${plan.name}: #${dex} is a starter`)
       if (!byDex.has(dex)) throw new Error(`${plan.name}: unknown dex #${dex}`)
@@ -619,7 +680,7 @@ export function buildAreasAndTrainers(pokemon: Species[]): { areas: Area[]; trai
       trainers.push({
         id: trainerId,
         name: tp.name,
-        spriteUrl: trainerSprite(tp.name),
+        spriteUrl: trainerSprite(tp.name, 'trainer', spriteRegion),
         team: team.map(([dex, level]) => ({ dex, level })),
         role: 'trainer',
         badge: null,
@@ -637,7 +698,7 @@ export function buildAreasAndTrainers(pokemon: Species[]): { areas: Area[]; trai
         id,
         name: g.name,
         // A rival version shows as the character the player didn't pick (resolved in play); Green by default.
-        spriteUrl: g.rivalOf != null ? '/characters/green.png' : trainerSprite(g.name, g.role),
+        spriteUrl: g.rivalOf != null ? '/characters/green.png' : trainerSprite(g.name, g.role, spriteRegion),
         team: g.team.map(([dex, level]) => ({ dex, level })),
         role: g.role,
         badge: g.badge ?? null,
@@ -650,7 +711,7 @@ export function buildAreasAndTrainers(pokemon: Species[]): { areas: Area[]; trai
       return id
     })
 
-    const itemKeys = new Set(ITEMS.map((i) => i.key))
+    const itemKeys = opts.itemKeys ?? new Set(ITEMS.map((i) => i.key))
     const lootPool = lootPlanFor(plan).map(([itemKey, weight, minQty, maxQty, once], i) => {
       if (itemKey !== 'money' && !itemKeys.has(itemKey)) throw new Error(`${plan.name}: unknown loot item ${itemKey}`)
       return { id: stableUuid(`loot:${plan.key}:${i}:${itemKey}`), itemKey, weight, unique: !!once, minQty, maxQty }
@@ -659,6 +720,7 @@ export function buildAreasAndTrainers(pokemon: Species[]): { areas: Area[]; trai
     areas.push({
       id: areaId,
       orderIndex: plan.orderIndex,
+      regionId,
       name: plan.name,
       bannerUrl: `/banners/${plan.banner.scene}.png${plan.banner.flip ? '#flip' : ''}`,
       roundsToClear: plan.roundsToClear,
@@ -670,7 +732,7 @@ export function buildAreasAndTrainers(pokemon: Species[]): { areas: Area[]; trai
       scalesToTeam: plan.scalesToTeam,
       easyMode: !!plan.easyMode,
       enemyUpgradeLevel: null, // set below, once every area is known
-      battleBackground: AREA_BACKGROUNDS[plan.name] ?? 'default',
+      battleBackground: backgrounds[plan.name] ?? AREA_BACKGROUNDS[plan.name] ?? 'default',
       hidden: !!plan.hidden,
       unlockConditions: plan.conditions?.map((c) => (c.kind === 'area' ? { ...c, areaId: stableUuid(`area:${c.areaId}`) } : c)) ?? null,
       gyms,
@@ -738,7 +800,18 @@ export function gymPotions(role: string, badge: string | null | undefined): stri
 /** game_config keys removed from the game (passive regen, 2026-09-19): seed.sql deletes them. */
 const RETIRED_CONFIG_KEYS = ['regenPercentPerHour']
 
+/**
+ * Schema the data needs but 0001_init.sql has not got: the `regions` table, `areas.region_id`, and the per-region
+ * `leaderboard()`. Folded into seed.sql so there is one file to run rather than two in a particular order. The
+ * migration stays the single source of that SQL — it is written to be idempotent, so re-running it costs nothing.
+ */
+export async function regionsPrelude(): Promise<string> {
+  const file = path.join(ROOT, 'supabase', 'migrations', '0016_regions.sql')
+  return `-- ↓ supabase/migrations/0016_regions.sql, inlined so this file stands alone.\n${await readFile(file, 'utf8')}`
+}
+
 export function buildSql(b: {
+  regions?: Region[]
   pokemon: Species[]
   typeChart: TypeChartRow[]
   diceTypes: DiceTypeDef[]
@@ -747,16 +820,18 @@ export function buildSql(b: {
   upgrades: { combos: ComboUpgradeRow[]; dice: DieUpgradeRow[] }
   items: ItemDef[]
   config: Record<string, unknown>
-}): string {
+}, prelude = ''): string {
   const parts = [
-    '-- Pokédice seed data. Generated by `pnpm seed` — do not edit by hand.',
-    '-- Run after 0001_init.sql (it adds the later columns itself, so a live database can take it alone). Safe to re-run:',
-    '-- every insert is an upsert on a stable key.',
+    '-- Pokédice seed data. Generated by `pnpm seed-sql` — do not edit by hand.',
+    '-- The only file you need to run: it carries the schema changes made after 0001_init.sql as well as the data, so',
+    '-- a live database can take it on its own. Safe to re-run — every statement is idempotent and every insert is an',
+    '-- upsert on a stable key. It never touches player saves.',
     'begin;',
     // Columns added after 0001_init.sql, so a live database can take this file on its own (no-ops when present).
     'alter table areas add column if not exists scale_offsets jsonb;',
     'alter table areas add column if not exists rounds_to_clear int;',
     'alter table items add column if not exists shop_area uuid;',
+    prelude,
     upsert(
       'type_chart',
       ['attacking', 'defending', 'multiplier'],
@@ -806,10 +881,17 @@ export function buildSql(b: {
       ['dex'],
     ),
     upsert(
+      'regions',
+      ['id', 'name', 'order_index', 'dex_range', 'starters', 'starter_level', 'league_area_id', 'next_region', 'enabled'],
+      (b.regions ?? []).map((r) => [r.id, r.name, r.orderIndex, r.dexRange, r.starters, r.starterLevel, r.leagueAreaId, r.nextRegion, r.enabled]),
+      ['id'],
+    ),
+    upsert(
       'areas',
       [
         'id',
         'order_index',
+        'region_id',
         'name',
         'banner_url',
         'rounds_to_clear',
@@ -830,6 +912,7 @@ export function buildSql(b: {
       b.areas.map((a) => [
         a.id,
         a.orderIndex,
+        a.regionId ?? 'kanto',
         a.name,
         a.bannerUrl,
         a.roundsToClear,
@@ -909,40 +992,166 @@ async function writeJson(name: string, data: unknown) {
   await writeFile(path.join(DATA_DIR, name), JSON.stringify(data, null, 1) + '\n')
 }
 
-async function main() {
+/** Everything this script can generate from PokeAPI plus `content.ts` — Kanto only, as it has always been. */
+async function generate() {
   await mkdir(CACHE_DIR, { recursive: true })
-  await mkdir(DATA_DIR, { recursive: true })
-  await mkdir(path.dirname(SQL_FILE), { recursive: true })
-
   const pokemon = await fetchSpecies()
   const typeChart = await fetchTypeChart()
-  const diceTypes = buildDiceTypes()
-  const upgrades = buildUpgrades()
   const { areas, trainers } = buildAreasAndTrainers(pokemon)
-  const config: Record<string, unknown> = { ...DEFAULT_CONFIG }
+  return {
+    pokemon,
+    typeChart,
+    diceTypes: buildDiceTypes(),
+    areas,
+    trainers,
+    upgrades: buildUpgrades(),
+    items: ITEMS,
+    config: { ...DEFAULT_CONFIG } as Record<string, unknown>,
+  }
+}
 
-  const bundle = { pokemon, typeChart, diceTypes, areas, trainers, upgrades, items: ITEMS, config }
-  await writeJson('pokemon.json', pokemon)
-  await writeJson('type-chart.json', typeChart)
-  await writeJson('dice-types.json', diceTypes)
-  await writeJson('areas.json', areas)
-  await writeJson('trainers.json', trainers)
-  await writeJson('upgrades.json', upgrades)
-  await writeJson('items.json', ITEMS)
-  await writeJson('config.json', config)
-  await writeFile(SQL_FILE, buildSql(bundle))
+// ---------------------------------------------------------------- report mode (the default)
+//
+// The generator is no longer the source of truth, and has not been for a long time: the bundle in src/data is edited
+// in the admin — decks retuned, loot rewritten, items added — and grown by `seed-regions` to 386 species across three
+// regions. Regenerating would silently roll all of that back, so the default run only *compares* and says what it
+// found. That turns a footgun into the one useful thing a stale generator can still do: tell you how far the shipped
+// content has drifted from the rules that first produced it.
+
+interface Divergence {
+  committed: number
+  generated: number
+  identical: number
+  /** Which fields differ, and in how many records — the shape of the drift, not a wall of diffs. */
+  fields: Record<string, number>
+  onlyCommitted: string[]
+  onlyGenerated: string[]
+}
+
+function diffRows<T extends object>(committed: T[], generated: T[], keyOf: (row: T) => string): Divergence {
+  const left = new Map(committed.map((r) => [keyOf(r), r]))
+  const right = new Map(generated.map((r) => [keyOf(r), r]))
+  const out: Divergence = {
+    committed: left.size,
+    generated: right.size,
+    identical: 0,
+    fields: {},
+    onlyCommitted: [...left.keys()].filter((k) => !right.has(k)),
+    onlyGenerated: [...right.keys()].filter((k) => !left.has(k)),
+  }
+  for (const [key, a] of left) {
+    const b = right.get(key)
+    if (!b) continue
+    const differing = [...new Set([...Object.keys(a), ...Object.keys(b)])].filter(
+      (f) => JSON.stringify(a[f as keyof T]) !== JSON.stringify(b[f as keyof T]),
+    )
+    if (!differing.length) out.identical++
+    for (const f of differing) out.fields[f] = (out.fields[f] ?? 0) + 1
+  }
+  return out
+}
+
+async function readCommitted<T>(name: string): Promise<T | null> {
+  const file = path.join(DATA_DIR, name)
+  if (!existsSync(file)) return null
+  return JSON.parse(await readFile(file, 'utf8')) as T
+}
+
+function printDivergence(label: string, d: Divergence) {
+  const drifted = d.identical < Math.min(d.committed, d.generated)
+  const mark = d.onlyCommitted.length || d.onlyGenerated.length || drifted ? '·' : '✓'
+  console.log(
+    `${mark} ${label.padEnd(12)} committed ${String(d.committed).padStart(4)} · generated ` +
+      `${String(d.generated).padStart(4)} · identical ${String(d.identical).padStart(4)}`,
+  )
+  const fields = Object.entries(d.fields).sort((a, b) => b[1] - a[1])
+  if (fields.length) console.log(`    drifted fields: ${fields.map(([f, n]) => `${f} (${n})`).join(', ')}`)
+  const sample = (list: string[]) => list.slice(0, 6).join(', ') + (list.length > 6 ? `, …` : '')
+  if (d.onlyCommitted.length)
+    console.log(`    only in the bundle (${d.onlyCommitted.length}): ${sample(d.onlyCommitted)}`)
+  if (d.onlyGenerated.length)
+    console.log(`    only from the generator (${d.onlyGenerated.length}): ${sample(d.onlyGenerated)}`)
+}
+
+async function report() {
+  const built = await generate()
+  console.log('\nComparing what scripts/ would generate against the committed bundle in src/data:\n')
+
+  const areas = (await readCommitted<Area[]>('areas.json')) ?? []
+  // The generator only ever knew Kanto, so a Johto area is not "missing" — it is simply out of its scope.
+  const kantoAreas = areas.filter((a) => (a.regionId ?? 'kanto') === 'kanto')
+  const later = areas.length - kantoAreas.length
+
+  printDivergence('pokemon', diffRows(((await readCommitted<Species[]>('pokemon.json')) ?? []).filter((p) => p.dex <= KANTO), built.pokemon, (p) => String(p.dex)))
+  printDivergence('areas', diffRows(kantoAreas, built.areas, (a) => a.name))
+  printDivergence('trainers', diffRows((await readCommitted<Trainer[]>('trainers.json')) ?? [], built.trainers, (t) => t.id))
+  printDivergence('items', diffRows((await readCommitted<ItemDef[]>('items.json')) ?? [], built.items, (i) => i.key))
+  printDivergence('dice-types', diffRows((await readCommitted<DiceTypeDef[]>('dice-types.json')) ?? [], built.diceTypes, (d) => d.type))
+  printDivergence(
+    'type-chart',
+    diffRows((await readCommitted<TypeChartRow[]>('type-chart.json')) ?? [], built.typeChart, (r) => `${r.attacking}>${r.defending}`),
+  )
+
+  const committedConfig = (await readCommitted<Record<string, unknown>>('config.json')) ?? {}
+  const configKeys = [...new Set([...Object.keys(committedConfig), ...Object.keys(built.config)])]
+  const changedConfig = configKeys.filter((k) => JSON.stringify(committedConfig[k]) !== JSON.stringify(built.config[k]))
+  console.log(
+    `${changedConfig.length ? '·' : '✓'} ${'config'.padEnd(12)} ${configKeys.length} keys · ` +
+      `${configKeys.length - changedConfig.length} identical`,
+  )
+  if (changedConfig.length) console.log(`    retuned: ${changedConfig.join(', ')}`)
+
+  const speciesAfterKanto = ((await readCommitted<Species[]>('pokemon.json')) ?? []).filter((p) => p.dex > KANTO).length
+  const regions = (await readCommitted<Region[]>('regions.json')) ?? []
+  console.log(
+    `\n  Out of this generator's reach: ${speciesAfterKanto} species past #${KANTO}, ${later} areas outside Kanto, ` +
+      `${regions.length} regions.`,
+  )
+  console.log(`  Those come from \`pnpm seed-regions\`, and the SQL from \`pnpm seed-sql\`.`)
+  console.log(
+    `\n  Nothing was written. To overwrite src/data and supabase/seed.sql with Kanto-only generated content — ` +
+      `losing\n  everything above — run \`pnpm seed --force\`.\n`,
+  )
+}
+
+// ---------------------------------------------------------------- write mode (--force)
+
+async function regenerate() {
+  await mkdir(DATA_DIR, { recursive: true })
+  await mkdir(path.dirname(SQL_FILE), { recursive: true })
+  console.warn(
+    '! --force: rewriting src/data/*.json and supabase/seed.sql from the generator. This is Kanto only — every\n' +
+      '  region, every species past #151 and every admin retune in the committed bundle is about to be dropped.\n' +
+      '  Run `pnpm seed-regions` afterwards to build Johto and Hoenn back on top.',
+  )
+  const built = await generate()
+  await writeJson('pokemon.json', built.pokemon)
+  await writeJson('type-chart.json', built.typeChart)
+  await writeJson('dice-types.json', built.diceTypes)
+  await writeJson('areas.json', built.areas)
+  await writeJson('trainers.json', built.trainers)
+  await writeJson('upgrades.json', built.upgrades)
+  await writeJson('items.json', built.items)
+  await writeJson('config.json', built.config)
+  await writeFile(SQL_FILE, buildSql(built, await regionsPrelude()))
 
   console.log(
-    `✓ ${pokemon.length} pokemon · ${typeChart.length} type-chart rows · ${diceTypes.length} dice types · ` +
-      `${areas.length} areas · ${trainers.length} trainers · ${upgrades.combos.length} combo rows · ` +
-      `${upgrades.dice.length} die rows · ${ITEMS.length} items`,
+    `✓ ${built.pokemon.length} pokemon · ${built.typeChart.length} type-chart rows · ${built.diceTypes.length} dice types · ` +
+      `${built.areas.length} areas · ${built.trainers.length} trainers · ${built.upgrades.combos.length} combo rows · ` +
+      `${built.upgrades.dice.length} die rows · ${built.items.length} items`,
   )
   console.log(`✓ wrote src/data/*.json and supabase/seed.sql`)
 }
 
+/** Writing is opt-in: a bare `pnpm seed` reports and touches nothing. */
+export function seedMode(argv: readonly string[]): 'report' | 'write' {
+  return argv.includes('--force') ? 'write' : 'report'
+}
+
 const isMain = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)
 if (isMain) {
-  main().catch((err) => {
+  const run = seedMode(process.argv.slice(2)) === 'write' ? regenerate : report
+  run().catch((err) => {
     console.error(err)
     process.exit(1)
   })

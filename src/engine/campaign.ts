@@ -4,6 +4,7 @@
 import { battleOutcome, createBattle, type BattleKind } from './battle'
 import { uniformLevels } from './damage'
 import { linearAreas } from './data'
+import { getRegion, newRegionBlock, regionOf, regionOfArea, startRegion } from './regions'
 import { maxComboLevel, maxDieLevel, nextComboCost, nextDieCost } from './economy'
 import { challengeEncounter, enemyUpgradeLevelFor, nextEncounter, type EncounterRoll } from './encounters'
 import { applyCatch, catchChance, catchTarget, catchValueOf, rollCatch } from './catching'
@@ -32,7 +33,7 @@ import {
   teamOf,
 } from './run'
 import { autoStep } from './sim'
-import { COMBO_KEYS, POKE_TYPES, type Area, type ComboKey, type GameData, type ItemDef, type PokeType, type SaveData } from './types'
+import { COMBO_KEYS, POKE_TYPES, type Area, type ComboKey, type GameData, type ItemDef, type PokeType, type RegionId, type SaveData } from './types'
 
 export interface CampaignOptions {
   /** Encounters to play. A Center, a trainer (all their Pokémon), a gym battle or a legendary counts as one. */
@@ -50,6 +51,8 @@ export interface CampaignOptions {
   spend: boolean
   /** The Multi EXP setting. */
   multiExp: boolean
+  /** Which region to run. Defaults to the first — a campaign is a run through one region, never across two. */
+  regionId?: RegionId
 }
 
 export type EncounterTally = Record<'wild' | 'trainer' | 'center' | 'item' | 'casino' | 'gym' | 'boss', number>
@@ -108,20 +111,29 @@ export interface CampaignResult {
 
 /** Push along the main chain; once it's all cleared, grind an unlocked scaling secret area (Cerulean Cave). */
 function chainArea(save: SaveData, data: GameData): Area {
-  const chain = linearAreas(data)
+  // A campaign is a run through one region; it never wanders into the next one's chain.
+  const region = regionOf(save)
+  const chain = linearAreas(data, region)
   let furthest = [...chain].reverse().find((a) => isAreaUnlocked(save, a.id, data)) ?? chain[0] ?? data.areas[0]!
   if (progressOf(save, furthest.id).cleared) {
-    const endgame = data.areas.find((a) => a.hidden && a.scalesToTeam && isAreaUnlocked(save, a.id, data))
+    const endgame = data.areas.find((a) => a.hidden && a.scalesToTeam && regionOfArea(a) === region && isAreaUnlocked(save, a.id, data))
     if (endgame) furthest = endgame
   }
   return furthest
 }
 
 function startingSave(data: GameData, opts: CampaignOptions, newId: () => string): SaveData {
+  const region = opts.regionId ? getRegion(data, opts.regionId) : null
   const members = (opts.team ?? []).filter((m) => data.species[m.dex]).slice(0, data.config.maxTeamSize)
-  const starter = members[0]?.dex ?? (data.species[opts.starterDex] ? opts.starterDex : data.speciesList[0]!.dex)
+  const fallback = region?.starters.find((d) => data.species[d]) ?? data.speciesList[0]!.dex
+  const starter = members[0]?.dex ?? (data.species[opts.starterDex] ? opts.starterDex : fallback)
   const fresh = newSave(starter, data, 0, newId)
   let save: SaveData = { ...fresh, settings: { ...fresh.settings, multiExp: opts.multiExp } }
+  // A run in a later region starts as a player arriving there would: that region's starter, and nothing else.
+  if (region && regionOf(save) !== region.id) {
+    save = startRegion(save, region, newRegionBlock(region, starter, data, 0, newId, createInstance))
+    save = { ...save, settings: { ...save.settings, multiExp: opts.multiExp } }
+  }
   if (members.length) {
     const box = members.map((m) => createInstance(m.dex, m.level, data, newId(), 0))
     save = { ...save, box, team: box.map((p) => p.id), pokedex: [...new Set(box.map((p) => p.dex))] }
@@ -351,6 +363,8 @@ export function* runCampaign(data: GameData, opts: CampaignOptions): Generator<n
       for (let k = 0; k < enc.team.length; k++) {
         const gym = enc.kind === 'gym' ? { trainerId: enc.trainerId, last: k === enc.team.length - 1 } : undefined
         if (fight(area, r, 'trainer', enc.team[k]!, enemyUpgradeLevelFor(enc, area, data), gym) !== 'won') break
+        // A mutual K.O. — the last Pokémon faints as it wins — ends the gauntlet: there is nobody left to send out.
+        if (teamOf(save).every((p) => p.currentHp <= 0)) break
       }
       if (opts.spend) save = spend(save, data)
     } else fight(area, r, enc.kind === 'boss' ? 'boss' : 'wild', { dex: enc.dex, level: enc.level }, enemyUpgradeLevelFor(enc, area, data))

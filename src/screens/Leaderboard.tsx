@@ -4,6 +4,7 @@ import { GoogleAccountButton } from '@/components/GoogleAccountButton'
 import { PixelIcon } from '@/components/icons'
 import { MiniSprite } from '@/components/SpriteImg'
 import { fetchLeaderboard, leaderboardError, rankLeaderboard, type LeaderboardRow, type LeaderboardTab } from '@/lib/leaderboard'
+import { regionOf } from '@/engine'
 import { visitLeaderboard } from '@/store/actions'
 import { useGame } from '@/store/game'
 import { cx } from '@/theme/util'
@@ -22,6 +23,7 @@ type Load = { state: 'loading' } | { state: 'ready'; rows: LeaderboardRow[] } | 
 export function LeaderboardScreen() {
   const { t } = useT()
   const data = useGame((s) => s.data)
+  const save = useGame((s) => s.save)!
   const auth = useGame((s) => s.auth)
   const [tab, setTab] = useState<LeaderboardTab>('level')
   const [load, setLoad] = useState<Load>({ state: 'loading' })
@@ -42,7 +44,12 @@ export function LeaderboardScreen() {
     }
   }, [auth.userId])
 
-  const ranked = useMemo(() => (load.state === 'ready' ? rankLeaderboard(load.rows, tab, data) : []), [load, tab, data])
+  // The board on screen is always the region the player is in: switching region on the map switches the board.
+  const region = regionOf(save)
+  const ranked = useMemo(
+    () => (load.state === 'ready' ? rankLeaderboard(load.rows, tab, data, region) : []),
+    [load, tab, data, region],
+  )
   const signedIn = auth.status === 'signed_in'
 
   return (

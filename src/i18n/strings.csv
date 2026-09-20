@@ -151,6 +151,241 @@ pokemon.148,Dragonair,Draco,Dragonair,Dragonir
 pokemon.149,Dragonite,Dracolosse,Dragonite,Dragoran
 pokemon.150,Mewtwo,Mewtwo,Mewtwo,Mewtu
 pokemon.151,Mew,Mew,Mew,Mew
+pokemon.152,Chikorita,Germignon,Chikorita,Endivie
+pokemon.153,Bayleef,Macronium,Bayleef,Lorblatt
+pokemon.154,Meganium,Méganium,Meganium,Meganie
+pokemon.155,Cyndaquil,Héricendre,Cyndaquil,Feurigel
+pokemon.156,Quilava,Feurisson,Quilava,Igelavar
+pokemon.157,Typhlosion,Typhlosion,Typhlosion,Tornupto
+pokemon.158,Totodile,Kaiminus,Totodile,Karnimani
+pokemon.159,Croconaw,Crocrodil,Croconaw,Tyracroc
+pokemon.160,Feraligatr,Aligatueur,Feraligatr,Impergator
+pokemon.161,Sentret,Fouinette,Sentret,Wiesor
+pokemon.162,Furret,Fouinar,Furret,Wiesenior
+pokemon.163,Hoothoot,Hoothoot,Hoothoot,Hoothoot
+pokemon.164,Noctowl,Noarfang,Noctowl,Noctuh
+pokemon.165,Ledyba,Coxy,Ledyba,Ledyba
+pokemon.166,Ledian,Coxyclaque,Ledian,Ledian
+pokemon.167,Spinarak,Mimigal,Spinarak,Webarak
+pokemon.168,Ariados,Migalos,Ariados,Ariados
+pokemon.169,Crobat,Nostenfer,Crobat,Iksbat
+pokemon.170,Chinchou,Loupio,Chinchou,Lampi
+pokemon.171,Lanturn,Lanturn,Lanturn,Lanturn
+pokemon.172,Pichu,Pichu,Pichu,Pichu
+pokemon.173,Cleffa,Mélo,Cleffa,Pii
+pokemon.174,Igglybuff,Toudoudou,Igglybuff,Fluffeluff
+pokemon.175,Togepi,Togepi,Togepi,Togepi
+pokemon.176,Togetic,Togetic,Togetic,Togetic
+pokemon.177,Natu,Natu,Natu,Natu
+pokemon.178,Xatu,Xatu,Xatu,Xatu
+pokemon.179,Mareep,Wattouat,Mareep,Voltilamm
+pokemon.180,Flaaffy,Lainergie,Flaaffy,Waaty
+pokemon.181,Ampharos,Pharamp,Ampharos,Ampharos
+pokemon.182,Bellossom,Joliflor,Bellossom,Blubella
+pokemon.183,Marill,Marill,Marill,Marill
+pokemon.184,Azumarill,Azumarill,Azumarill,Azumarill
+pokemon.185,Sudowoodo,Simularbre,Sudowoodo,Mogelbaum
+pokemon.186,Politoed,Tarpaud,Politoed,Quaxo
+pokemon.187,Hoppip,Granivol,Hoppip,Hoppspross
+pokemon.188,Skiploom,Floravol,Skiploom,Hubelupf
+pokemon.189,Jumpluff,Cotovol,Jumpluff,Papungha
+pokemon.190,Aipom,Capumain,Aipom,Griffel
+pokemon.191,Sunkern,Tournegrin,Sunkern,Sonnkern
+pokemon.192,Sunflora,Héliatronc,Sunflora,Sonnflora
+pokemon.193,Yanma,Yanma,Yanma,Yanma
+pokemon.194,Wooper,Axoloto,Wooper,Felino
+pokemon.195,Quagsire,Maraiste,Quagsire,Morlord
+pokemon.196,Espeon,Mentali,Espeon,Psiana
+pokemon.197,Umbreon,Noctali,Umbreon,Nachtara
+pokemon.198,Murkrow,Cornèbre,Murkrow,Kramurx
+pokemon.199,Slowking,Roigada,Slowking,Laschoking
+pokemon.200,Misdreavus,Feuforêve,Misdreavus,Traunfugil
+pokemon.201,Unown,Zarbi,Unown,Icognito
+pokemon.202,Wobbuffet,Qulbutoké,Wobbuffet,Woingenau
+pokemon.203,Girafarig,Girafarig,Girafarig,Girafarig
+pokemon.204,Pineco,Pomdepik,Pineco,Tannza
+pokemon.205,Forretress,Foretress,Forretress,Forstellka
+pokemon.206,Dunsparce,Insolourdo,Dunsparce,Dummisel
+pokemon.207,Gligar,Scorplane,Gligar,Skorgla
+pokemon.208,Steelix,Steelix,Steelix,Stahlos
+pokemon.209,Snubbull,Snubbull,Snubbull,Snubbull
+pokemon.210,Granbull,Granbull,Granbull,Granbull
+pokemon.211,Qwilfish,Qwilfish,Qwilfish,Baldorfish
+pokemon.212,Scizor,Cizayox,Scizor,Scherox
+pokemon.213,Shuckle,Caratroc,Shuckle,Pottrott
+pokemon.214,Heracross,Scarhino,Heracross,Skaraborn
+pokemon.215,Sneasel,Farfuret,Sneasel,Sniebel
+pokemon.216,Teddiursa,Teddiursa,Teddiursa,Teddiursa
+pokemon.217,Ursaring,Ursaring,Ursaring,Ursaring
+pokemon.218,Slugma,Limagma,Slugma,Schneckmag
+pokemon.219,Magcargo,Volcaropod,Magcargo,Magcargo
+pokemon.220,Swinub,Marcacrin,Swinub,Quiekel
+pokemon.221,Piloswine,Cochignon,Piloswine,Keifel
+pokemon.222,Corsola,Corayon,Corsola,Corasonn
+pokemon.223,Remoraid,Rémoraid,Remoraid,Remoraid
+pokemon.224,Octillery,Octillery,Octillery,Octillery
+pokemon.225,Delibird,Cadoizo,Delibird,Botogel
+pokemon.226,Mantine,Démanta,Mantine,Mantax
+pokemon.227,Skarmory,Airmure,Skarmory,Panzaeron
+pokemon.228,Houndour,Malosse,Houndour,Hunduster
+pokemon.229,Houndoom,Démolosse,Houndoom,Hundemon
+pokemon.230,Kingdra,Hyporoi,Kingdra,Seedraking
+pokemon.231,Phanpy,Phanpy,Phanpy,Phanpy
+pokemon.232,Donphan,Donphan,Donphan,Donphan
+pokemon.233,Porygon2,Porygon2,Porygon2,Porygon2
+pokemon.234,Stantler,Cerfrousse,Stantler,Damhirplex
+pokemon.235,Smeargle,Queulorior,Smeargle,Farbeagle
+pokemon.236,Tyrogue,Debugant,Tyrogue,Rabauz
+pokemon.237,Hitmontop,Kapoera,Hitmontop,Kapoera
+pokemon.238,Smoochum,Lippouti,Smoochum,Kussilla
+pokemon.239,Elekid,Élekid,Elekid,Elekid
+pokemon.240,Magby,Magby,Magby,Magby
+pokemon.241,Miltank,Écrémeuh,Miltank,Miltank
+pokemon.242,Blissey,Leuphorie,Blissey,Heiteira
+pokemon.243,Raikou,Raikou,Raikou,Raikou
+pokemon.244,Entei,Entei,Entei,Entei
+pokemon.245,Suicune,Suicune,Suicune,Suicune
+pokemon.246,Larvitar,Embrylex,Larvitar,Larvitar
+pokemon.247,Pupitar,Ymphect,Pupitar,Pupitar
+pokemon.248,Tyranitar,Tyranocif,Tyranitar,Despotar
+pokemon.249,Lugia,Lugia,Lugia,Lugia
+pokemon.250,Ho-Oh,Ho-Oh,Ho-Oh,Ho-Oh
+pokemon.251,Celebi,Celebi,Celebi,Celebi
+pokemon.252,Treecko,Arcko,Treecko,Geckarbor
+pokemon.253,Grovyle,Massko,Grovyle,Reptain
+pokemon.254,Sceptile,Jungko,Sceptile,Gewaldro
+pokemon.255,Torchic,Poussifeu,Torchic,Flemmli
+pokemon.256,Combusken,Galifeu,Combusken,Jungglut
+pokemon.257,Blaziken,Braségali,Blaziken,Lohgock
+pokemon.258,Mudkip,Gobou,Mudkip,Hydropi
+pokemon.259,Marshtomp,Flobio,Marshtomp,Moorabbel
+pokemon.260,Swampert,Laggron,Swampert,Sumpex
+pokemon.261,Poochyena,Medhyèna,Poochyena,Fiffyen
+pokemon.262,Mightyena,Grahyèna,Mightyena,Magnayen
+pokemon.263,Zigzagoon,Zigzaton,Zigzagoon,Zigzachs
+pokemon.264,Linoone,Linéon,Linoone,Geradaks
+pokemon.265,Wurmple,Chenipotte,Wurmple,Waumpel
+pokemon.266,Silcoon,Armulys,Silcoon,Schaloko
+pokemon.267,Beautifly,Charmillon,Beautifly,Papinella
+pokemon.268,Cascoon,Blindalys,Cascoon,Panekon
+pokemon.269,Dustox,Papinox,Dustox,Pudox
+pokemon.270,Lotad,Nénupiot,Lotad,Loturzel
+pokemon.271,Lombre,Lombre,Lombre,Lombrero
+pokemon.272,Ludicolo,Ludicolo,Ludicolo,Kappalores
+pokemon.273,Seedot,Grainipiot,Seedot,Samurzel
+pokemon.274,Nuzleaf,Pifeuil,Nuzleaf,Blanas
+pokemon.275,Shiftry,Tengalice,Shiftry,Tengulist
+pokemon.276,Taillow,Nirondelle,Taillow,Schwalbini
+pokemon.277,Swellow,Hélédelle,Swellow,Schwalboss
+pokemon.278,Wingull,Goélise,Wingull,Wingull
+pokemon.279,Pelipper,Bekipan,Pelipper,Pelipper
+pokemon.280,Ralts,Tarsal,Ralts,Trasla
+pokemon.281,Kirlia,Kirlia,Kirlia,Kirlia
+pokemon.282,Gardevoir,Gardevoir,Gardevoir,Guardevoir
+pokemon.283,Surskit,Arakdo,Surskit,Gehweiher
+pokemon.284,Masquerain,Maskadra,Masquerain,Maskeregen
+pokemon.285,Shroomish,Balignon,Shroomish,Knilz
+pokemon.286,Breloom,Chapignon,Breloom,Kapilz
+pokemon.287,Slakoth,Parecool,Slakoth,Bummelz
+pokemon.288,Vigoroth,Vigoroth,Vigoroth,Muntier
+pokemon.289,Slaking,Monaflèmit,Slaking,Letarking
+pokemon.290,Nincada,Ningale,Nincada,Nincada
+pokemon.291,Ninjask,Ninjask,Ninjask,Ninjask
+pokemon.292,Shedinja,Munja,Shedinja,Ninjatom
+pokemon.293,Whismur,Chuchmur,Whismur,Flurmel
+pokemon.294,Loudred,Ramboum,Loudred,Krakeelo
+pokemon.295,Exploud,Brouhabam,Exploud,Krawumms
+pokemon.296,Makuhita,Makuhita,Makuhita,Makuhita
+pokemon.297,Hariyama,Hariyama,Hariyama,Hariyama
+pokemon.298,Azurill,Azurill,Azurill,Azurill
+pokemon.299,Nosepass,Tarinor,Nosepass,Nasgnet
+pokemon.300,Skitty,Skitty,Skitty,Eneco
+pokemon.301,Delcatty,Delcatty,Delcatty,Enekoro
+pokemon.302,Sableye,Ténéfix,Sableye,Zobiris
+pokemon.303,Mawile,Mysdibule,Mawile,Flunkifer
+pokemon.304,Aron,Galekid,Aron,Stollunior
+pokemon.305,Lairon,Galegon,Lairon,Stollrak
+pokemon.306,Aggron,Galeking,Aggron,Stolloss
+pokemon.307,Meditite,Méditikka,Meditite,Meditie
+pokemon.308,Medicham,Charmina,Medicham,Meditalis
+pokemon.309,Electrike,Dynavolt,Electrike,Frizelbliz
+pokemon.310,Manectric,Élecsprint,Manectric,Voltenso
+pokemon.311,Plusle,Posipi,Plusle,Plusle
+pokemon.312,Minun,Négapi,Minun,Minun
+pokemon.313,Volbeat,Muciole,Volbeat,Volbeat
+pokemon.314,Illumise,Lumivole,Illumise,Illumise
+pokemon.315,Roselia,Rosélia,Roselia,Roselia
+pokemon.316,Gulpin,Gloupti,Gulpin,Schluppuck
+pokemon.317,Swalot,Avaltout,Swalot,Schlukwech
+pokemon.318,Carvanha,Carvanha,Carvanha,Kanivanha
+pokemon.319,Sharpedo,Sharpedo,Sharpedo,Tohaido
+pokemon.320,Wailmer,Wailmer,Wailmer,Wailmer
+pokemon.321,Wailord,Wailord,Wailord,Wailord
+pokemon.322,Numel,Chamallot,Numel,Camaub
+pokemon.323,Camerupt,Camérupt,Camerupt,Camerupt
+pokemon.324,Torkoal,Chartor,Torkoal,Qurtel
+pokemon.325,Spoink,Spoink,Spoink,Spoink
+pokemon.326,Grumpig,Groret,Grumpig,Groink
+pokemon.327,Spinda,Spinda,Spinda,Pandir
+pokemon.328,Trapinch,Kraknoix,Trapinch,Knacklion
+pokemon.329,Vibrava,Vibraninf,Vibrava,Vibrava
+pokemon.330,Flygon,Libégon,Flygon,Libelldra
+pokemon.331,Cacnea,Cacnea,Cacnea,Tuska
+pokemon.332,Cacturne,Cacturne,Cacturne,Noktuska
+pokemon.333,Swablu,Tylton,Swablu,Wablu
+pokemon.334,Altaria,Altaria,Altaria,Altaria
+pokemon.335,Zangoose,Mangriff,Zangoose,Sengo
+pokemon.336,Seviper,Séviper,Seviper,Vipitis
+pokemon.337,Lunatone,Séléroc,Lunatone,Lunastein
+pokemon.338,Solrock,Solaroc,Solrock,Sonnfel
+pokemon.339,Barboach,Barloche,Barboach,Schmerbe
+pokemon.340,Whiscash,Barbicha,Whiscash,Welsar
+pokemon.341,Corphish,Écrapince,Corphish,Krebscorps
+pokemon.342,Crawdaunt,Colhomard,Crawdaunt,Krebutack
+pokemon.343,Baltoy,Balbuto,Baltoy,Puppance
+pokemon.344,Claydol,Kaorine,Claydol,Lepumentas
+pokemon.345,Lileep,Lilia,Lileep,Liliep
+pokemon.346,Cradily,Vacilys,Cradily,Wielie
+pokemon.347,Anorith,Anorith,Anorith,Anorith
+pokemon.348,Armaldo,Armaldo,Armaldo,Armaldo
+pokemon.349,Feebas,Barpau,Feebas,Barschwa
+pokemon.350,Milotic,Milobellus,Milotic,Milotic
+pokemon.351,Castform,Morphéo,Castform,Formeo
+pokemon.352,Kecleon,Kecleon,Kecleon,Kecleon
+pokemon.353,Shuppet,Polichombr,Shuppet,Shuppet
+pokemon.354,Banette,Branette,Banette,Banette
+pokemon.355,Duskull,Skelénox,Duskull,Zwirrlicht
+pokemon.356,Dusclops,Téraclope,Dusclops,Zwirrklop
+pokemon.357,Tropius,Tropius,Tropius,Tropius
+pokemon.358,Chimecho,Éoko,Chimecho,Palimpalim
+pokemon.359,Absol,Absol,Absol,Absol
+pokemon.360,Wynaut,Okéoké,Wynaut,Isso
+pokemon.361,Snorunt,Stalgamin,Snorunt,Schneppke
+pokemon.362,Glalie,Oniglali,Glalie,Firnontor
+pokemon.363,Spheal,Obalie,Spheal,Seemops
+pokemon.364,Sealeo,Phogleur,Sealeo,Seejong
+pokemon.365,Walrein,Kaimorse,Walrein,Walraisa
+pokemon.366,Clamperl,Coquiperl,Clamperl,Perlu
+pokemon.367,Huntail,Serpang,Huntail,Aalabyss
+pokemon.368,Gorebyss,Rosabyss,Gorebyss,Saganabyss
+pokemon.369,Relicanth,Relicanth,Relicanth,Relicanth
+pokemon.370,Luvdisc,Lovdisc,Luvdisc,Liebiskus
+pokemon.371,Bagon,Draby,Bagon,Kindwurm
+pokemon.372,Shelgon,Drackhaus,Shelgon,Draschel
+pokemon.373,Salamence,Drattak,Salamence,Brutalanda
+pokemon.374,Beldum,Terhal,Beldum,Tanhel
+pokemon.375,Metang,Métang,Metang,Metang
+pokemon.376,Metagross,Métalosse,Metagross,Metagross
+pokemon.377,Regirock,Regirock,Regirock,Regirock
+pokemon.378,Regice,Regice,Regice,Regice
+pokemon.379,Registeel,Registeel,Registeel,Registeel
+pokemon.380,Latias,Latias,Latias,Latias
+pokemon.381,Latios,Latios,Latios,Latios
+pokemon.382,Kyogre,Kyogre,Kyogre,Kyogre
+pokemon.383,Groudon,Groudon,Groudon,Groudon
+pokemon.384,Rayquaza,Rayquaza,Rayquaza,Rayquaza
+pokemon.385,Jirachi,Jirachi,Jirachi,Jirachi
+pokemon.386,Deoxys,Deoxys,Deoxys,Deoxys
 # --- Items: names generated by `pnpm i18n:names`, descriptions written here,,,,
 item.antidote,Antidote,Antidote,Antídoto,Gegengift
 itemDesc.antidote,Cures a poisoned Pokémon. In battle.,Soigne un Pokémon empoisonné. En combat.,Cura el envenenamiento de un Pokémon. En combate.,Heilt ein vergiftetes Pokémon. Im Kampf.
@@ -200,6 +435,24 @@ item.dome-fossil,Dome Fossil,Fossile Dôme,Fósil Domo,Domfossil
 itemDesc.dome-fossil,"A fossil of an ancient Pokémon. Kabuto waits in your Box and is revived after 24 hours, at Lv.20.","Un fossile d'un Pokémon ancien. Kabuto attend dans votre Boîte et revit après 24 heures, au N.20.","Un fósil de un Pokémon antiguo. Kabuto espera en tu Caja y revive tras 24 horas, al Nv.20.",Ein Fossil eines urzeitlichen Pokémon. Kabuto wartet in deiner Box und wird nach 24 Stunden auf Lv.20 wiederbelebt.
 item.old-amber,Old Amber,Vieil Ambre,Ámbar Viejo,Altbernstein
 itemDesc.old-amber,"A fossil of an ancient Pokémon. Aerodactyl waits in your Box and is revived after 24 hours, at Lv.20.","Un fossile d'un Pokémon ancien. Ptéra attend dans votre Boîte et revit après 24 heures, au N.20.","Un fósil de un Pokémon antiguo. Aerodactyl espera en tu Caja y revive tras 24 horas, al Nv.20.",Ein Fossil eines urzeitlichen Pokémon. Aerodactyl wartet in deiner Box und wird nach 24 Stunden auf Lv.20 wiederbelebt.
+item.sun-stone,Sun Stone,Pierre Soleil,Piedra Solar,Sonnenstein
+itemDesc.sun-stone,"Makes certain Pokémon evolve: Gloom (Bellossom), Sunkern, Eevee (Espeon). Use it from the Team screen.","Fait évoluer certains Pokémon : Ortide (Joliflor), Tournegrin, Évoli (Mentali). À utiliser depuis l'écran Équipe.","Hace evolucionar a ciertos Pokémon: Gloom (Bellossom), Sunkern, Eevee (Espeon). Úsalo desde la pantalla Equipo.","Lässt bestimmte Pokémon entwickeln: Duflor (Blubella), Sonnkern, Evoli (Psiana). Im Team-Bildschirm einsetzbar."
+item.kings-rock,King’s Rock,Roche Royale,Roca del Rey,King-Stein
+itemDesc.kings-rock,"Makes certain Pokémon evolve: Poliwhirl (Politoed), Slowpoke (Slowking). Use it from the Team screen.","Fait évoluer certains Pokémon : Têtarte (Tarpaud), Ramoloss (Roigada). À utiliser depuis l'écran Équipe.","Hace evolucionar a ciertos Pokémon: Poliwhirl (Politoed), Slowpoke (Slowking). Úsalo desde la pantalla Equipo.","Lässt bestimmte Pokémon entwickeln: Quaputzi (Quaxo), Flegmon (Laschoking). Im Team-Bildschirm einsetzbar."
+item.metal-coat,Metal Coat,Peau Métal,Revest. Metálico,Metallmantel
+itemDesc.metal-coat,"Makes certain Pokémon evolve: Onix (Steelix), Scyther (Scizor). Use it from the Team screen.","Fait évoluer certains Pokémon : Onix (Steelix), Insécateur (Cizayox). À utiliser depuis l'écran Équipe.","Hace evolucionar a ciertos Pokémon: Onix (Steelix), Scyther (Scizor). Úsalo desde la pantalla Equipo.","Lässt bestimmte Pokémon entwickeln: Onix (Stahlos), Sichlor (Scherox). Im Team-Bildschirm einsetzbar."
+item.dragon-scale,Dragon Scale,Écaille Draco,Escama Dragón,Drachenhaut
+itemDesc.dragon-scale,Makes certain Pokémon evolve: Seadra (Kingdra). Use it from the Team screen.,Fait évoluer certains Pokémon : Hypocéan (Hyporoi). À utiliser depuis l'écran Équipe.,Hace evolucionar a ciertos Pokémon: Seadra (Kingdra). Úsalo desde la pantalla Equipo.,Lässt bestimmte Pokémon entwickeln: Seemon (Seedraking). Im Team-Bildschirm einsetzbar.
+item.up-grade,Upgrade,Améliorator,Mejora,Up-Grade
+itemDesc.up-grade,Makes certain Pokémon evolve: Porygon (Porygon2). Use it from the Team screen.,Fait évoluer certains Pokémon : Porygon (Porygon2). À utiliser depuis l'écran Équipe.,Hace evolucionar a ciertos Pokémon: Porygon (Porygon2). Úsalo desde la pantalla Equipo.,Lässt bestimmte Pokémon entwickeln: Porygon (Porygon2). Im Team-Bildschirm einsetzbar.
+item.deep-sea-tooth,Deep Sea Tooth,Dent Océan,Diente Marino,Abysszahn
+itemDesc.deep-sea-tooth,Makes certain Pokémon evolve: Clamperl (Huntail). Use it from the Team screen.,Fait évoluer certains Pokémon : Coquiperl (Serpang). À utiliser depuis l'écran Équipe.,Hace evolucionar a ciertos Pokémon: Clamperl (Huntail). Úsalo desde la pantalla Equipo.,Lässt bestimmte Pokémon entwickeln: Perlu (Aalabyss). Im Team-Bildschirm einsetzbar.
+item.deep-sea-scale,Deep Sea Scale,Écaille Océan,Escama Marina,Abyssplatte
+itemDesc.deep-sea-scale,Makes certain Pokémon evolve: Clamperl (Gorebyss). Use it from the Team screen.,Fait évoluer certains Pokémon : Coquiperl (Rosabyss). À utiliser depuis l'écran Équipe.,Hace evolucionar a ciertos Pokémon: Clamperl (Gorebyss). Úsalo desde la pantalla Equipo.,Lässt bestimmte Pokémon entwickeln: Perlu (Saganabyss). Im Team-Bildschirm einsetzbar.
+item.root-fossil,Root Fossil,Fossile Racine,Fósil Raíz,Wurzelfossil
+itemDesc.root-fossil,"A fossil of an ancient Pokémon. Lileep waits in your Box and is revived after 24 hours, at Lv.20.","Un fossile d'un Pokémon ancien. Lilia attend dans votre Boîte et revit après 24 heures, au N.20.","Un fósil de un Pokémon antiguo. Lileep espera en tu Caja y revive tras 24 horas, al Nv.20.",Ein Fossil eines urzeitlichen Pokémon. Liliep wartet in deiner Box und wird nach 24 Stunden auf Lv.20 wiederbelebt.
+item.claw-fossil,Claw Fossil,Fossile Griffe,Fósil Garra,Klauenfossil
+itemDesc.claw-fossil,"A fossil of an ancient Pokémon. Anorith waits in your Box and is revived after 24 hours, at Lv.20.","Un fossile d'un Pokémon ancien. Anorith attend dans votre Boîte et revit après 24 heures, au N.20.","Un fósil de un Pokémon antiguo. Anorith espera en tu Caja y revive tras 24 horas, al Nv.20.",Ein Fossil eines urzeitlichen Pokémon. Anorith wartet in deiner Box und wird nach 24 Stunden auf Lv.20 wiederbelebt.
 # --- Areas,,,,
 area.route-1,Route 1,Route 1,Ruta 1,Route 1
 area.routes-22-2,Routes 22 & 2,Routes 22 & 2,Rutas 22 y 2,Routen 22 & 2
@@ -229,6 +482,62 @@ area.faraway-island,Faraway Island,Île Lointaine,Isla Lejana,Ferne Insel
 area.victory-road,Victory Road,Route Victoire,Calle Victoria,Siegesstraße
 area.victory-road-ii,Victory Road II,Route Victoire II,Calle Victoria II,Siegesstraße II
 area.indigo-plateau-ii,Indigo Plateau II,Plateau Indigo II,Meseta Añil II,Indigo Plateau II
+area.route-29,Route 29,Route 29,Ruta 29,Route 29
+area.routes-30-31,Routes 30 & 31,Routes 30 & 31,Rutas 30 y 31,Routen 30 & 31
+area.violet-city-sprout-tower,Violet City & Sprout Tower,Ville Mauville & la Tour Chétiflor,Ciudad Malva y la Torre Bellsprout,Rosalia City & der Bellsprout-Turm
+area.route-32,Route 32,Route 32,Ruta 32,Route 32
+area.union-cave,Union Cave,Grotte Union,Cueva Unión,Trotzkopf-Höhle
+area.route-33-slowpoke-well,Route 33 & Slowpoke Well,Route 33 & le Puits Ramoloss,Ruta 33 y el Pozo Slowpoke,Route 33 & der Flegmon-Brunnen
+area.azalea-town,Azalea Town,Ville d'Azalée,Pueblo Azalea,Azalea City
+area.ilex-forest,Ilex Forest,Bois aux Chênes,Bosque Ilex,Ilex-Wald
+area.route-34-the-day-care,Route 34 & the Day Care,Route 34 & la Pension,Ruta 34 y la Guardería,Route 34 & die Pension
+area.goldenrod-city,Goldenrod City,Doublonville,Ciudad Trigal,Dukatia City
+area.routes-35-37,Routes 35–37,Routes 35–37,Rutas 35-37,Routen 35–37
+area.national-park,National Park,Parc National,Parque Nacional,Nationalpark
+area.ecruteak-city-the-burned-tower,Ecruteak City & the Burned Tower,Rosalia & la Tour Cendrée,Ciudad Iris y la Torre Quemada,Teak City & der Verbrannte Turm
+area.routes-38-39,Routes 38 & 39,Routes 38 & 39,Rutas 38 y 39,Routen 38 & 39
+area.olivine-city-the-lighthouse,Olivine City & the Lighthouse,Oliville & le Phare,Ciudad Olivo y el Faro,Oliviana City & der Leuchtturm
+area.routes-40-41,Routes 40 & 41,Routes 40 & 41,Rutas 40 y 41,Routen 40 & 41
+area.cianwood-city,Cianwood City,Irisia,Ciudad Orquídea,Anemonia City
+area.routes-42-43-and-the-lake-of-rage,Routes 42 & 43 and the Lake of Rage,Routes 42 & 43 et le Lac Colère,Rutas 42 y 43 y el Lago de la Furia,Routen 42 & 43 und der See des Zorns
+area.mahogany-town-the-rocket-hideout,Mahogany Town & the Rocket Hideout,Acajou & le repaire de la Team Rocket,Pueblo Caoba y la Guarida del Team Rocket,Mahagonia City & das Rocket-Versteck
+area.route-44-the-ice-path,Route 44 & the Ice Path,Route 44 & le Chemin Glacé,Ruta 44 y el Camino Helado,Route 44 & der Eispfad
+area.blackthorn-city-the-dragon-s-den,Blackthorn City & the Dragon's Den,Ebenelle & l'Antre du Dragon,Ciudad Endrino y la Guarida del Dragón,Ebenholz City & die Drachenhöhle
+area.mt-silver,Mt. Silver,Mont Argenté,Monte Plateado,Silberberg
+area.ruins-of-alph,Ruins of Alph,Ruines d'Alpha,Ruinas Alfa,Alph-Ruinen
+area.whirl-islands,Whirl Islands,Îles Tourbillon,Islas Remolino,Strudelinseln
+area.bell-tower,Bell Tower,Tour Carillon,Torre Campana,Glockenturm
+area.ilex-shrine,Ilex Shrine,Sanctuaire des Chênes,Santuario Ilex,Ilex-Schrein
+area.route-101,Route 101,Route 101,Ruta 101,Route 101
+area.routes-102-103,Routes 102 & 103,Routes 102 & 103,Rutas 102 y 103,Routen 102 & 103
+area.petalburg-woods-route-104,Petalburg Woods & Route 104,Bois de Clémenti-Ville & Route 104,Bosque Petalia y Ruta 104,Blütenwald & Route 104
+area.rustboro-city,Rustboro City,Mérouville,Ciudad Férrica,Metarost City
+area.route-116-rusturf-tunnel,Route 116 & Rusturf Tunnel,Route 116 & le Tunnel Mérazon,Ruta 116 y el Túnel Férrico,Route 116 & der Rosaria-Tunnel
+area.dewford-town-granite-cave,Dewford Town & Granite Cave,Myokara & la Grotte Granite,Pueblo Azuliza y la Cueva Granito,Faustauhaven & die Granithöhle
+area.routes-105-107,Routes 105–107,Routes 105–107,Rutas 105-107,Routen 105–107
+area.slateport-city-route-110,Slateport City & Route 110,Poivressel & Route 110,Ciudad Portual y Ruta 110,Graphitport City & Route 110
+area.mauville-city,Mauville City,Lavandia,Ciudad Malvalona,Malvenfroh City
+area.route-111-desert-mirage-tower,Route 111 Desert & Mirage Tower,Le désert de la Route 111 & la Tour Mirage,El desierto de la Ruta 111 y la Torre Espejismo,Die Wüste der Route 111 & der Trugturm
+area.route-112-fiery-path-mt-chimney,"Route 112, Fiery Path & Mt. Chimney","Route 112, le Chemin de Feu & le Mont Chimnée","Ruta 112, el Camino Ígneo y el Monte Cenizo","Route 112, der Feuerpfad & der Schornsteinberg"
+area.lavaridge-town,Lavaridge Town,Vermilava,Pueblo Lavacalda,Bad Lavastadt
+area.routes-113-115-meteor-falls,Routes 113–115 & Meteor Falls,Routes 113–115 & les Chutes Météore,Rutas 113-115 y la Cascada Meteoro,Routen 113–115 & die Meteorfälle
+area.petalburg-city,Petalburg City,Clémenti-Ville,Ciudad Petalia,Blütenburg City
+area.routes-118-119,Routes 118 & 119,Routes 118 & 119,Rutas 118 y 119,Routen 118 & 119
+area.fortree-city-routes-120-121,Fortree City & Routes 120–121,Cimetronelle & Routes 120–121,Ciudad Arborada y Rutas 120-121,Baumhausen City & Routen 120–121
+area.mt-pyre-routes-122-123,Mt. Pyre & Routes 122–123,Mont Cramoisi & Routes 122–123,Monte Pírico y Rutas 122-123,Ewigenaue & Routen 122–123
+area.the-magma-aqua-hideouts,The Magma & Aqua Hideouts,Les repaires des Teams Magma et Aqua,Las guaridas de los Equipos Magma y Aqua,Die Verstecke von Team Magma und Aqua
+area.lilycove-route-124-shoal-cave,"Lilycove, Route 124 & Shoal Cave","Nénucrique, Route 124 & la Grotte Sable","Ciudad Calagua, Ruta 124 y la Cueva Vaho","Seegrasulb City, Route 124 & die Krabbenhöhle"
+area.mossdeep-city-the-space-center,Mossdeep City & the Space Center,Atalanopolis & le Centre Spatial,Ciudad Algaria y el Centro Espacial,Moosbach City & das Raumfahrtzentrum
+area.routes-125-128-seafloor-cavern,Routes 125–128 & Seafloor Cavern,Routes 125–128 & la Caverne Abysse,Rutas 125-128 y la Cueva Ancestral,Routen 125–128 & die Höhle des Meeresgrundes
+area.sootopolis-city-the-cave-of-origin,Sootopolis City & the Cave of Origin,Algatia & la Grotte Origine,Ciudad Arrecípolis y la Cueva Origen,Xeneroville & die Höhle des Ursprungs
+area.ever-grande-city,Ever Grande City,Clémenti-Ville-sur-Mer,Ciudad Colosalia,Immergrün City
+area.the-battle-frontier,The Battle Frontier,La Zone de Combat,El Frente Batalla,Die Kampfzone
+area.the-cave-of-origin-depths,The Cave of Origin Depths,Les profondeurs de la Grotte Origine,Las profundidades de la Cueva Origen,Die Tiefen der Höhle des Ursprungs
+area.the-seafloor-cavern-depths,The Seafloor Cavern Depths,Les profondeurs de la Caverne Abysse,Las profundidades de la Cueva Ancestral,Die Tiefen der Höhle des Meeresgrundes
+area.sky-pillar,Sky Pillar,Tour Céleste,Pilar Celeste,Himmelsturm
+area.the-sealed-chambers,The Sealed Chambers,Les Chambres Scellées,Las Cámaras Selladas,Die Versiegelten Kammern
+area.southern-island,Southern Island,Île du Sud,Isla del Sur,Südinsel
+area.birth-island,Birth Island,Île Renaissance,Isla Génesis,Geburtsinsel
 # --- Gym badges,,,,
 badge.boulder-badge,Boulder Badge,Badge Roche,Medalla Roca,Felsorden
 badge.cascade-badge,Cascade Badge,Badge Cascade,Medalla Cascada,Quellorden
@@ -238,6 +547,22 @@ badge.soul-badge,Soul Badge,Badge Âme,Medalla Alma,Seelenorden
 badge.marsh-badge,Marsh Badge,Badge Marais,Medalla Pantano,Sumpforden
 badge.volcano-badge,Volcano Badge,Badge Volcan,Medalla Volcán,Vulkanorden
 badge.earth-badge,Earth Badge,Badge Terre,Medalla Tierra,Erdorden
+badge.zephyr-badge,Zephyr Badge,Badge Zéphyr,Medalla Céfiro,Flatterorden
+badge.hive-badge,Hive Badge,Badge Essaim,Medalla Colmena,Insektorden
+badge.plain-badge,Plain Badge,Badge Plaine,Medalla Llanura,Basicorden
+badge.fog-badge,Fog Badge,Badge Brume,Medalla Niebla,Nebelorden
+badge.storm-badge,Storm Badge,Badge Orage,Medalla Tormenta,Sturmorden
+badge.mineral-badge,Mineral Badge,Badge Minéral,Medalla Mineral,Mineralorden
+badge.glacier-badge,Glacier Badge,Badge Glacier,Medalla Glaciar,Gletscherorden
+badge.rising-badge,Rising Badge,Badge Montant,Medalla Alba,Drachenorden
+badge.stone-badge,Stone Badge,Badge Caillou,Medalla Piedra,Steinorden
+badge.knuckle-badge,Knuckle Badge,Badge Poing,Medalla Puño,Fitnessorden
+badge.dynamo-badge,Dynamo Badge,Badge Dynamo,Medalla Dínamo,Dynamoorden
+badge.heat-badge,Heat Badge,Badge Chaleur,Medalla Calor,Hitzeorden
+badge.balance-badge,Balance Badge,Badge Équilibre,Medalla Equilibrio,Balanceorden
+badge.feather-badge,Feather Badge,Badge Plume,Medalla Pluma,Federorden
+badge.mind-badge,Mind Badge,Badge Esprit,Medalla Mente,Gedankenorden
+badge.rain-badge,Rain Badge,Badge Pluie,Medalla Lluvia,Regenorden
 # --- Trainer classes - the given name that follows is never translated,,,,
 trainerClass.ace-trainer,Ace Trainer,Topdresseur,Entrenador Guay,Ass-Trainer
 trainerClass.beauty,Beauty,Canon,Modelo,Schönheit
@@ -272,6 +597,26 @@ trainerClass.super-nerd,Super Nerd,Intello,Cerebrito,Superfreak
 trainerClass.swimmer,Swimmer,Nageur,Nadador,Schwimmer
 trainerClass.tamer,Tamer,Dompteur,Domador,Dompteur
 trainerClass.youngster,Youngster,Gamin,Joven,Knirps
+trainerClass.battle-girl,Battle Girl,Combattante,Luchadora,Kämpferin
+trainerClass.dragon-tamer,Dragon Tamer,Dresseur de Dragons,Domadragones,Drachenprofi
+trainerClass.firebreather,Firebreather,Cracheur de Feu,Comefuegos,Feuerspucker
+trainerClass.guitarist,Guitarist,Guitariste,Guitarrista,Gitarrist
+trainerClass.hex-maniac,Hex Maniac,Mystimaniac,Bruja,Hexenmeisterin
+trainerClass.kindler,Kindler,Pyromane,Pirómano,Feuerkünstler
+trainerClass.lady,Lady,Rich Miss,Señorita,Lady
+trainerClass.ninja-boy,Ninja Boy,Petit Ninja,Ninja,Ninjajunge
+trainerClass.pokefan,Pokéfan,Pokéfan,Pokéfan,Pokéfan
+trainerClass.rich-boy,Rich Boy,Richard,Niño Rico,Reicher Junge
+trainerClass.rocket-executive,Rocket Executive,Cadre de la Team Rocket,Ejecutivo del Team Rocket,Rocket-Boss
+trainerClass.ruin-maniac,Ruin Maniac,Ruinomaniac,Arqueólogo,Ruinenmaniac
+trainerClass.sage,Sage,Bonze,Sabio,Weiser
+trainerClass.schoolboy,Schoolboy,Écolier,Colegial,Schüler
+trainerClass.skier,Skier,Skieuse,Esquiadora,Skifahrerin
+trainerClass.team-aqua-grunt,Team Aqua Grunt,Sbire de la Team Aqua,Recluta del Equipo Aqua,Team-Aqua-Rüpel
+trainerClass.team-magma-grunt,Team Magma Grunt,Sbire de la Team Magma,Recluta del Equipo Magma,Team-Magma-Rüpel
+trainerClass.team-rocket-grunt,Team Rocket Grunt,Sbire de la Team Rocket,Recluta del Team Rocket,Rocket-Rüpel
+trainerClass.triathlete,Triathlete,Triathlète,Triatleta,Triathlet
+trainerClass.twins,Twins,Jumelles,Gemelas,Zwillinge
 # --- Trainer, Gym Leader, Elite Four and Champion names - kept as they are,,,,
 trainerName.brock,Brock,Brock,Brock,Brock
 trainerName.misty,Misty,Misty,Misty,Misty
@@ -289,6 +634,28 @@ trainerName.lorelei,Lorelei,Lorelei,Lorelei,Lorelei
 trainerName.bruno,Bruno,Bruno,Bruno,Bruno
 trainerName.agatha,Agatha,Agatha,Agatha,Agatha
 trainerName.rival,Rival,Rival,Rival,Rival
+trainerName.falkner,Falkner,Falkner,Falkner,Falkner
+trainerName.bugsy,Bugsy,Bugsy,Bugsy,Bugsy
+trainerName.whitney,Whitney,Whitney,Whitney,Whitney
+trainerName.morty,Morty,Morty,Morty,Morty
+trainerName.chuck,Chuck,Chuck,Chuck,Chuck
+trainerName.jasmine,Jasmine,Jasmine,Jasmine,Jasmine
+trainerName.pryce,Pryce,Pryce,Pryce,Pryce
+trainerName.clair,Clair,Clair,Clair,Clair
+trainerName.roxanne,Roxanne,Roxanne,Roxanne,Roxanne
+trainerName.brawly,Brawly,Brawly,Brawly,Brawly
+trainerName.wattson,Wattson,Wattson,Wattson,Wattson
+trainerName.flannery,Flannery,Flannery,Flannery,Flannery
+trainerName.norman,Norman,Norman,Norman,Norman
+trainerName.winona,Winona,Winona,Winona,Winona
+trainerName.juan,Juan,Juan,Juan,Juan
+trainerName.maxie,Maxie,Maxie,Maxie,Maxie
+trainerName.archie,Archie,Archie,Archie,Archie
+trainerName.steven,Steven,Steven,Steven,Steven
+trainerName.ariana,Ariana,Ariana,Ariana,Ariana
+trainerName.petrel,Petrel,Petrel,Petrel,Petrel
+trainerName.tate-liza,Tate & Liza,Tate & Liza,Tate & Liza,Tate & Liza
+trainerName.amy-may,Amy & May,Amy & May,Amy & May,Amy & May
 # --- UI,,,,
 ui.type.base,Base,Base,Base,Basis
 ui.type.normal,Normal,Normal,Normal,Normal
@@ -765,7 +1132,7 @@ ui.help.navCombos,Combos,Combos,Combos,Combos
 ui.help.navStatus,Status faces,Faces de statut,Caras de estado,Status-Seiten
 ui.help.navTypes,Type chart,Table des types,Tabla de tipos,Typentabelle
 ui.help.navGrow,Getting stronger,Devenir plus fort,Hacerse más fuerte,Stärker werden
-ui.help.goalBody,"Travel across Kanto one area at a time. Catch Pokémon, beat the 8 Gym Leaders, the Elite Four and the Champion, then find the secret areas and fill the Pokédex: all 151.","Traverse Kanto zone après zone. Capture des Pokémon, bats les 8 Champions d'Arène, le Conseil 4 et le Maître, puis trouve les zones secrètes et complète le Pokédex : les 151.","Recorre Kanto zona a zona. Captura Pokémon, vence a los 8 Líderes de Gimnasio, al Alto Mando y al Campeón, y luego encuentra las zonas secretas y completa la Pokédex: los 151.","Durchquere Kanto Gebiet für Gebiet. Fange Pokémon, besiege die 8 Arenaleiter, die Top Vier und den Champ, finde dann die geheimen Gebiete und fülle den Pokédex: alle 151."
+ui.help.goalBody,"Travel across {region} one area at a time. Catch Pokémon, beat the Gym Leaders, the Elite Four and the Champion, then find the secret areas and fill the Pokédex.","Traverse {region} zone après zone. Capture des Pokémon, bats les Champions d'Arène, le Conseil 4 et le Maître, puis trouve les zones secrètes et complète le Pokédex.","Recorre {region} zona a zona. Captura Pokémon, vence a los Líderes de Gimnasio, al Alto Mando y al Campeón, y luego encuentra las zonas secretas y completa la Pokédex.","Durchquere {region} Gebiet für Gebiet. Fange Pokémon, besiege die Arenaleiter, die Top Vier und den Champ, finde dann die geheimen Gebiete und fülle den Pokédex."
 ui.help.explore1,"Encounters are dealt from each area's shuffled deck. Going through the whole deck is a round, and each area asks for a number of rounds (ROUNDS 1/2 on the area screen).","Les rencontres sont tirées du paquet mélangé de chaque zone. Parcourir tout le paquet fait une manche, et chaque zone en demande un certain nombre (MANCHES 1/2 sur l'écran de zone).","Los encuentros se reparten desde la baraja barajada de cada zona. Recorrer toda la baraja es una ronda, y cada zona pide un número de rondas (RONDAS 1/2 en la pantalla de zona).","Begegnungen werden aus dem gemischten Deck jedes Gebiets gezogen. Das ganze Deck durchzuspielen ist eine Runde, und jedes Gebiet verlangt eine Anzahl Runden (RUNDEN 1/2 im Gebietsbildschirm)."
 ui.help.explore2,"Once every round is done, CHALLENGE the area's Gym Leader (or legendary) whenever you're ready — or keep exploring first: finished rounds stay finished. Win to open the next area.","Une fois toutes les manches faites, DÉFIE le Champion d'Arène de la zone (ou le légendaire) quand tu veux — ou continue d'explorer : les manches terminées le restent. Gagne pour ouvrir la zone suivante.","Cuando acabes todas las rondas, DESAFÍA al Líder de Gimnasio de la zona (o al legendario) cuando quieras, o sigue explorando: las rondas completadas siguen completadas. Gana para abrir la siguiente zona.","Sind alle Runden geschafft, FORDERE den Arenaleiter des Gebiets (oder das Legendäre) heraus, wann du willst — oder erkunde erst weiter: Geschaffte Runden bleiben geschafft. Gewinne, um das nächste Gebiet zu öffnen."
 ui.help.explore3,"You see every encounter before it starts: FIGHT it, FLEE a wild Pokémon, or AVOID an ordinary trainer. Once a battle starts, only wild Pokémon can be run from.","Tu vois chaque rencontre avant qu'elle commence : COMBATTRE, FUIR un Pokémon sauvage, ou ÉVITER un Dresseur ordinaire. Une fois le combat lancé, on ne peut fuir que les Pokémon sauvages.","Ves cada encuentro antes de que empiece: LUCHAR, HUIR de un Pokémon salvaje o EVITAR a un Entrenador normal. Una vez empezado el combate, solo se puede huir de los Pokémon salvajes.","Du siehst jede Begegnung, bevor sie beginnt: KÄMPFEN, vor einem wilden Pokémon FLIEHEN oder einem gewöhnlichen Trainer AUSWEICHEN. Ist der Kampf erst gestartet, kann man nur vor wilden Pokémon fliehen."
@@ -921,6 +1288,10 @@ ui.newGame.characterN,Character {n},Personnage {n},Personaje {n},Figur {n}
 ui.newGame.yourName,Your name,Ton nom,Tu nombre,Dein Name
 ui.battle.rerollsLeft,Rerolls left,Relances restantes,Tiradas restantes,Verbleibende Neuwürfe
 ui.battle.rerollsOf,{left}/{max} rerolls,{left}/{max} relances,{left}/{max} tiradas,{left}/{max} Neuwürfe
+ui.help.goalRegions,"Beating a league opens the region beyond it. You arrive there with nothing but your character — a new partner, an empty bag — and everything you owned waits where you left it. Switch back any time from the Region row at the top of the Map, and once you beat the new league it all comes to you at once.","Battre une Ligue ouvre la région suivante. Tu y arrives avec ton seul personnage — un nouveau partenaire, un sac vide — et tout ce que tu possédais t'attend là où tu l'as laissé. Reviens quand tu veux depuis la ligne Région en haut de la Carte, et une fois la nouvelle Ligue battue, tout te revient d'un coup.","Vencer una Liga abre la región siguiente. Llegas allí solo con tu personaje —un nuevo compañero, una mochila vacía— y todo lo que tenías te espera donde lo dejaste. Vuelve cuando quieras desde la fila Región en lo alto del Mapa, y en cuanto venzas la nueva Liga lo recuperarás todo de golpe.","Eine Liga zu besiegen öffnet die Region dahinter. Du kommst dort nur mit deiner Figur an — ein neuer Partner, ein leerer Beutel — und alles, was dir gehörte, wartet dort, wo du es gelassen hast. Wechsle jederzeit über die Regionszeile oben auf der Karte zurück, und sobald du die neue Liga besiegst, kommt alles auf einmal zu dir."
+ui.toast.and, and , et , y , und 
+ui.toast.regionsMerged,"Everything you left in {regions} is yours again — {count} Pokémon, your bag and your ₽","Tout ce que tu avais laissé en {regions} est de nouveau à toi — {count} Pokémon, ton sac et tes ₽","Todo lo que dejaste en {regions} vuelve a ser tuyo: {count} Pokémon, tu mochila y tus ₽","Alles, was du in {regions} zurückgelassen hast, gehört wieder dir — {count} Pokémon, dein Beutel und deine ₽"
+ui.dex.completeIn, in {region}, à {region}, en {region}, in {region}
 ui.settings.title,Settings,Réglages,Ajustes,Einstellungen
 ui.settings.howToPlay,How to play,Comment jouer,Cómo jugar,Spielanleitung
 ui.settings.howToPlayHint,"The rules, the dice, status effects and the type chart.","Les règles, les dés, les statuts et la table des types.","Las reglas, los dados, los estados y la tabla de tipos.","Die Regeln, die Würfel, die Statusprobleme und die Typentabelle."
@@ -1057,7 +1428,7 @@ ui.dex.filterCaught,caught,capturés,capturados,gefangen
 ui.dex.filterMissing,missing,manquants,faltan,fehlend
 ui.dex.filterCatchable,catchable now,capturables,capturables ya,jetzt fangbar
 ui.dex.complete,POKÉDEX COMPLETE!,POKÉDEX COMPLET !,¡POKÉDEX COMPLETA!,POKÉDEX VOLLSTÄNDIG!
-ui.dex.completeBody,All {total} Pokémon caught. You are a true Pokédice Master.,Les {total} Pokémon capturés. Tu es un véritable Maître Pokédice.,Has capturado los {total} Pokémon. Eres todo un Maestro Pokédice.,Alle {total} Pokémon gefangen. Du bist ein wahrer Pokédice-Meister.
+ui.dex.completeBody,All {total} Pokémon caught{where}. You are a true Pokédice Master.,Les {total} Pokémon capturés{where}. Tu es un véritable Maître Pokédice.,Has capturado los {total} Pokémon{where}. Eres todo un Maestro Pokédice.,Alle {total} Pokémon gefangen{where}. Du bist ein wahrer Pokédice-Meister.
 ui.dex.searchLabel,Search the Pokédex by name or number,Chercher dans le Pokédex par nom ou numéro,Buscar en la Pokédex por nombre o número,Pokédex nach Name oder Nummer durchsuchen
 ui.dex.searchPlaceholder,Name or #number,Nom ou #numéro,Nombre o #número,Name oder #Nummer
 ui.dex.show,Show,Afficher,Mostrar,Anzeigen

@@ -41,7 +41,7 @@ const SECTION_TABLES: Partial<Record<string, TableName[]>> = {
   upgrades: ['combo_upgrades', 'die_upgrades'],
   items: ['items'],
   typechart: ['type_chart'],
-  config: ['game_config'],
+  config: ['game_config', 'regions'],
 }
 
 function Gate() {

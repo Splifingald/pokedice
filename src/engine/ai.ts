@@ -13,6 +13,12 @@ export interface AiInput {
   levels: UpgradeLevels
   data: GameData
   rng: Rng
+  /**
+   * The target's remaining HP, when the caller knows it. A roll that already kills is not improved by a bigger
+   * number, and a reroll spends a budget that lasts the whole battle — so with this set the heuristic stops as soon
+   * as the hit is lethal. Left out, it optimises damage for its own sake, as it always did.
+   */
+  targetHp?: number
 }
 
 const same = (a: readonly boolean[], b: readonly boolean[]) => a.every((v, i) => v === b[i])
@@ -119,6 +125,9 @@ export function expectedDamage(input: AiInput, keep: readonly boolean[], samples
 export function aiRerollMask(input: AiInput): boolean[] | null {
   const { data } = input
   const current = computeDamage(input.dice, input.attackerTypes, input.defenderTypes, input.levels, data).final
+  // Already lethal: throw it. Damage past the target's last hit point buys nothing, and the reroll budget is spent
+  // for the rest of the battle — so chasing a bigger number here is strictly worse than swinging.
+  if (input.targetHp != null && current >= input.targetHp) return null
   const samples = data.config.ai.samples
   let best: { keep: boolean[]; exp: number } | null = null
   for (const keep of candidateKeepSets(input.dice, data)) {

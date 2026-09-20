@@ -11,6 +11,9 @@ import {
   isDayCareOpen,
   isAreaUnlocked,
   linearAreas,
+  regionOf,
+  regionOfArea,
+  getRegion,
   playerSideOf,
   progressOf,
   trainerSpecialty,
@@ -29,6 +32,7 @@ import { useGame } from '@/store/game'
 import { enterArea } from '@/store/run'
 import { cx } from '@/theme/util'
 import { AreaBanner } from '@/components/AreaBanner'
+import { RegionBar } from '@/components/RegionBar'
 import { EggSprite } from './DayCareScreen'
 
 /** How many areas of the main chain the map shows by default, from the one you're working on. */
@@ -280,8 +284,10 @@ export function MapScreen() {
   const data = useGame((s) => s.data)
   const [showAll, setShowAll] = useState(false)
   if (!save) return null
-  const chain = linearAreas(data)
-  const secrets = data.areas.filter((a) => a.hidden)
+  const region = regionOf(save)
+  const chain = linearAreas(data, region)
+  // Secret areas belong to a region too — Kanto's must not show up on Johto's map.
+  const secrets = data.areas.filter((a) => a.hidden && regionOfArea(a) === region)
   const badges = badgeCase(save, data)
   const earned = badges.filter((b) => b.earned).length
   // The frontier is the furthest area you've opened; the map shows it and the next ones.
@@ -292,8 +298,9 @@ export function MapScreen() {
 
   return (
     <div className="flex flex-col gap-4">
+      <RegionBar />
       <div className="flex flex-wrap items-end justify-between gap-3">
-        <h1 className="text-5xl">{t('ui.map.region')}</h1>
+        <h1 className="text-5xl">{getRegion(data, region)?.name ?? t('ui.map.region')}</h1>
         {badges.length > 0 && (
           <div
             className="pixel-panel flex flex-wrap items-center gap-1.5 px-2 py-1"

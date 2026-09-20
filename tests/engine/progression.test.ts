@@ -10,6 +10,7 @@ import {
   instanceMaxHp,
   xpToNext,
   getSpecies,
+  preferUnowned,
   type PokemonInstance,
   type Species,
 } from '@/engine'
@@ -170,5 +171,39 @@ describe('averageLevel', () => {
   it('averages levels', () => {
     expect(averageLevel([])).toBe(1)
     expect(averageLevel([10, 20])).toBe(15)
+  })
+})
+
+describe('branching evolutions prefer an unowned species', () => {
+  // Eevee: five branches in the bundle, three by stone and two more with Johto. Tyrogue is the level-based branch.
+  const branches = (dex: number) => data.species[dex]!.evolutions.filter((e) => e.level != null)
+
+  it('picks only among the branches the player has not caught', () => {
+    const ready = branches(236) // Tyrogue → Hitmonlee / Hitmonchan / Hitmontop
+    expect(ready.length).toBeGreaterThan(1)
+    const owned = ready.slice(1).map((e) => e.toDex)
+    expect(preferUnowned(ready, owned).map((e) => e.toDex)).toEqual([ready[0]!.toDex])
+  })
+
+  it('falls back to every branch once they are all owned, so a full dex still varies', () => {
+    const ready = branches(236)
+    expect(preferUnowned(ready, ready.map((e) => e.toDex))).toEqual(ready)
+  })
+
+  it('leaves every branch on the table when there is no Pokédex to consult', () => {
+    const ready = branches(236)
+    expect(preferUnowned(ready, undefined)).toEqual(ready)
+  })
+
+  it('evolves into the missing one, over and over', () => {
+    const ready = branches(236)
+    const want = ready[ready.length - 1]!.toDex
+    const owned = ready.filter((e) => e.toDex !== want).map((e) => e.toDex)
+    for (let seed = 1; seed <= 25; seed++) {
+      const tyrogue = createInstance(236, 19, data, `t${seed}`, 0)
+      const res = gainXp(tyrogue, 99_999, data, createRng(seed), { owned })
+      const evolved = res.events.find((e) => e.kind === 'evolve')
+      expect(evolved && evolved.kind === 'evolve' ? evolved.toDex : null, `seed ${seed}`).toBe(want)
+    }
   })
 })

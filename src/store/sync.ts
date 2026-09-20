@@ -7,6 +7,7 @@ import { decideSync, pullCloudSave, pushCloudSave, sameSave, schedulePush } from
 import { backupSave, flushWrite } from '@/save/storage'
 import { commitSave, initialRun, onSaveCommitted, pushToast, setContent, tickFossils, useGame } from './game'
 import { t } from '@/i18n'
+import { rescueIfRegionDisabled } from './regions'
 
 let syncedUser: string | null = null
 /** Nothing is pushed until the first sync for the signed-in user is settled — no overwrite while we compare. */
@@ -168,6 +169,8 @@ let started = false
 export function startBackgroundServices() {
   if (started) return
   started = true
+  // A region may have been switched off in admin while this player was standing in it.
+  rescueIfRegionDisabled()
   startAnalytics()
   void initAuth()
   void checkContent()

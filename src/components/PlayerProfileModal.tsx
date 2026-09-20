@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { regionCases } from '@/engine'
+import type { RegionCase } from '@/engine'
 import { useT } from '@/i18n/react'
 import { CharacterSelect } from '@/screens/NewGame'
 import { mutateSave, useGame } from '@/store/game'
@@ -10,12 +11,12 @@ import { PixelButton } from './PixelButton'
 import { playerOf, TrainerSprite } from './TrainerArt'
 
 /** One region: its name, a crown once the endgame lap is done, and the badge case under it. */
-function RegionRow({ region }: { region: ReturnType<typeof regionCases>[number] }) {
+function RegionRow({ region }: { region: RegionCase }) {
   const { t } = useT()
   return (
     <li className="border-2 border-ink bg-panel p-2">
       <div className="mb-1.5 flex items-center gap-2">
-        <span className="text-2xl leading-none">{t(region.nameKey)}</span>
+        <span className="text-2xl leading-none">{region.name}</span>
         {region.endgameCleared && (
           <span className="flex items-center gap-1" title={t('ui.profile.crownHint')}>
             <PixelIcon name="crown" size={18} />
@@ -42,7 +43,7 @@ export function PlayerProfileModal({ open, onClose }: { open: boolean; onClose: 
   const data = useGame((s) => s.data)
   const [editing, setEditing] = useState(false)
   const me = playerOf(save)
-  const regions = save ? regionCases(save, data).filter((r) => r.unlocked) : []
+  const regions = save ? regionCases(save, data) : []
 
   return (
     <Modal

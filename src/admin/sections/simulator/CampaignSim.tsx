@@ -1,7 +1,7 @@
 // Whole-run simulation: a new game along the chain (Campaign) or a chosen team grinding one area (Area test).
 // The real run loop from src/engine/campaign.ts runs in a Web Worker, on the unsaved working copy plus what-if overrides.
 import { useMemo, useState } from 'react'
-import { median, mergeAreaReports, type CampaignResult, type GameConfig, type GameData } from '@/engine'
+import { median, mergeAreaReports, regionSpecies, type CampaignResult, type GameConfig, type GameData } from '@/engine'
 import { PixelButton } from '@/components/PixelButton'
 import { SpriteImg } from '@/components/SpriteImg'
 import { cx } from '@/theme/util'
@@ -154,7 +154,18 @@ function histogramOf(xs: readonly number[]) {
   return h
 }
 
-export function CampaignReport({ results, data, ms }: { results: CampaignResult[]; data: GameData; ms: number | null }) {
+export function CampaignReport({
+  results,
+  data,
+  ms,
+  regionId,
+}: {
+  results: CampaignResult[]
+  data: GameData
+  ms: number | null
+  /** The region the run was in: the Pokédex tile counts out of what that region actually holds. */
+  regionId?: string
+}) {
   const runs = results.length
   const areas = useMemo(() => mergeAreaReports(results.map((r) => r.areas)), [results])
   const rows = useMemo(
@@ -196,6 +207,8 @@ export function CampaignReport({ results, data, ms }: { results: CampaignResult[
       }),
     [areas],
   )
+  // Out of what this region can give you, not the National Dex — otherwise Johto looks a third finished at best.
+  const dexTotal = regionId ? (regionSpecies(data, regionId).size || data.speciesList.length) : data.speciesList.length
   const allTurns = areas.flatMap((a) => a.turns)
   const sum = (k: 'fights' | 'wins' | 'wipes' | 'stalemates' | 'encounters') => areas.reduce((s, a) => s + a[k], 0)
   const fights = sum('fights')
@@ -219,7 +232,7 @@ export function CampaignReport({ results, data, ms }: { results: CampaignResult[
     ['Mean turns', avgOf(allTurns).toFixed(2)],
     ['Stalemates', String(sum('stalemates'))],
     ['End team avg Lv', avgOf(results.map((r) => r.end.teamAvg)).toFixed(1)],
-    ['Pokédex (avg)', `${Math.round(avgOf(results.map((r) => r.end.dex)))} / ${data.speciesList.length}`],
+    ['Pokédex (avg)', `${Math.round(avgOf(results.map((r) => r.end.dex)))} / ${dexTotal}`],
     ['₽ earned / run', Math.round(avgOf(results.map((r) => r.end.goldEarned))).toLocaleString('en')],
     ['Took', ms != null ? `${(ms / 1000).toFixed(1)} s` : '—'],
   ]
@@ -368,14 +381,29 @@ export function CampaignReport({ results, data, ms }: { results: CampaignResult[
 // ---------------------------------------------------------------- tabs
 
 export function CampaignSim({ data }: { data: GameData }) {
-  const [starter, setStarter] = useState(data.config.starters[1] ?? data.config.starters[0] ?? 4)
+  // A campaign is a run through one region, so the region picks the starters it can be run with.
+  const [regionId, setRegionId] = useState(data.regions[0]?.id ?? 'kanto')
+  const region = data.regions.find((r) => r.id === regionId) ?? data.regions[0]
+  const starters = (region?.starters ?? data.config.starters).filter((d) => data.species[d])
+  const [starter, setStarter] = useState(starters[1] ?? starters[0] ?? 4)
   const [encounters, setEncounters] = useState(1500)
   const [common, setCommon] = useState<Common>({ runs: 1, seed: 1, spend: true, multiExp: true })
   const [whatIf, setWhatIf] = useState<WhatIf>({})
   const runner = useCampaignRunner()
 
+  // Switching region moves the starter to that region's, rather than running Johto with Bulbasaur.
+  const pickRegion = (id: string) => {
+    setRegionId(id)
+    const next = (data.regions.find((r) => r.id === id)?.starters ?? []).filter((d) => data.species[d])
+    if (next.length && !next.includes(starter)) setStarter(next[1] ?? next[0]!)
+  }
+
   const run = () =>
-    runner.start(applyWhatIf(data, whatIf), { encounters, seed: common.seed, starterDex: starter, spend: common.spend, multiExp: common.multiExp }, common.runs)
+    runner.start(
+      applyWhatIf(data, whatIf),
+      { encounters, seed: common.seed, starterDex: starter, spend: common.spend, multiExp: common.multiExp, regionId },
+      common.runs,
+    )
 
   return (
     <div className="flex flex-col gap-4">
@@ -385,9 +413,21 @@ export function CampaignSim({ data }: { data: GameData }) {
         clear, it grinds the endgame area. Same engine as <code>pnpm balance</code>.
       </p>
       <div className="flex flex-wrap items-end gap-3">
+        {data.regions.length > 1 && (
+          <Field label="Region">
+            <select className={inputCls} value={regionId} onChange={(e) => pickRegion(e.target.value)}>
+              {data.regions.map((r) => (
+                <option key={r.id} value={r.id}>
+                  {r.name}
+                  {r.enabled ? '' : ' (off)'}
+                </option>
+              ))}
+            </select>
+          </Field>
+        )}
         <Field label="Starter">
           <select className={inputCls} value={starter} onChange={(e) => setStarter(Number(e.target.value))}>
-            {data.config.starters.map((d) => (
+            {starters.map((d) => (
               <option key={d} value={d}>
                 {data.species[d]?.name ?? `#${d}`}
               </option>
@@ -401,13 +441,15 @@ export function CampaignSim({ data }: { data: GameData }) {
       </div>
       <WhatIfPanel data={data} value={whatIf} onChange={setWhatIf} />
       <RunBar runner={runner} onRun={run} label={`Run ${common.runs > 1 ? `${common.runs} × ` : ''}${encounters} encounters`} />
-      {runner.results && <CampaignReport results={runner.results} data={data} ms={runner.ms} />}
+      {runner.results && <CampaignReport results={runner.results} data={data} ms={runner.ms} regionId={regionId} />}
     </div>
   )
 }
 
 export function AreaTestSim({ data }: { data: GameData }) {
-  const [areaId, setAreaId] = useState(data.areas[2]?.id ?? data.areas[0]?.id ?? '')
+  const [regionId, setRegionId] = useState(data.regions[0]?.id ?? 'kanto')
+  const regionAreas = data.areas.filter((a) => (a.regionId ?? 'kanto') === regionId)
+  const [areaId, setAreaId] = useState(regionAreas[2]?.id ?? regionAreas[0]?.id ?? '')
   const [team, setTeam] = useState<{ dex: number; level: number }[]>([{ dex: 4, level: 12 }])
   const [track, setTrack] = useState(1)
   const [encounters, setEncounters] = useState(200)
@@ -417,10 +459,16 @@ export function AreaTestSim({ data }: { data: GameData }) {
   const area = data.areas.find((a) => a.id === areaId)
 
   const setMember = (k: number, patch: Partial<{ dex: number; level: number }>) => setTeam(team.map((m, j) => (j === k ? { ...m, ...patch } : m)))
+  // Switching region moves to one of its areas: an area id from another region would run nothing.
+  const pickRegion = (id: string) => {
+    setRegionId(id)
+    const next = data.areas.filter((a) => (a.regionId ?? 'kanto') === id)
+    setAreaId(next[2]?.id ?? next[0]?.id ?? '')
+  }
   const run = () =>
     runner.start(
       applyWhatIf(data, whatIf),
-      { encounters, seed: common.seed, starterDex: team[0]?.dex ?? 4, areaId, team, track, spend: common.spend, multiExp: common.multiExp },
+      { encounters, seed: common.seed, starterDex: team[0]?.dex ?? 4, areaId, team, track, spend: common.spend, multiExp: common.multiExp, regionId },
       common.runs,
     )
 
@@ -431,9 +479,20 @@ export function AreaTestSim({ data }: { data: GameData }) {
         fills, Centers and wipes. Levels grow and catches join the team, as in the game. Good for tuning one area.
       </p>
       <div className="flex flex-wrap items-end gap-3">
+        {data.regions.length > 1 && (
+          <Field label="Region">
+            <select className={inputCls} value={regionId} onChange={(e) => pickRegion(e.target.value)}>
+              {data.regions.map((r) => (
+                <option key={r.id} value={r.id}>
+                  {r.name}
+                </option>
+              ))}
+            </select>
+          </Field>
+        )}
         <Field label="Area" className="min-w-[260px]">
           <select className={inputCls} value={areaId} onChange={(e) => setAreaId(e.target.value)}>
-            {data.areas.map((a) => (
+            {regionAreas.map((a) => (
               <option key={a.id} value={a.id}>
                 {a.hidden ? '★ ' : `${a.orderIndex}. `}
                 {a.name}
@@ -489,7 +548,7 @@ export function AreaTestSim({ data }: { data: GameData }) {
       </div>
       <WhatIfPanel data={data} value={whatIf} onChange={setWhatIf} />
       <RunBar runner={runner} onRun={run} label={`Run ${common.runs > 1 ? `${common.runs} × ` : ''}${encounters} encounters`} />
-      {runner.results && <CampaignReport results={runner.results} data={data} ms={runner.ms} />}
+      {runner.results && <CampaignReport results={runner.results} data={data} ms={runner.ms} regionId={regionId} />}
     </div>
   )
 }

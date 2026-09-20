@@ -2,6 +2,8 @@
 // time the player opens the game the cloud save wins the sync even if it has less progress (see decideSync).
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { createInstance } from '@/engine/progression'
+import { getRegion, mergeEarlierRegions, newRegionBlock, regionOf, startRegion, switchRegion } from '@/engine/regions'
+import { progressOf } from '@/engine/run'
 import type { GameData, SaveData } from '@/engine/types'
 import { parseSave } from '@/save/schema'
 
@@ -43,6 +45,87 @@ export function adminAddPokemon(
     },
     now,
   )
+}
+
+// ---------------------------------------------------------------- regions
+//
+// The cheats below are how a region gets tested without playing twenty hours to reach it. Each one is a plain save
+// edit, so it goes through the same parse and settle as anything else when the player next loads.
+
+/** Marks a region's league beaten: every round done and every gym in its league area won. */
+export function adminCompleteLeague(save: SaveData, data: GameData, now: number, regionId = regionOf(save)): SaveData {
+  const region = getRegion(data, regionId)
+  const area = data.areas.find((a) => a.id === region?.leagueAreaId)
+  if (!region || !area) throw new Error(`No league area for ${regionId}`)
+  const progress = {
+    ...progressOf(save, area.id),
+    roundsDone: Math.max(area.roundsToClear ?? 1, progressOf(save, area.id).roundsDone ?? 0),
+    roundCounted: true,
+    cleared: true,
+    bossDefeated: true,
+    bossesDefeated: (area.legendaryBoss ?? []).map((b) => b.dex),
+    gymsDefeated: [...area.gyms],
+  }
+  const write = (p: typeof progress) =>
+    regionId === regionOf(save)
+      ? { ...save, areaProgress: { ...save.areaProgress, [area.id]: p } }
+      : {
+          ...save,
+          parked: {
+            ...save.parked,
+            [regionId]: { ...save.parked![regionId]!, areaProgress: { ...save.parked![regionId]!.areaProgress, [area.id]: p } },
+          },
+        }
+  if (regionId !== regionOf(save) && !save.parked?.[regionId]) throw new Error(`${regionId} has not been started`)
+  return stamp(write(progress), now)
+}
+
+/** Starts a region on a starter (the first of its own, unless told otherwise) and moves the player into it. */
+export function adminStartRegion(
+  save: SaveData,
+  data: GameData,
+  now: number,
+  regionId: string,
+  newId: () => string,
+  starterDex?: number,
+): SaveData {
+  const region = getRegion(data, regionId)
+  if (!region) throw new Error(`Unknown region ${regionId}`)
+  if (regionOf(save) === regionId) return save
+  if (save.parked?.[regionId]) return stamp(switchRegion(save, regionId), now)
+  const dex = starterDex ?? region.starters[0]
+  if (!dex) throw new Error(`${regionId} has no starters`)
+  return stamp(startRegion(save, region, newRegionBlock(region, dex, data, now, newId, createInstance)), now)
+}
+
+/** Moves between regions already started. */
+export function adminSwitchRegion(save: SaveData, now: number, regionId: string): SaveData {
+  if (!save.parked?.[regionId]) throw new Error(`${regionId} has not been started`)
+  return stamp(switchRegion(save, regionId), now)
+}
+
+/** Folds the earlier regions' Box, bag and ₽ into the live one early, to test the collision path. */
+export function adminMergeRegions(save: SaveData, data: GameData, now: number): { save: SaveData; merged: string[] } {
+  const res = mergeEarlierRegions(save, data)
+  if (!res.merged.length) throw new Error('Nothing to merge: no earlier region, or this league is not done')
+  return { save: stamp(res.save, now), merged: res.merged }
+}
+
+/** Puts an item in the bag — the stones and fossils included, so those paths are testable in any region. */
+export function adminGiveItem(save: SaveData, data: GameData, now: number, key: string, qty: number): SaveData {
+  if (!data.items[key]) throw new Error(`Unknown item ${key}`)
+  const have = save.inventory[key] ?? 0
+  return stamp({ ...save, inventory: { ...save.inventory, [key]: Math.max(0, have + qty) } }, now)
+}
+
+/**
+ * Opens the roamer gate by marking what the config requires as caught — the fastest way to see Raikou, Entei and
+ * Suicune without hunting two tower legendaries first.
+ */
+export function adminStartRoamers(save: SaveData, data: GameData, now: number): SaveData {
+  const need = data.config.roamers?.requires ?? []
+  if (!need.length) throw new Error('No roamers are configured')
+  return stamp({ ...save, pokedex: [...new Set([...save.pokedex, ...need])] }, now)
 }
 
 /** Removes a Pokémon wherever it is (team, Box or Day Care). Its Pokédex entry stays. Never the last one in the Box. */

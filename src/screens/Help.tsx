@@ -1,7 +1,16 @@
 // The rules in plain words, plus the type chart. Numbers come from the live game data.
 import { useState, type ReactNode } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { COMBO_KEYS, comboBonus, POKE_TYPES, typeMultiplier, type PokeType } from '@/engine'
+import {
+  COMBO_KEYS,
+  comboBonus,
+  getRegion,
+  POKE_TYPES,
+  regionOf,
+  typeMultiplier,
+  unlockedRegions,
+  type PokeType,
+} from '@/engine'
 import { multiExpText } from '@/i18n/text'
 import { useT } from '@/i18n/react'
 import { DieFaces } from '@/components/Die'
@@ -177,7 +186,9 @@ function TypeLookup() {
         {rows.map(([label, list]) => (
           <div key={label} className="contents">
             <dt className="text-muted first-letter:uppercase">{label}</dt>
-            <dd className="flex flex-wrap gap-1">{list.length ? list.map((x) => <TypeBadge key={x} type={x} size="sm" />) : '—'}</dd>
+            <dd className="flex flex-wrap gap-1">
+              {list.length ? list.map((x) => <TypeBadge key={x} type={x} size="sm" />) : '—'}
+            </dd>
           </div>
         ))}
       </dl>
@@ -188,7 +199,12 @@ function TypeLookup() {
 export function HelpContent() {
   const { t } = useT()
   const data = useGame((s) => s.data)
+  const save = useGame((s) => s.save)
   const cfg = data.config
+  // Help never names a region the player has not reached: with one unlocked, it reads exactly as it always did.
+  const regions = save ? unlockedRegions(save, data) : []
+  const regionName = (save && getRegion(data, regionOf(save))?.name) ?? 'Kanto'
+  const manyRegions = regions.length > 1
   return (
     <div className="flex flex-col gap-6">
       <nav aria-label={t('ui.help.sections')} className="flex flex-wrap gap-2 text-lg">
@@ -209,7 +225,8 @@ export function HelpContent() {
       </nav>
 
       <Section id="goal" title={t('ui.help.navGoal')}>
-        <p>{t('ui.help.goalBody')}</p>
+        <p>{t('ui.help.goalBody', { region: regionName })}</p>
+        {manyRegions && <p>{t('ui.help.goalRegions')}</p>}
       </Section>
 
       <Section id="explore" title={t('ui.help.navExplore')}>

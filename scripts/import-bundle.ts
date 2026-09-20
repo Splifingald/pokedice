@@ -14,6 +14,7 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 /** Also used by the dev server's "Pull from Supabase" admin button (vite.config.ts). */
 export async function writeBundleFiles(b: BundleRaw) {
   const need = ['pokemon', 'typeChart', 'diceTypes', 'areas', 'trainers', 'upgrades', 'items', 'config'] as const
+  // `regions` is optional: a bundle exported before regions existed has none, and compiles to Kanto alone.
   for (const k of need) if (!(k in b)) throw new Error(`Bundle is missing "${k}"`)
   const out: Record<string, unknown> = {
     'pokemon.json': b.pokemon,
@@ -24,6 +25,7 @@ export async function writeBundleFiles(b: BundleRaw) {
     'upgrades.json': b.upgrades,
     'items.json': b.items,
     'config.json': b.config,
+    ...(b.regions ? { 'regions.json': b.regions } : {}),
   }
   for (const [name, data] of Object.entries(out))
     await writeFile(path.join(ROOT, 'src', 'data', name), JSON.stringify(data, null, 1) + '\n')

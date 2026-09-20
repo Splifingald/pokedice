@@ -34,7 +34,9 @@ For local cloud/admin work, copy `.env.example` to `.env.local` and fill it in. 
 | `pnpm test` · `pnpm coverage` | Vitest — engine, data, save and a headless area-1 → area-2 run |
 | `pnpm e2e` | Playwright smoke tests (new game → win, buy an upgrade, mocked sign-in). Uses the installed Edge on Windows; elsewhere run `npx playwright install chromium` first |
 | `pnpm lint` · `pnpm format` | ESLint (also enforces that `src/engine` stays pure) · Prettier |
-| `pnpm seed` | PokeAPI → `src/data/*.json` + `supabase/seed.sql`. Cached in `scripts/.cache/`, deterministic, never touches a live DB |
+| `pnpm seed` | Reports how far the committed bundle has drifted from what the generator (PokeAPI + `scripts/content.ts`, Kanto only) would produce. Writes nothing. `pnpm seed --force` does the old destructive regeneration — see [docs/02](docs/02-DATA-MODEL.md#3-generating-the-386) |
+| `pnpm seed-regions` | Builds Johto and Hoenn on top of the committed bundle: species 152–386, their areas, trainers and regions. Additive — it never drops an existing row |
+| `pnpm seed-sql` | Regenerates `supabase/seed.sql` from the committed bundle, without rebuilding the bundle. That one file is all a live database needs — it carries the post-`0001` schema changes too, and is safe to re-run |
 | `pnpm art` | Regenerates the 5 area banners and 19 trainer badges in `public/` |
 | `pnpm sim` | 1000 random battles + the §2.3 turns-to-kill table (spec methodology and played-out) |
 | `pnpm balance [N] [seed]` | Simulated campaign with an upgrade-buying policy (the same engine as the admin Campaign simulator); reports fight length per area. `GOLD=0.8 HP=1.6 pnpm balance` tries other multipliers |
