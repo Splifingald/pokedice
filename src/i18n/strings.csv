@@ -1362,11 +1362,13 @@ ui.status.poison.noun,poison,l'empoisonnement,el envenenamiento,Vergiftung
 ui.status.frozen.noun,freezing,le gel,la congelación,Einfrieren
 ui.status.paralyze.noun,paralysis,la paralysie,la parálisis,Paralyse
 ui.status.confuse.noun,confusion,la confusion,la confusión,Verwirrung
+ui.status.heal.noun,healing,le soin,la curación,Heilung
 ui.status.burn.label,BURN,BRÛLURE,QUEMADURA,VERBRENNUNG
 ui.status.poison.label,POISON,POISON,VENENO,GIFT
 ui.status.frozen.label,FROZEN,GELÉ,CONGELADO,GEFROREN
 ui.status.paralyze.label,PARALYSED,PARALYSÉ,PARALIZADO,PARALYSIERT
 ui.status.confuse.label,CONFUSED,CONFUS,CONFUSO,VERWIRRT
+ui.status.heal.label,HEAL,SOIN,CURACIÓN,HEILUNG
 ui.multiExp.flat,{share} of the XP,{share} de l'XP,{share} de la EXP,{share} der EP
 ui.multiExp.gap,"{share} of the XP, +{bonus} for each level they're behind the fighter (up to {cap})","{share} de l'XP, +{bonus} par niveau de retard sur le combattant (jusqu'à {cap})","{share} de la EXP, +{bonus} por cada nivel de diferencia con el que combatió (hasta {cap})","{share} der EP, +{bonus} für jedes Level Rückstand auf den Kämpfer (bis zu {cap})"
 ui.unlock.area,Reach {area},Atteindre {area},Llegar a {area},{area} erreichen
