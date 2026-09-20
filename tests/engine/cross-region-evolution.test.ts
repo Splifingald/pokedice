@@ -13,6 +13,7 @@ import {
   newSave,
   regionOfSpecies,
   startRegion,
+  switchRegion,
   stoneEvolution,
   getRegion,
   newRegionBlock,
@@ -56,12 +57,23 @@ describe('the evolution gate', () => {
     expect(allowed(UMBREON)).toBe(false)
   })
 
-  it('opens the later generation once its region is unlocked', () => {
+  it('opens the later generation once you are standing in its region', () => {
     const allowed = evolutionGate(withJohto(), data)
     expect(allowed(CROBAT)).toBe(true)
     expect(allowed(UMBREON)).toBe(true)
     expect(allowed(GENGAR)).toBe(true)
     expect(allowed(252)).toBe(false) // Hoenn is still ahead
+  })
+
+  it('closes it again back in Kanto, however far the player has gone', () => {
+    // Johto unlocked and played, then the region switcher takes them back: Kanto is Kanto, and its Pokédex ends at
+    // #151. A Golbat raised there stays a Golbat; the Crobat waits for the trip back to Johto.
+    const back = switchRegion(withJohto(), 'kanto')
+    const allowed = evolutionGate(back, data)
+    expect(allowed(CROBAT)).toBe(false)
+    expect(allowed(UMBREON)).toBe(false)
+    expect(allowed(GENGAR)).toBe(true)
+    expect(stoneEvolution(createInstance(EEVEE, 20, data, newId(), 1), 'moon-stone', data, allowed)).toBe(null)
   })
 })
 

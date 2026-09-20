@@ -13,6 +13,11 @@ export type CatchTarget = { mode: 'new' } | { mode: 'replace'; uid: string; leve
  * Can this K.O.'d Pokémon be caught? A species not in the Pokédex yet, or — wild ones only — a stronger copy of one you
  * own, which then replaces your weakest copy. A wild shiny can always be caught and always joins as an extra copy, never
  * replacing one you own. A legendary is one of a kind.
+ *
+ * Shiny and normal are separate Pokémon in the Box and on the team, however much they share a Pokédex entry: a plain
+ * catch measures itself against your plain copies only, so a level-40 Pidgey never takes the place of the shiny Pidgey
+ * you went looking for — and when the shiny is all you have, the plain one joins as its own Pokémon. (The Pokédex does
+ * not care — one entry per species, shiny or not.)
  */
 export function catchTarget(
   save: SaveData,
@@ -27,8 +32,11 @@ export function catchTarget(
   if (kind !== 'wild') return null
   // A shiny never overwrites a copy you own, whatever its level: it always joins as its own Pokémon.
   if (shiny) return { mode: 'new' }
-  const weakest = save.box.filter((p) => p.dex === dex).sort((a, b) => a.level - b.level)[0]
-  if (weakest && weakest.level < level) return { mode: 'replace', uid: weakest.id, level: weakest.level }
+  const plain = save.box.filter((p) => p.dex === dex && !p.shiny)
+  // Only shiny copies (or none here at all): the plain one is a Pokémon you don't have, so it joins as its own.
+  if (!plain.length) return { mode: 'new' }
+  const weakest = plain.sort((a, b) => a.level - b.level)[0]!
+  if (weakest.level < level) return { mode: 'replace', uid: weakest.id, level: weakest.level }
   return null
 }
 

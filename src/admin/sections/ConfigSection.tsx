@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import {
   DEFAULT_CONFIG,
   eggSpecies,
+  enabledRegions,
   slotOdds,
   slotReturnPerSpin,
   xpToNext,
@@ -148,7 +149,8 @@ function DayCareBox() {
     <NumInput min={min} value={cfg[k]} onChange={(v) => set({ [k]: Math.max(min, v ?? min) })} />
   )
   const perDay = cfg.tickMinutes > 0 ? (cfg.xpPerTick * 24 * 60) / cfg.tickMinutes : 0
-  const pool = data ? eggSpecies(data) : []
+  // An Egg belongs to the region it is hatched in, so the pool is shown region by region.
+  const pools = data ? enabledRegions(data).map((r) => ({ region: r, pool: eggSpecies(data, r.id) })) : []
   return (
     <Box title="Pokémon Day Care" hint="A secret place on the Map (not an area): Pokémon train in real time, and Eggs hatch on the spot.">
       <div className="grid gap-3 sm:grid-cols-3">
@@ -175,15 +177,23 @@ function DayCareBox() {
         <Field label="Hatch: minus">{num('hatchOffset', 0)}</Field>
         <Field label="Hatch: at least">{num('hatchMinLevel', 1)}</Field>
       </div>
-      <div>
+      <div className="grid gap-2">
         <p className="text-base text-muted">
-          Eggs hatch into the first form of a line that evolves, starters excluded ({pool.length} species):
+          Eggs hatch into the first form of a line that evolves, starters excluded, and only from the region they are
+          hatched in:
         </p>
-        <div className="mt-1 flex flex-wrap gap-0.5">
-          {pool.map((sp) => (
-            <SpriteImg key={sp.dex} dex={sp.dex} size={32} alt={sp.name} />
-          ))}
-        </div>
+        {pools.map(({ region, pool }) => (
+          <div key={region.id}>
+            <p className="text-base text-muted">
+              {region.name} ({pool.length} species):
+            </p>
+            <div className="mt-1 flex flex-wrap gap-0.5">
+              {pool.map((sp) => (
+                <SpriteImg key={sp.dex} dex={sp.dex} size={32} alt={sp.name} />
+              ))}
+            </div>
+          </div>
+        ))}
       </div>
     </Box>
   )

@@ -103,6 +103,45 @@ describe('Day Care', () => {
     expect(odds.find((o) => o.species.dex === 19)!.weight).toBe(cfg.unownedWeight)
   })
 
+  it("hatches only the live region's own generation — no previous or later region", () => {
+    const kanto = eggSpecies(data, 'kanto').map((s) => s.dex)
+    const johto = eggSpecies(data, 'johto').map((s) => s.dex)
+    expect(kanto.length).toBeGreaterThan(0)
+    expect(johto.length).toBeGreaterThan(0)
+    expect(kanto.every((d) => d <= 151)).toBe(true)
+    expect(johto.every((d) => d >= 152 && d <= 251)).toBe(true)
+    expect(eggSpecies(data, 'hoenn').every((s) => s.dex >= 252 && s.dex <= 386)).toBe(true)
+    // With no region asked for (the admin's overview) the pool is still every hatchable species.
+    expect(eggSpecies(data).length).toBe(kanto.length + johto.length + eggSpecies(data, 'hoenn').length)
+
+    // A Kanto save's odds — and so its Eggs — only ever name Kanto species.
+    const s = withMons([30, 30, 30])
+    expect(eggOdds(s, data).every((o) => o.species.dex <= 151)).toBe(true)
+    const rng = createRng(11)
+    for (let i = 0; i < 200; i++) expect(hatchEgg(s, data, rng, 0, newId, { free: true })!.inst.dex).toBeLessThanOrEqual(151)
+
+    // The same player in Johto hatches Johto Eggs, not the Kanto ones they have already been through.
+    const inJohto = { ...s, region: 'johto' as const }
+    expect(eggOdds(inJohto, data).every((o) => o.species.dex >= 152 && o.species.dex <= 251)).toBe(true)
+    const johtoRng = createRng(11)
+    for (let i = 0; i < 200; i++) {
+      const dex = hatchEgg(inJohto, data, johtoRng, 0, newId, { free: true })!.inst.dex
+      expect(dex).toBeGreaterThanOrEqual(152)
+      expect(dex).toBeLessThanOrEqual(251)
+    }
+  })
+
+  it('never lets a hatchling replace a shiny copy', () => {
+    const s = withMons([30, 30, 30])
+    const dex = hatchEgg(s, data, createRng(1), 0, newId, { free: true })!.inst.dex
+    const shiny = { ...createInstance(dex, 40, data, 'shiny', 0), shiny: true }
+    // Shiny and plain are separate Pokémon: a stronger shiny neither turns the hatchling away nor is replaced by it.
+    const hatched = hatchEgg({ ...s, box: [...s.box, shiny] }, data, createRng(1), 0, newId, { free: true })!
+    expect(hatched.kept).toBe(true)
+    expect(hatched.replaced).toBeUndefined()
+    expect(hatched.save.box.find((p) => p.id === 'shiny')!.shiny).toBe(true)
+  })
+
   it('hatches at the 3rd-lowest owned level minus 5, never below 5', () => {
     expect(hatchLevel(withMons([40, 30, 25, 10]), data)).toBe(25)
     expect(hatchLevel(withMons([8, 7, 6]), data)).toBe(5)

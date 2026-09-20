@@ -1,9 +1,10 @@
 // The Pokémon Day Care: residents gain XP in real time (no battles), capped per stay, and never evolve from it. Eggs
 // hatch on the spot into the first form of an evolving line, favouring species the player doesn't have yet.
 import { createInstance, gainXp, instanceMaxHp } from './progression'
+import { regionOf, regionOfSpecies } from './regions'
 import { createRng, type Rng } from './rng'
 import { ownedPokemon } from './run'
-import type { DayCareResident, DayCareState, GameData, PokemonInstance, SaveData, Species } from './types'
+import type { DayCareResident, DayCareState, GameData, PokemonInstance, RegionId, SaveData, Species } from './types'
 
 const MINUTE = 60_000
 
@@ -115,18 +116,29 @@ export function withdrawPokemon(save: SaveData, uid: string, data: GameData, now
   }
 }
 
-/** First forms of evolving lines (nothing evolves into them), starters excluded. */
-export function eggSpecies(data: GameData): Species[] {
+/**
+ * First forms of evolving lines (nothing evolves into them), starters excluded — and, with a region, only that
+ * region's own generation.
+ *
+ * An Egg is a region's Egg: hatching a Chikorita in Kanto would put a #152 in a Pokédex that ends at #151, and
+ * hatching a Pidgey in Johto would hand out a region the player has already finished. So the pool is cut to the
+ * species whose dex number belongs to the region (see `regionOfSpecies`), never a previous or a later one. A region
+ * with no first forms of its own (nothing in the table yet) falls back to the whole pool, so Eggs never dry up.
+ */
+export function eggSpecies(data: GameData, regionId?: RegionId | null): Species[] {
   const evolvedInto = new Set(data.speciesList.flatMap((s) => s.evolutions.map((e) => e.toDex)))
   const starters = new Set(data.config.starters)
-  return data.speciesList.filter((s) => s.evolutions.length > 0 && !evolvedInto.has(s.dex) && !starters.has(s.dex))
+  const pool = data.speciesList.filter((s) => s.evolutions.length > 0 && !evolvedInto.has(s.dex) && !starters.has(s.dex))
+  if (!regionId) return pool
+  const here = pool.filter((s) => regionOfSpecies(data, s.dex) === regionId)
+  return here.length ? here : pool
 }
 
 /** Each hatchable species with its weight: missing from the Pokédex → unownedWeight, else 1. */
 export function eggOdds(save: SaveData, data: GameData): { species: Species; weight: number }[] {
   const dex = new Set(save.pokedex)
   const unowned = Math.max(0, data.config.dayCare.unownedWeight)
-  return eggSpecies(data).map((species) => ({ species, weight: dex.has(species.dex) ? 1 : unowned }))
+  return eggSpecies(data, regionOf(save)).map((species) => ({ species, weight: dex.has(species.dex) ? 1 : unowned }))
 }
 
 /** The hatchling's level: the hatchRank-th lowest level owned (or the highest, with fewer Pokémon), minus hatchOffset. */
@@ -171,7 +183,8 @@ export function hatchEgg(
   const inst = createInstance(pick.species.dex, hatchLevel(save, data), data, newId(), now)
   const isNew = !save.pokedex.includes(inst.dex)
   const paid = opts.free ? 0 : price
-  const copies = ownedPokemon(save).filter((p) => p.dex === inst.dex)
+  // Shiny copies are a species of their own (see engine/catching.ts): a hatchling never replaces one, nor is it held back by one.
+  const copies = ownedPokemon(save).filter((p) => p.dex === inst.dex && !p.shiny)
   const kept = copies.every((p) => p.level < inst.level)
   const replaced = kept ? copies.sort((a, b) => a.level - b.level)[0] : undefined
   const paidSave: SaveData = {

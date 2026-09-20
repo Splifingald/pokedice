@@ -388,8 +388,9 @@ a region you have not unlocked does not happen. It is a predicate on the target'
 the Day Care all obey one rule, and the campaign simulator inherits it by going through the same code. A species in no
 region's range is always allowed, so the gate can never be what makes something unobtainable.
 
-The gate is on **unlocked**, not on *where you are standing*: reach Johto and your Golbat evolves there, and in Kanto
-too if you go back, because by then you have seen a Crobat.
+The gate is on **where you are standing**, not on what you have unlocked: a region shows its own generation and the
+ones before it, and nothing else. A Golbat evolves into a Crobat in Johto or any later region, and never in Kanto —
+not even once Johto is done, because the Kanto Pokédex still ends at #151 and its Box is Kanto's.
 
 The display follows the same predicate, or it would promise an evolution that will not happen: `PokemonSheet`'s
 "Evolves into" row and its `EVOLVE` milestone list only the branches the save may see, and the milestone disappears
@@ -470,7 +471,8 @@ encounters-per-area inside Kanto's envelope, and the report is committed under `
    shinies by palette swap, and the two-frame GBA box icons kept (§1a).
 2. **Upgrade tracks** — reset with everything else on a region change; the merge takes the max across merged regions.
 3. **Day Care** — per-region: each region has its own, and residents stay in the region they were left in. Energy
-   stays global.
+   stays global. Eggs hatch from the region's **own** generation only (`eggSpecies(data, regionId)`): the first forms
+   of its evolving lines, starters excluded, never a previous or a later region's.
 4. **Master Ball** — resets with the bag; one to find per region (§2b).
 5. **Leaderboards** — one per region, unlocked with the region, following the region switcher (§4).
 6. **Kanto post-game** (Victory Road II / Indigo Plateau II) stays Kanto content, reachable any time via the region

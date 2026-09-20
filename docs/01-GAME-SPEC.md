@@ -256,6 +256,7 @@ Evolution is **automatic and cannot be cancelled**. It plays on the victory scre
 - After a wild (or legendary) Pokémon is K.O.'d, the player may throw the **catch die** — a d6 — with **one ball** from the bag: Poké Ball +1, Great Ball +2, Ultra Ball +3, Master Ball +9. If `die + bonus ≥ catch value` the Pokémon is caught; otherwise it **flees**. There is no way to skip the throw (v1.7): the player always throws, with or without a ball.
 - Every species has a **catch value** 1–9 (`pokemon.catch_value`, admin-editable; 1 = always caught). It is seeded from the Gen 1 capture rate: ≥ 255 → 1, ≥ 190 → 2, ≥ 120 → 3, ≥ 75 → 4, ≥ 45 → 5, ≥ 30 → 6, ≥ 20 → 7, ≥ 10 → 8, below → 9 (the legendary birds and Mewtwo). With a bare d6, values 7–9 need a ball.
 - **Who can be caught:** a species not in the Pokédex yet, or — wild only — a **stronger copy** of one you own (higher level than your weakest copy). That catch **replaces** the weaker copy in place: same team slot, the new level, full HP, XP reset.
+- **Shiny and normal are separate Pokémon** in the Box and on the team, and share one Pokédex entry. A wild shiny always joins as an extra copy and is never released as a duplicate; a plain catch only ever measures itself against — and only ever replaces — your plain copies, so a stronger plain Pidgey never takes your shiny Pidgey's place, and when the shiny is the only one you own the plain one joins as its own Pokémon.
 - Caught **at the level it was met**, at full HP.
 - **Where it goes:**
   - team has an empty slot → it **joins the team immediately**;

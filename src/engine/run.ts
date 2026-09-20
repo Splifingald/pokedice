@@ -582,9 +582,11 @@ export function syncXpCurve(save: SaveData, data: GameData): SaveData {
 
 /**
  * One copy per species in the Box: when an evolution (or a Pokémon coming back from the team) leaves two copies of a
- * species, only the one with the highest level stays (then the most XP, then the one that was there first). Shiny
- * Pokémon are never let go and don't count; team members are left alone until they come back to the Box, and a team
- * member at least as strong as a Box copy sends that copy away. Day Care residents are checked when picked up.
+ * species, only the one with the highest level stays (then the most XP, then the one that was there first). A shiny is
+ * its own Pokémon here: it is never let go and never counts against a plain copy, however strong either of them is —
+ * shiny and normal share a Pokédex entry, nothing else. Team members are left alone until they come back to the Box,
+ * and a team member at least as strong as a Box copy sends that copy away. Day Care residents are checked when picked
+ * up.
  */
 export function releaseDuplicates(save: SaveData): { save: SaveData; released: PokemonInstance[] } {
   const inTeam = new Set(save.team)

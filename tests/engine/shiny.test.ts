@@ -5,10 +5,12 @@ import {
   BATTLE_BACKGROUNDS,
   catchTarget,
   createBattle,
+  createInstance,
   createRng,
   linearAreas,
   newSave,
   progressOf,
+  releaseDuplicates,
   rollWild,
   teamOf,
   uniformLevels,
@@ -42,7 +44,7 @@ describe('shiny Pokémon', () => {
     expect(r).toBeLessThan(0.13)
   })
 
-  it('stay shiny in battle and once caught; a plain stronger copy replaces a shiny one', () => {
+  it('stay shiny in battle and once caught; a plain stronger copy never replaces a shiny one', () => {
     const s = newSave(4, data, 0, newId)
     const { state } = createBattle(
       {
@@ -59,9 +61,31 @@ describe('shiny Pokémon', () => {
     const caught = applyCatch(s, { dex: 16, level: 3, shiny: true }, { mode: 'new' }, data, 1, newId)
     const pidgey = caught.save.box.find((p) => p.id === caught.caughtId)!
     expect(pidgey.shiny).toBe(true)
+    // The shiny is all the player has of #16, so a plain one is a Pokémon they don't own: it joins, shiny untouched.
     const target = catchTarget(caught.save, 16, 9, 'wild', data)!
-    const replaced = applyCatch(caught.save, { dex: 16, level: 9 }, target, data, 2, newId)
-    expect(replaced.save.box.find((p) => p.id === pidgey.id)).not.toHaveProperty('shiny')
+    expect(target).toEqual({ mode: 'new' })
+    const kept = applyCatch(caught.save, { dex: 16, level: 9 }, target, data, 2, newId)
+    expect(kept.save.box.find((p) => p.id === pidgey.id)!.shiny).toBe(true)
+    expect(kept.save.box.filter((p) => p.dex === 16).map((p) => [p.level, !!p.shiny])).toEqual([[3, true], [9, false]])
+
+    // From there on, plain catches fight it out among themselves and leave the shiny alone, whatever their level.
+    const stronger = catchTarget(kept.save, 16, 20, 'wild', data)!
+    expect(stronger).toEqual({ mode: 'replace', uid: kept.caughtId, level: 9 })
+    const after = applyCatch(kept.save, { dex: 16, level: 20 }, stronger, data, 3, newId)
+    expect(after.save.box.filter((p) => p.dex === 16).map((p) => [p.level, !!p.shiny])).toEqual([[3, true], [20, false]])
+    // A shiny weaker than every plain copy still stays: it is never the weakest copy of anything.
+    expect(catchTarget(after.save, 16, 40, 'wild', data)).toEqual({ mode: 'replace', uid: kept.caughtId, level: 20 })
+  })
+
+  it('are left alone by the Box duplicate sweep, in both directions', () => {
+    const s = newSave(4, data, 0, newId)
+    const shiny = { ...createInstance(16, 3, data, 'shiny', 0), shiny: true }
+    const plain = createInstance(16, 40, data, 'plain', 0)
+    const weaker = createInstance(16, 10, data, 'weaker', 0)
+    const { save, released } = releaseDuplicates({ ...s, box: [...s.box, shiny, plain, weaker], team: s.team })
+    // Two plain copies is one too many; the shiny is a Pokémon of its own and neither goes nor sends anyone away.
+    expect(released.map((p) => p.id)).toEqual(['weaker'])
+    expect(save.box.map((p) => p.id)).toEqual([s.box[0]!.id, 'shiny', 'plain'])
   })
 
   it('a wild shiny always joins as an extra copy, whether weaker or stronger than yours', () => {

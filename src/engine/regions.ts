@@ -45,20 +45,24 @@ export function regionOfSpecies(data: GameData, dex: number): RegionId | null {
 }
 
 /**
- * Whether a species may be evolved into yet: cross-generation evolutions wait for their generation.
+ * Whether a species may be evolved into yet: cross-generation evolutions wait for the region they come from.
  *
  * Kanto is full of Pokémon that gained an evolution in a later game — Golbat into Crobat, Chansey into Blissey, Eevee
  * into Umbreon, Onix into Steelix. Those branches live on the Kanto species rows, because they are the same Pokémon,
- * but a player still working through the Indigo League must not meet a Gen 2 Pokémon: it would spoil a region they
- * have not been offered yet and drop a #169 into a Pokédex that ends at #151. So the evolution is held until the
- * region it comes from is unlocked. Reach Johto and your Golbat evolves — in Johto, and in Kanto too when you come
- * back, because by then you have seen a Crobat.
+ * but a player in Kanto must not meet a Gen 2 Pokémon: it would spoil a region they may not even have been offered
+ * yet and drop a #169 into a Pokédex that ends at #151.
+ *
+ * The gate is on **where you are standing**, not on what you have unlocked: a region only ever shows its own
+ * generation and the ones before it. So a Golbat evolves into a Crobat in Johto or any later region, and never in
+ * Kanto — not even once Johto is done, because the Kanto Pokédex still ends at #151 and its Box is Kanto's.
  *
  * A species in no region's range (content ahead of the regions table) is always allowed, so this can never be the
  * thing that makes a Pokémon unobtainable.
  */
 export function evolutionGate(save: SaveData, data: GameData): (dex: number) => boolean {
-  const open = new Set(unlockedRegions(save, data).map((r) => r.id))
+  const here = getRegion(data, regionOf(save))
+  // Standing in a region the table does not know: gate nothing rather than lock everything away.
+  const open = new Set(data.regions.filter((r) => !here || r.orderIndex <= here.orderIndex).map((r) => r.id))
   return (dex) => {
     const from = regionOfSpecies(data, dex)
     return from === null || open.has(from)
