@@ -16,6 +16,7 @@ import { MiniSprite, SpriteImg } from '@/components/SpriteImg'
 import { milestoneText, money, trainerTitle } from '@/lib/format'
 import { usePace } from '@/lib/pace'
 import { BadgeIcon } from '@/components/BadgeIcon'
+import { Confetti } from '@/components/Confetti'
 import { useGame } from '@/store/game'
 import { afterStalemate, afterWipe, continueAfterVictory, enterArea, resolveCatch, trainerHasNext } from '@/store/run'
 import { cx, shade, typeColor } from '@/theme/util'
@@ -303,37 +304,6 @@ function MilestoneChip({ m, type1 }: { m: Milestone; type1: DieType }) {
       title={milestoneText(m, type1)}
     >
       {body}
-    </span>
-  )
-}
-
-const CONFETTI = ['#e8b44a', '#c2452d', '#547acc', '#4aa84a', '#d44873', '#f7f2e0']
-
-/** A little burst of pixel confetti from the middle of its box (skipped with reduced motion). */
-function Confetti() {
-  const reduced = useGame((s) => s.settings.reducedMotion)
-  const bits = useMemo(
-    () =>
-      Array.from({ length: 20 }, (_, i) => {
-        const a = (i / 16) * Math.PI * 2 + Math.random() * 0.4
-        const r = 34 + Math.random() * 30
-        return { x: Math.cos(a) * r, y: Math.sin(a) * r - 14, rot: Math.random() * 360, color: CONFETTI[i % CONFETTI.length]! }
-      }),
-    [],
-  )
-  if (reduced) return null
-  return (
-    <span className="pointer-events-none absolute inset-0" aria-hidden>
-      {bits.map((b, i) => (
-        <motion.span
-          key={i}
-          className="absolute left-1/2 top-1/2 h-2.5 w-2.5"
-          style={{ background: b.color, boxShadow: '0 0 0 1px #2a2438' }}
-          initial={{ x: 0, y: 0, opacity: 1, rotate: 0 }}
-          animate={{ x: b.x, y: [0, b.y, b.y + 26], opacity: [1, 1, 0], rotate: b.rot }}
-          transition={{ duration: 1.3, ease: 'easeOut' }}
-        />
-      ))}
     </span>
   )
 }

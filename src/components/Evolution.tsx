@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom'
 import { getInstance, instanceStats } from '@/engine'
 import { sfx } from '@/audio/sfx'
 import { useGame } from '@/store/game'
+import { Confetti } from './Confetti'
 import { DiceSet } from './DiceSet'
 import { PixelButton } from './PixelButton'
 import { SpriteImg } from './SpriteImg'
@@ -36,7 +37,7 @@ export function EvolutionSequence({ uid, fromDex, toDex, onDone }: EvolutionShow
   const to = data.species[toDex]?.name ?? '???'
   const stats = inst ? instanceStats(inst, data) : null
   return (
-    <div className="flex flex-col items-center gap-2 border-[3px] border-ink bg-ink p-3 text-panel">
+    <div className="flex flex-col items-center gap-2 border-[3px] border-ink bg-parchment p-3 text-ink">
       <div className="relative" style={{ width: 144, height: 144 }}>
         {stage < 3 && (
           <motion.div
@@ -54,9 +55,13 @@ export function EvolutionSequence({ uid, fromDex, toDex, onDone }: EvolutionShow
         )}
         {stage === 2 && <div className="absolute inset-0 bg-white" />}
         {stage === 3 && (
-          <motion.div className="absolute inset-0" initial={{ scale: 1.3, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}>
-            <SpriteImg dex={toDex} size={144} />
-          </motion.div>
+          <>
+            <motion.div className="absolute inset-0" initial={{ scale: 1.3, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}>
+              <SpriteImg dex={toDex} size={144} />
+            </motion.div>
+            {/* The new form arrives to a burst of confetti. */}
+            <Confetti count={26} spread={60} size={12} />
+          </>
         )}
       </div>
       <div className="text-center text-2xl">{stage < 3 ? `What? ${from} is evolving!` : `${from} evolved into ${to}!`}</div>
@@ -86,7 +91,7 @@ export function EvolutionQueue({ items, onDone }: { items: EvolutionShow[]; onDo
   // On the page itself, above any sheet it was opened from (a fixed box inside a transformed modal would be clipped).
   return createPortal(
     <motion.div
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-ink/80 p-3"
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-ink/70 p-3"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       role="dialog"
