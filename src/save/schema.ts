@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { COMBO_KEYS, POKE_TYPES, type ComboKey, type PokeType, type RegionSave, type SaveData } from '@/engine/types'
+import { LANGS } from '@/i18n/langs'
 
 export const CURRENT_SAVE_VERSION = 1
 
@@ -70,7 +71,13 @@ export const saveSchema = z.object({
   dieLevels: levelRecord<PokeType>(POKE_TYPES),
   currentAreaId: z.string(),
   areaProgress: z.record(progressSchema),
-  settings: z.object({ sfx: z.boolean(), reducedMotion: z.boolean(), multiExp: z.boolean().default(true), autoMode: z.boolean().optional() }),
+  settings: z.object({
+    sfx: z.boolean(),
+    reducedMotion: z.boolean(),
+    multiExp: z.boolean().default(true),
+    autoMode: z.boolean().optional(),
+    lang: z.enum(LANGS).optional(),
+  }),
   hpScale: z.number().positive().optional(),
   player: z.object({ name: z.string().max(12), character: z.enum(['red', 'green']) }).optional(),
   dayCare: dayCareSchema.optional(),

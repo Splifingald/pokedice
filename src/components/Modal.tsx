@@ -1,6 +1,7 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import { useEffect, useId, useRef, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
+import { t } from '@/i18n'
 import { cx } from '@/theme/util'
 import { PixelIcon } from './icons'
 
@@ -58,7 +59,7 @@ export function Modal({
             role="dialog"
             aria-modal="true"
             aria-labelledby={title ? titleId : undefined}
-            aria-label={title ? undefined : (label ?? 'Dialog')}
+            aria-label={title ? undefined : (label ?? t('ui.modal.dialog'))}
             className={cx('pixel-panel pixel-scroll max-h-[90vh] w-full max-w-lg overflow-auto p-4 outline-none', className)}
             initial={{ scale: 0.9, y: 16 }}
             animate={{ scale: 1, y: 0 }}
@@ -74,7 +75,7 @@ export function Modal({
                     type="button"
                     className="-m-2 flex h-11 w-11 shrink-0 items-center justify-center md:-m-1 md:h-8 md:w-8"
                     onClick={onClose}
-                    aria-label="Close"
+                    aria-label={t('ui.common.close')}
                   >
                     <PixelIcon name="close" size={16} />
                   </button>

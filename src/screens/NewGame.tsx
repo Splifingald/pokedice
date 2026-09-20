@@ -2,6 +2,7 @@ import { motion } from 'framer-motion'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { createInstance, getSpecies } from '@/engine'
+import { useT } from '@/i18n/react'
 import { Dialogue } from '@/components/Dialogue'
 import { Modal } from '@/components/Modal'
 import { PixelButton } from '@/components/PixelButton'
@@ -14,14 +15,10 @@ import { cx } from '@/theme/util'
 import { useGame } from '@/store/game'
 import { enterArea, startNewGame } from '@/store/run'
 
-const INTRO = [
-  'Welcome to the world of POKÉDICE!',
-  'Here, Pokémon battle with dice. Every Pokémon carries its own set — typed dice hit harder against the right foes.',
-  'Throw, keep the dice you like, reroll the rest… then ATTACK. Pairs, straights and full houses add bonus damage.',
-  'Trainers pay in Pokédollars (₽). Spend them on upgrades that make every die and combo stronger. Now — choose your first partner!',
-]
+const INTRO = ['ui.newGame.intro1', 'ui.newGame.intro2', 'ui.newGame.intro3', 'ui.newGame.intro4']
 
 export function NewGame() {
+  const { t } = useT()
   const data = useGame((s) => s.data)
   const navigate = useNavigate()
   const [line, setLine] = useState(0)
@@ -44,10 +41,10 @@ export function NewGame() {
       <div className="mx-auto flex max-w-5xl flex-col gap-6">
         {!picking ? (
           <div className="mx-auto mt-[12vh] w-full max-w-2xl">
-            <h1 className="sr-only">New game</h1>
+            <h1 className="sr-only">{t('ui.newGame.heading')}</h1>
             <motion.img
               src="/characters/prof-oak.png"
-              alt="Professor Oak"
+              alt={t('ui.newGame.oak')}
               width={168}
               height={168}
               className="mx-auto mb-2 block"
@@ -55,14 +52,14 @@ export function NewGame() {
               initial={{ y: 12, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
             />
-            <div className="font-pixel-sm mb-1 inline-block bg-ink px-2 py-0.5 text-lg text-parchment">PROF. OAK</div>
-            <Dialogue key={line} text={INTRO[line]} />
+            <div className="font-pixel-sm mb-1 inline-block bg-ink px-2 py-0.5 text-lg text-parchment">{t('ui.newGame.oakTag')}</div>
+            <Dialogue key={line} text={t(INTRO[line] ?? '')} />
             <div className="mt-3 flex justify-between">
               <PixelButton size="sm" variant="ghost" onClick={() => setLine(INTRO.length)}>
-                Skip intro
+                {t('ui.newGame.skipIntro')}
               </PixelButton>
               <PixelButton variant="primary" onClick={() => setLine((l) => l + 1)}>
-                NEXT ▸
+                {t('ui.newGame.next')}
               </PixelButton>
             </div>
           </div>
@@ -70,7 +67,7 @@ export function NewGame() {
           <CharacterSelect onDone={setPlayer} />
         ) : (
           <>
-            <h1 className="text-center text-5xl">Choose your partner</h1>
+            <h1 className="text-center text-5xl">{t('ui.newGame.choosePartner')}</h1>
             <div className="mx-auto grid w-full max-w-3xl grid-cols-3 gap-1.5 sm:gap-4">
               {starters.map((dex, i) => {
                 const sp = getSpecies(data, dex)
@@ -98,8 +95,8 @@ export function NewGame() {
                     <button
                       type="button"
                       onClick={() => setInfo(dex)}
-                      aria-label={`${sp.name} info`}
-                      title="Info"
+                      aria-label={t('ui.newGame.monInfo', { name: sp.name })}
+                      title={t('ui.newGame.info')}
                       className="absolute right-0 top-0 flex h-11 w-11 items-center justify-center"
                     >
                       <span className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-ink bg-panel text-xl leading-none shadow-hard-sm hover:bg-gold">
@@ -114,7 +111,7 @@ export function NewGame() {
         )}
       </div>
 
-      <Modal open={info != null} onClose={() => setInfo(null)} label="Pokémon details">
+      <Modal open={info != null} onClose={() => setInfo(null)} label={t('ui.newGame.details')}>
         {info != null && (
           <PokemonSheet dex={info} inst={createInstance(info, level, data, 'starter-preview', 0)}>
             <PixelButton
@@ -125,21 +122,25 @@ export function NewGame() {
                 setChoice(info)
               }}
             >
-              Choose {data.species[info]?.name}
+              {t('ui.newGame.choose', { name: data.species[info]?.name ?? '' })}
             </PixelButton>
           </PokemonSheet>
         )}
       </Modal>
 
-      <Modal open={choice != null} onClose={() => setChoice(null)} title={choice ? `${data.species[choice]?.name}?` : ''}>
+      <Modal
+        open={choice != null}
+        onClose={() => setChoice(null)}
+        title={choice ? t('ui.newGame.confirmTitle', { name: data.species[choice]?.name ?? '' }) : ''}
+      >
         {choice && (
           <div className="flex flex-col items-center gap-3">
             <SpriteImg dex={choice} size={120} />
-            <p className="text-xl">Set off with {data.species[choice]?.name} as your partner?</p>
+            <p className="text-xl">{t('ui.newGame.confirmBody', { name: data.species[choice]?.name ?? '' })}</p>
             <div className="flex gap-2">
-              <PixelButton onClick={() => setChoice(null)}>Not yet</PixelButton>
+              <PixelButton onClick={() => setChoice(null)}>{t('ui.newGame.notYet')}</PixelButton>
               <PixelButton variant="primary" onClick={() => begin(choice)}>
-                YES!
+                {t('ui.newGame.yes')}
               </PixelButton>
             </div>
           </div>
@@ -153,7 +154,7 @@ export function NewGame() {
 export function CharacterSelect({
   onDone,
   initial,
-  submitLabel = 'NEXT ▸',
+  submitLabel,
   compact = false,
 }: {
   onDone: (p: PlayerProfile) => void
@@ -162,6 +163,7 @@ export function CharacterSelect({
   /** Inside a panel (Settings): no page heading. */
   compact?: boolean
 }) {
+  const { t } = useT()
   const [character, setCharacter] = useState<PlayerCharacter>(initial?.character ?? 'red')
   const [name, setName] = useState(initial?.name ?? '')
   const trimmed = name.trim()
@@ -173,15 +175,19 @@ export function CharacterSelect({
         if (trimmed) onDone({ name: trimmed, character })
       }}
     >
-      {compact ? <p className="text-center text-2xl">Select your character</p> : <h1 className="text-center text-5xl">Select your character</h1>}
-      <div role="radiogroup" aria-label="Character" className="flex justify-center gap-4">
+      {compact ? (
+        <p className="text-center text-2xl">{t('ui.newGame.selectCharacter')}</p>
+      ) : (
+        <h1 className="text-center text-5xl">{t('ui.newGame.selectCharacter')}</h1>
+      )}
+      <div role="radiogroup" aria-label={t('ui.newGame.character')} className="flex justify-center gap-4">
         {PLAYER_CHARACTERS.map((c, i) => (
           <motion.button
             key={c}
             type="button"
             role="radio"
             aria-checked={character === c}
-            aria-label={`Character ${i + 1}`}
+            aria-label={t('ui.newGame.characterN', { n: i + 1 })}
             onClick={() => setCharacter(c)}
             className={cx('pixel-panel p-2', character === c ? 'bg-gold' : 'hover:bg-white')}
             initial={{ y: 20, opacity: 0 }}
@@ -193,7 +199,7 @@ export function CharacterSelect({
         ))}
       </div>
       <label className="flex w-full max-w-xs flex-col gap-1 text-xl">
-        Your name
+        {t('ui.newGame.yourName')}
         <input
           value={name}
           onChange={(e) => setName(e.target.value.slice(0, 12))}
@@ -204,7 +210,7 @@ export function CharacterSelect({
         />
       </label>
       <PixelButton type="submit" variant="primary" size="lg" disabled={!trimmed}>
-        {submitLabel}
+        {submitLabel ?? t('ui.newGame.next')}
       </PixelButton>
     </form>
   )

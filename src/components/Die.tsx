@@ -4,6 +4,8 @@ import { usePace } from '@/lib/pace'
 import { PALETTE, STATUS_COLORS } from '@/theme/colors'
 import { cx, shade, textOn, typeColor } from '@/theme/util'
 import { PixelIcon, STATUS_GLYPH } from './icons'
+import { t } from '@/i18n'
+import { statusName, typeName } from '@/lib/format'
 
 const PIPS: Record<number, [number, number][]> = {
   1: [[1, 1]],
@@ -107,7 +109,17 @@ export function Die({ type, face, size = 56, selected, locked, rollKey, delay = 
   const interactive = !!onClick && !locked
   const special = statusColor(face)
   const ring = mini ? 2 : 3
-  const name = label ?? `${type} die${face ? `, ${face.kind === 'status' ? `${face.status} (${face.value})` : face.value}` : ''}`
+  const name =
+    label ??
+    (face
+      ? t('ui.die.withFace', {
+          type: typeName(type),
+          face:
+            face.kind === 'status'
+              ? t('ui.die.statusFace', { status: statusName(face.status), value: face.value })
+              : face.value,
+        })
+      : t('ui.die.name', { type: typeName(type) }))
   const base = {
     className: cx(mini ? 'die-mini' : 'die', 'relative flex select-none items-center justify-center', interactive && 'cursor-pointer', className),
     style: {

@@ -7,6 +7,7 @@
  * without knowing regions exist; switching region is a swap of those fields, and nothing else changes.
  */
 import { linearAreas } from './data'
+import type { BadgeInfo } from './run'
 import { COMBO_KEYS, POKE_TYPES, type ComboKey, type GameData, type PokeType, type Region, type RegionId, type RegionSave, type SaveData } from './types'
 
 export const KANTO: RegionId = 'kanto'
@@ -255,4 +256,42 @@ export function rescueFromDisabledRegion(save: SaveData, data: GameData): { save
   const target = [...open].reverse().find((r) => r.id !== live) ?? getRegion(data, KANTO)
   if (!target || !save.parked?.[target.id]) return null
   return { save: switchRegion(save, target.id), from: region }
+}
+
+/** One region on the trainer card: its badges, and whether its last area is behind the player. */
+export interface RegionCase {
+  id: RegionId
+  name: string
+  badges: BadgeInfo[]
+  earned: number
+  /** Its league area is cleared — the crown on the card. */
+  endgameCleared: boolean
+}
+
+/**
+ * The badge case of every region the player has reached, live or parked. `badgeCase` only ever describes the live
+ * region, because every other engine function reads the live block; here the parked blocks are read directly, which
+ * is the one place that needs to look across all of them at once.
+ */
+export function regionCases(save: SaveData, data: GameData): RegionCase[] {
+  return unlockedRegions(save, data).map((region) => {
+    const live = regionOf(save) === region.id
+    const progress = live ? save.areaProgress : (save.parked?.[region.id]?.areaProgress ?? {})
+    const badges: BadgeInfo[] = []
+    for (const area of regionAreas(data, region.id)) {
+      const defeated = progress[area.id]?.gymsDefeated ?? []
+      for (const id of area.gyms) {
+        const trainer = data.trainers[id]
+        if (trainer?.badge)
+          badges.push({ trainerId: id, areaId: area.id, leader: trainer.name, badge: trainer.badge, earned: defeated.includes(id) })
+      }
+    }
+    return {
+      id: region.id,
+      name: region.name,
+      badges,
+      earned: badges.filter((b) => b.earned).length,
+      endgameCleared: !!progress[region.leagueAreaId]?.cleared,
+    }
+  })
 }

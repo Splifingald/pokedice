@@ -3,21 +3,21 @@ import { useState, type ReactNode } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import {
   COMBO_KEYS,
-  COMBO_NAMES,
   comboBonus,
-  multiExpText,
-  POKE_TYPES,
-  typeMultiplier,
-  type PokeType,
   getRegion,
+  POKE_TYPES,
   regionOf,
+  typeMultiplier,
   unlockedRegions,
+  type PokeType,
 } from '@/engine'
+import { multiExpText } from '@/i18n/text'
+import { useT } from '@/i18n/react'
 import { DieFaces } from '@/components/Die'
 import { PixelIcon } from '@/components/icons'
 import { PixelButton } from '@/components/PixelButton'
 import { TypeBadge } from '@/components/TypeBadge'
-import { comboExampleText, DIE_ABBR, statusEffects } from '@/lib/format'
+import { comboExampleText, comboName, dieAbbr, statusEffects, typeName } from '@/lib/format'
 import { useGame } from '@/store/game'
 import { badgeColors, cx, typeColor } from '@/theme/util'
 
@@ -33,6 +33,7 @@ function Section({ id, title, children }: { id: string; title: string; children:
 }
 
 function StatusTable() {
+  const { t } = useT()
   const r = useGame((s) => s.data.config.status)
   const rows = statusEffects(r)
   return (
@@ -40,15 +41,9 @@ function StatusTable() {
       <table className="w-full border-collapse text-lg">
         <thead>
           <tr className="bg-ink text-panel">
-            <th scope="col" className="px-2 py-1 text-left font-normal">
-              Status
-            </th>
-            <th scope="col" className="px-2 py-1 text-left font-normal">
-              Triggers on
-            </th>
-            <th scope="col" className="px-2 py-1 text-left font-normal">
-              Effect
-            </th>
+            <th scope="col" className="px-2 py-1 text-left font-normal">{t('ui.help.statusCol')}</th>
+            <th scope="col" className="px-2 py-1 text-left font-normal">{t('ui.help.triggersCol')}</th>
+            <th scope="col" className="px-2 py-1 text-left font-normal">{t('ui.help.effectCol')}</th>
           </tr>
         </thead>
         <tbody>
@@ -60,62 +55,54 @@ function StatusTable() {
                 </span>
                 <TypeBadge type={x.die} size="sm" />
               </th>
-              <td className="px-2 py-1">{x.when} in one roll</td>
+              <td className="px-2 py-1">{t('ui.help.inOneRoll', { when: x.when })}</td>
               <td className="px-2 py-1">{x.what}</td>
             </tr>
           ))}
         </tbody>
       </table>
-      <p className="mt-1 text-lg text-muted">
-        Below its trigger count a status face still counts as a number (shown in its corner) for damage and
-        combos. All statuses clear when a battle ends.
-      </p>
+      <p className="mt-1 text-lg text-muted">{t('ui.help.statusNote')}</p>
     </div>
   )
 }
 
+/** `words` is a sheet key: the cell's meaning, read out in the player's language. */
 const CELL: Record<string, { label: string; cls: string; words: string }> = {
-  '2': { label: '2', cls: 'bg-hp-green text-ink', words: 'super effective (×2)' },
-  '0.5': { label: '½', cls: 'bg-[#e8905a] text-ink', words: 'not very effective (×½)' },
-  '0': { label: '0', cls: 'bg-ink text-panel', words: 'no effect (×0)' },
-  '1': { label: '', cls: '', words: 'normal (×1)' },
+  '2': { label: '2', cls: 'bg-hp-green text-ink', words: 'ui.help.superEffective' },
+  '0.5': { label: '½', cls: 'bg-[#e8905a] text-ink', words: 'ui.help.notVeryEffective' },
+  '0': { label: '0', cls: 'bg-ink text-panel', words: 'ui.help.noEffect' },
+  '1': { label: '', cls: '', words: 'ui.help.normalEffect' },
 }
 
-function TypeHeader({ t }: { t: PokeType }) {
-  const { bg, fg } = badgeColors(typeColor(t))
+function TypeHeader({ type }: { type: PokeType }) {
+  const { bg, fg } = badgeColors(typeColor(type))
   return (
     <span
       className="flex h-6 w-8 items-center justify-center border border-ink font-mono text-xs font-bold"
       style={{ background: bg, color: fg }}
-      title={t}
+      title={typeName(type)}
     >
-      <span aria-hidden="true">{DIE_ABBR[t]}</span>
-      <span className="sr-only">{t}</span>
+      <span aria-hidden="true">{dieAbbr(type)}</span>
+      <span className="sr-only">{typeName(type)}</span>
     </span>
   )
 }
 
 export function TypeChart() {
+  const { t } = useT()
   const chart = useGame((s) => s.data.typeChart)
   return (
-    <div
-      className="pixel-scroll overflow-x-auto"
-      role="region"
-      aria-label="Type effectiveness chart, scrollable"
-      tabIndex={0}
-    >
+    <div className="pixel-scroll overflow-x-auto" role="region" aria-label={t('ui.help.chartLabel')} tabIndex={0}>
       <table className="border-collapse">
-        <caption className="pb-1 text-left text-lg text-muted">
-          Attacking type (rows) against defending type (columns).
-        </caption>
+        <caption className="pb-1 text-left text-lg text-muted">{t('ui.help.chartCaption')}</caption>
         <thead>
           <tr>
             <th scope="col" className="sticky left-0 bg-panel p-0.5 text-left text-sm font-normal">
-              ATK ↓ DEF →
+              {t('ui.help.atkDef')}
             </th>
             {POKE_TYPES.map((d) => (
               <th key={d} scope="col" className="p-0.5">
-                <TypeHeader t={d} />
+                <TypeHeader type={d} />
               </th>
             ))}
           </tr>
@@ -124,7 +111,7 @@ export function TypeChart() {
           {POKE_TYPES.map((a) => (
             <tr key={a}>
               <th scope="row" className="sticky left-0 bg-panel p-0.5">
-                <TypeHeader t={a} />
+                <TypeHeader type={a} />
               </th>
               {POKE_TYPES.map((d) => {
                 const m = typeMultiplier(chart, a, [d])
@@ -132,14 +119,13 @@ export function TypeChart() {
                 return (
                   <td key={d} className="p-0.5">
                     <span
-                      className={cx(
-                        'flex h-6 w-8 items-center justify-center border border-shadow/40 font-mono text-sm',
-                        cell.cls,
-                      )}
-                      title={`${a} → ${d}: ${cell.words}`}
+                      className={cx('flex h-6 w-8 items-center justify-center border border-shadow/40 font-mono text-sm', cell.cls)}
+                      title={t('ui.help.cellTitle', { attacker: typeName(a), defender: typeName(d), words: t(cell.words) })}
                     >
                       <span aria-hidden="true">{cell.label}</span>
-                      <span className="sr-only">{`${a} on ${d}: ${cell.words}`}</span>
+                      <span className="sr-only">
+                        {t('ui.help.cellSr', { attacker: typeName(a), defender: typeName(d), words: t(cell.words) })}
+                      </span>
                     </span>
                   </td>
                 )
@@ -168,27 +154,29 @@ export function TypeChart() {
 
 /** Mobile-friendly lookup: pick a type, read its matchups as lists. */
 function TypeLookup() {
+  const { t } = useT()
   const chart = useGame((s) => s.data.typeChart)
-  const [t, setT] = useState<PokeType>('fire')
+  const [type, setType] = useState<PokeType>('fire')
   const by = (pred: (m: number) => boolean, atk: boolean) =>
-    POKE_TYPES.filter((o) => pred(atk ? typeMultiplier(chart, t, [o]) : typeMultiplier(chart, o, [t])))
+    POKE_TYPES.filter((o) => pred(atk ? typeMultiplier(chart, type, [o]) : typeMultiplier(chart, o, [type])))
+  const name = typeName(type)
   const rows: [string, PokeType[]][] = [
-    [`${t} dice hit hard (×2) on`, by((m) => m === 2, true)],
-    [`${t} dice are weak (×½) on`, by((m) => m === 0.5, true)],
-    [`${t} dice do nothing to`, by((m) => m === 0, true)],
-    [`${t} Pokémon take ×2 from`, by((m) => m === 2, false)],
-    [`${t} Pokémon resist`, by((m) => m < 1, false)],
+    [t('ui.help.hitHard', { type: name }), by((m) => m === 2, true)],
+    [t('ui.help.weakOn', { type: name }), by((m) => m === 0.5, true)],
+    [t('ui.help.nothingTo', { type: name }), by((m) => m === 0, true)],
+    [t('ui.help.takeDouble', { type: name }), by((m) => m === 2, false)],
+    [t('ui.help.resist', { type: name }), by((m) => m < 1, false)],
   ]
   return (
     <div className="flex flex-col gap-2">
-      <div className="flex flex-wrap gap-1" role="group" aria-label="Pick a type">
+      <div className="flex flex-wrap gap-1" role="group" aria-label={t('ui.help.pickType')}>
         {POKE_TYPES.map((x) => (
           <button
             key={x}
             type="button"
-            onClick={() => setT(x)}
-            aria-pressed={x === t}
-            className={cx('rounded-[2px]', x === t && 'outline outline-[3px] outline-offset-1 outline-gold')}
+            onClick={() => setType(x)}
+            aria-pressed={x === type}
+            className={cx('rounded-[2px]', x === type && 'outline outline-[3px] outline-offset-1 outline-gold')}
           >
             <TypeBadge type={x} size="sm" />
           </button>
@@ -209,6 +197,7 @@ function TypeLookup() {
 }
 
 export function HelpContent() {
+  const { t } = useT()
   const data = useGame((s) => s.data)
   const save = useGame((s) => s.save)
   const cfg = data.config
@@ -218,153 +207,81 @@ export function HelpContent() {
   const manyRegions = regions.length > 1
   return (
     <div className="flex flex-col gap-6">
-      <nav aria-label="Help sections" className="flex flex-wrap gap-2 text-lg">
+      <nav aria-label={t('ui.help.sections')} className="flex flex-wrap gap-2 text-lg">
         {[
-          ['goal', 'The goal'],
-          ['explore', 'Exploring'],
-          ['battle', 'Battles'],
-          ['damage', 'Damage'],
-          ['combos', 'Combos'],
-          ['status', 'Status faces'],
-          ['types', 'Type chart'],
-          ['grow', 'Getting stronger'],
+          ['goal', 'ui.help.navGoal'],
+          ['explore', 'ui.help.navExplore'],
+          ['battle', 'ui.help.navBattle'],
+          ['damage', 'ui.help.navDamage'],
+          ['combos', 'ui.help.navCombos'],
+          ['status', 'ui.help.navStatus'],
+          ['types', 'ui.help.navTypes'],
+          ['grow', 'ui.help.navGrow'],
         ].map(([id, label]) => (
-          <a
-            key={id}
-            href={`#${id}`}
-            className="pixel-btn flex min-h-[44px] items-center bg-panel px-2 md:min-h-[32px]"
-          >
-            {label}
+          <a key={id} href={`#${id}`} className="pixel-btn flex min-h-[44px] items-center bg-panel px-2 md:min-h-[32px]">
+            {t(label!)}
           </a>
         ))}
       </nav>
 
-      <Section id="goal" title="The goal">
-        <p>
-          Travel across {regionName} one area at a time. Catch Pokémon, beat the Gym Leaders, the Elite Four
-          and the Champion, then find the secret areas and fill the Pokédex.
-        </p>
-        {manyRegions && (
-          <p>
-            Beating a league opens the region beyond it. You arrive there with nothing but your character — a
-            new partner, an empty bag — and everything you owned waits where you left it. Switch back any time
-            from the Region row at the top of the Map, and once you beat the new league it all comes to you at
-            once.
-          </p>
-        )}
+      <Section id="goal" title={t('ui.help.navGoal')}>
+        <p>{t('ui.help.goalBody', { region: regionName })}</p>
+        {manyRegions && <p>{t('ui.help.goalRegions')}</p>}
       </Section>
 
-      <Section id="explore" title="Exploring">
+      <Section id="explore" title={t('ui.help.navExplore')}>
         <ul className="ml-5 list-disc">
-          <li>
-            Encounters are dealt from each area's <b>shuffled deck</b>. Going through the whole deck is a{' '}
-            <b>round</b>, and each area asks for a number of rounds (<b>ROUNDS 1/2</b> on the area screen).
-          </li>
-          <li>
-            Once every round is done, <b>CHALLENGE</b> the area's Gym Leader (or legendary) whenever you're
-            ready — or keep exploring first: finished rounds stay finished. Win to open the next area.
-          </li>
-          <li>
-            You see every encounter before it starts: <b>FIGHT</b> it, <b>FLEE</b> a wild Pokémon, or{' '}
-            <b>AVOID</b> an ordinary trainer. Once a battle starts, only wild Pokémon can be run from.
-          </li>
-          <li>
-            Knock a wild Pokémon out, then throw the <b>catch die</b>: reach its catch value (1–9) and it's
-            yours; miss and it flees. A Poké Ball adds +1, a Great Ball +2, an Ultra Ball +3, and a Master
-            Ball never misses.
-          </li>
-          <li>
-            You can catch a species you don't have yet, or a stronger copy of one you do (it replaces yours).
-            Your team holds 3; the rest wait in the Box. A legendary that flees comes back later.
-          </li>
-          <li>
-            Now and then you <b>find something</b> on the ground: an item or some Pokédollars. Each area has
-            its own finds, and a few can only be found once.
-          </li>
-          <li>
-            A <b>Pokémon Center</b> heals everyone and lets you change your team.
-          </li>
-          {cfg.encounterMode === 'deck' && (
-            <li>
-              Every new round opens with a Pokémon Center whenever you have someone to heal or swap. The round
-              bar under the rounds counter shows how far into the round you are.
-            </li>
-          )}
-          <li>
-            <b>Secret areas</b> appear on the Map when you meet their conditions (catch enough Pokémon, or
-            raise one high enough).
-          </li>
-          <li>
-            The type badges at the top right of each area are its <b>encounter types</b>: build your team for
-            them.
-          </li>
+          <li>{t('ui.help.explore1')}</li>
+          <li>{t('ui.help.explore2')}</li>
+          <li>{t('ui.help.explore3')}</li>
+          <li>{t('ui.help.explore4')}</li>
+          <li>{t('ui.help.explore5')}</li>
+          <li>{t('ui.help.explore6')}</li>
+          <li>{t('ui.help.explore7')}</li>
+          {cfg.encounterMode === 'deck' && <li>{t('ui.help.explore8')}</li>}
+          <li>{t('ui.help.explore9')}</li>
+          <li>{t('ui.help.explore10')}</li>
         </ul>
       </Section>
 
-      <Section id="battle" title="Battles">
+      <Section id="battle" title={t('ui.help.navBattle')}>
         <ol className="ml-5 list-decimal">
-          <li>The faster Pokémon acts first.</li>
-          <li>
-            Your dice are thrown for you as your turn starts. Tap the dice you don't like and press{' '}
-            <b>REROLL</b>. Each press uses one reroll, however many dice you picked, and your rerolls last the
-            whole battle.
-          </li>
-          <li>
-            Press <b>ATTACK</b> when you're happy.
-          </li>
+          <li>{t('ui.help.battle1')}</li>
+          <li>{t('ui.help.battle2')}</li>
+          <li>{t('ui.help.battle3')}</li>
         </ol>
         <p>
-          You can use <b>one item per turn</b>, before or after rolling, and it doesn't end your turn. A
-          frozen or paralyzed Pokémon loses its turn unless you cure it first (Ice Heal, Paralyze Heal).
-          Switching costs your turn; switching after a faint is free. You can only <b>RUN</b> from wild
-          Pokémon. Keyboard: <kbd>1</kbd>–<kbd>6</kbd> pick dice, <kbd>R</kbd> reroll, <kbd>Space</kbd>{' '}
-          attack.
+          {t('ui.help.battleBody')}{' '}
+          {t('ui.help.keyboard', { k1: '1', k6: '6', r: 'R', space: 'Space' })}
         </p>
       </Section>
 
-      <Section id="damage" title="Damage">
-        <p>
-          Add up your dice <b>numbers</b> (+ your upgrades) and your <b>best combo</b>. The whole attack then
-          takes the most effective <b>type</b> among your dice against the foe: a Kabuto with water and rock
-          dice hits a Pidgeotto as Rock, ×2. If none of your types can touch the foe, the attack does nothing.
-          Levels give HP, not damage: upgrades are what make you hit harder.
-        </p>
+      <Section id="damage" title={t('ui.help.navDamage')}>
+        <p>{t('ui.help.damageBody')}</p>
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-2">
-            <span className="w-16 text-lg">Base</span>
+            <span className="w-16 text-lg">{t('ui.help.baseLabel')}</span>
             <DieFaces type="base" faces={data.diceTypes.base?.faces ?? []} size={28} />
           </div>
-          <p className="copy text-muted">
-            White <b>Base</b> dice have no type of their own (they follow the attack's type) and can't be
-            upgraded. Coloured dice carry a type and have their own faces. The Pokédex shows each Pokémon's
-            dice.
-          </p>
+          <p className="copy text-muted">{t('ui.help.baseBody')}</p>
         </div>
       </Section>
 
-      <Section id="combos" title="Combos">
-        <p>Only the single most damaging combo in a roll pays.</p>
+      <Section id="combos" title={t('ui.help.navCombos')}>
+        <p>{t('ui.help.combosBody')}</p>
         <div className="overflow-x-auto">
           <table className="w-full border-collapse text-lg">
             <thead>
               <tr className="bg-ink text-panel">
-                <th scope="col" className="px-2 py-1 text-left font-normal">
-                  Combo
-                </th>
-                <th scope="col" className="px-2 py-1 text-left font-normal">
-                  Example
-                </th>
-                <th scope="col" className="px-2 py-1 text-left font-normal">
-                  Bonus at Lv.1
-                </th>
+                <th scope="col" className="px-2 py-1 text-left font-normal">{t('ui.help.comboCol')}</th>
+                <th scope="col" className="px-2 py-1 text-left font-normal">{t('ui.help.exampleCol')}</th>
+                <th scope="col" className="px-2 py-1 text-left font-normal">{t('ui.help.bonusCol')}</th>
               </tr>
             </thead>
             <tbody>
               {COMBO_KEYS.map((k) => (
                 <tr key={k} className="border-b-2 border-shadow/40">
-                  <th scope="row" className="px-2 py-1 text-left font-normal">
-                    {COMBO_NAMES[k]}
-                  </th>
+                  <th scope="row" className="px-2 py-1 text-left font-normal">{comboName(k)}</th>
                   <td className="px-2 py-1 font-mono text-base">{comboExampleText(k)}</td>
                   <td className="px-2 py-1">+{comboBonus(k, 1, data)}</td>
                 </tr>
@@ -374,46 +291,26 @@ export function HelpContent() {
         </div>
       </Section>
 
-      <Section id="status" title="Status faces">
+      <Section id="status" title={t('ui.help.navStatus')}>
         <StatusTable />
       </Section>
 
-      <Section id="types" title="Type chart">
+      <Section id="types" title={t('ui.help.navTypes')}>
         <TypeLookup />
         <details>
-          <summary className="flex min-h-[44px] cursor-pointer items-center text-xl">
-            Show the full type chart
-          </summary>
+          <summary className="flex min-h-[44px] cursor-pointer items-center text-xl">{t('ui.help.showFullChart')}</summary>
           <TypeChart />
         </details>
       </Section>
 
-      <Section id="grow" title="Getting stronger">
+      <Section id="grow" title={t('ui.help.navGrow')}>
         <ul className="ml-5 list-disc">
-          <li>
-            The Pokémon that lands the K.O. gets XP. Levels raise HP; some levels add a die or a reroll, and
-            many Pokémon evolve.
-          </li>
-          <li>
-            <b>Multi EXP</b> (Settings): team members who didn't fight still get {multiExpText(data)}.
-          </li>
-          <li>
-            Trainers pay <b>Pokédollars (₽)</b>. Gym Leaders, the Elite Four and the Champion pay ×
-            {cfg.gymGoldMultiplier}.
-          </li>
-          <li>
-            Spend them on <b>Upgrades</b> (every Pokémon benefits) and at the <b>Poké Mart</b>, whose stock
-            grows with your badges.
-          </li>
-          <li>
-            HP carries over between fights and doesn't come back by itself: heal at a Pokémon Center or with
-            items.
-          </li>
-          <li>
-            If your whole team faints, the <b>round is lost</b>: it won't count, and a new, freshly shuffled
-            round starts (rounds you had already finished stay finished). Your team is healed, and you keep
-            your Pokédollars, items and your Pokémon's levels.
-          </li>
+          <li>{t('ui.help.grow1')}</li>
+          <li>{t('ui.help.grow2', { share: multiExpText(data) })}</li>
+          <li>{t('ui.help.grow3', { multiplier: cfg.gymGoldMultiplier })}</li>
+          <li>{t('ui.help.grow4')}</li>
+          <li>{t('ui.help.grow5')}</li>
+          <li>{t('ui.help.grow6')}</li>
         </ul>
       </Section>
     </div>
@@ -421,20 +318,19 @@ export function HelpContent() {
 }
 
 export function HelpPage() {
+  const { t } = useT()
   const navigate = useNavigate()
   return (
     <main className="mx-auto flex max-w-3xl flex-col gap-4 px-3 py-6">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-5xl">How to play</h1>
-        <PixelButton onClick={() => (window.history.length > 1 ? navigate(-1) : navigate('/'))}>
-          Back
-        </PixelButton>
+        <h1 className="text-5xl">{t('ui.help.title')}</h1>
+        <PixelButton onClick={() => (window.history.length > 1 ? navigate(-1) : navigate('/'))}>{t('ui.help.back')}</PixelButton>
       </div>
       <div className="pixel-panel p-4">
         <HelpContent />
       </div>
       <Link to="/" className="self-center underline">
-        Title screen
+        {t('ui.help.titleScreen')}
       </Link>
     </main>
   )

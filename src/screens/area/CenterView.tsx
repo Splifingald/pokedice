@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion'
 import { useEffect, useState } from 'react'
 import { teamOf, type PokemonInstance } from '@/engine'
+import { useT } from '@/i18n/react'
 import { sfx } from '@/audio/sfx'
 import { PixelIcon } from '@/components/icons'
 import { MonCard } from '@/components/MonCard'
@@ -12,6 +13,7 @@ import { finishCenter } from '@/store/run'
 
 /** Pokémon Center: heal jingle, then team management — tap any Pokémon for its sheet and team actions. */
 export function CenterView() {
+  const { t } = useT()
   const save = useGame((s) => s.save)
   const data = useGame((s) => s.data)
   const reduced = useGame((s) => s.settings.reducedMotion)
@@ -29,7 +31,7 @@ export function CenterView() {
   const team = teamOf(save)
   const box = save.box.filter((p) => !save.team.includes(p.id)).sort((a, b) => a.dex - b.dex || b.level - a.level)
   const full = team.length >= data.config.maxTeamSize
-  const name = (p: PokemonInstance) => data.species[p.dex]?.name ?? '???'
+  const name = (p: PokemonInstance) => data.species[p.dex]?.name ?? t('ui.common.unknown')
   const open = (p: PokemonInstance) => setView({ kind: 'inst', id: p.id })
   const done = () => setView(null)
 
@@ -37,12 +39,12 @@ export function CenterView() {
     const inTeam = save.team.includes(inst.id)
     return (
       <section className="flex flex-col gap-2 border-t-[3px] border-dashed border-shadow pt-3">
-        <h3 className="text-xl">Team</h3>
+        <h3 className="text-xl">{t('ui.center.team')}</h3>
         {inTeam ? (
           <div className="flex flex-wrap gap-2">
             {save.team[0] !== inst.id && (
               <PixelButton variant="primary" onClick={() => reorderTeam([inst.id, ...save.team.filter((x) => x !== inst.id)])}>
-                Make lead
+                {t('ui.team.makeLead')}
               </PixelButton>
             )}
             <PixelButton
@@ -52,11 +54,11 @@ export function CenterView() {
                 done()
               }}
             >
-              Send to the Box
+              {t('ui.center.sendToBox')}
             </PixelButton>
           </div>
         ) : inst.revivesAt != null ? (
-          <p className="copy text-muted">Still being revived from its fossil — it can join your team once it wakes up.</p>
+          <p className="copy text-muted">{t('ui.center.stillReviving')}</p>
         ) : !full ? (
           <PixelButton
             variant="primary"
@@ -65,11 +67,11 @@ export function CenterView() {
               done()
             }}
           >
-            Add to team
+            {t('ui.center.addToTeam')}
           </PixelButton>
         ) : (
           <>
-            <p className="copy text-muted">Your team is full — swap {name(inst)} in for:</p>
+            <p className="copy text-muted">{t('ui.center.swapFor', { name: name(inst) })}</p>
             {team.map((p) => (
               <PixelButton
                 key={p.id}
@@ -80,9 +82,9 @@ export function CenterView() {
                 }}
               >
                 <span>
-                  {name(p)} Lv.{p.level}
+                  {name(p)} {t('ui.common.level.short', { n: p.level })}
                 </span>
-                <span className="text-base">goes to the Box</span>
+                <span className="text-base">{t('ui.center.goesToBox')}</span>
               </PixelButton>
             ))}
           </>
@@ -106,17 +108,15 @@ export function CenterView() {
           ))}
         </div>
         <div>
-          <div className="text-3xl leading-none">{healed ? 'Your Pokémon are fighting fit!' : 'Healing…'}</div>
-          <div className="text-lg text-muted">Team and Box are back to full HP.</div>
+          <div className="text-3xl leading-none">{t(healed ? 'ui.center.fightingFit' : 'ui.center.healing')}</div>
+          <div className="text-lg text-muted">{t('ui.center.backToFull')}</div>
         </div>
       </div>
 
       <section className="flex flex-col gap-2">
         <div className="flex flex-wrap items-baseline justify-between gap-x-3">
-          <h2 className="text-3xl">
-            Team ({team.length}/{data.config.maxTeamSize})
-          </h2>
-          <span className="text-base text-muted">Tap one to make it lead or send it to the Box</span>
+          <h2 className="text-3xl">{t('ui.center.teamCount', { count: team.length, max: data.config.maxTeamSize })}</h2>
+          <span className="text-base text-muted">{t('ui.center.tapTeam')}</span>
         </div>
         <ol className="grid gap-2 md:grid-cols-3">
           {team.map((p, i) => (
@@ -124,13 +124,13 @@ export function CenterView() {
               <MonCard
                 inst={p}
                 onClick={() => open(p)}
-                badge={i === 0 ? <PixelIcon name="crown" size={20} title="Lead: sent out first" /> : null}
+                badge={i === 0 ? <PixelIcon name="crown" size={20} title={t('ui.team.lead')} /> : null}
               />
             </li>
           ))}
           {Array.from({ length: Math.max(0, data.config.maxTeamSize - team.length) }, (_, i) => (
             <li key={`empty-${i}`} className="flex min-h-[80px] items-center justify-center border-[3px] border-dashed border-shadow text-lg text-muted">
-              Empty slot
+              {t('ui.center.emptySlot')}
             </li>
           ))}
         </ol>
@@ -138,10 +138,10 @@ export function CenterView() {
 
       <section className="flex flex-col gap-2">
         <div className="flex flex-wrap items-baseline justify-between gap-x-3">
-          <h2 className="text-3xl">Box ({box.length})</h2>
-          {box.length > 0 && <span className="text-base text-muted">Tap one to add it to your team or swap it in</span>}
+          <h2 className="text-3xl">{t('ui.team.box', { count: box.length })}</h2>
+          {box.length > 0 && <span className="text-base text-muted">{t('ui.center.tapBox')}</span>}
         </div>
-        {box.length === 0 && <p className="copy text-muted">Catch more Pokémon — they wait here when your team is full.</p>}
+        {box.length === 0 && <p className="copy text-muted">{t('ui.center.boxEmpty')}</p>}
         <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
           {box.map((p) => (
             <li key={p.id}>
@@ -154,7 +154,7 @@ export function CenterView() {
       {/* Always on screen, above the phone bottom bar. */}
       <div className="sticky z-30 -mx-3 border-t-[3px] border-ink bg-parchment px-3 py-2" style={{ bottom: 'var(--bottom-nav)' }}>
         <PixelButton variant="primary" size="lg" className="w-full md:mx-auto md:flex md:w-80" onClick={finishCenter}>
-          CONTINUE
+          {t('ui.common.continue')}
         </PixelButton>
       </div>
 

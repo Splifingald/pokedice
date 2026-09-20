@@ -2,6 +2,8 @@ import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { isAreaUnlocked, type Area, type GameData } from '@/engine'
 import { dexNo } from '@/lib/format'
+import { t } from '@/i18n'
+import { useT } from '@/i18n/react'
 import { useGame } from '@/store/game'
 import { enterArea } from '@/store/run'
 import { cx } from '@/theme/util'
@@ -41,9 +43,10 @@ function whereToFind(dex: number, data: GameData): Spot[] {
   return out.sort((a, b) => Number(a.area.hidden) - Number(b.area.hidden) || a.area.orderIndex - b.area.orderIndex)
 }
 
-const rarity = (share: number) => (share >= 0.15 ? 'common' : share >= 0.06 ? 'uncommon' : 'rare')
+const rarity = (share: number) => t(share >= 0.15 ? 'ui.dex.common' : share >= 0.06 ? 'ui.dex.uncommon' : 'ui.dex.rare')
 
 function SpotCard({ spot, onTravel }: { spot: Spot; onTravel?: () => void }) {
+  const { t } = useT()
   const save = useGame((s) => s.save)
   const data = useGame((s) => s.data)
   const runArea = useGame((s) => s.run.areaId)
@@ -53,10 +56,10 @@ function SpotCard({ spot, onTravel }: { spot: Spot; onTravel?: () => void }) {
   const unlocked = isAreaUnlocked(save, area.id, data)
   const secret = area.hidden && !unlocked
   const levels = area.scalesToTeam
-    ? 'levels scale to your team'
+    ? t('ui.dex.scaling')
     : spot.minLevel === spot.maxLevel
-      ? `Lv.${spot.minLevel}`
-      : `Lv.${spot.minLevel}–${spot.maxLevel}`
+      ? t('ui.common.level.short', { n: spot.minLevel })
+      : t('ui.map.levelRange', { min: spot.minLevel, max: spot.maxLevel })
   return (
     <li className="pixel-panel overflow-hidden p-0">
       {area.bannerUrl && (
@@ -65,16 +68,18 @@ function SpotCard({ spot, onTravel }: { spot: Spot; onTravel?: () => void }) {
       <div className="flex flex-wrap items-center gap-2 p-2">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5 text-2xl leading-none">
-            {!unlocked && <PixelIcon name="lock" size={16} title="Locked" />}
-            <span className="truncate">{secret ? 'A secret area' : area.name}</span>
+            {!unlocked && <PixelIcon name="lock" size={16} title={t('ui.dex.locked')} />}
+            <span className="truncate">{secret ? t('ui.dex.aSecretArea') : area.name}</span>
           </div>
           <div className="text-lg text-muted">
-            {spot.legendary ? `Legendary · ${levels}` : `${levels} · ${rarity(spot.share)}`}
-            {!unlocked && ' · locked'}
+            {spot.legendary
+              ? t('ui.dex.legendarySpot', { levels })
+              : t('ui.dex.wildSpot', { levels, rarity: rarity(spot.share) })}
+            {!unlocked && t('ui.dex.lockedSuffix')}
           </div>
         </div>
         {unlocked && runArea === area.id && (
-          <span className="border-2 border-ink bg-gold px-1.5 text-base leading-tight text-ink">you are here</span>
+          <span className="border-2 border-ink bg-gold px-1.5 text-base leading-tight text-ink">{t('ui.dex.youAreHere')}</span>
         )}
         {unlocked && !runArea && (
           <PixelButton
@@ -86,7 +91,7 @@ function SpotCard({ spot, onTravel }: { spot: Spot; onTravel?: () => void }) {
               navigate('/area')
             }}
           >
-            GO THERE
+            {t('ui.dex.goThere')}
           </PixelButton>
         )}
       </div>
@@ -96,6 +101,7 @@ function SpotCard({ spot, onTravel }: { spot: Spot; onTravel?: () => void }) {
 
 /** An uncaught species: its silhouette, and where it can be found (or what it evolves from). */
 function MissingEntry({ dex, onOpenDex, onTravel }: { dex: number; onOpenDex?: (dex: number) => void; onTravel?: () => void }) {
+  const { t } = useT()
   const data = useGame((s) => s.data)
   const pokedex = useGame((s) => s.save?.pokedex)
   const runArea = useGame((s) => s.run.areaId)
@@ -112,12 +118,12 @@ function MissingEntry({ dex, onOpenDex, onTravel }: { dex: number; onOpenDex?: (
         <SpriteImg dex={dex} size={112} silhouette className="border-[3px] border-ink bg-parchment" />
         <div className="min-w-0">
           <div className="font-mono text-sm text-muted">{dexNo(dex)}</div>
-          <div className="text-4xl leading-none">???</div>
-          <p className="copy text-muted">Not caught yet.</p>
+          <div className="text-4xl leading-none">{t('ui.common.unknown')}</div>
+          <p className="copy text-muted">{t('ui.dex.notCaught')}</p>
         </div>
       </div>
       <section className="flex flex-col gap-2">
-        <h3 className="text-2xl">Where to find it</h3>
+        <h3 className="text-2xl">{t('ui.dex.whereToFindHeading')}</h3>
         {spots.length > 0 && (
           <ul className="flex flex-col gap-2">
             {spots.map((s) => (
@@ -136,15 +142,16 @@ function MissingEntry({ dex, onOpenDex, onTravel }: { dex: number; onOpenDex?: (
             >
               <SpriteImg dex={species.dex} size={48} silhouette={!known} />
               <span className="text-xl leading-tight">
-                Evolves from {known ? species.name : '???'} {evo!.item ? `with a ${evolutionHow(evo!, data)}` : `at ${evolutionHow(evo!, data)}`}
+                {t(evo!.item ? 'ui.dex.evolvesFromItem' : 'ui.dex.evolvesFromLevel', {
+                  name: known ? species.name : t('ui.common.unknown'),
+                  how: evolutionHow(evo!, data),
+                })}
               </span>
             </button>
           )
         })}
-        {spots.length === 0 && from.length === 0 && <p className="copy text-muted">Nobody has spotted it in the wild yet…</p>}
-        {runName && canTravelSomewhere && (
-          <p className="copy text-muted">You're exploring {runName}: leave it (MAP) to travel somewhere else.</p>
-        )}
+        {spots.length === 0 && from.length === 0 && <p className="copy text-muted">{t('ui.dex.notSpotted')}</p>}
+        {runName && canTravelSomewhere && <p className="copy text-muted">{t('ui.dex.exploringHint', { area: runName })}</p>}
       </section>
     </div>
   )

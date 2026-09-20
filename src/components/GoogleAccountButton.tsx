@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useT } from '@/i18n/react'
 import { useGame } from '@/store/game'
 import { signInWithGoogle, signOut } from '@/store/sync'
 import { cx } from '@/theme/util'
@@ -6,7 +7,7 @@ import { Modal } from './Modal'
 import { PixelButton, type PixelButtonProps } from './PixelButton'
 
 /** The Google "G" (the multicolour mark Google asks sign-in buttons to use). */
-function GoogleMark({ size = 20 }: { size?: number }) {
+export function GoogleMark({ size = 20 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 48 48" aria-hidden className="shrink-0">
       <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z" />
@@ -17,22 +18,68 @@ function GoogleMark({ size = 20 }: { size?: number }) {
   )
 }
 
+/** The "are you sure" behind every disconnect, wherever the button lives. */
+function DisconnectModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const { t } = useT()
+  const email = useGame((s) => s.auth.email)
+  return (
+    <Modal open={open} onClose={onClose} title={t('ui.account.disconnectTitle')}>
+      <p className="copy mb-4 text-lg">
+        {t('ui.account.disconnectBody', { who: email ? t('ui.account.backedUpAs', { who: email }) : '' })}
+      </p>
+      <div className="flex justify-end gap-2">
+        <PixelButton onClick={onClose}>{t('ui.common.cancel')}</PixelButton>
+        <PixelButton
+          variant="danger"
+          onClick={() => {
+            onClose()
+            void signOut()
+          }}
+        >
+          {t('ui.account.disconnect')}
+        </PixelButton>
+      </div>
+    </Modal>
+  )
+}
+
+/** CONNECT with Google. Renders wherever a sign-in is offered (the drawer, the side bar). */
+export function ConnectButton({ size = 'md', className }: { size?: PixelButtonProps['size']; className?: string }) {
+  const { t } = useT()
+  return (
+    <PixelButton size={size} className={className} onClick={() => void signInWithGoogle()} aria-label={t('ui.account.connectLabel')}>
+      <GoogleMark />
+      {t('ui.account.connect')}
+    </PixelButton>
+  )
+}
+
+/** DISCONNECT, with the confirmation. Only useful while signed in — renders nothing otherwise. */
+export function DisconnectButton({ size = 'md', className }: { size?: PixelButtonProps['size']; className?: string }) {
+  const { t } = useT()
+  const status = useGame((s) => s.auth.status)
+  const [confirm, setConfirm] = useState(false)
+  if (status !== 'signed_in') return null
+  return (
+    <>
+      <PixelButton size={size} variant="danger" className={className} onClick={() => setConfirm(true)}>
+        {t('ui.account.disconnect')}
+      </PixelButton>
+      <DisconnectModal open={confirm} onClose={() => setConfirm(false)} />
+    </>
+  )
+}
+
 /**
  * Cloud backup in one button: CONNECT (Google) when signed out; a greyed CONNECTED with the profile picture when
  * signed in — clicking it asks before disconnecting. Renders nothing while auth is unknown or unavailable.
  */
 export function GoogleAccountButton({ size = 'md', className }: { size?: PixelButtonProps['size']; className?: string }) {
+  const { t } = useT()
   const auth = useGame((s) => s.auth)
   const [confirm, setConfirm] = useState(false)
   const [broken, setBroken] = useState(false)
-  if (auth.status === 'signed_out') {
-    return (
-      <PixelButton size={size} className={className} onClick={() => void signInWithGoogle()} aria-label="Connect with Google to back up your save">
-        <GoogleMark />
-        CONNECT
-      </PixelButton>
-    )
-  }
+  if (auth.status === 'signed_out') return <ConnectButton size={size} className={className} />
   if (auth.status !== 'signed_in') return null
   const avatar = auth.avatarUrl && !broken ? auth.avatarUrl : null
   return (
@@ -42,7 +89,7 @@ export function GoogleAccountButton({ size = 'md', className }: { size?: PixelBu
         className={cx('bg-[#d9d3c3] text-muted', className)}
         onClick={() => setConfirm(true)}
         title={auth.email ?? undefined}
-        aria-label={`Connected with Google${auth.email ? ` as ${auth.email}` : ''} — disconnect`}
+        aria-label={t('ui.account.connectedLabel', { who: auth.email ?? t('ui.settings.yourGoogle') })}
       >
         {avatar ? (
           <img
@@ -57,26 +104,9 @@ export function GoogleAccountButton({ size = 'md', className }: { size?: PixelBu
         ) : (
           <GoogleMark />
         )}
-        CONNECTED
+        {t('ui.account.connected')}
       </PixelButton>
-      <Modal open={confirm} onClose={() => setConfirm(false)} title="Disconnect?">
-        <p className="copy mb-4 text-lg">
-          {auth.email ? `You're backed up as ${auth.email}. ` : ''}Your save stays on this device, but it won't be backed up
-          until you connect again.
-        </p>
-        <div className="flex justify-end gap-2">
-          <PixelButton onClick={() => setConfirm(false)}>Cancel</PixelButton>
-          <PixelButton
-            variant="danger"
-            onClick={() => {
-              setConfirm(false)
-              void signOut()
-            }}
-          >
-            Disconnect
-          </PixelButton>
-        </div>
-      </Modal>
+      <DisconnectModal open={confirm} onClose={() => setConfirm(false)} />
     </>
   )
 }

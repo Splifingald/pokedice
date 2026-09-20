@@ -1,4 +1,5 @@
 import type { Area, AreaProgress } from '@/engine'
+import { useT } from '@/i18n/react'
 import { cx } from '@/theme/util'
 
 /**
@@ -16,14 +17,19 @@ export function RoundsCounter({
   labelClassName?: string
   className?: string
 }) {
+  const { t } = useT()
   const need = area.roundsToClear
   if (need == null) return null
   const done = Math.min(progress.roundsDone ?? 0, need)
   const complete = done >= need
   return (
-    <div className={cx('flex items-center gap-2', className)} role="img" aria-label={complete ? `All ${need} rounds done` : `${done} of ${need} rounds done`}>
+    <div
+      className={cx('flex items-center gap-2', className)}
+      role="img"
+      aria-label={complete ? t('ui.rounds.allDone', { n: need }) : t('ui.rounds.progress', { done, need })}
+    >
       <span className={cx('text-sm leading-none', labelClassName)} aria-hidden>
-        ROUNDS
+        {t('ui.rounds.label')}
       </span>
       <ol className="flex min-w-0 flex-1 gap-[3px]" aria-hidden>
         {Array.from({ length: need }, (_, i) => (

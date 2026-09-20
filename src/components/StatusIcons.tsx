@@ -1,14 +1,16 @@
 import type { StatusState } from '@/engine/status'
+import { useT } from '@/i18n/react'
 import { PixelIcon, type IconName } from './icons'
 
 /** Status icons with their turn counters (burn shows stacks × turns). */
 export function StatusIcons({ status }: { status: StatusState }) {
+  const { t } = useT()
   const items: { icon: IconName; label: string; text: string }[] = []
-  if (status.burn) items.push({ icon: 'burn', label: 'Burned', text: `${status.burn.stacks}×${status.burn.turns}` })
-  if (status.poison) items.push({ icon: 'poison', label: 'Poisoned', text: `${status.poison.turns}` })
-  if (status.frozen) items.push({ icon: 'frozen', label: 'Frozen', text: `${status.frozen}` })
-  if (status.paralyze) items.push({ icon: 'paralyze', label: 'Paralyzed', text: `${status.paralyze}` })
-  if (status.confused) items.push({ icon: 'confuse', label: 'Confused', text: '!' })
+  if (status.burn) items.push({ icon: 'burn', label: t('ui.statusIcon.burn'), text: `${status.burn.stacks}×${status.burn.turns}` })
+  if (status.poison) items.push({ icon: 'poison', label: t('ui.statusIcon.poison'), text: `${status.poison.turns}` })
+  if (status.frozen) items.push({ icon: 'frozen', label: t('ui.statusIcon.frozen'), text: `${status.frozen}` })
+  if (status.paralyze) items.push({ icon: 'paralyze', label: t('ui.statusIcon.paralyze'), text: `${status.paralyze}` })
+  if (status.confused) items.push({ icon: 'confuse', label: t('ui.statusIcon.confuse'), text: '!' })
   if (!items.length) return null
   return (
     <div className="flex flex-wrap gap-1">

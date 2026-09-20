@@ -23,6 +23,7 @@
     "sim": "tsx scripts/sim.ts",
     "balance": "tsx scripts/balance.ts",
     "import-bundle": "tsx scripts/import-bundle.ts",
+    "i18n:names": "tsx scripts/i18n-names.ts",
     "e2e": "playwright test"
   },
   "dependencies": {

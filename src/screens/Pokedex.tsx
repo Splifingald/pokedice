@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion'
 import { useMemo, useState } from 'react'
 import { isAreaUnlocked, regionOf, regionOfArea, regionSpecies, unlockedRegions } from '@/engine'
+import { useT } from '@/i18n/react'
 import { PixelIcon } from '@/components/icons'
 import { SheetModal, type SheetView } from '@/components/SheetModal'
 import { SpriteImg } from '@/components/SpriteImg'
@@ -10,14 +11,15 @@ import { cx } from '@/theme/util'
 
 type Filter = 'all' | 'caught' | 'missing' | 'catchable'
 const FILTERS: { id: Filter; label: string }[] = [
-  { id: 'all', label: 'all' },
-  { id: 'caught', label: 'caught' },
-  { id: 'missing', label: 'missing' },
-  { id: 'catchable', label: 'catchable now' },
+  { id: 'all', label: 'ui.dex.filterAll' },
+  { id: 'caught', label: 'ui.dex.filterCaught' },
+  { id: 'missing', label: 'ui.dex.filterMissing' },
+  { id: 'catchable', label: 'ui.dex.filterCatchable' },
 ]
 const JUMPS = [1, 26, 51, 76, 101, 126]
 
 export function PokedexScreen() {
+  const { t } = useT()
   const save = useGame((s) => s.save)
   const data = useGame((s) => s.data)
   const reduced = useGame((s) => s.settings.reducedMotion)
@@ -84,7 +86,7 @@ export function PokedexScreen() {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-end justify-between gap-2">
-        <h1 className="text-5xl">Pokédex</h1>
+        <h1 className="text-5xl">{t('ui.dex.title')}</h1>
         <div className="text-3xl">
           {n}/{total}
         </div>
@@ -118,10 +120,12 @@ export function PokedexScreen() {
           className="pixel-panel-dark flex flex-col items-center gap-2 p-5 text-center"
         >
           <PixelIcon name="star" size={40} />
-          <div className="text-5xl text-gold">POKÉDEX COMPLETE!</div>
+          <div className="text-5xl text-gold">{t('ui.dex.complete')}</div>
           <div className="text-2xl">
-            All {total} Pokémon caught{page === 'all' ? '' : ` in ${pages.find((r) => r.id === page)?.name}`}.
-            You are a true Pokédice Master.
+            {t('ui.dex.completeBody', {
+              total,
+              where: page === 'all' ? '' : t('ui.dex.completeIn', { region: pages.find((r) => r.id === page)?.name ?? '' }),
+            })}
           </div>
         </motion.div>
       )}
@@ -130,17 +134,17 @@ export function PokedexScreen() {
       <div className="sticky top-14 z-30 -mx-3 flex flex-col gap-2 border-b-[3px] border-ink bg-parchment px-3 py-2">
         <div className="flex flex-wrap items-center gap-2">
           <label htmlFor="dex-search" className="sr-only">
-            Search the Pokédex by name or number
+            {t('ui.dex.searchLabel')}
           </label>
           <input
             id="dex-search"
             type="search"
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="Name or #number"
+            placeholder={t('ui.dex.searchPlaceholder')}
             className="min-h-[44px] w-full border-[3px] border-ink bg-panel px-2 text-xl md:min-h-[38px] md:w-56"
           />
-          <div className="flex flex-wrap gap-1.5" role="group" aria-label="Show">
+          <div className="flex flex-wrap gap-1.5" role="group" aria-label={t('ui.dex.show')}>
             {FILTERS.map((f) => (
               <button
                 key={f.id}
@@ -152,13 +156,13 @@ export function PokedexScreen() {
                   filter === f.id ? 'bg-gold' : 'bg-panel',
                 )}
               >
-                {f.label}
+                {t(f.label)}
                 {f.id === 'catchable' && <span className="font-pixel-sm text-base"> ({catchable.size})</span>}
               </button>
             ))}
           </div>
         </div>
-        <div className="flex gap-1.5 overflow-x-auto" role="group" aria-label="Jump to number">
+        <div className="flex gap-1.5 overflow-x-auto" role="group" aria-label={t('ui.dex.jumpTo')}>
           {JUMPS.map((j) => (
             <button
               key={j}
@@ -174,9 +178,7 @@ export function PokedexScreen() {
 
       {list.length === 0 && (
         <p className="copy text-muted">
-          {filter === 'catchable'
-            ? "You've caught everything the areas you've opened have to offer — clear the next area."
-            : 'No Pokémon match.'}
+          {t(filter === 'catchable' ? 'ui.dex.noneCatchable' : 'ui.dex.noMatch')}
         </p>
       )}
       <div className="grid grid-cols-3 gap-2 xs:grid-cols-4 sm:grid-cols-6 lg:grid-cols-8">
@@ -189,19 +191,20 @@ export function PokedexScreen() {
               id={`dex-${s.dex}`}
               type="button"
               onClick={() => setView({ kind: 'dex', dex: s.dex })}
-              className={cx(
-                'pixel-panel flex scroll-mt-48 flex-col items-center p-1 hover:bg-white',
-                !has && 'bg-parchment',
-              )}
-              title={has ? s.name : '??? — where to find it'}
+              className={cx('pixel-panel flex scroll-mt-48 flex-col items-center p-1 hover:bg-white', !has && 'bg-parchment')}
+              title={has ? s.name : t('ui.dex.whereToFind')}
             >
               <span className="self-start font-mono text-xs text-muted">{dexNo(s.dex)}</span>
               <SpriteImg dex={s.dex} size={64} silhouette={!has} />
-              <span className="w-full truncate text-center text-base leading-none">
-                {has ? s.name : '???'}
-              </span>
+              <span className="w-full truncate text-center text-base leading-none">{has ? s.name : t('ui.common.unknown')}</span>
               <span className="text-sm leading-none text-muted">
-                {has ? (lv ? `Lv.${lv}` : 'seen') : catchable.has(s.dex) ? 'nearby' : ' '}
+                {has
+                  ? lv
+                    ? t('ui.common.level.short', { n: lv })
+                    : t('ui.dex.seen')
+                  : catchable.has(s.dex)
+                    ? t('ui.dex.nearby')
+                    : ' '}
               </span>
             </button>
           )

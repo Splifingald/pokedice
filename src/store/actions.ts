@@ -23,11 +23,12 @@ import {
 } from '@/engine'
 import { mutateSave, pushToast, useGame } from './game'
 import { newId } from './run'
+import { t } from '@/i18n'
 
 export function buy(key: string, qty = 1): boolean {
   const { data } = useGame.getState()
   const ok = mutateSave((s) => buyItem(s, key, qty, data))
-  if (!ok) pushToast('Not enough Pokédollars', 'bad')
+  if (!ok) pushToast(t('ui.toast.tooPoor'), 'bad')
   return ok
 }
 
@@ -37,13 +38,13 @@ export function sell(key: string, qty = 1): boolean {
 
 export function upgradeCombo(key: ComboKey): boolean {
   const ok = mutateSave((s) => buyComboUpgrade(s, key, useGame.getState().data))
-  if (!ok) pushToast('Not enough Pokédollars', 'bad')
+  if (!ok) pushToast(t('ui.toast.tooPoor'), 'bad')
   return ok
 }
 
 export function upgradeDie(type: PokeType): boolean {
   const ok = mutateSave((s) => buyDieUpgrade(s, type, useGame.getState().data))
-  if (!ok) pushToast('Not enough Pokédollars', 'bad')
+  if (!ok) pushToast(t('ui.toast.tooPoor'), 'bad')
   return ok
 }
 
@@ -56,13 +57,14 @@ export function applyBagItem(key: string, instId: string): { evolved: { uid: str
   if (!save) return null
   const res = applyFieldItem(save, key, instId, data, createRng(randomSeed()))
   if (!res) {
-    pushToast("It won't have any effect.", 'bad')
+    pushToast(t('ui.toast.noEffect'), 'bad')
     return null
   }
   mutateSave(() => res.save)
   const evo = res.events.find((e) => e.kind === 'evolve')
   const up = [...res.events].reverse().find((e) => e.kind === 'level_up')
-  if (up && up.kind === 'level_up') pushToast(`${data.species[up.dex]?.name} grew to Lv.${up.level}!`, 'good')
+  if (up && up.kind === 'level_up')
+    pushToast(t('ui.toast.grewTo', { name: data.species[up.dex]?.name ?? '', level: up.level }), 'good')
   return { evolved: evo && evo.kind === 'evolve' ? { uid: evo.uid, fromDex: evo.fromDex, toDex: evo.toDex } : null }
 }
 
@@ -80,11 +82,12 @@ export function removeFromTeam(id: string) {
 
 // ---------------------------------------------------------------- Day Care
 
+/** Sheet keys — the refusal is looked up when it is shown. */
 const DEPOSIT_REFUSED: Record<DepositError, string> = {
-  full: 'The Day Care is full',
-  last: 'Keep at least one Pokémon in your team',
-  missing: 'That Pokémon is not with you',
-  fossil: 'It is still being revived',
+  full: 'ui.toast.dayCareFull',
+  last: 'ui.toast.keepOne',
+  missing: 'ui.toast.notWithYou',
+  fossil: 'ui.toast.stillReviving',
 }
 
 /** The first visit ends Prof. Oak's leaderboard tutorial. */
@@ -103,7 +106,7 @@ export function leaveAtDayCare(uid: string): boolean {
   if (!save) return false
   const why = depositError(save, uid, data)
   if (why) {
-    pushToast(DEPOSIT_REFUSED[why], 'bad')
+    pushToast(t(DEPOSIT_REFUSED[why]), 'bad')
     return false
   }
   return mutateSave((s) => depositPokemon(s, uid, data, Date.now()))
@@ -121,7 +124,7 @@ export function hatchDayCareEgg(free: boolean): Hatch | null {
   const { save, data } = useGame.getState()
   const res = save ? hatchEgg(save, data, createRng(randomSeed()), Date.now(), newId, { free }) : null
   if (!res) {
-    if (!free) pushToast('Not enough Pokédollars', 'bad')
+    if (!free) pushToast(t('ui.toast.tooPoor'), 'bad')
     return null
   }
   mutateSave(() => res.save)

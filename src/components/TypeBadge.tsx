@@ -1,8 +1,11 @@
 import type { DieType } from '@/engine/types'
+import { typeName } from '@/lib/format'
+import { useT } from '@/i18n/react'
 import { badgeColors, cx, typeColor } from '@/theme/util'
 
 /** Type label. The fill is the type colour nudged until its text clears 4.5:1. */
 export function TypeBadge({ type, size = 'md', className }: { type: DieType; size?: 'sm' | 'md'; className?: string }) {
+  useT()
   const { bg, fg } = badgeColors(typeColor(type))
   return (
     <span
@@ -13,7 +16,7 @@ export function TypeBadge({ type, size = 'md', className }: { type: DieType; siz
       )}
       style={{ background: bg, color: fg, borderRadius: 2, boxShadow: 'inset 0 -2px 0 rgba(0,0,0,0.18)' }}
     >
-      {type}
+      {typeName(type)}
     </span>
   )
 }

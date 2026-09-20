@@ -1,4 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react'
+import { t } from '@/i18n'
 import { SAVE_KEY } from '@/save/storage'
 import { useGame } from '@/store/game'
 
@@ -33,8 +34,8 @@ export class ErrorBoundary extends Component<{ children: ReactNode }, State> {
     return (
       <div className="flex min-h-screen items-center justify-center p-4">
         <div className="pixel-panel flex max-w-lg flex-col gap-3 p-5">
-          <h1 className="text-4xl">Something broke.</h1>
-          <p className="text-xl">Your progress is stored in this browser. Copy it somewhere safe before trying anything else.</p>
+          <h1 className="text-4xl">{t('ui.error.title')}</h1>
+          <p className="text-xl">{t('ui.error.body')}</p>
           <pre className="max-h-24 overflow-auto border-2 border-ink bg-ink p-2 font-mono text-xs text-panel">{String(error.message || error)}</pre>
           <div className="flex flex-wrap gap-2">
             <button
@@ -47,16 +48,16 @@ export class ErrorBoundary extends Component<{ children: ReactNode }, State> {
                   .catch(() => this.setState({ copied: 'failed' }))
               }
             >
-              Copy save to clipboard
+              {t('ui.error.copySave')}
             </button>
             <button type="button" className="pixel-btn bg-panel px-3 py-1 text-xl" onClick={() => window.location.reload()}>
-              Reload
+              {t('ui.error.reload')}
             </button>
             <button type="button" className="pixel-btn bg-panel px-3 py-1 text-xl" onClick={() => (window.location.href = '/')}>
-              Title screen
+              {t('ui.error.titleScreen')}
             </button>
           </div>
-          {copied === 'ok' && <p className="text-lg text-good">Save copied.</p>}
+          {copied === 'ok' && <p className="text-lg text-good">{t('ui.error.copied')}</p>}
           {copied === 'failed' && <textarea readOnly className="h-24 w-full border-2 border-ink font-mono text-xs" value={saveText()} />}
         </div>
       </div>

@@ -13,9 +13,12 @@ import { XpBar } from '@/components/MonCard'
 import { PixelButton } from '@/components/PixelButton'
 import { TrainerSprite } from '@/components/TrainerArt'
 import { MiniSprite, SpriteImg } from '@/components/SpriteImg'
-import { milestoneText, money, trainerTitle } from '@/lib/format'
+import { milestoneText, money, trainerTitle, typeName } from '@/lib/format'
+import { t } from '@/i18n'
+import { useT } from '@/i18n/react'
 import { usePace } from '@/lib/pace'
 import { BadgeIcon } from '@/components/BadgeIcon'
+import { Confetti } from '@/components/Confetti'
 import { useGame } from '@/store/game'
 import { afterStalemate, afterWipe, continueAfterVictory, enterArea, resolveCatch, trainerHasNext } from '@/store/run'
 import { cx, shade, typeColor } from '@/theme/util'
@@ -57,7 +60,8 @@ function GoldCard({ amount }: { amount: number }) {
 }
 
 function CatchCard({ uid, dex, level, joined, replacedLevel }: { uid: string; dex: number; level: number; joined: boolean; replacedLevel?: number }) {
-  const name = useGame((s) => s.data.species[dex]?.name ?? '???')
+  const { t } = useT()
+  const name = useGame((s) => s.data.species[dex]?.name) ?? t('ui.common.unknown')
   const shiny = useGame((s) => !!s.save?.box.find((p) => p.id === uid)?.shiny)
   return (
     <div className="flex items-center gap-3 border-[3px] border-ink bg-gold/40 p-2">
@@ -66,16 +70,16 @@ function CatchCard({ uid, dex, level, joined, replacedLevel }: { uid: string; de
       </motion.div>
       <SpriteImg dex={dex} size={72} shiny={shiny} />
       <div>
-        <div className="text-3xl leading-none">Gotcha!</div>
+        <div className="text-3xl leading-none">{t('ui.victory.gotcha')}</div>
         <div className="text-xl">
-          {shiny ? 'Shiny ' : ''}{name} (Lv.{level}) was caught!
+          {t('ui.victory.wasCaught', { shiny: shiny ? t('ui.victory.shinyPrefix') : '', name, level })}
         </div>
         <div className="text-lg">
           {replacedLevel != null
-            ? `It replaces your Lv.${replacedLevel} ${name}.`
+            ? t('ui.victory.replacesYours', { level: replacedLevel, name })
             : joined
-              ? `${name} joined your team.`
-              : 'Your team is full…'}
+              ? t('ui.victory.joinedTeam', { name })
+              : t('ui.victory.teamFull')}
         </div>
       </div>
     </div>
@@ -87,6 +91,7 @@ function CatchCard({ uid, dex, level, joined, replacedLevel }: { uid: string; de
  * too: CONTINUE (the footer) sends the catch to the Box.
  */
 function TeamChoice() {
+  const { t } = useT()
   const save = useGame((s) => s.save)
   const data = useGame((s) => s.data)
   const pending = useGame((s) => s.run.pendingCatchId)
@@ -96,7 +101,7 @@ function TeamChoice() {
   const name = data.species[caught.dex]?.name
   return (
     <div className="mt-3 flex flex-col gap-2">
-      <div className="text-2xl">Add {name} to your team?</div>
+      <div className="text-2xl">{t('ui.victory.addToTeam', { name: name ?? '' })}</div>
       <ul className="grid grid-cols-3 gap-2">
         {teamOf(save).map((p) => {
           const species = data.species[p.dex]
@@ -107,13 +112,13 @@ function TeamChoice() {
                 type="button"
                 onClick={() => resolveCatch(p.id)}
                 className="pixel-btn flex w-full flex-col items-center gap-0.5 bg-panel px-1 pb-1.5 pt-1 text-center"
-                aria-label={`Swap out ${species?.name} Lv.${p.level} for ${name}`}
+                aria-label={t('ui.victory.swapOutFor', { name: species?.name ?? '', level: p.level, newName: name ?? '' })}
               >
                 <MiniSprite dex={p.dex} size={40} className="-my-1" />
                 <span className="w-full truncate text-lg leading-none">{species?.name}</span>
-                <span className="text-base leading-none text-muted">Lv.{p.level}</span>
+                <span className="text-base leading-none text-muted">{t('ui.common.level.short', { n: p.level })}</span>
                 <HpBar hp={p.currentHp} max={stats.maxHp} className="w-full" height={6} />
-                <span className="text-base leading-none">Swap out</span>
+                <span className="text-base leading-none">{t('ui.victory.swapOut')}</span>
               </button>
             </li>
           )
@@ -197,12 +202,23 @@ function useRecap(events: RunEvent[]): { mons: MonRecap[]; extras: Extra[]; evol
           })
           return
         case 'fled':
-          extras.push({ key: k, node: <div className="text-center text-xl text-muted">{data.species[e.dex]?.name} fled…</div> })
+          extras.push({
+            key: k,
+            node: (
+              <div className="text-center text-xl text-muted">
+                {t('ui.victory.fled', { name: data.species[e.dex]?.name ?? t('ui.common.unknown') })}
+              </div>
+            ),
+          })
           return
         case 'boss_defeated':
           extras.push({
             key: k,
-            node: <div className="text-center text-xl text-gold">The legendary {data.species[e.dex]?.name} was defeated!</div>,
+            node: (
+              <div className="text-center text-xl text-gold">
+                {t('ui.victory.bossDefeated', { name: data.species[e.dex]?.name ?? t('ui.common.unknown') })}
+              </div>
+            ),
           })
           return
         case 'gym_defeated':
@@ -213,8 +229,10 @@ function useRecap(events: RunEvent[]): { mons: MonRecap[]; extras: Extra[]; evol
               <div className="flex items-center justify-center gap-3 border-[3px] border-ink bg-gold p-2 text-center">
                 {e.badge && <BadgeIcon badge={e.badge} earned size={36} />}
                 <div>
-                  <div className="text-2xl leading-none">{e.role === 'champion' ? 'YOU ARE THE CHAMPION!' : `${e.name} defeated!`}</div>
-                  {e.badge && <div className="text-lg">You earned the {e.badge}!</div>}
+                  <div className="text-2xl leading-none">
+                    {e.role === 'champion' ? t('ui.victory.champion') : t('ui.victory.trainerDefeated', { name: e.name })}
+                  </div>
+                  {e.badge && <div className="text-lg">{t('ui.victory.earnedBadge', { badge: e.badge })}</div>}
                 </div>
               </div>
             ),
@@ -227,8 +245,8 @@ function useRecap(events: RunEvent[]): { mons: MonRecap[]; extras: Extra[]; evol
             sound: 'catch',
             node: (
               <div className="pixel-panel-dark p-2 text-center">
-                <div className="text-xl text-gold">A secret area has appeared!</div>
-                <div className="text-lg">{a?.name ?? '???'} is now on the Map.</div>
+                <div className="text-xl text-gold">{t('ui.victory.secretArea')}</div>
+                <div className="text-lg">{t('ui.victory.secretOnMap', { name: a?.name ?? t('ui.common.unknown') })}</div>
               </div>
             ),
           })
@@ -241,8 +259,10 @@ function useRecap(events: RunEvent[]): { mons: MonRecap[]; extras: Extra[]; evol
             sound: 'levelup',
             node: (
               <div className="border-[3px] border-ink bg-hp-green p-2 text-center">
-                <div className="text-2xl">AREA CLEARED!</div>
-                <div className="text-lg">{next ? `${next.name} is now open on the Map.` : 'Every area is cleared!'}</div>
+                <div className="text-2xl">{t('ui.victory.areaCleared')}</div>
+                <div className="text-lg">
+                  {next ? t('ui.victory.nextOpen', { name: next.name }) : t('ui.victory.allCleared')}
+                </div>
               </div>
             ),
           })
@@ -263,8 +283,8 @@ function DieChip({ type }: { type: DieType }) {
       className="die-mini inline-block shrink-0 align-middle"
       style={{ width: 20, height: 20, background: `linear-gradient(135deg, ${shade(bg, 1.08)} 0%, ${bg} 55%, ${shade(bg, 0.88)} 100%)` }}
       role="img"
-      aria-label={`${type} die`}
-      title={`${type} die`}
+      aria-label={t('ui.victory.dieChip', { type: typeName(type) })}
+      title={t('ui.victory.dieChip', { type: typeName(type) })}
     />
   )
 }
@@ -307,42 +327,12 @@ function MilestoneChip({ m, type1 }: { m: Milestone; type1: DieType }) {
   )
 }
 
-const CONFETTI = ['#e8b44a', '#c2452d', '#547acc', '#4aa84a', '#d44873', '#f7f2e0']
-
-/** A little burst of pixel confetti from the middle of its box (skipped with reduced motion). */
-function Confetti() {
-  const reduced = useGame((s) => s.settings.reducedMotion)
-  const bits = useMemo(
-    () =>
-      Array.from({ length: 20 }, (_, i) => {
-        const a = (i / 16) * Math.PI * 2 + Math.random() * 0.4
-        const r = 34 + Math.random() * 30
-        return { x: Math.cos(a) * r, y: Math.sin(a) * r - 14, rot: Math.random() * 360, color: CONFETTI[i % CONFETTI.length]! }
-      }),
-    [],
-  )
-  if (reduced) return null
-  return (
-    <span className="pointer-events-none absolute inset-0" aria-hidden>
-      {bits.map((b, i) => (
-        <motion.span
-          key={i}
-          className="absolute left-1/2 top-1/2 h-2.5 w-2.5"
-          style={{ background: b.color, boxShadow: '0 0 0 1px #2a2438' }}
-          initial={{ x: 0, y: 0, opacity: 1, rotate: 0 }}
-          animate={{ x: b.x, y: [0, b.y, b.y + 26], opacity: [1, 1, 0], rotate: b.rot }}
-          transition={{ duration: 1.3, ease: 'easeOut' }}
-        />
-      ))}
-    </span>
-  )
-}
-
 /**
  * One Pokémon: sprite, name, level and XP on one line (with its XP bar), and one line below for what it earned —
  * a level-up (the sprite pulses, confetti flies), new dice and milestones, an evolution to come.
  */
 function MonRow({ m }: { m: MonRecap }) {
+  const { t } = useT()
   const data = useGame((s) => s.data)
   const inst = useGame((s) => (s.save ? getInstance(s.save, m.uid) : undefined))
   const reduced = useGame((s) => s.settings.reducedMotion)
@@ -357,10 +347,10 @@ function MonRow({ m }: { m: MonRecap }) {
       <span
         key="lv"
         className="inline-flex items-center gap-1 border-2 border-ink bg-hp-green px-1.5 py-0.5 text-xl leading-none text-ink"
-        aria-label={`Level up: level ${m.toLevel}`}
+        aria-label={t('ui.victory.levelUp', { level: m.toLevel ?? 0 })}
       >
         <PixelIcon name="up" size={18} />
-        Lv.{m.toLevel}
+        {t('ui.common.level.short', { n: m.toLevel ?? 0 })}
       </span>,
     )
   // The evolution milestone is the scene that follows the recap, not a chip.
@@ -368,7 +358,7 @@ function MonRow({ m }: { m: MonRecap }) {
   if (m.evolvesTo != null)
     chips.push(
       <span key="evo" className="border-2 border-ink bg-ink px-1.5 py-0.5 text-lg leading-none text-panel">
-        Evolving into {data.species[m.evolvesTo]?.name ?? '???'}…
+        {t('ui.victory.evolvingInto', { name: data.species[m.evolvesTo]?.name ?? t('ui.common.unknown') })}
       </span>,
     )
   return (
@@ -384,9 +374,10 @@ function MonRow({ m }: { m: MonRecap }) {
           {leveled && <Confetti />}
         </motion.span>
         <span className="min-w-0 truncate text-xl leading-none">{species.name}</span>
-        <span className="shrink-0 text-lg leading-none">Lv.{level}</span>
+        <span className="shrink-0 text-lg leading-none">{t('ui.common.level.short', { n: level })}</span>
         <span className="ml-auto shrink-0 text-lg leading-none">
-          +{m.xp} XP{m.shared && <span className="text-sm text-muted"> Multi</span>}
+          {t('ui.victory.xpGain', { amount: m.xp })}
+          {m.shared && <span className="text-sm text-muted">{t('ui.victory.multi')}</span>}
         </span>
       </div>
       {inst && <XpBar inst={inst} className="mt-1" />}
@@ -401,6 +392,7 @@ function MonRow({ m }: { m: MonRecap }) {
  * CONTINUE, one after another, and only then does the game move on.
  */
 export function VictoryView() {
+  const { t } = useT()
   const run = useGame((s) => s.run)
   const battle = useGame((s) => s.battle)
   const data = useGame((s) => s.data)
@@ -444,7 +436,7 @@ export function VictoryView() {
   const enc = run.encounter
   const nextMon =
     hasNext && (enc?.kind === 'trainer' || enc?.kind === 'gym') && run.trainer ? enc.team[run.trainer.index + 1] : null
-  const trainerLabel = enc?.kind === 'gym' || enc?.kind === 'trainer' ? trainerTitle(enc) : 'The trainer'
+  const trainerLabel = enc?.kind === 'gym' || enc?.kind === 'trainer' ? trainerTitle(enc) : t('ui.log.theTrainer')
   // This fight cleared the area: offer the newly opened one straight away.
   const clearedTo = run.events.flatMap((e) => (e.kind === 'area_cleared' && e.nextAreaId ? [e.nextAreaId] : []))[0]
   const nextArea = clearedTo ? data.areas.find((a) => a.id === clearedTo) : undefined
@@ -453,11 +445,11 @@ export function VictoryView() {
 
   const footer = !allShown ? (
     <PixelButton variant="primary" size="lg" className="w-full" onClick={() => setShown(Number.MAX_SAFE_INTEGER)}>
-      SKIP ▸▸
+      {t('ui.victory.skip')}
     </PixelButton>
   ) : hasNext && nextMon ? (
     <PixelButton variant="primary" size="lg" className="w-full" onClick={go(() => continueAfterVictory(lead ?? stillIn ?? defaultLead()))}>
-      NEXT BATTLE
+      {t('ui.victory.nextBattle')}
     </PixelButton>
   ) : nextArea ? (
     // A new area just opened: travelling there is the green offer, above the usual (yellow) CONTINUE.
@@ -466,32 +458,34 @@ export function VictoryView() {
         variant="success"
         size="lg"
         className="w-full whitespace-nowrap"
-        aria-label={`Go to ${nextArea.name}`}
+        aria-label={t('ui.victory.goToArea', { name: nextArea.name })}
         onClick={go(() => {
           continueAfterVictory()
           enterArea(nextArea.id)
         })}
       >
         <PixelIcon name="map" size={20} />
-        GO TO NEW AREA
+        {t('ui.victory.goToNewArea')}
       </PixelButton>
       <PixelButton variant="primary" size="lg" className="w-full" onClick={go(() => continueAfterVictory())}>
-        CONTINUE
+        {t('ui.common.continue')}
       </PixelButton>
     </div>
   ) : (
     <PixelButton variant="primary" size="lg" className="w-full" onClick={go(() => continueAfterVictory())}>
-      CONTINUE
+      {t('ui.common.continue')}
     </PixelButton>
   )
 
   return (
     <Overlay footer={footer}>
       <div className="flex items-baseline justify-between gap-2">
-        <div className="text-3xl leading-none">{battle?.state.kind === 'boss' ? 'LEGENDARY VICTORY!' : 'VICTORY!'}</div>
+        <div className="text-3xl leading-none">
+          {t(battle?.state.kind === 'boss' ? 'ui.victory.legendaryVictory' : 'ui.victory.victory')}
+        </div>
         {enemy && (
           <div className="min-w-0 truncate text-lg text-muted">
-            {enemy.name} Lv.{enemy.level} defeated
+            {t('ui.victory.foeDefeated', { name: enemy.name, level: enemy.level })}
           </div>
         )}
       </div>
@@ -517,7 +511,11 @@ export function VictoryView() {
               <TrainerSprite src={enc?.kind === 'trainer' || enc?.kind === 'gym' ? enc.spriteUrl : null} size={72} />
             </motion.div>
             <div className="text-lg leading-tight">
-              {trainerLabel} is about to send out {data.species[nextMon.dex]?.name} (Lv.{nextMon.level}). Switch freely:
+              {t('ui.victory.aboutToSend', {
+                trainer: trainerLabel,
+                name: data.species[nextMon.dex]?.name ?? t('ui.common.unknown'),
+                level: nextMon.level,
+              })}
             </div>
           </div>
           <LeadPicker value={lead ?? stillIn ?? null} onChange={setLead} />
@@ -528,6 +526,7 @@ export function VictoryView() {
 }
 
 export function WipeView() {
+  const { t } = useT()
   const save = useGame((s) => s.save)
   const data = useGame((s) => s.data)
   const areaId = useGame((s) => s.run.areaId)
@@ -538,16 +537,13 @@ export function WipeView() {
     <Overlay
       footer={
         <PixelButton variant="primary" size="lg" className="w-full" onClick={afterWipe}>
-          TRY AGAIN
+          {t('ui.wipe.tryAgain')}
         </PixelButton>
       }
     >
-      <div className="mb-2 text-center text-4xl">Your team fainted…</div>
+      <div className="mb-2 text-center text-4xl">{t('ui.wipe.title')}</div>
       <p className="copy mb-3 text-lg">
-        You hurried back to the start of {area?.name}. Your Pokémon have been fully healed, and you keep your Pokédollars,
-        items and your Pokémon's levels.{' '}
-        The round is lost{done > 0 ? ', but the rounds you had already finished stay done' : ''}. A new round starts with a
-        freshly shuffled deck.
+        {t('ui.wipe.body', { area: area?.name ?? '', kept: done > 0 ? t('ui.wipe.keptRounds') : '' })}
       </p>
       {area && p && <RoundsCounter area={area} progress={p} />}
     </Overlay>
@@ -555,19 +551,17 @@ export function WipeView() {
 }
 
 export function StalemateView() {
+  const { t } = useT()
   return (
     <Overlay
       footer={
         <PixelButton variant="primary" size="lg" className="w-full" onClick={afterStalemate}>
-          CONTINUE
+          {t('ui.common.continue')}
         </PixelButton>
       }
     >
-      <div className="mb-2 text-center text-4xl">Stalemate</div>
-      <p className="copy text-lg">
-        Neither side can land a single blow on the other, so the fight is called off. No rewards — but no harm done beyond
-        the damage already taken.
-      </p>
+      <div className="mb-2 text-center text-4xl">{t('ui.stalemate.title')}</div>
+      <p className="copy text-lg">{t('ui.stalemate.body')}</p>
     </Overlay>
   )
 }

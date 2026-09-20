@@ -4,7 +4,6 @@ import type { Row } from '@/config/mapping'
 import {
   COMBO_KEYS,
   COMBO_NAMES,
-  effectText,
   POKE_TYPES,
   BATTLE_BACKGROUNDS,
   STATUS_KINDS,
@@ -25,6 +24,7 @@ import { cx } from '@/theme/util'
 import { DataTable } from '../DataTable'
 import { newUuid, rowKey, setTable, updateRow, useAdmin, useAdminData } from '../store'
 import { Field, NumInput, PokemonPicker, TextInput, n, s, useNumberField } from '../widgets'
+import { effectText } from '@/i18n/text'
 
 // ---------------------------------------------------------------- Trainers
 

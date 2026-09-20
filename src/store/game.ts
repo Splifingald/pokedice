@@ -22,6 +22,8 @@ import {
   type SaveData,
 } from '@/engine'
 import { DEFAULT_SETTINGS, readSave, readSettings, scheduleWrite, writeSettings, type Settings } from '@/save/storage'
+import { DEFAULT_LANG, setLangInternal, t, type Lang } from '@/i18n'
+import { localizeGameData } from '@/i18n/data'
 
 export type ToastTone = 'info' | 'good' | 'bad'
 export interface Toast {
@@ -79,6 +81,8 @@ export interface AuthState {
 
 export interface GameStore {
   data: GameData
+  /** The English content `data` was localized from — kept so a language switch can redo it. */
+  rawData: GameData
   contentSource: 'bundle' | 'remote'
   save: SaveData | null
   corruptSaveArchived: boolean
@@ -123,13 +127,17 @@ function settle(save: SaveData, data: GameData) {
   return { ...dup, revived: fossils.revived, merged: region.merged, gained: region.gained }
 }
 
-function boot(): Pick<GameStore, 'data' | 'save' | 'corruptSaveArchived' | 'settings'> {
-  const data = compileGameData(BUNDLE)
+function boot(): Pick<GameStore, 'data' | 'rawData' | 'save' | 'corruptSaveArchived' | 'settings'> {
+  const rawData = compileGameData(BUNDLE)
   const { save, corrupt } = readSave()
-  const settings = save?.settings ?? readSettings()
-  if (!save) return { data, save: null, corruptSaveArchived: corrupt, settings }
+  // A save carries the language it was last played in; a fresh browser falls back to readSettings' detection.
+  const stored = readSettings()
+  const settings = save?.settings ? { ...save.settings, lang: save.settings.lang ?? stored.lang } : stored
+  setLangInternal(settings.lang ?? DEFAULT_LANG)
+  const data = localizeGameData(rawData, settings.lang ?? DEFAULT_LANG)
+  if (!save) return { data, rawData, save: null, corruptSaveArchived: corrupt, settings }
   // Settle the save (HP scale, XP curve, duplicates) before the first render.
-  return { data, save: settle(save, data).save, corruptSaveArchived: corrupt, settings }
+  return { data, rawData, save: settle(save, data).save, corruptSaveArchived: corrupt, settings }
 }
 
 export const useGame = create<GameStore>()(() => ({
@@ -174,12 +182,12 @@ export function commitSave(next: SaveData | null, opts: { silent?: boolean; keep
   scheduleWrite(stamped)
   if (!opts.silent) for (const fn of saveListeners) fn(stamped, prev)
   for (const p of settled?.revived ?? [])
-    pushToast(`${data.species[p.dex]?.name ?? `#${p.dex}`} was revived from its fossil!`, 'good', 4500)
+    pushToast(t('ui.toast.revivedFossil', { name: data.species[p.dex]?.name ?? `#${p.dex}` }), 'good', 4500)
   for (const p of settled?.released ?? [])
-    pushToast(`${data.species[p.dex]?.name ?? `#${p.dex}`} Lv.${p.level} left: you have a stronger one`, 'info', 4000)
+    pushToast(t('ui.toast.releasedWeaker', { name: data.species[p.dex]?.name ?? `#${p.dex}`, level: p.level }), 'info', 4000)
   if (settled?.merged.length) {
-    const names = settled.merged.map((id) => getRegion(data, id)?.name ?? id).join(' and ')
-    pushToast(`Everything you left in ${names} is yours again — ${settled.gained} Pokémon, your bag and your ₽`, 'good', 6000)
+    const names = settled.merged.map((id) => getRegion(data, id)?.name ?? id).join(t('ui.toast.and'))
+    pushToast(t('ui.toast.regionsMerged', { regions: names, count: settled.gained }), 'good', 6000)
   }
 }
 
@@ -193,26 +201,37 @@ export function mutateSave(fn: (s: SaveData) => SaveData | null | undefined): bo
 }
 
 export function setSettings(patch: Partial<Settings>) {
-  const settings = { ...useGame.getState().settings, ...patch }
+  const prev = useGame.getState().settings
+  const settings = { ...prev, ...patch }
   useGame.setState({ settings })
+  if (settings.lang !== prev.lang) setLanguage(settings.lang ?? DEFAULT_LANG)
   writeSettings(settings)
   const save = useGame.getState().save
   if (save) commitSave({ ...save, settings })
 }
 
 export function resetSettings() {
-  setSettings(DEFAULT_SETTINGS)
+  // The language is the player's, not part of the game settings a reset is for.
+  setSettings({ ...DEFAULT_SETTINGS, lang: useGame.getState().settings.lang })
+}
+
+/** Re-translates the compiled content in place — every `species.name`, area, item and trainer at once. */
+function setLanguage(lang: Lang) {
+  setLangInternal(lang)
+  useGame.setState((s) => ({ data: localizeGameData(s.rawData, lang) }))
 }
 
 /** Hot-swap content (bundle → Supabase, or an admin publish). */
 export function setContent(raw: BundleRaw, source: 'bundle' | 'remote') {
-  const data = compileGameData(raw)
+  const rawData = compileGameData(raw)
+  const data = localizeGameData(rawData, useGame.getState().settings.lang ?? DEFAULT_LANG)
   useGame.setState((s) => {
     // A new hpMultiplier keeps every HP % (syncHpScale); an admin may also have removed the area the player was in.
     const save = s.save ? settle(s.save, data).save : null
     const areaOk = !save || data.areas.some((a) => a.id === save.currentAreaId)
     return {
       data,
+      rawData,
       contentSource: source,
       save: areaOk || !save ? save : { ...save, currentAreaId: data.areas[0]?.id ?? '' },
       run: s.run.areaId && !data.areas.some((a) => a.id === s.run.areaId) ? initialRun() : s.run,

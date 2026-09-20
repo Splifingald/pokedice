@@ -1,7 +1,7 @@
 // Items: where each one can be used, what the Poké Mart sells, and the per-area loot decks behind item finds.
 import { shuffle } from './deal'
 import type { Rng } from './rng'
-import type { Area, AreaProgress, CurableStatus, GameData, ItemDef, LootEntry } from './types'
+import type { Area, AreaProgress, GameData, ItemDef, LootEntry } from './types'
 
 /** Loot key for Pokédollars lying on the ground (not an inventory item). */
 export const MONEY = 'money'
@@ -34,37 +34,6 @@ export const usableIn = (item: ItemDef | undefined, use: ItemUse): boolean => !!
 
 /** What a ball adds to the catch die (0 for anything else). */
 export const ballBonus = (item: ItemDef | undefined): number => (item?.effect.kind === 'ball' ? item.effect.bonus : 0)
-
-const CURE_NAMES: Record<CurableStatus, string> = {
-  burn: 'burns',
-  poison: 'poison',
-  frozen: 'freezing',
-  paralyze: 'paralysis',
-  confuse: 'confusion',
-}
-
-/** One-line effect for menus: "+20 HP", "Cures paralysis", "+1 reroll", "+1 level", "+2 to the catch die". */
-export function effectText(item: ItemDef): string {
-  const e = item.effect
-  switch (e.kind) {
-    case 'heal':
-      return `+${e.amount} HP`
-    case 'revive':
-      return e.percent >= 100 ? 'Revives, full HP' : `Revives, ${e.percent} % HP`
-    case 'cure':
-      return `Cures ${e.statuses.map((s) => CURE_NAMES[s]).join(', ')}`
-    case 'rerolls':
-      return `+${e.amount} reroll${e.amount === 1 ? '' : 's'}`
-    case 'level':
-      return `+${e.amount} level${e.amount === 1 ? '' : 's'}`
-    case 'stone':
-      return 'Makes certain Pokémon evolve'
-    case 'fossil':
-      return `Revives in ${e.hours} h`
-    case 'ball':
-      return e.bonus >= 9 ? 'Never misses' : `+${e.bonus} to the catch die`
-  }
-}
 
 /** What the Mart pays for one: half its price, rounded down. Only items the Mart sells can be sold back (0 = can't). */
 export const sellPrice = (item: ItemDef | undefined): number => (item?.inShop ? Math.floor(item.price / 2) : 0)

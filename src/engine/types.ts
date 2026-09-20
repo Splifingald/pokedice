@@ -1,6 +1,8 @@
 // Core domain types shared by the engine, the seed script and the UI.
 // Pure declarations — no runtime dependencies.
 
+import type { Lang } from '@/i18n/langs'
+
 export const POKE_TYPES = [
   'normal',
   'fire',
@@ -499,7 +501,7 @@ export interface SaveData {
   dieLevels: Record<PokeType, number>
   currentAreaId: string
   areaProgress: Record<string, AreaProgress>
-  settings: { sfx: boolean; reducedMotion: boolean; multiExp: boolean; autoMode?: boolean }
+  settings: { sfx: boolean; reducedMotion: boolean; multiExp: boolean; autoMode?: boolean; lang?: Lang }
   /** The hpMultiplier current HP was last measured against (absent = ×1), so a change keeps every HP %. */
   hpScale?: number
   /** Who the player is: a name and one of the two trainer sprites (absent on older saves = Red, no name). */

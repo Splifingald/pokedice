@@ -4,7 +4,9 @@ import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { getInstance, instanceStats } from '@/engine'
 import { sfx } from '@/audio/sfx'
+import { useT } from '@/i18n/react'
 import { useGame } from '@/store/game'
+import { Confetti } from './Confetti'
 import { DiceSet } from './DiceSet'
 import { PixelButton } from './PixelButton'
 import { SpriteImg } from './SpriteImg'
@@ -18,6 +20,7 @@ export interface EvolutionShow {
 
 /** One evolution, played once. `onDone` fires when the new form is revealed. */
 export function EvolutionSequence({ uid, fromDex, toDex, onDone }: EvolutionShow & { onDone?: () => void }) {
+  const { t } = useT()
   const reduced = useGame((s) => s.settings.reducedMotion)
   const data = useGame((s) => s.data)
   const inst = useGame((s) => (s.save ? getInstance(s.save, uid) : undefined))
@@ -32,11 +35,11 @@ export function EvolutionSequence({ uid, fromDex, toDex, onDone }: EvolutionShow
     sfx('levelup')
     onDone?.()
   }, [stage]) // eslint-disable-line react-hooks/exhaustive-deps
-  const from = data.species[fromDex]?.name ?? '???'
-  const to = data.species[toDex]?.name ?? '???'
+  const from = data.species[fromDex]?.name ?? t('ui.common.unknown')
+  const to = data.species[toDex]?.name ?? t('ui.common.unknown')
   const stats = inst ? instanceStats(inst, data) : null
   return (
-    <div className="flex flex-col items-center gap-2 border-[3px] border-ink bg-ink p-3 text-panel">
+    <div className="flex flex-col items-center gap-2 border-[3px] border-ink bg-parchment p-3 text-ink">
       <div className="relative" style={{ width: 144, height: 144 }}>
         {stage < 3 && (
           <motion.div
@@ -54,9 +57,13 @@ export function EvolutionSequence({ uid, fromDex, toDex, onDone }: EvolutionShow
         )}
         {stage === 2 && <div className="absolute inset-0 bg-white" />}
         {stage === 3 && (
-          <motion.div className="absolute inset-0" initial={{ scale: 1.3, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}>
-            <SpriteImg dex={toDex} size={144} />
-          </motion.div>
+          <>
+            <motion.div className="absolute inset-0" initial={{ scale: 1.3, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}>
+              <SpriteImg dex={toDex} size={144} />
+            </motion.div>
+            {/* The new form arrives to a burst of confetti. */}
+            <Confetti count={26} spread={60} size={12} />
+          </>
         )}
       </div>
       <div className="text-center text-2xl">{stage < 3 ? `What? ${from} is evolving!` : `${from} evolved into ${to}!`}</div>
@@ -76,6 +83,7 @@ export function EvolutionSequence({ uid, fromDex, toDex, onDone }: EvolutionShow
  * The button is always in view (bottom of the card).
  */
 export function EvolutionQueue({ items, onDone }: { items: EvolutionShow[]; onDone: () => void }) {
+  const { t } = useT()
   const [i, setI] = useState(0)
   const [ready, setReady] = useState(false)
   const cur = items[i]
@@ -86,12 +94,12 @@ export function EvolutionQueue({ items, onDone }: { items: EvolutionShow[]; onDo
   // On the page itself, above any sheet it was opened from (a fixed box inside a transformed modal would be clipped).
   return createPortal(
     <motion.div
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-ink/80 p-3"
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-ink/70 p-3"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       role="dialog"
       aria-modal="true"
-      aria-label="Evolution"
+      aria-label={t('ui.evolution.label')}
     >
       <div className="pixel-panel flex max-h-full w-full max-w-md flex-col gap-3 overflow-auto p-3">
         <EvolutionSequence key={`${cur.uid}-${i}`} {...cur} onDone={() => setReady(true)} />
@@ -104,7 +112,7 @@ export function EvolutionQueue({ items, onDone }: { items: EvolutionShow[]; onDo
             setI((n) => n + 1)
           }}
         >
-          {ready ? (i + 1 < items.length ? 'NEXT' : 'CONTINUE') : 'SKIP ▸▸'}
+          {ready ? t(i + 1 < items.length ? 'ui.evolution.next' : 'ui.common.continue') : t('ui.evolution.skip')}
         </PixelButton>
       </div>
     </motion.div>,

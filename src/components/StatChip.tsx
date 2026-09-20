@@ -1,13 +1,18 @@
 import type { ReactNode } from 'react'
+import { t } from '@/i18n'
 import { cx } from '@/theme/util'
 import { PixelIcon, type IconName } from './icons'
 
+/** Labels and hints are sheet keys: `statLabel` / `statHint` read them in the player's language. */
 const STATS = {
-  hp: { icon: 'heart', label: 'HP', hint: 'HP: the damage it can take' },
-  speed: { icon: 'speed', label: 'Speed', hint: 'Speed: the faster Pokémon acts first (ties go to you)' },
-  rerolls: { icon: 'reroll', label: 'Rerolls', hint: 'Rerolls: how many times per battle it can reroll dice' },
-  catch: { icon: 'ball', label: 'Catch value', hint: 'Catch value: the catch die plus a ball must reach this (1 = always)' },
-} satisfies Record<string, { icon: IconName; label: string; hint: string }>
+  hp: { icon: 'heart' },
+  speed: { icon: 'speed' },
+  rerolls: { icon: 'reroll' },
+  catch: { icon: 'ball' },
+} satisfies Record<string, { icon: IconName }>
+
+export const statLabel = (stat: StatKind) => t(`ui.stat.${stat}.label`)
+export const statHint = (stat: StatKind) => t(`ui.stat.${stat}.hint`)
 
 export type StatKind = keyof typeof STATS
 
@@ -25,9 +30,9 @@ export function StatChip({
 }) {
   const s = STATS[stat]
   return (
-    <span className={cx('inline-flex items-center gap-1 tabular-nums', className)} title={s.hint}>
+    <span className={cx('inline-flex items-center gap-1 tabular-nums', className)} title={statHint(stat)}>
       <PixelIcon name={s.icon} size={size} />
-      <span className="sr-only">{s.label}</span>
+      <span className="sr-only">{statLabel(stat)}</span>
       {value}
     </span>
   )

@@ -1,6 +1,8 @@
 // Plays the engine's battle log one entry at a time. The UI never recomputes rules — it only animates the log.
 import { useEffect, useRef, useState } from 'react'
-import { activeBattler, COMBO_NAMES, type BattleState, type LogEntry, type RolledDie, type Side, type StatusKind } from '@/engine'
+import { activeBattler, type BattleState, type LogEntry, type RolledDie, type Side, type StatusKind } from '@/engine'
+import { t } from '@/i18n'
+import { comboName } from '@/lib/format'
 import { sfx, type SfxName } from '@/audio/sfx'
 import type { BattleSlice } from '@/store/game'
 
@@ -57,17 +59,17 @@ interface Step {
 }
 
 const STATUS_TEXT: Record<StatusKind, (n: string, stacks?: number) => string> = {
-  burn: (n, s) => `${n} was burned!${s && s > 1 ? ` (${s} stacks)` : ''}`,
-  poison: (n) => `${n} was badly poisoned!`,
-  frozen: (n) => `${n} was frozen solid!`,
-  paralyze: (n) => `${n} is paralyzed!`,
-  confuse: (n) => `${n} became confused!`,
-  heal: (n) => `${n} is healing!`,
+  burn: (name, s) => t('ui.log.burned', { name, stacks: s && s > 1 ? t('ui.log.stacks', { n: s }) : '' }),
+  poison: (name) => t('ui.log.poisoned', { name }),
+  frozen: (name) => t('ui.log.frozen', { name }),
+  paralyze: (name) => t('ui.log.paralyzed', { name }),
+  confuse: (name) => t('ui.log.confused', { name }),
+  heal: (name) => t('ui.log.healing', { name }),
 }
 
 function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): Step {
   const nameOf = (uid: string) =>
-    uid === st.enemy.uid ? st.enemy.name : (st.player.find((p) => p.uid === uid)?.name ?? '???')
+    uid === st.enemy.uid ? st.enemy.name : (st.player.find((p) => p.uid === uid)?.name ?? t('ui.common.unknown'))
   const sideUid = (side: Side, f: Fx) => (side === 'enemy' ? st.enemy.uid : f.activeUid)
 
   switch (e.kind) {
@@ -75,10 +77,10 @@ function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): Step {
       const lead = activeBattler(st).name
       const text =
         ctx.kind === 'wild'
-          ? `A wild ${st.enemy.name} appeared! Go, ${lead}!`
+          ? t('ui.log.startWild', { foe: st.enemy.name, lead })
           : ctx.kind === 'boss'
-            ? `The legendary ${st.enemy.name} attacks! Go, ${lead}!`
-            : `${ctx.trainerName ?? 'The trainer'} sent out ${st.enemy.name}! Go, ${lead}!`
+            ? t('ui.log.startBoss', { foe: st.enemy.name, lead })
+            : t('ui.log.startTrainer', { trainer: ctx.trainerName ?? t('ui.log.theTrainer'), foe: st.enemy.name, lead })
       return { delay: 1100, apply: (f) => ({ ...f, message: text }) }
     }
     case 'turn':
@@ -88,7 +90,8 @@ function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): Step {
           ...f,
           tray: null,
           fly: null,
-          message: e.side === 'player' ? `What will ${nameOf(e.uid)} do?` : `${st.enemy.name} rolls…`,
+          message:
+            e.side === 'player' ? t('ui.log.whatWillDo', { name: nameOf(e.uid) }) : t('ui.log.foeRolls', { foe: st.enemy.name }),
         }),
       }
     case 'roll':
@@ -103,7 +106,8 @@ function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): Step {
         sound: 'rattle',
         apply: (f) => ({
           ...f,
-          message: e.side === 'enemy' ? `${st.enemy.name} rerolls ${e.mask.filter(Boolean).length} dice…` : f.message,
+          message:
+            e.side === 'enemy' ? t('ui.log.foeRerolls', { foe: st.enemy.name, count: e.mask.filter(Boolean).length }) : f.message,
           tray: {
             side: e.side,
             dice: e.dice,
@@ -116,14 +120,20 @@ function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): Step {
       const eff = r.effectiveness
       const tone = r.immune ? 'immune' : eff >= 1.5 ? 'super' : eff <= 0.67 ? 'weak' : 'normal'
       const target = nameOf(e.targetUid)
-      const combo = r.combo ? `${COMBO_NAMES[r.combo.key].toUpperCase()}! ` : ''
+      const combo = r.combo ? `${comboName(r.combo.key).toUpperCase()}! ` : ''
       const textFor = (f: Fx) => {
         const attacker = e.side === 'enemy' ? st.enemy.name : nameOf(f.activeUid)
-        if (r.immune) return `It doesn't affect ${target}…`
-        return `${combo}${attacker} dealt ${e.amount} damage!`
+        if (r.immune) return t('ui.log.noEffect', { target })
+        return t('ui.log.dealt', { combo, attacker, amount: e.amount })
       }
       const banner =
-        tone === 'super' ? 'SUPER EFFECTIVE!' : tone === 'weak' ? 'Not very effective…' : tone === 'immune' ? 'NO EFFECT' : null
+        tone === 'super'
+          ? t('ui.log.superEffective')
+          : tone === 'weak'
+            ? t('ui.log.notVeryEffective')
+            : tone === 'immune'
+              ? t('ui.log.noEffectBanner')
+              : null
       const power = tone === 'super' ? (eff >= 3 ? 10 : 7) : tone === 'weak' ? 2 : tone === 'immune' ? 0 : 4
       const color = ctx.colorOf(r.attackType ?? r.perDie[0]?.type ?? 'base')
       return {
@@ -158,7 +168,11 @@ function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): Step {
         sound: 'hit',
         apply: (f) => ({
           ...f,
-          message: `${nameOf(e.targetUid)} is hurt by ${e.status === 'burn' ? 'its burn' : 'poison'}! −${e.amount}`,
+          message: t('ui.log.hurtByStatus', {
+            name: nameOf(e.targetUid),
+            source: t(e.status === 'burn' ? 'ui.log.itsBurn' : 'ui.log.poisonSource'),
+            amount: e.amount,
+          }),
           hp: { ...f.hp, [e.targetUid]: e.hpAfter },
           status: { id: nextId(), target: e.target, status: e.status },
           pop: { id: nextId(), target: e.target, amount: e.amount, tone: 'normal' },
@@ -171,10 +185,11 @@ function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): Step {
           ...f,
           tray: null,
           message: e.pending
-            ? `${nameOf(e.uid)} is ${e.status === 'frozen' ? 'frozen solid' : 'paralyzed'}! Cure it with an item, or skip the turn.`
-            : e.status === 'frozen'
-              ? `${nameOf(e.uid)} is frozen solid!`
-              : `${nameOf(e.uid)} is paralyzed! It can't move!`,
+            ? t('ui.log.stunnedPending', {
+                name: nameOf(e.uid),
+                state: t(e.status === 'frozen' ? 'ui.log.frozenSolid' : 'ui.log.paralysedWord'),
+              })
+            : t(e.status === 'frozen' ? 'ui.log.frozenPlain' : 'ui.log.paralysedCantMove', { name: nameOf(e.uid) }),
           status: { id: nextId(), target: e.side, status: e.status },
         }),
       }
@@ -184,7 +199,7 @@ function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): Step {
         sound: 'faint',
         apply: (f) => ({
           ...f,
-          message: `${nameOf(e.uid)} fainted!`,
+          message: t('ui.log.fainted', { name: nameOf(e.uid) }),
           fainted: { ...f.fainted, [e.uid]: true },
           flash: { id: nextId(), target: e.side },
           tray: null,
@@ -197,28 +212,28 @@ function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): Step {
           ...f,
           activeUid: e.uid,
           fainted: { ...f.fainted, [e.uid]: false },
-          message: `Go! ${nameOf(e.uid)}!`,
+          message: t('ui.log.goName', { name: nameOf(e.uid) }),
           tray: null,
         }),
       }
     case 'transform':
       return {
         delay: 900,
-        apply: (f) => ({ ...f, message: `${nameOf(e.uid)} copied ${nameOf(e.fromUid)}'s dice!` }),
+        apply: (f) => ({ ...f, message: t('ui.log.copiedDice', { name: nameOf(e.uid), from: nameOf(e.fromUid) }) }),
       }
     case 'item': {
       const who = nameOf(e.targetUid)
       const item = ctx.itemName(e.key)
       const text =
         e.side === 'enemy'
-          ? `${ctx.trainerName ?? 'The foe'} used a ${item} on ${who}! +${e.amount} HP`
+          ? t('ui.log.foeUsedItem', { trainer: ctx.trainerName ?? t('ui.log.theFoe'), item, who, amount: e.amount })
           : e.revived
-            ? `Used a ${item}! ${who} is back with ${e.amount} HP!`
+            ? t('ui.log.usedRevive', { item, who, amount: e.amount })
             : e.cured?.length
-            ? `Used a ${item}! ${who} is cured.`
-            : e.rerolls
-              ? `Used an ${item}! ${who} got ${e.rerolls} reroll${e.rerolls === 1 ? '' : 's'} back.`
-              : `Used a ${item} on ${who}! +${e.amount} HP`
+              ? t('ui.log.usedCure', { item, who })
+              : e.rerolls
+                ? t(`ui.log.usedEther.${e.rerolls === 1 ? 'one' : 'other'}`, { item, who, n: e.rerolls })
+                : t('ui.log.usedHeal', { item, who, amount: e.amount })
       // Items don't end the turn, so the dice on the tray stay put.
       return {
         delay: 900,
@@ -238,7 +253,7 @@ function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): Step {
         sound: 'heal',
         apply: (f) => ({
           ...f,
-          message: `${nameOf(e.uid)} restored ${e.amount} HP!`,
+          message: t('ui.log.restored', { name: nameOf(e.uid), amount: e.amount }),
           hp: { ...f.hp, [e.uid]: e.hpAfter },
           pop: { id: nextId(), target: e.side, amount: e.amount, tone: 'heal' },
           status: { id: nextId(), target: e.side, status: 'heal' },
@@ -250,7 +265,7 @@ function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): Step {
         sound: 'hit',
         apply: (f) => ({
           ...f,
-          message: `${nameOf(e.uid)} is hurt by the recoil of its confusion! −${e.amount}`,
+          message: t('ui.log.recoil', { name: nameOf(e.uid), amount: e.amount }),
           hp: { ...f.hp, [e.uid]: e.hpAfter },
           pop: { id: nextId(), target: e.side, amount: e.amount, tone: 'normal' },
           status: { id: nextId(), target: e.side, status: 'confuse' },
@@ -265,12 +280,10 @@ function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): Step {
           tray: null,
           message:
             e.result === 'won'
-              ? `${st.enemy.name} was defeated!`
+              ? t('ui.log.endWon', { foe: st.enemy.name })
               : e.result === 'lost'
-                ? 'You have no more Pokémon that can fight…'
-                : e.reason === 'stalemate'
-                  ? 'Neither side can land a blow — a stalemate.'
-                  : 'Got away safely!',
+                ? t('ui.log.endLost')
+                : t(e.reason === 'stalemate' ? 'ui.log.endStalemate' : 'ui.log.endFled'),
         }),
       }
   }

@@ -1,5 +1,7 @@
 // localStorage is always written. Everything is wrapped: storage can be full, disabled or throw in private modes.
 import type { SaveData } from '@/engine/types'
+import { isLang, type Lang } from '@/i18n/langs'
+import { detectLang } from '@/i18n'
 import { parseSave } from './schema'
 
 export const SAVE_KEY = 'pokedice.save'
@@ -14,6 +16,8 @@ export interface Settings {
   multiExp: boolean
   /** Auto-mode: fights in cleared areas play themselves — off by default. */
   autoMode?: boolean
+  /** UI language. Unset on an older save: the browser's language decides, English if we don't speak it. */
+  lang?: Lang
 }
 export const DEFAULT_SETTINGS: Settings = { sfx: false, reducedMotion: false, multiExp: true }
 
@@ -82,11 +86,17 @@ export function flushWrite() {
 export function readSettings(): Settings {
   try {
     const raw = storage()?.getItem(SETTINGS_KEY)
-    if (!raw) return { ...DEFAULT_SETTINGS }
+    if (!raw) return { ...DEFAULT_SETTINGS, lang: detectLang() }
     const s = JSON.parse(raw) as Partial<Settings>
-    return { sfx: !!s.sfx, reducedMotion: !!s.reducedMotion, multiExp: s.multiExp !== false, autoMode: !!s.autoMode }
+    return {
+      sfx: !!s.sfx,
+      reducedMotion: !!s.reducedMotion,
+      multiExp: s.multiExp !== false,
+      autoMode: !!s.autoMode,
+      lang: isLang(s.lang) ? s.lang : detectLang(),
+    }
   } catch {
-    return { ...DEFAULT_SETTINGS }
+    return { ...DEFAULT_SETTINGS, lang: detectLang() }
   }
 }
 

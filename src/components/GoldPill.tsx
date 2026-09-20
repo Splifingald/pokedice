@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
+import { getLang, t } from '@/i18n'
+import { useT } from '@/i18n/react'
 import { useGame } from '@/store/game'
 import { cx } from '@/theme/util'
 
@@ -30,18 +32,19 @@ export function useCountUp(target: number, ms = 600): number {
 }
 
 export function GoldPill({ amount, className }: { amount: number; className?: string }) {
+  useT()
   const shown = useCountUp(amount)
   return (
     <span
       className={cx('inline-flex items-center gap-1.5 border-2 border-ink bg-ink px-2 py-0.5 text-gold', className)}
       style={{ borderRadius: 2 }}
       role="img"
-      aria-label={`${amount} Pokédollars`}
+      aria-label={t('ui.mon.pokedollars', { amount })}
     >
       <span aria-hidden className="text-lg leading-none">
         ₽
       </span>
-      <span className="font-mono text-sm tabular-nums leading-none">{shown.toLocaleString('en')}</span>
+      <span className="font-mono text-sm tabular-nums leading-none">{shown.toLocaleString(getLang())}</span>
     </span>
   )
 }

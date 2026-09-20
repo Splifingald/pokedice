@@ -8,7 +8,6 @@ import {
   createInstance,
   createRng,
   multiExpShareFor,
-  multiExpText,
   newSave,
   reduce,
   statusesFromRoll,
@@ -16,6 +15,7 @@ import {
   type SaveData,
 } from '@/engine'
 import { data, die, makeData, newId, sdie } from '../fixtures'
+import { multiExpText } from '@/i18n/text'
 
 describe('Grass Heal face', () => {
   it('the Grass die is 1, 2, Heal, 4, 5, 6 and Heal is worth 3', () => {

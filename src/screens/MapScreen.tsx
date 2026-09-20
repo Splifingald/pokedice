@@ -19,6 +19,8 @@ import {
   trainerSpecialty,
   type Area,
 } from '@/engine'
+import { useT } from '@/i18n/react'
+import { conditionLabel } from '@/i18n/text'
 import { AreaTypes } from '@/components/AreaTypes'
 import { BadgeIcon } from '@/components/BadgeIcon'
 import { RoundsCounter } from '@/components/RoundsCounter'
@@ -37,6 +39,7 @@ import { EggSprite } from './DayCareScreen'
 const WINDOW = 3
 
 function GymRow({ area }: { area: Area }) {
+  const { t } = useT()
   const data = useGame((s) => s.data)
   const save = useGame((s) => s.save)!
   if (!area.gyms.length) return null
@@ -46,15 +49,15 @@ function GymRow({ area }: { area: Area }) {
       {gymsFor(area, data, playerSideOf(save)).map((id) => {
         const raw = data.trainers[id]
         if (!raw) return null
-        const t = asSeenBy(raw, playerSideOf(save))
+        const gym = asSeenBy(raw, playerSideOf(save))
         const beaten = p.gymsDefeated.includes(id)
-        const type = trainerSpecialty(t, data)
+        const type = trainerSpecialty(gym, data)
         return (
           <span key={id} className={cx('flex items-center gap-1 border-2 border-ink px-1', beaten ? 'bg-hp-green/30' : 'bg-panel')}>
-            {t.spriteUrl && <img src={t.spriteUrl} alt="" width={20} height={20} style={{ imageRendering: 'pixelated' }} />}
-            <span>{t.role === 'leader' ? `Gym: ${t.name}` : t.name}</span>
+            {gym.spriteUrl && <img src={gym.spriteUrl} alt="" width={20} height={20} style={{ imageRendering: 'pixelated' }} />}
+            <span>{gym.role === 'leader' ? t('ui.map.gym', { name: gym.name }) : gym.name}</span>
             {type && <TypeBadge type={type} size="sm" />}
-            {beaten && <PixelIcon name="check" size={12} title="beaten" />}
+            {beaten && <PixelIcon name="check" size={12} title={t('ui.map.beaten')} />}
           </span>
         )
       })}
@@ -63,6 +66,7 @@ function GymRow({ area }: { area: Area }) {
 }
 
 function AreaCard({ area, index, prevName, delay = 0 }: { area: Area; index: number | string; prevName?: string; delay?: number }) {
+  const { t } = useT()
   const save = useGame((s) => s.save)!
   const data = useGame((s) => s.data)
   const runArea = useGame((s) => s.run.areaId)
@@ -95,12 +99,12 @@ function AreaCard({ area, index, prevName, delay = 0 }: { area: Area; index: num
         <AreaTypes area={area} className={area.bannerUrl ? 'absolute left-12 right-2 top-2' : 'p-2 pl-12'} />
         {p.cleared && (
           <span className="absolute bottom-2 right-2 border-2 border-ink bg-hp-green px-2 text-lg leading-tight">
-            CLEARED · rewards ×{area.backtrackMultiplier}
+            {t('ui.map.cleared', { multiplier: area.backtrackMultiplier })}
           </span>
         )}
         {!unlocked && prevName && (
           <div className="absolute inset-0 flex items-center justify-center gap-2 bg-panel/40 text-2xl">
-            <PixelIcon name="lock" size={24} /> Clear {prevName}
+            <PixelIcon name="lock" size={24} /> {t('ui.map.clearFirst', { area: prevName })}
           </div>
         )}
       </div>
@@ -110,24 +114,24 @@ function AreaCard({ area, index, prevName, delay = 0 }: { area: Area; index: num
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
             <h2 className="min-w-0 break-words text-3xl leading-none">{area.name}</h2>
             {current && (
-              <span className="shrink-0 border-2 border-ink bg-gold px-1.5 text-lg leading-tight text-ink">◀ you are here</span>
+              <span className="shrink-0 border-2 border-ink bg-gold px-1.5 text-lg leading-tight text-ink">{t('ui.map.youAreHere')}</span>
             )}
             <span className="ml-auto shrink-0 text-2xl leading-none">
-              {area.scalesToTeam ? 'Lv. = team' : `Lv.${area.minLevel}–${area.maxLevel}`}
+              {area.scalesToTeam ? t('ui.map.levelTeam') : t('ui.map.levelRange', { min: area.minLevel, max: area.maxLevel })}
             </span>
           </div>
           <div className="text-lg text-muted">
             {species.length ? (
               <span className={cx(complete && 'inline-flex items-center gap-1 text-good')}>
-                {caught}/{species.length} species caught
-                {complete && <PixelIcon name="check" size={16} title="Every species here is caught" />}
+                {t('ui.map.speciesCaught', { caught, total: species.length })}
+                {complete && <PixelIcon name="check" size={16} title={t('ui.map.allCaughtHere')} />}
               </span>
             ) : (
-              'trainers only'
+              t('ui.map.trainersOnly')
             )}
-            {area.trainerPool.length ? ` · ${area.trainerPool.length} trainers` : ''}
-            {area.encounterWeights.casino > 0 ? ' · Game Corner' : ''}
-            {area.scalesToTeam ? ' · endless, foes scale to your team' : ''}
+            {area.trainerPool.length ? t('ui.map.trainerCount', { count: area.trainerPool.length }) : ''}
+            {area.encounterWeights.casino > 0 ? t('ui.map.gameCorner') : ''}
+            {area.scalesToTeam ? t('ui.map.endless') : ''}
           </div>
           <GymRow area={area} />
           {bosses.length > 0 && (
@@ -135,9 +139,13 @@ function AreaCard({ area, index, prevName, delay = 0 }: { area: Area; index: num
               {bosses.map((b) => {
                 const beaten = p.bossesDefeated.includes(b.dex)
                 return (
-                  <span key={b.dex} className="flex items-center gap-1 text-base" title={beaten ? data.species[b.dex]?.name : 'A legendary awaits'}>
+                  <span
+                    key={b.dex}
+                    className="flex items-center gap-1 text-base"
+                    title={beaten ? data.species[b.dex]?.name : t('ui.map.legendaryAwaits')}
+                  >
                     <MiniSprite dex={b.dex} size={36} silhouette={!beaten} />
-                    {beaten ? data.species[b.dex]?.name : 'Legendary'}
+                    {beaten ? data.species[b.dex]?.name : t('ui.map.legendary')}
                   </span>
                 )
               })}
@@ -152,7 +160,7 @@ function AreaCard({ area, index, prevName, delay = 0 }: { area: Area; index: num
             if (exploring || enterArea(area.id)) navigate('/area')
           }}
         >
-          {!unlocked ? 'LOCKED' : exploring ? 'CONTINUE' : 'ENTER'}
+          {t(!unlocked ? 'ui.map.locked' : exploring ? 'ui.common.continue' : 'ui.map.enter')}
         </PixelButton>
         {unlocked && <RoundsCounter area={area} progress={p} className="w-full" />}
       </div>
@@ -162,14 +170,17 @@ function AreaCard({ area, index, prevName, delay = 0 }: { area: Area; index: num
 
 /** A locked area of the chain: one line, no banner — there's nothing to do there yet. */
 function LockedRow({ area, index, prevName }: { area: Area; index: number; prevName?: string }) {
+  const { t } = useT()
   return (
     <li className="hatched flex flex-wrap items-center gap-x-3 gap-y-1 border-[3px] px-3 py-2">
       <span className="border-2 border-ink bg-panel px-2 text-xl leading-tight text-ink">{index}</span>
       <span className="min-w-0 flex-1 text-2xl leading-tight">{area.name}</span>
-      <span className="text-lg">{area.scalesToTeam ? 'Lv. = team' : `Lv.${area.minLevel}–${area.maxLevel}`}</span>
+      <span className="text-lg">
+        {area.scalesToTeam ? t('ui.map.levelTeam') : t('ui.map.levelRange', { min: area.minLevel, max: area.maxLevel })}
+      </span>
       {prevName && (
         <span className="flex w-full items-center gap-1.5 text-base sm:w-auto">
-          <PixelIcon name="lock" size={14} /> Clear {prevName}
+          <PixelIcon name="lock" size={14} /> {t('ui.map.clearFirst', { area: prevName })}
         </span>
       )}
     </li>
@@ -177,10 +188,11 @@ function LockedRow({ area, index, prevName }: { area: Area; index: number; prevN
 }
 
 function SecretCard({ area }: { area: Area }) {
+  const { t } = useT()
   const save = useGame((s) => s.save)!
   const data = useGame((s) => s.data)
   if (isAreaUnlocked(save, area.id, data)) return <AreaCard area={area} index="★" />
-  const conds = (area.unlockConditions ?? []).map((c) => conditionStatus(c, save, data))
+  const conds = (area.unlockConditions ?? []).map((c) => ({ ...conditionStatus(c, save, data), label: conditionLabel(c, data) }))
   return (
     <li className="pixel-panel-dark overflow-hidden p-0">
       <div className="relative h-20 overflow-hidden sm:h-28">
@@ -190,7 +202,7 @@ function SecretCard({ area }: { area: Area }) {
         <div className="absolute inset-0 flex items-center justify-center text-5xl text-gold">???</div>
       </div>
       <div className="flex flex-col gap-2 p-3">
-        <div className="text-2xl">A secret area</div>
+        <div className="text-2xl">{t('ui.map.aSecretArea')}</div>
         {conds.map((c, i) => (
           <div key={i} className="text-lg">
             <div className="flex justify-between gap-2">
@@ -211,6 +223,7 @@ function SecretCard({ area }: { area: Area }) {
 
 /** The Day Care sits with the secret areas: a locked card until enough species are caught, then its own screen. */
 function DayCareCard() {
+  const { t } = useT()
   const save = useGame((s) => s.save)!
   const data = useGame((s) => s.data)
   const navigate = useNavigate()
@@ -221,11 +234,11 @@ function DayCareCard() {
       <li className="pixel-panel-dark flex flex-col gap-2 p-3">
         <div className="flex items-center gap-3">
           <EggSprite size={40} className="opacity-40 grayscale" />
-          <div className="text-2xl">A secret place</div>
+          <div className="text-2xl">{t('ui.map.aSecretPlace')}</div>
         </div>
         <div className="text-lg">
           <div className="flex justify-between gap-2">
-            <span>Catch {cfg.unlockPokedex} Pokémon</span>
+            <span>{t('ui.unlock.pokedex', { count: cfg.unlockPokedex })}</span>
             <span className="font-mono text-base">
               {Math.min(current, cfg.unlockPokedex)}/{cfg.unlockPokedex}
             </span>
@@ -244,11 +257,11 @@ function DayCareCard() {
     <li className="pixel-panel flex flex-wrap items-center gap-3 p-3">
       <EggSprite size={48} />
       <div className="min-w-0 flex-1 basis-[12rem]">
-        <h2 className="text-3xl leading-none">Pokémon Day Care</h2>
+        <h2 className="text-3xl leading-none">{t('ui.map.dayCare')}</h2>
         <div className="text-lg text-muted">
-          {dc.residents.length}/{cfg.slots} staying
-          {full > 0 && ` · ${full} ready to pick up`}
-          {!dc.eggClaimed ? ' · an Egg is waiting for you!' : ` · Eggs ₽${cfg.eggPrice}`}
+          {t('ui.map.dayCareStaying', { count: dc.residents.length, slots: cfg.slots })}
+          {full > 0 && t('ui.map.dayCareReady', { count: full })}
+          {!dc.eggClaimed ? t('ui.map.dayCareEggWaiting') : t('ui.map.dayCareEggPrice', { price: cfg.eggPrice })}
         </div>
         {dc.residents.length > 0 && (
           <div className="mt-1 flex gap-1">
@@ -259,13 +272,14 @@ function DayCareCard() {
         )}
       </div>
       <PixelButton variant="primary" className="w-full sm:w-auto" onClick={() => navigate('/daycare')}>
-        ENTER
+        {t('ui.map.enter')}
       </PixelButton>
     </li>
   )
 }
 
 export function MapScreen() {
+  const { t } = useT()
   const save = useGame((s) => s.save)
   const data = useGame((s) => s.data)
   const [showAll, setShowAll] = useState(false)
@@ -286,10 +300,13 @@ export function MapScreen() {
     <div className="flex flex-col gap-4">
       <RegionBar />
       <div className="flex flex-wrap items-end justify-between gap-3">
-        <h1 className="text-5xl">{getRegion(data, region)?.name ?? 'Kanto'}</h1>
+        <h1 className="text-5xl">{getRegion(data, region)?.name ?? t('ui.map.region')}</h1>
         {badges.length > 0 && (
-          <div className="pixel-panel flex flex-wrap items-center gap-1.5 px-2 py-1" aria-label={`Badges: ${earned} of ${badges.length}`}>
-            <span className="mr-1 text-lg">Badges {earned}/{badges.length}</span>
+          <div
+            className="pixel-panel flex flex-wrap items-center gap-1.5 px-2 py-1"
+            aria-label={t('ui.map.badgesLabel', { earned, total: badges.length })}
+          >
+            <span className="mr-1 text-lg">{t('ui.map.badges', { earned, total: badges.length })}</span>
             {badges.map((b) => (
               <BadgeIcon key={b.trainerId} badge={b.badge} earned={b.earned} size={22} />
             ))}
@@ -298,7 +315,7 @@ export function MapScreen() {
       </div>
       {!showAll && hidden > 0 && (
         <p className="text-lg text-muted">
-          Areas {start + 1}–{start + shown.length} of {chain.length} — your next stages.
+          {t('ui.map.window', { from: start + 1, to: start + shown.length, total: chain.length })}
         </p>
       )}
       <ol className="flex flex-col gap-4">
@@ -312,12 +329,12 @@ export function MapScreen() {
       </ol>
       {chain.length > WINDOW && (
         <PixelButton className="self-center" aria-expanded={showAll} onClick={() => setShowAll((v) => !v)}>
-          {showAll ? `SHOW THE NEXT ${WINDOW} ONLY` : `VIEW ALL ${chain.length} AREAS`}
+          {showAll ? t('ui.map.showFewer', { n: WINDOW }) : t('ui.map.viewAll', { total: chain.length })}
         </PixelButton>
       )}
       <section className="flex flex-col gap-2">
-        <h2 className="text-4xl">Secret areas</h2>
-        <p className="copy text-muted">Hidden places open up once you meet their conditions — keep catching and training.</p>
+        <h2 className="text-4xl">{t('ui.map.secretAreas')}</h2>
+        <p className="copy text-muted">{t('ui.map.secretIntro')}</p>
         <ol className="grid gap-4 md:grid-cols-2">
           {secrets.map((a) => (
             <SecretCard key={a.id} area={a} />

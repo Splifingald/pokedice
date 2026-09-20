@@ -2,7 +2,6 @@ import { useId, useMemo, useState } from 'react'
 import {
   COMBO_KEYS,
   COMBO_MIN_DICE,
-  COMBO_NAMES,
   comboBonusAt,
   dieBonusAt,
   instanceStats,
@@ -19,15 +18,21 @@ import { Die, DieFaces } from '@/components/Die'
 import { PixelIcon } from '@/components/icons'
 import { PixelButton } from '@/components/PixelButton'
 import { TypeBadge } from '@/components/TypeBadge'
-import { COMBO_EXAMPLES, comboExampleText, money, statusEffects } from '@/lib/format'
+import { COMBO_EXAMPLES, comboExampleText, comboName, money, statusEffects } from '@/lib/format'
+import { useT } from '@/i18n/react'
 import { upgradeCombo, upgradeDie } from '@/store/actions'
 import { useGame } from '@/store/game'
 import { cx } from '@/theme/util'
 
 /** The combo shown as a roll of mini dice, groups spaced apart. */
 function ComboExample({ k }: { k: ComboKey }) {
+  const { t } = useT()
   return (
-    <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1" role="img" aria-label={`Example: ${comboExampleText(k)}`}>
+    <div
+      className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1"
+      role="img"
+      aria-label={t('ui.upgrades.example', { roll: comboExampleText(k) })}
+    >
       {COMBO_EXAMPLES[k].map((group, gi) => (
         <span key={gi} className="flex gap-1" aria-hidden>
           {group.map((v, i) => (
@@ -41,6 +46,7 @@ function ComboExample({ k }: { k: ComboKey }) {
 
 /** What a die's status faces do, with the live rules — only for dice that have one. */
 function DieEffects({ type }: { type: PokeType }) {
+  const { t } = useT()
   const data = useGame((s) => s.data)
   const statuses = new Set(
     (data.diceTypes[type]?.faces ?? []).flatMap((f) => (f.kind === 'status' ? [f.status] : [])),
@@ -53,7 +59,7 @@ function DieEffects({ type }: { type: PokeType }) {
         <li key={e.status} className="flex items-start gap-1.5">
           <PixelIcon name={e.icon} size={16} className="mt-1" />
           <span>
-            <b>{e.name}</b> — {e.when} in one roll: {e.what}
+            <b>{e.name}</b> — {t('ui.upgrades.statusLine', { when: e.when, what: e.what })}
           </span>
         </li>
       ))}
@@ -63,8 +69,14 @@ function DieEffects({ type }: { type: PokeType }) {
 
 /** The track as a segmented bar, like the area gauge. */
 function Pips({ level, max }: { level: number; max: number }) {
+  const { t } = useT()
   return (
-    <div className="flex h-4 w-36 gap-[2px] border-2 border-ink bg-ink p-[1px]" role="img" aria-label={`Level ${level} of ${max}`} style={{ borderRadius: 2 }}>
+    <div
+      className="flex h-4 w-full gap-[2px] border-2 border-ink bg-ink p-[1px]"
+      role="img"
+      aria-label={t('ui.upgrades.trackLevel', { level, max })}
+      style={{ borderRadius: 2 }}
+    >
       {Array.from({ length: max }, (_, i) => (
         <span key={i} className={cx('flex-1', i < level ? 'bg-gold' : 'bg-[#3e3552]')} />
       ))}
@@ -72,8 +84,14 @@ function Pips({ level, max }: { level: number; max: number }) {
   )
 }
 
+/**
+ * One upgrade: its name and dice on the first line, what its faces do (when they do anything), the track full width,
+ * the level and bonus under it, and the buy button.
+ */
 function Row({
   title,
+  dice,
+  effect,
   level,
   max,
   bonus,
@@ -81,10 +99,12 @@ function Row({
   cost,
   gold,
   onBuy,
-  extra,
   locked,
 }: {
   title: React.ReactNode
+  /** The example roll (combos) or the die's faces — top right. */
+  dice?: React.ReactNode
+  effect?: React.ReactNode
   level: number
   max: number
   bonus: number
@@ -92,51 +112,55 @@ function Row({
   cost: number | null
   gold: number
   onBuy: () => void
-  extra?: React.ReactNode
   /** Why no Pokémon you own would benefit yet — the row is greyed out and can't be bought. */
   locked?: string | null
 }) {
+  const { t } = useT()
   const short = !locked && cost != null && gold < cost
   const reasonId = useId()
   return (
-    <div className={cx('pixel-panel flex flex-wrap items-center gap-x-4 gap-y-2 p-2', locked && 'hatched')}>
-      <div className="min-w-[150px] flex-1">
+    <div className={cx('pixel-panel flex flex-col gap-1.5 p-2', locked && 'hatched')}>
+      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
         <div className="text-2xl leading-none">{title}</div>
-        {locked && (
-          <div className="mt-1 flex items-center gap-1.5 text-lg leading-tight">
-            <PixelIcon name="lock" size={14} /> {locked}
-          </div>
-        )}
-        {extra}
+        {dice}
       </div>
-      <div className="flex flex-col gap-1">
-        <Pips level={level} max={max} />
-        <span className="text-lg">
-          Lv.{level} · +{bonus}
+      {effect}
+      {locked && (
+        <div className="flex items-center gap-1.5 text-lg leading-tight">
+          <PixelIcon name="lock" size={14} /> {locked}
+        </div>
+      )}
+      <Pips level={level} max={max} />
+      <div className="flex flex-wrap items-baseline justify-between gap-x-3 text-lg leading-none">
+        <span>
+          {t('ui.common.level.short', { n: level })}
+          <span className="text-muted">/{max}</span>
+        </span>
+        <span>
+          +{bonus}
           {nextBonus != null && <span className="text-good"> → +{nextBonus}</span>}
         </span>
       </div>
-      <div className="flex flex-col items-center gap-0.5">
-        <PixelButton
-          variant="primary"
-          disabled={!!locked || cost == null || short}
-          className="min-w-[120px]"
-          onClick={onBuy}
-          aria-describedby={short ? `${reasonId}` : undefined}
-        >
-          {locked ? 'LOCKED' : cost == null ? 'MAX' : money(cost)}
-        </PixelButton>
-        {short && (
-          <span id={reasonId} className="text-base leading-none text-muted">
-            need {money(cost - gold)} more
-          </span>
-        )}
-      </div>
+      <PixelButton
+        variant="primary"
+        disabled={!!locked || cost == null || short}
+        className="w-full"
+        onClick={onBuy}
+        aria-describedby={short ? `${reasonId}` : undefined}
+      >
+        {locked ? t('ui.upgrades.locked') : cost == null ? t('ui.upgrades.max') : t('ui.upgrades.buy', { price: money(cost) })}
+      </PixelButton>
+      {short && (
+        <span id={reasonId} className="text-center text-base leading-none text-muted">
+          {t('ui.upgrades.short', { amount: money(cost - gold) })}
+        </span>
+      )}
     </div>
   )
 }
 
 export function UpgradesScreen() {
+  const { t } = useT()
   const save = useGame((s) => s.save)
   const data = useGame((s) => s.data)
   const [tab, setTab] = useState<'combos' | 'dice'>('combos')
@@ -159,15 +183,17 @@ export function UpgradesScreen() {
 
   return (
     <div className="flex flex-col gap-4">
-      <h1 className="text-5xl">Upgrades</h1>
-      <p className="copy text-muted">
-        Account-wide: every Pokémon you own — now and later — benefits. There is no level term in damage; upgrades are how
-        your hits keep up with bigger HP pools.
-      </p>
+      <h1 className="text-5xl">{t('ui.upgrades.title')}</h1>
       <div className="flex gap-2" role="tablist">
-        {(['combos', 'dice'] as const).map((t) => (
-          <PixelButton key={t} role="tab" aria-selected={tab === t} variant={tab === t ? 'primary' : 'secondary'} onClick={() => setTab(t)}>
-            {t === 'combos' ? 'Combos' : 'Dice Types'}
+        {(['combos', 'dice'] as const).map((id) => (
+          <PixelButton
+            key={id}
+            role="tab"
+            aria-selected={tab === id}
+            variant={tab === id ? 'primary' : 'secondary'}
+            onClick={() => setTab(id)}
+          >
+            {t(id === 'combos' ? 'ui.upgrades.tabCombos' : 'ui.upgrades.tabDice')}
           </PixelButton>
         ))}
       </div>
@@ -181,8 +207,8 @@ export function UpgradesScreen() {
             return (
               <Row
                 key={k}
-                title={COMBO_NAMES[k]}
-                extra={<ComboExample k={k} />}
+                title={comboName(k)}
+                dice={<ComboExample k={k} />}
                 level={lv}
                 max={max}
                 bonus={comboBonusAt(k, lv, data)}
@@ -192,7 +218,7 @@ export function UpgradesScreen() {
                 onBuy={() => buyAnd(upgradeCombo(k))}
                 locked={
                   maxDice < COMBO_MIN_DICE[k]
-                    ? `Needs a Pokémon with ${COMBO_MIN_DICE[k]}+ dice (yours throw up to ${maxDice})`
+                    ? t('ui.upgrades.needsDice', { need: COMBO_MIN_DICE[k], have: maxDice })
                     : null
                 }
               />
@@ -203,32 +229,26 @@ export function UpgradesScreen() {
 
       {tab === 'dice' && (
         <div className="flex flex-col gap-2">
-          <p className="copy text-muted">The bonus is added to each die of that type, before the type multiplier. The Base die can't be upgraded.</p>
           {[...POKE_TYPES]
             .sort((a, b) => carriers[b] - carriers[a] || a.localeCompare(b))
-            .map((t) => {
-              const lv = save.dieLevels[t] ?? 1
-              const max = maxDieLevel(t, data)
-              const cost = nextDieCost(t, lv, data)
+            .map((type) => {
+              const lv = save.dieLevels[type] ?? 1
+              const max = maxDieLevel(type, data)
+              const cost = nextDieCost(type, lv, data)
               return (
                 <Row
-                  key={t}
-                  title={<TypeBadge type={t} />}
-                  extra={
-                    <div className="mt-1 flex flex-wrap items-center gap-2">
-                      <DieFaces type={t} faces={data.diceTypes[t]?.faces ?? []} size={26} />
-                      {carriers[t] > 0 && <span className="text-base">{carriers[t]} of your Pokémon carry it</span>}
-                      <DieEffects type={t} />
-                    </div>
-                  }
+                  key={type}
+                  title={<TypeBadge type={type} />}
+                  dice={<DieFaces type={type} faces={data.diceTypes[type]?.faces ?? []} size={26} />}
+                  effect={<DieEffects type={type} />}
                   level={lv}
                   max={max}
-                  bonus={dieBonusAt(t, lv, data)}
-                  nextBonus={cost == null ? null : dieBonusAt(t, lv + 1, data)}
+                  bonus={dieBonusAt(type, lv, data)}
+                  nextBonus={cost == null ? null : dieBonusAt(type, lv + 1, data)}
                   cost={cost}
                   gold={save.gold}
-                  onBuy={() => buyAnd(upgradeDie(t))}
-                  locked={carriers[t] ? null : 'None of your Pokémon has this die yet'}
+                  onBuy={() => buyAnd(upgradeDie(type))}
+                  locked={carriers[type] ? null : t('ui.upgrades.noCarrier')}
                 />
               )
             })}

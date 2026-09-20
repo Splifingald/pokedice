@@ -1,5 +1,6 @@
 // Professor Oak's one-time tips (catch screen, auto-mode…): shown once per device, remembered in localStorage.
 import { useState, type ReactNode } from 'react'
+import { useT } from '@/i18n/react'
 import { PixelButton } from './PixelButton'
 
 const tipSeen = (key: string) => {
@@ -30,11 +31,12 @@ export function useOneTimeTip(key: string): [boolean, () => void] {
 }
 
 export function OakTip({ children, onClose }: { children: ReactNode; onClose: () => void }) {
+  const { t } = useT()
   return (
     <div className="flex w-full items-start gap-2 border-[3px] border-ink bg-parchment p-2 text-left">
       <img
         src="/characters/prof-oak.png"
-        alt="Professor Oak"
+        alt={t('ui.newGame.oak')}
         width={56}
         height={56}
         className="shrink-0"
@@ -42,10 +44,10 @@ export function OakTip({ children, onClose }: { children: ReactNode; onClose: ()
       />
       <div className="flex min-w-0 flex-1 flex-col gap-1">
         <div className="text-lg leading-snug">
-          <b>PROF. OAK:</b> {children}
+          <b>{t('ui.oak.prefix')}</b> {children}
         </div>
         <PixelButton size="sm" className="self-end" onClick={onClose}>
-          GOT IT
+          {t('ui.oak.gotIt')}
         </PixelButton>
       </div>
     </div>

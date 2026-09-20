@@ -1,8 +1,10 @@
 import { motion } from 'framer-motion'
 import { useId, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { catchTarget, catchValueOf, effectText, effectiveStats, getSpecies, MONEY, type Encounter } from '@/engine'
+import { catchTarget, catchValueOf, effectiveStats, getSpecies, MONEY, type Encounter } from '@/engine'
+import { effectText } from '@/i18n/text'
 import { money } from '@/lib/format'
+import { useT } from '@/i18n/react'
 import { useIsDesktop } from '@/lib/useMediaQuery'
 import { BadgeIcon } from '@/components/BadgeIcon'
 import { DiceSet } from '@/components/DiceSet'
@@ -18,6 +20,7 @@ import { canSkipCurrent, declineChallenge, engage, skipEncounter } from '@/store
 import { cx } from '@/theme/util'
 
 function WildCard({ enc }: { enc: Extract<Encounter, { kind: 'wild' | 'boss' }> }) {
+  const { t } = useT()
   const data = useGame((s) => s.data)
   const desktop = useIsDesktop()
   const sp = getSpecies(data, enc.dex)
@@ -33,25 +36,25 @@ function WildCard({ enc }: { enc: Extract<Encounter, { kind: 'wild' | 'boss' }> 
         <SpriteImg dex={enc.dex} size={desktop ? 144 : 104} shiny={enc.shiny} />
       </motion.div>
       <div className="flex min-w-0 flex-col gap-1">
-        {boss && <div className="text-lg leading-none tracking-[0.35em] text-gold">LEGENDARY</div>}
+        {boss && <div className="text-lg leading-none tracking-[0.35em] text-gold">{t('ui.enc.legendaryTag')}</div>}
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
           <span className="text-3xl leading-none sm:text-4xl">{sp.name}</span>
           {enc.shiny && (
             <span className="inline-flex items-center gap-1 border-2 border-ink bg-panel px-1.5 text-lg leading-tight text-ink">
-              <PixelIcon name="star" size={14} /> SHINY
+              <PixelIcon name="star" size={14} /> {t('ui.mon.shinyTag')}
             </span>
           )}
           {enc.kind === 'wild' &&
             (enc.isNew ? (
-              <span className="border-2 border-ink bg-gold px-1.5 text-lg leading-tight text-ink">NEW!</span>
+              <span className="border-2 border-ink bg-gold px-1.5 text-lg leading-tight text-ink">{t('ui.enc.new')}</span>
             ) : (
               <span className="inline-flex items-center gap-1 text-lg text-muted">
-                <PixelIcon name="ball" size={16} /> caught
+                <PixelIcon name="ball" size={16} /> {t('ui.enc.caught')}
               </span>
             ))}
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-2xl leading-none">Lv.{enc.level}</span>
+          <span className="text-2xl leading-none">{t('ui.common.level.short', { n: enc.level })}</span>
           <TypeBadge type={sp.type1} size="sm" />
           {sp.type2 && <TypeBadge type={sp.type2} size="sm" />}
         </div>
@@ -67,6 +70,7 @@ function WildCard({ enc }: { enc: Extract<Encounter, { kind: 'wild' | 'boss' }> 
 
 /** What a catch would mean here: its catch value, and whether it's new, an upgrade, or not catchable. */
 function CatchHint({ dex, level, kind, shiny }: { dex: number; level: number; kind: 'wild' | 'boss'; shiny?: boolean }) {
+  const { t } = useT()
   const save = useGame((s) => s.save)
   const data = useGame((s) => s.data)
   if (!save) return null
@@ -74,9 +78,9 @@ function CatchHint({ dex, level, kind, shiny }: { dex: number; level: number; ki
   return (
     <div className="flex flex-wrap items-center gap-x-1 text-lg leading-tight">
       <StatChip stat="catch" value={catchValueOf(data, dex)} size={18} />
-      {target?.mode === 'replace' && ` · stronger than your Lv.${target.level}: a catch replaces it`}
-      {target?.mode === 'new' && shiny && save.pokedex.includes(dex) && ' · shiny: a catch joins as an extra copy'}
-      {!target && ' · no catch (yours is as strong)'}
+      {target?.mode === 'replace' && t('ui.enc.replaces', { level: target.level })}
+      {target?.mode === 'new' && shiny && save.pokedex.includes(dex) && t('ui.enc.shinyExtra')}
+      {!target && t('ui.enc.noCatch')}
     </div>
   )
 }
@@ -118,6 +122,7 @@ function TrainerIntro({ src, size }: { src: string | null | undefined; size: num
 }
 
 function TrainerCard({ enc }: { enc: Extract<Encounter, { kind: 'trainer' }> }) {
+  const { t } = useT()
   const data = useGame((s) => s.data)
   const desktop = useIsDesktop()
   return (
@@ -125,19 +130,19 @@ function TrainerCard({ enc }: { enc: Extract<Encounter, { kind: 'trainer' }> }) 
       <TrainerIntro src={enc.spriteUrl} size={desktop ? 192 : 128} />
       <div className="flex min-w-0 flex-col gap-1">
         <div className="text-3xl leading-none sm:text-4xl">{enc.name}</div>
-        <div className="text-xl leading-tight text-muted">wants to battle! ({enc.team.length} Pokémon)</div>
+        <div className="text-xl leading-tight text-muted">{t('ui.enc.wantsToBattle', { count: enc.team.length })}</div>
         <div className="flex flex-wrap gap-1.5">
           {enc.team.map((m, i) => (
             <div key={i} className="flex flex-col items-center border-2 border-ink bg-panel px-1 py-0.5">
               <MiniSprite dex={m.dex} size={36} silhouette />
-              <span className="text-base leading-none">Lv.{m.level}</span>
+              <span className="text-base leading-none">{t('ui.common.level.short', { n: m.level })}</span>
             </div>
           ))}
         </div>
         <div className="text-base leading-tight text-muted">
-          Pays Pokédollars for every Pokémon you defeat.
+          {t('ui.enc.paysPerKo')}
           {/* Only worth saying when wild battles can be fled. */}
-          {!data.config.noEscape && ' No running once the battle starts.'}
+          {!data.config.noEscape && t('ui.enc.noRunning')}
         </div>
         <div className="sr-only">{enc.team.map((m) => data.species[m.dex]?.name).join(', ')}</div>
       </div>
@@ -146,24 +151,27 @@ function TrainerCard({ enc }: { enc: Extract<Encounter, { kind: 'trainer' }> }) 
 }
 
 function GymCard({ enc }: { enc: Extract<Encounter, { kind: 'gym' }> }) {
+  const { t } = useT()
   const data = useGame((s) => s.data)
   const desktop = useIsDesktop()
   const title =
     enc.role === 'leader'
-      ? 'GYM BATTLE'
+      ? t('ui.enc.gymBattle')
       : enc.role === 'champion'
-        ? 'CHAMPION'
-        : `ELITE FOUR · battle ${enc.index} of ${enc.total}`
+        ? t('ui.enc.champion')
+        : t('ui.enc.eliteFour', { index: enc.index, total: enc.total })
   return (
     <div className="flex flex-col gap-2">
       <div className="text-center text-xl tracking-[0.35em] text-gold">{title}</div>
       <div className="flex items-center gap-3">
         <TrainerIntro src={enc.spriteUrl} size={desktop ? 192 : 128} />
         <div className="flex min-w-0 flex-col gap-1">
-          <div className="text-3xl leading-none sm:text-4xl">{enc.role === 'leader' ? `Gym Leader ${enc.name}` : enc.name}</div>
+          <div className="text-3xl leading-none sm:text-4xl">
+            {enc.role === 'leader' ? t('ui.trainer.gymLeader', { name: enc.name }) : enc.name}
+          </div>
           {enc.badge && (
             <div className="flex items-center gap-2 text-xl">
-              <BadgeIcon badge={enc.badge} earned size={22} /> Win the {enc.badge}
+              <BadgeIcon badge={enc.badge} earned size={22} /> {t('ui.enc.winBadge', { badge: enc.badge })}
             </div>
           )}
         </div>
@@ -174,21 +182,22 @@ function GymCard({ enc }: { enc: Extract<Encounter, { kind: 'gym' }> }) {
             <MiniSprite dex={m.dex} size={40} />
             <span className="text-base leading-tight">
               {data.species[m.dex]?.name}
-              {m.shiny && <PixelIcon name="star" size={12} className="ml-1 inline-block" title="Shiny" />}
+              {m.shiny && <PixelIcon name="star" size={12} className="ml-1 inline-block" title={t('ui.mon.shiny')} />}
               <br />
-              Lv.{m.level}
+              {t('ui.common.level.short', { n: m.level })}
             </span>
           </div>
         ))}
       </div>
       <div className="text-base leading-tight">
-        {data.config.noEscape ? 'Pays' : 'No running once it starts · pays'} ×{data.config.gymGoldMultiplier} Pokédollars · switch freely between their Pokémon
+        {t(data.config.noEscape ? 'ui.enc.gymPays' : 'ui.enc.gymPaysNoRun', { multiplier: data.config.gymGoldMultiplier })}
       </div>
     </div>
   )
 }
 
 function CenterCard({ enc }: { enc: Extract<Encounter, { kind: 'center' }> }) {
+  const { t } = useT()
   return (
     <div className="flex flex-col items-center gap-2 text-center">
       <div className="flex gap-1">
@@ -196,24 +205,23 @@ function CenterCard({ enc }: { enc: Extract<Encounter, { kind: 'center' }> }) {
           <PixelIcon key={i} name="ball" size={32} />
         ))}
       </div>
-      <div className="text-4xl">Pokémon Center</div>
+      <div className="text-4xl">{t('ui.enc.centerTitle')}</div>
       <div className="text-xl text-muted">
         {enc.forced
-          ? enc.reason === 'round'
-            ? 'A new round begins — it opens with a Pokémon Center.'
-            : enc.reason === 'fainted'
-            ? 'One of your Pokémon is K.O. — a Center comes straight away.'
-            : 'Your team is hurt — a Center is the first stop in this area.'
-          : 'A place to rest.'}{' '}
-        Full heal for your team and Box, and a chance to change your team.
+          ? t(
+              enc.reason === 'round' ? 'ui.enc.centerRound' : enc.reason === 'fainted' ? 'ui.enc.centerFainted' : 'ui.enc.centerHurt',
+            )
+          : t('ui.enc.centerRest')}{' '}
+        {t('ui.enc.centerFull')}
       </div>
     </div>
   )
 }
 
 function CasinoCard() {
+  const { t } = useT()
   const slots = useGame((s) => s.data.config.slotMachine)
-  const prize = useGame((s) => s.data.species[s.data.config.slotMachine.prizeDex]?.name ?? 'prize Pokémon')
+  const prize = useGame((s) => s.data.species[s.data.config.slotMachine.prizeDex]?.name) ?? t('ui.enc.prizeMon')
   return (
     <div className="flex flex-col items-center gap-2 text-center">
       <div className="flex items-center gap-1">
@@ -221,26 +229,25 @@ function CasinoCard() {
         <SpriteImg dex={slots.prizeDex} size={48} />
         <PixelIcon name="ball" size={32} />
       </div>
-      <div className="text-4xl">Game Corner</div>
-      <div className="text-xl text-muted">
-        Behind a poster, Team Rocket runs a slot machine. ₽{slots.cost} a spin — line up three {prize} to win one!
-      </div>
+      <div className="text-4xl">{t('ui.enc.casinoTitle')}</div>
+      <div className="text-xl text-muted">{t('ui.enc.casinoIntro', { cost: slots.cost, prize })}</div>
     </div>
   )
 }
 
 const TITLES: Record<Encounter['kind'], string> = {
-  wild: 'You encountered a wild Pokémon!',
-  boss: 'A legendary Pokémon appears!',
-  trainer: 'A trainer wants to battle!',
-  gym: 'A gym battle',
-  item: 'You found something on the ground!',
-  center: 'You reached a Pokémon Center!',
-  casino: 'The Game Corner!',
+  wild: 'ui.enc.titleWild',
+  boss: 'ui.enc.titleBoss',
+  trainer: 'ui.enc.titleTrainer',
+  gym: 'ui.enc.titleGym',
+  item: 'ui.enc.titleItem',
+  center: 'ui.enc.titleCenter',
+  casino: 'ui.enc.titleCasino',
 }
 
 /** The encounter, in a pop-up (a bottom sheet on phones): the opponent, who to send out, FIGHT or FLEE (AVOID a trainer). */
 export function EncounterPreview({ enc }: { enc: Encounter }) {
+  const { t } = useT()
   const [lead, setLead] = useState<string | null>(null)
   const data = useGame((s) => s.data)
   const save = useGame((s) => s.save)
@@ -267,7 +274,7 @@ export function EncounterPreview({ enc }: { enc: Encounter }) {
       >
         {/* Gym and legendary cards carry their own banner, so their title is for screen readers only. */}
         <h2 id={titleId} className={dark ? 'sr-only' : 'border-b-[3px] border-ink px-3 py-2 text-center text-2xl leading-tight sm:text-3xl'}>
-          {TITLES[enc.kind]}
+          {t(TITLES[enc.kind])}
         </h2>
         <div className="pixel-scroll flex flex-col gap-3 overflow-y-auto p-3 sm:p-4">
           {enc.kind === 'gym' && <GymCard enc={enc} />}
@@ -276,8 +283,8 @@ export function EncounterPreview({ enc }: { enc: Encounter }) {
             <>
               <div className="text-center text-2xl leading-tight text-gold">
                 {enc.returning
-                  ? `${data.species[enc.dex]?.name ?? 'The legendary'} is back — another chance to catch it!`
-                  : 'The air crackles… a legendary Pokémon blocks the way!'}
+                  ? t('ui.enc.legendaryBack', { name: data.species[enc.dex]?.name ?? t('ui.enc.theLegendary') })
+                  : t('ui.enc.legendaryBlocks')}
               </div>
               <div className="bg-panel p-3 text-ink">
                 <WildCard enc={enc} />
@@ -308,19 +315,21 @@ export function EncounterPreview({ enc }: { enc: Encounter }) {
             onClick={() => engage(fight ? (lead ?? defaultLead()) : undefined)}
           >
             {fight && <PixelIcon name="sword" size={22} />}
-            {enc.kind === 'center' || enc.kind === 'casino' ? 'ENTER' : enc.kind === 'item' ? 'PICK IT UP' : 'FIGHT'}
+            {t(
+              enc.kind === 'center' || enc.kind === 'casino' ? 'ui.enc.enter' : enc.kind === 'item' ? 'ui.enc.pickUp' : 'ui.enc.fight',
+            )}
           </PixelButton>
           {skippable && (
             <PixelButton size="lg" className="flex-1" onClick={skipEncounter}>
               {fight && <PixelIcon name="run" size={20} />}
-              {enc.kind === 'trainer' ? 'AVOID' : fight ? 'FLEE' : 'SKIP'}
+              {t(enc.kind === 'trainer' ? 'ui.enc.avoid' : fight ? 'ui.enc.flee' : 'ui.enc.skip')}
               {data.config.skipPolicy === 'once' && <span className="text-base"> (1)</span>}
             </PixelButton>
           )}
           {/* A challenge the player picked (gym, or a legendary due once every round is done) can wait. */}
           {(enc.kind === 'gym' || (enc.kind === 'boss' && !enc.returning)) && (
             <PixelButton size="lg" className="flex-1" onClick={declineChallenge}>
-              NOT YET
+              {t('ui.enc.notYet')}
             </PixelButton>
           )}
         </div>
