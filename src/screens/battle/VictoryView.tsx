@@ -457,21 +457,23 @@ export function VictoryView() {
       NEXT BATTLE
     </PixelButton>
   ) : nextArea ? (
-    <div className="flex gap-2">
+    // A new area just opened: travelling there is the green offer, above the usual (yellow) CONTINUE.
+    <div className="flex flex-col gap-2">
       <PixelButton
-        variant="primary"
+        variant="success"
         size="lg"
-        className="flex-1 whitespace-nowrap"
+        className="w-full whitespace-nowrap"
+        aria-label={`Go to ${nextArea.name}`}
         onClick={go(() => {
           continueAfterVictory()
           enterArea(nextArea.id)
         })}
       >
         <PixelIcon name="map" size={20} />
-        NEW AREA
+        GO TO NEW AREA
       </PixelButton>
-      <PixelButton size="lg" className="flex-1" onClick={go(() => continueAfterVictory())}>
-        STAY
+      <PixelButton variant="primary" size="lg" className="w-full" onClick={go(() => continueAfterVictory())}>
+        CONTINUE
       </PixelButton>
     </div>
   ) : (
