@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { newSave } from '@/engine'
+import { isAreaUnlocked, linearAreas, newSave, offeredRegion, regionOf, unlockedRegions } from '@/engine'
 import { parseSave, migrate } from '@/save/schema'
 import { pickNewest } from '@/save/cloud'
 import { bundleToRows, isPlayableBundle, rowsToBundle } from '@/config/mapping'
@@ -88,5 +88,62 @@ describe('content mapping', () => {
     const b = rowsToBundle(rows)
     expect(typeof b.typeChart[0]!.multiplier).toBe('number')
     expect(b.areas[0]!.backtrackMultiplier).toBe(0.5)
+  })
+})
+
+describe('a save from before regions', () => {
+  const chain = linearAreas(data, 'kanto')
+  /** Exactly the shape saves had before regions existed: no `region`, no `parked`, mid-Kanto. */
+  const legacy = () => ({
+    version: 1,
+    updatedAt: 1_700_000_000_000,
+    gold: 3120,
+    pokedex: [1, 2, 3, 16, 19, 25, 74],
+    box: [
+      { id: 'a', dex: 3, level: 41, xp: 5, currentHp: 90, caughtAt: 1 },
+      { id: 'b', dex: 25, level: 30, xp: 0, currentHp: 60, caughtAt: 2 },
+    ],
+    team: ['a', 'b'],
+    inventory: { potion: 6, 'great-ball': 3 },
+    comboLevels: { pair: 5, two_pair: 3, three_kind: 2, small_straight: 1, full_house: 1, four_kind: 1, full_straight: 1, five_kind: 1 },
+    dieLevels: { grass: 6, electric: 4, normal: 3 },
+    currentAreaId: chain[9]!.id,
+    areaProgress: Object.fromEntries(
+      chain.slice(0, 9).map((a) => [a.id, { roundsDone: 2, cleared: true, bossDefeated: false, bossesDefeated: [], gymsDefeated: [] }]),
+    ),
+    settings: { sfx: true, reducedMotion: false, multiExp: true },
+    player: { name: 'Greg', character: 'red' },
+  })
+
+  it('still loads, in Kanto, with everything where the player left it', () => {
+    const res = parseSave(JSON.parse(JSON.stringify(legacy())))
+    expect(res.ok).toBe(true)
+    if (!res.ok) return
+    const s = res.save
+    expect(regionOf(s)).toBe('kanto')
+    expect(s.gold).toBe(3120)
+    expect(s.box.map((p) => p.id)).toEqual(['a', 'b'])
+    expect(s.inventory).toEqual({ potion: 6, 'great-ball': 3 })
+    expect(s.dieLevels.grass).toBe(6)
+    expect(s.comboLevels.pair).toBe(5)
+    // The area ids in areaProgress still name real areas: progress is not silently lost.
+    expect(Object.values(s.areaProgress).filter((p) => p.cleared)).toHaveLength(9)
+    expect(s.currentAreaId).toBe(chain[9]!.id)
+    expect(isAreaUnlocked(s, chain[9]!.id, data)).toBe(true)
+  })
+
+  it('sees no region but Kanto until its league is beaten', () => {
+    const res = parseSave(JSON.parse(JSON.stringify(legacy())))
+    expect(res.ok).toBe(true)
+    if (!res.ok) return
+    expect(unlockedRegions(res.save, data).map((r) => r.id)).toEqual(['kanto'])
+    expect(offeredRegion(res.save, data)).toBeNull()
+  })
+
+  it('keeps every Kanto area id the bundle shipped with, so saved progress still matches', () => {
+    // Progress is keyed by area id. If the seeder ever re-derived these, every player's campaign would reset.
+    for (const a of chain) expect(a.id).toMatch(/^[0-9a-f-]{36}$/)
+    expect(chain.map((a) => a.name)).toContain('Route 1')
+    expect(chain).toHaveLength(24)
   })
 })
