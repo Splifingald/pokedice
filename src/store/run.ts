@@ -50,6 +50,8 @@ import {
   type SpinResult,
 } from '@/engine'
 import { commitSave, initialRun, mutateSave, pushToast, useGame, type RunState } from './game'
+import { t } from '@/i18n'
+import { money } from '@/lib/format'
 
 let runRng = createRng(randomSeed())
 let battleRng = createRng(randomSeed())
@@ -106,13 +108,21 @@ function settleRound(quiet = false): Extract<RunEvent, { kind: 'area_cleared' }>
   if (r.cleared) {
     if (!quiet) {
       const next = r.cleared.nextAreaId ? data.areas.find((a) => a.id === r.cleared!.nextAreaId)?.name : null
-      pushToast(`${area?.name ?? 'Area'} cleared!${next ? ` ${next} is open.` : ''}`, 'good', 4500)
+      pushToast(
+        t('ui.toast.areaCleared', {
+          area: area?.name ?? t('ui.toast.theArea'),
+          next: next ? t('ui.toast.nextOpen', { name: next }) : '',
+        }),
+        'good',
+        4500,
+      )
     }
     return r.cleared
   }
   const need = area?.roundsToClear
   const done = progressOf(r.save, run.areaId).roundsDone ?? 0
-  if (!quiet) pushToast(need != null && done <= need ? `Round ${done}/${need} complete!` : `Round ${done} complete!`, 'good')
+  if (!quiet)
+    pushToast(need != null && done <= need ? t('ui.toast.roundOf', { done, need }) : t('ui.toast.round', { done }), 'good')
   return null
 }
 
@@ -161,7 +171,7 @@ export function rollNext() {
   if (!save || !run.areaId) return
   if (outOfEnergy()) {
     setRun({ phase: 'idle', encounter: null })
-    pushToast('Out of energy — it refills over time.', 'bad')
+    pushToast(t('ui.toast.outOfEnergy'), 'bad')
     return
   }
   // Nobody able to fight (e.g. after a stalemate) → the Center is the only sensible next stop.
@@ -208,7 +218,7 @@ export function skipEncounter() {
   // skipsUsed survives until a fight is engaged, so skipPolicy 'once' still allows one skip in a row.
   setRun({ skipsUsed: run.skipsUsed + 1 })
   backToArea()
-  pushToast(trainer ? 'You slipped past the trainer.' : 'Got away safely!')
+  pushToast(t(trainer ? 'ui.toast.slippedPast' : 'ui.toast.gotAway'))
 }
 
 function startBattle(kind: BattleKind, enemy: { dex: number; level: number; shiny?: boolean; item?: string }, leadUid?: string) {
@@ -266,10 +276,18 @@ export function engage(leadUid?: string) {
       if (!run.areaId) return
       commitSave(pickUpItem(save, run.areaId, enc, data, Date.now(), newId))
       const item = data.items[enc.itemKey]
-      const what = enc.itemKey === MONEY ? `₽${enc.qty.toLocaleString('en')}` : `${item?.name ?? enc.itemKey}${enc.qty > 1 ? ` ×${enc.qty}` : ''}`
+      const what = enc.itemKey === MONEY ? money(enc.qty) : `${item?.name ?? enc.itemKey}${enc.qty > 1 ? ` ×${enc.qty}` : ''}`
       if (item?.effect.kind === 'fossil')
-        pushToast(`You found a ${item.name}! ${data.species[item.effect.dex]?.name ?? 'Its Pokémon'} will be revived in ${item.effect.hours} h — it's waiting in your Box.`, 'good', 6000)
-      else pushToast(`You found ${what}!`, 'good')
+        pushToast(
+          t('ui.toast.foundFossil', {
+            item: item.name,
+            name: data.species[item.effect.dex]?.name ?? t('ui.toast.itsPokemon'),
+            hours: item.effect.hours,
+          }),
+          'good',
+          6000,
+        )
+      else pushToast(t('ui.toast.found', { what }), 'good')
       backToArea()
       return
     }
@@ -346,7 +364,7 @@ function settleBattle(stalemate: boolean) {
   }
   useGame.setState({ battle: null })
   setRun({ trainer: null })
-  pushToast('Got away safely!')
+  pushToast(t('ui.toast.gotAway'))
   rollNext()
 }
 
@@ -396,7 +414,7 @@ export function continueAfterVictory(leadUid?: string) {
     startBattle('trainer', run.encounter.team[index]!, leadUid)
     return
   }
-  if (run.trainer && run.trainer.gold > 0) pushToast(`Trainer defeated! +₽${run.trainer.gold}`, 'good')
+  if (run.trainer && run.trainer.gold > 0) pushToast(t('ui.toast.trainerBeaten', { gold: run.trainer.gold }), 'good')
   useGame.setState({ battle: null })
   setRun({ events: [], trainer: null })
   backToArea()
@@ -429,7 +447,7 @@ export function spinSlotMachine(): SpinResult | null {
   if (!save || run.phase !== 'casino') return null
   const res = spinSlots(save, data, runRng, Date.now(), newId)
   if (!res) {
-    pushToast('Not enough Pokédollars', 'bad')
+    pushToast(t('ui.toast.tooPoor'), 'bad')
     return null
   }
   commitSave(res.save)

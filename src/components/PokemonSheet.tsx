@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react'
 import { COPIES_FOE_DICE, effectiveStats, getSpecies, type DieType, type GameData, type Milestone, type PokemonInstance, type Species } from '@/engine'
-import { cap, dexNo } from '@/lib/format'
+import { dexNo, typeName } from '@/lib/format'
+import { t } from '@/i18n'
+import { useT } from '@/i18n/react'
 import { useGame } from '@/store/game'
 import { cx, typeColor } from '@/theme/util'
 import { DiceSet } from './DiceSet'
@@ -8,16 +10,17 @@ import { DieFaces } from './Die'
 import { HpBar } from './HpBar'
 import { PixelIcon, type IconName } from './icons'
 import { XpBar } from './MonCard'
-import { SpriteImg } from './SpriteImg'
-import { STAT_INFO, StatChip, type StatKind } from './StatChip'
+import { MiniSprite, SpriteImg } from './SpriteImg'
+import { STAT_INFO, StatChip, statHint, statLabel, type StatKind } from './StatChip'
 import { TypeBadge } from './TypeBadge'
 
 function StatTile({ stat, value }: { stat: StatKind; value: ReactNode }) {
-  const { icon, label, hint } = STAT_INFO[stat]
+  useT()
+  const { icon } = STAT_INFO[stat]
   return (
-    <div className="pixel-panel flex items-center gap-2 px-2 py-1.5" title={hint}>
+    <div className="pixel-panel flex items-center gap-2 px-2 py-1.5" title={statHint(stat)}>
       <PixelIcon name={icon} size={24} />
-      <span className="sr-only">{label}</span>
+      <span className="sr-only">{statLabel(stat)}</span>
       <div className="ml-auto font-mono text-xl leading-none tabular-nums">{value}</div>
     </div>
   )
@@ -26,25 +29,51 @@ function StatTile({ stat, value }: { stat: StatKind; value: ReactNode }) {
 /** "Lv.28", or the stone that does it ("Thunder Stone"). */
 export function evolutionHow(e: { level: number | null; item?: string | null }, data: GameData): string {
   if (e.item) return data.items[e.item]?.name ?? e.item
-  return `Lv.${e.level ?? '?'}`
+  return t('ui.common.level.short', { n: e.level ?? '?' })
 }
 
 function milestoneLabel(m: Milestone, species: Species, data: GameData): string {
-  const die = cap(m.dieType ?? species.type1)
+  const to = typeName(m.dieType ?? species.type1)
   switch (m.effect) {
     case 'UPGRADE_DIE':
-      return `Base die → ${die} die`
+      return t('ui.sheet.msUpgradeDie', { to })
     case 'REPLACE_DIE':
-      return `${cap(m.fromDieType ?? 'base')} die → ${die} die`
+      return t('ui.sheet.msReplaceDie', { from: typeName(m.fromDieType ?? 'base'), to })
     case 'ADD_DIE':
-      return `+1 ${die} die`
+      return t('ui.sheet.msAddDie', { to })
     case 'ADD_REROLL':
-      return `+${m.amount ?? 1} reroll${(m.amount ?? 1) > 1 ? 's' : ''}`
+      return t(`ui.sheet.msAddReroll.${(m.amount ?? 1) === 1 ? 'one' : 'other'}`, { amount: m.amount ?? 1 })
     case 'ADD_HP':
-      return `+${m.amount ?? 0} max HP`
+      return t('ui.sheet.msAddHp', { amount: m.amount ?? 0 })
     case 'EVOLVE':
-      return `Evolves into ${species.evolutions.map((e) => data.species[e.toDex]?.name ?? `#${e.toDex}`).join(' / ')}`
+      return t('ui.sheet.msEvolve', {
+        names: species.evolutions.map((e) => data.species[e.toDex]?.name ?? `#${e.toDex}`).join(' / '),
+      })
   }
+}
+
+/** An evolution target inline: animated mini + name, tappable to open its Pokédex entry. */
+function EvoLink({ toDex, how, onOpenDex }: { toDex: number; how: string; onOpenDex?: (dex: number) => void }) {
+  const { t } = useT()
+  const data = useGame((s) => s.data)
+  const name = data.species[toDex]?.name ?? `#${toDex}`
+  const body = (
+    <>
+      <MiniSprite dex={toDex} size={28} className="-my-2" />
+      <b className="underline">{name}</b>
+    </>
+  )
+  if (!onOpenDex) return <span className="inline-flex items-center gap-0.5 align-middle">{body}</span>
+  return (
+    <button
+      type="button"
+      className="inline-flex items-center gap-0.5 align-middle hover:bg-white"
+      onClick={() => onOpenDex(toDex)}
+      aria-label={t('ui.sheet.openDex', { name, how })}
+    >
+      {body}
+    </button>
+  )
 }
 
 function DieSwatch({ type }: { type: DieType }) {
@@ -68,16 +97,29 @@ function MilestoneGlyph({ m, species }: { m: Milestone; species: Species }) {
   return <PixelIcon name={icon} size={16} />
 }
 
-/** Milestones on a side gauge that fills in blue up to the Pokémon's level. */
-function MilestoneTrack({ species, level }: { species: Species; level: number | null }) {
+/**
+ * Milestones on a side gauge that fills in blue up to the Pokémon's level. An EVOLVE milestone shows what it becomes
+ * (animated mini + name, tappable); a stone evolution has no level, so it gets a row of its own at the end.
+ */
+function MilestoneTrack({ species, level, onOpenDex }: { species: Species; level: number | null; onOpenDex?: (dex: number) => void }) {
+  const { t } = useT()
   const data = useGame((s) => s.data)
   const ms = [...species.milestones].sort((a, b) => a.level - b.level)
   const next = level == null ? undefined : ms.find((m) => m.level > level)
+  const byLevel = species.evolutions.filter((e) => e.level != null)
+  const byStone = species.evolutions.filter((e) => e.level == null)
+  const evoNames = (evos: typeof species.evolutions) =>
+    evos.map((e, i) => (
+      <span key={e.toDex}>
+        {i > 0 && ' / '}
+        <EvoLink toDex={e.toDex} how={evolutionHow(e, data)} onOpenDex={onOpenDex} />
+      </span>
+    ))
   return (
     <section>
-      <h3 className="mb-1 text-xl">Milestones</h3>
-      {ms.length === 0 ? (
-        <div className="text-lg text-muted">None</div>
+      <h3 className="mb-1 text-xl">{t('ui.sheet.milestones')}</h3>
+      {ms.length === 0 && !byStone.length ? (
+        <div className="text-lg text-muted">{t('ui.sheet.none')}</div>
       ) : (
         <ol>
           {ms.map((m, i) => {
@@ -98,23 +140,46 @@ function MilestoneTrack({ species, level }: { species: Species; level: number | 
                 <div className="flex min-w-0 flex-1 items-center gap-2 pt-3 text-lg leading-tight">
                   <MilestoneGlyph m={m} species={species} />
                   <span className="min-w-0">
-                    <span className="font-mono text-sm">Lv.{m.level}</span> {milestoneLabel(m, species, data)}
-                    <span className="sr-only">{reached ? ' (reached)' : ''}</span>
+                    <span className="font-mono text-sm">{t('ui.common.level.short', { n: m.level })}</span>{' '}
+                    {m.effect === 'EVOLVE' ? (
+                      <>
+                        {t('ui.sheet.evolvesInto')} {evoNames(byLevel)}
+                      </>
+                    ) : (
+                      milestoneLabel(m, species, data)
+                    )}
+                    <span className="sr-only">{reached ? t('ui.sheet.reached') : ''}</span>
                   </span>
-                  {m === next && <span className="ml-auto shrink-0 bg-gold px-1 text-base leading-tight text-ink">next</span>}
+                  {m === next && <span className="ml-auto shrink-0 bg-gold px-1 text-base leading-tight text-ink">{t('ui.sheet.next')}</span>}
                 </div>
               </li>
             )
           })}
+          {byStone.map((e) => (
+            <li key={`stone-${e.toDex}`} className="flex items-stretch gap-2.5">
+              <div className="flex w-5 shrink-0 flex-col items-center" aria-hidden>
+                <div className="relative min-h-[12px] w-2.5 flex-1 border-x-2 border-ink bg-[#3e3552]" />
+                <span className="h-5 w-5 shrink-0 border-[3px] border-ink bg-panel" style={{ borderRadius: 2 }} />
+              </div>
+              <div className="flex min-w-0 flex-1 items-center gap-2 pt-3 text-lg leading-tight">
+                <PixelIcon name="up" size={16} />
+                <span className="min-w-0">
+                  <span className="font-mono text-sm">{evolutionHow(e, data)}</span> {t('ui.sheet.evolvesInto')}{' '}
+                  <EvoLink toDex={e.toDex} how={evolutionHow(e, data)} onOpenDex={onOpenDex} />
+                </span>
+              </div>
+            </li>
+          ))}
         </ol>
       )}
+      {byLevel.length > 1 && <p className="mt-1 text-base text-muted">{t('ui.sheet.oneAtRandom')}</p>}
     </section>
   )
 }
 
 /**
- * Detail sheet: sprite, types, HP, speed / rerolls / catch value, the dice set, milestones and evolutions. Tapping an
- * evolution calls `onOpenDex` (the modal opens its Pokédex entry on top).
+ * Detail sheet: sprite, types, HP, speed / rerolls / catch value, the dice set and the milestones (evolutions among
+ * them). Tapping an evolution calls `onOpenDex` (the modal opens its Pokédex entry on top).
  */
 export function PokemonSheet({
   dex,
@@ -127,6 +192,7 @@ export function PokemonSheet({
   children?: ReactNode
   onOpenDex?: (dex: number) => void
 }) {
+  const { t } = useT()
   const data = useGame((s) => s.data)
   const species = getSpecies(data, dex)
   const level = inst?.level ?? 1
@@ -146,10 +212,10 @@ export function PokemonSheet({
           </div>
           {inst && (
             <div className="mt-1 flex items-center gap-2 text-xl">
-              Lv.{inst.level}
+              {t('ui.common.level.short', { n: inst.level })}
               {inst.shiny && (
                 <span className="inline-flex items-center gap-1 border-2 border-ink px-1 text-base leading-tight">
-                  <PixelIcon name="star" size={12} /> SHINY
+                  <PixelIcon name="star" size={12} /> {t('ui.mon.shinyTag')}
                 </span>
               )}
             </div>
@@ -164,7 +230,14 @@ export function PokemonSheet({
         </div>
       ) : (
         <div className="text-lg">
-          <StatChip stat="hp" size={18} value={`${effectiveStats(species, 1, data).maxHp} at Lv.1 → ${effectiveStats(species, 100, data).maxHp} at Lv.100`} />
+          <StatChip
+            stat="hp"
+            size={18}
+            value={t('ui.sheet.hpRange', {
+              low: effectiveStats(species, 1, data).maxHp,
+              high: effectiveStats(species, 100, data).maxHp,
+            })}
+          />
         </div>
       )}
 
@@ -175,63 +248,28 @@ export function PokemonSheet({
       </div>
 
       <section>
-        <h3 className="mb-1 text-xl">Dice ({stats.dice.length})</h3>
+        <h3 className="mb-1 text-xl">{t('ui.sheet.diceCount', { count: stats.dice.length })}</h3>
         {COPIES_FOE_DICE.has(species.dex) && (
           <p className="copy mb-1.5 text-base">
-            <b>Transform:</b> in battle it copies its opponent's dice (again whenever the opponent changes), rolls them
-            itself and uses your upgrades. It never gains dice of its own.
+            <b>{t('ui.sheet.transformTitle')}</b> {t('ui.sheet.transformBody')}
           </p>
         )}
         <DiceSet dice={stats.dice} size={30} />
         <div className="mt-2 flex flex-col gap-1.5">
-          {uniqueTypes.map((t) => (
-            <div key={t} className="flex items-center gap-2">
-              <span className="w-16 shrink-0 text-base uppercase">{t}</span>
+          {uniqueTypes.map((die) => (
+            <div key={die} className="flex items-center gap-2">
+              <span className="w-16 shrink-0 text-base uppercase">{typeName(die)}</span>
               <div>
-                <DieFaces type={t} faces={data.diceTypes[t]?.faces ?? []} size={28} />
-                {data.diceTypes[t]?.description && <div className="copy text-sm text-muted">{data.diceTypes[t]!.description}</div>}
+                <DieFaces type={die} faces={data.diceTypes[die]?.faces ?? []} size={28} />
+                {data.diceTypes[die]?.description && <div className="copy text-sm text-muted">{data.diceTypes[die]!.description}</div>}
               </div>
             </div>
           ))}
         </div>
       </section>
 
-      <MilestoneTrack species={species} level={inst ? inst.level : null} />
+      <MilestoneTrack species={species} level={inst ? inst.level : null} onOpenDex={onOpenDex} />
 
-      {species.evolutions.length > 0 && (
-        <section>
-          <h3 className="mb-1 text-xl">Evolves into</h3>
-          <div className="flex flex-wrap gap-2">
-            {species.evolutions.map((e) => {
-              const name = data.species[e.toDex]?.name ?? `#${e.toDex}`
-              const how = evolutionHow(e, data)
-              const content = (
-                <>
-                  <SpriteImg dex={e.toDex} size={96} />
-                  <span className="text-xl leading-none">{name}</span>
-                  <span className="text-base text-muted">{how}</span>
-                </>
-              )
-              return onOpenDex ? (
-                <button
-                  key={e.toDex}
-                  type="button"
-                  onClick={() => onOpenDex(e.toDex)}
-                  className="pixel-panel flex flex-col items-center px-3 pb-1.5 pt-1 hover:bg-white"
-                  aria-label={`${name} (${how}) — open its Pokédex entry`}
-                >
-                  {content}
-                </button>
-              ) : (
-                <div key={e.toDex} className="pixel-panel flex flex-col items-center px-3 pb-1.5 pt-1">
-                  {content}
-                </div>
-              )
-            })}
-          </div>
-          {species.evolutions.filter((e) => e.level != null).length > 1 && <p className="mt-1 text-base text-muted">One is chosen at random.</p>}
-        </section>
-      )}
       {children}
     </div>
   )

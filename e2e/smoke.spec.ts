@@ -52,12 +52,12 @@ test('buy an upgrade', async ({ page }) => {
   )
   await page.goto('/upgrades')
   await expect(page.getByRole('heading', { name: 'Upgrades' })).toBeVisible()
-  await page.getByRole('button', { name: '₽5' }).first().click() // Pair → Lv.2 costs 5
+  await page.getByRole('button', { name: /₽5/ }).first().click() // Pair → Lv.2 costs 5
   await expect(page.getByLabel('495 Pokédollars').first()).toBeVisible()
-  await expect(page.getByText('Lv.2 · +3')).toBeVisible()
+  await expect(page.getByText(/\+3\s*→\s*\+4/).first()).toBeVisible()
 
   await page.getByRole('tab', { name: 'Dice Types' }).click()
-  await page.getByRole('button', { name: '₽10' }).first().click()
+  await page.getByRole('button', { name: /₽10/ }).first().click()
   await expect(page.getByLabel('485 Pokédollars').first()).toBeVisible()
 })
 
@@ -85,13 +85,62 @@ test('sign-in flow (mocked Supabase)', async ({ page }) => {
   )
   await page.goto('/settings')
   await expect(page.getByText('Backed up as admin@example.com')).toBeVisible()
-  await expect(page.getByRole('link', { name: 'Admin' })).toBeVisible()
   await expect.poll(() => calls.some((c) => c.startsWith('POST /rest/v1/saves'))).toBe(true)
 
-  // 3. CONNECTED asks first; disconnecting keeps the local save.
-  await page.getByRole('main').getByRole('button', { name: /Connected with Google/ }).click()
+  // 3. The avatar's drawer: signed in, it offers Admin and no Connect.
+  await page.getByRole('button', { name: 'Your trainer menu' }).click()
+  await expect(page.getByRole('dialog').getByRole('button', { name: 'Admin' })).toBeVisible()
+  await expect(page.getByRole('dialog').getByRole('button', { name: 'CONNECT' })).toHaveCount(0)
+  await page.keyboard.press('Escape')
+
+  // 4. Disconnecting asks first, and keeps the local save.
+  await page.getByRole('main').getByRole('button', { name: 'Disconnect' }).first().click()
   await page.getByRole('dialog').getByRole('button', { name: 'Disconnect' }).click()
   await expect(page.getByText(/local save is kept/)).toBeVisible()
   await page.goto('/map')
   await expect(page.getByRole('heading', { name: 'Kanto' })).toBeVisible()
+})
+
+test('the avatar drawer opens the profile, the guide and the settings', async ({ page }) => {
+  await mockSupabase(page)
+  const save = makeSave(4, { player: { name: 'Sam', character: 'red' } })
+  await page.addInitScript(
+    ([s, f]) => {
+      localStorage.setItem('pokedice.save', s!)
+      localStorage.setItem('pokedice.settings', f!)
+    },
+    [JSON.stringify(save), FAST],
+  )
+  await page.goto('/map')
+
+  // Signed out: the circle in the header is the initial, not a Google picture.
+  const avatar = page.getByRole('button', { name: 'Your trainer menu' })
+  await expect(avatar).toHaveText('S')
+
+  // The drawer is titled with the player's name, offers CONNECT, and hides Admin from a non-admin.
+  await avatar.click()
+  await expect(page.getByRole('dialog', { name: 'Sam' })).toBeVisible()
+  await expect(page.getByRole('dialog').getByRole('button', { name: 'Admin' })).toHaveCount(0)
+  await expect(page.getByRole('dialog').getByRole('button', { name: 'CONNECT' })).toBeVisible()
+
+  // The profile: the player's name and the Kanto badge case, every badge still to win.
+  await page.getByRole('button', { name: 'Trainer card' }).click()
+  const card = page.getByRole('dialog', { name: 'Trainer card' })
+  await expect(card.getByText('Sam')).toBeVisible()
+  await expect(card.getByRole('heading', { name: 'Badge case' })).toBeVisible()
+  await expect(card.getByRole('img', { name: 'Boulder Badge — not earned yet' })).toBeVisible()
+  await expect(card.getByText('Badges 0/8')).toBeVisible()
+  await page.keyboard.press('Escape')
+
+  // The guide is the rules, in a modal rather than its own screen.
+  await page.getByRole('button', { name: 'Your trainer menu' }).click()
+  await page.getByRole('button', { name: 'How to play' }).click()
+  await expect(page.getByRole('dialog', { name: 'How to play' })).toBeVisible()
+  await page.keyboard.press('Escape')
+
+  // Settings is a route, so the drawer closes behind it.
+  await page.getByRole('button', { name: 'Your trainer menu' }).click()
+  await page.getByRole('button', { name: 'Settings' }).click()
+  await expect(page).toHaveURL(/\/settings$/)
+  await expect(page.getByRole('dialog')).toHaveCount(0)
 })

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { getInstance, instanceStats } from '@/engine'
 import { sfx } from '@/audio/sfx'
+import { useT } from '@/i18n/react'
 import { useGame } from '@/store/game'
 import { Confetti } from './Confetti'
 import { DiceSet } from './DiceSet'
@@ -19,6 +20,7 @@ export interface EvolutionShow {
 
 /** One evolution, played once. `onDone` fires when the new form is revealed. */
 export function EvolutionSequence({ uid, fromDex, toDex, onDone }: EvolutionShow & { onDone?: () => void }) {
+  const { t } = useT()
   const reduced = useGame((s) => s.settings.reducedMotion)
   const data = useGame((s) => s.data)
   const inst = useGame((s) => (s.save ? getInstance(s.save, uid) : undefined))
@@ -33,8 +35,8 @@ export function EvolutionSequence({ uid, fromDex, toDex, onDone }: EvolutionShow
     sfx('levelup')
     onDone?.()
   }, [stage]) // eslint-disable-line react-hooks/exhaustive-deps
-  const from = data.species[fromDex]?.name ?? '???'
-  const to = data.species[toDex]?.name ?? '???'
+  const from = data.species[fromDex]?.name ?? t('ui.common.unknown')
+  const to = data.species[toDex]?.name ?? t('ui.common.unknown')
   const stats = inst ? instanceStats(inst, data) : null
   return (
     <div className="flex flex-col items-center gap-2 border-[3px] border-ink bg-parchment p-3 text-ink">
@@ -81,6 +83,7 @@ export function EvolutionSequence({ uid, fromDex, toDex, onDone }: EvolutionShow
  * The button is always in view (bottom of the card).
  */
 export function EvolutionQueue({ items, onDone }: { items: EvolutionShow[]; onDone: () => void }) {
+  const { t } = useT()
   const [i, setI] = useState(0)
   const [ready, setReady] = useState(false)
   const cur = items[i]
@@ -96,7 +99,7 @@ export function EvolutionQueue({ items, onDone }: { items: EvolutionShow[]; onDo
       animate={{ opacity: 1 }}
       role="dialog"
       aria-modal="true"
-      aria-label="Evolution"
+      aria-label={t('ui.evolution.label')}
     >
       <div className="pixel-panel flex max-h-full w-full max-w-md flex-col gap-3 overflow-auto p-3">
         <EvolutionSequence key={`${cur.uid}-${i}`} {...cur} onDone={() => setReady(true)} />
@@ -109,7 +112,7 @@ export function EvolutionQueue({ items, onDone }: { items: EvolutionShow[]; onDo
             setI((n) => n + 1)
           }}
         >
-          {ready ? (i + 1 < items.length ? 'NEXT' : 'CONTINUE') : 'SKIP ▸▸'}
+          {ready ? t(i + 1 < items.length ? 'ui.evolution.next' : 'ui.common.continue') : t('ui.evolution.skip')}
         </PixelButton>
       </div>
     </motion.div>,

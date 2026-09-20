@@ -1,23 +1,23 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { HelpButton } from '@/components/HelpButton'
 import { Modal } from '@/components/Modal'
 import { Panel } from '@/components/Panel'
 import { PixelButton } from '@/components/PixelButton'
-import { multiExpText } from '@/engine'
+import { LANG_LABELS, LANGS, type Lang } from '@/i18n'
+import { multiExpText } from '@/i18n/text'
+import { useT } from '@/i18n/react'
 import { isSupabaseConfigured } from '@/lib/supabase'
 import { parseSave } from '@/save/schema'
-import { mutateSave, pushToast, setSettings, useGame } from '@/store/game'
+import { pushToast, setSettings, useGame } from '@/store/game'
 import { deleteSave, replaceSave } from '@/store/run'
 import { useIsAdmin } from '@/store/hooks'
 import { checkContent } from '@/store/sync'
-import { GoogleAccountButton } from '@/components/GoogleAccountButton'
+import { DisconnectButton, GoogleAccountButton } from '@/components/GoogleAccountButton'
 import { SaveFacts } from '@/components/SyncConflictModal'
 import { backupSave, readBackups } from '@/save/storage'
-import { playerOf, TrainerSprite } from '@/components/TrainerArt'
-import { CharacterSelect } from './NewGame'
 
 function Toggle({ label, on, onChange, hint }: { label: string; on: boolean; onChange: (v: boolean) => void; hint?: string }) {
+  const { t } = useT()
   return (
     <label className="flex cursor-pointer items-center justify-between gap-3 py-1">
       <span>
@@ -31,13 +31,14 @@ function Toggle({ label, on, onChange, hint }: { label: string; on: boolean; onC
         onClick={() => onChange(!on)}
         className={`pixel-btn min-h-[44px] min-w-[72px] px-2 py-1 text-xl ${on ? 'bg-hp-green' : 'bg-parchment'}`}
       >
-        {on ? 'ON' : 'OFF'}
+        {t(on ? 'ui.common.on' : 'ui.common.off')}
       </button>
     </label>
   )
 }
 
 export function SettingsScreen() {
+  const { t } = useT()
   const settings = useGame((s) => s.settings)
   const save = useGame((s) => s.save)
   const auth = useGame((s) => s.auth)
@@ -52,48 +53,41 @@ export function SettingsScreen() {
     if (!save) return
     try {
       await navigator.clipboard.writeText(JSON.stringify(save))
-      pushToast('Save copied to the clipboard', 'good')
+      pushToast(t('ui.settings.copied'), 'good')
     } catch {
-      pushToast('Clipboard unavailable', 'bad')
+      pushToast(t('ui.settings.clipboardOff'), 'bad')
     }
   }
 
   const doImport = () => {
     try {
       const res = parseSave(JSON.parse(importText))
-      if (!res.ok) return pushToast(`Invalid save: ${res.error.slice(0, 80)}`, 'bad')
+      if (!res.ok) return pushToast(t('ui.settings.invalidSave', { error: res.error.slice(0, 80) }), 'bad')
       replaceSave(res.save)
       setImportText('')
-      pushToast('Save imported', 'good')
+      pushToast(t('ui.settings.imported'), 'good')
     } catch {
-      pushToast('That is not valid JSON', 'bad')
+      pushToast(t('ui.settings.notJson'), 'bad')
     }
   }
 
   return (
     <div className="flex max-w-2xl flex-col gap-4">
-      <h1 className="text-5xl">Settings</h1>
+      <h1 className="text-5xl">{t('ui.settings.title')}</h1>
 
-      <Panel title="How to play">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className="copy text-muted">The rules, the dice, status effects and the type chart.</p>
-          <HelpButton size="md" label />
-        </div>
-      </Panel>
-
-      <Panel title="Game">
+      <Panel title={t('ui.settings.game')}>
         <Toggle
-          label="Sound effects"
-          hint="8-bit SFX, off by default"
+          label={t('ui.settings.sfx')}
+          hint={t('ui.settings.sfxHint')}
           on={settings.sfx}
           onChange={(v) => setSettings({ sfx: v })}
         />
         <Toggle
-          label="Multi EXP"
+          label={t('ui.settings.multiExp')}
           hint={
             data.config.multiExpShare > 0
-              ? `Team members who didn't fight still get ${multiExpText(data)}.`
-              : 'Disabled by the game settings right now.'
+              ? t('ui.settings.multiExpHint', { share: multiExpText(data) })
+              : t('ui.settings.multiExpOff')
           }
           on={settings.multiExp}
           onChange={(v) => setSettings({ multiExp: v })}
@@ -101,92 +95,93 @@ export function SettingsScreen() {
         {/* Admins only — but a player who already turned it on still sees it, so they can turn it off. */}
         {(isAdmin || settings.reducedMotion) && (
           <Toggle
-            label="Reduced motion"
-            hint="Instant transitions, no shake or particles. Your OS setting is respected too."
+            label={t('ui.settings.reducedMotion')}
+            hint={t('ui.settings.reducedMotionHint')}
             on={settings.reducedMotion}
             onChange={(v) => setSettings({ reducedMotion: v })}
           />
         )}
       </Panel>
 
-      {save && <CharacterPanel />}
+      <LanguagePanel />
 
-      {/* Phones have no side bar, so the admin link lives here (admins only). */}
-      {isAdmin && (
-        <div className="md:hidden">
-          <Panel title="Admin">
-            <Link to="/admin" className="pixel-btn inline-flex min-h-[44px] items-center bg-ink px-4 text-2xl leading-none text-panel">
-              Open the admin
-            </Link>
-          </Panel>
-        </div>
-      )}
-
-      <Panel title="Cloud backup">
+      <Panel title={t('ui.settings.cloud')}>
         {!isSupabaseConfigured || auth.status === 'unavailable' ? (
           <p className="copy text-muted">
-            Cloud backup isn't configured on this deployment. Your save lives in this browser.{' '}
+            {t('ui.settings.cloudOff')}{' '}
             <Link to="/setup" className="underline">
-              How to set it up
+              {t('ui.settings.cloudHow')}
             </Link>
           </p>
         ) : (
           <div className="flex flex-wrap items-center justify-between gap-2">
             <span className="copy">
               {auth.status === 'signed_in'
-                ? `Backed up as ${auth.email ?? 'your Google account'}.`
-                : 'Connect to back up your save and play on other devices. Optional.'}
+                ? t('ui.settings.cloudOn', { who: auth.email ?? t('ui.settings.yourGoogle') })
+                : t('ui.settings.cloudConnect')}
             </span>
-            <GoogleAccountButton size="sm" />
+            {auth.status === 'signed_in' ? <DisconnectButton size="sm" /> : <GoogleAccountButton size="sm" />}
           </div>
         )}
       </Panel>
 
-      <Panel title="Save file">
+      <Panel title={t('ui.settings.saveFile')}>
         <details>
-          <summary className="flex min-h-[44px] cursor-pointer items-center text-xl">Advanced: copy, import or delete your save</summary>
+          <summary className="flex min-h-[44px] cursor-pointer items-center text-xl">{t('ui.settings.saveAdvanced')}</summary>
         <div className="mt-2 flex flex-wrap gap-2">
           <PixelButton size="sm" onClick={() => void copySave()} disabled={!save}>
-            Copy save (JSON)
+            {t('ui.settings.copySave')}
           </PixelButton>
           <PixelButton size="sm" variant="danger" onClick={() => setConfirmDelete(true)} disabled={!save}>
-            Delete save
+            {t('ui.settings.deleteSave')}
           </PixelButton>
         </div>
         <textarea
           value={importText}
           onChange={(e) => setImportText(e.target.value)}
-          placeholder="Paste a save JSON here to import it…"
+          placeholder={t('ui.settings.importPlaceholder')}
           className="mt-3 h-24 w-full border-2 border-ink bg-panel p-2 font-mono text-xs"
         />
         <PixelButton size="sm" className="mt-1" disabled={!importText.trim()} onClick={doImport}>
-          Import save
+          {t('ui.settings.importSave')}
         </PixelButton>
         </details>
       </Panel>
 
       <BackupsPanel />
 
-      <Panel title="Content">
+      <Panel title={t('ui.settings.content')}>
         <p className="text-lg">
-          Game data: <b>{source === 'remote' ? 'live (Supabase)' : 'bundled'}</b> · version {data.config.configVersion}
+          {t('ui.settings.gameData', {
+            source: t(source === 'remote' ? 'ui.settings.sourceLive' : 'ui.settings.sourceBundled'),
+            version: data.config.configVersion,
+          })}
         </p>
         <PixelButton size="sm" className="mt-1" onClick={() => void checkContent()}>
-          Check for updates
+          {t('ui.settings.checkUpdates')}
         </PixelButton>
       </Panel>
 
       <p className="copy text-muted">
-        Pokédice is a personal, non-commercial fan project. Pokémon © Nintendo / Creatures / GAME FREAK. Sprites via PokeAPI.{' '}
+        {t('ui.settings.legal')}{' '}
         <Link to="/setup" className="underline">
-          Deployment guide
+          {t('ui.title.deployGuide')}
         </Link>
       </p>
 
-      <Modal open={confirmDelete} onClose={() => setConfirmDelete(false)} title="Delete your save?">
-        <p className="copy mb-4 text-lg">This can't be undone{auth.status === 'signed_in' ? ' (the cloud copy stays until you start a new game)' : ''}.</p>
+      {/* The bottom of the settings is where a disconnect belongs: out of the way, never a mis-tap. */}
+      {auth.status === 'signed_in' && (
+        <div className="flex justify-center">
+          <DisconnectButton />
+        </div>
+      )}
+
+      <Modal open={confirmDelete} onClose={() => setConfirmDelete(false)} title={t('ui.settings.deleteTitle')}>
+        <p className="copy mb-4 text-lg">
+          {t('ui.settings.deleteBody', { cloud: auth.status === 'signed_in' ? t('ui.settings.deleteCloudNote') : '' })}
+        </p>
         <div className="flex justify-end gap-2">
-          <PixelButton onClick={() => setConfirmDelete(false)}>Cancel</PixelButton>
+          <PixelButton onClick={() => setConfirmDelete(false)}>{t('ui.common.cancel')}</PixelButton>
           <PixelButton
             variant="danger"
             onClick={() => {
@@ -194,7 +189,7 @@ export function SettingsScreen() {
               navigate('/')
             }}
           >
-            Delete
+            {t('ui.settings.delete')}
           </PixelButton>
         </div>
       </Modal>
@@ -204,18 +199,19 @@ export function SettingsScreen() {
 
 /** Saves replaced by a cloud sync (or a restore) on this device — a wrong choice can be undone here. */
 function BackupsPanel() {
+  const { t } = useT()
   const [list, setList] = useState(() => readBackups())
   const [confirm, setConfirm] = useState<number | null>(null)
   if (!list.length) return null
   return (
-    <Panel title="Save backups">
-      <p className="copy mb-2 text-muted">Saves replaced on this device, newest first. Restoring one replaces your current save (which is kept here too).</p>
+    <Panel title={t('ui.settings.backups')}>
+      <p className="copy mb-2 text-muted">{t('ui.settings.backupsHint')}</p>
       <ul className="flex flex-col gap-2">
         {list.map((b) => (
           <li key={b.at} className="flex flex-wrap items-center gap-3 border-2 border-ink bg-panel p-2">
             <div className="min-w-0 flex-1">
               <div className="text-lg leading-tight">{b.reason}</div>
-              <div className="text-base text-muted">Saved aside {new Date(b.at).toLocaleString()}</div>
+              <div className="text-base text-muted">{t('ui.settings.setAside', { when: new Date(b.at).toLocaleString() })}</div>
               <SaveFacts save={b.save} />
             </div>
             <PixelButton
@@ -224,14 +220,14 @@ function BackupsPanel() {
               onClick={() => {
                 if (confirm !== b.at) return setConfirm(b.at)
                 const current = useGame.getState().save
-                if (current) backupSave(current, 'Your save before restoring a backup')
+                if (current) backupSave(current, t('ui.settings.beforeRestore'))
                 replaceSave({ ...b.save, updatedAt: Date.now() })
                 setConfirm(null)
                 setList(readBackups())
-                pushToast('Backup restored', 'good')
+                pushToast(t('ui.settings.restored'), 'good')
               }}
             >
-              {confirm === b.at ? 'Replace my save?' : 'Restore'}
+              {t(confirm === b.at ? 'ui.settings.replaceMine' : 'ui.settings.restore')}
             </PixelButton>
           </li>
         ))}
@@ -240,29 +236,28 @@ function BackupsPanel() {
   )
 }
 
-function CharacterPanel() {
-  const save = useGame((s) => s.save)
-  const [editing, setEditing] = useState(false)
-  const me = playerOf(save)
+/** The whole game — menus, Pokémon, trainers, items — follows this. */
+function LanguagePanel() {
+  const { t } = useT()
+  const lang = useGame((s) => s.settings.lang)
   return (
-    <Panel title="Your character">
-      {editing ? (
-        <CharacterSelect
-          initial={save?.player}
-          submitLabel="SAVE"
-          compact
-          onDone={(player) => {
-            mutateSave((s) => ({ ...s, player }))
-            setEditing(false)
-          }}
-        />
-      ) : (
-        <div className="flex items-center gap-3">
-          <TrainerSprite src={`/characters/${me.character}.png`} size={64} />
-          <span className="flex-1 text-2xl">{me.name || 'No name yet'}</span>
-          <PixelButton onClick={() => setEditing(true)}>CHANGE</PixelButton>
-        </div>
-      )}
+    <Panel title={t('ui.settings.language')}>
+      <div role="radiogroup" aria-label={t('ui.settings.language')} className="flex flex-wrap gap-2">
+        {LANGS.map((l) => (
+          <button
+            key={l}
+            type="button"
+            role="radio"
+            aria-checked={lang === l}
+            lang={l}
+            onClick={() => setSettings({ lang: l as Lang })}
+            className={`pixel-btn min-h-[44px] px-3 py-1 text-2xl leading-none ${lang === l ? 'bg-gold' : 'bg-parchment'}`}
+          >
+            {LANG_LABELS[l]}
+          </button>
+        ))}
+      </div>
+      <p className="copy mt-2 text-muted">{t('ui.settings.languageHint')}</p>
     </Panel>
   )
 }

@@ -1,3 +1,4 @@
+import { useT } from '@/i18n/react'
 import { usePace } from '@/lib/pace'
 import { cx, hpColor } from '@/theme/util'
 
@@ -24,12 +25,13 @@ export function HpBar({
   /** A foe's bar: screen readers get "high / half / low", never the exact HP. */
   approximate?: boolean
 }) {
+  const { t } = useT()
   const pace = usePace()
   const pct = max > 0 ? Math.max(0, Math.min(1, hp / max)) : 0
   const collapse = collapsible && showNumbers
   return (
     <div className={cx('flex items-center gap-2', collapse && 'hp-collapsible justify-between', className)}>
-      <span className="text-sm leading-none text-ink">HP</span>
+      <span className="text-sm leading-none text-ink">{t('ui.mon.hp')}</span>
       <div
         className="hp-track relative flex-1 overflow-hidden border-2 border-ink bg-ink"
         style={{ height, borderRadius: 2 }}
@@ -37,8 +39,10 @@ export function HpBar({
         aria-valuemin={0}
         aria-valuemax={approximate ? 100 : max}
         aria-valuenow={approximate ? Math.ceil(pct * 4) * 25 : hp}
-        aria-valuetext={approximate ? (pct > 0.5 ? 'high' : pct > 0.2 ? 'half' : pct > 0 ? 'low' : 'none') : undefined}
-        aria-label="HP"
+        aria-valuetext={
+          approximate ? t(pct > 0.5 ? 'ui.mon.hpHigh' : pct > 0.2 ? 'ui.mon.hpHalf' : pct > 0 ? 'ui.mon.hpLow' : 'ui.mon.hpNone') : undefined
+        }
+        aria-label={t('ui.mon.hpLong')}
       >
         <div
           className="absolute inset-y-0 left-0 bg-danger/80"

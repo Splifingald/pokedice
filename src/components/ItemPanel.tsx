@@ -1,12 +1,16 @@
 import { useState } from 'react'
-import { effectText, instanceMaxHp, stoneEvolution, usableIn, type PokemonInstance } from '@/engine'
+import { instanceMaxHp, stoneEvolution, usableIn, type PokemonInstance } from '@/engine'
+import { effectText } from '@/i18n/text'
+import { useT } from '@/i18n/react'
 import { applyBagItem } from '@/store/actions'
 import { useGame } from '@/store/game'
 import { EvolutionQueue, type EvolutionShow } from './Evolution'
+import { ItemSprite } from './ItemSprite'
 import { PixelButton } from './PixelButton'
 
 /** "Use an item" inside a Pokémon's sheet: the bag items that work outside battle (potions, revives, stones, Rare Candy). */
 export function ItemPanel({ inst }: { inst: PokemonInstance }) {
+  const { t } = useT()
   const data = useGame((s) => s.data)
   const inventory = useGame((s) => s.save?.inventory)
   // An evolution (a stone, a Rare Candy level) plays its scene — kept even if that used up the last usable item.
@@ -24,7 +28,7 @@ export function ItemPanel({ inst }: { inst: PokemonInstance }) {
   }
   return (
     <section className="flex flex-col gap-2 border-t-[3px] border-dashed border-shadow pt-3">
-      <h3 className="text-xl">Use an item</h3>
+      <h3 className="text-xl">{t('ui.itemPanel.title')}</h3>
       {bag.map(([k, n]) => (
         <PixelButton
           key={k}
@@ -35,8 +39,11 @@ export function ItemPanel({ inst }: { inst: PokemonInstance }) {
             if (r?.evolved) setEvolving(r.evolved)
           }}
         >
-          <span>
-            {data.items[k]!.name} <span className="text-base">({effectText(data.items[k]!)})</span>
+          <span className="flex min-w-0 items-center gap-2">
+            <ItemSprite item={data.items[k]} size={24} />
+            <span className="min-w-0">
+              {data.items[k]!.name} <span className="text-base">({effectText(data.items[k]!)})</span>
+            </span>
           </span>
           <span className="font-mono text-base">×{n}</span>
         </PixelButton>

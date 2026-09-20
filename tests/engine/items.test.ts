@@ -9,7 +9,6 @@ import {
   createInstance,
   createRng,
   drawLoot,
-  effectText,
   emptyProgress,
   emptyStatus,
   fledLegendary,
@@ -34,6 +33,7 @@ import {
   type SaveData,
 } from '@/engine'
 import { data, newId } from '../fixtures'
+import { effectText } from '@/i18n/text'
 
 const ROUTE1 = linearAreas(data)[0]!
 const SEAFOAM = data.areas.find((a) => a.name === 'Seafoam Islands')!

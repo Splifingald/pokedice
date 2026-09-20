@@ -1,6 +1,6 @@
 // Shared admin table: sticky header, sort, filter, pagination, inline editing with per-cell dirty highlight,
 // Zod errors in the cell, duplicate / delete / bulk edit, CSV import + export.
-import { useMemo, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type ReactNode, type Ref } from 'react'
 import type { Row, TableName } from '@/config/mapping'
 import { PixelButton } from '@/components/PixelButton'
 import { pushToast } from '@/store/game'
@@ -64,43 +64,95 @@ function parseInput(raw: string, col: ColumnDef): unknown {
   return raw
 }
 
+/**
+ * Inline editor for one cell. It stays open while you are editing — it only closes on Enter,
+ * on Escape (discarding), or when you click / tab somewhere outside the editor, which commits
+ * whatever is in the field at that moment. A field left empty commits 0 (or null when nullable).
+ */
 function CellEditor({ col, row, onCommit, onCancel }: { col: ColumnDef; row: Row; onCommit: (v: unknown) => void; onCancel: () => void }) {
   const v = row[col.key]
-  if (col.editor) return <div onKeyDown={(e) => e.key === 'Escape' && onCancel()}>{col.editor(v, onCommit, row)}</div>
-  if (col.kind === 'enum')
-    return (
-      <select autoFocus className={inputCls} defaultValue={v == null ? '' : String(v)} onChange={(e) => onCommit(parseInput(e.target.value, col))} onBlur={onCancel}>
-        {col.nullable && <option value="">—</option>}
-        {(col.options ?? []).map((o) => (
-          <option key={o} value={o}>
-            {o}
-          </option>
-        ))}
-      </select>
-    )
-  if (col.kind === 'json')
-    return (
-      <textarea
-        autoFocus
-        className={cx(inputCls, 'h-28 font-mono text-xs')}
-        defaultValue={v == null ? '' : JSON.stringify(v, null, 1)}
-        onBlur={(e) => onCommit(parseInput(e.target.value, col))}
-        onKeyDown={(e) => e.key === 'Escape' && onCancel()}
-      />
-    )
+  const box = useRef<HTMLDivElement>(null)
+  const field = useRef<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>(null)
+  const done = useRef(false)
+
+  const finish = (commit: boolean) => {
+    if (done.current) return
+    done.current = true
+    const el = field.current
+    if (commit && el && !(el instanceof HTMLSelectElement)) onCommit(parseInput(el.value, col))
+    else onCancel()
+  }
+
+  // Leaving the editor — by click or by Tab — ends the edit; anything inside it (a picker's
+  // dropdown, the number spinner, a second field) keeps it open.
+  useEffect(() => {
+    const outside = (e: Event) => {
+      if (!box.current?.contains(e.target as Node)) finish(true)
+    }
+    const leaving = (e: FocusEvent) => {
+      const next = e.relatedTarget as Node | null
+      if (next && !box.current?.contains(next)) finish(true)
+    }
+    document.addEventListener('mousedown', outside)
+    box.current?.addEventListener('focusout', leaving)
+    const el = box.current
+    return () => {
+      document.removeEventListener('mousedown', outside)
+      el?.removeEventListener('focusout', leaving)
+    }
+  })
+
+  const keys = (e: ReactKeyboardEvent) => {
+    if (e.key === 'Escape') {
+      e.stopPropagation()
+      finish(false)
+    }
+    if (e.key === 'Enter' && col.kind !== 'json') {
+      e.preventDefault()
+      finish(true)
+    }
+  }
+
   return (
-    <input
-      autoFocus
-      type={col.kind === 'number' ? 'number' : col.kind === 'color' ? 'color' : 'text'}
-      step="any"
-      className={inputCls}
-      defaultValue={v == null ? '' : String(v)}
-      onBlur={(e) => onCommit(parseInput(e.target.value, col))}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter') onCommit(parseInput((e.target as HTMLInputElement).value, col))
-        if (e.key === 'Escape') onCancel()
-      }}
-    />
+    <div ref={box} onKeyDown={keys} onClick={(e) => e.stopPropagation()}>
+      {col.editor ? (
+        col.editor(v, (nv) => {
+          if (done.current) return
+          done.current = true
+          onCommit(nv)
+        }, row)
+      ) : col.kind === 'enum' ? (
+        <select
+          autoFocus
+          ref={field as Ref<HTMLSelectElement>}
+          className={inputCls}
+          defaultValue={v == null ? '' : String(v)}
+          onChange={(e) => {
+            if (done.current) return
+            done.current = true
+            onCommit(parseInput(e.target.value, col))
+          }}
+        >
+          {col.nullable && <option value="">—</option>}
+          {(col.options ?? []).map((o) => (
+            <option key={o} value={o}>
+              {o}
+            </option>
+          ))}
+        </select>
+      ) : col.kind === 'json' ? (
+        <textarea autoFocus ref={field as Ref<HTMLTextAreaElement>} className={cx(inputCls, 'h-28 font-mono text-xs')} defaultValue={v == null ? '' : JSON.stringify(v, null, 1)} />
+      ) : (
+        <input
+          autoFocus
+          ref={field as Ref<HTMLInputElement>}
+          type={col.kind === 'number' ? 'number' : col.kind === 'color' ? 'color' : 'text'}
+          step="any"
+          className={inputCls}
+          defaultValue={v == null ? '' : String(v)}
+        />
+      )}
+    </div>
   )
 }
 

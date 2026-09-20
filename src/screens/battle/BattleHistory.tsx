@@ -2,7 +2,6 @@
 // switches, items and heals. Only what the animation has already shown.
 import { useMemo, useState, type ReactNode } from 'react'
 import {
-  COMBO_NAMES,
   faceOf,
   statusCounts,
   STATUS_KINDS,
@@ -18,11 +17,14 @@ import { PixelIcon, STATUS_ICON } from '@/components/icons'
 import { MiniSprite } from '@/components/SpriteImg'
 import type { BattleSlice } from '@/store/game'
 import { useGame } from '@/store/game'
-import { cap } from '@/lib/format'
+import { t } from '@/i18n'
+import { useT } from '@/i18n/react'
+import { comboName, statusName, typeName } from '@/lib/format'
 import { cx } from '@/theme/util'
 
 /** How a hit's damage adds up: each die (value + upgrade bonus × the attack type's multiplier), the combo, the total. */
 export function DamageRecap({ result, dice, className }: { result: DamageResult; dice?: readonly RolledDie[]; className?: string }) {
+  const { t } = useT()
   const data = useGame((s) => s.data)
   return (
     <div className={cx('flex flex-col gap-1', className)}>
@@ -34,24 +36,25 @@ export function DamageRecap({ result, dice, className }: { result: DamageResult;
         </div>
       )}
       <div className="font-mono text-xs">
-        {result.attackType ? `${result.attackType.toUpperCase()} attack` : 'Untyped attack'} ×{result.perDie[0]?.multiplier ?? 1}
+        {result.attackType ? t('ui.hist.typedAttack', { type: typeName(result.attackType).toUpperCase() }) : t('ui.hist.untypedAttack')} ×
+        {result.perDie[0]?.multiplier ?? 1}
       </div>
       <div className="grid grid-cols-2 gap-x-4 font-mono text-xs sm:grid-cols-3">
         {result.perDie.map((p, i) => (
           <span key={i}>
             {p.value}
-            {p.bonus ? `+${p.bonus}` : ''} ({p.type}) ×{p.multiplier} = {p.damage}
+            {p.bonus ? `+${p.bonus}` : ''} ({typeName(p.type)}) ×{p.multiplier} = {p.damage}
           </span>
         ))}
         {result.combo && (
           <span>
-            {COMBO_NAMES[result.combo.key]} +{result.combo.bonus} ×{result.combo.multiplier} = {result.combo.damage}
+            {comboName(result.combo.key)} +{result.combo.bonus} ×{result.combo.multiplier} = {result.combo.damage}
           </span>
         )}
       </div>
       <div className="font-mono text-xs">
-        Total {result.final}
-        {result.immune ? ' (no effect)' : ''}
+        {t('ui.hist.total', { amount: result.final })}
+        {result.immune ? t('ui.hist.noEffect') : ''}
       </div>
     </div>
   )
@@ -76,7 +79,13 @@ function nearMisses(dice: readonly RolledDie[], data: GameData): string | undefi
   const counts = statusCounts(dice, data)
   const bits = STATUS_KINDS.filter((k) => counts[k] > 0 && counts[k] < data.config.status[k].threshold).map((k) => {
     const value = dice.map((d) => faceOf(d, data)).find((f) => f.kind === 'status' && f.status === k)?.value ?? 0
-    return `${counts[k]}/${data.config.status[k].threshold} ${cap(k)} faces, no ${k} (counted as ${value})`
+    return t('ui.hist.nearMiss', {
+      have: counts[k],
+      need: data.config.status[k].threshold,
+      status: statusName(k),
+      status2: statusName(k).toLowerCase(),
+      value,
+    })
   })
   return bits.length ? bits.join(' · ') : undefined
 }
@@ -85,7 +94,7 @@ function buildRows(log: readonly LogEntry[], player: readonly Battler[], enemy: 
   const itemName = (k: string) => data.items[k]?.name ?? k
   const who = (uid: string) => {
     const b = uid === enemy.uid ? enemy : player.find((p) => p.uid === uid)
-    return { dex: b?.dex ?? 0, name: b?.name ?? '???', foe: uid === enemy.uid }
+    return { dex: b?.dex ?? 0, name: b?.name ?? t('ui.common.unknown'), foe: uid === enemy.uid }
   }
   let active: Record<Side, string> = { enemy: enemy.uid, player: player[0]?.uid ?? '' }
   const rows: Row[] = []
@@ -96,10 +105,10 @@ function buildRows(log: readonly LogEntry[], player: readonly Battler[], enemy: 
         return
       case 'switch':
         active = { ...active, player: e.uid }
-        rows.push({ key, ...who(e.uid), text: e.free ? 'was sent out' : 'was switched in', icon: 'ball' })
+        rows.push({ key, ...who(e.uid), text: t(e.free ? 'ui.hist.sentOut' : 'ui.hist.switchedIn'), icon: 'ball' })
         return
       case 'transform':
-        rows.push({ key, ...who(e.uid), text: `copied ${who(e.fromUid).name}'s dice`, icon: 'reroll' })
+        rows.push({ key, ...who(e.uid), text: t('ui.hist.copied', { from: who(e.fromUid).name }), icon: 'reroll' })
         return
       case 'damage': {
         const attacker = who(active[e.side])
@@ -107,7 +116,9 @@ function buildRows(log: readonly LogEntry[], player: readonly Battler[], enemy: 
         rows.push({
           key,
           ...attacker,
-          text: `attacked ${target.name}${e.result.combo ? ` · ${COMBO_NAMES[e.result.combo.key]}` : ''}`,
+          text: e.result.combo
+            ? t('ui.hist.attackedCombo', { target: target.name, combo: comboName(e.result.combo.key) })
+            : t('ui.hist.attacked', { target: target.name }),
           icon: 'sword',
           amount: e.amount,
           note: nearMisses(e.dice, data),
@@ -119,35 +130,65 @@ function buildRows(log: readonly LogEntry[], player: readonly Battler[], enemy: 
         rows.push({
           key,
           ...who(e.targetUid),
-          text: e.status === 'heal' ? 'is healing' : `got ${e.status === 'frozen' ? 'frozen' : e.status === 'confuse' ? 'confused' : e.status === 'paralyze' ? 'paralyzed' : e.status === 'burn' ? `burned${e.stacks && e.stacks > 1 ? ` (${e.stacks} stacks)` : ''}` : 'poisoned'}`,
+          text:
+            e.status === 'heal'
+              ? t('ui.hist.isHealing')
+              : t('ui.hist.gotStatus', {
+                  status:
+                    e.status === 'frozen'
+                      ? t('ui.hist.statusFrozen')
+                      : e.status === 'confuse'
+                        ? t('ui.hist.statusConfused')
+                        : e.status === 'paralyze'
+                          ? t('ui.hist.statusParalyzed')
+                          : e.status === 'burn'
+                            ? t('ui.hist.statusBurned', { stacks: e.stacks && e.stacks > 1 ? t('ui.log.stacks', { n: e.stacks }) : '' })
+                            : t('ui.hist.statusPoisoned'),
+                }),
           icon: STATUS_ICON[e.status],
         })
         return
       case 'status_tick':
-        rows.push({ key, ...who(e.targetUid), text: `was hurt by its ${e.status === 'burn' ? 'burn' : 'poison'}`, icon: STATUS_ICON[e.status], amount: e.amount })
+        rows.push({
+          key,
+          ...who(e.targetUid),
+          text: t('ui.hist.hurtBy', { source: t(e.status === 'burn' ? 'ui.hist.burnSource' : 'ui.hist.poisonSource') }),
+          icon: STATUS_ICON[e.status],
+          amount: e.amount,
+        })
         return
       case 'stunned':
         if (e.pending) return
-        rows.push({ key, ...who(e.uid), text: `is ${e.status === 'frozen' ? 'frozen' : 'paralyzed'} and skipped its turn`, icon: STATUS_ICON[e.status] })
+        rows.push({
+          key,
+          ...who(e.uid),
+          text: t('ui.hist.skippedTurn', { state: t(e.status === 'frozen' ? 'ui.log.frozenSolid' : 'ui.log.paralysedWord') }),
+          icon: STATUS_ICON[e.status],
+        })
         return
       case 'faint':
-        rows.push({ key, ...who(e.uid), text: 'fainted', icon: 'close' })
+        rows.push({ key, ...who(e.uid), text: t('ui.hist.fainted'), icon: 'close' })
         return
       case 'item': {
         const bits = [
-          e.revived ? 'revived' : '',
-          e.amount > 0 ? `+${e.amount} HP` : '',
-          e.cured?.length ? `cured ${e.cured.join(', ')}` : '',
-          e.rerolls ? `+${e.rerolls} reroll${e.rerolls === 1 ? '' : 's'}` : '',
+          e.revived ? t('ui.hist.revived') : '',
+          e.amount > 0 ? t('ui.hist.plusHp', { amount: e.amount }) : '',
+          e.cured?.length ? t('ui.hist.cured', { statuses: e.cured.map((c) => t(`ui.status.${c}.noun`)).join(', ') }) : '',
+          e.rerolls ? t(`ui.hist.plusRerolls.${e.rerolls === 1 ? 'one' : 'other'}`, { n: e.rerolls }) : '',
         ].filter(Boolean)
-        rows.push({ key, ...who(e.targetUid), text: `got a ${itemName(e.key)}${bits.length ? ` (${bits.join(', ')})` : ''}`, icon: 'potion' })
+        rows.push({
+          key,
+          ...who(e.targetUid),
+          text: t('ui.hist.gotItem', { item: itemName(e.key), extras: bits.length ? ` (${bits.join(', ')})` : '' }),
+          icon: 'potion',
+        })
         return
       }
       case 'heal':
-        rows.push({ key, ...who(e.uid), text: 'healed', icon: 'heal', amount: e.amount, heal: true })
+        rows.push({ key, ...who(e.uid), text: t('ui.hist.healed'), icon: 'heal', amount: e.amount, heal: true })
         return
       case 'recoil':
-        rows.push({ key, ...who(e.uid), text: 'took confusion recoil', icon: STATUS_ICON.confuse, amount: e.amount })
+        rows.push({ key, ...who(e.uid), text: t('ui.hist.tookRecoil'), icon: STATUS_ICON.confuse, amount: e.amount })
         return
     }
   })
@@ -155,12 +196,13 @@ function buildRows(log: readonly LogEntry[], player: readonly Battler[], enemy: 
 }
 
 function HistoryRow({ r }: { r: Row }) {
+  const { t } = useT()
   const [open, setOpen] = useState(false)
   const body: ReactNode = (
     <>
       <MiniSprite dex={r.dex} size={32} className="-my-1" />
       <span className="min-w-0 flex-1 leading-tight">
-        <b className={r.foe ? 'text-danger' : undefined}>{r.foe ? `Foe ${r.name}` : r.name}</b> {r.text}
+        <b className={r.foe ? 'text-danger' : undefined}>{r.foe ? t('ui.hist.foe', { name: r.name }) : r.name}</b> {r.text}
         {r.note && <span className="block text-sm text-muted">{r.note}</span>}
       </span>
       {r.amount != null && (
@@ -195,17 +237,19 @@ function HistoryRow({ r }: { r: Row }) {
 
 /** The rows of the history, for the panel (desktop) or the sheet (phones). */
 export function BattleHistoryList({ battle, cursor }: { battle: BattleSlice; cursor: number }) {
+  const { t } = useT()
   const data = useGame((s) => s.data)
   const rows = useMemo(
     () => buildRows(battle.log.slice(0, cursor), battle.state.player, battle.state.enemy, data),
     [battle.log, battle.state.player, battle.state.enemy, cursor, data],
   )
-  if (!rows.length) return <p className="copy px-1 text-muted">Nothing has happened yet.</p>
-  return <ol aria-label="Battle history, newest first">{rows.map((r) => <HistoryRow key={r.key} r={r} />)}</ol>
+  if (!rows.length) return <p className="copy px-1 text-muted">{t('ui.hist.empty')}</p>
+  return <ol aria-label={t('ui.hist.label')}>{rows.map((r) => <HistoryRow key={r.key} r={r} />)}</ol>
 }
 
 /** Desktop: a toggle under the battle, open by default. */
 export function BattleHistory({ battle, cursor, defaultOpen }: { battle: BattleSlice; cursor: number; defaultOpen: boolean }) {
+  const { t } = useT()
   const [open, setOpen] = useState(defaultOpen)
   return (
     <section className="pixel-panel p-2">
@@ -216,7 +260,7 @@ export function BattleHistory({ battle, cursor, defaultOpen }: { battle: BattleS
         className="flex min-h-[36px] w-full items-center gap-2 text-left text-xl"
       >
         <PixelIcon name="history" size={16} />
-        Battle history
+        {t('ui.battle.history')}
         <span className="ml-auto text-base" aria-hidden>
           {open ? '▾' : '▸'}
         </span>

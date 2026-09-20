@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { instanceStats, xpToNext, type PokemonInstance } from '@/engine'
+import { useT } from '@/i18n/react'
 import { countdown } from '@/lib/format'
 import { useGame } from '@/store/game'
 import { useNow } from '@/store/hooks'
@@ -12,33 +13,35 @@ import { TypeBadge } from './TypeBadge'
 
 /** A fossil being revived: a timer gauge in place of HP, full when it wakes up. */
 export function RevivalBar({ inst, className }: { inst: PokemonInstance; className?: string }) {
+  const { t } = useT()
   const now = useNow(30_000)
   const total = Math.max(1, (inst.revivesAt ?? 0) - inst.caughtAt)
   const left = Math.max(0, (inst.revivesAt ?? 0) - now)
   const pct = 1 - left / total
   return (
-    <div className={cx('flex items-center gap-2', className)} role="img" aria-label={`Revives in ${countdown(left)}`}>
-      <span className="text-sm leading-none">REVIVING</span>
+    <div className={cx('flex items-center gap-2', className)} role="img" aria-label={t('ui.mon.revivesIn', { time: countdown(left) })}>
+      <span className="text-sm leading-none">{t('ui.mon.reviving')}</span>
       <div className="h-2 flex-1 border border-ink bg-ink" style={{ borderRadius: 1 }}>
         <div className="h-full bg-gold" style={{ width: `${pct * 100}%` }} />
       </div>
-      <span className="min-w-[7ch] text-right font-mono text-xs tabular-nums leading-none">{left > 0 ? countdown(left) : 'soon'}</span>
+      <span className="min-w-[7ch] text-right font-mono text-xs tabular-nums leading-none">{left > 0 ? countdown(left) : t('ui.mon.soon')}</span>
     </div>
   )
 }
 
 export function XpBar({ inst, className }: { inst: PokemonInstance; className?: string }) {
+  const { t } = useT()
   const cfg = useGame((s) => s.data.config)
   const need = xpToNext(inst.level, cfg)
   const pct = inst.level >= cfg.maxLevel ? 1 : Math.min(1, inst.xp / need)
   return (
     <div className={cx('flex items-center gap-2', className)}>
-      <span className="text-sm leading-none">XP</span>
+      <span className="text-sm leading-none">{t('ui.mon.xp')}</span>
       <div className="h-1.5 flex-1 border border-ink bg-ink" style={{ borderRadius: 1 }}>
         <div className="h-full bg-type-water" style={{ width: `${pct * 100}%`, transition: 'width 700ms ease-out' }} />
       </div>
       <span className="min-w-[4.5ch] text-right font-mono text-xs tabular-nums leading-none">
-        {inst.level >= cfg.maxLevel ? 'MAX' : `${inst.xp}/${need}`}
+        {inst.level >= cfg.maxLevel ? t('ui.mon.xpMax') : `${inst.xp}/${need}`}
       </span>
     </div>
   )
@@ -69,6 +72,7 @@ export function MonCard({
   className?: string
   badge?: ReactNode
 }) {
+  const { t } = useT()
   const data = useGame((s) => s.data)
   const species = data.species[inst.dex]
   if (!species) return null
@@ -102,24 +106,28 @@ export function MonCard({
           <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1">
             <span className="flex min-w-0 items-center gap-1">
               <span className="truncate text-xl leading-none">{species.name}</span>
-              {inst.shiny && <PixelIcon name="star" size={12} title="Shiny" className="shrink-0" />}
+              {inst.shiny && <PixelIcon name="star" size={12} title={t('ui.mon.shiny')} className="shrink-0" />}
             </span>
             <span className="flex flex-wrap items-center gap-1">
               <TypeBadge type={species.type1} size="sm" />
               {species.type2 && <TypeBadge type={species.type2} size="sm" />}
-              {fainted && <span className="text-sm text-danger">FAINTED</span>}
-              {reviving && <span className="text-sm text-muted">{fossil ? `from the ${fossil.name}` : 'fossil'}</span>}
+              {fainted && <span className="text-sm text-danger">{t('ui.mon.fainted')}</span>}
+              {reviving && (
+                <span className="text-sm text-muted">
+                  {fossil ? t('ui.mon.fromFossil', { fossil: fossil.name }) : t('ui.mon.fossil')}
+                </span>
+              )}
               {badge}
             </span>
           </div>
-          <span className="shrink-0 text-lg leading-none">Lv.{inst.level}</span>
+          <span className="shrink-0 text-lg leading-none">{t('ui.common.level.short', { n: inst.level })}</span>
         </div>
         {reviving ? <RevivalBar inst={inst} className="mt-1" /> : <HpBar hp={inst.currentHp} max={stats.maxHp} className="mt-1" height={8} />}
         {showXp && !reviving && <XpBar inst={inst} className="mt-1" />}
         {showDice && (
           <div className="mt-1 flex items-center gap-2">
             <DiceSet dice={stats.dice} size={22} />
-            <span className="flex items-center gap-1 text-sm" title="Rerolls per battle">
+            <span className="flex items-center gap-1 text-sm" title={t('ui.mon.rerollsPerBattle')}>
               <PixelIcon name="reroll" size={12} />×{stats.rerolls}
             </span>
           </div>

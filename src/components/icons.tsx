@@ -278,6 +278,9 @@ export const ICONS = {
     '...kkkkkkkk.',
     '....kkkkk...',
   ],
+  user: ['..kkkk..', '.kwwwwk.', '.kwwwwk.', '.kwwwwk.', '..kkkk..', '.kbbbbk.', 'kbbbbbbk', 'kbbbbbbk'],
+  book: ['kkkkkkkk', 'kwwwkwwk', 'kwwwkwwk', 'kwkwkwkk', 'kwwwkwwk', 'kwkwkwkk', 'kwwwkwwk', 'kkkkkkkk'],
+  wrench: ['....kkk.', '...kssk.', '...ksskk', '..kssk..', '.kssk...', 'kssk....', 'kssk....', '.kkk....'],
 } as const
 
 export type IconName = keyof typeof ICONS

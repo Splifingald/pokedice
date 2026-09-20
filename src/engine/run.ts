@@ -215,6 +215,8 @@ export function unlockedHiddenAreas(save: SaveData, data: GameData): string[] {
 
 export interface BadgeInfo {
   trainerId: string
+  /** The area the gym sits in — what groups the case into regions. */
+  areaId: string
   leader: string
   badge: string
   earned: boolean
@@ -227,7 +229,7 @@ export function badgeCase(save: SaveData, data: GameData): BadgeInfo[] {
     const p = progressOf(save, a.id)
     for (const id of a.gyms) {
       const t = data.trainers[id]
-      if (t?.badge) out.push({ trainerId: id, leader: t.name, badge: t.badge, earned: p.gymsDefeated.includes(id) })
+      if (t?.badge) out.push({ trainerId: id, areaId: a.id, leader: t.name, badge: t.badge, earned: p.gymsDefeated.includes(id) })
     }
   }
   return out

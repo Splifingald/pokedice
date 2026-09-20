@@ -27,6 +27,8 @@ import { PixelButton } from '@/components/PixelButton'
 import { SheetModal, type SheetView } from '@/components/SheetModal'
 import { MiniSprite, preloadSprites } from '@/components/SpriteImg'
 import { countdown, trainerTitle } from '@/lib/format'
+import { t } from '@/i18n'
+import { useT } from '@/i18n/react'
 import { OakTip, useOneTimeTip } from '@/components/OakTip'
 import { setSettings, useGame } from '@/store/game'
 import { challenge, enterArea, leaveArea, outOfEnergy, rollNext } from '@/store/run'
@@ -46,14 +48,8 @@ const CARD_ICON: Record<DeckCard, IconName> = {
   casino: 'coin',
   legend: 'masterball',
 }
-const CARD_NAME: Record<DeckCard, string> = {
-  wild: 'a wild Pokémon',
-  trainer: 'a trainer',
-  center: 'a Pokémon Center',
-  item: 'a find',
-  casino: 'the Game Corner',
-  legend: 'a legendary',
-}
+/** What a met card was, for the gauge's tooltips. */
+const cardName = (card: DeckCard) => t(`ui.card.${card}`)
 
 /**
  * The round gauge, under the area name (no label): one tile per card of the current round's deck · n/total.
@@ -62,6 +58,7 @@ const CARD_NAME: Record<DeckCard, string> = {
  * encounters aren't dealt from a deck.
  */
 function RoundGauge({ area, progress }: { area: Area; progress: AreaProgress }) {
+  const { t } = useT()
   const data = useGame((s) => s.data)
   const save = useGame((s) => s.save)
   const cfg = data.config
@@ -80,12 +77,22 @@ function RoundGauge({ area, progress }: { area: Area; progress: AreaProgress }) 
   const gymId = cfg.showRoundPreview ? gymsFor(area, data, side).find((id) => !progress.gymsDefeated.includes(id) && data.trainers[id]) : undefined
   const gym = gymId ? asSeenBy(data.trainers[gymId]!, side) : undefined
   const boss = cfg.showRoundPreview && !gym ? (area.legendaryBoss ?? []).find((b) => !progress.bossesDefeated.includes(b.dex)) : undefined
-  const finale = gym ? (gym.badge ? `${gym.name} (${gym.badge})` : gym.name) : boss ? (data.species[boss.dex]?.name ?? 'a legendary') : null
+  const finale = gym
+    ? gym.badge
+      ? t('ui.area.gymWithBadge', { name: gym.name, badge: gym.badge })
+      : gym.name
+    : boss
+      ? (data.species[boss.dex]?.name ?? t('ui.area.aLegendary'))
+      : null
   const gauge = (
     <div
       className="flex items-center gap-2"
       role="img"
-      aria-label={justDone ? 'This round is complete' : `This round: ${metCount} of ${total} encounters done`}
+      aria-label={
+        justDone
+          ? t('ui.area.roundComplete')
+          : t(`ui.area.roundProgress${metCount === 1 ? '.one' : ''}`, { done: metCount, total })
+      }
     >
       <ol className="flex min-w-0 flex-1 gap-[2px]" aria-hidden>
         {Array.from({ length: total }, (_, i) => {
@@ -95,7 +102,7 @@ function RoundGauge({ area, progress }: { area: Area; progress: AreaProgress }) 
           return (
             <li
               key={i}
-              title={done ? (card ? CARD_NAME[card] : 'met') : next ? 'next' : 'still to come'}
+              title={done ? (card ? cardName(card) : t('ui.area.cardMet')) : t(next ? 'ui.area.cardNext' : 'ui.area.cardToCome')}
               className={cx(
                 'flex h-6 min-w-0 flex-1 items-center justify-center border-2',
                 done ? 'border-ink bg-panel' : next ? 'border-gold bg-[#3e3552]' : 'border-ink bg-[#3e3552]',
@@ -117,27 +124,27 @@ function RoundGauge({ area, progress }: { area: Area; progress: AreaProgress }) 
     <>
       {gauge}
       <div className="flex items-center gap-2">
-        <span className="sr-only">Ahead</span>
+        <span className="sr-only">{t('ui.area.ahead')}</span>
         <ol
           className="flex min-w-0 flex-1 gap-[2px]"
-          aria-label={`Still to come this round: ${ahead.map((c) => CARD_NAME[c]).join(', ') || 'nothing'}`}
+          aria-label={t('ui.area.stillToCome', { cards: ahead.map(cardName).join(', ') || t('ui.area.nothing') })}
         >
           {Array.from({ length: total }, (_, i) => {
             const card = i >= metCount ? ahead[i - metCount] : undefined
             return (
-              <li key={i} className="flex h-6 min-w-0 flex-1 items-center justify-center" title={card ? CARD_NAME[card] : undefined}>
+              <li key={i} className="flex h-6 min-w-0 flex-1 items-center justify-center" title={card ? cardName(card) : undefined}>
                 {card && <PixelIcon name={CARD_ICON[card]} size={16} />}
               </li>
             )
           })}
         </ol>
-        <span className="flex min-w-[6ch] justify-end" title={finale ? `When every round is done: ${finale}` : undefined}>
+        <span className="flex min-w-[6ch] justify-end" title={finale ? t('ui.area.whenRoundsDone', { who: finale }) : undefined}>
           {gym?.badge ? (
             <BadgeIcon badge={gym.badge} earned size={18} />
           ) : gym ? (
-            <PixelIcon name="vs" size={18} title={`Gym: ${gym.name}`} />
+            <PixelIcon name="vs" size={18} title={t('ui.map.gym', { name: gym.name })} />
           ) : boss ? (
-            <PixelIcon name="masterball" size={18} title={`Legendary: ${finale}`} />
+            <PixelIcon name="masterball" size={18} title={t('ui.area.legendaryNamed', { name: finale ?? '' })} />
           ) : null}
         </span>
       </div>
@@ -147,11 +154,12 @@ function RoundGauge({ area, progress }: { area: Area; progress: AreaProgress }) 
 
 /** Encounter types, a slim banner, then the name with its round (or a checkmark) and levels, and the round gauge. */
 function AreaHeader({ area, progress, teamAvg }: { area: Area; progress: AreaProgress; teamAvg: number }) {
+  const { t } = useT()
   const data = useGame((s) => s.data)
   const span = area.scalesToTeam ? scaledLevelSpan(area, teamAvg, data) : { min: area.minLevel, max: area.maxLevel }
   const notes = [
-    area.scalesToTeam && 'Foes scale to your team',
-    progress.cleared && `Cleared — rewards ×${area.backtrackMultiplier}`,
+    area.scalesToTeam && t('ui.area.foesScale'),
+    progress.cleared && t('ui.area.clearedNote', { multiplier: area.backtrackMultiplier }),
   ].filter(Boolean)
   // "Round 2/3" while rounds are still needed; a checkmark once they're all done (secret areas: nothing).
   const need = area.roundsToClear
@@ -176,19 +184,21 @@ function AreaHeader({ area, progress, teamAvg }: { area: Area; progress: AreaPro
                 <span
                   className="self-center border-2 border-ink bg-hp-green px-1.5 text-xl leading-tight text-ink"
                   style={{ borderRadius: 2 }}
-                  title={`All ${need} round${need === 1 ? '' : 's'} done`}
-                  aria-label={`All ${need} round${need === 1 ? '' : 's'} done`}
+                  title={t(`ui.area.allRoundsDone.${need === 1 ? 'one' : 'other'}`, { n: need })}
+                  aria-label={t(`ui.area.allRoundsDone.${need === 1 ? 'one' : 'other'}`, { n: need })}
                 >
                   ✓
                 </span>
               ) : (
                 <span className="shrink-0 text-2xl leading-none text-muted">
-                  Round {Math.min(done + 1, need)}/{need}
+                  {t('ui.area.roundOf', { n: Math.min(done + 1, need), total: need })}
                 </span>
               ))}
           </div>
           <span className="shrink-0 text-2xl leading-none">
-            {span.min === span.max ? `Lv.${span.min}` : `Lv.${span.min}–${span.max}`}
+            {span.min === span.max
+              ? t('ui.area.levelOne', { n: span.min })
+              : t('ui.map.levelRange', { min: span.min, max: span.max })}
           </span>
         </div>
         {notes.length > 0 && <div className="text-lg leading-tight text-muted">{notes.join(' · ')}</div>}
@@ -203,17 +213,13 @@ const AUTO_TIP_KEY = 'pokedice.tip.auto'
 
 /** Cleared areas only: fights play themselves on both sides while it's on. Off by default; the choice is saved. */
 function AutoModeToggle() {
+  const { t } = useT()
   const on = useGame((s) => !!s.settings.autoMode)
   const [tip, closeTip] = useOneTimeTip(AUTO_TIP_KEY)
   return (
     <>
       {tip && (
-        <OakTip onClose={closeTip}>
-          You've cleared this area, so <b>AUTO-MODE</b> is open to you here! Turn it on and your Pokémon fight by
-          themselves: they roll, reroll, attack and switch in on their own, just like the foes do. Items stay in your
-          bag, and catches and rewards still wait for you. Tap AUTO-MODE again, or STOP in a battle, to take back
-          control.
-        </OakTip>
+        <OakTip onClose={closeTip}>{t('ui.area.autoTip')}</OakTip>
       )}
       <PixelButton
         size="sm"
@@ -222,7 +228,7 @@ function AutoModeToggle() {
         onClick={() => setSettings({ autoMode: !on })}
       >
         <PixelIcon name="dice" size={16} />
-        AUTO-MODE: {on ? 'ON' : 'OFF'}
+        {t('ui.area.autoMode', { state: t(on ? 'ui.common.on' : 'ui.common.off') })}
       </PixelButton>
     </>
   )
@@ -230,6 +236,7 @@ function AutoModeToggle() {
 
 /** The team at a glance between fights: HP for each, tap to open the sheet (and heal). */
 function TeamStrip({ onOpen }: { onOpen: (p: PokemonInstance) => void }) {
+  const { t } = useT()
   const save = useGame((s) => s.save)
   const data = useGame((s) => s.data)
   if (!save) return null
@@ -237,9 +244,9 @@ function TeamStrip({ onOpen }: { onOpen: (p: PokemonInstance) => void }) {
     <section aria-labelledby="team-strip" className="flex flex-col gap-1.5">
       <div className="flex items-baseline justify-between gap-2">
         <h2 id="team-strip" className="text-2xl">
-          Your team
+          {t('ui.area.yourTeam')}
         </h2>
-        <span className="text-base text-muted">Tap one to heal it or check it</span>
+        <span className="text-base text-muted">{t('ui.area.tapToHeal')}</span>
       </div>
       <ul className="grid grid-cols-3 gap-2">
         {teamOf(save).map((p) => {
@@ -258,7 +265,7 @@ function TeamStrip({ onOpen }: { onOpen: (p: PokemonInstance) => void }) {
                     <MiniSprite dex={p.dex} size={36} className={cx('relative -top-[3px] -my-2', fainted && 'grayscale')} />
                     <span className="min-w-0 truncate text-left text-lg leading-none">{data.species[p.dex]?.name}</span>
                   </span>
-                  <span className="ml-auto shrink-0 pr-0.5 text-base leading-none">Lv.{p.level}</span>
+                  <span className="ml-auto shrink-0 pr-0.5 text-base leading-none">{t('ui.common.level.short', { n: p.level })}</span>
                 </span>
                 <HpBar hp={p.currentHp} max={instanceMaxHp(p, data)} height={6} className="w-full" collapsible />
               </button>
@@ -272,6 +279,7 @@ function TeamStrip({ onOpen }: { onOpen: (p: PokemonInstance) => void }) {
 
 /** NEXT ENCOUNTER (EXPLORE on arrival): costs 1 energy; out of energy, it waits with a countdown. */
 function NextEncounterButton({ secondary }: { secondary: boolean }) {
+  const { t } = useT()
   const run = useGame((s) => s.run)
   const energy = useEnergy()
   // Re-checked every second (useEnergy ticks): a Center the game sends next is free even at 0.
@@ -279,11 +287,11 @@ function NextEncounterButton({ secondary }: { secondary: boolean }) {
   return (
     <div className="flex flex-col items-center gap-1">
       <PixelButton variant={secondary ? 'secondary' : 'primary'} size="lg" onClick={rollNext} disabled={run.phase !== 'idle' || empty}>
-        {run.firstInArea ? 'EXPLORE' : 'NEXT ENCOUNTER'}
+        {t(run.firstInArea ? 'ui.area.explore' : 'ui.area.nextEncounter')}
       </PixelButton>
       {empty && energy.nextAt != null && (
         <p className="text-lg leading-tight text-danger" role="status">
-          Out of energy · next in {countdown(energy.nextAt - energy.now)}
+          {t('ui.area.outOfEnergy', { time: countdown(energy.nextAt - energy.now) })}
         </p>
       )}
     </div>
@@ -291,6 +299,7 @@ function NextEncounterButton({ secondary }: { secondary: boolean }) {
 }
 
 export function AreaScreen() {
+  const { t } = useT()
   const save = useGame((s) => s.save)
   const data = useGame((s) => s.data)
   const run = useGame((s) => s.run)
@@ -330,19 +339,17 @@ export function AreaScreen() {
         <div className="pixel-panel flex flex-col items-center gap-3 p-5 text-center">
           <p className="text-2xl">
             {gym
-              ? `Every round done — ${trainerTitle(gym)} is ready when you are.`
+              ? t('ui.area.gymReady', { trainer: trainerTitle(gym) })
               : boss
-                ? 'The ground trembles. Something powerful is waiting…'
-                : run.firstInArea
-                  ? 'The path ahead is quiet. For now.'
-                  : 'Where to next?'}
+                ? t('ui.area.bossWaiting')
+                : t(run.firstInArea ? 'ui.area.quiet' : 'ui.area.whereNext')}
           </p>
           <div className="flex flex-wrap justify-center gap-2">
             {/* Finishing the rounds never forces the fight: challenge now, or keep exploring (the rounds stay done). */}
             {(gym || boss) && (
               <PixelButton variant="primary" size="lg" onClick={challenge} disabled={run.phase !== 'idle'}>
                 <PixelIcon name="sword" size={22} />
-                {gym ? `CHALLENGE ${gym.name.toUpperCase()}` : 'FACE IT'}
+                {gym ? t('ui.area.challenge', { name: gym.name.toUpperCase() }) : t('ui.area.faceIt')}
               </PixelButton>
             )}
             <NextEncounterButton secondary={!!(gym || boss)} />
@@ -358,13 +365,17 @@ export function AreaScreen() {
             }}
           >
             <PixelIcon name="map" size={16} />
-            BACK TO MAP
+            {t('ui.area.backToMap')}
           </PixelButton>
           {progress.cleared && <AutoModeToggle />}
-          {(gym || boss) && <p className="text-lg leading-tight text-muted">Or keep exploring first — your rounds stay done.</p>}
+          {(gym || boss) && <p className="text-lg leading-tight text-muted">{t('ui.area.keepExploring')}</p>}
           {nextGym && (
             <p className="text-lg leading-tight">
-              {trainerTitle(nextGym)} waits after round {area.roundsToClear ?? '∞'} ({progress.roundsDone ?? 0}/{area.roundsToClear ?? '∞'} done)
+              {t('ui.area.gymAfterRounds', {
+                trainer: trainerTitle(nextGym),
+                need: area.roundsToClear ?? '∞',
+                done: progress.roundsDone ?? 0,
+              })}
             </p>
           )}
         </div>

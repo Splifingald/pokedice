@@ -3,6 +3,7 @@
 import { linearAreas } from '@/engine/data'
 import type { GameData } from '@/engine/types'
 import { getSupabase } from './supabase'
+import { t } from '@/i18n'
 
 export type LeaderboardTab = 'level' | 'progress' | 'dex'
 
@@ -47,7 +48,7 @@ function sortKey(row: LeaderboardRow, tab: LeaderboardTab, data: GameData): numb
 }
 
 function scoreLabel(row: LeaderboardRow, tab: LeaderboardTab, data: GameData, total: number): string {
-  if (tab === 'level') return `Lv.${row.maxLevel}`
+  if (tab === 'level') return t('ui.common.level.short', { n: row.maxLevel })
   if (tab === 'dex') return `${row.pokedex}/${total}`
   return frontierArea(row, data)
 }

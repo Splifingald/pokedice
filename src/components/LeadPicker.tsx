@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { instanceMaxHp, teamOf } from '@/engine'
+import { useT } from '@/i18n/react'
 import { useGame } from '@/store/game'
 import { cx } from '@/theme/util'
 import { PixelIcon } from './icons'
@@ -13,6 +14,7 @@ import { TypeBadge } from './TypeBadge'
  * level, types, HP) and two buttons: SWITCH picks it, INFO opens its details.
  */
 export function LeadPicker({ value, onChange }: { value: string | null; onChange: (uid: string) => void }) {
+  const { t } = useT()
   const save = useGame((s) => s.save)
   const data = useGame((s) => s.data)
   const [info, setInfo] = useState<string | null>(null)
@@ -21,7 +23,7 @@ export function LeadPicker({ value, onChange }: { value: string | null; onChange
   const current = value && team.some((p) => p.id === value && p.currentHp > 0) ? value : team.find((p) => p.currentHp > 0)?.id
   return (
     <div>
-      <div className="mb-1 text-lg text-muted">Send out:</div>
+      <div className="mb-1 text-lg text-muted">{t('ui.lead.sendOut')}</div>
       <ul className="grid grid-cols-3 gap-1.5 sm:gap-2">
         {team.map((p) => {
           const species = data.species[p.dex]
@@ -40,15 +42,15 @@ export function LeadPicker({ value, onChange }: { value: string | null; onChange
               <div className="flex min-w-0 items-center gap-0.5">
                 <MiniSprite dex={p.dex} size={32} className={cx('-my-1 -ml-1', fainted && 'grayscale')} />
                 <span className="truncate text-lg leading-none">{species.name}</span>
-                {p.shiny && <PixelIcon name="star" size={10} title="Shiny" className="shrink-0" />}
+                {p.shiny && <PixelIcon name="star" size={10} title={t('ui.mon.shiny')} className="shrink-0" />}
               </div>
               <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
-                <span className="text-base leading-none">Lv.{p.level}</span>
+                <span className="text-base leading-none">{t('ui.common.level.short', { n: p.level })}</span>
                 <TypeBadge type={species.type1} size="sm" />
                 {species.type2 && <TypeBadge type={species.type2} size="sm" />}
               </div>
               <div className={cx('font-mono text-sm leading-none', fainted && 'text-danger')}>
-                {fainted ? 'FAINTED' : `HP ${p.currentHp}/${instanceMaxHp(p, data)}`}
+                {fainted ? t('ui.mon.fainted') : t('ui.lead.hp', { hp: p.currentHp, max: instanceMaxHp(p, data) })}
               </div>
               <div className="mt-auto flex flex-col gap-1 pt-0.5">
                 <PixelButton
@@ -57,13 +59,19 @@ export function LeadPicker({ value, onChange }: { value: string | null; onChange
                   className="w-full px-1"
                   disabled={fainted}
                   aria-pressed={selected}
-                  aria-label={`Send out ${species.name}`}
+                  aria-label={t('ui.lead.sendOutName', { name: species.name })}
                   onClick={() => onChange(p.id)}
                 >
-                  SWITCH
+                  {t('ui.lead.switch')}
                 </PixelButton>
-                <PixelButton size="sm" variant="ghost" className="w-full px-1" aria-label={`${species.name} info`} onClick={() => setInfo(p.id)}>
-                  INFO
+                <PixelButton
+                  size="sm"
+                  variant="ghost"
+                  className="w-full px-1"
+                  aria-label={t('ui.newGame.monInfo', { name: species.name })}
+                  onClick={() => setInfo(p.id)}
+                >
+                  {t('ui.lead.info')}
                 </PixelButton>
               </div>
             </li>

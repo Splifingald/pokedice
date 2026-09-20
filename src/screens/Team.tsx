@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { teamOf, type PokemonInstance } from '@/engine'
+import { useT } from '@/i18n/react'
 import { PixelIcon } from '@/components/icons'
 import { ItemPanel } from '@/components/ItemPanel'
 import { MonCard } from '@/components/MonCard'
@@ -11,15 +12,16 @@ import { cx } from '@/theme/util'
 
 type Sort = 'dex' | 'level' | 'type' | 'newest'
 const SORTS: { id: Sort; label: string }[] = [
-  { id: 'dex', label: 'No.' },
-  { id: 'level', label: 'Level' },
-  { id: 'type', label: 'Type' },
-  { id: 'newest', label: 'Newest' },
+  { id: 'dex', label: 'ui.team.sortDex' },
+  { id: 'level', label: 'ui.team.sortLevel' },
+  { id: 'type', label: 'ui.team.sortType' },
+  { id: 'newest', label: 'ui.team.sortNewest' },
 ]
 /** The Box gets a search field once it holds more than this. */
 const SEARCH_FROM = 20
 
 export function TeamScreen() {
+  const { t } = useT()
   const save = useGame((s) => s.save)
   const data = useGame((s) => s.data)
   const [view, setView] = useState<SheetView | null>(null)
@@ -27,7 +29,7 @@ export function TeamScreen() {
   const [q, setQ] = useState('')
   if (!save) return null
   const team = teamOf(save)
-  const name = (p: PokemonInstance) => data.species[p.dex]?.name ?? '???'
+  const name = (p: PokemonInstance) => data.species[p.dex]?.name ?? t('ui.common.unknown')
   const type1 = (p: PokemonInstance) => data.species[p.dex]?.type1 ?? ''
   const boxAll = save.box.filter((p) => !save.team.includes(p.id))
   const needle = q.trim().toLowerCase()
@@ -56,7 +58,7 @@ export function TeamScreen() {
     <>
       {save.team.includes(p.id) && save.team[0] !== p.id && (
         <PixelButton variant="primary" className="self-start" onClick={() => reorderTeam([p.id, ...save.team.filter((x) => x !== p.id)])}>
-          Make lead
+          {t('ui.team.makeLead')}
         </PixelButton>
       )}
       <ItemPanel inst={p} />
@@ -65,7 +67,7 @@ export function TeamScreen() {
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-4">
-      <h1 className="text-5xl">Team</h1>
+      <h1 className="text-5xl">{t('ui.team.title')}</h1>
       <ol className="flex flex-col gap-2">
         {team.map((p, i) => (
           <li key={p.id}>
@@ -74,13 +76,13 @@ export function TeamScreen() {
               showXp
               showDice
               onClick={() => open(p)}
-              badge={i === 0 ? <PixelIcon name="crown" size={20} title="Lead: sent out first" /> : null}
+              badge={i === 0 ? <PixelIcon name="crown" size={20} title={t('ui.team.lead')} /> : null}
             >
               <div className="flex flex-col gap-1">
-                <PixelButton size="sm" disabled={i === 0} onClick={() => move(i, -1)} aria-label={`Move ${name(p)} up`}>
+                <PixelButton size="sm" disabled={i === 0} onClick={() => move(i, -1)} aria-label={t('ui.team.moveUp', { name: name(p) })}>
                   ▲
                 </PixelButton>
-                <PixelButton size="sm" disabled={i === team.length - 1} onClick={() => move(i, 1)} aria-label={`Move ${name(p)} down`}>
+                <PixelButton size="sm" disabled={i === team.length - 1} onClick={() => move(i, 1)} aria-label={t('ui.team.moveDown', { name: name(p) })}>
                   ▼
                 </PixelButton>
               </div>
@@ -88,20 +90,15 @@ export function TeamScreen() {
           </li>
         ))}
       </ol>
-      <p className="copy text-muted">
-        Tap a Pokémon for its details — make it lead, or use Potions and Rare Candy from there. Team changes happen at a
-        Pokémon Center (or when a catch offers a swap). HP only comes back at a Center or with items — Revives bring
-        fainted Pokémon back.
-      </p>
 
       <section className="flex flex-col gap-2" aria-labelledby="box-title">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h2 id="box-title" className="text-3xl">
-            Box ({boxAll.length})
+            {t('ui.team.box', { count: boxAll.length })}
           </h2>
           {boxAll.length > 1 && (
-            <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Sort the Box">
-              <span className="text-lg text-muted">Sort</span>
+            <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label={t('ui.team.sortBox')}>
+              <span className="text-lg text-muted">{t('ui.team.sort')}</span>
               {SORTS.map((s) => (
                 <button
                   key={s.id}
@@ -110,7 +107,7 @@ export function TeamScreen() {
                   onClick={() => setSort(s.id)}
                   className={cx('pixel-btn min-h-[44px] px-2 text-lg md:min-h-[32px]', sort === s.id ? 'bg-gold' : 'bg-panel')}
                 >
-                  {s.label}
+                  {t(s.label)}
                 </button>
               ))}
             </div>
@@ -119,20 +116,20 @@ export function TeamScreen() {
         {boxAll.length > SEARCH_FROM && (
           <>
             <label htmlFor="box-search" className="sr-only">
-              Search the Box by name
+              {t('ui.team.searchBoxLabel')}
             </label>
             <input
               id="box-search"
               type="search"
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              placeholder="Search the Box"
+              placeholder={t('ui.team.searchBox')}
               className="min-h-[44px] w-full border-[3px] border-ink bg-panel px-2 text-xl md:min-h-[38px] md:w-64"
             />
           </>
         )}
-        {boxAll.length === 0 && <p className="copy text-muted">Pokémon you catch beyond your team of three wait here.</p>}
-        {boxAll.length > 0 && box.length === 0 && <p className="copy text-muted">No Pokémon in the Box match “{q}”.</p>}
+        {boxAll.length === 0 && <p className="copy text-muted">{t('ui.team.boxEmpty')}</p>}
+        {boxAll.length > 0 && box.length === 0 && <p className="copy text-muted">{t('ui.team.boxNoMatch', { query: q })}</p>}
         <ul className="flex flex-col gap-2">
           {box.map((p) => (
             <li key={p.id}>

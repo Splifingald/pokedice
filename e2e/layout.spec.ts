@@ -97,6 +97,44 @@ for (const size of SIZES) {
   })
 }
 
+/** A dialog animates in from `scale(0.9)`; measuring before it settles shrinks every control by 10%. */
+async function settled(page: Page) {
+  await page.waitForFunction(() =>
+    Array.from(document.querySelectorAll('[role=dialog]')).every((d) => {
+      const t = getComputedStyle(d).transform
+      return t === 'none' || t === 'matrix(1, 0, 0, 1, 0, 0)'
+    }),
+  )
+}
+
+test('the avatar drawer and the profile hold up at every size', async ({ page }) => {
+  for (const size of SIZES) {
+    await page.setViewportSize(size)
+    await boot(page)
+    await page.goto('/map')
+    await page.getByRole('button', { name: 'Your trainer menu' }).click()
+    await expect(page.getByRole('dialog')).toBeVisible()
+    await settled(page)
+
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)
+    expect(overflow, `drawer at ${size.width}: scrolls sideways`).toBeLessThanOrEqual(0)
+    expect(await nonJerseyText(page), `drawer at ${size.width}: fonts`).toEqual([])
+    if (size.phone) expect(await smallControls(page), `drawer at ${size.width}: controls under 44px`).toEqual([])
+
+    // The profile on top of it: the badge case is the densest thing either one draws.
+    await page.getByRole('button', { name: 'Trainer card' }).click()
+    await expect(page.getByRole('heading', { name: 'Badge case' })).toBeVisible()
+    await settled(page)
+    expect(await nonJerseyText(page), `profile at ${size.width}: fonts`).toEqual([])
+    if (size.phone) expect(await smallControls(page), `profile at ${size.width}: controls under 44px`).toEqual([])
+    if (size.width === 375 || size.width === 1280) {
+      const axe = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze()
+      const bad = axe.violations.filter((v) => v.impact === 'serious' || v.impact === 'critical')
+      expect(bad.map((v) => `${v.id}: ${v.nodes[0]?.target.join(' ')}`), `profile at ${size.width}: axe`).toEqual([])
+    }
+  }
+})
+
 test('the title, help, setup and admin pages use only the Jersey fonts', async ({ page }) => {
   await boot(page)
   for (const route of ['/', '/new', '/help', '/setup', '/admin']) {

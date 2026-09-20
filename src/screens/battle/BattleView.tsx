@@ -5,11 +5,9 @@ import {
   activeBattler,
   autoEvents,
   battleBackgroundFor,
-  COMBO_NAMES,
   computeDamage,
   confusionRecoil,
   createRng,
-  effectText,
   faceOf,
   facesOf,
   hasStatus,
@@ -26,6 +24,7 @@ import {
 import { Die } from '@/components/Die'
 import { HpBar } from '@/components/HpBar'
 import { PixelIcon, STATUS_ICON } from '@/components/icons'
+import { ItemSprite } from '@/components/ItemSprite'
 import { Modal } from '@/components/Modal'
 import { OakTip, useOneTimeTip } from '@/components/OakTip'
 import { ParticleCanvas, type ParticleHandle } from '@/components/ParticleCanvas'
@@ -34,7 +33,8 @@ import { MiniSprite, SpriteImg } from '@/components/SpriteImg'
 import { playerOf, PokeBall, ThrowSprite, TrainerSprite } from '@/components/TrainerArt'
 import { StatusIcons } from '@/components/StatusIcons'
 import { TypeBadge } from '@/components/TypeBadge'
-import { cap, trainerTitle } from '@/lib/format'
+import { comboName, statusName, trainerTitle } from '@/lib/format'
+import { useT } from '@/i18n/react'
 import { AUTO_PACE, PaceContext, usePace } from '@/lib/pace'
 import { useIsDesktop, useMediaQuery } from '@/lib/useMediaQuery'
 import { setSettings, useGame, type BattleSlice } from '@/store/game'
@@ -46,6 +46,7 @@ import { useBattleAnimator } from './useBattleAnimator'
 import { CatchView } from './CatchView'
 import { VictoryView, WipeView, StalemateView } from './VictoryView'
 import { BattleHistory, BattleHistoryList, DamageRecap } from './BattleHistory'
+import { effectText } from '@/i18n/text'
 
 /**
  * The info box: name, level, types, status and HP. The foe's HP is a bar only — never its exact numbers. `compact`
@@ -69,6 +70,7 @@ function BattlerPanel({
   footer?: React.ReactNode
   className?: string
 }) {
+  const { t } = useT()
   const foe = side === 'enemy'
   const bar = <HpBar hp={hp} max={b.maxHp} showNumbers={!foe} approximate={foe} height={foe ? 10 : 8} className={compact && foe ? 'min-w-[72px] flex-1' : 'mt-1'} />
   return (
@@ -76,8 +78,8 @@ function BattlerPanel({
       {/* Name, then its level; the Poké Ball pips (and your status on phones) sit at the far right. */}
       <div className="flex items-center gap-1.5">
         <span className="truncate text-xl leading-none sm:text-2xl">{b.name}</span>
-        {b.shiny && <PixelIcon name="star" size={12} title="Shiny" className="shrink-0" />}
-        <span className="shrink-0 text-lg leading-none sm:text-xl">Lv.{b.level}</span>
+        {b.shiny && <PixelIcon name="star" size={12} title={t('ui.mon.shiny')} className="shrink-0" />}
+        <span className="shrink-0 text-lg leading-none sm:text-xl">{t('ui.common.level.short', { n: b.level })}</span>
         <span className="ml-auto flex shrink-0 items-center gap-1">
           {compact && !foe && <StatusIcons status={b.status} />}
           {(foe || compact) && badges}
@@ -350,6 +352,7 @@ const autoRng = createRng(randomSeed())
 const AUTO_SELECT_MS = 450
 
 export function BattleView({ battle }: { battle: BattleSlice }) {
+  const { t } = useT()
   const data = useGame((s) => s.data)
   const save = useGame((s) => s.save)
   const run = useGame((s) => s.run)
@@ -571,8 +574,14 @@ export function BattleView({ battle }: { battle: BattleSlice }) {
         controls stay in view (shorter desktops get a narrower column). */}
     <div className={cx('relative mx-auto flex w-full flex-col gap-2 sm:gap-3', desktop ? (roomy ? 'max-w-3xl' : 'max-w-[640px]') : 'max-w-5xl')}>
       <h1 className="sr-only">
-        Battle: {active.name} against {trainerName ? `${trainerName}'s ` : st.kind === 'wild' ? 'a wild ' : ''}
-        {st.enemy.name}
+        {t('ui.battle.heading', {
+          mine: active.name,
+          foe: trainerName
+            ? t('ui.battle.theirs', { trainer: trainerName, name: st.enemy.name })
+            : st.kind === 'wild'
+              ? t('ui.battle.aWild', { name: st.enemy.name })
+              : st.enemy.name,
+        })}
       </h1>
       {/* Scene: the area's battle background, the foe on the far platform, yours from behind on the near one. */}
       <div className="pixel-panel overflow-hidden p-0">
@@ -676,8 +685,9 @@ export function BattleView({ battle }: { battle: BattleSlice }) {
             badges={teamPips}
             footer={
               <div className="mt-1 flex items-center justify-between gap-1 text-base leading-none">
-                <span className="flex items-center gap-1 whitespace-nowrap" title="Rerolls left">
-                  <PixelIcon name="reroll" size={12} /> {active.rerollsLeft}/{active.rerolls} rerolls
+                <span className="flex items-center gap-1 whitespace-nowrap" title={t('ui.battle.rerollsLeft')}>
+                  <PixelIcon name="reroll" size={12} />{' '}
+                  {t('ui.battle.rerollsOf', { left: active.rerollsLeft, max: active.rerolls })}
                 </span>
                 <StatusIcons status={active.status} />
                 {teamPips}
@@ -722,9 +732,9 @@ export function BattleView({ battle }: { battle: BattleSlice }) {
                 <SpriteImg dex={st.enemy.dex} size={Math.round(CELL * scale * 1.3)} silhouette />
               </motion.div>
               <div className="flex flex-col items-center">
-                <div className="text-lg tracking-[0.4em] text-gold sm:text-xl">LEGENDARY</div>
+                <div className="text-lg tracking-[0.4em] text-gold sm:text-xl">{t('ui.enc.legendaryTag')}</div>
                 <div className="text-4xl sm:text-5xl">{st.enemy.name}</div>
-                <div className="text-xl sm:text-2xl">Lv.{st.enemy.level}</div>
+                <div className="text-xl sm:text-2xl">{t('ui.common.level.short', { n: st.enemy.level })}</div>
               </div>
             </motion.div>
           )}
@@ -767,22 +777,31 @@ export function BattleView({ battle }: { battle: BattleSlice }) {
               {desktop && ready && rolling && <span className="font-mono text-xs text-muted">{i + 1}</span>}
             </div>
           ))}
-          {canAct && st.phase === 'player_roll' && <span className="text-xl text-muted">Rolling the dice…</span>}
-          {tray?.side === 'enemy' && <span className="w-full text-center text-sm uppercase tracking-widest text-muted">enemy roll</span>}
+          {canAct && st.phase === 'player_roll' && <span className="text-xl text-muted">{t('ui.battle.rollingDice')}</span>}
+          {tray?.side === 'enemy' && (
+            <span className="w-full text-center text-sm uppercase tracking-widest text-muted">{t('ui.battle.enemyRoll')}</span>
+          )}
         </motion.div>
 
         {/* Live combo readout */}
         {ready && preview && (
           <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-xl">
-            {preview.recoil > 0 && <span className="text-danger">CONFUSED — {active.name} takes {preview.recoil} recoil after this hit!</span>}
+            {preview.recoil > 0 && (
+              <span className="text-danger">{t('ui.battle.confusedRecoil', { name: active.name, amount: preview.recoil })}</span>
+            )}
             <span className={preview.r.combo ? 'text-ink' : 'text-muted'}>
-              {preview.r.combo ? `${COMBO_NAMES[preview.r.combo.key].toUpperCase()} — +${preview.r.combo.bonus}` : 'NO COMBO'}
+              {preview.r.combo
+                ? t('ui.battle.comboIs', { combo: comboName(preview.r.combo.key).toUpperCase(), bonus: preview.r.combo.bonus })
+                : t('ui.battle.noCombo')}
             </span>
             <button
               type="button"
               aria-expanded={showBreakdown}
-              aria-label={`${preview.r.final} damage — ${showBreakdown ? 'hide' : 'show'} details`}
-              title="Damage — click for details"
+              aria-label={t('ui.battle.damageDetails', {
+                amount: preview.r.final,
+                action: t(showBreakdown ? 'ui.battle.hide' : 'ui.battle.show'),
+              })}
+              title={t('ui.battle.damageTitle')}
               className={cx('inline-flex min-h-[44px] min-w-[44px] items-center justify-center gap-1.5 px-1 leading-none md:min-h-[32px]', short ? 'text-xl' : 'text-2xl')}
               onClick={() => setShowBreakdown((v) => !v)}
             >
@@ -791,7 +810,7 @@ export function BattleView({ battle }: { battle: BattleSlice }) {
             {preview.statuses.map((s) => (
               <span key={s.status} className="inline-flex items-center gap-1 border-2 border-ink bg-panel px-1 text-base">
                 <PixelIcon name={STATUS_ICON[s.status] ?? 'star'} size={12} />
-                {s.status.toUpperCase()}
+                {t(`ui.status.${s.status}.label`)}
                 {s.stacks && s.stacks > 1 ? ` ×${s.stacks}` : ''}
               </span>
             ))}
@@ -800,10 +819,10 @@ export function BattleView({ battle }: { battle: BattleSlice }) {
                 key={s.status}
                 className="inline-flex items-center gap-1 border-2 border-dashed px-1 text-base text-muted"
                 style={{ borderColor: STATUS_COLORS[s.status] }}
-                title={`${cap(s.status)} needs ${s.need} ${cap(s.status)} faces in one roll`}
+                title={t('ui.battle.almostStatus', { status: statusName(s.status), need: s.need })}
               >
                 <PixelIcon name={STATUS_ICON[s.status] ?? 'star'} size={12} />
-                {s.status.toUpperCase()} {s.have}/{s.need}
+                {t(`ui.status.${s.status}.label`)} {s.have}/{s.need}
               </span>
             ))}
           </div>
@@ -812,14 +831,12 @@ export function BattleView({ battle }: { battle: BattleSlice }) {
           <OakTip onClose={closeStatusTip}>
             {(() => {
               const s = preview.almost.find((x) => x.have > 0)!
-              const name = cap(s.status)
-              return (
-                <>
-                  A status face only works in numbers! {name} needs <b>{s.need} {name} faces in the same roll</b>. You have{' '}
-                  {s.have}, so {s.have === 1 ? `it just counts as ${s.value} damage` : `they just count as ${s.value} damage each`}. Reroll the other dice to chase
-                  the rest — the counter under the dice shows how close you are.
-                </>
-              )
+              return t('ui.battle.statusTip', {
+                status: statusName(s.status),
+                need: s.need,
+                have: s.have,
+                counts: t(s.have === 1 ? 'ui.battle.countsOne' : 'ui.battle.countsMany', { value: s.value }),
+              })
             })()}
           </OakTip>
         )}
@@ -829,16 +846,16 @@ export function BattleView({ battle }: { battle: BattleSlice }) {
         {auto && !terminal && (
           <div className="flex flex-wrap items-center justify-center gap-2" role="status">
             <span className="flex items-center gap-1 text-xl">
-              <PixelIcon name="dice" size={18} /> AUTO-MODE
+              <PixelIcon name="dice" size={18} /> {t('ui.battle.autoMode')}
             </span>
             <PixelButton size={minorSize} onClick={() => setSettings({ autoMode: false })}>
-              STOP
+              {t('ui.battle.stop')}
             </PixelButton>
           </div>
         )}
         {!auto && stunned && (
           <PixelButton variant="primary" size={mainSize} className="self-center" onClick={() => dispatchBattle({ t: 'PASS' })}>
-            SKIP TURN
+            {t('ui.battle.skipTurn')}
           </PixelButton>
         )}
         {!auto && rolling && (
@@ -852,14 +869,14 @@ export function BattleView({ battle }: { battle: BattleSlice }) {
                 onClick={() => dispatchBattle({ t: 'REROLL' })}
                 quiet
               >
-                <PixelIcon name="reroll" size={18} /> REROLL ({active.rerollsLeft})
+                <PixelIcon name="reroll" size={18} /> {t('ui.battle.reroll', { left: active.rerollsLeft })}
               </PixelButton>
               {active.rerollsLeft > 0 && (
-                <span className={cx('text-center leading-tight text-muted', short ? 'whitespace-nowrap text-sm' : 'text-base')}>Select dice to reroll</span>
+                <span className={cx('text-center leading-tight text-muted', short ? 'whitespace-nowrap text-sm' : 'text-base')}>{t('ui.battle.selectDice')}</span>
               )}
             </div>
             <PixelButton variant="primary" size={mainSize} className="min-h-[48px] gap-1 whitespace-nowrap px-2 max-[400px]:text-xl" disabled={!canAct} onClick={() => dispatchBattle({ t: 'ATTACK' })}>
-              <PixelIcon name="sword" size={18} /> ATTACK
+              <PixelIcon name="sword" size={18} /> {t('ui.battle.attack')}
             </PixelButton>
           </div>
         )}
@@ -869,42 +886,44 @@ export function BattleView({ battle }: { battle: BattleSlice }) {
               <PixelButton
                 size={minorSize}
                 disabled={!canItem}
-                title={st.itemUsedThisTurn ? 'One item per turn' : undefined}
+                title={st.itemUsedThisTurn ? t('ui.battle.oneItemPerTurn') : undefined}
                 onClick={() => setMenu('item')}
               >
-                <PixelIcon name="potion" size={14} /> ITEM
+                <PixelIcon name="potion" size={14} /> {t('ui.battle.item')}
               </PixelButton>
             )}
             {showSwitch && (
               <PixelButton size={minorSize} disabled={!canAct} onClick={() => setMenu('switch')}>
-                <PixelIcon name="ball" size={14} /> SWITCH
+                <PixelIcon name="ball" size={14} /> {t('ui.battle.switch')}
               </PixelButton>
             )}
             {st.canRun && (
               <PixelButton size={minorSize} variant="ghost" disabled={!canAct} onClick={() => dispatchBattle({ t: 'RUN' })}>
-                <PixelIcon name="run" size={14} /> RUN
+                <PixelIcon name="run" size={14} /> {t('ui.battle.run')}
               </PixelButton>
             )}
           </div>
         )}
         {desktop && canAct && !auto && (
-          <div className="text-center text-sm text-muted">Keys: 1–6 select · R reroll · Space {rolling ? 'attack' : 'roll'}</div>
+          <div className="text-center text-sm text-muted">
+            {t('ui.battle.keys', { action: t(rolling ? 'ui.battle.keyAttack' : 'ui.battle.keyRoll') })}
+          </div>
         )}
       </div>
 
       {/* Phones: the history sits on its own, below the message, dice and controls; it opens in a sheet. */}
       {!desktop && (
         <PixelButton size="sm" variant="ghost" className="w-full" onClick={() => setMenu('history')}>
-          <PixelIcon name="history" size={16} /> Battle history
+          <PixelIcon name="history" size={16} /> {t('ui.battle.history')}
         </PixelButton>
       )}
       {desktop && <BattleHistory battle={battle} cursor={fx.cursor} defaultOpen />}
-      <Modal open={menu === 'history'} onClose={() => setMenu(null)} title="Battle history">
+      <Modal open={menu === 'history'} onClose={() => setMenu(null)} title={t('ui.battle.history')}>
         <BattleHistoryList battle={battle} cursor={fx.cursor} />
       </Modal>
 
       {/* Forced switch after a faint (free) */}
-      <Modal open={ready && !auto && st.phase === 'player_switch'} dismissable={false} title="Choose your next Pokémon">
+      <Modal open={ready && !auto && st.phase === 'player_switch'} dismissable={false} title={t('ui.battle.chooseNext')}>
         <div className="flex flex-col gap-2">
           {switchTargets.map((p) => (
             <SwitchRow key={p.uid} b={p} onPick={() => dispatchBattle({ t: 'SWITCH', instanceId: p.uid })} />
@@ -913,7 +932,7 @@ export function BattleView({ battle }: { battle: BattleSlice }) {
       </Modal>
 
       {/* Voluntary switch (costs the turn) */}
-      <Modal open={menu === 'switch'} onClose={() => setMenu(null)} title="Switch (costs your turn)">
+      <Modal open={menu === 'switch'} onClose={() => setMenu(null)} title={t('ui.battle.switchCosts')}>
         <div className="flex flex-col gap-2">
           {switchTargets.map((p) => (
             <SwitchRow
@@ -935,7 +954,7 @@ export function BattleView({ battle }: { battle: BattleSlice }) {
           setMenu(null)
           setItemKey(null)
         }}
-        title={itemKey ? `Use ${data.items[itemKey]?.name} on…` : 'Items (one per turn)'}
+        title={itemKey ? t('ui.battle.useItemOn', { item: data.items[itemKey]?.name ?? itemKey }) : t('ui.battle.itemsTitle')}
       >
         {!itemKey ? (
           <div className="flex flex-col gap-2">
@@ -955,8 +974,11 @@ export function BattleView({ battle }: { battle: BattleSlice }) {
                     } else setItemKey(k)
                   }}
                 >
-                  <span>
-                    {it.name} <span className="text-base">({effectText(it)})</span>
+                  <span className="flex min-w-0 items-center gap-2">
+                    <ItemSprite item={it} size={24} />
+                    <span className="min-w-0">
+                      {it.name} <span className="text-base">({effectText(it)})</span>
+                    </span>
                   </span>
                   <span className="font-mono text-base">×{n}</span>
                 </PixelButton>
@@ -991,6 +1013,7 @@ export function BattleView({ battle }: { battle: BattleSlice }) {
 }
 
 function SwitchRow({ b, onPick, disabled }: { b: Battler; onPick: () => void; disabled?: boolean }) {
+  const { t } = useT()
   return (
     <button
       type="button"
@@ -1004,7 +1027,7 @@ function SwitchRow({ b, onPick, disabled }: { b: Battler; onPick: () => void; di
             <MiniSprite dex={b.dex} size={40} className="-my-2" />
             {b.name}
           </span>
-          <span>Lv.{b.level}</span>
+          <span>{t('ui.common.level.short', { n: b.level })}</span>
         </div>
         <HpBar hp={b.hp} max={b.maxHp} height={8} className="mt-1" />
       </div>

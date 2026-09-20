@@ -1,5 +1,6 @@
 import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react'
 import { cx } from '@/theme/util'
+import { t } from '@/i18n'
 
 export interface SearchSelectProps<T> {
   options: T[]
@@ -108,7 +109,7 @@ export function SearchSelect<T>({
           role="listbox"
           className="pixel-scroll absolute left-0 right-0 z-50 mt-1 max-h-72 overflow-auto border-2 border-ink bg-panel shadow-hard-sm"
         >
-          {filtered.length === 0 && <li className="px-2 py-1 text-muted">No match</li>}
+          {filtered.length === 0 && <li className="px-2 py-1 text-muted">{t('ui.search.noMatch')}</li>}
           {filtered.map((o, i) => (
             <li
               key={getKey(o)}

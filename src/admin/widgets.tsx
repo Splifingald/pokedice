@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import { PixelButton } from '@/components/PixelButton'
 import { SearchSelect } from '@/components/SearchSelect'
 import { SpriteImg } from '@/components/SpriteImg'
@@ -142,20 +142,25 @@ export function NumInput({
   nullable?: boolean
   className?: string
 }) {
+  // While the field has focus it shows exactly what was typed — so it can be emptied, or hold a
+  // lone "-" — and only what it means is pushed up: empty is 0 (or none when nullable).
+  const [draft, setDraft] = useState<string | null>(null)
   return (
     <input
       type="number"
       className={cx(inputCls, 'font-mono text-base', className)}
-      value={value ?? ''}
+      value={draft ?? (value ?? '')}
       step={step}
       min={min}
       max={max}
       placeholder={nullable ? '∞ / none' : undefined}
       onChange={(e) => {
         const raw = e.target.value
+        setDraft(raw)
         if (raw === '') onChange(nullable ? null : 0)
-        else onChange(Number(raw))
+        else if (Number.isFinite(Number(raw))) onChange(Number(raw))
       }}
+      onBlur={() => setDraft(null)}
     />
   )
 }
@@ -218,6 +223,7 @@ export function Stepper({
   min?: number
   max?: number
 }) {
+  const [draft, setDraft] = useState<string | null>(null)
   const clamp = (v: number) => Math.max(min, Math.min(max, Math.round(v)))
   return (
     <div className="flex items-center gap-1" role="group" aria-label={label}>
@@ -227,11 +233,16 @@ export function Stepper({
       <input
         type="number"
         className={cx(inputCls, 'w-16 text-center font-mono text-base')}
-        value={value}
+        value={draft ?? value}
         min={min}
         max={max}
         aria-label={label}
-        onChange={(e) => onChange(clamp(Number(e.target.value) || 0))}
+        onChange={(e) => {
+          const raw = e.target.value
+          setDraft(raw)
+          onChange(clamp(raw === '' ? 0 : Number(raw) || 0))
+        }}
+        onBlur={() => setDraft(null)}
       />
       <PixelButton size="sm" disabled={value >= max} onClick={() => onChange(clamp(value + 1))} aria-label={`${label}: one more`}>
         +

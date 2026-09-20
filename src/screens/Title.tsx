@@ -6,6 +6,7 @@ import { Modal } from '@/components/Modal'
 import { PixelButton } from '@/components/PixelButton'
 import { MiniSprite } from '@/components/SpriteImg'
 import { teamOf } from '@/engine'
+import { useT } from '@/i18n/react'
 import { isSupabaseConfigured } from '@/lib/supabase'
 import { useGame } from '@/store/game'
 import { GoogleAccountButton } from '@/components/GoogleAccountButton'
@@ -14,6 +15,7 @@ import type { DieType } from '@/engine/types'
 const DECOR: DieType[] = ['fire', 'water', 'grass', 'electric', 'psychic']
 
 export function Title() {
+  const { t } = useT()
   const navigate = useNavigate()
   const save = useGame((s) => s.save)
   const data = useGame((s) => s.data)
@@ -51,51 +53,47 @@ export function Title() {
             variant="primary"
             size="lg"
             onClick={() => navigate(runArea ? '/area' : '/map')}
-            aria-label={lead ? `Continue with ${data.species[lead.dex]?.name}` : 'Continue'}
+            aria-label={lead ? t('ui.title.continueWith', { name: data.species[lead.dex]?.name ?? '' }) : t('ui.common.continue')}
           >
             {lead && <MiniSprite dex={lead.dex} size={48} className="-my-3 -ml-2" />}
-            CONTINUE
+            {t('ui.common.continue')}
           </PixelButton>
         )}
         <PixelButton size="lg" variant={save ? 'secondary' : 'primary'} onClick={() => (save ? setConfirmNew(true) : navigate('/new'))}>
-          NEW GAME
+          {t('ui.title.newGame')}
         </PixelButton>
         <PixelButton size="md" variant="ghost" onClick={() => navigate('/help')}>
-          HOW TO PLAY
+          {t('ui.title.howToPlay')}
         </PixelButton>
         {isSupabaseConfigured && <GoogleAccountButton />}
       </div>
 
       {corrupt && (
-        <p className="copy max-w-md text-center text-danger">
-          Your previous save could not be read. It was archived (pokedice.save.corrupt) and a fresh game is ready.
-        </p>
+        <p className="copy max-w-md text-center text-danger">{t('ui.title.corruptSave')}</p>
       )}
 
       <footer className="copy mt-4 max-w-lg text-center text-muted">
-        A personal, non-commercial fan project. Pokémon and all related names are trademarks of Nintendo, Game Freak
-        and Creatures. Sprites are loaded from the public PokeAPI repository.
+        {t('ui.title.legal')}
         <div className="mt-2 flex justify-center gap-4">
           <Link to="/setup" className="underline">
-            Deployment guide
+            {t('ui.title.deployGuide')}
           </Link>
           {import.meta.env.DEV && (
             <Link to="/kitchen-sink" className="underline">
-              Kitchen sink
+              {t('ui.title.kitchenSink')}
             </Link>
           )}
         </div>
       </footer>
 
-      <Modal open={confirmNew} onClose={() => setConfirmNew(false)} title="Start over?">
+      <Modal open={confirmNew} onClose={() => setConfirmNew(false)} title={t('ui.title.startOver')}>
         <p className="copy mb-4 text-lg">
-          This replaces your current save{auth.status === 'signed_in' ? ' here and in the cloud' : ''}. Pokédollars, catches and
-          upgrades will be lost.
+          {t('ui.title.startOverBody', { where: auth.status === 'signed_in' ? t('ui.title.hereAndCloud') : '' })}
         </p>
         <div className="flex justify-end gap-2">
-          <PixelButton onClick={() => setConfirmNew(false)}>Cancel</PixelButton>
+          <PixelButton onClick={() => setConfirmNew(false)}>{t('ui.common.cancel')}</PixelButton>
           <PixelButton variant="danger" onClick={() => navigate('/new')}>
-            Start over
+            {t('ui.title.startOverAction')}
           </PixelButton>
         </div>
       </Modal>

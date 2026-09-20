@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect, type ReactNode } from 'react'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { MotionConfig } from 'framer-motion'
 import { setSfxEnabled } from '@/audio/sfx'
+import { t } from '@/i18n'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { GameLayout } from '@/components/GameLayout'
 import { SyncConflictModal } from '@/components/SyncConflictModal'
@@ -27,7 +28,7 @@ const HelpPage = lazy(() => import('@/screens/Help').then((m) => ({ default: m.H
 const KitchenSink = lazy(() => import('@/screens/KitchenSink').then((m) => ({ default: m.KitchenSink })))
 
 function Lazy({ children }: { children: ReactNode }) {
-  return <Suspense fallback={<div className="p-6 text-3xl">Loading…</div>}>{children}</Suspense>
+  return <Suspense fallback={<div className="p-6 text-3xl">{t('ui.common.loading')}</div>}>{children}</Suspense>
 }
 
 export function App() {

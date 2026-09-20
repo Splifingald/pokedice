@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import { useEffect, useRef, useState } from 'react'
 import { ballBonus, catchChance, catchValueOf } from '@/engine'
 import { sfx } from '@/audio/sfx'
+import { useT } from '@/i18n/react'
 import { Die } from '@/components/Die'
 import { PixelIcon } from '@/components/icons'
 import { OakTip, useOneTimeTip } from '@/components/OakTip'
@@ -17,12 +18,8 @@ import { cx } from '@/theme/util'
 const CATCH_TIP_KEY = 'pokedice.tip.catch'
 
 function CatchTip({ onClose }: { onClose: () => void }) {
-  return (
-    <OakTip onClose={onClose}>
-      Balls only help the catch die! A tired, weak Pokémon can often be caught with no ball at all. Save them for the
-      tough ones.
-    </OakTip>
-  )
+  const { t } = useT()
+  return <OakTip onClose={onClose}>{t('ui.catch.tip')}</OakTip>
 }
 
 // The throw, in ms from THROW: the arm swings, the ball flies, swallows the Pokémon, drops and wobbles until the reveal.
@@ -173,6 +170,7 @@ function ThrowStage({
 }
 
 export function CatchView() {
+  const { t } = useT()
   const c = useGame((s) => s.run.catch)
   const data = useGame((s) => s.data)
   const inventory = useGame((s) => s.save?.inventory)
@@ -193,14 +191,14 @@ export function CatchView() {
   }, [revealed, result])
 
   if (!c) return null
-  const name = data.species[c.dex]?.name ?? '???'
+  const name = data.species[c.dex]?.name ?? t('ui.common.unknown')
   const value = catchValueOf(data, c.dex)
   const balls = Object.entries(inventory ?? {})
     .map(([k, n]) => ({ item: data.items[k], n }))
     .filter((b) => b.n > 0 && b.item?.effect.kind === 'ball')
     .sort((a, b) => ballBonus(a.item) - ballBonus(b.item))
   const options = [
-    { key: null as string | null, label: 'No ball', bonus: 0, n: null as number | null },
+    { key: null as string | null, label: t('ui.catch.noBall'), bonus: 0, n: null as number | null },
     ...balls.map((b) => ({ key: b.item!.key as string | null, label: b.item!.name, bonus: ballBonus(b.item), n: b.n as number | null })),
   ]
   const chosen = options.find((o) => o.key === ball) ?? options[0]!
@@ -211,7 +209,12 @@ export function CatchView() {
   const certain = !!result && catchChance(value, result.bonus) >= 1
   const notNeeded = (o: (typeof options)[number]) =>
     o.key != null && options.some((w) => w.bonus < o.bonus && catchChance(value, w.bonus) >= 1)
-  const title = revealed && result ? (result.caught ? 'Gotcha!' : `${name} fled!`) : `${c.kind === 'boss' ? 'The legendary' : 'The wild'} ${name} is worn out!`
+  const title =
+    revealed && result
+      ? result.caught
+        ? t('ui.catch.gotcha')
+        : t('ui.catch.fledTitle', { name })
+      : t('ui.catch.wornOut', { who: t(c.kind === 'boss' ? 'ui.catch.theLegendary' : 'ui.catch.theWild'), name })
 
 
   return (
@@ -237,7 +240,7 @@ export function CatchView() {
           reduced={reduced}
         />
         {c.target.mode === 'replace' && !result && (
-          <p className="copy text-muted">Replaces your Lv.{c.target.level} {name}.</p>
+          <p className="copy text-muted">{t('ui.catch.replaces', { level: c.target.level, name })}</p>
         )}
 
         {!result ? (
@@ -245,22 +248,22 @@ export function CatchView() {
             <>
               <div aria-live="polite">
                 <div className="text-6xl leading-none">100%</div>
-                <p className="mt-1 text-2xl">It's exhausted: no ball needed!</p>
+                <p className="mt-1 text-2xl">{t('ui.catch.noBallNeeded')}</p>
               </div>
               {tip && <CatchTip onClose={closeTip} />}
               <PixelButton variant="primary" size="lg" onClick={() => throwBall(null)}>
-                CATCH
+                {t('ui.catch.catch')}
               </PixelButton>
             </>
           ) : (
             <>
               <div aria-live="polite">
-                <div className="text-xl leading-none">Catch chance</div>
+                <div className="text-xl leading-none">{t('ui.catch.chance')}</div>
                 <div className="text-6xl leading-none tabular-nums">{pct(chosen.bonus)}%</div>
               </div>
               {tip && <CatchTip onClose={closeTip} />}
               <fieldset className="w-full">
-                <legend className="sr-only">Ball</legend>
+                <legend className="sr-only">{t('ui.catch.ballLegend')}</legend>
                 <div className="flex flex-wrap justify-center gap-2">
                   {options.map((o) => {
                     const icon = o.key ? data.items[o.key]?.spriteUrl : null
@@ -270,8 +273,13 @@ export function CatchView() {
                         key={o.key ?? 'none'}
                         type="button"
                         aria-pressed={chosen.key === o.key}
-                        aria-label={`${o.label}${o.n != null ? `, ${o.n} left` : ''}: ${pct(o.bonus)}% chance${useless ? ', not needed' : ''}`}
-                        title={useless ? `${o.label}: not needed, a weaker option is already certain` : o.label}
+                        aria-label={t('ui.catch.ballLabel', {
+                          label: o.label,
+                          left: o.n != null ? t('ui.catch.ballLeft', { n: o.n }) : '',
+                          pct: pct(o.bonus),
+                          useless: useless ? t('ui.catch.notNeededSuffix') : '',
+                        })}
+                        title={useless ? t('ui.catch.notNeededTitle', { label: o.label }) : o.label}
                         onClick={() => setBall(o.key)}
                         className={cx(
                           'pixel-btn relative flex w-24 flex-col items-center gap-0.5 px-1 pb-1 pt-2',
@@ -290,9 +298,9 @@ export function CatchView() {
                             <PixelIcon name="ball" size={28} />
                           </span>
                         )}
-                        <span className="text-base leading-none">{o.key == null ? 'No ball' : `+${o.bonus}`}</span>
+                        <span className="text-base leading-none">{o.key == null ? t('ui.catch.noBall') : `+${o.bonus}`}</span>
                         <span className="text-2xl leading-none tabular-nums">{pct(o.bonus)}%</span>
-                        {useless && <span className="text-sm leading-none text-muted">not needed</span>}
+                        {useless && <span className="text-sm leading-none text-muted">{t('ui.catch.notNeeded')}</span>}
                         {o.n != null && <span className="absolute right-1 top-0.5 font-mono text-sm">×{o.n}</span>}
                       </button>
                     )
@@ -300,7 +308,7 @@ export function CatchView() {
                 </div>
               </fieldset>
               <PixelButton variant="primary" size="lg" onClick={() => throwBall(chosen.key)}>
-                ROLL TO CATCH
+                {t('ui.catch.roll')}
               </PixelButton>
             </>
           )
@@ -308,20 +316,24 @@ export function CatchView() {
           <>
             {/* A certain catch (no ball needed, or a ball that can't miss) skips the die: only the ball is thrown. */}
             {!certain && (
-              <Die type="base" face={{ kind: 'number', value: result.die }} size={80} rollKey="catch-throw" label={`Catch die: ${result.die}`} />
+              <Die type="base" face={{ kind: 'number', value: result.die }} size={80} rollKey="catch-throw" label={t('ui.catch.die', { value: result.die })} />
             )}
             <p className="text-2xl" aria-live="polite">
               {revealed
                 ? result.caught
-                  ? `${name} was caught!`
-                  : `MISSED! You needed at least ${Math.max(1, result.need - result.bonus)}.`
+                  ? t('ui.catch.caught', { name })
+                  : t('ui.catch.missed', { need: Math.max(1, result.need - result.bonus) })
                 : certain
-                  ? `Throwing the ${result.ballKey ? (data.items[result.ballKey]?.name ?? 'ball') : 'Poké Ball'}…`
-                  : 'The die is rolling…'}
+                  ? t('ui.catch.throwing', {
+                      ball: result.ballKey
+                        ? (data.items[result.ballKey]?.name ?? t('ui.catch.aBall'))
+                        : (data.items['poke-ball']?.name ?? t('ui.catch.aBall')),
+                    })
+                  : t('ui.catch.rolling')}
             </p>
             {revealed && (
               <PixelButton variant="primary" size="lg" onClick={finishCatch}>
-                CONTINUE
+                {t('ui.common.continue')}
               </PixelButton>
             )}
           </>

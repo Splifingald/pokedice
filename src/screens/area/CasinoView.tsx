@@ -2,6 +2,8 @@ import { motion } from 'framer-motion'
 import { useEffect, useRef, useState } from 'react'
 import type { SlotSymbol, SpinResult } from '@/engine'
 import { sfx } from '@/audio/sfx'
+import { t } from '@/i18n'
+import { useT } from '@/i18n/react'
 import { GoldPill } from '@/components/GoldPill'
 import { PixelIcon } from '@/components/icons'
 import { PixelButton } from '@/components/PixelButton'
@@ -16,33 +18,38 @@ const TICK_MS = 90
 
 function Symbol({ symbol, prizeDex, size }: { symbol: SlotSymbol; prizeDex: number; size: number }) {
   return symbol === 'ball' ? (
-    <PixelIcon name="ball" size={Math.round(size * 0.72)} title="Poké Ball" />
+    <PixelIcon name="ball" size={Math.round(size * 0.72)} title={t('ui.casino.pokeBall')} />
   ) : (
     <SpriteImg dex={prizeDex} size={size} />
   )
 }
 
-function resultText(res: SpinResult, prizeName: string): string {
+function resultText(res: SpinResult, prize: string): string {
   switch (res.outcome) {
     case 'oneBall':
-      return `1 Poké Ball · +₽${res.gold}`
+      return t('ui.casino.oneBall', { gold: res.gold })
     case 'twoBalls':
-      return `2 Poké Balls · +₽${res.gold}`
+      return t('ui.casino.twoBalls', { gold: res.gold })
     case 'threeBalls':
-      return `3 Poké Balls! +₽${res.gold}`
+      return t('ui.casino.threeBalls', { gold: res.gold })
     case 'jackpot':
-      if (!res.prize) return `JACKPOT! You already have a strong ${prizeName} · +₽${res.gold}`
+      if (!res.prize) return t('ui.casino.jackpotHave', { prize, gold: res.gold })
       if (res.prize.replacedLevel != null)
-        return `JACKPOT! Your ${prizeName} grew from Lv.${res.prize.replacedLevel} to Lv.${res.prize.level}!`
-      return `JACKPOT! ${prizeName} Lv.${res.prize.level} ${res.prize.joinedTeam ? 'joined your team' : 'was sent to your Box'}!`
+        return t('ui.casino.jackpotGrew', { prize, from: res.prize.replacedLevel, to: res.prize.level })
+      return t('ui.casino.jackpotWon', {
+        prize,
+        level: res.prize.level,
+        where: t(res.prize.joinedTeam ? 'ui.casino.joinedTeam' : 'ui.casino.sentToBox'),
+      })
   }
 }
 
 /** Game Corner: a three-reel slot machine, played as long as the player likes (and can pay). */
 export function CasinoView() {
+  const { t } = useT()
   const save = useGame((s) => s.save)
   const cfg = useGame((s) => s.data.config.slotMachine)
-  const prizeName = useGame((s) => s.data.species[s.data.config.slotMachine.prizeDex]?.name ?? 'Pokémon')
+  const prizeName = useGame((s) => s.data.species[s.data.config.slotMachine.prizeDex]?.name) ?? t('ui.common.pokemon')
   const reduced = useGame((s) => s.settings.reducedMotion)
   const [reels, setReels] = useState<SlotSymbol[]>(['prize', 'ball', 'prize'])
   const [stopped, setStopped] = useState(3)
@@ -121,10 +128,10 @@ export function CasinoView() {
     <div className="flex flex-col gap-4">
       <section
         className="pixel-panel-dark mx-auto flex w-full max-w-lg flex-col items-center gap-4 p-4"
-        aria-label="Slot machine"
+        aria-label={t('ui.casino.machine')}
       >
         <div className="flex w-full items-center justify-between gap-2">
-          <h2 className="text-3xl leading-none text-gold">GAME CORNER</h2>
+          <h2 className="text-3xl leading-none text-gold">{t('ui.casino.title')}</h2>
           <GoldPill amount={save.gold - hidden} />
         </div>
 
@@ -133,8 +140,8 @@ export function CasinoView() {
           role="img"
           aria-label={
             spinning
-              ? 'Reels spinning'
-              : `Reels: ${reels.map((r) => (r === 'ball' ? 'Poké Ball' : prizeName)).join(', ')}`
+              ? t('ui.casino.reelsSpinning')
+              : t('ui.casino.reels', { symbols: reels.map((r) => (r === 'ball' ? t('ui.casino.pokeBall') : prizeName)).join(', ') })
           }
         >
           {[0, 1, 2].map((i) => (
@@ -157,7 +164,7 @@ export function CasinoView() {
           )}
           aria-live="polite"
         >
-          {spinning ? 'Spinning…' : last ? resultText(last, prizeName) : `₽${cost} a spin. Good luck!`}
+          {spinning ? t('ui.casino.spinning') : last ? resultText(last, prizeName) : t('ui.casino.idle', { cost })}
         </p>
 
         <PixelButton
@@ -167,13 +174,13 @@ export function CasinoView() {
           disabled={spinning || !canPay}
           onClick={spin}
         >
-          SPIN · ₽{cost}
+          {t('ui.casino.spin', { cost })}
         </PixelButton>
-        {!canPay && !spinning && <p className="text-lg text-danger-light">Not enough Pokédollars to play.</p>}
+        {!canPay && !spinning && <p className="text-lg text-danger-light">{t('ui.casino.tooPoor')}</p>}
       </section>
 
-      <section className="pixel-panel mx-auto w-full max-w-lg p-3" aria-label="Payouts">
-        <h3 className="mb-2 text-2xl">Payouts</h3>
+      <section className="pixel-panel mx-auto w-full max-w-lg p-3" aria-label={t('ui.casino.payouts')}>
+        <h3 className="mb-2 text-2xl">{t('ui.casino.payouts')}</h3>
         <ul className="flex flex-col gap-1.5 text-xl">
           {([1, 2, 3] as const).map((n) => {
             const key = n === 1 ? 'oneBall' : n === 2 ? 'twoBalls' : 'threeBalls'
@@ -183,9 +190,7 @@ export function CasinoView() {
                   {Array.from({ length: n }, (_, j) => (
                     <PixelIcon key={j} name="ball" size={20} />
                   ))}
-                  <span className="ml-1">
-                    {n} Poké Ball{n > 1 ? 's' : ''}
-                  </span>
+                  <span className="ml-1">{t(`ui.casino.balls.${n === 1 ? 'one' : 'other'}`, { n })}</span>
                 </span>
                 <span className="font-mono">₽{Math.round(cfg[key].gold)}</span>
               </li>
@@ -196,10 +201,10 @@ export function CasinoView() {
               {[0, 1, 2].map((j) => (
                 <SpriteImg key={j} dex={cfg.prizeDex} size={28} />
               ))}
-              <span className="ml-1">3 {prizeName}</span>
+              <span className="ml-1">{t('ui.casino.threePrize', { prize: prizeName })}</span>
             </span>
             <span className="text-right text-good">
-              {prizeName} Lv.{cfg.prizeLevel}
+              {prizeName} {t('ui.common.level.short', { n: cfg.prizeLevel })}
             </span>
           </li>
         </ul>
@@ -216,7 +221,7 @@ export function CasinoView() {
           disabled={spinning}
           onClick={leaveCasino}
         >
-          LEAVE
+          {t('ui.casino.leave')}
         </PixelButton>
       </div>
     </div>

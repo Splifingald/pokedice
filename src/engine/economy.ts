@@ -53,15 +53,6 @@ export function multiExpShareFor(fighterLevel: number, benchLevel: number, data:
   return Math.max(0, Math.min(cap, cfg.multiExpShare + gap * Math.max(0, cfg.multiExpGapBonus)))
 }
 
-/** Multi EXP in words, for Settings and Help: "30 % of the XP, +5 % per level behind the fighter (up to 100 %)". */
-export function multiExpText(data: GameData): string {
-  const c = data.config
-  const pct = (x: number) => `${Math.round(x * 100)} %`
-  const cap = Math.max(0, Math.min(1, c.multiExpMaxShare))
-  if (c.multiExpGapBonus <= 0 || cap <= c.multiExpShare) return `${pct(c.multiExpShare)} of the XP`
-  return `${pct(c.multiExpShare)} of the XP, +${pct(c.multiExpGapBonus)} for each level they're behind the fighter (up to ${pct(cap)})`
-}
-
 export function healAmount(item: ItemDef, hp: number, maxHp: number): number {
   if (item.effect.kind === 'revive') return hp > 0 ? 0 : reviveHp(item.effect.percent, maxHp)
   if (item.effect.kind !== 'heal' || hp <= 0 || hp >= maxHp) return 0

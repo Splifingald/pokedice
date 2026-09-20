@@ -6,6 +6,7 @@ import { getSupabase } from '@/lib/supabase'
 import { decideSync, pullCloudSave, pushCloudSave, sameSave, schedulePush } from '@/save/cloud'
 import { backupSave, flushWrite } from '@/save/storage'
 import { commitSave, initialRun, onSaveCommitted, pushToast, setContent, tickFossils, useGame } from './game'
+import { t } from '@/i18n'
 
 let syncedUser: string | null = null
 /** Nothing is pushed until the first sync for the signed-in user is settled — no overwrite while we compare. */
@@ -37,20 +38,20 @@ async function handleSession(client: SupabaseClient, session: Session | null) {
       return
     }
     if (decision === 'cloud' && cloud) {
-      if (local && !sameSave(local, cloud)) backupSave(local, "This device's save, replaced by the newer cloud save")
+      if (local && !sameSave(local, cloud)) backupSave(local, t('ui.sync.replacedByCloud'))
       commitSave(cloud, { silent: true, keepTimestamp: true })
       resetRun()
-      pushToast('Cloud save loaded — it was newer', 'good')
+      pushToast(t('ui.toast.cloudNewer'), 'good')
     } else if (decision === 'local' && local) {
-      if (cloud && !sameSave(local, cloud)) backupSave(cloud, "Cloud save, replaced by this device's newer save")
+      if (cloud && !sameSave(local, cloud)) backupSave(cloud, t('ui.sync.replacedByLocal'))
       await pushCloudSave(client, id, local)
-      pushToast(cloud ? 'Local save kept — it was newer' : 'Save backed up to the cloud', 'good')
+      pushToast(t(cloud ? 'ui.toast.localNewer' : 'ui.toast.backedUp'), 'good')
     }
     pushAllowed = true
   } catch (err) {
     console.warn('[cloud] sync failed', err)
     syncedUser = null // try again on the next auth event; stay local-only meanwhile
-    pushToast('Cloud sync unavailable — playing locally', 'bad')
+    pushToast(t('ui.toast.syncUnavailable'), 'bad')
   }
 }
 
@@ -61,11 +62,11 @@ export async function resolveSyncConflict(keep: 'local' | 'cloud') {
   const local = save ?? syncConflict.local
   const { cloud } = syncConflict
   if (keep === 'cloud') {
-    backupSave(local, "This device's save, replaced by the cloud save you picked")
+    backupSave(local, t('ui.sync.localPicked'))
     commitSave(cloud, { silent: true, keepTimestamp: true })
     resetRun()
   } else {
-    backupSave(cloud, "Cloud save, replaced by this device's save you picked")
+    backupSave(cloud, t('ui.sync.cloudPicked'))
     const kept = { ...local, updatedAt: Date.now() }
     commitSave(kept, { silent: true, keepTimestamp: true })
     const client = await getSupabase()
@@ -79,7 +80,7 @@ export async function resolveSyncConflict(keep: 'local' | 'cloud') {
   }
   useGame.setState({ syncConflict: null })
   pushAllowed = true
-  pushToast(keep === 'cloud' ? 'Cloud save loaded' : "This device's save kept and backed up", 'good')
+  pushToast(t(keep === 'cloud' ? 'ui.toast.cloudLoaded' : 'ui.toast.localKept'), 'good')
 }
 
 export async function initAuth() {
@@ -105,7 +106,7 @@ export async function initAuth() {
 export async function signInWithGoogle() {
   const client = await getSupabase()
   if (!client) {
-    pushToast('Cloud backup is not configured on this site', 'bad')
+    pushToast(t('ui.toast.cloudNotConfigured'), 'bad')
     return
   }
   flushWrite()
@@ -120,7 +121,7 @@ export async function signInWithGoogle() {
 export async function signOut() {
   const client = await getSupabase()
   await client?.auth.signOut()
-  pushToast('Signed out — your local save is kept', 'info')
+  pushToast(t('ui.toast.signedOut'), 'info')
 }
 
 export async function checkContent() {
@@ -128,7 +129,7 @@ export async function checkContent() {
   const remote = await fetchContentUpdate(data.config.configVersion)
   if (!remote) return
   setContent(remote, 'remote')
-  pushToast('Content updated', 'info')
+  pushToast(t('ui.toast.contentUpdated'), 'info')
 }
 
 /** Back after this long away (tab hidden, or the device asleep): a new session, so the page reloads for the latest build and content. */

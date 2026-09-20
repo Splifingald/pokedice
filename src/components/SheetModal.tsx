@@ -1,5 +1,7 @@
 import { useState, type ReactNode } from 'react'
 import type { PokemonInstance } from '@/engine'
+import { t } from '@/i18n'
+import { useT } from '@/i18n/react'
 import { useGame } from '@/store/game'
 import { DexEntry } from './DexEntry'
 import { Modal } from './Modal'
@@ -22,7 +24,7 @@ export function SheetModal({
   instExtra?: (inst: PokemonInstance) => ReactNode
 }) {
   return (
-    <Modal open={!!view} onClose={onClose} label="Pokémon details">
+    <Modal open={!!view} onClose={onClose} label={t('ui.newGame.details')}>
       {view && <SheetStack key={viewKey(view)} initial={view} instExtra={instExtra} onClose={onClose} />}
     </Modal>
   )
@@ -37,6 +39,7 @@ function SheetStack({
   instExtra?: (inst: PokemonInstance) => ReactNode
   onClose: () => void
 }) {
+  const { t } = useT()
   const box = useGame((s) => s.save?.box)
   const [stack, setStack] = useState<SheetView[]>([initial])
   const top = stack[stack.length - 1]!
@@ -46,7 +49,7 @@ function SheetStack({
     <div className="flex flex-col gap-2">
       {stack.length > 1 && (
         <button type="button" className="min-h-[44px] self-start text-xl underline" onClick={() => setStack((s) => s.slice(0, -1))}>
-          ◀ Back
+          {t('ui.sheet.backStack')}
         </button>
       )}
       {top.kind === 'dex' ? (
