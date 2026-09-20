@@ -8,8 +8,10 @@ create table if not exists regions (
   dex_range jsonb not null,            -- [1, 151]: the generation this region's page is about
   starters jsonb not null,             -- [1, 4, 7]
   starter_level int not null default 5,
-  league_area_id uuid not null,        -- clearing this area is "the league is done"
-  next_region text references regions(id),
+  league_area_id uuid not null,        -- clearing this area is "the league is done" (a soft link to areas.id)
+  -- Soft links, deliberately not foreign keys: admin saves regions row by row, and a half-finished chain (Johto
+  -- pointing at a Hoenn that is not written yet) must not be rejected. The client tolerates a dangling id.
+  next_region text,
   -- Off = the region is invisible everywhere: no prompt, no switcher, no Pokédex page, no board. Kanto is always on.
   enabled boolean not null default true
 );

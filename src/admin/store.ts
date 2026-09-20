@@ -166,6 +166,8 @@ const ORDER: TableName[] = [
   'pokemon',
   'trainers',
   'areas',
+  // After areas: a region names the area its league is fought in.
+  'regions',
   'area_wild_pool',
   'area_trainer_pool',
   'area_loot_pool',

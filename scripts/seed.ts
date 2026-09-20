@@ -29,6 +29,7 @@ import {
   type ItemDef,
   type Milestone,
   type PokeType,
+  type Region,
   type Species,
   type StatusKind,
   type Trainer,
@@ -762,6 +763,7 @@ export function gymPotions(role: string, badge: string | null | undefined): stri
 const RETIRED_CONFIG_KEYS = ['regenPercentPerHour']
 
 export function buildSql(b: {
+  regions?: Region[]
   pokemon: Species[]
   typeChart: TypeChartRow[]
   diceTypes: DiceTypeDef[]
@@ -829,10 +831,17 @@ export function buildSql(b: {
       ['dex'],
     ),
     upsert(
+      'regions',
+      ['id', 'name', 'order_index', 'dex_range', 'starters', 'starter_level', 'league_area_id', 'next_region', 'enabled'],
+      (b.regions ?? []).map((r) => [r.id, r.name, r.orderIndex, r.dexRange, r.starters, r.starterLevel, r.leagueAreaId, r.nextRegion, r.enabled]),
+      ['id'],
+    ),
+    upsert(
       'areas',
       [
         'id',
         'order_index',
+        'region_id',
         'name',
         'banner_url',
         'rounds_to_clear',
@@ -853,6 +862,7 @@ export function buildSql(b: {
       b.areas.map((a) => [
         a.id,
         a.orderIndex,
+        a.regionId ?? 'kanto',
         a.name,
         a.bannerUrl,
         a.roundsToClear,
