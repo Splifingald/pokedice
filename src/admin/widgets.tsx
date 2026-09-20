@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import { PixelButton } from '@/components/PixelButton'
 import { SearchSelect } from '@/components/SearchSelect'
 import { SpriteImg } from '@/components/SpriteImg'
@@ -125,6 +125,51 @@ export function BackgroundPicker({
 
 export const inputCls = 'min-h-[34px] w-full border-2 border-ink bg-panel px-2 py-0.5 text-lg'
 
+/**
+ * A number field you can actually empty.
+ *
+ * A controlled `<input type="number">` that maps '' straight to 0 re-renders as "0" the instant you clear it, so
+ * select-all-then-type leaves you fighting a leading zero. This keeps what you typed as a draft string while the
+ * field has focus — including the half-finished states a number passes through, like '', '-' and '12.' — and reports
+ * a value only once one parses. Leaving the field empty means 0 (or null where the column allows one), which is
+ * settled on blur, when the draft is dropped and the real value shows again.
+ */
+export function useNumberField(
+  value: number | null | undefined,
+  onChange: (v: number | null) => void,
+  nullable = false,
+) {
+  const [draft, setDraft] = useState<string | null>(null)
+  const commit = (raw: string) => {
+    const next = readNumberInput(raw, nullable)
+    if (next !== HOLD) onChange(next)
+  }
+  return {
+    value: draft ?? (value ?? '').toString(),
+    onChange: (raw: string) => {
+      setDraft(raw)
+      commit(raw)
+    },
+    onBlur: () => {
+      if (draft !== null) commit(draft)
+      setDraft(null)
+    },
+  }
+}
+
+/** What a half-typed number reports: nothing yet. */
+export const HOLD = Symbol('hold')
+
+/**
+ * Read one keystroke's worth of a number field. Empty is 0 — or null where the column allows one — and anything that
+ * is only on the way to a number ('-', '1.', '1e', '  ') holds the previous value rather than reporting NaN.
+ */
+export function readNumberInput(raw: string, nullable = false): number | null | typeof HOLD {
+  if (raw.trim() === '') return nullable ? null : 0
+  const parsed = Number(raw)
+  return Number.isFinite(parsed) ? parsed : HOLD
+}
+
 export function NumInput({
   value,
   onChange,
@@ -142,20 +187,18 @@ export function NumInput({
   nullable?: boolean
   className?: string
 }) {
+  const field = useNumberField(value, onChange, nullable)
   return (
     <input
       type="number"
       className={cx(inputCls, 'font-mono text-base', className)}
-      value={value ?? ''}
+      value={field.value}
       step={step}
       min={min}
       max={max}
-      placeholder={nullable ? '∞ / none' : undefined}
-      onChange={(e) => {
-        const raw = e.target.value
-        if (raw === '') onChange(nullable ? null : 0)
-        else onChange(Number(raw))
-      }}
+      placeholder={nullable ? '∞ / none' : '0'}
+      onChange={(e) => field.onChange(e.target.value)}
+      onBlur={field.onBlur}
     />
   )
 }
@@ -219,6 +262,9 @@ export function Stepper({
   max?: number
 }) {
   const clamp = (v: number) => Math.max(min, Math.min(max, Math.round(v)))
+  // Clamping mid-typing is what makes a stepper impossible to retype: clearing it snaps to `min` and every further
+  // keystroke appends to that. The draft holds what you typed; the clamp lands on blur.
+  const field = useNumberField(value, (v) => onChange(clamp(v ?? min)))
   return (
     <div className="flex items-center gap-1" role="group" aria-label={label}>
       <PixelButton size="sm" disabled={value <= min} onClick={() => onChange(clamp(value - 1))} aria-label={`${label}: one less`}>
@@ -227,11 +273,12 @@ export function Stepper({
       <input
         type="number"
         className={cx(inputCls, 'w-16 text-center font-mono text-base')}
-        value={value}
+        value={field.value}
         min={min}
         max={max}
         aria-label={label}
-        onChange={(e) => onChange(clamp(Number(e.target.value) || 0))}
+        onChange={(e) => field.onChange(e.target.value)}
+        onBlur={field.onBlur}
       />
       <PixelButton size="sm" disabled={value >= max} onClick={() => onChange(clamp(value + 1))} aria-label={`${label}: one more`}>
         +

@@ -86,6 +86,11 @@ describe('regions', () => {
         }
       }
       const reachable = (dex: number): boolean => catchable.has(dex) || fossils.has(dex) || dex === prize
+      // The evolution gate (engine/regions.ts) needs no clause here: this loop only asks about dex numbers inside
+      // this region's own range, and those always belong to this region, which is unlocked while you play it. What
+      // the gate does change is the *other* direction — a Kanto Golbat filling Johto's #169 — and that is allowed
+      // exactly when Golbat is catchable here, which `reachable(w.from)` already asks. Kanto's side of it is pinned
+      // in tests/engine/cross-region-evolution.test.ts.
       const missing: number[] = []
       for (let dex = lo; dex <= hi; dex++) {
         if (reachable(dex)) continue

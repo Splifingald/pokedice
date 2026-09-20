@@ -359,6 +359,49 @@ accepts it, no duplicate species, the active block is consistent), plus the disa
   all of them if the player owns every branch. `gainXp` takes an optional `owned: Set<number>`; every caller passes
   `save.pokedex`. Covers Eevee, Tyrogue, Wurmple, Nincada, Clamperl, Poliwhirl, Slowpoke, Gloom, Snorunt.
 
+#### Cross-generation evolutions wait for their generation
+
+Kanto species carry branches that were added in later games — the seeder grafts them on, because they belong to the
+same Pokémon:
+
+| From | Into | How |
+|---|---|---|
+| Golbat #42 | Crobat #169 | Lv.30 |
+| Chansey #113 | Blissey #242 | Lv.30 |
+| Eevee #133 | Espeon #196 / Umbreon #197 | Sun Stone / Moon Stone |
+| Gloom #44 | Bellossom #182 | Sun Stone |
+| Poliwhirl #61 | Politoed #186 | King's Rock |
+| Slowpoke #79 | Slowking #199 | King's Rock |
+| Onix #95 | Steelix #208 | Metal Coat |
+| Scyther #123 | Scizor #212 | Metal Coat |
+| Seadra #117 | Kingdra #230 | Dragon Scale |
+| Porygon #137 | Porygon2 #233 | Up-Grade |
+
+Most are already fenced off by their item — the Sun Stone, King's Rock, Metal Coat, Dragon Scale and Up-Grade are
+Johto and Hoenn finds. Three were not: **Crobat** and **Blissey** need only a level, and **Umbreon** needs the Moon
+Stone, which is Kanto's own. So a first playthrough could turn up a Gen 2 Pokémon, which breaks the rule that no
+region is mentioned before the first one is done, and puts a #169 in a Pokédex that ends at #151.
+
+`evolutionGate(save, data)` in `engine/regions.ts` is the rule: an evolution into a species whose `dexRange` belongs to
+a region you have not unlocked does not happen. It is a predicate on the target's dex, threaded as `allowDex` through
+`gainXp` and `stoneEvolution`, and every caller in `engine/run.ts` passes it — so battle XP, Rare Candies, stones and
+the Day Care all obey one rule, and the campaign simulator inherits it by going through the same code. A species in no
+region's range is always allowed, so the gate can never be what makes something unobtainable.
+
+The gate is on **unlocked**, not on *where you are standing*: reach Johto and your Golbat evolves there, and in Kanto
+too if you go back, because by then you have seen a Crobat.
+
+The display follows the same predicate, or it would promise an evolution that will not happen: `PokemonSheet`'s
+"Evolves into" row and its `EVOLVE` milestone list only the branches the save may see, and the milestone disappears
+entirely when every branch is locked. A stone whose only branch is a later generation's stops offering itself in the
+bag. **That is what locking a milestone behind a region unlock looks like** — the gate is on the evolution, and the
+milestone is derived from it, rather than a separate flag to keep in sync.
+
+Stat milestones (`ADD_DIE`, `ADD_HP`, `ADD_REROLL`, `REPLACE_DIE`) are *not* region-gated. `effectiveStats(species,
+level, data)` is deliberately a pure function of species and level — "nothing about the dice set is stored in the
+save" — and gating those would mean threading the save through it and its ~36 call sites, making a Pokémon's power
+depend on progress. Worth doing only if a region is ever meant to *strengthen* Pokémon you already own.
+
 ### UI
 
 - **League-cleared modal** (reuse `Modal` + the `Dialogue`/`OakTip` voice): fires on `league_done`, explains that the

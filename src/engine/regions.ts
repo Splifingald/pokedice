@@ -35,6 +35,36 @@ export function unlockedRegions(save: SaveData, data: GameData): Region[] {
   return enabledRegions(data).filter((r) => started.has(r.id))
 }
 
+/**
+ * The region a species *belongs* to — the region whose `dexRange` covers its number. Unlike `regionSpecies`, which
+ * asks where you can catch something, this asks which generation it is from, and that is what decides whether a
+ * Pokémon exists for you yet.
+ */
+export function regionOfSpecies(data: GameData, dex: number): RegionId | null {
+  return data.regions.find((r) => dex >= r.dexRange[0] && dex <= r.dexRange[1])?.id ?? null
+}
+
+/**
+ * Whether a species may be evolved into yet: cross-generation evolutions wait for their generation.
+ *
+ * Kanto is full of Pokémon that gained an evolution in a later game — Golbat into Crobat, Chansey into Blissey, Eevee
+ * into Umbreon, Onix into Steelix. Those branches live on the Kanto species rows, because they are the same Pokémon,
+ * but a player still working through the Indigo League must not meet a Gen 2 Pokémon: it would spoil a region they
+ * have not been offered yet and drop a #169 into a Pokédex that ends at #151. So the evolution is held until the
+ * region it comes from is unlocked. Reach Johto and your Golbat evolves — in Johto, and in Kanto too when you come
+ * back, because by then you have seen a Crobat.
+ *
+ * A species in no region's range (content ahead of the regions table) is always allowed, so this can never be the
+ * thing that makes a Pokémon unobtainable.
+ */
+export function evolutionGate(save: SaveData, data: GameData): (dex: number) => boolean {
+  const open = new Set(unlockedRegions(save, data).map((r) => r.id))
+  return (dex) => {
+    const from = regionOfSpecies(data, dex)
+    return from === null || open.has(from)
+  }
+}
+
 /** The areas of one region's main chain, in order. */
 export function regionAreas(data: GameData, regionId: RegionId) {
   return linearAreas(data).filter((a) => regionOfArea(a) === regionId)

@@ -1,5 +1,5 @@
-import type { ReactNode } from 'react'
-import { COPIES_FOE_DICE, effectiveStats, getSpecies, type DieType, type GameData, type Milestone, type PokemonInstance, type Species } from '@/engine'
+import { useMemo, type ReactNode } from 'react'
+import { COPIES_FOE_DICE, effectiveStats, evolutionGate, getSpecies, type DieType, type Evolution, type GameData, type Milestone, type PokemonInstance, type Species } from '@/engine'
 import { cap, dexNo } from '@/lib/format'
 import { useGame } from '@/store/game'
 import { cx, typeColor } from '@/theme/util'
@@ -29,7 +29,7 @@ export function evolutionHow(e: { level: number | null; item?: string | null }, 
   return `Lv.${e.level ?? '?'}`
 }
 
-function milestoneLabel(m: Milestone, species: Species, data: GameData): string {
+function milestoneLabel(m: Milestone, species: Species, data: GameData, evolutions: Evolution[]): string {
   const die = cap(m.dieType ?? species.type1)
   switch (m.effect) {
     case 'UPGRADE_DIE':
@@ -43,7 +43,7 @@ function milestoneLabel(m: Milestone, species: Species, data: GameData): string 
     case 'ADD_HP':
       return `+${m.amount ?? 0} max HP`
     case 'EVOLVE':
-      return `Evolves into ${species.evolutions.map((e) => data.species[e.toDex]?.name ?? `#${e.toDex}`).join(' / ')}`
+      return `Evolves into ${evolutions.map((e) => data.species[e.toDex]?.name ?? `#${e.toDex}`).join(' / ')}`
   }
 }
 
@@ -68,10 +68,29 @@ function MilestoneGlyph({ m, species }: { m: Milestone; species: Species }) {
   return <PixelIcon name={icon} size={16} />
 }
 
+/**
+ * The evolutions this save may see. A branch into a later generation — Golbat into Crobat, Chansey into Blissey — is
+ * held until that region is unlocked, so the sheet must not name it either: it would spoil a region the player has
+ * not been offered and promise an evolution that will not happen.
+ */
+function useVisibleEvolutions(species: Species): Evolution[] {
+  const data = useGame((s) => s.data)
+  const save = useGame((s) => s.save)
+  return useMemo(() => {
+    if (!save) return species.evolutions
+    const allowed = evolutionGate(save, data)
+    return species.evolutions.filter((e) => allowed(e.toDex))
+  }, [species, save, data])
+}
+
 /** Milestones on a side gauge that fills in blue up to the Pokémon's level. */
 function MilestoneTrack({ species, level }: { species: Species; level: number | null }) {
   const data = useGame((s) => s.data)
-  const ms = [...species.milestones].sort((a, b) => a.level - b.level)
+  const evolutions = useVisibleEvolutions(species)
+  // An EVOLVE milestone whose every branch belongs to a locked region has nothing to announce yet.
+  const ms = [...species.milestones]
+    .filter((m) => m.effect !== 'EVOLVE' || evolutions.length > 0)
+    .sort((a, b) => a.level - b.level)
   const next = level == null ? undefined : ms.find((m) => m.level > level)
   return (
     <section>
@@ -98,7 +117,7 @@ function MilestoneTrack({ species, level }: { species: Species; level: number | 
                 <div className="flex min-w-0 flex-1 items-center gap-2 pt-3 text-lg leading-tight">
                   <MilestoneGlyph m={m} species={species} />
                   <span className="min-w-0">
-                    <span className="font-mono text-sm">Lv.{m.level}</span> {milestoneLabel(m, species, data)}
+                    <span className="font-mono text-sm">Lv.{m.level}</span> {milestoneLabel(m, species, data, evolutions)}
                     <span className="sr-only">{reached ? ' (reached)' : ''}</span>
                   </span>
                   {m === next && <span className="ml-auto shrink-0 bg-gold px-1 text-base leading-tight text-ink">next</span>}
@@ -129,6 +148,7 @@ export function PokemonSheet({
 }) {
   const data = useGame((s) => s.data)
   const species = getSpecies(data, dex)
+  const evolutions = useVisibleEvolutions(species)
   const level = inst?.level ?? 1
   const stats = effectiveStats(species, level, data)
   const uniqueTypes = [...new Set(stats.dice)]
@@ -198,11 +218,11 @@ export function PokemonSheet({
 
       <MilestoneTrack species={species} level={inst ? inst.level : null} />
 
-      {species.evolutions.length > 0 && (
+      {evolutions.length > 0 && (
         <section>
           <h3 className="mb-1 text-xl">Evolves into</h3>
           <div className="flex flex-wrap gap-2">
-            {species.evolutions.map((e) => {
+            {evolutions.map((e) => {
               const name = data.species[e.toDex]?.name ?? `#${e.toDex}`
               const how = evolutionHow(e, data)
               const content = (
@@ -229,7 +249,7 @@ export function PokemonSheet({
               )
             })}
           </div>
-          {species.evolutions.filter((e) => e.level != null).length > 1 && <p className="mt-1 text-base text-muted">One is chosen at random.</p>}
+          {evolutions.filter((e) => e.level != null).length > 1 && <p className="mt-1 text-base text-muted">One is chosen at random.</p>}
         </section>
       )}
       {children}

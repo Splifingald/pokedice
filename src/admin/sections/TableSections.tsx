@@ -24,7 +24,7 @@ import { TypeBadge } from '@/components/TypeBadge'
 import { cx } from '@/theme/util'
 import { DataTable } from '../DataTable'
 import { newUuid, rowKey, setTable, updateRow, useAdmin, useAdminData } from '../store'
-import { Field, NumInput, PokemonPicker, TextInput, n, s } from '../widgets'
+import { Field, NumInput, PokemonPicker, TextInput, n, s, useNumberField } from '../widgets'
 
 // ---------------------------------------------------------------- Trainers
 
@@ -313,6 +313,7 @@ export function ItemsSection() {
 // ---------------------------------------------------------------- Dice types
 
 function FaceSlot({ face, onChange, type, color }: { face: Face; onChange: (f: Face) => void; type: DieType; color: string }) {
+  const value = useNumberField(face.value, (v) => onChange({ ...face, value: v ?? 0 } as Face))
   return (
     <div className="flex flex-col items-center gap-1 border-2 border-ink bg-panel p-1">
       <Die type={type} face={face} size={40} color={color} />
@@ -334,9 +335,10 @@ function FaceSlot({ face, onChange, type, color }: { face: Face; onChange: (f: F
       <input
         type="number"
         className="w-14 border border-ink bg-panel text-center font-mono text-sm"
-        value={face.value}
+        value={value.value}
         title={face.kind === 'status' ? 'fallback value' : 'value'}
-        onChange={(e) => onChange({ ...face, value: Number(e.target.value) } as Face)}
+        onChange={(e) => value.onChange(e.target.value)}
+        onBlur={value.onBlur}
       />
     </div>
   )

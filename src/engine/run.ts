@@ -1,6 +1,6 @@
 // Pure state transitions on the save: new game, rewards, catches, wipes, center, team, shop, upgrades.
 import { getSpecies, linearAreas } from './data'
-import { KANTO, regionOf, regionOfArea } from './regions'
+import { KANTO, evolutionGate, regionOf, regionOfArea } from './regions'
 import { asSeenBy, gymsFor, playerSideOf } from './rival'
 import { nextComboCost, nextDieCost, pokemonXp, trainerGoldFor, healAmount, multiExpShareFor } from './economy'
 import { roundsComplete } from './encounters'
@@ -305,11 +305,13 @@ export function applyVictory(
 
   // XP: the foe's level × xpMultiplier.
   const xp = pokemonXp(input.enemyLevel, area, progress.cleared, data)
+  // Cross-generation evolutions wait for their generation; the gate is the same for every award in this battle.
+  const allowDex = evolutionGate(save, data)
   const award = (uid: string, amount: number, shared: boolean) => {
     const inst = getInstance(next, uid)
     if (!inst) return
     events.push(shared ? { kind: 'xp', uid, amount, shared } : { kind: 'xp', uid, amount })
-    const res = gainXp(inst, amount, data, rng, { owned: save.pokedex })
+    const res = gainXp(inst, amount, data, rng, { owned: save.pokedex, allowDex })
     next = replaceInstance(next, res.inst)
     events.push(...res.events)
     for (const ev of res.events)
@@ -521,7 +523,7 @@ export function applyFieldItem(
     return healed ? { save: healed, events: [] } : null
   }
   if (item.effect.kind === 'stone') {
-    const toDex = stoneEvolution(inst, key, data)
+    const toDex = stoneEvolution(inst, key, data, evolutionGate(save, data))
     if (toDex == null) return null
     const evolved = evolve(inst, toDex, data)
     let next = replaceInstance(consumeItem(save, key)!, evolved)
@@ -532,7 +534,7 @@ export function applyFieldItem(
   let cur = inst
   const events: ProgressEvent[] = []
   for (let i = 0; i < item.effect.amount && cur.level < data.config.maxLevel; i++) {
-    const res = gainXp(cur, xpToNext(cur.level, data.config) - cur.xp, data, rng, { owned: save.pokedex })
+    const res = gainXp(cur, xpToNext(cur.level, data.config) - cur.xp, data, rng, { owned: save.pokedex, allowDex: evolutionGate(save, data) })
     cur = res.inst
     events.push(...res.events)
   }
@@ -571,7 +573,7 @@ export function syncXpCurve(save: SaveData, data: GameData): SaveData {
   const pokedex = new Set(save.pokedex)
   const box = save.box.map((p) => {
     if (!due(p)) return p
-    const res = gainXp(p, 0, data, rng, { owned: save.pokedex })
+    const res = gainXp(p, 0, data, rng, { owned: save.pokedex, allowDex: evolutionGate(save, data) })
     for (const e of res.events) if (e.kind === 'evolve') pokedex.add(e.toDex)
     return res.inst
   })
