@@ -138,6 +138,8 @@ export const ROW_SCHEMAS: Record<TableName, z.ZodTypeAny> = {
         z.union([
           z.object({ kind: z.literal('pokedex'), count: int(1, 386) }),
           z.object({ kind: z.literal('maxLevel'), level: int(1, 100) }),
+          // "Another area is reached" — the kind the Rocket Hideout and the Johto/Hoenn secrets use.
+          z.object({ kind: z.literal('area'), areaId: uuid }),
         ]),
       )
       .nullable(),
