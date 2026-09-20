@@ -65,7 +65,7 @@ create table areas (
   max_level int not null,
   encounter_weights jsonb not null,          -- {wild:60, trainer:25, center:10, item:0}
   backtrack_multiplier numeric not null default 0.5,
-  legendary_boss jsonb,                      -- null | {dex:145, level:25} | [{dex,level,teamAvgThreshold,upgradeLevel}]
+  legendary_boss jsonb,                      -- null | {dex:145, level:25} | [{dex,level,teamAvgThreshold,upgradeLevel,battleBackground,shiny}]
   scales_to_team boolean not null default false,
   easy_mode boolean not null default false,  -- a Center comes next whenever a team member is K.O. (migration 0002)
   enemy_upgrade_level int                   -- foes' dice/combo upgrade level; null = game_config.enemyUpgradeLevel (v1.7)

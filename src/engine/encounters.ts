@@ -37,7 +37,7 @@ export type Encounter =
   /** `reason`: 'round' opens a new round; 'fainted' follows a K.O. in an easy area. */
   | { kind: 'center'; forced: boolean; reason?: 'fainted' | 'round' }
   /** `returning`: beaten before, fled the catch, back for another try. */
-  | { kind: 'boss'; dex: number; level: number; returning?: boolean }
+  | { kind: 'boss'; dex: number; level: number; returning?: boolean; shiny?: boolean }
   /** Something on the ground: `qty` of an item, or Pokédollars (itemKey 'money', qty = ₽). */
   | { kind: 'item'; entryId: string; itemKey: string; qty: number }
   /** The Game Corner: play the slot machine as long as you like. */
@@ -334,7 +334,7 @@ export function challengeEncounter(
   const gym = dueGym(area, progress, data, side)
   if (gym) return gymEncounter(area, gym, data, side)
   const boss = dueBoss(area, progress, teamAvgLevel)
-  return boss ? { kind: 'boss', dex: boss.dex, level: boss.level } : null
+  return boss ? { kind: 'boss', dex: boss.dex, level: boss.level, ...(boss.shiny && { shiny: true }) } : null
 }
 
 /** The next encounter alone, for callers that don't keep decks (each call deals from fresh ones). */
@@ -351,7 +351,7 @@ function findItem(ctx: EncounterContext, rng: Rng): { encounter: Encounter; loot
 
 function returningLegend(ctx: EncounterContext): Encounter | null {
   const b = fledLegendary(ctx.area, ctx.progress, ctx.pokedex)
-  return b ? { kind: 'boss', dex: b.dex, level: b.level, returning: true } : null
+  return b ? { kind: 'boss', dex: b.dex, level: b.level, returning: true, ...(b.shiny && { shiny: true }) } : null
 }
 
 const cardEncounter = (card: 'wild' | 'trainer' | 'center' | 'casino', ctx: EncounterContext, rng: Rng): Encounter | null =>
@@ -446,7 +446,7 @@ function forcedEncounter(ctx: EncounterContext, kind: ForceKind, rng: Rng): Enco
       return { kind: 'casino' }
     case 'boss': {
       const b = (ctx.area.legendaryBoss ?? []).find((x) => !ctx.progress.bossesDefeated.includes(x.dex))
-      return b ? { kind: 'boss', dex: b.dex, level: b.level } : returningLegend(ctx)
+      return b ? { kind: 'boss', dex: b.dex, level: b.level, ...(b.shiny && { shiny: true }) } : returningLegend(ctx)
     }
     default:
       return null

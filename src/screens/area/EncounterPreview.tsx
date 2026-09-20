@@ -30,13 +30,13 @@ function WildCard({ enc }: { enc: Extract<Encounter, { kind: 'wild' | 'boss' }> 
         animate={{ scale: 1, opacity: 1 }}
         className={cx('shrink-0', boss ? 'border-[3px] border-gold bg-ink' : 'border-[3px] border-ink bg-parchment')}
       >
-        <SpriteImg dex={enc.dex} size={desktop ? 144 : 104} shiny={enc.kind === 'wild' && enc.shiny} />
+        <SpriteImg dex={enc.dex} size={desktop ? 144 : 104} shiny={enc.shiny} />
       </motion.div>
       <div className="flex min-w-0 flex-col gap-1">
         {boss && <div className="text-lg leading-none tracking-[0.35em] text-gold">LEGENDARY</div>}
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
           <span className="text-3xl leading-none sm:text-4xl">{sp.name}</span>
-          {enc.kind === 'wild' && enc.shiny && (
+          {enc.shiny && (
             <span className="inline-flex items-center gap-1 border-2 border-ink bg-panel px-1.5 text-lg leading-tight text-ink">
               <PixelIcon name="star" size={14} /> SHINY
             </span>
@@ -59,7 +59,7 @@ function WildCard({ enc }: { enc: Extract<Encounter, { kind: 'wild' | 'boss' }> 
           <DiceSet dice={stats.dice} size={22} />
           <StatChip stat="rerolls" value={stats.rerolls} size={18} className="text-lg" />
         </div>
-        <CatchHint dex={enc.dex} level={enc.level} kind={boss ? 'boss' : 'wild'} shiny={enc.kind === 'wild' && enc.shiny} />
+        <CatchHint dex={enc.dex} level={enc.level} kind={boss ? 'boss' : 'wild'} shiny={enc.shiny} />
       </div>
     </div>
   )

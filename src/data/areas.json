@@ -9928,7 +9928,8 @@
   "legendaryBoss": [
    {
     "dex": 130,
-    "level": 36
+    "level": 36,
+    "shiny": true
    }
   ],
   "scalesToTeam": false,

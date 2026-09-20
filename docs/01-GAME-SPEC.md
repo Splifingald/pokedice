@@ -271,6 +271,7 @@ Articuno, Zapdos, Moltres, Mewtwo and Mew are **not** in wild pools. Each is att
 - Win → XP awarded, the area's next-area unlock is granted, then the catch throw (catch value 9: an Ultra Ball with a 6, or a Master Ball). **If it flees, it comes back:** until it's caught, every encounter deck dealt in that area holds one extra "legend" card that brings it back at the same level.
 - Lose → normal wipe handling (§6.4), and the boss can be challenged again right away (finished rounds stay finished). It is never missable.
 - An area with no `legendaryBossDex` simply unlocks the next area once every round is done.
+- **Always shiny** (`legendary_boss[].shiny`, Admin → Areas): the boss is shiny every time it appears — the challenge card, the fight, the catch and the Box. Colours only: nothing about the fight or the catch changes. Johto's Red Gyarados at the Lake of Rage ships with it on.
 
 ---
 

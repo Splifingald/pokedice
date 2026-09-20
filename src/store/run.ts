@@ -254,7 +254,7 @@ export function engage(leadUid?: string) {
     case 'wild':
       return startBattle('wild', { dex: enc.dex, level: enc.level, shiny: enc.shiny }, leadUid)
     case 'boss':
-      return startBattle('boss', { dex: enc.dex, level: enc.level }, leadUid)
+      return startBattle('boss', { dex: enc.dex, level: enc.level, shiny: enc.shiny }, leadUid)
     case 'trainer':
     case 'gym': {
       const first = enc.team[0]

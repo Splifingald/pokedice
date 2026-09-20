@@ -4,16 +4,20 @@ import {
   battleBackgroundFor,
   BATTLE_BACKGROUNDS,
   catchTarget,
+  challengeEncounter,
   createBattle,
   createInstance,
   createRng,
+  emptyProgress,
   linearAreas,
   newSave,
   progressOf,
   releaseDuplicates,
+  rollEncounter,
   rollWild,
   teamOf,
   uniformLevels,
+  type BossDef,
   type EncounterContext,
   type GameData,
 } from '@/engine'
@@ -101,6 +105,45 @@ describe('shiny Pokémon', () => {
     const stronger = applyCatch(s, { dex: 16, level: 12, shiny: true }, { mode: 'new' }, data, 3, newId)
     expect(stronger.save.box.filter((p) => p.dex === 16).map((p) => [p.level, !!p.shiny])).toEqual([[9, false], [12, true]])
     expect(catchTarget(s, 16, 5, 'boss', data, true)).toBeNull()
+  })
+})
+
+describe('an always-shiny legendary', () => {
+  // The Red Gyarados of the Lake of Rage: a boss marked shiny in the area's data is shiny everywhere it shows up.
+  const LAKE = data.areas.find((a) => (a.legendaryBoss ?? []).some((b) => b.dex === 130))!
+  const area = (boss: Partial<BossDef> = {}) => ({ ...LAKE, legendaryBoss: [{ ...(LAKE.legendaryBoss ?? [])[0]!, ...boss }] })
+  const ready = () => ({ ...emptyProgress(), roundsDone: LAKE.roundsToClear ?? 0 })
+
+  it('ships on the Red Gyarados, and its challenge card carries the colours', () => {
+    expect((LAKE.legendaryBoss ?? [])[0]).toMatchObject({ dex: 130, shiny: true })
+    const enc = challengeEncounter(area(), ready(), data, 40, null)!
+    expect(enc).toMatchObject({ kind: 'boss', dex: 130, shiny: true })
+    // A boss with no flag stays plain — every other legendary is untouched.
+    expect(challengeEncounter(area({ shiny: false }), ready(), data, 40, null)).not.toHaveProperty('shiny')
+  })
+
+  it('comes back shiny after it flees the throw, and reaches the battle and the Box that way', () => {
+    const beaten = { ...ready(), bossesDefeated: [130] }
+    // Knocked out, missed the throw: the legendary keeps coming back — still red.
+    const back = rollEncounter({ ...ctx(data), area: area(), progress: beaten, pokedex: [], forceKind: 'boss' }, createRng(3))
+    expect(back).toMatchObject({ kind: 'boss', dex: 130, returning: true, shiny: true })
+
+    const s = newSave(4, data, 0, newId)
+    const { state } = createBattle(
+      {
+        kind: 'boss',
+        team: teamOf(s).map((p) => ({ uid: p.id, dex: p.dex, level: p.level, hp: p.currentHp, shiny: p.shiny })),
+        enemy: { dex: 130, level: 36, shiny: true },
+        playerLevels: uniformLevels(1),
+        enemyLevels: uniformLevels(1),
+      },
+      data,
+    )
+    expect(state.enemy.shiny).toBe(true)
+    const caught = applyCatch(s, { dex: 130, level: 36, shiny: true }, { mode: 'new' }, data, 1, newId)
+    expect(caught.save.box.find((p) => p.id === caught.caughtId)!.shiny).toBe(true)
+    // One of a kind all the same: a legendary already in the Pokédex is never catchable again, shiny or not.
+    expect(catchTarget(caught.save, 130, 40, 'boss', data, true)).toBeNull()
   })
 })
 

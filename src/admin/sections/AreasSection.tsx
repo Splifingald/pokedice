@@ -64,7 +64,7 @@ function BossCard({ b, data, onChange, onRemove }: { b: BossDef; data: GameData;
   const byTeam = b.teamAvgThreshold != null
   return (
     <div className="flex flex-wrap items-center gap-3 border-2 border-ink bg-parchment p-2">
-      <SpriteImg dex={b.dex} size={56} className="border-2 border-ink bg-panel" />
+      <SpriteImg dex={b.dex} size={56} shiny={b.shiny} className="border-2 border-ink bg-panel" />
       <div className="flex min-w-[260px] flex-1 flex-col gap-1.5">
         <PokemonPicker data={data} value={b.dex} onChange={(dex) => onChange({ ...b, dex })} />
         <div className="flex flex-wrap items-center gap-2 text-lg">
@@ -94,6 +94,19 @@ function BossCard({ b, data, onChange, onRemove }: { b: BossDef; data: GameData;
         <label className="flex flex-wrap items-center gap-2 text-lg">
           Battle scene
           <BackgroundPicker value={b.battleBackground} emptyLabel="the area's" onChange={(v) => onChange({ ...b, battleBackground: v })} />
+        </label>
+        <label className="flex flex-wrap items-center gap-2 text-lg" title="Shiny colours (cosmetic only) — the Red Gyarados kind of legendary">
+          <input
+            type="checkbox"
+            checked={!!b.shiny}
+            onChange={(e) => {
+              if (e.target.checked) return onChange({ ...b, shiny: true })
+              const { shiny: _drop, ...rest } = b
+              onChange(rest)
+            }}
+          />
+          Always shiny
+          <span className="text-sm text-muted">colours only</span>
         </label>
       </div>
       <PixelButton size="sm" variant="danger" onClick={onRemove}>

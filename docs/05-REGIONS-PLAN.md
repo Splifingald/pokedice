@@ -230,7 +230,8 @@ rather than *defeated*, a player who knocks Lugia out and misses the throw does 
 Special events: Game Corner in Goldenrod (the existing `casino` card, prize Pokémon Abra/Dratini), Bug-Catching Contest
 in National Park (a `casino`-style one-off, or plain trainer gauntlet if it needs new UI — decide in step 4), Day Care
 on Route 34 (already a global feature — see §4 for whether it is per-region), Red Gyarados at Lake of Rage as a
-guaranteed-shiny boss.
+guaranteed-shiny boss (`legendary_boss[].shiny`, ticked in the area's data and in Admin → Areas: the legendary is shiny
+on its challenge card, in the fight, at the throw and in the Box, and nothing else about it changes).
 
 Fossils: Gen 2 adds no fossil Pokémon. The Kanto fossils are **not** in Johto's dex, so no fossil loot in Johto —
 Union Cave's loot tier goes to evolution stones instead.

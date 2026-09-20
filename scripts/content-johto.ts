@@ -511,8 +511,8 @@ export const JOHTO_AREAS: AreaPlan[] = [
     maxLevel: 40,
     weights: W.mixed,
     tier: 4,
-    // The red Gyarados waits at the lake, once the routes have been walked.
-    bosses: [{ dex: 130, level: 36 }],
+    // The red Gyarados waits at the lake, once the routes have been walked — and it is red: a guaranteed shiny.
+    bosses: [{ dex: 130, level: 36, shiny: true }],
     wild: [
       [129, 20, 30, 35], // Magikarp
       [179, 14, 30, 36], // Mareep

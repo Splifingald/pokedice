@@ -174,6 +174,8 @@ export interface BossDef {
   upgradeLevel?: number | null
   /** Battle scene for this legendary; unset = the area's. */
   battleBackground?: BattleBackground | null
+  /** Always shiny (the Red Gyarados kind of legendary): colours only, nothing about the fight changes. */
+  shiny?: boolean
 }
 
 /** Levels relative to the team average, both ends included: { min: -15, max: -10 } = 15 to 10 levels below. */

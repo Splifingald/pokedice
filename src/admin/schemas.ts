@@ -117,6 +117,7 @@ export const ROW_SCHEMAS: Record<TableName, z.ZodTypeAny> = {
           teamAvgThreshold: z.number().optional(),
           upgradeLevel: int(1, 10).nullable().optional(),
           battleBackground: background.nullable().optional(),
+          shiny: z.boolean().optional(),
         }),
       )
       .nullable(),
