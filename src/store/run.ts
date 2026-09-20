@@ -92,24 +92,28 @@ export function leaveArea() {
 }
 
 /**
- * An encounter is over and the player is back on the area screen: if it was the round's last card, the round counts
- * (once) and the area may clear. Safe to call more than once.
+ * The encounter is over: if it was the round's last card, the round counts (once) and the area may clear. Safe to call
+ * more than once. `quiet` keeps the "cleared" news for the caller (the victory screen shows it as a card instead of a
+ * toast); the cleared event is returned either way.
  */
-function settleRound() {
+function settleRound(quiet = false): Extract<RunEvent, { kind: 'area_cleared' }> | null {
   const { save, data, run } = useGame.getState()
-  if (!save || !run.areaId) return
+  if (!save || !run.areaId) return null
   const r = finishRound(save, run.areaId, data)
-  if (!r.roundDone) return
+  if (!r.roundDone) return null
   commitSave(r.save)
   const area = data.areas.find((a) => a.id === run.areaId)
   if (r.cleared) {
-    const next = r.cleared.nextAreaId ? data.areas.find((a) => a.id === r.cleared!.nextAreaId)?.name : null
-    pushToast(`${area?.name ?? 'Area'} cleared!${next ? ` ${next} is open.` : ''}`, 'good', 4500)
-    return
+    if (!quiet) {
+      const next = r.cleared.nextAreaId ? data.areas.find((a) => a.id === r.cleared!.nextAreaId)?.name : null
+      pushToast(`${area?.name ?? 'Area'} cleared!${next ? ` ${next} is open.` : ''}`, 'good', 4500)
+    }
+    return r.cleared
   }
   const need = area?.roundsToClear
   const done = progressOf(r.save, run.areaId).roundsDone ?? 0
-  pushToast(need != null && done <= need ? `Round ${done}/${need} complete!` : `Round ${done} complete!`, 'good')
+  if (!quiet) pushToast(need != null && done <= need ? `Round ${done}/${need} complete!` : `Round ${done} complete!`, 'good')
+  return null
 }
 
 /** Back to the area screen after an encounter: the round may be complete. */
@@ -313,13 +317,16 @@ function settleBattle(stalemate: boolean) {
       newId,
     )
     commitSave(res.save)
+    // The round's last card was this fight: count it now, so "AREA CLEARED" is part of the rewards.
+    const cleared = trainerHasNext() ? null : settleRound(true)
+    const events = cleared ? [...res.events, cleared] : res.events
     const gold = res.events.reduce((g, e) => (e.kind === 'gold' ? g + e.amount : g), 0)
     // A wild or legendary K.O. that can be caught goes to the catch throw first; the rewards screen follows it.
     const kind = s.kind === 'wild' || s.kind === 'boss' ? s.kind : null
     const target = kind ? catchTarget(res.save, s.enemy.dex, s.enemy.level, kind, data, s.enemy.shiny) : null
     setRun({
       phase: target ? 'catch' : 'victory',
-      events: res.events,
+      events,
       pendingCatchId: null,
       catch: target && kind ? { dex: s.enemy.dex, level: s.enemy.level, shiny: s.enemy.shiny, kind, target, result: null } : null,
       trainer: run.trainer ? { ...run.trainer, gold: run.trainer.gold + gold } : null,
