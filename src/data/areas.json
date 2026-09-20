@@ -7716,6 +7716,14 @@
     "unique": false,
     "minQty": 25,
     "maxQty": 50
+   },
+   {
+    "id": "ab4b1cad-ba12-52a5-82f3-15074060c2d5",
+    "itemKey": "kings-rock",
+    "weight": 1,
+    "unique": true,
+    "minQty": 1,
+    "maxQty": 1
    }
   ]
  },
@@ -8059,6 +8067,14 @@
     "unique": false,
     "minQty": 25,
     "maxQty": 50
+   },
+   {
+    "id": "82e3045d-079f-564c-9548-f4ee983f18b8",
+    "itemKey": "leaf-stone",
+    "weight": 1,
+    "unique": true,
+    "minQty": 1,
+    "maxQty": 1
    }
   ]
  },
@@ -8311,6 +8327,13 @@
     "weight": 20,
     "minLevel": 16,
     "maxLevel": 22
+   },
+   {
+    "id": "04fca267-6ab1-51ac-aea8-dcabd6ff22fc",
+    "dex": 133,
+    "weight": 6,
+    "minLevel": 16,
+    "maxLevel": 22
    }
   ],
   "trainerPool": [
@@ -8428,6 +8451,14 @@
     "unique": false,
     "minQty": 50,
     "maxQty": 100
+   },
+   {
+    "id": "ec8bd83e-c2fb-5643-aba2-9762680b365d",
+    "itemKey": "up-grade",
+    "weight": 1,
+    "unique": true,
+    "minQty": 1,
+    "maxQty": 1
    }
   ]
  },
@@ -8872,6 +8903,14 @@
     "unique": false,
     "minQty": 50,
     "maxQty": 100
+   },
+   {
+    "id": "56de34a6-12ad-5ea7-8258-2f709ce1343f",
+    "itemKey": "sun-stone",
+    "weight": 1,
+    "unique": true,
+    "minQty": 1,
+    "maxQty": 1
    }
   ]
  },
@@ -9068,6 +9107,22 @@
     "unique": false,
     "minQty": 50,
     "maxQty": 100
+   },
+   {
+    "id": "fbe09424-f733-5e4b-9d97-6a74cf89d32b",
+    "itemKey": "moon-stone",
+    "weight": 1,
+    "unique": true,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "b485407b-0b74-5f74-a908-4f9e9a2d18f9",
+    "itemKey": "fire-stone",
+    "weight": 1,
+    "unique": true,
+    "minQty": 1,
+    "maxQty": 1
    }
   ]
  },
@@ -9269,6 +9324,14 @@
     "unique": false,
     "minQty": 50,
     "maxQty": 100
+   },
+   {
+    "id": "c07b5c37-6c43-5fe1-9f2e-7ae1a8eb4364",
+    "itemKey": "thunder-stone",
+    "weight": 1,
+    "unique": true,
+    "minQty": 1,
+    "maxQty": 1
    }
   ]
  },
@@ -9453,6 +9516,14 @@
     "unique": false,
     "minQty": 100,
     "maxQty": 200
+   },
+   {
+    "id": "4157f1e4-6e9e-53fb-9bda-c86d04150ec1",
+    "itemKey": "metal-coat",
+    "weight": 1,
+    "unique": true,
+    "minQty": 1,
+    "maxQty": 1
    }
   ]
  },
@@ -9649,6 +9720,14 @@
     "unique": false,
     "minQty": 100,
     "maxQty": 200
+   },
+   {
+    "id": "cb646bc6-79cc-5e9c-a969-7ecbca592898",
+    "itemKey": "water-stone",
+    "weight": 1,
+    "unique": true,
+    "minQty": 1,
+    "maxQty": 1
    }
   ]
  },
@@ -10593,6 +10672,14 @@
     "unique": false,
     "minQty": 200,
     "maxQty": 400
+   },
+   {
+    "id": "64decf63-3a05-5c91-8f8e-117d5062a128",
+    "itemKey": "dragon-scale",
+    "weight": 1,
+    "unique": true,
+    "minQty": 1,
+    "maxQty": 1
    }
   ]
  },
@@ -11317,6 +11404,13 @@
    {
     "id": "804eb5d8-3314-5511-878f-8c328875f81f",
     "dex": 132,
+    "weight": 3,
+    "minLevel": 55,
+    "maxLevel": 70
+   },
+   {
+    "id": "bd7e6660-f604-5b2c-929e-adcac14f8df3",
+    "dex": 133,
     "weight": 3,
     "minLevel": 55,
     "maxLevel": 70
@@ -14136,6 +14230,14 @@
     "unique": false,
     "minQty": 50,
     "maxQty": 100
+   },
+   {
+    "id": "b9723819-075a-50f7-a407-01514864c0c3",
+    "itemKey": "thunder-stone",
+    "weight": 1,
+    "unique": true,
+    "minQty": 1,
+    "maxQty": 1
    }
   ]
  },
@@ -14543,6 +14645,14 @@
     "unique": false,
     "minQty": 100,
     "maxQty": 200
+   },
+   {
+    "id": "a1f41b1c-1dc9-5fc3-9107-5aa3244cb29d",
+    "itemKey": "fire-stone",
+    "weight": 1,
+    "unique": true,
+    "minQty": 1,
+    "maxQty": 1
    }
   ]
  },
@@ -14923,6 +15033,22 @@
     "unique": false,
     "minQty": 100,
     "maxQty": 200
+   },
+   {
+    "id": "46941362-b556-577f-93df-f59014bb7be5",
+    "itemKey": "moon-stone",
+    "weight": 1,
+    "unique": true,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "c427a2a4-5731-5627-99f6-b2769b77c4f1",
+    "itemKey": "dragon-scale",
+    "weight": 1,
+    "unique": true,
+    "minQty": 1,
+    "maxQty": 1
    }
   ]
  },
@@ -15513,6 +15639,14 @@
     "unique": false,
     "minQty": 100,
     "maxQty": 200
+   },
+   {
+    "id": "0d6e9639-1b0c-52df-97a6-87f6905745d6",
+    "itemKey": "leaf-stone",
+    "weight": 1,
+    "unique": true,
+    "minQty": 1,
+    "maxQty": 1
    }
   ]
  },
@@ -16195,6 +16329,22 @@
     "unique": false,
     "minQty": 200,
     "maxQty": 400
+   },
+   {
+    "id": "de1ba3a9-3db0-5b40-bcd3-eb75b6331a2e",
+    "itemKey": "deep-sea-tooth",
+    "weight": 1,
+    "unique": true,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "061fb4a4-9158-5169-95e3-5ddfc4bb25b5",
+    "itemKey": "deep-sea-scale",
+    "weight": 1,
+    "unique": true,
+    "minQty": 1,
+    "maxQty": 1
    }
   ]
  },
@@ -16346,6 +16496,14 @@
     "unique": false,
     "minQty": 200,
     "maxQty": 400
+   },
+   {
+    "id": "e8d4da9e-63d8-51d6-9fd6-c1bad6392c74",
+    "itemKey": "sun-stone",
+    "weight": 1,
+    "unique": true,
+    "minQty": 1,
+    "maxQty": 1
    }
   ]
  },
@@ -16660,6 +16818,14 @@
     "unique": false,
     "minQty": 200,
     "maxQty": 400
+   },
+   {
+    "id": "d21d0240-7347-5ae8-920a-018f2f8c59ae",
+    "itemKey": "water-stone",
+    "weight": 1,
+    "unique": true,
+    "minQty": 1,
+    "maxQty": 1
    }
   ]
  },

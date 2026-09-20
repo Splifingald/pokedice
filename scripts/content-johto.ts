@@ -151,6 +151,9 @@ export const JOHTO_AREAS: AreaPlan[] = [
     maxLevel: 16,
     weights: W.mixed,
     tier: 2,
+    once: [
+      ['kings-rock', 1, 1, 1, true], // Politoed and Slowking, where Slowpoke live
+    ],
     wild: [
       [79, 30, 9, 15], // Slowpoke
       [41, 22, 10, 15], // Zubat
@@ -202,6 +205,9 @@ export const JOHTO_AREAS: AreaPlan[] = [
     maxLevel: 20,
     weights: W.light,
     tier: 2,
+    once: [
+      ['leaf-stone', 1, 1, 1, true],
+    ],
     wild: [
       [10, 14, 12, 16], // Caterpie
       [11, 12, 14, 18], // Metapod
@@ -256,11 +262,15 @@ export const JOHTO_AREAS: AreaPlan[] = [
     // The Game Corner sits in Goldenrod, exactly as it does in the originals.
     weights: W.casino,
     tier: 3,
+    once: [
+      ['up-grade', 1, 1, 1, true], // Porygon2, from the Silph agent as in the originals
+    ],
     wild: [
       [19, 30, 15, 20], // Rattata
       [16, 30, 15, 20], // Pidgey
       [35, 20, 16, 22], // Clefairy
       [39, 20, 16, 22], // Jigglypuff
+      [133, 6, 16, 22], // Eevee — Bill's gift in the originals, and the only source of Espeon and Umbreon
     ],
     trainers: [
       { name: 'Lass Dana', team: [[209, 22], [35, 22]] },
@@ -315,6 +325,9 @@ export const JOHTO_AREAS: AreaPlan[] = [
     maxLevel: 27,
     weights: W.light,
     tier: 3,
+    once: [
+      ['sun-stone', 1, 1, 1, true], // Bellossom, Sunflora, Espeon
+    ],
     wild: [
       [10, 12, 18, 22], // Caterpie
       [11, 10, 20, 24], // Metapod
@@ -345,6 +358,10 @@ export const JOHTO_AREAS: AreaPlan[] = [
     maxLevel: 29,
     weights: W.mixed,
     tier: 3,
+    once: [
+      ['moon-stone', 1, 1, 1, true], // Umbreon
+      ['fire-stone', 1, 1, 1, true], // the Burned Tower
+    ],
     wild: [
       [92, 22, 20, 26], // Gastly
       [93, 10, 24, 29], // Haunter
@@ -375,6 +392,9 @@ export const JOHTO_AREAS: AreaPlan[] = [
     maxLevel: 31,
     weights: W.mixed,
     tier: 3,
+    once: [
+      ['thunder-stone', 1, 1, 1, true],
+    ],
     wild: [
       [128, 12, 24, 30], // Tauros
       [81, 14, 22, 28], // Magnemite
@@ -403,6 +423,9 @@ export const JOHTO_AREAS: AreaPlan[] = [
     maxLevel: 34,
     weights: W.mixed,
     tier: 4,
+    once: [
+      ['metal-coat', 1, 1, 1, true], // Steelix and Scizor, in Jasmine's steel city
+    ],
     wild: [
       [72, 20, 24, 30], // Tentacool
       [98, 18, 24, 30], // Krabby
@@ -431,6 +454,9 @@ export const JOHTO_AREAS: AreaPlan[] = [
     maxLevel: 36,
     weights: W.mixed,
     tier: 4,
+    once: [
+      ['water-stone', 1, 1, 1, true],
+    ],
     wild: [
       [72, 18, 26, 32], // Tentacool
       [226, 8, 28, 35], // Mantine
@@ -576,6 +602,9 @@ export const JOHTO_AREAS: AreaPlan[] = [
     maxLevel: 48,
     weights: W.busy,
     tier: 5,
+    once: [
+      ['dragon-scale', 1, 1, 1, true], // Kingdra, in the Dragon's Den
+    ],
     wild: [
       [147, 14, 38, 44], // Dratini
       [148, 8, 42, 48], // Dragonair

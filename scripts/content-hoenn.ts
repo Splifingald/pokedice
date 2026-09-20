@@ -227,6 +227,9 @@ export const HOENN_AREAS: AreaPlan[] = [
     // Mauville has the Game Corner.
     weights: W.casino,
     tier: 3,
+    once: [
+      ['thunder-stone', 1, 1, 1, true], // New Mauville
+    ],
     wild: [
       [309, 24, 17, 23], // Electrike
       [263, 20, 17, 23], // Zigzagoon
@@ -287,6 +290,9 @@ export const HOENN_AREAS: AreaPlan[] = [
     maxLevel: 30,
     weights: W.busy,
     tier: 4,
+    once: [
+      ['fire-stone', 1, 1, 1, true], // the Fiery Path
+    ],
     wild: [
       [322, 22, 21, 27], // Numel
       [324, 14, 22, 28], // Torkoal
@@ -342,6 +348,10 @@ export const HOENN_AREAS: AreaPlan[] = [
     maxLevel: 34,
     weights: W.mixed,
     tier: 4,
+    once: [
+      ['moon-stone', 1, 1, 1, true],
+      ['dragon-scale', 1, 1, 1, true], // Kingdra, among the dragons
+    ],
     wild: [
       [41, 18, 25, 31], // Zubat
       [338, 14, 26, 32], // Solrock
@@ -426,6 +436,9 @@ export const HOENN_AREAS: AreaPlan[] = [
     maxLevel: 40,
     weights: W.busy,
     tier: 4,
+    once: [
+      ['leaf-stone', 1, 1, 1, true],
+    ],
     wild: [
       [276, 14, 31, 37], // Taillow
       [352, 12, 32, 38], // Kecleon
@@ -542,6 +555,10 @@ export const HOENN_AREAS: AreaPlan[] = [
     maxLevel: 47,
     weights: W.mixed,
     tier: 5,
+    once: [
+      ['deep-sea-tooth', 1, 1, 1, true], // Huntail
+      ['deep-sea-scale', 1, 1, 1, true], // Gorebyss
+    ],
     wild: [
       [363, 18, 38, 44], // Spheal
       [364, 10, 42, 47], // Sealeo
@@ -569,6 +586,9 @@ export const HOENN_AREAS: AreaPlan[] = [
     maxLevel: 49,
     weights: W.busy,
     tier: 5,
+    once: [
+      ['sun-stone', 1, 1, 1, true],
+    ],
     wild: [
       [278, 18, 40, 46], // Wingull
       [72, 16, 40, 46], // Tentacool
@@ -626,6 +646,9 @@ export const HOENN_AREAS: AreaPlan[] = [
     maxLevel: 53,
     weights: W.busy,
     tier: 5,
+    once: [
+      ['water-stone', 1, 1, 1, true],
+    ],
     wild: [
       [41, 18, 44, 50], // Zubat
       [42, 12, 48, 53], // Golbat

@@ -73,15 +73,50 @@ describe('regions', () => {
       )
       // The Game Corner's jackpot prize is caught at the slot machine (Porygon, in Kanto).
       const prize = data.config.slotMachine.prizeDex
+      // Items you can actually get hold of **in this region**: its own loot tables, and the Mart where an item is
+      // stocked without being gated to another region's city. An evolution that needs an item you cannot obtain here
+      // is not a way to fill this Pokédex — which is the hole that once hid six unobtainable stones.
+      const obtainable = new Set<string>(of(r.id).flatMap((a) => a.lootPool.map((l) => l.itemKey)))
+      for (const i of Object.values(data.items)) {
+        if (
+          i.inShop &&
+          (!i.shopArea || regionOfArea(areas.find((a) => a.id === i.shopArea) ?? { regionId: r.id }) === r.id)
+        ) {
+          obtainable.add(i.key)
+        }
+      }
+      const reachable = (dex: number): boolean => catchable.has(dex) || fossils.has(dex) || dex === prize
       const missing: number[] = []
       for (let dex = lo; dex <= hi; dex++) {
-        if (catchable.has(dex) || fossils.has(dex) || dex === prize) continue
-        // An evolution of something catchable is reachable too.
-        const from = data.speciesList.find((s) => s.evolutions.some((e) => e.toDex === dex))
-        if (from && (catchable.has(from.dex) || fossils.has(from.dex) || from.dex === prize)) continue
+        if (reachable(dex)) continue
+        // Reachable by evolving something you can get — and, for an item evolution, only if the item is here too.
+        const ways = data.speciesList.flatMap((s) =>
+          s.evolutions.filter((e) => e.toDex === dex).map((e) => ({ from: s.dex, item: e.item })),
+        )
+        if (ways.some((w) => reachable(w.from) && (!w.item || obtainable.has(w.item)))) continue
         missing.push(dex)
       }
       expect(missing, `${r.id} unreachable`).toEqual([])
+    }
+  })
+
+  it('puts every evolution item a region needs inside that region', () => {
+    for (const r of regions) {
+      const here = new Set(of(r.id).flatMap((a) => a.lootPool.map((l) => l.itemKey)))
+      const catchable = regionSpecies(data, r.id)
+      const [lo, hi] = r.dexRange
+      const needed = new Set<string>()
+      for (const s of data.speciesList) {
+        if (!catchable.has(s.dex)) continue
+        for (const e of s.evolutions) {
+          if (e.item && e.toDex >= lo && e.toDex <= hi) needed.add(e.item)
+        }
+      }
+      for (const key of needed) {
+        const item = data.items[key]
+        const inMart = item?.inShop && (!item.shopArea || of(r.id).some((a) => a.id === item.shopArea))
+        expect(here.has(key) || inMart, `${r.id} needs ${key}`).toBe(true)
+      }
     }
   })
 
