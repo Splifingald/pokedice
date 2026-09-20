@@ -23,6 +23,19 @@ export function dayCareTutorialDue(save: SaveData, data: GameData): boolean {
   return !dc.visited && !dc.eggClaimed && dc.residents.length === 0
 }
 
+/** The leaderboard tutorial is due: never opened, and the Day Care's turn has passed. */
+export function leaderboardTutorialDue(save: SaveData, data: GameData): boolean {
+  return !save.leaderboardVisited && !dayCareTutorialDue(save, data)
+}
+
+/**
+ * Whether one of Prof. Oak's one-time pop-ups is waiting. They queue rather than stack: the Day Care first, then the
+ * leaderboard, and only once both are done does anything else (the region offer) take the screen.
+ */
+export function tutorialPending(save: SaveData, data: GameData): boolean {
+  return dayCareTutorialDue(save, data) || leaderboardTutorialDue(save, data)
+}
+
 export const markDayCareVisited = (save: SaveData): SaveData =>
   dayCareOf(save).visited ? save : { ...save, dayCare: { ...dayCareOf(save), visited: true } }
 
