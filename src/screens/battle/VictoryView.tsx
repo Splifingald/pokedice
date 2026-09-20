@@ -1,14 +1,15 @@
 // Result screens: victory (XP, level-ups, milestones, gold, catch, then evolutions), wipe and stalemate.
 import { AnimatePresence, motion } from 'framer-motion'
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
-import { getInstance, progressOf, teamOf, type RunEvent } from '@/engine'
+import { getInstance, instanceStats, progressOf, teamOf, type DieType, type Milestone, type RunEvent } from '@/engine'
 import { sfx } from '@/audio/sfx'
 import { EvolutionQueue, type EvolutionShow } from '@/components/Evolution'
 import { RoundsCounter } from '@/components/RoundsCounter'
 import { useCountUp } from '@/components/GoldPill'
 import { PixelIcon } from '@/components/icons'
 import { LeadPicker, defaultLead } from '@/components/LeadPicker'
-import { MonCard, XpBar } from '@/components/MonCard'
+import { HpBar } from '@/components/HpBar'
+import { XpBar } from '@/components/MonCard'
 import { PixelButton } from '@/components/PixelButton'
 import { TrainerSprite } from '@/components/TrainerArt'
 import { MiniSprite, SpriteImg } from '@/components/SpriteImg'
@@ -17,7 +18,7 @@ import { usePace } from '@/lib/pace'
 import { BadgeIcon } from '@/components/BadgeIcon'
 import { useGame } from '@/store/game'
 import { afterStalemate, afterWipe, continueAfterVictory, enterArea, resolveCatch, trainerHasNext } from '@/store/run'
-import { cx } from '@/theme/util'
+import { cx, shade, typeColor } from '@/theme/util'
 
 /**
  * A result card over the battle. On phones it takes the screen: the content scrolls and the `footer` (the action
@@ -81,6 +82,10 @@ function CatchCard({ uid, dex, level, joined, replacedLevel }: { uid: string; de
   )
 }
 
+/**
+ * "Add X to your team?" — the three team members side by side; tapping one swaps it out. Saying nothing is an answer
+ * too: CONTINUE (the footer) sends the catch to the Box.
+ */
 function TeamChoice() {
   const save = useGame((s) => s.save)
   const data = useGame((s) => s.data)
@@ -92,15 +97,28 @@ function TeamChoice() {
   return (
     <div className="mt-3 flex flex-col gap-2">
       <div className="text-2xl">Add {name} to your team?</div>
-      <div className="copy text-muted">Swap it in for one of your three — the one you replace goes to the Box.</div>
-      {teamOf(save).map((p) => (
-        <MonCard key={p.id} inst={p}>
-          <PixelButton size="sm" onClick={() => resolveCatch(p.id)}>
-            Swap out
-          </PixelButton>
-        </MonCard>
-      ))}
-      <PixelButton onClick={() => resolveCatch(null)}>Send {name} to the Box</PixelButton>
+      <ul className="grid grid-cols-3 gap-2">
+        {teamOf(save).map((p) => {
+          const species = data.species[p.dex]
+          const stats = instanceStats(p, data)
+          return (
+            <li key={p.id}>
+              <button
+                type="button"
+                onClick={() => resolveCatch(p.id)}
+                className="pixel-btn flex w-full flex-col items-center gap-0.5 bg-panel px-1 pb-1.5 pt-1 text-center"
+                aria-label={`Swap out ${species?.name} Lv.${p.level} for ${name}`}
+              >
+                <MiniSprite dex={p.dex} size={40} className="-my-1" />
+                <span className="w-full truncate text-lg leading-none">{species?.name}</span>
+                <span className="text-base leading-none text-muted">Lv.{p.level}</span>
+                <HpBar hp={p.currentHp} max={stats.maxHp} className="w-full" height={6} />
+                <span className="text-base leading-none">Swap out</span>
+              </button>
+            </li>
+          )
+        })}
+      </ul>
     </div>
   )
 }
@@ -237,6 +255,58 @@ function useRecap(events: RunEvent[]): { mons: MonRecap[]; extras: Extra[]; evol
   }, [events, data])
 }
 
+/** A blank die in its type's colour, small enough to sit in a chip (the colour is the type; a number would confuse). */
+function DieChip({ type }: { type: DieType }) {
+  const bg = typeColor(type)
+  return (
+    <span
+      className="die-mini inline-block shrink-0 align-middle"
+      style={{ width: 20, height: 20, background: `linear-gradient(135deg, ${shade(bg, 1.08)} 0%, ${bg} 55%, ${shade(bg, 0.88)} 100%)` }}
+      role="img"
+      aria-label={`${type} die`}
+      title={`${type} die`}
+    />
+  )
+}
+
+/** What a milestone gives, as icons: a die gained or swapped, a reroll, HP. */
+function MilestoneChip({ m, type1 }: { m: Milestone; type1: DieType }) {
+  const to = m.dieType ?? type1
+  const from = m.effect === 'UPGRADE_DIE' ? 'base' : (m.fromDieType ?? 'base')
+  const body =
+    m.effect === 'ADD_DIE' ? (
+      <>
+        <span aria-hidden>+</span>
+        <DieChip type={to} />
+      </>
+    ) : m.effect === 'UPGRADE_DIE' || m.effect === 'REPLACE_DIE' ? (
+      <>
+        <DieChip type={from} />
+        <span aria-hidden>→</span>
+        <DieChip type={to} />
+      </>
+    ) : m.effect === 'ADD_REROLL' ? (
+      <>
+        <span aria-hidden>+{(m.amount ?? 1) > 1 ? m.amount : ''}</span>
+        <PixelIcon name="reroll" size={20} />
+      </>
+    ) : (
+      <>
+        <span aria-hidden>+{m.amount ?? 0}</span>
+        <PixelIcon name="heart" size={18} />
+      </>
+    )
+  return (
+    <span
+      className="inline-flex items-center gap-1 border-2 border-ink bg-gold px-1.5 py-0.5 text-xl leading-none"
+      aria-label={milestoneText(m, type1)}
+      title={milestoneText(m, type1)}
+    >
+      {body}
+    </span>
+  )
+}
+
 const CONFETTI = ['#e8b44a', '#c2452d', '#547acc', '#4aa84a', '#d44873', '#f7f2e0']
 
 /** A little burst of pixel confetti from the middle of its box (skipped with reduced motion). */
@@ -244,10 +314,10 @@ function Confetti() {
   const reduced = useGame((s) => s.settings.reducedMotion)
   const bits = useMemo(
     () =>
-      Array.from({ length: 16 }, (_, i) => {
+      Array.from({ length: 20 }, (_, i) => {
         const a = (i / 16) * Math.PI * 2 + Math.random() * 0.4
-        const r = 26 + Math.random() * 22
-        return { x: Math.cos(a) * r, y: Math.sin(a) * r - 10, rot: Math.random() * 360, color: CONFETTI[i % CONFETTI.length]! }
+        const r = 34 + Math.random() * 30
+        return { x: Math.cos(a) * r, y: Math.sin(a) * r - 14, rot: Math.random() * 360, color: CONFETTI[i % CONFETTI.length]! }
       }),
     [],
   )
@@ -257,11 +327,11 @@ function Confetti() {
       {bits.map((b, i) => (
         <motion.span
           key={i}
-          className="absolute left-1/2 top-1/2 h-1.5 w-1.5"
+          className="absolute left-1/2 top-1/2 h-2.5 w-2.5"
           style={{ background: b.color, boxShadow: '0 0 0 1px #2a2438' }}
           initial={{ x: 0, y: 0, opacity: 1, rotate: 0 }}
           animate={{ x: b.x, y: [0, b.y, b.y + 26], opacity: [1, 1, 0], rotate: b.rot }}
-          transition={{ duration: 1.1, ease: 'easeOut' }}
+          transition={{ duration: 1.3, ease: 'easeOut' }}
         />
       ))}
     </span>
@@ -284,20 +354,20 @@ function MonRow({ m }: { m: MonRecap }) {
   const chips: ReactNode[] = []
   if (leveled)
     chips.push(
-      <span key="lv" className="border-2 border-ink bg-gold px-1.5 text-lg leading-tight">
-        LEVEL UP! {m.fromLevel != null && m.toLevel! - m.fromLevel > 1 ? `Lv.${m.fromLevel}→${m.toLevel}` : `Lv.${m.toLevel}`}
+      <span
+        key="lv"
+        className="inline-flex items-center gap-1 border-2 border-ink bg-hp-green px-1.5 py-0.5 text-xl leading-none text-ink"
+        aria-label={`Level up: level ${m.toLevel}`}
+      >
+        <PixelIcon name="up" size={18} />
+        Lv.{m.toLevel}
       </span>,
     )
-  m.milestones.forEach((ms, i) =>
-    chips.push(
-      <span key={`m${i}`} className="border-2 border-ink bg-panel px-1.5 text-lg leading-tight">
-        {milestoneText(ms, type1)}
-      </span>,
-    ),
-  )
+  // The evolution milestone is the scene that follows the recap, not a chip.
+  m.milestones.filter((ms) => ms.effect !== 'EVOLVE').forEach((ms, i) => chips.push(<MilestoneChip key={`m${i}`} m={ms} type1={type1} />))
   if (m.evolvesTo != null)
     chips.push(
-      <span key="evo" className="border-2 border-ink bg-ink px-1.5 text-lg leading-tight text-panel">
+      <span key="evo" className="border-2 border-ink bg-ink px-1.5 py-0.5 text-lg leading-none text-panel">
         Evolving into {data.species[m.evolvesTo]?.name ?? '???'}…
       </span>,
     )
@@ -307,8 +377,8 @@ function MonRow({ m }: { m: MonRecap }) {
         <motion.span
           className="relative shrink-0"
           initial={false}
-          animate={leveled && !reduced ? { scale: [1, 1.35, 1, 1.25, 1] } : undefined}
-          transition={{ duration: 0.9, delay: 0.15 }}
+          animate={leveled && !reduced ? { scale: [1, 1.4, 1, 1.3, 1], x: [0, -3, 3, -2, 2, 0], rotate: [0, -4, 4, -3, 0] } : undefined}
+          transition={{ duration: 1, delay: 0.15 }}
         >
           <MiniSprite dex={m.dex} size={40} className="-my-2" />
           {leveled && <Confetti />}
@@ -359,7 +429,12 @@ export function VictoryView() {
     if (mons[0]?.toLevel != null) sfx('levelup')
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const go = (action: () => void) => () => (evolutions.length ? setThen(() => action) : action())
+  // CONTINUE answers a pending "add to your team?" by sending the catch to the Box, then plays any evolution.
+  const go = (action: () => void) => () => {
+    if (useGame.getState().run.pendingCatchId) resolveCatch(null)
+    if (evolutions.length) setThen(() => action)
+    else action()
+  }
 
   const enemy = battle?.state.enemy
   const hasNext = trainerHasNext()
@@ -377,7 +452,7 @@ export function VictoryView() {
     <PixelButton variant="primary" size="lg" className="w-full" onClick={() => setShown(Number.MAX_SAFE_INTEGER)}>
       SKIP ▸▸
     </PixelButton>
-  ) : run.pendingCatchId ? null : hasNext && nextMon ? (
+  ) : hasNext && nextMon ? (
     <PixelButton variant="primary" size="lg" className="w-full" onClick={go(() => continueAfterVictory(lead ?? defaultLead()))}>
       NEXT BATTLE
     </PixelButton>
