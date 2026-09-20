@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { linearAreas, mergeAreaReports, runCampaign, runCampaignSync, type CampaignOptions } from '@/engine'
+import { linearAreas, mergeAreaReports, regionAreas, runCampaign, runCampaignSync, type CampaignOptions } from '@/engine'
 import { data, makeData } from '../fixtures'
 
 // Fewer AI samples keep these runs quick; the loop is what's under test, not the AI.
@@ -74,5 +74,23 @@ describe('a mutual knock-out', () => {
         ).not.toThrow()
       }
     }
+  })
+})
+
+describe('a campaign runs one region', () => {
+  it('visits only that region’s areas, and starts on its own starter', () => {
+    for (const region of data.regions) {
+      const starterDex = region.starters[0]!
+      const res = runCampaignSync(data, { encounters: 120, seed: 7, starterDex, spend: true, multiExp: true, regionId: region.id })
+      const visited = res.areas.map((r) => data.areas.find((a) => a.id === r.areaId)!)
+      expect(visited.length, region.id).toBeGreaterThan(0)
+      for (const a of visited) expect(a.regionId ?? 'kanto', `${region.id}: ${a.name}`).toBe(region.id)
+      expect(res.timeline[0]?.areaId, region.id).toBe(regionAreas(data, region.id)[0]!.id)
+    }
+  })
+
+  it('defaults to the first region when none is named, as it always did', () => {
+    const res = runCampaignSync(data, { encounters: 60, seed: 7, starterDex: 4, spend: true, multiExp: true })
+    for (const r of res.areas) expect(data.areas.find((a) => a.id === r.areaId)!.regionId ?? 'kanto').toBe('kanto')
   })
 })

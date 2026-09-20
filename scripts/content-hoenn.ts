@@ -178,7 +178,7 @@ export const HOENN_AREAS: AreaPlan[] = [
       [129, 16, 13, 19], // Magikarp
       [320, 12, 15, 21], // Wailmer
       [116, 12, 14, 20], // Horsea
-      [72, 10, 15, 21],
+      [279, 10, 15, 21], // Pelipper
       [370, 8, 16, 22], // Luvdisc
     ],
     trainers: [

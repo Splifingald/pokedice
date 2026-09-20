@@ -222,3 +222,23 @@ describe('region banners', () => {
 /** Regions come from the bundle, so a type error here means the data and the type drifted apart. */
 const _typecheck: Region[] = regions
 void _typecheck
+
+describe('generated ids', () => {
+  it('are unique across every pool — a collision is a primary key the database would reject', () => {
+    for (const key of ['wildPool', 'trainerPool', 'lootPool'] as const) {
+      const ids = areas.flatMap((a) => a[key].map((x) => x.id))
+      expect(new Set(ids).size, key).toBe(ids.length)
+    }
+    const areaIds = areas.map((a) => a.id)
+    expect(new Set(areaIds).size).toBe(areaIds.length)
+    const trainerIds = trainers.map((t) => t.id)
+    expect(new Set(trainerIds).size).toBe(trainerIds.length)
+  })
+
+  it('never lists a species twice in one wild pool, which is what would collide', () => {
+    for (const a of areas) {
+      const dexes = a.wildPool.map((w) => w.dex)
+      expect(new Set(dexes).size, a.name).toBe(dexes.length)
+    }
+  })
+})

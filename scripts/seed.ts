@@ -587,7 +587,12 @@ export function buildAreasAndTrainers(pokemon: Species[], opts: BuildOptions = {
             .filter((p) => !legendaries.has(p.dex) && (opts.catchAll?.(p.dex) ?? true))
             .map((p) => [p.dex, RARE_IN_CATCH_ALL.has(p.dex) || starters.has(p.dex) ? 3 : 10, plan.minLevel, plan.maxLevel] as const)
         : plan.wild
+    // Pool ids are derived from `wild:<area>:<dex>`, so the same species twice in one pool collides on one id — a
+    // duplicate primary key the database would reject and the admin would show as permanently unsaved.
+    const dexSeen = new Set<number>()
     for (const [dex] of wildRows) {
+      if (dexSeen.has(dex)) throw new Error(`${plan.name}: #${dex} is in the wild pool twice`)
+      dexSeen.add(dex)
       if (legendaries.has(dex)) throw new Error(`${plan.name}: #${dex} is a legendary`)
       if (plan.wild !== 'ALL' && starters.has(dex)) throw new Error(`${plan.name}: #${dex} is a starter`)
       if (!byDex.has(dex)) throw new Error(`${plan.name}: unknown dex #${dex}`)
