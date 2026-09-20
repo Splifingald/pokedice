@@ -61,7 +61,12 @@ export function regionOfSpecies(data: GameData, dex: number): RegionId | null {
  * thing that makes a Pokémon unobtainable.
  */
 export function evolutionGate(save: SaveData, data: GameData): (dex: number) => boolean {
-  const here = getRegion(data, regionOf(save))
+  return speciesAllowedIn(data, regionOf(save))
+}
+
+/** The same rule, for a region rather than a save — what `regionSpecies` counts and what `evolutionGate` allows. */
+export function speciesAllowedIn(data: GameData, regionId: RegionId): (dex: number) => boolean {
+  const here = getRegion(data, regionId)
   // Standing in a region the table does not know: gate nothing rather than lock everything away.
   const open = new Set(data.regions.filter((r) => !here || r.orderIndex <= here.orderIndex).map((r) => r.id))
   return (dex) => {
@@ -77,13 +82,18 @@ export function regionAreas(data: GameData, regionId: RegionId) {
 
 /**
  * Every species a region can give you, by any route: its wild pools, its legendaries, its starters, the Pokémon its
- * fossils revive into, and the Game Corner prize where it has a Game Corner. This — not a dex number range — is what
- * a region's Pokédex page counts, because a region's routes borrow freely from earlier generations and a player
- * should be able to see everything they can actually get here.
+ * fossils revive into, the Game Corner prize where it has a Game Corner — and everything all of those evolve into.
+ * This — not a dex number range — is what a region's Pokédex page counts, because a region's routes borrow freely
+ * from earlier generations and a player should be able to see everything they can actually get here.
  *
- * Counting only the wild pools is what left holes in the page: Omanyte, Kabuto and Aerodactyl are wild nowhere (they
+ * Counting only the wild pools is what left holes in the page. Omanyte, Kabuto and Aerodactyl are wild nowhere (they
  * come out of a fossil, see engine/fossils.ts) and Porygon is won at the Game Corner, so #137, #138, #140 and #142
- * were missing from Kanto's Pokédex — and a revived Omanyte had nowhere to show up at all.
+ * were missing from Kanto's Pokédex — and a revived Omanyte had nowhere to show up at all. Evolved forms went the
+ * same way wherever the grass holds only the first stage: Cradily and Armaldo in Hoenn, and in Johto a long list of
+ * Gen 1 finals — Pidgeot, Alakazam, Machamp, Gengar — whose families are all over the routes.
+ *
+ * The evolution pass obeys `speciesAllowedIn`, the very rule `evolutionGate` enforces, so the page can never promise
+ * an evolution the game would refuse: Kanto's Zubat does not put a Crobat on Kanto's page, Johto's does on Johto's.
  */
 export function regionSpecies(data: GameData, regionId: RegionId): Set<number> {
   const out = new Set<number>(getRegion(data, regionId)?.starters ?? [])
@@ -102,6 +112,15 @@ export function regionSpecies(data: GameData, regionId: RegionId): Set<number> {
   if (hasGameCorner && data.species[data.config.slotMachine.prizeDex]) out.add(data.config.slotMachine.prizeDex)
   // The roamers belong to their region without sitting in any one area (see engine/encounters.ts).
   for (const dex of data.config.roamers?.regionId === regionId ? (data.config.roamers?.dex ?? []) : []) out.add(dex)
+
+  // Whatever all of that evolves into is yours here too. Iterating the Set as it grows walks a line to its end:
+  // Magikarp adds Gyarados, and Gyarados is then visited in the same pass.
+  const allowed = speciesAllowedIn(data, regionId)
+  for (const dex of out) {
+    for (const e of data.species[dex]?.evolutions ?? []) {
+      if (!out.has(e.toDex) && data.species[e.toDex] && allowed(e.toDex)) out.add(e.toDex)
+    }
+  }
   return out
 }
 
