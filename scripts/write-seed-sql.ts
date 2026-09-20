@@ -9,12 +9,12 @@ import { writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { BUNDLE } from '../src/config/bundle'
-import { buildSql } from './seed'
+import { buildSql, regionsPrelude } from './seed'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 
 async function main() {
-  const sql = buildSql(BUNDLE as Parameters<typeof buildSql>[0])
+  const sql = buildSql(BUNDLE as Parameters<typeof buildSql>[0], await regionsPrelude())
   const file = path.join(ROOT, 'supabase', 'seed.sql')
   await writeFile(file, sql)
   console.log(

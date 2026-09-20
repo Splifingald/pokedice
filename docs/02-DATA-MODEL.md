@@ -187,6 +187,20 @@ The admin email lives in **one** place server-side (`is_admin()`) and one place 
 - `src/data/pokemon.json`, `type-chart.json`, `dice-types.json`, `areas.json`, `trainers.json`, `upgrades.json`, `items.json`, `config.json` — the offline bundle
 - `supabase/seed.sql` — the same data as INSERTs, for the Supabase project
 
+### 3.0 What to run against a live database
+
+**`supabase/seed.sql`, on its own.** It is generated to stand alone: it carries every schema change made after
+`0001_init.sql` — the later `areas` and `items` columns, and `0016_regions.sql` inlined verbatim (the `regions` table,
+`areas.region_id`, the per-region `leaderboard()`) — ahead of the data, all inside one transaction. Every statement is
+idempotent and every insert upserts on a stable key, so running it twice is the same as running it once.
+
+It never touches `saves`. The only `delete` in the file is of retired `game_config` keys.
+
+Verified against a real Postgres 16, from `origin/main`'s schema and data plus a mid-Kanto player save: applies with no
+errors and `0016` never run separately, leaves the save byte-identical, keeps all 28 Kanto area ids and all 226 trainer
+ids, and `leaderboard()` reports the pre-regions save as `kanto`. A fresh install and an upgraded one end up with
+identical Kanto area ids.
+
 **The bundle is now the source of truth, not the generator.** It has been retuned in the admin and grown well past
 what `seed.ts` knows how to make: 386 species, 88 areas across three regions, 450 trainers, 33 items. A plain
 re-run would silently roll every bit of that back, so it no longer writes anything:
