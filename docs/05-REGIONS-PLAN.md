@@ -1,5 +1,9 @@
 # Pokédice — Multi-Region Plan (Johto & Hoenn)
 
+> **Status: built.** All six steps are done and on `claude/awesome-albattani-ujgsev`. The balance pass and its
+> numbers are in `06-REGION-BALANCE.md`. This document is kept as the record of what was decided and why — where it
+> and the code disagree, the code is right.
+
 Integration plan for the second and third regions. Companion to `01-GAME-SPEC.md` (rules), `02-DATA-MODEL.md` (schema)
 and `03-BUILD-PLAN.md` (phasing conventions). Kanto stays the reference for every number: when this document is silent,
 copy what Kanto does.

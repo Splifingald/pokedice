@@ -6650,11 +6650,11 @@
   "team": [
    {
     "dex": 181,
-    "level": 50
+    "level": 54
    },
    {
     "dex": 232,
-    "level": 50
+    "level": 54
    }
   ],
   "role": "trainer",
@@ -6669,11 +6669,11 @@
   "team": [
    {
     "dex": 196,
-    "level": 51
+    "level": 55
    },
    {
     "dex": 197,
-    "level": 51
+    "level": 55
    }
   ],
   "role": "trainer",
@@ -6688,11 +6688,11 @@
   "team": [
    {
     "dex": 248,
-    "level": 52
+    "level": 56
    },
    {
     "dex": 212,
-    "level": 52
+    "level": 56
    }
   ],
   "role": "trainer",
@@ -6707,15 +6707,15 @@
   "team": [
    {
     "dex": 178,
-    "level": 42
+    "level": 47
    },
    {
     "dex": 124,
-    "level": 44
+    "level": 49
    },
    {
     "dex": 103,
-    "level": 46
+    "level": 51
    }
   ],
   "role": "elite",
@@ -6733,15 +6733,15 @@
   "team": [
    {
     "dex": 168,
-    "level": 44
+    "level": 49
    },
    {
     "dex": 49,
-    "level": 46
+    "level": 51
    },
    {
     "dex": 205,
-    "level": 48
+    "level": 53
    }
   ],
   "role": "elite",
@@ -6759,15 +6759,15 @@
   "team": [
    {
     "dex": 237,
-    "level": 46
+    "level": 51
    },
    {
     "dex": 107,
-    "level": 48
+    "level": 53
    },
    {
     "dex": 68,
-    "level": 50
+    "level": 55
    }
   ],
   "role": "elite",
@@ -6785,15 +6785,15 @@
   "team": [
    {
     "dex": 198,
-    "level": 47
+    "level": 52
    },
    {
     "dex": 229,
-    "level": 49
+    "level": 54
    },
    {
     "dex": 197,
-    "level": 51
+    "level": 56
    }
   ],
   "role": "elite",
@@ -6811,15 +6811,15 @@
   "team": [
    {
     "dex": 130,
-    "level": 50
+    "level": 55
    },
    {
     "dex": 149,
-    "level": 52
+    "level": 57
    },
    {
     "dex": 149,
-    "level": 54
+    "level": 59
    }
   ],
   "role": "champion",

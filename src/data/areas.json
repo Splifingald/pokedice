@@ -10766,8 +10766,8 @@
   "name": "Indigo Plateau",
   "bannerUrl": "/banners/default.png",
   "roundsToClear": 1,
-  "minLevel": 45,
-  "maxLevel": 55,
+  "minLevel": 49,
+  "maxLevel": 59,
   "encounterWeights": {
    "wild": 0,
    "trainer": 2,

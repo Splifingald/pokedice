@@ -630,22 +630,24 @@ export const JOHTO_AREAS: AreaPlan[] = [
     orderIndex: 223,
     banner: { scene: 'default' },
     roundsToClear: 1,
-    minLevel: 45,
-    maxLevel: 55,
+    minLevel: 49,
+    maxLevel: 59,
     weights: W.trainersOnly,
     tier: 5,
     wild: [],
     trainers: [
-      { name: 'Ace Trainer Quinn', team: [[181, 50], [232, 50]] }, // Ampharos, Donphan
-      { name: 'Ace Trainer Mira', team: [[196, 51], [197, 51]] }, // Espeon, Umbreon
-      { name: 'Ace Trainer Vance', team: [[248, 52], [212, 52]] }, // Tyranitar, Scizor
+      { name: 'Ace Trainer Quinn', team: [[181, 54], [232, 54]] }, // Ampharos, Donphan
+      { name: 'Ace Trainer Mira', team: [[196, 55], [197, 55]] }, // Espeon, Umbreon
+      { name: 'Ace Trainer Vance', team: [[248, 56], [212, 56]] }, // Tyranitar, Scizor
     ],
     gyms: [
-      { name: 'Elite Four Will', role: 'elite', specialty: 'psychic', team: [[178, 42], [124, 44], [103, 46]] }, // Xatu, Jynx, Exeggutor
-      { name: 'Elite Four Koga', role: 'elite', specialty: 'poison', team: [[168, 44], [49, 46], [205, 48]] }, // Ariados, Venomoth, Forretress
-      { name: 'Elite Four Bruno', role: 'elite', specialty: 'fighting', team: [[237, 46], [107, 48], [68, 50]] },
-      { name: 'Elite Four Karen', role: 'elite', specialty: 'dark', team: [[198, 47], [229, 49], [197, 51]] }, // Murkrow, Houndoom, Umbreon
-      { name: 'Champion Lance', role: 'champion', specialty: 'dragon', team: [[130, 50], [149, 52], [149, 54]] },
+      // Levels sit where Kanto's Elite Four sits, not where HGSS puts them (L42–52): the leagues are the
+      // three difficulty peaks of the game and should feel like peers. Teams and order stay the originals'.
+      { name: 'Elite Four Will', role: 'elite', specialty: 'psychic', team: [[178, 47], [124, 49], [103, 51]] }, // Xatu, Jynx, Exeggutor
+      { name: 'Elite Four Koga', role: 'elite', specialty: 'poison', team: [[168, 49], [49, 51], [205, 53]] }, // Ariados, Venomoth, Forretress
+      { name: 'Elite Four Bruno', role: 'elite', specialty: 'fighting', team: [[237, 51], [107, 53], [68, 55]] },
+      { name: 'Elite Four Karen', role: 'elite', specialty: 'dark', team: [[198, 52], [229, 54], [197, 56]] }, // Murkrow, Houndoom, Umbreon
+      { name: 'Champion Lance', role: 'champion', specialty: 'dragon', team: [[130, 55], [149, 57], [149, 59]] },
     ],
   }),
   area({
