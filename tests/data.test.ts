@@ -9,6 +9,8 @@ import areas from '@/data/areas.json'
 import trainers from '@/data/trainers.json'
 import upgrades from '@/data/upgrades.json'
 import { BUNDLE } from '@/config/bundle'
+import { bundleToRows, TABLES } from '@/config/mapping'
+import { validateRow } from '@/admin/schemas'
 import { compileGameData, effectiveStats } from '@/engine'
 import type { Area, DiceEntry, Species, Trainer } from '@/engine/types'
 import { composeDice, diceCountFromBst, hpAtLevel, stableUuid } from '../scripts/seed'
@@ -254,4 +256,14 @@ describe('generated art', () => {
     for (const a of areas as Area[]) expect(existsSync(path.join(root, 'public', a.bannerUrl!.replace(/#flip$/, '')))).toBe(true)
     for (const t of trainers as Trainer[]) expect(existsSync(path.join(root, 'public', t.spriteUrl!))).toBe(true)
   })
+})
+
+// The admin refuses to save a row its schema rejects, so a schema that has fallen behind the engine (a new unlock
+// condition, a new effect) locks the table. Every shipped row must pass the very check the Save button runs.
+describe('admin row schemas', () => {
+  const rows = bundleToRows(BUNDLE)
+  for (const t of TABLES)
+    it(`accepts every shipped ${t} row`, () => {
+      for (const r of rows[t]) expect([t, r.id ?? r.name ?? r, validateRow(t, r)]).toEqual([t, r.id ?? r.name ?? r, {}])
+    })
 })
