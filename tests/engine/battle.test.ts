@@ -325,6 +325,28 @@ describe('auto-mode (autoEvents)', () => {
     expect(evs).toEqual([{ t: 'SWITCH', instanceId: 'b' }])
   })
 
+  it('swings the moment the roll already kills, instead of hunting a bigger number', () => {
+    // One Rattata hit point left against a roll that does plenty: nothing a reroll could find is worth a reroll.
+    const s = start().state
+    const dice = [die('water', 2), die('base', 1), die('water', 5)]
+    const weak = atReroll({ ...s, enemy: { ...s.enemy, hp: 1 } }, dice)
+    expect(autoEvents(weak, data, createRng(1))).toEqual([{ t: 'ATTACK' }])
+    // …and it does not become lazy in general: the same roll on a healthy foe is still worth improving.
+    const healthy = atReroll({ ...s, enemy: { ...s.enemy, hp: 999 } }, dice)
+    const evs = autoEvents(healthy, data, createRng(1))
+    expect(evs.at(-1)).toEqual({ t: 'REROLL' })
+    expect(evs.length).toBeGreaterThan(1)
+  })
+
+  it('keeps its reroll for the next turn when it did not need it', () => {
+    // The budget lasts the whole battle, so a reroll skipped on a lethal roll is a reroll still in hand.
+    const s = start().state
+    const before = s.player[s.activeIndex]!.rerollsLeft
+    let cur = atReroll({ ...s, enemy: { ...s.enemy, hp: 1 } }, [die('water', 5), die('base', 6)])
+    for (const e of autoEvents(cur, data, createRng(2))) cur = reduce(cur, e, data, createRng(2)).state
+    expect(cur.player[s.activeIndex]!.rerollsLeft).toBe(before)
+  })
+
   it('ends every reroll turn with REROLL or ATTACK, and each plan is legal', () => {
     for (let seed = 1; seed <= 30; seed++) {
       const rng = createRng(seed)

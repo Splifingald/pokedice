@@ -55,6 +55,8 @@ export function autoEvents(state: BattleState, data: GameData, rng: Rng): Battle
               levels: state.playerLevels,
               data,
               rng,
+              // Auto-mode swings the moment the roll is lethal rather than hunting a bigger number it cannot use.
+              targetHp: state.enemy.hp,
             })
           : null
       if (!mask?.some(Boolean)) return [{ t: 'ATTACK' }]
@@ -215,7 +217,9 @@ export function turnsToKill(
       t++
       let dice = rollAll(stats.dice, data, rng)
       while (rerolls > 0) {
-        const mask = aiRerollMask({ dice, attackerTypes: stats.types, defenderTypes, levels, data, rng })
+        // This method plays out a real fight against a real HP pool, so it stops rerolling on a lethal roll exactly
+        // as the game does. (`perRoll`, above, measures damage per roll with no target to kill, so it does not.)
+        const mask = aiRerollMask({ dice, attackerTypes: stats.types, defenderTypes, levels, data, rng, targetHp: hp })
         if (!mask) break
         dice = rerollMasked(dice, mask, data, rng)
         rerolls--

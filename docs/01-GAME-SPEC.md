@@ -457,9 +457,18 @@ Wild and trainer Pokémon obey **exactly the same rules** — same dice, combos,
 
 Reroll heuristic, one pass per available reroll:
 1. Compute the current roll's damage.
-2. Build candidate keep-sets: the largest matching group; any straight draw of ≥3 distinct consecutive values; all dice with face value ≥5; any status face that has already met its threshold (**always kept**).
-3. Estimate expected damage after rerolling the complement, via a cheap Monte-Carlo (200 samples, per-die-type face tables precomputed).
-4. Reroll the best candidate's complement if its expected damage beats the current damage by **>8 %**; otherwise attack now.
+2. **If it already kills the target, attack now.** Damage past the target's last hit point buys nothing, and the
+   reroll budget is spent for the whole battle (§2), so a reroll here is a reroll missing from a later turn. This is
+   the one rule that looks at the target rather than the dice, so it needs the caller to say what the target's HP is;
+   the measurements that have no target to kill — the per-roll turns-to-kill table above — do not, and skip it.
+3. Build candidate keep-sets: the largest matching group; any straight draw of ≥3 distinct consecutive values; all dice with face value ≥5; any status face that has already met its threshold (**always kept**).
+4. Estimate expected damage after rerolling the complement, via a cheap Monte-Carlo (200 samples, per-die-type face tables precomputed).
+5. Reroll the best candidate's complement if its expected damage beats the current damage by **>8 %**; otherwise attack now.
+
+The player's **auto-mode** is this same heuristic driving the player's side, so it obeys rule 2 too — over 4,000
+sampled battles it was taking 602 rerolls on rolls that already killed, 7.3 % of every reroll it spent, and now takes
+none. Giving the enemy the same rule moved the win rate over 6,000 matched battles by 0.04 pp, which is noise, so both
+sides play it.
 
 ---
 

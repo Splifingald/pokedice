@@ -523,6 +523,7 @@ export function reduce(
           levels: s.enemyLevels,
           data,
           rng,
+          targetHp: target.hp,
         })
         if (!mask || !mask.some(Boolean)) break
         s.dice = rerollMasked(s.dice, mask, data, rng)
