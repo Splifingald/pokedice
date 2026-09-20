@@ -76,17 +76,30 @@ export function regionAreas(data: GameData, regionId: RegionId) {
 }
 
 /**
- * Every species a region can give you: its wild pools, its legendaries and its starters. This — not a dex number
- * range — is what a region's Pokédex page counts, because a region's routes borrow freely from earlier generations
- * and a player should be able to see everything they can actually catch here.
+ * Every species a region can give you, by any route: its wild pools, its legendaries, its starters, the Pokémon its
+ * fossils revive into, and the Game Corner prize where it has a Game Corner. This — not a dex number range — is what
+ * a region's Pokédex page counts, because a region's routes borrow freely from earlier generations and a player
+ * should be able to see everything they can actually get here.
+ *
+ * Counting only the wild pools is what left holes in the page: Omanyte, Kabuto and Aerodactyl are wild nowhere (they
+ * come out of a fossil, see engine/fossils.ts) and Porygon is won at the Game Corner, so #137, #138, #140 and #142
+ * were missing from Kanto's Pokédex — and a revived Omanyte had nowhere to show up at all.
  */
 export function regionSpecies(data: GameData, regionId: RegionId): Set<number> {
   const out = new Set<number>(getRegion(data, regionId)?.starters ?? [])
+  let hasGameCorner = false
   for (const area of data.areas) {
     if (regionOfArea(area) !== regionId) continue
     for (const w of area.wildPool) if (w.weight > 0) out.add(w.dex)
     for (const b of area.legendaryBoss ?? []) out.add(b.dex)
+    // A fossil in the loot is the Pokémon it revives into.
+    for (const l of area.lootPool) {
+      const fx = data.items[l.itemKey]?.effect
+      if (fx?.kind === 'fossil' && data.species[fx.dex]) out.add(fx.dex)
+    }
+    if ((area.encounterWeights.casino ?? 0) > 0) hasGameCorner = true
   }
+  if (hasGameCorner && data.species[data.config.slotMachine.prizeDex]) out.add(data.config.slotMachine.prizeDex)
   // The roamers belong to their region without sitting in any one area (see engine/encounters.ts).
   for (const dex of data.config.roamers?.regionId === regionId ? (data.config.roamers?.dex ?? []) : []) out.add(dex)
   return out
