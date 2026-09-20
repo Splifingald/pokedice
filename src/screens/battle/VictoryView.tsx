@@ -437,6 +437,9 @@ export function VictoryView() {
   }
 
   const enemy = battle?.state.enemy
+  // Between a trainer's Pokémon, the one that just fought stays selected unless the player picks another.
+  const fought = battle ? battle.state.player[battle.state.activeIndex] : undefined
+  const stillIn = fought && fought.hp > 0 ? fought.uid : undefined
   const hasNext = trainerHasNext()
   const enc = run.encounter
   const nextMon =
@@ -453,7 +456,7 @@ export function VictoryView() {
       SKIP ▸▸
     </PixelButton>
   ) : hasNext && nextMon ? (
-    <PixelButton variant="primary" size="lg" className="w-full" onClick={go(() => continueAfterVictory(lead ?? defaultLead()))}>
+    <PixelButton variant="primary" size="lg" className="w-full" onClick={go(() => continueAfterVictory(lead ?? stillIn ?? defaultLead()))}>
       NEXT BATTLE
     </PixelButton>
   ) : nextArea ? (
@@ -517,7 +520,7 @@ export function VictoryView() {
               {trainerLabel} is about to send out {data.species[nextMon.dex]?.name} (Lv.{nextMon.level}). Switch freely:
             </div>
           </div>
-          <LeadPicker value={lead} onChange={setLead} />
+          <LeadPicker value={lead ?? stillIn ?? null} onChange={setLead} />
         </div>
       )}
     </Overlay>
