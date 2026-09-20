@@ -180,14 +180,34 @@ The admin email lives in **one** place server-side (`is_admin()`) and one place 
 
 ---
 
-## 3. Generating the 151
+## 3. Generating the 386
 
-A script, `scripts/seed.ts`, run once locally (`pnpm seed`). It hits PokeAPI, applies deterministic rules, and writes:
+`scripts/seed.ts` was the original generator: hit PokeAPI for the 151, apply deterministic rules, and write
 
 - `src/data/pokemon.json`, `type-chart.json`, `dice-types.json`, `areas.json`, `trainers.json`, `upgrades.json`, `items.json`, `config.json` — the offline bundle
 - `supabase/seed.sql` — the same data as INSERTs, for the Supabase project
 
-It must be **idempotent and re-runnable**, and it must never overwrite hand-edits that were made in admin (it only writes the bundle + a fresh seed.sql; pushing to a live DB is a separate explicit command).
+**The bundle is now the source of truth, not the generator.** It has been retuned in the admin and grown well past
+what `seed.ts` knows how to make: 386 species, 88 areas across three regions, 450 trainers, 33 items. A plain
+re-run would silently roll every bit of that back, so it no longer writes anything:
+
+| Command | Role |
+|---|---|
+| `pnpm seed` | **Reports** the divergence between generator and bundle, per file and per field. Read-only |
+| `pnpm seed --force` | The old destructive regeneration: Kanto only, 151 species, 28 areas. Prints what it is about to drop. Follow it with `pnpm seed-regions` to rebuild Johto and Hoenn |
+| `pnpm seed-regions` | Additive: appends species 152–386, the Johto and Hoenn areas and trainers, and the `regions` table, preserving every existing row (and grafting cross-gen evolutions onto the Kanto rows) |
+| `pnpm seed-sql` | Regenerates `supabase/seed.sql` from the committed bundle without rebuilding the bundle |
+| `pnpm import-bundle <file>` | Turns an admin *Export bundle* download back into the committed bundle |
+
+`seed.ts`'s exported helpers — the dice maths (`diceCountFromBst`, `dicePlan`, `applyDiceSchedule`),
+`buildAreasAndTrainers` and `buildSql` — are still the real implementation, and `seed-regions.ts` builds the later
+regions with them. Only its `main()` was fenced off.
+
+Running `pnpm seed` today reports, among other things, that the generator's dice schedule differs from the shipped
+one for 76 of the 151 and its milestones for 140 — which is exactly why it must not write.
+
+All of these stay **idempotent and re-runnable**, and none of them touch a live database: they write the bundle and a
+fresh `seed.sql`, and pushing to Supabase is a separate explicit step.
 
 ### 3.1 PokeAPI endpoints
 
@@ -197,6 +217,11 @@ It must be **idempotent and re-runnable**, and it must never overwrite hand-edit
 - `GET /api/v2/type/{n}` → damage relations, for the 18×18 chart
 
 Cache every response to `scripts/.cache/` so re-runs are instant and offline.
+
+`pokeapi.co` itself refuses connections from CI and from a sandboxed checkout, so nothing is fetched from it directly.
+PokeAPI publishes the identical JSON as a static export — `raw.githubusercontent.com/PokeAPI/api-data/master/data/api/v2/<endpoint>/index.json`
+— and both `seed.ts` and `seed-regions.ts` read that, sharing one cache. The export indexes resources by **id only**,
+never by name, so `type/grass` has to be resolved through the `type` index first.
 
 ### 3.2 HP stats
 
