@@ -1155,6 +1155,15 @@ ui.help.combosBody,Only the single most damaging combo in a roll pays.,Seul le c
 ui.help.comboCol,Combo,Combo,Combo,Combo
 ui.help.exampleCol,Example,Exemple,Ejemplo,Beispiel
 ui.help.bonusCol,Bonus at Lv.1,Bonus au N.1,Bonus al Nv.1,Bonus auf Lv.1
+ui.types.toggle,Show strengths and weaknesses,Afficher forces et faiblesses,Mostrar fortalezas y debilidades,Stärken und Schwächen anzeigen
+ui.types.toggleHint,Tap a Pokémon in battle to see its matchups. They also appear at the bottom of its info sheet.,Touche un Pokémon en combat pour voir ses affinités. Elles apparaissent aussi en bas de sa fiche.,Toca un Pokémon en combate para ver sus afinidades. También aparecen al final de su ficha.,"Tippe im Kampf ein Pokémon an, um seine Typverhältnisse zu sehen. Sie stehen auch unten auf seiner Karte."
+ui.types.title,Strengths & weaknesses,Forces et faiblesses,Fortalezas y debilidades,Stärken und Schwächen
+ui.types.tap,{name}: strengths and weaknesses,{name} : forces et faiblesses,{name}: fortalezas y debilidades,{name}: Stärken und Schwächen
+ui.types.hits,Its dice hit hard on,Ses dés frappent fort sur,Sus dados golpean fuerte a,Seine Würfel treffen hart gegen
+ui.types.cantTouch,Its dice can't touch,Ses dés ne peuvent pas toucher,Sus dados no pueden tocar a,Seine Würfel können nichts ausrichten gegen
+ui.types.weak,Takes ×2 from,Prend ×2 de,Recibe ×2 de,Nimmt ×2 von
+ui.types.resists,Resists,Résiste à,Resiste a,Widersteht
+ui.types.immune,Takes nothing from,Ne prend rien de,No recibe nada de,Nimmt nichts von
 ui.help.typesIntro,Pick a type to see what it beats — and what beats it.,Choisis un type pour voir ce qu'il bat — et ce qui le bat.,Elige un tipo para ver a qué gana — y qué le gana.,"Wähle einen Typ, um zu sehen, was er schlägt — und was ihn schlägt."
 ui.help.showFullChart,Show the full type chart,Afficher la table des types complète,Mostrar la tabla de tipos completa,Die vollständige Typentabelle anzeigen
 ui.help.grow1,"The Pokémon that lands the K.O. gets XP. Levels raise HP; some levels add a die or a reroll, and many Pokémon evolve.","Le Pokémon qui met K.O. gagne de l'XP. Les niveaux augmentent les PV ; certains ajoutent un dé ou une relance, et beaucoup de Pokémon évoluent.","El Pokémon que debilita al rival gana EXP. Los niveles suben los PS; algunos añaden un dado o una tirada, y muchos Pokémon evolucionan.","Das Pokémon, das den K.O. setzt, bekommt EP. Level erhöhen die KP; manche fügen einen Würfel oder einen Neuwurf hinzu, und viele Pokémon entwickeln sich."

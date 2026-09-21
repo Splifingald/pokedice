@@ -24,6 +24,7 @@ import { XpBar } from './MonCard'
 import { MiniSprite, SpriteImg } from './SpriteImg'
 import { STAT_INFO, StatChip, statHint, statLabel, type StatKind } from './StatChip'
 import { TypeBadge } from './TypeBadge'
+import { TypeMatchups } from './TypeMatchups'
 
 function StatTile({ stat, value }: { stat: StatKind; value: ReactNode }) {
   useT()
@@ -225,6 +226,8 @@ export function PokemonSheet({
   const level = inst?.level ?? 1
   const stats = effectiveStats(species, level, data)
   const uniqueTypes = [...new Set(stats.dice)]
+  const hints = useGame((s) => s.settings.typeHints) ?? false
+  const types = species.type2 ? [species.type1, species.type2] : [species.type1]
 
   return (
     <div className="flex flex-col gap-3">
@@ -296,6 +299,13 @@ export function PokemonSheet({
       </section>
 
       <MilestoneTrack species={species} level={inst ? inst.level : null} onOpenDex={onOpenDex} />
+
+      {hints && (
+        <section>
+          <h3 className="mb-1 text-xl">{t('ui.types.title')}</h3>
+          <TypeMatchups types={types} dice={stats.dice} />
+        </section>
+      )}
 
       {children}
     </div>

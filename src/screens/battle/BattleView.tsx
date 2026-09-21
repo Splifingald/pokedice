@@ -33,6 +33,7 @@ import { MiniSprite, SpriteImg } from '@/components/SpriteImg'
 import { playerOf, PokeBall, ThrowSprite, TrainerSprite } from '@/components/TrainerArt'
 import { StatusIcons } from '@/components/StatusIcons'
 import { TypeBadge } from '@/components/TypeBadge'
+import { TypeMatchups } from '@/components/TypeMatchups'
 import { comboName, statusName, trainerTitle } from '@/lib/format'
 import { useT } from '@/i18n/react'
 import { AUTO_PACE, PaceContext, usePace } from '@/lib/pace'
@@ -60,6 +61,8 @@ function BattlerPanel({
   badges,
   footer,
   className,
+  onClick,
+  open,
 }: {
   b: Battler
   hp: number
@@ -69,12 +72,19 @@ function BattlerPanel({
   badges?: React.ReactNode
   footer?: React.ReactNode
   className?: string
+  /** Set when the type hint is on: the whole box opens the matchup pop-up. */
+  onClick?: () => void
+  open?: boolean
 }) {
   const { t } = useT()
   const foe = side === 'enemy'
   const bar = <HpBar hp={hp} max={b.maxHp} showNumbers={!foe} approximate={foe} height={foe ? 10 : 8} className={compact && foe ? 'min-w-[72px] flex-1' : 'mt-1'} />
+  const Box = onClick ? 'button' : 'div'
   return (
-    <div className={cx('pixel-panel', compact ? 'px-1.5 py-1' : 'p-2', className)}>
+    <Box
+      {...(onClick ? { type: 'button' as const, onClick, 'aria-expanded': !!open, 'aria-label': t('ui.types.tap', { name: b.name }) } : {})}
+      className={cx('pixel-panel text-left', compact ? 'px-1.5 py-1' : 'p-2', className)}
+    >
       {/* Name, then its level; the Poké Ball pips (and your status on phones) sit at the far right. */}
       <div className="flex items-center gap-1.5">
         <span className="truncate text-xl leading-none sm:text-2xl">{b.name}</span>
@@ -96,7 +106,38 @@ function BattlerPanel({
       )}
       {!(compact && foe) && bar}
       {!compact && footer}
-    </div>
+    </Box>
+  )
+}
+
+/** The matchup pop-up over the scene: which side it belongs to decides which end it sits at. */
+function MatchupPopup({ b, side, onClose }: { b: Battler; side: Side; onClose: () => void }) {
+  const { t } = useT()
+  return (
+    <>
+      <button type="button" className="absolute inset-0 z-30 cursor-default" aria-label={t('ui.common.close')} onClick={onClose} />
+      <div
+        role="dialog"
+        aria-label={t('ui.types.tap', { name: b.name })}
+        className={cx(
+          'pixel-panel absolute inset-x-2 z-30 max-h-[calc(100%-1rem)] overflow-y-auto p-2',
+          side === 'enemy' ? 'top-2' : 'bottom-2',
+        )}
+      >
+        <div className="mb-1 flex items-center gap-2">
+          <span className="truncate text-xl leading-none">{b.name}</span>
+          <div className="flex shrink-0 gap-1">
+            {b.types.map((x) => (
+              <TypeBadge key={x} type={x} size="sm" />
+            ))}
+          </div>
+          <button type="button" onClick={onClose} aria-label={t('ui.common.close')} className="ml-auto shrink-0 px-1 text-xl leading-none">
+            ✕
+          </button>
+        </div>
+        <TypeMatchups types={b.types} dice={b.dice} />
+      </div>
+    </>
   )
 }
 
@@ -201,6 +242,7 @@ function SpriteStage({
   anchorRef,
   hidden,
   compact,
+  onClick,
 }: {
   battler: Battler
   side: Side
@@ -213,7 +255,10 @@ function SpriteStage({
   hidden?: boolean
   /** Phone layout (your Pokémon stands further left). */
   compact: boolean
+  /** Set when the type hint is on: tapping the Pokémon itself opens its matchups too. */
+  onClick?: () => void
 }) {
+  const { t } = useT()
   const reduced = useGame((s) => s.settings.reducedMotion)
   const pace = usePace()
   const { dex, shiny } = battler
@@ -244,6 +289,9 @@ function SpriteStage({
       >
         <SpriteImg dex={dex} size={size} back={side === 'player'} shiny={shiny} alt="" />
       </motion.div>
+      {onClick && !hidden && !fainted && (
+        <button type="button" onClick={onClick} aria-label={t('ui.types.tap', { name: battler.name })} className="absolute inset-0 z-[1]" />
+      )}
       {shiny && !hidden && !fainted && !reduced && <ShinySparkle key={`${battler.uid}:${dex}`} size={size} delay={0.45} />}
       <AnimatePresence>
         {fx.flash?.target === side && (
@@ -370,6 +418,9 @@ export function BattleView({ battle }: { battle: BattleSlice }) {
   const [itemKey, setItemKey] = useState<string | null>(null)
   const [showBreakdown, setShowBreakdown] = useState(false)
   const [bossIntro, setBossIntro] = useState(st.kind === 'boss' && !reduced)
+  // Type hints (Trainer menu → Type chart): tapping a Pokémon opens its matchups over the scene.
+  const typeHints = useGame((s) => !!s.settings.typeHints)
+  const [matchups, setMatchups] = useState<Side | null>(null)
 
   // Auto-mode (cleared areas only): the player's side plays itself, like the enemy's.
   const autoOn = useGame((s) => !!s.settings.autoMode)
@@ -424,6 +475,9 @@ export function BattleView({ battle }: { battle: BattleSlice }) {
   }, [ready, intro, st.phase, reduced, pace, battle.log.length])
 
   const active = st.player.find((p) => p.uid === fx.activeUid) ?? activeBattler(st)
+  // A send-out, a faint or the end of the fight makes the open pop-up stale.
+  useEffect(() => setMatchups(null), [active.uid, st.enemy.uid, st.phase])
+
   const canAct = ready && !intro && (st.phase === 'player_roll' || st.phase === 'player_reroll')
   const stunned = ready && !intro && st.phase === 'player_stunned'
   // One item per turn: before the roll, after it, or to cure a stun.
@@ -607,6 +661,7 @@ export function BattleView({ battle }: { battle: BattleSlice }) {
             {scale > 0 && (
               <>
                 <SpriteStage
+                  onClick={typeHints ? () => setMatchups((v) => (v === 'enemy' ? null : 'enemy')) : undefined}
                   battler={st.enemy}
                   side="enemy"
                   fainted={!!fx.fainted[st.enemy.uid]}
@@ -638,6 +693,7 @@ export function BattleView({ battle }: { battle: BattleSlice }) {
                   )}
                 </AnimatePresence>
                 <SpriteStage
+                  onClick={typeHints ? () => setMatchups((v) => (v === 'player' ? null : 'player')) : undefined}
                   battler={active}
                   side="player"
                   fainted={!!fx.fainted[active.uid]}
@@ -664,6 +720,8 @@ export function BattleView({ battle }: { battle: BattleSlice }) {
             b={st.enemy}
             hp={fx.hp[st.enemy.uid] ?? st.enemy.hp}
             side="enemy"
+            onClick={typeHints ? () => setMatchups((v) => (v === 'enemy' ? null : 'enemy')) : undefined}
+            open={matchups === 'enemy'}
             compact={compact}
             className={cx('absolute z-10', compact ? 'left-[3px] top-[3px] w-[60%]' : 'left-[2%] top-[3%] w-[46%]')}
             badges={
@@ -680,6 +738,8 @@ export function BattleView({ battle }: { battle: BattleSlice }) {
             b={active}
             hp={fx.hp[active.uid] ?? active.hp}
             side="player"
+            onClick={typeHints ? () => setMatchups((v) => (v === 'player' ? null : 'player')) : undefined}
+            open={matchups === 'player'}
             compact={compact}
             className={cx('absolute z-10', compact ? 'bottom-[3px] right-[3px] w-[57%]' : 'bottom-[3%] right-[2%] w-[46%]')}
             badges={teamPips}
@@ -694,6 +754,14 @@ export function BattleView({ battle }: { battle: BattleSlice }) {
               </div>
             }
           />
+
+          {matchups && (
+            <MatchupPopup
+              b={matchups === 'enemy' ? st.enemy : active}
+              side={matchups}
+              onClose={() => setMatchups(null)}
+            />
+          )}
 
           <ParticleCanvas ref={particles} className="pointer-events-none absolute inset-0 z-20 h-full w-full" />
 

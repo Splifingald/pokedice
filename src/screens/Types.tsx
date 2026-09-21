@@ -3,9 +3,10 @@
 import { useState } from 'react'
 import { POKE_TYPES, typeMultiplier, type PokeType } from '@/engine'
 import { useT } from '@/i18n/react'
+import { Toggle } from '@/components/Toggle'
 import { TypeBadge } from '@/components/TypeBadge'
 import { dieAbbr, typeName } from '@/lib/format'
-import { useGame } from '@/store/game'
+import { setSettings, useGame } from '@/store/game'
 import { badgeColors, cx, typeColor } from '@/theme/util'
 
 /** `words` is a sheet key: the cell's meaning, read out in the player's language. */
@@ -141,8 +142,17 @@ export function TypeLookup() {
 /** Everything the type chart has to say — what the trainer menu opens. */
 export function TypesContent() {
   const { t } = useT()
+  const hints = useGame((s) => s.settings.typeHints) ?? false
   return (
     <div className="flex flex-col gap-3">
+      <div className="pixel-panel px-3 py-1.5">
+        <Toggle
+          label={t('ui.types.toggle')}
+          hint={t('ui.types.toggleHint')}
+          on={hints}
+          onChange={(v) => setSettings({ typeHints: v })}
+        />
+      </div>
       <p className="copy text-lg text-muted">{t('ui.help.typesIntro')}</p>
       <TypeLookup />
       <details>

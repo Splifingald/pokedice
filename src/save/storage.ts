@@ -16,6 +16,8 @@ export interface Settings {
   multiExp: boolean
   /** Auto-mode: fights in cleared areas play themselves — off by default. */
   autoMode?: boolean
+  /** Type hints: matchups on a Pokémon's sheet, and on tapping one in battle — off by default. */
+  typeHints?: boolean
   /** UI language. Unset on an older save: the browser's language decides, English if we don't speak it. */
   lang?: Lang
 }
