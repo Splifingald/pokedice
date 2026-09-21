@@ -8,7 +8,7 @@ import {
   type PlaytimeEvent,
 } from '@/analytics/playtime'
 import {
-  dayOneRetention,
+  retentionByDay,
   RETENTION_MIN_FIRST_DAY_EVENTS,
   type Retention,
   type RetentionEvent,
@@ -240,9 +240,46 @@ function Details({ row, data }: { row: EventRow; data: GameData }) {
   }
 }
 
-function RetentionHero({ retention: r }: { retention: Retention | null }) {
-  const pct = r?.rate == null ? null : Math.round(r.rate * 100)
-  const color = pct == null ? '#6b6480' : pct >= 40 ? '#4aa84a' : pct >= 20 ? '#e8b44a' : '#c2452d'
+/** The days shown under the headline, in order. Day 1 is the headline itself. */
+const LATER_DAYS = [2, 3, 7] as const
+
+const rateColor = (pct: number | null) =>
+  pct == null ? '#6b6480' : pct >= 40 ? '#4aa84a' : pct >= 20 ? '#e8b44a' : '#c2452d'
+
+const asPct = (r: Retention | undefined) => (r?.rate == null ? null : Math.round(r.rate * 100))
+
+/** D2 / D3 / D7 under the big D1 number: same measure, one week further out. */
+function LaterDays({ byDay }: { byDay: Record<number, Retention> }) {
+  return (
+    <dl className="mt-1 flex flex-wrap gap-x-4 gap-y-1">
+      {LATER_DAYS.map((day) => {
+        const r = byDay[day]
+        const pct = asPct(r)
+        return (
+          <div
+            key={day}
+            className="flex items-baseline gap-1.5"
+            title={
+              r && r.cohort
+                ? `${r.returned} of ${r.cohort} came back on day ${day}`
+                : `Nobody's day ${day} is over yet${r?.pending ? ` (${r.pending} waiting)` : ''}`
+            }
+          >
+            <dt className="text-base uppercase tracking-wider opacity-70">D{day}</dt>
+            <dd className="text-3xl leading-none" style={{ color: rateColor(pct) }}>
+              {pct == null ? '–' : `${pct}%`}
+            </dd>
+          </div>
+        )
+      })}
+    </dl>
+  )
+}
+
+function RetentionHero({ byDay }: { byDay: Record<number, Retention> | null }) {
+  const r = byDay?.[1] ?? null
+  const pct = asPct(r ?? undefined)
+  const color = rateColor(pct)
   const left = r
     ? [
         r.pending > 0 && `${r.pending} whose next day isn't over yet`,
@@ -260,6 +297,7 @@ function RetentionHero({ retention: r }: { retention: Retention | null }) {
         <span className="text-7xl leading-none sm:text-8xl" style={{ color }}>
           {r == null ? '…' : pct == null ? '–' : `${pct}%`}
         </span>
+        {byDay && <LaterDays byDay={byDay} />}
       </div>
       <div className="flex min-w-0 flex-1 flex-col gap-2">
         {r && (
@@ -285,8 +323,10 @@ function RetentionHero({ retention: r }: { retention: Retention | null }) {
         )}
         <p className="text-base leading-snug opacity-80">
           New players whose first day falls in this time frame, with at least {RETENTION_MIN_FIRST_DAY_EVENTS}{' '}
-          events that day, who had at least 1 event the next calendar day.
-          {left.length > 0 && ` Not counted: ${left.join(', ')}.`}
+          events that day, who had at least 1 event on the day counted. Each day is measured against its own
+          cohort — a player whose day 7 hasn't finished still counts for day 1 — so the later figures rest on
+          fewer players.
+          {left.length > 0 && ` Not counted for day 1: ${left.join(', ')}.`}
         </p>
       </div>
     </section>
@@ -346,7 +386,7 @@ export function AnalyticsSection() {
   const [customFrom, setCustomFrom] = useState(() => dayInput(new Date(Date.now() - 30 * 864e5)))
   const [customTo, setCustomTo] = useState(() => dayInput(new Date()))
   const [rows, setRows] = useState<EventRow[]>([])
-  const [retention, setRetention] = useState<Retention | null>(null)
+  const [retention, setRetention] = useState<Record<number, Retention> | null>(null)
   const [playtime, setPlaytime] = useState<PlaytimeEvent[]>([])
   const [reached, setReached] = useState<ProgressEvent[]>([])
   const progress = useMemo(() => playerProgress(reached, data), [reached, data])
@@ -392,7 +432,7 @@ export function AnalyticsSection() {
         player: playerKey(r),
         at: new Date(r.created_at),
       }))
-      setRetention(dayOneRetention(light, from, to))
+      setRetention(retentionByDay(light, from, to, [1, ...LATER_DAYS]))
       setStatus('ready')
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err))
@@ -555,7 +595,7 @@ export function AnalyticsSection() {
       </div>
 
       <div className="grid gap-3 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
-        <RetentionHero retention={status === 'loading' ? null : retention} />
+        <RetentionHero byDay={status === 'loading' ? null : retention} />
         <PlaytimeHero avg={status === 'loading' ? null : avgPlay} />
       </div>
 
