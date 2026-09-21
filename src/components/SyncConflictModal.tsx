@@ -1,5 +1,5 @@
-import { badgeCase, teamOf, type SaveData } from '@/engine'
-import { compareProgress } from '@/save/cloud'
+import { regionCases, teamOf, type SaveData } from '@/engine'
+import { compareProgress, progressTotals } from '@/save/cloud'
 import { useT } from '@/i18n/react'
 import { useGame } from '@/store/game'
 import { resolveSyncConflict } from '@/store/sync'
@@ -8,22 +8,33 @@ import { Modal } from './Modal'
 import { PixelButton } from './PixelButton'
 import { MiniSprite } from './SpriteImg'
 
-/** One line per fact that tells two saves apart. */
+/**
+ * One line per fact that tells two saves apart — every one of them counted across all the save's regions, the same
+ * way `compareProgress` counts. A save's numbers have to mean what the "more progress" badge means, or the player is
+ * picking on figures that disagree with the choice being recommended to them.
+ */
 export function SaveFacts({ save }: { save: SaveData }) {
   const { t } = useT()
   const data = useGame((s) => s.data)
-  const cleared = Object.values(save.areaProgress).filter((p) => p.cleared).length
-  const badges = badgeCase(save, data).filter((b) => b.earned).length
+  const totals = progressTotals(save)
+  const cases = regionCases(save, data)
+  const badges = cases.reduce((n, r) => n + r.earned, 0)
   return (
     <dl className="grid grid-cols-[auto_1fr] gap-x-3 text-lg leading-tight">
+      {cases.length > 1 && (
+        <>
+          <dt className="text-muted">{t('ui.sync.regions')}</dt>
+          <dd>{cases.map((r) => r.name).join(', ')}</dd>
+        </>
+      )}
       <dt className="text-muted">{t('ui.sync.pokedex')}</dt>
       <dd>
-        {new Set(save.pokedex).size}/{data.speciesList.length}
+        {totals.species}/{data.speciesList.length}
       </dd>
       <dt className="text-muted">{t('ui.sync.badges')}</dt>
       <dd>{badges}</dd>
       <dt className="text-muted">{t('ui.sync.areasCleared')}</dt>
-      <dd>{cleared}</dd>
+      <dd>{totals.cleared}</dd>
       <dt className="text-muted">{t('ui.sync.lastPlayed')}</dt>
       <dd>{new Date(save.updatedAt).toLocaleString()}</dd>
     </dl>

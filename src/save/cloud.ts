@@ -1,8 +1,9 @@
 // Cloud backup of the same save blob. Never blocks the UI. The newest `updatedAt` wins — unless it has less progress
-// than the other save, and then the player chooses (see decideSync).
+// than the other save, and then the player chooses (see decideSync). Progress is measured across every region a save
+// holds, not just the one it was last played in.
 import type { SupabaseClient } from '@supabase/supabase-js'
-import { ownedPokemon } from '@/engine/run'
-import type { SaveData } from '@/engine/types'
+import { liveBlock } from '@/engine/regions'
+import type { RegionSave, SaveData } from '@/engine/types'
 import { parseSave } from './schema'
 
 export async function pullCloudSave(client: SupabaseClient, userId: string): Promise<SaveData | null> {
@@ -40,15 +41,44 @@ export function schedulePush(run: () => Promise<void>, delay = 2000) {
   }, delay)
 }
 
-/** How far a save got, compared in order: areas cleared, gym battles won, species caught, total levels. */
+/**
+ * Every region the save holds: the live one, lifted out of the top level, and each parked block. Regions are
+ * separate runs, so anything that measures a whole save has to walk all of them — reading `save.areaProgress` alone
+ * sees only wherever the player happens to be standing.
+ */
+const regionBlocks = (s: SaveData): RegionSave[] => [liveBlock(s), ...Object.values(s.parked ?? {}).filter((b): b is RegionSave => !!b)]
+
+/**
+ * How far a save got across every region it holds, compared in order: areas cleared, gym battles won, species
+ * caught, total levels.
+ *
+ * Areas, gyms and levels add up, because clearing Johto is work done on top of Kanto, not instead of it. Species are
+ * the union: the regions' Pokédexes overlap — Johto's routes are full of Gen 1 — and catching the same Pikachu twice
+ * is not twice the progress. The other three axes already carry the extra region's weight.
+ *
+ * Before this walked the parked blocks, a save deep into Johto compared as if Kanto had never happened: a freshly
+ * started Johto, with one starter and no areas, lost to a stale device sitting in a finished Kanto.
+ */
+export function progressTotals(s: SaveData) {
+  const species = new Set<number>()
+  let cleared = 0
+  let gyms = 0
+  let levels = 0
+  for (const block of regionBlocks(s)) {
+    for (const p of Object.values(block.areaProgress)) {
+      if (p.cleared) cleared++
+      gyms += p.gymsDefeated?.length ?? 0
+    }
+    for (const dex of block.pokedex) species.add(dex)
+    for (const p of block.box) levels += p.level
+    for (const r of block.dayCare?.residents ?? []) levels += r.inst.level
+  }
+  return { regions: regionBlocks(s).length, cleared, gyms, species: species.size, levels }
+}
+
 function progressTuple(s: SaveData): number[] {
-  const areas = Object.values(s.areaProgress)
-  return [
-    areas.filter((p) => p.cleared).length,
-    areas.reduce((n, p) => n + (p.gymsDefeated?.length ?? 0), 0),
-    new Set(s.pokedex).size,
-    ownedPokemon(s).reduce((n, p) => n + p.level, 0),
-  ]
+  const t = progressTotals(s)
+  return [t.cleared, t.gyms, t.species, t.levels]
 }
 
 /** > 0 when `a` got further than `b`, < 0 when it's behind, 0 when they're level. */

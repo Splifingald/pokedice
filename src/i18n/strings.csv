@@ -1189,6 +1189,7 @@ ui.dex.evolvesFromItem,Evolves from {name} with a {how},Évolue de {name} avec {
 ui.dex.evolvesFromLevel,Evolves from {name} at {how},Évolue de {name} au {how},Evoluciona de {name} al {how},Entwickelt sich aus {name} auf {how}
 ui.dex.notSpotted,Nobody has spotted it in the wild yet…,Personne ne l'a encore repéré à l'état sauvage…,Nadie lo ha avistado todavía en libertad…,Noch niemand hat es in freier Wildbahn gesichtet …
 ui.dex.exploringHint,You're exploring {area}: leave it (MAP) to travel somewhere else.,Tu explores {area} : quitte la zone (CARTE) pour aller ailleurs.,Estás explorando {area}: sal de la zona (MAPA) para viajar a otro sitio.,"Du erkundest {area}: Verlasse es (KARTE), um woanders hinzureisen."
+ui.sync.regions,Regions,Régions,Regiones,Regionen
 ui.sync.pokedex,Pokédex,Pokédex,Pokédex,Pokédex
 ui.sync.badges,Badges,Badges,Medallas,Orden
 ui.sync.areasCleared,Areas cleared,Zones terminées,Zonas completadas,Abgeschlossene Gebiete

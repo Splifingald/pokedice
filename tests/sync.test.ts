@@ -1,7 +1,7 @@
 // Cloud sync safety: a stale device must never silently overwrite a save with more progress.
 import { describe, expect, it } from 'vitest'
-import { newSave, syncXpCurve, xpToNext, type SaveData } from '@/engine'
-import { compareProgress, decideSync, sameSave } from '@/save/cloud'
+import { liveBlock, newSave, syncXpCurve, xpToNext, type SaveData } from '@/engine'
+import { compareProgress, decideSync, progressTotals, sameSave } from '@/save/cloud'
 import { data, newId } from './fixtures'
 
 const base = newSave(4, data, 1000, newId)
@@ -35,6 +35,30 @@ describe('decideSync', () => {
     expect(compareProgress(cleared, further)).toBeGreaterThan(0)
     expect(compareProgress(further, base)).toBeGreaterThan(0)
     expect(compareProgress(base, base)).toBe(0)
+  })
+
+  it('counts every region the save holds, not just the one being played', () => {
+    const areaId = Object.keys(base.areaProgress)[0] ?? data.areas[0]!.id
+    const done = { roundsDone: 9, cleared: true, bossDefeated: true, bossesDefeated: [], gymsDefeated: ['g1'] }
+    // A finished Kanto, sitting on one device.
+    const kanto: SaveData = { ...base, areaProgress: { [areaId]: done }, pokedex: [...base.pokedex, 16, 19, 25] }
+    // The same player, having just walked into a fresh second region: one starter, nothing cleared yet.
+    const intoJohto: SaveData = {
+      ...newSave(4, data, 1000, newId),
+      region: 'johto',
+      parked: { kanto: { ...liveBlock(kanto) } },
+    }
+
+    // Read region by region, Johto looks like a brand new game and Kanto wins. It must not.
+    expect(compareProgress(intoJohto, kanto)).toBeGreaterThan(0)
+    expect(decideSync(at(kanto, 9), at(intoJohto, 2))).toBe('ask')
+
+    const totals = progressTotals(intoJohto)
+    expect(totals.regions).toBe(2)
+    expect(totals.cleared).toBe(1)
+    expect(totals.gyms).toBe(1)
+    // The two Pokédexes are unioned, not added: the starter is in both.
+    expect(totals.species).toBe(new Set([...kanto.pokedex, ...base.pokedex]).size)
   })
 
   it('ignores bookkeeping when comparing saves', () => {
