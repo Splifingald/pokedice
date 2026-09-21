@@ -27,7 +27,7 @@ import { t } from '@/i18n'
 
 export function buy(key: string, qty = 1): boolean {
   const { data } = useGame.getState()
-  const ok = mutateSave((s) => buyItem(s, key, qty, data))
+  const ok = mutateSave((s) => buyItem(s, key, qty, data, Date.now(), newId))
   if (!ok) pushToast(t('ui.toast.tooPoor'), 'bad')
   return ok
 }

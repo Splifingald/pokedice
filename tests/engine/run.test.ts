@@ -10,6 +10,7 @@ import {
   buyComboUpgrade,
   buyDieUpgrade,
   buyItem,
+  isReviving,
   canSkip,
   centerHeal,
   challengeEncounter,
@@ -387,6 +388,20 @@ describe('wipe, center, team, shop, upgrades', () => {
     const extra = createInstance(16, 3, data, 'x1', 0)
     const withBox = { ...s, box: [...s.box, extra] }
     expect(swapIntoTeam(withBox, 'x1', null, data).team).toEqual([s.team[0], 'x1'])
+  })
+
+  it('shop: a bought fossil goes to the Box reviving, not into the bag', () => {
+    // A fossil has no use from the bag at all, so one the Mart sells has to arrive the way a dug-up one does.
+    const amber = { ...data.items['old-amber']!, inShop: true, shopBadges: 7, price: 100 }
+    const withIt = { ...data, items: { ...data.items, 'old-amber': amber } }
+    const s: SaveData = { ...fresh(), gold: 250, inventory: {} }
+    let n = 0
+    const bought = buyItem(s, 'old-amber', 2, withIt, 5000, () => `am-${++n}`)!
+    expect(bought.gold).toBe(50)
+    expect(bought.inventory['old-amber']).toBeUndefined()
+    const added = bought.box.filter((p) => p.dex === 142)
+    expect(added).toHaveLength(2)
+    expect(added.every((p) => isReviving(p))).toBe(true)
   })
 
   it('shop: buy, consume and use potions out of battle', () => {

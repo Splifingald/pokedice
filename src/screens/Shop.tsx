@@ -9,13 +9,23 @@ import { buy, sell } from '@/store/actions'
 import { useGame } from '@/store/game'
 import { cx } from '@/theme/util'
 
+/**
+ * The Buy and Sell tabs render group by group, so an item whose effect kind is in no group is silently dropped —
+ * it would be listed under "Coming later" while locked and then vanish the moment it unlocked. Every kind of
+ * `ItemEffect` must appear here; `groupOf` and its test are what keep that true as kinds are added.
+ */
 const GROUPS: { title: string; kinds: ItemDef['effect']['kind'][] }[] = [
   { title: 'ui.shop.groupHealing', kinds: ['heal', 'revive'] },
   { title: 'ui.shop.groupCures', kinds: ['cure'] },
   { title: 'ui.shop.groupBattle', kinds: ['rerolls', 'level'] },
   { title: 'ui.shop.groupStones', kinds: ['stone'] },
+  { title: 'ui.shop.groupFossils', kinds: ['fossil'] },
   { title: 'ui.shop.groupBalls', kinds: ['ball'] },
 ]
+
+/** The group an item is listed under, or null when no group claims its kind. */
+export const groupOf = (kind: ItemDef['effect']['kind']): string | null =>
+  GROUPS.find((g) => g.kinds.includes(kind))?.title ?? null
 const QTY = [1, 5, 10] as const
 
 function ItemSprite({ it }: { it: ItemDef }) {

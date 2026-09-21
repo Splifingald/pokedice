@@ -472,12 +472,30 @@ export function swapIntoTeam(save: SaveData, inId: string, outId: string | null,
   return save
 }
 
-export function buyItem(save: SaveData, key: string, qty: number, data: GameData): SaveData | null {
+/**
+ * Buys `qty` of an item. A fossil bought over the counter behaves exactly like one dug out of the ground: it goes
+ * straight to the Box as the Pokémon it holds and revives on its own clock. Sitting in the bag it would be inert —
+ * `itemUses` gives a fossil no use at all — so anything the Mart is configured to sell has to arrive usable.
+ */
+export function buyItem(
+  save: SaveData,
+  key: string,
+  qty: number,
+  data: GameData,
+  now: number = Date.now(),
+  newId: () => string = () => `fossil-${now}`,
+): SaveData | null {
   const item = data.items[key]
   if (!item || qty <= 0) return null
   const cost = item.price * qty
   if (save.gold < cost) return null
-  return { ...save, gold: save.gold - cost, inventory: { ...save.inventory, [key]: (save.inventory[key] ?? 0) + qty } }
+  const paid = { ...save, gold: save.gold - cost }
+  if (item.effect.kind === 'fossil') {
+    let next = paid
+    for (let i = 0; i < qty; i++) next = addFossil(next, item, data, now, newId())
+    return next
+  }
+  return { ...paid, inventory: { ...paid.inventory, [key]: (paid.inventory[key] ?? 0) + qty } }
 }
 
 /** Sells `qty` of an item back to the Mart for `sellPrice` each. Null when it can't be sold or the bag has too few. */
