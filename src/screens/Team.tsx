@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { teamOf, type PokemonInstance } from '@/engine'
 import { useT } from '@/i18n/react'
+import { BoxSortPicker, sortBox, type BoxSort } from '@/components/BoxSort'
 import { PixelIcon } from '@/components/icons'
 import { ItemPanel } from '@/components/ItemPanel'
 import { MonCard } from '@/components/MonCard'
@@ -8,15 +9,7 @@ import { PixelButton } from '@/components/PixelButton'
 import { SheetModal, type SheetView } from '@/components/SheetModal'
 import { reorderTeam } from '@/store/actions'
 import { useGame } from '@/store/game'
-import { cx } from '@/theme/util'
 
-type Sort = 'dex' | 'level' | 'type' | 'newest'
-const SORTS: { id: Sort; label: string }[] = [
-  { id: 'dex', label: 'ui.team.sortDex' },
-  { id: 'level', label: 'ui.team.sortLevel' },
-  { id: 'type', label: 'ui.team.sortType' },
-  { id: 'newest', label: 'ui.team.sortNewest' },
-]
 /** The Box gets a search field once it holds more than this. */
 const SEARCH_FROM = 20
 
@@ -25,25 +18,14 @@ export function TeamScreen() {
   const save = useGame((s) => s.save)
   const data = useGame((s) => s.data)
   const [view, setView] = useState<SheetView | null>(null)
-  const [sort, setSort] = useState<Sort>('dex')
+  const [sort, setSort] = useState<BoxSort>('dex')
   const [q, setQ] = useState('')
   if (!save) return null
   const team = teamOf(save)
   const name = (p: PokemonInstance) => data.species[p.dex]?.name ?? t('ui.common.unknown')
-  const type1 = (p: PokemonInstance) => data.species[p.dex]?.type1 ?? ''
   const boxAll = save.box.filter((p) => !save.team.includes(p.id))
   const needle = q.trim().toLowerCase()
-  const box = boxAll
-    .filter((p) => !needle || name(p).toLowerCase().includes(needle))
-    .sort((a, b) =>
-      sort === 'level'
-        ? b.level - a.level || a.dex - b.dex
-        : sort === 'type'
-          ? type1(a).localeCompare(type1(b)) || a.dex - b.dex
-          : sort === 'newest'
-            ? b.caughtAt - a.caughtAt
-            : a.dex - b.dex || b.level - a.level,
-    )
+  const box = sortBox(boxAll.filter((p) => !needle || name(p).toLowerCase().includes(needle)), sort, data)
   const move = (i: number, d: -1 | 1) => {
     const ids = [...save.team]
     const j = i + d
@@ -96,22 +78,7 @@ export function TeamScreen() {
           <h2 id="box-title" className="text-3xl">
             {t('ui.team.box', { count: boxAll.length })}
           </h2>
-          {boxAll.length > 1 && (
-            <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label={t('ui.team.sortBox')}>
-              <span className="text-lg text-muted">{t('ui.team.sort')}</span>
-              {SORTS.map((s) => (
-                <button
-                  key={s.id}
-                  type="button"
-                  aria-pressed={sort === s.id}
-                  onClick={() => setSort(s.id)}
-                  className={cx('pixel-btn min-h-[44px] px-2 text-lg md:min-h-[32px]', sort === s.id ? 'bg-gold' : 'bg-panel')}
-                >
-                  {t(s.label)}
-                </button>
-              ))}
-            </div>
-          )}
+          {boxAll.length > 1 && <BoxSortPicker sort={sort} onChange={setSort} />}
         </div>
         {boxAll.length > SEARCH_FROM && (
           <>

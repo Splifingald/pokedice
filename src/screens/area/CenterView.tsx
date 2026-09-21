@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { teamOf, type PokemonInstance } from '@/engine'
 import { useT } from '@/i18n/react'
 import { sfx } from '@/audio/sfx'
+import { BoxSortPicker, sortBox, type BoxSort } from '@/components/BoxSort'
 import { PixelIcon } from '@/components/icons'
 import { MonCard } from '@/components/MonCard'
 import { PixelButton } from '@/components/PixelButton'
@@ -19,6 +20,7 @@ export function CenterView() {
   const reduced = useGame((s) => s.settings.reducedMotion)
   const [healed, setHealed] = useState(reduced)
   const [view, setView] = useState<SheetView | null>(null)
+  const [sort, setSort] = useState<BoxSort>('dex')
 
   useEffect(() => {
     sfx('heal')
@@ -29,7 +31,7 @@ export function CenterView() {
 
   if (!save) return null
   const team = teamOf(save)
-  const box = save.box.filter((p) => !save.team.includes(p.id)).sort((a, b) => a.dex - b.dex || b.level - a.level)
+  const box = sortBox(save.box.filter((p) => !save.team.includes(p.id)), sort, data)
   const full = team.length >= data.config.maxTeamSize
   const name = (p: PokemonInstance) => data.species[p.dex]?.name ?? t('ui.common.unknown')
   const open = (p: PokemonInstance) => setView({ kind: 'inst', id: p.id })
@@ -137,9 +139,10 @@ export function CenterView() {
       </section>
 
       <section className="flex flex-col gap-2">
-        <div className="flex flex-wrap items-baseline justify-between gap-x-3">
+        <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1.5">
           <h2 className="text-3xl">{t('ui.team.box', { count: box.length })}</h2>
           {box.length > 0 && <span className="text-base text-muted">{t('ui.center.tapBox')}</span>}
+          {box.length > 1 && <BoxSortPicker sort={sort} onChange={setSort} />}
         </div>
         {box.length === 0 && <p className="copy text-muted">{t('ui.center.boxEmpty')}</p>}
         <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
