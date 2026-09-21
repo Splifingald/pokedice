@@ -15,6 +15,7 @@ import { SidePanel } from './SidePanel'
 import { playerOf } from './TrainerArt'
 
 const HelpContent = lazy(() => import('@/screens/Help').then((m) => ({ default: m.HelpContent })))
+const TypesContent = lazy(() => import('@/screens/Types').then((m) => ({ default: m.TypesContent })))
 
 /** One row of the drawer: an icon, a label, and either a route or an action. */
 function MenuRow({ icon, mark, label, onClick }: { icon?: IconName; mark?: boolean; label: string; onClick: () => void }) {
@@ -32,8 +33,8 @@ function MenuRow({ icon, mark, label, onClick }: { icon?: IconName; mark?: boole
 
 /**
  * The header's avatar button and everything behind it: the player's profile, the settings screen,
- * the rules, the admin (admins only) and the Google connection. Disabled mid-fight, like the rest
- * of the header.
+ * the rules, the type chart, the admin (admins only) and the Google connection. Disabled mid-fight,
+ * like the rest of the header.
  */
 export function PlayerMenu() {
   const { t } = useT()
@@ -45,6 +46,7 @@ export function PlayerMenu() {
   const [open, setOpen] = useState(false)
   const [profile, setProfile] = useState(false)
   const [guide, setGuide] = useState(false)
+  const [types, setTypes] = useState(false)
 
   const name = playerOf(save).name
   // The Connect row only makes sense when cloud backup exists on this deployment and nobody is signed in.
@@ -101,6 +103,14 @@ export function PlayerMenu() {
               setGuide(true)
             }}
           />
+          <MenuRow
+            icon="vs"
+            label={t('ui.help.navTypes')}
+            onClick={() => {
+              setOpen(false)
+              setTypes(true)
+            }}
+          />
           {isAdmin && <MenuRow icon="wrench" label={t('ui.nav.admin')} onClick={go('/admin')} />}
           {canConnect && (
             <MenuRow
@@ -120,6 +130,12 @@ export function PlayerMenu() {
       <Modal open={guide} onClose={() => setGuide(false)} title={t('ui.settings.howToPlay')} className="max-w-3xl">
         <Suspense fallback={<p className="text-xl">{t('ui.common.loading')}</p>}>
           <HelpContent />
+        </Suspense>
+      </Modal>
+
+      <Modal open={types} onClose={() => setTypes(false)} title={t('ui.help.navTypes')} className="max-w-3xl">
+        <Suspense fallback={<p className="text-xl">{t('ui.common.loading')}</p>}>
+          <TypesContent />
         </Suspense>
       </Modal>
     </>
