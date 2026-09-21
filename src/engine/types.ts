@@ -518,7 +518,7 @@ export interface SaveData {
   region?: RegionId
   /** The regions not being played, each holding everything that region owns. */
   parked?: Partial<Record<RegionId, RegionSave>>
-  /** Regions whose Box, bag and ₽ have already been merged forward, so a merge never doubles. */
+  /** Legacy: regions folded forward by a league, back when that happened. Read by nothing — regions never pool now. */
   merged?: RegionId[]
 }
 

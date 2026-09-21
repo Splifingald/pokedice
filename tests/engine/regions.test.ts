@@ -1,4 +1,4 @@
-// Regions: the block swap, the league gate, the merge, and the rescue when one is switched off.
+// Regions: the block swap, the league gate, sending a Pokémon on, and the rescue when one is switched off.
 import { describe, expect, it } from 'vitest'
 import {
   compileGameData,
@@ -6,12 +6,15 @@ import {
   enabledRegions,
   leagueDone,
   liveBlock,
-  mergeEarlierRegions,
   newRegionBlock,
   newSave,
   offeredRegion,
   regionAreas,
   regionOf,
+  regionSpecies,
+  sendOnBlocked,
+  sendOnTarget,
+  sendPokemonOn,
   rescueFromDisabledRegion,
   startRegion,
   switchRegion,
@@ -118,34 +121,6 @@ describe('regions', () => {
     expect(switchRegion(s, 'johto')).toBe(s)
   })
 
-  it('merges the earlier regions forward once, when the league is done', () => {
-    const kanto = { ...clearLeague(newSave(7, data, 1, newId), data), gold: 900, inventory: { potion: 4 } }
-    const inJohto = start(kanto)
-    // Nothing to collect until Johto's own league falls.
-    expect(mergeEarlierRegions(inJohto, data).merged).toEqual([])
-
-    const done = clearLeague(inJohto, data, 'johto')
-    const first = mergeEarlierRegions(done, data)
-    expect(first.merged).toEqual(['kanto'])
-    expect(first.save.gold).toBe(900)
-    // Kanto's 4 potions land on top of the 2 Johto started with.
-    expect(first.save.inventory.potion).toBe(4 + (data.config.startInventory?.potion ?? 0))
-    expect(first.save.box.map((p) => p.dex).sort((a, b) => a - b)).toEqual([7, 152])
-    // Kanto keeps its Pokédex and its progress, but its things are here now.
-    expect(first.save.parked!.kanto!.pokedex).toEqual([7])
-    expect(first.save.parked!.kanto!.box).toEqual([])
-    expect(first.save.parked!.kanto!.gold).toBe(0)
-    // And it never doubles.
-    expect(mergeEarlierRegions(first.save, data).merged).toEqual([])
-  })
-
-  it('takes the best of each upgrade track on merge, never the sum', () => {
-    const kanto = { ...clearLeague(newSave(7, data, 1, newId), data), comboLevels: { ...newSave(7, data, 1, newId).comboLevels, pair: 6 } }
-    const done = clearLeague(start(kanto), data, 'johto')
-    const merged = mergeEarlierRegions({ ...done, comboLevels: { ...done.comboLevels, pair: 3 } }, data)
-    expect(merged.save.comboLevels.pair).toBe(6)
-  })
-
   it('hides a region switched off, and rescues a player standing in it', () => {
     const off = twoRegionData({ johtoEnabled: false })
     expect(enabledRegions(off).map((r) => r.id)).toEqual(['kanto'])
@@ -167,5 +142,64 @@ describe('regions', () => {
     expect(regionOf(old as SaveData)).toBe('kanto')
     expect(leagueDone(old as SaveData, data, 'kanto')).toBe(false)
     expect(unlockedRegions(old as SaveData, data).map((r) => r.id)).toEqual(['kanto'])
+  })
+})
+
+describe('sending a Pokémon on', () => {
+  const extra = (save: SaveData, dex: number, id: string) => ({
+    ...save,
+    box: [...save.box, createInstance(dex, 5, data, id, 1)],
+  })
+  /** Kanto's league done, Johto started, and the player back in Kanto — where the button lives. */
+  const inKanto = () => switchRegion(start(clearLeague(newSave(7, data, 1, newId), data)), 'kanto')
+
+  it('offers the next region only once its league is done and that region exists', () => {
+    // League done, but Johto never started: nowhere to send anything.
+    expect(sendOnTarget(clearLeague(newSave(7, data, 1, newId), data), data)).toBeNull()
+    // Johto started but Kanto's league not done.
+    const early = switchRegion(startRegion(newSave(7, data, 1, newId), johto, newRegionBlock(johto, 152, data, 1, newId, createInstance)), 'kanto')
+    expect(sendOnTarget(early, data)).toBeNull()
+    expect(sendOnTarget(inKanto(), data)?.id).toBe('johto')
+    // Johto is last in the chain: from there, there is nowhere further on.
+    expect(sendOnTarget(clearLeague(start(clearLeague(newSave(7, data, 1, newId), data)), data, 'johto'), data)).toBeNull()
+  })
+
+  it('moves it out of this region and into the next one’s Box and Pokédex', () => {
+    const save = extra(inKanto(), 4, 'charmander')
+    const sent = sendPokemonOn(save, data, 'charmander')!
+    expect(sent.box.map((p) => p.id)).not.toContain('charmander')
+    const arrived = sent.parked!.johto!
+    expect(arrived.box.map((p) => p.dex)).toEqual([152, 4])
+    expect(arrived.pokedex).toContain(4)
+    // Kanto keeps its own Pokédex: what it caught, it caught.
+    expect(sent.pokedex).toContain(7)
+  })
+
+  it('keeps the last Pokémon of a region, so the region stays playable', () => {
+    const save = inKanto()
+    expect(save.box).toHaveLength(1)
+    expect(sendOnBlocked(save, data, save.box[0]!, johto)).toBe('last')
+    expect(sendPokemonOn(save, data, save.box[0]!.id)).toBeNull()
+  })
+
+  it('refuses a species the next region could not have given you', () => {
+    const mine = regionSpecies(data, 'johto')
+    const alien = data.speciesList.map((sp) => sp.dex).find((dex) => !mine.has(dex))!
+    const save = extra(extra(inKanto(), 4, 'charmander'), alien, 'alien')
+    expect(sendOnBlocked(save, data, save.box.find((p) => p.id === 'alien')!, johto)).toBe('species')
+    expect(sendPokemonOn(save, data, 'alien')).toBeNull()
+  })
+
+  it('a fossil still reviving stays put', () => {
+    const save = extra(inKanto(), 4, 'charmander')
+    const reviving = { ...save, box: save.box.map((p) => (p.id === 'charmander' ? { ...p, revivesAt: 9e12 } : p)) }
+    expect(sendOnBlocked(reviving, data, reviving.box.find((p) => p.id === 'charmander')!, johto)).toBe('reviving')
+  })
+
+  it('promotes a replacement when the whole team leaves', () => {
+    const save = extra(inKanto(), 4, 'charmander')
+    const sent = sendPokemonOn({ ...save, team: [save.box[0]!.id] }, data, save.box[0]!.id)!
+    // The team cannot be left empty: the Box's next Pokémon takes over.
+    expect(sent.team).toEqual(['charmander'])
   })
 })

@@ -2,7 +2,7 @@
 // time the player opens the game the cloud save wins the sync even if it has less progress (see decideSync).
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { createInstance } from '@/engine/progression'
-import { getRegion, mergeEarlierRegions, newRegionBlock, regionOf, startRegion, switchRegion } from '@/engine/regions'
+import { getRegion, newRegionBlock, regionOf, startRegion, switchRegion } from '@/engine/regions'
 import { progressOf } from '@/engine/run'
 import type { GameData, SaveData } from '@/engine/types'
 import { parseSave } from '@/save/schema'
@@ -104,12 +104,6 @@ export function adminSwitchRegion(save: SaveData, now: number, regionId: string)
   return stamp(switchRegion(save, regionId), now)
 }
 
-/** Folds the earlier regions' Box, bag and ₽ into the live one early, to test the collision path. */
-export function adminMergeRegions(save: SaveData, data: GameData, now: number): { save: SaveData; merged: string[] } {
-  const res = mergeEarlierRegions(save, data)
-  if (!res.merged.length) throw new Error('Nothing to merge: no earlier region, or this league is not done')
-  return { save: stamp(res.save, now), merged: res.merged }
-}
 
 /** Puts an item in the bag — the stones and fossils included, so those paths are testable in any region. */
 export function adminGiveItem(save: SaveData, data: GameData, now: number, key: string, qty: number): SaveData {

@@ -11,7 +11,6 @@ import {
   adminAddPokemon,
   adminCompleteLeague,
   adminGiveItem,
-  adminMergeRegions,
   adminRemovePokemon,
   adminStartRegion,
   adminStartRoamers,
@@ -168,15 +167,6 @@ export function PlayerCheats({ player, name }: { player: string; name: string })
               }
             >
               Complete league
-            </PixelButton>
-            <PixelButton
-              size="sm"
-              disabled={busy}
-              onClick={() =>
-                void apply((s) => adminMergeRegions(s, data, Date.now()).save, 'Earlier regions merged in')
-              }
-            >
-              Merge earlier
             </PixelButton>
             <PixelButton
               size="sm"

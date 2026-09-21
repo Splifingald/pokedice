@@ -1,14 +1,27 @@
 /**
  * Regions: Kanto, Johto, Hoenn. Each is a self-contained run — its own areas, Box, bag, ₽, upgrade tracks and
- * Pokédex — and the player carries only their character between them.
+ * Pokédex — and the player carries only their character between them. Nothing pools, ever: what a region holds
+ * stays in it. The one thread between them is `sendPokemonOn`, which walks a single Pokémon one region forward.
  *
  * The save keeps the **live** region at the top level of `SaveData`, exactly where it has always been, and parks the
  * others in `save.parked`. So every engine function and every screen goes on reading `save.box` and `save.gold`
  * without knowing regions exist; switching region is a swap of those fields, and nothing else changes.
  */
 import { linearAreas } from './data'
+import { isReviving } from './fossils'
 import type { BadgeInfo } from './run'
-import { COMBO_KEYS, POKE_TYPES, type ComboKey, type GameData, type PokeType, type Region, type RegionId, type RegionSave, type SaveData } from './types'
+import {
+  COMBO_KEYS,
+  POKE_TYPES,
+  type ComboKey,
+  type GameData,
+  type PokeType,
+  type PokemonInstance,
+  type Region,
+  type RegionId,
+  type RegionSave,
+  type SaveData,
+} from './types'
 
 export const KANTO: RegionId = 'kanto'
 
@@ -233,46 +246,72 @@ export function startRegion(save: SaveData, region: Region, block: RegionSave): 
 }
 
 /**
- * Beating a region's league gives its earlier regions' things back: their Box, bag and ₽ fold into the live region,
- * once. Their parked blocks keep their Pokédex and progress, so switching back still shows everything they did — but
- * their Box and bag are now empty, because those Pokémon and items are here.
+ * The region a Pokémon can be sent on to from here: the one after this, once this region's league is done and that
+ * region has actually been started. Null the rest of the time, which is what keeps the button out of sight.
  *
- * Upgrade tracks take the best of the merged regions, rather than adding up: a track is a level, not a balance.
+ * Regions do not pool: a Box, a bag, a purse and an upgrade track belong to one region for good. Sending a Pokémon
+ * on is the single thread between them, and it goes one hop forward at a time — Kanto to Johto, then Johto to Hoenn
+ * once Johto's league has fallen too.
  */
-export function mergeEarlierRegions(save: SaveData, data: GameData): { save: SaveData; merged: RegionId[]; gained: number } {
-  const live = regionOf(save)
-  const region = getRegion(data, live)
-  if (!region || !leagueDone(save, data, live)) return { save, merged: [], gained: 0 }
+export function sendOnTarget(save: SaveData, data: GameData): Region | null {
+  const here = getRegion(data, regionOf(save))
+  if (!here?.nextRegion || !leagueDone(save, data, here.id)) return null
+  const next = getRegion(data, here.nextRegion)
+  // It has to be a region being played: its parked block is the Box the Pokémon arrives in.
+  if (!next || (!next.enabled && next.id !== KANTO) || !save.parked?.[next.id]) return null
+  return next
+}
 
-  const already = new Set(save.merged ?? [])
-  const earlier = enabledRegions(data).filter((r) => r.orderIndex < region.orderIndex && !already.has(r.id))
-  const sources = earlier.filter((r) => save.parked?.[r.id])
-  if (!sources.length) return { save, merged: [], gained: 0 }
+/** Why this Pokémon cannot go, or null when it can. */
+export type SendBlock = 'species' | 'last' | 'reviving'
 
-  const parked = { ...(save.parked ?? {}) }
-  let box = [...save.box]
-  const inventory = { ...save.inventory }
-  let gold = save.gold
-  const comboLevels = { ...save.comboLevels }
-  const dieLevels = { ...save.dieLevels }
-  let gained = 0
+/**
+ * A Pokémon may go on only if the region it is going to could have given it to the player itself — the same set its
+ * Pokédex page counts. A fossil still reviving stays put, and so does the last Pokémon in the Box: emptying a region
+ * would leave nothing to play it with.
+ */
+export function sendOnBlocked(save: SaveData, data: GameData, inst: PokemonInstance, target: Region): SendBlock | null {
+  if (isReviving(inst)) return 'reviving'
+  if (!regionSpecies(data, target.id).has(inst.dex)) return 'species'
+  if (save.box.filter((p) => !isReviving(p)).length <= 1) return 'last'
+  return null
+}
 
-  for (const r of sources) {
-    const block = parked[r.id]!
-    box = [...box, ...block.box]
-    gained += block.box.length
-    for (const [key, qty] of Object.entries(block.inventory)) inventory[key] = (inventory[key] ?? 0) + qty
-    gold += block.gold
-    for (const k of COMBO_KEYS) comboLevels[k] = Math.max(comboLevels[k], block.comboLevels[k] ?? 1)
-    for (const t of POKE_TYPES) dieLevels[t] = Math.max(dieLevels[t], block.dieLevels[t] ?? 1)
-    // The region keeps its Pokédex and its progress; what has moved here is no longer there.
-    parked[r.id] = { ...block, box: [], team: [], inventory: {}, gold: 0 }
+/**
+ * Moves one Pokémon out of the live region and into the next one's parked Box, where it is the player's to use the
+ * moment they travel. It leaves the team behind it — and if it was the whole team, the Box promotes a replacement,
+ * because a region with nobody in its team cannot be played.
+ *
+ * It also enters the target's Pokédex: it is sitting in that Box, and a Pokémon you own reading as never seen is
+ * the kind of thing that looks broken.
+ */
+export function sendPokemonOn(save: SaveData, data: GameData, instId: string): SaveData | null {
+  const target = sendOnTarget(save, data)
+  if (!target) return null
+  const inst = save.box.find((p) => p.id === instId)
+  if (!inst || sendOnBlocked(save, data, inst, target)) return null
+  const block = save.parked?.[target.id]
+  if (!block) return null
+
+  const box = save.box.filter((p) => p.id !== instId)
+  let team = save.team.filter((id) => id !== instId)
+  if (!team.length) {
+    const heir = box.find((p) => !isReviving(p))
+    if (!heir) return null
+    team = [heir.id]
   }
-
   return {
-    save: { ...save, parked, box, inventory, gold, comboLevels, dieLevels, merged: [...already, ...sources.map((r) => r.id)] },
-    merged: sources.map((r) => r.id),
-    gained,
+    ...save,
+    box,
+    team,
+    parked: {
+      ...save.parked,
+      [target.id]: {
+        ...block,
+        box: [...block.box, inst],
+        pokedex: block.pokedex.includes(inst.dex) ? block.pokedex : [...block.pokedex, inst.dex],
+      },
+    },
   }
 }
 

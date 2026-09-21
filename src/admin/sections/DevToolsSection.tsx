@@ -17,7 +17,7 @@ import {
   type PokeType,
   type SaveData,
 } from '@/engine'
-import { adminCompleteLeague, adminMergeRegions, adminStartRegion, adminStartRoamers } from '../playerSave'
+import { adminCompleteLeague, adminStartRegion, adminStartRoamers } from '../playerSave'
 import { Panel } from '@/components/Panel'
 import { PixelButton } from '@/components/PixelButton'
 import { parseSave } from '@/save/schema'
@@ -204,14 +204,6 @@ export function DevToolsSection() {
               }
             >
               Complete its league
-            </PixelButton>
-            <PixelButton
-              size="sm"
-              onClick={() =>
-                cheat((s) => adminMergeRegions(s, data, Date.now()).save, 'Earlier regions merged in')
-              }
-            >
-              Merge earlier regions
             </PixelButton>
             <PixelButton
               size="sm"

@@ -1,4 +1,4 @@
-// Region actions: start the next region, move between the ones you have played, and collect what you left behind.
+// Region actions: start the next region, move between the ones you have played, and send a Pokémon on to the next.
 import {
   createInstance,
   getRegion,
@@ -6,12 +6,15 @@ import {
   offeredRegion,
   regionOf,
   rescueFromDisabledRegion,
+  sendOnTarget as sendOnTargetSave,
+  sendPokemonOn as sendPokemonOnSave,
   startRegion as startRegionSave,
   switchRegion as switchRegionSave,
   unlockedRegions,
   type Region,
   type RegionId,
 } from '@/engine'
+import { t } from '@/i18n'
 import { commitSave, initialRun, mutateSave, pushToast, useGame } from './game'
 import { newId } from './run'
 
@@ -39,7 +42,15 @@ export function switchRegion(to: RegionId): boolean {
     return false
   }
   const region = getRegion(data, to)
-  if (!region || !save.parked?.[to]) return false
+  const block = save.parked?.[to]
+  if (!region || !block) return false
+  // A region with nothing in its Box cannot be played — and a live block with an empty Box does not even parse, so
+  // arriving in one would break the save outright. Saves from when a league folded earlier regions forward look
+  // exactly like this, which is what made those regions unreachable.
+  if (!block.box.length) {
+    pushToast(t('ui.region.emptyBox', { region: region.name }), 'bad', 6000)
+    return false
+  }
   useGame.setState({ run: initialRun() })
   const ok = mutateSave((s) => switchRegionSave(s, to))
   if (ok) pushToast(`Welcome back to ${region.name}`, 'good')
@@ -59,6 +70,24 @@ export function startRegion(regionId: RegionId, starterDex: number): boolean {
   const block = newRegionBlock(region, starterDex, data, Date.now(), newId, createInstance)
   const ok = mutateSave((s) => startRegionSave(s, region, block))
   if (ok) pushToast(`${region.name} awaits!`, 'good', 4500)
+  return ok
+}
+
+/** The region a Pokémon could be sent on to right now, if any — what the sheet's button is named after. */
+export function sendOnTarget(): Region | null {
+  const { save, data } = useGame.getState()
+  return save ? sendOnTargetSave(save, data) : null
+}
+
+/** Sends one Pokémon on to the next region's Box, where it waits for the player to travel. */
+export function sendPokemonOn(instId: string): boolean {
+  const { save, data, battle } = useGame.getState()
+  if (!save || battle) return false
+  const target = sendOnTargetSave(save, data)
+  const name = data.species[save.box.find((p) => p.id === instId)?.dex ?? -1]?.name
+  if (!target || !name) return false
+  const ok = mutateSave((s) => sendPokemonOnSave(s, data, instId))
+  if (ok) pushToast(t('ui.sheet.sentOn', { name, region: target.name }), 'good', 4500)
   return ok
 }
 

@@ -4,7 +4,6 @@ import {
   adminAddPokemon,
   adminCompleteLeague,
   adminGiveItem,
-  adminMergeRegions,
   adminRemovePokemon,
   adminStartRegion,
   adminStartRoamers,
@@ -86,16 +85,6 @@ describe('admin region cheats', () => {
     expect(leagueDone(done, data, 'kanto')).toBe(true)
     expect(regionOf(done)).toBe('johto')
     expect(() => adminCompleteLeague(base, data, 3000, 'hoenn')).toThrow()
-  })
-
-  it('merges the earlier regions early, and refuses when there is nothing to merge', () => {
-    expect(() => adminMergeRegions(base, data, 2000)).toThrow()
-    const inJohto = adminStartRegion(adminCompleteLeague(base, data, 2000), data, 2000, 'johto', newId)
-    const withLeague = adminCompleteLeague(inJohto, data, 3000)
-    const { save, merged } = adminMergeRegions(withLeague, data, 4000)
-    expect(merged).toEqual(['kanto'])
-    expect(save.box.map((p) => p.dex).sort((a, b) => a - b)).toEqual([4, johto.starters[0]!].sort((a, b) => a - b))
-    expect(parseSave(save).ok).toBe(true)
   })
 
   it('gives items, and opens the roamer gate', () => {

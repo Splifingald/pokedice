@@ -86,6 +86,8 @@ export const saveSchema = z.object({
   leaderboardVisited: z.boolean().optional(),
   region: z.string().optional(),
   parked: z.record(regionBlockSchema()).optional(),
+  // Legacy: regions whose things were folded forward while that behaviour existed. Nothing reads it; it is kept so
+  // a save that went through it still says so.
   merged: z.array(z.string()).optional(),
 })
 
@@ -124,7 +126,7 @@ export function parseSave(raw: unknown): ParseResult {
   // A Pokémon is either in the Box or at the Day Care, never both.
   const dayCare = s.dayCare && { ...s.dayCare, residents: s.dayCare.residents.filter((r) => !ids.has(r.inst.id)) }
   // Parked regions get the same repair: their team ids must exist in their own Box, their Pokédex must be unique.
-  // A parked Box can be legitimately empty — that is what a region looks like after its things were merged forward.
+  // A parked Box can be legitimately empty: saves from when leagues folded earlier regions forward look like that.
   const parked = s.parked && Object.fromEntries(Object.entries(s.parked).map(([id, b]) => [id, repairBlock(b!)]))
   return {
     ok: true,
