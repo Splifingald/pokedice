@@ -1,6 +1,6 @@
 // Leaderboard ranking: each tab sorts by its own measure, ties share a rank, and SQL rows are parsed defensively.
 import { describe, expect, it } from 'vitest'
-import { frontierArea, parseLeaderboard, rankLeaderboard, type LeaderboardRow } from '@/lib/leaderboard'
+import { frontierArea, parseLeaderboard, rankLeaderboard, splitLeaderboard, type LeaderboardRow } from '@/lib/leaderboard'
 import { regionSpecies } from '@/engine'
 import { data } from './fixtures'
 
@@ -57,6 +57,39 @@ describe('rankLeaderboard', () => {
   it('a player who cleared every main area is in the Hall of Fame', () => {
     expect(frontierArea(row('Red', { progress: cleared(main.length) }), data)).toBe('Hall of Fame')
     expect(frontierArea(row('New', {}), data)).toBe(main[0]!.name)
+  })
+})
+
+describe('splitLeaderboard', () => {
+  const capped = row('Red', { maxLevel: data.config.maxLevel, pokedex: 5, progress: cleared(1) })
+  const dexDone = row('Blue', { pokedex: regionSpecies(data, 'kanto').size, maxLevel: 40 })
+  const champ = row('Green', { progress: cleared(main.length), maxLevel: 40, pokedex: 5 })
+  const all = [...rows, capped, dexDone, champ]
+
+  it('sends whoever maxed the tab out to the Hall of Fame, and closes the ranking up', () => {
+    const { board, hall } = splitLeaderboard(all, 'level', data, 'kanto')
+    expect(hall.map((x) => x.name)).toEqual(['Red'])
+    expect(board.map((x) => x.name)).not.toContain('Red')
+    // The board still ranks from 1 with nobody missing in the middle.
+    expect(board.map((x) => x.rank)).toEqual([1, 2, 3, 4, 5])
+  })
+
+  it('each tab has its own maximum', () => {
+    expect(splitLeaderboard(all, 'dex', data, 'kanto').hall.map((x) => x.name)).toEqual(['Blue'])
+    // Clearing the region also fills its Pokédex measure for nobody but the one who cleared it.
+    expect(splitLeaderboard(all, 'progress', data, 'kanto').hall.map((x) => x.name)).toEqual(['Green'])
+  })
+
+  it('is empty when nobody has finished, which is what hides the button', () => {
+    expect(splitLeaderboard(rows, 'level', data, 'kanto').hall).toEqual([])
+    expect(splitLeaderboard(rows, 'progress', data, 'kanto').hall).toEqual([])
+    expect(splitLeaderboard(rows, 'dex', data, 'kanto').hall).toEqual([])
+  })
+
+  it('a board of nothing but finished players leaves the ranking empty', () => {
+    const { board, hall } = splitLeaderboard([capped], 'level', data, 'kanto')
+    expect(board).toEqual([])
+    expect(hall.map((x) => x.score)).toEqual([`Lv.${data.config.maxLevel}`])
   })
 })
 

@@ -42,7 +42,27 @@ function progressKey(row: LeaderboardRow, data: GameData): [number, number] {
 export function frontierArea(row: LeaderboardRow, data: GameData): string {
   const chain = linearAreas(data, row.region)
   const next = chain.find((a) => !row.progress[a.id]?.cleared)
-  return next ? next.name : 'Hall of Fame'
+  return next ? next.name : t('ui.board.hall')
+}
+
+/** How many species this region's Pokédex holds; the National Dex when the region declares none. */
+const dexTotal = (data: GameData, region: RegionId) => regionSpecies(data, region).size || data.speciesList.length
+
+/** Every area of the region's chain cleared — there is nothing left of it to finish. */
+export function clearedRegion(row: LeaderboardRow, data: GameData): boolean {
+  const chain = linearAreas(data, row.region)
+  return chain.length > 0 && chain.every((a) => row.progress[a.id]?.cleared)
+}
+
+/**
+ * Done with what this board measures: the level cap, the whole region cleared, or its Pokédex filled.
+ * Such a player can't be passed and can't climb, so the board is no longer a race they're in — they
+ * move to the Hall of Fame and the ranking below them closes up.
+ */
+export function atMax(row: LeaderboardRow, tab: LeaderboardTab, data: GameData, region: RegionId): boolean {
+  if (tab === 'level') return row.maxLevel >= data.config.maxLevel
+  if (tab === 'dex') return row.pokedex >= dexTotal(data, region)
+  return clearedRegion(row, data)
 }
 
 function sortKey(row: LeaderboardRow, tab: LeaderboardTab, data: GameData): number[] {
@@ -72,13 +92,31 @@ export function rankLeaderboard(rows: LeaderboardRow[], tab: LeaderboardTab, dat
   const keyed = rows.filter((r) => r.region === region).map((row) => ({ row, key: sortKey(row, tab, data) }))
   keyed.sort((a, b) => compare(a.key, b.key) || a.row.name.localeCompare(b.row.name))
   // The dex score is out of what this region actually holds, not the National Dex.
-  const total = regionSpecies(data, region).size || data.speciesList.length
+  const total = dexTotal(data, region)
   let rank = 0
   return keyed.map(({ row, key }, i) => {
     // Ties share a rank on the tab's own measure and its tie-breakers.
     if (i === 0 || compare(keyed[i - 1]!.key, key) !== 0) rank = i + 1
     return { ...row, rank, score: scoreLabel(row, tab, data, total) }
   })
+}
+
+/**
+ * The board and its Hall of Fame, split on this tab's own measure: whoever has maxed it out is ranked
+ * separately, so the board itself only holds players still climbing (and ranks them 1..n).
+ */
+export function splitLeaderboard(
+  rows: LeaderboardRow[],
+  tab: LeaderboardTab,
+  data: GameData,
+  region: RegionId,
+): { board: RankedRow[]; hall: RankedRow[] } {
+  const here = rows.filter((r) => r.region === region)
+  const done = (r: LeaderboardRow) => atMax(r, tab, data, region)
+  return {
+    board: rankLeaderboard(here.filter((r) => !done(r)), tab, data, region),
+    hall: rankLeaderboard(here.filter(done), tab, data, region),
+  }
 }
 
 interface RawRow {
