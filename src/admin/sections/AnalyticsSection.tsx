@@ -248,7 +248,10 @@ const rateColor = (pct: number | null) =>
 
 const asPct = (r: Retention | undefined) => (r?.rate == null ? null : Math.round(r.rate * 100))
 
-/** D2 / D3 / D7 under the big D1 number: same measure, one week further out. */
+/**
+ * D2 / D3 / D7 under the big D1 number: same measure, one week further out. Plain text, deliberately — the colour
+ * on the headline is what carries the "is this good?" judgement, and repeating it four times would drown it.
+ */
 function LaterDays({ byDay }: { byDay: Record<number, Retention> }) {
   return (
     <dl className="mt-1 flex flex-wrap gap-x-4 gap-y-1">
@@ -266,9 +269,7 @@ function LaterDays({ byDay }: { byDay: Record<number, Retention> }) {
             }
           >
             <dt className="text-base uppercase tracking-wider opacity-70">D{day}</dt>
-            <dd className="text-3xl leading-none" style={{ color: rateColor(pct) }}>
-              {pct == null ? '–' : `${pct}%`}
-            </dd>
+            <dd className="text-3xl leading-none">{pct == null ? '–' : `${pct}%`}</dd>
           </div>
         )
       })}
