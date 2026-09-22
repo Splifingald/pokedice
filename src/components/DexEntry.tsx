@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { isAreaUnlocked, type Area, type GameData } from '@/engine'
+import { isAreaUnlocked, regionOf, regionOfArea, type Area, type GameData, type RegionId } from '@/engine'
 import { dexNo } from '@/lib/format'
 import { t } from '@/i18n'
 import { useT } from '@/i18n/react'
@@ -22,10 +22,18 @@ interface Spot {
   legendary: boolean
 }
 
-/** Every area where a species turns up in the wild or as a legendary, main chain first, secret areas last. */
-function whereToFind(dex: number, data: GameData): Spot[] {
+/**
+ * Every area of `region` where a species turns up in the wild or as a legendary, main chain first, secret areas
+ * last.
+ *
+ * Only the region being played: its areas are the only ones the player can reach, the only ones whose lock state
+ * `isAreaUnlocked` can answer for (it reads the live region's progress), and the only ones the card's travel button
+ * can enter. Listing another region's routes offered a Kanto player a walk to Mount Silver.
+ */
+export function whereToFind(dex: number, data: GameData, region: RegionId): Spot[] {
   const out: Spot[] = []
   for (const area of data.areas) {
+    if (regionOfArea(area) !== region) continue
     const total = area.wildPool.reduce((sum, e) => sum + Math.max(0, e.weight), 0)
     const hits = area.wildPool.filter((e) => e.dex === dex && e.weight > 0)
     if (hits.length && total) {
@@ -103,9 +111,11 @@ function SpotCard({ spot, onTravel }: { spot: Spot; onTravel?: () => void }) {
 function MissingEntry({ dex, onOpenDex, onTravel }: { dex: number; onOpenDex?: (dex: number) => void; onTravel?: () => void }) {
   const { t } = useT()
   const data = useGame((s) => s.data)
-  const pokedex = useGame((s) => s.save?.pokedex)
+  const save = useGame((s) => s.save)
+  const pokedex = save?.pokedex
+  const region = save ? regionOf(save) : null
   const runArea = useGame((s) => s.run.areaId)
-  const spots = useMemo(() => whereToFind(dex, data), [dex, data])
+  const spots = useMemo(() => (region ? whereToFind(dex, data, region) : []), [dex, data, region])
   const from = data.speciesList
     .map((s) => ({ species: s, evo: s.evolutions.find((e) => e.toDex === dex) }))
     .filter((x) => !!x.evo)
