@@ -175,12 +175,13 @@ export function liveBlock(save: SaveData): RegionSave {
     currentAreaId: save.currentAreaId,
     areaProgress: save.areaProgress,
     ...(save.dayCare ? { dayCare: save.dayCare } : {}),
+    ...(save.boughtUnique ? { boughtUnique: save.boughtUnique } : {}),
   }
 }
 
 /** Puts a block back at the top level, as the live region. */
 function withBlock(save: SaveData, regionId: RegionId, block: RegionSave): SaveData {
-  const { dayCare: _drop, ...rest } = save
+  const { dayCare: _drop, boughtUnique: _alsoDrop, ...rest } = save
   return {
     ...rest,
     region: regionId,
@@ -194,6 +195,7 @@ function withBlock(save: SaveData, regionId: RegionId, block: RegionSave): SaveD
     currentAreaId: block.currentAreaId,
     areaProgress: block.areaProgress,
     ...(block.dayCare ? { dayCare: block.dayCare } : {}),
+    ...(block.boughtUnique ? { boughtUnique: block.boughtUnique } : {}),
   }
 }
 

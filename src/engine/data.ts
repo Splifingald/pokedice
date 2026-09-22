@@ -68,7 +68,8 @@ export function compileGameData(raw: BundleRaw): GameData {
     dieUpgrades[t] = raw.upgrades.dice.filter((r) => r.dieType === t).sort((a, b) => a.level - b.level)
 
   const items: Record<string, ItemDef> = {}
-  for (const i of raw.items) items[i.key] = { ...i, inShop: i.inShop ?? true, shopBadges: i.shopBadges ?? 0 }
+  for (const i of raw.items)
+    items[i.key] = { ...i, inShop: i.inShop ?? true, shopBadges: i.shopBadges ?? 0, region: i.region ?? null, unique: i.unique ?? false }
 
   const trainers: Record<string, Trainer> = {}
   for (const t of raw.trainers) trainers[t.id] = { ...t, role: t.role ?? 'trainer', badge: t.badge ?? null, rivalOf: t.rivalOf ?? null }

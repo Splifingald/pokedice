@@ -357,6 +357,10 @@ export interface ItemDef {
   shopBadges: number
   /** …and, when set, once this area is unlocked (e.g. Celadon's Dept. Store on Routes 7 & 8). */
   shopArea?: string | null
+  /** The only region that stocks it. Unset = every region does. */
+  region?: RegionId | null
+  /** Sold once per region and never again, whether or not it has been used since. */
+  unique?: boolean
 }
 
 export interface StatusRules {
@@ -520,6 +524,8 @@ export interface SaveData {
   parked?: Partial<Record<RegionId, RegionSave>>
   /** Legacy: regions folded forward by a league, back when that happened. Read by nothing — regions never pool now. */
   merged?: RegionId[]
+  /** Keys of the `unique` items the Mart has already sold here. They never come back, used or not. */
+  boughtUnique?: string[]
 }
 
 /**
@@ -537,6 +543,7 @@ export interface RegionSave {
   currentAreaId: string
   areaProgress: Record<string, AreaProgress>
   dayCare?: DayCareState
+  boughtUnique?: string[]
 }
 
 export interface DayCareResident {

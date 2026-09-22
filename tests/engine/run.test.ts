@@ -390,6 +390,33 @@ describe('wipe, center, team, shop, upgrades', () => {
     expect(swapIntoTeam(withBox, 'x1', null, data).team).toEqual([s.team[0], 'x1'])
   })
 
+  it('shop: a unique item sells once and never again, used or not', () => {
+    const once = { ...data.items['potion']!, key: 'lucky-egg', unique: true, price: 50 }
+    const d = { ...data, items: { ...data.items, 'lucky-egg': once } }
+    const s: SaveData = { ...fresh(), gold: 500, inventory: {} }
+
+    const first = buyItem(s, 'lucky-egg', 1, d)!
+    expect(first.gold).toBe(450)
+    expect(first.inventory['lucky-egg']).toBe(1)
+    expect(first.boughtUnique).toEqual(['lucky-egg'])
+
+    // A second sale is refused outright, and so is asking for several at once.
+    expect(buyItem(first, 'lucky-egg', 1, d)).toBeNull()
+    expect(buyItem(s, 'lucky-egg', 2, d)).toBeNull()
+    // Using it up does not put it back on the shelf.
+    const spent = { ...first, inventory: { ...first.inventory, 'lucky-egg': 0 } }
+    expect(buyItem(spent, 'lucky-egg', 1, d)).toBeNull()
+  })
+
+  it('shop: an item bound to another region is not for sale here', () => {
+    const elsewhere = { ...data.items['potion']!, key: 'johto-only', region: 'johto' as const, price: 10 }
+    const d = { ...data, items: { ...data.items, 'johto-only': elsewhere } }
+    const s: SaveData = { ...fresh(), gold: 500, inventory: {} }
+    // The save is Kanto's.
+    expect(buyItem(s, 'johto-only', 1, d)).toBeNull()
+    expect(buyItem({ ...s, region: 'johto' }, 'johto-only', 1, d)).not.toBeNull()
+  })
+
   it('shop: a bought fossil goes to the Box reviving, not into the bag', () => {
     // A fossil has no use from the bag at all, so one the Mart sells has to arrive the way a dug-up one does.
     const amber = { ...data.items['old-amber']!, inShop: true, shopBadges: 7, price: 100 }

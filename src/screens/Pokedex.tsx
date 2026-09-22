@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion'
 import { useMemo, useState } from 'react'
-import { isAreaUnlocked, regionOf, regionOfArea, regionSpecies, unlockedRegions } from '@/engine'
+import { getRegion, isAreaUnlocked, regionOf, regionOfArea, regionSpecies } from '@/engine'
 import { useT } from '@/i18n/react'
 import { PixelIcon } from '@/components/icons'
 import { SheetModal, type SheetView } from '@/components/SheetModal'
@@ -26,8 +26,7 @@ export function PokedexScreen() {
   const [view, setView] = useState<SheetView | null>(null)
   const [filter, setFilter] = useState<Filter>('all')
   const [q, setQ] = useState('')
-  // A page per region the player has been to, plus 'all'. One region = no tabs at all.
-  const [page, setPage] = useState<string>(() => (save ? regionOf(save) : 'all'))
+
 
   const owned = useMemo(() => {
     const m = new Map<number, number>()
@@ -50,10 +49,13 @@ export function PokedexScreen() {
 
   if (!save) return null
   const caught = new Set(save.pokedex)
-  const pages = unlockedRegions(save, data)
-  // Every region's page counts only what that region can actually give you — its pools, bosses and starters.
-  const inPage = page === 'all' ? null : regionSpecies(data, page)
-  const pageList = inPage ? data.speciesList.filter((s) => inPage.has(s.dex)) : data.speciesList
+  // The Pokédex is the region's, always — the one being played, with no way to browse another's. Regions are
+  // separate runs, and a page you cannot catch anything for is a list of spoilers, not a checklist.
+  const region = regionOf(save)
+  const regionName = getRegion(data, region)?.name ?? ''
+  // It counts only what this region can actually give you — its pools, bosses, fossils and starters.
+  const inRegion = regionSpecies(data, region)
+  const pageList = data.speciesList.filter((s) => inRegion.has(s.dex))
   const total = pageList.length
   const n = pageList.filter((s) => caught.has(s.dex)).length
   const needle = q.trim().toLowerCase()
@@ -86,26 +88,11 @@ export function PokedexScreen() {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-end justify-between gap-2">
-        <h1 className="text-5xl">{t('ui.dex.title')}</h1>
+        <h1 className="text-5xl">{regionName ? t('ui.dex.titleRegion', { region: regionName }) : t('ui.dex.title')}</h1>
         <div className="text-3xl">
           {n}/{total}
         </div>
       </div>
-      {pages.length > 1 && (
-        <div className="flex flex-wrap gap-1.5" role="group" aria-label="Pokédex">
-          {[...pages.map((r) => ({ id: r.id, label: r.name })), { id: 'all', label: 'All' }].map((t) => (
-            <button
-              key={t.id}
-              type="button"
-              onClick={() => setPage(t.id)}
-              aria-pressed={page === t.id}
-              className={cx('pixel-btn min-h-[40px] px-3 text-xl', page === t.id ? 'bg-gold' : 'bg-panel')}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
-      )}
       <div className="h-4 border-2 border-ink bg-ink p-[2px]">
         <div
           className="h-full bg-danger"
@@ -124,7 +111,7 @@ export function PokedexScreen() {
           <div className="text-2xl">
             {t('ui.dex.completeBody', {
               total,
-              where: page === 'all' ? '' : t('ui.dex.completeIn', { region: pages.find((r) => r.id === page)?.name ?? '' }),
+              where: regionName ? t('ui.dex.completeIn', { region: regionName }) : '',
             })}
           </div>
         </motion.div>
