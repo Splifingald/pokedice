@@ -28,7 +28,7 @@ const itemEffect = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('rerolls'), amount: int(1) }),
   z.object({ kind: z.literal('level'), amount: int(1, 10) }),
   z.object({ kind: z.literal('stone') }),
-  z.object({ kind: z.literal('fossil'), dex: int(1, 386), level: int(1, 100), hours: z.number().min(0) }),
+  z.object({ kind: z.literal('fossil'), dex: int(1, 493), level: int(1, 100), hours: z.number().min(0) }),
   z.object({ kind: z.literal('ball'), bonus: int(0, 12) }),
 ])
 
@@ -136,7 +136,7 @@ export const ROW_SCHEMAS: Record<TableName, z.ZodTypeAny> = {
     unlock_conditions: z
       .array(
         z.union([
-          z.object({ kind: z.literal('pokedex'), count: int(1, 386) }),
+          z.object({ kind: z.literal('pokedex'), count: int(1, 493) }),
           z.object({ kind: z.literal('maxLevel'), level: int(1, 100) }),
           // "Another area is reached" — the kind the Rocket Hideout and the Johto/Hoenn secrets use.
           z.object({ kind: z.literal('area'), areaId: uuid }),
