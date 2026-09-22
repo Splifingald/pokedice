@@ -216,81 +216,16 @@
   "shopBadges": 8
  },
  {
-  "key": "fire-stone",
-  "name": "Fire Stone",
-  "description": "Makes certain Pokémon evolve: Vulpix, Growlithe, Eevee (Flareon). Use it from the Team screen.",
-  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/fire-stone.png",
-  "price": 200,
-  "effect": {
-   "kind": "stone"
-  },
-  "inShop": true,
-  "shopBadges": 0,
-  "shopArea": "8cf87ee3-f7a5-568e-bc22-54f643572535"
- },
- {
-  "key": "water-stone",
-  "name": "Water Stone",
-  "description": "Makes certain Pokémon evolve: Poliwhirl, Shellder, Staryu, Eevee (Vaporeon). Use it from the Team screen.",
-  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/water-stone.png",
-  "price": 200,
-  "effect": {
-   "kind": "stone"
-  },
-  "inShop": true,
-  "shopBadges": 0,
-  "shopArea": "8cf87ee3-f7a5-568e-bc22-54f643572535"
- },
- {
-  "key": "thunder-stone",
-  "name": "Thunder Stone",
-  "description": "Makes certain Pokémon evolve: Pikachu, Eevee (Jolteon). Use it from the Team screen.",
-  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/thunder-stone.png",
-  "price": 200,
-  "effect": {
-   "kind": "stone"
-  },
-  "inShop": true,
-  "shopBadges": 0,
-  "shopArea": "8cf87ee3-f7a5-568e-bc22-54f643572535"
- },
- {
-  "key": "leaf-stone",
-  "name": "Leaf Stone",
-  "description": "Makes certain Pokémon evolve: Gloom, Weepinbell, Exeggcute. Use it from the Team screen.",
-  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/leaf-stone.png",
-  "price": 200,
-  "effect": {
-   "kind": "stone"
-  },
-  "inShop": true,
-  "shopBadges": 0,
-  "shopArea": "8cf87ee3-f7a5-568e-bc22-54f643572535"
- },
- {
-  "key": "moon-stone",
-  "name": "Moon Stone",
-  "description": "Makes certain Pokémon evolve: Nidorina, Nidorino, Clefairy, Jigglypuff. Use it from the Team screen.",
-  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/moon-stone.png",
-  "price": 200,
-  "effect": {
-   "kind": "stone"
-  },
-  "inShop": true,
-  "shopBadges": 0,
-  "shopArea": "8cf87ee3-f7a5-568e-bc22-54f643572535"
- },
- {
   "key": "helix-fossil",
   "name": "Helix Fossil",
   "description": "A fossil of an ancient Pokémon. Omanyte waits in your Box and is revived after 24 hours, at Lv.20.",
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/helix-fossil.png",
   "price": 0,
   "effect": {
-   "kind": "fossil",
    "dex": 138,
-   "level": 20,
-   "hours": 24
+   "kind": "fossil",
+   "hours": 24,
+   "level": 20
   },
   "inShop": false,
   "shopBadges": 0
@@ -302,25 +237,10 @@
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/dome-fossil.png",
   "price": 0,
   "effect": {
-   "kind": "fossil",
    "dex": 140,
-   "level": 20,
-   "hours": 24
-  },
-  "inShop": false,
-  "shopBadges": 0
- },
- {
-  "key": "old-amber",
-  "name": "Old Amber",
-  "description": "A fossil of an ancient Pokémon. Aerodactyl waits in your Box and is revived after 24 hours, at Lv.20.",
-  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/old-amber.png",
-  "price": 0,
-  "effect": {
    "kind": "fossil",
-   "dex": 142,
-   "level": 20,
-   "hours": 24
+   "hours": 24,
+   "level": 20
   },
   "inShop": false,
   "shopBadges": 0
@@ -416,10 +336,10 @@
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/root-fossil.png",
   "price": 0,
   "effect": {
-   "kind": "fossil",
    "dex": 345,
-   "level": 20,
-   "hours": 24
+   "kind": "fossil",
+   "hours": 24,
+   "level": 20
   },
   "inShop": false,
   "shopBadges": 0
@@ -431,8 +351,257 @@
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/claw-fossil.png",
   "price": 0,
   "effect": {
-   "kind": "fossil",
    "dex": 347,
+   "kind": "fossil",
+   "hours": 24,
+   "level": 20
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "old-amber",
+  "name": "Old Amber",
+  "description": "A fossil of an ancient Pokémon. Aerodactyl waits in your Box and is revived after 24 hours, at Lv.20.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/old-amber.png",
+  "price": 500,
+  "effect": {
+   "dex": 142,
+   "kind": "fossil",
+   "hours": 24,
+   "level": 20
+  },
+  "inShop": true,
+  "shopBadges": 7
+ },
+ {
+  "key": "fire-stone",
+  "name": "Fire Stone",
+  "description": "Makes certain Pokémon evolve: Vulpix, Growlithe, Eevee (Flareon). Use it from the Team screen.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/fire-stone.png",
+  "price": 200,
+  "effect": {
+   "kind": "stone"
+  },
+  "inShop": true,
+  "shopBadges": 4
+ },
+ {
+  "key": "water-stone",
+  "name": "Water Stone",
+  "description": "Makes certain Pokémon evolve: Poliwhirl, Shellder, Staryu, Eevee (Vaporeon). Use it from the Team screen.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/water-stone.png",
+  "price": 200,
+  "effect": {
+   "kind": "stone"
+  },
+  "inShop": true,
+  "shopBadges": 4
+ },
+ {
+  "key": "thunder-stone",
+  "name": "Thunder Stone",
+  "description": "Makes certain Pokémon evolve: Pikachu, Eevee (Jolteon). Use it from the Team screen.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/thunder-stone.png",
+  "price": 200,
+  "effect": {
+   "kind": "stone"
+  },
+  "inShop": true,
+  "shopBadges": 4
+ },
+ {
+  "key": "leaf-stone",
+  "name": "Leaf Stone",
+  "description": "Makes certain Pokémon evolve: Gloom, Weepinbell, Exeggcute. Use it from the Team screen.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/leaf-stone.png",
+  "price": 200,
+  "effect": {
+   "kind": "stone"
+  },
+  "inShop": true,
+  "shopBadges": 4
+ },
+ {
+  "key": "moon-stone",
+  "name": "Moon Stone",
+  "description": "Makes certain Pokémon evolve: Nidorina, Nidorino, Clefairy, Jigglypuff. Use it from the Team screen.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/moon-stone.png",
+  "price": 200,
+  "effect": {
+   "kind": "stone"
+  },
+  "inShop": true,
+  "shopBadges": 4
+ },
+ {
+  "key": "shiny-stone",
+  "name": "Shiny Stone",
+  "description": "Makes certain Pokémon evolve: Roselia (Roserade), Togetic (Togekiss). Use it from the Team screen.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/shiny-stone.png",
+  "price": 200,
+  "effect": {
+   "kind": "stone"
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "dusk-stone",
+  "name": "Dusk Stone",
+  "description": "Makes certain Pokémon evolve: Misdreavus (Mismagius), Murkrow (Honchkrow). Use it from the Team screen.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/dusk-stone.png",
+  "price": 200,
+  "effect": {
+   "kind": "stone"
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "dawn-stone",
+  "name": "Dawn Stone",
+  "description": "Makes certain Pokémon evolve: Kirlia (Gallade), Snorunt (Froslass). Use it from the Team screen.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/dawn-stone.png",
+  "price": 200,
+  "effect": {
+   "kind": "stone"
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "ice-stone",
+  "name": "Ice Stone",
+  "description": "Makes certain Pokémon evolve: Eevee (Glaceon). Use it from the Team screen.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/ice-stone.png",
+  "price": 200,
+  "effect": {
+   "kind": "stone"
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "oval-stone",
+  "name": "Oval Stone",
+  "description": "Makes certain Pokémon evolve: Happiny (Chansey). Use it from the Team screen.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/oval-stone.png",
+  "price": 200,
+  "effect": {
+   "kind": "stone"
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "razor-claw",
+  "name": "Razor Claw",
+  "description": "Makes certain Pokémon evolve: Sneasel (Weavile). Use it from the Team screen.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/razor-claw.png",
+  "price": 200,
+  "effect": {
+   "kind": "stone"
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "razor-fang",
+  "name": "Razor Fang",
+  "description": "Makes certain Pokémon evolve: Gligar (Gliscor). Use it from the Team screen.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/razor-fang.png",
+  "price": 200,
+  "effect": {
+   "kind": "stone"
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "electirizer",
+  "name": "Electirizer",
+  "description": "Makes certain Pokémon evolve: Electabuzz (Electivire). Use it from the Team screen.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/electirizer.png",
+  "price": 200,
+  "effect": {
+   "kind": "stone"
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "magmarizer",
+  "name": "Magmarizer",
+  "description": "Makes certain Pokémon evolve: Magmar (Magmortar). Use it from the Team screen.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/magmarizer.png",
+  "price": 200,
+  "effect": {
+   "kind": "stone"
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "protector",
+  "name": "Protector",
+  "description": "Makes certain Pokémon evolve: Rhydon (Rhyperior). Use it from the Team screen.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/protector.png",
+  "price": 200,
+  "effect": {
+   "kind": "stone"
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "dubious-disc",
+  "name": "Dubious Disc",
+  "description": "Makes certain Pokémon evolve: Porygon2 (Porygon-Z). Use it from the Team screen.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/dubious-disc.png",
+  "price": 200,
+  "effect": {
+   "kind": "stone"
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "reaper-cloth",
+  "name": "Reaper Cloth",
+  "description": "Makes certain Pokémon evolve: Dusclops (Dusknoir). Use it from the Team screen.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/reaper-cloth.png",
+  "price": 200,
+  "effect": {
+   "kind": "stone"
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "skull-fossil",
+  "name": "Skull Fossil",
+  "description": "A fossil of an ancient Pokémon. Cranidos waits in your Box and is revived after 24 hours, at Lv.20.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/skull-fossil.png",
+  "price": 0,
+  "effect": {
+   "kind": "fossil",
+   "dex": 408,
+   "level": 20,
+   "hours": 24
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "armor-fossil",
+  "name": "Armor Fossil",
+  "description": "A fossil of an ancient Pokémon. Shieldon waits in your Box and is revived after 24 hours, at Lv.20.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/armor-fossil.png",
+  "price": 0,
+  "effect": {
+   "kind": "fossil",
+   "dex": 410,
    "level": 20,
    "hours": 24
   },

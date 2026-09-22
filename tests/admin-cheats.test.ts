@@ -84,7 +84,7 @@ describe('admin region cheats', () => {
     const done = adminCompleteLeague(inJohto, data, 3000, 'kanto')
     expect(leagueDone(done, data, 'kanto')).toBe(true)
     expect(regionOf(done)).toBe('johto')
-    expect(() => adminCompleteLeague(base, data, 3000, 'hoenn')).toThrow()
+    expect(() => adminCompleteLeague(base, data, 3000, 'sinnoh')).toThrow()
   })
 
   it('gives items, and opens the roamer gate', () => {

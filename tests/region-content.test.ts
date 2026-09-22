@@ -1,4 +1,4 @@
-// The seeded Johto and Hoenn content: shape, reachability and the promises the regions make to the player.
+// The seeded Johto, Hoenn and Sinnoh content: shape, reachability and the promises the regions make to the player.
 import { describe, expect, it } from 'vitest'
 import { existsSync } from 'node:fs'
 import path from 'node:path'
@@ -13,9 +13,9 @@ const byId = new Map(trainers.map((t) => [t.id, t]))
 const of = (regionId: string) => areas.filter((a) => regionOfArea(a) === regionId)
 
 describe('regions', () => {
-  it('has Kanto, Johto and Hoenn, chained in order and all enabled', () => {
-    expect(regions.map((r) => r.id)).toEqual(['kanto', 'johto', 'hoenn'])
-    expect(regions.map((r) => r.nextRegion)).toEqual(['johto', 'hoenn', null])
+  it('has Kanto, Johto, Hoenn and Sinnoh, chained in order and all enabled', () => {
+    expect(regions.map((r) => r.id)).toEqual(['kanto', 'johto', 'hoenn', 'sinnoh'])
+    expect(regions.map((r) => r.nextRegion)).toEqual(['johto', 'hoenn', 'sinnoh', null])
     expect(regions.every((r) => r.enabled)).toBe(true)
   })
 
@@ -46,8 +46,9 @@ describe('regions', () => {
       const chain = linearAreas(data, r.id)
       expect(chain[0]!.minLevel, r.id).toBeLessThanOrEqual(3)
       const league = chain.findIndex((a) => a.id === r.leagueAreaId)
-      // Little comes after the league: the post-league area, and in Kanto its two-area endgame lap.
-      expect(chain.length - league - 1, r.id).toBeLessThanOrEqual(2)
+      // Little comes after the league: the post-league area, plus an endgame lap where a region has one — Kanto's
+      // Victory Road II / Indigo Plateau II, and now Johto's, which also keeps Mt. Silver behind them.
+      expect(chain.length - league - 1, r.id).toBeLessThanOrEqual(3)
     }
   })
 
@@ -158,14 +159,15 @@ describe('regions', () => {
   it('deals decks of a sensible size everywhere, as Kanto does', () => {
     for (const a of areas) {
       const total = Object.values(a.encounterWeights).reduce((s, n) => s + n, 0)
-      expect(total, a.name).toBeGreaterThanOrEqual(4)
+      // A league area's content is its gauntlet, not its deck, so it is allowed a short one.
+      expect(total, a.name).toBeGreaterThanOrEqual(a.gyms.length >= 5 ? 1 : 4)
       expect(total, a.name).toBeLessThanOrEqual(20)
     }
   })
 
   it('puts the Master Ball in one hideout per region, rare and only once', () => {
     const withMaster = areas.filter((a) => a.lootPool.some((l) => l.itemKey === 'master-ball'))
-    expect(withMaster.map((a) => regionOfArea(a)).sort()).toEqual(['hoenn', 'johto', 'kanto'])
+    expect(withMaster.map((a) => regionOfArea(a)).sort()).toEqual(['hoenn', 'johto', 'kanto', 'sinnoh'])
     for (const a of withMaster) {
       const entry = a.lootPool.find((l) => l.itemKey === 'master-ball')!
       expect(entry.unique, a.name).toBe(true)

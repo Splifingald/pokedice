@@ -64,20 +64,23 @@ describe('Day Care', () => {
     expect(depositError(lonely, a!.id, data)).toBe('last')
   })
 
-  it('gains 1 XP every 30 minutes, up to 500 per stay', () => {
+  // The tick length and the cap are admin-tuned (10 minutes and 200 on the live database, 30 and 500 when this was
+  // written), so the rule is checked against the config rather than against the numbers of the day.
+  it('gains 1 XP per tick, up to the cap, then stops', () => {
+    const { tickMinutes: tick, maxXp: cap, xpPerTick: per } = data.config.dayCare
     const res = { inst: createInstance(4, 10, data, 'x', 0), since: 0 }
-    expect(dayCareXp(res, 29 * MIN, data)).toBe(0)
-    expect(dayCareXp(res, 30 * MIN, data)).toBe(1)
-    expect(dayCareXp(res, 95 * MIN, data)).toBe(3)
-    expect(dayCareXp(res, 10_000 * 30 * MIN, data)).toBe(500)
-    expect(nextDayCareTick(res, 40 * MIN, data)).toBe(20 * MIN)
-    expect(nextDayCareTick(res, 10_000 * 30 * MIN, data)).toBeNull()
+    expect(dayCareXp(res, (tick - 1) * MIN, data)).toBe(0)
+    expect(dayCareXp(res, tick * MIN, data)).toBe(per)
+    expect(dayCareXp(res, 3 * tick * MIN + MIN, data)).toBe(3 * per)
+    expect(dayCareXp(res, 10_000 * cap * MIN, data)).toBe(cap)
+    expect(nextDayCareTick(res, Math.floor(1.5 * tick) * MIN, data)).toBe(Math.ceil(0.5 * tick) * MIN)
+    expect(nextDayCareTick(res, 10_000 * cap * MIN, data)).toBeNull()
   })
 
   it('levels up with Day Care XP but never evolves; it evolves on its next level-up in battle', () => {
-    // Charmander evolves at 16: 500 XP from Lv.14 takes it well past that.
+    // Charmander evolves at 16: a full stay from Lv.14 takes it well past that.
     const res = { inst: createInstance(4, 14, data, 'x', 0), since: 0 }
-    const later = 10_000 * 30 * MIN
+    const later = 10_000 * data.config.dayCare.maxXp * MIN
     const now = residentNow(res, later, data)
     expect(now.level).toBeGreaterThan(16)
     expect(now.dex).toBe(4)
@@ -85,7 +88,7 @@ describe('Day Care', () => {
     const s = { ...withMons([14, 20]), dayCare: { residents: [res], eggClaimed: true } }
     const back = withdrawPokemon(s, 'x', data, later)!
     expect(back.inst.dex).toBe(4)
-    expect(back.xpGained).toBe(500)
+    expect(back.xpGained).toBe(data.config.dayCare.maxXp)
     expect(back.levelsGained).toBe(now.level - 14)
     expect(dayCareOf(back.save).residents).toHaveLength(0)
     expect(back.save.box.some((p) => p.id === 'x')).toBe(true)
@@ -113,8 +116,11 @@ describe('Day Care', () => {
     expect(kanto.every((d) => d <= 151)).toBe(true)
     expect(johto.every((d) => d >= 152 && d <= 251)).toBe(true)
     expect(eggSpecies(data, 'hoenn').every((s) => s.dex >= 252 && s.dex <= 386)).toBe(true)
+    expect(eggSpecies(data, 'sinnoh').every((s) => s.dex >= 387 && s.dex <= 493)).toBe(true)
     // With no region asked for (the admin's overview) the pool is still every hatchable species.
-    expect(eggSpecies(data).length).toBe(kanto.length + johto.length + eggSpecies(data, 'hoenn').length)
+    expect(eggSpecies(data).length).toBe(
+      kanto.length + johto.length + eggSpecies(data, 'hoenn').length + eggSpecies(data, 'sinnoh').length,
+    )
 
     // A Kanto save's odds — and so its Eggs — only ever name Kanto species.
     const s = withMons([30, 30, 30])

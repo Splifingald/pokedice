@@ -1,5 +1,5 @@
 /**
- * pnpm region-trainers — the trainer sprites for Johto and Hoenn.
+ * pnpm region-trainers — the trainer sprites for Johto, Hoenn and Sinnoh.
  *
  * Hoenn comes from the pret/pokeemerald decomp, where every trainer pic is its own named 64×64 indexed PNG
  * (`graphics/trainers/front_pics/leader_roxanne.png`). Named files mean no guessing which cell is which leader.
@@ -9,7 +9,13 @@
  * makes the position map below trustworthy — each leader owns three consecutive cells (three battle poses), and the
  * first pose is the one used.
  *
- * Both write into public/trainers/classes/<region>/, which is what `trainerSprite()` in trainer-sprites.ts points at.
+ * Sinnoh comes from graphics/trainers/dppt.png, the DPPt trainer sheet. Same ripper and the same geometry as the
+ * HGSS one down to the pixel — 973px wide, 80×80 cells on an 81px column pitch from x=1, a 98px row pitch from y=18 —
+ * so it goes through the same cutter with the same constants. Rows 7–14 are the labelled bands (the eight leaders,
+ * the Elite Four, Cynthia, Team Galactic, the Frontier Brains); rows 0–6 are the "other trainers" class blocks.
+ *
+ * All three write into public/trainers/classes/<region>/, which is what `trainerSprite()` in trainer-sprites.ts
+ * points at.
  */
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
@@ -87,6 +93,105 @@ const JOHTO: Record<string, [row: number, col: number]> = {
   biker: [5, 9],
   sage: [6, 3],
   'super-nerd': [7, 2],
+}
+
+/**
+ * Sinnoh: `[row, col]` on the DPPt sheet → sprite name. Rows 7–14 are the labelled bands, where a named character
+ * owns three consecutive cells (three battle poses) and the first is the one taken. Rows 0–6 are the class blocks;
+ * only the cells identified with confidence are mapped, because `content-sinnoh.ts` decides which classes exist and
+ * an unmapped one would just fall back to the shared default.
+ */
+const SINNOH: Record<string, [row: number, col: number]> = {
+  // The player characters and the rival
+  lucas: [0, 0],
+  dawn: [0, 1],
+  barry: [0, 2],
+  // Gym leaders (labelled bands, first pose of three)
+  roark: [7, 0],
+  gardenia: [7, 3],
+  maylene: [7, 6],
+  'crasher-wake': [7, 9],
+  fantina: [8, 0],
+  byron: [8, 3],
+  candice: [8, 6],
+  volkner: [8, 9],
+  // Elite Four and Champion
+  'elite-aaron': [9, 0],
+  'elite-bertha': [9, 3],
+  'elite-flint': [9, 6],
+  'elite-lucian': [9, 9],
+  'champion-cynthia': [11, 0],
+  // Team Galactic
+  'galactic-grunt-m': [10, 0],
+  'galactic-grunt-f': [10, 1],
+  mars: [10, 2],
+  jupiter: [10, 3],
+  saturn: [10, 4],
+  cyrus: [10, 5],
+  // The companions of the Underground and Iron Island, and the Frontier Brains
+  cheryl: [11, 3],
+  riley: [11, 6],
+  marley: [11, 9],
+  buck: [12, 0],
+  mira: [12, 3],
+  palmer: [13, 0],
+  argenta: [13, 3],
+  thorton: [13, 6],
+  dahlia: [13, 9],
+  caitlin: [14, 0],
+  darach: [14, 3],
+  // Classes
+  youngster: [0, 5],
+  lass: [0, 6],
+  'bug-catcher': [0, 9],
+  twins: [0, 11],
+  hiker: [1, 0],
+  'battle-girl': [1, 1],
+  fisherman: [1, 2],
+  'cyclist-m': [1, 3],
+  'cyclist-f': [1, 4],
+  'black-belt': [1, 5],
+  'breeder-m': [1, 6],
+  'breeder-f': [1, 7],
+  cowgirl: [1, 9],
+  jogger: [1, 10],
+  'pokefan-m': [1, 11],
+  'pokefan-f': [2, 0],
+  'young-couple': [2, 2],
+  'ace-trainer-m': [2, 3],
+  'ace-trainer-f': [2, 4],
+  idol: [2, 5],
+  socialite: [2, 6],
+  'veteran-m': [2, 8],
+  'ranger-f': [2, 9],
+  scientist: [2, 11],
+  'parasol-lady': [3, 0],
+  gentleman: [3, 1],
+  beauty: [3, 3],
+  policeman: [3, 5],
+  'ranger-m': [3, 6],
+  'swimmer-m': [3, 9],
+  'swimmer-f': [3, 11],
+  'tuber-f': [4, 0],
+  'tuber-m': [4, 1],
+  sailor: [4, 2],
+  'ruin-maniac': [4, 3],
+  'psychic-m': [4, 4],
+  'psychic-f': [4, 5],
+  artist: [4, 6],
+  guitarist: [4, 7],
+  'skier-m': [4, 10],
+  'skier-f': [4, 11],
+  roughneck: [5, 0],
+  clown: [5, 1],
+  worker: [5, 2],
+  'school-kid-m': [5, 3],
+  'school-kid-f': [5, 4],
+  'aroma-lady': [5, 7],
+  waiter: [5, 8],
+  reporter: [6, 2],
+  lady: [6, 3],
+  maid: [6, 4],
 }
 
 /** Hoenn: sprite name → the decomp's file name under front_pics. */
@@ -187,13 +292,17 @@ const isEmpty = (img: PNG) => {
   return true
 }
 
-async function cutJohto(): Promise<number> {
-  const sheet = PNG.sync.read(await readFile(path.join(ROOT, 'graphics/trainers/hgss.png')))
-  const dir = path.join(OUT, 'johto')
+/**
+ * Cuts a position map out of one of the two sheets. They share their geometry exactly, so the only thing that
+ * differs between Johto and Sinnoh here is which file and which map.
+ */
+async function cutSheet(sheetFile: string, region: string, map: Record<string, [number, number]>): Promise<number> {
+  const sheet = PNG.sync.read(await readFile(path.join(ROOT, 'graphics/trainers', sheetFile)))
+  const dir = path.join(OUT, region)
   await mkdir(dir, { recursive: true })
   let n = 0
   const empty: string[] = []
-  for (const [name, [row, col]] of Object.entries(JOHTO)) {
+  for (const [name, [row, col]] of Object.entries(map)) {
     const out = new PNG({ width: HG_CELL, height: HG_CELL })
     PNG.bitblt(sheet, out, HG_X0 + col * HG_COL, HG_Y0 + row * HG_ROW, HG_CELL, HG_CELL, 0, 0)
     // The backdrop is whatever colour the cell's corner is — blue on most bands, green on the Platinum-shared ones.
@@ -205,7 +314,7 @@ async function cutJohto(): Promise<number> {
     await writeFile(path.join(dir, `${name}.png`), PNG.sync.write(out))
     n++
   }
-  if (empty.length) console.error(`  ! empty cells: ${empty.join(', ')}`)
+  if (empty.length) console.error(`  ! ${region}: empty cells: ${empty.join(', ')}`)
   return n
 }
 
@@ -235,9 +344,13 @@ async function fetchHoenn(): Promise<number> {
 }
 
 async function main() {
-  const johto = await cutJohto()
+  const johto = await cutSheet('hgss.png', 'johto', JOHTO)
   const hoenn = await fetchHoenn()
-  console.log(`✓ ${johto} Johto sprites (HGSS sheet) · ${hoenn} Hoenn sprites (pokeemerald) → public/trainers/classes`)
+  const sinnoh = await cutSheet('dppt.png', 'sinnoh', SINNOH)
+  console.log(
+    `✓ ${johto} Johto sprites (HGSS sheet) · ${hoenn} Hoenn sprites (pokeemerald) · ` +
+      `${sinnoh} Sinnoh sprites (DPPt sheet) → public/trainers/classes`,
+  )
 }
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1])) {

@@ -2,10 +2,14 @@
 // environment variables are missing — the game then simply runs offline.
 import type { SupabaseClient } from '@supabase/supabase-js'
 
-export const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL?.trim() || ''
-export const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY?.trim() || ''
+// `import.meta.env` is Vite's, and is undefined when a Node script imports this module (scripts/pull-remote.ts
+// reaches `fetchAllRows` through it). Reading it defensively keeps that path working without a build step.
+const env = import.meta.env ?? ({} as ImportMetaEnv)
+
+export const SUPABASE_URL = env.VITE_SUPABASE_URL?.trim() || ''
+export const SUPABASE_ANON_KEY = env.VITE_SUPABASE_ANON_KEY?.trim() || ''
 /** Cosmetic only — decides whether the Admin link renders. Postgres RLS (`is_admin()`) is the real gate. */
-export const ADMIN_EMAIL = (import.meta.env.VITE_ADMIN_EMAIL?.trim() || '').toLowerCase()
+export const ADMIN_EMAIL = (env.VITE_ADMIN_EMAIL?.trim() || '').toLowerCase()
 
 export const isSupabaseConfigured = !!(SUPABASE_URL && SUPABASE_ANON_KEY)
 

@@ -20,5 +20,7 @@
     },
     "types": ["node"]
   },
-  "include": ["vite.config.ts", "tailwind.config.ts", "playwright.config.ts", "scripts", "e2e"]
+  // src/vite-env.d.ts comes along because scripts/pull-remote.ts reaches into src/lib/supabase.ts, which reads
+  // Vite's `import.meta.env`; without it that file has no `ImportMetaEnv` to check against here.
+  "include": ["vite.config.ts", "tailwind.config.ts", "playwright.config.ts", "scripts", "e2e", "src/vite-env.d.ts"]
 }

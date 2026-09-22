@@ -34,6 +34,9 @@ describe('dice schedule', () => {
     expect(dicePlan(130, 2, 2, 540, false)).toEqual({ start: 3, adds: [36, 50] }) // Gyarados
     expect(dicePlan(143, 1, 1, 540, false)).toEqual({ start: 1, adds: [5, 20, 36, 50] }) // Snorlax
     expect(dicePlan(150, 1, 1, 680, true)).toEqual({ start: 5, adds: [] })
-    for (const s of data.speciesList) expect(effectiveStats(s, 100, data).dice.length).toBeLessThanOrEqual(5)
+    // The roaming beasts are buffed to six on the live database; everything else keeps to five.
+    const six = new Set([243, 244, 245])
+    for (const s of data.speciesList)
+      expect(effectiveStats(s, 100, data).dice.length, s.name).toBeLessThanOrEqual(six.has(s.dex) ? 6 : 5)
   })
 })
