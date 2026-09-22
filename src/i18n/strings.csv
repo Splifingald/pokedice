@@ -1176,6 +1176,7 @@ ui.dex.locked,Locked,Verrouillé,Bloqueado,Gesperrt
 ui.dex.aSecretArea,A secret area,Une zone secrète,Una zona secreta,Ein geheimes Gebiet
 ui.dex.scaling,levels scale to your team,les niveaux suivent ton équipe,los niveles se ajustan a tu equipo,die Level passen sich deinem Team an
 ui.dex.legendarySpot,Legendary · {levels},Légendaire · {levels},Legendario · {levels},Legendär · {levels}
+ui.dex.fossilSpot,Fossil: {item} · {levels} · {rarity},Fossile : {item} · {levels} · {rarity},Fósil: {item} · {levels} · {rarity},Fossil: {item} · {levels} · {rarity}
 ui.dex.wildSpot,{levels} · {rarity},{levels} · {rarity},{levels} · {rarity},{levels} · {rarity}
 ui.dex.common,common,commun,común,häufig
 ui.dex.uncommon,uncommon,peu commun,poco común,selten

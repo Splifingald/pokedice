@@ -1,6 +1,7 @@
 // A Pokédex entry only ever points at the region being played.
 import { describe, expect, it } from 'vitest'
 import { compileGameData, regionOfArea, type Area, type Region } from '@/engine'
+import { BUNDLE as REAL } from '@/config/bundle'
 import { whereToFind } from '@/components/DexEntry'
 import { BUNDLE } from '@/config/bundle'
 
@@ -45,5 +46,43 @@ describe('whereToFind', () => {
     })
     expect(whereToFind(wildDex, stripped, 'kanto')).toEqual([])
     expect(whereToFind(wildDex, stripped, 'johto').length).toBeGreaterThan(0)
+  })
+})
+
+describe('fossils', () => {
+  const live = compileGameData(REAL)
+  /** Every fossil the shipped areas hold, as [revived dex, area name, item name]. */
+  const fossils = live.areas.flatMap((a) =>
+    a.lootPool
+      .filter((e) => e.weight > 0 && live.items[e.itemKey]?.effect.kind === 'fossil')
+      .map((e) => {
+        const fx = live.items[e.itemKey]!.effect as { kind: 'fossil'; dex: number; level: number }
+        return { dex: fx.dex, level: fx.level, area: a, item: live.items[e.itemKey]!.name }
+      }),
+  )
+
+  it('the shipped data actually holds some', () => {
+    expect(fossils.length).toBeGreaterThan(0)
+  })
+
+  it('points at the area that holds the fossil, and names it', () => {
+    for (const f of fossils) {
+      const spots = whereToFind(f.dex, live, regionOfArea(f.area))
+      const hit = spots.find((s) => s.area.id === f.area.id)
+      expect(hit, `#${f.dex} in ${f.area.name}`).toBeTruthy()
+      expect(hit!.fossil?.name).toBe(f.item)
+      // The fossil revives at its own level, not the area's wild range.
+      expect(hit!.minLevel).toBe(f.level)
+      expect(hit!.maxLevel).toBe(f.level)
+      expect(hit!.legendary).toBe(false)
+    }
+  })
+
+  it('leaves a fossil out of the regions that do not hold it', () => {
+    const f = fossils[0]!
+    const elsewhere = live.regions.map((r) => r.id).filter((id) => id !== regionOfArea(f.area))
+    for (const id of elsewhere) {
+      expect(whereToFind(f.dex, live, id).some((s) => s.fossil), `#${f.dex} in ${id}`).toBe(false)
+    }
   })
 })

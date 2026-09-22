@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { isAreaUnlocked, regionOf, regionOfArea, type Area, type GameData, type RegionId } from '@/engine'
+import { isAreaUnlocked, regionOf, regionOfArea, type Area, type GameData, type ItemDef, type RegionId } from '@/engine'
 import { dexNo } from '@/lib/format'
 import { t } from '@/i18n'
 import { useT } from '@/i18n/react'
@@ -17,9 +17,11 @@ interface Spot {
   area: Area
   minLevel: number
   maxLevel: number
-  /** Share of the area's wild pool (0 for a legendary). */
+  /** Share of the area's wild pool — or of its loot table for a fossil (0 for a legendary). */
   share: number
   legendary: boolean
+  /** Set when the species is revived from a fossil found here rather than met in the grass. */
+  fossil?: ItemDef
 }
 
 /**
@@ -47,6 +49,24 @@ export function whereToFind(dex: number, data: GameData, region: RegionId): Spot
     }
     const boss = area.legendaryBoss?.find((b) => b.dex === dex)
     if (boss) out.push({ area, minLevel: boss.level, maxLevel: boss.level, share: 0, legendary: true })
+
+    // Omanyte, Kabuto and Aerodactyl are wild nowhere: they are dug out of an area's loot table as a fossil, and
+    // without this the only Pokémon in the game you have to go looking for had no entry telling you where.
+    const lootTotal = area.lootPool.reduce((sum, e) => sum + Math.max(0, e.weight), 0)
+    for (const entry of area.lootPool) {
+      if (entry.weight <= 0) continue
+      const item = data.items[entry.itemKey]
+      if (item?.effect.kind !== 'fossil' || item.effect.dex !== dex) continue
+      out.push({
+        area,
+        // A fossil revives at its own level, whatever the area does to wild ones.
+        minLevel: item.effect.level,
+        maxLevel: item.effect.level,
+        share: lootTotal ? entry.weight / lootTotal : 0,
+        legendary: false,
+        fossil: item,
+      })
+    }
   }
   return out.sort((a, b) => Number(a.area.hidden) - Number(b.area.hidden) || a.area.orderIndex - b.area.orderIndex)
 }
@@ -63,7 +83,7 @@ function SpotCard({ spot, onTravel }: { spot: Spot; onTravel?: () => void }) {
   const { area } = spot
   const unlocked = isAreaUnlocked(save, area.id, data)
   const secret = area.hidden && !unlocked
-  const levels = area.scalesToTeam
+  const levels = area.scalesToTeam && !spot.fossil
     ? t('ui.dex.scaling')
     : spot.minLevel === spot.maxLevel
       ? t('ui.common.level.short', { n: spot.minLevel })
@@ -80,9 +100,11 @@ function SpotCard({ spot, onTravel }: { spot: Spot; onTravel?: () => void }) {
             <span className="truncate">{secret ? t('ui.dex.aSecretArea') : area.name}</span>
           </div>
           <div className="text-lg text-muted">
-            {spot.legendary
-              ? t('ui.dex.legendarySpot', { levels })
-              : t('ui.dex.wildSpot', { levels, rarity: rarity(spot.share) })}
+            {spot.fossil
+              ? t('ui.dex.fossilSpot', { item: spot.fossil.name, levels, rarity: rarity(spot.share) })
+              : spot.legendary
+                ? t('ui.dex.legendarySpot', { levels })
+                : t('ui.dex.wildSpot', { levels, rarity: rarity(spot.share) })}
             {!unlocked && t('ui.dex.lockedSuffix')}
           </div>
         </div>
