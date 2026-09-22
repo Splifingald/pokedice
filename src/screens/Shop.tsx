@@ -242,7 +242,6 @@ function BuyTab({ badges }: { badges: number }) {
   const later = stock.filter((s) => !s.unlocked)
   return (
     <>
-      <p className="copy text-muted">{t('ui.shop.buyIntro', { badges })}</p>
       {GROUPS.map((g) => {
         const items = open.filter((it) => g.kinds.includes(it.effect.kind))
         if (!items.length) return null
