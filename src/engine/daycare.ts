@@ -3,7 +3,7 @@
 import { createInstance, gainXp, instanceMaxHp } from './progression'
 import { regionOf, regionOfSpecies } from './regions'
 import { createRng, type Rng } from './rng'
-import { ownedPokemon } from './run'
+import { badgeCase, ownedPokemon } from './run'
 import type { DayCareResident, DayCareState, GameData, PokemonInstance, RegionId, SaveData, Species } from './types'
 
 const MINUTE = 60_000
@@ -24,9 +24,16 @@ export function dayCareTutorialDue(save: SaveData, data: GameData): boolean {
   return !dc.visited && !dc.eggClaimed && dc.residents.length === 0
 }
 
-/** The leaderboard tutorial is due: never opened, and the Day Care's turn has passed. */
+/**
+ * The leaderboard tutorial is due: never opened, a badge already won, and the Day Care's turn has passed.
+ *
+ * It used to fire on the first quiet moment of a new game, which is the moment a player has least to put on a board
+ * and most else to take in. The first badge is the first thing worth comparing.
+ */
 export function leaderboardTutorialDue(save: SaveData, data: GameData): boolean {
-  return !save.leaderboardVisited && !dayCareTutorialDue(save, data)
+  if (save.leaderboardVisited) return false
+  if (!badgeCase(save, data).some((b) => b.earned)) return false
+  return !dayCareTutorialDue(save, data)
 }
 
 /**

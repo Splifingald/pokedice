@@ -3,6 +3,7 @@ import {
   createInstance,
   createRng,
   dayCareOf,
+  badgeCase,
   dayCareTutorialDue,
   dayCareXp,
   depositError,
@@ -11,6 +12,7 @@ import {
   eggSpecies,
   hatchEgg,
   hatchLevel,
+  leaderboardTutorialDue,
   isDayCareOpen,
   markDayCareVisited,
   newSave,
@@ -198,5 +200,31 @@ describe('Day Care in the save file', () => {
     const clash = { ...left, box: [...left.box, left.dayCare!.residents[0]!.inst] }
     const fixed = parseSave(JSON.parse(JSON.stringify(clash)))
     expect(fixed.ok && fixed.save.dayCare?.residents).toEqual([])
+  })
+})
+
+describe('leaderboardTutorialDue', () => {
+  const fresh = newSave(4, data, 1000, newId)
+  /** Beat the first gym leader the badge case knows about. */
+  const withBadge = (save: typeof fresh) => {
+    const first = badgeCase(save, data)[0]!
+    const p = save.areaProgress[first.areaId] ?? {
+      roundsDone: 0,
+      cleared: false,
+      bossDefeated: false,
+      bossesDefeated: [],
+      gymsDefeated: [],
+    }
+    return { ...save, areaProgress: { ...save.areaProgress, [first.areaId]: { ...p, gymsDefeated: [first.trainerId] } } }
+  }
+
+  it('waits for the first badge', () => {
+    // A brand new game has nothing to put on a board yet.
+    expect(leaderboardTutorialDue(fresh, data)).toBe(false)
+    expect(leaderboardTutorialDue(withBadge(fresh), data)).toBe(true)
+  })
+
+  it('still only fires once', () => {
+    expect(leaderboardTutorialDue({ ...withBadge(fresh), leaderboardVisited: true }, data)).toBe(false)
   })
 })

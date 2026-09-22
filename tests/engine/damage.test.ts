@@ -5,9 +5,11 @@ import { data, die, sdie } from '../fixtures'
 const L1 = uniformLevels(1)
 
 describe('type multiplier', () => {
-  it('multiplies over both defender types', () => {
+  it('multiplies over both defender types, and stops at ×2', () => {
     expect(typeMultiplier(data.typeChart, 'fire', ['grass'])).toBe(2)
-    expect(typeMultiplier(data.typeChart, 'fire', ['bug', 'grass'])).toBe(4)
+    // Fire beats both of Paras's types, and still only doubles.
+    expect(typeMultiplier(data.typeChart, 'fire', ['bug', 'grass'])).toBe(2)
+    // Resistances are not capped: two of them still quarter the damage.
     expect(typeMultiplier(data.typeChart, 'fire', ['water', 'rock'])).toBe(0.25)
     expect(typeMultiplier(data.typeChart, 'normal', ['ghost'])).toBe(0)
     expect(typeMultiplier(data.typeChart, 'base', ['ghost'])).toBe(1)
@@ -33,10 +35,12 @@ describe('damage formula', () => {
     expect(r.effectiveness).toBe(2)
   })
 
-  it('stacks 4× on dual weaknesses', () => {
-    const r = computeDamage([die('fire', 5)], ['fire'], ['bug', 'grass'], L1, data)
-    expect(r.perDie[0]!.multiplier).toBe(4)
-    expect(r.final).toBe(20)
+  it('caps a dual weakness at ×2, the same as a single one', () => {
+    const dual = computeDamage([die('fire', 5)], ['fire'], ['bug', 'grass'], L1, data)
+    const single = computeDamage([die('fire', 5)], ['fire'], ['grass'], L1, data)
+    expect(dual.perDie[0]!.multiplier).toBe(2)
+    expect(dual.final).toBe(10)
+    expect(dual.final).toBe(single.final)
   })
 
   it('is immune only when every dice type is — another type takes over otherwise', () => {
