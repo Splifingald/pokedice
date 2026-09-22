@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
-import { badgeCase, isAreaUnlocked, sellPrice, shopStock, type ItemDef } from '@/engine'
+import { badgeCase, isAreaUnlocked, regionOf, sellPrice, shopStock, type ItemDef } from '@/engine'
 import { effectText } from '@/i18n/text'
 import { useT } from '@/i18n/react'
 import { sfx } from '@/audio/sfx'
+import { ItemSprite as ItemPic } from '@/components/ItemSprite'
+import { Modal } from '@/components/Modal'
 import { PixelButton } from '@/components/PixelButton'
 import { money } from '@/lib/format'
 import { buy, sell } from '@/store/actions'
@@ -66,7 +68,7 @@ function QtyPicker({ label, options, value, onPick }: { label: string; options: 
 }
 
 /** One row per item: tap the name for the description and the quantity; BUY asks once to confirm the total. */
-function ItemRow({ it }: { it: ItemDef }) {
+function ItemRow({ it, onFossil }: { it: ItemDef; onFossil: (it: ItemDef) => void }) {
   const { t } = useT()
   const gold = useGame((s) => s.save?.gold ?? 0)
   const owned = useGame((s) => s.save?.inventory[it.key] ?? 0)
@@ -102,7 +104,12 @@ function ItemRow({ it }: { it: ItemDef }) {
           title={afford ? undefined : t('ui.shop.tooPoor')}
           onClick={() => {
             if (!confirming) return setConfirming(true)
-            if (buy(it.key, qty)) sfx('gold')
+            if (buy(it.key, qty)) {
+              sfx('gold')
+              // A fossil never reaches the bag, so a bag count ticking up would be the wrong feedback — and where it
+              // actually went, and that it is on a clock, is not something the shelf can say.
+              if (it.effect.kind === 'fossil') onFossil(it)
+            }
             setConfirming(false)
           }}
         >
@@ -230,9 +237,15 @@ function SellTab() {
 
 function BuyTab({ badges }: { badges: number }) {
   const { t } = useT()
+  // Held here, not in the row: a unique item leaves the shelf the moment it is bought, and a pop-up owned by the
+  // row would be unmounted along with it before anyone read a word of it.
+  const [dug, setDug] = useState<ItemDef | null>(null)
   const data = useGame((s) => s.data)
   const save = useGame((s) => s.save)
-  const stock = shopStock(data, badges, (id) => !!save && isAreaUnlocked(save, id, data))
+  const stock = shopStock(data, badges, (id) => !!save && isAreaUnlocked(save, id, data), {
+    region: save ? regionOf(save) : undefined,
+    bought: save?.boughtUnique,
+  })
   // What a locked item waits for: badges first, then reaching its area.
   const needs = (it: ItemDef) =>
     badges < it.shopBadges
@@ -242,6 +255,17 @@ function BuyTab({ badges }: { badges: number }) {
   const later = stock.filter((s) => !s.unlocked)
   return (
     <>
+      <Modal open={!!dug} onClose={() => setDug(null)} title={dug?.name}>
+        <div className="flex flex-col items-center gap-3 text-center">
+          <ItemPic item={dug ?? undefined} size={96} />
+          <p className="copy text-xl leading-snug">
+            {t('ui.shop.fossilBought', { hours: dug?.effect.kind === 'fossil' ? dug.effect.hours : 0 })}
+          </p>
+          <PixelButton variant="primary" onClick={() => setDug(null)}>
+            {t('ui.common.continue')}
+          </PixelButton>
+        </div>
+      </Modal>
       {GROUPS.map((g) => {
         const items = open.filter((it) => g.kinds.includes(it.effect.kind))
         if (!items.length) return null
@@ -250,7 +274,7 @@ function BuyTab({ badges }: { badges: number }) {
             <h2 className="text-3xl">{t(g.title)}</h2>
             <ul className="flex flex-col gap-2">
               {items.map((it) => (
-                <ItemRow key={it.key} it={it} />
+                <ItemRow key={it.key} it={it} onFossil={setDug} />
               ))}
             </ul>
           </section>

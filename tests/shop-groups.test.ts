@@ -32,3 +32,29 @@ describe('the Mart lists everything it stocks', () => {
     expect(groupOf(at7.item.effect.kind)).toBe('ui.shop.groupFossils')
   })
 })
+
+describe('what a region stocks', () => {
+  const mart = (over: Partial<ItemDef>) => ({ ...data.items['potion']!, key: 'special', ...over })
+  const withItem = (over: Partial<ItemDef>) => ({ ...data, items: { ...data.items, special: mart(over) } })
+  const has = (stock: { item: ItemDef }[]) => stock.some((s) => s.item.key === 'special')
+
+  it('an item with no region is on every shelf', () => {
+    const d = withItem({})
+    expect(has(shopStock(d, 8, () => true, { region: 'kanto' }))).toBe(true)
+    expect(has(shopStock(d, 8, () => true, { region: 'johto' }))).toBe(true)
+  })
+
+  it('an item bound to a region is on that shelf alone', () => {
+    const d = withItem({ region: 'johto' })
+    expect(has(shopStock(d, 8, () => true, { region: 'johto' }))).toBe(true)
+    expect(has(shopStock(d, 8, () => true, { region: 'kanto' }))).toBe(false)
+    // No region asked for: every region's stock, which is what the tests and the simulator want.
+    expect(has(shopStock(d, 8, () => true))).toBe(true)
+  })
+
+  it('a unique item leaves the shelf once bought, and does not come back', () => {
+    const d = withItem({ unique: true })
+    expect(has(shopStock(d, 8, () => true, { region: 'kanto' }))).toBe(true)
+    expect(has(shopStock(d, 8, () => true, { region: 'kanto', bought: ['special'] }))).toBe(false)
+  })
+})

@@ -6,7 +6,7 @@ import { nextComboCost, nextDieCost, pokemonXp, trainerGoldFor, healAmount, mult
 import { roundsComplete } from './encounters'
 import { addFossil, isReviving } from './fossils'
 import { LEGACY_GAUGE } from './legacyGauge'
-import { MONEY, sellPrice, usableIn } from './items'
+import { MONEY, sellPrice, shopSells, usableIn } from './items'
 import { averageLevel, createInstance, evolve, gainXp, instanceMaxHp, stoneEvolution, xpToNext, type ProgressEvent } from './progression'
 import { createRng, type Rng } from './rng'
 import {
@@ -476,6 +476,9 @@ export function swapIntoTeam(save: SaveData, inId: string, outId: string | null,
  * Buys `qty` of an item. A fossil bought over the counter behaves exactly like one dug out of the ground: it goes
  * straight to the Box as the Pokémon it holds and revives on its own clock. Sitting in the bag it would be inert —
  * `itemUses` gives a fossil no use at all — so anything the Mart is configured to sell has to arrive usable.
+ *
+ * A `unique` item is one sale per region, for good: the key is written down here and the Mart never offers it again,
+ * whether the player still has it, used it or sold it back.
  */
 export function buyItem(
   save: SaveData,
@@ -487,9 +490,14 @@ export function buyItem(
 ): SaveData | null {
   const item = data.items[key]
   if (!item || qty <= 0) return null
+  if (!shopSells(item, save, regionOf(save))) return null
+  // One is all there is: asking for more is a mistake, not a smaller order.
+  if (item.unique && qty !== 1) return null
   const cost = item.price * qty
   if (save.gold < cost) return null
-  const paid = { ...save, gold: save.gold - cost }
+  const paid = item.unique
+    ? { ...save, gold: save.gold - cost, boughtUnique: [...(save.boughtUnique ?? []), item.key] }
+    : { ...save, gold: save.gold - cost }
   if (item.effect.kind === 'fossil') {
     let next = paid
     for (let i = 0; i < qty; i++) next = addFossil(next, item, data, now, newId())

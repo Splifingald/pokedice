@@ -1,7 +1,7 @@
 // Items: where each one can be used, what the Poké Mart sells, and the per-area loot decks behind item finds.
 import { shuffle } from './deal'
 import type { Rng } from './rng'
-import type { Area, AreaProgress, GameData, ItemDef, LootEntry } from './types'
+import type { Area, AreaProgress, GameData, ItemDef, LootEntry, RegionId, SaveData } from './types'
 
 /** Loot key for Pokédollars lying on the ground (not an inventory item). */
 export const MONEY = 'money'
@@ -41,16 +41,32 @@ export const sellPrice = (item: ItemDef | undefined): number => (item?.inShop ? 
 /**
  * The Poké Mart's stock, by badge tier then price; `unlocked` once the player holds enough badges and has reached the
  * item's area, if it names one (`areaOpen` answers that; without it, area-bound items stay locked).
+ *
+ * Two things take an item off the shelf entirely rather than locking it, because neither is something the player can
+ * work towards here: one that belongs to another region, and a `unique` one this region has already sold. Both are
+ * skipped only when the caller says where it is standing — `where.region` unset means "every region's stock", which
+ * is what the admin simulator and the tests want.
  */
 export function shopStock(
   data: GameData,
   badges: number,
   areaOpen: (areaId: string) => boolean = () => false,
+  where: { region?: RegionId; bought?: readonly string[] } = {},
 ): { item: ItemDef; unlocked: boolean }[] {
+  const bought = new Set(where.bought ?? [])
   return Object.values(data.items)
     .filter((i) => i.inShop)
+    .filter((i) => !where.region || !i.region || i.region === where.region)
+    .filter((i) => !(i.unique && bought.has(i.key)))
     .sort((a, b) => a.shopBadges - b.shopBadges || a.price - b.price || a.name.localeCompare(b.name))
     .map((item) => ({ item, unlocked: badges >= item.shopBadges && (!item.shopArea || areaOpen(item.shopArea)) }))
+}
+
+/** Whether the Mart here would sell this item at all, ignoring badges and areas. */
+export function shopSells(item: ItemDef | undefined, save: Pick<SaveData, 'boughtUnique'>, region: RegionId): boolean {
+  if (!item?.inShop) return false
+  if (item.region && item.region !== region) return false
+  return !(item.unique && (save.boughtUnique ?? []).includes(item.key))
 }
 
 /** Loot still to be found in this area: a unique find already made is gone for good. */

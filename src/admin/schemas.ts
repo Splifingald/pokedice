@@ -195,6 +195,9 @@ export const ROW_SCHEMAS: Record<TableName, z.ZodTypeAny> = {
     shop_badges: int(0, 8).optional(),
     // Optional so a database created before migration 0015 still loads.
     shop_area: uuid.nullable().optional(),
+    // Likewise for 0017: the only region that stocks it (null = all), and one sale per region for good.
+    region: z.string().nullable().optional(),
+    once_only: z.boolean().optional(),
   }),
   game_config: z.object({ key: z.string().min(1), value: z.unknown() }),
 }

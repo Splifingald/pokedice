@@ -186,8 +186,10 @@ export function rowsToBundle(r: TableRows): BundleRaw {
       effect: x.effect as ItemDef['effect'],
       inShop: x.in_shop == null ? true : !!x.in_shop,
       shopBadges: x.shop_badges == null ? 0 : num(x.shop_badges),
-      // Only when set, so bundled items without it round-trip unchanged.
+      // Only when set, so bundled items without them round-trip unchanged.
       ...(x.shop_area != null && { shopArea: String(x.shop_area) }),
+      ...(x.region != null && { region: String(x.region) as ItemDef['region'] }),
+      ...(x.once_only ? { unique: true } : {}),
     })),
     config: Object.fromEntries(r.game_config.map((x) => [String(x.key), x.value])),
   }
@@ -316,6 +318,8 @@ export function bundleToRows(b: BundleRaw): TableRows {
       in_shop: x.inShop ?? true,
       shop_badges: x.shopBadges ?? 0,
       shop_area: x.shopArea ?? null,
+      region: x.region ?? null,
+      once_only: x.unique ?? false,
     })),
     game_config: Object.entries(b.config).map(([key, value]) => ({ key, value })),
   }

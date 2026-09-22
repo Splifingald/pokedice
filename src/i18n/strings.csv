@@ -1490,6 +1490,7 @@ ui.shop.groupBalls,Poké Balls,Poké Balls,Poké Balls,Pokébälle
 ui.shop.tabs,Buy or sell,Acheter ou vendre,Comprar o vender,Kaufen oder verkaufen
 ui.shop.buy,Buy,Acheter,Comprar,Kaufen
 ui.shop.sell,Sell · Bag,Vendre · Sac,Vender · Mochila,Verkaufen · Beutel
+ui.shop.fossilBought,Your fossil has been added to your Box. A Pokémon will emerge from it in {hours} hours.,Ton fossile a été ajouté à ta Boîte. Un Pokémon en sortira dans {hours} heures.,Tu fósil se ha añadido a tu Caja. De él saldrá un Pokémon dentro de {hours} horas.,Dein Fossil wurde deiner Box hinzugefügt. In {hours} Stunden schlüpft ein Pokémon daraus.
 ui.shop.inBag,{count} in bag,{count} dans le sac,{count} en la mochila,{count} im Beutel
 ui.shop.tooPoor,Not enough Pokédollars,Pas assez de Pokédollars,No tienes suficientes Pokédólares,Nicht genug Pokédollar
 ui.shop.howMany,How many {item},Combien de {item},Cuántos {item},Wie viele {item}

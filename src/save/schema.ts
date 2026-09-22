@@ -46,6 +46,7 @@ const regionBlockSchema = () =>
     currentAreaId: z.string(),
     areaProgress: z.record(progressSchema),
     dayCare: dayCareSchema.optional(),
+    boughtUnique: z.array(z.string()).optional(),
   })
 
 const levelRecord = <K extends string>(keys: readonly K[]) =>
@@ -89,6 +90,7 @@ export const saveSchema = z.object({
   // Legacy: regions whose things were folded forward while that behaviour existed. Nothing reads it; it is kept so
   // a save that went through it still says so.
   merged: z.array(z.string()).optional(),
+  boughtUnique: z.array(z.string()).optional(),
 })
 
 /**

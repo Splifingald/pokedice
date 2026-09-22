@@ -831,6 +831,8 @@ export function buildSql(b: {
     'alter table areas add column if not exists scale_offsets jsonb;',
     'alter table areas add column if not exists rounds_to_clear int;',
     'alter table items add column if not exists shop_area uuid;',
+    'alter table items add column if not exists region text;',
+    'alter table items add column if not exists once_only boolean not null default false;',
     prelude,
     upsert(
       'type_chart',
@@ -970,8 +972,20 @@ export function buildSql(b: {
     ),
     upsert(
       'items',
-      ['key', 'name', 'description', 'sprite_url', 'price', 'effect', 'in_shop', 'shop_badges', 'shop_area'],
-      b.items.map((i) => [i.key, i.name, i.description, i.spriteUrl, i.price, i.effect, i.inShop, i.shopBadges, i.shopArea ?? null]),
+      ['key', 'name', 'description', 'sprite_url', 'price', 'effect', 'in_shop', 'shop_badges', 'shop_area', 'region', 'once_only'],
+      b.items.map((i) => [
+        i.key,
+        i.name,
+        i.description,
+        i.spriteUrl,
+        i.price,
+        i.effect,
+        i.inShop,
+        i.shopBadges,
+        i.shopArea ?? null,
+        i.region ?? null,
+        i.unique ?? false,
+      ]),
       ['key'],
     ),
     // game_config values are jsonb; wrap scalars so they serialise as JSON too.

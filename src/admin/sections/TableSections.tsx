@@ -286,7 +286,26 @@ export function ItemsSection() {
         },
         { key: 'price', label: 'Price ₽', kind: 'number' },
         { key: 'in_shop', label: 'In shop', kind: 'bool' },
+        { key: 'once_only', label: 'Unique', kind: 'bool' },
         { key: 'shop_badges', label: 'Badges needed', kind: 'number' },
+        {
+          key: 'region',
+          label: 'Region only',
+          width: 130,
+          render: (r) => (r.region ? (data?.regions.find((x) => x.id === r.region)?.name ?? s(r.region)) : 'all'),
+          editor: (v, set) => (
+            <select className="border border-ink bg-panel text-lg" value={(v as string | null) ?? ''} onChange={(e) => set(e.target.value || null)}>
+              <option value="">— all regions —</option>
+              {[...(data?.regions ?? [])]
+                .sort((a, b) => a.orderIndex - b.orderIndex)
+                .map((r) => (
+                  <option key={r.id} value={r.id}>
+                    {r.name}
+                  </option>
+                ))}
+            </select>
+          ),
+        },
         {
           key: 'shop_area',
           label: 'Area needed',
