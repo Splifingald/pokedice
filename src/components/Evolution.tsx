@@ -66,7 +66,7 @@ export function EvolutionSequence({ uid, fromDex, toDex, onDone }: EvolutionShow
           </>
         )}
       </div>
-      <div className="text-center text-2xl">{stage < 3 ? `What? ${from} is evolving!` : `${from} evolved into ${to}!`}</div>
+      <div className="text-center text-2xl">{stage < 3 ? t('ui.evolution.evolving', { name: from }) : t('ui.evolution.evolved', { from, to })}</div>
       {stage === 3 && stats && inst && (
         <div className="flex flex-wrap items-center justify-center gap-3 text-lg">
           <DiceSet dice={stats.dice} size={24} />

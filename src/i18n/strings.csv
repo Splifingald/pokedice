@@ -1214,6 +1214,28 @@ ui.areaTypes.label,Encounter types,Types de rencontre,Tipos de encuentro,Begegnu
 ui.areaTypes.share,{pct} % of foes,{pct} % des adversaires,{pct} % de los rivales,{pct} % der Gegner
 ui.search.noMatch,No match,Aucun résultat,Sin resultados,Kein Treffer
 ui.region.emptyBox,There are no Pokémon left in {region} — nothing to play it with.,Il ne reste aucun Pokémon en {region} — rien pour y jouer.,No queda ningún Pokémon en {region}: nada con lo que jugarla.,"In {region} sind keine Pokémon mehr — nichts, womit du sie spielen könntest."
+ui.region.label,Region,Région,Región,Region
+ui.region.newOpen,A new region is open,Une nouvelle région est ouverte,Se ha abierto una nueva región,Eine neue Region ist offen
+ui.region.newBody,"{region} is waiting. You will start over there — new partner, empty bag — but everything here stays exactly as you left it.","{region} t'attend. Tu y repartiras de zéro — nouveau partenaire, sac vide — mais tout ici restera exactement comme tu l'as laissé.","{region} te espera. Allí empezarás de cero —nuevo compañero, mochila vacía—, pero todo lo de aquí seguirá tal como lo dejaste.","{region} wartet. Dort fängst du neu an — neuer Partner, leerer Beutel —, aber hier bleibt alles genau so, wie du es verlassen hast."
+ui.region.see,See {region},Voir {region},Ver {region},{region} ansehen
+ui.region.awaits,{region} awaits,{region} t'attend,{region} te espera,{region} wartet
+ui.region.choosePartner,Choose your {region} partner,Choisis ton partenaire de {region},Elige tu compañero de {region},Wähle deinen {region}-Partner
+ui.region.termsIntro,"You have beaten the league. Beyond {here} lies {region} — new routes, new gyms, and Pokémon you have never seen.","Tu as battu la Ligue. Au-delà de {here} se trouve {region} — de nouvelles routes, de nouvelles Arènes, et des Pokémon que tu n'as jamais vus.","Has vencido a la Liga. Más allá de {here} está {region}: nuevas rutas, nuevos gimnasios y Pokémon que nunca has visto.","Du hast die Liga besiegt. Hinter {here} liegt {region} — neue Routen, neue Arenen und Pokémon, die du nie gesehen hast."
+ui.region.termsSelf,"You travel as yourself — same name, same character.","Tu voyages tel que tu es — même nom, même personnage.","Viajas siendo tú mismo: mismo nombre, mismo personaje.","Du reist als du selbst — gleicher Name, gleiche Figur."
+ui.region.termsStay,"Your Pokémon, your bag and your ₽ stay in {here}. You will choose a new partner there.","Tes Pokémon, ton sac et tes ₽ restent à {here}. Tu choisiras un nouveau partenaire là-bas.","Tus Pokémon, tu mochila y tus ₽ se quedan en {here}. Allí elegirás un nuevo compañero.","Deine Pokémon, dein Beutel und deine ₽ bleiben in {here}. Dort wählst du einen neuen Partner."
+ui.region.termsBack,Come back any time from the Region row at the top of the Map.,Reviens quand tu veux depuis la ligne Région en haut de la Carte.,Vuelve cuando quieras desde la fila Región en lo alto del Mapa.,Komm jederzeit über die Regionszeile oben auf der Karte zurück.
+ui.region.termsSeparate,"Each region stays its own run: nothing pools. Once you have beaten its league, one Pokémon at a time can follow you on from its info sheet.","Chaque région reste une partie à part : rien ne se mélange. Une fois sa Ligue battue, tes Pokémon peuvent te suivre un par un depuis leur fiche.","Cada región sigue siendo una partida aparte: nada se mezcla. Una vez vencida su Liga, tus Pokémon pueden seguirte uno a uno desde su ficha.","Jede Region bleibt ein eigener Durchgang: nichts wird zusammengelegt. Ist ihre Liga besiegt, kann dir jeweils ein Pokémon von seiner Karte aus folgen."
+ui.region.notYet,Not yet,Pas encore,Todavía no,Noch nicht
+ui.region.goTo,Go to {region},Aller à {region},Ir a {region},Nach {region}
+ui.region.back,Back,Retour,Atrás,Zurück
+ui.region.pickOne,Pick one,Choisis-en un,Elige uno,Wähle eines
+ui.region.setOff,Set off with {name},Partir avec {name},Partir con {name},Los mit {name}
+ui.region.welcomeBack,Welcome back to {region},Bon retour à {region},Bienvenido de nuevo a {region},Willkommen zurück in {region}
+ui.region.awaitsToast,{region} awaits!,{region} t'attend !,¡{region} te espera!,{region} wartet!
+ui.region.finishFight,Finish this battle first,Termine d'abord ce combat,Termina antes este combate,Beende zuerst diesen Kampf
+ui.region.closed,{region} is closed for now — your progress there is safe,{region} est fermée pour le moment — ta progression y est en sécurité,{region} está cerrada por ahora: tu progreso allí está a salvo,{region} ist vorerst geschlossen — dein Fortschritt dort ist sicher
+ui.evolution.evolving,What? {name} is evolving!,Hein ? {name} évolue !,¿Qué? ¡{name} está evolucionando!,Was? {name} entwickelt sich!
+ui.evolution.evolved,{from} evolved into {to}!,{from} a évolué en {to} !,¡{from} ha evolucionado a {to}!,{from} hat sich zu {to} entwickelt!
 ui.sheet.sendOn,Send to {region},Envoyer à {region},Enviar a {region},Nach {region} schicken
 ui.sheet.sendOnConfirm,Sure? Tap again,Sûr ? Touche encore,¿Seguro? Toca otra vez,Sicher? Nochmal tippen
 ui.sheet.sendOnHint,{name} waits in your {region} Box. It does not come back.,{name} attendra dans ta Boîte de {region}. Il ne revient pas.,{name} esperará en tu Caja de {region}. No vuelve.,{name} wartet in deiner {region}-Box. Es kommt nicht zurück.

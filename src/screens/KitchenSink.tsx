@@ -76,6 +76,14 @@ export function KitchenSink() {
           LARGE
         </PixelButton>
         <PixelButton disabled>disabled</PixelButton>
+        {/* The tight case: a full-width button, the largest size, and the longest label a translation produces.
+            The label shrinks to fit rather than running past the frame. */}
+        <div className="w-[300px]" data-test="fit">
+          <PixelButton size="lg" variant="success" className="w-full whitespace-nowrap">
+            <PixelIcon name="map" size={20} />
+            ALLER À LA NOUVELLE ZONE
+          </PixelButton>
+        </div>
       </Section>
 
       <Section title="Dialogue">

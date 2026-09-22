@@ -5,6 +5,7 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { getRegion, regionOf, tutorialPending, type Region } from '@/engine'
+import { useT } from '@/i18n/react'
 import { Modal } from '@/components/Modal'
 import { PixelButton } from '@/components/PixelButton'
 import { SpriteImg } from '@/components/SpriteImg'
@@ -14,6 +15,7 @@ import { useGame } from '@/store/game'
 import { cx } from '@/theme/util'
 
 export function RegionBar() {
+  const { t } = useT()
   const save = useGame((s) => s.save)!
   // Prof. Oak's one-time pop-ups queue rather than stack, and they go first: the offer waits its turn behind them,
   // and the banner keeps it on screen meanwhile.
@@ -31,8 +33,8 @@ export function RegionBar() {
   return (
     <>
       {regions.length > 1 && (
-        <nav aria-label="Region" className="flex flex-wrap items-center gap-2">
-          <span className="text-lg text-muted">Region</span>
+        <nav aria-label={t('ui.region.label')} className="flex flex-wrap items-center gap-2">
+          <span className="text-lg text-muted">{t('ui.region.label')}</span>
           {regions.map((r) => (
             <button
               key={r.id}
@@ -57,14 +59,11 @@ export function RegionBar() {
           animate={{ y: 0, opacity: 1 }}
         >
           <div className="min-w-0 flex-1 basis-64">
-            <div className="text-2xl leading-tight text-gold">A new region is open</div>
-            <p className="text-lg leading-tight text-muted">
-              {offer.name} is waiting. You will start over there — new partner, empty bag — but everything
-              here stays exactly as you left it.
-            </p>
+            <div className="text-2xl leading-tight text-gold">{t('ui.region.newOpen')}</div>
+            <p className="text-lg leading-tight text-muted">{t('ui.region.newBody', { region: offer.name })}</p>
           </div>
           <PixelButton variant="primary" onClick={() => setDismissed(false)}>
-            See {offer.name}
+            {t('ui.region.see', { region: offer.name })}
           </PixelButton>
         </motion.div>
       )}
@@ -77,7 +76,7 @@ export function RegionBar() {
             setPicking(false)
             setDismissed(true)
           }}
-          title={picking ? `Choose your ${offer.name} partner` : `${offer.name} awaits`}
+          title={t(picking ? 'ui.region.choosePartner' : 'ui.region.awaits', { region: offer.name })}
         >
           {picking ? (
             <StarterPicker region={offer} onBack={() => setPicking(false)} onDone={() => setPicking(false)} />
@@ -104,9 +103,10 @@ function RegionTerms({
   onClose: () => void
   onAccept: () => void
 }) {
+  const { t } = useT()
   const save = useGame((s) => s.save)!
   const data = useGame((s) => s.data)
-  const here = getRegion(data, regionOf(save))
+  const here = getRegion(data, regionOf(save))?.name ?? ''
   return (
     <div className="flex flex-col gap-3">
       <img
@@ -117,24 +117,15 @@ function RegionTerms({
         className="mx-auto block"
         style={{ imageRendering: 'pixelated' }}
       />
-      <p className="text-xl leading-tight">
-        You have beaten the league. Beyond {here?.name ?? 'here'} lies <strong>{region.name}</strong> — new
-        routes, new gyms, and Pokémon you have never seen.
-      </p>
+      <p className="text-xl leading-tight">{t('ui.region.termsIntro', { here, region: region.name })}</p>
       <ul className="flex flex-col gap-1 border-[3px] border-ink bg-parchment p-2 text-lg leading-tight">
-        <li>You travel as yourself — same name, same character.</li>
-        <li>
-          Your Pokémon, your bag and your ₽ <strong>stay in {here?.name ?? 'this region'}</strong>. You will
-          choose a new partner there.
-        </li>
-        <li>Come back any time from the Region row at the top of the Map.</li>
-        <li>
-          Beat {region.name}&apos;s league and everything you left behind is <strong>yours again</strong>, all
-          in one place.
-        </li>
+        <li>{t('ui.region.termsSelf')}</li>
+        <li>{t('ui.region.termsStay', { here })}</li>
+        <li>{t('ui.region.termsBack')}</li>
+        <li>{t('ui.region.termsSeparate')}</li>
       </ul>
       <div className="flex flex-wrap justify-end gap-2">
-        <PixelButton onClick={onClose}>Not yet</PixelButton>
+        <PixelButton onClick={onClose}>{t('ui.region.notYet')}</PixelButton>
         <PixelButton
           variant="primary"
           onClick={() => {
@@ -142,7 +133,7 @@ function RegionTerms({
             onAccept()
           }}
         >
-          Go to {region.name}
+          {t('ui.region.goTo', { region: region.name })}
         </PixelButton>
       </div>
     </div>
@@ -159,6 +150,7 @@ function StarterPicker({
   onBack: () => void
   onDone: () => void
 }) {
+  const { t } = useT()
   const data = useGame((s) => s.data)
   const [choice, setChoice] = useState<number | null>(null)
   const starters = region.starters.filter((d) => data.species[d])
@@ -190,7 +182,7 @@ function StarterPicker({
         })}
       </div>
       <div className="flex flex-wrap items-center justify-end gap-2">
-        <PixelButton onClick={onBack}>Back</PixelButton>
+        <PixelButton onClick={onBack}>{t('ui.region.back')}</PixelButton>
         <PixelButton
           variant="primary"
           disabled={choice == null}
@@ -198,7 +190,7 @@ function StarterPicker({
             if (choice != null && startRegion(region.id, choice)) onDone()
           }}
         >
-          {choice != null ? `Set off with ${data.species[choice]?.name}` : 'Pick one'}
+          {choice != null ? t('ui.region.setOff', { name: data.species[choice]?.name ?? '' }) : t('ui.region.pickOne')}
         </PixelButton>
       </div>
     </div>

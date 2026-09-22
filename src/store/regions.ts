@@ -38,7 +38,7 @@ export function switchRegion(to: RegionId): boolean {
   const { save, data, battle } = useGame.getState()
   if (!save || regionOf(save) === to) return false
   if (battle) {
-    pushToast('Finish this battle first', 'bad')
+    pushToast(t('ui.region.finishFight'), 'bad')
     return false
   }
   const region = getRegion(data, to)
@@ -53,7 +53,7 @@ export function switchRegion(to: RegionId): boolean {
   }
   useGame.setState({ run: initialRun() })
   const ok = mutateSave((s) => switchRegionSave(s, to))
-  if (ok) pushToast(`Welcome back to ${region.name}`, 'good')
+  if (ok) pushToast(t('ui.region.welcomeBack', { region: region.name }), 'good')
   return ok
 }
 
@@ -69,7 +69,7 @@ export function startRegion(regionId: RegionId, starterDex: number): boolean {
   useGame.setState({ run: initialRun() })
   const block = newRegionBlock(region, starterDex, data, Date.now(), newId, createInstance)
   const ok = mutateSave((s) => startRegionSave(s, region, block))
-  if (ok) pushToast(`${region.name} awaits!`, 'good', 4500)
+  if (ok) pushToast(t('ui.region.awaitsToast', { region: region.name }), 'good', 4500)
   return ok
 }
 
@@ -102,5 +102,5 @@ export function rescueIfRegionDisabled(): void {
   if (!rescued) return
   useGame.setState({ run: initialRun() })
   commitSave(rescued.save)
-  pushToast(`${rescued.from.name} is closed for now — your progress there is safe`, 'info', 6000)
+  pushToast(t('ui.region.closed', { region: rescued.from.name }), 'info', 6000)
 }
