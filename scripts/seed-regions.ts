@@ -581,12 +581,22 @@ function catchAllFor(region: RegionPlan): (dex: number) => boolean {
  */
 const FOSSIL_ONLY = new Set([345, 346, 347, 348, 408, 409, 410, 411])
 
+/**
+ * The regions this run rebuilds: the ones whose Pokédex sits inside the generated range. Every other region is kept
+ * exactly as the bundle has it.
+ *
+ * This is the difference between adding a region and flattening the others. The content scripts are not the whole
+ * truth about Johto or Hoenn — admin tuning lands on Supabase and is pulled back into the bundle — so rebuilding a
+ * region the run was not asked to generate silently reverts all of it. With the default range only Sinnoh is built.
+ */
+const REBUILT = REGION_PLANS.filter((r) => r.dexRange[0] >= FIRST_NEW_DEX && r.dexRange[1] <= DEX_MAX)
+
 function buildRegions(pokemon: Species[], keptAreas: Area[], keptTrainers: Trainer[], itemKeys: Set<string>) {
   const areas: Area[] = [...keptAreas]
   const trainers: Trainer[] = [...keptTrainers]
   const regions: Region[] = []
 
-  for (const region of REGION_PLANS) {
+  for (const region of REBUILT) {
     const built = buildAreasAndTrainers(pokemon, {
       plans: region.plans,
       regionId: region.id,
@@ -641,14 +651,17 @@ async function main() {
   // Areas and trainers: Kanto's rows are kept exactly as they are, the regions' are appended.
   const allAreas = await readJson<Area[]>('areas.json')
   const allTrainers = await readJson<Trainer[]>('trainers.json')
-  const keptAreas = allAreas.filter((a) => (a.regionId ?? 'kanto') === 'kanto')
+  const rebuiltIds = new Set(REBUILT.map((r) => r.id))
+  const keptAreas = allAreas.filter((a) => !rebuiltIds.has(a.regionId ?? 'kanto'))
   const keptTrainerIds = new Set(keptAreas.flatMap((a) => [...a.gyms, ...a.trainerPool.map((t) => t.trainerId)]))
   const keptTrainers = allTrainers.filter((t) => keptTrainerIds.has(t.id))
   const built = buildRegions(out, keptAreas, keptTrainers, new Set(items.map((i) => i.key)))
 
-  const kantoLeague = keptAreas.find((a) => a.name === 'Indigo Plateau')
-  const regions: Region[] = [
-    {
+  const existingRegions = await readJson<Region[]>('regions.json').catch(() => [] as Region[])
+  const keptRegions = existingRegions.filter((r) => !rebuiltIds.has(r.id))
+  if (!keptRegions.some((r) => r.id === 'kanto')) {
+    const kantoLeague = keptAreas.find((a) => a.name === 'Indigo Plateau')
+    keptRegions.unshift({
       id: 'kanto',
       name: 'Kanto',
       orderIndex: 0,
@@ -656,11 +669,14 @@ async function main() {
       starters: [1, 4, 7],
       starterLevel: 5,
       leagueAreaId: kantoLeague?.id ?? '',
-      nextRegion: 'johto',
+      nextRegion: null,
       enabled: true,
-    },
-    ...built.regions,
-  ]
+    })
+  }
+  const regions: Region[] = [...keptRegions, ...built.regions].sort((a, b) => a.orderIndex - b.orderIndex)
+  // `nextRegion` is derived, not tuned: re-link it by order so a newly built region is chained on and the last one
+  // ends the game, whichever regions this run happened to rebuild.
+  regions.forEach((r, i) => (r.nextRegion = regions[i + 1]?.id ?? null))
 
   await writeJson('pokemon.json', out)
   await writeJson('items.json', items)

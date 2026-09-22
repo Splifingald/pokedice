@@ -48,14 +48,18 @@ describe('evolution stones', () => {
     expect([to('water-stone'), to('thunder-stone'), to('fire-stone')]).toEqual([134, 135, 136])
   })
 
-  it('₽200 in the Mart once Routes 7 & 8 is reached; sold back for ₽100', () => {
+  // Which stones the Mart gates is admin-tuned: Celadon held Kanto's five when this was written, and on the live
+  // database they carry no `shopArea` at all and are on sale from the start. The rule is what is checked here.
+  it('₽200 in the Mart, on sale once its shopArea is reached; sold back for ₽100', () => {
     const celadon = data.areas.find((a) => a.name === 'Routes 7 & 8')!.id
-    const stones = (open: boolean) =>
-      shopStock(data, 8, (id) => open && id === celadon)
-        .filter((x) => x.item.effect.kind === 'stone')
-        .map((x) => x.unlocked)
-    expect(stones(false).every((u) => !u)).toBe(true)
-    expect(stones(true)).toEqual([true, true, true, true, true])
+    for (const open of [false, true]) {
+      const stock = shopStock(data, 8, (id) => open && id === celadon).filter((x) => x.item.effect.kind === 'stone')
+      expect(stock.length).toBeGreaterThan(0)
+      for (const row of stock) {
+        const gate = row.item.shopArea
+        expect(row.unlocked, `${row.item.key} (open=${open})`).toBe(!gate || (open && gate === celadon))
+      }
+    }
     expect(data.items['moon-stone']!.price).toBe(200)
     expect(sellPrice(data.items['moon-stone'])).toBe(100)
     expect(isAreaUnlocked(fresh(), celadon, data)).toBe(false)

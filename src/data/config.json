@@ -1,25 +1,4 @@
 {
- "showRoundPreview": false,
- "xpCurve": {
-  "A": 0.5,
-  "B": 1.15,
-  "C": 1
- },
- "xpShareMode": "fighter",
- "maxTeamSize": 3,
- "maxLevel": 100,
- "maxDice": 5,
- "comboPayoutMode": "highestDamage",
- "skipPolicy": "free",
- "noEscape": true,
- "starters": [
-  1,
-  4,
-  7
- ],
- "starterLevel": 5,
- "hpMultiplier": 1,
- "goldMultiplier": 0.5,
  "status": {
   "burn": {
    "duration": 3,
@@ -35,9 +14,9 @@
    "threshold": 3
   },
   "poison": {
+   "percent": 10,
    "duration": 3,
-   "threshold": 2,
-   "percent": 10
+   "threshold": 2
   },
   "confuse": {
    "threshold": 2,
@@ -48,8 +27,25 @@
    "threshold": 2
   }
  },
+ "dayCare": {
+  "maxXp": 200,
+  "slots": 2,
+  "eggPrice": 50,
+  "hatchRank": 3,
+  "xpPerTick": 1,
+  "hatchOffset": 5,
+  "tickMinutes": 10,
+  "hatchMinLevel": 5,
+  "unlockPokedex": 20,
+  "unownedWeight": 4
+ },
+ "xpCurve": {
+  "A": 0.8,
+  "B": 1.25,
+  "C": 1
+ },
  "gymGoldMultiplier": 2,
- "configVersion": 23,
+ "configVersion": 51,
  "forcedCenterWhenHurt": true,
  "encounterMode": "deck",
  "startInventory": {
@@ -90,35 +86,39 @@
    "weight": 10
   }
  },
- "dayCare": {
-  "maxXp": 500,
-  "slots": 2,
-  "eggPrice": 50,
-  "hatchRank": 3,
-  "xpPerTick": 1,
-  "hatchOffset": 5,
-  "tickMinutes": 30,
-  "hatchMinLevel": 5,
-  "unlockPokedex": 20,
-  "unownedWeight": 4
- },
  "energy": {
-  "enabled": false,
   "max": 50,
+  "enabled": false,
   "minutesPerEnergy": 30
  },
  "roamers": {
-  "regionId": "johto",
-  "requires": [
-   249,
-   250
-  ],
-  "chance": 0.02,
-  "level": 40,
   "dex": [
    243,
    244,
    245
+  ],
+  "level": 40,
+  "chance": 0.02,
+  "regionId": "johto",
+  "requires": [
+   249,
+   250
   ]
- }
+ },
+ "showRoundPreview": false,
+ "xpShareMode": "fighter",
+ "maxTeamSize": 3,
+ "maxLevel": 100,
+ "maxDice": 5,
+ "comboPayoutMode": "highestDamage",
+ "skipPolicy": "free",
+ "noEscape": true,
+ "starters": [
+  1,
+  4,
+  7
+ ],
+ "starterLevel": 5,
+ "hpMultiplier": 1,
+ "goldMultiplier": 0.5
 }

@@ -26,13 +26,18 @@ const ALL_LEGENDARIES = [
   481, 482, 483, 484, 485, 486, 487, 488, 489, 490, 491, 492, 493,
 ]
 const STARTERS = [1, 4, 7]
+/**
+ * Five dice is the rule. Raikou, Entei and Suicune carry six: an admin buff that ships on the live database, kept
+ * here so the bound still means something for everything else.
+ */
+const SIX_DICE = new Set([243, 244, 245])
 
 describe('pokemon.json', () => {
   it('has 493 complete entries — Kanto, Johto, Hoenn and Sinnoh', () => {
     expect(species).toHaveLength(493)
     for (const p of species) {
       expect(total(p.dice)).toBeGreaterThanOrEqual(1)
-      expect(total(p.dice)).toBeLessThanOrEqual(5)
+      expect(total(p.dice), p.name).toBeLessThanOrEqual(SIX_DICE.has(p.dex) ? 6 : 5)
       expect(p.spriteUrl).toBe(`/pokemon/${String(p.dex).padStart(3, '0')}_front.png`)
       for (const view of ['front', 'front_shiny', 'back', 'back_shiny', 'mini_1', 'mini_2'])
         expect(existsSync(path.join('public/pokemon', `${String(p.dex).padStart(3, '0')}_${view}.png`)), `${p.dex} ${view}`).toBe(true)
@@ -48,7 +53,7 @@ describe('pokemon.json', () => {
   it('keeps every species within the dice rules at every level', () => {
     const d = compileGameData(BUNDLE)
     for (const p of species) {
-      expect(effectiveStats(d.species[p.dex]!, 100, d).dice.length, p.name).toBeLessThanOrEqual(5)
+      expect(effectiveStats(d.species[p.dex]!, 100, d).dice.length, p.name).toBeLessThanOrEqual(SIX_DICE.has(p.dex) ? 6 : 5)
     }
     expect(count(byDex(149).dice, 'dragon')).toBeGreaterThan(0)
   })

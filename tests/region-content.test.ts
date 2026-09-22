@@ -46,8 +46,9 @@ describe('regions', () => {
       const chain = linearAreas(data, r.id)
       expect(chain[0]!.minLevel, r.id).toBeLessThanOrEqual(3)
       const league = chain.findIndex((a) => a.id === r.leagueAreaId)
-      // Little comes after the league: the post-league area, and in Kanto its two-area endgame lap.
-      expect(chain.length - league - 1, r.id).toBeLessThanOrEqual(2)
+      // Little comes after the league: the post-league area, plus an endgame lap where a region has one — Kanto's
+      // Victory Road II / Indigo Plateau II, and now Johto's, which also keeps Mt. Silver behind them.
+      expect(chain.length - league - 1, r.id).toBeLessThanOrEqual(3)
     }
   })
 
@@ -158,7 +159,8 @@ describe('regions', () => {
   it('deals decks of a sensible size everywhere, as Kanto does', () => {
     for (const a of areas) {
       const total = Object.values(a.encounterWeights).reduce((s, n) => s + n, 0)
-      expect(total, a.name).toBeGreaterThanOrEqual(4)
+      // A league area's content is its gauntlet, not its deck, so it is allowed a short one.
+      expect(total, a.name).toBeGreaterThanOrEqual(a.gyms.length >= 5 ? 1 : 4)
       expect(total, a.name).toBeLessThanOrEqual(20)
     }
   })
