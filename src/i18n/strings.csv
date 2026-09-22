@@ -971,7 +971,6 @@ ui.log.endStalemate,Neither side can land a blow — a stalemate.,Aucun camp ne 
 ui.log.endFled,Got away safely!,Fuite réussie !,¡Has escapado sin problemas!,Erfolgreich geflohen!
 ui.hist.typedAttack,{type} attack,Attaque {type},Ataque {type},{type}-Angriff
 ui.hist.untypedAttack,Untyped attack,Attaque sans type,Ataque sin tipo,Angriff ohne Typ
-ui.hist.total,Total {amount},Total {amount},Total {amount},Gesamt {amount}
 ui.hist.noEffect, (no effect), (aucun effet), (sin efecto), (keine Wirkung)
 ui.hist.nearMiss,"{have}/{need} {status} faces, no {status2} (counted as {value})","{have}/{need} faces {status}, pas de {status2} (comptées comme {value})","{have}/{need} caras {status}, sin {status2} (cuentan como {value})","{have}/{need} {status}-Seiten, kein {status2} (zählen als {value})"
 ui.hist.sentOut,was sent out,a été envoyé,ha salido,wurde rausgeschickt

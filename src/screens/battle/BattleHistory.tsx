@@ -22,39 +22,52 @@ import { useT } from '@/i18n/react'
 import { comboName, statusName, typeName } from '@/lib/format'
 import { cx } from '@/theme/util'
 
-/** How a hit's damage adds up: each die (value + upgrade bonus × the attack type's multiplier), the combo, the total. */
+/**
+ * How a hit adds up, in one line: ( dice + combo ) × the type multiplier = the damage dealt.
+ *
+ * It used to print a term per die — `5+1 (fire) ×2 = 12` six times over — which is the same arithmetic six times,
+ * since every die and the combo take the one multiplier the whole attack does (v1.8). The dice are shown above as
+ * dice; their total is the only number worth reading off them.
+ *
+ * The total is rounded and floored at 1, so a halved or quartered hit can land a point off what the line multiplies
+ * out to. Showing the rounded figure is the honest choice: it is the damage that was actually dealt.
+ *
+ * Centred, under the dice it is about — in the roll preview and in a history row alike, since it is the same panel.
+ */
 export function DamageRecap({ result, dice, className }: { result: DamageResult; dice?: readonly RolledDie[]; className?: string }) {
   const { t } = useT()
   const data = useGame((s) => s.data)
+  const diceTotal = result.perDie.reduce((sum, p) => sum + p.value + p.bonus, 0)
+  const multiplier = result.perDie[0]?.multiplier ?? 1
   return (
-    <div className={cx('flex flex-col gap-1', className)}>
+    <div className={cx('flex flex-col items-center gap-1 text-center', className)}>
       {dice && dice.length > 0 && (
-        <div className="flex flex-wrap gap-1" aria-hidden>
+        <div className="flex flex-wrap justify-center gap-1" aria-hidden>
           {dice.map((d, i) => (
             <Die key={i} type={d.type} face={data.diceTypes[d.type]?.faces[d.faceIndex] ?? null} size={26} />
           ))}
         </div>
       )}
-      <div className="font-mono text-xs">
-        {result.attackType ? t('ui.hist.typedAttack', { type: typeName(result.attackType).toUpperCase() }) : t('ui.hist.untypedAttack')} ×
-        {result.perDie[0]?.multiplier ?? 1}
+      <div className="font-mono text-xs text-muted">
+        {result.attackType ? t('ui.hist.typedAttack', { type: typeName(result.attackType).toUpperCase() }) : t('ui.hist.untypedAttack')}
       </div>
-      <div className="grid grid-cols-2 gap-x-4 font-mono text-xs sm:grid-cols-3">
-        {result.perDie.map((p, i) => (
-          <span key={i}>
-            {p.value}
-            {p.bonus ? `+${p.bonus}` : ''} ({typeName(p.type)}) ×{p.multiplier} = {p.damage}
-          </span>
-        ))}
+      <div className="flex flex-wrap items-center justify-center gap-x-1.5 gap-y-0.5 font-mono text-sm leading-none">
+        {result.combo && <span aria-hidden>(</span>}
+        <PixelIcon name="dice" size={14} />
+        <span>{diceTotal}</span>
         {result.combo && (
-          <span>
-            {comboName(result.combo.key)} +{result.combo.bonus} ×{result.combo.multiplier} = {result.combo.damage}
-          </span>
+          <>
+            <span aria-hidden>+</span>
+            <span className="uppercase text-muted">{comboName(result.combo.key)}</span>
+            <span>{result.combo.bonus}</span>
+            <span aria-hidden>)</span>
+          </>
         )}
-      </div>
-      <div className="font-mono text-xs">
-        {t('ui.hist.total', { amount: result.final })}
-        {result.immune ? t('ui.hist.noEffect') : ''}
+        <span aria-hidden>×</span>
+        <span>{multiplier}</span>
+        <span aria-hidden>=</span>
+        <span className="text-base">{result.final}</span>
+        {result.immune && <span className="text-muted">{t('ui.hist.noEffect')}</span>}
       </div>
     </div>
   )
