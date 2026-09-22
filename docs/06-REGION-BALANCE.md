@@ -85,3 +85,56 @@ Winning a trainer battle while your last Pokémon faints with it left the gauntl
 **Kanto**, on content that predates this work, so it is reachable in the shipped game (`continueAfterVictory` starts
 the next battle without checking anyone can fight). Both gauntlet paths now stop there, which is what the Center
 logic already expects. Covered by `tests/engine/campaign.test.ts`.
+
+---
+
+## Sinnoh, and a re-measurement of the other three
+
+Added with Gen 4 (`docs/07-SINNOH-PLAN.md`). The table above was produced by a one-off harness; the summary is now a
+mode of the script, so it can be reproduced:
+
+```
+pnpm balance table 6 900         # every starter of every region, seeds 1–6
+pnpm balance table 6 900 sinnoh  # one region
+```
+
+Because that harness is not identical to the one that made the first table, all four regions were re-measured
+together. **Compare the rows below only with each other** — the Hoenn and Kanto numbers here and in the table above
+disagree on the league columns, and these are the ones Sinnoh was balanced against.
+
+| Region | Starter | League win % | League wipes | Chain wipe % | Chain turns | Lv at league | Band | Encounters to league |
+|---|---|---:|---:|---:|---:|---:|---|---:|
+| Kanto | Bulbasaur | 60 | 122.3 | 21 | 2.64 | 78 | 45–55 | 222 |
+| Kanto | Charmander | 72 | 16.5 | 28 | 3.12 | 79 | 45–55 | 361 |
+| Kanto | Squirtle | 65 | 32.7 | 25 | 3.07 | 77 | 45–55 | 200 |
+| Johto | Chikorita | 80 | 8.0 | 14 | 4.55 | 92 | 49–59 | 307 |
+| Johto | Cyndaquil | 84 | 5.3 | 2 | 2.48 | 81 | 49–59 | 208 |
+| Johto | Totodile | 81 | 6.8 | 2 | 2.63 | 80 | 49–59 | 203 |
+| Hoenn | Treecko | 38 | 123.5 | 5 | 2.82 | 96 | 50–58 | 276 |
+| Hoenn | Torchic | 36 | 25.3 | 6 | 2.65 | 98 | 50–58 | 290 |
+| Hoenn | Mudkip | 22 | 42.2 | 4 | 2.62 | 98 | 50–58 | 258 |
+| **Sinnoh** | **Turtwig** | **76** | **13.5** | **7** | **2.76** | **94** | **50–60** | **281** |
+| **Sinnoh** | **Chimchar** | **80** | **7.7** | **4** | **2.34** | **98** | **50–60** | **260** |
+| **Sinnoh** | **Piplup** | **76** | **12.8** | **4** | **2.68** | **93** | **50–60** | **252** |
+
+Sinnoh is inside the envelope on every column, and its three starters are the closest to each other of any region:
+4–7% chain wipes against Kanto's 21–28%, 2.3–2.8 player turns a fight against Kanto's 2.6–3.1, and 252–281
+encounters to the league against Johto's 203–307 and Hoenn's 258–290.
+
+## What the first pass got wrong
+
+**Every area wanted clearing several times.** Sinnoh shipped its first build with `roundsToClear` of 3 to 5, which
+Johto and Hoenn reserve for their opening two areas and nothing else. 588 encounters of chain against their ~180:
+the team hit L100 at the Great Marsh, fourteen areas in, and the back half of the region — Byron, Candice, Volkner,
+Cynthia — was a walk. One round per area past the second, which is the convention the other regions already follow,
+brought it to 183 and put the league back at L93–98.
+
+That is the whole of the tuning. No wild pool, level band or roster was touched: the region was routed on Platinum's
+own numbers and they held.
+
+## Not Sinnoh's, but visible from here
+
+**Hoenn's league is the hardest thing in the game** on this harness: 22–38% win rate against Johto's 80–84 and
+Sinnoh's 76–80, and Treecko wipes 123 times a run getting through it. Kanto's Bulbasaur is the same shape (122
+wipes at 60%). Both predate this work and neither was touched. If a league is ever re-tuned, those two are the
+candidates — not Sinnoh's.

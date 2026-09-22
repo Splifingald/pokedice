@@ -1,5 +1,7 @@
 /**
  * pnpm balance [encounters=1500] [seed=1] [region=kanto]
+ * pnpm balance table [seeds=6] [encounters=900] [region…=every region]
+ *   — the summary table of docs/06-REGION-BALANCE.md: every starter of every region, averaged over seeds 1..n.
  * "Simulated run": the same headless campaign as the admin Simulator's Campaign tab (src/engine/campaign.ts) —
  * encounters, battles (greedy AI on both sides), rewards, catches, wipes, upgrades — reporting fight length per area.
  * If average fights drift above ~5 player turns, trainers are paying too little gold (see goldMultiplier) or HP is too
@@ -8,7 +10,8 @@
 import { BUNDLE } from '../src/config/bundle'
 import { compileGameData, median, regionSpecies, runCampaignSync, type Species } from '../src/engine'
 
-const N = Number(process.argv[2] ?? 1500)
+const table = process.argv[2] === 'table'
+const N = table ? Number(process.argv[4] ?? 900) : Number(process.argv[2] ?? 1500)
 const seed = Number(process.argv[3] ?? 1)
 // A campaign is a run through one region. `all` runs each in turn, which is how the three curves get compared.
 const regionArg = process.argv[4] ?? process.env.REGION ?? 'kanto'
@@ -46,6 +49,52 @@ const data = compileGameData({
 })
 
 const regionIds = regionArg === 'all' ? data.regions.map((r) => r.id) : [regionArg]
+
+/**
+ * One row per starter: how the league went, how rough the way there was, and how long it took. "Chain" is every
+ * area but the league and the post-league catch-all — the catch-all never ends, and would drown the signal.
+ */
+function summaryTable(seeds: number, regionIds: string[]) {
+  console.log('| Region | Starter | League win % | League wipes | Chain wipe % | Chain turns | Lv at league | Band | Encounters to league |')
+  console.log('|---|---|---:|---:|---:|---:|---:|---|---:|')
+  for (const regionId of regionIds) {
+    const region = data.regions.find((r) => r.id === regionId)!
+    const league = data.areas.find((a) => a.id === region.leagueAreaId)!
+    for (const starterDex of region.starters) {
+      let lFights = 0, lWins = 0, lWipes = 0, cFights = 0, cWipes = 0, cTurns = 0, lv = 0, enc = 0
+      for (let seed = 1; seed <= seeds; seed++) {
+        const res = runCampaignSync(data, { encounters: N, seed, starterDex, spend: true, multiExp: true, regionId })
+        let before = 0
+        for (const r of res.areas) {
+          if (r.areaId === league.id) {
+            lFights += r.fights
+            lWins += r.wins
+            lWipes += r.wipes
+            lv += r.levelIn
+            enc += before
+            continue
+          }
+          if (data.areas.find((a) => a.id === r.areaId)?.scalesToTeam) continue
+          cFights += r.fights
+          cWipes += r.wipes
+          cTurns += r.turns.reduce((s, t) => s + t, 0)
+          before += r.fights
+        }
+      }
+      const pct = (a: number, b: number) => (b ? Math.round((a / b) * 100) : 0)
+      console.log(
+        `| ${region.name} | ${data.species[starterDex]?.name} | ${pct(lWins, lFights)} | ${(lWipes / seeds).toFixed(1)} | ` +
+          `${pct(cWipes, cFights)} | ${(cTurns / Math.max(1, cFights)).toFixed(2)} | ${(lv / seeds).toFixed(0)} | ` +
+          `${league.minLevel}–${league.maxLevel} | ${(enc / seeds).toFixed(0)} |`,
+      )
+    }
+  }
+}
+
+if (table) {
+  summaryTable(Number(process.argv[3] ?? 6), process.argv.slice(5).length ? process.argv.slice(5) : data.regions.map((r) => r.id))
+  process.exit(0)
+}
 
 const levels = (rec: Record<string, number>) =>
   Object.entries(rec)

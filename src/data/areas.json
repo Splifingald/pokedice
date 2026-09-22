@@ -19252,7 +19252,7 @@
   "regionId": "sinnoh",
   "name": "Route 203 & Oreburgh Gate",
   "bannerUrl": "/banners/cave.png",
-  "roundsToClear": 3,
+  "roundsToClear": 1,
   "minLevel": 5,
   "maxLevel": 11,
   "encounterWeights": {
@@ -19389,7 +19389,7 @@
   "regionId": "sinnoh",
   "name": "Oreburgh City & the Mine",
   "bannerUrl": "/banners/mountains.png",
-  "roundsToClear": 3,
+  "roundsToClear": 1,
   "minLevel": 8,
   "maxLevel": 14,
   "encounterWeights": {
@@ -19563,7 +19563,7 @@
   "regionId": "sinnoh",
   "name": "Route 204 & the Ravaged Path",
   "bannerUrl": "/banners/forest.png",
-  "roundsToClear": 3,
+  "roundsToClear": 1,
   "minLevel": 10,
   "maxLevel": 16,
   "encounterWeights": {
@@ -19724,7 +19724,7 @@
   "regionId": "sinnoh",
   "name": "Eterna Forest",
   "bannerUrl": "/banners/forest.png#flip",
-  "roundsToClear": 3,
+  "roundsToClear": 1,
   "minLevel": 12,
   "maxLevel": 18,
   "encounterWeights": {
@@ -19892,7 +19892,7 @@
   "regionId": "sinnoh",
   "name": "Eterna City & the Galactic Building",
   "bannerUrl": "/banners/city.png#flip",
-  "roundsToClear": 3,
+  "roundsToClear": 1,
   "minLevel": 15,
   "maxLevel": 22,
   "encounterWeights": {
@@ -20060,7 +20060,7 @@
   "regionId": "sinnoh",
   "name": "Cycling Road & Routes 206–207",
   "bannerUrl": "/banners/bridge.png",
-  "roundsToClear": 3,
+  "roundsToClear": 1,
   "minLevel": 18,
   "maxLevel": 25,
   "encounterWeights": {
@@ -20242,7 +20242,7 @@
   "regionId": "sinnoh",
   "name": "Mt. Coronet South",
   "bannerUrl": "/banners/cave_dark.png",
-  "roundsToClear": 4,
+  "roundsToClear": 1,
   "minLevel": 20,
   "maxLevel": 28,
   "encounterWeights": {
@@ -20441,7 +20441,7 @@
   "regionId": "sinnoh",
   "name": "Hearthome City",
   "bannerUrl": "/banners/city.png",
-  "roundsToClear": 3,
+  "roundsToClear": 1,
   "minLevel": 22,
   "maxLevel": 30,
   "encounterWeights": {
@@ -20625,7 +20625,7 @@
   "regionId": "sinnoh",
   "name": "Route 209 & the Solaceon Ruins",
   "bannerUrl": "/banners/crystal_cave.png",
-  "roundsToClear": 4,
+  "roundsToClear": 1,
   "minLevel": 25,
   "maxLevel": 32,
   "encounterWeights": {
@@ -20823,7 +20823,7 @@
   "regionId": "sinnoh",
   "name": "Veilstone City & the Galactic HQ",
   "bannerUrl": "/banners/city.png#flip",
-  "roundsToClear": 4,
+  "roundsToClear": 1,
   "minLevel": 27,
   "maxLevel": 35,
   "encounterWeights": {
@@ -21031,7 +21031,7 @@
   "regionId": "sinnoh",
   "name": "Route 212 & Pastoria City",
   "bannerUrl": "/banners/swamp.png",
-  "roundsToClear": 4,
+  "roundsToClear": 1,
   "minLevel": 29,
   "maxLevel": 37,
   "encounterWeights": {
@@ -21215,7 +21215,7 @@
   "regionId": "sinnoh",
   "name": "The Great Marsh",
   "bannerUrl": "/banners/swamp.png#flip",
-  "roundsToClear": 4,
+  "roundsToClear": 1,
   "minLevel": 30,
   "maxLevel": 38,
   "encounterWeights": {
@@ -21408,7 +21408,7 @@
   "regionId": "sinnoh",
   "name": "Route 213 & the Valley Windworks",
   "bannerUrl": "/banners/factory.png",
-  "roundsToClear": 4,
+  "roundsToClear": 1,
   "minLevel": 31,
   "maxLevel": 39,
   "encounterWeights": {
@@ -21598,7 +21598,7 @@
   "regionId": "sinnoh",
   "name": "Celestic Town & Route 210",
   "bannerUrl": "/banners/plains.png#flip",
-  "roundsToClear": 4,
+  "roundsToClear": 1,
   "minLevel": 32,
   "maxLevel": 40,
   "encounterWeights": {
@@ -21782,7 +21782,7 @@
   "regionId": "sinnoh",
   "name": "Canalave City & Iron Island",
   "bannerUrl": "/banners/ocean.png",
-  "roundsToClear": 4,
+  "roundsToClear": 1,
   "minLevel": 34,
   "maxLevel": 42,
   "encounterWeights": {
@@ -21988,7 +21988,7 @@
   "regionId": "sinnoh",
   "name": "Lake Valor & Lake Acuity",
   "bannerUrl": "/banners/ocean.png#flip",
-  "roundsToClear": 4,
+  "roundsToClear": 1,
   "minLevel": 36,
   "maxLevel": 44,
   "encounterWeights": {
@@ -22177,7 +22177,7 @@
   "regionId": "sinnoh",
   "name": "Routes 216 & 217 and Snowpoint City",
   "bannerUrl": "/banners/snow_mountains.png",
-  "roundsToClear": 4,
+  "roundsToClear": 1,
   "minLevel": 38,
   "maxLevel": 46,
   "encounterWeights": {
@@ -22368,7 +22368,7 @@
   "regionId": "sinnoh",
   "name": "Mt. Coronet North & Spear Pillar",
   "bannerUrl": "/banners/sky.png",
-  "roundsToClear": 5,
+  "roundsToClear": 1,
   "minLevel": 40,
   "maxLevel": 48,
   "encounterWeights": {
@@ -22533,7 +22533,7 @@
   "regionId": "sinnoh",
   "name": "Sunyshore City",
   "bannerUrl": "/banners/beach.png",
-  "roundsToClear": 4,
+  "roundsToClear": 1,
   "minLevel": 42,
   "maxLevel": 50,
   "encounterWeights": {
@@ -22684,7 +22684,7 @@
   "regionId": "sinnoh",
   "name": "Victory Road",
   "bannerUrl": "/banners/cave_dark.png#flip",
-  "roundsToClear": 5,
+  "roundsToClear": 1,
   "minLevel": 45,
   "maxLevel": 54,
   "encounterWeights": {
@@ -22963,7 +22963,7 @@
   "regionId": "sinnoh",
   "name": "The Fight Area & Routes 225–226",
   "bannerUrl": "/banners/volcano.png",
-  "roundsToClear": 3,
+  "roundsToClear": 1,
   "minLevel": 55,
   "maxLevel": 66,
   "encounterWeights": {
