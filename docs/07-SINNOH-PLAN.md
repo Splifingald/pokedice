@@ -1,8 +1,18 @@
 # Pokédice — Generation 4 Plan (Sinnoh)
 
-> **Status: planned.** Nothing below is built yet. Companion to `05-REGIONS-PLAN.md` (which is the record of how
-> Johto and Hoenn were added) and `06-REGION-BALANCE.md` (the numbers they were balanced to). Where this document and
-> the code disagree, the code is right.
+> **Status: built.** All seven steps are done and on `claude/gen4-sinnoh-integration-rnbpz3`; the balance pass and
+> its numbers are at the end of `06-REGION-BALANCE.md`. This document is kept as the record of what was decided and
+> why. Where it and the code disagree, the code is right — and two things did change in the building:
+>
+> - **The slot map was read, not written.** The Platinum sheet prints a dex number in every label band, so
+>   `PLATINUM_SLOTS` was decoded from those labels and checked against itself (107 labels, strictly increasing,
+>   387→493, none missing) rather than transcribed by hand. The sheet's block spans turned out to be an upper bound
+>   rather than a fact — see the commit — so the icons are found by the widest span that actually holds one.
+> - **The bottom gap is not preserved.** Step 1a planned to keep each sprite's own gap to the bottom of its cell.
+>   `BattleView` already stands every sprite on its lowest opaque row, so that gap changes nothing on screen; the
+>   sprites are simply bottom-aligned and Gen 4's metrics are all zero.
+>
+> Companion to `05-REGIONS-PLAN.md` (the record of how Johto and Hoenn were added) and `06-REGION-BALANCE.md`.
 
 Integration plan for the fourth region: **Sinnoh, #387–493**, played on Platinum. The shape of the feature is already
 decided and built — a region is a swappable block of save fields, the engine never learns what a region is, and the
