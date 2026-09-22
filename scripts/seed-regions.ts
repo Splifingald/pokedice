@@ -1,5 +1,5 @@
 /**
- * pnpm seed-regions — appends Johto (152–251) and Hoenn (252–386) to the offline bundle.
+ * pnpm seed-regions — appends Johto (152–251), Hoenn (252–386) and Sinnoh (387–493) to the offline bundle.
  *
  * Unlike `pnpm seed`, this script is **additive**: it reads `src/data/*.json`, keeps every existing row exactly as it
  * is, and only appends what is missing. That matters because the committed bundle is ahead of `scripts/seed.ts` —
@@ -26,6 +26,7 @@ import {
 } from './seed'
 import { HOENN_AREAS, HOENN_STARTERS } from './content-hoenn'
 import { JOHTO_AREAS, JOHTO_STARTERS } from './content-johto'
+import { SINNOH_AREAS, SINNOH_STARTERS } from './content-sinnoh'
 import type { AreaPlan } from './content'
 import type { Area, BattleBackground, Evolution, ItemDef, PokeType, Region, Species, Trainer } from '../src/engine/types'
 
@@ -38,8 +39,20 @@ const MIRROR = 'https://raw.githubusercontent.com/PokeAPI/api-data/master/data/a
 const SPRITE = (dex: number) => `/pokemon/${String(dex).padStart(3, '0')}_front.png`
 const ITEM_SPRITE = (key: string) => `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/${key}.png`
 
-const FIRST_NEW_DEX = 152
-const DEX_MAX = 386
+/**
+ * The range this run generates. Everything outside it is kept exactly as the bundle has it, so the default run adds
+ * Sinnoh and touches nothing else; `--from 152` would regenerate Johto and Hoenn along with it.
+ *
+ * That default matters more than it looks. A species only takes a newly computed dice schedule if it is inside the
+ * range, and the schedule is computed over the *merged* stage graph — so a run that reaches back over Johto would
+ * re-plan Sudowoodo, Mantine, Blissey, Roselia and Chimecho purely because Gen 4 gives each of them a baby form.
+ */
+const argOf = (flag: string) => {
+  const i = process.argv.indexOf(flag)
+  return i > 0 ? Number(process.argv[i + 1]) : null
+}
+const FIRST_NEW_DEX = argOf('--from') ?? 387
+const DEX_MAX = argOf('--to') ?? 493
 
 // ---------------------------------------------------------------- mirror access (cached)
 
@@ -130,13 +143,34 @@ const EVO_ITEMS = new Set([
   'up-grade',
   'deep-sea-tooth',
   'deep-sea-scale',
+  // Gen 4. Most of these graft onto an earlier generation's species (Electabuzz → Electivire, Sneasel → Weavile),
+  // which `evolutionGate` keeps inert until the player is in Sinnoh.
+  'shiny-stone',
+  'dusk-stone',
+  'dawn-stone',
+  'oval-stone',
+  'razor-claw',
+  'razor-fang',
+  'electirizer',
+  'magmarizer',
+  'protector',
+  'dubious-disc',
+  'reaper-cloth',
+  'ice-stone',
 ])
 
 /**
  * Espeon and Umbreon evolve on happiness by day and by night. With no day/night cycle, they become stone evolutions
  * instead — which also keeps all five Eevee branches item-driven, so a levelling Eevee never pre-empts the stones.
  */
-const FORCED_ITEM: Record<number, string> = { 196: 'sun-stone', 197: 'moon-stone' }
+const FORCED_ITEM: Record<number, string> = {
+  196: 'sun-stone',
+  197: 'moon-stone',
+  // Leafeon and Glaceon evolve next to a mossy or an icy rock, which is a place rather than a trigger this game has.
+  // Stones keep all seven Eevee branches item-driven, so a levelling Eevee never pre-empts one of them.
+  470: 'leaf-stone',
+  471: 'ice-stone',
+}
 
 /**
  * Nincada evolves into Ninjask at Lv.20 and *also* leaves a Shedinja behind, which PokeAPI models as a second branch
@@ -164,9 +198,23 @@ const LEGENDARY_CATCH: Record<number, number> = {
   379: 6, // Registeel
   380: 6, // Latias
   381: 6, // Latios
+  483: 7, // Dialga
+  484: 7, // Palkia
+  487: 7, // Giratina
+  493: 7, // Arceus
+  480: 6, // Uxie       ·  the lake trio, as the birds
+  481: 6, // Mesprit
+  482: 6, // Azelf
+  485: 6, // Heatran
+  486: 6, // Regigigas
+  488: 6, // Cresselia
   251: 5, // Celebi     ·  the mythicals, as Mew
   385: 5, // Jirachi
   386: 5, // Deoxys
+  489: 5, // Phione
+  490: 5, // Manaphy
+  491: 5, // Darkrai
+  492: 5, // Shaymin
 }
 
 /** One evolution edge, in the shape the bundle already uses for Kanto. */
@@ -240,6 +288,20 @@ const NEW_ITEMS: ItemDef[] = [
   stone('deep-sea-scale', 'Deep Sea Scale', 'Clamperl (Gorebyss)'),
   fossil('root-fossil', 'Root Fossil', 345, 'Lileep'),
   fossil('claw-fossil', 'Claw Fossil', 347, 'Anorith'),
+  stone('shiny-stone', 'Shiny Stone', 'Roselia (Roserade), Togetic (Togekiss)'),
+  stone('dusk-stone', 'Dusk Stone', 'Misdreavus (Mismagius), Murkrow (Honchkrow)'),
+  stone('dawn-stone', 'Dawn Stone', 'Kirlia (Gallade), Snorunt (Froslass)'),
+  stone('ice-stone', 'Ice Stone', 'Eevee (Glaceon)'),
+  stone('oval-stone', 'Oval Stone', 'Happiny (Chansey)'),
+  stone('razor-claw', 'Razor Claw', 'Sneasel (Weavile)'),
+  stone('razor-fang', 'Razor Fang', 'Gligar (Gliscor)'),
+  stone('electirizer', 'Electirizer', 'Electabuzz (Electivire)'),
+  stone('magmarizer', 'Magmarizer', 'Magmar (Magmortar)'),
+  stone('protector', 'Protector', 'Rhydon (Rhyperior)'),
+  stone('dubious-disc', 'Dubious Disc', 'Porygon2 (Porygon-Z)'),
+  stone('reaper-cloth', 'Reaper Cloth', 'Dusclops (Dusknoir)'),
+  fossil('skull-fossil', 'Skull Fossil', 408, 'Cranidos'),
+  fossil('armor-fossil', 'Armor Fossil', 410, 'Shieldon'),
 ]
 
 // ---------------------------------------------------------------- build
@@ -351,7 +413,7 @@ interface RegionPlan {
   dexRange: [number, number]
   starters: number[]
   plans: AreaPlan[]
-  spriteRegion: 'johto' | 'hoenn'
+  spriteRegion: 'johto' | 'hoenn' | 'sinnoh'
   /** Key of the area whose clearing is "the league is done". */
   leagueKey: string
   nextRegion: string | null
@@ -409,7 +471,7 @@ const REGION_PLANS: RegionPlan[] = [
     plans: HOENN_AREAS,
     spriteRegion: 'hoenn',
     leagueKey: 'ho-ever-grande',
-    nextRegion: null,
+    nextRegion: 'sinnoh',
     backgrounds: {
       'Route 101': 'grass',
       'Routes 102 & 103': 'grass',
@@ -445,6 +507,54 @@ const REGION_PLANS: RegionPlan[] = [
       'Birth Island': 'grass',
     },
   },
+  {
+    id: 'sinnoh',
+    name: 'Sinnoh',
+    orderIndex: 3,
+    dexRange: [387, 493],
+    starters: SINNOH_STARTERS,
+    plans: SINNOH_AREAS,
+    spriteRegion: 'sinnoh',
+    leagueKey: 'si-pokemon-league',
+    nextRegion: null,
+    backgrounds: {
+      'Route 201 & Lake Verity': 'grass',
+      'Route 202 & Jubilife City': 'default',
+      'Route 203 & Oreburgh Gate': 'rock',
+      'Oreburgh City & the Mine': 'rock',
+      'Route 204 & the Ravaged Path': 'grass',
+      'Eterna Forest': 'grass',
+      'Eterna City & the Galactic Building': 'default',
+      'Cycling Road & Routes 206–207': 'grass',
+      'Mt. Coronet South': 'rock',
+      'Hearthome City': 'default',
+      'Route 209 & the Solaceon Ruins': 'rock',
+      'Veilstone City & the Galactic HQ': 'default',
+      'Route 212 & Pastoria City': 'water',
+      'The Great Marsh': 'water',
+      'Route 213 & the Valley Windworks': 'grass',
+      'Celestic Town & Route 210': 'grass',
+      'Canalave City & Iron Island': 'sea',
+      'Lake Valor & Lake Acuity': 'water',
+      'Routes 216 & 217 and Snowpoint City': 'rock',
+      'Mt. Coronet North & Spear Pillar': 'rock',
+      'Sunyshore City': 'sea',
+      'Victory Road': 'rock',
+      'The Pokémon League': 'default',
+      'The Fight Area & Routes 225–226': 'rock',
+      'The Battle Frontier': 'grass',
+      'The Old Chateau': 'default',
+      'The Lakes of Sinnoh': 'water',
+      'Turnback Cave': 'rock',
+      'Stark Mountain': 'rock',
+      'Snowpoint Temple': 'rock',
+      'Fullmoon Island': 'grass',
+      'Newmoon Island': 'default',
+      'The Seabreak Path': 'sea',
+      'Flower Paradise': 'grass',
+      'The Hall of Origin': 'default',
+    },
+  },
 ]
 
 /**
@@ -465,8 +575,11 @@ function catchAllFor(region: RegionPlan): (dex: number) => boolean {
   return (dex) => reachable.has(dex)
 }
 
-/** Lileep and Anorith come out of the Root and Claw Fossil on Route 111, and their evolutions out of those. */
-const FOSSIL_ONLY = new Set([345, 346, 347, 348])
+/**
+ * Lileep and Anorith come out of the Root and Claw Fossil on Route 111, Cranidos and Shieldon out of the Skull and
+ * Armor Fossil in the Oreburgh Mine, and their evolutions out of those. None of the four lines is ever wild.
+ */
+const FOSSIL_ONLY = new Set([345, 346, 347, 348, 408, 409, 410, 411])
 
 function buildRegions(pokemon: Species[], keptAreas: Area[], keptTrainers: Trainer[], itemKeys: Set<string>) {
   const areas: Area[] = [...keptAreas]

@@ -7,7 +7,7 @@
 import type { BossDef, EncounterKind, PokeType, UnlockCondition } from '../src/engine/types'
 
 /**
- * Legendaries and mythicals across the three regions: 5 dice, catch value 9, never in a wild pool — each one is
+ * Legendaries and mythicals across the four regions: 5 dice, catch value 9, never in a wild pool — each one is
  * attached to an area as a `legendary_boss` instead.
  */
 export const LEGENDARIES = [
@@ -17,6 +17,8 @@ export const LEGENDARIES = [
   243, 244, 245, 249, 250, 251,
   // Hoenn: the Regis, the Eon duo, the weather trio, Jirachi, Deoxys
   377, 378, 379, 380, 381, 382, 383, 384, 385, 386,
+  // Sinnoh: Rotom, the lake trio, the creation trio, Heatran, Regigigas, Cresselia, the mythicals
+  479, 480, 481, 482, 483, 484, 485, 486, 487, 488, 489, 490, 491, 492, 493,
 ]
 export const STARTERS = [1, 4, 7]
 
@@ -1124,4 +1126,6 @@ export const AREAS: AreaPlan[] = [
 /** Rarer species get a lower weight in the catch-all pool (Cerulean Cave), the three starters included. */
 export const RARE_IN_CATCH_ALL = new Set([
   1, 4, 7, 83, 113, 115, 123, 127, 128, 131, 132, 133, 137, 138, 139, 140, 141, 142, 143, 147, 148, 149,
+  // Sinnoh's own: the pseudo-legendary line, the one-of-a-kind spirits, and the Eevee branches it adds.
+  442, 443, 444, 445, 446, 447, 448, 470, 471, 474, 475, 477, 478,
 ])

@@ -50,6 +50,24 @@
   ],
   "starterLevel": 5,
   "leagueAreaId": "a95b1329-0b92-511e-905b-f6616ed8f907",
+  "nextRegion": "sinnoh",
+  "enabled": true
+ },
+ {
+  "id": "sinnoh",
+  "name": "Sinnoh",
+  "orderIndex": 3,
+  "dexRange": [
+   387,
+   493
+  ],
+  "starters": [
+   387,
+   390,
+   393
+  ],
+  "starterLevel": 5,
+  "leagueAreaId": "5dc66787-c27b-5d67-8d66-4df0f1aa1041",
   "nextRegion": null,
   "enabled": true
  }

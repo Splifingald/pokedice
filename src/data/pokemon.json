@@ -3312,7 +3312,13 @@
   ],
   "rerolls": 3,
   "catchValue": 5,
-  "evolutions": [],
+  "evolutions": [
+   {
+    "toDex": 462,
+    "level": null,
+    "item": "thunder-stone"
+   }
+  ],
   "milestones": [
    {
     "level": 40,
@@ -4418,7 +4424,12 @@
   ],
   "rerolls": 3,
   "catchValue": 5,
-  "evolutions": [],
+  "evolutions": [
+   {
+    "toDex": 463,
+    "level": 30
+   }
+  ],
   "milestones": [
    {
     "level": 38,
@@ -4429,6 +4440,10 @@
     "level": 38,
     "amount": 1,
     "effect": "ADD_REROLL"
+   },
+   {
+    "level": 30,
+    "effect": "EVOLVE"
    }
   ],
   "notes": "BST 385"
@@ -4590,7 +4605,13 @@
   ],
   "rerolls": 3,
   "catchValue": 5,
-  "evolutions": [],
+  "evolutions": [
+   {
+    "toDex": 464,
+    "level": null,
+    "item": "protector"
+   }
+  ],
   "milestones": [
    {
     "level": 50,
@@ -4682,7 +4703,12 @@
   ],
   "rerolls": 2,
   "catchValue": 5,
-  "evolutions": [],
+  "evolutions": [
+   {
+    "toDex": 465,
+    "level": 30
+   }
+  ],
   "milestones": [
    {
     "level": 24,
@@ -4698,6 +4724,10 @@
     "level": 40,
     "effect": "ADD_DIE",
     "dieType": "grass"
+   },
+   {
+    "level": 30,
+    "effect": "EVOLVE"
    }
   ],
   "notes": "BST 435"
@@ -5183,7 +5213,13 @@
   ],
   "rerolls": 3,
   "catchValue": 5,
-  "evolutions": [],
+  "evolutions": [
+   {
+    "toDex": 466,
+    "level": null,
+    "item": "electirizer"
+   }
+  ],
   "milestones": [
    {
     "level": 36,
@@ -5225,7 +5261,13 @@
   ],
   "rerolls": 3,
   "catchValue": 5,
-  "evolutions": [],
+  "evolutions": [
+   {
+    "toDex": 467,
+    "level": null,
+    "item": "magmarizer"
+   }
+  ],
   "milestones": [
    {
     "level": 36,
@@ -5560,6 +5602,16 @@
     "toDex": 197,
     "level": null,
     "item": "moon-stone"
+   },
+   {
+    "toDex": 470,
+    "level": null,
+    "item": "leaf-stone"
+   },
+   {
+    "toDex": 471,
+    "level": null,
+    "item": "ice-stone"
    }
   ],
   "milestones": [
@@ -7299,7 +7351,13 @@
   ],
   "rerolls": 3,
   "catchValue": 4,
-  "evolutions": [],
+  "evolutions": [
+   {
+    "toDex": 468,
+    "level": null,
+    "item": "shiny-stone"
+   }
+  ],
   "milestones": [
    {
     "level": 36,
@@ -7847,7 +7905,12 @@
   ],
   "rerolls": 1,
   "catchValue": 5,
-  "evolutions": [],
+  "evolutions": [
+   {
+    "toDex": 424,
+    "level": 30
+   }
+  ],
   "milestones": [
    {
     "level": 5,
@@ -7868,6 +7931,10 @@
     "level": 20,
     "effect": "ADD_REROLL",
     "amount": 1
+   },
+   {
+    "level": 30,
+    "effect": "EVOLVE"
    }
   ],
   "notes": "BST 360"
@@ -7963,7 +8030,12 @@
   ],
   "rerolls": 1,
   "catchValue": 4,
-  "evolutions": [],
+  "evolutions": [
+   {
+    "toDex": 469,
+    "level": 30
+   }
+  ],
   "milestones": [
    {
     "level": 5,
@@ -7984,6 +8056,10 @@
     "level": 20,
     "effect": "ADD_REROLL",
     "amount": 1
+   },
+   {
+    "level": 30,
+    "effect": "EVOLVE"
    }
   ],
   "notes": "BST 390"
@@ -8178,7 +8254,13 @@
   ],
   "rerolls": 1,
   "catchValue": 6,
-  "evolutions": [],
+  "evolutions": [
+   {
+    "toDex": 430,
+    "level": null,
+    "item": "dusk-stone"
+   }
+  ],
   "milestones": [
    {
     "level": 5,
@@ -8270,7 +8352,13 @@
   ],
   "rerolls": 1,
   "catchValue": 5,
-  "evolutions": [],
+  "evolutions": [
+   {
+    "toDex": 429,
+    "level": null,
+    "item": "dusk-stone"
+   }
+  ],
   "milestones": [
    {
     "level": 5,
@@ -8585,7 +8673,13 @@
   ],
   "rerolls": 1,
   "catchValue": 5,
-  "evolutions": [],
+  "evolutions": [
+   {
+    "toDex": 472,
+    "level": null,
+    "item": "razor-fang"
+   }
+  ],
   "milestones": [
    {
     "level": 5,
@@ -8980,7 +9074,13 @@
   ],
   "rerolls": 1,
   "catchValue": 5,
-  "evolutions": [],
+  "evolutions": [
+   {
+    "toDex": 461,
+    "level": null,
+    "item": "razor-claw"
+   }
+  ],
   "milestones": [
    {
     "level": 5,
@@ -9239,7 +9339,12 @@
   ],
   "rerolls": 3,
   "catchValue": 4,
-  "evolutions": [],
+  "evolutions": [
+   {
+    "toDex": 473,
+    "level": 30
+   }
+  ],
   "milestones": [
    {
     "level": 36,
@@ -9260,6 +9365,10 @@
     "level": 50,
     "effect": "ADD_REROLL",
     "amount": 1
+   },
+   {
+    "level": 30,
+    "effect": "EVOLVE"
    }
   ],
   "notes": "BST 450"
@@ -9798,7 +9907,13 @@
   ],
   "rerolls": 3,
   "catchValue": 5,
-  "evolutions": [],
+  "evolutions": [
+   {
+    "toDex": 474,
+    "level": null,
+    "item": "dubious-disc"
+   }
+  ],
   "milestones": [
    {
     "level": 36,
@@ -11710,6 +11825,11 @@
    {
     "toDex": 282,
     "level": 30
+   },
+   {
+    "toDex": 475,
+    "level": null,
+    "item": "dawn-stone"
    }
   ],
   "milestones": [
@@ -12446,7 +12566,13 @@
   ],
   "rerolls": 1,
   "catchValue": 1,
-  "evolutions": [],
+  "evolutions": [
+   {
+    "toDex": 476,
+    "level": null,
+    "item": "thunder-stone"
+   }
+  ],
   "milestones": [
    {
     "level": 5,
@@ -13102,7 +13228,13 @@
   ],
   "rerolls": 1,
   "catchValue": 3,
-  "evolutions": [],
+  "evolutions": [
+   {
+    "toDex": 407,
+    "level": null,
+    "item": "shiny-stone"
+   }
+  ],
   "milestones": [
    {
     "level": 5,
@@ -14999,7 +15131,13 @@
   ],
   "rerolls": 3,
   "catchValue": 4,
-  "evolutions": [],
+  "evolutions": [
+   {
+    "toDex": 477,
+    "level": null,
+    "item": "reaper-cloth"
+   }
+  ],
   "milestones": [
    {
     "level": 36,
@@ -15272,6 +15410,11 @@
    {
     "toDex": 362,
     "level": 42
+   },
+   {
+    "toDex": 478,
+    "level": null,
+    "item": "dawn-stone"
    }
   ],
   "milestones": [
@@ -16198,5 +16341,4368 @@
   "evolutions": [],
   "milestones": [],
   "notes": "BST 600"
+ },
+ {
+  "dex": 387,
+  "name": "Turtwig",
+  "type1": "grass",
+  "type2": null,
+  "baseHp": 12,
+  "maxHp": 251,
+  "speed": 3,
+  "spriteUrl": "/pokemon/387_front.png",
+  "dice": [
+   {
+    "type": "grass",
+    "count": 1
+   }
+  ],
+  "rerolls": 1,
+  "catchValue": 5,
+  "evolutions": [
+   {
+    "toDex": 388,
+    "level": 18
+   }
+  ],
+  "milestones": [
+   {
+    "level": 5,
+    "effect": "ADD_DIE",
+    "dieType": "base"
+   },
+   {
+    "level": 5,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   },
+   {
+    "level": 18,
+    "effect": "EVOLVE"
+   }
+  ],
+  "notes": "BST 318"
+ },
+ {
+  "dex": 388,
+  "name": "Grotle",
+  "type1": "grass",
+  "type2": null,
+  "baseHp": 12,
+  "maxHp": 291,
+  "speed": 3,
+  "spriteUrl": "/pokemon/388_front.png",
+  "dice": [
+   {
+    "type": "grass",
+    "count": 2
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 5,
+  "evolutions": [
+   {
+    "toDex": 389,
+    "level": 32
+   }
+  ],
+  "milestones": [
+   {
+    "level": 32,
+    "effect": "EVOLVE"
+   }
+  ],
+  "notes": "BST 405"
+ },
+ {
+  "dex": 389,
+  "name": "Torterra",
+  "type1": "grass",
+  "type2": "ground",
+  "baseHp": 13,
+  "maxHp": 331,
+  "speed": 5,
+  "spriteUrl": "/pokemon/389_front.png",
+  "dice": [
+   {
+    "type": "grass",
+    "count": 1
+   },
+   {
+    "type": "ground",
+    "count": 1
+   },
+   {
+    "type": "base",
+    "count": 2
+   }
+  ],
+  "rerolls": 4,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [
+   {
+    "level": 50,
+    "effect": "ADD_DIE",
+    "dieType": "grass"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   }
+  ],
+  "notes": "BST 525"
+ },
+ {
+  "dex": 390,
+  "name": "Chimchar",
+  "type1": "fire",
+  "type2": null,
+  "baseHp": 12,
+  "maxHp": 229,
+  "speed": 6,
+  "spriteUrl": "/pokemon/390_front.png",
+  "dice": [
+   {
+    "type": "fire",
+    "count": 1
+   }
+  ],
+  "rerolls": 1,
+  "catchValue": 5,
+  "evolutions": [
+   {
+    "toDex": 391,
+    "level": 14
+   }
+  ],
+  "milestones": [
+   {
+    "level": 5,
+    "effect": "ADD_DIE",
+    "dieType": "base"
+   },
+   {
+    "level": 5,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   },
+   {
+    "level": 14,
+    "effect": "EVOLVE"
+   }
+  ],
+  "notes": "BST 309"
+ },
+ {
+  "dex": 391,
+  "name": "Monferno",
+  "type1": "fire",
+  "type2": "fighting",
+  "baseHp": 12,
+  "maxHp": 269,
+  "speed": 8,
+  "spriteUrl": "/pokemon/391_front.png",
+  "dice": [
+   {
+    "type": "fire",
+    "count": 1
+   },
+   {
+    "type": "fighting",
+    "count": 1
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 5,
+  "evolutions": [
+   {
+    "toDex": 392,
+    "level": 36
+   }
+  ],
+  "milestones": [
+   {
+    "level": 36,
+    "effect": "EVOLVE"
+   }
+  ],
+  "notes": "BST 405"
+ },
+ {
+  "dex": 392,
+  "name": "Infernape",
+  "type1": "fire",
+  "type2": "fighting",
+  "baseHp": 12,
+  "maxHp": 293,
+  "speed": 10,
+  "spriteUrl": "/pokemon/392_front.png",
+  "dice": [
+   {
+    "type": "fire",
+    "count": 1
+   },
+   {
+    "type": "fighting",
+    "count": 1
+   },
+   {
+    "type": "base",
+    "count": 2
+   }
+  ],
+  "rerolls": 4,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [
+   {
+    "level": 50,
+    "effect": "ADD_DIE",
+    "dieType": "fire"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   }
+  ],
+  "notes": "BST 534"
+ },
+ {
+  "dex": 393,
+  "name": "Piplup",
+  "type1": "water",
+  "type2": null,
+  "baseHp": 12,
+  "maxHp": 247,
+  "speed": 4,
+  "spriteUrl": "/pokemon/393_front.png",
+  "dice": [
+   {
+    "type": "water",
+    "count": 1
+   }
+  ],
+  "rerolls": 1,
+  "catchValue": 5,
+  "evolutions": [
+   {
+    "toDex": 394,
+    "level": 16
+   }
+  ],
+  "milestones": [
+   {
+    "level": 5,
+    "effect": "ADD_DIE",
+    "dieType": "base"
+   },
+   {
+    "level": 5,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   },
+   {
+    "level": 16,
+    "effect": "EVOLVE"
+   }
+  ],
+  "notes": "BST 314"
+ },
+ {
+  "dex": 394,
+  "name": "Prinplup",
+  "type1": "water",
+  "type2": null,
+  "baseHp": 12,
+  "maxHp": 269,
+  "speed": 5,
+  "spriteUrl": "/pokemon/394_front.png",
+  "dice": [
+   {
+    "type": "water",
+    "count": 2
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 5,
+  "evolutions": [
+   {
+    "toDex": 395,
+    "level": 36
+   }
+  ],
+  "milestones": [
+   {
+    "level": 36,
+    "effect": "EVOLVE"
+   }
+  ],
+  "notes": "BST 405"
+ },
+ {
+  "dex": 395,
+  "name": "Empoleon",
+  "type1": "water",
+  "type2": "steel",
+  "baseHp": 12,
+  "maxHp": 309,
+  "speed": 6,
+  "spriteUrl": "/pokemon/395_front.png",
+  "dice": [
+   {
+    "type": "water",
+    "count": 1
+   },
+   {
+    "type": "steel",
+    "count": 1
+   },
+   {
+    "type": "base",
+    "count": 2
+   }
+  ],
+  "rerolls": 4,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [
+   {
+    "level": 50,
+    "effect": "ADD_DIE",
+    "dieType": "water"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   }
+  ],
+  "notes": "BST 530"
+ },
+ {
+  "dex": 396,
+  "name": "Starly",
+  "type1": "normal",
+  "type2": "flying",
+  "baseHp": 12,
+  "maxHp": 221,
+  "speed": 6,
+  "spriteUrl": "/pokemon/396_front.png",
+  "dice": [
+   {
+    "type": "normal",
+    "count": 1
+   }
+  ],
+  "rerolls": 1,
+  "catchValue": 1,
+  "evolutions": [
+   {
+    "toDex": 397,
+    "level": 14
+   }
+  ],
+  "milestones": [
+   {
+    "level": 8,
+    "effect": "ADD_DIE",
+    "dieType": "base"
+   },
+   {
+    "level": 8,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   },
+   {
+    "level": 14,
+    "effect": "EVOLVE"
+   }
+  ],
+  "notes": "BST 245"
+ },
+ {
+  "dex": 397,
+  "name": "Staravia",
+  "type1": "normal",
+  "type2": "flying",
+  "baseHp": 12,
+  "maxHp": 251,
+  "speed": 8,
+  "spriteUrl": "/pokemon/397_front.png",
+  "dice": [
+   {
+    "type": "normal",
+    "count": 1
+   },
+   {
+    "type": "flying",
+    "count": 1
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 3,
+  "evolutions": [
+   {
+    "toDex": 398,
+    "level": 34
+   }
+  ],
+  "milestones": [
+   {
+    "level": 34,
+    "effect": "EVOLVE"
+   }
+  ],
+  "notes": "BST 340"
+ },
+ {
+  "dex": 398,
+  "name": "Staraptor",
+  "type1": "normal",
+  "type2": "flying",
+  "baseHp": 13,
+  "maxHp": 311,
+  "speed": 10,
+  "spriteUrl": "/pokemon/398_front.png",
+  "dice": [
+   {
+    "type": "normal",
+    "count": 1
+   },
+   {
+    "type": "flying",
+    "count": 1
+   },
+   {
+    "type": "base",
+    "count": 2
+   }
+  ],
+  "rerolls": 4,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [
+   {
+    "level": 50,
+    "effect": "ADD_DIE",
+    "dieType": "normal"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   }
+  ],
+  "notes": "BST 485"
+ },
+ {
+  "dex": 399,
+  "name": "Bidoof",
+  "type1": "normal",
+  "type2": null,
+  "baseHp": 12,
+  "maxHp": 259,
+  "speed": 3,
+  "spriteUrl": "/pokemon/399_front.png",
+  "dice": [
+   {
+    "type": "normal",
+    "count": 1
+   }
+  ],
+  "rerolls": 1,
+  "catchValue": 1,
+  "evolutions": [
+   {
+    "toDex": 400,
+    "level": 15
+   }
+  ],
+  "milestones": [
+   {
+    "level": 8,
+    "effect": "ADD_DIE",
+    "dieType": "base"
+   },
+   {
+    "level": 8,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   },
+   {
+    "level": 15,
+    "effect": "EVOLVE"
+   }
+  ],
+  "notes": "BST 250"
+ },
+ {
+  "dex": 400,
+  "name": "Bibarel",
+  "type1": "normal",
+  "type2": "water",
+  "baseHp": 12,
+  "maxHp": 299,
+  "speed": 7,
+  "spriteUrl": "/pokemon/400_front.png",
+  "dice": [
+   {
+    "type": "normal",
+    "count": 1
+   },
+   {
+    "type": "water",
+    "count": 1
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 3,
+  "evolutions": [],
+  "milestones": [
+   {
+    "level": 36,
+    "effect": "ADD_DIE",
+    "dieType": "base"
+   },
+   {
+    "level": 36,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   }
+  ],
+  "notes": "BST 410"
+ },
+ {
+  "dex": 401,
+  "name": "Kricketot",
+  "type1": "bug",
+  "type2": null,
+  "baseHp": 12,
+  "maxHp": 215,
+  "speed": 2,
+  "spriteUrl": "/pokemon/401_front.png",
+  "dice": [
+   {
+    "type": "bug",
+    "count": 1
+   }
+  ],
+  "rerolls": 1,
+  "catchValue": 1,
+  "evolutions": [
+   {
+    "toDex": 402,
+    "level": 10
+   }
+  ],
+  "milestones": [
+   {
+    "level": 8,
+    "effect": "ADD_DIE",
+    "dieType": "base"
+   },
+   {
+    "level": 8,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   },
+   {
+    "level": 10,
+    "effect": "EVOLVE"
+   }
+  ],
+  "notes": "BST 194"
+ },
+ {
+  "dex": 402,
+  "name": "Kricketune",
+  "type1": "bug",
+  "type2": null,
+  "baseHp": 12,
+  "maxHp": 295,
+  "speed": 6,
+  "spriteUrl": "/pokemon/402_front.png",
+  "dice": [
+   {
+    "type": "bug",
+    "count": 2
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [
+   {
+    "level": 36,
+    "effect": "ADD_DIE",
+    "dieType": "base"
+   },
+   {
+    "level": 36,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   }
+  ],
+  "notes": "BST 384"
+ },
+ {
+  "dex": 403,
+  "name": "Shinx",
+  "type1": "electric",
+  "type2": null,
+  "baseHp": 12,
+  "maxHp": 231,
+  "speed": 4,
+  "spriteUrl": "/pokemon/403_front.png",
+  "dice": [
+   {
+    "type": "electric",
+    "count": 1
+   }
+  ],
+  "rerolls": 1,
+  "catchValue": 2,
+  "evolutions": [
+   {
+    "toDex": 404,
+    "level": 15
+   }
+  ],
+  "milestones": [
+   {
+    "level": 7,
+    "effect": "ADD_DIE",
+    "dieType": "base"
+   },
+   {
+    "level": 7,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   },
+   {
+    "level": 15,
+    "effect": "EVOLVE"
+   }
+  ],
+  "notes": "BST 263"
+ },
+ {
+  "dex": 404,
+  "name": "Luxio",
+  "type1": "electric",
+  "type2": null,
+  "baseHp": 12,
+  "maxHp": 261,
+  "speed": 6,
+  "spriteUrl": "/pokemon/404_front.png",
+  "dice": [
+   {
+    "type": "electric",
+    "count": 2
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 3,
+  "evolutions": [
+   {
+    "toDex": 405,
+    "level": 30
+   }
+  ],
+  "milestones": [
+   {
+    "level": 30,
+    "effect": "EVOLVE"
+   }
+  ],
+  "notes": "BST 363"
+ },
+ {
+  "dex": 405,
+  "name": "Luxray",
+  "type1": "electric",
+  "type2": null,
+  "baseHp": 12,
+  "maxHp": 301,
+  "speed": 7,
+  "spriteUrl": "/pokemon/405_front.png",
+  "dice": [
+   {
+    "type": "electric",
+    "count": 2
+   },
+   {
+    "type": "base",
+    "count": 2
+   }
+  ],
+  "rerolls": 4,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [
+   {
+    "level": 50,
+    "effect": "ADD_DIE",
+    "dieType": "electric"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   }
+  ],
+  "notes": "BST 523"
+ },
+ {
+  "dex": 406,
+  "name": "Budew",
+  "type1": "grass",
+  "type2": "poison",
+  "baseHp": 12,
+  "maxHp": 221,
+  "speed": 5,
+  "spriteUrl": "/pokemon/406_front.png",
+  "dice": [
+   {
+    "type": "grass",
+    "count": 1
+   }
+  ],
+  "rerolls": 1,
+  "catchValue": 1,
+  "evolutions": [
+   {
+    "toDex": 315,
+    "level": 30
+   }
+  ],
+  "milestones": [
+   {
+    "level": 6,
+    "effect": "ADD_DIE",
+    "dieType": "base"
+   },
+   {
+    "level": 6,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   },
+   {
+    "level": 30,
+    "effect": "EVOLVE"
+   }
+  ],
+  "notes": "BST 280 · → #315: level-up → assigned Lv.30"
+ },
+ {
+  "dex": 407,
+  "name": "Roserade",
+  "type1": "grass",
+  "type2": "poison",
+  "baseHp": 12,
+  "maxHp": 261,
+  "speed": 9,
+  "spriteUrl": "/pokemon/407_front.png",
+  "dice": [
+   {
+    "type": "grass",
+    "count": 1
+   },
+   {
+    "type": "poison",
+    "count": 1
+   },
+   {
+    "type": "base",
+    "count": 2
+   }
+  ],
+  "rerolls": 4,
+  "catchValue": 4,
+  "evolutions": [],
+  "milestones": [
+   {
+    "level": 50,
+    "effect": "ADD_DIE",
+    "dieType": "grass"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   }
+  ],
+  "notes": "BST 515"
+ },
+ {
+  "dex": 408,
+  "name": "Cranidos",
+  "type1": "rock",
+  "type2": null,
+  "baseHp": 12,
+  "maxHp": 275,
+  "speed": 5,
+  "spriteUrl": "/pokemon/408_front.png",
+  "dice": [
+   {
+    "type": "rock",
+    "count": 1
+   }
+  ],
+  "rerolls": 1,
+  "catchValue": 5,
+  "evolutions": [
+   {
+    "toDex": 409,
+    "level": 30
+   }
+  ],
+  "milestones": [
+   {
+    "level": 5,
+    "effect": "ADD_DIE",
+    "dieType": "base"
+   },
+   {
+    "level": 5,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   },
+   {
+    "level": 30,
+    "effect": "EVOLVE"
+   }
+  ],
+  "notes": "BST 350"
+ },
+ {
+  "dex": 409,
+  "name": "Rampardos",
+  "type1": "rock",
+  "type2": null,
+  "baseHp": 13,
+  "maxHp": 335,
+  "speed": 5,
+  "spriteUrl": "/pokemon/409_front.png",
+  "dice": [
+   {
+    "type": "rock",
+    "count": 2
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [
+   {
+    "level": 36,
+    "effect": "ADD_DIE",
+    "dieType": "base"
+   },
+   {
+    "level": 36,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   },
+   {
+    "level": 50,
+    "effect": "ADD_DIE",
+    "dieType": "rock"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   }
+  ],
+  "notes": "BST 495"
+ },
+ {
+  "dex": 410,
+  "name": "Shieldon",
+  "type1": "rock",
+  "type2": "steel",
+  "baseHp": 11,
+  "maxHp": 201,
+  "speed": 3,
+  "spriteUrl": "/pokemon/410_front.png",
+  "dice": [
+   {
+    "type": "rock",
+    "count": 1
+   }
+  ],
+  "rerolls": 1,
+  "catchValue": 5,
+  "evolutions": [
+   {
+    "toDex": 411,
+    "level": 30
+   }
+  ],
+  "milestones": [
+   {
+    "level": 5,
+    "effect": "ADD_DIE",
+    "dieType": "base"
+   },
+   {
+    "level": 5,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   },
+   {
+    "level": 30,
+    "effect": "EVOLVE"
+   }
+  ],
+  "notes": "BST 350"
+ },
+ {
+  "dex": 411,
+  "name": "Bastiodon",
+  "type1": "rock",
+  "type2": "steel",
+  "baseHp": 12,
+  "maxHp": 261,
+  "speed": 3,
+  "spriteUrl": "/pokemon/411_front.png",
+  "dice": [
+   {
+    "type": "rock",
+    "count": 1
+   },
+   {
+    "type": "steel",
+    "count": 1
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [
+   {
+    "level": 36,
+    "effect": "ADD_DIE",
+    "dieType": "base"
+   },
+   {
+    "level": 36,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   },
+   {
+    "level": 50,
+    "effect": "ADD_DIE",
+    "dieType": "rock"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   }
+  ],
+  "notes": "BST 495"
+ },
+ {
+  "dex": 412,
+  "name": "Burmy",
+  "type1": "bug",
+  "type2": null,
+  "baseHp": 12,
+  "maxHp": 221,
+  "speed": 3,
+  "spriteUrl": "/pokemon/412_front.png",
+  "dice": [
+   {
+    "type": "bug",
+    "count": 1
+   }
+  ],
+  "rerolls": 1,
+  "catchValue": 3,
+  "evolutions": [
+   {
+    "toDex": 413,
+    "level": 20
+   },
+   {
+    "toDex": 414,
+    "level": 20
+   }
+  ],
+  "milestones": [
+   {
+    "level": 8,
+    "effect": "ADD_DIE",
+    "dieType": "base"
+   },
+   {
+    "level": 8,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   },
+   {
+    "level": 20,
+    "effect": "EVOLVE"
+   }
+  ],
+  "notes": "BST 224"
+ },
+ {
+  "dex": 413,
+  "name": "Wormadam",
+  "type1": "bug",
+  "type2": "grass",
+  "baseHp": 12,
+  "maxHp": 261,
+  "speed": 3,
+  "spriteUrl": "/pokemon/413_front.png",
+  "dice": [
+   {
+    "type": "bug",
+    "count": 1
+   },
+   {
+    "type": "grass",
+    "count": 1
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [
+   {
+    "level": 36,
+    "effect": "ADD_DIE",
+    "dieType": "base"
+   },
+   {
+    "level": 36,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   }
+  ],
+  "notes": "BST 424"
+ },
+ {
+  "dex": 414,
+  "name": "Mothim",
+  "type1": "bug",
+  "type2": "flying",
+  "baseHp": 12,
+  "maxHp": 281,
+  "speed": 6,
+  "spriteUrl": "/pokemon/414_front.png",
+  "dice": [
+   {
+    "type": "bug",
+    "count": 1
+   },
+   {
+    "type": "flying",
+    "count": 1
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [
+   {
+    "level": 36,
+    "effect": "ADD_DIE",
+    "dieType": "base"
+   },
+   {
+    "level": 36,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   }
+  ],
+  "notes": "BST 424"
+ },
+ {
+  "dex": 415,
+  "name": "Combee",
+  "type1": "bug",
+  "type2": "flying",
+  "baseHp": 11,
+  "maxHp": 201,
+  "speed": 7,
+  "spriteUrl": "/pokemon/415_front.png",
+  "dice": [
+   {
+    "type": "bug",
+    "count": 1
+   }
+  ],
+  "rerolls": 1,
+  "catchValue": 3,
+  "evolutions": [
+   {
+    "toDex": 416,
+    "level": 21
+   }
+  ],
+  "milestones": [
+   {
+    "level": 8,
+    "effect": "ADD_DIE",
+    "dieType": "base"
+   },
+   {
+    "level": 8,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   },
+   {
+    "level": 21,
+    "effect": "EVOLVE"
+   }
+  ],
+  "notes": "BST 244"
+ },
+ {
+  "dex": 416,
+  "name": "Vespiquen",
+  "type1": "bug",
+  "type2": "flying",
+  "baseHp": 12,
+  "maxHp": 281,
+  "speed": 4,
+  "spriteUrl": "/pokemon/416_front.png",
+  "dice": [
+   {
+    "type": "bug",
+    "count": 1
+   },
+   {
+    "type": "flying",
+    "count": 1
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [
+   {
+    "level": 36,
+    "effect": "ADD_DIE",
+    "dieType": "base"
+   },
+   {
+    "level": 36,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   },
+   {
+    "level": 50,
+    "effect": "ADD_DIE",
+    "dieType": "bug"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   }
+  ],
+  "notes": "BST 474"
+ },
+ {
+  "dex": 417,
+  "name": "Pachirisu",
+  "type1": "electric",
+  "type2": null,
+  "baseHp": 12,
+  "maxHp": 261,
+  "speed": 9,
+  "spriteUrl": "/pokemon/417_front.png",
+  "dice": [
+   {
+    "type": "electric",
+    "count": 1
+   }
+  ],
+  "rerolls": 1,
+  "catchValue": 2,
+  "evolutions": [],
+  "milestones": [
+   {
+    "level": 5,
+    "effect": "ADD_DIE",
+    "dieType": "base"
+   },
+   {
+    "level": 5,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   },
+   {
+    "level": 20,
+    "effect": "ADD_DIE",
+    "dieType": "electric"
+   },
+   {
+    "level": 20,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   }
+  ],
+  "notes": "BST 405"
+ },
+ {
+  "dex": 418,
+  "name": "Buizel",
+  "type1": "water",
+  "type2": null,
+  "baseHp": 12,
+  "maxHp": 251,
+  "speed": 8,
+  "spriteUrl": "/pokemon/418_front.png",
+  "dice": [
+   {
+    "type": "water",
+    "count": 1
+   }
+  ],
+  "rerolls": 1,
+  "catchValue": 2,
+  "evolutions": [
+   {
+    "toDex": 419,
+    "level": 26
+   }
+  ],
+  "milestones": [
+   {
+    "level": 5,
+    "effect": "ADD_DIE",
+    "dieType": "base"
+   },
+   {
+    "level": 5,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   },
+   {
+    "level": 26,
+    "effect": "EVOLVE"
+   }
+  ],
+  "notes": "BST 330"
+ },
+ {
+  "dex": 419,
+  "name": "Floatzel",
+  "type1": "water",
+  "type2": null,
+  "baseHp": 13,
+  "maxHp": 311,
+  "speed": 11,
+  "spriteUrl": "/pokemon/419_front.png",
+  "dice": [
+   {
+    "type": "water",
+    "count": 2
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 4,
+  "evolutions": [],
+  "milestones": [
+   {
+    "level": 36,
+    "effect": "ADD_DIE",
+    "dieType": "base"
+   },
+   {
+    "level": 36,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   },
+   {
+    "level": 50,
+    "effect": "ADD_DIE",
+    "dieType": "water"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   }
+  ],
+  "notes": "BST 495"
+ },
+ {
+  "dex": 420,
+  "name": "Cherubi",
+  "type1": "grass",
+  "type2": null,
+  "baseHp": 12,
+  "maxHp": 231,
+  "speed": 3,
+  "spriteUrl": "/pokemon/420_front.png",
+  "dice": [
+   {
+    "type": "grass",
+    "count": 1
+   }
+  ],
+  "rerolls": 1,
+  "catchValue": 2,
+  "evolutions": [
+   {
+    "toDex": 421,
+    "level": 25
+   }
+  ],
+  "milestones": [
+   {
+    "level": 7,
+    "effect": "ADD_DIE",
+    "dieType": "base"
+   },
+   {
+    "level": 7,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   },
+   {
+    "level": 25,
+    "effect": "EVOLVE"
+   }
+  ],
+  "notes": "BST 275"
+ },
+ {
+  "dex": 421,
+  "name": "Cherrim",
+  "type1": "grass",
+  "type2": null,
+  "baseHp": 12,
+  "maxHp": 281,
+  "speed": 8,
+  "spriteUrl": "/pokemon/421_front.png",
+  "dice": [
+   {
+    "type": "grass",
+    "count": 2
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 4,
+  "evolutions": [],
+  "milestones": [
+   {
+    "level": 36,
+    "effect": "ADD_DIE",
+    "dieType": "base"
+   },
+   {
+    "level": 36,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   },
+   {
+    "level": 50,
+    "effect": "ADD_DIE",
+    "dieType": "grass"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   }
+  ],
+  "notes": "BST 450"
+ },
+ {
+  "dex": 422,
+  "name": "Shellos",
+  "type1": "water",
+  "type2": null,
+  "baseHp": 12,
+  "maxHp": 293,
+  "speed": 3,
+  "spriteUrl": "/pokemon/422_front.png",
+  "dice": [
+   {
+    "type": "water",
+    "count": 1
+   }
+  ],
+  "rerolls": 1,
+  "catchValue": 2,
+  "evolutions": [
+   {
+    "toDex": 423,
+    "level": 30
+   }
+  ],
+  "milestones": [
+   {
+    "level": 5,
+    "effect": "ADD_DIE",
+    "dieType": "base"
+   },
+   {
+    "level": 5,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   },
+   {
+    "level": 30,
+    "effect": "EVOLVE"
+   }
+  ],
+  "notes": "BST 325"
+ },
+ {
+  "dex": 423,
+  "name": "Gastrodon",
+  "type1": "water",
+  "type2": "ground",
+  "baseHp": 13,
+  "maxHp": 363,
+  "speed": 3,
+  "spriteUrl": "/pokemon/423_front.png",
+  "dice": [
+   {
+    "type": "water",
+    "count": 1
+   },
+   {
+    "type": "ground",
+    "count": 1
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 4,
+  "evolutions": [],
+  "milestones": [
+   {
+    "level": 36,
+    "effect": "ADD_DIE",
+    "dieType": "base"
+   },
+   {
+    "level": 36,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   },
+   {
+    "level": 50,
+    "effect": "ADD_DIE",
+    "dieType": "water"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   }
+  ],
+  "notes": "BST 475"
+ },
+ {
+  "dex": 424,
+  "name": "Ambipom",
+  "type1": "normal",
+  "type2": null,
+  "baseHp": 12,
+  "maxHp": 291,
+  "speed": 11,
+  "spriteUrl": "/pokemon/424_front.png",
+  "dice": [
+   {
+    "type": "normal",
+    "count": 2
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [
+   {
+    "level": 36,
+    "effect": "ADD_DIE",
+    "dieType": "base"
+   },
+   {
+    "level": 36,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   },
+   {
+    "level": 50,
+    "effect": "ADD_DIE",
+    "dieType": "normal"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   }
+  ],
+  "notes": "BST 482"
+ },
+ {
+  "dex": 425,
+  "name": "Drifloon",
+  "type1": "ghost",
+  "type2": "flying",
+  "baseHp": 13,
+  "maxHp": 321,
+  "speed": 7,
+  "spriteUrl": "/pokemon/425_front.png",
+  "dice": [
+   {
+    "type": "ghost",
+    "count": 1
+   }
+  ],
+  "rerolls": 1,
+  "catchValue": 3,
+  "evolutions": [
+   {
+    "toDex": 426,
+    "level": 28
+   }
+  ],
+  "milestones": [
+   {
+    "level": 5,
+    "effect": "ADD_DIE",
+    "dieType": "base"
+   },
+   {
+    "level": 5,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   },
+   {
+    "level": 28,
+    "effect": "EVOLVE"
+   }
+  ],
+  "notes": "BST 348"
+ },
+ {
+  "dex": 426,
+  "name": "Drifblim",
+  "type1": "ghost",
+  "type2": "flying",
+  "baseHp": 14,
+  "maxHp": 441,
+  "speed": 8,
+  "spriteUrl": "/pokemon/426_front.png",
+  "dice": [
+   {
+    "type": "ghost",
+    "count": 1
+   },
+   {
+    "type": "flying",
+    "count": 1
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [
+   {
+    "level": 36,
+    "effect": "ADD_DIE",
+    "dieType": "base"
+   },
+   {
+    "level": 36,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   },
+   {
+    "level": 50,
+    "effect": "ADD_DIE",
+    "dieType": "ghost"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   }
+  ],
+  "notes": "BST 498"
+ },
+ {
+  "dex": 427,
+  "name": "Buneary",
+  "type1": "normal",
+  "type2": null,
+  "baseHp": 12,
+  "maxHp": 251,
+  "speed": 8,
+  "spriteUrl": "/pokemon/427_front.png",
+  "dice": [
+   {
+    "type": "normal",
+    "count": 1
+   }
+  ],
+  "rerolls": 1,
+  "catchValue": 2,
+  "evolutions": [
+   {
+    "toDex": 428,
+    "level": 30
+   }
+  ],
+  "milestones": [
+   {
+    "level": 5,
+    "effect": "ADD_DIE",
+    "dieType": "base"
+   },
+   {
+    "level": 5,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   },
+   {
+    "level": 30,
+    "effect": "EVOLVE"
+   }
+  ],
+  "notes": "BST 350 · → #428: level-up → assigned Lv.30"
+ },
+ {
+  "dex": 428,
+  "name": "Lopunny",
+  "type1": "normal",
+  "type2": null,
+  "baseHp": 12,
+  "maxHp": 271,
+  "speed": 10,
+  "spriteUrl": "/pokemon/428_front.png",
+  "dice": [
+   {
+    "type": "normal",
+    "count": 2
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [
+   {
+    "level": 36,
+    "effect": "ADD_DIE",
+    "dieType": "base"
+   },
+   {
+    "level": 36,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   },
+   {
+    "level": 50,
+    "effect": "ADD_DIE",
+    "dieType": "normal"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   }
+  ],
+  "notes": "BST 480"
+ },
+ {
+  "dex": 429,
+  "name": "Mismagius",
+  "type1": "ghost",
+  "type2": null,
+  "baseHp": 12,
+  "maxHp": 261,
+  "speed": 10,
+  "spriteUrl": "/pokemon/429_front.png",
+  "dice": [
+   {
+    "type": "ghost",
+    "count": 2
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [
+   {
+    "level": 36,
+    "effect": "ADD_DIE",
+    "dieType": "base"
+   },
+   {
+    "level": 36,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   },
+   {
+    "level": 50,
+    "effect": "ADD_DIE",
+    "dieType": "ghost"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   }
+  ],
+  "notes": "BST 495"
+ },
+ {
+  "dex": 430,
+  "name": "Honchkrow",
+  "type1": "dark",
+  "type2": "flying",
+  "baseHp": 13,
+  "maxHp": 341,
+  "speed": 7,
+  "spriteUrl": "/pokemon/430_front.png",
+  "dice": [
+   {
+    "type": "dark",
+    "count": 1
+   },
+   {
+    "type": "flying",
+    "count": 1
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 6,
+  "evolutions": [],
+  "milestones": [
+   {
+    "level": 36,
+    "effect": "ADD_DIE",
+    "dieType": "base"
+   },
+   {
+    "level": 36,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   },
+   {
+    "level": 50,
+    "effect": "ADD_DIE",
+    "dieType": "dark"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   }
+  ],
+  "notes": "BST 505"
+ },
+ {
+  "dex": 431,
+  "name": "Glameow",
+  "type1": "normal",
+  "type2": null,
+  "baseHp": 12,
+  "maxHp": 239,
+  "speed": 8,
+  "spriteUrl": "/pokemon/431_front.png",
+  "dice": [
+   {
+    "type": "normal",
+    "count": 1
+   }
+  ],
+  "rerolls": 1,
+  "catchValue": 2,
+  "evolutions": [
+   {
+    "toDex": 432,
+    "level": 38
+   }
+  ],
+  "milestones": [
+   {
+    "level": 5,
+    "effect": "ADD_DIE",
+    "dieType": "base"
+   },
+   {
+    "level": 5,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   },
+   {
+    "level": 38,
+    "effect": "EVOLVE"
+   }
+  ],
+  "notes": "BST 310"
+ },
+ {
+  "dex": 432,
+  "name": "Purugly",
+  "type1": "normal",
+  "type2": null,
+  "baseHp": 12,
+  "maxHp": 283,
+  "speed": 11,
+  "spriteUrl": "/pokemon/432_front.png",
+  "dice": [
+   {
+    "type": "normal",
+    "count": 2
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 4,
+  "evolutions": [],
+  "milestones": [
+   {
+    "level": 36,
+    "effect": "ADD_DIE",
+    "dieType": "base"
+   },
+   {
+    "level": 36,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   },
+   {
+    "level": 50,
+    "effect": "ADD_DIE",
+    "dieType": "normal"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   }
+  ],
+  "notes": "BST 452"
+ },
+ {
+  "dex": 433,
+  "name": "Chingling",
+  "type1": "psychic",
+  "type2": null,
+  "baseHp": 12,
+  "maxHp": 231,
+  "speed": 4,
+  "spriteUrl": "/pokemon/433_front.png",
+  "dice": [
+   {
+    "type": "psychic",
+    "count": 1
+   }
+  ],
+  "rerolls": 1,
+  "catchValue": 3,
+  "evolutions": [
+   {
+    "toDex": 358,
+    "level": 30
+   }
+  ],
+  "milestones": [
+   {
+    "level": 6,
+    "effect": "ADD_DIE",
+    "dieType": "base"
+   },
+   {
+    "level": 6,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   },
+   {
+    "level": 30,
+    "effect": "EVOLVE"
+   }
+  ],
+  "notes": "BST 285 · → #358: level-up → assigned Lv.30"
+ },
+ {
+  "dex": 434,
+  "name": "Stunky",
+  "type1": "poison",
+  "type2": "dark",
+  "baseHp": 12,
+  "maxHp": 267,
+  "speed": 7,
+  "spriteUrl": "/pokemon/434_front.png",
+  "dice": [
+   {
+    "type": "poison",
+    "count": 1
+   }
+  ],
+  "rerolls": 1,
+  "catchValue": 2,
+  "evolutions": [
+   {
+    "toDex": 435,
+    "level": 34
+   }
+  ],
+  "milestones": [
+   {
+    "level": 5,
+    "effect": "ADD_DIE",
+    "dieType": "base"
+   },
+   {
+    "level": 5,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   },
+   {
+    "level": 34,
+    "effect": "EVOLVE"
+   }
+  ],
+  "notes": "BST 329"
+ },
+ {
+  "dex": 435,
+  "name": "Skuntank",
+  "type1": "poison",
+  "type2": "dark",
+  "baseHp": 13,
+  "maxHp": 347,
+  "speed": 8,
+  "spriteUrl": "/pokemon/435_front.png",
+  "dice": [
+   {
+    "type": "poison",
+    "count": 1
+   },
+   {
+    "type": "dark",
+    "count": 1
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [
+   {
+    "level": 36,
+    "effect": "ADD_DIE",
+    "dieType": "base"
+   },
+   {
+    "level": 36,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   },
+   {
+    "level": 50,
+    "effect": "ADD_DIE",
+    "dieType": "poison"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   }
+  ],
+  "notes": "BST 479"
+ },
+ {
+  "dex": 436,
+  "name": "Bronzor",
+  "type1": "steel",
+  "type2": "psychic",
+  "baseHp": 12,
+  "maxHp": 255,
+  "speed": 2,
+  "spriteUrl": "/pokemon/436_front.png",
+  "dice": [
+   {
+    "type": "steel",
+    "count": 1
+   }
+  ],
+  "rerolls": 1,
+  "catchValue": 1,
+  "evolutions": [
+   {
+    "toDex": 437,
+    "level": 33
+   }
+  ],
+  "milestones": [
+   {
+    "level": 5,
+    "effect": "ADD_DIE",
+    "dieType": "base"
+   },
+   {
+    "level": 5,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   },
+   {
+    "level": 33,
+    "effect": "EVOLVE"
+   }
+  ],
+  "notes": "BST 300"
+ },
+ {
+  "dex": 437,
+  "name": "Bronzong",
+  "type1": "steel",
+  "type2": "psychic",
+  "baseHp": 12,
+  "maxHp": 275,
+  "speed": 3,
+  "spriteUrl": "/pokemon/437_front.png",
+  "dice": [
+   {
+    "type": "steel",
+    "count": 1
+   },
+   {
+    "type": "psychic",
+    "count": 1
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 4,
+  "evolutions": [],
+  "milestones": [
+   {
+    "level": 36,
+    "effect": "ADD_DIE",
+    "dieType": "base"
+   },
+   {
+    "level": 36,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   },
+   {
+    "level": 50,
+    "effect": "ADD_DIE",
+    "dieType": "steel"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   }
+  ],
+  "notes": "BST 500"
+ },
+ {
+  "dex": 438,
+  "name": "Bonsly",
+  "type1": "rock",
+  "type2": null,
+  "baseHp": 12,
+  "maxHp": 241,
+  "speed": 1,
+  "spriteUrl": "/pokemon/438_front.png",
+  "dice": [
+   {
+    "type": "rock",
+    "count": 1
+   }
+  ],
+  "rerolls": 1,
+  "catchValue": 1,
+  "evolutions": [
+   {
+    "toDex": 185,
+    "level": 30
+   }
+  ],
+  "milestones": [
+   {
+    "level": 6,
+    "effect": "ADD_DIE",
+    "dieType": "base"
+   },
+   {
+    "level": 6,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   },
+   {
+    "level": 30,
+    "effect": "EVOLVE"
+   }
+  ],
+  "notes": "BST 290 · → #185: level-up → assigned Lv.30"
+ },
+ {
+  "dex": 439,
+  "name": "Mime Jr.",
+  "type1": "psychic",
+  "type2": "fairy",
+  "baseHp": 11,
+  "maxHp": 181,
+  "speed": 6,
+  "spriteUrl": "/pokemon/439_front.png",
+  "dice": [
+   {
+    "type": "psychic",
+    "count": 1
+   }
+  ],
+  "rerolls": 1,
+  "catchValue": 3,
+  "evolutions": [
+   {
+    "toDex": 122,
+    "level": 30
+   }
+  ],
+  "milestones": [
+   {
+    "level": 5,
+    "effect": "ADD_DIE",
+    "dieType": "base"
+   },
+   {
+    "level": 5,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   },
+   {
+    "level": 30,
+    "effect": "EVOLVE"
+   }
+  ],
+  "notes": "BST 310 · → #122: level-up → assigned Lv.30"
+ },
+ {
+  "dex": 440,
+  "name": "Happiny",
+  "type1": "normal",
+  "type2": null,
+  "baseHp": 13,
+  "maxHp": 341,
+  "speed": 3,
+  "spriteUrl": "/pokemon/440_front.png",
+  "dice": [
+   {
+    "type": "normal",
+    "count": 1
+   }
+  ],
+  "rerolls": 1,
+  "catchValue": 3,
+  "evolutions": [
+   {
+    "toDex": 113,
+    "level": null,
+    "item": "oval-stone"
+   }
+  ],
+  "milestones": [
+   {
+    "level": 8,
+    "effect": "ADD_DIE",
+    "dieType": "base"
+   },
+   {
+    "level": 8,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   }
+  ],
+  "notes": "BST 220 · → #113: oval-stone"
+ },
+ {
+  "dex": 441,
+  "name": "Chatot",
+  "type1": "normal",
+  "type2": "flying",
+  "baseHp": 12,
+  "maxHp": 293,
+  "speed": 9,
+  "spriteUrl": "/pokemon/441_front.png",
+  "dice": [
+   {
+    "type": "normal",
+    "count": 1
+   }
+  ],
+  "rerolls": 1,
+  "catchValue": 6,
+  "evolutions": [],
+  "milestones": [
+   {
+    "level": 5,
+    "effect": "ADD_DIE",
+    "dieType": "base"
+   },
+   {
+    "level": 5,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   },
+   {
+    "level": 20,
+    "effect": "ADD_DIE",
+    "dieType": "flying"
+   },
+   {
+    "level": 20,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   }
+  ],
+  "notes": "BST 411"
+ },
+ {
+  "dex": 442,
+  "name": "Spiritomb",
+  "type1": "ghost",
+  "type2": "dark",
+  "baseHp": 12,
+  "maxHp": 241,
+  "speed": 3,
+  "spriteUrl": "/pokemon/442_front.png",
+  "dice": [
+   {
+    "type": "ghost",
+    "count": 1
+   }
+  ],
+  "rerolls": 1,
+  "catchValue": 4,
+  "evolutions": [],
+  "milestones": [
+   {
+    "level": 5,
+    "effect": "ADD_DIE",
+    "dieType": "base"
+   },
+   {
+    "level": 5,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   },
+   {
+    "level": 20,
+    "effect": "ADD_DIE",
+    "dieType": "dark"
+   },
+   {
+    "level": 20,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   },
+   {
+    "level": 36,
+    "effect": "ADD_DIE",
+    "dieType": "base"
+   },
+   {
+    "level": 36,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   },
+   {
+    "level": 50,
+    "effect": "ADD_DIE",
+    "dieType": "ghost"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   }
+  ],
+  "notes": "BST 485"
+ },
+ {
+  "dex": 443,
+  "name": "Gible",
+  "type1": "dragon",
+  "type2": "ground",
+  "baseHp": 12,
+  "maxHp": 257,
+  "speed": 4,
+  "spriteUrl": "/pokemon/443_front.png",
+  "dice": [
+   {
+    "type": "dragon",
+    "count": 1
+   }
+  ],
+  "rerolls": 1,
+  "catchValue": 5,
+  "evolutions": [
+   {
+    "toDex": 444,
+    "level": 24
+   }
+  ],
+  "milestones": [
+   {
+    "level": 5,
+    "effect": "ADD_DIE",
+    "dieType": "base"
+   },
+   {
+    "level": 5,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   },
+   {
+    "level": 24,
+    "effect": "EVOLVE"
+   }
+  ],
+  "notes": "BST 300"
+ },
+ {
+  "dex": 444,
+  "name": "Gabite",
+  "type1": "dragon",
+  "type2": "ground",
+  "baseHp": 12,
+  "maxHp": 277,
+  "speed": 8,
+  "spriteUrl": "/pokemon/444_front.png",
+  "dice": [
+   {
+    "type": "dragon",
+    "count": 1
+   },
+   {
+    "type": "ground",
+    "count": 1
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 5,
+  "evolutions": [
+   {
+    "toDex": 445,
+    "level": 48
+   }
+  ],
+  "milestones": [
+   {
+    "level": 48,
+    "effect": "EVOLVE"
+   }
+  ],
+  "notes": "BST 410"
+ },
+ {
+  "dex": 445,
+  "name": "Garchomp",
+  "type1": "dragon",
+  "type2": "ground",
+  "baseHp": 13,
+  "maxHp": 357,
+  "speed": 10,
+  "spriteUrl": "/pokemon/445_front.png",
+  "dice": [
+   {
+    "type": "dragon",
+    "count": 1
+   },
+   {
+    "type": "ground",
+    "count": 1
+   },
+   {
+    "type": "base",
+    "count": 2
+   }
+  ],
+  "rerolls": 4,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [
+   {
+    "level": 50,
+    "effect": "ADD_DIE",
+    "dieType": "dragon"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   }
+  ],
+  "notes": "BST 600"
+ },
+ {
+  "dex": 446,
+  "name": "Munchlax",
+  "type1": "normal",
+  "type2": null,
+  "baseHp": 14,
+  "maxHp": 411,
+  "speed": 0,
+  "spriteUrl": "/pokemon/446_front.png",
+  "dice": [
+   {
+    "type": "normal",
+    "count": 1
+   }
+  ],
+  "rerolls": 1,
+  "catchValue": 5,
+  "evolutions": [
+   {
+    "toDex": 143,
+    "level": 30
+   }
+  ],
+  "milestones": [
+   {
+    "level": 5,
+    "effect": "ADD_DIE",
+    "dieType": "base"
+   },
+   {
+    "level": 5,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   },
+   {
+    "level": 30,
+    "effect": "EVOLVE"
+   }
+  ],
+  "notes": "BST 390 · → #143: level-up → assigned Lv.30"
+ },
+ {
+  "dex": 447,
+  "name": "Riolu",
+  "type1": "fighting",
+  "type2": null,
+  "baseHp": 12,
+  "maxHp": 221,
+  "speed": 6,
+  "spriteUrl": "/pokemon/447_front.png",
+  "dice": [
+   {
+    "type": "fighting",
+    "count": 1
+   }
+  ],
+  "rerolls": 1,
+  "catchValue": 4,
+  "evolutions": [
+   {
+    "toDex": 448,
+    "level": 30
+   }
+  ],
+  "milestones": [
+   {
+    "level": 6,
+    "effect": "ADD_DIE",
+    "dieType": "base"
+   },
+   {
+    "level": 6,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   },
+   {
+    "level": 30,
+    "effect": "EVOLVE"
+   }
+  ],
+  "notes": "BST 285 · → #448: level-up → assigned Lv.30"
+ },
+ {
+  "dex": 448,
+  "name": "Lucario",
+  "type1": "fighting",
+  "type2": "steel",
+  "baseHp": 12,
+  "maxHp": 281,
+  "speed": 9,
+  "spriteUrl": "/pokemon/448_front.png",
+  "dice": [
+   {
+    "type": "fighting",
+    "count": 1
+   },
+   {
+    "type": "steel",
+    "count": 1
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [
+   {
+    "level": 36,
+    "effect": "ADD_DIE",
+    "dieType": "base"
+   },
+   {
+    "level": 36,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   },
+   {
+    "level": 50,
+    "effect": "ADD_DIE",
+    "dieType": "fighting"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   }
+  ],
+  "notes": "BST 525"
+ },
+ {
+  "dex": 449,
+  "name": "Hippopotas",
+  "type1": "ground",
+  "type2": null,
+  "baseHp": 12,
+  "maxHp": 277,
+  "speed": 3,
+  "spriteUrl": "/pokemon/449_front.png",
+  "dice": [
+   {
+    "type": "ground",
+    "count": 1
+   }
+  ],
+  "rerolls": 1,
+  "catchValue": 3,
+  "evolutions": [
+   {
+    "toDex": 450,
+    "level": 34
+   }
+  ],
+  "milestones": [
+   {
+    "level": 5,
+    "effect": "ADD_DIE",
+    "dieType": "base"
+   },
+   {
+    "level": 5,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   },
+   {
+    "level": 34,
+    "effect": "EVOLVE"
+   }
+  ],
+  "notes": "BST 330"
+ },
+ {
+  "dex": 450,
+  "name": "Hippowdon",
+  "type1": "ground",
+  "type2": null,
+  "baseHp": 13,
+  "maxHp": 357,
+  "speed": 4,
+  "spriteUrl": "/pokemon/450_front.png",
+  "dice": [
+   {
+    "type": "ground",
+    "count": 2
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [
+   {
+    "level": 36,
+    "effect": "ADD_DIE",
+    "dieType": "base"
+   },
+   {
+    "level": 36,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   },
+   {
+    "level": 50,
+    "effect": "ADD_DIE",
+    "dieType": "ground"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   }
+  ],
+  "notes": "BST 525"
+ },
+ {
+  "dex": 451,
+  "name": "Skorupi",
+  "type1": "poison",
+  "type2": "bug",
+  "baseHp": 12,
+  "maxHp": 221,
+  "speed": 6,
+  "spriteUrl": "/pokemon/451_front.png",
+  "dice": [
+   {
+    "type": "poison",
+    "count": 1
+   }
+  ],
+  "rerolls": 1,
+  "catchValue": 3,
+  "evolutions": [
+   {
+    "toDex": 452,
+    "level": 40
+   }
+  ],
+  "milestones": [
+   {
+    "level": 5,
+    "effect": "ADD_DIE",
+    "dieType": "base"
+   },
+   {
+    "level": 5,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   },
+   {
+    "level": 40,
+    "effect": "EVOLVE"
+   }
+  ],
+  "notes": "BST 330"
+ },
+ {
+  "dex": 452,
+  "name": "Drapion",
+  "type1": "poison",
+  "type2": "dark",
+  "baseHp": 12,
+  "maxHp": 281,
+  "speed": 9,
+  "spriteUrl": "/pokemon/452_front.png",
+  "dice": [
+   {
+    "type": "poison",
+    "count": 1
+   },
+   {
+    "type": "dark",
+    "count": 1
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [
+   {
+    "level": 36,
+    "effect": "ADD_DIE",
+    "dieType": "base"
+   },
+   {
+    "level": 36,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   },
+   {
+    "level": 50,
+    "effect": "ADD_DIE",
+    "dieType": "poison"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   }
+  ],
+  "notes": "BST 500"
+ },
+ {
+  "dex": 453,
+  "name": "Croagunk",
+  "type1": "poison",
+  "type2": "fighting",
+  "baseHp": 12,
+  "maxHp": 237,
+  "speed": 5,
+  "spriteUrl": "/pokemon/453_front.png",
+  "dice": [
+   {
+    "type": "poison",
+    "count": 1
+   }
+  ],
+  "rerolls": 1,
+  "catchValue": 3,
+  "evolutions": [
+   {
+    "toDex": 454,
+    "level": 37
+   }
+  ],
+  "milestones": [
+   {
+    "level": 5,
+    "effect": "ADD_DIE",
+    "dieType": "base"
+   },
+   {
+    "level": 5,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   },
+   {
+    "level": 37,
+    "effect": "EVOLVE"
+   }
+  ],
+  "notes": "BST 300"
+ },
+ {
+  "dex": 454,
+  "name": "Toxicroak",
+  "type1": "poison",
+  "type2": "fighting",
+  "baseHp": 12,
+  "maxHp": 307,
+  "speed": 8,
+  "spriteUrl": "/pokemon/454_front.png",
+  "dice": [
+   {
+    "type": "poison",
+    "count": 1
+   },
+   {
+    "type": "fighting",
+    "count": 1
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 4,
+  "evolutions": [],
+  "milestones": [
+   {
+    "level": 36,
+    "effect": "ADD_DIE",
+    "dieType": "base"
+   },
+   {
+    "level": 36,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   },
+   {
+    "level": 50,
+    "effect": "ADD_DIE",
+    "dieType": "poison"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   }
+  ],
+  "notes": "BST 490"
+ },
+ {
+  "dex": 455,
+  "name": "Carnivine",
+  "type1": "grass",
+  "type2": null,
+  "baseHp": 12,
+  "maxHp": 289,
+  "speed": 4,
+  "spriteUrl": "/pokemon/455_front.png",
+  "dice": [
+   {
+    "type": "grass",
+    "count": 1
+   }
+  ],
+  "rerolls": 1,
+  "catchValue": 2,
+  "evolutions": [],
+  "milestones": [
+   {
+    "level": 5,
+    "effect": "ADD_DIE",
+    "dieType": "base"
+   },
+   {
+    "level": 5,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   },
+   {
+    "level": 20,
+    "effect": "ADD_DIE",
+    "dieType": "grass"
+   },
+   {
+    "level": 20,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   },
+   {
+    "level": 36,
+    "effect": "ADD_DIE",
+    "dieType": "base"
+   },
+   {
+    "level": 36,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   },
+   {
+    "level": 50,
+    "effect": "ADD_DIE",
+    "dieType": "grass"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   }
+  ],
+  "notes": "BST 454"
+ },
+ {
+  "dex": 456,
+  "name": "Finneon",
+  "type1": "water",
+  "type2": null,
+  "baseHp": 12,
+  "maxHp": 239,
+  "speed": 6,
+  "spriteUrl": "/pokemon/456_front.png",
+  "dice": [
+   {
+    "type": "water",
+    "count": 1
+   }
+  ],
+  "rerolls": 1,
+  "catchValue": 2,
+  "evolutions": [
+   {
+    "toDex": 457,
+    "level": 31
+   }
+  ],
+  "milestones": [
+   {
+    "level": 5,
+    "effect": "ADD_DIE",
+    "dieType": "base"
+   },
+   {
+    "level": 5,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   },
+   {
+    "level": 31,
+    "effect": "EVOLVE"
+   }
+  ],
+  "notes": "BST 330"
+ },
+ {
+  "dex": 457,
+  "name": "Lumineon",
+  "type1": "water",
+  "type2": null,
+  "baseHp": 12,
+  "maxHp": 279,
+  "speed": 9,
+  "spriteUrl": "/pokemon/457_front.png",
+  "dice": [
+   {
+    "type": "water",
+    "count": 2
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 4,
+  "evolutions": [],
+  "milestones": [
+   {
+    "level": 36,
+    "effect": "ADD_DIE",
+    "dieType": "base"
+   },
+   {
+    "level": 36,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   },
+   {
+    "level": 50,
+    "effect": "ADD_DIE",
+    "dieType": "water"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   }
+  ],
+  "notes": "BST 460"
+ },
+ {
+  "dex": 458,
+  "name": "Mantyke",
+  "type1": "water",
+  "type2": "flying",
+  "baseHp": 12,
+  "maxHp": 231,
+  "speed": 5,
+  "spriteUrl": "/pokemon/458_front.png",
+  "dice": [
+   {
+    "type": "water",
+    "count": 1
+   }
+  ],
+  "rerolls": 1,
+  "catchValue": 7,
+  "evolutions": [
+   {
+    "toDex": 226,
+    "level": 30
+   }
+  ],
+  "milestones": [
+   {
+    "level": 5,
+    "effect": "ADD_DIE",
+    "dieType": "base"
+   },
+   {
+    "level": 5,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   },
+   {
+    "level": 30,
+    "effect": "EVOLVE"
+   }
+  ],
+  "notes": "BST 345 · → #226: level-up → assigned Lv.30"
+ },
+ {
+  "dex": 459,
+  "name": "Snover",
+  "type1": "grass",
+  "type2": "ice",
+  "baseHp": 12,
+  "maxHp": 261,
+  "speed": 4,
+  "spriteUrl": "/pokemon/459_front.png",
+  "dice": [
+   {
+    "type": "grass",
+    "count": 1
+   }
+  ],
+  "rerolls": 1,
+  "catchValue": 3,
+  "evolutions": [
+   {
+    "toDex": 460,
+    "level": 40
+   }
+  ],
+  "milestones": [
+   {
+    "level": 5,
+    "effect": "ADD_DIE",
+    "dieType": "base"
+   },
+   {
+    "level": 5,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   },
+   {
+    "level": 40,
+    "effect": "EVOLVE"
+   }
+  ],
+  "notes": "BST 334"
+ },
+ {
+  "dex": 460,
+  "name": "Abomasnow",
+  "type1": "grass",
+  "type2": "ice",
+  "baseHp": 13,
+  "maxHp": 321,
+  "speed": 6,
+  "spriteUrl": "/pokemon/460_front.png",
+  "dice": [
+   {
+    "type": "grass",
+    "count": 1
+   },
+   {
+    "type": "ice",
+    "count": 1
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [
+   {
+    "level": 36,
+    "effect": "ADD_DIE",
+    "dieType": "base"
+   },
+   {
+    "level": 36,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   },
+   {
+    "level": 50,
+    "effect": "ADD_DIE",
+    "dieType": "grass"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   }
+  ],
+  "notes": "BST 494"
+ },
+ {
+  "dex": 461,
+  "name": "Weavile",
+  "type1": "dark",
+  "type2": "ice",
+  "baseHp": 12,
+  "maxHp": 281,
+  "speed": 12,
+  "spriteUrl": "/pokemon/461_front.png",
+  "dice": [
+   {
+    "type": "dark",
+    "count": 1
+   },
+   {
+    "type": "ice",
+    "count": 1
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [
+   {
+    "level": 36,
+    "effect": "ADD_DIE",
+    "dieType": "base"
+   },
+   {
+    "level": 36,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   },
+   {
+    "level": 50,
+    "effect": "ADD_DIE",
+    "dieType": "dark"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   }
+  ],
+  "notes": "BST 510"
+ },
+ {
+  "dex": 462,
+  "name": "Magnezone",
+  "type1": "electric",
+  "type2": "steel",
+  "baseHp": 12,
+  "maxHp": 281,
+  "speed": 6,
+  "spriteUrl": "/pokemon/462_front.png",
+  "dice": [
+   {
+    "type": "electric",
+    "count": 1
+   },
+   {
+    "type": "steel",
+    "count": 1
+   },
+   {
+    "type": "base",
+    "count": 2
+   }
+  ],
+  "rerolls": 4,
+  "catchValue": 6,
+  "evolutions": [],
+  "milestones": [
+   {
+    "level": 50,
+    "effect": "ADD_DIE",
+    "dieType": "electric"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   }
+  ],
+  "notes": "BST 535"
+ },
+ {
+  "dex": 463,
+  "name": "Lickilicky",
+  "type1": "normal",
+  "type2": null,
+  "baseHp": 13,
+  "maxHp": 361,
+  "speed": 5,
+  "spriteUrl": "/pokemon/463_front.png",
+  "dice": [
+   {
+    "type": "normal",
+    "count": 2
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 6,
+  "evolutions": [],
+  "milestones": [
+   {
+    "level": 36,
+    "effect": "ADD_DIE",
+    "dieType": "base"
+   },
+   {
+    "level": 36,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   },
+   {
+    "level": 50,
+    "effect": "ADD_DIE",
+    "dieType": "normal"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   }
+  ],
+  "notes": "BST 515"
+ },
+ {
+  "dex": 464,
+  "name": "Rhyperior",
+  "type1": "ground",
+  "type2": "rock",
+  "baseHp": 13,
+  "maxHp": 371,
+  "speed": 4,
+  "spriteUrl": "/pokemon/464_front.png",
+  "dice": [
+   {
+    "type": "ground",
+    "count": 1
+   },
+   {
+    "type": "rock",
+    "count": 1
+   },
+   {
+    "type": "base",
+    "count": 2
+   }
+  ],
+  "rerolls": 4,
+  "catchValue": 6,
+  "evolutions": [],
+  "milestones": [
+   {
+    "level": 50,
+    "effect": "ADD_DIE",
+    "dieType": "ground"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   }
+  ],
+  "notes": "BST 535"
+ },
+ {
+  "dex": 465,
+  "name": "Tangrowth",
+  "type1": "grass",
+  "type2": null,
+  "baseHp": 13,
+  "maxHp": 341,
+  "speed": 5,
+  "spriteUrl": "/pokemon/465_front.png",
+  "dice": [
+   {
+    "type": "grass",
+    "count": 2
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 6,
+  "evolutions": [],
+  "milestones": [
+   {
+    "level": 36,
+    "effect": "ADD_DIE",
+    "dieType": "base"
+   },
+   {
+    "level": 36,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   },
+   {
+    "level": 50,
+    "effect": "ADD_DIE",
+    "dieType": "grass"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   }
+  ],
+  "notes": "BST 535"
+ },
+ {
+  "dex": 466,
+  "name": "Electivire",
+  "type1": "electric",
+  "type2": null,
+  "baseHp": 12,
+  "maxHp": 291,
+  "speed": 9,
+  "spriteUrl": "/pokemon/466_front.png",
+  "dice": [
+   {
+    "type": "electric",
+    "count": 2
+   },
+   {
+    "type": "base",
+    "count": 2
+   }
+  ],
+  "rerolls": 4,
+  "catchValue": 6,
+  "evolutions": [],
+  "milestones": [
+   {
+    "level": 50,
+    "effect": "ADD_DIE",
+    "dieType": "electric"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   }
+  ],
+  "notes": "BST 540"
+ },
+ {
+  "dex": 467,
+  "name": "Magmortar",
+  "type1": "fire",
+  "type2": null,
+  "baseHp": 12,
+  "maxHp": 291,
+  "speed": 8,
+  "spriteUrl": "/pokemon/467_front.png",
+  "dice": [
+   {
+    "type": "fire",
+    "count": 2
+   },
+   {
+    "type": "base",
+    "count": 2
+   }
+  ],
+  "rerolls": 4,
+  "catchValue": 6,
+  "evolutions": [],
+  "milestones": [
+   {
+    "level": 50,
+    "effect": "ADD_DIE",
+    "dieType": "fire"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   }
+  ],
+  "notes": "BST 540"
+ },
+ {
+  "dex": 468,
+  "name": "Togekiss",
+  "type1": "fairy",
+  "type2": "flying",
+  "baseHp": 13,
+  "maxHp": 311,
+  "speed": 8,
+  "spriteUrl": "/pokemon/468_front.png",
+  "dice": [
+   {
+    "type": "fairy",
+    "count": 1
+   },
+   {
+    "type": "flying",
+    "count": 1
+   },
+   {
+    "type": "base",
+    "count": 2
+   }
+  ],
+  "rerolls": 4,
+  "catchValue": 6,
+  "evolutions": [],
+  "milestones": [
+   {
+    "level": 50,
+    "effect": "ADD_DIE",
+    "dieType": "fairy"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   }
+  ],
+  "notes": "BST 545"
+ },
+ {
+  "dex": 469,
+  "name": "Yanmega",
+  "type1": "bug",
+  "type2": "flying",
+  "baseHp": 13,
+  "maxHp": 313,
+  "speed": 9,
+  "spriteUrl": "/pokemon/469_front.png",
+  "dice": [
+   {
+    "type": "bug",
+    "count": 1
+   },
+   {
+    "type": "flying",
+    "count": 1
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 6,
+  "evolutions": [],
+  "milestones": [
+   {
+    "level": 36,
+    "effect": "ADD_DIE",
+    "dieType": "base"
+   },
+   {
+    "level": 36,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   },
+   {
+    "level": 50,
+    "effect": "ADD_DIE",
+    "dieType": "bug"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   }
+  ],
+  "notes": "BST 515"
+ },
+ {
+  "dex": 470,
+  "name": "Leafeon",
+  "type1": "grass",
+  "type2": null,
+  "baseHp": 12,
+  "maxHp": 271,
+  "speed": 9,
+  "spriteUrl": "/pokemon/470_front.png",
+  "dice": [
+   {
+    "type": "grass",
+    "count": 2
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [
+   {
+    "level": 36,
+    "effect": "ADD_DIE",
+    "dieType": "base"
+   },
+   {
+    "level": 36,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   },
+   {
+    "level": 50,
+    "effect": "ADD_DIE",
+    "dieType": "grass"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   }
+  ],
+  "notes": "BST 525"
+ },
+ {
+  "dex": 471,
+  "name": "Glaceon",
+  "type1": "ice",
+  "type2": null,
+  "baseHp": 12,
+  "maxHp": 271,
+  "speed": 6,
+  "spriteUrl": "/pokemon/471_front.png",
+  "dice": [
+   {
+    "type": "ice",
+    "count": 2
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [
+   {
+    "level": 36,
+    "effect": "ADD_DIE",
+    "dieType": "base"
+   },
+   {
+    "level": 36,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   },
+   {
+    "level": 50,
+    "effect": "ADD_DIE",
+    "dieType": "ice"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   }
+  ],
+  "notes": "BST 525"
+ },
+ {
+  "dex": 472,
+  "name": "Gliscor",
+  "type1": "ground",
+  "type2": "flying",
+  "baseHp": 12,
+  "maxHp": 291,
+  "speed": 9,
+  "spriteUrl": "/pokemon/472_front.png",
+  "dice": [
+   {
+    "type": "ground",
+    "count": 1
+   },
+   {
+    "type": "flying",
+    "count": 1
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 6,
+  "evolutions": [],
+  "milestones": [
+   {
+    "level": 36,
+    "effect": "ADD_DIE",
+    "dieType": "base"
+   },
+   {
+    "level": 36,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   },
+   {
+    "level": 50,
+    "effect": "ADD_DIE",
+    "dieType": "ground"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   }
+  ],
+  "notes": "BST 510"
+ },
+ {
+  "dex": 473,
+  "name": "Mamoswine",
+  "type1": "ice",
+  "type2": "ground",
+  "baseHp": 13,
+  "maxHp": 361,
+  "speed": 8,
+  "spriteUrl": "/pokemon/473_front.png",
+  "dice": [
+   {
+    "type": "ice",
+    "count": 1
+   },
+   {
+    "type": "ground",
+    "count": 1
+   },
+   {
+    "type": "base",
+    "count": 2
+   }
+  ],
+  "rerolls": 4,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [
+   {
+    "level": 50,
+    "effect": "ADD_DIE",
+    "dieType": "ice"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   }
+  ],
+  "notes": "BST 530"
+ },
+ {
+  "dex": 474,
+  "name": "Porygon-Z",
+  "type1": "normal",
+  "type2": null,
+  "baseHp": 13,
+  "maxHp": 311,
+  "speed": 9,
+  "spriteUrl": "/pokemon/474_front.png",
+  "dice": [
+   {
+    "type": "normal",
+    "count": 2
+   },
+   {
+    "type": "base",
+    "count": 2
+   }
+  ],
+  "rerolls": 4,
+  "catchValue": 6,
+  "evolutions": [],
+  "milestones": [
+   {
+    "level": 50,
+    "effect": "ADD_DIE",
+    "dieType": "normal"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   }
+  ],
+  "notes": "BST 535"
+ },
+ {
+  "dex": 475,
+  "name": "Gallade",
+  "type1": "psychic",
+  "type2": "fighting",
+  "baseHp": 12,
+  "maxHp": 277,
+  "speed": 8,
+  "spriteUrl": "/pokemon/475_front.png",
+  "dice": [
+   {
+    "type": "psychic",
+    "count": 1
+   },
+   {
+    "type": "fighting",
+    "count": 1
+   },
+   {
+    "type": "base",
+    "count": 2
+   }
+  ],
+  "rerolls": 4,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [
+   {
+    "level": 50,
+    "effect": "ADD_DIE",
+    "dieType": "psychic"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   }
+  ],
+  "notes": "BST 518"
+ },
+ {
+  "dex": 476,
+  "name": "Probopass",
+  "type1": "rock",
+  "type2": "steel",
+  "baseHp": 12,
+  "maxHp": 261,
+  "speed": 4,
+  "spriteUrl": "/pokemon/476_front.png",
+  "dice": [
+   {
+    "type": "rock",
+    "count": 1
+   },
+   {
+    "type": "steel",
+    "count": 1
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [
+   {
+    "level": 36,
+    "effect": "ADD_DIE",
+    "dieType": "base"
+   },
+   {
+    "level": 36,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   },
+   {
+    "level": 50,
+    "effect": "ADD_DIE",
+    "dieType": "rock"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   }
+  ],
+  "notes": "BST 525"
+ },
+ {
+  "dex": 477,
+  "name": "Dusknoir",
+  "type1": "ghost",
+  "type2": null,
+  "baseHp": 12,
+  "maxHp": 231,
+  "speed": 4,
+  "spriteUrl": "/pokemon/477_front.png",
+  "dice": [
+   {
+    "type": "ghost",
+    "count": 2
+   },
+   {
+    "type": "base",
+    "count": 2
+   }
+  ],
+  "rerolls": 4,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [
+   {
+    "level": 50,
+    "effect": "ADD_DIE",
+    "dieType": "ghost"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   }
+  ],
+  "notes": "BST 525"
+ },
+ {
+  "dex": 478,
+  "name": "Froslass",
+  "type1": "ice",
+  "type2": "ghost",
+  "baseHp": 12,
+  "maxHp": 281,
+  "speed": 11,
+  "spriteUrl": "/pokemon/478_front.png",
+  "dice": [
+   {
+    "type": "ice",
+    "count": 1
+   },
+   {
+    "type": "ghost",
+    "count": 1
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 4,
+  "evolutions": [],
+  "milestones": [
+   {
+    "level": 36,
+    "effect": "ADD_DIE",
+    "dieType": "base"
+   },
+   {
+    "level": 36,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   },
+   {
+    "level": 50,
+    "effect": "ADD_DIE",
+    "dieType": "ice"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_REROLL",
+    "amount": 1
+   }
+  ],
+  "notes": "BST 480"
+ },
+ {
+  "dex": 479,
+  "name": "Rotom",
+  "type1": "electric",
+  "type2": "ghost",
+  "baseHp": 12,
+  "maxHp": 241,
+  "speed": 9,
+  "spriteUrl": "/pokemon/479_front.png",
+  "dice": [
+   {
+    "type": "electric",
+    "count": 2
+   },
+   {
+    "type": "ghost",
+    "count": 1
+   },
+   {
+    "type": "base",
+    "count": 2
+   }
+  ],
+  "rerolls": 5,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "BST 440"
+ },
+ {
+  "dex": 480,
+  "name": "Uxie",
+  "type1": "psychic",
+  "type2": null,
+  "baseHp": 12,
+  "maxHp": 291,
+  "speed": 9,
+  "spriteUrl": "/pokemon/480_front.png",
+  "dice": [
+   {
+    "type": "psychic",
+    "count": 3
+   },
+   {
+    "type": "base",
+    "count": 2
+   }
+  ],
+  "rerolls": 5,
+  "catchValue": 6,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "BST 580"
+ },
+ {
+  "dex": 481,
+  "name": "Mesprit",
+  "type1": "psychic",
+  "type2": null,
+  "baseHp": 12,
+  "maxHp": 301,
+  "speed": 8,
+  "spriteUrl": "/pokemon/481_front.png",
+  "dice": [
+   {
+    "type": "psychic",
+    "count": 3
+   },
+   {
+    "type": "base",
+    "count": 2
+   }
+  ],
+  "rerolls": 5,
+  "catchValue": 6,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "BST 580"
+ },
+ {
+  "dex": 482,
+  "name": "Azelf",
+  "type1": "psychic",
+  "type2": null,
+  "baseHp": 12,
+  "maxHp": 291,
+  "speed": 11,
+  "spriteUrl": "/pokemon/482_front.png",
+  "dice": [
+   {
+    "type": "psychic",
+    "count": 3
+   },
+   {
+    "type": "base",
+    "count": 2
+   }
+  ],
+  "rerolls": 5,
+  "catchValue": 6,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "BST 580"
+ },
+ {
+  "dex": 483,
+  "name": "Dialga",
+  "type1": "steel",
+  "type2": "dragon",
+  "baseHp": 13,
+  "maxHp": 341,
+  "speed": 9,
+  "spriteUrl": "/pokemon/483_front.png",
+  "dice": [
+   {
+    "type": "steel",
+    "count": 2
+   },
+   {
+    "type": "dragon",
+    "count": 1
+   },
+   {
+    "type": "base",
+    "count": 2
+   }
+  ],
+  "rerolls": 5,
+  "catchValue": 7,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "BST 680"
+ },
+ {
+  "dex": 484,
+  "name": "Palkia",
+  "type1": "water",
+  "type2": "dragon",
+  "baseHp": 13,
+  "maxHp": 321,
+  "speed": 10,
+  "spriteUrl": "/pokemon/484_front.png",
+  "dice": [
+   {
+    "type": "water",
+    "count": 2
+   },
+   {
+    "type": "dragon",
+    "count": 1
+   },
+   {
+    "type": "base",
+    "count": 2
+   }
+  ],
+  "rerolls": 5,
+  "catchValue": 7,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "BST 680"
+ },
+ {
+  "dex": 485,
+  "name": "Heatran",
+  "type1": "fire",
+  "type2": "steel",
+  "baseHp": 13,
+  "maxHp": 323,
+  "speed": 7,
+  "spriteUrl": "/pokemon/485_front.png",
+  "dice": [
+   {
+    "type": "fire",
+    "count": 2
+   },
+   {
+    "type": "steel",
+    "count": 1
+   },
+   {
+    "type": "base",
+    "count": 2
+   }
+  ],
+  "rerolls": 5,
+  "catchValue": 6,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "BST 600"
+ },
+ {
+  "dex": 486,
+  "name": "Regigigas",
+  "type1": "normal",
+  "type2": null,
+  "baseHp": 13,
+  "maxHp": 361,
+  "speed": 10,
+  "spriteUrl": "/pokemon/486_front.png",
+  "dice": [
+   {
+    "type": "normal",
+    "count": 3
+   },
+   {
+    "type": "base",
+    "count": 2
+   }
+  ],
+  "rerolls": 5,
+  "catchValue": 6,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "BST 670"
+ },
+ {
+  "dex": 487,
+  "name": "Giratina",
+  "type1": "ghost",
+  "type2": "dragon",
+  "baseHp": 14,
+  "maxHp": 441,
+  "speed": 9,
+  "spriteUrl": "/pokemon/487_front.png",
+  "dice": [
+   {
+    "type": "ghost",
+    "count": 2
+   },
+   {
+    "type": "dragon",
+    "count": 1
+   },
+   {
+    "type": "base",
+    "count": 2
+   }
+  ],
+  "rerolls": 5,
+  "catchValue": 7,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "BST 680"
+ },
+ {
+  "dex": 488,
+  "name": "Cresselia",
+  "type1": "psychic",
+  "type2": null,
+  "baseHp": 13,
+  "maxHp": 381,
+  "speed": 8,
+  "spriteUrl": "/pokemon/488_front.png",
+  "dice": [
+   {
+    "type": "psychic",
+    "count": 3
+   },
+   {
+    "type": "base",
+    "count": 2
+   }
+  ],
+  "rerolls": 5,
+  "catchValue": 6,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "BST 580"
+ },
+ {
+  "dex": 489,
+  "name": "Phione",
+  "type1": "water",
+  "type2": null,
+  "baseHp": 12,
+  "maxHp": 301,
+  "speed": 8,
+  "spriteUrl": "/pokemon/489_front.png",
+  "dice": [
+   {
+    "type": "water",
+    "count": 3
+   },
+   {
+    "type": "base",
+    "count": 2
+   }
+  ],
+  "rerolls": 5,
+  "catchValue": 5,
+  "evolutions": [
+   {
+    "toDex": 490,
+    "level": 30
+   }
+  ],
+  "milestones": [
+   {
+    "level": 30,
+    "effect": "EVOLVE"
+   }
+  ],
+  "notes": "BST 480 · → #490: other → assigned Lv.30"
+ },
+ {
+  "dex": 490,
+  "name": "Manaphy",
+  "type1": "water",
+  "type2": null,
+  "baseHp": 13,
+  "maxHp": 341,
+  "speed": 10,
+  "spriteUrl": "/pokemon/490_front.png",
+  "dice": [
+   {
+    "type": "water",
+    "count": 3
+   },
+   {
+    "type": "base",
+    "count": 2
+   }
+  ],
+  "rerolls": 5,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "BST 600"
+ },
+ {
+  "dex": 491,
+  "name": "Darkrai",
+  "type1": "dark",
+  "type2": null,
+  "baseHp": 12,
+  "maxHp": 281,
+  "speed": 12,
+  "spriteUrl": "/pokemon/491_front.png",
+  "dice": [
+   {
+    "type": "dark",
+    "count": 3
+   },
+   {
+    "type": "base",
+    "count": 2
+   }
+  ],
+  "rerolls": 5,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "BST 600"
+ },
+ {
+  "dex": 492,
+  "name": "Shaymin",
+  "type1": "grass",
+  "type2": null,
+  "baseHp": 13,
+  "maxHp": 341,
+  "speed": 10,
+  "spriteUrl": "/pokemon/492_front.png",
+  "dice": [
+   {
+    "type": "grass",
+    "count": 3
+   },
+   {
+    "type": "base",
+    "count": 2
+   }
+  ],
+  "rerolls": 5,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "BST 600"
+ },
+ {
+  "dex": 493,
+  "name": "Arceus",
+  "type1": "normal",
+  "type2": null,
+  "baseHp": 13,
+  "maxHp": 381,
+  "speed": 12,
+  "spriteUrl": "/pokemon/493_front.png",
+  "dice": [
+   {
+    "type": "normal",
+    "count": 3
+   },
+   {
+    "type": "base",
+    "count": 2
+   }
+  ],
+  "rerolls": 5,
+  "catchValue": 7,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "BST 720"
  }
 ]
