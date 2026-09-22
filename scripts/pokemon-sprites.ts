@@ -12,6 +12,16 @@
  * 2 cells wide × (34px header + 2 cells): header = name label + two 32×32 mini frames, then front | front shiny over
  * back | back shiny. Each cell has a flat background colour, which becomes transparent.
  *
+ * `pnpm pokemon-sprites --platinum` cuts Gen 4 (#387–493) out of graphics/pokemon/platinum.png, the Platinum sheet.
+ * That sheet is 3241×3511 with no alpha, so the backdrop is a flat colour (light blue, or green where the art is
+ * unchanged from Diamond/Pearl) and `clearBackground()` takes it. Geometry, measured off the file: 80×80 cells on an
+ * 81px column pitch from x=1 (40 columns), and 18 block rows on a 195px pitch from y=34, each a 34px label band over
+ * two cell rows. A species owns 4 columns × 2 rows — front, front, back, back across, normal over shiny down — and
+ * its two 32×32 Box-icon frames sit in the band, right-aligned to the end of those four columns. Gendered pairs and
+ * form variants take slots of their own, so PLATINUM_SLOTS below maps each dex number to the first slot of its block
+ * — male, Plant Cloak, West Sea, Land Forme, Altered Forme, plain Rotom, plain Arceus — and to how many slots the
+ * whole block spans, which is what the Box icons are right-aligned to.
+ *
  * `pnpm pokemon-sprites --publish [srcDir]` copies those files (default graphics/pokemon) into public/pokemon with short
  * names (001_front.png, 001_back_shiny.png, 001_mini_1.png…) and writes src/data/sprite-metrics.json: the transparent
  * rows under each front / back sprite, so the battle scene can stand every Pokémon on its platform.
@@ -48,6 +58,157 @@ const fileName = (s: string) =>
     .replace(/['’.]/g, '')
     .trim()
     .replace(/\s+/g, '-')
+
+// Platinum sheet geometry (graphics/pokemon/platinum.png), measured off the file.
+const PT_CELL = 80
+const PT_X0 = 1
+const PT_COL = 81
+const PT_SLOT_COLS = 4
+const PT_BLOCK_Y0 = 34
+const PT_BLOCK_PITCH = 195
+/** The Box icons are 32px on a 33px pitch, right-aligned to the last of the species' four columns. */
+const PT_ICON_PITCH = MINI + 1
+
+/**
+ * Dex number → `[block row, slot]` of the **first** slot of that species' block on the Platinum sheet, read off the
+ * dex numbers the sheet prints in its label bands. A species with gendered art or several forms owns more than one
+ * slot; the first is always the one this game wants, because the sheet orders them male-then-female and
+ * default-form-first.
+ */
+const PLATINUM_SLOTS: Record<number, [row: number, slot: number, slots: number]> = {
+  387: [0, 0, 1], 388: [0, 1, 1], 389: [0, 2, 1], 390: [0, 3, 1],
+  391: [0, 4, 1], 392: [0, 5, 1], 393: [0, 6, 1], 394: [0, 7, 1],
+  395: [0, 8, 2], 396: [1, 0, 2], 397: [1, 2, 2], 398: [1, 4, 2],
+  399: [1, 6, 2], 400: [1, 8, 2], 401: [2, 0, 2], 402: [2, 2, 2],
+  403: [2, 4, 2], 404: [2, 6, 2], 405: [2, 8, 2], 406: [3, 0, 1],
+  407: [3, 1, 2], 408: [3, 3, 1], 409: [3, 4, 1], 410: [3, 5, 1],
+  411: [3, 6, 1], 412: [3, 7, 3], 413: [4, 0, 3], 414: [4, 3, 1],
+  415: [4, 4, 2], 416: [4, 6, 1], 417: [4, 7, 3], 418: [5, 0, 2],
+  419: [5, 2, 2], 420: [5, 4, 1], 421: [5, 5, 2], 422: [5, 7, 3],
+  423: [6, 0, 2], 424: [6, 2, 2], 425: [6, 4, 1], 426: [6, 5, 1],
+  427: [6, 6, 1], 428: [6, 7, 1], 429: [6, 8, 1], 430: [6, 9, 1],
+  431: [7, 0, 1], 432: [7, 1, 1], 433: [7, 2, 1], 434: [7, 3, 1],
+  435: [7, 4, 1], 436: [7, 5, 1], 437: [7, 6, 1], 438: [7, 7, 1],
+  439: [7, 8, 1], 440: [7, 9, 1], 441: [8, 0, 1], 442: [8, 1, 1],
+  443: [8, 2, 2], 444: [8, 4, 2], 445: [8, 6, 2], 446: [8, 8, 1],
+  447: [8, 9, 1], 448: [9, 0, 1], 449: [9, 1, 2], 450: [9, 3, 2],
+  451: [9, 5, 1], 452: [9, 6, 1], 453: [9, 7, 3], 454: [10, 0, 2],
+  455: [10, 2, 1], 456: [10, 3, 2], 457: [10, 5, 2], 458: [10, 7, 1],
+  459: [10, 8, 2], 460: [11, 0, 2], 461: [11, 2, 2], 462: [11, 4, 1],
+  463: [11, 5, 1], 464: [11, 6, 2], 465: [11, 8, 2], 466: [12, 0, 1],
+  467: [12, 1, 1], 468: [12, 2, 1], 469: [12, 3, 1], 470: [12, 4, 1],
+  471: [12, 5, 1], 472: [12, 6, 1], 473: [12, 7, 2], 474: [12, 9, 1],
+  475: [13, 0, 1], 476: [13, 1, 1], 477: [13, 2, 1], 478: [13, 3, 1],
+  479: [13, 4, 6], 480: [14, 0, 1], 481: [14, 1, 1], 482: [14, 2, 1],
+  483: [14, 3, 1], 484: [14, 4, 1], 485: [14, 5, 1], 486: [14, 6, 1],
+  487: [14, 7, 2], 488: [14, 9, 1], 489: [15, 0, 1], 490: [15, 1, 1],
+  491: [15, 2, 1], 492: [15, 3, 7], 493: [16, 0, 10],
+}
+
+/**
+ * Fits an 80×80 Gen 4 cell into the 64×64 canvas every other sprite in this game uses: the art is trimmed to its
+ * bounding box and put back centred and bottom-aligned. Nothing is lost by dropping the cell's own bottom padding,
+ * because the battle scene stands every sprite on its lowest opaque row anyway (`cellBox` in BattleView adds the
+ * gap back). Only art too big for the canvas is scaled, nearest neighbour, which keeps the pixels square.
+ */
+function fitCanvas(img: PNG, size = CELL): PNG {
+  const out = new PNG({ width: size, height: size })
+  out.data.fill(0)
+  let x0 = img.width
+  let y0 = img.height
+  let x1 = -1
+  let y1 = -1
+  for (let y = 0; y < img.height; y++) {
+    for (let x = 0; x < img.width; x++) {
+      if (img.data[(y * img.width + x) * 4 + 3] === 0) continue
+      if (x < x0) x0 = x
+      if (x > x1) x1 = x
+      if (y < y0) y0 = y
+      if (y > y1) y1 = y
+    }
+  }
+  if (x1 < 0) return out
+  const w = x1 - x0 + 1
+  const h = y1 - y0 + 1
+  const scale = Math.min(1, size / w, size / h)
+  const dw = Math.max(1, Math.round(w * scale))
+  const dh = Math.max(1, Math.round(h * scale))
+  const dx = Math.floor((size - dw) / 2)
+  const dy = size - dh
+  for (let y = 0; y < dh; y++) {
+    for (let x = 0; x < dw; x++) {
+      const sx = x0 + Math.min(w - 1, Math.floor(x / scale))
+      const sy = y0 + Math.min(h - 1, Math.floor(y / scale))
+      const s = (sy * img.width + sx) * 4
+      const d = ((dy + y) * size + dx + x) * 4
+      out.data[d] = img.data[s]!
+      out.data[d + 1] = img.data[s + 1]!
+      out.data[d + 2] = img.data[s + 2]!
+      out.data[d + 3] = img.data[s + 3]!
+    }
+  }
+  return out
+}
+
+/** The six sprites of one Gen 4 species, cut from its block on the Platinum sheet. */
+function platinumSprites(sheet: PNG, row: number, slot: number, slots: number): Record<string, PNG> {
+  const x = PT_X0 + PT_COL * PT_SLOT_COLS * slot
+  const y = PT_BLOCK_Y0 + PT_BLOCK_PITCH * row
+  // col 0/1 are the front's two animation frames, col 2/3 the back's; the second cell row is the shiny palette.
+  const cell = (col: number, shiny: 0 | 1) =>
+    fitCanvas(clearBackground(crop(sheet, x + col * PT_COL, y + shiny * PT_COL, PT_CELL, PT_CELL)))
+  // The icons sit at the end of the species' whole block, which is wider than one slot where the sheet carries both
+  // sexes or several forms. `slots` is an upper bound — a block that is the last of its row looks like it runs to the
+  // row's end when it does not — so the widest span that actually holds an icon is the right one.
+  const iconsAt = (span: number) => {
+    const end = PT_X0 + PT_COL * PT_SLOT_COLS * (slot + span) - 1
+    return [0, 1].map((frame) =>
+      clearBackground(crop(sheet, end - MINI - (1 - frame) * PT_ICON_PITCH, PT_BLOCK_PITCH * row + 1, MINI, MINI)),
+    )
+  }
+  let icons = iconsAt(slots)
+  for (let span = slots - 1; span >= 1 && icons.some(isEmpty); span--) icons = iconsAt(span)
+  return {
+    front: cell(0, 0),
+    front_shiny: cell(0, 1),
+    back: cell(2, 0),
+    back_shiny: cell(2, 1),
+    miniature_1: icons[0]!,
+    miniature_2: icons[1]!,
+  }
+}
+
+/** Cuts every species PLATINUM_SLOTS knows about into `outDir`, named like the decomp path's files. */
+async function cutPlatinum(outDir: string) {
+  const sheet = PNG.sync.read(await readFile(path.join(ROOT, 'graphics/pokemon/platinum.png')))
+  await mkdir(outDir, { recursive: true })
+  const byDex = new Map(pokemon.map((p) => [p.dex, p.name]))
+  const failed: string[] = []
+  let n = 0
+  for (const [key, [row, slot, slots]] of Object.entries(PLATINUM_SLOTS)) {
+    const dex = Number(key)
+    const name = byDex.get(dex)
+    if (!name) {
+      failed.push(`${dex}: not in src/data/pokemon.json — run pnpm seed-regions first`)
+      continue
+    }
+    const prefix = `${String(dex).padStart(3, '0')}_${fileName(name)}`
+    for (const [kind, img] of Object.entries(platinumSprites(sheet, row, slot, slots))) {
+      if (isEmpty(img)) {
+        failed.push(`${dex} ${name} ${kind}: empty cell at [${row},${slot}]`)
+        continue
+      }
+      await writeFile(path.join(outDir, `${prefix}_${kind}.png`), PNG.sync.write(img))
+      n++
+    }
+  }
+  console.log(`${n} Gen 4 sprites written to ${outDir}`)
+  if (failed.length) {
+    console.error(`\n${failed.length} failures:`)
+    for (const f of failed) console.error(`  ${f}`)
+    process.exitCode = 1
+  }
+}
 
 function crop(sheet: PNG, x: number, y: number, w: number, h: number): PNG {
   const out = new PNG({ width: w, height: h })
@@ -311,6 +472,8 @@ async function publish(srcDir: string) {
 
 async function main() {
   if (process.argv[2] === '--fetch') return fetchAll(path.resolve(process.argv[3] ?? path.join(ROOT, 'graphics/pokemon')))
+  if (process.argv[2] === '--platinum')
+    return cutPlatinum(path.resolve(process.argv[3] ?? path.join(ROOT, 'graphics/pokemon')))
   if (process.argv[2] === '--publish') return publish(path.resolve(process.argv[3] ?? path.join(ROOT, 'graphics/pokemon')))
   const outDir = path.resolve(process.argv[2] ?? path.join(ROOT, 'graphics/pokemon/sprites'))
   const sheetPath = path.resolve(process.argv[3] ?? path.join(ROOT, 'graphics/pokemon/pokemon.png'))
