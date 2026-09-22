@@ -35,11 +35,13 @@ For local cloud/admin work, copy `.env.example` to `.env.local` and fill it in. 
 | `pnpm e2e` | Playwright smoke tests (new game → win, buy an upgrade, mocked sign-in). Uses the installed Edge on Windows; elsewhere run `npx playwright install chromium` first |
 | `pnpm lint` · `pnpm format` | ESLint (also enforces that `src/engine` stays pure) · Prettier |
 | `pnpm seed` | Reports how far the committed bundle has drifted from what the generator (PokeAPI + `scripts/content.ts`, Kanto only) would produce. Writes nothing. `pnpm seed --force` does the old destructive regeneration — see [docs/02](docs/02-DATA-MODEL.md#3-generating-the-386) |
-| `pnpm seed-regions` | Builds Johto and Hoenn on top of the committed bundle: species 152–386, their areas, trainers and regions. Additive — it never drops an existing row |
+| `pnpm seed-regions` | Builds Johto, Hoenn and Sinnoh on top of the committed bundle: species 152–493, their areas, trainers and regions. Additive — it never drops an existing row. Defaults to `--from 387 --to 493` (Sinnoh alone); widen it to regenerate an earlier region |
+| `pnpm pull-remote` | Says how far the committed bundle has fallen behind Supabase, where admin tuning lands first. Writes nothing. `pnpm pull-remote --write` then overwrites `src/data/*.json` and `supabase/seed.sql` with the live rows — the same check and the same refusals as Admin → "Pull from Supabase". Run it before adding content |
 | `pnpm seed-sql` | Regenerates `supabase/seed.sql` from the committed bundle, without rebuilding the bundle. That one file is all a live database needs — it carries the post-`0001` schema changes too, and is safe to re-run |
 | `pnpm art` | Regenerates the 5 area banners and 19 trainer badges in `public/` |
 | `pnpm sim` | 1000 random battles + the §2.3 turns-to-kill table (spec methodology and played-out) |
 | `pnpm balance [N] [seed]` | Simulated campaign with an upgrade-buying policy (the same engine as the admin Campaign simulator); reports fight length per area. `GOLD=0.8 HP=1.6 pnpm balance` tries other multipliers |
+| `pnpm balance table` | Every starter of every region over seeds 1–6 — the summary table of [docs/06](docs/06-REGION-BALANCE.md) |
 | `pnpm import-bundle <file>` | Turns an admin *Export bundle* download into `src/data/*.json` + `seed.sql` to commit |
 
 ## Architecture
