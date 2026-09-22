@@ -1463,6 +1463,7 @@ ui.team.searchBoxLabel,Search the Box by name,Chercher dans la Boîte par nom,Bu
 ui.team.searchBox,Search the Box,Chercher dans la Boîte,Buscar en la Caja,Box durchsuchen
 ui.team.boxEmpty,Pokémon you catch beyond your team of three wait here.,Les Pokémon capturés au-delà de ton équipe de trois attendent ici.,Los Pokémon que captures más allá de tu equipo de tres esperan aquí.,"Pokémon, die du über dein Dreierteam hinaus fängst, warten hier."
 ui.team.boxNoMatch,No Pokémon in the Box match “{query}”.,Aucun Pokémon de la Boîte ne correspond à « {query} ».,Ningún Pokémon de la Caja coincide con «{query}».,Kein Pokémon in der Box passt zu „{query}“.
+ui.dex.titleRegion,Pokédex {region},Pokédex {region},Pokédex {region},Pokédex {region}
 ui.dex.title,Pokédex,Pokédex,Pokédex,Pokédex
 ui.dex.filterAll,all,tous,todos,alle
 ui.dex.filterCaught,caught,capturés,capturados,gefangen
