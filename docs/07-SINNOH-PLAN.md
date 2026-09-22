@@ -10,8 +10,9 @@ chain, the Pokédex, the Box and the Day Care are all region-scoped. Sinnoh is t
 engineering: one more row in `regions.json`, one more `content-*.ts`, two sprite passes, and a short list of hardcoded
 `386`s to raise.
 
-The trainer sheet the work starts from is committed at `graphics/trainers/dppt.png` (the DPPt sheet ripped by
-MufasaKong, same ripper and same layout as `hgss.png`).
+The two sheets the work starts from are committed: `graphics/trainers/dppt.png` (the DPPt trainer sheet, same ripper
+and same layout as `hgss.png`) and `graphics/pokemon/platinum.png` (the Platinum Pokémon sheet — front, back, shiny
+and two-frame Box icons, all 107 species).
 
 ---
 
@@ -28,8 +29,8 @@ MufasaKong, same ripper and same layout as `hgss.png`).
 | Trainer sprites are per-region folders resolved by name | `scripts/trainer-sprites.ts` | `SpriteRegion` gains `'sinnoh'`, and a `REGION_NAMED` / `REGION_CLASSES` block comes with it |
 
 **The one thing that is not free:** Gen 4 Pokémon sprites are not in `pret/pokeemerald`, which is where all 386
-current sprites come from. Step 1a picks a new source and reconciles two sprite sizes. That is the highest-risk part
-of this plan.
+current sprites come from. Step 1a cuts them from the Platinum sheet instead and reconciles two sprite sizes. That is
+the highest-risk part of this plan.
 
 ---
 
@@ -37,36 +38,57 @@ of this plan.
 
 ### 1a. Pokémon #387–493
 
-`pnpm pokemon-sprites --fetch` pulls six files per species (front, front shiny, back, back shiny, two box-icon
-frames) out of the pokeemerald decomp, where a shiny is a palette swap of the same indexed PNG. **That decomp stops
-at #386.** Gen 4 needs a second source, and the reachable one is PokeAPI's sprite mirror — verified from this sandbox:
+The source is the **Platinum sprite sheet**, committed at `graphics/pokemon/platinum.png` — ripped by Random Talking
+Bush, hosted by The Spriters Resource. It carries everything the game needs, which the PokeAPI mirror did not:
 
-| File | URL under `raw.githubusercontent.com/PokeAPI/sprites/master` | Size |
-|---|---|---|
-| front | `sprites/pokemon/versions/generation-iv/platinum/{dex}.png` | 80×80 |
-| front shiny | `…/platinum/shiny/{dex}.png` | 80×80 |
-| back | `…/platinum/back/{dex}.png` | 80×80 |
-| back shiny | `…/platinum/back/shiny/{dex}.png` | 80×80 |
-| box icon | `sprites/pokemon/versions/generation-viii/icons/{dex}.png` | 68×56, one frame |
+| Per species, the sheet gives | The game needs |
+|---|---|
+| front, **2 animation frames** | front |
+| back, **2 animation frames** | back |
+| a second row of every one of those, in the **shiny palette** | front shiny, back shiny |
+| **2 box-icon frames** in the label band | `miniature_1`, `miniature_2` |
+| a battle-intro shadow silhouette | — (skipped) |
 
-Two reconciliations, both in `scripts/pokemon-sprites.ts`:
+Geometry, decoded off the file rather than eyeballed:
 
-1. **80×80 → 64×64.** Every committed sprite is 64×64 and the battle scene assumes it. Do not scale: trim the
-   transparent margin, then paste the trimmed art into a 64×64 canvas, horizontally centred and **bottom-aligned**,
-   so the Pokémon still stands on its platform. A handful of large Gen 4 sprites (Dialga, Palkia, Giratina,
-   Wailord-sized art) will exceed 64 wide after trimming — those, and only those, get a nearest-neighbour downscale
-   to fit, which keeps the pixel look.
-2. **One icon frame, not two.** The Gen 8 icons are a single frame at 68×56. Trim, centre into 32×32, and write it as
-   **both** `miniature_1` and `miniature_2`; the Box just stops bobbing for Gen 4. (Alternative, if a two-frame Gen 4
-   icon source turns up: prefer it. It is the only visible regression in this step.)
+- **3241×3511**, truecolor without alpha — backgrounds are the flat sheet colours (`#93BBEC` light blue, `#54A54B`
+  green where the sprite is unchanged from Diamond/Pearl), exactly like the FR/LG sheet the script's older path
+  already handles with `clearBackground()`
+- cells **80×80**, column pitch **81** from `x = 1` → **40 columns** (`1 + 81×40 = 3241`)
+- **18 block rows**, pitch **195** from `y = 34`: a 34px label band, then two cell rows at `+0` and `+81`
+- **a species is 4 columns × 2 rows**: cols 0–1 front frames, cols 2–3 back frames; row 0 normal, row 1 shiny —
+  10 species slots per block row, 180 in total for Gen 4's 107 species
+- the label band holds, **right-aligned to the end of that species' 4 columns**: a 16px shadow cell, then the two
+  32×32 box-icon frames at pitch 33, spanning `y = 1…32`. For the first block that is `x = 242`, `259`, `292`;
+  for the second, `566`, `583`, `616`
 
-Then `pnpm pokemon-sprites --publish` as usual: `public/pokemon/387_front.png` … and a regenerated
-`src/data/sprite-metrics.json` (the transparent rows under each front/back sprite, read by `BattleView`). The
-bottom-alignment above means the new metrics land in the same band as the existing ones — check that they do rather
-than assuming it.
+So `scripts/pokemon-sprites.ts` gains a third path, `--sheet-platinum`, next to the FR/LG cutter and the pokeemerald
+fetcher. No network, no `.pal` parsing (shiny is a second row of real pixels), and the two-frame Box icons are kept.
 
-**Acceptance:** 642 new files under `public/pokemon`, `sprite-metrics.json` has 493 keys, and the battle scene shows
-a Turtwig, a Dialga and a Bidoof standing on the platform, not floating and not clipped.
+Two things still to handle:
+
+1. **80×80 → 64×64.** Every committed sprite is 64×64 and the battle scene assumes it. Do not scale: trim the flat
+   background, then paste the trimmed art into a 64×64 canvas, horizontally centred and **bottom-aligned**, so the
+   Pokémon still stands on its platform. The big Gen 4 art — Torterra, Dialga, Palkia, Giratina, Rhyperior and the
+   other overflowers — gets a nearest-neighbour downscale to fit, which keeps the pixel look. Then
+   `--publish` as usual, regenerating `src/data/sprite-metrics.json` (493 keys).
+2. **A position map, because the slots are not one per species.** Gendered pairs take two slots (the Starly, Bidoof,
+   Kricketot, Shinx, Combee, Buizel, Hippopotas, Gible, Finneon, Snover lines and the rest the sheet labels
+   *Male* / *Female*) and so do forms (Burmy and Wormadam cloaks, Shellos and Gastrodon seas, Cherrim, the Rotom
+   appliances, Giratina Origin, Shaymin Sky, and Arceus's 18 plates across the last two block rows). The bundle has
+   no form concept, so the map picks **one slot per dex number** — male, Plant Cloak, West Sea, Land Forme, Altered
+   Forme, plain Rotom, plain Arceus — and the rest of the sheet is simply not cut. The map is a literal in the
+   script, checked by eye against the sliced output, the same way `region-trainers.ts` does it for Johto.
+
+The sheet also carries the Egg, Substitute and the unused sprites; none are cut.
+
+**Fallback, if the sheet turns out to be wrong somewhere:** PokeAPI's mirror has the same Platinum art per dex number
+(`sprites/pokemon/versions/generation-iv/platinum/{dex}.png` and its `back/`, `shiny/`, `back/shiny/` siblings, all
+verified reachable at 80×80). It has no two-frame Box icon, which is the whole reason it is second choice now.
+
+**Acceptance:** 642 new files under `public/pokemon`, `sprite-metrics.json` has 493 keys, no sprite carries a halo of
+sheet-blue, and the battle scene shows a Turtwig, a Dialga and a Bidoof standing on the platform — not floating, not
+clipped — with the Box icons still bobbing.
 
 ### 1b. Trainers
 
@@ -284,7 +306,7 @@ Commit the regenerated `src/data/*.json` and `supabase/seed.sql` **together**, a
 | # | Step | Depends on | Shape of the work |
 |---|---|---|---|
 | 1 | `region-trainers.ts` → Sinnoh sprites from `dppt.png` | nothing | one script branch + a position map; self-contained, verifiable by eye |
-| 2 | `pokemon-sprites.ts` → the Gen 4 source and the 80→64 reconciliation | nothing | the riskiest step; do it early so surprises surface early |
+| 2 | `pokemon-sprites.ts` → the Platinum sheet cutter and the 80→64 reconciliation | nothing | the riskiest step; do it early so surprises surface early |
 | 3 | `seed-regions.ts` → species 387–493, items, fossils, grafts | 2 (sprite paths) | mostly generalising constants |
 | 4 | `content-sinnoh.ts` → 30 areas, trainers, gyms, bosses | 1, 3 | the bulk of the typing; no cleverness, follow Hoenn |
 | 5 | The `386`s and the tests | 3, 4 | mechanical |
@@ -300,10 +322,12 @@ in the same commit as the script that regenerated it.
 
 1. **Sinnoh is content, not engineering.** If an engine edit looks necessary, the region feature is being worked
    around rather than used.
-2. **Pokémon sprites come from PokeAPI's Platinum set**, bottom-aligned into 64×64 — the pokeemerald decomp does not
-   cover Gen 4, and a scaled sprite would be the only non-pixel-perfect art in the game.
-3. **Box icons lose their second frame** for Gen 4 only, until a two-frame Gen 4 icon source is found. The Box stops
-   bobbing for these 107 Pokémon; nothing else changes.
+2. **Pokémon sprites are cut from the Platinum sheet**, bottom-aligned into 64×64 — the pokeemerald decomp does not
+   cover Gen 4, and the sheet beats PokeAPI's per-dex files because it carries the shiny row and the two-frame Box
+   icons. PokeAPI stays the documented fallback.
+3. **One slot per dex number.** The sheet's gendered pairs and form variants are real art the bundle has no concept
+   of; the position map takes male / Plant Cloak / West Sea / Land Forme / Altered Forme / plain Rotom / plain
+   Arceus, and the rest is left on the sheet.
 4. **The Gen 4 evolution items are real items**, not assigned levels — it is what makes Electivire, Magmortar,
    Rhyperior, Dusknoir, Weavile, Gliscor, Honchkrow, Mismagius, Roserade, Togekiss, Gallade and Froslass a reason to
    play Sinnoh with an old Box, and `evolutionGate` already keeps them inert until then.
