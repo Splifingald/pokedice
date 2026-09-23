@@ -77,6 +77,7 @@ export const saveSchema = z.object({
     reducedMotion: z.boolean(),
     multiExp: z.boolean().default(true),
     autoMode: z.boolean().optional(),
+    typeHints: z.boolean().optional(),
     lang: z.enum(LANGS).optional(),
   }),
   hpScale: z.number().positive().optional(),

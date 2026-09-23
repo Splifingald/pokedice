@@ -14,6 +14,13 @@ describe('save schema', () => {
     if (res.ok) expect(res.save).toEqual(s)
   })
 
+  it('keeps the type hint and auto-mode toggles', () => {
+    const base = newSave(7, data, 123, newId)
+    const s = { ...base, settings: { ...base.settings, typeHints: true, autoMode: true } }
+    const res = parseSave(JSON.parse(JSON.stringify(s)))
+    expect(res.ok && res.save.settings).toMatchObject({ typeHints: true, autoMode: true })
+  })
+
   it('rejects garbage and wrong versions', () => {
     expect(parseSave(null).ok).toBe(false)
     expect(parseSave({ version: 2 }).ok).toBe(false)

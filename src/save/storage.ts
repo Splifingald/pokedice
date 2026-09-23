@@ -95,6 +95,7 @@ export function readSettings(): Settings {
       reducedMotion: !!s.reducedMotion,
       multiExp: s.multiExp !== false,
       autoMode: !!s.autoMode,
+      typeHints: !!s.typeHints,
       lang: isLang(s.lang) ? s.lang : detectLang(),
     }
   } catch {
