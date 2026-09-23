@@ -49,6 +49,8 @@ export const ICONS = {
     '....kkkk....',
   ],
   potion: ['..kkkk..', '...kk...', '..kwwk..', '.kwbbwk.', 'kbbbbbbk', 'kbwbbbbk', 'kbbbbbbk', '.kkkkkk.'],
+  thumbUp: ['...kk...', '..kggk..', '..kgk...', 'kkkgkkkk', 'kgkggggk', 'kgkgggkk', 'kgkggggk', 'kkkkkkk.'],
+  thumbDown: ['kkkkkkk.', 'krkrrrrk', 'krkrrrkk', 'krkrrrrk', 'kkkrkkkk', '..krk...', '..krrk..', '...kk...'],
   up: ['...kk...', '..kggk..', '.kggggk.', 'kkkggkkk', '..kggk..', '..kggk..', '..kggk..', '..kkkk..'],
   dex: ['kkkkkkk.', 'krrrrrrk', 'krwwrrrk', 'krrrrrrk', 'kkkkkkkk', 'kwwwwwwk', 'kwsswwwk', 'kkkkkkkk'],
   map: ['kkkkkkkk', 'kgggbbbk', 'kgyggbbk', 'kggggbbk', 'kbbgrggk', 'kbbggggk', 'kbbbgggk', 'kkkkkkkk'],

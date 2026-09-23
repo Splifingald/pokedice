@@ -1068,6 +1068,8 @@ ui.lead.switch,SWITCH,CHANGER,CAMBIAR,WECHSELN
 ui.lead.info,INFO,INFOS,INFO,INFO
 ui.lead.sendOutName,Send out {name},Envoyer {name},Enviar a {name},{name} rausschicken
 ui.lead.hp,HP {hp}/{max},PV {hp}/{max},PS {hp}/{max},KP {hp}/{max}
+ui.lead.strong,Super effective,Super efficace,Súper eficaz,Sehr effektiv
+ui.lead.weak,Not very effective,Pas très efficace,No muy eficaz,Nicht sehr effektiv
 ui.oak.prefix,PROF. OAK:,PR. CHEN :,PROF. OAK:,PROF. EICH:
 ui.oak.gotIt,GOT IT,COMPRIS,ENTENDIDO,VERSTANDEN
 ui.toast.stack,Notifications,Notifications,Notificaciones,Benachrichtigungen

@@ -15,6 +15,7 @@ import { MiniSprite, SpriteImg } from '@/components/SpriteImg'
 import { StatChip } from '@/components/StatChip'
 import { TrainerSprite } from '@/components/TrainerArt'
 import { TypeBadge } from '@/components/TypeBadge'
+import { foeTypes } from '@/components/TypeMatchups'
 import { useGame } from '@/store/game'
 import { canSkipCurrent, declineChallenge, engage, skipEncounter } from '@/store/run'
 import { cx } from '@/theme/util'
@@ -298,7 +299,7 @@ export function EncounterPreview({ enc }: { enc: Encounter }) {
 
           {fight && save && (
             <div className={dark ? 'bg-panel p-2 text-ink' : undefined}>
-              <LeadPicker value={lead} onChange={setLead} />
+              <LeadPicker value={lead} onChange={setLead} foe={foeTypes(data, enc)} />
             </div>
           )}
         </div>

@@ -1,6 +1,6 @@
 // What a Pokémon beats and what beats it, read off the live type chart. Shown on its sheet and, in
 // battle, in a pop-up on tapping it — both only while the "strengths and weaknesses" hint is on.
-import { POKE_TYPES, typeMultiplier, type DieType, type GameData, type PokeType } from '@/engine'
+import { getSpecies, POKE_TYPES, typeMultiplier, type DieType, type Encounter, type GameData, type PokeType } from '@/engine'
 import { useT } from '@/i18n/react'
 import { useGame } from '@/store/game'
 import { cx } from '@/theme/util'
@@ -23,6 +23,28 @@ export function matchupsOf(data: GameData, types: readonly PokeType[], dice: rea
     resists: POKE_TYPES.filter((a) => taken(a) > 0 && taken(a) < 1),
     immune: POKE_TYPES.filter((a) => taken(a) === 0),
   }
+}
+
+/**
+ * How hard a Pokémon's dice hit this foe: the best multiplier among its typed dice, as the attack type picks it
+ * (see `attackType`). Only-base dice are untyped, ×1.
+ */
+export function attackEdge(data: GameData, dice: readonly DieType[], foe: readonly PokeType[]) {
+  const typed = dice.filter((d): d is PokeType => d !== 'base' && !!data.diceTypes[d]?.countsForMajority)
+  if (!typed.length) return 1
+  return Math.max(...typed.map((d) => typeMultiplier(data.typeChart, d, foe)))
+}
+
+export function speciesTypes(data: GameData, dex: number): PokeType[] {
+  const sp = getSpecies(data, dex)
+  return sp.type2 ? [sp.type1, sp.type2] : [sp.type1]
+}
+
+/** The types of the first Pokémon an encounter sends, when the preview shows it (a trainer's team is a silhouette). */
+export function foeTypes(data: GameData, enc: Encounter): PokeType[] | undefined {
+  if (enc.kind === 'wild' || enc.kind === 'boss') return speciesTypes(data, enc.dex)
+  if (enc.kind === 'gym' && enc.team[0]) return speciesTypes(data, enc.team[0].dex)
+  return undefined
 }
 
 type Row = { label: string; list: PokeType[] }
