@@ -77,7 +77,7 @@ describe('Day Care', () => {
     expect(nextDayCareTick(res, 10_000 * cap * MIN, data)).toBeNull()
   })
 
-  it('levels up with Day Care XP but never evolves; it evolves on its next level-up in battle', () => {
+  it('levels up with Day Care XP but never evolves; it evolves on its next XP in battle', () => {
     // Charmander evolves at 16: a full stay from Lv.14 takes it well past that.
     const res = { inst: createInstance(4, 14, data, 'x', 0), since: 0 }
     const later = 10_000 * data.config.dayCare.maxXp * MIN

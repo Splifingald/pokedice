@@ -138,7 +138,9 @@ export function preferUnowned(ready: Evolution[], owned?: readonly number[]): Ev
 /**
  * Level-ups, milestone cards and automatic (uncancellable) evolution by level (stone evolutions wait for their stone).
  * A branching evolution prefers a species not yet in the Pokédex (see preferUnowned).
- * `evolve: false` (Day Care XP) levels up without evolving; the next level-up in battle then evolves it.
+ * A Pokémon already at or past its evolution level evolves on any XP it earns, without waiting for a level: one caught
+ * above it (Johto's Pupitar comes N.55-70, it evolves at 55) or levelled in the Day Care.
+ * `evolve: false` (Day Care XP) levels up without evolving; the next XP in battle then evolves it.
  */
 export function gainXp(
   inst: PokemonInstance,
@@ -151,7 +153,22 @@ export function gainXp(
   const events: ProgressEvent[] = []
   let cur: PokemonInstance = { ...inst }
   if (cur.level >= cfg.maxLevel) return { inst: { ...cur, xp: 0 }, events }
-  cur.xp += Math.max(0, Math.floor(amount))
+  const gained = Math.max(0, Math.floor(amount))
+  cur.xp += gained
+
+  const tryEvolve = () => {
+    if (opts.evolve === false) return
+    const ready = getSpecies(data, cur.dex).evolutions.filter(
+      (e) => e.level != null && e.level <= cur.level && data.species[e.toDex] && (opts.allowDex?.(e.toDex) ?? true),
+    )
+    if (!ready.length) return
+    const target = ready.length === 1 ? ready[0]! : rng.pick(preferUnowned(ready, opts.owned))
+    const fromDex = cur.dex
+    cur = evolve(cur, target.toDex, data)
+    events.push({ kind: 'evolve', uid: cur.id, fromDex, toDex: cur.dex, level: cur.level })
+  }
+  // Overdue: past its evolution level before this XP came in.
+  if (gained > 0) tryEvolve()
 
   let guard = 0
   while (cur.level < cfg.maxLevel && cur.xp >= xpToNext(cur.level, cfg) && guard++ < 200) {
@@ -164,19 +181,7 @@ export function gainXp(
     for (const m of after.applied.slice(before.applied.length)) {
       events.push({ kind: 'milestone', uid: cur.id, dex: cur.dex, level: cur.level, milestone: m })
     }
-    const species = getSpecies(data, cur.dex)
-    const ready =
-      opts.evolve === false
-        ? []
-        : species.evolutions.filter(
-            (e) => e.level != null && e.level <= cur.level && data.species[e.toDex] && (opts.allowDex?.(e.toDex) ?? true),
-          )
-    if (ready.length) {
-      const target = ready.length === 1 ? ready[0]! : rng.pick(preferUnowned(ready, opts.owned))
-      const fromDex = cur.dex
-      cur = evolve(cur, target.toDex, data)
-      events.push({ kind: 'evolve', uid: cur.id, fromDex, toDex: cur.dex, level: cur.level })
-    }
+    tryEvolve()
   }
   if (cur.level >= cfg.maxLevel) cur.xp = 0 // overflow is discarded
   return { inst: cur, events }

@@ -134,6 +134,16 @@ describe('levelling & evolution', () => {
     expect(pct).toBeLessThan(0.65)
   })
 
+  it('a Pokémon caught past its evolution level evolves on its next XP, without waiting for a level', () => {
+    // Johto's Pupitar comes N.55-70 and evolves into Tyranitar at 55.
+    const r = gainXp(createInstance(247, 60, data, 'x', 0), 1, data, createRng(1))
+    expect(r.inst.level).toBe(60)
+    expect(r.inst.dex).toBe(248)
+    expect(r.events).toContainEqual({ kind: 'evolve', uid: 'x', fromDex: 247, toDex: 248, level: 60 })
+    // No XP, no evolution (the XP-curve sync calls it with 0).
+    expect(gainXp(createInstance(247, 60, data, 'x', 0), 0, data, createRng(1)).inst.dex).toBe(247)
+  })
+
   it('evolve() keeps a live Pokémon above 0 and a fainted one at 0', () => {
     expect(evolve(base(4, 16, 1), 5, data).currentHp).toBeGreaterThanOrEqual(1)
     expect(evolve(base(4, 16, 0), 5, data).currentHp).toBe(0)
