@@ -8,6 +8,7 @@ import { RoundsCounter } from '@/components/RoundsCounter'
 import { useCountUp } from '@/components/GoldPill'
 import { PixelIcon } from '@/components/icons'
 import { LeadPicker, defaultLead } from '@/components/LeadPicker'
+import { ForfeitButton } from '@/components/ForfeitButton'
 import { speciesTypes } from '@/components/TypeMatchups'
 import { HpBar } from '@/components/HpBar'
 import { XpBar } from '@/components/MonCard'
@@ -520,6 +521,7 @@ export function VictoryView() {
             </div>
           </div>
           <LeadPicker value={lead ?? stillIn ?? null} onChange={setLead} foe={speciesTypes(data, nextMon.dex)} />
+          <ForfeitButton />
         </div>
       )}
     </Overlay>

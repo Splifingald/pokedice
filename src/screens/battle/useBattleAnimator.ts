@@ -282,7 +282,7 @@ function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): Step {
             e.result === 'won'
               ? t('ui.log.endWon', { foe: st.enemy.name })
               : e.result === 'lost'
-                ? t('ui.log.endLost')
+                ? t(e.reason === 'forfeit' ? 'ui.log.endForfeit' : 'ui.log.endLost')
                 : t(e.reason === 'stalemate' ? 'ui.log.endStalemate' : 'ui.log.endFled'),
         }),
       }

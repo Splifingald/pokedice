@@ -433,6 +433,22 @@ export function resolveCatch(replaceId: string | null) {
   setRun({ pendingCatchId: null })
 }
 
+/**
+ * Give up the fight: the whole team is K.O., which loses the round like any wipe. In battle it goes through the
+ * reducer; between a trainer's Pokémon (the battle already won, the next one not started) it wipes straight away.
+ */
+export function forfeit() {
+  const { battle, run, save, data } = useGame.getState()
+  if (!save || !run.areaId) return
+  if (run.phase === 'battle' && battle) {
+    dispatchBattle({ t: 'FORFEIT' })
+    return
+  }
+  if (run.phase !== 'victory' || !trainerHasNext()) return
+  commitSave(applyWipe(save, run.areaId, data))
+  setRun({ phase: 'wipe', trainer: null, events: [] })
+}
+
 export function afterWipe() {
   useGame.setState((s) => ({ battle: null, run: { ...initialRun(), areaId: s.run.areaId, firstInArea: true } }))
 }

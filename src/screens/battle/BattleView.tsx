@@ -34,6 +34,7 @@ import { playerOf, PokeBall, ThrowSprite, TrainerSprite } from '@/components/Tra
 import { StatusIcons } from '@/components/StatusIcons'
 import { TypeBadge } from '@/components/TypeBadge'
 import { TypeMatchups } from '@/components/TypeMatchups'
+import { ForfeitButton } from '@/components/ForfeitButton'
 import { comboName, statusName, trainerTitle } from '@/lib/format'
 import { useT } from '@/i18n/react'
 import { AUTO_PACE, PaceContext, usePace } from '@/lib/pace'
@@ -996,6 +997,7 @@ export function BattleView({ battle }: { battle: BattleSlice }) {
           {switchTargets.map((p) => (
             <SwitchRow key={p.uid} b={p} onPick={() => dispatchBattle({ t: 'SWITCH', instanceId: p.uid })} />
           ))}
+          <ForfeitButton className="mt-1" />
         </div>
       </Modal>
 
@@ -1012,6 +1014,7 @@ export function BattleView({ battle }: { battle: BattleSlice }) {
               }}
             />
           ))}
+          <ForfeitButton className="mt-1" onForfeit={() => setMenu(null)} />
         </div>
       </Modal>
 

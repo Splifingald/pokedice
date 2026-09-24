@@ -10,6 +10,7 @@ import {
   enterArea,
   finishCatch,
   finishCenter,
+  forfeit,
   throwBall,
   resolveCatch,
   rollNext,
@@ -177,5 +178,43 @@ describe('run flow', () => {
     for (const p of teamOf(after)) expect(p.currentHp).toBe(instanceMaxHp(p, data))
     afterWipe()
     expect(useGame.getState().run.firstInArea).toBe(true)
+  })
+  it('forfeiting a battle loses the round like a wipe', () => {
+    seedRun(3)
+    startNewGame(4)
+    const { data } = useGame.getState()
+    const a1 = data.areas[0]!
+    enterArea(a1.id)
+    useGame.setState((s) => ({ run: { ...s.run, phase: 'preview', encounter: { kind: 'wild', dex: 19, level: 3, isNew: true } } }))
+    engage()
+    expect(useGame.getState().run.phase).toBe('battle')
+    forfeit()
+    expect(useGame.getState().battle!.state.phase).toBe('lost')
+    expect(useGame.getState().run.phase).toBe('wipe')
+    const after = useGame.getState().save!
+    expect(progressOf(after, a1.id)).toMatchObject({ deck: [], drawn: [] })
+    for (const p of teamOf(after)) expect(p.currentHp).toBe(instanceMaxHp(p, data))
+    afterWipe()
+  })
+
+  it("forfeiting between a trainer's Pokémon loses the round too", () => {
+    seedRun(3)
+    startNewGame(4)
+    const { data } = useGame.getState()
+    const a1 = data.areas[0]!
+    enterArea(a1.id)
+    const team = [{ dex: 19, level: 3 }, { dex: 16, level: 3 }]
+    useGame.setState((s) => ({
+      run: {
+        ...s.run,
+        phase: 'victory',
+        encounter: { kind: 'trainer', trainerId: 't', name: 'Youngster', spriteUrl: null, team },
+        trainer: { index: 0, gold: 10 },
+      },
+    }))
+    forfeit()
+    expect(useGame.getState().run).toMatchObject({ phase: 'wipe', trainer: null })
+    expect(progressOf(useGame.getState().save!, a1.id)).toMatchObject({ deck: [], drawn: [] })
+    afterWipe()
   })
 })

@@ -91,6 +91,8 @@ export type BattleEvent =
   | { t: 'RUN' }
   /** Accept a stunned turn (player_stunned). */
   | { t: 'PASS' }
+  /** Give up: every Pokémon of the team is K.O. and the battle is lost. */
+  | { t: 'FORFEIT' }
 
 export type LogEntry =
   | { kind: 'start'; first: Side }
@@ -120,7 +122,7 @@ export type LogEntry =
   | { kind: 'heal'; side: Side; uid: string; amount: number; hpAfter: number }
   /** Confusion recoil: the confused attacker hurts itself after its attack. */
   | { kind: 'recoil'; side: Side; uid: string; amount: number; hpAfter: number }
-  | { kind: 'end'; result: 'won' | 'lost' | 'fled'; reason?: 'stalemate' }
+  | { kind: 'end'; result: 'won' | 'lost' | 'fled'; reason?: 'stalemate' | 'forfeit' }
 
 export interface BattlerSeed {
   uid: string
@@ -219,7 +221,7 @@ export function createBattle(opts: CreateBattleOptions, data: GameData): { state
   return { state, log }
 }
 
-function finish(s: BattleState, result: 'won' | 'lost' | 'fled', log: LogEntry[], reason?: 'stalemate') {
+function finish(s: BattleState, result: 'won' | 'lost' | 'fled', log: LogEntry[], reason?: 'stalemate' | 'forfeit') {
   s.phase = result
   s.dice = []
   s.selected = []
@@ -480,6 +482,11 @@ export function reduce(
         copyFoeDice(s, log)
         afterAction(s, 'player', data, log)
       } else return NOOP(state)
+      break
+    }
+    case 'FORFEIT': {
+      for (const b of s.player) b.hp = 0
+      finish(s, 'lost', log, 'forfeit')
       break
     }
     case 'RUN': {

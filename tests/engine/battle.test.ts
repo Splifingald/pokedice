@@ -362,3 +362,21 @@ describe('auto-mode (autoEvents)', () => {
     }
   })
 })
+
+describe('forfeit', () => {
+  it('knocks the whole team out and loses the battle, whatever the phase', () => {
+    const rng = createRng(1)
+    for (const phase of ['player_roll', 'player_reroll', 'player_stunned', 'player_switch', 'enemy_turn'] as const) {
+      const r = reduce({ ...start().state, phase }, { t: 'FORFEIT' }, data, rng)
+      expect(r.state.phase).toBe('lost')
+      expect(r.state.player.every((b) => b.hp === 0)).toBe(true)
+      expect(r.log.at(-1)).toEqual({ kind: 'end', result: 'lost', reason: 'forfeit' })
+      expect(battleOutcome(r.state).result).toBe('lost')
+    }
+  })
+
+  it('does nothing once the battle is over', () => {
+    const s = { ...start().state, phase: 'won' as const }
+    expect(reduce(s, { t: 'FORFEIT' }, data, createRng(1)).state).toBe(s)
+  })
+})

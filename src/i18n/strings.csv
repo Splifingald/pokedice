@@ -1106,6 +1106,9 @@ ui.battle.keyRoll,roll,lancer,tirar,Wurf
 ui.battle.history,Battle history,Historique du combat,Historial del combate,Kampfverlauf
 ui.battle.chooseNext,Choose your next Pokémon,Choisis ton prochain Pokémon,Elige tu siguiente Pokémon,Wähle dein nächstes Pokémon
 ui.battle.switchCosts,Switch (costs your turn),Changer (coûte ton tour),Cambiar (cuesta tu turno),Wechseln (kostet deine Runde)
+ui.battle.forfeit,FORFEIT,ABANDONNER,RENDIRSE,AUFGEBEN
+ui.battle.forfeitTitle,Forfeit the battle?,Abandonner le combat ?,¿Rendirse en el combate?,Kampf aufgeben?
+ui.battle.forfeitBody,"All your Pokémon will be K.O. and the battle ends: you lose the round, just as if your team had fainted.","Tous tes Pokémon seront K.O. et le combat prendra fin : tu perds la manche, comme si toute ton équipe était K.O.","Todos tus Pokémon quedarán debilitados y el combate terminará: pierdes la ronda, igual que si todo tu equipo se debilitara.","Alle deine Pokémon werden besiegt und der Kampf endet: Du verlierst die Runde, als wäre dein ganzes Team besiegt worden."
 ui.battle.useItemOn,Use {item} on…,Utiliser {item} sur…,Usar {item} en…,{item} anwenden auf …
 ui.battle.itemsTitle,Items (one per turn),Objets (un par tour),Objetos (uno por turno),Items (eines pro Runde)
 ui.log.startWild,"A wild {foe} appeared! Go, {lead}!","Un {foe} sauvage apparaît ! Vas-y, {lead} !","¡Ha aparecido un {foe} salvaje! ¡Adelante, {lead}!","Ein wildes {foe} erscheint! Los, {lead}!"
@@ -1149,6 +1152,7 @@ ui.log.restored,{name} restored {amount} HP!,{name} récupère {amount} PV !,¡{
 ui.log.recoil,{name} is hurt by the recoil of its confusion! −{amount},{name} souffre du contrecoup de sa confusion ! −{amount},¡{name} sufre el retroceso de su confusión! −{amount},{name} leidet unter dem Rückstoß seiner Verwirrung! −{amount}
 ui.log.endWon,{foe} was defeated!,{foe} est vaincu !,¡{foe} ha sido derrotado!,{foe} wurde besiegt!
 ui.log.endLost,You have no more Pokémon that can fight…,Tu n'as plus de Pokémon en état de combattre…,Ya no te quedan Pokémon en condiciones de luchar…,Du hast kein kampffähiges Pokémon mehr …
+ui.log.endForfeit,You gave up the fight…,Tu as abandonné le combat…,Te has rendido…,Du hast den Kampf aufgegeben …
 ui.log.endStalemate,Neither side can land a blow — a stalemate.,Aucun camp ne peut frapper — match nul.,Ninguno de los dos puede golpear: tablas.,Keine Seite kann treffen — ein Patt.
 ui.log.endFled,Got away safely!,Fuite réussie !,¡Has escapado sin problemas!,Erfolgreich geflohen!
 ui.hist.typedAttack,{type} attack,Attaque {type},Ataque {type},{type}-Angriff
