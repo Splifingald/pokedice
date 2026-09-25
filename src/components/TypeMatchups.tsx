@@ -9,7 +9,7 @@ import { TypeBadge } from './TypeBadge'
 /**
  * Attack takes the most effective type among the dice, so a defender is hit hard when any die
  * doubles on it, and untouchable only when every die is blank against it. Defence is the product
- * over the Pokémon's own types, so ×4 counts as weak and ×¼ as resisted.
+ * over the Pokémon's own types (clamped to ×½…×2, immunities ×0).
  */
 export function matchupsOf(data: GameData, types: readonly PokeType[], dice: readonly DieType[]) {
   const chart = data.typeChart

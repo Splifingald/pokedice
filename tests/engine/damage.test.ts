@@ -5,12 +5,14 @@ import { data, die, sdie } from '../fixtures'
 const L1 = uniformLevels(1)
 
 describe('type multiplier', () => {
-  it('multiplies over both defender types, and stops at ×2', () => {
+  it('multiplies over both defender types, clamped to ×½…×2 (immunities stay ×0)', () => {
     expect(typeMultiplier(data.typeChart, 'fire', ['grass'])).toBe(2)
     // Fire beats both of Paras's types, and still only doubles.
     expect(typeMultiplier(data.typeChart, 'fire', ['bug', 'grass'])).toBe(2)
-    // Resistances are not capped: two of them still quarter the damage.
-    expect(typeMultiplier(data.typeChart, 'fire', ['water', 'rock'])).toBe(0.25)
+    // Fire is resisted by both of Kabuto's types, and still only halves.
+    expect(typeMultiplier(data.typeChart, 'fire', ['water', 'rock'])).toBe(0.5)
+    // An immunity on either type still wins over a weakness on the other.
+    expect(typeMultiplier(data.typeChart, 'ground', ['flying', 'fire'])).toBe(0)
     expect(typeMultiplier(data.typeChart, 'normal', ['ghost'])).toBe(0)
     expect(typeMultiplier(data.typeChart, 'base', ['ghost'])).toBe(1)
   })
@@ -55,9 +57,9 @@ describe('damage formula', () => {
     expect(r2.final).toBe(10)
   })
 
-  it('floors at 1 when not immune', () => {
+  it('a double resistance only halves the hit', () => {
     const r = computeDamage([die('fire', 2)], ['fire'], ['water', 'rock'], L1, data)
-    expect(r.raw).toBe(0.5)
+    expect(r.raw).toBe(1)
     expect(r.final).toBe(1)
   })
 

@@ -86,7 +86,7 @@ Example: Kabuto (2 water dice, 1 rock die, 1 base die) vs Pidgeotto (Normal/Flyi
 
 - `faceValue` — the rolled face's number. Status faces use their **fallback value** (§3.1).
 - `dieUpgradeBonus` — account-wide die track (§5.2), applied **per die, before** the type multiplier. **Base dice have no track and always contribute +0.**
-- `typeMultiplier` — Gen 6+ 18-type chart, product over the defender's types: `mult(atk,def1) × mult(atk,def2)` ∈ `{0, 0.25, 0.5, 1, 2, 4}`.
+- `typeMultiplier` — Gen 6+ 18-type chart, product over the defender's types: `mult(atk,def1) × mult(atk,def2)`, clamped to `{0, 0.5, 1, 2}` — a double weakness counts as ×2, a double resistance as ×0.5; an immunity stays ×0.
 - `attackType` — **base dice never set it** (`countsForMajority` = false, the column keeps its old name). Equal multipliers break to: the type with the most dice, then Type 1, Type 2, then the highest-value die. Only base dice → untyped (×1).
 - **Immunity:** when the attack type's multiplier is 0 (every dice type is useless), the attack does 0 and inflicts **no status**. A Normal-only Pokémon can't touch a Ghost at all.
 - **Deadlock:** if the foe can't hurt the active Pokémon, no teammate can hurt the foe, and no burn / poison / confusion is pending, the battle ends at once as a stalemate (no rewards, no wipe) instead of at `maxBattleTurns`.
