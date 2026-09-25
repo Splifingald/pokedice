@@ -1441,6 +1441,12 @@ ui.tutorial.goToDayCare,GO TO THE DAY CARE,ALLER À LA PENSION,IR A LA GUARDERÍ
 ui.tutorial.boardTitle,The leaderboard,Le classement,La clasificación,Die Bestenliste
 ui.tutorial.boardBody,"Trainers all over the world are on the same journey as you! The leaderboard ranks them by their best Pokémon level, how far they got, and their Pokédex. Open it any time with the trophy button at the top. Connect with Google to take your place on it!","Des Dresseurs du monde entier vivent le même voyage que toi ! Le classement les range selon le niveau de leur meilleur Pokémon, leur avancée et leur Pokédex. Ouvre-le quand tu veux avec le bouton trophée en haut. Connecte-toi avec Google pour y prendre ta place !","¡Entrenadores de todo el mundo están en el mismo viaje que tú! La clasificación los ordena por el nivel de su mejor Pokémon, lo lejos que han llegado y su Pokédex. Ábrela cuando quieras con el botón del trofeo de arriba. ¡Conéctate con Google para ocupar tu sitio en ella!","Trainer auf der ganzen Welt sind auf derselben Reise wie du! Die Bestenliste ordnet sie nach dem Level ihres besten Pokémon, wie weit sie gekommen sind und ihrem Pokédex. Öffne sie jederzeit mit der Pokal-Schaltfläche oben. Melde dich mit Google an, um deinen Platz einzunehmen!"
 ui.tutorial.seeBoard,SEE THE LEADERBOARD,VOIR LE CLASSEMENT,VER LA CLASIFICACIÓN,ZUR BESTENLISTE
+ui.share.title,Enjoying the game?,Tu aimes le jeu ?,¿Te gusta el juego?,Gefällt dir das Spiel?
+ui.share.body,You like the game? Share it to a friend!,Tu aimes le jeu ? Partage-le à un ami !,¿Te gusta el juego? ¡Compártelo con un amigo!,Gefällt dir das Spiel? Teile es mit einem Freund!
+ui.share.button,SHARE,PARTAGER,COMPARTIR,TEILEN
+ui.share.later,LATER,PLUS TARD,MÁS TARDE,SPÄTER
+ui.share.text,Catch them all with dice in Pokédice!,Attrape-les tous avec des dés dans Pokédice !,¡Atrápalos a todos con dados en Pokédice!,Schnapp sie dir alle mit Würfeln in Pokédice!
+ui.share.copied,Link copied — send it to a friend!,Lien copié — envoie-le à un ami !,Enlace copiado: ¡envíaselo a un amigo!,Link kopiert — schick ihn einem Freund!
 ui.account.connect,CONNECT,SE CONNECTER,CONECTAR,VERBINDEN
 ui.account.connectLabel,Connect with Google to back up your save,Se connecter avec Google pour sauvegarder ta partie,Conectar con Google para guardar tu partida,"Mit Google verbinden, um deinen Spielstand zu sichern"
 ui.account.connected,CONNECTED,CONNECTÉ,CONECTADO,VERBUNDEN
