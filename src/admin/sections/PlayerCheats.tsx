@@ -9,6 +9,7 @@ import { pushToast, useGame } from '@/store/game'
 import { newId } from '@/store/run'
 import {
   adminAddPokemon,
+  adminAddRegionPokemon,
   adminCompleteLeague,
   adminGiveItem,
   adminRemovePokemon,
@@ -31,6 +32,7 @@ export function PlayerCheats({ player, name }: { player: string; name: string })
   const [level, setLevel] = useState(5)
   const [shiny, setShiny] = useState(false)
   const [region, setRegion] = useState('kanto')
+  const [regionLevel, setRegionLevel] = useState(50)
   const [itemKey, setItemKey] = useState('rare-candy')
   const [qty, setQty] = useState(1)
 
@@ -84,6 +86,17 @@ export function PlayerCheats({ player, name }: { player: string; name: string })
     void apply(
       (s) => adminAddPokemon(s, { dex, level: lv, shiny }, data, Date.now(), newId()),
       `${data.species[dex]?.name ?? `#${dex}`} Lv.${lv} given to ${name}`,
+    )
+  }
+
+  const addRegion = () => {
+    const lv = Math.max(1, Math.min(data.config.maxLevel, Math.round(regionLevel)))
+    const r = data.regions.find((x) => x.id === region)
+    const count = r ? r.dexRange[1] - r.dexRange[0] + 1 : 0
+    if (!window.confirm(`Give ${name} every ${r?.name ?? region} Pokémon (up to ${count}) at Lv.${lv}?`)) return
+    void apply(
+      (s) => adminAddRegionPokemon(s, data, Date.now(), region, lv, newId),
+      `Every ${r?.name ?? region} Pokémon Lv.${lv} given to ${name}`,
     )
   }
 
@@ -176,6 +189,13 @@ export function PlayerCheats({ player, name }: { player: string; name: string })
               }
             >
               Start roamers
+            </PixelButton>
+            <label className="flex w-24 flex-col text-base">
+              Level
+              <NumInput value={regionLevel} min={1} max={data.config.maxLevel} onChange={(v) => setRegionLevel(v ?? 1)} />
+            </label>
+            <PixelButton size="sm" variant="success" disabled={busy} onClick={addRegion}>
+              Give all its Pokémon
             </PixelButton>
           </div>
           <div className="flex flex-wrap items-end gap-2">
