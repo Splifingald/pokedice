@@ -22,6 +22,13 @@
  * — male, Plant Cloak, West Sea, Land Forme, Altered Forme, plain Rotom, plain Arceus — and to how many slots the
  * whole block spans, which is what the Box icons are right-aligned to.
  *
+ * `pnpm pokemon-sprites --unova` cuts Gen 5 (#494–649) out of the four B2W2 sheets in graphics/pokemon
+ * (b2w2-front.png, b2w2-back.png, b2w2-front-shiny.png, b2w2-back-shiny.png — The Spriters Resource, lossless). All four
+ * share one layout, measured off the files: 96×96 cells, 8 columns, a 103px row pitch (a 7px label strip under each
+ * cell), each cell on a flat colour. Forms and genders take slots of their own, so UNOVA_SLOTS lists the sheet's labels
+ * in order and picks one per dex. The sheets carry no Box icons, so the menu icon is the front sprite for now (see
+ * `unovaMinis`).
+ *
  * `pnpm pokemon-sprites --publish [srcDir]` copies those files (default graphics/pokemon) into public/pokemon with short
  * names (001_front.png, 001_back_shiny.png, 001_mini_1.png…) and writes src/data/sprite-metrics.json: the transparent
  * rows under each front / back sprite, so the battle scene can stand every Pokémon on its platform.
@@ -175,6 +182,120 @@ function platinumSprites(sheet: PNG, row: number, slot: number, slots: number): 
     back_shiny: cell(2, 1),
     miniature_1: icons[0]!,
     miniature_2: icons[1]!,
+  }
+}
+
+// B2W2 sheet geometry (graphics/pokemon/b2w2-*.png), measured off the files.
+const BW_CELL = 96
+const BW_ROW = 103
+const BW_COLS = 8
+
+/**
+ * The sheets' labels in order, one per slot: a plain dex number, or the dex with its form / gender suffix. Every
+ * species not listed with a suffix owns exactly one slot. Picked per dex: the first slot, except where the male art
+ * comes second (Unfezant, Frillish, Jellicent).
+ */
+const UNOVA_FORMS: Record<number, { slots: number; pick: number }> = {
+  521: { slots: 2, pick: 1 }, // F, M
+  550: { slots: 2, pick: 0 }, // Red-Striped, Blue-Striped
+  555: { slots: 2, pick: 0 }, // Standard, Zen
+  585: { slots: 4, pick: 0 }, // Spring…Winter
+  586: { slots: 4, pick: 0 },
+  592: { slots: 2, pick: 1 }, // F, M
+  593: { slots: 2, pick: 1 },
+  641: { slots: 2, pick: 0 }, // Incarnate, Therian
+  642: { slots: 2, pick: 0 },
+  645: { slots: 2, pick: 0 },
+  646: { slots: 3, pick: 0 }, // Kyurem, White, Black
+  647: { slots: 2, pick: 0 }, // Ordinary, Resolute
+  648: { slots: 2, pick: 0 }, // Aria, Pirouette
+  649: { slots: 4, pick: 0 }, // plain, then the four Drives
+}
+
+/** Dex → slot index on the B2W2 sheets. */
+export function unovaSlots(): Map<number, number> {
+  const out = new Map<number, number>()
+  let slot = 0
+  for (let dex = 494; dex <= 649; dex++) {
+    const form = UNOVA_FORMS[dex]
+    out.set(dex, slot + (form?.pick ?? 0))
+    slot += form?.slots ?? 1
+  }
+  return out
+}
+
+/**
+ * Menu icons from the front sprite, since the sheets have none: the art trimmed to a square around it (so it fills
+ * a 32px menu slot rather than shrinking into a corner of a 64px canvas), bottom-aligned; the second frame is the same
+ * art one pixel higher, which keeps the hop every other Pokémon's icon has.
+ */
+function unovaMinis(front: PNG): [PNG, PNG] {
+  let x0 = front.width
+  let y0 = front.height
+  let x1 = -1
+  let y1 = -1
+  for (let y = 0; y < front.height; y++)
+    for (let x = 0; x < front.width; x++) {
+      if (front.data[(y * front.width + x) * 4 + 3] === 0) continue
+      x0 = Math.min(x0, x)
+      x1 = Math.max(x1, x)
+      y0 = Math.min(y0, y)
+      y1 = Math.max(y1, y)
+    }
+  const w = x1 - x0 + 1
+  const h = y1 - y0 + 1
+  const size = Math.max(w, h + 1)
+  const frame = (lift: number) => {
+    const out = new PNG({ width: size, height: size })
+    out.data.fill(0)
+    PNG.bitblt(front, out, x0, y0, w, h, Math.floor((size - w) / 2), size - h - lift)
+    return out
+  }
+  return [frame(0), frame(1)]
+}
+
+/** Cuts #494–649 from the four B2W2 sheets into `outDir`, named like the decomp path's files. */
+async function cutUnova(outDir: string) {
+  const sheet = async (name: string) => PNG.sync.read(await readFile(path.join(ROOT, `graphics/pokemon/b2w2-${name}.png`)))
+  const sheets = {
+    front: await sheet('front'),
+    front_shiny: await sheet('front-shiny'),
+    back: await sheet('back'),
+    back_shiny: await sheet('back-shiny'),
+  }
+  await mkdir(outDir, { recursive: true })
+  const byDex = new Map(pokemon.map((p) => [p.dex, p.name]))
+  const failed: string[] = []
+  let n = 0
+  for (const [dex, slot] of unovaSlots()) {
+    const name = byDex.get(dex)
+    if (!name) {
+      failed.push(`${dex}: not in src/data/pokemon.json — run pnpm seed-regions first`)
+      continue
+    }
+    const x = (slot % BW_COLS) * BW_CELL
+    const y = Math.floor(slot / BW_COLS) * BW_ROW
+    const cut: Record<string, PNG> = {}
+    for (const [kind, img] of Object.entries(sheets)) cut[kind] = fitCanvas(clearBackground(crop(img, x, y, BW_CELL, BW_CELL)))
+    const [mini1, mini2] = unovaMinis(cut.front!)
+    cut.miniature_1 = mini1
+    cut.miniature_2 = mini2
+    const prefix = `${String(dex).padStart(3, '0')}_${fileName(name)}`
+    for (const [kind, img] of Object.entries(cut)) {
+      if (isEmpty(img)) {
+        failed.push(`${dex} ${name} ${kind}: empty cell at slot ${slot}`)
+        continue
+      }
+      await writeFile(path.join(outDir, `${prefix}_${kind}.png`), PNG.sync.write(img))
+      n++
+    }
+  }
+  console.log(`${n} Gen 5 sprites written to ${outDir}`)
+  if (failed.length) {
+    console.error(`
+${failed.length} failures:`)
+    for (const f of failed) console.error(`  ${f}`)
+    process.exitCode = 1
   }
 }
 
@@ -474,6 +595,7 @@ async function main() {
   if (process.argv[2] === '--fetch') return fetchAll(path.resolve(process.argv[3] ?? path.join(ROOT, 'graphics/pokemon')))
   if (process.argv[2] === '--platinum')
     return cutPlatinum(path.resolve(process.argv[3] ?? path.join(ROOT, 'graphics/pokemon')))
+  if (process.argv[2] === '--unova') return cutUnova(path.resolve(process.argv[3] ?? path.join(ROOT, 'graphics/pokemon')))
   if (process.argv[2] === '--publish') return publish(path.resolve(process.argv[3] ?? path.join(ROOT, 'graphics/pokemon')))
   const outDir = path.resolve(process.argv[2] ?? path.join(ROOT, 'graphics/pokemon/sprites'))
   const sheetPath = path.resolve(process.argv[3] ?? path.join(ROOT, 'graphics/pokemon/pokemon.png'))
