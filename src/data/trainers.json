@@ -1,5 +1,194 @@
 [
  {
+  "id": "4457770f-a969-4efa-bee2-7102bd718fc4",
+  "name": "Elite Four Aaron II",
+  "spriteUrl": "/trainers/classes/sinnoh/elite-aaron.png",
+  "team": [
+   {
+    "dex": 452,
+    "level": 70
+   },
+   {
+    "dex": 416,
+    "level": 69
+   },
+   {
+    "dex": 469,
+    "level": 68
+   }
+  ],
+  "role": "elite",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ]
+ },
+ {
+  "id": "505a38a7-1fce-4bff-9dd1-c1ca9d0e2ec5",
+  "name": "Elite Four Bertha II",
+  "spriteUrl": "/trainers/classes/sinnoh/elite-bertha.png",
+  "team": [
+   {
+    "dex": 340,
+    "level": 71
+   },
+   {
+    "dex": 473,
+    "level": 71
+   },
+   {
+    "dex": 464,
+    "level": 72
+   }
+  ],
+  "role": "elite",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ]
+ },
+ {
+  "id": "b8f5fd50-207f-4e18-b8f4-4e6b9427b6e8",
+  "name": "Elite Four Flint II",
+  "spriteUrl": "/trainers/classes/sinnoh/elite-flint.png",
+  "team": [
+   {
+    "dex": 229,
+    "level": 72,
+    "shiny": true
+   },
+   {
+    "dex": 392,
+    "level": 74
+   },
+   {
+    "dex": 467,
+    "level": 75
+   }
+  ],
+  "role": "elite",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ]
+ },
+ {
+  "id": "ff1fa9eb-e2a9-4ec8-ae06-0c399a6b6d32",
+  "name": "Elite Four Lucian II",
+  "spriteUrl": "/trainers/classes/sinnoh/elite-lucian.png",
+  "team": [
+   {
+    "dex": 437,
+    "level": 72
+   },
+   {
+    "dex": 65,
+    "level": 74
+   },
+   {
+    "dex": 475,
+    "level": 75
+   }
+  ],
+  "role": "elite",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ]
+ },
+ {
+  "id": "43e442fb-cf4e-47f6-b0cd-1252eb421c93",
+  "name": "Champion Cynthia II",
+  "spriteUrl": "/trainers/classes/sinnoh/champion-cynthia.png",
+  "team": [
+   {
+    "dex": 442,
+    "level": 74
+   },
+   {
+    "dex": 448,
+    "level": 77,
+    "shiny": true
+   },
+   {
+    "dex": 445,
+    "level": 80
+   }
+  ],
+  "role": "champion",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ]
+ },
+ {
+  "id": "c7409849-6c4b-4cf8-8fe3-a4e24974952c",
+  "name": "Ace Trainer Alyssa II",
+  "spriteUrl": "/trainers/classes/sinnoh/ace-trainer-m.png",
+  "team": [
+   {
+    "dex": 395,
+    "level": 65
+   },
+   {
+    "dex": 462,
+    "level": 65
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "4e564ded-152d-434a-9fc8-9cf5186e2917",
+  "name": "Veteran Lamar II",
+  "spriteUrl": "/trainers/classes/sinnoh/veteran-m.png",
+  "team": [
+   {
+    "dex": 389,
+    "level": 65
+   },
+   {
+    "dex": 419,
+    "level": 66
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "29a39fad-d23a-42ce-9295-505608fca780",
+  "name": "Ace Trainer Maya II",
+  "spriteUrl": "/trainers/classes/sinnoh/ace-trainer-m.png",
+  "team": [
+   {
+    "dex": 468,
+    "level": 66
+   },
+   {
+    "dex": 465,
+    "level": 65
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
   "id": "d3301214-ac28-55b9-833a-65f5f0ce0999",
   "name": "Lass Reli",
   "spriteUrl": "/trainers/classes/lass.png",
@@ -11,6 +200,1182 @@
    {
     "dex": 29,
     "level": 16
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "993674e4-a27f-52c6-91d3-71bc5d3cbcab",
+  "name": "Lass Robin",
+  "spriteUrl": "/trainers/classes/lass.png",
+  "team": [
+   {
+    "dex": 39,
+    "level": 14
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "e67b06a7-cd12-5bb8-9666-c5dfd4e38a58",
+  "name": "Bug Catcher Kent",
+  "spriteUrl": "/trainers/classes/bug-catcher.png",
+  "team": [
+   {
+    "dex": 13,
+    "level": 11
+   },
+   {
+    "dex": 14,
+    "level": 11
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "70c9d7a3-6701-5234-b3ea-9352efe34e26",
+  "name": "Lass Iris",
+  "spriteUrl": "/trainers/classes/lass.png",
+  "team": [
+   {
+    "dex": 35,
+    "level": 14
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "eb27f123-dbfb-5520-85bb-06f54a8dfb09",
+  "name": "Elite Four Lance",
+  "spriteUrl": "/trainers/classes/elite-lance.png",
+  "team": [
+   {
+    "dex": 149,
+    "level": 60
+   },
+   {
+    "dex": 142,
+    "level": 58
+   },
+   {
+    "dex": 148,
+    "level": 54
+   }
+  ],
+  "role": "elite",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ]
+ },
+ {
+  "id": "2330f93e-5d26-56bd-b875-59351aac91bb",
+  "name": "Champion Blue",
+  "spriteUrl": "/trainers/classes/blue-3.png",
+  "team": [
+   {
+    "dex": 6,
+    "level": 63
+   },
+   {
+    "dex": 130,
+    "level": 61
+   },
+   {
+    "dex": 18,
+    "level": 59
+   }
+  ],
+  "role": "champion",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ]
+ },
+ {
+  "id": "10a639ea-ad88-5fc1-bda0-b937ee800c35",
+  "name": "Ace Trainer Nadia",
+  "spriteUrl": "/trainers/classes/cooltrainer-f.png",
+  "team": [
+   {
+    "dex": 148,
+    "level": 50
+   },
+   {
+    "dex": 149,
+    "level": 52
+   },
+   {
+    "dex": 147,
+    "level": 52
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "cd5e83a9-3e04-5822-a0cb-906b5b997d45",
+  "name": "Ace Trainer Samuel",
+  "spriteUrl": "/trainers/classes/cooltrainer-m.png",
+  "team": [
+   {
+    "dex": 126,
+    "level": 55
+   },
+   {
+    "dex": 38,
+    "level": 55
+   },
+   {
+    "dex": 6,
+    "level": 56
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "d730b0c5-0c10-54b2-83ef-26b103c323d9",
+  "name": "Super Nerd Jovan",
+  "spriteUrl": "/trainers/classes/super-nerd.png",
+  "team": [
+   {
+    "dex": 81,
+    "level": 11
+   },
+   {
+    "dex": 100,
+    "level": 11
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "b7c437a8-f4dc-555c-899f-1f49c72d8fcf",
+  "name": "Youngster Josh",
+  "spriteUrl": "/trainers/classes/youngster.png",
+  "team": [
+   {
+    "dex": 19,
+    "level": 10
+   },
+   {
+    "dex": 19,
+    "level": 10
+   },
+   {
+    "dex": 41,
+    "level": 10
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "dfca4c46-8805-5913-9d69-48eda26b7ae7",
+  "name": "Hiker Marcos",
+  "spriteUrl": "/trainers/classes/hiker.png",
+  "team": [
+   {
+    "dex": 74,
+    "level": 10
+   },
+   {
+    "dex": 74,
+    "level": 10
+   },
+   {
+    "dex": 95,
+    "level": 10
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "9136e8ac-b1b3-5995-ae1d-00db93b612a0",
+  "name": "Rocket Grunt",
+  "spriteUrl": "/trainers/classes/team-rocket-m.png",
+  "team": [
+   {
+    "dex": 27,
+    "level": 11
+   },
+   {
+    "dex": 19,
+    "level": 11
+   },
+   {
+    "dex": 41,
+    "level": 11
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "8bda4b51-c949-5b0d-8b50-bc5825b7ce7c",
+  "name": "Bug Catcher Cale",
+  "spriteUrl": "/trainers/classes/bug-catcher.png",
+  "team": [
+   {
+    "dex": 10,
+    "level": 10
+   },
+   {
+    "dex": 13,
+    "level": 10
+   },
+   {
+    "dex": 11,
+    "level": 10
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "f2ac2bb7-817c-57a2-aaa9-b7b0bd925cdb",
+  "name": "Lass Ali",
+  "spriteUrl": "/trainers/classes/lass.png",
+  "team": [
+   {
+    "dex": 16,
+    "level": 12
+   },
+   {
+    "dex": 43,
+    "level": 12
+   },
+   {
+    "dex": 69,
+    "level": 12
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "700a26fb-ef97-55a3-a878-97e4e5e1513d",
+  "name": "Youngster Timmy",
+  "spriteUrl": "/trainers/classes/youngster.png",
+  "team": [
+   {
+    "dex": 27,
+    "level": 14
+   },
+   {
+    "dex": 23,
+    "level": 14
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "979f0d14-caea-5048-a217-4cc9fc2ddc5c",
+  "name": "Elite Four Will",
+  "spriteUrl": "/trainers/classes/johto/elite-will.png",
+  "team": [
+   {
+    "dex": 178,
+    "level": 51
+   },
+   {
+    "dex": 124,
+    "level": 53
+   },
+   {
+    "dex": 103,
+    "level": 55
+   }
+  ],
+  "role": "elite",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ]
+ },
+ {
+  "id": "77f2e272-c680-5a70-b831-bf1e9f8b6c52",
+  "name": "Elite Four Koga",
+  "spriteUrl": "/trainers/classes/johto/elite-koga.png",
+  "team": [
+   {
+    "dex": 168,
+    "level": 53
+   },
+   {
+    "dex": 49,
+    "level": 55
+   },
+   {
+    "dex": 205,
+    "level": 57
+   }
+  ],
+  "role": "elite",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ]
+ },
+ {
+  "id": "a18db6c8-6c5e-5736-875b-6f761640b87e",
+  "name": "Elite Four Bruno",
+  "spriteUrl": "/trainers/classes/johto/elite-bruno.png",
+  "team": [
+   {
+    "dex": 237,
+    "level": 55
+   },
+   {
+    "dex": 107,
+    "level": 57
+   },
+   {
+    "dex": 106,
+    "level": 59
+   }
+  ],
+  "role": "elite",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ]
+ },
+ {
+  "id": "aa050486-189f-5ff4-a0e2-c75899f31bd4",
+  "name": "Elite Four Karen",
+  "spriteUrl": "/trainers/classes/johto/elite-karen.png",
+  "team": [
+   {
+    "dex": 198,
+    "level": 56
+   },
+   {
+    "dex": 229,
+    "level": 58
+   },
+   {
+    "dex": 197,
+    "level": 60
+   }
+  ],
+  "role": "elite",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ]
+ },
+ {
+  "id": "accb672b-6982-5485-b370-c30ae9ec2da4",
+  "name": "Champion Lance",
+  "spriteUrl": "/trainers/classes/johto/champion-lance.png",
+  "team": [
+   {
+    "dex": 130,
+    "level": 59
+   },
+   {
+    "dex": 149,
+    "level": 61
+   },
+   {
+    "dex": 149,
+    "level": 64
+   }
+  ],
+  "role": "champion",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ]
+ },
+ {
+  "id": "3d3164b4-144f-5082-b99c-db637c022d00",
+  "name": "Picnicker Diana",
+  "spriteUrl": "/trainers/classes/picnicker.png",
+  "team": [
+   {
+    "dex": 118,
+    "level": 19
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "d0c2cbc5-9b64-5b7d-86c4-92d379449e79",
+  "name": "Brock",
+  "spriteUrl": "/trainers/classes/champion-brock.png",
+  "team": [
+   {
+    "dex": 74,
+    "level": 12
+   },
+   {
+    "dex": 95,
+    "level": 14
+   }
+  ],
+  "role": "leader",
+  "badge": "Boulder Badge",
+  "upgradeLevel": null,
+  "battleBackground": "default"
+ },
+ {
+  "id": "ddf4d399-e9a9-5a0f-a6d1-65265068c8a3",
+  "name": "Lass Janice",
+  "spriteUrl": "/trainers/classes/lass.png",
+  "team": [
+   {
+    "dex": 16,
+    "level": 9
+   },
+   {
+    "dex": 16,
+    "level": 9
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "2c614121-f667-5065-8f60-d7937e67fd58",
+  "name": "Bug Catcher Colton",
+  "spriteUrl": "/trainers/classes/bug-catcher.png",
+  "team": [
+   {
+    "dex": 10,
+    "level": 10
+   },
+   {
+    "dex": 13,
+    "level": 10
+   },
+   {
+    "dex": 10,
+    "level": 10
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "0d076d9f-7c4f-5aa1-8974-7b494de9f6e3",
+  "name": "Youngster Ben",
+  "spriteUrl": "/trainers/classes/youngster.png",
+  "team": [
+   {
+    "dex": 19,
+    "level": 11
+   },
+   {
+    "dex": 23,
+    "level": 11
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "ae7cc0ef-b8ef-52b6-b1de-84fb9e0efed6",
+  "name": "Bug Catcher Greg",
+  "spriteUrl": "/trainers/classes/bug-catcher.png",
+  "team": [
+   {
+    "dex": 13,
+    "level": 9
+   },
+   {
+    "dex": 14,
+    "level": 9
+   },
+   {
+    "dex": 10,
+    "level": 9
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "a568ca36-fc30-599e-9e78-b4fb211fb606",
+  "name": "Champion Rival",
+  "spriteUrl": "/characters/green.png",
+  "team": [
+   {
+    "dex": 26,
+    "level": 75
+   },
+   {
+    "dex": 130,
+    "level": 76
+   },
+   {
+    "dex": 6,
+    "level": 80
+   }
+  ],
+  "role": "champion",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "rivalOf": 1,
+  "items": [
+   "hyper-potion"
+  ]
+ },
+ {
+  "id": "2a51f07a-53f5-5fe6-a875-8e8428d78db6",
+  "name": "Champion Rival",
+  "spriteUrl": "/characters/green.png",
+  "team": [
+   {
+    "dex": 26,
+    "level": 75
+   },
+   {
+    "dex": 59,
+    "level": 76
+   },
+   {
+    "dex": 9,
+    "level": 80
+   }
+  ],
+  "role": "champion",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "rivalOf": 4,
+  "items": [
+   "hyper-potion"
+  ]
+ },
+ {
+  "id": "599bb09c-3765-5356-b5e1-27a6cf741358",
+  "name": "Champion Rival",
+  "spriteUrl": "/characters/green.png",
+  "team": [
+   {
+    "dex": 26,
+    "level": 75
+   },
+   {
+    "dex": 59,
+    "level": 76
+   },
+   {
+    "dex": 3,
+    "level": 80
+   }
+  ],
+  "role": "champion",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "rivalOf": 7,
+  "items": [
+   "hyper-potion"
+  ]
+ },
+ {
+  "id": "654cb1e2-cc05-5148-824e-8378e33b8694",
+  "name": "Youngster Joey",
+  "spriteUrl": "/trainers/classes/johto/youngster.png",
+  "team": [
+   {
+    "dex": 19,
+    "level": 5
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "a2cea4fc-c09f-5a8f-b178-787ba9fed415",
+  "name": "Bug Catcher Don",
+  "spriteUrl": "/trainers/classes/johto/bug-catcher.png",
+  "team": [
+   {
+    "dex": 167,
+    "level": 6
+   },
+   {
+    "dex": 165,
+    "level": 6
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "40499b39-e1ed-5aae-a6a6-88ad227e4ac3",
+  "name": "Lass Abigail",
+  "spriteUrl": "/trainers/classes/johto/lass.png",
+  "team": [
+   {
+    "dex": 161,
+    "level": 7
+   },
+   {
+    "dex": 163,
+    "level": 7
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "6ab75ae9-9f8c-5b6f-b1a6-4d9bf68ef507",
+  "name": "Youngster Mikey",
+  "spriteUrl": "/trainers/classes/johto/youngster.png",
+  "team": [
+   {
+    "dex": 16,
+    "level": 7
+   },
+   {
+    "dex": 19,
+    "level": 7
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "e10acb82-610c-5dd2-a1b7-718ca4a2bae5",
+  "name": "Sage Nico",
+  "spriteUrl": "/trainers/classes/johto/sage.png",
+  "team": [
+   {
+    "dex": 69,
+    "level": 8
+   },
+   {
+    "dex": 69,
+    "level": 8
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "e52d35a5-bcba-4cff-a51a-14cf9400ef62",
+  "name": "Ace Trainer Blake II",
+  "spriteUrl": "/trainers/classes/johto/schoolboy.png",
+  "team": [
+   {
+    "dex": 232,
+    "level": 59
+   },
+   {
+    "dex": 208,
+    "level": 60,
+    "shiny": true
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null,
+  "items": [
+   "super-potion"
+  ]
+ },
+ {
+  "id": "5aeec583-b9a0-464d-aa70-6abb72718786",
+  "name": "Ace Trainer Irene II",
+  "spriteUrl": "/trainers/classes/johto/schoolboy.png",
+  "team": [
+   {
+    "dex": 112,
+    "level": 59
+   },
+   {
+    "dex": 248,
+    "level": 61
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "50a71ec5-d033-4e21-96e0-ea3ac26c844f",
+  "name": "Ace Trainer Cody II",
+  "spriteUrl": "/trainers/classes/johto/schoolboy.png",
+  "team": [
+   {
+    "dex": 149,
+    "level": 61
+   },
+   {
+    "dex": 148,
+    "level": 60
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "ffbca5d2-d659-4f46-b9af-f7c263b5a239",
+  "name": "Black Belt Lao II",
+  "spriteUrl": "/trainers/classes/johto/black-belt.png",
+  "team": [
+   {
+    "dex": 68,
+    "level": 60
+   },
+   {
+    "dex": 237,
+    "level": 60
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "c0a6eb4d-9adf-4063-9ce2-fc4cc669e7e8",
+  "name": "Elite Four Will II",
+  "spriteUrl": "/trainers/classes/johto/elite-will.png",
+  "team": [
+   {
+    "dex": 178,
+    "level": 71
+   },
+   {
+    "dex": 124,
+    "level": 73
+   },
+   {
+    "dex": 103,
+    "level": 75
+   }
+  ],
+  "role": "elite",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ]
+ },
+ {
+  "id": "45cdb614-48c6-4166-a250-b41d554e250b",
+  "name": "Elite Four Koga II",
+  "spriteUrl": "/trainers/classes/johto/elite-koga.png",
+  "team": [
+   {
+    "dex": 168,
+    "level": 73
+   },
+   {
+    "dex": 49,
+    "level": 74
+   },
+   {
+    "dex": 205,
+    "level": 75
+   }
+  ],
+  "role": "elite",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ]
+ },
+ {
+  "id": "e6f08fae-fb9d-4b38-870c-6539a695ebe1",
+  "name": "Elite Four Bruno II",
+  "spriteUrl": "/trainers/classes/johto/elite-bruno.png",
+  "team": [
+   {
+    "dex": 237,
+    "level": 75
+   },
+   {
+    "dex": 107,
+    "level": 77
+   },
+   {
+    "dex": 106,
+    "level": 79
+   }
+  ],
+  "role": "elite",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ]
+ },
+ {
+  "id": "c1b114c8-c834-4a4e-9dca-49965b044a52",
+  "name": "Elite Four Karen II",
+  "spriteUrl": "/trainers/classes/johto/elite-karen.png",
+  "team": [
+   {
+    "dex": 198,
+    "level": 75
+   },
+   {
+    "dex": 229,
+    "level": 77
+   },
+   {
+    "dex": 197,
+    "level": 80
+   }
+  ],
+  "role": "elite",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ]
+ },
+ {
+  "id": "eeddd758-6420-4f33-ba2c-56a098f3fd6c",
+  "name": "Champion Lance II",
+  "spriteUrl": "/trainers/classes/johto/champion-lance.png",
+  "team": [
+   {
+    "dex": 130,
+    "level": 79
+   },
+   {
+    "dex": 149,
+    "level": 81
+   },
+   {
+    "dex": 149,
+    "level": 84,
+    "shiny": true
+   }
+  ],
+  "role": "champion",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ]
+ },
+ {
+  "id": "fbccb182-9d19-5837-9c84-970936e1b7b0",
+  "name": "Hiker Jeremy",
+  "spriteUrl": "/trainers/classes/hiker.png",
+  "team": [
+   {
+    "dex": 66,
+    "level": 20
+   },
+   {
+    "dex": 95,
+    "level": 20
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "0dd54e5a-4887-58b2-a6f6-cb25433e0de7",
+  "name": "Sage Chow",
+  "spriteUrl": "/trainers/classes/johto/sage.png",
+  "team": [
+   {
+    "dex": 69,
+    "level": 9
+   },
+   {
+    "dex": 69,
+    "level": 9
+   },
+   {
+    "dex": 69,
+    "level": 9
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "886a3d08-fecc-56a4-89fc-9b6ccf66631b",
+  "name": "Sage Edmond",
+  "spriteUrl": "/trainers/classes/johto/sage.png",
+  "team": [
+   {
+    "dex": 69,
+    "level": 9
+   },
+   {
+    "dex": 92,
+    "level": 8
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "1ea3126a-c054-5e04-a1e4-e043bb66000d",
+  "name": "Cooltrainer Ivy",
+  "spriteUrl": "/trainers/classes/cooltrainer-f.png",
+  "team": [
+   {
+    "dex": 87,
+    "level": 60
+   },
+   {
+    "dex": 91,
+    "level": 60
+   },
+   {
+    "dex": 131,
+    "level": 62
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "43e5423e-66fa-5907-bded-9fab062d4c5d",
+  "name": "Pokémaniac Hugo",
+  "spriteUrl": "/trainers/classes/pokemaniac.png",
+  "team": [
+   {
+    "dex": 80,
+    "level": 60
+   },
+   {
+    "dex": 108,
+    "level": 61
+   },
+   {
+    "dex": 112,
+    "level": 62
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "2510d308-bcd5-5b2b-a1fc-df9a07cfea2e",
+  "name": "Ace Trainer Blake",
+  "spriteUrl": "/trainers/classes/cooltrainer-m.png",
+  "team": [
+   {
+    "dex": 135,
+    "level": 67
+   },
+   {
+    "dex": 59,
+    "level": 67
+   },
+   {
+    "dex": 130,
+    "level": 68
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "9e65b296-17f3-566c-8148-add7ac5956d0",
+  "name": "Ace Trainer Claire",
+  "spriteUrl": "/trainers/classes/cooltrainer-f.png",
+  "team": [
+   {
+    "dex": 36,
+    "level": 67
+   },
+   {
+    "dex": 134,
+    "level": 67
+   },
+   {
+    "dex": 121,
+    "level": 68
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "32aac824-7f02-58b9-8a83-3847371a4700",
+  "name": "Ace Trainer Marcus",
+  "spriteUrl": "/trainers/classes/cooltrainer-m.png",
+  "team": [
+   {
+    "dex": 99,
+    "level": 67
+   },
+   {
+    "dex": 68,
+    "level": 67
+   },
+   {
+    "dex": 112,
+    "level": 68
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "5fc3b44e-3023-5a8e-94c1-71eb245785dc",
+  "name": "Ace Trainer Rosa",
+  "spriteUrl": "/trainers/classes/cooltrainer-f.png",
+  "team": [
+   {
+    "dex": 136,
+    "level": 67
+   },
+   {
+    "dex": 26,
+    "level": 67
+   },
+   {
+    "dex": 3,
+    "level": 68
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "2d4a65c8-9b0c-5479-9658-ab6a8b709be5",
+  "name": "Ace Trainer Dante",
+  "spriteUrl": "/trainers/classes/cooltrainer-m.png",
+  "team": [
+   {
+    "dex": 123,
+    "level": 67
+   },
+   {
+    "dex": 142,
+    "level": 69
+   },
+   {
+    "dex": 149,
+    "level": 68
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "7ad13d36-f10e-596a-9f38-b7fe419b3e04",
+  "name": "Ace Trainer Yuki",
+  "spriteUrl": "/trainers/classes/cooltrainer-f.png",
+  "team": [
+   {
+    "dex": 87,
+    "level": 68
+   },
+   {
+    "dex": 124,
+    "level": 68
+   },
+   {
+    "dex": 131,
+    "level": 69
    }
   ],
   "role": "trainer",
@@ -677,21 +2042,6 @@
    {
     "dex": 79,
     "level": 23
-   }
-  ],
-  "role": "trainer",
-  "badge": null,
-  "upgradeLevel": null,
-  "battleBackground": null
- },
- {
-  "id": "993674e4-a27f-52c6-91d3-71bc5d3cbcab",
-  "name": "Lass Robin",
-  "spriteUrl": "/trainers/classes/lass.png",
-  "team": [
-   {
-    "dex": 39,
-    "level": 14
    }
   ],
   "role": "trainer",
@@ -2071,25 +3421,6 @@
   "battleBackground": null
  },
  {
-  "id": "e67b06a7-cd12-5bb8-9666-c5dfd4e38a58",
-  "name": "Bug Catcher Kent",
-  "spriteUrl": "/trainers/classes/bug-catcher.png",
-  "team": [
-   {
-    "dex": 13,
-    "level": 11
-   },
-   {
-    "dex": 14,
-    "level": 11
-   }
-  ],
-  "role": "trainer",
-  "badge": null,
-  "upgradeLevel": null,
-  "battleBackground": null
- },
- {
   "id": "e74611eb-6150-5a8c-8d17-ae889a6ce3ca",
   "name": "Channeler Tasha",
   "spriteUrl": "/trainers/classes/channeler.png",
@@ -2215,6 +3546,21 @@
    {
     "dex": 120,
     "level": 29
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "f9176ed5-1352-57b7-8acc-0100d4cdd67c",
+  "name": "Bug Catcher Sammy",
+  "spriteUrl": "/trainers/classes/bug-catcher.png",
+  "team": [
+   {
+    "dex": 13,
+    "level": 9
    }
   ],
   "role": "trainer",
@@ -2455,6 +3801,21 @@
    {
     "dex": 37,
     "level": 34
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "106bbb38-247f-546f-9211-a376b511429c",
+  "name": "Youngster Calvin",
+  "spriteUrl": "/trainers/classes/youngster.png",
+  "team": [
+   {
+    "dex": 21,
+    "level": 14
    }
   ],
   "role": "trainer",
@@ -2748,207 +4109,6 @@
    {
     "dex": 56,
     "level": 18
-   }
-  ],
-  "role": "trainer",
-  "badge": null,
-  "upgradeLevel": null,
-  "battleBackground": null
- },
- {
-  "id": "70c9d7a3-6701-5234-b3ea-9352efe34e26",
-  "name": "Lass Iris",
-  "spriteUrl": "/trainers/classes/lass.png",
-  "team": [
-   {
-    "dex": 35,
-    "level": 14
-   }
-  ],
-  "role": "trainer",
-  "badge": null,
-  "upgradeLevel": null,
-  "battleBackground": null
- },
- {
-  "id": "eb27f123-dbfb-5520-85bb-06f54a8dfb09",
-  "name": "Elite Four Lance",
-  "spriteUrl": "/trainers/classes/elite-lance.png",
-  "team": [
-   {
-    "dex": 149,
-    "level": 60
-   },
-   {
-    "dex": 142,
-    "level": 58
-   },
-   {
-    "dex": 148,
-    "level": 54
-   }
-  ],
-  "role": "elite",
-  "badge": null,
-  "upgradeLevel": null,
-  "battleBackground": "default",
-  "items": [
-   "hyper-potion"
-  ]
- },
- {
-  "id": "2330f93e-5d26-56bd-b875-59351aac91bb",
-  "name": "Champion Blue",
-  "spriteUrl": "/trainers/classes/blue-3.png",
-  "team": [
-   {
-    "dex": 6,
-    "level": 63
-   },
-   {
-    "dex": 130,
-    "level": 61
-   },
-   {
-    "dex": 18,
-    "level": 59
-   }
-  ],
-  "role": "champion",
-  "badge": null,
-  "upgradeLevel": null,
-  "battleBackground": "default",
-  "items": [
-   "hyper-potion"
-  ]
- },
- {
-  "id": "10a639ea-ad88-5fc1-bda0-b937ee800c35",
-  "name": "Ace Trainer Nadia",
-  "spriteUrl": "/trainers/classes/cooltrainer-f.png",
-  "team": [
-   {
-    "dex": 148,
-    "level": 50
-   },
-   {
-    "dex": 149,
-    "level": 52
-   },
-   {
-    "dex": 147,
-    "level": 52
-   }
-  ],
-  "role": "trainer",
-  "badge": null,
-  "upgradeLevel": null,
-  "battleBackground": null
- },
- {
-  "id": "cd5e83a9-3e04-5822-a0cb-906b5b997d45",
-  "name": "Ace Trainer Samuel",
-  "spriteUrl": "/trainers/classes/cooltrainer-m.png",
-  "team": [
-   {
-    "dex": 126,
-    "level": 55
-   },
-   {
-    "dex": 38,
-    "level": 55
-   },
-   {
-    "dex": 6,
-    "level": 56
-   }
-  ],
-  "role": "trainer",
-  "badge": null,
-  "upgradeLevel": null,
-  "battleBackground": null
- },
- {
-  "id": "d730b0c5-0c10-54b2-83ef-26b103c323d9",
-  "name": "Super Nerd Jovan",
-  "spriteUrl": "/trainers/classes/super-nerd.png",
-  "team": [
-   {
-    "dex": 81,
-    "level": 11
-   },
-   {
-    "dex": 100,
-    "level": 11
-   }
-  ],
-  "role": "trainer",
-  "badge": null,
-  "upgradeLevel": null,
-  "battleBackground": null
- },
- {
-  "id": "b7c437a8-f4dc-555c-899f-1f49c72d8fcf",
-  "name": "Youngster Josh",
-  "spriteUrl": "/trainers/classes/youngster.png",
-  "team": [
-   {
-    "dex": 19,
-    "level": 10
-   },
-   {
-    "dex": 19,
-    "level": 10
-   },
-   {
-    "dex": 41,
-    "level": 10
-   }
-  ],
-  "role": "trainer",
-  "badge": null,
-  "upgradeLevel": null,
-  "battleBackground": null
- },
- {
-  "id": "dfca4c46-8805-5913-9d69-48eda26b7ae7",
-  "name": "Hiker Marcos",
-  "spriteUrl": "/trainers/classes/hiker.png",
-  "team": [
-   {
-    "dex": 74,
-    "level": 10
-   },
-   {
-    "dex": 74,
-    "level": 10
-   },
-   {
-    "dex": 95,
-    "level": 10
-   }
-  ],
-  "role": "trainer",
-  "badge": null,
-  "upgradeLevel": null,
-  "battleBackground": null
- },
- {
-  "id": "9136e8ac-b1b3-5995-ae1d-00db93b612a0",
-  "name": "Rocket Grunt",
-  "spriteUrl": "/trainers/classes/team-rocket-m.png",
-  "team": [
-   {
-    "dex": 27,
-    "level": 11
-   },
-   {
-    "dex": 19,
-    "level": 11
-   },
-   {
-    "dex": 41,
-    "level": 11
    }
   ],
   "role": "trainer",
@@ -3252,446 +4412,6 @@
   ]
  },
  {
-  "id": "8bda4b51-c949-5b0d-8b50-bc5825b7ce7c",
-  "name": "Bug Catcher Cale",
-  "spriteUrl": "/trainers/classes/bug-catcher.png",
-  "team": [
-   {
-    "dex": 10,
-    "level": 10
-   },
-   {
-    "dex": 13,
-    "level": 10
-   },
-   {
-    "dex": 11,
-    "level": 10
-   }
-  ],
-  "role": "trainer",
-  "badge": null,
-  "upgradeLevel": null,
-  "battleBackground": null
- },
- {
-  "id": "f2ac2bb7-817c-57a2-aaa9-b7b0bd925cdb",
-  "name": "Lass Ali",
-  "spriteUrl": "/trainers/classes/lass.png",
-  "team": [
-   {
-    "dex": 16,
-    "level": 12
-   },
-   {
-    "dex": 43,
-    "level": 12
-   },
-   {
-    "dex": 69,
-    "level": 12
-   }
-  ],
-  "role": "trainer",
-  "badge": null,
-  "upgradeLevel": null,
-  "battleBackground": null
- },
- {
-  "id": "700a26fb-ef97-55a3-a878-97e4e5e1513d",
-  "name": "Youngster Timmy",
-  "spriteUrl": "/trainers/classes/youngster.png",
-  "team": [
-   {
-    "dex": 27,
-    "level": 14
-   },
-   {
-    "dex": 23,
-    "level": 14
-   }
-  ],
-  "role": "trainer",
-  "badge": null,
-  "upgradeLevel": null,
-  "battleBackground": null
- },
- {
-  "id": "979f0d14-caea-5048-a217-4cc9fc2ddc5c",
-  "name": "Elite Four Will",
-  "spriteUrl": "/trainers/classes/johto/elite-will.png",
-  "team": [
-   {
-    "dex": 178,
-    "level": 51
-   },
-   {
-    "dex": 124,
-    "level": 53
-   },
-   {
-    "dex": 103,
-    "level": 55
-   }
-  ],
-  "role": "elite",
-  "badge": null,
-  "upgradeLevel": null,
-  "battleBackground": "default",
-  "items": [
-   "hyper-potion"
-  ]
- },
- {
-  "id": "77f2e272-c680-5a70-b831-bf1e9f8b6c52",
-  "name": "Elite Four Koga",
-  "spriteUrl": "/trainers/classes/johto/elite-koga.png",
-  "team": [
-   {
-    "dex": 168,
-    "level": 53
-   },
-   {
-    "dex": 49,
-    "level": 55
-   },
-   {
-    "dex": 205,
-    "level": 57
-   }
-  ],
-  "role": "elite",
-  "badge": null,
-  "upgradeLevel": null,
-  "battleBackground": "default",
-  "items": [
-   "hyper-potion"
-  ]
- },
- {
-  "id": "a18db6c8-6c5e-5736-875b-6f761640b87e",
-  "name": "Elite Four Bruno",
-  "spriteUrl": "/trainers/classes/johto/elite-bruno.png",
-  "team": [
-   {
-    "dex": 237,
-    "level": 55
-   },
-   {
-    "dex": 107,
-    "level": 57
-   },
-   {
-    "dex": 106,
-    "level": 59
-   }
-  ],
-  "role": "elite",
-  "badge": null,
-  "upgradeLevel": null,
-  "battleBackground": "default",
-  "items": [
-   "hyper-potion"
-  ]
- },
- {
-  "id": "aa050486-189f-5ff4-a0e2-c75899f31bd4",
-  "name": "Elite Four Karen",
-  "spriteUrl": "/trainers/classes/johto/elite-karen.png",
-  "team": [
-   {
-    "dex": 198,
-    "level": 56
-   },
-   {
-    "dex": 229,
-    "level": 58
-   },
-   {
-    "dex": 197,
-    "level": 60
-   }
-  ],
-  "role": "elite",
-  "badge": null,
-  "upgradeLevel": null,
-  "battleBackground": "default",
-  "items": [
-   "hyper-potion"
-  ]
- },
- {
-  "id": "accb672b-6982-5485-b370-c30ae9ec2da4",
-  "name": "Champion Lance",
-  "spriteUrl": "/trainers/classes/johto/champion-lance.png",
-  "team": [
-   {
-    "dex": 130,
-    "level": 59
-   },
-   {
-    "dex": 149,
-    "level": 61
-   },
-   {
-    "dex": 149,
-    "level": 64
-   }
-  ],
-  "role": "champion",
-  "badge": null,
-  "upgradeLevel": null,
-  "battleBackground": "default",
-  "items": [
-   "hyper-potion"
-  ]
- },
- {
-  "id": "3d3164b4-144f-5082-b99c-db637c022d00",
-  "name": "Picnicker Diana",
-  "spriteUrl": "/trainers/classes/picnicker.png",
-  "team": [
-   {
-    "dex": 118,
-    "level": 19
-   }
-  ],
-  "role": "trainer",
-  "badge": null,
-  "upgradeLevel": null,
-  "battleBackground": null
- },
- {
-  "id": "e52d35a5-bcba-4cff-a51a-14cf9400ef62",
-  "name": "Ace Trainer Blake II",
-  "spriteUrl": "/trainers/classes/johto/schoolboy.png",
-  "team": [
-   {
-    "dex": 232,
-    "level": 59
-   },
-   {
-    "dex": 208,
-    "level": 60,
-    "shiny": true
-   }
-  ],
-  "role": "trainer",
-  "badge": null,
-  "upgradeLevel": null,
-  "battleBackground": null,
-  "items": [
-   "super-potion"
-  ]
- },
- {
-  "id": "5aeec583-b9a0-464d-aa70-6abb72718786",
-  "name": "Ace Trainer Irene II",
-  "spriteUrl": "/trainers/classes/johto/schoolboy.png",
-  "team": [
-   {
-    "dex": 112,
-    "level": 59
-   },
-   {
-    "dex": 248,
-    "level": 61
-   }
-  ],
-  "role": "trainer",
-  "badge": null,
-  "upgradeLevel": null,
-  "battleBackground": null
- },
- {
-  "id": "50a71ec5-d033-4e21-96e0-ea3ac26c844f",
-  "name": "Ace Trainer Cody II",
-  "spriteUrl": "/trainers/classes/johto/schoolboy.png",
-  "team": [
-   {
-    "dex": 149,
-    "level": 61
-   },
-   {
-    "dex": 148,
-    "level": 60
-   }
-  ],
-  "role": "trainer",
-  "badge": null,
-  "upgradeLevel": null,
-  "battleBackground": null
- },
- {
-  "id": "ffbca5d2-d659-4f46-b9af-f7c263b5a239",
-  "name": "Black Belt Lao II",
-  "spriteUrl": "/trainers/classes/johto/black-belt.png",
-  "team": [
-   {
-    "dex": 68,
-    "level": 60
-   },
-   {
-    "dex": 237,
-    "level": 60
-   }
-  ],
-  "role": "trainer",
-  "badge": null,
-  "upgradeLevel": null,
-  "battleBackground": null
- },
- {
-  "id": "c0a6eb4d-9adf-4063-9ce2-fc4cc669e7e8",
-  "name": "Elite Four Will II",
-  "spriteUrl": "/trainers/classes/johto/elite-will.png",
-  "team": [
-   {
-    "dex": 178,
-    "level": 71
-   },
-   {
-    "dex": 124,
-    "level": 73
-   },
-   {
-    "dex": 103,
-    "level": 75
-   }
-  ],
-  "role": "elite",
-  "badge": null,
-  "upgradeLevel": null,
-  "battleBackground": "default",
-  "items": [
-   "hyper-potion"
-  ]
- },
- {
-  "id": "45cdb614-48c6-4166-a250-b41d554e250b",
-  "name": "Elite Four Koga II",
-  "spriteUrl": "/trainers/classes/johto/elite-koga.png",
-  "team": [
-   {
-    "dex": 168,
-    "level": 73
-   },
-   {
-    "dex": 49,
-    "level": 74
-   },
-   {
-    "dex": 205,
-    "level": 75
-   }
-  ],
-  "role": "elite",
-  "badge": null,
-  "upgradeLevel": null,
-  "battleBackground": "default",
-  "items": [
-   "hyper-potion"
-  ]
- },
- {
-  "id": "e6f08fae-fb9d-4b38-870c-6539a695ebe1",
-  "name": "Elite Four Bruno II",
-  "spriteUrl": "/trainers/classes/johto/elite-bruno.png",
-  "team": [
-   {
-    "dex": 237,
-    "level": 75
-   },
-   {
-    "dex": 107,
-    "level": 77
-   },
-   {
-    "dex": 106,
-    "level": 79
-   }
-  ],
-  "role": "elite",
-  "badge": null,
-  "upgradeLevel": null,
-  "battleBackground": "default",
-  "items": [
-   "hyper-potion"
-  ]
- },
- {
-  "id": "c1b114c8-c834-4a4e-9dca-49965b044a52",
-  "name": "Elite Four Karen II",
-  "spriteUrl": "/trainers/classes/johto/elite-karen.png",
-  "team": [
-   {
-    "dex": 198,
-    "level": 75
-   },
-   {
-    "dex": 229,
-    "level": 77
-   },
-   {
-    "dex": 197,
-    "level": 80
-   }
-  ],
-  "role": "elite",
-  "badge": null,
-  "upgradeLevel": null,
-  "battleBackground": "default",
-  "items": [
-   "hyper-potion"
-  ]
- },
- {
-  "id": "eeddd758-6420-4f33-ba2c-56a098f3fd6c",
-  "name": "Champion Lance II",
-  "spriteUrl": "/trainers/classes/johto/champion-lance.png",
-  "team": [
-   {
-    "dex": 130,
-    "level": 79
-   },
-   {
-    "dex": 149,
-    "level": 81
-   },
-   {
-    "dex": 149,
-    "level": 84,
-    "shiny": true
-   }
-  ],
-  "role": "champion",
-  "badge": null,
-  "upgradeLevel": null,
-  "battleBackground": "default",
-  "items": [
-   "hyper-potion"
-  ]
- },
- {
-  "id": "fbccb182-9d19-5837-9c84-970936e1b7b0",
-  "name": "Hiker Jeremy",
-  "spriteUrl": "/trainers/classes/hiker.png",
-  "team": [
-   {
-    "dex": 66,
-    "level": 20
-   },
-   {
-    "dex": 95,
-    "level": 20
-   }
-  ],
-  "role": "trainer",
-  "badge": null,
-  "upgradeLevel": null,
-  "battleBackground": null
- },
- {
   "id": "e77ab3fd-8cc0-5124-a977-f9d8c5613237",
   "name": "Fisherman Chip",
   "spriteUrl": "/trainers/classes/fisherman.png",
@@ -3722,6 +4442,238 @@
    {
     "dex": 110,
     "level": 33
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "0ba0fe14-abc9-50a3-abea-f11e446c0efb",
+  "name": "Pryce",
+  "spriteUrl": "/trainers/classes/johto/pryce.png",
+  "team": [
+   {
+    "dex": 86,
+    "level": 27
+   },
+   {
+    "dex": 87,
+    "level": 29
+   },
+   {
+    "dex": 221,
+    "level": 31
+   }
+  ],
+  "role": "leader",
+  "badge": "Glacier Badge",
+  "upgradeLevel": null,
+  "battleBackground": "default"
+ },
+ {
+  "id": "dbe82012-5ff4-56ab-8b41-2b70f450b05c",
+  "name": "Skier Roxanne",
+  "spriteUrl": "/trainers/classes/johto/skier.png",
+  "team": [
+   {
+    "dex": 220,
+    "level": 44
+   },
+   {
+    "dex": 225,
+    "level": 44
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "347cfabe-9407-5b01-8463-e954917b0182",
+  "name": "Skier Clarissa",
+  "spriteUrl": "/trainers/classes/johto/skier.png",
+  "team": [
+   {
+    "dex": 124,
+    "level": 44
+   },
+   {
+    "dex": 87,
+    "level": 44
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "84d114fe-3f8f-533c-9036-4c622f887fdd",
+  "name": "Ace Trainer Irene",
+  "spriteUrl": "/trainers/classes/johto/schoolboy.png",
+  "team": [
+   {
+    "dex": 221,
+    "level": 45
+   },
+   {
+    "dex": 215,
+    "level": 45
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "3bba0c16-2369-5fc1-8384-282e7ec82491",
+  "name": "Bird Keeper Roy",
+  "spriteUrl": "/trainers/classes/johto/bird-keeper.png",
+  "team": [
+   {
+    "dex": 164,
+    "level": 45
+   },
+   {
+    "dex": 22,
+    "level": 45
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "4ae6d5fc-1ea9-51e7-8578-02800c11c9c0",
+  "name": "Ace Trainer Cody",
+  "spriteUrl": "/trainers/classes/johto/schoolboy.png",
+  "team": [
+   {
+    "dex": 148,
+    "level": 47
+   },
+   {
+    "dex": 117,
+    "level": 47
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "8bdccdea-0091-58d9-bf51-ad3372101030",
+  "name": "Swimmer Tara",
+  "spriteUrl": "/trainers/classes/hoenn/swimmer-f.png",
+  "team": [
+   {
+    "dex": 364,
+    "level": 46
+   },
+   {
+    "dex": 279,
+    "level": 46
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "68790ea0-5137-5e2d-af91-bbfbaaa9e8f7",
+  "name": "Swimmer Reed",
+  "spriteUrl": "/trainers/classes/hoenn/swimmer-m.png",
+  "team": [
+   {
+    "dex": 321,
+    "level": 46
+   },
+   {
+    "dex": 73,
+    "level": 46
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "be7cfa9c-24f3-5e50-9ce0-9e9bc4e57151",
+  "name": "Black Belt Koichi",
+  "spriteUrl": "/trainers/classes/hoenn/black-belt.png",
+  "team": [
+   {
+    "dex": 297,
+    "level": 47
+   },
+   {
+    "dex": 68,
+    "level": 47
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "d325b8e1-69cc-56ed-a3cf-19e70e4275b7",
+  "name": "Ace Trainer Randall",
+  "spriteUrl": "/trainers/classes/hoenn/collector.png",
+  "team": [
+   {
+    "dex": 365,
+    "level": 47
+   },
+   {
+    "dex": 369,
+    "level": 47
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "21e21757-b0c5-56a1-ad98-6da105e5f7ec",
+  "name": "Psychic Blake",
+  "spriteUrl": "/trainers/classes/hoenn/psychic-m.png",
+  "team": [
+   {
+    "dex": 282,
+    "level": 48
+   },
+   {
+    "dex": 326,
+    "level": 48
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "52b087f8-7477-58a9-a9e8-da517d50e866",
+  "name": "Psychic Samantha",
+  "spriteUrl": "/trainers/classes/hoenn/psychic-m.png",
+  "team": [
+   {
+    "dex": 344,
+    "level": 48
+   },
+   {
+    "dex": 337,
+    "level": 48
    }
   ],
   "role": "trainer",
@@ -4069,21 +5021,6 @@
   "battleBackground": null
  },
  {
-  "id": "f9176ed5-1352-57b7-8acc-0100d4cdd67c",
-  "name": "Bug Catcher Sammy",
-  "spriteUrl": "/trainers/classes/bug-catcher.png",
-  "team": [
-   {
-    "dex": 13,
-    "level": 9
-   }
-  ],
-  "role": "trainer",
-  "badge": null,
-  "upgradeLevel": null,
-  "battleBackground": null
- },
- {
   "id": "fc40bfca-7027-5bb9-9dcb-e52768966f5e",
   "name": "Channeler Laurel",
   "spriteUrl": "/trainers/classes/channeler.png",
@@ -4400,522 +5337,6 @@
    {
     "dex": 27,
     "level": 11
-   }
-  ],
-  "role": "trainer",
-  "badge": null,
-  "upgradeLevel": null,
-  "battleBackground": null
- },
- {
-  "id": "d0c2cbc5-9b64-5b7d-86c4-92d379449e79",
-  "name": "Brock",
-  "spriteUrl": "/trainers/classes/champion-brock.png",
-  "team": [
-   {
-    "dex": 74,
-    "level": 12
-   },
-   {
-    "dex": 95,
-    "level": 14
-   }
-  ],
-  "role": "leader",
-  "badge": "Boulder Badge",
-  "upgradeLevel": null,
-  "battleBackground": "default"
- },
- {
-  "id": "ddf4d399-e9a9-5a0f-a6d1-65265068c8a3",
-  "name": "Lass Janice",
-  "spriteUrl": "/trainers/classes/lass.png",
-  "team": [
-   {
-    "dex": 16,
-    "level": 9
-   },
-   {
-    "dex": 16,
-    "level": 9
-   }
-  ],
-  "role": "trainer",
-  "badge": null,
-  "upgradeLevel": null,
-  "battleBackground": null
- },
- {
-  "id": "2c614121-f667-5065-8f60-d7937e67fd58",
-  "name": "Bug Catcher Colton",
-  "spriteUrl": "/trainers/classes/bug-catcher.png",
-  "team": [
-   {
-    "dex": 10,
-    "level": 10
-   },
-   {
-    "dex": 13,
-    "level": 10
-   },
-   {
-    "dex": 10,
-    "level": 10
-   }
-  ],
-  "role": "trainer",
-  "badge": null,
-  "upgradeLevel": null,
-  "battleBackground": null
- },
- {
-  "id": "0d076d9f-7c4f-5aa1-8974-7b494de9f6e3",
-  "name": "Youngster Ben",
-  "spriteUrl": "/trainers/classes/youngster.png",
-  "team": [
-   {
-    "dex": 19,
-    "level": 11
-   },
-   {
-    "dex": 23,
-    "level": 11
-   }
-  ],
-  "role": "trainer",
-  "badge": null,
-  "upgradeLevel": null,
-  "battleBackground": null
- },
- {
-  "id": "ae7cc0ef-b8ef-52b6-b1de-84fb9e0efed6",
-  "name": "Bug Catcher Greg",
-  "spriteUrl": "/trainers/classes/bug-catcher.png",
-  "team": [
-   {
-    "dex": 13,
-    "level": 9
-   },
-   {
-    "dex": 14,
-    "level": 9
-   },
-   {
-    "dex": 10,
-    "level": 9
-   }
-  ],
-  "role": "trainer",
-  "badge": null,
-  "upgradeLevel": null,
-  "battleBackground": null
- },
- {
-  "id": "106bbb38-247f-546f-9211-a376b511429c",
-  "name": "Youngster Calvin",
-  "spriteUrl": "/trainers/classes/youngster.png",
-  "team": [
-   {
-    "dex": 21,
-    "level": 14
-   }
-  ],
-  "role": "trainer",
-  "badge": null,
-  "upgradeLevel": null,
-  "battleBackground": null
- },
- {
-  "id": "a568ca36-fc30-599e-9e78-b4fb211fb606",
-  "name": "Champion Rival",
-  "spriteUrl": "/characters/green.png",
-  "team": [
-   {
-    "dex": 26,
-    "level": 75
-   },
-   {
-    "dex": 130,
-    "level": 76
-   },
-   {
-    "dex": 6,
-    "level": 80
-   }
-  ],
-  "role": "champion",
-  "badge": null,
-  "upgradeLevel": null,
-  "battleBackground": "default",
-  "rivalOf": 1,
-  "items": [
-   "hyper-potion"
-  ]
- },
- {
-  "id": "2a51f07a-53f5-5fe6-a875-8e8428d78db6",
-  "name": "Champion Rival",
-  "spriteUrl": "/characters/green.png",
-  "team": [
-   {
-    "dex": 26,
-    "level": 75
-   },
-   {
-    "dex": 59,
-    "level": 76
-   },
-   {
-    "dex": 9,
-    "level": 80
-   }
-  ],
-  "role": "champion",
-  "badge": null,
-  "upgradeLevel": null,
-  "battleBackground": "default",
-  "rivalOf": 4,
-  "items": [
-   "hyper-potion"
-  ]
- },
- {
-  "id": "599bb09c-3765-5356-b5e1-27a6cf741358",
-  "name": "Champion Rival",
-  "spriteUrl": "/characters/green.png",
-  "team": [
-   {
-    "dex": 26,
-    "level": 75
-   },
-   {
-    "dex": 59,
-    "level": 76
-   },
-   {
-    "dex": 3,
-    "level": 80
-   }
-  ],
-  "role": "champion",
-  "badge": null,
-  "upgradeLevel": null,
-  "battleBackground": "default",
-  "rivalOf": 7,
-  "items": [
-   "hyper-potion"
-  ]
- },
- {
-  "id": "654cb1e2-cc05-5148-824e-8378e33b8694",
-  "name": "Youngster Joey",
-  "spriteUrl": "/trainers/classes/johto/youngster.png",
-  "team": [
-   {
-    "dex": 19,
-    "level": 5
-   }
-  ],
-  "role": "trainer",
-  "badge": null,
-  "upgradeLevel": null,
-  "battleBackground": null
- },
- {
-  "id": "a2cea4fc-c09f-5a8f-b178-787ba9fed415",
-  "name": "Bug Catcher Don",
-  "spriteUrl": "/trainers/classes/johto/bug-catcher.png",
-  "team": [
-   {
-    "dex": 167,
-    "level": 6
-   },
-   {
-    "dex": 165,
-    "level": 6
-   }
-  ],
-  "role": "trainer",
-  "badge": null,
-  "upgradeLevel": null,
-  "battleBackground": null
- },
- {
-  "id": "40499b39-e1ed-5aae-a6a6-88ad227e4ac3",
-  "name": "Lass Abigail",
-  "spriteUrl": "/trainers/classes/johto/lass.png",
-  "team": [
-   {
-    "dex": 161,
-    "level": 7
-   },
-   {
-    "dex": 163,
-    "level": 7
-   }
-  ],
-  "role": "trainer",
-  "badge": null,
-  "upgradeLevel": null,
-  "battleBackground": null
- },
- {
-  "id": "6ab75ae9-9f8c-5b6f-b1a6-4d9bf68ef507",
-  "name": "Youngster Mikey",
-  "spriteUrl": "/trainers/classes/johto/youngster.png",
-  "team": [
-   {
-    "dex": 16,
-    "level": 7
-   },
-   {
-    "dex": 19,
-    "level": 7
-   }
-  ],
-  "role": "trainer",
-  "badge": null,
-  "upgradeLevel": null,
-  "battleBackground": null
- },
- {
-  "id": "e10acb82-610c-5dd2-a1b7-718ca4a2bae5",
-  "name": "Sage Nico",
-  "spriteUrl": "/trainers/classes/johto/sage.png",
-  "team": [
-   {
-    "dex": 69,
-    "level": 8
-   },
-   {
-    "dex": 69,
-    "level": 8
-   }
-  ],
-  "role": "trainer",
-  "badge": null,
-  "upgradeLevel": null,
-  "battleBackground": null
- },
- {
-  "id": "0dd54e5a-4887-58b2-a6f6-cb25433e0de7",
-  "name": "Sage Chow",
-  "spriteUrl": "/trainers/classes/johto/sage.png",
-  "team": [
-   {
-    "dex": 69,
-    "level": 9
-   },
-   {
-    "dex": 69,
-    "level": 9
-   },
-   {
-    "dex": 69,
-    "level": 9
-   }
-  ],
-  "role": "trainer",
-  "badge": null,
-  "upgradeLevel": null,
-  "battleBackground": null
- },
- {
-  "id": "886a3d08-fecc-56a4-89fc-9b6ccf66631b",
-  "name": "Sage Edmond",
-  "spriteUrl": "/trainers/classes/johto/sage.png",
-  "team": [
-   {
-    "dex": 69,
-    "level": 9
-   },
-   {
-    "dex": 92,
-    "level": 8
-   }
-  ],
-  "role": "trainer",
-  "badge": null,
-  "upgradeLevel": null,
-  "battleBackground": null
- },
- {
-  "id": "1ea3126a-c054-5e04-a1e4-e043bb66000d",
-  "name": "Cooltrainer Ivy",
-  "spriteUrl": "/trainers/classes/cooltrainer-f.png",
-  "team": [
-   {
-    "dex": 87,
-    "level": 60
-   },
-   {
-    "dex": 91,
-    "level": 60
-   },
-   {
-    "dex": 131,
-    "level": 62
-   }
-  ],
-  "role": "trainer",
-  "badge": null,
-  "upgradeLevel": null,
-  "battleBackground": null
- },
- {
-  "id": "43e5423e-66fa-5907-bded-9fab062d4c5d",
-  "name": "Pokémaniac Hugo",
-  "spriteUrl": "/trainers/classes/pokemaniac.png",
-  "team": [
-   {
-    "dex": 80,
-    "level": 60
-   },
-   {
-    "dex": 108,
-    "level": 61
-   },
-   {
-    "dex": 112,
-    "level": 62
-   }
-  ],
-  "role": "trainer",
-  "badge": null,
-  "upgradeLevel": null,
-  "battleBackground": null
- },
- {
-  "id": "2510d308-bcd5-5b2b-a1fc-df9a07cfea2e",
-  "name": "Ace Trainer Blake",
-  "spriteUrl": "/trainers/classes/cooltrainer-m.png",
-  "team": [
-   {
-    "dex": 135,
-    "level": 67
-   },
-   {
-    "dex": 59,
-    "level": 67
-   },
-   {
-    "dex": 130,
-    "level": 68
-   }
-  ],
-  "role": "trainer",
-  "badge": null,
-  "upgradeLevel": null,
-  "battleBackground": null
- },
- {
-  "id": "9e65b296-17f3-566c-8148-add7ac5956d0",
-  "name": "Ace Trainer Claire",
-  "spriteUrl": "/trainers/classes/cooltrainer-f.png",
-  "team": [
-   {
-    "dex": 36,
-    "level": 67
-   },
-   {
-    "dex": 134,
-    "level": 67
-   },
-   {
-    "dex": 121,
-    "level": 68
-   }
-  ],
-  "role": "trainer",
-  "badge": null,
-  "upgradeLevel": null,
-  "battleBackground": null
- },
- {
-  "id": "32aac824-7f02-58b9-8a83-3847371a4700",
-  "name": "Ace Trainer Marcus",
-  "spriteUrl": "/trainers/classes/cooltrainer-m.png",
-  "team": [
-   {
-    "dex": 99,
-    "level": 67
-   },
-   {
-    "dex": 68,
-    "level": 67
-   },
-   {
-    "dex": 112,
-    "level": 68
-   }
-  ],
-  "role": "trainer",
-  "badge": null,
-  "upgradeLevel": null,
-  "battleBackground": null
- },
- {
-  "id": "5fc3b44e-3023-5a8e-94c1-71eb245785dc",
-  "name": "Ace Trainer Rosa",
-  "spriteUrl": "/trainers/classes/cooltrainer-f.png",
-  "team": [
-   {
-    "dex": 136,
-    "level": 67
-   },
-   {
-    "dex": 26,
-    "level": 67
-   },
-   {
-    "dex": 3,
-    "level": 68
-   }
-  ],
-  "role": "trainer",
-  "badge": null,
-  "upgradeLevel": null,
-  "battleBackground": null
- },
- {
-  "id": "2d4a65c8-9b0c-5479-9658-ab6a8b709be5",
-  "name": "Ace Trainer Dante",
-  "spriteUrl": "/trainers/classes/cooltrainer-m.png",
-  "team": [
-   {
-    "dex": 123,
-    "level": 67
-   },
-   {
-    "dex": 142,
-    "level": 69
-   },
-   {
-    "dex": 149,
-    "level": 68
-   }
-  ],
-  "role": "trainer",
-  "badge": null,
-  "upgradeLevel": null,
-  "battleBackground": null
- },
- {
-  "id": "7ad13d36-f10e-596a-9f38-b7fe419b3e04",
-  "name": "Ace Trainer Yuki",
-  "spriteUrl": "/trainers/classes/cooltrainer-f.png",
-  "team": [
-   {
-    "dex": 87,
-    "level": 68
-   },
-   {
-    "dex": 124,
-    "level": 68
-   },
-   {
-    "dex": 131,
-    "level": 69
    }
   ],
   "role": "trainer",
@@ -6860,124 +7281,6 @@
   "battleBackground": null
  },
  {
-  "id": "0ba0fe14-abc9-50a3-abea-f11e446c0efb",
-  "name": "Pryce",
-  "spriteUrl": "/trainers/classes/johto/pryce.png",
-  "team": [
-   {
-    "dex": 86,
-    "level": 27
-   },
-   {
-    "dex": 87,
-    "level": 29
-   },
-   {
-    "dex": 221,
-    "level": 31
-   }
-  ],
-  "role": "leader",
-  "badge": "Glacier Badge",
-  "upgradeLevel": null,
-  "battleBackground": "default"
- },
- {
-  "id": "dbe82012-5ff4-56ab-8b41-2b70f450b05c",
-  "name": "Skier Roxanne",
-  "spriteUrl": "/trainers/classes/johto/skier.png",
-  "team": [
-   {
-    "dex": 220,
-    "level": 44
-   },
-   {
-    "dex": 225,
-    "level": 44
-   }
-  ],
-  "role": "trainer",
-  "badge": null,
-  "upgradeLevel": null,
-  "battleBackground": null
- },
- {
-  "id": "347cfabe-9407-5b01-8463-e954917b0182",
-  "name": "Skier Clarissa",
-  "spriteUrl": "/trainers/classes/johto/skier.png",
-  "team": [
-   {
-    "dex": 124,
-    "level": 44
-   },
-   {
-    "dex": 87,
-    "level": 44
-   }
-  ],
-  "role": "trainer",
-  "badge": null,
-  "upgradeLevel": null,
-  "battleBackground": null
- },
- {
-  "id": "84d114fe-3f8f-533c-9036-4c622f887fdd",
-  "name": "Ace Trainer Irene",
-  "spriteUrl": "/trainers/classes/johto/schoolboy.png",
-  "team": [
-   {
-    "dex": 221,
-    "level": 45
-   },
-   {
-    "dex": 215,
-    "level": 45
-   }
-  ],
-  "role": "trainer",
-  "badge": null,
-  "upgradeLevel": null,
-  "battleBackground": null
- },
- {
-  "id": "3bba0c16-2369-5fc1-8384-282e7ec82491",
-  "name": "Bird Keeper Roy",
-  "spriteUrl": "/trainers/classes/johto/bird-keeper.png",
-  "team": [
-   {
-    "dex": 164,
-    "level": 45
-   },
-   {
-    "dex": 22,
-    "level": 45
-   }
-  ],
-  "role": "trainer",
-  "badge": null,
-  "upgradeLevel": null,
-  "battleBackground": null
- },
- {
-  "id": "4ae6d5fc-1ea9-51e7-8578-02800c11c9c0",
-  "name": "Ace Trainer Cody",
-  "spriteUrl": "/trainers/classes/johto/schoolboy.png",
-  "team": [
-   {
-    "dex": 148,
-    "level": 47
-   },
-   {
-    "dex": 117,
-    "level": 47
-   }
-  ],
-  "role": "trainer",
-  "badge": null,
-  "upgradeLevel": null,
-  "battleBackground": null
- },
- {
   "id": "6fcbfc7d-ab91-5802-8e01-13893147d925",
   "name": "Ace Trainer Fran",
   "spriteUrl": "/trainers/classes/johto/schoolboy.png",
@@ -8769,120 +9072,6 @@
    {
     "dex": 262,
     "level": 45
-   }
-  ],
-  "role": "trainer",
-  "badge": null,
-  "upgradeLevel": null,
-  "battleBackground": null
- },
- {
-  "id": "8bdccdea-0091-58d9-bf51-ad3372101030",
-  "name": "Swimmer Tara",
-  "spriteUrl": "/trainers/classes/hoenn/swimmer-f.png",
-  "team": [
-   {
-    "dex": 364,
-    "level": 46
-   },
-   {
-    "dex": 279,
-    "level": 46
-   }
-  ],
-  "role": "trainer",
-  "badge": null,
-  "upgradeLevel": null,
-  "battleBackground": null
- },
- {
-  "id": "68790ea0-5137-5e2d-af91-bbfbaaa9e8f7",
-  "name": "Swimmer Reed",
-  "spriteUrl": "/trainers/classes/hoenn/swimmer-m.png",
-  "team": [
-   {
-    "dex": 321,
-    "level": 46
-   },
-   {
-    "dex": 73,
-    "level": 46
-   }
-  ],
-  "role": "trainer",
-  "badge": null,
-  "upgradeLevel": null,
-  "battleBackground": null
- },
- {
-  "id": "be7cfa9c-24f3-5e50-9ce0-9e9bc4e57151",
-  "name": "Black Belt Koichi",
-  "spriteUrl": "/trainers/classes/hoenn/black-belt.png",
-  "team": [
-   {
-    "dex": 297,
-    "level": 47
-   },
-   {
-    "dex": 68,
-    "level": 47
-   }
-  ],
-  "role": "trainer",
-  "badge": null,
-  "upgradeLevel": null,
-  "battleBackground": null
- },
- {
-  "id": "d325b8e1-69cc-56ed-a3cf-19e70e4275b7",
-  "name": "Ace Trainer Randall",
-  "spriteUrl": "/trainers/classes/hoenn/collector.png",
-  "team": [
-   {
-    "dex": 365,
-    "level": 47
-   },
-   {
-    "dex": 369,
-    "level": 47
-   }
-  ],
-  "role": "trainer",
-  "badge": null,
-  "upgradeLevel": null,
-  "battleBackground": null
- },
- {
-  "id": "21e21757-b0c5-56a1-ad98-6da105e5f7ec",
-  "name": "Psychic Blake",
-  "spriteUrl": "/trainers/classes/hoenn/psychic-m.png",
-  "team": [
-   {
-    "dex": 282,
-    "level": 48
-   },
-   {
-    "dex": 326,
-    "level": 48
-   }
-  ],
-  "role": "trainer",
-  "badge": null,
-  "upgradeLevel": null,
-  "battleBackground": null
- },
- {
-  "id": "52b087f8-7477-58a9-a9e8-da517d50e866",
-  "name": "Psychic Samantha",
-  "spriteUrl": "/trainers/classes/hoenn/psychic-m.png",
-  "team": [
-   {
-    "dex": 344,
-    "level": 48
-   },
-   {
-    "dex": 337,
-    "level": 48
    }
   ],
   "role": "trainer",

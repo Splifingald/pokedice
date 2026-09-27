@@ -1,4 +1,39 @@
 {
+ "energy": {
+  "max": 50,
+  "enabled": false,
+  "minutesPerEnergy": 30
+ },
+ "roamers": {
+  "dex": [
+   243,
+   244,
+   245
+  ],
+  "level": 40,
+  "chance": 0.02,
+  "regionId": "johto",
+  "requires": [
+   249,
+   250
+  ]
+ },
+ "showRoundPreview": false,
+ "xpShareMode": "fighter",
+ "maxTeamSize": 3,
+ "maxLevel": 100,
+ "maxDice": 5,
+ "comboPayoutMode": "highestDamage",
+ "skipPolicy": "free",
+ "noEscape": true,
+ "starters": [
+  1,
+  4,
+  7
+ ],
+ "starterLevel": 5,
+ "hpMultiplier": 1,
+ "goldMultiplier": 0.5,
  "status": {
   "burn": {
    "duration": 3,
@@ -45,7 +80,6 @@
   "C": 1
  },
  "gymGoldMultiplier": 2,
- "configVersion": 51,
  "forcedCenterWhenHurt": true,
  "encounterMode": "deck",
  "startInventory": {
@@ -54,7 +88,6 @@
  },
  "scaleLevelSpread": 3,
  "showRecommendedTypes": true,
- "shinyChance": 0.02,
  "enemyUpgradeLevel": 1,
  "allowVoluntarySwitch": true,
  "maxBattleTurns": 150,
@@ -86,39 +119,6 @@
    "weight": 10
   }
  },
- "energy": {
-  "max": 50,
-  "enabled": false,
-  "minutesPerEnergy": 30
- },
- "roamers": {
-  "dex": [
-   243,
-   244,
-   245
-  ],
-  "level": 40,
-  "chance": 0.02,
-  "regionId": "johto",
-  "requires": [
-   249,
-   250
-  ]
- },
- "showRoundPreview": false,
- "xpShareMode": "fighter",
- "maxTeamSize": 3,
- "maxLevel": 100,
- "maxDice": 5,
- "comboPayoutMode": "highestDamage",
- "skipPolicy": "free",
- "noEscape": true,
- "starters": [
-  1,
-  4,
-  7
- ],
- "starterLevel": 5,
- "hpMultiplier": 1,
- "goldMultiplier": 0.5
+ "shinyChance": 0.01,
+ "configVersion": 59
 }

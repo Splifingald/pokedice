@@ -203,49 +203,6 @@
   "shopBadges": 6
  },
  {
-  "key": "max-revive",
-  "name": "Max Revive",
-  "description": "Revives a fainted Pokémon with all its HP. In battle or from the Team screen.",
-  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/max-revive.png",
-  "price": 350,
-  "effect": {
-   "kind": "revive",
-   "percent": 100
-  },
-  "inShop": true,
-  "shopBadges": 8
- },
- {
-  "key": "helix-fossil",
-  "name": "Helix Fossil",
-  "description": "A fossil of an ancient Pokémon. Omanyte waits in your Box and is revived after 24 hours, at Lv.20.",
-  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/helix-fossil.png",
-  "price": 0,
-  "effect": {
-   "dex": 138,
-   "kind": "fossil",
-   "hours": 24,
-   "level": 20
-  },
-  "inShop": false,
-  "shopBadges": 0
- },
- {
-  "key": "dome-fossil",
-  "name": "Dome Fossil",
-  "description": "A fossil of an ancient Pokémon. Kabuto waits in your Box and is revived after 24 hours, at Lv.20.",
-  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/dome-fossil.png",
-  "price": 0,
-  "effect": {
-   "dex": 140,
-   "kind": "fossil",
-   "hours": 24,
-   "level": 20
-  },
-  "inShop": false,
-  "shopBadges": 0
- },
- {
   "key": "sun-stone",
   "name": "Sun Stone",
   "description": "Makes certain Pokémon evolve: Gloom (Bellossom), Sunkern, Eevee (Espeon). Use it from the Team screen.",
@@ -282,6 +239,38 @@
   "shopBadges": 0
  },
  {
+  "key": "helix-fossil",
+  "name": "Helix Fossil",
+  "description": "A fossil of an ancient Pokémon. Omanyte waits in your Box and is revived after 24 hours, at Lv.20.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/helix-fossil.png",
+  "price": 0,
+  "effect": {
+   "dex": 138,
+   "kind": "fossil",
+   "hours": 24,
+   "level": 20
+  },
+  "inShop": false,
+  "shopBadges": 0,
+  "region": "kanto"
+ },
+ {
+  "key": "dome-fossil",
+  "name": "Dome Fossil",
+  "description": "A fossil of an ancient Pokémon. Kabuto waits in your Box and is revived after 24 hours, at Lv.20.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/dome-fossil.png",
+  "price": 0,
+  "effect": {
+   "dex": 140,
+   "kind": "fossil",
+   "hours": 24,
+   "level": 20
+  },
+  "inShop": false,
+  "shopBadges": 0,
+  "region": "kanto"
+ },
+ {
   "key": "dragon-scale",
   "name": "Dragon Scale",
   "description": "Makes certain Pokémon evolve: Seadra (Kingdra). Use it from the Team screen.",
@@ -292,6 +281,19 @@
   },
   "inShop": false,
   "shopBadges": 0
+ },
+ {
+  "key": "max-revive",
+  "name": "Max Revive",
+  "description": "Revives a fainted Pokémon with all its HP. In battle or from the Team screen.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/max-revive.png",
+  "price": 350,
+  "effect": {
+   "kind": "revive",
+   "percent": 100
+  },
+  "inShop": true,
+  "shopBadges": 8
  },
  {
   "key": "up-grade",
@@ -328,51 +330,6 @@
   },
   "inShop": false,
   "shopBadges": 0
- },
- {
-  "key": "root-fossil",
-  "name": "Root Fossil",
-  "description": "A fossil of an ancient Pokémon. Lileep waits in your Box and is revived after 24 hours, at Lv.20.",
-  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/root-fossil.png",
-  "price": 0,
-  "effect": {
-   "dex": 345,
-   "kind": "fossil",
-   "hours": 24,
-   "level": 20
-  },
-  "inShop": false,
-  "shopBadges": 0
- },
- {
-  "key": "claw-fossil",
-  "name": "Claw Fossil",
-  "description": "A fossil of an ancient Pokémon. Anorith waits in your Box and is revived after 24 hours, at Lv.20.",
-  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/claw-fossil.png",
-  "price": 0,
-  "effect": {
-   "dex": 347,
-   "kind": "fossil",
-   "hours": 24,
-   "level": 20
-  },
-  "inShop": false,
-  "shopBadges": 0
- },
- {
-  "key": "old-amber",
-  "name": "Old Amber",
-  "description": "A fossil of an ancient Pokémon. Aerodactyl waits in your Box and is revived after 24 hours, at Lv.20.",
-  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/old-amber.png",
-  "price": 500,
-  "effect": {
-   "dex": 142,
-   "kind": "fossil",
-   "hours": 24,
-   "level": 20
-  },
-  "inShop": true,
-  "shopBadges": 7
  },
  {
   "key": "fire-stone",
@@ -579,19 +536,69 @@
   "shopBadges": 0
  },
  {
+  "key": "root-fossil",
+  "name": "Root Fossil",
+  "description": "A fossil of an ancient Pokémon. Lileep waits in your Box and is revived after 24 hours, at Lv.20.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/root-fossil.png",
+  "price": 0,
+  "effect": {
+   "dex": 345,
+   "kind": "fossil",
+   "hours": 24,
+   "level": 20
+  },
+  "inShop": false,
+  "shopBadges": 0,
+  "region": "hoenn"
+ },
+ {
+  "key": "claw-fossil",
+  "name": "Claw Fossil",
+  "description": "A fossil of an ancient Pokémon. Anorith waits in your Box and is revived after 24 hours, at Lv.20.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/claw-fossil.png",
+  "price": 0,
+  "effect": {
+   "dex": 347,
+   "kind": "fossil",
+   "hours": 24,
+   "level": 20
+  },
+  "inShop": false,
+  "shopBadges": 0,
+  "region": "hoenn"
+ },
+ {
+  "key": "old-amber",
+  "name": "Old Amber",
+  "description": "A fossil of an ancient Pokémon. Aerodactyl waits in your Box and is revived after 24 hours, at Lv.20.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/old-amber.png",
+  "price": 500,
+  "effect": {
+   "dex": 142,
+   "kind": "fossil",
+   "hours": 24,
+   "level": 20
+  },
+  "inShop": true,
+  "shopBadges": 7,
+  "region": "kanto",
+  "unique": true
+ },
+ {
   "key": "skull-fossil",
   "name": "Skull Fossil",
   "description": "A fossil of an ancient Pokémon. Cranidos waits in your Box and is revived after 24 hours, at Lv.20.",
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/skull-fossil.png",
   "price": 0,
   "effect": {
-   "kind": "fossil",
    "dex": 408,
-   "level": 20,
-   "hours": 24
+   "kind": "fossil",
+   "hours": 24,
+   "level": 20
   },
   "inShop": false,
-  "shopBadges": 0
+  "shopBadges": 0,
+  "region": "sinnoh"
  },
  {
   "key": "armor-fossil",
@@ -600,12 +607,13 @@
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/armor-fossil.png",
   "price": 0,
   "effect": {
-   "kind": "fossil",
    "dex": 410,
-   "level": 20,
-   "hours": 24
+   "kind": "fossil",
+   "hours": 24,
+   "level": 20
   },
   "inShop": false,
-  "shopBadges": 0
+  "shopBadges": 0,
+  "region": "sinnoh"
  }
 ]

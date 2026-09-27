@@ -27,10 +27,10 @@ const ALL_LEGENDARIES = [
 ]
 const STARTERS = [1, 4, 7]
 /**
- * Five dice is the rule. Raikou, Entei and Suicune carry six: an admin buff that ships on the live database, kept
+ * Five dice is the rule. Raikou, Entei, Suicune and Arceus carry six: an admin buff that ships on the live database, kept
  * here so the bound still means something for everything else.
  */
-const SIX_DICE = new Set([243, 244, 245])
+const SIX_DICE = new Set([243, 244, 245, 493])
 
 describe('pokemon.json', () => {
   it('has 493 complete entries — Kanto, Johto, Hoenn and Sinnoh', () => {

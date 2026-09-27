@@ -419,7 +419,7 @@ describe('wipe, center, team, shop, upgrades', () => {
 
   it('shop: a bought fossil goes to the Box reviving, not into the bag', () => {
     // A fossil has no use from the bag at all, so one the Mart sells has to arrive the way a dug-up one does.
-    const amber = { ...data.items['old-amber']!, inShop: true, shopBadges: 7, price: 100 }
+    const amber = { ...data.items['old-amber']!, inShop: true, shopBadges: 7, price: 100, unique: false }
     const withIt = { ...data, items: { ...data.items, 'old-amber': amber } }
     const s: SaveData = { ...fresh(), gold: 250, inventory: {} }
     let n = 0
