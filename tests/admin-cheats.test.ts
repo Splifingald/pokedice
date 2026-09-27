@@ -2,6 +2,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   adminAddPokemon,
+  adminAddRegionPokemon,
   adminCompleteLeague,
   adminGiveItem,
   adminRemovePokemon,
@@ -56,6 +57,19 @@ describe('admin cheats', () => {
 
 describe('admin region cheats', () => {
   const johto = data.regions.find((r) => r.id === 'johto')!
+
+  it('gives one of every species in a region, all at the chosen level', () => {
+    const s = adminAddRegionPokemon(base, data, 2000, 'johto', 30, newId)
+    const added = s.box.slice(base.box.length)
+    const want = data.speciesList.map((sp) => sp.dex).filter((d) => d >= johto.dexRange[0] && d <= johto.dexRange[1])
+    expect(added.map((p) => p.dex).sort((a, b) => a - b)).toEqual(want.sort((a, b) => a - b))
+    expect(added.every((p) => p.level === 30)).toBe(true)
+    expect(s.team).toHaveLength(data.config.maxTeamSize)
+    expect(want.every((d) => s.pokedex.includes(d))).toBe(true)
+    expect(s.adminEditAt).toBe(2000)
+    expect(parseSave(s).ok).toBe(true)
+    expect(() => adminAddRegionPokemon(base, data, 2000, 'nowhere', 30, newId)).toThrow()
+  })
 
   it('starts a region, then switches back to it instead of restarting it', () => {
     const started = adminStartRegion(base, data, 2000, 'johto', newId)

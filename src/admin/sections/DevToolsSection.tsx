@@ -17,7 +17,7 @@ import {
   type PokeType,
   type SaveData,
 } from '@/engine'
-import { adminCompleteLeague, adminStartRegion, adminStartRoamers } from '../playerSave'
+import { adminAddRegionPokemon, adminCompleteLeague, adminStartRegion, adminStartRoamers } from '../playerSave'
 import { Panel } from '@/components/Panel'
 import { PixelButton } from '@/components/PixelButton'
 import { parseSave } from '@/save/schema'
@@ -40,6 +40,7 @@ export function DevToolsSection() {
   const navigate = useNavigate()
   const [gold, setGold] = useState(1000)
   const [regionPick, setRegionPick] = useState(() => regionOf(useGame.getState().save!))
+  const [regionLevel, setRegionLevel] = useState(50)
   const [catchDex, setCatchDex] = useState(25)
   const [catchLevel, setCatchLevel] = useState(10)
   const [instId, setInstId] = useState<string>('')
@@ -210,6 +211,27 @@ export function DevToolsSection() {
               onClick={() => cheat((s) => adminStartRoamers(s, data, Date.now()), 'The beasts are roaming')}
             >
               Start the roamers
+            </PixelButton>
+          </div>
+          <div className="mt-2 flex flex-wrap items-end gap-2">
+            <Field label="Level">
+              <NumInput
+                className="w-20"
+                value={regionLevel}
+                onChange={(v) => setRegionLevel(Math.max(1, Math.min(data.config.maxLevel, v ?? 1)))}
+              />
+            </Field>
+            <PixelButton
+              size="sm"
+              variant="primary"
+              onClick={() =>
+                cheat(
+                  (s) => adminAddRegionPokemon(s, data, Date.now(), regionPick, regionLevel, newId),
+                  `Every ${regionPick} Pokémon caught (Lv.${regionLevel})`,
+                )
+              }
+            >
+              Catch all its Pokémon
             </PixelButton>
           </div>
         </Panel>

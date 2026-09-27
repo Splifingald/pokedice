@@ -47,6 +47,36 @@ export function adminAddPokemon(
   )
 }
 
+/**
+ * One of every species in a region's National Dex span, all at `level` and full HP: the team fills up first, the rest
+ * go to the Box. Species missing from the data (content not in yet) are skipped.
+ */
+export function adminAddRegionPokemon(
+  save: SaveData,
+  data: GameData,
+  now: number,
+  regionId: string,
+  level: number,
+  newId: () => string,
+): SaveData {
+  const region = getRegion(data, regionId)
+  if (!region) throw new Error(`Unknown region ${regionId}`)
+  const [from, to] = region.dexRange
+  const mons = []
+  for (let dex = from; dex <= to; dex++) if (data.species[dex]) mons.push(createInstance(dex, level, data, newId(), now))
+  if (!mons.length) throw new Error(`${region.name} has no species yet`)
+  const room = Math.max(0, data.config.maxTeamSize - save.team.length)
+  return stamp(
+    {
+      ...save,
+      box: [...save.box, ...mons],
+      team: [...save.team, ...mons.slice(0, room).map((p) => p.id)],
+      pokedex: [...new Set([...save.pokedex, ...mons.map((p) => p.dex)])],
+    },
+    now,
+  )
+}
+
 // ---------------------------------------------------------------- regions
 //
 // The cheats below are how a region gets tested without playing twenty hours to reach it. Each one is a plain save
