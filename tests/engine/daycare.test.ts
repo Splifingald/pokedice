@@ -117,9 +117,14 @@ describe('Day Care', () => {
     expect(johto.every((d) => d >= 152 && d <= 251)).toBe(true)
     expect(eggSpecies(data, 'hoenn').every((s) => s.dex >= 252 && s.dex <= 386)).toBe(true)
     expect(eggSpecies(data, 'sinnoh').every((s) => s.dex >= 387 && s.dex <= 493)).toBe(true)
+    expect(eggSpecies(data, 'unova').every((s) => s.dex >= 494 && s.dex <= 649)).toBe(true)
     // With no region asked for (the admin's overview) the pool is still every hatchable species.
     expect(eggSpecies(data).length).toBe(
-      kanto.length + johto.length + eggSpecies(data, 'hoenn').length + eggSpecies(data, 'sinnoh').length,
+      kanto.length +
+        johto.length +
+        eggSpecies(data, 'hoenn').length +
+        eggSpecies(data, 'sinnoh').length +
+        eggSpecies(data, 'unova').length,
     )
 
     // A Kanto save's odds — and so its Eggs — only ever name Kanto species.

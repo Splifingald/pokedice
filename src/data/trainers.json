@@ -11620,5 +11620,1724 @@
   "badge": null,
   "upgradeLevel": null,
   "battleBackground": null
+ },
+ {
+  "id": "2bd77145-3d86-543d-8c73-7785edc18aaf",
+  "name": "Youngster Jimmy",
+  "spriteUrl": "/trainers/classes/unova/youngster.png",
+  "team": [
+   {
+    "dex": 504,
+    "level": 6
+   },
+   {
+    "dex": 506,
+    "level": 6
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "1b82e2bd-e4e3-5584-b8cf-01d41974d664",
+  "name": "Lass Tilly",
+  "spriteUrl": "/trainers/classes/unova/lass.png",
+  "team": [
+   {
+    "dex": 509,
+    "level": 7
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "f7927089-6934-5089-8f41-fd946935ac3c",
+  "name": "Cheren",
+  "spriteUrl": "/trainers/classes/unova/cheren.png",
+  "team": [
+   {
+    "dex": 506,
+    "level": 8
+   },
+   {
+    "dex": 509,
+    "level": 8
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "01190b97-e01a-57c8-b060-85635ef185ae",
+  "name": "Bianca",
+  "spriteUrl": "/trainers/classes/unova/bianca.png",
+  "team": [
+   {
+    "dex": 504,
+    "level": 7
+   },
+   {
+    "dex": 506,
+    "level": 8
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "c437a953-05ca-5ab6-aed3-5e98e9a5c9a1",
+  "name": "Waitress Flo",
+  "spriteUrl": "/trainers/classes/unova/waitress.png",
+  "team": [
+   {
+    "dex": 506,
+    "level": 10
+   },
+   {
+    "dex": 509,
+    "level": 10
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "5d55589f-6832-5fff-9f81-cd0e58f7ef2b",
+  "name": "Waiter Bert",
+  "spriteUrl": "/trainers/classes/unova/waiter.png",
+  "team": [
+   {
+    "dex": 504,
+    "level": 10
+   },
+   {
+    "dex": 517,
+    "level": 11
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "d30128a5-db70-5c69-901c-cd397d5ede9d",
+  "name": "Team Plasma Grunt",
+  "spriteUrl": "/trainers/classes/unova/plasma-grunt-m.png",
+  "team": [
+   {
+    "dex": 509,
+    "level": 11
+   },
+   {
+    "dex": 504,
+    "level": 11
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "af4fc742-aec9-5643-91a3-3c382b59855b",
+  "name": "Chili",
+  "spriteUrl": "/trainers/classes/unova/chili.png",
+  "team": [
+   {
+    "dex": 506,
+    "level": 12
+   },
+   {
+    "dex": 513,
+    "level": 14
+   }
+  ],
+  "role": "leader",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default"
+ },
+ {
+  "id": "7f303972-1ed7-5024-819f-d70a4253f415",
+  "name": "Cress",
+  "spriteUrl": "/trainers/classes/unova/cress.png",
+  "team": [
+   {
+    "dex": 506,
+    "level": 12
+   },
+   {
+    "dex": 515,
+    "level": 14
+   }
+  ],
+  "role": "leader",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default"
+ },
+ {
+  "id": "e4f5f4d3-d813-5fa2-b63f-9ab27e8853a1",
+  "name": "Cilan",
+  "spriteUrl": "/trainers/classes/unova/cilan.png",
+  "team": [
+   {
+    "dex": 506,
+    "level": 12
+   },
+   {
+    "dex": 511,
+    "level": 14
+   }
+  ],
+  "role": "leader",
+  "badge": "Trio Badge",
+  "upgradeLevel": null,
+  "battleBackground": "default"
+ },
+ {
+  "id": "752acbd8-397f-5876-ad0f-3b15a89f15cb",
+  "name": "Preschooler Doyle",
+  "spriteUrl": "/trainers/classes/unova/preschooler.png",
+  "team": [
+   {
+    "dex": 519,
+    "level": 12
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "376bfd3f-3f05-5175-9fd9-44ff0abd3638",
+  "name": "Twins Kumi & Amy",
+  "spriteUrl": "/trainers/classes/unova/twins.png",
+  "team": [
+   {
+    "dex": 504,
+    "level": 13
+   },
+   {
+    "dex": 509,
+    "level": 13
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "27a463ca-2915-5634-b905-b3dbc2a0040b",
+  "name": "Pokémon Breeder Galen",
+  "spriteUrl": "/trainers/classes/unova/breeder-m.png",
+  "team": [
+   {
+    "dex": 506,
+    "level": 14
+   },
+   {
+    "dex": 522,
+    "level": 14
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "1ac4ed4d-37cb-5daf-b14f-5c6f6998cdb5",
+  "name": "Team Plasma Grunt",
+  "spriteUrl": "/trainers/classes/unova/plasma-grunt-m.png",
+  "team": [
+   {
+    "dex": 509,
+    "level": 14
+   },
+   {
+    "dex": 504,
+    "level": 15
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "b04bf659-4255-5c37-8e5d-5a43ec4d1b61",
+  "name": "Cheren",
+  "spriteUrl": "/trainers/classes/unova/cheren.png",
+  "team": [
+   {
+    "dex": 507,
+    "level": 16
+   },
+   {
+    "dex": 509,
+    "level": 15
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "d6f7430c-2fad-518f-94f5-3be1219e4cb9",
+  "name": "Pokémon Ranger Forrest",
+  "spriteUrl": "/trainers/classes/unova/ranger-m.png",
+  "team": [
+   {
+    "dex": 540,
+    "level": 16
+   },
+   {
+    "dex": 543,
+    "level": 16
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "30b33e1b-4525-5282-8261-f9582b4144cf",
+  "name": "Hiker Hardy",
+  "spriteUrl": "/trainers/classes/unova/hiker.png",
+  "team": [
+   {
+    "dex": 524,
+    "level": 17
+   },
+   {
+    "dex": 532,
+    "level": 17
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "152fb2f0-59f0-5dcf-a7b9-fb78dbdd5821",
+  "name": "Team Plasma Grunt",
+  "spriteUrl": "/trainers/classes/unova/plasma-grunt-m.png",
+  "team": [
+   {
+    "dex": 509,
+    "level": 17
+   },
+   {
+    "dex": 543,
+    "level": 17
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "ed2244df-c3b7-5d6d-b907-2658b8bac4da",
+  "name": "Bianca",
+  "spriteUrl": "/trainers/classes/unova/bianca.png",
+  "team": [
+   {
+    "dex": 517,
+    "level": 17
+   },
+   {
+    "dex": 506,
+    "level": 18
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "d1bc9889-9e46-5d10-aa76-71d2e2439ed4",
+  "name": "Lenora",
+  "spriteUrl": "/trainers/classes/unova/lenora.png",
+  "team": [
+   {
+    "dex": 507,
+    "level": 18
+   },
+   {
+    "dex": 505,
+    "level": 20
+   }
+  ],
+  "role": "leader",
+  "badge": "Basic Badge",
+  "upgradeLevel": null,
+  "battleBackground": "default"
+ },
+ {
+  "id": "9db9c24a-81ad-5a9c-aaef-e81d8f4953c8",
+  "name": "School Kid Marsha",
+  "spriteUrl": "/trainers/classes/unova/school-kid-f.png",
+  "team": [
+   {
+    "dex": 540,
+    "level": 20
+   },
+   {
+    "dex": 546,
+    "level": 20
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "d21ad061-910a-5aa7-afdb-4d4e186338f4",
+  "name": "Clerk Clarence",
+  "spriteUrl": "/trainers/classes/unova/clerk.png",
+  "team": [
+   {
+    "dex": 505,
+    "level": 21
+   },
+   {
+    "dex": 520,
+    "level": 21
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "b48a7fdd-1234-5adc-a245-5e371bc47224",
+  "name": "Harlequin Jack",
+  "spriteUrl": "/trainers/classes/unova/harlequin.png",
+  "team": [
+   {
+    "dex": 509,
+    "level": 21
+   },
+   {
+    "dex": 548,
+    "level": 21
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "9fd23a5b-3b48-5a19-b9a2-a42d2398dbc7",
+  "name": "Team Plasma Grunt",
+  "spriteUrl": "/trainers/classes/unova/plasma-grunt-m.png",
+  "team": [
+   {
+    "dex": 510,
+    "level": 22
+   },
+   {
+    "dex": 544,
+    "level": 22
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "1f9ea371-a773-57eb-ac72-97600e265dcf",
+  "name": "Burgh",
+  "spriteUrl": "/trainers/classes/unova/burgh.png",
+  "team": [
+   {
+    "dex": 544,
+    "level": 21
+   },
+   {
+    "dex": 557,
+    "level": 21
+   },
+   {
+    "dex": 542,
+    "level": 23
+   }
+  ],
+  "role": "leader",
+  "badge": "Insect Badge",
+  "upgradeLevel": null,
+  "battleBackground": "default"
+ },
+ {
+  "id": "1c5248dc-ca3b-5768-afee-3402ad10aa34",
+  "name": "Backpacker Kiyo",
+  "spriteUrl": "/trainers/classes/unova/backpacker-m.png",
+  "team": [
+   {
+    "dex": 551,
+    "level": 23
+   },
+   {
+    "dex": 557,
+    "level": 23
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "e6a4eac3-284d-50ae-9bb6-a793cd79ddd4",
+  "name": "Psychic Tully",
+  "spriteUrl": "/trainers/classes/unova/psychic-m.png",
+  "team": [
+   {
+    "dex": 517,
+    "level": 23
+   },
+   {
+    "dex": 562,
+    "level": 24
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "1180e0bf-b2e6-5bfa-9974-e473dbbd2956",
+  "name": "Team Plasma Grunt",
+  "spriteUrl": "/trainers/classes/unova/plasma-grunt-m.png",
+  "team": [
+   {
+    "dex": 551,
+    "level": 24
+   },
+   {
+    "dex": 510,
+    "level": 24
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "81a6f370-8ae6-5ddc-8fed-f5ef6749766e",
+  "name": "Cheren",
+  "spriteUrl": "/trainers/classes/unova/cheren.png",
+  "team": [
+   {
+    "dex": 507,
+    "level": 24
+   },
+   {
+    "dex": 510,
+    "level": 25
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "6cc1ff0f-e32f-590d-93fa-54865f526016",
+  "name": "Artist Horton",
+  "spriteUrl": "/trainers/classes/unova/artist.png",
+  "team": [
+   {
+    "dex": 572,
+    "level": 25
+   },
+   {
+    "dex": 510,
+    "level": 25
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "6cf459d4-cec9-5deb-8f8f-296022205951",
+  "name": "Backers Ami & Eli",
+  "spriteUrl": "/trainers/classes/unova/backers.png",
+  "team": [
+   {
+    "dex": 568,
+    "level": 25
+   },
+   {
+    "dex": 574,
+    "level": 25
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "8c22dad6-02fc-5413-8395-ae4297541156",
+  "name": "Dancer Edwardo",
+  "spriteUrl": "/trainers/classes/unova/dancer.png",
+  "team": [
+   {
+    "dex": 577,
+    "level": 26
+   },
+   {
+    "dex": 520,
+    "level": 26
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "ac5982c1-6a04-5c48-93b1-aa6dba57bea0",
+  "name": "N",
+  "spriteUrl": "/trainers/classes/unova/n.png",
+  "team": [
+   {
+    "dex": 551,
+    "level": 26
+   },
+   {
+    "dex": 554,
+    "level": 26
+   },
+   {
+    "dex": 559,
+    "level": 26
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "46b3dd5f-ce56-5cf8-a77b-749899f75b1e",
+  "name": "Elesa",
+  "spriteUrl": "/trainers/classes/unova/elesa.png",
+  "team": [
+   {
+    "dex": 587,
+    "level": 25
+   },
+   {
+    "dex": 587,
+    "level": 25
+   },
+   {
+    "dex": 523,
+    "level": 27
+   }
+  ],
+  "role": "leader",
+  "badge": "Bolt Badge",
+  "upgradeLevel": null,
+  "battleBackground": "default"
+ },
+ {
+  "id": "6093c58a-d103-5a68-8902-5c9d998c4002",
+  "name": "Pokémon Ranger Shanti",
+  "spriteUrl": "/trainers/classes/unova/ranger-f.png",
+  "team": [
+   {
+    "dex": 585,
+    "level": 28
+   },
+   {
+    "dex": 590,
+    "level": 28
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "2d095a42-ebeb-5445-9106-5ccbea44922b",
+  "name": "Worker Jeremy",
+  "spriteUrl": "/trainers/classes/unova/worker.png",
+  "team": [
+   {
+    "dex": 525,
+    "level": 28
+   },
+   {
+    "dex": 532,
+    "level": 29
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "6f357c39-a9fe-5aae-b89c-4bb97a17dbdd",
+  "name": "Fisherman Andrew",
+  "spriteUrl": "/trainers/classes/unova/fisherman.png",
+  "team": [
+   {
+    "dex": 580,
+    "level": 28
+   },
+   {
+    "dex": 536,
+    "level": 29
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "792e3a6f-e8f9-5f37-a388-4daa2fba90f1",
+  "name": "Team Plasma Grunt",
+  "spriteUrl": "/trainers/classes/unova/plasma-grunt-m.png",
+  "team": [
+   {
+    "dex": 510,
+    "level": 29
+   },
+   {
+    "dex": 568,
+    "level": 29
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "221dcd60-4fb7-57d5-af93-c41c6194ce9e",
+  "name": "Bianca",
+  "spriteUrl": "/trainers/classes/unova/bianca.png",
+  "team": [
+   {
+    "dex": 518,
+    "level": 29
+   },
+   {
+    "dex": 507,
+    "level": 29
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "6f9251a7-08b4-52df-8997-a2a9ddc84f1a",
+  "name": "Clay",
+  "spriteUrl": "/trainers/classes/unova/clay.png",
+  "team": [
+   {
+    "dex": 552,
+    "level": 29
+   },
+   {
+    "dex": 536,
+    "level": 29
+   },
+   {
+    "dex": 530,
+    "level": 31
+   }
+  ],
+  "role": "leader",
+  "badge": "Quake Badge",
+  "upgradeLevel": null,
+  "battleBackground": "default"
+ },
+ {
+  "id": "2396f1c9-4da6-5b84-976b-bba805c70535",
+  "name": "Scientist Ronald",
+  "spriteUrl": "/trainers/classes/unova/scientist-m.png",
+  "team": [
+   {
+    "dex": 599,
+    "level": 30
+   },
+   {
+    "dex": 597,
+    "level": 30
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "2e69f154-16a5-5ef1-812d-ab367274de83",
+  "name": "Team Plasma Grunt",
+  "spriteUrl": "/trainers/classes/unova/plasma-grunt-m.png",
+  "team": [
+   {
+    "dex": 510,
+    "level": 31
+   },
+   {
+    "dex": 595,
+    "level": 31
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "d6a63392-bcc2-58ad-8159-912799f46a20",
+  "name": "N",
+  "spriteUrl": "/trainers/classes/unova/n.png",
+  "team": [
+   {
+    "dex": 525,
+    "level": 32
+   },
+   {
+    "dex": 599,
+    "level": 32
+   },
+   {
+    "dex": 595,
+    "level": 32
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "3007588d-f00a-53a3-8af6-7eaad234ea25",
+  "name": "Pilot Ted",
+  "spriteUrl": "/trainers/classes/unova/pilot.png",
+  "team": [
+   {
+    "dex": 520,
+    "level": 33
+   },
+   {
+    "dex": 580,
+    "level": 33
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "27580c8b-5135-56e8-8f16-cf2af9cdcab0",
+  "name": "Pokéfan Jojo",
+  "spriteUrl": "/trainers/classes/unova/pokefan-m.png",
+  "team": [
+   {
+    "dex": 587,
+    "level": 33
+   },
+   {
+    "dex": 572,
+    "level": 33
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "40cc2155-f9f6-5a02-9b24-4ca8aed6cad3",
+  "name": "Ace Trainer Webster",
+  "spriteUrl": "/trainers/classes/unova/ace-trainer-m.png",
+  "team": [
+   {
+    "dex": 523,
+    "level": 34
+   },
+   {
+    "dex": 585,
+    "level": 34
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "bd2fa0bd-ee47-5d1a-9d8a-fd62a37d76e6",
+  "name": "Cheren",
+  "spriteUrl": "/trainers/classes/unova/cheren.png",
+  "team": [
+   {
+    "dex": 508,
+    "level": 34
+   },
+   {
+    "dex": 510,
+    "level": 34
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "85b32112-9d31-5efd-854f-02ad957ab1eb",
+  "name": "Skyla",
+  "spriteUrl": "/trainers/classes/unova/skyla.png",
+  "team": [
+   {
+    "dex": 528,
+    "level": 33
+   },
+   {
+    "dex": 521,
+    "level": 33
+   },
+   {
+    "dex": 581,
+    "level": 35
+   }
+  ],
+  "role": "leader",
+  "badge": "Jet Badge",
+  "upgradeLevel": null,
+  "battleBackground": "default"
+ },
+ {
+  "id": "49e73842-5eef-56f2-8111-048862feaef6",
+  "name": "Psychic Bryce",
+  "spriteUrl": "/trainers/classes/unova/psychic-m.png",
+  "team": [
+   {
+    "dex": 605,
+    "level": 34
+   },
+   {
+    "dex": 575,
+    "level": 34
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "1bef9136-d825-5bb3-835f-b2c8695b728f",
+  "name": "Nurse Dixie",
+  "spriteUrl": "/trainers/classes/unova/nurse.png",
+  "team": [
+   {
+    "dex": 531,
+    "level": 35
+   },
+   {
+    "dex": 546,
+    "level": 35
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "364efc2f-54f2-590e-8f62-ee329527cc8f",
+  "name": "Lady Sarah",
+  "spriteUrl": "/trainers/classes/unova/lady.png",
+  "team": [
+   {
+    "dex": 607,
+    "level": 34
+   },
+   {
+    "dex": 578,
+    "level": 35
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "c9f701c8-cb75-57c9-81d8-1a245f3a3f8f",
+  "name": "Worker Dick",
+  "spriteUrl": "/trainers/classes/unova/worker.png",
+  "team": [
+   {
+    "dex": 533,
+    "level": 36
+   },
+   {
+    "dex": 525,
+    "level": 36
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "1ba833cd-9b58-5607-9a6b-7ae91308c010",
+  "name": "Hiker Grant",
+  "spriteUrl": "/trainers/classes/unova/hiker.png",
+  "team": [
+   {
+    "dex": 525,
+    "level": 36
+   },
+   {
+    "dex": 529,
+    "level": 37
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "0cc41a79-3741-55bb-9f30-613958d7a34b",
+  "name": "Backpacker Blossom",
+  "spriteUrl": "/trainers/classes/unova/backpacker-f.png",
+  "team": [
+   {
+    "dex": 613,
+    "level": 36
+   },
+   {
+    "dex": 528,
+    "level": 37
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "f860b7cb-0b5e-5201-b8be-72ddafc42889",
+  "name": "Fisherman Eustace",
+  "spriteUrl": "/trainers/classes/unova/fisherman.png",
+  "team": [
+   {
+    "dex": 536,
+    "level": 37
+   },
+   {
+    "dex": 618,
+    "level": 37
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "a9baac53-8fda-5d06-82aa-ac5086a5f610",
+  "name": "Parasol Lady Tyra",
+  "spriteUrl": "/trainers/classes/unova/parasol-lady.png",
+  "team": [
+   {
+    "dex": 586,
+    "level": 38
+   },
+   {
+    "dex": 581,
+    "level": 38
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "4dc0142b-95b0-570b-9b27-4a97c2765f7c",
+  "name": "Team Plasma Grunt",
+  "spriteUrl": "/trainers/classes/unova/plasma-grunt-m.png",
+  "team": [
+   {
+    "dex": 510,
+    "level": 38
+   },
+   {
+    "dex": 591,
+    "level": 38
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "c9eb95f3-b1be-5ab1-9918-a5080fd894c3",
+  "name": "Brycen",
+  "spriteUrl": "/trainers/classes/unova/brycen.png",
+  "team": [
+   {
+    "dex": 583,
+    "level": 37
+   },
+   {
+    "dex": 615,
+    "level": 37
+   },
+   {
+    "dex": 614,
+    "level": 39
+   }
+  ],
+  "role": "leader",
+  "badge": "Freeze Badge",
+  "upgradeLevel": null,
+  "battleBackground": "default"
+ },
+ {
+  "id": "07f02661-722c-521e-9335-b0b1cbc6242e",
+  "name": "Team Plasma Grunt",
+  "spriteUrl": "/trainers/classes/unova/plasma-grunt-m.png",
+  "team": [
+   {
+    "dex": 510,
+    "level": 41
+   },
+   {
+    "dex": 591,
+    "level": 41
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "b0b985fe-3c6c-5b23-adf0-975414ca72a5",
+  "name": "Team Plasma Grunt",
+  "spriteUrl": "/trainers/classes/unova/plasma-grunt-m.png",
+  "team": [
+   {
+    "dex": 569,
+    "level": 41
+   },
+   {
+    "dex": 552,
+    "level": 42
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "94f144e0-cbd0-5972-bb9a-0c830b38c3a8",
+  "name": "Zinzolin",
+  "spriteUrl": "/trainers/classes/unova/zinzolin.png",
+  "team": [
+   {
+    "dex": 614,
+    "level": 43
+   },
+   {
+    "dex": 615,
+    "level": 43
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "c55b8f18-0ee8-5f91-897a-8f391c1f3d92",
+  "name": "Gentleman Manuel",
+  "spriteUrl": "/trainers/classes/unova/gentleman.png",
+  "team": [
+   {
+    "dex": 573,
+    "level": 43
+   },
+   {
+    "dex": 626,
+    "level": 43
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "bb0fa088-f7ce-58ca-bd6f-97019b04f8c5",
+  "name": "Socialite Emilia",
+  "spriteUrl": "/trainers/classes/unova/socialite.png",
+  "team": [
+   {
+    "dex": 576,
+    "level": 43
+   },
+   {
+    "dex": 579,
+    "level": 43
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "002c3d61-f18e-5fdf-a8df-9a68e7b124be",
+  "name": "Biker Jeremiah",
+  "spriteUrl": "/trainers/classes/unova/biker.png",
+  "team": [
+   {
+    "dex": 569,
+    "level": 44
+   },
+   {
+    "dex": 560,
+    "level": 44
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "a828a77b-aefb-535d-b0f1-1cc80ddce269",
+  "name": "Bianca",
+  "spriteUrl": "/trainers/classes/unova/bianca.png",
+  "team": [
+   {
+    "dex": 518,
+    "level": 44
+   },
+   {
+    "dex": 508,
+    "level": 44
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "845c7be8-6909-5e2c-b149-84a2c4473397",
+  "name": "Drayden",
+  "spriteUrl": "/trainers/classes/unova/drayden.png",
+  "team": [
+   {
+    "dex": 611,
+    "level": 41
+   },
+   {
+    "dex": 621,
+    "level": 41
+   },
+   {
+    "dex": 612,
+    "level": 43
+   }
+  ],
+  "role": "leader",
+  "badge": "Legend Badge",
+  "upgradeLevel": null,
+  "battleBackground": "default"
+ },
+ {
+  "id": "2846978f-a594-58c5-9fe5-4e680b18e504",
+  "name": "Ace Trainer Ethan",
+  "spriteUrl": "/trainers/classes/unova/ace-trainer-m.png",
+  "team": [
+   {
+    "dex": 508,
+    "level": 47
+   },
+   {
+    "dex": 591,
+    "level": 47
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "42e9be0a-6219-5aee-b7e0-145f695335b0",
+  "name": "Ace Trainer Carol",
+  "spriteUrl": "/trainers/classes/unova/ace-trainer-f.png",
+  "team": [
+   {
+    "dex": 586,
+    "level": 47
+   },
+   {
+    "dex": 579,
+    "level": 47
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "d1a51474-1f26-57c2-a8ee-4481ab376d38",
+  "name": "Battle Girl Nicola",
+  "spriteUrl": "/trainers/classes/unova/battle-girl.png",
+  "team": [
+   {
+    "dex": 620,
+    "level": 47
+   },
+   {
+    "dex": 534,
+    "level": 47
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "1364cd0a-f8d5-5c9f-9b47-270a9e3a6a74",
+  "name": "Cheren",
+  "spriteUrl": "/trainers/classes/unova/cheren.png",
+  "team": [
+   {
+    "dex": 508,
+    "level": 48
+   },
+   {
+    "dex": 510,
+    "level": 48
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "4fb20a5b-5a17-5c38-bbc9-acd7530c7ac2",
+  "name": "Ace Trainer Chandra",
+  "spriteUrl": "/trainers/classes/unova/ace-trainer-f.png",
+  "team": [
+   {
+    "dex": 612,
+    "level": 50
+   },
+   {
+    "dex": 591,
+    "level": 50
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "004c097c-72e6-513e-9892-6338e91fe281",
+  "name": "Veteran Lance",
+  "spriteUrl": "/trainers/classes/unova/veteran.png",
+  "team": [
+   {
+    "dex": 534,
+    "level": 51
+   },
+   {
+    "dex": 589,
+    "level": 51
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "70ae1c45-5c01-51f0-a78d-cd33264d00d8",
+  "name": "Team Plasma Grunt",
+  "spriteUrl": "/trainers/classes/unova/plasma-grunt-m.png",
+  "team": [
+   {
+    "dex": 510,
+    "level": 50
+   },
+   {
+    "dex": 569,
+    "level": 50
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "211f78db-e371-5228-8bcd-8099355393d7",
+  "name": "Elite Four Shauntal",
+  "spriteUrl": "/trainers/classes/unova/elite-shauntal.png",
+  "team": [
+   {
+    "dex": 563,
+    "level": 48
+   },
+   {
+    "dex": 623,
+    "level": 48
+   },
+   {
+    "dex": 609,
+    "level": 50
+   }
+  ],
+  "role": "elite",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ]
+ },
+ {
+  "id": "fd9257c6-2f03-5576-bbcc-746b8ef34c40",
+  "name": "Elite Four Grimsley",
+  "spriteUrl": "/trainers/classes/unova/elite-grimsley.png",
+  "team": [
+   {
+    "dex": 560,
+    "level": 48
+   },
+   {
+    "dex": 553,
+    "level": 48
+   },
+   {
+    "dex": 625,
+    "level": 50
+   }
+  ],
+  "role": "elite",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ]
+ },
+ {
+  "id": "b4ee87be-97f7-5a78-a11e-79287117f850",
+  "name": "Elite Four Caitlin",
+  "spriteUrl": "/trainers/classes/unova/elite-caitlin.png",
+  "team": [
+   {
+    "dex": 579,
+    "level": 48
+   },
+   {
+    "dex": 561,
+    "level": 48
+   },
+   {
+    "dex": 576,
+    "level": 50
+   }
+  ],
+  "role": "elite",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ]
+ },
+ {
+  "id": "91925022-9ad3-5206-ae61-5ed1e14e975f",
+  "name": "Elite Four Marshal",
+  "spriteUrl": "/trainers/classes/unova/elite-marshal.png",
+  "team": [
+   {
+    "dex": 538,
+    "level": 48
+   },
+   {
+    "dex": 539,
+    "level": 48
+   },
+   {
+    "dex": 534,
+    "level": 50
+   }
+  ],
+  "role": "elite",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ]
+ },
+ {
+  "id": "96f94208-c601-51e4-924f-b492fc6f445c",
+  "name": "N",
+  "spriteUrl": "/trainers/classes/unova/n.png",
+  "team": [
+   {
+    "dex": 571,
+    "level": 50
+   },
+   {
+    "dex": 601,
+    "level": 50
+   },
+   {
+    "dex": 565,
+    "level": 51
+   }
+  ],
+  "role": "elite",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ]
+ },
+ {
+  "id": "d49fa8dd-28c5-55f3-ab4e-bd67a610dd9e",
+  "name": "Ghetsis",
+  "spriteUrl": "/trainers/classes/unova/ghetsis.png",
+  "team": [
+   {
+    "dex": 625,
+    "level": 52
+   },
+   {
+    "dex": 537,
+    "level": 52
+   },
+   {
+    "dex": 635,
+    "level": 54
+   }
+  ],
+  "role": "champion",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ]
+ },
+ {
+  "id": "6170c304-a91c-5f03-a8a1-a97007794a23",
+  "name": "Ace Trainer Jacob",
+  "spriteUrl": "/trainers/classes/unova/ace-trainer-m.png",
+  "team": [
+   {
+    "dex": 628,
+    "level": 58
+   },
+   {
+    "dex": 612,
+    "level": 58
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "39c014dd-37b9-59e9-a67c-0e2473b8fc0f",
+  "name": "Veteran Chaz",
+  "spriteUrl": "/trainers/classes/unova/veteran.png",
+  "team": [
+   {
+    "dex": 635,
+    "level": 59
+   },
+   {
+    "dex": 623,
+    "level": 59
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "bce11553-bb1b-5c8e-bd2e-34a80c1aa6e6",
+  "name": "Socialite Grier",
+  "spriteUrl": "/trainers/classes/unova/socialite.png",
+  "team": [
+   {
+    "dex": 593,
+    "level": 58
+   },
+   {
+    "dex": 584,
+    "level": 58
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "551b7881-97bb-5613-9f85-7a39d510dbd2",
+  "name": "Champion Alder",
+  "spriteUrl": "/trainers/classes/unova/alder.png",
+  "team": [
+   {
+    "dex": 589,
+    "level": 62
+   },
+   {
+    "dex": 621,
+    "level": 62
+   },
+   {
+    "dex": 637,
+    "level": 64
+   }
+  ],
+  "role": "champion",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ]
+ },
+ {
+  "id": "84604aff-ee94-5464-9025-f45cc4cc6d29",
+  "name": "Ace Trainer Kelvin",
+  "spriteUrl": "/trainers/classes/unova/ace-trainer-m.png",
+  "team": [
+   {
+    "dex": 621,
+    "level": 60
+   },
+   {
+    "dex": 633,
+    "level": 62
+   },
+   {
+    "dex": 611,
+    "level": 62
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "adda1181-0a8b-5ec7-9073-6d5905d1a922",
+  "name": "Veteran Naomi",
+  "spriteUrl": "/trainers/classes/unova/veteran.png",
+  "team": [
+   {
+    "dex": 625,
+    "level": 68
+   },
+   {
+    "dex": 598,
+    "level": 68
+   },
+   {
+    "dex": 589,
+    "level": 69
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "a4046653-8281-52eb-87b7-7f4cc87981c9",
+  "name": "Pokémon Ranger Brent",
+  "spriteUrl": "/trainers/classes/unova/ranger-m.png",
+  "team": [
+   {
+    "dex": 541,
+    "level": 75
+   },
+   {
+    "dex": 585,
+    "level": 76
+   },
+   {
+    "dex": 548,
+    "level": 75
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
  }
 ]

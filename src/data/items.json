@@ -615,5 +615,37 @@
   "inShop": false,
   "shopBadges": 0,
   "region": "sinnoh"
+ },
+ {
+  "key": "cover-fossil",
+  "name": "Cover Fossil",
+  "description": "A fossil of an ancient Pokémon. Tirtouga waits in your Box and is revived after 24 hours, at Lv.20.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/cover-fossil.png",
+  "price": 0,
+  "effect": {
+   "kind": "fossil",
+   "dex": 564,
+   "level": 20,
+   "hours": 24
+  },
+  "inShop": false,
+  "shopBadges": 0,
+  "region": "unova"
+ },
+ {
+  "key": "plume-fossil",
+  "name": "Plume Fossil",
+  "description": "A fossil of an ancient Pokémon. Archen waits in your Box and is revived after 24 hours, at Lv.20.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/plume-fossil.png",
+  "price": 0,
+  "effect": {
+   "kind": "fossil",
+   "dex": 566,
+   "level": 20,
+   "hours": 24
+  },
+  "inShop": false,
+  "shopBadges": 0,
+  "region": "unova"
  }
 ]

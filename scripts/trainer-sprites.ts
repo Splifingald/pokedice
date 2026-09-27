@@ -24,7 +24,7 @@ const slug = (s: string) =>
     .replace(/-+/g, '-')
     .replace(/^-|-$/g, '')
 
-export type SpriteRegion = 'kanto' | 'johto' | 'hoenn' | 'sinnoh'
+export type SpriteRegion = 'kanto' | 'johto' | 'hoenn' | 'sinnoh' | 'unova'
 
 /**
  * Named characters per region: gym leaders, the Elite Four, the Champion, the rival and the villainous teams. The
@@ -108,6 +108,29 @@ const REGION_NAMED: Record<Exclude<SpriteRegion, 'kanto'>, Record<string, string
     Dahlia: 'dahlia',
     Caitlin: 'caitlin',
     Darach: 'darach',
+  },
+  unova: {
+    Chili: 'chili',
+    Cress: 'cress',
+    Cilan: 'cilan',
+    Lenora: 'lenora',
+    Burgh: 'burgh',
+    Elesa: 'elesa',
+    Clay: 'clay',
+    Skyla: 'skyla',
+    Brycen: 'brycen',
+    Drayden: 'drayden',
+    'Elite Four Shauntal': 'elite-shauntal',
+    'Elite Four Grimsley': 'elite-grimsley',
+    'Elite Four Caitlin': 'elite-caitlin',
+    'Elite Four Marshal': 'elite-marshal',
+    'Champion Alder': 'alder',
+    Alder: 'alder',
+    Cheren: 'cheren',
+    Bianca: 'bianca',
+    N: 'n',
+    Ghetsis: 'ghetsis',
+    Zinzolin: 'zinzolin',
   },
 }
 
@@ -236,10 +259,60 @@ const REGION_CLASSES: Record<Exclude<SpriteRegion, 'kanto'>, [prefix: string, sp
     ['Young Couple', 'young-couple'],
     ['Youngster', 'youngster'],
   ],
+  unova: [
+    ['Ace Trainer', 'ace-trainer-m'],
+    ['Artist', 'artist'],
+    ['Backers', 'backers'],
+    ['Backpacker', 'backpacker-m'],
+    ['Baker', 'baker'],
+    ['Battle Girl', 'battle-girl'],
+    ['Biker', 'biker'],
+    ['Black Belt', 'black-belt'],
+    ['Clerk', 'clerk'],
+    ['Cyclist', 'cyclist-m'],
+    ['Dancer', 'dancer'],
+    ['Doctor', 'doctor'],
+    ['Fisherman', 'fisherman'],
+    ['Gentleman', 'gentleman'],
+    ['Harlequin', 'harlequin'],
+    ['Hiker', 'hiker'],
+    ['Hoopster', 'hoopster'],
+    ['Infielder', 'infielder'],
+    ['Janitor', 'janitor'],
+    ['Lady', 'lady'],
+    ['Lass', 'lass'],
+    ['Linebacker', 'linebacker'],
+    ['Maid', 'maid'],
+    ['Musician', 'musician'],
+    ['Nurse', 'nurse'],
+    ['Nursery Aide', 'nursery-aide'],
+    ['Parasol Lady', 'parasol-lady'],
+    ['Pilot', 'pilot'],
+    ['Pokéfan', 'pokefan-m'],
+    ['Pokémon Breeder', 'breeder-m'],
+    ['Pokémon Ranger', 'ranger-m'],
+    ['Policeman', 'policeman'],
+    ['Preschooler', 'preschooler'],
+    ['Psychic', 'psychic-m'],
+    ['Roughneck', 'roughneck'],
+    ['School Kid', 'school-kid-m'],
+    ['Scientist', 'scientist-m'],
+    ['Smasher', 'smasher'],
+    ['Socialite', 'socialite'],
+    ['Striker', 'striker'],
+    ['Swimmer', 'swimmer-f'],
+    ['Team Plasma Grunt', 'plasma-grunt-m'],
+    ['Twins', 'twins'],
+    ['Veteran', 'veteran'],
+    ['Waiter', 'waiter'],
+    ['Waitress', 'waitress'],
+    ['Worker', 'worker'],
+    ['Youngster', 'youngster'],
+  ],
 }
 
 /** Female first names, so a mixed class ("Swimmer Nina") picks the right sprite where both exist. */
-const FEMALE = /^(Mary|Naomi|Alexa|Sara|Nina|Nadia|Lena|Ivy|Claire|Rosa|Yuki|Mira|Dana|Tara|Elle|Nell|Kate|Erin|Amy|Beth)$/
+const FEMALE = /^(Mary|Naomi|Alexa|Sara|Nina|Nadia|Lena|Ivy|Claire|Rosa|Yuki|Mira|Dana|Tara|Elle|Nell|Kate|Erin|Amy|Beth|Marsha|Shanti|Blossom|Carol|Chandra)$/
 
 /**
  * Male sprites that have a female counterpart cut from the same sheet. Sinnoh's classes are `-m` / `-f` pairs
@@ -254,10 +327,15 @@ const PAIRED: Record<Exclude<SpriteRegion, 'kanto'>, Record<string, string>> = {
       (base) => [`${base}-m`, `${base}-f`],
     ),
   ),
+  unova: Object.fromEntries(
+    ['ace-trainer', 'backpacker', 'cyclist', 'plasma-grunt', 'pokefan', 'psychic', 'ranger', 'school-kid', 'scientist'].map(
+      (base) => [`${base}-m`, `${base}-f`],
+    ),
+  ),
 }
 
 /**
- * Sprite for a trainer in Johto, Hoenn or Sinnoh. Named characters first, then the class prefix, then the shared
+ * Sprite for a trainer in Johto, Hoenn, Sinnoh or Unova. Named characters first, then the class prefix, then the shared
  * default — a trainer never renders as a broken image.
  */
 export function regionTrainerSprite(name: string, region: Exclude<SpriteRegion, 'kanto'>): string {

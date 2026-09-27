@@ -68,6 +68,24 @@
   ],
   "starterLevel": 5,
   "leagueAreaId": "5dc66787-c27b-5d67-8d66-4df0f1aa1041",
+  "nextRegion": "unova",
+  "enabled": true
+ },
+ {
+  "id": "unova",
+  "name": "Unova",
+  "orderIndex": 4,
+  "dexRange": [
+   494,
+   649
+  ],
+  "starters": [
+   495,
+   498,
+   501
+  ],
+  "starterLevel": 5,
+  "leagueAreaId": "8c87ed3a-c021-57b6-b866-cc6e71877c0e",
   "nextRegion": null,
   "enabled": true
  }

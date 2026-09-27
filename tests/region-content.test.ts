@@ -13,9 +13,9 @@ const byId = new Map(trainers.map((t) => [t.id, t]))
 const of = (regionId: string) => areas.filter((a) => regionOfArea(a) === regionId)
 
 describe('regions', () => {
-  it('has Kanto, Johto, Hoenn and Sinnoh, chained in order and all enabled', () => {
-    expect(regions.map((r) => r.id)).toEqual(['kanto', 'johto', 'hoenn', 'sinnoh'])
-    expect(regions.map((r) => r.nextRegion)).toEqual(['johto', 'hoenn', 'sinnoh', null])
+  it('has Kanto, Johto, Hoenn, Sinnoh and Unova, chained in order and all enabled', () => {
+    expect(regions.map((r) => r.id)).toEqual(['kanto', 'johto', 'hoenn', 'sinnoh', 'unova'])
+    expect(regions.map((r) => r.nextRegion)).toEqual(['johto', 'hoenn', 'sinnoh', 'unova', null])
     expect(regions.every((r) => r.enabled)).toBe(true)
   })
 
@@ -167,7 +167,7 @@ describe('regions', () => {
 
   it('puts the Master Ball in one hideout per region, rare and only once', () => {
     const withMaster = areas.filter((a) => a.lootPool.some((l) => l.itemKey === 'master-ball'))
-    expect(withMaster.map((a) => regionOfArea(a)).sort()).toEqual(['hoenn', 'johto', 'kanto', 'sinnoh'])
+    expect(withMaster.map((a) => regionOfArea(a)).sort()).toEqual(['hoenn', 'johto', 'kanto', 'sinnoh', 'unova'])
     for (const a of withMaster) {
       const entry = a.lootPool.find((l) => l.itemKey === 'master-ball')!
       expect(entry.unique, a.name).toBe(true)

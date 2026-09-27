@@ -1,13 +1,15 @@
 /**
- * pnpm seed-regions — appends Johto (152–251), Hoenn (252–386) and Sinnoh (387–493) to the offline bundle.
+ * pnpm seed-regions — appends Johto (152–251), Hoenn (252–386), Sinnoh (387–493) and Unova (494–649) to the offline
+ * bundle.
  *
  * Unlike `pnpm seed`, this script is **additive**: it reads `src/data/*.json`, keeps every existing row exactly as it
  * is, and only appends what is missing. That matters because the committed bundle is ahead of `scripts/seed.ts` —
  * admin tuning was synced back into it (evolution stones, fossils, item-triggered evolutions), and a full re-seed
  * would delete all of that.
  *
- * Species are balanced by the very rules Kanto was: the pure helpers in `seed.ts` (`hpAtLevel`, `catchValueFromRate`,
- * `diceCountFromBst`, `composeDice`, `applyDiceSchedule`) are imported rather than re-implemented.
+ * HP, speed and catch values come from the pure helpers in `seed.ts` (`hpAtLevel`, `catchValueFromRate`), imported
+ * rather than re-implemented. Dice up to Sinnoh came from `applyDiceSchedule`; from Unova on they come from
+ * `liveDicePlan` (scripts/dice-live.ts), the patterns the admin's hand tuning of Sinnoh, Hoenn and Johto settled on.
  *
  * Data comes from the PokeAPI static mirror on raw.githubusercontent (pokeapi.co itself is unreachable from CI and
  * from the sandbox). Every response is cached under `scripts/.cache/`, so re-runs are offline and idempotent.
@@ -27,6 +29,8 @@ import {
 import { HOENN_AREAS, HOENN_STARTERS } from './content-hoenn'
 import { JOHTO_AREAS, JOHTO_STARTERS } from './content-johto'
 import { SINNOH_AREAS, SINNOH_STARTERS } from './content-sinnoh'
+import { UNOVA_AREAS, UNOVA_STARTERS } from './content-unova'
+import { liveDicePlan, type LegendKind } from './dice-live'
 import type { AreaPlan } from './content'
 import type { Area, BattleBackground, Evolution, ItemDef, PokeType, Region, Species, Trainer } from '../src/engine/types'
 
@@ -41,7 +45,8 @@ const ITEM_SPRITE = (key: string) => `https://raw.githubusercontent.com/PokeAPI/
 
 /**
  * The range this run generates. Everything outside it is kept exactly as the bundle has it, so the default run adds
- * Sinnoh and touches nothing else; `--from 152` would regenerate Johto and Hoenn along with it.
+ * Unova and touches nothing else; `--from 387` would regenerate Sinnoh along with it — and throw away every hand edit
+ * the admin made to Sinnoh's species and areas, which is why the default moved on when Unova was added.
  *
  * That default matters more than it looks. A species only takes a newly computed dice schedule if it is inside the
  * range, and the schedule is computed over the *merged* stage graph — so a run that reaches back over Johto would
@@ -51,8 +56,8 @@ const argOf = (flag: string) => {
   const i = process.argv.indexOf(flag)
   return i > 0 ? Number(process.argv[i + 1]) : null
 }
-const FIRST_NEW_DEX = argOf('--from') ?? 387
-const DEX_MAX = argOf('--to') ?? 493
+const FIRST_NEW_DEX = argOf('--from') ?? 494
+const DEX_MAX = argOf('--to') ?? 649
 
 // ---------------------------------------------------------------- mirror access (cached)
 
@@ -177,7 +182,11 @@ const FORCED_ITEM: Record<number, string> = {
  * with no level. Left alone it would be assigned Lv.30 and never fire, because Nincada is already a Ninjask by then.
  * Pinning it to 20 makes the two a real branch: one or the other, rolled like every other split.
  */
-const FORCED_LEVEL: Record<number, number> = { 292: 20 }
+const FORCED_LEVEL: Record<number, number> = {
+  292: 20,
+  // Darumaka evolves at Lv.35; PokeAPI lists Galarian Darumaka's Ice Stone on the same edge, which would win otherwise.
+  555: 35,
+}
 
 /**
  * Catch values for the new legendaries, matched to Kanto's own bands rather than taken from the capture rate. Gen 2
@@ -215,6 +224,19 @@ const LEGENDARY_CATCH: Record<number, number> = {
   490: 5, // Manaphy
   491: 5, // Darkrai
   492: 5, // Shaymin
+  643: 7, // Reshiram   ·  Unova: the tao duo and Kyurem as box legendaries
+  644: 7, // Zekrom
+  646: 7, // Kyurem
+  638: 6, // Cobalion   ·  the Swords of Justice and the Forces of Nature, as the birds
+  639: 6, // Terrakion
+  640: 6, // Virizion
+  641: 6, // Tornadus
+  642: 6, // Thundurus
+  645: 6, // Landorus
+  494: 5, // Victini    ·  the mythicals, as Mew
+  647: 5, // Keldeo
+  648: 5, // Meloetta
+  649: 5, // Genesect
 }
 
 /** One evolution edge, in the shape the bundle already uses for Kanto. */
@@ -302,6 +324,8 @@ const NEW_ITEMS: ItemDef[] = [
   stone('reaper-cloth', 'Reaper Cloth', 'Dusclops (Dusknoir)'),
   fossil('skull-fossil', 'Skull Fossil', 408, 'Cranidos'),
   fossil('armor-fossil', 'Armor Fossil', 410, 'Shieldon'),
+  { ...fossil('cover-fossil', 'Cover Fossil', 564, 'Tirtouga'), region: 'unova' },
+  { ...fossil('plume-fossil', 'Plume Fossil', 566, 'Archen'), region: 'unova' },
 ]
 
 // ---------------------------------------------------------------- build
@@ -401,6 +425,62 @@ function bstOfExisting(s: Species): number {
   return m ? Number(m[1]) : 400
 }
 
+// ---------------------------------------------------------------- dice on the live patterns (Unova on)
+
+/** From this dex on, dice follow `liveDicePlan`; earlier generations keep the v1.8 schedule they were seeded with. */
+const LIVE_DICE_FROM = 494
+
+const LEGEND_KIND: Record<number, LegendKind> = {
+  638: 'trio', 639: 'trio', 640: 'trio', 641: 'trio', 642: 'trio', 645: 'trio',
+  643: 'box', 644: 'box', 646: 'box',
+  494: 'mythical', 647: 'mythical', 648: 'mythical', 649: 'mythical',
+}
+
+/** Lines that level slowly into a 600-BST final, Gible's shape: Axew's and Deino's. */
+const PSEUDO_LINES = new Set([610, 611, 612, 633, 634, 635])
+
+/** Starters of every region, from the region plans, plus their evolutions. */
+function starterLines(species: Species[]): Set<number> {
+  const byDex = new Map(species.map((s) => [s.dex, s]))
+  const out = new Set<number>()
+  const add = (dex: number) => {
+    out.add(dex)
+    for (const e of byDex.get(dex)?.evolutions ?? []) add(e.toDex)
+  }
+  for (const r of REGION_PLANS) r.starters.forEach(add)
+  return out
+}
+
+/** Stage, line length and evolution levels over the merged graph, fed to `liveDicePlan`. */
+function liveSchedule(species: Species[], bst: Map<number, number>): (s: Species) => Species {
+  const byDex = new Map(species.map((s) => [s.dex, s]))
+  const parent = new Map<number, { dex: number; evo: Evolution }>()
+  for (const s of species) for (const e of s.evolutions) parent.set(e.toDex, { dex: s.dex, evo: e })
+  const stageOf = (dex: number): number => (parent.has(dex) ? 1 + stageOf(parent.get(dex)!.dex) : 1)
+  const rootOf = (dex: number): number => (parent.has(dex) ? rootOf(parent.get(dex)!.dex) : dex)
+  const depth = (dex: number): number => 1 + Math.max(0, ...(byDex.get(dex)?.evolutions ?? []).map((e) => depth(e.toDex)))
+  const starters = starterLines(species)
+  return (s) => {
+    const levels = s.evolutions.flatMap((e) => (e.level != null ? [e.level] : []))
+    const plan = liveDicePlan({
+      dex: s.dex,
+      type1: s.type1,
+      type2: s.type2,
+      bst: bst.get(s.dex) ?? 400,
+      stage: stageOf(s.dex),
+      lineLength: depth(rootOf(s.dex)),
+      evolvesAt: levels.length ? Math.min(...levels) : null,
+      evolvesByItem: s.evolutions.some((e) => e.item),
+      arrivesAt: parent.get(s.dex)?.evo.level ?? null,
+      starter: starters.has(s.dex),
+      pseudo: PSEUDO_LINES.has(s.dex),
+      fossil: FOSSIL_ONLY.has(s.dex),
+      legend: LEGEND_KIND[s.dex] ?? null,
+    })
+    return { ...s, ...plan }
+  }
+}
+
 const readJson = async <T>(name: string): Promise<T> => JSON.parse(await readFile(path.join(DATA_DIR, name), 'utf8')) as T
 const writeJson = (name: string, data: unknown) => writeFile(path.join(DATA_DIR, name), JSON.stringify(data, null, 1) + '\n')
 
@@ -413,7 +493,7 @@ interface RegionPlan {
   dexRange: [number, number]
   starters: number[]
   plans: AreaPlan[]
-  spriteRegion: 'johto' | 'hoenn' | 'sinnoh'
+  spriteRegion: 'johto' | 'hoenn' | 'sinnoh' | 'unova'
   /** Key of the area whose clearing is "the league is done". */
   leagueKey: string
   nextRegion: string | null
@@ -516,7 +596,7 @@ const REGION_PLANS: RegionPlan[] = [
     plans: SINNOH_AREAS,
     spriteRegion: 'sinnoh',
     leagueKey: 'si-pokemon-league',
-    nextRegion: null,
+    nextRegion: 'unova',
     backgrounds: {
       'Route 201 & Lake Verity': 'grass',
       'Route 202 & Jubilife City': 'default',
@@ -555,6 +635,47 @@ const REGION_PLANS: RegionPlan[] = [
       'The Hall of Origin': 'default',
     },
   },
+  {
+    id: 'unova',
+    name: 'Unova',
+    orderIndex: 4,
+    dexRange: [494, 649],
+    starters: UNOVA_STARTERS,
+    plans: UNOVA_AREAS,
+    spriteRegion: 'unova',
+    leagueKey: 'un-pokemon-league',
+    nextRegion: null,
+    backgrounds: {
+      'Route 1 & Nuvema Town': 'grass',
+      'Route 2 & Accumula Town': 'grass',
+      'Striaton City & the Dreamyard': 'default',
+      'Route 3 & Wellspring Cave': 'grass',
+      'Nacrene City & Pinwheel Forest': 'grass',
+      'Skyarrow Bridge & Castelia City': 'default',
+      'Route 4, the Desert Resort & Relic Castle': 'rock',
+      'Nimbasa City & Route 5': 'default',
+      'Driftveil City & Route 6': 'grass',
+      'Chargestone Cave': 'rock',
+      'Mistralton City & Route 7': 'grass',
+      'Celestial Tower': 'default',
+      'Twist Mountain': 'rock',
+      'Icirrus City & the Moor of Icirrus': 'water',
+      'Dragonspiral Tower': 'rock',
+      'Route 9 & Opelucid City': 'default',
+      'Route 10 & Victory Road': 'rock',
+      'The Pokémon League': 'default',
+      'Routes 11–14 & Undella Town': 'sea',
+      'Black City & White Forest': 'grass',
+      'Liberty Garden': 'grass',
+      'The Swords of Justice': 'rock',
+      'The Abundant Shrine': 'grass',
+      'The Giant Chasm': 'rock',
+      "Dragonspiral Tower's Summit": 'default',
+      'The Moor of Icirrus Spring': 'water',
+      'The Castelia Café': 'default',
+      'The P2 Laboratory': 'default',
+    },
+  },
 ]
 
 /**
@@ -577,9 +698,10 @@ function catchAllFor(region: RegionPlan): (dex: number) => boolean {
 
 /**
  * Lileep and Anorith come out of the Root and Claw Fossil on Route 111, Cranidos and Shieldon out of the Skull and
- * Armor Fossil in the Oreburgh Mine, and their evolutions out of those. None of the four lines is ever wild.
+ * Armor Fossil in the Oreburgh Mine, Tirtouga and Archen out of the Cover and Plume Fossil in Relic Castle, and their
+ * evolutions out of those. None of the six lines is ever wild.
  */
-const FOSSIL_ONLY = new Set([345, 346, 347, 348, 408, 409, 410, 411])
+const FOSSIL_ONLY = new Set([345, 346, 347, 348, 408, 409, 410, 411, 564, 565, 566, 567])
 
 /**
  * The regions this run rebuilds: the ones whose Pokédex sits inside the generated range. Every other region is kept
@@ -639,7 +761,8 @@ async function main() {
   // list — but only the new rows take the result. Otherwise adding a baby would silently re-plan its Kanto line.
   const { species: grown, grafted } = graftEvolutions([...kept, ...list].sort((a, b) => a.dex - b.dex), intoExisting)
   const scheduled = new Map(applyDiceSchedule(grown, (dex) => bst.get(dex) ?? 400).map((s) => [s.dex, s]))
-  const out = grown.map((s) => (s.dex >= FIRST_NEW_DEX ? scheduled.get(s.dex)! : s))
+  const live = liveSchedule(grown, bst)
+  const out = grown.map((s) => (s.dex < FIRST_NEW_DEX ? s : s.dex >= LIVE_DICE_FROM ? live(s) : scheduled.get(s.dex)!))
   for (const g of grafted) console.log(`  · grafted ${g}`)
 
   const byKey = new Map(items.map((i) => [i.key, i]))

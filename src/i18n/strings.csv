@@ -1788,3 +1788,198 @@ ui.stat.rerolls.label,Rerolls,Relances,Tiradas,Neuwürfe
 ui.stat.rerolls.hint,Rerolls: how many times per battle it can reroll dice,Relances : combien de fois par combat il peut relancer ses dés,Tiradas: cuántas veces por combate puede volver a tirar los dados,Neuwürfe: wie oft es pro Kampf Würfel neu werfen kann
 ui.stat.catch.label,Catch value,Valeur de capture,Valor de captura,Fangwert
 ui.stat.catch.hint,Catch value: the catch die plus a ball must reach this (1 = always),Valeur de capture : le dé de capture plus une Ball doit l'atteindre (1 = toujours),Valor de captura: el dado de captura más una Ball debe alcanzarlo (1 = siempre),Fangwert: Fangwürfel plus Ball müssen ihn erreichen (1 = immer)
+pokemon.494,Victini,Victini,Victini,Victini
+pokemon.495,Snivy,Vipélierre,Snivy,Serpifeu
+pokemon.496,Servine,Lianaja,Servine,Efoserp
+pokemon.497,Serperior,Majaspic,Serperior,Serpiroyal
+pokemon.498,Tepig,Gruikui,Tepig,Floink
+pokemon.499,Pignite,Grotichon,Pignite,Ferkokel
+pokemon.500,Emboar,Roitiflam,Emboar,Flambirex
+pokemon.501,Oshawott,Moustillon,Oshawott,Ottaro
+pokemon.502,Dewott,Mateloutre,Dewott,Zwottronin
+pokemon.503,Samurott,Clamiral,Samurott,Admurai
+pokemon.504,Patrat,Ratentif,Patrat,Nagelotz
+pokemon.505,Watchog,Miradar,Watchog,Kukmarda
+pokemon.506,Lillipup,Ponchiot,Lillipup,Yorkleff
+pokemon.507,Herdier,Ponchien,Herdier,Terribark
+pokemon.508,Stoutland,Mastouffe,Stoutland,Bissbark
+pokemon.509,Purrloin,Chacripan,Purrloin,Felilou
+pokemon.510,Liepard,Léopardus,Liepard,Kleoparda
+pokemon.511,Pansage,Feuillajou,Pansage,Vegimak
+pokemon.512,Simisage,Feuiloutan,Simisage,Vegichita
+pokemon.513,Pansear,Flamajou,Pansear,Grillmak
+pokemon.514,Simisear,Flamoutan,Simisear,Grillchita
+pokemon.515,Panpour,Flotajou,Panpour,Sodamak
+pokemon.516,Simipour,Flotoutan,Simipour,Sodachita
+pokemon.517,Munna,Munna,Munna,Somniam
+pokemon.518,Musharna,Mushana,Musharna,Somnivora
+pokemon.519,Pidove,Poichigeon,Pidove,Dusselgurr
+pokemon.520,Tranquill,Colombeau,Tranquill,Navitaub
+pokemon.521,Unfezant,Déflaisan,Unfezant,Fasasnob
+pokemon.522,Blitzle,Zébibron,Blitzle,Elezeba
+pokemon.523,Zebstrika,Zéblitz,Zebstrika,Zebritz
+pokemon.524,Roggenrola,Nodulithe,Roggenrola,Kiesling
+pokemon.525,Boldore,Géolithe,Boldore,Sedimantur
+pokemon.526,Gigalith,Gigalithe,Gigalith,Brockoloss
+pokemon.527,Woobat,Chovsourir,Woobat,Fleknoil
+pokemon.528,Swoobat,Rhinolove,Swoobat,Fletiamo
+pokemon.529,Drilbur,Rototaupe,Drilbur,Rotomurf
+pokemon.530,Excadrill,Minotaupe,Excadrill,Stalobor
+pokemon.531,Audino,Nanméouïe,Audino,Ohrdoch
+pokemon.532,Timburr,Charpenti,Timburr,Praktibalk
+pokemon.533,Gurdurr,Ouvrifier,Gurdurr,Strepoli
+pokemon.534,Conkeldurr,Bétochef,Conkeldurr,Meistagrif
+pokemon.535,Tympole,Tritonde,Tympole,Schallquap
+pokemon.536,Palpitoad,Batracné,Palpitoad,Mebrana
+pokemon.537,Seismitoad,Crapustule,Seismitoad,Branawarz
+pokemon.538,Throh,Judokrak,Throh,Jiutesto
+pokemon.539,Sawk,Karaclée,Sawk,Karadonis
+pokemon.540,Sewaddle,Larveyette,Sewaddle,Strawickl
+pokemon.541,Swadloon,Couverdure,Swadloon,Folikon
+pokemon.542,Leavanny,Manternel,Leavanny,Matrifol
+pokemon.543,Venipede,Venipatte,Venipede,Toxiped
+pokemon.544,Whirlipede,Scobolide,Whirlipede,Rollum
+pokemon.545,Scolipede,Brutapode,Scolipede,Cerapendra
+pokemon.546,Cottonee,Doudouvet,Cottonee,Waumboll
+pokemon.547,Whimsicott,Farfaduvet,Whimsicott,Elfun
+pokemon.548,Petilil,Chlorobule,Petilil,Lilminip
+pokemon.549,Lilligant,Fragilady,Lilligant,Dressella
+pokemon.550,Basculin,Bargantua,Basculin,Barschuft
+pokemon.551,Sandile,Mascaïman,Sandile,Ganovil
+pokemon.552,Krokorok,Escroco,Krokorok,Rokkaiman
+pokemon.553,Krookodile,Crocorible,Krookodile,Rabigator
+pokemon.554,Darumaka,Darumarond,Darumaka,Flampion
+pokemon.555,Darmanitan,Darumacho,Darmanitan,Flampivian
+pokemon.556,Maractus,Maracachi,Maractus,Maracamba
+pokemon.557,Dwebble,Crabicoque,Dwebble,Lithomith
+pokemon.558,Crustle,Crabaraque,Crustle,Castellith
+pokemon.559,Scraggy,Baggiguane,Scraggy,Zurrokex
+pokemon.560,Scrafty,Baggaïd,Scrafty,Irokex
+pokemon.561,Sigilyph,Cryptéro,Sigilyph,Symvolara
+pokemon.562,Yamask,Tutafeh,Yamask,Makabaja
+pokemon.563,Cofagrigus,Tutankafer,Cofagrigus,Echnatoll
+pokemon.564,Tirtouga,Carapagos,Tirtouga,Galapaflos
+pokemon.565,Carracosta,Mégapagos,Carracosta,Karippas
+pokemon.566,Archen,Arkéapti,Archen,Flapteryx
+pokemon.567,Archeops,Aéroptéryx,Archeops,Aeropteryx
+pokemon.568,Trubbish,Miamiasme,Trubbish,Unratütox
+pokemon.569,Garbodor,Miasmax,Garbodor,Deponitox
+pokemon.570,Zorua,Zorua,Zorua,Zorua
+pokemon.571,Zoroark,Zoroark,Zoroark,Zoroark
+pokemon.572,Minccino,Chinchidou,Minccino,Picochilla
+pokemon.573,Cinccino,Pashmilla,Cinccino,Chillabell
+pokemon.574,Gothita,Scrutella,Gothita,Mollimorba
+pokemon.575,Gothorita,Mesmérella,Gothorita,Hypnomorba
+pokemon.576,Gothitelle,Sidérella,Gothitelle,Morbitesse
+pokemon.577,Solosis,Nucléos,Solosis,Monozyto
+pokemon.578,Duosion,Méios,Duosion,Mitodos
+pokemon.579,Reuniclus,Symbios,Reuniclus,Zytomega
+pokemon.580,Ducklett,Couaneton,Ducklett,Piccolente
+pokemon.581,Swanna,Lakmécygne,Swanna,Swaroness
+pokemon.582,Vanillite,Sorbébé,Vanillite,Gelatini
+pokemon.583,Vanillish,Sorboul,Vanillish,Gelatroppo
+pokemon.584,Vanilluxe,Sorbouboul,Vanilluxe,Gelatwino
+pokemon.585,Deerling,Vivaldaim,Deerling,Sesokitz
+pokemon.586,Sawsbuck,Haydaim,Sawsbuck,Kronjuwild
+pokemon.587,Emolga,Emolga,Emolga,Emolga
+pokemon.588,Karrablast,Carabing,Karrablast,Laukaps
+pokemon.589,Escavalier,Lançargot,Escavalier,Cavalanzas
+pokemon.590,Foongus,Trompignon,Foongus,Tarnpignon
+pokemon.591,Amoonguss,Gaulet,Amoonguss,Hutsassa
+pokemon.592,Frillish,Viskuse,Frillish,Quabbel
+pokemon.593,Jellicent,Moyade,Jellicent,Apoquallyp
+pokemon.594,Alomomola,Mamanbo,Alomomola,Mamolida
+pokemon.595,Joltik,Statitik,Joltik,Wattzapf
+pokemon.596,Galvantula,Mygavolt,Galvantula,Voltula
+pokemon.597,Ferroseed,Grindur,Ferroseed,Kastadur
+pokemon.598,Ferrothorn,Noacier,Ferrothorn,Tentantel
+pokemon.599,Klink,Tic,Klink,Klikk
+pokemon.600,Klang,Clic,Klang,Kliklak
+pokemon.601,Klinklang,Cliticlic,Klinklang,Klikdiklak
+pokemon.602,Tynamo,Anchwatt,Tynamo,Zapplardin
+pokemon.603,Eelektrik,Lampéroie,Eelektrik,Zapplalek
+pokemon.604,Eelektross,Ohmassacre,Eelektross,Zapplarang
+pokemon.605,Elgyem,Lewsor,Elgyem,Pygraulon
+pokemon.606,Beheeyem,Neitram,Beheeyem,Megalon
+pokemon.607,Litwick,Funécire,Litwick,Lichtel
+pokemon.608,Lampent,Mélancolux,Lampent,Laternecto
+pokemon.609,Chandelure,Lugulabre,Chandelure,Skelabra
+pokemon.610,Axew,Coupenotte,Axew,Milza
+pokemon.611,Fraxure,Incisache,Fraxure,Sharfax
+pokemon.612,Haxorus,Tranchodon,Haxorus,Maxax
+pokemon.613,Cubchoo,Polarhume,Cubchoo,Petznief
+pokemon.614,Beartic,Polagriffe,Beartic,Siberio
+pokemon.615,Cryogonal,Hexagel,Cryogonal,Frigometri
+pokemon.616,Shelmet,Escargaume,Shelmet,Schnuthelm
+pokemon.617,Accelgor,Limaspeed,Accelgor,Hydragil
+pokemon.618,Stunfisk,Limonde,Stunfisk,Flunschlik
+pokemon.619,Mienfoo,Kungfouine,Mienfoo,Lin-Fu
+pokemon.620,Mienshao,Shaofouine,Mienshao,Wie-Shu
+pokemon.621,Druddigon,Drakkarmin,Druddigon,Shardrago
+pokemon.622,Golett,Gringolem,Golett,Golbit
+pokemon.623,Golurk,Golemastoc,Golurk,Golgantes
+pokemon.624,Pawniard,Scalpion,Pawniard,Gladiantri
+pokemon.625,Bisharp,Scalproie,Bisharp,Caesurio
+pokemon.626,Bouffalant,Frison,Bouffalant,Bisofank
+pokemon.627,Rufflet,Furaiglon,Rufflet,Geronimatz
+pokemon.628,Braviary,Gueriaigle,Braviary,Washakwil
+pokemon.629,Vullaby,Vostourno,Vullaby,Skallyk
+pokemon.630,Mandibuzz,Vaututrice,Mandibuzz,Grypheldis
+pokemon.631,Heatmor,Aflamanoir,Heatmor,Furnifraß
+pokemon.632,Durant,Fermite,Durant,Fermicula
+pokemon.633,Deino,Solochi,Deino,Kapuno
+pokemon.634,Zweilous,Diamat,Zweilous,Duodino
+pokemon.635,Hydreigon,Trioxhydre,Hydreigon,Trikephalo
+pokemon.636,Larvesta,Pyronille,Larvesta,Ignivor
+pokemon.637,Volcarona,Pyrax,Volcarona,Ramoth
+pokemon.638,Cobalion,Cobaltium,Cobalion,Kobalium
+pokemon.639,Terrakion,Terrakium,Terrakion,Terrakium
+pokemon.640,Virizion,Viridium,Virizion,Viridium
+pokemon.641,Tornadus,Boréas,Tornadus,Boreos
+pokemon.642,Thundurus,Fulguris,Thundurus,Voltolos
+pokemon.643,Reshiram,Reshiram,Reshiram,Reshiram
+pokemon.644,Zekrom,Zekrom,Zekrom,Zekrom
+pokemon.645,Landorus,Démétéros,Landorus,Demeteros
+pokemon.646,Kyurem,Kyurem,Kyurem,Kyurem
+pokemon.647,Keldeo,Keldeo,Keldeo,Keldeo
+pokemon.648,Meloetta,Meloetta,Meloetta,Meloetta
+pokemon.649,Genesect,Genesect,Genesect,Genesect
+item.cover-fossil,Cover Fossil,Fossile Plaque,Fósil Tapa,Schildfossil
+item.plume-fossil,Plume Fossil,Fossile Plume,Fósil Pluma,Federfossil
+area.route-1-nuvema-town,Route 1 & Nuvema Town,Route 1 & Renouet,Ruta 1 y Pueblo Arcilla,Route 1 & Avenitia
+area.route-2-accumula-town,Route 2 & Accumula Town,Route 2 & Arabelle,Ruta 2 y Pueblo Terracota,Route 2 & Gavina
+area.striaton-city-the-dreamyard,Striaton City & the Dreamyard,Ogoesse & les Vestiges du Rêve,Ciudad Gres y el Solar de los Sueños,Orion City & die Traumbrache
+area.route-3-wellspring-cave,Route 3 & Wellspring Cave,Route 3 & la Veine Souterraine,Ruta 3 y la Cueva Manantial,Route 3 & Grundwassersenke
+area.nacrene-city-pinwheel-forest,Nacrene City & Pinwheel Forest,Maillard & la Forêt d'Empoigne,Ciudad Esmalte y el Bosque Azulejo,Septerna City & Ewigenwald
+area.skyarrow-bridge-castelia-city,Skyarrow Bridge & Castelia City,Pont Sagiciel & Volucité,Puente Saeta y Ciudad Porcelana,Himmelspfeilbrücke & Stratos City
+area.route-4-the-desert-resort-relic-castle,"Route 4, the Desert Resort & Relic Castle","Route 4, le Désert Délassant & le Château Enfoui","Ruta 4, el Desierto Desolado y el Castillo Ancestral","Route 4, Wüstenresort & Alter Palast"
+area.nimbasa-city-route-5,Nimbasa City & Route 5,Méanville & la Route 5,Ciudad Mayólica y la Ruta 5,Rayono City & Route 5
+area.driftveil-city-route-6,Driftveil City & Route 6,Port Yoneuve & la Route 6,Ciudad Fayenza y la Ruta 6,Marea City & Route 6
+area.chargestone-cave,Chargestone Cave,Grotte Électrolithe,Cueva Electrorroca,Elektrolithhöhle
+area.mistralton-city-route-7,Mistralton City & Route 7,Parsemille & la Route 7,Ciudad Loza y la Ruta 7,Panaero City & Route 7
+area.celestial-tower,Celestial Tower,Tour des Cieux,Torre Cielo,Turm des Himmels
+area.twist-mountain,Twist Mountain,Mont Foré,Monte Tuerca,Wendelberg
+area.icirrus-city-the-moor-of-icirrus,Icirrus City & the Moor of Icirrus,Flocombe & la Tourbière Flocombe,Ciudad Teja y el Pantano Teja,Nevaio City & das Moor von Nevaio
+area.dragonspiral-tower,Dragonspiral Tower,Tour Dragospire,Torre Dragospiral,Drachenstiege
+area.route-9-opelucid-city,Route 9 & Opelucid City,Route 9 & Janusia,Ruta 9 y Ciudad Caolín,Route 9 & Twindrake City
+area.route-10-victory-road,Route 10 & Victory Road,Route 10 & la Route Victoire,Ruta 10 y la Calle Victoria,Route 10 & Siegesstraße
+area.routes-11-14-undella-town,Routes 11–14 & Undella Town,Routes 11–14 & Vaguelone,Rutas 11–14 y Pueblo Marga,Routen 11–14 & Ondula
+area.black-city-white-forest,Black City & White Forest,Ville Noire & Forêt Blanche,Ciudad Negra y Bosque Blanco,Schwarze Stadt & Weißer Wald
+area.liberty-garden,Liberty Garden,Île Liberté,Isla Libertad,Freiheitsgarten
+area.the-castelia-cafe,The Castelia Café,Le Café de Volucité,La Cafetería de Ciudad Porcelana,Das Café von Stratos City
+area.dragonspiral-tower-s-summit,Dragonspiral Tower's Summit,Le Sommet de la Tour Dragospire,La Cima de la Torre Dragospiral,Die Spitze der Drachenstiege
+area.the-swords-of-justice,The Swords of Justice,Les Épées de la Justice,Los Espadachines Místicos,Die Ritter der Redlichkeit
+area.the-moor-of-icirrus-spring,The Moor of Icirrus Spring,La Source de la Tourbière Flocombe,El Manantial del Pantano Teja,Die Quelle im Moor von Nevaio
+area.the-abundant-shrine,The Abundant Shrine,L'Autel Abondance,El Santuario Abundancia,Der Schrein der Ernte
+area.the-p2-laboratory,The P2 Laboratory,Le Labo P2,El Laboratorio P2,Das P2-Labor
+area.the-giant-chasm,The Giant Chasm,La Grotte Cyclopéenne,La Cueva Gigante,Die Riesengrotte
+badge.trio-badge,Trio Badge,Badge Triple,Medalla Trío,Triorden
+badge.basic-badge,Basic Badge,Badge Basique,Medalla Base,Basisorden
+badge.insect-badge,Insect Badge,Badge Élytre,Medalla Élitro,Käferorden
+badge.bolt-badge,Bolt Badge,Badge Volt,Medalla Voltio,Blitzorden
+badge.quake-badge,Quake Badge,Badge Sismique,Medalla Temblor,Bebenorden
+badge.jet-badge,Jet Badge,Badge Jet,Medalla Jet,Jetorden
+badge.freeze-badge,Freeze Badge,Badge Glacier,Medalla Iceberg,Frostorden
+badge.legend-badge,Legend Badge,Badge Légende,Medalla Leyenda,Legendenorden
+itemDesc.cover-fossil,"A fossil of an ancient Pokémon. Tirtouga waits in your Box and is revived after 24 hours, at Lv.20.","Un fossile d'un Pokémon ancien. Carapagos attend dans votre Boîte et revit après 24 heures, au N.20.","Un fósil de un Pokémon antiguo. Tirtouga espera en tu Caja y revive tras 24 horas, al Nv.20.",Ein Fossil eines urzeitlichen Pokémon. Galapaflos wartet in deiner Box und wird nach 24 Stunden auf Lv.20 wiederbelebt.
+itemDesc.plume-fossil,"A fossil of an ancient Pokémon. Archen waits in your Box and is revived after 24 hours, at Lv.20.","Un fossile d'un Pokémon ancien. Arkéapti attend dans votre Boîte et revit après 24 heures, au N.20.","Un fósil de un Pokémon antiguo. Archen espera en tu Caja y revive tras 24 horas, al Nv.20.",Ein Fossil eines urzeitlichen Pokémon. Flapteryx wartet in deiner Box und wird nach 24 Stunden auf Lv.20 wiederbelebt.

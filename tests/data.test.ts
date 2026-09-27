@@ -23,7 +23,8 @@ const LEGENDARIES = [144, 145, 146, 150, 151]
 /** Every region's legendaries and mythicals. */
 const ALL_LEGENDARIES = [
   144, 145, 146, 150, 151, 243, 244, 245, 249, 250, 251, 377, 378, 379, 380, 381, 382, 383, 384, 385, 386, 479, 480,
-  481, 482, 483, 484, 485, 486, 487, 488, 489, 490, 491, 492, 493,
+  481, 482, 483, 484, 485, 486, 487, 488, 489, 490, 491, 492, 493, 494, 638, 639, 640, 641, 642, 643, 644, 645, 646, 647,
+  648, 649,
 ]
 const STARTERS = [1, 4, 7]
 /**
@@ -33,8 +34,8 @@ const STARTERS = [1, 4, 7]
 const SIX_DICE = new Set([243, 244, 245, 493])
 
 describe('pokemon.json', () => {
-  it('has 493 complete entries — Kanto, Johto, Hoenn and Sinnoh', () => {
-    expect(species).toHaveLength(493)
+  it('has 649 complete entries — Kanto, Johto, Hoenn, Sinnoh and Unova', () => {
+    expect(species).toHaveLength(649)
     for (const p of species) {
       expect(total(p.dice)).toBeGreaterThanOrEqual(1)
       expect(total(p.dice), p.name).toBeLessThanOrEqual(SIX_DICE.has(p.dex) ? 6 : 5)

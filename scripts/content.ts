@@ -7,7 +7,7 @@
 import type { BossDef, EncounterKind, PokeType, UnlockCondition } from '../src/engine/types'
 
 /**
- * Legendaries and mythicals across the four regions: 5 dice, catch value 9, never in a wild pool — each one is
+ * Legendaries and mythicals across the five regions: 5 dice, catch value 9, never in a wild pool — each one is
  * attached to an area as a `legendary_boss` instead.
  */
 export const LEGENDARIES = [
@@ -19,6 +19,8 @@ export const LEGENDARIES = [
   377, 378, 379, 380, 381, 382, 383, 384, 385, 386,
   // Sinnoh: Rotom, the lake trio, the creation trio, Heatran, Regigigas, Cresselia, the mythicals
   479, 480, 481, 482, 483, 484, 485, 486, 487, 488, 489, 490, 491, 492, 493,
+  // Unova: Victini, the Swords of Justice, the Forces of Nature, the tao trio, the mythicals
+  494, 638, 639, 640, 641, 642, 643, 644, 645, 646, 647, 648, 649,
 ]
 export const STARTERS = [1, 4, 7]
 
