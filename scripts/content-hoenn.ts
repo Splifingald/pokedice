@@ -547,7 +547,7 @@ export const HOENN_AREAS: AreaPlan[] = [
   }),
   area({
     key: 'ho-shoal-cave',
-    name: 'Lilycove, Route 124 & Shoal Cave',
+    name: 'Lilycove City, Route 124 & Shoal Cave',
     orderIndex: 320,
     banner: { scene: 'crystal_cave', flip: true },
     roundsToClear: 1,

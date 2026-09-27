@@ -393,7 +393,7 @@ export const SINNOH_AREAS: AreaPlan[] = [
   }),
   area({
     key: 'si-valley-windworks',
-    name: 'Route 213 & the Valley Windworks',
+    name: 'Route 205 & the Valley Windworks',
     orderIndex: 415,
     banner: { scene: 'factory' },
     roundsToClear: 1,

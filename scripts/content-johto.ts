@@ -533,7 +533,7 @@ export const JOHTO_AREAS: AreaPlan[] = [
   }),
   area({
     key: 'jo-mahogany-town',
-    name: 'Mahogany Town & the Rocket Hideout',
+    name: 'Mahogany Town & the Team Rocket HQ',
     orderIndex: 219,
     banner: { scene: 'factory' },
     roundsToClear: 1,
