@@ -664,6 +664,8 @@ const REGION_PLANS: RegionPlan[] = [
       'Route 9 & Opelucid City': 'default',
       'Route 10 & Victory Road': 'rock',
       'The Pokémon League': 'default',
+      'Victory Road II': 'rock',
+      'The Pokémon League II': 'default',
       'Routes 11–14 & Undella Town': 'sea',
       'Black City & White Forest': 'grass',
       'Liberty Garden': 'grass',

@@ -126,6 +126,7 @@ const REGION_NAMED: Record<Exclude<SpriteRegion, 'kanto'>, Record<string, string
     'Elite Four Marshal': 'elite-marshal',
     'Champion Alder': 'alder',
     Alder: 'alder',
+    Cynthia: 'cynthia',
     Cheren: 'cheren',
     Bianca: 'bianca',
     N: 'n',
@@ -340,9 +341,11 @@ const PAIRED: Record<Exclude<SpriteRegion, 'kanto'>, Record<string, string>> = {
  */
 export function regionTrainerSprite(name: string, region: Exclude<SpriteRegion, 'kanto'>): string {
   const file = (s: string) => `/trainers/classes/${region}/${s}.png`
-  const named = REGION_NAMED[region][name]
+  // A rematch ("Elite Four Shauntal II", "Ace Trainer Chandra II") looks like the first battle.
+  const base = name.replace(/ II$/, '')
+  const named = REGION_NAMED[region][base]
   if (named) return file(named)
-  const first = name.split(' ').slice(-1)[0] ?? ''
+  const first = base.split(' ').slice(-1)[0] ?? ''
   const classes = [...REGION_CLASSES[region]].sort((a, b) => b[0].length - a[0].length)
   for (const [prefix, sprite] of classes) {
     if (!name.startsWith(prefix)) continue

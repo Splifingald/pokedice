@@ -352,6 +352,7 @@ const UNOVA: Record<string, number | [block: number, opts: { pair?: boolean; lef
   'elite-grimsley': 70,
   'elite-caitlin': 71,
   alder: 78,
+  cynthia: 81,
   // The story
   bianca: 33,
   n: 34,

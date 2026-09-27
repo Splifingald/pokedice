@@ -13189,17 +13189,261 @@
   ]
  },
  {
+  "id": "e0a4cd3b-7ab4-59bf-a195-144a59b92384",
+  "name": "Ace Trainer Chandra II",
+  "spriteUrl": "/trainers/classes/unova/ace-trainer-f.png",
+  "team": [
+   {
+    "dex": 612,
+    "level": 65
+   },
+   {
+    "dex": 591,
+    "level": 65
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "d89d231f-919d-5bfd-b0b2-c4b54a1ac65f",
+  "name": "Veteran Lance II",
+  "spriteUrl": "/trainers/classes/unova/veteran.png",
+  "team": [
+   {
+    "dex": 534,
+    "level": 65
+   },
+   {
+    "dex": 589,
+    "level": 66
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "7a6d3aac-ff9f-5931-8a7b-d292694e14d8",
+  "name": "Ace Trainer Carol II",
+  "spriteUrl": "/trainers/classes/unova/ace-trainer-f.png",
+  "team": [
+   {
+    "dex": 586,
+    "level": 66
+   },
+   {
+    "dex": 579,
+    "level": 65
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "fa1f4455-2ca4-5576-ab32-c4015e342a1c",
+  "name": "Ace Trainer Chandra II",
+  "spriteUrl": "/trainers/classes/unova/ace-trainer-f.png",
+  "team": [
+   {
+    "dex": 612,
+    "level": 65
+   },
+   {
+    "dex": 591,
+    "level": 65
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "b6b05bd2-451a-5100-9b52-e44fe822dc8a",
+  "name": "Veteran Lance II",
+  "spriteUrl": "/trainers/classes/unova/veteran.png",
+  "team": [
+   {
+    "dex": 534,
+    "level": 65
+   },
+   {
+    "dex": 589,
+    "level": 66
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "a7ed9d29-e0d8-575c-afd4-70ad1f16c9fa",
+  "name": "Ace Trainer Carol II",
+  "spriteUrl": "/trainers/classes/unova/ace-trainer-f.png",
+  "team": [
+   {
+    "dex": 586,
+    "level": 66
+   },
+   {
+    "dex": 579,
+    "level": 65
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "b37e3997-54de-5b46-953c-8be828c84b79",
+  "name": "Elite Four Shauntal II",
+  "spriteUrl": "/trainers/classes/unova/elite-shauntal.png",
+  "team": [
+   {
+    "dex": 563,
+    "level": 70
+   },
+   {
+    "dex": 593,
+    "level": 69
+   },
+   {
+    "dex": 609,
+    "level": 72
+   }
+  ],
+  "role": "elite",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ]
+ },
+ {
+  "id": "09b641be-1bbc-5743-be34-921b6a04201e",
+  "name": "Elite Four Grimsley II",
+  "spriteUrl": "/trainers/classes/unova/elite-grimsley.png",
+  "team": [
+   {
+    "dex": 510,
+    "level": 71
+   },
+   {
+    "dex": 553,
+    "level": 71
+   },
+   {
+    "dex": 625,
+    "level": 73
+   }
+  ],
+  "role": "elite",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ]
+ },
+ {
+  "id": "99eca4fd-c5eb-57c0-a169-7056d6fac493",
+  "name": "Elite Four Caitlin II",
+  "spriteUrl": "/trainers/classes/unova/elite-caitlin.png",
+  "team": [
+   {
+    "dex": 518,
+    "level": 72
+   },
+   {
+    "dex": 561,
+    "level": 72
+   },
+   {
+    "dex": 576,
+    "level": 74
+   }
+  ],
+  "role": "elite",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ]
+ },
+ {
+  "id": "14f3f2ff-374f-5c3e-9115-10a3a800fd13",
+  "name": "Elite Four Marshal II",
+  "spriteUrl": "/trainers/classes/unova/elite-marshal.png",
+  "team": [
+   {
+    "dex": 538,
+    "level": 72
+   },
+   {
+    "dex": 539,
+    "level": 73
+   },
+   {
+    "dex": 534,
+    "level": 75
+   }
+  ],
+  "role": "elite",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ]
+ },
+ {
+  "id": "a1bbf675-a45a-58d4-ab8b-47e7d219496c",
+  "name": "Champion Alder",
+  "spriteUrl": "/trainers/classes/unova/alder.png",
+  "team": [
+   {
+    "dex": 589,
+    "level": 74
+   },
+   {
+    "dex": 621,
+    "level": 77
+   },
+   {
+    "dex": 637,
+    "level": 80
+   }
+  ],
+  "role": "champion",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ]
+ },
+ {
   "id": "6170c304-a91c-5f03-a8a1-a97007794a23",
   "name": "Ace Trainer Jacob",
   "spriteUrl": "/trainers/classes/unova/ace-trainer-m.png",
   "team": [
    {
     "dex": 628,
-    "level": 58
+    "level": 60
    },
    {
     "dex": 612,
-    "level": 58
+    "level": 60
    }
   ],
   "role": "trainer",
@@ -13214,11 +13458,11 @@
   "team": [
    {
     "dex": 635,
-    "level": 59
+    "level": 61
    },
    {
     "dex": 623,
-    "level": 59
+    "level": 61
    }
   ],
   "role": "trainer",
@@ -13233,11 +13477,11 @@
   "team": [
    {
     "dex": 593,
-    "level": 58
+    "level": 60
    },
    {
     "dex": 584,
-    "level": 58
+    "level": 60
    }
   ],
   "role": "trainer",
@@ -13246,21 +13490,21 @@
   "battleBackground": null
  },
  {
-  "id": "551b7881-97bb-5613-9f85-7a39d510dbd2",
-  "name": "Champion Alder",
-  "spriteUrl": "/trainers/classes/unova/alder.png",
+  "id": "32ba99c6-191d-5c3b-9ad4-7c4a6669b197",
+  "name": "Cynthia",
+  "spriteUrl": "/trainers/classes/unova/cynthia.png",
   "team": [
    {
-    "dex": 589,
-    "level": 62
-   },
-   {
-    "dex": 621,
-    "level": 62
-   },
-   {
-    "dex": 637,
+    "dex": 442,
     "level": 64
+   },
+   {
+    "dex": 448,
+    "level": 64
+   },
+   {
+    "dex": 445,
+    "level": 66
    }
   ],
   "role": "champion",

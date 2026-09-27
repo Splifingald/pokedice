@@ -379,7 +379,7 @@ export const UNOVA_AREAS: AreaPlan[] = [
     name: 'Icirrus City & the Moor of Icirrus',
     orderIndex: 514,
     banner: { scene: 'swamp' },
-    roundsToClear: 1,
+    roundsToClear: 2,
     minLevel: 34,
     maxLevel: 41,
     weights: W.busy,
@@ -408,7 +408,7 @@ export const UNOVA_AREAS: AreaPlan[] = [
     name: 'Dragonspiral Tower',
     orderIndex: 515,
     banner: { scene: 'snow_mountains' },
-    roundsToClear: 1,
+    roundsToClear: 2,
     minLevel: 37,
     maxLevel: 44,
     weights: W.mixed,
@@ -434,7 +434,7 @@ export const UNOVA_AREAS: AreaPlan[] = [
     name: 'Route 9 & Opelucid City',
     orderIndex: 516,
     banner: { scene: 'city' },
-    roundsToClear: 1,
+    roundsToClear: 2,
     minLevel: 39,
     maxLevel: 46,
     weights: W.busy,
@@ -464,7 +464,7 @@ export const UNOVA_AREAS: AreaPlan[] = [
     name: 'Route 10 & Victory Road',
     orderIndex: 517,
     banner: { scene: 'cave_dark' },
-    roundsToClear: 1,
+    roundsToClear: 2,
     minLevel: 42,
     maxLevel: 50,
     weights: W.mixed,
@@ -515,42 +515,99 @@ export const UNOVA_AREAS: AreaPlan[] = [
       { name: 'Ghetsis', role: 'champion', specialty: 'dark', team: [[625, 52], [537, 52], [635, 54]] }, // Bisharp, Seismitoad, Hydreigon
     ],
   }),
+  // The endgame lap every region has on the live database, built by hand in the admin for Kanto, Johto and Sinnoh: a
+  // levelling Victory Road II, then the Elite Four again at their rematch levels with the Champion last. The rest of
+  // the post-league — the Undella coast and the catch-all — are side areas the league opens, as Sinnoh's are.
+  area({
+    key: 'un-victory-road-ii',
+    name: 'Victory Road II',
+    orderIndex: 519,
+    banner: { scene: 'cave_dark', flip: true },
+    roundsToClear: 1,
+    minLevel: 59,
+    maxLevel: 69,
+    weights: { wild: 4, trainer: 3, center: 1, item: 1 },
+    tier: 5,
+    wild: [
+      [526, 16, 59, 65], // Gigalith
+      [534, 14, 59, 65], // Conkeldurr
+      [530, 14, 59, 65], // Excadrill
+      [620, 12, 59, 65], // Mienshao
+      [628, 12, 59, 65], // Braviary
+      [630, 12, 59, 65], // Mandibuzz
+      [631, 10, 59, 65], // Heatmor
+      [632, 10, 59, 65], // Durant
+      [634, 8, 60, 66], // Zweilous
+    ],
+    trainers: [
+      { name: 'Ace Trainer Chandra II', team: [[612, 65], [591, 65]] },
+      { name: 'Veteran Lance II', team: [[534, 65], [589, 66]] },
+      { name: 'Ace Trainer Carol II', team: [[586, 66], [579, 65]] },
+    ],
+  }),
+  area({
+    key: 'un-pokemon-league-ii',
+    name: 'The Pokémon League II',
+    orderIndex: 520,
+    banner: { scene: 'default' },
+    roundsToClear: 1,
+    minLevel: 65,
+    maxLevel: 75,
+    weights: { wild: 0, trainer: 2, center: 1, item: 1 },
+    tier: 5,
+    wild: [],
+    trainers: [
+      { name: 'Ace Trainer Chandra II', team: [[612, 65], [591, 65]] },
+      { name: 'Veteran Lance II', team: [[534, 65], [589, 66]] },
+      { name: 'Ace Trainer Carol II', team: [[586, 66], [579, 65]] },
+    ],
+    gyms: [
+      { name: 'Elite Four Shauntal II', role: 'elite', specialty: 'ghost', team: [[563, 70], [593, 69], [609, 72]] }, // Cofagrigus, Jellicent, Chandelure
+      { name: 'Elite Four Grimsley II', role: 'elite', specialty: 'dark', team: [[510, 71], [553, 71], [625, 73]] }, // Liepard, Krookodile, Bisharp
+      { name: 'Elite Four Caitlin II', role: 'elite', specialty: 'psychic', team: [[518, 72], [561, 72], [576, 74]] }, // Musharna, Sigilyph, Gothitelle
+      { name: 'Elite Four Marshal II', role: 'elite', specialty: 'fighting', team: [[538, 72], [539, 73], [534, 75]] }, // Throh, Sawk, Conkeldurr
+      // Alder, the Champion the story never let the player fight.
+      { name: 'Champion Alder', role: 'champion', specialty: 'bug', team: [[589, 74], [621, 77], [637, 80]] }, // Escavalier, Druddigon, Volcarona
+    ],
+  }),
   area({
     key: 'un-undella',
     name: 'Routes 11–14 & Undella Town',
-    orderIndex: 519,
+    orderIndex: 521,
     banner: { scene: 'beach' },
     roundsToClear: 1,
-    minLevel: 52,
-    maxLevel: 64,
+    minLevel: 55,
+    maxLevel: 66,
     weights: W.busy,
     tier: 5,
+    hidden: true,
+    conditions: [{ kind: 'area', areaId: 'un-pokemon-league' }],
     wild: [
-      [592, 14, 52, 60], // Frillish
-      [594, 10, 53, 61], // Alomomola
-      [550, 12, 52, 60], // Basculin
-      [581, 12, 53, 61], // Swanna
-      [628, 10, 55, 63], // Braviary
-      [630, 10, 55, 63], // Mandibuzz
-      [634, 8, 54, 62], // Zweilous
-      [620, 10, 54, 62], // Mienshao
-      [621, 10, 54, 62], // Druddigon
-      [637, 4, 57, 64], // Volcarona
+      [592, 14, 55, 62], // Frillish
+      [594, 10, 55, 63], // Alomomola
+      [550, 12, 55, 62], // Basculin
+      [581, 12, 55, 63], // Swanna
+      [628, 10, 57, 65], // Braviary
+      [630, 10, 57, 65], // Mandibuzz
+      [634, 8, 56, 64], // Zweilous
+      [620, 10, 56, 64], // Mienshao
+      [621, 10, 56, 64], // Druddigon
+      [637, 4, 59, 66], // Volcarona
     ],
     trainers: [
-      { name: 'Ace Trainer Jacob', team: [[628, 58], [612, 58]] },
-      { name: 'Veteran Chaz', team: [[635, 59], [623, 59]] },
-      { name: 'Socialite Grier', team: [[593, 58], [584, 58]] }, // Jellicent, Vanilluxe
+      { name: 'Ace Trainer Jacob', team: [[628, 60], [612, 60]] },
+      { name: 'Veteran Chaz', team: [[635, 61], [623, 61]] },
+      { name: 'Socialite Grier', team: [[593, 60], [584, 60]] }, // Jellicent, Vanilluxe
     ],
     gyms: [
-      // Alder, the Champion the story never let the player fight, waits at the end of the post-league coast.
-      { name: 'Champion Alder', role: 'champion', specialty: 'bug', team: [[589, 62], [621, 62], [637, 64]] }, // Escavalier, Druddigon, Volcarona
+      // Cynthia spends her summers at her villa in Undella, and battles anyone who calls.
+      { name: 'Cynthia', role: 'champion', specialty: 'dragon', team: [[442, 64], [448, 64], [445, 66]] }, // Spiritomb, Lucario, Garchomp
     ],
   }),
   area({
     key: 'un-black-city',
     name: 'Black City & White Forest',
-    orderIndex: 520,
+    orderIndex: 522,
     banner: { scene: 'sunset' },
     roundsToClear: 1,
     minLevel: 60,
@@ -558,6 +615,8 @@ export const UNOVA_AREAS: AreaPlan[] = [
     weights: W.endgame,
     tier: 5,
     scalesToTeam: true,
+    hidden: true,
+    conditions: [{ kind: 'area', areaId: 'un-pokemon-league' }],
     // Every Unova species, so the Pokédex can be finished after the league: Black's city and White's forest, merged
     // the way every version exclusive is.
     wild: 'ALL',

@@ -28652,7 +28652,7 @@
   "regionId": "unova",
   "name": "Icirrus City & the Moor of Icirrus",
   "bannerUrl": "/banners/swamp.png",
-  "roundsToClear": 1,
+  "roundsToClear": 2,
   "minLevel": 34,
   "maxLevel": 41,
   "encounterWeights": {
@@ -28845,7 +28845,7 @@
   "regionId": "unova",
   "name": "Dragonspiral Tower",
   "bannerUrl": "/banners/snow_mountains.png",
-  "roundsToClear": 1,
+  "roundsToClear": 2,
   "minLevel": 37,
   "maxLevel": 44,
   "encounterWeights": {
@@ -28990,7 +28990,7 @@
   "regionId": "unova",
   "name": "Route 9 & Opelucid City",
   "bannerUrl": "/banners/city.png",
-  "roundsToClear": 1,
+  "roundsToClear": 2,
   "minLevel": 39,
   "maxLevel": 46,
   "encounterWeights": {
@@ -29148,7 +29148,7 @@
   "regionId": "unova",
   "name": "Route 10 & Victory Road",
   "bannerUrl": "/banners/cave_dark.png",
-  "roundsToClear": 1,
+  "roundsToClear": 2,
   "minLevel": 42,
   "maxLevel": 50,
   "encounterWeights": {
@@ -29421,14 +29421,272 @@
   ]
  },
  {
-  "id": "03b22d5c-9bdd-5024-80bb-7dfcaa848dc7",
+  "id": "888beadb-3aa2-57cc-82bc-cca9bd51f42a",
   "orderIndex": 519,
+  "regionId": "unova",
+  "name": "Victory Road II",
+  "bannerUrl": "/banners/cave_dark.png#flip",
+  "roundsToClear": 1,
+  "minLevel": 59,
+  "maxLevel": 69,
+  "encounterWeights": {
+   "wild": 4,
+   "trainer": 3,
+   "center": 1,
+   "item": 1,
+   "casino": 0
+  },
+  "backtrackMultiplier": 0.5,
+  "legendaryBoss": null,
+  "scalesToTeam": false,
+  "easyMode": false,
+  "enemyUpgradeLevel": 9,
+  "battleBackground": "rock",
+  "hidden": false,
+  "unlockConditions": null,
+  "gyms": [],
+  "wildPool": [
+   {
+    "id": "8ad863a5-7a69-52c7-bf52-29b5fc92a2e2",
+    "dex": 526,
+    "weight": 16,
+    "minLevel": 59,
+    "maxLevel": 65
+   },
+   {
+    "id": "849438ce-1ce7-505d-a2af-b90a37053d22",
+    "dex": 534,
+    "weight": 14,
+    "minLevel": 59,
+    "maxLevel": 65
+   },
+   {
+    "id": "2e72bddd-5ee4-50ae-a429-b2694f1727f5",
+    "dex": 530,
+    "weight": 14,
+    "minLevel": 59,
+    "maxLevel": 65
+   },
+   {
+    "id": "2cc915a5-8733-5836-b504-1d97bac7feac",
+    "dex": 620,
+    "weight": 12,
+    "minLevel": 59,
+    "maxLevel": 65
+   },
+   {
+    "id": "db7b6640-561c-5fd8-997a-4178e7ece39d",
+    "dex": 628,
+    "weight": 12,
+    "minLevel": 59,
+    "maxLevel": 65
+   },
+   {
+    "id": "a1927205-71ca-570b-80eb-b01c5924442e",
+    "dex": 630,
+    "weight": 12,
+    "minLevel": 59,
+    "maxLevel": 65
+   },
+   {
+    "id": "af8c7d17-356c-5085-9cad-deb695c32425",
+    "dex": 631,
+    "weight": 10,
+    "minLevel": 59,
+    "maxLevel": 65
+   },
+   {
+    "id": "9a652af2-ece0-55e2-babc-5a92976cfa96",
+    "dex": 632,
+    "weight": 10,
+    "minLevel": 59,
+    "maxLevel": 65
+   },
+   {
+    "id": "a6929836-deea-5ee3-8864-abf85e00469a",
+    "dex": 634,
+    "weight": 8,
+    "minLevel": 60,
+    "maxLevel": 66
+   }
+  ],
+  "trainerPool": [
+   {
+    "id": "05e85d77-18c3-599b-8f5c-d192063e21b8",
+    "trainerId": "e0a4cd3b-7ab4-59bf-a195-144a59b92384",
+    "weight": 10
+   },
+   {
+    "id": "2fe1e718-61e8-5b8c-9c02-341904b9b9fb",
+    "trainerId": "d89d231f-919d-5bfd-b0b2-c4b54a1ac65f",
+    "weight": 10
+   },
+   {
+    "id": "f41f0f70-e3f2-59b7-85ce-b2d003ee88de",
+    "trainerId": "7a6d3aac-ff9f-5931-8a7b-d292694e14d8",
+    "weight": 10
+   }
+  ],
+  "lootPool": [
+   {
+    "id": "dc22c3c9-0a5c-51d9-a334-6ab527682bac",
+    "itemKey": "hyper-potion",
+    "weight": 20,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "9e53b686-97d8-5b5d-8880-4c2e219ad35f",
+    "itemKey": "ultra-ball",
+    "weight": 20,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "10b5c322-8984-52f7-89e1-fcf44c79bb1f",
+    "itemKey": "max-ether",
+    "weight": 12,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "2aaccee4-727e-5007-8bd3-ad3fe94ce095",
+    "itemKey": "ether",
+    "weight": 8,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "e640e9c1-dbb8-5cab-9d98-81ab9e7d5150",
+    "itemKey": "rare-candy",
+    "weight": 8,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "ee7ba40d-b441-5a93-83a4-711aac8d2b60",
+    "itemKey": "money",
+    "weight": 20,
+    "unique": false,
+    "minQty": 200,
+    "maxQty": 400
+   }
+  ]
+ },
+ {
+  "id": "414d148c-76c2-5c1a-9e8d-aa1a0b60a154",
+  "orderIndex": 520,
+  "regionId": "unova",
+  "name": "The Pokémon League II",
+  "bannerUrl": "/banners/default.png",
+  "roundsToClear": 1,
+  "minLevel": 65,
+  "maxLevel": 75,
+  "encounterWeights": {
+   "wild": 0,
+   "trainer": 2,
+   "center": 1,
+   "item": 1,
+   "casino": 0
+  },
+  "backtrackMultiplier": 0.5,
+  "legendaryBoss": null,
+  "scalesToTeam": false,
+  "easyMode": false,
+  "enemyUpgradeLevel": 9,
+  "battleBackground": "default",
+  "hidden": false,
+  "unlockConditions": null,
+  "gyms": [
+   "b37e3997-54de-5b46-953c-8be828c84b79",
+   "09b641be-1bbc-5743-be34-921b6a04201e",
+   "99eca4fd-c5eb-57c0-a169-7056d6fac493",
+   "14f3f2ff-374f-5c3e-9115-10a3a800fd13",
+   "a1bbf675-a45a-58d4-ab8b-47e7d219496c"
+  ],
+  "wildPool": [],
+  "trainerPool": [
+   {
+    "id": "4b36980e-0f17-5718-ae03-a34ee0e872a2",
+    "trainerId": "fa1f4455-2ca4-5576-ab32-c4015e342a1c",
+    "weight": 10
+   },
+   {
+    "id": "1f587a0a-08d3-5039-9dda-10d3e646a4c3",
+    "trainerId": "b6b05bd2-451a-5100-9b52-e44fe822dc8a",
+    "weight": 10
+   },
+   {
+    "id": "0aed5c05-2c8d-5054-8c48-06f548cece2d",
+    "trainerId": "a7ed9d29-e0d8-575c-afd4-70ad1f16c9fa",
+    "weight": 10
+   }
+  ],
+  "lootPool": [
+   {
+    "id": "38920dab-92de-528e-84b6-5ed9535ec602",
+    "itemKey": "hyper-potion",
+    "weight": 20,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "aef81614-c354-5c6b-b96d-e90321f85215",
+    "itemKey": "ultra-ball",
+    "weight": 20,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "6a7db26f-37f5-5f52-812e-007a70012ea9",
+    "itemKey": "max-ether",
+    "weight": 12,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "5367ab78-49b2-5e2a-b0ba-1c0a47be8e2b",
+    "itemKey": "ether",
+    "weight": 8,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "cbe2c363-6e54-575c-a3ab-557172895789",
+    "itemKey": "rare-candy",
+    "weight": 8,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "485af46a-02bf-51b4-a02b-3e17db7a3347",
+    "itemKey": "money",
+    "weight": 20,
+    "unique": false,
+    "minQty": 200,
+    "maxQty": 400
+   }
+  ]
+ },
+ {
+  "id": "03b22d5c-9bdd-5024-80bb-7dfcaa848dc7",
+  "orderIndex": 521,
   "regionId": "unova",
   "name": "Routes 11–14 & Undella Town",
   "bannerUrl": "/banners/beach.png",
   "roundsToClear": 1,
-  "minLevel": 52,
-  "maxLevel": 64,
+  "minLevel": 55,
+  "maxLevel": 66,
   "encounterWeights": {
    "wild": 2,
    "trainer": 3,
@@ -29442,81 +29700,86 @@
   "easyMode": false,
   "enemyUpgradeLevel": 9,
   "battleBackground": "sea",
-  "hidden": false,
-  "unlockConditions": null,
+  "hidden": true,
+  "unlockConditions": [
+   {
+    "kind": "area",
+    "areaId": "8c87ed3a-c021-57b6-b866-cc6e71877c0e"
+   }
+  ],
   "gyms": [
-   "551b7881-97bb-5613-9f85-7a39d510dbd2"
+   "32ba99c6-191d-5c3b-9ad4-7c4a6669b197"
   ],
   "wildPool": [
    {
     "id": "12b36b00-0865-5f3b-bb2e-9fc48f05379e",
     "dex": 592,
     "weight": 14,
-    "minLevel": 52,
-    "maxLevel": 60
+    "minLevel": 55,
+    "maxLevel": 62
    },
    {
     "id": "c98b6d02-d275-5560-b587-03b4c9bc6cf5",
     "dex": 594,
     "weight": 10,
-    "minLevel": 53,
-    "maxLevel": 61
+    "minLevel": 55,
+    "maxLevel": 63
    },
    {
     "id": "dce7bb97-0872-5289-920c-2898de50a014",
     "dex": 550,
     "weight": 12,
-    "minLevel": 52,
-    "maxLevel": 60
+    "minLevel": 55,
+    "maxLevel": 62
    },
    {
     "id": "d9100bae-ee05-569f-b415-3bf9f2df1446",
     "dex": 581,
     "weight": 12,
-    "minLevel": 53,
-    "maxLevel": 61
+    "minLevel": 55,
+    "maxLevel": 63
    },
    {
     "id": "5cb3804d-cc00-5667-a115-1e45c98a76f7",
     "dex": 628,
     "weight": 10,
-    "minLevel": 55,
-    "maxLevel": 63
+    "minLevel": 57,
+    "maxLevel": 65
    },
    {
     "id": "a06f266b-39b4-524f-9594-9abbb02c5e95",
     "dex": 630,
     "weight": 10,
-    "minLevel": 55,
-    "maxLevel": 63
+    "minLevel": 57,
+    "maxLevel": 65
    },
    {
     "id": "cb0565c2-7f75-59df-b41a-3708033e905b",
     "dex": 634,
     "weight": 8,
-    "minLevel": 54,
-    "maxLevel": 62
+    "minLevel": 56,
+    "maxLevel": 64
    },
    {
     "id": "bdce6282-f69a-5208-bae4-961e3b18b5b4",
     "dex": 620,
     "weight": 10,
-    "minLevel": 54,
-    "maxLevel": 62
+    "minLevel": 56,
+    "maxLevel": 64
    },
    {
     "id": "321cee92-a2a1-5926-abbe-d8149577af74",
     "dex": 621,
     "weight": 10,
-    "minLevel": 54,
-    "maxLevel": 62
+    "minLevel": 56,
+    "maxLevel": 64
    },
    {
     "id": "b5b90bc7-840c-5acb-a44b-0282ea9fc5a3",
     "dex": 637,
     "weight": 4,
-    "minLevel": 57,
-    "maxLevel": 64
+    "minLevel": 59,
+    "maxLevel": 66
    }
   ],
   "trainerPool": [
@@ -29589,7 +29852,7 @@
  },
  {
   "id": "a79ba3e6-ec33-5480-8a4e-d7175eb8fb9a",
-  "orderIndex": 520,
+  "orderIndex": 522,
   "regionId": "unova",
   "name": "Black City & White Forest",
   "bannerUrl": "/banners/sunset.png",
@@ -29609,8 +29872,13 @@
   "easyMode": false,
   "enemyUpgradeLevel": 9,
   "battleBackground": "grass",
-  "hidden": false,
-  "unlockConditions": null,
+  "hidden": true,
+  "unlockConditions": [
+   {
+    "kind": "area",
+    "areaId": "8c87ed3a-c021-57b6-b866-cc6e71877c0e"
+   }
+  ],
   "gyms": [],
   "wildPool": [
    {

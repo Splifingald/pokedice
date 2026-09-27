@@ -1,8 +1,18 @@
 # Pokédice — Generation 5 Plan (Unova)
 
-> **Status: plan, approved 2026-09-27** (Black/White routing; the three Striaton leaders are fought back to back). Companion to `07-SINNOH-PLAN.md`, whose shape this follows step for step. Where the two differ,
-> the difference is called out: new sprite sources, and **dice balanced on the live game's patterns instead of
-> `dicePlan()`** (the user's instruction for this region).
+> **Status: built** on `claude/gen5-unova` (plan approved 2026-09-27: Black/White routing, the three Striaton leaders
+> fought back to back). Balance results are at the end of `06-REGION-BALANCE.md`. Where this document and the code
+> disagree, the code is right, and four things changed in the building:
+>
+> - **The trainer sheet carries more of the BW cast than expected.** Alder, Burgh, Lenora, Brycen, N, Bianca, Ghetsis
+>   and Zinzolin are all on it; only Cheren, Elesa and the Plasma grunts come from Showdown (`graphics/trainers/showdown-bw`).
+> - **The post-league follows the live database, not §3.** Every other region got a hand-made endgame lap in the admin,
+>   so Unova's chain ends League → Victory Road II → The Pokémon League II (Elite Four rematch, Champion Alder), and the
+>   Undella coast (Cynthia) and Black City & White Forest are side areas the league unlocks, as Sinnoh's are.
+> - **Four late areas take two rounds** (Icirrus, Dragonspiral, Opelucid, Victory Road): the first build reached the
+>   league only ~3 levels over its band.
+> - **Open: Shauntal's Chandelure and Ghetsis's Hydreigon are type walls** for Normal/Psychic teams in the simulation
+>   (see the balance report). Their levels were left as in Black/White.
 
 The fifth region is **Unova, #494–649** (156 species), routed on **Black/White**. BW is the natural choice for this
 game: its main story uses *only* Gen 5 Pokémon, so the region's Pokédex is exactly `dexRange` and is finishable without

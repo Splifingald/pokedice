@@ -138,3 +138,32 @@ own numbers and they held.
 Sinnoh's 76–80, and Treecko wipes 123 times a run getting through it. Kanto's Bulbasaur is the same shape (122
 wipes at 60%). Both predate this work and neither was touched. If a league is ever re-tuned, those two are the
 candidates — not Sinnoh's.
+
+---
+
+## Unova
+
+Added with Gen 5 (`docs/08-UNOVA-PLAN.md`), measured with `pnpm balance table 6 900 unova sinnoh` on the live
+database of 2026-09-27. Sinnoh is re-measured alongside because its live rows (admin tuning, and its Victory Road II /
+League II lap) no longer match the Sinnoh table above; **compare Unova with the Sinnoh rows here**.
+
+| Region | Starter | League win % | League wipes | Chain wipe % | Chain turns | Lv at league | Band | Encounters to league |
+|---|---|---:|---:|---:|---:|---:|---|---:|
+| Sinnoh (live) | Turtwig | 69 | 50.7 | 22 | 2.77 | 71 | 50–60 | 387 |
+| Sinnoh (live) | Chimchar | 72 | 26.5 | 14 | 2.26 | 68 | 50–60 | 336 |
+| Sinnoh (live) | Piplup | 74 | 18.5 | 20 | 2.49 | 70 | 50–60 | 356 |
+| **Unova** | **Snivy** | **57** | **244.0** | **21** | **3.33** | **68** | **46–56** | **370** |
+| **Unova** | **Tepig** | **69** | **67.7** | **20** | **2.57** | **64** | **46–56** | **322** |
+| **Unova** | **Oshawott** | **44** | **171.2** | **12** | **2.50** | **67** | **46–56** | **350** |
+
+**The chain is in the envelope**: 12–21% wipes, 2.5–3.3 turns a fight, 322–370 encounters to the league, arriving
+about ten levels over the league band — the same shape as live Sinnoh. The first build arrived only ~3 levels over
+(282–305 encounters); a second round on the four areas before the league (Icirrus, Dragonspiral, Opelucid, Victory
+Road) closed that, which is the lever the admin used on Sinnoh's Spear Pillar.
+
+**The league is not, and levels are not why.** Counting the lost gauntlet battles over 12 runs: Shauntal's Chandelure
+~1,700, Ghetsis's Hydreigon ~700, everything else under 250 combined. Both beat teams at L100. The simulated player's
+usual Unova team is Stoutland (Unova's commonest early catch), an unevolved Munna and a water starter — Normal and base
+dice cannot touch a Ghost, Psychic cannot touch a Dark — so this is a type wall, the same class as Kanto's Giovanni and
+Hoenn's league. Lowering both aces by two levels changed nothing, and was reverted: they stay at Black/White's 50 and
+54. Whether to bend the roster for it is left open (see the plan).
