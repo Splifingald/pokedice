@@ -1,6 +1,6 @@
 // The showpiece: drives the Phase 2 engine through the store and renders its log.
 import { AnimatePresence, motion } from 'framer-motion'
-import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react'
 import {
   activeBattler,
   autoEvents,
@@ -18,6 +18,7 @@ import {
   STATUS_KINDS,
   usableIn,
   type BattleBackground,
+  type BattleEvent,
   type Battler,
   type Side,
 } from '@/engine'
@@ -37,7 +38,7 @@ import { TypeMatchups } from '@/components/TypeMatchups'
 import { ForfeitButton } from '@/components/ForfeitButton'
 import { comboName, statusName, trainerTitle } from '@/lib/format'
 import { useT } from '@/i18n/react'
-import { AUTO_PACE, PaceContext, usePace } from '@/lib/pace'
+import { AUTO_PACE, PaceContext, usePace, VERSUS_PACE } from '@/lib/pace'
 import { useIsDesktop, useMediaQuery } from '@/lib/useMediaQuery'
 import { setSettings, useGame, type BattleSlice } from '@/store/game'
 import { dispatchBattle } from '@/store/run'
@@ -400,8 +401,32 @@ const autoRng = createRng(randomSeed())
 /** How long auto-mode shows its dice selection before the reroll. */
 const AUTO_SELECT_MS = 450
 
-export function BattleView({ battle }: { battle: BattleSlice }) {
+/**
+ * A Versus fight, replayed: the whole fight was computed (and its result recorded) before it started, so the screen
+ * plays it on auto and every move comes from that script instead of the run store.
+ */
+export interface VersusReplay {
+  /** Plays the script's next step, if it is this event. */
+  dispatch: (e: BattleEvent) => void
+  /** The events of the script's next auto move. */
+  nextMove: () => BattleEvent[]
+  trainerName: string
+  trainerSprite: string
+  /** The opponent's team size, and which of them is out (Poké Ball pips). */
+  foeCount: number
+  foeIndex: number
+  /** Called once when this battle has played out; may hand back a cleanup (a pending timer). */
+  onPlayed: () => void | (() => void)
+  /** Shown over the battle when the whole fight is over. */
+  end?: ReactNode
+}
+
+export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: VersusReplay }) {
   const { t } = useT()
+  // Read through a ref, so a new `versus` object each render doesn't restart the timers that use it.
+  const versusRef = useRef(versus)
+  versusRef.current = versus
+  const dispatch = useCallback((e: BattleEvent) => (versusRef.current?.dispatch ?? dispatchBattle)(e), [])
   const data = useGame((s) => s.data)
   const save = useGame((s) => s.save)
   const run = useGame((s) => s.run)
@@ -425,16 +450,19 @@ export function BattleView({ battle }: { battle: BattleSlice }) {
 
   // Auto-mode (cleared areas only): the player's side plays itself, like the enemy's.
   const autoOn = useGame((s) => !!s.settings.autoMode)
-  const auto = autoOn && !!save && !!run.areaId && progressOf(save, run.areaId).cleared
-  // Auto-mode plays the whole fight 50% faster: animations, dice and timers.
-  const pace = auto ? AUTO_PACE : 1
+  // A Versus fight is always on auto.
+  const auto = !!versus || (autoOn && !!save && !!run.areaId && progressOf(save, run.areaId).cleared)
+  // Auto-mode plays the whole fight 50% faster: animations, dice and timers. Versus, 75% faster.
+  const pace = versus ? VERSUS_PACE : auto ? AUTO_PACE : 1
 
-  const enc = run.encounter
-  const isTrainerFight = enc?.kind === 'trainer' || enc?.kind === 'gym'
+  // A Versus fight has nothing to do with the area the player may be standing in.
+  const enc = versus ? null : run.encounter
+  const isTrainerFight = !!versus || enc?.kind === 'trainer' || enc?.kind === 'gym'
   // Before each of their Pokémon, the trainer steps onto the field, then makes way for it.
   const [trainerIntro, setTrainerIntro] = useState(isTrainerFight && !reduced)
   const intro = bossIntro || trainerIntro
-  const trainerName = isTrainerFight ? trainerTitle(enc) : null
+  const trainerName = versus ? versus.trainerName : enc?.kind === 'trainer' || enc?.kind === 'gym' ? trainerTitle(enc) : null
+  const trainerSprite = versus ? versus.trainerSprite : enc?.kind === 'trainer' || enc?.kind === 'gym' ? enc.spriteUrl : null
   const onHit = useCallback((target: Side, color: string, power: number) => {
     const anchor = (target === 'enemy' ? enemyAnchor : playerAnchor).current
     const host = scene.current
@@ -471,9 +499,9 @@ export function BattleView({ battle }: { battle: BattleSlice }) {
   // The enemy acts on its own once the log has caught up.
   useEffect(() => {
     if (!ready || intro || st.phase !== 'enemy_turn') return
-    const t = setTimeout(() => dispatchBattle({ t: 'AI_TURN' }), reduced ? 0 : 450 * pace)
+    const t = setTimeout(() => dispatch({ t: 'AI_TURN' }), reduced ? 0 : 450 * pace)
     return () => clearTimeout(t)
-  }, [ready, intro, st.phase, reduced, pace, battle.log.length])
+  }, [ready, intro, st.phase, reduced, pace, battle.log.length, dispatch])
 
   const active = st.player.find((p) => p.uid === fx.activeUid) ?? activeBattler(st)
   // A send-out, a faint or the end of the fight makes the open pop-up stale.
@@ -526,20 +554,20 @@ export function BattleView({ battle }: { battle: BattleSlice }) {
       if (!(canAct || stunned) || auto || menu || (e.target as HTMLElement)?.tagName === 'INPUT') return
       if (e.key === ' ' || e.key === 'Enter') {
         e.preventDefault()
-        dispatchBattle(stunned ? { t: 'PASS' } : st.phase === 'player_roll' ? { t: 'ROLL' } : { t: 'ATTACK' })
-      } else if (e.key.toLowerCase() === 'r' && rolling) dispatchBattle({ t: 'REROLL' })
-      else if (/^[1-6]$/.test(e.key) && rolling) dispatchBattle({ t: 'TOGGLE_DIE', i: Number(e.key) - 1 })
+        dispatch(stunned ? { t: 'PASS' } : st.phase === 'player_roll' ? { t: 'ROLL' } : { t: 'ATTACK' })
+      } else if (e.key.toLowerCase() === 'r' && rolling) dispatch({ t: 'REROLL' })
+      else if (/^[1-6]$/.test(e.key) && rolling) dispatch({ t: 'TOGGLE_DIE', i: Number(e.key) - 1 })
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [canAct, stunned, auto, menu, rolling, st.phase])
+  }, [canAct, stunned, auto, menu, rolling, st.phase, dispatch])
 
   // Every turn starts with the throw, so the dice roll themselves (items, switching and running still work after it).
   useEffect(() => {
     if (auto || !ready || intro || menu || st.phase !== 'player_roll') return
-    const t = setTimeout(() => dispatchBattle({ t: 'ROLL' }), reduced ? 0 : 400)
+    const t = setTimeout(() => dispatch({ t: 'ROLL' }), reduced ? 0 : 400)
     return () => clearTimeout(t)
-  }, [auto, ready, intro, menu, st.phase, reduced, battle.log.length])
+  }, [auto, ready, intro, menu, st.phase, reduced, battle.log.length, dispatch])
 
   // Auto-mode: every player move once the log has caught up. A reroll shows its selected dice for a moment first.
   const autoPhase = st.phase === 'player_roll' || st.phase === 'player_reroll' || st.phase === 'player_stunned' || st.phase === 'player_switch'
@@ -549,13 +577,13 @@ export function BattleView({ battle }: { battle: BattleSlice }) {
     const t = setTimeout(
       () => {
         const b = useGame.getState().battle
-        if (!b) return
-        const events = autoEvents(b.state, data, autoRng)
+        const replay = versusRef.current
+        const events = replay ? replay.nextMove() : b ? autoEvents(b.state, data, autoRng) : []
         const last = events.pop()
         if (!last) return
-        events.forEach(dispatchBattle)
-        if (events.length && !reduced) inner = setTimeout(() => dispatchBattle(last), AUTO_SELECT_MS * pace)
-        else dispatchBattle(last)
+        events.forEach((e) => dispatch(e))
+        if (events.length && !reduced) inner = setTimeout(() => dispatch(last), AUTO_SELECT_MS * pace)
+        else dispatch(last)
       },
       reduced ? 0 : (st.phase === 'player_reroll' ? 350 : 400) * pace,
     )
@@ -563,7 +591,7 @@ export function BattleView({ battle }: { battle: BattleSlice }) {
       clearTimeout(t)
       clearTimeout(inner)
     }
-  }, [auto, ready, intro, menu, autoPhase, st.phase, data, reduced, pace, battle.log.length])
+  }, [auto, ready, intro, menu, autoPhase, st.phase, data, reduced, pace, battle.log.length, dispatch])
 
   const usefulItems = ownedItems.filter(([k]) => st.player.some((p) => itemHelps(k, p)))
   const showItem = usefulItems.length > 0
@@ -573,9 +601,9 @@ export function BattleView({ battle }: { battle: BattleSlice }) {
   const stunChoice = canItem && showItem
   useEffect(() => {
     if (auto || !stunned || menu || stunChoice) return
-    const t = setTimeout(() => dispatchBattle({ t: 'PASS' }), 900)
+    const t = setTimeout(() => dispatch({ t: 'PASS' }), 900)
     return () => clearTimeout(t)
-  }, [auto, stunned, menu, stunChoice])
+  }, [auto, stunned, menu, stunChoice, dispatch])
 
   // Each of your Pokémon comes out of a ball thrown by the player (first send-out and every switch).
   const character = playerOf(save).character
@@ -601,7 +629,7 @@ export function BattleView({ battle }: { battle: BattleSlice }) {
   )
   const sceneWidth = useWidth(scene)
   const scale = sceneWidth / SCENE_W
-  const area = data.areas.find((a) => a.id === run.areaId)
+  const area = versus ? undefined : data.areas.find((a) => a.id === run.areaId)
   const background = battleBackgroundFor(enc, area, data)
   const mainSize = desktop ? 'lg' : 'md'
   const minorSize = desktop ? 'md' : 'sm'
@@ -619,9 +647,16 @@ export function BattleView({ battle }: { battle: BattleSlice }) {
         }
       : fx.tray
 
-  const trainerTeam = isTrainerFight ? enc.team : []
-  const trainerLeft = isTrainerFight && run.trainer ? trainerTeam.length - run.trainer.index : 0
+  const trainerTeam = versus ? versus.foeCount : enc?.kind === 'trainer' || enc?.kind === 'gym' ? enc.team.length : 0
+  const trainerIndex = versus ? versus.foeIndex : (run.trainer?.index ?? 0)
+  const trainerLeft = versus || run.trainer ? trainerTeam - trainerIndex : 0
   const terminal = st.phase === 'won' || st.phase === 'lost' || st.phase === 'fled'
+
+  // Versus: once this battle has played out, the fight moves on (the next defender, or the result).
+  const played = ready && terminal
+  useEffect(() => {
+    if (played) return versusRef.current?.onPlayed()
+  }, [played])
 
   return (
     <PaceContext.Provider value={pace}>
@@ -689,7 +724,7 @@ export function BattleView({ battle }: { battle: BattleSlice }) {
                       transition={{ duration: 0.22 * pace, ease: 'easeOut' }}
                       aria-hidden
                     >
-                      <TrainerSprite src={enc.spriteUrl} size={Math.round(CELL * scale)} />
+                      <TrainerSprite src={trainerSprite ?? ''} size={Math.round(CELL * scale)} />
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -728,8 +763,8 @@ export function BattleView({ battle }: { battle: BattleSlice }) {
             badges={
               trainerLeft > 0 && (
                 <span className="flex items-center gap-0.5">
-                  {trainerTeam.map((_, i) => (
-                    <PixelIcon key={i} name="ball" size={12} style={{ opacity: i < (run.trainer?.index ?? 0) ? 0.3 : 1 }} />
+                  {Array.from({ length: trainerTeam }, (_, i) => (
+                    <PixelIcon key={i} name="ball" size={12} style={{ opacity: i < trainerIndex ? 0.3 : 1 }} />
                   ))}
                 </span>
               )
@@ -839,7 +874,7 @@ export function BattleView({ battle }: { battle: BattleSlice }) {
                 rollKey={tray.keys[i]}
                 delay={i * 0.06 * pace}
                 selected={ready && rolling && !!st.selected[i]}
-                onClick={canAct && rolling && !auto ? () => dispatchBattle({ t: 'TOGGLE_DIE', i }) : undefined}
+                onClick={canAct && rolling && !auto ? () => dispatch({ t: 'TOGGLE_DIE', i }) : undefined}
                 locked={tray.side === 'enemy'}
                 asButton={tray.side === 'player'}
               />
@@ -917,13 +952,16 @@ export function BattleView({ battle }: { battle: BattleSlice }) {
             <span className="flex items-center gap-1 text-xl">
               <PixelIcon name="dice" size={18} /> {t('ui.battle.autoMode')}
             </span>
-            <PixelButton size={minorSize} onClick={() => setSettings({ autoMode: false })}>
-              {t('ui.battle.stop')}
-            </PixelButton>
+            {/* A Versus fight is decided already: there is nothing to take over. */}
+            {!versus && (
+              <PixelButton size={minorSize} onClick={() => setSettings({ autoMode: false })}>
+                {t('ui.battle.stop')}
+              </PixelButton>
+            )}
           </div>
         )}
         {!auto && stunned && (
-          <PixelButton variant="primary" size={mainSize} className="self-center" onClick={() => dispatchBattle({ t: 'PASS' })}>
+          <PixelButton variant="primary" size={mainSize} className="self-center" onClick={() => dispatch({ t: 'PASS' })}>
             {t('ui.battle.skipTurn')}
           </PixelButton>
         )}
@@ -935,7 +973,7 @@ export function BattleView({ battle }: { battle: BattleSlice }) {
                 // Icon + label must stay on one line in a half-width column on narrow phones.
                 className="min-h-[48px] gap-1 whitespace-nowrap px-2 max-[400px]:text-xl"
                 disabled={!canAct || active.rerollsLeft <= 0 || !st.selected.some(Boolean)}
-                onClick={() => dispatchBattle({ t: 'REROLL' })}
+                onClick={() => dispatch({ t: 'REROLL' })}
                 quiet
               >
                 <PixelIcon name="reroll" size={18} /> {t('ui.battle.reroll', { left: active.rerollsLeft })}
@@ -944,7 +982,7 @@ export function BattleView({ battle }: { battle: BattleSlice }) {
                 <span className={cx('text-center leading-tight text-muted', short ? 'whitespace-nowrap text-sm' : 'text-base')}>{t('ui.battle.selectDice')}</span>
               )}
             </div>
-            <PixelButton variant="primary" size={mainSize} className="min-h-[48px] gap-1 whitespace-nowrap px-2 max-[400px]:text-xl" disabled={!canAct} onClick={() => dispatchBattle({ t: 'ATTACK' })}>
+            <PixelButton variant="primary" size={mainSize} className="min-h-[48px] gap-1 whitespace-nowrap px-2 max-[400px]:text-xl" disabled={!canAct} onClick={() => dispatch({ t: 'ATTACK' })}>
               <PixelIcon name="sword" size={18} /> {t('ui.battle.attack')}
             </PixelButton>
           </div>
@@ -967,7 +1005,7 @@ export function BattleView({ battle }: { battle: BattleSlice }) {
               </PixelButton>
             )}
             {st.canRun && (
-              <PixelButton size={minorSize} variant="ghost" disabled={!canAct} onClick={() => dispatchBattle({ t: 'RUN' })}>
+              <PixelButton size={minorSize} variant="ghost" disabled={!canAct} onClick={() => dispatch({ t: 'RUN' })}>
                 <PixelIcon name="run" size={14} /> {t('ui.battle.run')}
               </PixelButton>
             )}
@@ -995,7 +1033,7 @@ export function BattleView({ battle }: { battle: BattleSlice }) {
       <Modal open={ready && !auto && st.phase === 'player_switch'} dismissable={false} title={t('ui.battle.chooseNext')}>
         <div className="flex flex-col gap-2">
           {switchTargets.map((p) => (
-            <SwitchRow key={p.uid} b={p} onPick={() => dispatchBattle({ t: 'SWITCH', instanceId: p.uid })} />
+            <SwitchRow key={p.uid} b={p} onPick={() => dispatch({ t: 'SWITCH', instanceId: p.uid })} />
           ))}
           <ForfeitButton className="mt-1" />
         </div>
@@ -1010,7 +1048,7 @@ export function BattleView({ battle }: { battle: BattleSlice }) {
               b={p}
               onPick={() => {
                 setMenu(null)
-                dispatchBattle({ t: 'SWITCH', instanceId: p.uid })
+                dispatch({ t: 'SWITCH', instanceId: p.uid })
               }}
             />
           ))}
@@ -1040,7 +1078,7 @@ export function BattleView({ battle }: { battle: BattleSlice }) {
                   onClick={() => {
                     // Ethers go to the Pokémon in battle; everything else asks who.
                     if (it.effect.kind === 'rerolls') {
-                      dispatchBattle({ t: 'USE_ITEM', key: k, targetUid: activeBattler(st).uid })
+                      dispatch({ t: 'USE_ITEM', key: k, targetUid: activeBattler(st).uid })
                       setMenu(null)
                     } else setItemKey(k)
                   }}
@@ -1064,7 +1102,7 @@ export function BattleView({ battle }: { battle: BattleSlice }) {
                 b={p}
                 disabled={!itemHelps(itemKey, p)}
                 onPick={() => {
-                  dispatchBattle({ t: 'USE_ITEM', key: itemKey, targetUid: p.uid })
+                  dispatch({ t: 'USE_ITEM', key: itemKey, targetUid: p.uid })
                   setMenu(null)
                   setItemKey(null)
                 }}
@@ -1074,10 +1112,11 @@ export function BattleView({ battle }: { battle: BattleSlice }) {
         )}
       </Modal>
 
-      {ready && run.phase === 'catch' && <CatchView />}
-      {ready && run.phase === 'victory' && <VictoryView />}
-      {ready && run.phase === 'wipe' && <WipeView />}
-      {ready && run.phase === 'stalemate' && <StalemateView />}
+      {!versus && ready && run.phase === 'catch' && <CatchView />}
+      {!versus && ready && run.phase === 'victory' && <VictoryView />}
+      {!versus && ready && run.phase === 'wipe' && <WipeView />}
+      {!versus && ready && run.phase === 'stalemate' && <StalemateView />}
+      {versus && played && versus.end}
     </div>
     </PaceContext.Provider>
   )

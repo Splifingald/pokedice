@@ -91,5 +91,10 @@ supabase/    migrations/0001_init.sql, seed.sql (generated)
   card in its deck (the old `encounterDeckSize` / `lootDeckSize` scaling is gone).
 - **Pacing** — `hpMultiplier` 1 (fight length; 1.4 before the v1.8 dice schedule) and `goldMultiplier` 0.5 (economy), tuned with `pnpm balance` on the Kanto content. Damage has no global multiplier: a hit is exactly what the dice show (× type effectiveness, + the combo bonus).
 - `maxBattleTurns` (150) ends fights between two mutually-immune Pokémon in a no-reward stalemate.
+- **Versus** — trainer menu → Versus, open once 3 Pokémon reach Lv.50. A player leaves a team of three (cloned from the
+  live region's Box, capped at Lv.50, with their upgrades as they stand) that others fight on auto at 1.75× speed. The
+  whole fight is computed from a seed and recorded *before* it plays, so leaving halfway changes nothing. A team can be
+  beaten once per attacker (retries until then); changing it opens it to everyone again. Two boards: teams beaten in
+  attack, fights won in defense. Needs `supabase/migrations/0018_versus.sql` run once on the live database.
 - `allowVoluntarySwitch`, `enemyUpgradeLevel`, `goldMultiplier`, `forcedCenterWhenHurt` and `scaleLevelSpread` are
   `game_config` keys (the spec was silent on these).

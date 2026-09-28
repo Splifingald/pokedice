@@ -18,6 +18,7 @@ import { ShopScreen } from '@/screens/Shop'
 import { TeamScreen } from '@/screens/Team'
 import { Title } from '@/screens/Title'
 import { UpgradesScreen } from '@/screens/Upgrades'
+import { VersusScreen } from '@/screens/Versus'
 import { useGame } from '@/store/game'
 import { startBackgroundServices } from '@/store/sync'
 
@@ -62,6 +63,7 @@ export function App() {
               <Route path="/upgrades" element={<UpgradesScreen />} />
               <Route path="/pokedex" element={<PokedexScreen />} />
               <Route path="/leaderboard" element={<LeaderboardScreen />} />
+              <Route path="/versus" element={<VersusScreen />} />
               <Route path="/settings" element={<SettingsScreen />} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />

@@ -1,5 +1,6 @@
 import { lazy, Suspense, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { versusReadyCount, versusUnlocked, VERSUS_TEAM_SIZE } from '@/engine'
 import { useT } from '@/i18n/react'
 import { isSupabaseConfigured } from '@/lib/supabase'
 import { useGame } from '@/store/game'
@@ -17,8 +18,20 @@ import { playerOf } from './TrainerArt'
 const HelpContent = lazy(() => import('@/screens/Help').then((m) => ({ default: m.HelpContent })))
 const TypesContent = lazy(() => import('@/screens/Types').then((m) => ({ default: m.TypesContent })))
 
-/** One row of the drawer: an icon, a label, and either a route or an action. */
-function MenuRow({ icon, mark, label, onClick }: { icon?: IconName; mark?: boolean; label: string; onClick: () => void }) {
+/** One row of the drawer: an icon, a label, and either a route or an action. `hint`: a short note at the far end. */
+function MenuRow({
+  icon,
+  mark,
+  label,
+  hint,
+  onClick,
+}: {
+  icon?: IconName
+  mark?: boolean
+  label: string
+  hint?: string
+  onClick: () => void
+}) {
   return (
     <button
       type="button"
@@ -27,6 +40,7 @@ function MenuRow({ icon, mark, label, onClick }: { icon?: IconName; mark?: boole
     >
       {mark ? <GoogleMark /> : icon && <PixelIcon name={icon} size={20} />}
       <span className="min-w-0 truncate">{label}</span>
+      {hint && <span className="font-pixel-sm ml-auto flex shrink-0 items-center gap-1 text-base text-muted">{hint}</span>}
     </button>
   )
 }
@@ -42,6 +56,7 @@ export function PlayerMenu() {
   const inFight = useInFight()
   const isAdmin = useIsAdmin()
   const save = useGame((s) => s.save)
+  const data = useGame((s) => s.data)
   const auth = useGame((s) => s.auth)
   const [open, setOpen] = useState(false)
   const [profile, setProfile] = useState(false)
@@ -49,6 +64,9 @@ export function PlayerMenu() {
   const [types, setTypes] = useState(false)
 
   const name = playerOf(save).name
+  // Versus shows from the start, with how far the player is from opening it (3 Pokémon at Lv.50).
+  const versusOpen = !!save && versusUnlocked(save, data)
+  const versusReady = save ? Math.min(versusReadyCount(save, data), VERSUS_TEAM_SIZE) : 0
   // The Connect row only makes sense when cloud backup exists on this deployment and nobody is signed in.
   const canConnect = isSupabaseConfigured && auth.status === 'signed_out'
 
@@ -93,6 +111,12 @@ export function PlayerMenu() {
               setOpen(false)
               setProfile(true)
             }}
+          />
+          <MenuRow
+            icon={versusOpen ? 'sword' : 'lock'}
+            label={t('ui.nav.versus')}
+            hint={versusOpen ? undefined : t('ui.versus.lockedCount', { n: versusReady })}
+            onClick={go('/versus')}
           />
           <MenuRow icon="gear" label={t('ui.nav.settings')} onClick={go('/settings')} />
           <MenuRow

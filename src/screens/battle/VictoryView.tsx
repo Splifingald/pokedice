@@ -29,7 +29,7 @@ import { cx, shade, typeColor } from '@/theme/util'
  * A result card over the battle. On phones it takes the screen: the content scrolls and the `footer` (the action
  * button) stays pinned at the bottom of the card, so it's never below the fold.
  */
-function Overlay({ children, footer }: { children: ReactNode; footer?: ReactNode }) {
+export function Overlay({ children, footer }: { children: ReactNode; footer?: ReactNode }) {
   return (
     <motion.div
       className="fixed inset-0 z-[80] flex items-stretch justify-center bg-ink/70 p-2 sm:items-center sm:p-3"

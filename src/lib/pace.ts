@@ -7,3 +7,6 @@ import { createContext, useContext } from 'react'
 export const AUTO_PACE = 2 / 3
 export const PaceContext = createContext(1)
 export const usePace = () => useContext(PaceContext)
+
+/** Versus fights play on auto at 1.75× speed. */
+export const VERSUS_PACE = 1 / 1.75

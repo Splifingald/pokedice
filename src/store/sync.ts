@@ -104,6 +104,18 @@ export async function initAuth() {
   await handleSession(client, data.session)
 }
 
+/**
+ * Push the save to the cloud now rather than in 2 s, for what reads the cloud copy right after (a Versus team is built
+ * from it). False when there is nothing to push to yet: signed out, or the first sync not settled.
+ */
+export async function pushSaveNow(): Promise<boolean> {
+  const client = await getSupabase()
+  const { auth, save } = useGame.getState()
+  if (!client || !save || !pushAllowed || auth.status !== 'signed_in' || !auth.userId) return false
+  await pushCloudSave(client, auth.userId, save)
+  return true
+}
+
 export async function signInWithGoogle() {
   const client = await getSupabase()
   if (!client) {

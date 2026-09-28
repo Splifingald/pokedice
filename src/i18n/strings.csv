@@ -1717,6 +1717,59 @@ ui.board.rank,Rank {rank},Rang {rank},Puesto {rank},Platz {rank}
 ui.board.you, (you), (toi), (tú), (du)
 ui.board.theirTeam,{name}'s team,L'équipe de {name},El equipo de {name},Das Team von {name}
 ui.board.monTitle,{name} Lv.{level},{name} N.{level},{name} Nv.{level},{name} Lv.{level}
+ui.nav.versus,Versus,Versus,Versus,Versus
+ui.versus.title,Versus,Versus,Versus,Versus
+ui.versus.locked,Versus opens when 3 of your Pokémon reach Lv.50.,Le Versus s'ouvre quand 3 de tes Pokémon atteignent le N.50.,El Versus se abre cuando 3 de tus Pokémon llegan al Nv.50.,"Versus öffnet sich, sobald 3 deiner Pokémon Lv.50 erreichen."
+ui.versus.lockedCount,{n}/3 at Lv.50,{n}/3 au N.50,{n}/3 al Nv.50,{n}/3 auf Lv.50
+ui.versus.intro,"Leave a team of three for other trainers to fight, and fight theirs. Every fight plays itself, and its result is decided the moment it starts.","Laisse une équipe de trois que les autres Dresseurs pourront affronter, et affronte les leurs. Chaque combat se joue tout seul, et son résultat est décidé dès qu'il commence.","Deja un equipo de tres para que otros Entrenadores lo desafíen, y desafía los suyos. Cada combate se juega solo, y su resultado se decide en cuanto empieza.","Stelle ein Team aus drei auf, gegen das andere Trainer kämpfen, und kämpfe gegen ihre. Jeder Kampf spielt sich selbst, und sein Ausgang steht fest, sobald er beginnt."
+ui.versus.tabFight,Opponents,Adversaires,Rivales,Gegner
+ui.versus.tabTeam,My team,Mon équipe,Mi equipo,Mein Team
+ui.versus.tabBoard,Leaderboard,Classement,Clasificación,Bestenliste
+ui.versus.connect,Connect to Google to set a team and fight.,Connecte-toi à Google pour composer une équipe et combattre.,Conéctate con Google para formar un equipo y combatir.,"Melde dich bei Google an, um ein Team aufzustellen und zu kämpfen."
+ui.versus.offline,"Versus needs the cloud, which isn't set up on this site.","Le Versus a besoin du cloud, qui n'est pas configuré sur ce site.","El Versus necesita la nube, que no está configurada en este sitio.","Versus braucht die Cloud, die auf dieser Seite nicht eingerichtet ist."
+ui.versus.failed,Couldn't load Versus. Try again later.,Impossible de charger le Versus. Réessaie plus tard.,No se pudo cargar el Versus. Inténtalo más tarde.,Versus konnte nicht geladen werden. Versuche es später erneut.
+ui.versus.noTeamYet,Set your team first: it fights for you in attack and in defense.,Compose d'abord ton équipe : elle se bat pour toi en attaque comme en défense.,Primero forma tu equipo: combate por ti en ataque y en defensa.,Stelle zuerst dein Team auf: Es kämpft für dich im Angriff und in der Verteidigung.
+ui.versus.setTeam,SET MY TEAM,COMPOSER MON ÉQUIPE,FORMAR MI EQUIPO,TEAM AUFSTELLEN
+ui.versus.fight,FIGHT,COMBATTRE,LUCHAR,KÄMPFEN
+ui.versus.fightName,Fight {name},Affronter {name},Luchar contra {name},Gegen {name} kämpfen
+ui.versus.beaten,Beaten,Battu,Vencido,Besiegt
+ui.versus.beatenHint,"You beat this team. When {name} changes it, you can fight again.","Tu as battu cette équipe. Quand {name} la changera, tu pourras rejouer.","Venciste a este equipo. Cuando {name} lo cambie, podrás volver a luchar.","Du hast dieses Team besiegt. Wenn {name} es ändert, kannst du wieder kämpfen."
+ui.versus.noOpponents,No other trainer has a team yet.,Aucun autre Dresseur n'a encore d'équipe.,Ningún otro Entrenador tiene equipo todavía.,Noch kein anderer Trainer hat ein Team.
+ui.versus.yourTeam,Your team,Ton équipe,Tu equipo,Dein Team
+ui.versus.noTeam,No team yet.,Pas encore d'équipe.,Aún no hay equipo.,Noch kein Team.
+ui.versus.pickHint,"Pick three Pokémon at Lv.50 or more, in the order they go out.","Choisis trois Pokémon de niveau 50 ou plus, dans l'ordre où ils entreront en combat.","Elige tres Pokémon de nivel 50 o más, en el orden en que saldrán.","Wähle drei Pokémon ab Lv.50, in der Reihenfolge, in der sie antreten."
+ui.versus.rules,"They fight as clones at Lv.50, with your upgrades as they are now: levelling up later changes nothing. A new team can be fought again by everyone.","Ils combattent en clones au N.50, avec tes améliorations actuelles : monter de niveau ensuite n'y change rien. Une nouvelle équipe peut être réaffrontée par tout le monde.","Luchan como clones al Nv.50, con tus mejoras tal como están ahora: subir de nivel después no cambia nada. Todos pueden volver a desafiar un equipo nuevo.","Sie kämpfen als Klone auf Lv.50, mit deinen aktuellen Upgrades: Spätere Level-ups ändern nichts. Gegen ein neues Team dürfen alle wieder kämpfen."
+ui.versus.fromRegion,Only Pokémon of the region you're playing can join: {n}/3 here.,Seuls les Pokémon de la région en cours peuvent rejoindre l'équipe : {n}/3 ici.,Solo pueden unirse Pokémon de la región que juegas: {n}/3 aquí.,"Nur Pokémon der Region, die du gerade spielst, können beitreten: {n}/3 hier."
+ui.versus.save,SAVE TEAM,ENREGISTRER,GUARDAR EQUIPO,TEAM SPEICHERN
+ui.versus.clear,Clear,Effacer,Borrar,Leeren
+ui.versus.saved,Team saved!,Équipe enregistrée !,¡Equipo guardado!,Team gespeichert!
+ui.versus.unchanged,That's already your team.,C'est déjà ton équipe.,Ese ya es tu equipo.,Das ist schon dein Team.
+ui.versus.tabAttack,Attack,Attaque,Ataque,Angriff
+ui.versus.tabDefense,Defense,Défense,Defensa,Verteidigung
+ui.versus.boardAttack,Teams beaten — each team counts once.,Équipes battues — chaque équipe compte une fois.,Equipos vencidos: cada equipo cuenta una vez.,Besiegte Teams — jedes Team zählt einmal.
+ui.versus.boardDefense,Fights won in defense.,Combats gagnés en défense.,Combates ganados en defensa.,In der Verteidigung gewonnene Kämpfe.
+ui.versus.boardEmpty,No wins yet — be the first!,Aucune victoire pour l'instant — sois le premier !,Aún no hay victorias: ¡sé el primero!,Noch keine Siege — sei der Erste!
+ui.versus.wins.one,{count} win,{count} victoire,{count} victoria,{count} Sieg
+ui.versus.wins.other,{count} wins,{count} victoires,{count} victorias,{count} Siege
+ui.versus.defenseWins.one,{count} defense win,{count} victoire en défense,{count} victoria en defensa,{count} Verteidigungssieg
+ui.versus.defenseWins.other,{count} defense wins,{count} victoires en défense,{count} victorias en defensa,{count} Verteidigungssiege
+ui.versus.starting,Getting ready…,Préparation…,Preparando…,Wird vorbereitet…
+ui.versus.won.title,VICTORY!,VICTOIRE !,¡VICTORIA!,SIEG!
+ui.versus.won.body,You beat {name}'s team!,Tu as battu l'équipe de {name} !,¡Venciste al equipo de {name}!,Du hast das Team von {name} besiegt!
+ui.versus.lost.title,DEFEAT,DÉFAITE,DERROTA,NIEDERLAGE
+ui.versus.lost.body,{name}'s team held. Try again whenever you like — maybe with another team.,"L'équipe de {name} a tenu bon. Retente quand tu veux, peut-être avec une autre équipe.","El equipo de {name} resistió. Vuelve a intentarlo cuando quieras, quizá con otro equipo.",Das Team von {name} hat standgehalten. Versuch es jederzeit erneut – vielleicht mit einem anderen Team.
+ui.versus.back,BACK TO VERSUS,RETOUR AU VERSUS,VOLVER AL VERSUS,ZURÜCK ZU VERSUS
+ui.versus.err.versus_signed_out,Connect to Google to do that.,Connecte-toi à Google pour faire ça.,Conéctate con Google para hacer eso.,Melde dich dafür bei Google an.
+ui.versus.err.versus_team_size,Pick three different Pokémon.,Choisis trois Pokémon différents.,Elige tres Pokémon distintos.,Wähle drei verschiedene Pokémon.
+ui.versus.err.versus_no_save,Your save isn't in the cloud yet. Try again in a moment.,Ta sauvegarde n'est pas encore en ligne. Réessaie dans un instant.,Tu partida aún no está en la nube. Inténtalo en un momento.,Dein Spielstand ist noch nicht in der Cloud. Versuche es gleich noch einmal.
+ui.versus.err.versus_not_eligible,Your cloud save doesn't have these three at Lv.50 yet. Try again in a moment.,Ta sauvegarde en ligne n'a pas encore ces trois-là au N.50. Réessaie dans un instant.,Tu partida en la nube aún no tiene a estos tres al Nv.50. Inténtalo en un momento.,Dein Cloud-Spielstand hat diese drei noch nicht auf Lv.50. Versuche es gleich noch einmal.
+ui.versus.err.versus_self,That's your own team.,C'est ta propre équipe.,Ese es tu propio equipo.,Das ist dein eigenes Team.
+ui.versus.err.versus_no_team,Set your team first.,Compose d'abord ton équipe.,Primero forma tu equipo.,Stelle zuerst dein Team auf.
+ui.versus.err.versus_gone,This trainer has no team anymore.,Ce Dresseur n'a plus d'équipe.,Este Entrenador ya no tiene equipo.,Dieser Trainer hat kein Team mehr.
+ui.versus.err.versus_team_changed,This trainer just changed their team: here is the new one.,Ce Dresseur vient de changer d'équipe : voici la nouvelle.,Este Entrenador acaba de cambiar de equipo: aquí está el nuevo.,Dieser Trainer hat gerade sein Team geändert: Hier ist das neue.
+ui.versus.err.versus_already_won,You already beat this team.,Tu as déjà battu cette équipe.,Ya venciste a este equipo.,Du hast dieses Team schon besiegt.
+ui.versus.err.versus_missing,Versus isn't set up in the database yet (run 0018_versus.sql).,Le Versus n'est pas encore installé dans la base (lance 0018_versus.sql).,El Versus aún no está instalado en la base de datos (ejecuta 0018_versus.sql).,Versus ist in der Datenbank noch nicht eingerichtet (führe 0018_versus.sql aus).
+ui.versus.err.versus_unknown,Something went wrong. Try again later.,Un problème est survenu. Réessaie plus tard.,Algo salió mal. Inténtalo más tarde.,Etwas ist schiefgelaufen. Versuche es später erneut.
 ui.upgrades.title,Upgrades,Améliorations,Mejoras,Upgrades
 ui.upgrades.tabCombos,Combos,Combos,Combos,Combos
 ui.upgrades.tabDice,Dice Types,Types de dés,Tipos de dados,Würfeltypen
