@@ -97,11 +97,11 @@ $$;
 
 -- ---------------------------------------------------------------- the board
 --
--- Every registered team (banned players left out), with its owner's name and sprite, and both scores:
+-- Every registered team, with its owner's name and sprite, and both scores:
 -- attack_wins = teams beaten (each team version counts once); defense_wins = opponents this player's teams held off,
 -- each attacker counted once per team version however many times they lost to it.
 -- `beaten`: the caller has already beaten this version of the team. `ids`: the caller's own Box ids, null for others.
--- A player banned from the leaderboard is hidden from everyone else, never from themselves.
+-- The leaderboard's ban list (leaderboard_bans) doesn't apply here: every team is on the Versus board.
 drop function if exists versus_board();
 create or replace function versus_board()
 returns table (
@@ -137,7 +137,6 @@ language sql stable security definer set search_path = public as $$
     )
   from versus_teams v
   left join saves s on s.user_id = v.user_id
-  where v.user_id = auth.uid() or not exists (select 1 from leaderboard_bans x where x.user_id = v.user_id)
   order by v.updated_at desc
   limit 1000
 $$;
