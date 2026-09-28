@@ -1742,6 +1742,7 @@ ui.versus.rules,"They fight as clones at Lv.50, and every upgrade is the same fo
 ui.versus.save,SAVE TEAM,ENREGISTRER,GUARDAR EQUIPO,TEAM SPEICHERN
 ui.versus.clear,Clear,Effacer,Borrar,Leeren
 ui.versus.saved,Team saved!,Équipe enregistrée !,¡Equipo guardado!,Team gespeichert!
+ui.versus.isSaved,TEAM SAVED,ÉQUIPE ENREGISTRÉE,EQUIPO GUARDADO,TEAM GESPEICHERT
 ui.versus.unchanged,That's already your team.,C'est déjà ton équipe.,Ese ya es tu equipo.,Das ist schon dein Team.
 ui.versus.tabAttack,Attack,Attaque,Ataque,Angriff
 ui.versus.tabDefense,Defense,Défense,Defensa,Verteidigung
@@ -1767,6 +1768,7 @@ ui.versus.err.versus_no_team,Set your team first.,Compose d'abord ton équipe.,P
 ui.versus.err.versus_gone,This trainer has no team anymore.,Ce Dresseur n'a plus d'équipe.,Este Entrenador ya no tiene equipo.,Dieser Trainer hat kein Team mehr.
 ui.versus.err.versus_team_changed,This trainer just changed their team: here is the new one.,Ce Dresseur vient de changer d'équipe : voici la nouvelle.,Este Entrenador acaba de cambiar de equipo: aquí está el nuevo.,Dieser Trainer hat gerade sein Team geändert: Hier ist das neue.
 ui.versus.err.versus_already_won,You already beat this team.,Tu as déjà battu cette équipe.,Ya venciste a este equipo.,Du hast dieses Team schon besiegt.
+ui.versus.err.versus_not_saved,"The team was sent, but the server doesn't show it back. Reload the page and try again.","L'équipe a été envoyée, mais le serveur ne la renvoie pas. Recharge la page et réessaie.","El equipo se envió, pero el servidor no lo devuelve. Recarga la página e inténtalo de nuevo.","Das Team wurde gesendet, aber der Server zeigt es nicht an. Lade die Seite neu und versuche es erneut."
 ui.versus.err.versus_missing,Versus isn't set up in the database yet (run 0018_versus.sql).,Le Versus n'est pas encore installé dans la base (lance 0018_versus.sql).,El Versus aún no está instalado en la base de datos (ejecuta 0018_versus.sql).,Versus ist in der Datenbank noch nicht eingerichtet (führe 0018_versus.sql aus).
 ui.versus.err.versus_unknown,Something went wrong. Try again later.,Un problème est survenu. Réessaie plus tard.,Algo salió mal. Inténtalo más tarde.,Etwas ist schiefgelaufen. Versuche es später erneut.
 ui.upgrades.title,Upgrades,Améliorations,Mejoras,Upgrades

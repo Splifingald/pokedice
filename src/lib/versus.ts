@@ -11,6 +11,8 @@ export interface VersusEntry {
   name: string
   character: 'red' | 'green'
   team: VersusMon[]
+  /** Your own team only: the Box ids it was cloned from (null for everyone else, and for teams set before they were kept). */
+  ids: string[] | null
   /** Which version of the team this is: a win is against one version. */
   version: number
   /** Teams this player has beaten (one per team version). */
@@ -33,6 +35,7 @@ interface RawEntry {
   name: string | null
   character: string | null
   team: { dex: number; level: number; shiny?: boolean }[] | null
+  ids?: string[] | null
   version: number | null
   attack_wins: number | null
   defense_wins: number | null
@@ -46,6 +49,7 @@ export function parseVersusBoard(raw: RawEntry[]): VersusEntry[] {
     name: r.name || 'Trainer',
     character: r.character === 'green' ? 'green' : 'red',
     team: (r.team ?? []).map((m) => ({ dex: Number(m.dex), level: Number(m.level), shiny: !!m.shiny })),
+    ids: Array.isArray(r.ids) ? r.ids.map(String) : null,
     version: Number(r.version) || 1,
     attackWins: Number(r.attack_wins) || 0,
     defenseWins: Number(r.defense_wins) || 0,
@@ -83,6 +87,8 @@ export const VERSUS_ERRORS = [
   'versus_gone',
   'versus_team_changed',
   'versus_already_won',
+  // Not the database's: the team was accepted but the board doesn't show it back.
+  'versus_not_saved',
 ] as const
 export type VersusErrorCode = (typeof VERSUS_ERRORS)[number] | 'versus_missing' | 'versus_unknown'
 

@@ -54,9 +54,8 @@ test('Versus is in the trainer menu, locked until three Pokémon reach Lv.50', a
 })
 
 test('fight a team: the result is recorded before the fight plays', async ({ page }) => {
-  const calls = await mockSupabase(page)
+  await mockSupabase(page)
   const recorded: Record<string, unknown>[] = []
-  const teams: Record<string, unknown>[] = []
   await page.route('**/rest/v1/rpc/versus_board', (route) =>
     route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(BOARD) }),
   )
@@ -65,10 +64,6 @@ test('fight a team: the result is recorded before the fight plays', async ({ pag
     // Held back a moment: nothing of the fight may show until the result is written.
     await new Promise((r) => setTimeout(r, 600))
     await route.fulfill({ status: 204, body: '' })
-  })
-  await page.route('**/rest/v1/rpc/versus_set_team', (route) => {
-    teams.push(route.request().postDataJSON())
-    return route.fulfill({ status: 200, contentType: 'application/json', body: '2' })
   })
   await signedIn(page, readySave())
   await page.goto('/versus')
@@ -94,20 +89,6 @@ test('fight a team: the result is recorded before the fight plays', async ({ pag
   await page.getByRole('button', { name: 'BACK TO VERSUS' }).click()
   await expect(page.getByRole('heading', { name: 'Versus' })).toBeVisible()
 
-  // Your team: three picks in fight order, pushed to the cloud save first, then set from it.
-  await page.getByRole('tab', { name: 'My team' }).click()
-  await page.getByRole('button', { name: /Venusaur/ }).click()
-  await page.getByRole('button', { name: /Charizard/ }).click()
-  await page.getByRole('button', { name: /Blastoise/ }).click()
-  await expect(page.getByRole('button', { name: /Charizard/ })).toContainText('Lv.50 (72) · Kanto')
-  await expect(page.getByRole('button', { name: /Blastoise/ })).toContainText('Johto')
-  const pushesBefore = calls.filter((c) => c.startsWith('POST /rest/v1/saves')).length
-  await page.getByRole('button', { name: 'SAVE TEAM' }).click()
-  await expect.poll(() => teams.length).toBe(1)
-  expect(teams[0]).toEqual({ ids: ['vn', 'cz', 'bl'] })
-  expect(calls.filter((c) => c.startsWith('POST /rest/v1/saves')).length).toBeGreaterThan(pushesBefore)
-  await expect(page.getByText('Team saved!')).toBeVisible()
-
   // The boards: attack wins, then defense wins.
   await page.getByRole('tab', { name: 'Leaderboard' }).click()
   const ranks = page.getByRole('tabpanel').getByRole('listitem').filter({ has: page.getByLabel(/^Rank/) })
@@ -115,4 +96,73 @@ test('fight a team: the result is recorded before the fight plays', async ({ pag
   await page.getByRole('tab', { name: 'Defense' }).click()
   await expect(ranks.first()).toContainText('Blue')
   await expect(ranks.nth(1)).toContainText('Sam')
+})
+
+/** A fake Versus server that keeps what it is sent: the board shows the team you set, as the real one does. */
+async function versusServer(page: Page, opts: { forgets?: boolean } = {}) {
+  const teams: { ids: string[] }[] = []
+  let mine: ReturnType<typeof entry> | null = null
+  await page.route('**/rest/v1/rpc/versus_board', (route) =>
+    route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([...(mine ? [mine] : []), BOARD[1]]) }),
+  )
+  await page.route('**/rest/v1/rpc/versus_set_team', (route) => {
+    const body = route.request().postDataJSON() as { ids: string[] }
+    teams.push(body)
+    const version = (mine?.version ?? 0) + 1
+    if (!opts.forgets) mine = entry('Sam', { is_me: true, ids: body.ids, version, team: [mon(3), mon(6), mon(9)] })
+    return route.fulfill({ status: 200, contentType: 'application/json', body: String(version) })
+  })
+  return teams
+}
+
+test('set your team: three picks in fight order, saved from the cloud save, and still picked after a reload', async ({ page }) => {
+  const calls = await mockSupabase(page)
+  const teams = await versusServer(page)
+  await signedIn(page, readySave())
+  await page.goto('/versus')
+
+  // No team yet: the opponents list asks for one.
+  await expect(page.getByText('Set your team first')).toBeVisible()
+  await page.getByRole('tab', { name: 'My team' }).click()
+  await expect(page.getByText('No team yet.')).toBeVisible()
+  await page.getByRole('button', { name: /Venusaur/ }).click()
+  await page.getByRole('button', { name: /Charizard/ }).click()
+  await page.getByRole('button', { name: /Blastoise/ }).click()
+  // Every region's Box can send a Pokémon: each says where it comes from.
+  await expect(page.getByRole('button', { name: /Charizard/ })).toContainText('Lv.50 (72) · Kanto')
+  await expect(page.getByRole('button', { name: /Blastoise/ })).toContainText('Johto')
+  const pushesBefore = calls.filter((c) => c.startsWith('POST /rest/v1/saves')).length
+  await page.getByRole('button', { name: 'SAVE TEAM' }).click()
+
+  await expect(page.getByText('Team saved!')).toBeVisible()
+  expect(teams).toEqual([{ ids: ['vn', 'cz', 'bl'] }])
+  expect(calls.filter((c) => c.startsWith('POST /rest/v1/saves')).length).toBeGreaterThan(pushesBefore)
+  // The picks stay, the button says the team is saved, and the team shows at the top.
+  await expect(page.getByRole('button', { name: 'TEAM SAVED', exact: true })).toBeDisabled()
+  await expect(page.getByRole('button', { name: /Venusaur/ })).toHaveAttribute('aria-pressed', 'true')
+  await expect(page.getByText('No team yet.')).toHaveCount(0)
+
+  // Back later: the saved team is still picked, and the opponents can be fought.
+  await page.reload()
+  await expect(page.getByRole('button', { name: 'Fight Blue' })).toBeEnabled()
+  await page.getByRole('tab', { name: 'My team' }).click()
+  await expect(page.getByRole('button', { name: 'TEAM SAVED', exact: true })).toBeDisabled()
+  for (const name of ['Venusaur', 'Charizard', 'Blastoise'])
+    await expect(page.getByRole('button', { name: new RegExp(name) })).toHaveAttribute('aria-pressed', 'true')
+
+  // Changing a pick makes it savable again.
+  await page.getByRole('button', { name: /Blastoise/ }).click()
+  await expect(page.getByRole('button', { name: 'SAVE TEAM' })).toBeDisabled()
+})
+
+test("a team the server doesn't show back is not called saved", async ({ page }) => {
+  await mockSupabase(page)
+  await versusServer(page, { forgets: true })
+  await signedIn(page, readySave())
+  await page.goto('/versus')
+  await page.getByRole('tab', { name: 'My team' }).click()
+  for (const name of ['Venusaur', 'Charizard', 'Blastoise']) await page.getByRole('button', { name: new RegExp(name) }).click()
+  await page.getByRole('button', { name: 'SAVE TEAM' }).click()
+  await expect(page.getByText(/the server doesn't show it back/)).toBeVisible()
+  await expect(page.getByText('Team saved!')).toHaveCount(0)
 })

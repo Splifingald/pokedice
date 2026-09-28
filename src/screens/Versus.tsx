@@ -77,6 +77,12 @@ export function VersusScreen() {
   }, [t])
   // Refetched when the player signs in or out, so "you" and "beaten" follow.
   useEffect(() => refresh(), [refresh, auth.userId])
+  /** The board, fetched again and handed back: saving a team reads it to check the team is really there. */
+  const reload = useCallback(async () => {
+    const fresh = await fetchVersusBoard()
+    setLoad(fresh ? { state: 'ready', rows: fresh } : { state: 'offline' })
+    return fresh
+  }, [])
 
   const rows = load.state === 'ready' ? load.rows : []
   const me = rows.find((r) => r.isMe) ?? null
@@ -151,7 +157,7 @@ export function VersusScreen() {
         {load.state === 'ready' && tab === 'fight' && (
           <Opponents rows={rows} me={me} signedIn={signedIn} busy={busy} onFight={startFight} onSetTeam={() => setTab('team')} />
         )}
-        {load.state === 'ready' && tab === 'team' && <TeamEditor me={me} signedIn={signedIn} onSaved={refresh} />}
+        {load.state === 'ready' && tab === 'team' && <TeamEditor me={me} signedIn={signedIn} reload={reload} />}
         {load.state === 'ready' && tab === 'board' && <Board rows={rows} />}
       </div>
     </div>
@@ -264,11 +270,20 @@ function Opponents({
 }
 
 /** Your team as it stands, and three picks from the Box to replace it. */
-function TeamEditor({ me, signedIn, onSaved }: { me: VersusEntry | null; signedIn: boolean; onSaved: () => void }) {
+function TeamEditor({
+  me,
+  signedIn,
+  reload,
+}: {
+  me: VersusEntry | null
+  signedIn: boolean
+  reload: () => Promise<VersusEntry[] | null>
+}) {
   const { t } = useT()
   const data = useGame((s) => s.data)
   const save = useGame((s) => s.save)!
-  const [picks, setPicks] = useState<string[]>([])
+  // The saved team starts picked, so the screen shows which Pokémon are in it.
+  const [picks, setPicks] = useState<string[]>(() => me?.ids ?? [])
   const [saving, setSaving] = useState(false)
   // Every region's Box, strongest first; the region being played, then the Box order, break ties.
   const candidates = useMemo(() => [...versusCandidates(save, data)].sort((a, b) => b.inst.level - a.inst.level), [save, data])
@@ -276,6 +291,8 @@ function TeamEditor({ me, signedIn, onSaved }: { me: VersusEntry | null; signedI
   const manyRegions = new Set(candidates.map((c) => c.region)).size > 1
   // A pick that has left the Box (released, or sent to the Day Care) is dropped.
   const valid = picks.filter((id) => candidates.some((c) => c.inst.id === id))
+  // The picks are the team already saved: nothing to save.
+  const isSaved = !!me?.ids && me.ids.length === valid.length && me.ids.every((id, i) => valid[i] === id)
 
   const toggle = (id: string) =>
     setPicks((cur) => (cur.includes(id) ? cur.filter((x) => x !== id) : cur.length >= VERSUS_TEAM_SIZE ? cur : [...cur, id]))
@@ -288,9 +305,10 @@ function TeamEditor({ me, signedIn, onSaved }: { me: VersusEntry | null; signedI
       if (!(await pushSaveNow())) throw new Error('versus_no_save')
       const before = me?.version
       const version = await setVersusTeam(valid)
+      // Only said to be saved once the board shows it back.
+      const mine = (await reload())?.find((r) => r.isMe)
+      if (!mine || mine.version !== version) throw new Error('versus_not_saved')
       pushToast(t(before === version ? 'ui.versus.unchanged' : 'ui.versus.saved'), 'good')
-      setPicks([])
-      onSaved()
     } catch (err) {
       console.warn('[versus] set team failed', err)
       pushToast(errorText(t, err), 'bad', 4500)
@@ -353,10 +371,18 @@ function TeamEditor({ me, signedIn, onSaved }: { me: VersusEntry | null; signedI
           variant="primary"
           size="md"
           className="flex-1"
-          disabled={!signedIn || valid.length !== VERSUS_TEAM_SIZE || saving}
+          disabled={!signedIn || valid.length !== VERSUS_TEAM_SIZE || saving || isSaved}
           onClick={() => void submit()}
         >
-          {saving ? t('ui.common.loading') : t('ui.versus.save')}
+          {saving ? (
+            t('ui.common.loading')
+          ) : isSaved ? (
+            <>
+              <PixelIcon name="check" size={16} /> {t('ui.versus.isSaved')}
+            </>
+          ) : (
+            t('ui.versus.save')
+          )}
         </PixelButton>
       </div>
     </div>
