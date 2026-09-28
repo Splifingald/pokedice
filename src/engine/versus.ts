@@ -1,10 +1,11 @@
 // Versus: one player's team of three against another's, fought on auto from start to finish. The whole fight is
 // computed before a single frame plays, so its result can be recorded first and leaving halfway changes nothing.
 import { battleOutcome, createBattle, reduce, type BattleEvent, type BattleState, type LogEntry } from './battle'
-import type { UpgradeLevels } from './damage'
+import { uniformLevels } from './damage'
+import { regionOf } from './regions'
 import { autoEvents } from './sim'
 import { createRng } from './rng'
-import type { GameData, PokemonInstance, SaveData } from './types'
+import type { GameData, PokemonInstance, RegionId, SaveData } from './types'
 
 /** Every Pokémon of a Versus team fights at this level: higher ones are brought down to it, lower ones can't enter. */
 export const VERSUS_LEVEL = 50
@@ -17,29 +18,35 @@ export interface VersusMon {
   shiny: boolean
 }
 
-/** One side of a Versus fight: its three clones in fight order, and the upgrades its owner had when registering. */
-export interface VersusSide {
-  team: VersusMon[]
-  levels: UpgradeLevels
-}
-
 const eligible = (p: PokemonInstance, data: GameData) => p.level >= VERSUS_LEVEL && p.revivesAt == null && !!data.species[p.dex]
+
+/** A Pokémon that can join a Versus team, and the region whose Box it sits in. */
+export interface VersusCandidate {
+  inst: PokemonInstance
+  region: RegionId
+}
 
 /**
  * The Pokémon that can join a Versus team: Lv.50 or more, hatched (not a reviving fossil), known species — from the
- * Box of the region being played, whose upgrades the team takes along.
+ * Box of every region the player has played, the one being played first.
  */
-export function versusCandidates(save: SaveData, data: GameData): PokemonInstance[] {
-  return save.box.filter((p) => eligible(p, data))
+export function versusCandidates(save: SaveData, data: GameData): VersusCandidate[] {
+  const live = regionOf(save)
+  const blocks: [RegionId, PokemonInstance[]][] = [
+    [live, save.box],
+    ...Object.entries(save.parked ?? {})
+      .filter(([region, b]) => region !== live && !!b)
+      .map(([region, b]): [RegionId, PokemonInstance[]] => [region as RegionId, b!.box]),
+  ]
+  return blocks.flatMap(([region, box]) => box.filter((p) => eligible(p, data)).map((inst) => ({ inst, region })))
 }
 
 /** How many Pokémon at Lv.50 or more the player has, across every region they have played. */
 export function versusReadyCount(save: SaveData, data: GameData): number {
-  const parked = Object.values(save.parked ?? {}).flatMap((b) => b?.box ?? [])
-  return [...save.box, ...parked].filter((p) => eligible(p, data)).length
+  return versusCandidates(save, data).length
 }
 
-/** Versus opens once three Pokémon reach Lv.50 — in any region, so moving on to the next one doesn't close it. */
+/** Versus opens once three Pokémon reach Lv.50, in any region. */
 export function versusUnlocked(save: SaveData, data: GameData): boolean {
   return versusReadyCount(save, data) >= VERSUS_TEAM_SIZE
 }
@@ -81,10 +88,12 @@ const attackerUid = (i: number) => `a${i}`
  * The whole fight, decided by `seed` alone: the attacker's three go out in their order against each of the
  * defender's in turn, carrying their HP from one battle to the next, both sides played by the auto-mode AI.
  *
+ * Nobody brings their own upgrades: both sides fight with every combo and die track at `versusUpgradeLevel` (admin).
+ *
  * The attacker wins by knocking out all three defenders. Anything else — the attacker's team knocked out, or a
  * stalemate neither side can break — is the defender's win.
  */
-export function simulateVersus(attacker: VersusSide, defender: VersusSide, data: GameData, seed: number, maxSteps = 5000): VersusFight {
+export function simulateVersus(attacker: VersusMon[], defender: VersusMon[], data: GameData, seed: number, maxSteps = 5000): VersusFight {
   // The battle's own rolls and the auto player's choices draw from separate streams, like on the battle screen.
   const battleRng = createRng(seed)
   const choiceRng = createRng(seed ^ 0x5bd1e995)
@@ -92,9 +101,10 @@ export function simulateVersus(attacker: VersusSide, defender: VersusSide, data:
   const hp: Record<string, number> = {}
   let lead: string | undefined
   let group = 0
+  const levels = uniformLevels(data.config.versusUpgradeLevel)
 
-  for (let d = 0; d < defender.team.length; d++) {
-    const team = attacker.team.map((m, i) => ({
+  for (let d = 0; d < defender.length; d++) {
+    const team = attacker.map((m, i) => ({
       uid: attackerUid(i),
       dex: m.dex,
       level: m.level,
@@ -104,15 +114,15 @@ export function simulateVersus(attacker: VersusSide, defender: VersusSide, data:
     }))
     // A mutual K.O. — the attacker's last Pokémon falling as it wins — leaves nobody to face the next one.
     if (!team.some((p) => p.hp > 0)) return { seed, rounds, winner: 'defender' }
-    const foe = defender.team[d]!
+    const foe = defender[d]!
     const start = createBattle(
       {
         kind: 'trainer',
         team,
         leadUid: lead,
         enemy: { dex: foe.dex, level: foe.level, shiny: foe.shiny },
-        playerLevels: attacker.levels,
-        enemyLevels: defender.levels,
+        playerLevels: levels,
+        enemyLevels: levels,
       },
       data,
     )

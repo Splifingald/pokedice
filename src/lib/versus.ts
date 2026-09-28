@@ -1,6 +1,6 @@
 // Versus, the cloud side: every registered team with both scores, setting your own, and recording a fight. The rows
 // come from the SQL functions of supabase/migrations/0018_versus.sql; the fight itself is engine/versus.
-import type { UpgradeLevels, VersusMon, VersusSide } from '@/engine'
+import type { VersusMon } from '@/engine'
 import { getSupabase } from './supabase'
 
 export type VersusBoardTab = 'attack' | 'defense'
@@ -11,12 +11,11 @@ export interface VersusEntry {
   name: string
   character: 'red' | 'green'
   team: VersusMon[]
-  levels: UpgradeLevels
   /** Which version of the team this is: a win is against one version. */
   version: number
   /** Teams this player has beaten (one per team version). */
   attackWins: number
-  /** Fights this player's teams have won in defense. */
+  /** Fights this player's teams have won in defense (one per attacker and team version). */
   defenseWins: number
   /** The signed-in player has already beaten this version of the team. */
   beaten: boolean
@@ -34,7 +33,6 @@ interface RawEntry {
   name: string | null
   character: string | null
   team: { dex: number; level: number; shiny?: boolean }[] | null
-  levels: { comboLevels?: Record<string, number>; dieLevels?: Record<string, number> } | null
   version: number | null
   attack_wins: number | null
   defense_wins: number | null
@@ -48,16 +46,12 @@ export function parseVersusBoard(raw: RawEntry[]): VersusEntry[] {
     name: r.name || 'Trainer',
     character: r.character === 'green' ? 'green' : 'red',
     team: (r.team ?? []).map((m) => ({ dex: Number(m.dex), level: Number(m.level), shiny: !!m.shiny })),
-    levels: { comboLevels: r.levels?.comboLevels ?? {}, dieLevels: r.levels?.dieLevels ?? {} } as UpgradeLevels,
     version: Number(r.version) || 1,
     attackWins: Number(r.attack_wins) || 0,
     defenseWins: Number(r.defense_wins) || 0,
     beaten: !!r.beaten,
   }))
 }
-
-/** The fight-ready side of an entry: its clones and its upgrades. */
-export const sideOf = (e: VersusEntry): VersusSide => ({ team: e.team, levels: e.levels })
 
 /** Ranked by attack or defense wins; ties share a rank and are listed by name. Players with no win yet are left out. */
 export function rankVersus(rows: VersusEntry[], tab: VersusBoardTab): RankedVersusEntry[] {

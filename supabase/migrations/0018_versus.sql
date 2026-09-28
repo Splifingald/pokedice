@@ -2,16 +2,18 @@
 --
 -- Players never touch these tables directly: the functions below read and write them as the owner (security definer)
 -- and check everything they are given. A team is built here from the player's cloud save — never from what the page
--- sends — so it can only hold Pokémon that save really has, at Lv.50 or more, cloned down to Lv.50.
+-- sends — so it can only hold Pokémon that save really has (in any region's Box), at Lv.50 or more, cloned down to
+-- Lv.50. Nobody brings their own upgrades into Versus: the game fights both sides at game_config.versusUpgradeLevel.
 
 create table if not exists versus_teams (
   user_id uuid primary key references auth.users(id) on delete cascade,
   -- Bumped whenever the team changes: a win is against one version, and a new team can be beaten again.
   version int not null default 1,
   team jsonb not null,               -- [{dex, level, shiny}] × 3, in fight order, level ≤ 50
-  levels jsonb not null,             -- {comboLevels, dieLevels}: the owner's upgrades when the team was set
   updated_at timestamptz not null default now()
 );
+-- An early draft stored each owner's upgrades with the team; Versus uses the same upgrades for everyone.
+alter table versus_teams drop column if exists levels;
 alter table versus_teams enable row level security;
 drop policy if exists versus_teams_admin on versus_teams;
 create policy versus_teams_admin on versus_teams for all using (is_admin()) with check (is_admin());
@@ -36,8 +38,8 @@ create policy versus_battles_admin on versus_battles for all using (is_admin()) 
 
 -- ---------------------------------------------------------------- set your team
 --
--- `ids`: three Box instance ids of the live region, in fight order. Returns the team's version. Setting the same team
--- again (same clones, same upgrades) keeps its version, so nobody who beat it gets to fight it again for nothing.
+-- `ids`: three Box instance ids, from any region the save holds, in fight order. Returns the team's version. Setting
+-- the same team again (same clones, same order) keeps its version, so nobody who beat it gets to fight it again.
 create or replace function versus_set_team(ids text[])
 returns int
 language plpgsql security definer set search_path = public as $$
@@ -45,7 +47,6 @@ declare
   me uuid := auth.uid();
   save jsonb;
   new_team jsonb;
-  new_levels jsonb;
   cur versus_teams%rowtype;
   v int;
 begin
@@ -63,23 +64,23 @@ begin
   ) order by t.ord)
   into new_team
   from unnest(ids) with ordinality t(id, ord)
-  join jsonb_array_elements(coalesce(save -> 'box', '[]')) m on m ->> 'id' = t.id
+  join (
+    -- The Box of the region being played, and the Box of every region parked.
+    select b from jsonb_array_elements(coalesce(save -> 'box', '[]')) b
+    union all
+    select b from jsonb_each(coalesce(save -> 'parked', '{}')) p(k, v), jsonb_array_elements(coalesce(p.v -> 'box', '[]')) b
+  ) boxes(m) on m ->> 'id' = t.id
   where (m ->> 'level')::int >= 50 and m ->> 'revivesAt' is null;
   if new_team is null or jsonb_array_length(new_team) <> 3 then raise exception 'versus_not_eligible'; end if;
 
-  new_levels := jsonb_build_object(
-    'comboLevels', coalesce(save -> 'comboLevels', '{}'),
-    'dieLevels', coalesce(save -> 'dieLevels', '{}')
-  );
-
   select * into cur from versus_teams where user_id = me;
   if not found then
-    insert into versus_teams (user_id, version, team, levels) values (me, 1, new_team, new_levels);
+    insert into versus_teams (user_id, version, team) values (me, 1, new_team);
     return 1;
   end if;
-  if cur.team = new_team and cur.levels = new_levels then return cur.version; end if;
+  if cur.team = new_team then return cur.version; end if;
   update versus_teams
-     set team = new_team, levels = new_levels, version = cur.version + 1, updated_at = now()
+     set team = new_team, version = cur.version + 1, updated_at = now()
    where user_id = me
   returning version into v;
   return v;
@@ -89,8 +90,10 @@ $$;
 -- ---------------------------------------------------------------- the board
 --
 -- Every registered team (banned players left out), with its owner's name and sprite, and both scores:
--- attack_wins = teams beaten (each team version counts once), defense_wins = fights this player's teams won.
+-- attack_wins = teams beaten (each team version counts once); defense_wins = opponents this player's teams held off,
+-- each attacker counted once per team version however many times they lost to it.
 -- `beaten`: the caller has already beaten this version of the team.
+drop function if exists versus_board();
 create or replace function versus_board()
 returns table (
   user_id uuid,
@@ -98,7 +101,6 @@ returns table (
   name text,
   "character" text,
   team jsonb,
-  levels jsonb,
   version int,
   attack_wins int,
   defense_wins int,
@@ -111,10 +113,13 @@ language sql stable security definer set search_path = public as $$
     left(coalesce(nullif(trim(s.data -> 'player' ->> 'name'), ''), 'Trainer'), 12),
     coalesce(s.data -> 'player' ->> 'character', 'red'),
     v.team,
-    v.levels,
     v.version,
     (select count(*)::int from versus_battles b where b.attacker_id = v.user_id and b.won),
-    (select count(*)::int from versus_battles b where b.defender_id = v.user_id and not b.won),
+    (
+      select count(*)::int from (
+        select distinct b.attacker_id, b.defender_version from versus_battles b where b.defender_id = v.user_id and not b.won
+      ) held
+    ),
     exists (
       select 1 from versus_battles b
       where b.attacker_id = auth.uid() and b.defender_id = v.user_id and b.defender_version = v.version and b.won

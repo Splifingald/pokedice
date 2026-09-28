@@ -8,20 +8,16 @@ import {
   reduce,
   sameEvent,
   simulateVersus,
-  uniformLevels,
   versusCandidates,
   versusMoveAt,
   versusReadyCount,
   versusUnlocked,
   VERSUS_LEVEL,
-  type VersusSide,
+  type VersusMon,
 } from '@/engine'
-import { data } from '../fixtures'
+import { data, makeData } from '../fixtures'
 
-const side = (dexes: number[], level = VERSUS_LEVEL): VersusSide => ({
-  team: dexes.map((dex) => ({ dex, level, shiny: false })),
-  levels: uniformLevels(0),
-})
+const side = (dexes: number[], level = VERSUS_LEVEL): VersusMon[] => dexes.map((dex) => ({ dex, level, shiny: false }))
 
 const MEWTWOS = side([150, 150, 150])
 const MAGIKARPS = side([129, 129, 129])
@@ -43,19 +39,34 @@ describe('Versus teams', () => {
     expect(versusUnlocked(two, data)).toBe(false)
     const three = { ...two, box: [...two.box, at(55)] }
     expect(versusUnlocked(three, data)).toBe(true)
-    expect(versusCandidates(three, data).map((p) => p.level)).toEqual([50, 64, 55])
+    expect(versusCandidates(three, data).map((c) => c.inst.level)).toEqual([50, 64, 55])
     // A fossil still reviving doesn't count, nor a Pokémon under Lv.50.
     const fossil = { ...two, box: [...two.box, at(60, { revivesAt: Date.now() + 1e6 }), at(49)] }
     expect(versusUnlocked(fossil, data)).toBe(false)
-    // Pokémon left behind in a region played before still count towards opening it (not towards the team).
-    const parked = { ...two, parked: { kanto: { ...liveBlock(save), box: [at(70)] } } }
+    // Every region's Box counts, and every region's Box can send a Pokémon into the team.
+    const parked = { ...two, parked: { johto: { ...liveBlock(save), box: [at(70), at(12)] } } }
     expect(versusReadyCount(parked, data)).toBe(3)
     expect(versusUnlocked(parked, data)).toBe(true)
-    expect(versusCandidates(parked, data)).toHaveLength(2)
+    expect(versusCandidates(parked, data).map((c) => [c.region, c.inst.level])).toEqual([
+      ['kanto', 50],
+      ['kanto', 64],
+      ['johto', 70],
+    ])
   })
 })
 
 describe('simulateVersus', () => {
+  it("fights both sides at the admin's versusUpgradeLevel, whatever their owners bought", () => {
+    for (const lv of [1, 5, 9]) {
+      const first = simulateVersus(MIXED, MAGIKARPS, makeData({ versusUpgradeLevel: lv }), 1).rounds[0]!.start.state
+      expect(first.playerLevels).toEqual(first.enemyLevels)
+      expect(Object.keys(first.playerLevels.dieLevels).length).toBeGreaterThan(0)
+      expect(Object.values(first.playerLevels.dieLevels).every((l) => l === lv)).toBe(true)
+      expect(Object.values(first.playerLevels.comboLevels).every((l) => l === lv)).toBe(true)
+    }
+    expect(data.config.versusUpgradeLevel).toBe(5)
+  })
+
   it('is decided by the seed alone', () => {
     const a = simulateVersus(MIXED, side([65, 68, 94]), data, 1234)
     const b = simulateVersus(MIXED, side([65, 68, 94]), data, 1234)

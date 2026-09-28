@@ -25,6 +25,7 @@ export const DEFAULT_CONFIG: GameConfig = {
   startInventory: { 'poke-ball': 5, potion: 2 },
   scaleLevelSpread: 3,
   enemyUpgradeLevel: 1,
+  versusUpgradeLevel: 5,
   allowVoluntarySwitch: true,
   maxBattleTurns: 150,
   multiExpShare: 0.3,

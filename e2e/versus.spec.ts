@@ -9,7 +9,6 @@ const entry = (name: string, patch: Record<string, unknown> = {}) => ({
   name,
   character: 'red',
   team: [mon(129), mon(129), mon(129)],
-  levels: { comboLevels: {}, dieLevels: {} },
   version: 1,
   attack_wins: 0,
   defense_wins: 0,
@@ -24,11 +23,12 @@ const BOARD = [
   entry('Leaf', { beaten: true, attack_wins: 3, team: [mon(150), mon(151), mon(149)] }),
 ]
 
-/** A save with three Pokémon past Lv.50 in the Box (Charizard 72, Blastoise 50, Venusaur 55). */
+/** Three Pokémon past Lv.50: Charizard 72 and Venusaur 55 in Kanto's Box, Blastoise 50 left in Johto's. */
 function readySave() {
   const base = makeSave(4, { player: { name: 'Sam', character: 'red' } })
   const at = (id: string, dex: number, level: number) => ({ id, dex, level, xp: 0, currentHp: 999, caughtAt: 0 })
-  return { ...base, box: [...base.box, at('cz', 6, 72), at('bl', 9, 50), at('vn', 3, 55)] }
+  const johto = { gold: 0, pokedex: [9], box: [at('bl', 9, 50)], team: ['bl'], inventory: {}, comboLevels: base.comboLevels, dieLevels: base.dieLevels, currentAreaId: '', areaProgress: {} }
+  return { ...base, box: [...base.box, at('cz', 6, 72), at('vn', 3, 55)], parked: { johto } }
 }
 
 async function signedIn(page: Page, save: object, settings = FAST) {
@@ -99,7 +99,8 @@ test('fight a team: the result is recorded before the fight plays', async ({ pag
   await page.getByRole('button', { name: /Venusaur/ }).click()
   await page.getByRole('button', { name: /Charizard/ }).click()
   await page.getByRole('button', { name: /Blastoise/ }).click()
-  await expect(page.getByRole('button', { name: /Charizard/ })).toContainText('Lv.50 (72)')
+  await expect(page.getByRole('button', { name: /Charizard/ })).toContainText('Lv.50 (72) · Kanto')
+  await expect(page.getByRole('button', { name: /Blastoise/ })).toContainText('Johto')
   const pushesBefore = calls.filter((c) => c.startsWith('POST /rest/v1/saves')).length
   await page.getByRole('button', { name: 'SAVE TEAM' }).click()
   await expect.poll(() => teams.length).toBe(1)

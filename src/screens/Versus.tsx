@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   cloneForVersus,
+  getRegion,
   randomSeed,
   sameEvent,
   simulateVersus,
@@ -27,7 +28,6 @@ import {
   rankVersus,
   recordVersus,
   setVersusTeam,
-  sideOf,
   versusErrorCode,
   type VersusBoardTab,
   type VersusEntry,
@@ -87,7 +87,7 @@ export function VersusScreen() {
     if (!me || busy) return
     setBusy(true)
     const seed = randomSeed()
-    const result = simulateVersus(sideOf(me), sideOf(foe), data, seed)
+    const result = simulateVersus(me.team, foe.team, data, seed)
     try {
       await recordVersus(foe, seed, result.winner === 'attacker')
       setFight({ fight: result, foe })
@@ -270,10 +270,12 @@ function TeamEditor({ me, signedIn, onSaved }: { me: VersusEntry | null; signedI
   const save = useGame((s) => s.save)!
   const [picks, setPicks] = useState<string[]>([])
   const [saving, setSaving] = useState(false)
-  // Strongest first; the Box order breaks ties.
-  const candidates = useMemo(() => [...versusCandidates(save, data)].sort((a, b) => b.level - a.level), [save, data])
+  // Every region's Box, strongest first; the region being played, then the Box order, break ties.
+  const candidates = useMemo(() => [...versusCandidates(save, data)].sort((a, b) => b.inst.level - a.inst.level), [save, data])
+  // Several regions played: each Pokémon says which one it comes from.
+  const manyRegions = new Set(candidates.map((c) => c.region)).size > 1
   // A pick that has left the Box (released, or sent to the Day Care) is dropped.
-  const valid = picks.filter((id) => candidates.some((p) => p.id === id))
+  const valid = picks.filter((id) => candidates.some((c) => c.inst.id === id))
 
   const toggle = (id: string) =>
     setPicks((cur) => (cur.includes(id) ? cur.filter((x) => x !== id) : cur.length >= VERSUS_TEAM_SIZE ? cur : [...cur, id]))
@@ -306,12 +308,9 @@ function TeamEditor({ me, signedIn, onSaved }: { me: VersusEntry | null; signedI
 
       <p className="copy text-lg leading-tight">{t('ui.versus.pickHint')}</p>
       <p className="copy text-base leading-tight text-muted">{t('ui.versus.rules')}</p>
-      {candidates.length < VERSUS_TEAM_SIZE && (
-        <p className="copy text-base leading-tight text-danger">{t('ui.versus.fromRegion', { n: candidates.length })}</p>
-      )}
 
       <ul className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
-        {candidates.map((p) => {
+        {candidates.map(({ inst: p, region }) => {
           const order = valid.indexOf(p.id)
           const clone = cloneForVersus(p)
           const name = data.species[p.dex]?.name ?? t('ui.common.pokemon')
@@ -332,6 +331,7 @@ function TeamEditor({ me, signedIn, onSaved }: { me: VersusEntry | null; signedI
                   <span className="font-pixel-sm text-base text-muted">
                     {t('ui.common.level.short', { n: clone.level })}
                     {p.level > clone.level && ` (${p.level})`}
+                    {manyRegions && ` · ${getRegion(data, region)?.name ?? region}`}
                   </span>
                 </span>
                 {order >= 0 && (

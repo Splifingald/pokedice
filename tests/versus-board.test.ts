@@ -7,7 +7,6 @@ const raw = (name: string, attack: number, defense: number, extra: Record<string
   name,
   character: 'red',
   team: [{ dex: 6, level: 50, shiny: false }],
-  levels: { comboLevels: {}, dieLevels: {} },
   version: 1,
   attack_wins: attack,
   defense_wins: defense,
@@ -44,8 +43,8 @@ describe('Versus board', () => {
   })
 
   it('parses defensively', () => {
-    const [r] = parseVersusBoard([{ ...raw('', 0, 0), name: null, character: 'blue', version: null, levels: null }])
-    expect(r).toMatchObject({ name: 'Trainer', character: 'red', version: 1, levels: { comboLevels: {}, dieLevels: {} } })
+    const [r] = parseVersusBoard([{ ...raw('', 0, 0), name: null, character: 'blue', version: null }])
+    expect(r).toMatchObject({ name: 'Trainer', character: 'red', version: 1 })
   })
 
   it('names the refusals of the database', () => {

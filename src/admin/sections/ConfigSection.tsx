@@ -337,6 +337,7 @@ export function ConfigSection() {
   const [noEscape, setNoEscape] = useConfigRow('noEscape')
   const [payout, setPayout] = useConfigRow('comboPayoutMode')
   const [enemyLv, setEnemyLv] = useConfigRow('enemyUpgradeLevel')
+  const [versusLv, setVersusLv] = useConfigRow('versusUpgradeLevel')
   const [maxTurns, setMaxTurns] = useConfigRow('maxBattleTurns')
   const [starters, setStarters] = useConfigRow('starters')
   const [starterLevel, setStarterLevel] = useConfigRow('starterLevel')
@@ -426,6 +427,9 @@ export function ConfigSection() {
             </Field>
             <Field label="enemyUpgradeLevel" hint="foes' dice/combo upgrade level where the area (and the trainer / legendary) sets none">
               <NumInput value={enemyLv} min={1} max={10} onChange={(v) => setEnemyLv(v ?? 1)} />
+            </Field>
+            <Field label="versusUpgradeLevel" hint="Versus: every dice/combo track of both teams, whatever their owners bought">
+              <NumInput value={versusLv} min={1} max={10} onChange={(v) => setVersusLv(v ?? 5)} />
             </Field>
             <Field label="maxBattleTurns" hint="stalemate safety valve">
               <NumInput value={maxTurns} onChange={(v) => setMaxTurns(v ?? 150)} />

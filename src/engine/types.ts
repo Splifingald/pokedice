@@ -421,6 +421,8 @@ export interface GameConfig {
   scaleLevelSpread: number
   /** Combo and die track level used by every wild/trainer Pokémon (the player's tracks are theirs alone). */
   enemyUpgradeLevel: number
+  /** Versus: every combo and die track of both sides is at this level; nobody brings their own upgrades. */
+  versusUpgradeLevel: number
   /** Switching the active Pokémon on your own turn (costs the turn). Switching after a faint is always free. */
   allowVoluntarySwitch: boolean
   /** Safety valve: two Pokémon immune to each other's every die would otherwise fight forever. Ends in a stalemate. */
