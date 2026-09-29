@@ -1107,6 +1107,7 @@ ui.battle.keyRoll,roll,lancer,tirar,Wurf
 ui.battle.history,Battle history,Historique du combat,Historial del combate,Kampfverlauf
 ui.battle.chooseNext,Choose your next Pokémon,Choisis ton prochain Pokémon,Elige tu siguiente Pokémon,Wähle dein nächstes Pokémon
 ui.battle.switchCosts,Switch (costs your turn),Changer (coûte ton tour),Cambiar (cuesta tu turno),Wechseln (kostet deine Runde)
+ui.battle.noSwitch,No other Pokémon can fight.,Aucun autre Pokémon ne peut combattre.,Ningún otro Pokémon puede luchar.,Kein anderes Pokémon kann kämpfen.
 ui.battle.forfeit,FORFEIT,ABANDONNER,RENDIRSE,AUFGEBEN
 ui.battle.forfeitTitle,Forfeit the battle?,Abandonner le combat ?,¿Rendirse en el combate?,Kampf aufgeben?
 ui.battle.forfeitBody,"All your Pokémon will be K.O. and the battle ends: you lose the round, just as if your team had fainted.","Tous tes Pokémon seront K.O. et le combat prendra fin : tu perds la manche, comme si toute ton équipe était K.O.","Todos tus Pokémon quedarán debilitados y el combate terminará: pierdes la ronda, igual que si todo tu equipo se debilitara.","Alle deine Pokémon werden besiegt und der Kampf endet: Du verlierst die Runde, als wäre dein ganzes Team besiegt worden."
