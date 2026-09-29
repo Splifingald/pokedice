@@ -1,6 +1,17 @@
 import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { isAreaUnlocked, regionOf, regionOfArea, type Area, type GameData, type ItemDef, type RegionId } from '@/engine'
+import {
+  badgeCase,
+  isAreaUnlocked,
+  progressOf,
+  regionOf,
+  regionOfArea,
+  shopSells,
+  type Area,
+  type GameData,
+  type ItemDef,
+  type RegionId,
+} from '@/engine'
 import { dexNo } from '@/lib/format'
 import { t } from '@/i18n'
 import { useT } from '@/i18n/react'
@@ -9,7 +20,8 @@ import { enterArea } from '@/store/run'
 import { cx } from '@/theme/util'
 import { PixelIcon } from './icons'
 import { PixelButton } from './PixelButton'
-import { evolutionHow, PokemonSheet } from './PokemonSheet'
+import { ItemSprite } from './ItemSprite'
+import { evolutionHow, PokemonSheet, useVisibleEvolutions } from './PokemonSheet'
 import { SpriteImg } from './SpriteImg'
 import { AreaBanner } from '@/components/AreaBanner'
 
@@ -22,7 +34,11 @@ interface Spot {
   legendary: boolean
   /** Set when the species is revived from a fossil found here rather than met in the grass. */
   fossil?: ItemDef
+  /** Set when this is where an item (an evolution stone…) turns up in the loot, not a Pokémon. */
+  loot?: { item: ItemDef; entryId: string; unique: boolean }
 }
+
+const byRoute = (a: Spot, b: Spot) => Number(a.area.hidden) - Number(b.area.hidden) || a.area.orderIndex - b.area.orderIndex
 
 /**
  * Every area of `region` where a species turns up in the wild or as a legendary, main chain first, secret areas
@@ -68,7 +84,30 @@ export function whereToFind(dex: number, data: GameData, region: RegionId): Spot
       })
     }
   }
-  return out.sort((a, b) => Number(a.area.hidden) - Number(b.area.hidden) || a.area.orderIndex - b.area.orderIndex)
+  return out.sort(byRoute)
+}
+
+/** Every area of `region` whose loot table holds `itemKey` — same order, and same one-region rule, as `whereToFind`. */
+export function whereToFindItem(itemKey: string, data: GameData, region: RegionId): Spot[] {
+  const item = data.items[itemKey]
+  if (!item) return []
+  const out: Spot[] = []
+  for (const area of data.areas) {
+    if (regionOfArea(area) !== region) continue
+    const lootTotal = area.lootPool.reduce((sum, e) => sum + Math.max(0, e.weight), 0)
+    for (const entry of area.lootPool) {
+      if (entry.itemKey !== itemKey || entry.weight <= 0) continue
+      out.push({
+        area,
+        minLevel: 0,
+        maxLevel: 0,
+        share: lootTotal ? entry.weight / lootTotal : 0,
+        legendary: false,
+        loot: { item, entryId: entry.id, unique: entry.unique },
+      })
+    }
+  }
+  return out.sort(byRoute)
 }
 
 const rarity = (share: number) => t(share >= 0.15 ? 'ui.dex.common' : share >= 0.06 ? 'ui.dex.uncommon' : 'ui.dex.rare')
@@ -100,7 +139,11 @@ function SpotCard({ spot, onTravel }: { spot: Spot; onTravel?: () => void }) {
             <span className="truncate">{secret ? t('ui.dex.aSecretArea') : area.name}</span>
           </div>
           <div className="text-lg text-muted">
-            {spot.fossil
+            {spot.loot
+              ? spot.loot.unique
+                ? t('ui.dex.lootOnce') + (progressOf(save, area.id).uniqueFound?.includes(spot.loot.entryId) ? t('ui.dex.alreadyFoundSuffix') : '')
+                : t('ui.dex.lootSpot', { rarity: rarity(spot.share) })
+              : spot.fossil
               ? t('ui.dex.fossilSpot', { item: spot.fossil.name, levels, rarity: rarity(spot.share) })
               : spot.legendary
                 ? t('ui.dex.legendarySpot', { levels })
@@ -145,9 +188,46 @@ function SpotList({ spots, onTravel }: { spots: Spot[]; onTravel?: () => void })
   return (
     <ul className="flex flex-col gap-2">
       {spots.map((s) => (
-        <SpotCard key={`${s.area.id}-${s.legendary}-${s.fossil?.key ?? ''}`} spot={s} onTravel={onTravel} />
+        <SpotCard key={`${s.area.id}-${s.legendary}-${s.fossil?.key ?? ''}-${s.loot?.entryId ?? ''}`} spot={s} onTravel={onTravel} />
       ))}
     </ul>
+  )
+}
+
+/** Where the item an evolution needs comes from: the areas that drop it, and the Poké Mart if it sells it here. */
+function ItemSources({ itemKey, onTravel }: { itemKey: string; onTravel?: () => void }) {
+  const { t } = useT()
+  const data = useGame((s) => s.data)
+  const save = useGame((s) => s.save)
+  const region = save ? regionOf(save) : null
+  const spots = useMemo(() => (region ? whereToFindItem(itemKey, data, region) : []), [itemKey, data, region])
+  const item = data.items[itemKey]
+  if (!save || !region || !item) return null
+  const inShop = shopSells(item, save, region)
+  const badges = inShop ? badgeCase(save, data).filter((b) => b.earned).length : 0
+  // What the Mart still waits for, the way the Shop words it: badges first, then reaching its area.
+  const shopNeeds = !inShop
+    ? null
+    : badges < item.shopBadges
+      ? t(`ui.shop.needsBadges.${item.shopBadges === 1 ? 'one' : 'other'}`, { count: item.shopBadges })
+      : item.shopArea && !isAreaUnlocked(save, item.shopArea, data)
+        ? t('ui.shop.needsArea', { area: data.areas.find((a) => a.id === item.shopArea)?.name ?? t('ui.shop.someNewArea') })
+        : null
+  return (
+    <div className="flex flex-col gap-2 border-l-[3px] border-ink/30 pl-2">
+      <h4 className="flex items-center gap-1.5 text-xl leading-none">
+        <ItemSprite item={item} size={24} />
+        {t('ui.dex.whereToFindItem', { item: item.name })}
+      </h4>
+      {spots.length > 0 && <SpotList spots={spots} onTravel={onTravel} />}
+      {inShop && (
+        <p className="pixel-panel p-2 text-lg leading-tight">
+          {t('ui.dex.itemInShop')}
+          {shopNeeds && <span className="text-muted"> · {shopNeeds}</span>}
+        </p>
+      )}
+      {spots.length === 0 && !inShop && <p className="copy text-muted">{t('ui.dex.itemNowhere')}</p>}
+    </div>
   )
 }
 
@@ -176,7 +256,7 @@ function MissingEntry({ dex, onOpenDex, onTravel }: { dex: number; onOpenDex?: (
         {spots.length > 0 && <SpotList spots={spots} onTravel={onTravel} />}
         {from.map(({ species, evo }) => {
           const known = pokedex?.includes(species.dex)
-          return (
+          const button = (
             <button
               key={species.dex}
               type="button"
@@ -191,6 +271,13 @@ function MissingEntry({ dex, onOpenDex, onTravel }: { dex: number; onOpenDex?: (
                 })}
               </span>
             </button>
+          )
+          if (!evo!.item) return button
+          return (
+            <div key={species.dex} className="flex flex-col gap-2">
+              {button}
+              <ItemSources itemKey={evo!.item} onTravel={onTravel} />
+            </div>
           )
         })}
         {spots.length === 0 && from.length === 0 && <p className="copy text-muted">{t('ui.dex.notSpotted')}</p>}
@@ -215,6 +302,21 @@ function CaughtSpots({ dex, onTravel }: { dex: number; onTravel?: () => void }) 
   )
 }
 
+/** A caught species that evolves with an item: where to get that item. */
+function EvolutionItems({ dex, onTravel }: { dex: number; onTravel?: () => void }) {
+  const data = useGame((s) => s.data)
+  const evolutions = useVisibleEvolutions(data.species[dex]!)
+  const items = [...new Set(evolutions.flatMap((e) => (e.item ? [e.item] : [])))]
+  if (items.length === 0) return null
+  return (
+    <section className="flex flex-col gap-3">
+      {items.map((key) => (
+        <ItemSources key={key} itemKey={key} onTravel={onTravel} />
+      ))}
+    </section>
+  )
+}
+
 /** A Pokédex entry: the full sheet (and where to find it) once caught, otherwise just where to find it. */
 export function DexEntry({ dex, onOpenDex, onTravel }: { dex: number; onOpenDex?: (dex: number) => void; onTravel?: () => void }) {
   const save = useGame((s) => s.save)
@@ -223,6 +325,7 @@ export function DexEntry({ dex, onOpenDex, onTravel }: { dex: number; onOpenDex?
   const best = save.box.filter((p) => p.dex === dex).sort((a, b) => b.level - a.level)[0]
   return (
     <PokemonSheet dex={dex} inst={best} onOpenDex={onOpenDex}>
+      <EvolutionItems dex={dex} onTravel={onTravel} />
       <CaughtSpots dex={dex} onTravel={onTravel} />
     </PokemonSheet>
   )

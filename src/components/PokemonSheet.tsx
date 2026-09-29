@@ -114,7 +114,7 @@ function MilestoneGlyph({ m, species }: { m: Milestone; species: Species }) {
  * held until that region is unlocked, so the sheet must not name it either: it would spoil a region the player has
  * not been offered and promise an evolution that will not happen.
  */
-function useVisibleEvolutions(species: Species): Evolution[] {
+export function useVisibleEvolutions(species: Species): Evolution[] {
   const data = useGame((s) => s.data)
   const save = useGame((s) => s.save)
   return useMemo(() => {

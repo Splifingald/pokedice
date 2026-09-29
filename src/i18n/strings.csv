@@ -1376,6 +1376,12 @@ ui.dex.evolvesFromItem,Evolves from {name} with a {how},Évolue de {name} avec {
 ui.dex.evolvesFromLevel,Evolves from {name} at {how},Évolue de {name} au {how},Evoluciona de {name} al {how},Entwickelt sich aus {name} auf {how}
 ui.dex.notSpotted,Nobody has spotted it in the wild yet…,Personne ne l'a encore repéré à l'état sauvage…,Nadie lo ha avistado todavía en libertad…,Noch niemand hat es in freier Wildbahn gesichtet …
 ui.dex.exploringHint,You're exploring {area}: leave it (MAP) to travel somewhere else.,Tu explores {area} : quitte la zone (CARTE) pour aller ailleurs.,Estás explorando {area}: sal de la zona (MAPA) para viajar a otro sitio.,"Du erkundest {area}: Verlasse es (KARTE), um woanders hinzureisen."
+ui.dex.whereToFindItem,Where to find the {item},Où trouver : {item},Dónde encontrar: {item},Wo es {item} gibt
+ui.dex.lootSpot,found here · {rarity},trouvable ici · {rarity},se encuentra aquí · {rarity},hier zu finden · {rarity}
+ui.dex.lootOnce,found here once,trouvable ici une seule fois,se encuentra aquí una sola vez,hier einmalig zu finden
+ui.dex.alreadyFoundSuffix, · already found, · déjà trouvé, · ya encontrado, · bereits gefunden
+ui.dex.itemInShop,Sold at the Poké Mart,En vente au Poké Market,A la venta en la Tienda Poké,Im Pokémon-Markt erhältlich
+ui.dex.itemNowhere,Not found anywhere in this region.,Introuvable dans cette région.,No se encuentra en esta región.,In dieser Region nirgends zu finden.
 ui.sync.regions,Regions,Régions,Regiones,Regionen
 ui.sync.pokedex,Pokédex,Pokédex,Pokédex,Pokédex
 ui.sync.badges,Badges,Badges,Medallas,Orden

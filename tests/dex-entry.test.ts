@@ -2,7 +2,7 @@
 import { describe, expect, it } from 'vitest'
 import { compileGameData, regionOfArea, type Area, type Region } from '@/engine'
 import { BUNDLE as REAL } from '@/config/bundle'
-import { whereToFind } from '@/components/DexEntry'
+import { whereToFind, whereToFindItem } from '@/components/DexEntry'
 import { BUNDLE } from '@/config/bundle'
 
 /** Kanto's areas, re-badged into a second region, so both regions hold the same wild pools. */
@@ -84,5 +84,18 @@ describe('fossils', () => {
     for (const id of elsewhere) {
       expect(whereToFind(f.dex, live, id).some((s) => s.fossil), `#${f.dex} in ${id}`).toBe(false)
     }
+  })
+})
+
+describe('whereToFindItem', () => {
+  it("finds Mt. Moon's Moon Stone in Kanto, and only Kanto's areas", () => {
+    const spots = whereToFindItem('moon-stone', data, 'kanto')
+    expect(spots.some((s) => s.area.name === 'Mt. Moon')).toBe(true)
+    expect(spots.every((s) => regionOfArea(s.area) === 'kanto' && s.loot?.item.key === 'moon-stone')).toBe(true)
+    expect(whereToFindItem('moon-stone', data, 'johto').every((s) => regionOfArea(s.area) === 'johto')).toBe(true)
+  })
+
+  it('knows nothing of an unknown item', () => {
+    expect(whereToFindItem('no-such-item', data, 'kanto')).toEqual([])
   })
 })
