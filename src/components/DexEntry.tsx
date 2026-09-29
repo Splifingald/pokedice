@@ -129,20 +129,37 @@ function SpotCard({ spot, onTravel }: { spot: Spot; onTravel?: () => void }) {
   )
 }
 
+/** The areas of the region being played where `dex` turns up, plus a hint when the run is pinning the player down. */
+function useSpots(dex: number) {
+  const data = useGame((s) => s.data)
+  const save = useGame((s) => s.save)
+  const region = save ? regionOf(save) : null
+  const runArea = useGame((s) => s.run.areaId)
+  const spots = useMemo(() => (region ? whereToFind(dex, data, region) : []), [dex, data, region])
+  const runName = runArea ? data.areas.find((a) => a.id === runArea)?.name : null
+  const canTravelSomewhere = spots.some((s) => s.area.id !== runArea)
+  return { spots, travelHint: runName && canTravelSomewhere ? runName : null }
+}
+
+function SpotList({ spots, onTravel }: { spots: Spot[]; onTravel?: () => void }) {
+  return (
+    <ul className="flex flex-col gap-2">
+      {spots.map((s) => (
+        <SpotCard key={`${s.area.id}-${s.legendary}-${s.fossil?.key ?? ''}`} spot={s} onTravel={onTravel} />
+      ))}
+    </ul>
+  )
+}
+
 /** An uncaught species: its silhouette, and where it can be found (or what it evolves from). */
 function MissingEntry({ dex, onOpenDex, onTravel }: { dex: number; onOpenDex?: (dex: number) => void; onTravel?: () => void }) {
   const { t } = useT()
   const data = useGame((s) => s.data)
-  const save = useGame((s) => s.save)
-  const pokedex = save?.pokedex
-  const region = save ? regionOf(save) : null
-  const runArea = useGame((s) => s.run.areaId)
-  const spots = useMemo(() => (region ? whereToFind(dex, data, region) : []), [dex, data, region])
+  const pokedex = useGame((s) => s.save?.pokedex)
+  const { spots, travelHint } = useSpots(dex)
   const from = data.speciesList
     .map((s) => ({ species: s, evo: s.evolutions.find((e) => e.toDex === dex) }))
     .filter((x) => !!x.evo)
-  const runName = runArea ? data.areas.find((a) => a.id === runArea)?.name : null
-  const canTravelSomewhere = spots.some((s) => s.area.id !== runArea)
 
   return (
     <div className="flex flex-col gap-3">
@@ -156,13 +173,7 @@ function MissingEntry({ dex, onOpenDex, onTravel }: { dex: number; onOpenDex?: (
       </div>
       <section className="flex flex-col gap-2">
         <h3 className="text-2xl">{t('ui.dex.whereToFindHeading')}</h3>
-        {spots.length > 0 && (
-          <ul className="flex flex-col gap-2">
-            {spots.map((s) => (
-              <SpotCard key={`${s.area.id}-${s.legendary}`} spot={s} onTravel={onTravel} />
-            ))}
-          </ul>
-        )}
+        {spots.length > 0 && <SpotList spots={spots} onTravel={onTravel} />}
         {from.map(({ species, evo }) => {
           const known = pokedex?.includes(species.dex)
           return (
@@ -183,17 +194,36 @@ function MissingEntry({ dex, onOpenDex, onTravel }: { dex: number; onOpenDex?: (
           )
         })}
         {spots.length === 0 && from.length === 0 && <p className="copy text-muted">{t('ui.dex.notSpotted')}</p>}
-        {runName && canTravelSomewhere && <p className="copy text-muted">{t('ui.dex.exploringHint', { area: runName })}</p>}
+        {travelHint && <p className="copy text-muted">{t('ui.dex.exploringHint', { area: travelHint })}</p>}
       </section>
     </div>
   )
 }
 
-/** A Pokédex entry: the full sheet once caught, otherwise where to find it. */
+/** A caught species' spots, under its sheet — so the player can go back for another (or a shiny). */
+function CaughtSpots({ dex, onTravel }: { dex: number; onTravel?: () => void }) {
+  const { t } = useT()
+  const { spots, travelHint } = useSpots(dex)
+  // Evolved-only species: the sheet's evolution track already says where they come from.
+  if (spots.length === 0) return null
+  return (
+    <section className="flex flex-col gap-2">
+      <h3 className="text-xl">{t('ui.dex.whereToFindHeading')}</h3>
+      <SpotList spots={spots} onTravel={onTravel} />
+      {travelHint && <p className="copy text-muted">{t('ui.dex.exploringHint', { area: travelHint })}</p>}
+    </section>
+  )
+}
+
+/** A Pokédex entry: the full sheet (and where to find it) once caught, otherwise just where to find it. */
 export function DexEntry({ dex, onOpenDex, onTravel }: { dex: number; onOpenDex?: (dex: number) => void; onTravel?: () => void }) {
   const save = useGame((s) => s.save)
   if (!save) return null
   if (!save.pokedex.includes(dex)) return <MissingEntry dex={dex} onOpenDex={onOpenDex} onTravel={onTravel} />
   const best = save.box.filter((p) => p.dex === dex).sort((a, b) => b.level - a.level)[0]
-  return <PokemonSheet dex={dex} inst={best} onOpenDex={onOpenDex} />
+  return (
+    <PokemonSheet dex={dex} inst={best} onOpenDex={onOpenDex}>
+      <CaughtSpots dex={dex} onTravel={onTravel} />
+    </PokemonSheet>
+  )
 }
