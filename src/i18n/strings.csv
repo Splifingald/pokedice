@@ -1639,6 +1639,10 @@ ui.map.legendary,Legendary,Légendaire,Legendario,Legendär
 ui.map.legendaryAwaits,A legendary awaits,Un légendaire attend,Un legendario espera,Ein Legendäres wartet
 ui.map.locked,LOCKED,VERROUILLÉ,BLOQUEADO,GESPERRT
 ui.map.enter,ENTER,ENTRER,ENTRAR,BETRETEN
+ui.map.seePokemon,See the Pokémon of {area},Voir les Pokémon de {area},Ver los Pokémon de {area},Die Pokémon von {area} ansehen
+ui.areaDex.none,No wild Pokémon here: only trainers.,Aucun Pokémon sauvage ici : que des Dresseurs.,Aquí no hay Pokémon salvajes: solo Entrenadores.,Hier gibt es keine wilden Pokémon: nur Trainer.
+ui.areaDex.legendary,legendary,légendaire,legendario,legendär
+ui.areaDex.fossil,fossil,fossile,fósil,Fossil
 ui.map.dayCare,Pokémon Day Care,Pension Pokémon,Guardería Pokémon,Pokémon-Pension
 ui.map.dayCareStaying,{count}/{slots} staying,{count}/{slots} en pension,{count}/{slots} alojados,{count}/{slots} untergebracht
 ui.map.dayCareReady, · {count} ready to pick up, · {count} à récupérer, · {count} listos para recoger, · {count} zum Abholen bereit

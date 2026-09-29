@@ -24,6 +24,7 @@ import { conditionLabel } from '@/i18n/text'
 import { AreaTypes } from '@/components/AreaTypes'
 import { BadgeIcon } from '@/components/BadgeIcon'
 import { RoundsCounter } from '@/components/RoundsCounter'
+import { SheetModal } from '@/components/SheetModal'
 import { PixelIcon } from '@/components/icons'
 import { PixelButton } from '@/components/PixelButton'
 import { MiniSprite } from '@/components/SpriteImg'
@@ -79,10 +80,17 @@ function AreaCard({ area, index, prevName, delay = 0 }: { area: Area; index: num
   const caught = species.filter((d) => save.pokedex.includes(d)).length
   const complete = species.length > 0 && caught === species.length
   const exploring = runArea === area.id
+  // Tapping the card anywhere but ENTER opens the area's Pokémon, Pokédex-style.
+  const [dexOpen, setDexOpen] = useState(false)
   return (
     <motion.li
+      onClick={(e) => {
+        // Clicks inside the (portalled) modal bubble here too: only the card's own surface counts.
+        const target = e.target as HTMLElement
+        if (e.currentTarget.contains(target) && !target.closest('button, a')) setDexOpen(true)
+      }}
       className={cx(
-        'pixel-panel overflow-hidden p-0',
+        'pixel-panel cursor-pointer overflow-hidden p-0',
         !unlocked && 'grayscale',
         complete && 'outline outline-[3px] outline-offset-2 outline-hp-green',
       )}
@@ -112,7 +120,18 @@ function AreaCard({ area, index, prevName, delay = 0 }: { area: Area; index: num
         {/* On a phone the details take the full width and ENTER drops below them. */}
         <div className="min-w-0 flex-1 basis-[17rem]">
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-            <h2 className="min-w-0 break-words text-3xl leading-none">{area.name}</h2>
+            <h2 className="min-w-0 break-words text-3xl leading-none">
+              {/* The keyboard's way into the list a tap anywhere on the card opens. */}
+              <button
+                type="button"
+                onClick={() => setDexOpen(true)}
+                title={t('ui.map.seePokemon', { area: area.name })}
+                aria-haspopup="dialog"
+                className="min-h-[44px] text-left hover:underline"
+              >
+                {area.name}
+              </button>
+            </h2>
             {current && (
               <span className="shrink-0 border-2 border-ink bg-gold px-1.5 text-lg leading-tight text-ink">{t('ui.map.youAreHere')}</span>
             )}
@@ -164,6 +183,7 @@ function AreaCard({ area, index, prevName, delay = 0 }: { area: Area; index: num
         </PixelButton>
         {unlocked && <RoundsCounter area={area} progress={p} className="w-full" />}
       </div>
+      <SheetModal view={dexOpen ? { kind: 'area', areaId: area.id } : null} onClose={() => setDexOpen(false)} />
     </motion.li>
   )
 }

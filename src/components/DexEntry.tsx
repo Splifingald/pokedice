@@ -110,7 +110,7 @@ export function whereToFindItem(itemKey: string, data: GameData, region: RegionI
   return out.sort(byRoute)
 }
 
-const rarity = (share: number) => t(share >= 0.15 ? 'ui.dex.common' : share >= 0.06 ? 'ui.dex.uncommon' : 'ui.dex.rare')
+export const rarity = (share: number) => t(share >= 0.15 ? 'ui.dex.common' : share >= 0.06 ? 'ui.dex.uncommon' : 'ui.dex.rare')
 
 function SpotCard({ spot, onTravel }: { spot: Spot; onTravel?: () => void }) {
   const { t } = useT()

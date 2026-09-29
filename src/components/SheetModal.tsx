@@ -4,15 +4,16 @@ import { t } from '@/i18n'
 import { useT } from '@/i18n/react'
 import { useGame } from '@/store/game'
 import { sendPokemonOn } from '@/store/regions'
+import { AreaDex } from './AreaDex'
 import { DexEntry } from './DexEntry'
 import { Modal } from './Modal'
 import { PixelButton } from './PixelButton'
 import { PokemonSheet } from './PokemonSheet'
 
-/** What the details modal opens on: one of your Pokémon, or a Pokédex entry. */
-export type SheetView = { kind: 'inst'; id: string } | { kind: 'dex'; dex: number }
+/** What the details modal opens on: one of your Pokémon, a Pokédex entry, or an area's Pokémon. */
+export type SheetView = { kind: 'inst'; id: string } | { kind: 'dex'; dex: number } | { kind: 'area'; areaId: string }
 
-const viewKey = (v: SheetView) => (v.kind === 'inst' ? `i-${v.id}` : `d-${v.dex}`)
+const viewKey = (v: SheetView) => (v.kind === 'inst' ? `i-${v.id}` : v.kind === 'dex' ? `d-${v.dex}` : `a-${v.areaId}`)
 
 /** Pokémon details in a modal. Tapping an evolution opens its Pokédex entry on top, with Back. */
 export function SheetModal({
@@ -54,7 +55,9 @@ function SheetStack({
           {t('ui.sheet.backStack')}
         </button>
       )}
-      {top.kind === 'dex' ? (
+      {top.kind === 'area' ? (
+        <AreaDex areaId={top.areaId} onOpenDex={open} />
+      ) : top.kind === 'dex' ? (
         <DexEntry key={top.dex} dex={top.dex} onOpenDex={open} onTravel={onClose} />
       ) : inst ? (
         <PokemonSheet dex={inst.dex} inst={inst} onOpenDex={open}>
