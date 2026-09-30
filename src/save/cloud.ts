@@ -31,14 +31,32 @@ export function pickNewest(local: SaveData | null, cloud: SaveData | null): { wi
 }
 
 let pushTimer: ReturnType<typeof setTimeout> | null = null
+let pending: (() => Promise<void>) | null = null
+/** Pushes run one after another, so an older save can never land after a newer one. */
+let pushing: Promise<void> = Promise.resolve()
 
-/** Debounced (2 s) push after any save mutation. */
-export function schedulePush(run: () => Promise<void>, delay = 2000) {
+/**
+ * Push after any save mutation: at most once per 30 s, carrying the latest save — not a debounce, which non-stop play
+ * would keep putting off. The tab going hidden pushes right away (flushPush); the local save is always current.
+ */
+export function schedulePush(run: () => Promise<void>, delay = 30_000) {
+  pending = run
+  if (!pushTimer) pushTimer = setTimeout(flushPush, delay)
+}
+
+/** Push the waiting save now, if there is one. */
+export function flushPush() {
+  const run = pending
+  cancelPush()
+  if (!run) return
+  pushing = pushing.then(run).catch((err) => console.warn('[cloud] push failed', err))
+}
+
+/** Forget the waiting push: the caller is pushing the latest save itself. */
+export function cancelPush() {
   if (pushTimer) clearTimeout(pushTimer)
-  pushTimer = setTimeout(() => {
-    pushTimer = null
-    run().catch((err) => console.warn('[cloud] push failed', err))
-  }, delay)
+  pushTimer = null
+  pending = null
 }
 
 /**

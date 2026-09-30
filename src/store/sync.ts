@@ -3,7 +3,15 @@ import type { Session, SupabaseClient } from '@supabase/supabase-js'
 import { startAnalytics, trackLogin } from '@/analytics/track'
 import { fetchContentUpdate } from '@/config/remote'
 import { getSupabase } from '@/lib/supabase'
-import { decideSync, pullCloudSave, pushCloudSave, sameSave, schedulePush } from '@/save/cloud'
+import {
+  cancelPush,
+  decideSync,
+  flushPush,
+  pullCloudSave,
+  pushCloudSave,
+  sameSave,
+  schedulePush,
+} from '@/save/cloud'
 import { backupSave, flushWrite } from '@/save/storage'
 import { commitSave, initialRun, onSaveCommitted, pushToast, setContent, tickFossils, useGame } from './game'
 import { t } from '@/i18n'
@@ -105,13 +113,14 @@ export async function initAuth() {
 }
 
 /**
- * Push the save to the cloud now rather than in 2 s, for what reads the cloud copy right after (a Versus team is built
- * from it). False when there is nothing to push to yet: signed out, or the first sync not settled.
+ * Push the save to the cloud now rather than within 30 s, for what reads the cloud copy right after (a Versus team is
+ * built from it). False when there is nothing to push to yet: signed out, or the first sync not settled.
  */
 export async function pushSaveNow(): Promise<boolean> {
   const client = await getSupabase()
   const { auth, save } = useGame.getState()
   if (!client || !save || !pushAllowed || auth.status !== 'signed_in' || !auth.userId) return false
+  cancelPush()
   await pushCloudSave(client, auth.userId, save)
   return true
 }
@@ -191,11 +200,15 @@ export function startBackgroundServices() {
     if (document.visibilityState === 'visible') checkNewSession()
     tickFossils()
   }, 60_000)
-  window.addEventListener('pagehide', flushWrite)
+  window.addEventListener('pagehide', () => {
+    flushWrite()
+    flushPush()
+  })
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'hidden') {
       lastSeen = Date.now()
       flushWrite()
+      flushPush()
     } else {
       checkNewSession()
       tickFossils()
