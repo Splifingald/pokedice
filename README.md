@@ -7,7 +7,7 @@ upgrades, and the goal is 151/151 in the Pokédex.
 > **Personal, non-commercial fan project.** No monetisation. Pokémon and all related names are trademarks of Nintendo,
 > Game Freak and Creatures. Sprites are *referenced* from the public [PokeAPI sprites](https://github.com/PokeAPI/sprites)
 > repository, never redistributed. Area banners and trainer badges are original, generated pixel art; sound effects are
-> synthesised at runtime.
+> synthesised at runtime. Made by Splifingald.
 
 The design lives in [`docs/`](docs): [game spec](docs/01-GAME-SPEC.md) · [data model](docs/02-DATA-MODEL.md) ·
 [build plan](docs/03-BUILD-PLAN.md) · [Sinnoh plan](docs/07-SINNOH-PLAN.md).
