@@ -1,9 +1,9 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import areas from '@/data/areas.json'
 import items from '@/data/items.json'
 import pokemon from '@/data/pokemon.json'
 import trainers from '@/data/trainers.json'
-import { allKeys, hasKey, LANGS, tableFor, tIn } from '@/i18n'
+import { allKeys, detectLang, hasKey, LANGS, tableFor, tIn } from '@/i18n'
 import { areaKey, itemDescKey, itemKey, pokemonKey, slug, splitTrainerName, trainerClassKey } from '@/i18n/names'
 
 const missing = (keys: string[]) => keys.filter((k) => !hasKey(k))
@@ -45,5 +45,35 @@ describe('the localization sheet', () => {
     expect(tIn('fr', 'pokemon.6')).toBe('Dracaufeu')
     expect(tIn('de', 'ui.common.level.short', { n: 12 })).toContain('12')
     expect(tIn('fr', 'nope.at.all')).toBe('nope.at.all')
+  })
+
+  it('keeps the English Pokémon names in Italian and Portuguese, and translates the rest', () => {
+    for (const lang of ['it', 'pt', 'pt-BR'] as const) expect(tIn(lang, 'pokemon.6')).toBe('Charizard')
+    expect(tIn('it', 'item.potion')).toBe('Pozione')
+    expect(tIn('pt', 'ui.nav.team')).toBe('Equipa')
+    expect(tIn('pt-BR', 'ui.nav.team')).toBe('Equipe')
+  })
+})
+
+describe('detectLang', () => {
+  afterEach(() => vi.unstubAllGlobals())
+  const browser = (...languages: string[]) => vi.stubGlobal('navigator', { languages, language: languages[0] })
+
+  it('picks the regional variant when the sheet has it, else its base language', () => {
+    browser('pt-BR', 'en')
+    expect(detectLang()).toBe('pt-BR')
+    browser('pt-br')
+    expect(detectLang()).toBe('pt-BR')
+    browser('pt-PT')
+    expect(detectLang()).toBe('pt')
+    browser('it-CH')
+    expect(detectLang()).toBe('it')
+  })
+
+  it('skips languages it does not speak, and falls back to English', () => {
+    browser('ja-JP', 'de-AT')
+    expect(detectLang()).toBe('de')
+    browser('ko')
+    expect(detectLang()).toBe('en')
   })
 })

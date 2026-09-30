@@ -1,14 +1,14 @@
 // Localization. The single source of truth is src/i18n/strings.csv — edit that sheet, nothing else.
-// Columns: key,en,fr,es,de. A blank cell falls back to English; an unknown key renders as the key
+// Columns: key, then one per LANGS code (en,fr,es,de,it,pt,pt-BR). A blank cell falls back to English; an unknown key renders as the key
 // itself, which makes a missing row loud instead of invisible.
 import { parseCsv } from './csv'
-import { DEFAULT_LANG, isLang, LANGS, type Lang } from './langs'
+import { DEFAULT_LANG, LANGS, type Lang } from './langs'
 import sheet from './strings.csv?raw'
 
 export { DEFAULT_LANG, isLang, LANG_LABELS, LANGS, type Lang } from './langs'
 
 function build(): Record<Lang, Record<string, string>> {
-  const out = { en: {}, fr: {}, es: {}, de: {} } as Record<Lang, Record<string, string>>
+  const out = Object.fromEntries(LANGS.map((l) => [l, {}])) as Record<Lang, Record<string, string>>
   const rows = parseCsv(sheet)
   const header = (rows[0] ?? []).map((h) => h.trim())
   const cols = LANGS.map((l) => header.indexOf(l))
@@ -27,13 +27,16 @@ function build(): Record<Lang, Record<string, string>> {
 
 const TABLE = build()
 
-/** The browser's preferred language, when we speak it. */
+/** `pt-br` → `pt-BR`, `it` → `it`: a browser tag matched against the shipped codes, ignoring case. */
+const langOf = (tag: string): Lang | undefined => LANGS.find((l) => l.toLowerCase() === tag.toLowerCase())
+
+/** The browser's preferred language, when we speak it: the exact regional variant first (`pt-BR`), then its base (`pt-PT` → `pt`). */
 export function detectLang(): Lang {
   const prefs: readonly string[] =
     typeof navigator === 'undefined' ? [] : (navigator.languages?.length ? navigator.languages : [navigator.language]).filter(Boolean)
   for (const p of prefs) {
-    const base = p.toLowerCase().split('-')[0] ?? ''
-    if (isLang(base)) return base
+    const hit = langOf(p) ?? langOf(p.split('-')[0] ?? '')
+    if (hit) return hit
   }
   return DEFAULT_LANG
 }

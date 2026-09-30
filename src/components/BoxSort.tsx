@@ -43,7 +43,7 @@ export function BoxSortPicker({ sort, onChange }: { sort: BoxSort; onChange: (s:
           type="button"
           aria-pressed={sort === s.id}
           onClick={() => onChange(s.id)}
-          className={cx('pixel-btn min-h-[44px] px-2 text-lg md:min-h-[32px]', sort === s.id ? 'bg-gold' : 'bg-panel')}
+          className={cx('pixel-btn min-h-[44px] min-w-[44px] px-2 text-lg md:min-h-[32px] md:min-w-0', sort === s.id ? 'bg-gold' : 'bg-panel')}
         >
           {t(s.label)}
         </button>

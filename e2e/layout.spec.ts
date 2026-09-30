@@ -3,6 +3,7 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test, type Page } from '@playwright/test'
 import { createInstance, linearAreas, progressOf, type SaveData } from '../src/engine'
+import { LANGS, type Lang } from '../src/i18n/langs'
 import { FAST, gameData, makeSave, mockSupabase } from './helpers'
 
 const data = gameData()
@@ -36,14 +37,15 @@ function midGameSave(): SaveData {
   }
 }
 
-async function boot(page: Page) {
+async function boot(page: Page, lang?: Lang) {
   await mockSupabase(page)
+  const settings = lang ? JSON.stringify({ ...JSON.parse(FAST), lang }) : FAST
   await page.addInitScript(
     ([s, f]) => {
       localStorage.setItem('pokedice.save', s!)
       localStorage.setItem('pokedice.settings', f!)
     },
-    [JSON.stringify(midGameSave()), FAST],
+    [JSON.stringify(midGameSave()), settings],
   )
 }
 
@@ -93,6 +95,23 @@ for (const size of SIZES) {
         const bad = axe.violations.filter((v) => v.impact === 'serious' || v.impact === 'critical')
         expect(bad.map((v) => `${v.id}: ${v.nodes.length} node(s) — ${v.nodes[0]?.target.join(' ')}`), `${route}: axe`).toEqual([])
       }
+    }
+  })
+}
+
+// Translations run longer than the English (Configurações, Potenziamenti…): the smallest phone must hold every one.
+for (const lang of LANGS.filter((l) => l !== 'en')) {
+  test(`every screen fits a 360×640 phone in ${lang}`, async ({ page }) => {
+    await page.setViewportSize({ width: 360, height: 640 })
+    await boot(page, lang)
+    for (const route of ROUTES) {
+      await page.goto(route)
+      await expect(page.getByRole('heading', { level: 1 }).first()).toBeVisible()
+      expect(await page.evaluate(() => document.documentElement.lang)).toBe(lang)
+      const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)
+      expect(overflow, `${route} scrolls sideways`).toBeLessThanOrEqual(0)
+      expect(await nonJerseyText(page), `${route}: fonts`).toEqual([])
+      expect(await smallControls(page), `${route}: controls under 44px`).toEqual([])
     }
   })
 }

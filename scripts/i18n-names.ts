@@ -1,12 +1,16 @@
 /**
  * Refreshes the `pokemon.*` and `item.*` rows of src/i18n/strings.csv from PokeAPI, which is where the
- * official French, Spanish and German names live. Every other row in the sheet is left untouched.
+ * official names live. Every other row in the sheet is left untouched.
  *
  *   pnpm i18n:names
  *
  * The source is PokeAPI's static export on raw.githubusercontent, not pokeapi.co: the live API is unreachable from
  * CI and from the sandbox, and the mirror answers the same JSON under `<endpoint>/index.json`. The mirror keys items
  * by numeric id rather than by name, so `item/index.json` is fetched once and used to look the ids up.
+ *
+ * PokeAPI has no Portuguese names: the games never shipped in Portuguese. Pokémon keep their English names there (as
+ * in Italian), and an item the API has no name for keeps the cell the sheet already has — the Portuguese item names
+ * are written by hand.
  */
 import { readFileSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
@@ -23,13 +27,22 @@ interface NameRow {
   language: { name: string }
 }
 
-async function names(endpoint: string): Promise<Record<string, string>> {
+type Lang = (typeof LANGS)[number]
+
+/** Languages whose official Pokémon names are the English ones. */
+const ENGLISH_SPECIES_NAMES: readonly Lang[] = ['it', 'pt', 'pt-BR']
+
+async function names(endpoint: string): Promise<Partial<Record<Lang, string>>> {
   const url = `${API}/${endpoint}/index.json`
   const res = await fetch(url)
   if (!res.ok) throw new Error(`${url} → ${res.status}`)
   const json = (await res.json()) as { names: NameRow[] }
-  const out: Record<string, string> = {}
-  for (const n of json.names) if ((LANGS as readonly string[]).includes(n.language.name)) out[n.language.name] = n.name
+  const out: Partial<Record<Lang, string>> = {}
+  // PokeAPI writes its codes in lower case (`zh-hans`, `pt-br`); the sheet uses BCP 47 case (`pt-BR`).
+  for (const n of json.names) {
+    const lang = LANGS.find((l) => l.toLowerCase() === n.language.name.toLowerCase())
+    if (lang) out[lang] = n.name
+  }
   return out
 }
 
@@ -37,12 +50,19 @@ const csvCell = (v: string) => (/[",\r\n]/.test(v) ? `"${v.replace(/"/g, '""')}"
 const csvRow = (cells: string[]) => cells.map(csvCell).join(',')
 
 async function main() {
+  const existing = parseCsv(readFileSync(SHEET, 'utf8'))
+  const header = (existing[0] ?? []).map((h) => h.trim())
+  const current = new Map(existing.map((r) => [(r[0] ?? '').trim(), r]))
+  /** What the sheet already says for `key` in `lang` — kept when the API has nothing better. */
+  const cell = (key: string, lang: Lang) => current.get(key)?.[header.indexOf(lang)] ?? ''
+
   const rows = new Map<string, string[]>()
 
   const dexes = [...new Set((pokemon as { dex: number }[]).map((p) => p.dex))].sort((a, b) => a - b)
   for (const dex of dexes) {
     const n = await names(`pokemon-species/${dex}`)
-    rows.set(`pokemon.${dex}`, [`pokemon.${dex}`, ...LANGS.map((l) => n[l] ?? '')])
+    const key = `pokemon.${dex}`
+    rows.set(key, [key, ...LANGS.map((l) => n[l] || (ENGLISH_SPECIES_NAMES.includes(l) ? n.en : '') || cell(key, l))])
     process.stdout.write(`\rpokemon ${dex}/${dexes[dexes.length - 1]}   `)
   }
 
@@ -52,13 +72,13 @@ async function main() {
     const id = itemIds.get(it.key)
     if (!id) throw new Error(`no such item on the mirror: ${it.key}`)
     const n = await names(`item/${id}`)
-    rows.set(`item.${it.key}`, [`item.${it.key}`, ...LANGS.map((l) => n[l] ?? '')])
+    const key = `item.${it.key}`
+    rows.set(key, [key, ...LANGS.map((l) => n[l] || cell(key, l))])
     process.stdout.write(`\ritem ${it.key}            `)
   }
   process.stdout.write('\n')
 
   // Rewrite the managed rows in place; keep the order and every other row of the sheet.
-  const existing = parseCsv(readFileSync(SHEET, 'utf8'))
   const out: string[] = []
   const seen = new Set<string>()
   for (const row of existing) {
