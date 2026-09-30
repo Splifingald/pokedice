@@ -33,6 +33,16 @@ describe('dayOneRetention', () => {
     expect(r).toMatchObject({ cohort: 1, returned: 0, tooFewEvents: 1, rate: 0 })
   })
 
+  it('reads per-day counts, as the database sums them up, like the events they stand for', () => {
+    const days: RetentionEvent[] = [
+      { player: 'a', at: at(10), count: 3 },
+      { player: 'a', at: at(11), count: 1 },
+      { player: 'b', at: at(10), count: 2 },
+      { player: 'b', at: at(11), count: 5 },
+    ]
+    expect(dayOneRetention(days, null, null, NOW)).toMatchObject({ cohort: 1, returned: 1, tooFewEvents: 1 })
+  })
+
   it('uses the first day ever, not the first day inside the frame', () => {
     const veteran = ev('v', at(1), at(1), at(1), at(15), at(15), at(15), at(16))
     expect(dayOneRetention(veteran, at(14, 0), at(18, 0), NOW)).toMatchObject({ cohort: 0, rate: null })

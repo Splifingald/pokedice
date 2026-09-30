@@ -73,6 +73,11 @@ const localDay = (v: string, plusDays = 0) => {
   return new Date(y!, m! - 1, d! + plusDays)
 }
 
+/**
+ * A time frame's events, newest first, a page at a time. Each page carries on from the last row read (created_at, then
+ * id for rows stamped in the same instant) rather than an offset, so a deep page costs as little as the first.
+ * `columns` must include id and created_at.
+ */
 async function fetchEvents(
   from: Date | null,
   to: Date | null,
@@ -84,18 +89,47 @@ async function fetchEvents(
   if (!client) throw new Error('Supabase client unavailable')
   const out: EventRow[] = []
   const page = 1000
-  for (let offset = 0; offset < max; offset += page) {
-    let q = client.from('analytics_events').select(columns).order('created_at', { ascending: false })
+  while (out.length < max) {
+    let q = client
+      .from('analytics_events')
+      .select(columns)
+      .order('created_at', { ascending: false })
+      .order('id', { ascending: false })
     if (from) q = q.gte('created_at', from.toISOString())
     if (to) q = q.lt('created_at', to.toISOString())
     if (kinds.only) q = q.in('kind', [...kinds.only])
     if (kinds.exclude) q = q.not('kind', 'in', `(${kinds.exclude.join(',')})`)
-    const { data, error } = await q.range(offset, offset + page - 1)
+    const last = out[out.length - 1]
+    if (last)
+      q = q.or(`created_at.lt."${last.created_at}",and(created_at.eq."${last.created_at}",id.lt.${last.id})`)
+    const { data, error } = await q.limit(Math.min(page, max - out.length))
     if (error) throw error
     out.push(...((data ?? []) as unknown as EventRow[]))
     if (!data || data.length < page) break
   }
   return out
+}
+
+/** Each player's event count per calendar day (viewer's time zone), all time, summed up by the database. */
+async function fetchPlayerDays(): Promise<RetentionEvent[]> {
+  const client = await getSupabase()
+  if (!client) throw new Error('Supabase client unavailable')
+  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'
+  const { data, error } = await client.rpc('analytics_player_days', { tz })
+  if (error) throw error
+  // Noon of that local day: any instant of the day will do, and noon is safe from DST shifts.
+  return Object.entries((data ?? {}) as Record<string, Record<string, number>>).flatMap(([player, days]) =>
+    Object.entries(days).map(([day, count]) => ({ player, at: new Date(`${day}T12:00`), count })),
+  )
+}
+
+/** Each player's top level and the areas they reached, all time, summed up by the database. */
+async function fetchProgress(): Promise<ProgressEvent[]> {
+  const client = await getSupabase()
+  if (!client) throw new Error('Supabase client unavailable')
+  const { data, error } = await client.rpc('analytics_player_progress')
+  if (error) throw error
+  return (data ?? []) as ProgressEvent[]
 }
 
 function ago(iso: string) {
@@ -411,18 +445,16 @@ export function AnalyticsSection() {
       const f = FRAMES.find((x) => x.id === frame)!
       const from = frame === 'custom' ? localDay(customFrom) : f.ms ? new Date(Date.now() - f.ms) : null
       const to = frame === 'custom' ? localDay(customTo, 1) : null
-      // Retention needs every player's whole history (their first day may predate the frame): who and when only.
+      // Retention needs every player's whole history (their first day may predate the frame): per-day counts only.
       // Playtime and snapshots are background events: out of the feed and of retention.
       // Top level and furthest area are all time, whatever the frame.
       const [events, history, played, progressRows] = await Promise.all([
         fetchEvents(from, to, '*', 20_000, { exclude: SYSTEM_KINDS }),
-        fetchEvents(null, null, 'user_id,device_id,created_at', 200_000, { exclude: SYSTEM_KINDS }),
-        fetchEvents(from, to, 'user_id,device_id,created_at,params', 100_000, { only: ['playtime'] }),
-        fetchEvents(null, null, 'user_id,device_id,created_at,kind,params', 50_000, {
-          only: ['level_up', 'area_unlocked', 'snapshot'],
-        }),
+        fetchPlayerDays(),
+        fetchEvents(from, to, 'id,user_id,device_id,created_at,params', 100_000, { only: ['playtime'] }),
+        fetchProgress(),
       ])
-      setReached(progressRows.map((r) => ({ player: playerKey(r), kind: r.kind, params: r.params })))
+      setReached(progressRows)
       const pt: PlaytimeEvent[] = played.map((r) => ({
         player: playerKey(r),
         at: new Date(r.created_at),
@@ -432,11 +464,7 @@ export function AnalyticsSection() {
       setAvgPlay(averageDailyPlaytime(pt))
       setRange({ from, to })
       setRows(events)
-      const light: RetentionEvent[] = history.map((r) => ({
-        player: playerKey(r),
-        at: new Date(r.created_at),
-      }))
-      setRetention(retentionByDay(light, from, to, [1, ...LATER_DAYS]))
+      setRetention(retentionByDay(history, from, to, [1, ...LATER_DAYS]))
       setStatus('ready')
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err))
@@ -616,7 +644,7 @@ export function AnalyticsSection() {
       {status === 'error' && (
         <div className="pixel-panel p-3 text-lg">
           <p className="text-danger">Could not load analytics: {error}</p>
-          <p>Has supabase/migrations/0006_analytics.sql been run?</p>
+          <p>Have supabase/migrations/0006_analytics.sql and 0020_analytics_summaries.sql been run?</p>
         </div>
       )}
 

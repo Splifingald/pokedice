@@ -7,6 +7,8 @@ export const RETENTION_MIN_FIRST_DAY_EVENTS = 3
 export interface RetentionEvent {
   player: string
   at: Date
+  /** How many events this stands for (a day's count, summed up by the database). Default 1. */
+  count?: number
 }
 
 export interface Retention {
@@ -43,20 +45,21 @@ export function retentionByDay(
   days: readonly number[],
   now: Date = new Date(),
 ): Record<number, Retention> {
-  const byPlayer = new Map<string, Date[]>()
+  const byPlayer = new Map<string, RetentionEvent[]>()
   for (const e of events) {
     const list = byPlayer.get(e.player)
-    if (list) list.push(e.at)
-    else byPlayer.set(e.player, [e.at])
+    if (list) list.push(e)
+    else byPlayer.set(e.player, [e])
   }
   const out: Record<number, Retention> = {}
   for (const day of days) out[day] = { day, cohort: 0, returned: 0, rate: null, tooFewEvents: 0, pending: 0 }
 
-  for (const times of byPlayer.values()) {
+  for (const list of byPlayer.values()) {
+    const times = list.map((e) => e.at)
     const first = dayStart(times.reduce((a, b) => (b < a ? b : a)))
     // A player counts in the frame whose first day overlaps it.
     if ((from && addDays(first, 1) <= from) || (to && first >= to)) continue
-    const onFirstDay = times.filter((t) => t < addDays(first, 1)).length
+    const onFirstDay = list.reduce((n, e) => (e.at < addDays(first, 1) ? n + (e.count ?? 1) : n), 0)
     const active = onFirstDay >= RETENTION_MIN_FIRST_DAY_EVENTS
     for (const day of days) {
       const r = out[day]!
