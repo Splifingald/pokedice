@@ -1,5 +1,6 @@
-// Sends analytics events to Supabase in small batches. Never blocks the game: events wait in localStorage while
-// offline (capped), and any failure just retries on the next flush.
+// Sends analytics events to Supabase in batches, a few requests per session. Never blocks the game: events wait in
+// localStorage while offline (capped), and any failure just retries on the next flush — or at the next visit, since the
+// queue survives the page.
 import { getSupabase, isSupabaseConfigured } from '@/lib/supabase'
 import { onSaveCommitted, useGame } from '@/store/game'
 import { diffSaves, snapshotOf, SYSTEM_KINDS, type SystemKind, type TrackedEvent } from './events'
@@ -7,7 +8,14 @@ import { diffSaves, snapshotOf, SYSTEM_KINDS, type SystemKind, type TrackedEvent
 const QUEUE_KEY = 'pokedice.analytics.queue'
 const DEVICE_KEY = 'pokedice.analytics.device'
 const MAX_QUEUED = 500
-const FLUSH_MS = 15_000
+/** A batch goes out on this timer, when the tab is hidden, or early once FLUSH_AT events are waiting. */
+const FLUSH_MS = 5 * 60_000
+const FLUSH_AT = 100
+const BATCH = 200
+/** The early sends (tab hidden, queue full) wait at least this long after the previous attempt, failed or not. */
+const MIN_GAP_MS = 60_000
+/** The first send waits for the login and first snapshot, so they go out with last visit's leftovers in one request. */
+const FIRST_FLUSH_MS = 30_000
 
 interface QueuedRow {
   created_at: string
@@ -73,13 +81,17 @@ export function track(events: TrackedEvent[]) {
   }
   queue = [...queue, ...events.map((e) => ({ ...base, kind: e.kind, params: e.params }))].slice(-MAX_QUEUED)
   persistQueue()
+  if (queue.length >= FLUSH_AT) void flushAnalytics(MIN_GAP_MS)
 }
 
 let flushing = false
-export async function flushAnalytics() {
-  if (flushing || !queue.length) return
+let lastFlush = 0
+/** Sends the oldest batch, unless the previous attempt was less than `gap` ms ago. */
+export async function flushAnalytics(gap = 0) {
+  if (flushing || !queue.length || Date.now() - lastFlush < gap) return
   flushing = true
-  const batch = queue.slice(0, 100)
+  lastFlush = Date.now()
+  const batch = queue.slice(0, BATCH)
   try {
     const client = await getSupabase()
     if (!client) return
@@ -102,12 +114,11 @@ export async function flushAnalytics() {
 }
 
 let loggedInAs: string | null = null
-/** One "login" per page load per account (called by the auth flow). */
+/** One "login" per page load per account (called by the auth flow). It rides the next batch. */
 export function trackLogin(userId: string) {
   if (loggedInAs === userId) return
   loggedInAs = userId
   track([{ kind: 'login', params: { method: 'session' } }])
-  void flushAnalytics()
 }
 
 // ---------------------------------------------------------------- playtime & snapshots
@@ -167,8 +178,8 @@ export function startAnalytics() {
     if (document.visibilityState !== 'hidden') return
     sendPlaytime()
     sendSnapshot()
-    void flushAnalytics()
+    void flushAnalytics(MIN_GAP_MS)
   })
   startPlaytime()
-  void flushAnalytics()
+  setTimeout(() => void flushAnalytics(), FIRST_FLUSH_MS)
 }
