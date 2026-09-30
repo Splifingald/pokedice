@@ -35,7 +35,7 @@ const store = (): Storage | null => {
   }
 }
 
-function deviceId(): string {
+export function deviceId(): string {
   const ls = store()
   let id = ls?.getItem(DEVICE_KEY) ?? null
   if (!id) {

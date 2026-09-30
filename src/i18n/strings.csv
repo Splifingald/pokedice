@@ -1468,6 +1468,16 @@ ui.profile.guide,How to play,Comment jouer,Cómo jugar,Spielanleitung
 ui.profile.badgeCase,Badge case,Boîte à badges,Estuche de medallas,Ordensetui
 ui.profile.badgeLocked,{badge} — not earned yet,{badge} — pas encore gagné,{badge}: aún no conseguida,{badge} — noch nicht verdient
 ui.profile.crownHint,The crown is for clearing the region's last area.,La couronne récompense la dernière zone de la région.,La corona es por completar la última zona de la región.,Die Krone gibt es für das letzte Gebiet der Region.
+ui.contact.button,Contact the developer,Contacter le développeur,Contactar al desarrollador,Entwickler kontaktieren
+ui.contact.title,Contact the developer,Contacter le développeur,Contactar al desarrollador,Entwickler kontaktieren
+ui.contact.warning,"This project was built by a solo developer and is free, there is no customer support but I accept all feedback and ideas","Ce projet a été créé par un développeur seul et il est gratuit, il n'y a pas de service client mais j'accepte tous les retours et toutes les idées","Este proyecto lo ha creado un desarrollador en solitario y es gratuito, no hay atención al cliente pero acepto todos los comentarios e ideas","Dieses Projekt wurde von einem einzelnen Entwickler gebaut und ist kostenlos, es gibt keinen Kundensupport, aber ich freue mich über jedes Feedback und jede Idee"
+ui.contact.subject,Title,Titre,Título,Titel
+ui.contact.message,Description,Description,Descripción,Beschreibung
+ui.contact.send,SEND,ENVOYER,ENVIAR,SENDEN
+ui.contact.sending,Sending…,Envoi…,Enviando…,Wird gesendet…
+ui.contact.sent,Message sent — thank you!,Message envoyé — merci !,Mensaje enviado. ¡Gracias!,Nachricht gesendet – danke!
+ui.contact.failed,"Couldn't send the message. Check your connection and try again.","Impossible d'envoyer le message. Vérifie ta connexion et réessaie.","No se pudo enviar el mensaje. Revisa tu conexión y vuelve a intentarlo.","Die Nachricht konnte nicht gesendet werden. Prüfe deine Verbindung und versuche es erneut."
+ui.contact.rateLimited,"You've sent a few messages just now. Please wait a few minutes before sending another.","Tu viens d'envoyer plusieurs messages. Attends quelques minutes avant d'en envoyer un autre.","Acabas de enviar varios mensajes. Espera unos minutos antes de enviar otro.","Du hast gerade mehrere Nachrichten gesendet. Warte ein paar Minuten, bevor du die nächste sendest."
 ui.toast.tooPoor,Not enough Pokédollars,Pas assez de Pokédollars,No tienes suficientes Pokédólares,Nicht genug Pokédollar
 ui.toast.noEffect,It won't have any effect.,Ça n'aurait aucun effet.,No tendría ningún efecto.,Das hätte keine Wirkung.
 ui.toast.grewTo,{name} grew to Lv.{level}!,{name} passe au N.{level} !,¡{name} sube al Nv.{level}!,{name} ist auf Lv.{level} gestiegen!

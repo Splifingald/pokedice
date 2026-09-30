@@ -7,6 +7,7 @@ import { useGame } from '@/store/game'
 import { useInFight, useIsAdmin } from '@/store/hooks'
 import { signInWithGoogle } from '@/store/sync'
 import { cx } from '@/theme/util'
+import { ContactModal } from './ContactModal'
 import { GoogleMark } from './GoogleAccountButton'
 import { PixelIcon, type IconName } from './icons'
 import { Modal } from './Modal'
@@ -47,8 +48,8 @@ function MenuRow({
 
 /**
  * The header's avatar button and everything behind it: the player's profile, the settings screen,
- * the rules, the type chart, the admin (admins only) and the Google connection. Disabled mid-fight,
- * like the rest of the header.
+ * the rules, the type chart, the admin (admins only), the Google connection and, pinned at the bottom, Contact the
+ * developer. Disabled mid-fight, like the rest of the header.
  */
 export function PlayerMenu() {
   const { t } = useT()
@@ -62,6 +63,7 @@ export function PlayerMenu() {
   const [profile, setProfile] = useState(false)
   const [guide, setGuide] = useState(false)
   const [types, setTypes] = useState(false)
+  const [contact, setContact] = useState(false)
 
   const name = playerOf(save).name
   // Versus shows from the start, with how far the player is from opening it (3 Pokémon at Lv.50).
@@ -98,9 +100,22 @@ export function PlayerMenu() {
         onClose={() => setOpen(false)}
         title={name || t('ui.profile.title')}
         footer={
-          !isSupabaseConfigured || auth.status === 'unavailable' ? (
-            <p className="copy text-sm text-muted">{t('ui.nav.saveInBrowser')}</p>
-          ) : undefined
+          <div className="flex flex-col gap-2">
+            {(!isSupabaseConfigured || auth.status === 'unavailable') && (
+              <p className="copy text-sm text-muted">{t('ui.nav.saveInBrowser')}</p>
+            )}
+            {/* Messages go to Supabase, so a deployment without it has no one to send them to. */}
+            {isSupabaseConfigured && (
+              <MenuRow
+                icon="mail"
+                label={t('ui.contact.button')}
+                onClick={() => {
+                  setOpen(false)
+                  setContact(true)
+                }}
+              />
+            )}
+          </div>
         }
       >
         <nav aria-label={t('ui.profile.menuLabel')} className="flex flex-col gap-2.5">
@@ -150,6 +165,8 @@ export function PlayerMenu() {
       </SidePanel>
 
       <PlayerProfileModal open={profile} onClose={() => setProfile(false)} />
+
+      <ContactModal open={contact} onClose={() => setContact(false)} />
 
       <Modal open={guide} onClose={() => setGuide(false)} title={t('ui.settings.howToPlay')} className="max-w-3xl">
         <Suspense fallback={<p className="text-xl">{t('ui.common.loading')}</p>}>

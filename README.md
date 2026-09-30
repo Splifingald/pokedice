@@ -97,5 +97,9 @@ supabase/    migrations/0001_init.sql, seed.sql (generated)
   *before* it plays, so leaving halfway changes nothing. A team can be beaten once per attacker (retries until then);
   changing it opens it to everyone again. Two boards: teams beaten in attack, and opponents held off in defense (each
   attacker once per team). Needs `supabase/migrations/0018_versus.sql` run once on the live database.
+- **Contact the developer** — trainer menu (side panel) → Contact the developer, at the bottom: a title and a description, stored
+  in Supabase table `feedback` and read in Admin → Messages (mark read / unread, delete). The database fills in who
+  sent it (Google account or guest device) and allows 3 messages per player per 10 minutes. Needs
+  `supabase/migrations/0019_feedback.sql` run once on the live database.
 - `allowVoluntarySwitch`, `enemyUpgradeLevel`, `goldMultiplier`, `forcedCenterWhenHurt` and `scaleLevelSpread` are
   `game_config` keys (the spec was silent on these).

@@ -12,6 +12,7 @@ import { AnalyticsSection } from './sections/AnalyticsSection'
 import { AreasSection } from './sections/AreasSection'
 import { ConfigSection } from './sections/ConfigSection'
 import { DevToolsSection } from './sections/DevToolsSection'
+import { MessagesSection } from './sections/MessagesSection'
 import { PullRemoteButton } from './PullRemoteButton'
 import { PokemonSection } from './sections/PokemonSection'
 import { SimulatorSection } from './sections/SimulatorSection'
@@ -29,6 +30,7 @@ const SECTIONS: { id: string; label: string; C: ComponentType }[] = [
   { id: 'config', label: 'Config', C: ConfigSection },
   { id: 'simulator', label: 'Simulator', C: SimulatorSection },
   { id: 'analytics', label: 'Analytics', C: AnalyticsSection },
+  { id: 'messages', label: 'Messages', C: MessagesSection },
   { id: 'devtools', label: 'Dev Tools', C: DevToolsSection },
 ]
 
