@@ -132,6 +132,14 @@ async function fetchProgress(): Promise<ProgressEvent[]> {
   return (data ?? []) as ProgressEvent[]
 }
 
+/** Supabase errors are plain objects, not Errors: without this they print as "[object Object]". */
+const errorText = (err: unknown) =>
+  err instanceof Error
+    ? err.message
+    : err && typeof err === 'object' && 'message' in err
+      ? String((err as { message: unknown }).message)
+      : String(err)
+
 function ago(iso: string) {
   const s = (Date.now() - new Date(iso).getTime()) / 1000
   if (s < 60) return 'just now'
@@ -432,6 +440,8 @@ export function AnalyticsSection() {
   const [range, setRange] = useState<{ from: Date | null; to: Date | null }>({ from: null, to: null })
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading')
   const [error, setError] = useState<string | null>(null)
+  /** Retention, top level and furthest area failed (e.g. 0020 not run yet): the rest still shows. */
+  const [summaryError, setSummaryError] = useState<string | null>(null)
   const [player, setPlayer] = useState<string>('all')
   const [kinds, setKinds] = useState<Set<AnalyticsKind>>(() => new Set(ANALYTICS_KINDS))
   const [shown, setShown] = useState(200)
@@ -441,6 +451,7 @@ export function AnalyticsSection() {
   const load = useCallback(async () => {
     setStatus('loading')
     setError(null)
+    setSummaryError(null)
     try {
       const f = FRAMES.find((x) => x.id === frame)!
       const from = frame === 'custom' ? localDay(customFrom) : f.ms ? new Date(Date.now() - f.ms) : null
@@ -448,13 +459,16 @@ export function AnalyticsSection() {
       // Retention needs every player's whole history (their first day may predate the frame): per-day counts only.
       // Playtime and snapshots are background events: out of the feed and of retention.
       // Top level and furthest area are all time, whatever the frame.
-      const [events, history, played, progressRows] = await Promise.all([
+      // Those two come from database functions: if they fail, the frame's events still show.
+      const summaries = Promise.all([fetchPlayerDays(), fetchProgress()]).then(
+        (ok) => ({ ok }),
+        (err: unknown) => ({ err }),
+      )
+      const [events, played] = await Promise.all([
         fetchEvents(from, to, '*', 20_000, { exclude: SYSTEM_KINDS }),
-        fetchPlayerDays(),
         fetchEvents(from, to, 'id,user_id,device_id,created_at,params', 100_000, { only: ['playtime'] }),
-        fetchProgress(),
       ])
-      setReached(progressRows)
+      const sum = await summaries
       const pt: PlaytimeEvent[] = played.map((r) => ({
         player: playerKey(r),
         at: new Date(r.created_at),
@@ -464,10 +478,18 @@ export function AnalyticsSection() {
       setAvgPlay(averageDailyPlaytime(pt))
       setRange({ from, to })
       setRows(events)
-      setRetention(retentionByDay(history, from, to, [1, ...LATER_DAYS]))
+      if ('ok' in sum) {
+        const [history, progressRows] = sum.ok
+        setReached(progressRows)
+        setRetention(retentionByDay(history, from, to, [1, ...LATER_DAYS]))
+      } else {
+        setReached([])
+        setRetention(null)
+        setSummaryError(errorText(sum.err))
+      }
       setStatus('ready')
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err))
+      setError(errorText(err))
       setStatus('error')
     }
   }, [frame, customFrom, customTo])
@@ -644,7 +666,16 @@ export function AnalyticsSection() {
       {status === 'error' && (
         <div className="pixel-panel p-3 text-lg">
           <p className="text-danger">Could not load analytics: {error}</p>
-          <p>Have supabase/migrations/0006_analytics.sql and 0020_analytics_summaries.sql been run?</p>
+          <p>Has supabase/migrations/0006_analytics.sql been run?</p>
+        </div>
+      )}
+
+      {status === 'ready' && summaryError && (
+        <div className="pixel-panel p-3 text-lg">
+          <p className="text-danger">
+            Could not load retention, top levels and furthest areas: {summaryError}
+          </p>
+          <p>Has supabase/migrations/0020_analytics_summaries.sql been run?</p>
         </div>
       )}
 
