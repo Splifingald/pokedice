@@ -50,6 +50,9 @@ const KIND: Record<AnalyticsKind, { label: string; icon: IconName; color: string
 }
 
 const FRAMES = [
+  { id: '1h', label: '1 h', ms: 36e5 },
+  { id: '6h', label: '6 h', ms: 6 * 36e5 },
+  { id: '12h', label: '12 h', ms: 12 * 36e5 },
   { id: '24h', label: '24 h', ms: 864e5 },
   { id: '7d', label: '7 days', ms: 7 * 864e5 },
   { id: '30d', label: '30 days', ms: 30 * 864e5 },
