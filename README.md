@@ -123,5 +123,10 @@ supabase/    migrations/0001_init.sql, seed.sql (generated)
   database, from running totals kept up to date as events come in, so the page stays quick however many events pile
   up. Needs `supabase/migrations/0020_analytics_summaries.sql` then `0021_analytics_rollups.sql` run once on the live
   database.
+- **Database load** — the leaderboard is kept in a small cache table, rebuilt at most once a minute, instead of reading
+  every active save on every visit (your own rows are still live), and the analytics running totals are updated once
+  per batch of events rather than once per event. Needs `supabase/migrations/0026_lighter_load.sql` run once on the
+  live database, after 0021 (re-running `supabase/seed.sql` brings the leaderboard part too). Re-running 0021 would
+  put the per-event trigger back: run 0026 again after it.
 - `allowVoluntarySwitch`, `enemyUpgradeLevel`, `goldMultiplier`, `forcedCenterWhenHurt` and `scaleLevelSpread` are
   `game_config` keys (the spec was silent on these).

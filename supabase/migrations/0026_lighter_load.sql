@@ -1,38 +1,17 @@
--- Regions: Kanto, Johto, Hoenn. A region is a self-contained run — its own chain of areas, its own starters, its own
--- Pokédex page and its own leaderboard — and the player keeps only their character when they move on.
-
-create table if not exists regions (
-  id text primary key,                 -- 'kanto', 'johto', 'hoenn'
-  name text not null,
-  order_index int not null unique,
-  dex_range jsonb not null,            -- [1, 151]: the generation this region's page is about
-  starters jsonb not null,             -- [1, 4, 7]
-  starter_level int not null default 5,
-  league_area_id uuid not null,        -- clearing this area is "the league is done" (a soft link to areas.id)
-  -- Soft links, deliberately not foreign keys: admin saves regions row by row, and a half-finished chain (Johto
-  -- pointing at a Hoenn that is not written yet) must not be rejected. The client tolerates a dangling id.
-  next_region text,
-  -- Off = the region is invisible everywhere: no prompt, no switcher, no Pokédex page, no board. Kanto is always on.
-  enabled boolean not null default true
-);
-
-alter table regions enable row level security;
-drop policy if exists regions_read on regions;
-drop policy if exists regions_write on regions;
-create policy regions_read on regions for select using (true);
-create policy regions_write on regions for all using (is_admin()) with check (is_admin());
-
--- Which region's chain an area belongs to. Existing rows are Kanto, which is what they have always been.
-alter table areas add column if not exists region_id text not null default 'kanto';
-create index if not exists areas_region_idx on areas (region_id, order_index);
-
--- ---------------------------------------------------------------- leaderboard, one row per region played
+-- Lighter load on the database (the Nano instance stalled on 2026-10-01: CPU tripled the day 0021–0024 went in).
 --
--- Replaces 0011's leaderboard(): a save now holds the live region at its top level and the others under `parked`,
--- so a player who has played several regions appears once per region, and each board ranks only its own.
--- Later rules are kept here too, so re-running this file never brings an older board back: inactive players drop off
--- (0023), a region's row needs a badge (0024), and the board is cached and rebuilt at most once a minute (0026).
-drop function if exists leaderboard();
+-- 1. leaderboard() no longer reads every active save on every call. The board is kept in leaderboard_cache, rebuilt
+--    at most once a minute by whichever call finds it stale (the others read the previous copy meanwhile); only the
+--    caller's own rows are worked out live, so a player always sees themselves up to date. Same columns, same rules
+--    (bans, 72 hours of inactivity from 0023, a badge in the region from 0024).
+-- 2. The analytics rollup (0021) runs once per insert statement instead of once per event: the game sends events in
+--    batches of up to 200, which now cost one upsert per player and hour rather than two per event.
+-- 3. saves(updated_at) is indexed, so the leaderboard reads only the saves played in the last 72 hours.
+--
+-- 0016_regions.sql carries the same leaderboard() pieces, so re-running supabase/seed.sql (which inlines 0016) keeps
+-- them. Safe to run again.
+
+-- ---------------------------------------------------------------- leaderboard
 
 create index if not exists saves_updated_at on saves (updated_at desc);
 
@@ -187,3 +166,40 @@ revoke all on function leaderboard_rows(timestamptz, uuid) from public, anon, au
 revoke all on function leaderboard_refresh() from public, anon, authenticated;
 revoke all on function leaderboard() from public;
 grant execute on function leaderboard() to anon, authenticated;
+
+-- ---------------------------------------------------------------- analytics rollup, per batch
+
+-- Same totals as 0021's per-event analytics_rollup(), folded over every event of one insert.
+create or replace function analytics_rollup_batch() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  insert into analytics_player_hours as h (player, hour, events)
+  select coalesce(n.user_id::text, 'device:' || n.device_id), date_trunc('hour', n.created_at, 'UTC'), count(*)
+  from new_events n
+  where n.kind not in ('playtime', 'snapshot')
+  group by 1, 2
+  on conflict (player, hour) do update set events = h.events + excluded.events;
+
+  insert into analytics_player_reach as r (player, top_level, areas)
+  select e.player, coalesce(max(e.lvl), 0), coalesce(array_agg(distinct e.area) filter (where e.area is not null), '{}')
+  from (
+    select coalesce(n.user_id::text, 'device:' || n.device_id) as player,
+           analytics_event_level(n.kind, n.params) as lvl,
+           case when n.kind <> 'level_up' then n.params ->> 'areaId' end as area
+    from new_events n
+    where n.kind in ('level_up', 'area_unlocked', 'snapshot')
+  ) e
+  where e.lvl is not null or e.area is not null
+  group by e.player
+  on conflict (player) do update set
+    top_level = greatest(r.top_level, excluded.top_level),
+    areas = r.areas || array(select a from unnest(excluded.areas) a where a <> all(r.areas));
+  return null;
+end
+$$;
+
+drop trigger if exists analytics_rollup on analytics_events;
+create trigger analytics_rollup after insert on analytics_events
+  referencing new table as new_events
+  for each statement execute function analytics_rollup_batch();
+drop function if exists analytics_rollup();
