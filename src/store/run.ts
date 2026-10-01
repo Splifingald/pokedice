@@ -30,6 +30,7 @@ import {
   enemyUpgradeLevelFor,
   hasAbleTeam,
   hasFaintedMember,
+  isAreaClosed,
   isAreaUnlocked,
   isTeamHurt,
   newSave,
@@ -83,7 +84,7 @@ export function deleteSave() {
 
 export function enterArea(areaId: string): boolean {
   const { save, data } = useGame.getState()
-  if (!save || !isAreaUnlocked(save, areaId, data)) return false
+  if (!save || !isAreaUnlocked(save, areaId, data) || isAreaClosed(save, areaId, data)) return false
   if (save.currentAreaId !== areaId) commitSave({ ...save, currentAreaId: areaId })
   useGame.setState({ run: { ...initialRun(), areaId, firstInArea: true, forceNext: useGame.getState().run.forceNext }, battle: null })
   return true

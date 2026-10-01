@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   badgeCase,
+  isAreaClosed,
   isAreaUnlocked,
   progressOf,
   regionOf,
@@ -122,6 +123,7 @@ function SpotCard({ spot, onTravel }: { spot: Spot; onTravel?: () => void }) {
   const { area } = spot
   const unlocked = isAreaUnlocked(save, area.id, data)
   const secret = area.hidden && !unlocked
+  const closed = unlocked && isAreaClosed(save, area.id, data)
   const levels = area.scalesToTeam && !spot.fossil
     ? t('ui.dex.scaling')
     : spot.minLevel === spot.maxLevel
@@ -149,12 +151,13 @@ function SpotCard({ spot, onTravel }: { spot: Spot; onTravel?: () => void }) {
                 ? t('ui.dex.legendarySpot', { levels })
                 : t('ui.dex.wildSpot', { levels, rarity: rarity(spot.share) })}
             {!unlocked && t('ui.dex.lockedSuffix')}
+            {closed && t('ui.dex.closedSuffix')}
           </div>
         </div>
         {unlocked && runArea === area.id && (
           <span className="border-2 border-ink bg-gold px-1.5 text-base leading-tight text-ink">{t('ui.dex.youAreHere')}</span>
         )}
-        {unlocked && !runArea && (
+        {unlocked && !closed && !runArea && (
           <PixelButton
             size="sm"
             variant="primary"

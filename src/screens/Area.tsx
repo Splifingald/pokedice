@@ -8,6 +8,7 @@ import {
   gymsFor,
   playerSideOf,
   instanceMaxHp,
+  isAreaClosed,
   isAreaUnlocked,
   progressOf,
   scaledLevelSpan,
@@ -309,7 +310,8 @@ export function AreaScreen() {
 
   // Arriving without an active run (reload, HUD link): resume the save's current area.
   useEffect(() => {
-    if (!run.areaId && save && isAreaUnlocked(save, save.currentAreaId, data)) enterArea(save.currentAreaId)
+    if (!run.areaId && save && isAreaUnlocked(save, save.currentAreaId, data) && !isAreaClosed(save, save.currentAreaId, data))
+      enterArea(save.currentAreaId)
   }, [run.areaId, save, data])
 
   const area = data.areas.find((a) => a.id === (run.areaId ?? save?.currentAreaId))
@@ -319,6 +321,9 @@ export function AreaScreen() {
 
   if (!save) return <Navigate to="/" replace />
   if (!area) return <Navigate to="/map" replace />
+  // A closed area can't be resumed; one that closed while the player was in it shows them the way out.
+  const closed = isAreaClosed(save, area.id, data)
+  if (closed && !run.areaId) return <Navigate to="/map" replace />
   if (battle) return <BattleView key={battle.id} battle={battle} />
 
   const progress = progressOf(save, area.id)
@@ -342,7 +347,9 @@ export function AreaScreen() {
               ? t('ui.area.gymReady', { trainer: trainerTitle(gym) })
               : boss
                 ? t('ui.area.bossWaiting')
-                : t(run.firstInArea ? 'ui.area.quiet' : 'ui.area.whereNext')}
+                : closed
+                  ? t('ui.area.nothingLeft')
+                  : t(run.firstInArea ? 'ui.area.quiet' : 'ui.area.whereNext')}
           </p>
           <div className="flex flex-wrap justify-center gap-2">
             {/* Finishing the rounds never forces the fight: challenge now, or keep exploring (the rounds stay done). */}
@@ -352,7 +359,7 @@ export function AreaScreen() {
                 {gym ? t('ui.area.challenge', { name: gym.name.toUpperCase() }) : t('ui.area.faceIt')}
               </PixelButton>
             )}
-            <NextEncounterButton secondary={!!(gym || boss)} />
+            {!closed && <NextEncounterButton secondary={!!(gym || boss)} />}
           </div>
           <PixelButton
             size="sm"

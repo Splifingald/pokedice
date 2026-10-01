@@ -1038,6 +1038,7 @@ ui.area.gymReady,Every round done — {trainer} is ready when you are.,Toutes le
 ui.area.bossWaiting,The ground trembles. Something powerful is waiting…,Le sol tremble. Quelque chose de puissant attend…,El suelo tiembla. Algo poderoso espera…,Der Boden bebt. Etwas Mächtiges wartet …,Il terreno trema. Qualcosa di potente ti aspetta…,O chão treme. Algo poderoso está à espera…,O chão treme. Algo poderoso está esperando…,地面がゆれている。何か強大なものが待ち受けている…,땅이 흔들린다. 무언가 강력한 것이 기다리고 있다…,大地在颤抖。有什么强大的东西在等待着…
 ui.area.quiet,The path ahead is quiet. For now.,Le chemin est calme. Pour l'instant.,El camino está tranquilo. Por ahora.,Der Weg ist ruhig. Vorerst.,Il sentiero davanti è tranquillo. Per ora.,O caminho à frente está calmo. Por agora.,O caminho à frente está calmo. Por enquanto.,この先は静かだ。今のところは。,앞길은 조용하다. 지금은.,前方很安静。暂时如此。
 ui.area.whereNext,Where to next?,On va où maintenant ?,¿Adónde vamos ahora?,Wohin als Nächstes?,Dove si va adesso?,Para onde agora?,Para onde agora?,次はどこへ？,다음은 어디로?,接下来去哪里？
+ui.area.nothingLeft,Nothing left to do here. This place is closed now.,Plus rien à faire ici. Ce lieu est désormais fermé.,Aquí ya no queda nada por hacer. Este lugar está cerrado.,Hier gibt es nichts mehr zu tun. Dieser Ort ist jetzt geschlossen.,Qui non resta più niente da fare. Questo posto ora è chiuso.,Já não há nada para fazer aqui. Este lugar está agora fechado.,Não há mais nada para fazer aqui. Este lugar agora está fechado.,ここでやることはもうない。この場所は閉ざされた。,여기서 할 일은 더 없다. 이곳은 이제 닫혀 있다.,这里已无事可做。此地现已关闭。
 ui.area.challenge,CHALLENGE {name},DÉFIER {name},DESAFIAR A {name},{name} HERAUSFORDERN,SFIDA {name},DESAFIAR {name},DESAFIAR {name},{name}に挑戦,{name}에게 도전,挑战{name}
 ui.area.faceIt,FACE IT,L'AFFRONTER,AFRONTARLO,STELL DICH IHM,AFFRONTALO,ENFRENTAR,ENFRENTAR,立ち向かう,맞선다,迎战
 ui.area.backToMap,BACK TO MAP,RETOUR À LA CARTE,VOLVER AL MAPA,ZURÜCK ZUR KARTE,TORNA ALLA MAPPA,VOLTAR AO MAPA,VOLTAR AO MAPA,マップに戻る,지도로 돌아가기,返回地图
@@ -1463,6 +1464,7 @@ ui.dex.common,common,commun,común,häufig,comune,comum,comum,よく出る,흔�
 ui.dex.uncommon,uncommon,peu commun,poco común,selten,non comune,incomum,pouco comum,ときどき,가끔,少见
 ui.dex.rare,rare,rare,raro,sehr selten,raro,raro,raro,めずらしい,드묾,稀有
 ui.dex.lockedSuffix, · locked, · verrouillée, · bloqueada, · gesperrt, · bloccata, · bloqueada, · bloqueada, ・未開放, · 잠김, · 未开放
+ui.dex.closedSuffix, · closed, · fermée, · cerrada, · geschlossen, · chiusa, · fechada, · fechada, ・閉鎖, · 닫힌 곳, · 已关闭
 ui.dex.youAreHere,you are here,tu es ici,estás aquí,du bist hier,sei qui,estás aqui,você está aqui,現在地,현재 위치,你在这里
 ui.dex.goThere,GO THERE,S'Y RENDRE,IR ALLÍ,DORTHIN,VAI LÌ,IR PARA LÁ,IR PARA LÁ,行く,가기,前往
 ui.dex.notCaught,Not caught yet.,Pas encore capturé.,Aún no capturado.,Noch nicht gefangen.,Non ancora catturato.,Ainda não capturado.,Ainda não capturado.,まだ捕まえていない。,아직 잡지 않았다.,还没有收服。
@@ -1747,6 +1749,7 @@ ui.map.endless," · endless, foes scale to your team"," · sans fin, les adversa
 ui.map.legendary,Legendary,Légendaire,Legendario,Legendär,Leggendario,Lendário,Lendário,伝説,전설,传说
 ui.map.legendaryAwaits,A legendary awaits,Un légendaire attend,Un legendario espera,Ein Legendäres wartet,Un leggendario ti aspetta,Um lendário espera por ti,Um lendário espera por você,伝説のポケモンが待っている,전설의 포켓몬이 기다린다,传说的宝可梦在等待
 ui.map.locked,LOCKED,VERROUILLÉ,BLOQUEADO,GESPERRT,BLOCCATA,BLOQUEADA,BLOQUEADA,未開放,잠김,未开放
+ui.map.closed,CLOSED,FERMÉ,CERRADO,GESCHLOSSEN,CHIUSA,FECHADA,FECHADA,閉鎖,닫힌 곳,已关闭
 ui.map.enter,ENTER,ENTRER,ENTRAR,BETRETEN,ENTRA,ENTRAR,ENTRAR,入る,들어가기,进入
 ui.map.seePokemon,See the Pokémon of {area},Voir les Pokémon de {area},Ver los Pokémon de {area},Die Pokémon von {area} ansehen,Vedi i Pokémon di {area},Ver os Pokémon de {area},Ver os Pokémon de {area},{area}のポケモンを見る,{area}의 포켓몬 보기,查看{area}的宝可梦
 ui.areaDex.none,No wild Pokémon here: only trainers.,Aucun Pokémon sauvage ici : que des Dresseurs.,Aquí no hay Pokémon salvajes: solo Entrenadores.,Hier gibt es keine wilden Pokémon: nur Trainer.,Niente Pokémon selvatici qui: solo allenatori.,Não há Pokémon selvagens aqui: só treinadores.,Não há Pokémon selvagens aqui: só treinadores.,ここに野生のポケモンはいない：トレーナーだけ。,여기에는 야생 포켓몬이 없다: 트레이너뿐이다.,这里没有野生的宝可梦：只有训练家。
