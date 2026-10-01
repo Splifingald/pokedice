@@ -29,6 +29,13 @@
  * in order and picks one per dex. The sheets carry no Box icons, so the menu icon is the front sprite for now (see
  * `unovaMinis`).
  *
+ * `pnpm pokemon-sprites --fetch-bw [from] [to] [outDir]` (default 650 1025) downloads Gen 6–9 from PokeAPI's top-level
+ * sprites/pokemon folder: Black/White-style art for the whole dex, which for #650+ is the Smogon Sprite Project's work
+ * (see docs/10-GEN6-9-SPRITES.md for sources and credit). Per dex: `{dex}.png`, `back/`, `shiny/` and `back/shiny/`,
+ * 96×96 with a real alpha channel, so no backdrop to clear. Each goes through `fitCanvas()` like Gen 4 and 5, and the
+ * menu icons come from the front (`unovaMinis`). English names come from PokeAPI's species CSVs, since
+ * src/data/pokemon.json stops at 649. Everything is cached under scripts/.cache/pokeapi.
+ *
  * `pnpm pokemon-sprites --publish [srcDir]` copies those files (default graphics/pokemon) into public/pokemon with short
  * names (001_front.png, 001_back_shiny.png, 001_mini_1.png…) and writes src/data/sprite-metrics.json: the transparent
  * rows under each front / back sprite, so the battle scene can stand every Pokémon on its platform.
@@ -57,12 +64,17 @@ const EXTRAS: [block: number, dex: number, name: string][] = [
   [3, 386, 'Deoxys-Defense'],
 ]
 
-/** File-safe English name: Nidoran♀ → Nidoran-F, Farfetch’d → Farfetchd, Mr. Mime → Mr-Mime. */
-const fileName = (s: string) =>
+/**
+ * File-safe English name: Nidoran♀ → Nidoran-F, Farfetch’d → Farfetchd, Mr. Mime → Mr-Mime, Type: Null → Type-Null,
+ * Flabébé → Flabebe.
+ */
+export const fileName = (s: string) =>
   s
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
     .replace(/♀/g, '-F')
     .replace(/♂/g, '-M')
-    .replace(/['’.]/g, '')
+    .replace(/['’.:]/g, '')
     .trim()
     .replace(/\s+/g, '-')
 
@@ -438,14 +450,16 @@ export function decompPaths(name: string): DecompPaths {
   return all(d)
 }
 
-async function fetchFile(rel: string): Promise<Buffer> {
-  const file = path.join(CACHE_DIR, rel.replace(/\//g, '_'))
+const fetchFile = (rel: string) => fetchCached(`${DECOMP}/${rel}`, path.join(CACHE_DIR, rel.replace(/\//g, '_')))
+
+/** GET `url`, or read it back from `file` if an earlier run already saved it there. Retries with backoff. */
+async function fetchCached(url: string, file: string): Promise<Buffer> {
   if (existsSync(file)) return readFile(file)
   let lastErr: unknown
   for (let attempt = 0; attempt < 5; attempt++) {
     try {
-      const res = await fetch(`${DECOMP}/${rel}`)
-      if (!res.ok) throw new Error(`${res.status} ${res.statusText} for ${rel}`)
+      const res = await fetch(url)
+      if (!res.ok) throw new Error(`${res.status} ${res.statusText} for ${url}`)
       const buf = Buffer.from(await res.arrayBuffer())
       await writeFile(file, buf)
       return buf
@@ -562,6 +576,110 @@ async function fetchAll(outDir: string) {
   }
 }
 
+// ---------------------------------------------------------------- the Black/White-style source (--fetch-bw)
+
+const POKEAPI_SPRITES = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon'
+const POKEAPI_CSV = 'https://raw.githubusercontent.com/PokeAPI/pokeapi/master/data/v2/csv'
+const BW_CACHE_DIR = path.join(ROOT, 'scripts', '.cache', 'pokeapi')
+const ENGLISH = 9
+
+/** The four views and where PokeAPI keeps each, relative to sprites/pokemon. */
+const BW_VIEWS: [kind: string, dir: string][] = [
+  ['front', ''],
+  ['back', 'back/'],
+  ['front_shiny', 'shiny/'],
+  ['back_shiny', 'back/shiny/'],
+]
+
+/** A plain CSV reader: enough for PokeAPI's files, which quote a field only when it holds a comma. */
+export function parseCsv(text: string): string[][] {
+  const rows: string[][] = []
+  for (const line of text.split(/\r?\n/)) {
+    if (!line) continue
+    const row: string[] = []
+    let field = ''
+    let quoted = false
+    for (let i = 0; i < line.length; i++) {
+      const c = line[i]!
+      if (quoted) {
+        if (c === '"' && line[i + 1] === '"') field += line[++i]
+        else if (c === '"') quoted = false
+        else field += c
+      } else if (c === '"') quoted = true
+      else if (c === ',') {
+        row.push(field)
+        field = ''
+      } else field += c
+    }
+    row.push(field)
+    rows.push(row)
+  }
+  return rows
+}
+
+/** Dex → English name for every species PokeAPI knows, from pokemon_species.csv and pokemon_species_names.csv. */
+async function speciesNames(): Promise<Map<number, string>> {
+  const csv = async (name: string) =>
+    parseCsv((await fetchCached(`${POKEAPI_CSV}/${name}`, path.join(BW_CACHE_DIR, name))).toString('utf8')).slice(1)
+  const names = new Map<number, string>()
+  for (const [id, lang, name] of await csv('pokemon_species_names.csv'))
+    if (Number(lang) === ENGLISH) names.set(Number(id), name!)
+  const out = new Map<number, string>()
+  // pokemon_species.csv is the list of what exists; the names file only labels it.
+  for (const [id, identifier] of await csv('pokemon_species.csv')) out.set(Number(id), names.get(Number(id)) ?? identifier!)
+  return out
+}
+
+/** Downloads #from–to in the four views, fits them to 64×64 and writes the six files per species into `outDir`. */
+async function fetchBw(from: number, to: number, outDir: string) {
+  await mkdir(BW_CACHE_DIR, { recursive: true })
+  await mkdir(outDir, { recursive: true })
+  const names = await speciesNames()
+  const failed: string[] = []
+  let n = 0
+  let species = 0
+  for (let dex = from; dex <= to; dex++) {
+    const name = names.get(dex)
+    if (!name) {
+      failed.push(`${dex}: not in PokeAPI's pokemon_species.csv`)
+      continue
+    }
+    const sprites: Record<string, PNG> = {}
+    try {
+      for (const [kind, dir] of BW_VIEWS) {
+        const buf = await fetchCached(
+          `${POKEAPI_SPRITES}/${dir}${dex}.png`,
+          path.join(BW_CACHE_DIR, `${kind}_${dex}.png`),
+        )
+        sprites[kind] = fitCanvas(PNG.sync.read(buf))
+      }
+    } catch (err) {
+      failed.push(`${dex} ${name}: ${(err as Error).message}`)
+      continue
+    }
+    const [mini1, mini2] = unovaMinis(sprites.front!)
+    sprites.miniature_1 = mini1
+    sprites.miniature_2 = mini2
+    const prefix = `${String(dex).padStart(3, '0')}_${fileName(name)}`
+    for (const [kind, img] of Object.entries(sprites)) {
+      if (isEmpty(img)) {
+        failed.push(`${dex} ${name} ${kind}: empty`)
+        continue
+      }
+      await writeFile(path.join(outDir, `${prefix}_${kind}.png`), PNG.sync.write(img))
+      n++
+    }
+    species++
+    if (dex % 50 === 0) console.log(`  … ${dex}/${to}`)
+  }
+  console.log(`${n} sprites for ${species} species (#${from}–${to}) written to ${outDir}`)
+  if (failed.length) {
+    console.error(`\n${failed.length} failures:`)
+    for (const f of failed) console.error(`  ${f}`)
+    process.exitCode = 1
+  }
+}
+
 async function publish(srcDir: string) {
   const outDir = path.join(ROOT, 'public/pokemon')
   await mkdir(outDir, { recursive: true })
@@ -596,6 +714,12 @@ async function main() {
   if (process.argv[2] === '--platinum')
     return cutPlatinum(path.resolve(process.argv[3] ?? path.join(ROOT, 'graphics/pokemon')))
   if (process.argv[2] === '--unova') return cutUnova(path.resolve(process.argv[3] ?? path.join(ROOT, 'graphics/pokemon')))
+  if (process.argv[2] === '--fetch-bw')
+    return fetchBw(
+      Number(process.argv[3] ?? 650),
+      Number(process.argv[4] ?? 1025),
+      path.resolve(process.argv[5] ?? path.join(ROOT, 'graphics/pokemon')),
+    )
   if (process.argv[2] === '--publish') return publish(path.resolve(process.argv[3] ?? path.join(ROOT, 'graphics/pokemon')))
   const outDir = path.resolve(process.argv[2] ?? path.join(ROOT, 'graphics/pokemon/sprites'))
   const sheetPath = path.resolve(process.argv[3] ?? path.join(ROOT, 'graphics/pokemon/pokemon.png'))
