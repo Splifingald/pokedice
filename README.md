@@ -107,6 +107,10 @@ supabase/    migrations/0001_init.sql, seed.sql (generated)
   Hall of Fame) until they play again; you always see your own rows. Needs
   `supabase/migrations/0023_leaderboard_inactive.sql` run once on the live database (re-running `supabase/seed.sql`
   does it too).
+- **Leaderboard badge** — the trophy button and `/leaderboard` stay locked until the player's first gym badge (any
+  region), and a region's board only lists trainers with at least one badge there. Prof. Oak's share prompt comes with
+  the region's 2nd badge. Needs `supabase/migrations/0024_leaderboard_badge.sql` run once on the live database
+  (re-running `supabase/seed.sql` does it too).
 - **Contact the developer** — trainer menu (side panel) → Contact the developer, at the bottom: a title and a description, stored
   in Supabase table `feedback` and read in Admin → Messages (mark read / unread, delete). The database fills in who
   sent it (Google account or guest device) and allows 3 messages per player per 10 minutes. Needs

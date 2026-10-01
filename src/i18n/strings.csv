@@ -1066,6 +1066,7 @@ ui.nav.menus,Menus,Menus,Menús,Menüs,Menu,Menus,Menus,メニュー,메뉴,菜�
 ui.nav.admin,Admin,Admin,Admin,Admin,Admin,Admin,Admin,管理,관리,管理
 ui.nav.exploring, (exploring {area}), (en exploration : {area}), (explorando {area}), (erkundet {area}), (in esplorazione: {area}), (a explorar {area}), (explorando {area}), （{area}を探検中）, ({area} 탐험 중), （正在探索{area}）
 ui.nav.finishFight,Finish the fight first,Termine d'abord le combat,Termina antes el combate,Beende zuerst den Kampf,Prima finisci la lotta,Termina primeiro a batalha,Termine a batalha primeiro,先に戦闘を終わらせよう,먼저 배틀을 끝내세요,请先结束战斗
+ui.nav.boardLocked,Win your first badge to open the leaderboard,Gagne ton premier badge pour ouvrir le classement,Gana tu primera medalla para abrir la clasificación,"Gewinne deinen ersten Orden, um die Bestenliste zu öffnen",Vinci la tua prima medaglia per aprire la classifica,Ganha a tua primeira insígnia para abrir a classificação,Ganhe sua primeira insígnia para abrir a classificação,最初のバッジを手に入れるとランキングが開くよ,첫 배지를 얻으면 랭킹이 열려요,赢得第一枚徽章即可开启排行榜
 ui.nav.backToGame,Pokédice — back to the game,Pokédice — retour au jeu,Pokédice: volver al juego,Pokédice — zurück zum Spiel,Pokédice — torna al gioco,Pokédice — voltar ao jogo,Pokédice — voltar ao jogo,Pokédice — ゲームに戻る,Pokédice — 게임으로 돌아가기,Pokédice — 返回游戏
 ui.nav.leaderboard,Leaderboard,Classement,Clasificación,Bestenliste,Classifica,Classificação,Classificação,ランキング,랭킹,排行榜
 ui.nav.settings,Settings,Réglages,Ajustes,Einstellungen,Impostazioni,Definições,Configurações,設定,설정,设置

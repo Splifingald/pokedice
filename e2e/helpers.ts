@@ -1,6 +1,6 @@
 import type { Page } from '@playwright/test'
 import { readFileSync } from 'node:fs'
-import { compileGameData, newSave, type BundleRaw, type SaveData } from '../src/engine'
+import { badgeCase, compileGameData, newSave, progressOf, type BundleRaw, type SaveData } from '../src/engine'
 
 const load = (f: string) => JSON.parse(readFileSync(new URL(`../src/data/${f}`, import.meta.url), 'utf8'))
 
@@ -22,6 +22,13 @@ export function makeSave(starter: number, patch: Partial<SaveData> = {}): SaveDa
   let c = 0
   // Prof. Oak's leaderboard pop-up would cover every screen of a fresh save.
   return { ...newSave(starter, gameData(), Date.now(), () => `e2e-${++c}`), leaderboardVisited: true, ...patch }
+}
+
+/** The save with its region's first gym badge won: the leaderboard stays locked until then. */
+export function withBadge(save: SaveData): SaveData {
+  const first = badgeCase(save, gameData())[0]!
+  const p = progressOf(save, first.areaId)
+  return { ...save, areaProgress: { ...save.areaProgress, [first.areaId]: { ...p, gymsDefeated: [...p.gymsDefeated, first.trainerId] } } }
 }
 
 export const SUPABASE = 'http://127.0.0.1:54399'
