@@ -97,6 +97,12 @@ supabase/    migrations/0001_init.sql, seed.sql (generated)
   *before* it plays, so leaving halfway changes nothing. A team can be beaten once per attacker (retries until then);
   changing it opens it to everyone again. Two boards: teams beaten in attack, and opponents held off in defense (each
   attacker once per team). Needs `supabase/migrations/0018_versus.sql` run once on the live database.
+- **Trainer look** — trainer card → *Leaderboard & Versus* → CHANGE: the picture other players see on the leaderboard
+  (ranked rows and Hall of Fame), the Versus board and across the field in a Versus fight. Red and Leaf, plus every
+  Kanto and Johto trainer class (no Gym Leaders, Elite Four, Champions or Team Rocket); the list is
+  `src/lib/avatars.ts`. It is stored as `player.avatar` in the save and is the character until picked; the character
+  still throws the Poké Balls and decides the rival. Needs `supabase/migrations/0022_player_avatar.sql` run once on
+  the live database.
 - **Contact the developer** — trainer menu (side panel) → Contact the developer, at the bottom: a title and a description, stored
   in Supabase table `feedback` and read in Admin → Messages (mark read / unread, delete). The database fills in who
   sent it (Google account or guest device) and allows 3 messages per player per 10 minutes. Needs

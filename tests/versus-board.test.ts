@@ -44,7 +44,8 @@ describe('Versus board', () => {
 
   it('parses defensively', () => {
     const [r] = parseVersusBoard([{ ...raw('', 0, 0), name: null, character: 'blue', version: null }])
-    expect(r).toMatchObject({ name: 'Trainer', character: 'red', version: 1 })
+    expect(r).toMatchObject({ name: 'Trainer', avatar: 'red', version: 1 })
+    expect(parseVersusBoard([raw('Leaf', 0, 0, { character: 'johto/kimono-girl' })])[0]!.avatar).toBe('johto/kimono-girl')
   })
 
   it('names the refusals of the database', () => {

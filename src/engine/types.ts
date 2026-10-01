@@ -565,6 +565,8 @@ export type PlayerCharacter = 'red' | 'green'
 export interface PlayerProfile {
   name: string
   character: PlayerCharacter
+  /** The look on the leaderboard and in Versus (src/lib/avatars). Absent: the character. */
+  avatar?: string
 }
 
 /** The raw bundle — exactly the shape of src/data/*.json (camelCase DB rows). */

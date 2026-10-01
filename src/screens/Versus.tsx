@@ -21,6 +21,7 @@ import { PixelIcon } from '@/components/icons'
 import { PixelButton } from '@/components/PixelButton'
 import { MiniSprite } from '@/components/SpriteImg'
 import { TrainerSprite } from '@/components/TrainerArt'
+import { avatarOf } from '@/lib/avatars'
 import { useT } from '@/i18n/react'
 import {
   fetchVersusBoard,
@@ -231,7 +232,7 @@ function Opponents({
             key={r.userId}
             className={cx('flex items-center gap-2 border-[3px] border-ink px-2 py-1.5 shadow-[3px_3px_0_#6b6480]', r.beaten ? 'bg-parchment' : 'bg-panel')}
           >
-            <TrainerSprite src={`/characters/${r.character}.png`} size={48} />
+            <TrainerSprite src={avatarOf(r.avatar).src} size={48} />
             <div className="flex min-w-0 flex-1 flex-col items-center gap-1 sm:flex-row sm:gap-3">
               <div className="flex min-w-0 flex-col items-center sm:w-36 sm:shrink-0 sm:items-start">
                 <span className="max-w-full truncate text-2xl leading-none">{r.name}</span>
@@ -486,7 +487,7 @@ function VersusFightView({ fight, foe, onExit }: { fight: VersusFight; foe: Vers
     },
     nextMove: () => versusMoveAt(round, cursor.current),
     trainerName: foe.name,
-    trainerSprite: `/characters/${foe.character}.png`,
+    trainerSprite: avatarOf(foe.avatar).src,
     foeCount: foe.team.length,
     foeIndex: round.defenderIndex,
     onPlayed,
@@ -500,7 +501,7 @@ function VersusFightView({ fight, foe, onExit }: { fight: VersusFight; foe: Vers
       >
         <div className="mb-2 text-center text-4xl">{t(won ? 'ui.versus.won.title' : 'ui.versus.lost.title')}</div>
         <div className="mb-2 flex justify-center">
-          <TrainerSprite src={`/characters/${foe.character}.png`} size={72} />
+          <TrainerSprite src={avatarOf(foe.avatar).src} size={72} />
         </div>
         <p className="copy text-center text-lg">{t(won ? 'ui.versus.won.body' : 'ui.versus.lost.body', { name: foe.name })}</p>
       </Overlay>

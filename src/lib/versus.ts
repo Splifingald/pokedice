@@ -1,6 +1,7 @@
 // Versus, the cloud side: every registered team with both scores, setting your own, and recording a fight. The rows
 // come from the SQL functions of supabase/migrations/0018_versus.sql; the fight itself is engine/versus.
 import type { VersusMon } from '@/engine'
+import { avatarOf } from './avatars'
 import { getSupabase } from './supabase'
 
 export type VersusBoardTab = 'attack' | 'defense'
@@ -9,7 +10,8 @@ export interface VersusEntry {
   userId: string
   isMe: boolean
   name: string
-  character: 'red' | 'green'
+  /** Their look: an id from src/lib/avatars, already checked. */
+  avatar: string
   team: VersusMon[]
   /** Your own team only: the Box ids it was cloned from (null for everyone else, and for teams set before they were kept). */
   ids: string[] | null
@@ -47,7 +49,8 @@ export function parseVersusBoard(raw: RawEntry[]): VersusEntry[] {
     userId: r.user_id,
     isMe: !!r.is_me,
     name: r.name || 'Trainer',
-    character: r.character === 'green' ? 'green' : 'red',
+    // The column carries the look (migration 0022); an unknown id shows as Red.
+    avatar: avatarOf(r.character).id,
     team: (r.team ?? []).map((m) => ({ dex: Number(m.dex), level: Number(m.level), shiny: !!m.shiny })),
     ids: Array.isArray(r.ids) ? r.ids.map(String) : null,
     version: Number(r.version) || 1,

@@ -81,7 +81,7 @@ export const saveSchema = z.object({
     lang: z.enum(LANGS).optional(),
   }),
   hpScale: z.number().positive().optional(),
-  player: z.object({ name: z.string().max(12), character: z.enum(['red', 'green']) }).optional(),
+  player: z.object({ name: z.string().max(12), character: z.enum(['red', 'green']), avatar: z.string().max(40).optional() }).optional(),
   dayCare: dayCareSchema.optional(),
   energy: z.object({ value: z.number().min(0), at: z.number() }).optional(),
   adminEditAt: z.number().optional(),

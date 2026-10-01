@@ -5,6 +5,7 @@ import { PixelIcon } from '@/components/icons'
 import { MiniSprite } from '@/components/SpriteImg'
 import { Modal } from '@/components/Modal'
 import { TrainerSprite } from '@/components/TrainerArt'
+import { avatarOf } from '@/lib/avatars'
 import { fetchLeaderboard, leaderboardError, splitLeaderboard, type LeaderboardRow, type LeaderboardTab, type RankedRow } from '@/lib/leaderboard'
 import { regionOf } from '@/engine'
 import { visitLeaderboard } from '@/store/actions'
@@ -132,12 +133,15 @@ export function LeaderboardScreen() {
                   {r.rank}
                 </span>
                 <div className="flex min-w-0 flex-1 flex-col items-center gap-1 sm:flex-row sm:gap-3">
-                  <div className="flex min-w-0 flex-col items-center sm:w-40 sm:shrink-0 sm:items-start">
-                    <span className="max-w-full truncate text-2xl leading-none">
-                      {r.name}
-                      {r.isMe && <span className="font-pixel-sm text-base">{t('ui.board.you')}</span>}
-                    </span>
-                    <span className={cx('font-pixel-sm max-w-full truncate text-base leading-tight', r.isMe ? 'text-ink' : 'text-muted')}>{r.score}</span>
+                  <div className="flex min-w-0 max-w-full items-center gap-2 sm:w-52 sm:shrink-0">
+                    <TrainerSprite src={avatarOf(r.avatar).src} size={48} className="shrink-0" />
+                    <div className="flex min-w-0 flex-col items-start">
+                      <span className="max-w-full truncate text-2xl leading-none">
+                        {r.name}
+                        {r.isMe && <span className="font-pixel-sm text-base">{t('ui.board.you')}</span>}
+                      </span>
+                      <span className={cx('font-pixel-sm max-w-full truncate text-base leading-tight', r.isMe ? 'text-ink' : 'text-muted')}>{r.score}</span>
+                    </div>
                   </div>
                   <ul className="flex flex-1 flex-wrap items-center justify-center gap-0.5" aria-label={t('ui.board.theirTeam', { name: r.name })}>
                     {r.team.map((m, j) => {
@@ -177,7 +181,7 @@ function HallCell({ r }: { r: RankedRow }) {
       aria-current={r.isMe || undefined}
       className={cx('flex flex-col items-center gap-1 border-[3px] border-ink p-2 text-center', r.isMe ? 'bg-[#fbeeb0]' : 'bg-panel')}
     >
-      <TrainerSprite src={`/characters/${r.character}.png`} size={56} />
+      <TrainerSprite src={avatarOf(r.avatar).src} size={56} />
       <span className="max-w-full truncate text-xl leading-none">
         {r.name}
         {r.isMe && <span className="font-pixel-sm text-base">{t('ui.board.you')}</span>}

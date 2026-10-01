@@ -12,7 +12,7 @@ const row = (name: string, p: Partial<LeaderboardRow>): LeaderboardRow => ({
   region: 'kanto',
   isMe: false,
   name,
-  character: 'red',
+  avatar: 'red',
   team: [{ dex: 1, level: 5, shiny: false }],
   pokedex: 1,
   maxLevel: 5,
@@ -99,6 +99,12 @@ describe('parseLeaderboard', () => {
       { region: null, is_me: null, name: null, character: 'purple', team: null, pokedex: null, max_level: 12, progress: { x: { cleared: true } } },
     ])
     // A row from a database that predates regions reads as Kanto.
-    expect(r).toEqual({ region: 'kanto', isMe: false, name: 'Trainer', character: 'red', team: [], pokedex: 0, maxLevel: 12, progress: { x: { cleared: true, gyms: 0 } } })
+    expect(r).toEqual({ region: 'kanto', isMe: false, name: 'Trainer', avatar: 'red', team: [], pokedex: 0, maxLevel: 12, progress: { x: { cleared: true, gyms: 0 } } })
+  })
+
+  it('keeps a look from the list and nothing else', () => {
+    const base = { region: 'kanto', is_me: false, name: 'A', team: [], pokedex: 1, max_level: 5, progress: {} }
+    const looks = parseLeaderboard(['green', 'johto/silver', 'kanto/youngster', 'kanto/champion-brock', '../../evil', null].map((character) => ({ ...base, character })))
+    expect(looks.map((r) => r.avatar)).toEqual(['green', 'johto/silver', 'kanto/youngster', 'red', 'red', 'red'])
   })
 })

@@ -3,6 +3,7 @@
 import { linearAreas } from '@/engine/data'
 import { regionSpecies } from '@/engine/regions'
 import type { GameData, RegionId } from '@/engine/types'
+import { avatarOf } from './avatars'
 import { getSupabase } from './supabase'
 import { t } from '@/i18n'
 
@@ -13,7 +14,8 @@ export interface LeaderboardRow {
   region: RegionId
   isMe: boolean
   name: string
-  character: 'red' | 'green'
+  /** Their look: an id from src/lib/avatars, already checked. */
+  avatar: string
   team: { dex: number; level: number; shiny: boolean }[]
   pokedex: number
   maxLevel: number
@@ -136,7 +138,8 @@ export function parseLeaderboard(raw: RawRow[]): LeaderboardRow[] {
     region: r.region || 'kanto',
     isMe: !!r.is_me,
     name: r.name || 'Trainer',
-    character: r.character === 'green' ? 'green' : 'red',
+    // The column carries the look (migration 0022); an unknown id shows as Red.
+    avatar: avatarOf(r.character).id,
     team: (r.team ?? []).map((m) => ({ dex: Number(m.dex), level: Number(m.level), shiny: !!m.shiny })),
     pokedex: Number(r.pokedex) || 0,
     maxLevel: Number(r.max_level) || 0,

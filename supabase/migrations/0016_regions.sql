@@ -61,7 +61,8 @@ language sql stable security definer set search_path = public as $$
     b.region,
     b.user_id = auth.uid(),
     left(coalesce(nullif(trim(b.root -> 'player' ->> 'name'), ''), 'Trainer'), 12),
-    coalesce(b.root -> 'player' ->> 'character', 'red'),
+    -- The look (0022): the player's pick, else their character.
+    coalesce(b.root -> 'player' ->> 'avatar', b.root -> 'player' ->> 'character', 'red'),
     coalesce((
       select jsonb_agg(jsonb_build_object(
         'dex', (m ->> 'dex')::int, 'level', (m ->> 'level')::int, 'shiny', coalesce((m ->> 'shiny')::boolean, false)

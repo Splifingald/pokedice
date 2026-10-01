@@ -830,6 +830,13 @@ trainerClass.nurse,Nurse,Infirmière,Enfermera,Krankenschwester,Infermiera,Enfer
 trainerClass.pilot,Pilot,Pilote,Piloto,Pilot,Pilota,Piloto,Piloto,パイロット,파일럿,飞行员
 trainerClass.tuber,Tuber,Petit Nageur,Chapoteador,Planscher,Bambino col salvagente,Menino da Boia,Menino da Boia,うきわボーイ,튜브 소년,游泳圈小孩
 trainerClass.idol,Idol,Idole,Ídolo,Idol,Idol,Ídolo,Ídolo,アイドル,아이돌,偶像
+trainerClass.painter,Painter,Peintre,Pintora,Malerin,Pittrice,Pintora,Pintora,えかき,화가,画家
+trainerClass.crush-kin,Crush Kin,Duo Baston,Dúo Combate,Kampf-Duo,Duo Lotta,Dupla de Luta,Dupla de Luta,かくとうコンビ,격투 콤비,格斗组合
+trainerClass.sis-and-bro,Sis and Bro,Frère et Sœur,Hermanos,Geschwister,Fratelli,Irmãos,Irmãos,きょうだい,남매,姐弟
+trainerClass.cool-couple,Cool Couple,Couple Cool,Pareja Guay,Cool-Paar,Coppia Asso,Casal Experiente,Casal Experiente,エリートカップル,엘리트 커플,精英情侣
+trainerClass.swimmers,Swimmers,Nageurs,Nadadores,Schwimmer-Duo,Nuotatori,Nadadores,Nadadores,スイマーコンビ,수영 콤비,游泳组合
+trainerClass.kimono-girl,Kimono Girl,Kimono Girl,Chica Kimono,Kimono-Girl,Ragazza Kimono,Rapariga de Quimono,Garota de Quimono,まいこはん,기모노 아가씨,舞妓
+trainerClass.officer,Officer,Policier,Policía,Polizist,Poliziotto,Polícia,Policial,おまわりさん,순경,警察
 # --- Gym Leader / Elite Four / Champion names - kept in Latin languages; official names in Japanese / Korean / Chinese,,,,,,,,,,
 trainerName.brock,Brock,Brock,Brock,Brock,Brock,Brock,Brock,タケシ,웅,小刚
 trainerName.misty,Misty,Misty,Misty,Misty,Misty,Misty,Misty,カスミ,이슬,小霞
@@ -842,6 +849,8 @@ trainerName.giovanni,Giovanni,Giovanni,Giovanni,Giovanni,Giovanni,Giovanni,Giova
 trainerName.blue,Blue,Blue,Blue,Blue,Blue,Blue,Blue,グリーン,그린,青绿
 trainerName.red,Red,Red,Red,Red,Red,Red,Red,レッド,레드,赤红
 trainerName.green,Green,Green,Green,Green,Green,Green,Green,ブルー,블루,小蓝
+trainerName.leaf,Leaf,Leaf,Hoja,Leaf,Leaf,Leaf,Leaf,リーフ,리프,叶子
+trainerName.silver,Silver,Silver,Silver,Silver,Silver,Silver,Silver,シルバー,실버,银
 trainerName.lance,Lance,Lance,Lance,Lance,Lance,Lance,Lance,ワタル,목호,阿渡
 trainerName.lorelei,Lorelei,Lorelei,Lorelei,Lorelei,Lorelei,Lorelei,Lorelei,カンナ,칸나,科拿
 trainerName.bruno,Bruno,Bruno,Bruno,Bruno,Bruno,Bruno,Bruno,シバ,시바,希巴
@@ -1554,6 +1563,10 @@ ui.profile.guide,How to play,Comment jouer,Cómo jugar,Spielanleitung,Come si gi
 ui.profile.badgeCase,Badge case,Boîte à badges,Estuche de medallas,Ordensetui,Portamedaglie,Estojo de insígnias,Estojo de insígnias,バッジケース,배지 케이스,徽章盒
 ui.profile.badgeLocked,{badge} — not earned yet,{badge} — pas encore gagné,{badge}: aún no conseguida,{badge} — noch nicht verdient,{badge}: non ancora ottenuta,{badge} — ainda não conquistada,{badge} — ainda não conquistada,{badge} — まだ手に入れていない,{badge} — 아직 얻지 못함,{badge} — 尚未获得
 ui.profile.crownHint,The crown is for clearing the region's last area.,La couronne récompense la dernière zone de la région.,La corona es por completar la última zona de la región.,Die Krone gibt es für das letzte Gebiet der Region.,La corona si ottiene completando l'ultima area della regione.,A coroa é para quem conclui a última área da região.,A coroa é para quem conclui a última área da região.,王冠は、その地方の最後のエリアをクリアした証です。,왕관은 그 지방의 마지막 지역을 클리어한 증표예요.,王冠是通关该地区最后一个区域的证明。
+ui.profile.look,Leaderboard & Versus,Classement et Versus,Clasificación y Versus,Bestenliste & Versus,Classifica e Versus,Classificação e Versus,Classificação e Versus,ランキングと対戦,랭킹과 대전,排行榜与对战
+ui.profile.lookHint,How other trainers see you. Your character in battle doesn't change.,C'est ainsi que les autres Dresseurs te voient. Ton personnage en combat ne change pas.,Así te ven los demás Entrenadores. Tu personaje en combate no cambia.,So sehen dich andere Trainer. Deine Figur im Kampf bleibt gleich.,Così ti vedono gli altri allenatori. Il tuo personaggio in battaglia non cambia.,É assim que os outros treinadores te veem. A tua personagem em combate não muda.,É assim que os outros treinadores veem você. Seu personagem na batalha não muda.,ほかのトレーナーから見える姿です。バトルでのキャラクターは変わりません。,다른 트레이너에게 보이는 모습이에요. 배틀 속 캐릭터는 그대로예요.,其他训练家看到的你的形象。对战中的角色不会改变。
+ui.profile.lookTitle,Choose your look,Choisis ton apparence,Elige tu aspecto,Wähle dein Aussehen,Scegli il tuo aspetto,Escolhe o teu visual,Escolha seu visual,見た目を選ぼう,모습을 고르세요,选择你的形象
+ui.profile.lookDefault,Default,Par défaut,Por defecto,Standard,Predefinito,Predefinido,Padrão,きほん,기본,默认
 ui.contact.button,Contact the developer,Contacter le développeur,Contactar al desarrollador,Entwickler kontaktieren,Contatta lo sviluppatore,Contactar o programador,Falar com o desenvolvedor,開発者に連絡,개발자에게 연락,联系开发者
 ui.contact.title,Contact the developer,Contacter le développeur,Contactar al desarrollador,Entwickler kontaktieren,Contatta lo sviluppatore,Contactar o programador,Falar com o desenvolvedor,開発者に連絡,개발자에게 연락,联系开发者
 ui.contact.warning,"This project was built by a solo developer and is free, there is no customer support but I accept all feedback and ideas","Ce projet a été créé par un développeur seul et il est gratuit, il n'y a pas de service client mais j'accepte tous les retours et toutes les idées","Este proyecto lo ha creado un desarrollador en solitario y es gratuito, no hay atención al cliente pero acepto todos los comentarios e ideas","Dieses Projekt wurde von einem einzelnen Entwickler gebaut und ist kostenlos, es gibt keinen Kundensupport, aber ich freue mich über jedes Feedback und jede Idee","Questo progetto è stato realizzato da uno sviluppatore indipendente ed è gratuito: non c'è assistenza clienti, ma accetto ogni commento e idea","Este projeto foi feito por um programador independente e é gratuito; não há apoio ao cliente, mas aceito todas as opiniões e ideias","Este projeto foi feito por um desenvolvedor independente e é gratuito; não há suporte ao cliente, mas aceito todas as opiniões e ideias",このプロジェクトは個人の開発者が無料で作ったものです。サポート窓口はありませんが、感想やアイデアはどれも歓迎します,이 프로젝트는 개인 개발자가 무료로 만든 것입니다. 고객 지원은 없지만 모든 의견과 아이디어를 환영합니다,这个项目由一名独立开发者制作，完全免费。没有客服，但欢迎任何反馈和想法
