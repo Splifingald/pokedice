@@ -26,6 +26,7 @@
     "pull-remote": "tsx scripts/pull-remote.ts",
     "sync": "pnpm pull-remote --write && pnpm seed-regions && pnpm seed-sql && pnpm test && node -e \"console.log('\\n==============================================\\n  SYNC OK - your data now matches Supabase, with Unova added.\\n  Next: Supabase -> SQL Editor -> paste supabase/seed.sql -> Run\\n==============================================')\"",
     "i18n:names": "tsx scripts/i18n-names.ts",
+    "i18n:fonts": "tsx scripts/i18n-fonts.ts",
     "e2e": "playwright test"
   },
   "dependencies": {
@@ -41,6 +42,9 @@
   "devDependencies": {
     "@axe-core/playwright": "^4.13.0",
     "@eslint/js": "^9.13.0",
+    "@fontsource/fusion-pixel-12px-proportional-jp": "^5.3.0",
+    "@fontsource/fusion-pixel-12px-proportional-kr": "^5.3.0",
+    "@fontsource/fusion-pixel-12px-proportional-sc": "^5.3.0",
     "@playwright/test": "^1.48.0",
     "@types/node": "^22.7.0",
     "@types/pngjs": "^6.0.5",
@@ -56,6 +60,7 @@
     "pngjs": "^7.0.0",
     "postcss": "^8.4.47",
     "prettier": "^3.3.3",
+    "subset-font": "^2.9.0",
     "tailwindcss": "^3.4.14",
     "tsx": "^4.19.1",
     "typescript": "~5.6.3",

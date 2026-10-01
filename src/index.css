@@ -43,6 +43,40 @@
     U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
 }
 
+/* Fusion Pixel 12px (SIL OFL 1.1, public/fonts/fusion-pixel-OFL.txt), subset per language by `pnpm i18n:fonts`.
+   Each face only covers the CJK blocks (src/i18n/cjk.ts), so it is downloaded only once such a character is on screen.
+   Chinese and Japanese draw shared Han characters differently: the face follows the element's language. */
+@font-face {
+  font-family: 'Pokedice CJK ja';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/pokedice-cjk-ja.woff2') format('woff2');
+  unicode-range:
+    U+1100-11FF, U+2E80-2FDF, U+3000-303F, U+3040-30FF, U+3130-318F, U+31F0-31FF, U+3200-32FF, U+3400-4DBF,
+    U+4E00-9FFF, U+AC00-D7AF, U+F900-FAFF, U+FF00-FFEF;
+}
+@font-face {
+  font-family: 'Pokedice CJK ko';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/pokedice-cjk-ko.woff2') format('woff2');
+  unicode-range:
+    U+1100-11FF, U+2E80-2FDF, U+3000-303F, U+3040-30FF, U+3130-318F, U+31F0-31FF, U+3200-32FF, U+3400-4DBF,
+    U+4E00-9FFF, U+AC00-D7AF, U+F900-FAFF, U+FF00-FFEF;
+}
+@font-face {
+  font-family: 'Pokedice CJK zh-Hans';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/pokedice-cjk-zh-hans.woff2') format('woff2');
+  unicode-range:
+    U+1100-11FF, U+2E80-2FDF, U+3000-303F, U+3040-30FF, U+3130-318F, U+31F0-31FF, U+3200-32FF, U+3400-4DBF,
+    U+4E00-9FFF, U+AC00-D7AF, U+F900-FAFF, U+FF00-FFEF;
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -51,6 +85,25 @@
   color-scheme: light;
   /* Height of the phone bottom bar; sticky footers (the Pokémon Center's CONTINUE) sit on top of it. */
   --bottom-nav: 0px;
+  /* The CJK pixel face, after Jersey in every font stack (tailwind.config.ts). Players' CJK names in a Latin UI use
+     the Japanese build. */
+  --font-cjk: 'Pokedice CJK ja';
+}
+:lang(ko) {
+  --font-cjk: 'Pokedice CJK ko';
+}
+:lang(zh-Hans) {
+  --font-cjk: 'Pokedice CJK zh-Hans';
+}
+/* Korean breaks between words, like English; Chinese and Japanese may break anywhere, but never before 。、ー or a
+   small kana. */
+:lang(ko) {
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+:lang(ja),
+:lang(zh-Hans) {
+  line-break: strict;
 }
 @media (max-width: 767px) {
   :root {
@@ -68,7 +121,7 @@ body {
   margin: 0;
   background: #e8e0c8;
   color: #2a2438;
-  font-family: 'Jersey 25', 'Jersey 15';
+  font-family: 'Jersey 25', 'Jersey 15', var(--font-cjk);
   font-size: 20px;
   line-height: 1.2;
   letter-spacing: 0.02em;
@@ -101,7 +154,7 @@ button {
  */
 @layer components {
   .copy {
-    font-family: 'Jersey 15', 'Jersey 25';
+    font-family: 'Jersey 15', 'Jersey 25', var(--font-cjk);
     font-size: 20px;
     line-height: 1.35;
     letter-spacing: 0.02em;

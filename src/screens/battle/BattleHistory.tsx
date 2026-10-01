@@ -17,7 +17,7 @@ import { PixelIcon, STATUS_ICON } from '@/components/icons'
 import { MiniSprite } from '@/components/SpriteImg'
 import type { BattleSlice } from '@/store/game'
 import { useGame } from '@/store/game'
-import { t } from '@/i18n'
+import { joinList, t } from '@/i18n'
 import { useT } from '@/i18n/react'
 import { comboName, statusName, typeName } from '@/lib/format'
 import { cx } from '@/theme/util'
@@ -186,13 +186,13 @@ function buildRows(log: readonly LogEntry[], player: readonly Battler[], enemy: 
         const bits = [
           e.revived ? t('ui.hist.revived') : '',
           e.amount > 0 ? t('ui.hist.plusHp', { amount: e.amount }) : '',
-          e.cured?.length ? t('ui.hist.cured', { statuses: e.cured.map((c) => t(`ui.status.${c}.noun`)).join(', ') }) : '',
+          e.cured?.length ? t('ui.hist.cured', { statuses: joinList(e.cured.map((c) => t(`ui.status.${c}.noun`))) }) : '',
           e.rerolls ? t(`ui.hist.plusRerolls.${e.rerolls === 1 ? 'one' : 'other'}`, { n: e.rerolls }) : '',
         ].filter(Boolean)
         rows.push({
           key,
           ...who(e.targetUid),
-          text: t('ui.hist.gotItem', { item: itemName(e.key), extras: bits.length ? ` (${bits.join(', ')})` : '' }),
+          text: t('ui.hist.gotItem', { item: itemName(e.key), extras: bits.length ? ` (${joinList(bits)})` : '' }),
           icon: 'potion',
         })
         return

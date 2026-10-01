@@ -1,5 +1,6 @@
 import { regionCases, teamOf, type SaveData } from '@/engine'
 import { compareProgress, progressTotals } from '@/save/cloud'
+import { joinList } from '@/i18n'
 import { useT } from '@/i18n/react'
 import { useGame } from '@/store/game'
 import { resolveSyncConflict } from '@/store/sync'
@@ -24,7 +25,7 @@ export function SaveFacts({ save }: { save: SaveData }) {
       {cases.length > 1 && (
         <>
           <dt className="text-muted">{t('ui.sync.regions')}</dt>
-          <dd>{cases.map((r) => r.name).join(', ')}</dd>
+          <dd>{joinList(cases.map((r) => r.name))}</dd>
         </>
       )}
       <dt className="text-muted">{t('ui.sync.pokedex')}</dt>

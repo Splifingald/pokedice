@@ -1,11 +1,13 @@
 // Localization. The single source of truth is src/i18n/strings.csv — edit that sheet, nothing else.
-// Columns: key, then one per LANGS code (en,fr,es,de,it,pt,pt-BR). A blank cell falls back to English; an unknown key renders as the key
+// Columns: key, then one per LANGS code (en,fr,es,de,it,pt,pt-BR,ja,ko,zh-Hans). A blank cell falls back to English; an unknown key renders as the key
 // itself, which makes a missing row loud instead of invisible.
 import { parseCsv } from './csv'
+import { josa } from './ko'
 import { DEFAULT_LANG, LANGS, type Lang } from './langs'
 import sheet from './strings.csv?raw'
 
-export { DEFAULT_LANG, isLang, LANG_LABELS, LANGS, type Lang } from './langs'
+export { CJK_LANGS, DEFAULT_LANG, isLang, LANG_LABELS, LANGS, type Lang } from './langs'
+export { searchFold } from './fold'
 
 function build(): Record<Lang, Record<string, string>> {
   const out = Object.fromEntries(LANGS.map((l) => [l, {}])) as Record<Lang, Record<string, string>>
@@ -30,12 +32,25 @@ const TABLE = build()
 /** `pt-br` → `pt-BR`, `it` → `it`: a browser tag matched against the shipped codes, ignoring case. */
 const langOf = (tag: string): Lang | undefined => LANGS.find((l) => l.toLowerCase() === tag.toLowerCase())
 
+/**
+ * Chinese tags don't share a prefix with `zh-Hans`. Simplified-script regions map to it; Traditional ones (`zh-TW`,
+ * `zh-HK`, `zh-Hant`) map to nothing, so they fall through to the next preference rather than to the wrong script.
+ */
+function chineseOf(tag: string): Lang | null | undefined {
+  const t = tag.toLowerCase()
+  if (t !== 'zh' && !t.startsWith('zh-')) return undefined
+  if (/^zh-(hant|tw|hk|mo)\b/.test(t)) return null
+  return 'zh-Hans'
+}
+
 /** The browser's preferred language, when we speak it: the exact regional variant first (`pt-BR`), then its base (`pt-PT` → `pt`). */
 export function detectLang(): Lang {
   const prefs: readonly string[] =
     typeof navigator === 'undefined' ? [] : (navigator.languages?.length ? navigator.languages : [navigator.language]).filter(Boolean)
   for (const p of prefs) {
-    const hit = langOf(p) ?? langOf(p.split('-')[0] ?? '')
+    const zh = chineseOf(p)
+    if (zh === null) continue
+    const hit = zh ?? langOf(p) ?? langOf(p.split('-')[0] ?? '')
     if (hit) return hit
   }
   return DEFAULT_LANG
@@ -61,12 +76,16 @@ function interpolate(text: string, vars?: TVars): string {
 /** Look a key up in `lang`, then English, then give back the key so a missing row is visible. */
 export function tIn(lang: Lang, key: string, vars?: TVars): string {
   const hit = TABLE[lang][key] ?? TABLE.en[key]
-  return interpolate(hit ?? key, vars)
+  const text = interpolate(hit ?? key, vars)
+  return lang === 'ko' && vars ? josa(text) : text
 }
 
 export function t(key: string, vars?: TVars): string {
   return tIn(current, key, vars)
 }
+
+/** `a, b, c` — or `a、b、c` in Japanese and Chinese: the separator is a sheet row. */
+export const joinList = (items: readonly string[]): string => items.join(t('ui.common.listSep'))
 
 /** `key.one` / `key.other`, picked on `count` — which is also available to the text as {count}. */
 export function tPlural(key: string, count: number, vars?: TVars): string {

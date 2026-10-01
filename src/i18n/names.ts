@@ -70,6 +70,33 @@ export const TRAINER_CLASSES = [
   'Tamer',
   'Lass',
   'Rival',
+  // Sinnoh and Unova
+  'Team Plasma Grunt',
+  'Pokémon Breeder',
+  'Galactic Grunt',
+  'Pokémon Ranger',
+  'Parasol Lady',
+  'Preschooler',
+  'Aroma Lady',
+  'Backpacker',
+  'School Kid',
+  'Harlequin',
+  'Roughneck',
+  'Socialite',
+  'Waitress',
+  'Cyclist',
+  'Veteran',
+  'Artist',
+  'Backers',
+  'Dancer',
+  'Jogger',
+  'Worker',
+  'Waiter',
+  'Clerk',
+  'Nurse',
+  'Pilot',
+  'Tuber',
+  'Idol',
 ].sort((a, b) => b.length - a.length)
 
 /** Splits `Bug Catcher Kent` into its class and its given name; a bare `Misty` has neither. */
@@ -79,6 +106,12 @@ export function splitTrainerName(name: string): { cls: string | null; given: str
     if (name.startsWith(cls + ' ')) return { cls, given: name.slice(cls.length + 1) }
   }
   return { cls: null, given: name }
+}
+
+/** `Aaron II` → `Aaron` + ` II`: a rematch is the same person, so it shares the name row. */
+export function splitRematch(given: string): { base: string; suffix: string } {
+  const m = / (II|III|IV)$/.exec(given)
+  return m ? { base: given.slice(0, m.index), suffix: m[0] } : { base: given, suffix: '' }
 }
 
 export const pokemonKey = (dex: number) => `pokemon.${dex}`

@@ -32,16 +32,25 @@ type Lang = (typeof LANGS)[number]
 /** Languages whose official Pokémon names are the English ones. */
 const ENGLISH_SPECIES_NAMES: readonly Lang[] = ['it', 'pt', 'pt-BR']
 
+/**
+ * Where each sheet column reads from, first hit wins. PokeAPI writes its codes in lower case (`zh-hans`); the sheet
+ * uses BCP 47 case (`zh-Hans`, `pt-BR`). Japanese has two texts: `ja` is what the games show in kanji mode, `ja-hrkt`
+ * the kana-only mode (often identical; `ja` is missing on a few older entries).
+ */
+const sourcesOf = (lang: Lang): string[] => (lang === 'ja' ? ['ja', 'ja-hrkt'] : [lang.toLowerCase()])
+
 async function names(endpoint: string): Promise<Partial<Record<Lang, string>>> {
   const url = `${API}/${endpoint}/index.json`
   const res = await fetch(url)
   if (!res.ok) throw new Error(`${url} → ${res.status}`)
   const json = (await res.json()) as { names: NameRow[] }
+  const byCode = new Map(json.names.map((n) => [n.language.name.toLowerCase(), n.name]))
   const out: Partial<Record<Lang, string>> = {}
-  // PokeAPI writes its codes in lower case (`zh-hans`, `pt-br`); the sheet uses BCP 47 case (`pt-BR`).
-  for (const n of json.names) {
-    const lang = LANGS.find((l) => l.toLowerCase() === n.language.name.toLowerCase())
-    if (lang) out[lang] = n.name
+  for (const lang of LANGS) {
+    const hit = sourcesOf(lang)
+      .map((code) => byCode.get(code))
+      .find(Boolean)
+    if (hit) out[lang] = hit
   }
   return out
 }

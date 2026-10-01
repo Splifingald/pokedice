@@ -1,6 +1,6 @@
 import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react'
 import { cx } from '@/theme/util'
-import { t } from '@/i18n'
+import { searchFold, t } from '@/i18n'
 
 export interface SearchSelectProps<T> {
   options: T[]
@@ -36,8 +36,8 @@ export function SearchSelect<T>({
   const listId = useId()
 
   const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase()
-    const list = q ? options.filter((o) => getLabel(o).toLowerCase().includes(q) || String(getKey(o)) === q) : options
+    const q = searchFold(query)
+    const list = q ? options.filter((o) => searchFold(getLabel(o)).includes(q) || String(getKey(o)) === q) : options
     return list.slice(0, maxResults)
   }, [options, query, getLabel, getKey, maxResults])
 
@@ -89,6 +89,8 @@ export function SearchSelect<T>({
             setCursor(0)
           }}
           onKeyDown={(e) => {
+            // Enter while an IME is composing (kana → kanji, Hangul syllables) confirms the conversion, not a result.
+            if (e.nativeEvent.isComposing || e.keyCode === 229) return
             if (e.key === 'ArrowDown') {
               e.preventDefault()
               setCursor((c) => Math.min(filtered.length - 1, c + 1))

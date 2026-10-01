@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { teamOf, type PokemonInstance } from '@/engine'
+import { searchFold } from '@/i18n'
 import { useT } from '@/i18n/react'
 import { BoxSortPicker, sortBox, type BoxSort } from '@/components/BoxSort'
 import { PixelIcon } from '@/components/icons'
@@ -24,8 +25,8 @@ export function TeamScreen() {
   const team = teamOf(save)
   const name = (p: PokemonInstance) => data.species[p.dex]?.name ?? t('ui.common.unknown')
   const boxAll = save.box.filter((p) => !save.team.includes(p.id))
-  const needle = q.trim().toLowerCase()
-  const box = sortBox(boxAll.filter((p) => !needle || name(p).toLowerCase().includes(needle)), sort, data)
+  const needle = searchFold(q)
+  const box = sortBox(boxAll.filter((p) => !needle || searchFold(name(p)).includes(needle)), sort, data)
   const move = (i: number, d: -1 | 1) => {
     const ids = [...save.team]
     const j = i + d

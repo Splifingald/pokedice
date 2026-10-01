@@ -2,7 +2,7 @@
 // the Multi EXP share, a secret area's unlock condition. They live here, not in the engine, because
 // the engine also runs under `tsx` in the seed and sim scripts, where the CSV import has no loader.
 import type { GameData, ItemDef, UnlockCondition } from '@/engine/types'
-import { t } from '.'
+import { joinList, t } from '.'
 
 /** One-line effect for menus: "+20 HP", "Cures paralysis", "+1 reroll", "+2 to the catch die". */
 export function effectText(item: ItemDef): string {
@@ -13,7 +13,7 @@ export function effectText(item: ItemDef): string {
     case 'revive':
       return e.percent >= 100 ? t('ui.effect.reviveFull') : t('ui.effect.revivePercent', { percent: e.percent })
     case 'cure':
-      return t('ui.effect.cure', { statuses: e.statuses.map((s) => t(`ui.status.${s}.noun`)).join(', ') })
+      return t('ui.effect.cure', { statuses: joinList(e.statuses.map((s) => t(`ui.status.${s}.noun`))) })
     case 'rerolls':
       return t(`ui.effect.rerolls.${e.amount === 1 ? 'one' : 'other'}`, { amount: e.amount })
     case 'level':

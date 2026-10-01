@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion'
 import { useMemo, useState } from 'react'
 import { getRegion, isAreaUnlocked, regionOf, regionOfArea, regionSpecies } from '@/engine'
+import { searchFold } from '@/i18n'
 import { useT } from '@/i18n/react'
 import { PixelIcon } from '@/components/icons'
 import { SheetModal, type SheetView } from '@/components/SheetModal'
@@ -58,7 +59,7 @@ export function PokedexScreen() {
   const pageList = data.speciesList.filter((s) => inRegion.has(s.dex))
   const total = pageList.length
   const n = pageList.filter((s) => caught.has(s.dex)).length
-  const needle = q.trim().toLowerCase()
+  const needle = searchFold(q)
   const asNumber = /^#?\d+$/.test(needle) ? Number(needle.replace('#', '')) : null
   const list = pageList
     .filter((s) =>
@@ -74,7 +75,7 @@ export function PokedexScreen() {
     .filter(
       (s) =>
         !needle ||
-        (asNumber != null ? s.dex === asNumber : caught.has(s.dex) && s.name.toLowerCase().includes(needle)),
+        (asNumber != null ? s.dex === asNumber : caught.has(s.dex) && searchFold(s.name).includes(needle)),
     )
 
   const jump = (from: number) => {

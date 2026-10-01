@@ -1,4 +1,5 @@
 import type { DieType } from '@/engine/types'
+import { joinList } from '@/i18n'
 import { useT } from '@/i18n/react'
 import { typeName } from '@/lib/format'
 import { cx, typeColor } from '@/theme/util'
@@ -14,7 +15,7 @@ export function DiceSet({ dice, size = 16, className }: { dice: DieType[]; size?
     <div
       className={cx('flex flex-wrap items-center gap-1', className)}
       role="img"
-      aria-label={t('ui.die.set', { types: dice.map(typeName).join(', ') })}
+      aria-label={t('ui.die.set', { types: joinList(dice.map(typeName)) })}
     >
       {dice.map((type, i) => (
         <span

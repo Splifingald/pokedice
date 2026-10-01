@@ -3,7 +3,11 @@ import areas from '@/data/areas.json'
 import items from '@/data/items.json'
 import pokemon from '@/data/pokemon.json'
 import trainers from '@/data/trainers.json'
-import { allKeys, detectLang, hasKey, LANGS, tableFor, tIn } from '@/i18n'
+import { readFileSync } from 'node:fs'
+import regions from '@/data/regions.json'
+import { allKeys, CJK_LANGS, detectLang, hasKey, LANGS, searchFold, tableFor, tIn } from '@/i18n'
+import { CJK_RANGES, cjkFontFile, isCjkChar } from '@/i18n/cjk'
+import fontChars from '@/i18n/cjk-chars.json'
 import { areaKey, itemDescKey, itemKey, pokemonKey, slug, splitTrainerName, trainerClassKey } from '@/i18n/names'
 
 const missing = (keys: string[]) => keys.filter((k) => !hasKey(k))
@@ -20,6 +24,10 @@ describe('the localization sheet', () => {
 
   it('names every area', () => {
     expect(missing((areas as { name: string }[]).map((a) => areaKey(a.name)))).toEqual([])
+  })
+
+  it('names every region', () => {
+    expect(missing((regions as { id: string }[]).map((r) => `region.${r.id}`))).toEqual([])
   })
 
   it('knows every trainer class and badge in the bundle', () => {
@@ -53,6 +61,48 @@ describe('the localization sheet', () => {
     expect(tIn('pt', 'ui.nav.team')).toBe('Equipa')
     expect(tIn('pt-BR', 'ui.nav.team')).toBe('Equipe')
   })
+
+  it('uses the official CJK names', () => {
+    expect(tIn('ja', 'pokemon.25')).toBe('ピカチュウ')
+    expect(tIn('ko', 'pokemon.25')).toBe('피카츄')
+    expect(tIn('zh-Hans', 'pokemon.25')).toBe('皮卡丘')
+    expect(tIn('ja', 'trainerName.brock')).toBe('タケシ')
+    expect(tIn('ja', 'ui.common.listSep')).toBe('、')
+  })
+})
+
+describe('the pixel CJK font', () => {
+  const sheetChars = (lang: string) => {
+    const out = new Set<string>()
+    for (const key of allKeys()) for (const c of tableFor(lang as never)[key] ?? '') if (isCjkChar(c)) out.add(c)
+    return out
+  }
+
+  it('has every CJK character the sheet uses (run `pnpm i18n:fonts` after editing a CJK column)', () => {
+    for (const lang of CJK_LANGS) {
+      const font = new Set(fontChars[lang as keyof typeof fontChars])
+      expect([...sheetChars(lang)].filter((c) => !font.has(c)).join(''), lang).toBe('')
+    }
+  })
+
+  it('is declared once per CJK language, for exactly the CJK blocks', () => {
+    const css = readFileSync('src/index.css', 'utf8')
+    const ranges = CJK_RANGES.map(([a, b]) => `U+${a.toString(16)}-${b.toString(16)}`.toUpperCase())
+    for (const lang of CJK_LANGS) {
+      const face = css.split('@font-face').find((f) => f.includes(`/fonts/${cjkFontFile(lang)}`))
+      expect(face, lang).toBeDefined()
+      for (const r of ranges) expect(face, `${lang} ${r}`).toContain(r)
+      expect(readFileSync(`public/fonts/${cjkFontFile(lang)}`).length).toBeGreaterThan(50_000)
+    }
+  })
+})
+
+describe('searchFold', () => {
+  it('finds katakana names typed in hiragana, and full-width numbers', () => {
+    expect(searchFold('ぴかちゅう')).toBe(searchFold('ピカチュウ'))
+    expect(searchFold('＃０２５')).toBe('#025')
+    expect(searchFold(' Pikachu ')).toBe('pikachu')
+  })
 })
 
 describe('detectLang', () => {
@@ -71,9 +121,24 @@ describe('detectLang', () => {
   })
 
   it('skips languages it does not speak, and falls back to English', () => {
-    browser('ja-JP', 'de-AT')
+    browser('ru-RU', 'de-AT')
     expect(detectLang()).toBe('de')
-    browser('ko')
+    browser('th')
     expect(detectLang()).toBe('en')
+  })
+
+  it('maps Chinese tags to Simplified, and never shows Simplified to Traditional readers', () => {
+    for (const tag of ['zh', 'zh-CN', 'zh-SG', 'zh-Hans', 'zh-Hans-HK']) {
+      browser(tag)
+      expect(detectLang(), tag).toBe('zh-Hans')
+    }
+    browser('zh-TW', 'ja')
+    expect(detectLang()).toBe('ja')
+    browser('zh-Hant-HK')
+    expect(detectLang()).toBe('en')
+    browser('ja-JP')
+    expect(detectLang()).toBe('ja')
+    browser('ko-KR')
+    expect(detectLang()).toBe('ko')
   })
 })

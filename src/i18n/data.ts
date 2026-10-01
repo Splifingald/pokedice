@@ -3,7 +3,7 @@
 // `area.name`, `item.name` and `trainer.name` are already in the player's language everywhere.
 import type { GameData } from '@/engine'
 import { tIn, type Lang } from '.'
-import { areaKey, itemDescKey, itemKey, pokemonKey, slug, splitTrainerName, trainerClassKey, trainerNameKey } from './names'
+import { areaKey, itemDescKey, itemKey, pokemonKey, slug, splitRematch, splitTrainerName, trainerClassKey, trainerNameKey } from './names'
 
 /** A key the sheet has nothing for falls back to the English name it was built from. */
 const pick = (lang: Lang, key: string, english: string) => {
@@ -14,11 +14,17 @@ const pick = (lang: Lang, key: string, english: string) => {
 export const localizeSpeciesName = (lang: Lang, dex: number, english: string) => pick(lang, pokemonKey(dex), english)
 export const localizeAreaName = (lang: Lang, english: string) => pick(lang, areaKey(english), english)
 export const localizeBadge = (lang: Lang, english: string) => pick(lang, `badge.${slug(english)}`, english)
+export const localizeRegionName = (lang: Lang, id: string, english: string) => pick(lang, `region.${id}`, english)
 
-/** `Bug Catcher Kent` → `Chasseur d'insectes Kent`: the class is translated, the given name is not. */
+/**
+ * `Bug Catcher Kent` → `Chasseur d'insectes Kent`: the class is translated; a given name only when the sheet has a row
+ * for it (gym leaders, the Elite Four, champions: official names in CJK, kept in Latin languages). `Lance II` reads
+ * the `Lance` row.
+ */
 export function localizeTrainerName(lang: Lang, english: string): string {
   const { cls, given } = splitTrainerName(english)
-  const name = given ? pick(lang, trainerNameKey(given), given) : ''
+  const { base, suffix } = splitRematch(given)
+  const name = given ? pick(lang, trainerNameKey(base), base) + suffix : ''
   if (!cls) return name
   const label = pick(lang, trainerClassKey(cls), cls)
   return name ? `${label} ${name}` : label
@@ -44,6 +50,7 @@ export function localizeGameData(data: GameData, lang: Lang): GameData {
     trainers[id] = { ...tr, name: localizeTrainerName(lang, tr.name), badge: tr.badge ? localizeBadge(lang, tr.badge) : tr.badge }
 
   const areas = data.areas.map((a) => ({ ...a, name: localizeAreaName(lang, a.name) }))
+  const regions = data.regions.map((r) => ({ ...r, name: localizeRegionName(lang, r.id, r.name) }))
 
   return {
     ...data,
@@ -52,5 +59,6 @@ export function localizeGameData(data: GameData, lang: Lang): GameData {
     items,
     trainers,
     areas,
+    regions,
   }
 }

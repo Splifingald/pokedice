@@ -2,7 +2,7 @@ import { motion } from 'framer-motion'
 import { useEffect, useRef, useState } from 'react'
 import type { SlotSymbol, SpinResult } from '@/engine'
 import { sfx } from '@/audio/sfx'
-import { t } from '@/i18n'
+import { joinList, t } from '@/i18n'
 import { useT } from '@/i18n/react'
 import { GoldPill } from '@/components/GoldPill'
 import { PixelIcon } from '@/components/icons'
@@ -141,7 +141,7 @@ export function CasinoView() {
           aria-label={
             spinning
               ? t('ui.casino.reelsSpinning')
-              : t('ui.casino.reels', { symbols: reels.map((r) => (r === 'ball' ? t('ui.casino.pokeBall') : prizeName)).join(', ') })
+              : t('ui.casino.reels', { symbols: joinList(reels.map((r) => (r === 'ball' ? t('ui.casino.pokeBall') : prizeName))) })
           }
         >
           {[0, 1, 2].map((i) => (

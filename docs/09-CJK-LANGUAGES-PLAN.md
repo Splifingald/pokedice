@@ -1,9 +1,33 @@
 # Pokédice — Simplified Chinese, Japanese & Korean Plan
 
-> **Status: plan, not built.** Italian, Portuguese and Brazilian Portuguese shipped first (`it`, `pt`, `pt-BR`) and
-> were pure content: the Jersey fonts already draw every Latin letter they need. Chinese, Japanese and Korean are not.
-> The sheet and the code handle them almost as they are; **the work is the font**, then a few places where the code
-> assumes a Latin script, then the translation itself.
+> **Status: built** (`ja`, `ko`, `zh-Hans`). Where this document and the code disagree, the code is right. What
+> changed in the building:
+>
+> - **The font comes from npm, not GitHub.** GitHub is not reachable from the build sandbox; fontsource publishes the
+>   full Fusion Pixel 12px builds (`@fontsource/fusion-pixel-12px-proportional-{jp,kr,sc}`, dev dependencies).
+>   `pnpm i18n:fonts` (`scripts/i18n-fonts.ts`, with `subset-font`) cuts one file per language. §2.2 and §2.3 became
+>   **one** file per language, not two: the sheet's characters plus the language's standard set (JIS X 0208 /
+>   KS X 1001 / GB 2312), every kana and every KS X 1001 Hangul — 234 / 179 / 218 KB, covering players' names too.
+>   `src/i18n/cjk-chars.json` records the sheet's characters at build time; the i18n test fails when the sheet uses one
+>   the committed font lacks.
+> - **One known gap:** Fusion Pixel has no `鳅` (Barboach's Chinese name, 泥泥鳅). That glyph falls back to a system font.
+> - **No size floor or line-height change was needed.** The smallest size in the app is `text-xs` (12 px), Fusion's
+>   native size. The CJK face is drawn at the same font size as Jersey (no `size-adjust`): ideographs stand ~1.5× a
+>   Jersey capital, which reads well at every size checked.
+> - **A font stack resolves once, where it is declared.** `--font-cjk` is set by `:lang()`, but an element with its own
+>   `lang` inside a page of another language inherits the page's resolved stack. The Settings language buttons
+>   re-declare `font-pixel` so 日本語 / 한국어 / 简体中文 each draw in their own face (the layout test checks it).
+> - **Korean particles are resolved in code** (`src/i18n/ko.ts`): templates write `{name}이(가)`, and `tIn` picks 이 or 가
+>   from the name it received. Particles after Latin letters keep both forms.
+> - **Trainer names were wider than §3.2 assumed.** 442 Sinnoh/Unova trainers didn't split into class + name, so they
+>   stayed in English in every language. 26 classes were added (Galactic Grunt, Veteran, Worker…), `Lance II`-style
+>   rematches now read the `Lance` row, and the 53 leaders/Elite Four/champions/villains got name rows.
+> - **Region names are translated** (`region.*` rows, localized in `localizeGameData`): カントー, 관동, 关都…
+> - **Translation status:** every cell is filled, without native review yet. Least certain: Korean and Chinese place
+>   names for Hoenn, Sinnoh and especially Unova (several are best guesses), and a few Sinnoh Battle Frontier / minor
+>   character names (Thorton, Argenta, Darach, Palmer, Buck, Marley).
+>
+> The rest of this document is the plan as written.
 
 Target codes: **`zh-Hans`**, **`ja`**, **`ko`** (BCP 47, like `pt-BR`), labelled `简体中文`, `日本語`, `한국어`.
 

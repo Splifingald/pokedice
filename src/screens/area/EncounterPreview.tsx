@@ -2,6 +2,7 @@ import { motion } from 'framer-motion'
 import { useId, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { catchTarget, catchValueOf, effectiveStats, getSpecies, MONEY, type Encounter } from '@/engine'
+import { joinList } from '@/i18n'
 import { effectText } from '@/i18n/text'
 import { money } from '@/lib/format'
 import { useT } from '@/i18n/react'
@@ -145,7 +146,7 @@ function TrainerCard({ enc }: { enc: Extract<Encounter, { kind: 'trainer' }> }) 
           {/* Only worth saying when wild battles can be fled. */}
           {!data.config.noEscape && t('ui.enc.noRunning')}
         </div>
-        <div className="sr-only">{enc.team.map((m) => data.species[m.dex]?.name).join(', ')}</div>
+        <div className="sr-only">{joinList(enc.team.map((m) => data.species[m.dex]?.name ?? ''))}</div>
       </div>
     </div>
   )

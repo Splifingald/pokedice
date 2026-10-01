@@ -27,7 +27,7 @@ import { PixelButton } from '@/components/PixelButton'
 import { SheetModal, type SheetView } from '@/components/SheetModal'
 import { MiniSprite, preloadSprites } from '@/components/SpriteImg'
 import { countdown, trainerTitle } from '@/lib/format'
-import { t } from '@/i18n'
+import { joinList, t } from '@/i18n'
 import { useT } from '@/i18n/react'
 import { OakTip, useOneTimeTip } from '@/components/OakTip'
 import { setSettings, useGame } from '@/store/game'
@@ -127,7 +127,7 @@ function RoundGauge({ area, progress }: { area: Area; progress: AreaProgress }) 
         <span className="sr-only">{t('ui.area.ahead')}</span>
         <ol
           className="flex min-w-0 flex-1 gap-[2px]"
-          aria-label={t('ui.area.stillToCome', { cards: ahead.map(cardName).join(', ') || t('ui.area.nothing') })}
+          aria-label={t('ui.area.stillToCome', { cards: joinList(ahead.map(cardName)) || t('ui.area.nothing') })}
         >
           {Array.from({ length: total }, (_, i) => {
             const card = i >= metCount ? ahead[i - metCount] : undefined

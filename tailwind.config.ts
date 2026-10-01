@@ -25,12 +25,13 @@ export default {
         ...typeTokens,
       },
       fontFamily: {
-        // Jersey only, everywhere (sans/serif/mono included so no utility or preflight default reaches a system font).
-        pixel: ['"Jersey 25"', '"Jersey 15"'],
-        'pixel-sm': ['"Jersey 15"', '"Jersey 25"'],
-        sans: ['"Jersey 25"', '"Jersey 15"'],
-        serif: ['"Jersey 25"', '"Jersey 15"'],
-        mono: ['"Jersey 15"', '"Jersey 25"'],
+        // Jersey only, everywhere (sans/serif/mono included so no utility or preflight default reaches a system font),
+        // then the pixel CJK face for Japanese, Korean and Chinese characters (src/index.css).
+        pixel: ['"Jersey 25"', '"Jersey 15"', 'var(--font-cjk)'],
+        'pixel-sm': ['"Jersey 15"', '"Jersey 25"', 'var(--font-cjk)'],
+        sans: ['"Jersey 25"', '"Jersey 15"', 'var(--font-cjk)'],
+        serif: ['"Jersey 25"', '"Jersey 15"', 'var(--font-cjk)'],
+        mono: ['"Jersey 15"', '"Jersey 25"', 'var(--font-cjk)'],
       },
       borderRadius: {
         px2: '2px',

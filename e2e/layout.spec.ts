@@ -3,7 +3,8 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test, type Page } from '@playwright/test'
 import { createInstance, linearAreas, progressOf, type SaveData } from '../src/engine'
-import { LANGS, type Lang } from '../src/i18n/langs'
+import { cjkFamily } from '../src/i18n/cjk'
+import { CJK_LANGS, LANGS, type Lang } from '../src/i18n/langs'
 import { FAST, gameData, makeSave, mockSupabase } from './helpers'
 
 const data = gameData()
@@ -99,7 +100,20 @@ for (const size of SIZES) {
   })
 }
 
+/** The CJK faces the page has loaded. `getComputedStyle` can't tell: it still names Jersey first. */
+function cjkFacesLoaded(page: Page) {
+  return page.evaluate(async () => {
+    await document.fonts.ready
+    const faces: string[] = []
+    document.fonts.forEach((f) => {
+      if (f.family.includes('Pokedice CJK') && f.status !== 'unloaded') faces.push(f.family.replace(/"/g, ''))
+    })
+    return faces
+  })
+}
+
 // Translations run longer than the English (Configurações, Potenziamenti…): the smallest phone must hold every one.
+// Japanese, Korean and Chinese must draw in the pixel CJK face; the Latin languages must never download it.
 for (const lang of LANGS.filter((l) => l !== 'en')) {
   test(`every screen fits a 360×640 phone in ${lang}`, async ({ page }) => {
     await page.setViewportSize({ width: 360, height: 640 })
@@ -112,6 +126,11 @@ for (const lang of LANGS.filter((l) => l !== 'en')) {
       expect(overflow, `${route} scrolls sideways`).toBeLessThanOrEqual(0)
       expect(await nonJerseyText(page), `${route}: fonts`).toEqual([])
       expect(await smallControls(page), `${route}: controls under 44px`).toEqual([])
+      const cjk = await cjkFacesLoaded(page)
+      if (CJK_LANGS.includes(lang)) expect(cjk, `${route}: CJK font`).toContain(cjkFamily(lang))
+      // The language picker names 日本語, 한국어 and 简体中文 in their own scripts — each in its own face.
+      else if (route === '/settings') expect(cjk.sort(), `${route}: CJK font`).toEqual(CJK_LANGS.map(cjkFamily).sort())
+      else expect(cjk, `${route}: CJK font`).toEqual([])
     }
   })
 }

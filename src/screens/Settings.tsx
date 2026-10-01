@@ -231,7 +231,9 @@ function LanguagePanel() {
             aria-checked={lang === l}
             lang={l}
             onClick={() => setSettings({ lang: l as Lang })}
-            className={`pixel-btn min-h-[44px] px-3 py-1 text-2xl leading-none ${lang === l ? 'bg-gold' : 'bg-parchment'}`}
+            // font-pixel re-reads --font-cjk here, so each label draws in its own language's CJK face (`lang` alone
+            // would inherit the page's: a font stack is resolved once, on <body>).
+            className={`pixel-btn font-pixel min-h-[44px] px-3 py-1 text-2xl leading-none ${lang === l ? 'bg-gold' : 'bg-parchment'}`}
           >
             {LANG_LABELS[l]}
           </button>
