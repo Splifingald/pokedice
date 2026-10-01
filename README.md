@@ -10,7 +10,8 @@ upgrades, and the goal is 151/151 in the Pokédex.
 > synthesised at runtime. Made by Splifingald.
 
 The design lives in [`docs/`](docs): [game spec](docs/01-GAME-SPEC.md) · [data model](docs/02-DATA-MODEL.md) ·
-[build plan](docs/03-BUILD-PLAN.md) · [Sinnoh plan](docs/07-SINNOH-PLAN.md).
+[build plan](docs/03-BUILD-PLAN.md) · [Sinnoh plan](docs/07-SINNOH-PLAN.md) ·
+[Gen 6–9 sprite sources](docs/10-GEN6-9-SPRITES.md).
 
 ## Quick start
 
