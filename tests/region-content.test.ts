@@ -159,8 +159,10 @@ describe('regions', () => {
   it('deals decks of a sensible size everywhere, as Kanto does', () => {
     for (const a of areas) {
       const total = Object.values(a.encounterWeights).reduce((s, n) => s + n, 0)
-      // A league area's content is its gauntlet, not its deck, so it is allowed a short one.
-      expect(total, a.name).toBeGreaterThanOrEqual(a.gyms.length >= 5 ? 1 : 4)
+      // A league area's content is its gauntlet, not its deck, so it is allowed a short one;
+      // a legendary's lair may have no deck at all (it closes once the legendary is caught).
+      const lair = !!a.legendaryBoss?.length
+      expect(total, a.name).toBeGreaterThanOrEqual(lair ? 0 : a.gyms.length >= 5 ? 1 : 4)
       expect(total, a.name).toBeLessThanOrEqual(20)
     }
   })

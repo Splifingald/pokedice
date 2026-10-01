@@ -623,10 +623,10 @@
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/cover-fossil.png",
   "price": 0,
   "effect": {
-   "kind": "fossil",
    "dex": 564,
-   "level": 20,
-   "hours": 24
+   "kind": "fossil",
+   "hours": 24,
+   "level": 20
   },
   "inShop": false,
   "shopBadges": 0,
@@ -639,10 +639,10 @@
   "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/plume-fossil.png",
   "price": 0,
   "effect": {
-   "kind": "fossil",
    "dex": 566,
-   "level": 20,
-   "hours": 24
+   "kind": "fossil",
+   "hours": 24,
+   "level": 20
   },
   "inShop": false,
   "shopBadges": 0,
