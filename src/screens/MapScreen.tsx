@@ -9,6 +9,7 @@ import {
   dayCareXp,
   gymsFor,
   isDayCareOpen,
+  isAreaClosed,
   isAreaUnlocked,
   linearAreas,
   regionOf,
@@ -73,6 +74,8 @@ function AreaCard({ area, index, prevName, delay = 0 }: { area: Area; index: num
   const runArea = useGame((s) => s.run.areaId)
   const navigate = useNavigate()
   const unlocked = isAreaUnlocked(save, area.id, data)
+  // Nothing left to do in a deckless area (its legendary caught…): it can't be entered anymore.
+  const closed = unlocked && isAreaClosed(save, area.id, data)
   const p = progressOf(save, area.id)
   const current = save.currentAreaId === area.id
   const bosses = area.legendaryBoss ?? []
@@ -174,12 +177,12 @@ function AreaCard({ area, index, prevName, delay = 0 }: { area: Area; index: num
         <PixelButton
           variant="primary"
           className="w-full sm:w-auto"
-          disabled={!unlocked}
+          disabled={!unlocked || (closed && !exploring)}
           onClick={() => {
             if (exploring || enterArea(area.id)) navigate('/area')
           }}
         >
-          {t(!unlocked ? 'ui.map.locked' : exploring ? 'ui.common.continue' : 'ui.map.enter')}
+          {t(!unlocked ? 'ui.map.locked' : exploring ? 'ui.common.continue' : closed ? 'ui.map.closed' : 'ui.map.enter')}
         </PixelButton>
         {unlocked && <RoundsCounter area={area} progress={p} className="w-full" />}
       </div>

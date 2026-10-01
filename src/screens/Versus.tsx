@@ -22,6 +22,8 @@ import { PixelButton } from '@/components/PixelButton'
 import { MiniSprite } from '@/components/SpriteImg'
 import { TrainerSprite } from '@/components/TrainerArt'
 import { avatarOf } from '@/lib/avatars'
+import { useSnapToMe } from '@/lib/useSnapToMe'
+import { searchFold } from '@/i18n'
 import { useT } from '@/i18n/react'
 import {
   fetchVersusBoard,
@@ -286,10 +288,14 @@ function TeamEditor({
   // The saved team starts picked, so the screen shows which Pokémon are in it.
   const [picks, setPicks] = useState<string[]>(() => me?.ids ?? [])
   const [saving, setSaving] = useState(false)
+  const [q, setQ] = useState('')
   // Every region's Box, strongest first; the region being played, then the Box order, break ties.
   const candidates = useMemo(() => [...versusCandidates(save, data)].sort((a, b) => b.inst.level - a.inst.level), [save, data])
   // Several regions played: each Pokémon says which one it comes from.
   const manyRegions = new Set(candidates.map((c) => c.region)).size > 1
+  // The search narrows the list by name; picks it hides stay picked.
+  const needle = searchFold(q)
+  const shown = needle ? candidates.filter((c) => searchFold(data.species[c.inst.dex]?.name ?? '').includes(needle)) : candidates
   // A pick that has left the Box (released, or sent to the Day Care) is dropped.
   const valid = picks.filter((id) => candidates.some((c) => c.inst.id === id))
   // The picks are the team already saved: nothing to save.
@@ -320,6 +326,18 @@ function TeamEditor({
 
   return (
     <div className="flex flex-col gap-3">
+      <label htmlFor="versus-search" className="sr-only">
+        {t('ui.versus.searchLabel')}
+      </label>
+      <input
+        id="versus-search"
+        type="search"
+        value={q}
+        onChange={(e) => setQ(e.target.value)}
+        placeholder={t('ui.versus.search')}
+        className="min-h-[44px] w-full border-[3px] border-ink bg-panel px-2 text-xl"
+      />
+
       <section className="flex flex-col items-center gap-1 border-[3px] border-ink bg-panel p-2">
         <h2 className="text-2xl leading-none">{t('ui.versus.yourTeam')}</h2>
         {me ? <TeamStrip team={me.team} name={me.name} size={56} /> : <p className="text-xl text-muted">{t('ui.versus.noTeam')}</p>}
@@ -328,8 +346,9 @@ function TeamEditor({
       <p className="copy text-lg leading-tight">{t('ui.versus.pickHint')}</p>
       <p className="copy text-base leading-tight text-muted">{t('ui.versus.rules')}</p>
 
+      {shown.length === 0 && <p className="copy text-center text-lg text-muted">{t('ui.search.noMatch')}</p>}
       <ul className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
-        {candidates.map(({ inst: p, region }) => {
+        {shown.map(({ inst: p, region }) => {
           const order = valid.indexOf(p.id)
           const clone = cloneForVersus(p)
           const name = data.species[p.dex]?.name ?? t('ui.common.pokemon')
@@ -394,6 +413,7 @@ function Board({ rows }: { rows: VersusEntry[] }) {
   const { t, tPlural } = useT()
   const [tab, setTab] = useState<VersusBoardTab>('attack')
   const ranked = useMemo(() => rankVersus(rows, tab), [rows, tab])
+  const meRef = useSnapToMe(`${tab}:${ranked.findIndex((r) => r.isMe)}`)
   return (
     <div className="flex flex-col gap-2">
       <div role="tablist" aria-label={t('ui.board.sortBy')} className="grid grid-cols-2 gap-1.5">
@@ -416,6 +436,7 @@ function Board({ rows }: { rows: VersusEntry[] }) {
         {ranked.map((r) => (
           <li
             key={r.userId}
+            ref={r.isMe ? meRef : undefined}
             aria-current={r.isMe || undefined}
             className={cx(
               'flex items-center gap-3 border-[3px] border-ink px-2 py-1.5 shadow-[3px_3px_0_#6b6480]',

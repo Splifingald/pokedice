@@ -3,7 +3,7 @@ import { getSpecies, linearAreas } from './data'
 import { KANTO, evolutionGate, regionOf, regionOfArea } from './regions'
 import { asSeenBy, gymsFor, playerSideOf } from './rival'
 import { nextComboCost, nextDieCost, pokemonXp, trainerGoldFor, healAmount, multiExpShareFor } from './economy'
-import { roundsComplete } from './encounters'
+import { deckAbilities, deckCounts, roundsComplete } from './encounters'
 import { addFossil, isReviving } from './fossils'
 import { LEGACY_GAUGE } from './legacyGauge'
 import { MONEY, sellPrice, shopSells, usableIn } from './items'
@@ -212,6 +212,26 @@ export function isAreaUnlocked(save: SaveData, areaId: string, data: GameData, d
   const idx = chain.findIndex((a) => a.id === areaId)
   if (idx <= 0) return idx === 0
   return progressOf(save, chain[idx - 1]!.id).cleared
+}
+
+/**
+ * An area with no deck — no wild Pokémon, trainers or Game Corner to meet, only Pokémon Centers and items, e.g. a
+ * legendary's lair — closes once nothing is left to do there: every gym battle won, every legendary beaten and caught.
+ * It can't be entered anymore. Areas with a deck, and ones with nothing special to begin with, never close.
+ */
+export function isAreaClosed(save: SaveData, areaId: string, data: GameData): boolean {
+  const area = data.areas.find((a) => a.id === areaId)
+  if (!area) return false
+  const c = deckCounts(area.encounterWeights, deckAbilities(area))
+  if (c.wild + c.trainer + c.casino > 0) return false
+  const bosses = area.legendaryBoss ?? []
+  const gyms = gymsFor(area, data, playerSideOf(save)).filter((id) => data.trainers[id]?.team.length)
+  if (!bosses.length && !gyms.length) return false
+  const p = progressOf(save, areaId)
+  return (
+    gyms.every((id) => p.gymsDefeated.includes(id)) &&
+    bosses.every((b) => p.bossesDefeated.includes(b.dex) && save.pokedex.includes(b.dex))
+  )
 }
 
 export function unlockedHiddenAreas(save: SaveData, data: GameData): string[] {

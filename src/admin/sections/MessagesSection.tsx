@@ -1,8 +1,9 @@
 // Admin → Messages: what players sent through the side menu → Contact the developer (table feedback, migration 0019,
-// admin-only reads via RLS). Newest first; mark read / unread, or delete.
+// admin-only reads via RLS). Newest first; answer (migration 0025: the player sees it, and it marks the message read),
+// mark read / unread, or delete.
 import { useCallback, useEffect, useState } from 'react'
 import { PixelButton } from '@/components/PixelButton'
-import type { FeedbackRow } from '@/lib/feedback'
+import { FEEDBACK_MESSAGE_MAX, type FeedbackRow } from '@/lib/feedback'
 import { getSupabase, isSupabaseConfigured } from '@/lib/supabase'
 import { pushToast } from '@/store/game'
 import { cx } from '@/theme/util'
@@ -38,6 +39,8 @@ function Message({
   onDelete: () => void
 }) {
   const [busy, setBusy] = useState(false)
+  // The answer being written, or null when the editor is closed.
+  const [draft, setDraft] = useState<string | null>(null)
   const context = Object.entries(m.context ?? {}).filter(([, v]) => v !== null && v !== '')
 
   const run = async (fn: () => Promise<void>) => {
@@ -55,6 +58,24 @@ function Message({
       const { error } = await (await client()).from('feedback').update({ read: !m.read }).eq('id', m.id)
       if (error) throw error
       onChange({ ...m, read: !m.read })
+    })
+  const sendReply = () =>
+    run(async () => {
+      const reply = draft?.trim() ?? ''
+      if (!reply) return
+      // The database stamps the time, marks it read and shows it to the player again.
+      const { data, error } = await (
+        await client()
+      )
+        .from('feedback')
+        .update({ reply })
+        .eq('id', m.id)
+        .select('*')
+        .single()
+      if (error) throw error
+      onChange({ ...m, ...(data as Partial<FeedbackRow>), reply, read: true })
+      setDraft(null)
+      pushToast('Answer sent', 'good')
     })
   const remove = () =>
     run(async () => {
@@ -75,12 +96,56 @@ function Message({
       </div>
       <p className="text-lg text-muted">{sender(m)}</p>
       <p className="copy whitespace-pre-wrap break-words text-lg leading-snug">{m.message}</p>
+      {m.reply && draft === null && (
+        <div className="border-2 border-ink bg-gold/30 p-2">
+          <p className="flex flex-wrap items-baseline justify-between gap-x-2 text-lg leading-none">
+            <b>Your answer</b>
+            <span className="text-base text-muted">
+              {m.replied_at ? when(m.replied_at) : ''}
+              {m.reply_seen ? ' · seen' : ' · not seen yet'}
+            </span>
+          </p>
+          <p className="copy mt-1 whitespace-pre-wrap break-words text-lg leading-snug">{m.reply}</p>
+        </div>
+      )}
+      {draft !== null && (
+        <label className="flex flex-col gap-1 text-lg">
+          Answer — the player sees it the next time they open the game
+          <textarea
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            maxLength={FEEDBACK_MESSAGE_MAX}
+            rows={5}
+            autoFocus
+            className="copy w-full resize-y border-[3px] border-ink bg-panel p-2 text-lg leading-snug"
+          />
+        </label>
+      )}
       {context.length > 0 && (
         <p className="break-words font-mono text-xs text-muted">
           {context.map(([k, v]) => `${k}: ${String(v)}`).join(' · ')}
         </p>
       )}
       <div className="flex flex-wrap justify-end gap-2">
+        {draft === null ? (
+          <PixelButton size="sm" variant="primary" disabled={busy} onClick={() => setDraft(m.reply ?? '')}>
+            {m.reply ? 'Edit answer' : 'Reply'}
+          </PixelButton>
+        ) : (
+          <>
+            <PixelButton size="sm" disabled={busy} onClick={() => setDraft(null)}>
+              Cancel
+            </PixelButton>
+            <PixelButton
+              size="sm"
+              variant="primary"
+              disabled={busy || !draft.trim()}
+              onClick={() => void sendReply()}
+            >
+              Send answer
+            </PixelButton>
+          </>
+        )}
         <PixelButton size="sm" disabled={busy} onClick={() => void toggleRead()}>
           {m.read ? 'Mark unread' : 'Mark read'}
         </PixelButton>
@@ -158,7 +223,9 @@ export function MessagesSection() {
       {error ? (
         <div className="pixel-panel flex flex-col gap-2 p-4">
           <p className="text-danger">Could not load messages: {error}</p>
-          <p>Has supabase/migrations/0019_feedback.sql been run?</p>
+          <p>
+            Has supabase/migrations/0019_feedback.sql been run? Answers need 0025_feedback_replies.sql too.
+          </p>
         </div>
       ) : !rows ? (
         <p className="text-xl">Loading…</p>

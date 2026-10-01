@@ -7,6 +7,7 @@ import {
   deckCounts,
   deckSize,
   hasFaintedMember,
+  isAreaClosed,
   recordDraws,
   linearAreas,
   newSave,
@@ -144,6 +145,27 @@ describe('rounds', () => {
     expect(after.drawn).toHaveLength(1)
   })
 
+  it('a cleared area no longer opens with a Pokémon Center, but the Centers in its deck still turn up', () => {
+    const base = newSave(4, data, 0, newId)
+    const hurt = { ...base, box: base.box.map((p) => ({ ...p, currentHp: 1 })) }
+    const cleared: SaveData = { ...hurt, areaProgress: { ...hurt.areaProgress, [ROUTE1.id]: { ...progressOf(hurt, ROUTE1.id), cleared: true } } }
+    const rng = createRng(21)
+    const opening = nextEncounter(ctx(cleared, ROUTE1, { centerUseful: true, teamHurt: true, isFirstInArea: true }), rng)
+    expect(opening.newRound).toBe(true)
+    expect(opening.encounter).not.toMatchObject({ kind: 'center', forced: true })
+    let save = recordDraws(cleared, ROUTE1.id, opening)
+    const kinds = [opening.encounter.kind]
+    while (progressOf(save, ROUTE1.id).deck?.length) {
+      const roll = nextEncounter(ctx(save, ROUTE1, { centerUseful: true }), rng)
+      kinds.push(roll.encounter.kind)
+      save = recordDraws(save, ROUTE1.id, roll)
+    }
+    expect(kinds.filter((k) => k === 'center')).toHaveLength(deckCounts(ROUTE1.encounterWeights, deckAbilities(ROUTE1)).center)
+    // Easy areas still send one after a K.O.
+    const ko = { ...cleared, box: cleared.box.map((p) => ({ ...p, currentHp: 0 })) }
+    expect(nextEncounter(ctx(ko, { ...ROUTE1, easyMode: true }, { teamFainted: true }), rng).encounter).toMatchObject({ reason: 'fainted' })
+  })
+
   it('knows when a Center would help: someone hurt, or a Pokémon in the Box', () => {
     const s = newSave(4, data, 0, newId)
     expect(centerWouldHelp(s, data)).toBe(false)
@@ -206,5 +228,38 @@ describe('never two Pokémon Centers in a row', () => {
     const roll = nextEncounter(ctx(save, ROUTE1), createRng(3))
     expect(roll.encounter.kind).toBe('wild')
     expect(roll.deck).toEqual(['center'])
+  })
+})
+
+describe('closed areas', () => {
+  const LAIR = data.areas.find((a) => a.name === 'Faraway Island')! // Mew, nothing but Centers
+  const LAKES = data.areas.find((a) => a.name === 'The Lakes of Sinnoh')! // three legendaries, Centers and items
+  const withProgress = (save: SaveData, area: Area, p: Partial<ReturnType<typeof progressOf>>): SaveData => ({
+    ...save,
+    areaProgress: { ...save.areaProgress, [area.id]: { ...progressOf(save, area.id), ...p } },
+  })
+
+  it('a deckless area closes once its legendaries are beaten and caught', () => {
+    const save = newSave(4, data, 0, newId)
+    const mew = LAIR.legendaryBoss![0]!.dex
+    expect(isAreaClosed(save, LAIR.id, data)).toBe(false)
+    const beaten = withProgress(save, LAIR, { bossesDefeated: [mew] })
+    expect(isAreaClosed(beaten, LAIR.id, data)).toBe(false) // it fled the catch: it comes back
+    expect(isAreaClosed({ ...beaten, pokedex: [...beaten.pokedex, mew] }, LAIR.id, data)).toBe(true)
+
+    const dexes = LAKES.legendaryBoss!.map((b) => b.dex)
+    const lakes = { ...withProgress(save, LAKES, { bossesDefeated: dexes.slice(1) }), pokedex: [...save.pokedex, ...dexes] }
+    expect(isAreaClosed(lakes, LAKES.id, data)).toBe(false)
+    expect(isAreaClosed(withProgress(lakes, LAKES, { bossesDefeated: dexes }), LAKES.id, data)).toBe(true)
+  })
+
+  it('an area with wild Pokémon or trainers never closes', () => {
+    const save = withProgress(newSave(4, data, 0, newId), ROUTE1, { cleared: true, roundsDone: 99 })
+    expect(isAreaClosed(save, ROUTE1.id, data)).toBe(false)
+    const dex = LAIR.legendaryBoss![0]!.dex
+    const lair: Area = { ...LAIR, wildPool: ROUTE1.wildPool, encounterWeights: { ...LAIR.encounterWeights, wild: 4 } }
+    const d = { ...data, areas: data.areas.map((a) => (a.id === LAIR.id ? lair : a)) }
+    const done = { ...withProgress(save, LAIR, { bossesDefeated: [dex] }), pokedex: [...save.pokedex, dex] }
+    expect(isAreaClosed(done, LAIR.id, d)).toBe(false)
   })
 })

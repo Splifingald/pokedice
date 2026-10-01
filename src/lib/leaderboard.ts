@@ -1,5 +1,7 @@
-// The leaderboard: every cloud save (Google-signed-in players only), ranked by best level, campaign progress or
-// Pokédex. The rows come from the `leaderboard()` SQL function; ranking happens here, against the game data.
+// The leaderboard: every cloud save (Google-signed-in players only) played in the last 72 hours, ranked by best level,
+// campaign progress or Pokédex. The rows come from the `leaderboard()` SQL function, which leaves inactive players out
+// (migration 0023), and a region's row out until the player holds a badge there (0024); ranking happens here, against
+// the game data.
 import { linearAreas } from '@/engine/data'
 import { regionSpecies } from '@/engine/regions'
 import type { GameData, RegionId } from '@/engine/types'

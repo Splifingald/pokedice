@@ -104,10 +104,22 @@ supabase/    migrations/0001_init.sql, seed.sql (generated)
   `src/lib/avatars.ts`. It is stored as `player.avatar` in the save and is the character until picked; the character
   still throws the Poké Balls and decides the rival. Needs `supabase/migrations/0022_player_avatar.sql` run once on
   the live database.
+- **Leaderboard activity** — a player whose save hasn't changed in 72 hours drops off every board (ranked rows and
+  Hall of Fame) until they play again; you always see your own rows. Needs
+  `supabase/migrations/0023_leaderboard_inactive.sql` run once on the live database (re-running `supabase/seed.sql`
+  does it too).
+- **Leaderboard badge** — the trophy button and `/leaderboard` stay locked until the player's first gym badge (any
+  region), and a region's board only lists trainers with at least one badge there. Prof. Oak's share prompt comes with
+  the region's 2nd badge. Needs `supabase/migrations/0024_leaderboard_badge.sql` run once on the live database
+  (re-running `supabase/seed.sql` does it too).
 - **Contact the developer** — trainer menu (side panel) → Contact the developer, at the bottom: a title and a description, stored
   in Supabase table `feedback` and read in Admin → Messages (mark read / unread, delete). The database fills in who
   sent it (Google account or guest device) and allows 3 messages per player per 10 minutes. Needs
   `supabase/migrations/0019_feedback.sql` run once on the live database.
+- **Answers to messages** — Admin → Messages → REPLY writes an answer on a message and marks it read. The player finds
+  every message they sent and its answer under Contact the developer → *My messages* (their Google account's, plus the
+  ones sent as a guest from that browser), and an answer they haven't seen yet pops up the next time they open the
+  game. Needs `supabase/migrations/0025_feedback_replies.sql` run once on the live database.
 - **Admin → Analytics** sums up the all-time figures (retention, each player's top level and furthest area) in the
   database, from running totals kept up to date as events come in, so the page stays quick however many events pile
   up. Needs `supabase/migrations/0020_analytics_summaries.sql` then `0021_analytics_rollups.sql` run once on the live

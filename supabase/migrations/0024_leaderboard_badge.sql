@@ -1,36 +1,11 @@
--- Regions: Kanto, Johto, Hoenn. A region is a self-contained run — its own chain of areas, its own starters, its own
--- Pokédex page and its own leaderboard — and the player keeps only their character when they move on.
-
-create table if not exists regions (
-  id text primary key,                 -- 'kanto', 'johto', 'hoenn'
-  name text not null,
-  order_index int not null unique,
-  dex_range jsonb not null,            -- [1, 151]: the generation this region's page is about
-  starters jsonb not null,             -- [1, 4, 7]
-  starter_level int not null default 5,
-  league_area_id uuid not null,        -- clearing this area is "the league is done" (a soft link to areas.id)
-  -- Soft links, deliberately not foreign keys: admin saves regions row by row, and a half-finished chain (Johto
-  -- pointing at a Hoenn that is not written yet) must not be rejected. The client tolerates a dangling id.
-  next_region text,
-  -- Off = the region is invisible everywhere: no prompt, no switcher, no Pokédex page, no board. Kanto is always on.
-  enabled boolean not null default true
-);
-
-alter table regions enable row level security;
-drop policy if exists regions_read on regions;
-drop policy if exists regions_write on regions;
-create policy regions_read on regions for select using (true);
-create policy regions_write on regions for all using (is_admin()) with check (is_admin());
-
--- Which region's chain an area belongs to. Existing rows are Kanto, which is what they have always been.
-alter table areas add column if not exists region_id text not null default 'kanto';
-create index if not exists areas_region_idx on areas (region_id, order_index);
-
--- ---------------------------------------------------------------- leaderboard, one row per region played
+-- The leaderboard only lists trainers with a badge: a region's row shows once the player has won at least one gym
+-- badge in that region (a trainer with `badge` set among the gyms beaten there). The client keeps the board itself
+-- locked until the player's first badge (leaderboardUnlocked in src/engine/daycare.ts). Keeps 0023's 72-hour
+-- activity rule.
 --
--- Replaces 0011's leaderboard(): a save now holds the live region at its top level and the others under `parked`,
--- so a player who has played several regions appears once per region, and each board ranks only its own.
-drop function if exists leaderboard();
+-- 0016_regions.sql carries the same leaderboard() change, so re-running supabase/seed.sql (which inlines 0016) keeps
+-- it. Safe to run again.
+
 create or replace function leaderboard()
 returns table (
   region text,
@@ -61,7 +36,6 @@ language sql stable security definer set search_path = public as $$
     b.region,
     b.user_id = auth.uid(),
     left(coalesce(nullif(trim(b.root -> 'player' ->> 'name'), ''), 'Trainer'), 12),
-    -- The look (0022): the player's pick, else their character.
     coalesce(b.root -> 'player' ->> 'avatar', b.root -> 'player' ->> 'character', 'red'),
     coalesce((
       select jsonb_agg(jsonb_build_object(
@@ -87,7 +61,6 @@ language sql stable security definer set search_path = public as $$
     ), '{}')
   from blocks b
   where not exists (select 1 from leaderboard_bans x where x.user_id = b.user_id)
-    -- Inactive for 72 hours (0023): off the boards until they play again. The caller always sees their own rows.
     and (b.updated_at > now() - interval '72 hours' or b.user_id = auth.uid())
     -- At least one gym badge won in this region (0024): a trainer whose `badge` is set, among the block's gyms beaten.
     and exists (

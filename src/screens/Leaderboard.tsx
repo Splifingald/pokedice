@@ -6,8 +6,9 @@ import { MiniSprite } from '@/components/SpriteImg'
 import { Modal } from '@/components/Modal'
 import { TrainerSprite } from '@/components/TrainerArt'
 import { avatarOf } from '@/lib/avatars'
+import { useSnapToMe } from '@/lib/useSnapToMe'
 import { fetchLeaderboard, leaderboardError, splitLeaderboard, type LeaderboardRow, type LeaderboardTab, type RankedRow } from '@/lib/leaderboard'
-import { regionOf } from '@/engine'
+import { leaderboardUnlocked, regionOf } from '@/engine'
 import { visitLeaderboard } from '@/store/actions'
 import { useGame } from '@/store/game'
 import { cx } from '@/theme/util'
@@ -23,7 +24,26 @@ const PODIUM = ['bg-gold', 'bg-[#c9c6d4]', 'bg-[#d9a066]']
 
 type Load = { state: 'loading' } | { state: 'ready'; rows: LeaderboardRow[] } | { state: 'offline' } | { state: 'error'; why: string }
 
+/** The board opens with the first badge; until then the screen only says so (a typed-in /leaderboard included). */
 export function LeaderboardScreen() {
+  const { t } = useT()
+  const open = useGame((s) => !!s.save && leaderboardUnlocked(s.save, s.data))
+  if (open) return <Board />
+  return (
+    <div className="mx-auto flex max-w-3xl flex-col gap-3">
+      <h1 className="flex items-center gap-3 text-5xl leading-none">
+        <PixelIcon name="trophy" size={36} />
+        {t('ui.board.title')}
+      </h1>
+      <p className="flex items-center justify-center gap-2 border-[3px] border-ink bg-parchment p-4 text-center text-2xl leading-tight">
+        <PixelIcon name="lock" size={20} />
+        {t('ui.nav.boardLocked')}
+      </p>
+    </div>
+  )
+}
+
+function Board() {
   const { t, tPlural } = useT()
   const data = useGame((s) => s.data)
   const save = useGame((s) => s.save)!
@@ -56,6 +76,7 @@ export function LeaderboardScreen() {
     [load, tab, data, region],
   )
   const signedIn = auth.status === 'signed_in'
+  const meRef = useSnapToMe(`${tab}:${board.findIndex((r) => r.isMe)}`)
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-3">
@@ -117,6 +138,7 @@ export function LeaderboardScreen() {
             {board.map((r, i) => (
               <li
                 key={i}
+                ref={r.isMe ? meRef : undefined}
                 aria-current={r.isMe || undefined}
                 className={cx(
                   'flex items-center gap-3 border-[3px] border-ink px-2 py-1.5 shadow-[3px_3px_0_#6b6480]',

@@ -273,14 +273,16 @@ export interface EncounterRoll {
 
 /**
  * The Pokémon Center the game sends next on its own, if any (dev-forced types aside): a new round opens with one when
- * it would help, entering an area hurt, or after a K.O. in an easy area. Never two Centers in a row.
+ * it would help, entering an area hurt, or after a K.O. in an easy area. Never two Centers in a row. A cleared area no
+ * longer opens with one (round or entering hurt) — the Center cards in its deck still turn up.
  */
 export function dueCenter(ctx: EncounterContext): 'round' | 'hurt' | 'fainted' | null {
   const { area, data } = ctx
   if (ctx.progress.lastCenter) return null
+  const opening = !ctx.progress.cleared
   // A round is one full deck. A new one opens with a Pokémon Center, outside the deck — unless it would do nothing.
-  if (data.config.encounterMode !== 'random' && !ctx.progress.deck?.length && ctx.centerUseful) return 'round'
-  if (ctx.isFirstInArea && ctx.teamHurt && data.config.forcedCenterWhenHurt) return 'hurt'
+  if (opening && data.config.encounterMode !== 'random' && !ctx.progress.deck?.length && ctx.centerUseful) return 'round'
+  if (opening && ctx.isFirstInArea && ctx.teamHurt && data.config.forcedCenterWhenHurt) return 'hurt'
   if (area.easyMode && ctx.teamFainted) return 'fainted'
   return null
 }
