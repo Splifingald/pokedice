@@ -98,6 +98,8 @@ language sql stable security definer set search_path = public as $$
     ), '{}')
   from blocks b
   where not exists (select 1 from leaderboard_bans x where x.user_id = b.user_id)
+    -- Inactive for 72 hours (0023): off the boards until they play again. The caller always sees their own rows.
+    and (b.updated_at > now() - interval '72 hours' or b.user_id = auth.uid())
   order by b.updated_at desc
   limit 3000
 $$;

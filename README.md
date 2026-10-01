@@ -103,6 +103,10 @@ supabase/    migrations/0001_init.sql, seed.sql (generated)
   `src/lib/avatars.ts`. It is stored as `player.avatar` in the save and is the character until picked; the character
   still throws the Poké Balls and decides the rival. Needs `supabase/migrations/0022_player_avatar.sql` run once on
   the live database.
+- **Leaderboard activity** — a player whose save hasn't changed in 72 hours drops off every board (ranked rows and
+  Hall of Fame) until they play again; you always see your own rows. Needs
+  `supabase/migrations/0023_leaderboard_inactive.sql` run once on the live database (re-running `supabase/seed.sql`
+  does it too).
 - **Contact the developer** — trainer menu (side panel) → Contact the developer, at the bottom: a title and a description, stored
   in Supabase table `feedback` and read in Admin → Messages (mark read / unread, delete). The database fills in who
   sent it (Google account or guest device) and allows 3 messages per player per 10 minutes. Needs
