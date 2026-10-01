@@ -63,6 +63,44 @@ const levelsDiff = <K extends string>(a: Record<K, number>, b: Record<K, number>
     .filter((k) => (b[k] ?? 0) > (a[k] ?? 0))
     .map((k) => ({ key: k, from: a[k] ?? 0, to: b[k] }))
 
+type LevelUpParams = Extract<AnalyticsEvent, { kind: 'level_up' }>['params']
+
+/**
+ * A Pokémon's level-ups still waiting to be sent fold into one: Lv.12→13 then 13→14 goes out as 12→14, at the first
+ * one's time (the admin's level counts and top levels come out the same, from a fraction of the rows). Rows before
+ * `from` are already on their way and are left alone.
+ */
+export function foldLevelUps<R extends { kind: string; params: unknown; user_id: string | null; device_id: string }>(
+  queue: R[],
+  incoming: R[],
+  from = 0,
+): R[] {
+  const out = [...queue]
+  for (const row of incoming) {
+    if (row.kind === 'level_up') {
+      const p = row.params as LevelUpParams
+      let i = out.length - 1
+      while (
+        i >= from &&
+        !(
+          out[i]!.kind === 'level_up' &&
+          (out[i]!.params as LevelUpParams).uid === p.uid &&
+          out[i]!.user_id === row.user_id &&
+          out[i]!.device_id === row.device_id
+        )
+      )
+        i--
+      if (i >= from) {
+        const q = out[i]!.params as LevelUpParams
+        out[i] = { ...out[i]!, params: { ...q, dex: p.dex, to: Math.max(q.to, p.to) } }
+        continue
+      }
+    }
+    out.push(row)
+  }
+  return out
+}
+
 /** What changed between two consecutive saves. `where` says what the player was doing (for items used). */
 export function diffSaves(
   prev: SaveData | null,

@@ -3,7 +3,7 @@
 // queue survives the page.
 import { getSupabase, isSupabaseConfigured } from '@/lib/supabase'
 import { onSaveCommitted, useGame } from '@/store/game'
-import { diffSaves, snapshotOf, SYSTEM_KINDS, type SystemKind, type TrackedEvent } from './events'
+import { diffSaves, foldLevelUps, snapshotOf, SYSTEM_KINDS, type SystemKind, type TrackedEvent } from './events'
 
 const QUEUE_KEY = 'pokedice.analytics.queue'
 const DEVICE_KEY = 'pokedice.analytics.device'
@@ -79,12 +79,15 @@ export function track(events: TrackedEvent[]) {
     player_name: save?.player?.name?.trim() || null,
     email: signedIn ? auth.email : null,
   }
-  queue = [...queue, ...events.map((e) => ({ ...base, kind: e.kind, params: e.params }))].slice(-MAX_QUEUED)
+  const rows: QueuedRow[] = events.map((e) => ({ ...base, kind: e.kind, params: e.params }))
+  queue = foldLevelUps(queue, rows, inFlight).slice(-MAX_QUEUED)
   persistQueue()
   if (queue.length >= FLUSH_AT) void flushAnalytics(MIN_GAP_MS)
 }
 
 let flushing = false
+/** How many rows at the head of the queue are being sent right now: nothing folds into those. */
+let inFlight = 0
 let lastFlush = 0
 /** Sends the oldest batch, unless the previous attempt was less than `gap` ms ago. */
 export async function flushAnalytics(gap = 0) {
@@ -92,6 +95,7 @@ export async function flushAnalytics(gap = 0) {
   flushing = true
   lastFlush = Date.now()
   const batch = queue.slice(0, BATCH)
+  inFlight = batch.length
   try {
     const client = await getSupabase()
     if (!client) return
@@ -109,6 +113,7 @@ export async function flushAnalytics(gap = 0) {
   } catch (err) {
     console.info('[analytics] will retry:', err instanceof Error ? err.message : err)
   } finally {
+    inFlight = 0
     flushing = false
   }
 }

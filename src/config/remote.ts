@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { BundleRaw } from '@/engine/types'
 import { getSupabase } from '@/lib/supabase'
+import { readCachedContent, writeCachedContent } from './contentCache'
 import { isPlayableBundle, rowsToBundle, TABLES, type Row, type TableRows } from './mapping'
 
 export async function fetchTable(client: SupabaseClient, table: string): Promise<Row[]> {
@@ -39,8 +40,13 @@ export async function fetchContentUpdate(currentVersion: number): Promise<Bundle
     if (error || !data) return null
     const remoteVersion = Number((data as { value: unknown }).value)
     if (!Number.isFinite(remoteVersion) || remoteVersion === currentVersion) return null
+    // Downloaded on an earlier visit: no need to read every table again.
+    const cached = await readCachedContent(remoteVersion)
+    if (cached && isPlayableBundle(cached)) return cached
     const bundle = rowsToBundle(await fetchAllRows(client))
-    return isPlayableBundle(bundle) ? bundle : null
+    if (!isPlayableBundle(bundle)) return null
+    void writeCachedContent(remoteVersion, bundle)
+    return bundle
   } catch (err) {
     console.info('[content] staying on the bundled content:', err)
     return null

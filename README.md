@@ -128,5 +128,11 @@ supabase/    migrations/0001_init.sql, seed.sql (generated)
   per batch of events rather than once per event. Needs `supabase/migrations/0026_lighter_load.sql` run once on the
   live database, after 0021 (re-running `supabase/seed.sql` brings the leaderboard part too). Re-running 0021 would
   put the per-event trigger back: run 0026 again after it.
+- **Analytics upkeep** — `supabase/migrations/0027_analytics_slim.sql` drops two unused indexes on `analytics_events`
+  and adds `analytics_prune()`: snapshots older than a week go (each player's latest stays), and every event older
+  than 90 days. The all-time figures live in the running totals, so they don't change; never run
+  `analytics_rebuild_rollups()` after a prune. Schedule it nightly with pg_cron (the lines are at the end of the file).
+  The game also folds a Pokémon's queued level-ups into one event, and keeps content downloaded from Supabase in
+  IndexedDB, so a live configVersion ahead of the build costs each player one download per version, not one per visit.
 - `allowVoluntarySwitch`, `enemyUpgradeLevel`, `goldMultiplier`, `forcedCenterWhenHurt` and `scaleLevelSpread` are
   `game_config` keys (the spec was silent on these).

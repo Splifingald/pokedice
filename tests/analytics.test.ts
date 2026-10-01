@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { diffSaves } from '@/analytics/events'
+import { diffSaves, foldLevelUps } from '@/analytics/events'
 import { buyComboUpgrade, buyItem, linearAreas, newSave, type SaveData } from '@/engine'
 import { data, newId } from './fixtures'
 
@@ -69,5 +69,29 @@ describe('diffSaves', () => {
       kind: 'area_unlocked',
       params: { areaId: after.id, area: after.name, hidden: after.hidden },
     })
+  })
+})
+
+describe('foldLevelUps', () => {
+  const row = (kind: string, params: object, user_id: string | null = 'u1', device_id = 'd1') => ({
+    created_at: 't',
+    kind,
+    params,
+    user_id,
+    device_id,
+  })
+  const up = (uid: string, from: number, to: number, dex = 1) => row('level_up', { uid, dex, from, to })
+
+  it("folds a Pokémon's queued level-ups into one, keeping the first one's place and time", () => {
+    const queue = [up('a', 5, 6), row('item_used', { key: 'potion' }), up('b', 3, 4)]
+    const out = foldLevelUps(queue, [up('a', 6, 7, 2), up('a', 7, 9, 2), up('c', 1, 2)])
+    expect(out).toEqual([up('a', 5, 9, 2), row('item_used', { key: 'potion' }), up('b', 3, 4), up('c', 1, 2)])
+  })
+
+  it('leaves rows already being sent alone, and never mixes players', () => {
+    const queue = [up('a', 5, 6)]
+    expect(foldLevelUps(queue, [up('a', 6, 7)], 1)).toEqual([up('a', 5, 6), up('a', 6, 7)])
+    const other = row('level_up', { uid: 'a', dex: 1, from: 6, to: 7 }, null)
+    expect(foldLevelUps(queue, [other])).toEqual([up('a', 5, 6), other])
   })
 })
