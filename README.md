@@ -111,6 +111,10 @@ supabase/    migrations/0001_init.sql, seed.sql (generated)
   in Supabase table `feedback` and read in Admin → Messages (mark read / unread, delete). The database fills in who
   sent it (Google account or guest device) and allows 3 messages per player per 10 minutes. Needs
   `supabase/migrations/0019_feedback.sql` run once on the live database.
+- **Answers to messages** — Admin → Messages → REPLY writes an answer on a message and marks it read. The player finds
+  every message they sent and its answer under Contact the developer → *My messages* (their Google account's, plus the
+  ones sent as a guest from that browser), and an answer they haven't seen yet pops up the next time they open the
+  game. Needs `supabase/migrations/0024_feedback_replies.sql` run once on the live database.
 - **Admin → Analytics** sums up the all-time figures (retention, each player's top level and furthest area) in the
   database, from running totals kept up to date as events come in, so the page stays quick however many events pile
   up. Needs `supabase/migrations/0020_analytics_summaries.sql` then `0021_analytics_rollups.sql` run once on the live
