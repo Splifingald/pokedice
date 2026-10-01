@@ -22,6 +22,12 @@
  *
  * All four write into public/trainers/classes/<region>/, which is what `trainerSprite()` in trainer-sprites.ts
  * points at.
+ *
+ * `pnpm region-trainers --showdown [region…]` is separate: it only downloads. Generations 6–9 are 3D games with no
+ * sheet to cut, so Kalos, Alola, Galar and Paldea come from Pokémon Showdown's BW-style trainer sprites (80×80, the
+ * canvas the other regions use), fetched by id into graphics/trainers/showdown-<region>/ and cached under
+ * scripts/.cache/showdown. SHOWDOWN below maps each to our sprite names. Nothing reaches public/ until a region plan
+ * picks its cast. See docs/10-GEN6-9-SPRITES.md for the sources and the artists' credits.
  */
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
@@ -257,14 +263,16 @@ const HOENN: Record<string, string> = {
   'tuber-m': 'tuber_m',
 }
 
-async function fetchFile(rel: string): Promise<Buffer> {
-  const file = path.join(CACHE_DIR, rel.replace(/\//g, '_'))
+const fetchFile = (rel: string) => fetchCached(`${DECOMP}/${rel}`, path.join(CACHE_DIR, rel.replace(/\//g, '_')))
+
+/** GET `url`, or read it back from `file` if an earlier run already saved it there. Retries with backoff. */
+async function fetchCached(url: string, file: string): Promise<Buffer> {
   if (existsSync(file)) return readFile(file)
   let lastErr: unknown
   for (let attempt = 0; attempt < 5; attempt++) {
     try {
-      const res = await fetch(`${DECOMP}/${rel}`)
-      if (!res.ok) throw new Error(`${res.status} ${res.statusText} for ${rel}`)
+      const res = await fetch(url)
+      if (!res.ok) throw new Error(`${res.status} ${res.statusText} for ${url}`)
       const buf = Buffer.from(await res.arrayBuffer())
       await writeFile(file, buf)
       return buf
@@ -424,6 +432,404 @@ const UNOVA_SHOWDOWN: Record<string, string> = {
   'plasma-grunt-f': 'plasmagruntf-gen5bw',
 }
 
+export type ShowdownRegion = 'kalos' | 'alola' | 'galar' | 'paldea'
+const SHOWDOWN_URL = 'https://play.pokemonshowdown.com/sprites/trainers'
+
+/**
+ * Generations 6–9: sprite name → Pokémon Showdown trainer id, per region, as UNOVA_SHOWDOWN is for Unova. The ids are
+ * the OFFICIAL_AVATARS sets in smogon/pokemon-showdown server/chat-commands/avatars.tsx. Each region has its whole
+ * named cast (leaders, Elite Four, champion, rivals, professors, villains and grunt pair) and then every class sprite
+ * of its generation. Names follow the older regions: `elite-` and `champion-` prefixes, `-m` / `-f` where a class has
+ * both, plain names for one-sex classes.
+ */
+export const SHOWDOWN: Record<ShowdownRegion, Record<string, string>> = {
+  kalos: {
+    // Gym leaders
+    viola: 'viola',
+    grant: 'grant',
+    korrina: 'korrina',
+    ramos: 'ramos',
+    clemont: 'clemont',
+    valerie: 'valerie',
+    olympia: 'olympia',
+    wulfric: 'wulfric',
+    // Elite Four and Champion
+    'elite-malva': 'malva',
+    'elite-siebold': 'siebold',
+    'elite-wikstrom': 'wikstrom',
+    'elite-drasna': 'drasna',
+    'champion-diantha': 'diantha',
+    // The players, the friends and the professor's lab
+    calem: 'calem',
+    serena: 'serena',
+    shauna: 'shauna',
+    tierno: 'tierno',
+    trevor: 'trevor',
+    sycamore: 'sycamore',
+    dexio: 'dexio-gen6',
+    sina: 'sina-gen6',
+    // Team Flare (Aliana and Celosia have no sprite)
+    lysandre: 'lysandre',
+    xerosic: 'xerosic',
+    bryony: 'bryony',
+    mable: 'mable',
+    'flare-grunt-m': 'flaregrunt',
+    'flare-grunt-f': 'flaregruntf',
+    // AZ, Emma, and the Battle Maison's Chatelaines
+    az: 'az',
+    emma: 'emma',
+    essentia: 'essentia',
+    nita: 'nita',
+    evelyn: 'evelyn',
+    dana: 'dana',
+    morgan: 'morgan',
+    // Classes: Gen 6 (-gen6, -gen6xy, -gen6oras) and the X/Y-only classes. Where X/Y and ORAS each have a sprite, the plain name is X/Y's and -oras is the other.
+    'ace-trainer-f': 'acetrainerf-gen6xy',
+    'ace-trainer-f-oras': 'acetrainerf-gen6',
+    'ace-trainer-m': 'acetrainer-gen6xy',
+    'ace-trainer-m-oras': 'acetrainer-gen6',
+    'aroma-lady': 'aromalady-gen6',
+    'artist-f': 'artistf-gen6',
+    'artist-m': 'artist-gen6',
+    backpacker: 'backpacker-gen6',
+    'battle-girl': 'battlegirl-gen6xy',
+    'battle-girl-oras': 'battlegirl-gen6',
+    beauty: 'beauty-gen6xy',
+    'beauty-oras': 'beauty-gen6',
+    'bird-keeper': 'birdkeeper-gen6',
+    'black-belt': 'blackbelt-gen6',
+    'breeder-f': 'pokemonbreederf-gen6xy',
+    'breeder-f-oras': 'pokemonbreederf-gen6',
+    'breeder-m': 'pokemonbreeder-gen6xy',
+    'breeder-m-oras': 'pokemonbreeder-gen6',
+    'bug-catcher': 'bugcatcher-gen6',
+    'bug-maniac': 'bugmaniac-gen6',
+    butler: 'butler',
+    cabbie: 'cabbie',
+    'cafe-master': 'cafemaster',
+    cameraman: 'cameraman-gen6',
+    camper: 'camper-gen6',
+    collector: 'collector-gen6',
+    'dragon-tamer': 'dragontamer-gen6',
+    'expert-f': 'expertf-gen6',
+    'expert-m': 'expert-gen6',
+    'fairy-tale-girl': 'fairytalegirl',
+    fisherman: 'fisherman-gen6xy',
+    'fisherman-oras': 'fisherman-gen6',
+    'furisode-girl-black': 'furisodegirl-black',
+    'furisode-girl-blue': 'furisodegirl-blue',
+    'furisode-girl-pink': 'furisodegirl-pink',
+    'furisode-girl-white': 'furisodegirl-white',
+    garcon: 'garcon',
+    gentleman: 'gentleman-gen6xy',
+    'gentleman-oras': 'gentleman-gen6',
+    guitarist: 'guitarist-gen6',
+    'hex-maniac': 'hexmaniac-gen6',
+    hiker: 'hiker-gen6',
+    interviewers: 'interviewers-gen6',
+    kindler: 'kindler-gen6',
+    lady: 'lady-gen6',
+    'lady-oras': 'lady-gen6oras',
+    lass: 'lass-gen6',
+    'lass-oras': 'lass-gen6oras',
+    madame: 'madame-gen6',
+    maid: 'maid-gen6',
+    'ninja-boy': 'ninjaboy-gen6',
+    'parasol-lady': 'parasollady-gen6',
+    picnicker: 'picnicker-gen6',
+    'pokefan-f': 'pokefanf-gen6xy',
+    'pokefan-f-oras': 'pokefanf-gen6',
+    'pokefan-m': 'pokefan-gen6xy',
+    'pokefan-m-oras': 'pokefan-gen6',
+    pokemaniac: 'pokemaniac-gen6',
+    'preschooler-f': 'preschoolerf-gen6',
+    'preschooler-m': 'preschooler-gen6',
+    psychic: 'psychic-gen6',
+    'punk-girl': 'punkgirl',
+    'punk-guy': 'punkguy',
+    'ranger-f': 'pokemonrangerf-gen6xy',
+    'ranger-f-oras': 'pokemonrangerf-gen6',
+    'ranger-m': 'pokemonranger-gen6xy',
+    'ranger-m-oras': 'pokemonranger-gen6',
+    reporter: 'reporter-gen6',
+    'rich-boy': 'richboy-gen6xy',
+    'rich-boy-oras': 'richboy-gen6',
+    'rising-star-f': 'risingstarf-gen6',
+    'rising-star-m': 'risingstar-gen6',
+    'roller-skater-f': 'rollerskaterf',
+    'roller-skater-m': 'rollerskater',
+    'ruin-maniac': 'ruinmaniac-gen6',
+    sailor: 'sailor-gen6',
+    'school-kid-f': 'schoolkidf-gen6',
+    'school-kid-m': 'schoolkid-gen6',
+    'scientist-f': 'scientistf-gen6',
+    'scientist-m': 'scientist-gen6',
+    'sky-trainer-f': 'skytrainerf',
+    'sky-trainer-m': 'skytrainer',
+    'swimmer-f': 'swimmerf-gen6',
+    'swimmer-f2': 'swimmerf2-gen6',
+    'swimmer-m': 'swimmer-gen6',
+    'triathlete-biker': 'triathletebiker-gen6',
+    'triathlete-runner': 'triathleterunner-gen6',
+    'triathlete-swimmer': 'triathleteswimmer-gen6',
+    'tuber-f': 'tuberf-gen6',
+    'tuber-m': 'tuber-gen6',
+    twins: 'twins-gen6',
+    'veteran-f': 'veteranf-gen6',
+    'veteran-m': 'veteran-gen6',
+    waitress: 'waitress-gen6',
+    worker: 'worker-gen6',
+    'worker-2': 'worker2-gen6',
+    'young-couple': 'youngcouple-gen6',
+    youngster: 'youngster-gen6xy',
+    'youngster-oras': 'youngster-gen6',
+  },
+  alola: {
+    // Captains
+    ilima: 'ilima',
+    lana: 'lana',
+    kiawe: 'kiawe',
+    mallow: 'mallow',
+    sophocles: 'sophocles',
+    acerola: 'acerola',
+    mina: 'mina',
+    // Kahunas (Hala, Olivia and Acerola are also Elite Four; Nanu replaces Acerola in USUM)
+    hala: 'hala',
+    olivia: 'olivia',
+    nanu: 'nanu',
+    hapu: 'hapu',
+    // Elite Four and Champion
+    'elite-molayne': 'molayne',
+    'elite-kahili': 'kahili',
+    'champion-kukui': 'kukui',
+    // The players, the friends and the professors
+    elio: 'elio',
+    selene: 'selene',
+    hau: 'hau',
+    gladion: 'gladion',
+    lillie: 'lillie',
+    burnet: 'burnet',
+    'samson-oak': 'samsonoak',
+    // Team Skull and the Aether Foundation
+    guzma: 'guzma',
+    plumeria: 'plumeria',
+    'skull-grunt-m': 'skullgrunt',
+    'skull-grunt-f': 'skullgruntf',
+    lusamine: 'lusamine',
+    faba: 'faba',
+    wicke: 'wicke',
+    // Ultra Sun / Ultra Moon: the Ultra Recon Squad and Team Rainbow Rocket's grunts
+    dulse: 'dulse',
+    phyco: 'phyco',
+    zossie: 'zossie',
+    soliera: 'soliera',
+    'rainbow-rocket-grunt-m': 'rainbowrocketgrunt',
+    'rainbow-rocket-grunt-f': 'rainbowrocketgruntf',
+    // Battle Tree, Battle Royal Dome and the Alola guests
+    anabel: 'anabel-gen7',
+    blue: 'blue-gen7',
+    red: 'red-gen7',
+    colress: 'colress-gen7',
+    cynthia: 'cynthia-gen7',
+    grimsley: 'grimsley-gen7',
+    ryuki: 'ryuki',
+    'the-royal': 'theroyal',
+    // Classes: Gen 7 (-gen7) and the Sun/Moon-only classes.
+    'ace-trainer-f': 'acetrainerf-gen7',
+    'ace-trainer-m': 'acetrainer-gen7',
+    'aether-employee-f': 'aetheremployeef',
+    'aether-employee-m': 'aetheremployee',
+    'aether-foundation-f': 'aetherfoundationf',
+    'aether-foundation-m': 'aetherfoundation',
+    beauty: 'beauty-gen7',
+    bellhop: 'bellhop',
+    'black-belt': 'blackbelt-gen7',
+    'breeder-f': 'pokemonbreederf-gen7',
+    'breeder-m': 'pokemonbreeder-gen7',
+    collector: 'collector-gen7',
+    cook: 'cook-gen7',
+    dancer: 'dancer-gen7',
+    firefighter: 'firefighter',
+    fisherman: 'fisherman-gen7',
+    gentleman: 'gentleman-gen7',
+    golfer: 'golfer',
+    hiker: 'hiker-gen7',
+    janitor: 'janitor-gen7',
+    lass: 'lass-gen7',
+    madame: 'madame-gen7',
+    'office-worker-f': 'officeworkerf',
+    'office-worker-m': 'officeworker',
+    'pokemon-center-lady': 'pokemoncenterlady',
+    policeman: 'policeman-gen7',
+    'preschooler-f': 'preschoolerf-gen7',
+    'preschooler-m': 'preschooler-gen7',
+    preschoolers: 'preschoolers',
+    'punk-girl': 'punkgirl-gen7',
+    'punk-guy': 'punkguy-gen7',
+    'rising-star-f': 'risingstarf',
+    'rising-star-m': 'risingstar',
+    scientist: 'scientist-gen7',
+    'sightseer-f': 'sightseerf',
+    'sightseer-m': 'sightseer',
+    surfer: 'surfer',
+    'swimmer-f': 'swimmerf-gen7',
+    'swimmer-f2': 'swimmerf2-gen7',
+    'swimmer-m': 'swimmer-gen7',
+    teacher: 'teacher-gen7',
+    'trial-guide-f': 'trialguidef',
+    'trial-guide-m': 'trialguide',
+    'ultra-forest-kartenvoy': 'ultraforestkartenvoy',
+    'veteran-f': 'veteranf-gen7',
+    'veteran-m': 'veteran-gen7',
+    worker: 'worker-gen7',
+    'young-athlete-f': 'youngathletef',
+    'young-athlete-m': 'youngathlete',
+    youngster: 'youngster-gen7',
+  },
+  galar: {
+    // Gym leaders (Bede and Marnie take over Ballonlea and Spikemuth after the story)
+    milo: 'milo',
+    nessa: 'nessa',
+    kabu: 'kabu',
+    bea: 'bea',
+    allister: 'allister',
+    opal: 'opal',
+    gordie: 'gordie',
+    melony: 'melony',
+    piers: 'piers',
+    raihan: 'raihan',
+    'bede-leader': 'bede-leader',
+    'marnie-leader': 'marnie-league',
+    // Champion
+    'champion-leon': 'leon',
+    // The players, the rivals and the professors
+    victor: 'victor',
+    gloria: 'gloria',
+    hop: 'hop',
+    marnie: 'marnie',
+    bede: 'bede',
+    sonia: 'sonia',
+    magnolia: 'magnolia',
+    // Macro Cosmos, Team Yell, and the post-game brothers
+    rose: 'rose',
+    oleana: 'oleana',
+    'yell-grunt-m': 'yellgrunt',
+    'yell-grunt-f': 'yellgruntf',
+    sordward: 'sordward',
+    shielbert: 'shielbert',
+    'ball-guy': 'ballguy',
+    // The Isle of Armor and the Crown Tundra
+    mustard: 'mustard',
+    klara: 'klara',
+    avery: 'avery',
+    peony: 'peony',
+    // Classes: Gen 8 (-gen8).
+    artist: 'artist-gen8',
+    backpacker: 'backpacker-gen8',
+    beauty: 'beauty-gen8',
+    'black-belt': 'blackbelt-gen8',
+    'breeder-f': 'pokemonbreederf-gen8',
+    'breeder-m': 'pokemonbreeder-gen8',
+    cameraman: 'cameraman-gen8',
+    'clerk-f': 'clerkf-gen8',
+    'clerk-m': 'clerk-gen8',
+    dancer: 'dancer-gen8',
+    'doctor-f': 'doctorf-gen8',
+    'doctor-m': 'doctor-gen8',
+    fisher: 'fisher-gen8',
+    gentleman: 'gentleman-gen8',
+    hiker: 'hiker-gen8',
+    lass: 'lass-gen8',
+    madame: 'madame-gen8',
+    model: 'model-gen8',
+    musician: 'musician-gen8',
+    'poke-kid-f': 'pokekidf-gen8',
+    'poke-kid-m': 'pokekid-gen8',
+    policeman: 'policeman-gen8',
+    reporter: 'reporter-gen8',
+    'school-kid-f': 'schoolkidf-gen8',
+    'school-kid-m': 'schoolkid-gen8',
+    'swimmer-f': 'swimmerf-gen8',
+    'swimmer-m': 'swimmer-gen8',
+    'worker-f': 'workerf-gen8',
+    'worker-m': 'worker-gen8',
+    youngster: 'youngster-gen8',
+  },
+  paldea: {
+    // Gym leaders (Larry is also Elite Four)
+    katy: 'katy',
+    brassius: 'brassius',
+    iono: 'iono',
+    kofu: 'kofu',
+    larry: 'larry',
+    ryme: 'ryme',
+    tulip: 'tulip',
+    grusha: 'grusha',
+    // Elite Four and Champion
+    'elite-rika': 'rika',
+    'elite-poppy': 'poppy',
+    'elite-hassel': 'hassel',
+    'champion-geeta': 'geeta',
+    // The players, the friends and the academy (Scarlet's look first, Violet's as -violet)
+    florian: 'florian-s',
+    juliana: 'juliana-s',
+    nemona: 'nemona-s',
+    'nemona-violet': 'nemona-v',
+    arven: 'arven-s',
+    'arven-violet': 'arven-v',
+    penny: 'penny',
+    clavell: 'clavell-s',
+    'clavell-violet': 'clive-v',
+    jacq: 'jacq',
+    sada: 'sada',
+    turo: 'turo',
+    // Team Star: the bosses and the grunts
+    giacomo: 'giacomo',
+    mela: 'mela',
+    atticus: 'atticus',
+    ortega: 'ortega',
+    eri: 'eri',
+    'star-grunt-m': 'stargrunt-s',
+    'star-grunt-f': 'stargruntf-s',
+    'star-grunt-m-violet': 'stargrunt-v',
+    'star-grunt-f-violet': 'stargruntf-v',
+    // The Teal Mask and the Indigo Disk: Kitakami, Blueberry Academy and its Elite Four
+    kieran: 'kieran',
+    carmine: 'carmine',
+    perrin: 'perrin',
+    'ogre-clan': 'ogreclan',
+    drayton: 'drayton',
+    lacey: 'lacey',
+    crispin: 'crispin',
+    amarys: 'amarys',
+    briar: 'briar',
+    // Classes: Gen 9 (-gen9).
+    artist: 'artist-gen9',
+    backpacker: 'backpacker-gen9',
+    beauty: 'beauty-gen9',
+    'black-belt': 'blackbelt-gen9',
+    'bodybuilder-f': 'bodybuilderf-gen9',
+    'bodybuilder-m': 'bodybuilder-gen9',
+    cabbie: 'cabbie-gen9',
+    cook: 'cook-gen9',
+    'delinquent-f': 'delinquentf-gen9',
+    'delinquent-f2': 'delinquentf2-gen9',
+    'delinquent-m': 'delinquent-gen9',
+    'dragon-tamer': 'dragontamer-gen9',
+    hiker: 'hiker-gen9',
+    janitor: 'janitor-gen9',
+    musician: 'musician-gen9',
+    'office-worker-f': 'officeworkerf-gen9',
+    'office-worker-m': 'officeworker-gen9',
+    pokemaniac: 'pokemaniac-gen9',
+    scientist: 'scientist-gen9',
+    waiter: 'waiter-gen9',
+    waitress: 'waitress-gen9',
+    worker: 'worker-gen9',
+    youngster: 'youngster-gen9',
+  },
+}
+
 interface Box {
   x0: number
   y0: number
@@ -557,7 +963,51 @@ async function fetchHoenn(): Promise<number> {
   return n
 }
 
+/**
+ * Downloads every id in SHOWDOWN[region] into graphics/trainers/showdown-<region>/<id>.png, as served (80×80, real
+ * alpha), cached under scripts/.cache/showdown. Files are named by Showdown id, like graphics/trainers/showdown-bw, so
+ * a region plan maps them to sprite names when it copies them into public/.
+ */
+async function fetchShowdown(region: ShowdownRegion): Promise<{ n: number; failed: string[] }> {
+  const cache = path.join(ROOT, 'scripts', '.cache', 'showdown')
+  const dir = path.join(ROOT, 'graphics/trainers', `showdown-${region}`)
+  await mkdir(cache, { recursive: true })
+  await mkdir(dir, { recursive: true })
+  const failed: string[] = []
+  let n = 0
+  for (const [name, id] of Object.entries(SHOWDOWN[region])) {
+    try {
+      const buf = await fetchCached(`${SHOWDOWN_URL}/${id}.png`, path.join(cache, `${id}.png`))
+      const img = PNG.sync.read(buf)
+      if (img.width !== HG_CELL || img.height !== HG_CELL) throw new Error(`${img.width}×${img.height}, not 80×80`)
+      if (isEmpty(img)) throw new Error('empty')
+      await writeFile(path.join(dir, `${id}.png`), buf)
+      n++
+    } catch (err) {
+      failed.push(`${region} ${name} (${id}): ${(err as Error).message}`)
+    }
+  }
+  return { n, failed }
+}
+
 async function main() {
+  if (process.argv[2] === '--showdown') {
+    const asked = process.argv.slice(3) as ShowdownRegion[]
+    const regions = asked.length ? asked : (Object.keys(SHOWDOWN) as ShowdownRegion[])
+    const failed: string[] = []
+    for (const region of regions) {
+      if (!SHOWDOWN[region]) throw new Error(`unknown region ${region}: one of ${Object.keys(SHOWDOWN).join(', ')}`)
+      const r = await fetchShowdown(region)
+      console.log(`  ${region}: ${r.n} / ${Object.keys(SHOWDOWN[region]).length} → graphics/trainers/showdown-${region}`)
+      failed.push(...r.failed)
+    }
+    if (failed.length) {
+      console.error(`\n${failed.length} failed:`)
+      for (const f of failed) console.error(`  ${f}`)
+      process.exitCode = 1
+    }
+    return
+  }
   const johto = await cutSheet('hgss.png', 'johto', JOHTO)
   const hoenn = await fetchHoenn()
   const sinnoh = await cutSheet('dppt.png', 'sinnoh', SINNOH)
