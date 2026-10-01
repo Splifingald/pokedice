@@ -1,6 +1,6 @@
 // Messages to the developer (side menu → Contact the developer), stored in Supabase table `feedback` (migration
 // 0019) and read in Admin → Messages. The database fills in who sent it and when; this sends what they wrote, plus a
-// little context for bug reports. The admin's answers (migration 0024) come back through my_feedback(): the player's
+// little context for bug reports. The admin's answers (migration 0025) come back through my_feedback(): the player's
 // own messages, kept here in `useInbox` for the history and the pop-up of answers not seen yet.
 import { create } from 'zustand'
 import { deviceId } from '@/analytics/track'
@@ -25,7 +25,7 @@ export interface FeedbackRow {
   message: string
   context: Record<string, unknown>
   read: boolean
-  /** The admin's answer (migration 0024); null until there is one. */
+  /** The admin's answer (migration 0025); null until there is one. */
   reply?: string | null
   replied_at?: string | null
   /** The player has seen the answer. */

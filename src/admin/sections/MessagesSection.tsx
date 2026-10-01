@@ -1,5 +1,5 @@
 // Admin → Messages: what players sent through the side menu → Contact the developer (table feedback, migration 0019,
-// admin-only reads via RLS). Newest first; answer (migration 0024: the player sees it, and it marks the message read),
+// admin-only reads via RLS). Newest first; answer (migration 0025: the player sees it, and it marks the message read),
 // mark read / unread, or delete.
 import { useCallback, useEffect, useState } from 'react'
 import { PixelButton } from '@/components/PixelButton'
@@ -224,7 +224,7 @@ export function MessagesSection() {
         <div className="pixel-panel flex flex-col gap-2 p-4">
           <p className="text-danger">Could not load messages: {error}</p>
           <p>
-            Has supabase/migrations/0019_feedback.sql been run? Answers need 0024_feedback_replies.sql too.
+            Has supabase/migrations/0019_feedback.sql been run? Answers need 0025_feedback_replies.sql too.
           </p>
         </div>
       ) : !rows ? (

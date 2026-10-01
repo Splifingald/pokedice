@@ -118,7 +118,7 @@ supabase/    migrations/0001_init.sql, seed.sql (generated)
 - **Answers to messages** — Admin → Messages → REPLY writes an answer on a message and marks it read. The player finds
   every message they sent and its answer under Contact the developer → *My messages* (their Google account's, plus the
   ones sent as a guest from that browser), and an answer they haven't seen yet pops up the next time they open the
-  game. Needs `supabase/migrations/0024_feedback_replies.sql` run once on the live database.
+  game. Needs `supabase/migrations/0025_feedback_replies.sql` run once on the live database.
 - **Admin → Analytics** sums up the all-time figures (retention, each player's top level and furthest area) in the
   database, from running totals kept up to date as events come in, so the page stays quick however many events pile
   up. Needs `supabase/migrations/0020_analytics_summaries.sql` then `0021_analytics_rollups.sql` run once on the live
