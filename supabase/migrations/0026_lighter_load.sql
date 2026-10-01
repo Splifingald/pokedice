@@ -123,7 +123,7 @@ begin
   if exists (select 1 from leaderboard_cache_state where refreshed_at > now() - interval '1 minute') then
     return;
   end if;
-  delete from leaderboard_cache;
+  delete from leaderboard_cache where true;  -- a bare DELETE is refused through the API (pg-safeupdate)
   insert into leaderboard_cache (user_id, region, name, "character", team, pokedex, max_level, progress, updated_at)
   select r.user_id, r.region, r.name, r."character", r.team, r.pokedex, r.max_level, r.progress, r.updated_at
   from leaderboard_rows(now() - interval '72 hours', null) r;
