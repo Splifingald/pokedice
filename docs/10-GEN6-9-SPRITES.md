@@ -1,8 +1,10 @@
 # Pokédice — Generations 6–9: where the sprites come from
 
-> **Status: research, nothing built.** This note answers one question before any Kalos, Alola, Galar or Paldea plan is
-> written: X/Y onward are 3D games, so there is no sheet to cut from the way Gen 1–5 were. What do we use instead, for
-> the Pokémon and for the trainers, so that #650–1025 look like the 649 we already ship?
+> **Status: sprites downloaded, no region built.** This note began as the research for one question, asked before any
+> Kalos, Alola, Galar or Paldea plan is written: X/Y onward are 3D games, so there is no sheet to cut from the way
+> Gen 1–5 were. What do we use instead, for the Pokémon and for the trainers, so that #650–1025 look like the 649 we
+> already ship? §5 records what has since been fetched into `graphics/`. No species row, area, region or trainer exists in
+> `src/data` yet, because no region has been chosen.
 
 ## The short answer
 
@@ -17,7 +19,7 @@ the poor option here: they have hundreds of colours, soft edges and a different 
 | Pokémon front / back / shiny / back shiny | **PokeAPI `sprites/pokemon/{,back/,shiny/,back/shiny/}{dex}.png`** (Smogon art, 96×96) | **376 / 376**, all four views | yes (raw.githubusercontent) |
 | same, upstream | `smogon/sprites` → `src/sprites/gen5/s<name>[-b][-s].png` (pre-trimmed) | 367 / 376 (9 Gen 9 missing, below) | yes (raw.githubusercontent) |
 | Box icons | none that matches. Smogon `minisprites/pokemon/gen6` (40×30, one frame) | 159 / 160 for Gen 6–7, 1 for Gen 8, 0 for Gen 9 | yes |
-| Trainers (named + classes) | **Pokémon Showdown** `play.pokemonshowdown.com/sprites/trainers/<id>.png`, 80×80 | almost the whole cast (below) | **no**: the network policy denies the host |
+| Trainers (named + classes) | **Pokémon Showdown** `play.pokemonshowdown.com/sprites/trainers/<id>.png`, 80×80 | almost the whole cast (below) | yes, since the host was allowed (it was denied during the research) |
 
 ## 1. Pokémon #650–1025
 
@@ -117,9 +119,10 @@ Furisode Girl ×4, Garçon, Punk Guy/Girl, Sky Trainer, Bellhop, Golfer, Firefig
 almost class for class. For Alola, Galar and Paldea, a few routes will reuse the region's generic Ace Trainer / Youngster
 / Lass / Hiker, or an earlier generation's sprite of the same class. Each plan lists that per area, as Sinnoh's did.
 
-### The blocker: the host is denied here
+### The blocker, now cleared: the host was denied
 
-`play.pokemonshowdown.com` is refused by this environment's network policy (403 at the proxy), and the trainer PNGs
+*Resolved: the host was added to the environment's allowed domains, and option 1 below is what was built (§5).*
+During the research, `play.pokemonshowdown.com` was refused by this environment's network policy (403 at the proxy), and the trainer PNGs
 are not in any GitHub repo the sandbox can reach. Two ways through:
 
 1. **Allow the host.** Add `play.pokemonshowdown.com` to the environment's allowed domains (cloud environment menu →
@@ -165,3 +168,84 @@ For a personal, non-commercial fan project this is very likely fine, but it shou
 5. **Which region next**, and with it which game to route on (X/Y, Sun/Moon vs USUM, Sword/Shield
    with or without DLC, Scarlet/Violet with or without DLC). That decides which trainer ids each plan needs, so it
    comes before any sprite pass.
+
+## 5. What is in the repo now
+
+### Pokémon #650–1025: `pnpm pokemon-sprites --fetch-bw [from] [to]`
+
+- Source: PokeAPI `sprites/pokemon/{,back/,shiny/,back/shiny/}{dex}.png`, cached under `scripts/.cache/pokeapi`.
+- Each view goes through `fitCanvas()` (trim, bottom-align in 64×64, shrink only the overflowers), and `mini_1` / `mini_2`
+  come from `unovaMinis(front)`. Decisions 1 and 2 above are taken as recommended.
+- English names: PokeAPI `data/v2/csv/pokemon_species.csv` + `pokemon_species_names.csv`. `fileName()` now also drops
+  `:` and accents, so the names stay ASCII: `772_Type-Null`, `669_Flabebe`. None of #1–649 changes.
+- **2256 files** in `graphics/pokemon` (376 species × 6). **None missing.**
+- **Not published.** `--publish` iterates `src/data/pokemon.json`, which stops at 649, so it neither copies these nor
+  writes their metrics. It will copy them once a region plan adds the species rows (and raises the caps listed in §1).
+
+### Trainers: `pnpm region-trainers --showdown [kalos|alola|galar|paldea…]`
+
+- Downloads by Showdown id into `graphics/trainers/showdown-<region>/<id>.png`, cached under `scripts/.cache/showdown`.
+  It checks every file is 80×80 and not empty. Nothing is written to `public/`.
+- `SHOWDOWN` in `scripts/region-trainers.ts` is the mapping table (our sprite name → Showdown id) per region, in the
+  shape of `UNOVA_SHOWDOWN`. A region plan copies from it, as `cutUnova()` does for Unova's four fallbacks.
+
+| Region | Named cast | Classes | Total | Downloaded |
+|---|---|---|---|---|
+| Kalos | 34: 8 leaders, E4, Diantha, Calem/Serena, Shauna/Tierno/Trevor, Sycamore, Dexio/Sina (XY look), Lysandre, Xerosic, Bryony, Mable, Flare grunts ♂/♀, AZ, Emma/Essentia, the four Chatelaines | 99 | 133 | 133 |
+| Alola | 42: 7 captains, 4 kahunas, Molayne, Kahili, Kukui, Elio/Selene, Hau, Gladion, Lillie, Burnet, Samson Oak, Guzma, Plumeria, Skull grunts ♂/♀, Lusamine, Faba, Wicke, Ultra Recon Squad ×4, Rainbow Rocket grunts ♂/♀, the `-gen7` guests (Anabel, Blue, Red, Colress, Cynthia, Grimsley), Ryuki, the Masked Royal | 50 | 92 | 92 |
+| Galar | 31: 10 leaders plus Bede and Marnie as leaders, Leon, Victor/Gloria, Hop, Marnie, Bede, Sonia, Magnolia, Rose, Oleana, Yell grunts ♂/♀, Sordward, Shielbert, Ball Guy, Mustard, Klara, Avery, Peony | 30 | 61 | 61 |
+| Paldea | 42: 8 leaders, Rika, Poppy, Hassel, Geeta, Florian/Juliana, Nemona, Arven, Penny, Clavell, Jacq, Sada, Turo, the 5 Star bosses, Star grunts ♂/♀ (Scarlet and Violet looks), Kieran, Carmine, Perrin, Ogre Clan, Drayton, Lacey, Crispin, Amarys, Briar | 23 | 65 | 65 |
+
+**351 / 351 downloaded.** The only gaps in the named casts are **Aliana and Celosia** (Kalos). Avatars.tsx has no sprite for them.
+
+Naming follows the older regions: `elite-` / `champion-` prefixes, `-m` / `-f` where a class has both sexes, plain names
+for one-sex classes. Specific to Gen 6–9:
+
+- **Kalos holds every `-gen6` class, ORAS-era ones included** (Kindler, Ninja Boy, Triathletes, Bug Maniac…). The plan
+  picks per area. Where XY and ORAS each have a sprite, the plain name is XY's and the other gets `-oras`. Avatars.tsx
+  suffixes the pairs inconsistently: `X-gen6xy` + `X-gen6` for 14 classes (so plain `-gen6` is read as ORAS there),
+  but `X-gen6` + `X-gen6oras` for Lass and Lady. The contact sheet bears this out.
+- **Paldea's Scarlet and Violet variants** are both kept: plain for Scarlet (`-s`), `-violet` for Violet (`-v`).
+- One sprite per character. Alternative poses (`kukui-stand`, `hau-stance`, `lillie-z`, `lusamine-nihilego`,
+  `leon-tower`, the `-masters`, `-league`, `-festival`, `-dojo`, `-tundra` outfits) are left out. They are a one-line
+  addition each.
+
+**Left out on purpose:**
+
+- The ORAS **Hoenn** cast with a `-gen6` suffix (Roxanne, Brawly, Flannery, Norman, Winona, Tate & Liza, Wallace,
+  Phoebe, Steven, Maxie, Archie) and the unsuffixed ORAS Aqua/Magma grunts. They are Hoenn, not Kalos, and belong to a
+  Hoenn refresh if that ever happens.
+- Unsuffixed classes whose game avatars.tsx does not tell, because Kyledove's Gen 6 batch mixes in Gen 8 ids:
+  `chef`, `cook`, `delinquent`, `freediver`, `gardener`, `leaguestaff(f)`, `owner`, `postman`, `railstaff`, `schoolboy`,
+  `schoolgirl`, `scubadiver`, `streetthug`, `teammates`, `tourist(f/f2)`. Each region plan can check them against the
+  game it routes on and add the ones it needs. The unsuffixed ids in Kyledove's Gen 7 batch are all Sun/Moon, so
+  Alola takes them all.
+- Legends: Z-A (Lumiose: `az-lza`, `emma-lza`, `naveen`, `lida`, `canari`, `corbeau`, `jacinthe`, `urbain`, `taunie`…) and
+  Legends: Arceus (Hisui). Neither is a region plan yet.
+
+## 6. Credits
+
+Required by the artists' and Smogon's terms (§3). This list is the source for the README / about-page credits block,
+which is **not written yet**: Smogon has to be asked first.
+
+**Pokémon #650–1025 (2256 files):** the **Smogon Sprite Project** (`smogon/sprites`), the community artists who drew
+Black/White-style sprites for Generations 6–9, as distributed by PokeAPI (`PokeAPI/sprites`, which fills the gaps
+Smogon has not drawn yet). Smogon's README asks to be contacted before use; that request is still open.
+
+**Trainers (351 files):** Pokémon Showdown's trainer sprites. Each artist below is credited in `avatars.tsx` as
+Showdown names them:
+
+| Artist | Kalos | Alola | Galar | Paldea | Total |
+|---|---|---|---|---|---|
+| **Kyledove** ([@DoveKyle](https://twitter.com/DoveKyle)) | 105 | 32 | 29 | 57 | 223 |
+| **Beliot419** ([deviantart.com/beliot419](https://www.deviantart.com/beliot419)) | — | 49 | — | — | 49 |
+| **Brumirage** ([@Brumirage](https://twitter.com/Brumirage)) | 2 | 3 | 31 | — | 36 |
+| **Gnomowladny** | 18 | 2 | — | — | 20 |
+| **ZacWeavile** | 6 | 6 | 1 | 8 | 21 |
+| **Horo** | 1 | — | — | — | 1 |
+| no artist named (`OFFICIAL_AVATARS` main set) | 1 (Clemont) | — | — | — | 1 |
+
+Showdown also credits **hyo-oppa**, **Grapo**, **Fifty Shades of Rez**, **Selena**, **wisteriapurple**, **Flamibane** and
+**RADU** for other avatars. None of their sprites is in this pass. Credit them if a later pass adds any (Hyo-oppa's are
+the ORAS Brendan/May/Maxie. Grapo's include Glacia and Peonia, a Crown Tundra character Galar could add).
+
