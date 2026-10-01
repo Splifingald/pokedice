@@ -102,7 +102,8 @@ supabase/    migrations/0001_init.sql, seed.sql (generated)
   sent it (Google account or guest device) and allows 3 messages per player per 10 minutes. Needs
   `supabase/migrations/0019_feedback.sql` run once on the live database.
 - **Admin → Analytics** sums up the all-time figures (retention, each player's top level and furthest area) in the
-  database, so the page stays quick however many events pile up. Needs
-  `supabase/migrations/0020_analytics_summaries.sql` run once on the live database.
+  database, from running totals kept up to date as events come in, so the page stays quick however many events pile
+  up. Needs `supabase/migrations/0020_analytics_summaries.sql` then `0021_analytics_rollups.sql` run once on the live
+  database.
 - `allowVoluntarySwitch`, `enemyUpgradeLevel`, `goldMultiplier`, `forcedCenterWhenHurt` and `scaleLevelSpread` are
   `game_config` keys (the spec was silent on these).

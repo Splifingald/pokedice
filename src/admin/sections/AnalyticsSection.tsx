@@ -675,7 +675,9 @@ export function AnalyticsSection() {
           <p className="text-danger">
             Could not load retention, top levels and furthest areas: {summaryError}
           </p>
-          <p>Has supabase/migrations/0020_analytics_summaries.sql been run?</p>
+          <p>
+            Have supabase/migrations/0020_analytics_summaries.sql and 0021_analytics_rollups.sql been run?
+          </p>
         </div>
       )}
 
