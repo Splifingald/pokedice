@@ -6,6 +6,7 @@ import { MiniSprite } from '@/components/SpriteImg'
 import { Modal } from '@/components/Modal'
 import { TrainerSprite } from '@/components/TrainerArt'
 import { avatarOf } from '@/lib/avatars'
+import { useSnapToMe } from '@/lib/useSnapToMe'
 import { fetchLeaderboard, leaderboardError, splitLeaderboard, type LeaderboardRow, type LeaderboardTab, type RankedRow } from '@/lib/leaderboard'
 import { regionOf } from '@/engine'
 import { visitLeaderboard } from '@/store/actions'
@@ -56,6 +57,7 @@ export function LeaderboardScreen() {
     [load, tab, data, region],
   )
   const signedIn = auth.status === 'signed_in'
+  const meRef = useSnapToMe(`${tab}:${board.findIndex((r) => r.isMe)}`)
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-3">
@@ -117,6 +119,7 @@ export function LeaderboardScreen() {
             {board.map((r, i) => (
               <li
                 key={i}
+                ref={r.isMe ? meRef : undefined}
                 aria-current={r.isMe || undefined}
                 className={cx(
                   'flex items-center gap-3 border-[3px] border-ink px-2 py-1.5 shadow-[3px_3px_0_#6b6480]',
