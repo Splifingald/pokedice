@@ -1,6 +1,9 @@
 [build]
   command = "pnpm build"
   publish = "dist"
+  # Skip the build (exit 0) when nothing that ends up in dist/ changed: a docs, graphics, scripts or tests commit costs
+  # no deploy credits and sends no player a new build. Netlify builds anyway on a first deploy or a cleared cache.
+  ignore = "git diff --quiet $CACHED_COMMIT_REF $COMMIT_REF -- src public index.html package.json pnpm-lock.yaml vite.config.ts tailwind.config.ts postcss.config.js tsconfig.json tsconfig.node.json netlify.toml"
 
 [build.environment]
   NODE_VERSION = "22"

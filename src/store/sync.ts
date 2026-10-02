@@ -3,6 +3,7 @@ import type { Session, SupabaseClient } from '@supabase/supabase-js'
 import { create } from 'zustand'
 import { startAnalytics } from '@/analytics/ping'
 import { fetchContentUpdate } from '@/config/remote'
+import { isNewBuild, pageBuild } from '@/lib/buildId'
 import { getSupabase } from '@/lib/supabase'
 import {
   cancelPush,
@@ -240,17 +241,18 @@ export async function checkContent() {
 
 // ---------------------------------------------------------------- staying on the latest build
 // A tab can stay open for days, and it keeps running the build it loaded. Two things bring it up to date:
-// - version.json, written next to each build (vite.config.ts): checked when the player comes back to the tab, and every
-//   hour while it stays open. A different build there means a reload. One small Netlify request, no Supabase.
+// - version.json, written next to each build (vite.config.ts): checked when the player comes back to the tab after an
+//   hour away, and every 6 hours while it stays open. A different build there means a reload. Each check is one billed
+//   Netlify request, hence the spacing (docs/11-SCALING-COST-PLAN.md §3.3); deploys are batched, so little waits long.
 // - a page more than a day old reloads anyway, in case that check never gets through.
 // Either way the reload waits for a safe moment: never mid-fight, mid-encounter or mid-catch decision.
 
 /** A page older than this reloads (for the latest build and content). */
 const MAX_PAGE_AGE_MS = 24 * 60 * 60 * 1000
 /** version.json is checked on return to the tab at most this often… */
-const VERSION_ON_RETURN_MS = 10 * 60_000
+const VERSION_ON_RETURN_MS = 60 * 60_000
 /** …and this often while the tab stays visible. */
-const VERSION_WHILE_OPEN_MS = 60 * 60_000
+const VERSION_WHILE_OPEN_MS = 6 * 60 * 60_000
 const loadedAt = Date.now()
 let lastVersionCheck = Date.now()
 let reloading = false
@@ -285,7 +287,7 @@ async function checkForNewBuild() {
     const res = await fetch('/version.json', { cache: 'no-store' })
     if (!res.ok) return
     const { build } = (await res.json()) as { build?: string }
-    if (build && build !== __BUILD_ID__) reloadWhenSafe()
+    if (isNewBuild(build, pageBuild())) reloadWhenSafe()
   } catch {
     /* try again later */
   }

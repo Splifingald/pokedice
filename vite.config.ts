@@ -36,24 +36,31 @@ function devBundleWriter(): Plugin {
 }
 
 /**
- * Each build's id: the commit (Netlify sets COMMIT_REF) and the build time. Baked into the code as __BUILD_ID__ and
- * written to /version.json, which open tabs check to know a newer build is out (src/store/sync.ts).
+ * version.json names this build's entry script (`{ "build": "assets/index-<hash>.js" }`). Open tabs compare it with the
+ * script they loaded (src/lib/buildId.ts) to know a newer build is out. The entry's hash already covers every chunk it
+ * imports, so it changes exactly when the code or the bundled data does: a rebuild of the same code (a docs-only
+ * deploy, a retried build) gives the same name, re-downloads nothing and reloads no tab.
  */
-const BUILD_ID = `${(process.env.COMMIT_REF ?? 'local').slice(0, 7)}-${Date.now().toString(36)}`
-
 function buildVersion(): Plugin {
   return {
     name: 'pokedice-build-version',
     apply: 'build',
-    generateBundle() {
-      this.emitFile({ type: 'asset', fileName: 'version.json', source: JSON.stringify({ build: BUILD_ID }) })
+    generateBundle(_options, bundle) {
+      const entry = Object.values(bundle).find(
+        (f) => f.type === 'chunk' && f.isEntry && f.fileName.startsWith('assets/index-'),
+      )
+      if (!entry) this.error('pokedice-build-version: no entry chunk to name in version.json')
+      this.emitFile({
+        type: 'asset',
+        fileName: 'version.json',
+        source: JSON.stringify({ build: entry.fileName }),
+      })
     },
   }
 }
 
 export default defineConfig({
   plugins: [react(), devBundleWriter(), buildVersion()],
-  define: { __BUILD_ID__: JSON.stringify(BUILD_ID) },
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
