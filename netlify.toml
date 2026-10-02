@@ -10,6 +10,12 @@
   to = "/index.html"
   status = 200
 
+# Open tabs read this to know a newer build is out: never from a cache.
+[[headers]]
+  for = "/version.json"
+  [headers.values]
+    Cache-Control = "no-store"
+
 [[headers]]
   for = "/fonts/*"
   [headers.values]

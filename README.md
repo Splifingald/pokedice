@@ -148,5 +148,10 @@ supabase/    migrations/0001_init.sql, seed.sql (generated)
   hash, so a *replaced* image can take up to a month to reach returning players: give it a new name, or a `?v=` in its
   URL, when that matters. A Pokémon's two Box-icon frames are one image, `NNN_mini.png` (frame 1 left, frame 2 right),
   so a menu icon is one request instead of two.
+- **Open tabs pick up new builds** — every build writes `version.json` (its id, also baked into the code). An open tab
+  checks it when the player comes back to it (at most every 10 min) and every hour while it stays open, and reloads
+  when the build changed; a page more than a day old reloads anyway. The reload waits until nothing would be lost (no
+  fight, encounter or catch decision on screen). Tabs opened before this build can't be reached: they update on
+  their next reload, or after a day away.
 - `allowVoluntarySwitch`, `enemyUpgradeLevel`, `goldMultiplier`, `forcedCenterWhenHurt` and `scaleLevelSpread` are
   `game_config` keys (the spec was silent on these).

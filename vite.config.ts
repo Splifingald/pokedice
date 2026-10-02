@@ -35,8 +35,25 @@ function devBundleWriter(): Plugin {
   }
 }
 
+/**
+ * Each build's id: the commit (Netlify sets COMMIT_REF) and the build time. Baked into the code as __BUILD_ID__ and
+ * written to /version.json, which open tabs check to know a newer build is out (src/store/sync.ts).
+ */
+const BUILD_ID = `${(process.env.COMMIT_REF ?? 'local').slice(0, 7)}-${Date.now().toString(36)}`
+
+function buildVersion(): Plugin {
+  return {
+    name: 'pokedice-build-version',
+    apply: 'build',
+    generateBundle() {
+      this.emitFile({ type: 'asset', fileName: 'version.json', source: JSON.stringify({ build: BUILD_ID }) })
+    },
+  }
+}
+
 export default defineConfig({
-  plugins: [react(), devBundleWriter()],
+  plugins: [react(), devBundleWriter(), buildVersion()],
+  define: { __BUILD_ID__: JSON.stringify(BUILD_ID) },
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),

@@ -40,3 +40,18 @@ describe('SYNC ONLINE', () => {
     expect(syncBlockedBy()).toBe('fight')
   })
 })
+
+describe('reloading for a newer build', () => {
+  afterEach(() => useGame.setState({ run: initialRun(), syncConflict: null }))
+
+  it('waits for a moment with nothing to lose: no fight, encounter or catch decision on screen', async () => {
+    const { safeToReload } = await import('@/store/sync')
+    expect(safeToReload()).toBe(true)
+    for (const phase of ['battle', 'catch', 'victory', 'preview', 'center'] as const) {
+      useGame.setState({ run: { ...initialRun(), phase } })
+      expect(safeToReload(), phase).toBe(false)
+    }
+    useGame.setState({ run: { ...initialRun(), pendingCatchId: 'x' } })
+    expect(safeToReload()).toBe(false)
+  })
+})

@@ -238,32 +238,64 @@ export async function checkContent() {
   pushToast(t('ui.toast.contentUpdated'), 'info')
 }
 
-/** Back after this long away (tab hidden, or the device asleep): a new session, so the page reloads for the latest build and content. */
-const NEW_SESSION_MS = 24 * 60 * 60 * 1000
-let lastSeen = Date.now()
+// ---------------------------------------------------------------- staying on the latest build
+// A tab can stay open for days, and it keeps running the build it loaded. Two things bring it up to date:
+// - version.json, written next to each build (vite.config.ts): checked when the player comes back to the tab, and every
+//   hour while it stays open. A different build there means a reload. One small Netlify request, no Supabase.
+// - a page more than a day old reloads anyway, in case that check never gets through.
+// Either way the reload waits for a safe moment: never mid-fight, mid-encounter or mid-catch decision.
+
+/** A page older than this reloads (for the latest build and content). */
+const MAX_PAGE_AGE_MS = 24 * 60 * 60 * 1000
+/** version.json is checked on return to the tab at most this often… */
+const VERSION_ON_RETURN_MS = 10 * 60_000
+/** …and this often while the tab stays visible. */
+const VERSION_WHILE_OPEN_MS = 60 * 60_000
+const loadedAt = Date.now()
+let lastVersionCheck = Date.now()
 let reloading = false
 
-/** Reload now — or, mid-fight, as soon as the fight is over (a reload would lose it). The save is written first. */
-function reloadForNewSession() {
+/** Nothing would be lost by reloading now: no fight, encounter, pending catch or save conflict on screen. */
+export function safeToReload(): boolean {
+  const { run, syncConflict } = useGame.getState()
+  return run.phase === 'idle' && !run.encounter && !run.pendingCatchId && !syncConflict
+}
+
+/** Reload as soon as it's safe. The save is written first. */
+function reloadWhenSafe() {
   if (reloading) return
   reloading = true
   const go = () => {
     flushWrite()
     window.location.reload()
   }
-  if (!inFight()) return go()
+  if (safeToReload()) return go()
   const stop = useGame.subscribe(() => {
-    if (inFight()) return
+    if (!safeToReload()) return
     stop()
     go()
   })
 }
 
-/** Called while the page is visible (on return, and every minute): a gap of a day or more starts a new session. */
-function checkNewSession() {
-  const now = Date.now()
-  if (now - lastSeen >= NEW_SESSION_MS) reloadForNewSession()
-  else lastSeen = now
+/** Is a newer build out? Quiet on failure (offline, dev server without version.json). */
+async function checkForNewBuild() {
+  lastVersionCheck = Date.now()
+  if (import.meta.env.DEV) return
+  try {
+    const res = await fetch('/version.json', { cache: 'no-store' })
+    if (!res.ok) return
+    const { build } = (await res.json()) as { build?: string }
+    if (build && build !== __BUILD_ID__) reloadWhenSafe()
+  } catch {
+    /* try again later */
+  }
+}
+
+/** On return to the tab (`returning`), and every minute while it's visible. */
+function checkFreshness(returning: boolean) {
+  if (Date.now() - loadedAt >= MAX_PAGE_AGE_MS) return reloadWhenSafe()
+  if (Date.now() - lastVersionCheck >= (returning ? VERSION_ON_RETURN_MS : VERSION_WHILE_OPEN_MS))
+    void checkForNewBuild()
 }
 
 let started = false
@@ -276,8 +308,7 @@ export function startBackgroundServices() {
   void initAuth()
   void checkContent()
   setInterval(() => {
-    // A timer that fires a day late means the device slept: same as coming back to the tab.
-    if (document.visibilityState === 'visible') checkNewSession()
+    if (document.visibilityState === 'visible') checkFreshness(false)
     tickFossils()
   }, 60_000)
   // Closing the page sends what the automatic sync hasn't yet. Merely switching away doesn't: on phones that happens
@@ -288,10 +319,9 @@ export function startBackgroundServices() {
   })
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'hidden') {
-      lastSeen = Date.now()
       flushWrite()
     } else {
-      checkNewSession()
+      checkFreshness(true)
       tickFossils()
     }
   })
