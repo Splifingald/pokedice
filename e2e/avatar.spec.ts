@@ -43,7 +43,7 @@ test('the trainer card picks the look shown on the leaderboard, and keeps the ch
 test('the leaderboard draws each trainer with their look', async ({ page }) => {
   await mockSupabase(page)
   const rows = LEADERBOARD.map((r) => (r.name === 'Leaf' ? { ...r, character: 'kanto/hiker' } : r.name === 'Blue' ? { ...r, character: 'kanto/champion-brock' } : r))
-  await page.route('**/rest/v1/rpc/leaderboard', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(rows) }))
+  await page.route('**/rest/v1/rpc/leaderboard_region', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(rows) }))
   await signedIn(page, withBadge(makeSave(4, { player: { name: 'Sam', character: 'red' } })))
   await page.goto('/leaderboard')
   const row = (name: string) => page.getByRole('listitem').filter({ hasText: name }).first().locator('img').first()

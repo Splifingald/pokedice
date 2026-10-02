@@ -20,7 +20,7 @@ import {
   type SaveData,
 } from '@/engine'
 import { DEFAULT_SETTINGS, readSave, readSettings, scheduleWrite, writeSettings, type Settings } from '@/save/storage'
-import { DEFAULT_LANG, setLangInternal, t, type Lang } from '@/i18n'
+import { DEFAULT_LANG, isLangLoaded, loadLang, setLangInternal, t, type Lang } from '@/i18n'
 import { localizeGameData } from '@/i18n/data'
 
 export type ToastTone = 'info' | 'good' | 'bad'
@@ -191,7 +191,27 @@ export function mutateSave(fn: (s: SaveData) => SaveData | null | undefined): bo
   return true
 }
 
+/** The language last asked for while its strings were downloading: a later pick wins over a slower earlier one. */
+let wantedLang: Lang | null = null
+
 export function setSettings(patch: Partial<Settings>) {
+  const lang = patch.lang
+  // A language not downloaded yet switches once its strings are here — or, offline, at once with English in the gaps.
+  if (lang && lang !== useGame.getState().settings.lang && !isLangLoaded(lang)) {
+    wantedLang = lang
+    const rest = { ...patch }
+    delete rest.lang
+    if (Object.keys(rest).length) applySettings(rest)
+    void loadLang(lang).then(() => {
+      if (wantedLang === lang) applySettings({ lang })
+    })
+    return
+  }
+  wantedLang = null
+  applySettings(patch)
+}
+
+function applySettings(patch: Partial<Settings>) {
   const prev = useGame.getState().settings
   const settings = { ...prev, ...patch }
   useGame.setState({ settings })
@@ -210,6 +230,16 @@ export function resetSettings() {
 function setLanguage(lang: Lang) {
   setLangInternal(lang)
   useGame.setState((s) => ({ data: localizeGameData(s.rawData, lang) }))
+}
+
+/**
+ * The player's language, downloaded and applied. The store boots before it is here (content names read English until
+ * then), so main.tsx waits on this before the first render.
+ */
+export async function ensureLanguage(): Promise<void> {
+  const lang = useGame.getState().settings.lang ?? DEFAULT_LANG
+  if (isLangLoaded(lang)) return
+  if (await loadLang(lang)) setLanguage(lang)
 }
 
 /** Hot-swap content (bundle → Supabase, or an admin publish). */

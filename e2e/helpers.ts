@@ -47,7 +47,8 @@ export async function mockSupabase(page: Page): Promise<string[]> {
     if (url.pathname === '/auth/v1/user') {
       return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(fakeUser()) })
     }
-    if (url.pathname === '/rest/v1/rpc/leaderboard') {
+    // leaderboard_region (0029) is what the game asks for; leaderboard() only when a database lacks it.
+    if (url.pathname === '/rest/v1/rpc/leaderboard_region' || url.pathname === '/rest/v1/rpc/leaderboard') {
       return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(LEADERBOARD) })
     }
     if (req.method() === 'POST' || req.method() === 'PATCH') return route.fulfill({ status: 201, body: '' })
@@ -57,11 +58,11 @@ export async function mockSupabase(page: Page): Promise<string[]> {
 }
 
 const mon = (dex: number, level: number) => ({ dex, level, shiny: false })
-/** What the fake `leaderboard()` returns: a few trainers, one with a full team of six. */
+/** What the fake `leaderboard_region()` returns: a few trainers, one with a full team of six. */
 export const LEADERBOARD = [
-  { is_me: false, name: 'Blue', character: 'green', team: [mon(18, 61), mon(65, 59), mon(112, 61), mon(130, 61), mon(59, 63), mon(9, 65)], pokedex: 118, max_level: 65, progress: { 'route-1': { cleared: true, gyms: 0 } } },
-  { is_me: true, name: 'Sam', character: 'red', team: [mon(6, 36), mon(25, 30)], pokedex: 42, max_level: 36, progress: {} },
-  { is_me: false, name: 'Leaf', character: 'red', team: [mon(3, 12)], pokedex: 9, max_level: 12, progress: {} },
+  { is_me: false, name: 'Blue', character: 'green', team: [mon(18, 61), mon(65, 59), mon(112, 61), mon(130, 61), mon(59, 63), mon(9, 65)], pokedex: 118, max_level: 65, cleared: 1, gyms: 0 },
+  { is_me: true, name: 'Sam', character: 'red', team: [mon(6, 36), mon(25, 30)], pokedex: 42, max_level: 36, cleared: 0, gyms: 0 },
+  { is_me: false, name: 'Leaf', character: 'red', team: [mon(3, 12)], pokedex: 9, max_level: 12, cleared: 0, gyms: 0 },
 ]
 
 function b64url(o: unknown) {

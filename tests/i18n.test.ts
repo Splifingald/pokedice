@@ -1,14 +1,17 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 import areas from '@/data/areas.json'
 import items from '@/data/items.json'
 import pokemon from '@/data/pokemon.json'
 import trainers from '@/data/trainers.json'
 import { readFileSync } from 'node:fs'
 import regions from '@/data/regions.json'
-import { allKeys, CJK_LANGS, detectLang, hasKey, LANGS, searchFold, tableFor, tIn } from '@/i18n'
+import { allKeys, CJK_LANGS, detectLang, hasKey, LANGS, loadAllLangs, searchFold, tableFor, tIn } from '@/i18n'
 import { CJK_RANGES, cjkFontFile, isCjkChar } from '@/i18n/cjk'
 import fontChars from '@/i18n/cjk-chars.json'
 import { areaKey, itemDescKey, itemKey, pokemonKey, slug, splitTrainerName, trainerClassKey } from '@/i18n/names'
+
+// Each language is its own module now (vite.config.ts → i18nSheet); the sheet-wide checks need them all.
+beforeAll(() => loadAllLangs())
 
 const missing = (keys: string[]) => keys.filter((k) => !hasKey(k))
 

@@ -1,33 +1,62 @@
 // Localization. The single source of truth is src/i18n/strings.csv — edit that sheet, nothing else.
 // Columns: key, then one per LANGS code (en,fr,es,de,it,pt,pt-BR,ja,ko,zh-Hans). A blank cell falls back to English; an unknown key renders as the key
 // itself, which makes a missing row loud instead of invisible.
-import { parseCsv } from './csv'
+//
+// Each language is its own module, cut from the sheet at build time (vite.config.ts → i18nSheet): English is built in,
+// the others are downloaded when a player needs them (loadLang), so nobody downloads ten languages they don't read.
 import { josa } from './ko'
 import { DEFAULT_LANG, LANGS, type Lang } from './langs'
-import sheet from './strings.csv?raw'
+import en from 'virtual:i18n/en'
 
 export { CJK_LANGS, DEFAULT_LANG, isLang, LANG_LABELS, LANGS, type Lang } from './langs'
 export { searchFold } from './fold'
 
-function build(): Record<Lang, Record<string, string>> {
-  const out = Object.fromEntries(LANGS.map((l) => [l, {}])) as Record<Lang, Record<string, string>>
-  const rows = parseCsv(sheet)
-  const header = (rows[0] ?? []).map((h) => h.trim())
-  const cols = LANGS.map((l) => header.indexOf(l))
-  for (let i = 1; i < rows.length; i++) {
-    const row = rows[i] ?? []
-    const key = (row[0] ?? '').trim()
-    if (!key || key.startsWith('#')) continue
-    LANGS.forEach((lang, n) => {
-      const col = cols[n] ?? -1
-      const value = col >= 0 ? row[col] : undefined
-      if (value != null && value !== '') out[lang][key] = value
-    })
-  }
-  return out
+type Table = Record<string, string>
+
+/** The import of each downloadable language: written out so the bundler gives each its own file. */
+const LOADERS: Record<Exclude<Lang, 'en'>, () => Promise<{ default: Table }>> = {
+  fr: () => import('virtual:i18n/fr'),
+  es: () => import('virtual:i18n/es'),
+  de: () => import('virtual:i18n/de'),
+  it: () => import('virtual:i18n/it'),
+  pt: () => import('virtual:i18n/pt'),
+  'pt-BR': () => import('virtual:i18n/pt-BR'),
+  ja: () => import('virtual:i18n/ja'),
+  ko: () => import('virtual:i18n/ko'),
+  'zh-Hans': () => import('virtual:i18n/zh-Hans'),
 }
 
-const TABLE = build()
+/** The languages loaded so far. Until a language is, `t()` in it reads English. */
+const TABLE: Partial<Record<Lang, Table>> = { en }
+
+export const isLangLoaded = (lang: Lang): boolean => !!TABLE[lang]
+
+const loading = new Map<Lang, Promise<boolean>>()
+
+/** Downloads `lang`'s strings, once. False when it couldn't (offline): that language reads English until a retry. */
+export function loadLang(lang: Lang): Promise<boolean> {
+  if (TABLE[lang]) return Promise.resolve(true)
+  let p = loading.get(lang)
+  if (!p) {
+    p = LOADERS[lang as Exclude<Lang, 'en'>]()
+      .then((m) => {
+        TABLE[lang] = m.default
+        return true
+      })
+      .catch((err: unknown) => {
+        console.warn(`[i18n] could not load ${lang}`, err)
+        loading.delete(lang)
+        return false
+      })
+    loading.set(lang, p)
+  }
+  return p
+}
+
+/** Every language at once — for the tests that walk the whole sheet. */
+export const loadAllLangs = (): Promise<boolean[]> => Promise.all(LANGS.map(loadLang))
+
+const EN: Table = en
 
 /** `pt-br` → `pt-BR`, `it` → `it`: a browser tag matched against the shipped codes, ignoring case. */
 const langOf = (tag: string): Lang | undefined => LANGS.find((l) => l.toLowerCase() === tag.toLowerCase())
@@ -75,7 +104,7 @@ function interpolate(text: string, vars?: TVars): string {
 
 /** Look a key up in `lang`, then English, then give back the key so a missing row is visible. */
 export function tIn(lang: Lang, key: string, vars?: TVars): string {
-  const hit = TABLE[lang][key] ?? TABLE.en[key]
+  const hit = TABLE[lang]?.[key] ?? EN[key]
   const text = interpolate(hit ?? key, vars)
   return lang === 'ko' && vars ? josa(text) : text
 }
@@ -92,10 +121,11 @@ export function tPlural(key: string, count: number, vars?: TVars): string {
   return t(`${key}.${count === 1 ? 'one' : 'other'}`, { count, ...vars })
 }
 
-/** True when the sheet has a row for this key in any language. */
-export const hasKey = (key: string): boolean => key in TABLE.en || LANGS.some((l) => key in TABLE[l])
+/** True when the sheet has a row for this key in any language loaded (English always is). */
+export const hasKey = (key: string): boolean => key in EN || LANGS.some((l) => key in (TABLE[l] ?? {}))
 
 /** Every key in the sheet — the i18n test walks these. */
-export const allKeys = (): string[] => Object.keys(TABLE.en)
+export const allKeys = (): string[] => Object.keys(EN)
 
-export const tableFor = (lang: Lang): Record<string, string> => TABLE[lang]
+/** A loaded language's strings; empty until loadLang(lang) has finished. */
+export const tableFor = (lang: Lang): Table => TABLE[lang] ?? {}

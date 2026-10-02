@@ -166,5 +166,10 @@ supabase/    migrations/0001_init.sql, seed.sql (generated)
   (its own egress quota) instead of reading every content table through the API; the last three versions are kept.
   Needs `supabase/migrations/0030_content_storage.sql` run once on the live database. Without it, or for a version
   published before it, players read the tables as before, and Publish says the file didn't reach Storage.
+- **Smaller downloads** — the build splits the code by how often each part changes: `vendor` (React, router, zustand,
+  immer), `motion`, `zod`, `data` (the bundled content) and the game code, so a deploy that only changes the game
+  re-sends ~140 KB instead of ~620 KB. Each language is its own file, cut from `strings.csv` at build time (the
+  `i18nSheet` plugin in `vite.config.ts`): English is built in, a player in another language downloads only theirs
+  (~32 KB), and the first screen waits for it (3 s at most). The sheet stays the one place to edit.
 - `allowVoluntarySwitch`, `enemyUpgradeLevel`, `goldMultiplier`, `forcedCenterWhenHurt` and `scaleLevelSpread` are
   `game_config` keys (the spec was silent on these).
