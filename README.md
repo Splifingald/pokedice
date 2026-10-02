@@ -147,7 +147,9 @@ supabase/    migrations/0001_init.sql, seed.sql (generated)
   the browser for a month (`netlify.toml`) instead of being re-checked with Netlify on every visit. They have no content
   hash, so a *replaced* image can take up to a month to reach returning players: give it a new name, or a `?v=` in its
   URL, when that matters. A Pokémon's two Box-icon frames are one image, `NNN_mini.png` (frame 1 left, frame 2 right),
-  so a menu icon is one request instead of two.
+  and the game draws them from sheets of 160 (`public/pokemon/minis-<k>.png`, built by `pnpm mini-sheets`), so a
+  screen full of Pokémon costs a few requests instead of one per icon. After `pnpm pokemon-sprites`, run
+  `pnpm mini-sheets` then `pnpm png` (lossless recompression of everything in `public/`, pixel-checked).
 - **Open tabs pick up new builds** — every build writes `version.json`, naming its entry script
   (`assets/index-<hash>.js`). An open tab checks it when the player comes back to it (at most every hour) and every 6
   hours while it stays open, and reloads when the name differs from the script it loaded; a page more than a day old

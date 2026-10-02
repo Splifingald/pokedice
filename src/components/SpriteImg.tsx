@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useGame } from '@/store/game'
 import { cx } from '@/theme/util'
+import miniSheets from './mini-sheets.json'
 
 /** `mini` is both Box-icon frames side by side in one image (see MiniSprite). */
 export type SpriteView = 'front' | 'back' | 'mini'
@@ -8,6 +9,9 @@ export type SpriteView = 'front' | 'back' | 'mini'
 /** Local FireRed/LeafGreen sprites (public/pokemon, from `pnpm pokemon-sprites --publish`). Minis have no shiny version. */
 export const spriteUrlFor = (dex: number, view: SpriteView = 'front', shiny = false) =>
   `/pokemon/${String(dex).padStart(3, '0')}_${view}${shiny && view !== 'mini' ? '_shiny' : ''}.png`
+
+/** A sheet of Box icons (scripts/mini-sheets.ts): one request for up to 160 of them. */
+export const miniSheetUrl = (sheet: number) => `/pokemon/minis-${sheet}.png`
 
 /** Warm the browser cache (current area's pool only). */
 export function preloadSprites(dexes: number[]) {
@@ -102,6 +106,10 @@ export function MiniSprite({
 }) {
   const reduced = useGame((s) => s.settings.reducedMotion)
   const [delay] = useState(() => `-${Date.now() % 600}ms`)
+  // From its sheet when the icon is on one (pnpm mini-sheets), else its own file. Either way the image is scaled so one
+  // frame fills the box, and slides left by one frame (--mini-step) to animate.
+  const cell = dex >= 1 ? (miniSheets.icons[dex - 1] as [number, number, number, number] | undefined) : undefined
+  const scale = cell ? size / cell[3] : 1
   return (
     <span
       className={cx('relative inline-block shrink-0 overflow-hidden', className)}
@@ -109,16 +117,19 @@ export function MiniSprite({
       aria-hidden={alt ? undefined : true}
     >
       <img
-        src={spriteUrlFor(dex, 'mini')}
+        src={cell ? miniSheetUrl(cell[0]) : spriteUrlFor(dex, 'mini')}
         alt={alt}
-        width={size * 2}
-        height={size}
+        width={cell ? miniSheets.width * scale : size * 2}
+        height={cell ? miniSheets.heights[cell[0]]! * scale : size}
         loading="lazy"
         draggable={false}
         decoding="async"
-        className={cx('pixelated absolute left-0 top-0 h-full max-w-none select-none', !reduced && 'mini-frames')}
+        className={cx('pixelated absolute left-0 top-0 max-w-none select-none', !cell && 'h-full', !reduced && 'mini-frames')}
         style={{
-          width: size * 2,
+          ...(cell
+            ? { width: miniSheets.width * scale, height: miniSheets.heights[cell[0]]! * scale, left: -cell[1] * scale, top: -cell[2] * scale }
+            : { width: size * 2 }),
+          ['--mini-step' as string]: `-${size}px`,
           imageRendering: 'pixelated',
           filter: silhouette ? 'brightness(0) opacity(0.75)' : undefined,
           animationDelay: reduced ? undefined : delay,

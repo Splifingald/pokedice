@@ -150,13 +150,13 @@
   }
 }
 
-/* MiniSprite: two party-icon frames side by side in one image, slid left by a frame every 0.3 s. */
+/* MiniSprite: two party-icon frames side by side, slid left by a frame (--mini-step, one box width) every 0.3 s. */
 @keyframes mini-frames {
   0% {
     transform: translateX(0);
   }
   50% {
-    transform: translateX(-50%);
+    transform: translateX(var(--mini-step, -50%));
   }
 }
 .mini-frames {
