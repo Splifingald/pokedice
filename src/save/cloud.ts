@@ -14,6 +14,24 @@ export async function pullCloudSave(client: SupabaseClient, userId: string): Pro
   return res.ok ? res.save : null
 }
 
+/**
+ * When the cloud save was last written (its updated_at, which is the pushed save's updatedAt), without downloading it:
+ * a few bytes instead of the whole save. null when there is no cloud save.
+ */
+export async function cloudSaveStamp(client: SupabaseClient, userId: string): Promise<number | null> {
+  const { data, error } = await client.from('saves').select('updated_at').eq('user_id', userId).maybeSingle()
+  if (error) throw error
+  const at = data ? Date.parse((data as { updated_at: string }).updated_at) : NaN
+  return Number.isFinite(at) ? at : null
+}
+
+/**
+ * The cloud copy is this very save: it carries the same stamp, so this device pushed it or loaded it, and nothing has
+ * changed on either side since (every change restamps the save, admin edits included). Its download can be skipped.
+ */
+export const cloudIsThisSave = (stamp: number | null, local: SaveData | null): boolean =>
+  !!local && stamp != null && stamp === local.updatedAt
+
 export async function pushCloudSave(client: SupabaseClient, userId: string, save: SaveData): Promise<void> {
   const { error } = await client
     .from('saves')

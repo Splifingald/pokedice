@@ -5,9 +5,8 @@ import { data } from './fixtures'
 const rpc = vi.fn()
 vi.mock('@/lib/supabase', () => ({ getSupabase: async () => ({ rpc }) }))
 
-const { BOARD_CACHE_MS, clearBoardCache, fetchLeaderboard, frontierArea, parseRegionBoard, splitLeaderboard } = await import(
-  '@/lib/leaderboard'
-)
+const { clearBoardCache, fetchLeaderboard, frontierArea, parseRegionBoard, splitLeaderboard } = await import('@/lib/leaderboard')
+const { BOARD_CACHE_MS } = await import('@/lib/boardCache')
 type Row = import('@/lib/leaderboard').LeaderboardRow
 
 const main = data.areas.filter((a) => !a.hidden && (a.regionId ?? 'kanto') === 'kanto')
@@ -91,5 +90,30 @@ describe('fetchLeaderboard', () => {
     await expect(fetchLeaderboard('kanto', null, 0)).rejects.toMatchObject({ code: '57014' })
     rpc.mockResolvedValueOnce({ data: raw, error: null })
     expect(await fetchLeaderboard('kanto', null, 1)).toHaveLength(1)
+  })
+})
+
+describe('fetchVersusBoard', async () => {
+  const { clearVersusCache, fetchVersusBoard, recordVersus } = await import('@/lib/versus')
+  const entry = { user_id: 'u2', is_me: false, name: 'B', character: 'red', team: [], ids: null, version: 1, attack_wins: 0, defense_wins: 0, beaten: false }
+  beforeEach(() => {
+    clearVersusCache()
+    rpc.mockReset()
+    rpc.mockResolvedValue({ data: [entry], error: null })
+  })
+
+  it('reopened within 5 minutes comes from the cache; force always asks', async () => {
+    await fetchVersusBoard('u1', { now: 0 })
+    await fetchVersusBoard('u1', { now: 1_000 })
+    expect(rpc).toHaveBeenCalledTimes(1)
+    await fetchVersusBoard('u1', { now: 2_000, force: true })
+    expect(rpc).toHaveBeenCalledTimes(2)
+  })
+
+  it('a recorded fight drops the cached board, so "beaten" and the scores are fresh', async () => {
+    const [foe] = (await fetchVersusBoard('u1', { now: 0 }))!
+    await recordVersus(foe!, 1, true)
+    await fetchVersusBoard('u1', { now: 1 })
+    expect(rpc.mock.calls.map((c) => c[0])).toEqual(['versus_board', 'versus_record', 'versus_board'])
   })
 })

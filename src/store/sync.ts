@@ -7,6 +7,8 @@ import { isNewBuild, pageBuild } from '@/lib/buildId'
 import { getSupabase } from '@/lib/supabase'
 import {
   cancelPush,
+  cloudIsThisSave,
+  cloudSaveStamp,
   decideSync,
   flushPush,
   pullCloudSave,
@@ -54,13 +56,19 @@ async function push(client: SupabaseClient, userId: string, save: SaveData) {
 /**
  * Compares this device's save with the cloud copy and settles them: the newest wins, unless it has less progress —
  * then the player chooses (SyncConflictModal → resolveSyncConflict). Run at sign-in and by SYNC ONLINE. A save that
- * already matches the cloud costs the one read. Throws when the cloud can't be reached.
+ * already matches the cloud costs one read of its timestamp, not of the save. Throws when the cloud can't be reached.
  */
 async function reconcile(client: SupabaseClient, id: string): Promise<'loaded' | 'pushed' | 'same' | 'ask'> {
   pushAllowed = false
   cancelPush() // whatever was waiting goes out below, if this device wins
   lastTry = Date.now()
   const local = useGame.getState().save
+  // Most page loads find the cloud holding exactly this device's save: its stamp says so, without the download.
+  if (cloudIsThisSave(await cloudSaveStamp(client, id), local)) {
+    markSynced()
+    pushAllowed = true
+    return 'same'
+  }
   const cloud = await pullCloudSave(client, id)
   const decision = decideSync(local, cloud)
   if (decision === 'ask' && local && cloud) {

@@ -2,6 +2,7 @@
 // come from the SQL functions of supabase/migrations/0018_versus.sql; the fight itself is engine/versus.
 import type { VersusMon } from '@/engine'
 import { avatarOf } from './avatars'
+import { boardCache } from './boardCache'
 import { getSupabase } from './supabase'
 
 export type VersusBoardTab = 'attack' | 'defense'
@@ -102,19 +103,34 @@ export function versusErrorCode(err: unknown): VersusErrorCode {
   return VERSUS_ERRORS.find((k) => e.message?.includes(k)) ?? 'versus_unknown'
 }
 
-/** null when the cloud isn't configured on this site. */
-export async function fetchVersusBoard(): Promise<VersusEntry[] | null> {
+const cache = boardCache<VersusEntry[]>('versus')
+
+/** Forget the cached board (tests). Recording a fight or saving a team does it too. */
+export const clearVersusCache = () => cache.clear()
+
+/**
+ * The board for `user` (null = signed out). Reopened within 5 minutes it comes from the cache (boardCache.ts), unless
+ * `force`: after saving a team the page reads it fresh to check the team is there. null when the cloud isn't
+ * configured on this site.
+ */
+export async function fetchVersusBoard(user: string | null, opts: { force?: boolean; now?: number } = {}): Promise<VersusEntry[] | null> {
+  const key = user ?? ''
+  const cached = opts.force ? null : cache.get(key, opts.now)
+  if (cached) return cached
   const client = await getSupabase()
   if (!client) return null
   const { data, error } = await client.rpc('versus_board')
   if (error) throw error
-  return parseVersusBoard((data ?? []) as RawEntry[])
+  const rows = parseVersusBoard((data ?? []) as RawEntry[])
+  cache.put(key, rows, opts.now)
+  return rows
 }
 
 /** Registers the team (three Box ids, in fight order) from the cloud save. Returns the team's version. */
 export async function setVersusTeam(ids: string[]): Promise<number> {
   const client = await getSupabase()
   if (!client) throw new Error('versus_signed_out')
+  cache.clear()
   const { data, error } = await client.rpc('versus_set_team', { ids })
   if (error) throw error
   return Number(data) || 1
@@ -124,6 +140,7 @@ export async function setVersusTeam(ids: string[]): Promise<number> {
 export async function recordVersus(defender: VersusEntry, seed: number, won: boolean): Promise<void> {
   const client = await getSupabase()
   if (!client) throw new Error('versus_signed_out')
+  cache.clear()
   const { error } = await client.rpc('versus_record', { defender: defender.userId, defender_version: defender.version, seed, won })
   if (error) throw error
 }

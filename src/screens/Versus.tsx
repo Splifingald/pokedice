@@ -68,7 +68,7 @@ export function VersusScreen() {
 
   const refresh = useCallback(() => {
     let live = true
-    fetchVersusBoard()
+    fetchVersusBoard(useGame.getState().auth.userId)
       .then((rows) => live && setLoad(rows ? { state: 'ready', rows } : { state: 'offline' }))
       .catch((err) => {
         console.warn('[versus] fetch failed', err)
@@ -82,7 +82,7 @@ export function VersusScreen() {
   useEffect(() => refresh(), [refresh, auth.userId])
   /** The board, fetched again and handed back: saving a team reads it to check the team is really there. */
   const reload = useCallback(async () => {
-    const fresh = await fetchVersusBoard()
+    const fresh = await fetchVersusBoard(useGame.getState().auth.userId, { force: true })
     setLoad(fresh ? { state: 'ready', rows: fresh } : { state: 'offline' })
     return fresh
   }, [])

@@ -1,7 +1,7 @@
 // Cloud sync safety: a stale device must never silently overwrite a save with more progress.
 import { describe, expect, it } from 'vitest'
 import { liveBlock, newSave, syncXpCurve, xpToNext, type SaveData } from '@/engine'
-import { compareProgress, decideSync, progressTotals, sameSave } from '@/save/cloud'
+import { cloudIsThisSave, compareProgress, decideSync, progressTotals, sameSave } from '@/save/cloud'
 import { data, newId } from './fixtures'
 
 const base = newSave(4, data, 1000, newId)
@@ -76,5 +76,17 @@ describe('XP from an older curve', () => {
     const synced = syncXpCurve(stale, data)
     expect(synced.box[0]).toMatchObject({ level: p.level + 2, xp: 0 })
     expect(syncXpCurve(base, data)).toBe(base)
+  })
+})
+
+describe('cloudIsThisSave', () => {
+  it('skips the download only when the cloud carries this exact save stamp', () => {
+    expect(cloudIsThisSave(1000, at(base, 1000))).toBe(true)
+    // Played on since the last push, or pushed from another device since: download and compare.
+    expect(cloudIsThisSave(1000, at(base, 1001))).toBe(false)
+    expect(cloudIsThisSave(1002, at(base, 1001))).toBe(false)
+    // No cloud save yet, or nothing on this device.
+    expect(cloudIsThisSave(null, base)).toBe(false)
+    expect(cloudIsThisSave(1000, null)).toBe(false)
   })
 })

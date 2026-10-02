@@ -173,5 +173,15 @@ supabase/    migrations/0001_init.sql, seed.sql (generated)
   re-sends ~140 KB instead of ~620 KB. Each language is its own file, cut from `strings.csv` at build time (the
   `i18nSheet` plugin in `vite.config.ts`): English is built in, a player in another language downloads only theirs
   (~32 KB), and the first screen waits for it (3 s at most). The sheet stays the one place to edit.
+- **Versus board without counting** — each team row keeps its owner's name and look and both scores, updated as fights
+  are recorded and saves written, so `versus_board()` reads one table instead of counting battles and opening every
+  owner's save. Reopened within 5 minutes it comes from the browser (a recorded fight or a saved team clears that).
+  Needs `supabase/migrations/0031_versus_counters.sql` run once on the live database: it fills the new columns.
+- **Sign-in sync reads a timestamp first** — when the cloud save carries this device's save stamp, it isn't
+  downloaded at all; only a different stamp (played elsewhere, or an admin edit) fetches the save to compare.
+- **Upkeep** — `supabase/migrations/0032_upkeep.sql` caps signed-out feedback at 60 messages an hour altogether (on top
+  of 3 per device per 10 minutes) and adds `upkeep_prune()`: Versus fights against replaced teams after 30 days, and
+  the snapshot of guests not seen for a year (retention is unchanged). Run it once, then `select upkeep_prune();`, and
+  schedule it monthly with the two lines at the bottom of the file once pg_cron is on.
 - `allowVoluntarySwitch`, `enemyUpgradeLevel`, `goldMultiplier`, `forcedCenterWhenHurt` and `scaleLevelSpread` are
   `game_config` keys (the spec was silent on these).

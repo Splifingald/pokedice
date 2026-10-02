@@ -6,6 +6,7 @@ import { linearAreas } from '@/engine/data'
 import { regionSpecies } from '@/engine/regions'
 import type { GameData, RegionId } from '@/engine/types'
 import { avatarOf } from './avatars'
+import { boardCache } from './boardCache'
 import { getSupabase } from './supabase'
 import { t } from '@/i18n'
 
@@ -193,53 +194,21 @@ export function parseRegionBoard(raw: RawRegionRow[], region: RegionId): Leaderb
   }))
 }
 
-/** A board fetched less than this long ago is shown again rather than downloaded again (docs/11 §6.2). */
-export const BOARD_CACHE_MS = 5 * 60_000
-const CACHE_KEY = 'pokedice.board'
-
-type Cached = { at: number; user: string | null; region: string; rows: LeaderboardRow[] }
-let memo: Cached | null = null
-
-function readCache(user: string | null, region: string, now: number): LeaderboardRow[] | null {
-  if (!memo) {
-    try {
-      memo = JSON.parse(sessionStorage.getItem(CACHE_KEY) ?? 'null') as Cached | null
-    } catch {
-      memo = null
-    }
-  }
-  const c = memo
-  return c && c.user === user && c.region === region && now - c.at >= 0 && now - c.at < BOARD_CACHE_MS ? c.rows : null
-}
-
-function writeCache(entry: Cached) {
-  memo = entry
-  try {
-    sessionStorage.setItem(CACHE_KEY, JSON.stringify(entry))
-  } catch {
-    /* storage blocked or full: the in-memory copy still serves this page */
-  }
-}
+const cache = boardCache<LeaderboardRow[]>('leaderboard')
 
 /** Forget the cached board (tests, or after something that changes it on purpose). */
-export function clearBoardCache() {
-  memo = null
-  try {
-    sessionStorage.removeItem(CACHE_KEY)
-  } catch {
-    /* nothing to clear */
-  }
-}
+export const clearBoardCache = () => cache.clear()
 
 const missingFunction = (e: { code?: string }) => e.code === 'PGRST202' || e.code === '42883'
 
 /**
- * One region's board, for `user` (null = signed out). Reopened within BOARD_CACHE_MS, the same rows come back without a
+ * One region's board, for `user` (null = signed out). Reopened within BOARD_CACHE_MS (boardCache.ts), the same rows come back without a
  * request. A database that hasn't run 0029 yet answers through the older leaderboard(), every region at once.
  * null when the cloud isn't configured on this site.
  */
 export async function fetchLeaderboard(region: RegionId, user: string | null, now = Date.now()): Promise<LeaderboardRow[] | null> {
-  const cached = readCache(user, region, now)
+  const key = `${user ?? ''}:${region}`
+  const cached = cache.get(key, now)
   if (cached) return cached
   const client = await getSupabase()
   if (!client) return null
@@ -254,6 +223,6 @@ export async function fetchLeaderboard(region: RegionId, user: string | null, no
   } else {
     throw fresh.error
   }
-  writeCache({ at: now, user, region, rows })
+  cache.put(key, rows, now)
   return rows
 }
