@@ -37,7 +37,8 @@
  * src/data/pokemon.json stops at 649. Everything is cached under scripts/.cache/pokeapi.
  *
  * `pnpm pokemon-sprites --publish [srcDir]` copies those files (default graphics/pokemon) into public/pokemon with short
- * names (001_front.png, 001_back_shiny.png, 001_mini_1.png…) and writes src/data/sprite-metrics.json: the transparent
+ * names (001_front.png, 001_back_shiny.png, 001_mini.png — both Box-icon frames in one strip, see `miniStrip`…) and
+ * writes src/data/sprite-metrics.json: the transparent
  * rows under each front / back sprite, so the battle scene can stand every Pokémon on its platform.
  */
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
@@ -680,6 +681,19 @@ async function fetchBw(from: number, to: number, outDir: string) {
   }
 }
 
+/**
+ * The two Box-icon frames side by side in one PNG (frame 1 left), so a menu icon costs one request instead of two.
+ * Frames are square — 32×32, or Unova's N×N — and the strip is 2N×N.
+ */
+export function miniStrip(a: PNG, b: PNG): PNG {
+  const size = Math.max(a.width, a.height, b.width, b.height)
+  const out = new PNG({ width: size * 2, height: size })
+  out.data.fill(0)
+  PNG.bitblt(a, out, 0, 0, a.width, a.height, 0, size - a.height)
+  PNG.bitblt(b, out, 0, 0, b.width, b.height, size, size - b.height)
+  return out
+}
+
 async function publish(srcDir: string) {
   const outDir = path.join(ROOT, 'public/pokemon')
   await mkdir(outDir, { recursive: true })
@@ -693,8 +707,6 @@ async function publish(srcDir: string) {
       ['front_shiny', 'front_shiny'],
       ['back', 'back'],
       ['back_shiny', 'back_shiny'],
-      ['miniature_1', 'mini_1'],
-      ['miniature_2', 'mini_2'],
     ]
     const m = { front: 0, back: 0 }
     for (const [from, to] of kinds) {
@@ -703,6 +715,9 @@ async function publish(srcDir: string) {
       await writeFile(path.join(outDir, `${short}_${to}.png`), buf)
       n++
     }
+    const frame = async (k: number) => PNG.sync.read(await readFile(path.join(srcDir, `${prefix}_miniature_${k}.png`)))
+    await writeFile(path.join(outDir, `${short}_mini.png`), PNG.sync.write(miniStrip(await frame(1), await frame(2))))
+    n++
     metrics[p.dex] = m
   }
   await writeFile(path.join(ROOT, 'src/data/sprite-metrics.json'), JSON.stringify(metrics) + '\n')

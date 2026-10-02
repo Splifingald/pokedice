@@ -135,5 +135,10 @@ supabase/    migrations/0001_init.sql, seed.sql (generated)
   `analytics_rebuild_rollups()` after a prune. Schedule it nightly with pg_cron (the lines are at the end of the file).
   The game also folds a Pokémon's queued level-ups into one event, and keeps content downloaded from Supabase in
   IndexedDB, so a live configVersion ahead of the build costs each player one download per version, not one per visit.
+- **Fewer web requests** — the images in `public/` (`pokemon`, `trainers`, `banners`, `battle`, `characters`) are kept in
+  the browser for a month (`netlify.toml`) instead of being re-checked with Netlify on every visit. They have no content
+  hash, so a *replaced* image can take up to a month to reach returning players: give it a new name, or a `?v=` in its
+  URL, when that matters. A Pokémon's two Box-icon frames are one image, `NNN_mini.png` (frame 1 left, frame 2 right),
+  so a menu icon is one request instead of two.
 - `allowVoluntarySwitch`, `enemyUpgradeLevel`, `goldMultiplier`, `forcedCenterWhenHurt` and `scaleLevelSpread` are
   `game_config` keys (the spec was silent on these).
