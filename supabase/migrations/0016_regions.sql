@@ -57,6 +57,9 @@ create table if not exists leaderboard_cache_state (
 alter table leaderboard_cache enable row level security;
 alter table leaderboard_cache_state enable row level security;
 revoke all on leaderboard_cache, leaderboard_cache_state from anon, authenticated;
+-- The ranking's two numbers for one region (0029), worked out at each rebuild.
+alter table leaderboard_cache add column if not exists cleared int;
+alter table leaderboard_cache add column if not exists gyms int;
 
 -- The rows of every save played since `p_since`, plus `p_user`'s (either may be null). The trainers holding a badge are
 -- listed once rather than looked up again for every save.
@@ -130,6 +133,16 @@ language sql stable security definer set search_path = public as $$
   )
 $$;
 
+-- `progress` as leaderboard_rows() builds it ({areaId: {cleared, gyms}}), counted over the region's main route.
+create or replace function leaderboard_counts(p_region text, p_progress jsonb, out cleared int, out gyms int)
+language sql stable set search_path = public as $$
+  select
+    (count(*) filter (where coalesce((p_progress -> a.id::text ->> 'cleared')::boolean, false)))::int,
+    coalesce(sum((p_progress -> a.id::text ->> 'gyms')::int), 0)::int
+  from areas a
+  where a.region_id = p_region and not a.hidden
+$$;
+
 -- Rebuild the cache when it is over a minute old. One call at a time: the others skip and read the previous copy.
 create or replace function leaderboard_refresh() returns void
 language plpgsql security definer set search_path = public as $$
@@ -145,9 +158,10 @@ begin
     return;
   end if;
   delete from leaderboard_cache where true;  -- a bare DELETE is refused through the API (pg-safeupdate)
-  insert into leaderboard_cache (user_id, region, name, "character", team, pokedex, max_level, progress, updated_at)
-  select r.user_id, r.region, r.name, r."character", r.team, r.pokedex, r.max_level, r.progress, r.updated_at
-  from leaderboard_rows(now() - interval '72 hours', null) r;
+  insert into leaderboard_cache (user_id, region, name, "character", team, pokedex, max_level, progress, updated_at, cleared, gyms)
+  select r.user_id, r.region, r.name, r."character", r.team, r.pokedex, r.max_level, r.progress, r.updated_at, n.cleared, n.gyms
+  from leaderboard_rows(now() - interval '72 hours', null) r
+  cross join lateral leaderboard_counts(r.region, r.progress) n;
   insert into leaderboard_cache_state (id, refreshed_at) values (true, now())
   on conflict (id) do update set refreshed_at = excluded.refreshed_at;
 end
@@ -183,7 +197,44 @@ language sql volatile security definer set search_path = public as $$
   limit 3000
 $$;
 
+-- One region's board: everyone else from the cache, the caller live (same rules as leaderboard()).
+create or replace function leaderboard_region(p_region text)
+returns table (
+  is_me boolean,
+  name text,
+  "character" text,
+  team jsonb,
+  pokedex int,
+  max_level int,
+  cleared int,
+  gyms int
+)
+language sql volatile security definer set search_path = public as $$
+  select leaderboard_refresh();
+  select r.user_id = auth.uid(), r.name, r."character", r.team, r.pokedex, r.max_level, r.cleared, r.gyms
+  from (
+    select c.user_id, c.name, c."character", c.team, c.pokedex, c.max_level, c.updated_at,
+      -- A cache rebuilt before this migration has no counts yet: work them out here until the next rebuild.
+      coalesce(c.cleared, (leaderboard_counts(c.region, c.progress)).cleared) as cleared,
+      coalesce(c.gyms, (leaderboard_counts(c.region, c.progress)).gyms) as gyms
+    from leaderboard_cache c
+    where c.region = p_region
+      and c.user_id is distinct from auth.uid()
+      and not exists (select 1 from leaderboard_bans x where x.user_id = c.user_id)
+    union all
+    select m.user_id, m.name, m."character", m.team, m.pokedex, m.max_level, m.updated_at, n.cleared, n.gyms
+    from leaderboard_rows(null, auth.uid()) m
+    cross join lateral leaderboard_counts(m.region, m.progress) n
+    where m.region = p_region
+  ) r
+  order by r.updated_at desc
+  limit 3000
+$$;
+
 revoke all on function leaderboard_rows(timestamptz, uuid) from public, anon, authenticated;
+revoke all on function leaderboard_counts(text, jsonb) from public, anon, authenticated;
 revoke all on function leaderboard_refresh() from public, anon, authenticated;
 revoke all on function leaderboard() from public;
 grant execute on function leaderboard() to anon, authenticated;
+revoke all on function leaderboard_region(text) from public;
+grant execute on function leaderboard_region(text) to anon, authenticated;

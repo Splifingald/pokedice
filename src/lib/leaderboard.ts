@@ -21,7 +21,11 @@ export interface LeaderboardRow {
   team: { dex: number; level: number; shiny: boolean }[]
   pokedex: number
   maxLevel: number
-  progress: Record<string, { cleared: boolean; gyms: number }>
+  /** Per area of the region, from leaderboard() (a database without 0029). */
+  progress?: Record<string, { cleared: boolean; gyms: number }>
+  /** The same, already counted over the region's main route, from leaderboard_region() (0029). They win over `progress`. */
+  cleared?: number
+  gyms?: number
 }
 
 export interface RankedRow extends LeaderboardRow {
@@ -33,19 +37,23 @@ export interface RankedRow extends LeaderboardRow {
 
 /** How far into this region: its main-route areas cleared, then gym / Elite Four battles won. */
 function progressKey(row: LeaderboardRow, data: GameData): [number, number] {
+  if (row.cleared != null) return [row.cleared, row.gyms ?? 0]
   let cleared = 0
   let gyms = 0
   for (const a of linearAreas(data, row.region)) {
-    if (row.progress[a.id]?.cleared) cleared++
-    gyms += row.progress[a.id]?.gyms ?? 0
+    if (row.progress?.[a.id]?.cleared) cleared++
+    gyms += row.progress?.[a.id]?.gyms ?? 0
   }
   return [cleared, gyms]
 }
 
-/** The area the player is working on: the first area of their region's chain not cleared yet. */
+/**
+ * The area the player is working on: the first area of their region's chain not cleared yet. From a count, the one
+ * after the cleared ones: the chain unlocks one area at a time, so what is cleared is always its start.
+ */
 export function frontierArea(row: LeaderboardRow, data: GameData): string {
   const chain = linearAreas(data, row.region)
-  const next = chain.find((a) => !row.progress[a.id]?.cleared)
+  const next = row.cleared != null ? chain[row.cleared] : chain.find((a) => !row.progress?.[a.id]?.cleared)
   return next ? next.name : t('ui.board.hall')
 }
 
@@ -55,7 +63,8 @@ const dexTotal = (data: GameData, region: RegionId) => regionSpecies(data, regio
 /** Every area of the region's chain cleared — there is nothing left of it to finish. */
 export function clearedRegion(row: LeaderboardRow, data: GameData): boolean {
   const chain = linearAreas(data, row.region)
-  return chain.length > 0 && chain.every((a) => row.progress[a.id]?.cleared)
+  if (row.cleared != null) return chain.length > 0 && row.cleared >= chain.length
+  return chain.length > 0 && chain.every((a) => row.progress?.[a.id]?.cleared)
 }
 
 /**
@@ -158,11 +167,93 @@ export function leaderboardError(err: unknown): string {
   return [e.code, e.message].filter(Boolean).join(' — ') || String(err)
 }
 
-/** null when the cloud isn't configured on this site. */
-export async function fetchLeaderboard(): Promise<LeaderboardRow[] | null> {
+interface RawRegionRow {
+  is_me: boolean | null
+  name: string | null
+  character: string | null
+  team: { dex: number; level: number; shiny?: boolean }[] | null
+  pokedex: number | null
+  max_level: number | null
+  cleared: number | null
+  gyms: number | null
+}
+
+/** leaderboard_region()'s rows (0029): one region, the progress already counted. */
+export function parseRegionBoard(raw: RawRegionRow[], region: RegionId): LeaderboardRow[] {
+  return raw.map((r) => ({
+    region,
+    isMe: !!r.is_me,
+    name: r.name || 'Trainer',
+    avatar: avatarOf(r.character).id,
+    team: (r.team ?? []).map((m) => ({ dex: Number(m.dex), level: Number(m.level), shiny: !!m.shiny })),
+    pokedex: Number(r.pokedex) || 0,
+    maxLevel: Number(r.max_level) || 0,
+    cleared: Number(r.cleared) || 0,
+    gyms: Number(r.gyms) || 0,
+  }))
+}
+
+/** A board fetched less than this long ago is shown again rather than downloaded again (docs/11 §6.2). */
+export const BOARD_CACHE_MS = 5 * 60_000
+const CACHE_KEY = 'pokedice.board'
+
+type Cached = { at: number; user: string | null; region: string; rows: LeaderboardRow[] }
+let memo: Cached | null = null
+
+function readCache(user: string | null, region: string, now: number): LeaderboardRow[] | null {
+  if (!memo) {
+    try {
+      memo = JSON.parse(sessionStorage.getItem(CACHE_KEY) ?? 'null') as Cached | null
+    } catch {
+      memo = null
+    }
+  }
+  const c = memo
+  return c && c.user === user && c.region === region && now - c.at >= 0 && now - c.at < BOARD_CACHE_MS ? c.rows : null
+}
+
+function writeCache(entry: Cached) {
+  memo = entry
+  try {
+    sessionStorage.setItem(CACHE_KEY, JSON.stringify(entry))
+  } catch {
+    /* storage blocked or full: the in-memory copy still serves this page */
+  }
+}
+
+/** Forget the cached board (tests, or after something that changes it on purpose). */
+export function clearBoardCache() {
+  memo = null
+  try {
+    sessionStorage.removeItem(CACHE_KEY)
+  } catch {
+    /* nothing to clear */
+  }
+}
+
+const missingFunction = (e: { code?: string }) => e.code === 'PGRST202' || e.code === '42883'
+
+/**
+ * One region's board, for `user` (null = signed out). Reopened within BOARD_CACHE_MS, the same rows come back without a
+ * request. A database that hasn't run 0029 yet answers through the older leaderboard(), every region at once.
+ * null when the cloud isn't configured on this site.
+ */
+export async function fetchLeaderboard(region: RegionId, user: string | null, now = Date.now()): Promise<LeaderboardRow[] | null> {
+  const cached = readCache(user, region, now)
+  if (cached) return cached
   const client = await getSupabase()
   if (!client) return null
-  const { data, error } = await client.rpc('leaderboard')
-  if (error) throw error
-  return parseLeaderboard((data ?? []) as RawRow[])
+  let rows: LeaderboardRow[]
+  const fresh = await client.rpc('leaderboard_region', { p_region: region })
+  if (!fresh.error) {
+    rows = parseRegionBoard((fresh.data ?? []) as RawRegionRow[], region)
+  } else if (missingFunction(fresh.error)) {
+    const old = await client.rpc('leaderboard')
+    if (old.error) throw old.error
+    rows = parseLeaderboard((old.data ?? []) as RawRow[]).filter((r) => r.region === region)
+  } else {
+    throw fresh.error
+  }
+  writeCache({ at: now, user, region, rows })
+  return rows
 }

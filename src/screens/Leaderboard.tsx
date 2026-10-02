@@ -54,10 +54,15 @@ function Board() {
 
   useEffect(() => visitLeaderboard(), [])
 
-  // Refetched when the player signs in or out, so their own row shows up (or stops being marked "you").
+  // The board on screen is always the region the player is in: switching region on the map switches the board.
+  const region = regionOf(save)
+
+  // Only this region's board is downloaded, and reopened within 5 minutes it comes from the cache. Refetched when the
+  // player signs in or out, so their own row shows up (or stops being marked "you").
   useEffect(() => {
     let live = true
-    fetchLeaderboard()
+    setLoad({ state: 'loading' })
+    fetchLeaderboard(region, auth.userId)
       .then((rows) => live && setLoad(rows ? { state: 'ready', rows } : { state: 'offline' }))
       .catch((err) => {
         console.warn('[leaderboard] fetch failed', err)
@@ -66,10 +71,8 @@ function Board() {
     return () => {
       live = false
     }
-  }, [auth.userId])
+  }, [auth.userId, region])
 
-  // The board on screen is always the region the player is in: switching region on the map switches the board.
-  const region = regionOf(save)
   // Whoever has maxed this tab out leaves the ranking for the Hall of Fame behind the button below.
   const { board, hall } = useMemo(
     () => (load.state === 'ready' ? splitLeaderboard(load.rows, tab, data, region) : { board: [], hall: [] }),
