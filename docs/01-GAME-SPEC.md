@@ -45,7 +45,7 @@ Goal      →  clear the areas, then 151/151 in the Pokédex
 
 ### 1.2 Starting the game
 
-Title → a short intro → pick one of **Bulbasaur, Charmander, Squirtle at level 5**. It goes straight into the team (slots 2 and 3 empty). The chosen starter is marked caught in the Pokédex; the other two are catchable as **rare** encounters in **Cerulean Cave** only (the post-game secret area — added so 151/151 is reachable). They appear in no other pool and in no trainer team.
+Title → a short intro → pick one of **Bulbasaur, Charmander, Squirtle at level 5**. It goes straight into the team (slots 2 and 3 empty). The chosen starter is marked caught in the Pokédex; the other two are catchable as **rare** encounters in **Cerulean Cave** (the post-game secret area — added so 151/151 is reachable), and each is also a **very rare** find (weight 1) in one early area: Bulbasaur in Viridian Forest, Charmander on Route 4 & Nugget Bridge, Squirtle on Routes 5 & 6. They appear in no trainer team.
 
 ---
 

@@ -340,7 +340,7 @@ Generated from the formulas in `01-GAME-SPEC.md` §5.2 into **80** `combo_upgrad
 
 **25** areas per `01-GAME-SPEC.md` §7.1 (22 linear Kanto areas + 3 secret ones), hand-written in `scripts/content.ts`: wild pools from the original games, trainer rosters (explicit teams; the catch-all Cerulean Cave generates its own from the pool), gym leaders / Elite Four / Champion (`trainers.role`, `trainers.badge`, `areas.gyms`), and `areas.hidden` + `areas.unlock_conditions` for the secret areas. Legendaries are excluded from every wild pool and attached as `legendary_boss` instead (Articuno → Seafoam Islands, Zapdos → Power Plant, Moltres → Victory Road, Mewtwo → Cerulean Cave at team-average 60, Mew → Faraway Island on arrival).
 
-The three starters are excluded from every wild pool except Cerulean Cave's catch-all pool, where they are rare (weight 3) so the Pokédex can be completed. No trainer fields a starter.
+Each starter is rare in Cerulean Cave's catch-all pool (weight 3) so the Pokédex can be completed, and very rare (weight 1) in one early area that suits it (Bulbasaur → Viridian Forest, Charmander → Route 4 & Nugget Bridge, Squirtle → Routes 5 & 6); every region does the same with its own three. No trainer fields a starter.
 
 **Art:** a small Node script publishes the area banner scenes (118×16 strips from `graphics/banners`; a `#flip` URL suffix mirrors one) into `public/banners/` and a set of type-tinted trainer silhouette badges into `public/trainers/`. Both are referenced by URL, so replacing them later is a field edit in admin, not a code change.
 

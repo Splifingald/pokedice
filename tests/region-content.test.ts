@@ -126,16 +126,15 @@ describe('regions', () => {
     }
   })
 
-  it('keeps each region a self-contained run: its own starters, never in its own pools', () => {
+  it('keeps each region a self-contained run: its own starters, only ever very rare in its own pools', () => {
     for (const r of regions) {
       for (const a of of(r.id)) {
-        // The post-league catch-all is the one place a starter turns up, rarely, so the dex can be finished.
+        // The post-league catch-all has every starter (rare); elsewhere a starter may turn up as a one-in-many find.
         if (a.scalesToTeam) continue
-        for (const s of r.starters)
-          expect(
-            a.wildPool.find((w) => w.dex === s),
-            `${r.id} / ${a.name}`,
-          ).toBeUndefined()
+        for (const s of r.starters) {
+          const entry = a.wildPool.find((w) => w.dex === s)
+          if (entry) expect(entry.weight, `${r.id} / ${a.name}`).toBe(1)
+        }
       }
       for (const a of of(r.id)) {
         for (const id of [...a.gyms, ...a.trainerPool.map((t) => t.trainerId)]) {

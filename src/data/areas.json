@@ -364,6 +364,20 @@
     "weight": 15,
     "minLevel": 12,
     "maxLevel": 24
+   },
+   {
+    "id": "902a7328-5148-5474-adee-b9df80bb28af",
+    "dex": 177,
+    "weight": 12,
+    "minLevel": 14,
+    "maxLevel": 22
+   },
+   {
+    "id": "279087db-3ff2-5773-923b-2a9f4c8082d8",
+    "dex": 235,
+    "weight": 5,
+    "minLevel": 16,
+    "maxLevel": 24
    }
   ],
   "trainerPool": [],
@@ -709,6 +723,20 @@
     "weight": 14,
     "minLevel": 26,
     "maxLevel": 32
+   },
+   {
+    "id": "38de5643-6037-526a-a937-2b7470f0acac",
+    "dex": 442,
+    "weight": 2,
+    "minLevel": 26,
+    "maxLevel": 32
+   },
+   {
+    "id": "099a17b5-9457-5d5d-a678-ed9c2f93b540",
+    "dex": 449,
+    "weight": 6,
+    "minLevel": 25,
+    "maxLevel": 30
    }
   ],
   "trainerPool": [
@@ -908,6 +936,13 @@
     "dex": 447,
     "weight": 14,
     "minLevel": 28,
+    "maxLevel": 35
+   },
+   {
+    "id": "f60391bf-8d1d-5665-9cc3-eb007db45421",
+    "dex": 474,
+    "weight": 1,
+    "minLevel": 30,
     "maxLevel": 35
    }
   ],
@@ -1117,6 +1152,13 @@
     "weight": 14,
     "minLevel": 30,
     "maxLevel": 37
+   },
+   {
+    "id": "1e47335b-7612-547b-bdc9-fd9f16d0bbd6",
+    "dex": 463,
+    "weight": 3,
+    "minLevel": 31,
+    "maxLevel": 36
    }
   ],
   "trainerPool": [
@@ -2156,6 +2198,13 @@
     "weight": 12,
     "minLevel": 29,
     "maxLevel": 35
+   },
+   {
+    "id": "f779c9f9-8e8f-50d7-b384-743e0ca824ad",
+    "dex": 318,
+    "weight": 8,
+    "minLevel": 26,
+    "maxLevel": 29
    }
   ],
   "trainerPool": [
@@ -2357,6 +2406,13 @@
     "weight": 12,
     "minLevel": 38,
     "maxLevel": 44
+   },
+   {
+    "id": "1920c963-6c71-5e11-9b57-5c0e7e9f4966",
+    "dex": 361,
+    "weight": 8,
+    "minLevel": 38,
+    "maxLevel": 41
    }
   ],
   "trainerPool": [
@@ -2704,6 +2760,13 @@
     "weight": 14,
     "minLevel": 36,
     "maxLevel": 44
+   },
+   {
+    "id": "f5c05037-854a-55f3-905e-3c54f83afa01",
+    "dex": 200,
+    "weight": 8,
+    "minLevel": 33,
+    "maxLevel": 40
    }
   ],
   "trainerPool": [],
@@ -2873,6 +2936,13 @@
     "weight": 5,
     "minLevel": 3,
     "maxLevel": 6
+   },
+   {
+    "id": "c34fbca2-348c-52ee-b7bd-a0d12eecacfe",
+    "dex": 1,
+    "weight": 1,
+    "minLevel": 5,
+    "maxLevel": 7
    }
   ],
   "trainerPool": [
@@ -3488,6 +3558,13 @@
     "weight": 5,
     "minLevel": 8,
     "maxLevel": 12
+   },
+   {
+    "id": "85d30e64-85d3-5d68-92aa-f2044238cbcd",
+    "dex": 4,
+    "weight": 1,
+    "minLevel": 9,
+    "maxLevel": 13
    }
   ],
   "trainerPool": [
@@ -3845,6 +3922,13 @@
     "weight": 15,
     "minLevel": 2,
     "maxLevel": 4
+   },
+   {
+    "id": "49690014-dc6f-5b28-a16e-b53a5e9432d9",
+    "dex": 155,
+    "weight": 1,
+    "minLevel": 3,
+    "maxLevel": 5
    }
   ],
   "trainerPool": [],
@@ -4116,6 +4200,20 @@
     "dex": 16,
     "weight": 16,
     "minLevel": 4,
+    "maxLevel": 9
+   },
+   {
+    "id": "a6644992-10bf-5dc9-8008-6d6916113a0a",
+    "dex": 175,
+    "weight": 2,
+    "minLevel": 5,
+    "maxLevel": 8
+   },
+   {
+    "id": "14a943b0-2ea4-58db-92d6-307010077a94",
+    "dex": 198,
+    "weight": 6,
+    "minLevel": 5,
     "maxLevel": 9
    }
   ],
@@ -5807,6 +5905,27 @@
     "weight": 12,
     "minLevel": 4,
     "maxLevel": 7
+   },
+   {
+    "id": "e76b2051-47c1-5c13-b040-97944b1942b3",
+    "dex": 258,
+    "weight": 1,
+    "minLevel": 4,
+    "maxLevel": 7
+   },
+   {
+    "id": "ee68eb9d-d5ab-5c10-862a-3985f3a15d5c",
+    "dex": 298,
+    "weight": 4,
+    "minLevel": 3,
+    "maxLevel": 6
+   },
+   {
+    "id": "679b64d5-b2a6-5ec1-a697-151f214c38a4",
+    "dex": 341,
+    "weight": 5,
+    "minLevel": 4,
+    "maxLevel": 7
    }
   ],
   "trainerPool": [
@@ -5950,6 +6069,13 @@
     "weight": 2,
     "minLevel": 30,
     "maxLevel": 30
+   },
+   {
+    "id": "05a2d174-93fe-5726-9d52-edf38c9343db",
+    "dex": 108,
+    "weight": 3,
+    "minLevel": 24,
+    "maxLevel": 29
    }
   ],
   "trainerPool": [
@@ -7044,6 +7170,13 @@
     "weight": 10,
     "minLevel": 6,
     "maxLevel": 11
+   },
+   {
+    "id": "b47bb875-8f27-5537-95e2-5578f1c303f6",
+    "dex": 252,
+    "weight": 1,
+    "minLevel": 5,
+    "maxLevel": 9
    }
   ],
   "trainerPool": [
@@ -7354,6 +7487,20 @@
     "weight": 10,
     "minLevel": 11,
     "maxLevel": 16
+   },
+   {
+    "id": "9a04001a-6e27-575d-baa4-acd2b976d018",
+    "dex": 300,
+    "weight": 8,
+    "minLevel": 9,
+    "maxLevel": 14
+   },
+   {
+    "id": "6e9cf2c8-4e99-516a-930b-18d3dc042eee",
+    "dex": 315,
+    "weight": 4,
+    "minLevel": 11,
+    "maxLevel": 15
    }
   ],
   "trainerPool": [
@@ -7529,6 +7676,13 @@
     "weight": 10,
     "minLevel": 36,
     "maxLevel": 42
+   },
+   {
+    "id": "adf94b44-dc67-577c-944d-b26873089753",
+    "dex": 238,
+    "weight": 3,
+    "minLevel": 8,
+    "maxLevel": 11
    }
   ],
   "trainerPool": [
@@ -7690,6 +7844,13 @@
     "weight": 15,
     "minLevel": 2,
     "maxLevel": 4
+   },
+   {
+    "id": "820dbcd0-c36b-55c2-9caa-61b75376ee2c",
+    "dex": 393,
+    "weight": 1,
+    "minLevel": 2,
+    "maxLevel": 5
    }
   ],
   "trainerPool": [],
@@ -7948,6 +8109,13 @@
     "weight": 14,
     "minLevel": 5,
     "maxLevel": 10
+   },
+   {
+    "id": "a46f465b-a8a7-5f2e-b736-2ddd9dc06f3e",
+    "dex": 390,
+    "weight": 1,
+    "minLevel": 5,
+    "maxLevel": 9
    }
   ],
   "trainerPool": [
@@ -8564,6 +8732,13 @@
     "weight": 10,
     "minLevel": 13,
     "maxLevel": 18
+   },
+   {
+    "id": "4f095216-fee2-515d-be64-7e319b2ad73a",
+    "dex": 387,
+    "weight": 1,
+    "minLevel": 12,
+    "maxLevel": 16
    }
   ],
   "trainerPool": [
@@ -8893,6 +9068,13 @@
     "weight": 14,
     "minLevel": 19,
     "maxLevel": 25
+   },
+   {
+    "id": "e55402b7-4079-5e29-964b-17d59dbadfba",
+    "dex": 472,
+    "weight": 2,
+    "minLevel": 20,
+    "maxLevel": 25
    }
   ],
   "trainerPool": [
@@ -9089,6 +9271,13 @@
     "weight": 10,
     "minLevel": 21,
     "maxLevel": 28
+   },
+   {
+    "id": "a29f2d98-b119-5413-8c24-f5da07c608d3",
+    "dex": 433,
+    "weight": 6,
+    "minLevel": 20,
+    "maxLevel": 26
    }
   ],
   "trainerPool": [
@@ -9467,6 +9656,13 @@
     "weight": 12,
     "minLevel": 32,
     "maxLevel": 39
+   },
+   {
+    "id": "2d4c9373-6b9b-58b2-8357-ae89660e47bb",
+    "dex": 424,
+    "weight": 4,
+    "minLevel": 32,
+    "maxLevel": 37
    }
   ],
   "trainerPool": [
@@ -9664,6 +9860,13 @@
     "weight": 8,
     "minLevel": 33,
     "maxLevel": 40
+   },
+   {
+    "id": "0e857c19-d70d-59d7-b028-ecf59cec369f",
+    "dex": 468,
+    "weight": 1,
+    "minLevel": 34,
+    "maxLevel": 40
    }
   ],
   "trainerPool": [
@@ -9857,6 +10060,13 @@
     "weight": 12,
     "minLevel": 34,
     "maxLevel": 41
+   },
+   {
+    "id": "d30a5b69-c440-5053-a3df-fc395e9225fd",
+    "dex": 456,
+    "weight": 8,
+    "minLevel": 26,
+    "maxLevel": 30
    }
   ],
   "trainerPool": [
@@ -10441,6 +10651,34 @@
     "weight": 18,
     "minLevel": 25,
     "maxLevel": 31
+   },
+   {
+    "id": "f09798d9-8ef2-5223-9c59-1b8d6a77c359",
+    "dex": 327,
+    "weight": 8,
+    "minLevel": 25,
+    "maxLevel": 31
+   },
+   {
+    "id": "ee1a2e81-9639-592a-b026-cbd2154d3ebf",
+    "dex": 335,
+    "weight": 5,
+    "minLevel": 26,
+    "maxLevel": 32
+   },
+   {
+    "id": "20fdd313-85d2-5bb7-a4ae-d9f83025a838",
+    "dex": 336,
+    "weight": 5,
+    "minLevel": 26,
+    "maxLevel": 32
+   },
+   {
+    "id": "30b7c30a-f8c3-52b7-b81e-101219360acb",
+    "dex": 339,
+    "weight": 8,
+    "minLevel": 25,
+    "maxLevel": 29
    }
   ],
   "trainerPool": [
@@ -12435,6 +12673,13 @@
     "dex": 460,
     "weight": 14,
     "minLevel": 41,
+    "maxLevel": 48
+   },
+   {
+    "id": "b1789aaf-2831-59c7-930e-91b52e73bf37",
+    "dex": 462,
+    "weight": 2,
+    "minLevel": 42,
     "maxLevel": 48
    }
   ],
@@ -14462,6 +14707,13 @@
     "weight": 8,
     "minLevel": 37,
     "maxLevel": 43
+   },
+   {
+    "id": "7abd252d-4cd9-5364-a6eb-cd6bcaa2cb8f",
+    "dex": 358,
+    "weight": 2,
+    "minLevel": 35,
+    "maxLevel": 40
    }
   ],
   "trainerPool": [
@@ -14788,6 +15040,13 @@
     "weight": 6,
     "minLevel": 42,
     "maxLevel": 48
+   },
+   {
+    "id": "4f720f42-d23a-5033-b0f6-e45b651d8e65",
+    "dex": 227,
+    "weight": 3,
+    "minLevel": 41,
+    "maxLevel": 47
    }
   ],
   "trainerPool": [
@@ -17477,6 +17736,20 @@
     "weight": 14,
     "minLevel": 18,
     "maxLevel": 24
+   },
+   {
+    "id": "92682394-a6c1-5a3e-8ef3-19fdab673bde",
+    "dex": 313,
+    "weight": 6,
+    "minLevel": 18,
+    "maxLevel": 23
+   },
+   {
+    "id": "63429324-9a21-5ffe-9119-40784bd0d830",
+    "dex": 314,
+    "weight": 6,
+    "minLevel": 18,
+    "maxLevel": 23
    }
   ],
   "trainerPool": [
@@ -17859,6 +18132,20 @@
     "weight": 8,
     "minLevel": 5,
     "maxLevel": 15
+   },
+   {
+    "id": "2be7db26-cfb2-55bf-bd2a-1dba22de280c",
+    "dex": 7,
+    "weight": 1,
+    "minLevel": 12,
+    "maxLevel": 15
+   },
+   {
+    "id": "262ef8cc-ff7f-5f8d-a080-9aebd756eb82",
+    "dex": 122,
+    "weight": 2,
+    "minLevel": 13,
+    "maxLevel": 17
    }
   ],
   "trainerPool": [
@@ -21048,6 +21335,20 @@
     "weight": 12,
     "minLevel": 21,
     "maxLevel": 27
+   },
+   {
+    "id": "ba51076f-c67a-53fb-9a8a-244078355834",
+    "dex": 255,
+    "weight": 1,
+    "minLevel": 11,
+    "maxLevel": 15
+   },
+   {
+    "id": "1d7f8dcd-8f06-529e-9d8f-8c6f052bc23d",
+    "dex": 325,
+    "weight": 8,
+    "minLevel": 21,
+    "maxLevel": 27
    }
   ],
   "trainerPool": [
@@ -21245,6 +21546,13 @@
     "weight": 12,
     "minLevel": 24,
     "maxLevel": 30
+   },
+   {
+    "id": "0ac8d706-33f2-5765-b655-1d05fab92744",
+    "dex": 360,
+    "weight": 3,
+    "minLevel": 10,
+    "maxLevel": 14
    }
   ],
   "trainerPool": [
@@ -21840,6 +22148,20 @@
     "weight": 10,
     "minLevel": 8,
     "maxLevel": 12
+   },
+   {
+    "id": "83bb2ed8-4c39-542a-a48c-0c70dacdb363",
+    "dex": 158,
+    "weight": 1,
+    "minLevel": 6,
+    "maxLevel": 10
+   },
+   {
+    "id": "0361c011-cf3b-510e-b0be-ffc2623d35c1",
+    "dex": 211,
+    "weight": 6,
+    "minLevel": 8,
+    "maxLevel": 12
    }
   ],
   "trainerPool": [
@@ -22023,6 +22345,27 @@
     "weight": 10,
     "minLevel": 10,
     "maxLevel": 15
+   },
+   {
+    "id": "74ffd177-8595-52eb-83a3-44cd87668b0a",
+    "dex": 202,
+    "weight": 4,
+    "minLevel": 13,
+    "maxLevel": 15
+   },
+   {
+    "id": "6184f852-9f61-545b-bc9d-d2ad64999588",
+    "dex": 206,
+    "weight": 3,
+    "minLevel": 9,
+    "maxLevel": 14
+   },
+   {
+    "id": "58bc18f3-1859-52c6-95c3-c80b859cad5d",
+    "dex": 216,
+    "weight": 6,
+    "minLevel": 9,
+    "maxLevel": 14
    }
   ],
   "trainerPool": [
@@ -22216,6 +22559,13 @@
     "weight": 10,
     "minLevel": 30,
     "maxLevel": 37
+   },
+   {
+    "id": "c6cfc7e9-e553-53e2-ad6f-45ff15cc4f8a",
+    "dex": 236,
+    "weight": 3,
+    "minLevel": 15,
+    "maxLevel": 19
    }
   ],
   "trainerPool": [
@@ -22562,6 +22912,20 @@
     "weight": 4,
     "minLevel": 14,
     "maxLevel": 17
+   },
+   {
+    "id": "0c4c9347-447b-500c-9ecf-65325b31fad0",
+    "dex": 190,
+    "weight": 8,
+    "minLevel": 11,
+    "maxLevel": 16
+   },
+   {
+    "id": "d990c9ba-3995-57b7-8433-1a6c316dd592",
+    "dex": 214,
+    "weight": 3,
+    "minLevel": 12,
+    "maxLevel": 16
    }
   ],
   "trainerPool": [
@@ -22742,6 +23106,13 @@
     "weight": 4,
     "minLevel": 15,
     "maxLevel": 20
+   },
+   {
+    "id": "3c05131d-2df7-51ea-ade8-b9f2c42de537",
+    "dex": 152,
+    "weight": 1,
+    "minLevel": 12,
+    "maxLevel": 15
    }
   ],
   "trainerPool": [
@@ -22925,6 +23296,13 @@
     "weight": 14,
     "minLevel": 14,
     "maxLevel": 20
+   },
+   {
+    "id": "0b68539d-6e87-5058-802e-bfdcc30c18b4",
+    "dex": 172,
+    "weight": 4,
+    "minLevel": 14,
+    "maxLevel": 18
    }
   ],
   "trainerPool": [
@@ -23106,6 +23484,27 @@
     "dex": 133,
     "weight": 6,
     "minLevel": 16,
+    "maxLevel": 22
+   },
+   {
+    "id": "8f489165-6d38-5cb3-bf68-2e64f4ceab3d",
+    "dex": 173,
+    "weight": 4,
+    "minLevel": 15,
+    "maxLevel": 19
+   },
+   {
+    "id": "85fae0e6-dd59-5b45-bdde-f4664f5c28f5",
+    "dex": 174,
+    "weight": 4,
+    "minLevel": 15,
+    "maxLevel": 19
+   },
+   {
+    "id": "0a0f6986-b6e7-5b70-9c10-de0bf665a1b6",
+    "dex": 233,
+    "weight": 1,
+    "minLevel": 18,
     "maxLevel": 22
    }
   ],
@@ -23337,6 +23736,20 @@
     "weight": 10,
     "minLevel": 17,
     "maxLevel": 24
+   },
+   {
+    "id": "29d3e958-1b64-5c9c-8fd4-ac8c7e2d390d",
+    "dex": 185,
+    "weight": 3,
+    "minLevel": 20,
+    "maxLevel": 24
+   },
+   {
+    "id": "e0d4735f-b286-5784-9f2c-1893639c1231",
+    "dex": 193,
+    "weight": 3,
+    "minLevel": 18,
+    "maxLevel": 23
    }
   ],
   "trainerPool": [
@@ -23763,6 +24176,20 @@
     "weight": 10,
     "minLevel": 22,
     "maxLevel": 28
+   },
+   {
+    "id": "c4d5685c-b61c-56c8-aae4-805e5aef2798",
+    "dex": 218,
+    "weight": 8,
+    "minLevel": 20,
+    "maxLevel": 26
+   },
+   {
+    "id": "6e05ad04-1d15-58d4-9cbc-71366286e278",
+    "dex": 240,
+    "weight": 3,
+    "minLevel": 8,
+    "maxLevel": 11
    }
   ],
   "trainerPool": [
@@ -23980,6 +24407,13 @@
     "weight": 6,
     "minLevel": 24,
     "maxLevel": 30
+   },
+   {
+    "id": "1858bc12-51f8-567e-b7b4-0965c84ba7b0",
+    "dex": 242,
+    "weight": 1,
+    "minLevel": 28,
+    "maxLevel": 31
    }
   ],
   "trainerPool": [
@@ -24381,6 +24815,13 @@
     "weight": 10,
     "minLevel": 27,
     "maxLevel": 34
+   },
+   {
+    "id": "1167ed0b-8db2-5f41-ac81-04dd7e2eefaf",
+    "dex": 223,
+    "weight": 10,
+    "minLevel": 20,
+    "maxLevel": 24
    }
   ],
   "trainerPool": [
@@ -24566,6 +25007,13 @@
     "weight": 16,
     "minLevel": 29,
     "maxLevel": 35
+   },
+   {
+    "id": "ae0b63b1-3783-56ca-8905-645288040c13",
+    "dex": 222,
+    "weight": 8,
+    "minLevel": 28,
+    "maxLevel": 34
    }
   ],
   "trainerPool": [
@@ -24750,6 +25198,13 @@
     "weight": 12,
     "minLevel": 32,
     "maxLevel": 38
+   },
+   {
+    "id": "bfcc7b4c-2695-5914-96cc-6443fb84e9b1",
+    "dex": 239,
+    "weight": 3,
+    "minLevel": 8,
+    "maxLevel": 11
    }
   ],
   "trainerPool": [
@@ -24969,6 +25424,20 @@
     "weight": 12,
     "minLevel": 39,
     "maxLevel": 46
+   },
+   {
+    "id": "cf0157a9-5f57-5d64-b5ca-1dcaec11631a",
+    "dex": 207,
+    "weight": 8,
+    "minLevel": 38,
+    "maxLevel": 45
+   },
+   {
+    "id": "18f2b9aa-6e53-5020-8ac0-70ace51e0a9b",
+    "dex": 231,
+    "weight": 8,
+    "minLevel": 20,
+    "maxLevel": 24
    }
   ],
   "trainerPool": [
@@ -25228,6 +25697,13 @@
     "weight": 12,
     "minLevel": 40,
     "maxLevel": 46
+   },
+   {
+    "id": "099af139-4034-58ac-9a2b-e1d49f209dd2",
+    "dex": 374,
+    "weight": 1,
+    "minLevel": 15,
+    "maxLevel": 19
    }
   ],
   "trainerPool": [
@@ -26319,6 +26795,13 @@
     "weight": 10,
     "minLevel": 56,
     "maxLevel": 65
+   },
+   {
+    "id": "e18551c9-a8fa-5e94-8781-e22cc4b2047c",
+    "dex": 475,
+    "weight": 2,
+    "minLevel": 56,
+    "maxLevel": 64
    }
   ],
   "trainerPool": [
@@ -26840,6 +27323,13 @@
     "weight": 6,
     "minLevel": 12,
     "maxLevel": 16
+   },
+   {
+    "id": "6bcf6620-41e3-5b2b-ae61-4d7bd8a14eb8",
+    "dex": 501,
+    "weight": 1,
+    "minLevel": 10,
+    "maxLevel": 14
    }
   ],
   "trainerPool": [
@@ -27034,6 +27524,13 @@
     "weight": 10,
     "minLevel": 13,
     "maxLevel": 18
+   },
+   {
+    "id": "e298336a-d0d9-5a69-8f87-e747a02e8e13",
+    "dex": 495,
+    "weight": 1,
+    "minLevel": 13,
+    "maxLevel": 16
    }
   ],
   "trainerPool": [
@@ -27382,6 +27879,20 @@
     "weight": 12,
     "minLevel": 21,
     "maxLevel": 27
+   },
+   {
+    "id": "cbb7fd41-2fe6-5b8a-8a6e-75cd6b41ec2e",
+    "dex": 498,
+    "weight": 1,
+    "minLevel": 12,
+    "maxLevel": 16
+   },
+   {
+    "id": "a96f4037-61a0-52fc-9dba-19299b2cb5a3",
+    "dex": 636,
+    "weight": 2,
+    "minLevel": 20,
+    "maxLevel": 26
    }
   ],
   "trainerPool": [
@@ -27604,6 +28115,13 @@
     "weight": 6,
     "minLevel": 23,
     "maxLevel": 28
+   },
+   {
+    "id": "2c18938c-b6cc-5f00-8595-9a5eed054ed4",
+    "dex": 570,
+    "weight": 4,
+    "minLevel": 22,
+    "maxLevel": 27
    }
   ],
   "trainerPool": [

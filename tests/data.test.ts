@@ -147,13 +147,13 @@ describe('areas & trainers', () => {
     for (const l of ALL_LEGENDARIES) expect(bosses.has(l) || roamers.has(l), `#${l}`).toBe(true)
   })
 
-  it('puts the starters in Victory Road only (rare), never in trainer teams — so 151/151 is reachable', () => {
+  it('keeps the starters rare in the wild (weight 3 in the catch-all, 1 elsewhere), never in trainer teams', () => {
     const vr = allAreas.find((a) => a.scalesToTeam)!
     for (const a of allAreas) {
       for (const s of STARTERS) {
         const entry = a.wildPool.find((w) => w.dex === s)
         if (a === vr) expect(entry?.weight).toBe(3)
-        else expect(entry).toBeUndefined()
+        else if (entry) expect(entry.weight, a.name).toBe(1)
       }
     }
     for (const t of allTrainers) for (const m of t.team) expect(STARTERS).not.toContain(m.dex)
