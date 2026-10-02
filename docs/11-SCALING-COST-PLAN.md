@@ -1,10 +1,11 @@
 # Pokédice — Scaling & Cost Plan (Netlify + Supabase)
 
-> **Status: plan, nothing built.** Goal: keep the game running for thousands, then tens of thousands, of monthly
-> players while staying on **Netlify** (hosting) and **Supabase** (auth, saves, boards, content), at the lowest plan that
-> holds. No new host, no new backend. Every number marked *measured* was taken from this repository on 2026-10-02;
-> every number marked *estimate* comes from the cost model in §3 and should be replaced by the real figures from §2.4
-> once they exist.
+> **Status: built, except §6.2 B (board snapshots, only if needed) and two items dropped on purpose (§9).** Goal: keep
+> the game running for thousands, then tens of thousands, of monthly players while staying on **Netlify** (hosting)
+> and **Supabase** (auth, saves, boards, content), at the lowest plan that holds. No new host, no new backend. Every
+> number marked *measured* was taken from this repository on 2026-10-02; every number marked *estimate* comes from the
+> cost model in §2 and should be replaced by the real figures from §2.4. **§9 lists what was built and the steps left
+> to do on the live services.**
 
 Companion to `03-BUILD-PLAN.md` (phasing conventions). Earlier load work this builds on: `0026_lighter_load.sql`
 (leaderboard cache), `0028_analytics_minimal.sql` (one ping per player per day), the image cache headers in
@@ -383,3 +384,39 @@ Baseline to record after step 1:
 - Moving hosting or backend off Netlify / Supabase (asked to stay).
 - Self-hosting Supabase, or a second database.
 - Cutting features (boards, Versus, cloud saves) to save cost: none of them is expensive once built as above.
+
+---
+
+## 9. What was built (2026-10-02)
+
+| Plan item | Done | Where | Measured result |
+|---|---|---|---|
+| §3.1 build id from the entry script | yes | `vite.config.ts` (buildVersion), `src/lib/buildId.ts` | two builds of one commit: same `index-*.js`, same `version.json` |
+| §3.2 skip builds that change nothing in `dist/` | yes | `netlify.toml` `ignore` | — |
+| §3.3 fewer `version.json` checks | yes | `src/store/sync.ts` | 60 min on return, 6 h while open |
+| §6.2 A leaderboard: one region, counts, 5-min cache | yes | `0029_leaderboard_region.sql` (+ `0016`, `seed.sql`), `src/lib/leaderboard.ts` | ~10× fewer bytes per opening; 401 rows counted identically to the client |
+| §6.1 content as one Storage file | yes | `0030_content_storage.sql`, `src/admin/store.ts`, `src/config/remote.ts` | a Publish no longer reads the tables for players |
+| §4.1 chunks by rate of change | yes | `vite.config.ts` manualChunks | main entry 616 → **141 KB** gz; first load (English) ~620 → ~440 KB |
+| §4.2 one language per player | yes | `i18nSheet` plugin, `src/i18n/index.ts`, `src/main.tsx` | each other language ~32 KB gz, loaded on demand |
+| §5.1 lossless recompression | yes | `pnpm png` (`scripts/optimize-png.ts`) | images 7.7 → **2.1 MB**, all 3,632 pixel-identical |
+| §5.3 Box icon sheets | yes | `pnpm mini-sheets`, `MiniSprite` | 649 files → 5 sheets; a Kanto Box = 1 request (37 KB) |
+| §6.3 Versus counters + cache | yes | `0031_versus_counters.sql`, `src/lib/versus.ts`, `src/lib/boardCache.ts` | same board output byte-for-byte; no per-call counting or save reads |
+| §6.4 save stamp before download | yes | `src/save/cloud.ts`, `src/store/sync.ts` | an unchanged save costs a timestamp read, not the save |
+| §6.5 feedback cap, upkeep prune | yes (cap instead of an RPC: lengths and per-device limits already existed) | `0032_upkeep.sql` | 60 signed-out messages / hour in total |
+| §6.2 B board snapshots | **no, deferred** | — | build it only if §7.3 shows the board as the top egress item after 0029 |
+| §5.2 versioned image URLs | **dropped** | — | image URLs also come from content data (banners, items, trainers); the sheets took most of the request saving |
+| §5.4 service worker | **dropped** | — | its own update checks cost ~1 request per player per day, close to what it saves now, and a faulty worker stays on players' devices |
+
+### Left to do on the live services (in this order)
+
+1. **Supabase → SQL editor**, once each, in order: `0029_leaderboard_region.sql`, `0030_content_storage.sql`,
+   `0031_versus_counters.sql`, `0032_upkeep.sql`, then `select upkeep_prune();`. Every file is safe to run again, and
+   the game works before they are run (it falls back to the older calls).
+2. If pg_cron is on (Database → Extensions): the two `cron.schedule` lines at the bottom of `0032_upkeep.sql`.
+3. When `analytics_events` is no longer needed: the optional block at the end of `0028_analytics_minimal.sql`
+   (~300 MB back).
+4. **Netlify → Build & deploy**: check whether branch deploys / deploy previews are on for `claude/*` branches and
+   whether they cost credits on your plan; limit them to the production branch if they do. Turn on usage
+   notifications (§7.2).
+5. Admin → **Publish** once after step 1, so the live content gets its Storage file.
+6. After a week: fill in the baseline table in §8 from the dashboards and compare with §2.
