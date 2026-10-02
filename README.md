@@ -143,5 +143,10 @@ supabase/    migrations/0001_init.sql, seed.sql (generated)
   default 15) while they play, and when the page closes; no longer every 30 s or on every tab switch. SYNC ONLINE, at
   the bottom of the side bar (in the avatar's drawer on phones), shows the last sync and syncs now — the same
   compare-and-settle as at sign-in — then rests 5 minutes. A save that already matches the cloud isn't re-uploaded.
+- **Fewer web requests** — the images in `public/` (`pokemon`, `trainers`, `banners`, `battle`, `characters`) are kept in
+  the browser for a month (`netlify.toml`) instead of being re-checked with Netlify on every visit. They have no content
+  hash, so a *replaced* image can take up to a month to reach returning players: give it a new name, or a `?v=` in its
+  URL, when that matters. A Pokémon's two Box-icon frames are one image, `NNN_mini.png` (frame 1 left, frame 2 right),
+  so a menu icon is one request instead of two.
 - `allowVoluntarySwitch`, `enemyUpgradeLevel`, `goldMultiplier`, `forcedCenterWhenHurt` and `scaleLevelSpread` are
   `game_config` keys (the spec was silent on these).

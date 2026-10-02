@@ -2,11 +2,12 @@ import { useState } from 'react'
 import { useGame } from '@/store/game'
 import { cx } from '@/theme/util'
 
-export type SpriteView = 'front' | 'back' | 'mini_1' | 'mini_2'
+/** `mini` is both Box-icon frames side by side in one image (see MiniSprite). */
+export type SpriteView = 'front' | 'back' | 'mini'
 
 /** Local FireRed/LeafGreen sprites (public/pokemon, from `pnpm pokemon-sprites --publish`). Minis have no shiny version. */
 export const spriteUrlFor = (dex: number, view: SpriteView = 'front', shiny = false) =>
-  `/pokemon/${String(dex).padStart(3, '0')}_${view}${shiny && !view.startsWith('mini') ? '_shiny' : ''}.png`
+  `/pokemon/${String(dex).padStart(3, '0')}_${view}${shiny && view !== 'mini' ? '_shiny' : ''}.png`
 
 /** Warm the browser cache (current area's pool only). */
 export function preloadSprites(dexes: number[]) {
@@ -82,7 +83,8 @@ export function SpriteImg({
 }
 
 /**
- * The menu icon: a 32×32 party sprite hopping between its two frames every 0.3 s. Every mini on screen shares the
+ * The menu icon: a party sprite hopping between its two frames every 0.3 s. Both frames sit side by side in one image
+ * (one request per Pokémon), twice the slot's width, slid left by a frame on the beat. Every mini on screen shares the
  * same beat (the animation is offset by the wall clock). Sits before a Pokémon's name in lists and cards.
  */
 export function MiniSprite({
@@ -100,27 +102,28 @@ export function MiniSprite({
 }) {
   const reduced = useGame((s) => s.settings.reducedMotion)
   const [delay] = useState(() => `-${Date.now() % 600}ms`)
-  const img = (view: SpriteView, anim?: string) => (
-    <img
-      src={spriteUrlFor(dex, view)}
-      alt={view === 'mini_1' ? alt : ''}
-      width={size}
-      height={size}
-      draggable={false}
-      decoding="async"
-      className={cx('pixelated absolute inset-0 h-full w-full select-none', !reduced && anim)}
-      style={{
-        imageRendering: 'pixelated',
-        filter: silhouette ? 'brightness(0) opacity(0.75)' : undefined,
-        animationDelay: reduced ? undefined : delay,
-        opacity: reduced && view === 'mini_2' ? 0 : undefined,
-      }}
-    />
-  )
   return (
-    <span className={cx('relative inline-block shrink-0', className)} style={{ width: size, height: size }} aria-hidden={alt ? undefined : true}>
-      {img('mini_1', 'mini-frame-a')}
-      {img('mini_2', 'mini-frame-b')}
+    <span
+      className={cx('relative inline-block shrink-0 overflow-hidden', className)}
+      style={{ width: size, height: size }}
+      aria-hidden={alt ? undefined : true}
+    >
+      <img
+        src={spriteUrlFor(dex, 'mini')}
+        alt={alt}
+        width={size * 2}
+        height={size}
+        loading="lazy"
+        draggable={false}
+        decoding="async"
+        className={cx('pixelated absolute left-0 top-0 h-full max-w-none select-none', !reduced && 'mini-frames')}
+        style={{
+          width: size * 2,
+          imageRendering: 'pixelated',
+          filter: silhouette ? 'brightness(0) opacity(0.75)' : undefined,
+          animationDelay: reduced ? undefined : delay,
+        }}
+      />
     </span>
   )
 }
