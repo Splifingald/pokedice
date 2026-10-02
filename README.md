@@ -161,5 +161,10 @@ supabase/    migrations/0001_init.sql, seed.sql (generated)
   the bytes. Reopened within 5 minutes, it comes from the browser. Needs `supabase/migrations/0029_leaderboard_region.sql`
   run once on the live database (re-running `supabase/seed.sql` brings it too); until then the game falls back to the
   older `leaderboard()`.
+- **Published content from Storage** — Admin → Publish also uploads the whole content as `content/v<N>.json` to a
+  public Storage bucket, before bumping `configVersion`. Returning players download that one file from the Storage CDN
+  (its own egress quota) instead of reading every content table through the API; the last three versions are kept.
+  Needs `supabase/migrations/0030_content_storage.sql` run once on the live database. Without it, or for a version
+  published before it, players read the tables as before, and Publish says the file didn't reach Storage.
 - `allowVoluntarySwitch`, `enemyUpgradeLevel`, `goldMultiplier`, `forcedCenterWhenHurt` and `scaleLevelSpread` are
   `game_config` keys (the spec was silent on these).

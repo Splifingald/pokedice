@@ -3,7 +3,7 @@ import { useMemo } from 'react'
 import { create } from 'zustand'
 import { BUNDLE } from '@/config/bundle'
 import { bundleToRows, PRIMARY_KEYS, rowsToBundle, TABLES, type Row, type TableName, type TableRows } from '@/config/mapping'
-import { fetchAllRows } from '@/config/remote'
+import { CONTENT_BUCKET, contentFileName, fetchAllRows } from '@/config/remote'
 import { compileGameData, type GameData } from '@/engine'
 import type { BundleRaw } from '@/engine/types'
 import { getSupabase, isSupabaseConfigured } from '@/lib/supabase'
@@ -234,7 +234,42 @@ export async function undoLastSave() {
   }
 }
 
-/** Bumps game_config.configVersion — what makes every client hot-swap on its next load. */
+/** Published versions kept in the `content` bucket: the live one and the two before it. */
+const KEEP_CONTENT_FILES = 3
+
+/**
+ * Uploads `bundle` as `content/v<version>.json` (migration 0030), the one file players download for that version
+ * instead of reading every table. Then removes the files older than the last KEEP_CONTENT_FILES. False when the upload
+ * failed: players then read the tables, as before.
+ */
+async function uploadContentFile(version: number, bundle: BundleRaw): Promise<boolean> {
+  const client = await getSupabase()
+  if (!client) return false
+  const bucket = client.storage.from(CONTENT_BUCKET)
+  const { error } = await bucket.upload(contentFileName(version), new Blob([JSON.stringify(bundle)], { type: 'application/json' }), {
+    contentType: 'application/json',
+    // An hour on the CDN: long enough that one copy serves everyone, short enough that a version number re-used after
+    // an undo isn't served stale for long. Each player keeps it in IndexedDB anyway (contentCache.ts).
+    cacheControl: '3600',
+    upsert: true,
+  })
+  if (error) {
+    console.warn('[admin] content file upload failed', error)
+    return false
+  }
+  const { data: files } = await bucket.list('', { limit: 1000 })
+  const old = (files ?? [])
+    .map((f) => ({ name: f.name, v: Number(/^v(\d+)\.json$/.exec(f.name)?.[1]) }))
+    .filter((f) => Number.isFinite(f.v) && f.v <= version - KEEP_CONTENT_FILES)
+    .map((f) => f.name)
+  if (old.length) await bucket.remove(old)
+  return true
+}
+
+/**
+ * Bumps game_config.configVersion — what makes every client hot-swap on its next load. The content file goes up first,
+ * so no player sees the new version before its file exists.
+ */
 export async function publish() {
   const cfg = get().rows.game_config
   const cur = Number(cfg.find((r) => r.key === 'configVersion')?.value ?? 0)
@@ -245,8 +280,16 @@ export async function publish() {
       ? cfg.map((r) => (r.key === 'configVersion' ? { ...r, value: next } : r))
       : [...cfg, { key: 'configVersion', value: next }],
   )
+  const filed = get().mode === 'remote' && (await uploadContentFile(next, rowsToBundle(get().rows)))
   const ok = await saveAll({ silent: true })
-  if (ok) pushToast(`Published — content version ${next}. Players get it on their next load.`, 'good', 5000)
+  if (!ok) return
+  if (filed || get().mode !== 'remote') pushToast(`Published — content version ${next}. Players get it on their next load.`, 'good', 5000)
+  else
+    pushToast(
+      `Published — content version ${next}, but its file didn't reach Storage (has 0030_content_storage.sql been run?). Players read it from the tables instead.`,
+      'info',
+      8000,
+    )
 }
 
 export function applyToGame() {
