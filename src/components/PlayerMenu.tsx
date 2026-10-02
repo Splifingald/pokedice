@@ -7,6 +7,7 @@ import { useGame } from '@/store/game'
 import { useInFight, useIsAdmin } from '@/store/hooks'
 import { signInWithGoogle } from '@/store/sync'
 import { cx } from '@/theme/util'
+import { CloudSyncButton } from './CloudSyncButton'
 import { ContactModal } from './ContactModal'
 import { GoogleMark } from './GoogleAccountButton'
 import { PixelIcon, type IconName } from './icons'
@@ -151,6 +152,7 @@ export function PlayerMenu() {
             }}
           />
           {isAdmin && <MenuRow icon="wrench" label={t('ui.nav.admin')} onClick={go('/admin')} />}
+          <CloudSyncButton />
           {canConnect && (
             <MenuRow
               mark

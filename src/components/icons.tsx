@@ -33,6 +33,7 @@ export const ICONS = {
   heal: ['..kkkk..', '..kggk..', 'kkkggkkk', 'kgggwggk', 'kggggggk', 'kkkggkkk', '..kggk..', '..kkkk..'],
   sound: ['...k....', '..kk..k.', 'kkwk.k..', 'kwwk.k.k', 'kwwk.k.k', 'kkwk.k..', '..kk..k.', '...k....'],
   mute: ['...k....', '..kk....', 'kkwk.k.k', 'kwwk..k.', 'kwwk.k.k', 'kkwk....', '..kk....', '...k....'],
+  cloud: ['...kkk..', '..kwCCk.', '.kkCCCCk', 'kwCCCCCk', 'kCCCCCck', 'kCCCCcck', '.kkkkkk.', '........'],
   close: ['kk....kk', 'kkk..kkk', '.kkkkkk.', '..kkkk..', '..kkkk..', '.kkkkkk.', 'kkk..kkk', 'kk....kk'],
   ball: [
     '....kkkk....',

@@ -86,6 +86,14 @@ test('sign-in flow (mocked Supabase)', async ({ page }) => {
   await page.goto('/settings')
   await expect(page.getByText('Backed up as admin@example.com')).toBeVisible()
   await expect.poll(() => calls.some((c) => c.startsWith('POST /rest/v1/saves'))).toBe(true)
+  // The day's one analytics call.
+  await expect.poll(() => calls.filter((c) => c.startsWith('POST /rest/v1/rpc/player_ping')).length).toBe(1)
+
+  // SYNC ONLINE at the bottom of the side bar: it just synced, so it rests for 5 minutes.
+  const sync = page.getByRole('complementary').getByRole('button', { name: /Sync online/ })
+  await expect(sync).toContainText('Last sync: just now')
+  await expect(sync).toContainText(/Again in [45]:\d\d/)
+  await expect(sync).toBeDisabled()
 
   // 3. The avatar's drawer: signed in, it offers Admin and no Connect.
   await page.getByRole('button', { name: 'Your trainer menu' }).click()

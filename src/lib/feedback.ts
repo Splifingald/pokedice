@@ -3,7 +3,7 @@
 // little context for bug reports. The admin's answers (migration 0025) come back through my_feedback(): the player's
 // own messages, kept here in `useInbox` for the history and the pop-up of answers not seen yet.
 import { create } from 'zustand'
-import { deviceId } from '@/analytics/track'
+import { deviceId } from '@/lib/device'
 import { getLang } from '@/i18n'
 import { useGame } from '@/store/game'
 import { getSupabase } from './supabase'

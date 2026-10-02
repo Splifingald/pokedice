@@ -130,10 +130,18 @@ supabase/    migrations/0001_init.sql, seed.sql (generated)
   live database, after 0021 (re-running `supabase/seed.sql` brings the leaderboard part too). Re-running 0021 would
   put the per-event trigger back: run 0026 again after it.
 - **Analytics upkeep** — `supabase/migrations/0027_analytics_slim.sql` drops two unused indexes on `analytics_events`
-  and adds `analytics_prune()`: snapshots older than a week go (each player's latest stays), and every event older
-  than 90 days. The all-time figures live in the running totals, so they don't change; never run
-  `analytics_rebuild_rollups()` after a prune. Schedule it nightly with pg_cron (the lines are at the end of the file).
-  The game also folds a Pokémon's queued level-ups into one event, and keeps content downloaded from Supabase in
-  IndexedDB, so a live configVersion ahead of the build costs each player one download per version, not one per visit.
+  and adds `analytics_prune()`. The game also keeps content downloaded from Supabase in IndexedDB, so a live
+  configVersion ahead of the build costs each player one download per version, not one per visit.
+- **Minimal analytics** — the game no longer sends events. It makes one call per player per day, `player_ping()`, which
+  records the day and refreshes the player's row (name, and a small snapshot of their game). Admin → Analytics shows
+  day-1 retention and the players; clicking one opens their profile — a Google player's from their cloud save, a
+  guest's from that day's snapshot — with the leaderboard ban and the cheats. Needs
+  `supabase/migrations/0028_analytics_minimal.sql` run once on the live database: it fills the new tables from the old
+  analytics (retention keeps its history) and stops `analytics_events` taking inserts. The block at the end of the
+  file drops the old tables when you no longer want them.
+- **Cloud sync** — a signed-in player's save goes to Supabase at most once every `cloudSyncMinutes` (Admin → Config,
+  default 15) while they play, and when the page closes; no longer every 30 s or on every tab switch. SYNC ONLINE, at
+  the bottom of the side bar (in the avatar's drawer on phones), shows the last sync and syncs now — the same
+  compare-and-settle as at sign-in — then rests 5 minutes. A save that already matches the cloud isn't re-uploaded.
 - `allowVoluntarySwitch`, `enemyUpgradeLevel`, `goldMultiplier`, `forcedCenterWhenHurt` and `scaleLevelSpread` are
   `game_config` keys (the spec was silent on these).

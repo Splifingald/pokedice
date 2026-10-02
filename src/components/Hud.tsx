@@ -3,6 +3,7 @@ import { useT } from '@/i18n/react'
 import { leaderboardUnlocked } from '@/engine'
 import { pushToast, useGame } from '@/store/game'
 import { useInFight } from '@/store/hooks'
+import { CloudSyncButton } from './CloudSyncButton'
 import { PlayerMenu } from './PlayerMenu'
 import { cx } from '@/theme/util'
 import { GoldPill } from './GoldPill'
@@ -129,7 +130,7 @@ export function Header() {
   )
 }
 
-/** Desktop: the game menus down the left. The account, the admin and the rules live in the avatar's drawer. */
+/** Desktop: the game menus down the left, and SYNC ONLINE at the bottom. The account, the admin and the rules live in the avatar's drawer. */
 export function SideNav() {
   const { t } = useT()
   return (
@@ -139,6 +140,9 @@ export function SideNav() {
           <NavEntry key={n.to} n={n} variant="side" />
         ))}
       </nav>
+      <div className="mt-auto">
+        <CloudSyncButton />
+      </div>
     </aside>
   )
 }
