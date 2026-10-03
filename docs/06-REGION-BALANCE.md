@@ -242,3 +242,22 @@ reaches the Champion Cup well over its band. The Cup's ~190–200 wipes are five
 between them, the same shape as Unova's league and Alola's Popplio. The first build gave the Energy Plant two rounds as
 well as Route 10, which put Grookey at L81 and cost it 33 wipes against Rose's Copperajah for nothing; one round there
 is the only change. Grookey is still the long run (474 encounters): Kabu, Rose and Leon's Charizard are its walls.
+
+---
+
+## Paldea
+
+Added with Gen 9, measured with `pnpm balance table 6 900 paldea`.
+
+| Region | Starter | League win % | League wipes | Chain wipe % | Chain turns | Lv at league | Band | Encounters to league |
+|---|---|---:|---:|---:|---:|---:|---|---:|
+| **Paldea** | **Sprigatito** | **56** | **112.0** | **15** | **2.53** | **55** | **55–66** | **258** |
+| **Paldea** | **Fuecoco** | **68** | **109.0** | **26** | **2.19** | **60** | **55–66** | **298** |
+| **Paldea** | **Quaxly** | **65** | **138.5** | **23** | **2.55** | **60** | **55–66** | **334** |
+
+**In the envelope, at the low edge.** The league is won 56–68 % (Alola 56–68), the chain wipes 15–26 %, fights take
+2.2–2.6 turns. Paldea's chain is the shortest climb to a league (Scarlet and Violet's levels rise fast between the
+gyms), so the first build reached it at L53–58, under the band, on 243–323 encounters. Two rounds at Casseroya Lake,
+the last area before it, brought the team to L55–60 and Quaxly from 59 % to 65 %. Sprigatito stays the hard run
+(56 %, the fewest encounters and the lowest level at the league). Left at the games' levels.
+

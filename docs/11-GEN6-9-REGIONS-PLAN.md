@@ -1,9 +1,9 @@
 # Pokédice — Generations 6–9 Plan (Kalos, Alola, Galar, Paldea)
 
-> **Status: in progress**, built one generation at a time on `main` (asked for 2026-10-03). Each generation lands
-> whole (species, sprites, content, names, balance, seed.sql) before the next one starts. Where this document and
-> the code disagree, the code is right, and each section gets a "what changed in the building" note when its
-> generation ships.
+> **Status: built** — Kalos, Alola, Galar and Paldea, one generation at a time on `main` (asked for 2026-10-03).
+> Each generation landed whole (species, sprites, content, names, balance, seed.sql) before the next one started.
+> Where this document and the code disagree, the code is right; each region's section below says what changed in the
+> building.
 
 The four regions after Unova, in order: **Kalos** (#650–721, 72 species), **Alola** (#722–809, 88), **Galar**
 (#810–905, 96, Hisui's seven included) and **Paldea** (#906–1025, 120). That is 376 species, the sprites of
@@ -302,3 +302,98 @@ search results (化朗镇, 펄롱마을, Pueblo Yarda…). **The Italian Galar p
 column keeps the English ones**; the rest of the generic terms are written by hand and are best-effort.
 
 **Balance**: in the envelope with one change (the Energy Plant back to one round) — see `06-REGION-BALANCE.md`.
+
+---
+
+## Paldea (#906–1025) — built
+
+`scripts/content-paldea.ts`, `pnpm seed-regions --from 906 --to 1025` (the default). 20 areas on the chain, 3 side
+areas after the league, 7 secret.
+
+**Route.** Scarlet and Violet's three stories are open-world; here they are woven into one chain by their levels.
+Cabo Poco, the Poco Path & the Inlet Grotto → Los Platos & South Province (Area One) → Mesagoza & South Province
+(Area Two) (Nemona; the Game Corner deck) → South Province (Area Three) & Cortondo (**Katy**; Klawf) → South Province
+(Area Six) & Artazon (**Brassius**) → West Province (Area One) & the Segin Squad's Base (Giacomo; Bombirdier) → East
+Province (Areas One & Two) & Levincia (**Iono**) → the Schedar Squad's Base & East Province (Area Three) (Mela;
+Orthworm; Charcadet's armors) → the Asado Desert & Cascarrafa (**Kofu**) → Tagtree Thicket & the Navi Squad's Base
+(Atticus) → West Province (Area Two) & Medali (**Larry**) → the Dalizapa Passage & Montenevera (**Ryme**) → the
+Alfornada Cavern & Alfornada (**Tulip**) → Glaseado Mountain (**Grusha**; the Ice Stone) → North Province (Area Three)
+& the Ruchbah Squad's Base (Ortega) → North Province (Area Two) & the Caph Squad's Base (Eri; the Master Ball) →
+Casseroya Lake (Dondozo and Tatsugiri) → **the Pokémon League** (Rika, Poppy, Larry, Hassel, Geeta, then Nemona) →
+the Way Home (Arven, Penny) → Area Zero (the professor's AI). After the league: the Land of Kitakami, Blueberry
+Academy & the BB League, and the Terarium (catch-all).
+
+**Titans and Team Star.** The titans are wild Pokémon, so each sits in its own area's pool at its titan level, rare
+(weight 2): Klawf 16, Bombirdier 20, Orthworm 29, Dondozo 56–57 with Tatsugiri. The Quaking Earth titan is a Great
+Tusk or an Iron Treads; it is not put in the Lv.24–31 desert, where it would be a Lv.45 wall, and both are in Area
+Zero. Team Star's five bosses fight as leaders without a badge (Striaton's precedent), so the eight gym badges still
+take the foe upgrade level from 1 to 9; each ends on its squad's Starmobile, a Revavroom. Paldea's trainers are Gen 9
+classes (Showdown has no student sprites): Team Star Grunts, Office Workers, Cooks, Cabbies, Waiters, Bodybuilders,
+Dragon Tamers…
+
+**Teams** kept by the user's rule (Gen 9 first, then the highest level):
+
+| Battle | Real roster | Kept |
+|---|---|---|
+| Iono | Wattrel 23, Bellibolt 23, Luxio 23, Mismagius 24 | Wattrel, Bellibolt, Mismagius |
+| Ryme | Banette 41, Mimikyu 41, Houndstone 41, Toxtricity 42 | Mimikyu, Houndstone, Toxtricity |
+| Tulip | Farigiraf 44, Gardevoir 44, Espathra 44, Florges 45 | Farigiraf, Espathra, Florges |
+| Grusha | Frosmoth 47, Beartic 47, Cetitan 47, Altaria 48 | Frosmoth, Cetitan, Altaria |
+| Atticus | Skuntank 32, Muk 32, Revavroom 33, Navi Starmobile 32 | Muk, Revavroom, the Starmobile |
+| Ortega | Azumarill, Wigglytuff, Dachsbun, Ruchbah Starmobile | Azumarill, Dachsbun, the Starmobile |
+| Eri | Toxicroak 55, Passimian 55, Lucario 55, Annihilape 56, Caph Starmobile 56 | Lucario, Annihilape, the Starmobile |
+| Rika | Whiscash, Camerupt, Donphan, Dugtrio 57, Clodsire 58 | Donphan, Camerupt, Clodsire |
+| Poppy | Copperajah, Magnezone, Bronzong, Corviknight 58, Tinkaton 59 | Copperajah, Corviknight, Tinkaton |
+| Larry (Elite Four) | Tropius, Oricorio, Altaria, Staraptor 59, Flamigo 60 | Altaria, Staraptor, Flamigo |
+| Hassel | Noivern, Haxorus, Dragalge, Flapple 60, Baxcalibur 61 | Haxorus, Flapple, Baxcalibur |
+| Geeta | Espathra, Gogoat, Veluza, Avalugg, Kingambit 61, Glimmora 62 | Espathra, Kingambit, Glimmora |
+| Nemona | Lycanroc, Goodra, Dudunsparce, Orthworm, Pawmot 65, her starter 66 (left out) | Dudunsparce, Orthworm, Pawmot |
+| Arven | Greedent 58, Cloyster 59, Scovillain 60, Toedscruel 61, Garganacl 62, Mabosstiff 63 | Toedscruel, Garganacl, Mabosstiff |
+| Penny | Umbreon, Vaporeon, Jolteon, Flareon, Leafeon 62, Sylveon 63 | Umbreon, Vaporeon, Sylveon |
+| Sada / Turo's AI | six paradox Pokémon each, 66–67 | Slither Wing, Flutter Mane, Roaring Moon / Iron Hands, Iron Moth, Iron Valiant |
+| Kieran (Kitakami) | Shiftry 71, Probopass 71, Poliwrath, Yanmega, Dipplin 72, Gliscor 76 | Dipplin, Poliwrath, Gliscor |
+| Crispin | Talonflame, Rotom, Exeggutor 77–78, Magmortar, Camerupt 78, Blaziken 79 | Camerupt, Magmortar, Blaziken |
+| Amarys | Dugtrio, Skarmory 83, Empoleon, Scizor, Reuniclus 84, Metagross 85 | Empoleon, Scizor, Metagross |
+| Lacey | Granbull, Whimsicott 78, Primarina, Slowbro, Alcremie 79, Excadrill 80 | Primarina, Alcremie, Excadrill |
+| Drayton | Flygon, Dragonite 78, Sceptile, Haxorus, Kingdra 79, Archaludon 80 | Haxorus, Kingdra, Archaludon |
+| Kieran (BB Champion) | Dragonite, Politoed 80, Porygon-Z, Grimmsnarl, Incineroar 81, Hydrapple 82 | Incineroar, Grimmsnarl, Hydrapple |
+
+Katy, Brassius, Kofu, Larry, Giacomo and Mela have three or fewer and are kept whole. Where a source gave no level
+for every member (Ortega's), the levels follow the battle's band (50–51). The two BB League levels are the games' as
+the guides list them (Amarys's are a band above the others', as given).
+
+**Species.** 120 rows from `liveDicePlan`; Frigibax's line is a pseudo line. Grafted onto old species and inert
+outside Paldea: Primeape → Annihilape (Lv.35, Rage Fist), Wooper → Clodsire (Lv.20, a branch with Quagsire),
+Girafarig → Farigiraf and Dunsparce → Dudunsparce (Lv.32, their moves), Bisharp → Kingambit (Lv.60), Applin → Dipplin
+(Syrupy Apple), Duraludon → Archaludon (Metal Alloy). Gen 9's own odd triggers: Maushold at 25 (an in-battle level-up),
+Gholdengo at 40, Hydrapple at 45, Pawmot, Brambleghast, Rabsca at the assigned Lv.30 (steps walked). New items, all
+Paldea-only: Auspicious and Malicious Armor (East Province), Syrupy Apple and Unremarkable Teacup (Kitakami), Metal
+Alloy (Blueberry Academy); the Ice Stone is found once on Glaseado Mountain for Cetitan. Neither PokeAPI nor pokesprite
+has Gen 9 item sprites, so they borrow the Protector's, Reaper Cloth's, Sweet Apple's, Chipped Pot's and Metal Coat's.
+
+**Wild pools.** PokeAPI has no Scarlet/Violet encounter tables, so every pool is written by hand from the games'
+areas, at first-meeting levels, with base forms kept below their evolution level. The paradox Pokémon are all in Area
+Zero, both versions' at once (Roaring Moon and Iron Valiant rarer); Kitakami's and the Terarium's species are in their
+side areas. Every Gen 9 species, or the first stage of its line, has a home outside the Terarium (the test holds it).
+
+**Secret areas.** Paldea's Pokédex: **352** catchable species.
+
+| Area | Boss | Gate |
+|---|---|---|
+| The Zero Lab | Koraidon, Miraidon 72 | Area Zero · Pokédex **246** (70 %) · Lv.72 |
+| The Shrines of Ruin | Wo-Chien, Chien-Pao, Ting-Lu, Chi-Yu 60 | league · **194** (55 %) · Lv.60 |
+| Loyalty Plaza | Okidogi, Munkidori, Fezandipiti 70 | Kitakami · **194** · Lv.70 |
+| Oni Mountain & the Crystal Pool | Ogerpon 70 | Loyalty Plaza · **194** · Lv.70 |
+| The Paradox Sightings | Walking Wake, Iron Leaves, Gouging Fire, Raging Bolt, Iron Boulder, Iron Crown 75 | Blueberry Academy · **194** · Lv.75 |
+| The Area Zero Underdepths | Terapagos 85 | Blueberry Academy · **246** · Lv.85 |
+| Kitakami Hall | Pecharunt 88 | the Underdepths · **299** (85 %) · Lv.88 |
+
+**Names.** French and German place names are PokeAPI's (Cuchalaga, Mesaledo, Levalendura…). Japanese place names are
+written where known (テーブルシティ, ハッコウシティ, ナッペ山…); where a Japanese name was not known the row keeps the
+best-known part and drops the rest. **Spanish, Italian and Portuguese keep the English place names, and Korean and
+Chinese do too except for the region and the three Chinese towns the search confirmed (桌台市, 深钵镇, 酿光市)** —
+the wikis that list them (Bulbapedia, 52poke, Serebii) are blocked from the sandbox. Character names: Japanese for
+all; Korean for the gym leaders, Nemona, Arven and Penny; the rest keep the English name where it could not be
+checked.
+
+**Balance**: two rounds at Casseroya Lake, the last area before the league — see `06-REGION-BALANCE.md`.
