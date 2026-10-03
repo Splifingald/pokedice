@@ -29,6 +29,8 @@ const ALL_LEGENDARIES = [
   785, 786, 787, 788, 789, 791, 792, 793, 794, 795, 796, 797, 798, 799, 800, 801, 802, 803, 805, 806, 807, 808,
   // Galar's bosses. Urshifu is a legendary too, but only ever evolved into from Kubfu.
   888, 889, 890, 891, 893, 894, 895, 896, 897, 898, 905,
+  // Paldea's bosses. Roaring Moon and Iron Valiant are wild in Area Zero, like the other paradox Pokémon.
+  1001, 1002, 1003, 1004, 1007, 1008, 1009, 1010, 1014, 1015, 1016, 1017, 1020, 1021, 1022, 1023, 1024, 1025,
 ]
 const STARTERS = [1, 4, 7]
 /**
@@ -38,8 +40,8 @@ const STARTERS = [1, 4, 7]
 const SIX_DICE = new Set([243, 244, 245, 493])
 
 describe('pokemon.json', () => {
-  it('has 905 complete entries — Kanto to Galar', () => {
-    expect(species).toHaveLength(905)
+  it('has 1025 complete entries — Kanto to Paldea', () => {
+    expect(species).toHaveLength(1025)
     for (const p of species) {
       expect(total(p.dice)).toBeGreaterThanOrEqual(1)
       expect(total(p.dice), p.name).toBeLessThanOrEqual(SIX_DICE.has(p.dex) ? 6 : 5)

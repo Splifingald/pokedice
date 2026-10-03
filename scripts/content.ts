@@ -29,6 +29,9 @@ export const LEGENDARIES = [
   809,
   // Galar: the heroes and Eternatus, Kubfu's line, the Crown Tundra's, Zarude, and Hisui's Enamorus
   888, 889, 890, 891, 892, 893, 894, 895, 896, 897, 898, 905,
+  // Paldea: the Treasures of Ruin, the professor's two, the paradox legendaries, the Loyal Three, Ogerpon, Terapagos and
+  // Pecharunt. Area Zero's other paradox Pokémon, Roaring Moon and Iron Valiant included, are wild.
+  1001, 1002, 1003, 1004, 1007, 1008, 1009, 1010, 1014, 1015, 1016, 1017, 1020, 1021, 1022, 1023, 1024, 1025,
 ]
 export const STARTERS = [1, 4, 7]
 

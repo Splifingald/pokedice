@@ -2688,3 +2688,199 @@ itemDesc.cracked-pot,Makes certain Pokémon evolve: Sinistea (Polteageist). Use 
 itemDesc.scroll-of-darkness,Makes certain Pokémon evolve: Kubfu (Urshifu). Use it from the Team screen.,Fait évoluer certains Pokémon : Wushours (Shifours). À utiliser depuis l'écran Équipe.,Hace evolucionar a ciertos Pokémon: Kubfu (Urshifu). Úsalo desde la pantalla Equipo.,Lässt bestimmte Pokémon entwickeln: Dakuma (Wulaosu). Im Team-Bildschirm einsetzbar.,Fa evolvere alcuni Pokémon: Kubfu (Urshifu). Usala dalla schermata Squadra.,Faz evoluir certos Pokémon: Kubfu (Urshifu). Usa-a no ecrã Equipa.,Faz certos Pokémon evoluírem: Kubfu (Urshifu). Use na tela Equipe.,特定のポケモンを進化させる：ダクマ（ウーラオス）。「手持ち」画面で使う。,특정 포켓몬을 진화시킨다: 치고마(우라오스). 팀 화면에서 사용한다.,让特定的宝可梦进化：熊徒弟（武道熊师）。在队伍画面中使用。
 itemDesc.black-augurite,Makes certain Pokémon evolve: Scyther (Kleavor). Use it from the Team screen.,Fait évoluer certains Pokémon : Insécateur (Hachécateur). À utiliser depuis l'écran Équipe.,Hace evolucionar a ciertos Pokémon: Scyther (Kleavor). Úsalo desde la pantalla Equipo.,Lässt bestimmte Pokémon entwickeln: Sichlor (Axantor). Im Team-Bildschirm einsetzbar.,Fa evolvere alcuni Pokémon: Scyther (Kleavor). Usala dalla schermata Squadra.,Faz evoluir certos Pokémon: Scyther (Kleavor). Usa-a no ecrã Equipa.,Faz certos Pokémon evoluírem: Scyther (Kleavor). Use na tela Equipe.,特定のポケモンを進化させる：ストライク（バサギリ）。「手持ち」画面で使う。,특정 포켓몬을 진화시킨다: 스라크(사마자르). 팀 화면에서 사용한다.,让特定的宝可梦进化：飞天螳螂（劈斧螳螂）。在队伍画面中使用。
 itemDesc.peat-block,Makes certain Pokémon evolve: Ursaring (Ursaluna). Use it from the Team screen.,Fait évoluer certains Pokémon : Ursaring (Ursaking). À utiliser depuis l'écran Équipe.,Hace evolucionar a ciertos Pokémon: Ursaring (Ursaluna). Úsalo desde la pantalla Equipo.,Lässt bestimmte Pokémon entwickeln: Ursaring (Ursaluna). Im Team-Bildschirm einsetzbar.,Fa evolvere alcuni Pokémon: Ursaring (Ursaluna). Usala dalla schermata Squadra.,Faz evoluir certos Pokémon: Ursaring (Ursaluna). Usa-a no ecrã Equipa.,Faz certos Pokémon evoluírem: Ursaring (Ursaluna). Use na tela Equipe.,特定のポケモンを進化させる：リングマ（ガチグマ）。「手持ち」画面で使う。,특정 포켓몬을 진화시킨다: 링곰(다투곰). 팀 화면에서 사용한다.,让特定的宝可梦进化：圈圈熊（月月熊）。在队伍画面中使用。
+pokemon.906,Sprigatito,Poussacha,Sprigatito,Felori,Sprigatito,Sprigatito,Sprigatito,ニャオハ,나오하,新叶喵
+pokemon.907,Floragato,Matourgeon,Floragato,Feliospa,Floragato,Floragato,Floragato,ニャローテ,나로테,蒂蕾喵
+pokemon.908,Meowscarada,Miascarade,Meowscarada,Maskagato,Meowscarada,Meowscarada,Meowscarada,マスカーニャ,마스카나,魔幻假面喵
+pokemon.909,Fuecoco,Chochodile,Fuecoco,Krokel,Fuecoco,Fuecoco,Fuecoco,ホゲータ,뜨아거,呆火鳄
+pokemon.910,Crocalor,Crocogril,Crocalor,Lokroko,Crocalor,Crocalor,Crocalor,アチゲータ,악뜨거,炙烫鳄
+pokemon.911,Skeledirge,Flâmigator,Skeledirge,Skelokrok,Skeledirge,Skeledirge,Skeledirge,ラウドボーン,라우드본,骨纹巨声鳄
+pokemon.912,Quaxly,Coiffeton,Quaxly,Kwaks,Quaxly,Quaxly,Quaxly,クワッス,꾸왁스,润水鸭
+pokemon.913,Quaxwell,Canarbello,Quaxwell,Fuentente,Quaxwell,Quaxwell,Quaxwell,ウェルカモ,아꾸왁,涌跃鸭
+pokemon.914,Quaquaval,Palmaval,Quaquaval,Bailonda,Quaquaval,Quaquaval,Quaquaval,ウェーニバル,웨이니발,狂欢浪舞鸭
+pokemon.915,Lechonk,Gourmelet,Lechonk,Ferkuli,Lechonk,Lechonk,Lechonk,グルトン,맛보돈,爱吃豚
+pokemon.916,Oinkologne,Fragroin,Oinkologne,Fragrunz,Oinkologne,Oinkologne,Oinkologne,パフュートン,퍼퓨돈,飘香豚
+pokemon.917,Tarountula,Tissenboule,Tarountula,Tarundel,Tarountula,Tarountula,Tarountula,タマンチュラ,타랜툴라,团珠蛛
+pokemon.918,Spidops,Filentrappe,Spidops,Spinsidias,Spidops,Spidops,Spidops,ワナイダー,트래피더,操陷蛛
+pokemon.919,Nymble,Lilliterelle,Nymble,Micrick,Nymble,Nymble,Nymble,マメバッタ,콩알뚜기,豆蟋蟀
+pokemon.920,Lokix,Gambex,Lokix,Lextremo,Lokix,Lokix,Lokix,エクスレッグ,엑스레그,烈腿蝗
+pokemon.921,Pawmi,Pohm,Pawmi,Pamo,Pawmi,Pawmi,Pawmi,パモ,빠모,布拨
+pokemon.922,Pawmo,Pohmotte,Pawmo,Pamamo,Pawmo,Pawmo,Pawmo,パモット,빠모트,布土拨
+pokemon.923,Pawmot,Pohmarmotte,Pawmot,Pamomamo,Pawmot,Pawmot,Pawmot,パーモット,빠르모트,巴布土拨
+pokemon.924,Tandemaus,Compagnol,Tandemaus,Zwieps,Tandemaus,Tandemaus,Tandemaus,ワッカネズミ,두리쥐,一对鼠
+pokemon.925,Maushold,Famignol,Maushold,Famieps,Maushold,Maushold,Maushold,イッカネズミ,파밀리쥐,一家鼠
+pokemon.926,Fidough,Pâtachiot,Fidough,Hefel,Fidough,Fidough,Fidough,パピモッチ,쫀도기,狗仔包
+pokemon.927,Dachsbun,Briochien,Dachsbun,Backel,Dachsbun,Dachsbun,Dachsbun,バウッツェル,바우첼,麻花犬
+pokemon.928,Smoliv,Olivini,Smoliv,Olini,Smoliv,Smoliv,Smoliv,ミニーブ,미니브,迷你芙
+pokemon.929,Dolliv,Olivado,Dolliv,Olivinio,Dolliv,Dolliv,Dolliv,オリーニョ,올리뇨,奥利纽
+pokemon.930,Arboliva,Arboliva,Arboliva,Olithena,Arboliva,Arboliva,Arboliva,オリーヴァ,올리르바,奥利瓦
+pokemon.931,Squawkabilly,Tapatoès,Squawkabilly,Krawalloro,Squawkabilly,Squawkabilly,Squawkabilly,イキリンコ,시비꼬,怒鹦哥
+pokemon.932,Nacli,Selutin,Nacli,Geosali,Nacli,Nacli,Nacli,コジオ,베베솔트,盐石宝
+pokemon.933,Naclstack,Amassel,Naclstack,Sedisal,Naclstack,Naclstack,Naclstack,ジオヅム,스태솔트,盐石垒
+pokemon.934,Garganacl,Gigansel,Garganacl,Saltigant,Garganacl,Garganacl,Garganacl,キョジオーン,콜로솔트,盐石巨灵
+pokemon.935,Charcadet,Charbambin,Charcadet,Knarbon,Charcadet,Charcadet,Charcadet,カルボウ,카르본,炭小侍
+pokemon.936,Armarouge,Carmadura,Armarouge,Crimanzo,Armarouge,Armarouge,Armarouge,グレンアルマ,카디나르마,红莲铠骑
+pokemon.937,Ceruledge,Malvalame,Ceruledge,Azugladis,Ceruledge,Ceruledge,Ceruledge,ソウブレイズ,파라블레이즈,苍炎刃鬼
+pokemon.938,Tadbulb,Têtampoule,Tadbulb,Blipp,Tadbulb,Tadbulb,Tadbulb,ズピカ,빈나두,光蚪仔
+pokemon.939,Bellibolt,Ampibidou,Bellibolt,Wampitz,Bellibolt,Bellibolt,Bellibolt,ハラバリー,찌리배리,电肚蛙
+pokemon.940,Wattrel,Zapétrel,Wattrel,Voltrel,Wattrel,Wattrel,Wattrel,カイデン,찌리비,电海燕
+pokemon.941,Kilowattrel,Fulgulairo,Kilowattrel,Voltrean,Kilowattrel,Kilowattrel,Kilowattrel,タイカイデン,찌리비크,大电海燕
+pokemon.942,Maschiff,Grondogue,Maschiff,Mobtiff,Maschiff,Maschiff,Maschiff,オラチフ,오라티프,偶叫獒
+pokemon.943,Mabosstiff,Dogrino,Mabosstiff,Mastifioso,Mabosstiff,Mabosstiff,Mabosstiff,マフィティフ,마피티프,獒教父
+pokemon.944,Shroodle,Gribouraigne,Shroodle,Sproxi,Shroodle,Shroodle,Shroodle,シルシュルー,땃쭈르,滋汁鼹
+pokemon.945,Grafaiai,Tag-Tag,Grafaiai,Affiti,Grafaiai,Grafaiai,Grafaiai,タギングル,태깅구르,涂标客
+pokemon.946,Bramblin,Virovent,Bramblin,Weherba,Bramblin,Bramblin,Bramblin,アノクサ,그푸리,纳噬草
+pokemon.947,Brambleghast,Virevorreur,Brambleghast,Horrerba,Brambleghast,Brambleghast,Brambleghast,アノホラグサ,공푸리,怖纳噬草
+pokemon.948,Toedscool,Terracool,Toedscool,Tentagra,Toedscool,Toedscool,Toedscool,ノノクラゲ,들눈해,原野水母
+pokemon.949,Toedscruel,Terracruel,Toedscruel,Tenterra,Toedscruel,Toedscruel,Toedscruel,リククラゲ,육파리,陆地水母
+pokemon.950,Klawf,Craparoi,Klawf,Klibbe,Klawf,Klawf,Klawf,ガケガニ,절벼게,毛崖蟹
+pokemon.951,Capsakid,Pimito,Capsakid,Chilingel,Capsakid,Capsakid,Capsakid,カプサイジ,캡싸이,热辣娃
+pokemon.952,Scovillain,Scovilain,Scovillain,Halupenjo,Scovillain,Scovillain,Scovillain,スコヴィラン,스코빌런,狠辣椒
+pokemon.953,Rellor,Léboulérou,Rellor,Relluk,Rellor,Rellor,Rellor,シガロコ,구르데,虫滚泥
+pokemon.954,Rabsca,Bérasca,Rabsca,Skarabaks,Rabsca,Rabsca,Rabsca,ベラカス,베라카스,虫甲圣
+pokemon.955,Flittle,Flotillon,Flittle,Flattutu,Flittle,Flittle,Flittle,ヒラヒナ,하느라기,飘飘雏
+pokemon.956,Espathra,Cléopsytra,Espathra,Psiopatra,Espathra,Espathra,Espathra,クエスパトラ,클레스퍼트라,超能艳鸵
+pokemon.957,Tinkatink,Forgerette,Tinkatink,Forgita,Tinkatink,Tinkatink,Tinkatink,カヌチャン,어리짱,小锻匠
+pokemon.958,Tinkatuff,Forgella,Tinkatuff,Tafforgita,Tinkatuff,Tinkatuff,Tinkatuff,ナカヌチャン,벼리짱,巧锻匠
+pokemon.959,Tinkaton,Forgelina,Tinkaton,Granforgita,Tinkaton,Tinkaton,Tinkaton,デカヌチャン,두드리짱,巨锻匠
+pokemon.960,Wiglett,Taupikeau,Wiglett,Schligda,Wiglett,Wiglett,Wiglett,ウミディグダ,바다그다,海地鼠
+pokemon.961,Wugtrio,Triopikeau,Wugtrio,Schligdri,Wugtrio,Wugtrio,Wugtrio,ウミトリオ,바닥트리오,三海地鼠
+pokemon.962,Bombirdier,Lestombaile,Bombirdier,Adebom,Bombirdier,Bombirdier,Bombirdier,オトシドリ,떨구새,下石鸟
+pokemon.963,Finizen,Dofin,Finizen,Normifin,Finizen,Finizen,Finizen,ナミイルカ,맨돌핀,波普海豚
+pokemon.964,Palafin,Superdofin,Palafin,Delfinator,Palafin,Palafin,Palafin,イルカマン,돌핀맨,海豚侠
+pokemon.965,Varoom,Vrombi,Varoom,Knattox,Varoom,Varoom,Varoom,ブロロン,부르롱,噗隆隆
+pokemon.966,Revavroom,Vrombotor,Revavroom,Knattatox,Revavroom,Revavroom,Revavroom,ブロロローム,부르르룸,普隆隆姆
+pokemon.967,Cyclizar,Motorizard,Cyclizar,Mopex,Cyclizar,Cyclizar,Cyclizar,モトトカゲ,모토마,摩托蜥
+pokemon.968,Orthworm,Ferdeter,Orthworm,Schlurm,Orthworm,Orthworm,Orthworm,ミミズズ,꿈트렁,拖拖蚓
+pokemon.969,Glimmet,Germéclat,Glimmet,Lumispross,Glimmet,Glimmet,Glimmet,キラーメ,초롱순,晶光芽
+pokemon.970,Glimmora,Floréclat,Glimmora,Lumiflora,Glimmora,Glimmora,Glimmora,キラフロル,킬라플로르,晶光花
+pokemon.971,Greavard,Toutombe,Greavard,Gruff,Greavard,Greavard,Greavard,ボチ,망망이,墓仔狗
+pokemon.972,Houndstone,Tomberro,Houndstone,Friedwuff,Houndstone,Houndstone,Houndstone,ハカドッグ,묘두기,墓扬犬
+pokemon.973,Flamigo,Flamenroule,Flamigo,Flaminkno,Flamigo,Flamigo,Flamigo,カラミンゴ,꼬이밍고,纏红鹤
+pokemon.974,Cetoddle,Piétacé,Cetoddle,Flaniwal,Cetoddle,Cetoddle,Cetoddle,アルクジラ,터벅고래,走鲸
+pokemon.975,Cetitan,Balbalèze,Cetitan,Kolowal,Cetitan,Cetitan,Cetitan,ハルクジラ,우락고래,浩大鲸
+pokemon.976,Veluza,Délestin,Veluza,Agiluza,Veluza,Veluza,Veluza,ミガルーサ,가비루사,轻身鳕
+pokemon.977,Dondozo,Oyacata,Dondozo,Heerashai,Dondozo,Dondozo,Dondozo,ヘイラッシャ,어써러셔,吃吼霸
+pokemon.978,Tatsugiri,Nigirigon,Tatsugiri,Nigiragi,Tatsugiri,Tatsugiri,Tatsugiri,シャリタツ,싸리용,米立龙
+pokemon.979,Annihilape,Courrousinge,Annihilape,Epitaff,Annihilape,Annihilape,Annihilape,コノヨザル,저승갓숭,弃世猴
+pokemon.980,Clodsire,Terraiste,Clodsire,Suelord,Clodsire,Clodsire,Clodsire,ドオー,토오,土王
+pokemon.981,Farigiraf,Farigiraf,Farigiraf,Farigiraf,Farigiraf,Farigiraf,Farigiraf,リキキリン,키키링,奇麒麟
+pokemon.982,Dudunsparce,Deusolourdo,Dudunsparce,Dummimisel,Dudunsparce,Dudunsparce,Dudunsparce,ノココッチ,노고고치,土龙节节
+pokemon.983,Kingambit,Scalpereur,Kingambit,Gladimperio,Kingambit,Kingambit,Kingambit,ドドゲザン,대도각참,仆刀将军
+pokemon.984,Great Tusk,Fort-Ivoire,Colmilargo,Riesenzahn,Grandizanne,Great Tusk,Great Tusk,イダイナキバ,위대한엄니,雄伟牙
+pokemon.985,Scream Tail,Hurle-Queue,Colagrito,Brüllschweif,Codaurlante,Scream Tail,Scream Tail,サケブシッポ,우렁찬꼬리,吼叫尾
+pokemon.986,Brute Bonnet,Fongus-Furie,Furioseta,Wutpilz,Fungofurioso,Brute Bonnet,Brute Bonnet,アラブルタケ,사나운버섯,猛恶菇
+pokemon.987,Flutter Mane,Flotte-Mèche,Melenaleteo,Flatterhaar,Crinealato,Flutter Mane,Flutter Mane,ハバタクカミ,날개치는머리,振翼发
+pokemon.988,Slither Wing,Rampe-Ailes,Reptalada,Kriechflügel,Alirasenti,Slither Wing,Slither Wing,チヲハウハネ,땅을기는날개,爬地翅
+pokemon.989,Sandy Shocks,Pelage-Sablé,Pelarena,Sandfell,Peldisabbia,Sandy Shocks,Sandy Shocks,スナノケガワ,모래털가죽,沙铁皮
+pokemon.990,Iron Treads,Roue-de-Fer,Ferrodada,Eisenrad,Solcoferreo,Iron Treads,Iron Treads,テツノワダチ,무쇠바퀴,铁轍迹
+pokemon.991,Iron Bundle,Hotte-de-Fer,Ferrosaco,Eisenbündel,Saccoferreo,Iron Bundle,Iron Bundle,テツノツツミ,무쇠보따리,铁包袱
+pokemon.992,Iron Hands,Paume-de-Fer,Ferropalmas,Eisenhand,Manoferrea,Iron Hands,Iron Hands,テツノカイナ,무쇠손,铁臂膀
+pokemon.993,Iron Jugulis,Têtes-de-Fer,Ferrocuello,Eisenhals,Colloferreo,Iron Jugulis,Iron Jugulis,テツノコウベ,무쇠머리,铁脖颈
+pokemon.994,Iron Moth,Mite-de-Fer,Ferropolilla,Eisenfalter,Falenaferrea,Iron Moth,Iron Moth,テツノドクガ,무쇠독나방,铁毒蛾
+pokemon.995,Iron Thorns,Épine-de-Fer,Ferropúas,Eisendorn,Spineferree,Iron Thorns,Iron Thorns,テツノイバラ,무쇠가시,铁荆棘
+pokemon.996,Frigibax,Frigodo,Frigibax,Frospino,Frigibax,Frigibax,Frigibax,セビエ,드니차,凉脊龙
+pokemon.997,Arctibax,Cryodo,Arctibax,Cryospino,Arctibax,Arctibax,Arctibax,セゴール,드니꽁,冻脊龙
+pokemon.998,Baxcalibur,Glaivodo,Baxcalibur,Espinodon,Baxcalibur,Baxcalibur,Baxcalibur,セグレイブ,드닐레이브,戟脊龙
+pokemon.999,Gimmighoul,Mordudor,Gimmighoul,Gierspenst,Gimmighoul,Gimmighoul,Gimmighoul,コレクレー,모으령,索财灵
+pokemon.1000,Gholdengo,Gromago,Gholdengo,Monetigo,Gholdengo,Gholdengo,Gholdengo,サーフゴー,타부자고,赛富豪
+pokemon.1001,Wo-Chien,Chongjian,Wo-Chien,Chongjian,Wo-Chien,Wo-Chien,Wo-Chien,チオンジェン,총지엔,古简蜗
+pokemon.1002,Chien-Pao,Baojian,Chien-Pao,Baojian,Chien-Pao,Chien-Pao,Chien-Pao,パオジアン,파오젠,古剑豹
+pokemon.1003,Ting-Lu,Dinglu,Ting-Lu,Dinglu,Ting-Lu,Ting-Lu,Ting-Lu,ディンルー,딩루,古鼎鹿
+pokemon.1004,Chi-Yu,Yuyu,Chi-Yu,Yuyu,Chi-Yu,Chi-Yu,Chi-Yu,イーユイ,위유이,古玉鱼
+pokemon.1005,Roaring Moon,Rugit-Lune,Bramaluna,Donnersichel,Lunaruggente,Roaring Moon,Roaring Moon,トドロクツキ,고동치는달,轰鸣月
+pokemon.1006,Iron Valiant,Garde-de-Fer,Ferropaladín,Eisenkrieger,Eroeferreo,Iron Valiant,Iron Valiant,テツノブジン,무쇠무인,铁武者
+pokemon.1007,Koraidon,Koraidon,Koraidon,Koraidon,Koraidon,Koraidon,Koraidon,コライドン,코라이돈,故勒顿
+pokemon.1008,Miraidon,Miraidon,Miraidon,Miraidon,Miraidon,Miraidon,Miraidon,ミライドン,미라이돈,密勒顿
+pokemon.1009,Walking Wake,Serpente-Eau,Ondulagua,Windewoge,Acquecrespe,Walking Wake,Walking Wake,ウネルミナモ,굽이치는물결,波荡水
+pokemon.1010,Iron Leaves,Vert-de-Fer,Ferroverdor,Eisenblatt,Fogliaferrea,Iron Leaves,Iron Leaves,テツノイサハ,무쇠잎새,铁斑叶
+pokemon.1011,Dipplin,Pomdramour,Dipplin,Sirapfel,Dipplin,Dipplin,Dipplin,カミッチュ,과미르,裹蜜虫
+pokemon.1012,Poltchageist,Poltchageist,Poltchageist,Mortcha,Poltchageist,Poltchageist,Poltchageist,チャデス,차데스,斯魔茶
+pokemon.1013,Sinistcha,Théffroyable,Sinistcha,Fatalitcha,Sinistcha,Sinistcha,Sinistcha,ヤバソチャ,그우린차,来悲粗茶
+pokemon.1014,Okidogi,Félicanis,Okidogi,Boninu,Okidogi,Okidogi,Okidogi,イイネイヌ,조타구,够赞狗
+pokemon.1015,Munkidori,Fortusimia,Munkidori,Benesaru,Munkidori,Munkidori,Munkidori,マシマシラ,이야후,愿增猿
+pokemon.1016,Fezandipiti,Favianos,Fezandipiti,Beatori,Fezandipiti,Fezandipiti,Fezandipiti,キチキギス,기로치,吉雉鸡
+pokemon.1017,Ogerpon,Ogerpon,Ogerpon,Ogerpon,Ogerpon,Ogerpon,Ogerpon,オーガポン,오거폰,厄诡椪
+pokemon.1018,Archaludon,Pondralugon,Archaludon,Briduradon,Archaludon,Archaludon,Archaludon,ブリジュラス,브리두라스,铝钢桥龙
+pokemon.1019,Hydrapple,Pomdorochi,Hydrapple,Hydrapfel,Hydrapple,Hydrapple,Hydrapple,カミツオロチ,과미드라,蜜集大蛇
+pokemon.1020,Gouging Fire,Feu-Perçant,Flamariete,Keilflamme,Vampeaguzze,Gouging Fire,Gouging Fire,ウガツホムラ,꿰뚫는화염,破空焰
+pokemon.1021,Raging Bolt,Ire-Foudre,Electrofuria,Furienblitz,Furiatonante,Raging Bolt,Raging Bolt,タケルライコ,날뛰는우레,猛雷鼓
+pokemon.1022,Iron Boulder,Roc-de-Fer,Ferromole,Eisenfels,Massoferreo,Iron Boulder,Iron Boulder,テツノイワオ,무쇠암석,铁磐岩
+pokemon.1023,Iron Crown,Chef-de-Fer,Ferrotesta,Eisenhaupt,Capoferreo,Iron Crown,Iron Crown,テツノカシラ,무쇠감투,铁头壳
+pokemon.1024,Terapagos,Terapagos,Terapagos,Terapagos,Terapagos,Terapagos,Terapagos,テラパゴス,테라파고스,太乐巴戈斯
+pokemon.1025,Pecharunt,Pêchaminus,Pecharunt,Infamomo,Pecharunt,Pecharunt,Pecharunt,モモワロウ,복숭악동,桃歹郎
+item.auspicious-armor,Auspicious Armor,Armure de la Fortune,Armadura Auspiciosa,Glorienrüstung,Armatura fausta,Armadura Auspiciosa,Armadura Auspiciosa,イワイノヨロイ,축복받은갑옷,庆祝之铠
+item.malicious-armor,Malicious Armor,Armure de la Rancune,Armadura Maldita,Fluchrüstung,Armatura infausta,Armadura Maliciosa,Armadura Maliciosa,ノロイノヨロイ,저주받은갑옷,咒术之铠
+item.syrupy-apple,Syrupy Apple,Pomme Nectar,Manzana Melosa,Saftiger Apfel,Sciroppomo,Maçã Melada,Maçã Melada,みついりりんご,꿀맛사과,蜜汁苹果
+item.unremarkable-teacup,Unremarkable Teacup,Bol Médiocre,Cuenco Mediocre,Simple Teeschale,Tazza dozzinale,Taça Banal,Taça Banal,ボンサクのちゃわん,범작찻잔,凡作茶碗
+item.metal-alloy,Metal Alloy,Métal Composite,Metal Compuesto,Legierungsmetall,Metallo composito,Liga Metálica,Liga Metálica,ふくごうきんぞく,복합금속,复合金属
+"# --- Paldea (Gen 9): areas, region, badges, trainer classes and names. French and German place names are PokeAPI's; Japanese where known; Spanish, Italian, Portuguese, Korean and Chinese keep the English place names (docs/11)",,,,,,,,,,
+area.cabo-poco-the-poco-path-the-inlet-grotto,"Cabo Poco, the Poco Path & the Inlet Grotto","Cuchalaga, la Route de Cuchalaga & la Caverne de la Crique","Cabo Poco, el Camino de Cabo Poco y la Gruta de la Ensenada","Cucharico, der Cucharico-Pfad & die Meeresbuchthöhle","Cabo Poco, il Sentiero di Cabo Poco e la Grotta dell'Insenatura","Cabo Poco, o Caminho de Cabo Poco e a Gruta da Enseada","Cabo Poco, o Caminho de Cabo Poco e a Gruta da Enseada",コサジタウンとコサジのこみち,"Cabo Poco, Poco Path & Inlet Grotto","Cabo Poco, Poco Path & Inlet Grotto"
+area.los-platos-south-province-area-one,Los Platos & South Province (Area One),Plato Real & la Zone Sud n° 1,Los Platos y la Zona Sur 1,Pratolido & Südliche Zone 1,Los Platos e Zona Sud 1,Los Platos e a Zona Sul 1,Los Platos e a Zona Sul 1,プラトタウンと南1番エリア,Los Platos & South Province (Area One),Los Platos & South Province (Area One)
+area.mesagoza-south-province-area-two,Mesagoza & South Province (Area Two),Mesaledo & la Zone Sud n° 2,Mesagoza y la Zona Sur 2,Mesalona City & Südliche Zone 2,Mesagoza e Zona Sud 2,Mesagoza e a Zona Sul 2,Mesagoza e a Zona Sul 2,テーブルシティと南2番エリア,Mesagoza & South Province (Area Two),桌台市与南2号区
+area.south-province-area-three-cortondo,South Province (Area Three) & Cortondo,Zone Sud n° 3 & Sevaro,Zona Sur 3 y Cortondo,Südliche Zone 3 & Moldrid,Zona Sud 3 e Cortondo,Zona Sul 3 e Cortondo,Zona Sul 3 e Cortondo,南3番エリアとセルクルタウン,South Province (Area Three) & Cortondo,South Province (Area Three) & Cortondo
+area.south-province-area-six-artazon,South Province (Area Six) & Artazon,Zone Sud n° 6 & Cuencia,Zona Sur 6 y Artazon,Südliche Zone 6 & Bolardin,Zona Sud 6 e Artazon,Zona Sul 6 e Artazon,Zona Sul 6 e Artazon,南6番エリアとボウルタウン,South Province (Area Six) & Artazon,南6号区与深钵镇
+area.west-province-area-one-the-segin-squad-s-base,West Province (Area One) & the Segin Squad's Base,Zone Ouest n° 1 & le Repaire du Groupe Segin,Zona Oeste 1 y la base del Escuadrón Segin,Westliche Zone 1 & das Versteck der Segin-Bande,Zona Ovest 1 e la base della Squadra Segin,Zona Oeste 1 e a base do Esquadrão Segin,Zona Oeste 1 e a base do Esquadrão Segin,西1番エリアとチーム・セギンのアジト,West Province (Area One) & the Segin Squad's Base,West Province (Area One) & the Segin Squad's Base
+area.east-province-areas-one-two-levincia,East Province (Areas One & Two) & Levincia,Zones Est n° 1 & 2 et Levalendura,Zonas Este 1 y 2 y Levincia,Östliche Zonen 1 & 2 und Fermanca City,Zone Est 1 e 2 e Levincia,Zonas Leste 1 e 2 e Levincia,Zonas Leste 1 e 2 e Levincia,東1番・2番エリアとハッコウシティ,East Province (Areas One & Two) & Levincia,东1号区、东2号区与酿光市
+area.the-schedar-squad-s-base-east-province-area-three,The Schedar Squad's Base & East Province (Area Three),Le Repaire du Groupe Schedar & la Zone Est n° 3,La base del Escuadrón Schedar y la Zona Este 3,Das Versteck der Schedir-Bande & Östliche Zone 3,La base della Squadra Schedar e Zona Est 3,A base do Esquadrão Schedar e a Zona Leste 3,A base do Esquadrão Schedar e a Zona Leste 3,チーム・シェダルのアジトと東3番エリア,The Schedar Squad's Base & East Province (Area Three),The Schedar Squad's Base & East Province (Area Three)
+area.the-asado-desert-cascarrafa,The Asado Desert & Cascarrafa,Le Désert Rôtissable & Jarramanca,El Desierto Asado y Cascarrafa,Die Brutzelwüste & Garrafosa City,Il Deserto Asado e Cascarrafa,O Deserto Asado e Cascarrafa,O Deserto Asado e Cascarrafa,ロースト砂漠とカラフシティ,The Asado Desert & Cascarrafa,The Asado Desert & Cascarrafa
+area.tagtree-thicket-the-navi-squad-s-base,Tagtree Thicket & the Navi Squad's Base,Le Bosquet Tagué & le Repaire du Groupe Tsih,Tagtree Thicket y la base del Escuadrón Navi,Der Schmierhain & das Versteck der Tsih-Bande,Tagtree Thicket e la base della Squadra Navi,Tagtree Thicket e a base do Esquadrão Navi,Tagtree Thicket e a base do Esquadrão Navi,チーム・ナビのアジト,Tagtree Thicket & the Navi Squad's Base,Tagtree Thicket & the Navi Squad's Base
+area.west-province-area-two-medali,West Province (Area Two) & Medali,Zone Ouest n° 2 & Mezclamora,Zona Oeste 2 y Medali,Westliche Zone 2 & Mesclarra,Zona Ovest 2 e Medali,Zona Oeste 2 e Medali,Zona Oeste 2 e Medali,西2番エリアとチャンプルタウン,West Province (Area Two) & Medali,West Province (Area Two) & Medali
+area.the-dalizapa-passage-montenevera,The Dalizapa Passage & Montenevera,Le Tunnel Mezcla-Pincho & Frigao,El Pasaje Dalizapa y Montenevera,Die Mesclores-Passage & Frigomonta,Il Passaggio Dalizapa e Montenevera,A Passagem Dalizapa e Montenevera,A Passagem Dalizapa e Montenevera,フリッジタウン,The Dalizapa Passage & Montenevera,The Dalizapa Passage & Montenevera
+area.the-alfornada-cavern-alfornada,The Alfornada Cavern & Alfornada,La Grotte d'Alforneira & Alforneira,La Caverna de Alfornada y Alfornada,Die Asarilla-Grotte & Asarilla,La Caverna di Alfornada e Alfornada,A Caverna de Alfornada e Alfornada,A Caverna de Alfornada e Alfornada,ベイクタウン,The Alfornada Cavern & Alfornada,The Alfornada Cavern & Alfornada
+area.glaseado-mountain,Glaseado Mountain,Le Mont Nappé,La Montaña Glaseado,Montanata,Il Monte Glaseado,A Montanha Glaseado,A Montanha Glaseado,ナッペ山,Glaseado Mountain,Glaseado Mountain
+area.north-province-area-three-the-ruchbah-squad-s-base,North Province (Area Three) & the Ruchbah Squad's Base,Zone Nord n° 3 & le Repaire du Groupe Ruchbah,Zona Norte 3 y la base del Escuadrón Ruchbah,Nördliche Zone 3 & das Versteck der Rukbat-Bande,Zona Nord 3 e la base della Squadra Ruchbah,Zona Norte 3 e a base do Esquadrão Ruchbah,Zona Norte 3 e a base do Esquadrão Ruchbah,北3番エリアとチーム・ルクバーのアジト,North Province (Area Three) & the Ruchbah Squad's Base,North Province (Area Three) & the Ruchbah Squad's Base
+area.north-province-area-two-the-caph-squad-s-base,North Province (Area Two) & the Caph Squad's Base,Zone Nord n° 2 & le Repaire du Groupe Caph,Zona Norte 2 y la base del Escuadrón Caph,Nördliche Zone 2 & das Versteck der Caph-Bande,Zona Nord 2 e la base della Squadra Caph,Zona Norte 2 e a base do Esquadrão Caph,Zona Norte 2 e a base do Esquadrão Caph,北2番エリアとチーム・カーフのアジト,North Province (Area Two) & the Caph Squad's Base,North Province (Area Two) & the Caph Squad's Base
+area.casseroya-lake,Casseroya Lake,Le Lac Asrol,El Lago Casseroya,Der Caldero-See,Il Lago Casseroya,O Lago Casseroya,O Lago Casseroya,オージャの湖,Casseroya Lake,Casseroya Lake
+area.the-way-home,The Way Home,Le Chemin du Retour,El Camino a Casa,Der Weg nach Hause,La Via di Casa,O Caminho de Casa,O Caminho de Casa,ザ・ホームウェイ,The Way Home,The Way Home
+area.area-zero,Area Zero,La Zone Zéro,La Zona Cero,Die Zone Null,L'Area Zero,A Área Zero,A Área Zero,エリアゼロ,Area Zero,Area Zero
+area.the-land-of-kitakami,The Land of Kitakami,Septentria,La Tierra de Kitakami,Kitakami,La Terra di Kitakami,A Terra de Kitakami,A Terra de Kitakami,キタカミの里,The Land of Kitakami,The Land of Kitakami
+area.blueberry-academy-the-bb-league,Blueberry Academy & the BB League,L'Académie Myrtille & la Ligue Myrtille,La Academia Arándano y la Liga Arándano,Die Blaubeer-Akademie & die Blaubeer-Liga,L'Accademia Mirtillo e la Lega Mirtillo,A Academia Mirtilo e a Liga Mirtilo,A Academia Mirtilo e a Liga Mirtilo,ブルーベリー学園とブルベリーグ,Blueberry Academy & the BB League,Blueberry Academy & the BB League
+area.the-terarium,The Terarium,Le Terrarium,El Terrario,Das Terrarium,Il Terrarium,O Terrário,O Terrário,テラリウムドーム,The Terarium,The Terarium
+area.the-zero-lab,The Zero Lab,Le Laboratoire Zéro,El Laboratorio Cero,Das Labor Null,Il Laboratorio Zero,O Laboratório Zero,O Laboratório Zero,ゼロラボ,The Zero Lab,The Zero Lab
+area.the-shrines-of-ruin,The Shrines of Ruin,Les Sanctuaires du Fléau,Los Santuarios de la Ruina,Die Schreine des Unheils,I Santuari della Rovina,Os Santuários da Ruína,Os Santuários da Ruína,封印の祠,The Shrines of Ruin,The Shrines of Ruin
+area.loyalty-plaza,Loyalty Plaza,Le Parc Adorami,La Plaza de la Lealtad,Der Gefährten-Platz,La Piazza della Lealtà,A Praça da Lealdade,A Praça da Lealdade,ともっこプラザ,Loyalty Plaza,Loyalty Plaza
+area.oni-mountain-the-crystal-pool,Oni Mountain & the Crystal Pool,Le Mont Strueux & le Lac Cristallin,El Monte Oni y el Lago Cristalino,Oniyama & der Kristallsee,Il Monte Oni e il Lago Cristallino,O Monte Oni e o Lago Cristalino,O Monte Oni e o Lago Cristalino,鬼が山,Oni Mountain & the Crystal Pool,Oni Mountain & the Crystal Pool
+area.the-paradox-sightings,The Paradox Sightings,Les Apparitions Paradoxe,Los Avistamientos Paradoja,Die Paradox-Sichtungen,Gli Avvistamenti Paradosso,Os Avistamentos Paradoxo,Os Avistamentos Paradoxo,パラドックスポケモンの目撃地,The Paradox Sightings,The Paradox Sightings
+area.the-area-zero-underdepths,The Area Zero Underdepths,Les Profondeurs de la Zone Zéro,Las Profundidades de la Zona Cero,Die Tiefen der Zone Null,Le Profondità dell'Area Zero,As Profundezas da Área Zero,As Profundezas da Área Zero,エリアゼロの最深部,The Area Zero Underdepths,The Area Zero Underdepths
+area.kitakami-hall,Kitakami Hall,Septemplion,Kitakami Hall,Das Kitakami-Kulturzentrum,Kitakami Hall,Kitakami Hall,Kitakami Hall,キタカミの公民館,Kitakami Hall,Kitakami Hall
+region.paldea,Paldea,Paldea,Paldea,Paldea,Paldea,Paldea,Paldea,パルデア,팔데아,帕底亚
+badge.electric-badge,Electric Badge,Badge Électrik,Medalla Eléctrica,Elektro-Orden,Medaglia Elettro,Insígnia Elétrica,Insígnia Elétrica,でんきバッジ,전기배지,电徽章
+badge.normal-badge,Normal Badge,Badge Normal,Medalla Normal,Normal-Orden,Medaglia Normale,Insígnia Normal,Insígnia Normal,ノーマルバッジ,노말배지,一般徽章
+badge.ghost-badge,Ghost Badge,Badge Spectre,Medalla Fantasma,Geist-Orden,Medaglia Spettro,Insígnia Fantasma,Insígnia Fantasma,ゴーストバッジ,고스트배지,幽灵徽章
+badge.ice-badge,Ice Badge,Badge Glace,Medalla Hielo,Eis-Orden,Medaglia Ghiaccio,Insígnia do Gelo,Insígnia do Gelo,こおりバッジ,얼음배지,冰徽章
+trainerClass.team-star-grunt,Team Star Grunt,Sbire de la Team Star,Recluta del Team Star,Rüpel von Team Star,Recluta del Team Star,Recruta da Equipe Star,Recruta da Equipe Star,スター団のしたっぱ,스타단 조무래기,天星队手下
+trainerClass.bodybuilder,Bodybuilder,Culturiste,Culturista,Bodybuilder,Culturista,Fisiculturista,Fisiculturista,ボディビルダー,보디빌더,健美运动员
+trainerClass.cabbie,Cabbie,Chauffeur de taxi,Taxista,Taxifahrer,Tassista,Taxista,Taxista,タクシードライバー,택시 운전사,出租车司机
+trainerClass.cook,Cook,Cuisinier,Cocinero,Koch,Cuoco,Cozinheiro,Cozinheiro,コック,요리사,厨师
+trainerName.nemona,Nemona,Nemona,Nemona,Nemona,Nemona,Nemona,Nemona,ネモ,네모,妮莫
+trainerName.arven,Arven,Arven,Arven,Arven,Arven,Arven,Arven,ペパー,페퍼,派帕
+trainerName.penny,Penny,Penny,Penny,Penny,Penny,Penny,Penny,ボタン,모란,牡丹
+trainerName.katy,Katy,Katy,Katy,Katy,Katy,Katy,Katy,カエデ,단풍,阿枫
+trainerName.brassius,Brassius,Brassius,Brassius,Brassius,Brassius,Brassius,Brassius,コルサ,콜사,寇沙
+trainerName.iono,Iono,Iono,Iono,Iono,Iono,Iono,Iono,ナンジャモ,모야모,奇树
+trainerName.kofu,Kofu,Kofu,Kofu,Kofu,Kofu,Kofu,Kofu,ハイダイ,곤포,海岱
+trainerName.larry,Larry,Larry,Larry,Larry,Larry,Larry,Larry,アオキ,청목,青木
+trainerName.ryme,Ryme,Ryme,Ryme,Ryme,Ryme,Ryme,Ryme,ライム,라임,莱姆
+trainerName.tulip,Tulip,Tulip,Tulip,Tulip,Tulip,Tulip,Tulip,リップ,립,莉普
+trainerName.grusha,Grusha,Grusha,Grusha,Grusha,Grusha,Grusha,Grusha,グルーシャ,그루샤,古鲁夏
+trainerName.giacomo,Giacomo,Giacomo,Giacomo,Giacomo,Giacomo,Giacomo,Giacomo,ピーニャ,Giacomo,Giacomo
+trainerName.mela,Mela,Mela,Mela,Mela,Mela,Mela,Mela,メロコ,Mela,Mela
+trainerName.atticus,Atticus,Atticus,Atticus,Atticus,Atticus,Atticus,Atticus,シュウメイ,Atticus,Atticus
+trainerName.ortega,Ortega,Ortega,Ortega,Ortega,Ortega,Ortega,Ortega,オルティガ,Ortega,Ortega
+trainerName.eri,Eri,Eri,Eri,Eri,Eri,Eri,Eri,ビワ,Eri,Eri
+trainerName.rika,Rika,Rika,Rika,Rika,Rika,Rika,Rika,チリ,Rika,Rika
+trainerName.poppy,Poppy,Poppy,Poppy,Poppy,Poppy,Poppy,Poppy,ポピー,Poppy,Poppy
+trainerName.hassel,Hassel,Hassel,Hassel,Hassel,Hassel,Hassel,Hassel,ハッサク,Hassel,八朔
+trainerName.geeta,Geeta,Geeta,Geeta,Geeta,Geeta,Geeta,Geeta,オモダカ,Geeta,Geeta
+trainerName.sada,Sada,Sada,Sada,Sada,Sada,Sada,Sada,オーリム,Sada,Sada
+trainerName.turo,Turo,Turo,Turo,Turo,Turo,Turo,Turo,フトゥー,Turo,Turo
+trainerName.kieran,Kieran,Kieran,Kieran,Kieran,Kieran,Kieran,Kieran,スグリ,Kieran,Kieran
+trainerName.crispin,Crispin,Crispin,Crispin,Crispin,Crispin,Crispin,Crispin,アカマツ,Crispin,Crispin
+trainerName.amarys,Amarys,Amarys,Amarys,Amarys,Amarys,Amarys,Amarys,ネリネ,Amarys,Amarys
+trainerName.lacey,Lacey,Lacey,Lacey,Lacey,Lacey,Lacey,Lacey,タロ,Lacey,Lacey
+trainerName.drayton,Drayton,Drayton,Drayton,Drayton,Drayton,Drayton,Drayton,カキツバタ,Drayton,Drayton
+itemDesc.auspicious-armor,Makes certain Pokémon evolve: Charcadet (Armarouge). Use it from the Team screen.,Fait évoluer certains Pokémon : Charbambin (Carmadura). À utiliser depuis l'écran Équipe.,Hace evolucionar a ciertos Pokémon: Charcadet (Armarouge). Úsalo desde la pantalla Equipo.,Lässt bestimmte Pokémon entwickeln: Knarbon (Crimanzo). Im Team-Bildschirm einsetzbar.,Fa evolvere alcuni Pokémon: Charcadet (Armarouge). Usala dalla schermata Squadra.,Faz evoluir certos Pokémon: Charcadet (Armarouge). Usa-a no ecrã Equipa.,Faz certos Pokémon evoluírem: Charcadet (Armarouge). Use na tela Equipe.,特定のポケモンを進化させる：カルボウ（グレンアルマ）。「手持ち」画面で使う。,특정 포켓몬을 진화시킨다: 카르본(카디나르마). 팀 화면에서 사용한다.,让特定的宝可梦进化：炭小侍（红莲铠骑）。在队伍画面中使用。
+itemDesc.malicious-armor,Makes certain Pokémon evolve: Charcadet (Ceruledge). Use it from the Team screen.,Fait évoluer certains Pokémon : Charbambin (Malvalame). À utiliser depuis l'écran Équipe.,Hace evolucionar a ciertos Pokémon: Charcadet (Ceruledge). Úsalo desde la pantalla Equipo.,Lässt bestimmte Pokémon entwickeln: Knarbon (Azugladis). Im Team-Bildschirm einsetzbar.,Fa evolvere alcuni Pokémon: Charcadet (Ceruledge). Usala dalla schermata Squadra.,Faz evoluir certos Pokémon: Charcadet (Ceruledge). Usa-a no ecrã Equipa.,Faz certos Pokémon evoluírem: Charcadet (Ceruledge). Use na tela Equipe.,特定のポケモンを進化させる：カルボウ（ソウブレイズ）。「手持ち」画面で使う。,특정 포켓몬을 진화시킨다: 카르본(파라블레이즈). 팀 화면에서 사용한다.,让特定的宝可梦进化：炭小侍（苍炎刃鬼）。在队伍画面中使用。
+itemDesc.syrupy-apple,Makes certain Pokémon evolve: Applin (Dipplin). Use it from the Team screen.,Fait évoluer certains Pokémon : Verpom (Pomdramour). À utiliser depuis l'écran Équipe.,Hace evolucionar a ciertos Pokémon: Applin (Dipplin). Úsalo desde la pantalla Equipo.,Lässt bestimmte Pokémon entwickeln: Knapfel (Sirapfel). Im Team-Bildschirm einsetzbar.,Fa evolvere alcuni Pokémon: Applin (Dipplin). Usala dalla schermata Squadra.,Faz evoluir certos Pokémon: Applin (Dipplin). Usa-a no ecrã Equipa.,Faz certos Pokémon evoluírem: Applin (Dipplin). Use na tela Equipe.,特定のポケモンを進化させる：カジッチュ（カミッチュ）。「手持ち」画面で使う。,특정 포켓몬을 진화시킨다: 과사삭벌레(과미르). 팀 화면에서 사용한다.,让特定的宝可梦进化：啃果虫（裹蜜虫）。在队伍画面中使用。
+itemDesc.unremarkable-teacup,Makes certain Pokémon evolve: Poltchageist (Sinistcha). Use it from the Team screen.,Fait évoluer certains Pokémon : Poltchageist (Théffroyable). À utiliser depuis l'écran Équipe.,Hace evolucionar a ciertos Pokémon: Poltchageist (Sinistcha). Úsalo desde la pantalla Equipo.,Lässt bestimmte Pokémon entwickeln: Mortcha (Fatalitcha). Im Team-Bildschirm einsetzbar.,Fa evolvere alcuni Pokémon: Poltchageist (Sinistcha). Usala dalla schermata Squadra.,Faz evoluir certos Pokémon: Poltchageist (Sinistcha). Usa-a no ecrã Equipa.,Faz certos Pokémon evoluírem: Poltchageist (Sinistcha). Use na tela Equipe.,特定のポケモンを進化させる：チャデス（ヤバソチャ）。「手持ち」画面で使う。,특정 포켓몬을 진화시킨다: 차데스(그우린차). 팀 화면에서 사용한다.,让特定的宝可梦进化：斯魔茶（来悲粗茶）。在队伍画面中使用。
+itemDesc.metal-alloy,Makes certain Pokémon evolve: Duraludon (Archaludon). Use it from the Team screen.,Fait évoluer certains Pokémon : Duralugon (Pondralugon). À utiliser depuis l'écran Équipe.,Hace evolucionar a ciertos Pokémon: Duraludon (Archaludon). Úsalo desde la pantalla Equipo.,Lässt bestimmte Pokémon entwickeln: Duraludon (Briduradon). Im Team-Bildschirm einsetzbar.,Fa evolvere alcuni Pokémon: Duraludon (Archaludon). Usala dalla schermata Squadra.,Faz evoluir certos Pokémon: Duraludon (Archaludon). Usa-a no ecrã Equipa.,Faz certos Pokémon evoluírem: Duraludon (Archaludon). Use na tela Equipe.,特定のポケモンを進化させる：ジュラルドン（ブリジュラス）。「手持ち」画面で使う。,특정 포켓몬을 진화시킨다: 두랄루돈(브리두라스). 팀 화면에서 사용한다.,让特定的宝可梦进化：铝钢龙（铝钢桥龙）。在队伍画面中使用。

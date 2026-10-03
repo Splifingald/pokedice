@@ -140,6 +140,24 @@
   ],
   "starterLevel": 5,
   "leagueAreaId": "3610c6e0-5fc7-5aab-8b2c-a59be219db55",
+  "nextRegion": "paldea",
+  "enabled": true
+ },
+ {
+  "id": "paldea",
+  "name": "Paldea",
+  "orderIndex": 8,
+  "dexRange": [
+   906,
+   1025
+  ],
+  "starters": [
+   906,
+   909,
+   912
+  ],
+  "starterLevel": 5,
+  "leagueAreaId": "825f26fc-0e43-5fda-8a4b-07c0a044507d",
   "nextRegion": null,
   "enabled": true
  }

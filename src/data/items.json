@@ -847,5 +847,70 @@
   "inShop": false,
   "shopBadges": 0,
   "region": "galar"
+ },
+ {
+  "key": "auspicious-armor",
+  "name": "Auspicious Armor",
+  "description": "Makes certain Pokémon evolve: Charcadet (Armarouge). Use it from the Team screen.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/protector.png",
+  "price": 200,
+  "effect": {
+   "kind": "stone"
+  },
+  "inShop": false,
+  "shopBadges": 0,
+  "region": "paldea"
+ },
+ {
+  "key": "malicious-armor",
+  "name": "Malicious Armor",
+  "description": "Makes certain Pokémon evolve: Charcadet (Ceruledge). Use it from the Team screen.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/reaper-cloth.png",
+  "price": 200,
+  "effect": {
+   "kind": "stone"
+  },
+  "inShop": false,
+  "shopBadges": 0,
+  "region": "paldea"
+ },
+ {
+  "key": "syrupy-apple",
+  "name": "Syrupy Apple",
+  "description": "Makes certain Pokémon evolve: Applin (Dipplin). Use it from the Team screen.",
+  "spriteUrl": "https://raw.githubusercontent.com/msikma/pokesprite/master/items/evo-item/sweet-apple.png",
+  "price": 200,
+  "effect": {
+   "kind": "stone"
+  },
+  "inShop": false,
+  "shopBadges": 0,
+  "region": "paldea"
+ },
+ {
+  "key": "unremarkable-teacup",
+  "name": "Unremarkable Teacup",
+  "description": "Makes certain Pokémon evolve: Poltchageist (Sinistcha). Use it from the Team screen.",
+  "spriteUrl": "https://raw.githubusercontent.com/msikma/pokesprite/master/items/evo-item/chipped-pot.png",
+  "price": 200,
+  "effect": {
+   "kind": "stone"
+  },
+  "inShop": false,
+  "shopBadges": 0,
+  "region": "paldea"
+ },
+ {
+  "key": "metal-alloy",
+  "name": "Metal Alloy",
+  "description": "Makes certain Pokémon evolve: Duraludon (Archaludon). Use it from the Team screen.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/metal-coat.png",
+  "price": 200,
+  "effect": {
+   "kind": "stone"
+  },
+  "inShop": false,
+  "shopBadges": 0,
+  "region": "paldea"
  }
 ]

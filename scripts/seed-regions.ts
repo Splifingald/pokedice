@@ -1,6 +1,6 @@
 /**
  * pnpm seed-regions — appends Johto (152–251), Hoenn (252–386), Sinnoh (387–493), Unova (494–649), Kalos
- * (650–721), Alola (722–809) and Galar (810–905) to the offline bundle.
+ * (650–721), Alola (722–809), Galar (810–905) and Paldea (906–1025) to the offline bundle.
  *
  * Unlike `pnpm seed`, this script is **additive**: it reads `src/data/*.json`, keeps every existing row exactly as it
  * is, and only appends what is missing. That matters because the committed bundle is ahead of `scripts/seed.ts` —
@@ -33,6 +33,7 @@ import { UNOVA_AREAS, UNOVA_STARTERS } from './content-unova'
 import { KALOS_AREAS, KALOS_STARTERS } from './content-kalos'
 import { ALOLA_AREAS, ALOLA_STARTERS } from './content-alola'
 import { GALAR_AREAS, GALAR_STARTERS } from './content-galar'
+import { PALDEA_AREAS, PALDEA_STARTERS } from './content-paldea'
 import { liveDicePlan, type LegendKind } from './dice-live'
 import type { AreaPlan } from './content'
 import type { Area, BattleBackground, Evolution, ItemDef, PokeType, Region, Species, Trainer } from '../src/engine/types'
@@ -59,8 +60,8 @@ const argOf = (flag: string) => {
   const i = process.argv.indexOf(flag)
   return i > 0 ? Number(process.argv[i + 1]) : null
 }
-const FIRST_NEW_DEX = argOf('--from') ?? 810
-const DEX_MAX = argOf('--to') ?? 905
+const FIRST_NEW_DEX = argOf('--from') ?? 906
+const DEX_MAX = argOf('--to') ?? 1025
 
 // ---------------------------------------------------------------- mirror access (cached)
 
@@ -175,6 +176,12 @@ const EVO_ITEMS = new Set([
   'scroll-of-darkness',
   'black-augurite',
   'peat-block',
+  // Gen 9: Charcadet's two armors, and the DLCs' apple, teacup and alloy.
+  'auspicious-armor',
+  'malicious-armor',
+  'syrupy-apple',
+  'unremarkable-teacup',
+  'metal-alloy',
 ])
 
 /**
@@ -214,6 +221,17 @@ const FORCED_LEVEL: Record<number, number> = {
   853: 35,
   867: 34,
   903: 40,
+  // Gen 9. Tandemaus's Maushold is an in-battle level-up at 25, which the level rule above does not read. Primeape
+  // turns into Annihilape after twenty Rage Fists, learned at Lv.35; Girafarig and Dunsparce on Twin Beam and Hyper
+  // Drill, both learned at Lv.32; Bisharp into Kingambit after beating three Bisharp leaders, met around Lv.60 here;
+  // Gimmighoul on 999 coins, found by Lv.40; Dipplin into Hydrapple on Dragon Cheer, learned at Lv.45 here.
+  925: 25,
+  979: 35,
+  981: 32,
+  982: 32,
+  983: 60,
+  1000: 40,
+  1019: 45,
 }
 
 /**
@@ -310,6 +328,24 @@ const LEGENDARY_CATCH: Record<number, number> = {
   898: 6, // Calyrex
   905: 6, // Enamorus
   893: 5, // Zarude     ·  the mythical, as Mew
+  1007: 7, // Koraidon  ·  Paldea: the professor's two and Terapagos as box legendaries
+  1008: 7, // Miraidon
+  1024: 7, // Terapagos
+  1001: 6, // Wo-Chien  ·  the Treasures of Ruin, the Loyal Three, Ogerpon and the paradox legendaries, as the birds
+  1002: 6, // Chien-Pao
+  1003: 6, // Ting-Lu
+  1004: 6, // Chi-Yu
+  1009: 6, // Walking Wake
+  1010: 6, // Iron Leaves
+  1014: 6, // Okidogi
+  1015: 6, // Munkidori
+  1016: 6, // Fezandipiti
+  1017: 6, // Ogerpon
+  1020: 6, // Gouging Fire
+  1021: 6, // Raging Bolt
+  1022: 6, // Iron Boulder
+  1023: 6, // Iron Crown
+  1025: 5, // Pecharunt ·  the mythical, as Mew
 }
 
 /** One evolution edge, in the shape the bundle already uses for Kanto. */
@@ -404,6 +440,7 @@ const NEW_ITEMS: ItemDef[] = [
   { ...stone('sachet', 'Sachet', 'Spritzee (Aromatisse)'), region: 'kalos' },
   { ...stone('whipped-dream', 'Whipped Dream', 'Swirlix (Slurpuff)'), region: 'kalos' },
   ...galarItems(),
+  ...paldeaItems(),
 ]
 
 /**
@@ -431,6 +468,22 @@ function galarItems(): ItemDef[] {
   ]
 }
 
+/**
+ * Paldea's evolution items. Neither PokeAPI nor pokesprite has Gen 9 item sprites, so each points at the closest item
+ * that has one: the Protector and the Reaper Cloth for the two armors, Galar's Sweet Apple and Chipped Pot for the
+ * Syrupy Apple and the teacup, the Metal Coat for the alloy.
+ */
+function paldeaItems(): ItemDef[] {
+  const POKESPRITE = (p: string) => `https://raw.githubusercontent.com/msikma/pokesprite/master/items/${p}.png`
+  const withSprite = (i: ItemDef, spriteUrl: string): ItemDef => ({ ...i, spriteUrl, region: 'paldea' })
+  return [
+    withSprite(stone('auspicious-armor', 'Auspicious Armor', 'Charcadet (Armarouge)'), ITEM_SPRITE('protector')),
+    withSprite(stone('malicious-armor', 'Malicious Armor', 'Charcadet (Ceruledge)'), ITEM_SPRITE('reaper-cloth')),
+    withSprite(stone('syrupy-apple', 'Syrupy Apple', 'Applin (Dipplin)'), POKESPRITE('evo-item/sweet-apple')),
+    withSprite(stone('unremarkable-teacup', 'Unremarkable Teacup', 'Poltchageist (Sinistcha)'), POKESPRITE('evo-item/chipped-pot')),
+    withSprite(stone('metal-alloy', 'Metal Alloy', 'Duraludon (Archaludon)'), ITEM_SPRITE('metal-coat')),
+  ]
+}
 
 // ---------------------------------------------------------------- build
 
@@ -547,10 +600,14 @@ const LEGEND_KIND: Record<number, LegendKind> = {
   888: 'box', 889: 'box', 890: 'box',
   892: 'trio', 894: 'trio', 895: 'trio', 896: 'trio', 897: 'trio', 898: 'trio', 905: 'trio',
   893: 'mythical',
+  1001: 'trio', 1002: 'trio', 1003: 'trio', 1004: 'trio', 1009: 'trio', 1010: 'trio',
+  1014: 'trio', 1015: 'trio', 1016: 'trio', 1017: 'trio', 1020: 'trio', 1021: 'trio', 1022: 'trio', 1023: 'trio',
+  1007: 'box', 1008: 'box', 1024: 'box',
+  1025: 'mythical',
 }
 
-/** Lines that level slowly into a 600-BST final, Gible's shape: Axew's, Deino's, Goomy's, Jangmo-o's and Dreepy's. */
-const PSEUDO_LINES = new Set([610, 611, 612, 633, 634, 635, 704, 705, 706, 782, 783, 784, 885, 886, 887])
+/** Lines that level slowly into a 600-BST final, Gible's shape: Axew's, Deino's, Goomy's, Jangmo-o's, Dreepy's and Frigibax's. */
+const PSEUDO_LINES = new Set([610, 611, 612, 633, 634, 635, 704, 705, 706, 782, 783, 784, 885, 886, 887, 996, 997, 998])
 
 /**
  * Rows `liveDicePlan` reads wrongly, set to what the live game does for their closest relative. The rules go by stage
@@ -651,7 +708,7 @@ interface RegionPlan {
   dexRange: [number, number]
   starters: number[]
   plans: AreaPlan[]
-  spriteRegion: 'johto' | 'hoenn' | 'sinnoh' | 'unova' | 'kalos' | 'alola' | 'galar'
+  spriteRegion: 'johto' | 'hoenn' | 'sinnoh' | 'unova' | 'kalos' | 'alola' | 'galar' | 'paldea'
   /** Key of the area whose clearing is "the league is done". */
   leagueKey: string
   nextRegion: string | null
@@ -944,7 +1001,7 @@ const REGION_PLANS: RegionPlan[] = [
     plans: GALAR_AREAS,
     spriteRegion: 'galar',
     leagueKey: 'ga-champion-cup',
-    nextRegion: null,
+    nextRegion: 'paldea',
     backgrounds: {
       'Postwick, Route 1 & the Slumbering Weald': 'grass',
       'Wedgehurst & Route 2': 'grass',
@@ -977,6 +1034,49 @@ const REGION_PLANS: RegionPlan[] = [
       'The Crown Shrine': 'rock',
       'The Forest of Focus': 'grass',
       'The Crimson Mirelands': 'water',
+    },
+  },
+  {
+    id: 'paldea',
+    name: 'Paldea',
+    orderIndex: 8,
+    dexRange: [906, 1025],
+    starters: PALDEA_STARTERS,
+    plans: PALDEA_AREAS,
+    spriteRegion: 'paldea',
+    leagueKey: 'pa-pokemon-league',
+    nextRegion: null,
+    backgrounds: {
+      'Cabo Poco, the Poco Path & the Inlet Grotto': 'sea',
+      'Los Platos & South Province (Area One)': 'grass',
+      'Mesagoza & South Province (Area Two)': 'default',
+      'South Province (Area Three) & Cortondo': 'grass',
+      'South Province (Area Six) & Artazon': 'grass',
+      "West Province (Area One) & the Segin Squad's Base": 'rock',
+      'East Province (Areas One & Two) & Levincia': 'default',
+      "The Schedar Squad's Base & East Province (Area Three)": 'rock',
+      'The Asado Desert & Cascarrafa': 'rock',
+      "Tagtree Thicket & the Navi Squad's Base": 'grass',
+      'West Province (Area Two) & Medali': 'grass',
+      'The Dalizapa Passage & Montenevera': 'rock',
+      'The Alfornada Cavern & Alfornada': 'rock',
+      'Glaseado Mountain': 'rock',
+      "North Province (Area Three) & the Ruchbah Squad's Base": 'rock',
+      "North Province (Area Two) & the Caph Squad's Base": 'rock',
+      'Casseroya Lake': 'water',
+      'The Pokémon League': 'default',
+      'The Way Home': 'sea',
+      'Area Zero': 'rock',
+      'The Land of Kitakami': 'grass',
+      'Blueberry Academy & the BB League': 'sea',
+      'The Terarium': 'grass',
+      'The Zero Lab': 'default',
+      'The Shrines of Ruin': 'rock',
+      'Loyalty Plaza': 'grass',
+      'Oni Mountain & the Crystal Pool': 'rock',
+      'The Paradox Sightings': 'rock',
+      'The Area Zero Underdepths': 'rock',
+      'Kitakami Hall': 'default',
     },
   },
 ]

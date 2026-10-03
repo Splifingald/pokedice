@@ -493,6 +493,6 @@ describe('config & data plumbing', () => {
     expect(Object.values(d.trainers)[0]!.role).toBe('trainer')
     expect(() => getArea(d, 'nope')).toThrow()
     expect(speciesName(d, 25)).toBe('Pikachu')
-    expect(speciesName(d, 999)).toBe('#999')
+    expect(speciesName(d, 9999)).toBe('#9999')
   })
 })
