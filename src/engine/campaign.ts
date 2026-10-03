@@ -208,6 +208,8 @@ export function* runCampaign(data: GameData, opts: CampaignOptions): Generator<n
   const total = Math.max(0, Math.floor(opts.encounters))
   let current: string | null = null
   let firstInArea = true
+  // The last fight ended in a stalemate, and no Center has been visited since.
+  let stalled = false
   let goldEarned = 0
 
   const reportFor = (area: Area): AreaReport => {
@@ -311,11 +313,17 @@ export function* runCampaign(data: GameData, opts: CampaignOptions): Generator<n
       r.wipes++
       save = applyWipe(save, area.id, data)
       firstInArea = true
-    } else r.stalemates++
+    } else {
+      r.stalemates++
+      stalled = true
+    }
     return out.result
   }
 
   for (let i = 0; i < total; i++) {
+    // A stalemate with someone fainted means the Pokémon still standing can't touch this foe (a Ghost against a
+    // Normal-type gym): a player heals before trying again, so the sim does too, instead of looping on the same fight.
+    const healFirst = stalled && hasFaintedMember(save)
     const area = fixed ?? chainArea(save, data)
     if (area.id !== current) {
       current = area.id
@@ -327,7 +335,10 @@ export function* runCampaign(data: GameData, opts: CampaignOptions): Generator<n
     // The sim takes a due gym battle or legendary as soon as it's offered (a player may keep exploring first) — unless
     // a Center has to come first (arriving hurt, nobody standing, a K.O. in an easy area).
     const needsCenter =
-      (firstInArea && isTeamHurt(save, data)) || teamOf(save).every((p) => p.currentHp <= 0) || (area.easyMode && hasFaintedMember(save))
+      healFirst ||
+      (firstInArea && isTeamHurt(save, data)) ||
+      teamOf(save).every((p) => p.currentHp <= 0) ||
+      (area.easyMode && hasFaintedMember(save))
     const challenge = needsCenter ? null : challengeEncounter(area, progressOf(save, area.id), data, teamAverageLevel(save), playerSideOf(save))
     const roll: EncounterRoll = challenge ? { encounter: challenge, deck: null, lootDeck: null } : nextEncounter(
       {
@@ -340,7 +351,7 @@ export function* runCampaign(data: GameData, opts: CampaignOptions): Generator<n
         isFirstInArea: firstInArea,
         pokedex: save.pokedex,
         // Nobody able to fight (e.g. after a stalemate) → the Center is the only sensible next stop.
-        forceKind: teamOf(save).every((p) => p.currentHp <= 0) ? 'center' : null,
+        forceKind: healFirst || teamOf(save).every((p) => p.currentHp <= 0) ? 'center' : null,
         centerUseful: centerWouldHelp(save, data),
         player: playerSideOf(save),
       },
@@ -352,7 +363,10 @@ export function* runCampaign(data: GameData, opts: CampaignOptions): Generator<n
     r.encounters++
     r.kinds[enc.kind]++
 
-    if (enc.kind === 'center') save = centerHeal(save, data)
+    if (enc.kind === 'center') {
+      save = centerHeal(save, data)
+      stalled = false
+    }
     else if (enc.kind === 'casino') {
       // The simulated player walks past the Game Corner.
     } else if (enc.kind === 'item') {

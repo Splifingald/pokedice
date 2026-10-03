@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest'
-import { linearAreas, mergeAreaReports, regionAreas, runCampaign, runCampaignSync, type CampaignOptions } from '@/engine'
+import { BUNDLE } from '@/config/bundle'
+import {
+  compileGameData,
+  linearAreas,
+  mergeAreaReports,
+  regionAreas,
+  runCampaign,
+  runCampaignSync,
+  type CampaignOptions,
+} from '@/engine'
 import { data, makeData } from '../fixtures'
 
 // Fewer AI samples keep these runs quick; the loop is what's under test, not the AI.
@@ -20,6 +29,17 @@ describe('campaign simulator', () => {
     }
     expect(a.end.team.length).toBeGreaterThanOrEqual(1)
     expect(a.end.dex).toBeGreaterThanOrEqual(1)
+  })
+
+  it('heals after a stalemate instead of replaying it — a Ghost left standing against a Normal gym', () => {
+    // Alola, Litten, seed 1: Gastly from Hau'oli's cemetery is all that stands once Litten faints, and Ilima's team is
+    // all Normal. Each attempt is a stalemate; before the Center rule the run spent all 300 encounters on it.
+    // The shipped tuning (the fixtures neutralise it), which is what the balance report plays.
+    const shipped = compileGameData(BUNDLE)
+    const run = runCampaignSync(shipped, { encounters: 300, seed: 1, starterDex: 725, spend: true, multiExp: true, regionId: 'alola' })
+    for (const r of run.areas) expect(r.stalemates, r.name).toBeLessThan(25)
+    const verdant = run.areas.find((r) => r.name === 'Route 2 & the Verdant Cavern')!
+    expect(verdant.toClear, 'cleared').not.toBeNull()
   })
 
   it('reports progress as it goes', () => {
