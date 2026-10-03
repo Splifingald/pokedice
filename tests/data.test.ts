@@ -27,6 +27,8 @@ const ALL_LEGENDARIES = [
   648, 649, 716, 717, 718, 719, 720, 721,
   // Alola's bosses. Cosmoem, Naganadel and Melmetal are legendaries too, but only ever evolved into, never met.
   785, 786, 787, 788, 789, 791, 792, 793, 794, 795, 796, 797, 798, 799, 800, 801, 802, 803, 805, 806, 807, 808,
+  // Galar's bosses. Urshifu is a legendary too, but only ever evolved into from Kubfu.
+  888, 889, 890, 891, 893, 894, 895, 896, 897, 898, 905,
 ]
 const STARTERS = [1, 4, 7]
 /**
@@ -36,8 +38,8 @@ const STARTERS = [1, 4, 7]
 const SIX_DICE = new Set([243, 244, 245, 493])
 
 describe('pokemon.json', () => {
-  it('has 809 complete entries — Kanto to Alola', () => {
-    expect(species).toHaveLength(809)
+  it('has 905 complete entries — Kanto to Galar', () => {
+    expect(species).toHaveLength(905)
     for (const p of species) {
       expect(total(p.dice)).toBeGreaterThanOrEqual(1)
       expect(total(p.dice), p.name).toBeLessThanOrEqual(SIX_DICE.has(p.dex) ? 6 : 5)

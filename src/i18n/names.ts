@@ -126,6 +126,17 @@ export const TRAINER_CLASSES = [
   'Kahuna',
   'Golfer',
   'Surfer',
+  // Galar
+  'Team Yell Grunt',
+  'Cameraman',
+  'Policeman',
+  'Musician',
+  'Reporter',
+  'Poké Kid',
+  'Doctor',
+  'Madame',
+  'Fisher',
+  'Model',
 ].sort((a, b) => b.length - a.length)
 
 /** Splits `Bug Catcher Kent` into its class and its given name; a bare `Misty` has neither. */

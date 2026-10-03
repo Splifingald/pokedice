@@ -1,6 +1,6 @@
 /**
  * pnpm seed-regions — appends Johto (152–251), Hoenn (252–386), Sinnoh (387–493), Unova (494–649), Kalos
- * (650–721) and Alola (722–809) to the offline bundle.
+ * (650–721), Alola (722–809) and Galar (810–905) to the offline bundle.
  *
  * Unlike `pnpm seed`, this script is **additive**: it reads `src/data/*.json`, keeps every existing row exactly as it
  * is, and only appends what is missing. That matters because the committed bundle is ahead of `scripts/seed.ts` —
@@ -32,6 +32,7 @@ import { SINNOH_AREAS, SINNOH_STARTERS } from './content-sinnoh'
 import { UNOVA_AREAS, UNOVA_STARTERS } from './content-unova'
 import { KALOS_AREAS, KALOS_STARTERS } from './content-kalos'
 import { ALOLA_AREAS, ALOLA_STARTERS } from './content-alola'
+import { GALAR_AREAS, GALAR_STARTERS } from './content-galar'
 import { liveDicePlan, type LegendKind } from './dice-live'
 import type { AreaPlan } from './content'
 import type { Area, BattleBackground, Evolution, ItemDef, PokeType, Region, Species, Trainer } from '../src/engine/types'
@@ -58,8 +59,8 @@ const argOf = (flag: string) => {
   const i = process.argv.indexOf(flag)
   return i > 0 ? Number(process.argv[i + 1]) : null
 }
-const FIRST_NEW_DEX = argOf('--from') ?? 722
-const DEX_MAX = argOf('--to') ?? 809
+const FIRST_NEW_DEX = argOf('--from') ?? 810
+const DEX_MAX = argOf('--to') ?? 905
 
 // ---------------------------------------------------------------- mirror access (cached)
 
@@ -167,6 +168,13 @@ const EVO_ITEMS = new Set([
   // Gen 6: the two trade items of Kalos's fairies.
   'sachet',
   'whipped-dream',
+  // Gen 8: Galar's apples and pot, the Isle of Armor's scroll, and Hisui's two items.
+  'tart-apple',
+  'sweet-apple',
+  'cracked-pot',
+  'scroll-of-darkness',
+  'black-augurite',
+  'peat-block',
 ])
 
 /**
@@ -199,6 +207,13 @@ const FORCED_LEVEL: Record<number, number> = {
   773: 45,
   804: 60,
   809: 50,
+  // Gen 8. Clobbopus learns Taunt at Lv.35. Galarian Yamask's Runerigus branches at Cofagrigus's own Lv.34, so the two
+  // are a real choice rather than one always pre-empting the other; Hisuian Sneasel's Sneasler takes Lv.40 and leaves
+  // the Razor Claw to Weavile. The rest of Gen 8's odd triggers (critical hits, spins, recoil, move styles) take the
+  // assigned Lv.30 of an unknown trigger.
+  853: 35,
+  867: 34,
+  903: 40,
 }
 
 /**
@@ -283,6 +298,18 @@ const LEGENDARY_CATCH: Record<number, number> = {
   807: 5, // Zeraora
   808: 5, // Meltan
   809: 5, // Melmetal
+  888: 7, // Zacian     ·  Galar: the heroes and Eternatus as box legendaries
+  889: 7, // Zamazenta
+  890: 7, // Eternatus
+  891: 6, // Kubfu      ·  the Isle of Armor's and the Crown Tundra's legendaries, and Hisui's Enamorus, as the birds
+  892: 6, // Urshifu
+  894: 6, // Regieleki
+  895: 6, // Regidrago
+  896: 6, // Glastrier
+  897: 6, // Spectrier
+  898: 6, // Calyrex
+  905: 6, // Enamorus
+  893: 5, // Zarude     ·  the mythical, as Mew
 }
 
 /** One evolution edge, in the shape the bundle already uses for Kanto. */
@@ -376,7 +403,34 @@ const NEW_ITEMS: ItemDef[] = [
   { ...fossil('sail-fossil', 'Sail Fossil', 698, 'Amaura'), region: 'kalos' },
   { ...stone('sachet', 'Sachet', 'Spritzee (Aromatisse)'), region: 'kalos' },
   { ...stone('whipped-dream', 'Whipped Dream', 'Swirlix (Slurpuff)'), region: 'kalos' },
+  ...galarItems(),
 ]
+
+/**
+ * Galar's evolution items and its four fossil pairs. PokeAPI has no sprites for Gen 8 items, so these point at
+ * pokesprite's (Sword and Shield's own icons) and, for Hisui's three, which pokesprite has not got either, at the
+ * nearest-looking item PokeAPI does have.
+ */
+function galarItems(): ItemDef[] {
+  const POKESPRITE = (p: string) => `https://raw.githubusercontent.com/msikma/pokesprite/master/items/${p}.png`
+  const withSprite = (i: ItemDef, spriteUrl: string): ItemDef => ({ ...i, spriteUrl, region: 'galar' })
+  /** Cara Liss revives one Pokémon from two fossil halves; each pair is one item here. */
+  const pair = (key: string, name: string, dex: number, who: string, half: string) =>
+    withSprite(fossil(key, name, dex, who), POKESPRITE(`fossil/${half}`))
+  return [
+    withSprite(stone('tart-apple', 'Tart Apple', 'Applin (Flapple)'), POKESPRITE('evo-item/tart-apple')),
+    withSprite(stone('sweet-apple', 'Sweet Apple', 'Applin (Appletun)'), POKESPRITE('evo-item/sweet-apple')),
+    withSprite(stone('cracked-pot', 'Cracked Pot', 'Sinistea (Polteageist)'), POKESPRITE('evo-item/cracked-pot')),
+    withSprite(stone('scroll-of-darkness', 'Scroll of Darkness', 'Kubfu (Urshifu)'), ITEM_SPRITE('dread-plate')),
+    withSprite(stone('black-augurite', 'Black Augurite', 'Scyther (Kleavor)'), ITEM_SPRITE('hard-stone')),
+    withSprite(stone('peat-block', 'Peat Block', 'Ursaring (Ursaluna)'), ITEM_SPRITE('damp-mulch')),
+    pair('bird-and-drake-fossils', 'Fossilized Bird & Drake', 880, 'Dracozolt', 'bird'),
+    pair('bird-and-dino-fossils', 'Fossilized Bird & Dino', 881, 'Arctozolt', 'bird'),
+    pair('fish-and-drake-fossils', 'Fossilized Fish & Drake', 882, 'Dracovish', 'fish'),
+    pair('fish-and-dino-fossils', 'Fossilized Fish & Dino', 883, 'Arctovish', 'fish'),
+  ]
+}
+
 
 // ---------------------------------------------------------------- build
 
@@ -490,10 +544,13 @@ const LEGEND_KIND: Record<number, LegendKind> = {
   793: 'trio', 794: 'trio', 795: 'trio', 796: 'trio', 797: 'trio', 798: 'trio', 799: 'trio', 804: 'trio', 805: 'trio', 806: 'trio',
   791: 'box', 792: 'box', 800: 'box',
   801: 'mythical', 802: 'mythical', 807: 'mythical', 809: 'mythical',
+  888: 'box', 889: 'box', 890: 'box',
+  892: 'trio', 894: 'trio', 895: 'trio', 896: 'trio', 897: 'trio', 898: 'trio', 905: 'trio',
+  893: 'mythical',
 }
 
-/** Lines that level slowly into a 600-BST final, Gible's shape: Axew's, Deino's, Goomy's and Jangmo-o's. */
-const PSEUDO_LINES = new Set([610, 611, 612, 633, 634, 635, 704, 705, 706, 782, 783, 784])
+/** Lines that level slowly into a 600-BST final, Gible's shape: Axew's, Deino's, Goomy's, Jangmo-o's and Dreepy's. */
+const PSEUDO_LINES = new Set([610, 611, 612, 633, 634, 635, 704, 705, 706, 782, 783, 784, 885, 886, 887])
 
 /**
  * Rows `liveDicePlan` reads wrongly, set to what the live game does for their closest relative. The rules go by stage
@@ -506,6 +563,21 @@ const DICE_OVERRIDES: Record<number, Pick<Species, 'dice' | 'rerolls' | 'milesto
   665: { dice: [{ type: 'bug', count: 2 }], rerolls: 2, milestones: [{ level: 12, effect: 'EVOLVE' }] },
   666: {
     dice: [{ type: 'bug', count: 2 }, { type: 'flying', count: 1 }],
+    rerolls: 3,
+    milestones: [
+      { level: 40, effect: 'ADD_DIE', dieType: 'bug' },
+      { level: 40, effect: 'ADD_REROLL', amount: 1 },
+    ],
+  },
+  // Blipbug → Dottler → Orbeetle, the same early bug line: as Wurmple → Silcoon → Beautifly.
+  824: { dice: [{ type: 'bug', count: 1 }], rerolls: 1, milestones: [{ level: 10, effect: 'EVOLVE' }] },
+  825: {
+    dice: [{ type: 'bug', count: 1 }, { type: 'psychic', count: 1 }],
+    rerolls: 2,
+    milestones: [{ level: 30, effect: 'EVOLVE' }],
+  },
+  826: {
+    dice: [{ type: 'bug', count: 2 }, { type: 'psychic', count: 1 }],
     rerolls: 3,
     milestones: [
       { level: 40, effect: 'ADD_DIE', dieType: 'bug' },
@@ -579,7 +651,7 @@ interface RegionPlan {
   dexRange: [number, number]
   starters: number[]
   plans: AreaPlan[]
-  spriteRegion: 'johto' | 'hoenn' | 'sinnoh' | 'unova' | 'kalos' | 'alola'
+  spriteRegion: 'johto' | 'hoenn' | 'sinnoh' | 'unova' | 'kalos' | 'alola' | 'galar'
   /** Key of the area whose clearing is "the league is done". */
   leagueKey: string
   nextRegion: string | null
@@ -818,7 +890,7 @@ const REGION_PLANS: RegionPlan[] = [
     plans: ALOLA_AREAS,
     spriteRegion: 'alola',
     leagueKey: 'al-pokemon-league',
-    nextRegion: null,
+    nextRegion: 'galar',
     backgrounds: {
       "Route 1 & Hau'oli Outskirts": 'grass',
       "Hau'oli City & the Cemetery": 'default',
@@ -863,6 +935,50 @@ const REGION_PLANS: RegionPlan[] = [
       'The Mystery Box': 'default',
     },
   },
+  {
+    id: 'galar',
+    name: 'Galar',
+    orderIndex: 7,
+    dexRange: [810, 905],
+    starters: GALAR_STARTERS,
+    plans: GALAR_AREAS,
+    spriteRegion: 'galar',
+    leagueKey: 'ga-champion-cup',
+    nextRegion: null,
+    backgrounds: {
+      'Postwick, Route 1 & the Slumbering Weald': 'grass',
+      'Wedgehurst & Route 2': 'grass',
+      'The Wild Area: Rolling Fields & Dappled Grove': 'grass',
+      'Motostoke, Route 3 & the Galar Mine': 'rock',
+      'Route 4 & Turffield': 'grass',
+      'Route 5 & Hulbury': 'sea',
+      'Galar Mine No. 2 & Motostoke Stadium': 'rock',
+      'Motostoke Outskirts & the Wild Area South': 'rock',
+      'Hammerlocke & Route 6': 'rock',
+      'Stow-on-Side': 'rock',
+      'Glimwood Tangle & Ballonlea': 'grass',
+      'Routes 7 & 8': 'rock',
+      'Steamdrift Way & Circhester': 'rock',
+      'Route 9 & Spikemuth': 'sea',
+      'Hammerlocke Hills & the Lake of Outrage': 'rock',
+      'Route 10 & Wyndon': 'rock',
+      'Rose Tower & the Energy Plant': 'default',
+      'Wyndon Stadium & the Champion Cup': 'default',
+      'The Wild Area II': 'grass',
+      'The Champion Cup II': 'default',
+      'The Isle of Armor': 'sea',
+      'The Crown Tundra': 'rock',
+      'The Max Lair': 'rock',
+      'The Space-Time Rift': 'grass',
+      'The Energy Plant Summit': 'default',
+      "The Slumbering Weald's Depths": 'grass',
+      'The Master Dojo': 'default',
+      'The Split-Decision Ruins': 'rock',
+      'The Crown Shrine': 'rock',
+      'The Forest of Focus': 'grass',
+      'The Crimson Mirelands': 'water',
+    },
+  },
 ]
 
 /**
@@ -889,7 +1005,7 @@ function catchAllFor(region: RegionPlan): (dex: number) => boolean {
  * Amaura out of the Jaw and Sail Fossil in the Glittering Cave, and their evolutions out of those. None of the eight
  * lines is ever wild.
  */
-const FOSSIL_ONLY = new Set([345, 346, 347, 348, 408, 409, 410, 411, 564, 565, 566, 567, 696, 697, 698, 699])
+const FOSSIL_ONLY = new Set([345, 346, 347, 348, 408, 409, 410, 411, 564, 565, 566, 567, 696, 697, 698, 699, 880, 881, 882, 883])
 
 /**
  * The regions this run rebuilds: the ones whose Pokédex sits inside the generated range. Every other region is kept

@@ -122,6 +122,24 @@
   ],
   "starterLevel": 5,
   "leagueAreaId": "af565afe-bfc6-516a-8a4c-bba17bb1ff48",
+  "nextRegion": "galar",
+  "enabled": true
+ },
+ {
+  "id": "galar",
+  "name": "Galar",
+  "orderIndex": 7,
+  "dexRange": [
+   810,
+   905
+  ],
+  "starters": [
+   810,
+   813,
+   816
+  ],
+  "starterLevel": 5,
+  "leagueAreaId": "3610c6e0-5fc7-5aab-8b2c-a59be219db55",
   "nextRegion": null,
   "enabled": true
  }

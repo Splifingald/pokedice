@@ -27,6 +27,8 @@ export const LEGENDARIES = [
   // Meltan's line — every one an area boss, or what one evolves into
   785, 786, 787, 788, 789, 790, 791, 792, 793, 794, 795, 796, 797, 798, 799, 800, 801, 802, 803, 804, 805, 806, 807, 808,
   809,
+  // Galar: the heroes and Eternatus, Kubfu's line, the Crown Tundra's, Zarude, and Hisui's Enamorus
+  888, 889, 890, 891, 892, 893, 894, 895, 896, 897, 898, 905,
 ]
 export const STARTERS = [1, 4, 7]
 

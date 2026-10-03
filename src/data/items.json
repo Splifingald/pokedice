@@ -705,5 +705,147 @@
   "inShop": false,
   "shopBadges": 0,
   "region": "kalos"
+ },
+ {
+  "key": "tart-apple",
+  "name": "Tart Apple",
+  "description": "Makes certain Pokémon evolve: Applin (Flapple). Use it from the Team screen.",
+  "spriteUrl": "https://raw.githubusercontent.com/msikma/pokesprite/master/items/evo-item/tart-apple.png",
+  "price": 200,
+  "effect": {
+   "kind": "stone"
+  },
+  "inShop": false,
+  "shopBadges": 0,
+  "region": "galar"
+ },
+ {
+  "key": "sweet-apple",
+  "name": "Sweet Apple",
+  "description": "Makes certain Pokémon evolve: Applin (Appletun). Use it from the Team screen.",
+  "spriteUrl": "https://raw.githubusercontent.com/msikma/pokesprite/master/items/evo-item/sweet-apple.png",
+  "price": 200,
+  "effect": {
+   "kind": "stone"
+  },
+  "inShop": false,
+  "shopBadges": 0,
+  "region": "galar"
+ },
+ {
+  "key": "cracked-pot",
+  "name": "Cracked Pot",
+  "description": "Makes certain Pokémon evolve: Sinistea (Polteageist). Use it from the Team screen.",
+  "spriteUrl": "https://raw.githubusercontent.com/msikma/pokesprite/master/items/evo-item/cracked-pot.png",
+  "price": 200,
+  "effect": {
+   "kind": "stone"
+  },
+  "inShop": false,
+  "shopBadges": 0,
+  "region": "galar"
+ },
+ {
+  "key": "scroll-of-darkness",
+  "name": "Scroll of Darkness",
+  "description": "Makes certain Pokémon evolve: Kubfu (Urshifu). Use it from the Team screen.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/dread-plate.png",
+  "price": 200,
+  "effect": {
+   "kind": "stone"
+  },
+  "inShop": false,
+  "shopBadges": 0,
+  "region": "galar"
+ },
+ {
+  "key": "black-augurite",
+  "name": "Black Augurite",
+  "description": "Makes certain Pokémon evolve: Scyther (Kleavor). Use it from the Team screen.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/hard-stone.png",
+  "price": 200,
+  "effect": {
+   "kind": "stone"
+  },
+  "inShop": false,
+  "shopBadges": 0,
+  "region": "galar"
+ },
+ {
+  "key": "peat-block",
+  "name": "Peat Block",
+  "description": "Makes certain Pokémon evolve: Ursaring (Ursaluna). Use it from the Team screen.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/damp-mulch.png",
+  "price": 200,
+  "effect": {
+   "kind": "stone"
+  },
+  "inShop": false,
+  "shopBadges": 0,
+  "region": "galar"
+ },
+ {
+  "key": "bird-and-drake-fossils",
+  "name": "Fossilized Bird & Drake",
+  "description": "A fossil of an ancient Pokémon. Dracozolt waits in your Box and is revived after 24 hours, at Lv.20.",
+  "spriteUrl": "https://raw.githubusercontent.com/msikma/pokesprite/master/items/fossil/bird.png",
+  "price": 0,
+  "effect": {
+   "kind": "fossil",
+   "dex": 880,
+   "level": 20,
+   "hours": 24
+  },
+  "inShop": false,
+  "shopBadges": 0,
+  "region": "galar"
+ },
+ {
+  "key": "bird-and-dino-fossils",
+  "name": "Fossilized Bird & Dino",
+  "description": "A fossil of an ancient Pokémon. Arctozolt waits in your Box and is revived after 24 hours, at Lv.20.",
+  "spriteUrl": "https://raw.githubusercontent.com/msikma/pokesprite/master/items/fossil/bird.png",
+  "price": 0,
+  "effect": {
+   "kind": "fossil",
+   "dex": 881,
+   "level": 20,
+   "hours": 24
+  },
+  "inShop": false,
+  "shopBadges": 0,
+  "region": "galar"
+ },
+ {
+  "key": "fish-and-drake-fossils",
+  "name": "Fossilized Fish & Drake",
+  "description": "A fossil of an ancient Pokémon. Dracovish waits in your Box and is revived after 24 hours, at Lv.20.",
+  "spriteUrl": "https://raw.githubusercontent.com/msikma/pokesprite/master/items/fossil/fish.png",
+  "price": 0,
+  "effect": {
+   "kind": "fossil",
+   "dex": 882,
+   "level": 20,
+   "hours": 24
+  },
+  "inShop": false,
+  "shopBadges": 0,
+  "region": "galar"
+ },
+ {
+  "key": "fish-and-dino-fossils",
+  "name": "Fossilized Fish & Dino",
+  "description": "A fossil of an ancient Pokémon. Arctovish waits in your Box and is revived after 24 hours, at Lv.20.",
+  "spriteUrl": "https://raw.githubusercontent.com/msikma/pokesprite/master/items/fossil/fish.png",
+  "price": 0,
+  "effect": {
+   "kind": "fossil",
+   "dex": 883,
+   "level": 20,
+   "hours": 24
+  },
+  "inShop": false,
+  "shopBadges": 0,
+  "region": "galar"
  }
 ]

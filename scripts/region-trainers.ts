@@ -1007,7 +1007,7 @@ async function publishShowdown(region: ShowdownRegion): Promise<number> {
 }
 
 /** The Gen 6–9 regions that are in the game so far: their trainer sets are published with the others. */
-const PUBLISHED_SHOWDOWN: ShowdownRegion[] = ['kalos', 'alola']
+const PUBLISHED_SHOWDOWN: ShowdownRegion[] = ['kalos', 'alola', 'galar']
 
 async function main() {
   if (process.argv[2] === '--showdown') {

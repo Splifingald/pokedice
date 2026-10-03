@@ -18241,5 +18241,1918 @@
   "badge": null,
   "upgradeLevel": null,
   "battleBackground": null
+ },
+ {
+  "id": "65194c62-b387-5320-af2d-4ceaf0e888f3",
+  "name": "Youngster Ivan",
+  "spriteUrl": "/trainers/classes/galar/youngster.png",
+  "team": [
+   {
+    "dex": 819,
+    "level": 7
+   },
+   {
+    "dex": 821,
+    "level": 7
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "1849b9e0-1696-54e9-902b-4e122acc9154",
+  "name": "Lass Chloe",
+  "spriteUrl": "/trainers/classes/galar/lass.png",
+  "team": [
+   {
+    "dex": 831,
+    "level": 7
+   },
+   {
+    "dex": 835,
+    "level": 7
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "66e9d59e-1ebd-5135-a1ea-0e5949c4c0aa",
+  "name": "Hop",
+  "spriteUrl": "/trainers/classes/galar/hop.png",
+  "team": [
+   {
+    "dex": 831,
+    "level": 8
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "9278246a-75c4-5b6b-ad2e-194054fd89ee",
+  "name": "Backpacker Tobias",
+  "spriteUrl": "/trainers/classes/galar/backpacker.png",
+  "team": [
+   {
+    "dex": 659,
+    "level": 11
+   },
+   {
+    "dex": 519,
+    "level": 11
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "8bcdcba6-e5db-5243-904d-246a97d2f5f2",
+  "name": "Pokémon Breeder Lily",
+  "spriteUrl": "/trainers/classes/galar/breeder-f.png",
+  "team": [
+   {
+    "dex": 280,
+    "level": 11
+   },
+   {
+    "dex": 535,
+    "level": 11
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "b04d7fa9-4f23-5510-8f05-4e4613736edf",
+  "name": "Hop",
+  "spriteUrl": "/trainers/classes/galar/hop.png",
+  "team": [
+   {
+    "dex": 831,
+    "level": 11
+   },
+   {
+    "dex": 821,
+    "level": 12
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "ca23fea7-a5e1-5371-872e-6b3361aab3bf",
+  "name": "Worker Mitchell",
+  "spriteUrl": "/trainers/classes/galar/worker-m.png",
+  "team": [
+   {
+    "dex": 837,
+    "level": 14
+   },
+   {
+    "dex": 66,
+    "level": 14
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "c2199a77-b615-5f9e-b35c-5c6a1cb1df6b",
+  "name": "Hiker Bart",
+  "spriteUrl": "/trainers/classes/galar/hiker.png",
+  "team": [
+   {
+    "dex": 524,
+    "level": 14
+   },
+   {
+    "dex": 527,
+    "level": 14
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "36bd2c3c-badc-55e8-8ea1-91a06c90155b",
+  "name": "Bede",
+  "spriteUrl": "/trainers/classes/galar/bede.png",
+  "team": [
+   {
+    "dex": 577,
+    "level": 15
+   },
+   {
+    "dex": 574,
+    "level": 15
+   },
+   {
+    "dex": 856,
+    "level": 16
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "4b4f98ca-5650-540f-a13b-12404002ad46",
+  "name": "Youngster Henry",
+  "spriteUrl": "/trainers/classes/galar/youngster.png",
+  "team": [
+   {
+    "dex": 831,
+    "level": 17
+   },
+   {
+    "dex": 835,
+    "level": 17
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "4f8cfce0-52b1-50a1-b536-3ebec3d901ee",
+  "name": "Madame Imelda",
+  "spriteUrl": "/trainers/classes/galar/madame.png",
+  "team": [
+   {
+    "dex": 868,
+    "level": 17
+   },
+   {
+    "dex": 710,
+    "level": 17
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "2ff624d9-fd92-556a-bad5-8d8a6db0f04c",
+  "name": "Team Yell Grunt",
+  "spriteUrl": "/trainers/classes/galar/yell-grunt-m.png",
+  "team": [
+   {
+    "dex": 827,
+    "level": 17
+   },
+   {
+    "dex": 509,
+    "level": 17
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "c951de83-4acf-54a3-9869-1cdaec030d84",
+  "name": "Milo",
+  "spriteUrl": "/trainers/classes/galar/milo.png",
+  "team": [
+   {
+    "dex": 829,
+    "level": 19
+   },
+   {
+    "dex": 830,
+    "level": 20
+   }
+  ],
+  "role": "leader",
+  "badge": "Grass Badge",
+  "upgradeLevel": null,
+  "battleBackground": "default"
+ },
+ {
+  "id": "5d76428e-8bfb-5593-bc28-6eae2b4f8fd3",
+  "name": "Fisher Mark",
+  "spriteUrl": "/trainers/classes/galar/fisher.png",
+  "team": [
+   {
+    "dex": 846,
+    "level": 20
+   },
+   {
+    "dex": 170,
+    "level": 20
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "f47ed603-98df-5eda-9c8e-732e8fc0f34f",
+  "name": "Swimmer Lucy",
+  "spriteUrl": "/trainers/classes/galar/swimmer-f.png",
+  "team": [
+   {
+    "dex": 833,
+    "level": 21
+   },
+   {
+    "dex": 550,
+    "level": 21
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "cb1da03d-7547-56b7-84f5-871f7e52e3ee",
+  "name": "Team Yell Grunt",
+  "spriteUrl": "/trainers/classes/galar/yell-grunt-m.png",
+  "team": [
+   {
+    "dex": 263,
+    "level": 21
+   },
+   {
+    "dex": 827,
+    "level": 21
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "adc84e1a-f527-5dbd-805d-debfe370eb12",
+  "name": "Nessa",
+  "spriteUrl": "/trainers/classes/galar/nessa.png",
+  "team": [
+   {
+    "dex": 118,
+    "level": 22
+   },
+   {
+    "dex": 846,
+    "level": 23
+   },
+   {
+    "dex": 834,
+    "level": 24
+   }
+  ],
+  "role": "leader",
+  "badge": "Water Badge",
+  "upgradeLevel": null,
+  "battleBackground": "default"
+ },
+ {
+  "id": "4c1233c3-9a04-5f58-ba06-195bea203b0b",
+  "name": "Hiker Corey",
+  "spriteUrl": "/trainers/classes/galar/hiker.png",
+  "team": [
+   {
+    "dex": 838,
+    "level": 25
+   },
+   {
+    "dex": 688,
+    "level": 25
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "58513f6c-400f-5f01-ab89-5a6f30b33589",
+  "name": "Black Belt Kenzo",
+  "spriteUrl": "/trainers/classes/galar/black-belt.png",
+  "team": [
+   {
+    "dex": 559,
+    "level": 25
+   },
+   {
+    "dex": 453,
+    "level": 25
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "90c21d97-2d5b-5b51-a913-d618df14d81d",
+  "name": "Hop",
+  "spriteUrl": "/trainers/classes/galar/hop.png",
+  "team": [
+   {
+    "dex": 831,
+    "level": 25
+   },
+   {
+    "dex": 822,
+    "level": 25
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "9f7309fd-8b31-5bb6-a632-b77ae49621be",
+  "name": "Kabu",
+  "spriteUrl": "/trainers/classes/galar/kabu.png",
+  "team": [
+   {
+    "dex": 38,
+    "level": 25
+   },
+   {
+    "dex": 59,
+    "level": 25
+   },
+   {
+    "dex": 851,
+    "level": 27
+   }
+  ],
+  "role": "leader",
+  "badge": "Fire Badge",
+  "upgradeLevel": null,
+  "battleBackground": "default"
+ },
+ {
+  "id": "9f743f8f-6c0c-5ca7-a693-f637860c1b21",
+  "name": "Team Yell Grunt",
+  "spriteUrl": "/trainers/classes/galar/yell-grunt-m.png",
+  "team": [
+   {
+    "dex": 509,
+    "level": 26
+   },
+   {
+    "dex": 559,
+    "level": 26
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "5328fb93-0183-590e-8643-960d6bdfbcfe",
+  "name": "Team Yell Grunt",
+  "spriteUrl": "/trainers/classes/galar/yell-grunt-m.png",
+  "team": [
+   {
+    "dex": 827,
+    "level": 26
+   },
+   {
+    "dex": 453,
+    "level": 26
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "4b3654bc-f7ad-5457-bfe7-a95b5a74c6fe",
+  "name": "Cameraman Rolf",
+  "spriteUrl": "/trainers/classes/galar/cameraman.png",
+  "team": [
+   {
+    "dex": 856,
+    "level": 27
+   },
+   {
+    "dex": 561,
+    "level": 27
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "e56da994-ea86-5937-9001-b0d1ed54a3ff",
+  "name": "Marnie",
+  "spriteUrl": "/trainers/classes/galar/marnie.png",
+  "team": [
+   {
+    "dex": 509,
+    "level": 26
+   },
+   {
+    "dex": 859,
+    "level": 27
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "f41c0089-5a2a-5107-8151-321abec43310",
+  "name": "Backpacker Rhonda",
+  "spriteUrl": "/trainers/classes/galar/backpacker.png",
+  "team": [
+   {
+    "dex": 843,
+    "level": 30
+   },
+   {
+    "dex": 449,
+    "level": 30
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "f299ce7f-882e-5861-a940-ee1ca2af93fd",
+  "name": "Doctor Hyde",
+  "spriteUrl": "/trainers/classes/galar/doctor-m.png",
+  "team": [
+   {
+    "dex": 562,
+    "level": 31
+   },
+   {
+    "dex": 355,
+    "level": 31
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "3d8d3315-88ba-50c6-9b80-e2b356982722",
+  "name": "Hiker Calvin",
+  "spriteUrl": "/trainers/classes/galar/hiker.png",
+  "team": [
+   {
+    "dex": 51,
+    "level": 31
+   },
+   {
+    "dex": 632,
+    "level": 31
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "2d1d6714-f14f-53fe-a696-f21e80b6e0e8",
+  "name": "Black Belt Glenn",
+  "spriteUrl": "/trainers/classes/galar/black-belt.png",
+  "team": [
+   {
+    "dex": 538,
+    "level": 33
+   },
+   {
+    "dex": 539,
+    "level": 33
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "164fb215-ff74-56e6-b99b-3974516fe363",
+  "name": "Artist Mia",
+  "spriteUrl": "/trainers/classes/galar/artist.png",
+  "team": [
+   {
+    "dex": 857,
+    "level": 33
+   },
+   {
+    "dex": 860,
+    "level": 33
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "2f3ec7bd-6dbe-5cb9-b68d-20c051bfb715",
+  "name": "Bede",
+  "spriteUrl": "/trainers/classes/galar/bede.png",
+  "team": [
+   {
+    "dex": 578,
+    "level": 33
+   },
+   {
+    "dex": 575,
+    "level": 33
+   },
+   {
+    "dex": 857,
+    "level": 34
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "9afcb4e3-a5ff-5bc5-ace7-c53dbaa947f4",
+  "name": "Allister",
+  "spriteUrl": "/trainers/classes/galar/allister.png",
+  "team": [
+   {
+    "dex": 778,
+    "level": 34
+   },
+   {
+    "dex": 864,
+    "level": 35
+   },
+   {
+    "dex": 94,
+    "level": 36
+   }
+  ],
+  "role": "leader",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default"
+ },
+ {
+  "id": "9801a92f-d18c-515b-9e33-f8c3c748c129",
+  "name": "Bea",
+  "spriteUrl": "/trainers/classes/galar/bea.png",
+  "team": [
+   {
+    "dex": 675,
+    "level": 34
+   },
+   {
+    "dex": 865,
+    "level": 35
+   },
+   {
+    "dex": 68,
+    "level": 36
+   }
+  ],
+  "role": "leader",
+  "badge": "Fighting Badge",
+  "upgradeLevel": null,
+  "battleBackground": "default"
+ },
+ {
+  "id": "c5555899-2980-5812-9465-e5f20973f7f5",
+  "name": "Model Gina",
+  "spriteUrl": "/trainers/classes/galar/model.png",
+  "team": [
+   {
+    "dex": 858,
+    "level": 36
+   },
+   {
+    "dex": 869,
+    "level": 36
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "4a59e4df-2480-5e84-b774-5cb627b650ca",
+  "name": "Musician Elliott",
+  "spriteUrl": "/trainers/classes/galar/musician.png",
+  "team": [
+   {
+    "dex": 756,
+    "level": 36
+   },
+   {
+    "dex": 860,
+    "level": 36
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "4d05e348-5809-5e06-a5d3-2429f9f31861",
+  "name": "Madame Celeste",
+  "spriteUrl": "/trainers/classes/galar/madame.png",
+  "team": [
+   {
+    "dex": 855,
+    "level": 37
+   },
+   {
+    "dex": 868,
+    "level": 37
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "2c07947c-1895-56f9-8d58-19f799c983ab",
+  "name": "Opal",
+  "spriteUrl": "/trainers/classes/galar/opal.png",
+  "team": [
+   {
+    "dex": 110,
+    "level": 36
+   },
+   {
+    "dex": 468,
+    "level": 37
+   },
+   {
+    "dex": 869,
+    "level": 38
+   }
+  ],
+  "role": "leader",
+  "badge": "Fairy Badge",
+  "upgradeLevel": null,
+  "battleBackground": "default"
+ },
+ {
+  "id": "8a2e5beb-abe2-5755-afd9-05de8dd52a56",
+  "name": "Dancer Rowena",
+  "spriteUrl": "/trainers/classes/galar/dancer.png",
+  "team": [
+   {
+    "dex": 877,
+    "level": 40
+   },
+   {
+    "dex": 863,
+    "level": 40
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "bd006e02-2fec-532a-9e30-1cd15f8e0e65",
+  "name": "Reporter Ellie",
+  "spriteUrl": "/trainers/classes/galar/reporter.png",
+  "team": [
+   {
+    "dex": 828,
+    "level": 40
+   },
+   {
+    "dex": 596,
+    "level": 40
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "b6bbcaea-6bca-58a9-a27c-2f190cba0c14",
+  "name": "Team Yell Grunt",
+  "spriteUrl": "/trainers/classes/galar/yell-grunt-m.png",
+  "team": [
+   {
+    "dex": 510,
+    "level": 40
+   },
+   {
+    "dex": 860,
+    "level": 40
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "5910570c-35b1-5c41-87e4-8b6aeab41070",
+  "name": "Hop",
+  "spriteUrl": "/trainers/classes/galar/hop.png",
+  "team": [
+   {
+    "dex": 832,
+    "level": 40
+   },
+   {
+    "dex": 823,
+    "level": 40
+   },
+   {
+    "dex": 871,
+    "level": 40
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "2e5a78b5-f2e8-584e-a3d2-36192dd9ebf1",
+  "name": "Hiker Laurie",
+  "spriteUrl": "/trainers/classes/galar/hiker.png",
+  "team": [
+   {
+    "dex": 839,
+    "level": 42
+   },
+   {
+    "dex": 874,
+    "level": 42
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "20b2c2d3-b222-53f5-9318-326b1981db6f",
+  "name": "Pokémon Breeder Dina",
+  "spriteUrl": "/trainers/classes/galar/breeder-f.png",
+  "team": [
+   {
+    "dex": 873,
+    "level": 42
+   },
+   {
+    "dex": 875,
+    "level": 42
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "dfca275e-9409-56be-b714-fbc476f0aace",
+  "name": "Policeman Archie",
+  "spriteUrl": "/trainers/classes/galar/policeman.png",
+  "team": [
+   {
+    "dex": 215,
+    "level": 42
+   },
+   {
+    "dex": 584,
+    "level": 42
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "9f5135d2-c590-5cd0-8ef9-bc28afe4219e",
+  "name": "Melony",
+  "spriteUrl": "/trainers/classes/galar/melony.png",
+  "team": [
+   {
+    "dex": 873,
+    "level": 40
+   },
+   {
+    "dex": 875,
+    "level": 41
+   },
+   {
+    "dex": 131,
+    "level": 42
+   }
+  ],
+  "role": "leader",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default"
+ },
+ {
+  "id": "2ceb1b58-db61-5a3f-870f-5c570453b643",
+  "name": "Gordie",
+  "spriteUrl": "/trainers/classes/galar/gordie.png",
+  "team": [
+   {
+    "dex": 689,
+    "level": 40
+   },
+   {
+    "dex": 874,
+    "level": 41
+   },
+   {
+    "dex": 839,
+    "level": 42
+   }
+  ],
+  "role": "leader",
+  "badge": "Rock Badge",
+  "upgradeLevel": null,
+  "battleBackground": "default"
+ },
+ {
+  "id": "584ab2cd-83c5-510c-87ef-dabb78e7dbe5",
+  "name": "Team Yell Grunt",
+  "spriteUrl": "/trainers/classes/galar/yell-grunt-m.png",
+  "team": [
+   {
+    "dex": 828,
+    "level": 43
+   },
+   {
+    "dex": 559,
+    "level": 43
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "a73d66dd-c249-50e7-b084-a66f5f488ca6",
+  "name": "Team Yell Grunt",
+  "spriteUrl": "/trainers/classes/galar/yell-grunt-m.png",
+  "team": [
+   {
+    "dex": 675,
+    "level": 43
+   },
+   {
+    "dex": 860,
+    "level": 43
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "fc9ddc02-7b4f-598e-a066-ab746e6d9496",
+  "name": "Swimmer Pamela",
+  "spriteUrl": "/trainers/classes/galar/swimmer-f.png",
+  "team": [
+   {
+    "dex": 845,
+    "level": 43
+   },
+   {
+    "dex": 593,
+    "level": 43
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "eea86604-c6a0-579d-96d3-55669a4e2c2b",
+  "name": "Marnie",
+  "spriteUrl": "/trainers/classes/galar/marnie.png",
+  "team": [
+   {
+    "dex": 510,
+    "level": 43
+   },
+   {
+    "dex": 454,
+    "level": 43
+   },
+   {
+    "dex": 860,
+    "level": 44
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "6bd4616b-22f4-5f4c-a3d8-fc99eeeb92b9",
+  "name": "Piers",
+  "spriteUrl": "/trainers/classes/galar/piers.png",
+  "team": [
+   {
+    "dex": 687,
+    "level": 45
+   },
+   {
+    "dex": 435,
+    "level": 45
+   },
+   {
+    "dex": 862,
+    "level": 46
+   }
+  ],
+  "role": "leader",
+  "badge": "Dark Badge",
+  "upgradeLevel": null,
+  "battleBackground": "default"
+ },
+ {
+  "id": "be91844c-88cb-58f9-997b-d8e888d92a22",
+  "name": "Clerk Bryce",
+  "spriteUrl": "/trainers/classes/galar/clerk-m.png",
+  "team": [
+   {
+    "dex": 884,
+    "level": 45
+   },
+   {
+    "dex": 879,
+    "level": 45
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "8598509f-052e-5486-b2db-f6975b02e0d0",
+  "name": "Clerk Augustin",
+  "spriteUrl": "/trainers/classes/galar/clerk-m.png",
+  "team": [
+   {
+    "dex": 437,
+    "level": 45
+   },
+   {
+    "dex": 596,
+    "level": 45
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "4dee5f60-2a57-5512-ad0c-02e300ab9196",
+  "name": "Hiker Malcolm",
+  "spriteUrl": "/trainers/classes/galar/hiker.png",
+  "team": [
+   {
+    "dex": 208,
+    "level": 46
+   },
+   {
+    "dex": 879,
+    "level": 46
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "b3fcfc37-f2a6-593a-9ded-288b13044a7b",
+  "name": "Raihan",
+  "spriteUrl": "/trainers/classes/galar/raihan.png",
+  "team": [
+   {
+    "dex": 844,
+    "level": 46
+   },
+   {
+    "dex": 330,
+    "level": 47
+   },
+   {
+    "dex": 884,
+    "level": 48
+   }
+  ],
+  "role": "leader",
+  "badge": "Dragon Badge",
+  "upgradeLevel": null,
+  "battleBackground": "default"
+ },
+ {
+  "id": "a794e1ba-eaac-511f-9e9e-47c0aee94de5",
+  "name": "Model Eliza",
+  "spriteUrl": "/trainers/classes/galar/model.png",
+  "team": [
+   {
+    "dex": 873,
+    "level": 49
+   },
+   {
+    "dex": 866,
+    "level": 49
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "83917740-6092-54e5-b8f1-9d2a822feeb4",
+  "name": "Team Yell Grunt",
+  "spriteUrl": "/trainers/classes/galar/yell-grunt-m.png",
+  "team": [
+   {
+    "dex": 828,
+    "level": 49
+   },
+   {
+    "dex": 862,
+    "level": 49
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "56171ab2-e2ee-5ad5-8da0-88c3ca0df9f2",
+  "name": "Bede",
+  "spriteUrl": "/trainers/classes/galar/bede.png",
+  "team": [
+   {
+    "dex": 858,
+    "level": 50
+   },
+   {
+    "dex": 282,
+    "level": 50
+   },
+   {
+    "dex": 78,
+    "level": 50
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "b94de4f4-450b-5cdd-9554-87f050e600be",
+  "name": "Hop",
+  "spriteUrl": "/trainers/classes/galar/hop.png",
+  "team": [
+   {
+    "dex": 832,
+    "level": 50
+   },
+   {
+    "dex": 823,
+    "level": 50
+   },
+   {
+    "dex": 143,
+    "level": 51
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "afaf4815-5e10-5ccc-999d-42acd5bc5949",
+  "name": "Clerk Kendra",
+  "spriteUrl": "/trainers/classes/galar/clerk-f.png",
+  "team": [
+   {
+    "dex": 823,
+    "level": 54
+   },
+   {
+    "dex": 601,
+    "level": 54
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "71a767c7-c7ce-5713-81e8-c3c3c17cc386",
+  "name": "Clerk Gerald",
+  "spriteUrl": "/trainers/classes/galar/clerk-m.png",
+  "team": [
+   {
+    "dex": 879,
+    "level": 55
+   },
+   {
+    "dex": 598,
+    "level": 55
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "ad384b19-0567-5b6f-907f-b70d80fc4f85",
+  "name": "Worker Lara",
+  "spriteUrl": "/trainers/classes/galar/worker-f.png",
+  "team": [
+   {
+    "dex": 839,
+    "level": 55
+   },
+   {
+    "dex": 569,
+    "level": 55
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "f72d75a3-2548-5157-a52c-f6e119aee234",
+  "name": "Oleana",
+  "spriteUrl": "/trainers/classes/galar/oleana.png",
+  "team": [
+   {
+    "dex": 478,
+    "level": 52
+   },
+   {
+    "dex": 763,
+    "level": 52
+   },
+   {
+    "dex": 569,
+    "level": 53
+   }
+  ],
+  "role": "leader",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default"
+ },
+ {
+  "id": "e92a0830-24c2-5628-a1f4-053874059324",
+  "name": "Rose",
+  "spriteUrl": "/trainers/classes/galar/rose.png",
+  "team": [
+   {
+    "dex": 598,
+    "level": 61
+   },
+   {
+    "dex": 863,
+    "level": 61
+   },
+   {
+    "dex": 879,
+    "level": 63
+   }
+  ],
+  "role": "leader",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default"
+ },
+ {
+  "id": "ec664a57-603c-5efd-922f-ccf2e1d752be",
+  "name": "Clerk Bryce",
+  "spriteUrl": "/trainers/classes/galar/clerk-m.png",
+  "team": [
+   {
+    "dex": 884,
+    "level": 58
+   },
+   {
+    "dex": 879,
+    "level": 58
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "1280cf8b-50ed-5b4a-b618-2f2e90dd176c",
+  "name": "Model Eliza",
+  "spriteUrl": "/trainers/classes/galar/model.png",
+  "team": [
+   {
+    "dex": 873,
+    "level": 58
+   },
+   {
+    "dex": 866,
+    "level": 58
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "44ce7777-4cf5-5901-813f-6a2c3b6cc674",
+  "name": "Marnie",
+  "spriteUrl": "/trainers/classes/galar/marnie.png",
+  "team": [
+   {
+    "dex": 454,
+    "level": 57
+   },
+   {
+    "dex": 860,
+    "level": 58
+   },
+   {
+    "dex": 861,
+    "level": 59
+   }
+  ],
+  "role": "elite",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ]
+ },
+ {
+  "id": "d441cafb-3f08-5574-ab4e-5bb865205339",
+  "name": "Nessa",
+  "spriteUrl": "/trainers/classes/galar/nessa.png",
+  "team": [
+   {
+    "dex": 768,
+    "level": 59
+   },
+   {
+    "dex": 847,
+    "level": 60
+   },
+   {
+    "dex": 834,
+    "level": 61
+   }
+  ],
+  "role": "elite",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ]
+ },
+ {
+  "id": "034cdfb7-6dd9-5804-8fca-8951ee6682dd",
+  "name": "Bea",
+  "spriteUrl": "/trainers/classes/galar/bea.png",
+  "team": [
+   {
+    "dex": 853,
+    "level": 60
+   },
+   {
+    "dex": 865,
+    "level": 60
+   },
+   {
+    "dex": 870,
+    "level": 61
+   }
+  ],
+  "role": "elite",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ]
+ },
+ {
+  "id": "6887f24f-ca71-5e77-abb9-a8be436c7a42",
+  "name": "Raihan",
+  "spriteUrl": "/trainers/classes/galar/raihan.png",
+  "team": [
+   {
+    "dex": 330,
+    "level": 61
+   },
+   {
+    "dex": 844,
+    "level": 61
+   },
+   {
+    "dex": 884,
+    "level": 62
+   }
+  ],
+  "role": "elite",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ]
+ },
+ {
+  "id": "b4a12a66-7cf9-565d-88ee-fe2dde356b01",
+  "name": "Champion Leon",
+  "spriteUrl": "/trainers/classes/galar/champion-leon.png",
+  "team": [
+   {
+    "dex": 887,
+    "level": 62
+   },
+   {
+    "dex": 866,
+    "level": 64
+   },
+   {
+    "dex": 6,
+    "level": 65
+   }
+  ],
+  "role": "champion",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ]
+ },
+ {
+  "id": "767d9500-3edd-5c8b-9605-db055d552814",
+  "name": "Clerk Bryce II",
+  "spriteUrl": "/trainers/classes/galar/clerk-m.png",
+  "team": [
+   {
+    "dex": 884,
+    "level": 66
+   },
+   {
+    "dex": 879,
+    "level": 66
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "eebec2ff-520a-5e3a-9bea-707eb66e5681",
+  "name": "Model Eliza II",
+  "spriteUrl": "/trainers/classes/galar/model.png",
+  "team": [
+   {
+    "dex": 873,
+    "level": 66
+   },
+   {
+    "dex": 866,
+    "level": 66
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "d7af6fc8-b4d0-5350-ad23-56d5f687c8e0",
+  "name": "Hiker Malcolm II",
+  "spriteUrl": "/trainers/classes/galar/hiker.png",
+  "team": [
+   {
+    "dex": 208,
+    "level": 67
+   },
+   {
+    "dex": 879,
+    "level": 67
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "d91c91bd-fc24-5d10-9ee7-412ec2d0c99b",
+  "name": "Clerk Bryce II",
+  "spriteUrl": "/trainers/classes/galar/clerk-m.png",
+  "team": [
+   {
+    "dex": 884,
+    "level": 66
+   },
+   {
+    "dex": 879,
+    "level": 66
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "7bdf35df-408f-59c4-9731-bc17d285c6cb",
+  "name": "Hiker Malcolm II",
+  "spriteUrl": "/trainers/classes/galar/hiker.png",
+  "team": [
+   {
+    "dex": 208,
+    "level": 67
+   },
+   {
+    "dex": 879,
+    "level": 67
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "166e6f09-e8f0-531a-9406-4ff8fb3b1356",
+  "name": "Marnie II",
+  "spriteUrl": "/trainers/classes/galar/marnie.png",
+  "team": [
+   {
+    "dex": 454,
+    "level": 70
+   },
+   {
+    "dex": 860,
+    "level": 70
+   },
+   {
+    "dex": 861,
+    "level": 72
+   }
+  ],
+  "role": "elite",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ]
+ },
+ {
+  "id": "42d88a23-6c45-5021-8f29-29a60636ede8",
+  "name": "Nessa II",
+  "spriteUrl": "/trainers/classes/galar/nessa.png",
+  "team": [
+   {
+    "dex": 768,
+    "level": 70
+   },
+   {
+    "dex": 847,
+    "level": 71
+   },
+   {
+    "dex": 834,
+    "level": 72
+   }
+  ],
+  "role": "elite",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ]
+ },
+ {
+  "id": "6298d31c-7a96-5baf-8dc3-4a94f9e24976",
+  "name": "Bea II",
+  "spriteUrl": "/trainers/classes/galar/bea.png",
+  "team": [
+   {
+    "dex": 853,
+    "level": 71
+   },
+   {
+    "dex": 865,
+    "level": 71
+   },
+   {
+    "dex": 870,
+    "level": 72
+   }
+  ],
+  "role": "elite",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ]
+ },
+ {
+  "id": "116b423f-ed7c-5a30-8c90-f77e13c11e5e",
+  "name": "Raihan II",
+  "spriteUrl": "/trainers/classes/galar/raihan.png",
+  "team": [
+   {
+    "dex": 330,
+    "level": 72
+   },
+   {
+    "dex": 844,
+    "level": 72
+   },
+   {
+    "dex": 884,
+    "level": 73
+   }
+  ],
+  "role": "elite",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ]
+ },
+ {
+  "id": "396e5069-b490-5300-b934-72a13ed2ddb0",
+  "name": "Champion Leon II",
+  "spriteUrl": "/trainers/classes/galar/champion-leon.png",
+  "team": [
+   {
+    "dex": 887,
+    "level": 73
+   },
+   {
+    "dex": 866,
+    "level": 74
+   },
+   {
+    "dex": 6,
+    "level": 76
+   }
+  ],
+  "role": "champion",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ]
+ },
+ {
+  "id": "5843e53a-cbad-5a93-ad0d-ab5048ad3c5a",
+  "name": "Klara",
+  "spriteUrl": "/trainers/classes/galar/klara.png",
+  "team": [
+   {
+    "dex": 748,
+    "level": 64
+   },
+   {
+    "dex": 80,
+    "level": 65
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "50f7d13b-5fbd-569f-bb4a-cdf6af943acf",
+  "name": "Avery",
+  "spriteUrl": "/trainers/classes/galar/avery.png",
+  "team": [
+   {
+    "dex": 64,
+    "level": 64
+   },
+   {
+    "dex": 199,
+    "level": 65
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "6db13215-1b94-5d3e-8b8c-48513d75137c",
+  "name": "Black Belt Kenji II",
+  "spriteUrl": "/trainers/classes/galar/black-belt.png",
+  "team": [
+   {
+    "dex": 870,
+    "level": 65
+   },
+   {
+    "dex": 534,
+    "level": 65
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "78b7d756-4317-5ba4-b555-9117d72e1409",
+  "name": "Peony",
+  "spriteUrl": "/trainers/classes/galar/peony.png",
+  "team": [
+   {
+    "dex": 879,
+    "level": 68
+   },
+   {
+    "dex": 376,
+    "level": 69
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "c8deb49d-7974-5d63-8cf2-8032a48ac236",
+  "name": "Hiker Laurie II",
+  "spriteUrl": "/trainers/classes/galar/hiker.png",
+  "team": [
+   {
+    "dex": 874,
+    "level": 68
+   },
+   {
+    "dex": 839,
+    "level": 68
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "d12ad702-523f-5b84-9d18-3474d3461810",
+  "name": "Model Eliza II",
+  "spriteUrl": "/trainers/classes/galar/model.png",
+  "team": [
+   {
+    "dex": 873,
+    "level": 68
+   },
+   {
+    "dex": 866,
+    "level": 68
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "c2438f7f-6120-5a5a-8354-a92ff2b8824f",
+  "name": "Clerk Bryce III",
+  "spriteUrl": "/trainers/classes/galar/clerk-m.png",
+  "team": [
+   {
+    "dex": 841,
+    "level": 60
+   },
+   {
+    "dex": 842,
+    "level": 62
+   },
+   {
+    "dex": 714,
+    "level": 62
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "087bf88e-fe42-5843-83b2-14190b71a993",
+  "name": "Black Belt Kenji III",
+  "spriteUrl": "/trainers/classes/galar/black-belt.png",
+  "team": [
+   {
+    "dex": 865,
+    "level": 68
+   },
+   {
+    "dex": 559,
+    "level": 68
+   },
+   {
+    "dex": 532,
+    "level": 69
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "7e4b498e-731f-5f3d-b448-17cd245837ec",
+  "name": "Beauty Odette",
+  "spriteUrl": "/trainers/classes/galar/beauty.png",
+  "team": [
+   {
+    "dex": 684,
+    "level": 75
+   },
+   {
+    "dex": 860,
+    "level": 76
+   },
+   {
+    "dex": 858,
+    "level": 75
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "1004682e-7078-59a3-a0e4-fa4b65c25c56",
+  "name": "Backpacker Arlo",
+  "spriteUrl": "/trainers/classes/galar/backpacker.png",
+  "team": [
+   {
+    "dex": 899,
+    "level": 64
+   },
+   {
+    "dex": 900,
+    "level": 64
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "e5ca9269-8108-550a-b00e-c92d2b74ba77",
+  "name": "Hiker Maddox",
+  "spriteUrl": "/trainers/classes/galar/hiker.png",
+  "team": [
+   {
+    "dex": 901,
+    "level": 65
+   },
+   {
+    "dex": 903,
+    "level": 65
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "4248f70d-15a2-5325-b6dd-d9dce841db52",
+  "name": "Pokémon Breeder Carly",
+  "spriteUrl": "/trainers/classes/galar/breeder-f.png",
+  "team": [
+   {
+    "dex": 902,
+    "level": 64
+   },
+   {
+    "dex": 904,
+    "level": 64
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
  }
 ]

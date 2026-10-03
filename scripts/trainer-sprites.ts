@@ -24,7 +24,7 @@ const slug = (s: string) =>
     .replace(/-+/g, '-')
     .replace(/^-|-$/g, '')
 
-export type SpriteRegion = 'kanto' | 'johto' | 'hoenn' | 'sinnoh' | 'unova' | 'kalos' | 'alola'
+export type SpriteRegion = 'kanto' | 'johto' | 'hoenn' | 'sinnoh' | 'unova' | 'kalos' | 'alola' | 'galar'
 
 /**
  * Named characters per region: gym leaders, the Elite Four, the Champion, the rival and the villainous teams. The
@@ -191,6 +191,29 @@ const REGION_NAMED: Record<Exclude<SpriteRegion, 'kanto'>, Record<string, string
     Wicke: 'wicke',
     Blue: 'blue',
     Red: 'red',
+  },
+  galar: {
+    Milo: 'milo',
+    Nessa: 'nessa',
+    Kabu: 'kabu',
+    Bea: 'bea',
+    Allister: 'allister',
+    Opal: 'opal',
+    Gordie: 'gordie',
+    Melony: 'melony',
+    Piers: 'piers',
+    Raihan: 'raihan',
+    'Champion Leon': 'champion-leon',
+    Hop: 'hop',
+    Marnie: 'marnie',
+    Bede: 'bede',
+    Sonia: 'sonia',
+    Rose: 'rose',
+    Oleana: 'oleana',
+    Mustard: 'mustard',
+    Klara: 'klara',
+    Avery: 'avery',
+    Peony: 'peony',
   },
 }
 
@@ -448,11 +471,37 @@ const REGION_CLASSES: Record<Exclude<SpriteRegion, 'kanto'>, [prefix: string, sp
     ['Young Athlete', 'young-athlete-m'],
     ['Youngster', 'youngster'],
   ],
+  galar: [
+    ['Artist', 'artist'],
+    ['Backpacker', 'backpacker'],
+    ['Beauty', 'beauty'],
+    ['Black Belt', 'black-belt'],
+    ['Cameraman', 'cameraman'],
+    ['Clerk', 'clerk-m'],
+    ['Dancer', 'dancer'],
+    ['Doctor', 'doctor-m'],
+    ['Fisher', 'fisher'],
+    ['Gentleman', 'gentleman'],
+    ['Hiker', 'hiker'],
+    ['Lass', 'lass'],
+    ['Madame', 'madame'],
+    ['Model', 'model'],
+    ['Musician', 'musician'],
+    ['Poké Kid', 'poke-kid-m'],
+    ['Pokémon Breeder', 'breeder-m'],
+    ['Policeman', 'policeman'],
+    ['Reporter', 'reporter'],
+    ['School Kid', 'school-kid-m'],
+    ['Swimmer', 'swimmer-m'],
+    ['Team Yell Grunt', 'yell-grunt-m'],
+    ['Worker', 'worker-m'],
+    ['Youngster', 'youngster'],
+  ],
 }
 
 /** Female first names, so a mixed class ("Swimmer Nina") picks the right sprite where both exist. */
 const FEMALE =
-  /^(Mary|Naomi|Alexa|Sara|Nina|Nadia|Lena|Ivy|Claire|Rosa|Yuki|Mira|Dana|Tara|Elle|Nell|Kate|Erin|Amy|Beth|Marsha|Shanti|Blossom|Carol|Chandra|Anna|Lily|Lucia|Monique|Bonnie|Mariah|Raissa|Kimberly|Hilda|Jocelyn|Rachel|Gwendolyn|Corinne|Sabine|Abigail|Margaux|Elsa|Lilly|Leah|Lucy|Mercy|Nicole|Rae|Vicky|Emma|Ellie|Rosie|Dorothy|Keala|Kira)$/
+  /^(Mary|Naomi|Alexa|Sara|Nina|Nadia|Lena|Ivy|Claire|Rosa|Yuki|Mira|Dana|Tara|Elle|Nell|Kate|Erin|Amy|Beth|Marsha|Shanti|Blossom|Carol|Chandra|Anna|Lily|Lucia|Monique|Bonnie|Mariah|Raissa|Kimberly|Hilda|Jocelyn|Rachel|Gwendolyn|Corinne|Sabine|Abigail|Margaux|Elsa|Lilly|Leah|Lucy|Mercy|Nicole|Rae|Vicky|Emma|Ellie|Rosie|Dorothy|Keala|Kira|Chloe|Pamela|Lara|Kendra|Dina|Carly|Rhonda)$/
 
 /**
  * Male sprites that have a female counterpart cut from the same sheet. Sinnoh's classes are `-m` / `-f` pairs
@@ -504,6 +553,12 @@ const PAIRED: Record<Exclude<SpriteRegion, 'kanto'>, Record<string, string>> = {
       'young-athlete',
       'skull-grunt',
     ].map((base) => [`${base}-m`, `${base}-f`]),
+  ),
+  galar: Object.fromEntries(
+    ['breeder', 'clerk', 'doctor', 'poke-kid', 'school-kid', 'swimmer', 'worker', 'yell-grunt'].map((base) => [
+      `${base}-m`,
+      `${base}-f`,
+    ]),
   ),
 }
 

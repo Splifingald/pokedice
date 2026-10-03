@@ -77,9 +77,14 @@ async function main() {
 
   const list = (await (await fetch(`${API}/item/index.json`)).json()) as { results: { name: string; url: string }[] }
   const itemIds = new Map(list.results.map((r) => [r.name, r.url.replace(/\/+$/, '').split('/').pop()!]))
+  const skipped: string[] = []
   for (const it of items as { key: string }[]) {
     const id = itemIds.get(it.key)
-    if (!id) throw new Error(`no such item on the mirror: ${it.key}`)
+    // Items made up for this game (Galar's fossil pairs) have no PokeAPI row: their names are written by hand.
+    if (!id) {
+      skipped.push(it.key)
+      continue
+    }
     const n = await names(`item/${id}`)
     const key = `item.${it.key}`
     rows.set(key, [key, ...LANGS.map((l) => n[l] || cell(key, l))])
@@ -101,6 +106,7 @@ async function main() {
   for (const [key, row] of rows) if (!seen.has(key)) out.push(csvRow(row))
   writeFileSync(SHEET, out.join('\n') + '\n', 'utf8')
   console.log(`${rows.size} name rows written to ${SHEET}`)
+  if (skipped.length) console.log(`not on PokeAPI, kept as the sheet has them: ${skipped.join(', ')}`)
 }
 
 void main()
