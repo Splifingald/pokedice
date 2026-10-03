@@ -104,6 +104,24 @@
   ],
   "starterLevel": 5,
   "leagueAreaId": "d3464556-7bcd-5708-9a13-415e0326fb75",
+  "nextRegion": "alola",
+  "enabled": true
+ },
+ {
+  "id": "alola",
+  "name": "Alola",
+  "orderIndex": 6,
+  "dexRange": [
+   722,
+   809
+  ],
+  "starters": [
+   722,
+   725,
+   728
+  ],
+  "starterLevel": 5,
+  "leagueAreaId": "af565afe-bfc6-516a-8a4c-bba17bb1ff48",
   "nextRegion": null,
   "enabled": true
  }

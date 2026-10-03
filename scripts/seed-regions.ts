@@ -1,6 +1,6 @@
 /**
- * pnpm seed-regions — appends Johto (152–251), Hoenn (252–386), Sinnoh (387–493), Unova (494–649) and Kalos
- * (650–721) to the offline bundle.
+ * pnpm seed-regions — appends Johto (152–251), Hoenn (252–386), Sinnoh (387–493), Unova (494–649), Kalos
+ * (650–721) and Alola (722–809) to the offline bundle.
  *
  * Unlike `pnpm seed`, this script is **additive**: it reads `src/data/*.json`, keeps every existing row exactly as it
  * is, and only appends what is missing. That matters because the committed bundle is ahead of `scripts/seed.ts` —
@@ -31,6 +31,7 @@ import { JOHTO_AREAS, JOHTO_STARTERS } from './content-johto'
 import { SINNOH_AREAS, SINNOH_STARTERS } from './content-sinnoh'
 import { UNOVA_AREAS, UNOVA_STARTERS } from './content-unova'
 import { KALOS_AREAS, KALOS_STARTERS } from './content-kalos'
+import { ALOLA_AREAS, ALOLA_STARTERS } from './content-alola'
 import { liveDicePlan, type LegendKind } from './dice-live'
 import type { AreaPlan } from './content'
 import type { Area, BattleBackground, Evolution, ItemDef, PokeType, Region, Species, Trainer } from '../src/engine/types'
@@ -57,8 +58,8 @@ const argOf = (flag: string) => {
   const i = process.argv.indexOf(flag)
   return i > 0 ? Number(process.argv[i + 1]) : null
 }
-const FIRST_NEW_DEX = argOf('--from') ?? 650
-const DEX_MAX = argOf('--to') ?? 721
+const FIRST_NEW_DEX = argOf('--from') ?? 722
+const DEX_MAX = argOf('--to') ?? 809
 
 // ---------------------------------------------------------------- mirror access (cached)
 
@@ -192,6 +193,12 @@ const FORCED_LEVEL: Record<number, number> = {
   292: 20,
   // Darumaka evolves at Lv.35; PokeAPI lists Galarian Darumaka's Ice Stone on the same edge, which would win otherwise.
   555: 35,
+  // Gen 7's three that evolve on something this game has not got. Type: Null turns into Silvally on friendship, met
+  // around Lv.40 on Poni; Poipole learns Dragon Pulse at Lv.40 in the games and is entrusted at 55 here; Meltan needs
+  // 400 candies from Pokémon GO. Each gets a level a little past where it is found.
+  773: 45,
+  804: 60,
+  809: 50,
 }
 
 /**
@@ -249,6 +256,33 @@ const LEGENDARY_CATCH: Record<number, number> = {
   719: 5, // Diancie    ·  the mythicals, as Mew
   720: 5, // Hoopa
   721: 5, // Volcanion
+  785: 6, // Tapu Koko  ·  Alola: the guardians and the Ultra Beasts, as the birds
+  786: 6, // Tapu Lele
+  787: 6, // Tapu Bulu
+  788: 6, // Tapu Fini
+  793: 6, // Nihilego
+  794: 6, // Buzzwole
+  795: 6, // Pheromosa
+  796: 6, // Xurkitree
+  797: 6, // Celesteela
+  798: 6, // Kartana
+  799: 6, // Guzzlord
+  803: 6, // Poipole
+  804: 6, // Naganadel
+  805: 6, // Stakataka
+  806: 6, // Blacephalon
+  789: 6, // Cosmog     ·  the story's nebula, a gentle catch
+  790: 6, // Cosmoem
+  772: 6, // Type: Null ·  capture rate 3, but a found Pokémon rather than a legendary
+  773: 6, // Silvally
+  791: 7, // Solgaleo   ·  box legendaries
+  792: 7, // Lunala
+  800: 7, // Necrozma
+  801: 5, // Magearna   ·  the mythicals, as Mew
+  802: 5, // Marshadow
+  807: 5, // Zeraora
+  808: 5, // Meltan
+  809: 5, // Melmetal
 }
 
 /** One evolution edge, in the shape the bundle already uses for Kanto. */
@@ -452,10 +486,14 @@ const LEGEND_KIND: Record<number, LegendKind> = {
   494: 'mythical', 647: 'mythical', 648: 'mythical', 649: 'mythical',
   716: 'box', 717: 'box', 718: 'box',
   719: 'mythical', 720: 'mythical', 721: 'mythical',
+  785: 'trio', 786: 'trio', 787: 'trio', 788: 'trio',
+  793: 'trio', 794: 'trio', 795: 'trio', 796: 'trio', 797: 'trio', 798: 'trio', 799: 'trio', 804: 'trio', 805: 'trio', 806: 'trio',
+  791: 'box', 792: 'box', 800: 'box',
+  801: 'mythical', 802: 'mythical', 807: 'mythical', 809: 'mythical',
 }
 
-/** Lines that level slowly into a 600-BST final, Gible's shape: Axew's, Deino's and Goomy's. */
-const PSEUDO_LINES = new Set([610, 611, 612, 633, 634, 635, 704, 705, 706])
+/** Lines that level slowly into a 600-BST final, Gible's shape: Axew's, Deino's, Goomy's and Jangmo-o's. */
+const PSEUDO_LINES = new Set([610, 611, 612, 633, 634, 635, 704, 705, 706, 782, 783, 784])
 
 /**
  * Rows `liveDicePlan` reads wrongly, set to what the live game does for their closest relative. The rules go by stage
@@ -541,7 +579,7 @@ interface RegionPlan {
   dexRange: [number, number]
   starters: number[]
   plans: AreaPlan[]
-  spriteRegion: 'johto' | 'hoenn' | 'sinnoh' | 'unova' | 'kalos'
+  spriteRegion: 'johto' | 'hoenn' | 'sinnoh' | 'unova' | 'kalos' | 'alola'
   /** Key of the area whose clearing is "the league is done". */
   leagueKey: string
   nextRegion: string | null
@@ -735,7 +773,7 @@ const REGION_PLANS: RegionPlan[] = [
     plans: KALOS_AREAS,
     spriteRegion: 'kalos',
     leagueKey: 'ka-pokemon-league',
-    nextRegion: null,
+    nextRegion: 'alola',
     backgrounds: {
       'Routes 1 & 2 and Aquacorde Town': 'grass',
       'Santalune Forest': 'grass',
@@ -769,6 +807,60 @@ const REGION_PLANS: RegionPlan[] = [
       'The Diamond Domain': 'rock',
       "Hoopa's Ring": 'default',
       'The Nebel Plateau': 'rock',
+    },
+  },
+  {
+    id: 'alola',
+    name: 'Alola',
+    orderIndex: 6,
+    dexRange: [722, 809],
+    starters: ALOLA_STARTERS,
+    plans: ALOLA_AREAS,
+    spriteRegion: 'alola',
+    leagueKey: 'al-pokemon-league',
+    nextRegion: null,
+    backgrounds: {
+      "Route 1 & Hau'oli Outskirts": 'grass',
+      "Hau'oli City & the Cemetery": 'default',
+      'Route 2 & the Verdant Cavern': 'rock',
+      'Route 3 & Melemele Meadow': 'grass',
+      "Ten Carat Hill & Kala'e Bay": 'rock',
+      'Route 1 South & Iki Town': 'grass',
+      'Heahea City & Routes 4–6': 'grass',
+      'Brooklet Hill': 'water',
+      'Routes 7 & 8 and Wela Volcano Park': 'rock',
+      'Lush Jungle': 'grass',
+      'Memorial Hill, Akala Outskirts & Konikoni City': 'default',
+      'Hano Beach & Aether Paradise': 'sea',
+      'Malie City & Malie Garden': 'default',
+      'Route 10 & Mount Hokulani': 'rock',
+      'Routes 11 & 12 and Blush Mountain': 'rock',
+      'Routes 13 & 14, Haina Desert & Tapu Village': 'rock',
+      'Routes 15 & 16 and the Thrifty Megamart': 'default',
+      'Route 17 & Po Town': 'default',
+      'Aether Paradise': 'default',
+      'Seafolk Village, Poni Wilds & Ancient Poni Path': 'sea',
+      'Exeggutor Island & Vast Poni Canyon': 'rock',
+      'Mount Lanakila': 'rock',
+      'The Pokémon League': 'default',
+      'Mount Lanakila II': 'rock',
+      'The Pokémon League II': 'default',
+      'Poni Gauntlet & the Battle Tree': 'grass',
+      'The Poké Pelago': 'sea',
+      'The Lakes of the Sunne and Moone': 'water',
+      'The Altar of the Sunne and Moone': 'default',
+      'Ultra Megalopolis': 'default',
+      'The Ruins of the Guardians': 'rock',
+      'Ultra Space: the Deep Sea & the Jungle': 'water',
+      'Ultra Space: the Desert & the Plant': 'rock',
+      'Ultra Space: the Crater & the Forest': 'rock',
+      'Ultra Space: the Ruin': 'rock',
+      'Poni Grove': 'grass',
+      'The Ultra Recon Squad': 'default',
+      "Magearna's Workshop": 'default',
+      "Ten Carat Hill's Farthest Hollow": 'rock',
+      'The Blush Mountain Storm': 'rock',
+      'The Mystery Box': 'default',
     },
   },
 ]

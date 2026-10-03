@@ -24,7 +24,7 @@ const slug = (s: string) =>
     .replace(/-+/g, '-')
     .replace(/^-|-$/g, '')
 
-export type SpriteRegion = 'kanto' | 'johto' | 'hoenn' | 'sinnoh' | 'unova' | 'kalos'
+export type SpriteRegion = 'kanto' | 'johto' | 'hoenn' | 'sinnoh' | 'unova' | 'kalos' | 'alola'
 
 /**
  * Named characters per region: gym leaders, the Elite Four, the Champion, the rival and the villainous teams. The
@@ -162,6 +162,35 @@ const REGION_NAMED: Record<Exclude<SpriteRegion, 'kanto'>, Record<string, string
     'Battle Chatelaine Evelyn': 'evelyn',
     'Battle Chatelaine Dana': 'dana',
     'Battle Chatelaine Morgan': 'morgan',
+  },
+  alola: {
+    'Captain Ilima': 'ilima',
+    'Captain Lana': 'lana',
+    'Captain Kiawe': 'kiawe',
+    'Captain Mallow': 'mallow',
+    'Captain Sophocles': 'sophocles',
+    'Captain Acerola': 'acerola',
+    'Captain Mina': 'mina',
+    'Kahuna Hala': 'hala',
+    'Kahuna Olivia': 'olivia',
+    'Kahuna Nanu': 'nanu',
+    'Kahuna Hapu': 'hapu',
+    'Elite Four Hala': 'hala',
+    'Elite Four Olivia': 'olivia',
+    'Elite Four Acerola': 'acerola',
+    'Elite Four Kahili': 'elite-kahili',
+    'Elite Four Molayne': 'elite-molayne',
+    'Professor Kukui': 'champion-kukui',
+    Hau: 'hau',
+    Gladion: 'gladion',
+    Lillie: 'lillie',
+    Guzma: 'guzma',
+    Plumeria: 'plumeria',
+    Lusamine: 'lusamine',
+    Faba: 'faba',
+    Wicke: 'wicke',
+    Blue: 'blue',
+    Red: 'red',
   },
 }
 
@@ -383,11 +412,47 @@ const REGION_CLASSES: Record<Exclude<SpriteRegion, 'kanto'>, [prefix: string, sp
     ['Worker', 'worker'],
     ['Youngster', 'youngster'],
   ],
+  alola: [
+    ['Ace Trainer', 'ace-trainer-m'],
+    ['Aether Foundation Employee', 'aether-employee-m'],
+    ['Beauty', 'beauty'],
+    ['Bellhop', 'bellhop'],
+    ['Black Belt', 'black-belt'],
+    ['Collector', 'collector'],
+    ['Cook', 'cook'],
+    ['Dancer', 'dancer'],
+    ['Firefighter', 'firefighter'],
+    ['Fisherman', 'fisherman'],
+    ['Gentleman', 'gentleman'],
+    ['Golfer', 'golfer'],
+    ['Hiker', 'hiker'],
+    ['Janitor', 'janitor'],
+    ['Lass', 'lass'],
+    ['Madame', 'madame'],
+    ['Office Worker', 'office-worker-m'],
+    ['Pokémon Breeder', 'breeder-m'],
+    ['Policeman', 'policeman'],
+    ['Preschooler', 'preschooler-m'],
+    ['Punk Girl', 'punk-girl'],
+    ['Punk Guy', 'punk-guy'],
+    ['Rising Star', 'rising-star-m'],
+    ['Scientist', 'scientist'],
+    ['Sightseer', 'sightseer-m'],
+    ['Surfer', 'surfer'],
+    ['Swimmer', 'swimmer-m'],
+    ['Teacher', 'teacher'],
+    ['Team Skull Grunt', 'skull-grunt-m'],
+    ['Trial Guide', 'trial-guide-m'],
+    ['Veteran', 'veteran-m'],
+    ['Worker', 'worker'],
+    ['Young Athlete', 'young-athlete-m'],
+    ['Youngster', 'youngster'],
+  ],
 }
 
 /** Female first names, so a mixed class ("Swimmer Nina") picks the right sprite where both exist. */
 const FEMALE =
-  /^(Mary|Naomi|Alexa|Sara|Nina|Nadia|Lena|Ivy|Claire|Rosa|Yuki|Mira|Dana|Tara|Elle|Nell|Kate|Erin|Amy|Beth|Marsha|Shanti|Blossom|Carol|Chandra|Anna|Lily|Lucia|Monique|Bonnie|Mariah|Raissa|Kimberly|Hilda|Jocelyn|Rachel|Gwendolyn|Corinne|Sabine|Abigail|Margaux|Elsa)$/
+  /^(Mary|Naomi|Alexa|Sara|Nina|Nadia|Lena|Ivy|Claire|Rosa|Yuki|Mira|Dana|Tara|Elle|Nell|Kate|Erin|Amy|Beth|Marsha|Shanti|Blossom|Carol|Chandra|Anna|Lily|Lucia|Monique|Bonnie|Mariah|Raissa|Kimberly|Hilda|Jocelyn|Rachel|Gwendolyn|Corinne|Sabine|Abigail|Margaux|Elsa|Lilly|Leah|Lucy|Mercy|Nicole|Rae|Vicky|Emma|Ellie|Rosie|Dorothy|Keala|Kira)$/
 
 /**
  * Male sprites that have a female counterpart cut from the same sheet. Sinnoh's classes are `-m` / `-f` pairs
@@ -422,6 +487,22 @@ const PAIRED: Record<Exclude<SpriteRegion, 'kanto'>, Record<string, string>> = {
       'swimmer',
       'veteran',
       'flare-grunt',
+    ].map((base) => [`${base}-m`, `${base}-f`]),
+  ),
+  alola: Object.fromEntries(
+    [
+      'ace-trainer',
+      'aether-employee',
+      'breeder',
+      'office-worker',
+      'preschooler',
+      'rising-star',
+      'sightseer',
+      'swimmer',
+      'trial-guide',
+      'veteran',
+      'young-athlete',
+      'skull-grunt',
     ].map((base) => [`${base}-m`, `${base}-f`]),
   ),
 }

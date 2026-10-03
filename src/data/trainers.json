@@ -15955,5 +15955,2291 @@
   "badge": null,
   "upgradeLevel": null,
   "battleBackground": null
+ },
+ {
+  "id": "e2ed8665-e615-5e9c-95b7-2a6ed81d34f9",
+  "name": "Youngster Joey",
+  "spriteUrl": "/trainers/classes/alola/youngster.png",
+  "team": [
+   {
+    "dex": 734,
+    "level": 6
+   },
+   {
+    "dex": 731,
+    "level": 7
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "ffd99396-cb55-5b58-ba0c-559b71dbc67b",
+  "name": "Lass Kimberly",
+  "spriteUrl": "/trainers/classes/alola/lass.png",
+  "team": [
+   {
+    "dex": 165,
+    "level": 7
+   },
+   {
+    "dex": 278,
+    "level": 7
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "1faed1a5-264b-54e9-9db9-498e6491c169",
+  "name": "Hau",
+  "spriteUrl": "/trainers/classes/alola/hau.png",
+  "team": [
+   {
+    "dex": 172,
+    "level": 8
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "cac298e4-705c-5278-b8d8-65b31e722c4e",
+  "name": "Team Skull Grunt",
+  "spriteUrl": "/trainers/classes/alola/skull-grunt-m.png",
+  "team": [
+   {
+    "dex": 41,
+    "level": 8
+   },
+   {
+    "dex": 734,
+    "level": 8
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "5029c7ad-ffe2-5c53-b088-9a5aa41609a6",
+  "name": "Trial Guide Oscar",
+  "spriteUrl": "/trainers/classes/alola/trial-guide-m.png",
+  "team": [
+   {
+    "dex": 734,
+    "level": 10
+   },
+   {
+    "dex": 19,
+    "level": 10
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "e5c2f611-a2d2-5ab8-bdc5-df776bfc4013",
+  "name": "Team Skull Grunt",
+  "spriteUrl": "/trainers/classes/alola/skull-grunt-m.png",
+  "team": [
+   {
+    "dex": 96,
+    "level": 10
+   },
+   {
+    "dex": 23,
+    "level": 10
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "ae169afa-2442-5f15-9766-6f8a36e0474f",
+  "name": "Team Skull Grunt",
+  "spriteUrl": "/trainers/classes/alola/skull-grunt-m.png",
+  "team": [
+   {
+    "dex": 41,
+    "level": 10
+   },
+   {
+    "dex": 19,
+    "level": 11
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "9278accb-60fa-54d6-8d86-54388af3ae06",
+  "name": "Hau",
+  "spriteUrl": "/trainers/classes/alola/hau.png",
+  "team": [
+   {
+    "dex": 172,
+    "level": 10
+   },
+   {
+    "dex": 133,
+    "level": 10
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "4f91ae65-c2ed-5625-8493-cc888560e844",
+  "name": "Captain Ilima",
+  "spriteUrl": "/trainers/classes/alola/ilima.png",
+  "team": [
+   {
+    "dex": 734,
+    "level": 10
+   },
+   {
+    "dex": 235,
+    "level": 11
+   },
+   {
+    "dex": 735,
+    "level": 12
+   }
+  ],
+  "role": "leader",
+  "badge": "Normalium Z",
+  "upgradeLevel": null,
+  "battleBackground": "default"
+ },
+ {
+  "id": "6c82d1ec-2289-53aa-8138-abb77517519d",
+  "name": "Team Skull Grunt",
+  "spriteUrl": "/trainers/classes/alola/skull-grunt-m.png",
+  "team": [
+   {
+    "dex": 56,
+    "level": 12
+   },
+   {
+    "dex": 41,
+    "level": 12
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "e4a371de-c917-524e-aa8f-6aeb28996d34",
+  "name": "Team Skull Grunt",
+  "spriteUrl": "/trainers/classes/alola/skull-grunt-m.png",
+  "team": [
+   {
+    "dex": 734,
+    "level": 12
+   },
+   {
+    "dex": 23,
+    "level": 12
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "43bc54a0-4975-5cd4-8e7b-ba0c404315dc",
+  "name": "Rising Star Taylor",
+  "spriteUrl": "/trainers/classes/alola/rising-star-m.png",
+  "team": [
+   {
+    "dex": 742,
+    "level": 12
+   },
+   {
+    "dex": 741,
+    "level": 12
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "2c0ff913-af99-5b84-a65e-ee4144818874",
+  "name": "Gladion",
+  "spriteUrl": "/trainers/classes/alola/gladion.png",
+  "team": [
+   {
+    "dex": 41,
+    "level": 13
+   },
+   {
+    "dex": 772,
+    "level": 14
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "59ad37c4-cfdf-5014-b5b7-010974af81b2",
+  "name": "Hiker Wesley",
+  "spriteUrl": "/trainers/classes/alola/hiker.png",
+  "team": [
+   {
+    "dex": 524,
+    "level": 13
+   },
+   {
+    "dex": 66,
+    "level": 13
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "2388acbf-0822-592a-a9d5-d2bea5482a11",
+  "name": "Swimmer Kai",
+  "spriteUrl": "/trainers/classes/alola/swimmer-m.png",
+  "team": [
+   {
+    "dex": 116,
+    "level": 13
+   },
+   {
+    "dex": 90,
+    "level": 13
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "e642dfa7-4a30-5d9c-91d0-73f0c80688c2",
+  "name": "Fisherman Russell",
+  "spriteUrl": "/trainers/classes/alola/fisherman.png",
+  "team": [
+   {
+    "dex": 129,
+    "level": 13
+   },
+   {
+    "dex": 86,
+    "level": 14
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "465f30f0-0236-5dc6-b10a-5cae56a9b1de",
+  "name": "Youngster Tyler",
+  "spriteUrl": "/trainers/classes/alola/youngster.png",
+  "team": [
+   {
+    "dex": 732,
+    "level": 14
+   },
+   {
+    "dex": 744,
+    "level": 14
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "d5104e99-1d30-5d94-9bdf-5a81489753f9",
+  "name": "Lass Ellen",
+  "spriteUrl": "/trainers/classes/alola/lass.png",
+  "team": [
+   {
+    "dex": 742,
+    "level": 14
+   },
+   {
+    "dex": 741,
+    "level": 14
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "17a95eb7-00cb-5c1a-aff5-119290c1b907",
+  "name": "Hau",
+  "spriteUrl": "/trainers/classes/alola/hau.png",
+  "team": [
+   {
+    "dex": 172,
+    "level": 14
+   },
+   {
+    "dex": 133,
+    "level": 14
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "6f841802-a4ca-5e58-bc31-2c5037791a07",
+  "name": "Kahuna Hala",
+  "spriteUrl": "/trainers/classes/alola/hala.png",
+  "team": [
+   {
+    "dex": 56,
+    "level": 15
+   },
+   {
+    "dex": 296,
+    "level": 15
+   },
+   {
+    "dex": 739,
+    "level": 16
+   }
+  ],
+  "role": "leader",
+  "badge": "Fightinium Z",
+  "upgradeLevel": null,
+  "battleBackground": "default"
+ },
+ {
+  "id": "48d4e541-5da0-5d36-bd29-2ed3e0f3de97",
+  "name": "Rising Star Leah",
+  "spriteUrl": "/trainers/classes/alola/rising-star-f.png",
+  "team": [
+   {
+    "dex": 749,
+    "level": 16
+   },
+   {
+    "dex": 506,
+    "level": 16
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "ab6e4d36-e8c1-5d4f-86cf-419998047ec9",
+  "name": "Preschooler Lilly",
+  "spriteUrl": "/trainers/classes/alola/preschooler-f.png",
+  "team": [
+   {
+    "dex": 174,
+    "level": 15
+   },
+   {
+    "dex": 133,
+    "level": 15
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "0cd3c6d0-14ce-5388-8d69-48bfdb00b878",
+  "name": "Hiker Calhoun",
+  "spriteUrl": "/trainers/classes/alola/hiker.png",
+  "team": [
+   {
+    "dex": 749,
+    "level": 16
+   },
+   {
+    "dex": 524,
+    "level": 16
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "f3cf001e-bbfb-5d24-bbf3-06318b1cade0",
+  "name": "Team Skull Grunt",
+  "spriteUrl": "/trainers/classes/alola/skull-grunt-m.png",
+  "team": [
+   {
+    "dex": 19,
+    "level": 16
+   },
+   {
+    "dex": 88,
+    "level": 16
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "1e6db40c-30ad-5d88-a778-458bea45c450",
+  "name": "Fisherman Edmond",
+  "spriteUrl": "/trainers/classes/alola/fisherman.png",
+  "team": [
+   {
+    "dex": 118,
+    "level": 18
+   },
+   {
+    "dex": 746,
+    "level": 18
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "4428b3a2-c9c8-51da-a066-a90af7a20a35",
+  "name": "Swimmer Lucy",
+  "spriteUrl": "/trainers/classes/alola/swimmer-f.png",
+  "team": [
+   {
+    "dex": 60,
+    "level": 18
+   },
+   {
+    "dex": 283,
+    "level": 18
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "c0dfe7e4-0c3a-51f2-8f40-db15bcb9786f",
+  "name": "Trial Guide Ewan",
+  "spriteUrl": "/trainers/classes/alola/trial-guide-m.png",
+  "team": [
+   {
+    "dex": 751,
+    "level": 18
+   },
+   {
+    "dex": 54,
+    "level": 18
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "2d323fd2-b283-56cf-99fb-d525a90ba2ec",
+  "name": "Captain Lana",
+  "spriteUrl": "/trainers/classes/alola/lana.png",
+  "team": [
+   {
+    "dex": 751,
+    "level": 18
+   },
+   {
+    "dex": 594,
+    "level": 19
+   },
+   {
+    "dex": 746,
+    "level": 20
+   }
+  ],
+  "role": "leader",
+  "badge": "Waterium Z",
+  "upgradeLevel": null,
+  "battleBackground": "default"
+ },
+ {
+  "id": "f11e2667-9c31-589d-af8b-70f10caba98e",
+  "name": "Firefighter Ernest",
+  "spriteUrl": "/trainers/classes/alola/firefighter.png",
+  "team": [
+   {
+    "dex": 661,
+    "level": 19
+   },
+   {
+    "dex": 757,
+    "level": 19
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "5665ba00-732d-529b-bbf0-13bfb08e26b0",
+  "name": "Surfer Kalani",
+  "spriteUrl": "/trainers/classes/alola/surfer.png",
+  "team": [
+   {
+    "dex": 771,
+    "level": 19
+   },
+   {
+    "dex": 120,
+    "level": 19
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "ef4262ae-c88f-5031-98ef-cad45ead2a1d",
+  "name": "Team Skull Grunt",
+  "spriteUrl": "/trainers/classes/alola/skull-grunt-m.png",
+  "team": [
+   {
+    "dex": 757,
+    "level": 20
+   },
+   {
+    "dex": 41,
+    "level": 20
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "d8a8325d-a9dd-5865-b389-ded18cb9dcb9",
+  "name": "Captain Kiawe",
+  "spriteUrl": "/trainers/classes/alola/kiawe.png",
+  "team": [
+   {
+    "dex": 757,
+    "level": 20
+   },
+   {
+    "dex": 662,
+    "level": 21
+   },
+   {
+    "dex": 758,
+    "level": 22
+   }
+  ],
+  "role": "leader",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default"
+ },
+ {
+  "id": "1bde458e-8a5f-5914-ad26-cc52847d40a0",
+  "name": "Pokémon Breeder Mercy",
+  "spriteUrl": "/trainers/classes/alola/breeder-f.png",
+  "team": [
+   {
+    "dex": 761,
+    "level": 21
+   },
+   {
+    "dex": 764,
+    "level": 21
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "d79be1b5-bbbd-5cfd-8a99-3118f1f5b70a",
+  "name": "Trial Guide Kent",
+  "spriteUrl": "/trainers/classes/alola/trial-guide-m.png",
+  "team": [
+   {
+    "dex": 732,
+    "level": 21
+   },
+   {
+    "dex": 753,
+    "level": 21
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "8f7c9e03-a70e-5faa-b2da-ea328629b8ab",
+  "name": "Hau",
+  "spriteUrl": "/trainers/classes/alola/hau.png",
+  "team": [
+   {
+    "dex": 25,
+    "level": 22
+   },
+   {
+    "dex": 133,
+    "level": 21
+   },
+   {
+    "dex": 714,
+    "level": 21
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "4d870364-1d61-5516-a2f7-717f067720bf",
+  "name": "Captain Mallow",
+  "spriteUrl": "/trainers/classes/alola/mallow.png",
+  "team": [
+   {
+    "dex": 732,
+    "level": 22
+   },
+   {
+    "dex": 753,
+    "level": 22
+   },
+   {
+    "dex": 754,
+    "level": 24
+   }
+  ],
+  "role": "leader",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default"
+ },
+ {
+  "id": "7446e7c5-9edc-59c6-b66f-7daae84b4a1b",
+  "name": "Team Skull Grunt",
+  "spriteUrl": "/trainers/classes/alola/skull-grunt-m.png",
+  "team": [
+   {
+    "dex": 747,
+    "level": 24
+   },
+   {
+    "dex": 92,
+    "level": 24
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "1e689dbe-e8f7-565e-9a59-86934b00f2e0",
+  "name": "Team Skull Grunt",
+  "spriteUrl": "/trainers/classes/alola/skull-grunt-m.png",
+  "team": [
+   {
+    "dex": 41,
+    "level": 24
+   },
+   {
+    "dex": 88,
+    "level": 25
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "a74915b8-d2a4-5196-88d0-1175519d200b",
+  "name": "Beauty Nicole",
+  "spriteUrl": "/trainers/classes/alola/beauty.png",
+  "team": [
+   {
+    "dex": 222,
+    "level": 24
+   },
+   {
+    "dex": 370,
+    "level": 24
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "83a4bf1d-ca8a-5a5b-8018-617c4078dcdd",
+  "name": "Plumeria",
+  "spriteUrl": "/trainers/classes/alola/plumeria.png",
+  "team": [
+   {
+    "dex": 42,
+    "level": 25
+   },
+   {
+    "dex": 758,
+    "level": 26
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "8ccda063-9222-5190-a949-145815db7a6f",
+  "name": "Kahuna Olivia",
+  "spriteUrl": "/trainers/classes/alola/olivia.png",
+  "team": [
+   {
+    "dex": 299,
+    "level": 26
+   },
+   {
+    "dex": 525,
+    "level": 26
+   },
+   {
+    "dex": 745,
+    "level": 27
+   }
+  ],
+  "role": "leader",
+  "badge": "Rockium Z",
+  "upgradeLevel": null,
+  "battleBackground": "default"
+ },
+ {
+  "id": "2d97ffca-24c4-56c3-a69b-792913750dc4",
+  "name": "Aether Foundation Employee Jordan",
+  "spriteUrl": "/trainers/classes/alola/aether-employee-m.png",
+  "team": [
+   {
+    "dex": 81,
+    "level": 24
+   },
+   {
+    "dex": 137,
+    "level": 25
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "b126bc3e-9c99-5734-b3c6-2032fe5f0465",
+  "name": "Aether Foundation Employee Rae",
+  "spriteUrl": "/trainers/classes/alola/aether-employee-f.png",
+  "team": [
+   {
+    "dex": 121,
+    "level": 25
+   },
+   {
+    "dex": 279,
+    "level": 25
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "4c44cb19-2e9c-5583-9278-23c35e1fecff",
+  "name": "Sightseer Mira",
+  "spriteUrl": "/trainers/classes/alola/sightseer-f.png",
+  "team": [
+   {
+    "dex": 769,
+    "level": 25
+   },
+   {
+    "dex": 771,
+    "level": 25
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "a291f26a-d650-51f8-b6fa-d31e21e30e59",
+  "name": "Hau",
+  "spriteUrl": "/trainers/classes/alola/hau.png",
+  "team": [
+   {
+    "dex": 25,
+    "level": 26
+   },
+   {
+    "dex": 134,
+    "level": 26
+   },
+   {
+    "dex": 714,
+    "level": 25
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "618a3856-008e-5a72-8745-c08d86f11be5",
+  "name": "Office Worker Rob",
+  "spriteUrl": "/trainers/classes/alola/office-worker-m.png",
+  "team": [
+   {
+    "dex": 81,
+    "level": 27
+   },
+   {
+    "dex": 52,
+    "level": 27
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "678dff2c-99b1-5e3f-8962-110b5bb79f08",
+  "name": "Golfer Nathaniel",
+  "spriteUrl": "/trainers/classes/alola/golfer.png",
+  "team": [
+   {
+    "dex": 284,
+    "level": 27
+   },
+   {
+    "dex": 752,
+    "level": 27
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "1e56740b-9148-5eab-b70c-9fbee6647b09",
+  "name": "Team Skull Grunt",
+  "spriteUrl": "/trainers/classes/alola/skull-grunt-m.png",
+  "team": [
+   {
+    "dex": 568,
+    "level": 27
+   },
+   {
+    "dex": 757,
+    "level": 27
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "ab4d5f00-3c74-5de3-9a7d-be191bbc2836",
+  "name": "Scientist Hugh",
+  "spriteUrl": "/trainers/classes/alola/scientist.png",
+  "team": [
+   {
+    "dex": 81,
+    "level": 28
+   },
+   {
+    "dex": 605,
+    "level": 28
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "c359c22b-b30c-5d00-a2b1-6681c6031012",
+  "name": "Ace Trainer Emma",
+  "spriteUrl": "/trainers/classes/alola/ace-trainer-f.png",
+  "team": [
+   {
+    "dex": 774,
+    "level": 28
+   },
+   {
+    "dex": 605,
+    "level": 28
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "c8353701-42ed-5a91-9d53-49ba716ce16e",
+  "name": "Youngster Raymond",
+  "spriteUrl": "/trainers/classes/alola/youngster.png",
+  "team": [
+   {
+    "dex": 22,
+    "level": 27
+   },
+   {
+    "dex": 739,
+    "level": 27
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "018f1a21-bb29-56a5-a929-6228bbad679b",
+  "name": "Captain Sophocles",
+  "spriteUrl": "/trainers/classes/alola/sophocles.png",
+  "team": [
+   {
+    "dex": 777,
+    "level": 27
+   },
+   {
+    "dex": 737,
+    "level": 27
+   },
+   {
+    "dex": 738,
+    "level": 29
+   }
+  ],
+  "role": "leader",
+  "badge": "Electrium Z",
+  "upgradeLevel": null,
+  "battleBackground": "default"
+ },
+ {
+  "id": "e60e46d3-b103-5053-9752-ad0f514742cb",
+  "name": "Hiker Frank",
+  "spriteUrl": "/trainers/classes/alola/hiker.png",
+  "team": [
+   {
+    "dex": 324,
+    "level": 30
+   },
+   {
+    "dex": 111,
+    "level": 30
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "dc6e3496-eed2-5993-b67e-a77501cb0501",
+  "name": "Punk Guy Dax",
+  "spriteUrl": "/trainers/classes/alola/punk-guy.png",
+  "team": [
+   {
+    "dex": 776,
+    "level": 30
+   },
+   {
+    "dex": 775,
+    "level": 30
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "23aec3a7-158c-5bc6-941c-bcf8d4e3af22",
+  "name": "Team Skull Grunt",
+  "spriteUrl": "/trainers/classes/alola/skull-grunt-m.png",
+  "team": [
+   {
+    "dex": 42,
+    "level": 30
+   },
+   {
+    "dex": 747,
+    "level": 30
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "2d0aebc3-3c08-5a25-81a9-d4860cd16304",
+  "name": "Surfer Tanoa",
+  "spriteUrl": "/trainers/classes/alola/surfer.png",
+  "team": [
+   {
+    "dex": 779,
+    "level": 32
+   },
+   {
+    "dex": 746,
+    "level": 32
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "8c2a43eb-ec31-527d-a3e9-ad72acfb7d6f",
+  "name": "Sightseer Ellie",
+  "spriteUrl": "/trainers/classes/alola/sightseer-f.png",
+  "team": [
+   {
+    "dex": 551,
+    "level": 32
+   },
+   {
+    "dex": 328,
+    "level": 32
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "3acff8d3-ed25-54ff-a1ac-4aa31c258b7b",
+  "name": "Team Skull Grunt",
+  "spriteUrl": "/trainers/classes/alola/skull-grunt-m.png",
+  "team": [
+   {
+    "dex": 552,
+    "level": 32
+   },
+   {
+    "dex": 42,
+    "level": 32
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "caa7bc26-5304-5b34-9755-17704a46228c",
+  "name": "Janitor Ralph",
+  "spriteUrl": "/trainers/classes/alola/janitor.png",
+  "team": [
+   {
+    "dex": 93,
+    "level": 33
+   },
+   {
+    "dex": 353,
+    "level": 33
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "4e0f064f-552c-5107-96ac-df626a958603",
+  "name": "Aether Foundation Employee Vicky",
+  "spriteUrl": "/trainers/classes/alola/aether-employee-f.png",
+  "team": [
+   {
+    "dex": 279,
+    "level": 33
+   },
+   {
+    "dex": 121,
+    "level": 33
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "a6be7a84-77bb-5a6e-afef-fb0ba96b3d17",
+  "name": "Team Skull Grunt",
+  "spriteUrl": "/trainers/classes/alola/skull-grunt-m.png",
+  "team": [
+   {
+    "dex": 42,
+    "level": 33
+   },
+   {
+    "dex": 559,
+    "level": 33
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "1a82b30c-6585-5df3-bbd7-4aea039a82f4",
+  "name": "Captain Acerola",
+  "spriteUrl": "/trainers/classes/alola/acerola.png",
+  "team": [
+   {
+    "dex": 302,
+    "level": 31
+   },
+   {
+    "dex": 426,
+    "level": 31
+   },
+   {
+    "dex": 778,
+    "level": 33
+   }
+  ],
+  "role": "leader",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default"
+ },
+ {
+  "id": "7f290718-05b8-56bd-a85e-fb6d170dcae9",
+  "name": "Team Skull Grunt",
+  "spriteUrl": "/trainers/classes/alola/skull-grunt-m.png",
+  "team": [
+   {
+    "dex": 42,
+    "level": 36
+   },
+   {
+    "dex": 748,
+    "level": 36
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "c0895cc3-88a2-5d18-ae09-fe3086b0a94f",
+  "name": "Team Skull Grunt",
+  "spriteUrl": "/trainers/classes/alola/skull-grunt-m.png",
+  "team": [
+   {
+    "dex": 758,
+    "level": 36
+   },
+   {
+    "dex": 20,
+    "level": 36
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "dd1f0f09-3d8b-5b63-a7c1-ec0c7141c0fe",
+  "name": "Team Skull Grunt",
+  "spriteUrl": "/trainers/classes/alola/skull-grunt-m.png",
+  "team": [
+   {
+    "dex": 569,
+    "level": 37
+   },
+   {
+    "dex": 89,
+    "level": 37
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "4eee5f0a-7672-51a8-9e2c-947b25d0b2d9",
+  "name": "Plumeria",
+  "spriteUrl": "/trainers/classes/alola/plumeria.png",
+  "team": [
+   {
+    "dex": 42,
+    "level": 37
+   },
+   {
+    "dex": 758,
+    "level": 38
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "e2a93cac-24c0-5ed2-b69e-f2960e2f3991",
+  "name": "Guzma",
+  "spriteUrl": "/trainers/classes/alola/guzma.png",
+  "team": [
+   {
+    "dex": 168,
+    "level": 40
+   },
+   {
+    "dex": 768,
+    "level": 41
+   }
+  ],
+  "role": "leader",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default"
+ },
+ {
+  "id": "4f0e8ccf-2756-5de1-a7c0-7412cb29daf5",
+  "name": "Kahuna Nanu",
+  "spriteUrl": "/trainers/classes/alola/nanu.png",
+  "team": [
+   {
+    "dex": 302,
+    "level": 38
+   },
+   {
+    "dex": 553,
+    "level": 38
+   },
+   {
+    "dex": 53,
+    "level": 39
+   }
+  ],
+  "role": "leader",
+  "badge": "Darkinium Z",
+  "upgradeLevel": null,
+  "battleBackground": "default"
+ },
+ {
+  "id": "47e1a14e-7b5d-5b8d-835e-8ce3be22fdc4",
+  "name": "Aether Foundation Employee Jordan",
+  "spriteUrl": "/trainers/classes/alola/aether-employee-m.png",
+  "team": [
+   {
+    "dex": 137,
+    "level": 42
+   },
+   {
+    "dex": 82,
+    "level": 42
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "ca95f8cc-686a-5ae6-86cb-2f63ccd3c4a8",
+  "name": "Aether Foundation Employee Rae",
+  "spriteUrl": "/trainers/classes/alola/aether-employee-f.png",
+  "team": [
+   {
+    "dex": 121,
+    "level": 42
+   },
+   {
+    "dex": 199,
+    "level": 43
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "a67e9d24-8a9d-5363-8646-a89169a7e167",
+  "name": "Team Skull Grunt",
+  "spriteUrl": "/trainers/classes/alola/skull-grunt-m.png",
+  "team": [
+   {
+    "dex": 748,
+    "level": 43
+   },
+   {
+    "dex": 42,
+    "level": 43
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "e89c01d9-ad5d-596d-a647-d80cc3b9fcb9",
+  "name": "Gladion",
+  "spriteUrl": "/trainers/classes/alola/gladion.png",
+  "team": [
+   {
+    "dex": 42,
+    "level": 43
+   },
+   {
+    "dex": 745,
+    "level": 43
+   },
+   {
+    "dex": 772,
+    "level": 44
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "d1e8b794-d27f-52e1-9f23-be3de2d7665d",
+  "name": "Faba",
+  "spriteUrl": "/trainers/classes/alola/faba.png",
+  "team": [
+   {
+    "dex": 97,
+    "level": 42
+   },
+   {
+    "dex": 779,
+    "level": 43
+   }
+  ],
+  "role": "leader",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default"
+ },
+ {
+  "id": "2ebf133c-a700-5d2b-ba5b-a91cb8fc51eb",
+  "name": "Guzma",
+  "spriteUrl": "/trainers/classes/alola/guzma.png",
+  "team": [
+   {
+    "dex": 168,
+    "level": 46
+   },
+   {
+    "dex": 284,
+    "level": 46
+   },
+   {
+    "dex": 768,
+    "level": 47
+   }
+  ],
+  "role": "leader",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default"
+ },
+ {
+  "id": "92a6ae77-e6df-5d66-9ecb-9e631f34dccc",
+  "name": "Lusamine",
+  "spriteUrl": "/trainers/classes/alola/lusamine.png",
+  "team": [
+   {
+    "dex": 36,
+    "level": 47
+   },
+   {
+    "dex": 350,
+    "level": 47
+   },
+   {
+    "dex": 760,
+    "level": 48
+   }
+  ],
+  "role": "leader",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default"
+ },
+ {
+  "id": "cb25e5f9-94ba-511b-9cf1-5eb44ccf9680",
+  "name": "Fisherman Kaimana",
+  "spriteUrl": "/trainers/classes/alola/fisherman.png",
+  "team": [
+   {
+    "dex": 320,
+    "level": 43
+   },
+   {
+    "dex": 369,
+    "level": 43
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "a9da3a5a-7f5b-5e64-b4d2-bd682ea2d008",
+  "name": "Veteran Kanoa",
+  "spriteUrl": "/trainers/classes/alola/veteran-m.png",
+  "team": [
+   {
+    "dex": 423,
+    "level": 44
+   },
+   {
+    "dex": 210,
+    "level": 44
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "f755ba0d-7d71-580a-ace0-dd801a81bddf",
+  "name": "Hau",
+  "spriteUrl": "/trainers/classes/alola/hau.png",
+  "team": [
+   {
+    "dex": 26,
+    "level": 44
+   },
+   {
+    "dex": 134,
+    "level": 44
+   },
+   {
+    "dex": 715,
+    "level": 43
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "d88dbaef-893e-522d-b404-bb5c106568cd",
+  "name": "Captain Mina",
+  "spriteUrl": "/trainers/classes/alola/mina.png",
+  "team": [
+   {
+    "dex": 707,
+    "level": 43
+   },
+   {
+    "dex": 210,
+    "level": 43
+   },
+   {
+    "dex": 743,
+    "level": 45
+   }
+  ],
+  "role": "leader",
+  "badge": "Fairium Z",
+  "upgradeLevel": null,
+  "battleBackground": "default"
+ },
+ {
+  "id": "5e1b4d3f-16c1-5fdc-b0e1-590832bb82b5",
+  "name": "Ace Trainer Sanjay",
+  "spriteUrl": "/trainers/classes/alola/ace-trainer-m.png",
+  "team": [
+   {
+    "dex": 783,
+    "level": 46
+   },
+   {
+    "dex": 745,
+    "level": 46
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "6e683673-67ed-5d7c-9c03-0cf39aa686f8",
+  "name": "Veteran Dorothy",
+  "spriteUrl": "/trainers/classes/alola/veteran-f.png",
+  "team": [
+   {
+    "dex": 525,
+    "level": 46
+   },
+   {
+    "dex": 103,
+    "level": 46
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "aa5e1f04-305f-500a-bcfe-40af678cdedc",
+  "name": "Black Belt Leilani",
+  "spriteUrl": "/trainers/classes/alola/black-belt.png",
+  "team": [
+   {
+    "dex": 67,
+    "level": 46
+   },
+   {
+    "dex": 619,
+    "level": 46
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "c6106307-fd9e-50e1-aa2c-8edd1069cb8f",
+  "name": "Kahuna Hapu",
+  "spriteUrl": "/trainers/classes/alola/hapu.png",
+  "team": [
+   {
+    "dex": 423,
+    "level": 47
+   },
+   {
+    "dex": 330,
+    "level": 47
+   },
+   {
+    "dex": 750,
+    "level": 48
+   }
+  ],
+  "role": "leader",
+  "badge": "Groundium Z",
+  "upgradeLevel": null,
+  "battleBackground": "default"
+ },
+ {
+  "id": "34f7e756-0b88-5a5a-a56a-975511f3cc34",
+  "name": "Ace Trainer Ollie",
+  "spriteUrl": "/trainers/classes/alola/ace-trainer-m.png",
+  "team": [
+   {
+    "dex": 740,
+    "level": 52
+   },
+   {
+    "dex": 780,
+    "level": 52
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "e35a0add-33cf-5101-9532-032769b8e684",
+  "name": "Ace Trainer Rosie",
+  "spriteUrl": "/trainers/classes/alola/ace-trainer-f.png",
+  "team": [
+   {
+    "dex": 743,
+    "level": 52
+   },
+   {
+    "dex": 748,
+    "level": 52
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "47da36e5-b84e-56d1-a463-f81fddbe37ec",
+  "name": "Veteran Stuart",
+  "spriteUrl": "/trainers/classes/alola/veteran-m.png",
+  "team": [
+   {
+    "dex": 784,
+    "level": 53
+   },
+   {
+    "dex": 768,
+    "level": 53
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "578094c9-d05c-57d0-970c-0b6d0d79dbf7",
+  "name": "Gladion",
+  "spriteUrl": "/trainers/classes/alola/gladion.png",
+  "team": [
+   {
+    "dex": 169,
+    "level": 53
+   },
+   {
+    "dex": 448,
+    "level": 53
+   },
+   {
+    "dex": 773,
+    "level": 55
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "29850881-49a5-574e-90c8-6bd60abe0f11",
+  "name": "Ace Trainer Ollie",
+  "spriteUrl": "/trainers/classes/alola/ace-trainer-m.png",
+  "team": [
+   {
+    "dex": 740,
+    "level": 55
+   },
+   {
+    "dex": 780,
+    "level": 55
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "40051e3e-c5d9-56dd-a4f7-d9c0e31d5b71",
+  "name": "Veteran Stuart",
+  "spriteUrl": "/trainers/classes/alola/veteran-m.png",
+  "team": [
+   {
+    "dex": 784,
+    "level": 55
+   },
+   {
+    "dex": 768,
+    "level": 55
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "e047e618-23e4-5e5c-a8bb-21ac07b0cb2d",
+  "name": "Elite Four Hala",
+  "spriteUrl": "/trainers/classes/alola/hala.png",
+  "team": [
+   {
+    "dex": 297,
+    "level": 54
+   },
+   {
+    "dex": 760,
+    "level": 54
+   },
+   {
+    "dex": 740,
+    "level": 55
+   }
+  ],
+  "role": "elite",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ]
+ },
+ {
+  "id": "c890fdd8-3ff9-5f09-b1cb-913a3e659688",
+  "name": "Elite Four Olivia",
+  "spriteUrl": "/trainers/classes/alola/olivia.png",
+  "team": [
+   {
+    "dex": 476,
+    "level": 54
+   },
+   {
+    "dex": 76,
+    "level": 54
+   },
+   {
+    "dex": 745,
+    "level": 55
+   }
+  ],
+  "role": "elite",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ]
+ },
+ {
+  "id": "8c836c01-4755-59dc-88f3-aceffc2666bf",
+  "name": "Elite Four Acerola",
+  "spriteUrl": "/trainers/classes/alola/acerola.png",
+  "team": [
+   {
+    "dex": 478,
+    "level": 54
+   },
+   {
+    "dex": 781,
+    "level": 54
+   },
+   {
+    "dex": 770,
+    "level": 55
+   }
+  ],
+  "role": "elite",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ]
+ },
+ {
+  "id": "1a3ca20b-e218-5ebc-845b-af0dbaf41b2e",
+  "name": "Elite Four Kahili",
+  "spriteUrl": "/trainers/classes/alola/elite-kahili.png",
+  "team": [
+   {
+    "dex": 227,
+    "level": 54
+   },
+   {
+    "dex": 741,
+    "level": 54
+   },
+   {
+    "dex": 733,
+    "level": 55
+   }
+  ],
+  "role": "elite",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ]
+ },
+ {
+  "id": "f058140b-aac1-586e-b798-9ec8ca8dd04d",
+  "name": "Professor Kukui",
+  "spriteUrl": "/trainers/classes/alola/champion-kukui.png",
+  "team": [
+   {
+    "dex": 38,
+    "level": 56
+   },
+   {
+    "dex": 143,
+    "level": 56
+   },
+   {
+    "dex": 745,
+    "level": 57
+   }
+  ],
+  "role": "champion",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ]
+ },
+ {
+  "id": "aa7855fb-96b3-5c0c-9967-b5b668dfd86f",
+  "name": "Ace Trainer Ollie II",
+  "spriteUrl": "/trainers/classes/alola/ace-trainer-m.png",
+  "team": [
+   {
+    "dex": 740,
+    "level": 65
+   },
+   {
+    "dex": 780,
+    "level": 65
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "1bd541c2-e4cf-50c7-a1cb-e756caf000cb",
+  "name": "Ace Trainer Rosie II",
+  "spriteUrl": "/trainers/classes/alola/ace-trainer-f.png",
+  "team": [
+   {
+    "dex": 743,
+    "level": 65
+   },
+   {
+    "dex": 748,
+    "level": 66
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "26b1ab7d-3809-5613-bf4d-ae2acf8be436",
+  "name": "Veteran Stuart II",
+  "spriteUrl": "/trainers/classes/alola/veteran-m.png",
+  "team": [
+   {
+    "dex": 784,
+    "level": 66
+   },
+   {
+    "dex": 768,
+    "level": 66
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "1637180b-5024-5f48-a947-92030f53c4a6",
+  "name": "Ace Trainer Ollie II",
+  "spriteUrl": "/trainers/classes/alola/ace-trainer-m.png",
+  "team": [
+   {
+    "dex": 740,
+    "level": 65
+   },
+   {
+    "dex": 780,
+    "level": 65
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "21258d99-a592-503a-bdbb-6801fed426ef",
+  "name": "Veteran Stuart II",
+  "spriteUrl": "/trainers/classes/alola/veteran-m.png",
+  "team": [
+   {
+    "dex": 784,
+    "level": 66
+   },
+   {
+    "dex": 768,
+    "level": 66
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "3551cda5-c63e-516e-a105-1e4ae24a0241",
+  "name": "Elite Four Hala II",
+  "spriteUrl": "/trainers/classes/alola/hala.png",
+  "team": [
+   {
+    "dex": 297,
+    "level": 69
+   },
+   {
+    "dex": 760,
+    "level": 69
+   },
+   {
+    "dex": 740,
+    "level": 71
+   }
+  ],
+  "role": "elite",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ]
+ },
+ {
+  "id": "7c584e7f-62bc-573b-bbe2-e2d7f2f62f86",
+  "name": "Elite Four Olivia II",
+  "spriteUrl": "/trainers/classes/alola/olivia.png",
+  "team": [
+   {
+    "dex": 476,
+    "level": 69
+   },
+   {
+    "dex": 76,
+    "level": 69
+   },
+   {
+    "dex": 745,
+    "level": 71
+   }
+  ],
+  "role": "elite",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ]
+ },
+ {
+  "id": "cb5f58b1-b32e-5727-880e-ebb60adc85ac",
+  "name": "Elite Four Acerola II",
+  "spriteUrl": "/trainers/classes/alola/acerola.png",
+  "team": [
+   {
+    "dex": 478,
+    "level": 69
+   },
+   {
+    "dex": 781,
+    "level": 69
+   },
+   {
+    "dex": 770,
+    "level": 71
+   }
+  ],
+  "role": "elite",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ]
+ },
+ {
+  "id": "225d7071-308e-5e2e-b4dd-0af4068aa88e",
+  "name": "Elite Four Kahili II",
+  "spriteUrl": "/trainers/classes/alola/elite-kahili.png",
+  "team": [
+   {
+    "dex": 227,
+    "level": 69
+   },
+   {
+    "dex": 741,
+    "level": 69
+   },
+   {
+    "dex": 733,
+    "level": 71
+   }
+  ],
+  "role": "elite",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ]
+ },
+ {
+  "id": "d540c5be-def8-5f96-8ac2-be5663b754e9",
+  "name": "Professor Kukui II",
+  "spriteUrl": "/trainers/classes/alola/champion-kukui.png",
+  "team": [
+   {
+    "dex": 38,
+    "level": 72
+   },
+   {
+    "dex": 143,
+    "level": 72
+   },
+   {
+    "dex": 745,
+    "level": 74
+   }
+  ],
+  "role": "champion",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ]
+ },
+ {
+  "id": "47f70a31-496e-589c-b1d1-f4e3024e3817",
+  "name": "Ace Trainer Keala",
+  "spriteUrl": "/trainers/classes/alola/ace-trainer-f.png",
+  "team": [
+   {
+    "dex": 733,
+    "level": 65
+   },
+   {
+    "dex": 760,
+    "level": 65
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "6f4d9893-93c7-5a7b-ba75-e79e0f36f8be",
+  "name": "Veteran Makana",
+  "spriteUrl": "/trainers/classes/alola/veteran-m.png",
+  "team": [
+   {
+    "dex": 784,
+    "level": 66
+   },
+   {
+    "dex": 778,
+    "level": 66
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "0fef3bec-a69f-5f01-91b3-7ec991835934",
+  "name": "Young Athlete Kira",
+  "spriteUrl": "/trainers/classes/alola/young-athlete-f.png",
+  "team": [
+   {
+    "dex": 768,
+    "level": 65
+   },
+   {
+    "dex": 776,
+    "level": 65
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "339a9554-6ff0-5b40-85bb-ea76a6220ca4",
+  "name": "Blue",
+  "spriteUrl": "/trainers/classes/alola/blue.png",
+  "team": [
+   {
+    "dex": 18,
+    "level": 68
+   },
+   {
+    "dex": 65,
+    "level": 68
+   },
+   {
+    "dex": 130,
+    "level": 70
+   }
+  ],
+  "role": "leader",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default"
+ },
+ {
+  "id": "0c197ab9-0b6a-5d0c-8541-42ca1249c049",
+  "name": "Red",
+  "spriteUrl": "/trainers/classes/alola/red.png",
+  "team": [
+   {
+    "dex": 143,
+    "level": 70
+   },
+   {
+    "dex": 131,
+    "level": 70
+   },
+   {
+    "dex": 25,
+    "level": 72
+   }
+  ],
+  "role": "leader",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default"
+ },
+ {
+  "id": "7f42ec8e-af5f-5b70-bee3-e2f453eaed58",
+  "name": "Ace Trainer Leilani",
+  "spriteUrl": "/trainers/classes/alola/ace-trainer-m.png",
+  "team": [
+   {
+    "dex": 366,
+    "level": 60
+   },
+   {
+    "dex": 349,
+    "level": 62
+   },
+   {
+    "dex": 120,
+    "level": 62
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "ff77e0a2-d624-50e1-bbb9-e7f09d27133d",
+  "name": "Veteran Akoni",
+  "spriteUrl": "/trainers/classes/alola/veteran-m.png",
+  "team": [
+   {
+    "dex": 745,
+    "level": 68
+   },
+   {
+    "dex": 246,
+    "level": 68
+   },
+   {
+    "dex": 111,
+    "level": 69
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
+ },
+ {
+  "id": "56f52629-5baf-51f2-a16f-8681e208b71d",
+  "name": "Surfer Kapono",
+  "spriteUrl": "/trainers/classes/alola/surfer.png",
+  "team": [
+   {
+    "dex": 169,
+    "level": 75
+   },
+   {
+    "dex": 629,
+    "level": 76
+   },
+   {
+    "dex": 357,
+    "level": 75
+   }
+  ],
+  "role": "trainer",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": null
  }
 ]

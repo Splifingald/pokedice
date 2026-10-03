@@ -112,6 +112,20 @@ export const TRAINER_CLASSES = [
   'Garçon',
   'Butler',
   'Maid',
+  // Alola
+  'Aether Foundation Employee',
+  'Team Skull Grunt',
+  'Young Athlete',
+  'Office Worker',
+  'Trial Guide',
+  'Firefighter',
+  'Sightseer',
+  'Professor',
+  'Captain',
+  'Janitor',
+  'Kahuna',
+  'Golfer',
+  'Surfer',
 ].sort((a, b) => b.length - a.length)
 
 /** Splits `Bug Catcher Kent` into its class and its given name; a bare `Misty` has neither. */

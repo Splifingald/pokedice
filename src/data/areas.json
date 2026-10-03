@@ -39556,5 +39556,8104 @@
     "maxQty": 400
    }
   ]
+ },
+ {
+  "id": "19484a4c-fd2d-539b-a375-e0683e90424b",
+  "orderIndex": 701,
+  "regionId": "alola",
+  "name": "Route 1 & Hau'oli Outskirts",
+  "bannerUrl": "/banners/beach.png",
+  "roundsToClear": 2,
+  "minLevel": 2,
+  "maxLevel": 5,
+  "encounterWeights": {
+   "wild": 4,
+   "trainer": 0,
+   "center": 0,
+   "item": 1,
+   "casino": 0
+  },
+  "backtrackMultiplier": 0.5,
+  "legendaryBoss": null,
+  "scalesToTeam": false,
+  "easyMode": true,
+  "enemyUpgradeLevel": 1,
+  "battleBackground": "grass",
+  "hidden": false,
+  "unlockConditions": null,
+  "gyms": [],
+  "wildPool": [
+   {
+    "id": "5d56f430-cd5c-549a-a54e-42fcc2ae9cda",
+    "dex": 731,
+    "weight": 20,
+    "minLevel": 2,
+    "maxLevel": 4
+   },
+   {
+    "id": "799d2187-e209-55c6-9f8f-67df54b13acb",
+    "dex": 734,
+    "weight": 20,
+    "minLevel": 2,
+    "maxLevel": 4
+   },
+   {
+    "id": "477342a1-6271-55ca-981c-b550f7d2401a",
+    "dex": 19,
+    "weight": 16,
+    "minLevel": 2,
+    "maxLevel": 4
+   },
+   {
+    "id": "048a7d9a-8afa-5329-95d2-e3a6fcc27959",
+    "dex": 165,
+    "weight": 10,
+    "minLevel": 2,
+    "maxLevel": 4
+   },
+   {
+    "id": "5a65b1e3-6e55-5285-8042-344a3f129448",
+    "dex": 167,
+    "weight": 10,
+    "minLevel": 2,
+    "maxLevel": 4
+   },
+   {
+    "id": "02176969-6a79-5908-b077-1f0a18cdbeda",
+    "dex": 10,
+    "weight": 10,
+    "minLevel": 2,
+    "maxLevel": 4
+   },
+   {
+    "id": "40e082fa-ebf7-5cb0-ad6b-8249bf3f9727",
+    "dex": 736,
+    "weight": 6,
+    "minLevel": 3,
+    "maxLevel": 5
+   },
+   {
+    "id": "4f370409-e7eb-52f9-81f6-41bd86ad1ea9",
+    "dex": 427,
+    "weight": 4,
+    "minLevel": 3,
+    "maxLevel": 5
+   },
+   {
+    "id": "1b0f26e5-bee9-5fcb-92f3-06a1dafc9d2d",
+    "dex": 172,
+    "weight": 2,
+    "minLevel": 3,
+    "maxLevel": 5
+   }
+  ],
+  "trainerPool": [],
+  "lootPool": [
+   {
+    "id": "593985e3-7083-5201-b5f6-9b279f98193f",
+    "itemKey": "potion",
+    "weight": 30,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "8787ba24-71b0-514e-b5f7-797e60a260da",
+    "itemKey": "poke-ball",
+    "weight": 26,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "d978e9d5-1b5b-57a8-aef3-3dbeadda0438",
+    "itemKey": "antidote",
+    "weight": 12,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "bb7ef142-7a7b-5cdf-a173-6a116d9c5241",
+    "itemKey": "paralyze-heal",
+    "weight": 10,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "32df68ea-60c5-5ee3-bedf-fc4eb4a39ea5",
+    "itemKey": "ether",
+    "weight": 4,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "dd9384dc-bb55-5f58-8770-e54dd48861a9",
+    "itemKey": "money",
+    "weight": 18,
+    "unique": false,
+    "minQty": 10,
+    "maxQty": 25
+   }
+  ]
+ },
+ {
+  "id": "b0476bf1-2815-53f6-9483-6d984dfa938a",
+  "orderIndex": 702,
+  "regionId": "alola",
+  "name": "Hau'oli City & the Cemetery",
+  "bannerUrl": "/banners/city.png",
+  "roundsToClear": 2,
+  "minLevel": 4,
+  "maxLevel": 9,
+  "encounterWeights": {
+   "wild": 3,
+   "trainer": 1,
+   "center": 0,
+   "item": 1,
+   "casino": 0
+  },
+  "backtrackMultiplier": 0.5,
+  "legendaryBoss": null,
+  "scalesToTeam": false,
+  "easyMode": true,
+  "enemyUpgradeLevel": 1,
+  "battleBackground": "default",
+  "hidden": false,
+  "unlockConditions": null,
+  "gyms": [],
+  "wildPool": [
+   {
+    "id": "2f26e3fe-e4c0-52aa-9920-f947fc658deb",
+    "dex": 278,
+    "weight": 14,
+    "minLevel": 4,
+    "maxLevel": 8
+   },
+   {
+    "id": "86ef2b7c-ce0b-5f09-823d-76cafe0fcaa1",
+    "dex": 81,
+    "weight": 10,
+    "minLevel": 5,
+    "maxLevel": 8
+   },
+   {
+    "id": "21d205f8-37df-596b-acc6-3e22ca5ad8b4",
+    "dex": 52,
+    "weight": 10,
+    "minLevel": 5,
+    "maxLevel": 8
+   },
+   {
+    "id": "9e69e4cc-ff33-551c-93de-6a98a6988e97",
+    "dex": 79,
+    "weight": 8,
+    "minLevel": 4,
+    "maxLevel": 7
+   },
+   {
+    "id": "942e59f5-031c-549e-96db-c59ff4f45190",
+    "dex": 88,
+    "weight": 8,
+    "minLevel": 5,
+    "maxLevel": 8
+   },
+   {
+    "id": "98249806-12d5-5923-a77f-cabc3d596a7f",
+    "dex": 686,
+    "weight": 8,
+    "minLevel": 4,
+    "maxLevel": 7
+   },
+   {
+    "id": "3458d7fc-03db-5064-83f1-76a530b9c9bf",
+    "dex": 63,
+    "weight": 6,
+    "minLevel": 5,
+    "maxLevel": 8
+   },
+   {
+    "id": "37194903-4a93-5bb4-a35b-ff18fd5a5c25",
+    "dex": 607,
+    "weight": 10,
+    "minLevel": 6,
+    "maxLevel": 9
+   },
+   {
+    "id": "9f327db7-4408-551f-85ea-c662353ac741",
+    "dex": 92,
+    "weight": 8,
+    "minLevel": 6,
+    "maxLevel": 9
+   },
+   {
+    "id": "ab44e8dd-0038-53d8-990c-349e840ee849",
+    "dex": 425,
+    "weight": 6,
+    "minLevel": 6,
+    "maxLevel": 9
+   },
+   {
+    "id": "96e91ec0-366b-5bd5-9728-72067fceeb11",
+    "dex": 570,
+    "weight": 4,
+    "minLevel": 5,
+    "maxLevel": 8
+   },
+   {
+    "id": "29eb0be9-6eaa-57fc-81f7-625de2dc0556",
+    "dex": 439,
+    "weight": 4,
+    "minLevel": 6,
+    "maxLevel": 9
+   }
+  ],
+  "trainerPool": [
+   {
+    "id": "52c056ad-3ae6-5721-aa04-8f164f82dfcb",
+    "trainerId": "e2ed8665-e615-5e9c-95b7-2a6ed81d34f9",
+    "weight": 10
+   },
+   {
+    "id": "fd7ce166-7d97-5004-895f-50bbdb836be2",
+    "trainerId": "ffd99396-cb55-5b58-ba0c-559b71dbc67b",
+    "weight": 10
+   },
+   {
+    "id": "81dd938a-1418-50fb-9e8b-fb502b2d3bbd",
+    "trainerId": "1faed1a5-264b-54e9-9db9-498e6491c169",
+    "weight": 10
+   },
+   {
+    "id": "4ab3c54d-81db-5311-ad4d-7937867d9c9e",
+    "trainerId": "cac298e4-705c-5278-b8d8-65b31e722c4e",
+    "weight": 10
+   }
+  ],
+  "lootPool": [
+   {
+    "id": "851c7dab-fd02-5938-bb6e-21cee7d81c0c",
+    "itemKey": "potion",
+    "weight": 30,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "8f6f7253-d1fd-5c8b-b3a7-9b6d007fbbfd",
+    "itemKey": "poke-ball",
+    "weight": 26,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "e11b1874-2450-5e6a-abf1-c33a03594278",
+    "itemKey": "antidote",
+    "weight": 12,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "c7d1d39b-9360-5f83-bf8a-26beeefa0e99",
+    "itemKey": "paralyze-heal",
+    "weight": 10,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "d4f83003-5c4d-5ad6-bba2-a6b82215e9d0",
+    "itemKey": "ether",
+    "weight": 4,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "188b8b0c-296f-5805-b376-873f28de4642",
+    "itemKey": "money",
+    "weight": 18,
+    "unique": false,
+    "minQty": 10,
+    "maxQty": 25
+   }
+  ]
+ },
+ {
+  "id": "d7bfc7c0-ab59-5608-88c7-5d395cdbe217",
+  "orderIndex": 703,
+  "regionId": "alola",
+  "name": "Route 2 & the Verdant Cavern",
+  "bannerUrl": "/banners/cave.png",
+  "roundsToClear": 1,
+  "minLevel": 6,
+  "maxLevel": 12,
+  "encounterWeights": {
+   "wild": 3,
+   "trainer": 2,
+   "center": 1,
+   "item": 1,
+   "casino": 0
+  },
+  "backtrackMultiplier": 0.5,
+  "legendaryBoss": null,
+  "scalesToTeam": false,
+  "easyMode": false,
+  "enemyUpgradeLevel": 1,
+  "battleBackground": "rock",
+  "hidden": false,
+  "unlockConditions": null,
+  "gyms": [
+   "4f91ae65-c2ed-5625-8493-cc888560e844"
+  ],
+  "wildPool": [
+   {
+    "id": "4a32a1cc-0c3d-5298-98cc-a7dda9c831cf",
+    "dex": 739,
+    "weight": 14,
+    "minLevel": 7,
+    "maxLevel": 11
+   },
+   {
+    "id": "8e1cc42a-7900-5e93-a8cc-29b9e4b21574",
+    "dex": 296,
+    "weight": 10,
+    "minLevel": 7,
+    "maxLevel": 11
+   },
+   {
+    "id": "21cd611e-615e-5b23-b5dd-9965301d7b75",
+    "dex": 96,
+    "weight": 10,
+    "minLevel": 7,
+    "maxLevel": 11
+   },
+   {
+    "id": "e72e0fff-f7f6-5283-8e98-3f859d09ded0",
+    "dex": 23,
+    "weight": 8,
+    "minLevel": 7,
+    "maxLevel": 11
+   },
+   {
+    "id": "8303d43c-c1f5-517d-9778-9392f5c14e97",
+    "dex": 21,
+    "weight": 8,
+    "minLevel": 7,
+    "maxLevel": 10
+   },
+   {
+    "id": "d0d8a6fd-c6cd-57e3-9c7c-68b2041d62ba",
+    "dex": 742,
+    "weight": 8,
+    "minLevel": 7,
+    "maxLevel": 10
+   },
+   {
+    "id": "951b0bdf-5109-5da8-826e-567b3ccb9c97",
+    "dex": 58,
+    "weight": 6,
+    "minLevel": 7,
+    "maxLevel": 10
+   },
+   {
+    "id": "2f70eff0-6860-54de-9b8f-ea6666adcb2b",
+    "dex": 235,
+    "weight": 4,
+    "minLevel": 7,
+    "maxLevel": 10
+   },
+   {
+    "id": "ad53e9e5-4aea-5fc1-896a-5b3aaaa2c7c4",
+    "dex": 206,
+    "weight": 4,
+    "minLevel": 8,
+    "maxLevel": 11
+   },
+   {
+    "id": "285426d1-3841-5617-bc6d-163572f939f1",
+    "dex": 41,
+    "weight": 10,
+    "minLevel": 8,
+    "maxLevel": 11
+   },
+   {
+    "id": "5f13bd85-ac13-50fb-bcb3-4feceee64eef",
+    "dex": 50,
+    "weight": 8,
+    "minLevel": 8,
+    "maxLevel": 11
+   },
+   {
+    "id": "c74ba0e3-cfa0-544a-aa7b-c236f52a1a7f",
+    "dex": 714,
+    "weight": 4,
+    "minLevel": 8,
+    "maxLevel": 11
+   }
+  ],
+  "trainerPool": [
+   {
+    "id": "4420b96b-f11e-5e68-944b-ab7dc9e5fdc6",
+    "trainerId": "5029c7ad-ffe2-5c53-b088-9a5aa41609a6",
+    "weight": 10
+   },
+   {
+    "id": "13972626-c48a-510b-a8d7-935e46b9559b",
+    "trainerId": "e5c2f611-a2d2-5ab8-bdc5-df776bfc4013",
+    "weight": 10
+   },
+   {
+    "id": "6c194596-e070-5be7-bfd3-0fa7f614f0a2",
+    "trainerId": "ae169afa-2442-5f15-9766-6f8a36e0474f",
+    "weight": 10
+   },
+   {
+    "id": "06311615-53ec-5d00-a350-8a5631810043",
+    "trainerId": "9278accb-60fa-54d6-8d86-54388af3ae06",
+    "weight": 10
+   }
+  ],
+  "lootPool": [
+   {
+    "id": "2211ca9b-e02a-5a08-9ea3-b2e010d1ff9e",
+    "itemKey": "potion",
+    "weight": 30,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "adc7a19e-0376-5d04-a666-55aad2988654",
+    "itemKey": "poke-ball",
+    "weight": 26,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "159c092d-37d7-5f57-bedf-721f33a59156",
+    "itemKey": "antidote",
+    "weight": 12,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "dc17815d-b53f-5df0-ab1e-a9306a9615ec",
+    "itemKey": "paralyze-heal",
+    "weight": 10,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "04429b42-5f82-5db1-af44-6efbd43b750d",
+    "itemKey": "ether",
+    "weight": 4,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "cb23d677-b958-5823-bfca-513b00ba1524",
+    "itemKey": "money",
+    "weight": 18,
+    "unique": false,
+    "minQty": 10,
+    "maxQty": 25
+   }
+  ]
+ },
+ {
+  "id": "ef57b168-56a6-55c7-ad15-a09d319e487b",
+  "orderIndex": 704,
+  "regionId": "alola",
+  "name": "Route 3 & Melemele Meadow",
+  "bannerUrl": "/banners/flowers.png",
+  "roundsToClear": 1,
+  "minLevel": 9,
+  "maxLevel": 14,
+  "encounterWeights": {
+   "wild": 3,
+   "trainer": 2,
+   "center": 1,
+   "item": 1,
+   "casino": 0
+  },
+  "backtrackMultiplier": 0.5,
+  "legendaryBoss": null,
+  "scalesToTeam": false,
+  "easyMode": false,
+  "enemyUpgradeLevel": 2,
+  "battleBackground": "grass",
+  "hidden": false,
+  "unlockConditions": null,
+  "gyms": [],
+  "wildPool": [
+   {
+    "id": "0836f60f-f2b7-5b0c-88db-96b8da5ce132",
+    "dex": 741,
+    "weight": 12,
+    "minLevel": 9,
+    "maxLevel": 12
+   },
+   {
+    "id": "8e935aa5-4fe4-5c74-b6b6-9ab1ce2ddc81",
+    "dex": 742,
+    "weight": 12,
+    "minLevel": 9,
+    "maxLevel": 12
+   },
+   {
+    "id": "60e1ea83-6e44-59f4-a673-0d3761b42281",
+    "dex": 21,
+    "weight": 12,
+    "minLevel": 9,
+    "maxLevel": 13
+   },
+   {
+    "id": "61d31ce9-719c-514d-b88f-74a4bc764e67",
+    "dex": 56,
+    "weight": 10,
+    "minLevel": 9,
+    "maxLevel": 12
+   },
+   {
+    "id": "5b0e158e-6bac-5e1c-b6c7-90203eb481eb",
+    "dex": 629,
+    "weight": 6,
+    "minLevel": 10,
+    "maxLevel": 13
+   },
+   {
+    "id": "937acc5a-c1ce-5394-8cd3-d3193f992736",
+    "dex": 627,
+    "weight": 6,
+    "minLevel": 10,
+    "maxLevel": 13
+   },
+   {
+    "id": "1b3b2ebd-77dd-5836-b778-52e256022d5b",
+    "dex": 701,
+    "weight": 4,
+    "minLevel": 9,
+    "maxLevel": 12
+   },
+   {
+    "id": "a6a33121-cb66-5d5a-b3ce-f387fbf18fc2",
+    "dex": 548,
+    "weight": 6,
+    "minLevel": 9,
+    "maxLevel": 12
+   },
+   {
+    "id": "54f5d924-e58d-5ef1-8fdf-ae89813c7baa",
+    "dex": 546,
+    "weight": 6,
+    "minLevel": 9,
+    "maxLevel": 12
+   },
+   {
+    "id": "0e7fafd6-3e74-5e00-a442-b233ac5afd17",
+    "dex": 669,
+    "weight": 6,
+    "minLevel": 9,
+    "maxLevel": 12
+   },
+   {
+    "id": "5b374fd1-84d5-57dc-b13f-d888b06a6a83",
+    "dex": 12,
+    "weight": 6,
+    "minLevel": 10,
+    "maxLevel": 12
+   },
+   {
+    "id": "3dea73fa-0099-5ad0-9991-3d15471ab67d",
+    "dex": 371,
+    "weight": 2,
+    "minLevel": 9,
+    "maxLevel": 12
+   }
+  ],
+  "trainerPool": [
+   {
+    "id": "1d2931d0-b5a3-588c-9cb7-661a1f759038",
+    "trainerId": "6c82d1ec-2289-53aa-8138-abb77517519d",
+    "weight": 10
+   },
+   {
+    "id": "9145386b-b621-5442-8311-89074655b343",
+    "trainerId": "e4a371de-c917-524e-aa8f-6aeb28996d34",
+    "weight": 10
+   },
+   {
+    "id": "92785288-2150-523a-9621-03317f18fd87",
+    "trainerId": "43bc54a0-4975-5cd4-8e7b-ba0c404315dc",
+    "weight": 10
+   },
+   {
+    "id": "91f0d845-0573-5f83-931f-7705639c3b3b",
+    "trainerId": "2c0ff913-af99-5b84-a65e-ee4144818874",
+    "weight": 10
+   }
+  ],
+  "lootPool": [
+   {
+    "id": "941fbbf9-d53e-529c-b4dd-c2dde7eae34c",
+    "itemKey": "potion",
+    "weight": 30,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "a91bf000-1b37-5d18-95b7-631869e20ca0",
+    "itemKey": "poke-ball",
+    "weight": 26,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "52d8dcb7-a576-582e-bc7d-92964fd9b559",
+    "itemKey": "antidote",
+    "weight": 12,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "2aab80b7-791d-5c75-b3fb-c2eb6d93bdd6",
+    "itemKey": "paralyze-heal",
+    "weight": 10,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "8fabeea9-2e9f-509b-beab-d821e0bc7622",
+    "itemKey": "ether",
+    "weight": 4,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "a899dbdb-144b-5374-aa34-48ce695992ee",
+    "itemKey": "money",
+    "weight": 18,
+    "unique": false,
+    "minQty": 10,
+    "maxQty": 25
+   }
+  ]
+ },
+ {
+  "id": "a3fa05ff-904e-5994-98aa-134ee66e5f80",
+  "orderIndex": 705,
+  "regionId": "alola",
+  "name": "Ten Carat Hill & Kala'e Bay",
+  "bannerUrl": "/banners/crystal_cave.png",
+  "roundsToClear": 1,
+  "minLevel": 10,
+  "maxLevel": 15,
+  "encounterWeights": {
+   "wild": 3,
+   "trainer": 2,
+   "center": 1,
+   "item": 1,
+   "casino": 0
+  },
+  "backtrackMultiplier": 0.5,
+  "legendaryBoss": null,
+  "scalesToTeam": false,
+  "easyMode": false,
+  "enemyUpgradeLevel": 2,
+  "battleBackground": "rock",
+  "hidden": false,
+  "unlockConditions": null,
+  "gyms": [],
+  "wildPool": [
+   {
+    "id": "00de613b-8c2d-5c14-9fb3-ee0be0ee67e9",
+    "dex": 744,
+    "weight": 12,
+    "minLevel": 10,
+    "maxLevel": 14
+   },
+   {
+    "id": "904a2db8-99f9-58b0-a8e5-ba1b88f3e803",
+    "dex": 524,
+    "weight": 10,
+    "minLevel": 10,
+    "maxLevel": 14
+   },
+   {
+    "id": "e8adeb5e-b37a-5187-b573-1d59d46d0a67",
+    "dex": 703,
+    "weight": 8,
+    "minLevel": 10,
+    "maxLevel": 14
+   },
+   {
+    "id": "6b4c3380-b588-5ee8-b7ee-bf832b785a64",
+    "dex": 66,
+    "weight": 8,
+    "minLevel": 10,
+    "maxLevel": 14
+   },
+   {
+    "id": "c08390de-594e-5929-b7e4-a12bc127dc8a",
+    "dex": 327,
+    "weight": 8,
+    "minLevel": 10,
+    "maxLevel": 14
+   },
+   {
+    "id": "1499011f-bec7-56e8-a56a-725705ad0451",
+    "dex": 302,
+    "weight": 4,
+    "minLevel": 11,
+    "maxLevel": 14
+   },
+   {
+    "id": "e335e813-5bfd-5758-a950-da3890ac3292",
+    "dex": 303,
+    "weight": 4,
+    "minLevel": 11,
+    "maxLevel": 14
+   },
+   {
+    "id": "f8d852a8-3199-56f7-bda2-ee7e4fabd0cb",
+    "dex": 116,
+    "weight": 10,
+    "minLevel": 11,
+    "maxLevel": 15
+   },
+   {
+    "id": "8e515050-0c7f-5667-b490-e58cfed5a45e",
+    "dex": 90,
+    "weight": 8,
+    "minLevel": 11,
+    "maxLevel": 15
+   },
+   {
+    "id": "8130d988-d0a2-5c4c-8752-3a000304b300",
+    "dex": 86,
+    "weight": 6,
+    "minLevel": 11,
+    "maxLevel": 15
+   },
+   {
+    "id": "01f3e190-286e-5ee6-a5ca-f9bdcc297480",
+    "dex": 238,
+    "weight": 6,
+    "minLevel": 10,
+    "maxLevel": 14
+   },
+   {
+    "id": "672a5bb7-2716-56dd-9a6f-b465cfd6b4f8",
+    "dex": 225,
+    "weight": 6,
+    "minLevel": 10,
+    "maxLevel": 14
+   }
+  ],
+  "trainerPool": [
+   {
+    "id": "8ef8cde7-1053-5b09-bcf2-88a88a7d0d67",
+    "trainerId": "59ad37c4-cfdf-5014-b5b7-010974af81b2",
+    "weight": 10
+   },
+   {
+    "id": "d753a7e9-5089-5339-8429-035dbaedfef6",
+    "trainerId": "2388acbf-0822-592a-a9d5-d2bea5482a11",
+    "weight": 10
+   },
+   {
+    "id": "7e33a27a-0d2d-557c-9690-d033db81e9a6",
+    "trainerId": "e642dfa7-4a30-5d9c-91d0-73f0c80688c2",
+    "weight": 10
+   }
+  ],
+  "lootPool": [
+   {
+    "id": "c4a04bc6-a93c-5884-9855-80c40f036af5",
+    "itemKey": "potion",
+    "weight": 30,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "53a94555-bcd6-5417-9382-f12c29aad8a3",
+    "itemKey": "poke-ball",
+    "weight": 26,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "0f5549e7-26cf-5023-81ec-0c27bd04d7b3",
+    "itemKey": "antidote",
+    "weight": 12,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "73cff199-8c8f-5f9e-a479-44c846467f0d",
+    "itemKey": "paralyze-heal",
+    "weight": 10,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "b2929d41-812f-5e70-ad27-0046cb4cdce1",
+    "itemKey": "ether",
+    "weight": 4,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "358d1577-5fe0-5c07-82bb-fc97fa64c82c",
+    "itemKey": "money",
+    "weight": 18,
+    "unique": false,
+    "minQty": 10,
+    "maxQty": 25
+   }
+  ]
+ },
+ {
+  "id": "55e5bb0d-c6b3-5177-9533-a04e905f005b",
+  "orderIndex": 706,
+  "regionId": "alola",
+  "name": "Route 1 South & Iki Town",
+  "bannerUrl": "/banners/plains.png",
+  "roundsToClear": 1,
+  "minLevel": 11,
+  "maxLevel": 16,
+  "encounterWeights": {
+   "wild": 3,
+   "trainer": 2,
+   "center": 1,
+   "item": 1,
+   "casino": 0
+  },
+  "backtrackMultiplier": 0.5,
+  "legendaryBoss": null,
+  "scalesToTeam": false,
+  "easyMode": false,
+  "enemyUpgradeLevel": 2,
+  "battleBackground": "grass",
+  "hidden": false,
+  "unlockConditions": null,
+  "gyms": [
+   "6f841802-a4ca-5e58-bc31-2c5037791a07"
+  ],
+  "wildPool": [
+   {
+    "id": "2d975d3b-3317-5b02-9a2c-5908a378f9ea",
+    "dex": 438,
+    "weight": 12,
+    "minLevel": 11,
+    "maxLevel": 14
+   },
+   {
+    "id": "6d36c6d1-dc8b-5a40-85fe-eca59add4b03",
+    "dex": 446,
+    "weight": 8,
+    "minLevel": 11,
+    "maxLevel": 14
+   },
+   {
+    "id": "3b33f03e-0efa-510e-ade7-da0c768ceb14",
+    "dex": 744,
+    "weight": 10,
+    "minLevel": 11,
+    "maxLevel": 14
+   },
+   {
+    "id": "fb969161-51d2-5a5b-9e95-d47f993d32bc",
+    "dex": 731,
+    "weight": 10,
+    "minLevel": 11,
+    "maxLevel": 13
+   },
+   {
+    "id": "25cedfa5-a0fb-5239-b4bf-21e52a3d502a",
+    "dex": 734,
+    "weight": 10,
+    "minLevel": 11,
+    "maxLevel": 14
+   },
+   {
+    "id": "2fe47fa2-12ac-562e-9ce6-a430bedf8fef",
+    "dex": 440,
+    "weight": 6,
+    "minLevel": 11,
+    "maxLevel": 14
+   },
+   {
+    "id": "1777bb53-302a-5688-a2d7-4e1bdc994561",
+    "dex": 185,
+    "weight": 6,
+    "minLevel": 11,
+    "maxLevel": 14
+   },
+   {
+    "id": "495c81e9-3444-52c9-9500-36f4a2d8483b",
+    "dex": 736,
+    "weight": 8,
+    "minLevel": 11,
+    "maxLevel": 14
+   },
+   {
+    "id": "deae56d2-a57c-56c4-a975-b9098d382b55",
+    "dex": 143,
+    "weight": 2,
+    "minLevel": 13,
+    "maxLevel": 15
+   }
+  ],
+  "trainerPool": [
+   {
+    "id": "95e9377a-2f4b-5fad-87fc-59b4701743a0",
+    "trainerId": "465f30f0-0236-5dc6-b10a-5cae56a9b1de",
+    "weight": 10
+   },
+   {
+    "id": "c837e1a3-df17-5e6a-aa57-0b8c0cd4b45d",
+    "trainerId": "d5104e99-1d30-5d94-9bdf-5a81489753f9",
+    "weight": 10
+   },
+   {
+    "id": "9dbff0b3-78f7-53e6-8187-5500391f41db",
+    "trainerId": "17a95eb7-00cb-5c1a-aff5-119290c1b907",
+    "weight": 10
+   }
+  ],
+  "lootPool": [
+   {
+    "id": "42ea1547-b079-5604-982d-3a76327b4b52",
+    "itemKey": "potion",
+    "weight": 22,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "eac1a5ae-0ea8-5cb0-9e23-b03acd91fb8d",
+    "itemKey": "super-potion",
+    "weight": 10,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "ce790ea5-e3f4-567c-9cec-fbbd0da63f9e",
+    "itemKey": "poke-ball",
+    "weight": 20,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "b841a10d-4d88-5d58-9aa9-a45fddb7dad1",
+    "itemKey": "great-ball",
+    "weight": 6,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "bef66225-1b41-5903-8b5c-bcefcde617b0",
+    "itemKey": "antidote",
+    "weight": 8,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "17ea9a94-8c02-5819-bc2c-eab646ed30ef",
+    "itemKey": "paralyze-heal",
+    "weight": 8,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "ca0a2cd5-dad6-5eac-8240-be3d3e9234ff",
+    "itemKey": "burn-heal",
+    "weight": 6,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "f081b152-0e5e-5372-bba5-6fc46e02f361",
+    "itemKey": "ether",
+    "weight": 6,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "610878dd-0c24-5f49-b05a-9f3e2313dae5",
+    "itemKey": "money",
+    "weight": 16,
+    "unique": false,
+    "minQty": 25,
+    "maxQty": 50
+   }
+  ]
+ },
+ {
+  "id": "87cba513-0bc5-55df-a781-9de73048528c",
+  "orderIndex": 707,
+  "regionId": "alola",
+  "name": "Heahea City & Routes 4–6",
+  "bannerUrl": "/banners/plains.png#flip",
+  "roundsToClear": 1,
+  "minLevel": 13,
+  "maxLevel": 18,
+  "encounterWeights": {
+   "wild": 3,
+   "trainer": 2,
+   "center": 1,
+   "item": 1,
+   "casino": 0
+  },
+  "backtrackMultiplier": 0.5,
+  "legendaryBoss": null,
+  "scalesToTeam": false,
+  "easyMode": false,
+  "enemyUpgradeLevel": 3,
+  "battleBackground": "grass",
+  "hidden": false,
+  "unlockConditions": null,
+  "gyms": [],
+  "wildPool": [
+   {
+    "id": "71e9ff96-3617-5a9d-bcb8-76c517bd8628",
+    "dex": 749,
+    "weight": 12,
+    "minLevel": 13,
+    "maxLevel": 17
+   },
+   {
+    "id": "d5b668a4-ee6c-5220-8612-565a51049e08",
+    "dex": 506,
+    "weight": 12,
+    "minLevel": 13,
+    "maxLevel": 15
+   },
+   {
+    "id": "2d8ba868-9d9b-5dfe-b73e-22a46fecad69",
+    "dex": 731,
+    "weight": 10,
+    "minLevel": 13,
+    "maxLevel": 13
+   },
+   {
+    "id": "ad6d1ca5-f5fa-5e03-b9f5-bf2136a62790",
+    "dex": 133,
+    "weight": 6,
+    "minLevel": 13,
+    "maxLevel": 17
+   },
+   {
+    "id": "36044e90-547c-5b44-b6e8-c591a2098824",
+    "dex": 174,
+    "weight": 6,
+    "minLevel": 13,
+    "maxLevel": 17
+   },
+   {
+    "id": "e7376a86-2c19-5f0a-9824-fc55756e0844",
+    "dex": 736,
+    "weight": 8,
+    "minLevel": 13,
+    "maxLevel": 17
+   },
+   {
+    "id": "6fcdc28e-b36c-54fb-a1e9-c7e5dfd056e2",
+    "dex": 440,
+    "weight": 6,
+    "minLevel": 13,
+    "maxLevel": 17
+   },
+   {
+    "id": "4beba605-233a-5138-9896-5918d03d8fbb",
+    "dex": 741,
+    "weight": 8,
+    "minLevel": 14,
+    "maxLevel": 17
+   },
+   {
+    "id": "2d5b56cc-b39a-5c3c-aef7-7ccfd9120ee1",
+    "dex": 128,
+    "weight": 6,
+    "minLevel": 13,
+    "maxLevel": 17
+   },
+   {
+    "id": "c634acfd-4fce-59d2-85bb-0dde155969b5",
+    "dex": 241,
+    "weight": 6,
+    "minLevel": 13,
+    "maxLevel": 17
+   },
+   {
+    "id": "b460b2ee-3f87-5405-b255-ab0bbf605b1e",
+    "dex": 179,
+    "weight": 6,
+    "minLevel": 12,
+    "maxLevel": 14
+   },
+   {
+    "id": "df430df9-f4d5-53b5-bac9-f00059d1683e",
+    "dex": 761,
+    "weight": 8,
+    "minLevel": 14,
+    "maxLevel": 17
+   }
+  ],
+  "trainerPool": [
+   {
+    "id": "b7e8bb88-7b85-5ee2-a3e0-af3dc662fd20",
+    "trainerId": "48d4e541-5da0-5d36-bd29-2ed3e0f3de97",
+    "weight": 10
+   },
+   {
+    "id": "8a8548c6-4016-5770-bf6b-17d3400a4097",
+    "trainerId": "ab6e4d36-e8c1-5d4f-86cf-419998047ec9",
+    "weight": 10
+   },
+   {
+    "id": "382e6aa1-f9bd-5bd4-83d4-760bfb827e4e",
+    "trainerId": "0cd3c6d0-14ce-5388-8d69-48bfdb00b878",
+    "weight": 10
+   },
+   {
+    "id": "708b54ac-d944-5420-8938-6a4c3e1b26a3",
+    "trainerId": "f3cf001e-bbfb-5d24-bbf3-06318b1cade0",
+    "weight": 10
+   }
+  ],
+  "lootPool": [
+   {
+    "id": "6247e605-b094-53e5-a504-711eb73b8b5f",
+    "itemKey": "potion",
+    "weight": 22,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "9adef22b-8558-5698-8405-ea75869cfe16",
+    "itemKey": "super-potion",
+    "weight": 10,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "8f5eef3a-c165-5b24-848e-4a8f4097cc15",
+    "itemKey": "poke-ball",
+    "weight": 20,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "ef4636cb-03c1-5353-bf05-cbb2f50919e9",
+    "itemKey": "great-ball",
+    "weight": 6,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "0bbd4acd-7722-5642-96b8-4cb93a602338",
+    "itemKey": "antidote",
+    "weight": 8,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "a54c148b-5ca6-515b-81f2-e24c41274009",
+    "itemKey": "paralyze-heal",
+    "weight": 8,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "7bcda269-e3a9-5df1-820d-2a7bc5767054",
+    "itemKey": "burn-heal",
+    "weight": 6,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "b7400571-4a2b-57aa-9695-e65d63ea2272",
+    "itemKey": "ether",
+    "weight": 6,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "38dcfde9-cdb1-5be3-96e5-3a0129e5b4c5",
+    "itemKey": "money",
+    "weight": 16,
+    "unique": false,
+    "minQty": 25,
+    "maxQty": 50
+   }
+  ]
+ },
+ {
+  "id": "ab9ebe55-a162-52ce-b648-cc84608f7f77",
+  "orderIndex": 708,
+  "regionId": "alola",
+  "name": "Brooklet Hill",
+  "bannerUrl": "/banners/swamp.png#flip",
+  "roundsToClear": 1,
+  "minLevel": 14,
+  "maxLevel": 20,
+  "encounterWeights": {
+   "wild": 3,
+   "trainer": 2,
+   "center": 1,
+   "item": 1,
+   "casino": 0
+  },
+  "backtrackMultiplier": 0.5,
+  "legendaryBoss": null,
+  "scalesToTeam": false,
+  "easyMode": false,
+  "enemyUpgradeLevel": 3,
+  "battleBackground": "water",
+  "hidden": false,
+  "unlockConditions": null,
+  "gyms": [
+   "2d323fd2-b283-56cf-99fb-d525a90ba2ec"
+  ],
+  "wildPool": [
+   {
+    "id": "ad4aea91-e06a-5263-86fc-6333761145af",
+    "dex": 751,
+    "weight": 12,
+    "minLevel": 14,
+    "maxLevel": 17
+   },
+   {
+    "id": "92009085-688b-5ab0-9c42-1e1c074f7f22",
+    "dex": 746,
+    "weight": 10,
+    "minLevel": 14,
+    "maxLevel": 20
+   },
+   {
+    "id": "a1a29837-1bce-50a6-bb21-8d557487d45c",
+    "dex": 60,
+    "weight": 10,
+    "minLevel": 14,
+    "maxLevel": 17
+   },
+   {
+    "id": "ea37690b-ecc5-558c-933b-b3d27dc1b589",
+    "dex": 283,
+    "weight": 10,
+    "minLevel": 14,
+    "maxLevel": 17
+   },
+   {
+    "id": "b365ec15-7bbd-5f84-8ec8-e25506bee504",
+    "dex": 54,
+    "weight": 8,
+    "minLevel": 14,
+    "maxLevel": 17
+   },
+   {
+    "id": "2a0511cf-8436-5b1c-8c97-5840e48d264e",
+    "dex": 755,
+    "weight": 8,
+    "minLevel": 14,
+    "maxLevel": 17
+   },
+   {
+    "id": "976cd20d-a5a1-50ad-9978-9b86b7a4f66b",
+    "dex": 46,
+    "weight": 6,
+    "minLevel": 14,
+    "maxLevel": 17
+   },
+   {
+    "id": "f4879734-53e4-524f-9e3a-d6672b3d2803",
+    "dex": 118,
+    "weight": 8,
+    "minLevel": 14,
+    "maxLevel": 20
+   },
+   {
+    "id": "1b698b9a-0032-52f2-bd07-e6eecf574463",
+    "dex": 550,
+    "weight": 6,
+    "minLevel": 14,
+    "maxLevel": 20
+   },
+   {
+    "id": "76b17b7e-06c4-5da5-84a4-1871bf03a6e6",
+    "dex": 594,
+    "weight": 4,
+    "minLevel": 16,
+    "maxLevel": 20
+   },
+   {
+    "id": "1cba4f2b-bf4d-5cee-8a65-e10efaa36d73",
+    "dex": 349,
+    "weight": 2,
+    "minLevel": 14,
+    "maxLevel": 20
+   }
+  ],
+  "trainerPool": [
+   {
+    "id": "cef9d68b-db26-5a73-88d5-f9b83aac1420",
+    "trainerId": "1e6db40c-30ad-5d88-a778-458bea45c450",
+    "weight": 10
+   },
+   {
+    "id": "a62a3186-1001-5f82-8b02-7657d0893258",
+    "trainerId": "4428b3a2-c9c8-51da-a066-a90af7a20a35",
+    "weight": 10
+   },
+   {
+    "id": "24e96e1b-1d6c-5643-8846-f17f6afb9a35",
+    "trainerId": "c0dfe7e4-0c3a-51f2-8f40-db15bcb9786f",
+    "weight": 10
+   }
+  ],
+  "lootPool": [
+   {
+    "id": "869e0482-36df-5681-a1a8-8f3d1436d569",
+    "itemKey": "potion",
+    "weight": 22,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "f2821e11-5ff2-5f12-a842-638aa25b6828",
+    "itemKey": "super-potion",
+    "weight": 10,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "33a095bb-8541-57ba-b756-cb2a8e8c8ab3",
+    "itemKey": "poke-ball",
+    "weight": 20,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "f37e53dd-0b3c-5b4c-b91d-55e35d46f02d",
+    "itemKey": "great-ball",
+    "weight": 6,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "081d45f8-5031-5679-8ebc-8d4fd799dac0",
+    "itemKey": "antidote",
+    "weight": 8,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "a8ed6e73-3540-5a81-8a51-6bb2ac76a660",
+    "itemKey": "paralyze-heal",
+    "weight": 8,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "d2b9d2d7-b04c-5695-ab5b-07fa61c432d2",
+    "itemKey": "burn-heal",
+    "weight": 6,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "5f92aa26-4ac5-5787-8fb8-22217be53859",
+    "itemKey": "ether",
+    "weight": 6,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "a00d61fc-b90a-5e36-83a0-76d7c3762375",
+    "itemKey": "money",
+    "weight": 16,
+    "unique": false,
+    "minQty": 25,
+    "maxQty": 50
+   }
+  ]
+ },
+ {
+  "id": "38846271-6caa-52ab-b474-600c585b98f2",
+  "orderIndex": 709,
+  "regionId": "alola",
+  "name": "Routes 7 & 8 and Wela Volcano Park",
+  "bannerUrl": "/banners/volcano.png",
+  "roundsToClear": 1,
+  "minLevel": 16,
+  "maxLevel": 22,
+  "encounterWeights": {
+   "wild": 3,
+   "trainer": 2,
+   "center": 1,
+   "item": 1,
+   "casino": 0
+  },
+  "backtrackMultiplier": 0.5,
+  "legendaryBoss": null,
+  "scalesToTeam": false,
+  "easyMode": false,
+  "enemyUpgradeLevel": 4,
+  "battleBackground": "rock",
+  "hidden": false,
+  "unlockConditions": null,
+  "gyms": [
+   "d8a8325d-a9dd-5865-b389-ded18cb9dcb9"
+  ],
+  "wildPool": [
+   {
+    "id": "e10ee474-b703-5f70-afa9-1d9f8f0f719b",
+    "dex": 757,
+    "weight": 12,
+    "minLevel": 16,
+    "maxLevel": 20
+   },
+   {
+    "id": "cf69d264-4753-5890-9cea-f9ecf18a6b72",
+    "dex": 767,
+    "weight": 10,
+    "minLevel": 17,
+    "maxLevel": 20
+   },
+   {
+    "id": "1094c09b-93ee-55ca-bf1d-59eee1e535f2",
+    "dex": 759,
+    "weight": 8,
+    "minLevel": 17,
+    "maxLevel": 20
+   },
+   {
+    "id": "08fbe395-60f0-511e-b539-d9cead68b0b8",
+    "dex": 732,
+    "weight": 8,
+    "minLevel": 17,
+    "maxLevel": 20
+   },
+   {
+    "id": "f7402666-ae45-5c27-b1ea-39747007265a",
+    "dex": 661,
+    "weight": 8,
+    "minLevel": 16,
+    "maxLevel": 16
+   },
+   {
+    "id": "9eb1fa15-6183-594b-a429-7a954a03c75d",
+    "dex": 104,
+    "weight": 8,
+    "minLevel": 16,
+    "maxLevel": 19
+   },
+   {
+    "id": "fafded6d-3769-55a4-9925-b94c6b3b2c80",
+    "dex": 115,
+    "weight": 4,
+    "minLevel": 16,
+    "maxLevel": 19
+   },
+   {
+    "id": "fb6969b1-66fc-5a1c-92f9-4ebaf9ed2785",
+    "dex": 240,
+    "weight": 6,
+    "minLevel": 16,
+    "maxLevel": 19
+   },
+   {
+    "id": "820110a8-473c-5dca-b733-65b44df74a6b",
+    "dex": 771,
+    "weight": 8,
+    "minLevel": 16,
+    "maxLevel": 19
+   },
+   {
+    "id": "4bede860-24ba-58f8-b599-b5ed6597e586",
+    "dex": 120,
+    "weight": 6,
+    "minLevel": 16,
+    "maxLevel": 19
+   },
+   {
+    "id": "55fcd486-d97b-5e2c-abe1-7cf8b365ce08",
+    "dex": 456,
+    "weight": 6,
+    "minLevel": 16,
+    "maxLevel": 19
+   },
+   {
+    "id": "f669f0ae-ef74-5dc7-9091-39aa3fdaaf57",
+    "dex": 170,
+    "weight": 6,
+    "minLevel": 16,
+    "maxLevel": 20
+   }
+  ],
+  "trainerPool": [
+   {
+    "id": "fcb6d13d-140f-53d9-8521-99f309538ca5",
+    "trainerId": "f11e2667-9c31-589d-af8b-70f10caba98e",
+    "weight": 10
+   },
+   {
+    "id": "72a7e576-17a7-5cfc-a767-1dd386381649",
+    "trainerId": "5665ba00-732d-529b-bbf0-13bfb08e26b0",
+    "weight": 10
+   },
+   {
+    "id": "4fd4d53d-d9ba-55a1-ad5e-46f70614069f",
+    "trainerId": "ef4262ae-c88f-5031-98ef-cad45ead2a1d",
+    "weight": 10
+   }
+  ],
+  "lootPool": [
+   {
+    "id": "7a9396f8-e083-542c-b69d-55a0ec373fcb",
+    "itemKey": "potion",
+    "weight": 22,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "1cf17fae-5689-5541-8d14-06286188d9f7",
+    "itemKey": "super-potion",
+    "weight": 10,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "fafffeac-0336-5bf9-8724-7dfd9c6760b8",
+    "itemKey": "poke-ball",
+    "weight": 20,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "16deceee-43be-50af-8e44-8966c26d09e7",
+    "itemKey": "great-ball",
+    "weight": 6,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "33b46e42-c184-543a-9c1f-24033789710a",
+    "itemKey": "antidote",
+    "weight": 8,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "f81ac96a-03ed-5aa6-9802-fbc380055fc0",
+    "itemKey": "paralyze-heal",
+    "weight": 8,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "5b3119eb-6cef-58c8-ba79-16a1851dfbc5",
+    "itemKey": "burn-heal",
+    "weight": 6,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "595c8e0c-027c-54c1-812f-cbf598d54c92",
+    "itemKey": "ether",
+    "weight": 6,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "c7dc063c-c923-5cad-9243-0dc2b070d6d7",
+    "itemKey": "money",
+    "weight": 16,
+    "unique": false,
+    "minQty": 25,
+    "maxQty": 50
+   }
+  ]
+ },
+ {
+  "id": "5e9ea6d6-2b62-56a5-a737-d841a48684f6",
+  "orderIndex": 710,
+  "regionId": "alola",
+  "name": "Lush Jungle",
+  "bannerUrl": "/banners/forest.png",
+  "roundsToClear": 1,
+  "minLevel": 18,
+  "maxLevel": 24,
+  "encounterWeights": {
+   "wild": 3,
+   "trainer": 2,
+   "center": 1,
+   "item": 1,
+   "casino": 0
+  },
+  "backtrackMultiplier": 0.5,
+  "legendaryBoss": null,
+  "scalesToTeam": false,
+  "easyMode": false,
+  "enemyUpgradeLevel": 4,
+  "battleBackground": "grass",
+  "hidden": false,
+  "unlockConditions": null,
+  "gyms": [
+   "4d870364-1d61-5516-a2f7-717f067720bf"
+  ],
+  "wildPool": [
+   {
+    "id": "a75e0e3e-419e-5a19-bc15-aae7fdf05078",
+    "dex": 753,
+    "weight": 14,
+    "minLevel": 18,
+    "maxLevel": 22
+   },
+   {
+    "id": "068a7716-fdb1-59dc-a493-0a624fd31e02",
+    "dex": 762,
+    "weight": 10,
+    "minLevel": 19,
+    "maxLevel": 22
+   },
+   {
+    "id": "4d11a5b3-a56f-5bcb-9768-dd48a020625e",
+    "dex": 761,
+    "weight": 8,
+    "minLevel": 16,
+    "maxLevel": 17
+   },
+   {
+    "id": "9df28e22-2100-530c-918f-693af8ca2a5b",
+    "dex": 732,
+    "weight": 10,
+    "minLevel": 18,
+    "maxLevel": 22
+   },
+   {
+    "id": "e8988dcc-d3d1-561d-8d7e-6abe54e3b148",
+    "dex": 764,
+    "weight": 6,
+    "minLevel": 18,
+    "maxLevel": 22
+   },
+   {
+    "id": "59fa698f-7373-5dda-a25c-ab625f4a2db0",
+    "dex": 765,
+    "weight": 4,
+    "minLevel": 18,
+    "maxLevel": 22
+   },
+   {
+    "id": "d846da28-7c71-5b96-81b4-123c00f06b57",
+    "dex": 766,
+    "weight": 4,
+    "minLevel": 18,
+    "maxLevel": 22
+   },
+   {
+    "id": "62c11189-f93b-52ee-b9d7-90099e497b2b",
+    "dex": 755,
+    "weight": 6,
+    "minLevel": 18,
+    "maxLevel": 22
+   },
+   {
+    "id": "80d01012-50ea-5673-b2d9-a8d53afc5ad8",
+    "dex": 704,
+    "weight": 4,
+    "minLevel": 18,
+    "maxLevel": 22
+   },
+   {
+    "id": "868be027-6811-5a6e-be89-e82013e93002",
+    "dex": 163,
+    "weight": 6,
+    "minLevel": 19,
+    "maxLevel": 19
+   },
+   {
+    "id": "40218241-c8aa-5f1d-9841-c846963e761f",
+    "dex": 438,
+    "weight": 6,
+    "minLevel": 18,
+    "maxLevel": 22
+   },
+   {
+    "id": "5d99e00b-e876-5f6c-987d-383ec3483efe",
+    "dex": 127,
+    "weight": 2,
+    "minLevel": 19,
+    "maxLevel": 22
+   }
+  ],
+  "trainerPool": [
+   {
+    "id": "adcb5009-5ffd-5d48-bc12-c3e8061bc297",
+    "trainerId": "1bde458e-8a5f-5914-ad26-cc52847d40a0",
+    "weight": 10
+   },
+   {
+    "id": "620d2218-2fef-5613-b716-b2db26ed743a",
+    "trainerId": "d79be1b5-bbbd-5cfd-8a99-3118f1f5b70a",
+    "weight": 10
+   },
+   {
+    "id": "bdd5c624-fa60-59af-9791-40012b0b847a",
+    "trainerId": "8f7c9e03-a70e-5faa-b2da-ea328629b8ab",
+    "weight": 10
+   }
+  ],
+  "lootPool": [
+   {
+    "id": "cf800078-c207-58c2-bdff-9ff81a730ead",
+    "itemKey": "potion",
+    "weight": 22,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "966dea74-2a37-52b3-a2c4-3daeea6f418e",
+    "itemKey": "super-potion",
+    "weight": 10,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "e425f25a-705c-57b4-84cd-74493afd16b5",
+    "itemKey": "poke-ball",
+    "weight": 20,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "a0030ea0-ef42-5a71-a4b7-a01b9d1c89da",
+    "itemKey": "great-ball",
+    "weight": 6,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "39e2c5cc-f934-57fc-8e26-d6821bcfb839",
+    "itemKey": "antidote",
+    "weight": 8,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "bb639590-6c72-5e6e-9524-a3fadb0f9d35",
+    "itemKey": "paralyze-heal",
+    "weight": 8,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "e5eba093-d867-59ae-92cf-e9caf58abdc2",
+    "itemKey": "burn-heal",
+    "weight": 6,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "1d54a56f-407e-5a01-ba0b-745e7f895b5b",
+    "itemKey": "ether",
+    "weight": 6,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "78e7b5d6-4c08-5577-ad1a-9e63c1f62d24",
+    "itemKey": "money",
+    "weight": 16,
+    "unique": false,
+    "minQty": 25,
+    "maxQty": 50
+   }
+  ]
+ },
+ {
+  "id": "40914a04-5443-58e5-bcdf-051cc9de5dd7",
+  "orderIndex": 711,
+  "regionId": "alola",
+  "name": "Memorial Hill, Akala Outskirts & Konikoni City",
+  "bannerUrl": "/banners/haunted.png",
+  "roundsToClear": 1,
+  "minLevel": 19,
+  "maxLevel": 27,
+  "encounterWeights": {
+   "wild": 3,
+   "trainer": 2,
+   "center": 1,
+   "item": 1,
+   "casino": 0
+  },
+  "backtrackMultiplier": 0.5,
+  "legendaryBoss": null,
+  "scalesToTeam": false,
+  "easyMode": false,
+  "enemyUpgradeLevel": 4,
+  "battleBackground": "default",
+  "hidden": false,
+  "unlockConditions": null,
+  "gyms": [
+   "8ccda063-9222-5190-a949-145815db7a6f"
+  ],
+  "wildPool": [
+   {
+    "id": "d408bd0e-a3be-5c90-83d3-cf4e659e2420",
+    "dex": 679,
+    "weight": 12,
+    "minLevel": 20,
+    "maxLevel": 24
+   },
+   {
+    "id": "0efc13ed-208c-5766-b3da-60c8d0a42b6e",
+    "dex": 759,
+    "weight": 8,
+    "minLevel": 20,
+    "maxLevel": 24
+   },
+   {
+    "id": "b03d0b18-7c07-5beb-90c2-af7167929854",
+    "dex": 747,
+    "weight": 10,
+    "minLevel": 20,
+    "maxLevel": 23
+   },
+   {
+    "id": "8d8c8352-c691-5aa7-bc1d-9ba2b59bdcb7",
+    "dex": 92,
+    "weight": 10,
+    "minLevel": 20,
+    "maxLevel": 24
+   },
+   {
+    "id": "6013cf6b-0f39-5728-8808-06e9eaa270d4",
+    "dex": 708,
+    "weight": 8,
+    "minLevel": 20,
+    "maxLevel": 24
+   },
+   {
+    "id": "17e1fd09-d2c9-569e-acc7-8ab4861f133e",
+    "dex": 41,
+    "weight": 8,
+    "minLevel": 19,
+    "maxLevel": 21
+   },
+   {
+    "id": "7e78c1c7-2480-5a1d-865c-6eecd3462739",
+    "dex": 50,
+    "weight": 8,
+    "minLevel": 19,
+    "maxLevel": 23
+   },
+   {
+    "id": "1b7a0539-2896-5c21-bdd4-ce68b812a16b",
+    "dex": 299,
+    "weight": 6,
+    "minLevel": 20,
+    "maxLevel": 24
+   },
+   {
+    "id": "0bdd5182-79a7-5881-ac29-438529d4590a",
+    "dex": 177,
+    "weight": 6,
+    "minLevel": 21,
+    "maxLevel": 24
+   },
+   {
+    "id": "9af3794e-6d51-5dd9-bde8-072553af69c6",
+    "dex": 222,
+    "weight": 6,
+    "minLevel": 20,
+    "maxLevel": 23
+   },
+   {
+    "id": "e2adac79-d662-5bf1-abac-49303ec56358",
+    "dex": 370,
+    "weight": 6,
+    "minLevel": 20,
+    "maxLevel": 23
+   },
+   {
+    "id": "3efc893b-f62c-5c00-967f-a740f716d4a3",
+    "dex": 246,
+    "weight": 2,
+    "minLevel": 20,
+    "maxLevel": 23
+   }
+  ],
+  "trainerPool": [
+   {
+    "id": "b8f3efe6-ca6a-51b6-b220-268ea3d87e1c",
+    "trainerId": "7446e7c5-9edc-59c6-b66f-7daae84b4a1b",
+    "weight": 10
+   },
+   {
+    "id": "926d9f60-13d6-5ca5-a80b-ff19f060bfc9",
+    "trainerId": "1e689dbe-e8f7-565e-9a59-86934b00f2e0",
+    "weight": 10
+   },
+   {
+    "id": "52b2deef-2c35-55cc-847e-3312be9e152f",
+    "trainerId": "a74915b8-d2a4-5196-88d0-1175519d200b",
+    "weight": 10
+   },
+   {
+    "id": "1399823c-3dc5-536f-8cba-2f4152e59b0b",
+    "trainerId": "83a4bf1d-ca8a-5a5b-8018-617c4078dcdd",
+    "weight": 10
+   }
+  ],
+  "lootPool": [
+   {
+    "id": "beaf38ab-2542-5536-b6c8-aa288c072fe6",
+    "itemKey": "super-potion",
+    "weight": 20,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "373eba16-99f4-5cd7-a8f6-3012546824ed",
+    "itemKey": "poke-ball",
+    "weight": 10,
+    "unique": false,
+    "minQty": 2,
+    "maxQty": 3
+   },
+   {
+    "id": "7d74958e-5b2e-5194-b572-f4aeb329f4f5",
+    "itemKey": "great-ball",
+    "weight": 16,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "49c35946-e8aa-5d0a-9232-bf9396bbfda5",
+    "itemKey": "ultra-ball",
+    "weight": 4,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "745b8fef-66c7-5b62-95eb-7e90fee7f149",
+    "itemKey": "antidote",
+    "weight": 5,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "5bcca9c0-b769-5a6c-944d-9c63d48bc902",
+    "itemKey": "paralyze-heal",
+    "weight": 5,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "e85f70ae-6560-5763-87ef-d8b9fee43865",
+    "itemKey": "burn-heal",
+    "weight": 5,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "c1d7f859-ed20-5ba1-91a6-2b40e6429903",
+    "itemKey": "ice-heal",
+    "weight": 5,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "0fcd15ca-c8b9-56e0-9770-0487924df43b",
+    "itemKey": "ether",
+    "weight": 8,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "98b27d08-e586-5a23-8179-cdd54cc004e2",
+    "itemKey": "max-ether",
+    "weight": 3,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "6a42acba-0745-5469-8c37-a94e2ab103e5",
+    "itemKey": "money",
+    "weight": 16,
+    "unique": false,
+    "minQty": 50,
+    "maxQty": 100
+   }
+  ]
+ },
+ {
+  "id": "0e1ccc24-1c60-56e1-9f03-4b3deda34951",
+  "orderIndex": 712,
+  "regionId": "alola",
+  "name": "Hano Beach & Aether Paradise",
+  "bannerUrl": "/banners/beach.png#flip",
+  "roundsToClear": 1,
+  "minLevel": 21,
+  "maxLevel": 28,
+  "encounterWeights": {
+   "wild": 2,
+   "trainer": 3,
+   "center": 1,
+   "item": 1,
+   "casino": 0
+  },
+  "backtrackMultiplier": 0.5,
+  "legendaryBoss": null,
+  "scalesToTeam": false,
+  "easyMode": false,
+  "enemyUpgradeLevel": 5,
+  "battleBackground": "sea",
+  "hidden": false,
+  "unlockConditions": null,
+  "gyms": [],
+  "wildPool": [
+   {
+    "id": "65049284-b757-5d69-bd17-63e970fff086",
+    "dex": 769,
+    "weight": 12,
+    "minLevel": 21,
+    "maxLevel": 25
+   },
+   {
+    "id": "38b4d44a-d148-5a01-a871-35606ee1593d",
+    "dex": 771,
+    "weight": 10,
+    "minLevel": 21,
+    "maxLevel": 25
+   },
+   {
+    "id": "5d4da95f-03a8-5117-8eee-4a8e70749ee9",
+    "dex": 72,
+    "weight": 12,
+    "minLevel": 21,
+    "maxLevel": 25
+   },
+   {
+    "id": "064feaca-d3cd-59de-81a1-0855b381cc32",
+    "dex": 120,
+    "weight": 8,
+    "minLevel": 21,
+    "maxLevel": 25
+   },
+   {
+    "id": "aa0dbb1e-4d74-5679-bd60-23a4288ea843",
+    "dex": 456,
+    "weight": 8,
+    "minLevel": 21,
+    "maxLevel": 25
+   },
+   {
+    "id": "3835cef9-4084-5cfe-8b85-33102beab3b0",
+    "dex": 278,
+    "weight": 8,
+    "minLevel": 21,
+    "maxLevel": 24
+   },
+   {
+    "id": "6b20c9f6-48d1-52fb-9db5-08e51f5d6932",
+    "dex": 137,
+    "weight": 2,
+    "minLevel": 24,
+    "maxLevel": 27
+   }
+  ],
+  "trainerPool": [
+   {
+    "id": "827fa17a-6a47-5214-9ab7-5d59c660f764",
+    "trainerId": "2d97ffca-24c4-56c3-a69b-792913750dc4",
+    "weight": 10
+   },
+   {
+    "id": "e47498db-e57e-59a3-a928-f08584a09b2c",
+    "trainerId": "b126bc3e-9c99-5734-b3c6-2032fe5f0465",
+    "weight": 10
+   },
+   {
+    "id": "9fccbec0-117f-594a-9240-a42da87b1725",
+    "trainerId": "4c44cb19-2e9c-5583-9278-23c35e1fecff",
+    "weight": 10
+   },
+   {
+    "id": "fd39cd24-6f83-5d68-8e54-78ee6094f669",
+    "trainerId": "a291f26a-d650-51f8-b6fa-d31e21e30e59",
+    "weight": 10
+   }
+  ],
+  "lootPool": [
+   {
+    "id": "0d021425-a7e3-52a6-b7d2-2bde26b79f20",
+    "itemKey": "super-potion",
+    "weight": 20,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "9ee4468f-486e-5fdd-9a83-a37db1fe3336",
+    "itemKey": "poke-ball",
+    "weight": 10,
+    "unique": false,
+    "minQty": 2,
+    "maxQty": 3
+   },
+   {
+    "id": "6b32121a-6e6c-5dd4-8b3f-9c9d508a17c0",
+    "itemKey": "great-ball",
+    "weight": 16,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "8ad46f93-c22d-5665-97b8-273c38c1f451",
+    "itemKey": "ultra-ball",
+    "weight": 4,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "079a3536-6b29-5257-b11e-9e2cdfeca326",
+    "itemKey": "antidote",
+    "weight": 5,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "1af9e8dc-7189-5b42-b964-fd936c7089b5",
+    "itemKey": "paralyze-heal",
+    "weight": 5,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "4bbc9b2d-df54-5eb5-9cda-fca0430e20a2",
+    "itemKey": "burn-heal",
+    "weight": 5,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "3bd6987b-2d65-59d6-9d6c-f0892e8bc02a",
+    "itemKey": "ice-heal",
+    "weight": 5,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "32bef529-ea35-53e8-b126-c10ed9cfa526",
+    "itemKey": "ether",
+    "weight": 8,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "c578d5f1-e216-5e3a-ba6b-b8c311cb0182",
+    "itemKey": "max-ether",
+    "weight": 3,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "fd25ea38-3d74-52e6-ae1a-0a48cd22474c",
+    "itemKey": "money",
+    "weight": 16,
+    "unique": false,
+    "minQty": 50,
+    "maxQty": 100
+   }
+  ]
+ },
+ {
+  "id": "7d3ee2f7-3442-5738-b2c6-d3037e514fec",
+  "orderIndex": 713,
+  "regionId": "alola",
+  "name": "Malie City & Malie Garden",
+  "bannerUrl": "/banners/city.png#flip",
+  "roundsToClear": 1,
+  "minLevel": 23,
+  "maxLevel": 29,
+  "encounterWeights": {
+   "wild": 2,
+   "trainer": 3,
+   "center": 1,
+   "item": 1,
+   "casino": 2
+  },
+  "backtrackMultiplier": 0.5,
+  "legendaryBoss": null,
+  "scalesToTeam": false,
+  "easyMode": false,
+  "enemyUpgradeLevel": 5,
+  "battleBackground": "default",
+  "hidden": false,
+  "unlockConditions": null,
+  "gyms": [],
+  "wildPool": [
+   {
+    "id": "da05e9f0-83e3-5fc5-8cff-b34e537094db",
+    "dex": 568,
+    "weight": 10,
+    "minLevel": 24,
+    "maxLevel": 28
+   },
+   {
+    "id": "a2a3f824-a8f5-5b7a-b8d3-1d5b97ee5f53",
+    "dex": 88,
+    "weight": 10,
+    "minLevel": 24,
+    "maxLevel": 28
+   },
+   {
+    "id": "7e6fdc29-1468-524a-a28c-606d8c3f28b1",
+    "dex": 81,
+    "weight": 8,
+    "minLevel": 24,
+    "maxLevel": 28
+   },
+   {
+    "id": "fa049232-150c-5c56-8171-39bff6f625a6",
+    "dex": 572,
+    "weight": 6,
+    "minLevel": 25,
+    "maxLevel": 28
+   },
+   {
+    "id": "25f117d9-a6e8-5a99-b7f8-14ebf16cf9f5",
+    "dex": 52,
+    "weight": 8,
+    "minLevel": 24,
+    "maxLevel": 27
+   },
+   {
+    "id": "243fb2d3-54a2-5a1f-89a0-c8ce08d447a0",
+    "dex": 60,
+    "weight": 6,
+    "minLevel": 24,
+    "maxLevel": 24
+   },
+   {
+    "id": "3f89ad10-7275-5fa0-ba00-b3d8b926668f",
+    "dex": 54,
+    "weight": 6,
+    "minLevel": 24,
+    "maxLevel": 28
+   },
+   {
+    "id": "8f72967e-cbf8-59cb-bab9-dfe41ec33507",
+    "dex": 284,
+    "weight": 6,
+    "minLevel": 24,
+    "maxLevel": 28
+   },
+   {
+    "id": "2133d3cb-42b4-5105-b5d0-cfbb8c3e3455",
+    "dex": 752,
+    "weight": 6,
+    "minLevel": 24,
+    "maxLevel": 28
+   },
+   {
+    "id": "f8e55262-3b8e-51a2-8983-5bd450a48345",
+    "dex": 166,
+    "weight": 6,
+    "minLevel": 24,
+    "maxLevel": 28
+   },
+   {
+    "id": "139efe97-54b4-5265-9d53-3688f6343155",
+    "dex": 168,
+    "weight": 6,
+    "minLevel": 24,
+    "maxLevel": 28
+   }
+  ],
+  "trainerPool": [
+   {
+    "id": "53c98e01-d1b8-5336-8588-032a2bc538c5",
+    "trainerId": "618a3856-008e-5a72-8745-c08d86f11be5",
+    "weight": 10
+   },
+   {
+    "id": "e8e151dc-baa7-5f2c-8a30-c7570760a865",
+    "trainerId": "678dff2c-99b1-5e3f-8962-110b5bb79f08",
+    "weight": 10
+   },
+   {
+    "id": "4a0bcc42-a347-57cb-b57f-285c10385e0c",
+    "trainerId": "1e56740b-9148-5eab-b70c-9fbee6647b09",
+    "weight": 10
+   }
+  ],
+  "lootPool": [
+   {
+    "id": "4703e906-f92b-593e-af2c-de32f5d25a43",
+    "itemKey": "super-potion",
+    "weight": 20,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "e38329b6-2725-53d4-b7b7-e8a2f2195384",
+    "itemKey": "poke-ball",
+    "weight": 10,
+    "unique": false,
+    "minQty": 2,
+    "maxQty": 3
+   },
+   {
+    "id": "e3966017-6ea2-572c-9e30-be9223f6576a",
+    "itemKey": "great-ball",
+    "weight": 16,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "8d68d773-e558-5111-b8c0-087235488334",
+    "itemKey": "ultra-ball",
+    "weight": 4,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "169bc592-4a08-52b8-bbb8-78fe36f741bc",
+    "itemKey": "antidote",
+    "weight": 5,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "066231ec-29d8-5c99-a07e-92235cd8cb9e",
+    "itemKey": "paralyze-heal",
+    "weight": 5,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "d82f2d32-71f3-56b6-b9fa-0ec6815777fa",
+    "itemKey": "burn-heal",
+    "weight": 5,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "20739c11-e5be-58b1-88f6-c03b828b8cc4",
+    "itemKey": "ice-heal",
+    "weight": 5,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "32be44b4-ffb9-578c-9fc2-3ad00f7311dc",
+    "itemKey": "ether",
+    "weight": 8,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "46bc73e4-eeb6-5146-b42c-29107b99569c",
+    "itemKey": "max-ether",
+    "weight": 3,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "8dbd904e-0b06-57bf-a0f4-df41bb5fad91",
+    "itemKey": "money",
+    "weight": 16,
+    "unique": false,
+    "minQty": 50,
+    "maxQty": 100
+   }
+  ]
+ },
+ {
+  "id": "5fb9f3eb-bdbe-5c45-8345-3f4a20d75f1d",
+  "orderIndex": 714,
+  "regionId": "alola",
+  "name": "Route 10 & Mount Hokulani",
+  "bannerUrl": "/banners/sky.png",
+  "roundsToClear": 1,
+  "minLevel": 24,
+  "maxLevel": 30,
+  "encounterWeights": {
+   "wild": 3,
+   "trainer": 2,
+   "center": 1,
+   "item": 1,
+   "casino": 0
+  },
+  "backtrackMultiplier": 0.5,
+  "legendaryBoss": null,
+  "scalesToTeam": false,
+  "easyMode": false,
+  "enemyUpgradeLevel": 5,
+  "battleBackground": "rock",
+  "hidden": false,
+  "unlockConditions": null,
+  "gyms": [
+   "018f1a21-bb29-56a5-a929-6228bbad679b"
+  ],
+  "wildPool": [
+   {
+    "id": "c0262623-f0ca-5239-a312-832ee0fd72de",
+    "dex": 774,
+    "weight": 12,
+    "minLevel": 25,
+    "maxLevel": 30
+   },
+   {
+    "id": "8a67700c-0088-5c13-aa90-f1956a57f8a3",
+    "dex": 739,
+    "weight": 10,
+    "minLevel": 24,
+    "maxLevel": 29
+   },
+   {
+    "id": "43e97d55-cfbd-5918-a924-d1260bf92bd8",
+    "dex": 22,
+    "weight": 10,
+    "minLevel": 24,
+    "maxLevel": 29
+   },
+   {
+    "id": "ee8cdbc1-0d0a-54dc-a675-2fc28cb58aa8",
+    "dex": 227,
+    "weight": 6,
+    "minLevel": 24,
+    "maxLevel": 29
+   },
+   {
+    "id": "b211f612-6306-5bfa-b2bc-5be91d34aff1",
+    "dex": 605,
+    "weight": 8,
+    "minLevel": 27,
+    "maxLevel": 30
+   },
+   {
+    "id": "26d62b46-b722-5f5f-bc2c-e419eb056b91",
+    "dex": 173,
+    "weight": 4,
+    "minLevel": 25,
+    "maxLevel": 30
+   },
+   {
+    "id": "a2091007-c022-5e1f-92b0-dbba2520d80b",
+    "dex": 374,
+    "weight": 2,
+    "minLevel": 18,
+    "maxLevel": 19
+   },
+   {
+    "id": "8c23fda3-a83a-5ccc-b500-0a65ade61636",
+    "dex": 610,
+    "weight": 6,
+    "minLevel": 28,
+    "maxLevel": 30
+   },
+   {
+    "id": "a8366aa0-09b3-565a-aaf0-f6b3044d053b",
+    "dex": 204,
+    "weight": 6,
+    "minLevel": 26,
+    "maxLevel": 29
+   },
+   {
+    "id": "13fd915e-cd7d-5759-b13c-e69b9d659695",
+    "dex": 132,
+    "weight": 4,
+    "minLevel": 25,
+    "maxLevel": 30
+   },
+   {
+    "id": "03611c8a-636b-5103-b7b2-9425b32cd3d6",
+    "dex": 674,
+    "weight": 6,
+    "minLevel": 24,
+    "maxLevel": 29
+   }
+  ],
+  "trainerPool": [
+   {
+    "id": "00812a4a-de83-50b6-b998-3c565192fd6c",
+    "trainerId": "ab4d5f00-3c74-5de3-9a7d-be191bbc2836",
+    "weight": 10
+   },
+   {
+    "id": "c01d5f96-1c0b-5ceb-afbc-ac37546f96de",
+    "trainerId": "c359c22b-b30c-5d00-a2b1-6681c6031012",
+    "weight": 10
+   },
+   {
+    "id": "46db7900-62de-5e9e-81e4-43ad29de3ee9",
+    "trainerId": "c8353701-42ed-5a91-9d53-49ba716ce16e",
+    "weight": 10
+   }
+  ],
+  "lootPool": [
+   {
+    "id": "c030d299-1147-57de-bd65-72da58b981f7",
+    "itemKey": "super-potion",
+    "weight": 20,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "6158ebab-de12-582b-bc38-255fa42b9500",
+    "itemKey": "poke-ball",
+    "weight": 10,
+    "unique": false,
+    "minQty": 2,
+    "maxQty": 3
+   },
+   {
+    "id": "99b95f97-f27e-5244-9eef-9d09a708dd79",
+    "itemKey": "great-ball",
+    "weight": 16,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "4d7d1758-b272-5cce-926f-55079dd13412",
+    "itemKey": "ultra-ball",
+    "weight": 4,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "f25443f4-c371-5c7e-a96e-b55ea90e8dbf",
+    "itemKey": "antidote",
+    "weight": 5,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "d63c971d-1cd5-5eac-8269-43e4a1dc3005",
+    "itemKey": "paralyze-heal",
+    "weight": 5,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "afce86cf-84d4-5781-b01f-082a81cb2ffb",
+    "itemKey": "burn-heal",
+    "weight": 5,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "2201b748-b0b4-56dd-b83b-3ab336fe3af8",
+    "itemKey": "ice-heal",
+    "weight": 5,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "5ad5909b-8f21-5fb8-9eab-cca4daf5288e",
+    "itemKey": "ether",
+    "weight": 8,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "406c7d64-a74b-5aaf-9946-4cc72896bc27",
+    "itemKey": "max-ether",
+    "weight": 3,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "f9bbbaa6-3066-595e-aa2f-6ebaad4bd9ca",
+    "itemKey": "money",
+    "weight": 16,
+    "unique": false,
+    "minQty": 50,
+    "maxQty": 100
+   }
+  ]
+ },
+ {
+  "id": "d6ba26d1-3dd2-51fc-b559-74c01d2ddba2",
+  "orderIndex": 715,
+  "regionId": "alola",
+  "name": "Routes 11 & 12 and Blush Mountain",
+  "bannerUrl": "/banners/mountains.png",
+  "roundsToClear": 1,
+  "minLevel": 26,
+  "maxLevel": 32,
+  "encounterWeights": {
+   "wild": 3,
+   "trainer": 2,
+   "center": 1,
+   "item": 1,
+   "casino": 0
+  },
+  "backtrackMultiplier": 0.5,
+  "legendaryBoss": null,
+  "scalesToTeam": false,
+  "easyMode": false,
+  "enemyUpgradeLevel": 6,
+  "battleBackground": "rock",
+  "hidden": false,
+  "unlockConditions": null,
+  "gyms": [],
+  "wildPool": [
+   {
+    "id": "64da1426-441f-54aa-8332-bb5f66a13677",
+    "dex": 775,
+    "weight": 10,
+    "minLevel": 26,
+    "maxLevel": 29
+   },
+   {
+    "id": "5600bb1d-f3d3-567a-82ae-cf8e78e6c536",
+    "dex": 776,
+    "weight": 6,
+    "minLevel": 26,
+    "maxLevel": 32
+   },
+   {
+    "id": "e401c5ab-eea4-5b96-9c18-194e4d51c18c",
+    "dex": 777,
+    "weight": 8,
+    "minLevel": 26,
+    "maxLevel": 32
+   },
+   {
+    "id": "7e56cc73-0a7a-5f59-a14c-849c52fbeafa",
+    "dex": 749,
+    "weight": 8,
+    "minLevel": 26,
+    "maxLevel": 29
+   },
+   {
+    "id": "75d7311e-44fb-5a01-b266-f988b52e0ccc",
+    "dex": 324,
+    "weight": 8,
+    "minLevel": 26,
+    "maxLevel": 32
+   },
+   {
+    "id": "87b9c0d0-3ed8-52b0-880c-5c240cbbb70d",
+    "dex": 74,
+    "weight": 8,
+    "minLevel": 23,
+    "maxLevel": 24
+   },
+   {
+    "id": "4886e088-9e95-5ff3-b96a-a254166a60fb",
+    "dex": 737,
+    "weight": 6,
+    "minLevel": 26,
+    "maxLevel": 32
+   },
+   {
+    "id": "54f5bb38-d49e-5a4d-83ae-7528afb50304",
+    "dex": 702,
+    "weight": 6,
+    "minLevel": 29,
+    "maxLevel": 32
+   },
+   {
+    "id": "cbb45093-f890-50ff-9141-4603a814acd4",
+    "dex": 239,
+    "weight": 6,
+    "minLevel": 26,
+    "maxLevel": 29
+   },
+   {
+    "id": "a93dbd69-89b7-54df-8b9f-97c35c94ce01",
+    "dex": 288,
+    "weight": 6,
+    "minLevel": 27,
+    "maxLevel": 29
+   },
+   {
+    "id": "7cde7ba8-a2f5-5cfe-aa3a-841e41509cc8",
+    "dex": 111,
+    "weight": 6,
+    "minLevel": 30,
+    "maxLevel": 32
+   }
+  ],
+  "trainerPool": [
+   {
+    "id": "e1008006-fd76-56a8-b012-7b73bc9cb667",
+    "trainerId": "e60e46d3-b103-5053-9752-ad0f514742cb",
+    "weight": 10
+   },
+   {
+    "id": "7573be5c-a63e-5eeb-a47e-b235f565998c",
+    "trainerId": "dc6e3496-eed2-5993-b67e-a77501cb0501",
+    "weight": 10
+   },
+   {
+    "id": "62dd9217-bbf0-5d6e-815b-90d88b68ad18",
+    "trainerId": "23aec3a7-158c-5bc6-941c-bcf8d4e3af22",
+    "weight": 10
+   }
+  ],
+  "lootPool": [
+   {
+    "id": "5abdb3e0-24ab-56ff-a9f0-d83f163da2f4",
+    "itemKey": "super-potion",
+    "weight": 20,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "f4aedf31-6eba-5ff4-9b21-b1a3d73bbe69",
+    "itemKey": "poke-ball",
+    "weight": 10,
+    "unique": false,
+    "minQty": 2,
+    "maxQty": 3
+   },
+   {
+    "id": "fb3c0dde-ddf5-5110-9b9c-8985798166c0",
+    "itemKey": "great-ball",
+    "weight": 16,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "af748c10-85c7-565d-8bb2-3c3e59aa205d",
+    "itemKey": "ultra-ball",
+    "weight": 4,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "6fe72971-311c-5b72-a7fc-de4745b9d03b",
+    "itemKey": "antidote",
+    "weight": 5,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "7d56095a-2c5e-57e8-87fc-268d0d3610ef",
+    "itemKey": "paralyze-heal",
+    "weight": 5,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "1cdfe059-052d-5979-b741-ae1c760850b2",
+    "itemKey": "burn-heal",
+    "weight": 5,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "b1c4380d-a4cc-57ed-873e-5d5ce49e5cc1",
+    "itemKey": "ice-heal",
+    "weight": 5,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "3ee42bf7-d6f5-5587-8c01-b9b3ac28cac4",
+    "itemKey": "ether",
+    "weight": 8,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "42837121-d1a2-5f8c-ac83-33d184f21bde",
+    "itemKey": "max-ether",
+    "weight": 3,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "537b20ad-721f-5b06-b660-48043c6ea9ee",
+    "itemKey": "money",
+    "weight": 16,
+    "unique": false,
+    "minQty": 50,
+    "maxQty": 100
+   }
+  ]
+ },
+ {
+  "id": "3463beea-946a-5c99-89d1-19dc707896e8",
+  "orderIndex": 716,
+  "regionId": "alola",
+  "name": "Routes 13 & 14, Haina Desert & Tapu Village",
+  "bannerUrl": "/banners/dunes.png",
+  "roundsToClear": 1,
+  "minLevel": 28,
+  "maxLevel": 34,
+  "encounterWeights": {
+   "wild": 3,
+   "trainer": 2,
+   "center": 1,
+   "item": 1,
+   "casino": 0
+  },
+  "backtrackMultiplier": 0.5,
+  "legendaryBoss": null,
+  "scalesToTeam": false,
+  "easyMode": false,
+  "enemyUpgradeLevel": 6,
+  "battleBackground": "rock",
+  "hidden": false,
+  "unlockConditions": null,
+  "gyms": [],
+  "wildPool": [
+   {
+    "id": "4880af9b-5941-5be4-934b-9ae1568a0da1",
+    "dex": 779,
+    "weight": 8,
+    "minLevel": 28,
+    "maxLevel": 33
+   },
+   {
+    "id": "66934357-2ca5-5e0a-b6fb-7a264c4a3ad2",
+    "dex": 746,
+    "weight": 8,
+    "minLevel": 28,
+    "maxLevel": 33
+   },
+   {
+    "id": "a917ff38-df00-5772-a544-77fb93ed7f43",
+    "dex": 551,
+    "weight": 10,
+    "minLevel": 28,
+    "maxLevel": 28
+   },
+   {
+    "id": "4e486659-9c2b-5c35-8aed-c4317953c916",
+    "dex": 552,
+    "weight": 6,
+    "minLevel": 32,
+    "maxLevel": 35
+   },
+   {
+    "id": "d551aeb6-5bf2-5b2d-92c0-d8808df05c15",
+    "dex": 51,
+    "weight": 8,
+    "minLevel": 28,
+    "maxLevel": 33
+   },
+   {
+    "id": "65780d76-479c-5ed9-910c-1eb6aed464e1",
+    "dex": 343,
+    "weight": 6,
+    "minLevel": 32,
+    "maxLevel": 35
+   },
+   {
+    "id": "ca9a73be-83f8-5b68-9425-abddaa2a793e",
+    "dex": 622,
+    "weight": 6,
+    "minLevel": 32,
+    "maxLevel": 35
+   },
+   {
+    "id": "f581a2f1-39d5-54d0-8bb2-fa8b636866a8",
+    "dex": 328,
+    "weight": 6,
+    "minLevel": 28,
+    "maxLevel": 33
+   },
+   {
+    "id": "bc86c671-5b9e-5a24-ae02-5cf5455e09f6",
+    "dex": 444,
+    "weight": 4,
+    "minLevel": 28,
+    "maxLevel": 33
+   },
+   {
+    "id": "b0bd773e-24a3-5b9a-92cf-50e651738b3e",
+    "dex": 361,
+    "weight": 8,
+    "minLevel": 28,
+    "maxLevel": 33
+   },
+   {
+    "id": "602b00f9-28ca-5ae0-a011-625f271fcc5a",
+    "dex": 359,
+    "weight": 4,
+    "minLevel": 28,
+    "maxLevel": 33
+   },
+   {
+    "id": "052e6eeb-f98e-5dc0-8dff-addcf43be070",
+    "dex": 37,
+    "weight": 6,
+    "minLevel": 28,
+    "maxLevel": 33
+   },
+   {
+    "id": "8323d8ae-29dd-54ca-bcf6-4f4efd86e236",
+    "dex": 27,
+    "weight": 6,
+    "minLevel": 20,
+    "maxLevel": 21
+   }
+  ],
+  "trainerPool": [
+   {
+    "id": "e1c1929d-ef6c-50d0-8aa9-0b4a845e40de",
+    "trainerId": "2d0aebc3-3c08-5a25-81a9-d4860cd16304",
+    "weight": 10
+   },
+   {
+    "id": "b3c1e453-7799-5ded-ab1d-0346587f1d71",
+    "trainerId": "8c2a43eb-ec31-527d-a3e9-ad72acfb7d6f",
+    "weight": 10
+   },
+   {
+    "id": "e04bad52-192f-503d-8671-b45a482dba2a",
+    "trainerId": "3acff8d3-ed25-54ff-a1ac-4aa31c258b7b",
+    "weight": 10
+   }
+  ],
+  "lootPool": [
+   {
+    "id": "1a1b0102-3750-5dd2-8a56-3b02db822a3c",
+    "itemKey": "super-potion",
+    "weight": 20,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "2ae905e7-7acd-5a51-bfd7-dadc9bb150bc",
+    "itemKey": "poke-ball",
+    "weight": 10,
+    "unique": false,
+    "minQty": 2,
+    "maxQty": 3
+   },
+   {
+    "id": "2722a793-3741-5504-bf5c-dc626aa4f14e",
+    "itemKey": "great-ball",
+    "weight": 16,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "fc7359a8-8f4d-5d0e-bf5d-b349da076fec",
+    "itemKey": "ultra-ball",
+    "weight": 4,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "bcea5351-21f8-5991-9b13-6e4391029a6e",
+    "itemKey": "antidote",
+    "weight": 5,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "95825486-cbaf-55ee-acb9-7b5e8c86b647",
+    "itemKey": "paralyze-heal",
+    "weight": 5,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "1c053b67-59f6-5acb-9155-ff14d2e3e5c8",
+    "itemKey": "burn-heal",
+    "weight": 5,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "1fbf7884-a51f-5bb3-847c-4c03249878d3",
+    "itemKey": "ice-heal",
+    "weight": 5,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "7b3b14cd-d845-5235-89ae-2002923efe3e",
+    "itemKey": "ether",
+    "weight": 8,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "83778561-7ff1-5385-8be5-f17b34d31580",
+    "itemKey": "max-ether",
+    "weight": 3,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "d2b04d71-9cad-550c-aa44-4904a030df0e",
+    "itemKey": "money",
+    "weight": 16,
+    "unique": false,
+    "minQty": 50,
+    "maxQty": 100
+   }
+  ]
+ },
+ {
+  "id": "8b0339d9-7358-5cff-a342-49b1ae6dda36",
+  "orderIndex": 717,
+  "regionId": "alola",
+  "name": "Routes 15 & 16 and the Thrifty Megamart",
+  "bannerUrl": "/banners/haunted.png#flip",
+  "roundsToClear": 1,
+  "minLevel": 30,
+  "maxLevel": 35,
+  "encounterWeights": {
+   "wild": 3,
+   "trainer": 2,
+   "center": 1,
+   "item": 1,
+   "casino": 0
+  },
+  "backtrackMultiplier": 0.5,
+  "legendaryBoss": null,
+  "scalesToTeam": false,
+  "easyMode": false,
+  "enemyUpgradeLevel": 6,
+  "battleBackground": "default",
+  "hidden": false,
+  "unlockConditions": null,
+  "gyms": [
+   "1a82b30c-6585-5df3-bbd7-4aea039a82f4"
+  ],
+  "wildPool": [
+   {
+    "id": "a4f0d017-9c3d-58b3-a038-d354bc20a3e0",
+    "dex": 778,
+    "weight": 6,
+    "minLevel": 30,
+    "maxLevel": 34
+   },
+   {
+    "id": "baf7a98a-f4dd-5906-884d-44dafffde065",
+    "dex": 93,
+    "weight": 10,
+    "minLevel": 30,
+    "maxLevel": 34
+   },
+   {
+    "id": "a163d7c7-01dd-56da-86f2-307904ae1031",
+    "dex": 42,
+    "weight": 10,
+    "minLevel": 30,
+    "maxLevel": 34
+   },
+   {
+    "id": "0817edb6-a3e7-5a68-b567-0424db9fb880",
+    "dex": 707,
+    "weight": 8,
+    "minLevel": 30,
+    "maxLevel": 34
+   },
+   {
+    "id": "401050ce-8f7d-5156-a0ed-4efc3ecc391c",
+    "dex": 353,
+    "weight": 8,
+    "minLevel": 31,
+    "maxLevel": 34
+   },
+   {
+    "id": "dd296d8f-fd1e-5ac1-b379-d246fed0ac20",
+    "dex": 279,
+    "weight": 10,
+    "minLevel": 30,
+    "maxLevel": 35
+   },
+   {
+    "id": "7c280cad-2e29-5ff8-b125-8acbe1cb9fea",
+    "dex": 769,
+    "weight": 8,
+    "minLevel": 30,
+    "maxLevel": 35
+   },
+   {
+    "id": "649a12da-8791-595c-b645-2bdba50f4b3c",
+    "dex": 559,
+    "weight": 6,
+    "minLevel": 32,
+    "maxLevel": 35
+   },
+   {
+    "id": "ba04c30b-f5a9-50a2-929e-cc0a7f35e9b5",
+    "dex": 366,
+    "weight": 6,
+    "minLevel": 30,
+    "maxLevel": 35
+   },
+   {
+    "id": "77dfa5eb-89d1-59b8-ac62-9f01dfaa35d0",
+    "dex": 739,
+    "weight": 8,
+    "minLevel": 30,
+    "maxLevel": 33
+   }
+  ],
+  "trainerPool": [
+   {
+    "id": "810a289b-8308-51a0-bb7f-c827d92012e0",
+    "trainerId": "caa7bc26-5304-5b34-9755-17704a46228c",
+    "weight": 10
+   },
+   {
+    "id": "e54aad56-a5b5-5535-b3b7-3fda0949176a",
+    "trainerId": "4e0f064f-552c-5107-96ac-df626a958603",
+    "weight": 10
+   },
+   {
+    "id": "ad0a267a-dc96-5d0d-87f6-8066c9f62fb7",
+    "trainerId": "a6be7a84-77bb-5a6e-afef-fb0ba96b3d17",
+    "weight": 10
+   }
+  ],
+  "lootPool": [
+   {
+    "id": "6277f92e-05b1-54ab-985a-b081d19acdf9",
+    "itemKey": "super-potion",
+    "weight": 12,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "a10d20ba-c29f-5fcf-8ba9-1e6c8e96b7b1",
+    "itemKey": "hyper-potion",
+    "weight": 14,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "a93ae62b-d438-52ff-96a6-54943f56497f",
+    "itemKey": "great-ball",
+    "weight": 12,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "c383a1f4-7ceb-5216-baaa-ed33f357c896",
+    "itemKey": "ultra-ball",
+    "weight": 12,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "127ace33-38fd-568a-bd6a-ca35f4fa39df",
+    "itemKey": "paralyze-heal",
+    "weight": 4,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "c24dae8a-d44c-5a85-b553-bd7ae8a33f89",
+    "itemKey": "burn-heal",
+    "weight": 4,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "356cf060-3fc3-57ec-a9b9-d09f08d614eb",
+    "itemKey": "ice-heal",
+    "weight": 4,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "c1cd4980-4319-5fec-8589-620d59cc6f9e",
+    "itemKey": "ether",
+    "weight": 8,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "79f41041-1d60-5190-9aa1-b4889caee1fb",
+    "itemKey": "max-ether",
+    "weight": 6,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "8b26fc15-ed80-5deb-8d35-a97d0ddb39fe",
+    "itemKey": "rare-candy",
+    "weight": 3,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "dc6b95fe-1eab-54ba-84de-1795ee428f44",
+    "itemKey": "money",
+    "weight": 18,
+    "unique": false,
+    "minQty": 100,
+    "maxQty": 200
+   }
+  ]
+ },
+ {
+  "id": "15d60999-b4a3-5a6e-bee2-7a1ff9e278e6",
+  "orderIndex": 718,
+  "regionId": "alola",
+  "name": "Route 17 & Po Town",
+  "bannerUrl": "/banners/sunset.png",
+  "roundsToClear": 2,
+  "minLevel": 31,
+  "maxLevel": 41,
+  "encounterWeights": {
+   "wild": 2,
+   "trainer": 3,
+   "center": 1,
+   "item": 1,
+   "casino": 0
+  },
+  "backtrackMultiplier": 0.5,
+  "legendaryBoss": null,
+  "scalesToTeam": false,
+  "easyMode": false,
+  "enemyUpgradeLevel": 6,
+  "battleBackground": "default",
+  "hidden": false,
+  "unlockConditions": null,
+  "gyms": [
+   "e2a93cac-24c0-5ed2-b69e-f2960e2f3991",
+   "4f0e8ccf-2756-5de1-a7c0-7412cb29daf5"
+  ],
+  "wildPool": [
+   {
+    "id": "fe574c84-9c3e-586c-8956-ac766303ac1f",
+    "dex": 351,
+    "weight": 8,
+    "minLevel": 31,
+    "maxLevel": 36
+   },
+   {
+    "id": "f35db878-6369-5347-997e-7732e85c00b7",
+    "dex": 22,
+    "weight": 10,
+    "minLevel": 31,
+    "maxLevel": 36
+   },
+   {
+    "id": "59933c3b-9ce5-588f-bc4d-af7ebfe277ea",
+    "dex": 75,
+    "weight": 8,
+    "minLevel": 31,
+    "maxLevel": 36
+   },
+   {
+    "id": "0eb2de92-e2bf-5223-81bb-fb813fdc0294",
+    "dex": 227,
+    "weight": 6,
+    "minLevel": 31,
+    "maxLevel": 36
+   },
+   {
+    "id": "88f2aeb8-2847-5c41-b1ce-8a2e2b3d0107",
+    "dex": 559,
+    "weight": 8,
+    "minLevel": 33,
+    "maxLevel": 36
+   },
+   {
+    "id": "094c29f0-21ac-5cd4-81be-fc7e8e514a7b",
+    "dex": 624,
+    "weight": 6,
+    "minLevel": 33,
+    "maxLevel": 36
+   },
+   {
+    "id": "f9d71442-bc88-50fd-ad3f-fb3834a73367",
+    "dex": 675,
+    "weight": 6,
+    "minLevel": 32,
+    "maxLevel": 36
+   },
+   {
+    "id": "cce5a868-a927-5685-bba3-b57979344d74",
+    "dex": 704,
+    "weight": 4,
+    "minLevel": 31,
+    "maxLevel": 36
+   }
+  ],
+  "trainerPool": [
+   {
+    "id": "de62ea66-7867-5b09-a908-44dd4acbe015",
+    "trainerId": "7f290718-05b8-56bd-a85e-fb6d170dcae9",
+    "weight": 10
+   },
+   {
+    "id": "5a2fa3e9-6d51-5b18-93ea-d20121450277",
+    "trainerId": "c0895cc3-88a2-5d18-ae09-fe3086b0a94f",
+    "weight": 10
+   },
+   {
+    "id": "dff05e22-63d3-50b3-a79f-986ead61b2ec",
+    "trainerId": "dd1f0f09-3d8b-5b63-a7c1-ec0c7141c0fe",
+    "weight": 10
+   },
+   {
+    "id": "ff8dc755-781b-561d-93b0-e470e80959c3",
+    "trainerId": "4eee5f0a-7672-51a8-9e2c-947b25d0b2d9",
+    "weight": 10
+   }
+  ],
+  "lootPool": [
+   {
+    "id": "6e2602a9-9cf8-5f56-8698-4464c26769b8",
+    "itemKey": "super-potion",
+    "weight": 12,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "83f14fe4-851e-5123-8e4f-fedac9368540",
+    "itemKey": "hyper-potion",
+    "weight": 14,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "c5f98ca3-1601-550f-b6bb-3b6606664d43",
+    "itemKey": "great-ball",
+    "weight": 12,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "1f58492c-82dd-5943-a2d9-b6c7babdca72",
+    "itemKey": "ultra-ball",
+    "weight": 12,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "967d3ba7-6b1e-5aeb-a7f4-9ca8731b3ca6",
+    "itemKey": "paralyze-heal",
+    "weight": 4,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "e5fa6984-99d4-53f4-8461-15dfc5edf544",
+    "itemKey": "burn-heal",
+    "weight": 4,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "bc13d9a7-1ed8-594d-bf09-5d45e2a45dd1",
+    "itemKey": "ice-heal",
+    "weight": 4,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "e8c8ed35-6553-5548-ae2c-6399ac0b603e",
+    "itemKey": "ether",
+    "weight": 8,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "cdd4a344-69d2-57e2-b690-4d20bb66de9c",
+    "itemKey": "max-ether",
+    "weight": 6,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "0c2c08e3-eeeb-5769-aff9-3350f3072c0a",
+    "itemKey": "rare-candy",
+    "weight": 3,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "a93c4eb0-f09c-504a-aedc-5a4b1ca6c93f",
+    "itemKey": "money",
+    "weight": 18,
+    "unique": false,
+    "minQty": 100,
+    "maxQty": 200
+   }
+  ]
+ },
+ {
+  "id": "a13dcc18-e146-5423-b54d-c0a5869ddad2",
+  "orderIndex": 719,
+  "regionId": "alola",
+  "name": "Aether Paradise",
+  "bannerUrl": "/banners/factory.png",
+  "roundsToClear": 2,
+  "minLevel": 38,
+  "maxLevel": 49,
+  "encounterWeights": {
+   "wild": 0,
+   "trainer": 2,
+   "center": 1,
+   "item": 1,
+   "casino": 0
+  },
+  "backtrackMultiplier": 0.5,
+  "legendaryBoss": null,
+  "scalesToTeam": false,
+  "easyMode": false,
+  "enemyUpgradeLevel": 7,
+  "battleBackground": "default",
+  "hidden": false,
+  "unlockConditions": null,
+  "gyms": [
+   "d1e8b794-d27f-52e1-9f23-be3de2d7665d",
+   "2ebf133c-a700-5d2b-ba5b-a91cb8fc51eb",
+   "92a6ae77-e6df-5d66-9ecb-9e631f34dccc"
+  ],
+  "wildPool": [],
+  "trainerPool": [
+   {
+    "id": "45b90bd9-973a-5df1-8135-abab623d7a9c",
+    "trainerId": "47e1a14e-7b5d-5b8d-835e-8ce3be22fdc4",
+    "weight": 10
+   },
+   {
+    "id": "f3ba8670-b4be-572e-b88c-8eca66713faf",
+    "trainerId": "ca95f8cc-686a-5ae6-86cb-2f63ccd3c4a8",
+    "weight": 10
+   },
+   {
+    "id": "b364cc92-8467-51bf-9072-0e3e04c0a7b5",
+    "trainerId": "a67e9d24-8a9d-5363-8646-a89169a7e167",
+    "weight": 10
+   },
+   {
+    "id": "33afaea5-7be5-5772-963f-14f1b9e17171",
+    "trainerId": "e89c01d9-ad5d-596d-a647-d80cc3b9fcb9",
+    "weight": 10
+   }
+  ],
+  "lootPool": [
+   {
+    "id": "b43327f3-09b6-514f-aeaa-9b23031d7ec0",
+    "itemKey": "super-potion",
+    "weight": 12,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "d131a793-2b94-56a3-a46e-466fa51a10da",
+    "itemKey": "hyper-potion",
+    "weight": 14,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "8fb4746a-5d3d-5e57-afce-f8807246bf92",
+    "itemKey": "great-ball",
+    "weight": 12,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "bf2bee38-1897-5773-b431-bb9d975731aa",
+    "itemKey": "ultra-ball",
+    "weight": 12,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "1f3c7b41-53c9-5101-bea3-ddaa760fd565",
+    "itemKey": "paralyze-heal",
+    "weight": 4,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "8090afc5-9d64-5a51-bea2-8029c8467377",
+    "itemKey": "burn-heal",
+    "weight": 4,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "1c10638d-a488-5b31-b732-5f203198f304",
+    "itemKey": "ice-heal",
+    "weight": 4,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "232037c2-4a52-5897-bc36-f37506bc4d79",
+    "itemKey": "ether",
+    "weight": 8,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "0876e20c-ba50-5e79-b538-d59409b4df9f",
+    "itemKey": "max-ether",
+    "weight": 6,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "df50eced-851e-52ee-9a0c-a3104fa43f9c",
+    "itemKey": "rare-candy",
+    "weight": 3,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "bd2df295-013b-527a-968e-afa505b35e0a",
+    "itemKey": "money",
+    "weight": 18,
+    "unique": false,
+    "minQty": 100,
+    "maxQty": 200
+   },
+   {
+    "id": "ae4f2a18-9b6e-5fb7-bf9f-89b2709df6ce",
+    "itemKey": "master-ball",
+    "weight": 2,
+    "unique": true,
+    "minQty": 1,
+    "maxQty": 1
+   }
+  ]
+ },
+ {
+  "id": "b629fa00-cb91-5390-9500-2240f2dc5ceb",
+  "orderIndex": 720,
+  "regionId": "alola",
+  "name": "Seafolk Village, Poni Wilds & Ancient Poni Path",
+  "bannerUrl": "/banners/ocean.png",
+  "roundsToClear": 2,
+  "minLevel": 40,
+  "maxLevel": 46,
+  "encounterWeights": {
+   "wild": 3,
+   "trainer": 2,
+   "center": 1,
+   "item": 1,
+   "casino": 0
+  },
+  "backtrackMultiplier": 0.5,
+  "legendaryBoss": null,
+  "scalesToTeam": false,
+  "easyMode": false,
+  "enemyUpgradeLevel": 7,
+  "battleBackground": "sea",
+  "hidden": false,
+  "unlockConditions": null,
+  "gyms": [
+   "d88dbaef-893e-522d-b404-bb5c106568cd"
+  ],
+  "wildPool": [
+   {
+    "id": "b164428e-a416-567c-a3bb-1b3cad4baee1",
+    "dex": 781,
+    "weight": 6,
+    "minLevel": 40,
+    "maxLevel": 45
+   },
+   {
+    "id": "7bba3bc1-46b8-580e-b89c-33d6aa6ee0e3",
+    "dex": 320,
+    "weight": 10,
+    "minLevel": 38,
+    "maxLevel": 39
+   },
+   {
+    "id": "217824ad-1864-54a6-8b96-6fb13f56f7cf",
+    "dex": 279,
+    "weight": 10,
+    "minLevel": 40,
+    "maxLevel": 44
+   },
+   {
+    "id": "5f365c03-d6d8-5f8e-9cea-2daa409164a7",
+    "dex": 767,
+    "weight": 8,
+    "minLevel": 26,
+    "maxLevel": 29
+   },
+   {
+    "id": "2082fe88-7bdc-5a0a-bc13-0313b0a9ceb8",
+    "dex": 210,
+    "weight": 8,
+    "minLevel": 40,
+    "maxLevel": 44
+   },
+   {
+    "id": "689b99c6-1edd-5b11-8573-0332fa5ce03c",
+    "dex": 423,
+    "weight": 8,
+    "minLevel": 40,
+    "maxLevel": 44
+   },
+   {
+    "id": "30436178-61bb-5496-aa81-b0df9cd29b4c",
+    "dex": 676,
+    "weight": 6,
+    "minLevel": 41,
+    "maxLevel": 44
+   },
+   {
+    "id": "a7ec62f3-1ffc-59f9-b18f-580c65742203",
+    "dex": 686,
+    "weight": 6,
+    "minLevel": 26,
+    "maxLevel": 29
+   },
+   {
+    "id": "81a354b9-569c-5d14-9055-75918494add8",
+    "dex": 73,
+    "weight": 6,
+    "minLevel": 40,
+    "maxLevel": 44
+   },
+   {
+    "id": "731b4c55-207f-5464-8462-6c9c9269188c",
+    "dex": 369,
+    "weight": 4,
+    "minLevel": 40,
+    "maxLevel": 44
+   },
+   {
+    "id": "af2c8b26-16bf-5a68-872b-3506dfd54859",
+    "dex": 131,
+    "weight": 2,
+    "minLevel": 41,
+    "maxLevel": 44
+   },
+   {
+    "id": "ae27b256-86a0-5739-9ab8-2eac192629f5",
+    "dex": 772,
+    "weight": 1,
+    "minLevel": 40,
+    "maxLevel": 44
+   }
+  ],
+  "trainerPool": [
+   {
+    "id": "4f06fe98-1252-5f77-851f-5a907dfcff6d",
+    "trainerId": "cb25e5f9-94ba-511b-9cf1-5eb44ccf9680",
+    "weight": 10
+   },
+   {
+    "id": "c94fa9e7-c1a2-51d1-a817-6ea0c0b879c9",
+    "trainerId": "a9da3a5a-7f5b-5e64-b4d2-bd682ea2d008",
+    "weight": 10
+   },
+   {
+    "id": "d9a6f6d0-c455-5afb-9b7c-7fc93c2174c5",
+    "trainerId": "f755ba0d-7d71-580a-ace0-dd801a81bddf",
+    "weight": 10
+   }
+  ],
+  "lootPool": [
+   {
+    "id": "0a900afd-339b-5b82-ac7c-6fe540d833be",
+    "itemKey": "super-potion",
+    "weight": 12,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "b86ad091-8ffa-5c6e-bb42-0173ddd03375",
+    "itemKey": "hyper-potion",
+    "weight": 14,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "f874c590-4b48-5a0a-9d54-0820dcf29122",
+    "itemKey": "great-ball",
+    "weight": 12,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "c92131bb-bc24-584e-81bb-a82b1c7ae32a",
+    "itemKey": "ultra-ball",
+    "weight": 12,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "0c6909a3-5b0e-5d99-9e4b-9fc85afb8e38",
+    "itemKey": "paralyze-heal",
+    "weight": 4,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "341a86c0-7718-5158-90d1-8f4d95ac445f",
+    "itemKey": "burn-heal",
+    "weight": 4,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "63b846bb-4b3f-54cc-8163-f1d703f871cb",
+    "itemKey": "ice-heal",
+    "weight": 4,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "4e6aae31-968d-557b-adea-c212f73c32d4",
+    "itemKey": "ether",
+    "weight": 8,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "505512b3-8939-5fc5-a9ab-081260745c3f",
+    "itemKey": "max-ether",
+    "weight": 6,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "37faf18a-9910-500a-a521-333adf4ae1ce",
+    "itemKey": "rare-candy",
+    "weight": 3,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "79e00169-d532-5132-a3d5-8240b399ed1d",
+    "itemKey": "money",
+    "weight": 18,
+    "unique": false,
+    "minQty": 100,
+    "maxQty": 200
+   }
+  ]
+ },
+ {
+  "id": "e7ae24d0-80a4-51d7-a9cb-c0df82d25286",
+  "orderIndex": 721,
+  "regionId": "alola",
+  "name": "Exeggutor Island & Vast Poni Canyon",
+  "bannerUrl": "/banners/cave_dark.png",
+  "roundsToClear": 2,
+  "minLevel": 41,
+  "maxLevel": 48,
+  "encounterWeights": {
+   "wild": 3,
+   "trainer": 2,
+   "center": 1,
+   "item": 1,
+   "casino": 0
+  },
+  "backtrackMultiplier": 0.5,
+  "legendaryBoss": null,
+  "scalesToTeam": false,
+  "easyMode": false,
+  "enemyUpgradeLevel": 8,
+  "battleBackground": "rock",
+  "hidden": false,
+  "unlockConditions": null,
+  "gyms": [
+   "c6106307-fd9e-50e1-aa2c-8edd1069cb8f"
+  ],
+  "wildPool": [
+   {
+    "id": "4bc8c697-55fd-57bc-b24f-649dab1efb00",
+    "dex": 782,
+    "weight": 6,
+    "minLevel": 33,
+    "maxLevel": 34
+   },
+   {
+    "id": "f4870ea1-a53f-511b-8f46-7666f31c9f26",
+    "dex": 783,
+    "weight": 4,
+    "minLevel": 41,
+    "maxLevel": 44
+   },
+   {
+    "id": "bdc3dbaf-dfb3-5a69-8556-e4efdcee376f",
+    "dex": 745,
+    "weight": 8,
+    "minLevel": 41,
+    "maxLevel": 46
+   },
+   {
+    "id": "3dc817bf-5434-5dd7-99f9-22bb47c964f8",
+    "dex": 103,
+    "weight": 8,
+    "minLevel": 40,
+    "maxLevel": 45
+   },
+   {
+    "id": "f5aab237-a122-511e-ab4f-b50694567017",
+    "dex": 51,
+    "weight": 10,
+    "minLevel": 41,
+    "maxLevel": 45
+   },
+   {
+    "id": "ca01a1ab-74fa-55e1-8763-59f8298d30c6",
+    "dex": 42,
+    "weight": 10,
+    "minLevel": 41,
+    "maxLevel": 45
+   },
+   {
+    "id": "d373a98d-2098-5ce0-bfab-8e5dcf7aed2d",
+    "dex": 525,
+    "weight": 8,
+    "minLevel": 41,
+    "maxLevel": 45
+   },
+   {
+    "id": "59416dee-7288-5621-b7d8-9591bfe7b236",
+    "dex": 703,
+    "weight": 6,
+    "minLevel": 41,
+    "maxLevel": 45
+   },
+   {
+    "id": "1ba9b0ad-6fb9-5381-9252-a5fbdbe27bcc",
+    "dex": 67,
+    "weight": 6,
+    "minLevel": 41,
+    "maxLevel": 46
+   },
+   {
+    "id": "dc0be3c7-dd06-5c31-83f5-ddcd745c678e",
+    "dex": 619,
+    "weight": 6,
+    "minLevel": 43,
+    "maxLevel": 46
+   },
+   {
+    "id": "b7e6a299-b8d3-5801-ad3c-7ae6d5ace4e1",
+    "dex": 357,
+    "weight": 4,
+    "minLevel": 42,
+    "maxLevel": 45
+   },
+   {
+    "id": "52e84b54-7897-5808-a419-bb158a7fc439",
+    "dex": 148,
+    "weight": 2,
+    "minLevel": 41,
+    "maxLevel": 44
+   }
+  ],
+  "trainerPool": [
+   {
+    "id": "c8f990f2-9c19-554b-b61a-35cc940daa3b",
+    "trainerId": "5e1b4d3f-16c1-5fdc-b0e1-590832bb82b5",
+    "weight": 10
+   },
+   {
+    "id": "632394fe-38fb-5d7e-a617-4527a129e55a",
+    "trainerId": "6e683673-67ed-5d7c-9c03-0cf39aa686f8",
+    "weight": 10
+   },
+   {
+    "id": "45e47f0f-b89a-527d-9501-50e9bf6b615f",
+    "trainerId": "aa5e1f04-305f-500a-bcfe-40af678cdedc",
+    "weight": 10
+   }
+  ],
+  "lootPool": [
+   {
+    "id": "bdb3322c-b55c-5546-9535-dc1b392e99ed",
+    "itemKey": "super-potion",
+    "weight": 12,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "6264f9f9-4410-5c86-995a-949c54211092",
+    "itemKey": "hyper-potion",
+    "weight": 14,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "ae6ff050-6a14-54b4-94f0-1f1586b27de9",
+    "itemKey": "great-ball",
+    "weight": 12,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "83ab870b-dd4e-5e6e-8718-856bec7d3ec0",
+    "itemKey": "ultra-ball",
+    "weight": 12,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "c688c914-cbf6-5dca-9651-090b4cd211c7",
+    "itemKey": "paralyze-heal",
+    "weight": 4,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "c095722e-eb50-501b-9a8f-46f6a64f638b",
+    "itemKey": "burn-heal",
+    "weight": 4,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "92fce61a-78c2-52a1-9fa6-114dae738c8a",
+    "itemKey": "ice-heal",
+    "weight": 4,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "f39d1ef2-e772-507f-b2d0-caaaeb038381",
+    "itemKey": "ether",
+    "weight": 8,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "49d8333f-208e-5c11-a225-ebef6f04d6e2",
+    "itemKey": "max-ether",
+    "weight": 6,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "60a97739-1052-54c6-9023-98f2ed02c937",
+    "itemKey": "rare-candy",
+    "weight": 3,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "8164cc62-9734-5fd9-b43d-2b52a5a9b0a0",
+    "itemKey": "money",
+    "weight": 18,
+    "unique": false,
+    "minQty": 100,
+    "maxQty": 200
+   }
+  ]
+ },
+ {
+  "id": "db4e5701-dfdf-54dd-bfee-002c1fdcc391",
+  "orderIndex": 722,
+  "regionId": "alola",
+  "name": "Mount Lanakila",
+  "bannerUrl": "/banners/snow_mountains.png",
+  "roundsToClear": 2,
+  "minLevel": 46,
+  "maxLevel": 54,
+  "encounterWeights": {
+   "wild": 2,
+   "trainer": 3,
+   "center": 1,
+   "item": 1,
+   "casino": 0
+  },
+  "backtrackMultiplier": 0.5,
+  "legendaryBoss": null,
+  "scalesToTeam": false,
+  "easyMode": false,
+  "enemyUpgradeLevel": 9,
+  "battleBackground": "rock",
+  "hidden": false,
+  "unlockConditions": null,
+  "gyms": [],
+  "wildPool": [
+   {
+    "id": "4bab38e2-91db-520f-b4cc-d45b7bee9a6a",
+    "dex": 780,
+    "weight": 6,
+    "minLevel": 46,
+    "maxLevel": 51
+   },
+   {
+    "id": "410dbbf9-1cf8-5391-b4df-09840ac85e16",
+    "dex": 362,
+    "weight": 8,
+    "minLevel": 46,
+    "maxLevel": 51
+   },
+   {
+    "id": "36947fdb-021f-511c-bcce-9d6bf58ebed2",
+    "dex": 215,
+    "weight": 8,
+    "minLevel": 46,
+    "maxLevel": 51
+   },
+   {
+    "id": "a8256cc7-9fca-5661-94a1-6d221449f9d1",
+    "dex": 359,
+    "weight": 8,
+    "minLevel": 46,
+    "maxLevel": 51
+   },
+   {
+    "id": "ce1cd2b5-94ca-52d6-948f-048f67ceb474",
+    "dex": 361,
+    "weight": 8,
+    "minLevel": 40,
+    "maxLevel": 41
+   },
+   {
+    "id": "1291abbc-4f06-5b43-822f-2d164967e0ee",
+    "dex": 27,
+    "weight": 6,
+    "minLevel": 46,
+    "maxLevel": 51
+   },
+   {
+    "id": "96d66dbd-1d65-5d31-a676-19a0a3ef2cf7",
+    "dex": 37,
+    "weight": 6,
+    "minLevel": 46,
+    "maxLevel": 51
+   },
+   {
+    "id": "eba51e05-245b-500b-98b9-a050fc21f48d",
+    "dex": 583,
+    "weight": 6,
+    "minLevel": 42,
+    "maxLevel": 46
+   },
+   {
+    "id": "47fc05cc-1a30-5cb1-81f4-696fe3ae6e1d",
+    "dex": 351,
+    "weight": 6,
+    "minLevel": 46,
+    "maxLevel": 51
+   },
+   {
+    "id": "fb581c43-8138-510d-b84d-ce09289c56aa",
+    "dex": 42,
+    "weight": 8,
+    "minLevel": 46,
+    "maxLevel": 51
+   },
+   {
+    "id": "f449123b-848f-5e9f-a7ef-8e528b28dbf9",
+    "dex": 739,
+    "weight": 8,
+    "minLevel": 46,
+    "maxLevel": 51
+   }
+  ],
+  "trainerPool": [
+   {
+    "id": "14ccbd05-7f21-5e9e-b279-affcc45a1f5f",
+    "trainerId": "34f7e756-0b88-5a5a-a56a-975511f3cc34",
+    "weight": 10
+   },
+   {
+    "id": "ce1e69f2-a057-55b7-a915-31cc7fb8432c",
+    "trainerId": "e35a0add-33cf-5101-9532-032769b8e684",
+    "weight": 10
+   },
+   {
+    "id": "c733136c-27b3-56af-a469-6246cadc4dfb",
+    "trainerId": "47da36e5-b84e-56d1-a463-f81fddbe37ec",
+    "weight": 10
+   },
+   {
+    "id": "d2569614-0652-5cb3-89af-e7c1178210e7",
+    "trainerId": "578094c9-d05c-57d0-970c-0b6d0d79dbf7",
+    "weight": 10
+   }
+  ],
+  "lootPool": [
+   {
+    "id": "a598161e-f1b3-5241-9d7d-da374e6f1083",
+    "itemKey": "hyper-potion",
+    "weight": 20,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "a951bc5a-bfb6-520e-8a58-2e922f1054fa",
+    "itemKey": "ultra-ball",
+    "weight": 20,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "0105f318-2061-5a85-b496-e09b128c17ff",
+    "itemKey": "max-ether",
+    "weight": 12,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "9c6f1af7-dde8-58ef-a85f-459a9237dc90",
+    "itemKey": "ether",
+    "weight": 8,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "ba52422b-b1ce-50b6-816b-8078ff6239df",
+    "itemKey": "rare-candy",
+    "weight": 8,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "ae09a2c9-dae8-5746-943b-4d2281b6ef62",
+    "itemKey": "money",
+    "weight": 20,
+    "unique": false,
+    "minQty": 200,
+    "maxQty": 400
+   },
+   {
+    "id": "62149101-b25d-585d-82f6-0cfc012bc84b",
+    "itemKey": "ice-stone",
+    "weight": 8,
+    "unique": true,
+    "minQty": 1,
+    "maxQty": 1
+   }
+  ]
+ },
+ {
+  "id": "af565afe-bfc6-516a-8a4c-bba17bb1ff48",
+  "orderIndex": 723,
+  "regionId": "alola",
+  "name": "The Pokémon League",
+  "bannerUrl": "/banners/default.png",
+  "roundsToClear": 1,
+  "minLevel": 54,
+  "maxLevel": 62,
+  "encounterWeights": {
+   "wild": 0,
+   "trainer": 2,
+   "center": 1,
+   "item": 1,
+   "casino": 0
+  },
+  "backtrackMultiplier": 0.5,
+  "legendaryBoss": null,
+  "scalesToTeam": false,
+  "easyMode": false,
+  "enemyUpgradeLevel": 9,
+  "battleBackground": "default",
+  "hidden": false,
+  "unlockConditions": null,
+  "gyms": [
+   "e047e618-23e4-5e5c-a8bb-21ac07b0cb2d",
+   "c890fdd8-3ff9-5f09-b1cb-913a3e659688",
+   "8c836c01-4755-59dc-88f3-aceffc2666bf",
+   "1a3ca20b-e218-5ebc-845b-af0dbaf41b2e",
+   "f058140b-aac1-586e-b798-9ec8ca8dd04d"
+  ],
+  "wildPool": [],
+  "trainerPool": [
+   {
+    "id": "b0dbbb5f-f48b-5ddf-b407-b80e03f09b1e",
+    "trainerId": "29850881-49a5-574e-90c8-6bd60abe0f11",
+    "weight": 10
+   },
+   {
+    "id": "b0d58875-f514-58ea-aafc-09795ba3d1cc",
+    "trainerId": "40051e3e-c5d9-56dd-a4f7-d9c0e31d5b71",
+    "weight": 10
+   }
+  ],
+  "lootPool": [
+   {
+    "id": "c14bce6b-f450-596b-bf99-e6e5433c7dd0",
+    "itemKey": "hyper-potion",
+    "weight": 20,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "a3da07bb-ca93-5188-b558-9c02ef38315b",
+    "itemKey": "ultra-ball",
+    "weight": 20,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "cc08caa0-ce54-552b-b396-48bc1a2b0669",
+    "itemKey": "max-ether",
+    "weight": 12,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "1fd720b9-6a66-5bfe-bdc6-0097cc3b9597",
+    "itemKey": "ether",
+    "weight": 8,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "790ddfa0-3451-5842-a1a1-fe609c01efe1",
+    "itemKey": "rare-candy",
+    "weight": 8,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "aa1360e8-4f1a-50c4-b419-5cfaff38ee8d",
+    "itemKey": "money",
+    "weight": 20,
+    "unique": false,
+    "minQty": 200,
+    "maxQty": 400
+   }
+  ]
+ },
+ {
+  "id": "5d2b50d3-a648-5479-a687-067ca5f833f4",
+  "orderIndex": 724,
+  "regionId": "alola",
+  "name": "Mount Lanakila II",
+  "bannerUrl": "/banners/snow_mountains.png#flip",
+  "roundsToClear": 1,
+  "minLevel": 60,
+  "maxLevel": 70,
+  "encounterWeights": {
+   "wild": 4,
+   "trainer": 3,
+   "center": 1,
+   "item": 1,
+   "casino": 0
+  },
+  "backtrackMultiplier": 0.5,
+  "legendaryBoss": null,
+  "scalesToTeam": false,
+  "easyMode": false,
+  "enemyUpgradeLevel": 9,
+  "battleBackground": "rock",
+  "hidden": false,
+  "unlockConditions": null,
+  "gyms": [],
+  "wildPool": [
+   {
+    "id": "fb0577e2-a6d5-5bb4-8ed1-f09759c180b7",
+    "dex": 784,
+    "weight": 6,
+    "minLevel": 60,
+    "maxLevel": 66
+   },
+   {
+    "id": "55afa892-8f92-5b89-9de7-0e4c34c1171d",
+    "dex": 780,
+    "weight": 8,
+    "minLevel": 60,
+    "maxLevel": 66
+   },
+   {
+    "id": "a8379a48-b601-547e-a7ac-90c66b11bdce",
+    "dex": 740,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 66
+   },
+   {
+    "id": "4d473f84-8435-59e7-b965-7120dfd961fe",
+    "dex": 362,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 66
+   },
+   {
+    "id": "94f81d1d-1a75-5135-ac23-aa351a589b1d",
+    "dex": 461,
+    "weight": 8,
+    "minLevel": 60,
+    "maxLevel": 66
+   },
+   {
+    "id": "6ecdab22-2076-5396-8515-dd143e5b4560",
+    "dex": 359,
+    "weight": 8,
+    "minLevel": 60,
+    "maxLevel": 66
+   },
+   {
+    "id": "2e981450-010b-5115-afe9-0517aa8cb3e6",
+    "dex": 584,
+    "weight": 6,
+    "minLevel": 60,
+    "maxLevel": 66
+   },
+   {
+    "id": "c9a37283-5502-5842-8b84-31456fdc3eb7",
+    "dex": 169,
+    "weight": 8,
+    "minLevel": 60,
+    "maxLevel": 66
+   }
+  ],
+  "trainerPool": [
+   {
+    "id": "59d52306-5c5d-5cf9-9804-d291fb8db2d2",
+    "trainerId": "aa7855fb-96b3-5c0c-9967-b5b668dfd86f",
+    "weight": 10
+   },
+   {
+    "id": "5e068c98-2434-58a5-a83a-34b0d1a64b8e",
+    "trainerId": "1bd541c2-e4cf-50c7-a1cb-e756caf000cb",
+    "weight": 10
+   },
+   {
+    "id": "217cb4f4-8fdb-5e68-b891-a9c64281833a",
+    "trainerId": "26b1ab7d-3809-5613-bf4d-ae2acf8be436",
+    "weight": 10
+   }
+  ],
+  "lootPool": [
+   {
+    "id": "83bfdd91-5f47-5ba5-8dd3-af88f4f4b6e9",
+    "itemKey": "hyper-potion",
+    "weight": 20,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "ddea688d-68a8-5055-91e5-9dc082460e39",
+    "itemKey": "ultra-ball",
+    "weight": 20,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "b952d625-2de6-57ca-919d-deba7f5b8c7b",
+    "itemKey": "max-ether",
+    "weight": 12,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "42dcf60f-19b3-545e-aa6c-d64e565a23db",
+    "itemKey": "ether",
+    "weight": 8,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "696bf919-86de-5df3-94f1-1dceac9af545",
+    "itemKey": "rare-candy",
+    "weight": 8,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "2dcfeef4-de1c-5301-b00d-c55ed1623c55",
+    "itemKey": "money",
+    "weight": 20,
+    "unique": false,
+    "minQty": 200,
+    "maxQty": 400
+   }
+  ]
+ },
+ {
+  "id": "62903307-8361-5503-9f7c-216d94b03a27",
+  "orderIndex": 725,
+  "regionId": "alola",
+  "name": "The Pokémon League II",
+  "bannerUrl": "/banners/default.png",
+  "roundsToClear": 1,
+  "minLevel": 66,
+  "maxLevel": 76,
+  "encounterWeights": {
+   "wild": 0,
+   "trainer": 2,
+   "center": 1,
+   "item": 1,
+   "casino": 0
+  },
+  "backtrackMultiplier": 0.5,
+  "legendaryBoss": null,
+  "scalesToTeam": false,
+  "easyMode": false,
+  "enemyUpgradeLevel": 9,
+  "battleBackground": "default",
+  "hidden": false,
+  "unlockConditions": null,
+  "gyms": [
+   "3551cda5-c63e-516e-a105-1e4ae24a0241",
+   "7c584e7f-62bc-573b-bbe2-e2d7f2f62f86",
+   "cb5f58b1-b32e-5727-880e-ebb60adc85ac",
+   "225d7071-308e-5e2e-b4dd-0af4068aa88e",
+   "d540c5be-def8-5f96-8ac2-be5663b754e9"
+  ],
+  "wildPool": [],
+  "trainerPool": [
+   {
+    "id": "b54e435e-5ca0-5fac-8c33-455208562b6d",
+    "trainerId": "1637180b-5024-5f48-a947-92030f53c4a6",
+    "weight": 10
+   },
+   {
+    "id": "f19b64aa-3c31-597b-bbfb-6d1b7ea2ba5b",
+    "trainerId": "21258d99-a592-503a-bdbb-6801fed426ef",
+    "weight": 10
+   }
+  ],
+  "lootPool": [
+   {
+    "id": "a018f58a-45ad-5251-adca-2636d3bacadb",
+    "itemKey": "hyper-potion",
+    "weight": 20,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "0025a2fb-a8c1-5b78-a7b2-ff4aca24737a",
+    "itemKey": "ultra-ball",
+    "weight": 20,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "93ac949f-14ff-5ab5-8a5c-660de630950f",
+    "itemKey": "max-ether",
+    "weight": 12,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "15ee8381-a0aa-504b-95b8-41c361a1a318",
+    "itemKey": "ether",
+    "weight": 8,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "0339d9ad-ddb5-5144-8d79-9bc5e4c034a0",
+    "itemKey": "rare-candy",
+    "weight": 8,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "957d99a9-8a30-5fb2-affe-34d47f323277",
+    "itemKey": "money",
+    "weight": 20,
+    "unique": false,
+    "minQty": 200,
+    "maxQty": 400
+   }
+  ]
+ },
+ {
+  "id": "30233749-91cd-5ba0-8e62-f4ea0042de40",
+  "orderIndex": 726,
+  "regionId": "alola",
+  "name": "Poni Gauntlet & the Battle Tree",
+  "bannerUrl": "/banners/forest.png#flip",
+  "roundsToClear": 1,
+  "minLevel": 60,
+  "maxLevel": 72,
+  "encounterWeights": {
+   "wild": 2,
+   "trainer": 3,
+   "center": 1,
+   "item": 1,
+   "casino": 0
+  },
+  "backtrackMultiplier": 0.5,
+  "legendaryBoss": null,
+  "scalesToTeam": false,
+  "easyMode": false,
+  "enemyUpgradeLevel": 9,
+  "battleBackground": "grass",
+  "hidden": true,
+  "unlockConditions": [
+   {
+    "kind": "area",
+    "areaId": "af565afe-bfc6-516a-8a4c-bba17bb1ff48"
+   }
+  ],
+  "gyms": [
+   "339a9554-6ff0-5b40-85bb-ea76a6220ca4",
+   "0c197ab9-0b6a-5d0c-8541-42ca1249c049"
+  ],
+  "wildPool": [
+   {
+    "id": "4e1123a9-3dca-5d8f-95f5-f03b636a1752",
+    "dex": 147,
+    "weight": 4,
+    "minLevel": 28,
+    "maxLevel": 30
+   },
+   {
+    "id": "c55bbe4b-e95b-5cfd-a70b-48456848e4df",
+    "dex": 149,
+    "weight": 2,
+    "minLevel": 62,
+    "maxLevel": 66
+   },
+   {
+    "id": "1f96d710-447c-5c6a-ae51-006bc77a43ed",
+    "dex": 468,
+    "weight": 4,
+    "minLevel": 60,
+    "maxLevel": 66
+   },
+   {
+    "id": "f03b095f-47da-581d-acf0-ee80531b4ab2",
+    "dex": 663,
+    "weight": 8,
+    "minLevel": 60,
+    "maxLevel": 66
+   },
+   {
+    "id": "7ac89baf-55aa-5043-aadb-06db3668ca0b",
+    "dex": 128,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 66
+   },
+   {
+    "id": "0463dc89-191d-5987-81f4-6fa4d60f17d6",
+    "dex": 210,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 66
+   },
+   {
+    "id": "35c69b04-bf68-574a-b529-14e104963163",
+    "dex": 55,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 66
+   },
+   {
+    "id": "b5804c53-996a-59e1-bf13-dcc5f08453c1",
+    "dex": 108,
+    "weight": 8,
+    "minLevel": 60,
+    "maxLevel": 66
+   },
+   {
+    "id": "a815b1e2-bcef-5894-b32c-31e29b94e24c",
+    "dex": 760,
+    "weight": 8,
+    "minLevel": 60,
+    "maxLevel": 66
+   },
+   {
+    "id": "aa444f04-c5cf-5abb-ae96-bbc4c918f51f",
+    "dex": 733,
+    "weight": 8,
+    "minLevel": 60,
+    "maxLevel": 66
+   }
+  ],
+  "trainerPool": [
+   {
+    "id": "f8ef28dc-1922-575c-a86b-fc5e5f47f79d",
+    "trainerId": "47f70a31-496e-589c-b1d1-f4e3024e3817",
+    "weight": 10
+   },
+   {
+    "id": "6008922e-a8a2-5f7b-ab8e-1f45d328cba4",
+    "trainerId": "6f4d9893-93c7-5a7b-ba75-e79e0f36f8be",
+    "weight": 10
+   },
+   {
+    "id": "09fccf76-99c9-545b-8dbe-74c78dce7891",
+    "trainerId": "0fef3bec-a69f-5f01-91b3-7ec991835934",
+    "weight": 10
+   }
+  ],
+  "lootPool": [
+   {
+    "id": "510adcb9-0901-5e0a-a41e-fa5e62c03842",
+    "itemKey": "hyper-potion",
+    "weight": 20,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "48c33e2e-73f7-55d9-93db-a151bfaad9af",
+    "itemKey": "ultra-ball",
+    "weight": 20,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "4fa295ff-27a8-5bba-917a-bcaa8b52fc37",
+    "itemKey": "max-ether",
+    "weight": 12,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "a6e057b1-c776-56d5-9208-0cf3befe97c9",
+    "itemKey": "ether",
+    "weight": 8,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "289b32fc-8038-5f9b-9637-2be88766cc7a",
+    "itemKey": "rare-candy",
+    "weight": 8,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "bfa1f50c-e731-5b8c-a6c4-69a999b88196",
+    "itemKey": "money",
+    "weight": 20,
+    "unique": false,
+    "minQty": 200,
+    "maxQty": 400
+   }
+  ]
+ },
+ {
+  "id": "e22d5bee-8d04-5f99-ab7f-157785f0a30b",
+  "orderIndex": 727,
+  "regionId": "alola",
+  "name": "The Poké Pelago",
+  "bannerUrl": "/banners/beach.png",
+  "roundsToClear": 1,
+  "minLevel": 60,
+  "maxLevel": 76,
+  "encounterWeights": {
+   "wild": 6,
+   "trainer": 2,
+   "center": 1,
+   "item": 1,
+   "casino": 0
+  },
+  "backtrackMultiplier": 0.5,
+  "legendaryBoss": null,
+  "scalesToTeam": true,
+  "easyMode": false,
+  "enemyUpgradeLevel": 9,
+  "battleBackground": "sea",
+  "hidden": true,
+  "unlockConditions": [
+   {
+    "kind": "area",
+    "areaId": "af565afe-bfc6-516a-8a4c-bba17bb1ff48"
+   }
+  ],
+  "gyms": [],
+  "wildPool": [
+   {
+    "id": "b9fb4329-d16b-523a-80b3-03a55b6d0b9b",
+    "dex": 10,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "17f76f3b-618e-5fc4-a1c7-625524f14ba3",
+    "dex": 12,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "8eed6dcd-8bbf-526c-bc18-1949bacf73b1",
+    "dex": 19,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "9b694e64-1499-5040-9d38-30fccabf865c",
+    "dex": 21,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "36fccaf1-dcb7-5b0f-8988-00bac04c24b8",
+    "dex": 22,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "de556207-6a6d-562e-a143-e4d99770562d",
+    "dex": 23,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "f1bf2802-cae5-5a58-8fff-b95589209f26",
+    "dex": 27,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "4894edb5-2390-5d9b-9e46-c4569625ebdf",
+    "dex": 37,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "6af05ab9-b45e-5112-b65e-831ff6f25e34",
+    "dex": 41,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "a4180d27-2c56-5402-afc9-b5ccb89a5585",
+    "dex": 42,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "69838558-d0c4-552f-b07a-a2f02d6b14a7",
+    "dex": 46,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "1679e10a-721b-55b8-b8e9-efdb1c2ca167",
+    "dex": 50,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "86babaa4-90d8-574d-8a97-26cd26ba2218",
+    "dex": 51,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "23f1ff54-cdff-5f08-bbcf-8b842de3ec40",
+    "dex": 52,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "6a0abd64-eb64-5ba5-a567-4ab2198a3224",
+    "dex": 54,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "846b7f88-8767-5793-a160-fdbef98d1f4c",
+    "dex": 55,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "69a5a348-854a-5565-84a0-7d59d3459597",
+    "dex": 56,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "36437127-2602-5b56-8b11-f36e082886fc",
+    "dex": 58,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "18605e62-dc7d-5fdc-8ff7-f2d852f7dd13",
+    "dex": 60,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "c4c63ce9-65ce-5589-9f7b-bdb50a392525",
+    "dex": 63,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "4adc3536-03f8-5827-a919-ed3dd0fa550d",
+    "dex": 66,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "2a31af3f-da32-5ccc-a43f-2ba750d5869d",
+    "dex": 67,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "f5af5b83-4b0d-507f-8a37-af9fe433d054",
+    "dex": 72,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "bd4b50d2-3f05-5649-bf3c-2fd133eeac9b",
+    "dex": 73,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "4705d8f6-3fb1-56c2-8a9d-447a8a9670b6",
+    "dex": 74,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "e3911357-5f70-5771-a3b3-f07d81396a50",
+    "dex": 75,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "21913e1c-47d7-569b-8a7d-7b573f17c8e6",
+    "dex": 79,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "d4c03944-d956-550d-b692-c4b6059c5d5b",
+    "dex": 81,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "cc001fb4-53cf-5094-bada-e95cb29d46d0",
+    "dex": 86,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "73afa34f-3b65-57ae-8697-9d7c4e39376f",
+    "dex": 88,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "eb1ce1a8-096f-58b0-96ea-46549c715f87",
+    "dex": 90,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "6af409bc-a07e-58a3-ae9d-0576682ed598",
+    "dex": 92,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "984c30e0-38fc-54e5-b48b-6c9a265ac56d",
+    "dex": 93,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "d95235ca-2152-5a99-a890-b769e505dd5c",
+    "dex": 96,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "0ec15e95-b94d-589d-b22f-327afdb2b24e",
+    "dex": 103,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "3d037ed9-36ce-5864-8723-bb3ff8b823a5",
+    "dex": 104,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "b65b11c7-05bd-5b8a-b28a-e53cfc058c22",
+    "dex": 108,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "c161e9d0-0457-5ba6-93ae-d85599ff7e9d",
+    "dex": 111,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "29df26c2-31bd-5a95-9ccd-5f7845c1ca54",
+    "dex": 115,
+    "weight": 3,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "955d012e-a55e-5663-920e-0ee36ad8f7d3",
+    "dex": 116,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "2d560b0e-3467-5c6e-8321-4596977aa1e0",
+    "dex": 118,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "83cc097e-52d2-5b87-a00e-b8eb7d9f8d3f",
+    "dex": 120,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "e2f42e69-947d-5a41-9823-0f71470a5a7f",
+    "dex": 127,
+    "weight": 3,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "e52e0a8f-ab3a-50f7-b786-d47d85a2b41e",
+    "dex": 128,
+    "weight": 3,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "62f3884b-d10a-57a2-8f96-ff70ac82c873",
+    "dex": 131,
+    "weight": 3,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "292fb1c1-7067-568f-8fbb-ee69de6d3a0c",
+    "dex": 132,
+    "weight": 3,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "364e57b4-042b-515e-96a1-a12a61f3cba4",
+    "dex": 133,
+    "weight": 3,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "9117dda8-9f97-5dec-98af-404e0334d637",
+    "dex": 137,
+    "weight": 3,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "5c797f24-982b-5c9f-853a-135b075cb8fc",
+    "dex": 143,
+    "weight": 3,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "d6e7c4d9-ac84-501c-addf-633f3494284a",
+    "dex": 147,
+    "weight": 3,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "dc18c721-9826-558a-9c08-0edf5b7ef9b8",
+    "dex": 148,
+    "weight": 3,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "1924ac75-fe9b-5c91-b842-c51debbcf845",
+    "dex": 149,
+    "weight": 3,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "3e36469f-daaa-5d09-aebb-e354a33cc513",
+    "dex": 163,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "5f124332-4037-58b8-a0d3-9a377f9d79ad",
+    "dex": 165,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "e83bac78-cb34-5a24-9abf-528c5801de0b",
+    "dex": 166,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "6b274659-9e54-59ba-9a1f-6959aa33cda0",
+    "dex": 167,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "71d7008f-1a89-5a2d-b5ec-06450f7261d0",
+    "dex": 168,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "ceafe68e-2dc1-53fc-ab7e-dd8fd621cd59",
+    "dex": 169,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "65160e50-b9f8-59d4-8750-9e503cefcaff",
+    "dex": 170,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "4ffd0949-c79c-50f0-96e7-e9cb12f20646",
+    "dex": 172,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "9b7684a7-1820-5b21-9a91-bd7075916e45",
+    "dex": 173,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "8d1a64a5-03ec-5bd2-9073-7d1223902eef",
+    "dex": 174,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "2c01d4de-0d2a-53ae-9c30-1dd0b3a636e1",
+    "dex": 177,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "358977a8-40a1-5beb-b9e7-c8b6a4fe358f",
+    "dex": 179,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "b5320b2a-da3b-52ad-a2d8-ce86bb792cdf",
+    "dex": 185,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "987daf14-98e2-59fe-96e1-f7f1eaa99d38",
+    "dex": 204,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "3bbe3aa0-59e2-5e9d-9595-12030270b88e",
+    "dex": 206,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "282e8c8e-f251-5bef-a372-58e6c38de804",
+    "dex": 210,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "7d94d4b1-712d-5398-9666-80ec09825c79",
+    "dex": 214,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "a5066da8-a09b-54d7-b91d-586c08df034a",
+    "dex": 215,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "c4ba52b4-55c5-578d-bf67-12e0589dc978",
+    "dex": 222,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "d912e768-d222-51d7-b137-ce2000e82eb7",
+    "dex": 225,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "798c01cd-8231-584c-bf66-d263d0586899",
+    "dex": 227,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "721c5ad1-dad2-5678-9d6a-686b94865713",
+    "dex": 235,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "f03c31f5-89c7-56e6-8be8-9282c06e32ac",
+    "dex": 238,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "1182dff4-356a-5b45-a540-8fcedf49fa89",
+    "dex": 239,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "5e6acbe8-dcbd-5f3b-bdad-10f03d936d2d",
+    "dex": 240,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "ab86ac26-3d9e-586e-9130-9a777136889f",
+    "dex": 241,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "dbd3c3b5-beef-5e1f-95aa-3964075d37b7",
+    "dex": 246,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "0e514be8-df6a-5220-9bfa-498363f2a94a",
+    "dex": 278,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "9a366914-0f37-5e7c-8ee5-5d341ee07520",
+    "dex": 279,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "61223b7c-3d7a-5c59-a809-8c5c259d432e",
+    "dex": 283,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "c266bb80-b5c7-5ce6-8108-35fbcf450122",
+    "dex": 284,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "209883f3-bd75-5689-b3e2-51b9466b226d",
+    "dex": 288,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "df3cc22d-c520-5d6e-b608-307d68d5d156",
+    "dex": 296,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "6268bde9-4951-5e82-87b6-be9e97240a5f",
+    "dex": 299,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "89325d08-dbb4-50ef-9654-b9262d2d790a",
+    "dex": 302,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "b0f42f4e-1aa4-5de5-97a7-d0bd0965a867",
+    "dex": 303,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "78dde52f-d657-5f47-98a9-11f4516ea093",
+    "dex": 320,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "433384e0-41c7-5a26-9310-5b7cfc93f498",
+    "dex": 324,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "a1014682-ad8a-53bb-ae97-dcefdeaa3cbd",
+    "dex": 327,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "918fad4e-8bde-52b2-ab4a-2c3c603d75d6",
+    "dex": 328,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "1df223df-23a4-55ac-9ec7-7886bdd15643",
+    "dex": 343,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "58667c9d-2b47-568c-8153-730ee7fffc8d",
+    "dex": 349,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "a6ea47d0-f262-503d-beef-74342846b8f0",
+    "dex": 351,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "3e1f6eb3-85b9-56fc-ae83-c330083e3d37",
+    "dex": 353,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "05f6634d-2724-5e54-844e-cee339863a9f",
+    "dex": 357,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "84c6c783-7751-5dcc-9bcb-14b210ea0ceb",
+    "dex": 359,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "14108c44-75a2-581e-b0fd-1e62fef5e837",
+    "dex": 361,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "1f1684c9-7736-598a-9107-6fad727e4b92",
+    "dex": 362,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "8415c26b-68d1-5901-8d91-656401dbb261",
+    "dex": 366,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "f197146c-3eee-5180-a90d-2416ae979080",
+    "dex": 369,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "3a797c76-fcbb-5c7d-a830-3e29684a8a09",
+    "dex": 370,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "f3bdda18-d2b8-509a-b871-759dd706144a",
+    "dex": 371,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "60cbf2a7-2bda-519b-a72c-7aedb803c2ee",
+    "dex": 374,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "d07e18f4-72bf-528a-9272-7db82c1e1673",
+    "dex": 423,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "c2c517f6-8f6c-51ca-a4d3-3013ed2a4c2b",
+    "dex": 425,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "dec00d64-cdd8-5d90-bdb3-d9531777f3ff",
+    "dex": 427,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "58f58813-eb08-579f-9c6b-acfc0443dcf8",
+    "dex": 428,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "7e54825e-9626-56a2-b6c9-945ea5250cad",
+    "dex": 438,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "31b28a8e-ab90-5046-aa47-f160c7ae8fda",
+    "dex": 439,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "b449e5e8-9f48-5319-8611-a8cc9d1fd1fe",
+    "dex": 440,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "25af23bc-a035-5a06-9ce3-5f6450d7862b",
+    "dex": 444,
+    "weight": 3,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "46ef6378-1cb1-5fef-92a1-cfdaa1fd6e74",
+    "dex": 446,
+    "weight": 3,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "6aa63202-ba44-5a60-a888-61dee0960f4a",
+    "dex": 448,
+    "weight": 3,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "69bbaf9c-5d17-5a95-b107-a2e89bda4c4b",
+    "dex": 456,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "371c571b-7567-5a67-b03b-006a042b96fb",
+    "dex": 461,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "10cd86e1-3de0-5dcd-ae0b-30976c96471c",
+    "dex": 462,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "b6c40ada-7393-531d-9892-3a71cd093152",
+    "dex": 468,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "255a1b85-7711-5f88-8f0b-5c35227f477e",
+    "dex": 506,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "525e2295-8945-5489-aa04-849f110a37d6",
+    "dex": 524,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "b6350978-05d3-5b3b-a2b0-95a3fd5ea9e5",
+    "dex": 525,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "5cc43e02-9cbb-5b99-9580-27445fa22fbd",
+    "dex": 546,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "c12e297a-50ab-5d3f-8401-50d642799afb",
+    "dex": 548,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "f3af7337-5125-5ba3-92bd-c2b38c6fcb1c",
+    "dex": 550,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "7bdab154-c112-529e-8ee6-58b9a27db365",
+    "dex": 551,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "ada699bb-ce73-5c14-a981-71e22d08d485",
+    "dex": 552,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "266b3c8d-b927-578f-a63e-4491860ed126",
+    "dex": 553,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "642ec17d-5ed7-5866-aaf3-6bba9f91ef02",
+    "dex": 559,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "5d7fd226-b636-5a5d-8544-8fe711755b8e",
+    "dex": 568,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "43c0d3f4-5d9b-5512-974d-c91991ce73ea",
+    "dex": 570,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "c7dbb45c-eccc-5a4f-82b3-4debb2aab303",
+    "dex": 571,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "3a12032b-0a37-5cd0-8e6b-59db03c6959c",
+    "dex": 572,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "1f87da88-525b-5577-9c59-c8eb7e897d0b",
+    "dex": 583,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "dc1905d8-06fa-508f-8e34-cae82b8ff380",
+    "dex": 584,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "3862ed89-94c9-5b9a-8f0c-73d5252c4a69",
+    "dex": 594,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "92a12458-6acf-52c6-a936-f9f2085f0329",
+    "dex": 604,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "3e7b342d-2e03-5a84-801f-1aec4efcbc30",
+    "dex": 605,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "14b8289d-38ff-5772-93ed-2e581ef996e5",
+    "dex": 607,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "ea2a5b03-6dda-5487-aa90-5228fee6b0fe",
+    "dex": 610,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "ef319d7d-9af2-5644-a2a3-6e6d7e9655bd",
+    "dex": 619,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "65c137da-6000-5ec9-84c6-82363fb8fac3",
+    "dex": 622,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "a3a6dc70-4994-5b0d-b29f-d0c6877dea62",
+    "dex": 624,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "66dbe1fb-783a-5fca-bc4a-607c3c2376f3",
+    "dex": 627,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "4d0a4048-9c19-5473-9256-75df2b6a86c6",
+    "dex": 629,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "efa708f2-c067-5bdf-b9e4-1d78b573246a",
+    "dex": 661,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "49794131-85e6-5eb9-b209-0bfa58bbfa70",
+    "dex": 663,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "7ea4dce0-a8c3-5c48-bf30-706ad10ce136",
+    "dex": 669,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "e26098f5-322c-5aba-820a-97385c699d42",
+    "dex": 674,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "19a88752-d310-52ec-8080-57e974704187",
+    "dex": 675,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "017377e4-cf4c-5b4c-9b57-e51d74b48786",
+    "dex": 676,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "7156d05f-4a09-592f-a189-fa6c50635613",
+    "dex": 679,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "d20609db-7302-5973-8520-86f54550161e",
+    "dex": 686,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "e093df3e-7c89-5204-a9ee-ac85a7df1d22",
+    "dex": 701,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "c93f059b-3c73-5a4d-9791-bbc712de5ec9",
+    "dex": 702,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "9a84eac8-b439-5d93-99fa-a3b0915dc76a",
+    "dex": 703,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "aac85d46-7575-5d9a-9450-6fda330787e5",
+    "dex": 704,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "da60952a-b04e-5860-93d2-efdcb6010589",
+    "dex": 707,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "5b25dd1f-86f1-5b03-969f-10af90522875",
+    "dex": 708,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "85844d9b-bc96-5dc0-bb0d-a584afde442d",
+    "dex": 714,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "9079200a-5265-5893-883d-ddd76430fbb7",
+    "dex": 722,
+    "weight": 3,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "e7bfc84d-ee66-5127-9bfa-6f54697a27e5",
+    "dex": 723,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "7dde1ba9-e511-5b72-bb51-6404e1753c20",
+    "dex": 724,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "c58de823-eafd-527e-b3d0-65ea3341d97b",
+    "dex": 725,
+    "weight": 3,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "41cd8bc4-a697-5f84-9862-b65ba4d2b835",
+    "dex": 726,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "ec1d1c95-796c-5493-a8cf-88ace411ea01",
+    "dex": 727,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "7f559b9b-d275-5764-889f-78ef83cc9be0",
+    "dex": 728,
+    "weight": 3,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "5e999306-5b26-5005-b98b-467967c9cf54",
+    "dex": 729,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "48b47326-2dab-53d8-9d17-a5733df21795",
+    "dex": 730,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "78c5c466-da98-54d2-9d01-b50e3e84ba2f",
+    "dex": 731,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "ef7a0344-e932-51f1-a74b-c538e9585f4c",
+    "dex": 732,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "70414267-185f-5233-b044-bf623ffe1866",
+    "dex": 733,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "876ad4ca-d5f4-59d1-b653-048260582e0e",
+    "dex": 734,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "3560608e-53d4-58b1-9d92-a619ccfb949c",
+    "dex": 735,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "e523661d-e853-58e1-83ea-38b2eca9e9ce",
+    "dex": 736,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "b65e731f-e533-5958-9575-a6d03aa03f5d",
+    "dex": 737,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "72849862-b9e8-52d5-9be6-37d320e9ffab",
+    "dex": 738,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "806e7afd-2e45-5935-9af6-b9c55c40915f",
+    "dex": 739,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "4dd0e621-af84-5971-82d9-2c83ec24b2c9",
+    "dex": 740,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "9c4e6b51-5d9c-5c52-b93b-c4cdc78225d0",
+    "dex": 741,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "32d49c18-a60c-5985-a8ba-0844d8204bff",
+    "dex": 742,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "b24e3d56-0254-5aad-81d4-a50df81a10da",
+    "dex": 743,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "2212b11e-e7e2-57aa-8266-28c0829fa8dc",
+    "dex": 744,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "0b989615-dc0c-5e55-95d5-cbaece225c8d",
+    "dex": 745,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "4749f61f-5282-5d1c-bc49-546f613bbabd",
+    "dex": 746,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "bdf53cda-d1a6-51ce-8c26-fca3d03a7db2",
+    "dex": 747,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "7661c818-6699-5ad5-890e-d1f3c004daa0",
+    "dex": 748,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "3c780aad-e55a-5c67-8498-8b55d7da71f1",
+    "dex": 749,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "918510b4-c2bd-5413-be70-48fe9690944b",
+    "dex": 750,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "546a4b3f-29c4-58a6-9bc6-28c37216ed41",
+    "dex": 751,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "116716dd-441b-53d6-ac16-d8d2491b578a",
+    "dex": 752,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "fc87b9f3-6aca-5489-80b0-c7e4896fc3e8",
+    "dex": 753,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "efcaaa5b-7d34-5e56-9052-7a5e162c4f35",
+    "dex": 754,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "0a02b57c-9bcd-5a6b-840c-9c844165a0c1",
+    "dex": 755,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "8f67e64c-f979-5635-a711-bb35d7674689",
+    "dex": 756,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "d60397d6-5dfb-58c6-90a5-d428c7faca0a",
+    "dex": 757,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "53bd6618-5075-5228-90e3-7d56a5e217dc",
+    "dex": 758,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "ad9ac5f1-63d1-541f-af59-186e26183112",
+    "dex": 759,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "22472978-119c-59e0-85c0-44cea02baf02",
+    "dex": 760,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "9406a805-847b-558f-bda6-33dec7f1d700",
+    "dex": 761,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "71826ce1-48ea-559b-93bb-a1c10901c14c",
+    "dex": 762,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "47d0d57a-d827-5e15-a1b0-bf06b48116ec",
+    "dex": 763,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "37ec8a2d-f485-5474-8a0c-2bcc66d9bf2f",
+    "dex": 764,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "c3170cb8-dd93-5b8b-9212-f3c6dd0b4f59",
+    "dex": 765,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "cfc24ebb-0a40-53e6-b1d8-3a8468ebeac6",
+    "dex": 766,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "eacae899-d19f-58ba-96c9-319c1090da4d",
+    "dex": 767,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "09440bc1-6e1b-50ba-a991-2df11b50a2ac",
+    "dex": 768,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "8c17ee2d-1782-585d-832e-301649384c31",
+    "dex": 769,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "b709728c-b906-5518-98e6-b69883707e48",
+    "dex": 770,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "eabfadb1-d713-5ccd-af29-a7b4ab914aad",
+    "dex": 771,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "e0647aee-b812-5e46-8925-bd907ca38c7c",
+    "dex": 772,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "f89d7db6-3a01-55c1-8db6-2459605638d9",
+    "dex": 773,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "18198b14-8c29-501c-8a24-0da7f3b88224",
+    "dex": 774,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "d42d1e21-9b47-5219-b7bd-6490ab0c8070",
+    "dex": 775,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "ced82018-d4dd-57da-a983-106ba3080124",
+    "dex": 776,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "794a5201-ab6f-5252-9b99-1316e295752c",
+    "dex": 777,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "acd071f7-1296-5cfd-83b2-43bb8d26c6c5",
+    "dex": 778,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "7d35c12b-ead1-57f8-bacf-9eaa52e20740",
+    "dex": 779,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "677ef71a-c6fc-540f-b8ad-7595e71734c6",
+    "dex": 780,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "72f56146-44f1-563e-acdd-74977777c302",
+    "dex": 781,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "ba28ea70-f127-55fa-a2e4-8b893ea467e0",
+    "dex": 782,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "0a856132-6e41-54fe-8a0f-9f4af5a93169",
+    "dex": 783,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   },
+   {
+    "id": "056b9399-05fe-572a-9f2b-12d22b85a12c",
+    "dex": 784,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 76
+   }
+  ],
+  "trainerPool": [
+   {
+    "id": "7b5bc622-fc6b-5f73-a2f6-99dad310b94f",
+    "trainerId": "7f42ec8e-af5f-5b70-bee3-e2f453eaed58",
+    "weight": 10
+   },
+   {
+    "id": "472cc46b-7849-5fa2-918f-38773fad57b4",
+    "trainerId": "ff77e0a2-d624-50e1-bbb9-e7f09d27133d",
+    "weight": 10
+   },
+   {
+    "id": "05600135-740d-51e0-bfd0-0e515fbda4ca",
+    "trainerId": "56f52629-5baf-51f2-a16f-8681e208b71d",
+    "weight": 10
+   }
+  ],
+  "lootPool": [
+   {
+    "id": "b376a20b-4643-5442-9302-ef3381ca1814",
+    "itemKey": "hyper-potion",
+    "weight": 20,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "37076e8d-f518-5107-b399-e495962cc89b",
+    "itemKey": "ultra-ball",
+    "weight": 20,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "dfee378b-6038-5bcf-a820-a2f7655aabdf",
+    "itemKey": "max-ether",
+    "weight": 12,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "4d497650-dcac-5199-a4b2-80fb9405f442",
+    "itemKey": "ether",
+    "weight": 8,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "9bf284f3-c7dc-5b51-9cc0-e50945624d51",
+    "itemKey": "rare-candy",
+    "weight": 8,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "2ef8c8dd-f823-512e-831f-1ff5923e7485",
+    "itemKey": "money",
+    "weight": 20,
+    "unique": false,
+    "minQty": 200,
+    "maxQty": 400
+   }
+  ]
+ },
+ {
+  "id": "a33bf12e-2ad9-5a79-bfe7-6224579f9a32",
+  "orderIndex": 751,
+  "regionId": "alola",
+  "name": "The Lakes of the Sunne and Moone",
+  "bannerUrl": "/banners/sky.png#flip",
+  "roundsToClear": 1,
+  "minLevel": 40,
+  "maxLevel": 48,
+  "encounterWeights": {
+   "wild": 0,
+   "trainer": 0,
+   "center": 6,
+   "item": 2,
+   "casino": 0
+  },
+  "backtrackMultiplier": 0.5,
+  "legendaryBoss": [
+   {
+    "dex": 789,
+    "level": 40,
+    "teamAvgThreshold": 0
+   }
+  ],
+  "scalesToTeam": false,
+  "easyMode": false,
+  "enemyUpgradeLevel": 7,
+  "battleBackground": "water",
+  "hidden": true,
+  "unlockConditions": [
+   {
+    "kind": "area",
+    "areaId": "a13dcc18-e146-5423-b54d-c0a5869ddad2"
+   },
+   {
+    "kind": "pokedex",
+    "count": 126
+   },
+   {
+    "kind": "maxLevel",
+    "level": 40
+   }
+  ],
+  "gyms": [],
+  "wildPool": [],
+  "trainerPool": [],
+  "lootPool": [
+   {
+    "id": "1b94c2b0-d99f-510a-9545-74ffe1d60fcf",
+    "itemKey": "super-potion",
+    "weight": 12,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "a9ec586e-bdaf-5e59-90e8-abf01b1278d6",
+    "itemKey": "hyper-potion",
+    "weight": 14,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "67b235e8-1aac-575a-aca5-04df743d4e38",
+    "itemKey": "great-ball",
+    "weight": 12,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "d1492e4d-5d48-5b55-b78f-25ed7a368f68",
+    "itemKey": "ultra-ball",
+    "weight": 12,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "4bc32088-3fa5-5b5f-b92f-b89b20fede4a",
+    "itemKey": "paralyze-heal",
+    "weight": 4,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "c7ab8aad-4355-5627-ab12-243f3910c88e",
+    "itemKey": "burn-heal",
+    "weight": 4,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "a6bb58da-822f-5ec7-a72e-6032b51366c2",
+    "itemKey": "ice-heal",
+    "weight": 4,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "a98e1638-62a7-592d-92b1-f76bccc7ef84",
+    "itemKey": "ether",
+    "weight": 8,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "382ee120-146d-5b43-9582-3e40fc8f1a34",
+    "itemKey": "max-ether",
+    "weight": 6,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "04e5a9ae-43cf-533c-b9ad-98c6c354582a",
+    "itemKey": "rare-candy",
+    "weight": 3,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "a673eb68-82fe-5157-a8cc-a699ba617091",
+    "itemKey": "money",
+    "weight": 18,
+    "unique": false,
+    "minQty": 100,
+    "maxQty": 200
+   }
+  ]
+ },
+ {
+  "id": "16780c62-8411-5637-abec-7257a04e2e3c",
+  "orderIndex": 752,
+  "regionId": "alola",
+  "name": "The Altar of the Sunne and Moone",
+  "bannerUrl": "/banners/sunset.png#flip",
+  "roundsToClear": 1,
+  "minLevel": 60,
+  "maxLevel": 70,
+  "encounterWeights": {
+   "wild": 0,
+   "trainer": 0,
+   "center": 6,
+   "item": 2,
+   "casino": 0
+  },
+  "backtrackMultiplier": 0.5,
+  "legendaryBoss": [
+   {
+    "dex": 791,
+    "level": 65
+   },
+   {
+    "dex": 792,
+    "level": 65
+   }
+  ],
+  "scalesToTeam": false,
+  "easyMode": false,
+  "enemyUpgradeLevel": 9,
+  "battleBackground": "default",
+  "hidden": true,
+  "unlockConditions": [
+   {
+    "kind": "area",
+    "areaId": "af565afe-bfc6-516a-8a4c-bba17bb1ff48"
+   },
+   {
+    "kind": "pokedex",
+    "count": 251
+   },
+   {
+    "kind": "maxLevel",
+    "level": 65
+   }
+  ],
+  "gyms": [],
+  "wildPool": [],
+  "trainerPool": [],
+  "lootPool": [
+   {
+    "id": "d95b1138-9df6-5e95-8d2c-17ecf478c72c",
+    "itemKey": "hyper-potion",
+    "weight": 20,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "0b7624c4-2fca-5609-b84c-4a468d47f09d",
+    "itemKey": "ultra-ball",
+    "weight": 20,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "71160067-2566-5265-9392-68e57f5e66db",
+    "itemKey": "max-ether",
+    "weight": 12,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "b3050b6c-85ef-5ec2-87f1-dad9d0bb4575",
+    "itemKey": "ether",
+    "weight": 8,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "21f70096-82f6-59ac-9a57-ed571a4be7fd",
+    "itemKey": "rare-candy",
+    "weight": 8,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "4a16c65b-32e3-5387-aeb9-027a88648f3d",
+    "itemKey": "money",
+    "weight": 20,
+    "unique": false,
+    "minQty": 200,
+    "maxQty": 400
+   }
+  ]
+ },
+ {
+  "id": "fa01d16e-8669-5542-be05-f5d8d16395d1",
+  "orderIndex": 753,
+  "regionId": "alola",
+  "name": "Ultra Megalopolis",
+  "bannerUrl": "/banners/city.png",
+  "roundsToClear": 1,
+  "minLevel": 64,
+  "maxLevel": 74,
+  "encounterWeights": {
+   "wild": 0,
+   "trainer": 0,
+   "center": 6,
+   "item": 2,
+   "casino": 0
+  },
+  "backtrackMultiplier": 0.5,
+  "legendaryBoss": [
+   {
+    "dex": 800,
+    "level": 70
+   }
+  ],
+  "scalesToTeam": false,
+  "easyMode": false,
+  "enemyUpgradeLevel": 9,
+  "battleBackground": "default",
+  "hidden": true,
+  "unlockConditions": [
+   {
+    "kind": "area",
+    "areaId": "16780c62-8411-5637-abec-7257a04e2e3c"
+   },
+   {
+    "kind": "pokedex",
+    "count": 251
+   },
+   {
+    "kind": "maxLevel",
+    "level": 70
+   }
+  ],
+  "gyms": [],
+  "wildPool": [],
+  "trainerPool": [],
+  "lootPool": [
+   {
+    "id": "70e622b6-958e-5374-bfd3-ce4c51801971",
+    "itemKey": "hyper-potion",
+    "weight": 20,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "30312f07-1c7d-503e-85c7-45ddbc5a1213",
+    "itemKey": "ultra-ball",
+    "weight": 20,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "50479bed-9355-5029-93b8-c723b24dba8b",
+    "itemKey": "max-ether",
+    "weight": 12,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "cb64e366-178b-521a-b2e1-2a15794b7964",
+    "itemKey": "ether",
+    "weight": 8,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "57efd09b-91aa-5dda-a861-58274c2a5f36",
+    "itemKey": "rare-candy",
+    "weight": 8,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "0978a3fa-aa78-58e3-9967-b3b7c0d2fbe2",
+    "itemKey": "money",
+    "weight": 20,
+    "unique": false,
+    "minQty": 200,
+    "maxQty": 400
+   }
+  ]
+ },
+ {
+  "id": "65b4d722-2dfa-5a76-826b-4978a2ee9279",
+  "orderIndex": 754,
+  "regionId": "alola",
+  "name": "The Ruins of the Guardians",
+  "bannerUrl": "/banners/mountains.png#flip",
+  "roundsToClear": 1,
+  "minLevel": 58,
+  "maxLevel": 66,
+  "encounterWeights": {
+   "wild": 0,
+   "trainer": 0,
+   "center": 6,
+   "item": 2,
+   "casino": 0
+  },
+  "backtrackMultiplier": 0.5,
+  "legendaryBoss": [
+   {
+    "dex": 785,
+    "level": 60,
+    "teamAvgThreshold": 0
+   },
+   {
+    "dex": 786,
+    "level": 60,
+    "teamAvgThreshold": 0
+   },
+   {
+    "dex": 787,
+    "level": 60,
+    "teamAvgThreshold": 0
+   },
+   {
+    "dex": 788,
+    "level": 60,
+    "teamAvgThreshold": 0
+   }
+  ],
+  "scalesToTeam": false,
+  "easyMode": false,
+  "enemyUpgradeLevel": 9,
+  "battleBackground": "rock",
+  "hidden": true,
+  "unlockConditions": [
+   {
+    "kind": "area",
+    "areaId": "af565afe-bfc6-516a-8a4c-bba17bb1ff48"
+   },
+   {
+    "kind": "pokedex",
+    "count": 197
+   },
+   {
+    "kind": "maxLevel",
+    "level": 60
+   }
+  ],
+  "gyms": [],
+  "wildPool": [],
+  "trainerPool": [],
+  "lootPool": [
+   {
+    "id": "9f4a68b4-22e7-5eac-b990-98a67516d214",
+    "itemKey": "hyper-potion",
+    "weight": 20,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "f12e80a1-621f-5191-92fe-f0aac686a0f5",
+    "itemKey": "ultra-ball",
+    "weight": 20,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "44f0d99c-f8d0-5df2-a094-ec61d92c951e",
+    "itemKey": "max-ether",
+    "weight": 12,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "0ea7b0b9-b70f-5ff6-923b-a2d256e24aeb",
+    "itemKey": "ether",
+    "weight": 8,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "5f4f0b76-34ba-500e-8de4-4060a8accc19",
+    "itemKey": "rare-candy",
+    "weight": 8,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "224fa3b6-0d21-5c4d-b636-ab3459f8ddde",
+    "itemKey": "money",
+    "weight": 20,
+    "unique": false,
+    "minQty": 200,
+    "maxQty": 400
+   }
+  ]
+ },
+ {
+  "id": "8fbfe77e-17f1-52c8-9232-cde4de4c111d",
+  "orderIndex": 755,
+  "regionId": "alola",
+  "name": "Ultra Space: the Deep Sea & the Jungle",
+  "bannerUrl": "/banners/ocean.png#flip",
+  "roundsToClear": 1,
+  "minLevel": 58,
+  "maxLevel": 66,
+  "encounterWeights": {
+   "wild": 8,
+   "trainer": 0,
+   "center": 1,
+   "item": 1,
+   "casino": 0
+  },
+  "backtrackMultiplier": 0.5,
+  "legendaryBoss": [
+   {
+    "dex": 793,
+    "level": 60,
+    "teamAvgThreshold": 0
+   },
+   {
+    "dex": 794,
+    "level": 60,
+    "teamAvgThreshold": 0
+   }
+  ],
+  "scalesToTeam": false,
+  "easyMode": false,
+  "enemyUpgradeLevel": 9,
+  "battleBackground": "water",
+  "hidden": true,
+  "unlockConditions": [
+   {
+    "kind": "area",
+    "areaId": "af565afe-bfc6-516a-8a4c-bba17bb1ff48"
+   },
+   {
+    "kind": "pokedex",
+    "count": 197
+   },
+   {
+    "kind": "maxLevel",
+    "level": 60
+   }
+  ],
+  "gyms": [],
+  "wildPool": [
+   {
+    "id": "ed8d1cd7-413e-5de2-8b0f-8716c106f04b",
+    "dex": 748,
+    "weight": 14,
+    "minLevel": 58,
+    "maxLevel": 64
+   },
+   {
+    "id": "5b276623-027d-54d8-a0b7-db1bfd8a4923",
+    "dex": 771,
+    "weight": 12,
+    "minLevel": 58,
+    "maxLevel": 64
+   },
+   {
+    "id": "5569081e-a1fa-593a-a373-590f0f225b97",
+    "dex": 760,
+    "weight": 12,
+    "minLevel": 58,
+    "maxLevel": 64
+   },
+   {
+    "id": "b36ea44e-d1e1-56de-a4aa-d01b72e95c5a",
+    "dex": 766,
+    "weight": 12,
+    "minLevel": 58,
+    "maxLevel": 64
+   },
+   {
+    "id": "13af9041-bf02-583c-9076-3377ab18e7fd",
+    "dex": 765,
+    "weight": 10,
+    "minLevel": 58,
+    "maxLevel": 64
+   }
+  ],
+  "trainerPool": [],
+  "lootPool": [
+   {
+    "id": "1c0248fc-f4ff-5631-aab2-794b696f0b69",
+    "itemKey": "hyper-potion",
+    "weight": 20,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "e495ae8c-c4f9-536e-9e8a-c3ce6e457c41",
+    "itemKey": "ultra-ball",
+    "weight": 20,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "0db02855-0cb9-5e0d-b742-7bdca7458c20",
+    "itemKey": "max-ether",
+    "weight": 12,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "44aba526-219d-5139-89db-b2cad42f22e9",
+    "itemKey": "ether",
+    "weight": 8,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "4e60d6c2-0264-5cfe-b40b-09f5e02adc3f",
+    "itemKey": "rare-candy",
+    "weight": 8,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "8885d627-c5d4-56a9-bdb6-c4f1aa4ae3ff",
+    "itemKey": "money",
+    "weight": 20,
+    "unique": false,
+    "minQty": 200,
+    "maxQty": 400
+   }
+  ]
+ },
+ {
+  "id": "e54b0cd7-f0a7-5d43-850f-5488e781eefc",
+  "orderIndex": 756,
+  "regionId": "alola",
+  "name": "Ultra Space: the Desert & the Plant",
+  "bannerUrl": "/banners/dunes.png#flip",
+  "roundsToClear": 1,
+  "minLevel": 60,
+  "maxLevel": 68,
+  "encounterWeights": {
+   "wild": 8,
+   "trainer": 0,
+   "center": 1,
+   "item": 1,
+   "casino": 0
+  },
+  "backtrackMultiplier": 0.5,
+  "legendaryBoss": [
+   {
+    "dex": 795,
+    "level": 62,
+    "teamAvgThreshold": 0
+   },
+   {
+    "dex": 796,
+    "level": 62,
+    "teamAvgThreshold": 0
+   }
+  ],
+  "scalesToTeam": false,
+  "easyMode": false,
+  "enemyUpgradeLevel": 9,
+  "battleBackground": "rock",
+  "hidden": true,
+  "unlockConditions": [
+   {
+    "kind": "area",
+    "areaId": "8fbfe77e-17f1-52c8-9232-cde4de4c111d"
+   },
+   {
+    "kind": "pokedex",
+    "count": 197
+   },
+   {
+    "kind": "maxLevel",
+    "level": 62
+   }
+  ],
+  "gyms": [],
+  "wildPool": [
+   {
+    "id": "a977266a-77af-50fe-be62-80d42921e998",
+    "dex": 770,
+    "weight": 14,
+    "minLevel": 60,
+    "maxLevel": 66
+   },
+   {
+    "id": "bbd4765a-71b4-5686-ae08-c584aa447bd7",
+    "dex": 553,
+    "weight": 12,
+    "minLevel": 60,
+    "maxLevel": 66
+   },
+   {
+    "id": "142e73a5-10f0-51f6-ba24-f78ae80f3135",
+    "dex": 738,
+    "weight": 12,
+    "minLevel": 60,
+    "maxLevel": 66
+   },
+   {
+    "id": "90a640d1-1a2d-59ff-be26-f14890863f5a",
+    "dex": 777,
+    "weight": 12,
+    "minLevel": 60,
+    "maxLevel": 66
+   },
+   {
+    "id": "38959164-34bc-5707-8296-e2dcb0fb151b",
+    "dex": 462,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 66
+   }
+  ],
+  "trainerPool": [],
+  "lootPool": [
+   {
+    "id": "2035f7dd-5861-5b32-acf4-4108f989632b",
+    "itemKey": "hyper-potion",
+    "weight": 20,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "8a08d2ad-e108-539a-8f8d-e53c5b0dc6bc",
+    "itemKey": "ultra-ball",
+    "weight": 20,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "57fc22de-1089-52e8-8675-e95de0a34dc0",
+    "itemKey": "max-ether",
+    "weight": 12,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "af7dccd2-f802-5146-b2b6-ad79914f2f8a",
+    "itemKey": "ether",
+    "weight": 8,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "712d5fbf-6c46-5554-b01e-470fed7b6d0b",
+    "itemKey": "rare-candy",
+    "weight": 8,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "c4223b62-446c-5a92-b0c9-2100a59e245f",
+    "itemKey": "money",
+    "weight": 20,
+    "unique": false,
+    "minQty": 200,
+    "maxQty": 400
+   }
+  ]
+ },
+ {
+  "id": "85752149-2f14-5e91-a6c1-226e6db35f80",
+  "orderIndex": 757,
+  "regionId": "alola",
+  "name": "Ultra Space: the Crater & the Forest",
+  "bannerUrl": "/banners/volcano.png#flip",
+  "roundsToClear": 1,
+  "minLevel": 62,
+  "maxLevel": 70,
+  "encounterWeights": {
+   "wild": 8,
+   "trainer": 0,
+   "center": 1,
+   "item": 1,
+   "casino": 0
+  },
+  "backtrackMultiplier": 0.5,
+  "legendaryBoss": [
+   {
+    "dex": 797,
+    "level": 65,
+    "teamAvgThreshold": 0
+   },
+   {
+    "dex": 798,
+    "level": 65,
+    "teamAvgThreshold": 0
+   }
+  ],
+  "scalesToTeam": false,
+  "easyMode": false,
+  "enemyUpgradeLevel": 9,
+  "battleBackground": "rock",
+  "hidden": true,
+  "unlockConditions": [
+   {
+    "kind": "area",
+    "areaId": "e54b0cd7-f0a7-5d43-850f-5488e781eefc"
+   },
+   {
+    "kind": "pokedex",
+    "count": 197
+   },
+   {
+    "kind": "maxLevel",
+    "level": 65
+   }
+  ],
+  "gyms": [],
+  "wildPool": [
+   {
+    "id": "463af44f-1032-5fd0-a3a7-f57ee0669791",
+    "dex": 776,
+    "weight": 14,
+    "minLevel": 62,
+    "maxLevel": 68
+   },
+   {
+    "id": "e2c01da8-ae55-5173-a77d-ed32628d0506",
+    "dex": 754,
+    "weight": 12,
+    "minLevel": 62,
+    "maxLevel": 68
+   },
+   {
+    "id": "b3860fac-241e-50ec-b30e-962a3ae2a6c3",
+    "dex": 763,
+    "weight": 12,
+    "minLevel": 62,
+    "maxLevel": 68
+   },
+   {
+    "id": "549de18e-d993-52e8-b8cc-5aa1d5aba41e",
+    "dex": 756,
+    "weight": 12,
+    "minLevel": 62,
+    "maxLevel": 68
+   },
+   {
+    "id": "2fd2dd49-6d37-560b-9bc7-741165e3ddaa",
+    "dex": 781,
+    "weight": 10,
+    "minLevel": 62,
+    "maxLevel": 68
+   }
+  ],
+  "trainerPool": [],
+  "lootPool": [
+   {
+    "id": "1719a5ad-0748-53be-85df-f7a66f9b0f21",
+    "itemKey": "hyper-potion",
+    "weight": 20,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "c8b1fba6-c0ba-581b-ab75-7fadc9330c12",
+    "itemKey": "ultra-ball",
+    "weight": 20,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "187006e1-c2d1-59a1-9640-6c0175a70aaf",
+    "itemKey": "max-ether",
+    "weight": 12,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "e725f09d-a861-5685-a0ce-0527de61a786",
+    "itemKey": "ether",
+    "weight": 8,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "474656fd-dedf-5273-8672-368552b5aca8",
+    "itemKey": "rare-candy",
+    "weight": 8,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "62a5c96a-da96-58de-8c3e-adea6ddca4d2",
+    "itemKey": "money",
+    "weight": 20,
+    "unique": false,
+    "minQty": 200,
+    "maxQty": 400
+   }
+  ]
+ },
+ {
+  "id": "4c3e26b2-3163-556e-b4d4-d628e1ff4120",
+  "orderIndex": 758,
+  "regionId": "alola",
+  "name": "Ultra Space: the Ruin",
+  "bannerUrl": "/banners/cave_dark.png#flip",
+  "roundsToClear": 1,
+  "minLevel": 64,
+  "maxLevel": 72,
+  "encounterWeights": {
+   "wild": 0,
+   "trainer": 0,
+   "center": 6,
+   "item": 2,
+   "casino": 0
+  },
+  "backtrackMultiplier": 0.5,
+  "legendaryBoss": [
+   {
+    "dex": 799,
+    "level": 70,
+    "teamAvgThreshold": 0
+   }
+  ],
+  "scalesToTeam": false,
+  "easyMode": false,
+  "enemyUpgradeLevel": 9,
+  "battleBackground": "rock",
+  "hidden": true,
+  "unlockConditions": [
+   {
+    "kind": "area",
+    "areaId": "85752149-2f14-5e91-a6c1-226e6db35f80"
+   },
+   {
+    "kind": "pokedex",
+    "count": 197
+   },
+   {
+    "kind": "maxLevel",
+    "level": 70
+   }
+  ],
+  "gyms": [],
+  "wildPool": [],
+  "trainerPool": [],
+  "lootPool": [
+   {
+    "id": "96dba09a-6563-5775-8b75-ca441bb09121",
+    "itemKey": "hyper-potion",
+    "weight": 20,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "ff313166-dab0-5e7b-85d1-65bca4e23cdd",
+    "itemKey": "ultra-ball",
+    "weight": 20,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "b618fa9a-dc37-5c66-bd96-c9566ddb6514",
+    "itemKey": "max-ether",
+    "weight": 12,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "3d4089bb-cc62-57b6-8609-62a069442755",
+    "itemKey": "ether",
+    "weight": 8,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "b77ae1c3-ddb0-57a7-9443-802c6e831def",
+    "itemKey": "rare-candy",
+    "weight": 8,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "4e4a7473-4b80-5d96-96e1-d2ac69923c88",
+    "itemKey": "money",
+    "weight": 20,
+    "unique": false,
+    "minQty": 200,
+    "maxQty": 400
+   }
+  ]
+ },
+ {
+  "id": "63160939-79ac-5244-ae50-7f7fc8c37c5f",
+  "orderIndex": 759,
+  "regionId": "alola",
+  "name": "Poni Grove",
+  "bannerUrl": "/banners/forest.png",
+  "roundsToClear": 1,
+  "minLevel": 60,
+  "maxLevel": 68,
+  "encounterWeights": {
+   "wild": 8,
+   "trainer": 0,
+   "center": 1,
+   "item": 1,
+   "casino": 0
+  },
+  "backtrackMultiplier": 0.5,
+  "legendaryBoss": [
+   {
+    "dex": 805,
+    "level": 63,
+    "teamAvgThreshold": 0
+   },
+   {
+    "dex": 806,
+    "level": 63,
+    "teamAvgThreshold": 0
+   }
+  ],
+  "scalesToTeam": false,
+  "easyMode": false,
+  "enemyUpgradeLevel": 9,
+  "battleBackground": "grass",
+  "hidden": true,
+  "unlockConditions": [
+   {
+    "kind": "area",
+    "areaId": "af565afe-bfc6-516a-8a4c-bba17bb1ff48"
+   },
+   {
+    "kind": "pokedex",
+    "count": 197
+   },
+   {
+    "kind": "maxLevel",
+    "level": 63
+   }
+  ],
+  "gyms": [],
+  "wildPool": [
+   {
+    "id": "c4c0b186-2080-545f-9024-b4589d23dc26",
+    "dex": 604,
+    "weight": 14,
+    "minLevel": 60,
+    "maxLevel": 66
+   },
+   {
+    "id": "5c71108d-91fc-5510-a064-cb726bea58e2",
+    "dex": 448,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 66
+   },
+   {
+    "id": "eba4aa71-e314-5d21-95ec-1aae0c5f0ad0",
+    "dex": 428,
+    "weight": 12,
+    "minLevel": 60,
+    "maxLevel": 66
+   },
+   {
+    "id": "c2d86edc-11ce-547e-8c2e-89d53e8cc9b5",
+    "dex": 571,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 66
+   },
+   {
+    "id": "6ca73511-5062-5404-9ad0-11dd47131661",
+    "dex": 214,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 66
+   },
+   {
+    "id": "6e63cc8b-a88e-5180-a5c9-b99e207c433d",
+    "dex": 733,
+    "weight": 12,
+    "minLevel": 60,
+    "maxLevel": 66
+   }
+  ],
+  "trainerPool": [],
+  "lootPool": [
+   {
+    "id": "6182d7ac-b1aa-5d73-a17c-d57c69c9c188",
+    "itemKey": "hyper-potion",
+    "weight": 20,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "15139026-c003-5d9f-bd48-159030a35593",
+    "itemKey": "ultra-ball",
+    "weight": 20,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "41d816cd-57f4-5c9f-8e17-06ccd2a410d2",
+    "itemKey": "max-ether",
+    "weight": 12,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "1ffd1e58-ec42-55ba-9e78-6c27061ac105",
+    "itemKey": "ether",
+    "weight": 8,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "717dbf55-ce3e-57d8-aa2f-44b03ef158c1",
+    "itemKey": "rare-candy",
+    "weight": 8,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "6532d10a-0f5e-5453-8e9c-e8228039423b",
+    "itemKey": "money",
+    "weight": 20,
+    "unique": false,
+    "minQty": 200,
+    "maxQty": 400
+   }
+  ]
+ },
+ {
+  "id": "ad40171a-6414-5510-bafe-44d13217d218",
+  "orderIndex": 760,
+  "regionId": "alola",
+  "name": "The Ultra Recon Squad",
+  "bannerUrl": "/banners/sky.png#flip",
+  "roundsToClear": 1,
+  "minLevel": 50,
+  "maxLevel": 60,
+  "encounterWeights": {
+   "wild": 0,
+   "trainer": 0,
+   "center": 6,
+   "item": 2,
+   "casino": 0
+  },
+  "backtrackMultiplier": 0.5,
+  "legendaryBoss": [
+   {
+    "dex": 803,
+    "level": 55,
+    "teamAvgThreshold": 0
+   }
+  ],
+  "scalesToTeam": false,
+  "easyMode": false,
+  "enemyUpgradeLevel": 9,
+  "battleBackground": "default",
+  "hidden": true,
+  "unlockConditions": [
+   {
+    "kind": "area",
+    "areaId": "fa01d16e-8669-5542-be05-f5d8d16395d1"
+   },
+   {
+    "kind": "pokedex",
+    "count": 197
+   },
+   {
+    "kind": "maxLevel",
+    "level": 55
+   }
+  ],
+  "gyms": [],
+  "wildPool": [],
+  "trainerPool": [],
+  "lootPool": [
+   {
+    "id": "ff0f5f14-ad4c-5dfe-a0b6-56b05cf340fe",
+    "itemKey": "hyper-potion",
+    "weight": 20,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "23936e20-6113-5b72-8b47-72b00db34e51",
+    "itemKey": "ultra-ball",
+    "weight": 20,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "ebae9c36-03ab-5cf3-8d10-ee70efef897d",
+    "itemKey": "max-ether",
+    "weight": 12,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "940e90e1-69e0-57d4-bb70-40474d1a7add",
+    "itemKey": "ether",
+    "weight": 8,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "b0b8ddd1-98f6-50fe-9edc-5a8e8ed53bfc",
+    "itemKey": "rare-candy",
+    "weight": 8,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "abc3fef8-f3e4-5174-be68-31188d1e9d45",
+    "itemKey": "money",
+    "weight": 20,
+    "unique": false,
+    "minQty": 200,
+    "maxQty": 400
+   }
+  ]
+ },
+ {
+  "id": "28487bdf-d4f4-5fc9-860e-accef6b9677f",
+  "orderIndex": 761,
+  "regionId": "alola",
+  "name": "Magearna's Workshop",
+  "bannerUrl": "/banners/factory.png#flip",
+  "roundsToClear": 1,
+  "minLevel": 60,
+  "maxLevel": 68,
+  "encounterWeights": {
+   "wild": 0,
+   "trainer": 0,
+   "center": 6,
+   "item": 2,
+   "casino": 0
+  },
+  "backtrackMultiplier": 0.5,
+  "legendaryBoss": [
+   {
+    "dex": 801,
+    "level": 65,
+    "teamAvgThreshold": 0
+   }
+  ],
+  "scalesToTeam": false,
+  "easyMode": false,
+  "enemyUpgradeLevel": 9,
+  "battleBackground": "default",
+  "hidden": true,
+  "unlockConditions": [
+   {
+    "kind": "area",
+    "areaId": "af565afe-bfc6-516a-8a4c-bba17bb1ff48"
+   },
+   {
+    "kind": "pokedex",
+    "count": 305
+   },
+   {
+    "kind": "maxLevel",
+    "level": 65
+   }
+  ],
+  "gyms": [],
+  "wildPool": [],
+  "trainerPool": [],
+  "lootPool": [
+   {
+    "id": "b429158f-2d49-5c76-a62d-9a9506663b28",
+    "itemKey": "hyper-potion",
+    "weight": 20,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "43ce2b83-80ca-5937-af88-9904bb509a3a",
+    "itemKey": "ultra-ball",
+    "weight": 20,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "7500f8fb-d8b1-5258-a9e6-002d416fb0a7",
+    "itemKey": "max-ether",
+    "weight": 12,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "94d71ec9-63da-5254-9b82-dbccd2ed5191",
+    "itemKey": "ether",
+    "weight": 8,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "4e5bb5b0-95cd-5029-8b3c-3be0d048e4cc",
+    "itemKey": "rare-candy",
+    "weight": 8,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "f701a25a-6cd5-5d73-b5bb-b344e0379d40",
+    "itemKey": "money",
+    "weight": 20,
+    "unique": false,
+    "minQty": 200,
+    "maxQty": 400
+   }
+  ]
+ },
+ {
+  "id": "e8c9b515-3421-5bdb-ade2-b101f1e6885d",
+  "orderIndex": 762,
+  "regionId": "alola",
+  "name": "Ten Carat Hill's Farthest Hollow",
+  "bannerUrl": "/banners/cave_dark.png",
+  "roundsToClear": 1,
+  "minLevel": 62,
+  "maxLevel": 70,
+  "encounterWeights": {
+   "wild": 0,
+   "trainer": 0,
+   "center": 6,
+   "item": 2,
+   "casino": 0
+  },
+  "backtrackMultiplier": 0.5,
+  "legendaryBoss": [
+   {
+    "dex": 802,
+    "level": 67,
+    "teamAvgThreshold": 0
+   }
+  ],
+  "scalesToTeam": false,
+  "easyMode": false,
+  "enemyUpgradeLevel": 9,
+  "battleBackground": "rock",
+  "hidden": true,
+  "unlockConditions": [
+   {
+    "kind": "area",
+    "areaId": "28487bdf-d4f4-5fc9-860e-accef6b9677f"
+   },
+   {
+    "kind": "pokedex",
+    "count": 305
+   },
+   {
+    "kind": "maxLevel",
+    "level": 67
+   }
+  ],
+  "gyms": [],
+  "wildPool": [],
+  "trainerPool": [],
+  "lootPool": [
+   {
+    "id": "ccde5d29-a9a4-543a-b953-367fe9e47a17",
+    "itemKey": "hyper-potion",
+    "weight": 20,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "2a328038-fe51-5f40-a3a0-fe964dc5b0c4",
+    "itemKey": "ultra-ball",
+    "weight": 20,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "269fe6b8-4096-5f48-8a7d-b19e8d54578c",
+    "itemKey": "max-ether",
+    "weight": 12,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "7c7aa24f-6cb7-53b1-b257-55b3eeb07967",
+    "itemKey": "ether",
+    "weight": 8,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "17ad5796-f720-5202-8d20-b55e7bd3e4b2",
+    "itemKey": "rare-candy",
+    "weight": 8,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "38e1b29b-f017-55e4-8352-1056b6c7d900",
+    "itemKey": "money",
+    "weight": 20,
+    "unique": false,
+    "minQty": 200,
+    "maxQty": 400
+   }
+  ]
+ },
+ {
+  "id": "4a29a297-7cb0-5f5d-b6f0-f36210ff02e4",
+  "orderIndex": 763,
+  "regionId": "alola",
+  "name": "The Blush Mountain Storm",
+  "bannerUrl": "/banners/mountains.png",
+  "roundsToClear": 1,
+  "minLevel": 64,
+  "maxLevel": 72,
+  "encounterWeights": {
+   "wild": 0,
+   "trainer": 0,
+   "center": 6,
+   "item": 2,
+   "casino": 0
+  },
+  "backtrackMultiplier": 0.5,
+  "legendaryBoss": [
+   {
+    "dex": 807,
+    "level": 70,
+    "teamAvgThreshold": 0
+   }
+  ],
+  "scalesToTeam": false,
+  "easyMode": false,
+  "enemyUpgradeLevel": 9,
+  "battleBackground": "rock",
+  "hidden": true,
+  "unlockConditions": [
+   {
+    "kind": "area",
+    "areaId": "e8c9b515-3421-5bdb-ade2-b101f1e6885d"
+   },
+   {
+    "kind": "pokedex",
+    "count": 305
+   },
+   {
+    "kind": "maxLevel",
+    "level": 70
+   }
+  ],
+  "gyms": [],
+  "wildPool": [],
+  "trainerPool": [],
+  "lootPool": [
+   {
+    "id": "79ba6d0b-bba9-5803-ba22-e32b6e560a18",
+    "itemKey": "hyper-potion",
+    "weight": 20,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "b624891c-785d-5ad8-868c-354ae147cd82",
+    "itemKey": "ultra-ball",
+    "weight": 20,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "acb6acb1-b3b0-5231-bd0f-5d6f491b151b",
+    "itemKey": "max-ether",
+    "weight": 12,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "ac374b37-b869-586d-9540-a3c119802d3b",
+    "itemKey": "ether",
+    "weight": 8,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "ba2da4f2-1436-54f2-a7f1-50bb17663d93",
+    "itemKey": "rare-candy",
+    "weight": 8,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "41eca900-1b96-56ba-be8b-c82013386067",
+    "itemKey": "money",
+    "weight": 20,
+    "unique": false,
+    "minQty": 200,
+    "maxQty": 400
+   }
+  ]
+ },
+ {
+  "id": "bf277850-73f7-569e-8657-fa5298161229",
+  "orderIndex": 764,
+  "regionId": "alola",
+  "name": "The Mystery Box",
+  "bannerUrl": "/banners/factory.png",
+  "roundsToClear": 1,
+  "minLevel": 40,
+  "maxLevel": 50,
+  "encounterWeights": {
+   "wild": 0,
+   "trainer": 0,
+   "center": 6,
+   "item": 2,
+   "casino": 0
+  },
+  "backtrackMultiplier": 0.5,
+  "legendaryBoss": [
+   {
+    "dex": 808,
+    "level": 40,
+    "teamAvgThreshold": 0
+   }
+  ],
+  "scalesToTeam": false,
+  "easyMode": false,
+  "enemyUpgradeLevel": 7,
+  "battleBackground": "default",
+  "hidden": true,
+  "unlockConditions": [
+   {
+    "kind": "area",
+    "areaId": "4a29a297-7cb0-5f5d-b6f0-f36210ff02e4"
+   },
+   {
+    "kind": "pokedex",
+    "count": 305
+   },
+   {
+    "kind": "maxLevel",
+    "level": 70
+   }
+  ],
+  "gyms": [],
+  "wildPool": [],
+  "trainerPool": [],
+  "lootPool": [
+   {
+    "id": "64db55d8-7029-5b70-aa91-9fb94a84de42",
+    "itemKey": "hyper-potion",
+    "weight": 20,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "f5310e34-25ae-589f-8c60-63c78f30c8d6",
+    "itemKey": "ultra-ball",
+    "weight": 20,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "2e57e11f-6a66-5578-86e9-d4da7b9a5688",
+    "itemKey": "max-ether",
+    "weight": 12,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "1d723c0f-aeda-5f2e-bbde-5a668d6b77fb",
+    "itemKey": "ether",
+    "weight": 8,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
+    "id": "3ef9341a-1887-5bd3-a269-d06c43d189f1",
+    "itemKey": "rare-candy",
+    "weight": 8,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "f26edc2b-793f-55c0-b405-ec03470ca0ff",
+    "itemKey": "money",
+    "weight": 20,
+    "unique": false,
+    "minQty": 200,
+    "maxQty": 400
+   }
+  ]
  }
 ]

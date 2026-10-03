@@ -2335,3 +2335,172 @@ itemDesc.jaw-fossil,"A fossil of an ancient Pokémon. Tyrunt waits in your Box a
 itemDesc.sail-fossil,"A fossil of an ancient Pokémon. Amaura waits in your Box and is revived after 24 hours, at Lv.20.","Un fossile d'un Pokémon ancien. Amagara attend dans votre Boîte et revit après 24 heures, au N.20.","Un fósil de un Pokémon antiguo. Amaura espera en tu Caja y revive tras 24 horas, al Nv.20.",Ein Fossil eines urzeitlichen Pokémon. Amarino wartet in deiner Box und wird nach 24 Stunden auf Lv.20 wiederbelebt.,"Il fossile di un Pokémon antico. Amaura aspetta nel tuo Box e torna in vita dopo 24 ore, al Lv.20.","O fóssil de um Pokémon antigo. Amaura espera na tua Caixa e é reanimado após 24 horas, no Nv.20.","O fóssil de um Pokémon antigo. Amaura espera na sua Caixa e é reanimado após 24 horas, no Nv.20.",古代のポケモンの化石。アマルスがボックスで待ち、24時間後にLv.20で復元される。,고대 포켓몬의 화석. 아마루스가 박스에서 기다리다가 24시간 후 Lv.20으로 복원된다.,古代宝可梦的化石。冰雪龙会在盒子里等待，24小时后以Lv.20复活。
 itemDesc.sachet,Makes certain Pokémon evolve: Spritzee (Aromatisse). Use it from the Team screen.,Fait évoluer certains Pokémon : Fluvetin (Cocotine). À utiliser depuis l'écran Équipe.,Hace evolucionar a ciertos Pokémon: Spritzee (Aromatisse). Úsalo desde la pantalla Equipo.,Lässt bestimmte Pokémon entwickeln: Parfi (Parfinesse). Im Team-Bildschirm einsetzbar.,Fa evolvere alcuni Pokémon: Spritzee (Aromatisse). Usala dalla schermata Squadra.,Faz evoluir certos Pokémon: Spritzee (Aromatisse). Usa-a no ecrã Equipa.,Faz certos Pokémon evoluírem: Spritzee (Aromatisse). Use na tela Equipe.,特定のポケモンを進化させる：シュシュプ（フレフワン）。「手持ち」画面で使う。,특정 포켓몬을 진화시킨다: 슈쁘(프레프티르). 팀 화면에서 사용한다.,让特定的宝可梦进化：粉香香（芳香精）。在队伍画面中使用。
 itemDesc.whipped-dream,Makes certain Pokémon evolve: Swirlix (Slurpuff). Use it from the Team screen.,Fait évoluer certains Pokémon : Sucroquin (Cupcanaille). À utiliser depuis l'écran Équipe.,Hace evolucionar a ciertos Pokémon: Swirlix (Slurpuff). Úsalo desde la pantalla Equipo.,Lässt bestimmte Pokémon entwickeln: Flauschling (Sabbaione). Im Team-Bildschirm einsetzbar.,Fa evolvere alcuni Pokémon: Swirlix (Slurpuff). Usala dalla schermata Squadra.,Faz evoluir certos Pokémon: Swirlix (Slurpuff). Usa-a no ecrã Equipa.,Faz certos Pokémon evoluírem: Swirlix (Slurpuff). Use na tela Equipe.,特定のポケモンを進化させる：ペロッパフ（ペロリーム）。「手持ち」画面で使う。,특정 포켓몬을 진화시킨다: 나룸퍼프(나루림). 팀 화면에서 사용한다.,让特定的宝可梦进化：绵绵泡芙（胖甜妮）。在队伍画面中使用。
+pokemon.722,Rowlet,Brindibou,Rowlet,Bauz,Rowlet,Rowlet,Rowlet,モクロー,나몰빼미,木木枭
+pokemon.723,Dartrix,Efflèche,Dartrix,Arboretoss,Dartrix,Dartrix,Dartrix,フクスロー,빼미스로우,投羽枭
+pokemon.724,Decidueye,Archéduc,Decidueye,Silvarro,Decidueye,Decidueye,Decidueye,ジュナイパー,모크나이퍼,狙射树枭
+pokemon.725,Litten,Flamiaou,Litten,Flamiau,Litten,Litten,Litten,ニャビー,냐오불,火斑喵
+pokemon.726,Torracat,Matoufeu,Torracat,Miezunder,Torracat,Torracat,Torracat,ニャヒート,냐오히트,炎热喵
+pokemon.727,Incineroar,Félinferno,Incineroar,Fuegro,Incineroar,Incineroar,Incineroar,ガオガエン,어흥염,炽焰咆哮虎
+pokemon.728,Popplio,Otaquin,Popplio,Robball,Popplio,Popplio,Popplio,アシマリ,누리공,球球海狮
+pokemon.729,Brionne,Otarlette,Brionne,Marikeck,Brionne,Brionne,Brionne,オシャマリ,키요공,花漾海狮
+pokemon.730,Primarina,Oratoria,Primarina,Primarene,Primarina,Primarina,Primarina,アシレーヌ,누리레느,西狮海壬
+pokemon.731,Pikipek,Picassaut,Pikipek,Peppeck,Pikipek,Pikipek,Pikipek,ツツケラ,콕코구리,小笃儿
+pokemon.732,Trumbeak,Piclairon,Trumbeak,Trompeck,Trumbeak,Trumbeak,Trumbeak,ケララッパ,크라파,喇叭啄鸟
+pokemon.733,Toucannon,Bazoucan,Toucannon,Tukanon,Toucannon,Toucannon,Toucannon,ドデカバシ,왕큰부리,铳嘴大鸟
+pokemon.734,Yungoos,Manglouton,Yungoos,Mangunior,Yungoos,Yungoos,Yungoos,ヤングース,영구스,猫鼬少
+pokemon.735,Gumshoos,Argouste,Gumshoos,Manguspektor,Gumshoos,Gumshoos,Gumshoos,デカグース,형사구스,猫鼬探长
+pokemon.736,Grubbin,Larvibule,Grubbin,Mabula,Grubbin,Grubbin,Grubbin,アゴジムシ,턱지충이,强颚鸡母虫
+pokemon.737,Charjabug,Chrysapile,Charjabug,Akkup,Charjabug,Charjabug,Charjabug,デンヂムシ,전지충이,虫电宝
+pokemon.738,Vikavolt,Lucanon,Vikavolt,Donarion,Vikavolt,Vikavolt,Vikavolt,クワガノン,투구뿌논,锹农炮虫
+pokemon.739,Crabrawler,Crabagarre,Crabrawler,Krabbox,Crabrawler,Crabrawler,Crabrawler,マケンカニ,오기지게,好胜蟹
+pokemon.740,Crabominable,Crabominable,Crabominable,Krawell,Crabominable,Crabominable,Crabominable,ケケンカニ,모단단게,好胜毛蟹
+pokemon.741,Oricorio,Plumeline,Oricorio,Choreogel,Oricorio,Oricorio,Oricorio,オドリドリ,춤추새,花舞鸟
+pokemon.742,Cutiefly,Bombydou,Cutiefly,Wommel,Cutiefly,Cutiefly,Cutiefly,アブリー,에블리,萌虻
+pokemon.743,Ribombee,Rubombelle,Ribombee,Bandelby,Ribombee,Ribombee,Ribombee,アブリボン,에리본,蝶结萌虻
+pokemon.744,Rockruff,Rocabot,Rockruff,Wuffels,Rockruff,Rockruff,Rockruff,イワンコ,암멍이,岩狗狗
+pokemon.745,Lycanroc,Lougaroc,Lycanroc,Wolwerock,Lycanroc,Lycanroc,Lycanroc,ルガルガン,루가루암,鬃岩狼人
+pokemon.746,Wishiwashi,Froussardine,Wishiwashi,Lusardin,Wishiwashi,Wishiwashi,Wishiwashi,ヨワシ,약어리,弱丁鱼
+pokemon.747,Mareanie,Vorastérie,Mareanie,Garstella,Mareanie,Mareanie,Mareanie,ヒドイデ,시마사리,好坏星
+pokemon.748,Toxapex,Prédastérie,Toxapex,Aggrostella,Toxapex,Toxapex,Toxapex,ドヒドイデ,더시마사리,超坏星
+pokemon.749,Mudbray,Tiboudet,Mudbray,Pampuli,Mudbray,Mudbray,Mudbray,ドロバンコ,머드나기,泥驴仔
+pokemon.750,Mudsdale,Bourrinos,Mudsdale,Pampross,Mudsdale,Mudsdale,Mudsdale,バンバドロ,만마드,重泥挽马
+pokemon.751,Dewpider,Araqua,Dewpider,Araqua,Dewpider,Dewpider,Dewpider,シズクモ,물거미,滴蛛
+pokemon.752,Araquanid,Tarenbulle,Araquanid,Aranestro,Araquanid,Araquanid,Araquanid,オニシズクモ,깨비물거미,滴蛛霸
+pokemon.753,Fomantis,Mimantis,Fomantis,Imantis,Fomantis,Fomantis,Fomantis,カリキリ,짜랑랑,伪螳草
+pokemon.754,Lurantis,Floramantis,Lurantis,Mantidea,Lurantis,Lurantis,Lurantis,ラランテス,라란티스,兰螳花
+pokemon.755,Morelull,Spododo,Morelull,Bubungus,Morelull,Morelull,Morelull,ネマシュ,자마슈,睡睡菇
+pokemon.756,Shiinotic,Lampignon,Shiinotic,Lamellux,Shiinotic,Shiinotic,Shiinotic,マシェード,마셰이드,灯罩夜菇
+pokemon.757,Salandit,Tritox,Salandit,Molunk,Salandit,Salandit,Salandit,ヤトウモリ,야도뇽,夜盗火蜥
+pokemon.758,Salazzle,Malamandre,Salazzle,Amfira,Salazzle,Salazzle,Salazzle,エンニュート,염뉴트,焰后蜥
+pokemon.759,Stufful,Nounourson,Stufful,Velursi,Stufful,Stufful,Stufful,ヌイコグマ,포곰곰,童偶熊
+pokemon.760,Bewear,Chelours,Bewear,Kosturso,Bewear,Bewear,Bewear,キテルグマ,이븐곰,穿着熊
+pokemon.761,Bounsweet,Croquine,Bounsweet,Frubberl,Bounsweet,Bounsweet,Bounsweet,アマカジ,달콤아,甜竹竹
+pokemon.762,Steenee,Candine,Steenee,Frubaila,Steenee,Steenee,Steenee,アママイコ,달무리나,甜舞妮
+pokemon.763,Tsareena,Sucreine,Tsareena,Fruyal,Tsareena,Tsareena,Tsareena,アマージョ,달코퀸,甜冷美后
+pokemon.764,Comfey,Guérilande,Comfey,Curelei,Comfey,Comfey,Comfey,キュワワー,큐아링,花疗环环
+pokemon.765,Oranguru,Gouroutan,Oranguru,Kommandutan,Oranguru,Oranguru,Oranguru,ヤレユータン,하랑우탄,智挥猩
+pokemon.766,Passimian,Quartermac,Passimian,Quartermak,Passimian,Passimian,Passimian,ナゲツケサル,내던숭이,投掷猴
+pokemon.767,Wimpod,Sovkipou,Wimpod,Reißlaus,Wimpod,Wimpod,Wimpod,コソクムシ,꼬시레,胆小虫
+pokemon.768,Golisopod,Sarmuraï,Golisopod,Tectass,Golisopod,Golisopod,Golisopod,グソクムシャ,갑주무사,具甲武者
+pokemon.769,Sandygast,Bacabouh,Sandygast,Sankabuh,Sandygast,Sandygast,Sandygast,スナバァ,모래꿍,沙丘娃
+pokemon.770,Palossand,Trépassable,Palossand,Colossand,Palossand,Palossand,Palossand,シロデスナ,모래성이당,噬沙堡爷
+pokemon.771,Pyukumuku,Concombaffe,Pyukumuku,Gufa,Pyukumuku,Pyukumuku,Pyukumuku,ナマコブシ,해무기,拳海参
+pokemon.772,Type: Null,Type:0,Código Cero,Typ:Null,Tipo Zero,Type: Null,Type: Null,タイプ：ヌル,타입:널,属性：空
+pokemon.773,Silvally,Silvallié,Silvally,Amigento,Silvally,Silvally,Silvally,シルヴァディ,실버디,银伴战兽
+pokemon.774,Minior,Météno,Minior,Meteno,Minior,Minior,Minior,メテノ,메테노,小陨星
+pokemon.775,Komala,Dodoala,Komala,Koalelu,Komala,Komala,Komala,ネッコアラ,자말라,树枕尾熊
+pokemon.776,Turtonator,Boumata,Turtonator,Tortunator,Turtonator,Turtonator,Turtonator,バクガメス,폭거북스,爆焰龟兽
+pokemon.777,Togedemaru,Togedemaru,Togedemaru,Togedemaru,Togedemaru,Togedemaru,Togedemaru,トゲデマル,토게데마루,托戈德玛尔
+pokemon.778,Mimikyu,Mimiqui,Mimikyu,Mimigma,Mimikyu,Mimikyu,Mimikyu,ミミッキュ,따라큐,谜拟丘
+pokemon.779,Bruxish,Denticrisse,Bruxish,Knirfish,Bruxish,Bruxish,Bruxish,ハギギシリ,치갈기,磨牙彩皮鱼
+pokemon.780,Drampa,Draïeul,Drampa,Sen-Long,Drampa,Drampa,Drampa,ジジーロン,할비롱,老翁龙
+pokemon.781,Dhelmise,Sinistrail,Dhelmise,Moruda,Dhelmise,Dhelmise,Dhelmise,ダダリン,타타륜,破破舵轮
+pokemon.782,Jangmo-o,Bébécaille,Jangmo-o,Miniras,Jangmo-o,Jangmo-o,Jangmo-o,ジャラコ,짜랑꼬,心鳞宝
+pokemon.783,Hakamo-o,Écaïd,Hakamo-o,Mediras,Hakamo-o,Hakamo-o,Hakamo-o,ジャランゴ,짜랑고우,鳞甲龙
+pokemon.784,Kommo-o,Ékaïser,Kommo-o,Grandiras,Kommo-o,Kommo-o,Kommo-o,ジャラランガ,짜랑고우거,杖尾鳞甲龙
+pokemon.785,Tapu Koko,Tokorico,Tapu Koko,Kapu-Riki,Tapu Koko,Tapu Koko,Tapu Koko,カプ・コケコ,카푸꼬꼬꼭,卡璞・鸣鸣
+pokemon.786,Tapu Lele,Tokopiyon,Tapu Lele,Kapu-Fala,Tapu Lele,Tapu Lele,Tapu Lele,カプ・テテフ,카푸나비나,卡璞・蝶蝶
+pokemon.787,Tapu Bulu,Tokotoro,Tapu Bulu,Kapu-Toro,Tapu Bulu,Tapu Bulu,Tapu Bulu,カプ・ブルル,카푸브루루,卡璞・哞哞
+pokemon.788,Tapu Fini,Tokopisco,Tapu Fini,Kapu-Kime,Tapu Fini,Tapu Fini,Tapu Fini,カプ・レヒレ,카푸느지느,卡璞・鳍鳍
+pokemon.789,Cosmog,Cosmog,Cosmog,Cosmog,Cosmog,Cosmog,Cosmog,コスモッグ,코스모그,科斯莫古
+pokemon.790,Cosmoem,Cosmovum,Cosmoem,Cosmovum,Cosmoem,Cosmoem,Cosmoem,コスモウム,코스모움,科斯莫姆
+pokemon.791,Solgaleo,Solgaleo,Solgaleo,Solgaleo,Solgaleo,Solgaleo,Solgaleo,ソルガレオ,솔가레오,索尔迦雷欧
+pokemon.792,Lunala,Lunala,Lunala,Lunala,Lunala,Lunala,Lunala,ルナアーラ,루나아라,露奈雅拉
+pokemon.793,Nihilego,Zéroïd,Nihilego,Anego,Nihilego,Nihilego,Nihilego,ウツロイド,텅비드,虚吾伊德
+pokemon.794,Buzzwole,Mouscoto,Buzzwole,Masskito,Buzzwole,Buzzwole,Buzzwole,マッシブーン,매시붕,爆肌蚊
+pokemon.795,Pheromosa,Cancrelove,Pheromosa,Schabelle,Pheromosa,Pheromosa,Pheromosa,フェローチェ,페로코체,费洛美螂
+pokemon.796,Xurkitree,Câblifère,Xurkitree,Voltriant,Xurkitree,Xurkitree,Xurkitree,デンジュモク,전수목,电束木
+pokemon.797,Celesteela,Bamboiselle,Celesteela,Kaguron,Celesteela,Celesteela,Celesteela,テッカグヤ,철화구야,铁火辉夜
+pokemon.798,Kartana,Katagami,Kartana,Katagami,Kartana,Kartana,Kartana,カミツルギ,종이신도,纸御剑
+pokemon.799,Guzzlord,Engloutyran,Guzzlord,Schlingking,Guzzlord,Guzzlord,Guzzlord,アクジキング,악식킹,恶食大王
+pokemon.800,Necrozma,Necrozma,Necrozma,Necrozma,Necrozma,Necrozma,Necrozma,ネクロズマ,네크로즈마,奈克洛兹玛
+pokemon.801,Magearna,Magearna,Magearna,Magearna,Magearna,Magearna,Magearna,マギアナ,마기아나,玛机雅娜
+pokemon.802,Marshadow,Marshadow,Marshadow,Marshadow,Marshadow,Marshadow,Marshadow,マーシャドー,마샤도,玛夏多
+pokemon.803,Poipole,Vémini,Poipole,Venicro,Poipole,Poipole,Poipole,ベベノム,베베놈,毒贝比
+pokemon.804,Naganadel,Mandrillon,Naganadel,Agoyon,Naganadel,Naganadel,Naganadel,アーゴヨン,아고용,四颚针龙
+pokemon.805,Stakataka,Ama-Ama,Stakataka,Muramura,Stakataka,Stakataka,Stakataka,ツンデツンデ,차곡차곡,垒磊石
+pokemon.806,Blacephalon,Pierroteknik,Blacephalon,Kopplosio,Blacephalon,Blacephalon,Blacephalon,ズガドーン,두파팡,砰头小丑
+pokemon.807,Zeraora,Zeraora,Zeraora,Zeraora,Zeraora,Zeraora,Zeraora,ゼラオラ,제라오라,捷拉奥拉
+pokemon.808,Meltan,Meltan,Meltan,Meltan,Meltan,Meltan,Meltan,メルタン,멜탄,美录坦
+pokemon.809,Melmetal,Melmetal,Melmetal,Melmetal,Melmetal,Melmetal,Melmetal,メルメタル,멜메탈,美录梅塔
+"# --- Alola (Gen 7): areas, region, Z-Crystal badges, trainer classes and names",,,,,,,,,,
+area.route-1-hau-oli-outskirts,Route 1 & Hau'oli Outskirts,Route 1 & la banlieue d'Ekaeka,Ruta 1 y las afueras de Hauoli,Route 1 & Hauholi-Stadtrand,Percorso 1 e periferia di Hau'oli,Rota 1 e Arredores de Hau'oli,Rota 1 e Arredores de Hau'oli,1ばんどうろとハウオリシティはずれ,1번도로·하우올리시티 외곽,1号道路与好奥乐市郊外
+area.hau-oli-city-the-cemetery,Hau'oli City & the Cemetery,Ekaeka & son Cimetière,Ciudad Hauoli y su Cementerio,Hauholi City & Hauholi-Friedhof,Hau'oli e il Cimitero di Hau'oli,Cidade de Hau'oli e o Cemitério,Cidade de Hau'oli e o Cemitério,ハウオリシティとハウオリれいえん,하우올리시티·하우올리 묘원,好奥乐市与好奥乐墓园
+area.route-2-the-verdant-cavern,Route 2 & the Verdant Cavern,Route 2 & la Grotte Verdoyante,Ruta 2 y la Cueva Sotobosque,Route 2 & die Vegetationshöhle,Percorso 2 e la Grotta Sottobosco,Rota 2 e a Caverna Verdejante,Rota 2 e a Caverna Verdejante,2ばんどうろとしげみのどうくつ,2번도로·우거진 동굴,2号道路与葱郁洞窟
+area.route-3-melemele-meadow,Route 3 & Melemele Meadow,Route 3 & le Jardin de Mele-Mele,Ruta 3 y los Jardines de Melemele,Route 3 & das Mele-Mele-Blumenmeer,Percorso 3 e il Prato Mele Mele,Rota 3 e o Prado de Melemele,Rota 3 e o Prado de Melemele,3ばんどうろとメレメレのはなぞの,3번도로·멜레멜레 화원,3号道路与美乐美乐花园
+area.ten-carat-hill-kala-e-bay,Ten Carat Hill & Kala'e Bay,La Colline Dicarat & la Baie de Kala'e,La Colina Dequilate y la Bahía Kalae,Tenkarat-Hügel & Kala'e-Bucht,Collina Diecicarati e Baia Kala'e,Colina dos Dez Quilates e a Baía de Kala'e,Colina dos Dez Quilates e a Baía de Kala'e,テンカラットヒルとカーラエわん,텐캐럿힐·칼라에만,十克拉山丘与卡拉蔚湾
+area.route-1-south-iki-town,Route 1 South & Iki Town,Route 1 Sud & Lili'i,Ruta 1 Sur y Pueblo Lilii,Route 1 Süd & Lili'i,Percorso 1 Sud e Lili,Rota 1 Sul e Vila Iki,Rota 1 Sul e Vila Iki,1ばんどうろみなみとリリィタウン,1번도로 남쪽·릴리마을,1号道路南部与利利小镇
+area.heahea-city-routes-4-6,Heahea City & Routes 4–6,Ho'ohale & Routes 4–6,Ciudad Kantai y Rutas 4–6,Kantai City & Routen 4–6,Kantai e Percorsi 4–6,Cidade de Heahea e Rotas 4–6,Cidade de Heahea e Rotas 4–6,カンタイシティと4〜6ばんどうろ,환대시티·4~6번도로,慷待市与4–6号道路
+area.brooklet-hill,Brooklet Hill,Colline Clapotis,Colina Saltagua,Plätscherhügel,Collina Scrosciante,Colina do Riacho,Colina do Riacho,せせらぎのおか,잔잔한물가언덕,潺潺之丘
+area.routes-7-8-and-wela-volcano-park,Routes 7 & 8 and Wela Volcano Park,Routes 7 & 8 et le Parc Volcanique,Rutas 7 y 8 y el Área Volcánica Wela,Routen 7 & 8 und der Wela-Vulkanpark,Percorsi 7 e 8 e il Parco Vulcano Wela,Rotas 7 e 8 e o Parque Vulcânico Wela,Rotas 7 e 8 e o Parque Vulcânico Wela,7・8ばんどうろとヴェラかざんこうえん,7번·8번도로·벨라화산공원,7、8号道路与维拉火山公园
+area.lush-jungle,Lush Jungle,Jungle Sombrefeuille,Jungla Umbría,Schattendschungel,Giungla Ombrosa,Selva Exuberante,Selva Exuberante,シェードジャングル,셰이드정글,树荫丛林
+area.memorial-hill-akala-outskirts-konikoni-city,"Memorial Hill, Akala Outskirts & Konikoni City","Colline Memento, Côte Reculée d'Akala & Konikoni","Colina del Recuerdo, Afueras de Akala y Ciudad Konikoni","Hügel des Gedenkens, Akala-Küstenstreifen & Konikoni City","Colle della Memoria, Punta Akala e Konikoni","Colina Memorial, Arredores de Akala e Cidade de Konikoni","Colina Memorial, Arredores de Akala e Cidade de Konikoni",メモリアルヒル、アーカラじまはずれとコニコシティ,메모리얼힐·아칼라외곽·코니코니시티,回忆之丘、阿卡拉岛郊外与可霓可市
+area.hano-beach-aether-paradise,Hano Beach & Aether Paradise,Plage Hano-Hano & Paradis Æther,Playa de Hanohano y Paraíso Æther,Hanohano-Strand & Æther-Paradies,Spiaggia Hanu Hanu e Æther Paradise,Praia de Hano e o Paraíso Æther,Praia de Hano e o Paraíso Æther,ハノハノビーチとエーテルパラダイス,하노하노비치·에테르파라다이스,豪诺豪诺海滩与以太乐园
+area.malie-city-malie-garden,Malie City & Malie Garden,Malié & le Parc de Malié,Ciudad Malíe y el Parque de Malíe,Malihe City & Malihe-Ziergarten,Malie e il Giardino di Malie,Cidade de Malie e o Jardim de Malie,Cidade de Malie e o Jardim de Malie,マリエシティとマリエていえん,말리에시티·말리에 정원,马利埃静市与马利埃庭园
+area.route-10-mount-hokulani,Route 10 & Mount Hokulani,Route 10 & Mont Hokulani,Ruta 10 y el Pico Hokulani,Route 10 & Hokulani-Berg,Percorso 10 e Picco Hokulani,Rota 10 e o Monte Hokulani,Rota 10 e o Monte Hokulani,10ばんどうろとホクラニだけ,10번도로·호쿠라니큰산,10号道路与辉克拉尼山
+area.routes-11-12-and-blush-mountain,Routes 11 & 12 and Blush Mountain,Routes 11 & 12 et le Mont Ardent,Rutas 11 y 12 y el Monte Rubor,Routen 11 & 12 und der Glühberg,Percorsi 11 e 12 e il Monte Tepore,Rotas 11 e 12 e a Montanha Rubor,Rotas 11 e 12 e a Montanha Rubor,11・12ばんどうろとホテリやま,11번·12번도로·화끈산,11、12号道路与火特力山
+area.routes-13-14-haina-desert-tapu-village,"Routes 13 & 14, Haina Desert & Tapu Village","Routes 13 & 14, Désert Haina & Village Toko","Rutas 13 y 14, Desierto de Haina y Aldea Tapu","Routen 13 & 14, Haina-Wüste & Dorf der Kapu","Percorsi 13 e 14, Deserto Haina e Villaggio Tapu","Rotas 13 e 14, Deserto de Haina e a Vila Tapu","Rotas 13 e 14, Deserto de Haina e a Vila Tapu",13・14ばんどうろ、ハイナさばくとカプのむら,13번·14번도로·하이나사막·카푸마을,13、14号道路、哈伊纳沙漠与卡璞村
+area.routes-15-16-and-the-thrifty-megamart,Routes 15 & 16 and the Thrifty Megamart,Routes 15 & 16 et Bradley Prix,Rutas 15 y 16 y el Súper Ultraganga,Routen 15 & 16 und das Schnäppchenparadies,Percorsi 15 e 16 e il Supermarket Affaroni,Rotas 15 e 16 e o Megamercado Econômico,Rotas 15 e 16 e o Megamercado Econômico,15・16ばんどうろとスーパー・メガやす,15번·16번도로·슈퍼・메가싸네,15、16号道路与超值超市
+area.route-17-po-town,Route 17 & Po Town,Route 17 & Kokohio,Ruta 17 y Pueblo Po,Route 17 & Po'u,Percorso 17 e Poh,Rota 17 e Vila Po,Rota 17 e Vila Po,17ばんどうろとポータウン,17번도로·포마을,17号道路与魄镇
+area.aether-paradise,Aether Paradise,Paradis Æther,Paraíso Æther,Æther-Paradies,Æther Paradise,Paraíso Æther,Paraíso Æther,エーテルパラダイス,에테르파라다이스,以太乐园
+area.seafolk-village-poni-wilds-ancient-poni-path,"Seafolk Village, Poni Wilds & Ancient Poni Path","Village Flottant, Prairie de Poni & Vieille Route","Aldea Marina, Prado de Poni y Antiguo Paso de Poni","Dorf des Seevolkes, Wildnis von Poni & Alter Pfad von Poni","Villaggio del Mare, Piana di Poni e Via Antica di Poni","Vila Marinha, Planície de Poni e o Antigo Caminho de Poni","Vila Marinha, Planície de Poni e o Antigo Caminho de Poni",うみのたみのむら、ポニのげんやとポニのこどう,바다민족의 마을·포니들판·포니옛길,海洋居民之村、波尼原野与波尼古道
+area.exeggutor-island-vast-poni-canyon,Exeggutor Island & Vast Poni Canyon,Île Noadkoko & Grand Canyon de Poni,Isla Exeggutor y el Cañón de Poni,Kokowei-Eiland & Canyon von Poni,Isola Exeggutor e Canyon di Poni,Ilha Exeggutor e o Grande Cânion de Poni,Ilha Exeggutor e o Grande Cânion de Poni,ナッシー・アイランドとポニのだいきょうこく,나시・아일랜드·포니대협곡,椰蛋树岛与波尼大峡谷
+area.mount-lanakila,Mount Lanakila,Mont Lanakila,Monte Lanakila,Mount Lanakila,Monte Lanakila,Monte Lanakila,Monte Lanakila,ラナキラマウンテン,라나키라마운틴,拉纳基拉山
+area.mount-lanakila-ii,Mount Lanakila II,Mont Lanakila II,Monte Lanakila II,Mount Lanakila II,Monte Lanakila II,Monte Lanakila II,Monte Lanakila II,ラナキラマウンテン II,라나키라마운틴 II,拉纳基拉山 II
+area.poni-gauntlet-the-battle-tree,Poni Gauntlet & the Battle Tree,Chemin du Défi & l'Arbre de Combat,Pendiente de Poni y el Árbol de Combate,Beschwerlicher Pfad & der Kampfbaum,Erta di Poni e l'Albero della Lotta,Trilha de Poni e a Árvore de Batalha,Trilha de Poni e a Árvore de Batalha,ポニのけんろとバトルツリー,포니험로·배틀트리,波尼险路与对战树
+area.the-poke-pelago,The Poké Pelago,Le Poké Loisir,El Poké Resort,Das Pokémon-Resort,Il Poké Resort,O Poké Resort,O Poké Resort,ポケリゾート,포켓리조트,宝可度假地
+area.the-lakes-of-the-sunne-and-moone,The Lakes of the Sunne and Moone,Les Lacs du Halo Solaire et Lunaire,Los Lagos Corosol y Coroluna,Sonnenkreis-See & Mondscheiben-See,Il Lago Solare e il Lago Lunare,Os Lagos do Sol e da Lua,Os Lagos do Sol e da Lua,にちりんのみずうみとがちりんのみずうみ,일륜의 호수·월륜의 호수,日轮湖与月轮湖
+area.the-altar-of-the-sunne-and-moone,The Altar of the Sunne and Moone,Les Autels du Soleil et de la Lune,Los Altares del Sol y de la Luna,Sonnenkreis- & Mondscheiben-Podium,L'Altare Solare e l'Altare Lunare,Os Altares do Sol e da Lua,Os Altares do Sol e da Lua,にちりんのさいだんとがちりんのさいだん,일륜의 제단·월륜의 제단,日轮祭坛与月轮祭坛
+area.ultra-megalopolis,Ultra Megalopolis,Ultra-Mégalopole,Ultrametrópolis,Ultrametropolis,Ultramegalopoli,Ultra Megalópole,Ultra Megalópole,ウルトラメガロポリス,울트라메가로폴리스,究极巨都
+area.the-ruins-of-the-guardians,The Ruins of the Guardians,Les Ruines des Gardiens,Las Ruinas de los Guardianes,Die Ruinen der Schutzpatrone,I Templi dei Protettori,As Ruínas dos Guardiões,As Ruínas dos Guardiões,しゅごしんのいせき,수호신의 유적,守护神的遗迹
+area.ultra-space-the-deep-sea-the-jungle,Ultra Space: the Deep Sea & the Jungle,Ultra-Dimension : Abysses & Jungle,Ultraespacio: Mar Profundo y Jungla,Ultradimension: Tiefsee & Dschungel,Ultramondo: Abisso e Giungla,Ultra Espaço: Mar Profundo e Selva,Ultra Espaço: Mar Profundo e Selva,ウルトラスペース：ディープシーとジャングル,울트라스페이스: 딥시·정글,究极空间：深海与丛林
+area.ultra-space-the-desert-the-plant,Ultra Space: the Desert & the Plant,Ultra-Dimension : Désert & Centrale,Ultraespacio: Desierto y Central,Ultradimension: Wüste & Kraftwerk,Ultramondo: Deserto e Centrale,Ultra Espaço: Deserto e Usina,Ultra Espaço: Deserto e Usina,ウルトラスペース：デザートとプラント,울트라스페이스: 데저트·플랜트,究极空间：沙漠与发电站
+area.ultra-space-the-crater-the-forest,Ultra Space: the Crater & the Forest,Ultra-Dimension : Cratère & Forêt,Ultraespacio: Cráter y Bosque,Ultradimension: Krater & Wald,Ultramondo: Cratere e Foresta,Ultra Espaço: Cratera e Floresta,Ultra Espaço: Cratera e Floresta,ウルトラスペース：クレーターとフォレスト,울트라스페이스: 크레이터·포레스트,究极空间：陨石坑与森林
+area.ultra-space-the-ruin,Ultra Space: the Ruin,Ultra-Dimension : Ruines,Ultraespacio: Ruinas,Ultradimension: Ruinen,Ultramondo: Rovine,Ultra Espaço: Ruínas,Ultra Espaço: Ruínas,ウルトラスペース：ルイン,울트라스페이스: 루인,究极空间：废墟
+area.poni-grove,Poni Grove,Forêt de Poni,Bosque de Poni,Wald von Poni,Foresta di Poni,Bosque de Poni,Bosque de Poni,ポニのじゅりん,포니수림,波尼树林
+area.the-ultra-recon-squad,The Ultra Recon Squad,L'Ultra-Escadron,El Ultraescuadrón,Die Ultra-Erkunder,L'Ultrasquadra,O Esquadrão Ultra,O Esquadrão Ultra,ウルトラちょうさたい,울트라조사대,究极调查队
+area.magearna-s-workshop,Magearna's Workshop,L'Atelier de Magearna,El Taller de Magearna,Magearnas Werkstatt,Il Laboratorio di Magearna,A Oficina de Magearna,A Oficina de Magearna,マギアナのこうぼう,마기아나의 공방,玛机雅娜的工坊
+area.ten-carat-hill-s-farthest-hollow,Ten Carat Hill's Farthest Hollow,Le Fond de la Colline Dicarat,El Fondo de la Colina Dequilate,Die tiefste Mulde des Tenkarat-Hügels,Il Fondo della Collina Diecicarati,O Fundo da Colina dos Dez Quilates,O Fundo da Colina dos Dez Quilates,テンカラットヒルのさいおう,텐캐럿힐 가장 깊은 곳,十克拉山丘最深处
+area.the-blush-mountain-storm,The Blush Mountain Storm,L'Orage du Mont Ardent,La Tormenta del Monte Rubor,Das Gewitter am Glühberg,La Tempesta del Monte Tepore,A Tempestade da Montanha Rubor,A Tempestade da Montanha Rubor,ホテリやまのあらし,화끈산의 폭풍,火特力山的风暴
+area.the-mystery-box,The Mystery Box,La Boîte Mystère,La Caja Misteriosa,Die Geheimbox,La Scatola Misteriosa,A Caixa Misteriosa,A Caixa Misteriosa,ふしぎなはこ,이상한 상자,神秘盒子
+region.alola,Alola,Alola,Alola,Alola,Alola,Alola,Alola,アローラ,알로라,阿罗拉
+badge.normalium-z,Normalium Z,Normazium Z,Normastal Z,Normium Z,Normium Z,Normalium Z,Normalium Z,ノーマルZ,노말Z,一般Z
+badge.fightinium-z,Fightinium Z,Combazium Z,Lizastal Z,Kampfium Z,Lottium Z,Fightinium Z,Fightinium Z,カクトウZ,격투Z,格斗Z
+badge.waterium-z,Waterium Z,Hydrozium Z,Hidrostal Z,Aquarium Z,Acquium Z,Waterium Z,Waterium Z,ミズZ,물Z,水Z
+badge.rockium-z,Rockium Z,Rocazium Z,Litostal Z,Gesteinium Z,Roccium Z,Rockium Z,Rockium Z,イワZ,바위Z,岩石Z
+badge.electrium-z,Electrium Z,Électrozium Z,Electrostal Z,Elektrium Z,Elettrium Z,Electrium Z,Electrium Z,デンキZ,전기Z,电Z
+badge.darkinium-z,Darkinium Z,Ténébrozium Z,Nictostal Z,Unlichtium Z,Buium Z,Darkinium Z,Darkinium Z,アクZ,악Z,恶Z
+badge.fairium-z,Fairium Z,Nymphézium Z,Feeristal Z,Feenium Z,Follettium Z,Fairium Z,Fairium Z,フェアリーZ,페어리Z,妖精Z
+badge.groundium-z,Groundium Z,Terrazium Z,Geostal Z,Bodium Z,Terrium Z,Groundium Z,Groundium Z,ジメンZ,땅Z,地面Z
+trainerClass.aether-foundation-employee,Aether Foundation Employee,Employé d'Æther,Empleado de Æther,Æther-Angestellter,Impiegato Æther,Funcionário da Æther,Funcionário da Æther,エーテルざいだんしょくいん,에테르재단 직원,以太基金会职员
+trainerClass.captain,Captain,Capitaine,Capitán,Captain,Capitano,Capitão,Capitão,キャプテン,캡틴,队长
+trainerClass.kahuna,Kahuna,Doyen,Kahuna,Inselkönig,Kahuna,Kahuna,Kahuna,しまキング,섬킹,岛屿之王
+trainerClass.firefighter,Firefighter,Pompier,Bombero,Feuerwehrmann,Pompiere,Bombeiro,Bombeiro,しょうぼうし,소방관,消防员
+trainerClass.golfer,Golfer,Golfeur,Golfista,Golfer,Golfista,Golfista,Golfista,ゴルファー,골퍼,高尔夫球手
+trainerClass.janitor,Janitor,Agent d'Entretien,Limpiador,Hausmeister,Bidello,Zelador,Zelador,せいそういん,청소부,清洁工
+trainerClass.office-worker,Office Worker,Employé de Bureau,Oficinista,Angestellter,Impiegato,Funcionário de Escritório,Funcionário de Escritório,サラリーマン,샐러리맨,上班族
+trainerClass.professor,Professor,Professeur,Profesor,Professor,Professor,Professor,Professor,はかせ,박사,博士
+trainerClass.sightseer,Sightseer,Touriste,Turista,Tourist,Turista,Turista,Turista,かんこうきゃく,관광객,观光客
+trainerClass.surfer,Surfer,Surfeur,Surfista,Surfer,Surfista,Surfista,Surfista,サーファー,서퍼,冲浪手
+trainerClass.team-skull-grunt,Team Skull Grunt,Sbire Skull,Recluta Skull,Rüpel von Team Skull,Recluta Team Skull,Recruta da Equipa Skull,Recruta da Equipe Skull,スカル団員,스컬단 조무래기,骷髅队手下
+trainerClass.trial-guide,Trial Guide,Guide d'Épreuve,Guía de Prueba,Prüfungsführer,Guida della Prova,Guia de Provação,Guia de Provação,しれんサポーター,시련서포터,试炼支持者
+trainerClass.young-athlete,Young Athlete,Jeune Athlète,Joven Atleta,Jungsportler,Giovane Atleta,Jovem Atleta,Jovem Atleta,ジュニアアスリート,주니어애슬리트,青年运动员
+trainerName.ilima,Ilima,Ilima,Ilima,Ilima,Ilima,Ilima,Ilima,イリマ,일리마,伊里马
+trainerName.lana,Lana,Lana,Lana,Lana,Lana,Lana,Lana,スイレン,수련,水莲
+trainerName.kiawe,Kiawe,Kiawe,Kiawe,Kiawe,Kiawe,Kiawe,Kiawe,カキ,카키,卡奇
+trainerName.mallow,Mallow,Mallow,Mallow,Mallow,Mallow,Mallow,Mallow,マオ,마오,玛奥
+trainerName.sophocles,Sophocles,Sophocles,Sophocles,Sophocles,Sophocles,Sophocles,Sophocles,マーマネ,마마네,马玛内
+trainerName.acerola,Acerola,Acerola,Acerola,Acerola,Acerola,Acerola,Acerola,アセロラ,아세로라,阿塞萝拉
+trainerName.mina,Mina,Mina,Mina,Mina,Mina,Mina,Mina,マツリカ,마쓰리카,茉莉花
+trainerName.hala,Hala,Hala,Hala,Hala,Hala,Hala,Hala,ハラ,할라,哈拉
+trainerName.olivia,Olivia,Olivia,Olivia,Olivia,Olivia,Olivia,Olivia,ライチ,라이치,丽姿
+trainerName.nanu,Nanu,Nanu,Nanu,Nanu,Nanu,Nanu,Nanu,クチナシ,쿠치나시,库奇纳希
+trainerName.hapu,Hapu,Hapu,Hapu,Hapu,Hapu,Hapu,Hapu,ハプウ,하푸,哈普乌
+trainerName.kahili,Kahili,Kahili,Kahili,Kahili,Kahili,Kahili,Kahili,カヒリ,카일리,卡希丽
+trainerName.kukui,Kukui,Kukui,Kukui,Kukui,Kukui,Kukui,Kukui,ククイ,쿠쿠이,库库伊
+trainerName.hau,Hau,Hau,Hau,Hau,Hau,Hau,Hau,ハウ,하우,哈乌
+trainerName.gladion,Gladion,Gladion,Gladion,Gladion,Gladion,Gladion,Gladion,グラジオ,글라디오,格拉吉欧
+trainerName.guzma,Guzma,Guzma,Guzma,Guzma,Guzma,Guzma,Guzma,グズマ,구즈마,古兹马
+trainerName.plumeria,Plumeria,Plumeria,Plumeria,Plumeria,Plumeria,Plumeria,Plumeria,プルメリ,플루메리,布尔美丽
+trainerName.lusamine,Lusamine,Lusamine,Lusamine,Lusamine,Lusamine,Lusamine,Lusamine,ルザミーネ,루자미네,露莎米奈
+trainerName.faba,Faba,Faba,Faba,Faba,Faba,Faba,Faba,ザオボー,자오보,扎奥博

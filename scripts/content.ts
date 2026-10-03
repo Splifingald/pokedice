@@ -23,6 +23,10 @@ export const LEGENDARIES = [
   494, 638, 639, 640, 641, 642, 643, 644, 645, 646, 647, 648, 649,
   // Kalos: Xerneas, Yveltal, Zygarde, the mythicals
   716, 717, 718, 719, 720, 721,
+  // Alola: the Tapus, the Cosmog line and Necrozma, the Ultra Beasts (Poipole's line included), the mythicals and
+  // Meltan's line — every one an area boss, or what one evolves into
+  785, 786, 787, 788, 789, 790, 791, 792, 793, 794, 795, 796, 797, 798, 799, 800, 801, 802, 803, 804, 805, 806, 807, 808,
+  809,
 ]
 export const STARTERS = [1, 4, 7]
 
