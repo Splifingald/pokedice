@@ -2,13 +2,19 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import initSql from '../../supabase/migrations/0001_init.sql?raw'
-import seedSql from '../../supabase/seed.sql?raw'
 import { PixelIcon } from '@/components/icons'
 import { Panel } from '@/components/Panel'
 import { PixelButton } from '@/components/PixelButton'
 import { TABLES } from '@/config/mapping'
 import { ADMIN_EMAIL, getSupabase, isAdminEmail, SUPABASE_ANON_KEY, SUPABASE_URL } from '@/lib/supabase'
 import { pushToast, useGame } from '@/store/game'
+
+/** seed.sql cut into parts the SQL editor accepts (`pnpm seed-sql` writes them), in run order. */
+const SEED_PARTS = Object.entries(
+  import.meta.glob<string>('../../supabase/seed-parts/*.sql', { query: '?raw', import: 'default', eager: true }),
+)
+  .sort(([a], [b]) => a.localeCompare(b))
+  .map(([, sql]) => sql)
 
 function copy(text: string, what: string) {
   navigator.clipboard
@@ -162,12 +168,20 @@ export default function SetupPage() {
         </Step>
 
         <Step n={3} title="SQL — create the tables and load the content">
-          <p>In Supabase: SQL Editor → New query. Paste the schema, press Run. Then a new query with the seed data, Run. In that order.</p>
-          <Code label="0001_init.sql">{initSql}</Code>
-          <p className="copy text-muted">
-            seed.sql is large ({Math.round(seedSql.length / 1024)} KB) — use the Copy button rather than selecting it.
+          <p>
+            In Supabase: SQL Editor → New query. Paste the schema, press Run. Then the seed data, which is too large for one paste: one
+            new query per part, Run each, part 1 first. Updating a live database only needs the parts.
           </p>
-          <Code label="seed.sql">{seedSql}</Code>
+          <Code label="0001_init.sql">{initSql}</Code>
+          {SEED_PARTS.map((sql, i) => (
+            <div key={i}>
+              <p className="copy text-muted">
+                Seed data, part {i + 1} of {SEED_PARTS.length} ({Math.round(sql.length / 1024)} KB) — use the Copy button rather than
+                selecting it.
+              </p>
+              <Code label={`seed part ${i + 1}`}>{sql}</Code>
+            </div>
+          ))}
         </Step>
 
         <Step n={4} title="Google Cloud Console — OAuth client">
