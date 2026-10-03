@@ -224,3 +224,21 @@ so the four areas before Mount Lanakila take two rounds, as Unova's last four do
 54–62 league, wins 56–68 % of the time, and its chain is the gentlest of the three (9–17 % wipes). Popplio's league
 wipes (208) come from Hala's Hariyama and Bewear and Kukui's Lycanroc — the Water starter's team leans on Water and
 Normal dice, the same shape as Unova's Oshawott. Left at Sun and Moon's levels.
+
+---
+
+## Galar
+
+Added with Gen 8, measured with `pnpm balance table 6 900 galar`.
+
+| Region | Starter | League win % | League wipes | Chain wipe % | Chain turns | Lv at league | Band | Encounters to league |
+|---|---|---:|---:|---:|---:|---:|---|---:|
+| **Galar** | **Grookey** | **67** | **195.8** | **18** | **2.60** | **81** | **56–66** | **474** |
+| **Galar** | **Scorbunny** | **62** | **202.0** | **18** | **2.68** | **74** | **56–66** | **412** |
+| **Galar** | **Sobble** | **67** | **187.3** | **22** | **2.85** | **73** | **56–66** | **382** |
+
+**In the envelope.** The chain wipes 18–22 % (Kalos 15–22, Unova 14–20), fights take 2.6–2.9 turns, and the team
+reaches the Champion Cup well over its band. The Cup's ~190–200 wipes are five battles in a row with no Center
+between them, the same shape as Unova's league and Alola's Popplio. The first build gave the Energy Plant two rounds as
+well as Route 10, which put Grookey at L81 and cost it 33 wipes against Rose's Copperajah for nothing; one round there
+is the only change. Grookey is still the long run (474 encounters): Kabu, Rose and Leon's Charizard are its walls.

@@ -236,3 +236,69 @@ Spanish, German and Italian names and the new trainer classes are written by han
 
 **Balance**: two rounds on the four areas before Mount Lanakila (Po Town, Aether Paradise, Seafolk, Vast Poni), and a
 fix to the simulator itself — see `06-REGION-BALANCE.md`.
+
+---
+
+## Galar (#810–905) — built
+
+`scripts/content-galar.ts`, `pnpm seed-regions --from 810 --to 905` (the default). 20 areas on the chain, 4 side areas
+after the league, 7 secret.
+
+**Route.** Postwick, Route 1 & the Slumbering Weald → Wedgehurst & Route 2 → the Wild Area → Motostoke, Route 3 & the
+Galar Mine (Bede; the Game Corner deck) → Route 4 & Turffield (**Milo**) → Route 5 & Hulbury (**Nessa**) → Galar Mine
+No. 2 & Motostoke Stadium (**Kabu**) → Motostoke Outskirts & the Wild Area South → Hammerlocke & Route 6 (Cara Liss's
+fossils) → Stow-on-Side (Allister, then **Bea**) → Glimwood Tangle & Ballonlea (**Opal**) → Routes 7 & 8 →
+Steamdrift Way & Circhester (Melony, then **Gordie**) → Route 9 & Spikemuth (**Piers**) → Hammerlocke Hills & the Lake
+of Outrage (**Raihan**) → Route 10 & Wyndon → Rose Tower & the Energy Plant (Oleana, Rose; the Master Ball) → **the
+Champion Cup** (Marnie, Nessa, Bea, Raihan, then Leon) → the Wild Area II → the Champion Cup II. After the league: the
+Isle of Armor, the Crown Tundra, the Max Lair (catch-all) and the Space-Time Rift.
+
+**Version leaders, back to back.** Sword's and Shield's exclusive leaders are both fought, as Striaton's brothers
+are: Allister then Bea (Fighting Badge), Melony then Gordie (Rock Badge). Galar's trainers are Galar's own classes —
+Sword and Shield have no Ace Trainers or Veterans, so the strong ones are Macro Cosmos Clerks, Models and Hikers.
+
+**Teams** kept by the user's rule:
+
+| Battle | Real roster | Kept |
+|---|---|---|
+| Bea | Hitmontop, Pangoro 34, Sirfetch'd 35, Machamp 36 | Pangoro, Sirfetch'd, Machamp |
+| Allister | Yamask, Mimikyu 34, Cursola 35, Gengar 36 | Mimikyu, Cursola, Gengar |
+| Opal | Weezing, Mawile 36, Togekiss 37, Alcremie 38 | Weezing, Togekiss, Alcremie |
+| Melony | Frosmoth 40, Darmanitan, Eiscue 41, Lapras 42 | Frosmoth, Eiscue, Lapras |
+| Gordie | Barbaracle, Shuckle 40, Stonjourner 41, Coalossal 42 | Barbaracle, Stonjourner, Coalossal |
+| Piers | Scrafty 44, Malamar, Skuntank 45, Obstagoon 46 | Malamar, Skuntank, Obstagoon |
+| Raihan | Gigalith, Sandaconda 46, Flygon 47, Duraludon 48 | Sandaconda, Flygon, Duraludon |
+| Rose | Escavalier, Ferrothorn, Perrserker, Klinklang 61, Copperajah 63 | Ferrothorn, Perrserker, Copperajah |
+| Leon | Aegislash, Dragapult 62, Haxorus 63, Mr. Rime / Rhyperior / Seismitoad 64, Charizard 65 (his starter left out) | Dragapult, Mr. Rime, Charizard |
+
+**Hisui.** Gen 8's range holds Hisui's seven (#899–905), and Sword and Shield have none of them nor Stantler or
+Teddiursa. They come in through **the Space-Time Rift**, a side area the league opens: Legends: Arceus's Obsidian
+Fieldlands, with the Black Augurite and the Peat Block found there once. Enamorus is its secret area beyond.
+
+**Species.** 96 rows from `liveDicePlan`, plus Blipbug's line set as Wurmple's. The form evolutions of old species are
+grafted on and stay inert outside Galar: Meowth → Perrserker (a 50/50 branch with Persian at 28), Farfetch'd →
+Sirfetch'd (Lv.30), Mr. Mime → Mr. Rime (42), Corsola → Cursola (38), Yamask → Runerigus (34, a branch with
+Cofagrigus), Linoone → Obstagoon (35), Stantler → Wyrdeer (30), Scyther → Kleavor (Black Augurite), Ursaring →
+Ursaluna (Peat Block), Basculin → Basculegion (30), Sneasel → Sneasler (40; the Razor Claw stays Weavile's), Qwilfish
+→ Overqwil (30). New items, all Galar-only: Tart Apple, Sweet Apple, Cracked Pot, Scroll of Darkness, Black Augurite,
+Peat Block, and the four fossil pairs (Dracozolt, Arctozolt, Dracovish, Arctovish come only from them). Dreepy's line
+is a pseudo line. PokeAPI has no Gen 8 item sprites: they come from pokesprite, and the three Hisui items borrow the
+Dread Plate's, Hard Stone's and Damp Mulch's icons.
+
+**Secret areas.** Galar's Pokédex: **314** catchable species.
+
+| Area | Boss | Gate |
+|---|---|---|
+| The Energy Plant Summit | Eternatus 65 | league · Pokédex **220** (70 %) · Lv.65 |
+| The Slumbering Weald's Depths | Zacian, Zamazenta 70 | the Summit · **220** · Lv.70 |
+| The Master Dojo | Kubfu 55 | the Isle of Armor · **173** (55 %) · Lv.55 |
+| The Split-Decision Ruins | Regieleki, Regidrago 65 | the Crown Tundra · **173** · Lv.65 |
+| The Crown Shrine | Glastrier, Spectrier 75, Calyrex 80 | the Ruins · **220** · Lv.75 |
+| The Forest of Focus | Zarude 70 | the Isle of Armor · **267** (85 %) · Lv.70 |
+| The Crimson Mirelands | Enamorus 70 | the Space-Time Rift · **173** · Lv.70 |
+
+**Names.** French and German place names from PokeAPI; the Chinese, Korean and Spanish town names checked against
+search results (化朗镇, 펄롱마을, Pueblo Yarda…). **The Italian Galar place names could not be checked, so the Italian
+column keeps the English ones**; the rest of the generic terms are written by hand and are best-effort.
+
+**Balance**: in the envelope with one change (the Energy Plant back to one round) — see `06-REGION-BALANCE.md`.
