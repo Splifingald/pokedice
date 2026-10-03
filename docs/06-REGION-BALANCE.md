@@ -192,3 +192,35 @@ Unova is. Its league band is the highest yet (60–70) because X/Y's levels are,
 25 wipes, against 35 / 9 for Froakie — his Pyroar and Honchkrow both hit Grass) and Malva at the league. That is a
 type wall, the same shape as Unova's Snivy against Shauntal. Ramos's gym is the one early spike for every starter
 (74–79 % wins at Coumarine), where X/Y jumps from Korrina's 32 to Gogoat's 34. Both are left at X/Y's levels.
+
+---
+
+## Alola, and a simulator fix
+
+Added with Gen 7 (`docs/11-GEN6-9-REGIONS-PLAN.md`), measured with `pnpm balance table 6 900 alola kalos unova`.
+
+**The simulator could loop forever on a stalemate.** It only went to a Center when the whole team was down. In Alola,
+Litten's run caught a Gastly in Hau'oli's cemetery; when Litten fainted against Ilima's all-Normal trial, Gastly was
+the only one standing, neither side could touch the other, and every retry was another stalemate — seed 1 spent all
+900 encounters there. A player would heal and come back, so now the sim does too: a stalemate with someone fainted
+sends it to a Center first (`src/engine/campaign.ts`, covered in `tests/engine/campaign.test.ts`). The same loop had
+been quietly eating whole seeds elsewhere, which is why **Unova moves** in this table: its league win rate was being
+averaged over runs that never reached the league.
+
+| Region | Starter | League win % | League wipes | Chain wipe % | Chain turns | Lv at league | Band | Encounters to league |
+|---|---|---:|---:|---:|---:|---:|---|---:|
+| Unova | Snivy | 65 | 359.3 | 20 | 3.28 | 66 | 46–56 | 347 |
+| Unova | Tepig | 63 | 201.0 | 14 | 2.54 | 65 | 46–56 | 330 |
+| Unova | Oshawott | 66 | 195.8 | 17 | 2.61 | 69 | 46–56 | 368 |
+| Kalos | Chespin | 66 | 53.0 | 22 | 2.71 | 79 | 60–70 | 506 |
+| Kalos | Fennekin | 68 | 92.5 | 15 | 2.28 | 71 | 60–70 | 371 |
+| Kalos | Froakie | 72 | 29.5 | 19 | 2.74 | 73 | 60–70 | 377 |
+| **Alola** | **Rowlet** | **56** | **84.8** | **9** | **2.27** | **69** | **54–62** | **344** |
+| **Alola** | **Litten** | **68** | **92.8** | **17** | **2.41** | **69** | **54–62** | **365** |
+| **Alola** | **Popplio** | **60** | **208.3** | **10** | **2.40** | **67** | **54–62** | **319** |
+
+**Alola is in the envelope** after one change: the first build reached the league only at its band's floor (L57–59),
+so the four areas before Mount Lanakila take two rounds, as Unova's last four do. It now arrives at L67–69 for a
+54–62 league, wins 56–68 % of the time, and its chain is the gentlest of the three (9–17 % wipes). Popplio's league
+wipes (208) come from Hala's Hariyama and Bewear and Kukui's Lycanroc — the Water starter's team leans on Water and
+Normal dice, the same shape as Unova's Oshawott. Left at Sun and Moon's levels.

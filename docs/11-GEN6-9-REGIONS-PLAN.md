@@ -168,3 +168,71 @@ Chinese wiki (52poke) lists, and the routes, caves and new trainer classes are w
 and the new class names are best-effort and worth a native speaker's look.**
 
 **Balance** (`pnpm balance table 6 900 kalos unova`, in `06-REGION-BALANCE.md`): inside the envelope, no change needed.
+
+---
+
+## Alola (#722–809) — built
+
+`scripts/content-alola.ts`, `pnpm seed-regions --from 722 --to 809` (the default). 27 areas on the chain, 14 secret.
+Routed on **Sun and Moon's levels**, which climb more evenly than Ultra Sun and Ultra Moon's, with USUM's additions on
+top (Mina's trial, the Ultra Beasts in Ultra Space, the Ultra Recon Squad, Necrozma's Megalopolis).
+
+**Badges.** The game counts eight badges (the foe upgrade level climbs one per badge, 1 → 9), and the island challenge
+has twelve trials and grand trials. Two per island hand over their **Z-Crystal as the badge**: Ilima (Normalium Z) and
+Hala (Fightinium Z) on Melemele, Lana (Waterium Z) and Olivia (Rockium Z) on Akala, Sophocles (Electrium Z) and Nanu
+(Darkinium Z) on Ula'ula, Mina (Fairium Z) and Hapu (Groundium Z) on Poni. Kiawe, Mallow, Acerola, Guzma, Faba and
+Lusamine are fought without one, the way Striaton's first two brothers are. A captain's battle ends on the **totem**
+of the trial, at its totem level (Gumshoos 12, Wishiwashi 20, Salazzle 22, Lurantis 24, Vikavolt 29, Mimikyu 33,
+Ribombee 45).
+
+**Route.** Melemele: Route 1 → Hau'oli & the Cemetery → Route 2 & the Verdant Cavern (**Ilima**) → Route 3 &
+Melemele Meadow → Ten Carat Hill & Kala'e Bay → Route 1 South & Iki Town (**Hala**). Akala: Heahea & Routes 4–6 →
+Brooklet Hill (**Lana**) → Routes 7–8 & Wela Volcano (Kiawe) → Lush Jungle (Mallow) → Memorial Hill, Akala Outskirts
+& Konikoni (**Olivia**) → Hano Beach & Aether Paradise. Ula'ula: Malie (the Game Corner deck) → Route 10 & Mount
+Hokulani (**Sophocles**) → Routes 11–12 & Blush Mountain → Routes 13–14, Haina Desert & Tapu Village → Routes 15–16 &
+the Thrifty Megamart (Acerola) → Route 17 & Po Town (Guzma, **Nanu**) → Aether Paradise (Faba, Guzma, Lusamine; the
+Master Ball). Poni: Seafolk, Poni Wilds & Ancient Poni Path (**Mina**) → Exeggutor Island & Vast Poni Canyon
+(**Hapu**) → Mount Lanakila (Gladion) → **the League** (Hala, Olivia, Acerola, Kahili, then Kukui) → Mount Lanakila II →
+League II. After the league: Poni Gauntlet & the Battle Tree (**Blue** and **Red**), the Poké Pelago (catch-all).
+
+**Teams** kept by the user's rule:
+
+| Battle | Real roster | Kept |
+|---|---|---|
+| Hala (E4) | Hariyama, Primeape, Bewear, Poliwrath 54, Crabominable 55 | Hariyama, Bewear, Crabominable |
+| Olivia (E4) | Relicanth, Carbink, Golem, Probopass 54, Lycanroc 55 | Probopass, Golem, Lycanroc |
+| Acerola (E4) | Sableye, Drifblim, Dhelmise, Froslass 54, Palossand 55 | Froslass, Dhelmise, Palossand |
+| Kahili | Skarmory, Crobat, Oricorio, Mandibuzz 54, Toucannon 55 | Skarmory, Oricorio, Toucannon |
+| Kukui | Lycanroc 57, Ninetales, Braviary, Magnezone, Snorlax 56, his starter 58 | Ninetales, Snorlax, Lycanroc (starters never appear in trainer teams) |
+| Hapu | Dugtrio, Gastrodon, Flygon 47, Mudsdale 48 | Gastrodon, Flygon, Mudsdale |
+| Lusamine | Clefable, Lilligant, Mismagius, Milotic 47, Bewear 48 | Clefable, Milotic, Bewear |
+
+**Species.** 88 rows from `liveDicePlan`, no overrides needed. The odd triggers: Type: Null → Silvally at Lv.45 (found
+on Poni at 40–44), Poipole → Naganadel at Lv.60, Meltan → Melmetal at Lv.50; Charjabug and Crabrawler evolve with the
+Thunder and the Ice Stone (the later games' rule, and the Ice Stone is found once on Mount Lanakila); Cosmog →
+Cosmoem at 43 → Solgaleo **or** Lunala at 53, rolled like any branch. Jangmo-o's line is a pseudo-legendary line.
+
+**Secret areas.** Alola's Pokédex: **359** catchable species.
+
+| Area | Boss | Gate |
+|---|---|---|
+| The Lakes of the Sunne and Moone | Cosmog 40 | Aether Paradise · Pokédex **126** (35 %) · Lv.40 |
+| The Ruins of the Guardians | Tapu Koko, Lele, Bulu, Fini 60 | league · **197** (55 %) · Lv.60 |
+| Ultra Space: the Deep Sea & the Jungle | Nihilego, Buzzwole 60 | league · **197** · Lv.60 |
+| Ultra Space: the Desert & the Plant | Pheromosa, Xurkitree 62 | the Deep Sea · **197** · Lv.62 |
+| Ultra Space: the Crater & the Forest | Celesteela, Kartana 65 | the Desert · **197** · Lv.65 |
+| Ultra Space: the Ruin | Guzzlord 70 | the Crater · **197** · Lv.70 |
+| Poni Grove | Stakataka, Blacephalon 63 | league · **197** · Lv.63 |
+| The Altar of the Sunne and Moone | Solgaleo, Lunala 65 | league · **251** (70 %) · Lv.65 |
+| Ultra Megalopolis | Necrozma 70 | the Altar · **251** · Lv.70 |
+| The Ultra Recon Squad | Poipole 55 | Ultra Megalopolis · **197** · Lv.55 |
+| Magearna's Workshop | Magearna 65 | league · **305** (85 %) · Lv.65 |
+| Ten Carat Hill's Farthest Hollow | Marshadow 67 | the Workshop · **305** · Lv.67 |
+| The Blush Mountain Storm | Zeraora 70 | the Hollow · **305** · Lv.70 |
+| The Mystery Box | Meltan 40 | the Storm · **305** · Lv.70 |
+
+**Names.** PokeAPI has every Alola place name in all seven languages, Chinese included. The Z-Crystals' French,
+Spanish, German and Italian names and the new trainer classes are written by hand and are best-effort.
+
+**Balance**: two rounds on the four areas before Mount Lanakila (Po Town, Aether Paradise, Seafolk, Vast Poni), and a
+fix to the simulator itself — see `06-REGION-BALANCE.md`.
