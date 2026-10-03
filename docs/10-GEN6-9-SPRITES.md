@@ -1,6 +1,6 @@
 # Pokédice — Generations 6–9: where the sprites come from
 
-> **Status: sprites downloaded, no region built.** This note began as the research for one question, asked before any
+> **Status: sprites downloaded; Kalos built on them** (`docs/11-GEN6-9-REGIONS-PLAN.md`). This note began as the research for one question, asked before any
 > Kalos, Alola, Galar or Paldea plan is written: X/Y onward are 3D games, so there is no sheet to cut from the way
 > Gen 1–5 were. What do we use instead, for the Pokémon and for the trainers, so that #650–1025 look like the 649 we
 > already ship? §5 records what has since been fetched into `graphics/`. No species row, area, region or trainer exists in

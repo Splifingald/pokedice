@@ -167,3 +167,28 @@ usual Unova team is Stoutland (Unova's commonest early catch), an unevolved Munn
 dice cannot touch a Ghost, Psychic cannot touch a Dark — so this is a type wall, the same class as Kanto's Giovanni and
 Hoenn's league. Lowering both aces by two levels changed nothing, and was reverted: they stay at Black/White's 50 and
 54. Whether to bend the roster for it is left open (see the plan).
+
+---
+
+## Kalos
+
+Added with Gen 6 (`docs/11-GEN6-9-REGIONS-PLAN.md`), measured with `pnpm balance table 6 900 kalos unova` on the
+live bundle of 2026-10-03 plus Kalos. Unova is re-measured alongside; **compare Kalos with the Unova rows here**.
+
+| Region | Starter | League win % | League wipes | Chain wipe % | Chain turns | Lv at league | Band | Encounters to league |
+|---|---|---:|---:|---:|---:|---:|---|---:|
+| Unova | Snivy | 38 | 161.0 | 20 | 3.37 | 66 | 46–56 | 348 |
+| Unova | Tepig | 59 | 194.3 | 11 | 2.29 | 66 | 46–56 | 339 |
+| Unova | Oshawott | 51 | 188.3 | 15 | 2.58 | 70 | 46–56 | 379 |
+| **Kalos** | **Chespin** | **67** | **119.0** | **18** | **2.50** | **80** | **60–70** | **515** |
+| **Kalos** | **Fennekin** | **68** | **92.5** | **15** | **2.28** | **71** | **60–70** | **371** |
+| **Kalos** | **Froakie** | **72** | **29.5** | **19** | **2.74** | **73** | **60–70** | **377** |
+
+**Kalos sits in the envelope on the first build**: 15–19 % chain wipes, 2.3–2.7 turns a fight, about ten levels
+over its league band on arrival, and a league won 67–72 % of the time — closer to Kanto, Johto and Sinnoh than
+Unova is. Its league band is the highest yet (60–70) because X/Y's levels are, and it holds.
+
+**Chespin takes longer**, 515 encounters against 371–377, and the per-area run says where: Lysandre (79 fights,
+25 wipes, against 35 / 9 for Froakie — his Pyroar and Honchkrow both hit Grass) and Malva at the league. That is a
+type wall, the same shape as Unova's Snivy against Shauntal. Ramos's gym is the one early spike for every starter
+(74–79 % wins at Coumarine), where X/Y jumps from Korrina's 32 to Gogoat's 34. Both are left at X/Y's levels.
