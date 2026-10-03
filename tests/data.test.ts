@@ -40,7 +40,7 @@ describe('pokemon.json', () => {
       expect(total(p.dice)).toBeGreaterThanOrEqual(1)
       expect(total(p.dice), p.name).toBeLessThanOrEqual(SIX_DICE.has(p.dex) ? 6 : 5)
       expect(p.spriteUrl).toBe(`/pokemon/${String(p.dex).padStart(3, '0')}_front.png`)
-      for (const view of ['front', 'front_shiny', 'back', 'back_shiny', 'mini_1', 'mini_2'])
+      for (const view of ['front', 'front_shiny', 'back', 'back_shiny', 'mini'])
         expect(existsSync(path.join('public/pokemon', `${String(p.dex).padStart(3, '0')}_${view}.png`)), `${p.dex} ${view}`).toBe(true)
       expect(p.baseHp).toBeGreaterThan(0)
       expect(p.maxHp).toBeGreaterThan(p.baseHp)

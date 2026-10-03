@@ -352,6 +352,7 @@ export function ConfigSection() {
   const [showRound, setShowRound] = useConfigRow('showRoundGauge')
   const [showAhead, setShowAhead] = useConfigRow('showRoundPreview')
   const [shiny, setShiny] = useConfigRow('shinyChance')
+  const [cloudSync, setCloudSync] = useConfigRow('cloudSyncMinutes')
   const [fph, setFph] = useState(80)
   const curve = useMemo(() => ({ ...DEFAULT_CONFIG.xpCurve, ...xpCurve }), [xpCurve])
 
@@ -438,6 +439,15 @@ export function ConfigSection() {
               <input type="checkbox" checked={!!voluntary} onChange={(e) => setVoluntary(e.target.checked)} /> allowVoluntarySwitch
             </label>
           </div>
+        </Box>
+
+        <Box title="Cloud save" hint="How often signed-in players' saves go to Supabase. Fewer pushes = less database load.">
+          <Field
+            label="cloudSyncMinutes"
+            hint="a signed-in player's save is pushed at most once every this many minutes while they play (and when the page closes) · players can still press SYNC ONLINE, once per 5 min"
+          >
+            <NumInput value={cloudSync} min={1} max={240} onChange={(v) => setCloudSync(Math.max(1, Math.min(240, v ?? 15)))} />
+          </Field>
         </Box>
 
         <Box title="Player help" hint="What the game shows players while they plan.">

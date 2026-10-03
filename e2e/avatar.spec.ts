@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
-import { FAST, fakeSession, LEADERBOARD, makeSave, mockSupabase, STORAGE_KEY } from './helpers'
+import { FAST, fakeSession, LEADERBOARD, makeSave, mockSupabase, STORAGE_KEY, withBadge } from './helpers'
 
 async function signedIn(page: Page, save: object) {
   await page.addInitScript(
@@ -44,7 +44,7 @@ test('the leaderboard draws each trainer with their look', async ({ page }) => {
   await mockSupabase(page)
   const rows = LEADERBOARD.map((r) => (r.name === 'Leaf' ? { ...r, character: 'kanto/hiker' } : r.name === 'Blue' ? { ...r, character: 'kanto/champion-brock' } : r))
   await page.route('**/rest/v1/rpc/leaderboard', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(rows) }))
-  await signedIn(page, makeSave(4, { player: { name: 'Sam', character: 'red' } }))
+  await signedIn(page, withBadge(makeSave(4, { player: { name: 'Sam', character: 'red' } })))
   await page.goto('/leaderboard')
   const row = (name: string) => page.getByRole('listitem').filter({ hasText: name }).first().locator('img').first()
   await expect(row('Leaf')).toHaveAttribute('src', '/trainers/classes/hiker.png')

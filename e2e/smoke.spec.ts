@@ -26,9 +26,9 @@ test('new game → first battle → win', async ({ page }) => {
   await page.getByRole('button', { name: /Squirtle/ }).first().click()
   await page.getByRole('button', { name: 'YES!' }).click()
   await expect(page).toHaveURL(/\/area$/)
-  // Prof. Oak shows the leaderboard first.
-  await page.getByRole('button', { name: 'SEE THE LEADERBOARD' }).click()
-  await expect(page.getByRole('heading', { name: 'Leaderboard', level: 1 })).toBeVisible()
+  // No badge yet: the leaderboard is locked.
+  await page.goto('/leaderboard')
+  await expect(page.getByText('Win your first badge to open the leaderboard')).toBeVisible()
   await page.goto('/area')
 
   for (let i = 0; i < 400; i++) {
@@ -86,6 +86,14 @@ test('sign-in flow (mocked Supabase)', async ({ page }) => {
   await page.goto('/settings')
   await expect(page.getByText('Backed up as admin@example.com')).toBeVisible()
   await expect.poll(() => calls.some((c) => c.startsWith('POST /rest/v1/saves'))).toBe(true)
+  // The day's one analytics call.
+  await expect.poll(() => calls.filter((c) => c.startsWith('POST /rest/v1/rpc/player_ping')).length).toBe(1)
+
+  // SYNC ONLINE at the bottom of the side bar: it just synced, so it rests for 5 minutes.
+  const sync = page.getByRole('complementary').getByRole('button', { name: /Sync online/ })
+  await expect(sync).toContainText('Last sync: just now')
+  await expect(sync).toContainText(/Again in [45]:\d\d/)
+  await expect(sync).toBeDisabled()
 
   // 3. The avatar's drawer: signed in, it offers Admin and no Connect.
   await page.getByRole('button', { name: 'Your trainer menu' }).click()

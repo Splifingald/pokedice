@@ -36,8 +36,9 @@ let pending: (() => Promise<void>) | null = null
 let pushing: Promise<void> = Promise.resolve()
 
 /**
- * Push after any save mutation: at most once per 30 s, carrying the latest save — not a debounce, which non-stop play
- * would keep putting off. The tab going hidden pushes right away (flushPush); the local save is always current.
+ * Push after any save mutation, once `delay` is up, carrying the latest save — not a debounce, which non-stop play
+ * would keep putting off. The game passes the time left until `cloudSyncMinutes` after the last sync (src/store/sync.ts);
+ * closing the page pushes right away (flushPush). The local save is always current.
  */
 export function schedulePush(run: () => Promise<void>, delay = 30_000) {
   pending = run

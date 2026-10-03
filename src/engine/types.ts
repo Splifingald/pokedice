@@ -441,6 +441,8 @@ export interface GameConfig {
   showRoundPreview: boolean
   /** Chance (0–1) that a wild Pokémon is shiny: only its sprites change. */
   shinyChance: number
+  /** Signed-in players' save goes to the cloud at most this often (minutes) while they play; SYNC ONLINE does it now. */
+  cloudSyncMinutes: number
   /** Energy: 1 per encounter discovered (not gyms, legendaries or Pokémon Centers), refilled over time. */
   energy: EnergyConfig
   status: StatusRules

@@ -1,4 +1,4 @@
-// Prof. Oak's share prompt: once per region, when the player holds its 4th badge (between fights). The button opens
+// Prof. Oak's share prompt: once per region, when the player holds its 2nd badge (between fights). The button opens
 // the native share sheet on phones, or copies the link where there is none (desktop). Remembered in localStorage.
 import { useState } from 'react'
 import { badgeCase, dayCareTutorialDue, leaderboardTutorialDue, regionOf } from '@/engine'
@@ -22,7 +22,7 @@ export function ShareTutorial() {
   const due = useGame(
     (s) =>
       !!s.save &&
-      badgeCase(s.save, s.data).filter((b) => b.earned).length >= 4 &&
+      badgeCase(s.save, s.data).filter((b) => b.earned).length >= 2 &&
       !dayCareTutorialDue(s.save, s.data) &&
       !leaderboardTutorialDue(s.save, s.data),
   )

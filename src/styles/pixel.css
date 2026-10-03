@@ -150,26 +150,15 @@
   }
 }
 
-/* MiniSprite: two party-icon frames, swapped every 0.3 s. */
-@keyframes mini-frame-a {
+/* MiniSprite: two party-icon frames side by side in one image, slid left by a frame every 0.3 s. */
+@keyframes mini-frames {
   0% {
-    opacity: 1;
+    transform: translateX(0);
   }
   50% {
-    opacity: 0;
+    transform: translateX(-50%);
   }
 }
-@keyframes mini-frame-b {
-  0% {
-    opacity: 0;
-  }
-  50% {
-    opacity: 1;
-  }
-}
-.mini-frame-a {
-  animation: mini-frame-a 600ms step-end infinite;
-}
-.mini-frame-b {
-  animation: mini-frame-b 600ms step-end infinite;
+.mini-frames {
+  animation: mini-frames 600ms step-end infinite;
 }

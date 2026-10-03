@@ -1,7 +1,9 @@
 import { Link, useLocation } from 'react-router-dom'
 import { useT } from '@/i18n/react'
-import { useGame } from '@/store/game'
+import { leaderboardUnlocked } from '@/engine'
+import { pushToast, useGame } from '@/store/game'
 import { useInFight } from '@/store/hooks'
+import { CloudSyncButton } from './CloudSyncButton'
 import { PlayerMenu } from './PlayerMenu'
 import { cx } from '@/theme/util'
 import { GoldPill } from './GoldPill'
@@ -85,8 +87,11 @@ export function Header() {
   const runArea = useGame((s) => s.run.areaId)
   const inFight = useInFight()
   const { pathname } = useLocation()
+  const boardOpen = useGame((s) => !!s.save && leaderboardUnlocked(s.save, s.data))
   if (!save) return null
   const onBoard = pathname === '/leaderboard'
+  // Before the first badge the trophy is hatched; a tap says what opens it.
+  const blocked = inFight || !boardOpen
   return (
     <header className="sticky top-0 z-40 border-b-[3px] border-ink bg-panel shadow-[0_3px_0_#6b6480]">
       <div className="flex h-14 items-center gap-1.5 px-3 sm:gap-2">
@@ -100,16 +105,21 @@ export function Header() {
         <EnergyPill />
         <GoldPill amount={save.gold} className="shrink-0" />
         <Link
-          to={inFight ? '#' : '/leaderboard'}
+          to={blocked ? '#' : '/leaderboard'}
           aria-label={t('ui.nav.leaderboard')}
           aria-current={onBoard ? 'page' : undefined}
-          aria-disabled={inFight || undefined}
-          onClick={(e) => inFight && e.preventDefault()}
-          title={t(inFight ? 'ui.nav.finishFight' : 'ui.nav.leaderboard')}
+          aria-disabled={blocked || undefined}
+          onClick={(e) => {
+            if (!blocked) return
+            e.preventDefault()
+            if (!inFight) pushToast(t('ui.nav.boardLocked'), 'info')
+          }}
+          title={t(inFight ? 'ui.nav.finishFight' : boardOpen ? 'ui.nav.leaderboard' : 'ui.nav.boardLocked')}
           className={cx(
             'pixel-btn flex h-11 w-11 shrink-0 items-center justify-center md:h-9 md:w-9',
             onBoard ? 'bg-gold' : 'bg-panel',
-            inFight && 'hatched pointer-events-none',
+            blocked && 'hatched',
+            inFight && 'pointer-events-none',
           )}
         >
           <PixelIcon name="trophy" size={20} />
@@ -120,7 +130,7 @@ export function Header() {
   )
 }
 
-/** Desktop: the game menus down the left. The account, the admin and the rules live in the avatar's drawer. */
+/** Desktop: the game menus down the left, and SYNC ONLINE at the bottom. The account, the admin and the rules live in the avatar's drawer. */
 export function SideNav() {
   const { t } = useT()
   return (
@@ -130,6 +140,9 @@ export function SideNav() {
           <NavEntry key={n.to} n={n} variant="side" />
         ))}
       </nav>
+      <div className="mt-auto">
+        <CloudSyncButton />
+      </div>
     </aside>
   )
 }

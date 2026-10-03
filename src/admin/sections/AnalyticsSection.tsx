@@ -1,338 +1,79 @@
-// Admin → Analytics: what players do, read from analytics_events (admin-only via RLS).
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
-import { ANALYTICS_KINDS, SYSTEM_KINDS, type AnalyticsKind } from '@/analytics/events'
-import {
-  averageDailyPlaytime,
-  formatDuration,
-  type AveragePlaytime,
-  type PlaytimeEvent,
-} from '@/analytics/playtime'
-import {
-  retentionByDay,
-  RETENTION_MIN_FIRST_DAY_EVENTS,
-  type Retention,
-  type RetentionEvent,
-} from '@/analytics/retention'
-import { playerProgress, type ProgressEvent } from '@/analytics/progress'
-import { AreaBanner } from '@/components/AreaBanner'
-import { BadgeIcon } from '@/components/BadgeIcon'
-import { PixelIcon, type IconName } from '@/components/icons'
+// Admin → Analytics: day-1 retention and the players, from the daily ping (migration 0028). Admin-only via RLS.
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { dayKey, dayOneRetention, type D1Cohorts, type Retention } from '@/analytics/retention'
 import { PixelButton } from '@/components/PixelButton'
-import { SpriteImg } from '@/components/SpriteImg'
-import { COMBO_NAMES, type ComboKey, type GameData } from '@/engine'
 import { getSupabase, isSupabaseConfigured } from '@/lib/supabase'
-import { useGame } from '@/store/game'
-import { cx, typeColor } from '@/theme/util'
+import { cx } from '@/theme/util'
 import { inputCls } from '../widgets'
-import { PlayerPanel, PlaytimeHero } from './AnalyticsPlayer'
+import { errorText, PlayerPanel } from './AnalyticsPlayer'
 
-interface EventRow {
-  id: number
-  created_at: string
+interface PlayerRow {
+  player: string
   user_id: string | null
-  device_id: string
-  player_name: string | null
+  name: string | null
   email: string | null
-  kind: AnalyticsKind
-  params: Record<string, unknown>
-}
-
-const KIND: Record<AnalyticsKind, { label: string; icon: IconName; color: string }> = {
-  login: { label: 'Logged in', icon: 'run', color: '#547acc' },
-  game_started: { label: 'New game', icon: 'ball', color: '#6b6480' },
-  level_up: { label: 'Level up', icon: 'up', color: '#2f6b36' },
-  evolved: { label: 'Evolved', icon: 'star', color: '#8a4fb0' },
-  area_unlocked: { label: 'Area found', icon: 'map', color: '#2a8a8a' },
-  badge: { label: 'Badge', icon: 'crown', color: '#b8860b' },
-  item_bought: { label: 'Bought', icon: 'coin', color: '#c26a1a' },
-  item_used: { label: 'Item used', icon: 'potion', color: '#c2457a' },
-  upgrade: { label: 'Upgrade', icon: 'dice', color: '#a8341f' },
+  first_day: string
+  last_day: string
+  days: number
+  /** From the latest daily snapshot. */
+  area: string | null
+  badges: number | null
+  team: { dex: number; level: number }[] | null
 }
 
 const FRAMES = [
-  { id: '1h', label: '1 h', ms: 36e5 },
-  { id: '6h', label: '6 h', ms: 6 * 36e5 },
-  { id: '12h', label: '12 h', ms: 12 * 36e5 },
-  { id: '24h', label: '24 h', ms: 864e5 },
-  { id: '7d', label: '7 days', ms: 7 * 864e5 },
-  { id: '30d', label: '30 days', ms: 30 * 864e5 },
-  { id: '90d', label: '90 days', ms: 90 * 864e5 },
-  { id: 'all', label: 'All time', ms: null },
-  { id: 'custom', label: 'Custom', ms: null },
+  { id: '7d', label: '7 days', days: 7 },
+  { id: '30d', label: '30 days', days: 30 },
+  { id: '90d', label: '90 days', days: 90 },
+  { id: 'all', label: 'All time', days: null },
 ] as const
 type FrameId = (typeof FRAMES)[number]['id']
 
-const playerKey = (r: EventRow) => r.user_id ?? `device:${r.device_id}`
-const num = (v: unknown) => Number(v) || 0
-const str = (v: unknown) => (v == null ? '' : String(v))
-const dayInput = (d: Date) =>
-  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-/** A date input's value as local midnight (not UTC), so days match the viewer's calendar. */
-const localDay = (v: string, plusDays = 0) => {
-  const [y, m, d] = v.split('-').map(Number)
-  return new Date(y!, m! - 1, d! + plusDays)
+const startOfDay = (daysAgo: number) => {
+  const d = new Date()
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate() - daysAgo)
 }
 
-/**
- * A time frame's events, newest first, a page at a time. Each page carries on from the last row read (created_at, then
- * id for rows stamped in the same instant) rather than an offset, so a deep page costs as little as the first.
- * `columns` must include id and created_at.
- */
-async function fetchEvents(
-  from: Date | null,
-  to: Date | null,
-  columns = '*',
-  max = 20_000,
-  kinds: { only?: readonly string[]; exclude?: readonly string[] } = {},
-): Promise<EventRow[]> {
-  const client = await getSupabase()
-  if (!client) throw new Error('Supabase client unavailable')
-  const out: EventRow[] = []
+async function client() {
+  const c = await getSupabase()
+  if (!c) throw new Error('Supabase client unavailable')
+  return c
+}
+
+async function fetchCohorts(): Promise<D1Cohorts> {
+  const { data, error } = await (await client()).rpc('analytics_d1')
+  if (error) throw error
+  return (data ?? {}) as D1Cohorts
+}
+
+/** Players seen on or after `since` (null = all), most recent first, a page of 1000 at a time. */
+async function fetchPlayers(since: Date | null, max = 10_000): Promise<PlayerRow[]> {
+  const c = await client()
+  const out: PlayerRow[] = []
   const page = 1000
   while (out.length < max) {
-    let q = client
-      .from('analytics_events')
-      .select(columns)
-      .order('created_at', { ascending: false })
-      .order('id', { ascending: false })
-    if (from) q = q.gte('created_at', from.toISOString())
-    if (to) q = q.lt('created_at', to.toISOString())
-    if (kinds.only) q = q.in('kind', [...kinds.only])
-    if (kinds.exclude) q = q.not('kind', 'in', `(${kinds.exclude.join(',')})`)
-    const last = out[out.length - 1]
-    if (last)
-      q = q.or(`created_at.lt."${last.created_at}",and(created_at.eq."${last.created_at}",id.lt.${last.id})`)
-    const { data, error } = await q.limit(Math.min(page, max - out.length))
+    let q = c
+      .from('players')
+      .select(
+        'player,user_id,name,email,first_day,last_day,days,area:snapshot->>area,badges:snapshot->badges,team:snapshot->team',
+      )
+      .order('last_day', { ascending: false })
+      .order('player')
+    if (since) q = q.gte('last_day', dayKey(since))
+    const { data, error } = await q.range(out.length, out.length + page - 1)
     if (error) throw error
-    out.push(...((data ?? []) as unknown as EventRow[]))
+    out.push(...((data ?? []) as unknown as PlayerRow[]))
     if (!data || data.length < page) break
   }
   return out
 }
 
-/** Each player's event count per calendar day (viewer's time zone), all time, summed up by the database. */
-async function fetchPlayerDays(): Promise<RetentionEvent[]> {
-  const client = await getSupabase()
-  if (!client) throw new Error('Supabase client unavailable')
-  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'
-  const { data, error } = await client.rpc('analytics_player_days', { tz })
-  if (error) throw error
-  // Noon of that local day: any instant of the day will do, and noon is safe from DST shifts.
-  return Object.entries((data ?? {}) as Record<string, Record<string, number>>).flatMap(([player, days]) =>
-    Object.entries(days).map(([day, count]) => ({ player, at: new Date(`${day}T12:00`), count })),
-  )
-}
-
-/** Each player's top level and the areas they reached, all time, summed up by the database. */
-async function fetchProgress(): Promise<ProgressEvent[]> {
-  const client = await getSupabase()
-  if (!client) throw new Error('Supabase client unavailable')
-  const { data, error } = await client.rpc('analytics_player_progress')
-  if (error) throw error
-  return (data ?? []) as ProgressEvent[]
-}
-
-/** Supabase errors are plain objects, not Errors: without this they print as "[object Object]". */
-const errorText = (err: unknown) =>
-  err instanceof Error
-    ? err.message
-    : err && typeof err === 'object' && 'message' in err
-      ? String((err as { message: unknown }).message)
-      : String(err)
-
-function ago(iso: string) {
-  const s = (Date.now() - new Date(iso).getTime()) / 1000
-  if (s < 60) return 'just now'
-  if (s < 3600) return `${Math.floor(s / 60)} min ago`
-  if (s < 86400) return `${Math.floor(s / 3600)} h ago`
-  return `${Math.floor(s / 86400)} d ago`
-}
-
-function KindChip({ kind }: { kind: AnalyticsKind }) {
-  const k = KIND[kind]
-  return (
-    <span
-      className="inline-flex items-center gap-1.5 whitespace-nowrap border-2 border-ink px-1.5 py-0.5 text-base leading-none text-panel"
-      style={{ background: k.color, boxShadow: 'inset 0 -2px 0 rgba(0,0,0,0.2)' }}
-    >
-      <span className="flex h-4 w-4 items-center justify-center bg-panel">
-        <PixelIcon name={k.icon} size={12} />
-      </span>
-      {k.label}
-    </span>
-  )
-}
-
-const Mon = ({ dex, data }: { dex: number; data: GameData }) => (
-  <span className="inline-flex items-center gap-1">
-    <SpriteImg dex={dex} size={32} />
-    <b>{data.species[dex]?.name ?? `#${dex}`}</b>
-  </span>
-)
-
-const Lv = ({ children }: { children: ReactNode }) => (
-  <span className="border-2 border-ink bg-gold px-1 leading-none">{children}</span>
-)
-
-const Cost = ({ gold }: { gold: number }) =>
-  gold > 0 ? (
-    <span className="inline-flex items-center gap-1 text-muted">
-      <PixelIcon name="coin" size={14} />
-      {gold.toLocaleString()}
-    </span>
-  ) : null
-
-function itemIcon(key: string, data: GameData): IconName {
-  if (key.includes('master')) return 'masterball'
-  const kind = data.items[key]?.effect.kind
-  return kind === 'ball' ? 'ball' : kind === 'level' ? 'up' : 'potion'
-}
-
-function Details({ row, data }: { row: EventRow; data: GameData }) {
-  const p = row.params
-  switch (row.kind) {
-    case 'login':
-      return <span className="text-muted">Session started{row.email ? '' : ' (guest)'}</span>
-    case 'game_started':
-      return p.starterDex ? (
-        <span className="inline-flex items-center gap-2">
-          Chose <Mon dex={num(p.starterDex)} data={data} />
-          {p.character ? (
-            <span className="text-muted">as {str(p.character) === 'green' ? 'Green' : 'Red'}</span>
-          ) : null}
-        </span>
-      ) : (
-        <span>Started a game</span>
-      )
-    case 'level_up':
-      return (
-        <span className="inline-flex items-center gap-2">
-          <Mon dex={num(p.dex)} data={data} />
-          <Lv>Lv {num(p.from)}</Lv>→<Lv>Lv {num(p.to)}</Lv>
-          {num(p.to) - num(p.from) > 1 && <span className="text-good">+{num(p.to) - num(p.from)}</span>}
-        </span>
-      )
-    case 'evolved':
-      return (
-        <span className="inline-flex items-center gap-2">
-          <Mon dex={num(p.fromDex)} data={data} />
-          <PixelIcon name="star" size={14} />
-          <Mon dex={num(p.toDex)} data={data} />
-          <span className="text-muted">at Lv {num(p.level)}</span>
-        </span>
-      )
-    case 'area_unlocked': {
-      const area = data.areas.find((a) => a.id === p.areaId)
-      return (
-        <span className="inline-flex items-center gap-2">
-          {area?.bannerUrl && <AreaBanner url={area.bannerUrl} className="h-6 !w-16 border border-ink" />}
-          <b>{area?.name ?? str(p.area)}</b>
-          {p.hidden ? (
-            <span className="border-2 border-ink bg-ink px-1 leading-none text-gold">SECRET</span>
-          ) : null}
-        </span>
-      )
-    }
-    case 'badge':
-      return (
-        <span className="inline-flex items-center gap-2">
-          <BadgeIcon badge={str(p.badge)} earned size={24} />
-          <b>{str(p.badge)}</b>
-          <span className="text-muted">from {str(p.leader)}</span>
-        </span>
-      )
-    case 'item_bought':
-    case 'item_used': {
-      const key = str(p.key)
-      return (
-        <span className="inline-flex items-center gap-2">
-          <PixelIcon name={itemIcon(key, data)} size={20} />
-          <b>{data.items[key]?.name ?? key}</b>
-          <span>×{num(p.qty)}</span>
-          {row.kind === 'item_bought' ? (
-            <Cost gold={num(p.cost)} />
-          ) : (
-            <span className="border-2 border-shadow px-1 text-sm uppercase leading-none text-muted">
-              {str(p.where)}
-            </span>
-          )}
-        </span>
-      )
-    }
-    case 'upgrade': {
-      const isDie = p.track === 'die'
-      const key = str(p.key)
-      return (
-        <span className="inline-flex items-center gap-2">
-          {isDie ? (
-            <span
-              className="border-2 border-ink px-1 uppercase leading-none text-panel"
-              style={{ background: typeColor(key), textShadow: '1px 1px 0 #2a2438' }}
-            >
-              {key} die
-            </span>
-          ) : (
-            <span className="inline-flex items-center gap-1">
-              <PixelIcon name="dice" size={16} />
-              <b>{COMBO_NAMES[key as ComboKey] ?? key}</b>
-            </span>
-          )}
-          <Lv>Lv {num(p.from)}</Lv>→<Lv>Lv {num(p.to)}</Lv>
-          <Cost gold={num(p.cost)} />
-        </span>
-      )
-    }
-  }
-}
-
-/** The days shown under the headline, in order. Day 1 is the headline itself. */
-const LATER_DAYS = [2, 3, 7] as const
-
 const rateColor = (pct: number | null) =>
   pct == null ? '#6b6480' : pct >= 40 ? '#4aa84a' : pct >= 20 ? '#e8b44a' : '#c2452d'
 
-const asPct = (r: Retention | undefined) => (r?.rate == null ? null : Math.round(r.rate * 100))
-
-/**
- * D2 / D3 / D7 under the big D1 number: same measure, one week further out. Plain text, deliberately — the colour
- * on the headline is what carries the "is this good?" judgement, and repeating it four times would drown it.
- */
-function LaterDays({ byDay }: { byDay: Record<number, Retention> }) {
-  return (
-    <dl className="mt-1 flex flex-wrap gap-x-4 gap-y-1">
-      {LATER_DAYS.map((day) => {
-        const r = byDay[day]
-        const pct = asPct(r)
-        return (
-          <div
-            key={day}
-            className="flex items-baseline gap-1.5"
-            title={
-              r && r.cohort
-                ? `${r.returned} of ${r.cohort} came back on day ${day}`
-                : `Nobody's day ${day} is over yet${r?.pending ? ` (${r.pending} waiting)` : ''}`
-            }
-          >
-            <dt className="text-base uppercase tracking-wider opacity-70">D{day}</dt>
-            <dd className="text-3xl leading-none">{pct == null ? '–' : `${pct}%`}</dd>
-          </div>
-        )
-      })}
-    </dl>
-  )
-}
-
-function RetentionHero({ byDay }: { byDay: Record<number, Retention> | null }) {
-  const r = byDay?.[1] ?? null
-  const pct = asPct(r ?? undefined)
+function RetentionHero({ r }: { r: Retention | null }) {
+  const pct = r?.rate == null ? null : Math.round(r.rate * 100)
   const color = rateColor(pct)
-  const left = r
-    ? [
-        r.pending > 0 && `${r.pending} whose next day isn't over yet`,
-        r.tooFewEvents > 0 &&
-          `${r.tooFewEvents} with fewer than ${RETENTION_MIN_FIRST_DAY_EVENTS} events on day one`,
-      ].filter(Boolean)
-    : []
   return (
     <section
       className="pixel-panel-dark flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:gap-6"
@@ -343,7 +84,6 @@ function RetentionHero({ byDay }: { byDay: Record<number, Retention> | null }) {
         <span className="text-7xl leading-none sm:text-8xl" style={{ color }}>
           {r == null ? '…' : pct == null ? '–' : `${pct}%`}
         </span>
-        {byDay && <LaterDays byDay={byDay} />}
       </div>
       <div className="flex min-w-0 flex-1 flex-col gap-2">
         {r && (
@@ -368,19 +108,16 @@ function RetentionHero({ byDay }: { byDay: Record<number, Retention> | null }) {
           </>
         )}
         <p className="text-base leading-snug opacity-80">
-          New players whose first day falls in this time frame, with at least {RETENTION_MIN_FIRST_DAY_EVENTS}{' '}
-          events that day, who had at least 1 event on the day counted. Each day is measured against its own
-          cohort — a player whose day 7 hasn't finished still counts for day 1 — so the later figures rest on
-          fewer players.
-          {left.length > 0 && ` Not counted for day 1: ${left.join(', ')}.`}
+          New players whose first day falls in this time frame who played again the next calendar day
+          (theirs). A player counts on each day they open the game with a save.
+          {r && r.pending > 0 && ` Not counted yet: ${r.pending} whose next day isn't over.`}
         </p>
       </div>
     </section>
   )
 }
 
-type PlayerSort = 'name' | 'events' | 'last' | 'levels' | 'topLevel' | 'area' | 'badges' | 'spent' | 'playtime'
-type EventSort = 'time' | 'player' | 'kind'
+type PlayerSort = 'name' | 'first' | 'last' | 'days' | 'topLevel' | 'badges'
 
 function SortTh({
   label,
@@ -426,170 +163,75 @@ function useSort<K extends string>(initial: K, initialDir: 1 | -1 = -1, ascFirst
   return { key, dir, toggle }
 }
 
+const dayLabel = (day: string) =>
+  new Date(`${day}T12:00`).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: '2-digit' })
+
 export function AnalyticsSection() {
-  const data = useGame((s) => s.data)
-  const [frame, setFrame] = useState<FrameId>('7d')
-  const [customFrom, setCustomFrom] = useState(() => dayInput(new Date(Date.now() - 30 * 864e5)))
-  const [customTo, setCustomTo] = useState(() => dayInput(new Date()))
-  const [rows, setRows] = useState<EventRow[]>([])
-  const [retention, setRetention] = useState<Record<number, Retention> | null>(null)
-  const [playtime, setPlaytime] = useState<PlaytimeEvent[]>([])
-  const [reached, setReached] = useState<ProgressEvent[]>([])
-  const progress = useMemo(() => playerProgress(reached, data), [reached, data])
-  const [avgPlay, setAvgPlay] = useState<AveragePlaytime | null>(null)
-  const [range, setRange] = useState<{ from: Date | null; to: Date | null }>({ from: null, to: null })
+  const [frame, setFrame] = useState<FrameId>('30d')
+  const [cohorts, setCohorts] = useState<D1Cohorts | null>(null)
+  const [rows, setRows] = useState<PlayerRow[]>([])
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading')
   const [error, setError] = useState<string | null>(null)
-  /** Retention, top level and furthest area failed (e.g. 0020 not run yet): the rest still shows. */
-  const [summaryError, setSummaryError] = useState<string | null>(null)
-  const [player, setPlayer] = useState<string>('all')
-  const [kinds, setKinds] = useState<Set<AnalyticsKind>>(() => new Set(ANALYTICS_KINDS))
+  const [player, setPlayer] = useState<string | null>(null)
+  const [search, setSearch] = useState('')
   const [shown, setShown] = useState(200)
-  const pSort = useSort<PlayerSort>('last', -1, ['name'])
-  const eSort = useSort<EventSort>('time')
+  const sort = useSort<PlayerSort>('last', -1, ['name'])
+
+  const from = useMemo(() => {
+    const days = FRAMES.find((f) => f.id === frame)!.days
+    return days == null ? null : startOfDay(days - 1)
+  }, [frame])
 
   const load = useCallback(async () => {
     setStatus('loading')
     setError(null)
-    setSummaryError(null)
     try {
-      const f = FRAMES.find((x) => x.id === frame)!
-      const from = frame === 'custom' ? localDay(customFrom) : f.ms ? new Date(Date.now() - f.ms) : null
-      const to = frame === 'custom' ? localDay(customTo, 1) : null
-      // Retention needs every player's whole history (their first day may predate the frame): per-day counts only.
-      // Playtime and snapshots are background events: out of the feed and of retention.
-      // Top level and furthest area are all time, whatever the frame.
-      // Those two come from database functions: if they fail, the frame's events still show.
-      const summaries = Promise.all([fetchPlayerDays(), fetchProgress()]).then(
-        (ok) => ({ ok }),
-        (err: unknown) => ({ err }),
-      )
-      const [events, played] = await Promise.all([
-        fetchEvents(from, to, '*', 20_000, { exclude: SYSTEM_KINDS }),
-        fetchEvents(from, to, 'id,user_id,device_id,created_at,params', 100_000, { only: ['playtime'] }),
-      ])
-      const sum = await summaries
-      const pt: PlaytimeEvent[] = played.map((r) => ({
-        player: playerKey(r),
-        at: new Date(r.created_at),
-        seconds: num(r.params?.seconds),
-      }))
-      setPlaytime(pt)
-      setAvgPlay(averageDailyPlaytime(pt))
-      setRange({ from, to })
-      setRows(events)
-      if ('ok' in sum) {
-        const [history, progressRows] = sum.ok
-        setReached(progressRows)
-        setRetention(retentionByDay(history, from, to, [1, ...LATER_DAYS]))
-      } else {
-        setReached([])
-        setRetention(null)
-        setSummaryError(errorText(sum.err))
-      }
+      const [c, p] = await Promise.all([fetchCohorts(), fetchPlayers(from)])
+      setCohorts(c)
+      setRows(p)
       setStatus('ready')
     } catch (err) {
       setError(errorText(err))
       setStatus('error')
     }
-  }, [frame, customFrom, customTo])
+  }, [from])
 
   useEffect(() => {
     if (isSupabaseConfigured) void load()
   }, [load])
-  useEffect(() => setShown(200), [player, kinds, frame])
+  useEffect(() => setShown(200), [frame, search])
+
+  const retention = useMemo(() => (cohorts ? dayOneRetention(cohorts, from, null) : null), [cohorts, from])
 
   const players = useMemo(() => {
-    const by = new Map<
-      string,
-      {
-        key: string
-        name: string
-        email: string | null
-        guest: boolean
-        events: number
-        last: string
-        levels: number
-        badges: number
-        spent: number
-        logins: number
-      }
-    >()
-    for (const r of rows) {
-      const key = playerKey(r)
-      const p = by.get(key) ?? {
-        key,
-        name: '',
-        email: null,
+    const q = search.trim().toLowerCase()
+    const list = rows
+      .map((r) => ({
+        ...r,
         guest: !r.user_id,
-        events: 0,
-        last: r.created_at,
-        levels: 0,
-        badges: 0,
-        spent: 0,
-        logins: 0,
-      }
-      p.events++
-      if (r.created_at > p.last) p.last = r.created_at
-      if (!p.name && r.player_name) p.name = r.player_name
-      if (!p.email && r.email) p.email = r.email
-      if (r.kind === 'level_up') p.levels += num(r.params.to) - num(r.params.from)
-      if (r.kind === 'badge') p.badges++
-      if (r.kind === 'login') p.logins++
-      if (r.kind === 'item_bought' || r.kind === 'upgrade') p.spent += num(r.params.cost)
-      by.set(key, p)
-    }
-    const played = new Map<string, number>()
-    for (const e of playtime) played.set(e.player, (played.get(e.player) ?? 0) + e.seconds)
-    const list = [...by.values()].map((p) => ({
-      ...p,
-      name: p.name || p.email?.split('@')[0] || `Guest ${p.key.slice(-4)}`,
-      playtime: played.get(p.key) ?? 0,
-      topLevel: progress.get(p.key)?.topLevel ?? 0,
-      area: progress.get(p.key)?.areaRank ?? -1,
-      areaName: progress.get(p.key)?.areaName ?? '',
-    }))
-    const val = (p: (typeof list)[number]) =>
-      pSort.key === 'name' ? p.name.toLowerCase() : pSort.key === 'last' ? p.last : p[pSort.key]
-    return list.sort((a, b) => (val(a) < val(b) ? -1 : val(a) > val(b) ? 1 : 0) * pSort.dir)
-  }, [rows, playtime, progress, pSort.key, pSort.dir])
-  const nameOf = useMemo(() => new Map(players.map((p) => [p.key, p])), [players])
-
-  const inPlayer = useMemo(
-    () => (player === 'all' ? rows : rows.filter((r) => playerKey(r) === player)),
-    [rows, player],
-  )
-  const counts = useMemo(() => {
-    const c = Object.fromEntries(ANALYTICS_KINDS.map((k) => [k, 0])) as Record<AnalyticsKind, number>
-    for (const r of inPlayer) c[r.kind] = (c[r.kind] ?? 0) + 1
-    return c
-  }, [inPlayer])
-  const events = useMemo(() => {
-    const list = inPlayer.filter((r) => kinds.has(r.kind))
-    const val = (r: EventRow) =>
-      eSort.key === 'time'
-        ? r.created_at
-        : eSort.key === 'kind'
-          ? KIND[r.kind].label
-          : (nameOf.get(playerKey(r))?.name.toLowerCase() ?? '')
-    return [...list].sort((a, b) => {
-      const d = val(a) < val(b) ? -1 : val(a) > val(b) ? 1 : 0
-      return (d || (a.created_at < b.created_at ? -1 : 1)) * eSort.dir
-    })
-  }, [inPlayer, kinds, eSort.key, eSort.dir, nameOf])
+        label: r.name || r.email?.split('@')[0] || `Guest ${r.player.slice(-4)}`,
+        topLevel: Math.max(0, ...(r.team ?? []).map((m) => Number(m.level) || 0)),
+        badgeCount: Number(r.badges) || 0,
+      }))
+      .filter((r) => !q || r.label.toLowerCase().includes(q) || (r.email ?? '').toLowerCase().includes(q))
+    const val = (p: (typeof list)[number]): string | number =>
+      sort.key === 'name'
+        ? p.label.toLowerCase()
+        : sort.key === 'first'
+          ? p.first_day
+          : sort.key === 'last'
+            ? p.last_day
+            : sort.key === 'badges'
+              ? p.badgeCount
+              : p[sort.key]
+    return list.sort((a, b) => (val(a) < val(b) ? -1 : val(a) > val(b) ? 1 : 0) * sort.dir)
+  }, [rows, search, sort.key, sort.dir])
 
   if (!isSupabaseConfigured)
     return <p className="text-xl">Analytics needs Supabase — this admin is running offline.</p>
 
-  const toggleKind = (k: AnalyticsKind) =>
-    setKinds((cur) => {
-      const next = new Set(cur)
-      if (cur.size === ANALYTICS_KINDS.length) return new Set([k])
-      if (next.has(k)) next.delete(k)
-      else next.add(k)
-      return next.size ? next : new Set(ANALYTICS_KINDS)
-    })
-  const selected = player === 'all' ? null : nameOf.get(player)
+  const selected = player ? players.find((p) => p.player === player) : null
+  const newInFrame = from ? rows.filter((r) => r.first_day >= dayKey(from)).length : rows.length
 
   return (
     <div className="flex flex-col gap-4">
@@ -609,195 +251,93 @@ export function AnalyticsSection() {
             </button>
           ))}
         </div>
-        {frame === 'custom' && (
-          <div className="flex items-center gap-1">
-            <input
-              type="date"
-              aria-label="From"
-              className={cx(inputCls, 'w-auto')}
-              value={customFrom}
-              onChange={(e) => setCustomFrom(e.target.value)}
-            />
-            <span>→</span>
-            <input
-              type="date"
-              aria-label="To"
-              className={cx(inputCls, 'w-auto')}
-              value={customTo}
-              onChange={(e) => setCustomTo(e.target.value)}
-            />
-          </div>
-        )}
-        <select
-          aria-label="Player"
-          className={cx(inputCls, 'w-auto max-w-[220px]')}
-          value={player}
-          onChange={(e) => setPlayer(e.target.value)}
-        >
-          <option value="all">All players ({players.length})</option>
-          {[...players]
-            .sort((a, b) => a.name.localeCompare(b.name))
-            .map((p) => (
-              <option key={p.key} value={p.key}>
-                {p.name} ({p.events})
-              </option>
-            ))}
-        </select>
         <PixelButton size="sm" onClick={() => void load()} disabled={status === 'loading'}>
           {status === 'loading' ? 'Loading…' : 'Refresh'}
         </PixelButton>
       </div>
 
-      <div className="grid gap-3 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
-        <RetentionHero byDay={status === 'loading' ? null : retention} />
-        <PlaytimeHero avg={status === 'loading' ? null : avgPlay} />
-      </div>
-
-      {selected && (
-        <PlayerPanel
-          player={player}
-          name={selected.name}
-          playtime={playtime}
-          from={range.from}
-          to={range.to}
-        />
-      )}
+      <RetentionHero r={status === 'loading' ? null : retention} />
 
       {status === 'error' && (
         <div className="pixel-panel p-3 text-lg">
           <p className="text-danger">Could not load analytics: {error}</p>
-          <p>Has supabase/migrations/0006_analytics.sql been run?</p>
+          <p>Has supabase/migrations/0028_analytics_minimal.sql been run?</p>
         </div>
       )}
 
-      {status === 'ready' && summaryError && (
-        <div className="pixel-panel p-3 text-lg">
-          <p className="text-danger">
-            Could not load retention, top levels and furthest areas: {summaryError}
-          </p>
-          <p>
-            Have supabase/migrations/0020_analytics_summaries.sql and 0021_analytics_rollups.sql been run?
-          </p>
-        </div>
-      )}
-
-      {/* One tile per event kind; clicking filters the feed. */}
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-5">
-        <div className="pixel-panel-dark flex flex-col justify-between p-2">
-          <span className="text-lg uppercase text-gold">{selected ? selected.name : 'Players'}</span>
-          <span className="text-4xl leading-none">{selected ? inPlayer.length : players.length}</span>
-          <span className="text-sm opacity-80">
-            {selected ? 'events' : `${rows.length.toLocaleString()} events`}
-          </span>
-        </div>
-        {ANALYTICS_KINDS.map((k) => {
-          const on = kinds.has(k) && kinds.size < ANALYTICS_KINDS.length
-          return (
-            <button
-              key={k}
-              type="button"
-              aria-pressed={on}
-              onClick={() => toggleKind(k)}
-              className={cx(
-                'pixel-panel flex items-center gap-2 p-2 text-left transition-transform hover:-translate-y-0.5',
-                !kinds.has(k) && 'opacity-40',
-              )}
-              style={on ? { outline: `3px solid ${KIND[k].color}`, outlineOffset: 2 } : undefined}
-            >
-              <span
-                className="flex h-10 w-10 shrink-0 items-center justify-center border-2 border-ink"
-                style={{ background: KIND[k].color }}
-              >
-                <span className="flex h-7 w-7 items-center justify-center bg-panel">
-                  <PixelIcon name={KIND[k].icon} size={20} />
-                </span>
-              </span>
-              <span className="flex min-w-0 flex-col">
-                <span className="text-3xl leading-none">{counts[k].toLocaleString()}</span>
-                <span className="truncate text-base text-muted">{KIND[k].label}</span>
-              </span>
-            </button>
-          )
-        })}
-      </div>
+      {selected && <PlayerPanel key={selected.player} player={selected.player} name={selected.label} />}
 
       <section className="pixel-panel overflow-hidden p-0" aria-label="Players">
-        <h3 className="border-b-[3px] border-ink px-3 py-1 text-2xl">Players</h3>
-        <div className="pixel-scroll max-h-[320px] overflow-auto">
+        <h3 className="flex flex-wrap items-center gap-3 border-b-[3px] border-ink px-3 py-1 text-2xl">
+          Players
+          <span className="text-lg text-muted">
+            {rows.length.toLocaleString()} seen · {newInFrame.toLocaleString()} new
+          </span>
+          <input
+            type="search"
+            aria-label="Search players"
+            placeholder="Name or email"
+            className={cx(inputCls, 'ml-auto w-auto max-w-[220px] text-lg')}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </h3>
+        <div className="pixel-scroll max-h-[520px] overflow-auto">
           <table className="w-full text-lg">
             <thead className="sticky top-0 bg-ink text-left">
               <tr>
                 <SortTh
                   label="Player"
-                  active={pSort.key === 'name'}
-                  dir={pSort.dir}
-                  onClick={() => pSort.toggle('name')}
+                  active={sort.key === 'name'}
+                  dir={sort.dir}
+                  onClick={() => sort.toggle('name')}
                 />
-                <SortTh
-                  label="Events"
-                  right
-                  active={pSort.key === 'events'}
-                  dir={pSort.dir}
-                  onClick={() => pSort.toggle('events')}
-                />
-                <SortTh
-                  label="Levels"
-                  right
-                  active={pSort.key === 'levels'}
-                  dir={pSort.dir}
-                  onClick={() => pSort.toggle('levels')}
-                />
+                <th className="px-2 py-1 uppercase text-panel">Area</th>
                 <SortTh
                   label="Top Lv."
                   right
-                  active={pSort.key === 'topLevel'}
-                  dir={pSort.dir}
-                  onClick={() => pSort.toggle('topLevel')}
-                />
-                <SortTh
-                  label="Furthest area"
-                  active={pSort.key === 'area'}
-                  dir={pSort.dir}
-                  onClick={() => pSort.toggle('area')}
+                  active={sort.key === 'topLevel'}
+                  dir={sort.dir}
+                  onClick={() => sort.toggle('topLevel')}
                 />
                 <SortTh
                   label="Badges"
                   right
-                  active={pSort.key === 'badges'}
-                  dir={pSort.dir}
-                  onClick={() => pSort.toggle('badges')}
+                  active={sort.key === 'badges'}
+                  dir={sort.dir}
+                  onClick={() => sort.toggle('badges')}
                 />
                 <SortTh
-                  label="Spent"
+                  label="Days"
                   right
-                  active={pSort.key === 'spent'}
-                  dir={pSort.dir}
-                  onClick={() => pSort.toggle('spent')}
+                  active={sort.key === 'days'}
+                  dir={sort.dir}
+                  onClick={() => sort.toggle('days')}
                 />
                 <SortTh
-                  label="Played"
+                  label="First day"
                   right
-                  active={pSort.key === 'playtime'}
-                  dir={pSort.dir}
-                  onClick={() => pSort.toggle('playtime')}
+                  active={sort.key === 'first'}
+                  dir={sort.dir}
+                  onClick={() => sort.toggle('first')}
                 />
                 <SortTh
-                  label="Last seen"
+                  label="Last day"
                   right
-                  active={pSort.key === 'last'}
-                  dir={pSort.dir}
-                  onClick={() => pSort.toggle('last')}
+                  active={sort.key === 'last'}
+                  dir={sort.dir}
+                  onClick={() => sort.toggle('last')}
                 />
               </tr>
             </thead>
             <tbody>
-              {players.map((p, i) => (
+              {players.slice(0, shown).map((p, i) => (
                 <tr
-                  key={p.key}
-                  onClick={() => setPlayer(player === p.key ? 'all' : p.key)}
+                  key={p.player}
+                  onClick={() => setPlayer(player === p.player ? null : p.player)}
                   className={cx(
                     'cursor-pointer border-t border-shadow/40 hover:bg-gold/30',
-                    player === p.key ? 'bg-gold/60' : i % 2 ? 'bg-parchment/50' : '',
+                    player === p.player ? 'bg-gold/60' : i % 2 ? 'bg-parchment/50' : '',
                   )}
                 >
                   <td className="px-2 py-1">
@@ -811,129 +351,34 @@ export function AnalyticsSection() {
                       >
                         {p.guest ? 'GUEST' : 'GOOGLE'}
                       </span>
-                      <b className="truncate">{p.name}</b>
+                      <b className="truncate">{p.label}</b>
                       {p.email && <span className="truncate text-base text-muted">{p.email}</span>}
                     </span>
                   </td>
-                  <td className="px-2 text-right">{p.events}</td>
-                  <td className="px-2 text-right text-good">{p.levels ? `+${p.levels}` : '–'}</td>
+                  <td className="max-w-[180px] truncate px-2" title={p.area ?? ''}>
+                    {p.area || '–'}
+                  </td>
                   <td className="px-2 text-right">{p.topLevel || '–'}</td>
-                  <td className="max-w-[180px] truncate px-2" title={p.areaName}>
-                    {p.areaName || '–'}
-                  </td>
-                  <td className="px-2 text-right">{p.badges || '–'}</td>
-                  <td className="px-2 text-right">{p.spent ? p.spent.toLocaleString() : '–'}</td>
-                  <td className="px-2 text-right">{p.playtime ? formatDuration(p.playtime) : '–'}</td>
-                  <td className="px-2 text-right text-muted" title={new Date(p.last).toLocaleString()}>
-                    {ago(p.last)}
-                  </td>
+                  <td className="px-2 text-right">{p.badgeCount || '–'}</td>
+                  <td className="px-2 text-right">{p.days}</td>
+                  <td className="whitespace-nowrap px-2 text-right text-muted">{dayLabel(p.first_day)}</td>
+                  <td className="whitespace-nowrap px-2 text-right text-muted">{dayLabel(p.last_day)}</td>
                 </tr>
               ))}
               {status === 'ready' && !players.length && (
                 <tr>
-                  <td colSpan={9} className="px-3 py-4 text-center text-muted">
-                    No player activity in this time frame.
+                  <td colSpan={7} className="px-3 py-4 text-center text-muted">
+                    {search ? 'No player matches.' : 'No players in this time frame.'}
                   </td>
                 </tr>
               )}
             </tbody>
           </table>
         </div>
-      </section>
-
-      <section className="pixel-panel overflow-hidden p-0" aria-label="Events">
-        <h3 className="flex items-center gap-2 border-b-[3px] border-ink px-3 py-1 text-2xl">
-          Events <span className="text-lg text-muted">{events.length.toLocaleString()}</span>
-          {selected && (
-            <button
-              type="button"
-              className="ml-auto border-2 border-ink bg-gold px-2 text-base"
-              onClick={() => setPlayer('all')}
-            >
-              {selected.name} ✕
-            </button>
-          )}
-        </h3>
-        <div className="overflow-x-auto">
-          <table className="w-full text-lg">
-            <thead className="bg-ink text-left">
-              <tr>
-                <SortTh
-                  label="When"
-                  active={eSort.key === 'time'}
-                  dir={eSort.dir}
-                  onClick={() => eSort.toggle('time')}
-                />
-                <SortTh
-                  label="Player"
-                  active={eSort.key === 'player'}
-                  dir={eSort.dir}
-                  onClick={() => eSort.toggle('player')}
-                />
-                <SortTh
-                  label="Event"
-                  active={eSort.key === 'kind'}
-                  dir={eSort.dir}
-                  onClick={() => eSort.toggle('kind')}
-                />
-                <th className="px-2 py-1 uppercase text-panel">Details</th>
-              </tr>
-            </thead>
-            <tbody>
-              {events.slice(0, shown).map((r, i) => (
-                <tr
-                  key={r.id}
-                  className={cx('border-t border-shadow/40', i % 2 === 1 && 'bg-parchment/50')}
-                  style={{ boxShadow: `inset 4px 0 0 ${KIND[r.kind].color}` }}
-                >
-                  <td
-                    className="whitespace-nowrap px-2 py-1 pl-3"
-                    title={new Date(r.created_at).toLocaleString()}
-                  >
-                    <span className="block leading-none">
-                      {new Date(r.created_at).toLocaleDateString(undefined, {
-                        day: 'numeric',
-                        month: 'short',
-                      })}
-                    </span>
-                    <span className="text-base leading-none text-muted">
-                      {new Date(r.created_at).toLocaleTimeString(undefined, {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })}
-                    </span>
-                  </td>
-                  <td className="px-2">
-                    <button
-                      type="button"
-                      className="truncate text-left underline decoration-dotted"
-                      onClick={() => setPlayer(playerKey(r))}
-                    >
-                      {nameOf.get(playerKey(r))?.name ?? '?'}
-                    </button>
-                  </td>
-                  <td className="px-2">
-                    <KindChip kind={r.kind} />
-                  </td>
-                  <td className="px-2 py-1">
-                    <Details row={r} data={data} />
-                  </td>
-                </tr>
-              ))}
-              {status === 'ready' && !events.length && (
-                <tr>
-                  <td colSpan={4} className="px-3 py-4 text-center text-muted">
-                    No events match these filters.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-        {events.length > shown && (
+        {players.length > shown && (
           <div className="border-t-[3px] border-ink p-2 text-center">
             <PixelButton size="sm" onClick={() => setShown((n) => n + 300)}>
-              Show more ({(events.length - shown).toLocaleString()} left)
+              Show more ({(players.length - shown).toLocaleString()} left)
             </PixelButton>
           </div>
         )}

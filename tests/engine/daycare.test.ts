@@ -13,6 +13,7 @@ import {
   hatchEgg,
   hatchLevel,
   leaderboardTutorialDue,
+  leaderboardUnlocked,
   isDayCareOpen,
   markDayCareVisited,
   newSave,
@@ -237,5 +238,14 @@ describe('leaderboardTutorialDue', () => {
 
   it('still only fires once', () => {
     expect(leaderboardTutorialDue({ ...withBadge(fresh), leaderboardVisited: true }, data)).toBe(false)
+  })
+
+  it('the board itself opens with the first badge, in any region played', () => {
+    expect(leaderboardUnlocked(fresh, data)).toBe(false)
+    expect(leaderboardUnlocked(withBadge(fresh), data)).toBe(true)
+    // Moved on to Johto with no badge there yet: Kanto's badge still counts.
+    const kanto = withBadge(fresh)
+    const moved = { ...fresh, region: 'johto', areaProgress: {}, parked: { kanto } } as unknown as SaveData
+    expect(leaderboardUnlocked(moved, data)).toBe(true)
   })
 })

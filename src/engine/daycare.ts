@@ -1,7 +1,7 @@
 // The Pokémon Day Care: residents gain XP in real time (no battles), capped per stay, and never evolve from it. Eggs
 // hatch on the spot into the first form of an evolving line, favouring species the player doesn't have yet.
 import { createInstance, gainXp, instanceMaxHp } from './progression'
-import { regionOf, regionOfSpecies } from './regions'
+import { regionCases, regionOf, regionOfSpecies } from './regions'
 import { createRng, type Rng } from './rng'
 import { badgeCase, ownedPokemon } from './run'
 import type { DayCareResident, DayCareState, GameData, PokemonInstance, RegionId, SaveData, Species } from './types'
@@ -22,6 +22,14 @@ export function dayCareTutorialDue(save: SaveData, data: GameData): boolean {
   if (!isDayCareOpen(save, data)) return false
   const dc = dayCareOf(save)
   return !dc.visited && !dc.eggClaimed && dc.residents.length === 0
+}
+
+/**
+ * The leaderboard opens with the first gym badge, in any region played: before it there is nothing worth comparing,
+ * and the board itself only lists trainers who hold one (leaderboard(), migration 0024).
+ */
+export function leaderboardUnlocked(save: SaveData, data: GameData): boolean {
+  return regionCases(save, data).some((r) => r.earned > 0)
 }
 
 /**

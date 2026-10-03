@@ -10,7 +10,8 @@ upgrades, and the goal is 151/151 in the Pokédex.
 > synthesised at runtime. Made by Splifingald.
 
 The design lives in [`docs/`](docs): [game spec](docs/01-GAME-SPEC.md) · [data model](docs/02-DATA-MODEL.md) ·
-[build plan](docs/03-BUILD-PLAN.md) · [Sinnoh plan](docs/07-SINNOH-PLAN.md).
+[build plan](docs/03-BUILD-PLAN.md) · [Sinnoh plan](docs/07-SINNOH-PLAN.md) ·
+[Gen 6–9 sprite sources](docs/10-GEN6-9-SPRITES.md).
 
 ## Quick start
 
@@ -107,13 +108,50 @@ supabase/    migrations/0001_init.sql, seed.sql (generated)
   Hall of Fame) until they play again; you always see your own rows. Needs
   `supabase/migrations/0023_leaderboard_inactive.sql` run once on the live database (re-running `supabase/seed.sql`
   does it too).
+- **Leaderboard badge** — the trophy button and `/leaderboard` stay locked until the player's first gym badge (any
+  region), and a region's board only lists trainers with at least one badge there. Prof. Oak's share prompt comes with
+  the region's 2nd badge. Needs `supabase/migrations/0024_leaderboard_badge.sql` run once on the live database
+  (re-running `supabase/seed.sql` does it too).
 - **Contact the developer** — trainer menu (side panel) → Contact the developer, at the bottom: a title and a description, stored
   in Supabase table `feedback` and read in Admin → Messages (mark read / unread, delete). The database fills in who
   sent it (Google account or guest device) and allows 3 messages per player per 10 minutes. Needs
   `supabase/migrations/0019_feedback.sql` run once on the live database.
+- **Answers to messages** — Admin → Messages → REPLY writes an answer on a message and marks it read. The player finds
+  every message they sent and its answer under Contact the developer → *My messages* (their Google account's, plus the
+  ones sent as a guest from that browser), and an answer they haven't seen yet pops up the next time they open the
+  game. Needs `supabase/migrations/0025_feedback_replies.sql` run once on the live database.
 - **Admin → Analytics** sums up the all-time figures (retention, each player's top level and furthest area) in the
   database, from running totals kept up to date as events come in, so the page stays quick however many events pile
   up. Needs `supabase/migrations/0020_analytics_summaries.sql` then `0021_analytics_rollups.sql` run once on the live
   database.
+- **Database load** — the leaderboard is kept in a small cache table, rebuilt at most once a minute, instead of reading
+  every active save on every visit (your own rows are still live), and the analytics running totals are updated once
+  per batch of events rather than once per event. Needs `supabase/migrations/0026_lighter_load.sql` run once on the
+  live database, after 0021 (re-running `supabase/seed.sql` brings the leaderboard part too). Re-running 0021 would
+  put the per-event trigger back: run 0026 again after it.
+- **Analytics upkeep** — `supabase/migrations/0027_analytics_slim.sql` drops two unused indexes on `analytics_events`
+  and adds `analytics_prune()`. The game also keeps content downloaded from Supabase in IndexedDB, so a live
+  configVersion ahead of the build costs each player one download per version, not one per visit.
+- **Minimal analytics** — the game no longer sends events. It makes one call per player per day, `player_ping()`, which
+  records the day and refreshes the player's row (name, and a small snapshot of their game). Admin → Analytics shows
+  day-1 retention and the players; clicking one opens their profile — a Google player's from their cloud save, a
+  guest's from that day's snapshot — with the leaderboard ban and the cheats. Needs
+  `supabase/migrations/0028_analytics_minimal.sql` run once on the live database: it fills the new tables from the old
+  analytics (retention keeps its history) and stops `analytics_events` taking inserts. The block at the end of the
+  file drops the old tables when you no longer want them.
+- **Cloud sync** — a signed-in player's save goes to Supabase at most once every `cloudSyncMinutes` (Admin → Config,
+  default 15) while they play, and when the page closes; no longer every 30 s or on every tab switch. SYNC ONLINE, at
+  the bottom of the side bar (in the avatar's drawer on phones), shows the last sync and syncs now — the same
+  compare-and-settle as at sign-in — then rests 5 minutes. A save that already matches the cloud isn't re-uploaded.
+- **Fewer web requests** — the images in `public/` (`pokemon`, `trainers`, `banners`, `battle`, `characters`) are kept in
+  the browser for a month (`netlify.toml`) instead of being re-checked with Netlify on every visit. They have no content
+  hash, so a *replaced* image can take up to a month to reach returning players: give it a new name, or a `?v=` in its
+  URL, when that matters. A Pokémon's two Box-icon frames are one image, `NNN_mini.png` (frame 1 left, frame 2 right),
+  so a menu icon is one request instead of two.
+- **Open tabs pick up new builds** — every build writes `version.json` (its id, also baked into the code). An open tab
+  checks it when the player comes back to it (at most every 10 min) and every hour while it stays open, and reloads
+  when the build changed; a page more than a day old reloads anyway. The reload waits until nothing would be lost (no
+  fight, encounter or catch decision on screen). Tabs opened before this build can't be reached: they update on
+  their next reload, or after a day away.
 - `allowVoluntarySwitch`, `enemyUpgradeLevel`, `goldMultiplier`, `forcedCenterWhenHurt` and `scaleLevelSpread` are
   `game_config` keys (the spec was silent on these).

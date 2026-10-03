@@ -45,6 +45,8 @@ async function boot(page: Page, lang?: Lang) {
     ([s, f]) => {
       localStorage.setItem('pokedice.save', s!)
       localStorage.setItem('pokedice.settings', f!)
+      // Prof. Oak's share prompt (2nd badge) would cover every screen of this save.
+      localStorage.setItem('pokedice.sharePrompt.kanto', '1')
     },
     [JSON.stringify(midGameSave()), settings],
   )
