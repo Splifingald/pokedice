@@ -13,9 +13,9 @@ const byId = new Map(trainers.map((t) => [t.id, t]))
 const of = (regionId: string) => areas.filter((a) => regionOfArea(a) === regionId)
 
 describe('regions', () => {
-  it('has Kanto, Johto, Hoenn, Sinnoh and Unova, chained in order and all enabled', () => {
-    expect(regions.map((r) => r.id)).toEqual(['kanto', 'johto', 'hoenn', 'sinnoh', 'unova'])
-    expect(regions.map((r) => r.nextRegion)).toEqual(['johto', 'hoenn', 'sinnoh', 'unova', null])
+  it('has Kanto, Johto, Hoenn, Sinnoh, Unova and Kalos, chained in order and all enabled', () => {
+    expect(regions.map((r) => r.id)).toEqual(['kanto', 'johto', 'hoenn', 'sinnoh', 'unova', 'kalos'])
+    expect(regions.map((r) => r.nextRegion)).toEqual(['johto', 'hoenn', 'sinnoh', 'unova', 'kalos', null])
     expect(regions.every((r) => r.enabled)).toBe(true)
   })
 
@@ -168,7 +168,7 @@ describe('regions', () => {
 
   it('puts the Master Ball in one hideout per region, rare and only once', () => {
     const withMaster = areas.filter((a) => a.lootPool.some((l) => l.itemKey === 'master-ball'))
-    expect(withMaster.map((a) => regionOfArea(a)).sort()).toEqual(['hoenn', 'johto', 'kanto', 'sinnoh', 'unova'])
+    expect(withMaster.map((a) => regionOfArea(a)).sort()).toEqual(['hoenn', 'johto', 'kalos', 'kanto', 'sinnoh', 'unova'])
     for (const a of withMaster) {
       const entry = a.lootPool.find((l) => l.itemKey === 'master-ball')!
       expect(entry.unique, a.name).toBe(true)
@@ -212,6 +212,61 @@ describe('regions', () => {
     const bosses = new Set(bossAreas.flatMap((a) => (a.legendaryBoss ?? []).map((b) => b.dex)))
     // Ho-Oh and Lugia; Groudon and Kyogre — the four the brief names, all catchable.
     for (const dex of [249, 250, 382, 383]) expect(bosses.has(dex), `#${dex}`).toBe(true)
+  })
+
+  it('puts every species of a region, or the first stage of its line, somewhere other than the catch-all', () => {
+    // The user's rule (2026-10-03): the late-game area with everything is a convenience, never the only way. A species
+    // counts as found when it, or anything it evolves from, is in a wild pool that is not a `scalesToTeam` area — or
+    // when it comes out of a fossil, or is an area's legendary boss.
+    const fossils = new Set(
+      Object.values(data.items).flatMap((i) => (i.effect.kind === 'fossil' ? [i.effect.dex] : [])),
+    )
+    const parent = new Map<number, number[]>()
+    for (const s of data.speciesList) for (const e of s.evolutions) parent.set(e.toDex, [...(parent.get(e.toDex) ?? []), s.dex])
+    for (const r of regions) {
+      const here = of(r.id)
+      const wild = new Set(here.filter((a) => !a.scalesToTeam).flatMap((a) => a.wildPool.map((w) => w.dex)))
+      const bosses = new Set(here.flatMap((a) => (a.legendaryBoss ?? []).map((b) => b.dex)))
+      // Johto's beasts roam instead of waiting in an area.
+      const roamers = new Set(data.config.roamers.regionId === r.id ? data.config.roamers.dex : [])
+      const found = (dex: number, depth = 0): boolean =>
+        wild.has(dex) ||
+        fossils.has(dex) ||
+        bosses.has(dex) ||
+        roamers.has(dex) ||
+        dex === data.config.slotMachine.prizeDex ||
+        (depth < 4 && (parent.get(dex) ?? []).some((p) => found(p, depth + 1)))
+      // A region's starters and their lines come from the professor, so they need no wild home.
+      const starterLines = new Set<number>()
+      const grow = (dex: number) => {
+        starterLines.add(dex)
+        for (const e of data.species[dex]?.evolutions ?? []) grow(e.toDex)
+      }
+      r.starters.forEach(grow)
+      const [lo, hi] = r.dexRange
+      const missing: number[] = []
+      for (let dex = lo; dex <= hi; dex++) if (!starterLines.has(dex) && !found(dex)) missing.push(dex)
+      expect(missing, `${r.id} only in the catch-all`).toEqual([])
+    }
+  })
+
+  it('gates every secret legendary area from Kalos on behind a story point, the Pokédex and a level', () => {
+    // docs/11-GEN6-9-REGIONS-PLAN.md: at least 35 % of the region's catchable Pokédex (70 % box, 85 % mythical), and a
+    // Pokémon at the boss's own level.
+    const later = regions.filter((r) => r.orderIndex >= 5)
+    expect(later.length).toBeGreaterThan(0)
+    for (const r of later) {
+      const size = regionSpecies(data, r.id).size
+      for (const a of of(r.id).filter((x) => x.hidden && (x.legendaryBoss ?? []).length)) {
+        const conds = a.unlockConditions ?? []
+        const dex = conds.find((c) => c.kind === 'pokedex')
+        const level = conds.find((c) => c.kind === 'maxLevel')
+        expect(conds.some((c) => c.kind === 'area'), a.name).toBe(true)
+        expect(dex && dex.kind === 'pokedex' && dex.count >= Math.round(size * 0.35), `${a.name} Pokédex`).toBe(true)
+        const bossLevel = Math.min(...a.legendaryBoss!.map((b) => b.level))
+        expect(level && level.kind === 'maxLevel' && level.level >= bossLevel, `${a.name} level`).toBe(true)
+      }
+    }
   })
 
   it('names no region but Kanto in an area or trainer of Kanto', () => {

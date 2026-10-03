@@ -990,6 +990,25 @@ async function fetchShowdown(region: ShowdownRegion): Promise<{ n: number; faile
   return { n, failed }
 }
 
+/**
+ * Publishes one region's Showdown set: every sprite of SHOWDOWN[region] copied from graphics/trainers/showdown-<region>/
+ * into public/trainers/classes/<region>/ under our sprite name, which is what `trainerSprite()` points at.
+ */
+async function publishShowdown(region: ShowdownRegion): Promise<number> {
+  const from = path.join(ROOT, 'graphics/trainers', `showdown-${region}`)
+  const dir = path.join(OUT, region)
+  await mkdir(dir, { recursive: true })
+  let n = 0
+  for (const [name, id] of Object.entries(SHOWDOWN[region])) {
+    await writeFile(path.join(dir, `${name}.png`), await readFile(path.join(from, `${id}.png`)))
+    n++
+  }
+  return n
+}
+
+/** The Gen 6–9 regions that are in the game so far: their trainer sets are published with the others. */
+const PUBLISHED_SHOWDOWN: ShowdownRegion[] = ['kalos']
+
 async function main() {
   if (process.argv[2] === '--showdown') {
     const asked = process.argv.slice(3) as ShowdownRegion[]
@@ -1012,6 +1031,7 @@ async function main() {
   const hoenn = await fetchHoenn()
   const sinnoh = await cutSheet('dppt.png', 'sinnoh', SINNOH)
   const unova = await cutUnova()
+  for (const region of PUBLISHED_SHOWDOWN) console.log(`  ${region}: ${await publishShowdown(region)} Showdown sprites`)
   console.log(
     `✓ ${johto} Johto sprites (HGSS sheet) · ${hoenn} Hoenn sprites (pokeemerald) · ` +
       `${sinnoh} Sinnoh sprites (DPPt sheet) · ${unova} Unova sprites (B2W2 sheet) → public/trainers/classes`,

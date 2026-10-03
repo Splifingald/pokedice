@@ -647,5 +647,63 @@
   "inShop": false,
   "shopBadges": 0,
   "region": "unova"
+ },
+ {
+  "key": "jaw-fossil",
+  "name": "Jaw Fossil",
+  "description": "A fossil of an ancient Pokémon. Tyrunt waits in your Box and is revived after 24 hours, at Lv.20.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/jaw-fossil.png",
+  "price": 0,
+  "effect": {
+   "kind": "fossil",
+   "dex": 696,
+   "level": 20,
+   "hours": 24
+  },
+  "inShop": false,
+  "shopBadges": 0,
+  "region": "kalos"
+ },
+ {
+  "key": "sail-fossil",
+  "name": "Sail Fossil",
+  "description": "A fossil of an ancient Pokémon. Amaura waits in your Box and is revived after 24 hours, at Lv.20.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/sail-fossil.png",
+  "price": 0,
+  "effect": {
+   "kind": "fossil",
+   "dex": 698,
+   "level": 20,
+   "hours": 24
+  },
+  "inShop": false,
+  "shopBadges": 0,
+  "region": "kalos"
+ },
+ {
+  "key": "sachet",
+  "name": "Sachet",
+  "description": "Makes certain Pokémon evolve: Spritzee (Aromatisse). Use it from the Team screen.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/sachet.png",
+  "price": 200,
+  "effect": {
+   "kind": "stone"
+  },
+  "inShop": false,
+  "shopBadges": 0,
+  "region": "kalos"
+ },
+ {
+  "key": "whipped-dream",
+  "name": "Whipped Dream",
+  "description": "Makes certain Pokémon evolve: Swirlix (Slurpuff). Use it from the Team screen.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/whipped-dream.png",
+  "price": 200,
+  "effect": {
+   "kind": "stone"
+  },
+  "inShop": false,
+  "shopBadges": 0,
+  "region": "kalos"
  }
 ]

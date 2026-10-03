@@ -10,7 +10,7 @@ upgrades, and the goal is 151/151 in the Pokédex.
 > synthesised at runtime. Made by Splifingald.
 
 The design lives in [`docs/`](docs): [game spec](docs/01-GAME-SPEC.md) · [data model](docs/02-DATA-MODEL.md) ·
-[build plan](docs/03-BUILD-PLAN.md) · [Sinnoh plan](docs/07-SINNOH-PLAN.md) ·
+[build plan](docs/03-BUILD-PLAN.md) · [Sinnoh plan](docs/07-SINNOH-PLAN.md) · [Unova plan](docs/08-UNOVA-PLAN.md) · [Gen 6–9 plan](docs/11-GEN6-9-REGIONS-PLAN.md) ·
 [Gen 6–9 sprite sources](docs/10-GEN6-9-SPRITES.md).
 
 ## Quick start
@@ -36,7 +36,7 @@ For local cloud/admin work, copy `.env.example` to `.env.local` and fill it in. 
 | `pnpm e2e` | Playwright smoke tests (new game → win, buy an upgrade, mocked sign-in). Uses the installed Edge on Windows; elsewhere run `npx playwright install chromium` first |
 | `pnpm lint` · `pnpm format` | ESLint (also enforces that `src/engine` stays pure) · Prettier |
 | `pnpm seed` | Reports how far the committed bundle has drifted from what the generator (PokeAPI + `scripts/content.ts`, Kanto only) would produce. Writes nothing. `pnpm seed --force` does the old destructive regeneration — see [docs/02](docs/02-DATA-MODEL.md#3-generating-the-386) |
-| `pnpm seed-regions` | Builds Johto, Hoenn and Sinnoh on top of the committed bundle: species 152–493, their areas, trainers and regions. Additive — it never drops an existing row. Defaults to `--from 387 --to 493` (Sinnoh alone); widen it to regenerate an earlier region |
+| `pnpm seed-regions` | Builds the regions after Kanto on top of the committed bundle: species, their areas, trainers and regions. Additive — it never drops an existing row, above or below the range. Defaults to the newest region (`--from 650 --to 721`, Kalos); pass another range to regenerate an earlier one, which throws away its admin tuning |
 | `pnpm pull-remote` | Says how far the committed bundle has fallen behind Supabase, where admin tuning lands first. Writes nothing. `pnpm pull-remote --write` then overwrites `src/data/*.json` and `supabase/seed.sql` with the live rows — the same check and the same refusals as Admin → "Pull from Supabase". Run it before adding content |
 | `pnpm sync` | Pull Supabase, rebuild the regions on top, regenerate `supabase/seed.sql`, run the tests — in that order, stopping at the first failure. The one command to run before applying `seed.sql` to a live database |
 | `pnpm seed-sql` | Regenerates `supabase/seed.sql` from the committed bundle, without rebuilding the bundle. That one file is all a live database needs — it carries the post-`0001` schema changes too, and is safe to re-run |

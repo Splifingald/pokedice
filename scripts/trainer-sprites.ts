@@ -24,7 +24,7 @@ const slug = (s: string) =>
     .replace(/-+/g, '-')
     .replace(/^-|-$/g, '')
 
-export type SpriteRegion = 'kanto' | 'johto' | 'hoenn' | 'sinnoh' | 'unova'
+export type SpriteRegion = 'kanto' | 'johto' | 'hoenn' | 'sinnoh' | 'unova' | 'kalos'
 
 /**
  * Named characters per region: gym leaders, the Elite Four, the Champion, the rival and the villainous teams. The
@@ -132,6 +132,36 @@ const REGION_NAMED: Record<Exclude<SpriteRegion, 'kanto'>, Record<string, string
     N: 'n',
     Ghetsis: 'ghetsis',
     Zinzolin: 'zinzolin',
+  },
+  kalos: {
+    Viola: 'viola',
+    Grant: 'grant',
+    Korrina: 'korrina',
+    Ramos: 'ramos',
+    Clemont: 'clemont',
+    Valerie: 'valerie',
+    Olympia: 'olympia',
+    Wulfric: 'wulfric',
+    'Elite Four Malva': 'elite-malva',
+    'Elite Four Siebold': 'elite-siebold',
+    'Elite Four Wikstrom': 'elite-wikstrom',
+    'Elite Four Drasna': 'elite-drasna',
+    'Champion Diantha': 'champion-diantha',
+    Serena: 'serena',
+    Calem: 'calem',
+    Shauna: 'shauna',
+    Tierno: 'tierno',
+    Trevor: 'trevor',
+    'Professor Sycamore': 'sycamore',
+    Lysandre: 'lysandre',
+    Xerosic: 'xerosic',
+    'Flare Admin Bryony': 'bryony',
+    'Flare Admin Mable': 'mable',
+    AZ: 'az',
+    'Battle Chatelaine Nita': 'nita',
+    'Battle Chatelaine Evelyn': 'evelyn',
+    'Battle Chatelaine Dana': 'dana',
+    'Battle Chatelaine Morgan': 'morgan',
   },
 }
 
@@ -310,10 +340,54 @@ const REGION_CLASSES: Record<Exclude<SpriteRegion, 'kanto'>, [prefix: string, sp
     ['Worker', 'worker'],
     ['Youngster', 'youngster'],
   ],
+  kalos: [
+    ['Ace Trainer', 'ace-trainer-m'],
+    ['Aroma Lady', 'aroma-lady'],
+    ['Artist', 'artist-m'],
+    ['Backpacker', 'backpacker'],
+    ['Battle Girl', 'battle-girl'],
+    ['Beauty', 'beauty'],
+    ['Bird Keeper', 'bird-keeper'],
+    ['Black Belt', 'black-belt'],
+    ['Bug Catcher', 'bug-catcher'],
+    ['Butler', 'butler'],
+    ['Cabbie', 'cabbie'],
+    ['Café Master', 'cafe-master'],
+    ['Fairy Tale Girl', 'fairy-tale-girl'],
+    ['Fisherman', 'fisherman'],
+    ['Furisode Girl', 'furisode-girl-pink'],
+    ['Garçon', 'garcon'],
+    ['Gentleman', 'gentleman'],
+    ['Hex Maniac', 'hex-maniac'],
+    ['Hiker', 'hiker'],
+    ['Lady', 'lady'],
+    ['Lass', 'lass'],
+    ['Madame', 'madame'],
+    ['Maid', 'maid'],
+    ['Pokéfan', 'pokefan-m'],
+    ['Pokémon Breeder', 'breeder-m'],
+    ['Pokémon Ranger', 'ranger-m'],
+    ['Psychic', 'psychic'],
+    ['Punk Girl', 'punk-girl'],
+    ['Punk Guy', 'punk-guy'],
+    ['Rich Boy', 'rich-boy'],
+    ['Rising Star', 'rising-star-m'],
+    ['Roller Skater', 'roller-skater-m'],
+    ['School Kid', 'school-kid-m'],
+    ['Scientist', 'scientist-m'],
+    ['Sky Trainer', 'sky-trainer-m'],
+    ['Swimmer', 'swimmer-m'],
+    ['Team Flare Grunt', 'flare-grunt-m'],
+    ['Twins', 'twins'],
+    ['Veteran', 'veteran-m'],
+    ['Worker', 'worker'],
+    ['Youngster', 'youngster'],
+  ],
 }
 
 /** Female first names, so a mixed class ("Swimmer Nina") picks the right sprite where both exist. */
-const FEMALE = /^(Mary|Naomi|Alexa|Sara|Nina|Nadia|Lena|Ivy|Claire|Rosa|Yuki|Mira|Dana|Tara|Elle|Nell|Kate|Erin|Amy|Beth|Marsha|Shanti|Blossom|Carol|Chandra)$/
+const FEMALE =
+  /^(Mary|Naomi|Alexa|Sara|Nina|Nadia|Lena|Ivy|Claire|Rosa|Yuki|Mira|Dana|Tara|Elle|Nell|Kate|Erin|Amy|Beth|Marsha|Shanti|Blossom|Carol|Chandra|Anna|Lily|Lucia|Monique|Bonnie|Mariah|Raissa|Kimberly|Hilda|Jocelyn|Rachel|Gwendolyn|Corinne|Sabine|Abigail|Margaux|Elsa)$/
 
 /**
  * Male sprites that have a female counterpart cut from the same sheet. Sinnoh's classes are `-m` / `-f` pairs
@@ -333,10 +407,27 @@ const PAIRED: Record<Exclude<SpriteRegion, 'kanto'>, Record<string, string>> = {
       (base) => [`${base}-m`, `${base}-f`],
     ),
   ),
+  kalos: Object.fromEntries(
+    [
+      'ace-trainer',
+      'artist',
+      'breeder',
+      'pokefan',
+      'ranger',
+      'rising-star',
+      'roller-skater',
+      'school-kid',
+      'scientist',
+      'sky-trainer',
+      'swimmer',
+      'veteran',
+      'flare-grunt',
+    ].map((base) => [`${base}-m`, `${base}-f`]),
+  ),
 }
 
 /**
- * Sprite for a trainer in Johto, Hoenn, Sinnoh or Unova. Named characters first, then the class prefix, then the shared
+ * Sprite for a trainer in a region after Kanto. Named characters first, then the class prefix, then the shared
  * default — a trainer never renders as a broken image.
  */
 export function regionTrainerSprite(name: string, region: Exclude<SpriteRegion, 'kanto'>): string {

@@ -86,6 +86,24 @@
   ],
   "starterLevel": 5,
   "leagueAreaId": "8c87ed3a-c021-57b6-b866-cc6e71877c0e",
+  "nextRegion": "kalos",
+  "enabled": true
+ },
+ {
+  "id": "kalos",
+  "name": "Kalos",
+  "orderIndex": 5,
+  "dexRange": [
+   650,
+   721
+  ],
+  "starters": [
+   650,
+   653,
+   656
+  ],
+  "starterLevel": 5,
+  "leagueAreaId": "d3464556-7bcd-5708-9a13-415e0326fb75",
   "nextRegion": null,
   "enabled": true
  }

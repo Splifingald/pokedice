@@ -2181,3 +2181,157 @@ badge.freeze-badge,Freeze Badge,Badge Glacier,Medalla Iceberg,Frostorden,Medagli
 badge.legend-badge,Legend Badge,Badge Légende,Medalla Leyenda,Legendenorden,Medaglia Leggenda,Insígnia da Lenda,Insígnia da Lenda,レジェンドバッジ,레전드배지,传说徽章
 itemDesc.cover-fossil,"A fossil of an ancient Pokémon. Tirtouga waits in your Box and is revived after 24 hours, at Lv.20.","Un fossile d'un Pokémon ancien. Carapagos attend dans votre Boîte et revit après 24 heures, au N.20.","Un fósil de un Pokémon antiguo. Tirtouga espera en tu Caja y revive tras 24 horas, al Nv.20.",Ein Fossil eines urzeitlichen Pokémon. Galapaflos wartet in deiner Box und wird nach 24 Stunden auf Lv.20 wiederbelebt.,"Il fossile di un Pokémon antico. Tirtouga aspetta nel tuo Box e torna in vita dopo 24 ore, al Lv.20.","O fóssil de um Pokémon antigo. Tirtouga espera na tua Caixa e é reanimado após 24 horas, no Nv.20.","O fóssil de um Pokémon antigo. Tirtouga espera na sua Caixa e é reanimado após 24 horas, no Nv.20.",古代のポケモンの化石。プロトーガがボックスで待ち、24時間後にLv.20で復元される。,고대 포켓몬의 화석. 프로토가가 박스에서 기다리다가 24시간 후 Lv.20으로 복원된다.,古代宝可梦的化石。原盖海龟会在盒子里等待，24小时后以Lv.20复活。
 itemDesc.plume-fossil,"A fossil of an ancient Pokémon. Archen waits in your Box and is revived after 24 hours, at Lv.20.","Un fossile d'un Pokémon ancien. Arkéapti attend dans votre Boîte et revit après 24 heures, au N.20.","Un fósil de un Pokémon antiguo. Archen espera en tu Caja y revive tras 24 horas, al Nv.20.",Ein Fossil eines urzeitlichen Pokémon. Flapteryx wartet in deiner Box und wird nach 24 Stunden auf Lv.20 wiederbelebt.,"Il fossile di un Pokémon antico. Archen aspetta nel tuo Box e torna in vita dopo 24 ore, al Lv.20.","O fóssil de um Pokémon antigo. Archen espera na tua Caixa e é reanimado após 24 horas, no Nv.20.","O fóssil de um Pokémon antigo. Archen espera na sua Caixa e é reanimado após 24 horas, no Nv.20.",古代のポケモンの化石。アーケンがボックスで待ち、24時間後にLv.20で復元される。,고대 포켓몬의 화석. 아켄이 박스에서 기다리다가 24시간 후 Lv.20으로 복원된다.,古代宝可梦的化石。始祖小鸟会在盒子里等待，24小时后以Lv.20复活。
+pokemon.650,Chespin,Marisson,Chespin,Igamaro,Chespin,Chespin,Chespin,ハリマロン,도치마론,哈力栗
+pokemon.651,Quilladin,Boguérisse,Quilladin,Igastarnish,Quilladin,Quilladin,Quilladin,ハリボーグ,도치보구,胖胖哈力
+pokemon.652,Chesnaught,Blindépique,Chesnaught,Brigaron,Chesnaught,Chesnaught,Chesnaught,ブリガロン,브리가론,布里卡隆
+pokemon.653,Fennekin,Feunnec,Fennekin,Fynx,Fennekin,Fennekin,Fennekin,フォッコ,푸호꼬,火狐狸
+pokemon.654,Braixen,Roussil,Braixen,Rutena,Braixen,Braixen,Braixen,テールナー,테르나,长尾火狐
+pokemon.655,Delphox,Goupelin,Delphox,Fennexis,Delphox,Delphox,Delphox,マフォクシー,마폭시,妖火红狐
+pokemon.656,Froakie,Grenousse,Froakie,Froxy,Froakie,Froakie,Froakie,ケロマツ,개구마르,呱呱泡蛙
+pokemon.657,Frogadier,Croâporal,Frogadier,Amphizel,Frogadier,Frogadier,Frogadier,ゲコガシラ,개굴반장,呱头蛙
+pokemon.658,Greninja,Amphinobi,Greninja,Quajutsu,Greninja,Greninja,Greninja,ゲッコウガ,개굴닌자,甲贺忍蛙
+pokemon.659,Bunnelby,Sapereau,Bunnelby,Scoppel,Bunnelby,Bunnelby,Bunnelby,ホルビー,파르빗,掘掘兔
+pokemon.660,Diggersby,Excavarenne,Diggersby,Grebbit,Diggersby,Diggersby,Diggersby,ホルード,파르토,掘地兔
+pokemon.661,Fletchling,Passerouge,Fletchling,Dartiri,Fletchling,Fletchling,Fletchling,ヤヤコマ,화살꼬빈,小箭雀
+pokemon.662,Fletchinder,Braisillon,Fletchinder,Dartignis,Fletchinder,Fletchinder,Fletchinder,ヒノヤコマ,불화살빈,火箭雀
+pokemon.663,Talonflame,Flambusard,Talonflame,Fiaro,Talonflame,Talonflame,Talonflame,ファイアロー,파이어로,烈箭鹰
+pokemon.664,Scatterbug,Lépidonille,Scatterbug,Purmel,Scatterbug,Scatterbug,Scatterbug,コフキムシ,분이벌레,粉蝶虫
+pokemon.665,Spewpa,Pérégrain,Spewpa,Puponcho,Spewpa,Spewpa,Spewpa,コフーライ,분떠도리,粉蝶蛹
+pokemon.666,Vivillon,Prismillon,Vivillon,Vivillon,Vivillon,Vivillon,Vivillon,ビビヨン,비비용,彩粉蝶
+pokemon.667,Litleo,Hélionceau,Litleo,Leufeo,Litleo,Litleo,Litleo,シシコ,레오꼬,小狮狮
+pokemon.668,Pyroar,Némélios,Pyroar,Pyroleo,Pyroar,Pyroar,Pyroar,カエンジシ,화염레오,火炎狮
+pokemon.669,Flabébé,Flabébé,Flabébé,Flabébé,Flabébé,Flabébé,Flabébé,フラベベ,플라베베,花蓓蓓
+pokemon.670,Floette,Floette,Floette,Floette,Floette,Floette,Floette,フラエッテ,플라엣테,花叶蒂
+pokemon.671,Florges,Florges,Florges,Florges,Florges,Florges,Florges,フラージェス,플라제스,花洁夫人
+pokemon.672,Skiddo,Cabriolaine,Skiddo,Mähikel,Skiddo,Skiddo,Skiddo,メェークル,메이클,坐骑小羊
+pokemon.673,Gogoat,Chevroum,Gogoat,Chevrumm,Gogoat,Gogoat,Gogoat,ゴーゴート,고고트,坐骑山羊
+pokemon.674,Pancham,Pandespiègle,Pancham,Pam-Pam,Pancham,Pancham,Pancham,ヤンチャム,판짱,顽皮熊猫
+pokemon.675,Pangoro,Pandarbare,Pangoro,Pandagro,Pangoro,Pangoro,Pangoro,ゴロンダ,부란다,霸道熊猫
+pokemon.676,Furfrou,Couafarel,Furfrou,Coiffwaff,Furfrou,Furfrou,Furfrou,トリミアン,트리미앙,多丽米亚
+pokemon.677,Espurr,Psystigri,Espurr,Psiau,Espurr,Espurr,Espurr,ニャスパー,냐스퍼,妙喵
+pokemon.678,Meowstic,Mistigrix,Meowstic,Psiaugon,Meowstic,Meowstic,Meowstic,ニャオニクス,냐오닉스,超能妙喵
+pokemon.679,Honedge,Monorpale,Honedge,Gramokles,Honedge,Honedge,Honedge,ヒトツキ,단칼빙,独剑鞘
+pokemon.680,Doublade,Dimoclès,Doublade,Duokles,Doublade,Doublade,Doublade,ニダンギル,쌍검킬,双剑鞘
+pokemon.681,Aegislash,Exagide,Aegislash,Durengard,Aegislash,Aegislash,Aegislash,ギルガルド,킬가르도,坚盾剑怪
+pokemon.682,Spritzee,Fluvetin,Spritzee,Parfi,Spritzee,Spritzee,Spritzee,シュシュプ,슈쁘,粉香香
+pokemon.683,Aromatisse,Cocotine,Aromatisse,Parfinesse,Aromatisse,Aromatisse,Aromatisse,フレフワン,프레프티르,芳香精
+pokemon.684,Swirlix,Sucroquin,Swirlix,Flauschling,Swirlix,Swirlix,Swirlix,ペロッパフ,나룸퍼프,绵绵泡芙
+pokemon.685,Slurpuff,Cupcanaille,Slurpuff,Sabbaione,Slurpuff,Slurpuff,Slurpuff,ペロリーム,나루림,胖甜妮
+pokemon.686,Inkay,Sepiatop,Inkay,Iscalar,Inkay,Inkay,Inkay,マーイーカ,오케이징,好啦鱿
+pokemon.687,Malamar,Sepiatroce,Malamar,Calamanero,Malamar,Malamar,Malamar,カラマネロ,칼라마네로,乌贼王
+pokemon.688,Binacle,Opermine,Binacle,Bithora,Binacle,Binacle,Binacle,カメテテ,거북손손,龟脚脚
+pokemon.689,Barbaracle,Golgopathe,Barbaracle,Thanathora,Barbaracle,Barbaracle,Barbaracle,ガメノデス,거북손데스,龟足巨铠
+pokemon.690,Skrelp,Venalgue,Skrelp,Algitt,Skrelp,Skrelp,Skrelp,クズモー,수레기,垃垃藻
+pokemon.691,Dragalge,Kravarech,Dragalge,Tandrak,Dragalge,Dragalge,Dragalge,ドラミドロ,드래캄,毒藻龙
+pokemon.692,Clauncher,Flingouste,Clauncher,Scampisto,Clauncher,Clauncher,Clauncher,ウデッポウ,완철포,铁臂枪虾
+pokemon.693,Clawitzer,Gamblast,Clawitzer,Wummer,Clawitzer,Clawitzer,Clawitzer,ブロスター,블로스터,钢炮臂虾
+pokemon.694,Helioptile,Galvaran,Helioptile,Eguana,Helioptile,Helioptile,Helioptile,エリキテル,목도리키텔,伞电蜥
+pokemon.695,Heliolisk,Iguolta,Heliolisk,Elezard,Heliolisk,Heliolisk,Heliolisk,エレザード,일레도리자드,光电伞蜥
+pokemon.696,Tyrunt,Ptyranidur,Tyrunt,Balgoras,Tyrunt,Tyrunt,Tyrunt,チゴラス,티고라스,宝宝暴龙
+pokemon.697,Tyrantrum,Rexillius,Tyrantrum,Monargoras,Tyrantrum,Tyrantrum,Tyrantrum,ガチゴラス,견고라스,怪颚龙
+pokemon.698,Amaura,Amagara,Amaura,Amarino,Amaura,Amaura,Amaura,アマルス,아마루스,冰雪龙
+pokemon.699,Aurorus,Dragmara,Aurorus,Amagarga,Aurorus,Aurorus,Aurorus,アマルルガ,아마루르가,冰雪巨龙
+pokemon.700,Sylveon,Nymphali,Sylveon,Feelinara,Sylveon,Sylveon,Sylveon,ニンフィア,님피아,仙子伊布
+pokemon.701,Hawlucha,Brutalibré,Hawlucha,Resladero,Hawlucha,Hawlucha,Hawlucha,ルチャブル,루차불,摔角鹰人
+pokemon.702,Dedenne,Dedenne,Dedenne,Dedenne,Dedenne,Dedenne,Dedenne,デデンネ,데덴네,咚咚鼠
+pokemon.703,Carbink,Strassie,Carbink,Rocara,Carbink,Carbink,Carbink,メレシー,멜리시,小碎钻
+pokemon.704,Goomy,Mucuscule,Goomy,Viscora,Goomy,Goomy,Goomy,ヌメラ,미끄메라,黏黏宝
+pokemon.705,Sliggoo,Colimucus,Sliggoo,Viscargot,Sliggoo,Sliggoo,Sliggoo,ヌメイル,미끄네일,黏美儿
+pokemon.706,Goodra,Muplodocus,Goodra,Viscogon,Goodra,Goodra,Goodra,ヌメルゴン,미끄래곤,黏美龙
+pokemon.707,Klefki,Trousselin,Klefki,Clavion,Klefki,Klefki,Klefki,クレッフィ,클레피,钥圈儿
+pokemon.708,Phantump,Brocélôme,Phantump,Paragoni,Phantump,Phantump,Phantump,ボクレー,나목령,小木灵
+pokemon.709,Trevenant,Desséliande,Trevenant,Trombork,Trevenant,Trevenant,Trevenant,オーロット,대로트,朽木妖
+pokemon.710,Pumpkaboo,Pitrouille,Pumpkaboo,Irrbis,Pumpkaboo,Pumpkaboo,Pumpkaboo,バケッチャ,호바귀,南瓜精
+pokemon.711,Gourgeist,Banshitrouye,Gourgeist,Pumpdjinn,Gourgeist,Gourgeist,Gourgeist,パンプジン,펌킨인,南瓜怪人
+pokemon.712,Bergmite,Grelaçon,Bergmite,Arktip,Bergmite,Bergmite,Bergmite,カチコール,꽁어름,冰宝
+pokemon.713,Avalugg,Séracrawl,Avalugg,Arktilas,Avalugg,Avalugg,Avalugg,クレベース,크레베이스,冰岩怪
+pokemon.714,Noibat,Sonistrelle,Noibat,eF-eM,Noibat,Noibat,Noibat,オンバット,음뱃,嗡蝠
+pokemon.715,Noivern,Bruyverne,Noivern,UHaFnir,Noivern,Noivern,Noivern,オンバーン,음번,音波龙
+pokemon.716,Xerneas,Xerneas,Xerneas,Xerneas,Xerneas,Xerneas,Xerneas,ゼルネアス,제르네아스,哲尔尼亚斯
+pokemon.717,Yveltal,Yveltal,Yveltal,Yveltal,Yveltal,Yveltal,Yveltal,イベルタル,이벨타르,伊裴尔塔尔
+pokemon.718,Zygarde,Zygarde,Zygarde,Zygarde,Zygarde,Zygarde,Zygarde,ジガルデ,지가르데,基格尔德
+pokemon.719,Diancie,Diancie,Diancie,Diancie,Diancie,Diancie,Diancie,ディアンシー,디안시,蒂安希
+pokemon.720,Hoopa,Hoopa,Hoopa,Hoopa,Hoopa,Hoopa,Hoopa,フーパ,후파,胡帕
+pokemon.721,Volcanion,Volcanion,Volcanion,Volcanion,Volcanion,Volcanion,Volcanion,ボルケニオン,볼케니온,波尔凯尼恩
+item.jaw-fossil,Jaw Fossil,Fossile Mâchoire,Fósil Mandíbula,Kieferfossil,Fossilmascella,Fóssil de Mandíbula,Fóssil de Mandíbula,アゴのカセキ,턱화석,颚之化石
+item.sail-fossil,Sail Fossil,Fossile Nageoire,Fósil Aleta,Flossenfossil,Fossilpinna,Fóssil de Vela,Fóssil de Vela,ヒレのカセキ,지느러미화석,鳍之化石
+item.sachet,Sachet,Sachet Senteur,Saquito Fragante,Duftbeutel,Bustina aromi,Sachê,Sachê,においぶくろ,향기주머니,香袋
+item.whipped-dream,Whipped Dream,Chantibonbon,Dulce de Nata,Sahnehäubchen,Dolcespuma,Chantilly dos Sonhos,Chantilly dos Sonhos,ホイップポップ,휘핑팝,泡沫奶油
+"# --- Kalos (Gen 6): areas, region, badges, trainer classes and names, items",,,,,,,,,,
+area.routes-1-2-and-aquacorde-town,Routes 1 & 2 and Aquacorde Town,Routes 1 & 2 et Quarellis,Rutas 1 y 2 y Pueblo Acuarela,Routen 1 & 2 und Aquarellia,Percorsi 1 e 2 e Rio Acquerello,Rotas 1 e 2 e Cidade de Aquacorde,Rotas 1 e 2 e Cidade de Aquacorde,1・2ばんどうろとメイスイタウン,1번·2번도로·수미마을,1、2号道路与美川镇
+area.santalune-forest,Santalune Forest,Forêt de Neuvartault,Bosque de Novarte,Nouvaria-Wald,Bosco Novartopoli,Floresta de Santalune,Floresta de Santalune,ハクダンのもり,백단숲,白檀森林
+area.route-3-santalune-city,Route 3 & Santalune City,Route 3 & Neuvartault,Ruta 3 y Ciudad Novarte,Route 3 & Nouvaria City,Percorso 3 e Novartopoli,Rota 3 e Cidade de Santalune,Rota 3 e Cidade de Santalune,3ばんどうろとハクダンシティ,3번도로·백단시티,3号道路与白檀市
+area.routes-4-22-and-lumiose-city-south,Routes 4 & 22 and Lumiose City South,Routes 4 & 22 et le sud d'Illumis,Rutas 4 y 22 y el sur de Ciudad Luminalia,Routen 4 & 22 und Illumina City Süd,Percorsi 4 e 22 e Luminopoli Sud,Rotas 4 e 22 e o sul de Lumiose,Rotas 4 e 22 e o sul de Lumiose,4・22ばんどうろとミアレシティみなみ,4번·22번도로·미르시티 남쪽,4、22号道路与密阿雷市南部
+area.route-5-camphrier-town,Route 5 & Camphrier Town,Route 5 & Fort-Vanitas,Ruta 5 y Pueblo Vánitas,Route 5 & Vanitéa,Percorso 5 e Castel Vanità,Rota 5 e Cidade de Camphrier,Rota 5 e Cidade de Camphrier,5ばんどうろとコボクタウン,5번도로·고목내마을,5号道路与古木镇
+area.route-6-parfum-palace,Route 6 & Parfum Palace,Route 6 & le Palais Chaydeuvre,Ruta 6 y el Palacio Cénit,Route 6 & der Magnum-Opus-Palast,Percorso 6 e la Reggia Aurea,Rota 6 e o Palácio Parfum,Rota 6 e o Palácio Parfum,6ばんどうろとパルファムきゅうでん,6번도로·파르팽 궁전,6号道路与芳香宫殿
+area.route-7-the-connecting-cave,Route 7 & the Connecting Cave,Route 7 & la Cave Connecterre,Ruta 7 y la Gruta Tierraunida,Route 7 & die Geolinkhöhle,Percorso 7 e la Grotta Trait d'Union,Rota 7 e a Caverna Conectora,Rota 7 e a Caverna Conectora,7ばんどうろとちつなぎのどうけつ,7번도로·땅이음의 동굴,7号道路与连地洞穴
+area.route-8-ambrette-town,Route 8 & Ambrette Town,Route 8 & Roche-sur-Gliffe,Ruta 8 y Pueblo Petroglifo,Route 8 & Petrophia,Percorso 8 e Petroglifari,Rota 8 e Cidade de Ambrette,Rota 8 e Cidade de Ambrette,8ばんどうろとコウジンタウン,8번도로·가라마을,8号道路与古香镇
+area.route-9-the-glittering-cave-cyllage-city,"Route 9, the Glittering Cave & Cyllage City","Route 9, la Grotte Étincelante & Relifac-le-Haut","Ruta 9, la Cueva Brillante y Ciudad Relieve","Route 9, Leuchthöhle & Relievera City","Percorso 9, Grotta dei Bagliori e Altoripoli","Rota 9, a Caverna Cintilante e a Cidade de Cyllage","Rota 9, a Caverna Cintilante e a Cidade de Cyllage",9ばんどうろ、かがやきのどうくつとショウヨウシティ,9번도로·반짝임의 동굴·삼채시티,9号道路、辉光洞窟与遥香市
+area.route-10-geosenge-town,Route 10 & Geosenge Town,Route 10 & Cromlac'h,Ruta 10 y Pueblo Crómlech,Route 10 & Cromlexia,Percorso 10 e Cromleburgo,Rota 10 e Cidade de Geosenge,Rota 10 e Cidade de Geosenge,10ばんどうろとセキタイタウン,10번도로·옥유마을,10号道路与石林镇
+area.route-11-reflection-cave-shalour-city,"Route 11, Reflection Cave & Shalour City","Route 11, la Grotte Miroitante & Yantreizh","Ruta 11, la Cueva Reflejos y Ciudad Yantra","Route 11, Spiegelhöhle & Yantara City","Percorso 11, Grotta dei Riflessi e Yantaropoli","Rota 11, a Caverna do Reflexo e a Cidade de Shalour","Rota 11, a Caverna do Reflexo e a Cidade de Shalour",11ばんどうろ、うつしみのどうくつとシャラシティ,11번도로·비춤의 동굴·사라시티,11号道路、映身洞窟与娑罗市
+area.route-12-azure-bay-coumarine-city,"Route 12, Azure Bay & Coumarine City","Route 12, la Baie Azur & Port Tempères","Ruta 12, la Bahía Azul y Ciudad Témpera","Route 12, Azurbucht & Tempera City","Percorso 12, Baia Azzurra e Temperopoli","Rota 12, a Baía Azul e a Cidade de Coumarine","Rota 12, a Baía Azul e a Cidade de Coumarine",12ばんどうろ、アズールわんとヒヨクシティ,12번도로·아쥐르만·비익시티,12号道路、蔚蓝海湾与比翼市
+area.route-13-the-kalos-power-plant,Route 13 & the Kalos Power Plant,Route 13 & la Centrale de Kalos,Ruta 13 y la Central de Kalos,Route 13 & das Kalos-Kraftwerk,Percorso 13 e la Centrale di Kalos,Rota 13 e a Usina de Kalos,Rota 13 e a Usina de Kalos,13ばんどうろとカロスはつでんしょ,13번도로·칼로스발전소,13号道路与卡洛斯发电厂
+area.lumiose-city,Lumiose City,Illumis,Ciudad Luminalia,Illumina City,Luminopoli,Cidade de Lumiose,Cidade de Lumiose,ミアレシティ,미르시티,密阿雷市
+area.route-14-laverre-city,Route 14 & Laverre City,Route 14 & Romant-sous-Bois,Ruta 14 y Ciudad Romantis,Route 14 & Romantia City,Percorso 14 e Romantopoli,Rota 14 e Cidade de Laverre,Rota 14 e Cidade de Laverre,14ばんどうろとクノエシティ,14번도로·후늬시티,14号道路与香薰市
+area.routes-15-16-and-the-lost-hotel,Routes 15 & 16 and the Lost Hotel,Routes 15 & 16 et l'Hôtel Désolation,Rutas 15 y 16 y el Hotel Desolación,Routen 15 & 16 und die Hotelruine,Percorsi 15 e 16 e l'Albergo Diroccato,Rotas 15 e 16 e o Hotel Abandonado,Rotas 15 e 16 e o Hotel Abandonado,15・16ばんどうろとあれはてホテル,15번·16번도로·황폐해진 호텔,15、16号道路与荒废酒店
+area.dendemille-town-route-17-the-frost-cavern,"Dendemille Town, Route 17 & the Frost Cavern","La Frescale, Route 17 & la Caverne Gelée","Pueblo Fresco, Ruta 17 y la Gruta Helada","Frescora, Route 17 & die Frosthöhle","Frescovilla, Percorso 17 e Caverna Gelata","Cidade de Dendemille, Rota 17 e a Caverna Gélida","Cidade de Dendemille, Rota 17 e a Caverna Gélida",フウジョタウン、17ばんどうろとフロストケイブ,버들비마을·17번도로·프로스트케이브,雪风镇、17号道路与冰冻洞穴
+area.route-18-anistar-city,Route 18 & Anistar City,Route 18 & Flusselles,Ruta 18 y Ciudad Fluxus,Route 18 & Fluxia City,Percorso 18 e Fluxopoli,Rota 18 e Cidade de Anistar,Rota 18 e Cidade de Anistar,18ばんどうろとヒャッコクシティ,18번도로·향전시티,18号道路与百刻市
+area.lysandre-labs-the-team-flare-secret-hq,Lysandre Labs & the Team Flare Secret HQ,Labos Lysandre & Repaire Team Flare,Laboratorios Lysson y la Guarida Team Flare,Labor von Flordelis & Flare-Geheimbasis,Laboratori Elisio e Covo del Team Flare,Laboratórios Lysandre e o QG Secreto da Equipe Flare,Laboratórios Lysandre e o QG Secreto da Equipe Flare,フラダリラボとフレアだんひみつきち,플라드리 래버러토리·플레어단 비밀기지,弗拉达利研究所与闪焰队秘密基地
+area.route-19-couriway-town,Route 19 & Couriway Town,Route 19 & Mozheim,Ruta 19 y Pueblo Mosaico,Route 19 & Mosaia,Percorso 19 e Ponte Mosaico,Rota 19 e Cidade de Couriway,Rota 19 e Cidade de Couriway,19ばんどうろとレンリタウン,19번도로·배롱마을,19号道路与水涟镇
+area.route-20-the-pokemon-village-snowbelle-city,"Route 20, the Pokémon Village & Snowbelle City","Route 20, le Village Pokémon & Auffrac-les-Congères","Ruta 20, la Villa Pokémon y Ciudad Fractal","Route 20, Pokémon-Dorf & Fractalia City","Percorso 20, Valle dei Pokémon e Fractalopoli","Rota 20, a Vila Pokémon e a Cidade de Snowbelle","Rota 20, a Vila Pokémon e a Cidade de Snowbelle",20ばんどうろ、ポケモンのむらとエイセツシティ,20번도로·포켓몬마을·이설시티,20号道路、宝可梦之村与映雪市
+area.route-21-victory-road,Route 21 & Victory Road,Route 21 & la Route Victoire,Ruta 21 y Calle Victoria,Route 21 & die Siegesstraße,Percorso 21 e Via Vittoria,Rota 21 e a Estrada Vitória,Rota 21 e a Estrada Vitória,21ばんどうろとチャンピオンロード,21번도로·챔피언로드,21号道路与冠军之路
+area.kiloude-city-the-battle-maison,Kiloude City & the Battle Maison,Batisques & la Maison de Combat,Ciudad Batik y la Mansión Batalla,Batika City & das Kampfhaus,Batikopoli e la Villa Lotta,Cidade de Kiloude e a Mansão de Batalha,Cidade de Kiloude e a Mansão de Batalha,キナンシティとバトルハウス,기남시티·배틀하우스,奇楠市与对战宅邸
+area.the-friend-safari,The Friend Safari,Le Safari des Amis,El Safari Amistad,Die Kontaktsafari,Il Safari Amici,O Safári dos Amigos,O Safári dos Amigos,フレンドサファリ,프렌드사파리,朋友狩猎区
+area.the-team-flare-secret-hq-depths,The Team Flare Secret HQ Depths,Les Profondeurs du Repaire Team Flare,Las Profundidades de la Guarida Team Flare,Die Tiefen der Flare-Geheimbasis,Le Profondità del Covo del Team Flare,As Profundezas do QG da Equipe Flare,As Profundezas do QG da Equipe Flare,フレアだんひみつきちのさいしんぶ,플레어단 비밀기지 깊은 곳,闪焰队秘密基地深处
+area.terminus-cave,Terminus Cave,La Grotte Coda,La Cueva Desenlace,Die Omega-Höhle,La Grotta Climax,A Caverna Terminal,A Caverna Terminal,ついのどうくつ,끝의 동굴,终结洞窟
+area.the-diamond-domain,The Diamond Domain,Le Royaume Diamant,El Reino Diamante,Das Diamantenreich,Il Regno dei Diamanti,O Domínio dos Diamantes,O Domínio dos Diamantes,ダイヤモンドこうこく,다이아몬드 광국,钻石矿国
+area.hoopa-s-ring,Hoopa's Ring,L'Anneau de Hoopa,El Aro de Hoopa,Hoopas Ring,L'Anello di Hoopa,O Anel de Hoopa,O Anel de Hoopa,フーパのリング,후파의 링,胡帕的圆环
+area.the-nebel-plateau,The Nebel Plateau,Le Plateau de Nébel,La Meseta Nebel,Das Nebel-Plateau,L'Altopiano Nebel,O Planalto de Nebel,O Planalto de Nebel,ネーベルこうげん,네벨 고원,尼贝尔高原
+region.kalos,Kalos,Kalos,Kalos,Kalos,Kalos,Kalos,Kalos,カロス,칼로스,卡洛斯
+badge.bug-badge,Bug Badge,Badge Insecte,Medalla Insecto,Käferorden,Medaglia Coleottero,Insígnia do Inseto,Insígnia do Inseto,バグバッジ,버그배지,虫虫徽章
+badge.cliff-badge,Cliff Badge,Badge Falaise,Medalla Muro,Klippenorden,Medaglia Parete,Insígnia do Penhasco,Insígnia do Penhasco,ウォールバッジ,월배지,岩壁徽章
+badge.rumble-badge,Rumble Badge,Badge Rafale,Medalla Lucha,Kampforden,Medaglia Lotta,Insígnia do Combate,Insígnia do Combate,ファイトバッジ,파이트배지,格斗徽章
+badge.plant-badge,Plant Badge,Badge Plante,Medalla Planta,Pflanzenorden,Medaglia Pianta,Insígnia da Planta,Insígnia da Planta,プラントバッジ,플랜트배지,植物徽章
+badge.voltage-badge,Voltage Badge,Badge Volt,Medalla Voltio,Voltorden,Medaglia Voltaggio,Insígnia da Voltagem,Insígnia da Voltagem,ボルテージバッジ,볼티지배지,电压徽章
+badge.fairy-badge,Fairy Badge,Badge Fée,Medalla Hada,Feenorden,Medaglia Folletto,Insígnia da Fada,Insígnia da Fada,フェアリーバッジ,페어리배지,妖精徽章
+badge.psychic-badge,Psychic Badge,Badge Psy,Medalla Psíquica,Psychoorden,Medaglia Psiche,Insígnia Psíquica,Insígnia Psíquica,サイキックバッジ,사이킥배지,超能力徽章
+badge.iceberg-badge,Iceberg Badge,Badge Iceberg,Medalla Iceberg,Eisbergorden,Medaglia Iceberg,Insígnia do Iceberg,Insígnia do Iceberg,アイスバーグバッジ,아이스버그배지,冰山徽章
+trainerClass.fairy-tale-girl,Fairy Tale Girl,Petite Fée,Chica de Cuento,Märchenmädchen,Ragazza Fiaba,Menina dos Contos,Menina dos Contos,メルヘンしょうじょ,메르헨소녀,童话少女
+trainerClass.rising-star,Rising Star,Étoile Montante,Joven Promesa,Aufsteiger,Astro Nascente,Estrela em Ascensão,Estrela em Ascensão,ライジングスター,라이징스타,明日之星
+trainerClass.roller-skater,Roller Skater,Patineur,Patinador,Rollschuhfahrer,Pattinatore,Patinador,Patinador,ローラースケーター,롤러스케이터,轮滑选手
+trainerClass.butler,Butler,Majordome,Mayordomo,Butler,Maggiordomo,Mordomo,Mordomo,しつじ,집사,管家
+trainerClass.maid,Maid,Soubrette,Doncella,Hausmädchen,Cameriera,Empregada,Empregada,メイド,메이드,女佣
+trainerClass.sky-trainer,Sky Trainer,Dresseur du Ciel,Entrenador Aéreo,Himmelstrainer,Allenatore Celeste,Treinador Celeste,Treinador Celeste,スカイトレーナー,스카이트레이너,天空训练家
+trainerClass.garcon,Garçon,Garçon,Garçon,Garçon,Garçon,Garçon,Garçon,ギャルソン,갸르송,男侍者
+trainerClass.cafe-master,Café Master,Patron de Café,Dueño de Café,Café-Besitzer,Gestore del Caffè,Dono do Café,Dono do Café,カフェのマスター,카페 마스터,咖啡厅老板
+trainerClass.punk-guy,Punk Guy,Punk,Punk,Punk,Punk,Punk,Punk,パンク,펑크,朋克男
+trainerClass.punk-girl,Punk Girl,Punkette,Punk,Punkerin,Punk,Punk,Punk,パンクガール,펑크걸,朋克女
+trainerClass.team-flare-grunt,Team Flare Grunt,Sbire Flare,Recluta Flare,Rüpel von Team Flare,Recluta Team Flare,Recruta da Equipa Flare,Recruta da Equipe Flare,フレア団員,플레어단 조무래기,闪焰队手下
+trainerClass.flare-admin,Flare Admin,Admin Flare,Admin. Flare,Flare-Admin,Admin Team Flare,Admin da Equipa Flare,Admin da Equipe Flare,フレア団幹部,플레어단 간부,闪焰队干部
+trainerClass.furisode-girl,Furisode Girl,Fille en Furisode,Chica Furisode,Furisode-Mädchen,Ragazza Furisode,Moça de Furisode,Moça de Furisode,ふりそでさん,후리소데 아가씨,振袖小姐
+trainerClass.battle-chatelaine,Battle Chatelaine,Châtelaine,Castellana,Schlossherrin,Castellana,Castelã,Castelã,バトルシャトレーヌ,배틀샤틀렌,对战城主
+trainerName.viola,Viola,Viola,Viola,Viola,Viola,Viola,Viola,ビオラ,비올라,紫罗兰
+trainerName.grant,Grant,Grant,Grant,Grant,Grant,Grant,Grant,ザクロ,자크로,查克洛
+trainerName.korrina,Korrina,Korrina,Korrina,Korrina,Korrina,Korrina,Korrina,コルニ,코르니,可尔妮
+trainerName.ramos,Ramos,Ramos,Ramos,Ramos,Ramos,Ramos,Ramos,フクジ,후쿠지,福爷
+trainerName.clemont,Clemont,Clemont,Clemont,Clemont,Clemont,Clemont,Clemont,シトロン,시트론,希特隆
+trainerName.valerie,Valerie,Valerie,Valerie,Valerie,Valerie,Valerie,Valerie,マーシュ,마슈,玛绣
+trainerName.olympia,Olympia,Olympia,Olympia,Olympia,Olympia,Olympia,Olympia,ゴジカ,고지카,葛吉花
+trainerName.wulfric,Wulfric,Wulfric,Wulfric,Wulfric,Wulfric,Wulfric,Wulfric,ウルップ,우르프,得抚
+trainerName.malva,Malva,Malva,Malva,Malva,Malva,Malva,Malva,パキラ,파키라,帕琪拉
+trainerName.siebold,Siebold,Siebold,Siebold,Siebold,Siebold,Siebold,Siebold,ズミ,즈미,志米
+trainerName.wikstrom,Wikstrom,Wikstrom,Wikstrom,Wikstrom,Wikstrom,Wikstrom,Wikstrom,ガンピ,간피,雁铠
+trainerName.drasna,Drasna,Drasna,Drasna,Drasna,Drasna,Drasna,Drasna,ドラセナ,드라세나,朵拉塞娜
+trainerName.diantha,Diantha,Diantha,Diantha,Diantha,Diantha,Diantha,Diantha,カルネ,카르네,卡露妮
+trainerName.serena,Serena,Serena,Serena,Serena,Serena,Serena,Serena,セレナ,세레나,莎莉娜
+trainerName.shauna,Shauna,Shauna,Shauna,Shauna,Shauna,Shauna,Shauna,サナ,사나,莎娜
+trainerName.tierno,Tierno,Tierno,Tierno,Tierno,Tierno,Tierno,Tierno,ティエルノ,티에르노,蒂艾路诺
+trainerName.trevor,Trevor,Trevor,Trevor,Trevor,Trevor,Trevor,Trevor,トロバ,트로바,托罗巴
+trainerName.lysandre,Lysandre,Lysandre,Lysandre,Lysandre,Lysandre,Lysandre,Lysandre,フラダリ,플라드리,弗拉达利
+trainerName.xerosic,Xerosic,Xerosic,Xerosic,Xerosic,Xerosic,Xerosic,Xerosic,クセロシキ,크세로시키,库瑟洛斯奇
+trainerName.bryony,Bryony,Bryony,Bryony,Bryony,Bryony,Bryony,Bryony,バラ,바라,芭菈
+trainerName.mable,Mable,Mable,Mable,Mable,Mable,Mable,Mable,モミジ,모미지,茉蜜姬
+itemDesc.jaw-fossil,"A fossil of an ancient Pokémon. Tyrunt waits in your Box and is revived after 24 hours, at Lv.20.","Un fossile d'un Pokémon ancien. Ptyranidur attend dans votre Boîte et revit après 24 heures, au N.20.","Un fósil de un Pokémon antiguo. Tyrunt espera en tu Caja y revive tras 24 horas, al Nv.20.",Ein Fossil eines urzeitlichen Pokémon. Balgoras wartet in deiner Box und wird nach 24 Stunden auf Lv.20 wiederbelebt.,"Il fossile di un Pokémon antico. Tyrunt aspetta nel tuo Box e torna in vita dopo 24 ore, al Lv.20.","O fóssil de um Pokémon antigo. Tyrunt espera na tua Caixa e é reanimado após 24 horas, no Nv.20.","O fóssil de um Pokémon antigo. Tyrunt espera na sua Caixa e é reanimado após 24 horas, no Nv.20.",古代のポケモンの化石。チゴラスがボックスで待ち、24時間後にLv.20で復元される。,고대 포켓몬의 화석. 티고라스가 박스에서 기다리다가 24시간 후 Lv.20으로 복원된다.,古代宝可梦的化石。宝宝暴龙会在盒子里等待，24小时后以Lv.20复活。
+itemDesc.sail-fossil,"A fossil of an ancient Pokémon. Amaura waits in your Box and is revived after 24 hours, at Lv.20.","Un fossile d'un Pokémon ancien. Amagara attend dans votre Boîte et revit après 24 heures, au N.20.","Un fósil de un Pokémon antiguo. Amaura espera en tu Caja y revive tras 24 horas, al Nv.20.",Ein Fossil eines urzeitlichen Pokémon. Amarino wartet in deiner Box und wird nach 24 Stunden auf Lv.20 wiederbelebt.,"Il fossile di un Pokémon antico. Amaura aspetta nel tuo Box e torna in vita dopo 24 ore, al Lv.20.","O fóssil de um Pokémon antigo. Amaura espera na tua Caixa e é reanimado após 24 horas, no Nv.20.","O fóssil de um Pokémon antigo. Amaura espera na sua Caixa e é reanimado após 24 horas, no Nv.20.",古代のポケモンの化石。アマルスがボックスで待ち、24時間後にLv.20で復元される。,고대 포켓몬의 화석. 아마루스가 박스에서 기다리다가 24시간 후 Lv.20으로 복원된다.,古代宝可梦的化石。冰雪龙会在盒子里等待，24小时后以Lv.20复活。
+itemDesc.sachet,Makes certain Pokémon evolve: Spritzee (Aromatisse). Use it from the Team screen.,Fait évoluer certains Pokémon : Fluvetin (Cocotine). À utiliser depuis l'écran Équipe.,Hace evolucionar a ciertos Pokémon: Spritzee (Aromatisse). Úsalo desde la pantalla Equipo.,Lässt bestimmte Pokémon entwickeln: Parfi (Parfinesse). Im Team-Bildschirm einsetzbar.,Fa evolvere alcuni Pokémon: Spritzee (Aromatisse). Usala dalla schermata Squadra.,Faz evoluir certos Pokémon: Spritzee (Aromatisse). Usa-a no ecrã Equipa.,Faz certos Pokémon evoluírem: Spritzee (Aromatisse). Use na tela Equipe.,特定のポケモンを進化させる：シュシュプ（フレフワン）。「手持ち」画面で使う。,특정 포켓몬을 진화시킨다: 슈쁘(프레프티르). 팀 화면에서 사용한다.,让特定的宝可梦进化：粉香香（芳香精）。在队伍画面中使用。
+itemDesc.whipped-dream,Makes certain Pokémon evolve: Swirlix (Slurpuff). Use it from the Team screen.,Fait évoluer certains Pokémon : Sucroquin (Cupcanaille). À utiliser depuis l'écran Équipe.,Hace evolucionar a ciertos Pokémon: Swirlix (Slurpuff). Úsalo desde la pantalla Equipo.,Lässt bestimmte Pokémon entwickeln: Flauschling (Sabbaione). Im Team-Bildschirm einsetzbar.,Fa evolvere alcuni Pokémon: Swirlix (Slurpuff). Usala dalla schermata Squadra.,Faz evoluir certos Pokémon: Swirlix (Slurpuff). Usa-a no ecrã Equipa.,Faz certos Pokémon evoluírem: Swirlix (Slurpuff). Use na tela Equipe.,特定のポケモンを進化させる：ペロッパフ（ペロリーム）。「手持ち」画面で使う。,특정 포켓몬을 진화시킨다: 나룸퍼프(나루림). 팀 화면에서 사용한다.,让特定的宝可梦进化：绵绵泡芙（胖甜妮）。在队伍画面中使用。

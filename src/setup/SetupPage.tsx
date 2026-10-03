@@ -59,7 +59,7 @@ function jwtRole(key: string): string | null {
   }
 }
 
-const EXPECTED: Partial<Record<string, number>> = { pokemon: 649, dice_types: 19, die_upgrades: 180, combo_upgrades: 80, regions: 5 }
+const EXPECTED: Partial<Record<string, number>> = { pokemon: 721, dice_types: 19, die_upgrades: 180, combo_upgrades: 80, regions: 6 }
 
 function useChecks() {
   const auth = useGame((s) => s.auth)

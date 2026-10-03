@@ -24,7 +24,7 @@ const LEGENDARIES = [144, 145, 146, 150, 151]
 const ALL_LEGENDARIES = [
   144, 145, 146, 150, 151, 243, 244, 245, 249, 250, 251, 377, 378, 379, 380, 381, 382, 383, 384, 385, 386, 479, 480,
   481, 482, 483, 484, 485, 486, 487, 488, 489, 490, 491, 492, 493, 494, 638, 639, 640, 641, 642, 643, 644, 645, 646, 647,
-  648, 649,
+  648, 649, 716, 717, 718, 719, 720, 721,
 ]
 const STARTERS = [1, 4, 7]
 /**
@@ -34,8 +34,8 @@ const STARTERS = [1, 4, 7]
 const SIX_DICE = new Set([243, 244, 245, 493])
 
 describe('pokemon.json', () => {
-  it('has 649 complete entries — Kanto, Johto, Hoenn, Sinnoh and Unova', () => {
-    expect(species).toHaveLength(649)
+  it('has 721 complete entries — Kanto, Johto, Hoenn, Sinnoh, Unova and Kalos', () => {
+    expect(species).toHaveLength(721)
     for (const p of species) {
       expect(total(p.dice)).toBeGreaterThanOrEqual(1)
       expect(total(p.dice), p.name).toBeLessThanOrEqual(SIX_DICE.has(p.dex) ? 6 : 5)
@@ -62,7 +62,7 @@ describe('pokemon.json', () => {
     expect(byDex(6).baseHp).toBe(12)
     expect(byDex(6).maxHp).toBe(297)
     expect(byDex(4).evolutions).toEqual([{ toDex: 5, level: 16 }])
-    expect(byDex(133).evolutions.map((e) => e.toDex).sort((a, b) => a - b)).toEqual([134, 135, 136, 196, 197, 470, 471])
+    expect(byDex(133).evolutions.map((e) => e.toDex).sort((a, b) => a - b)).toEqual([134, 135, 136, 196, 197, 470, 471, 700])
     // v1.10: Eevee's forms come from the stones (Water, Thunder, Fire) — and, with Johto, Espeon and Umbreon, which
     // evolve on happiness by day and by night in the originals and on the Sun and Moon Stone here (no day/night cycle).
     // Sinnoh adds Leafeon and Glaceon the same way: they evolve beside a mossy or an icy rock, which is a place
@@ -72,6 +72,7 @@ describe('pokemon.json', () => {
       'ice-stone',
       'leaf-stone',
       'moon-stone',
+      'shiny-stone',
       'sun-stone',
       'thunder-stone',
       'water-stone',

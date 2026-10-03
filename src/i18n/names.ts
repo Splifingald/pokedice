@@ -97,6 +97,21 @@ export const TRAINER_CLASSES = [
   'Pilot',
   'Tuber',
   'Idol',
+  // Kalos
+  'Battle Chatelaine',
+  'Team Flare Grunt',
+  'Fairy Tale Girl',
+  'Furisode Girl',
+  'Roller Skater',
+  'Rising Star',
+  'Sky Trainer',
+  'Café Master',
+  'Flare Admin',
+  'Punk Girl',
+  'Punk Guy',
+  'Garçon',
+  'Butler',
+  'Maid',
 ].sort((a, b) => b.length - a.length)
 
 /** Splits `Bug Catcher Kent` into its class and its given name; a bare `Misty` has neither. */

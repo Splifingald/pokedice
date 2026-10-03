@@ -1,6 +1,6 @@
 /**
- * pnpm seed-regions — appends Johto (152–251), Hoenn (252–386), Sinnoh (387–493) and Unova (494–649) to the offline
- * bundle.
+ * pnpm seed-regions — appends Johto (152–251), Hoenn (252–386), Sinnoh (387–493), Unova (494–649) and Kalos
+ * (650–721) to the offline bundle.
  *
  * Unlike `pnpm seed`, this script is **additive**: it reads `src/data/*.json`, keeps every existing row exactly as it
  * is, and only appends what is missing. That matters because the committed bundle is ahead of `scripts/seed.ts` —
@@ -30,6 +30,7 @@ import { HOENN_AREAS, HOENN_STARTERS } from './content-hoenn'
 import { JOHTO_AREAS, JOHTO_STARTERS } from './content-johto'
 import { SINNOH_AREAS, SINNOH_STARTERS } from './content-sinnoh'
 import { UNOVA_AREAS, UNOVA_STARTERS } from './content-unova'
+import { KALOS_AREAS, KALOS_STARTERS } from './content-kalos'
 import { liveDicePlan, type LegendKind } from './dice-live'
 import type { AreaPlan } from './content'
 import type { Area, BattleBackground, Evolution, ItemDef, PokeType, Region, Species, Trainer } from '../src/engine/types'
@@ -56,8 +57,8 @@ const argOf = (flag: string) => {
   const i = process.argv.indexOf(flag)
   return i > 0 ? Number(process.argv[i + 1]) : null
 }
-const FIRST_NEW_DEX = argOf('--from') ?? 494
-const DEX_MAX = argOf('--to') ?? 649
+const FIRST_NEW_DEX = argOf('--from') ?? 650
+const DEX_MAX = argOf('--to') ?? 721
 
 // ---------------------------------------------------------------- mirror access (cached)
 
@@ -162,6 +163,9 @@ const EVO_ITEMS = new Set([
   'dubious-disc',
   'reaper-cloth',
   'ice-stone',
+  // Gen 6: the two trade items of Kalos's fairies.
+  'sachet',
+  'whipped-dream',
 ])
 
 /**
@@ -175,6 +179,8 @@ const FORCED_ITEM: Record<number, string> = {
   // Stones keep all seven Eevee branches item-driven, so a levelling Eevee never pre-empts one of them.
   470: 'leaf-stone',
   471: 'ice-stone',
+  // Sylveon wants affection and a Fairy move. The Shiny Stone is the one stone Eevee had no use for yet.
+  700: 'shiny-stone',
 }
 
 /**
@@ -237,6 +243,12 @@ const LEGENDARY_CATCH: Record<number, number> = {
   647: 5, // Keldeo
   648: 5, // Meloetta
   649: 5, // Genesect
+  716: 7, // Xerneas    ·  Kalos: the life-and-death pair and Zygarde as box legendaries
+  717: 7, // Yveltal
+  718: 7, // Zygarde
+  719: 5, // Diancie    ·  the mythicals, as Mew
+  720: 5, // Hoopa
+  721: 5, // Volcanion
 }
 
 /** One evolution edge, in the shape the bundle already uses for Kanto. */
@@ -326,6 +338,10 @@ const NEW_ITEMS: ItemDef[] = [
   fossil('armor-fossil', 'Armor Fossil', 410, 'Shieldon'),
   { ...fossil('cover-fossil', 'Cover Fossil', 564, 'Tirtouga'), region: 'unova' },
   { ...fossil('plume-fossil', 'Plume Fossil', 566, 'Archen'), region: 'unova' },
+  { ...fossil('jaw-fossil', 'Jaw Fossil', 696, 'Tyrunt'), region: 'kalos' },
+  { ...fossil('sail-fossil', 'Sail Fossil', 698, 'Amaura'), region: 'kalos' },
+  { ...stone('sachet', 'Sachet', 'Spritzee (Aromatisse)'), region: 'kalos' },
+  { ...stone('whipped-dream', 'Whipped Dream', 'Swirlix (Slurpuff)'), region: 'kalos' },
 ]
 
 // ---------------------------------------------------------------- build
@@ -434,10 +450,42 @@ const LEGEND_KIND: Record<number, LegendKind> = {
   638: 'trio', 639: 'trio', 640: 'trio', 641: 'trio', 642: 'trio', 645: 'trio',
   643: 'box', 644: 'box', 646: 'box',
   494: 'mythical', 647: 'mythical', 648: 'mythical', 649: 'mythical',
+  716: 'box', 717: 'box', 718: 'box',
+  719: 'mythical', 720: 'mythical', 721: 'mythical',
 }
 
-/** Lines that level slowly into a 600-BST final, Gible's shape: Axew's and Deino's. */
-const PSEUDO_LINES = new Set([610, 611, 612, 633, 634, 635])
+/** Lines that level slowly into a 600-BST final, Gible's shape: Axew's, Deino's and Goomy's. */
+const PSEUDO_LINES = new Set([610, 611, 612, 633, 634, 635, 704, 705, 706])
+
+/**
+ * Rows `liveDicePlan` reads wrongly, set to what the live game does for their closest relative. The rules go by stage
+ * and BST, and a few lines sit outside both: a cocoon that evolves at Lv.9–12 never reaches a Lv.24 replacement, and
+ * an Eevee branch arriving by stone levels like its siblings, not like a slow evolver.
+ */
+const DICE_OVERRIDES: Record<number, Pick<Species, 'dice' | 'rerolls' | 'milestones'>> = {
+  // Scatterbug → Spewpa → Vivillon, as Wurmple → Silcoon → Beautifly.
+  664: { dice: [{ type: 'bug', count: 1 }], rerolls: 1, milestones: [{ level: 9, effect: 'EVOLVE' }] },
+  665: { dice: [{ type: 'bug', count: 2 }], rerolls: 2, milestones: [{ level: 12, effect: 'EVOLVE' }] },
+  666: {
+    dice: [{ type: 'bug', count: 2 }, { type: 'flying', count: 1 }],
+    rerolls: 3,
+    milestones: [
+      { level: 40, effect: 'ADD_DIE', dieType: 'bug' },
+      { level: 40, effect: 'ADD_REROLL', amount: 1 },
+    ],
+  },
+  // Sylveon, as Leafeon and Glaceon: a die of its type at Lv.36 and at Lv.50.
+  700: {
+    dice: [{ type: 'fairy', count: 2 }, { type: 'base', count: 1 }],
+    rerolls: 3,
+    milestones: [
+      { level: 36, effect: 'ADD_DIE', dieType: 'fairy' },
+      { level: 36, effect: 'ADD_REROLL', amount: 1 },
+      { level: 50, effect: 'ADD_DIE', dieType: 'fairy' },
+      { level: 50, effect: 'ADD_REROLL', amount: 1 },
+    ],
+  },
+}
 
 /** Starters of every region, from the region plans, plus their evolutions. */
 function starterLines(species: Species[]): Set<number> {
@@ -477,7 +525,7 @@ function liveSchedule(species: Species[], bst: Map<number, number>): (s: Species
       fossil: FOSSIL_ONLY.has(s.dex),
       legend: LEGEND_KIND[s.dex] ?? null,
     })
-    return { ...s, ...plan }
+    return { ...s, ...plan, ...DICE_OVERRIDES[s.dex] }
   }
 }
 
@@ -493,7 +541,7 @@ interface RegionPlan {
   dexRange: [number, number]
   starters: number[]
   plans: AreaPlan[]
-  spriteRegion: 'johto' | 'hoenn' | 'sinnoh' | 'unova'
+  spriteRegion: 'johto' | 'hoenn' | 'sinnoh' | 'unova' | 'kalos'
   /** Key of the area whose clearing is "the league is done". */
   leagueKey: string
   nextRegion: string | null
@@ -644,7 +692,7 @@ const REGION_PLANS: RegionPlan[] = [
     plans: UNOVA_AREAS,
     spriteRegion: 'unova',
     leagueKey: 'un-pokemon-league',
-    nextRegion: null,
+    nextRegion: 'kalos',
     backgrounds: {
       'Route 1 & Nuvema Town': 'grass',
       'Route 2 & Accumula Town': 'grass',
@@ -678,6 +726,51 @@ const REGION_PLANS: RegionPlan[] = [
       'The P2 Laboratory': 'default',
     },
   },
+  {
+    id: 'kalos',
+    name: 'Kalos',
+    orderIndex: 5,
+    dexRange: [650, 721],
+    starters: KALOS_STARTERS,
+    plans: KALOS_AREAS,
+    spriteRegion: 'kalos',
+    leagueKey: 'ka-pokemon-league',
+    nextRegion: null,
+    backgrounds: {
+      'Routes 1 & 2 and Aquacorde Town': 'grass',
+      'Santalune Forest': 'grass',
+      'Route 3 & Santalune City': 'grass',
+      'Routes 4 & 22 and Lumiose City South': 'grass',
+      'Route 5 & Camphrier Town': 'grass',
+      'Route 6 & Parfum Palace': 'grass',
+      'Route 7 & the Connecting Cave': 'grass',
+      'Route 8 & Ambrette Town': 'sea',
+      'Route 9, the Glittering Cave & Cyllage City': 'rock',
+      'Route 10 & Geosenge Town': 'rock',
+      'Route 11, Reflection Cave & Shalour City': 'rock',
+      'Route 12, Azure Bay & Coumarine City': 'sea',
+      'Route 13 & the Kalos Power Plant': 'rock',
+      'Lumiose City': 'default',
+      'Route 14 & Laverre City': 'water',
+      'Routes 15 & 16 and the Lost Hotel': 'default',
+      'Dendemille Town, Route 17 & the Frost Cavern': 'rock',
+      'Route 18 & Anistar City': 'rock',
+      'Lysandre Labs & the Team Flare Secret HQ': 'default',
+      'Route 19 & Couriway Town': 'water',
+      'Route 20, the Pokémon Village & Snowbelle City': 'grass',
+      'Route 21 & Victory Road': 'rock',
+      'The Pokémon League': 'default',
+      'Victory Road II': 'rock',
+      'The Pokémon League II': 'default',
+      'Kiloude City & the Battle Maison': 'default',
+      'The Friend Safari': 'grass',
+      'The Team Flare Secret HQ Depths': 'default',
+      'Terminus Cave': 'rock',
+      'The Diamond Domain': 'rock',
+      "Hoopa's Ring": 'default',
+      'The Nebel Plateau': 'rock',
+    },
+  },
 ]
 
 /**
@@ -700,10 +793,11 @@ function catchAllFor(region: RegionPlan): (dex: number) => boolean {
 
 /**
  * Lileep and Anorith come out of the Root and Claw Fossil on Route 111, Cranidos and Shieldon out of the Skull and
- * Armor Fossil in the Oreburgh Mine, Tirtouga and Archen out of the Cover and Plume Fossil in Relic Castle, and their
- * evolutions out of those. None of the six lines is ever wild.
+ * Armor Fossil in the Oreburgh Mine, Tirtouga and Archen out of the Cover and Plume Fossil in Relic Castle, Tyrunt and
+ * Amaura out of the Jaw and Sail Fossil in the Glittering Cave, and their evolutions out of those. None of the eight
+ * lines is ever wild.
  */
-const FOSSIL_ONLY = new Set([345, 346, 347, 348, 408, 409, 410, 411, 564, 565, 566, 567])
+const FOSSIL_ONLY = new Set([345, 346, 347, 348, 408, 409, 410, 411, 564, 565, 566, 567, 696, 697, 698, 699])
 
 /**
  * The regions this run rebuilds: the ones whose Pokédex sits inside the generated range. Every other region is kept
@@ -754,7 +848,9 @@ async function main() {
   const pokemon = await readJson<Species[]>('pokemon.json')
   const items = await readJson<ItemDef[]>('items.json')
 
-  const kept = pokemon.filter((p) => p.dex < FIRST_NEW_DEX)
+  // Rows outside the range stay exactly as they are — above it too, so re-running an earlier region never drops a later one.
+  const inRange = (dex: number) => dex >= FIRST_NEW_DEX && dex <= DEX_MAX
+  const kept = pokemon.filter((p) => !inRange(p.dex))
   if (kept.length !== pokemon.length) console.log(`· replacing ${pokemon.length - kept.length} previously generated rows`)
 
   const { list, bst, intoExisting } = await fetchNewSpecies(kept)
@@ -764,7 +860,7 @@ async function main() {
   const { species: grown, grafted } = graftEvolutions([...kept, ...list].sort((a, b) => a.dex - b.dex), intoExisting)
   const scheduled = new Map(applyDiceSchedule(grown, (dex) => bst.get(dex) ?? 400).map((s) => [s.dex, s]))
   const live = liveSchedule(grown, bst)
-  const out = grown.map((s) => (s.dex < FIRST_NEW_DEX ? s : s.dex >= LIVE_DICE_FROM ? live(s) : scheduled.get(s.dex)!))
+  const out = grown.map((s) => (!inRange(s.dex) ? s : s.dex >= LIVE_DICE_FROM ? live(s) : scheduled.get(s.dex)!))
   for (const g of grafted) console.log(`  · grafted ${g}`)
 
   const byKey = new Map(items.map((i) => [i.key, i]))
