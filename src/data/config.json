@@ -1,24 +1,4 @@
 {
- "energy": {
-  "max": 50,
-  "enabled": false,
-  "minutesPerEnergy": 30
- },
- "roamers": {
-  "dex": [
-   243,
-   244,
-   245
-  ],
-  "level": 40,
-  "chance": 0.02,
-  "regionId": "johto",
-  "requires": [
-   249,
-   250
-  ]
- },
- "showRoundPreview": false,
  "xpShareMode": "fighter",
  "maxTeamSize": 3,
  "maxLevel": 100,
@@ -120,5 +100,25 @@
   }
  },
  "shinyChance": 0.01,
- "configVersion": 60
+ "configVersion": 61,
+ "energy": {
+  "max": 50,
+  "enabled": false,
+  "minutesPerEnergy": 30
+ },
+ "roamers": {
+  "dex": [
+   243,
+   244,
+   245
+  ],
+  "level": 40,
+  "chance": 0.02,
+  "regionId": "johto",
+  "requires": [
+   249,
+   250
+  ]
+ },
+ "showRoundPreview": false
 }
