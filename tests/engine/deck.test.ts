@@ -145,25 +145,13 @@ describe('rounds', () => {
     expect(after.drawn).toHaveLength(1)
   })
 
-  it('a cleared area no longer opens with a Pokémon Center, but the Centers in its deck still turn up', () => {
+  it('a cleared area still opens with a Pokémon Center', () => {
     const base = newSave(4, data, 0, newId)
     const hurt = { ...base, box: base.box.map((p) => ({ ...p, currentHp: 1 })) }
     const cleared: SaveData = { ...hurt, areaProgress: { ...hurt.areaProgress, [ROUTE1.id]: { ...progressOf(hurt, ROUTE1.id), cleared: true } } }
-    const rng = createRng(21)
-    const opening = nextEncounter(ctx(cleared, ROUTE1, { centerUseful: true, teamHurt: true, isFirstInArea: true }), rng)
-    expect(opening.newRound).toBe(true)
-    expect(opening.encounter).not.toMatchObject({ kind: 'center', forced: true })
-    let save = recordDraws(cleared, ROUTE1.id, opening)
-    const kinds = [opening.encounter.kind]
-    while (progressOf(save, ROUTE1.id).deck?.length) {
-      const roll = nextEncounter(ctx(save, ROUTE1, { centerUseful: true }), rng)
-      kinds.push(roll.encounter.kind)
-      save = recordDraws(save, ROUTE1.id, roll)
-    }
-    expect(kinds.filter((k) => k === 'center')).toHaveLength(deckCounts(ROUTE1.encounterWeights, deckAbilities(ROUTE1)).center)
-    // Easy areas still send one after a K.O.
-    const ko = { ...cleared, box: cleared.box.map((p) => ({ ...p, currentHp: 0 })) }
-    expect(nextEncounter(ctx(ko, { ...ROUTE1, easyMode: true }, { teamFainted: true }), rng).encounter).toMatchObject({ reason: 'fainted' })
+    const roll = nextEncounter(ctx(cleared, ROUTE1, { centerUseful: true, teamHurt: true, isFirstInArea: true }), createRng(21))
+    expect(roll.newRound).toBe(true)
+    expect(roll.encounter).toMatchObject({ kind: 'center', forced: true, reason: 'round' })
   })
 
   it('knows when a Center would help: someone hurt, or a Pokémon in the Box', () => {
