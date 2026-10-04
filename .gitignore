@@ -13,3 +13,4 @@ test-results
 !.vscode/extensions.json
 .idea
 *.tsbuildinfo
+.claude/settings.local.json
