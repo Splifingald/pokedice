@@ -1,7 +1,7 @@
 // Cloud sync safety: a stale device must never silently overwrite a save with more progress.
 import { describe, expect, it } from 'vitest'
 import { liveBlock, newSave, syncXpCurve, xpToNext, type SaveData } from '@/engine'
-import { compareProgress, decideSync, progressTotals, sameSave } from '@/save/cloud'
+import { compareProgress, decideSync, progressTotals, pushKey, sameSave } from '@/save/cloud'
 import { data, newId } from './fixtures'
 
 const base = newSave(4, data, 1000, newId)
@@ -65,6 +65,14 @@ describe('decideSync', () => {
     // Saves from before passive regen was removed still carry lastRegenTick: not progress either.
     expect(sameSave(at(base, 1), { ...at(base, 9), lastRegenTick: 42 } as typeof base)).toBe(true)
     expect(sameSave(base, further)).toBe(false)
+  })
+
+  it('skips a push only when nothing but timestamps changed', () => {
+    expect(pushKey(at(base, 1))).toBe(pushKey({ ...at(base, 9), lastRegenTick: 42 } as typeof base))
+    expect(pushKey(base)).not.toBe(pushKey(further))
+    // Unlike sameSave, a settings change is worth sending.
+    const muted: SaveData = { ...base, settings: { ...base.settings, sfx: !base.settings.sfx } }
+    expect(pushKey(muted)).not.toBe(pushKey(base))
   })
 })
 

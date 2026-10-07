@@ -132,3 +132,11 @@ export function sameSave(a: SaveData, b: SaveData): boolean {
   const strip = (s: SaveData) => JSON.stringify({ ...s, updatedAt: 0, lastRegenTick: 0, settings: null })
   return strip(a) === strip(b)
 }
+
+/**
+ * The save as far as a push is concerned: everything but its timestamps. Settings count, so a change made only there
+ * still reaches the cloud. Two saves with the same key, and the second push would change nothing.
+ */
+export function pushKey(s: SaveData): string {
+  return JSON.stringify({ ...s, updatedAt: 0, lastRegenTick: 0 })
+}

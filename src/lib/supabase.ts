@@ -1,6 +1,7 @@
 // Supabase is optional. The client is loaded lazily so it never weighs on first paint, and is null when the
 // environment variables are missing — the game then simply runs offline.
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { guardRefresh } from './refreshGuard'
 
 // `import.meta.env` is Vite's, and is undefined when a Node script imports this module (scripts/pull-remote.ts
 // reaches `fetchAllRows` through it). Reading it defensively keeps that path working without a build step.
@@ -21,6 +22,8 @@ export function getSupabase(): Promise<SupabaseClient | null> {
     .then(({ createClient }) =>
       createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
         auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: 'pkce' },
+        // Session refreshes back off while Auth answers with server errors (src/lib/refreshGuard.ts).
+        global: { fetch: guardRefresh((...args) => fetch(...args)) },
       }),
     )
     .catch((err) => {

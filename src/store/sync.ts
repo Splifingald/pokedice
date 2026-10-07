@@ -10,6 +10,7 @@ import {
   flushPush,
   pullCloudSave,
   pushCloudSave,
+  pushKey,
   sameSave,
   schedulePush,
 } from '@/save/cloud'
@@ -22,6 +23,8 @@ import { rescueIfRegionDisabled } from './regions'
 let syncedUser: string | null = null
 /** Nothing is pushed until the first sync for the signed-in user is settled — no overwrite while we compare. */
 let pushAllowed = false
+/** pushKey of the save the cloud holds, as far as this device knows; null when it doesn't. A push of the same is skipped. */
+let cloudKey: string | null = null
 
 /** After a successful sync, SYNC ONLINE can't be pressed again for this long. */
 export const SYNC_COOLDOWN_MS = 5 * 60_000
@@ -46,7 +49,12 @@ const inFight = () => {
 
 async function push(client: SupabaseClient, userId: string, save: SaveData) {
   lastTry = Date.now()
-  await pushCloudSave(client, userId, save)
+  const key = pushKey(save)
+  // Nothing changed since the cloud last matched (only timestamps): the upsert would rewrite the same row.
+  if (key !== cloudKey) {
+    await pushCloudSave(client, userId, save)
+    cloudKey = key
+  }
   markSynced()
 }
 
@@ -57,6 +65,7 @@ async function push(client: SupabaseClient, userId: string, save: SaveData) {
  */
 async function reconcile(client: SupabaseClient, id: string): Promise<'loaded' | 'pushed' | 'same' | 'ask'> {
   pushAllowed = false
+  cloudKey = null
   cancelPush() // whatever was waiting goes out below, if this device wins
   lastTry = Date.now()
   const local = useGame.getState().save
@@ -73,11 +82,15 @@ async function reconcile(client: SupabaseClient, id: string): Promise<'loaded' |
     resetRun()
     pushToast(t('ui.toast.cloudNewer'), 'good')
     outcome = 'loaded'
+    cloudKey = pushKey(cloud)
   } else if (decision === 'local' && local && !(cloud && sameSave(local, cloud))) {
     if (cloud) backupSave(cloud, t('ui.sync.replacedByLocal'))
     await pushCloudSave(client, id, local)
     pushToast(t(cloud ? 'ui.toast.localNewer' : 'ui.toast.backedUp'), 'good')
     outcome = 'pushed'
+    cloudKey = pushKey(local)
+  } else if (cloud) {
+    cloudKey = pushKey(cloud)
   }
   markSynced()
   pushAllowed = true
@@ -88,6 +101,7 @@ async function handleSession(client: SupabaseClient, session: Session | null) {
   if (!session) {
     syncedUser = null
     pushAllowed = false
+    cloudKey = null
     cancelPush()
     useCloudSync.setState({ lastAt: null })
     useGame.setState({ auth: { status: 'signed_out', userId: null, email: null } })
@@ -155,6 +169,7 @@ export async function resolveSyncConflict(keep: 'local' | 'cloud') {
     backupSave(local, t('ui.sync.localPicked'))
     commitSave(cloud, { silent: true, keepTimestamp: true })
     resetRun()
+    cloudKey = pushKey(cloud)
     markSynced()
   } else {
     backupSave(cloud, t('ui.sync.cloudPicked'))

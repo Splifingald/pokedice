@@ -142,18 +142,12 @@ language sql stable security definer set search_path = public as $$
   )
 $$;
 
--- Rebuild the cache when it is over a minute old. One call at a time: the others skip and read the previous copy.
-create or replace function leaderboard_refresh() returns void
+-- The whole board, from scratch (0031: pg_cron runs it every 5 minutes). One rebuild at a time: a second caller skips
+-- and the board stays as it was.
+create or replace function leaderboard_rebuild() returns void
 language plpgsql security definer set search_path = public as $$
 begin
-  if exists (select 1 from leaderboard_cache_state where refreshed_at > now() - interval '1 minute') then
-    return;
-  end if;
   if not pg_try_advisory_xact_lock(hashtext('pokedice.leaderboard_refresh')) then
-    return;
-  end if;
-  -- Someone may have finished a rebuild between the check and the lock.
-  if exists (select 1 from leaderboard_cache_state where refreshed_at > now() - interval '1 minute') then
     return;
   end if;
   delete from leaderboard_cache where true;  -- a bare DELETE is refused through the API (pg-safeupdate)
@@ -162,6 +156,17 @@ begin
   from leaderboard_rows(now() - interval '72 hours', null) r;
   insert into leaderboard_cache_state (id, refreshed_at) values (true, now())
   on conflict (id) do update set refreshed_at = excluded.refreshed_at;
+end
+$$;
+
+-- The fallback for when the scheduled rebuild isn't running: rebuild only a cache over 15 minutes old.
+create or replace function leaderboard_refresh() returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  if exists (select 1 from leaderboard_cache_state where refreshed_at > now() - interval '15 minutes') then
+    return;
+  end if;
+  perform leaderboard_rebuild();
 end
 $$;
 
@@ -196,6 +201,7 @@ language sql volatile security definer set search_path = public as $$
 $$;
 
 revoke all on function leaderboard_rows(timestamptz, uuid) from public, anon, authenticated;
+revoke all on function leaderboard_rebuild() from public, anon, authenticated;
 revoke all on function leaderboard_refresh() from public, anon, authenticated;
 revoke all on function leaderboard() from public;
 grant execute on function leaderboard() to anon, authenticated;
