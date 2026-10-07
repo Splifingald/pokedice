@@ -10,7 +10,10 @@ import {
   createRng,
   faceOf,
   facesOf,
+  formChoices,
   hasStatus,
+  megaChoices,
+  megaDie,
   progressOf,
   randomSeed,
   statusCounts,
@@ -30,19 +33,19 @@ import { Modal } from '@/components/Modal'
 import { OakTip, useOneTimeTip } from '@/components/OakTip'
 import { ParticleCanvas, type ParticleHandle } from '@/components/ParticleCanvas'
 import { PixelButton } from '@/components/PixelButton'
-import { MiniSprite, SpriteImg } from '@/components/SpriteImg'
+import { MiniSprite, SPRITE_METRICS, SpriteImg } from '@/components/SpriteImg'
 import { playerOf, PokeBall, ThrowSprite, TrainerSprite } from '@/components/TrainerArt'
 import { StatusIcons } from '@/components/StatusIcons'
 import { TypeBadge } from '@/components/TypeBadge'
 import { TypeMatchups } from '@/components/TypeMatchups'
 import { ForfeitButton } from '@/components/ForfeitButton'
-import { comboName, statusName, trainerTitle } from '@/lib/format'
+import { DiceSet } from '@/components/DiceSet'
+import { comboName, statusName, trainerTitle, typeName } from '@/lib/format'
 import { useT } from '@/i18n/react'
 import { AUTO_PACE, PaceContext, usePace, VERSUS_PACE } from '@/lib/pace'
 import { useIsDesktop, useMediaQuery } from '@/lib/useMediaQuery'
 import { setSettings, useGame, type BattleSlice } from '@/store/game'
 import { dispatchBattle } from '@/store/run'
-import spriteMetrics from '@/data/sprite-metrics.json'
 import { STATUS_COLORS } from '@/theme/colors'
 import { cx, typeColor } from '@/theme/util'
 import { useBattleAnimator } from './useBattleAnimator'
@@ -179,13 +182,26 @@ const OWN_SPOT_COMPACT = { x: 48, feet: 116 }
 /** Phones: a strip of sky above the background holds the foe's box. Colour = the backgrounds' flat sky (row 24). */
 const SKY_BAND = 34
 const SKY: Record<BattleBackground, string> = { default: '#e8e8e8', grass: '#e8f0f0', rock: '#a08850', sea: '#f8f8f8', water: '#f8f8f8' }
-const METRICS = spriteMetrics as Record<string, { front: number; back: number } | undefined>
+const METRICS = SPRITE_METRICS
+/** The tallest or widest a form kept on its 96px canvas may stand in the scene (scene pixels); bigger art is shrunk. */
+const MAX_ART = 80
 
-/** Where a sprite cell goes (scene pixels): centred on the spot, its lowest opaque row on the spot's feet line. */
+/**
+ * Where a sprite cell goes (scene pixels): centred on the spot, its lowest opaque row on the spot's feet line. A form
+ * kept on its uncut 96px canvas gets a 96px cell at the same pixel scale — shrunk only if its art passes MAX_ART.
+ */
 function cellBox(dex: number, side: Side, compact: boolean) {
   const spot = side === 'enemy' ? FOE_SPOT : compact ? OWN_SPOT_COMPACT : OWN_SPOT
-  const gap = METRICS[dex]?.[side === 'enemy' ? 'front' : 'back'] ?? 0
-  return { left: spot.x - CELL / 2, top: spot.feet - CELL + gap }
+  const m = METRICS[dex]
+  let cell = CELL
+  let gap = m?.[side === 'enemy' ? 'front' : 'back'] ?? 0
+  if (m?.size && m.size !== CELL) {
+    const box = (side === 'enemy' ? m.frontBox : m.backBox) ?? [0, 0, m.size - 1, m.size - 1]
+    const k = Math.min(1, MAX_ART / Math.max(box[2] - box[0] + 1, box[3] - box[1] + 1))
+    cell = m.size * k
+    gap *= k
+  }
+  return { left: spot.x - cell / 2, top: spot.feet - cell + gap, cell }
 }
 
 function useWidth(ref: RefObject<HTMLElement>) {
@@ -264,8 +280,8 @@ function SpriteStage({
   const reduced = useGame((s) => s.settings.reducedMotion)
   const pace = usePace()
   const { dex, shiny } = battler
-  const size = Math.round(CELL * scale)
   const box = cellBox(dex, side, compact)
+  const size = Math.round(box.cell * scale)
   const enter = side === 'enemy' ? 60 : -60
   return (
     <div
@@ -289,7 +305,7 @@ function SpriteStage({
         className="absolute inset-0"
         style={{ transformOrigin: '50% 90%' }}
       >
-        <SpriteImg dex={dex} size={size} back={side === 'player'} shiny={shiny} alt="" />
+        <SpriteImg dex={dex} size={size} back={side === 'player'} shiny={shiny} alt="" fit={false} />
       </motion.div>
       {onClick && !hidden && !fainted && (
         <button type="button" onClick={onClick} aria-label={t('ui.types.tap', { name: battler.name })} className="absolute inset-0 z-[1]" />
@@ -440,7 +456,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
   const scene = useRef<HTMLDivElement>(null)
   const enemyAnchor = useRef<HTMLDivElement>(null)
   const playerAnchor = useRef<HTMLDivElement>(null)
-  const [menu, setMenu] = useState<null | 'item' | 'switch' | 'history'>(null)
+  const [menu, setMenu] = useState<null | 'item' | 'switch' | 'history' | 'mega' | 'form'>(null)
   const [itemKey, setItemKey] = useState<string | null>(null)
   const [showBreakdown, setShowBreakdown] = useState(false)
   const [bossIntro, setBossIntro] = useState(st.kind === 'boss' && !reduced)
@@ -478,6 +494,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
     itemName: (k) => data.items[k]?.name ?? k,
     colorOf: (t) => data.diceTypes[t as keyof typeof data.diceTypes]?.color ?? typeColor(t),
     onHit,
+    speciesName: (dex) => data.species[dex]?.name ?? `#${dex}`,
   }, pace)
   useShake(scene, fx.shake, reduced, pace)
 
@@ -596,6 +613,15 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
   const usefulItems = ownedItems.filter(([k]) => st.player.some((p) => itemHelps(k, p)))
   const showItem = usefulItems.length > 0
   const showSwitch = data.config.allowVoluntarySwitch && switchTargets.length > 0
+  // Mega Evolution (once per battle, Lv.50+, from Kalos on) and Arceus's types, beside ITEM and SWITCH.
+  const megaOpts = versus ? [] : megaChoices(st, data)
+  const formOpts = versus ? [] : formChoices(st, data)
+  const formsLeft = data.config.arceusChangesPerBattle - (st.formChanges ?? 0)
+  const megaBase = data.species[activeBattler(st).baseDex ?? activeBattler(st).dex]
+  const megaEvolve = (toDex: number) => {
+    setMenu(null)
+    dispatch({ t: 'MEGA', toDex })
+  }
 
   // Stunned with no item that could help: nothing to do but lose the turn.
   const stunChoice = canItem && showItem
@@ -987,8 +1013,25 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
             </PixelButton>
           </div>
         )}
-        {!auto && !terminal && (showItem || showSwitch || st.canRun) && (
+        {!auto && !terminal && (showItem || showSwitch || st.canRun || megaOpts.length > 0 || formOpts.length > 0) && (
           <div className="flex flex-wrap items-center justify-center gap-2">
+            {megaOpts.length > 0 && (
+              <PixelButton
+                size={minorSize}
+                variant="primary"
+                disabled={!canAct}
+                title={t('ui.battle.megaOnce')}
+                // One Mega form: straight in. Several (Charizard X and Y…): the player picks.
+                onClick={() => (megaOpts.length === 1 ? megaEvolve(megaOpts[0]!.dex) : setMenu('mega'))}
+              >
+                <PixelIcon name="up" size={14} /> {t('ui.battle.mega')}
+              </PixelButton>
+            )}
+            {formOpts.length > 0 && (
+              <PixelButton size={minorSize} disabled={!canAct} onClick={() => setMenu('form')}>
+                <PixelIcon name="dice" size={14} /> {t('ui.battle.type', { left: formsLeft })}
+              </PixelButton>
+            )}
             {showItem && (
               <PixelButton
                 size={minorSize}
@@ -1053,6 +1096,60 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
             />
           ))}
           <ForfeitButton className="mt-1" onForfeit={() => setMenu(null)} />
+        </div>
+      </Modal>
+
+      {/* Mega Evolution: the choice, when the Pokémon has more than one Mega form. */}
+      <Modal open={menu === 'mega' && megaOpts.length > 0} onClose={() => setMenu(null)} title={t('ui.battle.megaTitle')}>
+        <div className="flex flex-col gap-2">
+          <p className="copy text-lg">{t('ui.battle.megaPick', { name: active.name })}</p>
+          {megaOpts.map((m) => {
+            const die = megaBase ? megaDie(megaBase, m) : m.type1
+            return (
+              <button
+                key={m.dex}
+                type="button"
+                onClick={() => megaEvolve(m.dex)}
+                className="pixel-panel flex w-full items-center gap-3 p-2 text-left enabled:hover:bg-white"
+              >
+                <SpriteImg dex={m.dex} size={80} shiny={active.shiny} className="border-[3px] border-ink bg-parchment" />
+                <span className="flex min-w-0 flex-1 flex-col gap-1">
+                  <span className="text-2xl leading-none">{m.name}</span>
+                  <span className="flex gap-1">
+                    <TypeBadge type={m.type1} size="sm" />
+                    {m.type2 && <TypeBadge type={m.type2} size="sm" />}
+                  </span>
+                  <span className="flex items-center gap-1.5 text-lg leading-none">
+                    <DiceSet dice={[die]} size={22} /> {t('ui.sheet.msAddDie', { to: typeName(die) })}
+                  </span>
+                </span>
+              </button>
+            )
+          })}
+          <p className="copy text-base text-muted">{t('ui.battle.megaOnce')}</p>
+        </div>
+      </Modal>
+
+      {/* Arceus: its type, picked from a menu, a few times per battle. */}
+      <Modal open={menu === 'form' && formOpts.length > 0} onClose={() => setMenu(null)} title={t('ui.battle.typeTitle', { name: active.name })}>
+        <div className="flex flex-col gap-2">
+          <p className="copy text-base">{t('ui.battle.typeHint', { left: formsLeft })}</p>
+          <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+            {formOpts.map((f) => (
+              <button
+                key={f.dex}
+                type="button"
+                onClick={() => {
+                  setMenu(null)
+                  dispatch({ t: 'CHANGE_FORM', toDex: f.dex })
+                }}
+                className="pixel-panel flex flex-col items-center gap-1 p-1 enabled:hover:bg-white"
+              >
+                <SpriteImg dex={f.dex} size={56} shiny={active.shiny} />
+                <TypeBadge type={f.type1} size="sm" />
+              </button>
+            ))}
+          </div>
         </div>
       </Modal>
 

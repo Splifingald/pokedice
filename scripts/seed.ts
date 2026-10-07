@@ -871,6 +871,7 @@ export function buildSql(b: {
     'alter table items add column if not exists shop_area uuid;',
     'alter table items add column if not exists region text;',
     'alter table items add column if not exists once_only boolean not null default false;',
+    'alter table pokemon add column if not exists form jsonb;',
     prelude,
     upsert(
       'type_chart',
@@ -901,6 +902,7 @@ export function buildSql(b: {
         'evolutions',
         'milestones',
         'notes',
+        'form',
       ],
       b.pokemon.map((p) => [
         p.dex,
@@ -917,6 +919,7 @@ export function buildSql(b: {
         p.evolutions,
         p.milestones,
         p.notes ?? null,
+        p.form ?? null,
       ]),
       ['dex'],
     ),

@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import type { Area, GameData } from '@/engine'
+import { nationalDex, type Area, type GameData } from '@/engine'
 import { dexNo } from '@/lib/format'
 import { useT } from '@/i18n/react'
 import { useGame } from '@/store/game'
@@ -74,7 +74,7 @@ export function AreaDex({ areaId, onOpenDex }: { areaId: string; onOpenDex: (dex
                   )}
                   title={has ? data.species[m.dex]?.name : t('ui.dex.whereToFind')}
                 >
-                  <span className="self-start font-mono text-xs text-muted">{dexNo(m.dex)}</span>
+                  <span className="self-start font-mono text-xs text-muted">{dexNo(nationalDex(data, m.dex))}</span>
                   <SpriteImg dex={m.dex} size={64} silhouette={!has} />
                   <span className="w-full truncate text-center text-base leading-none">
                     {has ? data.species[m.dex]?.name : t('ui.common.unknown')}

@@ -113,6 +113,8 @@ export function rowsToBundle(r: TableRows): BundleRaw {
       evolutions: (x.evolutions as Species['evolutions']) ?? [],
       milestones: (x.milestones as Species['milestones']) ?? [],
       notes: (x.notes as string | null) ?? null,
+      // Forms (regional, Mega, battle); a database from before them has no column and every row is a plain species.
+      ...(x.form ? { form: x.form as Species['form'] } : {}),
     })),
     // A database from before regions has no rows here: compileGameData then falls back to Kanto alone.
     regions: (r.regions ?? []).map((x): Region => ({
@@ -227,6 +229,7 @@ export function bundleToRows(b: BundleRaw): TableRows {
       evolutions: x.evolutions,
       milestones: x.milestones,
       notes: x.notes ?? null,
+      form: x.form ?? null,
     })),
     regions: (b.regions ?? []).map((x) => ({
       id: x.id,

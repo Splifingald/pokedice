@@ -50,7 +50,8 @@ export const ROW_SCHEMAS: Record<TableName, z.ZodTypeAny> = {
   }),
   pokemon: z
     .object({
-      dex: int(1, 9999),
+      // Forms are numbered past the National Dex: PokeAPI's 10001+ ids, Arceus's types 20001+.
+      dex: int(1, 99999),
       name: z.string().min(1),
       type1: pokeType,
       type2: pokeType.nullable(),
@@ -66,7 +67,13 @@ export const ROW_SCHEMAS: Record<TableName, z.ZodTypeAny> = {
       // Optional so a database created before migration 0003 still loads.
       catch_value: int(1, 9).optional(),
       evolutions: z.array(
-        z.object({ toDex: int(1), level: int(1, 100).nullable(), item: z.string().nullable().optional() }),
+        z.object({
+          toDex: int(1),
+          level: int(1, 100).nullable(),
+          item: z.string().nullable().optional(),
+          region: z.string().nullable().optional(),
+          notInRegion: z.string().nullable().optional(),
+        }),
       ),
       milestones: z.array(
         z.object({
@@ -78,6 +85,17 @@ export const ROW_SCHEMAS: Record<TableName, z.ZodTypeAny> = {
         }),
       ),
       notes: z.string().nullable(),
+      // Optional so a database from before forms still loads.
+      form: z
+        .object({
+          of: int(1),
+          kind: z.enum(['regional', 'mega', 'battle']),
+          region: z.string().nullable().optional(),
+          trigger: z.enum(['lowHp', 'choice']).nullable().optional(),
+          swapDie: z.object({ from: dieType, to: dieType }).nullable().optional(),
+        })
+        .nullable()
+        .optional(),
     })
     .refine((r) => r.max_hp >= r.base_hp, { message: 'max_hp must be ≥ base_hp', path: ['max_hp'] }),
   regions: z.object({

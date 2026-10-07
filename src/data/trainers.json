@@ -2726,7 +2726,7 @@
     "level": 10
    },
    {
-    "dex": 19,
+    "dex": 10091,
     "level": 10
    }
   ],
@@ -2764,7 +2764,7 @@
     "level": 10
    },
    {
-    "dex": 19,
+    "dex": 10091,
     "level": 11
    }
   ],
@@ -3091,11 +3091,11 @@
   "spriteUrl": "/trainers/classes/alola/skull-grunt-m.png",
   "team": [
    {
-    "dex": 19,
+    "dex": 10091,
     "level": 16
    },
    {
-    "dex": 88,
+    "dex": 10112,
     "level": 16
    }
   ],
@@ -3578,7 +3578,7 @@
     "level": 24
    },
    {
-    "dex": 88,
+    "dex": 10112,
     "level": 25
    }
   ],
@@ -4227,7 +4227,7 @@
     "level": 27
    },
    {
-    "dex": 52,
+    "dex": 10107,
     "level": 27
    }
   ],
@@ -6933,7 +6933,7 @@
     "level": 36
    },
    {
-    "dex": 20,
+    "dex": 10092,
     "level": 36
    }
   ],
@@ -6952,7 +6952,7 @@
     "level": 37
    },
    {
-    "dex": 89,
+    "dex": 10113,
     "level": 37
    }
   ],
@@ -7013,7 +7013,7 @@
     "level": 38
    },
    {
-    "dex": 53,
+    "dex": 10108,
     "level": 39
    }
   ],
@@ -7483,7 +7483,7 @@
   "spriteUrl": "/trainers/classes/alola/hau.png",
   "team": [
    {
-    "dex": 26,
+    "dex": 10100,
     "level": 44
    },
    {
@@ -7552,7 +7552,7 @@
     "level": 46
    },
    {
-    "dex": 103,
+    "dex": 10114,
     "level": 46
    }
   ],
@@ -7757,7 +7757,7 @@
     "level": 54
    },
    {
-    "dex": 76,
+    "dex": 10111,
     "level": 54
    },
    {
@@ -7831,7 +7831,7 @@
   "spriteUrl": "/trainers/classes/alola/champion-kukui.png",
   "team": [
    {
-    "dex": 38,
+    "dex": 10104,
     "level": 56
    },
    {
@@ -8227,7 +8227,7 @@
     "level": 69
    },
    {
-    "dex": 76,
+    "dex": 10111,
     "level": 69
    },
    {
@@ -8301,7 +8301,7 @@
   "spriteUrl": "/trainers/classes/alola/champion-kukui.png",
   "team": [
    {
-    "dex": 38,
+    "dex": 10104,
     "level": 72
    },
    {
@@ -9065,7 +9065,7 @@
   "spriteUrl": "/trainers/classes/galar/yell-grunt-m.png",
   "team": [
    {
-    "dex": 263,
+    "dex": 10174,
     "level": 21
    },
    {
@@ -9301,7 +9301,7 @@
   "spriteUrl": "/trainers/classes/galar/doctor-m.png",
   "team": [
    {
-    "dex": 562,
+    "dex": 10179,
     "level": 31
    },
    {
@@ -9503,7 +9503,7 @@
   "spriteUrl": "/trainers/classes/galar/opal.png",
   "team": [
    {
-    "dex": 110,
+    "dex": 10167,
     "level": 36
    },
    {
@@ -9938,7 +9938,7 @@
     "level": 50
    },
    {
-    "dex": 78,
+    "dex": 10163,
     "level": 50
    }
   ],
@@ -10811,7 +10811,7 @@
     "level": 64
    },
    {
-    "dex": 80,
+    "dex": 10165,
     "level": 65
    }
   ],
@@ -10830,7 +10830,7 @@
     "level": 64
    },
    {
-    "dex": 199,
+    "dex": 10172,
     "level": 65
    }
   ],
@@ -11748,7 +11748,7 @@
     "level": 34
    },
    {
-    "dex": 128,
+    "dex": 10250,
     "level": 34
    }
   ],

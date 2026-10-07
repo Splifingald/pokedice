@@ -692,12 +692,8 @@
   "catchValue": 1,
   "evolutions": [
    {
-    "level": 28,
-    "toDex": 53
-   },
-   {
-    "level": 28,
-    "toDex": 863
+    "toDex": 53,
+    "level": 28
    }
   ],
   "milestones": [
@@ -2182,12 +2178,7 @@
   ],
   "rerolls": 1,
   "catchValue": 5,
-  "evolutions": [
-   {
-    "level": 30,
-    "toDex": 865
-   }
-  ],
+  "evolutions": [],
   "milestones": [
    {
     "level": 10,
@@ -2213,10 +2204,6 @@
     "level": 30,
     "effect": "ADD_DIE",
     "dieType": "flying"
-   },
-   {
-    "level": 30,
-    "effect": "EVOLVE"
    }
   ],
   "notes": "BST 377"
@@ -2240,12 +2227,8 @@
   "catchValue": 1,
   "evolutions": [
    {
-    "level": 20,
-    "toDex": 195
-   },
-   {
-    "level": 20,
-    "toDex": 980
+    "toDex": 195,
+    "level": 20
    }
   ],
   "milestones": [
@@ -2255,14 +2238,14 @@
     "dieType": "base"
    },
    {
-    "level": 20,
-    "effect": "EVOLVE"
-   },
-   {
     "level": 14,
     "effect": "REPLACE_DIE",
     "dieType": "ground",
     "fromDieType": "base"
+   },
+   {
+    "level": 20,
+    "effect": "EVOLVE"
    }
   ],
   "notes": "BST 210"
@@ -2395,12 +2378,7 @@
   ],
   "rerolls": 2,
   "catchValue": 5,
-  "evolutions": [
-   {
-    "level": 30,
-    "toDex": 904
-   }
-  ],
+  "evolutions": [],
   "milestones": [
    {
     "level": 20,
@@ -2421,10 +2399,6 @@
     "level": 38,
     "effect": "ADD_DIE",
     "dieType": "poison"
-   },
-   {
-    "level": 30,
-    "effect": "EVOLVE"
    }
   ],
   "notes": "BST 440"
@@ -2452,13 +2426,9 @@
   "catchValue": 5,
   "evolutions": [
    {
-    "item": "razor-claw",
+    "toDex": 461,
     "level": null,
-    "toDex": 461
-   },
-   {
-    "level": 40,
-    "toDex": 903
+    "item": "razor-claw"
    }
   ],
   "milestones": [
@@ -2486,10 +2456,6 @@
     "level": 50,
     "effect": "ADD_DIE",
     "dieType": "ice"
-   },
-   {
-    "level": 40,
-    "effect": "EVOLVE"
    }
   ],
   "notes": "BST 430"
@@ -2563,12 +2529,7 @@
   ],
   "rerolls": 2,
   "catchValue": 5,
-  "evolutions": [
-   {
-    "level": 38,
-    "toDex": 864
-   }
-  ],
+  "evolutions": [],
   "milestones": [
    {
     "level": 20,
@@ -2589,10 +2550,6 @@
     "level": 39,
     "amount": 1,
     "effect": "ADD_REROLL"
-   },
-   {
-    "level": 38,
-    "effect": "EVOLVE"
    }
   ],
   "notes": "BST 410"
@@ -2669,12 +2626,7 @@
   ],
   "rerolls": 3,
   "catchValue": 4,
-  "evolutions": [
-   {
-    "level": 35,
-    "toDex": 862
-   }
-  ],
+  "evolutions": [],
   "milestones": [
    {
     "level": 40,
@@ -2691,10 +2643,6 @@
     "effect": "REPLACE_DIE",
     "dieType": "normal",
     "fromDieType": "base"
-   },
-   {
-    "level": 35,
-    "effect": "EVOLVE"
    }
   ],
   "notes": "BST 420"
@@ -3838,12 +3786,8 @@
   "catchValue": 2,
   "evolutions": [
    {
-    "level": 34,
-    "toDex": 563
-   },
-   {
-    "level": 34,
-    "toDex": 867
+    "toDex": 563,
+    "level": 34
    }
   ],
   "milestones": [
@@ -6314,8 +6258,14 @@
   "catchValue": 5,
   "evolutions": [
    {
+    "toDex": 705,
     "level": 40,
-    "toDex": 705
+    "notInRegion": "galar"
+   },
+   {
+    "toDex": 10241,
+    "level": 40,
+    "region": "galar"
    }
   ],
   "milestones": [
@@ -6666,8 +6616,13 @@
   "catchValue": 2,
   "evolutions": [
    {
+    "toDex": 713,
+    "level": 37
+   },
+   {
+    "toDex": 10243,
     "level": 37,
-    "toDex": 713
+    "region": "galar"
    }
   ],
   "milestones": [
@@ -7011,8 +6966,14 @@
   "catchValue": 5,
   "evolutions": [
    {
+    "toDex": 724,
     "level": 34,
-    "toDex": 724
+    "notInRegion": "galar"
+   },
+   {
+    "toDex": 10244,
+    "level": 34,
+    "region": "galar"
    }
   ],
   "milestones": [
@@ -10495,9 +10456,16 @@
   "catchValue": 4,
   "evolutions": [
    {
-    "item": "leaf-stone",
+    "toDex": 103,
     "level": null,
-    "toDex": 103
+    "item": "leaf-stone",
+    "notInRegion": "alola"
+   },
+   {
+    "toDex": 10114,
+    "level": null,
+    "item": "leaf-stone",
+    "region": "alola"
    }
   ],
   "milestones": [
@@ -11940,8 +11908,14 @@
   "catchValue": 2,
   "evolutions": [
    {
+    "toDex": 105,
     "level": 28,
-    "toDex": 105
+    "notInRegion": "alola"
+   },
+   {
+    "toDex": 10115,
+    "level": 28,
+    "region": "alola"
    }
   ],
   "milestones": [
@@ -11956,14 +11930,14 @@
     "effect": "ADD_REROLL"
    },
    {
-    "level": 28,
-    "effect": "EVOLVE"
-   },
-   {
     "level": 18,
     "effect": "REPLACE_DIE",
     "dieType": "ground",
     "fromDieType": "base"
+   },
+   {
+    "level": 28,
+    "effect": "EVOLVE"
    }
   ],
   "notes": "BST 320"
@@ -12165,8 +12139,14 @@
   "catchValue": 2,
   "evolutions": [
    {
+    "toDex": 110,
     "level": 35,
-    "toDex": 110
+    "notInRegion": "galar"
+   },
+   {
+    "toDex": 10167,
+    "level": 35,
+    "region": "galar"
    }
   ],
   "milestones": [
@@ -12177,13 +12157,13 @@
     "fromDieType": "base"
    },
    {
-    "level": 35,
-    "effect": "EVOLVE"
-   },
-   {
     "level": 27,
     "amount": 1,
     "effect": "ADD_REROLL"
+   },
+   {
+    "level": 35,
+    "effect": "EVOLVE"
    }
   ],
   "notes": "BST 340"
@@ -14157,12 +14137,7 @@
   ],
   "rerolls": 3,
   "catchValue": 5,
-  "evolutions": [
-   {
-    "level": 42,
-    "toDex": 866
-   }
-  ],
+  "evolutions": [],
   "milestones": [
    {
     "level": 20,
@@ -14178,10 +14153,6 @@
     "level": 50,
     "effect": "ADD_DIE",
     "dieType": "psychic"
-   },
-   {
-    "level": 42,
-    "effect": "EVOLVE"
    }
   ],
   "notes": "BST 460"
@@ -16182,20 +16153,26 @@
   "catchValue": 5,
   "evolutions": [
    {
+    "toDex": 157,
     "level": 36,
-    "toDex": 157
+    "notInRegion": "galar"
+   },
+   {
+    "toDex": 10233,
+    "level": 36,
+    "region": "galar"
    }
   ],
   "milestones": [
-   {
-    "level": 36,
-    "effect": "EVOLVE"
-   },
    {
     "level": 24,
     "effect": "REPLACE_DIE",
     "dieType": "fire",
     "fromDieType": "base"
+   },
+   {
+    "level": 36,
+    "effect": "EVOLVE"
    }
   ],
   "notes": "BST 405"
@@ -24013,9 +23990,16 @@
   "catchValue": 2,
   "evolutions": [
    {
-    "item": "thunder-stone",
+    "toDex": 26,
     "level": null,
-    "toDex": 26
+    "item": "thunder-stone",
+    "notInRegion": "alola"
+   },
+   {
+    "toDex": 10100,
+    "level": null,
+    "item": "thunder-stone",
+    "region": "alola"
    }
   ],
   "milestones": [
@@ -28304,8 +28288,14 @@
   "catchValue": 5,
   "evolutions": [
    {
+    "toDex": 503,
     "level": 36,
-    "toDex": 503
+    "notInRegion": "galar"
+   },
+   {
+    "toDex": 10236,
+    "level": 36,
+    "region": "galar"
    }
   ],
   "milestones": [
@@ -31405,8 +31395,14 @@
   "catchValue": 3,
   "evolutions": [
    {
+    "toDex": 122,
     "level": 30,
-    "toDex": 122
+    "notInRegion": "galar"
+   },
+   {
+    "toDex": 10168,
+    "level": 30,
+    "region": "galar"
    }
   ],
   "milestones": [
@@ -31421,13 +31417,13 @@
     "effect": "ADD_REROLL"
    },
    {
-    "level": 30,
-    "effect": "EVOLVE"
-   },
-   {
     "level": 20,
     "amount": 1,
     "effect": "ADD_REROLL"
+   },
+   {
+    "level": 30,
+    "effect": "EVOLVE"
    }
   ],
   "notes": "BST 310 · → #122: level-up → assigned Lv.30"
@@ -38644,9 +38640,16 @@
   "catchValue": 2,
   "evolutions": [
    {
-    "item": "sun-stone",
+    "toDex": 549,
     "level": null,
-    "toDex": 549
+    "item": "sun-stone",
+    "notInRegion": "galar"
+   },
+   {
+    "toDex": 10237,
+    "level": null,
+    "item": "sun-stone",
+    "region": "galar"
    }
   ],
   "milestones": [
@@ -41994,8 +41997,14 @@
   "catchValue": 2,
   "evolutions": [
    {
+    "toDex": 628,
     "level": 54,
-    "toDex": 628
+    "notInRegion": "galar"
+   },
+   {
+    "toDex": 10240,
+    "level": 54,
+    "region": "galar"
    }
   ],
   "milestones": [
@@ -42588,5 +42597,5981 @@
   "evolutions": [],
   "milestones": [],
   "notes": "BST 580"
+ },
+ {
+  "dex": 10007,
+  "name": "Giratina",
+  "type1": "ghost",
+  "type2": "dragon",
+  "baseHp": 14,
+  "maxHp": 441,
+  "speed": 9,
+  "spriteUrl": "/pokemon/10007_front.png",
+  "dice": [
+   {
+    "type": "ghost",
+    "count": 3
+   },
+   {
+    "type": "dragon",
+    "count": 2
+   }
+  ],
+  "rerolls": 5,
+  "catchValue": 7,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "giratina-origin · below half HP, a Ghost die becomes a Dragon die",
+  "form": {
+   "of": 487,
+   "kind": "battle",
+   "trigger": "lowHp",
+   "swapDie": {
+    "from": "ghost",
+    "to": "dragon"
+   }
+  }
+ },
+ {
+  "dex": 10033,
+  "name": "Mega Venusaur",
+  "type1": "grass",
+  "type2": "poison",
+  "baseHp": 12,
+  "maxHp": 301,
+  "speed": 8,
+  "spriteUrl": "/pokemon/10033_front.png",
+  "dice": [
+   {
+    "type": "grass",
+    "count": 2
+   },
+   {
+    "type": "poison",
+    "count": 1
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 4,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "venusaur-mega · BST 625",
+  "form": {
+   "of": 3,
+   "kind": "mega"
+  }
+ },
+ {
+  "dex": 10034,
+  "name": "Mega Charizard X",
+  "type1": "fire",
+  "type2": "dragon",
+  "baseHp": 12,
+  "maxHp": 297,
+  "speed": 10,
+  "spriteUrl": "/pokemon/10034_front.png",
+  "dice": [
+   {
+    "type": "fire",
+    "count": 2
+   },
+   {
+    "type": "flying",
+    "count": 1
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 4,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "charizard-mega-x · BST 634",
+  "form": {
+   "of": 6,
+   "kind": "mega"
+  }
+ },
+ {
+  "dex": 10035,
+  "name": "Mega Charizard Y",
+  "type1": "fire",
+  "type2": "flying",
+  "baseHp": 12,
+  "maxHp": 297,
+  "speed": 10,
+  "spriteUrl": "/pokemon/10035_front.png",
+  "dice": [
+   {
+    "type": "fire",
+    "count": 2
+   },
+   {
+    "type": "flying",
+    "count": 1
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 4,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "charizard-mega-y · BST 634",
+  "form": {
+   "of": 6,
+   "kind": "mega"
+  }
+ },
+ {
+  "dex": 10036,
+  "name": "Mega Blastoise",
+  "type1": "water",
+  "type2": null,
+  "baseHp": 12,
+  "maxHp": 299,
+  "speed": 9,
+  "spriteUrl": "/pokemon/10036_front.png",
+  "dice": [
+   {
+    "type": "water",
+    "count": 2
+   },
+   {
+    "type": "base",
+    "count": 2
+   }
+  ],
+  "rerolls": 4,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "blastoise-mega · BST 630",
+  "form": {
+   "of": 9,
+   "kind": "mega"
+  }
+ },
+ {
+  "dex": 10037,
+  "name": "Mega Alakazam",
+  "type1": "psychic",
+  "type2": null,
+  "baseHp": 12,
+  "maxHp": 251,
+  "speed": 15,
+  "spriteUrl": "/pokemon/10037_front.png",
+  "dice": [
+   {
+    "type": "psychic",
+    "count": 3
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 4,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "alakazam-mega · BST 600",
+  "form": {
+   "of": 65,
+   "kind": "mega"
+  }
+ },
+ {
+  "dex": 10038,
+  "name": "Mega Gengar",
+  "type1": "ghost",
+  "type2": "poison",
+  "baseHp": 12,
+  "maxHp": 261,
+  "speed": 13,
+  "spriteUrl": "/pokemon/10038_front.png",
+  "dice": [
+   {
+    "type": "ghost",
+    "count": 2
+   },
+   {
+    "type": "poison",
+    "count": 1
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 4,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "gengar-mega · BST 600",
+  "form": {
+   "of": 94,
+   "kind": "mega"
+  }
+ },
+ {
+  "dex": 10039,
+  "name": "Mega Kangaskhan",
+  "type1": "normal",
+  "type2": null,
+  "baseHp": 13,
+  "maxHp": 351,
+  "speed": 10,
+  "spriteUrl": "/pokemon/10039_front.png",
+  "dice": [
+   {
+    "type": "normal",
+    "count": 3
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "kangaskhan-mega · BST 590",
+  "form": {
+   "of": 115,
+   "kind": "mega"
+  }
+ },
+ {
+  "dex": 10040,
+  "name": "Mega Pinsir",
+  "type1": "bug",
+  "type2": "flying",
+  "baseHp": 12,
+  "maxHp": 271,
+  "speed": 10,
+  "spriteUrl": "/pokemon/10040_front.png",
+  "dice": [
+   {
+    "type": "bug",
+    "count": 2
+   }
+  ],
+  "rerolls": 2,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "pinsir-mega · BST 600",
+  "form": {
+   "of": 127,
+   "kind": "mega"
+  }
+ },
+ {
+  "dex": 10041,
+  "name": "Mega Gyarados",
+  "type1": "water",
+  "type2": "dark",
+  "baseHp": 13,
+  "maxHp": 331,
+  "speed": 8,
+  "spriteUrl": "/pokemon/10041_front.png",
+  "dice": [
+   {
+    "type": "water",
+    "count": 1
+   },
+   {
+    "type": "flying",
+    "count": 1
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "gyarados-mega · BST 640",
+  "form": {
+   "of": 130,
+   "kind": "mega"
+  }
+ },
+ {
+  "dex": 10042,
+  "name": "Mega Aerodactyl",
+  "type1": "rock",
+  "type2": "flying",
+  "baseHp": 12,
+  "maxHp": 301,
+  "speed": 15,
+  "spriteUrl": "/pokemon/10042_front.png",
+  "dice": [
+   {
+    "type": "rock",
+    "count": 1
+   },
+   {
+    "type": "flying",
+    "count": 1
+   },
+   {
+    "type": "base",
+    "count": 2
+   }
+  ],
+  "rerolls": 4,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "aerodactyl-mega · BST 615",
+  "form": {
+   "of": 142,
+   "kind": "mega"
+  }
+ },
+ {
+  "dex": 10043,
+  "name": "Mega Mewtwo X",
+  "type1": "psychic",
+  "type2": "fighting",
+  "baseHp": 13,
+  "maxHp": 353,
+  "speed": 13,
+  "spriteUrl": "/pokemon/10043_front.png",
+  "dice": [
+   {
+    "type": "psychic",
+    "count": 4
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 5,
+  "catchValue": 7,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "mewtwo-mega-x · BST 780",
+  "form": {
+   "of": 150,
+   "kind": "mega"
+  }
+ },
+ {
+  "dex": 10044,
+  "name": "Mega Mewtwo Y",
+  "type1": "psychic",
+  "type2": null,
+  "baseHp": 13,
+  "maxHp": 353,
+  "speed": 14,
+  "spriteUrl": "/pokemon/10044_front.png",
+  "dice": [
+   {
+    "type": "psychic",
+    "count": 4
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 5,
+  "catchValue": 7,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "mewtwo-mega-y · BST 780",
+  "form": {
+   "of": 150,
+   "kind": "mega"
+  }
+ },
+ {
+  "dex": 10045,
+  "name": "Mega Ampharos",
+  "type1": "electric",
+  "type2": "dragon",
+  "baseHp": 13,
+  "maxHp": 321,
+  "speed": 4,
+  "spriteUrl": "/pokemon/10045_front.png",
+  "dice": [
+   {
+    "type": "electric",
+    "count": 3
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 4,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "ampharos-mega · BST 610",
+  "form": {
+   "of": 181,
+   "kind": "mega"
+  }
+ },
+ {
+  "dex": 10046,
+  "name": "Mega Scizor",
+  "type1": "bug",
+  "type2": "steel",
+  "baseHp": 12,
+  "maxHp": 281,
+  "speed": 7,
+  "spriteUrl": "/pokemon/10046_front.png",
+  "dice": [
+   {
+    "type": "bug",
+    "count": 2
+   },
+   {
+    "type": "steel",
+    "count": 2
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 7,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "scizor-mega · BST 600",
+  "form": {
+   "of": 212,
+   "kind": "mega"
+  }
+ },
+ {
+  "dex": 10047,
+  "name": "Mega Heracross",
+  "type1": "bug",
+  "type2": "fighting",
+  "baseHp": 12,
+  "maxHp": 301,
+  "speed": 7,
+  "spriteUrl": "/pokemon/10047_front.png",
+  "dice": [
+   {
+    "type": "bug",
+    "count": 2
+   },
+   {
+    "type": "fighting",
+    "count": 1
+   }
+  ],
+  "rerolls": 2,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "heracross-mega · BST 600",
+  "form": {
+   "of": 214,
+   "kind": "mega"
+  }
+ },
+ {
+  "dex": 10048,
+  "name": "Mega Houndoom",
+  "type1": "dark",
+  "type2": "fire",
+  "baseHp": 12,
+  "maxHp": 291,
+  "speed": 11,
+  "spriteUrl": "/pokemon/10048_front.png",
+  "dice": [
+   {
+    "type": "dark",
+    "count": 2
+   },
+   {
+    "type": "fire",
+    "count": 1
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "houndoom-mega · BST 600",
+  "form": {
+   "of": 229,
+   "kind": "mega"
+  }
+ },
+ {
+  "dex": 10049,
+  "name": "Mega Tyranitar",
+  "type1": "rock",
+  "type2": "dark",
+  "baseHp": 13,
+  "maxHp": 341,
+  "speed": 7,
+  "spriteUrl": "/pokemon/10049_front.png",
+  "dice": [
+   {
+    "type": "rock",
+    "count": 3
+   },
+   {
+    "type": "dark",
+    "count": 2
+   }
+  ],
+  "rerolls": 5,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "tyranitar-mega · BST 700",
+  "form": {
+   "of": 248,
+   "kind": "mega"
+  }
+ },
+ {
+  "dex": 10050,
+  "name": "Mega Blaziken",
+  "type1": "fire",
+  "type2": "fighting",
+  "baseHp": 12,
+  "maxHp": 301,
+  "speed": 10,
+  "spriteUrl": "/pokemon/10050_front.png",
+  "dice": [
+   {
+    "type": "fire",
+    "count": 2
+   },
+   {
+    "type": "fighting",
+    "count": 2
+   }
+  ],
+  "rerolls": 4,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "blaziken-mega · BST 630",
+  "form": {
+   "of": 257,
+   "kind": "mega"
+  }
+ },
+ {
+  "dex": 10051,
+  "name": "Mega Gardevoir",
+  "type1": "psychic",
+  "type2": "fairy",
+  "baseHp": 12,
+  "maxHp": 277,
+  "speed": 10,
+  "spriteUrl": "/pokemon/10051_front.png",
+  "dice": [
+   {
+    "type": "psychic",
+    "count": 2
+   },
+   {
+    "type": "fairy",
+    "count": 1
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 4,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "gardevoir-mega · BST 618",
+  "form": {
+   "of": 282,
+   "kind": "mega"
+  }
+ },
+ {
+  "dex": 10052,
+  "name": "Mega Mawile",
+  "type1": "steel",
+  "type2": "fairy",
+  "baseHp": 12,
+  "maxHp": 241,
+  "speed": 5,
+  "spriteUrl": "/pokemon/10052_front.png",
+  "dice": [
+   {
+    "type": "steel",
+    "count": 1
+   },
+   {
+    "type": "fairy",
+    "count": 1
+   }
+  ],
+  "rerolls": 2,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "mawile-mega · BST 480",
+  "form": {
+   "of": 303,
+   "kind": "mega"
+  }
+ },
+ {
+  "dex": 10053,
+  "name": "Mega Aggron",
+  "type1": "steel",
+  "type2": null,
+  "baseHp": 12,
+  "maxHp": 281,
+  "speed": 5,
+  "spriteUrl": "/pokemon/10053_front.png",
+  "dice": [
+   {
+    "type": "steel",
+    "count": 2
+   },
+   {
+    "type": "rock",
+    "count": 2
+   }
+  ],
+  "rerolls": 4,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "aggron-mega · BST 630",
+  "form": {
+   "of": 306,
+   "kind": "mega"
+  }
+ },
+ {
+  "dex": 10054,
+  "name": "Mega Medicham",
+  "type1": "fighting",
+  "type2": "psychic",
+  "baseHp": 12,
+  "maxHp": 261,
+  "speed": 10,
+  "spriteUrl": "/pokemon/10054_front.png",
+  "dice": [
+   {
+    "type": "fighting",
+    "count": 2
+   },
+   {
+    "type": "psychic",
+    "count": 2
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 4,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "medicham-mega · BST 510",
+  "form": {
+   "of": 308,
+   "kind": "mega"
+  }
+ },
+ {
+  "dex": 10055,
+  "name": "Mega Manectric",
+  "type1": "electric",
+  "type2": null,
+  "baseHp": 12,
+  "maxHp": 281,
+  "speed": 13,
+  "spriteUrl": "/pokemon/10055_front.png",
+  "dice": [
+   {
+    "type": "electric",
+    "count": 2
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "manectric-mega · BST 575",
+  "form": {
+   "of": 310,
+   "kind": "mega"
+  }
+ },
+ {
+  "dex": 10056,
+  "name": "Mega Banette",
+  "type1": "ghost",
+  "type2": null,
+  "baseHp": 12,
+  "maxHp": 269,
+  "speed": 7,
+  "spriteUrl": "/pokemon/10056_front.png",
+  "dice": [
+   {
+    "type": "ghost",
+    "count": 3
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "banette-mega · BST 555",
+  "form": {
+   "of": 354,
+   "kind": "mega"
+  }
+ },
+ {
+  "dex": 10057,
+  "name": "Mega Absol",
+  "type1": "dark",
+  "type2": null,
+  "baseHp": 12,
+  "maxHp": 271,
+  "speed": 11,
+  "spriteUrl": "/pokemon/10057_front.png",
+  "dice": [
+   {
+    "type": "dark",
+    "count": 2
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 6,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "absol-mega · BST 565",
+  "form": {
+   "of": 359,
+   "kind": "mega"
+  }
+ },
+ {
+  "dex": 10058,
+  "name": "Mega Garchomp",
+  "type1": "dragon",
+  "type2": "ground",
+  "baseHp": 13,
+  "maxHp": 357,
+  "speed": 9,
+  "spriteUrl": "/pokemon/10058_front.png",
+  "dice": [
+   {
+    "type": "dragon",
+    "count": 2
+   },
+   {
+    "type": "ground",
+    "count": 2
+   }
+  ],
+  "rerolls": 4,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "garchomp-mega · BST 700",
+  "form": {
+   "of": 445,
+   "kind": "mega"
+  }
+ },
+ {
+  "dex": 10059,
+  "name": "Mega Lucario",
+  "type1": "fighting",
+  "type2": "steel",
+  "baseHp": 12,
+  "maxHp": 281,
+  "speed": 11,
+  "spriteUrl": "/pokemon/10059_front.png",
+  "dice": [
+   {
+    "type": "fighting",
+    "count": 2
+   },
+   {
+    "type": "steel",
+    "count": 1
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "lucario-mega · BST 625",
+  "form": {
+   "of": 448,
+   "kind": "mega"
+  }
+ },
+ {
+  "dex": 10060,
+  "name": "Mega Abomasnow",
+  "type1": "grass",
+  "type2": "ice",
+  "baseHp": 13,
+  "maxHp": 321,
+  "speed": 3,
+  "spriteUrl": "/pokemon/10060_front.png",
+  "dice": [
+   {
+    "type": "grass",
+    "count": 2
+   },
+   {
+    "type": "ice",
+    "count": 2
+   }
+  ],
+  "rerolls": 4,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "abomasnow-mega · BST 594",
+  "form": {
+   "of": 460,
+   "kind": "mega"
+  }
+ },
+ {
+  "dex": 10062,
+  "name": "Mega Latias",
+  "type1": "dragon",
+  "type2": "psychic",
+  "baseHp": 12,
+  "maxHp": 301,
+  "speed": 11,
+  "spriteUrl": "/pokemon/10062_front.png",
+  "dice": [
+   {
+    "type": "dragon",
+    "count": 2
+   },
+   {
+    "type": "psychic",
+    "count": 2
+   }
+  ],
+  "rerolls": 5,
+  "catchValue": 6,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "latias-mega · BST 700",
+  "form": {
+   "of": 380,
+   "kind": "mega"
+  }
+ },
+ {
+  "dex": 10063,
+  "name": "Mega Latios",
+  "type1": "dragon",
+  "type2": "psychic",
+  "baseHp": 12,
+  "maxHp": 301,
+  "speed": 11,
+  "spriteUrl": "/pokemon/10063_front.png",
+  "dice": [
+   {
+    "type": "dragon",
+    "count": 2
+   },
+   {
+    "type": "psychic",
+    "count": 2
+   }
+  ],
+  "rerolls": 5,
+  "catchValue": 6,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "latios-mega · BST 700",
+  "form": {
+   "of": 381,
+   "kind": "mega"
+  }
+ },
+ {
+  "dex": 10064,
+  "name": "Mega Swampert",
+  "type1": "water",
+  "type2": "ground",
+  "baseHp": 13,
+  "maxHp": 341,
+  "speed": 7,
+  "spriteUrl": "/pokemon/10064_front.png",
+  "dice": [
+   {
+    "type": "water",
+    "count": 2
+   },
+   {
+    "type": "ground",
+    "count": 2
+   }
+  ],
+  "rerolls": 4,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "swampert-mega · BST 635",
+  "form": {
+   "of": 260,
+   "kind": "mega"
+  }
+ },
+ {
+  "dex": 10065,
+  "name": "Mega Sceptile",
+  "type1": "grass",
+  "type2": "dragon",
+  "baseHp": 12,
+  "maxHp": 281,
+  "speed": 14,
+  "spriteUrl": "/pokemon/10065_front.png",
+  "dice": [
+   {
+    "type": "grass",
+    "count": 3
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 4,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "sceptile-mega · BST 630",
+  "form": {
+   "of": 254,
+   "kind": "mega"
+  }
+ },
+ {
+  "dex": 10066,
+  "name": "Mega Sableye",
+  "type1": "dark",
+  "type2": "ghost",
+  "baseHp": 12,
+  "maxHp": 241,
+  "speed": 2,
+  "spriteUrl": "/pokemon/10066_front.png",
+  "dice": [
+   {
+    "type": "dark",
+    "count": 1
+   },
+   {
+    "type": "ghost",
+    "count": 1
+   }
+  ],
+  "rerolls": 2,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "sableye-mega · BST 480",
+  "form": {
+   "of": 302,
+   "kind": "mega"
+  }
+ },
+ {
+  "dex": 10067,
+  "name": "Mega Altaria",
+  "type1": "dragon",
+  "type2": "fairy",
+  "baseHp": 12,
+  "maxHp": 291,
+  "speed": 8,
+  "spriteUrl": "/pokemon/10067_front.png",
+  "dice": [
+   {
+    "type": "dragon",
+    "count": 1
+   },
+   {
+    "type": "flying",
+    "count": 2
+   }
+  ],
+  "rerolls": 4,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "altaria-mega · BST 590",
+  "form": {
+   "of": 334,
+   "kind": "mega"
+  }
+ },
+ {
+  "dex": 10068,
+  "name": "Mega Gallade",
+  "type1": "psychic",
+  "type2": "fighting",
+  "baseHp": 12,
+  "maxHp": 277,
+  "speed": 11,
+  "spriteUrl": "/pokemon/10068_front.png",
+  "dice": [
+   {
+    "type": "psychic",
+    "count": 2
+   },
+   {
+    "type": "fighting",
+    "count": 2
+   }
+  ],
+  "rerolls": 4,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "gallade-mega · BST 618",
+  "form": {
+   "of": 475,
+   "kind": "mega"
+  }
+ },
+ {
+  "dex": 10069,
+  "name": "Mega Audino",
+  "type1": "normal",
+  "type2": "fairy",
+  "baseHp": 13,
+  "maxHp": 347,
+  "speed": 5,
+  "spriteUrl": "/pokemon/10069_front.png",
+  "dice": [
+   {
+    "type": "normal",
+    "count": 2
+   }
+  ],
+  "rerolls": 2,
+  "catchValue": 1,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "audino-mega · BST 545",
+  "form": {
+   "of": 531,
+   "kind": "mega"
+  }
+ },
+ {
+  "dex": 10070,
+  "name": "Mega Sharpedo",
+  "type1": "water",
+  "type2": "dark",
+  "baseHp": 12,
+  "maxHp": 281,
+  "speed": 10,
+  "spriteUrl": "/pokemon/10070_front.png",
+  "dice": [
+   {
+    "type": "water",
+    "count": 2
+   },
+   {
+    "type": "dark",
+    "count": 1
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "sharpedo-mega · BST 560",
+  "form": {
+   "of": 319,
+   "kind": "mega"
+  }
+ },
+ {
+  "dex": 10071,
+  "name": "Mega Slowbro",
+  "type1": "water",
+  "type2": "psychic",
+  "baseHp": 13,
+  "maxHp": 331,
+  "speed": 3,
+  "spriteUrl": "/pokemon/10071_front.png",
+  "dice": [
+   {
+    "type": "water",
+    "count": 2
+   },
+   {
+    "type": "psychic",
+    "count": 1
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 4,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "slowbro-mega · BST 590",
+  "form": {
+   "of": 80,
+   "kind": "mega"
+  }
+ },
+ {
+  "dex": 10072,
+  "name": "Mega Steelix",
+  "type1": "steel",
+  "type2": "ground",
+  "baseHp": 12,
+  "maxHp": 291,
+  "speed": 3,
+  "spriteUrl": "/pokemon/10072_front.png",
+  "dice": [
+   {
+    "type": "steel",
+    "count": 2
+   },
+   {
+    "type": "ground",
+    "count": 1
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 7,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "steelix-mega · BST 610",
+  "form": {
+   "of": 208,
+   "kind": "mega"
+  }
+ },
+ {
+  "dex": 10073,
+  "name": "Mega Pidgeot",
+  "type1": "normal",
+  "type2": "flying",
+  "baseHp": 12,
+  "maxHp": 307,
+  "speed": 12,
+  "spriteUrl": "/pokemon/10073_front.png",
+  "dice": [
+   {
+    "type": "normal",
+    "count": 1
+   },
+   {
+    "type": "flying",
+    "count": 1
+   },
+   {
+    "type": "base",
+    "count": 2
+   }
+  ],
+  "rerolls": 4,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "pidgeot-mega · BST 579",
+  "form": {
+   "of": 18,
+   "kind": "mega"
+  }
+ },
+ {
+  "dex": 10074,
+  "name": "Mega Glalie",
+  "type1": "ice",
+  "type2": null,
+  "baseHp": 12,
+  "maxHp": 301,
+  "speed": 10,
+  "spriteUrl": "/pokemon/10074_front.png",
+  "dice": [
+   {
+    "type": "ice",
+    "count": 3
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 4,
+  "catchValue": 4,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "glalie-mega · BST 580",
+  "form": {
+   "of": 362,
+   "kind": "mega"
+  }
+ },
+ {
+  "dex": 10075,
+  "name": "Mega Diancie",
+  "type1": "rock",
+  "type2": "fairy",
+  "baseHp": 12,
+  "maxHp": 241,
+  "speed": 11,
+  "spriteUrl": "/pokemon/10075_front.png",
+  "dice": [
+   {
+    "type": "rock",
+    "count": 3
+   },
+   {
+    "type": "fairy",
+    "count": 2
+   }
+  ],
+  "rerolls": 5,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "diancie-mega · BST 700",
+  "form": {
+   "of": 719,
+   "kind": "mega"
+  }
+ },
+ {
+  "dex": 10076,
+  "name": "Mega Metagross",
+  "type1": "steel",
+  "type2": "psychic",
+  "baseHp": 12,
+  "maxHp": 301,
+  "speed": 11,
+  "spriteUrl": "/pokemon/10076_front.png",
+  "dice": [
+   {
+    "type": "steel",
+    "count": 2
+   },
+   {
+    "type": "psychic",
+    "count": 2
+   }
+  ],
+  "rerolls": 4,
+  "catchValue": 9,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "metagross-mega · BST 700",
+  "form": {
+   "of": 376,
+   "kind": "mega"
+  }
+ },
+ {
+  "dex": 10079,
+  "name": "Mega Rayquaza",
+  "type1": "dragon",
+  "type2": "flying",
+  "baseHp": 13,
+  "maxHp": 351,
+  "speed": 11,
+  "spriteUrl": "/pokemon/10079_front.png",
+  "dice": [
+   {
+    "type": "dragon",
+    "count": 3
+   },
+   {
+    "type": "flying",
+    "count": 2
+   }
+  ],
+  "rerolls": 5,
+  "catchValue": 7,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "rayquaza-mega · BST 780",
+  "form": {
+   "of": 384,
+   "kind": "mega"
+  }
+ },
+ {
+  "dex": 10087,
+  "name": "Mega Camerupt",
+  "type1": "fire",
+  "type2": "ground",
+  "baseHp": 12,
+  "maxHp": 281,
+  "speed": 2,
+  "spriteUrl": "/pokemon/10087_front.png",
+  "dice": [
+   {
+    "type": "fire",
+    "count": 1
+   },
+   {
+    "type": "ground",
+    "count": 2
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 3,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "camerupt-mega · BST 560",
+  "form": {
+   "of": 323,
+   "kind": "mega"
+  }
+ },
+ {
+  "dex": 10088,
+  "name": "Mega Lopunny",
+  "type1": "normal",
+  "type2": "fighting",
+  "baseHp": 12,
+  "maxHp": 271,
+  "speed": 13,
+  "spriteUrl": "/pokemon/10088_front.png",
+  "dice": [
+   {
+    "type": "normal",
+    "count": 2
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "lopunny-mega · BST 580",
+  "form": {
+   "of": 428,
+   "kind": "mega"
+  }
+ },
+ {
+  "dex": 10089,
+  "name": "Mega Salamence",
+  "type1": "dragon",
+  "type2": "flying",
+  "baseHp": 13,
+  "maxHp": 331,
+  "speed": 12,
+  "spriteUrl": "/pokemon/10089_front.png",
+  "dice": [
+   {
+    "type": "dragon",
+    "count": 3
+   },
+   {
+    "type": "flying",
+    "count": 2
+   }
+  ],
+  "rerolls": 4,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "salamence-mega · BST 700",
+  "form": {
+   "of": 373,
+   "kind": "mega"
+  }
+ },
+ {
+  "dex": 10090,
+  "name": "Mega Beedrill",
+  "type1": "bug",
+  "type2": "poison",
+  "baseHp": 12,
+  "maxHp": 271,
+  "speed": 14,
+  "spriteUrl": "/pokemon/10090_front.png",
+  "dice": [
+   {
+    "type": "bug",
+    "count": 1
+   },
+   {
+    "type": "poison",
+    "count": 1
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 2,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "beedrill-mega · BST 495",
+  "form": {
+   "of": 15,
+   "kind": "mega"
+  }
+ },
+ {
+  "dex": 10091,
+  "name": "Alolan Rattata",
+  "type1": "dark",
+  "type2": "normal",
+  "baseHp": 11,
+  "maxHp": 201,
+  "speed": 7,
+  "spriteUrl": "/pokemon/10091_front.png",
+  "dice": [
+   {
+    "type": "dark",
+    "count": 1
+   }
+  ],
+  "rerolls": 1,
+  "catchValue": 1,
+  "evolutions": [
+   {
+    "toDex": 10092,
+    "level": 20
+   }
+  ],
+  "milestones": [
+   {
+    "level": 8,
+    "effect": "ADD_DIE",
+    "dieType": "normal"
+   },
+   {
+    "level": 12,
+    "amount": 1,
+    "effect": "ADD_REROLL"
+   },
+   {
+    "level": 20,
+    "effect": "EVOLVE"
+   }
+  ],
+  "notes": "rattata-alola · BST 253",
+  "form": {
+   "of": 19,
+   "kind": "regional",
+   "region": "alola"
+  }
+ },
+ {
+  "dex": 10092,
+  "name": "Alolan Raticate",
+  "type1": "dark",
+  "type2": "normal",
+  "baseHp": 12,
+  "maxHp": 291,
+  "speed": 7,
+  "spriteUrl": "/pokemon/10092_front.png",
+  "dice": [
+   {
+    "type": "dark",
+    "count": 2
+   },
+   {
+    "type": "normal",
+    "count": 1
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 3,
+  "evolutions": [],
+  "milestones": [
+   {
+    "level": 30,
+    "effect": "ADD_DIE",
+    "dieType": "dark"
+   },
+   {
+    "level": 40,
+    "amount": 1,
+    "effect": "ADD_REROLL"
+   }
+  ],
+  "notes": "raticate-alola · BST 413",
+  "form": {
+   "of": 20,
+   "kind": "regional",
+   "region": "alola"
+  }
+ },
+ {
+  "dex": 10100,
+  "name": "Alolan Raichu",
+  "type1": "electric",
+  "type2": "psychic",
+  "baseHp": 12,
+  "maxHp": 261,
+  "speed": 11,
+  "spriteUrl": "/pokemon/10100_front.png",
+  "dice": [
+   {
+    "type": "electric",
+    "count": 1
+   },
+   {
+    "type": "psychic",
+    "count": 1
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 4,
+  "evolutions": [],
+  "milestones": [
+   {
+    "level": 36,
+    "effect": "ADD_DIE",
+    "dieType": "base"
+   },
+   {
+    "level": 42,
+    "amount": 1,
+    "effect": "ADD_REROLL"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_DIE",
+    "dieType": "electric"
+   },
+   {
+    "level": 50,
+    "amount": 1,
+    "effect": "ADD_REROLL"
+   }
+  ],
+  "notes": "raichu-alola · BST 485",
+  "form": {
+   "of": 26,
+   "kind": "regional",
+   "region": "alola"
+  }
+ },
+ {
+  "dex": 10101,
+  "name": "Alolan Sandshrew",
+  "type1": "ice",
+  "type2": "steel",
+  "baseHp": 12,
+  "maxHp": 241,
+  "speed": 4,
+  "spriteUrl": "/pokemon/10101_front.png",
+  "dice": [
+   {
+    "type": "ice",
+    "count": 1
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 2,
+  "catchValue": 1,
+  "evolutions": [
+   {
+    "toDex": 10102,
+    "level": null,
+    "item": "ice-stone"
+   }
+  ],
+  "milestones": [
+   {
+    "level": 16,
+    "effect": "REPLACE_DIE",
+    "dieType": "steel",
+    "fromDieType": "base"
+   }
+  ],
+  "notes": "sandshrew-alola · BST 300",
+  "form": {
+   "of": 27,
+   "kind": "regional",
+   "region": "alola"
+  }
+ },
+ {
+  "dex": 10102,
+  "name": "Alolan Sandslash",
+  "type1": "ice",
+  "type2": "steel",
+  "baseHp": 12,
+  "maxHp": 291,
+  "speed": 6,
+  "spriteUrl": "/pokemon/10102_front.png",
+  "dice": [
+   {
+    "type": "ice",
+    "count": 1
+   },
+   {
+    "type": "steel",
+    "count": 1
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 4,
+  "evolutions": [],
+  "milestones": [
+   {
+    "level": 30,
+    "amount": 1,
+    "effect": "ADD_REROLL"
+   },
+   {
+    "level": 38,
+    "effect": "ADD_DIE",
+    "dieType": "base"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_DIE",
+    "dieType": "ice"
+   },
+   {
+    "level": 50,
+    "amount": 1,
+    "effect": "ADD_REROLL"
+   }
+  ],
+  "notes": "sandslash-alola · BST 450",
+  "form": {
+   "of": 28,
+   "kind": "regional",
+   "region": "alola"
+  }
+ },
+ {
+  "dex": 10103,
+  "name": "Alolan Vulpix",
+  "type1": "ice",
+  "type2": null,
+  "baseHp": 12,
+  "maxHp": 217,
+  "speed": 6,
+  "spriteUrl": "/pokemon/10103_front.png",
+  "dice": [
+   {
+    "type": "ice",
+    "count": 1
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 2,
+  "catchValue": 2,
+  "evolutions": [
+   {
+    "toDex": 10104,
+    "level": null,
+    "item": "ice-stone"
+   }
+  ],
+  "milestones": [
+   {
+    "level": 18,
+    "effect": "REPLACE_DIE",
+    "dieType": "ice",
+    "fromDieType": "base"
+   }
+  ],
+  "notes": "vulpix-alola · BST 299",
+  "form": {
+   "of": 37,
+   "kind": "regional",
+   "region": "alola"
+  }
+ },
+ {
+  "dex": 10104,
+  "name": "Alolan Ninetales",
+  "type1": "ice",
+  "type2": "fairy",
+  "baseHp": 12,
+  "maxHp": 287,
+  "speed": 10,
+  "spriteUrl": "/pokemon/10104_front.png",
+  "dice": [
+   {
+    "type": "ice",
+    "count": 1
+   },
+   {
+    "type": "fairy",
+    "count": 1
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 4,
+  "evolutions": [],
+  "milestones": [
+   {
+    "level": 34,
+    "effect": "ADD_DIE",
+    "dieType": "base"
+   },
+   {
+    "level": 34,
+    "amount": 1,
+    "effect": "ADD_REROLL"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_DIE",
+    "dieType": "ice"
+   },
+   {
+    "level": 50,
+    "amount": 1,
+    "effect": "ADD_REROLL"
+   }
+  ],
+  "notes": "ninetales-alola · BST 505",
+  "form": {
+   "of": 38,
+   "kind": "regional",
+   "region": "alola"
+  }
+ },
+ {
+  "dex": 10105,
+  "name": "Alolan Diglett",
+  "type1": "ground",
+  "type2": "steel",
+  "baseHp": 11,
+  "maxHp": 161,
+  "speed": 9,
+  "spriteUrl": "/pokemon/10105_front.png",
+  "dice": [
+   {
+    "type": "ground",
+    "count": 1
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 2,
+  "catchValue": 1,
+  "evolutions": [
+   {
+    "toDex": 10106,
+    "level": 26
+   }
+  ],
+  "milestones": [
+   {
+    "level": 18,
+    "effect": "REPLACE_DIE",
+    "dieType": "steel",
+    "fromDieType": "base"
+   },
+   {
+    "level": 26,
+    "effect": "EVOLVE"
+   }
+  ],
+  "notes": "diglett-alola · BST 265",
+  "form": {
+   "of": 50,
+   "kind": "regional",
+   "region": "alola"
+  }
+ },
+ {
+  "dex": 10106,
+  "name": "Alolan Dugtrio",
+  "type1": "ground",
+  "type2": "steel",
+  "baseHp": 12,
+  "maxHp": 211,
+  "speed": 11,
+  "spriteUrl": "/pokemon/10106_front.png",
+  "dice": [
+   {
+    "type": "ground",
+    "count": 1
+   },
+   {
+    "type": "steel",
+    "count": 1
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [
+   {
+    "level": 36,
+    "effect": "ADD_DIE",
+    "dieType": "base"
+   },
+   {
+    "level": 36,
+    "amount": 1,
+    "effect": "ADD_REROLL"
+   },
+   {
+    "level": 50,
+    "effect": "REPLACE_DIE",
+    "dieType": "ground",
+    "fromDieType": "base"
+   }
+  ],
+  "notes": "dugtrio-alola · BST 425",
+  "form": {
+   "of": 51,
+   "kind": "regional",
+   "region": "alola"
+  }
+ },
+ {
+  "dex": 10107,
+  "name": "Alolan Meowth",
+  "type1": "dark",
+  "type2": null,
+  "baseHp": 12,
+  "maxHp": 221,
+  "speed": 9,
+  "spriteUrl": "/pokemon/10107_front.png",
+  "dice": [
+   {
+    "type": "dark",
+    "count": 1
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 2,
+  "catchValue": 1,
+  "evolutions": [
+   {
+    "toDex": 10108,
+    "level": 28
+   }
+  ],
+  "milestones": [
+   {
+    "level": 16,
+    "effect": "REPLACE_DIE",
+    "dieType": "dark",
+    "fromDieType": "base"
+   },
+   {
+    "level": 28,
+    "effect": "EVOLVE"
+   }
+  ],
+  "notes": "meowth-alola · BST 290",
+  "form": {
+   "of": 52,
+   "kind": "regional",
+   "region": "alola"
+  }
+ },
+ {
+  "dex": 10108,
+  "name": "Alolan Persian",
+  "type1": "dark",
+  "type2": null,
+  "baseHp": 12,
+  "maxHp": 271,
+  "speed": 11,
+  "spriteUrl": "/pokemon/10108_front.png",
+  "dice": [
+   {
+    "type": "dark",
+    "count": 2
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 4,
+  "evolutions": [],
+  "milestones": [
+   {
+    "level": 38,
+    "effect": "ADD_DIE",
+    "dieType": "dark"
+   },
+   {
+    "level": 38,
+    "amount": 1,
+    "effect": "ADD_REROLL"
+   }
+  ],
+  "notes": "persian-alola · BST 440",
+  "form": {
+   "of": 53,
+   "kind": "regional",
+   "region": "alola"
+  }
+ },
+ {
+  "dex": 10109,
+  "name": "Alolan Geodude",
+  "type1": "rock",
+  "type2": "electric",
+  "baseHp": 12,
+  "maxHp": 221,
+  "speed": 2,
+  "spriteUrl": "/pokemon/10109_front.png",
+  "dice": [
+   {
+    "type": "rock",
+    "count": 1
+   }
+  ],
+  "rerolls": 2,
+  "catchValue": 1,
+  "evolutions": [
+   {
+    "toDex": 10110,
+    "level": 25
+   }
+  ],
+  "milestones": [
+   {
+    "level": 8,
+    "effect": "ADD_DIE",
+    "dieType": "base"
+   },
+   {
+    "level": 16,
+    "effect": "REPLACE_DIE",
+    "dieType": "electric",
+    "fromDieType": "base"
+   },
+   {
+    "level": 25,
+    "effect": "EVOLVE"
+   }
+  ],
+  "notes": "geodude-alola · BST 300",
+  "form": {
+   "of": 74,
+   "kind": "regional",
+   "region": "alola"
+  }
+ },
+ {
+  "dex": 10110,
+  "name": "Alolan Graveler",
+  "type1": "rock",
+  "type2": "electric",
+  "baseHp": 12,
+  "maxHp": 251,
+  "speed": 3,
+  "spriteUrl": "/pokemon/10110_front.png",
+  "dice": [
+   {
+    "type": "rock",
+    "count": 1
+   },
+   {
+    "type": "electric",
+    "count": 1
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 3,
+  "evolutions": [
+   {
+    "toDex": 10111,
+    "level": 34
+   }
+  ],
+  "milestones": [
+   {
+    "level": 28,
+    "effect": "REPLACE_DIE",
+    "dieType": "rock",
+    "fromDieType": "base"
+   },
+   {
+    "level": 34,
+    "effect": "EVOLVE"
+   }
+  ],
+  "notes": "graveler-alola · BST 390",
+  "form": {
+   "of": 75,
+   "kind": "regional",
+   "region": "alola"
+  }
+ },
+ {
+  "dex": 10111,
+  "name": "Alolan Golem",
+  "type1": "rock",
+  "type2": "electric",
+  "baseHp": 12,
+  "maxHp": 301,
+  "speed": 4,
+  "spriteUrl": "/pokemon/10111_front.png",
+  "dice": [
+   {
+    "type": "rock",
+    "count": 2
+   },
+   {
+    "type": "electric",
+    "count": 1
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 4,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [
+   {
+    "level": 42,
+    "effect": "REPLACE_DIE",
+    "dieType": "electric",
+    "fromDieType": "base"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_DIE",
+    "dieType": "rock"
+   },
+   {
+    "level": 50,
+    "amount": 1,
+    "effect": "ADD_REROLL"
+   }
+  ],
+  "notes": "golem-alola · BST 495",
+  "form": {
+   "of": 76,
+   "kind": "regional",
+   "region": "alola"
+  }
+ },
+ {
+  "dex": 10112,
+  "name": "Alolan Grimer",
+  "type1": "poison",
+  "type2": "dark",
+  "baseHp": 12,
+  "maxHp": 301,
+  "speed": 2,
+  "spriteUrl": "/pokemon/10112_front.png",
+  "dice": [
+   {
+    "type": "poison",
+    "count": 1
+   },
+   {
+    "type": "dark",
+    "count": 1
+   }
+  ],
+  "rerolls": 2,
+  "catchValue": 2,
+  "evolutions": [
+   {
+    "toDex": 10113,
+    "level": 38
+   }
+  ],
+  "milestones": [
+   {
+    "level": 24,
+    "amount": 1,
+    "effect": "ADD_REROLL"
+   },
+   {
+    "level": 38,
+    "effect": "EVOLVE"
+   }
+  ],
+  "notes": "grimer-alola · BST 325",
+  "form": {
+   "of": 88,
+   "kind": "regional",
+   "region": "alola"
+  }
+ },
+ {
+  "dex": 10113,
+  "name": "Alolan Muk",
+  "type1": "poison",
+  "type2": "dark",
+  "baseHp": 13,
+  "maxHp": 351,
+  "speed": 5,
+  "spriteUrl": "/pokemon/10113_front.png",
+  "dice": [
+   {
+    "type": "poison",
+    "count": 1
+   },
+   {
+    "type": "dark",
+    "count": 1
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 4,
+  "evolutions": [],
+  "milestones": [
+   {
+    "level": 36,
+    "effect": "ADD_DIE",
+    "dieType": "base"
+   },
+   {
+    "level": 36,
+    "amount": 1,
+    "effect": "ADD_REROLL"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_DIE",
+    "dieType": "poison"
+   },
+   {
+    "level": 50,
+    "amount": 1,
+    "effect": "ADD_REROLL"
+   }
+  ],
+  "notes": "muk-alola · BST 500",
+  "form": {
+   "of": 89,
+   "kind": "regional",
+   "region": "alola"
+  }
+ },
+ {
+  "dex": 10114,
+  "name": "Alolan Exeggutor",
+  "type1": "grass",
+  "type2": "dragon",
+  "baseHp": 13,
+  "maxHp": 331,
+  "speed": 4,
+  "spriteUrl": "/pokemon/10114_front.png",
+  "dice": [
+   {
+    "type": "grass",
+    "count": 1
+   },
+   {
+    "type": "dragon",
+    "count": 1
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [
+   {
+    "level": 38,
+    "effect": "ADD_DIE",
+    "dieType": "grass"
+   },
+   {
+    "level": 38,
+    "amount": 1,
+    "effect": "ADD_REROLL"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_DIE",
+    "dieType": "dragon"
+   },
+   {
+    "level": 50,
+    "amount": 1,
+    "effect": "ADD_REROLL"
+   }
+  ],
+  "notes": "exeggutor-alola · BST 530",
+  "form": {
+   "of": 103,
+   "kind": "regional",
+   "region": "alola"
+  }
+ },
+ {
+  "dex": 10115,
+  "name": "Alolan Marowak",
+  "type1": "fire",
+  "type2": "ghost",
+  "baseHp": 12,
+  "maxHp": 261,
+  "speed": 4,
+  "spriteUrl": "/pokemon/10115_front.png",
+  "dice": [
+   {
+    "type": "fire",
+    "count": 1
+   },
+   {
+    "type": "ghost",
+    "count": 1
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 4,
+  "evolutions": [],
+  "milestones": [
+   {
+    "level": 38,
+    "effect": "ADD_DIE",
+    "dieType": "base"
+   },
+   {
+    "level": 38,
+    "amount": 1,
+    "effect": "ADD_REROLL"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_DIE",
+    "dieType": "fire"
+   }
+  ],
+  "notes": "marowak-alola · BST 425",
+  "form": {
+   "of": 105,
+   "kind": "regional",
+   "region": "alola"
+  }
+ },
+ {
+  "dex": 10161,
+  "name": "Galarian Meowth",
+  "type1": "steel",
+  "type2": null,
+  "baseHp": 12,
+  "maxHp": 241,
+  "speed": 4,
+  "spriteUrl": "/pokemon/10161_front.png",
+  "dice": [
+   {
+    "type": "steel",
+    "count": 1
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 2,
+  "catchValue": 1,
+  "evolutions": [
+   {
+    "toDex": 863,
+    "level": 28
+   }
+  ],
+  "milestones": [
+   {
+    "level": 16,
+    "effect": "REPLACE_DIE",
+    "dieType": "steel",
+    "fromDieType": "base"
+   },
+   {
+    "level": 28,
+    "effect": "EVOLVE"
+   }
+  ],
+  "notes": "meowth-galar · BST 290",
+  "form": {
+   "of": 52,
+   "kind": "regional",
+   "region": "galar"
+  }
+ },
+ {
+  "dex": 10162,
+  "name": "Galarian Ponyta",
+  "type1": "psychic",
+  "type2": null,
+  "baseHp": 12,
+  "maxHp": 241,
+  "speed": 9,
+  "spriteUrl": "/pokemon/10162_front.png",
+  "dice": [
+   {
+    "type": "psychic",
+    "count": 2
+   }
+  ],
+  "rerolls": 2,
+  "catchValue": 2,
+  "evolutions": [
+   {
+    "toDex": 10163,
+    "level": 40
+   }
+  ],
+  "milestones": [
+   {
+    "level": 25,
+    "amount": 1,
+    "effect": "ADD_REROLL"
+   },
+   {
+    "level": 40,
+    "effect": "EVOLVE"
+   }
+  ],
+  "notes": "ponyta-galar · BST 410",
+  "form": {
+   "of": 77,
+   "kind": "regional",
+   "region": "galar"
+  }
+ },
+ {
+  "dex": 10163,
+  "name": "Galarian Rapidash",
+  "type1": "psychic",
+  "type2": "fairy",
+  "baseHp": 12,
+  "maxHp": 271,
+  "speed": 10,
+  "spriteUrl": "/pokemon/10163_front.png",
+  "dice": [
+   {
+    "type": "psychic",
+    "count": 1
+   },
+   {
+    "type": "fairy",
+    "count": 1
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [
+   {
+    "level": 42,
+    "effect": "ADD_DIE",
+    "dieType": "base"
+   },
+   {
+    "level": 42,
+    "amount": 1,
+    "effect": "ADD_REROLL"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_DIE",
+    "dieType": "psychic"
+   },
+   {
+    "level": 50,
+    "amount": 1,
+    "effect": "ADD_REROLL"
+   }
+  ],
+  "notes": "rapidash-galar · BST 500",
+  "form": {
+   "of": 78,
+   "kind": "regional",
+   "region": "galar"
+  }
+ },
+ {
+  "dex": 10164,
+  "name": "Galarian Slowpoke",
+  "type1": "psychic",
+  "type2": null,
+  "baseHp": 13,
+  "maxHp": 321,
+  "speed": 1,
+  "spriteUrl": "/pokemon/10164_front.png",
+  "dice": [
+   {
+    "type": "psychic",
+    "count": 2
+   }
+  ],
+  "rerolls": 2,
+  "catchValue": 2,
+  "evolutions": [
+   {
+    "toDex": 10165,
+    "level": null,
+    "item": "galarica-cuff"
+   },
+   {
+    "toDex": 10172,
+    "level": null,
+    "item": "galarica-wreath"
+   }
+  ],
+  "milestones": [],
+  "notes": "slowpoke-galar · BST 315",
+  "form": {
+   "of": 79,
+   "kind": "regional",
+   "region": "galar"
+  }
+ },
+ {
+  "dex": 10165,
+  "name": "Galarian Slowbro",
+  "type1": "poison",
+  "type2": "psychic",
+  "baseHp": 13,
+  "maxHp": 331,
+  "speed": 3,
+  "spriteUrl": "/pokemon/10165_front.png",
+  "dice": [
+   {
+    "type": "poison",
+    "count": 2
+   },
+   {
+    "type": "psychic",
+    "count": 1
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 4,
+  "evolutions": [],
+  "milestones": [
+   {
+    "level": 36,
+    "effect": "ADD_DIE",
+    "dieType": "base"
+   },
+   {
+    "level": 36,
+    "amount": 1,
+    "effect": "ADD_REROLL"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_DIE",
+    "dieType": "psychic"
+   },
+   {
+    "level": 50,
+    "amount": 1,
+    "effect": "ADD_REROLL"
+   }
+  ],
+  "notes": "slowbro-galar · BST 490",
+  "form": {
+   "of": 80,
+   "kind": "regional",
+   "region": "galar"
+  }
+ },
+ {
+  "dex": 10166,
+  "name": "Galarian Farfetch’d",
+  "type1": "fighting",
+  "type2": null,
+  "baseHp": 12,
+  "maxHp": 245,
+  "speed": 5,
+  "spriteUrl": "/pokemon/10166_front.png",
+  "dice": [
+   {
+    "type": "fighting",
+    "count": 1
+   }
+  ],
+  "rerolls": 1,
+  "catchValue": 5,
+  "evolutions": [
+   {
+    "toDex": 865,
+    "level": 30
+   }
+  ],
+  "milestones": [
+   {
+    "level": 10,
+    "effect": "ADD_DIE",
+    "dieType": "base"
+   },
+   {
+    "level": 10,
+    "amount": 1,
+    "effect": "ADD_REROLL"
+   },
+   {
+    "level": 20,
+    "effect": "ADD_DIE",
+    "dieType": "fighting"
+   },
+   {
+    "level": 20,
+    "amount": 1,
+    "effect": "ADD_REROLL"
+   },
+   {
+    "level": 30,
+    "effect": "ADD_DIE",
+    "dieType": "fighting"
+   },
+   {
+    "level": 30,
+    "effect": "EVOLVE"
+   }
+  ],
+  "notes": "farfetchd-galar · BST 377",
+  "form": {
+   "of": 83,
+   "kind": "regional",
+   "region": "galar"
+  }
+ },
+ {
+  "dex": 10167,
+  "name": "Galarian Weezing",
+  "type1": "poison",
+  "type2": "fairy",
+  "baseHp": 12,
+  "maxHp": 271,
+  "speed": 6,
+  "spriteUrl": "/pokemon/10167_front.png",
+  "dice": [
+   {
+    "type": "poison",
+    "count": 1
+   },
+   {
+    "type": "fairy",
+    "count": 1
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [
+   {
+    "level": 40,
+    "effect": "ADD_DIE",
+    "dieType": "poison"
+   },
+   {
+    "level": 40,
+    "amount": 1,
+    "effect": "ADD_REROLL"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_DIE",
+    "dieType": "poison"
+   },
+   {
+    "level": 50,
+    "amount": 1,
+    "effect": "ADD_REROLL"
+   }
+  ],
+  "notes": "weezing-galar · BST 490",
+  "form": {
+   "of": 110,
+   "kind": "regional",
+   "region": "galar"
+  }
+ },
+ {
+  "dex": 10168,
+  "name": "Galarian Mr. Mime",
+  "type1": "ice",
+  "type2": "psychic",
+  "baseHp": 12,
+  "maxHp": 241,
+  "speed": 10,
+  "spriteUrl": "/pokemon/10168_front.png",
+  "dice": [
+   {
+    "type": "ice",
+    "count": 1
+   },
+   {
+    "type": "psychic",
+    "count": 1
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 5,
+  "evolutions": [
+   {
+    "toDex": 866,
+    "level": 42
+   }
+  ],
+  "milestones": [
+   {
+    "level": 20,
+    "effect": "ADD_DIE",
+    "dieType": "ice"
+   },
+   {
+    "level": 36,
+    "effect": "ADD_DIE",
+    "dieType": "psychic"
+   },
+   {
+    "level": 42,
+    "effect": "EVOLVE"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_DIE",
+    "dieType": "ice"
+   }
+  ],
+  "notes": "mr-mime-galar · BST 460",
+  "form": {
+   "of": 122,
+   "kind": "regional",
+   "region": "galar"
+  }
+ },
+ {
+  "dex": 10169,
+  "name": "Galarian Articuno",
+  "type1": "psychic",
+  "type2": "flying",
+  "baseHp": 13,
+  "maxHp": 321,
+  "speed": 9,
+  "spriteUrl": "/pokemon/10169_front.png",
+  "dice": [
+   {
+    "type": "psychic",
+    "count": 3
+   },
+   {
+    "type": "flying",
+    "count": 2
+   }
+  ],
+  "rerolls": 5,
+  "catchValue": 6,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "articuno-galar · BST 580",
+  "form": {
+   "of": 144,
+   "kind": "regional",
+   "region": "galar"
+  }
+ },
+ {
+  "dex": 10170,
+  "name": "Galarian Zapdos",
+  "type1": "fighting",
+  "type2": "flying",
+  "baseHp": 13,
+  "maxHp": 321,
+  "speed": 10,
+  "spriteUrl": "/pokemon/10170_front.png",
+  "dice": [
+   {
+    "type": "fighting",
+    "count": 3
+   },
+   {
+    "type": "flying",
+    "count": 2
+   }
+  ],
+  "rerolls": 5,
+  "catchValue": 6,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "zapdos-galar · BST 580",
+  "form": {
+   "of": 145,
+   "kind": "regional",
+   "region": "galar"
+  }
+ },
+ {
+  "dex": 10171,
+  "name": "Galarian Moltres",
+  "type1": "dark",
+  "type2": "flying",
+  "baseHp": 13,
+  "maxHp": 321,
+  "speed": 9,
+  "spriteUrl": "/pokemon/10171_front.png",
+  "dice": [
+   {
+    "type": "dark",
+    "count": 3
+   },
+   {
+    "type": "flying",
+    "count": 2
+   }
+  ],
+  "rerolls": 5,
+  "catchValue": 6,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "moltres-galar · BST 580",
+  "form": {
+   "of": 146,
+   "kind": "regional",
+   "region": "galar"
+  }
+ },
+ {
+  "dex": 10172,
+  "name": "Galarian Slowking",
+  "type1": "poison",
+  "type2": "psychic",
+  "baseHp": 13,
+  "maxHp": 331,
+  "speed": 3,
+  "spriteUrl": "/pokemon/10172_front.png",
+  "dice": [
+   {
+    "type": "poison",
+    "count": 1
+   },
+   {
+    "type": "psychic",
+    "count": 1
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [
+   {
+    "level": 36,
+    "effect": "ADD_DIE",
+    "dieType": "poison"
+   },
+   {
+    "level": 36,
+    "amount": 1,
+    "effect": "ADD_REROLL"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_DIE",
+    "dieType": "psychic"
+   },
+   {
+    "level": 50,
+    "amount": 1,
+    "effect": "ADD_REROLL"
+   }
+  ],
+  "notes": "slowking-galar · BST 490",
+  "form": {
+   "of": 199,
+   "kind": "regional",
+   "region": "galar"
+  }
+ },
+ {
+  "dex": 10173,
+  "name": "Galarian Corsola",
+  "type1": "ghost",
+  "type2": null,
+  "baseHp": 12,
+  "maxHp": 261,
+  "speed": 3,
+  "spriteUrl": "/pokemon/10173_front.png",
+  "dice": [
+   {
+    "type": "ghost",
+    "count": 2
+   }
+  ],
+  "rerolls": 2,
+  "catchValue": 5,
+  "evolutions": [
+   {
+    "toDex": 864,
+    "level": 38
+   }
+  ],
+  "milestones": [
+   {
+    "level": 20,
+    "effect": "ADD_DIE",
+    "dieType": "ghost"
+   },
+   {
+    "level": 20,
+    "amount": 1,
+    "effect": "ADD_REROLL"
+   },
+   {
+    "level": 38,
+    "effect": "EVOLVE"
+   },
+   {
+    "level": 39,
+    "effect": "ADD_DIE",
+    "dieType": "ghost"
+   },
+   {
+    "level": 39,
+    "amount": 1,
+    "effect": "ADD_REROLL"
+   }
+  ],
+  "notes": "corsola-galar · BST 410",
+  "form": {
+   "of": 222,
+   "kind": "regional",
+   "region": "galar"
+  }
+ },
+ {
+  "dex": 10174,
+  "name": "Galarian Zigzagoon",
+  "type1": "dark",
+  "type2": "normal",
+  "baseHp": 12,
+  "maxHp": 217,
+  "speed": 6,
+  "spriteUrl": "/pokemon/10174_front.png",
+  "dice": [
+   {
+    "type": "dark",
+    "count": 1
+   }
+  ],
+  "rerolls": 1,
+  "catchValue": 1,
+  "evolutions": [
+   {
+    "toDex": 10175,
+    "level": 20
+   }
+  ],
+  "milestones": [
+   {
+    "level": 8,
+    "effect": "ADD_DIE",
+    "dieType": "base"
+   },
+   {
+    "level": 8,
+    "amount": 1,
+    "effect": "ADD_REROLL"
+   },
+   {
+    "level": 15,
+    "effect": "REPLACE_DIE",
+    "dieType": "normal",
+    "fromDieType": "base"
+   },
+   {
+    "level": 20,
+    "effect": "EVOLVE"
+   }
+  ],
+  "notes": "zigzagoon-galar · BST 240",
+  "form": {
+   "of": 263,
+   "kind": "regional",
+   "region": "galar"
+  }
+ },
+ {
+  "dex": 10175,
+  "name": "Galarian Linoone",
+  "type1": "dark",
+  "type2": "normal",
+  "baseHp": 12,
+  "maxHp": 297,
+  "speed": 10,
+  "spriteUrl": "/pokemon/10175_front.png",
+  "dice": [
+   {
+    "type": "dark",
+    "count": 1
+   },
+   {
+    "type": "normal",
+    "count": 1
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 4,
+  "evolutions": [
+   {
+    "toDex": 862,
+    "level": 35
+   }
+  ],
+  "milestones": [
+   {
+    "level": 35,
+    "effect": "EVOLVE"
+   },
+   {
+    "level": 40,
+    "effect": "ADD_DIE",
+    "dieType": "dark"
+   },
+   {
+    "level": 40,
+    "amount": 1,
+    "effect": "ADD_REROLL"
+   },
+   {
+    "level": 50,
+    "effect": "REPLACE_DIE",
+    "dieType": "dark",
+    "fromDieType": "base"
+   }
+  ],
+  "notes": "linoone-galar · BST 420",
+  "form": {
+   "of": 264,
+   "kind": "regional",
+   "region": "galar"
+  }
+ },
+ {
+  "dex": 10176,
+  "name": "Galarian Darumaka",
+  "type1": "ice",
+  "type2": null,
+  "baseHp": 12,
+  "maxHp": 281,
+  "speed": 5,
+  "spriteUrl": "/pokemon/10176_front.png",
+  "dice": [
+   {
+    "type": "ice",
+    "count": 2
+   }
+  ],
+  "rerolls": 2,
+  "catchValue": 3,
+  "evolutions": [
+   {
+    "toDex": 10177,
+    "level": null,
+    "item": "ice-stone"
+   }
+  ],
+  "milestones": [
+   {
+    "level": 23,
+    "effect": "ADD_DIE",
+    "dieType": "base"
+   },
+   {
+    "level": 23,
+    "amount": 1,
+    "effect": "ADD_REROLL"
+   }
+  ],
+  "notes": "darumaka-galar · BST 315",
+  "form": {
+   "of": 554,
+   "kind": "regional",
+   "region": "galar"
+  }
+ },
+ {
+  "dex": 10177,
+  "name": "Galarian Darmanitan",
+  "type1": "ice",
+  "type2": null,
+  "baseHp": 13,
+  "maxHp": 351,
+  "speed": 9,
+  "spriteUrl": "/pokemon/10177_front.png",
+  "dice": [
+   {
+    "type": "ice",
+    "count": 2
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [
+   {
+    "level": 40,
+    "effect": "ADD_DIE",
+    "dieType": "ice"
+   },
+   {
+    "level": 40,
+    "amount": 1,
+    "effect": "ADD_REROLL"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_DIE",
+    "dieType": "ice"
+   },
+   {
+    "level": 50,
+    "amount": 1,
+    "effect": "ADD_REROLL"
+   }
+  ],
+  "notes": "darmanitan-galar-standard · BST 480",
+  "form": {
+   "of": 555,
+   "kind": "regional",
+   "region": "galar"
+  }
+ },
+ {
+  "dex": 10179,
+  "name": "Galarian Yamask",
+  "type1": "ground",
+  "type2": "ghost",
+  "baseHp": 12,
+  "maxHp": 217,
+  "speed": 3,
+  "spriteUrl": "/pokemon/10179_front.png",
+  "dice": [
+   {
+    "type": "ground",
+    "count": 1
+   },
+   {
+    "type": "ghost",
+    "count": 1
+   }
+  ],
+  "rerolls": 2,
+  "catchValue": 2,
+  "evolutions": [
+   {
+    "toDex": 867,
+    "level": 34
+   }
+  ],
+  "milestones": [
+   {
+    "level": 22,
+    "effect": "ADD_DIE",
+    "dieType": "base"
+   },
+   {
+    "level": 22,
+    "amount": 1,
+    "effect": "ADD_REROLL"
+   },
+   {
+    "level": 34,
+    "effect": "EVOLVE"
+   }
+  ],
+  "notes": "yamask-galar · BST 303",
+  "form": {
+   "of": 562,
+   "kind": "regional",
+   "region": "galar"
+  }
+ },
+ {
+  "dex": 10180,
+  "name": "Galarian Stunfisk",
+  "type1": "ground",
+  "type2": "steel",
+  "baseHp": 13,
+  "maxHp": 359,
+  "speed": 3,
+  "spriteUrl": "/pokemon/10180_front.png",
+  "dice": [
+   {
+    "type": "ground",
+    "count": 1
+   },
+   {
+    "type": "steel",
+    "count": 1
+   }
+  ],
+  "rerolls": 2,
+  "catchValue": 4,
+  "evolutions": [],
+  "milestones": [
+   {
+    "level": 24,
+    "effect": "ADD_DIE",
+    "dieType": "steel"
+   },
+   {
+    "level": 24,
+    "amount": 1,
+    "effect": "ADD_REROLL"
+   },
+   {
+    "level": 40,
+    "effect": "ADD_DIE",
+    "dieType": "base"
+   },
+   {
+    "level": 40,
+    "amount": 1,
+    "effect": "ADD_REROLL"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_DIE",
+    "dieType": "ground"
+   },
+   {
+    "level": 50,
+    "amount": 1,
+    "effect": "ADD_REROLL"
+   }
+  ],
+  "notes": "stunfisk-galar · BST 471",
+  "form": {
+   "of": 618,
+   "kind": "regional",
+   "region": "galar"
+  }
+ },
+ {
+  "dex": 10229,
+  "name": "Hisuian Growlithe",
+  "type1": "fire",
+  "type2": "rock",
+  "baseHp": 12,
+  "maxHp": 261,
+  "speed": 5,
+  "spriteUrl": "/pokemon/10229_front.png",
+  "dice": [
+   {
+    "type": "fire",
+    "count": 1
+   },
+   {
+    "type": "rock",
+    "count": 1
+   }
+  ],
+  "rerolls": 2,
+  "catchValue": 2,
+  "evolutions": [
+   {
+    "toDex": 10230,
+    "level": null,
+    "item": "fire-stone"
+   }
+  ],
+  "milestones": [],
+  "notes": "growlithe-hisui · BST 350",
+  "form": {
+   "of": 58,
+   "kind": "regional",
+   "region": "galar"
+  }
+ },
+ {
+  "dex": 10230,
+  "name": "Hisuian Arcanine",
+  "type1": "fire",
+  "type2": "rock",
+  "baseHp": 13,
+  "maxHp": 331,
+  "speed": 9,
+  "spriteUrl": "/pokemon/10230_front.png",
+  "dice": [
+   {
+    "type": "fire",
+    "count": 1
+   },
+   {
+    "type": "rock",
+    "count": 1
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 4,
+  "evolutions": [],
+  "milestones": [
+   {
+    "level": 38,
+    "effect": "ADD_DIE",
+    "dieType": "base"
+   },
+   {
+    "level": 38,
+    "amount": 1,
+    "effect": "ADD_REROLL"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_DIE",
+    "dieType": "fire"
+   },
+   {
+    "level": 50,
+    "amount": 1,
+    "effect": "ADD_REROLL"
+   }
+  ],
+  "notes": "arcanine-hisui · BST 555",
+  "form": {
+   "of": 59,
+   "kind": "regional",
+   "region": "galar"
+  }
+ },
+ {
+  "dex": 10231,
+  "name": "Hisuian Voltorb",
+  "type1": "electric",
+  "type2": "grass",
+  "baseHp": 12,
+  "maxHp": 221,
+  "speed": 10,
+  "spriteUrl": "/pokemon/10231_front.png",
+  "dice": [
+   {
+    "type": "electric",
+    "count": 1
+   },
+   {
+    "type": "grass",
+    "count": 1
+   }
+  ],
+  "rerolls": 2,
+  "catchValue": 2,
+  "evolutions": [
+   {
+    "toDex": 10232,
+    "level": null,
+    "item": "leaf-stone"
+   }
+  ],
+  "milestones": [
+   {
+    "level": 24,
+    "amount": 1,
+    "effect": "ADD_REROLL"
+   }
+  ],
+  "notes": "voltorb-hisui · BST 330",
+  "form": {
+   "of": 100,
+   "kind": "regional",
+   "region": "galar"
+  }
+ },
+ {
+  "dex": 10232,
+  "name": "Hisuian Electrode",
+  "type1": "electric",
+  "type2": "grass",
+  "baseHp": 12,
+  "maxHp": 261,
+  "speed": 15,
+  "spriteUrl": "/pokemon/10232_front.png",
+  "dice": [
+   {
+    "type": "electric",
+    "count": 1
+   },
+   {
+    "type": "grass",
+    "count": 1
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [
+   {
+    "level": 40,
+    "effect": "ADD_DIE",
+    "dieType": "base"
+   },
+   {
+    "level": 40,
+    "amount": 1,
+    "effect": "ADD_REROLL"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_DIE",
+    "dieType": "electric"
+   },
+   {
+    "level": 50,
+    "amount": 1,
+    "effect": "ADD_REROLL"
+   }
+  ],
+  "notes": "electrode-hisui · BST 490",
+  "form": {
+   "of": 101,
+   "kind": "regional",
+   "region": "galar"
+  }
+ },
+ {
+  "dex": 10233,
+  "name": "Hisuian Typhlosion",
+  "type1": "fire",
+  "type2": "ghost",
+  "baseHp": 12,
+  "maxHp": 287,
+  "speed": 9,
+  "spriteUrl": "/pokemon/10233_front.png",
+  "dice": [
+   {
+    "type": "fire",
+    "count": 2
+   },
+   {
+    "type": "ghost",
+    "count": 1
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 4,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [
+   {
+    "level": 50,
+    "effect": "ADD_DIE",
+    "dieType": "fire"
+   },
+   {
+    "level": 50,
+    "amount": 1,
+    "effect": "ADD_REROLL"
+   },
+   {
+    "level": 62,
+    "effect": "REPLACE_DIE",
+    "dieType": "fire",
+    "fromDieType": "base"
+   },
+   {
+    "level": 80,
+    "effect": "ADD_DIE",
+    "dieType": "fire"
+   }
+  ],
+  "notes": "typhlosion-hisui · BST 534",
+  "form": {
+   "of": 157,
+   "kind": "regional",
+   "region": "galar"
+  }
+ },
+ {
+  "dex": 10234,
+  "name": "Hisuian Qwilfish",
+  "type1": "dark",
+  "type2": "poison",
+  "baseHp": 12,
+  "maxHp": 271,
+  "speed": 8,
+  "spriteUrl": "/pokemon/10234_front.png",
+  "dice": [
+   {
+    "type": "dark",
+    "count": 2
+   }
+  ],
+  "rerolls": 2,
+  "catchValue": 5,
+  "evolutions": [
+   {
+    "toDex": 904,
+    "level": 30
+   }
+  ],
+  "milestones": [
+   {
+    "level": 20,
+    "effect": "ADD_DIE",
+    "dieType": "poison"
+   },
+   {
+    "level": 20,
+    "amount": 1,
+    "effect": "ADD_REROLL"
+   },
+   {
+    "level": 30,
+    "effect": "EVOLVE"
+   },
+   {
+    "level": 32,
+    "amount": 1,
+    "effect": "ADD_REROLL"
+   },
+   {
+    "level": 38,
+    "effect": "ADD_DIE",
+    "dieType": "poison"
+   }
+  ],
+  "notes": "qwilfish-hisui · BST 440",
+  "form": {
+   "of": 211,
+   "kind": "regional",
+   "region": "galar"
+  }
+ },
+ {
+  "dex": 10235,
+  "name": "Hisuian Sneasel",
+  "type1": "fighting",
+  "type2": "poison",
+  "baseHp": 12,
+  "maxHp": 251,
+  "speed": 11,
+  "spriteUrl": "/pokemon/10235_front.png",
+  "dice": [
+   {
+    "type": "fighting",
+    "count": 1
+   },
+   {
+    "type": "poison",
+    "count": 1
+   }
+  ],
+  "rerolls": 2,
+  "catchValue": 5,
+  "evolutions": [
+   {
+    "toDex": 903,
+    "level": 40
+   }
+  ],
+  "milestones": [
+   {
+    "level": 22,
+    "effect": "ADD_DIE",
+    "dieType": "poison"
+   },
+   {
+    "level": 22,
+    "amount": 1,
+    "effect": "ADD_REROLL"
+   },
+   {
+    "level": 40,
+    "effect": "ADD_DIE",
+    "dieType": "fighting"
+   },
+   {
+    "level": 40,
+    "amount": 1,
+    "effect": "ADD_REROLL"
+   },
+   {
+    "level": 40,
+    "effect": "EVOLVE"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_DIE",
+    "dieType": "poison"
+   }
+  ],
+  "notes": "sneasel-hisui · BST 430",
+  "form": {
+   "of": 215,
+   "kind": "regional",
+   "region": "galar"
+  }
+ },
+ {
+  "dex": 10236,
+  "name": "Hisuian Samurott",
+  "type1": "water",
+  "type2": "dark",
+  "baseHp": 13,
+  "maxHp": 321,
+  "speed": 8,
+  "spriteUrl": "/pokemon/10236_front.png",
+  "dice": [
+   {
+    "type": "water",
+    "count": 2
+   },
+   {
+    "type": "dark",
+    "count": 1
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 4,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [
+   {
+    "level": 50,
+    "effect": "ADD_DIE",
+    "dieType": "water"
+   },
+   {
+    "level": 50,
+    "amount": 1,
+    "effect": "ADD_REROLL"
+   }
+  ],
+  "notes": "samurott-hisui · BST 528",
+  "form": {
+   "of": 503,
+   "kind": "regional",
+   "region": "galar"
+  }
+ },
+ {
+  "dex": 10237,
+  "name": "Hisuian Lilligant",
+  "type1": "grass",
+  "type2": "fighting",
+  "baseHp": 12,
+  "maxHp": 281,
+  "speed": 10,
+  "spriteUrl": "/pokemon/10237_front.png",
+  "dice": [
+   {
+    "type": "grass",
+    "count": 1
+   },
+   {
+    "type": "fighting",
+    "count": 1
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 4,
+  "evolutions": [],
+  "milestones": [
+   {
+    "level": 40,
+    "effect": "ADD_DIE",
+    "dieType": "grass"
+   },
+   {
+    "level": 40,
+    "amount": 1,
+    "effect": "ADD_REROLL"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_DIE",
+    "dieType": "grass"
+   },
+   {
+    "level": 50,
+    "amount": 1,
+    "effect": "ADD_REROLL"
+   }
+  ],
+  "notes": "lilligant-hisui · BST 480",
+  "form": {
+   "of": 549,
+   "kind": "regional",
+   "region": "galar"
+  }
+ },
+ {
+  "dex": 10238,
+  "name": "Hisuian Zorua",
+  "type1": "normal",
+  "type2": "ghost",
+  "baseHp": 12,
+  "maxHp": 211,
+  "speed": 7,
+  "spriteUrl": "/pokemon/10238_front.png",
+  "dice": [
+   {
+    "type": "normal",
+    "count": 1
+   },
+   {
+    "type": "ghost",
+    "count": 1
+   }
+  ],
+  "rerolls": 2,
+  "catchValue": 4,
+  "evolutions": [
+   {
+    "toDex": 10239,
+    "level": 30
+   }
+  ],
+  "milestones": [
+   {
+    "level": 18,
+    "effect": "ADD_DIE",
+    "dieType": "base"
+   },
+   {
+    "level": 18,
+    "amount": 1,
+    "effect": "ADD_REROLL"
+   },
+   {
+    "level": 30,
+    "effect": "EVOLVE"
+   }
+  ],
+  "notes": "zorua-hisui · BST 330",
+  "form": {
+   "of": 570,
+   "kind": "regional",
+   "region": "galar"
+  }
+ },
+ {
+  "dex": 10239,
+  "name": "Hisuian Zoroark",
+  "type1": "normal",
+  "type2": "ghost",
+  "baseHp": 12,
+  "maxHp": 251,
+  "speed": 11,
+  "spriteUrl": "/pokemon/10239_front.png",
+  "dice": [
+   {
+    "type": "normal",
+    "count": 1
+   },
+   {
+    "type": "ghost",
+    "count": 1
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [
+   {
+    "level": 38,
+    "effect": "ADD_DIE",
+    "dieType": "normal"
+   },
+   {
+    "level": 38,
+    "amount": 1,
+    "effect": "ADD_REROLL"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_DIE",
+    "dieType": "normal"
+   },
+   {
+    "level": 50,
+    "amount": 1,
+    "effect": "ADD_REROLL"
+   }
+  ],
+  "notes": "zoroark-hisui · BST 510",
+  "form": {
+   "of": 571,
+   "kind": "regional",
+   "region": "galar"
+  }
+ },
+ {
+  "dex": 10240,
+  "name": "Hisuian Braviary",
+  "type1": "psychic",
+  "type2": "flying",
+  "baseHp": 13,
+  "maxHp": 361,
+  "speed": 6,
+  "spriteUrl": "/pokemon/10240_front.png",
+  "dice": [
+   {
+    "type": "psychic",
+    "count": 2
+   },
+   {
+    "type": "flying",
+    "count": 2
+   }
+  ],
+  "rerolls": 4,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [
+   {
+    "level": 50,
+    "effect": "ADD_DIE",
+    "dieType": "flying"
+   },
+   {
+    "level": 50,
+    "amount": 1,
+    "effect": "ADD_REROLL"
+   }
+  ],
+  "notes": "braviary-hisui · BST 510",
+  "form": {
+   "of": 628,
+   "kind": "regional",
+   "region": "galar"
+  }
+ },
+ {
+  "dex": 10241,
+  "name": "Hisuian Sliggoo",
+  "type1": "steel",
+  "type2": "dragon",
+  "baseHp": 12,
+  "maxHp": 257,
+  "speed": 4,
+  "spriteUrl": "/pokemon/10241_front.png",
+  "dice": [
+   {
+    "type": "steel",
+    "count": 2
+   },
+   {
+    "type": "dragon",
+    "count": 1
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 5,
+  "evolutions": [
+   {
+    "toDex": 10242,
+    "level": 50
+   }
+  ],
+  "milestones": [
+   {
+    "level": 42,
+    "effect": "ADD_DIE",
+    "dieType": "steel"
+   },
+   {
+    "level": 42,
+    "amount": 1,
+    "effect": "ADD_REROLL"
+   },
+   {
+    "level": 50,
+    "effect": "EVOLVE"
+   }
+  ],
+  "notes": "sliggoo-hisui · BST 452",
+  "form": {
+   "of": 705,
+   "kind": "regional",
+   "region": "galar"
+  }
+ },
+ {
+  "dex": 10242,
+  "name": "Hisuian Goodra",
+  "type1": "steel",
+  "type2": "dragon",
+  "baseHp": 12,
+  "maxHp": 301,
+  "speed": 6,
+  "spriteUrl": "/pokemon/10242_front.png",
+  "dice": [
+   {
+    "type": "steel",
+    "count": 3
+   },
+   {
+    "type": "dragon",
+    "count": 1
+   }
+  ],
+  "rerolls": 4,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [
+   {
+    "level": 55,
+    "effect": "ADD_DIE",
+    "dieType": "steel"
+   },
+   {
+    "level": 55,
+    "amount": 1,
+    "effect": "ADD_REROLL"
+   }
+  ],
+  "notes": "goodra-hisui · BST 600",
+  "form": {
+   "of": 706,
+   "kind": "regional",
+   "region": "galar"
+  }
+ },
+ {
+  "dex": 10243,
+  "name": "Hisuian Avalugg",
+  "type1": "ice",
+  "type2": "rock",
+  "baseHp": 13,
+  "maxHp": 331,
+  "speed": 3,
+  "spriteUrl": "/pokemon/10243_front.png",
+  "dice": [
+   {
+    "type": "ice",
+    "count": 2
+   },
+   {
+    "type": "rock",
+    "count": 1
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 4,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [
+   {
+    "level": 50,
+    "effect": "ADD_DIE",
+    "dieType": "ice"
+   },
+   {
+    "level": 50,
+    "amount": 1,
+    "effect": "ADD_REROLL"
+   }
+  ],
+  "notes": "avalugg-hisui · BST 514",
+  "form": {
+   "of": 713,
+   "kind": "regional",
+   "region": "galar"
+  }
+ },
+ {
+  "dex": 10244,
+  "name": "Hisuian Decidueye",
+  "type1": "grass",
+  "type2": "fighting",
+  "baseHp": 13,
+  "maxHp": 317,
+  "speed": 6,
+  "spriteUrl": "/pokemon/10244_front.png",
+  "dice": [
+   {
+    "type": "grass",
+    "count": 2
+   },
+   {
+    "type": "fighting",
+    "count": 2
+   }
+  ],
+  "rerolls": 4,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [
+   {
+    "level": 50,
+    "effect": "ADD_DIE",
+    "dieType": "grass"
+   },
+   {
+    "level": 50,
+    "amount": 1,
+    "effect": "ADD_REROLL"
+   }
+  ],
+  "notes": "decidueye-hisui · BST 530",
+  "form": {
+   "of": 724,
+   "kind": "regional",
+   "region": "galar"
+  }
+ },
+ {
+  "dex": 10250,
+  "name": "Paldean Tauros (Combat Breed)",
+  "type1": "fighting",
+  "type2": null,
+  "baseHp": 12,
+  "maxHp": 291,
+  "speed": 10,
+  "spriteUrl": "/pokemon/10250_front.png",
+  "dice": [
+   {
+    "type": "fighting",
+    "count": 2
+   }
+  ],
+  "rerolls": 2,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [
+   {
+    "level": 22,
+    "effect": "ADD_DIE",
+    "dieType": "fighting"
+   },
+   {
+    "level": 22,
+    "amount": 1,
+    "effect": "ADD_REROLL"
+   },
+   {
+    "level": 37,
+    "effect": "ADD_DIE",
+    "dieType": "base"
+   },
+   {
+    "level": 37,
+    "amount": 1,
+    "effect": "ADD_REROLL"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_DIE",
+    "dieType": "fighting"
+   },
+   {
+    "level": 50,
+    "amount": 1,
+    "effect": "ADD_REROLL"
+   }
+  ],
+  "notes": "tauros-paldea-combat-breed · BST 490",
+  "form": {
+   "of": 128,
+   "kind": "regional",
+   "region": "paldea"
+  }
+ },
+ {
+  "dex": 10251,
+  "name": "Paldean Tauros (Blaze Breed)",
+  "type1": "fighting",
+  "type2": "fire",
+  "baseHp": 12,
+  "maxHp": 291,
+  "speed": 10,
+  "spriteUrl": "/pokemon/10251_front.png",
+  "dice": [
+   {
+    "type": "fighting",
+    "count": 1
+   },
+   {
+    "type": "fire",
+    "count": 1
+   }
+  ],
+  "rerolls": 2,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [
+   {
+    "level": 22,
+    "effect": "ADD_DIE",
+    "dieType": "fighting"
+   },
+   {
+    "level": 22,
+    "amount": 1,
+    "effect": "ADD_REROLL"
+   },
+   {
+    "level": 37,
+    "effect": "ADD_DIE",
+    "dieType": "base"
+   },
+   {
+    "level": 37,
+    "amount": 1,
+    "effect": "ADD_REROLL"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_DIE",
+    "dieType": "fighting"
+   },
+   {
+    "level": 50,
+    "amount": 1,
+    "effect": "ADD_REROLL"
+   }
+  ],
+  "notes": "tauros-paldea-blaze-breed · BST 490",
+  "form": {
+   "of": 128,
+   "kind": "regional",
+   "region": "paldea"
+  }
+ },
+ {
+  "dex": 10252,
+  "name": "Paldean Tauros (Aqua Breed)",
+  "type1": "fighting",
+  "type2": "water",
+  "baseHp": 12,
+  "maxHp": 291,
+  "speed": 10,
+  "spriteUrl": "/pokemon/10252_front.png",
+  "dice": [
+   {
+    "type": "fighting",
+    "count": 1
+   },
+   {
+    "type": "water",
+    "count": 1
+   }
+  ],
+  "rerolls": 2,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [
+   {
+    "level": 22,
+    "effect": "ADD_DIE",
+    "dieType": "fighting"
+   },
+   {
+    "level": 22,
+    "amount": 1,
+    "effect": "ADD_REROLL"
+   },
+   {
+    "level": 37,
+    "effect": "ADD_DIE",
+    "dieType": "base"
+   },
+   {
+    "level": 37,
+    "amount": 1,
+    "effect": "ADD_REROLL"
+   },
+   {
+    "level": 50,
+    "effect": "ADD_DIE",
+    "dieType": "fighting"
+   },
+   {
+    "level": 50,
+    "amount": 1,
+    "effect": "ADD_REROLL"
+   }
+  ],
+  "notes": "tauros-paldea-aqua-breed · BST 490",
+  "form": {
+   "of": 128,
+   "kind": "regional",
+   "region": "paldea"
+  }
+ },
+ {
+  "dex": 10253,
+  "name": "Paldean Wooper",
+  "type1": "poison",
+  "type2": "ground",
+  "baseHp": 12,
+  "maxHp": 251,
+  "speed": 1,
+  "spriteUrl": "/pokemon/10253_front.png",
+  "dice": [
+   {
+    "type": "poison",
+    "count": 1
+   }
+  ],
+  "rerolls": 2,
+  "catchValue": 1,
+  "evolutions": [
+   {
+    "toDex": 980,
+    "level": 20
+   }
+  ],
+  "milestones": [
+   {
+    "level": 8,
+    "effect": "ADD_DIE",
+    "dieType": "base"
+   },
+   {
+    "level": 14,
+    "effect": "REPLACE_DIE",
+    "dieType": "ground",
+    "fromDieType": "base"
+   },
+   {
+    "level": 20,
+    "effect": "EVOLVE"
+   }
+  ],
+  "notes": "wooper-paldea · BST 210",
+  "form": {
+   "of": 194,
+   "kind": "regional",
+   "region": "paldea"
+  }
+ },
+ {
+  "dex": 10278,
+  "name": "Mega Clefable",
+  "type1": "fairy",
+  "type2": "flying",
+  "baseHp": 13,
+  "maxHp": 331,
+  "speed": 7,
+  "spriteUrl": "/pokemon/10278_front.png",
+  "dice": [
+   {
+    "type": "fairy",
+    "count": 2
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 7,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "clefable-mega · BST 583",
+  "form": {
+   "of": 36,
+   "kind": "mega"
+  }
+ },
+ {
+  "dex": 10279,
+  "name": "Mega Victreebel",
+  "type1": "grass",
+  "type2": "poison",
+  "baseHp": 12,
+  "maxHp": 301,
+  "speed": 7,
+  "spriteUrl": "/pokemon/10279_front.png",
+  "dice": [
+   {
+    "type": "grass",
+    "count": 2
+   },
+   {
+    "type": "poison",
+    "count": 1
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 4,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "victreebel-mega · BST 590",
+  "form": {
+   "of": 71,
+   "kind": "mega"
+  }
+ },
+ {
+  "dex": 10280,
+  "name": "Mega Starmie",
+  "type1": "water",
+  "type2": "psychic",
+  "baseHp": 12,
+  "maxHp": 261,
+  "speed": 12,
+  "spriteUrl": "/pokemon/10280_front.png",
+  "dice": [
+   {
+    "type": "water",
+    "count": 1
+   },
+   {
+    "type": "psychic",
+    "count": 1
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "starmie-mega · BST 620",
+  "form": {
+   "of": 121,
+   "kind": "mega"
+  }
+ },
+ {
+  "dex": 10281,
+  "name": "Mega Dragonite",
+  "type1": "dragon",
+  "type2": "flying",
+  "baseHp": 13,
+  "maxHp": 323,
+  "speed": 10,
+  "spriteUrl": "/pokemon/10281_front.png",
+  "dice": [
+   {
+    "type": "dragon",
+    "count": 2
+   },
+   {
+    "type": "flying",
+    "count": 1
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 4,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "dragonite-mega · BST 700",
+  "form": {
+   "of": 149,
+   "kind": "mega"
+  }
+ },
+ {
+  "dex": 10282,
+  "name": "Mega Meganium",
+  "type1": "grass",
+  "type2": "fairy",
+  "baseHp": 12,
+  "maxHp": 301,
+  "speed": 8,
+  "spriteUrl": "/pokemon/10282_front.png",
+  "dice": [
+   {
+    "type": "grass",
+    "count": 3
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 4,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "meganium-mega · BST 625",
+  "form": {
+   "of": 154,
+   "kind": "mega"
+  }
+ },
+ {
+  "dex": 10283,
+  "name": "Mega Feraligatr",
+  "type1": "water",
+  "type2": "dragon",
+  "baseHp": 13,
+  "maxHp": 311,
+  "speed": 7,
+  "spriteUrl": "/pokemon/10283_front.png",
+  "dice": [
+   {
+    "type": "water",
+    "count": 3
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 4,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "feraligatr-mega · BST 630",
+  "form": {
+   "of": 160,
+   "kind": "mega"
+  }
+ },
+ {
+  "dex": 10284,
+  "name": "Mega Skarmory",
+  "type1": "steel",
+  "type2": "flying",
+  "baseHp": 12,
+  "maxHp": 271,
+  "speed": 11,
+  "spriteUrl": "/pokemon/10284_front.png",
+  "dice": [
+   {
+    "type": "steel",
+    "count": 1
+   },
+   {
+    "type": "flying",
+    "count": 1
+   }
+  ],
+  "rerolls": 2,
+  "catchValue": 7,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "skarmory-mega · BST 565",
+  "form": {
+   "of": 227,
+   "kind": "mega"
+  }
+ },
+ {
+  "dex": 10285,
+  "name": "Mega Froslass",
+  "type1": "ice",
+  "type2": "ghost",
+  "baseHp": 12,
+  "maxHp": 281,
+  "speed": 12,
+  "spriteUrl": "/pokemon/10285_front.png",
+  "dice": [
+   {
+    "type": "ice",
+    "count": 2
+   },
+   {
+    "type": "ghost",
+    "count": 1
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 4,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "froslass-mega · BST 580",
+  "form": {
+   "of": 478,
+   "kind": "mega"
+  }
+ },
+ {
+  "dex": 10286,
+  "name": "Mega Emboar",
+  "type1": "fire",
+  "type2": "fighting",
+  "baseHp": 13,
+  "maxHp": 361,
+  "speed": 7,
+  "spriteUrl": "/pokemon/10286_front.png",
+  "dice": [
+   {
+    "type": "fire",
+    "count": 2
+   },
+   {
+    "type": "fighting",
+    "count": 2
+   }
+  ],
+  "rerolls": 4,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "emboar-mega · BST 628",
+  "form": {
+   "of": 500,
+   "kind": "mega"
+  }
+ },
+ {
+  "dex": 10287,
+  "name": "Mega Excadrill",
+  "type1": "ground",
+  "type2": "steel",
+  "baseHp": 13,
+  "maxHp": 361,
+  "speed": 10,
+  "spriteUrl": "/pokemon/10287_front.png",
+  "dice": [
+   {
+    "type": "ground",
+    "count": 2
+   },
+   {
+    "type": "steel",
+    "count": 1
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "excadrill-mega · BST 608",
+  "form": {
+   "of": 530,
+   "kind": "mega"
+  }
+ },
+ {
+  "dex": 10288,
+  "name": "Mega Scolipede",
+  "type1": "bug",
+  "type2": "poison",
+  "baseHp": 12,
+  "maxHp": 261,
+  "speed": 6,
+  "spriteUrl": "/pokemon/10288_front.png",
+  "dice": [
+   {
+    "type": "bug",
+    "count": 2
+   },
+   {
+    "type": "poison",
+    "count": 2
+   }
+  ],
+  "rerolls": 4,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "scolipede-mega · BST 585",
+  "form": {
+   "of": 545,
+   "kind": "mega"
+  }
+ },
+ {
+  "dex": 10289,
+  "name": "Mega Scrafty",
+  "type1": "dark",
+  "type2": "fighting",
+  "baseHp": 12,
+  "maxHp": 271,
+  "speed": 6,
+  "spriteUrl": "/pokemon/10289_front.png",
+  "dice": [
+   {
+    "type": "dark",
+    "count": 2
+   },
+   {
+    "type": "fighting",
+    "count": 1
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 4,
+  "catchValue": 4,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "scrafty-mega · BST 588",
+  "form": {
+   "of": 560,
+   "kind": "mega"
+  }
+ },
+ {
+  "dex": 10290,
+  "name": "Mega Eelektross",
+  "type1": "electric",
+  "type2": null,
+  "baseHp": 13,
+  "maxHp": 311,
+  "speed": 8,
+  "spriteUrl": "/pokemon/10290_front.png",
+  "dice": [
+   {
+    "type": "electric",
+    "count": 3
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 4,
+  "catchValue": 6,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "eelektross-mega · BST 615",
+  "form": {
+   "of": 604,
+   "kind": "mega"
+  }
+ },
+ {
+  "dex": 10291,
+  "name": "Mega Chandelure",
+  "type1": "ghost",
+  "type2": "fire",
+  "baseHp": 12,
+  "maxHp": 261,
+  "speed": 9,
+  "spriteUrl": "/pokemon/10291_front.png",
+  "dice": [
+   {
+    "type": "ghost",
+    "count": 2
+   },
+   {
+    "type": "fire",
+    "count": 2
+   }
+  ],
+  "rerolls": 4,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "chandelure-mega · BST 620",
+  "form": {
+   "of": 609,
+   "kind": "mega"
+  }
+ },
+ {
+  "dex": 10292,
+  "name": "Mega Chesnaught",
+  "type1": "grass",
+  "type2": "fighting",
+  "baseHp": 13,
+  "maxHp": 317,
+  "speed": 4,
+  "spriteUrl": "/pokemon/10292_front.png",
+  "dice": [
+   {
+    "type": "grass",
+    "count": 2
+   },
+   {
+    "type": "fighting",
+    "count": 2
+   }
+  ],
+  "rerolls": 4,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "chesnaught-mega · BST 630",
+  "form": {
+   "of": 652,
+   "kind": "mega"
+  }
+ },
+ {
+  "dex": 10293,
+  "name": "Mega Delphox",
+  "type1": "fire",
+  "type2": "psychic",
+  "baseHp": 12,
+  "maxHp": 291,
+  "speed": 13,
+  "spriteUrl": "/pokemon/10293_front.png",
+  "dice": [
+   {
+    "type": "fire",
+    "count": 2
+   },
+   {
+    "type": "psychic",
+    "count": 2
+   }
+  ],
+  "rerolls": 4,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "delphox-mega · BST 634",
+  "form": {
+   "of": 655,
+   "kind": "mega"
+  }
+ },
+ {
+  "dex": 10294,
+  "name": "Mega Greninja",
+  "type1": "water",
+  "type2": "dark",
+  "baseHp": 12,
+  "maxHp": 285,
+  "speed": 14,
+  "spriteUrl": "/pokemon/10294_front.png",
+  "dice": [
+   {
+    "type": "water",
+    "count": 2
+   },
+   {
+    "type": "dark",
+    "count": 2
+   }
+  ],
+  "rerolls": 4,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "greninja-mega · BST 630",
+  "form": {
+   "of": 658,
+   "kind": "mega"
+  }
+ },
+ {
+  "dex": 10295,
+  "name": "Mega Pyroar",
+  "type1": "fire",
+  "type2": "normal",
+  "baseHp": 13,
+  "maxHp": 313,
+  "speed": 12,
+  "spriteUrl": "/pokemon/10295_front.png",
+  "dice": [
+   {
+    "type": "fire",
+    "count": 2
+   },
+   {
+    "type": "normal",
+    "count": 1
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "pyroar-mega · BST 607",
+  "form": {
+   "of": 668,
+   "kind": "mega"
+  }
+ },
+ {
+  "dex": 10296,
+  "name": "Mega Floette",
+  "type1": "fairy",
+  "type2": null,
+  "baseHp": 12,
+  "maxHp": 249,
+  "speed": 10,
+  "spriteUrl": "/pokemon/10296_front.png",
+  "dice": [
+   {
+    "type": "fairy",
+    "count": 2
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 3,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "floette-mega · BST 651",
+  "form": {
+   "of": 670,
+   "kind": "mega"
+  }
+ },
+ {
+  "dex": 10297,
+  "name": "Mega Malamar",
+  "type1": "dark",
+  "type2": "psychic",
+  "baseHp": 13,
+  "maxHp": 313,
+  "speed": 8,
+  "spriteUrl": "/pokemon/10297_front.png",
+  "dice": [
+   {
+    "type": "dark",
+    "count": 2
+   },
+   {
+    "type": "psychic",
+    "count": 1
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 4,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "malamar-mega · BST 582",
+  "form": {
+   "of": 687,
+   "kind": "mega"
+  }
+ },
+ {
+  "dex": 10298,
+  "name": "Mega Barbaracle",
+  "type1": "rock",
+  "type2": "fighting",
+  "baseHp": 12,
+  "maxHp": 285,
+  "speed": 8,
+  "spriteUrl": "/pokemon/10298_front.png",
+  "dice": [
+   {
+    "type": "rock",
+    "count": 2
+   },
+   {
+    "type": "water",
+    "count": 2
+   }
+  ],
+  "rerolls": 4,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "barbaracle-mega · BST 600",
+  "form": {
+   "of": 689,
+   "kind": "mega"
+  }
+ },
+ {
+  "dex": 10299,
+  "name": "Mega Dragalge",
+  "type1": "poison",
+  "type2": "dragon",
+  "baseHp": 12,
+  "maxHp": 271,
+  "speed": 4,
+  "spriteUrl": "/pokemon/10299_front.png",
+  "dice": [
+   {
+    "type": "poison",
+    "count": 2
+   },
+   {
+    "type": "dragon",
+    "count": 1
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 4,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "dragalge-mega · BST 594",
+  "form": {
+   "of": 691,
+   "kind": "mega"
+  }
+ },
+ {
+  "dex": 10300,
+  "name": "Mega Hawlucha",
+  "type1": "fighting",
+  "type2": "flying",
+  "baseHp": 12,
+  "maxHp": 297,
+  "speed": 11,
+  "spriteUrl": "/pokemon/10300_front.png",
+  "dice": [
+   {
+    "type": "fighting",
+    "count": 1
+   },
+   {
+    "type": "flying",
+    "count": 1
+   }
+  ],
+  "rerolls": 2,
+  "catchValue": 4,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "hawlucha-mega · BST 600",
+  "form": {
+   "of": 701,
+   "kind": "mega"
+  }
+ },
+ {
+  "dex": 10302,
+  "name": "Mega Drampa",
+  "type1": "normal",
+  "type2": "dragon",
+  "baseHp": 12,
+  "maxHp": 297,
+  "speed": 3,
+  "spriteUrl": "/pokemon/10302_front.png",
+  "dice": [
+   {
+    "type": "normal",
+    "count": 1
+   },
+   {
+    "type": "dragon",
+    "count": 1
+   }
+  ],
+  "rerolls": 2,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "drampa-mega · BST 585",
+  "form": {
+   "of": 780,
+   "kind": "mega"
+  }
+ },
+ {
+  "dex": 10303,
+  "name": "Mega Falinks",
+  "type1": "fighting",
+  "type2": null,
+  "baseHp": 12,
+  "maxHp": 271,
+  "speed": 10,
+  "spriteUrl": "/pokemon/10303_front.png",
+  "dice": [
+   {
+    "type": "fighting",
+    "count": 2
+   }
+  ],
+  "rerolls": 2,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "falinks-mega · BST 570",
+  "form": {
+   "of": 870,
+   "kind": "mega"
+  }
+ },
+ {
+  "dex": 10304,
+  "name": "Mega Raichu X",
+  "type1": "electric",
+  "type2": null,
+  "baseHp": 12,
+  "maxHp": 261,
+  "speed": 11,
+  "spriteUrl": "/pokemon/10304_front.png",
+  "dice": [
+   {
+    "type": "electric",
+    "count": 2
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 4,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "raichu-mega-x · BST 585",
+  "form": {
+   "of": 26,
+   "kind": "mega"
+  }
+ },
+ {
+  "dex": 10305,
+  "name": "Mega Raichu Y",
+  "type1": "electric",
+  "type2": null,
+  "baseHp": 12,
+  "maxHp": 261,
+  "speed": 13,
+  "spriteUrl": "/pokemon/10305_front.png",
+  "dice": [
+   {
+    "type": "electric",
+    "count": 2
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 4,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "raichu-mega-y · BST 585",
+  "form": {
+   "of": 26,
+   "kind": "mega"
+  }
+ },
+ {
+  "dex": 10306,
+  "name": "Mega Chimecho",
+  "type1": "psychic",
+  "type2": "steel",
+  "baseHp": 12,
+  "maxHp": 291,
+  "speed": 6,
+  "spriteUrl": "/pokemon/10306_front.png",
+  "dice": [
+   {
+    "type": "psychic",
+    "count": 2
+   }
+  ],
+  "rerolls": 2,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "chimecho-mega · BST 555",
+  "form": {
+   "of": 358,
+   "kind": "mega"
+  }
+ },
+ {
+  "dex": 10307,
+  "name": "Mega Absol Z",
+  "type1": "dark",
+  "type2": "ghost",
+  "baseHp": 12,
+  "maxHp": 271,
+  "speed": 15,
+  "spriteUrl": "/pokemon/10307_front.png",
+  "dice": [
+   {
+    "type": "dark",
+    "count": 2
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 6,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "absol-mega-z · BST 565",
+  "form": {
+   "of": 359,
+   "kind": "mega"
+  }
+ },
+ {
+  "dex": 10308,
+  "name": "Mega Staraptor",
+  "type1": "fighting",
+  "type2": "flying",
+  "baseHp": 13,
+  "maxHp": 311,
+  "speed": 11,
+  "spriteUrl": "/pokemon/10308_front.png",
+  "dice": [
+   {
+    "type": "normal",
+    "count": 2
+   },
+   {
+    "type": "flying",
+    "count": 2
+   }
+  ],
+  "rerolls": 4,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "staraptor-mega · BST 585",
+  "form": {
+   "of": 398,
+   "kind": "mega"
+  }
+ },
+ {
+  "dex": 10309,
+  "name": "Mega Garchomp Z",
+  "type1": "dragon",
+  "type2": null,
+  "baseHp": 13,
+  "maxHp": 357,
+  "speed": 15,
+  "spriteUrl": "/pokemon/10309_front.png",
+  "dice": [
+   {
+    "type": "dragon",
+    "count": 2
+   },
+   {
+    "type": "ground",
+    "count": 2
+   }
+  ],
+  "rerolls": 4,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "garchomp-mega-z · BST 700",
+  "form": {
+   "of": 445,
+   "kind": "mega"
+  }
+ },
+ {
+  "dex": 10310,
+  "name": "Mega Lucario Z",
+  "type1": "fighting",
+  "type2": "steel",
+  "baseHp": 12,
+  "maxHp": 281,
+  "speed": 15,
+  "spriteUrl": "/pokemon/10310_front.png",
+  "dice": [
+   {
+    "type": "fighting",
+    "count": 2
+   },
+   {
+    "type": "steel",
+    "count": 1
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "lucario-mega-z · BST 625",
+  "form": {
+   "of": 448,
+   "kind": "mega"
+  }
+ },
+ {
+  "dex": 10311,
+  "name": "Mega Heatran",
+  "type1": "fire",
+  "type2": "steel",
+  "baseHp": 13,
+  "maxHp": 323,
+  "speed": 6,
+  "spriteUrl": "/pokemon/10311_front.png",
+  "dice": [
+   {
+    "type": "fire",
+    "count": 3
+   },
+   {
+    "type": "steel",
+    "count": 2
+   }
+  ],
+  "rerolls": 5,
+  "catchValue": 6,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "heatran-mega · BST 700",
+  "form": {
+   "of": 485,
+   "kind": "mega"
+  }
+ },
+ {
+  "dex": 10312,
+  "name": "Mega Darkrai",
+  "type1": "dark",
+  "type2": null,
+  "baseHp": 12,
+  "maxHp": 281,
+  "speed": 8,
+  "spriteUrl": "/pokemon/10312_front.png",
+  "dice": [
+   {
+    "type": "dark",
+    "count": 5
+   }
+  ],
+  "rerolls": 5,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "darkrai-mega · BST 700",
+  "form": {
+   "of": 491,
+   "kind": "mega"
+  }
+ },
+ {
+  "dex": 10313,
+  "name": "Mega Golurk",
+  "type1": "ground",
+  "type2": "ghost",
+  "baseHp": 13,
+  "maxHp": 319,
+  "speed": 5,
+  "spriteUrl": "/pokemon/10313_front.png",
+  "dice": [
+   {
+    "type": "ground",
+    "count": 2
+   },
+   {
+    "type": "ghost",
+    "count": 1
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 4,
+  "catchValue": 4,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "golurk-mega · BST 583",
+  "form": {
+   "of": 623,
+   "kind": "mega"
+  }
+ },
+ {
+  "dex": 10314,
+  "name": "Mega Meowstic",
+  "type1": "psychic",
+  "type2": null,
+  "baseHp": 12,
+  "maxHp": 289,
+  "speed": 12,
+  "spriteUrl": "/pokemon/10314_front.png",
+  "dice": [
+   {
+    "type": "psychic",
+    "count": 2
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 4,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "meowstic-male-mega · BST 566",
+  "form": {
+   "of": 678,
+   "kind": "mega"
+  }
+ },
+ {
+  "dex": 10315,
+  "name": "Mega Crabominable",
+  "type1": "fighting",
+  "type2": "ice",
+  "baseHp": 13,
+  "maxHp": 335,
+  "speed": 3,
+  "spriteUrl": "/pokemon/10315_front.png",
+  "dice": [
+   {
+    "type": "fighting",
+    "count": 2
+   },
+   {
+    "type": "ice",
+    "count": 1
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "crabominable-mega · BST 578",
+  "form": {
+   "of": 740,
+   "kind": "mega"
+  }
+ },
+ {
+  "dex": 10316,
+  "name": "Mega Golisopod",
+  "type1": "bug",
+  "type2": "steel",
+  "baseHp": 12,
+  "maxHp": 291,
+  "speed": 4,
+  "spriteUrl": "/pokemon/10316_front.png",
+  "dice": [
+   {
+    "type": "bug",
+    "count": 2
+   },
+   {
+    "type": "water",
+    "count": 1
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "golisopod-mega · BST 630",
+  "form": {
+   "of": 768,
+   "kind": "mega"
+  }
+ },
+ {
+  "dex": 10317,
+  "name": "Mega Magearna",
+  "type1": "steel",
+  "type2": "fairy",
+  "baseHp": 12,
+  "maxHp": 301,
+  "speed": 9,
+  "spriteUrl": "/pokemon/10317_front.png",
+  "dice": [
+   {
+    "type": "steel",
+    "count": 3
+   },
+   {
+    "type": "fairy",
+    "count": 2
+   }
+  ],
+  "rerolls": 5,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "magearna-mega · BST 700",
+  "form": {
+   "of": 801,
+   "kind": "mega"
+  }
+ },
+ {
+  "dex": 10319,
+  "name": "Mega Zeraora",
+  "type1": "electric",
+  "type2": null,
+  "baseHp": 13,
+  "maxHp": 317,
+  "speed": 15,
+  "spriteUrl": "/pokemon/10319_front.png",
+  "dice": [
+   {
+    "type": "electric",
+    "count": 5
+   }
+  ],
+  "rerolls": 5,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "zeraora-mega · BST 700",
+  "form": {
+   "of": 807,
+   "kind": "mega"
+  }
+ },
+ {
+  "dex": 10320,
+  "name": "Mega Scovillain",
+  "type1": "grass",
+  "type2": "fire",
+  "baseHp": 12,
+  "maxHp": 271,
+  "speed": 7,
+  "spriteUrl": "/pokemon/10320_front.png",
+  "dice": [
+   {
+    "type": "grass",
+    "count": 2
+   },
+   {
+    "type": "fire",
+    "count": 1
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 4,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "scovillain-mega · BST 586",
+  "form": {
+   "of": 952,
+   "kind": "mega"
+  }
+ },
+ {
+  "dex": 10321,
+  "name": "Mega Glimmora",
+  "type1": "rock",
+  "type2": "poison",
+  "baseHp": 12,
+  "maxHp": 307,
+  "speed": 10,
+  "spriteUrl": "/pokemon/10321_front.png",
+  "dice": [
+   {
+    "type": "rock",
+    "count": 2
+   },
+   {
+    "type": "poison",
+    "count": 1
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 7,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "glimmora-mega · BST 625",
+  "form": {
+   "of": 970,
+   "kind": "mega"
+  }
+ },
+ {
+  "dex": 10322,
+  "name": "Mega Curly Tatsugiri",
+  "type1": "dragon",
+  "type2": "water",
+  "baseHp": 12,
+  "maxHp": 277,
+  "speed": 9,
+  "spriteUrl": "/pokemon/10322_front.png",
+  "dice": [
+   {
+    "type": "dragon",
+    "count": 1
+   },
+   {
+    "type": "water",
+    "count": 1
+   }
+  ],
+  "rerolls": 2,
+  "catchValue": 4,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "tatsugiri-curly-mega · BST 575",
+  "form": {
+   "of": 978,
+   "kind": "mega"
+  }
+ },
+ {
+  "dex": 10325,
+  "name": "Mega Baxcalibur",
+  "type1": "dragon",
+  "type2": "ice",
+  "baseHp": 13,
+  "maxHp": 371,
+  "speed": 8,
+  "spriteUrl": "/pokemon/10325_front.png",
+  "dice": [
+   {
+    "type": "dragon",
+    "count": 2
+   },
+   {
+    "type": "ice",
+    "count": 2
+   }
+  ],
+  "rerolls": 4,
+  "catchValue": 8,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "baxcalibur-mega · BST 700",
+  "form": {
+   "of": 998,
+   "kind": "mega"
+  }
+ },
+ {
+  "dex": 20001,
+  "name": "Arceus",
+  "type1": "fire",
+  "type2": null,
+  "baseHp": 13,
+  "maxHp": 381,
+  "speed": 12,
+  "spriteUrl": "/pokemon/20001_front.png",
+  "dice": [
+   {
+    "type": "fire",
+    "count": 6
+   }
+  ],
+  "rerolls": 5,
+  "catchValue": 7,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "arceus-fire · sprite 493-fire",
+  "form": {
+   "of": 493,
+   "kind": "battle",
+   "trigger": "choice"
+  }
+ },
+ {
+  "dex": 20002,
+  "name": "Arceus",
+  "type1": "water",
+  "type2": null,
+  "baseHp": 13,
+  "maxHp": 381,
+  "speed": 12,
+  "spriteUrl": "/pokemon/20002_front.png",
+  "dice": [
+   {
+    "type": "water",
+    "count": 6
+   }
+  ],
+  "rerolls": 5,
+  "catchValue": 7,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "arceus-water · sprite 493-water",
+  "form": {
+   "of": 493,
+   "kind": "battle",
+   "trigger": "choice"
+  }
+ },
+ {
+  "dex": 20003,
+  "name": "Arceus",
+  "type1": "electric",
+  "type2": null,
+  "baseHp": 13,
+  "maxHp": 381,
+  "speed": 12,
+  "spriteUrl": "/pokemon/20003_front.png",
+  "dice": [
+   {
+    "type": "electric",
+    "count": 6
+   }
+  ],
+  "rerolls": 5,
+  "catchValue": 7,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "arceus-electric · sprite 493-electric",
+  "form": {
+   "of": 493,
+   "kind": "battle",
+   "trigger": "choice"
+  }
+ },
+ {
+  "dex": 20004,
+  "name": "Arceus",
+  "type1": "grass",
+  "type2": null,
+  "baseHp": 13,
+  "maxHp": 381,
+  "speed": 12,
+  "spriteUrl": "/pokemon/20004_front.png",
+  "dice": [
+   {
+    "type": "grass",
+    "count": 6
+   }
+  ],
+  "rerolls": 5,
+  "catchValue": 7,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "arceus-grass · sprite 493-grass",
+  "form": {
+   "of": 493,
+   "kind": "battle",
+   "trigger": "choice"
+  }
+ },
+ {
+  "dex": 20005,
+  "name": "Arceus",
+  "type1": "ice",
+  "type2": null,
+  "baseHp": 13,
+  "maxHp": 381,
+  "speed": 12,
+  "spriteUrl": "/pokemon/20005_front.png",
+  "dice": [
+   {
+    "type": "ice",
+    "count": 6
+   }
+  ],
+  "rerolls": 5,
+  "catchValue": 7,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "arceus-ice · sprite 493-ice",
+  "form": {
+   "of": 493,
+   "kind": "battle",
+   "trigger": "choice"
+  }
+ },
+ {
+  "dex": 20006,
+  "name": "Arceus",
+  "type1": "fighting",
+  "type2": null,
+  "baseHp": 13,
+  "maxHp": 381,
+  "speed": 12,
+  "spriteUrl": "/pokemon/20006_front.png",
+  "dice": [
+   {
+    "type": "fighting",
+    "count": 6
+   }
+  ],
+  "rerolls": 5,
+  "catchValue": 7,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "arceus-fighting · sprite 493-fighting",
+  "form": {
+   "of": 493,
+   "kind": "battle",
+   "trigger": "choice"
+  }
+ },
+ {
+  "dex": 20007,
+  "name": "Arceus",
+  "type1": "poison",
+  "type2": null,
+  "baseHp": 13,
+  "maxHp": 381,
+  "speed": 12,
+  "spriteUrl": "/pokemon/20007_front.png",
+  "dice": [
+   {
+    "type": "poison",
+    "count": 6
+   }
+  ],
+  "rerolls": 5,
+  "catchValue": 7,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "arceus-poison · sprite 493-poison",
+  "form": {
+   "of": 493,
+   "kind": "battle",
+   "trigger": "choice"
+  }
+ },
+ {
+  "dex": 20008,
+  "name": "Arceus",
+  "type1": "ground",
+  "type2": null,
+  "baseHp": 13,
+  "maxHp": 381,
+  "speed": 12,
+  "spriteUrl": "/pokemon/20008_front.png",
+  "dice": [
+   {
+    "type": "ground",
+    "count": 6
+   }
+  ],
+  "rerolls": 5,
+  "catchValue": 7,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "arceus-ground · sprite 493-ground",
+  "form": {
+   "of": 493,
+   "kind": "battle",
+   "trigger": "choice"
+  }
+ },
+ {
+  "dex": 20009,
+  "name": "Arceus",
+  "type1": "flying",
+  "type2": null,
+  "baseHp": 13,
+  "maxHp": 381,
+  "speed": 12,
+  "spriteUrl": "/pokemon/20009_front.png",
+  "dice": [
+   {
+    "type": "flying",
+    "count": 6
+   }
+  ],
+  "rerolls": 5,
+  "catchValue": 7,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "arceus-flying · sprite 493-flying",
+  "form": {
+   "of": 493,
+   "kind": "battle",
+   "trigger": "choice"
+  }
+ },
+ {
+  "dex": 20010,
+  "name": "Arceus",
+  "type1": "psychic",
+  "type2": null,
+  "baseHp": 13,
+  "maxHp": 381,
+  "speed": 12,
+  "spriteUrl": "/pokemon/20010_front.png",
+  "dice": [
+   {
+    "type": "psychic",
+    "count": 6
+   }
+  ],
+  "rerolls": 5,
+  "catchValue": 7,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "arceus-psychic · sprite 493-psychic",
+  "form": {
+   "of": 493,
+   "kind": "battle",
+   "trigger": "choice"
+  }
+ },
+ {
+  "dex": 20011,
+  "name": "Arceus",
+  "type1": "bug",
+  "type2": null,
+  "baseHp": 13,
+  "maxHp": 381,
+  "speed": 12,
+  "spriteUrl": "/pokemon/20011_front.png",
+  "dice": [
+   {
+    "type": "bug",
+    "count": 6
+   }
+  ],
+  "rerolls": 5,
+  "catchValue": 7,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "arceus-bug · sprite 493-bug",
+  "form": {
+   "of": 493,
+   "kind": "battle",
+   "trigger": "choice"
+  }
+ },
+ {
+  "dex": 20012,
+  "name": "Arceus",
+  "type1": "rock",
+  "type2": null,
+  "baseHp": 13,
+  "maxHp": 381,
+  "speed": 12,
+  "spriteUrl": "/pokemon/20012_front.png",
+  "dice": [
+   {
+    "type": "rock",
+    "count": 6
+   }
+  ],
+  "rerolls": 5,
+  "catchValue": 7,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "arceus-rock · sprite 493-rock",
+  "form": {
+   "of": 493,
+   "kind": "battle",
+   "trigger": "choice"
+  }
+ },
+ {
+  "dex": 20013,
+  "name": "Arceus",
+  "type1": "ghost",
+  "type2": null,
+  "baseHp": 13,
+  "maxHp": 381,
+  "speed": 12,
+  "spriteUrl": "/pokemon/20013_front.png",
+  "dice": [
+   {
+    "type": "ghost",
+    "count": 6
+   }
+  ],
+  "rerolls": 5,
+  "catchValue": 7,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "arceus-ghost · sprite 493-ghost",
+  "form": {
+   "of": 493,
+   "kind": "battle",
+   "trigger": "choice"
+  }
+ },
+ {
+  "dex": 20014,
+  "name": "Arceus",
+  "type1": "dragon",
+  "type2": null,
+  "baseHp": 13,
+  "maxHp": 381,
+  "speed": 12,
+  "spriteUrl": "/pokemon/20014_front.png",
+  "dice": [
+   {
+    "type": "dragon",
+    "count": 6
+   }
+  ],
+  "rerolls": 5,
+  "catchValue": 7,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "arceus-dragon · sprite 493-dragon",
+  "form": {
+   "of": 493,
+   "kind": "battle",
+   "trigger": "choice"
+  }
+ },
+ {
+  "dex": 20015,
+  "name": "Arceus",
+  "type1": "dark",
+  "type2": null,
+  "baseHp": 13,
+  "maxHp": 381,
+  "speed": 12,
+  "spriteUrl": "/pokemon/20015_front.png",
+  "dice": [
+   {
+    "type": "dark",
+    "count": 6
+   }
+  ],
+  "rerolls": 5,
+  "catchValue": 7,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "arceus-dark · sprite 493-dark",
+  "form": {
+   "of": 493,
+   "kind": "battle",
+   "trigger": "choice"
+  }
+ },
+ {
+  "dex": 20016,
+  "name": "Arceus",
+  "type1": "steel",
+  "type2": null,
+  "baseHp": 13,
+  "maxHp": 381,
+  "speed": 12,
+  "spriteUrl": "/pokemon/20016_front.png",
+  "dice": [
+   {
+    "type": "steel",
+    "count": 6
+   }
+  ],
+  "rerolls": 5,
+  "catchValue": 7,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "arceus-steel · sprite 493-steel",
+  "form": {
+   "of": 493,
+   "kind": "battle",
+   "trigger": "choice"
+  }
+ },
+ {
+  "dex": 20017,
+  "name": "Arceus",
+  "type1": "fairy",
+  "type2": null,
+  "baseHp": 13,
+  "maxHp": 381,
+  "speed": 12,
+  "spriteUrl": "/pokemon/20017_front.png",
+  "dice": [
+   {
+    "type": "fairy",
+    "count": 6
+   }
+  ],
+  "rerolls": 5,
+  "catchValue": 7,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "arceus-fairy · sprite 493-fairy",
+  "form": {
+   "of": 493,
+   "kind": "battle",
+   "trigger": "choice"
+  }
  }
 ]

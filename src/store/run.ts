@@ -33,6 +33,7 @@ import {
   isAreaClosed,
   isAreaUnlocked,
   isTeamHurt,
+  megaUnlocked,
   newSave,
   nextEncounter,
   progressOf,
@@ -237,6 +238,7 @@ function startBattle(kind: BattleKind, enemy: { dex: number; level: number; shin
       enemy,
       playerLevels: { comboLevels: save.comboLevels, dieLevels: save.dieLevels },
       enemyLevels: uniformLevels(upgradeLevel),
+      megaAllowed: megaUnlocked(save, data),
     },
     data,
   )
@@ -324,7 +326,8 @@ function settleBattle(stalemate: boolean) {
       {
         areaId: run.areaId,
         kind: gym ? 'gym' : s.kind,
-        enemyDex: s.enemy.dex,
+        // The species it was sent out as: a Giratina knocked out in its Origin Forme is still Giratina.
+        enemyDex: s.enemy.baseDex ?? s.enemy.dex,
         enemyLevel: s.enemy.level,
         fighterUid: out.fighterUid,
         gymTrainerId: gym ? enc.trainerId : undefined,
@@ -342,12 +345,13 @@ function settleBattle(stalemate: boolean) {
     const gold = res.events.reduce((g, e) => (e.kind === 'gold' ? g + e.amount : g), 0)
     // A wild or legendary K.O. that can be caught goes to the catch throw first; the rewards screen follows it.
     const kind = s.kind === 'wild' || s.kind === 'boss' ? s.kind : null
-    const target = kind ? catchTarget(res.save, s.enemy.dex, s.enemy.level, kind, data, s.enemy.shiny) : null
+    const foeDex = s.enemy.baseDex ?? s.enemy.dex
+    const target = kind ? catchTarget(res.save, foeDex, s.enemy.level, kind, data, s.enemy.shiny) : null
     setRun({
       phase: target ? 'catch' : 'victory',
       events,
       pendingCatchId: null,
-      catch: target && kind ? { dex: s.enemy.dex, level: s.enemy.level, shiny: s.enemy.shiny, kind, target, result: null } : null,
+      catch: target && kind ? { dex: foeDex, level: s.enemy.level, shiny: s.enemy.shiny, kind, target, result: null } : null,
       trainer: run.trainer ? { ...run.trainer, gold: run.trainer.gold + gold } : null,
     })
     return

@@ -1,6 +1,6 @@
 // Headless battles: both sides driven by the §8 AI. Powers the admin simulator and the balance scripts.
 import { aiRerollMask } from './ai'
-import { activeBattler, canHurt, createBattle, reduce, type BattleEvent, type BattleState, type LogEntry } from './battle'
+import { activeBattler, canHurt, createBattle, megaChoices, reduce, type BattleEvent, type BattleState, type LogEntry } from './battle'
 import { computeDamage, uniformLevels, type UpgradeLevels } from './damage'
 import { getSpecies } from './data'
 import { rollAll, rerollMasked } from './dice'
@@ -35,6 +35,9 @@ export function autoEvents(state: BattleState, data: GameData, rng: Rng): Battle
       const a = activeBattler(state)
       const better = !canHurt(a, state.enemy, data) && state.player.find((b) => b.hp > 0 && canHurt(b, state.enemy, data))
       if (better && data.config.allowVoluntarySwitch) return [{ t: 'SWITCH', instanceId: better.uid }]
+      // Auto-mode Mega Evolves the first Pokémon that can, into its first Mega form.
+      const mega = megaChoices(state, data)[0]
+      if (mega) return [{ t: 'MEGA', toDex: mega.dex }, { t: 'ROLL' }]
       return [{ t: 'ROLL' }]
     }
     case 'player_stunned':

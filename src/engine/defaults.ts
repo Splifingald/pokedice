@@ -79,4 +79,8 @@ export const DEFAULT_CONFIG: GameConfig = {
     hatchOffset: 5,
     hatchMinLevel: 5,
   },
+  // Mega Evolution opens with Kalos (X and Y's mechanic) and then works in every region: a Lv.50 Pokémon of a species
+  // with a Mega form, once per battle for the whole team.
+  megaEvolution: { region: 'kalos', level: 50, perBattle: 1 },
+  arceusChangesPerBattle: 2,
 }

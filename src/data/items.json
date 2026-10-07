@@ -912,5 +912,31 @@
   "inShop": false,
   "shopBadges": 0,
   "region": "paldea"
+ },
+ {
+  "key": "galarica-cuff",
+  "name": "Galarica Cuff",
+  "description": "Makes certain Pokémon evolve: Galarian Slowpoke (Galarian Slowbro). Use it from the Team screen.",
+  "spriteUrl": "https://raw.githubusercontent.com/msikma/pokesprite/master/items/evo-item/galarica-cuff.png",
+  "price": 200,
+  "effect": {
+   "kind": "stone"
+  },
+  "inShop": false,
+  "shopBadges": 0,
+  "region": "galar"
+ },
+ {
+  "key": "galarica-wreath",
+  "name": "Galarica Wreath",
+  "description": "Makes certain Pokémon evolve: Galarian Slowpoke (Galarian Slowking). Use it from the Team screen.",
+  "spriteUrl": "https://raw.githubusercontent.com/msikma/pokesprite/master/items/evo-item/galarica-wreath.png",
+  "price": 200,
+  "effect": {
+   "kind": "stone"
+  },
+  "inShop": false,
+  "shopBadges": 0,
+  "region": "galar"
  }
 ]
