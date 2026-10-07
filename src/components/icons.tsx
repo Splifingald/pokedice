@@ -286,6 +286,7 @@ export const ICONS = {
   user: ['..kkkk..', '.kwwwwk.', '.kwwwwk.', '.kwwwwk.', '..kkkk..', '.kbbbbk.', 'kbbbbbbk', 'kbbbbbbk'],
   book: ['kkkkkkkk', 'kwwwkwwk', 'kwwwkwwk', 'kwkwkwkk', 'kwwwkwwk', 'kwkwkwkk', 'kwwwkwwk', 'kkkkkkkk'],
   mail: ['........', 'kkkkkkkk', 'kkwwwwkk', 'kwkwwkwk', 'kwwkkwwk', 'kwwwwwwk', 'kkkkkkkk', '........'],
+  discord: ['........', '.kk..kk.', 'kbbkkbbk', 'kbbbbbbk', 'kbwbbwbk', 'kbbbbbbk', '.kbkkbk.', '..k..k..'],
   wrench: ['....kkk.', '...kssk.', '...ksskk', '..kssk..', '.kssk...', 'kssk....', 'kssk....', '.kkk....'],
 } as const
 

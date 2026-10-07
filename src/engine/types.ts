@@ -492,6 +492,8 @@ export interface GameConfig {
   dayCare: DayCareConfig
   roamers: RoamerConfig
   donation: DonationConfig
+  /** The community Discord's invite link (Admin → Config): a button in the player menu. Empty = no button. */
+  discordUrl: string
   megaEvolution: MegaConfig
   gigantamax: GigantamaxConfig
   /** Arceus, Silvally and Ogerpon can each change type this many times per battle (the TYPE menu). */

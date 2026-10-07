@@ -7,7 +7,7 @@ import type { GameData, RegionId, SaveData } from './types'
 /** Badges a region needs before its pop-up shows. */
 export const DONATION_BADGES = 5
 
-/** A web address the PayPal button may open (nothing else: no javascript: or data: links). */
+/** A web address the PayPal (or Discord) button may open (nothing else: no javascript: or data: links). */
 export const isDonationUrl = (url: string): boolean => /^https?:\/\/\S+$/i.test(url.trim())
 
 /** The PayPal link, when it is a web address the button may open; null otherwise. */

@@ -1,6 +1,6 @@
 import { lazy, Suspense, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { versusReadyCount, versusUnlocked, VERSUS_TEAM_SIZE } from '@/engine'
+import { discordUrl, versusReadyCount, versusUnlocked, VERSUS_TEAM_SIZE } from '@/engine'
 import { useT } from '@/i18n/react'
 import { isSupabaseConfigured } from '@/lib/supabase'
 import { useGame } from '@/store/game'
@@ -20,37 +20,48 @@ import { playerOf } from './TrainerArt'
 const HelpContent = lazy(() => import('@/screens/Help').then((m) => ({ default: m.HelpContent })))
 const TypesContent = lazy(() => import('@/screens/Types').then((m) => ({ default: m.TypesContent })))
 
-/** One row of the drawer: an icon, a label, and either a route or an action. `hint`: a short note at the far end. */
+/**
+ * One row of the drawer: an icon, a label, and either a route or an action — or `href`, a link out of the game opened in
+ * a new tab. `hint`: a short note at the far end.
+ */
 function MenuRow({
   icon,
   mark,
   label,
   hint,
+  href,
   onClick,
 }: {
   icon?: IconName
   mark?: boolean
   label: string
   hint?: string
-  onClick: () => void
+  href?: string
+  onClick?: () => void
 }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="pixel-btn flex min-h-[44px] w-full items-center gap-3 bg-panel px-3 py-2 text-2xl leading-none"
-    >
+  const className = 'pixel-btn flex min-h-[44px] w-full items-center gap-3 bg-panel px-3 py-2 text-2xl leading-none'
+  const body = (
+    <>
       {mark ? <GoogleMark /> : icon && <PixelIcon name={icon} size={20} />}
       <span className="min-w-0 truncate">{label}</span>
       {hint && <span className="font-pixel-sm ml-auto flex shrink-0 items-center gap-1 text-base text-muted">{hint}</span>}
+    </>
+  )
+  return href ? (
+    <a href={href} target="_blank" rel="noopener noreferrer" onClick={onClick} className={className}>
+      {body}
+    </a>
+  ) : (
+    <button type="button" onClick={onClick} className={className}>
+      {body}
     </button>
   )
 }
 
 /**
  * The header's avatar button and everything behind it: the player's profile, the settings screen,
- * the rules, the type chart, the admin (admins only), the Google connection and, pinned at the bottom, Contact the
- * developer. Disabled mid-fight, like the rest of the header.
+ * the rules, the type chart, the admin (admins only), the Google connection and, pinned at the bottom, the community
+ * Discord (once the admin has set its link) and Contact the developer. Disabled mid-fight, like the rest of the header.
  */
 export function PlayerMenu() {
   const { t } = useT()
@@ -60,6 +71,7 @@ export function PlayerMenu() {
   const save = useGame((s) => s.save)
   const data = useGame((s) => s.data)
   const auth = useGame((s) => s.auth)
+  const discord = useGame((s) => discordUrl(s.data))
   const [open, setOpen] = useState(false)
   const [profile, setProfile] = useState(false)
   const [guide, setGuide] = useState(false)
@@ -105,6 +117,7 @@ export function PlayerMenu() {
             {(!isSupabaseConfigured || auth.status === 'unavailable') && (
               <p className="copy text-sm text-muted">{t('ui.nav.saveInBrowser')}</p>
             )}
+            {discord && <MenuRow icon="discord" label={t('ui.nav.discord')} href={discord} onClick={() => setOpen(false)} />}
             {/* Messages go to Supabase, so a deployment without it has no one to send them to. */}
             {isSupabaseConfigured && (
               <MenuRow

@@ -197,6 +197,33 @@ function DonationBox() {
   )
 }
 
+/** The community Discord: its invite link puts a button in the player menu (the avatar's side panel). */
+function DiscordBox() {
+  const [raw, setRaw] = useConfigRow('discordUrl')
+  const value = String(raw ?? '')
+  const url = value.trim()
+  const urlOk = isDonationUrl(url)
+  return (
+    <Box
+      title="Discord"
+      hint="A Discord button in the player menu (click the avatar, top right). Save, then Publish, for players to get the change."
+    >
+      <Field
+        label="Invite link"
+        hint={url && !urlOk ? 'Must start with https:// — the button stays hidden until it does' : 'e.g. https://discord.gg/… · empty = no button'}
+      >
+        <input
+          className={inputCls}
+          type="url"
+          placeholder="https://discord.gg/…"
+          value={value}
+          onChange={(e) => setRaw(e.target.value)}
+        />
+      </Field>
+    </Box>
+  )
+}
+
 /** Pokémon Day Care: when it opens, how fast residents train, and what Eggs cost and hatch into. */
 function DayCareBox() {
   const data = useAdminData()
@@ -566,6 +593,8 @@ export function ConfigSection() {
       <EnergyBox />
 
       <DonationBox />
+
+      <DiscordBox />
 
       <SlotMachineBox />
 

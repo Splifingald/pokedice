@@ -81,6 +81,8 @@ export const DEFAULT_CONFIG: GameConfig = {
   },
   // Off until the admin sets a PayPal link and switches it on.
   donation: { enabled: false, paypalUrl: '', round: 0 },
+  // No Discord button until the admin sets the invite link.
+  discordUrl: '',
   // Mega Evolution opens with Kalos (X and Y's mechanic) and then works in every region: a Lv.50 Pokémon of a species
   // with a Mega form (or a Primal / Ultra Burst one), once per battle for the whole team — Gigantamax included.
   // Trainers do it too, in the games that have it — Hoenn (Omega Ruby / Alpha Sapphire), Kalos, Alola — with their ace.
