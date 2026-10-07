@@ -1107,6 +1107,10 @@ export const KALOS_AREAS: AreaPlan[] = [
     maxLevel: 51,
     weights: W.mixed,
     tier: 4,
+    // The only Razor Fang in the game, for the Gligar of Route 19.
+    once: [
+      ['razor-fang', 8, 1, 1, true],
+    ],
     wild: [
       [705, 10, 46, 49], // Sliggoo
       [195, 14, 46, 49], // Quagsire

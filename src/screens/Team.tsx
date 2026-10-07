@@ -44,6 +44,7 @@ export function TeamScreen() {
           {t('ui.team.makeLead')}
         </PixelButton>
       )}
+      {!save.team.includes(p.id) && <p className="copy text-base text-muted">{t('ui.team.boxAtCenter', { name: name(p) })}</p>}
       <ItemPanel inst={p} />
     </>
   )
@@ -51,6 +52,10 @@ export function TeamScreen() {
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-4">
       <h1 className="text-5xl">{t('ui.team.title')}</h1>
+      <p className="pixel-panel copy flex items-center gap-2 px-3 py-2 text-lg">
+        <PixelIcon name="ball" size={24} className="shrink-0" />
+        <span>{t('ui.team.centerOnly')}</span>
+      </p>
       <ol className="flex flex-col gap-2">
         {team.map((p, i) => (
           <li key={p.id}>

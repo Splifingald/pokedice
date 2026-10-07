@@ -36356,6 +36356,14 @@
     "unique": false,
     "minQty": 100,
     "maxQty": 200
+   },
+   {
+    "id": "bdc0b03d-c1ad-59b1-ba83-bbf51174e831",
+    "itemKey": "razor-fang",
+    "weight": 8,
+    "unique": true,
+    "minQty": 1,
+    "maxQty": 1
    }
   ]
  },
