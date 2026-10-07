@@ -282,10 +282,11 @@ export const SINNOH_AREAS: AreaPlan[] = [
     maxLevel: 32,
     weights: W.mixed,
     tier: 3,
-    // What the Underground gives up, dug out of the walls under Solaceon.
+    // What the Underground gives up, dug out of the walls under Solaceon — the Oval Stone for the Happiny of Route 209.
     once: [
       ['thunder-stone', 8, 1, 1, true],
       ['shiny-stone', 8, 1, 1, true],
+      ['oval-stone', 8, 1, 1, true],
     ],
     wild: [
       [436, 22, 25, 31], // Bronzor

@@ -1,6 +1,7 @@
 // Out-of-battle save actions: shop, upgrades, bag items from the team screen, Center team management.
 import {
   applyFieldItem,
+  applyLevelEvolution,
   buyComboUpgrade,
   buyDieUpgrade,
   buyItem,
@@ -66,6 +67,17 @@ export function applyBagItem(key: string, instId: string): { evolved: { uid: str
   if (up && up.kind === 'level_up')
     pushToast(t('ui.toast.grewTo', { name: data.species[up.dex]?.name ?? '', level: up.level }), 'good')
   return { evolved: evo && evo.kind === 'evolve' ? { uid: evo.uid, fromDex: evo.fromDex, toDex: evo.toDex } : null }
+}
+
+/** A Pokémon at the level cap with an evolution by level due evolves on request; returned for the evolution scene. */
+export function evolveAtLevelCap(instId: string): { uid: string; fromDex: number; toDex: number } | null {
+  const { data, save } = useGame.getState()
+  if (!save) return null
+  const res = applyLevelEvolution(save, instId, data, createRng(randomSeed()))
+  const evo = res?.events.find((e) => e.kind === 'evolve')
+  if (!res || !evo || evo.kind !== 'evolve') return null
+  mutateSave(() => res.save)
+  return { uid: evo.uid, fromDex: evo.fromDex, toDex: evo.toDex }
 }
 
 export function reorderTeam(ids: string[]) {

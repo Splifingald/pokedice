@@ -2,6 +2,7 @@
 -- Run the parts in order (1 first: it carries the schema changes). Together they are supabase/seed.sql.
 begin;
 insert into area_loot_pool (id, area_id, item_key, weight, unique_find, min_qty, max_qty) values
+  ('14790a93-26d1-5b2a-86b3-0dbb8580bd01', '1db6ed36-e9f3-5b41-bc01-056f64328d72', 'antidote', 12, false, 1, 1),
   ('4b9aa58b-0b4f-5b44-a67d-3a7670b9c412', '1db6ed36-e9f3-5b41-bc01-056f64328d72', 'paralyze-heal', 10, false, 1, 1),
   ('de1fd02a-d16e-525b-bdfd-82d8cc48de79', '1db6ed36-e9f3-5b41-bc01-056f64328d72', 'ether', 4, false, 1, 1),
   ('35018fd1-17fe-52c7-a571-bde04ee00da7', '1db6ed36-e9f3-5b41-bc01-056f64328d72', 'money', 18, false, 10, 25),
@@ -250,11 +251,11 @@ insert into area_loot_pool (id, area_id, item_key, weight, unique_find, min_qty,
   ('fcdbb076-b55c-52ad-a6ba-690166acb457', '9736bc36-2a22-5136-a6c3-0968cbffb987', 'antidote', 12, false, 1, 1),
   ('0f7388b7-ea97-5ebf-b6f7-e7a623d77299', '9736bc36-2a22-5136-a6c3-0968cbffb987', 'paralyze-heal', 10, false, 1, 1),
   ('5c68aa6b-4413-5213-bdc4-5940f9243792', '9736bc36-2a22-5136-a6c3-0968cbffb987', 'ether', 4, false, 1, 1),
-  ('cb0b7198-03f4-558e-9664-ef7b73caeb11', '9736bc36-2a22-5136-a6c3-0968cbffb987', 'money', 18, false, 10, 25),
-  ('b96dc077-406f-5b44-88dd-47b8c79012e3', 'c3e62acf-0be6-50e4-9276-deee4b898a92', 'potion', 30, false, 1, 1)
+  ('cb0b7198-03f4-558e-9664-ef7b73caeb11', '9736bc36-2a22-5136-a6c3-0968cbffb987', 'money', 18, false, 10, 25)
 on conflict (id) do update set area_id = excluded.area_id, item_key = excluded.item_key, weight = excluded.weight, unique_find = excluded.unique_find, min_qty = excluded.min_qty, max_qty = excluded.max_qty;
 
 insert into area_loot_pool (id, area_id, item_key, weight, unique_find, min_qty, max_qty) values
+  ('b96dc077-406f-5b44-88dd-47b8c79012e3', 'c3e62acf-0be6-50e4-9276-deee4b898a92', 'potion', 30, false, 1, 1),
   ('1e738f00-5c26-567b-842e-26e67aff51f3', 'c3e62acf-0be6-50e4-9276-deee4b898a92', 'poke-ball', 26, false, 1, 2),
   ('e3dea6c9-6d50-55a9-a43d-460df913f696', 'c3e62acf-0be6-50e4-9276-deee4b898a92', 'antidote', 12, false, 1, 1),
   ('cbd7025b-b60a-525e-babd-a55fe4a2eeba', 'c3e62acf-0be6-50e4-9276-deee4b898a92', 'paralyze-heal', 10, false, 1, 1),

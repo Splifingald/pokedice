@@ -865,6 +865,14 @@
     "unique": true,
     "minQty": 1,
     "maxQty": 1
+   },
+   {
+    "id": "f81bb425-66b7-51d5-8de4-f8ec2ea74ad0",
+    "itemKey": "oval-stone",
+    "weight": 8,
+    "unique": true,
+    "minQty": 1,
+    "maxQty": 1
    }
   ]
  },

@@ -135,6 +135,13 @@ export function preferUnowned(ready: Evolution[], owned?: readonly number[]): Ev
   return fresh.length ? fresh : ready
 }
 
+/** The evolutions by level this Pokémon has reached (several for a branching one), gated like `stoneEvolution`. */
+export function levelEvolutions(inst: PokemonInstance, data: GameData, allowDex?: (dex: number) => boolean): Evolution[] {
+  return getSpecies(data, inst.dex).evolutions.filter(
+    (e) => e.level != null && e.level <= inst.level && data.species[e.toDex] && (allowDex?.(e.toDex) ?? true),
+  )
+}
+
 /**
  * Level-ups, milestone cards and automatic (uncancellable) evolution by level (stone evolutions wait for their stone).
  * A branching evolution prefers a species not yet in the Pokédex (see preferUnowned).
@@ -158,9 +165,7 @@ export function gainXp(
 
   const tryEvolve = () => {
     if (opts.evolve === false) return
-    const ready = getSpecies(data, cur.dex).evolutions.filter(
-      (e) => e.level != null && e.level <= cur.level && data.species[e.toDex] && (opts.allowDex?.(e.toDex) ?? true),
-    )
+    const ready = levelEvolutions(cur, data, opts.allowDex)
     if (!ready.length) return
     const target = ready.length === 1 ? ready[0]! : rng.pick(preferUnowned(ready, opts.owned))
     const fromDex = cur.dex
