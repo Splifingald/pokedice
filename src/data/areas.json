@@ -9078,6 +9078,13 @@
     "maxLevel": 25
    },
    {
+    "id": "827591e2-3c7d-5023-bbb9-436c25abe7d2",
+    "dex": 207,
+    "weight": 10,
+    "minLevel": 19,
+    "maxLevel": 25
+   },
+   {
     "id": "e55402b7-4079-5e29-964b-17d59dbadfba",
     "dex": 472,
     "weight": 2,
@@ -9195,6 +9202,14 @@
     "unique": false,
     "minQty": 50,
     "maxQty": 100
+   },
+   {
+    "id": "ebf2f15b-6ec9-5f39-86e8-209df3b12108",
+    "itemKey": "razor-fang",
+    "weight": 8,
+    "unique": true,
+    "minQty": 1,
+    "maxQty": 1
    }
   ]
  },

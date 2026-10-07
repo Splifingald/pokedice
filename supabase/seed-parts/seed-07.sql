@@ -2,6 +2,7 @@
 -- Run the parts in order (1 first: it carries the schema changes). Together they are supabase/seed.sql.
 begin;
 insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level) values
+  ('8c86fbfb-3f32-5cbb-9c41-d6133d27833d', 'bda155ba-8676-5610-a304-3aa1a309a8f5', 174, 10, 60, 80),
   ('27d95c22-2421-56d8-8031-d660eadc96c9', 'bda155ba-8676-5610-a304-3aa1a309a8f5', 179, 10, 60, 80),
   ('c2767fb4-9072-5cea-a325-45aa191236ea', 'bda155ba-8676-5610-a304-3aa1a309a8f5', 180, 10, 60, 80),
   ('eba0c265-33ad-5d79-b61d-bacc6a6e43b0', 'bda155ba-8676-5610-a304-3aa1a309a8f5', 183, 10, 60, 80),
@@ -1533,6 +1534,7 @@ insert into area_loot_pool (id, area_id, item_key, weight, unique_find, min_qty,
   ('a8a59c1a-320d-57f8-aeac-209bdcbf714c', 'eb01f9bc-a3e2-5fdb-ade9-343b5c0c04b9', 'ether', 8, false, 1, 1),
   ('cc19bc56-5e12-5d9e-80ab-87cac5fb298c', 'eb01f9bc-a3e2-5fdb-ade9-343b5c0c04b9', 'max-ether', 3, false, 1, 1),
   ('253a3911-ef54-5418-a52b-f729569db262', 'eb01f9bc-a3e2-5fdb-ade9-343b5c0c04b9', 'money', 16, false, 50, 100),
+  ('ebf2f15b-6ec9-5f39-86e8-209df3b12108', 'eb01f9bc-a3e2-5fdb-ade9-343b5c0c04b9', 'razor-fang', 8, true, 1, 1),
   ('96565c23-8c69-510d-b932-22489bee330a', '84e74f22-b8fc-5658-8f2d-c2cf1751b4f8', 'super-potion', 20, false, 1, 2),
   ('894f71db-fba6-5399-942f-8b6b573269b2', '84e74f22-b8fc-5658-8f2d-c2cf1751b4f8', 'poke-ball', 10, false, 2, 3),
   ('e379d187-7da6-56e4-a8c8-cf7629e5095f', '84e74f22-b8fc-5658-8f2d-c2cf1751b4f8', 'great-ball', 16, false, 1, 2),
@@ -1608,7 +1610,6 @@ insert into area_loot_pool (id, area_id, item_key, weight, unique_find, min_qty,
   ('7cef51b9-7951-5aca-8e6f-ae1d4415fe81', 'bbdca5af-2024-5c0c-8278-c7c5966a5be4', 'ultra-ball', 12, false, 1, 1),
   ('78d444b6-1c17-5fa1-9535-608b78e1fb3c', 'bbdca5af-2024-5c0c-8278-c7c5966a5be4', 'paralyze-heal', 4, false, 1, 1),
   ('06683262-9201-5bce-9b32-3302ba9ea654', 'bbdca5af-2024-5c0c-8278-c7c5966a5be4', 'burn-heal', 4, false, 1, 1),
-  ('6b0eea2a-31c5-5e9d-918b-f50d5ca188d5', 'bbdca5af-2024-5c0c-8278-c7c5966a5be4', 'ice-heal', 4, false, 1, 1),
-  ('c0e119ae-ae7e-5a1b-ab81-c28346f3ae71', 'bbdca5af-2024-5c0c-8278-c7c5966a5be4', 'ether', 8, false, 1, 2)
+  ('6b0eea2a-31c5-5e9d-918b-f50d5ca188d5', 'bbdca5af-2024-5c0c-8278-c7c5966a5be4', 'ice-heal', 4, false, 1, 1)
 on conflict (id) do update set area_id = excluded.area_id, item_key = excluded.item_key, weight = excluded.weight, unique_find = excluded.unique_find, min_qty = excluded.min_qty, max_qty = excluded.max_qty;
 commit;
