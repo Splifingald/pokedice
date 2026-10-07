@@ -18,6 +18,8 @@ export function TeamScreen() {
   const { t } = useT()
   const save = useGame((s) => s.save)
   const data = useGame((s) => s.data)
+  // Inside a Pokémon Center the team can change, so the warning has nothing to warn about.
+  const atCenter = useGame((s) => s.run.phase === 'center')
   const [view, setView] = useState<SheetView | null>(null)
   const [sort, setSort] = useState<BoxSort>('dex')
   const [q, setQ] = useState('')
@@ -52,10 +54,12 @@ export function TeamScreen() {
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-4">
       <h1 className="text-5xl">{t('ui.team.title')}</h1>
-      <p className="pixel-panel copy flex items-center gap-2 px-3 py-2 text-lg">
-        <PixelIcon name="ball" size={24} className="shrink-0" />
-        <span>{t('ui.team.centerOnly')}</span>
-      </p>
+      {!atCenter && (
+        <p role="note" className="pixel-panel copy flex items-center gap-2 px-3 py-2 text-lg">
+          <PixelIcon name="warning" size={24} className="shrink-0" />
+          <span>{t('ui.team.centerOnly')}</span>
+        </p>
+      )}
       <ol className="flex flex-col gap-2">
         {team.map((p, i) => (
           <li key={p.id}>
