@@ -16,6 +16,9 @@ export function donationUrl(data: GameData): string | null {
   return isDonationUrl(url) ? url : null
 }
 
+/** Switched on in Admin with a usable link: only then does the pop-up (or the Settings button) exist. */
+export const donationEnabled = (data: GameData): boolean => data.config.donation.enabled && !!donationUrl(data)
+
 /** The regions shown already in the current round (an older round's list no longer counts). */
 function seenRegions(save: SaveData, data: GameData): RegionId[] {
   const seen = save.donationSeen
@@ -24,7 +27,7 @@ function seenRegions(save: SaveData, data: GameData): RegionId[] {
 
 /** Regions holding 5+ badges whose pop-up hasn't been shown this round. Empty while it is off or has no link. */
 export function donationRegionsDue(save: SaveData, data: GameData): RegionId[] {
-  if (!data.config.donation.enabled || !donationUrl(data)) return []
+  if (!donationEnabled(data)) return []
   const seen = seenRegions(save, data)
   return regionCases(save, data)
     .filter((r) => r.earned >= DONATION_BADGES && !seen.includes(r.id))

@@ -4,6 +4,7 @@ import {
   badgeCase,
   createInstance,
   donationDue,
+  donationEnabled,
   donationRegionsDue,
   donationUrl,
   markDonationSeen,
@@ -48,6 +49,13 @@ describe('donation pop-up', () => {
     const d = makeData()
     expect(d.config.donation.enabled).toBe(false)
     expect(donationDue(withBadges(newSave(4, d, 1000, newId), d, 8), d)).toBe(false)
+  })
+
+  it('exists (for the Settings button too) only when switched on with a link', () => {
+    expect(donationEnabled(data)).toBe(true)
+    expect(donationEnabled(makeData())).toBe(false)
+    expect(donationEnabled(on({ enabled: false }))).toBe(false)
+    expect(donationEnabled(on({ paypalUrl: '' }))).toBe(false)
   })
 
   it('fires with the 5th badge of a region, not before', () => {

@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { DonationModal } from '@/components/DonationPopup'
 import { Modal } from '@/components/Modal'
 import { Panel } from '@/components/Panel'
 import { PixelButton } from '@/components/PixelButton'
 import { Toggle } from '@/components/Toggle'
+import { donationEnabled } from '@/engine'
 import { LANG_LABELS, LANGS, type Lang } from '@/i18n'
 import { multiExpText } from '@/i18n/text'
 import { useT } from '@/i18n/react'
@@ -28,6 +30,9 @@ export function SettingsScreen() {
   const navigate = useNavigate()
   const [importText, setImportText] = useState('')
   const [confirmDelete, setConfirmDelete] = useState(false)
+  // Only when the admin has it switched on, with a PayPal link.
+  const canDonate = donationEnabled(data)
+  const [donating, setDonating] = useState(false)
 
   const copySave = async () => {
     if (!save) return
@@ -53,7 +58,14 @@ export function SettingsScreen() {
 
   return (
     <div className="flex max-w-2xl flex-col gap-4">
-      <h1 className="text-5xl">{t('ui.settings.title')}</h1>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h1 className="text-5xl">{t('ui.settings.title')}</h1>
+        {canDonate && (
+          <PixelButton variant="primary" size="sm" onClick={() => setDonating(true)}>
+            {t('ui.settings.helpPokedice')}
+          </PixelButton>
+        )}
+      </div>
 
       <Panel title={t('ui.settings.game')}>
         <Toggle
@@ -155,6 +167,8 @@ export function SettingsScreen() {
           <DisconnectButton />
         </div>
       )}
+
+      <DonationModal open={donating} onClose={() => setDonating(false)} />
 
       <Modal open={confirmDelete} onClose={() => setConfirmDelete(false)} title={t('ui.settings.deleteTitle')}>
         <p className="copy mb-4 text-lg">
