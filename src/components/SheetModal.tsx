@@ -1,11 +1,13 @@
 import { useState, type ReactNode } from 'react'
-import { sendOnBlocked, sendOnTarget, type PokemonInstance } from '@/engine'
+import { evolutionGate, levelEvolutions, sendOnBlocked, sendOnTarget, type PokemonInstance } from '@/engine'
 import { t } from '@/i18n'
 import { useT } from '@/i18n/react'
+import { evolveAtLevelCap } from '@/store/actions'
 import { useGame } from '@/store/game'
 import { sendPokemonOn } from '@/store/regions'
 import { AreaDex } from './AreaDex'
 import { DexEntry } from './DexEntry'
+import { EvolutionQueue, type EvolutionShow } from './Evolution'
 import { Modal } from './Modal'
 import { PixelButton } from './PixelButton'
 import { PokemonSheet } from './PokemonSheet'
@@ -63,6 +65,7 @@ function SheetStack({
         <PokemonSheet dex={inst.dex} inst={inst} onOpenDex={open}>
           <SendOnPanel inst={inst} onSent={onClose} />
           {instExtra?.(inst)}
+          <LevelCapEvolvePanel inst={inst} />
         </PokemonSheet>
       ) : null}
     </div>
@@ -103,6 +106,43 @@ function SendOnPanel({ inst, onSent }: { inst: PokemonInstance; onSent: () => vo
             ? t('ui.sheet.sendOnReviving')
             : t('ui.sheet.sendOnHint', { name, region: target.name })}
       </p>
+    </section>
+  )
+}
+
+/**
+ * "Evolve": a Pokémon that reached the level cap without taking an evolution by level it qualifies for — the gate held
+ * it back until a later region opened, or the Day Care raised it — earns no more XP to trigger it, so it is offered
+ * here, at the bottom of its sheet.
+ */
+function LevelCapEvolvePanel({ inst }: { inst: PokemonInstance }) {
+  const { t } = useT()
+  const save = useGame((s) => s.save)
+  const data = useGame((s) => s.data)
+  // The scene outlives the button: once evolved, the Pokémon no longer qualifies.
+  const [evolving, setEvolving] = useState<EvolutionShow | null>(null)
+  const scene = evolving && <EvolutionQueue items={[evolving]} onDone={() => setEvolving(null)} />
+  if (!save || inst.level < data.config.maxLevel || inst.revivesAt != null) return scene || null
+  const ready = levelEvolutions(inst, data, evolutionGate(save, data))
+  if (!ready.length) return scene || null
+
+  const name = data.species[inst.dex]?.name ?? t('ui.common.pokemon')
+  const names = ready.map((e) => data.species[e.toDex]?.name ?? `#${e.toDex}`).join(' / ')
+  return (
+    <section className="flex flex-col items-start gap-1 border-t-[3px] border-dashed border-shadow/40 pt-2">
+      <PixelButton
+        variant="primary"
+        onClick={() => {
+          const evolved = evolveAtLevelCap(inst.id)
+          if (evolved) setEvolving(evolved)
+        }}
+      >
+        {t('ui.sheet.evolveNow')}
+      </PixelButton>
+      <p className="copy text-base text-muted">
+        {t('ui.sheet.evolveNowHint', { name, names })} {ready.length > 1 && t('ui.sheet.oneAtRandom')}
+      </p>
+      {scene}
     </section>
   )
 }

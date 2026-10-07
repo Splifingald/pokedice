@@ -7,7 +7,18 @@ import { deckAbilities, deckCounts, roundsComplete } from './encounters'
 import { addFossil, isReviving } from './fossils'
 import { LEGACY_GAUGE } from './legacyGauge'
 import { MONEY, sellPrice, shopSells, usableIn } from './items'
-import { averageLevel, createInstance, evolve, gainXp, instanceMaxHp, stoneEvolution, xpToNext, type ProgressEvent } from './progression'
+import {
+  averageLevel,
+  createInstance,
+  evolve,
+  gainXp,
+  instanceMaxHp,
+  levelEvolutions,
+  preferUnowned,
+  stoneEvolution,
+  xpToNext,
+  type ProgressEvent,
+} from './progression'
 import { createRng, type Rng } from './rng'
 import {
   COMBO_KEYS,
@@ -589,6 +600,27 @@ export function applyFieldItem(
   let next = replaceInstance(consumeItem(save, key)!, cur)
   for (const ev of events) if (ev.kind === 'evolve' && !next.pokedex.includes(ev.toDex)) next = { ...next, pokedex: [...next.pokedex, ev.toDex] }
   return { save: next, events }
+}
+
+/**
+ * Evolve a Pokémon at the level cap whose evolution by level is due: it earns no more XP, so the level-up path that
+ * normally evolves it never runs again (a Golbat raised to 100 in Kanto, before Johto opened up Crobat). Asked for from
+ * its sheet. A branching evolution picks like a level-up does. Null when there is nothing to evolve into.
+ */
+export function applyLevelEvolution(
+  save: SaveData,
+  instId: string,
+  data: GameData,
+  rng: Rng,
+): { save: SaveData; events: ProgressEvent[] } | null {
+  const inst = getInstance(save, instId)
+  if (!inst || isReviving(inst) || inst.level < data.config.maxLevel) return null
+  const ready = levelEvolutions(inst, data, evolutionGate(save, data))
+  if (!ready.length) return null
+  const target = ready.length === 1 ? ready[0]! : rng.pick(preferUnowned(ready, save.pokedex))
+  let next = replaceInstance(save, evolve(inst, target.toDex, data))
+  if (!next.pokedex.includes(target.toDex)) next = { ...next, pokedex: [...next.pokedex, target.toDex] }
+  return { save: next, events: [{ kind: 'evolve', uid: inst.id, fromDex: inst.dex, toDex: target.toDex, level: inst.level }] }
 }
 
 export function buyComboUpgrade(save: SaveData, key: ComboKey, data: GameData): SaveData | null {

@@ -199,6 +199,10 @@ export const SINNOH_AREAS: AreaPlan[] = [
     maxLevel: 25,
     weights: W.busy,
     tier: 3,
+    // Gligar glides over Route 206 in Platinum; the Razor Fang next to it is what turns it into Gliscor.
+    once: [
+      ['razor-fang', 8, 1, 1, true],
+    ],
     wild: [
       [434, 20, 18, 24], // Stunky
       [431, 18, 18, 24], // Glameow
@@ -206,6 +210,7 @@ export const SINNOH_AREAS: AreaPlan[] = [
       [74, 16, 18, 24], // Geodude
       [417, 16, 19, 25], // Pachirisu
       [228, 14, 19, 25], // Houndour
+      [207, 10, 19, 25], // Gligar
     ],
     trainers: [
       { name: 'Cyclist Nina', team: [[403, 22], [417, 22]] },
@@ -282,10 +287,11 @@ export const SINNOH_AREAS: AreaPlan[] = [
     maxLevel: 32,
     weights: W.mixed,
     tier: 3,
-    // What the Underground gives up, dug out of the walls under Solaceon.
+    // What the Underground gives up, dug out of the walls under Solaceon — the Oval Stone for the Happiny of Route 209.
     once: [
       ['thunder-stone', 8, 1, 1, true],
       ['shiny-stone', 8, 1, 1, true],
+      ['oval-stone', 8, 1, 1, true],
     ],
     wild: [
       [436, 22, 25, 31], // Bronzor

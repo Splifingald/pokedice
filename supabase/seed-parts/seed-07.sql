@@ -2,6 +2,7 @@
 -- Run the parts in order (1 first: it carries the schema changes). Together they are supabase/seed.sql.
 begin;
 insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level) values
+  ('8c86fbfb-3f32-5cbb-9c41-d6133d27833d', 'bda155ba-8676-5610-a304-3aa1a309a8f5', 174, 10, 60, 80),
   ('27d95c22-2421-56d8-8031-d660eadc96c9', 'bda155ba-8676-5610-a304-3aa1a309a8f5', 179, 10, 60, 80),
   ('c2767fb4-9072-5cea-a325-45aa191236ea', 'bda155ba-8676-5610-a304-3aa1a309a8f5', 180, 10, 60, 80),
   ('eba0c265-33ad-5d79-b61d-bacc6a6e43b0', 'bda155ba-8676-5610-a304-3aa1a309a8f5', 183, 10, 60, 80),
@@ -1160,6 +1161,7 @@ insert into area_loot_pool (id, area_id, item_key, weight, unique_find, min_qty,
   ('94e67dc1-5dd9-5d21-bf3b-244f13d2308d', '6c54a30a-d5cc-5311-ae07-d9b0dfac5db2', 'money', 16, false, 50, 100),
   ('1f1df807-af44-5f4c-ae4c-e72d0c52699f', '6c54a30a-d5cc-5311-ae07-d9b0dfac5db2', 'thunder-stone', 8, true, 1, 1),
   ('cdf52d3a-b615-5db7-8efa-dfbf54ddd252', '6c54a30a-d5cc-5311-ae07-d9b0dfac5db2', 'shiny-stone', 8, true, 1, 1),
+  ('f81bb425-66b7-51d5-8de4-f8ec2ea74ad0', '6c54a30a-d5cc-5311-ae07-d9b0dfac5db2', 'oval-stone', 8, true, 1, 1),
   ('744158fa-c55c-569b-91e4-9605de44830a', 'ec3bf8b4-c54c-5891-8c31-d22a029fa3b2', 'super-potion', 20, false, 1, 2),
   ('07830c33-8d1f-57c9-86fd-e32f8f6f50dc', 'ec3bf8b4-c54c-5891-8c31-d22a029fa3b2', 'poke-ball', 10, false, 2, 3),
   ('d58693e0-b6cd-5658-b9ee-1b185d5b39e4', 'ec3bf8b4-c54c-5891-8c31-d22a029fa3b2', 'great-ball', 16, false, 1, 2),
@@ -1355,11 +1357,11 @@ insert into area_loot_pool (id, area_id, item_key, weight, unique_find, min_qty,
   ('4264becc-30e8-5235-a323-5b82aed98294', 'f319e2ef-f0d1-5f2d-a7cb-cf92aeb8bca7', 'poke-ball', 1, false, 2, 3),
   ('a4c54b2c-ba23-514f-8b1f-e45bfe092d03', 'f319e2ef-f0d1-5f2d-a7cb-cf92aeb8bca7', 'great-ball', 1, false, 1, 2),
   ('c061f9df-963a-5632-bd29-6686e1a07f57', 'f319e2ef-f0d1-5f2d-a7cb-cf92aeb8bca7', 'ultra-ball', 1, false, 1, 1),
-  ('4d640f92-b8d2-5af9-9b76-90259a7cdcd8', 'f319e2ef-f0d1-5f2d-a7cb-cf92aeb8bca7', 'antidote', 1, false, 1, 1),
-  ('def317b2-1d73-583b-9992-cdfb6b210aeb', 'f319e2ef-f0d1-5f2d-a7cb-cf92aeb8bca7', 'paralyze-heal', 1, false, 1, 1)
+  ('4d640f92-b8d2-5af9-9b76-90259a7cdcd8', 'f319e2ef-f0d1-5f2d-a7cb-cf92aeb8bca7', 'antidote', 1, false, 1, 1)
 on conflict (id) do update set area_id = excluded.area_id, item_key = excluded.item_key, weight = excluded.weight, unique_find = excluded.unique_find, min_qty = excluded.min_qty, max_qty = excluded.max_qty;
 
 insert into area_loot_pool (id, area_id, item_key, weight, unique_find, min_qty, max_qty) values
+  ('def317b2-1d73-583b-9992-cdfb6b210aeb', 'f319e2ef-f0d1-5f2d-a7cb-cf92aeb8bca7', 'paralyze-heal', 1, false, 1, 1),
   ('db37acb0-072f-5f3a-bded-836e7c5143c4', 'f319e2ef-f0d1-5f2d-a7cb-cf92aeb8bca7', 'ice-heal', 1, false, 1, 1),
   ('d2d8ce12-a003-58bc-b56b-f6cc70097509', 'f319e2ef-f0d1-5f2d-a7cb-cf92aeb8bca7', 'ether', 1, false, 1, 1),
   ('4c4b5552-5bc5-5078-80b7-03f223b91ba9', 'f319e2ef-f0d1-5f2d-a7cb-cf92aeb8bca7', 'max-ether', 1, false, 1, 1),
@@ -1532,6 +1534,7 @@ insert into area_loot_pool (id, area_id, item_key, weight, unique_find, min_qty,
   ('a8a59c1a-320d-57f8-aeac-209bdcbf714c', 'eb01f9bc-a3e2-5fdb-ade9-343b5c0c04b9', 'ether', 8, false, 1, 1),
   ('cc19bc56-5e12-5d9e-80ab-87cac5fb298c', 'eb01f9bc-a3e2-5fdb-ade9-343b5c0c04b9', 'max-ether', 3, false, 1, 1),
   ('253a3911-ef54-5418-a52b-f729569db262', 'eb01f9bc-a3e2-5fdb-ade9-343b5c0c04b9', 'money', 16, false, 50, 100),
+  ('ebf2f15b-6ec9-5f39-86e8-209df3b12108', 'eb01f9bc-a3e2-5fdb-ade9-343b5c0c04b9', 'razor-fang', 8, true, 1, 1),
   ('96565c23-8c69-510d-b932-22489bee330a', '84e74f22-b8fc-5658-8f2d-c2cf1751b4f8', 'super-potion', 20, false, 1, 2),
   ('894f71db-fba6-5399-942f-8b6b573269b2', '84e74f22-b8fc-5658-8f2d-c2cf1751b4f8', 'poke-ball', 10, false, 2, 3),
   ('e379d187-7da6-56e4-a8c8-cf7629e5095f', '84e74f22-b8fc-5658-8f2d-c2cf1751b4f8', 'great-ball', 16, false, 1, 2),
@@ -1607,8 +1610,6 @@ insert into area_loot_pool (id, area_id, item_key, weight, unique_find, min_qty,
   ('7cef51b9-7951-5aca-8e6f-ae1d4415fe81', 'bbdca5af-2024-5c0c-8278-c7c5966a5be4', 'ultra-ball', 12, false, 1, 1),
   ('78d444b6-1c17-5fa1-9535-608b78e1fb3c', 'bbdca5af-2024-5c0c-8278-c7c5966a5be4', 'paralyze-heal', 4, false, 1, 1),
   ('06683262-9201-5bce-9b32-3302ba9ea654', 'bbdca5af-2024-5c0c-8278-c7c5966a5be4', 'burn-heal', 4, false, 1, 1),
-  ('6b0eea2a-31c5-5e9d-918b-f50d5ca188d5', 'bbdca5af-2024-5c0c-8278-c7c5966a5be4', 'ice-heal', 4, false, 1, 1),
-  ('c0e119ae-ae7e-5a1b-ab81-c28346f3ae71', 'bbdca5af-2024-5c0c-8278-c7c5966a5be4', 'ether', 8, false, 1, 2),
-  ('5b72040b-9b6a-5ee2-affe-24a339ae3314', 'bbdca5af-2024-5c0c-8278-c7c5966a5be4', 'max-ether', 6, false, 1, 1)
+  ('6b0eea2a-31c5-5e9d-918b-f50d5ca188d5', 'bbdca5af-2024-5c0c-8278-c7c5966a5be4', 'ice-heal', 4, false, 1, 1)
 on conflict (id) do update set area_id = excluded.area_id, item_key = excluded.item_key, weight = excluded.weight, unique_find = excluded.unique_find, min_qty = excluded.min_qty, max_qty = excluded.max_qty;
 commit;

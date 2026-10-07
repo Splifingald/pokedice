@@ -6,7 +6,9 @@
 // offered and putting a #169 in a Pokédex that ends at #151.
 import { describe, expect, it } from 'vitest'
 import {
+  applyLevelEvolution,
   createInstance,
+  getInstance,
   createRng,
   evolutionGate,
   gainXp,
@@ -17,6 +19,7 @@ import {
   stoneEvolution,
   getRegion,
   newRegionBlock,
+  levelEvolutions,
   type SaveData,
 } from '@/engine'
 import { data, newId } from '../fixtures'
@@ -113,6 +116,34 @@ describe('levelling up in Kanto', () => {
     })
     expect(held.inst.dex).toBe(GOLBAT)
     expect(held.events.some((e) => e.kind === 'evolve')).toBe(false)
+  })
+})
+
+describe('a Pokémon held back until the level cap', () => {
+  /** A Golbat raised to 100 in Kanto: the gate kept Crobat away, and at the cap no XP will ever come to evolve it. */
+  const capped = (save: SaveData): SaveData => ({
+    ...save,
+    box: [...save.box, createInstance(GOLBAT, data.config.maxLevel, data, 'capped', 1)],
+  })
+
+  it('earns no more XP to evolve on, even once Johto is open', () => {
+    const inst = getInstance(capped(withJohto()), 'capped')!
+    expect(levelEvolutions(inst, data, evolutionGate(withJohto(), data)).map((e) => e.toDex)).toEqual([CROBAT])
+    expect(gainXp(inst, 100000, data, createRng(1), { allowDex: evolutionGate(withJohto(), data) }).inst.dex).toBe(GOLBAT)
+  })
+
+  it('evolves on request once its generation is open, and joins the Pokédex', () => {
+    const r = applyLevelEvolution(capped(withJohto()), 'capped', data, createRng(1))!
+    expect(getInstance(r.save, 'capped')!.dex).toBe(CROBAT)
+    expect(getInstance(r.save, 'capped')!.level).toBe(data.config.maxLevel)
+    expect(r.save.pokedex).toContain(CROBAT)
+    expect(r.events).toContainEqual(expect.objectContaining({ kind: 'evolve', fromDex: GOLBAT, toDex: CROBAT }))
+  })
+
+  it('does nothing while the gate holds, or below the cap where XP still evolves it', () => {
+    expect(applyLevelEvolution(capped(kanto()), 'capped', data, createRng(1))).toBeNull()
+    const low = { ...withJohto(), box: [...withJohto().box, createInstance(GOLBAT, 60, data, 'low', 1)] }
+    expect(applyLevelEvolution(low, 'low', data, createRng(1))).toBeNull()
   })
 })
 

@@ -865,6 +865,14 @@
     "unique": true,
     "minQty": 1,
     "maxQty": 1
+   },
+   {
+    "id": "f81bb425-66b7-51d5-8de4-f8ec2ea74ad0",
+    "itemKey": "oval-stone",
+    "weight": 8,
+    "unique": true,
+    "minQty": 1,
+    "maxQty": 1
    }
   ]
  },
@@ -9070,6 +9078,13 @@
     "maxLevel": 25
    },
    {
+    "id": "827591e2-3c7d-5023-bbb9-436c25abe7d2",
+    "dex": 207,
+    "weight": 10,
+    "minLevel": 19,
+    "maxLevel": 25
+   },
+   {
     "id": "e55402b7-4079-5e29-964b-17d59dbadfba",
     "dex": 472,
     "weight": 2,
@@ -9187,6 +9202,14 @@
     "unique": false,
     "minQty": 50,
     "maxQty": 100
+   },
+   {
+    "id": "ebf2f15b-6ec9-5f39-86e8-209df3b12108",
+    "itemKey": "razor-fang",
+    "weight": 8,
+    "unique": true,
+    "minQty": 1,
+    "maxQty": 1
    }
   ]
  },
@@ -36348,6 +36371,14 @@
     "unique": false,
     "minQty": 100,
     "maxQty": 200
+   },
+   {
+    "id": "bdc0b03d-c1ad-59b1-ba83-bbf51174e831",
+    "itemKey": "razor-fang",
+    "weight": 8,
+    "unique": true,
+    "minQty": 1,
+    "maxQty": 1
    }
   ]
  },
