@@ -54,4 +54,13 @@ describe('reloading for a newer build', () => {
     useGame.setState({ run: { ...initialRun(), pendingCatchId: 'x' } })
     expect(safeToReload()).toBe(false)
   })
+
+  it('waits for the end of a Versus fight, which plays outside the run', async () => {
+    const { holdReload, safeToReload } = await import('@/store/sync')
+    const release = holdReload()
+    expect(safeToReload()).toBe(false)
+    release()
+    release() // a second call changes nothing
+    expect(safeToReload()).toBe(true)
+  })
 })

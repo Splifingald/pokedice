@@ -17,7 +17,7 @@ import { PullRemoteButton } from './PullRemoteButton'
 import { PokemonSection } from './sections/PokemonSection'
 import { SimulatorSection } from './sections/SimulatorSection'
 import { DiceSection, ItemsSection, TrainersSection, TypeChartSection, UpgradesSection } from './sections/TableSections'
-import { discard, exportBundle, loadAdmin, publish, saveAll, undoLastSave, useAdmin, useDirtyTables } from './store'
+import { discard, exportBundle, loadAdmin, publish, reloadAllPlayers, saveAll, undoLastSave, useAdmin, useDirtyTables } from './store'
 
 const SECTIONS: { id: string; label: string; C: ComponentType }[] = [
   { id: 'pokemon', label: 'Pokémon', C: PokemonSection },
@@ -105,6 +105,17 @@ function SaveBar() {
         <span className="flex-1" />
         <PixelButton size="sm" variant="success" disabled={saving} onClick={() => void publish()} title="Bumps configVersion so every client hot-swaps">
           {dirty.length ? 'Save & Publish' : 'Publish'}
+        </PixelButton>
+        <PixelButton
+          size="sm"
+          disabled={mode !== 'remote'}
+          onClick={() => {
+            if (window.confirm('Reload the game for every player now? Each open game reloads as soon as its player is between fights.'))
+              void reloadAllPlayers()
+          }}
+          title="Every open game reloads at its next safe moment (never mid-fight) — after deploying a fix"
+        >
+          Reload all players
         </PixelButton>
         <PixelButton size="sm" onClick={exportBundle} title="Download the saved state as the bundle JSON">
           Export bundle

@@ -153,5 +153,13 @@ supabase/    migrations/0001_init.sql, seed.sql (generated)
   when the build changed; a page more than a day old reloads anyway. The reload waits until nothing would be lost (no
   fight, encounter or catch decision on screen). Tabs opened before this build can't be reached: they update on
   their next reload, or after a day away.
+- **Reload all players** — Admin → *Reload all players* (bottom bar, next to Publish) makes every open game reload at
+  its next safe moment, the same one as above (never in a fight, a Versus fight, an encounter or a catch decision; a
+  toast tells a player in a fight that it's coming). Use it right after deploying a fix that can't wait for the hourly
+  check. Open tabs hear it at once over Supabase Realtime (private channel `app`, only visible tabs stay on it); a tab
+  that was offline or in the background catches up from table `app_signals` when it comes back. The admin panel and
+  `/setup` never reload on their own. Needs `supabase/migrations/0029_force_reload.sql` run once on the live database.
+  Each visible tab is one Realtime connection: past the plan's limit (200 at once on the free plan) the extra tabs
+  read `app_signals` instead, at most every 5 minutes, so they reload a few minutes late rather than never.
 - `allowVoluntarySwitch`, `enemyUpgradeLevel`, `goldMultiplier`, `forcedCenterWhenHurt` and `scaleLevelSpread` are
   `game_config` keys (the spec was silent on these).

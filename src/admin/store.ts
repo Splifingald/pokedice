@@ -249,6 +249,18 @@ export async function publish() {
   if (ok) pushToast(`Published — content version ${next}. Players get it on their next load.`, 'good', 5000)
 }
 
+/**
+ * Every open game reloads at its next safe moment (never mid-fight): for a fix that shouldn't wait for the tabs' own
+ * hourly version check. Needs supabase/migrations/0029_force_reload.sql.
+ */
+export async function reloadAllPlayers() {
+  const client = await getSupabase()
+  if (!client) return
+  const { error } = await client.rpc('force_reload')
+  if (error) pushToast(`Reload request failed: ${error.message}. Did you run 0029_force_reload.sql?`, 'bad', 6000)
+  else pushToast('Every open game reloads as soon as its player is between fights.', 'good', 5000)
+}
+
 export function applyToGame() {
   try {
     setContent(rowsToBundle(get().base), get().mode === 'remote' ? 'remote' : 'bundle')

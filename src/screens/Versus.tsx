@@ -36,7 +36,7 @@ import {
   type VersusEntry,
 } from '@/lib/versus'
 import { pushToast, useGame, type BattleSlice } from '@/store/game'
-import { pushSaveNow } from '@/store/sync'
+import { holdReload, pushSaveNow } from '@/store/sync'
 import { cx } from '@/theme/util'
 import { BattleView, type VersusReplay } from './battle/BattleView'
 import { Overlay } from './battle/VictoryView'
@@ -483,6 +483,9 @@ function VersusFightView({ fight, foe, onExit }: { fight: VersusFight; foe: Vers
   const [over, setOver] = useState(false)
   const cursor = useRef(0)
   const won = fight.winner === 'attacker'
+
+  // A pending reload (new build, Admin → "Reload all players") waits for the end of the fight.
+  useEffect(() => holdReload(), [])
 
   // The next battle, once this one has played out and the moment has sunk in.
   const onPlayed = useCallback(() => {

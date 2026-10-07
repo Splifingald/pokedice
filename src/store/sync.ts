@@ -1,5 +1,5 @@
 // Auth + cloud save sync + background content hot-swap. Never blocks the UI on the network.
-import type { Session, SupabaseClient } from '@supabase/supabase-js'
+import type { RealtimeChannel, Session, SupabaseClient } from '@supabase/supabase-js'
 import { create } from 'zustand'
 import { startAnalytics } from '@/analytics/ping'
 import { fetchContentUpdate } from '@/config/remote'
@@ -239,10 +239,11 @@ export async function checkContent() {
 }
 
 // ---------------------------------------------------------------- staying on the latest build
-// A tab can stay open for days, and it keeps running the build it loaded. Two things bring it up to date:
+// A tab can stay open for days, and it keeps running the build it loaded. Three things bring it up to date:
 // - version.json, written next to each build (vite.config.ts): checked when the player comes back to the tab, and every
 //   hour while it stays open. A different build there means a reload. One small Netlify request, no Supabase.
-// - a page more than a day old reloads anyway, in case that check never gets through.
+// - Admin → "Reload all players" (force_reload, migration 0029), heard at once over Realtime by every open tab.
+// - a page more than a day old reloads anyway, in case neither gets through.
 // Either way the reload waits for a safe moment: never mid-fight, mid-encounter or mid-catch decision.
 
 /** A page older than this reloads (for the latest build and content). */
@@ -253,28 +254,59 @@ const VERSION_ON_RETURN_MS = 10 * 60_000
 const VERSION_WHILE_OPEN_MS = 60 * 60_000
 const loadedAt = Date.now()
 let lastVersionCheck = Date.now()
+let reloadPending = false
 let reloading = false
+
+/** Screens that keep the page from reloading though the run is idle: a Versus fight plays outside the run. */
+const useReloadHolds = create<{ count: number }>(() => ({ count: 0 }))
+
+/** Keeps the page from reloading until the returned function is called. */
+export function holdReload(): () => void {
+  useReloadHolds.setState((s) => ({ count: s.count + 1 }))
+  let released = false
+  return () => {
+    if (released) return
+    released = true
+    useReloadHolds.setState((s) => ({ count: s.count - 1 }))
+  }
+}
+
+/** The admin panel and the setup guide have unsaved work of their own: they wait until the admin leaves them. */
+function onToolPage(): boolean {
+  const path = globalThis.location?.pathname ?? ''
+  return path.startsWith('/admin') || path.startsWith('/setup')
+}
 
 /** Nothing would be lost by reloading now: no fight, encounter, pending catch or save conflict on screen. */
 export function safeToReload(): boolean {
+  if (onToolPage()) return false
   const { run, syncConflict } = useGame.getState()
-  return run.phase === 'idle' && !run.encounter && !run.pendingCatchId && !syncConflict
+  return (
+    useReloadHolds.getState().count === 0 &&
+    run.phase === 'idle' &&
+    !run.encounter &&
+    !run.pendingCatchId &&
+    !syncConflict
+  )
 }
 
-/** Reload as soon as it's safe. The save is written first. */
-function reloadWhenSafe() {
-  if (reloading) return
+/** The reload asked for, if now is a safe moment. The save is written first. */
+function reloadIfSafe() {
+  if (!reloadPending || reloading || !safeToReload()) return
   reloading = true
-  const go = () => {
-    flushWrite()
-    window.location.reload()
-  }
-  if (safeToReload()) return go()
-  const stop = useGame.subscribe(() => {
-    if (!safeToReload()) return
-    stop()
-    go()
-  })
+  flushWrite()
+  window.location.reload()
+}
+
+/** Reload as soon as it's safe. `tell`: say so if it has to wait. */
+function reloadWhenSafe(tell = false) {
+  if (reloadPending) return
+  reloadPending = true
+  if (safeToReload()) return reloadIfSafe()
+  if (tell && !onToolPage()) pushToast(t('ui.toast.reloadSoon'), 'info', 6000)
+  useGame.subscribe(reloadIfSafe)
+  useReloadHolds.subscribe(reloadIfSafe)
+  // Leaving the admin panel changes no store: the minute timer in startBackgroundServices catches that.
 }
 
 /** Is a newer build out? Quiet on failure (offline, dev server without version.json). */
@@ -291,8 +323,87 @@ async function checkForNewBuild() {
   }
 }
 
+// ---------------------------------------------------------------- Admin → "Reload all players"
+// The request is broadcast on the private Realtime channel 'app' and kept in app_signals ('reload' row). A tab that
+// hears it live reloads. A tab that wasn't listening (offline, in the background, Realtime down) reads the row when it
+// listens again, and reloads if it was loaded before the request. Only visible tabs stay on the channel, to keep the
+// number of Realtime connections down.
+
+/** The reload this tab already went through, kept across the reload (per tab) so a request never loops. */
+const RELOAD_SIGNAL_KEY = 'pokedice.reloadSignal'
+/** A dropped or refused channel is joined again at most this often. */
+const RELISTEN_MS = 5 * 60_000
+/** A tab hidden this long leaves the channel; it catches up from app_signals when it comes back. */
+const HIDDEN_LEAVE_MS = 5 * 60_000
+let channel: RealtimeChannel | null = null
+let lastListen = 0
+let leaveTimer: ReturnType<typeof setTimeout> | undefined
+
+/** Postgres timestamps carry microseconds, which not every browser parses: keep milliseconds. */
+const signalMs = (at: string) => Date.parse(at.replace(/(\.\d{3})\d+/, '$1'))
+
+/** A reload asked for at `at`. `live`: heard as it went out, so this page is older than the request. */
+function onReloadSignal(at: unknown, live: boolean) {
+  if (typeof at !== 'string') return
+  const ms = signalMs(at)
+  if (!Number.isFinite(ms)) return
+  let seen: string | null = null
+  try {
+    seen = sessionStorage.getItem(RELOAD_SIGNAL_KEY)
+  } catch {
+    /* storage blocked: the page age below still guards */
+  }
+  if (seen === String(ms)) return
+  if (!live && ms <= loadedAt) return // this page was loaded after the request
+  try {
+    sessionStorage.setItem(RELOAD_SIGNAL_KEY, String(ms))
+  } catch {
+    /* see above */
+  }
+  reloadWhenSafe(true)
+}
+
+/** Reads the last request: for a tab that may have missed it. */
+async function checkReloadSignal(client: SupabaseClient) {
+  const { data } = await client.from('app_signals').select('at').eq('id', 'reload').maybeSingle()
+  if (data) onReloadSignal((data as { at?: unknown }).at, false)
+}
+
+/** Joins the 'app' channel. `catchUp`: also read the request this tab may have missed while away. */
+async function listenForReload(catchUp: boolean) {
+  if (channel) return
+  lastListen = Date.now()
+  const client = await getSupabase()
+  if (!client || channel) return
+  if (catchUp) void checkReloadSignal(client).catch(() => {})
+  const ch = client
+    .channel('app', { config: { private: true } })
+    .on('broadcast', { event: 'reload' }, ({ payload }) =>
+      onReloadSignal((payload as { at?: unknown })?.at, true),
+    )
+  channel = ch
+  ch.subscribe((status) => {
+    // Dropped (connection lost) or refused (migration 0029 not run): leave it, and join again later rather than let
+    // supabase-js retry every few seconds.
+    if (status !== 'SUBSCRIBED' && channel === ch) leaveChannel()
+  })
+}
+
+function leaveChannel() {
+  const ch = channel
+  channel = null
+  if (ch) void getSupabase().then((client) => client?.removeChannel(ch))
+}
+
+/** Back on the tab, or the minute timer while it's visible: listen again if the channel was left or dropped. */
+function relisten() {
+  if (!channel && Date.now() - lastListen >= RELISTEN_MS) void listenForReload(true)
+}
+
 /** On return to the tab (`returning`), and every minute while it's visible. */
 function checkFreshness(returning: boolean) {
+  reloadIfSafe()
+  relisten()
   if (Date.now() - loadedAt >= MAX_PAGE_AGE_MS) return reloadWhenSafe()
   if (Date.now() - lastVersionCheck >= (returning ? VERSION_ON_RETURN_MS : VERSION_WHILE_OPEN_MS))
     void checkForNewBuild()
@@ -307,6 +418,7 @@ export function startBackgroundServices() {
   startAnalytics()
   void initAuth()
   void checkContent()
+  void listenForReload(false)
   setInterval(() => {
     if (document.visibilityState === 'visible') checkFreshness(false)
     tickFossils()
@@ -318,8 +430,10 @@ export function startBackgroundServices() {
     flushPush()
   })
   document.addEventListener('visibilitychange', () => {
+    clearTimeout(leaveTimer)
     if (document.visibilityState === 'hidden') {
       flushWrite()
+      leaveTimer = setTimeout(leaveChannel, HIDDEN_LEAVE_MS)
     } else {
       checkFreshness(true)
       tickFossils()
