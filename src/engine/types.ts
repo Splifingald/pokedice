@@ -207,7 +207,10 @@ export interface BossDef {
   upgradeLevel?: number | null
   /** Battle scene for this legendary; unset = the area's. */
   battleBackground?: BattleBackground | null
-  /** Always shiny (the Red Gyarados kind of legendary): colours only, nothing about the fight changes. */
+  /**
+   * Always shiny (the Red Gyarados kind of legendary): colours only, nothing about the fight changes. Without it, each
+   * appearance rolls the wild odds (`shinyChance`).
+   */
   shiny?: boolean
 }
 

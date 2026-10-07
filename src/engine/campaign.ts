@@ -339,7 +339,7 @@ export function* runCampaign(data: GameData, opts: CampaignOptions): Generator<n
       (firstInArea && isTeamHurt(save, data)) ||
       teamOf(save).every((p) => p.currentHp <= 0) ||
       (area.easyMode && hasFaintedMember(save))
-    const challenge = needsCenter ? null : challengeEncounter(area, progressOf(save, area.id), data, teamAverageLevel(save), playerSideOf(save))
+    const challenge = needsCenter ? null : challengeEncounter(area, progressOf(save, area.id), data, teamAverageLevel(save), playerSideOf(save), rng)
     const roll: EncounterRoll = challenge ? { encounter: challenge, deck: null, lootDeck: null } : nextEncounter(
       {
         area,

@@ -109,6 +109,18 @@ export function dueBoss(area: Area, progress: AreaProgress, teamAvgLevel: number
   return null
 }
 
+/** One roll of the wild shiny odds (`shinyChance`). */
+const rollShiny = (data: GameData, rng: Rng): boolean => {
+  const chance = data.config.shinyChance ?? 0
+  return chance > 0 && rng.next() < chance
+}
+
+/**
+ * A legendary's colours each time it shows up: always shiny when its data says so, else a fresh roll of the wild odds —
+ * so declining the challenge, losing, or seeing it come back after the throw missed all roll again.
+ */
+const legendShiny = (b: BossDef, data: GameData, rng?: Rng): boolean => !!b.shiny || (!!rng && rollShiny(data, rng))
+
 /** A legendary beaten earlier that fled the catch. It keeps coming back — one card per encounter deck — until caught. */
 export function fledLegendary(area: Area, progress: AreaProgress, pokedex: readonly number[]): BossDef | null {
   return (area.legendaryBoss ?? []).find((b) => progress.bossesDefeated.includes(b.dex) && !pokedex.includes(b.dex)) ?? null
@@ -167,7 +179,9 @@ export function rollRoamer(ctx: EncounterContext, rng: Rng): Encounter | null {
   if (!roamers.requires.every((dex) => caught.has(dex))) return null
   for (const dex of roamers.dex) {
     if (caught.has(dex) || !ctx.data.species[dex]) continue
-    if (rng.next() < roamers.chance) return { kind: 'boss', dex, level: clampLevel(roamers.level, ctx.data) }
+    // A roamer is met afresh each time it shows up, so each meeting rolls the wild odds.
+    if (rng.next() < roamers.chance)
+      return { kind: 'boss', dex, level: clampLevel(roamers.level, ctx.data), ...(rollShiny(ctx.data, rng) && { shiny: true }) }
   }
   return null
 }
@@ -178,8 +192,7 @@ export function rollWild(ctx: EncounterContext, rng: Rng): Encounter | null {
   const entry = rng.weighted(ctx.area.wildPool, (w) => (ctx.data.species[w.dex] ? w.weight : 0))
   if (!entry) return null
   const level = enemyLevel(rng.int(entry.minLevel, Math.max(entry.minLevel, entry.maxLevel)), ctx, rng)
-  const chance = ctx.data.config.shinyChance ?? 0
-  const shiny = chance > 0 && rng.next() < chance
+  const shiny = rollShiny(ctx.data, rng)
   return { kind: 'wild', dex: entry.dex, level, isNew: !ctx.pokedex.includes(entry.dex), ...(shiny && { shiny }) }
 }
 
@@ -330,11 +343,12 @@ export function challengeEncounter(
   data: GameData,
   teamAvgLevel: number,
   side?: PlayerSide | null,
+  rng?: Rng,
 ): Encounter | null {
   const gym = dueGym(area, progress, data, side)
   if (gym) return gymEncounter(area, gym, data, side)
   const boss = dueBoss(area, progress, teamAvgLevel)
-  return boss ? { kind: 'boss', dex: boss.dex, level: boss.level, ...(boss.shiny && { shiny: true }) } : null
+  return boss ? { kind: 'boss', dex: boss.dex, level: boss.level, ...(legendShiny(boss, data, rng) && { shiny: true }) } : null
 }
 
 /** The next encounter alone, for callers that don't keep decks (each call deals from fresh ones). */
@@ -349,9 +363,9 @@ function findItem(ctx: EncounterContext, rng: Rng): { encounter: Encounter; loot
     : null
 }
 
-function returningLegend(ctx: EncounterContext): Encounter | null {
+function returningLegend(ctx: EncounterContext, rng: Rng): Encounter | null {
   const b = fledLegendary(ctx.area, ctx.progress, ctx.pokedex)
-  return b ? { kind: 'boss', dex: b.dex, level: b.level, returning: true, ...(b.shiny && { shiny: true }) } : null
+  return b ? { kind: 'boss', dex: b.dex, level: b.level, returning: true, ...(legendShiny(b, ctx.data, rng) && { shiny: true }) } : null
 }
 
 const cardEncounter = (card: 'wild' | 'trainer' | 'center' | 'casino', ctx: EncounterContext, rng: Rng): Encounter | null =>
@@ -399,7 +413,7 @@ function drawFromDeck(ctx: EncounterContext, rng: Rng): EncounterRoll {
       if (found) return { encounter: found.encounter, deck, lootDeck: found.lootDeck, drawn, newRound }
       continue
     }
-    const encounter = card === 'legend' ? returningLegend(ctx) : cardEncounter(card, ctx, rng)
+    const encounter = card === 'legend' ? returningLegend(ctx, rng) : cardEncounter(card, ctx, rng)
     if (encounter) return { encounter, deck, lootDeck: null, drawn, newRound }
   }
   return { encounter: { kind: 'center', forced: false }, deck, lootDeck: null, drawn, newRound }
@@ -446,7 +460,7 @@ function forcedEncounter(ctx: EncounterContext, kind: ForceKind, rng: Rng): Enco
       return { kind: 'casino' }
     case 'boss': {
       const b = (ctx.area.legendaryBoss ?? []).find((x) => !ctx.progress.bossesDefeated.includes(x.dex))
-      return b ? { kind: 'boss', dex: b.dex, level: b.level, ...(b.shiny && { shiny: true }) } : returningLegend(ctx)
+      return b ? { kind: 'boss', dex: b.dex, level: b.level, ...(legendShiny(b, ctx.data, rng) && { shiny: true }) } : returningLegend(ctx, rng)
     }
     default:
       return null

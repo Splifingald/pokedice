@@ -1,7 +1,7 @@
 // The roaming legendaries: no area of their own, gated on catching both tower legendaries, once each.
 import { describe, expect, it } from 'vitest'
 import { createRng, regionOfArea, rollRoamer, type Area, type EncounterContext } from '@/engine'
-import { data } from '../fixtures'
+import { data, makeData } from '../fixtures'
 
 const roamers = data.config.roamers
 const johtoRoute = data.areas.find((a) => regionOfArea(a) === 'johto' && a.wildPool.length > 0)!
@@ -76,5 +76,14 @@ describe('roaming legendaries', () => {
       expect(roamers.dex).toContain(found.dex)
       expect(found.level).toBe(roamers.level)
     }
+  })
+
+  it('rolls the wild shiny odds each time it shows up', () => {
+    const meet = (shinyChance: number) => {
+      const d = makeData({ shinyChance, roamers: { ...roamers, chance: 1 } })
+      return rollRoamer({ ...ctx(johtoRoute, [249, 250]), data: d }, createRng(1))
+    }
+    expect(meet(1)).toMatchObject({ kind: 'boss', shiny: true })
+    expect(meet(0)).not.toHaveProperty('shiny')
   })
 })

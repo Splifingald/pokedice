@@ -272,6 +272,7 @@ Articuno, Zapdos, Moltres, Mewtwo and Mew are **not** in wild pools. Each is att
 - Lose → normal wipe handling (§6.4), and the boss can be challenged again right away (finished rounds stay finished). It is never missable.
 - An area with no `legendaryBossDex` simply unlocks the next area once every round is done.
 - **Always shiny** (`legendary_boss[].shiny`, Admin → Areas): the boss is shiny every time it appears — the challenge card, the fight, the catch and the Box. Colours only: nothing about the fight or the catch changes. Johto's Red Gyarados at the Lake of Rage ships with it on.
+- **Every other legendary can still be shiny**, at the wild odds (`shinyChance`), rolled afresh each time it appears: each CHALLENGE (so declining with NOT YET, or losing, and challenging again rolls again), each return after it fled the throw, and each time a roamer turns up.
 
 ---
 
