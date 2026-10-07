@@ -79,4 +79,6 @@ export const DEFAULT_CONFIG: GameConfig = {
     hatchOffset: 5,
     hatchMinLevel: 5,
   },
+  // Off until the admin sets a PayPal link and switches it on.
+  donation: { enabled: false, paypalUrl: '', round: 0 },
 }

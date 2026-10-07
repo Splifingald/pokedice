@@ -386,6 +386,16 @@ export interface EnergyConfig {
   minutesPerEnergy: number
 }
 
+/** "Keep the game alive": Prof. Oak's donation pop-up (Admin → Config). */
+export interface DonationConfig {
+  /** Off = the pop-up never shows. It also stays hidden while `paypalUrl` is empty. */
+  enabled: boolean
+  /** Where the PayPal button leads (a paypal.me or donate link). */
+  paypalUrl: string
+  /** Bumped by the admin's reset: every player who has already seen the pop-up gets it once more. */
+  round: number
+}
+
 export interface GameConfig {
   configVersion: number
   xpCurve: { A: number; B: number; C: number }
@@ -450,6 +460,7 @@ export interface GameConfig {
   slotMachine: SlotMachineConfig
   dayCare: DayCareConfig
   roamers: RoamerConfig
+  donation: DonationConfig
 }
 
 // ---------------------------------------------------------------- save data (01-GAME-SPEC §9)
@@ -530,6 +541,8 @@ export interface SaveData {
   merged?: RegionId[]
   /** Keys of the `unique` items the Mart has already sold here. They never come back, used or not. */
   boughtUnique?: string[]
+  /** The regions whose donation pop-up was shown, in the admin's current reset round (engine/donation). */
+  donationSeen?: { round: number; regions: RegionId[] }
 }
 
 /**

@@ -92,6 +92,7 @@ export const saveSchema = z.object({
   // a save that went through it still says so.
   merged: z.array(z.string()).optional(),
   boughtUnique: z.array(z.string()).optional(),
+  donationSeen: z.object({ round: z.number().int().min(0), regions: z.array(z.string()) }).optional(),
 })
 
 /**

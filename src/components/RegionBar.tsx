@@ -4,7 +4,7 @@
 // nothing at all, which is what keeps Johto unmentioned for a player still working through Kanto.
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { getRegion, regionOf, tutorialPending, type Region } from '@/engine'
+import { donationDue, getRegion, regionOf, tutorialPending, type Region } from '@/engine'
 import { useT } from '@/i18n/react'
 import { Modal } from '@/components/Modal'
 import { PixelButton } from '@/components/PixelButton'
@@ -18,8 +18,8 @@ export function RegionBar() {
   const { t } = useT()
   const save = useGame((s) => s.save)!
   // Prof. Oak's one-time pop-ups queue rather than stack, and they go first: the offer waits its turn behind them,
-  // and the banner keeps it on screen meanwhile.
-  const waiting = useGame((s) => !!s.save && tutorialPending(s.save, s.data))
+  // and the banner keeps it on screen meanwhile. The donation pop-up goes first too.
+  const waiting = useGame((s) => !!s.save && (tutorialPending(s.save, s.data) || donationDue(s.save, s.data)))
   const busy = useGame((s) => s.run.phase !== 'idle')
   const [dismissed, setDismissed] = useState(false)
   const [picking, setPicking] = useState(false)

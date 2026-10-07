@@ -3,6 +3,7 @@ import { useGame } from '@/store/game'
 import { useInFight } from '@/store/hooks'
 import { cx } from '@/theme/util'
 import { DayCareTutorial } from './DayCareTutorial'
+import { DonationPopup } from './DonationPopup'
 import { BottomNav, Header, SideNav } from './Hud'
 import { LeaderboardTutorial } from './LeaderboardTutorial'
 import { ReplyPopup } from './ReplyPopup'
@@ -32,6 +33,7 @@ export function GameLayout() {
       <LeaderboardTutorial />
       <ShareTutorial />
       <ReplyPopup />
+      <DonationPopup />
     </div>
   )
 }

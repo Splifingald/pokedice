@@ -2,11 +2,13 @@ import { useMemo, useState } from 'react'
 import {
   DEFAULT_CONFIG,
   eggSpecies,
+  isDonationUrl,
   enabledRegions,
   slotOdds,
   slotReturnPerSpin,
   xpToNext,
   type DayCareConfig,
+  type DonationConfig,
   type EnergyConfig,
   type GameConfig,
   type SlotMachineConfig,
@@ -135,6 +137,62 @@ function EnergyBox() {
       <p className="text-lg">
         {perDay.toFixed(1)} energy per day · empty to full in {((cfg.max * cfg.minutesPerEnergy) / 60).toFixed(1)} h
       </p>
+    </Box>
+  )
+}
+
+/**
+ * "Keep the game alive": Prof. Oak's donation pop-up. Each player sees it once per region, when its 5th badge is won.
+ * Ticking the reset bumps the round, so on the next Save + Publish everyone who has seen it gets it once more; the
+ * box then reads unticked again, ready for the next time.
+ */
+function DonationBox() {
+  const [raw, setRaw] = useConfigRow('donation')
+  const cfg: DonationConfig = { ...DEFAULT_CONFIG.donation, ...raw }
+  const set = (patch: Partial<DonationConfig>) => setRaw({ ...cfg, ...patch })
+  const saved = useAdmin((st) => st.base.game_config.find((r) => r.key === 'donation')?.value as Partial<DonationConfig> | undefined)
+  const savedRound = Number(saved?.round ?? 0)
+  const url = cfg.paypalUrl.trim()
+  const urlOk = isDonationUrl(url)
+  return (
+    <Box
+      title="Keep the game alive (donations)"
+      hint="Prof. Oak asks players to help with the hosting costs, with a PayPal button. Once per region, when its 5th badge is won, between fights. Save, then Publish, for players to get the change."
+    >
+      <div className="grid gap-3 sm:grid-cols-3">
+        <label className="flex items-center gap-2 text-lg">
+          <input type="checkbox" checked={!!cfg.enabled} onChange={(e) => set({ enabled: e.target.checked })} /> enabled
+        </label>
+        <Field
+          label="PayPal link"
+          className="sm:col-span-2"
+          hint={url && !urlOk ? 'Must start with https:// — the pop-up stays hidden until it does' : 'e.g. https://paypal.me/yourname · empty = the pop-up stays hidden'}
+        >
+          <input
+            className={inputCls}
+            type="url"
+            placeholder="https://paypal.me/…"
+            value={cfg.paypalUrl}
+            onChange={(e) => set({ paypalUrl: e.target.value })}
+          />
+        </Field>
+      </div>
+      <label className="flex items-start gap-2 text-lg">
+        <input
+          type="checkbox"
+          className="mt-1.5"
+          checked={cfg.round > savedRound}
+          onChange={(e) => set({ round: e.target.checked ? savedRound + 1 : savedRound })}
+        />
+        <span>
+          Reset — show it again to everyone
+          <span className="block text-sm text-muted">
+            Every player who has already seen it gets it once more, at their next quiet moment (those with a region at 5
+            badges). Unticks itself once saved · reset {savedRound} time{savedRound === 1 ? '' : 's'} so far.
+          </span>
+        </span>
+      </label>
+      {cfg.enabled && !urlOk && <p className="text-lg text-danger">Enabled, but hidden from players until the PayPal link is set.</p>}
     </Box>
   )
 }
@@ -506,6 +564,8 @@ export function ConfigSection() {
       </section>
 
       <EnergyBox />
+
+      <DonationBox />
 
       <SlotMachineBox />
 
