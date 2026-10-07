@@ -71,7 +71,7 @@ species in this game), and **Mega Zygarde**, which PokeAPI has no sprite for yet
 ## 4. Gigantamax
 
 - **Unlocked** once the player has reached Galar (`gigantamax.region`), then everywhere; no level.
-- A **G-MAX** button beside MEGA: the Gigantamax look and +1 die of the Pokémon's first type for **3 of its own turns**
+- A **G-MAX** button beside MEGA: the Gigantamax look and +1 die of the Pokémon's first type for **its next turn**
   (`gigantamax.turns`), then it shrinks back — or when it leaves the field. **Never in the same battle as a Mega**: the
   two share the one per battle.
 - The Pokémon sheet says so under the curve, once Galar is reached. 32 forms (the low-key Toxtricity and Rapid Strike
@@ -85,7 +85,7 @@ species in this game), and **Mega Zygarde**, which PokeAPI has no sprite for yet
   sent out below half, it starts in the form. A Mega or Gigantamax Pokémon keeps that look instead.
 - **TYPE menu** — Arceus (17 Plates), Silvally (17 Memories) and Ogerpon (3 masks): its type and every die — base dice
   included, the hand already thrown too — become the type (an Ogerpon mask's: Water, Fire, Rock). **Once per battle**
-  (`formChangesPerBattle`), for the whole team.
+  (`formChangesPerBattle`) for each Pokémon: an Arceus and a Silvally on one team change once each.
 
 ## 6. Trainers, and auto battles
 

@@ -249,7 +249,7 @@ function MilestoneTrack({ species, level, onOpenDex }: { species: Species; level
       {gmax && (
         <p className="copy mt-1 flex items-center gap-1 text-base">
           <MiniSprite dex={gmax.dex} size={28} className="-my-2" />
-          <span>{t('ui.sheet.gmaxNote', { to: typeName(megaDie(species, gmax)), n: data.config.gigantamax.turns })}</span>
+          <span>{t(`ui.sheet.gmaxNote.${data.config.gigantamax.turns === 1 ? 'one' : 'other'}`, { to: typeName(megaDie(species, gmax)), n: data.config.gigantamax.turns })}</span>
         </p>
       )}
     </section>

@@ -192,6 +192,30 @@ describe('battle forms', () => {
     expect(reduce(s, { t: 'CHANGE_FORM', toDex: 493 }, data, rng).state).toBe(s)
   })
 
+  it('each Pokémon has its own change: a second type changer on the team still has one', () => {
+    let s = playerTurn(
+      createBattle(
+        {
+          kind: 'wild',
+          team: [
+            { uid: 'a', dex: 493, level: 80, hp: 9999 },
+            { uid: 'b', dex: 773, level: 60, hp: 9999 },
+          ],
+          leadUid: 'a',
+          enemy: { dex: 19, level: 5 },
+          playerLevels: uniformLevels(1),
+          enemyLevels: uniformLevels(1),
+        },
+        data,
+      ).state,
+    )
+    s = reduce(s, { t: 'CHANGE_FORM', toDex: formChoices(s, data)[0]!.dex }, data, rng).state
+    expect(formChoices(s, data)).toEqual([])
+    // Silvally comes in (the switch takes the turn): its own change is still there.
+    s = playerTurn({ ...s, activeIndex: 1 })
+    expect(formChoices(s, data)).toHaveLength(17)
+  })
+
   it('Silvally has the same menu, and Ogerpon its masks, its dice taking the mask’s type', () => {
     expect(formChoices(playerTurn(battle({ dex: 773, level: 60 })), data)).toHaveLength(17)
     let s = playerTurn(battle({ dex: 1017, level: 70 }))
@@ -220,7 +244,7 @@ describe('Gigantamax', () => {
   const gmaxBattle = (megaToo = false) =>
     playerTurn({ ...battle({ dex: 6, level: 60 }), gmaxAllowed: true, megaAllowed: megaToo || undefined })
 
-  it('adds a die for three of its turns, then it shrinks back', () => {
+  it('adds a die for its next turn, then it shrinks back', () => {
     let s = gmaxBattle()
     const dice = activeBattler(s).dice.length
     expect(gmaxChoices(s, data).map((f) => f.dex)).toEqual([10196])

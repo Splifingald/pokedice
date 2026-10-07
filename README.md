@@ -158,9 +158,9 @@ supabase/    migrations/0001_init.sql, seed.sql (generated)
   their region; evolving in that region gives the regional form (Pikachu → Alolan Raichu in Alola). Once the player has
   reached Kalos, a Lv.50 Pokémon with a Mega form gets a MEGA button in battle — no stone, no item, one per battle — and
   a die of the type it gains (else its first type) until the fight ends (Primal Kyogre / Groudon and Ultra Necrozma
-  too). From Galar on, a G-MAX button gives +1 die for 3 turns, never in the same battle as a Mega. Giratina,
+  too). From Galar on, a G-MAX button gives +1 die for its next turn, never in the same battle as a Mega. Giratina,
   Darmanitan, Zygarde, Wishiwashi and Minior change form below half HP; Arceus, Silvally and Ogerpon change type from a
-  TYPE menu, once a battle. Leaders, the Elite Four and Champions use Mega (Hoenn, Kalos, Alola) and Gigantamax (Galar)
+  TYPE menu, once a battle each. Leaders, the Elite Four and Champions use Mega (Hoenn, Kalos, Alola) and Gigantamax (Galar)
   with their ace once the player has it too; auto battles use none of it. See
   [docs/12](docs/12-FORMS-AND-MEGA.md). Needs `supabase/migrations/0029_pokemon_forms.sql` (or `seed.sql`, which
   carries it) and the rows of `supabase/patches/pokemon-forms-and-mega.sql`.

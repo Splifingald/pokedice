@@ -60,6 +60,8 @@ export interface Battler {
   mega?: boolean
   /** A form taken below half HP (Giratina's Origin Forme…): how it looked and rolled before, for above half again. */
   preForm?: FormSnapshot
+  /** Type changes (Arceus, Silvally, Ogerpon) this Pokémon has made this battle. */
+  formChanges?: number
   /** Gigantamaxed: its own turns left, and how it looked before (the die it gained goes when it shrinks back). */
   gmax?: { turns: number; pre: FormSnapshot }
 }
@@ -100,15 +102,12 @@ export interface BattleState {
   gmaxAllowed?: boolean
   /** Mega Evolutions and Gigantamax the player's side has used this battle (they share one limit). */
   megaUsed?: number
-  /** Type changes (Arceus, Silvally, Ogerpon) the player's side has used this battle. */
-  formChanges?: number
   /** An auto battle: no Mega Evolution, Gigantamax or type change, on either side. */
   auto?: boolean
   /** What the foe does on its first turn — a trainer's ace Mega Evolving or Gigantamaxing — and whether it changes type. */
   enemyPlan?: EnemyPlan
   /** The plan's Mega / Gigantamax has been used. */
   enemyPlanDone?: boolean
-  enemyFormChanges?: number
 }
 
 export interface EnemyPlan {
@@ -406,10 +405,11 @@ export function gmaxChoices(s: BattleState, data: GameData): Species[] {
 
 /** The types the Pokémon in battle could take right now (empty when it has none, or the change is spent). */
 export function formChoices(s: BattleState, data: GameData): Species[] {
-  if (s.auto || (s.formChanges ?? 0) >= data.config.formChangesPerBattle) return []
+  if (s.auto) return []
   if (s.phase !== 'player_roll' && s.phase !== 'player_reroll') return []
   const a = activeBattler(s)
-  if (a.hp <= 0) return []
+  // Each Pokémon has its own changes for the battle.
+  if (a.hp <= 0 || (a.formChanges ?? 0) >= data.config.formChangesPerBattle) return []
   return typeForms(a, data)
 }
 
@@ -722,7 +722,7 @@ export function reduce(
       const form = formChoices(s, data).find((f) => f.dex === e.toDex)
       if (!form) return NOOP(state)
       changeForm(s, 'player', a, form, log)
-      s.formChanges = (s.formChanges ?? 0) + 1
+      a.formChanges = (a.formChanges ?? 0) + 1
       break
     }
     case 'PASS': {
@@ -780,11 +780,11 @@ export function reduce(
         else if (gmax && !en.gmax) gigantamax(s, 'enemy', en, gmax, data, rng, log)
         s.enemyPlanDone = true
       }
-      if (plan?.formChanges && (s.enemyFormChanges ?? 0) < data.config.formChangesPerBattle) {
+      if (plan?.formChanges && (en.formChanges ?? 0) < data.config.formChangesPerBattle) {
         const form = bestTypeForm(en, target, data)
         if (form) {
           changeForm(s, 'enemy', en, form, log)
-          s.enemyFormChanges = (s.enemyFormChanges ?? 0) + 1
+          en.formChanges = (en.formChanges ?? 0) + 1
         }
       }
       // A trainer's potion goes down first, once, when the next hit could K.O. — it doesn't cost the turn.

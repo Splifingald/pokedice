@@ -622,7 +622,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
   const megaMechanic = megaOpts[0]?.form?.mechanic
   const megaLabel = megaMechanic === 'primal' ? 'ui.battle.primal' : megaMechanic === 'ultra' ? 'ui.battle.ultra' : 'ui.battle.mega'
   const formOpts = versus ? [] : formChoices(st, data)
-  const formsLeft = data.config.formChangesPerBattle - (st.formChanges ?? 0)
+  const formsLeft = data.config.formChangesPerBattle - (activeBattler(st).formChanges ?? 0)
   const megaBase = data.species[activeBattler(st).baseDex ?? activeBattler(st).dex]
   const megaEvolve = (toDex: number) => {
     setMenu(null)
@@ -1038,7 +1038,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
                 size={minorSize}
                 variant="primary"
                 disabled={!canAct}
-                title={t('ui.battle.gmaxHint', { n: data.config.gigantamax.turns })}
+                title={t(`ui.battle.gmaxHint.${data.config.gigantamax.turns === 1 ? 'one' : 'other'}`, { n: data.config.gigantamax.turns })}
                 onClick={() => {
                   setMenu(null)
                   dispatch({ t: 'GMAX', toDex: gmaxOpts[0]!.dex })

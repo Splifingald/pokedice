@@ -89,7 +89,8 @@ export const DEFAULT_CONFIG: GameConfig = {
     trainerRegions: ['hoenn', 'kalos', 'alola'],
     trainerRoles: ['leader', 'elite', 'champion'],
   },
-  // Gigantamax opens with Galar, for 3 of the Pokémon's turns; Galar's leaders and Champion use it with their ace.
-  gigantamax: { region: 'galar', turns: 3, trainerRegions: ['galar'] },
+  // Gigantamax opens with Galar, for the Pokémon's next turn only (fights here are short); Galar's leaders and Champion
+  // use it with their ace.
+  gigantamax: { region: 'galar', turns: 1, trainerRegions: ['galar'] },
   formChangesPerBattle: 1,
 }

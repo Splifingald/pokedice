@@ -483,7 +483,7 @@ export interface GameConfig {
   roamers: RoamerConfig
   megaEvolution: MegaConfig
   gigantamax: GigantamaxConfig
-  /** Arceus, Silvally and Ogerpon can change type this many times per battle (the TYPE menu). */
+  /** Arceus, Silvally and Ogerpon can each change type this many times per battle (the TYPE menu). */
   formChangesPerBattle: number
 }
 
