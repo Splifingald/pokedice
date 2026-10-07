@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { activeBattler, type BattleState, type LogEntry, type RolledDie, type Side, type StatusKind } from '@/engine'
 import { t } from '@/i18n'
-import { comboName } from '@/lib/format'
+import { comboName, typeName } from '@/lib/format'
 import { sfx, type SfxName } from '@/audio/sfx'
 import type { BattleSlice } from '@/store/game'
 
@@ -27,6 +27,10 @@ export interface AnimatorContext {
   itemName: (key: string) => string
   colorOf: (type: string) => string
   onHit: (target: Side, color: string, power: number) => void
+  /** A species' (or form's) name, for the form changes. */
+  speciesName: (dex: number) => string
+  /** A Mega row's own mechanic (Primal Reversion, Ultra Burst), for the message. */
+  megaMechanic: (dex: number) => 'primal' | 'ultra' | null
 }
 
 let seq = 0
@@ -221,6 +225,28 @@ function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): Step {
         delay: 900,
         apply: (f) => ({ ...f, message: t('ui.log.copiedDice', { name: nameOf(e.uid), from: nameOf(e.fromUid) }) }),
       }
+    case 'form': {
+      const before = ctx.speciesName(e.fromDex)
+      const after = ctx.speciesName(e.toDex)
+      const mechanic = e.reason === 'mega' ? ctx.megaMechanic(e.toDex) : null
+      const text =
+        e.reason === 'mega'
+          ? mechanic === 'primal'
+            ? t('ui.log.primal', { name: before })
+            : mechanic === 'ultra'
+              ? t('ui.log.ultra', { name: before, mega: after })
+              : t('ui.log.megaEvolved', { name: before, mega: after })
+          : e.reason === 'gmax'
+            ? t(e.revert ? 'ui.log.gmaxEnd' : 'ui.log.gmax', { name: e.revert ? after : before })
+            : e.reason === 'lowHp'
+              ? t(e.revert ? 'ui.log.formBack' : 'ui.log.formChanged', { name: nameOf(e.uid) })
+              : t('ui.log.typeChange', { name: nameOf(e.uid), type: typeName(e.dice[0] ?? 'normal') })
+      return {
+        delay: 1300,
+        sound: 'levelup',
+        apply: (f) => ({ ...f, message: text, flash: { id: nextId(), target: e.side } }),
+      }
+    }
     case 'item': {
       const who = nameOf(e.targetUid)
       const item = ctx.itemName(e.key)

@@ -120,9 +120,9 @@ describe('Day Care', () => {
     expect(eggSpecies(data, 'sinnoh').every((s) => s.dex >= 387 && s.dex <= 493)).toBe(true)
     expect(eggSpecies(data, 'unova').every((s) => s.dex >= 494 && s.dex <= 649)).toBe(true)
     expect(eggSpecies(data, 'kalos').every((s) => s.dex >= 650 && s.dex <= 721)).toBe(true)
-    expect(eggSpecies(data, 'alola').every((s) => s.dex >= 722 && s.dex <= 809)).toBe(true)
-    expect(eggSpecies(data, 'galar').every((s) => s.dex >= 810 && s.dex <= 905)).toBe(true)
-    expect(eggSpecies(data, 'paldea').every((s) => s.dex >= 906 && s.dex <= 1025)).toBe(true)
+    expect(eggSpecies(data, 'alola').every((s) => (s.dex >= 722 && s.dex <= 809) || s.form?.region === 'alola')).toBe(true)
+    expect(eggSpecies(data, 'galar').every((s) => (s.dex >= 810 && s.dex <= 905) || s.form?.region === 'galar')).toBe(true)
+    expect(eggSpecies(data, 'paldea').every((s) => (s.dex >= 906 && s.dex <= 1025) || s.form?.region === 'paldea')).toBe(true)
     // With no region asked for (the admin's overview) the pool is still every hatchable species.
     expect(eggSpecies(data).length).toBe(
       kanto.length +

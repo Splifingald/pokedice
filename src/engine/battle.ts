@@ -4,6 +4,7 @@ import { getSpecies } from './data'
 import { attackMultiplier, attackType, computeDamage, type DamageResult, type UpgradeLevels } from './damage'
 import { rerollMasked, rollAll, type RolledDie } from './dice'
 import { reviveHp } from './economy'
+import { choiceFormDie, choiceFormsOf, gmaxFormsOf, lowHpFormOf, megaDie, megaOptions, swapOneDie } from './forms'
 import { effectiveStats } from './progression'
 import { potionHeal, shouldUsePotion } from './trainerItems'
 import type { Rng } from './rng'
@@ -18,7 +19,7 @@ import {
   tickDot,
   type StatusState,
 } from './status'
-import type { CurableStatus, DieType, GameData, PokeType, StatusKind } from './types'
+import type { CurableStatus, DieType, GameData, PokeType, Species, StatusKind } from './types'
 
 export type Side = 'player' | 'enemy'
 export type BattleKind = 'wild' | 'trainer' | 'boss'
@@ -53,6 +54,23 @@ export interface Battler {
   /** Ditto: its dice are a copy of the opponent's, taken again whenever the opponent changes. `ownDice` = its own set. */
   copiesFoe?: boolean
   ownDice?: DieType[]
+  /** The species it was sent out as. `dex` is the form it shows now (a Mega, Giratina's Origin Forme, an Arceus type). */
+  baseDex?: number
+  /** Mega Evolved (or Primal Reversion, Ultra Burst) this battle: it stays so until the fight ends. */
+  mega?: boolean
+  /** A form taken below half HP (Giratina's Origin Forme…): how it looked and rolled before, for above half again. */
+  preForm?: FormSnapshot
+  /** Type changes (Arceus, Silvally, Ogerpon) this Pokémon has made this battle. */
+  formChanges?: number
+  /** Gigantamaxed: its own turns left, and how it looked before (the die it gained goes when it shrinks back). */
+  gmax?: { turns: number; pre: FormSnapshot }
+}
+
+export interface FormSnapshot {
+  dex: number
+  name: string
+  types: PokeType[]
+  dice: DieType[]
 }
 
 /** Species that fight with a copy of their opponent's dice (Ditto), rolled on their own and with their own upgrades. */
@@ -78,6 +96,27 @@ export interface BattleState {
   lastDamage: DamageResult | null
   /** One item per turn — it doesn't end the turn. */
   itemUsedThisTurn: boolean
+  /** The player may Mega Evolve in this fight (they have reached Kalos). Absent = no. */
+  megaAllowed?: boolean
+  /** The player may Gigantamax in this fight (they have reached Galar). Absent = no. */
+  gmaxAllowed?: boolean
+  /** Mega Evolutions and Gigantamax the player's side has used this battle (they share one limit). */
+  megaUsed?: number
+  /** An auto battle: no Mega Evolution, Gigantamax or type change, on either side. */
+  auto?: boolean
+  /** What the foe does on its first turn — a trainer's ace Mega Evolving or Gigantamaxing — and whether it changes type. */
+  enemyPlan?: EnemyPlan
+  /** The plan's Mega / Gigantamax has been used. */
+  enemyPlanDone?: boolean
+}
+
+export interface EnemyPlan {
+  /** The Mega (or Primal / Ultra Burst) form it takes. */
+  mega?: number | null
+  /** The Gigantamax form it takes. */
+  gmax?: number | null
+  /** It may change type (Arceus, Silvally, Ogerpon) to the one best against your Pokémon. */
+  formChanges?: boolean
 }
 
 export type BattleEvent =
@@ -93,6 +132,12 @@ export type BattleEvent =
   | { t: 'PASS' }
   /** Give up: every Pokémon of the team is K.O. and the battle is lost. */
   | { t: 'FORFEIT' }
+  /** Mega Evolve the Pokémon in battle into this Mega form. It doesn't end the turn. */
+  | { t: 'MEGA'; toDex: number }
+  /** Gigantamax the Pokémon in battle. It doesn't end the turn. */
+  | { t: 'GMAX'; toDex: number }
+  /** Arceus, Silvally, Ogerpon: take this form (a type). It doesn't end the turn. */
+  | { t: 'CHANGE_FORM'; toDex: number }
 
 export type LogEntry =
   | { kind: 'start'; first: Side }
@@ -123,6 +168,22 @@ export type LogEntry =
   /** Confusion recoil: the confused attacker hurts itself after its attack. */
   | { kind: 'recoil'; side: Side; uid: string; amount: number; hpAfter: number }
   | { kind: 'end'; result: 'won' | 'lost' | 'fled'; reason?: 'stalemate' | 'forfeit' }
+  /**
+   * A Pokémon changed form: `mega` (Mega Evolution, Primal Reversion, Ultra Burst — `die` is the die it gained),
+   * `gmax` (Gigantamax; `revert` when it shrinks back), `lowHp` (Giratina's Origin Forme…, `revert` when it goes back
+   * above half HP) or `choice` (an Arceus, Silvally or Ogerpon type).
+   */
+  | {
+      kind: 'form'
+      side: Side
+      uid: string
+      fromDex: number
+      toDex: number
+      reason: 'mega' | 'gmax' | 'lowHp' | 'choice'
+      dice: DieType[]
+      die?: DieType
+      revert?: boolean
+    }
 
 export interface BattlerSeed {
   uid: string
@@ -151,6 +212,7 @@ export function makeBattler(seed: BattlerSeed, data: GameData): Battler {
     status: emptyStatus(),
     spriteUrl: species.spriteUrl,
     shiny: !!seed.shiny,
+    baseDex: seed.dex,
     ...(seed.item && { item: seed.item }),
     ...(COPIES_FOE_DICE.has(seed.dex) && { copiesFoe: true, ownDice: stats.dice }),
   }
@@ -180,6 +242,175 @@ export interface CreateBattleOptions {
   enemy: { dex: number; level: number; hp?: number; shiny?: boolean; item?: string }
   playerLevels: UpgradeLevels
   enemyLevels: UpgradeLevels
+  /** The player has unlocked Mega Evolution (see `megaUnlocked`). */
+  megaAllowed?: boolean
+  /** The player has unlocked Gigantamax (see `gmaxUnlocked`). */
+  gmaxAllowed?: boolean
+  /** The foe's Mega / Gigantamax / type change (see `enemyPlanFor`). */
+  enemyPlan?: EnemyPlan | null
+  /** An auto battle: none of the above, for either side. */
+  auto?: boolean
+}
+
+/** Takes on a form's look and types (the dice are the caller's business). */
+function wearForm(b: Battler, form: Species) {
+  b.dex = form.dex
+  b.name = form.name
+  b.types = form.type2 ? [form.type1, form.type2] : [form.type1]
+  b.spriteUrl = form.spriteUrl
+}
+
+const snapshot = (b: Battler): FormSnapshot => ({ dex: b.dex, name: b.name, types: [...b.types], dice: [...b.dice] })
+function restore(b: Battler, pre: FormSnapshot, data: GameData) {
+  b.dex = pre.dex
+  b.name = pre.name
+  b.types = pre.types
+  b.dice = pre.dice
+  b.spriteUrl = data.species[pre.dex]?.spriteUrl ?? b.spriteUrl
+}
+
+/** A new die goes with the other typed dice, ahead of any base die; thrown into the hand when the hand is out. */
+function addDie(s: BattleState, side: Side, b: Battler, die: DieType, data: GameData, rng: Rng) {
+  const at = b.dice.filter((d) => d !== 'base').length
+  b.dice.splice(at, 0, die)
+  if (side === 'player' && s.phase === 'player_reroll') {
+    s.dice.splice(Math.min(at, s.dice.length), 0, rollAll([die], data, rng)[0]!)
+    s.selected.splice(Math.min(at, s.selected.length), 0, false)
+  }
+}
+
+/** Mega Evolution (Primal Reversion, Ultra Burst): its look and types, and a die, until the battle ends. */
+function megaEvolve(s: BattleState, side: Side, b: Battler, mega: Species, data: GameData, rng: Rng, log: LogEntry[]) {
+  const base = data.species[b.baseDex ?? b.dex]
+  if (!base) return
+  const fromDex = b.dex
+  const die = megaDie(base, mega)
+  wearForm(b, mega)
+  b.mega = true
+  addDie(s, side, b, die, data, rng)
+  log.push({ kind: 'form', side, uid: b.uid, fromDex, toDex: b.dex, reason: 'mega', dice: [...b.dice], die })
+}
+
+/** Gigantamax: its look and a die of its first type, for `gigantamax.turns` of its own turns. */
+function gigantamax(s: BattleState, side: Side, b: Battler, form: Species, data: GameData, rng: Rng, log: LogEntry[]) {
+  const base = data.species[b.baseDex ?? b.dex]
+  if (!base) return
+  const pre = snapshot(b)
+  const die = megaDie(base, form)
+  wearForm(b, form)
+  addDie(s, side, b, die, data, rng)
+  b.gmax = { turns: Math.max(1, data.config.gigantamax.turns), pre }
+  log.push({ kind: 'form', side, uid: b.uid, fromDex: pre.dex, toDex: b.dex, reason: 'gmax', dice: [...b.dice], die })
+}
+
+/** Back to its size: the look and the dice it had before. */
+function endGmax(side: Side, b: Battler, data: GameData, log: LogEntry[]) {
+  if (!b.gmax) return
+  const fromDex = b.dex
+  restore(b, b.gmax.pre, data)
+  delete b.gmax
+  log.push({ kind: 'form', side, uid: b.uid, fromDex, toDex: b.dex, reason: 'gmax', dice: [...b.dice], revert: true })
+}
+
+/** One of its own turns has gone by: a Gigantamax Pokémon shrinks back after its last. */
+function tickGmax(s: BattleState, side: Side, data: GameData, log: LogEntry[]) {
+  const b = side === 'player' ? activeBattler(s) : s.enemy
+  if (!b.gmax || b.hp <= 0) return
+  b.gmax.turns -= 1
+  if (b.gmax.turns <= 0) endGmax(side, b, data, log)
+}
+
+/** A type picked from the menu (Arceus, Silvally, Ogerpon): its look, and every die — the hand too — takes the type. */
+function changeForm(s: BattleState, side: Side, b: Battler, form: Species, log: LogEntry[]) {
+  const fromDex = b.dex
+  const type = choiceFormDie(form)
+  wearForm(b, form)
+  b.dice = b.dice.map(() => type)
+  if (side === 'player') s.dice = s.dice.map((d) => ({ ...d, type }))
+  log.push({ kind: 'form', side, uid: b.uid, fromDex, toDex: b.dex, reason: 'choice', dice: [...b.dice] })
+}
+
+/** The type forms open to this battler (its own form among them once it has taken another). */
+function typeForms(b: Battler, data: GameData): Species[] {
+  const base = b.baseDex ?? b.dex
+  const forms = choiceFormsOf(data, base)
+  if (!forms.length) return []
+  const own = data.species[base]
+  return [...(own ? [own] : []), ...forms].filter((f) => f.dex !== b.dex)
+}
+
+/**
+ * The foe's pick: the type form whose type hits your Pokémon hardest, if it beats every type it rolls now (an Arceus
+ * facing a Pokémon its Normal dice can't touch turns Fighting, or whatever is best).
+ */
+function bestTypeForm(b: Battler, target: Battler, data: GameData): Species | null {
+  const score = (t: PokeType) => attackMultiplier(t, target.types, data)
+  const now = Math.max(0, ...b.dice.filter((d): d is PokeType => d !== 'base').map(score))
+  let best: Species | null = null
+  let bestScore = now
+  for (const f of typeForms(b, data)) {
+    const sc = score(choiceFormDie(f))
+    if (sc > bestScore) {
+      best = f
+      bestScore = sc
+    }
+  }
+  return best
+}
+
+/**
+ * Giratina's Origin Forme: below half HP it takes it, one Ghost die turning Dragon; back at half or above it returns
+ * to its Altered Forme. Checked for both sides whenever HP may have moved. A K.O.'d Pokémon keeps the look it fell in.
+ */
+function checkHpForms(s: BattleState, data: GameData, log: LogEntry[]) {
+  for (const [side, b] of [...s.player.map((p) => ['player', p] as const), ['enemy', s.enemy] as const]) {
+    // A Mega or Gigantamax Pokémon keeps that look whatever its HP.
+    if (b.hp <= 0 || b.mega || b.gmax) continue
+    const low = b.hp * 2 < b.maxHp
+    if (low && !b.preForm) {
+      const form = lowHpFormOf(data, b.dex)
+      if (!form) continue
+      const swap = form.form?.swapDie
+      b.preForm = snapshot(b)
+      const fromDex = b.dex
+      wearForm(b, form)
+      if (swap) b.dice = swapOneDie(b.dice, swap.from, swap.to)
+      log.push({ kind: 'form', side, uid: b.uid, fromDex, toDex: b.dex, reason: 'lowHp', dice: [...b.dice] })
+    } else if (!low && b.preForm) {
+      const fromDex = b.dex
+      restore(b, b.preForm, data)
+      delete b.preForm
+      log.push({ kind: 'form', side, uid: b.uid, fromDex, toDex: b.dex, reason: 'lowHp', dice: [...b.dice], revert: true })
+    }
+  }
+}
+
+/** The Mega forms the Pokémon in battle could take right now (empty when it can't Mega Evolve). */
+export function megaChoices(s: BattleState, data: GameData): Species[] {
+  if (s.auto || !s.megaAllowed || (s.megaUsed ?? 0) >= data.config.megaEvolution.perBattle) return []
+  if (s.phase !== 'player_roll' && s.phase !== 'player_reroll') return []
+  const a = activeBattler(s)
+  if (a.mega || a.gmax || a.hp <= 0 || a.preForm) return []
+  return megaOptions(data, a.baseDex ?? a.dex, a.level)
+}
+
+/** The Gigantamax form the Pokémon in battle could take right now — it shares the Mega's one-per-battle. */
+export function gmaxChoices(s: BattleState, data: GameData): Species[] {
+  if (s.auto || !s.gmaxAllowed || (s.megaUsed ?? 0) >= data.config.megaEvolution.perBattle) return []
+  if (s.phase !== 'player_roll' && s.phase !== 'player_reroll') return []
+  const a = activeBattler(s)
+  if (a.mega || a.gmax || a.hp <= 0 || a.preForm) return []
+  return gmaxFormsOf(data, a.baseDex ?? a.dex)
+}
+
+/** The types the Pokémon in battle could take right now (empty when it has none, or the change is spent). */
+export function formChoices(s: BattleState, data: GameData): Species[] {
+  if (s.auto) return []
+  if (s.phase !== 'player_roll' && s.phase !== 'player_reroll') return []
+  const a = activeBattler(s)
+  // Each Pokémon has its own changes for the battle.
+  if (a.hp <= 0 || (a.formChanges ?? 0) >= data.config.formChangesPerBattle) return []
+  return typeForms(a, data)
 }
 
 const other = (s: Side): Side => (s === 'player' ? 'enemy' : 'player')
@@ -214,8 +445,17 @@ export function createBattle(opts: CreateBattleOptions, data: GameData): { state
     canRun: opts.kind === 'wild' && !data.config.noEscape,
     lastDamage: null,
     itemUsedThisTurn: false,
+    ...(opts.auto
+      ? { auto: true }
+      : {
+          ...(opts.megaAllowed && { megaAllowed: true }),
+          ...(opts.gmaxAllowed && { gmaxAllowed: true }),
+          ...(opts.enemyPlan && { enemyPlan: opts.enemyPlan }),
+        }),
   }
   const log: LogEntry[] = [{ kind: 'start', first }]
+  // A Giratina sent out below half HP is already in its Origin Forme.
+  checkHpForms(state, data, log)
   copyFoeDice(state, log)
   beginTurn(state, first, data, log)
   return { state, log }
@@ -295,6 +535,7 @@ function beginTurn(s: BattleState, side: Side, data: GameData, log: LogEntry[]) 
       b.hp = Math.max(0, b.hp - t.amount)
       log.push({ kind: 'status_tick', target: side, targetUid: b.uid, status: t.status, amount: t.amount, hpAfter: b.hp })
     }
+    if (ticks.length) checkHpForms(s, data, log)
     if (b.hp <= 0) {
       // A K.O. here ends the turn.
       if (checkKnockouts(s, log) && s.phase === 'player_switch') s.nextActor = other(side)
@@ -320,6 +561,7 @@ function beginTurn(s: BattleState, side: Side, data: GameData, log: LogEntry[]) 
 }
 
 function afterAction(s: BattleState, side: Side, data: GameData, log: LogEntry[]) {
+  tickGmax(s, side, data, log)
   if (checkKnockouts(s, log)) {
     if (s.phase === 'player_switch') s.nextActor = other(side)
     return
@@ -373,6 +615,7 @@ function resolveAttack(s: BattleState, side: Side, data: GameData, log: LogEntry
     atk.hp = Math.max(0, atk.hp - amount)
     log.push({ kind: 'recoil', side, uid: atk.uid, amount, hpAfter: atk.hp })
   }
+  checkHpForms(s, data, log)
   s.dice = []
   s.selected = []
   afterAction(s, side, data, log)
@@ -455,12 +698,38 @@ export function reduce(
         log.push({ kind: 'item', key: item.key, targetUid: target.uid, amount: 0, hpAfter: target.hp, rerolls: gained })
       } else return NOOP(state) // Rare Candy and balls aren't battle items
       s.itemUsedThisTurn = true
+      checkHpForms(s, data, log)
+      break
+    }
+    case 'MEGA': {
+      const a = activeBattler(s)
+      const mega = megaChoices(s, data).find((m) => m.dex === e.toDex)
+      if (!mega) return NOOP(state)
+      megaEvolve(s, 'player', a, mega, data, rng, log)
+      s.megaUsed = (s.megaUsed ?? 0) + 1
+      break
+    }
+    case 'GMAX': {
+      const a = activeBattler(s)
+      const form = gmaxChoices(s, data).find((m) => m.dex === e.toDex)
+      if (!form) return NOOP(state)
+      gigantamax(s, 'player', a, form, data, rng, log)
+      s.megaUsed = (s.megaUsed ?? 0) + 1
+      break
+    }
+    case 'CHANGE_FORM': {
+      const a = activeBattler(s)
+      const form = formChoices(s, data).find((f) => f.dex === e.toDex)
+      if (!form) return NOOP(state)
+      changeForm(s, 'player', a, form, log)
+      a.formChanges = (a.formChanges ?? 0) + 1
       break
     }
     case 'PASS': {
       if (s.phase !== 'player_stunned') return NOOP(state)
       const a = activeBattler(s)
       a.status = consumeStun(a.status)
+      tickGmax(s, 'player', data, log)
       beginTurn(s, 'enemy', data, log)
       break
     }
@@ -468,6 +737,10 @@ export function reduce(
       const idx = s.player.findIndex((b) => b.uid === e.instanceId)
       const target = s.player[idx]
       if (!target || target.hp <= 0 || idx === s.activeIndex) return NOOP(state)
+      const outgoing = activeBattler(s)
+      const switchable = s.phase === 'player_switch' || ((s.phase === 'player_roll' || s.phase === 'player_reroll') && data.config.allowVoluntarySwitch)
+      // A Gigantamax Pokémon shrinks back when it leaves the field.
+      if (switchable && outgoing.gmax) endGmax('player', outgoing, data, log)
       if (s.phase === 'player_switch') {
         s.activeIndex = idx
         if (!s.participants.includes(target.uid)) s.participants.push(target.uid)
@@ -498,6 +771,22 @@ export function reduce(
       if (s.phase !== 'enemy_turn') return NOOP(state)
       const en = s.enemy
       const target = activeBattler(s)
+      // A trainer's ace Mega Evolves or Gigantamaxes on its first turn; a type changer picks the type best against you.
+      const plan = s.enemyPlan
+      if (plan && !s.enemyPlanDone && en.hp > 0) {
+        const mega = plan.mega ? data.species[plan.mega] : undefined
+        const gmax = plan.gmax ? data.species[plan.gmax] : undefined
+        if (mega && !en.mega) megaEvolve(s, 'enemy', en, mega, data, rng, log)
+        else if (gmax && !en.gmax) gigantamax(s, 'enemy', en, gmax, data, rng, log)
+        s.enemyPlanDone = true
+      }
+      if (plan?.formChanges && (en.formChanges ?? 0) < data.config.formChangesPerBattle) {
+        const form = bestTypeForm(en, target, data)
+        if (form) {
+          changeForm(s, 'enemy', en, form, log)
+          en.formChanges = (en.formChanges ?? 0) + 1
+        }
+      }
       // A trainer's potion goes down first, once, when the next hit could K.O. — it doesn't cost the turn.
       const heal = en.item ? potionHeal(en.item, data) : 0
       if (
@@ -519,6 +808,7 @@ export function reduce(
         en.hp += amount
         log.push({ kind: 'item', key: en.item!, targetUid: en.uid, amount, hpAfter: en.hp, side: 'enemy' })
         en.item = null
+        checkHpForms(s, data, log)
       }
       s.dice = rollAll(en.dice, data, rng)
       log.push({ kind: 'roll', side: 'enemy', dice: s.dice })

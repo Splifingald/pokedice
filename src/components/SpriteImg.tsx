@@ -1,6 +1,37 @@
 import { useState } from 'react'
+import spriteMetrics from '@/data/sprite-metrics.json'
 import { useGame } from '@/store/game'
 import { cx } from '@/theme/util'
+
+/** The usual sprite canvas. Forms keep PokeAPI's own 96px canvas, uncut, and are scaled here instead. */
+export const SPRITE_CANVAS = 64
+
+type Box = [number, number, number, number]
+export interface SpriteMetric {
+  front: number
+  back: number
+  /** Canvas size when it isn't 64 (the forms' 96). */
+  size?: number
+  /** The opaque pixels' box [x0, y0, x1, y1] on such a canvas. */
+  frontBox?: Box
+  backBox?: Box
+}
+export const SPRITE_METRICS = spriteMetrics as unknown as Record<string, SpriteMetric | undefined>
+
+/**
+ * How a sprite with a bigger canvas sits in a `size` box: drawn at the same pixel scale as a 64px sprite would be
+ * (so a Mega is as big next to its Pokémon as in the games), shrunk only when its art is wider or taller than 64
+ * pixels, and centred on its art. Null for a usual 64px sprite, which simply fills the box.
+ */
+export function spritePlacement(dex: number, back: boolean, size: number) {
+  const m = SPRITE_METRICS[dex]
+  if (!m?.size || m.size === SPRITE_CANVAS) return null
+  const box = (back ? m.backBox : m.frontBox) ?? [0, 0, m.size - 1, m.size - 1]
+  const w = box[2] - box[0] + 1
+  const h = box[3] - box[1] + 1
+  const px = Math.min(size / SPRITE_CANVAS, size / Math.max(w, h))
+  return { width: m.size * px, left: size / 2 - (box[0] + w / 2) * px, top: size / 2 - (box[1] + h / 2) * px }
+}
 
 /** `mini` is both Box-icon frames side by side in one image (see MiniSprite). */
 export type SpriteView = 'front' | 'back' | 'mini'
@@ -29,6 +60,7 @@ export function SpriteImg({
   shiny = false,
   className,
   alt,
+  fit = true,
 }: {
   dex: number
   size?: number
@@ -39,6 +71,8 @@ export function SpriteImg({
   shiny?: boolean
   className?: string
   alt?: string
+  /** Off: the image fills the box whatever its canvas (the battle scene places big canvases itself). */
+  fit?: boolean
 }) {
   const species = useGame((s) => s.data.species[dex])
   const local = spriteUrlFor(dex, back ? 'back' : 'front', shiny)
@@ -47,9 +81,10 @@ export function SpriteImg({
   const [state, setState] = useState<{ key: string; status: 'loading' | 'ok' | 'fallback' | 'error' }>({ key: local, status: 'loading' })
   const status = state.key === local ? state.status : 'loading'
   const src = status === 'fallback' ? fallback! : local
+  const place = fit && status !== 'fallback' ? spritePlacement(dex, back, size) : null
 
   return (
-    <div className={cx('relative inline-block shrink-0', className)} style={{ width: size, height: size }}>
+    <div className={cx('relative inline-block shrink-0', place && 'overflow-hidden', className)} style={{ width: size, height: size }}>
       {status === 'loading' && (
         // A plain ink square while loading — a checkerboard read like "missing".
         <div className="absolute inset-[25%] animate-pulse bg-ink/10" style={{ borderRadius: 2 }} aria-hidden />
@@ -69,8 +104,9 @@ export function SpriteImg({
           onError={() =>
             setState((s) => ({ key: local, status: s.key === local && s.status === 'fallback' ? 'error' : fallback ? 'fallback' : 'error' }))
           }
-          className="pixelated h-full w-full select-none"
+          className={cx('pixelated select-none', place ? 'absolute max-w-none' : 'h-full w-full')}
           style={{
+            ...(place && { width: place.width, height: place.width, left: place.left, top: place.top }),
             imageRendering: 'pixelated',
             filter: silhouette ? 'brightness(0) opacity(0.75)' : undefined,
             transform: flip ? 'scaleX(-1)' : undefined,

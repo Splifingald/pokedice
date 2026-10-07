@@ -8,6 +8,7 @@
  * without knowing regions exist; switching region is a swap of those fields, and nothing else changes.
  */
 import { linearAreas } from './data'
+import { evolutionsIn } from './forms'
 import { isReviving } from './fossils'
 import type { BadgeInfo } from './run'
 import {
@@ -55,8 +56,17 @@ export function unlockedRegions(save: SaveData, data: GameData): Region[] {
  * Pokémon exists for you yet.
  */
 export function regionOfSpecies(data: GameData, dex: number): RegionId | null {
+  // A form belongs to its own region (an Alolan form to Alola), or else to its species' generation.
+  const form = data.species[dex]?.form
+  if (form) return form.region ?? (form.of !== dex ? regionOfSpecies(data, form.of) : null)
   return data.regions.find((r) => dex >= r.dexRange[0] && dex <= r.dexRange[1])?.id ?? null
 }
+
+/**
+ * A species gate that also knows the region it stands for, so the evolution helpers can pick a regional evolution
+ * there (Pikachu → Alolan Raichu in Alola) — see `evolutionsIn`.
+ */
+export type EvolutionGate = ((dex: number) => boolean) & { region?: RegionId }
 
 /**
  * Whether a species may be evolved into yet: cross-generation evolutions wait for the region they come from.
@@ -73,19 +83,20 @@ export function regionOfSpecies(data: GameData, dex: number): RegionId | null {
  * A species in no region's range (content ahead of the regions table) is always allowed, so this can never be the
  * thing that makes a Pokémon unobtainable.
  */
-export function evolutionGate(save: SaveData, data: GameData): (dex: number) => boolean {
+export function evolutionGate(save: SaveData, data: GameData): EvolutionGate {
   return speciesAllowedIn(data, regionOf(save))
 }
 
 /** The same rule, for a region rather than a save — what `regionSpecies` counts and what `evolutionGate` allows. */
-export function speciesAllowedIn(data: GameData, regionId: RegionId): (dex: number) => boolean {
+export function speciesAllowedIn(data: GameData, regionId: RegionId): EvolutionGate {
   const here = getRegion(data, regionId)
   // Standing in a region the table does not know: gate nothing rather than lock everything away.
   const open = new Set(data.regions.filter((r) => !here || r.orderIndex <= here.orderIndex).map((r) => r.id))
-  return (dex) => {
+  const gate = (dex: number) => {
     const from = regionOfSpecies(data, dex)
     return from === null || open.has(from)
   }
+  return Object.assign(gate, { region: regionId })
 }
 
 /** The areas of one region's main chain, in order. */
@@ -130,7 +141,7 @@ export function regionSpecies(data: GameData, regionId: RegionId): Set<number> {
   // Magikarp adds Gyarados, and Gyarados is then visited in the same pass.
   const allowed = speciesAllowedIn(data, regionId)
   for (const dex of out) {
-    for (const e of data.species[dex]?.evolutions ?? []) {
+    for (const e of evolutionsIn(data.species[dex]?.evolutions ?? [], regionId)) {
       if (!out.has(e.toDex) && data.species[e.toDex] && allowed(e.toDex)) out.add(e.toDex)
     }
   }

@@ -1,9 +1,18 @@
 import { useMemo, type ReactNode } from 'react'
 import {
+  choiceFormsOf,
   COPIES_FOE_DICE,
   effectiveStats,
   evolutionGate,
+  evolutionsIn,
   getSpecies,
+  lowHpFormOf,
+  megaDie,
+  megaFormsOf,
+  megaUnlocked,
+  gmaxFormsOf,
+  gmaxUnlocked,
+  nationalDex,
   type DieType,
   type Evolution,
   type GameData,
@@ -120,7 +129,8 @@ export function useVisibleEvolutions(species: Species): Evolution[] {
   return useMemo(() => {
     if (!save) return species.evolutions
     const allowed = evolutionGate(save, data)
-    return species.evolutions.filter((e) => allowed(e.toDex))
+    // A regional evolution shows only where it happens (Pikachu → Alolan Raichu in Alola, → Raichu elsewhere).
+    return evolutionsIn(species.evolutions, allowed.region).filter((e) => allowed(e.toDex))
   }, [species, save, data])
 }
 
@@ -131,9 +141,19 @@ export function useVisibleEvolutions(species: Species): Evolution[] {
 function MilestoneTrack({ species, level, onOpenDex }: { species: Species; level: number | null; onOpenDex?: (dex: number) => void }) {
   const { t } = useT()
   const data = useGame((s) => s.data)
+  const save = useGame((s) => s.save)
   const evolutions = useVisibleEvolutions(species)
-  const ms = [...species.milestones].sort((a, b) => a.level - b.level)
-  const next = level == null ? undefined : ms.find((m) => m.level > level)
+  // Mega Evolution joins the curve at its level, once the player has reached Kalos — not before, so it spoils nothing.
+  const megas = save && megaUnlocked(save, data) ? megaFormsOf(data, species.dex) : []
+  // Gigantamax has no level: a line under the curve once the player has reached Galar.
+  const gmax = save && gmaxUnlocked(save, data) ? gmaxFormsOf(data, species.dex)[0] : undefined
+  const megaLevel = data.config.megaEvolution.level
+  type Row = { level: number; m: Milestone } | { level: number; mega: true }
+  const ms: Row[] = [
+    ...[...species.milestones].sort((a, b) => a.level - b.level).map((m) => ({ level: m.level, m })),
+    ...(megas.length ? [{ level: megaLevel, mega: true as const }] : []),
+  ].sort((a, b) => a.level - b.level)
+  const next = level == null ? undefined : ms.find((r) => r.level > level)
   const byLevel = evolutions.filter((e) => e.level != null)
   const byStone = evolutions.filter((e) => e.level == null)
   const evoNames = (evos: Evolution[]) =>
@@ -150,10 +170,10 @@ function MilestoneTrack({ species, level, onOpenDex }: { species: Species; level
         <div className="text-lg text-muted">{t('ui.sheet.none')}</div>
       ) : (
         <ol>
-          {ms.map((m, i) => {
+          {ms.map((row, i) => {
             const from = i === 0 ? 1 : ms[i - 1]!.level
-            const fill = level == null ? 0 : Math.max(0, Math.min(1, (level - from) / Math.max(1, m.level - from)))
-            const reached = level != null && level >= m.level
+            const fill = level == null ? 0 : Math.max(0, Math.min(1, (level - from) / Math.max(1, row.level - from)))
+            const reached = level != null && level >= row.level
             return (
               <li key={i} className="flex items-stretch gap-2.5">
                 <div className="flex w-5 shrink-0 flex-col items-center" aria-hidden>
@@ -166,19 +186,43 @@ function MilestoneTrack({ species, level, onOpenDex }: { species: Species; level
                   />
                 </div>
                 <div className="flex min-w-0 flex-1 items-center gap-2 pt-3 text-lg leading-tight">
-                  <MilestoneGlyph m={m} species={species} />
+                  {'mega' in row ? (
+                    <DiceSet dice={[...new Set(megas.map((x) => megaDie(species, x)))]} size={20} />
+                  ) : (
+                    <MilestoneGlyph m={row.m} species={species} />
+                  )}
                   <span className="min-w-0">
-                    <span className="font-mono text-sm">{t('ui.common.level.short', { n: m.level })}</span>{' '}
-                    {m.effect === 'EVOLVE' && byLevel.length > 0 ? (
+                    <span className="font-mono text-sm">{t('ui.common.level.short', { n: row.level })}</span>{' '}
+                    {'mega' in row ? (
+                      <>
+                        {t(
+                          megas[0]?.form?.mechanic === 'primal'
+                            ? 'ui.sheet.msPrimal'
+                            : megas[0]?.form?.mechanic === 'ultra'
+                              ? 'ui.sheet.msUltra'
+                              : 'ui.sheet.msMega',
+                        )}{' '}
+                        {megas.map((x, j) => (
+                          <span key={x.dex}>
+                            {j > 0 && ' / '}
+                            <span className="inline-flex items-center gap-0.5 align-middle">
+                              <MiniSprite dex={x.dex} size={28} className="-my-2" />
+                              <b>{x.name}</b>
+                            </span>{' '}
+                            ({t('ui.sheet.msAddDie', { to: typeName(megaDie(species, x)) })})
+                          </span>
+                        ))}
+                      </>
+                    ) : row.m.effect === 'EVOLVE' && byLevel.length > 0 ? (
                       <>
                         {t('ui.sheet.evolvesInto')} {evoNames(byLevel)}
                       </>
                     ) : (
-                      milestoneLabel(m, species, data, evolutions)
+                      milestoneLabel(row.m, species, data, evolutions)
                     )}
                     <span className="sr-only">{reached ? t('ui.sheet.reached') : ''}</span>
                   </span>
-                  {m === next && <span className="ml-auto shrink-0 bg-gold px-1 text-base leading-tight text-ink">{t('ui.sheet.next')}</span>}
+                  {row === next && <span className="ml-auto shrink-0 bg-gold px-1 text-base leading-tight text-ink">{t('ui.sheet.next')}</span>}
                 </div>
               </li>
             )
@@ -201,6 +245,13 @@ function MilestoneTrack({ species, level, onOpenDex }: { species: Species; level
         </ol>
       )}
       {byLevel.length > 1 && <p className="mt-1 text-base text-muted">{t('ui.sheet.oneAtRandom')}</p>}
+      {megas.length > 0 && <p className="copy mt-1 text-base text-muted">{t('ui.sheet.megaNote')}</p>}
+      {gmax && (
+        <p className="copy mt-1 flex items-center gap-1 text-base">
+          <MiniSprite dex={gmax.dex} size={28} className="-my-2" />
+          <span>{t(`ui.sheet.gmaxNote.${data.config.gigantamax.turns === 1 ? 'one' : 'other'}`, { to: typeName(megaDie(species, gmax)), n: data.config.gigantamax.turns })}</span>
+        </p>
+      )}
     </section>
   )
 }
@@ -228,13 +279,14 @@ export function PokemonSheet({
   const uniqueTypes = [...new Set(stats.dice)]
   const hints = useGame((s) => s.settings.typeHints) ?? false
   const types = species.type2 ? [species.type1, species.type2] : [species.type1]
+  const lowHp = lowHpFormOf(data, species.dex)
 
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center gap-3">
         <SpriteImg dex={dex} size={128} shiny={inst?.shiny} className="border-[3px] border-ink bg-parchment" />
         <div className="min-w-0">
-          <div className="font-mono text-sm text-muted">{dexNo(dex)}</div>
+          <div className="font-mono text-sm text-muted">{dexNo(nationalDex(data, dex))}</div>
           <div className="text-4xl leading-none">{species.name}</div>
           <div className="mt-1 flex gap-1">
             <TypeBadge type={species.type1} />
@@ -283,6 +335,17 @@ export function PokemonSheet({
           <p className="copy mb-1.5 text-base">
             <b>{t('ui.sheet.transformTitle')}</b> {t('ui.sheet.transformBody')}
           </p>
+        )}
+        {lowHp?.form?.swapDie && (
+          <p className="copy mb-1.5 text-base">
+            {t('ui.sheet.lowHpForm', {
+              from: typeName(lowHp.form.swapDie.from),
+              to: typeName(lowHp.form.swapDie.to),
+            })}
+          </p>
+        )}
+        {choiceFormsOf(data, species.dex).length > 0 && (
+          <p className="copy mb-1.5 text-base">{t('ui.sheet.choiceForm', { n: data.config.formChangesPerBattle })}</p>
         )}
         <DiceSet dice={stats.dice} size={30} />
         <div className="mt-2 flex flex-col gap-1.5">

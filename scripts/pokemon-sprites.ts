@@ -36,6 +36,9 @@
  * menu icons come from the front (`unovaMinis`). English names come from PokeAPI's species CSVs, since
  * src/data/pokemon.json stops at 649. Everything is cached under scripts/.cache/pokeapi.
  *
+ * `pnpm pokemon-sprites --fetch-forms [outDir]` downloads the forms (#10001+, past the National Dex) from the same
+ * PokeAPI folder, kept at their own 96×96 with nothing cut (see `fetchForms`).
+ *
  * `pnpm pokemon-sprites --publish [srcDir]` copies those files (default graphics/pokemon) into public/pokemon with short
  * names (001_front.png, 001_back_shiny.png, 001_mini.png — both Box-icon frames in one strip, see `miniStrip`…) and
  * writes src/data/sprite-metrics.json: the transparent
@@ -398,6 +401,32 @@ function spritesOf(sheet: PNG, index: number): Record<string, PNG> {
 }
 
 /** Empty (fully transparent) rows at the bottom of a sprite. */
+/** What publish records per sprite: the transparent rows under the art, and for a non-64 canvas its size and art box. */
+interface SpriteMetrics {
+  front: number
+  back: number
+  size?: number
+  /** [x0, y0, x1, y1] of the opaque pixels, both ends included. */
+  frontBox?: [number, number, number, number]
+  backBox?: [number, number, number, number]
+}
+
+function artBox(img: PNG): [number, number, number, number] {
+  let x0 = img.width
+  let y0 = img.height
+  let x1 = -1
+  let y1 = -1
+  for (let y = 0; y < img.height; y++)
+    for (let x = 0; x < img.width; x++) {
+      if (img.data[(y * img.width + x) * 4 + 3] === 0) continue
+      x0 = Math.min(x0, x)
+      x1 = Math.max(x1, x)
+      y0 = Math.min(y0, y)
+      y1 = Math.max(y1, y)
+    }
+  return x1 < 0 ? [0, 0, img.width - 1, img.height - 1] : [x0, y0, x1, y1]
+}
+
 function bottomGap(img: PNG): number {
   for (let y = img.height - 1; y >= 0; y--)
     for (let x = 0; x < img.width; x++) if (img.data[(y * img.width + x) * 4 + 3]! > 0) return img.height - 1 - y
@@ -682,6 +711,61 @@ async function fetchBw(from: number, to: number, outDir: string) {
 }
 
 /**
+ * `--fetch-forms`: the sprites of every form row in src/data/pokemon.json (dex past 1025 — regional forms, Megas,
+ * Giratina's Origin Forme, Arceus's types) from PokeAPI, **uncut**: the 96×96 canvas is kept as PokeAPI draws it,
+ * nothing trimmed or shrunk, and the game scales it on screen (`size` in sprite-metrics.json). Only the Box icons are
+ * made, the same way as Unova's, from the front. Arceus's types have no PokeAPI pokemon id; their sprites are named
+ * `493-<type>.png`, which the row's notes carry (`sprite 493-fire`).
+ */
+async function fetchForms(outDir: string) {
+  await mkdir(BW_CACHE_DIR, { recursive: true })
+  await mkdir(outDir, { recursive: true })
+  const failed: string[] = []
+  let n = 0
+  for (const p of pokemon as { dex: number; name: string; notes?: string | null }[]) {
+    if (p.dex <= 1025) continue
+    const file = p.notes?.match(/sprite (\S+)/)?.[1] ?? String(p.dex)
+    const sprites: Record<string, PNG> = {}
+    try {
+      for (const [kind, dir] of BW_VIEWS) {
+        const buf = await fetchCached(`${POKEAPI_SPRITES}/${dir}${file}.png`, path.join(BW_CACHE_DIR, `${kind}_${file}.png`))
+        sprites[kind] = toRgba(PNG.sync.read(endAtIend(buf)))
+      }
+    } catch (err) {
+      failed.push(`${p.dex} ${p.name}: ${(err as Error).message}`)
+      continue
+    }
+    const [mini1, mini2] = unovaMinis(sprites.front!)
+    sprites.miniature_1 = mini1
+    sprites.miniature_2 = mini2
+    const prefix = `${String(p.dex).padStart(3, '0')}_${fileName(p.name)}`
+    for (const [kind, img] of Object.entries(sprites)) {
+      await writeFile(path.join(outDir, `${prefix}_${kind}.png`), PNG.sync.write(img))
+      n++
+    }
+  }
+  console.log(`${n} form sprites written to ${outDir}`)
+  if (failed.length) {
+    console.error(`\n${failed.length} failures:`)
+    for (const f of failed) console.error(`  ${f}`)
+    process.exitCode = 1
+  }
+}
+
+/** A few PokeAPI files carry bytes after the IEND chunk, which pngjs refuses: the image ends there. */
+function endAtIend(buf: Buffer): Buffer {
+  const at = buf.lastIndexOf('IEND')
+  return at < 0 ? buf : buf.subarray(0, at + 8)
+}
+
+/** A decoded PNG as plain RGBA at its own size (pngjs already expands palettes): a copy, nothing cut. */
+function toRgba(img: PNG): PNG {
+  const out = new PNG({ width: img.width, height: img.height })
+  img.data.copy(out.data)
+  return out
+}
+
+/**
  * The two Box-icon frames side by side in one PNG (frame 1 left), so a menu icon costs one request instead of two.
  * Frames are square — 32×32, or Unova's N×N — and the strip is 2N×N.
  */
@@ -697,7 +781,7 @@ export function miniStrip(a: PNG, b: PNG): PNG {
 async function publish(srcDir: string) {
   const outDir = path.join(ROOT, 'public/pokemon')
   await mkdir(outDir, { recursive: true })
-  const metrics: Record<number, { front: number; back: number }> = {}
+  const metrics: Record<number, SpriteMetrics> = {}
   let n = 0
   for (const p of pokemon) {
     const prefix = `${String(p.dex).padStart(3, '0')}_${fileName(p.name)}`
@@ -708,10 +792,18 @@ async function publish(srcDir: string) {
       ['back', 'back'],
       ['back_shiny', 'back_shiny'],
     ]
-    const m = { front: 0, back: 0 }
+    const m: SpriteMetrics = { front: 0, back: 0 }
     for (const [from, to] of kinds) {
       const buf = await readFile(path.join(srcDir, `${prefix}_${from}.png`))
-      if (from === 'front' || from === 'back') m[from] = bottomGap(PNG.sync.read(buf))
+      if (from === 'front' || from === 'back') {
+        const img = PNG.sync.read(buf)
+        m[from] = bottomGap(img)
+        // A canvas other than the usual 64px (a form kept uncut at 96): its size and the art's box, for the views.
+        if (img.width !== CELL) {
+          m.size = img.width
+          m[from === 'front' ? 'frontBox' : 'backBox'] = artBox(img)
+        }
+      }
       await writeFile(path.join(outDir, `${short}_${to}.png`), buf)
       n++
     }
@@ -735,6 +827,7 @@ async function main() {
       Number(process.argv[4] ?? 1025),
       path.resolve(process.argv[5] ?? path.join(ROOT, 'graphics/pokemon')),
     )
+  if (process.argv[2] === '--fetch-forms') return fetchForms(path.resolve(process.argv[3] ?? path.join(ROOT, 'graphics/pokemon')))
   if (process.argv[2] === '--publish') return publish(path.resolve(process.argv[3] ?? path.join(ROOT, 'graphics/pokemon')))
   const outDir = path.resolve(process.argv[2] ?? path.join(ROOT, 'graphics/pokemon/sprites'))
   const sheetPath = path.resolve(process.argv[3] ?? path.join(ROOT, 'graphics/pokemon/pokemon.png'))

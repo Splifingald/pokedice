@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion'
 import { useMemo, useState } from 'react'
-import { getRegion, isAreaUnlocked, regionOf, regionOfArea, regionSpecies } from '@/engine'
+import { getRegion, isAreaUnlocked, nationalDex, regionOf, regionOfArea, regionSpecies } from '@/engine'
 import { searchFold } from '@/i18n'
 import { useT } from '@/i18n/react'
 import { PixelIcon } from '@/components/icons'
@@ -56,7 +56,9 @@ export function PokedexScreen() {
   const regionName = getRegion(data, region)?.name ?? ''
   // It counts only what this region can actually give you — its pools, bosses, fossils and starters.
   const inRegion = regionSpecies(data, region)
-  const pageList = data.speciesList.filter((s) => inRegion.has(s.dex))
+  // A regional form sits right after its species (Alolan Rattata after Rattata), under the same number.
+  const natOf = (dex: number) => nationalDex(data, dex)
+  const pageList = data.speciesList.filter((s) => inRegion.has(s.dex)).sort((a, b) => natOf(a.dex) - natOf(b.dex) || a.dex - b.dex)
   const total = pageList.length
   const n = pageList.filter((s) => caught.has(s.dex)).length
   const needle = searchFold(q)
@@ -75,11 +77,11 @@ export function PokedexScreen() {
     .filter(
       (s) =>
         !needle ||
-        (asNumber != null ? s.dex === asNumber : caught.has(s.dex) && searchFold(s.name).includes(needle)),
+        (asNumber != null ? natOf(s.dex) === asNumber : caught.has(s.dex) && searchFold(s.name).includes(needle)),
     )
 
   const jump = (from: number) => {
-    const target = list.find((s) => s.dex >= from) ?? list[list.length - 1]
+    const target = list.find((s) => natOf(s.dex) >= from) ?? list[list.length - 1]
     if (target)
       document
         .getElementById(`dex-${target.dex}`)
@@ -182,7 +184,7 @@ export function PokedexScreen() {
               className={cx('pixel-panel flex scroll-mt-48 flex-col items-center p-1 hover:bg-white', !has && 'bg-parchment')}
               title={has ? s.name : t('ui.dex.whereToFind')}
             >
-              <span className="self-start font-mono text-xs text-muted">{dexNo(s.dex)}</span>
+              <span className="self-start font-mono text-xs text-muted">{dexNo(natOf(s.dex))}</span>
               <SpriteImg dex={s.dex} size={64} silhouette={!has} />
               <span className="w-full truncate text-center text-base leading-none">{has ? s.name : t('ui.common.unknown')}</span>
               <span className="text-sm leading-none text-muted">

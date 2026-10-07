@@ -256,7 +256,8 @@ describe('regions', () => {
     const later = regions.filter((r) => r.orderIndex >= 5)
     expect(later.length).toBeGreaterThan(0)
     for (const r of later) {
-      const size = regionSpecies(data, r.id).size
+      // Measured on species, as the gates were set: the regional forms added since are extra entries, not a higher bar.
+      const size = [...regionSpecies(data, r.id)].filter((d) => !data.species[d]?.form).length
       for (const a of of(r.id).filter((x) => x.hidden && (x.legendaryBoss ?? []).length)) {
         const conds = a.unlockConditions ?? []
         const dex = conds.find((c) => c.kind === 'pokedex')

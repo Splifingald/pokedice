@@ -4,6 +4,7 @@ import {
   badgeCase,
   isAreaClosed,
   isAreaUnlocked,
+  nationalDex,
   progressOf,
   regionOf,
   regionOfArea,
@@ -249,7 +250,7 @@ function MissingEntry({ dex, onOpenDex, onTravel }: { dex: number; onOpenDex?: (
       <div className="flex items-center gap-3">
         <SpriteImg dex={dex} size={112} silhouette className="border-[3px] border-ink bg-parchment" />
         <div className="min-w-0">
-          <div className="font-mono text-sm text-muted">{dexNo(dex)}</div>
+          <div className="font-mono text-sm text-muted">{dexNo(nationalDex(data, dex))}</div>
           <div className="text-4xl leading-none">{t('ui.common.unknown')}</div>
           <p className="copy text-muted">{t('ui.dex.notCaught')}</p>
         </div>

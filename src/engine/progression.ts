@@ -1,5 +1,6 @@
 import { getSpecies } from './data'
 import { expandDice } from './dice'
+import { evolutionsIn } from './forms'
 import type { Rng } from './rng'
 import type { DieType, Evolution, GameConfig, GameData, Milestone, PokeType, PokemonInstance, Species } from './types'
 
@@ -95,7 +96,12 @@ export type ProgressEvent =
   | { kind: 'milestone'; uid: string; dex: number; level: number; milestone: Milestone }
   | { kind: 'evolve'; uid: string; fromDex: number; toDex: number; level: number }
 
-/** Species change: dice, types, HP curve and rerolls follow the new species; level, XP and HP % carry over. */
+/**
+ * Which species may be evolved into, and — for a regional evolution — the region the player stands in (see
+ * `evolutionGate` in regions.ts, which builds one).
+ */
+export type EvolutionGateLike = ((dex: number) => boolean) & { region?: string }
+
 /**
  * The evolution this item (a stone) triggers on this Pokémon, if any. `allowDex` gates cross-generation branches on
  * the region they come from (see engine/regions.ts, `evolutionGate`); with none passed every branch is on the table.
@@ -104,14 +110,15 @@ export function stoneEvolution(
   inst: PokemonInstance,
   itemKey: string,
   data: GameData,
-  allowDex?: (dex: number) => boolean,
+  allowDex?: EvolutionGateLike,
 ): number | null {
-  const e = data.species[inst.dex]?.evolutions.find(
+  const e = evolutionsIn(data.species[inst.dex]?.evolutions ?? [], allowDex?.region).find(
     (x) => x.item === itemKey && data.species[x.toDex] && (allowDex?.(x.toDex) ?? true),
   )
   return e ? e.toDex : null
 }
 
+/** Species change: dice, types, HP curve and rerolls follow the new species; level, XP and HP % carry over. */
 export function evolve(inst: PokemonInstance, toDex: number, data: GameData): PokemonInstance {
   const oldMax = instanceMaxHp(inst, data)
   const next = { ...inst, dex: toDex }
@@ -136,8 +143,8 @@ export function preferUnowned(ready: Evolution[], owned?: readonly number[]): Ev
 }
 
 /** The evolutions by level this Pokémon has reached (several for a branching one), gated like `stoneEvolution`. */
-export function levelEvolutions(inst: PokemonInstance, data: GameData, allowDex?: (dex: number) => boolean): Evolution[] {
-  return getSpecies(data, inst.dex).evolutions.filter(
+export function levelEvolutions(inst: PokemonInstance, data: GameData, allowDex?: EvolutionGateLike): Evolution[] {
+  return evolutionsIn(getSpecies(data, inst.dex).evolutions, allowDex?.region).filter(
     (e) => e.level != null && e.level <= inst.level && data.species[e.toDex] && (allowDex?.(e.toDex) ?? true),
   )
 }
@@ -154,7 +161,7 @@ export function gainXp(
   amount: number,
   data: GameData,
   rng: Rng,
-  opts: { evolve?: boolean; owned?: readonly number[]; allowDex?: (dex: number) => boolean } = {},
+  opts: { evolve?: boolean; owned?: readonly number[]; allowDex?: EvolutionGateLike } = {},
 ): { inst: PokemonInstance; events: ProgressEvent[] } {
   const cfg = data.config
   const events: ProgressEvent[] = []

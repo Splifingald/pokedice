@@ -37,6 +37,6 @@ describe('dice schedule', () => {
     // The roaming beasts and Arceus are buffed to six on the live database; everything else keeps to five.
     const six = new Set([243, 244, 245, 493])
     for (const s of data.speciesList)
-      expect(effectiveStats(s, 100, data).dice.length, s.name).toBeLessThanOrEqual(six.has(s.dex) ? 6 : 5)
+      expect(effectiveStats(s, 100, data).dice.length, s.name).toBeLessThanOrEqual(six.has(s.form?.of ?? s.dex) ? 6 : 5)
   })
 })

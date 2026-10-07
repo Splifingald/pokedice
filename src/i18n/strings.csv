@@ -2894,3 +2894,272 @@ itemDesc.malicious-armor,Makes certain Pokémon evolve: Charcadet (Ceruledge). U
 itemDesc.syrupy-apple,Makes certain Pokémon evolve: Applin (Dipplin). Use it from the Team screen.,Fait évoluer certains Pokémon : Verpom (Pomdramour). À utiliser depuis l'écran Équipe.,Hace evolucionar a ciertos Pokémon: Applin (Dipplin). Úsalo desde la pantalla Equipo.,Lässt bestimmte Pokémon entwickeln: Knapfel (Sirapfel). Im Team-Bildschirm einsetzbar.,Fa evolvere alcuni Pokémon: Applin (Dipplin). Usala dalla schermata Squadra.,Faz evoluir certos Pokémon: Applin (Dipplin). Usa-a no ecrã Equipa.,Faz certos Pokémon evoluírem: Applin (Dipplin). Use na tela Equipe.,特定のポケモンを進化させる：カジッチュ（カミッチュ）。「手持ち」画面で使う。,특정 포켓몬을 진화시킨다: 과사삭벌레(과미르). 팀 화면에서 사용한다.,让特定的宝可梦进化：啃果虫（裹蜜虫）。在队伍画面中使用。
 itemDesc.unremarkable-teacup,Makes certain Pokémon evolve: Poltchageist (Sinistcha). Use it from the Team screen.,Fait évoluer certains Pokémon : Poltchageist (Théffroyable). À utiliser depuis l'écran Équipe.,Hace evolucionar a ciertos Pokémon: Poltchageist (Sinistcha). Úsalo desde la pantalla Equipo.,Lässt bestimmte Pokémon entwickeln: Mortcha (Fatalitcha). Im Team-Bildschirm einsetzbar.,Fa evolvere alcuni Pokémon: Poltchageist (Sinistcha). Usala dalla schermata Squadra.,Faz evoluir certos Pokémon: Poltchageist (Sinistcha). Usa-a no ecrã Equipa.,Faz certos Pokémon evoluírem: Poltchageist (Sinistcha). Use na tela Equipe.,特定のポケモンを進化させる：チャデス（ヤバソチャ）。「手持ち」画面で使う。,특정 포켓몬을 진화시킨다: 차데스(그우린차). 팀 화면에서 사용한다.,让特定的宝可梦进化：斯魔茶（来悲粗茶）。在队伍画面中使用。
 itemDesc.metal-alloy,Makes certain Pokémon evolve: Duraludon (Archaludon). Use it from the Team screen.,Fait évoluer certains Pokémon : Duralugon (Pondralugon). À utiliser depuis l'écran Équipe.,Hace evolucionar a ciertos Pokémon: Duraludon (Archaludon). Úsalo desde la pantalla Equipo.,Lässt bestimmte Pokémon entwickeln: Duraludon (Briduradon). Im Team-Bildschirm einsetzbar.,Fa evolvere alcuni Pokémon: Duraludon (Archaludon). Usala dalla schermata Squadra.,Faz evoluir certos Pokémon: Duraludon (Archaludon). Usa-a no ecrã Equipa.,Faz certos Pokémon evoluírem: Duraludon (Archaludon). Use na tela Equipe.,特定のポケモンを進化させる：ジュラルドン（ブリジュラス）。「手持ち」画面で使う。,특정 포켓몬을 진화시킨다: 두랄루돈(브리두라스). 팀 화면에서 사용한다.,让特定的宝可梦进化：铝钢龙（铝钢桥龙）。在队伍画面中使用。
+ui.battle.mega,MEGA,MÉGA,MEGA,MEGA,MEGA,MEGA,MEGA,メガシンカ,메가진화,超级进化
+ui.battle.megaTitle,Mega Evolution,Méga-Évolution,Megaevolución,Mega-Entwicklung,Megaevoluzione,Mega Evolução,Mega Evolução,メガシンカ,메가진화,超级进化
+ui.battle.megaPick,Which Mega Evolution for {name}?,Quelle Méga-Évolution pour {name} ?,¿Qué megaevolución para {name}?,Welche Mega-Entwicklung für {name}?,Quale Megaevoluzione per {name}?,Que Mega Evolução para {name}?,Qual Mega Evolução para {name}?,{name}のメガシンカを選ぶ,{name}의 메가진화를 고르세요,选择{name}的超级进化
+ui.battle.megaOnce,One Mega Evolution per battle: it lasts until the battle ends.,Une seule Méga-Évolution par combat : elle dure jusqu’à la fin du combat.,Una megaevolución por combate: dura hasta que acaba el combate.,Eine Mega-Entwicklung pro Kampf: Sie hält bis zum Kampfende.,Una Megaevoluzione per lotta: dura fino alla fine della lotta.,Uma Mega Evolução por batalha: dura até ao fim da batalha.,Uma Mega Evolução por batalha: dura até o fim da batalha.,メガシンカは1回のバトルに1度だけ。バトルが終わるまで続く。,메가진화는 배틀당 한 번. 배틀이 끝날 때까지 유지된다.,每场对战只能超级进化一次，效果持续到对战结束。
+ui.battle.type,TYPE ({left}),TYPE ({left}),TIPO ({left}),TYP ({left}),TIPO ({left}),TIPO ({left}),TIPO ({left}),タイプ（{left}）,타입 ({left}),属性（{left}）
+ui.battle.typeTitle,{name}’s type,Type de {name},Tipo de {name},Typ von {name},Tipo di {name},Tipo de {name},Tipo de {name},{name}のタイプ,{name}의 타입,{name}的属性
+ui.battle.typeHint,All its dice take the type chosen. Changes left this battle: {left}.,Tous ses dés prennent le type choisi. Changements restants ce combat : {left}.,Todos sus dados toman el tipo elegido. Cambios restantes en este combate: {left}.,Alle Würfel nehmen den gewählten Typ an. Verbleibende Wechsel in diesem Kampf: {left}.,Tutti i suoi dadi prendono il tipo scelto. Cambi rimasti in questa lotta: {left}.,Todos os dados ficam com o tipo escolhido. Mudanças restantes nesta batalha: {left}.,Todos os dados ficam com o tipo escolhido. Mudanças restantes nesta batalha: {left}.,ダイスがすべて選んだタイプになる。このバトルの残り：{left}回,모든 주사위가 고른 타입이 된다. 이번 배틀 남은 횟수: {left},所有骰子都会变成所选属性。本场对战剩余次数：{left}
+ui.log.megaEvolved,{name} Mega Evolved into {mega}!,{name} méga-évolue en {mega} !,¡{name} megaevoluciona en {mega}!,{name} mega-entwickelt sich zu {mega}!,{name} si megaevolve in {mega}!,{name} Mega Evoluiu para {mega}!,{name} Mega Evoluiu para {mega}!,{name}は{mega}にメガシンカした！,{name}은(는) {mega}(으)로 메가진화했다!,{name}超级进化成了{mega}！
+ui.log.typeChange,{name} became {type} type!,{name} devient de type {type} !,¡{name} pasa a ser de tipo {type}!,{name} wird zum Typ {type}!,{name} diventa di tipo {type}!,{name} passou a ser do tipo {type}!,{name} virou do tipo {type}!,{name}は{type}タイプになった！,{name}은(는) {type} 타입이 되었다!,{name}变成了{type}属性！
+ui.sheet.msMega,Mega Evolves in battle:,Méga-évolue en combat :,Megaevoluciona en combate:,Mega-Entwicklung im Kampf:,Si megaevolve in lotta:,Mega Evolui em batalha:,Mega Evolui em batalha:,バトルでメガシンカ：,배틀에서 메가진화:,对战中超级进化：
+ui.sheet.megaNote,"Once per battle, from the MEGA button: +1 die until the battle ends.","Une fois par combat, avec le bouton MÉGA : +1 dé jusqu’à la fin du combat.","Una vez por combate, con el botón MEGA: +1 dado hasta el final del combate.","Einmal pro Kampf, über die MEGA-Taste: +1 Würfel bis zum Kampfende.","Una volta per lotta, con il pulsante MEGA: +1 dado fino alla fine della lotta.","Uma vez por batalha, com o botão MEGA: +1 dado até ao fim da batalha.","Uma vez por batalha, com o botão MEGA: +1 dado até o fim da batalha.",バトルごとに1回、メガシンカボタンで：バトルが終わるまでダイス+1。,"배틀마다 한 번, 메가진화 버튼으로: 배틀이 끝날 때까지 주사위 +1.",每场对战一次，按超级进化按钮：对战结束前骰子+1。
+ui.sheet.lowHpForm,Below half HP in battle it changes form: one {from} die becomes a {to} die.,"Sous la moitié de ses PV en combat, il change de forme : un dé {from} devient un dé {to}.",Con menos de la mitad de PS en combate cambia de forma: un dado {from} pasa a ser un dado {to}.,Unter halben KP ändert es im Kampf seine Form: Ein {from}-Würfel wird ein {to}-Würfel.,Sotto metà PS in lotta cambia forma: un dado {from} diventa un dado {to}.,Abaixo de metade dos PS em batalha muda de forma: um dado {from} passa a dado {to}.,Abaixo de metade dos PS em batalha muda de forma: um dado {from} vira um dado {to}.,バトルでHPが半分を切るとすがたが変わる：{from}ダイス1個が{to}ダイスになる。,배틀에서 HP가 절반 아래면 모습이 바뀐다: {from} 주사위 1개가 {to} 주사위가 된다.,对战中HP低于一半时改变样子：一颗{from}骰子变成{to}骰子。
+ui.sheet.choiceForm,"In battle, the TYPE button turns it and all its dice into another type ({n} per battle).","En combat, le bouton TYPE change son type et celui de tous ses dés ({n} par combat).","En combate, el botón TIPO cambia su tipo y el de todos sus dados ({n} por combate).",Im Kampf ändert die TYP-Taste seinen Typ und den aller Würfel ({n} pro Kampf).,"In lotta, il pulsante TIPO cambia il suo tipo e quello di tutti i dadi ({n} per lotta).","Em batalha, o botão TIPO muda o tipo dele e de todos os dados ({n} por batalha).","Em batalha, o botão TIPO muda o tipo dele e de todos os dados ({n} por batalha).",バトルではタイプボタンで自分とダイスすべてのタイプを変えられる（1回のバトルに{n}回）。,배틀에서 타입 버튼으로 자신과 모든 주사위의 타입을 바꾼다 (배틀당 {n}번).,对战中按属性按钮可改变自身及所有骰子的属性（每场对战{n}次）。
+ui.hist.megaEvolved,Mega Evolved into {mega},méga-évolue en {mega},megaevoluciona en {mega},mega-entwickelt sich zu {mega},si megaevolve in {mega},Mega Evoluiu para {mega},Mega Evoluiu para {mega},{mega}にメガシンカ,{mega}(으)로 메가진화,超级进化成了{mega}
+ui.hist.typeChange,became {type} type,devient de type {type},pasa a ser de tipo {type},wird zum Typ {type},diventa di tipo {type},passou a ser do tipo {type},virou do tipo {type},{type}タイプになった,{type} 타입이 되었다,变成了{type}属性
+ui.battle.gmax,G-MAX,GIGAMAX,GIGAMAX,GIGADYNAMAX,GIGAMAX,GIGAMAX,GIGAMAX,キョダイマックス,거다이맥스,超极巨化
+ui.battle.primal,PRIMAL,PRIMO,PRIMIGENIO,PROTO,ARCHEO,PRIMITIVO,PRIMITIVO,ゲンシカイキ,원시회귀,原始回归
+ui.battle.ultra,ULTRA BURST,ULTRA-EXPLOSION,ULTRAEXPLOSIÓN,ULTRA-BURST,ULTRAESPLOSIONE,ULTRAEXPLOSÃO,ULTRAEXPLOSÃO,ウルトラバースト,울트라버스트,究极爆发
+ui.battle.gmaxHint.one,+1 die for its next turn. One Mega Evolution or Gigantamax per battle.,+1 dé pour son prochain tour. Une seule Méga-Évolution ou Gigamax par combat.,+1 dado para su próximo turno. Una megaevolución o gigamax por combate.,+1 Würfel für seine nächste Runde. Eine Mega-Entwicklung oder Gigadynamaximierung pro Kampf.,+1 dado per il suo prossimo turno. Una Megaevoluzione o Gigamax per lotta.,+1 dado no próximo turno. Uma Mega Evolução ou Gigantamax por batalha.,+1 dado no próximo turno dele. Uma Mega Evolução ou Gigantamax por batalha.,次の自分のターンのあいだダイス+1。メガシンカかキョダイマックスは1回のバトルに1度だけ。,다음 자신의 턴 동안 주사위 +1. 메가진화나 거다이맥스는 배틀당 한 번.,己方下一个回合骰子+1。每场对战只能超级进化或超极巨化一次。
+ui.battle.gmaxHint.other,+1 die for {n} of its turns. One Mega Evolution or Gigantamax per battle.,+1 dé pendant {n} de ses tours. Une seule Méga-Évolution ou Gigamax par combat.,+1 dado durante {n} de sus turnos. Una megaevolución o gigamax por combate.,+1 Würfel für {n} seiner Runden. Eine Mega-Entwicklung oder Gigadynamaximierung pro Kampf.,+1 dado per {n} dei suoi turni. Una Megaevoluzione o Gigamax per lotta.,+1 dado durante {n} dos seus turnos. Uma Mega Evolução ou Gigantamax por batalha.,+1 dado durante {n} turnos dele. Uma Mega Evolução ou Gigantamax por batalha.,自分のターン{n}回のあいだダイス+1。メガシンカかキョダイマックスは1回のバトルに1度だけ。,자신의 턴 {n}번 동안 주사위 +1. 메가진화나 거다이맥스는 배틀당 한 번.,己方{n}个回合内骰子+1。每场对战只能超级进化或超极巨化一次。
+ui.log.gmax,{name} Gigantamaxed!,{name} se Gigamaxe !,¡{name} se ha gigamaxizado!,{name} gigadynamaximiert sich!,{name} si è Gigamaxizzato!,{name} Gigantamaxizou!,{name} Gigantamaxizou!,{name}はキョダイマックスした！,{name}은(는) 거다이맥스했다!,{name}超极巨化了！
+ui.log.gmaxEnd,{name} returned to its normal size!,{name} reprend sa taille normale !,¡{name} ha vuelto a su tamaño normal!,{name} hat wieder seine normale Größe!,{name} è tornato alle dimensioni normali!,{name} voltou ao tamanho normal!,{name} voltou ao tamanho normal!,{name}は元の大きさに戻った！,{name}은(는) 원래 크기로 돌아왔다!,{name}恢复了原来的大小！
+ui.log.primal,{name} underwent Primal Reversion!,{name} fait sa Primo-Résurgence !,¡{name} ha experimentado una regresión primigenia!,{name} durchläuft eine Protomorphose!,{name} subisce l’Archeorisveglio!,{name} passou por uma Regressão Primitiva!,{name} passou por uma Regressão Primitiva!,{name}はゲンシカイキした！,{name}은(는) 원시회귀했다!,{name}原始回归了！
+ui.log.ultra,{name} Ultra Burst into {mega}!,{name} se transforme en {mega} !,¡{name} se ha transformado en {mega}!,{name} wird zu {mega}!,{name} diventa {mega}!,{name} transformou-se em {mega}!,{name} se transformou em {mega}!,{name}は{mega}になった！,{name}은(는) {mega}(이)가 되었다!,{name}变成了{mega}！
+ui.log.formChanged,{name} changed form!,{name} change de forme !,¡{name} ha cambiado de forma!,{name} hat seine Form geändert!,{name} ha cambiato forma!,{name} mudou de forma!,{name} mudou de forma!,{name}のすがたが変わった！,{name}의 모습이 바뀌었다!,{name}改变了样子！
+ui.log.formBack,{name} went back to its usual form!,{name} reprend sa forme habituelle !,¡{name} ha vuelto a su forma habitual!,{name} hat wieder seine übliche Form!,{name} è tornato alla forma abituale!,{name} voltou à forma habitual!,{name} voltou à forma de sempre!,{name}は元のすがたに戻った！,{name}은(는) 원래 모습으로 돌아왔다!,{name}恢复了原来的样子！
+ui.hist.gmax,Gigantamaxed,se Gigamaxe,se ha gigamaxizado,gigadynamaximiert sich,si è Gigamaxizzato,Gigantamaxizou,Gigantamaxizou,キョダイマックスした,거다이맥스했다,超极巨化了
+ui.hist.gmaxEnd,returned to its normal size,reprend sa taille normale,ha vuelto a su tamaño normal,hat wieder seine normale Größe,è tornato alle dimensioni normali,voltou ao tamanho normal,voltou ao tamanho normal,元の大きさに戻った,원래 크기로 돌아왔다,恢复了原来的大小
+ui.hist.primal,underwent Primal Reversion,fait sa Primo-Résurgence,ha experimentado una regresión primigenia,durchläuft eine Protomorphose,subisce l’Archeorisveglio,passou por uma Regressão Primitiva,passou por uma Regressão Primitiva,ゲンシカイキした,원시회귀했다,原始回归了
+ui.hist.ultra,Ultra Burst into {mega},se transforme en {mega},se ha transformado en {mega},wird zu {mega},diventa {mega},transformou-se em {mega},se transformou em {mega},{mega}になった,{mega}(이)가 되었다,变成了{mega}
+ui.hist.formChanged,changed form,change de forme,ha cambiado de forma,hat seine Form geändert,ha cambiato forma,mudou de forma,mudou de forma,すがたが変わった,모습이 바뀌었다,改变了样子
+ui.hist.formBack,went back to its usual form,reprend sa forme habituelle,ha vuelto a su forma habitual,hat wieder seine übliche Form,è tornato alla forma abituale,voltou à forma habitual,voltou à forma de sempre,元のすがたに戻った,원래 모습으로 돌아왔다,恢复了原来的样子
+ui.sheet.msPrimal,Primal Reversion in battle:,Primo-Résurgence en combat :,Regresión primigenia en combate:,Protomorphose im Kampf:,Archeorisveglio in lotta:,Regressão Primitiva em batalha:,Regressão Primitiva em batalha:,バトルでゲンシカイキ：,배틀에서 원시회귀:,对战中原始回归：
+ui.sheet.msUltra,Ultra Burst in battle:,Ultra-Explosion en combat :,Ultraexplosión en combate:,Ultra-Burst im Kampf:,Ultraesplosione in lotta:,Ultraexplosão em batalha:,Ultraexplosão em batalha:,バトルでウルトラバースト：,배틀에서 울트라버스트:,对战中究极爆发：
+ui.sheet.gmaxNote.one,Can Gigantamax in battle: +1 {to} die for its next turn (one Mega Evolution or Gigantamax per battle).,Peut se Gigamaxer en combat : +1 dé {to} pour son prochain tour (une Méga-Évolution ou Gigamax par combat).,Puede gigamaxizarse en combate: +1 dado {to} para su próximo turno (una megaevolución o gigamax por combate).,Kann sich im Kampf gigadynamaximieren: +1 {to}-Würfel für seine nächste Runde (eine Mega-Entwicklung oder Gigadynamaximierung pro Kampf).,Può Gigamaxizzarsi in lotta: +1 dado {to} per il suo prossimo turno (una Megaevoluzione o Gigamax per lotta).,Pode Gigantamaxizar em batalha: +1 dado {to} no próximo turno (uma Mega Evolução ou Gigantamax por batalha).,Pode Gigantamaxizar em batalha: +1 dado {to} no próximo turno dele (uma Mega Evolução ou Gigantamax por batalha).,バトルでキョダイマックスできる：次の自分のターンのあいだ{to}ダイス+1（メガシンカかキョダイマックスは1回のバトルに1度だけ）。,배틀에서 거다이맥스할 수 있다: 다음 자신의 턴 동안 {to} 주사위 +1 (메가진화나 거다이맥스는 배틀당 한 번).,对战中可超极巨化：己方下一个回合{to}骰子+1（每场对战只能超级进化或超极巨化一次）。
+ui.sheet.gmaxNote.other,Can Gigantamax in battle: +1 {to} die for {n} of its turns (one Mega Evolution or Gigantamax per battle).,Peut se Gigamaxer en combat : +1 dé {to} pendant {n} de ses tours (une Méga-Évolution ou Gigamax par combat).,Puede gigamaxizarse en combate: +1 dado {to} durante {n} de sus turnos (una megaevolución o gigamax por combate).,Kann sich im Kampf gigadynamaximieren: +1 {to}-Würfel für {n} seiner Runden (eine Mega-Entwicklung oder Gigadynamaximierung pro Kampf).,Può Gigamaxizzarsi in lotta: +1 dado {to} per {n} dei suoi turni (una Megaevoluzione o Gigamax per lotta).,Pode Gigantamaxizar em batalha: +1 dado {to} durante {n} dos seus turnos (uma Mega Evolução ou Gigantamax por batalha).,Pode Gigantamaxizar em batalha: +1 dado {to} durante {n} turnos dele (uma Mega Evolução ou Gigantamax por batalha).,バトルでキョダイマックスできる：自分のターン{n}回のあいだ{to}ダイス+1（メガシンカかキョダイマックスは1回のバトルに1度だけ）。,배틀에서 거다이맥스할 수 있다: 자신의 턴 {n}번 동안 {to} 주사위 +1 (메가진화나 거다이맥스는 배틀당 한 번).,对战中可超极巨化：己方{n}个回合内{to}骰子+1（每场对战只能超级进化或超极巨化一次）。
+# --- Pokémon forms (generated by `pnpm seed-forms` from PokeAPI),,,,,,,,,,
+pokemon.10007,Giratina,Giratina,Giratina,Giratina,Giratina,Giratina,Giratina,ギラティナ,기라티나,骑拉帝纳
+pokemon.10017,Darmanitan,Darumacho,Darmanitan,Flampivian,Darmanitan,Darmanitan,Darmanitan,ヒヒダルマ,불비달마,达摩狒狒
+pokemon.10033,Mega Venusaur,Méga-Florizarre,Mega-Venusaur,Mega-Bisaflor,Mega Venusaur,Mega Venusaur,Mega Venusaur,メガフシギバナ,메가이상해꽃,超级妙蛙花
+pokemon.10034,Mega Charizard X,Méga-Dracaufeu X,Mega-Charizard X,Mega-Glurak X,Mega Charizard X,Mega Charizard X,Mega Charizard X,メガリザードンＸ,메가리자몽X,超级喷火龙Ｘ
+pokemon.10035,Mega Charizard Y,Méga-Dracaufeu Y,Mega-Charizard Y,Mega-Glurak Y,Mega Charizard Y,Mega Charizard Y,Mega Charizard Y,メガリザードンＹ,메가리자몽Y,超级喷火龙Ｙ
+pokemon.10036,Mega Blastoise,Méga-Tortank,Mega-Blastoise,Mega-Turtok,Mega Blastoise,Mega Blastoise,Mega Blastoise,メガカメックス,메가거북왕,超级水箭龟
+pokemon.10037,Mega Alakazam,Méga-Alakazam,Mega-Alakazam,Mega-Simsala,Mega Alakazam,Mega Alakazam,Mega Alakazam,メガフーディン,메가후딘,超级胡地
+pokemon.10038,Mega Gengar,Méga-Ectoplasma,Mega-Gengar,Mega-Gengar,Mega Gengar,Mega Gengar,Mega Gengar,メガゲンガー,메가팬텀,超级耿鬼
+pokemon.10039,Mega Kangaskhan,Méga-Kangourex,Mega-Kangaskhan,Mega-Kangama,Mega Kangaskhan,Mega Kangaskhan,Mega Kangaskhan,メガガルーラ,메가캥카,超级袋兽
+pokemon.10040,Mega Pinsir,Méga-Scarabrute,Mega-Pinsir,Mega-Pinsir,Mega Pinsir,Mega Pinsir,Mega Pinsir,メガカイロス,메가쁘사이저,超级凯罗斯
+pokemon.10041,Mega Gyarados,Méga-Léviator,Mega-Gyarados,Mega-Garados,Mega Gyarados,Mega Gyarados,Mega Gyarados,メガギャラドス,메가갸라도스,超级暴鲤龙
+pokemon.10042,Mega Aerodactyl,Méga-Ptéra,Mega-Aerodactyl,Mega-Aerodactyl,Mega Aerodactyl,Mega Aerodactyl,Mega Aerodactyl,メガプテラ,메가프테라,超级化石翼龙
+pokemon.10043,Mega Mewtwo X,Méga-Mewtwo X,Mega-Mewtwo X,Mega-Mewtu X,Mega Mewtwo X,Mega Mewtwo X,Mega Mewtwo X,メガミュウツーＸ,메가뮤츠X,超级超梦Ｘ
+pokemon.10044,Mega Mewtwo Y,Méga-Mewtwo Y,Mega-Mewtwo Y,Mega-Mewtu Y,Mega Mewtwo Y,Mega Mewtwo Y,Mega Mewtwo Y,メガミュウツーＹ,메가뮤츠Y,超级超梦Ｙ
+pokemon.10045,Mega Ampharos,Méga-Pharamp,Mega-Ampharos,Mega-Ampharos,Mega Ampharos,Mega Ampharos,Mega Ampharos,メガデンリュウ,메가전룡,超级电龙
+pokemon.10046,Mega Scizor,Méga-Cizayox,Mega-Scizor,Mega-Scherox,Mega Scizor,Mega Scizor,Mega Scizor,メガハッサム,메가핫삼,超级巨钳螳螂
+pokemon.10047,Mega Heracross,Méga-Scarhino,Mega-Heracross,Mega-Skaraborn,Mega Heracross,Mega Heracross,Mega Heracross,メガヘラクロス,메가헤라크로스,超级赫拉克罗斯
+pokemon.10048,Mega Houndoom,Méga-Démolosse,Mega-Houndoom,Mega-Hundemon,Mega Houndoom,Mega Houndoom,Mega Houndoom,メガヘルガー,메가헬가,超级黑鲁加
+pokemon.10049,Mega Tyranitar,Méga-Tyranocif,Mega-Tyranitar,Mega-Despotar,Mega Tyranitar,Mega Tyranitar,Mega Tyranitar,メガバンギラス,메가마기라스,超级班基拉斯
+pokemon.10050,Mega Blaziken,Méga-Braségali,Mega-Blaziken,Mega-Lohgock,Mega Blaziken,Mega Blaziken,Mega Blaziken,メガバシャーモ,메가번치코,超级火焰鸡
+pokemon.10051,Mega Gardevoir,Méga-Gardevoir,Mega-Gardevoir,Mega-Guardevoir,Mega Gardevoir,Mega Gardevoir,Mega Gardevoir,メガサーナイト,메가가디안,超级沙奈朵
+pokemon.10052,Mega Mawile,Méga-Mysdibule,Mega-Mawile,Mega-Flunkifer,Mega Mawile,Mega Mawile,Mega Mawile,メガクチート,메가입치트,超级大嘴娃
+pokemon.10053,Mega Aggron,Méga-Galeking,Mega-Aggron,Mega-Stolloss,Mega Aggron,Mega Aggron,Mega Aggron,メガボスゴドラ,메가보스로라,超级波士可多拉
+pokemon.10054,Mega Medicham,Méga-Charmina,Mega-Medicham,Mega-Meditalis,Mega Medicham,Mega Medicham,Mega Medicham,メガチャーレム,메가요가램,超级恰雷姆
+pokemon.10055,Mega Manectric,Méga-Élecsprint,Mega-Manectric,Mega-Voltenso,Mega Manectric,Mega Manectric,Mega Manectric,メガライボルト,메가썬더볼트,超级雷电兽
+pokemon.10056,Mega Banette,Méga-Branette,Mega-Banette,Mega-Banette,Mega Banette,Mega Banette,Mega Banette,メガジュペッタ,메가다크펫,超级诅咒娃娃
+pokemon.10057,Mega Absol,Méga-Absol,Mega-Absol,Mega-Absol,Mega Absol,Mega Absol,Mega Absol,メガアブソル,메가앱솔,超级阿勃梭鲁
+pokemon.10058,Mega Garchomp,Méga-Carchacrok,Mega-Garchomp,Mega-Knakrack,Mega Garchomp,Mega Garchomp,Mega Garchomp,メガガブリアス,메가한카리아스,超级烈咬陆鲨
+pokemon.10059,Mega Lucario,Méga-Lucario,Mega-Lucario,Mega-Lucario,Mega Lucario,Mega Lucario,Mega Lucario,メガルカリオ,메가루카리오,超级路卡利欧
+pokemon.10060,Mega Abomasnow,Méga-Blizzaroi,Mega-Abomasnow,Mega-Rexblisar,Mega Abomasnow,Mega Abomasnow,Mega Abomasnow,メガユキノオー,메가눈설왕,超级暴雪王
+pokemon.10062,Mega Latias,Méga-Latias,Mega-Latias,Mega-Latias,Mega Latias,Mega Latias,Mega Latias,メガラティアス,메가라티아스,超级拉帝亚斯
+pokemon.10063,Mega Latios,Méga-Latios,Mega-Latios,Mega-Latios,Mega Latios,Mega Latios,Mega Latios,メガラティオス,메가라티오스,超级拉帝欧斯
+pokemon.10064,Mega Swampert,Méga-Laggron,Mega-Swampert,Mega-Sumpex,Mega Swampert,Mega Swampert,Mega Swampert,メガラグラージ,메가대짱이,超级巨沼怪
+pokemon.10065,Mega Sceptile,Méga-Jungko,Mega-Sceptile,Mega-Gewaldro,Mega Sceptile,Mega Sceptile,Mega Sceptile,メガジュカイン,메가나무킹,超级蜥蜴王
+pokemon.10066,Mega Sableye,Méga-Ténéfix,Mega-Sableye,Mega-Zobiris,Mega Sableye,Mega Sableye,Mega Sableye,メガヤミラミ,메가깜까미,超级勾魂眼
+pokemon.10067,Mega Altaria,Méga-Altaria,Mega-Altaria,Mega-Altaria,Mega Altaria,Mega Altaria,Mega Altaria,メガチルタリス,메가파비코리,超级七夕青鸟
+pokemon.10068,Mega Gallade,Méga-Gallame,Mega-Gallade,Mega-Galagladi,Mega Gallade,Mega Gallade,Mega Gallade,メガエルレイド,메가엘레이드,超级艾路雷朵
+pokemon.10069,Mega Audino,Méga-Nanméouïe,Mega-Audino,Mega-Ohrdoch,Mega Audino,Mega Audino,Mega Audino,メガタブンネ,메가다부니,超级差不多娃娃
+pokemon.10070,Mega Sharpedo,Méga-Sharpedo,Mega-Sharpedo,Mega-Tohaido,Mega Sharpedo,Mega Sharpedo,Mega Sharpedo,メガサメハダー,메가샤크니아,超级巨牙鲨
+pokemon.10071,Mega Slowbro,Méga-Flagadoss,Mega-Slowbro,Mega-Lahmus,Mega Slowbro,Mega Slowbro,Mega Slowbro,メガヤドラン,메가야도란,超级呆壳兽
+pokemon.10072,Mega Steelix,Méga-Steelix,Mega-Steelix,Mega-Stahlos,Mega Steelix,Mega Steelix,Mega Steelix,メガハガネール,메가강철톤,超级大钢蛇
+pokemon.10073,Mega Pidgeot,Méga-Roucarnage,Mega-Pidgeot,Mega-Tauboss,Mega Pidgeot,Mega Pidgeot,Mega Pidgeot,メガピジョット,메가피죤투,超级大比鸟
+pokemon.10074,Mega Glalie,Méga-Oniglali,Mega-Glalie,Mega-Firnontor,Mega Glalie,Mega Glalie,Mega Glalie,メガオニゴーリ,메가얼음귀신,超级冰鬼护
+pokemon.10075,Mega Diancie,Méga-Diancie,Mega-Diancie,Mega-Diancie,Mega Diancie,Mega Diancie,Mega Diancie,メガディアンシー,메가디안시,超级蒂安希
+pokemon.10076,Mega Metagross,Méga-Métalosse,Mega-Metagross,Mega-Metagross,Mega Metagross,Mega Metagross,Mega Metagross,メガメタグロス,메가메타그로스,超级巨金怪
+pokemon.10077,Primal Kyogre,Primo-Kyogre,Kyogre Primigenio,Proto-Kyogre,Primal Kyogre,Primal Kyogre,Primal Kyogre,ゲンシカイオーガ,원시가이오가,原始盖欧卡
+pokemon.10078,Primal Groudon,Primo-Groudon,Groudon Primigenio,Proto-Groudon,Primal Groudon,Primal Groudon,Primal Groudon,ゲンシグラードン,원시그란돈,原始固拉多
+pokemon.10079,Mega Rayquaza,Méga-Rayquaza,Mega-Rayquaza,Mega-Rayquaza,Mega Rayquaza,Mega Rayquaza,Mega Rayquaza,メガレックウザ,메가레쿠쟈,超级烈空坐
+pokemon.10087,Mega Camerupt,Méga-Camérupt,Mega-Camerupt,Mega-Camerupt,Mega Camerupt,Mega Camerupt,Mega Camerupt,メガバクーダ,메가폭타,超级喷火驼
+pokemon.10088,Mega Lopunny,Méga-Lockpin,Mega-Lopunny,Mega-Schlapor,Mega Lopunny,Mega Lopunny,Mega Lopunny,メガミミロップ,메가이어롭,超级长耳兔
+pokemon.10089,Mega Salamence,Méga-Drattak,Mega-Salamence,Mega-Brutalanda,Mega Salamence,Mega Salamence,Mega Salamence,メガボーマンダ,메가보만다,超级暴飞龙
+pokemon.10090,Mega Beedrill,Méga-Dardargnan,Mega-Beedrill,Mega-Bibor,Mega Beedrill,Mega Beedrill,Mega Beedrill,メガスピアー,메가독침붕,超级大针蜂
+pokemon.10091,Alolan Rattata,Rattata d’Alola,Rattata de Alola,Alola Rattfratz,Alolan Rattata,Alolan Rattata,Alolan Rattata,コラッタ（アローラのすがた）,꼬렛(알로라의 모습),小拉达（阿罗拉的样子）
+pokemon.10092,Alolan Raticate,Rattatac d’Alola,Raticate de Alola,Alola Rattikarl,Alolan Raticate,Alolan Raticate,Alolan Raticate,ラッタ（アローラのすがた）,레트라(알로라의 모습),拉达（阿罗拉的样子）
+pokemon.10100,Alolan Raichu,Raichu d’Alola,Raichu de Alola,Alola Raichu,Alolan Raichu,Alolan Raichu,Alolan Raichu,ライチュウ（アローラのすがた）,라이츄(알로라의 모습),雷丘（阿罗拉的样子）
+pokemon.10101,Alolan Sandshrew,Sabelette d’Alola,Sandshrew de Alola,Alola Sandan,Alolan Sandshrew,Alolan Sandshrew,Alolan Sandshrew,サンド（アローラのすがた）,모래두지(알로라의 모습),穿山鼠（阿罗拉的样子）
+pokemon.10102,Alolan Sandslash,Sablaireau d’Alola,Sandslash de Alola,Alola Sandamer,Alolan Sandslash,Alolan Sandslash,Alolan Sandslash,サンドパン（アローラのすがた）,고지(알로라의 모습),穿山王（阿罗拉的样子）
+pokemon.10103,Alolan Vulpix,Goupix d’Alola,Vulpix de Alola,Alola Vulpix,Alolan Vulpix,Alolan Vulpix,Alolan Vulpix,ロコン（アローラのすがた）,식스테일(알로라의 모습),六尾（阿罗拉的样子）
+pokemon.10104,Alolan Ninetales,Feunard d’Alola,Ninetales de Alola,Alola Vulnona,Alolan Ninetales,Alolan Ninetales,Alolan Ninetales,キュウコン（アローラのすがた）,나인테일(알로라의 모습),九尾（阿罗拉的样子）
+pokemon.10105,Alolan Diglett,Taupiqueur d’Alola,Diglett de Alola,Alola Digda,Alolan Diglett,Alolan Diglett,Alolan Diglett,ディグダ（アローラのすがた）,디그다(알로라의 모습),地鼠（阿罗拉的样子）
+pokemon.10106,Alolan Dugtrio,Triopikeur d’Alola,Dugtrio de Alola,Alola Digdri,Alolan Dugtrio,Alolan Dugtrio,Alolan Dugtrio,ダグトリオ（アローラのすがた）,닥트리오(알로라의 모습),三地鼠（阿罗拉的样子）
+pokemon.10107,Alolan Meowth,Miaouss d’Alola,Meowth de Alola,Alola Mauzi,Alolan Meowth,Alolan Meowth,Alolan Meowth,ニャース（アローラのすがた）,나옹(알로라의 모습),喵喵（阿罗拉的样子）
+pokemon.10108,Alolan Persian,Persian d’Alola,Persian de Alola,Alola Snobilikat,Alolan Persian,Alolan Persian,Alolan Persian,ペルシアン（アローラのすがた）,페르시온(알로라의 모습),猫老大（阿罗拉的样子）
+pokemon.10109,Alolan Geodude,Racaillou d’Alola,Geodude de Alola,Alola Kleinstein,Alolan Geodude,Alolan Geodude,Alolan Geodude,イシツブテ（アローラのすがた）,꼬마돌(알로라의 모습),小拳石（阿罗拉的样子）
+pokemon.10110,Alolan Graveler,Gravalanch d’Alola,Graveler de Alola,Alola Georok,Alolan Graveler,Alolan Graveler,Alolan Graveler,ゴローン（アローラのすがた）,데구리(알로라의 모습),隆隆石（阿罗拉的样子）
+pokemon.10111,Alolan Golem,Grolem d’Alola,Golem de Alola,Alola Geowaz,Alolan Golem,Alolan Golem,Alolan Golem,ゴローニャ（アローラのすがた）,딱구리(알로라의 모습),隆隆岩（阿罗拉的样子）
+pokemon.10112,Alolan Grimer,Tadmorv d’Alola,Grimer de Alola,Alola Sleima,Alolan Grimer,Alolan Grimer,Alolan Grimer,ベトベター（アローラのすがた）,질퍽이(알로라의 모습),臭泥（阿罗拉的样子）
+pokemon.10113,Alolan Muk,Grotadmorv d’Alola,Muk de Alola,Alola Sleimok,Alolan Muk,Alolan Muk,Alolan Muk,ベトベトン（アローラのすがた）,질뻐기(알로라의 모습),臭臭泥（阿罗拉的样子）
+pokemon.10114,Alolan Exeggutor,Noadkoko d’Alola,Exeggutor de Alola,Alola Kokowei,Alolan Exeggutor,Alolan Exeggutor,Alolan Exeggutor,ナッシー（アローラのすがた）,나시(알로라의 모습),椰蛋树（阿罗拉的样子）
+pokemon.10115,Alolan Marowak,Ossatueur d’Alola,Marowak de Alola,Alola Knogga,Alolan Marowak,Alolan Marowak,Alolan Marowak,ガラガラ（アローラのすがた）,텅구리(알로라의 모습),嘎啦嘎啦（阿罗拉的样子）
+pokemon.10120,Zygarde,Zygarde,Zygarde,Zygarde,Zygarde,Zygarde,Zygarde,ジガルデ,지가르데,基格尔德
+pokemon.10127,Wishiwashi,Froussardine,Wishiwashi,Lusardin,Wishiwashi,Wishiwashi,Wishiwashi,ヨワシ,약어리,弱丁鱼
+pokemon.10136,Minior,Météno,Minior,Meteno,Minior,Minior,Minior,メテノ,메테노,小陨星
+pokemon.10157,Ultra Necrozma,Ultra-Necrozma,Ultra-Necrozma,Ultra-Necrozma,Ultra Necrozma,Ultra Necrozma,Ultra Necrozma,ウルトラネクロズマ,울트라네크로즈마,究极奈克洛兹玛
+pokemon.10161,Galarian Meowth,Miaouss de Galar,Meowth de Galar,Galar Mauzi,Galarian Meowth,Galarian Meowth,Galarian Meowth,ニャース（ガラルのすがた）,나옹(가라르의 모습),喵喵（伽勒尔的样子）
+pokemon.10162,Galarian Ponyta,Ponyta de Galar,Ponyta de Galar,Galar Ponita,Galarian Ponyta,Galarian Ponyta,Galarian Ponyta,ポニータ（ガラルのすがた）,포니타(가라르의 모습),小火马（伽勒尔的样子）
+pokemon.10163,Galarian Rapidash,Galopa de Galar,Rapidash de Galar,Galar Gallopa,Galarian Rapidash,Galarian Rapidash,Galarian Rapidash,ギャロップ（ガラルのすがた）,날쌩마(가라르의 모습),烈焰马（伽勒尔的样子）
+pokemon.10164,Galarian Slowpoke,Ramoloss de Galar,Slowpoke de Galar,Galar Flegmon,Galarian Slowpoke,Galarian Slowpoke,Galarian Slowpoke,ヤドン（ガラルのすがた）,야돈(가라르의 모습),呆呆兽（伽勒尔的样子）
+pokemon.10165,Galarian Slowbro,Flagadoss de Galar,Slowbro de Galar,Galar Lahmus,Galarian Slowbro,Galarian Slowbro,Galarian Slowbro,ヤドラン（ガラルのすがた）,야도란(가라르의 모습),呆壳兽（伽勒尔的样子）
+pokemon.10166,Galarian Farfetch’d,Canarticho de Galar,Farfetch’d de Galar,Galar Porenta,Galarian Farfetch’d,Galarian Farfetch’d,Galarian Farfetch’d,カモネギ（ガラルのすがた）,파오리(가라르의 모습),大葱鸭（伽勒尔的样子）
+pokemon.10167,Galarian Weezing,Smogogo de Galar,Weezing de Galar,Galar Smogmog,Galarian Weezing,Galarian Weezing,Galarian Weezing,マタドガス（ガラルのすがた）,또도가스(가라르의 모습),双弹瓦斯（伽勒尔的样子）
+pokemon.10168,Galarian Mr. Mime,M. Mime de Galar,Mr. Mime de Galar,Galar Pantimos,Galarian Mr. Mime,Galarian Mr. Mime,Galarian Mr. Mime,バリヤード（ガラルのすがた）,마임맨(가라르의 모습),魔墙人偶（伽勒尔的样子）
+pokemon.10169,Galarian Articuno,Artikodin de Galar,Articuno de Galar,Galar Arktos,Galarian Articuno,Galarian Articuno,Galarian Articuno,フリーザー（ガラルのすがた）,프리져(가라르의 모습),急冻鸟（伽勒尔的样子）
+pokemon.10170,Galarian Zapdos,Électhor de Galar,Zapdos de Galar,Galar Zapdos,Galarian Zapdos,Galarian Zapdos,Galarian Zapdos,サンダー（ガラルのすがた）,썬더(가라르의 모습),闪电鸟（伽勒尔的样子）
+pokemon.10171,Galarian Moltres,Sulfura de Galar,Moltres de Galar,Galar Lavados,Galarian Moltres,Galarian Moltres,Galarian Moltres,ファイヤー（ガラルのすがた）,파이어(가라르의 모습),火焰鸟（伽勒尔的样子）
+pokemon.10172,Galarian Slowking,Roigada de Galar,Slowking de Galar,Galar Laschoking,Galarian Slowking,Galarian Slowking,Galarian Slowking,ヤドキング（ガラルのすがた）,야도킹(가라르의 모습),呆呆王（伽勒尔的样子）
+pokemon.10173,Galarian Corsola,Corayon de Galar,Corsola de Galar,Galar Corasonn,Galarian Corsola,Galarian Corsola,Galarian Corsola,サニーゴ（ガラルのすがた）,코산호(가라르의 모습),太阳珊瑚（伽勒尔的样子）
+pokemon.10174,Galarian Zigzagoon,Zigzaton de Galar,Zigzagoon de Galar,Galar Zigzachs,Galarian Zigzagoon,Galarian Zigzagoon,Galarian Zigzagoon,ジグザグマ（ガラルのすがた）,지그제구리(가라르의 모습),蛇纹熊（伽勒尔的样子）
+pokemon.10175,Galarian Linoone,Linéon de Galar,Linoone de Galar,Galar Geradaks,Galarian Linoone,Galarian Linoone,Galarian Linoone,マッスグマ（ガラルのすがた）,직구리(가라르의 모습),直冲熊（伽勒尔的样子）
+pokemon.10176,Galarian Darumaka,Darumarond de Galar,Darumaka de Galar,Galar Flampion,Galarian Darumaka,Galarian Darumaka,Galarian Darumaka,ダルマッカ（ガラルのすがた）,달막화(가라르의 모습),火红不倒翁（伽勒尔的样子）
+pokemon.10177,Galarian Darmanitan,Darumacho de Galar,Darmanitan de Galar,Galar Flampivian,Galarian Darmanitan,Galarian Darmanitan,Galarian Darmanitan,ヒヒダルマ（ガラルのすがた）,불비달마(가라르의 모습),达摩狒狒（伽勒尔的样子）
+pokemon.10178,Galarian Darmanitan,Darumacho de Galar,Darmanitan de Galar,Galar Flampivian,Galarian Darmanitan,Galarian Darmanitan,Galarian Darmanitan,ヒヒダルマ（ガラルのすがた）,불비달마(가라르의 모습),达摩狒狒（伽勒尔的样子）
+pokemon.10179,Galarian Yamask,Tutafeh de Galar,Yamask de Galar,Galar Makabaja,Galarian Yamask,Galarian Yamask,Galarian Yamask,デスマス（ガラルのすがた）,데스마스(가라르의 모습),哭哭面具（伽勒尔的样子）
+pokemon.10180,Galarian Stunfisk,Limonde de Galar,Stunfisk de Galar,Galar Flunschlik,Galarian Stunfisk,Galarian Stunfisk,Galarian Stunfisk,マッギョ（ガラルのすがた）,메더(가라르의 모습),泥巴鱼（伽勒尔的样子）
+pokemon.10195,Gigantamax Venusaur,Florizarre Gigamax,Venusaur Gigamax,Gigadynamax-Bisaflor,Gigantamax Venusaur,Gigantamax Venusaur,Gigantamax Venusaur,フシギバナ（キョダイマックスのすがた）,이상해꽃(거다이맥스의 모습),妙蛙花（超极巨化的样子）
+pokemon.10196,Gigantamax Charizard,Dracaufeu Gigamax,Charizard Gigamax,Gigadynamax-Glurak,Gigantamax Charizard,Gigantamax Charizard,Gigantamax Charizard,リザードン（キョダイマックスのすがた）,리자몽(거다이맥스의 모습),喷火龙（超极巨化的样子）
+pokemon.10197,Gigantamax Blastoise,Tortank Gigamax,Blastoise Gigamax,Gigadynamax-Turtok,Gigantamax Blastoise,Gigantamax Blastoise,Gigantamax Blastoise,カメックス（キョダイマックスのすがた）,거북왕(거다이맥스의 모습),水箭龟（超极巨化的样子）
+pokemon.10198,Gigantamax Butterfree,Papilusion Gigamax,Butterfree Gigamax,Gigadynamax-Smettbo,Gigantamax Butterfree,Gigantamax Butterfree,Gigantamax Butterfree,バタフリー（キョダイマックスのすがた）,버터플(거다이맥스의 모습),巴大蝶（超极巨化的样子）
+pokemon.10199,Gigantamax Pikachu,Pikachu Gigamax,Pikachu Gigamax,Gigadynamax-Pikachu,Gigantamax Pikachu,Gigantamax Pikachu,Gigantamax Pikachu,ピカチュウ（キョダイマックスのすがた）,피카츄(거다이맥스의 모습),皮卡丘（超极巨化的样子）
+pokemon.10200,Gigantamax Meowth,Miaouss Gigamax,Meowth Gigamax,Gigadynamax-Mauzi,Gigantamax Meowth,Gigantamax Meowth,Gigantamax Meowth,ニャース（キョダイマックスのすがた）,나옹(거다이맥스의 모습),喵喵（超极巨化的样子）
+pokemon.10201,Gigantamax Machamp,Mackogneur Gigamax,Machamp Gigamax,Gigadynamax-Machomei,Gigantamax Machamp,Gigantamax Machamp,Gigantamax Machamp,カイリキー（キョダイマックスのすがた）,괴력몬(거다이맥스의 모습),怪力（超极巨化的样子）
+pokemon.10202,Gigantamax Gengar,Ectoplasma Gigamax,Gengar Gigamax,Gigadynamax-Gengar,Gigantamax Gengar,Gigantamax Gengar,Gigantamax Gengar,ゲンガー（キョダイマックスのすがた）,팬텀(거다이맥스의 모습),耿鬼（超极巨化的样子）
+pokemon.10203,Gigantamax Kingler,Krabboss Gigamax,Kingler Gigamax,Gigadynamax-Kingler,Gigantamax Kingler,Gigantamax Kingler,Gigantamax Kingler,キングラー（キョダイマックスのすがた）,킹크랩(거다이맥스의 모습),巨钳蟹（超极巨化的样子）
+pokemon.10204,Gigantamax Lapras,Lokhlass Gigamax,Lapras Gigamax,Gigadynamax-Lapras,Gigantamax Lapras,Gigantamax Lapras,Gigantamax Lapras,ラプラス（キョダイマックスのすがた）,라프라스(거다이맥스의 모습),拉普拉斯（超极巨化的样子）
+pokemon.10205,Gigantamax Eevee,Évoli Gigamax,Eevee Gigamax,Gigadynamax-Evoli,Gigantamax Eevee,Gigantamax Eevee,Gigantamax Eevee,イーブイ（キョダイマックスのすがた）,이브이(거다이맥스의 모습),伊布（超极巨化的样子）
+pokemon.10206,Gigantamax Snorlax,Ronflex Gigamax,Snorlax Gigamax,Gigadynamax-Relaxo,Gigantamax Snorlax,Gigantamax Snorlax,Gigantamax Snorlax,カビゴン（キョダイマックスのすがた）,잠만보(거다이맥스의 모습),卡比兽（超极巨化的样子）
+pokemon.10207,Gigantamax Garbodor,Miasmax Gigamax,Garbodor Gigamax,Gigadynamax-Deponitox,Gigantamax Garbodor,Gigantamax Garbodor,Gigantamax Garbodor,ダストダス（キョダイマックスのすがた）,더스트나(거다이맥스의 모습),灰尘山（超极巨化的样子）
+pokemon.10208,Gigantamax Melmetal,Melmetal Gigamax,Melmetal Gigamax,Gigadynamax-Melmetal,Gigantamax Melmetal,Gigantamax Melmetal,Gigantamax Melmetal,メルメタル（キョダイマックスのすがた）,멜메탈(거다이맥스의 모습),美录梅塔（超极巨化的样子）
+pokemon.10209,Gigantamax Rillaboom,Gorythmic Gigamax,Rillaboom Gigamax,Gigadynamax-Gortrom,Gigantamax Rillaboom,Gigantamax Rillaboom,Gigantamax Rillaboom,ゴリランダー（キョダイマックスのすがた）,고릴타(거다이맥스의 모습),轰擂金刚猩（超极巨化的样子）
+pokemon.10210,Gigantamax Cinderace,Pyrobut Gigamax,Cinderace Gigamax,Gigadynamax-Liberlo,Gigantamax Cinderace,Gigantamax Cinderace,Gigantamax Cinderace,エースバーン（キョダイマックスのすがた）,에이스번(거다이맥스의 모습),闪焰王牌（超极巨化的样子）
+pokemon.10211,Gigantamax Inteleon,Lézargus Gigamax,Inteleon Gigamax,Gigadynamax-Intelleon,Gigantamax Inteleon,Gigantamax Inteleon,Gigantamax Inteleon,インテレオン（キョダイマックスのすがた）,인텔리레온(거다이맥스의 모습),千面避役（超极巨化的样子）
+pokemon.10212,Gigantamax Corviknight,Corvaillus Gigamax,Corviknight Gigamax,Gigadynamax-Krarmor,Gigantamax Corviknight,Gigantamax Corviknight,Gigantamax Corviknight,アーマーガア（キョダイマックスのすがた）,아머까오(거다이맥스의 모습),钢铠鸦（超极巨化的样子）
+pokemon.10213,Gigantamax Orbeetle,Astronelle Gigamax,Orbeetle Gigamax,Gigadynamax-Maritellit,Gigantamax Orbeetle,Gigantamax Orbeetle,Gigantamax Orbeetle,イオルブ（キョダイマックスのすがた）,이올브(거다이맥스의 모습),以欧路普（超极巨化的样子）
+pokemon.10214,Gigantamax Drednaw,Torgamord Gigamax,Drednaw Gigamax,Gigadynamax-Kamalm,Gigantamax Drednaw,Gigantamax Drednaw,Gigantamax Drednaw,カジリガメ（キョダイマックスのすがた）,갈가부기(거다이맥스의 모습),暴噬龟（超极巨化的样子）
+pokemon.10215,Gigantamax Coalossal,Monthracite Gigamax,Coalossal Gigamax,Gigadynamax-Montecarbo,Gigantamax Coalossal,Gigantamax Coalossal,Gigantamax Coalossal,セキタンザン（キョダイマックスのすがた）,석탄산(거다이맥스의 모습),巨炭山（超极巨化的样子）
+pokemon.10216,Gigantamax Flapple,Pomdrapi Gigamax,Flapple Gigamax,Gigadynamax-Drapfel,Gigantamax Flapple,Gigantamax Flapple,Gigantamax Flapple,アップリュー（キョダイマックスのすがた）,애프룡(거다이맥스의 모습),苹裹龙（超极巨化的样子）
+pokemon.10217,Gigantamax Appletun,Dratatin Gigamax,Appletun Gigamax,Gigadynamax-Schlapfel,Gigantamax Appletun,Gigantamax Appletun,Gigantamax Appletun,タルップル（キョダイマックスのすがた）,단지래플(거다이맥스의 모습),丰蜜龙（超极巨化的样子）
+pokemon.10218,Gigantamax Sandaconda,Dunaconda Gigamax,Sandaconda Gigamax,Gigadynamax-Sanaconda,Gigantamax Sandaconda,Gigantamax Sandaconda,Gigantamax Sandaconda,サダイジャ（キョダイマックスのすがた）,사다이사(거다이맥스의 모습),沙螺蟒（超极巨化的样子）
+pokemon.10219,Gigantamax Amped Toxtricity,Salarsen Forme Aigüe Gigamax,Toxtricity Gigamax,Gigadynamax-Riffex (Hochform),Gigantamax Amped Toxtricity,Gigantamax Amped Toxtricity,Gigantamax Amped Toxtricity,ストリンダー（キョダイマックスのすがた）,스트린더(거다이맥스의 모습),颤弦蝾螈（超极巨化的样子）
+pokemon.10220,Gigantamax Centiskorch,Scolocendre Gigamax,Centiskorch Gigamax,Gigadynamax-Infernopod,Gigantamax Centiskorch,Gigantamax Centiskorch,Gigantamax Centiskorch,マルヤクデ（キョダイマックスのすがた）,다태우지네(거다이맥스의 모습),焚焰蚣（超极巨化的样子）
+pokemon.10221,Gigantamax Hatterene,Sorcilence Gigamax,Hatterene Gigamax,Gigadynamax-Silembrim,Gigantamax Hatterene,Gigantamax Hatterene,Gigantamax Hatterene,ブリムオン（キョダイマックスのすがた）,브리무음(거다이맥스의 모습),布莉姆温（超极巨化的样子）
+pokemon.10222,Gigantamax Grimmsnarl,Angoliath Gigamax,Grimmsnarl Gigamax,Gigadynamax-Olangaar,Gigantamax Grimmsnarl,Gigantamax Grimmsnarl,Gigantamax Grimmsnarl,オーロンゲ（キョダイマックスのすがた）,오롱털(거다이맥스의 모습),长毛巨魔（超极巨化的样子）
+pokemon.10223,Gigantamax Alcremie,Charmilly Gigamax,Alcremie Gigamax,Gigadynamax-Pokusan,Gigantamax Alcremie,Gigantamax Alcremie,Gigantamax Alcremie,マホイップ（キョダイマックスのすがた）,마휘핑(거다이맥스의 모습),霜奶仙（超极巨化的样子）
+pokemon.10224,Gigantamax Copperajah,Pachyradjah Gigamax,Copperajah Gigamax,Gigadynamax-Patinaraja,Gigantamax Copperajah,Gigantamax Copperajah,Gigantamax Copperajah,ダイオウドウ（キョダイマックスのすがた）,대왕끼리동(거다이맥스의 모습),大王铜象（超极巨化的样子）
+pokemon.10225,Gigantamax Duraludon,Duralugon Gigamax,Duraludon Gigamax,Gigadynamax-Duraludon,Gigantamax Duraludon,Gigantamax Duraludon,Gigantamax Duraludon,ジュラルドン（キョダイマックスのすがた）,두랄루돈(거다이맥스의 모습),铝钢龙（超极巨化的样子）
+pokemon.10226,Gigantamax Single Strike Urshifu,Shifours Style Poing Final Gigamax,Urshifu Gigamax,Gigadynamax-Wulaosu (Fokussiert),Gigantamax Single Strike Urshifu,Gigantamax Single Strike Urshifu,Gigantamax Single Strike Urshifu,ウーラオス（キョダイマックスのすがた）,우라오스(거다이맥스의 모습),武道熊师（超极巨化的样子）
+pokemon.10229,Hisuian Growlithe,Caninos de Hisui,Growlithe de Hisui,Hisui Fukano,Hisuian Growlithe,Hisuian Growlithe,Hisuian Growlithe,ガーディ（ヒスイのすがた）,가디(히스이의 모습),卡蒂狗（洗翠的样子）
+pokemon.10230,Hisuian Arcanine,Arcanin de Hisui,Arcanine de Hisui,Hisui Arkani,Hisuian Arcanine,Hisuian Arcanine,Hisuian Arcanine,ウインディ（ヒスイのすがた）,윈디(히스이의 모습),风速狗（洗翠的样子）
+pokemon.10231,Hisuian Voltorb,Voltorbe de Hisui,Voltorb de Hisui,Hisui Voltobal,Hisuian Voltorb,Hisuian Voltorb,Hisuian Voltorb,ビリリダマ（ヒスイのすがた）,찌리리공(히스이의 모습),霹雳电球（洗翠的样子）
+pokemon.10232,Hisuian Electrode,Électrode de Hisui,Electrode de Hisui,Hisui Lektrobal,Hisuian Electrode,Hisuian Electrode,Hisuian Electrode,マルマイン（ヒスイのすがた）,붐볼(히스이의 모습),顽皮雷弹（洗翠的样子）
+pokemon.10233,Hisuian Typhlosion,Typhlosion de Hisui,Typhlosion de Hisui,Hisui Tornupto,Hisuian Typhlosion,Hisuian Typhlosion,Hisuian Typhlosion,バクフーン（ヒスイのすがた）,블레이범(히스이의 모습),火暴兽（洗翠的样子）
+pokemon.10234,Hisuian Qwilfish,Qwilfish de Hisui,Qwilfish de Hisui,Hisui Baldorfish,Hisuian Qwilfish,Hisuian Qwilfish,Hisuian Qwilfish,ハリーセン（ヒスイのすがた）,침바루(히스이의 모습),千针鱼（洗翠的样子）
+pokemon.10235,Hisuian Sneasel,Farfuret de Hisui,Sneasel de Hisui,Hisui Sniebel,Hisuian Sneasel,Hisuian Sneasel,Hisuian Sneasel,ニューラ（ヒスイのすがた）,포푸니(히스이의 모습),狃拉（洗翠的样子）
+pokemon.10236,Hisuian Samurott,Clamiral de Hisui,Samurott de Hisui,Hisui Admurai,Hisuian Samurott,Hisuian Samurott,Hisuian Samurott,ダイケンキ（ヒスイのすがた）,대검귀(히스이의 모습),大剑鬼（洗翠的样子）
+pokemon.10237,Hisuian Lilligant,Fragilady de Hisui,Lilligant de Hisui,Hisui Dressella,Hisuian Lilligant,Hisuian Lilligant,Hisuian Lilligant,ドレディア（ヒスイのすがた）,드레디어(히스이의 모습),裙儿小姐（洗翠的样子）
+pokemon.10238,Hisuian Zorua,Zorua de Hisui,Zorua de Hisui,Hisui Zorua,Hisuian Zorua,Hisuian Zorua,Hisuian Zorua,ゾロア（ヒスイのすがた）,조로아(히스이의 모습),索罗亚（洗翠的样子）
+pokemon.10239,Hisuian Zoroark,Zoroark de Hisui,Zoroark de Hisui,Hisui Zoroark,Hisuian Zoroark,Hisuian Zoroark,Hisuian Zoroark,ゾロアーク（ヒスイのすがた）,조로아크(히스이의 모습),索罗亚克（洗翠的样子）
+pokemon.10240,Hisuian Braviary,Gueriaigle de Hisui,Braviary de Hisui,Hisui Washakwil,Hisuian Braviary,Hisuian Braviary,Hisuian Braviary,ウォーグル（ヒスイのすがた）,워글(히스이의 모습),勇士雄鹰（洗翠的样子）
+pokemon.10241,Hisuian Sliggoo,Colimucus de Hisui,Sliggoo de Hisui,Hisui Viscargot,Hisuian Sliggoo,Hisuian Sliggoo,Hisuian Sliggoo,ヌメイル（ヒスイのすがた）,미끄네일(히스이의 모습),黏美儿（洗翠的样子）
+pokemon.10242,Hisuian Goodra,Muplodocus de Hisui,Goodra de Hisui,Hisui Viscogon,Hisuian Goodra,Hisuian Goodra,Hisuian Goodra,ヌメルゴン（ヒスイのすがた）,미끄래곤(히스이의 모습),黏美龙（洗翠的样子）
+pokemon.10243,Hisuian Avalugg,Séracrawl de Hisui,Avalugg de Hisui,Hisui Arktilas,Hisuian Avalugg,Hisuian Avalugg,Hisuian Avalugg,クレベース（ヒスイのすがた）,크레베이스(히스이의 모습),冰岩怪（洗翠的样子）
+pokemon.10244,Hisuian Decidueye,Archéduc de Hisui,Decidueye de Hisui,Hisui Silvarro,Hisuian Decidueye,Hisuian Decidueye,Hisuian Decidueye,ジュナイパー（ヒスイのすがた）,모크나이퍼(히스이의 모습),狙射树枭（洗翠的样子）
+pokemon.10250,Paldean Tauros (Combat Breed),Paldean Tauros (Combat Breed),Tauros de Paldea (Raza Combatiente),Paldea-Tauros (Gefechtsrasse),Paldean Tauros (Combat Breed),Paldean Tauros (Combat Breed),Paldean Tauros (Combat Breed),ケンタロス（パルデアのすがた・コンバット種）,켄타로스(팔데아의 모습・컴뱃종),肯泰罗（帕底亚的样子・斗战种）
+pokemon.10251,Paldean Tauros (Blaze Breed),Paldean Tauros (Blaze Breed),Tauros de Paldea (Raza Ardiente),Paldea-Tauros (Flammenrasse),Paldean Tauros (Blaze Breed),Paldean Tauros (Blaze Breed),Paldean Tauros (Blaze Breed),ケンタロス（パルデアのすがた・ブレイズ種）,켄타로스(팔데아의 모습・블레이즈종),肯泰罗（帕底亚的样子・火炽种）
+pokemon.10252,Paldean Tauros (Aqua Breed),Paldean Tauros (Aqua Breed),Tauros de Paldea (Raza Acuática),Paldea-Tauros (Flutenrasse),Paldean Tauros (Aqua Breed),Paldean Tauros (Aqua Breed),Paldean Tauros (Aqua Breed),ケンタロス（パルデアのすがた・ウォーター種）,켄타로스(팔데아의 모습・워터종),肯泰罗（帕底亚的样子・水澜种）
+pokemon.10253,Paldean Wooper,Axoloto de Paldéa,Wooper de Paldea,Paldea-Felino,Paldean Wooper,Paldean Wooper,Paldean Wooper,ウパー（パルデアのすがた）,우파(팔데아의 모습),乌波（帕底亚的样子）
+pokemon.10273,Ogerpon,Ogerpon,Ogerpon,Ogerpon,Ogerpon,Ogerpon,Ogerpon,オーガポン,오거폰,厄诡椪
+pokemon.10274,Ogerpon,Ogerpon,Ogerpon,Ogerpon,Ogerpon,Ogerpon,Ogerpon,オーガポン,오거폰,厄诡椪
+pokemon.10275,Ogerpon,Ogerpon,Ogerpon,Ogerpon,Ogerpon,Ogerpon,Ogerpon,オーガポン,오거폰,厄诡椪
+pokemon.10278,Mega Clefable,Méga-Mélodelfe,Mega-Clefable,Mega-Pixi,Mega Clefable,Mega Clefable,Mega Clefable,メガピクシー,메가픽시,超级皮可西
+pokemon.10279,Mega Victreebel,Méga-Empiflor,Mega-Victreebel,Mega-Sarzenia,Mega Victreebel,Mega Victreebel,Mega Victreebel,メガウツボット,메가우츠보트,超级大食花
+pokemon.10280,Mega Starmie,Méga-Staross,Mega-Starmie,Mega-Starmie,Mega Starmie,Mega Starmie,Mega Starmie,メガスターミー,메가아쿠스타,超级宝石海星
+pokemon.10281,Mega Dragonite,Méga-Dracolosse,Mega-Dragonite,Mega-Dragoran,Mega Dragonite,Mega Dragonite,Mega Dragonite,メガカイリュー,메가망나뇽,超级快龙
+pokemon.10282,Mega Meganium,Méga-Méganium,Mega-Meganium,Mega-Meganie,Mega Meganium,Mega Meganium,Mega Meganium,メガメガニウム,메가메가니움,超级大竺葵
+pokemon.10283,Mega Feraligatr,Méga-Aligatueur,Mega-Feraligatr,Mega-Impergator,Mega Feraligatr,Mega Feraligatr,Mega Feraligatr,メガオーダイル,메가장크로다일,超级大力鳄
+pokemon.10284,Mega Skarmory,Méga-Airmure,Mega-Skarmory,Mega-Panzaeron,Mega Skarmory,Mega Skarmory,Mega Skarmory,メガエアームド,메가무장조,超级盔甲鸟
+pokemon.10285,Mega Froslass,Méga-Momartik,Mega-Froslass,Mega-Frosdedje,Mega Froslass,Mega Froslass,Mega Froslass,メガユキメノコ,메가눈여아,超级雪妖女
+pokemon.10286,Mega Emboar,Méga-Roitiflam,Mega-Emboar,Mega-Flambirex,Mega Emboar,Mega Emboar,Mega Emboar,メガエンブオー,메가염무왕,超级炎武王
+pokemon.10287,Mega Excadrill,Méga-Minotaupe,Mega-Excadrill,Mega-Stalobor,Mega Excadrill,Mega Excadrill,Mega Excadrill,メガドリュウズ,메가몰드류,超级龙头地鼠
+pokemon.10288,Mega Scolipede,Méga-Brutapode,Mega-Scolipede,Mega-Cerapendra,Mega Scolipede,Mega Scolipede,Mega Scolipede,メガペンドラー,메가펜드라,超级蜈蚣王
+pokemon.10289,Mega Scrafty,Méga-Baggaïd,Mega-Scrafty,Mega-Irokex,Mega Scrafty,Mega Scrafty,Mega Scrafty,メガズルズキン,메가곤율거니,超级头巾混混
+pokemon.10290,Mega Eelektross,Méga-Ohmassacre,Mega-Eelektross,Mega-Zapplarang,Mega Eelektross,Mega Eelektross,Mega Eelektross,メガシビルドン,메가저리더프,超级麻麻鳗鱼王
+pokemon.10291,Mega Chandelure,Méga-Lugulabre,Mega-Chandelure,Mega-Skelabra,Mega Chandelure,Mega Chandelure,Mega Chandelure,メガシャンデラ,메가샹델라,超级水晶灯火灵
+pokemon.10292,Mega Chesnaught,Méga-Blindépique,Mega-Chesnaught,Mega-Brigaron,Mega Chesnaught,Mega Chesnaught,Mega Chesnaught,メガブリガロン,메가브리가론,超级布里卡隆
+pokemon.10293,Mega Delphox,Méga-Goupelin,Mega-Delphox,Mega-Fennexis,Mega Delphox,Mega Delphox,Mega Delphox,メガマフォクシー,메가마폭시,超级妖火红狐
+pokemon.10294,Mega Greninja,Méga-Amphinobi,Mega-Greninja,Mega-Quajutsu,Mega Greninja,Mega Greninja,Mega Greninja,メガゲッコウガ,메가개굴닌자,超级甲贺忍蛙
+pokemon.10295,Mega Pyroar,Méga-Némélios,Mega-Pyroar,Mega-Pyroleo,Mega Pyroar,Mega Pyroar,Mega Pyroar,メガカエンジシ,메가화염레오,超级火炎狮
+pokemon.10296,Mega Floette,Méga-Floette,Mega-Floette,Mega-Floette,Mega Floette,Mega Floette,Mega Floette,メガフラエッテ,메가플라엣테,超级花叶蒂
+pokemon.10297,Mega Malamar,Méga-Sepiatroce,Mega-Malamar,Mega-Calamanero,Mega Malamar,Mega Malamar,Mega Malamar,メガカラマネロ,메가칼라마네로,超级乌贼王
+pokemon.10298,Mega Barbaracle,Méga-Golgopathe,Mega-Barbaracle,Mega-Thanathora,Mega Barbaracle,Mega Barbaracle,Mega Barbaracle,メガガメノデス,메가거북손데스,超级龟足巨铠
+pokemon.10299,Mega Dragalge,Méga-Kravarech,Mega-Dragalge,Mega-Tandrak,Mega Dragalge,Mega Dragalge,Mega Dragalge,メガドラミドロ,메가드래캄,超级毒藻龙
+pokemon.10300,Mega Hawlucha,Méga-Brutalibré,Mega-Hawlucha,Mega-Resladero,Mega Hawlucha,Mega Hawlucha,Mega Hawlucha,メガルチャブル,메가루차불,超级摔角鹰人
+pokemon.10302,Mega Drampa,Méga-Draïeul,Mega-Drampa,Mega-Sen-Long,Mega Drampa,Mega Drampa,Mega Drampa,メガジジーロン,메가할비롱,超级老翁龙
+pokemon.10303,Mega Falinks,Méga-Hexadron,Mega-Falinks,Mega-Legios,Mega Falinks,Mega Falinks,Mega Falinks,メガタイレーツ,메가대여르,超级列阵兵
+pokemon.10304,Mega Raichu X,Méga-Raichu X,Mega-Raichu X,Mega-Raichu X,Mega Raichu X,Mega Raichu X,Mega Raichu X,メガライチュウX,메가라이츄X,超级雷丘Ｘ
+pokemon.10305,Mega Raichu Y,Méga-Raichu Y,Mega-Raichu Y,Mega-Raichu Y,Mega Raichu Y,Mega Raichu Y,Mega Raichu Y,メガライチュウY,메가라이츄Y,超级雷丘Ｙ
+pokemon.10306,Mega Chimecho,Méga-Éoko,Mega-Chimecho,Mega-Palimpalim,Mega Chimecho,Mega Chimecho,Mega Chimecho,メガチリーン,메가치렁,超级风铃铃
+pokemon.10307,Mega Absol Z,Méga-Absol Z,Mega-Absol Z,Mega-Absol Z,Mega Absol Z,Mega Absol Z,Mega Absol Z,メガアブソルZ,메가앱솔Z,超级阿勃梭鲁Ｚ
+pokemon.10308,Mega Staraptor,Méga-Étouraptor,Mega-Staraptor,Mega-Staraptor,Mega Staraptor,Mega Staraptor,Mega Staraptor,メガムクホーク,메가찌르호크,超级姆克鹰
+pokemon.10309,Mega Garchomp Z,Méga-Carchacrok Z,Mega-Garchomp Z,Mega-Knakrack Z,Mega Garchomp Z,Mega Garchomp Z,Mega Garchomp Z,メガガブリアスZ,메가한카리아스Z,超级烈咬陆鲨Ｚ
+pokemon.10310,Mega Lucario Z,Méga-Lucario Z,Mega-Lucario Z,Mega-Lucario Z,Mega Lucario Z,Mega Lucario Z,Mega Lucario Z,メガルカリオZ,메가루카리오Z,超级路卡利欧Ｚ
+pokemon.10311,Mega Heatran,Méga-Heatran,Mega-Heatran,Mega-Heatran,Mega Heatran,Mega Heatran,Mega Heatran,メガヒードラン,메가히드런,超级席多蓝恩
+pokemon.10312,Mega Darkrai,Méga-Darkrai,Mega-Darkrai,Mega-Darkrai,Mega Darkrai,Mega Darkrai,Mega Darkrai,メガダークライ,메가다크라이,超级达克莱伊
+pokemon.10313,Mega Golurk,Méga-Golemastoc,Mega-Golurk,Mega-Golgantes,Mega Golurk,Mega Golurk,Mega Golurk,メガゴルーグ,메가골루그,超级泥偶巨人
+pokemon.10314,Mega Meowstic,Méga-Mistigrix,Mega-Meowstic,Mega-Psiaugon,Mega Meowstic,Mega Meowstic,Mega Meowstic,メガニャオニクス,메가냐오닉스,超级超能妙喵
+pokemon.10315,Mega Crabominable,Méga-Crabominable,Mega-Crabominable,Mega-Krawell,Mega Crabominable,Mega Crabominable,Mega Crabominable,メガケケンカニ,메가모단단게,超级好胜毛蟹
+pokemon.10316,Mega Golisopod,Méga-Sarmuraï,Mega-Golisopod,Mega-Tectass,Mega Golisopod,Mega Golisopod,Mega Golisopod,メガグソクムシャ,메가갑주무사,超级具甲武者
+pokemon.10317,Mega Magearna,Méga-Magearna,Mega-Magearna,Mega-Magearna,Mega Magearna,Mega Magearna,Mega Magearna,メガマギアナ,메가마기아나,超级玛机雅娜
+pokemon.10319,Mega Zeraora,Méga-Zeraora,Mega-Zeraora,Mega-Zeraora,Mega Zeraora,Mega Zeraora,Mega Zeraora,メガゼラオラ,메가제라오라,超级捷拉奥拉
+pokemon.10320,Mega Scovillain,Méga-Scovilain,Mega-Scovillain,Mega-Halupenjo,Mega Scovillain,Mega Scovillain,Mega Scovillain,メガスコヴィラン,메가스코빌런,超级狠辣椒
+pokemon.10321,Mega Glimmora,Méga-Floréclat,Mega-Glimmora,Mega-Lumiflora,Mega Glimmora,Mega Glimmora,Mega Glimmora,メガキラフロル,메가킬라플로르,超级晶光花
+pokemon.10322,Mega Curly Tatsugiri,Méga-Nigirigon Forme Courbée,Mega-Tatsugiri,Mega-Nigiragi,Mega Curly Tatsugiri,Mega Curly Tatsugiri,Mega Curly Tatsugiri,メガシャリタツ,메가싸리용,超级米立龙
+pokemon.10325,Mega Baxcalibur,Méga-Glaivodo,Mega-Baxcalibur,Mega-Espinodon,Mega Baxcalibur,Mega Baxcalibur,Mega Baxcalibur,メガセグレイブ,메가드닐레이브,超级戟脊龙
+pokemon.20001,Arceus,Arceus,Arceus,Arceus,Arceus,Arceus,Arceus,アルセウス,아르세우스,阿尔宙斯
+pokemon.20002,Arceus,Arceus,Arceus,Arceus,Arceus,Arceus,Arceus,アルセウス,아르세우스,阿尔宙斯
+pokemon.20003,Arceus,Arceus,Arceus,Arceus,Arceus,Arceus,Arceus,アルセウス,아르세우스,阿尔宙斯
+pokemon.20004,Arceus,Arceus,Arceus,Arceus,Arceus,Arceus,Arceus,アルセウス,아르세우스,阿尔宙斯
+pokemon.20005,Arceus,Arceus,Arceus,Arceus,Arceus,Arceus,Arceus,アルセウス,아르세우스,阿尔宙斯
+pokemon.20006,Arceus,Arceus,Arceus,Arceus,Arceus,Arceus,Arceus,アルセウス,아르세우스,阿尔宙斯
+pokemon.20007,Arceus,Arceus,Arceus,Arceus,Arceus,Arceus,Arceus,アルセウス,아르세우스,阿尔宙斯
+pokemon.20008,Arceus,Arceus,Arceus,Arceus,Arceus,Arceus,Arceus,アルセウス,아르세우스,阿尔宙斯
+pokemon.20009,Arceus,Arceus,Arceus,Arceus,Arceus,Arceus,Arceus,アルセウス,아르세우스,阿尔宙斯
+pokemon.20010,Arceus,Arceus,Arceus,Arceus,Arceus,Arceus,Arceus,アルセウス,아르세우스,阿尔宙斯
+pokemon.20011,Arceus,Arceus,Arceus,Arceus,Arceus,Arceus,Arceus,アルセウス,아르세우스,阿尔宙斯
+pokemon.20012,Arceus,Arceus,Arceus,Arceus,Arceus,Arceus,Arceus,アルセウス,아르세우스,阿尔宙斯
+pokemon.20013,Arceus,Arceus,Arceus,Arceus,Arceus,Arceus,Arceus,アルセウス,아르세우스,阿尔宙斯
+pokemon.20014,Arceus,Arceus,Arceus,Arceus,Arceus,Arceus,Arceus,アルセウス,아르세우스,阿尔宙斯
+pokemon.20015,Arceus,Arceus,Arceus,Arceus,Arceus,Arceus,Arceus,アルセウス,아르세우스,阿尔宙斯
+pokemon.20016,Arceus,Arceus,Arceus,Arceus,Arceus,Arceus,Arceus,アルセウス,아르세우스,阿尔宙斯
+pokemon.20017,Arceus,Arceus,Arceus,Arceus,Arceus,Arceus,Arceus,アルセウス,아르세우스,阿尔宙斯
+pokemon.20101,Silvally,Silvallié,Silvally,Amigento,Silvally,Silvally,Silvally,シルヴァディ,실버디,银伴战兽
+pokemon.20102,Silvally,Silvallié,Silvally,Amigento,Silvally,Silvally,Silvally,シルヴァディ,실버디,银伴战兽
+pokemon.20103,Silvally,Silvallié,Silvally,Amigento,Silvally,Silvally,Silvally,シルヴァディ,실버디,银伴战兽
+pokemon.20104,Silvally,Silvallié,Silvally,Amigento,Silvally,Silvally,Silvally,シルヴァディ,실버디,银伴战兽
+pokemon.20105,Silvally,Silvallié,Silvally,Amigento,Silvally,Silvally,Silvally,シルヴァディ,실버디,银伴战兽
+pokemon.20106,Silvally,Silvallié,Silvally,Amigento,Silvally,Silvally,Silvally,シルヴァディ,실버디,银伴战兽
+pokemon.20107,Silvally,Silvallié,Silvally,Amigento,Silvally,Silvally,Silvally,シルヴァディ,실버디,银伴战兽
+pokemon.20108,Silvally,Silvallié,Silvally,Amigento,Silvally,Silvally,Silvally,シルヴァディ,실버디,银伴战兽
+pokemon.20109,Silvally,Silvallié,Silvally,Amigento,Silvally,Silvally,Silvally,シルヴァディ,실버디,银伴战兽
+pokemon.20110,Silvally,Silvallié,Silvally,Amigento,Silvally,Silvally,Silvally,シルヴァディ,실버디,银伴战兽
+pokemon.20111,Silvally,Silvallié,Silvally,Amigento,Silvally,Silvally,Silvally,シルヴァディ,실버디,银伴战兽
+pokemon.20112,Silvally,Silvallié,Silvally,Amigento,Silvally,Silvally,Silvally,シルヴァディ,실버디,银伴战兽
+pokemon.20113,Silvally,Silvallié,Silvally,Amigento,Silvally,Silvally,Silvally,シルヴァディ,실버디,银伴战兽
+pokemon.20114,Silvally,Silvallié,Silvally,Amigento,Silvally,Silvally,Silvally,シルヴァディ,실버디,银伴战兽
+pokemon.20115,Silvally,Silvallié,Silvally,Amigento,Silvally,Silvally,Silvally,シルヴァディ,실버디,银伴战兽
+pokemon.20116,Silvally,Silvallié,Silvally,Amigento,Silvally,Silvally,Silvally,シルヴァディ,실버디,银伴战兽
+pokemon.20117,Silvally,Silvallié,Silvally,Amigento,Silvally,Silvally,Silvally,シルヴァディ,실버디,银伴战兽
+item.galarica-cuff,Galarica Cuff,Bracelet Galanoa,Brazal Galanuez,Galarnuss-Reif,Bracciale Galarnoce,Bracelete Galárica,Bracelete Galárica,ガラナツブレス,가라두구팔찌,伽勒豆蔻手环
+item.galarica-wreath,Galarica Wreath,Couronne Galanoa,Corona Galanuez,Galarnuss-Kranz,Corona Galarnoce,Coroa Galárica,Coroa Galárica,ガラナツリース,가라두구머리장식,伽勒豆蔻花圈
+itemDesc.galarica-cuff,Makes certain Pokémon evolve: Galarian Slowpoke (Galarian Slowbro). Use it from the Team screen.,Fait évoluer certains Pokémon : Ramoloss de Galar (Flagadoss de Galar). À utiliser depuis l'écran Équipe.,Hace evolucionar a ciertos Pokémon: Slowpoke de Galar (Slowbro de Galar). Úsalo desde la pantalla Equipo.,Lässt bestimmte Pokémon entwickeln: Galar-Flegmon (Galar-Lahmus). Im Team-Bildschirm einsetzbar.,Fa evolvere alcuni Pokémon: Slowpoke di Galar (Slowbro di Galar). Usalo dalla schermata Squadra.,Faz evoluir certos Pokémon: Slowpoke de Galar (Slowbro de Galar). Usa-o no ecrã Equipa.,Faz certos Pokémon evoluírem: Slowpoke de Galar (Slowbro de Galar). Use na tela Equipe.,特定のポケモンを進化させる：ガラルヤドン（ガラルヤドラン）。「手持ち」画面で使う。,특정 포켓몬을 진화시킨다: 가라르 야돈(가라르 야도란). 팀 화면에서 사용한다.,让特定的宝可梦进化：伽勒尔呆呆兽（伽勒尔呆壳兽）。在队伍画面中使用。
+itemDesc.galarica-wreath,Makes certain Pokémon evolve: Galarian Slowpoke (Galarian Slowking). Use it from the Team screen.,Fait évoluer certains Pokémon : Ramoloss de Galar (Roigada de Galar). À utiliser depuis l'écran Équipe.,Hace evolucionar a ciertos Pokémon: Slowpoke de Galar (Slowking de Galar). Úsalo desde la pantalla Equipo.,Lässt bestimmte Pokémon entwickeln: Galar-Flegmon (Galar-Laschoking). Im Team-Bildschirm einsetzbar.,Fa evolvere alcuni Pokémon: Slowpoke di Galar (Slowking di Galar). Usala dalla schermata Squadra.,Faz evoluir certos Pokémon: Slowpoke de Galar (Slowking de Galar). Usa-a no ecrã Equipa.,Faz certos Pokémon evoluírem: Slowpoke de Galar (Slowking de Galar). Use na tela Equipe.,特定のポケモンを進化させる：ガラルヤドン（ガラルヤドキング）。「手持ち」画面で使う。,특정 포켓몬을 진화시킨다: 가라르 야돈(가라르 야도킹). 팀 화면에서 사용한다.,让特定的宝可梦进化：伽勒尔呆呆兽（伽勒尔呆呆王）。在队伍画面中使用。
+area.dyna-tree-hill,Dyna Tree Hill,Butte du Dynarbre,Colina del Árbol Dinamax,Hügel des Dyna-Baums,Collina dell'Albero Dynamax,Colina da Árvore Dynamax,Colina da Árvore Dynamax,ダイ木の丘,다이나무 언덕,极巨树之丘

@@ -11,7 +11,7 @@ upgrades, and the goal is 151/151 in the Pokédex.
 
 The design lives in [`docs/`](docs): [game spec](docs/01-GAME-SPEC.md) · [data model](docs/02-DATA-MODEL.md) ·
 [build plan](docs/03-BUILD-PLAN.md) · [Sinnoh plan](docs/07-SINNOH-PLAN.md) · [Unova plan](docs/08-UNOVA-PLAN.md) · [Gen 6–9 plan](docs/11-GEN6-9-REGIONS-PLAN.md) ·
-[Gen 6–9 sprite sources](docs/10-GEN6-9-SPRITES.md).
+[Gen 6–9 sprite sources](docs/10-GEN6-9-SPRITES.md) · [forms & Mega Evolution](docs/12-FORMS-AND-MEGA.md).
 
 ## Quick start
 
@@ -37,6 +37,7 @@ For local cloud/admin work, copy `.env.example` to `.env.local` and fill it in. 
 | `pnpm lint` · `pnpm format` | ESLint (also enforces that `src/engine` stays pure) · Prettier |
 | `pnpm seed` | Reports how far the committed bundle has drifted from what the generator (PokeAPI + `scripts/content.ts`, Kanto only) would produce. Writes nothing. `pnpm seed --force` does the old destructive regeneration — see [docs/02](docs/02-DATA-MODEL.md#3-generating-the-386) |
 | `pnpm seed-regions` | Builds the regions after Kanto on top of the committed bundle: species, their areas, trainers and regions. Additive — it never drops an existing row, above or below the range. Defaults to the newest region (`--from 906 --to 1025`, Paldea); pass another range to regenerate an earlier one, which throws away its admin tuning |
+| `pnpm seed-forms` | Writes the Pokémon forms into the bundle (`scripts/content-forms.ts`): regional forms with their evolutions, wild pools, trainers and finds, the Mega Evolutions, Giratina's Origin Forme and Arceus's types, and their names in `strings.csv`. Idempotent; run it after `pnpm seed-regions`. Then `pnpm pokemon-sprites --fetch-forms` and `--publish` for new sprites |
 | `pnpm pull-remote` | Says how far the committed bundle has fallen behind Supabase, where admin tuning lands first. Writes nothing. `pnpm pull-remote --write` then overwrites `src/data/*.json` and `supabase/seed.sql` with the live rows — the same check and the same refusals as Admin → "Pull from Supabase". Run it before adding content |
 | `pnpm sync` | Pull Supabase, rebuild the regions on top, regenerate `supabase/seed.sql`, run the tests — in that order, stopping at the first failure. The one command to run before applying `seed.sql` to a live database |
 | `pnpm seed-sql` | Regenerates `supabase/seed.sql` from the committed bundle, without rebuilding the bundle. That one file is all a live database needs — it carries the post-`0001` schema changes too, and is safe to re-run. It also writes `supabase/seed-parts/seed-NN.sql`, the same SQL in parts small enough to paste into the Supabase SQL editor: run them in order, part 1 first (the /setup page has a Copy button per part) |
@@ -161,5 +162,15 @@ supabase/    migrations/0001_init.sql, seed.sql (generated)
   `/setup` never reload on their own. Needs `supabase/migrations/0029_force_reload.sql` run once on the live database.
   Each visible tab is one Realtime connection: past the plan's limit (200 at once on the free plan) the extra tabs
   read `app_signals` instead, at most every 5 minutes, so they reload a few minutes late rather than never.
+- **Forms & Mega Evolution** — regional forms (Alolan, Galarian, Hisuian, Paldean) are Pokémon of their own, caught in
+  their region; evolving in that region gives the regional form (Pikachu → Alolan Raichu in Alola). Once the player has
+  reached Kalos, a Lv.50 Pokémon with a Mega form gets a MEGA button in battle — no stone, no item, one per battle — and
+  a die of the type it gains (else its first type) until the fight ends (Primal Kyogre / Groudon and Ultra Necrozma
+  too). From Galar on, a G-MAX button gives +1 die for its next turn, never in the same battle as a Mega. Giratina,
+  Darmanitan, Zygarde, Wishiwashi and Minior change form below half HP; Arceus, Silvally and Ogerpon change type from a
+  TYPE menu, once a battle each. Leaders, the Elite Four and Champions use Mega (Hoenn, Kalos, Alola) and Gigantamax (Galar)
+  with their ace once the player has it too; auto battles use none of it. See
+  [docs/12](docs/12-FORMS-AND-MEGA.md). Needs `supabase/migrations/0030_pokemon_forms.sql` (or `seed.sql`, which
+  carries it) and the rows of `supabase/patches/pokemon-forms-and-mega.sql`.
 - `allowVoluntarySwitch`, `enemyUpgradeLevel`, `goldMultiplier`, `forcedCenterWhenHurt` and `scaleLevelSpread` are
   `game_config` keys (the spec was silent on these).

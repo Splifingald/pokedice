@@ -203,6 +203,29 @@ function buildRows(log: readonly LogEntry[], player: readonly Battler[], enemy: 
       case 'recoil':
         rows.push({ key, ...who(e.uid), text: t('ui.hist.tookRecoil'), icon: STATUS_ICON.confuse, amount: e.amount })
         return
+      case 'form': {
+        const before = data.species[e.fromDex]?.name ?? who(e.uid).name
+        rows.push({
+          key,
+          ...who(e.uid),
+          dex: e.toDex,
+          name: before,
+          text:
+            e.reason === 'mega'
+              ? data.species[e.toDex]?.form?.mechanic === 'primal'
+                ? t('ui.hist.primal')
+                : data.species[e.toDex]?.form?.mechanic === 'ultra'
+                  ? t('ui.hist.ultra', { mega: data.species[e.toDex]?.name ?? '' })
+                  : t('ui.hist.megaEvolved', { mega: data.species[e.toDex]?.name ?? '' })
+              : e.reason === 'gmax'
+                ? t(e.revert ? 'ui.hist.gmaxEnd' : 'ui.hist.gmax')
+                : e.reason === 'lowHp'
+                  ? t(e.revert ? 'ui.hist.formBack' : 'ui.hist.formChanged')
+                  : t('ui.hist.typeChange', { type: typeName(e.dice[0] ?? 'normal') }),
+          icon: 'up',
+        })
+        return
+      }
     }
   })
   return rows.reverse()

@@ -68,6 +68,35 @@ export interface Evolution {
   level: number | null
   /** …or when this item (an evolution stone's key) is used on it — then `level` is null. */
   item?: string | null
+  /** Only while the player is in this region (Pikachu → Alolan Raichu in Alola). */
+  region?: RegionId | null
+  /** Never while the player is in this region — where a regional form takes its place (Pikachu → Raichu outside Alola). */
+  notInRegion?: RegionId | null
+}
+
+/**
+ * What kind of form a species row is, when it is not a plain species:
+ * - `regional`: an Alolan, Galarian, Hisuian or Paldean form — a Pokémon of its own, caught, evolved and kept;
+ * - `mega`: a Mega Evolution — battle only, from a Lv.50 Pokémon of species `of` once Mega Evolution is unlocked;
+ * - `gmax`: a Gigantamax form — battle only, for a few turns, once Gigantamax is unlocked (never with a Mega);
+ * - `battle`: another battle-only look (Giratina's Origin Forme, Arceus's types) the engine switches to mid-fight.
+ */
+export type FormKind = 'regional' | 'mega' | 'gmax' | 'battle'
+
+export interface SpeciesForm {
+  /** The species this is a form of: the national dex number for a regional form, the Pokémon that turns into it otherwise. */
+  of: number
+  kind: FormKind
+  /** The region this form belongs to (its generation, for `regionOfSpecies`). Unset = the region of `of`. */
+  region?: RegionId | null
+  /**
+   * Battle forms only — when the engine switches to it. `lowHp`: below half HP, swapping one `swapDie.from` die for a
+   * `swapDie.to` one (Giratina). `choice`: picked from a menu, every die turning into the form's type (Arceus).
+   */
+  trigger?: 'lowHp' | 'choice' | null
+  swapDie?: { from: DieType; to: DieType } | null
+  /** A `mega` row that is a Primal Reversion or an Ultra Burst: the same rules, its own name in the game. */
+  mechanic?: 'primal' | 'ultra' | null
 }
 
 export interface Species {
@@ -86,6 +115,8 @@ export interface Species {
   evolutions: Evolution[]
   milestones: Milestone[]
   notes?: string | null
+  /** Set on every form row (regional, Mega, battle); absent on a plain species. */
+  form?: SpeciesForm | null
 }
 
 export interface TypeChartRow {
@@ -461,6 +492,33 @@ export interface GameConfig {
   dayCare: DayCareConfig
   roamers: RoamerConfig
   donation: DonationConfig
+  megaEvolution: MegaConfig
+  gigantamax: GigantamaxConfig
+  /** Arceus, Silvally and Ogerpon can each change type this many times per battle (the TYPE menu). */
+  formChangesPerBattle: number
+}
+
+/** Gigantamax: a button in battle once the player has reached `region`; never in the same battle as a Mega. */
+export interface GigantamaxConfig {
+  region: RegionId
+  /** It lasts this many of the Pokémon's own turns, then it shrinks back (or when it leaves the field). */
+  turns: number
+  /** Trainers Gigantamax their ace in these regions (leaders, Elite Four, Champions), once the player has it too. */
+  trainerRegions: RegionId[]
+}
+
+/** Mega Evolution: no stone, no item — a button in battle, once the player has reached `region`. */
+export interface MegaConfig {
+  /** Starting this region (or being past it) turns Mega Evolution on, in every region. */
+  region: RegionId
+  /** The Pokémon must be at least this level. */
+  level: number
+  /** Mega Evolutions (or Gigantamax) per battle, for the whole team. */
+  perBattle: number
+  /** Trainers Mega Evolve their ace in these regions (leaders, Elite Four, Champions), once the player has it too. */
+  trainerRegions: RegionId[]
+  /** Trainer roles that use Mega Evolution and Gigantamax. */
+  trainerRoles: TrainerRole[]
 }
 
 // ---------------------------------------------------------------- save data (01-GAME-SPEC §9)
