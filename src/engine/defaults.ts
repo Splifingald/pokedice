@@ -80,7 +80,16 @@ export const DEFAULT_CONFIG: GameConfig = {
     hatchMinLevel: 5,
   },
   // Mega Evolution opens with Kalos (X and Y's mechanic) and then works in every region: a Lv.50 Pokémon of a species
-  // with a Mega form, once per battle for the whole team.
-  megaEvolution: { region: 'kalos', level: 50, perBattle: 1 },
-  arceusChangesPerBattle: 2,
+  // with a Mega form (or a Primal / Ultra Burst one), once per battle for the whole team — Gigantamax included.
+  // Trainers do it too, in the games that have it — Hoenn (Omega Ruby / Alpha Sapphire), Kalos, Alola — with their ace.
+  megaEvolution: {
+    region: 'kalos',
+    level: 50,
+    perBattle: 1,
+    trainerRegions: ['hoenn', 'kalos', 'alola'],
+    trainerRoles: ['leader', 'elite', 'champion'],
+  },
+  // Gigantamax opens with Galar, for 3 of the Pokémon's turns; Galar's leaders and Champion use it with their ace.
+  gigantamax: { region: 'galar', turns: 3, trainerRegions: ['galar'] },
+  formChangesPerBattle: 1,
 }

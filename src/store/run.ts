@@ -34,6 +34,10 @@ import {
   isAreaUnlocked,
   isTeamHurt,
   megaUnlocked,
+  gmaxUnlocked,
+  enemyPlanFor,
+  regionOf,
+  regionOfArea,
   newSave,
   nextEncounter,
   progressOf,
@@ -229,6 +233,21 @@ function startBattle(kind: BattleKind, enemy: { dex: number; level: number; shin
   const area = data.areas.find((a) => a.id === run.areaId)
   const upgradeLevel = run.encounter ? enemyUpgradeLevelFor(run.encounter, area, data) : (area?.enemyUpgradeLevel ?? data.config.enemyUpgradeLevel)
   const team = teamOf(save).map((p) => ({ uid: p.id, dex: p.dex, level: p.level, hp: p.currentHp, shiny: p.shiny }))
+  // Auto-mode (a cleared area) fights without Mega Evolution, Gigantamax or type changes, on both sides.
+  const auto = !!useGame.getState().settings.autoMode && !!run.areaId && progressOf(save, run.areaId).cleared
+  // A trainer's ace — its strongest, the last of them if several — may Mega Evolve or Gigantamax (see enemyPlanFor).
+  const enc = run.encounter
+  const trainer =
+    kind === 'trainer' && run.trainer && (enc?.kind === 'trainer' || enc?.kind === 'gym')
+      ? (() => {
+          const levels = enc.team.map((m) => m.level)
+          return {
+            regionId: area ? regionOfArea(area) : regionOf(save),
+            role: enc.kind === 'gym' ? enc.role : (data.trainers[enc.trainerId]?.role ?? 'trainer'),
+            ace: run.trainer.index === levels.lastIndexOf(Math.max(...levels)),
+          }
+        })()
+      : null
   battleRng = createRng(randomSeed() ^ battleRng.getState())
   const { state, log } = createBattle(
     {
@@ -239,6 +258,9 @@ function startBattle(kind: BattleKind, enemy: { dex: number; level: number; shin
       playerLevels: { comboLevels: save.comboLevels, dieLevels: save.dieLevels },
       enemyLevels: uniformLevels(upgradeLevel),
       megaAllowed: megaUnlocked(save, data),
+      gmaxAllowed: gmaxUnlocked(save, data),
+      enemyPlan: enemyPlanFor(save, data, enemy, trainer),
+      auto,
     },
     data,
   )

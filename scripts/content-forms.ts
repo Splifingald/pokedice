@@ -1,7 +1,7 @@
 // Pokémon forms: the regional forms, the Mega Evolutions and the battle forms of Giratina and Arceus, as the content
 // `pnpm seed-forms` (scripts/seed-forms.ts) writes into the bundle. Ids are PokeAPI's `pokemon.csv` ids, which is
 // also where the sprites and the names live; Arceus's types have no PokeAPI pokemon id, so they get 20001+ here.
-import type { Evolution, PokeType, RegionId } from '../src/engine/types'
+import type { DieType, Evolution, PokeType, RegionId } from '../src/engine/types'
 
 export interface RegionalFormPlan {
   id: number
@@ -129,10 +129,42 @@ export const MEGA_SKIPPED = new Set([
   'zygarde-mega',
 ])
 
-/** Giratina's Origin Forme: below half HP, one Ghost die becomes a Dragon die. */
-export const GIRATINA_ORIGIN = { id: 10007, of: 487, from: 'ghost', to: 'dragon' } as const
+/**
+ * Forms taken below half HP, one die swapping type, and left again above it: Giratina's Origin Forme (Ghost → Dragon),
+ * Darmanitan's Zen Mode (Fire → Psychic; the Galarian one's Ice → Fire), Zygarde's Complete Forme (Ground → Dragon),
+ * Wishiwashi's School (a base die → Water) and Minior's Core (Rock → Flying).
+ */
+export const HP_FORMS: { id: number; of: number; from: DieType; to: DieType }[] = [
+  { id: 10007, of: 487, from: 'ghost', to: 'dragon' },
+  { id: 10017, of: 555, from: 'fire', to: 'psychic' },
+  { id: 10178, of: 10177, from: 'ice', to: 'fire' },
+  { id: 10120, of: 718, from: 'ground', to: 'dragon' },
+  { id: 10127, of: 746, from: 'base', to: 'water' },
+  { id: 10136, of: 774, from: 'rock', to: 'flying' },
+]
 
-/** Arceus's types, as battle forms (PokeAPI sprite `493-<type>.png`). Plain Arceus (#493) is its Normal type. */
+/** Primal Reversion and Ultra Burst: Mega Evolutions in all but name (the same button, the same one per battle). */
+export const MEGA_LIKE: { id: number; mechanic: 'primal' | 'ultra' }[] = [
+  { id: 10077, mechanic: 'primal' }, // Kyogre
+  { id: 10078, mechanic: 'primal' }, // Groudon
+  { id: 10157, mechanic: 'ultra' }, // Necrozma
+]
+
+/** Gigantamax forms left out: a second form of a species the game has as one. */
+export const GMAX_SKIPPED = new Set(['toxtricity-low-key-gmax', 'urshifu-rapid-strike-gmax'])
+
+/** Silvally's Memories, as battle forms (PokeAPI sprite `773-<type>.png`, no pokemon id): 20101+. */
+export const SILVALLY = 773
+export const silvallyFormId = (type: PokeType) => 20101 + ARCEUS_TYPES.indexOf(type)
+
+/** Ogerpon's masks: Wellspring (Water), Hearthflame (Fire), Cornerstone (Rock); its own Teal Mask is Grass. */
+export const OGERPON = 1017
+export const OGERPON_MASKS = [10273, 10274, 10275]
+
+/**
+ * Arceus's types, as battle forms (PokeAPI sprite `493-<type>.png`). Plain Arceus (#493) is its Normal type. Silvally
+ * uses the same list.
+ */
 export const ARCEUS = 493
 export const ARCEUS_TYPES: PokeType[] = [
   'fire',

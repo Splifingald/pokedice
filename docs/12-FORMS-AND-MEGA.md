@@ -10,9 +10,10 @@ Every form is a row of `pokemon` numbered past the National Dex, with a `form` c
 | Kind | Ids | `form` | Saved? |
 |---|---|---|---|
 | Regional (Alolan, Galarian, Hisuian, Paldean) — 57 | PokeAPI's (Alolan Rattata 10091) | `{ of: 19, kind: 'regional', region: 'alola' }` | yes: caught, levelled, evolved, in the Pokédex |
-| Mega Evolution — 92 | PokeAPI's (Mega Venusaur 10033) | `{ of: 3, kind: 'mega' }` | no: battle only |
-| Giratina's Origin Forme | 10007 | `{ of: 487, kind: 'battle', trigger: 'lowHp', swapDie: { from: 'ghost', to: 'dragon' } }` | no |
-| Arceus's 17 types | 20001–20017 (PokeAPI has no pokemon id; sprite `493-<type>`) | `{ of: 493, kind: 'battle', trigger: 'choice' }` | no |
+| Mega Evolution — 92, plus Primal Kyogre / Groudon and Ultra Necrozma | PokeAPI's (Mega Venusaur 10033) | `{ of: 3, kind: 'mega' }`, `mechanic: 'primal' \| 'ultra'` | no: battle only |
+| Gigantamax — 32 | PokeAPI's (Gigantamax Charizard 10196) | `{ of: 6, kind: 'gmax' }` | no |
+| Below half HP — Giratina, Darmanitan (both), Zygarde, Wishiwashi, Minior | PokeAPI's (Origin Giratina 10007) | `{ of: 487, kind: 'battle', trigger: 'lowHp', swapDie: { from: 'ghost', to: 'dragon' } }` | no |
+| Type menu — Arceus ×17, Silvally ×17, Ogerpon's 3 masks | 20001+, 20101+ (no PokeAPI pokemon id; sprites `493-<type>`, `773-<type>`), Ogerpon's PokeAPI's | `{ of: 493, kind: 'battle', trigger: 'choice' }` | no |
 
 PokeAPI's ids keep the sprites (`/pokemon/10091_front.png`) and the names (`pokemon.10091` in `strings.csv`) lined up
 with the source. A form shows its species' number (`#019`) and sits right after it on the Pokédex page.
@@ -48,28 +49,53 @@ Linoone → Obstagoon, Galarian Yamask → Runerigus, Hisuian Qwilfish → Overq
 Wooper → Clodsire. Trainers of Alola, Galar and Paldea use the forms their games give them (Nanu's Persian, Olivia's
 Golem, Kukui's Ninetales, Hau's Raichu, Opal's Weezing, Bede's Rapidash, Klara's Slowbro, Avery's Slowking…).
 
-## 3. Mega Evolution
+## 3. Mega Evolution, Primal Reversion, Ultra Burst
 
 - **Unlocked** once the player has reached Kalos (started it, live or parked) — `megaEvolution.region` — and then in
   every region. No stone, no item.
 - **Lv.50** (`megaEvolution.level`) for every Pokémon with a Mega form. The Pokémon sheet shows it on the levelling
   curve at Lv.50, with each Mega form and the die it adds, once the feature is unlocked.
-- In battle, a **MEGA** button sits beside ITEM and SWITCH. One Mega Evolution per battle for the whole team
-  (`megaEvolution.perBattle`). It doesn't take the turn; already thrown, the new die is thrown and joins the hand.
+- In battle, a **MEGA** button sits beside ITEM and SWITCH (**PRIMAL** for Kyogre and Groudon, **ULTRA BURST** for
+  Necrozma — the same rules). One per battle for the whole team (`megaEvolution.perBattle`), **shared with
+  Gigantamax**. It doesn't take the turn; already thrown, the new die is thrown and joins the hand.
 - With **several Mega forms** (Charizard, Mewtwo, Raichu X / Y), a prompt shows each one's sprite, name, types and the
   die it adds.
 - **The die**: one die of the type the Mega gains (Charizard X: Dragon, Gyarados: Dark); when it gains none, the
   Pokémon's first type (Venusaur: Grass). It may take the Pokémon past `maxDice`.
 - The Mega's types, name and sprite last until the battle ends; nothing is saved. Rewards and catches count the
-  species sent out. Auto-mode Mega Evolves the first Pokémon that can, into its first form. Versus never does.
+  species sent out.
 
 Left out: the female Meowstic, the droopy / stretchy Tatsugiri and the Original-Color Magearna Megas (one form of each
 species in this game), and **Mega Zygarde**, which PokeAPI has no sprite for yet.
 
-## 4. Battle forms
+## 4. Gigantamax
 
-- **Giratina** (either side) takes its Origin Forme below half HP — one Ghost die becomes a Dragon die, new sprite —
-  and returns to its Altered Forme at half or above. Checked after every HP change; a Giratina sent out below half
-  starts in it.
-- **Arceus** (yours) gets a **TYPE** button: a menu of the 17 other types (and Normal once it has changed). Its type
-  and every die — base dice included, the hand already thrown too — become that type. `arceusChangesPerBattle` (2).
+- **Unlocked** once the player has reached Galar (`gigantamax.region`), then everywhere; no level.
+- A **G-MAX** button beside MEGA: the Gigantamax look and +1 die of the Pokémon's first type for **3 of its own turns**
+  (`gigantamax.turns`), then it shrinks back — or when it leaves the field. **Never in the same battle as a Mega**: the
+  two share the one per battle.
+- The Pokémon sheet says so under the curve, once Galar is reached. 32 forms (the low-key Toxtricity and Rapid Strike
+  Urshifu ones are left out, as one form of each is in this game).
+
+## 5. Battle forms
+
+- **Below half HP** — Giratina (Origin Forme: Ghost → Dragon), Darmanitan (Zen Mode: Fire → Psychic; the Galarian one
+  Ice → Fire), Zygarde (Complete: Ground → Dragon), Wishiwashi (School: a base die → Water), Minior (Core: Rock →
+  Flying): either side, one die swapping type and a new sprite, back at half HP or above. Checked after every HP change;
+  sent out below half, it starts in the form. A Mega or Gigantamax Pokémon keeps that look instead.
+- **TYPE menu** — Arceus (17 Plates), Silvally (17 Memories) and Ogerpon (3 masks): its type and every die — base dice
+  included, the hand already thrown too — become the type (an Ogerpon mask's: Water, Fire, Rock). **Once per battle**
+  (`formChangesPerBattle`), for the whole team.
+
+## 6. Trainers, and auto battles
+
+- **Foes use them too** where the games did, and never before the player has the mechanic (`enemyPlanFor`):
+  - a Gym Leader's, Elite Four member's or Champion's **ace** (its highest level, the last of them if tied) Mega
+    Evolves on its first turn in **Hoenn, Kalos and Alola** (`megaEvolution.trainerRegions` / `trainerRoles`) — at
+    Lv.50, like yours, so in practice from the Elite Four on — and Gigantamaxes in **Galar**
+    (`gigantamax.trainerRegions`);
+  - a foe Arceus, Silvally or Ogerpon — a legendary boss or a trainer's — takes the type that hits your Pokémon
+    hardest, once, when that beats every type it rolls;
+  - the below-half-HP forms work for both sides.
+- **Auto battles** (auto-mode in a cleared area, Versus) have none of these on either side, except the below-half-HP
+  forms, which are not a choice.

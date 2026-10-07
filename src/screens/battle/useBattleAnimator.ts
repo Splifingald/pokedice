@@ -29,6 +29,8 @@ export interface AnimatorContext {
   onHit: (target: Side, color: string, power: number) => void
   /** A species' (or form's) name, for the form changes. */
   speciesName: (dex: number) => string
+  /** A Mega row's own mechanic (Primal Reversion, Ultra Burst), for the message. */
+  megaMechanic: (dex: number) => 'primal' | 'ultra' | null
 }
 
 let seq = 0
@@ -224,12 +226,21 @@ function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): Step {
         apply: (f) => ({ ...f, message: t('ui.log.copiedDice', { name: nameOf(e.uid), from: nameOf(e.fromUid) }) }),
       }
     case 'form': {
+      const before = ctx.speciesName(e.fromDex)
+      const after = ctx.speciesName(e.toDex)
+      const mechanic = e.reason === 'mega' ? ctx.megaMechanic(e.toDex) : null
       const text =
         e.reason === 'mega'
-          ? t('ui.log.megaEvolved', { name: ctx.speciesName(e.fromDex), mega: ctx.speciesName(e.toDex) })
-          : e.reason === 'lowHp'
-            ? t(e.revert ? 'ui.log.alteredForme' : 'ui.log.originForme', { name: nameOf(e.uid) })
-            : t('ui.log.typeChange', { name: nameOf(e.uid), type: typeName(e.dice[0] ?? 'normal') })
+          ? mechanic === 'primal'
+            ? t('ui.log.primal', { name: before })
+            : mechanic === 'ultra'
+              ? t('ui.log.ultra', { name: before, mega: after })
+              : t('ui.log.megaEvolved', { name: before, mega: after })
+          : e.reason === 'gmax'
+            ? t(e.revert ? 'ui.log.gmaxEnd' : 'ui.log.gmax', { name: e.revert ? after : before })
+            : e.reason === 'lowHp'
+              ? t(e.revert ? 'ui.log.formBack' : 'ui.log.formChanged', { name: nameOf(e.uid) })
+              : t('ui.log.typeChange', { name: nameOf(e.uid), type: typeName(e.dice[0] ?? 'normal') })
       return {
         delay: 1300,
         sound: 'levelup',

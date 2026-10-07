@@ -42621,7 +42621,7 @@
   "catchValue": 7,
   "evolutions": [],
   "milestones": [],
-  "notes": "giratina-origin · below half HP, a Ghost die becomes a Dragon die",
+  "notes": "giratina-origin · below half HP, a ghost die becomes a dragon die",
   "form": {
    "of": 487,
    "kind": "battle",
@@ -42629,6 +42629,40 @@
    "swapDie": {
     "from": "ghost",
     "to": "dragon"
+   }
+  }
+ },
+ {
+  "dex": 10017,
+  "name": "Darmanitan",
+  "type1": "fire",
+  "type2": "psychic",
+  "baseHp": 13,
+  "maxHp": 351,
+  "speed": 5,
+  "spriteUrl": "/pokemon/10017_front.png",
+  "dice": [
+   {
+    "type": "fire",
+    "count": 2
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "darmanitan-zen · below half HP, a fire die becomes a psychic die",
+  "form": {
+   "of": 555,
+   "kind": "battle",
+   "trigger": "lowHp",
+   "swapDie": {
+    "from": "fire",
+    "to": "psychic"
    }
   }
  },
@@ -43896,6 +43930,58 @@
   }
  },
  {
+  "dex": 10077,
+  "name": "Primal Kyogre",
+  "type1": "water",
+  "type2": null,
+  "baseHp": 13,
+  "maxHp": 341,
+  "speed": 9,
+  "spriteUrl": "/pokemon/10077_front.png",
+  "dice": [
+   {
+    "type": "water",
+    "count": 5
+   }
+  ],
+  "rerolls": 5,
+  "catchValue": 7,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "kyogre-primal · BST 770",
+  "form": {
+   "of": 382,
+   "kind": "mega",
+   "mechanic": "primal"
+  }
+ },
+ {
+  "dex": 10078,
+  "name": "Primal Groudon",
+  "type1": "ground",
+  "type2": "fire",
+  "baseHp": 13,
+  "maxHp": 341,
+  "speed": 9,
+  "spriteUrl": "/pokemon/10078_front.png",
+  "dice": [
+   {
+    "type": "ground",
+    "count": 5
+   }
+  ],
+  "rerolls": 5,
+  "catchValue": 7,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "groudon-primal · BST 770",
+  "form": {
+   "of": 383,
+   "kind": "mega",
+   "mechanic": "primal"
+  }
+ },
+ {
   "dex": 10079,
   "name": "Mega Rayquaza",
   "type1": "dragon",
@@ -44920,6 +45006,130 @@
   }
  },
  {
+  "dex": 10120,
+  "name": "Zygarde",
+  "type1": "dragon",
+  "type2": "ground",
+  "baseHp": 13,
+  "maxHp": 357,
+  "speed": 8,
+  "spriteUrl": "/pokemon/10120_front.png",
+  "dice": [
+   {
+    "type": "dragon",
+    "count": 3
+   },
+   {
+    "type": "ground",
+    "count": 2
+   }
+  ],
+  "rerolls": 5,
+  "catchValue": 7,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "zygarde-complete · below half HP, a ground die becomes a dragon die",
+  "form": {
+   "of": 718,
+   "kind": "battle",
+   "trigger": "lowHp",
+   "swapDie": {
+    "from": "ground",
+    "to": "dragon"
+   }
+  }
+ },
+ {
+  "dex": 10127,
+  "name": "Wishiwashi",
+  "type1": "water",
+  "type2": null,
+  "baseHp": 12,
+  "maxHp": 231,
+  "speed": 3,
+  "spriteUrl": "/pokemon/10127_front.png",
+  "dice": [
+   {
+    "type": "water",
+    "count": 2
+   }
+  ],
+  "rerolls": 2,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "wishiwashi-school · below half HP, a base die becomes a water die",
+  "form": {
+   "of": 746,
+   "kind": "battle",
+   "trigger": "lowHp",
+   "swapDie": {
+    "from": "base",
+    "to": "water"
+   }
+  }
+ },
+ {
+  "dex": 10136,
+  "name": "Minior",
+  "type1": "rock",
+  "type2": "flying",
+  "baseHp": 12,
+  "maxHp": 261,
+  "speed": 12,
+  "spriteUrl": "/pokemon/10136_front.png",
+  "dice": [
+   {
+    "type": "rock",
+    "count": 1
+   },
+   {
+    "type": "flying",
+    "count": 1
+   }
+  ],
+  "rerolls": 2,
+  "catchValue": 6,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "minior-red · below half HP, a rock die becomes a flying die",
+  "form": {
+   "of": 774,
+   "kind": "battle",
+   "trigger": "lowHp",
+   "swapDie": {
+    "from": "rock",
+    "to": "flying"
+   }
+  }
+ },
+ {
+  "dex": 10157,
+  "name": "Ultra Necrozma",
+  "type1": "psychic",
+  "type2": "dragon",
+  "baseHp": 13,
+  "maxHp": 335,
+  "speed": 12,
+  "spriteUrl": "/pokemon/10157_front.png",
+  "dice": [
+   {
+    "type": "psychic",
+    "count": 5
+   }
+  ],
+  "rerolls": 5,
+  "catchValue": 7,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "necrozma-ultra · BST 754",
+  "form": {
+   "of": 800,
+   "kind": "mega",
+   "mechanic": "ultra"
+  }
+ },
+ {
   "dex": 10161,
   "name": "Galarian Meowth",
   "type1": "steel",
@@ -45728,6 +45938,40 @@
   }
  },
  {
+  "dex": 10178,
+  "name": "Galarian Darmanitan",
+  "type1": "ice",
+  "type2": "fire",
+  "baseHp": 13,
+  "maxHp": 351,
+  "speed": 13,
+  "spriteUrl": "/pokemon/10178_front.png",
+  "dice": [
+   {
+    "type": "ice",
+    "count": 2
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "darmanitan-galar-zen · below half HP, a ice die becomes a fire die",
+  "form": {
+   "of": 10177,
+   "kind": "battle",
+   "trigger": "lowHp",
+   "swapDie": {
+    "from": "ice",
+    "to": "fire"
+   }
+  }
+ },
+ {
   "dex": 10179,
   "name": "Galarian Yamask",
   "type1": "ground",
@@ -45836,6 +46080,938 @@
    "of": 618,
    "kind": "regional",
    "region": "galar"
+  }
+ },
+ {
+  "dex": 10195,
+  "name": "Gigantamax Venusaur",
+  "type1": "grass",
+  "type2": "poison",
+  "baseHp": 12,
+  "maxHp": 301,
+  "speed": 8,
+  "spriteUrl": "/pokemon/10195_front.png",
+  "dice": [
+   {
+    "type": "grass",
+    "count": 2
+   },
+   {
+    "type": "poison",
+    "count": 1
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 4,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "venusaur-gmax",
+  "form": {
+   "of": 3,
+   "kind": "gmax"
+  }
+ },
+ {
+  "dex": 10196,
+  "name": "Gigantamax Charizard",
+  "type1": "fire",
+  "type2": "flying",
+  "baseHp": 12,
+  "maxHp": 297,
+  "speed": 10,
+  "spriteUrl": "/pokemon/10196_front.png",
+  "dice": [
+   {
+    "type": "fire",
+    "count": 2
+   },
+   {
+    "type": "flying",
+    "count": 1
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 4,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "charizard-gmax",
+  "form": {
+   "of": 6,
+   "kind": "gmax"
+  }
+ },
+ {
+  "dex": 10197,
+  "name": "Gigantamax Blastoise",
+  "type1": "water",
+  "type2": null,
+  "baseHp": 12,
+  "maxHp": 299,
+  "speed": 9,
+  "spriteUrl": "/pokemon/10197_front.png",
+  "dice": [
+   {
+    "type": "water",
+    "count": 2
+   },
+   {
+    "type": "base",
+    "count": 2
+   }
+  ],
+  "rerolls": 4,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "blastoise-gmax",
+  "form": {
+   "of": 9,
+   "kind": "gmax"
+  }
+ },
+ {
+  "dex": 10198,
+  "name": "Gigantamax Butterfree",
+  "type1": "bug",
+  "type2": "flying",
+  "baseHp": 12,
+  "maxHp": 261,
+  "speed": 7,
+  "spriteUrl": "/pokemon/10198_front.png",
+  "dice": [
+   {
+    "type": "bug",
+    "count": 1
+   },
+   {
+    "type": "flying",
+    "count": 1
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 2,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "butterfree-gmax",
+  "form": {
+   "of": 12,
+   "kind": "gmax"
+  }
+ },
+ {
+  "dex": 10199,
+  "name": "Gigantamax Pikachu",
+  "type1": "electric",
+  "type2": null,
+  "baseHp": 12,
+  "maxHp": 211,
+  "speed": 9,
+  "spriteUrl": "/pokemon/10199_front.png",
+  "dice": [
+   {
+    "type": "electric",
+    "count": 2
+   }
+  ],
+  "rerolls": 2,
+  "catchValue": 2,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "pikachu-gmax",
+  "form": {
+   "of": 25,
+   "kind": "gmax"
+  }
+ },
+ {
+  "dex": 10200,
+  "name": "Gigantamax Meowth",
+  "type1": "normal",
+  "type2": null,
+  "baseHp": 12,
+  "maxHp": 221,
+  "speed": 9,
+  "spriteUrl": "/pokemon/10200_front.png",
+  "dice": [
+   {
+    "type": "normal",
+    "count": 1
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 2,
+  "catchValue": 1,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "meowth-gmax",
+  "form": {
+   "of": 52,
+   "kind": "gmax"
+  }
+ },
+ {
+  "dex": 10201,
+  "name": "Gigantamax Machamp",
+  "type1": "fighting",
+  "type2": null,
+  "baseHp": 13,
+  "maxHp": 321,
+  "speed": 5,
+  "spriteUrl": "/pokemon/10201_front.png",
+  "dice": [
+   {
+    "type": "fighting",
+    "count": 3
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 4,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "machamp-gmax",
+  "form": {
+   "of": 68,
+   "kind": "gmax"
+  }
+ },
+ {
+  "dex": 10202,
+  "name": "Gigantamax Gengar",
+  "type1": "ghost",
+  "type2": "poison",
+  "baseHp": 12,
+  "maxHp": 261,
+  "speed": 11,
+  "spriteUrl": "/pokemon/10202_front.png",
+  "dice": [
+   {
+    "type": "ghost",
+    "count": 2
+   },
+   {
+    "type": "poison",
+    "count": 1
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 4,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "gengar-gmax",
+  "form": {
+   "of": 94,
+   "kind": "gmax"
+  }
+ },
+ {
+  "dex": 10203,
+  "name": "Gigantamax Kingler",
+  "type1": "water",
+  "type2": null,
+  "baseHp": 12,
+  "maxHp": 251,
+  "speed": 7,
+  "spriteUrl": "/pokemon/10203_front.png",
+  "dice": [
+   {
+    "type": "water",
+    "count": 2
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "kingler-gmax",
+  "form": {
+   "of": 99,
+   "kind": "gmax"
+  }
+ },
+ {
+  "dex": 10204,
+  "name": "Gigantamax Lapras",
+  "type1": "water",
+  "type2": "ice",
+  "baseHp": 13,
+  "maxHp": 401,
+  "speed": 6,
+  "spriteUrl": "/pokemon/10204_front.png",
+  "dice": [
+   {
+    "type": "water",
+    "count": 1
+   },
+   {
+    "type": "ice",
+    "count": 1
+   }
+  ],
+  "rerolls": 2,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "lapras-gmax",
+  "form": {
+   "of": 131,
+   "kind": "gmax"
+  }
+ },
+ {
+  "dex": 10205,
+  "name": "Gigantamax Eevee",
+  "type1": "normal",
+  "type2": null,
+  "baseHp": 12,
+  "maxHp": 251,
+  "speed": 5,
+  "spriteUrl": "/pokemon/10205_front.png",
+  "dice": [
+   {
+    "type": "normal",
+    "count": 1
+   }
+  ],
+  "rerolls": 1,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "eevee-gmax",
+  "form": {
+   "of": 133,
+   "kind": "gmax"
+  }
+ },
+ {
+  "dex": 10206,
+  "name": "Gigantamax Snorlax",
+  "type1": "normal",
+  "type2": null,
+  "baseHp": 14,
+  "maxHp": 461,
+  "speed": 3,
+  "spriteUrl": "/pokemon/10206_front.png",
+  "dice": [
+   {
+    "type": "normal",
+    "count": 3
+   }
+  ],
+  "rerolls": 1,
+  "catchValue": 7,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "snorlax-gmax",
+  "form": {
+   "of": 143,
+   "kind": "gmax"
+  }
+ },
+ {
+  "dex": 10207,
+  "name": "Gigantamax Garbodor",
+  "type1": "poison",
+  "type2": null,
+  "baseHp": 12,
+  "maxHp": 301,
+  "speed": 7,
+  "spriteUrl": "/pokemon/10207_front.png",
+  "dice": [
+   {
+    "type": "poison",
+    "count": 2
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "garbodor-gmax",
+  "form": {
+   "of": 569,
+   "kind": "gmax"
+  }
+ },
+ {
+  "dex": 10208,
+  "name": "Gigantamax Melmetal",
+  "type1": "steel",
+  "type2": null,
+  "baseHp": 14,
+  "maxHp": 411,
+  "speed": 3,
+  "spriteUrl": "/pokemon/10208_front.png",
+  "dice": [
+   {
+    "type": "steel",
+    "count": 5
+   }
+  ],
+  "rerolls": 5,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "melmetal-gmax",
+  "form": {
+   "of": 809,
+   "kind": "gmax"
+  }
+ },
+ {
+  "dex": 10209,
+  "name": "Gigantamax Rillaboom",
+  "type1": "grass",
+  "type2": null,
+  "baseHp": 13,
+  "maxHp": 341,
+  "speed": 8,
+  "spriteUrl": "/pokemon/10209_front.png",
+  "dice": [
+   {
+    "type": "grass",
+    "count": 3
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 4,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "rillaboom-gmax",
+  "form": {
+   "of": 812,
+   "kind": "gmax"
+  }
+ },
+ {
+  "dex": 10210,
+  "name": "Gigantamax Cinderace",
+  "type1": "fire",
+  "type2": null,
+  "baseHp": 12,
+  "maxHp": 301,
+  "speed": 11,
+  "spriteUrl": "/pokemon/10210_front.png",
+  "dice": [
+   {
+    "type": "fire",
+    "count": 3
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 4,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "cinderace-gmax",
+  "form": {
+   "of": 815,
+   "kind": "gmax"
+  }
+ },
+ {
+  "dex": 10211,
+  "name": "Gigantamax Inteleon",
+  "type1": "water",
+  "type2": null,
+  "baseHp": 12,
+  "maxHp": 281,
+  "speed": 12,
+  "spriteUrl": "/pokemon/10211_front.png",
+  "dice": [
+   {
+    "type": "water",
+    "count": 3
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 4,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "inteleon-gmax",
+  "form": {
+   "of": 818,
+   "kind": "gmax"
+  }
+ },
+ {
+  "dex": 10212,
+  "name": "Gigantamax Corviknight",
+  "type1": "flying",
+  "type2": "steel",
+  "baseHp": 13,
+  "maxHp": 337,
+  "speed": 6,
+  "spriteUrl": "/pokemon/10212_front.png",
+  "dice": [
+   {
+    "type": "flying",
+    "count": 2
+   },
+   {
+    "type": "steel",
+    "count": 2
+   }
+  ],
+  "rerolls": 4,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "corviknight-gmax",
+  "form": {
+   "of": 823,
+   "kind": "gmax"
+  }
+ },
+ {
+  "dex": 10213,
+  "name": "Gigantamax Orbeetle",
+  "type1": "bug",
+  "type2": "psychic",
+  "baseHp": 12,
+  "maxHp": 261,
+  "speed": 9,
+  "spriteUrl": "/pokemon/10213_front.png",
+  "dice": [
+   {
+    "type": "bug",
+    "count": 2
+   },
+   {
+    "type": "psychic",
+    "count": 1
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "orbeetle-gmax",
+  "form": {
+   "of": 826,
+   "kind": "gmax"
+  }
+ },
+ {
+  "dex": 10214,
+  "name": "Gigantamax Drednaw",
+  "type1": "water",
+  "type2": "rock",
+  "baseHp": 13,
+  "maxHp": 321,
+  "speed": 7,
+  "spriteUrl": "/pokemon/10214_front.png",
+  "dice": [
+   {
+    "type": "water",
+    "count": 2
+   },
+   {
+    "type": "rock",
+    "count": 1
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 4,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "drednaw-gmax",
+  "form": {
+   "of": 834,
+   "kind": "gmax"
+  }
+ },
+ {
+  "dex": 10215,
+  "name": "Gigantamax Coalossal",
+  "type1": "rock",
+  "type2": "fire",
+  "baseHp": 13,
+  "maxHp": 361,
+  "speed": 3,
+  "spriteUrl": "/pokemon/10215_front.png",
+  "dice": [
+   {
+    "type": "rock",
+    "count": 2
+   },
+   {
+    "type": "fire",
+    "count": 2
+   }
+  ],
+  "rerolls": 4,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "coalossal-gmax",
+  "form": {
+   "of": 839,
+   "kind": "gmax"
+  }
+ },
+ {
+  "dex": 10216,
+  "name": "Gigantamax Flapple",
+  "type1": "grass",
+  "type2": "dragon",
+  "baseHp": 12,
+  "maxHp": 281,
+  "speed": 7,
+  "spriteUrl": "/pokemon/10216_front.png",
+  "dice": [
+   {
+    "type": "grass",
+    "count": 2
+   },
+   {
+    "type": "dragon",
+    "count": 1
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "flapple-gmax",
+  "form": {
+   "of": 841,
+   "kind": "gmax"
+  }
+ },
+ {
+  "dex": 10217,
+  "name": "Gigantamax Appletun",
+  "type1": "grass",
+  "type2": "dragon",
+  "baseHp": 13,
+  "maxHp": 361,
+  "speed": 3,
+  "spriteUrl": "/pokemon/10217_front.png",
+  "dice": [
+   {
+    "type": "grass",
+    "count": 2
+   },
+   {
+    "type": "dragon",
+    "count": 1
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "appletun-gmax",
+  "form": {
+   "of": 842,
+   "kind": "gmax"
+  }
+ },
+ {
+  "dex": 10218,
+  "name": "Gigantamax Sandaconda",
+  "type1": "ground",
+  "type2": null,
+  "baseHp": 12,
+  "maxHp": 285,
+  "speed": 7,
+  "spriteUrl": "/pokemon/10218_front.png",
+  "dice": [
+   {
+    "type": "ground",
+    "count": 2
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 3,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "sandaconda-gmax",
+  "form": {
+   "of": 844,
+   "kind": "gmax"
+  }
+ },
+ {
+  "dex": 10219,
+  "name": "Gigantamax Amped Toxtricity",
+  "type1": "electric",
+  "type2": "poison",
+  "baseHp": 12,
+  "maxHp": 291,
+  "speed": 7,
+  "spriteUrl": "/pokemon/10219_front.png",
+  "dice": [
+   {
+    "type": "electric",
+    "count": 2
+   },
+   {
+    "type": "poison",
+    "count": 1
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "toxtricity-amped-gmax",
+  "form": {
+   "of": 849,
+   "kind": "gmax"
+  }
+ },
+ {
+  "dex": 10220,
+  "name": "Gigantamax Centiskorch",
+  "type1": "fire",
+  "type2": "bug",
+  "baseHp": 13,
+  "maxHp": 341,
+  "speed": 6,
+  "spriteUrl": "/pokemon/10220_front.png",
+  "dice": [
+   {
+    "type": "fire",
+    "count": 2
+   },
+   {
+    "type": "bug",
+    "count": 1
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 4,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "centiskorch-gmax",
+  "form": {
+   "of": 851,
+   "kind": "gmax"
+  }
+ },
+ {
+  "dex": 10221,
+  "name": "Gigantamax Hatterene",
+  "type1": "psychic",
+  "type2": "fairy",
+  "baseHp": 12,
+  "maxHp": 255,
+  "speed": 2,
+  "spriteUrl": "/pokemon/10221_front.png",
+  "dice": [
+   {
+    "type": "psychic",
+    "count": 2
+   },
+   {
+    "type": "fairy",
+    "count": 2
+   }
+  ],
+  "rerolls": 4,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "hatterene-gmax",
+  "form": {
+   "of": 858,
+   "kind": "gmax"
+  }
+ },
+ {
+  "dex": 10222,
+  "name": "Gigantamax Grimmsnarl",
+  "type1": "dark",
+  "type2": "fairy",
+  "baseHp": 13,
+  "maxHp": 331,
+  "speed": 6,
+  "spriteUrl": "/pokemon/10222_front.png",
+  "dice": [
+   {
+    "type": "dark",
+    "count": 2
+   },
+   {
+    "type": "fairy",
+    "count": 2
+   }
+  ],
+  "rerolls": 4,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "grimmsnarl-gmax",
+  "form": {
+   "of": 861,
+   "kind": "gmax"
+  }
+ },
+ {
+  "dex": 10223,
+  "name": "Gigantamax Alcremie",
+  "type1": "fairy",
+  "type2": null,
+  "baseHp": 12,
+  "maxHp": 271,
+  "speed": 6,
+  "spriteUrl": "/pokemon/10223_front.png",
+  "dice": [
+   {
+    "type": "fairy",
+    "count": 2
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 4,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "alcremie-gmax",
+  "form": {
+   "of": 869,
+   "kind": "gmax"
+  }
+ },
+ {
+  "dex": 10224,
+  "name": "Gigantamax Copperajah",
+  "type1": "steel",
+  "type2": null,
+  "baseHp": 13,
+  "maxHp": 385,
+  "speed": 3,
+  "spriteUrl": "/pokemon/10224_front.png",
+  "dice": [
+   {
+    "type": "steel",
+    "count": 2
+   },
+   {
+    "type": "base",
+    "count": 1
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 4,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "copperajah-gmax",
+  "form": {
+   "of": 879,
+   "kind": "gmax"
+  }
+ },
+ {
+  "dex": 10225,
+  "name": "Gigantamax Duraludon",
+  "type1": "steel",
+  "type2": "dragon",
+  "baseHp": 12,
+  "maxHp": 281,
+  "speed": 8,
+  "spriteUrl": "/pokemon/10225_front.png",
+  "dice": [
+   {
+    "type": "steel",
+    "count": 1
+   },
+   {
+    "type": "dragon",
+    "count": 1
+   }
+  ],
+  "rerolls": 2,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "duraludon-gmax",
+  "form": {
+   "of": 884,
+   "kind": "gmax"
+  }
+ },
+ {
+  "dex": 10226,
+  "name": "Gigantamax Single Strike Urshifu",
+  "type1": "fighting",
+  "type2": "dark",
+  "baseHp": 13,
+  "maxHp": 341,
+  "speed": 9,
+  "spriteUrl": "/pokemon/10226_front.png",
+  "dice": [
+   {
+    "type": "fighting",
+    "count": 2
+   },
+   {
+    "type": "dark",
+    "count": 1
+   },
+   {
+    "type": "base",
+    "count": 2
+   }
+  ],
+  "rerolls": 5,
+  "catchValue": 6,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "urshifu-single-strike-gmax",
+  "form": {
+   "of": 892,
+   "kind": "gmax"
   }
  },
  {
@@ -46850,6 +48026,84 @@
    "of": 194,
    "kind": "regional",
    "region": "paldea"
+  }
+ },
+ {
+  "dex": 10273,
+  "name": "Ogerpon",
+  "type1": "grass",
+  "type2": "water",
+  "baseHp": 12,
+  "maxHp": 301,
+  "speed": 11,
+  "spriteUrl": "/pokemon/10273_front.png",
+  "dice": [
+   {
+    "type": "water",
+    "count": 5
+   }
+  ],
+  "rerolls": 5,
+  "catchValue": 6,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "ogerpon-wellspring-mask",
+  "form": {
+   "of": 1017,
+   "kind": "battle",
+   "trigger": "choice"
+  }
+ },
+ {
+  "dex": 10274,
+  "name": "Ogerpon",
+  "type1": "grass",
+  "type2": "fire",
+  "baseHp": 12,
+  "maxHp": 301,
+  "speed": 11,
+  "spriteUrl": "/pokemon/10274_front.png",
+  "dice": [
+   {
+    "type": "fire",
+    "count": 5
+   }
+  ],
+  "rerolls": 5,
+  "catchValue": 6,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "ogerpon-hearthflame-mask",
+  "form": {
+   "of": 1017,
+   "kind": "battle",
+   "trigger": "choice"
+  }
+ },
+ {
+  "dex": 10275,
+  "name": "Ogerpon",
+  "type1": "grass",
+  "type2": "rock",
+  "baseHp": 12,
+  "maxHp": 301,
+  "speed": 11,
+  "spriteUrl": "/pokemon/10275_front.png",
+  "dice": [
+   {
+    "type": "rock",
+    "count": 5
+   }
+  ],
+  "rerolls": 5,
+  "catchValue": 6,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "ogerpon-cornerstone-mask",
+  "form": {
+   "of": 1017,
+   "kind": "battle",
+   "trigger": "choice"
   }
  },
  {
@@ -48570,6 +49824,448 @@
   "notes": "arceus-fairy · sprite 493-fairy",
   "form": {
    "of": 493,
+   "kind": "battle",
+   "trigger": "choice"
+  }
+ },
+ {
+  "dex": 20101,
+  "name": "Silvally",
+  "type1": "fire",
+  "type2": null,
+  "baseHp": 13,
+  "maxHp": 331,
+  "speed": 9,
+  "spriteUrl": "/pokemon/20101_front.png",
+  "dice": [
+   {
+    "type": "fire",
+    "count": 4
+   }
+  ],
+  "rerolls": 4,
+  "catchValue": 6,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "silvally-fire · sprite 773-fire",
+  "form": {
+   "of": 773,
+   "kind": "battle",
+   "trigger": "choice"
+  }
+ },
+ {
+  "dex": 20102,
+  "name": "Silvally",
+  "type1": "water",
+  "type2": null,
+  "baseHp": 13,
+  "maxHp": 331,
+  "speed": 9,
+  "spriteUrl": "/pokemon/20102_front.png",
+  "dice": [
+   {
+    "type": "water",
+    "count": 4
+   }
+  ],
+  "rerolls": 4,
+  "catchValue": 6,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "silvally-water · sprite 773-water",
+  "form": {
+   "of": 773,
+   "kind": "battle",
+   "trigger": "choice"
+  }
+ },
+ {
+  "dex": 20103,
+  "name": "Silvally",
+  "type1": "electric",
+  "type2": null,
+  "baseHp": 13,
+  "maxHp": 331,
+  "speed": 9,
+  "spriteUrl": "/pokemon/20103_front.png",
+  "dice": [
+   {
+    "type": "electric",
+    "count": 4
+   }
+  ],
+  "rerolls": 4,
+  "catchValue": 6,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "silvally-electric · sprite 773-electric",
+  "form": {
+   "of": 773,
+   "kind": "battle",
+   "trigger": "choice"
+  }
+ },
+ {
+  "dex": 20104,
+  "name": "Silvally",
+  "type1": "grass",
+  "type2": null,
+  "baseHp": 13,
+  "maxHp": 331,
+  "speed": 9,
+  "spriteUrl": "/pokemon/20104_front.png",
+  "dice": [
+   {
+    "type": "grass",
+    "count": 4
+   }
+  ],
+  "rerolls": 4,
+  "catchValue": 6,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "silvally-grass · sprite 773-grass",
+  "form": {
+   "of": 773,
+   "kind": "battle",
+   "trigger": "choice"
+  }
+ },
+ {
+  "dex": 20105,
+  "name": "Silvally",
+  "type1": "ice",
+  "type2": null,
+  "baseHp": 13,
+  "maxHp": 331,
+  "speed": 9,
+  "spriteUrl": "/pokemon/20105_front.png",
+  "dice": [
+   {
+    "type": "ice",
+    "count": 4
+   }
+  ],
+  "rerolls": 4,
+  "catchValue": 6,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "silvally-ice · sprite 773-ice",
+  "form": {
+   "of": 773,
+   "kind": "battle",
+   "trigger": "choice"
+  }
+ },
+ {
+  "dex": 20106,
+  "name": "Silvally",
+  "type1": "fighting",
+  "type2": null,
+  "baseHp": 13,
+  "maxHp": 331,
+  "speed": 9,
+  "spriteUrl": "/pokemon/20106_front.png",
+  "dice": [
+   {
+    "type": "fighting",
+    "count": 4
+   }
+  ],
+  "rerolls": 4,
+  "catchValue": 6,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "silvally-fighting · sprite 773-fighting",
+  "form": {
+   "of": 773,
+   "kind": "battle",
+   "trigger": "choice"
+  }
+ },
+ {
+  "dex": 20107,
+  "name": "Silvally",
+  "type1": "poison",
+  "type2": null,
+  "baseHp": 13,
+  "maxHp": 331,
+  "speed": 9,
+  "spriteUrl": "/pokemon/20107_front.png",
+  "dice": [
+   {
+    "type": "poison",
+    "count": 4
+   }
+  ],
+  "rerolls": 4,
+  "catchValue": 6,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "silvally-poison · sprite 773-poison",
+  "form": {
+   "of": 773,
+   "kind": "battle",
+   "trigger": "choice"
+  }
+ },
+ {
+  "dex": 20108,
+  "name": "Silvally",
+  "type1": "ground",
+  "type2": null,
+  "baseHp": 13,
+  "maxHp": 331,
+  "speed": 9,
+  "spriteUrl": "/pokemon/20108_front.png",
+  "dice": [
+   {
+    "type": "ground",
+    "count": 4
+   }
+  ],
+  "rerolls": 4,
+  "catchValue": 6,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "silvally-ground · sprite 773-ground",
+  "form": {
+   "of": 773,
+   "kind": "battle",
+   "trigger": "choice"
+  }
+ },
+ {
+  "dex": 20109,
+  "name": "Silvally",
+  "type1": "flying",
+  "type2": null,
+  "baseHp": 13,
+  "maxHp": 331,
+  "speed": 9,
+  "spriteUrl": "/pokemon/20109_front.png",
+  "dice": [
+   {
+    "type": "flying",
+    "count": 4
+   }
+  ],
+  "rerolls": 4,
+  "catchValue": 6,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "silvally-flying · sprite 773-flying",
+  "form": {
+   "of": 773,
+   "kind": "battle",
+   "trigger": "choice"
+  }
+ },
+ {
+  "dex": 20110,
+  "name": "Silvally",
+  "type1": "psychic",
+  "type2": null,
+  "baseHp": 13,
+  "maxHp": 331,
+  "speed": 9,
+  "spriteUrl": "/pokemon/20110_front.png",
+  "dice": [
+   {
+    "type": "psychic",
+    "count": 4
+   }
+  ],
+  "rerolls": 4,
+  "catchValue": 6,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "silvally-psychic · sprite 773-psychic",
+  "form": {
+   "of": 773,
+   "kind": "battle",
+   "trigger": "choice"
+  }
+ },
+ {
+  "dex": 20111,
+  "name": "Silvally",
+  "type1": "bug",
+  "type2": null,
+  "baseHp": 13,
+  "maxHp": 331,
+  "speed": 9,
+  "spriteUrl": "/pokemon/20111_front.png",
+  "dice": [
+   {
+    "type": "bug",
+    "count": 4
+   }
+  ],
+  "rerolls": 4,
+  "catchValue": 6,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "silvally-bug · sprite 773-bug",
+  "form": {
+   "of": 773,
+   "kind": "battle",
+   "trigger": "choice"
+  }
+ },
+ {
+  "dex": 20112,
+  "name": "Silvally",
+  "type1": "rock",
+  "type2": null,
+  "baseHp": 13,
+  "maxHp": 331,
+  "speed": 9,
+  "spriteUrl": "/pokemon/20112_front.png",
+  "dice": [
+   {
+    "type": "rock",
+    "count": 4
+   }
+  ],
+  "rerolls": 4,
+  "catchValue": 6,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "silvally-rock · sprite 773-rock",
+  "form": {
+   "of": 773,
+   "kind": "battle",
+   "trigger": "choice"
+  }
+ },
+ {
+  "dex": 20113,
+  "name": "Silvally",
+  "type1": "ghost",
+  "type2": null,
+  "baseHp": 13,
+  "maxHp": 331,
+  "speed": 9,
+  "spriteUrl": "/pokemon/20113_front.png",
+  "dice": [
+   {
+    "type": "ghost",
+    "count": 4
+   }
+  ],
+  "rerolls": 4,
+  "catchValue": 6,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "silvally-ghost · sprite 773-ghost",
+  "form": {
+   "of": 773,
+   "kind": "battle",
+   "trigger": "choice"
+  }
+ },
+ {
+  "dex": 20114,
+  "name": "Silvally",
+  "type1": "dragon",
+  "type2": null,
+  "baseHp": 13,
+  "maxHp": 331,
+  "speed": 9,
+  "spriteUrl": "/pokemon/20114_front.png",
+  "dice": [
+   {
+    "type": "dragon",
+    "count": 4
+   }
+  ],
+  "rerolls": 4,
+  "catchValue": 6,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "silvally-dragon · sprite 773-dragon",
+  "form": {
+   "of": 773,
+   "kind": "battle",
+   "trigger": "choice"
+  }
+ },
+ {
+  "dex": 20115,
+  "name": "Silvally",
+  "type1": "dark",
+  "type2": null,
+  "baseHp": 13,
+  "maxHp": 331,
+  "speed": 9,
+  "spriteUrl": "/pokemon/20115_front.png",
+  "dice": [
+   {
+    "type": "dark",
+    "count": 4
+   }
+  ],
+  "rerolls": 4,
+  "catchValue": 6,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "silvally-dark · sprite 773-dark",
+  "form": {
+   "of": 773,
+   "kind": "battle",
+   "trigger": "choice"
+  }
+ },
+ {
+  "dex": 20116,
+  "name": "Silvally",
+  "type1": "steel",
+  "type2": null,
+  "baseHp": 13,
+  "maxHp": 331,
+  "speed": 9,
+  "spriteUrl": "/pokemon/20116_front.png",
+  "dice": [
+   {
+    "type": "steel",
+    "count": 4
+   }
+  ],
+  "rerolls": 4,
+  "catchValue": 6,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "silvally-steel · sprite 773-steel",
+  "form": {
+   "of": 773,
+   "kind": "battle",
+   "trigger": "choice"
+  }
+ },
+ {
+  "dex": 20117,
+  "name": "Silvally",
+  "type1": "fairy",
+  "type2": null,
+  "baseHp": 13,
+  "maxHp": 331,
+  "speed": 9,
+  "spriteUrl": "/pokemon/20117_front.png",
+  "dice": [
+   {
+    "type": "fairy",
+    "count": 4
+   }
+  ],
+  "rerolls": 4,
+  "catchValue": 6,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "silvally-fairy · sprite 773-fairy",
+  "form": {
+   "of": 773,
    "kind": "battle",
    "trigger": "choice"
   }

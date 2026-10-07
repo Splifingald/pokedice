@@ -89,10 +89,11 @@ export const ROW_SCHEMAS: Record<TableName, z.ZodTypeAny> = {
       form: z
         .object({
           of: int(1),
-          kind: z.enum(['regional', 'mega', 'battle']),
+          kind: z.enum(['regional', 'mega', 'gmax', 'battle']),
           region: z.string().nullable().optional(),
           trigger: z.enum(['lowHp', 'choice']).nullable().optional(),
           swapDie: z.object({ from: dieType, to: dieType }).nullable().optional(),
+          mechanic: z.enum(['primal', 'ultra']).nullable().optional(),
         })
         .nullable()
         .optional(),

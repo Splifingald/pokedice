@@ -11,6 +11,7 @@ import {
   faceOf,
   facesOf,
   formChoices,
+  gmaxChoices,
   hasStatus,
   megaChoices,
   megaDie,
@@ -495,6 +496,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
     colorOf: (t) => data.diceTypes[t as keyof typeof data.diceTypes]?.color ?? typeColor(t),
     onHit,
     speciesName: (dex) => data.species[dex]?.name ?? `#${dex}`,
+    megaMechanic: (dex) => data.species[dex]?.form?.mechanic ?? null,
   }, pace)
   useShake(scene, fx.shake, reduced, pace)
 
@@ -615,8 +617,12 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
   const showSwitch = data.config.allowVoluntarySwitch && switchTargets.length > 0
   // Mega Evolution (once per battle, Lv.50+, from Kalos on) and Arceus's types, beside ITEM and SWITCH.
   const megaOpts = versus ? [] : megaChoices(st, data)
+  const gmaxOpts = versus ? [] : gmaxChoices(st, data)
+  // Primal Reversion and Ultra Burst use the same button under their own name.
+  const megaMechanic = megaOpts[0]?.form?.mechanic
+  const megaLabel = megaMechanic === 'primal' ? 'ui.battle.primal' : megaMechanic === 'ultra' ? 'ui.battle.ultra' : 'ui.battle.mega'
   const formOpts = versus ? [] : formChoices(st, data)
-  const formsLeft = data.config.arceusChangesPerBattle - (st.formChanges ?? 0)
+  const formsLeft = data.config.formChangesPerBattle - (st.formChanges ?? 0)
   const megaBase = data.species[activeBattler(st).baseDex ?? activeBattler(st).dex]
   const megaEvolve = (toDex: number) => {
     setMenu(null)
@@ -1013,7 +1019,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
             </PixelButton>
           </div>
         )}
-        {!auto && !terminal && (showItem || showSwitch || st.canRun || megaOpts.length > 0 || formOpts.length > 0) && (
+        {!auto && !terminal && (showItem || showSwitch || st.canRun || megaOpts.length > 0 || gmaxOpts.length > 0 || formOpts.length > 0) && (
           <div className="flex flex-wrap items-center justify-center gap-2">
             {megaOpts.length > 0 && (
               <PixelButton
@@ -1024,7 +1030,21 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
                 // One Mega form: straight in. Several (Charizard X and Y…): the player picks.
                 onClick={() => (megaOpts.length === 1 ? megaEvolve(megaOpts[0]!.dex) : setMenu('mega'))}
               >
-                <PixelIcon name="up" size={14} /> {t('ui.battle.mega')}
+                <PixelIcon name="up" size={14} /> {t(megaLabel)}
+              </PixelButton>
+            )}
+            {gmaxOpts.length > 0 && (
+              <PixelButton
+                size={minorSize}
+                variant="primary"
+                disabled={!canAct}
+                title={t('ui.battle.gmaxHint', { n: data.config.gigantamax.turns })}
+                onClick={() => {
+                  setMenu(null)
+                  dispatch({ t: 'GMAX', toDex: gmaxOpts[0]!.dex })
+                }}
+              >
+                <PixelIcon name="up" size={14} /> {t('ui.battle.gmax')}
               </PixelButton>
             )}
             {formOpts.length > 0 && (

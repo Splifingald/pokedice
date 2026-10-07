@@ -26,7 +26,13 @@ import {
   arceusFormId,
   BASE_EVOLUTIONS,
   BIRDS_AREA,
-  GIRATINA_ORIGIN,
+  GMAX_SKIPPED,
+  HP_FORMS,
+  MEGA_LIKE,
+  OGERPON,
+  OGERPON_MASKS,
+  SILVALLY,
+  silvallyFormId,
   LOOT_ADD,
   MEGA_SKIPPED,
   NAME_FIXES,
@@ -222,40 +228,105 @@ async function main() {
     })
   }
 
-  // ---- Giratina's Origin Forme
-  {
-    const base = byDex.get(GIRATINA_ORIGIN.of)!
-    const a = api.get(GIRATINA_ORIGIN.id)!
+  // ---- Primal Reversion and Ultra Burst: Mega rows with their own name for the mechanic
+  for (const { id, mechanic } of MEGA_LIKE) {
+    const m = api.get(id)!
+    const of = speciesOf.get(id)!
+    const base = byDex.get(of)!
+    const [t1, t2 = null] = m.types
     forms.push({
       ...base,
-      dex: GIRATINA_ORIGIN.id,
-      type1: a.types[0]!,
-      type2: a.types[1] ?? null,
-      speed: speedOf(base, api.get(base.dex), a),
-      spriteUrl: sprite(GIRATINA_ORIGIN.id),
+      dex: id,
+      name: enName(id) || base.name,
+      type1: t1!,
+      type2: t2,
+      speed: speedOf(base, api.get(of), m),
+      spriteUrl: sprite(id),
       evolutions: [],
       milestones: [],
-      notes: `${a.identifier} · below half HP, a Ghost die becomes a Dragon die`,
-      form: { of: base.dex, kind: 'battle', trigger: 'lowHp', swapDie: { from: GIRATINA_ORIGIN.from, to: GIRATINA_ORIGIN.to } },
+      notes: `${m.identifier} · BST ${bst(m)}`,
+      form: { of, kind: 'mega', mechanic },
     })
   }
 
-  // ---- Arceus's types
-  {
-    const base = byDex.get(ARCEUS)!
+  // ---- Gigantamax
+  const gmax = [...api.values()].filter((m) => m.id > 10000 && m.identifier.endsWith('-gmax') && !GMAX_SKIPPED.has(m.identifier))
+  for (const m of gmax) {
+    const of = speciesOf.get(m.id)!
+    const base = byDex.get(of)
+    if (!base) continue
+    forms.push({
+      ...base,
+      dex: m.id,
+      name: enName(m.id) || `Gigantamax ${base.name}`,
+      spriteUrl: sprite(m.id),
+      evolutions: [],
+      milestones: [],
+      notes: `${m.identifier}`,
+      form: { of, kind: 'gmax' },
+    })
+  }
+
+  // ---- forms taken below half HP (Giratina, Darmanitan, Zygarde, Wishiwashi, Minior)
+  const formById = new Map(forms.map((f) => [f.dex, f]))
+  for (const h of HP_FORMS) {
+    const base = byDex.get(h.of) ?? formById.get(h.of)!
+    const a = api.get(h.id)!
+    forms.push({
+      ...base,
+      dex: h.id,
+      name: base.name,
+      type1: a.types[0]!,
+      type2: a.types[1] ?? null,
+      speed: speedOf(base, api.get(h.of), a),
+      spriteUrl: sprite(h.id),
+      evolutions: [],
+      milestones: [],
+      notes: `${a.identifier} · below half HP, a ${h.from} die becomes a ${h.to} die`,
+      form: { of: h.of, kind: 'battle', trigger: 'lowHp', swapDie: { from: h.from, to: h.to } },
+    })
+  }
+
+  // ---- types picked from a menu: Arceus's Plates, Silvally's Memories, Ogerpon's masks
+  for (const [of, idOf, file] of [
+    [ARCEUS, arceusFormId, 'arceus'],
+    [SILVALLY, silvallyFormId, 'silvally'],
+  ] as const) {
+    const base = byDex.get(of)!
     const dice = base.dice.reduce((s, d) => s + d.count, 0)
     for (const type of ARCEUS_TYPES) {
       forms.push({
         ...base,
-        dex: arceusFormId(type),
+        dex: idOf(type),
         type1: type,
         type2: null,
-        spriteUrl: sprite(arceusFormId(type)),
+        spriteUrl: sprite(idOf(type)),
         dice: [{ type, count: dice }],
         evolutions: [],
         milestones: [],
-        notes: `arceus-${type} · sprite 493-${type}`,
-        form: { of: ARCEUS, kind: 'battle', trigger: 'choice' },
+        notes: `${file}-${type} · sprite ${of}-${type}`,
+        form: { of, kind: 'battle', trigger: 'choice' },
+      })
+    }
+  }
+  {
+    const base = byDex.get(OGERPON)!
+    const dice = base.dice.reduce((s, d) => s + d.count, 0)
+    for (const id of OGERPON_MASKS) {
+      const a = api.get(id)!
+      const [t1, t2 = null] = a.types
+      forms.push({
+        ...base,
+        dex: id,
+        type1: t1!,
+        type2: t2,
+        spriteUrl: sprite(id),
+        // Its dice take the mask's type, as Arceus's take its Plate's.
+        dice: [{ type: t2 ?? t1!, count: dice }],
+        evolutions: [],
+        milestones: [],
+        notes: a.identifier,
+        form: { of: OGERPON, kind: 'battle', trigger: 'choice' },
       })
     }
   }
@@ -352,7 +423,7 @@ async function main() {
   // ---- names
   await writeNames(forms, api)
   const n = (k: string) => forms.filter((f) => f.form?.kind === k).length
-  console.log(`✓ ${n('regional')} regional forms, ${n('mega')} Mega Evolutions, ${n('battle')} battle forms → src/data, src/i18n/strings.csv`)
+  console.log(`✓ ${n('regional')} regional forms, ${n('mega')} Mega Evolutions, ${n('gmax')} Gigantamax, ${n('battle')} battle forms → src/data, src/i18n/strings.csv`)
 }
 
 const ORIGIN: Record<string, Partial<Record<Lang, string>>> = {
@@ -370,8 +441,27 @@ const MEGA_PREFIX: Partial<Record<Lang, string>> = { fr: 'Méga-', es: 'Mega-', 
 const FULL_WIDTH: Record<string, string> = { x: 'Ｘ', y: 'Ｙ', z: 'Ｚ' }
 
 /** A name PokeAPI has not got yet (the newest forms in Spanish, German, Korean, Chinese), built the games' way. */
+const GMAX_NAME: Partial<Record<Lang, (s: string) => string>> = {
+  fr: (s) => `${s} Gigamax`,
+  es: (s) => `${s} Gigamax`,
+  de: (s) => `Gigadynamax-${s}`,
+  ja: (s) => `${s}（キョダイマックスのすがた）`,
+  ko: (s) => `${s}(거다이맥스의 모습)`,
+  'zh-Hans': (s) => `${s}（超极巨化的样子）`,
+}
+const PRIMAL_NAME: Partial<Record<Lang, (s: string) => string>> = {
+  fr: (s) => `Primo-${s}`,
+  es: (s) => `${s} Primigenio`,
+  de: (s) => `Proto-${s}`,
+  ja: (s) => `ゲンシ${s}`,
+  ko: (s) => `원시${s}`,
+  'zh-Hans': (s) => `原始${s}`,
+}
+
 function composedName(f: Species, lang: Lang, species: string, identifier: string): string {
   const cjk = lang === 'ja' || lang === 'zh-Hans'
+  if (f.form!.kind === 'gmax') return GMAX_NAME[lang]?.(species) ?? f.name
+  if (f.form!.mechanic === 'primal') return PRIMAL_NAME[lang]?.(species) ?? f.name
   if (f.form!.kind === 'mega') {
     const letter = identifier.match(/-mega-([xyz])$/)?.[1]
     const suffix = !letter ? '' : cjk ? FULL_WIDTH[letter]! : lang === 'ko' ? letter.toUpperCase() : ` ${letter.toUpperCase()}`
@@ -420,7 +510,7 @@ async function writeNames(forms: Species[], api: Map<number, ApiMon>) {
       for (const id of LANG_IDS[lang] ?? []) {
         const [form, full] = names?.get(id) ?? ['', '']
         if (full) return full
-        if (form && f.form!.kind === 'mega') return form
+        if (form && f.form!.kind === 'mega' && f.form!.mechanic !== 'primal') return form
         if (form) return composedName(f, lang, species(lang), identifier)
       }
       return composedName(f, lang, species(lang), identifier)

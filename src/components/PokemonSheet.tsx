@@ -10,6 +10,8 @@ import {
   megaDie,
   megaFormsOf,
   megaUnlocked,
+  gmaxFormsOf,
+  gmaxUnlocked,
   nationalDex,
   type DieType,
   type Evolution,
@@ -143,6 +145,8 @@ function MilestoneTrack({ species, level, onOpenDex }: { species: Species; level
   const evolutions = useVisibleEvolutions(species)
   // Mega Evolution joins the curve at its level, once the player has reached Kalos — not before, so it spoils nothing.
   const megas = save && megaUnlocked(save, data) ? megaFormsOf(data, species.dex) : []
+  // Gigantamax has no level: a line under the curve once the player has reached Galar.
+  const gmax = save && gmaxUnlocked(save, data) ? gmaxFormsOf(data, species.dex)[0] : undefined
   const megaLevel = data.config.megaEvolution.level
   type Row = { level: number; m: Milestone } | { level: number; mega: true }
   const ms: Row[] = [
@@ -191,7 +195,13 @@ function MilestoneTrack({ species, level, onOpenDex }: { species: Species; level
                     <span className="font-mono text-sm">{t('ui.common.level.short', { n: row.level })}</span>{' '}
                     {'mega' in row ? (
                       <>
-                        {t('ui.sheet.msMega')}{' '}
+                        {t(
+                          megas[0]?.form?.mechanic === 'primal'
+                            ? 'ui.sheet.msPrimal'
+                            : megas[0]?.form?.mechanic === 'ultra'
+                              ? 'ui.sheet.msUltra'
+                              : 'ui.sheet.msMega',
+                        )}{' '}
                         {megas.map((x, j) => (
                           <span key={x.dex}>
                             {j > 0 && ' / '}
@@ -236,6 +246,12 @@ function MilestoneTrack({ species, level, onOpenDex }: { species: Species; level
       )}
       {byLevel.length > 1 && <p className="mt-1 text-base text-muted">{t('ui.sheet.oneAtRandom')}</p>}
       {megas.length > 0 && <p className="copy mt-1 text-base text-muted">{t('ui.sheet.megaNote')}</p>}
+      {gmax && (
+        <p className="copy mt-1 flex items-center gap-1 text-base">
+          <MiniSprite dex={gmax.dex} size={28} className="-my-2" />
+          <span>{t('ui.sheet.gmaxNote', { to: typeName(megaDie(species, gmax)), n: data.config.gigantamax.turns })}</span>
+        </p>
+      )}
     </section>
   )
 }
@@ -323,14 +339,13 @@ export function PokemonSheet({
         {lowHp?.form?.swapDie && (
           <p className="copy mb-1.5 text-base">
             {t('ui.sheet.lowHpForm', {
-              form: t('ui.sheet.originForme'),
               from: typeName(lowHp.form.swapDie.from),
               to: typeName(lowHp.form.swapDie.to),
             })}
           </p>
         )}
         {choiceFormsOf(data, species.dex).length > 0 && (
-          <p className="copy mb-1.5 text-base">{t('ui.sheet.choiceForm', { n: data.config.arceusChangesPerBattle })}</p>
+          <p className="copy mb-1.5 text-base">{t('ui.sheet.choiceForm', { n: data.config.formChangesPerBattle })}</p>
         )}
         <DiceSet dice={stats.dice} size={30} />
         <div className="mt-2 flex flex-col gap-1.5">

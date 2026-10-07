@@ -6,11 +6,13 @@
  * a Pokémon like any other: it is caught, levels, evolves and has its Pokédex entry. **Mega** and **battle** forms are
  * looks a Pokémon takes in a fight and loses when it ends: nothing about them is ever saved.
  */
+import type { EnemyPlan } from './battle'
 import { getRegion, regionOf } from './regions'
-import type { DieType, Evolution, GameData, PokeType, RegionId, SaveData, Species } from './types'
+import type { DieType, Evolution, GameData, PokeType, RegionId, SaveData, Species, TrainerRole } from './types'
 
-/** A form that only exists inside a battle (a Mega Evolution, Giratina's Origin Forme, Arceus's types). */
-export const isBattleForm = (s: Species | null | undefined): boolean => s?.form?.kind === 'mega' || s?.form?.kind === 'battle'
+/** A form that only exists inside a battle (a Mega Evolution, a Gigantamax, Giratina's Origin Forme, Arceus's types). */
+export const isBattleForm = (s: Species | null | undefined): boolean =>
+  s?.form?.kind === 'mega' || s?.form?.kind === 'gmax' || s?.form?.kind === 'battle'
 
 /** The Pokémon a battle form is a look of (its own dex for anything else). */
 export const baseOfForm = (data: GameData, dex: number): number => {
@@ -41,15 +43,21 @@ function formsOf(data: GameData, dex: number): Species[] {
 /** The Mega Evolutions of a species — two for Charizard, Mewtwo and Raichu (X and Y), none for most. */
 export const megaFormsOf = (data: GameData, dex: number): Species[] => formsOf(data, dex).filter((s) => s.form!.kind === 'mega')
 
-/** Giratina's Origin Forme: the form a Pokémon takes below half HP. */
+/** The Gigantamax form of a species (none for most). */
+export const gmaxFormsOf = (data: GameData, dex: number): Species[] => formsOf(data, dex).filter((s) => s.form!.kind === 'gmax')
+
+/** Giratina's Origin Forme, Darmanitan's Zen Mode…: the form a Pokémon takes below half HP. */
 export const lowHpFormOf = (data: GameData, dex: number): Species | undefined =>
   formsOf(data, dex).find((s) => s.form!.kind === 'battle' && s.form!.trigger === 'lowHp')
 
-/** Arceus's types: the forms picked from the battle menu. The Pokémon's own form is one of the choices too. */
+/** Arceus's types, Silvally's Memories, Ogerpon's masks: the forms picked from the battle menu. */
 export const choiceFormsOf = (data: GameData, dex: number): Species[] =>
   formsOf(data, dex).filter((s) => s.form!.kind === 'battle' && s.form!.trigger === 'choice')
 
 const typesOf = (s: Species): PokeType[] => (s.type2 ? [s.type1, s.type2] : [s.type1])
+
+/** The type every die takes in a menu form: the one it adds (Ogerpon's mask), else its only type (Arceus, Silvally). */
+export const choiceFormDie = (form: Species): PokeType => form.type2 ?? form.type1
 
 /**
  * The die a Mega Evolution adds: the type it gains by Mega Evolving (Charizard X's Dragon, Gyarados's Dark), or —
@@ -65,10 +73,43 @@ export function megaDie(base: Species, mega: Species): PokeType {
  * parked — or any region after it. From then on it works everywhere, earlier regions included.
  */
 export function megaUnlocked(save: SaveData, data: GameData): boolean {
-  const gate = getRegion(data, data.config.megaEvolution.region)
+  return reached(save, data, data.config.megaEvolution.region)
+}
+
+/** Gigantamax is on once the player has reached `gigantamax.region` (Galar), and then everywhere. */
+export function gmaxUnlocked(save: SaveData, data: GameData): boolean {
+  return reached(save, data, data.config.gigantamax.region)
+}
+
+function reached(save: SaveData, data: GameData, regionId: RegionId): boolean {
+  const gate = getRegion(data, regionId)
   if (!gate) return false
   const started = new Set<RegionId>([regionOf(save), ...Object.keys(save.parked ?? {})])
   return data.regions.some((r) => started.has(r.id) && r.orderIndex >= gate.orderIndex)
+}
+
+/**
+ * What a foe does with these mechanics. A type changer (Arceus, Silvally, Ogerpon) picks its type against yours. A
+ * trainer's ace — a leader's, the Elite Four's, a Champion's: the last of its strongest — Gigantamaxes in Galar and
+ * Mega Evolves (Primal Reversion, Ultra Burst) in the regions whose games have it (Hoenn, Kalos, Alola), at Lv.50 like
+ * yours. Only once the player has the mechanic too: a foe never shows one first.
+ */
+export function enemyPlanFor(
+  save: SaveData,
+  data: GameData,
+  foe: { dex: number; level: number },
+  trainer: { regionId: RegionId; role: TrainerRole; ace: boolean } | null,
+): EnemyPlan | null {
+  const plan: EnemyPlan = {}
+  if (choiceFormsOf(data, foe.dex).length) plan.formChanges = true
+  const cfg = data.config
+  if (trainer?.ace && cfg.megaEvolution.trainerRoles.includes(trainer.role)) {
+    const gmax = gmaxFormsOf(data, foe.dex)[0]
+    const mega = megaOptions(data, foe.dex, foe.level)[0]
+    if (gmax && gmaxUnlocked(save, data) && cfg.gigantamax.trainerRegions.includes(trainer.regionId)) plan.gmax = gmax.dex
+    else if (mega && megaUnlocked(save, data) && cfg.megaEvolution.trainerRegions.includes(trainer.regionId)) plan.mega = mega.dex
+  }
+  return Object.keys(plan).length ? plan : null
 }
 
 /** The Mega forms open to a Pokémon of this species and level (empty below the level, or with none). */

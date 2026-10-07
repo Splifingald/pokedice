@@ -212,10 +212,16 @@ function buildRows(log: readonly LogEntry[], player: readonly Battler[], enemy: 
           name: before,
           text:
             e.reason === 'mega'
-              ? t('ui.hist.megaEvolved', { mega: data.species[e.toDex]?.name ?? '' })
-              : e.reason === 'lowHp'
-                ? t(e.revert ? 'ui.hist.alteredForme' : 'ui.hist.originForme')
-                : t('ui.hist.typeChange', { type: typeName(e.dice[0] ?? 'normal') }),
+              ? data.species[e.toDex]?.form?.mechanic === 'primal'
+                ? t('ui.hist.primal')
+                : data.species[e.toDex]?.form?.mechanic === 'ultra'
+                  ? t('ui.hist.ultra', { mega: data.species[e.toDex]?.name ?? '' })
+                  : t('ui.hist.megaEvolved', { mega: data.species[e.toDex]?.name ?? '' })
+              : e.reason === 'gmax'
+                ? t(e.revert ? 'ui.hist.gmaxEnd' : 'ui.hist.gmax')
+                : e.reason === 'lowHp'
+                  ? t(e.revert ? 'ui.hist.formBack' : 'ui.hist.formChanged')
+                  : t('ui.hist.typeChange', { type: typeName(e.dice[0] ?? 'normal') }),
           icon: 'up',
         })
         return
