@@ -23,6 +23,7 @@ export const ICONS = {
   coin: ['..kkkk..', '.kyyyyk.', 'kyYyyyyk', 'kyYyyyyk', 'kyyyyyok', 'kyyyyyok', '.kyooyk.', '..kkkk..'],
   heart: ['.kk..kk.', 'krrkkrrk', 'krwrrrrk', 'krrrrrrk', '.krrrrk.', '..krrk..', '...kk...', '........'],
   star: ['...kk...', '...yy...', 'kkyYyykk', '.kyyyyk.', '..kyyk..', '.kykkyk.', '.kk..kk.', '........'],
+  warning: ['...kk...', '..kyyk..', '..kkkk..', '.kykkyk.', '.kykkyk.', 'kyyyyyyk', 'kyykkyyk', 'kkkkkkkk'],
   lock: ['..kkkk..', '.k....k.', '.k....k.', 'kkkkkkkk', 'kyyyyyyk', 'kyyykyyk', 'kyyyyyyk', 'kkkkkkkk'],
   burn: ['....k...', '...kok..', '..koYok.', '.kooYyok', '.koyYyok', '.kooyyok', '..koook.', '...kkk..'],
   frozen: ['...C....', '.C.c.C..', '..ccc...', 'CccwccC.', '..ccc...', '.C.c.C..', '...C....', '........'],
