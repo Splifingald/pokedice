@@ -100,7 +100,7 @@
   }
  },
  "shinyChance": 0.01,
- "configVersion": 61,
+ "configVersion": 63,
  "energy": {
   "max": 50,
   "enabled": false,
