@@ -93,6 +93,7 @@ export const saveSchema = z.object({
   merged: z.array(z.string()).optional(),
   boughtUnique: z.array(z.string()).optional(),
   donationSeen: z.object({ round: z.number().int().min(0), regions: z.array(z.string()) }).optional(),
+  regionOfferSeen: z.array(z.string()).optional(),
 })
 
 /**

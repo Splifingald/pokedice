@@ -2,6 +2,7 @@
 import {
   createInstance,
   getRegion,
+  markRegionOfferSeen,
   newRegionBlock,
   offeredRegion,
   regionOf,
@@ -28,6 +29,15 @@ export function availableRegions(): Region[] {
 export function regionOnOffer(): Region | null {
   const { save, data } = useGame.getState()
   return save ? offeredRegion(save, data) : null
+}
+
+/** The offer's pop-up was closed: from now on only the banner opens it. */
+export function closeRegionOffer(): void {
+  const { data } = useGame.getState()
+  mutateSave((s) => {
+    const next = markRegionOfferSeen(s, data)
+    return next === s ? null : next
+  })
 }
 
 /**

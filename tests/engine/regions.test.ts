@@ -6,11 +6,13 @@ import {
   enabledRegions,
   leagueDone,
   liveBlock,
+  markRegionOfferSeen,
   newRegionBlock,
   newSave,
   offeredRegion,
   regionAreas,
   regionOf,
+  regionOfferDue,
   regionSpecies,
   sendOnBlocked,
   sendOnTarget,
@@ -25,6 +27,7 @@ import {
   type SaveData,
 } from '@/engine'
 import { BUNDLE } from '@/config/bundle'
+import { parseSave } from '@/save/schema'
 import { newId } from '../fixtures'
 
 /**
@@ -79,6 +82,19 @@ describe('regions', () => {
     const s = newSave(7, data, 1, newId)
     expect(offeredRegion(s, data)).toBeNull()
     expect(offeredRegion(clearLeague(s, data), data)?.id).toBe('johto')
+  })
+
+  it('opens the offer pop-up once per region: closed, it stays on offer but is no longer due', () => {
+    const s = clearLeague(newSave(7, data, 1, newId), data)
+    expect(regionOfferDue(s, data)?.id).toBe('johto')
+    const seen = markRegionOfferSeen(s, data)
+    expect(seen.regionOfferSeen).toEqual(['johto'])
+    expect(regionOfferDue(seen, data)).toBeNull()
+    expect(offeredRegion(seen, data)?.id).toBe('johto')
+    expect(markRegionOfferSeen(seen, data)).toBe(seen)
+    // It survives a reload.
+    const parsed = parseSave(JSON.parse(JSON.stringify(seen)))
+    expect(parsed.ok && parsed.save.regionOfferSeen).toEqual(['johto'])
   })
 
   it('offers nothing once the region has been started', () => {

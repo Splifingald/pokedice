@@ -4,13 +4,13 @@
 // nothing at all, which is what keeps Johto unmentioned for a player still working through Kanto.
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { donationDue, getRegion, regionOf, tutorialPending, type Region } from '@/engine'
+import { donationDue, getRegion, regionOf, regionOfferDue, tutorialPending, type Region } from '@/engine'
 import { useT } from '@/i18n/react'
 import { Modal } from '@/components/Modal'
 import { PixelButton } from '@/components/PixelButton'
 import { SpriteImg } from '@/components/SpriteImg'
 import { TypeBadge } from '@/components/TypeBadge'
-import { availableRegions, regionOnOffer, startRegion, switchRegion } from '@/store/regions'
+import { availableRegions, closeRegionOffer, regionOnOffer, startRegion, switchRegion } from '@/store/regions'
 import { useGame } from '@/store/game'
 import { cx } from '@/theme/util'
 
@@ -21,13 +21,19 @@ export function RegionBar() {
   // and the banner keeps it on screen meanwhile. The donation pop-up goes first too.
   const waiting = useGame((s) => !!s.save && (tutorialPending(s.save, s.data) || donationDue(s.save, s.data)))
   const busy = useGame((s) => s.run.phase !== 'idle')
-  const [dismissed, setDismissed] = useState(false)
+  // The pop-up opens by itself once per region; once closed, it is saved as seen and only the banner reopens it.
+  const due = useGame((s) => !!s.save && !!regionOfferDue(s.save, s.data))
+  const [reopened, setReopened] = useState(false)
   const [picking, setPicking] = useState(false)
 
   const regions = availableRegions()
   const offer = regionOnOffer()
   const current = regionOf(save)
-  const offerOpen = !dismissed && !waiting && !busy && !picking
+  const offerOpen = (due || reopened) && !waiting && !busy && !picking
+  const closeOffer = () => {
+    setReopened(false)
+    closeRegionOffer()
+  }
   if (regions.length < 2 && !offer) return null
 
   return (
@@ -62,7 +68,7 @@ export function RegionBar() {
             <div className="text-2xl leading-tight text-gold">{t('ui.region.newOpen')}</div>
             <p className="text-lg leading-tight text-muted">{t('ui.region.newBody', { region: offer.name })}</p>
           </div>
-          <PixelButton variant="primary" onClick={() => setDismissed(false)}>
+          <PixelButton variant="primary" onClick={() => setReopened(true)}>
             {t('ui.region.see', { region: offer.name })}
           </PixelButton>
         </motion.div>
@@ -74,7 +80,7 @@ export function RegionBar() {
           open={offerOpen || picking}
           onClose={() => {
             setPicking(false)
-            setDismissed(true)
+            closeOffer()
           }}
           title={t(picking ? 'ui.region.choosePartner' : 'ui.region.awaits', { region: offer.name })}
         >
@@ -83,7 +89,7 @@ export function RegionBar() {
           ) : (
             <RegionTerms
               region={offer}
-              onClose={() => setDismissed(true)}
+              onClose={closeOffer}
               onAccept={() => setPicking(true)}
             />
           )}

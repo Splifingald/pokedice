@@ -171,6 +171,19 @@ export function offeredRegion(save: SaveData, data: GameData): Region | null {
   return null
 }
 
+/** The region on offer, if its pop-up has not been closed yet: it opens by itself once per region, never again. */
+export function regionOfferDue(save: SaveData, data: GameData): Region | null {
+  const offer = offeredRegion(save, data)
+  return offer && !save.regionOfferSeen?.includes(offer.id) ? offer : null
+}
+
+/** The pop-up was closed: the region stays on offer (the banner reopens it) but it no longer opens by itself. */
+export function markRegionOfferSeen(save: SaveData, data: GameData): SaveData {
+  const due = regionOfferDue(save, data)
+  if (!due) return save
+  return { ...save, regionOfferSeen: [...(save.regionOfferSeen ?? []), due.id] }
+}
+
 // ---------------------------------------------------------------- the block swap
 
 /** Lifts the live region's fields out of the save. */

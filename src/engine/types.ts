@@ -605,6 +605,8 @@ export interface SaveData {
   boughtUnique?: string[]
   /** The regions whose donation pop-up was shown, in the admin's current reset round (engine/donation). */
   donationSeen?: { round: number; regions: RegionId[] }
+  /** The regions whose "a new region is open" pop-up has been closed: it opens by itself once per region. */
+  regionOfferSeen?: RegionId[]
 }
 
 /**
