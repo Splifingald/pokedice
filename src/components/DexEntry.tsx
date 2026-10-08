@@ -10,6 +10,7 @@ import {
   regionOfArea,
   shopSells,
   type Area,
+  type Evolution,
   type GameData,
   type ItemDef,
   type RegionId,
@@ -235,15 +236,95 @@ function ItemSources({ itemKey, onTravel }: { itemKey: string; onTravel?: () => 
   )
 }
 
-/** An uncaught species: its silhouette, and where it can be found (or what it evolves from). */
+const EVOLVES_TEXT = {
+  from: { item: 'ui.dex.evolvesFromItem', level: 'ui.dex.evolvesFromLevel' },
+  into: { item: 'ui.dex.evolvesIntoItem', level: 'ui.dex.evolvesIntoLevel' },
+} as const
+
+/**
+ * One evolution step as a card naming the other species (a silhouette until it is caught, unless `reveal`) that opens
+ * its entry — and, for a stone, where to find that stone. "From" on the evolved species' entry, "into" on the one
+ * that evolves.
+ */
+function EvolutionStep({
+  dex,
+  evo,
+  direction,
+  reveal = false,
+  onOpenDex,
+  onTravel,
+}: {
+  dex: number
+  evo: Evolution
+  direction: 'from' | 'into'
+  reveal?: boolean
+  onOpenDex?: (dex: number) => void
+  onTravel?: () => void
+}) {
+  const { t } = useT()
+  const data = useGame((s) => s.data)
+  const known = useGame((s) => reveal || !!s.save?.pokedex.includes(dex))
+  const button = (
+    <button
+      type="button"
+      onClick={() => onOpenDex?.(dex)}
+      className="pixel-panel flex w-full items-center gap-2 p-2 text-left hover:bg-white"
+    >
+      <SpriteImg dex={dex} size={48} silhouette={!known} />
+      <span className="text-xl leading-tight">
+        {t(EVOLVES_TEXT[direction][evo.item ? 'item' : 'level'], {
+          name: known ? (data.species[dex]?.name ?? '') : t('ui.common.unknown'),
+          how: evolutionHow(evo, data),
+        })}
+      </span>
+    </button>
+  )
+  if (!evo.item) return button
+  return (
+    <div className="flex flex-col gap-2">
+      {button}
+      <ItemSources itemKey={evo.item} onTravel={onTravel} />
+    </div>
+  )
+}
+
+/**
+ * What this species evolves into (the branches this save may see), and for a stone where to find it. Once it is
+ * caught its sheet already names its evolutions, so the cards do too.
+ */
+function EvolvesInto({ dex, onOpenDex, onTravel }: { dex: number; onOpenDex?: (dex: number) => void; onTravel?: () => void }) {
+  const { t } = useT()
+  const data = useGame((s) => s.data)
+  const caught = useGame((s) => !!s.save?.pokedex.includes(dex))
+  const evolutions = useVisibleEvolutions(data.species[dex]!)
+  if (evolutions.length === 0) return null
+  return (
+    <section className="flex flex-col gap-2">
+      <h3 className="text-xl">{t('ui.sheet.evolvesInto')}</h3>
+      {evolutions.map((e) => (
+        <EvolutionStep
+          key={`${e.toDex}-${e.item ?? e.level}`}
+          dex={e.toDex}
+          evo={e}
+          direction="into"
+          reveal={caught}
+          onOpenDex={onOpenDex}
+          onTravel={onTravel}
+        />
+      ))}
+    </section>
+  )
+}
+
+/** An uncaught species: its silhouette, where it can be found (or what it evolves from), and what it evolves into. */
 function MissingEntry({ dex, onOpenDex, onTravel }: { dex: number; onOpenDex?: (dex: number) => void; onTravel?: () => void }) {
   const { t } = useT()
   const data = useGame((s) => s.data)
-  const pokedex = useGame((s) => s.save?.pokedex)
   const { spots, travelHint } = useSpots(dex)
-  const from = data.speciesList
-    .map((s) => ({ species: s, evo: s.evolutions.find((e) => e.toDex === dex) }))
-    .filter((x) => !!x.evo)
+  const from = data.speciesList.flatMap((s) => {
+    const evo = s.evolutions.find((e) => e.toDex === dex)
+    return evo ? [{ species: s, evo }] : []
+  })
 
   return (
     <div className="flex flex-col gap-3">
@@ -258,35 +339,13 @@ function MissingEntry({ dex, onOpenDex, onTravel }: { dex: number; onOpenDex?: (
       <section className="flex flex-col gap-2">
         <h3 className="text-2xl">{t('ui.dex.whereToFindHeading')}</h3>
         {spots.length > 0 && <SpotList spots={spots} onTravel={onTravel} />}
-        {from.map(({ species, evo }) => {
-          const known = pokedex?.includes(species.dex)
-          const button = (
-            <button
-              key={species.dex}
-              type="button"
-              onClick={() => onOpenDex?.(species.dex)}
-              className="pixel-panel flex w-full items-center gap-2 p-2 text-left hover:bg-white"
-            >
-              <SpriteImg dex={species.dex} size={48} silhouette={!known} />
-              <span className="text-xl leading-tight">
-                {t(evo!.item ? 'ui.dex.evolvesFromItem' : 'ui.dex.evolvesFromLevel', {
-                  name: known ? species.name : t('ui.common.unknown'),
-                  how: evolutionHow(evo!, data),
-                })}
-              </span>
-            </button>
-          )
-          if (!evo!.item) return button
-          return (
-            <div key={species.dex} className="flex flex-col gap-2">
-              {button}
-              <ItemSources itemKey={evo!.item} onTravel={onTravel} />
-            </div>
-          )
-        })}
+        {from.map(({ species, evo }) => (
+          <EvolutionStep key={species.dex} dex={species.dex} evo={evo} direction="from" onOpenDex={onOpenDex} onTravel={onTravel} />
+        ))}
         {spots.length === 0 && from.length === 0 && <p className="copy text-muted">{t('ui.dex.notSpotted')}</p>}
         {travelHint && <p className="copy text-muted">{t('ui.dex.exploringHint', { area: travelHint })}</p>}
       </section>
+      <EvolvesInto dex={dex} onOpenDex={onOpenDex} onTravel={onTravel} />
     </div>
   )
 }
@@ -306,21 +365,6 @@ function CaughtSpots({ dex, onTravel }: { dex: number; onTravel?: () => void }) 
   )
 }
 
-/** A caught species that evolves with an item: where to get that item. */
-function EvolutionItems({ dex, onTravel }: { dex: number; onTravel?: () => void }) {
-  const data = useGame((s) => s.data)
-  const evolutions = useVisibleEvolutions(data.species[dex]!)
-  const items = [...new Set(evolutions.flatMap((e) => (e.item ? [e.item] : [])))]
-  if (items.length === 0) return null
-  return (
-    <section className="flex flex-col gap-3">
-      {items.map((key) => (
-        <ItemSources key={key} itemKey={key} onTravel={onTravel} />
-      ))}
-    </section>
-  )
-}
-
 /** A Pokédex entry: the full sheet (and where to find it) once caught, otherwise just where to find it. */
 export function DexEntry({ dex, onOpenDex, onTravel }: { dex: number; onOpenDex?: (dex: number) => void; onTravel?: () => void }) {
   const save = useGame((s) => s.save)
@@ -329,7 +373,7 @@ export function DexEntry({ dex, onOpenDex, onTravel }: { dex: number; onOpenDex?
   const best = save.box.filter((p) => p.dex === dex).sort((a, b) => b.level - a.level)[0]
   return (
     <PokemonSheet dex={dex} inst={best} onOpenDex={onOpenDex}>
-      <EvolutionItems dex={dex} onTravel={onTravel} />
+      <EvolvesInto dex={dex} onOpenDex={onOpenDex} onTravel={onTravel} />
       <CaughtSpots dex={dex} onTravel={onTravel} />
     </PokemonSheet>
   )
