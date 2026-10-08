@@ -1346,7 +1346,6 @@ insert into game_config (key, value) values
   ('xpShareMode', '"fighter"'::jsonb),
   ('maxTeamSize', '3'::jsonb),
   ('maxLevel', '100'::jsonb),
-  ('maxDice', '5'::jsonb),
   ('comboPayoutMode', '"highestDamage"'::jsonb),
   ('skipPolicy', '"free"'::jsonb),
   ('noEscape', 'true'::jsonb),

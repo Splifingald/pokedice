@@ -436,7 +436,6 @@ export interface GameConfig {
   xpShareMode: 'fighter' | 'team'
   maxTeamSize: number
   maxLevel: number
-  maxDice: number
   comboPayoutMode: 'highestDamage' | 'highestRank'
   skipPolicy: SkipPolicy
   /** No way out of a fight: no FLEE / AVOID on the encounter pop-up and no RUN in battle (overrides skipPolicy). */

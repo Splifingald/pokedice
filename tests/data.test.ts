@@ -33,11 +33,6 @@ const ALL_LEGENDARIES = [
   1001, 1002, 1003, 1004, 1007, 1008, 1009, 1010, 1014, 1015, 1016, 1017, 1020, 1021, 1022, 1023, 1024, 1025,
 ]
 const STARTERS = [1, 4, 7]
-/**
- * Five dice is the rule. Raikou, Entei, Suicune and Arceus carry six: an admin buff that ships on the live database, kept
- * here so the bound still means something for everything else.
- */
-const SIX_DICE = new Set([243, 244, 245, 493])
 
 describe('pokemon.json', () => {
   it('has 1025 complete entries — Kanto to Paldea — and the forms after them', () => {
@@ -45,8 +40,6 @@ describe('pokemon.json', () => {
     expect(species.filter((p) => !p.form).every((p) => p.dex <= 1025)).toBe(true)
     for (const p of species) {
       expect(total(p.dice)).toBeGreaterThanOrEqual(1)
-      // A form is held to its species' bound (Arceus's types roll six, like Arceus).
-      expect(total(p.dice), p.name).toBeLessThanOrEqual(SIX_DICE.has(p.form?.of ?? p.dex) ? 6 : 5)
       expect(p.spriteUrl).toBe(`/pokemon/${String(p.dex).padStart(3, '0')}_front.png`)
       for (const view of ['front', 'front_shiny', 'back', 'back_shiny', 'mini'])
         expect(existsSync(path.join('public/pokemon', `${String(p.dex).padStart(3, '0')}_${view}.png`)), `${p.dex} ${view}`).toBe(true)
@@ -59,11 +52,15 @@ describe('pokemon.json', () => {
 
   // Dice and milestones are tuned per species in admin (Supabase is the source), so only their bounds are checked here;
   // the seed's schedule itself is covered by tests/dice-schedule.test.ts.
-  it('keeps every species within the dice rules at every level', () => {
+  // There is no dice cap: every ADD_DIE milestone lands (Lugia's Lv.75 Psychic die is its sixth).
+  it('applies every ADD_DIE milestone by Lv.100', () => {
     const d = compileGameData(BUNDLE)
     for (const p of species) {
-      expect(effectiveStats(d.species[p.dex]!, 100, d).dice.length, p.name).toBeLessThanOrEqual(SIX_DICE.has(p.form?.of ?? p.dex) ? 6 : 5)
+      const adds = p.milestones.filter((m) => m.effect === 'ADD_DIE').length
+      expect(effectiveStats(d.species[p.dex]!, 100, d).dice.length, p.name).toBe(total(p.dice) + adds)
     }
+    expect(effectiveStats(d.species[249]!, 74, d).dice).toHaveLength(5)
+    expect(effectiveStats(d.species[249]!, 75, d).dice).toHaveLength(6)
     expect(count(byDex(149).dice, 'dragon')).toBeGreaterThan(0)
   })
   it('computes HP curves and evolutions from PokeAPI', () => {

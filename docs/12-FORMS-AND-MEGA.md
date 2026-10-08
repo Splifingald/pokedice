@@ -61,7 +61,7 @@ Golem, Kukui's Ninetales, Hau's Raichu, Opal's Weezing, Bede's Rapidash, Klara's
 - With **several Mega forms** (Charizard, Mewtwo, Raichu X / Y), a prompt shows each one's sprite, name, types and the
   die it adds.
 - **The die**: one die of the type the Mega gains (Charizard X: Dragon, Gyarados: Dark); when it gains none, the
-  Pokémon's first type (Venusaur: Grass). It may take the Pokémon past `maxDice`.
+  Pokémon's first type (Venusaur: Grass).
 - The Mega's types, name and sprite last until the battle ends; nothing is saved. Rewards and catches count the
   species sent out.
 

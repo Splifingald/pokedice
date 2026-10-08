@@ -137,7 +137,7 @@ Ditto never gains dice of its own. When a battle starts, and again whenever its 
 
 ## 3. Dice
 
-Every Pokémon owns 1–5 dice (v1.8; `maxDice` 5), gained by level and evolution (§4.2). Two categories:
+Every Pokémon owns at least one die, gained by level and evolution (§4.2). There is no cap: every `ADD_DIE` milestone lands (Lugia's Lv.75 die is its sixth). Two categories:
 
 - **Base die** — the plain filler die, faces `1,2,3,4,5,6`. It has **no upgrade track and can never be upgraded**, and it never sets the attack type (but takes its multiplier, v1.8). Off-white with grey pips.
 - **Typed dice** — one per type, 18 of them (Normal included). Each has its own 10-level upgrade track and its own colour.

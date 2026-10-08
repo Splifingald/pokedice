@@ -8,7 +8,6 @@ export const DEFAULT_CONFIG: GameConfig = {
   xpShareMode: 'fighter',
   maxTeamSize: 3,
   maxLevel: 100,
-  maxDice: 5,
   comboPayoutMode: 'highestDamage',
   skipPolicy: 'free',
   noEscape: true,

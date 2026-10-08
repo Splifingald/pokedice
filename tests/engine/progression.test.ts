@@ -45,10 +45,9 @@ describe('milestones', () => {
       const at = effectiveStats(zard, lv, data).applied.length
       expect(at - before, `Lv.${lv}`).toBe(zard.milestones.filter((m) => m.effect !== 'EVOLVE' && m.level === lv).length)
     }
-    expect(effectiveStats(zard, 100, data).dice.length).toBeLessThanOrEqual(5)
   })
 
-  it('skips UPGRADE_DIE with no base left and ADD_DIE at max dice; supports ADD_HP', () => {
+  it('skips UPGRADE_DIE with no base left, ADD_DIE has no cap; supports ADD_HP', () => {
     const fake: Species = {
       ...getSpecies(data, 150),
       dice: [{ type: 'psychic', count: 6 }],
@@ -60,8 +59,8 @@ describe('milestones', () => {
       ],
     }
     const s = effectiveStats(fake, 10, data)
-    expect(s.dice).toHaveLength(6)
-    expect(s.applied.map((m) => m.effect)).toEqual(['ADD_HP'])
+    expect(s.dice).toHaveLength(7)
+    expect(s.applied.map((m) => m.effect)).toEqual(['ADD_DIE', 'ADD_HP'])
     expect(s.maxHp).toBe(hpCurve(fake, 10) + 7)
   })
 

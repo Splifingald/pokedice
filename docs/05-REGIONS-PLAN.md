@@ -154,7 +154,7 @@ currently a Silph Co. one-time find. Three changes:
   Magma/Aqua Hideout each hide one of their own on the same rare terms, so every region has exactly one to find.
 
 **Acceptance:** `pnpm seed` writes 386 species offline from cache; `pnpm test` green; a new test asserts every species
-has ≥1 die, ≤`maxDice`, a non-empty sprite path, and that every `evolutions[].item` exists in `items.json`.
+has ≥1 die, a non-empty sprite path, and that every `evolutions[].item` exists in `items.json`.
 
 ---
 

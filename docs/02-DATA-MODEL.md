@@ -263,7 +263,7 @@ Dice no longer come from BST alone: `applyDiceSchedule` (`scripts/seed.ts`) read
 5th die at Lv.50 for 2-stage finals and non-evolvers:  BST >= 450
 ```
 
-Caterpie / Weedle lines (dex 10–15) are fixed at 1 / 2 / 3 dice by stage, +1 at Lv.36 on the final stage. Legendaries have 5 dice. Non-evolvers under BST 450 stop at 3 dice. Per-family overrides (`FAMILY_PLANS`): Magikarp 1 die for good, Omanyte / Kabuto 2, Aerodactyl 4 (+Lv.50), Dragonair 3 (+Lv.40), Mew 4 (+Lv.40). `maxDice` = 5.
+Caterpie / Weedle lines (dex 10–15) are fixed at 1 / 2 / 3 dice by stage, +1 at Lv.36 on the final stage. Legendaries have 5 dice. Non-evolvers under BST 450 stop at 3 dice. Per-family overrides (`FAMILY_PLANS`): Magikarp 1 die for good, Omanyte / Kabuto 2, Aerodactyl 4 (+Lv.50), Dragonair 3 (+Lv.40), Mew 4 (+Lv.40). There is no dice cap (`maxDice` is gone): admin tuning may take a species past five.
 
 ### 3.4 Typed vs normal split
 

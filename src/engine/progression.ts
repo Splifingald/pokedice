@@ -56,7 +56,6 @@ export function effectiveStats(species: Species, level: number, data: GameData):
         applied.push(m)
         break
       case 'ADD_DIE':
-        if (dice.length >= data.config.maxDice) break
         // Keep base dice at the end so the tray reads typed-first.
         dice.splice(dice.filter((d) => d !== 'base').length, 0, m.dieType ?? species.type1)
         applied.push(m)
