@@ -113,6 +113,11 @@ supabase/    migrations/0001_init.sql, seed.sql (generated)
   region), and a region's board only lists trainers with at least one badge there. Prof. Oak's share prompt comes with
   the region's 2nd badge. Needs `supabase/migrations/0024_leaderboard_badge.sql` run once on the live database
   (re-running `supabase/seed.sql` does it too).
+- **Leaderboard tabs** — four boards per region, each tab an icon that spells out its name once open: max level,
+  progression, Pokédex, and shinies caught (the shiny Pokémon owned in the region — Box, team and Day Care — since a
+  shiny is never released). The shiny board has no ceiling, so no Hall of Fame. Needs
+  `supabase/migrations/0032_leaderboard_shiny.sql` run once on the live database (re-running `supabase/seed.sql` does
+  it too); until then everyone shows 0 shinies.
 - **Contact the developer** — trainer menu (side panel) → Contact the developer, at the bottom: a title and a description, stored
   in Supabase table `feedback` and read in Admin → Messages (mark read / unread, delete). The database fills in who
   sent it (Google account or guest device) and allows 3 messages per player per 10 minutes. Needs

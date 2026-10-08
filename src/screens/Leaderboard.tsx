@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useT } from '@/i18n/react'
 import { GoogleAccountButton } from '@/components/GoogleAccountButton'
-import { PixelIcon } from '@/components/icons'
+import { PixelIcon, type IconName } from '@/components/icons'
 import { MiniSprite } from '@/components/SpriteImg'
 import { Modal } from '@/components/Modal'
 import { TrainerSprite } from '@/components/TrainerArt'
@@ -13,10 +13,12 @@ import { visitLeaderboard } from '@/store/actions'
 import { useGame } from '@/store/game'
 import { cx } from '@/theme/util'
 
-const TABS: { id: LeaderboardTab; label: string }[] = [
-  { id: 'level', label: 'ui.board.tabLevel' },
-  { id: 'progress', label: 'ui.board.tabProgress' },
-  { id: 'dex', label: 'ui.board.tabDex' },
+/** Each tab is its icon; only the open one spells out its name. */
+const TABS: { id: LeaderboardTab; label: string; icon: IconName }[] = [
+  { id: 'level', label: 'ui.board.tabLevel', icon: 'up' },
+  { id: 'progress', label: 'ui.board.tabProgress', icon: 'map' },
+  { id: 'dex', label: 'ui.board.tabDex', icon: 'dex' },
+  { id: 'shiny', label: 'ui.board.tabShiny', icon: 'star' },
 ]
 
 /** Gold, silver and bronze for the podium. */
@@ -92,19 +94,28 @@ function Board() {
         </div>
       )}
 
-      <div role="tablist" aria-label={t('ui.board.sortBy')} className="grid grid-cols-3 gap-1.5">
-        {TABS.map((entry) => (
-          <button
-            key={entry.id}
-            type="button"
-            role="tab"
-            aria-selected={tab === entry.id}
-            onClick={() => setTab(entry.id)}
-            className={cx('pixel-btn min-h-[44px] px-1 text-lg leading-none sm:text-xl', tab === entry.id ? 'bg-gold' : 'bg-panel')}
-          >
-            {t(entry.label)}
-          </button>
-        ))}
+      <div role="tablist" aria-label={t('ui.board.sortBy')} className="flex gap-1.5">
+        {TABS.map((entry) => {
+          const open = tab === entry.id
+          return (
+            <button
+              key={entry.id}
+              type="button"
+              role="tab"
+              aria-selected={open}
+              aria-label={open ? undefined : t(entry.label)}
+              title={open ? undefined : t(entry.label)}
+              onClick={() => setTab(entry.id)}
+              className={cx(
+                'pixel-btn flex min-h-[44px] items-center justify-center gap-2 text-lg leading-none sm:text-xl',
+                open ? 'min-w-0 flex-1 bg-gold px-3' : 'w-14 shrink-0 bg-panel px-1',
+              )}
+            >
+              <PixelIcon name={entry.icon} size={22} />
+              {open && <span className="truncate">{t(entry.label)}</span>}
+            </button>
+          )
+        })}
       </div>
 
       {hall.length > 0 && (

@@ -1,38 +1,14 @@
--- Regions: Kanto, Johto, Hoenn. A region is a self-contained run — its own chain of areas, its own starters, its own
--- Pokédex page and its own leaderboard — and the player keeps only their character when they move on.
-
-create table if not exists regions (
-  id text primary key,                 -- 'kanto', 'johto', 'hoenn'
-  name text not null,
-  order_index int not null unique,
-  dex_range jsonb not null,            -- [1, 151]: the generation this region's page is about
-  starters jsonb not null,             -- [1, 4, 7]
-  starter_level int not null default 5,
-  league_area_id uuid not null,        -- clearing this area is "the league is done" (a soft link to areas.id)
-  -- Soft links, deliberately not foreign keys: admin saves regions row by row, and a half-finished chain (Johto
-  -- pointing at a Hoenn that is not written yet) must not be rejected. The client tolerates a dangling id.
-  next_region text,
-  -- Off = the region is invisible everywhere: no prompt, no switcher, no Pokédex page, no board. Kanto is always on.
-  enabled boolean not null default true
-);
-
-alter table regions enable row level security;
-drop policy if exists regions_read on regions;
-drop policy if exists regions_write on regions;
-create policy regions_read on regions for select using (true);
-create policy regions_write on regions for all using (is_admin()) with check (is_admin());
-
--- Which region's chain an area belongs to. Existing rows are Kanto, which is what they have always been.
-alter table areas add column if not exists region_id text not null default 'kanto';
-create index if not exists areas_region_idx on areas (region_id, order_index);
-
--- ---------------------------------------------------------------- leaderboard, one row per region played
+-- A fourth leaderboard tab: shiny Pokémon caught. Each row of every region's board now also carries `shinies`, the
+-- shiny Pokémon the player owns in that region (Box, team and Day Care). A shiny is never released (the Box clean-up
+-- and catching both keep it), so what a player owns is what they have caught.
 --
--- Replaces 0011's leaderboard(): a save now holds the live region at its top level and the others under `parked`,
--- so a player who has played several regions appears once per region, and each board ranks only its own.
--- Later rules are kept here too, so re-running this file never brings an older board back: inactive players drop off
--- (0023), a region's row needs a badge (0024), the board is cached and rebuilt on a schedule (0026, 0031), and each
--- row counts its shinies (0032).
+-- leaderboard() and leaderboard_rows() gain the column, so both are dropped and created again (a function's return
+-- type can't change in place), and leaderboard_cache gets it too. Everything else is as in 0031: same rules (bans,
+-- 72 hours of inactivity, a badge in the region), same cache, same pg_cron schedule.
+--
+-- 0016_regions.sql carries the same pieces, so re-running supabase/seed.sql (which inlines 0016) keeps them. Safe to
+-- run again. Until this runs, the game shows the Shiny tab with everyone on 0.
+
 drop function if exists leaderboard();
 -- Its columns grew (0032); a function's return type can't change in place.
 drop function if exists leaderboard_rows(timestamptz, uuid);
@@ -205,3 +181,6 @@ revoke all on function leaderboard_rebuild() from public, anon, authenticated;
 revoke all on function leaderboard_refresh() from public, anon, authenticated;
 revoke all on function leaderboard() from public;
 grant execute on function leaderboard() to anon, authenticated;
+
+-- A first board with the new column right away, rather than at the next 5-minute mark.
+select leaderboard_rebuild();

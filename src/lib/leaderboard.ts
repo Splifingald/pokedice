@@ -1,5 +1,5 @@
 // The leaderboard: every cloud save (Google-signed-in players only) played in the last 72 hours, ranked by best level,
-// campaign progress or Pokédex. The rows come from the `leaderboard()` SQL function, which leaves inactive players out
+// campaign progress, Pokédex or shinies caught. The rows come from the `leaderboard()` SQL function, which leaves inactive players out
 // (migration 0023), and a region's row out until the player holds a badge there (0024); ranking happens here, against
 // the game data.
 import { linearAreas } from '@/engine/data'
@@ -7,9 +7,9 @@ import { regionSpecies } from '@/engine/regions'
 import type { GameData, RegionId } from '@/engine/types'
 import { avatarOf } from './avatars'
 import { getSupabase } from './supabase'
-import { t } from '@/i18n'
+import { t, tPlural } from '@/i18n'
 
-export type LeaderboardTab = 'level' | 'progress' | 'dex'
+export type LeaderboardTab = 'level' | 'progress' | 'dex' | 'shiny'
 
 export interface LeaderboardRow {
   /** Which region this row is about: a player who has played several appears once per region. */
@@ -21,6 +21,8 @@ export interface LeaderboardRow {
   team: { dex: number; level: number; shiny: boolean }[]
   pokedex: number
   maxLevel: number
+  /** Shiny Pokémon caught in this region (all still owned: a shiny is never released). */
+  shinies: number
   progress: Record<string, { cleared: boolean; gyms: number }>
 }
 
@@ -61,11 +63,12 @@ export function clearedRegion(row: LeaderboardRow, data: GameData): boolean {
 /**
  * Done with what this board measures: the level cap, the whole region cleared, or its Pokédex filled.
  * Such a player can't be passed and can't climb, so the board is no longer a race they're in — they
- * move to the Hall of Fame and the ranking below them closes up.
+ * move to the Hall of Fame and the ranking below them closes up. Shinies have no ceiling: nobody leaves that board.
  */
 export function atMax(row: LeaderboardRow, tab: LeaderboardTab, data: GameData, region: RegionId): boolean {
   if (tab === 'level') return row.maxLevel >= data.config.maxLevel
   if (tab === 'dex') return row.pokedex >= dexTotal(data, region)
+  if (tab === 'shiny') return false
   return clearedRegion(row, data)
 }
 
@@ -74,12 +77,14 @@ function sortKey(row: LeaderboardRow, tab: LeaderboardTab, data: GameData): numb
   // The tab's measure first, the others break ties.
   if (tab === 'level') return [row.maxLevel, cleared, gyms, row.pokedex]
   if (tab === 'dex') return [row.pokedex, cleared, gyms, row.maxLevel]
+  if (tab === 'shiny') return [row.shinies, row.pokedex, cleared, gyms, row.maxLevel]
   return [cleared, gyms, row.maxLevel, row.pokedex]
 }
 
 function scoreLabel(row: LeaderboardRow, tab: LeaderboardTab, data: GameData, total: number): string {
   if (tab === 'level') return t('ui.common.level.short', { n: row.maxLevel })
   if (tab === 'dex') return `${row.pokedex}/${total}`
+  if (tab === 'shiny') return tPlural('ui.board.shinies', row.shinies)
   return frontierArea(row, data)
 }
 
@@ -131,6 +136,8 @@ interface RawRow {
   team: { dex: number; level: number; shiny?: boolean }[] | null
   pokedex: number | null
   max_level: number | null
+  /** Missing on a database that hasn't run 0032_leaderboard_shiny.sql. */
+  shinies?: number | null
   progress: Record<string, { cleared?: boolean; gyms?: number }> | null
 }
 
@@ -145,6 +152,7 @@ export function parseLeaderboard(raw: RawRow[]): LeaderboardRow[] {
     team: (r.team ?? []).map((m) => ({ dex: Number(m.dex), level: Number(m.level), shiny: !!m.shiny })),
     pokedex: Number(r.pokedex) || 0,
     maxLevel: Number(r.max_level) || 0,
+    shinies: Number(r.shinies) || 0,
     progress: Object.fromEntries(
       Object.entries(r.progress ?? {}).map(([id, p]) => [id, { cleared: !!p.cleared, gyms: Number(p.gyms) || 0 }]),
     ),

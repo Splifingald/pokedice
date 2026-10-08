@@ -16,14 +16,15 @@ const row = (name: string, p: Partial<LeaderboardRow>): LeaderboardRow => ({
   team: [{ dex: 1, level: 5, shiny: false }],
   pokedex: 1,
   maxLevel: 5,
+  shinies: 0,
   progress: {},
   ...p,
 })
 
 const rows = [
-  row('Ash', { maxLevel: 30, pokedex: 20, progress: cleared(3) }),
-  row('Misty', { maxLevel: 45, pokedex: 12, progress: cleared(2) }),
-  row('Brock', { maxLevel: 30, pokedex: 60, progress: cleared(3, 1) }),
+  row('Ash', { maxLevel: 30, pokedex: 20, shinies: 2, progress: cleared(3) }),
+  row('Misty', { maxLevel: 45, pokedex: 12, shinies: 2, progress: cleared(2) }),
+  row('Brock', { maxLevel: 30, pokedex: 60, shinies: 1, progress: cleared(3, 1) }),
 ]
 
 describe('rankLeaderboard', () => {
@@ -47,6 +48,15 @@ describe('rankLeaderboard', () => {
     expect(r.map((x) => x.name)).toEqual(['Brock', 'Ash', 'Misty'])
     // Out of Kanto's own species, not the National Dex — a Johto board counts Johto's.
     expect(r[0]!.score).toBe(`60/${regionSpecies(data, 'kanto').size}`)
+  })
+
+  it('Shiny: most shinies caught first, the Pokédex breaks ties', () => {
+    const r = rankLeaderboard(rows, 'shiny', data, 'kanto')
+    expect(r.map((x) => [x.name, x.rank, x.score])).toEqual([
+      ['Ash', 1, '2 shinies'],
+      ['Misty', 2, '2 shinies'],
+      ['Brock', 3, '1 shiny'],
+    ])
   })
 
   it('exact ties share a rank', () => {
@@ -78,6 +88,8 @@ describe('splitLeaderboard', () => {
     expect(splitLeaderboard(all, 'dex', data, 'kanto').hall.map((x) => x.name)).toEqual(['Blue'])
     // Clearing the region also fills its Pokédex measure for nobody but the one who cleared it.
     expect(splitLeaderboard(all, 'progress', data, 'kanto').hall.map((x) => x.name)).toEqual(['Green'])
+    // Shinies have no ceiling: everyone stays on the board.
+    expect(splitLeaderboard(all, 'shiny', data, 'kanto').hall).toEqual([])
   })
 
   it('is empty when nobody has finished, which is what hides the button', () => {
@@ -99,7 +111,8 @@ describe('parseLeaderboard', () => {
       { region: null, is_me: null, name: null, character: 'purple', team: null, pokedex: null, max_level: 12, progress: { x: { cleared: true } } },
     ])
     // A row from a database that predates regions reads as Kanto.
-    expect(r).toEqual({ region: 'kanto', isMe: false, name: 'Trainer', avatar: 'red', team: [], pokedex: 0, maxLevel: 12, progress: { x: { cleared: true, gyms: 0 } } })
+    // …and one from a database without 0032 has no shinies.
+    expect(r).toEqual({ region: 'kanto', isMe: false, name: 'Trainer', avatar: 'red', team: [], pokedex: 0, maxLevel: 12, shinies: 0, progress: { x: { cleared: true, gyms: 0 } } })
   })
 
   it('keeps a look from the list and nothing else', () => {
