@@ -1856,6 +1856,9 @@ ui.board.title,Leaderboard,Classement,Clasificación,Bestenliste,Classifica,Clas
 ui.board.tabLevel,Max level,Niveau max,Nivel máx.,Höchstlevel,Livello max,Nível máx.,Nível máx.,最高レベル,최고 레벨,最高等级
 ui.board.tabProgress,Progression,Progression,Progreso,Fortschritt,Progressi,Progresso,Progresso,進み具合,진행도,进度
 ui.board.tabDex,Pokédex,Pokédex,Pokédex,Pokédex,Pokédex,Pokédex,Pokédex,図鑑,도감,图鉴
+ui.board.tabShiny,Shiny,Chromatiques,Variocolor,Schillernde,Cromatici,Brilhantes,Brilhantes,色違い,색이 다른 포켓몬,异色
+ui.board.shinies.one,{count} shiny,{count} chromatique,{count} variocolor,{count} schillerndes,{count} cromatico,{count} brilhante,{count} brilhante,色違い{count}匹,색이 다른 포켓몬 {count}마리,{count}只异色
+ui.board.shinies.other,{count} shinies,{count} chromatiques,{count} variocolor,{count} schillernde,{count} cromatici,{count} brilhantes,{count} brilhantes,色違い{count}匹,색이 다른 포켓몬 {count}마리,{count}只异色
 ui.board.sortBy,Sort by,Trier par,Ordenar por,Sortieren nach,Ordina per,Ordenar por,Ordenar por,並べ替え,정렬 기준,排序方式
 ui.board.connect,Connect to Google to participate,Connecte-toi à Google pour participer,Conéctate con Google para participar,"Melde dich bei Google an, um teilzunehmen",Collegati con Google per partecipare,Liga-te com o Google para participar,Conecte-se com o Google para participar,参加するにはGoogleで連携,참가하려면 Google로 연결,用Google连接以参加
 ui.board.failed,Couldn't load the leaderboard. Try again later.,Impossible de charger le classement. Réessaie plus tard.,No se pudo cargar la clasificación. Inténtalo más tarde.,Die Bestenliste konnte nicht geladen werden. Versuche es später erneut.,Impossibile caricare la classifica. Riprova più tardi.,Não foi possível carregar a classificação. Tenta mais tarde.,Não foi possível carregar a classificação. Tente mais tarde.,ランキングを読み込めませんでした。あとでもう一度お試しください。,랭킹을 불러올 수 없었어요. 나중에 다시 시도하세요.,无法加载排行榜，请稍后再试。
