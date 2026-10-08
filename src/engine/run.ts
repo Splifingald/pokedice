@@ -245,8 +245,15 @@ export function isAreaClosed(save: SaveData, areaId: string, data: GameData): bo
   )
 }
 
+/**
+ * The open secret areas of the region being played. Only that region's: the conditions read the live region's
+ * Pokédex and Box, so another region's secret area "opening" here would be announced to a player who isn't there.
+ */
 export function unlockedHiddenAreas(save: SaveData, data: GameData): string[] {
-  return data.areas.filter((a) => a.hidden && isAreaUnlocked(save, a.id, data)).map((a) => a.id)
+  const region = regionOf(save)
+  return data.areas
+    .filter((a) => a.hidden && regionOfArea(a) === region && isAreaUnlocked(save, a.id, data))
+    .map((a) => a.id)
 }
 
 export interface BadgeInfo {

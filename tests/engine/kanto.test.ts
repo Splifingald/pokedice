@@ -18,6 +18,7 @@ import {
   progressOf,
   rollEncounter,
   trainerSpecialty,
+  regionOfArea,
   unlockedHiddenAreas,
   type Area,
   type SaveData,
@@ -126,6 +127,16 @@ describe('secret areas', () => {
     expect(isAreaUnlocked(strong, CAVE.id, data)).toBe(true)
     expect(unlockedHiddenAreas(strong, data)).toEqual([CAVE.id])
     expect(conditionStatus({ kind: 'maxLevel', level: CAVE_LEVEL }, s, data)).toMatchObject({ met: false, current: 5, target: CAVE_LEVEL })
+  })
+
+  it('only the region being played counts: another region\'s secret areas never announce themselves here', () => {
+    const s = fresh()
+    const maxed = { ...s, pokedex: data.speciesList.map((p) => p.dex), box: s.box.map((p) => ({ ...p, level: 100 })) }
+    const all = data.areas.filter((a) => a.hidden && isAreaUnlocked(maxed, a.id, data))
+    expect(all.some((a) => regionOfArea(a) !== 'kanto')).toBe(true)
+    const here = unlockedHiddenAreas(maxed, data)
+    expect(here.length).toBeGreaterThan(0)
+    expect(here.every((id) => regionOfArea(data.areas.find((a) => a.id === id)!) === 'kanto')).toBe(true)
   })
 
   it('announce themselves the moment a catch meets the condition', () => {
