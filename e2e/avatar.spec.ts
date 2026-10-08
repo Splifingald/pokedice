@@ -46,9 +46,9 @@ test('the leaderboard draws each trainer with their look', async ({ page }) => {
   await page.route('**/rest/v1/rpc/leaderboard', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(rows) }))
   await signedIn(page, withBadge(makeSave(4, { player: { name: 'Sam', character: 'red' } })))
   await page.goto('/leaderboard')
-  const row = (name: string) => page.getByRole('listitem').filter({ hasText: name }).first().locator('img').first()
-  await expect(row('Leaf')).toHaveAttribute('src', '/trainers/classes/hiker.png')
-  await expect(row('Sam')).toHaveAttribute('src', '/characters/red.png')
+  const row = (name: string) => page.getByRole('listitem').filter({ hasText: name }).first().locator('[data-src]').first()
+  await expect(row('Leaf')).toHaveAttribute('data-src', '/trainers/classes/hiker.png')
+  await expect(row('Sam')).toHaveAttribute('data-src', '/characters/red.png')
   // Not on the list (a Gym Leader): drawn as Red.
-  await expect(row('Blue')).toHaveAttribute('src', '/characters/red.png')
+  await expect(row('Blue')).toHaveAttribute('data-src', '/characters/red.png')
 })

@@ -150,15 +150,15 @@
   }
 }
 
-/* MiniSprite: two party-icon frames side by side in one image, slid left by a frame every 0.3 s. */
-@keyframes mini-frames {
+/* MiniSprite: the menu icon hops up an icon pixel (1/30 of its height) every 0.3 s, as the games' party icons do. */
+@keyframes mini-hop {
   0% {
-    transform: translateX(0);
+    transform: translateY(0);
   }
   50% {
-    transform: translateX(-50%);
+    transform: translateY(-3.34%);
   }
 }
-.mini-frames {
-  animation: mini-frames 600ms step-end infinite;
+.mini-hop {
+  animation: mini-hop 600ms step-end infinite;
 }

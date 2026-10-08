@@ -29,6 +29,7 @@ import { SheetModal } from '@/components/SheetModal'
 import { PixelIcon } from '@/components/icons'
 import { PixelButton } from '@/components/PixelButton'
 import { MiniSprite } from '@/components/SpriteImg'
+import { TrainerSprite } from '@/components/TrainerArt'
 import { TypeBadge } from '@/components/TypeBadge'
 import { useGame } from '@/store/game'
 import { enterArea } from '@/store/run'
@@ -56,7 +57,7 @@ function GymRow({ area }: { area: Area }) {
         const type = trainerSpecialty(gym, data)
         return (
           <span key={id} className={cx('flex items-center gap-1 border-2 border-ink px-1', beaten ? 'bg-hp-green/30' : 'bg-panel')}>
-            {gym.spriteUrl && <img src={gym.spriteUrl} alt="" width={20} height={20} style={{ imageRendering: 'pixelated' }} />}
+            {gym.spriteUrl && <TrainerSprite src={gym.spriteUrl} size={20} />}
             <span>{gym.role === 'leader' ? t('ui.map.gym', { name: gym.name }) : gym.name}</span>
             {type && <TypeBadge type={type} size="sm" />}
             {beaten && <PixelIcon name="check" size={12} title={t('ui.map.beaten')} />}

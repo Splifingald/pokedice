@@ -39,8 +39,11 @@
  * `pnpm pokemon-sprites --fetch-forms [outDir]` downloads the forms (#10001+, past the National Dex) from the same
  * PokeAPI folder, kept at their own 96×96 with nothing cut (see `fetchForms`).
  *
+ * These local sprites are now only the game's offline fallback: what it shows comes from Pokémon Showdown, see
+ * scripts/showdown-sprites.ts. The Box icons too, so the `miniature_*` frames are no longer published.
+ *
  * `pnpm pokemon-sprites --publish [srcDir]` copies those files (default graphics/pokemon) into public/pokemon with short
- * names (001_front.png, 001_back_shiny.png, 001_mini.png — both Box-icon frames in one strip, see `miniStrip`…) and
+ * names (001_front.png, 001_back_shiny.png…) and
  * writes src/data/sprite-metrics.json: the transparent
  * rows under each front / back sprite, so the battle scene can stand every Pokémon on its platform.
  */
@@ -807,9 +810,6 @@ async function publish(srcDir: string) {
       await writeFile(path.join(outDir, `${short}_${to}.png`), buf)
       n++
     }
-    const frame = async (k: number) => PNG.sync.read(await readFile(path.join(srcDir, `${prefix}_miniature_${k}.png`)))
-    await writeFile(path.join(outDir, `${short}_mini.png`), PNG.sync.write(miniStrip(await frame(1), await frame(2))))
-    n++
     metrics[p.dex] = m
   }
   await writeFile(path.join(ROOT, 'src/data/sprite-metrics.json'), JSON.stringify(metrics) + '\n')
