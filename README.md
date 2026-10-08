@@ -5,13 +5,16 @@ keep, reroll, and hit with the per-die type chart plus poker-style combos. Train
 upgrades, and the goal is 151/151 in the Pokédex.
 
 > **Personal, non-commercial fan project.** No monetisation. Pokémon and all related names are trademarks of Nintendo,
-> Game Freak and Creatures. Sprites are *referenced* from the public [PokeAPI sprites](https://github.com/PokeAPI/sprites)
-> repository, never redistributed. Area banners and trainer badges are original, generated pixel art; sound effects are
-> synthesised at runtime. Made by Splifingald.
+> Game Freak and Creatures. Pokémon and trainer sprites come from [Pokémon Showdown](https://pokemonshowdown.com): the
+> animated Pokémon load from its sprite server, its menu icons and trainer sprites are bundled (credits in
+> [docs/13](docs/13-SHOWDOWN-SPRITES.md#credits)). The offline fallback sprites come from the public
+> [PokeAPI sprites](https://github.com/PokeAPI/sprites) repository. Area banners and trainer badges are original,
+> generated pixel art; sound effects are synthesised at runtime. Made by Splifingald.
 
 The design lives in [`docs/`](docs): [game spec](docs/01-GAME-SPEC.md) · [data model](docs/02-DATA-MODEL.md) ·
 [build plan](docs/03-BUILD-PLAN.md) · [Sinnoh plan](docs/07-SINNOH-PLAN.md) · [Unova plan](docs/08-UNOVA-PLAN.md) · [Gen 6–9 plan](docs/11-GEN6-9-REGIONS-PLAN.md) ·
-[Gen 6–9 sprite sources](docs/10-GEN6-9-SPRITES.md) · [forms & Mega Evolution](docs/12-FORMS-AND-MEGA.md).
+[Gen 6–9 sprite sources](docs/10-GEN6-9-SPRITES.md) · [forms & Mega Evolution](docs/12-FORMS-AND-MEGA.md) ·
+[Showdown sprites](docs/13-SHOWDOWN-SPRITES.md).
 
 ## Quick start
 
@@ -41,6 +44,7 @@ For local cloud/admin work, copy `.env.example` to `.env.local` and fill it in. 
 | `pnpm pull-remote` | Says how far the committed bundle has fallen behind Supabase, where admin tuning lands first. Writes nothing. `pnpm pull-remote --write` then overwrites `src/data/*.json` and `supabase/seed.sql` with the live rows — the same check and the same refusals as Admin → "Pull from Supabase". Run it before adding content |
 | `pnpm sync` | Pull Supabase, rebuild the regions on top, regenerate `supabase/seed.sql`, run the tests — in that order, stopping at the first failure. The one command to run before applying `seed.sql` to a live database |
 | `pnpm seed-sql` | Regenerates `supabase/seed.sql` from the committed bundle, without rebuilding the bundle. That one file is all a live database needs — it carries the post-`0001` schema changes too, and is safe to re-run. It also writes `supabase/seed-parts/seed-NN.sql`, the same SQL in parts small enough to paste into the Supabase SQL editor: run them in order, part 1 first (the /setup page has a Copy button per part) |
+| `pnpm showdown-sprites` | Rebuilds every sprite table from Pokémon Showdown ([docs/13](docs/13-SHOWDOWN-SPRITES.md)): the animated sprite of each Pokémon view and its size (`src/data/showdown-sprites.json`), the menu icon sheet (`src/assets/pokemon-icons.png`), and the trainer sprites with their per-region sheets (`src/assets/trainers/`, `src/data/trainer-atlas.json`). Pass `pokemon`, `icons` or `trainers` to run one step. Run it after adding species or trainers |
 | `pnpm art` | Regenerates the 5 area banners and 19 trainer badges in `public/` |
 | `pnpm sim` | 1000 random battles + the §2.3 turns-to-kill table (spec methodology and played-out) |
 | `pnpm balance [N] [seed]` | Simulated campaign with an upgrade-buying policy (the same engine as the admin Campaign simulator); reports fight length per area. `GOLD=0.8 HP=1.6 pnpm balance` tries other multipliers |
@@ -113,6 +117,11 @@ supabase/    migrations/0001_init.sql, seed.sql (generated)
   region), and a region's board only lists trainers with at least one badge there. Prof. Oak's share prompt comes with
   the region's 2nd badge. Needs `supabase/migrations/0024_leaderboard_badge.sql` run once on the live database
   (re-running `supabase/seed.sql` does it too).
+- **Leaderboard tabs** — four boards per region, each tab an icon that spells out its name once open: max level,
+  progression, Pokédex, and shinies caught (the shiny Pokémon owned in the region — Box, team and Day Care — since a
+  shiny is never released). The shiny board has no ceiling, so no Hall of Fame. Needs
+  `supabase/migrations/0032_leaderboard_shiny.sql` run once on the live database (re-running `supabase/seed.sql` does
+  it too); until then everyone shows 0 shinies.
 - **Contact the developer** — trainer menu (side panel) → Contact the developer, at the bottom: a title and a description, stored
   in Supabase table `feedback` and read in Admin → Messages (mark read / unread, delete). The database fills in who
   sent it (Google account or guest device) and allows 3 messages per player per 10 minutes. Needs

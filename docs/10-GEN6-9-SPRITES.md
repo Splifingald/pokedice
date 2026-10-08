@@ -1,5 +1,8 @@
 # Pokédice — Generations 6–9: where the sprites come from
 
+> **Superseded for what the game shows** by [docs/13](13-SHOWDOWN-SPRITES.md): every Pokémon and trainer sprite now comes
+> from Pokémon Showdown. The files this note describes stay in `public/pokemon` as the offline fallback.
+
 > **Status: sprites downloaded; Kalos, Alola, Galar and Paldea built on them** (`docs/11-GEN6-9-REGIONS-PLAN.md`). This note began as the research for one question, asked before any
 > Kalos, Alola, Galar or Paldea plan is written: X/Y onward are 3D games, so there is no sheet to cut from the way
 > Gen 1–5 were. What do we use instead, for the Pokémon and for the trainers, so that #650–1025 look like the 649 we

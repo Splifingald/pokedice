@@ -13,6 +13,7 @@ import { TypeBadge } from '@/components/TypeBadge'
 import { availableRegions, closeRegionOffer, regionOnOffer, startRegion, switchRegion } from '@/store/regions'
 import { useGame } from '@/store/game'
 import { cx } from '@/theme/util'
+import { TrainerSprite } from '@/components/TrainerArt'
 
 export function RegionBar() {
   const { t } = useT()
@@ -115,14 +116,9 @@ function RegionTerms({
   const here = getRegion(data, regionOf(save))?.name ?? ''
   return (
     <div className="flex flex-col gap-3">
-      <img
-        src="/characters/prof-oak.png"
-        alt=""
-        width={96}
-        height={96}
-        className="mx-auto block"
-        style={{ imageRendering: 'pixelated' }}
-      />
+      <div className="flex justify-center">
+        <TrainerSprite src="/characters/prof-oak.png" size={96} />
+      </div>
       <p className="text-xl leading-tight">{t('ui.region.termsIntro', { here, region: region.name })}</p>
       <ul className="flex flex-col gap-1 border-[3px] border-ink bg-parchment p-2 text-lg leading-tight">
         <li>{t('ui.region.termsSelf')}</li>

@@ -42,16 +42,9 @@ export function NewGame() {
         {!picking ? (
           <div className="mx-auto mt-[12vh] w-full max-w-2xl">
             <h1 className="sr-only">{t('ui.newGame.heading')}</h1>
-            <motion.img
-              src="/characters/prof-oak.png"
-              alt={t('ui.newGame.oak')}
-              width={168}
-              height={168}
-              className="mx-auto mb-2 block"
-              style={{ imageRendering: 'pixelated' }}
-              initial={{ y: 12, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-            />
+            <motion.div className="mb-2 flex justify-center" initial={{ y: 12, opacity: 0 }} animate={{ y: 0, opacity: 1 }}>
+              <TrainerSprite src="/characters/prof-oak.png" alt={t('ui.newGame.oak')} size={168} />
+            </motion.div>
             <div className="font-pixel-sm mb-1 inline-block bg-ink px-2 py-0.5 text-lg text-parchment">{t('ui.newGame.oakTag')}</div>
             <Dialogue key={line} text={t(INTRO[line] ?? '')} />
             <div className="mt-3 flex justify-between">

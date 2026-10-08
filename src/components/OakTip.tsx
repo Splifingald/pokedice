@@ -2,6 +2,7 @@
 import { useState, type ReactNode } from 'react'
 import { useT } from '@/i18n/react'
 import { PixelButton } from './PixelButton'
+import { TrainerSprite } from '@/components/TrainerArt'
 
 const tipSeen = (key: string) => {
   try {
@@ -34,14 +35,7 @@ export function OakTip({ children, onClose }: { children: ReactNode; onClose: ()
   const { t } = useT()
   return (
     <div className="flex w-full items-start gap-2 border-[3px] border-ink bg-parchment p-2 text-left">
-      <img
-        src="/characters/prof-oak.png"
-        alt={t('ui.newGame.oak')}
-        width={56}
-        height={56}
-        className="shrink-0"
-        style={{ imageRendering: 'pixelated' }}
-      />
+      <TrainerSprite src="/characters/prof-oak.png" alt={t('ui.newGame.oak')} size={56} className="shrink-0" />
       <div className="flex min-w-0 flex-1 flex-col gap-1">
         <div className="text-lg leading-snug">
           <b>{t('ui.oak.prefix')}</b> {children}

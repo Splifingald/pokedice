@@ -7,6 +7,7 @@ import { useGame } from '@/store/game'
 import { EggSprite } from '@/screens/DayCareScreen'
 import { Modal } from './Modal'
 import { PixelButton } from './PixelButton'
+import { TrainerSprite } from '@/components/TrainerArt'
 
 export function DayCareTutorial() {
   const { t } = useT()
@@ -21,14 +22,7 @@ export function DayCareTutorial() {
     <Modal open={open} dismissable={false} title={t('ui.tutorial.dayCareTitle')}>
       <div className="flex flex-col gap-3">
         <div className="flex items-start gap-3">
-          <img
-            src="/characters/prof-oak.png"
-            alt={t('ui.newGame.oak')}
-            width={64}
-            height={64}
-            className="shrink-0"
-            style={{ imageRendering: 'pixelated' }}
-          />
+          <TrainerSprite src="/characters/prof-oak.png" alt={t('ui.newGame.oak')} size={64} className="shrink-0" />
           <p className="text-xl leading-snug">
             <b>{t('ui.oak.prefix')}</b> {t('ui.tutorial.dayCareBody', { count: data.config.dayCare.unlockPokedex })}
           </p>

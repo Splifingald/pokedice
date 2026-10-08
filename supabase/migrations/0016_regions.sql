@@ -31,8 +31,11 @@ create index if not exists areas_region_idx on areas (region_id, order_index);
 -- Replaces 0011's leaderboard(): a save now holds the live region at its top level and the others under `parked`,
 -- so a player who has played several regions appears once per region, and each board ranks only its own.
 -- Later rules are kept here too, so re-running this file never brings an older board back: inactive players drop off
--- (0023), a region's row needs a badge (0024), and the board is cached and rebuilt at most once a minute (0026).
+-- (0023), a region's row needs a badge (0024), the board is cached and rebuilt on a schedule (0026, 0031), and each
+-- row counts its shinies (0032).
 drop function if exists leaderboard();
+-- Its columns grew (0032); a function's return type can't change in place.
+drop function if exists leaderboard_rows(timestamptz, uuid);
 
 create index if not exists saves_updated_at on saves (updated_at desc);
 
@@ -45,10 +48,13 @@ create table if not exists leaderboard_cache (
   team jsonb not null,
   pokedex int not null,
   max_level int not null,
+  shinies int not null default 0,
   progress jsonb not null,
   updated_at timestamptz not null,
   primary key (user_id, region)
 );
+-- A cache made before 0032.
+alter table leaderboard_cache add column if not exists shinies int not null default 0;
 create table if not exists leaderboard_cache_state (
   id boolean primary key default true check (id),
   refreshed_at timestamptz not null
@@ -69,6 +75,7 @@ returns table (
   team jsonb,
   pokedex int,
   max_level int,
+  shinies int,       -- shiny Pokémon owned in this region (Box, team and Day Care); a shiny is never released
   progress jsonb,
   updated_at timestamptz
 )
@@ -112,6 +119,10 @@ language sql stable security definer set search_path = public as $$
         from jsonb_array_elements(coalesce(b.block -> 'dayCare' -> 'residents', '[]')) r
       ), 0)
     ),
+    (select count(*)::int from jsonb_array_elements(coalesce(b.block -> 'box', '[]')) m
+      where coalesce((m ->> 'shiny')::boolean, false))
+    + (select count(*)::int from jsonb_array_elements(coalesce(b.block -> 'dayCare' -> 'residents', '[]')) r
+      where coalesce((r -> 'inst' ->> 'shiny')::boolean, false)),
     coalesce((
       select jsonb_object_agg(k, jsonb_build_object(
         'cleared', coalesce((v ->> 'cleared')::boolean, false),
@@ -139,8 +150,8 @@ begin
     return;
   end if;
   delete from leaderboard_cache where true;  -- a bare DELETE is refused through the API (pg-safeupdate)
-  insert into leaderboard_cache (user_id, region, name, "character", team, pokedex, max_level, progress, updated_at)
-  select r.user_id, r.region, r.name, r."character", r.team, r.pokedex, r.max_level, r.progress, r.updated_at
+  insert into leaderboard_cache (user_id, region, name, "character", team, pokedex, max_level, shinies, progress, updated_at)
+  select r.user_id, r.region, r.name, r."character", r.team, r.pokedex, r.max_level, r.shinies, r.progress, r.updated_at
   from leaderboard_rows(now() - interval '72 hours', null) r;
   insert into leaderboard_cache_state (id, refreshed_at) values (true, now())
   on conflict (id) do update set refreshed_at = excluded.refreshed_at;
@@ -168,20 +179,21 @@ returns table (
   team jsonb,
   pokedex int,
   max_level int,
+  shinies int,
   progress jsonb
 )
 language sql volatile security definer set search_path = public as $$
   select leaderboard_refresh();
-  select r.region, r.user_id = auth.uid(), r.name, r."character", r.team, r.pokedex, r.max_level, r.progress
+  select r.region, r.user_id = auth.uid(), r.name, r."character", r.team, r.pokedex, r.max_level, r.shinies, r.progress
   from (
     -- Everyone else, from the cache (a ban takes effect at once, not at the next rebuild)…
-    select c.user_id, c.region, c.name, c."character", c.team, c.pokedex, c.max_level, c.progress, c.updated_at
+    select c.user_id, c.region, c.name, c."character", c.team, c.pokedex, c.max_level, c.shinies, c.progress, c.updated_at
     from leaderboard_cache c
     where c.user_id is distinct from auth.uid()
       and not exists (select 1 from leaderboard_bans x where x.user_id = c.user_id)
     union all
     -- …and the caller, live, active or not (0023: the board can always open on them).
-    select m.user_id, m.region, m.name, m."character", m.team, m.pokedex, m.max_level, m.progress, m.updated_at
+    select m.user_id, m.region, m.name, m."character", m.team, m.pokedex, m.max_level, m.shinies, m.progress, m.updated_at
     from leaderboard_rows(null, auth.uid()) m
   ) r
   order by r.updated_at desc

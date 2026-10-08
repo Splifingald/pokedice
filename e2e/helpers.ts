@@ -59,8 +59,8 @@ export async function mockSupabase(page: Page): Promise<string[]> {
 const mon = (dex: number, level: number) => ({ dex, level, shiny: false })
 /** What the fake `leaderboard()` returns: a few trainers, one with a full team of six. */
 export const LEADERBOARD = [
-  { is_me: false, name: 'Blue', character: 'green', team: [mon(18, 61), mon(65, 59), mon(112, 61), mon(130, 61), mon(59, 63), mon(9, 65)], pokedex: 118, max_level: 65, progress: { 'route-1': { cleared: true, gyms: 0 } } },
-  { is_me: true, name: 'Sam', character: 'red', team: [mon(6, 36), mon(25, 30)], pokedex: 42, max_level: 36, progress: {} },
+  { is_me: false, name: 'Blue', character: 'green', team: [mon(18, 61), mon(65, 59), mon(112, 61), mon(130, 61), mon(59, 63), mon(9, 65)], pokedex: 118, max_level: 65, shinies: 3, progress: { 'route-1': { cleared: true, gyms: 0 } } },
+  { is_me: true, name: 'Sam', character: 'red', team: [mon(6, 36), mon(25, 30)], pokedex: 42, max_level: 36, shinies: 1, progress: {} },
   { is_me: false, name: 'Leaf', character: 'red', team: [mon(3, 12)], pokedex: 9, max_level: 12, progress: {} },
 ]
 
