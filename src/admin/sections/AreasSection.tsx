@@ -16,6 +16,7 @@ import {
 import { PixelButton } from '@/components/PixelButton'
 import { SearchSelect } from '@/components/SearchSelect'
 import { SpriteImg } from '@/components/SpriteImg'
+import { TrainerSprite } from '@/components/TrainerArt'
 import { TypeBadge } from '@/components/TypeBadge'
 import { cx, textOn } from '@/theme/util'
 import { DataTable } from '../DataTable'
@@ -307,7 +308,7 @@ function AreaEditor({ area }: { area: Row }) {
             return (
               <div key={`${gid}-${i}`} className="flex flex-wrap items-center gap-2 border-2 border-ink bg-parchment p-2">
                 <span className="w-6 text-xl">{i + 1}.</span>
-                {t?.spriteUrl && <img src={t.spriteUrl} alt="" width={40} height={40} className="pixelated" style={{ imageRendering: 'pixelated' }} />}
+                {t?.spriteUrl && <TrainerSprite src={t.spriteUrl} size={40} />}
                 <SearchSelect
                   className="min-w-[220px] flex-1"
                   options={trainers}

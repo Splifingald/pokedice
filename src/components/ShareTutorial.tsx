@@ -7,6 +7,7 @@ import { useT } from '@/i18n/react'
 import { pushToast, useGame } from '@/store/game'
 import { Modal } from './Modal'
 import { PixelButton } from './PixelButton'
+import { TrainerSprite } from '@/components/TrainerArt'
 
 const seenKey = (region: string) => `pokedice.sharePrompt.${region}`
 const seen = (region: string) => {
@@ -60,14 +61,7 @@ export function ShareTutorial() {
     <Modal open={open} onClose={close} title={t('ui.share.title')}>
       <div className="flex flex-col gap-3">
         <div className="flex items-start gap-3">
-          <img
-            src="/characters/prof-oak.png"
-            alt={t('ui.newGame.oak')}
-            width={64}
-            height={64}
-            className="shrink-0"
-            style={{ imageRendering: 'pixelated' }}
-          />
+          <TrainerSprite src="/characters/prof-oak.png" alt={t('ui.newGame.oak')} size={64} className="shrink-0" />
           <p className="text-xl leading-snug">
             <b>{t('ui.oak.prefix')}</b> {t('ui.share.body')}
           </p>

@@ -9,6 +9,7 @@ import { closeDonation } from '@/store/actions'
 import { useGame } from '@/store/game'
 import { Modal } from './Modal'
 import { PixelButton } from './PixelButton'
+import { TrainerSprite } from '@/components/TrainerArt'
 
 export function DonationPopup() {
   const due = useGame((s) => !!s.save && donationDue(s.save, s.data) && !tutorialPending(s.save, s.data))
@@ -36,14 +37,7 @@ export function DonationModal({ open, onClose }: { open: boolean; onClose: () =>
     <Modal open={open && enabled} onClose={close} title={t('ui.donate.title')}>
       <div className="flex flex-col gap-3">
         <div className="flex items-start gap-3">
-          <img
-            src="/characters/prof-oak.png"
-            alt={t('ui.newGame.oak')}
-            width={64}
-            height={64}
-            className="shrink-0"
-            style={{ imageRendering: 'pixelated' }}
-          />
+          <TrainerSprite src="/characters/prof-oak.png" alt={t('ui.newGame.oak')} size={64} className="shrink-0" />
           <p className="text-xl leading-snug">
             <b>{t('ui.oak.prefix')}</b> {t('ui.donate.body')}
           </p>

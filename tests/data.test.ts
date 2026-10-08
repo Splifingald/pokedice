@@ -41,7 +41,8 @@ describe('pokemon.json', () => {
     for (const p of species) {
       expect(total(p.dice)).toBeGreaterThanOrEqual(1)
       expect(p.spriteUrl).toBe(`/pokemon/${String(p.dex).padStart(3, '0')}_front.png`)
-      for (const view of ['front', 'front_shiny', 'back', 'back_shiny', 'mini'])
+      // The offline fallback for Showdown's sprites (tests/showdown-sprites.test.ts); the Box icons are one sheet now.
+      for (const view of ['front', 'front_shiny', 'back', 'back_shiny'])
         expect(existsSync(path.join('public/pokemon', `${String(p.dex).padStart(3, '0')}_${view}.png`)), `${p.dex} ${view}`).toBe(true)
       expect(p.baseHp).toBeGreaterThan(0)
       expect(p.maxHp).toBeGreaterThan(p.baseHp)

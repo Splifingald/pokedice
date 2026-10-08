@@ -34,7 +34,8 @@ import { Modal } from '@/components/Modal'
 import { OakTip, useOneTimeTip } from '@/components/OakTip'
 import { ParticleCanvas, type ParticleHandle } from '@/components/ParticleCanvas'
 import { PixelButton } from '@/components/PixelButton'
-import { MiniSprite, SPRITE_METRICS, SpriteImg } from '@/components/SpriteImg'
+import { MiniSprite, SHOWDOWN_SCALE, showdownView, SPRITE_METRICS, SpriteImg } from '@/components/SpriteImg'
+import { artBox } from '@/lib/showdown'
 import { playerOf, PokeBall, ThrowSprite, TrainerSprite } from '@/components/TrainerArt'
 import { StatusIcons } from '@/components/StatusIcons'
 import { TypeBadge } from '@/components/TypeBadge'
@@ -184,15 +185,23 @@ const OWN_SPOT_COMPACT = { x: 48, feet: 116 }
 const SKY_BAND = 34
 const SKY: Record<BattleBackground, string> = { default: '#e8e8e8', grass: '#e8f0f0', rock: '#a08850', sea: '#f8f8f8', water: '#f8f8f8' }
 const METRICS = SPRITE_METRICS
-/** The tallest or widest a form kept on its 96px canvas may stand in the scene (scene pixels); bigger art is shrunk. */
+/** The tallest or widest a Pokémon may stand in the scene (scene pixels); bigger art is shrunk. */
 const MAX_ART = 80
 
 /**
- * Where a sprite cell goes (scene pixels): centred on the spot, its lowest opaque row on the spot's feet line. A form
- * kept on its uncut 96px canvas gets a 96px cell at the same pixel scale — shrunk only if its art passes MAX_ART.
+ * Where a sprite cell goes (scene pixels): a square on the spot, its floor on the spot's feet line. A Showdown sprite's
+ * art fills it from the floor up, at SHOWDOWN_SCALE — shrunk only if it passes MAX_ART. A local sprite (Showdown has
+ * none for this view) keeps its 64px cell with its lowest opaque row on the line, or for a form on its uncut 96px
+ * canvas a 96px cell at the same pixel scale.
  */
-function cellBox(dex: number, side: Side, compact: boolean) {
+function cellBox(dex: number, side: Side, compact: boolean, shiny: boolean) {
   const spot = side === 'enemy' ? FOE_SPOT : compact ? OWN_SPOT_COMPACT : OWN_SPOT
+  const sd = showdownView(dex, side === 'player', shiny)
+  if (sd) {
+    const [x0, y0, x1, y1] = artBox(sd.box)
+    const cell = Math.min(MAX_ART, Math.max(x1 - x0 + 1, y1 - y0 + 1) * SHOWDOWN_SCALE)
+    return { left: spot.x - cell / 2, top: spot.feet - cell, cell }
+  }
   const m = METRICS[dex]
   let cell = CELL
   let gap = m?.[side === 'enemy' ? 'front' : 'back'] ?? 0
@@ -281,7 +290,7 @@ function SpriteStage({
   const reduced = useGame((s) => s.settings.reducedMotion)
   const pace = usePace()
   const { dex, shiny } = battler
-  const box = cellBox(dex, side, compact)
+  const box = cellBox(dex, side, compact, shiny)
   const size = Math.round(box.cell * scale)
   const enter = side === 'enemy' ? 60 : -60
   return (

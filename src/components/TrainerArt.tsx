@@ -1,6 +1,8 @@
-// Trainer sprites (64×64 cells cut from graphics/trainers) and the pixel Poké Balls thrown at catches.
+// Trainer sprites (Showdown's 80×80, packed one sheet per region) and the pixel Poké Balls thrown at catches.
 import type { CSSProperties } from 'react'
 import type { PlayerCharacter, SaveData } from '@/engine'
+import atlas from '@/data/trainer-atlas.json'
+import { TRAINER_CELL, TRAINER_COLS, TRAINER_PITCH } from '@/lib/showdown'
 
 export const PLAYER_CHARACTERS: PlayerCharacter[] = ['red', 'green']
 
@@ -9,7 +11,34 @@ export const playerOf = (save: SaveData | null | undefined) => ({
   character: save?.player?.character ?? ('red' as PlayerCharacter),
 })
 
-/** A 64px trainer sprite shown at a whole-pixel scale. */
+/** The region sheets (scripts/showdown-sprites.ts), by name: hashed asset URLs, so each is fetched once a year. */
+const SHEETS = Object.fromEntries(
+  Object.entries(
+    import.meta.glob<string>('../assets/trainers/*.png', { query: '?url', import: 'default', eager: true }),
+  ).map(([file, url]) => [file.replace(/^.*\/|\.png$/g, ''), url]),
+)
+const ATLAS = atlas as unknown as {
+  sheets: Record<string, number>
+  cells: Record<string, [sheet: string, cell: number]>
+}
+
+/** Where a sprite URL sits in the region sheets, or null for one outside them (an admin's own sprite_url). */
+export function trainerCell(src: string | null | undefined) {
+  const hit = src ? ATLAS.cells[src] : undefined
+  const sheet = hit && SHEETS[hit[0]]
+  if (!hit || !sheet) return null
+  return {
+    sheet,
+    rows: ATLAS.sheets[hit[0]]!,
+    col: hit[1] % TRAINER_COLS,
+    row: Math.floor(hit[1] / TRAINER_COLS),
+  }
+}
+
+/**
+ * An 80px trainer sprite at any size. Every sprite the game names is a cell of its region's sheet, so a screen full of
+ * trainers costs one request per region; any other URL loads as an image of its own.
+ */
 export function TrainerSprite({
   src,
   size = 128,
@@ -23,15 +52,39 @@ export function TrainerSprite({
   style?: CSSProperties
   alt?: string
 }) {
+  const url = src || '/trainers/default.png'
+  const cell = trainerCell(url)
+  if (!cell)
+    return (
+      <img
+        src={url}
+        alt={alt}
+        width={size}
+        height={size}
+        draggable={false}
+        className={className}
+        style={{ imageRendering: 'pixelated', ...style }}
+      />
+    )
+  const k = size / TRAINER_CELL
   return (
-    <img
-      src={src ?? '/trainers/default.png'}
-      alt={alt}
-      width={size}
-      height={size}
-      draggable={false}
+    <span
+      role={alt ? 'img' : undefined}
+      aria-label={alt || undefined}
+      aria-hidden={alt ? undefined : true}
+      data-src={url}
       className={className}
-      style={{ imageRendering: 'pixelated', ...style }}
+      style={{
+        display: 'inline-block',
+        width: size,
+        height: size,
+        backgroundImage: `url(${cell.sheet})`,
+        backgroundSize: `${TRAINER_COLS * TRAINER_PITCH * k}px ${cell.rows * TRAINER_PITCH * k}px`,
+        backgroundPosition: `-${cell.col * TRAINER_PITCH * k}px -${cell.row * TRAINER_PITCH * k}px`,
+        backgroundRepeat: 'no-repeat',
+        imageRendering: 'pixelated',
+        ...style,
+      }}
     />
   )
 }
