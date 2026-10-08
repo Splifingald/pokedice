@@ -242,28 +242,25 @@ const EVOLVES_TEXT = {
 } as const
 
 /**
- * One evolution step as a card naming the other species (a silhouette until it is caught, unless `reveal`) that opens
- * its entry — and, for a stone, where to find that stone. "From" on the evolved species' entry, "into" on the one
- * that evolves.
+ * One evolution step as a card naming the other species (a silhouette until it is caught) that opens its entry — and,
+ * for a stone, where to find that stone. "From" on the evolved species' entry, "into" on the one that evolves.
  */
 function EvolutionStep({
   dex,
   evo,
   direction,
-  reveal = false,
   onOpenDex,
   onTravel,
 }: {
   dex: number
   evo: Evolution
   direction: 'from' | 'into'
-  reveal?: boolean
   onOpenDex?: (dex: number) => void
   onTravel?: () => void
 }) {
   const { t } = useT()
   const data = useGame((s) => s.data)
-  const known = useGame((s) => reveal || !!s.save?.pokedex.includes(dex))
+  const known = useGame((s) => !!s.save?.pokedex.includes(dex))
   const button = (
     <button
       type="button"
@@ -289,13 +286,12 @@ function EvolutionStep({
 }
 
 /**
- * What this species evolves into (the branches this save may see), and for a stone where to find it. Once it is
- * caught its sheet already names its evolutions, so the cards do too.
+ * What an uncaught species evolves into (the branches this save may see), and for a stone where to find it. A caught
+ * one's sheet already lists its evolutions, so it only gets the stones' sources (EvolutionItems).
  */
 function EvolvesInto({ dex, onOpenDex, onTravel }: { dex: number; onOpenDex?: (dex: number) => void; onTravel?: () => void }) {
   const { t } = useT()
   const data = useGame((s) => s.data)
-  const caught = useGame((s) => !!s.save?.pokedex.includes(dex))
   const evolutions = useVisibleEvolutions(data.species[dex]!)
   if (evolutions.length === 0) return null
   return (
@@ -307,7 +303,6 @@ function EvolvesInto({ dex, onOpenDex, onTravel }: { dex: number; onOpenDex?: (d
           dex={e.toDex}
           evo={e}
           direction="into"
-          reveal={caught}
           onOpenDex={onOpenDex}
           onTravel={onTravel}
         />
@@ -365,6 +360,21 @@ function CaughtSpots({ dex, onTravel }: { dex: number; onTravel?: () => void }) 
   )
 }
 
+/** A caught species that evolves with an item: where to get that item. */
+function EvolutionItems({ dex, onTravel }: { dex: number; onTravel?: () => void }) {
+  const data = useGame((s) => s.data)
+  const evolutions = useVisibleEvolutions(data.species[dex]!)
+  const items = [...new Set(evolutions.flatMap((e) => (e.item ? [e.item] : [])))]
+  if (items.length === 0) return null
+  return (
+    <section className="flex flex-col gap-3">
+      {items.map((key) => (
+        <ItemSources key={key} itemKey={key} onTravel={onTravel} />
+      ))}
+    </section>
+  )
+}
+
 /** A Pokédex entry: the full sheet (and where to find it) once caught, otherwise just where to find it. */
 export function DexEntry({ dex, onOpenDex, onTravel }: { dex: number; onOpenDex?: (dex: number) => void; onTravel?: () => void }) {
   const save = useGame((s) => s.save)
@@ -373,7 +383,7 @@ export function DexEntry({ dex, onOpenDex, onTravel }: { dex: number; onOpenDex?
   const best = save.box.filter((p) => p.dex === dex).sort((a, b) => b.level - a.level)[0]
   return (
     <PokemonSheet dex={dex} inst={best} onOpenDex={onOpenDex}>
-      <EvolvesInto dex={dex} onOpenDex={onOpenDex} onTravel={onTravel} />
+      <EvolutionItems dex={dex} onTravel={onTravel} />
       <CaughtSpots dex={dex} onTravel={onTravel} />
     </PokemonSheet>
   )
