@@ -319,3 +319,8 @@ in view) and the battle history sits beside it from 1024 px.
   (`versusClosest`). Unlocked: tabs Opponents (with the count still to beat) / My team / Leaderboard; Opponents has
   your team strip with Change, a search by trainer *or* Pokémon and To beat / Beaten / All chips with counts. My team
   shows three numbered slots ("Lv.72 → 50") over the eligible list (order badges 1–3), then Clear and Save team.
+- **The leaderboard**: the region's name as the head's count; four tabs that are icons, only the open one spelling
+  out its name (four names don't fit a phone in every language); a gold card with your look, the board's one-line
+  note and "You're #N of M" (tap: your row scrolls into view and blinks) or "You're in the Hall of Fame"; a navy
+  **Hall of Fame** button with the crown, how many maxed the board out and their faces, opening a sheet with the
+  board's `ui.board.hallBody.*` text and their rows (a crown in place of the rank). Locked until the first badge.

@@ -93,6 +93,7 @@ export function TrainerLook({
   return (
     <span
       aria-hidden
+      data-src={src ?? undefined}
       className={cx('inline-block shrink-0', className)}
       style={{
         width: w,

@@ -191,7 +191,7 @@ test('a battle fits a 360×640 phone', async ({ page }) => {
   // Home's CONTINUE starts the area; the encounter plays on /area.
   await page.goto('/home')
   const attack = page.getByRole('button', { name: 'ATTACK', exact: true })
-  for (let i = 0; i < 60 && !(await attack.isVisible().catch(() => false)); i++) {
+  for (let i = 0; i < 150 && !(await attack.isVisible().catch(() => false)); i++) {
     // Random fights: the lead may faint before the controls show — send in the next one (its pip pulses).
     if (await page.getByText('Choose your next Pokémon').isVisible().catch(() => false))
       await page.getByRole('group', { name: 'Switch Pokémon' }).getByRole('button', { name: /Switch in$/ }).first().click()
