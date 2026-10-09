@@ -1,17 +1,11 @@
 import { motion } from 'framer-motion'
-import { useRef, useState } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { createInstance, getSpecies, nationalDex } from '@/engine'
 import { useT } from '@/i18n/react'
-import { dexNo } from '@/lib/format'
 import { Dialogue } from '@/components/Dialogue'
-import { Modal } from '@/components/Modal'
 import { PixelButton } from '@/components/PixelButton'
-import { PokemonSheet } from '@/components/PokemonSheet'
-import { Sheet } from '@/components/Sheet'
-import { SpriteImg } from '@/components/SpriteImg'
+import { PartnerMoment } from '@/components/PartnerMoment'
 import { PLAYER_CHARACTERS, TrainerSprite } from '@/components/TrainerArt'
-import { TypeBadge } from '@/components/TypeBadge'
 import type { PlayerCharacter, PlayerProfile } from '@/engine'
 import { cx } from '@/theme/util'
 import { useGame } from '@/store/game'
@@ -24,15 +18,11 @@ export function NewGame() {
   const data = useGame((s) => s.data)
   const navigate = useNavigate()
   const [line, setLine] = useState(0)
-  const [choice, setChoice] = useState<number | null>(null)
-  const [info, setInfo] = useState<number | null>(null)
-  // The sheet keeps showing the last starter while it slides away.
-  const lastInfo = useRef<number | null>(null)
-  if (info != null) lastInfo.current = info
-  const shownInfo = info ?? lastInfo.current
   const [player, setPlayer] = useState<PlayerProfile | null>(null)
   const level = data.config.starterLevel
   const starters = data.config.starters.filter((d) => data.species[d])
+  // A new game starts in the first region.
+  const region = data.regions[0]
   const picking = line >= INTRO.length
 
   const begin = (dex: number) => {
@@ -66,97 +56,17 @@ export function NewGame() {
           <CharacterSelect onDone={setPlayer} />
         ) : (
           <>
-            <h1 className="text-center text-[36px] leading-none">{t('ui.newGame.choosePartner')}</h1>
-            <div className="mx-auto grid w-full max-w-3xl grid-cols-3 gap-1.5 sm:gap-4">
-              {starters.map((dex, i) => {
-                const sp = getSpecies(data, dex)
-                return (
-                  <motion.div
-                    key={dex}
-                    className="pixel-panel relative flex flex-col items-center"
-                    initial={{ y: 30, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    transition={{ delay: i * 0.12 }}
-                    whileHover={{ y: -4 }}
-                  >
-                    <button
-                      type="button"
-                      onClick={() => setChoice(dex)}
-                      className="flex w-full flex-col items-center gap-1 px-1 pb-3 pt-2 hover:bg-white sm:gap-2 sm:p-4"
-                    >
-                      <SpriteImg dex={dex} size={144} className="aspect-square !h-auto !w-full max-w-[144px]" />
-                      <span className="max-w-full truncate text-xl leading-none sm:text-4xl">{sp.name}</span>
-                      <span className="flex flex-wrap justify-center gap-1">
-                        <TypeBadge type={sp.type1} size="sm" />
-                        {sp.type2 && <TypeBadge type={sp.type2} size="sm" />}
-                      </span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setInfo(dex)}
-                      aria-label={t('ui.newGame.monInfo', { name: sp.name })}
-                      title={t('ui.newGame.info')}
-                      className="absolute right-0 top-0 flex h-11 w-11 items-center justify-center"
-                    >
-                      <span className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-ink bg-panel text-xl leading-none shadow-hard-sm hover:bg-gold">
-                        i
-                      </span>
-                    </button>
-                  </motion.div>
-                )
-              })}
-            </div>
+            <h1 className="sr-only">{t('ui.newGame.choosePartner')}</h1>
+            <PartnerMoment
+              starters={starters}
+              regionId={region?.id ?? 'kanto'}
+              regionName={region?.name ?? ''}
+              level={level}
+              onPick={begin}
+            />
           </>
         )}
       </div>
-
-      <Sheet
-        open={info != null}
-        onClose={() => setInfo(null)}
-        title={shownInfo != null ? (data.species[shownInfo]?.name ?? '') : ''}
-        sub={
-          shownInfo != null
-            ? `${dexNo(nationalDex(data, shownInfo))} · ${t('ui.common.level.short', { n: level })}`
-            : undefined
-        }
-        footer={
-          <PixelButton
-            variant="primary"
-            size="lg"
-            className="w-full"
-            onClick={() => {
-              if (info == null) return
-              setInfo(null)
-              setChoice(info)
-            }}
-          >
-            {t('ui.newGame.choose', { name: shownInfo != null ? (data.species[shownInfo]?.name ?? '') : '' })}
-          </PixelButton>
-        }
-      >
-        {shownInfo != null && (
-          <PokemonSheet dex={shownInfo} inst={createInstance(shownInfo, level, data, 'starter-preview', 0)} />
-        )}
-      </Sheet>
-
-      <Modal
-        open={choice != null}
-        onClose={() => setChoice(null)}
-        title={choice ? t('ui.newGame.confirmTitle', { name: data.species[choice]?.name ?? '' }) : ''}
-      >
-        {choice && (
-          <div className="flex flex-col items-center gap-3">
-            <SpriteImg dex={choice} size={120} />
-            <p className="text-xl">{t('ui.newGame.confirmBody', { name: data.species[choice]?.name ?? '' })}</p>
-            <div className="flex gap-2">
-              <PixelButton onClick={() => setChoice(null)}>{t('ui.newGame.notYet')}</PixelButton>
-              <PixelButton variant="primary" onClick={() => begin(choice)}>
-                {t('ui.newGame.yes')}
-              </PixelButton>
-            </div>
-          </div>
-        )}
-      </Modal>
     </main>
   )
 }

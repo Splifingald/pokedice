@@ -15,6 +15,7 @@ import { centerTimeline } from '@/fx/timelines/center'
 import { gmaxEndTimeline, gmaxFor, megaFor } from '@/fx/timelines/forms'
 import { legendLook, legendTimeline } from '@/fx/timelines/legend'
 import { evolveTimeline, hatchTimeline } from '@/fx/timelines/moments'
+import { labColors, starterTimeline } from '@/fx/timelines/starter'
 
 interface Preset {
   name: string
@@ -120,6 +121,21 @@ const PRESETS: Preset[] = [
     make: () => evolveTimeline({ from: foe(133), to: foe(135), type: 'electric', stone: `item|${STONE}` }),
   },
   { name: 'Egg hatching (Dratini)', sprites: [[147, false]], make: () => hatchTimeline({ baby: foe(147) }) },
+  {
+    name: 'Starter choice (Johto lab)',
+    sprites: [
+      [152, false],
+      [155, false],
+      [158, false],
+    ],
+    make: () =>
+      starterTimeline({
+        lab: labColors('johto'),
+        mons: [foe(152), foe(155), foe(158)],
+        ribbon: { welcome: 'Welcome to', region: 'Johto' },
+        pick: 1,
+      }),
+  },
   {
     name: 'Mega Evolution (Charizard X)',
     sprites: [

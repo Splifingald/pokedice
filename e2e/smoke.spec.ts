@@ -23,8 +23,10 @@ test('new game → first battle → win', async ({ page }) => {
   await page.getByRole('radio', { name: 'Character 2' }).click()
   await page.getByLabel('Your name').fill('Sam')
   await page.getByRole('button', { name: 'NEXT ▸' }).click()
-  await page.getByRole('button', { name: /Squirtle/ }).first().click()
-  await page.getByRole('button', { name: 'YES!' }).click()
+  // The professor's lab: three Poké Balls on the table; the third holds Squirtle.
+  await page.getByRole('button', { name: 'Poké Ball 3 of 3' }).click()
+  await page.getByRole('button', { name: 'Pick Squirtle' }).click()
+  await page.getByRole('button', { name: /let's go/i }).click()
   // A new game lands on Home, the area hub: CONTINUE plays the area you're in.
   await expect(page).toHaveURL(/\/home$/)
   await expect(page.getByRole('heading', { name: /^Exploring / })).toBeAttached()

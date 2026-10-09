@@ -176,7 +176,7 @@ motion `off` the stage jumps to the end and still fires every cue, so the screen
 | Catch | throw, beam, drop, wobbles, result | throw and drop, result at once |
 | Pokémon Center | three balls, six-beat jingle | one flash, healed |
 | Mega Evolution, Gigantamax | the full change | a white flash and the new sprite |
-| Legendary intro, Evolution, Egg hatching | in full | in full |
+| Legendary intro, Evolution, Egg hatching, the lab (a partner) | in full | in full |
 
 `calm` (OS reduce motion, or animations off) also removes screen shakes and full-screen flashes; a hit keeps its two
 white sprite frames. Every timeline is on `/kitchen-sink/fx` (dev): replay, ¼ speed, one-frame steps, the end state,
@@ -343,3 +343,20 @@ in view) and the battle history sits beside it from 1024 px.
 - **The menu** under the card: rows with an icon tile, a label and a one-line description (Leaderboard, Versus with
   "0/3 at Lv.50" while locked, Settings, How to play, Type chart, Admin for admins, Cloud backup, Connect). The label
   alone names a row; the description is its `aria-describedby`.
+
+## 18. Picking a partner (the lab)
+
+- **One moment for every partner** (`PartnerMoment`): a new game and every new region open the professor's lab full
+  screen (`useHoldFullscreen`), on top of whatever opened it (a `useDialog`, so Tab stays in and Esc answers it
+  first). The lab is code-drawn in the region's colours (`labColors`), with "WELCOME TO" and the region on a ribbon.
+- **The drop**: three Poké Balls fall onto the table, one after another (`starter.drop`, `starter.land`); a tap on the
+  stage lands them at once. Then "Choose your partner! Tap a Poké Ball."
+- **The balls are the buttons**: three transparent buttons over the balls ("Poké Ball 2 of 3"); hover or focus lifts
+  one. Opening one lets its Pokémon out (`starter.open`) and asks "Do you want to pick Charmander?" in the message
+  box, with a card under it: its types, what it hits hard, what hits it hard, its dice and rerolls at the starting
+  level. Not this one puts it back; another ball swaps it.
+- **Yes**: the partner hops with hearts, the other two balls sink away (`starter.fanfare`), "Charmander is your
+  partner! Your Kanto journey begins." and one wide button, Let's go!, which starts the game or the region.
+- **Leaving**: a new region has ✕ (Not now) and Esc; a new game has nothing to go back to. With motion `off` the balls
+  are already on the table.
+

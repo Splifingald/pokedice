@@ -25,6 +25,7 @@ import { Toggle } from '@/components/Toggle'
 import { TypeBadge, TypeSwatch } from '@/components/TypeBadge'
 import { pushToast, setSettings, useGame } from '@/store/game'
 import { BattleBits } from './kitchen/BattleBits'
+import { PartnerBits } from './kitchen/PartnerBits'
 import { BadgeIcon, CrownIcon } from '@/components/BadgeIcon'
 import { BoardRow } from '@/components/BoardRow'
 
@@ -448,6 +449,10 @@ export function KitchenSink() {
 
       <Section title="Battle: stage, plates, tray, readout, team pips, Bag, catch">
         <BattleBits />
+      </Section>
+
+      <Section title="PartnerMoment: the lab (new game, new region)">
+        <PartnerBits />
       </Section>
 
       <Section title="StatusIcons · PixelIcon">

@@ -284,6 +284,10 @@ const FX_SOUNDS = {
   'gmax.fanfare': (n = 0) => tone([392, 494, 587, 784][n]!, n === 3 ? 0.55 : 0.12, { type: 'square', vol: 0.04 }),
   'gmax.shrink': () => tone(440, 0.5, { type: 'triangle', vol: 0.04, slide: -300 }),
   'form.flash': () => tone(1047, 0.25, { type: 'square', vol: 0.04 }),
+  'starter.drop': () => tone(1200, 0.5, { type: 'triangle', vol: 0.03, slide: -700 }),
+  'starter.land': () => hiss(0.08, { freq: 500, vol: 0.06 }),
+  'starter.open': () => tone(880, 0.12, { type: 'square', vol: 0.04 }),
+  'starter.fanfare': (n = 0) => tone([523, 659, 784, 1047][n]!, 0.12, { type: 'square', vol: 0.04 }),
   'impact.windup': () => hiss(0.2, { freq: 700, slide: 900, vol: 0.04 }),
   'impact.hit': () => {
     hiss(0.18, { freq: 420, vol: 0.12 })

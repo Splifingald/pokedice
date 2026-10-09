@@ -13,6 +13,7 @@ import {
 import { useT } from '@/i18n/react'
 import { Chip } from '@/components/Chip'
 import { PixelIcon } from '@/components/icons'
+import { PartnerMoment } from '@/components/PartnerMoment'
 import { PixelButton } from '@/components/PixelButton'
 import { FilterChips, SearchField, type SegOption } from '@/components/Segmented'
 import { Sheet } from '@/components/Sheet'
@@ -222,7 +223,7 @@ function OfferCard({ region, onStarted }: { region: Region; onStarted: () => voi
   const { t } = useT()
   const data = useGame((s) => s.data)
   const save = useGame((s) => s.save)!
-  const [pick, setPick] = useState<number | null>(null)
+  const [picking, setPicking] = useState(false)
   const starters = region.starters.filter((d) => data.species[d])
   const here = getRegion(data, regionOf(save))?.name ?? ''
   return (
@@ -240,50 +241,47 @@ function OfferCard({ region, onStarted }: { region: Region; onStarted: () => voi
       <h3 id="offer-title" className="px-1 text-[42px] leading-[0.9]">
         {region.name}
       </h3>
-      <p id="offer-pick" className="m-0 px-1 text-[18px]">
-        {t('ui.home.pickPartner')}
-      </p>
-      <div role="radiogroup" aria-labelledby="offer-pick" className="grid grid-cols-3 gap-2 px-1">
+      <p className="m-0 px-1 text-[18px]">{t('ui.home.pickPartner')}</p>
+      <ul className="m-0 grid list-none grid-cols-3 gap-2 p-0 px-1" aria-label={t('ui.home.pickPartner')}>
         {starters.map((d) => {
           const s = data.species[d]!
-          const on = pick === d
           return (
-            <button
+            <li
               key={d}
-              type="button"
-              role="radio"
-              aria-checked={on}
-              onClick={() => setPick(d)}
-              className={cx(
-                'grid min-w-0 justify-items-center gap-1 bg-paper px-0.5 pb-2 pt-0.5',
-                on
-                  ? 'bg-[#fffbea] shadow-[inset_0_0_0_3px_#24304f,inset_0_-6px_0_#ffbe2e]'
-                  : 'shadow-ring-line',
-              )}
+              className="grid min-w-0 justify-items-center gap-1 bg-paper px-0.5 pb-2 pt-0.5 shadow-ring-line"
             >
               <MiniSprite dex={d} size={64} />
               <b className="max-w-full truncate text-[18px] font-normal leading-none">{s.name}</b>
               <TypeBadge type={s.type1} size="sm" />
-            </button>
+            </li>
           )
         })}
-      </div>
+      </ul>
       <p className="m-0 px-1 font-pixel-sm text-[15px] leading-tight text-muted">
         {t('ui.home.offerNote', { region: here })}
       </p>
+      {/* The choice itself happens in the professor's lab: the three balls drop onto the table. */}
       <PixelButton
         variant="primary"
         size="lg"
         className="mx-1 w-[calc(100%-8px)]"
-        disabled={pick == null}
-        onClick={() => {
-          if (pick != null && startRegion(region.id, pick)) onStarted()
-        }}
+        onClick={() => setPicking(true)}
       >
-        {pick != null
-          ? t('ui.home.startWith', { region: region.name, name: data.species[pick]?.name ?? '' })
-          : t('ui.home.pickFirst')}
+        {t('ui.partner.enter', { region: region.name })}
       </PixelButton>
+      {picking && (
+        <PartnerMoment
+          starters={starters}
+          regionId={region.id}
+          regionName={region.name}
+          level={data.config.starterLevel}
+          onLeave={() => setPicking(false)}
+          onPick={(dex) => {
+            setPicking(false)
+            if (startRegion(region.id, dex)) onStarted()
+          }}
+        />
+      )}
     </section>
   )
 }

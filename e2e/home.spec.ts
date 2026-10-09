@@ -91,3 +91,27 @@ test("Home's widgets say what's next: the Day Care's unlock and how close Versus
   await expect(versus).toContainText('0/3 at Lv.50')
   expect(await seriousAxe(page)).toEqual([])
 })
+
+test('a new region: its partner is picked in the lab, from three Poké Balls', async ({ page }) => {
+  // Kanto's league is won: Johto is on offer, and its pop-up opens by itself.
+  const league = 'bbe7e459-a138-5106-bd01-fce7ff422e7f'
+  const save = makeSave(4)
+  const won = { roundsDone: 1, cleared: true, bossDefeated: true, bossesDefeated: [], gymsDefeated: [] }
+  await boot(page, { ...save, areaProgress: { ...save.areaProgress, [league]: won } })
+  await page.goto('/home')
+  await page.getByRole('button', { name: 'Go to Johto' }).click()
+
+  const lab = page.getByRole('dialog', { name: 'Pick your partner in Johto' })
+  await expect(lab).toBeVisible()
+  // A ball opens; "not this one" puts it back, and another one is asked about.
+  await lab.getByRole('button', { name: 'Poké Ball 1 of 3' }).click()
+  await expect(lab.getByText('Do you want to pick Chikorita?')).toBeVisible()
+  expect(await seriousAxe(page)).toEqual([])
+  await lab.getByRole('button', { name: 'Not this one' }).click()
+  await lab.getByRole('button', { name: 'Poké Ball 2 of 3' }).click()
+  await lab.getByRole('button', { name: 'Pick Cyndaquil' }).click()
+  await lab.getByRole('button', { name: /let's go/i }).click()
+  await expect(lab).toHaveCount(0)
+  // Johto begins at its first area.
+  await expect(page.getByRole('heading', { name: 'Exploring Route 29' })).toBeAttached()
+})
