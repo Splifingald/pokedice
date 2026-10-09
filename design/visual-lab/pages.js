@@ -189,25 +189,19 @@
     confuse: '2 faces in one roll: the foe’s next attack hurts it too (20% recoil).',
     heal: '2 faces in one roll: your Pokémon heals by the dice total.',
   }
-  const light = (hex) => {
-    const [r, g, b] = PX.rgba(hex)
-    return 0.299 * r + 0.587 * g + 0.114 * b > 165
-  }
   /** A die's six faces as little dice; a status face wears its colour and icon, and says what it does below. */
   function faces(t) {
-    const D = G().dice[t],
-      col = t === 'base' ? '#f4f6fb' : UI().TYPE[t]
+    const D = G().dice[t]
     const st = [...new Set(D.faces.filter(Array.isArray).map((f) => f[1]))]
-    const tiles = D.faces
+    // Real dice, pips and all; a status face gets a ring in its colour, its icon and its name.
+    const dice = D.faces
       .map((f) => {
         const s = Array.isArray(f) ? f[1] : null,
           v = Array.isArray(f) ? f[0] : f
-        return s
-          ? `<i class="st" role="listitem" style="--stc:${UI().STATUS[s]}" aria-label="${v}, ${STATUS_NAME[s]} face"><img class="px" alt="" src="${UI().statusIcon(s, 2)}" />${v}</i>`
-          : `<i role="listitem" aria-label="${v}">${v}</i>`
+        return `<span class="pg-face${s ? ' st' : ''}" role="listitem" aria-label="${v}${s ? `, ${STATUS_NAME[s]} face` : ''}"${s ? ` style="--stc:${UI().STATUS[s]}"` : ''}>${UI().die(t, v, { size: 40 })}${s ? `<img class="px pg-face-badge" alt="" src="${UI().statusIcon(s, 2)}" />` : ''}<small>${s ? STATUS_NAME[s] : v}</small></span>`
       })
       .join('')
-    return `<span class="pg-faces${light(col) ? ' lt' : ''}" role="list" aria-label="${D.label} die faces" style="--c:${col}">${tiles}</span>${st
+    return `<span class="pg-dicerow" role="list" aria-label="${D.label} die faces">${dice}</span>${st
       .map(
         (s) =>
           `<span class="pg-stline" style="--stc:${UI().STATUS[s]}"><img class="px" alt="" src="${UI().statusIcon(s, 2)}" /><span><b>${STATUS_NAME[s]}</b> ${STATUS_LINE[s]}</span></span>`,
@@ -303,7 +297,7 @@
     const dieRows = groups
       .map(({ t, n }) => {
         const D = G().dice[t]
-        return `<li class="pg-die"><span class="pg-die-name">${UI().die(t, 6, { size: 26 })}<b>${D.label}</b><em>×${n}</em><small>${esc(D.desc)}</small></span>${faces(t)}</li>`
+        return `<li class="pg-die"><span class="pg-die-name"><b>${D.label}</b><em>×${n}</em><small>${esc(D.desc)}</small></span>${faces(t)}</li>`
       })
       .join('')
     const next = s.ms.filter((x) => x[0] > m.lv).slice(0, 3)
@@ -808,7 +802,7 @@
         ? '<span class="pg-upbtn max">MAX</span>'
         : `<button type="button" class="pg-upbtn${can ? '' : ' poor'}" data-up="${u.kind}:${u.key}" ${can ? '' : 'aria-disabled="true"'} aria-label="Upgrade ${esc(u.name)} to level ${u.lv + 1} for ${u.cost} Pokédollars${can ? '' : ', not enough Pokédollars'}"><b>${money(u.cost)}</b><small>${can ? 'Upgrade' : `need ${money(u.cost - S.gold)}`}</small></button>`
     return `<li class="pg-up${u.locked ? ' locked' : ''}${can ? ' can' : ''}" data-key="${u.kind}:${u.key}">
-      <div class="pg-up-top">${u.kind === 'die' ? UI().die(u.key, 6, { size: 26 }) : ''}<span class="pg-up-name"><b>${esc(u.name)}</b>${u.kind === 'die' ? `<small>${esc(G().dice[u.key].desc)}</small>` : ''}</span>${visual}</div>
+      <div class="pg-up-top"><span class="pg-up-name"><b>${esc(u.name)}</b>${u.kind === 'die' ? `<small>${esc(G().dice[u.key].desc)}</small>` : ''}</span>${visual}</div>
       ${u.kind === 'die' ? faces(u.key) : ''}
       <div class="pg-up-mid">${pips(u.lv)}<span class="pg-up-lv">Lv.${u.lv}</span></div>
       <div class="pg-up-bot"><span class="pg-up-bonus">${u.kind === 'combo' ? `+${now} damage` : `+${now} a die`}${next != null ? ` <span class="pg-arrow">→</span> <em>+${next}</em>` : ''}</span>${btn}</div>

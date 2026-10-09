@@ -674,7 +674,17 @@
   }
   const hpVar = (p) => (p > 0.5 ? 'var(--hp-hi)' : p > 0.2 ? 'var(--hp-mid)' : 'var(--hp-low)')
   const typeBadge = (style, t) => `<span class="ui-type" style="--c:${typeColor(style, t)}">${t}</span>`
-  const PIPS = { 1: [4], 2: [0, 8], 3: [0, 4, 8], 4: [0, 2, 6, 8], 5: [0, 2, 4, 6, 8], 6: [0, 2, 3, 5, 6, 8] }
+  // 0 is a blank face; some typed dice go up to 7 and 8.
+  const PIPS = {
+    1: [4],
+    2: [0, 8],
+    3: [0, 4, 8],
+    4: [0, 2, 6, 8],
+    5: [0, 2, 4, 6, 8],
+    6: [0, 2, 3, 5, 6, 8],
+    7: [0, 2, 3, 4, 5, 6, 8],
+    8: [0, 1, 2, 3, 5, 6, 7, 8],
+  }
   function die(style, type, value, o = {}) {
     const c =
       type === 'base' && style === 'pop' ? '#ffffff' : typeColor(style, type === 'base' ? 'base' : type)

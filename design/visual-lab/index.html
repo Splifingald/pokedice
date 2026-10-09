@@ -977,11 +977,13 @@
   .pg-die-name b { font-weight: 400; font-size: 18px; }
   .pg-die-name em { font-style: normal; font-family: 'Jersey 15', sans-serif; color: #5c6a8a; }
   .pg-die small { font-family: 'Jersey 15', sans-serif; font-size: 13px; color: #5c6a8a; }
-  .pg-faces { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 5px; }
-  .pg-faces i { position: relative; height: 38px; display: grid; place-items: center; font-style: normal; font-size: 22px; line-height: 1; color: #ffffff; text-shadow: 0 2px 0 #24304f; background: var(--c); box-shadow: inset 0 0 0 2px #24304f, inset -3px -3px 0 #0000002e, inset 3px 3px 0 #ffffff59; }
-  .pg-faces.lt i { color: #24304f; text-shadow: none; }
-  .pg-faces i.st, .pg-faces.lt i.st { display: flex; align-items: center; justify-content: center; gap: 2px; background: #3d4970; color: var(--stc); text-shadow: 0 2px 0 #1a2238; box-shadow: inset 0 0 0 2px #24304f, inset 0 0 0 4px var(--stc), 0 0 0 2px #ffffff, 0 0 0 4px var(--stc); z-index: 1; }
-  .pg-faces i.st img { width: 16px; height: 16px; flex: none; }
+  .pg-dicerow { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; justify-items: center; padding: 6px 0 0; }
+  .pg-face { position: relative; display: grid; justify-items: center; gap: 4px; }
+  .pg-face .ui-die { --s: 40px; }
+  .pg-face small { font-family: 'Jersey 15', sans-serif; font-size: 13px; line-height: 1; color: #8592ad; }
+  .pg-face.st .die-wrap { filter: drop-shadow(2px 0 0 #ffffff) drop-shadow(-2px 0 0 #ffffff) drop-shadow(0 2px 0 #ffffff) drop-shadow(0 -2px 0 #ffffff) drop-shadow(2px 0 0 var(--stc)) drop-shadow(-2px 0 0 var(--stc)) drop-shadow(0 2px 0 var(--stc)) drop-shadow(0 -2px 0 var(--stc)); }
+  .pg-face-badge { position: absolute; right: -8px; top: -8px; width: 20px; height: 20px; padding: 2px; background: #ffffff; border-radius: 50%; box-shadow: 0 0 0 2px var(--stc); }
+  .pg-face.st small { padding: 1px 4px 2px; background: var(--stc); color: #ffffff; text-shadow: 0 1px 0 #24304f; box-shadow: inset 0 0 0 1px #24304f; }
   .pg-stline { display: flex; align-items: flex-start; gap: 7px; padding: 5px 8px 6px; background: color-mix(in oklab, var(--stc) 14%, #ffffff); box-shadow: inset 4px 0 0 var(--stc); font-family: 'Jersey 15', sans-serif; font-size: 15px; line-height: 1.15; color: #24304f; }
   .pg-stline img { width: 16px; height: 16px; flex: none; margin-top: 1px; }
   .pg-stline b { font-family: 'Jersey 20', sans-serif; font-weight: 400; font-size: 16px; }
