@@ -42,6 +42,9 @@ export const StageCanvas = forwardRef<
   endRef.current = onEnd
   const tickRef = useRef(onTick)
   tickRef.current = onTick
+  // Skip pressed while the sprites are still loading: the timeline jumps to its end as soon as it is loaded.
+  const loaded = useRef(false)
+  const skipEarly = useRef(false)
   const { level, calm } = useMotion()
 
   useEffect(() => setCalm(calm), [calm])
@@ -64,10 +67,13 @@ export const StageCanvas = forwardRef<
     const p = player.current
     if (!p || !timeline) return
     let gone = false
+    loaded.current = false
+    skipEarly.current = false
     const start = () => {
       if (gone) return
       p.load(timeline)
-      if (level === 'off') p.skip()
+      loaded.current = true
+      if (level === 'off' || skipEarly.current) p.skip()
       else if (autoPlay) p.play()
     }
     if (ready) void Promise.race([ready, new Promise((r) => setTimeout(r, READY_WAIT))]).then(start)
@@ -88,7 +94,10 @@ export const StageCanvas = forwardRef<
     play: () => player.current?.play(),
     pause: () => player.current?.pause(),
     step: () => player.current?.stepFrame(),
-    skip: () => player.current?.skip(),
+    skip: () => {
+      if (loaded.current) player.current?.skip()
+      else skipEarly.current = true
+    },
     setSpeed: (k) => {
       if (player.current) player.current.speed = k
     },

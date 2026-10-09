@@ -174,7 +174,7 @@ export function HelpPage() {
   return (
     <main className="mx-auto flex max-w-3xl flex-col gap-4 px-3 py-6">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-5xl">{t('ui.help.title')}</h1>
+        <h1 className="text-[32px] leading-none">{t('ui.help.title')}</h1>
         <PixelButton onClick={() => (window.history.length > 1 ? navigate(-1) : navigate('/'))}>{t('ui.help.back')}</PixelButton>
       </div>
       <div className="pixel-panel p-4">

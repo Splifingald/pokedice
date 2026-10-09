@@ -66,7 +66,7 @@ export function NewGame() {
           <CharacterSelect onDone={setPlayer} />
         ) : (
           <>
-            <h1 className="text-center text-5xl">{t('ui.newGame.choosePartner')}</h1>
+            <h1 className="text-center text-[36px] leading-none">{t('ui.newGame.choosePartner')}</h1>
             <div className="mx-auto grid w-full max-w-3xl grid-cols-3 gap-1.5 sm:gap-4">
               {starters.map((dex, i) => {
                 const sp = getSpecies(data, dex)
@@ -189,7 +189,7 @@ export function CharacterSelect({
       {compact ? (
         <p className="text-center text-2xl">{t('ui.newGame.selectCharacter')}</p>
       ) : (
-        <h1 className="text-center text-5xl">{t('ui.newGame.selectCharacter')}</h1>
+        <h1 className="text-center text-[36px] leading-none">{t('ui.newGame.selectCharacter')}</h1>
       )}
       <div role="radiogroup" aria-label={t('ui.newGame.character')} className="flex justify-center gap-4">
         {PLAYER_CHARACTERS.map((c, i) => (
@@ -216,7 +216,7 @@ export function CharacterSelect({
           onChange={(e) => setName(e.target.value.slice(0, 12))}
           maxLength={12}
           autoComplete="nickname"
-          className="min-h-[44px] w-full border-[3px] border-ink bg-panel px-2 text-2xl"
+          className="min-h-[44px] w-full bg-paper shadow-[inset_0_0_0_2px_#24304f,inset_0_3px_0_#dfe7f2] px-2 text-2xl"
           required
         />
       </label>

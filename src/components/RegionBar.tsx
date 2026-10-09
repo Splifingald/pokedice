@@ -121,7 +121,7 @@ function RegionTerms({
         <TrainerSprite src="/characters/prof-oak.png" size={96} />
       </div>
       <p className="text-xl leading-tight">{t('ui.region.termsIntro', { here, region: region.name })}</p>
-      <ul className="flex flex-col gap-1 border-[3px] border-ink bg-parchment p-2 text-lg leading-tight">
+      <ul className="flex flex-col gap-1 bg-paper p-2 text-lg shadow-ring leading-tight">
         <li>{t('ui.region.termsSelf')}</li>
         <li>{t('ui.region.termsStay', { here })}</li>
         <li>{t('ui.region.termsBack')}</li>

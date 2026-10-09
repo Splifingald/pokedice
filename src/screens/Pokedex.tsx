@@ -140,7 +140,7 @@ export function PokedexScreen() {
           className="pixel-panel-dark flex flex-col items-center gap-2 p-5 text-center"
         >
           <PixelIcon name="star" size={40} />
-          <div className="text-5xl text-gold">{t('ui.dex.complete')}</div>
+          <div className="text-[40px] leading-none text-gold">{t('ui.dex.complete')}</div>
           <div className="text-2xl">
             {t('ui.dex.completeBody', {
               total,

@@ -211,6 +211,10 @@ Players shouldn't have to make many requests:
   are preloaded.
 - Fonts are subset by unicode range; only Jersey 20 (latin) is preloaded.
 - Before adding an image file, ask whether code can draw it, or whether it belongs in an atlas.
+- **Painted backgrounds** (area scenes, battle backdrops), when they replace the code-drawn ones: one file per scene
+  at the stage's own size (WebP, hashed, cached a year), loaded only when that scene is on screen and the current
+  area's preloaded; lists of areas use one downscaled sheet of strips, never one file per card. The code-drawn scene
+  stays the fallback while a file loads or when it fails.
 
 ## 12. Navigation, Home and stages
 

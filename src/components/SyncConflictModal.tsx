@@ -48,7 +48,7 @@ function SaveCard({ label, save, more, onKeep }: { label: string; save: SaveData
     <section className={cx('pixel-panel flex flex-col gap-2 p-3', more && 'outline outline-[3px] outline-offset-2 outline-gold')}>
       <div className="flex items-baseline justify-between gap-2">
         <h3 className="text-2xl leading-none">{label}</h3>
-        {more && <span className="border-2 border-ink bg-gold px-1 text-base leading-tight text-ink">{t('ui.sync.moreProgress')}</span>}
+        {more && <span className="bg-gold px-1 text-base shadow-ring leading-tight text-ink">{t('ui.sync.moreProgress')}</span>}
       </div>
       <div className="flex gap-1" aria-hidden>
         {teamOf(save).map((p) => (

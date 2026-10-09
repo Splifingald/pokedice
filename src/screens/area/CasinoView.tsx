@@ -147,7 +147,7 @@ export function CasinoView() {
           {[0, 1, 2].map((i) => (
             <motion.div
               key={i}
-              className="flex h-24 w-20 items-center justify-center border-[3px] border-ink bg-panel sm:h-28 sm:w-24"
+              className="flex h-24 w-20 items-center justify-center bg-paper shadow-ring sm:h-28 sm:w-24"
               style={{ boxShadow: 'inset 0 6px 0 rgba(0,0,0,0.18), inset 0 -6px 0 rgba(0,0,0,0.18)' }}
               animate={spinning && i >= stopped ? { y: [0, -3, 0] } : { y: 0 }}
               transition={spinning && i >= stopped ? { duration: 0.18, repeat: Infinity } : { duration: 0.1 }}

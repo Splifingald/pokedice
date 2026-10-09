@@ -60,7 +60,7 @@ export function SettingsScreen() {
   return (
     <div className="flex max-w-2xl flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-5xl">{t('ui.settings.title')}</h1>
+        <h1 className="text-[32px] leading-none">{t('ui.settings.title')}</h1>
         {canDonate && (
           <PixelButton variant="primary" size="sm" onClick={() => setDonating(true)}>
             {t('ui.settings.helpPokedice')}
@@ -149,7 +149,7 @@ export function SettingsScreen() {
           value={importText}
           onChange={(e) => setImportText(e.target.value)}
           placeholder={t('ui.settings.importPlaceholder')}
-          className="mt-3 h-24 w-full border-2 border-ink bg-panel p-2 font-mono text-xs"
+          className="mt-3 h-24 w-full bg-paper shadow-[inset_0_0_0_2px_#24304f,inset_0_3px_0_#dfe7f2] p-2 font-mono text-xs"
         />
         <PixelButton size="sm" className="mt-1" disabled={!importText.trim()} onClick={doImport}>
           {t('ui.settings.importSave')}
@@ -219,7 +219,7 @@ function BackupsPanel() {
       <p className="copy mb-2 text-muted">{t('ui.settings.backupsHint')}</p>
       <ul className="flex flex-col gap-2">
         {list.map((b) => (
-          <li key={b.at} className="flex flex-wrap items-center gap-3 border-2 border-ink bg-panel p-2">
+          <li key={b.at} className="flex flex-wrap items-center gap-3 bg-paper p-2 shadow-ring">
             <div className="min-w-0 flex-1">
               <div className="text-lg leading-tight">{b.reason}</div>
               <div className="text-base text-muted">{t('ui.settings.setAside', { when: new Date(b.at).toLocaleString() })}</div>

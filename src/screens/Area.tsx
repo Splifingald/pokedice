@@ -160,13 +160,13 @@ function AreaHeader({ area, progress, teamAvg }: { area: Area; progress: AreaPro
       <div className="flex flex-col gap-1.5 px-3 pb-3 pt-2">
         <div className="flex items-baseline justify-between gap-3">
           <div className="flex min-w-0 flex-wrap items-baseline gap-x-2.5">
-            <h1 id="area-title" className="min-w-0 text-4xl leading-none">
+            <h1 id="area-title" className="min-w-0 text-[32px] leading-none">
               {area.name}
             </h1>
             {need != null &&
               (done >= need ? (
                 <span
-                  className="self-center border-2 border-ink bg-hp-green px-1.5 text-xl leading-tight text-ink"
+                  className="self-center bg-hp-green px-1.5 text-xl leading-tight text-ink shadow-ring"
                   style={{ borderRadius: 2 }}
                   title={t(`ui.area.allRoundsDone.${need === 1 ? 'one' : 'other'}`, { n: need })}
                   aria-label={t(`ui.area.allRoundsDone.${need === 1 ? 'one' : 'other'}`, { n: need })}

@@ -262,7 +262,7 @@ function useRecap(events: RunEvent[]): { mons: MonRecap[]; extras: Extra[]; evol
             key: k,
             sound: 'levelup',
             node: (
-              <div className="flex items-center justify-center gap-3 border-[3px] border-ink bg-gold p-2 text-center">
+              <div className="flex items-center justify-center gap-3 bg-gold p-2 text-center shadow-ring">
                 {e.badge && <BadgeIcon badge={e.badge} earned size={36} />}
                 <div>
                   <div className="text-2xl leading-none">
@@ -294,7 +294,7 @@ function useRecap(events: RunEvent[]): { mons: MonRecap[]; extras: Extra[]; evol
             key: k,
             sound: 'levelup',
             node: (
-              <div className="border-[3px] border-ink bg-hp-green p-2 text-center">
+              <div className="bg-hp-green p-2 text-center shadow-ring">
                 <div className="text-2xl">{t('ui.victory.areaCleared')}</div>
                 <div className="text-lg">
                   {next ? t('ui.victory.nextOpen', { name: next.name }) : t('ui.victory.allCleared')}
@@ -354,7 +354,7 @@ function MilestoneChip({ m, type1 }: { m: Milestone; type1: DieType }) {
     )
   return (
     <span
-      className="inline-flex items-center gap-1 border-2 border-ink bg-gold px-1.5 py-0.5 text-xl leading-none"
+      className="inline-flex items-center gap-1 bg-gold px-1.5 py-0.5 text-xl leading-none shadow-ring"
       aria-label={milestoneText(m, type1)}
       title={milestoneText(m, type1)}
     >
@@ -382,7 +382,7 @@ function MonRow({ m }: { m: MonRecap }) {
     chips.push(
       <span
         key="lv"
-        className="inline-flex items-center gap-1 border-2 border-ink bg-hp-green px-1.5 py-0.5 text-xl leading-none text-ink"
+        className="inline-flex items-center gap-1 bg-hp-green px-1.5 py-0.5 text-xl leading-none text-ink shadow-ring"
         aria-label={t('ui.victory.levelUp', { level: m.toLevel ?? 0 })}
       >
         <PixelIcon name="up" size={18} />
@@ -393,12 +393,12 @@ function MonRow({ m }: { m: MonRecap }) {
   m.milestones.filter((ms) => ms.effect !== 'EVOLVE').forEach((ms, i) => chips.push(<MilestoneChip key={`m${i}`} m={ms} type1={type1} />))
   if (m.evolvesTo != null)
     chips.push(
-      <span key="evo" className="border-2 border-ink bg-ink px-1.5 py-0.5 text-lg leading-none text-panel">
+      <span key="evo" className="bg-ink px-1.5 py-0.5 text-lg leading-none text-panel">
         {t('ui.victory.evolvingInto', { name: data.species[m.evolvesTo]?.name ?? t('ui.common.unknown') })}
       </span>,
     )
   return (
-    <div className={cx('border-[3px] border-ink p-2', leveled ? 'bg-gold/25' : 'bg-panel')}>
+    <div className={cx('p-2 shadow-ring', leveled ? 'bg-[#fff4d6]' : 'bg-paper')}>
       <div className="flex items-center gap-2">
         <motion.span
           className="relative shrink-0"

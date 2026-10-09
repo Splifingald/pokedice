@@ -1,5 +1,17 @@
 # Pokédice — Readability & Accessibility Pass
 
+> **October 2026: the UI was rebuilt as *Johto Daybreak*** ([docs/14](14-DAYBREAK-PORT.md)). The rules every screen
+> now follows — colours and their contrast, type, frames, components, layout, accessibility, motion levels, web
+> requests, and each screen's conventions — live in [docs/15-UI-GUIDELINES.md](15-UI-GUIDELINES.md), which replaces
+> the findings below as the reference. What changed for players: Home replaces the Map as the hub (a tab bar on
+> phones), the battle is full screen on a pixel stage with a timeline for every move, the catch happens in the
+> battle scene, the Day Care hatches Eggs full screen, Versus and the leaderboard share ranked rows, and the avatar
+> opens a trainer card with a badge case. The checks that guard it run in `pnpm e2e`: no sideways scroll at 360, 375,
+> 768 and 1280 px, 44 px tap targets on phones, only the Jersey fonts, axe with no serious issue, a battle that fits
+> 360×640 without scrolling, every language at 360×640.
+>
+> The audit below is kept as history.
+
 Audit of the game UI on 14 Sep 2026 (v1.3 content), and the plan to fix what it found.
 
 **Status.** Phases 1 and 2 shipped on 14 Sep 2026. Re-running the same 46 captures: **0 axe violations of any rule**,

@@ -34,7 +34,7 @@ export class ErrorBoundary extends Component<{ children: ReactNode }, State> {
     return (
       <div className="flex min-h-screen items-center justify-center p-4">
         <div className="pixel-panel flex max-w-lg flex-col gap-3 p-5">
-          <h1 className="text-4xl">{t('ui.error.title')}</h1>
+          <h1 className="text-[32px] leading-none">{t('ui.error.title')}</h1>
           <p className="text-xl">{t('ui.error.body')}</p>
           <pre className="max-h-24 overflow-auto border-2 border-ink bg-ink p-2 font-mono text-xs text-panel">{String(error.message || error)}</pre>
           <div className="flex flex-wrap gap-2">

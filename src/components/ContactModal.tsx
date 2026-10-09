@@ -22,7 +22,7 @@ const when = (iso: string) =>
 export function ReplyBox({ reply, at }: { reply: string; at: string | null }) {
   const { t } = useT()
   return (
-    <div className="border-2 border-ink bg-gold/30 p-2">
+    <div className="bg-[#fff4d6] p-2 shadow-ring">
       <p className="flex flex-wrap items-baseline justify-between gap-x-2 text-lg leading-none">
         <b>{t('ui.contact.answer')}</b>
         {at && <span className="text-base text-muted">{when(at)}</span>}
@@ -134,7 +134,7 @@ export function ContactModal({ open, onClose }: { open: boolean; onClose: () => 
         <History />
       ) : (
         <form onSubmit={(e) => void submit(e)} className="flex flex-col gap-3">
-          <p className="copy border-2 border-ink bg-gold/30 p-2 text-lg leading-snug">
+          <p className="copy bg-[#fff4d6] p-2 text-lg leading-snug shadow-ring">
             {t('ui.contact.warning')}
           </p>
           <label className="flex flex-col gap-1 text-xl">
@@ -143,7 +143,7 @@ export function ContactModal({ open, onClose }: { open: boolean; onClose: () => 
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               maxLength={FEEDBACK_TITLE_MAX}
-              className="min-h-[44px] w-full border-[3px] border-ink bg-panel px-2 text-xl"
+              className="min-h-[44px] w-full bg-paper shadow-[inset_0_0_0_2px_#24304f,inset_0_3px_0_#dfe7f2] px-2 text-xl"
               required
             />
           </label>
@@ -154,7 +154,7 @@ export function ContactModal({ open, onClose }: { open: boolean; onClose: () => 
               onChange={(e) => setMessage(e.target.value)}
               maxLength={FEEDBACK_MESSAGE_MAX}
               rows={7}
-              className="copy w-full resize-y border-[3px] border-ink bg-panel p-2 text-lg leading-snug"
+              className="copy w-full resize-y bg-paper shadow-[inset_0_0_0_2px_#24304f,inset_0_3px_0_#dfe7f2] p-2 text-lg leading-snug"
               required
             />
           </label>
