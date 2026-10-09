@@ -7,6 +7,7 @@ A standalone page for deciding the game's next look, outside the app's build. Th
   - the area plate on top opens the area's details: gym, legendary, one-time finds still there, Pokémon to catch with rarity and levels, the round mix
   - CONTINUE is the one big action
   - an Areas sheet offers search by area or Pokémon, filters (To catch, Secret, Cleared), sorting and a region switcher; a card opens its details, GO travels, the outline gives the state; the Areas button turns gold when a new region opens
+  - entering a new region starts the partner pick: in the professor's lab, three Poké Balls drop onto the table, a tap opens one, and the question comes with the Pokémon's type, matchups and dice (`starter.js`)
   - each area has one picture: the scene the team roams on Home, cropped to its middle in lists
   - widgets, two by two: the newest secret area and the Day Care, then Versus (locked until three Pokémon reach Lv.50) and a slot for special events
   - a game-style tab bar sits at the bottom
@@ -29,6 +30,7 @@ A standalone page for deciding the game's next look, outside the app's build. Th
   - an evolution (Charmeleon → Charizard at Lv.36, Eevee → Jolteon with a Thunder Stone)
   - an Egg hatching (the Gen 5 Egg, into Dratini or Eevee)
   - a Mega Evolution on the battle stage (Charizard into Mega Charizard X or Y): the Key Stone and the Mega Stone linked by two strands of light, a sphere in the seven colours, the change inside, the burst and the Mega symbol; +1 die of the type it gains, until the battle ends
+  - the partner pick (Johto when a region opens, Kanto for a new game): in the professor's lab: a welcome ribbon, three Poké Balls dropping onto their cradles one after another, the choice, the yes, the other two flying home
   - a Gigantamax (Pikachu or Lapras): recalled into the ball, Dynamax energy swelling it, thrown up behind the field under a crimson sky, a giant red silhouette rising in steps, then the G-Max form with its cloud crown; +1 die of its first type for its next turn
 
   You can play them at ¼ speed, step frame by frame, jump between beats, and turn on synthesised sound.
@@ -55,6 +57,7 @@ node design/visual-lab/serve.mjs   # http://localhost:4173
 | `pages.js` | The tabs behind Home: Team, Pokédex, Poké Mart, Upgrades, and the shared Pokémon sheet |
 | `battle.js` | The playable battle: the engine's damage, combo, type and status rules, the dice tray, the catch, and Versus on auto |
 | `daycare.js` | The Day Care: slots, drop-off, take back, Eggs and the hatching moment |
+| `starter.js` | The partner pick when a region opens: drives the Animations tab's starter scene from taps and keys, the question with type, matchups and dice |
 | `social.js` | Versus (team, opponents, board), the leaderboard with its Hall of Fame, the trainer card with the badge case and looks |
 | `lab.js` | Styles, the 9-slice frame generator (`makeFrame`), the mock screens, the HUD, the moodboards |
 | `assets/` | Showdown's Black/White animated sprites as de-duplicated sheets (`sprites.json` = frame order and timings), menu icons (`dex-icons.png`: #1 to #251), item icons (`items.png`), trainer looks (`trainers.png`: Red, Leaf and 22 trainer classes, 80×80, from `public/`), `game.json` (from `src/data`: species dice, stats, milestones and evolutions, shop items, upgrade tracks, die faces), `kanto.json` (from `src/data`: areas with levels, wild Pokémon and their odds, gyms, legendaries, one-time and common finds, the round mix, unlocks; regions with their starters), the current grass background |

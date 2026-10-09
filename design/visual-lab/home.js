@@ -1298,7 +1298,8 @@
   function renderAreasBtn() {
     const b = $('#hm-areas')
     const gold = !!SAVE.offer && !SAVE.offerSeen
-    const fresh = K.areas.some((a) => statusOf(a) === 'new') || !!SAVE.offer
+    // A new region stays news until its partner is picked.
+    const fresh = K.areas.some((a) => statusOf(a) === 'new') || (!!SAVE.offer && !SAVE.partner)
     b.classList.toggle('gold', gold)
     b.innerHTML = `<span><img class="px" alt="" src="${MAP}" /><small>${gold ? 'New region' : 'Areas'}</small></span>${gold ? '<i class="spk" aria-hidden="true"></i><i class="spk" aria-hidden="true"></i><i class="spk" aria-hidden="true"></i>' : fresh ? '<i class="dot new" aria-hidden="true">NEW</i>' : ''}`
     b.setAttribute(
@@ -1424,7 +1425,7 @@
   })
 
   // ------------------------------------------------------------------ the areas sheet, with the region switcher
-  const SHEET = { q: '', filter: 'all', sort: 'route', view: 'areas', starter: 0 }
+  const SHEET = { q: '', filter: 'all', sort: 'route', view: 'areas' }
   const regionName = (id) => (K.regions.find((r) => r.id === id) || {}).name || ''
   function openSheet(o = {}) {
     if (o.filter) SHEET.filter = o.filter
@@ -1538,7 +1539,6 @@
       .join('')
   }
 
-  const TYPE_COL = { grass: '#34c97a', fire: '#ff7a3d', water: '#3a9be8' }
   function renderRegions() {
     const kanto = K.regions[0],
       next = K.regions.find((r) => r.id === kanto.next)
@@ -1558,19 +1558,21 @@
       `<p class="hm-reg-foot">More regions open one League at a time. Each keeps its own team, Box, bag and gold.</p>`
   }
   function offerCard(r) {
-    const pick = SHEET.starter
-    return `<section class="hm-reg offer" aria-labelledby="hm-offer-h">
-      <span class="hm-reg-row"><span class="hm-st new">NEW REGION</span><span class="hm-reg-stats"><span>${r.areas} areas</span><span>${r.species} new Pokémon</span></span></span>
+    const stats = `<span class="hm-reg-row"><span class="hm-st new">NEW REGION</span><span class="hm-reg-stats"><span>${r.areas} areas</span><span>${r.species} new Pokémon</span></span></span>`
+    // Picked already: the partner, and the way back into the moment (for the preview).
+    if (SAVE.partner)
+      return `<section class="hm-reg offer" aria-labelledby="hm-offer-h">${stats}
+        <h3 id="hm-offer-h">${esc(r.name)}</h3>
+        <p class="hm-reg-partner">${dexIco(SAVE.partner, 'x2')}<span><b>${esc(K.names[SAVE.partner])}</b><small>Your partner in ${esc(r.name)}</small></span></p>
+        <p class="hm-reg-note">Kanto stays as you left it: its team, Box and bag wait here. Switch back any time.</p>
+        <button type="button" class="ui-btn wide" id="hm-enter"><span>See the pick again</span></button>
+      </section>`
+    return `<section class="hm-reg offer" aria-labelledby="hm-offer-h">${stats}
       <h3 id="hm-offer-h">${esc(r.name)}</h3>
-      <p class="hm-reg-pick" id="hm-pick-h">Pick a partner to start with</p>
-      <div class="hm-starters" role="radiogroup" aria-labelledby="hm-pick-h">${r.starters
-        .map((d) => {
-          const ty = K.types[d][0]
-          return `<button type="button" role="radio" aria-checked="${pick === d}" data-starter="${d}">${dexIco(d, 'x2')}<b>${esc(K.names[d])}</b><span class="hm-type" style="--c:${TYPE_COL[ty] || '#8592ad'}">${ty}</span></button>`
-        })
-        .join('')}</div>
+      <p class="hm-reg-balls" aria-hidden="true">${r.starters.map(() => `<img class="px" alt="" src="${BALL3}" />`).join('')}</p>
+      <p class="hm-reg-pick">Three partners are waiting. Enter to meet them and pick one.</p>
       <p class="hm-reg-note">Kanto stays as you left it: its team, Box and bag wait here. Switch back any time.</p>
-      <button type="button" class="ui-btn wide${pick ? ' primary' : ''}" id="hm-start"${pick ? '' : ' disabled'}><span>${pick ? `Start ${esc(r.name)} with ${esc(K.names[pick])}` : 'Pick a partner first'}</span></button>
+      <button type="button" class="ui-btn wide gold" id="hm-enter"><span>Enter ${esc(r.name)}</span></button>
     </section>`
   }
 
@@ -1843,7 +1845,7 @@
     s: '#8592ad',
   }
   const url = (name, scale, pal = PAL) => PX.icon(ICO[name], pal, scale).toDataURL()
-  let BALL, LOCK, LOCK3, PLAY, MAP, COIN, BADGE, BADGE3, TROPHY
+  let BALL, BALL3, LOCK, LOCK3, PLAY, MAP, COIN, BADGE, BADGE3, TROPHY
   // The tab bar's icons, 16×16 in the Daybreak style: navy outline, three tones, one idea each.
   const NAVICO = {
     shop: [
@@ -2026,17 +2028,10 @@
     })
     $('#hm-regions').addEventListener('click', (e) => {
       if (e.target.closest('[data-back]')) return setView('areas')
-      const s = e.target.closest('[data-starter]')
-      if (s) {
-        SHEET.starter = Number(s.dataset.starter)
-        renderRegions()
-        $(`[data-starter="${SHEET.starter}"]`).focus({ preventScroll: true })
-        return
-      }
-      if (e.target.closest('#hm-start')) {
-        const r = K.regions.find((x) => x.id === SAVE.offer)
+      // ENTER: the partner pick, full screen (starter.js).
+      if (e.target.closest('#hm-enter')) {
         closeAll()
-        toast(`${r.name} with ${K.names[SHEET.starter]}: next in the UX pass`)
+        if (API.startStarter) API.startStarter(SAVE.offer)
       }
     })
 
@@ -2088,7 +2083,6 @@
     loadState(id)
     buildPokedex()
     SHEET.view = 'areas'
-    SHEET.starter = 0
     $$('#hm-states button').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.state === id)))
     $('#hm-state-note').textContent = STATES[id].note
     renderTop()
@@ -2143,6 +2137,7 @@
       ['assets/kanto.json', 'assets/game.json'].map((u) => fetch(u).then((r) => r.json())),
     )
     BALL = url('ball', 1)
+    BALL3 = url('ball', 3)
     LOCK = url('lock', 2)
     LOCK3 = url('lock', 3)
     PLAY = url('play', 3, { k: '#ffffff', w: '#ffffff' })
@@ -2212,6 +2207,8 @@
     renderTop,
     renderNavDots,
     renderWidgets,
+    renderAreasBtn,
+    openRegions: () => openSheet({ view: 'regions' }),
     showPage,
     /** The team changed outside Home (the Day Care): rebuild the scene and the widgets. */
     refreshTeam() {

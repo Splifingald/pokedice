@@ -986,6 +986,7 @@
     ['hatch', 'Egg hatching', '#9be3a0'],
     ['mega', 'Mega Evolution', '#c26bf0'],
     ['gmax', 'Gigantamax', '#e0245e'],
+    ['starter', 'Starter pick', '#7ac74c'],
   ]
   const OPT = {
     anim: 'attack',
@@ -997,6 +998,8 @@
     baby: 'dratini',
     mega: 'charizardx',
     gmax: 'pikachu',
+    starterSet: 'johto',
+    starterPick: '1',
   }
   let player = null
 
@@ -1273,6 +1276,7 @@
     if (OPT.anim === 'hatch') return M.hatch({ baby: OPT.baby })
     if (OPT.anim === 'mega') return M.mega({ mega: OPT.mega })
     if (OPT.anim === 'gmax') return M.gmax({ gmax: OPT.gmax })
+    if (OPT.anim === 'starter') return M.starter({ set: OPT.starterSet, pick: Number(OPT.starterPick) })
     return M.center()
   }
 
@@ -1322,6 +1326,17 @@
         ['charizardx', 'Charizard → Mega Charizard X · +1 Dragon die', '#3ab0ff'],
         ['charizardy', 'Charizard → Mega Charizard Y · +1 Fire die', '#ff8a3d'],
       ])
+    else if (OPT.anim === 'starter')
+      opts.innerHTML =
+        seg('starterSet', 'REGION', [
+          ['johto', 'Johto · a new region opens', '#e8b44a'],
+          ['kanto', 'Kanto · a new game', '#ec3b33'],
+        ]) +
+        seg(
+          'starterPick',
+          'PICKS',
+          ANIM.STARTER_SETS[OPT.starterSet].mons.map((m, i) => [String(i), m.name, TYPE_MOD[m.types[0]]]),
+        )
     else if (OPT.anim === 'gmax')
       opts.innerHTML = seg('gmax', 'GIGANTAMAX', [
         ['pikachu', 'Pikachu · +1 Electric die', '#ffd23a'],
@@ -1378,7 +1393,9 @@
                   ? `Mega Evolution: ${ANIM.MEGAS[OPT.mega].mega}`
                   : OPT.anim === 'gmax'
                     ? `Gigantamax: ${ANIM.GMAXES[OPT.gmax].name}`
-                    : 'Pokémon Center'
+                    : OPT.anim === 'starter'
+                      ? `Starter pick: ${ANIM.STARTER_SETS[OPT.starterSet].region}, ${ANIM.STARTER_SETS[OPT.starterSet].mons[Number(OPT.starterPick)].name}`
+                      : 'Pokémon Center'
     $('#beats').innerHTML =
       `<h3>${esc(name)}</h3><p class="sub">${d.dur.toFixed(1)} s · ${Math.round(d.dur * 60)} frames. Click a beat to jump to it.</p><ol>${d.beats.map(([t, l, txt], i) => `<li data-i="${i}" data-t="${t}" tabindex="0"><span class="ts">${t.toFixed(2)}s</span><span><b>${esc(l)}</b><span>${esc(txt)}</span></span></li>`).join('')}</ol>${RULES_ANIM}`
     $$('#beats li').forEach((li) => {

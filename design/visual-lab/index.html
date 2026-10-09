@@ -699,7 +699,7 @@
   /* the area plate is a button: it opens the area's details */
   .hm-area { appearance: none; border: 0; text-align: left; font: inherit; color: inherit; cursor: pointer; }
   .hm-area:active { transform: translateY(1px); }
-  .hm-area:focus-visible, .hm-regbtn:focus-visible, .hm-reg:focus-visible, .hm-starters button:focus-visible, .hm-seg button:focus-visible { outline: 3px solid #f2553f; outline-offset: 2px; }
+  .hm-area:focus-visible, .hm-regbtn:focus-visible, .hm-reg:focus-visible, .hm-seg button:focus-visible { outline: 3px solid #f2553f; outline-offset: 2px; }
 
   /* the Areas button: plain, NEW dot, gold for a new region */
   .hm-map { position: relative; }
@@ -760,10 +760,6 @@
   .hm-reg.offer .hm-reg-row .hm-reg-stats { margin-left: auto; padding: 0; }
   .hm-reg.offer h3 { margin: 0; padding: 0 4px; font-weight: 400; font-size: 42px; line-height: 0.9; }
   .hm-reg-pick { margin: 0 4px; font-size: 18px; }
-  .hm-starters { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; padding: 0 4px; }
-  .hm-starters button { appearance: none; border: 0; display: grid; justify-items: center; gap: 3px; padding: 2px 2px 8px; background: #ffffff; box-shadow: inset 0 0 0 2px #b6c3d9; min-width: 0; }
-  .hm-starters button[aria-checked='true'] { background: #fffbea; box-shadow: inset 0 0 0 3px #24304f, inset 0 -6px 0 #ffbe2e; }
-  .hm-starters b { font-weight: 400; font-size: 18px; line-height: 1; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
   .hm-type { font-family: 'Jersey 15', sans-serif; font-size: 13px; line-height: 1; padding: 1px 6px 2px; background: var(--c); color: #ffffff; text-transform: uppercase; letter-spacing: 0.05em; box-shadow: inset 0 0 0 1px #24304f; }
   .hm-reg-note { margin: 0 4px; font-family: 'Jersey 15', sans-serif; font-size: 15px; line-height: 1.15; color: #5c6a8a; }
   .hm-reg.offer .ui-btn { margin: 2px 4px 0; width: calc(100% - 8px); min-height: 52px; }
@@ -1275,6 +1271,40 @@
   .tc-menu small { font-family: 'Jersey 15', sans-serif; font-size: 14px; line-height: 1.1; color: #5c6a8a; }
   .tc-menu em { font-style: normal; font-size: 15px; padding: 2px 8px 3px; background: #24304f; color: #ffe7a8; }
   .tc-mi { width: 32px; height: 32px; flex: none; display: grid; place-items: center; font-size: 20px; color: #ffffff; background: #5b8def; box-shadow: inset 0 0 0 2px #24304f; }
+  /* The partner pick (starter.js): full screen over the phone, the stage on top, the question under it. */
+  .hm-moment { position: absolute; inset: 0; z-index: 40; display: flex; flex-direction: column; gap: 10px; padding: 0 0 16px; background: #fbfdff; overflow-y: auto; }
+  .hm-mo-stage { position: relative; flex: none; box-shadow: 0 2px 0 #24304f; }
+  .hm-mo-stage canvas { display: block; width: 100%; height: auto; aspect-ratio: 3 / 2; image-rendering: pixelated; }
+  .hm-mo-hits { position: absolute; inset: 0; }
+  .hm-mo-ball { appearance: none; border: 0; position: absolute; top: 75%; width: 56px; height: 60px; margin: -40px 0 0 -28px; background: none; cursor: pointer; }
+  .hm-mo-ball:disabled { cursor: default; }
+  .hm-mo-ball:focus-visible { outline: 3px solid #5b8def; outline-offset: -4px; }
+  .hm-mo-x { appearance: none; border: 0; position: absolute; right: 6px; top: 6px; width: 44px; height: 44px; font-size: 20px; color: #ffffff; background: #24304fcc; }
+  .hm-mo-x:focus-visible { outline: 3px solid #5b8def; outline-offset: 2px; }
+  .hm-mo-say { margin: 0 12px; font-size: 20px; min-height: calc(2.3em + 18px); display: flex; align-items: center; line-height: 1.15; }
+  .ui-root[data-framed] .hm-mo-say { padding: 6px 12px 8px; }
+  .hm-mo-ask, .hm-mo-end { margin: 0 12px; display: grid; gap: 10px; }
+  .hm-mo-ask { padding: 10px 12px 12px; background: #ffffff; box-shadow: inset 0 0 0 2px #24304f, inset 0 -4px 0 #dfe7f2; }
+  .hm-ask-head { display: flex; align-items: center; gap: 8px; }
+  .hm-ask-head .ico { margin: -12px -6px -10px -10px; }
+  .hm-ask-head > span { display: grid; gap: 4px; }
+  .hm-ask-head b { font-weight: 400; font-size: 26px; line-height: 1; }
+  .hm-ask-head .ui-types { display: flex; gap: 4px; }
+  .hm-ask-facts { margin: 0; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 6px 10px; align-items: center; }
+  .hm-ask-facts dt { font-family: 'Jersey 15', sans-serif; font-size: 15px; color: #5c6a8a; }
+  .hm-ask-facts dd { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+  .hm-ask-facts .ui-type { height: 18px; font-size: 13px; padding: 0 5px; }
+  .hm-ask-dice small { font-family: 'Jersey 15', sans-serif; font-size: 14px; color: #5c6a8a; margin-left: 4px; }
+  .hm-ask-none { font-family: 'Jersey 15', sans-serif; font-size: 14px; color: #8592ad; }
+  .hm-ask-btns { display: grid; grid-template-columns: 1fr 1.4fr; gap: 10px; }
+  .hm-ask-btns .ui-btn { min-height: 52px; }
+  .hm-reg-balls { margin: 2px 4px 0; display: flex; gap: 10px; }
+  .hm-reg-balls img { width: 36px; height: 36px; }
+  .hm-reg-partner { margin: 0 4px; display: flex; align-items: center; gap: 6px; }
+  .hm-reg-partner .ico { margin: -10px -6px -10px -10px; }
+  .hm-reg-partner > span { display: grid; gap: 2px; }
+  .hm-reg-partner b { font-weight: 400; font-size: 22px; line-height: 1; }
+  .hm-reg-partner small { font-family: 'Jersey 15', sans-serif; font-size: 15px; color: #5c6a8a; }
   @media (max-width: 520px) { .hm-page { overflow: visible; } }
   @media (prefers-reduced-motion: reduce) { .hm-pill.bump, .pg-pips i.pop, .bt-team.force .bt-pip, .so-row.flash { animation: none; } }
 
@@ -1448,7 +1478,7 @@
           <li><b>Where you are</b><span>Area, level range, rounds, species caught here. Tap it for the <em>area’s details</em>: gym, legendary and when it shows up, one-time finds still there, Pokémon to catch with rarity and levels, what a round brings.</span></li>
           <li><b>Your team, roaming</b><span>The three of them (a team is three at most) wander the area’s own scenery. Friends walk over to each other and hop, <em>little hearts</em> float up; Lapras starts a song and the others join, <em>notes</em> rising. Tap one: it hops, a heart pops, its card shows. A tired one sweats and naps.</span></li>
           <li><b>Continue</b><span>The only big button, in thumb reach, and it says what comes next.</span></li>
-          <li><b>Areas</b><span>A sheet, not a page. Search by area <em>or by Pokémon</em> (“Pikachu” finds where it lives), filter To catch, Secret or Cleared, sort by route, level or most to catch. A card opens the area’s details; <em>GO</em> travels. The outline is the state: <em>orange</em> where you are, <em>green</em> cleared, grey locked. Each area has one picture: the scene the team roams, and cards show its middle. <em>Regions</em>, next to the region name, switches region: the next one appears once the League is won, starters included. The Areas button has three states: plain, a NEW dot, <em>gold “New region”</em>.</span></li>
+          <li><b>Areas</b><span>A sheet, not a page. Search by area <em>or by Pokémon</em> (“Pikachu” finds where it lives), filter To catch, Secret or Cleared, sort by route, level or most to catch. A card opens the area’s details; <em>GO</em> travels. The outline is the state: <em>orange</em> where you are, <em>green</em> cleared, grey locked. Each area has one picture: the scene the team roams, and cards show its middle. <em>Regions</em>, next to the region name, switches region: the next one appears once the League is won. <em>Enter</em> starts the partner pick: in the professor’s lab, three Poké Balls drop onto the table, a tap opens one, and “Do you want to pick it?” comes with its type, what it hits hard, what hits it hard and its dice; no sends it back into its ball. The Areas button has three states: plain, a NEW dot, <em>gold “New region”</em>.</span></li>
           <li><b>Widgets</b><span>Two by two. The newest secret area travels in one tap; when there is none, the next one shows its progress. The Day Care shows who is ready and how long the others need; it opens the <em>Day Care</em>. <em>Versus</em> sits under the secret area: locked, it shows how close you are (3 Pokémon at Lv.50); then Set team, then Fight. Under the Day Care, an empty slot waits for <em>special events</em>.</span></li>
           <li><b>Tab bar</b><span>Home in the middle. New 16×16 icons: a Mart bag, a die going up, three balls for the team, the red Pokédex; a podium for the leaderboard. Dots only for things you can act on: affordable upgrades, a new Pokédex entry.</span></li>
         </ol>
@@ -1568,4 +1598,5 @@
 <script src="battle.js"></script>
 <script src="daycare.js"></script>
 <script src="social.js"></script>
+<script src="starter.js"></script>
 <script src="lab.js"></script>
