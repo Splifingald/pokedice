@@ -85,10 +85,7 @@ export function FoePlate({
               {Array.from({ length: party.count }, (_, i) => (
                 <i
                   key={i}
-                  className={cx(
-                    'h-2 w-2 shadow-[inset_0_0_0_1px_#24304f]',
-                    i < party.index ? 'bg-shadow' : 'bg-danger',
-                  )}
+                  className={cx('h-2 w-2 shadow-ring-thin', i < party.index ? 'bg-shadow' : 'bg-crimson')}
                 />
               ))}
             </span>

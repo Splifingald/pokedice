@@ -110,7 +110,7 @@ export function CharacterSelect({
             aria-checked={character === c}
             aria-label={t('ui.newGame.characterN', { n: i + 1 })}
             onClick={() => setCharacter(c)}
-            className={cx('pixel-panel p-2', character === c ? 'bg-gold' : 'hover:bg-white')}
+            className={cx('pixel-panel p-2', character === c ? 'bg-gold' : 'hover:bg-paper')}
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: character === c ? -6 : 0, opacity: 1 }}
             transition={{ delay: i * 0.08 }}
@@ -126,7 +126,7 @@ export function CharacterSelect({
           onChange={(e) => setName(e.target.value.slice(0, 12))}
           maxLength={12}
           autoComplete="nickname"
-          className="min-h-[44px] w-full bg-paper shadow-[inset_0_0_0_2px_#24304f,inset_0_3px_0_#dfe7f2] px-2 text-2xl"
+          className="min-h-[44px] w-full bg-paper shadow-field px-2 text-2xl"
           required
         />
       </label>

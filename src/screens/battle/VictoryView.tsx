@@ -42,7 +42,7 @@ export function Overlay({ children, footer, label }: { children: ReactNode; foot
   const reduced = useGame((s) => s.settings.reducedMotion)
   return (
     <motion.div
-      className="fixed inset-0 z-[80] flex items-end justify-center bg-ink/45 sm:items-center sm:p-3"
+      className="fixed inset-0 z-[80] flex items-end justify-center bg-night/45 sm:items-center sm:p-3"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: reduced ? 0 : 0.16 }}
@@ -58,7 +58,7 @@ export function Overlay({ children, footer, label }: { children: ReactNode; foot
       >
         <div className="pixel-scroll min-h-0 flex-1 overflow-auto p-3 sm:p-4">{children}</div>
         {footer && (
-          <div className="shrink-0 bg-parchment p-2 shadow-[inset_0_2px_0_#24304f]" style={{ paddingBottom: 'calc(0.5rem + env(safe-area-inset-bottom))' }}>
+          <div className="shrink-0 bg-parchment p-2 shadow-[inset_0_2px_0_rgb(var(--c-edge))]" style={{ paddingBottom: 'calc(0.5rem + env(safe-area-inset-bottom))' }}>
             {footer}
           </div>
         )}
@@ -95,7 +95,7 @@ function CatchCard({
   const name = useGame((s) => s.data.species[dex]?.name) ?? t('ui.common.unknown')
   const shiny = useGame((s) => !!s.save?.box.find((p) => p.id === uid)?.shiny)
   return (
-    <div className="flex items-center gap-3 bg-[#fff4d6] p-2 shadow-ring">
+    <div className="flex items-center gap-3 bg-gold-pale p-2 shadow-ring">
       <motion.div initial={{ rotate: -30, y: -20 }} animate={{ rotate: [0, -15, 15, -8, 0], y: 0 }} transition={{ duration: 0.9 }}>
         <PixelIcon name="ball" size={36} />
       </motion.div>
@@ -398,7 +398,7 @@ function MonRow({ m }: { m: MonRecap }) {
       </span>,
     )
   return (
-    <div className={cx('p-2 shadow-ring', leveled ? 'bg-[#fff4d6]' : 'bg-paper')}>
+    <div className={cx('p-2 shadow-ring', leveled ? 'bg-gold-pale' : 'bg-paper')}>
       <div className="flex items-center gap-2">
         <motion.span
           className="relative shrink-0"

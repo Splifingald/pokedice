@@ -49,7 +49,7 @@ function DeckPreview({ deck }: { deck: DeckCounts }) {
         Array.from({ length: deck[k] }, (_, i) => (
           <span
             key={`${k}${i}`}
-            className="flex h-10 w-7 items-center justify-center border-2 border-ink font-pixel-sm text-base"
+            className="flex h-10 w-7 items-center justify-center border-2 border-edge font-pixel-sm text-base"
             style={{ background: CARD[k].color, color: textOn(CARD[k].color), borderRadius: 2 }}
             title={CARD[k].label}
           >
@@ -64,8 +64,8 @@ function DeckPreview({ deck }: { deck: DeckCounts }) {
 function BossCard({ b, data, onChange, onRemove }: { b: BossDef; data: GameData; onChange: (b: BossDef) => void; onRemove: () => void }) {
   const byTeam = b.teamAvgThreshold != null
   return (
-    <div className="flex flex-wrap items-center gap-3 border-2 border-ink bg-parchment p-2">
-      <SpriteImg dex={b.dex} size={56} shiny={b.shiny} className="border-2 border-ink bg-panel" />
+    <div className="flex flex-wrap items-center gap-3 border-2 border-edge bg-parchment p-2">
+      <SpriteImg dex={b.dex} size={56} shiny={b.shiny} className="border-2 border-edge bg-panel" />
       <div className="flex min-w-[260px] flex-1 flex-col gap-1.5">
         <PokemonPicker data={data} value={b.dex} onChange={(dex) => onChange({ ...b, dex })} />
         <div className="flex flex-wrap items-center gap-2 text-lg">
@@ -230,7 +230,7 @@ function AreaEditor({ area }: { area: Row }) {
             </div>
           )}
           {!!area.banner_url && (
-            <AreaBanner url={s(area.banner_url)} className="h-20 border-2 border-ink" />
+            <AreaBanner url={s(area.banner_url)} className="h-20 border-2 border-edge" />
           )}
         </Box>
 
@@ -242,7 +242,7 @@ function AreaEditor({ area }: { area: Row }) {
             {KINDS.map((k) => (
               <div key={k} className="flex flex-col gap-1">
                 <span className="flex items-center gap-1.5 text-lg leading-none">
-                  <span className="inline-block h-4 w-3 border-2 border-ink" style={{ background: CARD[k].color }} aria-hidden />
+                  <span className="inline-block h-4 w-3 border-2 border-edge" style={{ background: CARD[k].color }} aria-hidden />
                   {CARD[k].label}
                 </span>
                 <Stepper label={`${CARD[k].label} copies`} value={n(weights[k])} max={50} onChange={(v) => patch({ encounter_weights: { ...weights, [k]: v } })} />
@@ -306,7 +306,7 @@ function AreaEditor({ area }: { area: Row }) {
             const t = data.trainers[gid]
             const type = t ? trainerSpecialty(t, data) : null
             return (
-              <div key={`${gid}-${i}`} className="flex flex-wrap items-center gap-2 border-2 border-ink bg-parchment p-2">
+              <div key={`${gid}-${i}`} className="flex flex-wrap items-center gap-2 border-2 border-edge bg-parchment p-2">
                 <span className="w-6 text-xl">{i + 1}.</span>
                 {t?.spriteUrl && <TrainerSprite src={t.spriteUrl} size={40} />}
                 <SearchSelect
@@ -562,13 +562,13 @@ export function AreasSection() {
                 onDragStart={() => setDrag(aid)}
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={() => drag && reorder(drag, aid)}
-                className={cx('flex cursor-grab items-center gap-1 border-2 border-ink p-1', isCurrent ? 'bg-gold' : 'bg-panel hover:bg-white')}
+                className={cx('flex cursor-grab items-center gap-1 border-2 border-edge p-1', isCurrent ? 'bg-gold' : 'bg-panel hover:bg-paper')}
               >
                 <button type="button" className="flex min-w-0 flex-1 items-center gap-2 text-left" onClick={() => setSelected(aid)} aria-current={isCurrent || undefined}>
                   {a.banner_url ? (
-                    <AreaBanner url={s(a.banner_url)} className="h-8 !w-14 shrink-0 border border-ink" />
+                    <AreaBanner url={s(a.banner_url)} className="h-8 !w-14 shrink-0 border border-edge" />
                   ) : (
-                    <span className="h-8 w-14 shrink-0 border border-ink bg-parchment" />
+                    <span className="h-8 w-14 shrink-0 border border-edge bg-parchment" />
                   )}
                   <span className="min-w-0">
                     <span className="block truncate text-lg leading-tight">

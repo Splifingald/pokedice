@@ -70,7 +70,7 @@ export function AreaDex({ areaId, onOpenDex }: { areaId: string; onOpenDex: (dex
                   type="button"
                   onClick={() => onOpenDex(m.dex)}
                   className={cx(
-                    'pixel-panel flex w-full flex-col items-center p-1 hover:bg-white',
+                    'pixel-panel flex w-full flex-col items-center p-1 hover:bg-paper',
                     !has && 'bg-parchment',
                   )}
                   title={has ? data.species[m.dex]?.name : t('ui.dex.whereToFind')}

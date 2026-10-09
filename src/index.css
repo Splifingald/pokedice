@@ -83,8 +83,7 @@
 @tailwind utilities;
 
 :root {
-  color-scheme: light;
-  /* Height of the phone bottom bar; sticky footers (the Pokémon Center's CONTINUE) sit on top of it. */
+  /* The theme's colours (--c-*) and color-scheme come from tailwind.config.ts. Height of the phone bottom bar; sticky footers (the Pokémon Center's CONTINUE) sit on top of it. */
   --bottom-nav: 0px;
   /* The CJK pixel face, after Jersey in every font stack (tailwind.config.ts). Players' CJK names in a Latin UI use
      the Japanese build. */
@@ -121,10 +120,10 @@ body,
 /* The ground: Daybreak's pale sky under its dot texture (src/theme/frames.ts draws --tex), two CSS px per art px. */
 body {
   margin: 0;
-  background-color: #e9f0f8;
+  background-color: rgb(var(--c-parchment));
   background-image: var(--tex);
   background-size: 16px 16px;
-  color: #24304f;
+  color: rgb(var(--c-ink));
   font-family: 'Jersey 20', 'Jersey 15', var(--font-cjk);
   font-size: 20px;
   line-height: 1.2;
@@ -140,16 +139,17 @@ button {
 
 /* Keyboard focus: a solid ink ring (11:1 on the ground and panels), gold on dark grounds (8.9:1 on ink). */
 :focus-visible {
-  outline: 3px solid #24304f;
+  outline: 3px solid rgb(var(--c-ink));
   outline-offset: 2px;
 }
 .pixel-panel-dark :focus-visible,
-.bg-ink :focus-visible {
+.bg-night :focus-visible,
+:root:not([data-theme='dark']) .bg-ink :focus-visible {
   outline-color: #ffbe2e;
 }
 .pixel-panel-dark .bg-panel :focus-visible,
 .pixel-panel-dark .pixel-panel :focus-visible {
-  outline-color: #24304f;
+  outline-color: rgb(var(--c-ink));
 }
 
 /*

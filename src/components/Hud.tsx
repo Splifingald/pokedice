@@ -81,7 +81,7 @@ function NavEntry({ n, variant }: { n: NavItem; variant: 'side' | 'bottom' }) {
         {...common}
         className={cx(
           'pixel-btn relative flex min-h-[48px] items-center gap-3 px-3 py-2 text-[22px] leading-none',
-          active && !inFight && 'bg-[#fff2ef] text-danger',
+          active && !inFight && 'bg-rose text-danger',
           inFight && 'hatched pointer-events-none',
         )}
       >
@@ -96,8 +96,8 @@ function NavEntry({ n, variant }: { n: NavItem; variant: 'side' | 'bottom' }) {
         {/* Home: a raised Poké Ball in the middle of the bar. */}
         <span
           className={cx(
-            '-mt-[26px] grid h-[62px] w-[62px] place-items-center rounded-full shadow-[inset_0_0_0_3px_#24304f,inset_0_-6px_0_#c4382a,0_0_0_4px_#fbfdff]',
-            active ? 'bg-accent' : 'bg-danger',
+            '-mt-[26px] grid h-[62px] w-[62px] place-items-center rounded-full shadow-[inset_0_0_0_3px_rgb(var(--c-edge)),inset_0_-6px_0_#c4382a,0_0_0_4px_rgb(var(--c-panel))]',
+            active ? 'bg-accent' : 'bg-crimson',
           )}
         >
           <PixelIcon name="ball" size={36} />
@@ -109,7 +109,7 @@ function NavEntry({ n, variant }: { n: NavItem; variant: 'side' | 'bottom' }) {
       {...common}
       className={cx(
         'relative flex min-h-[60px] flex-1 flex-col items-center justify-end gap-0.5 pb-2 pt-1.5 font-pixel-sm text-[15px] leading-none',
-        active && !inFight ? 'bg-[#fff2ef] text-danger shadow-[inset_0_3px_0_#f2553f]' : 'text-muted',
+        active && !inFight ? 'bg-rose text-danger shadow-[inset_0_3px_0_#f2553f]' : 'text-muted',
         inFight && 'pointer-events-none opacity-60',
       )}
     >
@@ -134,13 +134,13 @@ function GoldButton() {
       aria-disabled={inFight || undefined}
       aria-label={t('ui.nav.goldShop', { amount: gold.toLocaleString(getLang()) })}
       className={cx(
-        'pixel-corners inline-flex min-h-[44px] shrink-0 items-center gap-1.5 bg-ink pl-2.5 pr-1 text-[19px] leading-none text-gold-light md:min-h-[40px]',
+        'pixel-corners inline-flex min-h-[44px] light-scope shrink-0 items-center gap-1.5 bg-night pl-2.5 pr-1 text-[19px] leading-none text-gold-light md:min-h-[40px]',
         inFight && 'pointer-events-none opacity-60',
       )}
     >
       <PixelIcon name="coin" size={16} />
       <span className="tabular-nums">₽ {text}</span>
-      <i className="grid h-[26px] w-[26px] place-items-center bg-danger text-[22px] not-italic leading-none text-white" aria-hidden>
+      <i className="grid h-[26px] w-[26px] place-items-center bg-crimson text-[22px] not-italic leading-none text-white" aria-hidden>
         +
       </i>
     </Link>
@@ -161,7 +161,7 @@ function RoundLink({ to, label, children, blocked, current, onBlocked }: { to: s
       }}
       title={label}
       className={cx(
-        'grid h-11 w-11 shrink-0 place-items-center rounded-full bg-panel shadow-[inset_0_0_0_2px_#24304f,inset_0_-4px_0_#dfe7f2]',
+        'grid h-11 w-11 shrink-0 place-items-center rounded-full bg-panel shadow-card',
         current && 'bg-gold-pale',
         blocked && 'opacity-60 grayscale',
       )}
@@ -185,7 +185,7 @@ export function Header() {
   // Before the first badge the cup is greyed; a tap says what opens it.
   const blocked = inFight || !boardOpen
   return (
-    <header className="sticky top-0 z-40 bg-panel shadow-[0_2px_0_#24304f,0_4px_0_#24304f22]">
+    <header className="sticky top-0 z-40 bg-panel shadow-[0_2px_0_rgb(var(--c-edge)),0_4px_0_rgb(var(--c-edge)/0.13)]">
       <div className="mx-auto flex h-14 max-w-6xl items-center gap-2 px-2.5 md:max-w-none">
         <PlayerMenu />
         <span className="flex-1" />
@@ -209,7 +209,7 @@ export function Header() {
 export function SideNav() {
   const { t } = useT()
   return (
-    <aside className="sticky top-14 hidden h-[calc(100vh-3.5rem)] w-52 shrink-0 flex-col gap-3 overflow-y-auto bg-panel p-3 shadow-[2px_0_0_#24304f] md:flex lg:w-56">
+    <aside className="sticky top-14 hidden h-[calc(100vh-3.5rem)] w-52 shrink-0 flex-col gap-3 overflow-y-auto bg-panel p-3 shadow-[2px_0_0_rgb(var(--c-edge))] md:flex lg:w-56">
       <nav aria-label={t('ui.nav.menus')} className="flex flex-col gap-2.5">
         {SIDE_NAV.map((n) => (
           <NavEntry key={n.to} n={n} variant="side" />
@@ -230,7 +230,7 @@ export function BottomNav() {
   return (
     <nav
       aria-label={t('ui.nav.menus')}
-      className="fixed inset-x-0 bottom-0 z-40 flex items-end bg-panel shadow-[0_-2px_0_#24304f,0_-4px_0_#24304f18] md:hidden"
+      className="fixed inset-x-0 bottom-0 z-40 flex items-end bg-panel shadow-[0_-2px_0_rgb(var(--c-edge)),0_-4px_0_rgb(var(--c-edge)/0.09)] md:hidden"
       style={{ height: 'var(--bottom-nav)', paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
       {BOTTOM_NAV.map((n) => (

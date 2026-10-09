@@ -50,8 +50,8 @@ export function RegionBar({ modalOnly = false }: { modalOnly?: boolean }) {
               aria-current={r.id === current ? 'page' : undefined}
               onClick={() => switchRegion(r.id)}
               className={cx(
-                'min-h-[34px] border-2 border-ink px-2 text-xl leading-tight',
-                r.id === current ? 'bg-gold text-ink' : 'bg-panel hover:bg-white',
+                'min-h-[34px] border-2 border-edge px-2 text-xl leading-tight',
+                r.id === current ? 'bg-gold text-ink' : 'bg-panel hover:bg-paper',
               )}
             >
               {r.name}

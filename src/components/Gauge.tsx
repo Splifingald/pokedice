@@ -35,7 +35,7 @@ export function Gauge({
     <div className={cx('flex items-center gap-2', className)}>
       <span className={cx('text-sm leading-none', labelClassName)}>{label}</span>
       <div
-        className="relative flex flex-1 gap-[2px] border-2 border-ink bg-ink p-[2px]"
+        className="relative flex flex-1 gap-[2px] border-2 border-edge bg-night p-[2px]"
         role="meter"
         aria-valuemin={0}
         aria-valuemax={max ?? undefined}
@@ -48,7 +48,7 @@ export function Gauge({
           <span
             aria-hidden
             title={markText}
-            className="pointer-events-none absolute -bottom-[5px] -top-[5px] z-10 w-[3px] border-x border-ink bg-danger"
+            className="pointer-events-none absolute -bottom-[5px] -top-[5px] z-10 w-[3px] border-x border-edge bg-crimson"
             style={{ left: `calc(${Math.min(1, mark / max) * 100}% - 1.5px)` }}
           />
         )}
@@ -57,7 +57,7 @@ export function Gauge({
             key={i}
             className="h-2 flex-1"
             style={{
-              background: i < lit ? (max ? color : `repeating-linear-gradient(90deg, ${color} 0 3px, #d44873 3px 6px)`) : '#dde5f0',
+              background: i < lit ? (max ? color : `repeating-linear-gradient(90deg, ${color} 0 3px, #d44873 3px 6px)`) : 'rgb(var(--c-line))',
               transition: `background-color 200ms ${i * 30}ms`,
             }}
           />

@@ -15,39 +15,73 @@ white paper panels, **one red action** per screen (`#f2553f`) and **gold for wha
 drawn on a pixel grid: square corners cut by a 1–3 pixel stair, never `border-radius`, never blur, never a soft
 shadow. Fonts are **Jersey 20** (titles, names, buttons, most text) and **Jersey 15** (labels, numbers, paragraphs).
 
-## 2. Colour tokens
+**Dusk**, the dark theme, is the same lab after sundown: a night-blue ground (`#10172a`), panels a step lighter, pale
+ink text and softer slate outlines (`#7d8bb2`) so frames don't glare; red, gold, the HP colours and all the art stay
+as they are.
+
+## 2. Colour tokens and themes
 
 Defined once in `src/theme/colors.ts`, exposed as Tailwind colours (`tailwind.config.ts`). Never write a hex in a
 component when a token exists; never invent a near-duplicate.
 
-| Token (Tailwind) | Value | Use | Contrast |
+**Two themes** (Settings → Theme: Light, Dark, Auto; unset = Light): **Daybreak** (light) and **Dusk** (dark). The
+themed tokens are CSS variables (`--c-ink` …) generated from `THEMES` by a Tailwind plugin; `data-theme="dark"` on
+`<html>` switches them (`src/theme/theme.ts`, and a two-line script in `index.html` so a dark page never flashes
+light). The pixel frames and the ground texture are redrawn in the theme's colours (`frameSpecs(theme)`).
+
+| Token (Tailwind) | Daybreak | Dusk | Use |
 |---|---|---|---|
-| `parchment` | `#e9f0f8` | The page ground (with the dot texture) | — |
-| `panel` | `#fbfdff` | Panels, sheets, the top bar | — |
-| `paper` | `#ffffff` | Cards on a panel, inputs, white buttons | — |
-| `ink` | `#24304f` | Text, outlines, selected chips and tabs | 11:1 on panel |
-| `muted` | `#5c6a8a` | Secondary text | 5.1:1 panel, 4.7:1 ground |
-| `faint` | `#8592ad` | Placeholders, decoration. **Never text** | 3.1:1 |
-| `shadow` | `#b6c3d9` | Borders, dashed rules, quiet rings | — |
-| `line` / `lip` | `#dde5f0` / `#dfe7f2` | Empty tracks, a card's bottom lip | — |
-| `accent` | `#f2553f` | The primary action, the current place, alerts | white on it: 3.4:1 |
-| `danger` | `#c4382a` | Red **as text**, and small red controls | 5.2:1 panel, white on it 5.3:1 |
-| `danger-light` | `#ff8a7a` | Red as text on ink | 5.7:1 |
-| `gold` (`-light`, `-pale`) | `#ffbe2e` (`#ffe7a8`, `#fff4d6`) | New, the lead, combos, rewards | ink on gold 8.9:1 |
-| `good` / `good-pale` | `#1d6b43` / `#d8f5e4` | Positive text (bonus, cleared) and its chip | 6.5:1 |
-| `hp-green` / `hp-yellow` / `hp-red` / `hp-trail` | `#34c97a` / `#ffbe2e` / `#ff5a4a` / `#ffb3a8` | HP above 50 %, above 20 %, below; the trail of the last hit | — |
-| `type-*` | `DAYBREAK_TYPES` | Dice fills, swatches | — |
-| `st-*` | burn `#f07a2a`, poison `#b04db0`, frozen `#5fc0e0`, paralyze `#f0cc28`, confuse `#ec5f9e`, heal `#52c052` | Status rings, chips | — |
+| `parchment` | `#e9f0f8` | `#10172a` | The page ground (with the dot texture, `dot`) |
+| `panel` | `#fbfdff` | `#182139` | Panels, sheets, the top bar |
+| `paper` | `#ffffff` | `#1f2944` | Cards on a panel, inputs, white buttons |
+| `ink` | `#24304f` | `#e6ecf7` | Text; selected chips and tabs (`bg-ink text-panel`, inverted in Dusk) |
+| `edge` | `#24304f` | `#7d8bb2` | Outlines: card rings, frames, `border-edge`, icon outlines. Never text |
+| `muted` | `#5c6a8a` | `#a7b2cc` | Secondary text (≥ 4.7:1 / ≥ 5.9:1) |
+| `faint` | `#8592ad` | `#6f7c9c` | Placeholders, decoration. **Never text** |
+| `shadow` | `#b6c3d9` | `#3e4b6e` | Borders, dashed rules, quiet rings |
+| `line` / `lip` | `#dde5f0` / `#dfe7f2` | `#2b3654` / `#151c31` | Empty tracks; a card's bottom lip |
+| `well` / `well-deep` | `#f1f4f9` / `#e3e8f0` | `#141b30` / `#283250` | A sunken ground in a card (tiles, empty slots); deeper: locked, unaffordable |
+| `sky` / `sky-line` | `#e8f1ff` / `#cfe0fb` | `#1c2a4a` / `#35507e` | The blue tint (trainer card, info) and its rule |
+| `cream`, `gold-pale`, `gold-light` | `#fffbea`, `#fff4d6`, `#ffe7a8` | `#28251a`, `#2e2817`, `#7a5a12` | Warm cards (affordable, the lead, a new region); gold tints and lips |
+| `sand` / `sand-lip` | `#fff8ec` / `#f3e2c4` | `#2a2520` / `#4a3d2a` | Prof. Oak's notes, the Egg for sale |
+| `rose` | `#fff2ef` | `#3a1e24` | The red tint behind a warning |
+| `danger` / `danger-light` | `#c4382a` / `#ff8a7a` | `#ff8676` / `#b3352a` | Red **as text**; red text on `bg-ink` |
+| `good` / `good-pale` | `#1d6b43` / `#d8f5e4` | `#72dca0` / `#173628` | Positive text and its chip |
+
+The same in both themes: `gold` `#ffbe2e`, `accent` `#f2553f` (white on it 3.4:1), `night` `#24304f` (navy that stays
+navy), `crimson` `#c4382a` and `forest` `#1d6b43` (red and green **fills** under white text), `hp-*`, `type-*`
+(`DAYBREAK_TYPES`), `st-*` (burn `#f07a2a`, poison `#b04db0`, frozen `#5fc0e0`, paralyze `#f0cc28`, confuse `#ec5f9e`,
+heal `#52c052`).
+
+Named shadows (prefer them to an arbitrary `shadow-[…]`): `shadow-ring` (2px edge), `ring-thin`, `ring-line`,
+`ring-line-thin`, `card` (ring + lip), `card-gold` (ring + gold ring), `card-gold-lip`, `card-warm` (ring + gold lip),
+`field` (an input: ring + top lip), `halo` (outside), `ledge` (2px under).
 
 Rules:
 
+- **A themed colour inside an arbitrary value** is `rgb(var(--c-NAME))` (`shadow-[inset_0_0_0_3px_rgb(var(--c-edge))]`,
+  `color-mix(in oklab, ${c} 14%, rgb(var(--c-paper)))` for a tint of a type or status colour). A pale hex tint in a
+  component is a bug in Dusk: it becomes a bright patch under light text.
+- **Bright fills keep Daybreak's colours for what's on them**: `bg-gold`, `bg-hp-green`, `bg-hp-yellow` and anything
+  with `light-scope` bring the light variables back (navy text and outlines). Put `light-scope` on any other bright
+  fill (medals, type-coloured cells).
+- **Night chips**: a chip that is dark in both themes (the wallet, energy, prices, a hint, the Hall of Fame card) is
+  `light-scope bg-night` with `text-gold-light` (or `text-gold`, `text-panel`). Selected tabs and table headers are
+  `bg-ink text-panel` and invert in Dusk. Scrims are `bg-night/55`; HP and gauge tracks are `bg-night`.
+- **`dark:`** (bound to `data-theme`) is for the rare one-off that needs its own dusk value; tokens come first.
+- **Art stays art**: scenes (Home, battle, the lab, painted backgrounds), sprites, dice, badges and trainer pictures
+  look the same in both themes. Icons keep their colours, but their navy outline follows `edge`. An uncaught
+  Pokémon's silhouette is `var(--silhouette)`: black in Daybreak, pale in Dusk.
 - **White text on the bright red needs 24 px or more** (large text, 3:1). Under 24 px a red control uses the deeper red
-  (`frame-deep`, `bg-danger`). `PixelButton` does this by itself, including when a long label shrinks to fit.
+  (`frame-deep`, `bg-crimson`). `PixelButton` does this by itself, including when a long label shrinks to fit.
 - **Type badges** mix the type colour: 32 % into white for the fill, 45 % into deep navy for the text, 75 % into ink
-  for the ring (`badgeColors`, OKLab). A test keeps every type at 4.5:1.
+  for the ring (`badgeColors`, OKLab). A test keeps every type at 4.5:1; they are bright chips in both themes.
 - **The data's type colours** (`TYPE_COLORS`) belong to the seed and art scripts. The UI draws types with
   `DAYBREAK_TYPES` through `typeColor()`.
-- Dark grounds (ink): text in `panel`, accents in `gold-light`, focus ring in gold.
+- Dark grounds (night): text in `panel`, accents in `gold-light`, focus ring in gold.
+- **Tests**: `tests/daybreak.test.ts` keeps Dusk's text at 4.5:1 on every surface and outlines at 3:1;
+  `e2e/theme.spec.ts` runs axe colour-contrast on every main screen in Dusk. Check a new screen in both
+  (`/kitchen-sink` has the theme switch).
 
 ## 3. Type
 

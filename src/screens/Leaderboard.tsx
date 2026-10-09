@@ -46,7 +46,7 @@ export function LeaderboardScreen() {
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-3">
       <PageHead icon="navRanks" title={t('ui.board.title')} onBack={() => navigate('/home')} />
-      <p className="m-0 grid justify-items-center gap-2 bg-paper px-3.5 py-4 text-center text-[21px] leading-[1.1] shadow-[inset_0_0_0_2px_#24304f,inset_0_-4px_0_#dfe7f2]">
+      <p className="m-0 grid justify-items-center gap-2 bg-paper px-3.5 py-4 text-center text-[21px] leading-[1.1] shadow-card">
         <PixelIcon name="lock" size={36} />
         {t('ui.nav.boardLocked')}
       </p>
@@ -109,7 +109,7 @@ function Board() {
       />
 
       {!signedIn && (
-        <div className="flex flex-wrap items-center justify-between gap-2 bg-[#fff4d6] p-3 shadow-[inset_0_0_0_2px_#24304f,inset_0_0_0_4px_#ffbe2e]">
+        <div className="flex flex-wrap items-center justify-between gap-2 bg-gold-pale p-3 shadow-card-gold">
           <p className="m-0 text-[19px] leading-tight">{t('ui.board.connect')}</p>
           <GoogleAccountButton />
         </div>
@@ -149,7 +149,7 @@ function Board() {
               ? t('ui.board.mine', { rank: mine.rank, total: board.length })
               : t('ui.board.mineHall'),
           })}
-          className="flex w-full items-center gap-2.5 bg-[#fff4d6] pb-2 pl-2 pr-3 pt-1.5 text-left shadow-[inset_0_0_0_2px_#24304f,inset_0_0_0_4px_#ffbe2e,inset_0_-6px_0_#ffe7a8]"
+          className="flex w-full items-center gap-2.5 bg-gold-pale pb-2 pl-2 pr-3 pt-1.5 text-left shadow-card-gold-lip"
         >
           <TrainerLook src={avatarOf(me.avatar).src} w={44} h={48} />
           <span className="grid min-w-0 flex-1 gap-0.5">
@@ -168,7 +168,7 @@ function Board() {
         <button
           type="button"
           onClick={() => setHallOpen(true)}
-          className="flex w-full items-center gap-2.5 bg-ink pb-2 pl-2.5 pr-3 pt-1.5 text-left text-gold-light shadow-[inset_0_-4px_0_#11182d]"
+          className="light-scope flex w-full items-center gap-2.5 bg-night pb-2 pl-2.5 pr-3 pt-1.5 text-left text-gold-light shadow-[inset_0_-4px_0_#11182d]"
         >
           <Crown />
           <span className="grid min-w-0 flex-1 gap-0.5">
@@ -184,7 +184,7 @@ function Board() {
                 src={avatarOf(r.avatar).src}
                 w={32}
                 h={32}
-                className="-ml-1.5 bg-[#3a4a72] shadow-[0_0_0_2px_#24304f]"
+                className="-ml-1.5 bg-[#3a4a72] shadow-halo"
               />
             ))}
           </span>

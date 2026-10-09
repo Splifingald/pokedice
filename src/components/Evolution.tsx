@@ -98,7 +98,7 @@ export function EvolutionQueue({ items, onDone }: { items: EvolutionShow[]; onDo
   // On the page itself, above any sheet it was opened from (a fixed box inside a transformed modal would be clipped).
   return createPortal(
     <motion.div
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-ink/70 p-3"
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-night/70 p-3"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       role="dialog"

@@ -97,9 +97,7 @@ export function ItemPanel({ inst, onUsed }: { inst: PokemonInstance; onUsed?: ()
                 }}
                 className={cx(
                   'flex min-h-[54px] w-full items-center gap-2.5 px-2 pb-2 pt-1.5 text-left',
-                  why
-                    ? 'bg-[#f1f4f9] text-muted shadow-[inset_0_0_0_2px_#b6c3d9]'
-                    : 'bg-paper shadow-[inset_0_0_0_2px_#24304f,inset_0_-4px_0_#dfe7f2]',
+                  why ? 'bg-well text-muted shadow-ring-line' : 'bg-paper shadow-card',
                 )}
               >
                 <ItemSprite item={data.items[k]} size={32} className={cx(why && 'opacity-60 grayscale')} />

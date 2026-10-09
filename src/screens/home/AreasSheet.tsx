@@ -39,12 +39,12 @@ type Sort = 'route' | 'level' | 'catch'
 
 /** Each state is an outline: orange where you are, green cleared, grey locked, plain otherwise. */
 const CARD: Record<AreaStatus, string> = {
-  here: 'bg-paper shadow-[inset_0_0_0_3px_#ff8a3d,inset_0_-5px_0_#ffe0c8]',
-  cleared: 'bg-paper shadow-[inset_0_0_0_3px_#34c97a,inset_0_-5px_0_#d2f3e0]',
+  here: 'bg-paper shadow-[inset_0_0_0_3px_#ff8a3d,inset_0_-5px_0_#ffe0c8] dark:shadow-[inset_0_0_0_3px_#ff8a3d,inset_0_-5px_0_#4a2a14]',
+  cleared: 'bg-paper shadow-[inset_0_0_0_3px_#34c97a,inset_0_-5px_0_rgb(var(--c-good-pale))]',
   next: 'bg-paper shadow-card',
   new: 'bg-paper shadow-card',
   open: 'bg-paper shadow-card',
-  locked: 'bg-[#f1f4f9] shadow-ring-line text-muted',
+  locked: 'bg-well shadow-ring-line text-muted',
 }
 
 function AreaCard({
@@ -148,7 +148,7 @@ function AreaCard({
       </button>
       {locked ? (
         <span
-          className="absolute bottom-3 right-2.5 grid h-11 w-[60px] place-items-center bg-[#e3e8f0] shadow-ring-line"
+          className="absolute bottom-3 right-2.5 grid h-11 w-[60px] place-items-center bg-well-deep shadow-ring-line"
           aria-hidden
         >
           <PixelIcon name="lock" size={16} />
@@ -192,7 +192,9 @@ function RegionCard({ region, onBack }: { region: Region; onBack: () => void }) 
       aria-label={label}
       className={cx(
         'grid w-full gap-1.5 bg-paper px-1.5 pb-2.5 pt-1.5 text-left',
-        here ? 'shadow-[inset_0_0_0_3px_#ff8a3d,inset_0_-5px_0_#ffe0c8]' : 'shadow-card',
+        here
+          ? 'shadow-[inset_0_0_0_3px_#ff8a3d,inset_0_-5px_0_#ffe0c8] dark:shadow-[inset_0_0_0_3px_#ff8a3d,inset_0_-5px_0_#4a2a14]'
+          : 'shadow-card',
       )}
     >
       {first && <img src={stripOf(first.bannerUrl)} alt="" className="pixelated h-auto w-full" />}
@@ -229,7 +231,7 @@ function OfferCard({ region, onStarted }: { region: Region; onStarted: () => voi
   return (
     <section
       aria-labelledby="offer-title"
-      className="grid gap-2 bg-[#fff8e0] px-3 pb-3.5 pt-3 shadow-[inset_0_0_0_2px_#24304f,inset_0_0_0_6px_#ffbe2e,inset_0_0_0_8px_#24304f,inset_0_-12px_0_#ffe7a8]"
+      className="grid gap-2 bg-cream px-3 pb-3.5 pt-3 shadow-[inset_0_0_0_2px_rgb(var(--c-edge)),inset_0_0_0_6px_#ffbe2e,inset_0_0_0_8px_rgb(var(--c-edge)),inset_0_-12px_0_rgb(var(--c-gold-light))]"
     >
       <span className="flex flex-wrap items-center gap-2 px-1 pt-1">
         <Chip tone="gold">{t('ui.home.newRegionTag')}</Chip>
@@ -374,7 +376,7 @@ export function AreasSheet({
       className={cx(
         'inline-flex min-h-[44px] items-center gap-1.5 px-2.5 pb-0.5 text-[18px] leading-none md:min-h-[40px]',
         view === 'regions'
-          ? 'bg-ink text-panel shadow-[inset_0_0_0_2px_#24304f,inset_0_3px_0_#11182c]'
+          ? 'bg-ink text-panel shadow-[inset_0_0_0_2px_rgb(var(--c-edge)),inset_0_3px_0_#11182c]'
           : 'bg-paper shadow-card',
       )}
     >
@@ -408,7 +410,7 @@ export function AreasSheet({
           <>
             <SearchField id="areas-q" label={t('ui.home.searchAreas')} value={q} onChange={setQ} />
             <FilterChips label={t('ui.home.show')} value={filter} onChange={setFilter} options={filters} />
-            <div className="flex items-center gap-1.5 pb-1 shadow-[0_2px_0_#dfe7f2]">
+            <div className="flex items-center gap-1.5 pb-1 shadow-[0_2px_0_rgb(var(--c-lip))]">
               <span className="font-pixel-sm text-[15px] text-muted" aria-hidden>
                 {t('ui.home.sort')}
               </span>
@@ -443,9 +445,9 @@ export function AreasSheet({
             <OfferCard region={offer} onStarted={onClose} />
           ) : (
             more && (
-              <div className="grid grid-cols-[60px_minmax(0,1fr)] items-center gap-3 bg-[#f1f4f9] p-3 shadow-ring-line">
+              <div className="grid grid-cols-[60px_minmax(0,1fr)] items-center gap-3 bg-well p-3 shadow-ring-line">
                 <span
-                  className="grid h-[60px] w-[60px] place-items-center bg-faint text-[46px] leading-none text-white shadow-[inset_0_0_0_3px_#5c6a8a]"
+                  className="grid h-[60px] w-[60px] place-items-center bg-faint text-[46px] leading-none text-white shadow-[inset_0_0_0_3px_rgb(var(--c-muted))]"
                   aria-hidden
                 >
                   ?

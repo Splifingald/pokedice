@@ -85,8 +85,8 @@ function Row({
     <li
       className={cx(
         open
-          ? 'bg-[#fffdf3] shadow-[inset_0_0_0_3px_#24304f,inset_0_-4px_0_#ffe7a8]'
-          : 'bg-paper shadow-[inset_0_0_0_2px_#24304f,inset_0_-4px_0_#dfe7f2]',
+          ? 'bg-cream shadow-[inset_0_0_0_3px_rgb(var(--c-edge)),inset_0_-4px_0_rgb(var(--c-gold-light))]'
+          : 'bg-paper shadow-card',
       )}
     >
       <button
@@ -190,7 +190,7 @@ function BuyTab({ badges }: { badges: number }) {
                 <span
                   className={cx(
                     'min-w-[62px] px-2 pb-2 pt-1.5 text-center text-[18px] leading-none',
-                    it.price > gold ? 'bg-[#e3e8f0] text-ink' : 'bg-ink text-gold-light',
+                    it.price > gold ? 'bg-well-deep text-ink' : 'light-scope bg-night text-gold-light',
                   )}
                 >
                   {money(it.price)}
@@ -250,14 +250,14 @@ function BuyTab({ badges }: { badges: number }) {
             {later.map((it) => (
               <li
                 key={it.key}
-                className="flex min-h-[54px] items-center gap-2 bg-[#f1f4f9] px-2 py-1.5 text-muted shadow-[inset_0_0_0_2px_#b6c3d9]"
+                className="flex min-h-[54px] items-center gap-2 bg-well px-2 py-1.5 text-muted shadow-ring-line"
               >
                 <ItemSprite item={it} size={32} className="opacity-55 grayscale" />
                 <span className="grid min-w-0 flex-1 leading-[1.05]">
                   <b className="truncate text-[19px] font-normal">{it.name}</b>
                   <small className="font-pixel-sm text-[14px]">{effectText(it)}</small>
                 </span>
-                <span className="inline-flex shrink-0 items-center gap-1 bg-[#e3e8f0] px-1.5 pb-1 pt-[3px] font-pixel-sm text-[14px] text-ink">
+                <span className="inline-flex shrink-0 items-center gap-1 bg-well-deep px-1.5 pb-1 pt-[3px] font-pixel-sm text-[14px] text-ink">
                   {badges < it.shopBadges && <PixelIcon name="badge" size={8} />}
                   {needs(it)}
                 </span>
@@ -325,7 +325,7 @@ function SellTab() {
               sub={sellable ? t('ui.shop.each', { price: money(unit) }) : t('ui.shop.cantSell')}
               pill={
                 sellable && (
-                  <span className="min-w-[62px] bg-good px-2 pb-2 pt-1.5 text-center text-[18px] leading-none text-white">
+                  <span className="min-w-[62px] bg-forest px-2 pb-2 pt-1.5 text-center text-[18px] leading-none text-white">
                     +{money(unit)}
                   </span>
                 )

@@ -145,7 +145,7 @@ export function PlayerCheats({ player, name }: { player: string; name: string })
               Give Pokémon
             </PixelButton>
           </div>
-          <div className="flex flex-wrap items-end gap-2 border-t-[3px] border-ink pt-2">
+          <div className="flex flex-wrap items-end gap-2 border-t-[3px] border-edge pt-2">
             <label className="flex w-40 flex-col text-base">
               Region
               <select className={inputCls} value={region} onChange={(e) => setRegion(e.target.value)}>
@@ -228,7 +228,7 @@ export function PlayerCheats({ player, name }: { player: string; name: string })
           </div>
           <ul className="pixel-scroll flex max-h-80 flex-col gap-1 overflow-auto">
             {mons.map(({ p, where }) => (
-              <li key={p.id} className="flex items-center gap-2 border-2 border-ink bg-parchment px-2 py-0.5">
+              <li key={p.id} className="flex items-center gap-2 border-2 border-edge bg-parchment px-2 py-0.5">
                 <SpriteImg dex={p.dex} size={40} shiny={p.shiny} />
                 <span className="min-w-0 flex-1 truncate text-lg">
                   {data.species[p.dex]?.name ?? `#${p.dex}`} Lv.{p.level}

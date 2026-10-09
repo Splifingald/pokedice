@@ -93,7 +93,7 @@ function useNow(ms = 20_000) {
   return now
 }
 
-const CARD = 'bg-paper shadow-[inset_0_0_0_2px_#24304f,inset_0_-4px_0_#dfe7f2]'
+const CARD = 'bg-paper shadow-card'
 
 /** One resident: its sprite, Lv now → Lv after, the stay's XP bar, when the next XP comes and when it is full. */
 function Resident({ res, now, onTake }: { res: DayCareResident; now: number; onTake: () => void }) {
@@ -119,7 +119,7 @@ function Resident({ res, now, onTake }: { res: DayCareResident; now: number; onT
       className={cx(
         'grid grid-cols-[84px_minmax(0,1fr)] items-center gap-x-2.5 gap-y-1.5 px-2.5 pb-2.5 pt-2',
         ready
-          ? 'bg-[#f2fff6] shadow-[inset_0_0_0_2px_#24304f,inset_0_0_0_4px_#34c97a,inset_0_-6px_0_#c9f2d9]'
+          ? 'bg-[#f2fff6] shadow-[inset_0_0_0_2px_rgb(var(--c-edge)),inset_0_0_0_4px_#34c97a,inset_0_-6px_0_rgb(var(--c-good-pale))] dark:bg-[#12261c]'
           : CARD,
       )}
     >
@@ -142,7 +142,7 @@ function Resident({ res, now, onTake }: { res: DayCareResident; now: number; onT
           )}
         </span>
         <span
-          className="relative block h-2 bg-[#dde5f0] shadow-[inset_0_0_0_1px_#24304f]"
+          className="relative block h-2 bg-line shadow-ring-thin"
           role="img"
           aria-label={t('ui.dayCare.xpOf', { xp, max: cfg.maxXp })}
         >
@@ -229,7 +229,7 @@ function LeaveSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
                   }}
                   className={cx(
                     'flex min-h-[52px] w-full items-center gap-2 py-1.5 pl-1.5 pr-2.5 text-left',
-                    why ? 'bg-[#f1f4f9] text-ink shadow-[inset_0_0_0_2px_#b6c3d9]' : CARD,
+                    why ? 'bg-well text-ink shadow-ring-line' : CARD,
                   )}
                 >
                   <MiniSprite dex={p.dex} size={40} className={cx('-my-1', why && 'opacity-60 grayscale')} />
@@ -308,7 +308,7 @@ function HatchMoment({
       onKeyDown={(e) => e.key === 'Escape' && open && onDone()}
     >
       <div className="mx-auto flex min-h-full w-full max-w-[560px] flex-col gap-3 pb-4">
-        <div className="shadow-[0_2px_0_#24304f]">
+        <div className="shadow-ledge">
           <StageCanvas
             ref={stage}
             timeline={scene.timeline}
@@ -371,8 +371,8 @@ function EggCard({ onHatch }: { onHatch: (free: boolean) => void }) {
       className={cx(
         'grid grid-cols-[72px_minmax(0,1fr)] items-center gap-x-3 gap-y-2 px-3 pb-3 pt-2.5',
         free
-          ? 'bg-[#fff4d6] shadow-[inset_0_0_0_2px_#24304f,inset_0_0_0_4px_#ffbe2e,inset_0_-6px_0_#ffe7a8]'
-          : 'bg-[#fff8ec] shadow-[inset_0_0_0_2px_#24304f,inset_0_-4px_0_#f3e2c4]',
+          ? 'bg-gold-pale shadow-card-gold-lip'
+          : 'bg-sand shadow-[inset_0_0_0_2px_rgb(var(--c-edge)),inset_0_-4px_0_rgb(var(--c-sand-lip))]',
       )}
     >
       <EggSprite size={64} className="mx-auto" />
@@ -384,10 +384,10 @@ function EggCard({ onHatch }: { onHatch: (free: boolean) => void }) {
           {free ? t('ui.dayCare.freeEgg') : t('ui.dayCare.buyEgg', { price: cfg.eggPrice })}
         </p>
         <ul className="m-0 mt-0.5 flex list-none flex-wrap gap-1 p-0">
-          <li className="bg-paper px-1.5 pb-0.5 pt-px font-pixel-sm text-[14px] text-ink shadow-[inset_0_0_0_1px_#d8c8a8]">
+          <li className="bg-paper px-1.5 pb-0.5 pt-px font-pixel-sm text-[14px] text-ink shadow-[inset_0_0_0_1px_#d8c8a8] dark:shadow-[inset_0_0_0_1px_rgb(var(--c-sand-lip))]">
             {t('ui.dayCare.hatchAt', { level: t('ui.common.level.short', { n: hatchLevel(save, data) }) })}
           </li>
-          <li className="bg-paper px-1.5 pb-0.5 pt-px font-pixel-sm text-[14px] text-ink shadow-[inset_0_0_0_1px_#d8c8a8]">
+          <li className="bg-paper px-1.5 pb-0.5 pt-px font-pixel-sm text-[14px] text-ink shadow-[inset_0_0_0_1px_#d8c8a8] dark:shadow-[inset_0_0_0_1px_rgb(var(--c-sand-lip))]">
             {missing > 0
               ? tPlural('ui.dayCare.missing', missing, { n: missing, k: cfg.unownedWeight })
               : t('ui.dayCare.haveAll')}
@@ -485,11 +485,11 @@ export function DayCareScreen() {
             <button
               type="button"
               onClick={() => setLeaving(true)}
-              className="flex min-h-[96px] w-full items-center gap-3 bg-[#f6f9fd] px-3.5 py-2.5 text-left shadow-[inset_0_0_0_2px_#8592ad] outline-dashed outline-2 -outline-offset-[6px] outline-[#b6c3d9] hover:bg-paper"
+              className="flex min-h-[96px] w-full items-center gap-3 bg-well px-3.5 py-2.5 text-left shadow-[inset_0_0_0_2px_rgb(var(--c-faint))] outline-dashed outline-2 -outline-offset-[6px] outline-shadow hover:bg-paper"
             >
               <span
                 aria-hidden
-                className="grid h-11 w-11 shrink-0 place-items-center bg-[#5b8def] text-[32px] leading-none text-white shadow-[inset_0_0_0_2px_#24304f,inset_0_-4px_0_#3c6cc8]"
+                className="grid h-11 w-11 shrink-0 place-items-center bg-[#5b8def] text-[32px] leading-none text-white shadow-[inset_0_0_0_2px_rgb(var(--c-edge)),inset_0_-4px_0_#3c6cc8]"
               >
                 +
               </span>

@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { pipLayout } from '@/components/Die'
 import { motionLevel } from '@/lib/motion'
-import { DAYBREAK_TYPES, PALETTE } from '@/theme/colors'
-import { FRAME_SLICE, FRAME_SPECS, frameArt, textureArt } from '@/theme/frames'
+import { DAYBREAK_TYPES, PALETTE, THEMES } from '@/theme/colors'
+import { FRAME_SLICE, FRAME_SPECS, frameArt, frameSpecs, textureArt } from '@/theme/frames'
 import { badgeColors, contrast } from '@/theme/util'
 
 describe('Daybreak frames', () => {
@@ -90,5 +90,43 @@ describe('animation levels', () => {
     expect(motionLevel({ reducedMotion: false, animations: 'full' }, true)).toBe('short')
     expect(motionLevel({ reducedMotion: true, animations: 'full' }, false)).toBe('off')
     expect(motionLevel({ reducedMotion: true, animations: 'short' }, true)).toBe('off')
+  })
+})
+
+describe('themes', () => {
+  it('keeps light identical to the Daybreak palette', () => {
+    expect(THEMES.light.ink).toBe(PALETTE.ink)
+    expect(THEMES.light.edge).toBe(PALETTE.ink)
+    expect(THEMES.light.panel).toBe(PALETTE.panel)
+    expect(THEMES.light.muted).toBe(PALETTE.muted)
+  })
+
+  it('gives both themes the same tokens', () => {
+    expect(Object.keys(THEMES.dark).sort()).toEqual(Object.keys(THEMES.light).sort())
+  })
+
+  it('keeps text readable at dusk: 4.5:1 for every text colour on every surface, 3:1 for outlines', () => {
+    const T = THEMES.dark
+    const surfaces = [T.parchment, T.panel, T.paper, T.well, T.sky, T.cream, T.sand, T['gold-pale'], T.rose]
+    for (const bg of surfaces) {
+      for (const fg of [T.ink, T.muted])
+        expect(contrast(fg, bg), `${fg} on ${bg}`).toBeGreaterThanOrEqual(4.5)
+    }
+    for (const bg of [T.panel, T.paper]) {
+      for (const fg of [T.danger, T.good])
+        expect(contrast(fg, bg), `${fg} on ${bg}`).toBeGreaterThanOrEqual(4.5)
+      expect(contrast(T.edge, bg)).toBeGreaterThanOrEqual(3)
+    }
+    // Inverted chips (bg-ink): their panel, gold and red text.
+    for (const fg of [T.panel, T['gold-light'], T['danger-light']])
+      expect(contrast(fg, T.ink)).toBeGreaterThanOrEqual(4.5)
+    expect(contrast(T.good, T['good-pale'])).toBeGreaterThanOrEqual(4.5)
+  })
+
+  it('draws the dusk frames with the slate outline and a night ground', () => {
+    const dark = frameSpecs('dark')
+    expect(dark.panel.out).toBe(THEMES.dark.edge)
+    expect(dark.btn.out).toBe(THEMES.dark.edge)
+    expect(new Set(textureArt('dark').flat())).toEqual(new Set([THEMES.dark.parchment, THEMES.dark.dot]))
   })
 })

@@ -41,7 +41,7 @@ import { TypeMatchups } from './TypeMatchups'
 function StatTile({ stat, value }: { stat: StatKind; value: ReactNode }) {
   useT()
   return (
-    <div className="grid justify-items-center bg-paper px-1 pb-2 pt-1.5 shadow-[inset_0_0_0_2px_#b6c3d9]" title={statHint(stat)}>
+    <div className="grid justify-items-center bg-paper px-1 pb-2 pt-1.5 shadow-ring-line" title={statHint(stat)}>
       <b className="text-[26px] font-normal leading-none tabular-nums">{value}</b>
       <small className="font-pixel-sm text-[13px] text-muted">{statLabel(stat)}</small>
     </div>
@@ -89,7 +89,7 @@ function EvoLink({ toDex, how, onOpenDex }: { toDex: number; how: string; onOpen
   return (
     <button
       type="button"
-      className="inline-flex items-center gap-0.5 align-middle hover:bg-white"
+      className="inline-flex items-center gap-0.5 align-middle hover:bg-paper"
       onClick={() => onOpenDex(toDex)}
       aria-label={t('ui.sheet.openDex', { name, how })}
     >
@@ -99,7 +99,7 @@ function EvoLink({ toDex, how, onOpenDex }: { toDex: number; how: string; onOpen
 }
 
 function DieSwatch({ type }: { type: DieType }) {
-  return <span className="inline-block h-4 w-4 shrink-0 border-2 border-ink" style={{ background: typeColor(type), borderRadius: 2 }} aria-hidden />
+  return <span className="inline-block h-4 w-4 shrink-0 border-2 border-edge" style={{ background: typeColor(type), borderRadius: 2 }} aria-hidden />
 }
 
 function MilestoneGlyph({ m, species }: { m: Milestone; species: Species }) {
@@ -173,7 +173,7 @@ const LevelChip = ({ level, reached }: { level: number; reached?: boolean }) => 
   <span
     className={cx(
       'px-1.5 pb-[3px] pt-0.5 text-center font-pixel-sm text-[14px] leading-none',
-      reached ? 'bg-line text-muted' : 'bg-ink text-gold-light',
+      reached ? 'bg-line text-muted' : 'light-scope bg-night text-gold-light',
     )}
   >
     {t('ui.common.level.short', { n: level })}
@@ -357,7 +357,7 @@ export function PokemonSheet({
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center gap-3">
-        <div className="grid h-[104px] w-[112px] shrink-0 place-items-center bg-[#eef4fb] shadow-ring">
+        <div className="grid h-[104px] w-[112px] shrink-0 place-items-center bg-sky shadow-ring">
           <SpriteImg dex={dex} size={96} shiny={inst?.shiny} />
         </div>
         <div className="grid min-w-0 flex-1 gap-1.5">

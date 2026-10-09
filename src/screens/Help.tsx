@@ -14,7 +14,7 @@ import { useGame } from '@/store/game'
 function Section({ id, title, children }: { id: string; title: string; children: ReactNode }) {
   return (
     <section id={id} aria-labelledby={`${id}-h`} className="flex flex-col gap-2">
-      <h2 id={`${id}-h`} className="border-b-[3px] border-ink text-3xl leading-tight">
+      <h2 id={`${id}-h`} className="border-b-[3px] border-edge text-3xl leading-tight">
         {title}
       </h2>
       <div className="copy flex flex-col gap-2">{children}</div>

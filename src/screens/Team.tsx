@@ -55,7 +55,7 @@ export function TeamScreen() {
           <button
             type="button"
             onClick={() => pushToast(t('ui.team.swapsRule'), 'info')}
-            className="inline-flex min-h-[44px] items-center gap-1.5 bg-[#f1f4f9] px-2.5 font-pixel-sm text-[15px] text-muted shadow-[inset_0_0_0_2px_#b6c3d9] md:min-h-[36px]"
+            className="inline-flex min-h-[44px] items-center gap-1.5 bg-well px-2.5 font-pixel-sm text-[15px] text-muted shadow-ring-line md:min-h-[36px]"
           >
             <PixelIcon name="lock" size={16} />
             {t('ui.team.swapsHint')}
@@ -112,7 +112,7 @@ export function TeamScreen() {
                     label: (
                       <span className="inline-flex items-center gap-1.5">
                         <i
-                          className="h-2.5 w-2.5 shadow-[inset_0_0_0_1px_#24304f]"
+                          className="h-2.5 w-2.5 shadow-ring-thin"
                           style={{ background: typeColor(ty) }}
                           aria-hidden
                         />

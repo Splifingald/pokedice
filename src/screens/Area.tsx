@@ -91,7 +91,7 @@ export function RoundGauge({ area, progress }: { area: Area; progress: AreaProgr
               title={done ? (card ? cardName(card) : t('ui.area.cardMet')) : t(next ? 'ui.area.cardNext' : 'ui.area.cardToCome')}
               className={cx(
                 'flex h-6 min-w-0 flex-1 items-center justify-center border-2',
-                done ? 'border-ink bg-panel' : next ? 'border-gold bg-line' : 'border-ink bg-line',
+                done ? 'border-edge bg-panel' : next ? 'border-gold bg-line' : 'border-edge bg-line',
               )}
               style={{ borderRadius: 2 }}
             >

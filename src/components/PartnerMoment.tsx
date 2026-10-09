@@ -184,7 +184,7 @@ export function PartnerMoment({
     >
       <div className="mx-auto flex min-h-full w-full max-w-[560px] flex-col gap-3 pb-4">
         <div
-          className="relative shadow-[0_2px_0_#24304f]"
+          className="relative shadow-ledge"
           onClick={() => {
             // A tap during the drop lets the balls land at once.
             if (phase !== 'intro') return
@@ -244,7 +244,7 @@ export function PartnerMoment({
         </p>
 
         {phase === 'ask' && asking && facts && dex != null && (
-          <div className="mx-3 grid gap-2 bg-paper px-3 pb-3 pt-2.5 shadow-[inset_0_0_0_2px_#24304f,inset_0_-4px_0_#dfe7f2]">
+          <div className="mx-3 grid gap-2 bg-paper px-3 pb-3 pt-2.5 shadow-card">
             <div className="flex items-center gap-2">
               <MiniSprite dex={dex} size={56} className="-my-2" />
               <span className="grid min-w-0 gap-1">

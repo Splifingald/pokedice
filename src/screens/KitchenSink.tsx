@@ -76,6 +76,17 @@ export function KitchenSink() {
               { id: 'off', label: 'None' },
             ]}
           />
+          {/* Every component in both themes: flip this and scroll. */}
+          <Seg
+            label="Theme"
+            value={settings.theme ?? 'light'}
+            onChange={(v) => setSettings({ theme: v })}
+            options={[
+              { id: 'light', label: 'Light' },
+              { id: 'dark', label: 'Dark' },
+              { id: 'auto', label: 'Auto' },
+            ]}
+          />
           <Link to="/" className="pixel-btn flex min-h-[44px] items-center px-3 text-lg">
             Title
           </Link>

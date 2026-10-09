@@ -65,7 +65,7 @@ export function AreaPlate({ area, onOpen }: { area: Area; onOpen: () => void }) 
                   i < done
                     ? 'bg-gold shadow-ring'
                     : i === done
-                      ? 'bg-[#fff2cc] shadow-ring'
+                      ? 'bg-gold-light shadow-ring'
                       : 'bg-line shadow-ring-line',
                 )}
               />

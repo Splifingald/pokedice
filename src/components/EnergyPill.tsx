@@ -31,7 +31,7 @@ export function EnergyPill() {
         title={next ? t('ui.energy.nextTitle', { time: next }) : t('ui.energy.fullTitle')}
       >
         <span
-          className={cx('pixel-corners inline-flex min-h-[36px] items-center gap-1 bg-ink px-2 text-[19px] leading-none', value > 0 ? 'text-gold-light' : 'text-danger-light')}
+          className={cx('pixel-corners inline-flex min-h-[36px] items-center gap-1 bg-night px-2 light-scope text-[19px] leading-none', value > 0 ? 'text-gold-light' : 'text-danger-light')}
         >
           <PixelIcon name="energy" size={14} />
           <span className="tabular-nums">

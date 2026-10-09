@@ -180,7 +180,7 @@ export function SearchField({
         placeholder={placeholder ?? label}
         autoComplete="off"
         spellCheck={false}
-        className="h-11 w-full appearance-none rounded-none bg-paper px-3 text-[20px] text-ink shadow-[inset_0_0_0_2px_#24304f,inset_0_3px_0_#dfe7f2] placeholder:text-faint"
+        className="h-11 w-full appearance-none rounded-none bg-paper px-3 text-[20px] text-ink shadow-field placeholder:text-faint"
       />
     </div>
   )

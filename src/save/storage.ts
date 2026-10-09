@@ -11,6 +11,8 @@ export const BACKUPS_KEY = 'pokedice.save.backups'
 
 /** How much the game animates: every timeline in full, or its short version (lib/motion.ts). */
 export type AnimationLevel = 'full' | 'short'
+/** Light (Daybreak), dark (Dusk), or whatever the device is set to (src/theme/theme.ts). */
+export type ThemeSetting = 'light' | 'dark' | 'auto'
 
 export interface Settings {
   sfx: boolean
@@ -26,6 +28,8 @@ export interface Settings {
   typeHints?: boolean
   /** UI language. Unset on an older save: the browser's language decides, English if we don't speak it. */
   lang?: Lang
+  /** Light, dark or the device's. Unset = light. */
+  theme?: ThemeSetting
 }
 export const DEFAULT_SETTINGS: Settings = { sfx: false, reducedMotion: false, multiExp: true }
 
@@ -104,6 +108,7 @@ export function readSettings(): Settings {
       autoMode: !!s.autoMode,
       typeHints: !!s.typeHints,
       lang: isLang(s.lang) ? s.lang : detectLang(),
+      theme: s.theme === 'dark' || s.theme === 'auto' ? s.theme : 'light',
     }
   } catch {
     return { ...DEFAULT_SETTINGS, lang: detectLang() }

@@ -7,7 +7,8 @@ import { cx } from '@/theme/util'
 import { MiniSprite } from './SpriteImg'
 import { TrainerLook } from './TrainerLook'
 
-const MEDAL = ['bg-gold', 'bg-[#d8dfeb]', 'bg-[#e8a070]']
+// Bright squares in both themes: their numbers stay navy (light-scope).
+const MEDAL = ['bg-gold', 'light-scope bg-[#d8dfeb]', 'light-scope bg-[#e8a070]']
 
 /** The rank: a plain number from 4 on; the podium wears gold, silver and bronze squares. */
 export function RankMedal({ rank }: { rank: number }) {
@@ -107,10 +108,10 @@ export function BoardRow({
       className={cx(
         'flex items-center gap-2 pb-1.5 pl-1.5 pr-2.5 pt-1',
         isMe
-          ? 'bg-[#fff4d6] shadow-[inset_0_0_0_2px_#24304f,inset_0_0_0_4px_#ffbe2e]'
+          ? 'bg-gold-pale shadow-card-gold'
           : dim
-            ? 'bg-[#f1f4f9] shadow-[inset_0_0_0_2px_#b6c3d9]'
-            : 'bg-paper shadow-[inset_0_0_0_2px_#b6c3d9]',
+            ? 'bg-well shadow-ring-line'
+            : 'bg-paper shadow-ring-line',
         flash && 'so-flash',
       )}
     >

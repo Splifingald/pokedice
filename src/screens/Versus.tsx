@@ -138,7 +138,7 @@ export function VersusScreen() {
       <p className="m-0 font-pixel-sm text-[15px] leading-[1.15] text-muted">{t('ui.versus.intro')}</p>
 
       {!signedIn && (
-        <div className="flex flex-wrap items-center justify-between gap-2 bg-[#fff4d6] p-3 shadow-[inset_0_0_0_2px_#24304f,inset_0_0_0_4px_#ffbe2e]">
+        <div className="flex flex-wrap items-center justify-between gap-2 bg-gold-pale p-3 shadow-card-gold">
           <p className="m-0 text-[19px] leading-tight">{t('ui.versus.connect')}</p>
           <GoogleAccountButton />
         </div>
@@ -192,10 +192,7 @@ export function VersusScreen() {
 function Meter({ value, className }: { value: number; className?: string }) {
   const k = Math.max(0, Math.min(1, value))
   return (
-    <span
-      className={cx('relative block h-1.5 bg-[#dde5f0] shadow-[inset_0_0_0_1px_#b6c3d9]', className)}
-      aria-hidden
-    >
+    <span className={cx('relative block h-1.5 bg-line shadow-ring-line-thin', className)} aria-hidden>
       <i
         className={cx('absolute inset-y-0 left-0 block', k >= 1 ? 'bg-hp-green' : 'bg-gold')}
         style={{ width: `${k * 100}%` }}
@@ -217,7 +214,7 @@ function Locked() {
       <PageHead title={t('ui.versus.title')} onBack={() => navigate('/home')}>
         <Chip tone="dark">{t('ui.versus.auto')}</Chip>
       </PageHead>
-      <div className="grid justify-items-center gap-2 bg-paper px-3.5 py-4 text-center shadow-[inset_0_0_0_2px_#24304f,inset_0_-4px_0_#dfe7f2]">
+      <div className="grid justify-items-center gap-2 bg-paper px-3.5 py-4 text-center shadow-card">
         <PixelIcon name="lock" size={36} />
         <b className="text-[21px] font-normal leading-[1.1]">{t('ui.versus.locked')}</b>
         <Meter value={count / VERSUS_TEAM_SIZE} className="h-2.5 w-[70%]" />
@@ -235,7 +232,7 @@ function Locked() {
               return (
                 <li
                   key={inst.id}
-                  className="grid grid-cols-[auto_auto_minmax(0,1fr)_auto] items-center gap-2 bg-paper pb-1 pl-0.5 pr-2.5 pt-0.5 shadow-[inset_0_0_0_2px_#b6c3d9]"
+                  className="grid grid-cols-[auto_auto_minmax(0,1fr)_auto] items-center gap-2 bg-paper pb-1 pl-0.5 pr-2.5 pt-0.5 shadow-ring-line"
                 >
                   <MiniSprite dex={inst.dex} size={40} />
                   <b className="text-[18px] font-normal">{name}</b>
@@ -294,7 +291,7 @@ function Opponents({
   const mine = me?.team.map((m) => m.dex) ?? []
   if (signedIn && !me)
     return (
-      <div className="grid gap-2.5 bg-[#fff4d6] p-3.5 text-center shadow-[inset_0_0_0_2px_#24304f,inset_0_0_0_4px_#ffbe2e]">
+      <div className="grid gap-2.5 bg-gold-pale p-3.5 text-center shadow-card-gold">
         <p className="m-0 text-[19px] leading-[1.15]">{t('ui.versus.noTeamYet')}</p>
         <PixelButton variant="primary" onClick={onSetTeam}>
           {t('ui.versus.setTeam')}
@@ -304,7 +301,7 @@ function Opponents({
   return (
     <>
       {me && (
-        <div className="flex items-center gap-2 bg-paper py-1 pl-2.5 pr-1.5 shadow-[inset_0_0_0_2px_#b6c3d9]">
+        <div className="flex items-center gap-2 bg-paper py-1 pl-2.5 pr-1.5 shadow-ring-line">
           <span className="font-pixel-sm text-[15px] text-muted">{t('ui.versus.yourTeam')}</span>
           <TeamIcons team={me.team} owner={me.name} />
           <PixelButton size="sm" variant="ghost" className="ml-auto" onClick={onSetTeam}>
@@ -463,7 +460,7 @@ function TeamEditor({
         {Array.from({ length: VERSUS_TEAM_SIZE }, (_, i) => {
           const c = candidates.find((x) => x.inst.id === valid[i])
           const n = (
-            <span className="absolute left-1.5 top-[5px] bg-ink px-[5px] pb-0.5 pt-px font-pixel-sm text-[14px] leading-none text-gold-light">
+            <span className="light-scope absolute left-1.5 top-[5px] bg-night px-[5px] pb-0.5 pt-px font-pixel-sm text-[14px] leading-none text-gold-light">
               {i + 1}
             </span>
           )
@@ -471,7 +468,7 @@ function TeamEditor({
             return (
               <li
                 key={i}
-                className="relative grid min-h-[118px] place-content-center bg-[#f6f9fd] px-1 text-center font-pixel-sm text-[14px] text-ink shadow-[inset_0_0_0_2px_#b6c3d9]"
+                className="relative grid min-h-[118px] place-content-center bg-well px-1 text-center font-pixel-sm text-[14px] text-ink shadow-ring-line"
               >
                 {n}
                 {t('ui.versus.slotEmpty')}
@@ -482,7 +479,7 @@ function TeamEditor({
           return (
             <li
               key={i}
-              className="relative grid min-h-[118px] justify-items-center gap-0.5 bg-paper px-1 pb-2 pt-[18px] text-center shadow-[inset_0_0_0_2px_#24304f,inset_0_-4px_0_#dfe7f2]"
+              className="relative grid min-h-[118px] justify-items-center gap-0.5 bg-paper px-1 pb-2 pt-[18px] text-center shadow-card"
             >
               {n}
               <SpriteImg dex={c.inst.dex} size={64} shiny={c.inst.shiny} />
@@ -520,9 +517,7 @@ function TeamEditor({
                 onClick={() => toggle(p.id)}
                 className={cx(
                   'flex min-h-[52px] w-full items-center gap-2 py-1.5 pl-1.5 pr-2.5 text-left',
-                  order >= 0
-                    ? 'bg-[#fff4d6] shadow-[inset_0_0_0_2px_#24304f,inset_0_0_0_4px_#ffbe2e]'
-                    : 'bg-paper shadow-[inset_0_0_0_2px_#24304f,inset_0_-4px_0_#dfe7f2]',
+                  order >= 0 ? 'bg-gold-pale shadow-card-gold' : 'bg-paper shadow-card',
                 )}
               >
                 <MiniSprite dex={p.dex} size={40} className="-my-1" />
@@ -535,7 +530,7 @@ function TeamEditor({
                   </small>
                 </span>
                 {order >= 0 && (
-                  <span className="grid h-7 w-7 shrink-0 place-items-center bg-ink text-[18px] leading-none text-gold-light">
+                  <span className="grid h-7 w-7 light-scope shrink-0 place-items-center bg-night text-[18px] leading-none text-gold-light">
                     {order + 1}
                   </span>
                 )}
@@ -677,10 +672,7 @@ function VersusFightView({
     fast,
     onSkip: () => setFast(true),
     end: over ? (
-      <div
-        className="grid gap-2 bg-paper p-3 shadow-[inset_0_0_0_2px_#24304f,inset_0_-4px_0_#dfe7f2]"
-        role="status"
-      >
+      <div className="grid gap-2 bg-paper p-3 shadow-card" role="status">
         <div className="flex items-center gap-2">
           <TrainerSprite src={avatarOf(foe.avatar).src} size={48} />
           <h2 className="m-0 text-[28px] font-normal leading-none">

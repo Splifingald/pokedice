@@ -4,7 +4,7 @@ import { useT } from '@/i18n/react'
 import { statusEffects, statusName, typeName } from '@/lib/format'
 import { useGame } from '@/store/game'
 import { STATUS_COLORS } from '@/theme/colors'
-import { badgeColors, mixOklab } from '@/theme/util'
+import { badgeColors } from '@/theme/util'
 import { Die } from './Die'
 import { PixelIcon, STATUS_ICON } from './icons'
 
@@ -73,7 +73,10 @@ export function StatusLines({ statuses }: { statuses: readonly StatusKind[] }) {
           <li
             key={s}
             className="flex items-start gap-2 px-2 pb-1.5 pt-1 font-pixel-sm text-[15px] leading-tight text-ink"
-            style={{ background: mixOklab(c, 0.14, '#ffffff'), boxShadow: `inset 4px 0 0 ${c}` }}
+            style={{
+              background: `color-mix(in oklab, ${c} 14%, rgb(var(--c-paper)))`,
+              boxShadow: `inset 4px 0 0 ${c}`,
+            }}
           >
             <PixelIcon name={STATUS_ICON[s] ?? 'star'} size={16} className="mt-px shrink-0" />
             <span>

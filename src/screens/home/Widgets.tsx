@@ -60,7 +60,7 @@ function Widget({
 function Meter({ value, max }: { value: number; max: number }) {
   const k = max > 0 ? Math.min(1, value / max) : 0
   return (
-    <span className="relative block h-1.5 w-full bg-line shadow-[inset_0_0_0_1px_#b6c3d9]" aria-hidden>
+    <span className="relative block h-1.5 w-full bg-line shadow-ring-line-thin" aria-hidden>
       <i
         className={cx('absolute inset-y-0 left-0 block', k >= 1 ? 'bg-hp-green' : 'bg-gold')}
         style={{ width: `${k * 100}%` }}
@@ -90,7 +90,7 @@ function SecretWidget({ onSecrets }: { onSecrets: () => void }) {
         label={t('ui.home.secretNewLabel', { area: f.area.name })}
         onClick={() => travelTo(f.area)}
       >
-        <span className="block w-full leading-[0] shadow-[0_0_0_2px_#24304f]">
+        <span className="block w-full leading-[0] shadow-halo">
           <img src={stripOf(f.area.bannerUrl)} alt="" className="pixelated h-auto w-full" />
         </span>
         <span className="truncate text-[20px] leading-none">{f.area.name}</span>
@@ -113,7 +113,7 @@ function SecretWidget({ onSecrets }: { onSecrets: () => void }) {
       })}
       onClick={onSecrets}
     >
-      <span className="relative block w-full leading-[0] shadow-[0_0_0_2px_#24304f]">
+      <span className="relative block w-full leading-[0] shadow-halo">
         <img src={stripOf(f.area.bannerUrl)} alt="" className="pixelated h-auto w-full grayscale-[0.7]" />
         <PixelIcon
           name="lock"
@@ -330,7 +330,7 @@ function VersusWidget() {
       </span>
       <span className="flex w-full items-center justify-between gap-1.5">
         <span className="font-pixel-sm text-[15px] leading-none text-muted">{t('ui.home.vsAuto')}</span>
-        <span className="bg-danger px-2 pb-1.5 pt-1 text-[17px] leading-none text-white shadow-[inset_0_0_0_2px_#24304f]">
+        <span className="bg-crimson px-2 pb-1.5 pt-1 text-[17px] leading-none text-white shadow-ring">
           {set ? t('ui.home.vsFight') : t('ui.home.vsSetTeam')}
         </span>
       </span>
@@ -345,7 +345,7 @@ function EventsWidget() {
     <div
       role="note"
       aria-label={t('ui.home.eventsLabel')}
-      className="flex min-h-[120px] flex-col items-center justify-center gap-1.5 bg-[#f6f8fc80] p-2.5 text-center text-faint outline-dashed outline-2 -outline-offset-2 outline-shadow"
+      className="flex min-h-[120px] flex-col items-center justify-center gap-1.5 bg-panel/50 p-2.5 text-center text-faint outline-dashed outline-2 -outline-offset-2 outline-shadow"
     >
       <span className="font-pixel-sm text-[15px] leading-none text-muted">{t('ui.home.events')}</span>
       <PixelIcon name="star" size={24} style={{ filter: 'grayscale(1) opacity(0.4)' }} />

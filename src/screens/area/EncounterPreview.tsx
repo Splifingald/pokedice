@@ -34,7 +34,7 @@ function WildCard({ enc }: { enc: Extract<Encounter, { kind: 'wild' | 'boss' }> 
       <motion.div
         initial={{ scale: 0.6, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
-        className={cx('shrink-0', boss ? 'bg-ink shadow-[inset_0_0_0_3px_#ffbe2e]' : 'bg-paper shadow-ring')}
+        className={cx('shrink-0', boss ? 'bg-night shadow-[inset_0_0_0_3px_#ffbe2e]' : 'bg-paper shadow-ring')}
       >
         <SpriteImg dex={enc.dex} size={desktop ? 144 : 104} shiny={enc.shiny} />
       </motion.div>
@@ -262,7 +262,7 @@ export function EncounterPreview({ enc }: { enc: Encounter }) {
 
   return createPortal(
     <motion.div
-      className="fixed inset-0 z-[80] flex items-end justify-center bg-ink/60 sm:items-center sm:p-3"
+      className="fixed inset-0 z-[80] flex items-end justify-center bg-night/60 sm:items-center sm:p-3"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
     >
@@ -276,7 +276,7 @@ export function EncounterPreview({ enc }: { enc: Encounter }) {
         animate={{ y: 0, opacity: 1 }}
       >
         {/* Gym and legendary cards carry their own banner, so their title is for screen readers only. */}
-        <h2 id={titleId} className={dark ? 'sr-only' : 'border-b-[3px] border-ink px-3 py-2 text-center text-2xl leading-tight sm:text-3xl'}>
+        <h2 id={titleId} className={dark ? 'sr-only' : 'border-b-[3px] border-edge px-3 py-2 text-center text-2xl leading-tight sm:text-3xl'}>
           {t(TITLES[enc.kind])}
         </h2>
         <div className="pixel-scroll flex flex-col gap-3 overflow-y-auto p-3 sm:p-4">
@@ -307,7 +307,7 @@ export function EncounterPreview({ enc }: { enc: Encounter }) {
         </div>
 
         <div
-          className={cx('flex gap-2 border-t-[3px] p-3', dark ? 'border-shadow' : 'border-ink')}
+          className={cx('flex gap-2 border-t-[3px] p-3', dark ? 'border-shadow' : 'border-edge')}
           style={{ paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom))' }}
         >
           <PixelButton

@@ -39,8 +39,8 @@ export function MonTile({
       onClick={onClick}
       aria-label={label}
       className={cx(
-        'relative grid w-full justify-items-center gap-0.5 px-1 pb-[7px] pt-[3px] shadow-[inset_0_0_0_2px_#b6c3d9] hover:shadow-ring',
-        missing ? 'bg-[#f1f4f9]' : 'bg-paper',
+        'relative grid w-full justify-items-center gap-0.5 px-1 pb-[7px] pt-[3px] shadow-ring-line hover:shadow-ring',
+        missing ? 'bg-well' : 'bg-paper',
       )}
     >
       {icon ?? <MiniSprite dex={dex} size={40} silhouette={missing} />}
@@ -61,8 +61,8 @@ export function TileTag({ tone, children }: { tone: 'new' | 'near'; children: Re
       className={cx(
         'absolute top-[3px] px-[3px] pb-[2px] pt-px font-pixel-sm text-[12px] not-italic leading-none',
         tone === 'new'
-          ? 'right-[3px] bg-gold text-ink shadow-[inset_0_0_0_1px_#24304f]'
-          : 'left-[3px] bg-[#d8f5e4] text-[#1d6b43] shadow-[inset_0_0_0_1px_#34c97a]',
+          ? 'right-[3px] bg-gold text-ink shadow-ring-thin'
+          : 'left-[3px] bg-good-pale text-good shadow-[inset_0_0_0_1px_#34c97a]',
       )}
       aria-hidden
     >

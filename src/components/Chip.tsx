@@ -16,10 +16,10 @@ const TONE: Record<ChipTone, string> = {
   gold: 'bg-gold text-ink shadow-ring',
   green: 'bg-hp-green text-[#0f2e1d] shadow-ring',
   done: 'bg-good-pale text-good shadow-[inset_0_0_0_2px_#34c97a]',
-  red: 'bg-danger text-white',
-  blue: 'bg-[#e6f0ff] text-ink shadow-[inset_0_0_0_2px_#5b8def]',
-  lock: 'bg-[#e3e8f0] text-ink',
-  dark: 'bg-ink text-gold-light',
+  red: 'bg-crimson text-white',
+  blue: 'bg-sky text-ink shadow-[inset_0_0_0_2px_#5b8def]',
+  lock: 'bg-well-deep text-ink',
+  dark: 'light-scope bg-night text-gold-light',
 }
 
 export function Chip({

@@ -186,7 +186,7 @@ export function SpriteImg({
           style={{
             ...(place && { width: place.width, height: place.height, left: place.left, top: place.top }),
             imageRendering: 'pixelated',
-            filter: silhouette ? 'brightness(0) opacity(0.75)' : undefined,
+            filter: silhouette ? 'var(--silhouette)' : undefined,
             transform: flip ? 'scaleX(-1)' : undefined,
             opacity: loaded ? 1 : 0,
           }}
@@ -236,7 +236,7 @@ export function MiniSprite({
           backgroundSize: `${ICON_COLS * ICON_W * k}px auto`,
           backgroundPosition: `-${(cell % ICON_COLS) * ICON_W * k}px -${Math.floor(cell / ICON_COLS) * ICON_H * k}px`,
           imageRendering: 'pixelated',
-          filter: silhouette ? 'brightness(0) opacity(0.75)' : undefined,
+          filter: silhouette ? 'var(--silhouette)' : undefined,
           animationDelay: reduced ? undefined : delay,
         }}
       />

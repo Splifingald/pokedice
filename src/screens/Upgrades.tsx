@@ -75,9 +75,7 @@ function Pips({ level, max }: { level: number; max: number }) {
           key={i}
           className={cx(
             'h-2.5 flex-1',
-            i < level
-              ? 'bg-gold shadow-[inset_0_0_0_1px_#24304f]'
-              : 'bg-[#e3e8f0] shadow-[inset_0_0_0_1px_#b6c3d9]',
+            i < level ? 'bg-gold shadow-ring-thin' : 'bg-well-deep shadow-ring-line-thin',
           )}
         />
       ))}
@@ -105,10 +103,10 @@ function UpCard({ u, gold }: { u: Up; gold: number }) {
       className={cx(
         'grid gap-1.5 px-2.5 pb-2.5 pt-2',
         u.locked
-          ? 'bg-[#f1f4f9] text-muted shadow-[inset_0_0_0_2px_#b6c3d9]'
+          ? 'bg-well text-muted shadow-ring-line'
           : can
-            ? 'bg-[#fffdf3] shadow-[inset_0_0_0_2px_#24304f,inset_0_-4px_0_#ffe7a8]'
-            : 'bg-paper shadow-[inset_0_0_0_2px_#24304f,inset_0_-4px_0_#dfe7f2]',
+            ? 'bg-cream shadow-card-warm'
+            : 'bg-paper shadow-card',
       )}
     >
       <div className="flex min-h-[30px] items-center gap-2">
@@ -140,12 +138,12 @@ function UpCard({ u, gold }: { u: Up; gold: number }) {
           )}
         </span>
         {u.locked ? (
-          <span className="inline-flex min-h-[46px] min-w-[96px] items-center justify-center gap-1.5 bg-[#e3e8f0] px-2.5 font-pixel-sm text-[15px] text-ink">
+          <span className="inline-flex min-h-[46px] min-w-[96px] items-center justify-center gap-1.5 bg-well-deep px-2.5 font-pixel-sm text-[15px] text-ink">
             <PixelIcon name="lock" size={16} />
             {t('ui.upgrades.lockedWord')}
           </span>
         ) : u.cost == null ? (
-          <span className="inline-flex min-h-[46px] min-w-[96px] items-center justify-center bg-gold text-[18px] text-ink shadow-[inset_0_0_0_2px_#24304f]">
+          <span className="inline-flex min-h-[46px] min-w-[96px] items-center justify-center bg-gold text-[18px] text-ink shadow-ring">
             {t('ui.upgrades.max')}
           </span>
         ) : (
@@ -155,9 +153,7 @@ function UpCard({ u, gold }: { u: Up; gold: number }) {
             aria-disabled={!can || undefined}
             className={cx(
               'grid min-h-[46px] min-w-[96px] place-items-center px-2.5 pb-2 pt-1 leading-none',
-              can
-                ? 'pixel-btn frame-deep text-white'
-                : 'bg-[#e3e8f0] text-ink shadow-[inset_0_0_0_2px_#b6c3d9]',
+              can ? 'pixel-btn frame-deep text-white' : 'bg-well-deep text-ink shadow-ring-line',
             )}
           >
             <b className="text-[20px] font-normal">{money(u.cost)}</b>
@@ -270,7 +266,7 @@ export function UpgradesScreen() {
             onClick={() => setAffordOnly((v) => !v)}
             className={cx(
               'inline-flex min-h-[44px] items-center gap-1.5 whitespace-nowrap px-2.5 text-[17px] md:min-h-[38px]',
-              affordOnly ? 'bg-ink text-panel' : 'bg-paper shadow-[inset_0_0_0_2px_#b6c3d9]',
+              affordOnly ? 'bg-ink text-panel' : 'bg-paper shadow-ring-line',
             )}
           >
             {t('ui.upgrades.affordable')}

@@ -58,9 +58,7 @@ function Fact({
     <div
       className={cx(
         'flex items-center gap-2.5 px-2.5 py-2',
-        gold
-          ? 'bg-[#fff8e0] shadow-[inset_0_0_0_2px_#24304f,inset_0_-4px_0_#ffe7a8]'
-          : 'bg-paper shadow-card',
+        gold ? 'bg-cream shadow-card-warm' : 'bg-paper shadow-card',
       )}
     >
       <span className="flex shrink-0 items-center">{icon}</span>
@@ -209,14 +207,14 @@ function DetailsBody({ area }: { area: Area }) {
 
   return (
     <div className="grid gap-3.5 pt-0.5">
-      <div className="relative mx-0.5 leading-[0] shadow-[0_0_0_2px_#24304f]">
+      <div className="relative mx-0.5 leading-[0] shadow-halo">
         <img
           src={stripOf(area.bannerUrl, 96)}
           alt=""
           className={cx('pixelated h-auto w-full', locked && 'brightness-[0.92] grayscale-[0.7]')}
         />
         {locked && (
-          <span className="absolute left-1/2 top-1/2 inline-flex max-w-[92%] -translate-x-1/2 -translate-y-1/2 items-center gap-1.5 whitespace-nowrap bg-ink/90 px-2.5 pb-1.5 pt-1 text-[17px] leading-none text-white">
+          <span className="absolute left-1/2 top-1/2 inline-flex max-w-[92%] -translate-x-1/2 -translate-y-1/2 items-center gap-1.5 whitespace-nowrap bg-night/90 px-2.5 pb-1.5 pt-1 text-[17px] leading-none text-white">
             <PixelIcon name="lock" size={16} color="#ffffff" />
             {t('ui.dex.locked')}
           </span>
@@ -296,9 +294,7 @@ function DetailsBody({ area }: { area: Area }) {
                   key={e.id}
                   className={cx(
                     'flex min-h-[46px] items-center gap-2 py-1 pl-1.5 pr-2.5',
-                    got
-                      ? 'bg-[#f1f4f9] text-muted shadow-ring-line'
-                      : 'bg-[#fffbea] shadow-[inset_0_0_0_2px_#24304f,inset_0_-4px_0_#ffe7a8]',
+                    got ? 'bg-well text-muted shadow-ring-line' : 'bg-cream shadow-card-warm',
                   )}
                 >
                   {e.itemKey === MONEY ? (
@@ -361,7 +357,7 @@ function DetailsBody({ area }: { area: Area }) {
                     onClick={() => setView({ kind: 'dex', dex: m.dex })}
                     className={cx(
                       'relative grid w-full min-w-0 justify-items-center gap-[3px] px-1 pb-2 pt-1 text-center shadow-ring-line',
-                      got ? 'bg-[#f6f8fb]' : 'bg-paper',
+                      got ? 'bg-well' : 'bg-paper',
                     )}
                   >
                     <MiniSprite
@@ -382,10 +378,10 @@ function DetailsBody({ area }: { area: Area }) {
                       className={cx(
                         'whitespace-nowrap px-1 pb-0.5 font-pixel-sm text-[13px] leading-none',
                         r === 'rare'
-                          ? 'bg-gold text-ink shadow-[inset_0_0_0_1px_#24304f]'
+                          ? 'bg-gold text-ink shadow-ring-thin'
                           : r === 'unc'
                             ? 'bg-good-pale text-good'
-                            : 'bg-[#e6f0ff] text-ink',
+                            : 'bg-sky text-ink',
                       )}
                     >
                       {rarity(m.share)} · {Math.round(m.share * 100)}%
@@ -410,7 +406,7 @@ function DetailsBody({ area }: { area: Area }) {
       {sum > 0 && (
         <SheetSection title={t('ui.home.eachRound')}>
           <div
-            className="flex h-4 gap-0.5 bg-ink p-0.5"
+            className="flex h-4 gap-0.5 bg-night p-0.5"
             role="img"
             aria-label={pct.map(([k, n]) => `${t(`ui.home.kind.${k}`)} ${n}%`).join(', ')}
           >
@@ -421,10 +417,7 @@ function DetailsBody({ area }: { area: Area }) {
           <ul className="flex flex-wrap gap-x-3.5 gap-y-1 font-pixel-sm text-[15px] text-muted" aria-hidden>
             {pct.map(([k, n]) => (
               <li key={k} className="inline-flex items-center gap-1">
-                <i
-                  className="block h-2.5 w-2.5 shadow-[inset_0_0_0_1px_#24304f]"
-                  style={{ background: MIX[k] }}
-                />
+                <i className="block h-2.5 w-2.5 shadow-ring-thin" style={{ background: MIX[k] }} />
                 {t(`ui.home.kind.${k}`)} <b className="font-normal text-ink">{n}%</b>
               </li>
             ))}

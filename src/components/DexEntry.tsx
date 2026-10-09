@@ -144,7 +144,7 @@ function SpotCard({ spot, onTravel }: { spot: Spot; onTravel?: () => void }) {
       className={cx(
         'relative flex min-h-[62px] items-center gap-2 py-1.5 pl-1.5 pr-[78px]',
         locked
-          ? 'bg-[#f1f4f9] text-muted shadow-[inset_0_0_0_2px_#b6c3d9]'
+          ? 'bg-well text-muted shadow-ring-line'
           : st === 'here'
             ? 'bg-paper shadow-[inset_0_0_0_3px_#ff8a3d]'
             : st === 'cleared'
@@ -155,7 +155,7 @@ function SpotCard({ spot, onTravel }: { spot: Spot; onTravel?: () => void }) {
       <img
         src={stripOf(area.bannerUrl, 48)}
         alt=""
-        className={cx('pixelated h-12 w-[72px] shrink-0 shadow-[0_0_0_2px_#24304f]', locked && 'grayscale-[0.7]', secret && 'blur-[1px]')}
+        className={cx('pixelated h-12 w-[72px] shrink-0 shadow-halo', locked && 'grayscale-[0.7]', secret && 'blur-[1px]')}
       />
       <span className="grid min-w-0 gap-[3px]">
         <b className="truncate text-[18px] font-normal leading-none">{name}</b>
@@ -174,7 +174,7 @@ function SpotCard({ spot, onTravel }: { spot: Spot; onTravel?: () => void }) {
         </small>
       </span>
       {locked || closed ? (
-        <span className="absolute right-2.5 top-1/2 grid h-11 w-[60px] -translate-y-1/2 place-items-center bg-[#e3e8f0] shadow-ring-line" aria-hidden>
+        <span className="absolute right-2.5 top-1/2 grid h-11 w-[60px] -translate-y-1/2 place-items-center bg-well-deep shadow-ring-line" aria-hidden>
           <PixelIcon name="lock" size={16} />
         </span>
       ) : (
@@ -233,7 +233,7 @@ function ItemSources({ itemKey, onTravel }: { itemKey: string; onTravel?: () => 
         ? t('ui.shop.needsArea', { area: data.areas.find((a) => a.id === item.shopArea)?.name ?? t('ui.shop.someNewArea') })
         : null
   return (
-    <div className="flex flex-col gap-2 border-l-[3px] border-ink/30 pl-2">
+    <div className="flex flex-col gap-2 border-l-[3px] border-edge/30 pl-2">
       <h4 className="flex items-center gap-1.5 text-xl leading-none">
         <ItemSprite item={item} size={24} />
         {t('ui.dex.whereToFindItem', { item: item.name })}
@@ -279,7 +279,7 @@ function EvolutionStep({
     <button
       type="button"
       onClick={() => onOpenDex?.(dex)}
-      className="flex min-h-[52px] w-full items-center gap-2 bg-paper px-2 py-1.5 text-left shadow-ring hover:bg-white"
+      className="flex min-h-[52px] w-full items-center gap-2 bg-paper px-2 py-1.5 text-left shadow-ring hover:bg-paper"
     >
       <MiniSprite dex={dex} size={40} silhouette={!known} />
       <span className="text-[18px] leading-tight">
@@ -338,7 +338,7 @@ function MissingEntry({ dex, onOpenDex, onTravel }: { dex: number; onOpenDex?: (
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center gap-3">
-        <div className="grid h-[104px] w-[112px] shrink-0 place-items-center bg-[#eef4fb] shadow-ring">
+        <div className="grid h-[104px] w-[112px] shrink-0 place-items-center bg-sky shadow-ring">
           <MiniSprite dex={dex} size={80} silhouette />
         </div>
         <p className="font-pixel-sm text-[16px] leading-tight text-muted">{t('ui.dex.catchToLearn')}</p>

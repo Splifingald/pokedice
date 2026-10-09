@@ -39,7 +39,89 @@ export const PALETTE = {
   hpRed: '#ff5a4a',
   /** The HP the last hit took, before the trail catches up. */
   hpTrail: '#ffb3a8',
+  /** The navy that stays navy in both themes: text on gold and other bright fills, the scrim under a dialog. */
+  night: '#24304f',
+  /** Red and green as fills under white text, the same in both themes (danger and good are text colours). */
+  crimson: '#c4382a',
+  forest: '#1d6b43',
 } as const
+
+/**
+ * The colours that change with the theme (Settings → Theme). Light is PALETTE's Daybreak; dark is Dusk, the same
+ * lab after sundown. tailwind.config.ts turns each into a CSS variable (`--c-ink` …) and a Tailwind colour, so a
+ * component writes `text-ink` or `bg-well` once and reads right in both. Everything else (gold, the HP colours, types,
+ * statuses, the art) keeps one value: bright fills keep navy text in both themes (`light-scope`, index.css).
+ */
+export const THEMES = {
+  light: {
+    parchment: PALETTE.parchment,
+    ink: PALETTE.ink,
+    /** Outlines: card rings, frames, dividers. The ink itself in light; a softer slate in dark, so frames don't glare. */
+    edge: PALETTE.ink,
+    panel: PALETTE.panel,
+    paper: PALETTE.paper,
+    shadow: PALETTE.shadow,
+    line: PALETTE.line,
+    lip: PALETTE.lip,
+    muted: PALETTE.muted,
+    faint: PALETTE.faint,
+    'gold-light': PALETTE.goldLight,
+    'gold-pale': PALETTE.goldPale,
+    danger: PALETTE.danger,
+    'danger-light': PALETTE.dangerLight,
+    good: PALETTE.good,
+    'good-pale': PALETTE.goodPale,
+    /** A sunken ground inside a card: tiles, dex cells, empty slots. */
+    well: '#f1f4f9',
+    /** Deeper: locked tiles, prices you can't pay, the unavailable. */
+    'well-deep': '#e3e8f0',
+    /** The blue tint: the trainer card, menu tiles, info. */
+    sky: '#e8f1ff',
+    'sky-line': '#cfe0fb',
+    /** The red tint behind a warning (no energy, a fainted lead). */
+    rose: '#fff2ef',
+    /** The warm card: something you can afford, the next region, the lead. */
+    cream: '#fffbea',
+    /** Prof. Oak's notes and the Egg on sale: paper, and its lip. */
+    sand: '#fff8ec',
+    'sand-lip': '#f3e2c4',
+    /** The dot of the ground's texture. */
+    dot: '#dde7f3',
+    /** The dialogue box's inner ring. */
+    'dialog-ring': '#cfe0f4',
+  },
+  dark: {
+    parchment: '#10172a',
+    ink: '#e6ecf7',
+    edge: '#7d8bb2',
+    panel: '#182139',
+    paper: '#1f2944',
+    shadow: '#3e4b6e',
+    line: '#2b3654',
+    lip: '#151c31',
+    muted: '#a7b2cc',
+    faint: '#6f7c9c',
+    'gold-light': '#7a5a12',
+    'gold-pale': '#2e2817',
+    danger: '#ff8676',
+    'danger-light': '#b3352a',
+    good: '#72dca0',
+    'good-pale': '#173628',
+    well: '#141b30',
+    'well-deep': '#283250',
+    sky: '#1c2a4a',
+    'sky-line': '#35507e',
+    rose: '#3a1e24',
+    cream: '#28251a',
+    sand: '#2a2520',
+    'sand-lip': '#4a3d2a',
+    dot: '#1a2238',
+    'dialog-ring': '#35507e',
+  },
+} as const satisfies Record<'light' | 'dark', Record<string, string>>
+
+export type ThemeName = keyof typeof THEMES
+export type ThemeColor = keyof (typeof THEMES)['light']
 
 /** Status effects: the ring of a die face that carries one, its badge, and its chip under the tray. */
 export const STATUS_COLORS = {

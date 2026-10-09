@@ -45,10 +45,10 @@ function MenuRow({
 }) {
   const descId = useId()
   const className =
-    'flex min-h-[56px] w-full items-center gap-2.5 bg-paper pb-2 pl-2 pr-3 pt-1.5 text-left text-ink shadow-[inset_0_0_0_2px_#24304f,inset_0_-4px_0_#dfe7f2]'
+    'flex min-h-[56px] w-full items-center gap-2.5 bg-paper pb-2 pl-2 pr-3 pt-1.5 text-left text-ink shadow-card'
   const body = (
     <>
-      <span className="grid h-8 w-8 shrink-0 place-items-center bg-[#e8f1ff] shadow-[inset_0_0_0_2px_#24304f]">
+      <span className="grid h-8 w-8 shrink-0 place-items-center bg-sky shadow-ring">
         {mark ? <GoogleMark /> : icon && <PixelIcon name={icon} size={18} />}
       </span>
       <span className="grid min-w-0 flex-1 gap-0.5">
@@ -59,7 +59,7 @@ function MenuRow({
           </small>
         )}
       </span>
-      {hint && <em className="shrink-0 bg-ink px-2 pb-[3px] pt-0.5 text-[15px] not-italic text-gold-light">{hint}</em>}
+      {hint && <em className="light-scope shrink-0 bg-night px-2 pb-[3px] pt-0.5 text-[15px] not-italic text-gold-light">{hint}</em>}
     </>
   )
   const a11y = { 'aria-label': label, 'aria-describedby': desc ? descId : undefined }
@@ -120,7 +120,7 @@ export function PlayerMenu() {
         title={t(inFight ? 'ui.nav.finishFight' : 'ui.profile.menuLabel')}
         className={cx('flex min-h-[44px] min-w-0 items-center gap-2 text-left', inFight && 'pointer-events-none opacity-60')}
       >
-        <span className="grid h-[38px] w-[38px] shrink-0 place-items-center overflow-hidden rounded-full bg-[#7fb4ff] shadow-[inset_0_0_0_2px_#24304f,inset_0_-4px_0_#4f86d8]">
+        <span className="grid h-[38px] w-[38px] shrink-0 place-items-center overflow-hidden rounded-full bg-[#7fb4ff] shadow-[inset_0_0_0_2px_rgb(var(--c-edge)),inset_0_-4px_0_#4f86d8]">
           <TrainerLook src={avatarOf(playerAvatarId(save?.player)).src} w={30} h={30} />
         </span>
         <span className="grid min-w-0 leading-none">

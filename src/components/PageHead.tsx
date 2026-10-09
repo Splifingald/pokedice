@@ -14,7 +14,7 @@ export function Wallet() {
   return (
     <span
       role="img"
-      className="inline-flex shrink-0 items-center gap-1.5 bg-ink px-2.5 pb-[5px] pt-[3px] text-[20px] leading-none text-gold-light"
+      className="light-scope inline-flex shrink-0 items-center gap-1.5 bg-night px-2.5 pb-[5px] pt-[3px] text-[20px] leading-none text-gold-light"
       aria-label={t('ui.mon.pokedollars', { amount: gold })}
     >
       <PixelIcon name="coin" size={16} />

@@ -36,7 +36,7 @@ export function GoldPill({ amount, className }: { amount: number; className?: st
   const shown = useCountUp(amount)
   return (
     <span
-      className={cx('inline-flex items-center gap-1.5 border-2 border-ink bg-ink px-2 py-0.5 text-gold', className)}
+      className={cx('inline-flex items-center gap-1.5 border-2 border-edge bg-night px-2 py-0.5 text-gold', className)}
       style={{ borderRadius: 2 }}
       role="img"
       aria-label={t('ui.mon.pokedollars', { amount })}

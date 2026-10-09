@@ -101,6 +101,23 @@ export function SettingsScreen() {
           </div>
           <span className="copy block text-muted">{t('ui.settings.animationsHint')}</span>
         </div>
+        <div className="flex flex-col gap-1.5 py-1">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <span className="text-2xl">{t('ui.settings.theme')}</span>
+            <Seg
+              label={t('ui.settings.theme')}
+              value={settings.theme ?? 'light'}
+              onChange={(v) => setSettings({ theme: v })}
+              options={[
+                { id: 'light', label: t('ui.settings.themeLight') },
+                { id: 'dark', label: t('ui.settings.themeDark') },
+                { id: 'auto', label: t('ui.settings.themeAuto') },
+              ]}
+              className="min-w-[15rem]"
+            />
+          </div>
+          <span className="copy block text-muted">{t('ui.settings.themeHint')}</span>
+        </div>
         {/* No animations: admins only — but a player who already turned it on still sees it, so they can turn it off. */}
         {(isAdmin || settings.reducedMotion) && (
           <Toggle
@@ -149,7 +166,7 @@ export function SettingsScreen() {
           value={importText}
           onChange={(e) => setImportText(e.target.value)}
           placeholder={t('ui.settings.importPlaceholder')}
-          className="mt-3 h-24 w-full bg-paper shadow-[inset_0_0_0_2px_#24304f,inset_0_3px_0_#dfe7f2] p-2 font-mono text-xs"
+          className="mt-3 h-24 w-full bg-paper shadow-field p-2 font-mono text-xs"
         />
         <PixelButton size="sm" className="mt-1" disabled={!importText.trim()} onClick={doImport}>
           {t('ui.settings.importSave')}

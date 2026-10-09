@@ -34,7 +34,7 @@ export function Modal({
     <AnimatePresence>
       {open && (
         <motion.div
-          className="fixed inset-0 z-[90] flex items-center justify-center bg-ink/55 p-3"
+          className="fixed inset-0 z-[90] flex items-center justify-center bg-night/55 p-3"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}

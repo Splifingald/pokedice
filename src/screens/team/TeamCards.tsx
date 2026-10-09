@@ -126,9 +126,7 @@ export function TeamCards({
               })}
               className={cx(
                 'relative grid w-full cursor-grab touch-pan-y select-none justify-items-center gap-1 px-1.5 pb-[9px] pt-[22px]',
-                lead
-                  ? 'bg-[#fffbea] shadow-[inset_0_0_0_2px_#24304f,inset_0_0_0_4px_#ffbe2e,inset_0_-6px_0_#ffe7a8]'
-                  : 'bg-paper shadow-[inset_0_0_0_2px_#24304f,inset_0_-4px_0_#dfe7f2]',
+                lead ? 'bg-cream shadow-card-gold-lip' : 'bg-paper shadow-card',
                 lifted === i && 'z-10 cursor-grabbing',
                 over === i && 'outline-dashed outline-[3px] outline-offset-2 outline-danger',
               )}
@@ -136,7 +134,7 @@ export function TeamCards({
               <span
                 className={cx(
                   'absolute left-1.5 top-1.5 inline-flex items-center gap-0.5 px-[5px] pb-[2px] pt-px font-pixel-sm text-[14px] leading-none text-ink',
-                  lead ? 'bg-gold shadow-[inset_0_0_0_1px_#24304f]' : 'bg-[#e3e8f0]',
+                  lead ? 'bg-gold shadow-ring-thin' : 'bg-well-deep',
                 )}
                 aria-hidden
               >
@@ -153,14 +151,14 @@ export function TeamCards({
                 {fainted ? t('ui.mon.fainted') : t('ui.common.level.short', { n: p.level })}
               </span>
               <HpBar hp={p.currentHp} max={stats.maxHp} compact height={8} className="w-full" />
-              <span className="block h-1 w-full bg-[#e3e8f0]" aria-hidden>
+              <span className="block h-1 w-full bg-well-deep" aria-hidden>
                 <i className="block h-full bg-type-water" style={{ width: `${xp * 100}%` }} />
               </span>
               <span className="flex flex-wrap justify-center gap-0.5" aria-hidden>
                 {stats.dice.map((d, k) => (
                   <i
                     key={k}
-                    className="h-2.5 w-2.5 shadow-[inset_0_0_0_1px_#24304f]"
+                    className="h-2.5 w-2.5 shadow-ring-thin"
                     style={{ background: d === 'base' ? '#f4f6fb' : typeColor(d) }}
                   />
                 ))}

@@ -155,7 +155,7 @@ export function CenterView() {
       </section>
 
       {/* Always on screen, above the phone bottom bar. */}
-      <div className="sticky z-30 -mx-3 border-t-[3px] border-ink bg-parchment px-3 py-2" style={{ bottom: 'var(--bottom-nav)' }}>
+      <div className="sticky z-30 -mx-3 border-t-[3px] border-edge bg-parchment px-3 py-2" style={{ bottom: 'var(--bottom-nav)' }}>
         <PixelButton variant="primary" size="lg" className="w-full md:mx-auto md:flex md:w-80" onClick={finishCenter}>
           {t('ui.common.continue')}
         </PixelButton>

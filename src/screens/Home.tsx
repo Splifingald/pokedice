@@ -67,7 +67,7 @@ function HomeView({ area }: { area: Area }) {
     <div className="flex flex-col gap-3 md:gap-4 lg:grid lg:grid-cols-[minmax(0,460px)_minmax(0,1fr)] lg:items-start lg:gap-5">
       <h1 className="sr-only">{t('ui.home.heading', { area: area.name })}</h1>
       <section className="flex flex-col gap-3" aria-label={area.name}>
-        <div className="-mx-3 -mt-4 overflow-hidden shadow-[0_2px_0_#24304f] md:pixel-panel md:m-0 md:p-0 md:shadow-none">
+        <div className="-mx-3 -mt-4 overflow-hidden shadow-ledge md:pixel-panel md:m-0 md:p-0 md:shadow-none">
           <SceneStage area={area} team={teamOf(save)} onOpen={(id) => setMon({ kind: 'inst', id })}>
             <AreaPlate area={area} onOpen={() => setDetails(area.id)} />
           </SceneStage>

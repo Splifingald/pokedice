@@ -136,7 +136,7 @@ export function CasinoView() {
         </div>
 
         <div
-          className="flex justify-center gap-2 border-[3px] border-gold bg-ink p-2 sm:gap-3 sm:p-3"
+          className="flex justify-center gap-2 border-[3px] border-gold bg-night p-2 sm:gap-3 sm:p-3"
           role="img"
           aria-label={
             spinning
@@ -212,7 +212,7 @@ export function CasinoView() {
 
       {/* Always on screen, above the phone bottom bar. */}
       <div
-        className="sticky z-30 -mx-3 border-t-[3px] border-ink bg-parchment px-3 py-2"
+        className="sticky z-30 -mx-3 border-t-[3px] border-edge bg-parchment px-3 py-2"
         style={{ bottom: 'var(--bottom-nav)' }}
       >
         <PixelButton

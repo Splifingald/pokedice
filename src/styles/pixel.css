@@ -20,17 +20,22 @@
 }
 
 .pixel-panel {
-  background-color: #fbfdff;
+  background-color: rgb(var(--c-panel));
 }
 
+/* The night panel: navy in light, deeper than the ground in dark. Its text stays white in both. */
 .pixel-panel-dark {
   background-color: #24304f;
   color: #fbfdff;
   border-image-source: var(--fr-dark);
 }
+[data-theme='dark'] .pixel-panel-dark,
+[data-theme='dark'] .frame-dark {
+  background-color: #0b1122;
+}
 
 .pixel-dialogue {
-  background-color: #ffffff;
+  background-color: rgb(var(--c-paper));
   border-image-source: var(--fr-dialog);
 }
 
@@ -39,9 +44,9 @@
  * red is 3.4:1, enough only from 24px (large text): smaller red buttons wear `frame-deep` (5.3:1).
  */
 .pixel-btn {
-  background-color: #ffffff;
+  background-color: rgb(var(--c-paper));
   border-image-source: var(--fr-btn);
-  color: #24304f;
+  color: rgb(var(--c-ink));
   user-select: none;
   -webkit-user-select: none;
   touch-action: manipulation;
@@ -108,8 +113,8 @@
 .pixel-btn[aria-disabled='true'],
 .pixel-panel:disabled {
   border-image-source: var(--fr-off);
-  background-color: #eef2f8;
-  color: #5c6a8a;
+  background-color: rgb(var(--c-well));
+  color: rgb(var(--c-muted));
   text-shadow: none;
   cursor: not-allowed;
 }
@@ -120,10 +125,10 @@
  * a slightly see-through paper, so the scene shows behind it.
  */
 .pixel-plate {
-  background: #fbfdffeb;
+  background: rgb(var(--c-panel) / 0.92);
   box-shadow:
-    inset 0 0 0 2px #24304f,
-    inset 0 -4px 0 #dfe7f2;
+    inset 0 0 0 2px rgb(var(--c-edge)),
+    inset 0 -4px 0 rgb(var(--c-lip));
   clip-path: polygon(
     2px 0,
     calc(100% - 2px) 0,
@@ -200,15 +205,15 @@
   height: 10px;
 }
 .pixel-scroll::-webkit-scrollbar-thumb {
-  background: #b6c3d9;
-  border: 2px solid #fbfdff;
+  background: rgb(var(--c-shadow));
+  border: 2px solid rgb(var(--c-panel));
 }
 .pixel-scroll::-webkit-scrollbar-track {
-  background: #e9f0f8;
+  background: rgb(var(--c-parchment));
 }
 
 .scanlines {
-  background-image: repeating-linear-gradient(to bottom, rgba(36, 48, 79, 0.05) 0 1px, transparent 1px 3px);
+  background-image: repeating-linear-gradient(to bottom, rgb(var(--c-ink) / 0.05) 0 1px, transparent 1px 3px);
 }
 
 @keyframes shake {
@@ -301,7 +306,7 @@
 @keyframes bt-call {
   50% {
     box-shadow:
-      inset 0 0 0 2px #24304f,
+      inset 0 0 0 2px rgb(var(--c-edge)),
       inset 0 0 0 4px #ffbe2e;
     transform: translateY(-3px);
   }
@@ -320,12 +325,12 @@
   0%,
   33%,
   66% {
-    background-color: #ffe066;
+    background-color: rgb(var(--c-gold-light));
   }
   17%,
   50%,
   83% {
-    background-color: #fff4d6;
+    background-color: rgb(var(--c-gold-pale));
   }
 }
 .so-flash {

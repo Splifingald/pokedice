@@ -48,7 +48,7 @@ export function Sheet({
       {open && (
         <motion.div
           className={cx(
-            'fixed inset-0 z-[85] flex bg-ink/55',
+            'fixed inset-0 z-[85] flex bg-night/55',
             desktop ? 'items-center justify-center p-4' : 'items-end',
           )}
           initial={{ opacity: 0 }}
@@ -69,7 +69,7 @@ export function Sheet({
               'flex w-full flex-col bg-panel outline-none',
               desktop
                 ? cx('pixel-panel max-h-[85vh]', wide ? 'max-w-3xl' : 'max-w-xl')
-                : 'max-h-[90dvh] shadow-[0_-2px_0_#24304f,0_-6px_0_#24304f22]',
+                : 'max-h-[90dvh] shadow-[0_-2px_0_rgb(var(--c-edge)),0_-6px_0_rgb(var(--c-edge)/0.13)]',
               className,
             )}
             style={desktop ? undefined : { paddingBottom: 'env(safe-area-inset-bottom)' }}
@@ -102,7 +102,9 @@ export function Sheet({
               {children}
             </div>
             {footer && (
-              <div className="shrink-0 bg-panel px-3.5 py-2.5 shadow-[0_-2px_0_#dfe7f2]">{footer}</div>
+              <div className="shrink-0 bg-panel px-3.5 py-2.5 shadow-[0_-2px_0_rgb(var(--c-lip))]">
+                {footer}
+              </div>
             )}
           </motion.div>
         </motion.div>

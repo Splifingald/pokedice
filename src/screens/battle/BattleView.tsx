@@ -598,7 +598,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
     )
 
   const stage = (
-    <div ref={stageBox} className="shadow-[0_2px_0_#24304f]">
+    <div ref={stageBox} className="shadow-ledge">
       <BattleStage
         own={active}
         foe={st.enemy}
@@ -878,7 +878,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
                 key={m.dex}
                 type="button"
                 onClick={() => megaEvolve(m.dex)}
-                className="pixel-panel flex w-full items-center gap-3 p-2 text-left enabled:hover:bg-white"
+                className="pixel-panel flex w-full items-center gap-3 p-2 text-left enabled:hover:bg-paper"
               >
                 <SpriteImg dex={m.dex} size={80} shiny={active.shiny} className="bg-parchment shadow-ring" />
                 <span className="flex min-w-0 flex-1 flex-col gap-1">
@@ -915,7 +915,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
                   setMenu(null)
                   dispatch({ t: 'CHANGE_FORM', toDex: f.dex })
                 }}
-                className="pixel-panel flex flex-col items-center gap-1 p-1 enabled:hover:bg-white"
+                className="pixel-panel flex flex-col items-center gap-1 p-1 enabled:hover:bg-paper"
               >
                 <SpriteImg dex={f.dex} size={56} shiny={active.shiny} />
                 <TypeBadge type={f.type1} size="sm" />
@@ -955,7 +955,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
                       setMenu(null)
                     } else setItemKey(k)
                   }}
-                  className="flex min-h-[56px] w-full items-center gap-2 bg-paper px-2 py-1 text-left shadow-[inset_0_0_0_2px_#24304f,inset_0_-4px_0_#dfe7f2] disabled:opacity-50"
+                  className="flex min-h-[56px] w-full items-center gap-2 bg-paper px-2 py-1 text-left shadow-card disabled:opacity-50"
                 >
                   <ItemSprite item={it} size={32} />
                   <span className="flex min-w-0 flex-1 flex-col">
@@ -1001,7 +1001,7 @@ function SwitchRow({ b, onPick, disabled }: { b: Battler; onPick: () => void; di
       type="button"
       disabled={disabled}
       onClick={onPick}
-      className="pixel-panel flex w-full items-center gap-2 p-2 text-left enabled:hover:bg-white disabled:opacity-50"
+      className="pixel-panel flex w-full items-center gap-2 p-2 text-left enabled:hover:bg-paper disabled:opacity-50"
     >
       <div className="min-w-0 flex-1">
         <div className="flex items-center justify-between text-xl leading-none">

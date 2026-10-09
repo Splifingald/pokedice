@@ -268,7 +268,7 @@ export function AnalyticsSection() {
       {selected && <PlayerPanel key={selected.player} player={selected.player} name={selected.label} />}
 
       <section className="pixel-panel overflow-hidden p-0" aria-label="Players">
-        <h3 className="flex flex-wrap items-center gap-3 border-b-[3px] border-ink px-3 py-1 text-2xl">
+        <h3 className="flex flex-wrap items-center gap-3 border-b-[3px] border-edge px-3 py-1 text-2xl">
           Players
           <span className="text-lg text-muted">
             {rows.length.toLocaleString()} seen · {newInFrame.toLocaleString()} new
@@ -344,7 +344,7 @@ export function AnalyticsSection() {
                     <span className="flex items-center gap-2">
                       <span
                         className={cx(
-                          'border-2 border-ink px-1 text-sm leading-none',
+                          'border-2 border-edge px-1 text-sm leading-none',
                           p.guest ? 'bg-parchment text-muted' : 'bg-hp-green text-ink',
                         )}
                         title={p.guest ? 'Playing without an account' : 'Signed in with Google'}
@@ -376,7 +376,7 @@ export function AnalyticsSection() {
           </table>
         </div>
         {players.length > shown && (
-          <div className="border-t-[3px] border-ink p-2 text-center">
+          <div className="border-t-[3px] border-edge p-2 text-center">
             <PixelButton size="sm" onClick={() => setShown((n) => n + 300)}>
               Show more ({(players.length - shown).toLocaleString()} left)
             </PixelButton>

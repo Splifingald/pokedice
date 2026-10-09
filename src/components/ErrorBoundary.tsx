@@ -36,7 +36,7 @@ export class ErrorBoundary extends Component<{ children: ReactNode }, State> {
         <div className="pixel-panel flex max-w-lg flex-col gap-3 p-5">
           <h1 className="text-[32px] leading-none">{t('ui.error.title')}</h1>
           <p className="text-xl">{t('ui.error.body')}</p>
-          <pre className="max-h-24 overflow-auto border-2 border-ink bg-ink p-2 font-mono text-xs text-panel">{String(error.message || error)}</pre>
+          <pre className="max-h-24 overflow-auto border-2 border-edge bg-ink p-2 font-mono text-xs text-panel">{String(error.message || error)}</pre>
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
@@ -58,7 +58,7 @@ export class ErrorBoundary extends Component<{ children: ReactNode }, State> {
             </button>
           </div>
           {copied === 'ok' && <p className="text-lg text-good">{t('ui.error.copied')}</p>}
-          {copied === 'failed' && <textarea readOnly className="h-24 w-full border-2 border-ink font-mono text-xs" value={saveText()} />}
+          {copied === 'failed' && <textarea readOnly className="h-24 w-full border-2 border-edge font-mono text-xs" value={saveText()} />}
         </div>
       </div>
     )

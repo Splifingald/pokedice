@@ -135,7 +135,7 @@ export function Readout({
         <span
           className={cx(
             'font-pixel-sm text-[16px] leading-none',
-            eff === 'up' ? 'text-good' : eff === 'down' ? 'text-[#8a5a2f]' : 'text-muted',
+            eff === 'up' ? 'text-good' : eff === 'down' ? 'text-[#8a5a2f] dark:text-[#e8b080]' : 'text-muted',
           )}
         >
           {eff === 'up' ? t('ui.lead.strong') : eff === 'down' ? t('ui.lead.weak') : t('ui.battle.effNone')}
@@ -210,14 +210,14 @@ export function TeamPips({
             }
             className={cx(
               'grid min-h-[48px] w-[52px] justify-items-center gap-px bg-paper px-1 pb-[5px] pt-0.5 shadow-ring',
-              active && 'bg-[#fff4d6] shadow-[inset_0_0_0_2px_#24304f,inset_0_0_0_4px_#ffbe2e]',
+              active && 'bg-gold-pale shadow-card-gold',
               out && 'opacity-55 grayscale',
               !open && 'cursor-default',
               calling && open && !reduced && 'bt-call',
             )}
           >
             <MiniSprite dex={b.dex} size={32} className="-mb-1 -mt-0.5" />
-            <span className="relative h-1.5 w-10 bg-[#dde5f0] shadow-[inset_0_0_0_1px_#24304f]" aria-hidden>
+            <span className="relative h-1.5 w-10 bg-line shadow-ring-thin" aria-hidden>
               <i
                 className="absolute inset-y-px left-px block"
                 style={{
@@ -250,7 +250,7 @@ export function BagButton({
       disabled={disabled}
       title={title}
       onClick={onClick}
-      className="inline-flex min-h-[48px] items-center gap-1.5 bg-paper py-1 pl-2 pr-3 text-[18px] leading-none text-ink shadow-[inset_0_0_0_2px_#24304f,inset_0_-4px_0_#dfe7f2] disabled:opacity-50"
+      className="inline-flex min-h-[48px] items-center gap-1.5 bg-paper py-1 pl-2 pr-3 text-[18px] leading-none text-ink shadow-card disabled:opacity-50"
     >
       <PixelIcon name="potion" size={20} />
       {t('ui.battle.bag')}

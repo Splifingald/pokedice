@@ -47,7 +47,7 @@ function Stat({ label, value }: { label: string; value: string }) {
   return (
     <>
       <dt className="font-pixel-sm text-[15px] text-muted">{label}</dt>
-      <dd className="m-0 truncate border-b border-dotted border-[#b6c3d9] text-right text-[17px] leading-[1.1]">
+      <dd className="m-0 truncate border-b border-dotted border-shadow text-right text-[17px] leading-[1.1]">
         {value}
       </dd>
     </>
@@ -89,8 +89,8 @@ export function TrainerCard() {
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="grid gap-2 bg-[linear-gradient(#e8f1ff,#ffffff_60%)] px-2.5 pb-3 pt-2 shadow-[inset_0_0_0_2px_#24304f,inset_0_0_0_5px_#5b8def,inset_0_0_0_7px_#24304f,inset_0_-10px_0_#cfe0fb]">
-        <div className="flex justify-between px-1.5 pt-1 font-pixel-sm text-[14px] uppercase tracking-[0.06em] text-[#2f5fb8]">
+      <div className="grid gap-2 bg-[linear-gradient(rgb(var(--c-sky)),rgb(var(--c-paper))_60%)] px-2.5 pb-3 pt-2 shadow-[inset_0_0_0_2px_rgb(var(--c-edge)),inset_0_0_0_5px_#5b8def,inset_0_0_0_7px_rgb(var(--c-edge)),inset_0_-10px_0_rgb(var(--c-sky-line))]">
+        <div className="flex justify-between px-1.5 pt-1 font-pixel-sm text-[14px] uppercase tracking-[0.06em] text-[#2f5fb8] dark:text-[#8fb4ff]">
           <span>{t('ui.profile.title')}</span>
           <span>{t('ui.card.idNo', { n: idNumber(auth.userId ?? `${me.name}|${me.character}`) })}</span>
         </div>
@@ -136,7 +136,7 @@ export function TrainerCard() {
           </div>
         </div>
         <ul
-          className="m-0 flex list-none justify-center gap-1 border-t-2 border-[#cfe0fb] p-0 pt-1"
+          className="m-0 flex list-none justify-center gap-1 border-t-2 border-sky-line p-0 pt-1"
           aria-label={t('ui.team.title')}
         >
           {teamOf(save).map((p) => (
@@ -163,7 +163,7 @@ export function TrainerCard() {
               </div>
               <ul
                 aria-label={t('ui.map.badgesLabel', { earned: r.earned, total: r.badges.length })}
-                className="m-0 grid list-none grid-cols-[repeat(auto-fill,minmax(62px,1fr))] gap-x-1 gap-y-2 bg-[#2b3a63] px-2 py-2.5 shadow-[inset_0_0_0_2px_#24304f,inset_0_4px_0_#1b2647]"
+                className="m-0 grid list-none grid-cols-[repeat(auto-fill,minmax(62px,1fr))] gap-x-1 gap-y-2 bg-[#2b3a63] px-2 py-2.5 shadow-[inset_0_0_0_2px_rgb(var(--c-edge)),inset_0_4px_0_#1b2647]"
               >
                 {r.badges.map((b) => (
                   <li key={b.trainerId} className="grid justify-items-center gap-[3px] text-center">
@@ -214,7 +214,7 @@ export function TrainerCard() {
 
       <section className="flex flex-col gap-2">
         <h3 className="m-0 text-[24px] font-normal leading-none">{t('ui.profile.look')}</h3>
-        <div className="flex items-center gap-2.5 bg-paper py-1 pl-1 pr-2 shadow-[inset_0_0_0_2px_#b6c3d9]">
+        <div className="flex items-center gap-2.5 bg-paper py-1 pl-1 pr-2 shadow-ring-line">
           <span role="img" aria-label={lookName} className="shrink-0">
             <TrainerLook src={look.src} w={44} h={48} />
           </span>
@@ -258,9 +258,7 @@ export function TrainerCard() {
                         }
                         className={cx(
                           'grid min-h-[60px] place-items-center pt-1',
-                          on
-                            ? 'bg-[#fff4d6] shadow-[inset_0_0_0_2px_#24304f,inset_0_0_0_4px_#ffbe2e]'
-                            : 'bg-paper shadow-[inset_0_0_0_2px_#b6c3d9]',
+                          on ? 'bg-gold-pale shadow-card-gold' : 'bg-paper shadow-ring-line',
                         )}
                       >
                         <TrainerLook src={a.src} w={44} h={52} />

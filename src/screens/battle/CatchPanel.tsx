@@ -142,8 +142,8 @@ export function CatchPanel({
                 className={cx(
                   'relative grid min-h-[72px] content-start justify-items-center gap-0.5 px-0.5 pb-1.5 pt-1.5 text-ink',
                   on
-                    ? 'bg-[#fff4d6] shadow-[inset_0_0_0_2px_#24304f,inset_0_0_0_4px_#f07a2a]'
-                    : 'bg-paper shadow-[inset_0_0_0_2px_#24304f,inset_0_-4px_0_#dfe7f2]',
+                    ? 'bg-gold-pale shadow-[inset_0_0_0_2px_rgb(var(--c-edge)),inset_0_0_0_4px_#f07a2a]'
+                    : 'bg-paper shadow-card',
                   useless && !on && 'opacity-60',
                 )}
               >

@@ -589,6 +589,7 @@ export interface SaveData {
     multiExp: boolean
     autoMode?: boolean
     lang?: Lang
+    theme?: 'light' | 'dark' | 'auto'
   }
   /** The hpMultiplier current HP was last measured against (absent = ×1), so a change keeps every HP %. */
   hpScale?: number

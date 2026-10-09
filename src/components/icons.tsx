@@ -3,6 +3,8 @@ import type { CSSProperties } from 'react'
 import { ICON_PALETTE } from '@/theme/colors'
 
 const PAL = ICON_PALETTE
+const OUTLINE = '#24304f'
+const THEMED_OUTLINE = { fill: 'rgb(var(--c-edge, 36 48 79))' }
 
 /** The tab bar's 16×16 icons have their own tones: navy outline, three tones each, one idea each. */
 const NAV_PAL: Record<string, string> = {
@@ -435,7 +437,16 @@ export function PixelIcon({
       aria-label={title}
     >
       {rows.flatMap((row, y) =>
-        [...row].map((ch, x) => (ch === '.' ? null : <rect key={`${x}-${y}`} x={x} y={y} width={1} height={1} fill={color ?? pal[ch]} />)),
+        [...row].map((ch, x) => {
+          if (ch === '.') return null
+          const fill = color ?? pal[ch]
+          // The navy outline follows the theme (a slate one at dusk), or a dark-only shape would vanish there.
+          return !color && fill === OUTLINE ? (
+            <rect key={`${x}-${y}`} x={x} y={y} width={1} height={1} style={THEMED_OUTLINE} />
+          ) : (
+            <rect key={`${x}-${y}`} x={x} y={y} width={1} height={1} fill={fill} />
+          )
+        }),
       )}
     </svg>
   )
