@@ -18,7 +18,7 @@ test('side menu → contact the developer: the warning, then title and descripti
     },
     [JSON.stringify(save), FAST],
   )
-  await page.goto('/map')
+  await page.goto('/home')
 
   // The last row of the side menu, pinned under the others.
   await page.getByRole('button', { name: 'Your trainer menu' }).click()
@@ -71,7 +71,7 @@ test('a message that fails to send stays in the form with an error', async ({ pa
     },
     [JSON.stringify(makeSave(4, { player: { name: 'Sam', character: 'red' } })), FAST],
   )
-  await page.goto('/map')
+  await page.goto('/home')
   await page.getByRole('button', { name: 'Your trainer menu' }).click()
   await page.getByRole('button', { name: 'Contact the developer' }).click()
 
@@ -182,7 +182,7 @@ test('an unseen answer pops up on opening the game, and My messages keeps every 
     },
     [JSON.stringify(makeSave(4, { player: { name: 'Sam', character: 'red' } })), FAST],
   )
-  await page.goto('/map')
+  await page.goto('/home')
 
   const popup = page.getByRole('dialog', { name: 'The developer answered!' })
   await expect(popup).toBeVisible()

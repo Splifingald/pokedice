@@ -25,11 +25,13 @@ test('new game → first battle → win', async ({ page }) => {
   await page.getByRole('button', { name: 'NEXT ▸' }).click()
   await page.getByRole('button', { name: /Squirtle/ }).first().click()
   await page.getByRole('button', { name: 'YES!' }).click()
-  await expect(page).toHaveURL(/\/area$/)
+  // A new game lands on Home, the area hub: CONTINUE plays the area you're in.
+  await expect(page).toHaveURL(/\/home$/)
+  await expect(page.getByRole('heading', { name: /^Exploring / })).toBeAttached()
   // No badge yet: the leaderboard is locked.
   await page.goto('/leaderboard')
   await expect(page.getByText('Win your first badge to open the leaderboard')).toBeVisible()
-  await page.goto('/area')
+  await page.goto('/home')
 
   for (let i = 0; i < 400; i++) {
     if (await page.getByText('VICTORY!').isVisible()) break
@@ -105,8 +107,8 @@ test('sign-in flow (mocked Supabase)', async ({ page }) => {
   await page.getByRole('main').getByRole('button', { name: 'Disconnect' }).first().click()
   await page.getByRole('dialog').getByRole('button', { name: 'Disconnect' }).click()
   await expect(page.getByText(/local save is kept/)).toBeVisible()
-  await page.goto('/map')
-  await expect(page.getByRole('heading', { name: 'Kanto' })).toBeVisible()
+  await page.goto('/home')
+  await expect(page.getByRole('heading', { name: /^Exploring / })).toBeAttached()
 })
 
 test('the avatar drawer opens the profile, the guide and the settings', async ({ page }) => {
@@ -119,11 +121,11 @@ test('the avatar drawer opens the profile, the guide and the settings', async ({
     },
     [JSON.stringify(save), FAST],
   )
-  await page.goto('/map')
+  await page.goto('/home')
 
-  // Signed out: the circle in the header is the initial, not a Google picture.
+  // The header shows the trainer: their look, their name and their badges.
   const avatar = page.getByRole('button', { name: 'Your trainer menu' })
-  await expect(avatar).toHaveText('S')
+  await expect(avatar).toHaveText('Sam0/8')
 
   // The drawer is titled with the player's name, offers CONNECT, and hides Admin from a non-admin.
   await avatar.click()

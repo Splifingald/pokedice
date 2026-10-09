@@ -1,11 +1,12 @@
 import { motion } from 'framer-motion'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { getRegion, isAreaUnlocked, nationalDex, regionOf, regionOfArea, regionSpecies } from '@/engine'
 import { searchFold } from '@/i18n'
 import { useT } from '@/i18n/react'
 import { PixelIcon } from '@/components/icons'
 import { SheetModal, type SheetView } from '@/components/SheetModal'
 import { SpriteImg } from '@/components/SpriteImg'
+import { markDexSeen } from '@/lib/dexSeen'
 import { dexNo } from '@/lib/format'
 import { useGame } from '@/store/game'
 import { cx } from '@/theme/util'
@@ -27,7 +28,9 @@ export function PokedexScreen() {
   const [view, setView] = useState<SheetView | null>(null)
   const [filter, setFilter] = useState<Filter>('all')
   const [q, setQ] = useState('')
-
+  // Looking at the Pokédex clears the tab bar's NEW.
+  const count = save?.pokedex.length ?? 0
+  useEffect(() => markDexSeen(), [count])
 
   const owned = useMemo(() => {
     const m = new Map<number, number>()

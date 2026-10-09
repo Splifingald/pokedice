@@ -45,7 +45,7 @@ async function signedIn(page: Page, save: object, settings = FAST) {
 test('Versus is in the trainer menu, locked until three Pokémon reach Lv.50', async ({ page }) => {
   await mockSupabase(page)
   await signedIn(page, makeSave(4, { player: { name: 'Sam', character: 'red' } }))
-  await page.goto('/map')
+  await page.goto('/home')
   await page.getByRole('button', { name: 'Your trainer menu' }).click()
   const row = page.getByRole('dialog').getByRole('button', { name: /Versus/ })
   await expect(row).toContainText('0/3 at Lv.50')

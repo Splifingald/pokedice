@@ -33,7 +33,7 @@ export function NewGame() {
     startNewGame(dex, player ?? undefined)
     const first = data.areas[0]
     if (first) enterArea(first.id)
-    navigate('/area')
+    navigate('/home')
   }
 
   return (

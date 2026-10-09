@@ -179,7 +179,7 @@ export default function AdminApp() {
             {mode === 'remote' ? 'LIVE · Supabase' : 'OFFLINE · this session only'}
           </span>
           <span className="flex-1" />
-          <Link to="/map" className="underline">
+          <Link to="/home" className="underline">
             Back to game
           </Link>
         </div>

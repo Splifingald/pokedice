@@ -1,45 +1,30 @@
-import { useEffect, useState } from 'react'
-import { Navigate, useNavigate } from 'react-router-dom'
+import { useEffect } from 'react'
+import { Navigate } from 'react-router-dom'
 import {
   deckSize,
-  dueBoss,
-  dueGym,
   asSeenBy,
   gymsFor,
   playerSideOf,
-  instanceMaxHp,
-  isAreaClosed,
-  isAreaUnlocked,
   progressOf,
   scaledLevelSpan,
   teamAverageLevel,
-  teamOf,
   type Area,
   type AreaProgress,
   type DeckCard,
-  type PokemonInstance,
 } from '@/engine'
 import { AreaTypes } from '@/components/AreaTypes'
 import { BadgeIcon } from '@/components/BadgeIcon'
-import { HpBar } from '@/components/HpBar'
 import { PixelIcon, type IconName } from '@/components/icons'
-import { ItemPanel } from '@/components/ItemPanel'
-import { PixelButton } from '@/components/PixelButton'
-import { SheetModal, type SheetView } from '@/components/SheetModal'
-import { MiniSprite, preloadSprites } from '@/components/SpriteImg'
-import { countdown, trainerTitle } from '@/lib/format'
+import { preloadSprites } from '@/components/SpriteImg'
 import { joinList, t } from '@/i18n'
 import { useT } from '@/i18n/react'
-import { OakTip, useOneTimeTip } from '@/components/OakTip'
-import { setSettings, useGame } from '@/store/game'
-import { challenge, enterArea, leaveArea, outOfEnergy, rollNext } from '@/store/run'
-import { useEnergy } from '@/store/hooks'
+import { useGame } from '@/store/game'
 import { cx } from '@/theme/util'
 import { BattleView } from './battle/BattleView'
 import { CasinoView } from './area/CasinoView'
 import { CenterView } from './area/CenterView'
 import { EncounterPreview } from './area/EncounterPreview'
-import { AreaBanner } from '@/components/AreaBanner'
+import { stripOf } from './home/scene'
 
 const CARD_ICON: Record<DeckCard, IconName> = {
   wild: 'ball',
@@ -58,7 +43,7 @@ const cardName = (card: DeckCard) => t(`ui.card.${card}`)
  * round (wipe) or a finished one leaves the next round waiting, empty. Hidden with game_config.showRoundGauge, or when
  * encounters aren't dealt from a deck.
  */
-function RoundGauge({ area, progress }: { area: Area; progress: AreaProgress }) {
+export function RoundGauge({ area, progress }: { area: Area; progress: AreaProgress }) {
   const { t } = useT()
   const data = useGame((s) => s.data)
   const save = useGame((s) => s.save)
@@ -169,10 +154,8 @@ function AreaHeader({ area, progress, teamAvg }: { area: Area; progress: AreaPro
     <section className="pixel-panel overflow-hidden p-0" aria-labelledby="area-title">
       {/* The encounter types sit on the banner's top right corner. */}
       <div className="relative">
-        {area.bannerUrl && (
-          <AreaBanner url={area.bannerUrl} className="h-14 sm:h-24" />
-        )}
-        <AreaTypes area={area} className={area.bannerUrl ? 'absolute left-2 right-2 top-2' : 'px-3 pt-2'} />
+        <img src={stripOf(area.bannerUrl, 40)} alt="" className="pixelated block h-auto w-full" />
+        <AreaTypes area={area} className="absolute left-2 right-2 top-2" />
       </div>
       <div className="flex flex-col gap-1.5 px-3 pb-3 pt-2">
         <div className="flex items-baseline justify-between gap-3">
@@ -209,110 +192,15 @@ function AreaHeader({ area, progress, teamAvg }: { area: Area; progress: AreaPro
   )
 }
 
-// Professor Oak explains auto-mode the first time a cleared area offers it (per device).
-const AUTO_TIP_KEY = 'pokedice.tip.auto'
-
-/** Cleared areas only: fights play themselves on both sides while it's on. Off by default; the choice is saved. */
-function AutoModeToggle() {
-  const { t } = useT()
-  const on = useGame((s) => !!s.settings.autoMode)
-  const [tip, closeTip] = useOneTimeTip(AUTO_TIP_KEY)
-  return (
-    <>
-      {tip && (
-        <OakTip onClose={closeTip}>{t('ui.area.autoTip')}</OakTip>
-      )}
-      <PixelButton
-        size="sm"
-        variant={on ? 'success' : 'ghost'}
-        aria-pressed={on}
-        onClick={() => setSettings({ autoMode: !on })}
-      >
-        <PixelIcon name="dice" size={16} />
-        {t('ui.area.autoMode', { state: t(on ? 'ui.common.on' : 'ui.common.off') })}
-      </PixelButton>
-    </>
-  )
-}
-
-/** The team at a glance between fights: HP for each, tap to open the sheet (and heal). */
-function TeamStrip({ onOpen }: { onOpen: (p: PokemonInstance) => void }) {
-  const { t } = useT()
-  const save = useGame((s) => s.save)
-  const data = useGame((s) => s.data)
-  if (!save) return null
-  return (
-    <section aria-labelledby="team-strip" className="flex flex-col gap-1.5">
-      <div className="flex items-baseline justify-between gap-2">
-        <h2 id="team-strip" className="text-2xl">
-          {t('ui.area.yourTeam')}
-        </h2>
-        <span className="text-base text-muted">{t('ui.area.tapToHeal')}</span>
-      </div>
-      <ul className="grid grid-cols-3 gap-2">
-        {teamOf(save).map((p) => {
-          const fainted = p.currentHp <= 0
-          return (
-            <li key={p.id} className="min-w-0">
-              <button
-                type="button"
-                onClick={() => onOpen(p)}
-                className={cx('pixel-panel flex w-full flex-col items-center gap-1 p-1.5 hover:bg-white', fainted && 'hatched')}
-              >
-                {/* Sprite (nudged up — party icons sit low in their box) and name, level on the right; the level
-                    only wraps under them when a narrow card has no room for it. */}
-                <span className="flex w-full min-w-0 flex-wrap items-center gap-x-1 gap-y-0.5">
-                  <span className="flex min-w-0 items-center gap-0.5">
-                    <MiniSprite dex={p.dex} size={36} className={cx('relative -top-[3px] -my-2', fainted && 'grayscale')} />
-                    <span className="min-w-0 truncate text-left text-lg leading-none">{data.species[p.dex]?.name}</span>
-                  </span>
-                  <span className="ml-auto shrink-0 pr-0.5 text-base leading-none">{t('ui.common.level.short', { n: p.level })}</span>
-                </span>
-                <HpBar hp={p.currentHp} max={instanceMaxHp(p, data)} height={6} className="w-full" collapsible />
-              </button>
-            </li>
-          )
-        })}
-      </ul>
-    </section>
-  )
-}
-
-/** NEXT ENCOUNTER (EXPLORE on arrival): costs 1 energy; out of energy, it waits with a countdown. */
-function NextEncounterButton({ secondary }: { secondary: boolean }) {
-  const { t } = useT()
-  const run = useGame((s) => s.run)
-  const energy = useEnergy()
-  // Re-checked every second (useEnergy ticks): a Center the game sends next is free even at 0.
-  const empty = !!energy && energy.value < 1 && outOfEnergy()
-  return (
-    <div className="flex flex-col items-center gap-1">
-      <PixelButton variant={secondary ? 'secondary' : 'primary'} size="lg" onClick={rollNext} disabled={run.phase !== 'idle' || empty}>
-        {t(run.firstInArea ? 'ui.area.explore' : 'ui.area.nextEncounter')}
-      </PixelButton>
-      {empty && energy.nextAt != null && (
-        <p className="text-lg leading-tight text-danger" role="status">
-          {t('ui.area.outOfEnergy', { time: countdown(energy.nextAt - energy.now) })}
-        </p>
-      )}
-    </div>
-  )
-}
-
+/**
+ * The encounter route: the preview of what CONTINUE rolled on Home, the Pokémon Center, the Game Corner and the battle.
+ * Between encounters there is nothing to do here: Home is the area hub, so an idle run goes back there.
+ */
 export function AreaScreen() {
-  const { t } = useT()
   const save = useGame((s) => s.save)
   const data = useGame((s) => s.data)
   const run = useGame((s) => s.run)
   const battle = useGame((s) => s.battle)
-  const navigate = useNavigate()
-  const [view, setView] = useState<SheetView | null>(null)
-
-  // Arriving without an active run (reload, HUD link): resume the save's current area.
-  useEffect(() => {
-    if (!run.areaId && save && isAreaUnlocked(save, save.currentAreaId, data) && !isAreaClosed(save, save.currentAreaId, data))
-      enterArea(save.currentAreaId)
-  }, [run.areaId, save, data])
 
   const area = data.areas.find((a) => a.id === (run.areaId ?? save?.currentAreaId))
   useEffect(() => {
@@ -320,79 +208,16 @@ export function AreaScreen() {
   }, [area])
 
   if (!save) return <Navigate to="/" replace />
-  if (!area) return <Navigate to="/map" replace />
-  // A closed area can't be resumed; one that closed while the player was in it shows them the way out.
-  const closed = isAreaClosed(save, area.id, data)
-  if (closed && !run.areaId) return <Navigate to="/map" replace />
   if (battle) return <BattleView key={battle.id} battle={battle} />
+  if (!area || !run.areaId || run.phase === 'idle') return <Navigate to="/home" replace />
 
   const progress = progressOf(save, area.id)
-  const teamAvg = teamAverageLevel(save)
-  const side = playerSideOf(save)
-  const gym = dueGym(area, progress, data, side)
-  const boss = dueBoss(area, progress, teamAvg)
-  // The gym battle waiting once every round is done (before they are).
-  const nextGymId = !gym ? gymsFor(area, data, side).find((id) => !progress.gymsDefeated.includes(id) && data.trainers[id]) : undefined
-  const nextGym = nextGymId ? asSeenBy(data.trainers[nextGymId]!, side) : undefined
-  const between = run.phase === 'idle' || run.phase === 'preview'
-
   return (
     <div className="flex flex-col gap-4">
-      <AreaHeader area={area} progress={progress} teamAvg={teamAvg} />
-
-      {between && (
-        <div className="pixel-panel flex flex-col items-center gap-3 p-5 text-center">
-          <p className="text-2xl">
-            {gym
-              ? t('ui.area.gymReady', { trainer: trainerTitle(gym) })
-              : boss
-                ? t('ui.area.bossWaiting')
-                : closed
-                  ? t('ui.area.nothingLeft')
-                  : t(run.firstInArea ? 'ui.area.quiet' : 'ui.area.whereNext')}
-          </p>
-          <div className="flex flex-wrap justify-center gap-2">
-            {/* Finishing the rounds never forces the fight: challenge now, or keep exploring (the rounds stay done). */}
-            {(gym || boss) && (
-              <PixelButton variant="primary" size="lg" onClick={challenge} disabled={run.phase !== 'idle'}>
-                <PixelIcon name="sword" size={22} />
-                {gym ? t('ui.area.challenge', { name: gym.name.toUpperCase() }) : t('ui.area.faceIt')}
-              </PixelButton>
-            )}
-            {!closed && <NextEncounterButton secondary={!!(gym || boss)} />}
-          </div>
-          <PixelButton
-            size="sm"
-            variant="ghost"
-            className="self-center"
-            disabled={run.phase !== 'idle'}
-            onClick={() => {
-              leaveArea()
-              navigate('/map')
-            }}
-          >
-            <PixelIcon name="map" size={16} />
-            {t('ui.area.backToMap')}
-          </PixelButton>
-          {progress.cleared && <AutoModeToggle />}
-          {(gym || boss) && <p className="text-lg leading-tight text-muted">{t('ui.area.keepExploring')}</p>}
-          {nextGym && (
-            <p className="text-lg leading-tight">
-              {t('ui.area.gymAfterRounds', {
-                trainer: trainerTitle(nextGym),
-                need: area.roundsToClear ?? '∞',
-                done: progress.roundsDone ?? 0,
-              })}
-            </p>
-          )}
-        </div>
-      )}
-      {between && <TeamStrip onOpen={(p) => setView({ kind: 'inst', id: p.id })} />}
+      <AreaHeader area={area} progress={progress} teamAvg={teamAverageLevel(save)} />
       {run.phase === 'preview' && run.encounter && <EncounterPreview enc={run.encounter} />}
       {run.phase === 'center' && <CenterView />}
       {run.phase === 'casino' && <CasinoView />}
-
-      <SheetModal view={view} onClose={() => setView(null)} instExtra={(p) => <ItemPanel inst={p} />} />
     </div>
   )
 }

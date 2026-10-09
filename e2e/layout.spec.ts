@@ -74,7 +74,7 @@ function nonJerseyText(page: Page) {
   )
 }
 
-const ROUTES = ['/map', '/area', '/team', '/shop', '/upgrades', '/pokedex', '/leaderboard', '/settings']
+const ROUTES = ['/home', '/team', '/shop', '/upgrades', '/pokedex', '/leaderboard', '/settings']
 const SIZES = [
   { width: 360, height: 640, phone: true },
   { width: 375, height: 812, phone: true },
@@ -151,7 +151,7 @@ test('the avatar drawer and the profile hold up at every size', async ({ page })
   for (const size of SIZES) {
     await page.setViewportSize(size)
     await boot(page)
-    await page.goto('/map')
+    await page.goto('/home')
     await page.getByRole('button', { name: 'Your trainer menu' }).click()
     await expect(page.getByRole('dialog')).toBeVisible()
     await settled(page)
@@ -188,7 +188,8 @@ test('the title, help, setup and admin pages use only the Jersey fonts', async (
 test('a battle fits a 360×640 phone', async ({ page }) => {
   await page.setViewportSize({ width: 360, height: 640 })
   await boot(page)
-  await page.goto('/area')
+  // Home's CONTINUE starts the area; the encounter plays on /area.
+  await page.goto('/home')
   const attack = page.getByRole('button', { name: 'ATTACK', exact: true })
   for (let i = 0; i < 60 && !(await attack.isVisible().catch(() => false)); i++) {
     // Random fights: the lead may faint before the controls show — send in the next one.

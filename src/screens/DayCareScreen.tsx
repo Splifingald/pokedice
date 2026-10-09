@@ -276,7 +276,7 @@ export function DayCareScreen() {
     if (open) visitDayCare()
   }, [open])
   if (!save) return <Navigate to="/" replace />
-  if (!isDayCareOpen(save, data)) return <Navigate to="/map" replace />
+  if (!isDayCareOpen(save, data)) return <Navigate to="/home" replace />
   const cfg = data.config.dayCare
   const dc = dayCareOf(save)
   const free = !dc.eggClaimed
@@ -326,7 +326,7 @@ export function DayCareScreen() {
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-end justify-between gap-2">
         <h1 className="text-5xl leading-none">{t('ui.dayCare.title')}</h1>
-        <PixelButton size="sm" onClick={() => navigate('/map')}>
+        <PixelButton size="sm" onClick={() => navigate('/home')}>
           {t('ui.dayCare.map')}
         </PixelButton>
       </div>

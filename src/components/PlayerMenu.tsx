@@ -1,6 +1,6 @@
 import { lazy, Suspense, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { discordUrl, versusReadyCount, versusUnlocked, VERSUS_TEAM_SIZE } from '@/engine'
+import { badgeCase, discordUrl, versusReadyCount, versusUnlocked, VERSUS_TEAM_SIZE } from '@/engine'
 import { useT } from '@/i18n/react'
 import { isSupabaseConfigured } from '@/lib/supabase'
 import { useGame } from '@/store/game'
@@ -12,7 +12,8 @@ import { ContactModal } from './ContactModal'
 import { GoogleMark } from './GoogleAccountButton'
 import { PixelIcon, type IconName } from './icons'
 import { Modal } from './Modal'
-import { PlayerAvatar } from './PlayerAvatar'
+import { TrainerLook } from './TrainerLook'
+import { avatarOf, playerAvatarId } from '@/lib/avatars'
 import { PlayerProfileModal } from './PlayerProfileModal'
 import { SidePanel } from './SidePanel'
 import { playerOf } from './TrainerArt'
@@ -79,6 +80,8 @@ export function PlayerMenu() {
   const [contact, setContact] = useState(false)
 
   const name = playerOf(save).name
+  const badges = save ? badgeCase(save, data) : []
+  const earned = badges.filter((b) => b.earned).length
   // Versus shows from the start, with how far the player is from opening it (3 Pokémon at Lv.50).
   const versusOpen = !!save && versusUnlocked(save, data)
   const versusReady = save ? Math.min(versusReadyCount(save, data), VERSUS_TEAM_SIZE) : 0
@@ -100,12 +103,18 @@ export function PlayerMenu() {
         aria-expanded={open}
         aria-label={t('ui.profile.menuLabel')}
         title={t(inFight ? 'ui.nav.finishFight' : 'ui.profile.menuLabel')}
-        className={cx(
-          'flex h-11 w-11 shrink-0 items-center justify-center md:h-9 md:w-9',
-          inFight && 'hatched pointer-events-none',
-        )}
+        className={cx('flex min-h-[44px] min-w-0 items-center gap-2 text-left', inFight && 'pointer-events-none opacity-60')}
       >
-        <PlayerAvatar size={34} />
+        <span className="grid h-[38px] w-[38px] shrink-0 place-items-center overflow-hidden rounded-full bg-[#7fb4ff] shadow-[inset_0_0_0_2px_#24304f,inset_0_-4px_0_#4f86d8]">
+          <TrainerLook src={avatarOf(playerAvatarId(save?.player)).src} w={30} h={30} />
+        </span>
+        <span className="grid min-w-0 leading-none">
+          <b className="truncate text-[20px] font-normal">{name || t('ui.profile.title')}</b>
+          <small className="flex items-center gap-[3px] font-pixel-sm text-[15px] text-muted">
+            <PixelIcon name="badge" size={8} />
+            {earned}/{badges.length}
+          </small>
+        </span>
       </button>
 
       <SidePanel

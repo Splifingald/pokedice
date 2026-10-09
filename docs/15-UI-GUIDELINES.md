@@ -123,6 +123,8 @@ Dialog behaviour (`src/lib/useDialog.ts`, used by `Modal`, `Sheet`, `SidePanel`)
 - **One primary (red) action per screen**, in thumb reach on phones. Gold appears at most once, for something new.
 - Lists of things you can open are buttons (whole card), with a keyboard path to every action inside them.
 - Full-screen moments (the battle, a hatching) hide the tab bar and the top bar.
+- From 768 px the side nav takes ~210 px, so the content is only ~550 px wide: **side-by-side columns start at
+  1024 px** (`lg:`), not at `md:`.
 
 ## 7. Accessibility
 
@@ -182,3 +184,25 @@ Players shouldn't have to make many requests:
   are preloaded.
 - Fonts are subset by unicode range; only Jersey 20 (latin) is preloaded.
 - Before adding an image file, ask whether code can draw it, or whether it belongs in an atlas.
+
+## 12. Navigation, Home and stages
+
+- **Top bar** (`Header` in `src/components/Hud.tsx`): you (trainer look, name, badges → the trainer menu), energy, gold
+  as a navy pill whose red "+" opens the Poké Mart, and the cup (→ the leaderboard; greyed until the first badge, and a
+  tap says what opens it). Everything in it is disabled mid-fight and says why.
+- **Tab bar** (phones): Poké Mart, Upgrades, **Home** (a raised Poké Ball in the middle, under the thumb), Team,
+  Pokédex. The side nav (desktop) has the same entries with Home first. A tab's hit area is the whole column, at
+  least 60 px tall, even where the drawing is smaller.
+- **Dots only for something you can act on**: the number of upgrades you can afford (9+ at most), a gold NEW for
+  Pokédex entries you haven't looked at. The dot is in the link's accessible name, never colour alone.
+- **Home is the area hub** (`/home`; `/map` redirects there): the area's scene with your team roaming in it, the area
+  plate (name, levels, rounds, caught → the area's details), AREAS (the area list, its search also finds Pokémon,
+  filters and the Regions view in the same sheet) and one big CONTINUE whose second line says what comes next
+  (round n of m, the gym leader, the legend, a new region). The encounter itself plays on `/area`; an idle `/area`
+  goes back Home, and Home stays lit in the menus while it plays.
+- Home's widgets show what's next (the next secret, the Day Care, Versus, events) and are buttons when they lead
+  somewhere; a locked one says what opens it and how far you are.
+- **Stages** (a canvas scene: Home, the battle, a hatching) are a background canvas, the Pokémon as DOM `<img>`s
+  (Showdown's animated sprites, no extra request) and an effects canvas on top. A stage root is its own stacking
+  context (`isolate`), so its internal z-indexes never rise above sheets and dialogs. The canvas has `role="img"` and a
+  label; whatever you can tap on it (a Pokémon) also exists as a button in a hidden list.

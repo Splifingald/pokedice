@@ -31,11 +31,10 @@ export function EnergyPill() {
         title={next ? t('ui.energy.nextTitle', { time: next }) : t('ui.energy.fullTitle')}
       >
         <span
-          className={cx('inline-flex items-center gap-1 border-2 border-ink bg-ink px-2 py-0.5', value > 0 ? 'text-gold' : 'text-danger-light')}
-          style={{ borderRadius: 2 }}
+          className={cx('pixel-corners inline-flex min-h-[36px] items-center gap-1 bg-ink px-2 text-[19px] leading-none', value > 0 ? 'text-gold-light' : 'text-danger-light')}
         >
           <PixelIcon name="energy" size={14} />
-          <span className="font-mono text-sm tabular-nums leading-none">
+          <span className="tabular-nums">
             {value}/{max}
           </span>
         </span>

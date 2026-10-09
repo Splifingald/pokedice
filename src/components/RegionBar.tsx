@@ -15,7 +15,8 @@ import { useGame } from '@/store/game'
 import { cx } from '@/theme/util'
 import { TrainerSprite } from '@/components/TrainerArt'
 
-export function RegionBar() {
+/** `modalOnly`: just the offer's pop-up (Home shows the regions in its Areas sheet). */
+export function RegionBar({ modalOnly = false }: { modalOnly?: boolean }) {
   const { t } = useT()
   const save = useGame((s) => s.save)!
   // Prof. Oak's one-time pop-ups queue rather than stack, and they go first: the offer waits its turn behind them,
@@ -39,7 +40,7 @@ export function RegionBar() {
 
   return (
     <>
-      {regions.length > 1 && (
+      {!modalOnly && regions.length > 1 && (
         <nav aria-label={t('ui.region.label')} className="flex flex-wrap items-center gap-2">
           <span className="text-lg text-muted">{t('ui.region.label')}</span>
           {regions.map((r) => (
@@ -59,7 +60,7 @@ export function RegionBar() {
         </nav>
       )}
 
-      {offer && (
+      {!modalOnly && offer && (
         <motion.div
           className="pixel-panel flex flex-wrap items-center gap-3 border-gold p-3"
           initial={{ y: -8, opacity: 0 }}

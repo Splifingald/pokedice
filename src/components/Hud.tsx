@@ -1,12 +1,16 @@
+import type { ReactNode } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useT } from '@/i18n/react'
+import { getLang } from '@/i18n'
 import { leaderboardUnlocked } from '@/engine'
+import { useDexNew } from '@/lib/dexSeen'
+import { affordableUpgrades } from '@/lib/upgrades'
 import { pushToast, useGame } from '@/store/game'
 import { useInFight } from '@/store/hooks'
 import { CloudSyncButton } from './CloudSyncButton'
 import { PlayerMenu } from './PlayerMenu'
 import { cx } from '@/theme/util'
-import { GoldPill } from './GoldPill'
+import { useCountUp } from './GoldPill'
 import { EnergyPill } from './EnergyPill'
 import { PixelIcon, type IconName } from './icons'
 
@@ -17,124 +21,195 @@ interface NavItem {
   icon: IconName
 }
 
-const MAP: NavItem = { to: '/map', label: 'ui.nav.map', icon: 'map' }
-const TEAM: NavItem = { to: '/team', label: 'ui.nav.team', icon: 'ball' }
-const SHOP: NavItem = { to: '/shop', label: 'ui.nav.shop', icon: 'potion' }
-const UPGRADES: NavItem = { to: '/upgrades', label: 'ui.nav.upgrades', icon: 'up' }
-const DEX: NavItem = { to: '/pokedex', label: 'ui.nav.pokedex', icon: 'dex' }
+const HOME: NavItem = { to: '/home', label: 'ui.nav.home', icon: 'ball' }
+const TEAM: NavItem = { to: '/team', label: 'ui.nav.team', icon: 'navTeam' }
+const SHOP: NavItem = { to: '/shop', label: 'ui.nav.shop', icon: 'navShop' }
+const UPGRADES: NavItem = { to: '/upgrades', label: 'ui.nav.upgrades', icon: 'navUpgrades' }
+const DEX: NavItem = { to: '/pokedex', label: 'ui.nav.pokedex', icon: 'navDex' }
 
-/** Side bar (desktop): the map first. */
-const SIDE_NAV = [MAP, TEAM, SHOP, UPGRADES, DEX]
-/** Bottom bar (phones): the map in the middle, under the thumb. */
-const BOTTOM_NAV = [SHOP, UPGRADES, MAP, TEAM, DEX]
+/** Side bar (desktop): Home first. */
+const SIDE_NAV = [HOME, TEAM, SHOP, UPGRADES, DEX]
+/** Bottom bar (phones): Home in the middle, under the thumb. */
+const BOTTOM_NAV = [SHOP, UPGRADES, HOME, TEAM, DEX]
 
-/** While exploring, "Map" leads back to the area (the area's MAP button goes to the map itself). */
-function useNavEntry(n: NavItem) {
-  const runArea = useGame((s) => (s.run.areaId ? (s.data.areas.find((a) => a.id === s.run.areaId)?.name ?? null) : null))
-  const { pathname } = useLocation()
-  const isMap = n.to === '/map'
-  return {
-    to: isMap && runArea ? '/area' : n.to,
-    active: isMap ? pathname === '/map' || pathname === '/area' : pathname === n.to,
-    exploring: isMap ? runArea : null,
-  }
+/** Home stays lit while an encounter plays on /area: it is where you are. */
+const isActive = (n: NavItem, pathname: string) => (n === HOME ? pathname === '/home' || pathname === '/area' : pathname === n.to)
+
+/** Dots only for what you can act on: affordable upgrades (9+ at most), a gold NEW for new Pokédex entries. */
+function useNavDot(n: NavItem): { text: string; label: string; gold?: boolean } | null {
+  const { t } = useT()
+  const upgrades = useGame((s) => (n === UPGRADES && s.save ? affordableUpgrades(s.save, s.data) : 0))
+  const dexNew = useDexNew()
+  if (n === UPGRADES && upgrades > 0) return { text: upgrades > 9 ? '9+' : String(upgrades), label: t('ui.nav.upgradesDot', { n: upgrades }) }
+  if (n === DEX && dexNew > 0) return { text: t('ui.common.new'), label: t('ui.nav.dexDot', { n: dexNew }), gold: true }
+  return null
+}
+
+function Dot({ dot, className }: { dot: { text: string; gold?: boolean }; className?: string }) {
+  return (
+    <i
+      aria-hidden
+      className={cx(
+        'grid h-[18px] min-w-[18px] place-items-center px-1 font-pixel-sm text-[13px] not-italic leading-none shadow-ring',
+        dot.gold ? 'bg-gold text-ink' : 'bg-accent text-white',
+        className,
+      )}
+    >
+      {dot.text}
+    </i>
+  )
 }
 
 function NavEntry({ n, variant }: { n: NavItem; variant: 'side' | 'bottom' }) {
   const { t } = useT()
   const inFight = useInFight()
-  const { to, active, exploring } = useNavEntry(n)
+  const { pathname } = useLocation()
+  const active = isActive(n, pathname)
+  const dot = useNavDot(n)
+  const label = t(n.label)
+  const common = {
+    to: inFight ? '#' : n.to,
+    'aria-current': active ? ('page' as const) : undefined,
+    'aria-disabled': inFight || undefined,
+    'aria-label': dot ? `${label} · ${dot.label}` : label,
+    onClick: (e: React.MouseEvent) => inFight && e.preventDefault(),
+    title: inFight ? t('ui.nav.finishFight') : undefined,
+  }
+  if (variant === 'side')
+    return (
+      <Link
+        {...common}
+        className={cx(
+          'pixel-btn relative flex min-h-[48px] items-center gap-3 px-3 py-2 text-[22px] leading-none',
+          active && !inFight && 'bg-[#fff2ef] text-danger',
+          inFight && 'hatched pointer-events-none',
+        )}
+      >
+        <PixelIcon name={n.icon} size={n === HOME ? 22 : 28} />
+        <span>{label}</span>
+        {dot && <Dot dot={dot} className="ml-auto" />}
+      </Link>
+    )
+  if (n === HOME)
+    return (
+      <Link {...common} className={cx('relative flex min-h-[60px] flex-1 flex-col items-center justify-start', inFight && 'pointer-events-none opacity-60')}>
+        {/* Home: a raised Poké Ball in the middle of the bar. */}
+        <span
+          className={cx(
+            '-mt-[26px] grid h-[62px] w-[62px] place-items-center rounded-full shadow-[inset_0_0_0_3px_#24304f,inset_0_-6px_0_#c4382a,0_0_0_4px_#fbfdff]',
+            active ? 'bg-accent' : 'bg-danger',
+          )}
+        >
+          <PixelIcon name="ball" size={36} />
+        </span>
+      </Link>
+    )
   return (
     <Link
-      to={inFight ? '#' : to}
-      aria-current={active ? 'page' : undefined}
-      aria-disabled={inFight || undefined}
-      onClick={(e) => inFight && e.preventDefault()}
-      title={inFight ? t('ui.nav.finishFight') : undefined}
+      {...common}
       className={cx(
-        variant === 'side'
-          ? 'pixel-btn flex min-h-[44px] items-center gap-3 px-3 py-2 text-2xl leading-none'
-          : 'relative flex flex-1 flex-col items-center justify-center gap-1',
-        active && !inFight ? 'bg-gold' : variant === 'side' ? 'bg-panel' : '',
-        variant === 'bottom' && active && 'shadow-[inset_0_3px_0_#f2553f]',
-        inFight && 'hatched pointer-events-none',
+        'relative flex min-h-[60px] flex-1 flex-col items-center justify-end gap-0.5 pb-2 pt-1.5 font-pixel-sm text-[15px] leading-none',
+        active && !inFight ? 'bg-[#fff2ef] text-danger shadow-[inset_0_3px_0_#f2553f]' : 'text-muted',
+        inFight && 'pointer-events-none opacity-60',
       )}
     >
-      <PixelIcon name={n.icon} size={variant === 'side' ? 20 : 22} />
-      {variant === 'side' ? (
-        <span className="flex min-w-0 flex-col gap-0.5">
-          <span>{t(n.label)}</span>
-          {exploring && (
-            // Ink on the gold highlight: the muted grey fails contrast there.
-            <span className={cx('truncate font-pixel-sm text-sm leading-none', active && !inFight ? 'text-ink' : 'text-muted')}>{exploring}</span>
-          )}
-        </span>
-      ) : (
-        <span className="font-pixel-sm text-base leading-none">{t(n.label)}</span>
-      )}
-      {variant === 'bottom' && exploring && (
-        <span className="absolute right-[26%] top-1.5 h-2.5 w-2.5 border-2 border-ink bg-danger" aria-hidden style={{ borderRadius: 2 }} />
-      )}
-      {exploring && <span className="sr-only">{t('ui.nav.exploring', { area: exploring })}</span>}
+      <PixelIcon name={n.icon} size={32} />
+      <span>{label}</span>
+      {dot && <Dot dot={dot} className="absolute left-[calc(50%+6px)] top-1" />}
     </Link>
   )
 }
 
-/** Top bar: logo, energy, Pokédollars, the leaderboard and the player's avatar (profile, settings, rules, admin, connect). The game menus live in the side / bottom bar. */
+/** The gold, as a navy pill; its red "+" opens the Poké Mart. */
+function GoldButton() {
+  const { t } = useT()
+  const gold = useGame((s) => s.save?.gold ?? 0)
+  const inFight = useInFight()
+  const shown = useCountUp(gold)
+  const text = shown.toLocaleString(getLang())
+  return (
+    <Link
+      to={inFight ? '#' : '/shop'}
+      onClick={(e) => inFight && e.preventDefault()}
+      aria-disabled={inFight || undefined}
+      aria-label={t('ui.nav.goldShop', { amount: gold.toLocaleString(getLang()) })}
+      className={cx(
+        'pixel-corners inline-flex min-h-[44px] shrink-0 items-center gap-1.5 bg-ink pl-2.5 pr-1 text-[19px] leading-none text-gold-light md:min-h-[40px]',
+        inFight && 'pointer-events-none opacity-60',
+      )}
+    >
+      <PixelIcon name="coin" size={16} />
+      <span className="tabular-nums">₽ {text}</span>
+      <i className="grid h-[26px] w-[26px] place-items-center bg-danger text-[22px] not-italic leading-none text-white" aria-hidden>
+        +
+      </i>
+    </Link>
+  )
+}
+
+function RoundLink({ to, label, children, blocked, current, onBlocked }: { to: string; label: string; children: ReactNode; blocked: boolean; current: boolean; onBlocked: () => void }) {
+  return (
+    <Link
+      to={blocked ? '#' : to}
+      aria-label={label}
+      aria-current={current ? 'page' : undefined}
+      aria-disabled={blocked || undefined}
+      onClick={(e) => {
+        if (!blocked) return
+        e.preventDefault()
+        onBlocked()
+      }}
+      title={label}
+      className={cx(
+        'grid h-11 w-11 shrink-0 place-items-center rounded-full bg-panel shadow-[inset_0_0_0_2px_#24304f,inset_0_-4px_0_#dfe7f2]',
+        current && 'bg-gold-pale',
+        blocked && 'opacity-60 grayscale',
+      )}
+    >
+      {children}
+    </Link>
+  )
+}
+
+/**
+ * Top bar: you (your look, name and badges: the trainer menu), energy, your gold (→ Poké Mart) and the cup (→ the
+ * leaderboard, locked until the first badge). Menus mid-fight are disabled.
+ */
 export function Header() {
   const { t } = useT()
   const save = useGame((s) => s.save)
-  const runArea = useGame((s) => s.run.areaId)
   const inFight = useInFight()
   const { pathname } = useLocation()
   const boardOpen = useGame((s) => !!s.save && leaderboardUnlocked(s.save, s.data))
   if (!save) return null
-  const onBoard = pathname === '/leaderboard'
-  // Before the first badge the trophy is hatched; a tap says what opens it.
+  // Before the first badge the cup is greyed; a tap says what opens it.
   const blocked = inFight || !boardOpen
   return (
-    <header className="sticky top-0 z-40 border-b-[3px] border-ink bg-panel shadow-[0_2px_0_#24304f,0_4px_0_#24304f22]">
-      <div className="flex h-14 items-center gap-1.5 px-3 sm:gap-2">
-        <Link
-          to={runArea ? '/area' : '/map'}
-          className="mr-auto flex min-h-[44px] min-w-0 items-center text-xl leading-none tracking-wider sm:text-2xl"
-          aria-label={t('ui.nav.backToGame')}
-        >
-          POKÉ<span className="text-danger">DICE</span>
-        </Link>
-        <EnergyPill />
-        <GoldPill amount={save.gold} className="shrink-0" />
-        <Link
-          to={blocked ? '#' : '/leaderboard'}
-          aria-label={t('ui.nav.leaderboard')}
-          aria-current={onBoard ? 'page' : undefined}
-          aria-disabled={blocked || undefined}
-          onClick={(e) => {
-            if (!blocked) return
-            e.preventDefault()
-            if (!inFight) pushToast(t('ui.nav.boardLocked'), 'info')
-          }}
-          title={t(inFight ? 'ui.nav.finishFight' : boardOpen ? 'ui.nav.leaderboard' : 'ui.nav.boardLocked')}
-          className={cx(
-            'pixel-btn flex h-11 w-11 shrink-0 items-center justify-center md:h-9 md:w-9',
-            onBoard ? 'bg-gold' : 'bg-panel',
-            blocked && 'hatched',
-            inFight && 'pointer-events-none',
-          )}
-        >
-          <PixelIcon name="trophy" size={20} />
-        </Link>
+    <header className="sticky top-0 z-40 bg-panel shadow-[0_2px_0_#24304f,0_4px_0_#24304f22]">
+      <div className="mx-auto flex h-14 max-w-6xl items-center gap-2 px-2.5 md:max-w-none">
         <PlayerMenu />
+        <span className="flex-1" />
+        <EnergyPill />
+        <GoldButton />
+        <RoundLink
+          to="/leaderboard"
+          label={t(inFight ? 'ui.nav.finishFight' : boardOpen ? 'ui.nav.leaderboard' : 'ui.nav.boardLocked')}
+          blocked={blocked}
+          current={pathname === '/leaderboard'}
+          onBlocked={() => !inFight && pushToast(t('ui.nav.boardLocked'), 'info')}
+        >
+          <PixelIcon name="navRanks" size={30} />
+        </RoundLink>
       </div>
     </header>
   )
 }
 
-/** Desktop: the game menus down the left, and SYNC ONLINE at the bottom. The account, the admin and the rules live in the avatar's drawer. */
+/** Desktop: the game menus down the left, and SYNC ONLINE at the bottom. */
 export function SideNav() {
   const { t } = useT()
   return (
-    <aside className="sticky top-14 hidden h-[calc(100vh-3.5rem)] w-52 shrink-0 flex-col gap-3 overflow-y-auto border-r-[3px] border-ink bg-parchment p-3 md:flex lg:w-56">
+    <aside className="sticky top-14 hidden h-[calc(100vh-3.5rem)] w-52 shrink-0 flex-col gap-3 overflow-y-auto bg-panel p-3 shadow-[2px_0_0_#24304f] md:flex lg:w-56">
       <nav aria-label={t('ui.nav.menus')} className="flex flex-col gap-2.5">
         {SIDE_NAV.map((n) => (
           <NavEntry key={n.to} n={n} variant="side" />
@@ -147,7 +222,7 @@ export function SideNav() {
   )
 }
 
-/** Phones: a bottom tab bar (height: --bottom-nav). Hidden mid-fight — the battle controls take the bottom. */
+/** Phones: the tab bar (height: --bottom-nav). Hidden mid-fight — the battle controls take the bottom. */
 export function BottomNav() {
   const { t } = useT()
   const inFight = useInFight()
@@ -155,7 +230,7 @@ export function BottomNav() {
   return (
     <nav
       aria-label={t('ui.nav.menus')}
-      className="fixed inset-x-0 bottom-0 z-40 flex border-t-[3px] border-ink bg-panel shadow-[0_-2px_0_#24304f,0_-4px_0_#24304f18] md:hidden"
+      className="fixed inset-x-0 bottom-0 z-40 flex items-end bg-panel shadow-[0_-2px_0_#24304f,0_-4px_0_#24304f18] md:hidden"
       style={{ height: 'var(--bottom-nav)', paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
       {BOTTOM_NAV.map((n) => (
