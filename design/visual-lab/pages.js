@@ -975,6 +975,28 @@
             ? () => (A.SAVE.dexSeen ? null : { text: 'NEW', gold: true, label: 'A new Pokédex entry' })
             : null,
     })
+  // Shared with the other screens (daycare.js, social.js).
+  Object.assign(A, {
+    sprCanvas,
+    spriteKey,
+    money,
+    typeBadges,
+    owned,
+    boxAdd(m) {
+      BOX.push({ uid: `b${m.dex}-${Date.now()}`, xp: 0, ...m, at: BOX.length })
+    },
+    boxRemove(uid) {
+      const i = BOX.findIndex((b) => b.uid === uid)
+      return i < 0 ? null : BOX.splice(i, 1)[0]
+    },
+  })
+  // A catch in battle (battle.js): into the Box at full HP, newest first; a new species lights the Pokédex dot.
+  A.onCatch = (dex, lv) => {
+    if (!A.caught.has(dex)) A.SAVE.dexSeen = false
+    A.caught.add(dex)
+    const max = A.hpAt(dex, lv)
+    BOX.push({ uid: `b${dex}-${Date.now()}`, dex, lv, hp: [max, max], xp: 0, at: BOX.length })
+  }
   const ready = () => {
     bindSheet()
     requestAnimationFrame(tick)

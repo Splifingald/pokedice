@@ -865,6 +865,7 @@
   .pg-tools input { flex: 1 1 150px; min-width: 0; height: 42px; border: 0; padding: 0 12px; background: #ffffff; box-shadow: inset 0 0 0 2px #24304f, inset 0 3px 0 #dfe7f2; font-family: 'Jersey 20', sans-serif; font-size: 19px; color: #24304f; border-radius: 0; -webkit-appearance: none; }
   .pg-tools input::placeholder { color: #8592ad; }
   .pg-tools input:focus-visible { outline: 3px solid #f2553f; outline-offset: 1px; }
+  section.hm-page > .pg-note { flex: none; }
   .pg-note { margin: 0; flex: 1 1 180px; font-family: 'Jersey 15', sans-serif; font-size: 15px; line-height: 1.15; color: #5c6a8a; }
   .pg-tip { margin: -4px 0 0; font-family: 'Jersey 15', sans-serif; font-size: 14px; color: #8592ad; text-align: center; }
   .pg-sec-h { display: flex; align-items: baseline; gap: 8px; margin-top: 4px; }
@@ -1029,8 +1030,253 @@
   .pg-where .hm-gobtn { top: 50%; bottom: auto; transform: translateY(-50%); }
   .pg-evo-from { display: flex; align-items: center; gap: 2px; margin: 2px 0 0; font-family: 'Jersey 15', sans-serif; font-size: 15px; color: #5c6a8a; }
   .pg-evo-from .ico { margin: -6px -2px -6px -8px; }
+  /* Battle (battle.js): the stage on top, the dice tray under it, actions in thumb reach. Full screen: no top bar, no tab bar. */
+  .hm-screen.in-battle .hm-top, .hm-screen.in-battle .hm-nav { display: none; }
+  section.hm-page[data-page='battle'] { padding: 0; gap: 0; }
+  .bt-stage { flex: none; box-shadow: 0 2px 0 #24304f; }
+  .bt-stage canvas { display: block; width: 100%; height: auto; aspect-ratio: 3 / 2; image-rendering: pixelated; }
+  .bt-st:empty { display: none; }
+  .bt-panel { display: flex; flex-direction: column; gap: 10px; padding: 12px 12px 16px; flex: 1; }
+  .bt-msg { margin: 0; min-height: calc(2.3em + 18px); display: flex; align-items: center; font-size: 20px; line-height: 1.15; }
+  .ui-root[data-framed] .bt-msg { padding: 6px 12px 8px; }
+  .bt-tray { display: flex; justify-content: center; align-items: end; gap: 8px; flex-wrap: wrap; min-height: 76px; padding-top: 8px; margin-top: auto; }
+  .bt-tray.foe { min-height: 76px; opacity: 0.92; }
+  .bt-die { appearance: none; border: 0; background: none; padding: 4px; min-width: 44px; min-height: 44px; display: grid; place-items: end center; }
+  .bt-die:disabled { cursor: default; }
+  .bt-die:focus-visible, .bt-pip:focus-visible, .bt-ball:focus-visible, .bt-bag:focus-visible { outline: 3px solid #5b8def; outline-offset: 2px; }
+  .bt-die .die-wrap.sel { transform: translateY(-8px); }
+  .bt-read { display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 6px 8px; min-height: 30px; font-family: 'Jersey 15', sans-serif; }
+  .bt-chip { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px 4px; font-size: 16px; line-height: 1; background: #ffffff; color: #24304f; box-shadow: inset 0 0 0 2px #24304f; }
+  .bt-chip.combo, .bt-chip.new { background: #ffbe2e; }
+  .bt-chip.none { color: #5c6a8a; box-shadow: inset 0 0 0 2px #b6c3d9; }
+  .bt-chip.st { box-shadow: inset 0 0 0 2px var(--stc); }
+  .bt-chip.st.on { background: var(--stc); color: #ffffff; box-shadow: inset 0 0 0 2px #24304f; }
+  .bt-math { font-size: 18px; color: #24304f; white-space: nowrap; }
+  .bt-math b { font-family: 'Jersey 20', sans-serif; font-weight: 400; font-size: 24px; }
+  .bt-eff { font-style: normal; font-size: 16px; }
+  .bt-eff.up { color: #2f7d3a; }
+  .bt-eff.down { color: #8a5a2f; }
+  .bt-eff.no { color: #5c6a8a; }
+  .bt-rolling { color: #5c6a8a; font-size: 16px; }
+  .bt-acts { display: grid; grid-template-columns: 1fr 1.4fr; gap: 10px; min-height: 56px; }
+  .bt-acts:empty { visibility: hidden; }
+  .bt-panel.over .bt-tray, .bt-panel.over .bt-read, .bt-panel.over .bt-sub { display: none; }
+  .bt-panel.over .bt-acts { display: block; margin-top: auto; }
+  .bt-acts .ui-btn { min-height: 56px; font-size: 22px; }
+  .bt-reroll i { font-style: normal; display: inline-grid; place-items: center; min-width: 22px; height: 22px; margin-left: 6px; padding: 0 4px; background: #24304f; color: #ffffff; font-size: 16px; }
+  .bt-reroll:disabled { opacity: 0.55; }
+  .bt-sub { display: flex; align-items: center; gap: 10px; margin-top: 4px; }
+  .bt-bag { appearance: none; border: 0; display: inline-flex; align-items: center; gap: 6px; min-height: 48px; padding: 4px 12px 6px 8px; font-size: 18px; color: #24304f; background: #ffffff; box-shadow: inset 0 0 0 2px #24304f, inset 0 -4px 0 #dfe7f2; }
+  .bt-bag img { width: 32px; height: 32px; }
+  .bt-bag:disabled { opacity: 0.5; cursor: default; }
+  .bt-team { display: flex; gap: 6px; margin-left: auto; }
+  .bt-pip { appearance: none; border: 0; width: 56px; min-height: 48px; padding: 2px 4px 5px; display: grid; justify-items: center; gap: 1px; background: #ffffff; box-shadow: inset 0 0 0 2px #24304f; }
+  .bt-pip .ico { margin: -4px 0 -6px; }
+  .bt-pip.on { background: #fff4d6; box-shadow: inset 0 0 0 2px #24304f, inset 0 0 0 4px #ffbe2e; }
+  .bt-pip.fnt { filter: grayscale(1); opacity: 0.55; }
+  .bt-pip[aria-disabled='true'] { cursor: default; }
+  .bt-team.force .bt-pip:not([aria-disabled='true']) { animation: bt-call 900ms steps(2) infinite; }
+  @keyframes bt-call { 50% { box-shadow: inset 0 0 0 2px #24304f, inset 0 0 0 4px #ffbe2e; transform: translateY(-3px); } }
+  .bt-pip-hp { width: 40px; height: 6px; background: #dde5f0; box-shadow: inset 0 0 0 1px #24304f; position: relative; }
+  .bt-pip-hp i { position: absolute; inset: 1px auto 1px 1px; max-width: calc(100% - 2px); background: var(--hp); }
+  .bt-balls { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; width: 100%; }
+  .bt-ball { appearance: none; border: 0; display: grid; justify-items: center; align-content: start; gap: 2px; min-height: 76px; padding: 6px 2px 7px; background: #ffffff; color: #24304f; box-shadow: inset 0 0 0 2px #24304f, inset 0 -4px 0 #dfe7f2; }
+  .bt-ball[aria-checked='true'] { background: #fff4d6; box-shadow: inset 0 0 0 2px #24304f, inset 0 0 0 4px #f07a2a; }
+  .bt-ball:disabled { opacity: 0.5; cursor: default; }
+  .bt-ball b { font-weight: 400; font-size: 16px; line-height: 1; }
+  .bt-ball small { font-family: 'Jersey 15', sans-serif; font-size: 14px; color: #5c6a8a; line-height: 1; }
+  .bt-ballico, .bt-noball { width: 26px; height: 26px; display: grid; place-items: center; }
+  .bt-ballico img { width: 26px; height: 26px; }
+  .bt-noball { font-size: 22px; color: #5c6a8a; }
+  .bt-catchroll { display: inline-flex; align-items: center; gap: 10px; font-size: 24px; color: #24304f; }
+  .bt-catchroll b { font-weight: 400; }
+  .bt-win { grid-column: 1 / -1; display: grid; gap: 8px; padding: 10px 12px 12px; background: #ffffff; box-shadow: inset 0 0 0 2px #24304f, inset 0 -4px 0 #dfe7f2; }
+  .bt-win-h { margin: 0; font-size: 28px; line-height: 1; }
+  .bt-win p { margin: 0; }
+  .bt-win ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+  .bt-win li { display: flex; align-items: center; gap: 6px; font-size: 18px; }
+  .bt-win li .ico { margin: -6px -4px; }
+  .bt-win li span { margin-left: auto; font-family: 'Jersey 15', sans-serif; color: #2f7d3a; }
+  .bt-win-catch { display: flex; align-items: center; gap: 6px; font-size: 18px; }
+  .bt-win-catch em { font-style: normal; font-size: 14px; padding: 1px 6px; background: #ffbe2e; box-shadow: inset 0 0 0 2px #24304f; }
+  .bt-win-catch.fled { font-family: 'Jersey 15', sans-serif; color: #5c6a8a; }
+  .bt-win.lost p:not(.bt-win-h) { font-family: 'Jersey 15', sans-serif; font-size: 16px; color: #5c6a8a; }
+  .bt-win-btns { display: grid; grid-template-columns: 1fr 1.4fr; gap: 10px; }
+  .bt-win.lost .bt-win-btns { grid-template-columns: 1fr; }
+  /* Pages off the tab bar (Day Care, Versus, Leaderboard, Trainer card): a back arrow before the title. */
+  .pg-back { appearance: none; border: 0; flex: none; width: 44px; height: 44px; margin: 0 -4px 0 -6px; background: none; display: grid; place-items: center; }
+  .pg-back::before { content: ''; width: 14px; height: 18px; background: #24304f; clip-path: polygon(0 50%, 100% 0, 100% 34%, 50% 50%, 100% 66%, 100% 100%); }
+  .pg-back:focus-visible { outline: 3px solid #5b8def; outline-offset: -2px; }
+  /* A trainer's look: a crop of the 80 × 80 sprite sheet (assets/trainers.png), head first. */
+  .lk { flex: none; display: inline-block; width: 48px; height: 52px; background: url(assets/trainers.png) no-repeat; background-position: calc(var(--i) * -80px - 16px) calc(var(--t) * -1px + 4px); image-rendering: pixelated; }
+  .lk.sm { width: 32px; height: 32px; background-position: calc(var(--i) * -80px - 24px) calc(var(--t) * -1px + 2px); }
+  .lk.av { width: 30px; height: 30px; background-position: calc(var(--i) * -80px - 25px) calc(var(--t) * -1px + 3px); }
+  .lk.big { width: 112px; height: 140px; background-size: 3840px 160px; background-position: calc(var(--i) * -160px - 24px) calc(var(--t) * -2px + 6px); }
+  .hm-trainer .ui-avatar { overflow: hidden; align-items: end; }
+  /* Battle: Versus bits */
+  .bt-party { display: inline-flex; gap: 3px; margin-left: 6px; }
+  .bt-party i { width: 8px; height: 8px; background: #f2553f; box-shadow: inset 0 0 0 1px #24304f; }
+  .bt-party i.out { background: #b6c3d9; }
+  .bt-auto { margin: 0; display: flex; align-items: center; gap: 8px; font-family: 'Jersey 15', sans-serif; font-size: 16px; color: #5c6a8a; line-height: 1.1; }
+  .bt-acts:has(.bt-auto) { grid-template-columns: 1.4fr 1fr; align-items: center; }
+  .bt-skip { min-height: 48px !important; font-size: 20px !important; }
+  .bt-vsname { font-size: 20px; color: #5c6a8a; }
+  .bt-win-note { font-family: 'Jersey 15', sans-serif; font-size: 16px; color: #5c6a8a; }
+  .bt-win-btns:has(> :only-child) { grid-template-columns: 1fr; }
+  /* Day Care */
+  .dc-slots { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+  .dc-res { display: grid; grid-template-columns: 84px minmax(0, 1fr); grid-template-areas: 'spr txt' 'btn btn'; gap: 6px 10px; align-items: center; padding: 8px 10px 10px; background: #ffffff; box-shadow: inset 0 0 0 2px #24304f, inset 0 -4px 0 #dfe7f2; }
+  .dc-res.ready { background: #f2fff6; box-shadow: inset 0 0 0 2px #24304f, inset 0 0 0 4px #34c97a, inset 0 -6px 0 #c9f2d9; }
+  .dc-res .pg-spr { grid-area: spr; width: 84px; height: 74px; }
+  .dc-res-t { grid-area: txt; display: grid; gap: 4px; min-width: 0; }
+  .dc-res .dc-take { grid-area: btn; width: 100%; }
+  .dc-name { display: flex; align-items: center; gap: 8px; }
+  .dc-name b { font-weight: 400; font-size: 22px; line-height: 1; }
+  .dc-tag, .dc-free { font-family: 'Jersey 15', sans-serif; font-size: 13px; line-height: 1; padding: 2px 5px 3px; background: #34c97a; color: #ffffff; box-shadow: inset 0 0 0 1px #24304f; }
+  .dc-free { background: #ffbe2e; color: #24304f; }
+  .dc-lv { font-size: 18px; line-height: 1; }
+  .dc-lv i { font-style: normal; color: #5c6a8a; }
+  .dc-lv b { font-weight: 400; color: #2f7d3a; }
+  .dc-xp { display: block; height: 8px; background: #dde5f0; box-shadow: inset 0 0 0 1px #24304f; position: relative; }
+  .dc-xp i { position: absolute; inset: 1px auto 1px 1px; max-width: calc(100% - 2px); background: #5b8def; }
+  .dc-res.ready .dc-xp i { background: #34c97a; }
+  .dc-res small { font-family: 'Jersey 15', sans-serif; font-size: 14px; line-height: 1.15; color: #5c6a8a; }
+  .dc-res.empty { display: block; padding: 0; background: none; box-shadow: none; }
+  .dc-leave { appearance: none; border: 0; width: 100%; min-height: 96px; display: flex; align-items: center; gap: 12px; padding: 10px 14px; text-align: left; background: #f6f9fd; box-shadow: inset 0 0 0 2px #8592ad; outline: 2px dashed #b6c3d9; outline-offset: -6px; }
+  .dc-leave:hover { background: #ffffff; }
+  .dc-leave > span:last-child { display: grid; gap: 2px; }
+  .dc-leave b { font-weight: 400; font-size: 21px; line-height: 1; }
+  .dc-leave small { font-family: 'Jersey 15', sans-serif; font-size: 15px; color: #5c6a8a; }
+  .dc-plus { width: 44px; height: 44px; flex: none; display: grid; place-items: center; font-size: 32px; line-height: 1; color: #ffffff; background: #5b8def; box-shadow: inset 0 0 0 2px #24304f, inset 0 -4px 0 #3c6cc8; }
+  .dc-egg { display: grid; grid-template-columns: 72px minmax(0, 1fr); grid-template-areas: 'egg txt' 'btn btn'; gap: 8px 12px; align-items: center; padding: 10px 12px 12px; background: #fff8ec; box-shadow: inset 0 0 0 2px #24304f, inset 0 -4px 0 #f3e2c4; }
+  .dc-egg.free { background: #fff4d6; box-shadow: inset 0 0 0 2px #24304f, inset 0 0 0 4px #ffbe2e, inset 0 -6px 0 #ffe7a8; }
+  .dc-eggspr { grid-area: egg; width: 72px; height: 72px; }
+  .dc-egg-t { grid-area: txt; display: grid; gap: 4px; min-width: 0; }
+  .dc-egg-t b { font-weight: 400; font-size: 22px; line-height: 1; }
+  .dc-egg-t p { margin: 0; font-family: 'Jersey 15', sans-serif; font-size: 15px; line-height: 1.15; color: #5c6a8a; }
+  .dc-facts { list-style: none; margin: 2px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 4px; }
+  .dc-facts li { font-family: 'Jersey 15', sans-serif; font-size: 14px; padding: 1px 6px 2px; background: #ffffff; box-shadow: inset 0 0 0 1px #d8c8a8; color: #24304f; }
+  .dc-facts b { font-weight: 400; }
+  .dc-buy { grid-area: btn; width: 100%; }
+  .dc-pick { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 6px; }
+  .dc-teamtag { font-style: normal; font-size: 13px; padding: 1px 5px 2px; background: #24304f; color: #ffe7a8; }
+  .dc-moment { position: absolute; inset: 0; z-index: 30; display: flex; flex-direction: column; gap: 12px; padding: 0 0 16px; background: #fbfdff; }
+  .dc-m-stage canvas { display: block; width: 100%; height: auto; aspect-ratio: 3 / 2; image-rendering: pixelated; box-shadow: 0 2px 0 #24304f; }
+  .dc-m-say { margin: 0 12px; font-size: 20px; min-height: calc(2.3em + 18px); display: flex; align-items: center; }
+  .ui-root[data-framed] .dc-m-say { padding: 6px 12px 8px; }
+  .dc-m-end { margin: 0 12px; display: grid; gap: 8px; padding: 10px 12px 12px; background: #ffffff; box-shadow: inset 0 0 0 2px #24304f, inset 0 -4px 0 #dfe7f2; }
+  .dc-m-end p { margin: 0; }
+  .dc-m-who { display: flex; align-items: center; gap: 6px; font-size: 22px; }
+  .dc-m-who b { font-weight: 400; }
+  .dc-m-who span { font-family: 'Jersey 15', sans-serif; font-size: 17px; color: #5c6a8a; }
+  .dc-m-who em { font-style: normal; font-size: 14px; padding: 1px 6px; background: #ffbe2e; box-shadow: inset 0 0 0 2px #24304f; }
+  .dc-m-where { font-family: 'Jersey 15', sans-serif; font-size: 16px; color: #5c6a8a; }
+  .dc-m-btns { display: grid; grid-template-columns: 1fr 1.4fr; gap: 10px; }
+  .dc-m-btns:has(> :only-child) { grid-template-columns: 1fr; }
+  .dc-m-skip { appearance: none; border: 0; position: absolute; right: 8px; top: 8px; min-height: 36px; padding: 0 12px; background: #24304fcc; color: #ffffff; font-size: 17px; }
+  /* Versus, leaderboard */
+  .so-auto { margin-left: auto; font-family: 'Jersey 15', sans-serif; font-size: 14px; padding: 2px 7px 3px; background: #24304f; color: #ffe7a8; }
+  .so-team { display: inline-flex; align-items: center; }
+  .so-mon .ico { margin: -6px -4px -6px -6px; }
+  .so-who { display: grid; gap: 1px; min-width: 0; flex: 1; }
+  .so-who b { font-weight: 400; font-size: 20px; line-height: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .so-who b em { font-style: normal; font-family: 'Jersey 15', sans-serif; font-size: 13px; padding: 0 5px 1px; margin-left: 4px; background: #ffbe2e; color: #24304f; vertical-align: 2px; }
+  .so-locked { display: grid; justify-items: center; gap: 8px; padding: 18px 14px; text-align: center; background: #ffffff; box-shadow: inset 0 0 0 2px #24304f, inset 0 -4px 0 #dfe7f2; }
+  .so-locked img { width: 36px; height: 36px; }
+  .so-locked b { font-weight: 400; font-size: 21px; line-height: 1.1; }
+  .so-locked .hm-meter { width: 70%; height: 10px; }
+  .so-locked small, .so-close small { font-family: 'Jersey 15', sans-serif; font-size: 15px; color: #5c6a8a; }
+  .so-close { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+  .so-close li { display: grid; grid-template-columns: auto auto minmax(0, 1fr) auto; align-items: center; gap: 8px; padding: 2px 10px 4px 2px; background: #ffffff; box-shadow: inset 0 0 0 2px #b6c3d9; }
+  .so-close b { font-weight: 400; font-size: 18px; }
+  .so-first { display: grid; gap: 10px; padding: 14px; text-align: center; background: #fff4d6; box-shadow: inset 0 0 0 2px #24304f, inset 0 0 0 4px #ffbe2e; }
+  .so-first p { margin: 0; font-size: 19px; line-height: 1.15; }
+  .so-body { display: grid; gap: 10px; }
+  .so-mine-team { display: flex; align-items: center; gap: 8px; padding: 4px 6px 4px 10px; background: #ffffff; box-shadow: inset 0 0 0 2px #b6c3d9; }
+  .so-mine-team > span:first-child { font-family: 'Jersey 15', sans-serif; font-size: 15px; color: #5c6a8a; }
+  .so-chips { padding: 0; }
+  .so-opps, .so-board { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+  .so-opp { display: flex; align-items: center; gap: 8px; padding: 6px 8px 8px 6px; background: #ffffff; box-shadow: inset 0 0 0 2px #24304f, inset 0 -4px 0 #dfe7f2; }
+  .so-opp.won { background: #f1f4f9; box-shadow: inset 0 0 0 2px #b6c3d9; }
+  .so-opp.won .lk { filter: grayscale(0.7); opacity: 0.75; }
+  .so-edge { font-family: 'Jersey 15', sans-serif; font-size: 13px; line-height: 1.1; color: #5c6a8a; }
+  .so-edge.good { color: #2f7d3a; }
+  .so-edge.bad { color: #b0402a; }
+  .so-fight { flex: none; min-height: 44px !important; padding-inline: 12px !important; font-size: 20px !important; }
+  .so-beaten { flex: none; font-family: 'Jersey 15', sans-serif; font-size: 15px; padding: 3px 8px 4px; background: #34c97a; color: #ffffff; box-shadow: inset 0 0 0 2px #24304f; }
+  .so-slots { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+  .so-slot { position: relative; display: grid; justify-items: center; gap: 2px; min-height: 118px; padding: 18px 4px 8px; background: #ffffff; box-shadow: inset 0 0 0 2px #24304f, inset 0 -4px 0 #dfe7f2; }
+  .so-slot.empty { align-content: center; background: #f6f9fd; box-shadow: inset 0 0 0 2px #b6c3d9; font-family: 'Jersey 15', sans-serif; font-size: 14px; color: #8592ad; text-align: center; }
+  .so-slot .pg-spr { width: 72px; height: 64px; }
+  .so-slot b { font-weight: 400; font-size: 17px; line-height: 1; }
+  .so-slot small { font-family: 'Jersey 15', sans-serif; font-size: 13px; color: #5c6a8a; }
+  .so-n { position: absolute; left: 6px; top: 5px; font-family: 'Jersey 15', sans-serif; font-size: 14px; line-height: 1; padding: 1px 5px 2px; background: #24304f; color: #ffe7a8; }
+  .so-pick { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+  .so-pick .pg-useit[aria-pressed='true'] { background: #fff4d6; box-shadow: inset 0 0 0 2px #24304f, inset 0 0 0 4px #ffbe2e; }
+  .so-order { font-style: normal; display: grid; place-items: center; width: 28px; height: 28px; font-size: 18px; background: #24304f; color: #ffe7a8; }
+  .so-save { display: grid; grid-template-columns: 1fr 1.6fr; gap: 10px; }
+  .so-tabs4 button { padding: 0 4px; font-size: 17px; }
+  .so-mine, .so-hall { appearance: none; border: 0; width: 100%; display: flex; align-items: center; gap: 10px; padding: 6px 12px 8px 8px; text-align: left; background: #fff4d6; box-shadow: inset 0 0 0 2px #24304f, inset 0 0 0 4px #ffbe2e, inset 0 -6px 0 #ffe7a8; }
+  .so-mine > span:nth-child(2), .so-hall > span:nth-child(2) { display: grid; gap: 2px; flex: 1; min-width: 0; }
+  .so-mine small, .so-hall small { font-family: 'Jersey 15', sans-serif; font-size: 14px; color: #5c6a8a; line-height: 1.1; }
+  .so-mine b, .so-hall b { font-weight: 400; font-size: 21px; line-height: 1; }
+  .so-hall { background: #24304f; color: #ffe7a8; box-shadow: inset 0 0 0 2px #24304f, inset 0 -4px 0 #11182d; }
+  .so-hall small { color: #b6c3d9; }
+  .so-hall-faces { display: flex; }
+  .so-hall-faces .lk { margin-left: -6px; background-color: #3a4a72; box-shadow: 0 0 0 2px #24304f; }
+  .so-crown { width: 24px; height: 18px; flex: none; background: #ffbe2e; clip-path: polygon(0 20%, 25% 55%, 50% 0, 75% 55%, 100% 20%, 92% 100%, 8% 100%); }
+  .so-row { display: flex; align-items: center; gap: 8px; padding: 4px 10px 6px 6px; background: #ffffff; box-shadow: inset 0 0 0 2px #b6c3d9; }
+  .so-row.me { background: #fff4d6; box-shadow: inset 0 0 0 2px #24304f, inset 0 0 0 4px #ffbe2e; }
+  .so-row.flash { animation: so-flash 1.2s steps(6); }
+  @keyframes so-flash { 0%, 33%, 66% { background: #ffe066; } 17%, 50%, 83% { background: #fff4d6; } }
+  .so-rank { flex: none; width: 30px; height: 30px; display: grid; place-items: center; font-size: 19px; color: #5c6a8a; }
+  .so-rank.m1, .so-rank.m2, .so-rank.m3 { color: #24304f; box-shadow: inset 0 0 0 2px #24304f; }
+  .so-rank.m1 { background: #ffbe2e; }
+  .so-rank.m2 { background: #d8dfeb; }
+  .so-rank.m3 { background: #e8a070; }
+  .so-val { flex: none; display: grid; justify-items: end; gap: 1px; text-align: right; }
+  .so-val b { font-weight: 400; font-size: 20px; line-height: 1; white-space: nowrap; }
+  .so-val small { font-family: 'Jersey 15', sans-serif; font-size: 13px; color: #5c6a8a; }
+  /* Trainer card */
+  .tc-card { display: grid; gap: 8px; padding: 8px 10px 10px; background: linear-gradient(#e8f1ff, #ffffff 60%); box-shadow: inset 0 0 0 2px #24304f, inset 0 0 0 5px #5b8def, inset 0 0 0 7px #24304f, inset 0 -10px 0 #cfe0fb; }
+  .tc-top { display: flex; justify-content: space-between; padding: 4px 6px 0; font-family: 'Jersey 15', sans-serif; font-size: 14px; letter-spacing: 0.06em; color: #3c6cc8; }
+  .tc-main { display: grid; grid-template-columns: 112px minmax(0, 1fr); gap: 10px; align-items: start; padding: 0 4px; }
+  .tc-main .lk.big { background-color: #ffffff; box-shadow: inset 0 0 0 2px #24304f; }
+  .tc-info { display: grid; gap: 6px; min-width: 0; }
+  .tc-name { margin: 0; display: flex; align-items: center; gap: 8px; }
+  .tc-name b { font-weight: 400; font-size: 28px; line-height: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  .tc-name .pg-hint, .tc-nameform .pg-hint { margin-left: auto; }
+  .tc-nameform { display: flex; gap: 6px; }
+  .tc-nameform input { flex: 1; min-width: 0; height: 36px; border: 0; padding: 0 8px; font: inherit; font-size: 20px; color: #24304f; background: #ffffff; box-shadow: inset 0 0 0 2px #24304f; border-radius: 0; }
+  .tc-nameform input:focus-visible { outline: 3px solid #f2553f; outline-offset: 1px; }
+  .tc-stats { margin: 0; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 2px 10px; font-size: 17px; line-height: 1.1; }
+  .tc-stats dt { font-family: 'Jersey 15', sans-serif; font-size: 15px; color: #5c6a8a; }
+  .tc-stats dd { margin: 0; text-align: right; border-bottom: 1px dotted #b6c3d9; }
+  .tc-team { display: flex; justify-content: center; gap: 4px; padding: 4px 0 2px; border-top: 2px solid #cfe0fb; }
+  .tc-team span { display: grid; justify-items: center; }
+  .tc-team small { font-family: 'Jersey 15', sans-serif; font-size: 13px; color: #5c6a8a; margin-top: -4px; }
+  .tc-badges { list-style: none; margin: 0; padding: 10px 8px; display: grid; grid-template-columns: repeat(auto-fill, minmax(62px, 1fr)); gap: 8px 4px; background: #2b3a63; box-shadow: inset 0 0 0 2px #24304f, inset 0 4px 0 #1b2647; }
+  .tc-badges li { display: grid; justify-items: center; gap: 3px; }
+  .tc-badges img { width: 36px; height: 36px; }
+  .tc-badges span:not(.sr) { font-family: 'Jersey 15', sans-serif; font-size: 13px; line-height: 1; color: #e3e9f2; }
+  .tc-badges li.off img { opacity: 0.4; }
+  .tc-badges li.off span:not(.sr) { color: #8592ad; }
+  .tc-look { display: flex; align-items: center; gap: 10px; padding: 4px 10px 4px 4px; background: #ffffff; box-shadow: inset 0 0 0 2px #b6c3d9; }
+  .tc-look p { margin: 0; flex: 1; font-family: 'Jersey 15', sans-serif; font-size: 15px; line-height: 1.15; color: #5c6a8a; }
+  .tc-looks { display: grid; grid-template-columns: repeat(auto-fill, minmax(56px, 1fr)); gap: 6px; }
+  .tc-lk { appearance: none; border: 0; display: grid; place-items: center; min-height: 60px; padding: 4px 0 0; background: #ffffff; box-shadow: inset 0 0 0 2px #b6c3d9; }
+  .tc-lk[aria-checked='true'] { background: #fff4d6; box-shadow: inset 0 0 0 2px #24304f, inset 0 0 0 4px #ffbe2e; }
+  .tc-lk:focus-visible, .so-mine:focus-visible, .so-hall:focus-visible, .dc-leave:focus-visible, .tc-menu button:focus-visible { outline: 3px solid #5b8def; outline-offset: 2px; }
+  .tc-menu { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+  .tc-menu button { appearance: none; border: 0; width: 100%; display: flex; align-items: center; gap: 10px; min-height: 56px; padding: 6px 12px 8px 8px; text-align: left; background: #ffffff; box-shadow: inset 0 0 0 2px #24304f, inset 0 -4px 0 #dfe7f2; }
+  .tc-menu img { width: 32px; height: 32px; }
+  .tc-menu button > span:nth-child(2) { display: grid; gap: 2px; flex: 1; min-width: 0; }
+  .tc-menu b { font-weight: 400; font-size: 20px; line-height: 1; }
+  .tc-menu small { font-family: 'Jersey 15', sans-serif; font-size: 14px; line-height: 1.1; color: #5c6a8a; }
+  .tc-menu em { font-style: normal; font-size: 15px; padding: 2px 8px 3px; background: #24304f; color: #ffe7a8; }
+  .tc-mi { width: 32px; height: 32px; flex: none; display: grid; place-items: center; font-size: 20px; color: #ffffff; background: #5b8def; box-shadow: inset 0 0 0 2px #24304f; }
   @media (max-width: 520px) { .hm-page { overflow: visible; } }
-  @media (prefers-reduced-motion: reduce) { .hm-pill.bump, .pg-pips i.pop { animation: none; } }
+  @media (prefers-reduced-motion: reduce) { .hm-pill.bump, .pg-pips i.pop, .bt-team.force .bt-pip, .so-row.flash { animation: none; } }
 
   /* the preview toggle above the phone */
   .home-states { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin: 0 0 18px; }
@@ -1109,10 +1355,10 @@
           <div class="ui-root" data-style="daybreak" data-framed id="home-root">
             <div class="hm-screen">
               <header class="hm-top">
-                <button type="button" class="hm-trainer" id="hm-trainer" data-soon="Trainer menu" aria-label="Trainer menu"><span class="ui-avatar" aria-hidden="true">S</span><span class="hm-tr-txt"><b>Sam</b><small><img id="hm-ico-badge" class="px" alt="" /><span id="hm-badges">5/8</span></small></span></button>
+                <button type="button" class="hm-trainer" id="hm-trainer" aria-label="Trainer card"><span class="ui-avatar" aria-hidden="true">S</span><span class="hm-tr-txt"><b>Sam</b><small><img id="hm-ico-badge" class="px" alt="" /><span id="hm-badges">5/8</span></small></span></button>
                 <span class="sp"></span>
-                <button type="button" class="hm-pill" id="hm-pill" data-soon="Shop" aria-label="Open the Shop"><img id="hm-ico-coin" class="px" alt="" /><span id="hm-gold">₽ 1,240</span><i aria-hidden="true">+</i></button>
-                <button type="button" class="hm-round" data-soon="Leaderboard" aria-label="Leaderboard"><img id="hm-ico-trophy" class="px" alt="" /></button>
+                <button type="button" class="hm-pill" id="hm-pill" aria-label="Open the Shop"><img id="hm-ico-coin" class="px" alt="" /><span id="hm-gold">₽ 1,240</span><i aria-hidden="true">+</i></button>
+                <button type="button" class="hm-round" aria-label="Leaderboard"><img id="hm-ico-trophy" class="px" alt="" /></button>
               </header>
               <div class="hm-page hm-page-home" data-page="home">
               <div class="hm-stage" id="hm-stage">
@@ -1136,6 +1382,11 @@
               <section class="hm-page" data-page="dex" aria-label="Pokédex" hidden></section>
               <section class="hm-page" data-page="shop" aria-label="Poké Mart" hidden></section>
               <section class="hm-page" data-page="upgrades" aria-label="Upgrades" hidden></section>
+              <section class="hm-page" data-page="battle" aria-label="Battle" hidden></section>
+              <section class="hm-page" data-page="daycare" aria-label="Day Care" hidden></section>
+              <section class="hm-page" data-page="versus" aria-label="Versus" hidden></section>
+              <section class="hm-page" data-page="ranks" aria-label="Leaderboard" hidden></section>
+              <section class="hm-page" data-page="trainer" aria-label="Trainer card" hidden></section>
               <nav class="hm-nav" id="hm-nav" aria-label="Game menu">
                 <button type="button" data-tab="shop"><img data-nav="shop" class="px" alt="" /><span>Shop</span></button>
                 <button type="button" data-tab="upgrades"><img data-nav="upgrades" class="px" alt="" /><span>Upgrades</span><i class="dot" hidden></i></button>
@@ -1191,14 +1442,14 @@
       <aside class="home-notes">
         <p class="eyebrow">THE UX PASS · HOME AND ITS TABS</p>
         <h1 class="title">Home</h1>
-        <p class="home-thesis">One big button to play, your team on show, everything else one tap away. It replaces the Map page as the place you land. The tab bar works: Team, Pokédex, Poké Mart and Upgrades are built too.</p>
+        <p class="home-thesis">One big button to play, your team on show, everything else one tap away. It replaces the Map page as the place you land. Every screen it leads to is built: the tab bar (Team, Pokédex, Poké Mart, Upgrades), the battle, the Day Care, Versus, the leaderboard and the trainer card.</p>
         <ol class="zones">
-          <li><b>Top bar</b><span>You, your badges, your gold. The <em>+</em> opens the Shop; the cup opens the leaderboard.</span></li>
+          <li><b>Top bar</b><span>You (your look), your badges, your gold. The avatar opens the <em>trainer card</em>, the gold opens the Shop, the cup opens the leaderboard.</span></li>
           <li><b>Where you are</b><span>Area, level range, rounds, species caught here. Tap it for the <em>area’s details</em>: gym, legendary and when it shows up, one-time finds still there, Pokémon to catch with rarity and levels, what a round brings.</span></li>
           <li><b>Your team, roaming</b><span>The three of them (a team is three at most) wander the area’s own scenery. Friends walk over to each other and hop, <em>little hearts</em> float up; Lapras starts a song and the others join, <em>notes</em> rising. Tap one: it hops, a heart pops, its card shows. A tired one sweats and naps.</span></li>
           <li><b>Continue</b><span>The only big button, in thumb reach, and it says what comes next.</span></li>
           <li><b>Areas</b><span>A sheet, not a page. Search by area <em>or by Pokémon</em> (“Pikachu” finds where it lives), filter To catch, Secret or Cleared, sort by route, level or most to catch. A card opens the area’s details; <em>GO</em> travels. The outline is the state: <em>orange</em> where you are, <em>green</em> cleared, grey locked. Each area has one picture: the scene the team roams, and cards show its middle. <em>Regions</em>, next to the region name, switches region: the next one appears once the League is won, starters included. The Areas button has three states: plain, a NEW dot, <em>gold “New region”</em>.</span></li>
-          <li><b>Widgets</b><span>Two by two. The newest secret area travels in one tap; when there is none, the next one shows its progress. The Day Care shows who is ready and collects in place. <em>Versus</em> sits under the secret area: locked, it shows how close you are (3 Pokémon at Lv.50); then Set team, then Fight. Under the Day Care, an empty slot waits for <em>special events</em>.</span></li>
+          <li><b>Widgets</b><span>Two by two. The newest secret area travels in one tap; when there is none, the next one shows its progress. The Day Care shows who is ready and how long the others need; it opens the <em>Day Care</em>. <em>Versus</em> sits under the secret area: locked, it shows how close you are (3 Pokémon at Lv.50); then Set team, then Fight. Under the Day Care, an empty slot waits for <em>special events</em>.</span></li>
           <li><b>Tab bar</b><span>Home in the middle. New 16×16 icons: a Mart bag, a die going up, three balls for the team, the red Pokédex; a podium for the leaderboard. Dots only for things you can act on: affordable upgrades, a new Pokédex entry.</span></li>
         </ol>
         <h2 class="notes-h">The tabs</h2>
@@ -1224,13 +1475,14 @@
           <article class="ref"><div class="k"><i class="Official">POKÉMON</i>Pokémon TCG Pocket</div><h4>The counter-example</h4><p>When older packs moved behind a small corner button, players thought they were gone. <em>Take:</em> nothing hides behind a corner; areas get search and filters.</p><div class="links"><a href="https://thefilibusterblog.com/fans-express-confusion-over-pokemon-tcg-pocket-ui-after-new-expansion-launch/" target="_blank" rel="noopener">Filibuster ↗</a><a href="https://ixd.prattsi.org/2025/09/design-critique-pokemon-tcg-pocket-android-app/" target="_blank" rel="noopener">Pratt IXD ↗</a></div></article>
           <article class="ref"><div class="k"><i class="Craft">UX</i>Menus and retention</div><h4>Players leave at the menu</h4><p>Many players uninstall within a day and a quarter of them cite confusing interfaces; key controls belong in the thumb zone. <em>Take:</em> one action per screen, at the bottom.</p><div class="links"><a href="https://game-wisdom.com/general/ux-game-design-menus-might-killing-player-retention" target="_blank" rel="noopener">Game-Wisdom ↗</a><a href="https://uxplanet.org/game-design-ux-best-practices-the-ultimate-guide-4a3078c32099" target="_blank" rel="noopener">UX Planet ↗</a></div></article>
         </div>
-        <h2 class="notes-h">Next in the UX pass</h2>
-        <ul class="notes-list next">
-          <li><b>Battle</b> from CONTINUE: the dice tray first, items in a drawer, the catch inside the scene.</li>
-          <li><b>Day Care</b> from its widget: drop-off from the Box with search, the Egg.</li>
-          <li><b>Versus</b> from its widget: opponents, my team, the leaderboard.</li>
-          <li><b>Trainer card &amp; Leaderboard</b> from the top bar.</li>
-        </ul>
+        <h2 class="notes-h">The screens off Home</h2>
+        <ol class="zones">
+          <li><b>Battle</b><span>From CONTINUE, full screen. The dice roll by themselves; <em>tap the ones to throw again</em>, then ATTACK. Under the tray, the combo, the sum, the type multiplier and the status faces, with the engine’s rules. The move is the Animations tab’s timeline; the foe rolls its own dice. Bag (one item a turn), switches, and a free switch after a K.O. The catch happens in the scene: each ball shows its chance, and one throw decides.</span></li>
+          <li><b>Day Care</b><span>From its widget. Two slots with XP toward the 200 cap and the time left; TAKE BACK. Leave one from the team or the Box (search). The Egg: free once, then ₽50. It <em>hatches right there</em>, weighted toward species you’re missing, and says where it went.</span></li>
+          <li><b>Versus</b><span>From its widget. Locked, it shows who’s closest to Lv.50. My team: three Lv.50 clones, in order. Opponents: search, To beat / Beaten, and <em>how many of theirs you hit super effectively</em>. FIGHT: the trainer sends out three in turn, both sides on auto; SKIP jumps to the result, decided when the fight starts. A board for Attack and Defense.</span></li>
+          <li><b>Leaderboard</b><span>From the cup. Max level, Progression, Pokédex, Shiny. Your rank sits on top (tap it to find your row); trainers who maxed a board out go to the <em>Hall of Fame</em>.</span></li>
+          <li><b>Trainer card</b><span>From the avatar. Your look (the game’s trainer sprites, the one others see), name, money, Pokédex, best level, areas, shinies, Versus record; the badge case with the crown; the menu.</span></li>
+        </ol>
       </aside>
     </div>
   </section>
@@ -1304,7 +1556,7 @@
 </main>
 
 <footer class="wrap">
-  <p>Pokédice is a personal, non-commercial fan project. Pokémon and all related names are trademarks of Nintendo, Game Freak and Creatures. Battle sprites, menu icons: Pokémon Showdown (Black/White animated sprites and the community's sprites in that style), the same sources the game credits. Everything else here (backgrounds, balls, effects, frames) is drawn in code.</p>
+  <p>Pokédice is a personal, non-commercial fan project. Pokémon and all related names are trademarks of Nintendo, Game Freak and Creatures. Battle sprites, menu icons: Pokémon Showdown (Black/White animated sprites and the community's sprites in that style). Trainer sprites: the ones the game ships. These are the same sources the game credits. Everything else here (backgrounds, balls, effects, frames) is drawn in code.</p>
   <p>Fonts: Jersey 25/15 (current game), Pixelify Sans, Silkscreen, Handjet, Doto, DotGothic16, IBM Plex Sans/Mono, from Google Fonts.</p>
 </footer>
 
@@ -1313,4 +1565,7 @@
 <script src="anims.js"></script>
 <script src="home.js"></script>
 <script src="pages.js"></script>
+<script src="battle.js"></script>
+<script src="daycare.js"></script>
+<script src="social.js"></script>
 <script src="lab.js"></script>

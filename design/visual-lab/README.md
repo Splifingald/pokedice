@@ -12,6 +12,12 @@ A standalone page for deciding the game's next look, outside the app's build. Th
   - a game-style tab bar sits at the bottom
 
   - the tab bar works: **Team** (drag to reorder, the Box with search, sort and type filter, a sheet per Pokémon with its dice faces and what it learns next), **Pokédex** (silhouettes, search, All / Caught / Missing / Nearby, where to find with GO), **Poké Mart** (buy and sell by category, quantities, locked stock) and **Upgrades** (combos and dice, pip tracks, an affordable filter)
+  - the screens off Home work too:
+    - **Battle**, from CONTINUE: a wild Pokémon from the area, full screen. The dice roll by themselves; you tap the ones to throw again, then ATTACK. The readout under the tray shows the combo, the sum, the type multiplier and the status faces, with the engine's rules. The move plays the Animations tab's timeline, and the foe rolls its own dice. Other parts: the bag (one item a turn), switching, burn and poison ticks, a free switch after a K.O., and the catch with the ball picker and chances, then XP.
+    - **Day Care**, from its widget: two slots with XP toward the 200 cap and the time left. You can take one back, or leave one from the team or the Box (with search). The Egg is free the first time, then ₽50, and hatches with the Animations tab's timeline into a species weighted toward the ones you're missing.
+    - **Versus**, from its widget: locked until three Pokémon reach Lv.50 (with who's closest). It has three tabs: My team (three Lv.50 clones, in order), Opponents (search, To beat / Beaten, how many of theirs you hit super effectively, FIGHT) and the Attack / Defense board. A fight plays on its own on the battle stage: the trainer sends out three in turn, and SKIP jumps to the result.
+    - **Leaderboard**, from the cup: Max level, Progression, Pokédex, Shiny. It shows your rank on top (tap it to find your row), and a Hall of Fame for trainers who maxed a board out.
+    - **Trainer card**, from the avatar: your look (the game's trainer sprites), name, money, Pokédex, best level, areas, shinies, Versus record, the badge case with the crown, and the menu.
 
   A switch above the phone previews three saves: Mid-game, Versus opens, League beaten. Built on the real Kanto data (`assets/kanto.json`), with the mobile game references next to it.
 - **Style lab.** The current game ("Kanto Parchment") and three modern pixel-art directions: Johto Daybreak, Unova Night and Paldea Pop. Each one is shown on the same three phone screens (Map, Battle, Pokémon Center), with a style sheet: palette, type, components and rules. A switch at the top changes the style; hold **C** (or the compare button) to see the current game in the same screens.
@@ -45,8 +51,11 @@ node design/visual-lab/serve.mjs   # http://localhost:4173
 | `anims.js` | The eight timelines and the player (60 fixed steps a second, hit-stops, cues for the HUD) |
 | `home.js` | The Home prototype: area scenery per biome, the team and how they get along, the area details, the Areas sheet with the region switcher, widgets, toasts, the three preview saves |
 | `pages.js` | The tabs behind Home: Team, Pokédex, Poké Mart, Upgrades, and the shared Pokémon sheet |
+| `battle.js` | The playable battle: the engine's damage, combo, type and status rules, the dice tray, the catch, and Versus on auto |
+| `daycare.js` | The Day Care: slots, drop-off, take back, Eggs and the hatching moment |
+| `social.js` | Versus (team, opponents, board), the leaderboard with its Hall of Fame, the trainer card with the badge case and looks |
 | `lab.js` | Styles, the 9-slice frame generator (`makeFrame`), the mock screens, the HUD, the moodboards |
-| `assets/` | Showdown's Black/White animated sprites as de-duplicated sheets (`sprites.json` = frame order and timings), menu icons (`dex-icons.png`: #1 to #251), item icons (`items.png`), `game.json` (from `src/data`: species dice, stats, milestones and evolutions, shop items, upgrade tracks, die faces), `kanto.json` (from `src/data`: areas with levels, wild Pokémon and their odds, gyms, legendaries, one-time and common finds, the round mix, unlocks; regions with their starters), the current grass background |
+| `assets/` | Showdown's Black/White animated sprites as de-duplicated sheets (`sprites.json` = frame order and timings), menu icons (`dex-icons.png`: #1 to #251), item icons (`items.png`), trainer looks (`trainers.png`: Red, Leaf and 22 trainer classes, 80×80, from `public/`), `game.json` (from `src/data`: species dice, stats, milestones and evolutions, shop items, upgrade tracks, die faces), `kanto.json` (from `src/data`: areas with levels, wild Pokémon and their odds, gyms, legendaries, one-time and common finds, the round mix, unlocks; regions with their starters), the current grass background |
 
 ## Porting notes
 
@@ -62,4 +71,4 @@ node design/visual-lab/serve.mjs   # http://localhost:4173
 
   `useBattleAnimator` already gives each hit a target, a colour and a power, so it can drive these effects.
 
-Sprites and icons come from Pokémon Showdown, the same source the game uses and credits. Everything else is drawn in code.
+Pokémon sprites and icons come from Pokémon Showdown, and the trainer sprites are the ones in the game's `public/` folder; both are what the game already uses and credits. Everything else is drawn in code.

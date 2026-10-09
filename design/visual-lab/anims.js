@@ -310,7 +310,18 @@
     const c = [
       [0.15, say(`${A.ownName} used ${A.move}!`)],
       [tHit, (hud) => hud.hp('foe', A.hp[1])],
-      [tVerdict, say(A.mult > 1 ? "It's super effective!" : 'A solid hit!')],
+      [
+        tVerdict,
+        say(
+          A.mult > 1
+            ? "It's super effective!"
+            : A.mult === 0
+              ? 'It had no effect…'
+              : A.mult < 1
+                ? "It's not very effective…"
+                : 'A solid hit!',
+        ),
+      ],
     ]
     if (A.status)
       c.push([
@@ -1150,11 +1161,16 @@
 
   // ---------------------------------------------------------------- catch (in battle)
   function catchAnim(opts = {}) {
+    // Defaults: the lab's preview (Pikachu catching an Eevee); the battle screen passes its own fight.
     const kind = opts.ball || 'great'
     const B = SCN.BALLS[kind]
-    const need = 5
+    const need = opts.need || 5
+    const FOE = opts.foe || 'front-eevee',
+      OWN = opts.own || 'back-pikachu',
+      F = opts.foeName || 'Eevee',
+      DEX = opts.dex || 133
     const caught = kind === 'master' || opts.outcome !== 'fail'
-    const die = caught ? clamp(need - B.bonus + 1, 1, 6) : clamp(need - B.bonus - 1, 1, 6)
+    const die = opts.roll ?? (caught ? clamp(need - B.bonus + 1, 1, 6) : clamp(need - B.bonus - 1, 1, 6))
     const T_THROW = 0.8,
       T_HIT = 1.35,
       T_OPEN = 1.43,
@@ -1180,9 +1196,14 @@
         success: caught,
       },
       hud: () => ({
-        foe: { name: 'Eevee', lv: 25, types: ['normal'], hp: 0 },
-        own: { name: 'Pikachu', lv: 32, hp: 0.74, max: 64 },
-        msg: 'Eevee is worn out!',
+        foe: { name: F, lv: opts.foeLv || 25, types: opts.foeTypes || ['normal'], hp: 0 },
+        own: {
+          name: opts.ownName || 'Pikachu',
+          lv: opts.ownLv || 32,
+          hp: opts.ownHp ?? 0.74,
+          max: opts.ownMax || 64,
+        },
+        msg: `${F} is worn out!`,
       }),
       beats: [
         [
@@ -1191,7 +1212,7 @@
           'After a K.O. the foe stays on its platform: lower, greyed, animation at 35 % speed, stars circling.',
         ],
         [T_THROW, 'Throw', 'The ball arcs in from bottom left, spinning, with a two-ghost trail.'],
-        [T_HIT, 'Contact', 'Hit-stop on contact; Eevee flashes white.'],
+        [T_HIT, 'Contact', `Hit-stop on contact; ${F} flashes white.`],
         [
           T_OPEN,
           'Capture beam',
@@ -1213,11 +1234,11 @@
           caught ? 'Gotcha' : 'Break free',
           caught
             ? 'Click: three stars burst in a fan, the ball darkens to say “locked”.'
-            : 'The ball bursts, both halves fly, Eevee pops back with a flash and runs.',
+            : `The ball bursts, both halves fly, ${F} pops back with a flash and runs.`,
         ],
       ],
       setup(env) {
-        const s = new Stage(env, 'back-pikachu', 'front-eevee', 71)
+        const s = new Stage(env, OWN, FOE, 71)
         s.CP = s.foeAt(0.5, 0.45)
         s.ground = s.L.foe.y - 6
         s.start = { x: -10, y: H + 6 }
@@ -1528,8 +1549,10 @@
                 Sound.tone(1320, 0.3, { vol: 0.05, at: 0.12 })
               },
             ],
-            [T_END + 0.05, say('Gotcha! Eevee was caught!')],
-            [T_END + 0.4, (hud) => hud.chip('New Pokédex entry · #133')],
+            [T_END + 0.05, say(`Gotcha! ${F} was caught!`)],
+            ...(opts.isNew === false
+              ? []
+              : [[T_END + 0.4, (hud) => hud.chip(`New Pokédex entry · #${DEX}`)]]),
           )
         else
           c.push(
@@ -1544,7 +1567,7 @@
             [
               T_FLEE + 0.45,
               (hud) => {
-                hud.say('Eevee fled!')
+                hud.say(`${F} fled!`)
                 hud.show('foe', false)
               },
             ],
@@ -2640,7 +2663,8 @@
     return c
   }
   function hatchAnim(opts = {}) {
-    const B = BABIES[opts.baby || 'dratini']
+    // A baby from the list, or any sprite (the Day Care passes the species it rolled).
+    const B = opts.key ? { key: opts.key, name: opts.name } : BABIES[opts.baby || 'dratini']
     const C = { x: 120, y: 112 }
     const WOB = [
       [0.8, 0.55, 5, 2],
@@ -2864,5 +2888,13 @@
     evolve: evolveAnim,
     hatch: hatchAnim,
   }
-  window.ANIM = { W, H, MAKE, Player, ATTACKS, LEGENDS, EVOS, BABIES, Stage, shakeAt, comboOf, ROLL }
+  // The moves without the lab's roll prefix: the battle screen rolls its own dice first.
+  const RAW = {
+    fire: fireAnim,
+    water: waterAnim,
+    grass: grassAnim,
+    electric: electricAnim,
+    psychic: psychicAnim,
+  }
+  window.ANIM = { W, H, MAKE, RAW, Player, ATTACKS, LEGENDS, EVOS, BABIES, Stage, shakeAt, comboOf, ROLL }
 })()

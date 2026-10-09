@@ -121,10 +121,12 @@
       offer: null,
       offerSeen: false,
       found: {},
+      // The Day Care: XP earned this stay (1 every 10 min, up to 200) and minutes to the next point.
       dayCare: [
-        { dex: 133, name: 'Eevee', lv: 22, gain: 2, xp: 1, ready: true },
-        { dex: 147, name: 'Dratini', lv: 18, gain: 1, xp: 0.45, mins: 40 },
+        { dex: 133, name: 'Eevee', lv: 22, gain: 2, xp: 200 },
+        { dex: 147, name: 'Dratini', lv: 18, gain: 1, xp: 90, next: 4 },
       ],
+      eggFree: true,
       ...JSON.parse(JSON.stringify(S)),
     })
     TEAM = MONS.map((m, i) => {
@@ -1260,7 +1262,12 @@
     const gold = SAVE.gold.toLocaleString('en-US')
     $('#hm-badges').textContent = `${SAVE.badges}/8`
     $('#hm-gold').textContent = `₽ ${gold}`
-    $('#hm-trainer').setAttribute('aria-label', `Trainer menu: ${SAVE.trainer}, ${SAVE.badges} of 8 badges`)
+    $('#hm-trainer').setAttribute('aria-label', `Trainer card: ${SAVE.trainer}, ${SAVE.badges} of 8 badges`)
+    $('#hm-trainer b').textContent = SAVE.trainer
+    // The look other trainers see (battle.js has the sheet); the initial until it's there.
+    $('#hm-trainer .ui-avatar').innerHTML = API.lookOf
+      ? API.lookOf(SAVE.look || 'red', 'av')
+      : esc(SAVE.trainer[0])
     $('#hm-pill').setAttribute('aria-label', `${gold} Pokédollars. Open the Shop`)
   }
 
@@ -1304,6 +1311,14 @@
     )
   }
 
+  // The Day Care's numbers (src/data/config.json): 2 slots, +1 XP every 10 min up to 200 a stay, Eggs at ₽50.
+  const DC = { slots: 2, per: 1, tick: 10, max: 200, egg: 50 }
+  const dcReady = (d) => d.xp >= DC.max
+  /** Minutes until a resident is full. */
+  const dcLeft = (d) => Math.max(0, ((DC.max - d.xp) / DC.per - 1) * DC.tick + (d.next ?? DC.tick))
+  const dcShort = (m) => (m < 60 ? `${m}m` : `${Math.floor(m / 60)}h`)
+  const dcLong = (m) => (m < 60 ? `${m} min` : `${Math.floor(m / 60)} h${m % 60 ? ` ${m % 60}` : ''}`)
+
   function renderWidgets() {
     renderVersus()
     const pp = K.areas.find((a) => a.name === 'Power Plant')
@@ -1327,24 +1342,24 @@
         `Next secret area: ${fi.name}. ${caught.size} of ${n} species caught. Open the areas list.`,
       )
     }
-    const ready = SAVE.dayCare.filter((d) => d && d.ready)
+    const ready = SAVE.dayCare.filter((d) => d && dcReady(d))
     const dc = $('#hm-daycare')
-    dc.innerHTML = `<span class="hm-w-head"><b>Day Care</b>${ready.length ? `<span class="hm-new">TAP TO COLLECT</span>` : ''}</span>
+    dc.innerHTML = `<span class="hm-w-head"><b>Day Care</b>${ready.length ? `<span class="hm-new">READY</span>` : ''}</span>
       ${SAVE.dayCare
         .map((d) =>
           d
             ? `<span class="hm-dc">${dexIco(d.dex)}
-               <span class="hm-dc-mid"><span class="hm-dc-name">${esc(d.name)}${d.ready ? '' : ` <em>Lv.${d.lv}</em>`}</span><span class="hm-meter${d.ready ? ' full' : ''}"><i style="width:${d.xp * 100}%"></i></span></span>
-               ${d.ready ? '<span class="hm-ready">Ready</span>' : `<span class="hm-dc-time">${d.mins}m</span>`}</span>`
+               <span class="hm-dc-mid"><span class="hm-dc-name">${esc(d.name)}${dcReady(d) ? '' : ` <em>Lv.${d.lv}</em>`}</span><span class="hm-meter${dcReady(d) ? ' full' : ''}"><i style="width:${(d.xp / DC.max) * 100}%"></i></span></span>
+               ${dcReady(d) ? '<span class="hm-ready">Ready</span>' : `<span class="hm-dc-time">${dcShort(dcLeft(d))}</span>`}</span>`
             : `<span class="hm-dc empty"><span class="ico empty" aria-hidden="true"></span><span class="hm-dc-mid"><span class="hm-dc-name">Free slot</span><span class="hm-w-sub">Leave a Pokémon</span></span></span>`,
         )
         .join('')}`
     const words = SAVE.dayCare
       .map((d) =>
-        !d ? 'one free slot' : d.ready ? `${d.name} is ready` : `${d.name}, ${d.mins} minutes left`,
+        !d ? 'one free slot' : dcReady(d) ? `${d.name} is ready` : `${d.name}, full in ${dcLong(dcLeft(d))}`,
       )
       .join('. ')
-    dc.setAttribute('aria-label', `Day Care: ${words}.${ready.length ? ' Collect.' : ' Open the Day Care.'}`)
+    dc.setAttribute('aria-label', `Day Care: ${words}. Open the Day Care.`)
   }
 
   /** Versus joins Home once three Pokémon reach Lv.50: first to set a team, then to fight. */
@@ -1707,6 +1722,8 @@
       toast(after)
     }, 2150)
   }
+  /** CONTINUE: the battle (battle.js); without it, the old wipe. */
+  const play = () => (API.startBattle ? API.startBattle() : battleWipe())
   function battleWipe() {
     const a = areaBy(SAVE.current)
     const pool = toCatch(a).length ? toCatch(a) : a.dex
@@ -1717,18 +1734,6 @@
       'Battles play in the Animations tab',
     )
   }
-  function vsWipe() {
-    const side = (who, team) =>
-      `<span class="hm-vs-side"><span class="hm-vs-icons">${team.map((d) => dexIco(d, 'x2')).join('')}</span><b>${esc(who)}</b></span>`
-    wipe(
-      `<p class="vs">${side(
-        SAVE.trainer,
-        TEAM.map((m) => m.dex),
-      )}<span class="hm-vs-big">VS</span>${side(VS.rival.name, VS.rival.team)}</p>`,
-      'Versus fights play on auto: next in the UX pass',
-    )
-  }
-
   function showCard(m) {
     const card = $('#hm-card')
     const p = m.hp[0] / m.hp[1]
@@ -1972,7 +1977,7 @@
       if (b) poke(mons[Number(b.dataset.i)])
     })
     $('#hm-area').addEventListener('click', () => openDetail(SAVE.current))
-    $('#hm-go').addEventListener('click', battleWipe)
+    $('#hm-go').addEventListener('click', () => play())
     $('#hm-areas').addEventListener('click', () =>
       openSheet({ view: SAVE.offer && !SAVE.offerSeen ? 'regions' : 'areas' }),
     )
@@ -1981,28 +1986,12 @@
       if (statusOf(pp) === 'new') travel(pp)
       else openSheet({ filter: 'secret' })
     })
-    $('#hm-daycare').addEventListener('click', () => {
-      const ready = SAVE.dayCare.map((d, i) => (d && d.ready ? i : -1)).filter((i) => i >= 0)
-      if (!ready.length) return toast('The Day Care opens here: drop off, collect, buy an Egg')
-      const names = ready.map(
-        (i) => `${SAVE.dayCare[i].name} grew to Lv.${SAVE.dayCare[i].lv + SAVE.dayCare[i].gain}`,
-      )
-      ready.forEach((i) => (SAVE.dayCare[i] = null))
-      renderWidgets()
-      toast(`${names.join(', ')} · back in your Box`)
-    })
-    $('#hm-versus').addEventListener('click', () => {
-      if (!SAVE.versus) return toast('Versus opens when 3 of your Pokémon reach Lv.50')
-      if (SAVE.versus === 'new') {
-        SAVE.versus = 'set'
-        renderVersus()
-        toast(`Team set: ${TEAM.map((m) => m.name).join(', ')} fight as Lv.50 clones`)
-      } else vsWipe()
-    })
+    $('#hm-daycare').addEventListener('click', () => showPage('daycare'))
+    $('#hm-versus').addEventListener('click', () => showPage('versus'))
     $$('#hm-nav button').forEach((b) => b.addEventListener('click', () => showPage(b.dataset.tab)))
-    $$('.hm-top [data-soon]').forEach((b) =>
-      b.addEventListener('click', () => toast(`${b.dataset.soon}: next in the UX pass`)),
-    )
+    $('#hm-trainer').addEventListener('click', () => showPage('trainer'))
+    $('#hm-pill').addEventListener('click', () => showPage('shop'))
+    $('.hm-top .hm-round').addEventListener('click', () => showPage('ranks'))
 
     // The Areas sheet.
     $('#hm-region').addEventListener('click', () => setView(SHEET.view === 'regions' ? 'areas' : 'regions'))
@@ -2028,7 +2017,7 @@
         const a = areaBy(Number(go.dataset.go))
         if (a.order === SAVE.current) {
           closeAll()
-          return battleWipe()
+          return play()
         }
         return travel(a)
       }
@@ -2063,7 +2052,7 @@
       const a = areaBy(DETAIL.order)
       if (e.currentTarget.dataset.go === 'continue') {
         closeAll()
-        battleWipe()
+        play()
       } else travel(a)
     })
 
@@ -2107,7 +2096,7 @@
     for (const p of Object.values(PAGES)) if (p.reset) p.reset()
     renderWidgets()
     setArea(SAVE.current, false)
-    showPage(PAGE, true)
+    showPage(PAGE === 'battle' ? 'home' : PAGE, true)
   }
 
   // ------------------------------------------------------------------ pages behind the tab bar (pages.js)
@@ -2116,7 +2105,10 @@
   function showPage(id, quiet) {
     if (id !== 'home' && !PAGES[id]) return toast(`${id}: next in the UX pass`)
     closeAll()
+    if (PAGE !== id && PAGES[PAGE] && PAGES[PAGE].leave) PAGES[PAGE].leave()
     PAGE = id
+    // A battle (and later a Versus fight) takes the whole screen: no top bar, no tab bar.
+    $('.hm-screen').classList.toggle('in-battle', !!(PAGES[id] && PAGES[id].full))
     $$('.hm-page').forEach((el) => (el.hidden = el.dataset.page !== id))
     $$('#hm-nav button').forEach((b) =>
       b.dataset.tab === id ? b.setAttribute('aria-current', 'page') : b.removeAttribute('aria-current'),
@@ -2194,6 +2186,10 @@
       return { BALL, LOCK, LOCK3, PLAY, MAP, COIN, BADGE, BADGE3, TROPHY, NAV }
     },
     REDUCED,
+    DC,
+    dcReady,
+    dcLeft,
+    dcLong,
     $,
     $$,
     esc,
@@ -2217,11 +2213,21 @@
     renderNavDots,
     renderWidgets,
     showPage,
+    /** The team changed outside Home (the Day Care): rebuild the scene and the widgets. */
+    refreshTeam() {
+      setArea(SAVE.current, false)
+      renderTeamList()
+      renderWidgets()
+    },
+    get MONS() {
+      return MONS
+    },
+    VS,
     goToArea(order) {
       // From another page: back Home, then travel (or play, if it is where you are).
       const a = areaBy(order)
       showPage('home')
-      if (order === SAVE.current) battleWipe()
+      if (order === SAVE.current) play()
       else travel(a)
     },
   }
