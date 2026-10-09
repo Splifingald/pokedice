@@ -1251,7 +1251,10 @@
     chip(text) {
       this.dice.hidden = false
       const host = $('.roll .extra', this.dice) || this.dice
-      host.innerHTML = [].concat(text).map((t) => `<span class="ui-chip">${esc(t)}</span>`).join('')
+      host.innerHTML = []
+        .concat(text)
+        .map((t) => `<span class="ui-chip">${esc(t)}</span>`)
+        .join('')
     },
     heal() {
       $$('.ui-mon', this.team).forEach((row, i) => {
