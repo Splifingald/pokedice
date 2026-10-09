@@ -155,7 +155,7 @@
       g.save()
       g.translate(s.x, s.y)
       g.drawImage(this.bg.cv, 0, 0)
-      this.bg.dyn(g, t)
+      this.bg.dyn(g, this.absT ?? t)
     }
     end(g) {
       g.restore()
@@ -308,8 +308,7 @@
   /** Cues every attack shares: dice, the move name, the hit, the verdict, the status. */
   function attackCues(A, tHit, tVerdict, tStatus) {
     const c = [
-      [0, (hud) => hud.roll(A.dice, `${A.combo} · ×${A.mult}`)],
-      [0.3, say(`${A.ownName} used ${A.move}!`)],
+      [0.15, say(`${A.ownName} used ${A.move}!`)],
       [tHit, (hud) => hud.hp('foe', A.hp[1])],
       [tVerdict, say(A.mult > 1 ? "It's super effective!" : 'A solid hit!')],
     ]
@@ -337,7 +336,6 @@
       dur: 4.2,
       hud: () => attackHud(A),
       beats: [
-        [0, 'Roll', 'The dice land: two 6s make a Pair; the 1 is a Burn face.'],
         [
           0.5,
           'Inhale',
@@ -514,7 +512,6 @@
       dur: 4.0,
       hud: () => attackHud(A),
       beats: [
-        [0, 'Roll', 'Water dice: 5, 4, 4. A Pair, doubled against Arcanine.'],
         [0.5, 'Charge', 'Droplets orbit into both cannons; a cold glow builds at each muzzle.'],
         [0.95, 'Jet', 'Two pressurised jets in four blues with a white core; the edges ripple at 45 Hz.'],
         [1.07, 'Contact', 'Hit-stop, knock-back of 3 px, a splash crown and a foam ring on the ground.'],
@@ -684,7 +681,6 @@
       dur: 3.9,
       hud: () => attackHud(A),
       beats: [
-        [0, 'Roll', 'Grass 4 and 4, a Pair; ×4 against Rock/Ground.'],
         [0.45, 'Rustle', 'The flower shudders 1 px; twelve leaves burst upward in a fan.'],
         [0.8, 'Aim', 'The leaves hang, spinning, then turn to face the target.'],
         [
@@ -876,7 +872,6 @@
       dur: 4.2,
       hud: () => attackHud(A),
       beats: [
-        [0, 'Roll', 'Two Paralyze faces (4s) make a Pair and trigger paralysis.'],
         [0.4, 'Charge', 'The scene dims to 55 %; small arcs crackle around Pikachu, who flickers yellow.'],
         [0.95, 'Hop', 'A 5 px hop: the release.'],
         [
@@ -1013,7 +1008,6 @@
       dur: 4.4,
       hud: () => attackHud(A),
       beats: [
-        [0, 'Roll', 'Psychic 5 and 5; the third die shows the Confuse face.'],
         [0.4, 'Focus', 'Both spoons glow; rings ripple out of Alakazam and the world tints violet.'],
         [
           0.9,
@@ -1167,13 +1161,24 @@
       T_ABS = 1.55,
       T_CLOSE = 1.98,
       T_DROP = 2.05
-    const T_ROLL = 2.8,
-      WOB = caught ? [3.7, 4.55, 5.4] : [3.7, 4.55],
-      T_END = caught ? 6.05 : 5.3
-    const dur = caught ? 7.6 : 7.4
+    const T_ROLL = 2.75,
+      WOB = caught ? [4.1, 4.95, 5.8] : [4.1, 4.95],
+      T_END = caught ? 6.45 : 5.7,
+      T_FLEE = T_END + 0.7
+    const dur = caught ? 8.0 : 7.9
     return {
       id: 'catch',
       dur,
+      roll: {
+        kind: 'catch',
+        t0: T_ROLL,
+        dice: [['base', die]],
+        bonus: B.bonus,
+        ball: B.name,
+        need,
+        verdictAt: T_END,
+        success: caught,
+      },
       hud: () => ({
         foe: { name: 'Eevee', lv: 25, types: ['normal'], hp: 0 },
         own: { name: 'Pikachu', lv: 32, hp: 0.74, max: 64 },
@@ -1193,7 +1198,11 @@
           'The lid swings open, red light floods the silhouette, and it shrinks into the ball.',
         ],
         [T_DROP, 'Drop', 'The ball falls with two bounces (9 px, then 3 px) and a dust puff on each.'],
-        [T_ROLL, 'Catch roll', `The catch die: ${die} + ${B.bonus} (${B.name}) against ${need}.`],
+        [
+          T_ROLL,
+          'Catch roll',
+          `The catch die tumbles and lands on ${die}; the ${B.name} adds ${B.bonus}. The total waits under the ball until the wobbles decide.`,
+        ],
         [
           WOB[0],
           'Wobbles',
@@ -1317,7 +1326,7 @@
               colors: ['#ffffff', '#ff9aa8', '#ff3b5c'],
             })
           }
-        if (!caught && within(t, 6.0, 6.7) && Math.floor(t * 60) % 3 === 0)
+        if (!caught && within(t, T_FLEE, T_FLEE + 0.7) && Math.floor(t * 60) % 3 === 0)
           s.under.add({
             x: s.L.foe.x + this.fleeX(t) - 8,
             y: s.L.foe.y,
@@ -1332,7 +1341,7 @@
           })
       },
       fleeX(t) {
-        return 70 * ease.inQ(span(t, 6.05, 6.7))
+        return 70 * ease.inQ(span(t, T_FLEE + 0.05, T_FLEE + 0.7))
       },
       draw(g, s, t) {
         s.begin(g, t)
@@ -1363,8 +1372,8 @@
         } else if (back) {
           const p = span(t, T_END + 0.15, T_END + 0.4)
           const k = ease.outBack(p, 2)
-          const hop = t > 6.0 ? -Math.round(Math.abs(Math.sin((t - 6.0) * 10)) * 4) : 0
-          const alpha = 1 - span(t, 6.4, 6.75)
+          const hop = t > T_FLEE ? -Math.round(Math.abs(Math.sin((t - T_FLEE) * 10)) * 4) : 0
+          const alpha = 1 - span(t, T_FLEE + 0.4, T_FLEE + 0.75)
           if (alpha > 0)
             sprite(g, s.foe, s.L.foe.x + this.fleeX(t), s.L.foe.y + hop, s.clock(t), {
               sx: k,
@@ -1491,18 +1500,13 @@
       },
       init() {
         const c = [
-          [0, (hud) => hud.chip(`Catch: d6 + ${B.bonus} ≥ ${need}`)],
           [0.4, say(`You threw a ${B.name}!`)],
           [T_THROW, () => Sound.noise(0.3, { freq: 1500, slide: 1500, vol: 0.04 })],
           [T_OPEN, () => Sound.tone(500, 0.3, { type: 'square', vol: 0.04, slide: 700 })],
           [T_ABS, (hud) => hud.show('foe', false)],
           [T_CLOSE, () => Sound.tone(1200, 0.06, { vol: 0.04 })],
           [
-            T_ROLL,
-            (hud) => hud.roll([['base', die]], `${die} + ${B.bonus} = ${die + B.bonus} · need ${need}`),
-          ],
-          [
-            T_ROLL + 0.6,
+            T_ROLL + 0.95,
             say(
               die + B.bonus >= need
                 ? `Rolled ${die} + ${B.bonus} = ${die + B.bonus}. Just enough…`
@@ -1538,7 +1542,7 @@
               },
             ],
             [
-              6.45,
+              T_FLEE + 0.45,
               (hud) => {
                 hud.say('Eevee fled!')
                 hud.show('foe', false)
@@ -2134,6 +2138,82 @@
     }
   }
 
+  // ---------------------------------------------------------------- the dice roll before every attack
+  /** How long the roll holds the stage before the move starts: tumble, land, combo, damage. */
+  const ROLL = 1.8
+  /** The combo in a roll: the most common value (ties: the higher one), when it shows at least twice. */
+  function comboOf(dice) {
+    const by = {}
+    dice.forEach(([, v], i) => (by[v] = by[v] || []).push(i))
+    const best = Object.entries(by).sort((a, b) => b[1].length - a[1].length || b[0] - a[0])[0]
+    const n = best[1].length
+    if (n < 2) return null
+    const NAMES = {
+      2: ['Pair', 3],
+      3: ['Three of a Kind', 6],
+      4: ['Four of a Kind', 10],
+      5: ['Five of a Kind', 15],
+    }
+    return { name: NAMES[n][0], bonus: NAMES[n][1], value: Number(best[0]), idx: best[1] }
+  }
+  function withRoll(def, A) {
+    const combo = comboOf(A.dice)
+    const sum = A.dice.reduce((a, d) => a + d[1], 0)
+    const st = A.dice.find((d) => d[2])
+    return {
+      id: def.id,
+      dur: def.dur + ROLL,
+      hud: def.hud,
+      roll: { kind: 'attack', t0: 0.1, dice: A.dice, combo, sum, mult: A.mult, dmg: A.dmg },
+      beats: [
+        [
+          0,
+          'Roll',
+          `${A.ownName}'s ${A.dice.length} dice hop in, flicker through faces and land one by one with a thunk.`,
+        ],
+        [
+          0.95,
+          'Combo',
+          `The two ${combo.value}s lift out of the tray with a ring: ${combo.name} +${combo.bonus}. The other dice step back.${st ? ` The ${st[2]} face flags its status.` : ''}`,
+        ],
+        [
+          1.1,
+          'Damage',
+          `The sum counts up: ${sum} + ${combo.bonus} = ${sum + combo.bonus}, ×${A.mult} for the type → ${A.dmg}. Only then does the move start.`,
+        ],
+        ...def.beats.map(([t, l, x]) => [t + ROLL, l, x]),
+      ],
+      setup: (env) => def.setup(env),
+      init(s) {
+        def.init(s)
+        this.cues = [
+          [0, (hud) => hud.say(`${A.ownName} rolls ${A.dice.length} dice…`)],
+          [0.95, (hud) => hud.say(`${combo.name} of ${combo.value}s! +${combo.bonus}`)],
+          [0.1, () => Sound.noise(0.35, { freq: 2600, q: 2, vol: 0.03 })],
+          ...A.dice.map((_, i) => [
+            0.1 + 0.38 + i * 0.1,
+            () => Sound.tone(150 + i * 25, 0.05, { type: 'square', vol: 0.05 }),
+          ]),
+          [
+            0.95,
+            () => {
+              Sound.tone(660, 0.08, { vol: 0.04 })
+              Sound.tone(990, 0.12, { vol: 0.04, at: 0.08 })
+            },
+          ],
+          ...def.cues.map(([t, f]) => [t + ROLL, f]),
+        ].sort((a, b) => a[0] - b[0])
+      },
+      step(s, t, dt) {
+        if (t > ROLL) def.step(s, t - ROLL, dt)
+      },
+      draw(g, s, t) {
+        s.absT = t
+        def.draw(g, s, t - ROLL)
+      },
+    }
+  }
+
   // ---------------------------------------------------------------- the player
   class Player {
     constructor(cv, hud) {
@@ -2160,6 +2240,7 @@
       this.s = this.def.setup(this.env)
       this.def.init(this.s)
       this.hud.reset(this.def.hud())
+      this.hud.setRoll(this.def.roll || null)
       this.render()
     }
     play() {
@@ -2211,6 +2292,7 @@
     render() {
       this.g.clearRect(0, 0, W, H)
       this.def.draw(this.g, this.s, this.t)
+      this.hud.tick(this.t)
       this.onTick && this.onTick(this.t)
     }
   }
@@ -2218,12 +2300,12 @@
   const MAKE = {
     center: centerAnim,
     catch: catchAnim,
-    fire: fireAnim,
-    water: waterAnim,
-    grass: grassAnim,
-    electric: electricAnim,
-    psychic: psychicAnim,
+    fire: () => withRoll(fireAnim(), ATTACKS.fire),
+    water: () => withRoll(waterAnim(), ATTACKS.water),
+    grass: () => withRoll(grassAnim(), ATTACKS.grass),
+    electric: () => withRoll(electricAnim(), ATTACKS.electric),
+    psychic: () => withRoll(psychicAnim(), ATTACKS.psychic),
     legend: legendAnim,
   }
-  window.ANIM = { W, H, MAKE, Player, ATTACKS, LEGENDS, Stage, shakeAt }
+  window.ANIM = { W, H, MAKE, Player, ATTACKS, LEGENDS, Stage, shakeAt, comboOf, ROLL }
 })()

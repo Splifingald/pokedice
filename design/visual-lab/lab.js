@@ -304,7 +304,7 @@
       thesis:
         'HeartGold’s morning light with a modern UI’s calm. Panels are paper-white with drawn, stepped corners and a dithered drop shadow instead of a hard one. Skies are ordered-dither gradients, greens shift hue toward yellow in the light, and Poké-ball red is kept for the one action that matters.',
       chips: [
-        'Pixelify Sans + Silkscreen',
+        'Jersey 20 + 15',
         '1 px navy line',
         'dithered 2 px shadow',
         'hue-shifted pastels',
@@ -321,9 +321,9 @@
         ['Sunrise', '#ffbe2e', 'Progress, rewards'],
       ],
       fonts: [
-        ['Display', 'Pixelify Sans 600', "'Pixelify Sans'"],
-        ['Body', 'Pixelify Sans 400 · 15 px', "'Pixelify Sans'"],
-        ['Buttons, numbers', 'Silkscreen', "'Silkscreen'"],
+        ['Display', 'Jersey 20 · 40 px', "'Jersey 20'"],
+        ['Body', 'Jersey 20 · 20 px', "'Jersey 20'"],
+        ['Labels, numbers', 'Jersey 15 · 15 px', "'Jersey 15'"],
       ],
       rules: [
         [
@@ -340,9 +340,13 @@
           'Scenery is lit from the top right: sun bloom on the sky, lit edges on ridges, darker feet.',
         ],
         ['Motion', 'Buttons press 2 px into their own shadow; HP drains with a coral trail.'],
+        [
+          'Type',
+          'Jersey 20 for text, Jersey 15 for labels and numbers, only at sizes on their pixel grid (15, 20, 40 px): the same family the game ships, one step crisper.',
+        ],
       ],
       build:
-        'Swap <code>.pixel-panel</code> / <code>.pixel-btn</code> for <code>border-image</code> frames generated from small pixel maps (this page builds them in <code>lab.js → makeFrame</code>). Fonts: Pixelify Sans and Silkscreen from Google Fonts; keep the Fusion Pixel CJK fallback.',
+        'Swap <code>.pixel-panel</code> / <code>.pixel-btn</code> for <code>border-image</code> frames generated from small pixel maps (this page builds them in <code>lab.js → makeFrame</code>). Type: add Jersey 20 next to the Jersey 25/15 the game already bundles, and keep the Fusion Pixel CJK fallback.',
     },
     {
       id: 'night',
@@ -680,7 +684,7 @@
       ? `<span class="tag"><img class="px" alt="" src="${iconURL(o.status, style, 2)}" /></span>`
       : ''
     const label = `${type === 'base' ? 'Base' : type[0].toUpperCase() + type.slice(1)} die showing ${value}${o.status ? ', ' + o.status + ' face' : ''}`
-    return `<span class="die-wrap${o.sel ? ' sel' : ''}"><span class="ui-die${o.sel ? ' sel' : ''}${st ? ' st' : ''}" role="img" aria-label="${label}" style="--c:${c};--pip:${pip};${st ? `--stc:${st};` : ''}${o.size ? `--s:${o.size}px` : ''}">${cells}${tag}</span></span>`
+    return `<span class="die-wrap${o.sel ? ' sel' : ''}${o.combo ? ' combo' : ''}"><span class="ui-die${o.sel ? ' sel' : ''}${st ? ' st' : ''}" role="img" aria-label="${label}" style="--c:${c};--pip:${pip};${st ? `--stc:${st};` : ''}${o.size ? `--s:${o.size}px` : ''}">${cells}${tag}</span></span>`
   }
   function hp(pct, numbers, o = {}) {
     const num = numbers ? `<span class="num">${numbers}</span>` : ''
@@ -748,8 +752,8 @@
       </div>
       <section class="ui-panel">
         <p class="ui-prompt">What will Charizard do?</p>
-        <div class="ui-dice">${die(style, 'fire', 6)}${die(style, 'flying', 6)}${die(style, 'fire', 1, { status: 'burn' })}${die(style, 'base', 3, { sel: true })}</div>
-        <div class="ui-combo"><span>PAIR +3</span><span class="ui-row" style="gap:4px">${ico('sword', style, 2, 18)}<span class="ui-num">31</span></span><span class="ui-chip" style="--chip:#f07a2a">${ico('burn', style, 2, 14)} BURN 1/1</span></div>
+        <div class="ui-dice">${die(style, 'fire', 6, { combo: true })}${die(style, 'flying', 6, { combo: true })}${die(style, 'fire', 1, { status: 'burn' })}${die(style, 'base', 3, { sel: true })}</div>
+        <div class="ui-combo"><span class="combo-chip">PAIR +3</span><span class="ui-row" style="gap:4px">${ico('sword', style, 2, 18)}<span class="ui-num">31</span></span><span class="ui-chip" style="--chip:#f07a2a">${ico('burn', style, 2, 14)} BURN 1/1</span></div>
         <div class="ui-btns" style="margin-top:12px">${btn('Reroll (2)', { icon: ico('reroll', style, 2, 20) })}${btn('Attack', { primary: true, icon: ico('sword', style, 2, 20) })}</div>
         <p class="ui-hint">Tap the dice you want to reroll</p>
       </section>
@@ -996,8 +1000,6 @@
       } else {
         this.foe.hidden = this.own.hidden = false
         this.team.hidden = true
-        this.dice.hidden = false
-        this.dice.innerHTML = ''
         const f = cfg.foe,
           o = cfg.own
         this.foe.innerHTML = `<div class="ui-row"><span class="name ui-trunc">${f.name}</span><span class="lv">Lv.${f.lv}</span><span class="st-chip"></span></div><div class="ui-types">${f.types.map((t) => typeBadge(s, t)).join('')}</div>${hp(f.hp, '', { id: 'foe' })}`
@@ -1054,36 +1056,152 @@
     show(side, on) {
       this[side].classList.toggle('gone', !on)
     },
-    roll(dice, label) {
+    /** Build the roll for this animation; its look at any moment comes from tick(t). */
+    setRoll(spec) {
+      this.spec = spec
+      this.rd = null
+      this.lastFaces = []
+      const box = this.dice
+      box.innerHTML = ''
+      box.hidden = !spec
+      if (!spec) return
       const s = style
-      const draw = (vals) =>
-        dice
-          .map(([type, v, st], i) => die(s, type, vals[i], { status: vals === final ? st : null, size: 40 }))
-          .join('')
-      const final = dice.map((d) => d[1])
-      this.dice.hidden = false
-      this.dice.classList.add('rolling')
-      let n = 0
-      const k = player ? 1 / player.speed : 1
-      const spin = () => {
-        n += 1
-        if (n * 70 * k >= 480 * k || REDUCED) {
-          clearInterval(this.rollTimer)
-          this.dice.classList.remove('rolling')
-          this.dice.innerHTML = draw(final) + `<span class="ui-chip">${esc(label)}</span>`
+      const tokens =
+        spec.kind === 'attack'
+          ? [
+              [spec.sum, 'dice'],
+              ['+' + spec.combo.bonus, spec.combo.name],
+              ['×' + spec.mult, spec.mult > 1 ? 'super effective' : 'type'],
+              ['= ' + spec.dmg, 'damage'],
+            ]
+          : [
+              [spec.dice[0][1], 'catch die'],
+              ['+' + spec.bonus, spec.ball],
+              ['= ' + (spec.dice[0][1] + spec.bonus), `needs ${spec.need}`],
+            ]
+      const cap =
+        spec.kind === 'attack'
+          ? 'Damage = (dice + combo) × type'
+          : `Catch: d6 + ball bonus against a catch value of ${spec.need}`
+      const dice = spec.dice
+        .map(
+          ([type, v, st], i) =>
+            `<span class="rd" data-i="${i}">${die(s, type, v, { status: st, size: 48 })}<span class="rd-st" style="color:${st ? STATUS[st] : 'inherit'}">${st ? st : ''}</span></span>`,
+        )
+        .join('')
+      box.innerHTML = `<div class="roll"><div class="tray">${dice}${spec.combo ? `<span class="bracket"><b>${spec.combo.name} +${spec.combo.bonus}</b></span>` : ''}</div><div class="math">${tokens.map(([v, l], k) => `<span class="tok${k === tokens.length - 1 ? ' total' : ''}"><b>${esc(v)}</b><i>${esc(l)}</i></span>`).join('')}</div><div class="cap">${esc(cap)}</div><div class="extra"></div></div>`
+      this.rd = $$('.rd', box)
+      this.cells = this.rd.map((r) => $$('.ui-die i', r))
+      this.tags = this.rd.map((r) => $('.tag', r))
+      this.sts = this.rd.map((r) => $('.rd-st', r))
+      this.toks = $$('.tok', box)
+      this.bracket = $('.bracket', box)
+      this.tray = $('.tray', box)
+      this.tick(player ? player.t : 0)
+    },
+    /**
+     * The roll as a function of time: dice drop in and hop three times while their faces flicker (slowing down),
+     * land one after another with a squash, then the combo dice lift and ring, the rest step back, a bracket names
+     * the combo and the math counts up to the damage.
+     */
+    tick(t) {
+      const sp = this.spec
+      if (!sp || !this.rd) return
+      const lt = t - sp.t0
+      const n = sp.dice.length
+      const land = (i) => 0.38 + i * 0.1
+      const RES = land(n - 1) + 0.16
+      const verdict = sp.kind === 'catch' ? lt >= sp.verdictAt - sp.t0 : false
+      const lifted = sp.kind === 'attack' ? sp.combo.idx : verdict && sp.success ? [0] : []
+      const busted = sp.kind === 'catch' && verdict && !sp.success
+      this.rd.forEach((el, i) => {
+        const [, v] = sp.dice[i]
+        if (lt < 0) {
+          el.style.visibility = 'hidden'
           return
         }
-        this.dice.innerHTML = draw(dice.map(() => 1 + Math.floor(Math.random() * 6)))
+        el.style.visibility = 'visible'
+        let y = 0,
+          rot = 0,
+          sx = 1,
+          sy = 1,
+          face = v,
+          pop = false,
+          dim = false
+        const L = land(i)
+        if (lt < L) {
+          const k = lt / L
+          const drop = lt < 0.1 ? (1 - lt / 0.1) * -40 : 0
+          y = drop - Math.abs(Math.sin(k * Math.PI * 3)) * (18 * (1 - k) + 3)
+          rot = (Math.floor(lt * 16 + i * 2) % 2 ? 1 : -1) * Math.round(12 * (1 - k))
+          face = 1 + ((Math.floor(lt * (26 - 16 * k)) * 7 + i * 3 + 5) % 6)
+          if (face === v && k > 0.6) face = (v % 6) + 1
+        } else {
+          const p = lt - L
+          if (p < 0.12) {
+            const q = 1 - p / 0.12
+            sx = 1 + 0.22 * q
+            sy = 1 - 0.24 * q
+          }
+          if (lt >= RES && sp.kind === 'attack') {
+            if (lifted.includes(i)) pop = true
+            else if (!sp.dice[i][2]) dim = true
+          }
+          if (verdict && lifted.includes(i)) pop = true
+          if (pop) {
+            const q = PX.ease.outBack(Math.min(1, (lt - (verdict ? sp.verdictAt - sp.t0 : RES)) / 0.24), 2.6)
+            y = -12 * q
+            sx = sy = 1 + 0.16 * q
+          }
+          if (busted && lt - (sp.verdictAt - sp.t0) < 0.3) rot = Math.floor(lt * 40) % 2 ? 8 : -8
+        }
+        const wrap = el.firstElementChild
+        wrap.style.transform = `translateY(${Math.round(y)}px) rotate(${rot}deg) scale(${sx.toFixed(3)}, ${sy.toFixed(3)})`
+        el.classList.toggle('pop', pop)
+        el.classList.toggle('dim', dim)
+        el.classList.toggle('bust', busted)
+        el.classList.toggle('stat', !!sp.dice[i][2] && lt >= RES && !pop)
+        if (sp.dice[i][2]) el.style.setProperty('--stc', STATUS[sp.dice[i][2]])
+        if (face !== this.lastFaces[i]) {
+          const on = PIPS[face] || []
+          this.cells[i].forEach((c, k) => c.classList.toggle('on', on.includes(k)))
+          this.lastFaces[i] = face
+        }
+        const shown = lt >= L
+        if (this.tags[i]) this.tags[i].style.visibility = shown ? 'visible' : 'hidden'
+        if (this.sts[i]) {
+          const q = PX.clamp((lt - RES) / 0.18)
+          this.sts[i].style.opacity = q > 0 ? 1 : 0
+          this.sts[i].style.transform = `scale(${(1 + 0.6 * (1 - PX.ease.outBack(q, 2))).toFixed(3)})`
+        }
+      })
+      if (this.bracket) {
+        const q = PX.clamp((lt - RES - 0.06) / 0.2)
+        const box = this.tray.getBoundingClientRect()
+        const xs = sp.combo.idx.map((i) => this.rd[i].getBoundingClientRect())
+        const left = Math.min(...xs.map((r) => r.left)) - box.left
+        const right = Math.max(...xs.map((r) => r.right)) - box.left
+        Object.assign(this.bracket.style, {
+          left: `${Math.round(left)}px`,
+          width: `${Math.round(right - left)}px`,
+          opacity: q > 0 ? 1 : 0,
+          transform: `scaleX(${PX.ease.outBack(q, 2).toFixed(3)})`,
+        })
       }
-      clearInterval(this.rollTimer)
-      spin()
-      this.rollTimer = setInterval(spin, 70 * k)
+      this.toks.forEach((tk, k) => {
+        const at = RES + 0.12 + k * 0.11
+        const q = PX.clamp((lt - at) / 0.18)
+        tk.style.opacity = q > 0 ? 1 : 0
+        tk.style.transform = `scale(${(1 + 0.55 * (1 - PX.ease.outQ(q))).toFixed(3)})`
+      })
+      const total = this.toks[this.toks.length - 1]
+      total.classList.toggle('ok', sp.kind === 'catch' && verdict && sp.success)
+      total.classList.toggle('ko', busted)
     },
     chip(text) {
       this.dice.hidden = false
-      const c = $('.ui-chip.solo', this.dice)
-      if (c) c.textContent = text
-      else this.dice.insertAdjacentHTML('beforeend', `<span class="ui-chip solo">${esc(text)}</span>`)
+      const host = $('.roll .extra', this.dice) || this.dice
+      host.innerHTML = `<span class="ui-chip">${esc(text)}</span>`
     },
     heal() {
       $$('.ui-mon', this.team).forEach((row, i) => {
