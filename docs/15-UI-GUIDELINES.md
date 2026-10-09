@@ -109,6 +109,11 @@ All live in `src/components/`. Every component, in every state, is on `/kitchen-
 | `HpBar` | HP | Track with ink ring; the fill drains over 700 ms, the trail waits 280 ms then follows over 900 ms; numbers for your own, words for a foe's (screen readers) |
 | `TypeBadge`, `TypeSwatch` | A type | `md` 20 px, `sm` 16 px (plates) |
 | `Die` | A die face | Square corners; pips on whole pixels (`pipLayout`: one even pip size, three fixed columns) at any size; ink pips on light dice, white on dark; status face = white + status ring and a round badge with its icon; `selected` = lifted 6 px with a red outline; `combo` = a gold ring; values without a pip layout show their number |
+| `PageHead` / `Wallet` | A tab's title row | Tab icon, the one `<h1>` (`as="h2"` where the page has its own), a count ("3/3", "81/151") or the gold as a navy plate |
+| `SheetSection` | A titled block inside a sheet | 22 px heading, a muted hint on the same row, extra controls |
+| `MonTile` / `TileTag` | A grid of Pokémon (Box, Pokédex) | Menu icon from the atlas, number, name, a line under it; `missing` = grey tile + silhouette; corner tags NEW (gold) and Nearby (green). `TILE_GRID` = ~84 px columns |
+| `FaceDice` / `StatusLines` | What a die does | Its six faces as real dice, value under each; a status face keeps its ring and badge and gets its short name in a chip. One tinted line per status: when it triggers and what it does, with the live numbers (`statusEffects`) |
+| `ItemSprite` | An item's picture | From the item atlas (one request); falls back to the item's own URL for items added since the atlas was built |
 | `PixelIcon` | Every icon | Pixel maps in `icons.tsx` (8×8, 12×12 and the 16×16 tab-bar set `nav*`), drawn as SVG rects. One shared palette (`ICON_PALETTE`); a map may have its own (`OWN_PALETTE`) |
 
 Dialog behaviour (`src/lib/useDialog.ts`, used by `Modal`, `Sheet`, `SidePanel`): focus moves in, **Tab stays inside**,
@@ -178,7 +183,11 @@ Players shouldn't have to make many requests:
 - **Draw in code** whatever can be: frames, the ground texture, icons, badges, Poké Balls, the Egg, area scenes and
   battle backgrounds. They cost no request at all.
 - **Atlases** for sets of small pictures: the Pokémon menu icons (`src/assets/pokemon-icons.png`), the trainers (one
-  sheet per region), the item icons. One request, cached for a year (hashed Vite assets).
+  sheet per region), the item icons (`src/assets/item-icons.png`, rebuilt by `pnpm item-sprites` when items change).
+  One request, cached for a year (hashed Vite assets).
+- **Grids use icons, not sprites**: the Box and the Pokédex show menu icons from the atlas (a 151-entry Pokédex costs
+  one request). Showdown's animated sprites are for the places where one Pokémon is the subject: team cards, a
+  Pokémon's sheet, the scene.
 - **Pokémon sprites** come from Pokémon Showdown's CDN: one request per sprite actually shown, cached by the browser;
   never a request for a view Showdown doesn't have (`src/data/showdown-sprites.json`); only the current area's fronts
   are preloaded.
@@ -206,3 +215,23 @@ Players shouldn't have to make many requests:
   (Showdown's animated sprites, no extra request) and an effects canvas on top. A stage root is its own stacking
   context (`isolate`), so its internal z-indexes never rise above sheets and dialogs. The canvas has `role="img"` and a
   label; whatever you can tap on it (a Pokémon) also exists as a button in a hidden list.
+
+## 13. Lists, sheets and buying
+
+- **A Pokémon's sheet** (`SheetModal`, a `Sheet`): the title is the name, the line under it says number · level · where
+  it is (Lead, Team slot 2, In the Box). The footer holds what you can do: Make lead and Use an item for a team member,
+  the Center rule (with a lock) and Use an item for one in the Box. Use an item opens a list in the same sheet, with
+  Back. The body leads with what matters now: HP and XP, Speed / Rerolls / Catch value, every die as real dice, then
+  **What's next** (milestones still ahead, the next one tagged NEXT, each with how close it is); milestones already
+  reached fold away under a summary.
+- **Explain, don't hide**: something that can't be used right now stays listed, greyed, with the reason in words
+  ("Already full", "Fainted: needs a Revive", "Needs a Pokémon with 4+ dice", "6 badges"). Buttons you can't afford
+  stay focusable (`aria-disabled`) and say what's missing ("need ₽14"); a tap explains in a toast.
+- **Reordering**: drag a card onto another to swap them (pointer events, 8 px before a press becomes a drag; a tap
+  still opens the card). Every drag has a button twin for keyboards and screen readers (Make lead).
+- **Shelves** (the Poké Mart): one row open at a time; an open row shows the description, a ×1 / ×5 / ×10 segmented
+  picker and one button that names the total ("Buy ₽500") or what's missing ("Need ₽40 more"). Category chips put the
+  most-used group first (Balls). What isn't sold yet waits under "Coming later" with what it waits for.
+- **Search resets filters**: typing in a search shows everything that matches (the Pokédex's filter goes back to All).
+  A Pokédex number finds any entry; a name only finds what has been caught.
+- **Grey plates** (`#e3e8f0`, `#f1f4f9`) take ink text: muted grey on them is under 4.5:1.

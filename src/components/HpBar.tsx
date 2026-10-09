@@ -15,6 +15,7 @@ export function HpBar({
   height = 10,
   collapsible = false,
   approximate = false,
+  compact = false,
 }: {
   hp: number
   max: number
@@ -28,6 +29,8 @@ export function HpBar({
   collapsible?: boolean
   /** A foe's bar: screen readers get "high / half / low", never the exact HP. */
   approximate?: boolean
+  /** Narrow cards (the Team's): no "HP" word in front, smaller numbers. */
+  compact?: boolean
 }) {
   const { t } = useT()
   const pace = usePace()
@@ -35,8 +38,8 @@ export function HpBar({
   const collapse = collapsible && showNumbers
   const color = hpColor(pct)
   return (
-    <div className={cx('flex items-center gap-2', collapse && 'hp-collapsible justify-between', className)}>
-      <span className="font-pixel-sm text-sm leading-none text-muted">{t('ui.mon.hp')}</span>
+    <div className={cx('flex items-center', compact ? 'gap-1' : 'gap-2', collapse && 'hp-collapsible justify-between', className)}>
+      {!compact && <span className="font-pixel-sm text-sm leading-none text-muted">{t('ui.mon.hp')}</span>}
       <div
         className="hp-track pixel-corners relative flex-1 overflow-hidden bg-line shadow-ring"
         style={{ height: Math.max(8, height) }}
@@ -66,7 +69,7 @@ export function HpBar({
         />
       </div>
       {showNumbers && (
-        <span className="min-w-[4.5ch] text-right font-mono text-[15px] tabular-nums leading-none">
+        <span className={cx('text-right font-mono tabular-nums leading-none', compact ? 'text-[13px]' : 'min-w-[4.5ch] text-[15px]')}>
           {Math.max(0, Math.round(hp))}/{max}
         </span>
       )}

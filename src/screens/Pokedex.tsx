@@ -1,49 +1,63 @@
 import { motion } from 'framer-motion'
 import { useEffect, useMemo, useState } from 'react'
-import { getRegion, isAreaUnlocked, nationalDex, regionOf, regionOfArea, regionSpecies } from '@/engine'
+import {
+  conditionStatus,
+  getRegion,
+  isAreaUnlocked,
+  nationalDex,
+  regionOf,
+  regionOfArea,
+  regionSpecies,
+  type GameData,
+  type SaveData,
+} from '@/engine'
 import { searchFold } from '@/i18n'
 import { useT } from '@/i18n/react'
 import { PixelIcon } from '@/components/icons'
+import { MonTile, TILE_GRID, TileTag } from '@/components/MonTile'
+import { PageHead } from '@/components/PageHead'
+import { FilterChips, SearchField } from '@/components/Segmented'
 import { SheetModal, type SheetView } from '@/components/SheetModal'
-import { SpriteImg } from '@/components/SpriteImg'
-import { markDexSeen } from '@/lib/dexSeen'
+import { markDexSeen, useDexNew } from '@/lib/dexSeen'
 import { dexNo } from '@/lib/format'
 import { useGame } from '@/store/game'
-import { cx } from '@/theme/util'
 
-type Filter = 'all' | 'caught' | 'missing' | 'catchable'
-const FILTERS: { id: Filter; label: string }[] = [
-  { id: 'all', label: 'ui.dex.filterAll' },
-  { id: 'caught', label: 'ui.dex.filterCaught' },
-  { id: 'missing', label: 'ui.dex.filterMissing' },
-  { id: 'catchable', label: 'ui.dex.filterCatchable' },
-]
-const JUMPS = [1, 26, 51, 76, 101, 126]
+type Filter = 'all' | 'caught' | 'missing' | 'nearby'
+
+/** The secret area of this region that opens at a Pokédex count, and how many more catches it needs. */
+function nextDexUnlock(save: SaveData, data: GameData): { name: string; more: number } | null {
+  let best: { name: string; more: number } | null = null
+  for (const a of data.areas) {
+    if (!a.hidden || regionOfArea(a) !== regionOf(save) || isAreaUnlocked(save, a.id, data)) continue
+    const unmet = (a.unlockConditions ?? []).filter((c) => !conditionStatus(c, save, data).met)
+    const c = unmet[0]
+    if (unmet.length !== 1 || c?.kind !== 'pokedex') continue
+    const s = conditionStatus(c, save, data)
+    const more = s.target - s.current
+    if (more > 0 && (!best || more < best.more)) best = { name: a.name, more }
+  }
+  return best
+}
 
 export function PokedexScreen() {
   const { t } = useT()
   const save = useGame((s) => s.save)
   const data = useGame((s) => s.data)
-  const reduced = useGame((s) => s.settings.reducedMotion)
   const [view, setView] = useState<SheetView | null>(null)
   const [filter, setFilter] = useState<Filter>('all')
   const [q, setQ] = useState('')
-  // Looking at the Pokédex clears the tab bar's NEW.
+  // What was new on arrival keeps its NEW tag while the screen is open; looking clears the tab bar's dot.
+  const newCount = useDexNew()
+  const [fresh] = useState(() => new Set(newCount > 0 ? (save?.pokedex.slice(-newCount) ?? []) : []))
   const count = save?.pokedex.length ?? 0
   useEffect(() => markDexSeen(), [count])
 
-  const owned = useMemo(() => {
-    const m = new Map<number, number>()
-    for (const p of save?.box ?? []) m.set(p.dex, Math.max(m.get(p.dex) ?? 0, p.level))
-    return m
-  }, [save])
-
   // Missing species you can meet right now: in a wild pool (or as a legendary) of an area you've opened.
-  const catchable = useMemo(() => {
+  const nearby = useMemo(() => {
     const set = new Set<number>()
     if (!save) return set
     for (const a of data.areas) {
-      // "Catchable now" means without leaving: an unlocked area of the region you are standing in.
+      // "Nearby" means without leaving: an unlocked area of the region you are standing in.
       if (regionOfArea(a) !== regionOf(save) || !isAreaUnlocked(save, a.id, data)) continue
       for (const w of a.wildPool) if (w.weight > 0 && !save.pokedex.includes(w.dex)) set.add(w.dex)
       for (const b of a.legendaryBoss ?? []) if (!save.pokedex.includes(b.dex)) set.add(b.dex)
@@ -61,49 +75,62 @@ export function PokedexScreen() {
   const inRegion = regionSpecies(data, region)
   // A regional form sits right after its species (Alolan Rattata after Rattata), under the same number.
   const natOf = (dex: number) => nationalDex(data, dex)
-  const pageList = data.speciesList.filter((s) => inRegion.has(s.dex)).sort((a, b) => natOf(a.dex) - natOf(b.dex) || a.dex - b.dex)
+  const pageList = data.speciesList
+    .filter((s) => inRegion.has(s.dex))
+    .sort((a, b) => natOf(a.dex) - natOf(b.dex) || a.dex - b.dex)
   const total = pageList.length
   const n = pageList.filter((s) => caught.has(s.dex)).length
-  const needle = searchFold(q)
-  const asNumber = /^#?\d+$/.test(needle) ? Number(needle.replace('#', '')) : null
+  const unlock = nextDexUnlock(save, data)
+  const needle = searchFold(q.trim())
+  const asNumber = /^#?\d+$/.test(needle) ? needle.replace('#', '') : null
+  const inFilter = (dex: number) =>
+    filter === 'all'
+      ? true
+      : filter === 'caught'
+        ? caught.has(dex)
+        : filter === 'missing'
+          ? !caught.has(dex)
+          : nearby.has(dex)
   const list = pageList
-    .filter((s) =>
-      filter === 'all'
-        ? true
-        : filter === 'caught'
-          ? caught.has(s.dex)
-          : filter === 'missing'
-            ? !caught.has(s.dex)
-            : catchable.has(s.dex),
-    )
-    // Uncaught names stay hidden: searching by name only finds what you've caught.
+    .filter((s) => inFilter(s.dex))
+    // A number finds anything; a name only finds what you've caught (the rest is still ???).
     .filter(
       (s) =>
         !needle ||
-        (asNumber != null ? natOf(s.dex) === asNumber : caught.has(s.dex) && searchFold(s.name).includes(needle)),
+        (asNumber != null
+          ? String(natOf(s.dex)).startsWith(String(Number(asNumber)))
+          : caught.has(s.dex) && searchFold(s.name).includes(needle)),
     )
-
-  const jump = (from: number) => {
-    const target = list.find((s) => natOf(s.dex) >= from) ?? list[list.length - 1]
-    if (target)
-      document
-        .getElementById(`dex-${target.dex}`)
-        ?.scrollIntoView({ block: 'start', behavior: reduced ? 'auto' : 'smooth' })
+  const counts: Record<Filter, number> = {
+    all: total,
+    caught: n,
+    missing: total - n,
+    nearby: pageList.filter((s) => nearby.has(s.dex)).length,
   }
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-end justify-between gap-2">
-        <h1 className="text-5xl">{regionName ? t('ui.dex.titleRegion', { region: regionName }) : t('ui.dex.title')}</h1>
-        <div className="text-3xl">
-          {n}/{total}
-        </div>
-      </div>
-      <div className="h-4 border-2 border-ink bg-ink p-[2px]">
-        <div
-          className="h-full bg-danger"
-          style={{ width: `${(n / total) * 100}%`, transition: 'width 600ms' }}
-        />
+    <div className="mx-auto flex w-full max-w-5xl flex-col gap-3">
+      <PageHead
+        icon="navDex"
+        title={regionName ? t('ui.dex.titleRegion', { region: regionName }) : t('ui.dex.title')}
+        count={`${n}/${total}`}
+      />
+      <div className="grid gap-1">
+        <span
+          className="pixel-corners block h-2 bg-line shadow-ring"
+          role="img"
+          aria-label={t('ui.dex.caughtOf', { n, total })}
+        >
+          <i className="block h-full bg-gold" style={{ width: `${(n / Math.max(1, total)) * 100}%` }} />
+        </span>
+        {unlock && (
+          <small className="font-pixel-sm text-[15px] text-muted">
+            {t(`ui.dex.moreOpens.${unlock.more === 1 ? 'one' : 'other'}`, {
+              n: unlock.more,
+              area: unlock.name,
+            })}
+          </small>
+        )}
       </div>
 
       {n >= total && (
@@ -123,86 +150,71 @@ export function PokedexScreen() {
         </motion.div>
       )}
 
-      {/* Search, filters and the jump bar stay under the top bar while the grid scrolls. */}
-      <div className="sticky top-14 z-30 -mx-3 flex flex-col gap-2 border-b-[3px] border-ink bg-parchment px-3 py-2">
-        <div className="flex flex-wrap items-center gap-2">
-          <label htmlFor="dex-search" className="sr-only">
-            {t('ui.dex.searchLabel')}
-          </label>
-          <input
-            id="dex-search"
-            type="search"
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder={t('ui.dex.searchPlaceholder')}
-            className="min-h-[44px] w-full border-[3px] border-ink bg-panel px-2 text-xl md:min-h-[38px] md:w-56"
-          />
-          <div className="flex flex-wrap gap-1.5" role="group" aria-label={t('ui.dex.show')}>
-            {FILTERS.map((f) => (
-              <button
-                key={f.id}
-                type="button"
-                onClick={() => setFilter(f.id)}
-                aria-pressed={filter === f.id}
-                className={cx(
-                  'pixel-btn min-h-[44px] min-w-[44px] px-2 text-lg md:min-h-[36px]',
-                  filter === f.id ? 'bg-gold' : 'bg-panel',
-                )}
-              >
-                {t(f.label)}
-                {f.id === 'catchable' && <span className="font-pixel-sm text-base"> ({catchable.size})</span>}
-              </button>
-            ))}
-          </div>
-        </div>
-        <div className="flex gap-1.5 overflow-x-auto" role="group" aria-label={t('ui.dex.jumpTo')}>
-          {JUMPS.map((j) => (
-            <button
-              key={j}
-              type="button"
-              onClick={() => jump(j)}
-              className="pixel-btn min-h-[44px] shrink-0 bg-panel px-2 font-pixel-sm text-lg md:min-h-[32px]"
-            >
-              {dexNo(j)}
-            </button>
-          ))}
-        </div>
-      </div>
+      <SearchField
+        id="dex-search"
+        value={q}
+        onChange={(v) => {
+          setQ(v)
+          // A search looks through the whole Pokédex.
+          if (v.trim()) setFilter('all')
+        }}
+        label={t('ui.dex.searchLabel')}
+        placeholder={t('ui.dex.searchPlaceholder')}
+      />
+      <FilterChips
+        label={t('ui.dex.show')}
+        value={filter}
+        onChange={setFilter}
+        options={[
+          { id: 'all', label: t('ui.dex.fAll'), count: counts.all },
+          { id: 'caught', label: t('ui.dex.fCaught'), count: counts.caught },
+          { id: 'missing', label: t('ui.dex.fMissing'), count: counts.missing },
+          { id: 'nearby', label: t('ui.dex.fNearby'), count: counts.nearby },
+        ]}
+      />
 
       {list.length === 0 && (
         <p className="copy text-muted">
-          {t(filter === 'catchable' ? 'ui.dex.noneCatchable' : 'ui.dex.noMatch')}
+          {asNumber == null && needle
+            ? t('ui.dex.nameNeedsCatch')
+            : filter === 'nearby'
+              ? t('ui.dex.noneCatchable')
+              : t('ui.dex.noMatch')}
         </p>
       )}
-      <div className="grid grid-cols-3 gap-2 xs:grid-cols-4 sm:grid-cols-6 lg:grid-cols-8">
+      <ul className={TILE_GRID}>
         {list.map((s) => {
           const has = caught.has(s.dex)
-          const lv = owned.get(s.dex)
+          const near = nearby.has(s.dex)
+          const isNew = fresh.has(s.dex)
+          const no = dexNo(natOf(s.dex))
           return (
-            <button
-              key={s.dex}
-              id={`dex-${s.dex}`}
-              type="button"
-              onClick={() => setView({ kind: 'dex', dex: s.dex })}
-              className={cx('pixel-panel flex scroll-mt-48 flex-col items-center p-1 hover:bg-white', !has && 'bg-parchment')}
-              title={has ? s.name : t('ui.dex.whereToFind')}
-            >
-              <span className="self-start font-mono text-xs text-muted">{dexNo(natOf(s.dex))}</span>
-              <SpriteImg dex={s.dex} size={64} silhouette={!has} />
-              <span className="w-full truncate text-center text-base leading-none">{has ? s.name : t('ui.common.unknown')}</span>
-              <span className="text-sm leading-none text-muted">
-                {has
-                  ? lv
-                    ? t('ui.common.level.short', { n: lv })
-                    : t('ui.dex.seen')
-                  : catchable.has(s.dex)
-                    ? t('ui.dex.nearby')
-                    : ' '}
-              </span>
-            </button>
+            <li key={s.dex}>
+              <MonTile
+                dex={s.dex}
+                number={no}
+                name={has ? s.name : t('ui.common.unknown')}
+                missing={!has}
+                label={[
+                  has ? s.name : t('ui.common.unknown'),
+                  no,
+                  near && t('ui.dex.fNearby'),
+                  isNew && t('ui.common.new'),
+                ]
+                  .filter(Boolean)
+                  .join(', ')}
+                onClick={() => setView({ kind: 'dex', dex: s.dex })}
+                tags={
+                  <>
+                    {near && <TileTag tone="near">{t('ui.dex.fNearby')}</TileTag>}
+                    {isNew && <TileTag tone="new">{t('ui.common.new')}</TileTag>}
+                  </>
+                }
+              />
+            </li>
           )
         })}
-      </div>
+      </ul>
 
       <SheetModal view={view} onClose={() => setView(null)} />
     </div>

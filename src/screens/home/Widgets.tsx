@@ -22,7 +22,7 @@ import { useNow } from '@/store/hooks'
 import { cx } from '@/theme/util'
 import { featuredSecret } from './areas'
 import { stripOf } from './scene'
-import { travelTo } from './travel'
+import { travelTo } from '@/store/travel'
 
 /** A widget's frame: a framed panel, a small header row, and whatever it shows. */
 function Widget({

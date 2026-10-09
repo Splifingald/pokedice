@@ -9,6 +9,7 @@ import { useT } from '@/i18n/react'
 import { useIsDesktop } from '@/lib/useMediaQuery'
 import { BadgeIcon } from '@/components/BadgeIcon'
 import { DiceSet } from '@/components/DiceSet'
+import { ItemSprite } from '@/components/ItemSprite'
 import { PixelIcon } from '@/components/icons'
 import { LeadPicker, defaultLead } from '@/components/LeadPicker'
 import { PixelButton } from '@/components/PixelButton'
@@ -99,7 +100,7 @@ function ItemCard({ enc }: { enc: Extract<Encounter, { kind: 'item' }> }) {
           ₽
         </span>
       ) : item?.spriteUrl ? (
-        <img src={item.spriteUrl} alt="" width={80} height={80} className="pixelated" style={{ imageRendering: 'pixelated' }} />
+        <ItemSprite item={item} size={80} />
       ) : null}
       <div className="text-4xl leading-none">
         {isMoney ? money(enc.qty) : `${item?.name ?? enc.itemKey}${enc.qty > 1 ? ` ×${enc.qty}` : ''}`}

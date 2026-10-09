@@ -206,6 +206,10 @@ test('a battle fits a 360×640 phone', async ({ page }) => {
   }
   await expect(attack).toBeEnabled()
   await page.waitForTimeout(1200) // let the thrown dice settle before measuring them
+  // Prof. Oak's one-time tip shows the first time a status face is rolled (so only on some dice): read once and
+  // dismissed, like a player would. The fit being checked is the battle's own.
+  const gotIt = page.getByRole('button', { name: 'GOT IT' })
+  if (await gotIt.isVisible().catch(() => false)) await gotIt.click()
   expect(await nonJerseyText(page), 'battle: fonts').toEqual([])
   const box = await attack.boundingBox()
   expect(box!.y + box!.height, 'ATTACK is on screen').toBeLessThanOrEqual(640)

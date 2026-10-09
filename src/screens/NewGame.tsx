@@ -1,12 +1,14 @@
 import { motion } from 'framer-motion'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { createInstance, getSpecies } from '@/engine'
+import { createInstance, getSpecies, nationalDex } from '@/engine'
 import { useT } from '@/i18n/react'
+import { dexNo } from '@/lib/format'
 import { Dialogue } from '@/components/Dialogue'
 import { Modal } from '@/components/Modal'
 import { PixelButton } from '@/components/PixelButton'
 import { PokemonSheet } from '@/components/PokemonSheet'
+import { Sheet } from '@/components/Sheet'
 import { SpriteImg } from '@/components/SpriteImg'
 import { PLAYER_CHARACTERS, TrainerSprite } from '@/components/TrainerArt'
 import { TypeBadge } from '@/components/TypeBadge'
@@ -24,6 +26,10 @@ export function NewGame() {
   const [line, setLine] = useState(0)
   const [choice, setChoice] = useState<number | null>(null)
   const [info, setInfo] = useState<number | null>(null)
+  // The sheet keeps showing the last starter while it slides away.
+  const lastInfo = useRef<number | null>(null)
+  if (info != null) lastInfo.current = info
+  const shownInfo = info ?? lastInfo.current
   const [player, setPlayer] = useState<PlayerProfile | null>(null)
   const level = data.config.starterLevel
   const starters = data.config.starters.filter((d) => data.species[d])
@@ -104,22 +110,34 @@ export function NewGame() {
         )}
       </div>
 
-      <Modal open={info != null} onClose={() => setInfo(null)} label={t('ui.newGame.details')}>
-        {info != null && (
-          <PokemonSheet dex={info} inst={createInstance(info, level, data, 'starter-preview', 0)}>
-            <PixelButton
-              variant="primary"
-              className="self-center"
-              onClick={() => {
-                setInfo(null)
-                setChoice(info)
-              }}
-            >
-              {t('ui.newGame.choose', { name: data.species[info]?.name ?? '' })}
-            </PixelButton>
-          </PokemonSheet>
+      <Sheet
+        open={info != null}
+        onClose={() => setInfo(null)}
+        title={shownInfo != null ? (data.species[shownInfo]?.name ?? '') : ''}
+        sub={
+          shownInfo != null
+            ? `${dexNo(nationalDex(data, shownInfo))} · ${t('ui.common.level.short', { n: level })}`
+            : undefined
+        }
+        footer={
+          <PixelButton
+            variant="primary"
+            size="lg"
+            className="w-full"
+            onClick={() => {
+              if (info == null) return
+              setInfo(null)
+              setChoice(info)
+            }}
+          >
+            {t('ui.newGame.choose', { name: shownInfo != null ? (data.species[shownInfo]?.name ?? '') : '' })}
+          </PixelButton>
+        }
+      >
+        {shownInfo != null && (
+          <PokemonSheet dex={shownInfo} inst={createInstance(shownInfo, level, data, 'starter-preview', 0)} />
         )}
-      </Modal>
+      </Sheet>
 
       <Modal
         open={choice != null}

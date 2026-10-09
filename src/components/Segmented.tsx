@@ -77,7 +77,7 @@ export function Seg<T extends string>({
             disabled={o.disabled}
             onClick={() => onChange(o.id)}
             className={cx(
-              'flex min-h-[44px] flex-1 items-center justify-center gap-1 whitespace-nowrap px-2.5 text-[19px] leading-none md:min-h-[38px]',
+              'flex min-h-[44px] min-w-[44px] flex-1 items-center justify-center gap-1 whitespace-nowrap px-2.5 text-[19px] leading-none md:min-h-[38px] md:min-w-0',
               on ? 'bg-ink text-panel' : 'bg-transparent text-ink',
               o.disabled && 'cursor-not-allowed text-muted',
             )}
@@ -134,7 +134,7 @@ export function FilterChips<T extends string>({
             disabled={o.disabled}
             onClick={() => onChange(o.id)}
             className={cx(
-              'flex min-h-[44px] shrink-0 items-center gap-1 whitespace-nowrap px-2.5 text-[18px] leading-none md:min-h-[36px]',
+              'flex min-h-[44px] min-w-[44px] shrink-0 items-center justify-center gap-1 whitespace-nowrap px-2.5 text-[18px] leading-none md:min-h-[36px] md:min-w-0',
               on ? 'bg-ink text-panel' : 'bg-paper text-ink shadow-ring-line',
             )}
           >

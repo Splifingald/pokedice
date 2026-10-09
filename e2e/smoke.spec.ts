@@ -54,12 +54,12 @@ test('buy an upgrade', async ({ page }) => {
   )
   await page.goto('/upgrades')
   await expect(page.getByRole('heading', { name: 'Upgrades' })).toBeVisible()
-  await page.getByRole('button', { name: /₽5/ }).first().click() // Pair → Lv.2 costs 5
+  await page.getByRole('button', { name: /^₽5 Upgrade/ }).first().click() // Pair → Lv.2 costs 5
   await expect(page.getByLabel('495 Pokédollars').first()).toBeVisible()
-  await expect(page.getByText(/\+3\s*→\s*\+4/).first()).toBeVisible()
+  await expect(page.getByText(/\+3 damage.*\+4/).first()).toBeVisible()
 
   await page.getByRole('tab', { name: 'Dice Types' }).click()
-  await page.getByRole('button', { name: /₽10/ }).first().click()
+  await page.getByRole('button', { name: /^₽10 Upgrade/ }).first().click()
   await expect(page.getByLabel('485 Pokédollars').first()).toBeVisible()
 })
 

@@ -12,7 +12,6 @@ import {
   megaUnlocked,
   gmaxFormsOf,
   gmaxUnlocked,
-  nationalDex,
   type DieType,
   type Evolution,
   type GameData,
@@ -20,29 +19,31 @@ import {
   type PokemonInstance,
   type Species,
 } from '@/engine'
-import { dexNo, typeName } from '@/lib/format'
+import { typeName } from '@/lib/format'
 import { t } from '@/i18n'
 import { useT } from '@/i18n/react'
 import { useGame } from '@/store/game'
 import { cx, typeColor } from '@/theme/util'
+import { Chip } from './Chip'
 import { DiceSet } from './DiceSet'
-import { DieFaces } from './Die'
+import { FaceDice, facesStatuses, StatusLines } from './FaceDice'
 import { HpBar } from './HpBar'
 import { PixelIcon, type IconName } from './icons'
-import { XpBar } from './MonCard'
+import { ItemSprite } from './ItemSprite'
+import { RevivalBar, XpBar } from './MonCard'
+import { SheetSection } from './SheetSection'
 import { MiniSprite, SpriteImg } from './SpriteImg'
-import { STAT_INFO, StatChip, statHint, statLabel, type StatKind } from './StatChip'
+import { StatChip, statHint, statLabel, type StatKind } from './StatChip'
 import { TypeBadge } from './TypeBadge'
 import { TypeMatchups } from './TypeMatchups'
 
+/** A stat as a big number over its name (Speed, Rerolls, Catch value); the hint is the tooltip. */
 function StatTile({ stat, value }: { stat: StatKind; value: ReactNode }) {
   useT()
-  const { icon } = STAT_INFO[stat]
   return (
-    <div className="pixel-panel flex items-center gap-2 px-2 py-1.5" title={statHint(stat)}>
-      <PixelIcon name={icon} size={24} />
-      <span className="sr-only">{statLabel(stat)}</span>
-      <div className="ml-auto font-mono text-xl leading-none tabular-nums">{value}</div>
+    <div className="grid justify-items-center bg-paper px-1 pb-2 pt-1.5 shadow-[inset_0_0_0_2px_#b6c3d9]" title={statHint(stat)}>
+      <b className="text-[26px] font-normal leading-none tabular-nums">{value}</b>
+      <small className="font-pixel-sm text-[13px] text-muted">{statLabel(stat)}</small>
     </div>
   )
 }
@@ -134,9 +135,55 @@ export function useVisibleEvolutions(species: Species): Evolution[] {
   }, [species, save, data])
 }
 
+/** A milestone row: the level (or the stone) in a navy chip, what happens, and — for one still ahead — how close. */
+function MilestoneRow({
+  chip,
+  progress,
+  next,
+  reached,
+  children,
+}: {
+  chip: ReactNode
+  progress?: number
+  next?: boolean
+  reached?: boolean
+  children: ReactNode
+}) {
+  const { t } = useT()
+  return (
+    <li className="grid grid-cols-[58px_minmax(0,1fr)] items-center gap-x-2 gap-y-[3px] text-[17px] leading-[1.1]">
+      {chip}
+      <span className="flex min-w-0 items-center gap-2">
+        <span className="min-w-0 flex-1">
+          {children}
+          {reached && <span className="sr-only">{t('ui.sheet.reached')}</span>}
+        </span>
+        {next && <Chip tone="gold">{t('ui.sheet.next')}</Chip>}
+      </span>
+      {progress != null && (
+        <span className="col-start-2 block h-1 bg-line" aria-hidden>
+          <i className="block h-full bg-type-water" style={{ width: `${Math.round(progress * 100)}%` }} />
+        </span>
+      )}
+    </li>
+  )
+}
+
+const LevelChip = ({ level, reached }: { level: number; reached?: boolean }) => (
+  <span
+    className={cx(
+      'px-1.5 pb-[3px] pt-0.5 text-center font-pixel-sm text-[14px] leading-none',
+      reached ? 'bg-line text-muted' : 'bg-ink text-gold-light',
+    )}
+  >
+    {t('ui.common.level.short', { n: level })}
+  </span>
+)
+
 /**
- * Milestones on a side gauge that fills in blue up to the Pokémon's level. An EVOLVE milestone shows what it becomes
- * (animated mini + name, tappable); a stone evolution has no level, so it gets a row of its own at the end.
+ * What it learns next: the milestones still ahead (the first one marked NEXT, each with how close it is), stone
+ * evolutions, Mega Evolution once Kalos is reached, and Gigantamax once Galar is. Milestones already reached fold
+ * away under a summary, so the sheet leads with what's coming.
  */
 function MilestoneTrack({ species, level, onOpenDex }: { species: Species; level: number | null; onOpenDex?: (dex: number) => void }) {
   const { t } = useT()
@@ -153,7 +200,8 @@ function MilestoneTrack({ species, level, onOpenDex }: { species: Species; level
     ...[...species.milestones].sort((a, b) => a.level - b.level).map((m) => ({ level: m.level, m })),
     ...(megas.length ? [{ level: megaLevel, mega: true as const }] : []),
   ].sort((a, b) => a.level - b.level)
-  const next = level == null ? undefined : ms.find((r) => r.level > level)
+  const ahead = level == null ? ms : ms.filter((r) => r.level > level)
+  const done = level == null ? [] : ms.filter((r) => r.level <= level)
   const byLevel = evolutions.filter((e) => e.level != null)
   const byStone = evolutions.filter((e) => e.level == null)
   const evoNames = (evos: Evolution[]) =>
@@ -163,102 +211,121 @@ function MilestoneTrack({ species, level, onOpenDex }: { species: Species; level
         <EvoLink toDex={e.toDex} how={evolutionHow(e, data)} onOpenDex={onOpenDex} />
       </span>
     ))
-  return (
-    <section>
-      <h3 className="mb-1 text-xl">{t('ui.sheet.milestones')}</h3>
-      {ms.length === 0 && !byStone.length ? (
-        <div className="text-lg text-muted">{t('ui.sheet.none')}</div>
+  const what = (row: Row) => (
+    <span className="inline-flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
+      {'mega' in row ? (
+        <DiceSet dice={[...new Set(megas.map((x) => megaDie(species, x)))]} size={16} />
       ) : (
-        <ol>
-          {ms.map((row, i) => {
-            const from = i === 0 ? 1 : ms[i - 1]!.level
-            const fill = level == null ? 0 : Math.max(0, Math.min(1, (level - from) / Math.max(1, row.level - from)))
-            const reached = level != null && level >= row.level
-            return (
-              <li key={i} className="flex items-stretch gap-2.5">
-                <div className="flex w-5 shrink-0 flex-col items-center" aria-hidden>
-                  <div className="relative min-h-[12px] w-2.5 flex-1 border-x-2 border-ink bg-line">
-                    <div className="absolute inset-x-0 top-0 bg-type-water" style={{ height: `${fill * 100}%` }} />
-                  </div>
-                  <span
-                    className={cx('h-5 w-5 shrink-0 border-[3px] border-ink', reached ? 'bg-type-water' : 'bg-panel')}
-                    style={{ borderRadius: 2 }}
-                  />
-                </div>
-                <div className="flex min-w-0 flex-1 items-center gap-2 pt-3 text-lg leading-tight">
-                  {'mega' in row ? (
-                    <DiceSet dice={[...new Set(megas.map((x) => megaDie(species, x)))]} size={20} />
-                  ) : (
-                    <MilestoneGlyph m={row.m} species={species} />
-                  )}
-                  <span className="min-w-0">
-                    <span className="font-mono text-sm">{t('ui.common.level.short', { n: row.level })}</span>{' '}
-                    {'mega' in row ? (
-                      <>
-                        {t(
-                          megas[0]?.form?.mechanic === 'primal'
-                            ? 'ui.sheet.msPrimal'
-                            : megas[0]?.form?.mechanic === 'ultra'
-                              ? 'ui.sheet.msUltra'
-                              : 'ui.sheet.msMega',
-                        )}{' '}
-                        {megas.map((x, j) => (
-                          <span key={x.dex}>
-                            {j > 0 && ' / '}
-                            <span className="inline-flex items-center gap-0.5 align-middle">
-                              <MiniSprite dex={x.dex} size={28} className="-my-2" />
-                              <b>{x.name}</b>
-                            </span>{' '}
-                            ({t('ui.sheet.msAddDie', { to: typeName(megaDie(species, x)) })})
-                          </span>
-                        ))}
-                      </>
-                    ) : row.m.effect === 'EVOLVE' && byLevel.length > 0 ? (
-                      <>
-                        {t('ui.sheet.evolvesInto')} {evoNames(byLevel)}
-                      </>
-                    ) : (
-                      milestoneLabel(row.m, species, data, evolutions)
-                    )}
-                    <span className="sr-only">{reached ? t('ui.sheet.reached') : ''}</span>
-                  </span>
-                  {row === next && <span className="ml-auto shrink-0 bg-gold px-1 text-base leading-tight text-ink">{t('ui.sheet.next')}</span>}
-                </div>
-              </li>
-            )
-          })}
+        <MilestoneGlyph m={row.m} species={species} />
+      )}
+      {'mega' in row ? (
+        <span>
+          {t(
+            megas[0]?.form?.mechanic === 'primal'
+              ? 'ui.sheet.msPrimal'
+              : megas[0]?.form?.mechanic === 'ultra'
+                ? 'ui.sheet.msUltra'
+                : 'ui.sheet.msMega',
+          )}{' '}
+          {megas.map((x, j) => (
+            <span key={x.dex}>
+              {j > 0 && ' / '}
+              <span className="inline-flex items-center gap-0.5 align-middle">
+                <MiniSprite dex={x.dex} size={28} className="-my-2" />
+                <b className="font-normal">{x.name}</b>
+              </span>{' '}
+              ({t('ui.sheet.msAddDie', { to: typeName(megaDie(species, x)) })})
+            </span>
+          ))}
+        </span>
+      ) : row.m.effect === 'EVOLVE' && byLevel.length > 0 ? (
+        <span>
+          {t('ui.sheet.evolvesInto')} {evoNames(byLevel)}
+        </span>
+      ) : (
+        <span>{milestoneLabel(row.m, species, data, evolutions)}</span>
+      )}
+    </span>
+  )
+  // Progress toward a row runs from the milestone before it (or Lv.1).
+  const progressTo = (row: Row) => {
+    if (level == null) return undefined
+    const before = ms.filter((r) => r.level < row.level).pop()?.level ?? 1
+    return Math.max(0, Math.min(1, (level - before) / Math.max(1, row.level - before)))
+  }
+  return (
+    <SheetSection title={t('ui.sheet.whatsNext')}>
+      {ahead.length === 0 && !byStone.length ? (
+        <p className="font-pixel-sm text-[16px] text-muted">{t('ui.sheet.fullyGrown')}</p>
+      ) : (
+        <ol className="grid gap-2">
+          {ahead.map((row, i) => (
+            <MilestoneRow
+              key={i}
+              chip={<LevelChip level={row.level} />}
+              progress={progressTo(row)}
+              next={level != null && i === 0}
+            >
+              {what(row)}
+            </MilestoneRow>
+          ))}
           {byStone.map((e) => (
-            <li key={`stone-${e.toDex}`} className="flex items-stretch gap-2.5">
-              <div className="flex w-5 shrink-0 flex-col items-center" aria-hidden>
-                <div className="relative min-h-[12px] w-2.5 flex-1 border-x-2 border-ink bg-line" />
-                <span className="h-5 w-5 shrink-0 border-[3px] border-ink bg-panel" style={{ borderRadius: 2 }} />
-              </div>
-              <div className="flex min-w-0 flex-1 items-center gap-2 pt-3 text-lg leading-tight">
-                <PixelIcon name="up" size={16} />
-                <span className="min-w-0">
-                  <span className="font-mono text-sm">{evolutionHow(e, data)}</span> {t('ui.sheet.evolvesInto')}{' '}
-                  <EvoLink toDex={e.toDex} how={evolutionHow(e, data)} onOpenDex={onOpenDex} />
-                </span>
-              </div>
-            </li>
+            <MilestoneRow key={`stone-${e.toDex}`} chip={<StoneChip itemKey={e.item} />}>
+              <span>
+                {evolutionHow(e, data)}: {t('ui.sheet.evolvesInto')}{' '}
+                <EvoLink toDex={e.toDex} how={evolutionHow(e, data)} onOpenDex={onOpenDex} />
+              </span>
+            </MilestoneRow>
           ))}
         </ol>
       )}
-      {byLevel.length > 1 && <p className="mt-1 text-base text-muted">{t('ui.sheet.oneAtRandom')}</p>}
-      {megas.length > 0 && <p className="copy mt-1 text-base text-muted">{t('ui.sheet.megaNote')}</p>}
+      {byLevel.length > 1 && <p className="font-pixel-sm text-[15px] text-muted">{t('ui.sheet.oneAtRandom')}</p>}
+      {megas.length > 0 && <p className="copy font-pixel-sm text-[15px] text-muted">{t('ui.sheet.megaNote')}</p>}
       {gmax && (
-        <p className="copy mt-1 flex items-center gap-1 text-base">
+        <p className="copy flex items-center gap-1 font-pixel-sm text-[15px]">
           <MiniSprite dex={gmax.dex} size={28} className="-my-2" />
-          <span>{t(`ui.sheet.gmaxNote.${data.config.gigantamax.turns === 1 ? 'one' : 'other'}`, { to: typeName(megaDie(species, gmax)), n: data.config.gigantamax.turns })}</span>
+          <span>
+            {t(`ui.sheet.gmaxNote.${data.config.gigantamax.turns === 1 ? 'one' : 'other'}`, {
+              to: typeName(megaDie(species, gmax)),
+              n: data.config.gigantamax.turns,
+            })}
+          </span>
         </p>
       )}
-    </section>
+      {done.length > 0 && (
+        <details className="group">
+          <summary className="flex min-h-[44px] cursor-pointer items-center gap-1.5 font-pixel-sm text-[16px] text-muted md:min-h-[32px]">
+            <span className="inline-block transition-transform group-open:rotate-90" aria-hidden>
+              ▶
+            </span>
+            {t(`ui.sheet.reachedCount.${done.length === 1 ? 'one' : 'other'}`, { n: done.length })}
+          </summary>
+          <ol className="mt-1 grid gap-2 opacity-80">
+            {done.map((row, i) => (
+              <MilestoneRow key={i} chip={<LevelChip level={row.level} reached />} reached>
+                {what(row)}
+              </MilestoneRow>
+            ))}
+          </ol>
+        </details>
+      )}
+    </SheetSection>
+  )
+}
+
+function StoneChip({ itemKey }: { itemKey?: string | null }) {
+  const item = useGame((s) => (itemKey ? s.data.items[itemKey] : undefined))
+  return (
+    <span className="grid place-items-center">
+      <ItemSprite item={item} size={28} />
+    </span>
   )
 }
 
 /**
- * Detail sheet: sprite, types, HP, speed / rerolls / catch value, the dice set and the milestones (evolutions among
- * them). Tapping an evolution calls `onOpenDex` (the modal opens its Pokédex entry on top).
+ * Detail sheet body: sprite, types, HP and XP, speed / rerolls / catch value, every die as its six real faces (what
+ * its status faces do, with the game's numbers) and what it learns next. The sheet around it carries the name and
+ * number. Tapping an evolution calls `onOpenDex` (the sheet opens its Pokédex entry on top).
  */
 export function PokemonSheet({
   dex,
@@ -276,68 +343,72 @@ export function PokemonSheet({
   const species = getSpecies(data, dex)
   const level = inst?.level ?? 1
   const stats = effectiveStats(species, level, data)
-  const uniqueTypes = [...new Set(stats.dice)]
   const hints = useGame((s) => s.settings.typeHints) ?? false
   const types = species.type2 ? [species.type1, species.type2] : [species.type1]
   const lowHp = lowHpFormOf(data, species.dex)
+  // One row per die type, in the order the Pokémon throws them, with how many it throws.
+  const groups: { type: DieType; n: number }[] = []
+  for (const d of stats.dice) {
+    const g = groups.find((x) => x.type === d)
+    if (g) g.n++
+    else groups.push({ type: d, n: 1 })
+  }
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-4">
       <div className="flex items-center gap-3">
-        <SpriteImg dex={dex} size={128} shiny={inst?.shiny} className="border-[3px] border-ink bg-parchment" />
-        <div className="min-w-0">
-          <div className="font-mono text-sm text-muted">{dexNo(nationalDex(data, dex))}</div>
-          <div className="text-4xl leading-none">{species.name}</div>
-          <div className="mt-1 flex gap-1">
-            <TypeBadge type={species.type1} />
-            {species.type2 && <TypeBadge type={species.type2} />}
+        <div className="grid h-[104px] w-[112px] shrink-0 place-items-center bg-[#eef4fb] shadow-ring">
+          <SpriteImg dex={dex} size={96} shiny={inst?.shiny} />
+        </div>
+        <div className="grid min-w-0 flex-1 gap-1.5">
+          <div className="flex flex-wrap items-center gap-1">
+            {types.map((ty) => (
+              <TypeBadge key={ty} type={ty} />
+            ))}
+            {inst?.shiny && (
+              <Chip tone="gold">
+                <PixelIcon name="star" size={12} /> {t('ui.mon.shinyTag')}
+              </Chip>
+            )}
           </div>
-          {inst && (
-            <div className="mt-1 flex items-center gap-2 text-xl">
-              {t('ui.common.level.short', { n: inst.level })}
-              {inst.shiny && (
-                <span className="inline-flex items-center gap-1 border-2 border-ink px-1 text-base leading-tight">
-                  <PixelIcon name="star" size={12} /> {t('ui.mon.shinyTag')}
-                </span>
-              )}
-            </div>
+          {inst?.revivesAt != null ? (
+            <RevivalBar inst={inst} />
+          ) : inst ? (
+            <>
+              <HpBar hp={inst.currentHp} max={stats.maxHp} />
+              <XpBar inst={inst} />
+            </>
+          ) : (
+            <StatChip
+              stat="hp"
+              size={18}
+              className="font-pixel-sm text-[16px]"
+              value={t('ui.sheet.hpRange', {
+                low: effectiveStats(species, 1, data).maxHp,
+                high: effectiveStats(species, 100, data).maxHp,
+              })}
+            />
           )}
         </div>
       </div>
 
-      {inst ? (
-        <div className="flex flex-col gap-1">
-          <HpBar hp={inst.currentHp} max={stats.maxHp} />
-          <XpBar inst={inst} />
-        </div>
-      ) : (
-        <div className="text-lg">
-          <StatChip
-            stat="hp"
-            size={18}
-            value={t('ui.sheet.hpRange', {
-              low: effectiveStats(species, 1, data).maxHp,
-              high: effectiveStats(species, 100, data).maxHp,
-            })}
-          />
-        </div>
-      )}
-
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-3 gap-1.5">
         <StatTile stat="speed" value={species.speed} />
         <StatTile stat="rerolls" value={stats.rerolls} />
         <StatTile stat="catch" value={species.catchValue} />
       </div>
 
-      <section>
-        <h3 className="mb-1 text-xl">{t('ui.sheet.diceCount', { count: stats.dice.length })}</h3>
+      <SheetSection
+        title={t('ui.sheet.dice')}
+        hint={t(`ui.sheet.perRoll.${stats.dice.length === 1 ? 'one' : 'other'}`, { n: stats.dice.length })}
+      >
         {COPIES_FOE_DICE.has(species.dex) && (
-          <p className="copy mb-1.5 text-base">
-            <b>{t('ui.sheet.transformTitle')}</b> {t('ui.sheet.transformBody')}
+          <p className="copy font-pixel-sm text-[15px]">
+            <b className="font-pixel font-normal">{t('ui.sheet.transformTitle')}</b> {t('ui.sheet.transformBody')}
           </p>
         )}
         {lowHp?.form?.swapDie && (
-          <p className="copy mb-1.5 text-base">
+          <p className="copy font-pixel-sm text-[15px]">
             {t('ui.sheet.lowHpForm', {
               from: typeName(lowHp.form.swapDie.from),
               to: typeName(lowHp.form.swapDie.to),
@@ -345,29 +416,34 @@ export function PokemonSheet({
           </p>
         )}
         {choiceFormsOf(data, species.dex).length > 0 && (
-          <p className="copy mb-1.5 text-base">{t('ui.sheet.choiceForm', { n: data.config.formChangesPerBattle })}</p>
+          <p className="copy font-pixel-sm text-[15px]">{t('ui.sheet.choiceForm', { n: data.config.formChangesPerBattle })}</p>
         )}
-        <DiceSet dice={stats.dice} size={30} />
-        <div className="mt-2 flex flex-col gap-1.5">
-          {uniqueTypes.map((die) => (
-            <div key={die} className="flex items-center gap-2">
-              <span className="w-16 shrink-0 text-base uppercase">{typeName(die)}</span>
-              <div>
-                <DieFaces type={die} faces={data.diceTypes[die]?.faces ?? []} size={28} />
-                {data.diceTypes[die]?.description && <div className="copy text-sm text-muted">{data.diceTypes[die]!.description}</div>}
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
+        <ul className="grid gap-3">
+          {groups.map(({ type, n }) => {
+            const faces = data.diceTypes[type]?.faces ?? []
+            return (
+              <li key={type} className="grid gap-1">
+                <span className="flex flex-wrap items-baseline gap-x-2">
+                  <b className="text-[18px] font-normal leading-none">{typeName(type)}</b>
+                  <em className="font-pixel-sm not-italic text-muted">×{n}</em>
+                  {data.diceTypes[type]?.description && (
+                    <small className="ml-auto font-pixel-sm text-[14px] text-muted">{data.diceTypes[type]!.description}</small>
+                  )}
+                </span>
+                <FaceDice type={type} faces={faces} />
+                <StatusLines statuses={facesStatuses(faces)} />
+              </li>
+            )
+          })}
+        </ul>
+      </SheetSection>
 
       <MilestoneTrack species={species} level={inst ? inst.level : null} onOpenDex={onOpenDex} />
 
       {hints && (
-        <section>
-          <h3 className="mb-1 text-xl">{t('ui.types.title')}</h3>
+        <SheetSection title={t('ui.types.title')}>
           <TypeMatchups types={types} dice={stats.dice} />
-        </section>
+        </SheetSection>
       )}
 
       {children}

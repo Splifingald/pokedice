@@ -5,11 +5,15 @@ import { DIE_TYPES, POKE_TYPES, STATUS_KINDS, emptyStatus, type Species } from '
 import { Chip, LevelTag, NewTag, StatusChip } from '@/components/Chip'
 import { Dialogue } from '@/components/Dialogue'
 import { Die, DieFaces } from '@/components/Die'
+import { FaceDice, facesStatuses, StatusLines } from '@/components/FaceDice'
 import { Gauge } from '@/components/Gauge'
 import { GoldPill } from '@/components/GoldPill'
 import { HpBar } from '@/components/HpBar'
 import { ICONS, PixelIcon, type IconName } from '@/components/icons'
+import { ItemSprite } from '@/components/ItemSprite'
 import { Modal } from '@/components/Modal'
+import { MonTile, TILE_GRID, TileTag } from '@/components/MonTile'
+import { PageHead, Wallet } from '@/components/PageHead'
 import { Panel } from '@/components/Panel'
 import { PixelButton } from '@/components/PixelButton'
 import { SearchSelect } from '@/components/SearchSelect'
@@ -260,6 +264,41 @@ export function KitchenSink() {
               <DieFaces type={t} faces={data.diceTypes[t].faces} size={40} />
             </div>
           ))}
+        </div>
+      </Section>
+
+      <Section title="FaceDice · StatusLines (Pokémon sheet, Upgrades)">
+        <div className="flex w-full max-w-md flex-col gap-2">
+          {(['electric', 'fire', 'grass'] as const).map((ty) => (
+            <div key={ty} className="flex flex-col gap-1">
+              <FaceDice type={ty} faces={data.diceTypes[ty].faces} />
+              <StatusLines statuses={facesStatuses(data.diceTypes[ty].faces)} />
+            </div>
+          ))}
+        </div>
+      </Section>
+
+      <Section title="PageHead · Wallet · MonTile · ItemSprite (atlas)">
+        <div className="flex w-full flex-col gap-2">
+          <PageHead icon="navShop" title="Poké Mart" as="h2">
+            <Wallet />
+          </PageHead>
+          <ul className={TILE_GRID}>
+            <li>
+              <MonTile dex={25} number="#025" name="Pikachu" label="Pikachu" onClick={() => {}} tags={<TileTag tone="new">NEW</TileTag>} />
+            </li>
+            <li>
+              <MonTile dex={1} number="#001" name="???" missing label="???" onClick={() => {}} tags={<TileTag tone="near">Nearby</TileTag>} />
+            </li>
+            <li>
+              <MonTile dex={6} name="Charizard" sub="Lv.36" label="Charizard" onClick={() => {}} />
+            </li>
+          </ul>
+          <div className="flex flex-wrap gap-2">
+            {['poke-ball', 'great-ball', 'potion', 'thunder-stone', 'old-amber'].map((k) => (
+              <ItemSprite key={k} item={data.items[k]} size={32} />
+            ))}
+          </div>
         </div>
       </Section>
 

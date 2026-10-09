@@ -16,6 +16,7 @@ import { Chip } from '@/components/Chip'
 import { rarity } from '@/components/DexEntry'
 import { PixelIcon } from '@/components/icons'
 import { ItemSprite } from '@/components/ItemSprite'
+import { SheetSection } from '@/components/SheetSection'
 import { PixelButton } from '@/components/PixelButton'
 import { Seg } from '@/components/Segmented'
 import { Sheet } from '@/components/Sheet'
@@ -36,29 +37,6 @@ const MIX: Record<EncounterKind, string> = {
   center: '#ff7aa0',
   trainer: '#5b8def',
   casino: '#9b5de5',
-}
-
-function Section({
-  title,
-  hint,
-  extra,
-  children,
-}: {
-  title: string
-  hint?: string
-  extra?: ReactNode
-  children: ReactNode
-}) {
-  return (
-    <section className="grid gap-2">
-      <div className="flex min-h-[36px] flex-wrap items-center gap-2">
-        <h3 className="flex-1 text-[22px] leading-none">{title}</h3>
-        {hint && <span className="font-pixel-sm text-[15px] text-muted">{hint}</span>}
-        {extra}
-      </div>
-      {children}
-    </section>
-  )
 }
 
 function Fact({
@@ -309,7 +287,7 @@ function DetailsBody({ area }: { area: Area }) {
       {st === 'here' && <RoundGauge area={area} progress={p} />}
 
       {finds.length > 0 && (
-        <Section title={t('ui.home.finds')} hint={t('ui.home.oneTime')}>
+        <SheetSection title={t('ui.home.finds')} hint={t('ui.home.oneTime')}>
           <ul className="grid gap-1.5">
             {finds.map((e) => {
               const got = found.has(e.id)
@@ -343,10 +321,10 @@ function DetailsBody({ area }: { area: Area }) {
               )
             })}
           </ul>
-        </Section>
+        </SheetSection>
       )}
 
-      <Section
+      <SheetSection
         title={t('ui.common.pokemon')}
         extra={
           mons.length > 0 && (
@@ -427,10 +405,10 @@ function DetailsBody({ area }: { area: Area }) {
             })}
           </ul>
         )}
-      </Section>
+      </SheetSection>
 
       {sum > 0 && (
-        <Section title={t('ui.home.eachRound')}>
+        <SheetSection title={t('ui.home.eachRound')}>
           <div
             className="flex h-4 gap-0.5 bg-ink p-0.5"
             role="img"
@@ -451,11 +429,11 @@ function DetailsBody({ area }: { area: Area }) {
               </li>
             ))}
           </ul>
-        </Section>
+        </SheetSection>
       )}
 
       {common.length > 0 && (
-        <Section title={t('ui.home.alsoHere')} hint={t('ui.home.anyTime')}>
+        <SheetSection title={t('ui.home.alsoHere')} hint={t('ui.home.anyTime')}>
           <ul className="flex flex-wrap gap-x-3 gap-y-0.5">
             {common.map((e) => (
               <li key={e.id} className="inline-flex items-center gap-1 font-pixel-sm text-[15px]">
@@ -468,7 +446,7 @@ function DetailsBody({ area }: { area: Area }) {
               </li>
             ))}
           </ul>
-        </Section>
+        </SheetSection>
       )}
 
       <SheetModal view={view} onClose={() => setView(null)} />

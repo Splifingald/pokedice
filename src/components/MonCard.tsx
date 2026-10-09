@@ -8,6 +8,7 @@ import { cx } from '@/theme/util'
 import { DiceSet } from './DiceSet'
 import { HpBar } from './HpBar'
 import { PixelIcon } from './icons'
+import { ItemSprite } from './ItemSprite'
 import { MiniSprite } from './SpriteImg'
 import { TypeBadge } from './TypeBadge'
 
@@ -95,11 +96,7 @@ export function MonCard({
         <div className="flex items-start gap-2">
           {/* Party icons sit low in their box: pull it up so the creature lines up with the name. */}
           {reviving ? (
-            fossil?.spriteUrl ? (
-              <img src={fossil.spriteUrl} alt="" width={32} height={32} className="-mt-1 shrink-0" style={{ imageRendering: 'pixelated' }} />
-            ) : (
-              <span className="h-8 w-8 shrink-0" />
-            )
+            <ItemSprite item={fossil} size={32} className="-mt-1" />
           ) : (
             <MiniSprite dex={inst.dex} size={40} className={cx('-mb-2 -ml-1 -mt-4 shrink-0', fainted && 'grayscale')} />
           )}

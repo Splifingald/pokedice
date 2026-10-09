@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react'
 import { Navigate } from 'react-router-dom'
 import { linearAreas, regionOf, teamOf, type Area } from '@/engine'
 import { useT } from '@/i18n/react'
-import { ItemPanel } from '@/components/ItemPanel'
 import { RegionBar } from '@/components/RegionBar'
 import { SheetModal, type SheetView } from '@/components/SheetModal'
 import { useGame } from '@/store/game'
@@ -14,7 +13,7 @@ import { AreasSheet, type AreasFilter } from './home/AreasSheet'
 import { ContinueBar, useContinue } from './home/ContinueBar'
 import { hasNewSecret, playable } from './home/areas'
 import { SceneStage } from './home/SceneStage'
-import { travelTo } from './home/travel'
+import { travelTo } from '@/store/travel'
 import { Widgets } from './home/Widgets'
 
 /**
@@ -96,7 +95,7 @@ function HomeView({ area }: { area: Area }) {
         onTravel={travel}
       />
       <AreaDetails area={detailArea} onClose={() => setDetails(null)} onPlay={play} onTravel={travel} />
-      <SheetModal view={mon} onClose={() => setMon(null)} instExtra={(p) => <ItemPanel inst={p} />} />
+      <SheetModal view={mon} onClose={() => setMon(null)} manage />
       {/* The next region's offer opens by itself once, when a league is won. */}
       <RegionBar modalOnly />
     </div>
