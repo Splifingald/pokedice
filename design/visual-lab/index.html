@@ -539,7 +539,7 @@
 
   /* ------------------------------------------------------------------ Home prototype */
   .home-grid { display: grid; grid-template-columns: 406px minmax(0, 1fr); gap: 40px; align-items: start; }
-  .home-device { position: sticky; top: 72px; }
+  .home-device { position: sticky; top: 72px; min-width: 0; }
   .home-bezel { padding: 8px; }
   #home-root { border-radius: 18px; overflow: hidden; }
   .hm-screen { position: relative; height: 872px; display: flex; flex-direction: column; background-color: var(--u-bg); background-image: var(--tex); background-size: 16px auto; image-rendering: pixelated; overflow: hidden; }
@@ -832,6 +832,185 @@
   .hm-d-foot .ui-btn { min-height: 56px; }
   .hm-d-foot .ui-btn img { width: 24px; height: 24px; }
 
+  /* ------------------------------------------------------------------ pages behind the tab bar (pages.js) */
+  .hm-page { display: flex; flex-direction: column; flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+  .hm-page-home { overflow: hidden; }
+  section.hm-page { padding: 10px 12px 20px; gap: 12px; }
+  section.hm-page > * { flex-shrink: 0; }
+  .hm-page .hm-chips { padding: 0; }
+  .hm-seg button[aria-selected='true'] { background: #24304f; color: #fbfdff; }
+  .hm-seg button[aria-selected='true'] i { color: #ffe7a8; }
+  .hm-seg button i { font-style: normal; font-family: 'Jersey 15', sans-serif; font-size: 14px; color: #5c6a8a; }
+  .hm-pill.bump { animation: bump 320ms steps(4); }
+  @keyframes bump { 40% { transform: translateY(-3px) scale(1.06); } }
+  .pg-head { display: flex; align-items: center; gap: 10px; min-height: 44px; }
+  .pg-head h2 { margin: 0; font-weight: 400; font-size: 32px; line-height: 1; }
+  .pg-count { font-family: 'Jersey 15', sans-serif; font-size: 17px; color: #5c6a8a; }
+  .pg-hint { appearance: none; border: 0; margin-left: auto; min-height: 36px; display: inline-flex; align-items: center; gap: 6px; padding: 0 10px; background: #f1f4f9; box-shadow: inset 0 0 0 2px #b6c3d9; font-family: 'Jersey 15', sans-serif !important; font-size: 15px; color: #5c6a8a !important; }
+  .pg-hint img { width: 16px; height: 16px; }
+  .pg-wallet { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px 5px; background: #24304f; color: #ffe7a8; font-size: 20px; line-height: 1; }
+  .pg-wallet img { width: 16px; height: 16px; }
+  .pg-tabs { width: 100%; }
+  .pg-tabs button { flex: 1; min-height: 42px; font-size: 19px; }
+  .pg-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+  .pg-tools input { flex: 1 1 150px; min-width: 0; height: 42px; border: 0; padding: 0 12px; background: #ffffff; box-shadow: inset 0 0 0 2px #24304f, inset 0 3px 0 #dfe7f2; font-family: 'Jersey 20', sans-serif; font-size: 19px; color: #24304f; border-radius: 0; -webkit-appearance: none; }
+  .pg-tools input::placeholder { color: #8592ad; }
+  .pg-tools input:focus-visible { outline: 3px solid #f2553f; outline-offset: 1px; }
+  .pg-note { margin: 0; flex: 1 1 180px; font-family: 'Jersey 15', sans-serif; font-size: 15px; line-height: 1.15; color: #5c6a8a; }
+  .pg-tip { margin: -4px 0 0; font-family: 'Jersey 15', sans-serif; font-size: 14px; color: #8592ad; text-align: center; }
+  .pg-sec-h { display: flex; align-items: baseline; gap: 8px; margin-top: 4px; }
+  .pg-sec-h h3 { margin: 0; font-weight: 400; font-size: 24px; line-height: 1; }
+  .pg-new { position: absolute; right: 3px; top: 3px; font-style: normal; font-family: 'Jersey 15', sans-serif; font-size: 11px; line-height: 1; padding: 1px 3px 2px; background: #ffbe2e; color: #24304f; box-shadow: inset 0 0 0 1px #24304f; }
+  .pg-shiny { position: absolute; left: 5px; top: 3px; font-style: normal; font-size: 15px; line-height: 1; color: #e8a800; text-shadow: 0 1px 0 #24304f; }
+  .pg-spr { image-rendering: pixelated; image-rendering: crisp-edges; }
+  .pg-spr-ico { display: grid; place-items: center; }
+  .pg-xp { display: block; width: 100%; height: 4px; background: #e3e8f0; }
+  .pg-xp i { display: block; height: 100%; background: #5b8def; }
+  .pg-minidice { display: flex; flex-wrap: wrap; justify-content: center; gap: 2px; }
+  .pg-minidice i { width: 10px; height: 10px; background: var(--c); box-shadow: inset 0 0 0 1px #24304f; }
+  .pg-tdot { display: inline-block; width: 10px; height: 10px; margin-right: 5px; background: var(--c); box-shadow: inset 0 0 0 1px #24304f; }
+  /* Team */
+  .pg-team { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  .pg-tm { appearance: none; border: 0; position: relative; width: 100%; display: grid; justify-items: center; gap: 4px; padding: 22px 6px 9px; background: #ffffff; box-shadow: inset 0 0 0 2px #24304f, inset 0 -4px 0 #dfe7f2; cursor: grab; touch-action: pan-y; user-select: none; -webkit-user-select: none; }
+  .pg-tm.lead { background: #fffbea; box-shadow: inset 0 0 0 2px #24304f, inset 0 0 0 4px #ffbe2e, inset 0 -6px 0 #ffe7a8; }
+  .pg-tm.dragging { z-index: 5; cursor: grabbing; box-shadow: inset 0 0 0 2px #24304f, inset 0 -4px 0 #dfe7f2, 0 10px 0 #24304f33; }
+  .pg-tm.over { outline: 3px dashed #f2553f; outline-offset: 2px; }
+  .pg-tm-n { position: absolute; left: 6px; top: 6px; font-family: 'Jersey 15', sans-serif; font-size: 14px; line-height: 1; padding: 1px 5px 2px; background: #e3e8f0; color: #24304f; }
+  .pg-tm.lead .pg-tm-n { background: #ffbe2e; box-shadow: inset 0 0 0 1px #24304f; }
+  .pg-tm .pg-spr { width: 96px; height: 84px; max-width: 100%; }
+  .pg-tm-name { font-weight: 400; font-size: 18px; line-height: 1; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pg-tm .ui-hp { width: 100%; margin: 0; gap: 4px; }
+  .pg-tm .ui-hp .lbl { display: none; }
+  .pg-tm .ui-hp .track { min-width: 0; }
+  .pg-tm .ui-hp .num { font-size: 13px; }
+  .pg-box, .pg-dex { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 6px; }
+  .pg-bx, .pg-dx { appearance: none; border: 0; position: relative; width: 100%; display: grid; justify-items: center; gap: 2px; padding: 3px 3px 7px; background: #ffffff; box-shadow: inset 0 0 0 2px #b6c3d9; }
+  .pg-bx b, .pg-dx b { font-weight: 400; font-size: 15px; line-height: 1; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pg-bx > span:not(.ico) { font-family: 'Jersey 15', sans-serif; font-size: 13px; line-height: 1; color: #5c6a8a; }
+  .pg-bx:hover, .pg-dx:hover { box-shadow: inset 0 0 0 2px #24304f; }
+  /* Pokédex */
+  .pg-progress { display: grid; gap: 4px; }
+  .pg-progress .hm-meter { height: 8px; }
+  .pg-progress small { font-family: 'Jersey 15', sans-serif; font-size: 15px; color: #5c6a8a; }
+  .pg-dx-n { font-family: 'Jersey 15', sans-serif; font-size: 12px; line-height: 1; color: #8592ad; }
+  .pg-dx.miss { background: #f1f4f9; }
+  .pg-dx.miss .ico { filter: brightness(0) opacity(0.32); }
+  .pg-dx.miss b { color: #8592ad; }
+  .pg-near { position: absolute; left: 3px; top: 3px; font-style: normal; font-family: 'Jersey 15', sans-serif; font-size: 11px; line-height: 1; padding: 1px 3px 2px; background: #d8f5e4; color: #1d6b43; box-shadow: inset 0 0 0 1px #34c97a; }
+  /* Poké Mart */
+  .pg-items { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+  .pg-it { background: #ffffff; box-shadow: inset 0 0 0 2px #24304f, inset 0 -4px 0 #dfe7f2; }
+  .pg-it.open { background: #fffdf3; box-shadow: inset 0 0 0 3px #24304f, inset 0 -4px 0 #ffe7a8; }
+  .pg-it-main { appearance: none; border: 0; background: none; width: 100%; min-height: 54px; display: flex; align-items: center; gap: 8px; padding: 6px 8px 9px 6px; text-align: left; }
+  .pg-it-t { display: grid; flex: 1; min-width: 0; line-height: 1.05; }
+  .pg-it-t b { font-weight: 400; font-size: 19px; }
+  .pg-it-t small { font-family: 'Jersey 15', sans-serif; font-size: 14px; color: #5c6a8a; }
+  .pg-own { font-style: normal; font-family: 'Jersey 15', sans-serif; font-size: 15px; color: #5c6a8a; }
+  .pg-price { min-width: 62px; padding: 6px 8px 8px; text-align: center; background: #24304f; color: #ffe7a8; font-size: 18px; line-height: 1; }
+  .pg-price.sell { background: #1d6b43; color: #ffffff; }
+  .pg-it.poor .pg-price { background: #e3e8f0; color: #8592ad; }
+  .pg-it-more { display: grid; gap: 8px; padding: 0 10px 12px; }
+  .pg-it-more p { margin: 0; font-family: 'Jersey 15', sans-serif; font-size: 15px; line-height: 1.15; color: #5c6a8a; }
+  .pg-buyrow { display: flex; align-items: center; gap: 8px; }
+  .pg-buyrow .hm-seg button { min-height: 44px; }
+  .pg-buy { flex: 1; min-height: 50px; }
+  .pg-it.locked { background: #f1f4f9; box-shadow: inset 0 0 0 2px #b6c3d9; color: #5c6a8a; }
+  .pg-it.locked .it { filter: grayscale(1) opacity(0.55); }
+  .pg-lockbadge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 6px 4px; background: #e3e8f0; font-family: 'Jersey 15', sans-serif; font-size: 14px; white-space: nowrap; }
+  .pg-lockbadge img { width: 8px; height: 8px; }
+  /* Upgrades */
+  .pg-toggle { appearance: none; border: 0; min-height: 38px; padding: 0 10px; background: #ffffff; box-shadow: inset 0 0 0 2px #b6c3d9; font-size: 17px; white-space: nowrap; }
+  .pg-toggle i { font-style: normal; font-family: 'Jersey 15', sans-serif; font-size: 14px; color: #5c6a8a; }
+  .pg-toggle[aria-pressed='true'] { background: #24304f; color: #fbfdff; box-shadow: none; }
+  .pg-toggle[aria-pressed='true'] i { color: #ffe7a8; }
+  .pg-ups { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+  .pg-up { display: grid; gap: 6px; padding: 8px 10px 10px; background: #ffffff; box-shadow: inset 0 0 0 2px #24304f, inset 0 -4px 0 #dfe7f2; }
+  .pg-up.can { background: #fffdf3; box-shadow: inset 0 0 0 2px #24304f, inset 0 -4px 0 #ffe7a8; }
+  .pg-up.locked { background: #f1f4f9; box-shadow: inset 0 0 0 2px #b6c3d9; color: #5c6a8a; }
+  .pg-up-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 30px; }
+  .pg-up-top b { font-weight: 400; font-size: 20px; line-height: 1; }
+  .pg-ex { display: inline-flex; align-items: center; gap: 3px; }
+  .pg-ex small { font-family: 'Jersey 15', sans-serif; font-size: 14px; color: #5c6a8a; margin-left: 4px; }
+  .pg-ex .die-wrap { line-height: 0; }
+  .pg-up-mid { display: flex; align-items: center; gap: 8px; }
+  .pg-pips { flex: 1; display: flex; gap: 2px; }
+  .pg-pips i { flex: 1; height: 10px; background: #e3e8f0; box-shadow: inset 0 0 0 1px #b6c3d9; }
+  .pg-pips i.on { background: #ffbe2e; box-shadow: inset 0 0 0 1px #24304f; }
+  .pg-pips i.pop { animation: pip-pop 420ms steps(6); }
+  @keyframes pip-pop { 0% { background: #ffffff; transform: scaleY(1.8); } 60% { transform: scaleY(1.3); } }
+  .pg-up-lv { font-family: 'Jersey 15', sans-serif; font-size: 15px; color: #5c6a8a; }
+  .pg-up-bot { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .pg-up-bonus { font-size: 18px; }
+  .pg-up-bonus em { font-style: normal; color: #1d9e5a; }
+  .pg-arrow { color: #8592ad; }
+  .pg-upbtn { appearance: none; border: 0; min-width: 96px; min-height: 46px; display: grid; place-items: center; padding: 4px 10px 8px; background: #f2553f; color: #ffffff; box-shadow: inset 0 0 0 2px #24304f, inset 0 -4px 0 #c4382a, inset 0 2px 0 #ff9a85; line-height: 1; }
+  .pg-upbtn b { font-weight: 400; font-size: 20px; }
+  .pg-upbtn small { font-family: 'Jersey 15', sans-serif; font-size: 13px; color: #ffe2db; }
+  .pg-upbtn:active { box-shadow: inset 0 0 0 2px #24304f, inset 0 2px 0 #c4382a; }
+  .pg-upbtn.poor { background: #e3e8f0; color: #5c6a8a; box-shadow: inset 0 0 0 2px #b6c3d9; }
+  .pg-upbtn.poor small { color: #8592ad; }
+  .pg-upbtn.max { background: #ffbe2e; color: #24304f; box-shadow: inset 0 0 0 2px #24304f; font-size: 18px; }
+  .pg-upbtn.off { display: inline-flex; gap: 6px; background: #e3e8f0; color: #5c6a8a; box-shadow: none; font-family: 'Jersey 15', sans-serif; font-size: 15px; }
+  .pg-upbtn.off img { width: 16px; height: 16px; }
+  .pg-up-why { margin: 0; font-family: 'Jersey 15', sans-serif; font-size: 14px; color: #5c6a8a; }
+  .pg-locked summary { cursor: pointer; padding: 8px 0; font-family: 'Jersey 15', sans-serif; font-size: 16px; color: #5c6a8a; }
+  /* a Pokémon's sheet */
+  .pg-hero { display: flex; align-items: center; gap: 12px; }
+  .pg-hero .pg-spr, .pg-hero .pg-spr-ico { width: 112px; height: 104px; flex: none; background: #eef4fb; box-shadow: inset 0 0 0 2px #24304f; }
+  .pg-hero.miss .ico { filter: brightness(0) opacity(0.4); }
+  .pg-hero-t { display: grid; gap: 6px; flex: 1; min-width: 0; }
+  .pg-hero-t .ui-hp { margin: 0; }
+  .pg-types { display: flex; flex-wrap: wrap; gap: 4px; }
+  .pg-xpline { display: grid; gap: 3px; }
+  .pg-xpline small { font-family: 'Jersey 15', sans-serif; font-size: 13px; color: #5c6a8a; }
+  .pg-miss-t { margin: 0; font-family: 'Jersey 15', sans-serif; font-size: 16px; line-height: 1.15; color: #5c6a8a; }
+  .pg-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+  .pg-stats span { display: grid; justify-items: center; padding: 6px 4px 8px; background: #ffffff; box-shadow: inset 0 0 0 2px #b6c3d9; }
+  .pg-stats b { font-weight: 400; font-size: 26px; line-height: 1; }
+  .pg-stats small { font-family: 'Jersey 15', sans-serif; font-size: 13px; color: #5c6a8a; }
+  .pg-dice { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+  .pg-die { display: grid; gap: 4px; }
+  .pg-die-name { display: flex; align-items: center; gap: 8px; }
+  .pg-die-name b { font-weight: 400; font-size: 18px; }
+  .pg-die-name em { font-style: normal; font-family: 'Jersey 15', sans-serif; color: #5c6a8a; }
+  .pg-die small { font-family: 'Jersey 15', sans-serif; font-size: 13px; color: #5c6a8a; }
+  .pg-faces { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 3px; }
+  .pg-faces i { display: grid; place-items: center; height: 28px; font-style: normal; font-size: 18px; background: color-mix(in oklab, var(--c) 35%, #ffffff); box-shadow: inset 0 0 0 2px color-mix(in oklab, var(--c) 70%, #24304f); }
+  .pg-faces i.st { background: var(--stc); color: #ffffff; text-shadow: 0 1px 0 #24304f; box-shadow: inset 0 0 0 2px #24304f; }
+  .pg-ms { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+  .pg-ms li { display: grid; grid-template-columns: 58px minmax(0, 1fr); align-items: center; gap: 3px 8px; font-size: 17px; line-height: 1.1; }
+  .pg-ms-lv { padding: 2px 6px 3px; background: #24304f; color: #ffe7a8; font-family: 'Jersey 15', sans-serif; font-size: 14px; text-align: center; }
+  .pg-ms-lv.stone { padding: 0; background: none; display: grid; place-items: center; }
+  .pg-ms-bar { grid-column: 2; height: 4px; background: #e3e8f0; }
+  .pg-ms-bar i { display: block; height: 100%; background: #5b8def; }
+  .pg-foot2 { display: flex; gap: 8px; }
+  .pg-foot2 .ui-btn { flex: 1; min-height: 52px; }
+  .pg-lead-note { flex: 1; display: grid; place-items: center; font-family: 'Jersey 15', sans-serif; font-size: 16px; color: #5c6a8a; }
+  .pg-foot-note { margin: 0; min-height: 44px; display: flex; align-items: center; gap: 8px; font-family: 'Jersey 15', sans-serif; font-size: 16px; color: #5c6a8a; }
+  .pg-foot-note img { width: 16px; height: 16px; }
+  .pg-uselist, .pg-wherelist { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+  .pg-useit { appearance: none; border: 0; width: 100%; display: flex; align-items: center; gap: 8px; padding: 6px 10px 9px 6px; text-align: left; background: #ffffff; box-shadow: inset 0 0 0 2px #24304f, inset 0 -4px 0 #dfe7f2; }
+  .pg-useit > span { display: grid; flex: 1; min-width: 0; line-height: 1.05; }
+  .pg-useit b { font-weight: 400; font-size: 18px; }
+  .pg-useit small { font-family: 'Jersey 15', sans-serif; font-size: 14px; color: #5c6a8a; }
+  .pg-useit em { font-style: normal; font-family: 'Jersey 15', sans-serif; color: #5c6a8a; }
+  .pg-useit:disabled { background: #f1f4f9; box-shadow: inset 0 0 0 2px #b6c3d9; color: #5c6a8a; }
+  .pg-useit:disabled .it { filter: grayscale(1) opacity(0.55); }
+  .pg-where { position: relative; display: flex; align-items: center; gap: 8px; min-height: 62px; padding: 6px 78px 7px 6px; background: #ffffff; box-shadow: inset 0 0 0 2px #24304f; }
+  .pg-where.st-here { box-shadow: inset 0 0 0 3px #ff8a3d; }
+  .pg-where.st-cleared { box-shadow: inset 0 0 0 3px #34c97a; }
+  .pg-where.st-locked { background: #f1f4f9; box-shadow: inset 0 0 0 2px #b6c3d9; color: #5c6a8a; }
+  .pg-where.st-locked .pg-where-ban { filter: grayscale(0.7); }
+  .pg-where-ban { width: 72px; height: 48px; flex: none; image-rendering: pixelated; box-shadow: 0 0 0 2px #24304f; }
+  .pg-where-t { display: grid; gap: 3px; min-width: 0; }
+  .pg-where-t b { font-weight: 400; font-size: 18px; line-height: 1; }
+  .pg-where-t small { font-family: 'Jersey 15', sans-serif; font-size: 14px; line-height: 1.2; color: #5c6a8a; }
+  .pg-where .hm-gobtn { top: 50%; bottom: auto; transform: translateY(-50%); }
+  .pg-evo-from { display: flex; align-items: center; gap: 2px; margin: 2px 0 0; font-family: 'Jersey 15', sans-serif; font-size: 15px; color: #5c6a8a; }
+  .pg-evo-from .ico { margin: -6px -2px -6px -8px; }
+  @media (max-width: 520px) { .hm-page { overflow: visible; } }
+  @media (prefers-reduced-motion: reduce) { .hm-pill.bump, .pg-pips i.pop { animation: none; } }
+
   /* the preview toggle above the phone */
   .home-states { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin: 0 0 18px; }
   .home-states .eyebrow { margin: 0; }
@@ -850,7 +1029,7 @@
   .notes-list b { color: var(--text); }
   .home-refs { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
   @media (max-width: 960px) {
-    .home-grid { grid-template-columns: 1fr; }
+    .home-grid { grid-template-columns: minmax(0, 1fr); }
     .home-device { position: static; display: grid; justify-content: center; }
   }
   @media (max-width: 520px) {
@@ -914,6 +1093,7 @@
                 <button type="button" class="hm-pill" id="hm-pill" data-soon="Shop" aria-label="Open the Shop"><img id="hm-ico-coin" class="px" alt="" /><span id="hm-gold">₽ 1,240</span><i aria-hidden="true">+</i></button>
                 <button type="button" class="hm-round" data-soon="Leaderboard" aria-label="Leaderboard"><img id="hm-ico-trophy" class="px" alt="" /></button>
               </header>
+              <div class="hm-page hm-page-home" data-page="home">
               <div class="hm-stage" id="hm-stage">
                 <canvas id="hm-cv" width="288" height="276" role="img" aria-label="Your team"></canvas>
                 <button type="button" class="hm-area hm-plate" id="hm-area" aria-haspopup="dialog"></button>
@@ -929,12 +1109,17 @@
                 <button type="button" class="ui-panel hm-w" id="hm-secret"></button>
                 <button type="button" class="ui-panel hm-w" id="hm-daycare"></button>
               </div>
+              </div>
+              <section class="hm-page" data-page="team" aria-label="Team" hidden></section>
+              <section class="hm-page" data-page="dex" aria-label="Pokédex" hidden></section>
+              <section class="hm-page" data-page="shop" aria-label="Poké Mart" hidden></section>
+              <section class="hm-page" data-page="upgrades" aria-label="Upgrades" hidden></section>
               <nav class="hm-nav" id="hm-nav" aria-label="Game menu">
-                <button type="button" data-tab="Shop"><img data-ico="potion" class="px" alt="" /><span>Shop</span></button>
-                <button type="button" data-tab="Upgrades"><img data-ico="up" class="px" alt="" /><span>Upgrades</span><i class="dot" aria-label="2 upgrades you can afford">2</i></button>
+                <button type="button" data-tab="shop"><img data-ico="potion" class="px" alt="" /><span>Shop</span></button>
+                <button type="button" data-tab="upgrades"><img data-ico="up" class="px" alt="" /><span>Upgrades</span><i class="dot" hidden></i></button>
                 <button type="button" data-tab="home" class="home" aria-current="page" aria-label="Home"><span class="hm-home-ball"><img data-ico="ball" class="px" alt="" /></span></button>
-                <button type="button" data-tab="Team"><span class="ico" style="background-position:-200px 0" aria-hidden="true"></span><span>Team</span></button>
-                <button type="button" data-tab="Pokédex"><img data-ico="dex" class="px" alt="" /><span>Pokédex</span><i class="dot new" aria-label="1 new entry">NEW</i></button>
+                <button type="button" data-tab="team"><span class="ico" style="background-position:-200px 0" aria-hidden="true"></span><span>Team</span></button>
+                <button type="button" data-tab="dex"><img data-ico="dex" class="px" alt="" /><span>Pokédex</span><i class="dot new" hidden></i></button>
               </nav>
               <div class="hm-wipe" id="hm-wipe" hidden aria-hidden="true"></div>
               <div class="hm-sheet" id="hm-sheet" hidden>
@@ -967,15 +1152,24 @@
                   <div class="hm-d-foot"><button type="button" class="ui-btn primary wide" id="hm-d-go"></button></div>
                 </div>
               </div>
+              <div class="hm-sheet hm-detail hm-s2" id="hm-sheet2" hidden>
+                <div class="hm-scrim" data-close></div>
+                <div class="hm-panel" role="dialog" aria-modal="true" aria-labelledby="hm-s2-title">
+                  <div class="hm-grab" aria-hidden="true"></div>
+                  <header class="hm-sheet-head"><div><h2 id="hm-s2-title"></h2><p id="hm-s2-sub"></p></div><button type="button" class="hm-x" data-close aria-label="Close">✕</button></header>
+                  <div class="hm-d-body" id="hm-s2-body"></div>
+                  <div class="hm-d-foot" id="hm-s2-foot"></div>
+                </div>
+              </div>
               <div class="hm-toast" id="hm-toast" role="status" aria-live="polite"></div>
             </div>
           </div>
         </div>
       </div>
       <aside class="home-notes">
-        <p class="eyebrow">PAGE 1 OF THE UX PASS · HOME</p>
+        <p class="eyebrow">THE UX PASS · HOME AND ITS TABS</p>
         <h1 class="title">Home</h1>
-        <p class="home-thesis">One big button to play, your team on show, everything else one tap away. It replaces the Map page as the place you land.</p>
+        <p class="home-thesis">One big button to play, your team on show, everything else one tap away. It replaces the Map page as the place you land. The tab bar works: Team, Pokédex, Poké Mart and Upgrades are built too.</p>
         <ol class="zones">
           <li><b>Top bar</b><span>You, your badges, your gold. The <em>+</em> opens the Shop; the cup opens the leaderboard.</span></li>
           <li><b>Where you are</b><span>Area, level range, rounds, species caught here. Tap it for the <em>area’s details</em>: gym, legendary and when it shows up, one-time finds still there, Pokémon to catch with rarity and levels, what a round brings.</span></li>
@@ -985,9 +1179,16 @@
           <li><b>Widgets</b><span><em>Versus</em> joins once three Pokémon reach Lv.50: Set team first, then Fight. The newest secret area travels in one tap; when there is none, the next one shows its progress. The Day Care shows who is ready and collects in place.</span></li>
           <li><b>Tab bar</b><span>Home in the middle. Dots only for things you can act on: affordable upgrades, a new Pokédex entry.</span></li>
         </ol>
+        <h2 class="notes-h">The tabs</h2>
+        <ol class="zones">
+          <li><b>Team</b><span>The three as cards: sprite, HP, XP, dice. <em>Drag one onto another</em> to change who goes out first; the lead wears gold. The Box below: search, sort by number, level or newest, filter by type. A card opens the Pokémon: stats, every die face, what it learns next, items to use. Swaps stay a Pokémon Center thing, said once at the top.</span></li>
+          <li><b>Pokédex</b><span>151 tiles, silhouettes for the missing ones. Filters All, Caught, Missing and <em>Nearby</em> (catchable in an open area). A number finds anything; a name only what you’ve caught. A missing one shows where it lives, with the same <em>GO</em> as the Areas list.</span></li>
+          <li><b>Poké Mart</b><span>Buy and Sell, category chips, Balls first. A row opens to pick ×1, ×5 or ×10; the button gives the total, or how much is missing. Items that need more badges wait under “Coming later”.</span></li>
+          <li><b>Upgrades</b><span>Combos and Dice. Each card: example dice, a 10-pip track, the bonus now → next, the price. <em>Affordable</em> narrows to what you can buy; the tab bar’s dot counts it. Locked ones say why.</span></li>
+        </ol>
         <h2 class="notes-h">Accessible by default</h2>
         <ul class="notes-list">
-          <li>Every control is a real button, 44 px or more; the team is also a keyboard list of buttons.</li>
+          <li>Every control is a real button, 44 px or more; the team is also a keyboard list of buttons. Team order works without dragging too (Make lead).</li>
           <li>Both sheets (Areas, an area’s details) are dialogs: focus moves in, stays in, Esc closes the top one, focus comes back.</li>
           <li>Text is navy on paper (11:1); status is never colour alone (chips carry words).</li>
           <li>With reduced motion on, the team stands still and nothing pulses.</li>
@@ -1003,11 +1204,10 @@
         </div>
         <h2 class="notes-h">Next in the UX pass</h2>
         <ul class="notes-list next">
-          <li><b>Battle</b> slim boxes (done here), dice tray first, items in a drawer.</li>
-          <li><b>Team</b> drag to reorder, filter by type, sort by level or HP.</li>
-          <li><b>Pokédex</b> grid of 151 with search, “where to find” from the same data as Areas.</li>
-          <li><b>Shop &amp; Upgrades</b> one screen, what you can afford first.</li>
-          <li><b>Day Care</b> drop-off from the Box with search.</li>
+          <li><b>Battle</b> from CONTINUE: the dice tray first, items in a drawer, the catch inside the scene.</li>
+          <li><b>Day Care</b> from its widget: drop-off from the Box with search, the Egg.</li>
+          <li><b>Versus</b> from its widget: opponents, my team, the leaderboard.</li>
+          <li><b>Trainer card &amp; Leaderboard</b> from the top bar.</li>
         </ul>
       </aside>
     </div>
@@ -1090,4 +1290,5 @@
 <script src="scenes.js"></script>
 <script src="anims.js"></script>
 <script src="home.js"></script>
+<script src="pages.js"></script>
 <script src="lab.js"></script>

@@ -106,7 +106,8 @@
   const SAVE = {}
   let TEAM = []
   const VS = { toBeat: 5, defense: 3, rival: { name: 'Lea', team: [149, 94, 130] } }
-  let K = null
+  let K = null,
+    G = null
   let caught = new Set()
 
   function loadState(id) {
@@ -127,9 +128,14 @@
       ...JSON.parse(JSON.stringify(S)),
     })
     TEAM = MONS.map((m, i) => {
-      const max = Math.round(m.hpLv * S.lv[i])
-      return { ...m, lv: S.lv[i], hp: [Math.round(max * S.hp[i]), max] }
+      const max = hpAt(m.dex, S.lv[i]) || Math.round(m.hpLv * S.lv[i])
+      return { ...m, lv: S.lv[i], hp: [Math.round(max * S.hp[i]), max], xp: [0.42, 0.76, 0.18][i] }
     })
+  }
+  /** The game's HP at a level: round(baseHp + (maxHp − baseHp) × (L − 1) / 99). */
+  function hpAt(dex, lv) {
+    const s = G && G.mons[dex]
+    return s ? Math.round(s.hp[0] + ((s.hp[1] - s.hp[0]) * (lv - 1)) / 99) : 0
   }
 
   /** The Pokédex of this save: everything met on the way here first, then the rest in route order. */
@@ -804,8 +810,18 @@
     return (worldCache[id] = flip ? mirrored(base) : base)
   }
   const worldOf = (a) => sceneOf(sceneKey(a), sceneFlip(a))
-  /** A strip cut from the middle of an area's scene, around its horizon: what lists show. */
   const stripCache = {}
+  /** A small centered view of an area's scene (no scaling): thumbnails in lists. */
+  function thumbOf(a, w = 72, h = 48) {
+    const id = `${sceneKey(a)}|${sceneFlip(a)}|t${w}x${h}`
+    if (stripCache[id]) return stripCache[id]
+    const wd = worldOf(a)
+    const c = canvas(w, h)
+    const y0 = clamp(Math.round(wd.horizon - h * 0.45), 0, H - h)
+    c.g.drawImage(wd.cv, Math.round((W - w) / 2), y0, w, h, 0, 0, w, h)
+    return (stripCache[id] = c.toDataURL())
+  }
+  /** A strip cut from the middle of an area's scene, around its horizon: what lists show. */
   function stripOf(a, h = 56) {
     const id = `${sceneKey(a)}|${sceneFlip(a)}|${h}`
     if (stripCache[id]) return stripCache[id]
@@ -1373,6 +1389,10 @@
     if (d.back && d.back.isConnected) d.back.focus({ preventScroll: true })
   }
   const closeAll = () => [...OPEN].reverse().forEach((d) => closeDialog(d.el))
+  // Esc closes the top dialog wherever focus is (a sheet's content can change under the focused button).
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && OPEN.length && !e.defaultPrevented) closeDialog(OPEN[OPEN.length - 1].el)
+  })
 
   // ------------------------------------------------------------------ the areas sheet, with the region switcher
   const SHEET = { q: '', filter: 'all', sort: 'route', view: 'areas', starter: 0 }
@@ -1743,7 +1763,7 @@
     if (!running) return
     const dt = Math.min(0.05, (now - last) / 1000)
     last = now
-    if (visible && !$('#home').hidden) {
+    if (visible && PAGE === 'home' && !$('#home').hidden) {
       t += dt
       for (const m of mons) m.update(dt, t, world, mons)
       updateSong(t, mons)
@@ -1848,11 +1868,7 @@
         toast(`Team set: ${TEAM.map((m) => m.name).join(', ')} fight as Lv.50 clones`)
       } else vsWipe()
     })
-    $$('#hm-nav button').forEach((b) =>
-      b.addEventListener('click', () =>
-        b.dataset.tab === 'home' ? toast('You’re home') : toast(`${b.dataset.tab}: next in the UX pass`),
-      ),
-    )
+    $$('#hm-nav button').forEach((b) => b.addEventListener('click', () => showPage(b.dataset.tab)))
     $$('.hm-top [data-soon]').forEach((b) =>
       b.addEventListener('click', () => toast(`${b.dataset.soon}: next in the UX pass`)),
     )
@@ -1957,12 +1973,52 @@
     $('#hm-state-note').textContent = STATES[id].note
     renderTop()
     renderTeamList()
+    for (const p of Object.values(PAGES)) if (p.reset) p.reset()
     renderWidgets()
     setArea(SAVE.current, false)
+    showPage(PAGE, true)
+  }
+
+  // ------------------------------------------------------------------ pages behind the tab bar (pages.js)
+  const PAGES = {}
+  let PAGE = 'home'
+  function showPage(id, quiet) {
+    if (id !== 'home' && !PAGES[id]) return toast(`${id}: next in the UX pass`)
+    closeAll()
+    PAGE = id
+    $$('.hm-page').forEach((el) => (el.hidden = el.dataset.page !== id))
+    $$('#hm-nav button').forEach((b) =>
+      b.dataset.tab === id ? b.setAttribute('aria-current', 'page') : b.removeAttribute('aria-current'),
+    )
+    $('#hm-card').hidden = true
+    if (id !== 'home') PAGES[id].render($(`.hm-page[data-page="${id}"]`))
+    renderNavDots()
+    if (!quiet) {
+      // A new page starts at its top; on a phone, bring the screen's top back into view too.
+      $(`.hm-page[data-page="${id}"]`).scrollTop = 0
+      const r = $('#home-root').getBoundingClientRect()
+      if (r.top < 0) window.scrollBy(0, r.top)
+    }
+  }
+  /** Dots only for what you can act on: affordable upgrades, a new Pokédex entry. */
+  function renderNavDots() {
+    for (const [id, p] of Object.entries(PAGES)) {
+      const dot = $(`#hm-nav [data-tab="${id}"] .dot`)
+      const v = p.dot ? p.dot() : null
+      if (!dot) continue
+      dot.hidden = !v
+      if (v) {
+        dot.textContent = v.text
+        dot.classList.toggle('new', !!v.gold)
+        dot.setAttribute('aria-label', v.label)
+      }
+    }
   }
 
   async function init() {
-    K = await (await fetch('assets/kanto.json')).json()
+    ;[K, G] = await Promise.all(
+      ['assets/kanto.json', 'assets/game.json'].map((u) => fetch(u).then((r) => r.json())),
+    )
     BALL = url('ball', 1)
     LOCK = url('lock', 2)
     LOCK3 = url('lock', 3)
@@ -1983,5 +2039,63 @@
     draw()
     requestAnimationFrame(frame)
   }
-  window.HOME = { init }
+  // What the pages (pages.js) share with Home: the save, the data, the dialogs, the icons.
+  const API = {
+    get SAVE() {
+      return SAVE
+    },
+    get TEAM() {
+      return TEAM
+    },
+    get K() {
+      return K
+    },
+    get G() {
+      return G
+    },
+    get caught() {
+      return caught
+    },
+    get icons() {
+      return { BALL, LOCK, LOCK3, PLAY, MAP, COIN, BADGE, BADGE3, TROPHY }
+    },
+    REDUCED,
+    $,
+    $$,
+    esc,
+    fold,
+    plural,
+    dexIco,
+    itemIco,
+    hpAt,
+    areaBy,
+    statusOf,
+    clearedArea,
+    toCatch,
+    stripOf,
+    thumbOf,
+    lockReason,
+    toast,
+    openDialog,
+    closeDialog,
+    closeAll,
+    renderTop,
+    renderNavDots,
+    renderWidgets,
+    showPage,
+    goToArea(order) {
+      // From another page: back Home, then travel (or play, if it is where you are).
+      const a = areaBy(order)
+      showPage('home')
+      if (order === SAVE.current) battleWipe()
+      else travel(a)
+    },
+  }
+  window.HOME = {
+    init,
+    api: API,
+    page(id, def) {
+      PAGES[id] = def
+    },
+  }
 })()

@@ -706,6 +706,15 @@
     `<button type="button" class="ui-btn${o.primary ? ' primary' : ''}${o.wide ? ' wide' : ''}" ${o.disabled ? 'disabled' : ''}><span>${o.icon || ''}${label}</span></button>`
   const ico = (name, style, scale = 3, size) =>
     `<img class="px" alt="" src="${iconURL(name, style, scale)}" ${size ? `style="width:${size}px;height:${size}px"` : ''} />`
+  // Shared with the Home pages (pages.js): Daybreak dice, HP bars, type badges and status icons.
+  window.PDUI = {
+    die: (type, value, o) => die('daybreak', type, value, o),
+    hp,
+    typeBadge: (t) => typeBadge('daybreak', t),
+    TYPE: TYPE_MOD,
+    STATUS,
+    statusIcon: (s, scale = 2) => iconURL(s, 'daybreak', scale),
+  }
   const monIcon = (dex) =>
     `<span class="ico" style="background-position:-${(ICON_IDX[dex] ?? 0) * 40}px 0"></span>`
 
