@@ -290,3 +290,18 @@ in view) and the battle history sits beside it from 1024 px.
   encounter** (what Home's CONTINUE would start). Versus ends on its own card in the panel: Victory / Defeat,
   Rematch, Back to Versus.
 - **Versus** plays on auto; SKIP ▸▸ only fast-forwards the replay, since the result was recorded before it started.
+
+## 15. Day Care and Eggs
+
+- **Residents** are cards: the animated sprite, the name (READY in green once the stay is full), "Lv.20 → Lv.22",
+  the stay's XP bar (blue, green when full) and one muted line: "18 of 200 XP · +1 XP in 8 min · full in 30 h 18".
+  TAKE BACK is the card's own button (red once it is ready); what happened is said in a toast (XP and levels gained,
+  back in the team or in the Box).
+- **An empty slot** is a dashed button with a blue +: "Leave a Pokémon / From your team or your Box". It opens a
+  sheet with a search: the team first (TEAM tag), then the Box, lowest level first; a Pokémon that can't stay is
+  greyed with the reason (your last team member, still a fossil).
+- **The Egg card**: gold when the free Egg waits ("1 FREE" by the heading), cream otherwise; two facts as small tags
+  (hatches at Lv.N, how many species you're missing and their odds, from `eggOdds`), and one button: Take the Egg,
+  Buy · ₽50, or "Need ₽x more" (focusable, explains in a toast).
+- **Hatching** is full screen (`useHoldFullscreen`): the hatching timeline, the message box, Skip; then what hatched
+  (NEW when it's new to the Pokédex), where it went, Done and Another · ₽50 when you can afford one.

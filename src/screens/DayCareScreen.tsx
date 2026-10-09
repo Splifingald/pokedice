@@ -1,30 +1,38 @@
+// The Pokémon Day Care: two Pokémon train on their own (real time, even while you're away), and Eggs hatch on the
+// spot, full screen. Every number comes from src/engine/daycare.ts.
 import { motion } from 'framer-motion'
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { Navigate, useNavigate } from 'react-router-dom'
 import {
+  dayCareFullAt,
   dayCareOf,
   dayCareXp,
   depositError,
+  eggOdds,
+  hatchLevel,
   isDayCareOpen,
   nextDayCareTick,
   residentNow,
   type DayCareResident,
+  type DepositError,
   type Hatch,
-  type Pickup,
 } from '@/engine'
 import { sfx } from '@/audio/sfx'
-import { t } from '@/i18n'
-import { useT } from '@/i18n/react'
-import { Modal } from '@/components/Modal'
-import { MonCard } from '@/components/MonCard'
+import { Chip, NewTag } from '@/components/Chip'
 import { PixelButton } from '@/components/PixelButton'
+import { SearchField } from '@/components/Segmented'
+import { Sheet } from '@/components/Sheet'
+import { MiniSprite, SpriteImg } from '@/components/SpriteImg'
 import { StageCanvas, type StageHandle } from '@/components/StageCanvas'
-import { SpriteImg } from '@/components/SpriteImg'
-import { TypeBadge } from '@/components/TypeBadge'
-import { hatchDayCareEgg, leaveAtDayCare, pickUpFromDayCare, visitDayCare } from '@/store/actions'
 import { loadSprite, spriteKey } from '@/fx/sprites'
 import { hatchTimeline } from '@/fx/timelines/moments'
-import { useGame } from '@/store/game'
+import { searchFold, t } from '@/i18n'
+import { useT } from '@/i18n/react'
+import { money } from '@/lib/format'
+import { useHoldFullscreen } from '@/lib/fullscreen'
+import { hatchDayCareEgg, leaveAtDayCare, pickUpFromDayCare, visitDayCare } from '@/store/actions'
+import { pushToast, useGame } from '@/store/game'
 import { cx } from '@/theme/util'
 
 // 12×14 pixel Egg: k outline, w shell, s shade, g spots.
@@ -67,8 +75,8 @@ export function EggSprite({ size = 64, className }: { size?: number; className?:
   )
 }
 
-const minutes = (ms: number) => {
-  const m = Math.ceil(ms / 60_000)
+const duration = (ms: number) => {
+  const m = Math.max(1, Math.ceil(ms / 60_000))
   return m >= 60
     ? t('ui.dayCare.hours', { h: Math.floor(m / 60), m: String(m % 60).padStart(2, '0') })
     : t('ui.dayCare.minutes', { n: m })
@@ -78,301 +86,448 @@ const minutes = (ms: number) => {
 function useNow(ms = 20_000) {
   const [now, setNow] = useState(() => Date.now())
   useEffect(() => {
-    const t = setInterval(() => setNow(Date.now()), ms)
-    return () => clearInterval(t)
+    const id = setInterval(() => setNow(Date.now()), ms)
+    return () => clearInterval(id)
   }, [ms])
   return now
 }
 
-function ResidentCard({ res, now, onPickUp }: { res: DayCareResident; now: number; onPickUp: () => void }) {
+const CARD = 'bg-paper shadow-[inset_0_0_0_2px_#24304f,inset_0_-4px_0_#dfe7f2]'
+
+/** One resident: its sprite, Lv now → Lv after, the stay's XP bar, when the next XP comes and when it is full. */
+function Resident({ res, now, onTake }: { res: DayCareResident; now: number; onTake: () => void }) {
   const { t } = useT()
   const data = useGame((s) => s.data)
   const cfg = data.config.dayCare
   const grown = residentNow(res, now, data)
   const xp = dayCareXp(res, now, data)
   const next = nextDayCareTick(res, now, data)
-  const species = data.species[res.inst.dex]
-  const gained = grown.level - res.inst.level
+  const fullAt = dayCareFullAt(res, data)
+  const ready = next == null
+  const name = data.species[res.inst.dex]?.name ?? t('ui.common.unknown')
+  const status = ready
+    ? t('ui.dayCare.fullShort')
+    : [
+        t('ui.dayCare.nextTick', { xp: cfg.xpPerTick, time: duration(next) }),
+        fullAt != null ? t('ui.dayCare.fullIn', { time: duration(fullAt - now) }) : null,
+      ]
+        .filter(Boolean)
+        .join(' · ')
   return (
-    <div className="pixel-panel flex flex-col gap-2 p-3">
-      <div className="flex items-center gap-3">
-        <SpriteImg
-          dex={res.inst.dex}
-          size={80}
-          shiny={res.inst.shiny}
-          className="border-[3px] border-ink bg-parchment"
-        />
-        <div className="min-w-0 flex-1">
-          <div className="truncate text-3xl leading-none">{species?.name ?? t('ui.common.unknown')}</div>
-          <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xl">
-            <span>{t('ui.common.level.short', { n: res.inst.level })}</span>
-            {gained > 0 && (
-              <>
-                <span aria-hidden>→</span>
-                <span className="border-2 border-ink bg-gold px-1 leading-none">
-                  {t('ui.common.level.short', { n: grown.level })}
-                </span>
-                <span className="text-good">+{gained}</span>
-              </>
-            )}
-          </div>
-        </div>
+    <li
+      className={cx(
+        'grid grid-cols-[84px_minmax(0,1fr)] items-center gap-x-2.5 gap-y-1.5 px-2.5 pb-2.5 pt-2',
+        ready
+          ? 'bg-[#f2fff6] shadow-[inset_0_0_0_2px_#24304f,inset_0_0_0_4px_#34c97a,inset_0_-6px_0_#c9f2d9]'
+          : CARD,
+      )}
+    >
+      <SpriteImg dex={res.inst.dex} size={84} shiny={res.inst.shiny} />
+      <div className="grid min-w-0 gap-1">
+        <span className="flex items-center gap-2">
+          <b className="min-w-0 truncate text-[22px] font-normal leading-none">{name}</b>
+          {ready && <Chip tone="green">{t('ui.home.ready')}</Chip>}
+        </span>
+        <span className="text-[18px] leading-none">
+          {t('ui.common.level.short', { n: res.inst.level })}
+          {grown.level > res.inst.level && (
+            <>
+              {' '}
+              <span aria-hidden className="text-muted">
+                →
+              </span>{' '}
+              <span className="text-good">{t('ui.common.level.short', { n: grown.level })}</span>
+            </>
+          )}
+        </span>
+        <span
+          className="relative block h-2 bg-[#dde5f0] shadow-[inset_0_0_0_1px_#24304f]"
+          role="img"
+          aria-label={t('ui.dayCare.xpOf', { xp, max: cfg.maxXp })}
+        >
+          <i
+            className={cx('absolute inset-y-px left-px block', ready ? 'bg-hp-green' : 'bg-[#5b8def]')}
+            style={{ width: `calc(${Math.min(100, (xp / Math.max(1, cfg.maxXp)) * 100)}% - 2px)` }}
+          />
+        </span>
+        <small className="font-pixel-sm text-[14px] leading-[1.15] text-muted">
+          {t('ui.dayCare.xpOf', { xp, max: cfg.maxXp })} · {status}
+        </small>
       </div>
-      <div>
-        <div className="flex justify-between text-base">
-          <span>{t('ui.dayCare.xp')}</span>
-          <span className="font-mono">
-            {xp}/{cfg.maxXp}
-          </span>
-        </div>
-        <div className="h-3 border-2 border-ink bg-panel" role="img" aria-label={t('ui.dayCare.xpOf', { xp, max: cfg.maxXp })}>
-          <div
-            className="h-full bg-hp-green"
-            style={{ width: `${Math.min(100, (xp / Math.max(1, cfg.maxXp)) * 100)}%` }}
+      <PixelButton
+        variant={ready ? 'primary' : 'secondary'}
+        className="col-span-2 w-full"
+        aria-label={t('ui.dayCare.takeBackName', { name })}
+        onClick={onTake}
+      >
+        {t('ui.dayCare.takeBack')}
+      </PixelButton>
+    </li>
+  )
+}
+
+const REFUSED: Record<DepositError, string> = {
+  full: 'ui.toast.dayCareFull',
+  last: 'ui.dayCare.lastMember',
+  missing: 'ui.toast.notWithYou',
+  fossil: 'ui.dayCare.fossil',
+}
+
+/** Who stays: a search, then the team first (TEAM tag), then the Box, lowest level first (they gain the most). */
+function LeaveSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const { t } = useT()
+  const save = useGame((s) => s.save)
+  const data = useGame((s) => s.data)
+  const [q, setQ] = useState('')
+  useEffect(() => {
+    if (open) setQ('')
+  }, [open])
+  if (!save) return null
+  const cfg = data.config.dayCare
+  const needle = searchFold(q.trim())
+  const rows = save.box
+    .filter((p) => !needle || searchFold(data.species[p.dex]?.name ?? '').includes(needle))
+    .sort((a, b) => {
+      const ta = save.team.includes(a.id)
+      const tb = save.team.includes(b.id)
+      return ta === tb ? a.level - b.level : ta ? -1 : 1
+    })
+  return (
+    <Sheet
+      open={open}
+      onClose={onClose}
+      title={t('ui.dayCare.leaveWhich')}
+      sub={t('ui.dayCare.depositHint', { xp: cfg.xpPerTick, minutes: cfg.tickMinutes, max: cfg.maxXp })}
+      head={
+        <SearchField
+          id="dc-q"
+          value={q}
+          onChange={setQ}
+          label={t('ui.dayCare.searchLabel')}
+          placeholder={t('ui.dayCare.searchLabel')}
+        />
+      }
+    >
+      {rows.length === 0 ? (
+        <p className="m-0 p-2 text-center font-pixel-sm text-[16px] text-muted">{t('ui.dayCare.noMatch')}</p>
+      ) : (
+        <ul className="m-0 grid list-none gap-1.5 p-0">
+          {rows.map((p) => {
+            const why = depositError(save, p.id, data)
+            const name = data.species[p.dex]?.name ?? t('ui.common.unknown')
+            return (
+              <li key={p.id}>
+                <button
+                  type="button"
+                  disabled={!!why}
+                  onClick={() => {
+                    if (leaveAtDayCare(p.id)) {
+                      pushToast(t('ui.dayCare.staysToast', { name }), 'good')
+                      onClose()
+                    }
+                  }}
+                  className={cx(
+                    'flex min-h-[52px] w-full items-center gap-2 py-1.5 pl-1.5 pr-2.5 text-left',
+                    why ? 'bg-[#f1f4f9] text-ink shadow-[inset_0_0_0_2px_#b6c3d9]' : CARD,
+                  )}
+                >
+                  <MiniSprite dex={p.dex} size={40} className={cx('-my-1', why && 'opacity-60 grayscale')} />
+                  <span className="grid min-w-0 flex-1 leading-[1.05]">
+                    <b className="truncate text-[18px] font-normal">{name}</b>
+                    <small className="font-pixel-sm text-[14px] text-ink">
+                      {why
+                        ? t(REFUSED[why])
+                        : t('ui.dayCare.gainsUpTo', {
+                            level: t('ui.common.level.short', { n: p.level }),
+                            max: cfg.maxXp,
+                          })}
+                    </small>
+                  </span>
+                  {save.team.includes(p.id) && <Chip tone="dark">{t('ui.dayCare.teamTag')}</Chip>}
+                </button>
+              </li>
+            )
+          })}
+        </ul>
+      )}
+    </Sheet>
+  )
+}
+
+/**
+ * The hatching, full screen over the page: the timeline on the stage (src/fx/timelines/moments.ts) with Skip, then
+ * what hatched and where it went, Done and "Another".
+ */
+function HatchMoment({
+  hatch,
+  onDone,
+  onAgain,
+}: {
+  hatch: Hatch
+  onDone: () => void
+  onAgain: (() => void) | null
+}) {
+  const { t } = useT()
+  useHoldFullscreen()
+  const data = useGame((s) => s.data)
+  const price = data.config.dayCare.eggPrice
+  const stage = useRef<StageHandle>(null)
+  const doneRef = useRef<HTMLButtonElement>(null)
+  const [open, setOpen] = useState(false)
+  const scene = useMemo(
+    () => ({
+      ready: loadSprite(hatch.inst.dex, false, hatch.inst.shiny),
+      timeline: hatchTimeline({ baby: spriteKey(hatch.inst.dex, false, hatch.inst.shiny) }),
+    }),
+    [hatch],
+  )
+  const sp = data.species[hatch.inst.dex]
+  const name = sp?.name ?? t('ui.common.aPokemon')
+  const reveal = () => {
+    if (open) return
+    setOpen(true)
+    sfx('levelup')
+  }
+  useEffect(() => {
+    if (open) doneRef.current?.focus({ preventScroll: true })
+  }, [open])
+  const where = !hatch.kept
+    ? t('ui.dayCare.keptStronger', { name })
+    : `${hatch.replaced ? t('ui.dayCare.replacedYours', { level: hatch.replaced.level, name }) : ''}${t(
+        hatch.joinedTeam ? 'ui.dayCare.joinedTeam' : 'ui.dayCare.wentToBox',
+      )}`
+  return createPortal(
+    <motion.div
+      role="dialog"
+      aria-modal="true"
+      aria-label={t('ui.dayCare.eggHatching')}
+      className="fixed inset-0 z-[100] overflow-y-auto bg-paper"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      onKeyDown={(e) => e.key === 'Escape' && open && onDone()}
+    >
+      <div className="mx-auto flex min-h-full w-full max-w-[560px] flex-col gap-3 pb-4">
+        <div className="shadow-[0_2px_0_#24304f]">
+          <StageCanvas
+            ref={stage}
+            timeline={scene.timeline}
+            ready={scene.ready}
+            hud={{ beat: (b) => b === 'hatched' && reveal() }}
+            onEnd={reveal}
+            label={open ? t('ui.dayCare.hatched', { name }) : t('ui.dayCare.eggMoving')}
           />
         </div>
-        <p className="mt-1 text-base text-muted">
-          {next == null ? t('ui.dayCare.full') : t('ui.dayCare.nextTick', { xp: cfg.xpPerTick, time: minutes(next) })}
+        <p
+          className="pixel-dialogue mx-3 my-0 flex min-h-[64px] items-center px-3 py-1.5 text-[20px] leading-[1.15]"
+          aria-live="polite"
+        >
+          {open ? t('ui.dayCare.hatched', { name }) : t('ui.dayCare.eggMoving')}
         </p>
+        {!open ? (
+          <PixelButton className="mx-3 self-end" size="sm" onClick={() => stage.current?.skip()}>
+            {t('ui.evolution.skip')}
+          </PixelButton>
+        ) : (
+          <div className={cx('mx-3 grid gap-2 px-3 pb-3 pt-2.5', CARD)}>
+            <p className="m-0 flex items-center gap-1.5 text-[22px] leading-none">
+              <MiniSprite dex={hatch.inst.dex} size={40} className="-my-2" />
+              <b className="font-normal">{name}</b>
+              <span className="font-pixel-sm text-[17px] text-muted">
+                {t('ui.common.level.short', { n: hatch.inst.level })}
+              </span>
+              {hatch.isNew && <NewTag />}
+            </p>
+            <p className="m-0 font-pixel-sm text-[16px] leading-tight text-muted">{where}</p>
+            <div className={cx('grid gap-2.5', onAgain ? 'grid-cols-[1fr_1.4fr]' : 'grid-cols-1')}>
+              <PixelButton ref={doneRef} onClick={onDone}>
+                {t('ui.dayCare.done')}
+              </PixelButton>
+              {onAgain && (
+                <PixelButton variant="primary" className="whitespace-nowrap px-2" onClick={onAgain}>
+                  {t('ui.dayCare.another', { price })}
+                </PixelButton>
+              )}
+            </div>
+          </div>
+        )}
       </div>
-      <PixelButton variant="primary" onClick={onPickUp}>
-        {t('ui.dayCare.takeBack')}
+    </motion.div>,
+    document.body,
+  )
+}
+
+/** The Egg: free once, then bought; the level it hatches at and the odds of a missing species, from the engine. */
+function EggCard({ onHatch }: { onHatch: (free: boolean) => void }) {
+  const { t, tPlural } = useT()
+  const save = useGame((s) => s.save)!
+  const data = useGame((s) => s.data)
+  const cfg = data.config.dayCare
+  const free = !dayCareOf(save).eggClaimed
+  const short = Math.max(0, cfg.eggPrice - save.gold)
+  const missing = eggOdds(save, data).filter((o) => o.weight > 1).length
+  return (
+    <div
+      className={cx(
+        'grid grid-cols-[72px_minmax(0,1fr)] items-center gap-x-3 gap-y-2 px-3 pb-3 pt-2.5',
+        free
+          ? 'bg-[#fff4d6] shadow-[inset_0_0_0_2px_#24304f,inset_0_0_0_4px_#ffbe2e,inset_0_-6px_0_#ffe7a8]'
+          : 'bg-[#fff8ec] shadow-[inset_0_0_0_2px_#24304f,inset_0_-4px_0_#f3e2c4]',
+      )}
+    >
+      <EggSprite size={64} className="mx-auto" />
+      <div className="grid min-w-0 gap-1">
+        <b className="text-[22px] font-normal leading-none">
+          {t(free ? 'ui.dayCare.eggForYou' : 'ui.dayCare.buyTitle')}
+        </b>
+        <p className="m-0 font-pixel-sm text-[15px] leading-[1.15] text-muted">
+          {free ? t('ui.dayCare.freeEgg') : t('ui.dayCare.buyEgg', { price: cfg.eggPrice })}
+        </p>
+        <ul className="m-0 mt-0.5 flex list-none flex-wrap gap-1 p-0">
+          <li className="bg-paper px-1.5 pb-0.5 pt-px font-pixel-sm text-[14px] text-ink shadow-[inset_0_0_0_1px_#d8c8a8]">
+            {t('ui.dayCare.hatchAt', { level: t('ui.common.level.short', { n: hatchLevel(save, data) }) })}
+          </li>
+          <li className="bg-paper px-1.5 pb-0.5 pt-px font-pixel-sm text-[14px] text-ink shadow-[inset_0_0_0_1px_#d8c8a8]">
+            {missing > 0
+              ? tPlural('ui.dayCare.missing', missing, { n: missing, k: cfg.unownedWeight })
+              : t('ui.dayCare.haveAll')}
+          </li>
+        </ul>
+      </div>
+      <PixelButton
+        variant="primary"
+        className="col-span-2 w-full"
+        aria-disabled={!free && short > 0}
+        onClick={() => {
+          if (!free && short > 0) pushToast(t('ui.shop.needMore', { price: money(short) }), 'bad')
+          else onHatch(free)
+        }}
+      >
+        {free
+          ? t('ui.dayCare.takeEgg')
+          : short > 0
+            ? t('ui.shop.needMore', { price: money(short) })
+            : t('ui.dayCare.buy', { price: cfg.eggPrice })}
       </PixelButton>
     </div>
   )
 }
 
-/** Choose who stays: team first, then the Box. The last team member can't be left. */
-function DepositModal({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const { t } = useT()
-  const save = useGame((s) => s.save)
-  const data = useGame((s) => s.data)
-  if (!save) return null
-  const mons = [...save.box].sort((a, b) => {
-    const ta = save.team.indexOf(a.id)
-    const tb = save.team.indexOf(b.id)
-    return (ta < 0 ? 99 : ta) - (tb < 0 ? 99 : tb) || a.dex - b.dex || b.level - a.level
-  })
-  return (
-    <Modal open={open} onClose={onClose} title={t('ui.dayCare.leaveWhich')} className="max-w-2xl">
-      <p className="mb-2 text-lg text-muted">
-        {t('ui.dayCare.depositHint', {
-          xp: data.config.dayCare.xpPerTick,
-          minutes: data.config.dayCare.tickMinutes,
-          max: data.config.dayCare.maxXp,
-        })}
-      </p>
-      <ul className="grid gap-2 sm:grid-cols-2">
-        {mons.map((p) => {
-          const why = depositError(save, p.id, data)
-          return (
-            <li key={p.id}>
-              <MonCard
-                inst={p}
-                disabled={!!why}
-                onClick={() => {
-                  if (leaveAtDayCare(p.id)) onClose()
-                }}
-                badge={
-                  save.team.includes(p.id) ? (
-                    <span className="border-2 border-ink px-1 text-sm">{t('ui.dayCare.teamTag')}</span>
-                  ) : null
-                }
-              >
-                {why === 'last' && <span className="text-sm text-muted">{t('ui.dayCare.lastMember')}</span>}
-              </MonCard>
-            </li>
-          )
-        })}
-      </ul>
-    </Modal>
-  )
-}
-
-function HatchModal({ hatch, onClose }: { hatch: Hatch | null; onClose: () => void }) {
-  const { t } = useT()
-  const data = useGame((s) => s.data)
-  const [open, setOpen] = useState(false)
-  const stage = useRef<StageHandle>(null)
-  // The hatching plays on the pixel stage (src/fx/timelines/moments.ts); "off" jumps straight to the hatchling.
-  const scene = useMemo(() => {
-    if (!hatch) return null
-    return {
-      ready: loadSprite(hatch.inst.dex, false, hatch.inst.shiny),
-      timeline: hatchTimeline({ baby: spriteKey(hatch.inst.dex, false, hatch.inst.shiny) }),
-    }
-  }, [hatch])
-  useEffect(() => setOpen(false), [hatch])
-  const sp = hatch ? data.species[hatch.inst.dex] : undefined
-  const reveal = () => setOpen(true)
-  return (
-    <Modal open={!!hatch} onClose={open ? onClose : undefined} dismissable={open} label={t('ui.dayCare.eggHatching')}>
-      {hatch && scene && (
-        <div className="flex flex-col items-center gap-3 py-2 text-center">
-          <div className="w-full overflow-hidden shadow-ring">
-            <StageCanvas
-              ref={stage}
-              timeline={scene.timeline}
-              ready={scene.ready}
-              hud={{ beat: (b) => b === 'hatched' && reveal() }}
-              onEnd={reveal}
-              label={open ? t('ui.dayCare.hatched', { name: sp?.name ?? t('ui.common.aPokemon') }) : t('ui.dayCare.eggMoving')}
-            />
-          </div>
-          <p className="text-3xl leading-tight" aria-live="polite">
-            {open ? t('ui.dayCare.hatched', { name: sp?.name ?? t('ui.common.aPokemon') }) : t('ui.dayCare.eggMoving')}
-          </p>
-          {!open && (
-            <PixelButton size="sm" onClick={() => stage.current?.skip()}>
-              {t('ui.evolution.skip')}
-            </PixelButton>
-          )}
-          {open && sp && (
-            <>
-              <div className="flex flex-wrap items-center justify-center gap-2 text-xl">
-                <span>{t('ui.common.level.short', { n: hatch.inst.level })}</span>
-                <TypeBadge type={sp.type1} />
-                {sp.type2 && <TypeBadge type={sp.type2} />}
-                {hatch.isNew && <span className="border-2 border-ink bg-gold px-1.5 leading-tight">{t('ui.dayCare.newTag')}</span>}
-              </div>
-              <p className="text-lg text-muted">
-                {!hatch.kept
-                  ? t('ui.dayCare.keptStronger', { name: sp.name })
-                  : `${hatch.replaced ? t('ui.dayCare.replacedYours', { level: hatch.replaced.level, name: sp.name }) : ''}${t(
-                      hatch.joinedTeam ? 'ui.dayCare.joinedTeam' : 'ui.dayCare.wentToBox',
-                    )}`}
-              </p>
-              <PixelButton variant="primary" onClick={onClose}>
-                {t('ui.common.ok')}
-              </PixelButton>
-            </>
-          )}
-        </div>
-      )}
-    </Modal>
-  )
-}
-
-/** The Pokémon Day Care: two Pokémon train on their own (real time), and Eggs hatch on the spot. */
 export function DayCareScreen() {
   const { t } = useT()
   const save = useGame((s) => s.save)
   const data = useGame((s) => s.data)
   const navigate = useNavigate()
   const now = useNow()
-  const [depositing, setDepositing] = useState(false)
+  const [leaving, setLeaving] = useState(false)
   const [hatch, setHatch] = useState<Hatch | null>(null)
-  const [pickup, setPickup] = useState<Pickup | null>(null)
+  const [hatchId, setHatchId] = useState(0)
   const open = !!save && isDayCareOpen(save, data)
   useEffect(() => {
     if (open) visitDayCare()
   }, [open])
   if (!save) return <Navigate to="/" replace />
-  if (!isDayCareOpen(save, data)) return <Navigate to="/home" replace />
+  if (!open) return <Navigate to="/home" replace />
   const cfg = data.config.dayCare
   const dc = dayCareOf(save)
   const free = !dc.eggClaimed
-  const canBuy = save.gold >= cfg.eggPrice
 
-  const takeEgg = () => {
-    const res = hatchDayCareEgg(free)
-    if (res) setHatch(res)
-  }
-  const pickUp = (uid: string) => {
-    const res = pickUpFromDayCare(uid)
+  const takeEgg = (isFree: boolean) => {
+    const res = hatchDayCareEgg(isFree)
     if (res) {
-      sfx(res.levelsGained > 0 ? 'levelup' : 'button')
-      setPickup(res)
+      setHatch(res)
+      setHatchId((n) => n + 1)
     }
   }
-  const picked = pickup ? data.species[pickup.inst.dex]?.name : null
-  const eggPanel = (
-    <section
-      className={cx(
-        'flex flex-col items-center gap-3 p-4 text-center sm:flex-row sm:text-left',
-        free ? 'pixel-panel-dark' : 'pixel-panel',
-      )}
-      aria-label={t('ui.dayCare.eggs')}
-    >
-      <motion.div
-        animate={free ? { rotate: [0, -8, 8, 0] } : {}}
-        transition={{ duration: 0.6, repeat: Infinity, repeatDelay: 1.6 }}
-      >
-        <EggSprite size={72} />
-      </motion.div>
-      <div className="flex flex-1 flex-col gap-1">
-        <h2 className={cx('text-3xl leading-none', free && 'text-gold')}>
-          {t(free ? 'ui.dayCare.eggForYou' : 'ui.dayCare.eggs')}
-        </h2>
-        <p className="text-lg">
-          {free ? t('ui.dayCare.freeEgg') : t('ui.dayCare.buyEgg', { price: cfg.eggPrice })}
-        </p>
-      </div>
-      <PixelButton variant="primary" size="lg" disabled={!free && !canBuy} onClick={takeEgg}>
-        {free ? t('ui.dayCare.takeEgg') : t('ui.dayCare.buy', { price: cfg.eggPrice })}
-      </PixelButton>
-    </section>
-  )
+  const take = (uid: string) => {
+    const res = pickUpFromDayCare(uid)
+    if (!res) return
+    sfx(res.levelsGained > 0 ? 'levelup' : 'button')
+    const name = data.species[res.inst.dex]?.name ?? t('ui.common.unknown')
+    const grew =
+      res.levelsGained > 0
+        ? t(`ui.dayCare.grewLevels.${res.levelsGained === 1 ? 'one' : 'other'}`, {
+            xp: res.xpGained,
+            levels: res.levelsGained,
+            level: res.inst.level,
+          })
+        : t('ui.dayCare.gainedXp', { xp: res.xpGained })
+    pushToast(
+      `${t('ui.dayCare.isBack', { name })} ${grew} ${t(res.joinedTeam ? 'ui.dayCare.rejoined' : 'ui.dayCare.wentToBox')}`,
+      'good',
+      5000,
+    )
+  }
+  const canAgain = save.gold >= cfg.eggPrice
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-end justify-between gap-2">
-        <h1 className="text-5xl leading-none">{t('ui.dayCare.title')}</h1>
-        <PixelButton size="sm" onClick={() => navigate('/home')}>
-          {t('ui.dayCare.map')}
-        </PixelButton>
+    <div className="mx-auto flex max-w-2xl flex-col gap-3">
+      <div className="flex min-h-[44px] items-center gap-2.5">
+        <button
+          type="button"
+          onClick={() => navigate('/home')}
+          aria-label={t('ui.dayCare.backHome')}
+          className="-ml-1.5 grid h-11 w-11 shrink-0 place-items-center"
+        >
+          <span
+            aria-hidden
+            className="block h-[18px] w-[14px] bg-ink [clip-path:polygon(0_50%,100%_0,100%_34%,50%_50%,100%_66%,100%_100%)]"
+          />
+        </button>
+        <h1 className="text-[32px] leading-none">{t('ui.dayCare.title')}</h1>
+        <span className="font-pixel-sm text-[17px] text-muted">
+          {dc.residents.length}/{cfg.slots}
+        </span>
       </div>
-      <p className="copy text-muted">
-        {t('ui.dayCare.intro', { slots: cfg.slots, xp: cfg.xpPerTick, minutes: cfg.tickMinutes, max: cfg.maxXp })}
+      <p className="m-0 font-pixel-sm text-[15px] leading-[1.15] text-muted">
+        {t('ui.dayCare.intro', {
+          slots: cfg.slots,
+          xp: cfg.xpPerTick,
+          minutes: cfg.tickMinutes,
+          max: cfg.maxXp,
+        })}
       </p>
 
-      {free && eggPanel}
-      <section className="flex flex-col gap-2" aria-label={t('ui.dayCare.staying')}>
-        <h2 className="text-3xl">{t('ui.dayCare.stayingCount', { count: dc.residents.length, slots: cfg.slots })}</h2>
-        <div className="grid gap-3 md:grid-cols-2">
-          {dc.residents.map((r) => (
-            <ResidentCard key={r.inst.id} res={r} now={now} onPickUp={() => pickUp(r.inst.id)} />
-          ))}
-          {Array.from({ length: Math.max(0, cfg.slots - dc.residents.length) }, (_, i) => (
+      <ul className="m-0 grid list-none gap-2 p-0 md:grid-cols-2" aria-label={t('ui.dayCare.staying')}>
+        {dc.residents.map((r) => (
+          <Resident key={r.inst.id} res={r} now={now} onTake={() => take(r.inst.id)} />
+        ))}
+        {Array.from({ length: Math.max(0, cfg.slots - dc.residents.length) }, (_, i) => (
+          <li key={`empty-${i}`}>
             <button
-              key={`empty-${i}`}
               type="button"
-              onClick={() => setDepositing(true)}
-              className="flex min-h-[120px] flex-col items-center justify-center gap-1 border-[3px] border-dashed border-shadow text-2xl text-muted hover:bg-panel"
+              onClick={() => setLeaving(true)}
+              className="flex min-h-[96px] w-full items-center gap-3 bg-[#f6f9fd] px-3.5 py-2.5 text-left shadow-[inset_0_0_0_2px_#8592ad] outline-dashed outline-2 -outline-offset-[6px] outline-[#b6c3d9] hover:bg-paper"
             >
-              <span aria-hidden className="text-4xl leading-none">
+              <span
+                aria-hidden
+                className="grid h-11 w-11 shrink-0 place-items-center bg-[#5b8def] text-[32px] leading-none text-white shadow-[inset_0_0_0_2px_#24304f,inset_0_-4px_0_#3c6cc8]"
+              >
                 +
               </span>
-              {t('ui.dayCare.leaveOne')}
+              <span className="grid gap-0.5">
+                <b className="text-[21px] font-normal leading-none">{t('ui.dayCare.leaveOne')}</b>
+                <small className="font-pixel-sm text-[15px] text-muted">{t('ui.dayCare.leaveFrom')}</small>
+              </span>
             </button>
-          ))}
-        </div>
-      </section>
+          </li>
+        ))}
+      </ul>
 
-      {!free && eggPanel}
+      <div className="mt-1 flex items-baseline gap-2">
+        <h2 className="m-0 text-[24px] font-normal leading-none">{t('ui.dayCare.eggs')}</h2>
+        {free && <Chip tone="gold">{t('ui.dayCare.freeChip')}</Chip>}
+      </div>
+      <EggCard onHatch={takeEgg} />
 
-      <DepositModal open={depositing} onClose={() => setDepositing(false)} />
-      <HatchModal hatch={hatch} onClose={() => setHatch(null)} />
-      <Modal open={!!pickup} onClose={() => setPickup(null)} title={picked ? t('ui.dayCare.isBack', { name: picked }) : ''}>
-        {pickup && (
-          <div className="flex flex-col items-center gap-2 text-center">
-            <SpriteImg dex={pickup.inst.dex} size={112} />
-            <p className="text-xl">
-              {pickup.levelsGained > 0
-                ? t(`ui.dayCare.grewLevels.${pickup.levelsGained === 1 ? 'one' : 'other'}`, {
-                    xp: pickup.xpGained,
-                    levels: pickup.levelsGained,
-                    level: pickup.inst.level,
-                  })
-                : t('ui.dayCare.gainedXp', { xp: pickup.xpGained })}{' '}
-              {t(pickup.joinedTeam ? 'ui.dayCare.rejoined' : 'ui.dayCare.wentToBox')}
-            </p>
-            <PixelButton variant="primary" onClick={() => setPickup(null)}>
-              {t('ui.common.ok')}
-            </PixelButton>
-          </div>
-        )}
-      </Modal>
+      <LeaveSheet open={leaving} onClose={() => setLeaving(false)} />
+      {hatch && (
+        <HatchMoment
+          key={hatchId}
+          hatch={hatch}
+          onDone={() => setHatch(null)}
+          onAgain={canAgain ? () => takeEgg(false) : null}
+        />
+      )}
     </div>
   )
 }
