@@ -1,5 +1,5 @@
-import { AnimatePresence, motion } from 'framer-motion'
-import { useEffect, useState } from 'react'
+import { motion } from 'framer-motion'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import {
   dayCareOf,
@@ -18,9 +18,12 @@ import { useT } from '@/i18n/react'
 import { Modal } from '@/components/Modal'
 import { MonCard } from '@/components/MonCard'
 import { PixelButton } from '@/components/PixelButton'
+import { StageCanvas, type StageHandle } from '@/components/StageCanvas'
 import { SpriteImg } from '@/components/SpriteImg'
 import { TypeBadge } from '@/components/TypeBadge'
 import { hatchDayCareEgg, leaveAtDayCare, pickUpFromDayCare, visitDayCare } from '@/store/actions'
+import { loadSprite, spriteKey } from '@/fx/sprites'
+import { hatchTimeline } from '@/fx/timelines/moments'
 import { useGame } from '@/store/game'
 import { cx } from '@/theme/util'
 
@@ -189,52 +192,41 @@ function DepositModal({ open, onClose }: { open: boolean; onClose: () => void })
 function HatchModal({ hatch, onClose }: { hatch: Hatch | null; onClose: () => void }) {
   const { t } = useT()
   const data = useGame((s) => s.data)
-  const reduced = useGame((s) => s.settings.reducedMotion)
   const [open, setOpen] = useState(false)
-  useEffect(() => {
-    if (!hatch) return
-    setOpen(reduced)
-    if (reduced) return
-    const t = setTimeout(() => {
-      setOpen(true)
-      sfx('catch')
-    }, 1600)
-    return () => clearTimeout(t)
-  }, [hatch, reduced])
+  const stage = useRef<StageHandle>(null)
+  // The hatching plays on the pixel stage (src/fx/timelines/moments.ts); "off" jumps straight to the hatchling.
+  const scene = useMemo(() => {
+    if (!hatch) return null
+    return {
+      ready: loadSprite(hatch.inst.dex, false, hatch.inst.shiny),
+      timeline: hatchTimeline({ baby: spriteKey(hatch.inst.dex, false, hatch.inst.shiny) }),
+    }
+  }, [hatch])
+  useEffect(() => setOpen(false), [hatch])
   const sp = hatch ? data.species[hatch.inst.dex] : undefined
+  const reveal = () => setOpen(true)
   return (
     <Modal open={!!hatch} onClose={open ? onClose : undefined} dismissable={open} label={t('ui.dayCare.eggHatching')}>
-      {hatch && (
+      {hatch && scene && (
         <div className="flex flex-col items-center gap-3 py-2 text-center">
-          {/* The Egg and the hatchling share one spot: a quick crossfade, no wait between them. */}
-          <div className="relative h-40 w-40">
-            <AnimatePresence>
-              {!open ? (
-                <motion.div
-                  key="egg"
-                  className="absolute inset-0 flex items-center justify-center"
-                  animate={{ rotate: [0, -12, 12, -12, 12, 0] }}
-                  transition={{ duration: 0.8, repeat: 1 }}
-                  exit={{ scale: 1.5, opacity: 0, transition: { duration: 0.2 } }}
-                >
-                  <EggSprite size={96} />
-                </motion.div>
-              ) : (
-                <motion.div
-                  key="mon"
-                  className="absolute inset-0 flex items-center justify-center"
-                  initial={{ scale: 0.4, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  transition={{ duration: 0.25 }}
-                >
-                  <SpriteImg dex={hatch.inst.dex} size={144} />
-                </motion.div>
-              )}
-            </AnimatePresence>
+          <div className="w-full overflow-hidden shadow-ring">
+            <StageCanvas
+              ref={stage}
+              timeline={scene.timeline}
+              ready={scene.ready}
+              hud={{ beat: (b) => b === 'hatched' && reveal() }}
+              onEnd={reveal}
+              label={open ? t('ui.dayCare.hatched', { name: sp?.name ?? t('ui.common.aPokemon') }) : t('ui.dayCare.eggMoving')}
+            />
           </div>
           <p className="text-3xl leading-tight" aria-live="polite">
             {open ? t('ui.dayCare.hatched', { name: sp?.name ?? t('ui.common.aPokemon') }) : t('ui.dayCare.eggMoving')}
           </p>
+          {!open && (
+            <PixelButton size="sm" onClick={() => stage.current?.skip()}>
+              {t('ui.evolution.skip')}
+            </PixelButton>
+          )}
           {open && sp && (
             <>
               <div className="flex flex-wrap items-center justify-center gap-2 text-xl">

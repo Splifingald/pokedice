@@ -58,6 +58,9 @@ export function KitchenSink() {
     <main className="mx-auto max-w-6xl px-3 py-6">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <h1 className="text-display">Kitchen sink</h1>
+        <Link to="/kitchen-sink/fx" className="underline">
+          FX lab ▶
+        </Link>
         <div className="flex flex-wrap gap-2">
           <Seg
             label="Animations"

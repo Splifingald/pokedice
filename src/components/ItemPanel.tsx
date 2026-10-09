@@ -77,7 +77,12 @@ export function ItemPanel({ inst, onUsed }: { inst: PokemonInstance; onUsed?: ()
                 onClick={() => {
                   const r = applyBagItem(k, inst.id)
                   if (!r) return
-                  if (r.evolved) return setEvolving(r.evolved)
+                  // A stone floats down first in the evolution scene.
+                  if (r.evolved)
+                    return setEvolving({
+                      ...r.evolved,
+                      item: data.items[k]?.effect.kind === 'stone' ? k : null,
+                    })
                   const after = useGame.getState().save?.box.find((p) => p.id === inst.id)
                   if (after && data.items[k]?.effect.kind !== 'level')
                     pushToast(

@@ -3,6 +3,9 @@
 // never blurred, so every frame stays one a pixel artist could have drawn (docs/15-UI-GUIDELINES.md, Motion).
 // No React here: scenes, timelines and the Home team build on it.
 
+import { getLang } from '@/i18n'
+import { cjkFamily } from '@/i18n/cjk'
+
 // ---------------------------------------------------------------- maths
 export const clamp = (v: number, a = 0, b = 1) => Math.max(a, Math.min(b, v))
 export const lerp = (a: number, b: number, t: number) => a + (b - a) * t
@@ -366,6 +369,58 @@ export function text(
     ] as const)
       draw(ox * s, oy * s, outline)
   draw(0, 0, color)
+}
+
+/** Whether the bitmap font has every character of a string (A–Z, digits, a few signs). */
+const covered = (str: string) => [...str.toUpperCase()].every((c) => c in GLYPHS)
+const labelFont = (s: number) => `${9 * s}px "Jersey 15", "${cjkFamily(getLang())}", sans-serif`
+
+/**
+ * A word on the canvas in the player's language: the bitmap font when it has every letter (crisp, uppercase), else
+ * the page's pixel font (accents, Japanese, Korean, Chinese names). Returns the width drawn.
+ */
+export function label(
+  g: G,
+  str: string,
+  x: number,
+  y: number,
+  color: string,
+  outline: string | null = null,
+  s = 1,
+): number {
+  if (covered(str)) {
+    text(g, str, x, y, color, outline, s)
+    return textWidth(str, s)
+  }
+  g.save()
+  g.font = labelFont(s)
+  g.textBaseline = 'top'
+  const up = str.toLocaleUpperCase(getLang())
+  if (outline) {
+    g.fillStyle = outline
+    for (const [ox, oy] of [
+      [-1, 0],
+      [1, 0],
+      [0, -1],
+      [0, 1],
+    ] as const)
+      g.fillText(up, Math.round(x) + ox * s, Math.round(y) - s + oy * s)
+  }
+  g.fillStyle = color
+  g.fillText(up, Math.round(x), Math.round(y) - s)
+  const w = Math.ceil(g.measureText(up).width)
+  g.restore()
+  return w
+}
+
+/** The width `label` would draw. */
+export function labelWidth(g: G, str: string, s = 1): number {
+  if (covered(str)) return textWidth(str, s)
+  g.save()
+  g.font = labelFont(s)
+  const w = Math.ceil(g.measureText(str.toLocaleUpperCase(getLang())).width)
+  g.restore()
+  return w
 }
 
 // ---------------------------------------------------------------- icons (pixel maps)

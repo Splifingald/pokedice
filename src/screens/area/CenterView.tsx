@@ -1,33 +1,37 @@
-import { motion } from 'framer-motion'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { teamOf, type PokemonInstance } from '@/engine'
 import { useT } from '@/i18n/react'
-import { sfx } from '@/audio/sfx'
 import { BoxSortPicker, sortBox, type BoxSort } from '@/components/BoxSort'
 import { PixelIcon } from '@/components/icons'
 import { MonCard } from '@/components/MonCard'
 import { PixelButton } from '@/components/PixelButton'
 import { SheetModal, type SheetView } from '@/components/SheetModal'
+import { StageCanvas } from '@/components/StageCanvas'
+import { loadSprite, spriteKey } from '@/fx/sprites'
+import { centerTimeline } from '@/fx/timelines/center'
+import { useMotion } from '@/lib/motion'
 import { putInTeam, removeFromTeam, reorderTeam } from '@/store/actions'
 import { useGame } from '@/store/game'
 import { finishCenter } from '@/store/run'
+
+/** Chansey, behind the healing machine's counter. */
+const NURSE = 113
 
 /** Pokémon Center: heal jingle, then team management — tap any Pokémon for its sheet and team actions. */
 export function CenterView() {
   const { t } = useT()
   const save = useGame((s) => s.save)
   const data = useGame((s) => s.data)
-  const reduced = useGame((s) => s.settings.reducedMotion)
-  const [healed, setHealed] = useState(reduced)
+  const [healed, setHealed] = useState(false)
   const [view, setView] = useState<SheetView | null>(null)
   const [sort, setSort] = useState<BoxSort>('dex')
-
-  useEffect(() => {
-    sfx('heal')
-    if (reduced) return
-    const t = setTimeout(() => setHealed(true), 1400)
-    return () => clearTimeout(t)
-  }, [reduced])
+  const { level } = useMotion()
+  const teamSize = useGame((s) => s.save?.team.length ?? 1)
+  // The machine's jingle plays once, on arrival (short motion: the quick version).
+  const [scene] = useState(() => ({
+    ready: loadSprite(NURSE, false),
+    timeline: centerTimeline({ balls: teamSize, nurse: spriteKey(NURSE, false), short: level !== 'full' }),
+  }))
 
   if (!save) return null
   const team = teamOf(save)
@@ -97,21 +101,17 @@ export function CenterView() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="pixel-panel flex items-center gap-3 p-3">
-        <div className="flex shrink-0 gap-1" aria-hidden>
-          {[0, 1, 2].map((i) => (
-            <motion.div
-              key={i}
-              animate={healed ? { opacity: 1 } : { opacity: [0.2, 1, 0.2] }}
-              transition={healed ? {} : { duration: 0.35, repeat: 3, delay: i * 0.08 }}
-            >
-              <PixelIcon name="ball" size={24} />
-            </motion.div>
-          ))}
-        </div>
-        <div>
-          <div className="text-3xl leading-none">{t(healed ? 'ui.center.fightingFit' : 'ui.center.healing')}</div>
-          <div className="text-lg text-muted">{t('ui.center.backToFull')}</div>
+      <div className="pixel-panel overflow-hidden p-0">
+        <StageCanvas
+          timeline={scene.timeline}
+          ready={scene.ready}
+          hud={{ heal: () => setHealed(true) }}
+          onEnd={() => setHealed(true)}
+          label={t(healed ? 'ui.center.fightingFit' : 'ui.center.healing')}
+        />
+        <div className="px-3 pb-2.5 pt-2" aria-live="polite">
+          <div className="text-[26px] leading-none">{t(healed ? 'ui.center.fightingFit' : 'ui.center.healing')}</div>
+          <div className="font-pixel-sm text-[16px] text-muted">{t('ui.center.backToFull')}</div>
         </div>
       </div>
 

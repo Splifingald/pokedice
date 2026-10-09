@@ -27,6 +27,7 @@ const AdminApp = lazy(() => import('@/admin/AdminApp'))
 const SetupPage = lazy(() => import('@/setup/SetupPage'))
 const HelpPage = lazy(() => import('@/screens/Help').then((m) => ({ default: m.HelpPage })))
 const KitchenSink = lazy(() => import('@/screens/KitchenSink').then((m) => ({ default: m.KitchenSink })))
+const FxLab = lazy(() => import('@/screens/FxLab').then((m) => ({ default: m.FxLab })))
 
 function Lazy({ children }: { children: ReactNode }) {
   return <Suspense fallback={<div className="p-6 text-3xl">{t('ui.common.loading')}</div>}>{children}</Suspense>
@@ -54,6 +55,7 @@ export function App() {
             <Route path="/admin" element={<Lazy><AdminApp /></Lazy>} />
             <Route path="/admin/:section" element={<Lazy><AdminApp /></Lazy>} />
             {import.meta.env.DEV && <Route path="/kitchen-sink" element={<Lazy><KitchenSink /></Lazy>} />}
+            {import.meta.env.DEV && <Route path="/kitchen-sink/fx" element={<Lazy><FxLab /></Lazy>} />}
             <Route element={<GameLayout />}>
               <Route path="/home" element={<HomeScreen />} />
               {/* Home replaced the Map as the landing screen: old links land there. */}

@@ -1,73 +1,77 @@
-// The evolution cut-scene (silhouette → flash → new sprite), and a full-screen queue that plays several in a row.
+// The evolution cut-scene on the pixel stage (src/fx/timelines/moments.ts: silhouette, a flicker that speeds up,
+// rays, burst, reveal; a stone floats down first), and a full-screen queue that plays several in a row.
 import { motion } from 'framer-motion'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { getInstance, instanceStats } from '@/engine'
 import { sfx } from '@/audio/sfx'
+import { loadItemSprite, loadSprite, spriteKey } from '@/fx/sprites'
+import { evolveTimeline } from '@/fx/timelines/moments'
 import { useT } from '@/i18n/react'
 import { useGame } from '@/store/game'
-import { Confetti } from './Confetti'
 import { DiceSet } from './DiceSet'
 import { PixelButton } from './PixelButton'
-import { SpriteImg } from './SpriteImg'
+import { StageCanvas } from './StageCanvas'
 import { StatChip } from './StatChip'
 
 export interface EvolutionShow {
   uid: string
   fromDex: number
   toDex: number
+  /** The stone that did it (an item key): it floats down and touches the Pokémon first. */
+  item?: string | null
 }
 
 /** One evolution, played once. `onDone` fires when the new form is revealed. */
-export function EvolutionSequence({ uid, fromDex, toDex, onDone }: EvolutionShow & { onDone?: () => void }) {
+export function EvolutionSequence({ uid, fromDex, toDex, item, onDone }: EvolutionShow & { onDone?: () => void }) {
   const { t } = useT()
-  const reduced = useGame((s) => s.settings.reducedMotion)
   const data = useGame((s) => s.data)
   const inst = useGame((s) => (s.save ? getInstance(s.save, uid) : undefined))
-  const [stage, setStage] = useState(reduced ? 3 : 0)
-  useEffect(() => {
-    if (stage >= 3) return
-    const t = setTimeout(() => setStage((s) => s + 1), [1000, 1400, 350][stage])
-    return () => clearTimeout(t)
-  }, [stage])
-  useEffect(() => {
-    if (stage !== 3) return
-    sfx('levelup')
-    onDone?.()
-  }, [stage]) // eslint-disable-line react-hooks/exhaustive-deps
+  const shiny = !!inst?.shiny
+  const [done, setDone] = useState(false)
+  const stoneUrl = item ? (data.items[item]?.spriteUrl ?? null) : null
+  const { timeline, ready } = useMemo(
+    () => ({
+      ready: Promise.all([
+        loadSprite(fromDex, false, shiny),
+        loadSprite(toDex, false, shiny),
+        ...(stoneUrl ? [loadItemSprite(stoneUrl)] : []),
+      ]),
+      timeline: evolveTimeline({
+        from: spriteKey(fromDex, false, shiny),
+        to: spriteKey(toDex, false, shiny),
+        type: data.species[toDex]?.type1 ?? 'normal',
+        stone: stoneUrl ? `item|${stoneUrl}` : null,
+      }),
+    }),
+    // One scene per evolution: the instance's later changes don't restart it.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [uid, fromDex, toDex],
+  )
   const from = data.species[fromDex]?.name ?? t('ui.common.unknown')
   const to = data.species[toDex]?.name ?? t('ui.common.unknown')
   const stats = inst ? instanceStats(inst, data) : null
+  const reveal = () => {
+    if (done) return
+    setDone(true)
+    sfx('levelup')
+    onDone?.()
+  }
   return (
-    <div className="flex flex-col items-center gap-2 border-[3px] border-ink bg-parchment p-3 text-ink">
-      <div className="relative" style={{ width: 144, height: 144 }}>
-        {stage < 3 && (
-          <motion.div
-            className="absolute inset-0"
-            animate={stage === 1 ? { opacity: [1, 0, 1, 0, 1, 0, 1, 0] } : { opacity: 1 }}
-            transition={{ duration: 1.4 }}
-          >
-            <SpriteImg dex={fromDex} size={144} silhouette={stage >= 1} />
-          </motion.div>
-        )}
-        {stage === 1 && (
-          <motion.div className="absolute inset-0" animate={{ opacity: [0, 1, 0, 1, 0, 1, 0, 1] }} transition={{ duration: 1.4 }}>
-            <SpriteImg dex={toDex} size={144} silhouette />
-          </motion.div>
-        )}
-        {stage === 2 && <div className="absolute inset-0 bg-white" />}
-        {stage === 3 && (
-          <>
-            <motion.div className="absolute inset-0" initial={{ scale: 1.3, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}>
-              <SpriteImg dex={toDex} size={144} />
-            </motion.div>
-            {/* The new form arrives to a burst of confetti. */}
-            <Confetti count={26} spread={60} size={12} />
-          </>
-        )}
+    <div className="flex flex-col items-center gap-2 text-ink">
+      <div className="w-full overflow-hidden shadow-ring">
+        <StageCanvas
+          timeline={timeline}
+          ready={ready}
+          hud={{ beat: (b) => b === 'evolved' && reveal() }}
+          onEnd={reveal}
+          label={done ? t('ui.evolution.evolved', { from, to }) : t('ui.evolution.evolving', { name: from })}
+        />
       </div>
-      <div className="text-center text-2xl">{stage < 3 ? t('ui.evolution.evolving', { name: from }) : t('ui.evolution.evolved', { from, to })}</div>
-      {stage === 3 && stats && inst && (
+      <div className="min-h-[2lh] text-center text-2xl leading-tight" aria-live="polite">
+        {done ? t('ui.evolution.evolved', { from, to }) : t('ui.evolution.evolving', { name: from })}
+      </div>
+      {done && stats && inst && (
         <div className="flex flex-wrap items-center justify-center gap-3 text-lg">
           <DiceSet dice={stats.dice} size={24} />
           <StatChip stat="rerolls" value={stats.rerolls} />

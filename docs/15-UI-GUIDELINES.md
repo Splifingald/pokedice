@@ -164,6 +164,24 @@ House rules for every effect and timeline:
 - Durations: a button press 60 ms in 2 steps; a sheet rises in 220 ms; HP 700 ms / 280 ms / 900 ms; dice tumble 600 ms.
 - Pixel motion steps (`steps()`), it doesn't glide, except HP bars and sheets.
 
+**Timelines** (`src/fx`, no React): a timeline is `setup / step / draw / cues` on a 240×160 stage. A screen plays one
+with `<StageCanvas timeline ready hud onEnd label>`: it waits for the sprites (`loadSprite`, at most 1.5 s), plays at
+60 fixed steps a second, and sends the cues to the `hud` (`contact` when a hit lands, `status`, `show`, `heal`,
+`form`, `catchResult`, `beat`). Timelines never decide words: the screen phrases each cue from strings.csv. With
+motion `off` the stage jumps to the end and still fires every cue, so the screen ends up in the same state.
+
+| Timeline | full | short |
+|---|---|---|
+| Attacks (Flamethrower, Hydro Pump, Razor Leaf, Thunderbolt, Psychic; a generic impact in the type's colour for the rest) | the typed move | one generic hit |
+| Catch | throw, beam, drop, wobbles, result | throw and drop, result at once |
+| Pokémon Center | three balls, six-beat jingle | one flash, healed |
+| Mega Evolution, Gigantamax | the full change | a white flash and the new sprite |
+| Legendary intro, Evolution, Egg hatching | in full | in full |
+
+`calm` (OS reduce motion, or animations off) also removes screen shakes and full-screen flashes; a hit keeps its two
+white sprite frames. Every timeline is on `/kitchen-sink/fx` (dev): replay, ¼ speed, one-frame steps, the end state,
+your side or the foe's, the cue log. Sounds are named in `src/audio/sfx.ts` (`fxSound`), one per cue.
+
 ## 9. Sound
 
 8-bit sounds are synthesised in `src/audio/sfx.ts` (no sample files). Each cue has a name; add new ones there.
