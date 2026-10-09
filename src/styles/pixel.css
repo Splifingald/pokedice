@@ -296,3 +296,21 @@
 .mini-hop {
   animation: mini-hop 600ms step-end infinite;
 }
+
+/* Battle: after a K.O., the Pokémon that can go out next call for a tap (two steps, not a glide). */
+@keyframes bt-call {
+  50% {
+    box-shadow:
+      inset 0 0 0 2px #24304f,
+      inset 0 0 0 4px #ffbe2e;
+    transform: translateY(-3px);
+  }
+}
+.bt-call {
+  animation: bt-call 900ms steps(2) infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .bt-call {
+    animation: none;
+  }
+}

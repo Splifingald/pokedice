@@ -36,6 +36,38 @@ export function detectCombos(values: readonly number[]): ComboKey[] {
 
 export const comboRank = (key: ComboKey) => COMBO_KEYS.indexOf(key)
 
+/**
+ * Which dice make a combo (indexes into `values`): the ones the battle tray rings in gold. A kind is its biggest group
+ * (the highest value on a tie), two pair and full house the two biggest groups, a straight one die per value of its
+ * longest run. Empty when the roll doesn't hold that combo.
+ */
+export function comboDice(values: readonly number[], key: ComboKey): number[] {
+  if (!detectCombos(values).includes(key)) return []
+  const groups = new Map<number, number[]>()
+  values.forEach((v, i) => groups.set(v, [...(groups.get(v) ?? []), i]))
+  const byCount = [...groups.entries()].sort((a, b) => b[1].length - a[1].length || b[0] - a[0]).map(([, ix]) => ix)
+  if (key === 'small_straight' || key === 'full_straight') {
+    const distinct = [...groups.keys()].sort((a, b) => a - b)
+    let best = [distinct[0]!]
+    let cur = [distinct[0]!]
+    for (let i = 1; i < distinct.length; i++) {
+      cur = distinct[i] === distinct[i - 1]! + 1 ? [...cur, distinct[i]!] : [distinct[i]!]
+      if (cur.length > best.length) best = cur
+    }
+    return best.map((v) => groups.get(v)![0]!).sort((a, b) => a - b)
+  }
+  const take = (n: number, ix: number[]) => ix.slice(0, n)
+  const need: Record<Exclude<ComboKey, 'small_straight' | 'full_straight'>, number[]> = {
+    pair: take(2, byCount[0]!),
+    two_pair: [...take(2, byCount[0]!), ...take(2, byCount[1] ?? [])],
+    three_kind: take(3, byCount[0]!),
+    full_house: [...take(3, byCount[0]!), ...take(2, byCount[1] ?? [])],
+    four_kind: take(4, byCount[0]!),
+    five_kind: take(5, byCount[0]!),
+  }
+  return need[key].sort((a, b) => a - b)
+}
+
 export function comboBonus(key: ComboKey, level: number, data: GameData): number {
   const rows = data.comboUpgrades[key]
   if (!rows?.length) return 0

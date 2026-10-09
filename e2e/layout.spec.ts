@@ -192,10 +192,10 @@ test('a battle fits a 360×640 phone', async ({ page }) => {
   await page.goto('/home')
   const attack = page.getByRole('button', { name: 'ATTACK', exact: true })
   for (let i = 0; i < 60 && !(await attack.isVisible().catch(() => false)); i++) {
-    // Random fights: the lead may faint before the controls show — send in the next one.
-    const next = page.getByRole('dialog', { name: 'Choose your next Pokémon' }).getByRole('button').first()
-    if (await next.isVisible().catch(() => false)) await next.click()
-    for (const name of ['FIGHT', 'EXPLORE', 'NEXT ENCOUNTER', 'ENTER', 'PICK IT UP', 'CONTINUE']) {
+    // Random fights: the lead may faint before the controls show — send in the next one (its pip pulses).
+    if (await page.getByText('Choose your next Pokémon').isVisible().catch(() => false))
+      await page.getByRole('group', { name: 'Switch Pokémon' }).getByRole('button', { name: /Switch in$/ }).first().click()
+    for (const name of ['FIGHT', 'EXPLORE', 'NEXT ENCOUNTER', 'ENTER', 'PICK IT UP', 'CONTINUE', 'SKIP TURN']) {
       const b = page.getByRole('button', { name, exact: true }).first()
       if ((await b.isVisible().catch(() => false)) && (await b.isEnabled().catch(() => false))) {
         await b.click()
@@ -215,11 +215,13 @@ test('a battle fits a 360×640 phone', async ({ page }) => {
   expect(box!.y + box!.height, 'ATTACK is on screen').toBeLessThanOrEqual(640)
   const dims = await page.evaluate(() => {
     const h = (sel: string) => Math.round(document.querySelector(sel)?.getBoundingClientRect().height ?? -1)
-    return { page: document.documentElement.scrollHeight, view: window.innerHeight, header: h('header'), scene: h('.scanlines'), dialogue: h('.pixel-dialogue') }
+    return { page: document.documentElement.scrollHeight, view: window.innerHeight, header: h('header'), dialogue: h('.pixel-dialogue') }
   })
-  // Everything up to the controls fits; only the separate "Battle history" row may sit just below the fold.
+  // Full screen: no top bar, no tab bar, and the whole battle — down to the team and the history — fits.
+  expect(dims.header, 'no top bar in battle').toBe(-1)
   const history = await page.getByRole('button', { name: 'Battle history' }).boundingBox()
   expect(history, 'the history button is there').not.toBeNull()
-  expect(dims.page - dims.view, `the battle scrolls: ${JSON.stringify(dims)}`).toBeLessThanOrEqual(history!.height + 8)
+  expect(history!.y + history!.height, 'the history button is on screen').toBeLessThanOrEqual(640)
+  expect(dims.page - dims.view, `the battle scrolls: ${JSON.stringify(dims)}`).toBeLessThanOrEqual(0)
   expect(await smallControls(page), 'battle controls under 44px').toEqual([])
 })

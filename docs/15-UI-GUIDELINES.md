@@ -253,3 +253,40 @@ Players shouldn't have to make many requests:
 - **Search resets filters**: typing in a search shows everything that matches (the Pokédex's filter goes back to All).
   A Pokédex number finds any entry; a name only finds what has been caught.
 - **Grey plates** (`#e3e8f0`, `#f1f4f9`) take ink text: muted grey on them is under 4.5:1.
+
+## 14. The battle
+
+The battle (`src/screens/battle/BattleView.tsx`) is **full screen**: `useHoldFullscreen()` puts the top bar, the side
+nav and the tab bar away while it is mounted. It must fit a 360×640 phone with nothing to scroll
+(`e2e/layout.spec.ts`). On desktop the column is at most 560 px wide (narrower on short screens, so the actions stay
+in view) and the battle history sits beside it from 1024 px.
+
+- **Stage** (`BattleStage`): 240×160 art pixels, scaled. The Daybreak background is drawn in code (no image), the two
+  Pokémon are the page's animated sprites on their platforms (foe front, yours from the back), and while a move, a
+  form change or an entrance plays, its timeline's canvas takes over the stage. Plates sit on the stage: the foe's
+  top left (name, level, types, HP as a bar only, status, a trainer's party as small red squares), yours bottom right
+  (level, HP with numbers, status). MEGA / G-MAX tags join the plate when the form changes.
+- **The log drives everything** (`useBattleAnimator`): each entry is a step; a hit is a *scene* the stage plays, and
+  the HP waits for the timeline's `contact` cue before it drains. Entrances hold the log after its opening line.
+  When animations are off, every step lands at once and no scene plays.
+- **Panel**, top to bottom, each part keeping its height so nothing jumps: the message box (two lines; "Tap dice to
+  throw them again." is added on your turn), the dice tray (your dice up to 54 px and never under 44, lifted with a
+  red outline when picked, the combo's dice in a gold ring; the foe's dice smaller, not buttons), the readout (combo
+  chip or "No combo", `(sum + bonus) × mult = damage` with the damage big — a button for the breakdown — how
+  effective it is, a `StatusChip` per status face, lit once its threshold is met), the extras (Mega, G-MAX, Type,
+  Run) only when they exist, the actions (REROLL with its count, ATTACK in red; SKIP TURN when stunned; the AUTO note
+  with STOP or SKIP ▸▸), then the Bag, the team pips and the history.
+- **Team pips**: menu icon + an HP bar, the one in battle ringed in gold, fainted ones grey. Tapping one switches
+  (it costs the turn; the dialog also holds Forfeit). After a K.O. the message asks "Choose your next Pokémon" and
+  the pips that can go out pulse (two steps, not a glide; still when the OS asks for reduced motion).
+- **The Bag** is a `Sheet`: every item usable in battle with what it does and how many you have; one that can't help
+  anyone is greyed. One item a turn, and it doesn't end the turn.
+- **The catch happens on the stage**: the worn-out foe stays on its platform, greyed; the panel shows a radio group
+  of balls (each with its chance from `catchChance`, how many you have, "not needed" when a weaker one is already
+  certain), the catch math (`d6 + bonus ≥ need`), and one throw. The catch timeline plays; the die shows on its
+  `roll` beat and the result on `catchResult`. A throw that can't miss has no die.
+- **Result cards** rise from the bottom over the panel, the stage still in view: XP per Pokémon, the catch (NEW when
+  the species is new to the Pokédex), "Wild battles pay no ₽" when that is why no money came; **Home** and **Next
+  encounter** (what Home's CONTINUE would start). Versus ends on its own card in the panel: Victory / Defeat,
+  Rematch, Back to Versus.
+- **Versus** plays on auto; SKIP ▸▸ only fast-forwards the replay, since the result was recorded before it started.

@@ -6,6 +6,7 @@ import { sfx } from '@/audio/sfx'
 import { EvolutionQueue, type EvolutionShow } from '@/components/Evolution'
 import { RoundsCounter } from '@/components/RoundsCounter'
 import { useCountUp } from '@/components/GoldPill'
+import { NewTag } from '@/components/Chip'
 import { PixelIcon } from '@/components/icons'
 import { LeadPicker, defaultLead } from '@/components/LeadPicker'
 import { ForfeitButton } from '@/components/ForfeitButton'
@@ -22,28 +23,42 @@ import { usePace } from '@/lib/pace'
 import { BadgeIcon } from '@/components/BadgeIcon'
 import { Confetti } from '@/components/Confetti'
 import { useGame } from '@/store/game'
-import { afterStalemate, afterWipe, continueAfterVictory, enterArea, resolveCatch, trainerHasNext } from '@/store/run'
+import {
+  afterStalemate,
+  afterWipe,
+  continueAfterVictory,
+  continueExploring,
+  enterArea,
+  resolveCatch,
+  trainerHasNext,
+} from '@/store/run'
 import { cx, shade, typeColor } from '@/theme/util'
 
 /**
- * A result card over the battle. On phones it takes the screen: the content scrolls and the `footer` (the action
- * button) stays pinned at the bottom of the card, so it's never below the fold.
+ * A result card over the battle: on phones it rises from the bottom over the panel, the stage still in view above it;
+ * the content scrolls and the `footer` (the action buttons) stays pinned at the bottom, never below the fold.
  */
-export function Overlay({ children, footer }: { children: ReactNode; footer?: ReactNode }) {
+export function Overlay({ children, footer, label }: { children: ReactNode; footer?: ReactNode; label?: string }) {
+  const reduced = useGame((s) => s.settings.reducedMotion)
   return (
     <motion.div
-      className="fixed inset-0 z-[80] flex items-stretch justify-center bg-ink/70 p-2 sm:items-center sm:p-3"
+      className="fixed inset-0 z-[80] flex items-end justify-center bg-ink/45 sm:items-center sm:p-3"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
+      transition={{ duration: reduced ? 0 : 0.16 }}
     >
       <motion.div
-        className="pixel-panel flex max-h-full w-full max-w-xl flex-col sm:max-h-[90vh]"
-        initial={{ y: 30, scale: 0.95 }}
-        animate={{ y: 0, scale: 1 }}
+        role="dialog"
+        aria-modal="true"
+        aria-label={label}
+        className="pixel-panel flex max-h-[78dvh] w-full max-w-xl flex-col sm:max-h-[90vh]"
+        initial={reduced ? false : { y: 40 }}
+        animate={{ y: 0 }}
+        transition={{ duration: 0.22, ease: 'easeOut' }}
       >
         <div className="pixel-scroll min-h-0 flex-1 overflow-auto p-3 sm:p-4">{children}</div>
         {footer && (
-          <div className="shrink-0 border-t-[3px] border-ink bg-parchment p-2" style={{ paddingBottom: 'calc(0.5rem + env(safe-area-inset-bottom))' }}>
+          <div className="shrink-0 bg-parchment p-2 shadow-[inset_0_2px_0_#24304f]" style={{ paddingBottom: 'calc(0.5rem + env(safe-area-inset-bottom))' }}>
             {footer}
           </div>
         )}
@@ -61,18 +76,35 @@ function GoldCard({ amount }: { amount: number }) {
   )
 }
 
-function CatchCard({ uid, dex, level, joined, replacedLevel }: { uid: string; dex: number; level: number; joined: boolean; replacedLevel?: number }) {
+function CatchCard({
+  uid,
+  dex,
+  level,
+  joined,
+  replacedLevel,
+  isNew,
+}: {
+  uid: string
+  dex: number
+  level: number
+  joined: boolean
+  replacedLevel?: number
+  isNew?: boolean
+}) {
   const { t } = useT()
   const name = useGame((s) => s.data.species[dex]?.name) ?? t('ui.common.unknown')
   const shiny = useGame((s) => !!s.save?.box.find((p) => p.id === uid)?.shiny)
   return (
-    <div className="flex items-center gap-3 border-[3px] border-ink bg-gold/40 p-2">
+    <div className="flex items-center gap-3 bg-[#fff4d6] p-2 shadow-ring">
       <motion.div initial={{ rotate: -30, y: -20 }} animate={{ rotate: [0, -15, 15, -8, 0], y: 0 }} transition={{ duration: 0.9 }}>
         <PixelIcon name="ball" size={36} />
       </motion.div>
       <SpriteImg dex={dex} size={72} shiny={shiny} />
       <div>
-        <div className="text-3xl leading-none">{t('ui.victory.gotcha')}</div>
+        <div className="flex items-center gap-2 text-3xl leading-none">
+          {t('ui.victory.gotcha')}
+          {isNew && <NewTag />}
+        </div>
         <div className="text-xl">
           {t('ui.victory.wasCaught', { shiny: shiny ? t('ui.victory.shinyPrefix') : '', name, level })}
         </div>
@@ -200,7 +232,9 @@ function useRecap(events: RunEvent[]): { mons: MonRecap[]; extras: Extra[]; evol
           extras.push({
             key: k,
             sound: 'catch',
-            node: <CatchCard uid={e.uid} dex={e.dex} level={e.level} joined={e.joinedTeam} replacedLevel={e.replacedLevel} />,
+            node: (
+              <CatchCard uid={e.uid} dex={e.dex} level={e.level} joined={e.joinedTeam} replacedLevel={e.replacedLevel} isNew={e.isNew} />
+            ),
           })
           return
         case 'fled':
@@ -453,38 +487,50 @@ export function VictoryView() {
     <PixelButton variant="primary" size="lg" className="w-full" onClick={go(() => continueAfterVictory(lead ?? stillIn ?? defaultLead()))}>
       {t('ui.victory.nextBattle')}
     </PixelButton>
-  ) : nextArea ? (
-    // A new area just opened: travelling there is the green offer, above the usual (yellow) CONTINUE.
-    <div className="flex flex-col gap-2">
-      <PixelButton
-        variant="success"
-        size="lg"
-        className="w-full whitespace-nowrap"
-        aria-label={t('ui.victory.goToArea', { name: nextArea.name })}
-        onClick={go(() => {
-          continueAfterVictory()
-          enterArea(nextArea.id)
-        })}
-      >
-        <PixelIcon name="map" size={20} />
-        {t('ui.victory.goToNewArea')}
-      </PixelButton>
-      <PixelButton variant="primary" size="lg" className="w-full" onClick={go(() => continueAfterVictory())}>
-        {t('ui.common.continue')}
-      </PixelButton>
-    </div>
   ) : (
-    <PixelButton variant="primary" size="lg" className="w-full" onClick={go(() => continueAfterVictory())}>
-      {t('ui.common.continue')}
-    </PixelButton>
+    <div className="flex flex-col gap-2">
+      {nextArea && (
+        // A new area just opened: travelling there is the green offer, above Home / Next encounter.
+        <PixelButton
+          variant="success"
+          size="lg"
+          className="w-full whitespace-nowrap"
+          aria-label={t('ui.victory.goToArea', { name: nextArea.name })}
+          onClick={go(() => {
+            continueAfterVictory()
+            enterArea(nextArea.id)
+          })}
+        >
+          <PixelIcon name="map" size={20} />
+          {t('ui.victory.goToNewArea')}
+        </PixelButton>
+      )}
+      <div className="grid grid-cols-[1fr_1.4fr] gap-2.5">
+        <PixelButton size="lg" className="whitespace-nowrap px-2" onClick={go(() => continueAfterVictory())}>
+          {t('ui.nav.home')}
+        </PixelButton>
+        <PixelButton
+          variant="primary"
+          size="lg"
+          className="whitespace-nowrap px-2"
+          onClick={go(() => {
+            continueAfterVictory()
+            continueExploring()
+          })}
+        >
+          {t('ui.area.nextEncounter')}
+        </PixelButton>
+      </div>
+    </div>
   )
 
+  const title = t(battle?.state.kind === 'boss' ? 'ui.victory.legendaryVictory' : 'ui.victory.victory')
+  // Wild battles pay nothing: said, so a missing gold line isn't a mystery.
+  const noGold = battle?.state.kind === 'wild' && !run.events.some((e) => e.kind === 'gold')
   return (
-    <Overlay footer={footer}>
+    <Overlay footer={footer} label={title}>
       <div className="flex items-baseline justify-between gap-2">
-        <div className="text-3xl leading-none">
-          {t(battle?.state.kind === 'boss' ? 'ui.victory.legendaryVictory' : 'ui.victory.victory')}
-        </div>
+        <h2 className="m-0 text-[28px] font-normal leading-none">{title}</h2>
         {enemy && (
           <div className="min-w-0 truncate text-lg text-muted">
             {t('ui.victory.foeDefeated', { name: enemy.name, level: enemy.level })}
@@ -505,6 +551,7 @@ export function VictoryView() {
           ))}
         </AnimatePresence>
       </div>
+      {allShown && noGold && <p className="m-0 mt-2 font-pixel-sm text-[16px] text-muted">{t('ui.battle.wildNoGold')}</p>}
       {allShown && run.pendingCatchId && <TeamChoice />}
       {allShown && !run.pendingCatchId && hasNext && nextMon && (
         <div className="mt-3 flex flex-col gap-2">
@@ -538,13 +585,14 @@ export function WipeView() {
   const done = p?.roundsDone ?? 0
   return (
     <Overlay
+      label={t('ui.wipe.title')}
       footer={
         <PixelButton variant="primary" size="lg" className="w-full" onClick={afterWipe}>
           {t('ui.wipe.tryAgain')}
         </PixelButton>
       }
     >
-      <div className="mb-2 text-center text-4xl">{t('ui.wipe.title')}</div>
+      <h2 className="mb-2 text-center text-[32px] font-normal leading-none">{t('ui.wipe.title')}</h2>
       <p className="copy mb-3 text-lg">
         {t('ui.wipe.body', { area: area?.name ?? '', kept: done > 0 ? t('ui.wipe.keptRounds') : '' })}
       </p>
@@ -557,13 +605,14 @@ export function StalemateView() {
   const { t } = useT()
   return (
     <Overlay
+      label={t('ui.stalemate.title')}
       footer={
         <PixelButton variant="primary" size="lg" className="w-full" onClick={afterStalemate}>
           {t('ui.common.continue')}
         </PixelButton>
       }
     >
-      <div className="mb-2 text-center text-4xl">{t('ui.stalemate.title')}</div>
+      <h2 className="mb-2 text-center text-[32px] font-normal leading-none">{t('ui.stalemate.title')}</h2>
       <p className="copy text-lg">{t('ui.stalemate.body')}</p>
     </Overlay>
   )

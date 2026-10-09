@@ -24,6 +24,7 @@ import { StatusIcons } from '@/components/StatusIcons'
 import { Toggle } from '@/components/Toggle'
 import { TypeBadge, TypeSwatch } from '@/components/TypeBadge'
 import { pushToast, setSettings, useGame } from '@/store/game'
+import { BattleBits } from './kitchen/BattleBits'
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -388,6 +389,10 @@ export function KitchenSink() {
             )}
           />
         </div>
+      </Section>
+
+      <Section title="Battle: stage, plates, tray, readout, team pips, Bag, catch">
+        <BattleBits />
       </Section>
 
       <Section title="StatusIcons · PixelIcon">

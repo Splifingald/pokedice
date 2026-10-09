@@ -1,10 +1,12 @@
-// The showpiece: drives the Phase 2 engine through the store and renders its log.
+// The battle, full screen: the 240×160 stage on top (BattleStage) and the panel under it — the message, the dice tray
+// and its readout, the actions, the Bag and the team. It drives the engine through the store and plays the engine's
+// log (useBattleAnimator); the UI never recomputes a rule.
 import { AnimatePresence, motion } from 'framer-motion'
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react'
 import {
   activeBattler,
   autoEvents,
-  battleBackgroundFor,
+  comboDice,
   computeDamage,
   confusionRecoil,
   createRng,
@@ -21,108 +23,56 @@ import {
   statusesFromRoll,
   STATUS_KINDS,
   usableIn,
-  type BattleBackground,
   type BattleEvent,
   type Battler,
   type Side,
 } from '@/engine'
-import { Die } from '@/components/Die'
+import { Chip } from '@/components/Chip'
+import { DiceSet } from '@/components/DiceSet'
+import { ForfeitButton } from '@/components/ForfeitButton'
 import { HpBar } from '@/components/HpBar'
-import { PixelIcon, STATUS_ICON } from '@/components/icons'
+import { PixelIcon } from '@/components/icons'
 import { ItemSprite } from '@/components/ItemSprite'
 import { Modal } from '@/components/Modal'
 import { OakTip, useOneTimeTip } from '@/components/OakTip'
-import { ParticleCanvas, type ParticleHandle } from '@/components/ParticleCanvas'
 import { PixelButton } from '@/components/PixelButton'
-import { MiniSprite, SHOWDOWN_SCALE, showdownView, SPRITE_METRICS, SpriteImg } from '@/components/SpriteImg'
-import { artBox } from '@/lib/showdown'
-import { playerOf, PokeBall, ThrowSprite, TrainerSprite } from '@/components/TrainerArt'
-import { StatusIcons } from '@/components/StatusIcons'
+import { Sheet } from '@/components/Sheet'
+import { MiniSprite, SpriteImg } from '@/components/SpriteImg'
 import { TypeBadge } from '@/components/TypeBadge'
 import { TypeMatchups } from '@/components/TypeMatchups'
-import { ForfeitButton } from '@/components/ForfeitButton'
-import { DiceSet } from '@/components/DiceSet'
-import { comboName, statusName, trainerTitle, typeName } from '@/lib/format'
+import { ballOfItem } from '@/fx/scenes'
+import { loadSprite, spriteKey } from '@/fx/sprites'
+import { catchTimeline } from '@/fx/timelines/catch'
+import { legendLook, legendTimeline } from '@/fx/timelines/legend'
 import { useT } from '@/i18n/react'
-import { AUTO_PACE, PaceContext, usePace, VERSUS_PACE } from '@/lib/pace'
-import { useIsDesktop, useMediaQuery } from '@/lib/useMediaQuery'
-import { setSettings, useGame, type BattleSlice } from '@/store/game'
-import { dispatchBattle } from '@/store/run'
-import { STATUS_COLORS } from '@/theme/colors'
-import { cx, typeColor } from '@/theme/util'
-import { useBattleAnimator } from './useBattleAnimator'
-import { CatchView } from './CatchView'
-import { VictoryView, WipeView, StalemateView } from './VictoryView'
-import { BattleHistory, BattleHistoryList, DamageRecap } from './BattleHistory'
 import { effectText } from '@/i18n/text'
+import { statusName, trainerTitle, typeName } from '@/lib/format'
+import { useHoldFullscreen } from '@/lib/fullscreen'
+import { useMotion } from '@/lib/motion'
+import { AUTO_PACE, PaceContext, VERSUS_PACE } from '@/lib/pace'
+import { useMediaQuery } from '@/lib/useMediaQuery'
+import { setSettings, useGame, type BattleSlice } from '@/store/game'
+import { dispatchBattle, throwBall } from '@/store/run'
+import { cx } from '@/theme/util'
+import { BattleHistory, BattleHistoryList, DamageRecap } from './BattleHistory'
+import { BagButton, DiceTray, Readout, TeamPips, type Preview, type TrayDice } from './BattlePanel'
+import { BattleStage, type StageOverlay } from './BattleStage'
+import { CatchPanel, catchMessage } from './CatchPanel'
+import { FoePlate, OwnPlate } from './Plates'
+import { useBattleAnimator } from './useBattleAnimator'
+import { StalemateView, VictoryView, WipeView } from './VictoryView'
 
-/**
- * The info box: name, level, types, status and HP. The foe's HP is a bar only — never its exact numbers. `compact`
- * (phones) packs it into two rows so both boxes fit around the Pokémon on a small scene.
- */
-function BattlerPanel({
-  b,
-  hp,
-  side,
-  compact,
-  badges,
-  footer,
-  className,
-  onClick,
-  open,
-}: {
-  b: Battler
-  hp: number
-  side: Side
-  compact: boolean
-  /** Poké Ball pips (the trainer's team / yours). */
-  badges?: React.ReactNode
-  footer?: React.ReactNode
-  className?: string
-  /** Set when the type hint is on: the whole box opens the matchup pop-up. */
-  onClick?: () => void
-  open?: boolean
-}) {
-  const { t } = useT()
-  const foe = side === 'enemy'
-  const bar = <HpBar hp={hp} max={b.maxHp} showNumbers={!foe} approximate={foe} height={foe ? 10 : 8} className={compact && foe ? 'min-w-[72px] flex-1' : 'mt-1'} />
-  const Box = onClick ? 'button' : 'div'
-  return (
-    <Box
-      {...(onClick ? { type: 'button' as const, onClick, 'aria-expanded': !!open, 'aria-label': t('ui.types.tap', { name: b.name }) } : {})}
-      className={cx('pixel-panel text-left', compact ? 'px-1.5 py-1' : 'p-2', className)}
-    >
-      {/* Name, then its level; the Poké Ball pips (and your status on phones) sit at the far right. */}
-      <div className="flex items-center gap-1.5">
-        <span className="truncate text-xl leading-none sm:text-2xl">{b.name}</span>
-        {b.shiny && <PixelIcon name="star" size={12} title={t('ui.mon.shiny')} className="shrink-0" />}
-        <span className="shrink-0 text-lg leading-none sm:text-xl">{t('ui.common.level.short', { n: b.level })}</span>
-        <span className="ml-auto flex shrink-0 items-center gap-1">
-          {compact && !foe && <StatusIcons status={b.status} />}
-          {(foe || compact) && badges}
-        </span>
-      </div>
-      {foe && (
-        <div className="mt-1 flex flex-wrap items-center gap-1">
-          {b.types.map((t) => (
-            <TypeBadge key={t} type={t} size="sm" />
-          ))}
-          <StatusIcons status={b.status} />
-          {compact && bar}
-        </div>
-      )}
-      {!(compact && foe) && bar}
-      {!compact && footer}
-    </Box>
-  )
-}
-
-/** The matchup pop-up over the scene: which side it belongs to decides which end it sits at. */
+/** The matchup pop-up over the stage: which side it belongs to decides which end it sits at. */
 function MatchupPopup({ b, side, onClose }: { b: Battler; side: Side; onClose: () => void }) {
   const { t } = useT()
   return (
     <>
-      <button type="button" className="absolute inset-0 z-30 cursor-default" aria-label={t('ui.common.close')} onClick={onClose} />
+      <button
+        type="button"
+        className="absolute inset-0 z-30 cursor-default"
+        aria-label={t('ui.common.close')}
+        onClick={onClose}
+      />
       <div
         role="dialog"
         aria-label={t('ui.types.tap', { name: b.name })}
@@ -138,7 +88,12 @@ function MatchupPopup({ b, side, onClose }: { b: Battler; side: Side; onClose: (
               <TypeBadge key={x} type={x} size="sm" />
             ))}
           </div>
-          <button type="button" onClick={onClose} aria-label={t('ui.common.close')} className="ml-auto shrink-0 px-1 text-xl leading-none">
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label={t('ui.common.close')}
+            className="ml-auto min-h-[44px] min-w-[44px] shrink-0 px-1 text-xl leading-none md:min-h-0 md:min-w-0"
+          >
             ✕
           </button>
         </div>
@@ -148,9 +103,15 @@ function MatchupPopup({ b, side, onClose }: { b: Battler; side: Side; onClose: (
   )
 }
 
-function useShake(ref: RefObject<HTMLElement>, shake: { id: number; power: number } | null, reduced: boolean, pace: number) {
+/** A hit without a scene of its own (a status tick, recoil) still shakes the stage, unless the screen should be calm. */
+function useShake(
+  ref: RefObject<HTMLElement>,
+  shake: { id: number; power: number } | null,
+  calm: boolean,
+  pace: number,
+) {
   useEffect(() => {
-    if (!shake || reduced || !ref.current?.animate) return
+    if (!shake || calm || !ref.current?.animate) return
     const p = shake.power
     ref.current.animate(
       [
@@ -164,54 +125,6 @@ function useShake(ref: RefObject<HTMLElement>, shake: { id: number; power: numbe
       { duration: 360 * pace, easing: 'steps(6)' },
     )
   }, [shake?.id]) // eslint-disable-line react-hooks/exhaustive-deps
-}
-
-// Professor Oak explains thresholds the first time a status face lands short of one (per device).
-const STATUS_TIP_KEY = 'pokedice.tip.statusThreshold'
-
-/** One square per face a status needs in the roll, filled for each that landed: full = it triggers. */
-const POP_COLOR = { super: '#ffbe2e', weak: '#fbfdff', immune: '#9c9caf', normal: '#fbfdff', heal: '#34c97a' }
-
-// The scene is drawn in the backgrounds' own pixels (240×112) and scaled to fit; sprites are 64×64 cells on that grid.
-const SCENE_W = 240
-const SCENE_H = 112
-const CELL = 64
-/** The foe stands on the far platform (centred at 176, 64); your Pokémon, seen from behind, on the near one. */
-const FOE_SPOT = { x: 176, feet: 70 }
-const OWN_SPOT = { x: 72, feet: 116 }
-/** Phones: your box takes more of the width, so your Pokémon stands further left to stay clear of it. */
-const OWN_SPOT_COMPACT = { x: 48, feet: 116 }
-/** Phones: a strip of sky above the background holds the foe's box. Colour = the backgrounds' flat sky (row 24). */
-const SKY_BAND = 34
-const SKY: Record<BattleBackground, string> = { default: '#e8e8e8', grass: '#e8f0f0', rock: '#a08850', sea: '#f8f8f8', water: '#f8f8f8' }
-const METRICS = SPRITE_METRICS
-/** The tallest or widest a Pokémon may stand in the scene (scene pixels); bigger art is shrunk. */
-const MAX_ART = 80
-
-/**
- * Where a sprite cell goes (scene pixels): a square on the spot, its floor on the spot's feet line. A Showdown sprite's
- * art fills it from the floor up, at SHOWDOWN_SCALE — shrunk only if it passes MAX_ART. A local sprite (Showdown has
- * none for this view) keeps its 64px cell with its lowest opaque row on the line, or for a form on its uncut 96px
- * canvas a 96px cell at the same pixel scale.
- */
-function cellBox(dex: number, side: Side, compact: boolean, shiny: boolean) {
-  const spot = side === 'enemy' ? FOE_SPOT : compact ? OWN_SPOT_COMPACT : OWN_SPOT
-  const sd = showdownView(dex, side === 'player', shiny)
-  if (sd) {
-    const [x0, y0, x1, y1] = artBox(sd.box)
-    const cell = Math.min(MAX_ART, Math.max(x1 - x0 + 1, y1 - y0 + 1) * SHOWDOWN_SCALE)
-    return { left: spot.x - cell / 2, top: spot.feet - cell, cell }
-  }
-  const m = METRICS[dex]
-  let cell = CELL
-  let gap = m?.[side === 'enemy' ? 'front' : 'back'] ?? 0
-  if (m?.size && m.size !== CELL) {
-    const box = (side === 'enemy' ? m.frontBox : m.backBox) ?? [0, 0, m.size - 1, m.size - 1]
-    const k = Math.min(1, MAX_ART / Math.max(box[2] - box[0] + 1, box[3] - box[1] + 1))
-    cell = m.size * k
-    gap *= k
-  }
-  return { left: spot.x - cell / 2, top: spot.feet - cell + gap, cell }
 }
 
 function useWidth(ref: RefObject<HTMLElement>) {
@@ -228,204 +141,25 @@ function useWidth(ref: RefObject<HTMLElement>) {
   return w
 }
 
-/** A shiny's entrance: a ring of stars twinkles around it. */
-function ShinySparkle({ size, delay }: { size: number; delay: number }) {
-  const pace = usePace()
-  const stars = [
-    [0.2, 0.25],
-    [0.78, 0.2],
-    [0.5, 0.08],
-    [0.85, 0.62],
-    [0.15, 0.7],
-    [0.55, 0.5],
-  ]
-  const star = Math.max(10, Math.round(size / 6))
-  return (
-    <div className="pointer-events-none absolute inset-0" aria-hidden>
-      {stars.map(([x, y], i) => (
-        <motion.div
-          key={i}
-          className="absolute"
-          style={{ left: x! * size - star / 2, top: y! * size - star / 2 }}
-          initial={{ scale: 0, opacity: 0, rotate: 0 }}
-          animate={{ scale: [0, 1.3, 0], opacity: [0, 1, 0], rotate: 90 }}
-          transition={{ duration: 0.45 * pace, delay: (delay + i * 0.12) * pace, times: [0, 0.5, 1], ease: 'easeOut' }}
-        >
-          <svg width={star} height={star} viewBox="0 0 8 8" shapeRendering="crispEdges">
-            <path d="M3 0h2v3h3v2H5v3H3V5H0V3h3z" fill="#fff8c8" />
-            <path d="M3.5 1h1v2.5H7v1H4.5V7h-1V4.5H1v-1h2.5z" fill="#ffbe2e" />
-          </svg>
-        </motion.div>
-      ))}
-    </div>
-  )
-}
+// Professor Oak explains thresholds the first time a status face lands short of one (per device).
+const STATUS_TIP_KEY = 'pokedice.tip.statusThreshold'
 
-function SpriteStage({
-  battler,
-  side,
-  fainted,
-  scale,
-  fx,
-  anchorRef,
-  hidden,
-  compact,
-  onClick,
-}: {
-  battler: Battler
-  side: Side
-  fainted: boolean
-  /** Screen pixels per scene pixel. */
-  scale: number
-  fx: ReturnType<typeof useBattleAnimator>['fx']
-  anchorRef: RefObject<HTMLDivElement>
-  /** Held back (the trainer is still on the field): the entrance plays once this clears. */
-  hidden?: boolean
-  /** Phone layout (your Pokémon stands further left). */
-  compact: boolean
-  /** Set when the type hint is on: tapping the Pokémon itself opens its matchups too. */
-  onClick?: () => void
-}) {
-  const { t } = useT()
-  const reduced = useGame((s) => s.settings.reducedMotion)
-  const pace = usePace()
-  const { dex, shiny } = battler
-  const box = cellBox(dex, side, compact, shiny)
-  const size = Math.round(box.cell * scale)
-  const enter = side === 'enemy' ? 60 : -60
-  return (
-    <div
-      ref={anchorRef}
-      className="absolute"
-      style={{ left: box.left * scale, top: box.top * scale, width: size, height: size }}
-    >
-      <motion.div
-        key={`${battler.uid}:${dex}`}
-        // The foe slides in; yours pops out of the ball (with a flash) once the send-out throw lands.
-        initial={reduced ? false : side === 'enemy' ? { opacity: 0, x: enter } : { opacity: 0, scale: 0, filter: 'brightness(4)' }}
-        animate={
-          fainted
-            ? { opacity: 0, y: size * 0.4, transition: { duration: 0.7 * pace } }
-            : hidden
-              ? { opacity: 0, scale: 0, transition: { duration: 0 } }
-              : side === 'enemy'
-                ? { opacity: 1, x: 0, y: 0, scale: 1, transition: { duration: reduced ? 0 : 0.45 * pace } }
-                : { opacity: 1, y: 0, scale: 1, filter: 'brightness(1)', transition: { duration: reduced ? 0 : 0.22 * pace, ease: 'backOut' } }
-        }
-        className="absolute inset-0"
-        style={{ transformOrigin: '50% 90%' }}
-      >
-        <SpriteImg dex={dex} size={size} back={side === 'player'} shiny={shiny} alt="" fit={false} />
-      </motion.div>
-      {onClick && !hidden && !fainted && (
-        <button type="button" onClick={onClick} aria-label={t('ui.types.tap', { name: battler.name })} className="absolute inset-0 z-[1]" />
-      )}
-      {shiny && !hidden && !fainted && !reduced && <ShinySparkle key={`${battler.uid}:${dex}`} size={size} delay={0.45} />}
-      <AnimatePresence>
-        {fx.flash?.target === side && (
-          <motion.div
-            key={fx.flash.id}
-            className="absolute inset-0 bg-white"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: [0, 1, 0] }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.5 * pace }}
-            style={{ mixBlendMode: 'screen' }}
-          />
-        )}
-        {fx.status?.target === side && (
-          <motion.div
-            key={fx.status.id}
-            className="absolute inset-0 flex items-center justify-center"
-            initial={{ opacity: 0, scale: 0.4 }}
-            animate={{ opacity: [0, 1, 1, 0], scale: [0.4, 1.3, 1.1, 1], rotate: fx.status.status === 'confuse' ? 360 : 0 }}
-            transition={{ duration: 0.85 * pace }}
-          >
-            <PixelIcon name={STATUS_ICON[fx.status.status] ?? 'star'} size={size * 0.35} />
-          </motion.div>
-        )}
-        {fx.pop?.target === side && (
-          <motion.div
-            key={fx.pop.id}
-            className="pointer-events-none absolute left-1/2 top-[25%] z-20 -translate-x-1/2 font-pixel leading-none"
-            initial={{ opacity: 0, y: 10, scale: 0.4 }}
-            animate={{ opacity: [0, 1, 1, 0], y: [10, -20, -34, -48], scale: [0.4, 1.7, 1.2, 1] }}
-            transition={{ duration: reduced ? 0 : 1.1 * pace }}
-            style={{
-              fontSize: Math.max(24, size * 0.28),
-              color: POP_COLOR[fx.pop.tone],
-              textShadow: '3px 3px 0 #24304f, -2px -2px 0 #24304f, 2px -2px 0 #24304f, -2px 2px 0 #24304f',
-            }}
-          >
-            {fx.pop.tone === 'heal' ? '+' : fx.pop.amount === 0 ? '' : '−'}
-            {fx.pop.amount}
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  )
-}
-
-const TRAINER_INTRO_MS = 850
-
-// Sending a Pokémon out: the player's 5-frame throw, the ball's short arc, then the Pokémon pops out.
-const SEND_FRAME_MS = 55
-const SEND_BALL_AT = 110
-const SEND_BALL_MS = 260
-const SEND_OUT_POP_MS = SEND_BALL_AT + SEND_BALL_MS
-
-function SendOut({ character, size }: { character: 'red' | 'green'; size: number }) {
-  const [frame, setFrame] = useState(0)
-  const [ball, setBall] = useState(false)
-  const [gone, setGone] = useState(false)
-  const pace = usePace()
-  useEffect(() => {
-    const timers = [
-      ...[1, 2, 3, 4].map((f, i) => setTimeout(() => setFrame(f), i * SEND_FRAME_MS * pace)),
-      setTimeout(() => setBall(true), SEND_BALL_AT * pace),
-      setTimeout(() => setBall(false), SEND_OUT_POP_MS * pace),
-      setTimeout(() => setGone(true), (SEND_OUT_POP_MS - 60) * pace),
-    ]
-    return () => timers.forEach(clearTimeout)
-  }, [pace])
-  const px = Math.max(64, Math.round(size / 64 - 0.2) * 64)
-  const ballSize = Math.round(size / 6)
-  return (
-    <div className="pointer-events-none absolute inset-0 z-10" aria-hidden>
-      <motion.div
-        className="absolute bottom-0 left-0"
-        initial={{ x: -px * 0.35, opacity: 1 }}
-        animate={gone ? { x: -px, opacity: 0 } : { x: -px * 0.35, opacity: 1 }}
-        transition={{ duration: 0.2 * pace, ease: 'easeIn' }}
-      >
-        <ThrowSprite character={character} frame={frame} size={px} />
-      </motion.div>
-      <AnimatePresence>
-        {ball && (
-          <motion.div
-            key="ball"
-            className="absolute left-0 top-0"
-            initial={{ x: px * 0.25, y: size - px * 0.7, rotate: 0 }}
-            animate={{
-              x: [px * 0.25, size * 0.35, size / 2 - ballSize / 2],
-              y: [size - px * 0.7, size * 0.1, size * 0.62],
-              rotate: 540,
-            }}
-            exit={{ scale: 1.8, opacity: 0, transition: { duration: 0.15 * pace } }}
-            transition={{ duration: (SEND_BALL_MS / 1000) * pace, ease: 'linear' }}
-          >
-            <PokeBall size={ballSize} />
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  )
-}
+/** The trainer on the field before their Pokémon. */
+const TRAINER_INTRO_MS = 1100
+/** From the foe's arrival to yours popping out of its ball. */
+const SEND_OUT_MS = 900
 
 // Auto-mode's picks sample rolls (like the enemy AI); its own stream keeps the battle's rolls untouched.
 const autoRng = createRng(randomSeed())
 /** How long auto-mode shows its dice selection before the reroll. */
 const AUTO_SELECT_MS = 450
+
+const BANNER_TONE = {
+  super: 'bg-gold text-ink',
+  weak: 'bg-paper text-ink',
+  immune: 'bg-ink text-paper',
+  info: 'bg-paper text-ink',
+}
 
 /**
  * A Versus fight, replayed: the whole fight was computed (and its result recorded) before it started, so the screen
@@ -438,17 +172,21 @@ export interface VersusReplay {
   nextMove: () => BattleEvent[]
   trainerName: string
   trainerSprite: string
-  /** The opponent's team size, and which of them is out (Poké Ball pips). */
+  /** The opponent's team size, and which of them is out (the party on the foe's plate). */
   foeCount: number
   foeIndex: number
   /** Called once when this battle has played out; may hand back a cleanup (a pending timer). */
   onPlayed: () => void | (() => void)
-  /** Shown over the battle when the whole fight is over. */
+  /** SKIP ▸▸ was pressed: the rest of the replay plays at once (the result was decided before it started). */
+  fast: boolean
+  onSkip: () => void
+  /** The result card, once the whole fight is over. */
   end?: ReactNode
 }
 
 export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: VersusReplay }) {
   const { t } = useT()
+  useHoldFullscreen()
   // Read through a ref, so a new `versus` object each render doesn't restart the timers that use it.
   const versusRef = useRef(versus)
   versusRef.current = versus
@@ -456,80 +194,97 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
   const data = useGame((s) => s.data)
   const save = useGame((s) => s.save)
   const run = useGame((s) => s.run)
-  const reduced = useGame((s) => s.settings.reducedMotion)
-  const desktop = useIsDesktop()
-  const short = useMediaQuery('(max-height: 700px)')
-  // Desktop screens under 1000px tall get a lower scene so the controls below stay in view.
-  const roomy = useMediaQuery('(min-height: 1000px)')
+  const { level, calm } = useMotion()
+  const fast = !!versus?.fast
+  // Nothing to wait for: animations off, or a Versus replay being skipped.
+  const quick = level === 'off' || fast
+  const wide = useMediaQuery('(min-width: 1024px)')
   const st = battle.state
-  const particles = useRef<ParticleHandle>(null)
-  const scene = useRef<HTMLDivElement>(null)
-  const enemyAnchor = useRef<HTMLDivElement>(null)
-  const playerAnchor = useRef<HTMLDivElement>(null)
+  const stageBox = useRef<HTMLDivElement>(null)
+  const panel = useRef<HTMLDivElement>(null)
   const [menu, setMenu] = useState<null | 'item' | 'switch' | 'history' | 'mega' | 'form'>(null)
   const [itemKey, setItemKey] = useState<string | null>(null)
   const [showBreakdown, setShowBreakdown] = useState(false)
-  const [bossIntro, setBossIntro] = useState(st.kind === 'boss' && !reduced)
-  // Type hints (Trainer menu → Type chart): tapping a Pokémon opens its matchups over the scene.
+  // Type hints (Trainer menu → Type chart): tapping a Pokémon opens its matchups over the stage.
   const typeHints = useGame((s) => !!s.settings.typeHints)
   const [matchups, setMatchups] = useState<Side | null>(null)
 
-  // Auto-mode (cleared areas only): the player's side plays itself, like the enemy's.
+  // Auto-mode (cleared areas only): the player's side plays itself, like the enemy's. A Versus fight is always on auto.
   const autoOn = useGame((s) => !!s.settings.autoMode)
-  // A Versus fight is always on auto.
   const auto = !!versus || (autoOn && !!save && !!run.areaId && progressOf(save, run.areaId).cleared)
-  // Auto-mode plays the whole fight 50% faster: animations, dice and timers. Versus, 75% faster.
+  // Auto-mode plays the whole fight faster: animations, dice and timers.
   const pace = versus ? VERSUS_PACE : auto ? AUTO_PACE : 1
 
   // A Versus fight has nothing to do with the area the player may be standing in.
   const enc = versus ? null : run.encounter
   const isTrainerFight = !!versus || enc?.kind === 'trainer' || enc?.kind === 'gym'
-  // Before each of their Pokémon, the trainer steps onto the field, then makes way for it.
-  const [trainerIntro, setTrainerIntro] = useState(isTrainerFight && !reduced)
-  const intro = bossIntro || trainerIntro
-  const trainerName = versus ? versus.trainerName : enc?.kind === 'trainer' || enc?.kind === 'gym' ? trainerTitle(enc) : null
-  const trainerSprite = versus ? versus.trainerSprite : enc?.kind === 'trainer' || enc?.kind === 'gym' ? enc.spriteUrl : null
-  const onHit = useCallback((target: Side, color: string, power: number) => {
-    const anchor = (target === 'enemy' ? enemyAnchor : playerAnchor).current
-    const host = scene.current
-    if (!anchor || !host) return
-    const a = anchor.getBoundingClientRect()
-    const h = host.getBoundingClientRect()
-    particles.current?.burst(a.left - h.left + a.width / 2, a.top - h.top + a.height / 2, color, Math.round(40 * power + 20), power)
-  }, [])
+  const trainerName = versus
+    ? versus.trainerName
+    : enc?.kind === 'trainer' || enc?.kind === 'gym'
+      ? trainerTitle(enc)
+      : null
+  const trainerSprite = versus
+    ? versus.trainerSprite
+    : enc?.kind === 'trainer' || enc?.kind === 'gym'
+      ? enc.spriteUrl
+      : null
 
-  const { fx, ready } = useBattleAnimator(battle, reduced, {
-    kind: st.kind,
-    trainerName,
-    itemName: (k) => data.items[k]?.name ?? k,
-    colorOf: (t) => data.diceTypes[t as keyof typeof data.diceTypes]?.color ?? typeColor(t),
-    onHit,
-    speciesName: (dex) => data.species[dex]?.name ?? `#${dex}`,
-    megaMechanic: (dex) => data.species[dex]?.form?.mechanic ?? null,
-  }, pace)
-  useShake(scene, fx.shake, reduced, pace)
+  // The entrances: a legendary's timeline, or the trainer stepping onto the field; then the foe; then yours.
+  const [bossIntro, setBossIntro] = useState(st.kind === 'boss' && level !== 'off')
+  const [trainerIntro, setTrainerIntro] = useState(isTrainerFight && !quick)
+  const [foeOut, setFoeOut] = useState(!bossIntro && !trainerIntro)
+  const [ownOut, setOwnOut] = useState(quick)
+  const intro = bossIntro || trainerIntro || !ownOut
+
+  const { fx, ready, sceneContact, sceneDone } = useBattleAnimator(
+    battle,
+    quick,
+    {
+      kind: st.kind,
+      trainerName,
+      itemName: (k) => data.items[k]?.name ?? k,
+      speciesName: (dex) => data.species[dex]?.name ?? `#${dex}`,
+      megaMechanic: (dex) => data.species[dex]?.form?.mechanic ?? null,
+      gmaxTurns: data.config.gigantamax.turns,
+    },
+    pace,
+    intro,
+  )
+  useShake(stageBox, fx.shake, calm, pace)
 
   useEffect(() => {
     window.scrollTo({ top: 0 })
   }, [])
 
   useEffect(() => {
-    if (!bossIntro) return
-    const t = setTimeout(() => setBossIntro(false), 1900 * pace)
-    return () => clearTimeout(t)
-  }, [bossIntro, pace])
-  useEffect(() => {
     if (!trainerIntro) return
-    const t = setTimeout(() => setTrainerIntro(false), TRAINER_INTRO_MS * pace)
+    const t = setTimeout(() => {
+      setTrainerIntro(false)
+      setFoeOut(true)
+    }, TRAINER_INTRO_MS * pace)
     return () => clearTimeout(t)
   }, [trainerIntro, pace])
+  useEffect(() => {
+    if (ownOut || !foeOut || bossIntro) return
+    const t = setTimeout(() => setOwnOut(true), quick ? 0 : SEND_OUT_MS * pace)
+    return () => clearTimeout(t)
+  }, [ownOut, foeOut, bossIntro, quick, pace])
+  // SKIP ▸▸: whatever is playing ends now.
+  useEffect(() => {
+    if (!fast) return
+    setTrainerIntro(false)
+    setBossIntro(false)
+    setFoeOut(true)
+    setOwnOut(true)
+    if (fx.scene) sceneDone()
+  }, [fast, fx.scene, sceneDone])
 
   // The enemy acts on its own once the log has caught up.
   useEffect(() => {
     if (!ready || intro || st.phase !== 'enemy_turn') return
-    const t = setTimeout(() => dispatch({ t: 'AI_TURN' }), reduced ? 0 : 450 * pace)
+    const t = setTimeout(() => dispatch({ t: 'AI_TURN' }), quick ? 0 : 450 * pace)
     return () => clearTimeout(t)
-  }, [ready, intro, st.phase, reduced, pace, battle.log.length, dispatch])
+  }, [ready, intro, st.phase, quick, pace, battle.log.length, dispatch])
 
   const active = st.player.find((p) => p.uid === fx.activeUid) ?? activeBattler(st)
   // A send-out, a faint or the end of the fight makes the open pop-up stale.
@@ -537,11 +292,12 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
 
   const canAct = ready && !intro && (st.phase === 'player_roll' || st.phase === 'player_reroll')
   const stunned = ready && !intro && st.phase === 'player_stunned'
+  const forced = ready && !intro && st.phase === 'player_switch'
   // One item per turn: before the roll, after it, or to cure a stun.
   const canItem = (canAct || stunned) && !st.itemUsedThisTurn
   const rolling = st.phase === 'player_reroll'
 
-  const preview = useMemo(() => {
+  const preview = useMemo<Preview | null>(() => {
     if (!rolling || !st.dice.length) return null
     const a = activeBattler(st)
     const recoil = a.status.confused ? confusionRecoil(a.maxHp, data) : 0
@@ -551,12 +307,15 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
     // this roll, and the counter shows how close it is.
     const counts = statusCounts(st.dice, data)
     const rules = data.config.status
-    const possible = new Set(a.dice.flatMap((t) => facesOf(t, data).flatMap((f) => (f.kind === 'status' ? [f.status] : []))))
+    const possible = new Set(
+      a.dice.flatMap((ty) => facesOf(ty, data).flatMap((f) => (f.kind === 'status' ? [f.status] : []))),
+    )
     const almost = STATUS_KINDS.filter((k) => possible.has(k) && counts[k] < rules[k].threshold).map((k) => ({
       status: k,
       have: counts[k],
       need: rules[k].threshold,
-      value: st.dice.map((d) => faceOf(d, data)).find((f) => f.kind === 'status' && f.status === k)?.value ?? 0,
+      value:
+        st.dice.map((d) => faceOf(d, data)).find((f) => f.kind === 'status' && f.status === k)?.value ?? 0,
     }))
     return { r, statuses, almost, recoil }
   }, [rolling, st, data])
@@ -565,22 +324,24 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
   const inventory = save?.inventory ?? {}
   const ownedItems = Object.entries(inventory).filter(([k, n]) => n > 0 && usableIn(data.items[k], 'battle'))
   const itemHelps = (key: string, p: Battler) => {
-    const fx = data.items[key]?.effect
-    if (!fx) return false
-    if (fx.kind === 'revive') return p.hp <= 0
+    const e = data.items[key]?.effect
+    if (!e) return false
+    if (e.kind === 'revive') return p.hp <= 0
     if (p.hp <= 0) return false
-    if (fx.kind === 'heal') return p.hp < p.maxHp
-    if (fx.kind === 'cure') return fx.statuses.some((k) => hasStatus(p.status, k))
-    if (fx.kind === 'rerolls') return p.rerollsLeft < p.rerolls
+    if (e.kind === 'heal') return p.hp < p.maxHp
+    if (e.kind === 'cure') return e.statuses.some((k) => hasStatus(p.status, k))
+    if (e.kind === 'rerolls') return p.rerollsLeft < p.rerolls
     return false
   }
   const switchTargets = st.player.filter((p, i) => p.hp > 0 && i !== st.activeIndex)
 
-  // Keyboard: 1..6 toggle, R reroll, Space roll/attack.
+  // Keyboard: 1..6 toggle, R reroll, Space/Enter roll or attack.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (!(canAct || stunned) || auto || menu || (e.target as HTMLElement)?.tagName === 'INPUT') return
       if (e.key === ' ' || e.key === 'Enter') {
+        // A focused button answers Enter/Space itself.
+        if ((e.target as HTMLElement)?.closest?.('button')) return
         e.preventDefault()
         dispatch(stunned ? { t: 'PASS' } : st.phase === 'player_roll' ? { t: 'ROLL' } : { t: 'ATTACK' })
       } else if (e.key.toLowerCase() === 'r' && rolling) dispatch({ t: 'REROLL' })
@@ -593,12 +354,16 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
   // Every turn starts with the throw, so the dice roll themselves (items, switching and running still work after it).
   useEffect(() => {
     if (auto || !ready || intro || menu || st.phase !== 'player_roll') return
-    const t = setTimeout(() => dispatch({ t: 'ROLL' }), reduced ? 0 : 400)
+    const t = setTimeout(() => dispatch({ t: 'ROLL' }), quick ? 0 : 400)
     return () => clearTimeout(t)
-  }, [auto, ready, intro, menu, st.phase, reduced, battle.log.length, dispatch])
+  }, [auto, ready, intro, menu, st.phase, quick, battle.log.length, dispatch])
 
   // Auto-mode: every player move once the log has caught up. A reroll shows its selected dice for a moment first.
-  const autoPhase = st.phase === 'player_roll' || st.phase === 'player_reroll' || st.phase === 'player_stunned' || st.phase === 'player_switch'
+  const autoPhase =
+    st.phase === 'player_roll' ||
+    st.phase === 'player_reroll' ||
+    st.phase === 'player_stunned' ||
+    st.phase === 'player_switch'
   useEffect(() => {
     if (!auto || !ready || intro || menu || !autoPhase) return
     let inner: ReturnType<typeof setTimeout> | undefined
@@ -610,26 +375,30 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
         const last = events.pop()
         if (!last) return
         events.forEach((e) => dispatch(e))
-        if (events.length && !reduced) inner = setTimeout(() => dispatch(last), AUTO_SELECT_MS * pace)
+        if (events.length && !quick) inner = setTimeout(() => dispatch(last), AUTO_SELECT_MS * pace)
         else dispatch(last)
       },
-      reduced ? 0 : (st.phase === 'player_reroll' ? 350 : 400) * pace,
+      quick ? 0 : (st.phase === 'player_reroll' ? 350 : 400) * pace,
     )
     return () => {
       clearTimeout(t)
       clearTimeout(inner)
     }
-  }, [auto, ready, intro, menu, autoPhase, st.phase, data, reduced, pace, battle.log.length, dispatch])
+  }, [auto, ready, intro, menu, autoPhase, st.phase, data, quick, pace, battle.log.length, dispatch])
 
   const usefulItems = ownedItems.filter(([k]) => st.player.some((p) => itemHelps(k, p)))
-  const showItem = usefulItems.length > 0
   const showSwitch = data.config.allowVoluntarySwitch && switchTargets.length > 0
-  // Mega Evolution (once per battle, Lv.50+, from Kalos on) and Arceus's types, beside ITEM and SWITCH.
+  // Mega Evolution (once per battle, Lv.50+, from Kalos on), Gigantamax and Arceus's types.
   const megaOpts = versus ? [] : megaChoices(st, data)
   const gmaxOpts = versus ? [] : gmaxChoices(st, data)
   // Primal Reversion and Ultra Burst use the same button under their own name.
   const megaMechanic = megaOpts[0]?.form?.mechanic
-  const megaLabel = megaMechanic === 'primal' ? 'ui.battle.primal' : megaMechanic === 'ultra' ? 'ui.battle.ultra' : 'ui.battle.mega'
+  const megaLabel =
+    megaMechanic === 'primal'
+      ? 'ui.battle.primal'
+      : megaMechanic === 'ultra'
+        ? 'ui.battle.ultra'
+        : 'ui.battle.mega'
   const formOpts = versus ? [] : formChoices(st, data)
   const formsLeft = data.config.formChangesPerBattle - (activeBattler(st).formChanges ?? 0)
   const megaBase = data.species[activeBattler(st).baseDex ?? activeBattler(st).dex]
@@ -639,479 +408,445 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
   }
 
   // Stunned with no item that could help: nothing to do but lose the turn.
-  const stunChoice = canItem && showItem
+  const stunChoice = canItem && usefulItems.length > 0
   useEffect(() => {
     if (auto || !stunned || menu || stunChoice) return
     const t = setTimeout(() => dispatch({ t: 'PASS' }), 900)
     return () => clearTimeout(t)
   }, [auto, stunned, menu, stunChoice, dispatch])
 
-  // Each of your Pokémon comes out of a ball thrown by the player (first send-out and every switch).
-  const character = playerOf(save).character
-  const [sendingUid, setSendingUid] = useState<string | null>(reduced ? null : active.uid)
-  const lastUid = useRef(active.uid)
-  useEffect(() => {
-    if (active.uid === lastUid.current) return
-    lastUid.current = active.uid
-    if (!reduced) setSendingUid(active.uid)
-  }, [active.uid, reduced])
-  useEffect(() => {
-    if (!sendingUid) return
-    const t = setTimeout(() => setSendingUid(null), SEND_OUT_POP_MS * pace)
-    return () => clearTimeout(t)
-  }, [sendingUid, pace])
-  const compact = !desktop
-  const teamPips = (
-    <span className="flex gap-0.5" aria-label={`${st.player.filter((p) => p.hp > 0).length} of ${st.player.length} able`}>
-      {st.player.map((p) => (
-        <PixelIcon key={p.uid} name="ball" size={12} style={{ opacity: p.hp > 0 ? 1 : 0.3 }} />
-      ))}
-    </span>
-  )
-  const sceneWidth = useWidth(scene)
-  const scale = sceneWidth / SCENE_W
-  const area = versus ? undefined : data.areas.find((a) => a.id === run.areaId)
-  const background = battleBackgroundFor(enc, area, data)
-  const mainSize = desktop ? 'lg' : 'md'
-  const minorSize = desktop ? 'md' : 'sm'
-  // Dice fill the tray: sized by how many are thrown (up to 64px), never under a 44px tap target.
-  const diceCount = Math.max(1, active.dice.length, st.enemy.dice.length)
-  const dieSize = desktop ? 64 : Math.max(44, Math.min(64, Math.floor((window.innerWidth - 56 - (diceCount - 1) * 8) / diceCount)))
-
-  // Tray: animated roll while playing the log; the live, selectable roll once caught up.
-  const tray =
-    ready && rolling
-      ? {
-          side: 'player' as Side,
-          dice: st.dice,
-          keys: fx.tray?.side === 'player' && fx.tray.dice.length === st.dice.length ? fx.tray.keys : st.dice.map((_, i) => `s${i}`),
-        }
-      : fx.tray
-
-  const trainerTeam = versus ? versus.foeCount : enc?.kind === 'trainer' || enc?.kind === 'gym' ? enc.team.length : 0
-  const trainerIndex = versus ? versus.foeIndex : (run.trainer?.index ?? 0)
-  const trainerLeft = versus || run.trainer ? trainerTeam - trainerIndex : 0
   const terminal = st.phase === 'won' || st.phase === 'lost' || st.phase === 'fled'
-
   // Versus: once this battle has played out, the fight moves on (the next defender, or the result).
   const played = ready && terminal
   useEffect(() => {
     if (played) return versusRef.current?.onPlayed()
   }, [played])
 
+  // ---- The catch, in the scene: the worn-out foe waits on its platform; one throw plays the catch timeline.
+  const catching = !versus && ready && run.phase === 'catch' && !!run.catch
+  const [thrown, setThrown] = useState<StageOverlay | null>(null)
+  const [catchBeat, setCatchBeat] = useState({ rolled: false, revealed: false })
+  const onThrow = (ballKey: string | null) => {
+    throwBall(ballKey)
+    const r = useGame.getState().run.catch?.result
+    if (!r) return
+    const foe = st.enemy
+    setThrown({
+      timeline: catchTimeline({
+        own: spriteKey(active.dex, true, active.shiny),
+        foe: spriteKey(foe.dex, false, foe.shiny),
+        ball: ballOfItem(r.ballKey),
+        caught: r.caught,
+        short: level === 'short',
+      }),
+      ready: Promise.all([loadSprite(active.dex, true, active.shiny), loadSprite(foe.dex, false, foe.shiny)]),
+      label: t('ui.catch.throwing', {
+        ball: data.items[r.ballKey ?? 'poke-ball']?.name ?? t('ui.catch.aBall'),
+      }),
+      hud: {
+        beat: (b) => b === 'roll' && setCatchBeat((s) => ({ ...s, rolled: true })),
+        catchResult: () => setCatchBeat({ rolled: true, revealed: true }),
+      },
+      onEnd: () => setCatchBeat({ rolled: true, revealed: true }),
+    })
+  }
+
+  // A legendary's entrance: the boss intro is its timeline (the foe and yours appear on its cues).
+  const legend = useMemo<StageOverlay | null>(() => {
+    if (!bossIntro) return null
+    const foe = st.enemy
+    const lead = activeBattler(st)
+    return {
+      timeline: legendTimeline({
+        own: spriteKey(lead.dex, true, lead.shiny),
+        foe: spriteKey(foe.dex, false, foe.shiny),
+        look: legendLook(foe.baseDex ?? foe.dex, foe.types[0] ?? 'normal'),
+        name: foe.name,
+        level: t('ui.common.level.short', { n: foe.level }),
+        types: foe.types.map((ty) => typeName(ty)).join(' / '),
+      }),
+      ready: Promise.all([loadSprite(lead.dex, true, lead.shiny), loadSprite(foe.dex, false, foe.shiny)]),
+      label: t('ui.battle.aWild', { name: foe.name }),
+      hud: {
+        show: (side, on) => on && (side === 'foe' ? setFoeOut(true) : setOwnOut(true)),
+      },
+      onEnd: () => {
+        setBossIntro(false)
+        setFoeOut(true)
+        setOwnOut(true)
+      },
+    }
+    // One entrance per battle.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bossIntro])
+
+  // ---- Layout numbers.
+  const panelWidth = useWidth(panel)
+  const diceCount = Math.max(1, active.dice.length)
+  // Your dice fill the tray: up to 54px, never under a 44px tap target.
+  const dieSize = panelWidth
+    ? Math.max(44, Math.min(54, Math.floor((panelWidth - 24 - (diceCount - 1) * 8) / diceCount)))
+    : 54
+
+  // Tray: the animated roll while the log plays; the live, selectable roll once caught up.
+  const tray: TrayDice | null =
+    ready && rolling
+      ? {
+          side: 'player',
+          dice: st.dice,
+          keys:
+            fx.tray?.side === 'player' && fx.tray.dice.length === st.dice.length
+              ? fx.tray.keys
+              : st.dice.map((_, i) => `s${i}`),
+        }
+      : fx.tray
+  const ring = useMemo(
+    () =>
+      preview?.r.combo
+        ? new Set(
+            comboDice(
+              preview.r.perDie.map((p) => p.value),
+              preview.r.combo.key,
+            ),
+          )
+        : new Set<number>(),
+    [preview],
+  )
+
+  const party = versus
+    ? { count: versus.foeCount, index: versus.foeIndex }
+    : (enc?.kind === 'trainer' || enc?.kind === 'gym') && run.trainer
+      ? { count: enc.team.length, index: run.trainer.index }
+      : null
+
+  const heading = t('ui.battle.heading', {
+    mine: active.name,
+    foe: trainerName
+      ? t('ui.battle.theirs', { trainer: trainerName, name: st.enemy.name })
+      : st.kind === 'wild'
+        ? t('ui.battle.aWild', { name: st.enemy.name })
+        : st.enemy.name,
+  })
+
+  const over = !!versus && played && !!versus.end
+  const message = catching
+    ? catchMessage(run.catch!, st.enemy.name, catchBeat)
+    : forced && !auto
+      ? t('ui.battle.chooseNext')
+      : canAct && rolling && !auto && active.rerollsLeft > 0
+        ? `${fx.message} ${t('ui.battle.tapToReroll')}`
+        : fx.message
+
+  const tapMatchups = typeHints ? (side: Side) => setMatchups((v) => (v === side ? null : side)) : undefined
+  const pickPip = (b: Battler) => {
+    if (forced && !auto) dispatch({ t: 'SWITCH', instanceId: b.uid })
+    else if (canAct && showSwitch) setMenu('switch')
+  }
+  const extras =
+    !auto && !terminal && (megaOpts.length > 0 || gmaxOpts.length > 0 || formOpts.length > 0 || st.canRun)
+
+  let actions: ReactNode = null
+  if (over) actions = versus!.end
+  else if (auto && !terminal)
+    actions = (
+      <div className="grid grid-cols-[1.4fr_1fr] items-center gap-2.5" role="status">
+        <p className="m-0 flex items-center gap-2 font-pixel-sm text-[16px] leading-[1.1] text-muted">
+          <Chip tone="plain">{t('ui.battle.autoMode')}</Chip>
+          {t('ui.battle.autoNote')}
+        </p>
+        {/* A Versus fight is decided already: skipping only fast-forwards the replay. */}
+        {versus ? (
+          <PixelButton size="md" disabled={fast} onClick={versus.onSkip}>
+            {t('ui.battle.skipReplay')}
+          </PixelButton>
+        ) : (
+          <PixelButton size="md" onClick={() => setSettings({ autoMode: false })}>
+            {t('ui.battle.stop')}
+          </PixelButton>
+        )}
+      </div>
+    )
+  else if (stunned)
+    actions = (
+      <PixelButton variant="primary" size="lg" className="w-full" onClick={() => dispatch({ t: 'PASS' })}>
+        {t('ui.battle.skipTurn')}
+      </PixelButton>
+    )
+  else if (forced) actions = <ForfeitButton />
+  else if (rolling && !terminal)
+    actions = (
+      <div className="grid grid-cols-[1fr_1.4fr] gap-2.5">
+        <PixelButton
+          size="lg"
+          className="whitespace-nowrap px-2"
+          disabled={!canAct || active.rerollsLeft <= 0 || !st.selected.some(Boolean)}
+          title={t('ui.battle.selectDice')}
+          onClick={() => dispatch({ t: 'REROLL' })}
+        >
+          {t('ui.battle.reroll', { left: active.rerollsLeft })}
+        </PixelButton>
+        <PixelButton
+          variant="primary"
+          size="lg"
+          className="whitespace-nowrap px-2"
+          disabled={!canAct}
+          onClick={() => dispatch({ t: 'ATTACK' })}
+        >
+          {t('ui.battle.attack')}
+        </PixelButton>
+      </div>
+    )
+
+  const stage = (
+    <div ref={stageBox} className="shadow-[0_2px_0_#24304f]">
+      <BattleStage
+        own={active}
+        foe={st.enemy}
+        fx={fx}
+        ownShown={ownOut}
+        foeShown={foeOut}
+        trainer={trainerIntro && isTrainerFight ? (trainerSprite ?? '') : null}
+        overlay={legend ?? thrown}
+        worn={catching && !thrown}
+        onContact={sceneContact}
+        onSceneDone={sceneDone}
+        onTap={tapMatchups}
+        tapLabel={(b) => t('ui.types.tap', { name: b.name })}
+        label={heading}
+      >
+        {foeOut && !bossIntro && (
+          <FoePlate
+            b={st.enemy}
+            hp={fx.hp[st.enemy.uid] ?? st.enemy.hp}
+            party={party}
+            onClick={tapMatchups && (() => tapMatchups('enemy'))}
+            open={matchups === 'enemy'}
+          />
+        )}
+        {ownOut && !bossIntro && (
+          <OwnPlate
+            b={active}
+            hp={fx.hp[active.uid] ?? active.hp}
+            onClick={tapMatchups && (() => tapMatchups('player'))}
+            open={matchups === 'player'}
+          />
+        )}
+        {matchups && (
+          <MatchupPopup
+            b={matchups === 'enemy' ? st.enemy : active}
+            side={matchups}
+            onClose={() => setMatchups(null)}
+          />
+        )}
+        <AnimatePresence>
+          {fx.banner && (
+            <motion.div
+              key={fx.banner.id}
+              className="pointer-events-none absolute inset-x-0 top-[38%] flex justify-center"
+              initial={{ scale: 0.3, opacity: 0 }}
+              animate={{ scale: [0.3, 1.2, 1], opacity: [0, 1, 1, 0] }}
+              transition={{ duration: (quick ? 0.6 : 1.2) * pace, times: [0, 0.2, 0.8, 1] }}
+            >
+              <span
+                className={cx(
+                  'px-3 pb-1 pt-0.5 text-[22px] leading-none shadow-ring',
+                  BANNER_TONE[fx.banner.tone],
+                )}
+              >
+                {fx.banner.text}
+              </span>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </BattleStage>
+    </div>
+  )
+
   return (
     <PaceContext.Provider value={pace}>
-    {/* The scene keeps the backgrounds' 240×112 shape, so its width sets its height: capped on desktop so the tray and
-        controls stay in view (shorter desktops get a narrower column). */}
-    <div className={cx('relative mx-auto flex w-full flex-col gap-2 sm:gap-3', desktop ? (roomy ? 'max-w-3xl' : 'max-w-[640px]') : 'max-w-5xl')}>
-      <h1 className="sr-only">
-        {t('ui.battle.heading', {
-          mine: active.name,
-          foe: trainerName
-            ? t('ui.battle.theirs', { trainer: trainerName, name: st.enemy.name })
-            : st.kind === 'wild'
-              ? t('ui.battle.aWild', { name: st.enemy.name })
-              : st.enemy.name,
-        })}
-      </h1>
-      {/* Scene: the area's battle background, the foe on the far platform, yours from behind on the near one. */}
-      <div className="pixel-panel overflow-hidden p-0">
-        <div ref={scene} className="relative w-full" style={{ paddingTop: compact ? SKY_BAND : 0 }} data-background={background}>
-          {compact && (
-            <div
-              className="absolute inset-x-0 top-0"
-              style={{ height: SKY_BAND, backgroundImage: `url(/battle/${background}.png)`, backgroundSize: '100% auto', imageRendering: 'pixelated' }}
-              aria-hidden
-            />
-          )}
+      <div className="mx-auto w-full lg:grid lg:max-w-[1000px] lg:grid-cols-[minmax(0,1fr)_300px] lg:items-start lg:gap-4 lg:p-4">
+        <section
+          aria-label={heading}
+          className="mx-auto flex min-h-[100dvh] w-full max-w-[max(300px,min(560px,calc((100dvh_-_330px)_*_1.5)))] flex-col lg:min-h-0"
+        >
+          <h1 className="sr-only">{heading}</h1>
+          {stage}
           <div
-            className="relative w-full overflow-hidden"
-            style={{
-              aspectRatio: `${SCENE_W} / ${SCENE_H}`,
-              backgroundImage: `url(/battle/${background}.png)`,
-              backgroundSize: '100% 100%',
-              imageRendering: 'pixelated',
-            }}
+            ref={panel}
+            className="flex flex-1 flex-col gap-2 px-3 pt-3"
+            style={{ paddingBottom: 'calc(12px + env(safe-area-inset-bottom))' }}
           >
-            {/* Under the sky strip, the background's own striped top would show twice: flatten it. */}
-            {compact && <div className="absolute inset-x-0 top-0" style={{ height: 20 * scale, background: SKY[background] }} aria-hidden />}
-            {scale > 0 && (
+            <p
+              className="pixel-dialogue m-0 flex min-h-[64px] items-center px-3 py-1.5 text-[20px] leading-[1.15]"
+              aria-live="polite"
+            >
+              {message}
+            </p>
+            {catching ? (
+              <CatchPanel
+                c={run.catch!}
+                onThrow={onThrow}
+                rolled={catchBeat.rolled}
+                revealed={catchBeat.revealed}
+              />
+            ) : over ? (
+              <div className="mt-auto">{actions}</div>
+            ) : (
               <>
-                <SpriteStage
-                  onClick={typeHints ? () => setMatchups((v) => (v === 'enemy' ? null : 'enemy')) : undefined}
-                  battler={st.enemy}
-                  side="enemy"
-                  fainted={!!fx.fainted[st.enemy.uid]}
-                  scale={scale}
-                  compact={compact}
-                  fx={fx}
-                  anchorRef={enemyAnchor}
-                  hidden={trainerIntro}
+                <DiceTray
+                  tray={tray}
+                  live={ready && rolling}
+                  selected={st.selected}
+                  combo={ring}
+                  onToggle={canAct && rolling && !auto ? (i) => dispatch({ t: 'TOGGLE_DIE', i }) : undefined}
+                  size={dieSize}
+                  foeName={st.enemy.name}
                 />
-                <AnimatePresence>
-                  {trainerIntro && isTrainerFight && (
-                    <motion.div
-                      key="trainer"
-                      className="absolute z-10"
-                      style={{
-                        left: (FOE_SPOT.x - CELL / 2) * scale,
-                        top: (FOE_SPOT.feet - CELL + 2) * scale,
-                        width: CELL * scale,
-                        height: CELL * scale,
-                      }}
-                      initial={{ x: 90, opacity: 0 }}
-                      animate={{ x: 0, opacity: 1 }}
-                      exit={{ x: 110, opacity: 0, transition: { duration: 0.2 * pace, ease: 'easeIn' } }}
-                      transition={{ duration: 0.22 * pace, ease: 'easeOut' }}
-                      aria-hidden
-                    >
-                      <TrainerSprite src={trainerSprite ?? ''} size={Math.round(CELL * scale)} />
-                    </motion.div>
+                <div
+                  className="flex min-h-[30px] flex-wrap items-center justify-center gap-x-2 gap-y-1"
+                  aria-live="polite"
+                >
+                  {fx.chip && (
+                    <Chip key={fx.chip.id} tone="gold" className="text-[16px]">
+                      {fx.chip.text}
+                    </Chip>
                   )}
-                </AnimatePresence>
-                <SpriteStage
-                  onClick={typeHints ? () => setMatchups((v) => (v === 'player' ? null : 'player')) : undefined}
-                  battler={active}
-                  side="player"
-                  fainted={!!fx.fainted[active.uid]}
-                  scale={scale}
-                  compact={compact}
-                  fx={fx}
-                  anchorRef={playerAnchor}
-                  hidden={sendingUid === active.uid}
-                />
-                {sendingUid === active.uid && (
-                  <div
-                    key={sendingUid}
-                    className="absolute"
-                    style={{ left: ((compact ? OWN_SPOT_COMPACT : OWN_SPOT).x - CELL / 2) * scale, top: (SCENE_H - CELL) * scale, width: CELL * scale, height: CELL * scale }}
-                  >
-                    <SendOut character={character} size={Math.round(CELL * scale)} />
+                  {ready && preview && (
+                    <Readout
+                      preview={preview}
+                      activeName={active.name}
+                      open={showBreakdown}
+                      onToggle={() => setShowBreakdown((v) => !v)}
+                    />
+                  )}
+                </div>
+                {ready && preview && showBreakdown && <DamageRecap result={preview.r} />}
+                {ready && preview && !auto && statusTip && preview.almost.some((s) => s.have > 0) && (
+                  <OakTip onClose={closeStatusTip}>
+                    {(() => {
+                      const s = preview.almost.find((x) => x.have > 0)!
+                      return t('ui.battle.statusTip', {
+                        status: statusName(s.status),
+                        need: s.need,
+                        have: s.have,
+                        counts: t(s.have === 1 ? 'ui.battle.countsOne' : 'ui.battle.countsMany', {
+                          value: s.value,
+                        }),
+                      })
+                    })()}
+                  </OakTip>
+                )}
+                {extras && (
+                  <div className="flex flex-wrap items-center justify-center gap-2">
+                    {megaOpts.length > 0 && (
+                      <PixelButton
+                        size="sm"
+                        variant="gold"
+                        disabled={!canAct}
+                        title={t('ui.battle.megaOnce')}
+                        // One Mega form: straight in. Several (Charizard X and Y…): the player picks.
+                        onClick={() =>
+                          megaOpts.length === 1 ? megaEvolve(megaOpts[0]!.dex) : setMenu('mega')
+                        }
+                      >
+                        <PixelIcon name="up" size={14} /> {t(megaLabel)}
+                      </PixelButton>
+                    )}
+                    {gmaxOpts.length > 0 && (
+                      <PixelButton
+                        size="sm"
+                        variant="gold"
+                        disabled={!canAct}
+                        title={t(
+                          `ui.battle.gmaxHint.${data.config.gigantamax.turns === 1 ? 'one' : 'other'}`,
+                          {
+                            n: data.config.gigantamax.turns,
+                          },
+                        )}
+                        onClick={() => {
+                          setMenu(null)
+                          dispatch({ t: 'GMAX', toDex: gmaxOpts[0]!.dex })
+                        }}
+                      >
+                        <PixelIcon name="up" size={14} /> {t('ui.battle.gmax')}
+                      </PixelButton>
+                    )}
+                    {formOpts.length > 0 && (
+                      <PixelButton size="sm" disabled={!canAct} onClick={() => setMenu('form')}>
+                        <PixelIcon name="dice" size={14} /> {t('ui.battle.type', { left: formsLeft })}
+                      </PixelButton>
+                    )}
+                    {st.canRun && (
+                      <PixelButton
+                        size="sm"
+                        variant="ghost"
+                        disabled={!canAct}
+                        onClick={() => dispatch({ t: 'RUN' })}
+                      >
+                        <PixelIcon name="run" size={14} /> {t('ui.battle.run')}
+                      </PixelButton>
+                    )}
                   </div>
                 )}
+                <div className="min-h-[56px]">{actions}</div>
+                <div className="mt-auto flex items-center gap-2">
+                  {versus ? (
+                    <span className="min-w-0 truncate text-[20px] text-muted">
+                      {t('ui.battle.vsName', { name: versus.trainerName })}
+                    </span>
+                  ) : (
+                    ownedItems.length > 0 &&
+                    !auto && (
+                      <BagButton
+                        disabled={!canItem || usefulItems.length === 0}
+                        title={st.itemUsedThisTurn ? t('ui.battle.oneItemPerTurn') : undefined}
+                        onClick={() => setMenu('item')}
+                      />
+                    )
+                  )}
+                  <div className="ml-auto flex items-center gap-1.5">
+                    <TeamPips
+                      team={st.player}
+                      activeUid={active.uid}
+                      hpOf={(b) => fx.hp[b.uid] ?? b.hp}
+                      canSwitch={!auto && (forced || (canAct && showSwitch))}
+                      calling={forced && !auto}
+                      onPick={pickPip}
+                    />
+                    {!wide && (
+                      <button
+                        type="button"
+                        aria-label={t('ui.battle.history')}
+                        title={t('ui.battle.history')}
+                        onClick={() => setMenu('history')}
+                        className="grid min-h-[48px] min-w-[44px] place-items-center bg-paper shadow-ring"
+                      >
+                        <PixelIcon name="history" size={20} />
+                      </button>
+                    )}
+                  </div>
+                </div>
               </>
             )}
           </div>
-
-          <BattlerPanel
-            b={st.enemy}
-            hp={fx.hp[st.enemy.uid] ?? st.enemy.hp}
-            side="enemy"
-            onClick={typeHints ? () => setMatchups((v) => (v === 'enemy' ? null : 'enemy')) : undefined}
-            open={matchups === 'enemy'}
-            compact={compact}
-            className={cx('absolute z-10', compact ? 'left-[3px] top-[3px] w-[60%]' : 'left-[2%] top-[3%] w-[46%]')}
-            badges={
-              trainerLeft > 0 && (
-                <span className="flex items-center gap-0.5">
-                  {Array.from({ length: trainerTeam }, (_, i) => (
-                    <PixelIcon key={i} name="ball" size={12} style={{ opacity: i < trainerIndex ? 0.3 : 1 }} />
-                  ))}
-                </span>
-              )
-            }
-          />
-          <BattlerPanel
-            b={active}
-            hp={fx.hp[active.uid] ?? active.hp}
-            side="player"
-            onClick={typeHints ? () => setMatchups((v) => (v === 'player' ? null : 'player')) : undefined}
-            open={matchups === 'player'}
-            compact={compact}
-            className={cx('absolute z-10', compact ? 'bottom-[3px] right-[3px] w-[57%]' : 'bottom-[3%] right-[2%] w-[46%]')}
-            badges={teamPips}
-            footer={
-              <div className="mt-1 flex items-center justify-between gap-1 text-base leading-none">
-                <span className="flex items-center gap-1 whitespace-nowrap" title={t('ui.battle.rerollsLeft')}>
-                  <PixelIcon name="reroll" size={12} />{' '}
-                  {t('ui.battle.rerollsOf', { left: active.rerollsLeft, max: active.rerolls })}
-                </span>
-                <StatusIcons status={active.status} />
-                {teamPips}
-              </div>
-            }
-          />
-
-          {matchups && (
-            <MatchupPopup
-              b={matchups === 'enemy' ? st.enemy : active}
-              side={matchups}
-              onClose={() => setMatchups(null)}
-            />
-          )}
-
-          <ParticleCanvas ref={particles} className="pointer-events-none absolute inset-0 z-20 h-full w-full" />
-
-          <AnimatePresence>
-            {fx.banner && (
-              <motion.div
-                key={fx.banner.id}
-                className="pointer-events-none absolute inset-x-0 top-[38%] z-20 flex justify-center"
-                initial={{ scale: 0.3, opacity: 0 }}
-                animate={{ scale: [0.3, 1.25, 1], opacity: [0, 1, 1, 0] }}
-                transition={{ duration: 1.2 * pace, times: [0, 0.2, 0.8, 1] }}
-              >
-                <span
-                  className={cx(
-                    'border-[3px] border-ink px-4 py-1 text-2xl shadow-hard sm:text-3xl',
-                    fx.banner.tone === 'super' && 'bg-gold text-ink',
-                    fx.banner.tone === 'weak' && 'bg-shadow text-panel',
-                    fx.banner.tone === 'immune' && 'bg-ink text-panel',
-                    fx.banner.tone === 'info' && 'bg-panel text-ink',
-                  )}
-                >
-                  {fx.banner.text}
-                </span>
-              </motion.div>
+        </section>
+        {wide && (
+          <aside className="flex flex-col gap-2">
+            <BattleHistory battle={battle} cursor={fx.cursor} defaultOpen />
+            {canAct && !auto && (
+              <p className="m-0 font-pixel-sm text-[15px] text-muted">
+                {t('ui.battle.keys', { action: t(rolling ? 'ui.battle.keyAttack' : 'ui.battle.keyRoll') })}
+              </p>
             )}
-          </AnimatePresence>
-
-          {bossIntro && (
-            <motion.div
-              className="absolute inset-0 z-30 flex items-center justify-center gap-3 bg-ink text-panel sm:gap-6"
-              initial={{ opacity: 1 }}
-              animate={{ opacity: [1, 1, 0] }}
-              transition={{ duration: 1.9 * pace, times: [0, 0.8, 1] }}
-            >
-              <motion.div initial={{ scale: 0.6 }} animate={{ scale: 1 }} transition={{ duration: 1.2 * pace }}>
-                <SpriteImg dex={st.enemy.dex} size={Math.round(CELL * scale * 1.3)} silhouette />
-              </motion.div>
-              <div className="flex flex-col items-center">
-                <div className="text-lg tracking-[0.4em] text-gold sm:text-xl">{t('ui.enc.legendaryTag')}</div>
-                <div className="text-4xl sm:text-5xl">{st.enemy.name}</div>
-                <div className="text-xl sm:text-2xl">{t('ui.common.level.short', { n: st.enemy.level })}</div>
-              </div>
-            </motion.div>
-          )}
-        </div>
-      </div>
-
-      {/* Message + tray */}
-      <div
-        className={cx(
-          'pixel-dialogue flex flex-col gap-2',
-          short ? 'p-2' : 'p-3',
-          !desktop && 'sticky bottom-0 z-30',
-        )}
-        style={{ paddingBottom: desktop ? undefined : `calc(${short ? '0.5rem' : '0.75rem'} + env(safe-area-inset-bottom))` }}
-      >
-        <div className={cx('min-h-[1.6em] leading-tight', short ? 'text-xl' : 'text-2xl')} aria-live="polite">
-          {fx.message}
-        </div>
-
-        <motion.div
-          key={fx.fly ? `fly${fx.fly.id}` : 'tray'}
-          className={cx('flex flex-wrap items-center justify-center gap-2 sm:gap-3', short ? 'min-h-[64px]' : 'min-h-[72px]')}
-          initial={false}
-          animate={fx.fly && !reduced ? { y: fx.fly.to === 'enemy' ? -140 : 60, opacity: 0, scale: 0.6 } : { y: 0, opacity: 1, scale: 1 }}
-          transition={{ duration: 0.35 * pace, ease: 'easeIn' }}
-        >
-          {tray?.dice.map((d, i) => (
-            <div key={i} className="flex flex-col items-center gap-0.5">
-              <Die
-                type={d.type}
-                face={faceOf(d, data)}
-                size={dieSize}
-                rollKey={tray.keys[i]}
-                delay={i * 0.06 * pace}
-                selected={ready && rolling && !!st.selected[i]}
-                onClick={canAct && rolling && !auto ? () => dispatch({ t: 'TOGGLE_DIE', i }) : undefined}
-                locked={tray.side === 'enemy'}
-                asButton={tray.side === 'player'}
-              />
-              {desktop && ready && rolling && <span className="font-mono text-xs text-muted">{i + 1}</span>}
-            </div>
-          ))}
-          {canAct && st.phase === 'player_roll' && <span className="text-xl text-muted">{t('ui.battle.rollingDice')}</span>}
-          {tray?.side === 'enemy' && (
-            <span className="w-full text-center text-sm uppercase tracking-widest text-muted">{t('ui.battle.enemyRoll')}</span>
-          )}
-        </motion.div>
-
-        {/* Live combo readout */}
-        {ready && preview && (
-          <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-xl">
-            {preview.recoil > 0 && (
-              <span className="text-danger">{t('ui.battle.confusedRecoil', { name: active.name, amount: preview.recoil })}</span>
-            )}
-            <span className={preview.r.combo ? 'text-ink' : 'text-muted'}>
-              {preview.r.combo
-                ? t('ui.battle.comboIs', { combo: comboName(preview.r.combo.key).toUpperCase(), bonus: preview.r.combo.bonus })
-                : t('ui.battle.noCombo')}
-            </span>
-            <button
-              type="button"
-              aria-expanded={showBreakdown}
-              aria-label={t('ui.battle.damageDetails', {
-                amount: preview.r.final,
-                action: t(showBreakdown ? 'ui.battle.hide' : 'ui.battle.show'),
-              })}
-              title={t('ui.battle.damageTitle')}
-              className={cx('inline-flex min-h-[44px] min-w-[44px] items-center justify-center gap-1.5 px-1 leading-none md:min-h-[32px]', short ? 'text-xl' : 'text-2xl')}
-              onClick={() => setShowBreakdown((v) => !v)}
-            >
-              <PixelIcon name="sword" size={short ? 16 : 20} /> {preview.r.final}
-            </button>
-            {preview.statuses.map((s) => (
-              <span key={s.status} className="inline-flex items-center gap-1 border-2 border-ink bg-panel px-1 text-base">
-                <PixelIcon name={STATUS_ICON[s.status] ?? 'star'} size={12} />
-                {t(`ui.status.${s.status}.label`)}
-                {s.stacks && s.stacks > 1 ? ` ×${s.stacks}` : ''}
-              </span>
-            ))}
-            {preview.almost.map((s) => (
-              <span
-                key={s.status}
-                className="inline-flex items-center gap-1 border-2 border-dashed px-1 text-base text-muted"
-                style={{ borderColor: STATUS_COLORS[s.status] }}
-                title={t('ui.battle.almostStatus', { status: statusName(s.status), need: s.need })}
-              >
-                <PixelIcon name={STATUS_ICON[s.status] ?? 'star'} size={12} />
-                {t(`ui.status.${s.status}.label`)} {s.have}/{s.need}
-              </span>
-            ))}
-          </div>
-        )}
-        {ready && preview && !auto && statusTip && preview.almost.some((s) => s.have > 0) && (
-          <OakTip onClose={closeStatusTip}>
-            {(() => {
-              const s = preview.almost.find((x) => x.have > 0)!
-              return t('ui.battle.statusTip', {
-                status: statusName(s.status),
-                need: s.need,
-                have: s.have,
-                counts: t(s.have === 1 ? 'ui.battle.countsOne' : 'ui.battle.countsMany', { value: s.value }),
-              })
-            })()}
-          </OakTip>
-        )}
-        {ready && preview && showBreakdown && <DamageRecap result={preview.r} />}
-
-        {/* Controls — auto-mode plays them itself and only offers STOP. */}
-        {auto && !terminal && (
-          <div className="flex flex-wrap items-center justify-center gap-2" role="status">
-            <span className="flex items-center gap-1 text-xl">
-              <PixelIcon name="dice" size={18} /> {t('ui.battle.autoMode')}
-            </span>
-            {/* A Versus fight is decided already: there is nothing to take over. */}
-            {!versus && (
-              <PixelButton size={minorSize} onClick={() => setSettings({ autoMode: false })}>
-                {t('ui.battle.stop')}
-              </PixelButton>
-            )}
-          </div>
-        )}
-        {!auto && stunned && (
-          <PixelButton variant="primary" size={mainSize} className="self-center" onClick={() => dispatch({ t: 'PASS' })}>
-            {t('ui.battle.skipTurn')}
-          </PixelButton>
-        )}
-        {!auto && rolling && (
-          <div className="grid w-full grid-cols-2 items-start gap-2 sm:mx-auto sm:max-w-md">
-            <div className="flex flex-col gap-1">
-              <PixelButton
-                size={mainSize}
-                // Icon + label must stay on one line in a half-width column on narrow phones.
-                className="min-h-[48px] gap-1 whitespace-nowrap px-2 max-[400px]:text-xl"
-                disabled={!canAct || active.rerollsLeft <= 0 || !st.selected.some(Boolean)}
-                onClick={() => dispatch({ t: 'REROLL' })}
-                quiet
-              >
-                <PixelIcon name="reroll" size={18} /> {t('ui.battle.reroll', { left: active.rerollsLeft })}
-              </PixelButton>
-              {active.rerollsLeft > 0 && (
-                <span className={cx('text-center leading-tight text-muted', short ? 'whitespace-nowrap text-sm' : 'text-base')}>{t('ui.battle.selectDice')}</span>
-              )}
-            </div>
-            <PixelButton variant="primary" size={mainSize} className="min-h-[48px] gap-1 whitespace-nowrap px-2 max-[400px]:text-xl" disabled={!canAct} onClick={() => dispatch({ t: 'ATTACK' })}>
-              <PixelIcon name="sword" size={18} /> {t('ui.battle.attack')}
-            </PixelButton>
-          </div>
-        )}
-        {!auto && !terminal && (showItem || showSwitch || st.canRun || megaOpts.length > 0 || gmaxOpts.length > 0 || formOpts.length > 0) && (
-          <div className="flex flex-wrap items-center justify-center gap-2">
-            {megaOpts.length > 0 && (
-              <PixelButton
-                size={minorSize}
-                variant="primary"
-                disabled={!canAct}
-                title={t('ui.battle.megaOnce')}
-                // One Mega form: straight in. Several (Charizard X and Y…): the player picks.
-                onClick={() => (megaOpts.length === 1 ? megaEvolve(megaOpts[0]!.dex) : setMenu('mega'))}
-              >
-                <PixelIcon name="up" size={14} /> {t(megaLabel)}
-              </PixelButton>
-            )}
-            {gmaxOpts.length > 0 && (
-              <PixelButton
-                size={minorSize}
-                variant="primary"
-                disabled={!canAct}
-                title={t(`ui.battle.gmaxHint.${data.config.gigantamax.turns === 1 ? 'one' : 'other'}`, { n: data.config.gigantamax.turns })}
-                onClick={() => {
-                  setMenu(null)
-                  dispatch({ t: 'GMAX', toDex: gmaxOpts[0]!.dex })
-                }}
-              >
-                <PixelIcon name="up" size={14} /> {t('ui.battle.gmax')}
-              </PixelButton>
-            )}
-            {formOpts.length > 0 && (
-              <PixelButton size={minorSize} disabled={!canAct} onClick={() => setMenu('form')}>
-                <PixelIcon name="dice" size={14} /> {t('ui.battle.type', { left: formsLeft })}
-              </PixelButton>
-            )}
-            {showItem && (
-              <PixelButton
-                size={minorSize}
-                disabled={!canItem}
-                title={st.itemUsedThisTurn ? t('ui.battle.oneItemPerTurn') : undefined}
-                onClick={() => setMenu('item')}
-              >
-                <PixelIcon name="potion" size={14} /> {t('ui.battle.item')}
-              </PixelButton>
-            )}
-            {showSwitch && (
-              <PixelButton size={minorSize} disabled={!canAct} onClick={() => setMenu('switch')}>
-                <PixelIcon name="ball" size={14} /> {t('ui.battle.switch')}
-              </PixelButton>
-            )}
-            {st.canRun && (
-              <PixelButton size={minorSize} variant="ghost" disabled={!canAct} onClick={() => dispatch({ t: 'RUN' })}>
-                <PixelIcon name="run" size={14} /> {t('ui.battle.run')}
-              </PixelButton>
-            )}
-          </div>
-        )}
-        {desktop && canAct && !auto && (
-          <div className="text-center text-sm text-muted">
-            {t('ui.battle.keys', { action: t(rolling ? 'ui.battle.keyAttack' : 'ui.battle.keyRoll') })}
-          </div>
+          </aside>
         )}
       </div>
 
-      {/* Phones: the history sits on its own, below the message, dice and controls; it opens in a sheet. */}
-      {!desktop && (
-        <PixelButton size="sm" variant="ghost" className="w-full" onClick={() => setMenu('history')}>
-          <PixelIcon name="history" size={16} /> {t('ui.battle.history')}
-        </PixelButton>
-      )}
-      {desktop && <BattleHistory battle={battle} cursor={fx.cursor} defaultOpen />}
-      <Modal open={menu === 'history'} onClose={() => setMenu(null)} title={t('ui.battle.history')}>
+      <Sheet open={menu === 'history'} onClose={() => setMenu(null)} title={t('ui.battle.history')}>
         <BattleHistoryList battle={battle} cursor={fx.cursor} />
-      </Modal>
+      </Sheet>
 
-      {/* Forced switch after a faint (free) */}
-      <Modal open={ready && !auto && st.phase === 'player_switch'} dismissable={false} title={t('ui.battle.chooseNext')}>
-        <div className="flex flex-col gap-2">
-          {switchTargets.map((p) => (
-            <SwitchRow key={p.uid} b={p} onPick={() => dispatch({ t: 'SWITCH', instanceId: p.uid })} />
-          ))}
-          <ForfeitButton className="mt-1" />
-        </div>
-      </Modal>
-
-      {/* Voluntary switch (costs the turn) */}
+      {/* Switching in: it costs the turn. Forfeit lives here too. */}
       <Modal open={menu === 'switch'} onClose={() => setMenu(null)} title={t('ui.battle.switchCosts')}>
         <div className="flex flex-col gap-2">
           {switchTargets.map((p) => (
@@ -1129,7 +864,11 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
       </Modal>
 
       {/* Mega Evolution: the choice, when the Pokémon has more than one Mega form. */}
-      <Modal open={menu === 'mega' && megaOpts.length > 0} onClose={() => setMenu(null)} title={t('ui.battle.megaTitle')}>
+      <Modal
+        open={menu === 'mega' && megaOpts.length > 0}
+        onClose={() => setMenu(null)}
+        title={t('ui.battle.megaTitle')}
+      >
         <div className="flex flex-col gap-2">
           <p className="copy text-lg">{t('ui.battle.megaPick', { name: active.name })}</p>
           {megaOpts.map((m) => {
@@ -1141,7 +880,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
                 onClick={() => megaEvolve(m.dex)}
                 className="pixel-panel flex w-full items-center gap-3 p-2 text-left enabled:hover:bg-white"
               >
-                <SpriteImg dex={m.dex} size={80} shiny={active.shiny} className="border-[3px] border-ink bg-parchment" />
+                <SpriteImg dex={m.dex} size={80} shiny={active.shiny} className="bg-parchment shadow-ring" />
                 <span className="flex min-w-0 flex-1 flex-col gap-1">
                   <span className="text-2xl leading-none">{m.name}</span>
                   <span className="flex gap-1">
@@ -1160,7 +899,11 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
       </Modal>
 
       {/* Arceus: its type, picked from a menu, a few times per battle. */}
-      <Modal open={menu === 'form' && formOpts.length > 0} onClose={() => setMenu(null)} title={t('ui.battle.typeTitle', { name: active.name })}>
+      <Modal
+        open={menu === 'form' && formOpts.length > 0}
+        onClose={() => setMenu(null)}
+        title={t('ui.battle.typeTitle', { name: active.name })}
+      >
         <div className="flex flex-col gap-2">
           <p className="copy text-base">{t('ui.battle.typeHint', { left: formsLeft })}</p>
           <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
@@ -1182,14 +925,18 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
         </div>
       </Modal>
 
-      {/* Items: one per turn, the turn goes on */}
-      <Modal
+      {/* The Bag: one item a turn, and the turn goes on. */}
+      <Sheet
         open={menu === 'item'}
         onClose={() => {
           setMenu(null)
           setItemKey(null)
         }}
-        title={itemKey ? t('ui.battle.useItemOn', { item: data.items[itemKey]?.name ?? itemKey }) : t('ui.battle.itemsTitle')}
+        title={
+          itemKey
+            ? t('ui.battle.useItemOn', { item: data.items[itemKey]?.name ?? itemKey })
+            : t('ui.battle.itemsTitle')
+        }
       >
         {!itemKey ? (
           <div className="flex flex-col gap-2">
@@ -1197,9 +944,9 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
               const it = data.items[k]!
               const useful = st.player.some((p) => itemHelps(k, p))
               return (
-                <PixelButton
+                <button
                   key={k}
-                  className="justify-between"
+                  type="button"
                   disabled={!useful}
                   onClick={() => {
                     // Ethers go to the Pokémon in battle; everything else asks who.
@@ -1208,15 +955,17 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
                       setMenu(null)
                     } else setItemKey(k)
                   }}
+                  className="flex min-h-[56px] w-full items-center gap-2 bg-paper px-2 py-1 text-left shadow-[inset_0_0_0_2px_#24304f,inset_0_-4px_0_#dfe7f2] disabled:opacity-50"
                 >
-                  <span className="flex min-w-0 items-center gap-2">
-                    <ItemSprite item={it} size={24} />
-                    <span className="min-w-0">
-                      {it.name} <span className="text-base">({effectText(it)})</span>
+                  <ItemSprite item={it} size={32} />
+                  <span className="flex min-w-0 flex-1 flex-col">
+                    <span className="text-[20px] leading-none">{it.name}</span>
+                    <span className="font-pixel-sm text-[15px] leading-tight text-muted">
+                      {effectText(it)}
                     </span>
                   </span>
-                  <span className="font-mono text-base">×{n}</span>
-                </PixelButton>
+                  <span className="font-pixel-sm text-[16px] tabular-nums">×{n}</span>
+                </button>
               )
             })}
           </div>
@@ -1236,14 +985,11 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
             ))}
           </div>
         )}
-      </Modal>
+      </Sheet>
 
-      {!versus && ready && run.phase === 'catch' && <CatchView />}
       {!versus && ready && run.phase === 'victory' && <VictoryView />}
       {!versus && ready && run.phase === 'wipe' && <WipeView />}
       {!versus && ready && run.phase === 'stalemate' && <StalemateView />}
-      {versus && played && versus.end}
-    </div>
     </PaceContext.Provider>
   )
 }
@@ -1255,7 +1001,7 @@ function SwitchRow({ b, onPick, disabled }: { b: Battler; onPick: () => void; di
       type="button"
       disabled={disabled}
       onClick={onPick}
-      className="pixel-panel flex w-full items-center gap-2 p-2 text-left enabled:hover:bg-white"
+      className="pixel-panel flex w-full items-center gap-2 p-2 text-left enabled:hover:bg-white disabled:opacity-50"
     >
       <div className="min-w-0 flex-1">
         <div className="flex items-center justify-between text-xl leading-none">

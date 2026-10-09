@@ -39,7 +39,6 @@ import { pushToast, useGame, type BattleSlice } from '@/store/game'
 import { holdReload, pushSaveNow } from '@/store/sync'
 import { cx } from '@/theme/util'
 import { BattleView, type VersusReplay } from './battle/BattleView'
-import { Overlay } from './battle/VictoryView'
 
 type Tab = 'fight' | 'team' | 'board'
 type Load = { state: 'loading' } | { state: 'ready'; rows: VersusEntry[] } | { state: 'offline' } | { state: 'error'; why: string }
@@ -63,7 +62,8 @@ export function VersusScreen() {
   const auth = useGame((s) => s.auth)
   const [tab, setTab] = useState<Tab>('fight')
   const [load, setLoad] = useState<Load>({ state: 'loading' })
-  const [fight, setFight] = useState<{ fight: VersusFight; foe: VersusEntry } | null>(null)
+  const [fight, setFight] = useState<{ fight: VersusFight; foe: VersusEntry; n: number } | null>(null)
+  const fights = useRef(0)
   const [busy, setBusy] = useState(false)
 
   const refresh = useCallback(() => {
@@ -99,7 +99,7 @@ export function VersusScreen() {
     const result = simulateVersus(me.team, foe.team, data, seed)
     try {
       await recordVersus(foe, seed, result.winner === 'attacker')
-      setFight({ fight: result, foe })
+      setFight({ fight: result, foe, n: ++fights.current })
     } catch (err) {
       console.warn('[versus] record failed', err)
       pushToast(errorText(t, err), 'bad', 4500)
@@ -112,8 +112,11 @@ export function VersusScreen() {
   if (fight)
     return (
       <VersusFightView
+        key={fight.n}
         fight={fight.fight}
         foe={fight.foe}
+        busy={busy}
+        onRematch={() => void startFight(fight.foe)}
         onExit={() => {
           setFight(null)
           refresh()
@@ -475,12 +478,27 @@ function Board({ rows }: { rows: VersusEntry[] }) {
 let replaySeq = 1_000_000
 
 /** One precomputed fight, played back battle by battle on the battle screen, at Versus speed. */
-function VersusFightView({ fight, foe, onExit }: { fight: VersusFight; foe: VersusEntry; onExit: () => void }) {
+function VersusFightView({
+  fight,
+  foe,
+  busy,
+  onRematch,
+  onExit,
+}: {
+  fight: VersusFight
+  foe: VersusEntry
+  /** A rematch is being computed and recorded. */
+  busy: boolean
+  onRematch: () => void
+  onExit: () => void
+}) {
   const { t } = useT()
   const [roundIndex, setRoundIndex] = useState(0)
   const round = fight.rounds[roundIndex]!
   const [slice, setSlice] = useState<BattleSlice>(() => ({ state: round.start.state, log: round.start.log, id: ++replaySeq }))
   const [over, setOver] = useState(false)
+  // SKIP ▸▸: the result is decided before the fight starts, so skipping only plays the rest of the replay at once.
+  const [fast, setFast] = useState(false)
   const cursor = useRef(0)
   const won = fight.winner === 'attacker'
 
@@ -494,13 +512,16 @@ function VersusFightView({ fight, foe, onExit }: { fight: VersusFight; foe: Vers
       return
     }
     const next = fight.rounds[roundIndex + 1]!
-    const timer = setTimeout(() => {
-      cursor.current = 0
-      setRoundIndex(roundIndex + 1)
-      setSlice({ state: next.start.state, log: next.start.log, id: ++replaySeq })
-    }, 700)
+    const timer = setTimeout(
+      () => {
+        cursor.current = 0
+        setRoundIndex(roundIndex + 1)
+        setSlice({ state: next.start.state, log: next.start.log, id: ++replaySeq })
+      },
+      fast ? 0 : 700,
+    )
     return () => clearTimeout(timer)
-  }, [fight, roundIndex])
+  }, [fight, roundIndex, fast])
 
   const replay: VersusReplay = {
     dispatch: (e: BattleEvent) => {
@@ -515,20 +536,26 @@ function VersusFightView({ fight, foe, onExit }: { fight: VersusFight; foe: Vers
     foeCount: foe.team.length,
     foeIndex: round.defenderIndex,
     onPlayed,
+    fast,
+    onSkip: () => setFast(true),
     end: over ? (
-      <Overlay
-        footer={
-          <PixelButton variant="primary" size="lg" className="w-full" onClick={onExit}>
+      <div className="grid gap-2 bg-paper p-3 shadow-[inset_0_0_0_2px_#24304f,inset_0_-4px_0_#dfe7f2]" role="status">
+        <div className="flex items-center gap-2">
+          <TrainerSprite src={avatarOf(foe.avatar).src} size={48} />
+          <h2 className="m-0 text-[28px] font-normal leading-none">{t(won ? 'ui.versus.won.title' : 'ui.versus.lost.title')}</h2>
+        </div>
+        <p className="m-0 font-pixel-sm text-[16px] leading-tight text-muted">
+          {t(won ? 'ui.versus.won.body' : 'ui.versus.lost.body', { name: foe.name })}
+        </p>
+        <div className="grid grid-cols-[1fr_1.4fr] gap-2.5">
+          <PixelButton size="lg" className="whitespace-nowrap px-2" disabled={busy} onClick={onRematch}>
+            {t('ui.battle.rematch')}
+          </PixelButton>
+          <PixelButton variant="primary" size="lg" className="whitespace-nowrap px-2" onClick={onExit}>
             {t('ui.versus.back')}
           </PixelButton>
-        }
-      >
-        <div className="mb-2 text-center text-4xl">{t(won ? 'ui.versus.won.title' : 'ui.versus.lost.title')}</div>
-        <div className="mb-2 flex justify-center">
-          <TrainerSprite src={avatarOf(foe.avatar).src} size={72} />
         </div>
-        <p className="copy text-center text-lg">{t(won ? 'ui.versus.won.body' : 'ui.versus.lost.body', { name: foe.name })}</p>
-      </Overlay>
+      </div>
     ) : undefined,
   }
 
