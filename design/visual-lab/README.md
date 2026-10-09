@@ -6,7 +6,8 @@ A standalone page for deciding the game's next look, outside the app's build. Th
   - the team of three roams the current area seen from the front: friends visit each other, hearts and notes float up, Lapras starts a song the others join (tap one for a hop, a heart and its level and HP)
   - the area plate on top opens the area's details: gym, legendary, one-time finds still there, Pokémon to catch with rarity and levels, the round mix
   - CONTINUE is the one big action
-  - an Areas sheet offers search by area or Pokémon, filters (To catch, Secret, Cleared), sorting and a region switcher; the Areas button turns gold when a new region opens
+  - an Areas sheet offers search by area or Pokémon, filters (To catch, Secret, Cleared), sorting and a region switcher; a card opens its details, GO travels, the outline gives the state; the Areas button turns gold when a new region opens
+  - each area has one picture: the scene the team roams on Home, cropped to its middle in lists
   - widgets show Versus (once three Pokémon reach Lv.50), the newest secret area and the Day Care
   - a game-style tab bar sits at the bottom
 
@@ -40,7 +41,7 @@ node design/visual-lab/serve.mjs   # http://localhost:4173
 | `anims.js` | The eight timelines and the player (60 fixed steps a second, hit-stops, cues for the HUD) |
 | `home.js` | The Home prototype: area scenery per biome, the team and how they get along, the area details, the Areas sheet with the region switcher, widgets, toasts, the three preview saves |
 | `lab.js` | Styles, the 9-slice frame generator (`makeFrame`), the mock screens, the HUD, the moodboards |
-| `assets/` | Showdown's Black/White animated sprites as de-duplicated sheets (`sprites.json` = frame order and timings), menu icons (`dex-icons.png`: #1 to #251), item icons (`items.png`), the game's area banners, `kanto.json` (from `src/data`: areas with levels, wild Pokémon and their odds, gyms, legendaries, one-time and common finds, the round mix, unlocks; regions with their starters), the current grass background |
+| `assets/` | Showdown's Black/White animated sprites as de-duplicated sheets (`sprites.json` = frame order and timings), menu icons (`dex-icons.png`: #1 to #251), item icons (`items.png`), `kanto.json` (from `src/data`: areas with levels, wild Pokémon and their odds, gyms, legendaries, one-time and common finds, the round mix, unlocks; regions with their starters), the current grass background |
 
 ## Porting notes
 

@@ -595,7 +595,6 @@
   .hm-new { background: #ffbe2e; color: #24304f; padding: 1px 5px 2px; font-size: 13px; letter-spacing: 0.04em; box-shadow: inset 0 0 0 2px #24304f; }
   .hm-ban { position: relative; display: block; line-height: 0; box-shadow: 0 0 0 2px #24304f; }
   .hm-ban img { width: 100%; height: auto; image-rendering: pixelated; }
-  .hm-ban.flip img:first-child { transform: scaleX(-1); }
   .hm-ban.dim img:first-child { filter: grayscale(0.7) brightness(0.92); }
   .hm-ban img.lock { position: absolute; width: 16px; left: 50%; top: 50%; transform: translate(-50%, -50%); }
   .hm-w-title { font-size: 20px; line-height: 1; }
@@ -657,9 +656,16 @@
   .hm-sort button[aria-checked='true'] { box-shadow: inset 0 0 0 2px #24304f, inset 0 -3px 0 #ffbe2e; }
   .hm-list { list-style: none; margin: 0; padding: 10px 14px 18px; overflow-y: auto; display: grid; gap: 10px; align-content: start; flex: 1; overscroll-behavior: contain; }
   .hm-card-area { appearance: none; border: 0; width: 100%; display: grid; gap: 5px; padding: 6px 6px 8px; text-align: left; background: #ffffff; box-shadow: inset 0 0 0 2px #24304f, inset 0 -4px 0 #dfe7f2; }
-  .hm-card-area.here { box-shadow: inset 0 0 0 3px #f2553f, inset 0 -5px 0 #ffd2c8; }
-  .hm-card-area.locked { background: #f1f4f9; box-shadow: inset 0 0 0 2px #b6c3d9; color: #5c6a8a; }
-  .hm-card-area:not(.locked):hover { transform: translateY(-1px); }
+  .hm-card-area.st-here { box-shadow: inset 0 0 0 3px #ff8a3d, inset 0 -5px 0 #ffe0c8; }
+  .hm-card-area.st-cleared { box-shadow: inset 0 0 0 3px #34c97a, inset 0 -5px 0 #d2f3e0; }
+  .hm-card-area.st-locked { background: #f1f4f9; box-shadow: inset 0 0 0 2px #b6c3d9; color: #5c6a8a; }
+  .hm-card-area:not(.st-locked):hover { transform: translateY(-1px); }
+  .hm-card-area .hm-ca-row, .hm-card-area .hm-hits { padding-right: 70px; }
+  .hm-gobtn { appearance: none; border: 0; position: absolute; right: 10px; bottom: 12px; width: 60px; height: 44px; display: grid; place-items: center; background: #f2553f; color: #ffffff; font-size: 24px; line-height: 1; letter-spacing: 0.06em; text-shadow: 0 2px 0 #b8352a; box-shadow: inset 0 0 0 2px #24304f, inset 0 -4px 0 #c4382a, inset 0 2px 0 #ff9a85; }
+  .hm-gobtn:active { box-shadow: inset 0 0 0 2px #24304f, inset 0 2px 0 #c4382a; padding-top: 3px; }
+  .hm-gobtn:focus-visible { outline: 3px solid #24304f; outline-offset: 2px; }
+  .hm-gobtn.off { background: #e3e8f0; box-shadow: inset 0 0 0 2px #b6c3d9; }
+  .hm-gobtn.off img { width: 16px; height: 16px; opacity: 0.7; }
   .hm-card-area .hm-ban { box-shadow: none; }
   .hm-gym { position: absolute; right: 4px; top: 4px; font-family: 'Jersey 15', sans-serif; font-size: 13px; line-height: 1; padding: 2px 4px; background: #24304f; color: #ffe7a8; }
   .hm-ca-row { display: flex; align-items: center; gap: 8px; padding: 0 4px; min-width: 0; }
@@ -684,21 +690,11 @@
   .hm-screen .it.coin { width: 16px; height: 16px; margin: 7px; background: none; }
   .hm-screen .ico.x2 { width: 80px; height: 60px; background-size: 1280px auto; }
   .hm-ok { font-family: 'Jersey 15', sans-serif; font-size: 14px; line-height: 1; padding: 2px 6px 3px; background: #d8f5e4; color: #1d6b43; box-shadow: inset 0 0 0 2px #34c97a; white-space: nowrap; }
-  /* a pixel chevron, drawn from 2 px squares */
-  .hm-more, .hm-caret { position: relative; width: 22px; height: 22px; flex: none; background: #24304f; }
-  .hm-more::before, .hm-caret::before { content: ''; position: absolute; width: 2px; height: 2px; background: #fff; }
-  .hm-more::before { left: 8px; top: 5px; box-shadow: 2px 0 #fff, 2px 2px #fff, 4px 2px #fff, 4px 4px #fff, 6px 4px #fff, 4px 6px #fff, 2px 6px #fff, 2px 8px #fff, 0 8px #fff; }
-  .hm-caret::before { left: 5px; top: 7px; box-shadow: 0 2px #fff, 2px 2px #fff, 2px 4px #fff, 4px 4px #fff, 4px 6px #fff, 6px 4px #fff, 6px 6px #fff, 8px 2px #fff, 8px 4px #fff, 10px 0 #fff, 10px 2px #fff; }
-  .hm-region[aria-expanded='true'] .hm-caret { transform: scaleY(-1); }
 
   /* the area plate is a button: it opens the area's details */
   .hm-area { appearance: none; border: 0; text-align: left; font: inherit; color: inherit; cursor: pointer; }
   .hm-area:active { transform: translateY(1px); }
-  .hm-area:focus-visible, .hm-info:focus-visible, .hm-region:focus-visible, .hm-reg:focus-visible, .hm-starters button:focus-visible, .hm-seg button:focus-visible { outline: 3px solid #f2553f; outline-offset: 2px; }
-  .hm-finds { display: inline-flex; align-items: center; font-family: 'Jersey 15', sans-serif; font-size: 16px; color: #8a5a00; white-space: nowrap; }
-  .hm-finds .it { margin: -8px -4px -8px -6px; }
-  .hm-finds .it.coin { margin: 0 2px 0 0; width: 12px; height: 12px; }
-  .hm-leg { color: #e8a800; font-size: 16px; line-height: 1; text-shadow: 0 1px 0 #24304f; }
+  .hm-area:focus-visible, .hm-regbtn:focus-visible, .hm-reg:focus-visible, .hm-starters button:focus-visible, .hm-seg button:focus-visible { outline: 3px solid #f2553f; outline-offset: 2px; }
 
   /* the Areas button: plain, NEW dot, gold for a new region */
   .hm-map { position: relative; }
@@ -733,13 +729,17 @@
   .hm-vs-big { font-size: 64px; line-height: 1; color: #ffbe2e; text-shadow: 0 4px 0 #c4382a, 4px 0 0 #c4382a; letter-spacing: 0.04em; }
 
   /* the region switcher, in the Areas sheet */
-  .hm-region { appearance: none; border: 0; background: none; padding: 0 2px; margin-left: -2px; min-height: 44px; display: inline-flex; align-items: center; gap: 8px; font-size: 30px; line-height: 1; }
-  .hm-region b { font-weight: 400; }
-  .hm-region .hm-new { font-size: 13px; }
+  .hm-title-row { display: flex; align-items: center; gap: 10px; min-height: 44px; }
+  .hm-regbtn { appearance: none; border: 0; min-height: 40px; display: inline-flex; align-items: center; gap: 6px; padding: 0 10px 2px 8px; background: #ffffff; font-size: 18px; line-height: 1; box-shadow: inset 0 0 0 2px #24304f, inset 0 -4px 0 #dfe7f2; }
+  .hm-regbtn img { width: 24px; height: 24px; }
+  .hm-regbtn .hm-new { font-size: 12px; margin-left: 2px; }
+  .hm-regbtn[aria-pressed='true'] { background: #24304f; color: #fbfdff; box-shadow: inset 0 0 0 2px #24304f, inset 0 3px 0 #11182c; }
+  .hm-regbtn:active { box-shadow: inset 0 0 0 2px #24304f, inset 0 2px 0 #dfe7f2; }
+  .hm-gym.new { background: #ffbe2e; color: #24304f; box-shadow: inset 0 0 0 1px #24304f; }
   .hm-view { display: flex; flex-direction: column; flex: 1; min-height: 0; }
   .hm-regions { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 4px 14px 18px; display: grid; gap: 12px; align-content: start; }
   .hm-reg { appearance: none; border: 0; width: 100%; display: grid; gap: 6px; padding: 6px 6px 10px; text-align: left; background: #ffffff; box-shadow: inset 0 0 0 2px #24304f, inset 0 -4px 0 #dfe7f2; }
-  .hm-reg.here { box-shadow: inset 0 0 0 3px #f2553f, inset 0 -5px 0 #ffd2c8; }
+  .hm-reg.st-here { box-shadow: inset 0 0 0 3px #ff8a3d, inset 0 -5px 0 #ffe0c8; }
   .hm-reg .hm-ban { box-shadow: none; }
   .hm-reg-row { display: flex; align-items: center; gap: 8px; padding: 0 4px; min-width: 0; }
   .hm-reg-row b { font-weight: 400; font-size: 24px; line-height: 1; flex: 1; }
@@ -770,10 +770,6 @@
   .hm-tags { position: absolute; left: 4px; top: 4px; display: flex; gap: 4px; }
   .hm-tags .hm-gym { position: static; }
   .hm-gym.leg { background: #ffbe2e; color: #24304f; }
-  .hm-card-area .hm-finds { margin-left: auto; }
-  .hm-info { appearance: none; border: 0; position: absolute; top: 8px; right: 8px; width: 40px; height: 40px; display: grid; place-items: center; background: #fbfdff; box-shadow: inset 0 0 0 2px #24304f, inset 0 -4px 0 #dfe7f2; font-size: 24px; line-height: 1; }
-  .hm-info span { margin-top: -3px; }
-  .hm-info:active { box-shadow: inset 0 0 0 2px #24304f, inset 0 2px 0 #dfe7f2; }
 
   /* an area's details */
   .hm-detail .hm-panel { height: 92%; max-height: 92%; }
@@ -945,7 +941,7 @@
                 <div class="hm-scrim" data-close></div>
                 <div class="hm-panel" role="dialog" aria-modal="true" aria-labelledby="hm-sheet-title">
                   <div class="hm-grab" aria-hidden="true"></div>
-                  <header class="hm-sheet-head"><div><h2 id="hm-sheet-title" class="sr">Areas</h2><button type="button" class="hm-region" id="hm-region" aria-controls="hm-regions" aria-expanded="false"></button><p id="hm-sheet-sub"></p></div><button type="button" class="hm-x" data-close aria-label="Close the areas">✕</button></header>
+                  <header class="hm-sheet-head"><div><div class="hm-title-row"><h2 id="hm-sheet-title">Kanto</h2><button type="button" class="hm-regbtn" id="hm-region" aria-controls="hm-regions" aria-pressed="false"></button></div><p id="hm-sheet-sub"></p></div><button type="button" class="hm-x" data-close aria-label="Close the areas">✕</button></header>
                   <div class="hm-view" id="hm-areas-view">
                   <div class="hm-search"><label for="hm-q" class="sr">Search an area or a Pokémon</label><input id="hm-q" type="search" placeholder="Search an area or a Pokémon" autocomplete="off" spellcheck="false" /></div>
                   <div class="hm-chips" id="hm-chips" role="radiogroup" aria-label="Show">
@@ -982,10 +978,10 @@
         <p class="home-thesis">One big button to play, your team on show, everything else one tap away. It replaces the Map page as the place you land.</p>
         <ol class="zones">
           <li><b>Top bar</b><span>You, your badges, your gold. The <em>+</em> opens the Shop; the cup opens the leaderboard.</span></li>
-          <li><b>Where you are</b><span>Area, level range, rounds, species caught here, limited finds left. Tap it for the <em>area’s details</em>: gym, legendary and when it shows up, one-time finds still there, Pokémon to catch with rarity and levels, what a round brings.</span></li>
+          <li><b>Where you are</b><span>Area, level range, rounds, species caught here. Tap it for the <em>area’s details</em>: gym, legendary and when it shows up, one-time finds still there, Pokémon to catch with rarity and levels, what a round brings.</span></li>
           <li><b>Your team, roaming</b><span>The three of them (a team is three at most) wander the area’s own scenery. Friends walk over to each other and hop, <em>little hearts</em> float up; Lapras starts a song and the others join, <em>notes</em> rising. Tap one: it hops, a heart pops, its card shows. A tired one sweats and naps.</span></li>
           <li><b>Continue</b><span>The only big button, in thumb reach, and it says what comes next.</span></li>
-          <li><b>Areas</b><span>A sheet, not a page. Search by area <em>or by Pokémon</em> (“Pikachu” finds where it lives), filter To catch, Secret or Cleared, sort by route, level or most to catch; <em>i</em> opens an area’s details, a locked card shows what opens it. The region name on top <em>switches region</em>: the next one appears once the League is won, starters included. The button itself has three states: plain, a NEW dot, <em>gold “New region”</em>.</span></li>
+          <li><b>Areas</b><span>A sheet, not a page. Search by area <em>or by Pokémon</em> (“Pikachu” finds where it lives), filter To catch, Secret or Cleared, sort by route, level or most to catch. A card opens the area’s details; <em>GO</em> travels. The outline is the state: <em>orange</em> where you are, <em>green</em> cleared, grey locked. Each area has one picture: the scene the team roams, and cards show its middle. <em>Regions</em>, next to the region name, switches region: the next one appears once the League is won, starters included. The Areas button has three states: plain, a NEW dot, <em>gold “New region”</em>.</span></li>
           <li><b>Widgets</b><span><em>Versus</em> joins once three Pokémon reach Lv.50: Set team first, then Fight. The newest secret area travels in one tap; when there is none, the next one shows its progress. The Day Care shows who is ready and collects in place.</span></li>
           <li><b>Tab bar</b><span>Home in the middle. Dots only for things you can act on: affordable upgrades, a new Pokédex entry.</span></li>
         </ol>
