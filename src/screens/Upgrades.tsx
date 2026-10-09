@@ -78,7 +78,7 @@ function Pips({ level, max }: { level: number; max: number }) {
       style={{ borderRadius: 2 }}
     >
       {Array.from({ length: max }, (_, i) => (
-        <span key={i} className={cx('flex-1', i < level ? 'bg-gold' : 'bg-[#3e3552]')} />
+        <span key={i} className={cx('flex-1', i < level ? 'bg-gold' : 'bg-line')} />
       ))}
     </div>
   )

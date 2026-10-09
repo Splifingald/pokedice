@@ -2,23 +2,27 @@ import { forwardRef, useLayoutEffect, useRef, type ButtonHTMLAttributes, type Re
 import { cx } from '@/theme/util'
 import { sfx } from '@/audio/sfx'
 
-type Variant = 'primary' | 'secondary' | 'danger' | 'success' | 'ghost' | 'dark'
-type Size = 'sm' | 'md' | 'lg'
+type Variant = 'primary' | 'secondary' | 'gold' | 'danger' | 'success' | 'ghost' | 'dark'
+type Size = 'sm' | 'md' | 'lg' | 'xl'
 
+// Daybreak: red is the action, white the alternative, gold the one new thing to open (a new region, an Egg).
 const VARIANT: Record<Variant, string> = {
-  primary: 'bg-gold text-ink',
-  secondary: 'bg-panel text-ink',
-  danger: 'bg-danger text-panel',
-  success: 'bg-hp-green text-ink',
-  ghost: 'bg-parchment text-ink',
-  dark: 'bg-ink text-panel',
+  primary: 'frame-primary',
+  secondary: '',
+  gold: 'frame-gold',
+  danger: 'frame-primary',
+  success: 'frame-green',
+  ghost: 'bg-parchment',
+  dark: 'frame-dark',
 }
 
-// Phones get 44px tap targets; from 768px (mouse and trackpad) the tighter sizes come back.
+// Phones get 44px tap targets; from 768px (mouse and trackpad) the tighter sizes come back. `lg` and `xl` are the
+// big calls to action (56 and 72px).
 const SIZE: Record<Size, string> = {
-  sm: 'px-2 py-0.5 text-lg min-h-[44px] min-w-[44px] md:min-h-[32px] md:min-w-0',
-  md: 'px-4 py-1 text-2xl min-h-[44px] md:min-h-[40px]',
-  lg: 'px-6 py-2 text-3xl min-h-[52px]',
+  sm: 'px-2 py-0.5 text-lg min-h-[44px] min-w-[44px] md:min-h-[36px] md:min-w-0',
+  md: 'px-3 py-1 text-[24px] min-h-[44px] md:min-h-[40px]',
+  lg: 'px-5 py-1.5 text-[26px] min-h-[56px]',
+  xl: 'px-6 py-2 text-[30px] tracking-[0.06em] min-h-[72px]',
 }
 
 /** How far a label may shrink before it would be doing more harm than the overflow. */
@@ -51,6 +55,8 @@ function useFitText(label: ReactNode) {
         size = Math.max(floor, size * (room / el.scrollWidth))
         el.style.fontSize = `${size}px`
       }
+      // A red button's white label under 24px needs the deeper red to stay readable (pixel.css).
+      el.parentElement?.toggleAttribute('data-small', size < 24)
     }
     fit()
     // Re-fit on a real width change only: reacting to our own font change would loop.
@@ -82,7 +88,13 @@ export const PixelButton = forwardRef<HTMLButtonElement, PixelButtonProps>(funct
     <button
       ref={ref}
       type={type}
-      className={cx('pixel-btn inline-flex items-center justify-center gap-2 leading-none', VARIANT[variant], SIZE[size], className)}
+      className={cx(
+        'pixel-btn inline-flex items-center justify-center gap-2 font-pixel uppercase leading-none tracking-[0.04em]',
+        // White under 24px needs the deeper red (pixel.css).
+        size === 'sm' && VARIANT[variant] === 'frame-primary' ? 'frame-deep' : VARIANT[variant],
+        SIZE[size],
+        className,
+      )}
       onClick={(e) => {
         if (!quiet) sfx('button')
         onClick?.(e)

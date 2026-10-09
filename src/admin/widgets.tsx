@@ -211,7 +211,7 @@ export function Slider({ value, onChange, min = 0, max = 100, step = 1 }: { valu
   return (
     <input
       type="range"
-      className="w-full accent-[#e8b44a]"
+      className="w-full accent-[#ffbe2e]"
       value={value}
       min={min}
       max={max}

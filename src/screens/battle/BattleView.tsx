@@ -170,7 +170,7 @@ function useShake(ref: RefObject<HTMLElement>, shake: { id: number; power: numbe
 const STATUS_TIP_KEY = 'pokedice.tip.statusThreshold'
 
 /** One square per face a status needs in the roll, filled for each that landed: full = it triggers. */
-const POP_COLOR = { super: '#e8b44a', weak: '#f7f2e0', immune: '#9c9caf', normal: '#f7f2e0', heal: '#4aa84a' }
+const POP_COLOR = { super: '#ffbe2e', weak: '#fbfdff', immune: '#9c9caf', normal: '#fbfdff', heal: '#34c97a' }
 
 // The scene is drawn in the backgrounds' own pixels (240×112) and scaled to fit; sprites are 64×64 cells on that grid.
 const SCENE_W = 240
@@ -253,7 +253,7 @@ function ShinySparkle({ size, delay }: { size: number; delay: number }) {
         >
           <svg width={star} height={star} viewBox="0 0 8 8" shapeRendering="crispEdges">
             <path d="M3 0h2v3h3v2H5v3H3V5H0V3h3z" fill="#fff8c8" />
-            <path d="M3.5 1h1v2.5H7v1H4.5V7h-1V4.5H1v-1h2.5z" fill="#e8b44a" />
+            <path d="M3.5 1h1v2.5H7v1H4.5V7h-1V4.5H1v-1h2.5z" fill="#ffbe2e" />
           </svg>
         </motion.div>
       ))}
@@ -354,7 +354,7 @@ function SpriteStage({
             style={{
               fontSize: Math.max(24, size * 0.28),
               color: POP_COLOR[fx.pop.tone],
-              textShadow: '3px 3px 0 #2a2438, -2px -2px 0 #2a2438, 2px -2px 0 #2a2438, -2px 2px 0 #2a2438',
+              textShadow: '3px 3px 0 #24304f, -2px -2px 0 #24304f, 2px -2px 0 #24304f, -2px 2px 0 #24304f',
             }}
           >
             {fx.pop.tone === 'heal' ? '+' : fx.pop.amount === 0 ? '' : '−'}

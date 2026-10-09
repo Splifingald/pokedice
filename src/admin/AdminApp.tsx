@@ -87,7 +87,7 @@ function SaveBar() {
   const undo = useAdmin((s) => s.undo)
   const mode = useAdmin((s) => s.mode)
   return (
-    <section aria-label="Save changes" className="fixed inset-x-0 bottom-0 z-40 border-t-[3px] border-ink bg-panel px-3 py-2 shadow-[0_-3px_0_#6b6480]">
+    <section aria-label="Save changes" className="fixed inset-x-0 bottom-0 z-40 border-t-[3px] border-ink bg-panel px-3 py-2 shadow-[0_-2px_0_#24304f,0_-4px_0_#24304f18]">
       <div className="mx-auto flex max-w-[1400px] flex-wrap items-center gap-2">
         <span className={cx('text-lg', dirty.length ? 'text-danger' : 'text-muted')}>
           {dirty.length ? `Unsaved: ${dirty.join(', ')}` : 'All changes saved'}

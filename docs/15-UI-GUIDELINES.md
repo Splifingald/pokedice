@@ -1,0 +1,184 @@
+# Pokédice — UI guidelines (Johto Daybreak)
+
+The rules every screen follows. They describe the **Johto Daybreak** look chosen in the Visual Lab
+(`design/visual-lab/`) and how it is built in `src/`. When you add or change UI, follow this page; when a rule here no
+longer fits, change the rule here first, then the code.
+
+The game's engine and data decide every rule and number shown. The UI only presents them (see "Numbers" below).
+
+---
+
+## 1. The look in one paragraph
+
+A pale morning sky (`#e9f0f8`, a faint dot texture) under crisp pixel-art frames with **ink outlines** (`#24304f`),
+white paper panels, **one red action** per screen (`#f2553f`) and **gold for what's new** (`#ffbe2e`). Everything is
+drawn on a pixel grid: square corners cut by a 1–3 pixel stair, never `border-radius`, never blur, never a soft
+shadow. Fonts are **Jersey 20** (titles, names, buttons, most text) and **Jersey 15** (labels, numbers, paragraphs).
+
+## 2. Colour tokens
+
+Defined once in `src/theme/colors.ts`, exposed as Tailwind colours (`tailwind.config.ts`). Never write a hex in a
+component when a token exists; never invent a near-duplicate.
+
+| Token (Tailwind) | Value | Use | Contrast |
+|---|---|---|---|
+| `parchment` | `#e9f0f8` | The page ground (with the dot texture) | — |
+| `panel` | `#fbfdff` | Panels, sheets, the top bar | — |
+| `paper` | `#ffffff` | Cards on a panel, inputs, white buttons | — |
+| `ink` | `#24304f` | Text, outlines, selected chips and tabs | 11:1 on panel |
+| `muted` | `#5c6a8a` | Secondary text | 5.1:1 panel, 4.7:1 ground |
+| `faint` | `#8592ad` | Placeholders, decoration. **Never text** | 3.1:1 |
+| `shadow` | `#b6c3d9` | Borders, dashed rules, quiet rings | — |
+| `line` / `lip` | `#dde5f0` / `#dfe7f2` | Empty tracks, a card's bottom lip | — |
+| `accent` | `#f2553f` | The primary action, the current place, alerts | white on it: 3.4:1 |
+| `danger` | `#c4382a` | Red **as text**, and small red controls | 5.2:1 panel, white on it 5.3:1 |
+| `danger-light` | `#ff8a7a` | Red as text on ink | 5.7:1 |
+| `gold` (`-light`, `-pale`) | `#ffbe2e` (`#ffe7a8`, `#fff4d6`) | New, the lead, combos, rewards | ink on gold 8.9:1 |
+| `good` / `good-pale` | `#1d6b43` / `#d8f5e4` | Positive text (bonus, cleared) and its chip | 6.5:1 |
+| `hp-green` / `hp-yellow` / `hp-red` / `hp-trail` | `#34c97a` / `#ffbe2e` / `#ff5a4a` / `#ffb3a8` | HP above 50 %, above 20 %, below; the trail of the last hit | — |
+| `type-*` | `DAYBREAK_TYPES` | Dice fills, swatches | — |
+| `st-*` | burn `#f07a2a`, poison `#b04db0`, frozen `#5fc0e0`, paralyze `#f0cc28`, confuse `#ec5f9e`, heal `#52c052` | Status rings, chips | — |
+
+Rules:
+
+- **White text on the bright red needs 24 px or more** (large text, 3:1). Under 24 px a red control uses the deeper red
+  (`frame-deep`, `bg-danger`). `PixelButton` does this by itself, including when a long label shrinks to fit.
+- **Type badges** mix the type colour: 32 % into white for the fill, 45 % into deep navy for the text, 75 % into ink
+  for the ring (`badgeColors`, OKLab). A test keeps every type at 4.5:1.
+- **The data's type colours** (`TYPE_COLORS`) belong to the seed and art scripts. The UI draws types with
+  `DAYBREAK_TYPES` through `typeColor()`.
+- Dark grounds (ink): text in `panel`, accents in `gold-light`, focus ring in gold.
+
+## 3. Type
+
+| Role | Font | Size | Notes |
+|---|---|---|---|
+| Page title (`h1`) | Jersey 20 | 30–40 px (`text-title`, `text-display`) | One `<h1>` per route |
+| Section title | Jersey 20 | 24 px | |
+| Body, names | Jersey 20 | 20 px (`text-body`); 17 small; 22 large | |
+| Buttons | Jersey 20 | 24 px (md), 18 (sm), 26 (lg), 30 (xl) | Uppercase, 0.04em tracking |
+| Labels, numbers, captions | Jersey 15 (`font-pixel-sm`) | 15 px (`text-label`) | `tabular-nums` for counters |
+| Paragraphs (2+ lines) | Jersey 15 (`.copy`) | 20 px, line-height 1.35 | |
+
+- Floor: **no text under 12 px** on any game screen.
+- Only the Jersey faces ship (plus the Fusion Pixel CJK subsets). `e2e/layout.spec.ts` fails on any other font.
+- CJK: the font stack ends in `var(--font-cjk)`, which follows the element's `lang`. After editing a ja, ko or zh-Hans
+  string, run `pnpm i18n:fonts`.
+- Strings are never uppercased in the CSV just for looks; buttons uppercase themselves.
+
+## 4. Pixels, shapes and frames
+
+- **The pixel scale is 2 CSS px per art pixel.** Outlines are 2 px, lips 4 px, shadows drop 4 px, all on whole pixels.
+- **Frames** (`src/theme/frames.ts` → `src/styles/pixel.css`): every panel, dialogue box and button is a 14×14 pixel
+  drawing used as a 9-slice `border-image`, drawn at 2 × devicePixelRatio and redrawn when the ratio changes. The
+  middle of the drawing is empty: the element's own `background-color` fills it, so `bg-*` utilities still recolour a
+  frame, and contrast checkers see a real background.
+
+  | Class | Drawing | For |
+  |---|---|---|
+  | `.pixel-panel` | ink outline, highlight, lip, dithered shadow | Panels |
+  | `.pixel-panel-dark` | ink fill | Rare dark blocks |
+  | `.pixel-dialogue` | outline + an inner pale-blue ring | Messages, narration |
+  | `.pixel-btn` (+ `frame-primary` / `frame-deep` / `frame-gold` / `frame-green` / `frame-dark`) | outline, highlight, a 2-row lip, shadow | Buttons |
+  | `.hatched`, any disabled `.pixel-btn` | dotted outline, `#eef2f8` fill, muted text | Unavailable |
+
+- **Pressed:** a button moves down 4 px onto its shadow and its frame drops the shadow (`--fr-*-down`).
+- **Plates and cards** are flatter: `.pixel-plate` (a 2 px ink ring, a 4 px lip, clipped corners, slightly see-through
+  paper over a scene) and `shadow-card` (a 2 px ink ring + lip, for list items on a panel).
+- **Clipped corners** (`.pixel-corners`) for chips, pills, tracks and badges.
+- Circles only where the thing is round: the avatar, a status badge on a die, the Home ball in the tab bar.
+
+## 5. Components
+
+All live in `src/components/`. Every component, in every state, is on `/kitchen-sink` (dev only): add yours there.
+
+| Component | When | States |
+|---|---|---|
+| `PixelButton` | Any action | `primary` (red, the one main action), `secondary` (white), `gold` (one new thing to open: a new region, an Egg), `success` (green: collect), `danger` (destructive, red), `ghost`, `dark`; sizes `sm` (44 px on phones), `md`, `lg` (56 px), `xl` (72 px, the big CTA); disabled. `.sheen` adds the passing light on a CTA |
+| `Panel` | A block of content | light, dark, dialogue; optional title row |
+| `Dialogue` | Narration, battle messages | Typewriter text (tap to finish), blinking ▼; two lines tall so nothing jumps |
+| `Chip` | A short label | `plain`, `gold`, `green` (ready), `done` (cleared), `red` (where you are), `blue` (open), `lock`, `dark` |
+| `NewTag`, `LevelTag` | NEW, "Lv.36" | |
+| `StatusChip` / `StatusIcons` | A status | Icon + short name (BRN, PAR…) + counter, ring in the status colour; `lit=false` before its threshold. **Status is never colour alone** |
+| `Seg` | Two to four views of one thing (tabs) | `tabs` → `role=tablist`; otherwise a radio group. Counts after labels. Arrow keys move |
+| `FilterChips` | Narrowing a list | A radio group with counts; scrolls sideways when it runs out of room |
+| `SearchField` | Searching a list | 44 px, an ink ring, a top lip, a screen-reader label |
+| `Sheet` | Anything opened from a screen: details, lists, pickers | Phones: from the bottom, grab handle, ✕, 90 % tall at most, `head` (filters) pinned, body scrolls, `footer` pinned. Desktop: a centred panel |
+| `Modal` | A short decision or message | Centred framed panel; `dismissable={false}` for a choice that must be made |
+| `SidePanel` | The trainer menu drawer | From the right |
+| `HpBar` | HP | Track with ink ring; the fill drains over 700 ms, the trail waits 280 ms then follows over 900 ms; numbers for your own, words for a foe's (screen readers) |
+| `TypeBadge`, `TypeSwatch` | A type | `md` 20 px, `sm` 16 px (plates) |
+| `Die` | A die face | Square corners; pips on whole pixels (`pipLayout`: one even pip size, three fixed columns) at any size; ink pips on light dice, white on dark; status face = white + status ring and a round badge with its icon; `selected` = lifted 6 px with a red outline; `combo` = a gold ring; values without a pip layout show their number |
+| `PixelIcon` | Every icon | Pixel maps in `icons.tsx` (8×8, 12×12 and the 16×16 tab-bar set `nav*`), drawn as SVG rects. One shared palette (`ICON_PALETTE`); a map may have its own (`OWN_PALETTE`) |
+
+Dialog behaviour (`src/lib/useDialog.ts`, used by `Modal`, `Sheet`, `SidePanel`): focus moves in, **Tab stays inside**,
+**Esc closes the top dialog only**, focus returns to what opened it.
+
+## 6. Layout
+
+- Phone first, from **360 px**. Nothing scrolls sideways at 360, 375, 768 or 1280 (`e2e/layout.spec.ts`).
+- Page gutter 12 px; gaps 8–12 px between cards; a panel's padding 12 px.
+- **Tap targets ≥ 44 px on phones** (inline links in a sentence excepted). From 768 px, tighter sizes are allowed.
+- One `<h1>` per route; headings in order; landmarks (`main`, `nav`).
+- **One primary (red) action per screen**, in thumb reach on phones. Gold appears at most once, for something new.
+- Lists of things you can open are buttons (whole card), with a keyboard path to every action inside them.
+- Full-screen moments (the battle, a hatching) hide the tab bar and the top bar.
+
+## 7. Accessibility
+
+- Contrast: text 4.5:1 (3:1 from 24 px). Check with the table above; axe runs in `pnpm e2e` and fails on serious or
+  critical issues.
+- Focus ring: 3 px ink, 2 px offset (gold on ink).
+- Never colour alone: statuses carry words, states carry a word or an icon (READY, NEW, a lock with its reason).
+- Disabled things say why, in words, next to them.
+- Live text (battle messages, toasts) is in an `aria-live` region. Canvases have a `role="img"` and a label, and
+  anything you can do on a canvas also exists as a button.
+- Arrow keys in radio groups and tab lists; Enter/Space on everything else.
+
+## 8. Motion
+
+How much the game animates comes from one place, `src/lib/motion.ts`:
+
+| Level | Who sets it | What plays |
+|---|---|---|
+| `full` | Default | Everything |
+| `short` | The player (Settings → Animations), or the OS "reduce motion" | A hit is one generic impact (no typed attack); Mega Evolution and Gigantamax are a white flash and the new sprite; a catch is the throw with its result at once; a quick Pokémon Center. Evolutions, Eggs hatching and encounters (legendary and trainer intros) still play in full |
+| `off` | Admins only (Settings → No animations) | Nothing animates: every timeline jumps to its end state, its messages kept |
+
+`calm` (the OS setting, or `off`): no screen shake, no flashing, the Home team stands still.
+
+House rules for every effect and timeline:
+
+- Anticipation before every release; a 3–5 frame **hit-stop** on contact.
+- A hit flashes **two white silhouette frames**, never an opacity blink.
+- Light and smoke are **ordered-dithered**, never blurred; particles step through a fixed colour ramp.
+- **No screen flash faster than 3 a second.**
+- Timelines run at **60 fixed steps a second** and fire their cues (message, HP, status, form…) at exact times.
+- Durations: a button press 60 ms in 2 steps; a sheet rises in 220 ms; HP 700 ms / 280 ms / 900 ms; dice tumble 600 ms.
+- Pixel motion steps (`steps()`), it doesn't glide, except HP bars and sheets.
+
+## 9. Sound
+
+8-bit sounds are synthesised in `src/audio/sfx.ts` (no sample files). Each cue has a name; add new ones there.
+Sound is off by default and always respects `settings.sfx`.
+
+## 10. Words and numbers
+
+- **Strings:** `src/i18n/strings.csv` is the only place for text, in all ten columns (en, fr, es, de, it, pt, pt-BR,
+  ja, ko, zh-Hans); no empty cell. Use `useT()` / `t()`. Reuse a key when the meaning matches.
+- **Numbers:** every number shown (damage, combos, multipliers, status thresholds, catch chance, XP, prices, unlocks)
+  comes from the engine's helpers (`src/engine`). The UI never recomputes a rule.
+
+## 11. Web requests
+
+Players shouldn't have to make many requests:
+
+- **Draw in code** whatever can be: frames, the ground texture, icons, badges, Poké Balls, the Egg, area scenes and
+  battle backgrounds. They cost no request at all.
+- **Atlases** for sets of small pictures: the Pokémon menu icons (`src/assets/pokemon-icons.png`), the trainers (one
+  sheet per region), the item icons. One request, cached for a year (hashed Vite assets).
+- **Pokémon sprites** come from Pokémon Showdown's CDN: one request per sprite actually shown, cached by the browser;
+  never a request for a view Showdown doesn't have (`src/data/showdown-sprites.json`); only the current area's fronts
+  are preloaded.
+- Fonts are subset by unicode range; only Jersey 20 (latin) is preloaded.
+- Before adding an image file, ask whether code can draw it, or whether it belongs in an atlas.

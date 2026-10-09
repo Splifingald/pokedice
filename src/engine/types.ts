@@ -582,7 +582,14 @@ export interface SaveData {
   dieLevels: Record<PokeType, number>
   currentAreaId: string
   areaProgress: Record<string, AreaProgress>
-  settings: { sfx: boolean; reducedMotion: boolean; multiExp: boolean; autoMode?: boolean; lang?: Lang }
+  settings: {
+    sfx: boolean
+    reducedMotion: boolean
+    animations?: 'full' | 'short'
+    multiExp: boolean
+    autoMode?: boolean
+    lang?: Lang
+  }
   /** The hpMultiplier current HP was last measured against (absent = ×1), so a change keeps every HP %. */
   hpScale?: number
   /** Who the player is: a name and one of the two trainer sprites (absent on older saves = Red, no name). */

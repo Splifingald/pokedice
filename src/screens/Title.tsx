@@ -35,7 +35,7 @@ export function Title() {
       >
         <h1
           className="text-7xl leading-none tracking-widest sm:text-8xl"
-          style={{ textShadow: '4px 4px 0 #6b6480, 8px 8px 0 #2a2438' }}
+          style={{ textShadow: '4px 4px 0 #b6c3d9, 8px 8px 0 #24304f' }}
         >
           POKÉ<span className="text-danger">DICE</span>
         </h1>

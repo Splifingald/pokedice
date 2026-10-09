@@ -152,7 +152,7 @@ function Board() {
                 ref={r.isMe ? meRef : undefined}
                 aria-current={r.isMe || undefined}
                 className={cx(
-                  'flex items-center gap-3 border-[3px] border-ink px-2 py-1.5 shadow-[3px_3px_0_#6b6480]',
+                  'flex items-center gap-3 border-[3px] border-ink px-2 py-1.5 shadow-[0_4px_0_#24304f33]',
                   r.isMe ? 'bg-[#fbeeb0]' : 'bg-panel',
                 )}
               >

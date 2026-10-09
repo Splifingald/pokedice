@@ -9,9 +9,15 @@ export const CORRUPT_KEY = 'pokedice.save.corrupt'
 export const SETTINGS_KEY = 'pokedice.settings'
 export const BACKUPS_KEY = 'pokedice.save.backups'
 
+/** How much the game animates: every timeline in full, or its short version (lib/motion.ts). */
+export type AnimationLevel = 'full' | 'short'
+
 export interface Settings {
   sfx: boolean
+  /** No animations at all: every timeline jumps to its end. An admin-only switch. */
   reducedMotion: boolean
+  /** Full or short animations, the player's choice. Unset = full. */
+  animations?: AnimationLevel
   /** Multi EXP — on by default. */
   multiExp: boolean
   /** Auto-mode: fights in cleared areas play themselves — off by default. */
@@ -93,6 +99,7 @@ export function readSettings(): Settings {
     return {
       sfx: !!s.sfx,
       reducedMotion: !!s.reducedMotion,
+      animations: s.animations === 'short' ? 'short' : 'full',
       multiExp: s.multiExp !== false,
       autoMode: !!s.autoMode,
       typeHints: !!s.typeHints,

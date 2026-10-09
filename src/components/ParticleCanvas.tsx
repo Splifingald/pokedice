@@ -83,7 +83,7 @@ export const ParticleCanvas = forwardRef<ParticleHandle, { className?: string }>
   useImperativeHandle(ref, () => ({
     burst(x, y, color, count = 60, power = 1) {
       if (reducedRef.current) return
-      const palette = [color, color, '#f7f2e0', '#2a2438']
+      const palette = [color, color, '#fbfdff', '#24304f']
       for (let i = 0; i < count && particles.current.length < MAX_PARTICLES; i++) {
         const a = Math.random() * Math.PI * 2
         const sp = (1.5 + Math.random() * 4.5) * power

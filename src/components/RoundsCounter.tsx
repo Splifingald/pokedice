@@ -35,7 +35,7 @@ export function RoundsCounter({
         {Array.from({ length: need }, (_, i) => (
           <li
             key={i}
-            className={cx('h-3 min-w-0 flex-1 border-2 border-ink', i < done ? 'bg-gold' : 'bg-[#3e3552]')}
+            className={cx('h-3 min-w-0 flex-1 border-2 border-ink', i < done ? 'bg-gold' : 'bg-line')}
             style={{ borderRadius: 2 }}
           />
         ))}

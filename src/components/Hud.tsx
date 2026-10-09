@@ -56,7 +56,7 @@ function NavEntry({ n, variant }: { n: NavItem; variant: 'side' | 'bottom' }) {
           ? 'pixel-btn flex min-h-[44px] items-center gap-3 px-3 py-2 text-2xl leading-none'
           : 'relative flex flex-1 flex-col items-center justify-center gap-1',
         active && !inFight ? 'bg-gold' : variant === 'side' ? 'bg-panel' : '',
-        variant === 'bottom' && active && 'shadow-[inset_0_3px_0_#2a2438]',
+        variant === 'bottom' && active && 'shadow-[inset_0_3px_0_#f2553f]',
         inFight && 'hatched pointer-events-none',
       )}
     >
@@ -93,7 +93,7 @@ export function Header() {
   // Before the first badge the trophy is hatched; a tap says what opens it.
   const blocked = inFight || !boardOpen
   return (
-    <header className="sticky top-0 z-40 border-b-[3px] border-ink bg-panel shadow-[0_3px_0_#6b6480]">
+    <header className="sticky top-0 z-40 border-b-[3px] border-ink bg-panel shadow-[0_2px_0_#24304f,0_4px_0_#24304f22]">
       <div className="flex h-14 items-center gap-1.5 px-3 sm:gap-2">
         <Link
           to={runArea ? '/area' : '/map'}
@@ -155,7 +155,7 @@ export function BottomNav() {
   return (
     <nav
       aria-label={t('ui.nav.menus')}
-      className="fixed inset-x-0 bottom-0 z-40 flex border-t-[3px] border-ink bg-panel shadow-[0_-3px_0_#6b6480] md:hidden"
+      className="fixed inset-x-0 bottom-0 z-40 flex border-t-[3px] border-ink bg-panel shadow-[0_-2px_0_#24304f,0_-4px_0_#24304f18] md:hidden"
       style={{ height: 'var(--bottom-nav)', paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
       {BOTTOM_NAV.map((n) => (

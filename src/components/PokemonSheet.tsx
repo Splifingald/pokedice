@@ -177,7 +177,7 @@ function MilestoneTrack({ species, level, onOpenDex }: { species: Species; level
             return (
               <li key={i} className="flex items-stretch gap-2.5">
                 <div className="flex w-5 shrink-0 flex-col items-center" aria-hidden>
-                  <div className="relative min-h-[12px] w-2.5 flex-1 border-x-2 border-ink bg-[#3e3552]">
+                  <div className="relative min-h-[12px] w-2.5 flex-1 border-x-2 border-ink bg-line">
                     <div className="absolute inset-x-0 top-0 bg-type-water" style={{ height: `${fill * 100}%` }} />
                   </div>
                   <span
@@ -230,7 +230,7 @@ function MilestoneTrack({ species, level, onOpenDex }: { species: Species; level
           {byStone.map((e) => (
             <li key={`stone-${e.toDex}`} className="flex items-stretch gap-2.5">
               <div className="flex w-5 shrink-0 flex-col items-center" aria-hidden>
-                <div className="relative min-h-[12px] w-2.5 flex-1 border-x-2 border-ink bg-[#3e3552]" />
+                <div className="relative min-h-[12px] w-2.5 flex-1 border-x-2 border-ink bg-line" />
                 <span className="h-5 w-5 shrink-0 border-[3px] border-ink bg-panel" style={{ borderRadius: 2 }} />
               </div>
               <div className="flex min-w-0 flex-1 items-center gap-2 pt-3 text-lg leading-tight">

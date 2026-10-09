@@ -69,7 +69,7 @@ async function fetchPlayers(since: Date | null, max = 10_000): Promise<PlayerRow
 }
 
 const rateColor = (pct: number | null) =>
-  pct == null ? '#6b6480' : pct >= 40 ? '#4aa84a' : pct >= 20 ? '#e8b44a' : '#c2452d'
+  pct == null ? '#b6c3d9' : pct >= 40 ? '#34c97a' : pct >= 20 ? '#ffbe2e' : '#f2553f'
 
 function RetentionHero({ r }: { r: Retention | null }) {
   const pct = r?.rate == null ? null : Math.round(r.rate * 100)

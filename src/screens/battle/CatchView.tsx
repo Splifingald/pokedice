@@ -149,7 +149,7 @@ function ThrowStage({
           <motion.div
             key={d}
             className="absolute left-0 top-0 h-2 w-2 bg-gold"
-            style={{ boxShadow: '0 0 0 2px #2a2438' }}
+            style={{ boxShadow: '0 0 0 2px #24304f' }}
             initial={{ x: ground.x + ballSize / 2 - 4, y: ground.y, opacity: 1 }}
             animate={{ x: ground.x + ballSize / 2 - 4 + d * 26, y: ground.y - 26 + Math.abs(d) * 8, opacity: 0 }}
             transition={{ duration: 0.5, ease: 'easeOut' }}

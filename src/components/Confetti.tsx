@@ -2,7 +2,7 @@ import { motion } from 'framer-motion'
 import { useMemo } from 'react'
 import { useGame } from '@/store/game'
 
-const COLORS = ['#e8b44a', '#c2452d', '#547acc', '#4aa84a', '#d44873', '#f7f2e0']
+const COLORS = ['#ffbe2e', '#f2553f', '#547acc', '#34c97a', '#d44873', '#fbfdff']
 
 /**
  * A burst of pixel confetti from the middle of its (positioned) box — a level-up, an evolution. Skipped entirely with
@@ -26,7 +26,7 @@ export function Confetti({ count = 20, spread = 34, size = 10 }: { count?: numbe
         <motion.span
           key={i}
           className="absolute left-1/2 top-1/2"
-          style={{ width: size, height: size, background: b.color, boxShadow: '0 0 0 1px #2a2438' }}
+          style={{ width: size, height: size, background: b.color, boxShadow: '0 0 0 1px #24304f' }}
           initial={{ x: 0, y: 0, opacity: 1, rotate: 0 }}
           animate={{ x: b.x, y: [0, b.y, b.y + spread * 0.8], opacity: [1, 1, 0], rotate: b.rot }}
           transition={{ duration: 1.3, ease: 'easeOut' }}

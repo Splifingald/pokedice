@@ -8,7 +8,7 @@ export function Gauge({
   className,
   labelClassName,
   segments = 12,
-  color = '#e8b44a',
+  color = '#ffbe2e',
   name = 'Exploration',
   mark,
   markText,
@@ -57,7 +57,7 @@ export function Gauge({
             key={i}
             className="h-2 flex-1"
             style={{
-              background: i < lit ? (max ? color : `repeating-linear-gradient(90deg, ${color} 0 3px, #d44873 3px 6px)`) : '#3e3552',
+              background: i < lit ? (max ? color : `repeating-linear-gradient(90deg, ${color} 0 3px, #d44873 3px 6px)`) : '#dde5f0',
               transition: `background-color 200ms ${i * 30}ms`,
             }}
           />

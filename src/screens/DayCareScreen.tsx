@@ -41,7 +41,7 @@ const EGG = [
   '..kssssssk..',
   '...kkkkkk...',
 ]
-const EGG_COLORS: Record<string, string> = { k: '#2a2438', w: '#f7f2e0', s: '#d8cfb4', g: '#4aa84a' }
+const EGG_COLORS: Record<string, string> = { k: '#24304f', w: '#fbfdff', s: '#d8cfb4', g: '#34c97a' }
 
 export function EggSprite({ size = 64, className }: { size?: number; className?: string }) {
   return (

@@ -414,7 +414,7 @@ export function DiceSection() {
 // ---------------------------------------------------------------- Type chart
 
 const CYCLE = [1, 2, 0.5, 0]
-const CELL_BG: Record<string, string> = { '2': '#4aa84a', '0.5': '#c2452d', '0': '#2a2438', '1': 'transparent' }
+const CELL_BG: Record<string, string> = { '2': '#34c97a', '0.5': '#f2553f', '0': '#24304f', '1': 'transparent' }
 
 export function TypeChartSection() {
   const rows = useAdmin((st) => st.rows.type_chart)
@@ -484,10 +484,10 @@ function Chart({ rows }: { rows: { level: number; bonus: number; cost: number }[
   return (
     <svg viewBox={`0 0 ${W} ${H}`} className="w-full max-w-md border-2 border-ink bg-panel" role="img" aria-label="Bonus (bars) and cost (line) per level">
       {rows.map((r, i) => (
-        <rect key={i} x={i * bw + 3} y={H - (r.bonus / maxB) * (H - 16)} width={bw - 6} height={(r.bonus / maxB) * (H - 16)} fill="#e8b44a" stroke="#2a2438" />
+        <rect key={i} x={i * bw + 3} y={H - (r.bonus / maxB) * (H - 16)} width={bw - 6} height={(r.bonus / maxB) * (H - 16)} fill="#ffbe2e" stroke="#24304f" />
       ))}
-      <polyline points={pts} fill="none" stroke="#c2452d" strokeWidth={2} />
-      <text x={4} y={12} fontSize={10} fill="#2a2438">
+      <polyline points={pts} fill="none" stroke="#f2553f" strokeWidth={2} />
+      <text x={4} y={12} fontSize={10} fill="#24304f">
         bars: bonus (max {maxB}) · line: cost (max {maxC})
       </text>
     </svg>

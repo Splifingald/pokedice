@@ -296,7 +296,7 @@ function XpPlot({ A, B, C, fightsPerHour, mult }: { A: number; B: number; C: num
     <div className="flex flex-wrap items-start gap-4">
       <svg viewBox={`0 0 ${W} ${H}`} className="w-full max-w-sm border-2 border-ink bg-panel" role="img" aria-label="XP to next level by level">
         <polyline points={path} fill="none" stroke="#547acc" strokeWidth={2} />
-        <text x={4} y={12} fontSize={10} fill="#2a2438">
+        <text x={4} y={12} fontSize={10} fill="#24304f">
           xpToNext(L), L = 1…100 (max {max})
         </text>
       </svg>

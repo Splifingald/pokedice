@@ -26,10 +26,10 @@ import { AreaBanner } from '@/components/AreaBanner'
 
 const KINDS: EncounterKind[] = ['wild', 'trainer', 'center', 'item', 'casino']
 const CARD: Record<EncounterKind, { label: string; color: string }> = {
-  wild: { label: 'Wild', color: '#4aa84a' },
-  trainer: { label: 'Trainer', color: '#c2452d' },
+  wild: { label: 'Wild', color: '#34c97a' },
+  trainer: { label: 'Trainer', color: '#f2553f' },
   center: { label: 'Center', color: '#d44873' },
-  item: { label: 'Item', color: '#e8b44a' },
+  item: { label: 'Item', color: '#ffbe2e' },
   casino: { label: 'Game Corner', color: '#6b3fa0' },
 }
 

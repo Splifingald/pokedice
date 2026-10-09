@@ -75,6 +75,7 @@ export const saveSchema = z.object({
   settings: z.object({
     sfx: z.boolean(),
     reducedMotion: z.boolean(),
+    animations: z.enum(['full', 'short']).optional(),
     multiExp: z.boolean().default(true),
     autoMode: z.boolean().optional(),
     typeHints: z.boolean().optional(),

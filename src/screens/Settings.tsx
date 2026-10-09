@@ -4,6 +4,7 @@ import { DonationModal } from '@/components/DonationPopup'
 import { Modal } from '@/components/Modal'
 import { Panel } from '@/components/Panel'
 import { PixelButton } from '@/components/PixelButton'
+import { Seg } from '@/components/Segmented'
 import { Toggle } from '@/components/Toggle'
 import { donationEnabled } from '@/engine'
 import { LANG_LABELS, LANGS, type Lang } from '@/i18n'
@@ -84,7 +85,23 @@ export function SettingsScreen() {
           on={settings.multiExp}
           onChange={(v) => setSettings({ multiExp: v })}
         />
-        {/* Admins only — but a player who already turned it on still sees it, so they can turn it off. */}
+        <div className="flex flex-col gap-1.5 py-1">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <span className="text-2xl">{t('ui.settings.animations')}</span>
+            <Seg
+              label={t('ui.settings.animations')}
+              value={settings.animations ?? 'full'}
+              onChange={(v) => setSettings({ animations: v })}
+              options={[
+                { id: 'full', label: t('ui.settings.animFull') },
+                { id: 'short', label: t('ui.settings.animShort') },
+              ]}
+              className="min-w-[12rem]"
+            />
+          </div>
+          <span className="copy block text-muted">{t('ui.settings.animationsHint')}</span>
+        </div>
+        {/* No animations: admins only — but a player who already turned it on still sees it, so they can turn it off. */}
         {(isAdmin || settings.reducedMotion) && (
           <Toggle
             label={t('ui.settings.reducedMotion')}

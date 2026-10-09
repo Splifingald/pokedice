@@ -76,9 +76,9 @@ const EFFECT_COLOR: Record<MilestoneEffect, string> = {
   UPGRADE_DIE: '#d44873',
   REPLACE_DIE: '#a2478f',
   ADD_REROLL: '#547acc',
-  ADD_DIE: '#e8b44a',
-  ADD_HP: '#4aa84a',
-  EVOLVE: '#2a2438',
+  ADD_DIE: '#ffbe2e',
+  ADD_HP: '#34c97a',
+  EVOLVE: '#24304f',
 }
 
 function MilestoneEditor({ value, onChange }: { value: Milestone[]; onChange: (m: Milestone[]) => void }) {

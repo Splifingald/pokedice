@@ -1,7 +1,8 @@
 import { AnimatePresence, motion } from 'framer-motion'
-import { useEffect, useId, useRef, type ReactNode } from 'react'
+import { useId, useRef, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { t } from '@/i18n'
+import { useDialog } from '@/lib/useDialog'
 import { cx } from '@/theme/util'
 import { PixelIcon } from './icons'
 
@@ -26,26 +27,14 @@ export function Modal({
 }) {
   const ref = useRef<HTMLDivElement>(null)
   const titleId = useId()
-  useEffect(() => {
-    if (!open) return
-    const prev = document.activeElement as HTMLElement | null
-    ref.current?.focus()
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && dismissable) onClose?.()
-    }
-    window.addEventListener('keydown', onKey)
-    return () => {
-      window.removeEventListener('keydown', onKey)
-      prev?.focus?.()
-    }
-  }, [open, dismissable, onClose])
+  useDialog(ref, open, dismissable ? onClose : undefined)
 
   if (typeof document === 'undefined') return null
   return createPortal(
     <AnimatePresence>
       {open && (
         <motion.div
-          className="fixed inset-0 z-[90] flex items-center justify-center bg-ink/60 p-3"
+          className="fixed inset-0 z-[90] flex items-center justify-center bg-ink/55 p-3"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -67,19 +56,10 @@ export function Modal({
           >
             {(title || (dismissable && onClose)) && (
               <div className="mb-3 flex items-start justify-between gap-3">
-                <h2 id={titleId} className="text-3xl leading-none">
+                <h2 id={titleId} className="text-title leading-none">
                   {title}
                 </h2>
-                {dismissable && onClose && (
-                  <button
-                    type="button"
-                    className="-m-2 flex h-11 w-11 shrink-0 items-center justify-center md:-m-1 md:h-8 md:w-8"
-                    onClick={onClose}
-                    aria-label={t('ui.common.close')}
-                  >
-                    <PixelIcon name="close" size={16} />
-                  </button>
-                )}
+                {dismissable && onClose && <CloseButton onClick={onClose} />}
               </div>
             )}
             {children}
@@ -88,5 +68,19 @@ export function Modal({
       )}
     </AnimatePresence>,
     document.body,
+  )
+}
+
+/** The ✕ in a dialog's corner: 44px, a flat ink ring. */
+export function CloseButton({ onClick, className }: { onClick: () => void; className?: string }) {
+  return (
+    <button
+      type="button"
+      className={cx('flex h-11 w-11 shrink-0 items-center justify-center bg-panel shadow-ring', className)}
+      onClick={onClick}
+      aria-label={t('ui.common.close')}
+    >
+      <PixelIcon name="close" size={14} />
+    </button>
   )
 }
