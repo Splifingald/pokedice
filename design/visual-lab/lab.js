@@ -1247,10 +1247,11 @@
       total.classList.toggle('ok', sp.kind === 'catch' && verdict && sp.success)
       total.classList.toggle('ko', busted)
     },
+    /** One chip, or several (an array) that wrap onto new lines on a narrow screen. */
     chip(text) {
       this.dice.hidden = false
       const host = $('.roll .extra', this.dice) || this.dice
-      host.innerHTML = `<span class="ui-chip">${esc(text)}</span>`
+      host.innerHTML = [].concat(text).map((t) => `<span class="ui-chip">${esc(t)}</span>`).join('')
     },
     heal() {
       $$('.ui-mon', this.team).forEach((row, i) => {

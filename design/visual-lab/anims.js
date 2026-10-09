@@ -4049,9 +4049,11 @@
           [
             T_ASK + 0.2,
             (hud) =>
-              hud.chip(
-                `${m.types.map(cap).join(' / ')} · strong vs ${m.strong.map(cap).join(', ')} · weak to ${m.weak.map(cap).join(', ')}`,
-              ),
+              hud.chip([
+                m.types.map(cap).join(' / '),
+                `Strong vs ${m.strong.map(cap).join(', ')}`,
+                `Weak to ${m.weak.map(cap).join(', ')}`,
+              ]),
           ],
           [T_YES - 0.3, (hud) => hud.chip('YES')],
           [

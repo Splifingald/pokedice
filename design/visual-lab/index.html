@@ -434,7 +434,8 @@
   .dice-line { display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap; min-height: 54px; }
   .dice-line .ui-die { --s: 40px; }
   .dice-line .lab { font-family: var(--u-font-label); font-size: var(--u-fs-sm); }
-  .dice-line .ui-chip { font-size: var(--u-fs-sm); }
+  .dice-line { row-gap: 6px; }
+  .dice-line .ui-chip { font-size: var(--u-fs-sm); white-space: normal; max-width: 100%; text-align: center; line-height: 1.2; }
   /* The roll: driven frame by frame from the animation clock (lab.js → HUD.tick), so pause and slow motion hold. */
   .roll { display: grid; justify-items: center; gap: 4px; width: 100%; }
   .tray { position: relative; display: flex; gap: 18px; justify-content: center; align-items: flex-end; padding: 24px 10px 34px; min-height: 108px; }
