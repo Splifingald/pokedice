@@ -314,3 +314,25 @@
     animation: none;
   }
 }
+
+/* A board row found with "show my row": three steps of gold. */
+@keyframes so-flash {
+  0%,
+  33%,
+  66% {
+    background-color: #ffe066;
+  }
+  17%,
+  50%,
+  83% {
+    background-color: #fff4d6;
+  }
+}
+.so-flash {
+  animation: so-flash 1.2s steps(6);
+}
+@media (prefers-reduced-motion: reduce) {
+  .so-flash {
+    animation: none;
+  }
+}

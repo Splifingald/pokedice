@@ -305,3 +305,17 @@ in view) and the battle history sits beside it from 1024 px.
   Buy · ₽50, or "Need ₽x more" (focusable, explains in a toast).
 - **Hatching** is full screen (`useHoldFullscreen`): the hatching timeline, the message box, Skip; then what hatched
   (NEW when it's new to the Pokédex), where it went, Done and Another · ₽50 when you can afford one.
+
+## 16. Versus and the boards
+
+- **Screens reached from Home** (Day Care, Versus, the leaderboard) put a back chevron before their title
+  (`PageHead onBack`); the tab bar stays.
+- **Ranked rows** (`BoardRow`): the rank (gold, silver and bronze squares for 1–3, `RankMedal`), the trainer's look
+  (the `TrainerLook` crop, the same crop everywhere a trainer appears), the name with a gold "you" tag, their team as
+  menu icons (`TeamIcons`, one atlas), the value at the end. Your row is gold-ringed. A row can carry a line under
+  the team (Versus: how many of their Pokémon your team hits super effectively, green at 2+, red at 0) and an action
+  in place of the value (FIGHT, or a green Beaten tag that says when you can fight them again).
+- **Versus locked**: what opens it, a meter n/3, and the three Pokémon closest to Lv.50 with how many levels to go
+  (`versusClosest`). Unlocked: tabs Opponents (with the count still to beat) / My team / Leaderboard; Opponents has
+  your team strip with Change, a search by trainer *or* Pokémon and To beat / Beaten / All chips with counts. My team
+  shows three numbered slots ("Lv.72 → 50") over the eligible list (order badges 1–3), then Clear and Save team.

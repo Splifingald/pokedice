@@ -9,6 +9,8 @@ import {
   sameEvent,
   simulateVersus,
   versusCandidates,
+  versusClosest,
+  versusEdge,
   versusMoveAt,
   versusReadyCount,
   versusUnlocked,
@@ -52,6 +54,28 @@ describe('Versus teams', () => {
       ['kanto', 64],
       ['johto', 70],
     ])
+  })
+
+  it('while locked, lists the three closest to Lv.50 from every Box, highest first, fossils left out', () => {
+    const save = newSave(1, data, 0, () => 'x')
+    const at = (level: number, extra = {}) => ({ id: `c${level}`, dex: 25, level, xp: 0, currentHp: 1, caughtAt: 0, ...extra })
+    const s = {
+      ...save,
+      box: [at(12), at(31), at(60, { revivesAt: Date.now() + 1e6 })],
+      parked: { johto: { ...liveBlock(save), box: [at(44), at(8)] } },
+    }
+    expect(versusClosest(s, data).map((c) => [c.region, c.inst.level])).toEqual([
+      ['johto', 44],
+      ['kanto', 31],
+      ['kanto', 12],
+    ])
+  })
+
+  it('counts how many of their Pokémon your team hits super effectively', () => {
+    // Charizard (fire, flying) and Blastoise (water) against Venusaur (grass, poison), Golem (rock, ground), Pidgey.
+    expect(versusEdge([6, 9], [3, 76, 16], data)).toBe(2)
+    expect(versusEdge([129], [129, 129, 129], data)).toBe(0)
+    expect(versusEdge([25], [7, 8, 9], data)).toBe(3)
   })
 })
 

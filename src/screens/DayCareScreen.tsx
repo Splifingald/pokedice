@@ -20,6 +20,7 @@ import {
 } from '@/engine'
 import { sfx } from '@/audio/sfx'
 import { Chip, NewTag } from '@/components/Chip'
+import { PageHead } from '@/components/PageHead'
 import { PixelButton } from '@/components/PixelButton'
 import { SearchField } from '@/components/Segmented'
 import { Sheet } from '@/components/Sheet'
@@ -461,23 +462,11 @@ export function DayCareScreen() {
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-3">
-      <div className="flex min-h-[44px] items-center gap-2.5">
-        <button
-          type="button"
-          onClick={() => navigate('/home')}
-          aria-label={t('ui.dayCare.backHome')}
-          className="-ml-1.5 grid h-11 w-11 shrink-0 place-items-center"
-        >
-          <span
-            aria-hidden
-            className="block h-[18px] w-[14px] bg-ink [clip-path:polygon(0_50%,100%_0,100%_34%,50%_50%,100%_66%,100%_100%)]"
-          />
-        </button>
-        <h1 className="text-[32px] leading-none">{t('ui.dayCare.title')}</h1>
-        <span className="font-pixel-sm text-[17px] text-muted">
-          {dc.residents.length}/{cfg.slots}
-        </span>
-      </div>
+      <PageHead
+        title={t('ui.dayCare.title')}
+        count={`${dc.residents.length}/${cfg.slots}`}
+        onBack={() => navigate('/home')}
+      />
       <p className="m-0 font-pixel-sm text-[15px] leading-[1.15] text-muted">
         {t('ui.dayCare.intro', {
           slots: cfg.slots,
