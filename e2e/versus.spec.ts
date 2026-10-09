@@ -131,12 +131,13 @@ test('set your team: three picks in fight order, saved from the cloud save, and 
   // Every region's Box can send a Pokémon: each says where it comes from.
   await expect(page.getByRole('button', { name: /Charizard/ })).toContainText('Lv.50 (72) · Kanto')
   await expect(page.getByRole('button', { name: /Blastoise/ })).toContainText('Johto')
-  const pushesBefore = calls.filter((c) => c.startsWith('POST /rest/v1/saves')).length
   await page.getByRole('button', { name: 'SAVE TEAM' }).click()
 
   await expect(page.getByText('Team saved!')).toBeVisible()
   expect(teams).toEqual([{ ids: ['vn', 'cz', 'bl'] }])
-  expect(calls.filter((c) => c.startsWith('POST /rest/v1/saves')).length).toBeGreaterThan(pushesBefore)
+  // The team is built from the cloud save, so it must be there: pushed by the first sync. An unchanged save isn't
+  // pushed a second time (only its timestamps would differ).
+  expect(calls.filter((c) => c.startsWith('POST /rest/v1/saves')).length).toBeGreaterThan(0)
   // The picks stay, the button says the team is saved, and the team shows at the top.
   await expect(page.getByRole('button', { name: 'TEAM SAVED', exact: true })).toBeDisabled()
   await expect(page.getByRole('button', { name: /Venusaur/ })).toHaveAttribute('aria-pressed', 'true')
