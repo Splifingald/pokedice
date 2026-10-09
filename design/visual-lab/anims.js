@@ -2302,6 +2302,556 @@
     }
   }
 
+  // ---------------------------------------------------------------- evolution and egg hatching
+  const EVOS = {
+    charmeleon: {
+      from: 'front-charmeleon',
+      to: 'front-charizard',
+      fromName: 'Charmeleon',
+      toName: 'Charizard',
+      glow: ['#ffffff', '#ffe9b0', '#ffb84d', '#ff7a3d'],
+    },
+    eevee: {
+      from: 'front-eevee',
+      to: 'front-jolteon',
+      fromName: 'Eevee',
+      toName: 'Jolteon',
+      stone: 'Thunder Stone',
+      glow: ['#ffffff', '#fff6a8', '#ffd23a', '#f0b000'],
+    },
+  }
+  const BABIES = {
+    dratini: { key: 'front-dratini', name: 'Dratini' },
+    eevee: { key: 'front-eevee', name: 'Eevee' },
+  }
+  /** A quiet stage for moments outside battle: a vertical gradient, a floor, a pool of light where the Pokémon stands. */
+  function momentBg(top, bottom, floor, spot, seed) {
+    return PX.cached(`moment|${top}|${bottom}|${floor}|${spot}`, () => {
+      const r = rng(seed)
+      const c = PX.shade(W, H, (x, y) => {
+        if (y < 118) {
+          const t = y / 118
+          return t > bayer(x, y) * 0.9 + 0.05 ? bottom : top
+        }
+        // The floor: lit near the horizon, fading to the floor colour, dithered.
+        return (y - 118) / 42 > bayer(x, y) * 0.85 + 0.1 ? floor : mix(floor, spot, 0.45)
+      })
+      const g = c.g
+      // The pool of light on the floor and a halo behind.
+      for (let k = 0; k < 4; k++)
+        PX.softEllipse(g, 120, 116, 70 - k * 12, 12 - k * 2, spot, 0.35 + k * 0.12, 0.8)
+      g.drawImage(glow(70, spot, 1.4, 0.32), 120 - 70, 70 - 70)
+      for (let i = 0; i < 26; i++) px(g, r.int(0, W - 1), r.int(0, 100), r() < 0.5 ? spot : '#ffffff')
+      return c
+    })
+  }
+  const THUNDER_STONE = [
+    '...kkk...',
+    '..kgggk..',
+    '.kgGyggk.',
+    'kgggyGggk',
+    'kggyyyggk',
+    'kgGgyggGk',
+    '.kggyggk.',
+    '..kgggk..',
+    '...kkk...',
+  ]
+
+  function evolveAnim(opts = {}) {
+    const E = EVOS[opts.evo || 'charmeleon']
+    const C = { x: 120, y: 112 }
+    const T_STONE = E.stone ? 0.25 : -1,
+      T_TOUCH = E.stone ? 1.0 : -1,
+      T_DARK = E.stone ? 1.35 : 0.9,
+      T_WHITE = T_DARK + 0.45,
+      T_MORPH = T_WHITE + 0.75,
+      T_BURST = T_MORPH + 3.7,
+      T_CONGRATS = T_BURST + 0.55,
+      dur = T_BURST + 3.2
+    // The flicker between the two forms: each swap comes sooner than the last.
+    const swaps = []
+    for (let t = T_MORPH, k = 0.5; t < T_BURST - 0.02; k = Math.max(0.045, k * 0.84)) swaps.push((t += k))
+    const formAt = (t) => swaps.filter((s) => s <= t).length % 2 // 0: before, 1: after
+    return {
+      id: 'evolve',
+      dur,
+      hud: () => ({ bare: true, msg: E.stone ? `${E.fromName} touched the ${E.stone}…` : '' }),
+      beats: [
+        ...(E.stone
+          ? [
+              [
+                T_STONE,
+                'Stone',
+                `The ${E.stone} floats down and touches ${E.fromName}; it dissolves into sparks.`,
+              ],
+            ]
+          : []),
+        [T_DARK, 'Hush', 'The room dims; sparks drift in from the edges and gather on the Pokémon.'],
+        [T_WHITE, 'White', `${E.fromName} turns into a white silhouette with a glowing rim.`],
+        [
+          T_MORPH,
+          'Morph',
+          `It flickers between ${E.fromName} and ${E.toName}, faster and faster, over turning light rays; a ring at every swap.`,
+        ],
+        [T_BURST, 'Burst', 'A full white flash, a ring and a burst of stars; the screen shakes once.'],
+        [T_BURST + 0.1, 'Reveal', `${E.toName} fades in from white and hops.`],
+        [T_CONGRATS, 'Congratulations', 'The message and the fanfare; sparkles keep twinkling.'],
+      ],
+      setup(env) {
+        const s = {
+          env,
+          r: rng(97),
+          fx: new Particles(),
+          amb: new Particles(),
+          rays: canvas(W, H),
+          shakes: [[T_BURST, 0.35, 3]],
+        }
+        s.bg = momentBg('#141a36', '#2a2458', '#221c40', '#4a3f86', 3)
+        s.stone = E.stone
+          ? PX.icon(THUNDER_STONE, { k: '#24304f', g: '#5fbf5f', G: '#c8f5b8', y: '#ffe14d' }, 1)
+          : null
+        return s
+      },
+      step(s, t, dt) {
+        s.fx.update(dt)
+        s.amb.update(dt)
+        const r = s.r
+        // Sparks drift in from the edges and are drawn into the Pokémon.
+        if (t > T_DARK && t < T_BURST && r() < 0.6) {
+          const a = r() * Math.PI * 2
+          s.amb.add({
+            x: C.x + Math.cos(a) * 130,
+            y: C.y - 30 + Math.sin(a) * 90,
+            home: { x: C.x, y: C.y - 30, k: 260 },
+            life: 1.6,
+            size: r.int(1, 2),
+            shape: r() < 0.3 ? 'star' : 'sq',
+            colors: E.glow.slice(0, 3),
+          })
+        }
+        if (E.stone && t >= T_TOUCH && t < T_TOUCH + STEP * 1.5)
+          for (let k = 0; k < 18; k++) {
+            const a = r() * Math.PI * 2
+            s.fx.add({
+              x: C.x,
+              y: C.y - 46,
+              vx: Math.cos(a) * 60,
+              vy: Math.sin(a) * 40,
+              drag: 3,
+              life: 0.6,
+              shape: 'plus',
+              colors: ['#ffffff', '#ffe14d', '#5fbf5f'],
+            })
+          }
+        if (t >= T_BURST && t < T_BURST + STEP * 1.5)
+          for (let k = 0; k < 46; k++) {
+            const a = r() * Math.PI * 2,
+              sp = r.range(50, 150)
+            s.fx.add({
+              x: C.x,
+              y: C.y - 36,
+              vx: Math.cos(a) * sp,
+              vy: Math.sin(a) * sp,
+              drag: 2.4,
+              life: r.range(0.6, 1.1),
+              size: r.int(1, 2),
+              shape: k % 3 ? 'star' : 'sq',
+              colors: E.glow,
+            })
+          }
+        // Afterwards, sparkles keep twinkling around the new form.
+        if (t > T_BURST + 0.6 && r() < 0.12) {
+          const a = r() * Math.PI * 2
+          s.amb.add({
+            x: C.x + Math.cos(a) * r.range(30, 60),
+            y: C.y - 40 + Math.sin(a) * r.range(20, 45),
+            life: 0.6,
+            shape: 'star',
+            size: 1,
+            colors: E.glow.slice(0, 2),
+          })
+        }
+      },
+      draw(g, s, t) {
+        const sh = shakeAt(t, s.shakes)
+        g.save()
+        g.translate(sh.x, sh.y)
+        g.drawImage(s.bg, 0, 0)
+        const dark =
+          t < T_DARK
+            ? 0
+            : t < T_BURST
+              ? 0.55 * span(t, T_DARK, T_DARK + 0.6)
+              : 0.55 * (1 - span(t, T_BURST, T_BURST + 1.2))
+        if (dark > 0) wash(g, '#06040c', dark, 12)
+        // Light rays behind, turning and growing through the morph.
+        if (t > T_MORPH - 0.2 && t < T_BURST + 1.4) {
+          const k =
+            0.55 *
+            (t < T_BURST ? 0.3 + 0.7 * span(t, T_MORPH - 0.2, T_BURST) : 1 - span(t, T_BURST, T_BURST + 1.4))
+          drawRays(
+            s.rays,
+            { x: C.x, y: C.y - 36 },
+            t * (t < T_BURST ? 1 + 2 * span(t, T_MORPH, T_BURST) : 1),
+            E.glow[1],
+            k,
+          )
+          g.drawImage(s.rays, 0, 0)
+        }
+        if (t > T_DARK)
+          g.drawImage(
+            glow(44, E.glow[1], 1.6, 0.25 + 0.35 * span(t, T_DARK, T_BURST)),
+            C.x - 44,
+            C.y - 36 - 44,
+          )
+        const ms = t * 1000
+        const before = t < T_BURST && (t < T_MORPH || formAt(t) === 0)
+        const key = before ? E.from : E.to
+        if (t < T_WHITE) {
+          sprite(g, E.from, C.x, C.y, ms, { flash: span(t, T_WHITE - 0.45, T_WHITE) })
+        } else if (t < T_BURST) {
+          // A white silhouette with a rim that pulses in the glow colours.
+          sprite(g, key, C.x, C.y, ms, { sil: '#ffffff', outline: E.glow[Math.floor(t * 10) % 2 ? 2 : 3] })
+        } else {
+          const hop = within(t, T_BURST + 0.6, T_BURST + 0.95)
+            ? Math.round(Math.sin(Math.PI * span(t, T_BURST + 0.6, T_BURST + 0.95)) * 7)
+            : 0
+          sprite(g, E.to, C.x, C.y - hop, ms, { flash: 1 - span(t, T_BURST + 0.05, T_BURST + 0.5) })
+        }
+        // A ring at each swap, and a big one at the burst.
+        for (const sw of swaps) {
+          const p = span(t, sw, sw + 0.35)
+          if (p > 0 && p < 1) {
+            const R = Math.round(20 + 40 * ease.outC(p))
+            g.drawImage(ring(R, 2, E.glow[1], 0.7 * (1 - p)), C.x - R - 1, C.y - 36 - R - 1)
+          }
+        }
+        {
+          const p = span(t, T_BURST, T_BURST + 0.7)
+          if (p > 0 && p < 1) {
+            const R = Math.min(150, Math.round(10 + 140 * ease.outC(p)))
+            g.drawImage(ring(R, 4, E.glow[2], 1 - p), C.x - R - 1, C.y - 36 - R - 1)
+          }
+        }
+        if (s.stone && t >= T_STONE && t < T_TOUCH) {
+          const p = span(t, T_STONE, T_TOUCH)
+          const y = Math.round(lerp(20, C.y - 52, ease.outQ(p)) + Math.sin(t * 8) * 1.5)
+          g.drawImage(glow(10, '#ffe14d', 1.6, 0.6), C.x - 10, y - 6)
+          g.drawImage(s.stone, C.x - 4, y - 4)
+        }
+        s.amb.draw(g)
+        s.fx.draw(g)
+        g.restore()
+        if (t < 0.5) wash(g, '#06040c', 1 - span(t, 0, 0.5))
+        if (within(t, T_BURST, T_BURST + 0.5)) wash(g, '#ffffff', 1 - span(t, T_BURST, T_BURST + 0.5))
+      },
+      init() {
+        const c = [
+          [T_DARK - 0.1, say(`What? ${E.fromName} is evolving!`)],
+          [T_CONGRATS, say(`Congratulations! Your ${E.fromName} evolved into ${E.toName}!`)],
+          [T_WHITE, () => Sound.tone(392, 0.4, { type: 'triangle', vol: 0.05, slide: 200 })],
+          [
+            T_BURST,
+            () => (
+              Sound.noise(0.5, { vol: 0.08, freq: 2400 }),
+              Sound.tone(1047, 0.5, { type: 'square', vol: 0.04 })
+            ),
+          ],
+        ]
+        if (E.stone) c.push([T_TOUCH, () => Sound.tone(1319, 0.2, { type: 'square', vol: 0.04 })])
+        swaps.forEach((sw, i) =>
+          c.push([sw, () => Sound.tone(330 + i * 26, 0.06, { type: 'square', vol: 0.03 })]),
+        )
+        const FAN = [523, 659, 784, 1047, 784, 1047]
+        FAN.forEach((f, i) =>
+          c.push([
+            T_CONGRATS + i * 0.13,
+            () => Sound.tone(f, i === 5 ? 0.6 : 0.12, { type: 'square', vol: 0.045 }),
+          ]),
+        )
+        this.cues = c.sort((a, b) => a[0] - b[0])
+      },
+    }
+  }
+
+  /** The egg with its cracks, drawn into its own canvas so the wobble can tilt it around its base. */
+  const CRACKS = [
+    // Each stage adds lines (egg-local pixels; the egg is 28×30).
+    [
+      [
+        [9, 6],
+        [11, 8],
+        [10, 10],
+        [13, 12],
+      ],
+    ],
+    [
+      [
+        [13, 12],
+        [16, 11],
+        [18, 13],
+        [21, 12],
+      ],
+      [
+        [10, 10],
+        [7, 12],
+        [6, 15],
+      ],
+    ],
+    [
+      [
+        [21, 12],
+        [23, 15],
+        [22, 18],
+        [25, 20],
+      ],
+      [
+        [6, 15],
+        [4, 17],
+        [6, 20],
+        [3, 22],
+      ],
+      [
+        [16, 11],
+        [15, 7],
+        [17, 4],
+      ],
+    ],
+  ]
+  function eggCanvas(stage, leak, t) {
+    const m = size('front-egg')
+    const c = canvas(m.w + 2, m.h + 2)
+    sprite(c.g, 'front-egg', 1 + m.w / 2, 1 + m.h, 0, {})
+    for (let k = 0; k < stage; k++)
+      for (const ln of CRACKS[k]) {
+        polyline(
+          c.g,
+          ln.map(([x, y]) => [x + 1, y + 1]),
+          '#24304f',
+        )
+        // Light leaking from the cracks once they open.
+        if (leak > 0 && (Math.floor(t * 14) + k) % 2)
+          polyline(
+            c.g,
+            ln.map(([x, y]) => [x + 1, y]),
+            leak > 0.5 ? '#ffffff' : '#fff2b8',
+          )
+      }
+    return c
+  }
+  function hatchAnim(opts = {}) {
+    const B = BABIES[opts.baby || 'dratini']
+    const C = { x: 120, y: 112 }
+    const WOB = [
+      [0.8, 0.55, 5, 2],
+      [1.75, 0.75, 7, 3],
+      [2.95, 0.9, 10, 4],
+    ]
+    const T_CRACK = [1.95, 3.15, 4.0],
+      T_SHAKE = 4.0,
+      T_BURST = 4.85,
+      T_HATCHED = 5.5,
+      dur = 9
+    return {
+      id: 'hatch',
+      dur,
+      hud: () => ({ bare: true, msg: '' }),
+      beats: [
+        [0, 'The Egg', 'The Egg rests in a straw nest under a warm pool of light.'],
+        [WOB[0][0], 'Oh?', 'A small wobble, then a pause; each wobble is bigger and quicker than the last.'],
+        [T_CRACK[0], 'Crack', 'A first crack near the top; a second spreads at the next wobble.'],
+        [T_CRACK[2], 'Light', 'Light leaks through the cracks; the Egg shakes without stopping and hops.'],
+        [T_BURST, 'Burst', 'A white flash, shell pieces fly out and fall, stars ring out.'],
+        [T_BURST + 0.1, 'Hello', `${B.name} fades in from white and hops; hearts float up.`],
+        [T_HATCHED, 'Hatched', `“${B.name} hatched from the Egg!” and the fanfare.`],
+      ],
+      setup(env) {
+        const s = { env, r: rng(41), fx: new Particles(), amb: new Particles(), shakes: [[T_BURST, 0.3, 2]] }
+        s.bg = momentBg('#ffe6d2', '#ffc8c0', '#e8a890', '#fff3e0', 7)
+        // A straw nest, built once.
+        const n = canvas(80, 24)
+        ellipse(n.g, 40, 14, 34, 8, '#8a5a32')
+        ellipse(n.g, 40, 12, 32, 7, '#c8945a')
+        const r = rng(9)
+        for (let i = 0; i < 60; i++) {
+          const a = r() * Math.PI,
+            x = Math.round(40 + Math.cos(a) * r.range(18, 33)),
+            y = Math.round(12 + Math.sin(a) * r.range(2, 7))
+          rect(n.g, x, y, r.int(2, 4), 1, r() < 0.5 ? '#e0b070' : '#a0704a')
+        }
+        ellipse(n.g, 40, 10, 22, 4, '#6b4a34')
+        s.nest = n
+        return s
+      },
+      step(s, t, dt) {
+        s.fx.update(dt)
+        s.amb.update(dt)
+        const r = s.r
+        if (r() < 0.08)
+          s.amb.add({
+            x: r.int(20, 220),
+            y: r.int(20, 100),
+            vy: -4,
+            life: 1.2,
+            shape: 'star',
+            size: 1,
+            colors: ['#ffffff', '#fff3e0'],
+          })
+        for (const tc of T_CRACK)
+          if (t >= tc && t < tc + STEP * 1.5)
+            for (let k = 0; k < 5; k++)
+              s.fx.add({
+                x: C.x + r.range(-8, 8),
+                y: C.y - 22,
+                vx: r.range(-30, 30),
+                vy: -r.range(20, 50),
+                ay: 160,
+                life: 0.5,
+                size: 1,
+                shape: 'sq',
+                colors: ['#f6efd6', '#d8cfb4'],
+              })
+        if (t >= T_BURST && t < T_BURST + STEP * 1.5) {
+          // The shell flies apart: big pieces that fall, then stars.
+          for (let k = 0; k < 22; k++) {
+            const a = -Math.PI * r.range(0.05, 0.95),
+              sp = r.range(70, 150)
+            s.fx.add({
+              x: C.x + r.range(-6, 6),
+              y: C.y - 16,
+              vx: Math.cos(a) * sp,
+              vy: Math.sin(a) * sp,
+              ay: 260,
+              drag: 0.4,
+              life: r.range(0.8, 1.3),
+              size: r.int(2, 3),
+              shape: 'sq',
+              colors: k % 4 ? ['#f6efd6', '#e8e0c4'] : ['#7cc070', '#5aa850'],
+            })
+          }
+          for (let k = 0; k < 24; k++) {
+            const a = r() * Math.PI * 2,
+              sp = r.range(40, 110)
+            s.fx.add({
+              x: C.x,
+              y: C.y - 20,
+              vx: Math.cos(a) * sp,
+              vy: Math.sin(a) * sp,
+              drag: 2.6,
+              life: r.range(0.5, 0.9),
+              shape: 'star',
+              size: 1,
+              colors: ['#ffffff', '#fff2b8', '#ffd0d8'],
+            })
+          }
+        }
+        if (t >= T_HATCHED && t < T_HATCHED + 1.6 && r() < 0.06)
+          s.amb.add({
+            x: C.x + r.range(-16, 16),
+            y: C.y - 50,
+            vy: -14,
+            vx: r.range(-4, 4),
+            life: 1.3,
+            shape: 'heart',
+            size: 2,
+            colors: ['#ff6f9c', '#ff9ab8'],
+          })
+      },
+      draw(g, s, t) {
+        const sh = shakeAt(t, s.shakes)
+        g.save()
+        g.translate(sh.x, sh.y)
+        g.drawImage(s.bg, 0, 0)
+        g.drawImage(s.nest, C.x - 40, C.y - 13)
+        if (t < T_BURST) {
+          // The wobble: a tilt around the base, in bursts, then a constant shake with little hops.
+          let ang = 0,
+            hop = 0,
+            dx = 0
+          for (const [t0, d, deg, n] of WOB)
+            if (within(t, t0, t0 + d))
+              ang = Math.sin(span(t, t0, t0 + d) * Math.PI * n) * deg * (1 - 0.3 * span(t, t0, t0 + d))
+          if (t >= T_SHAKE) {
+            const k = span(t, T_SHAKE, T_BURST)
+            ang = Math.sin(t * 46) * (8 + 6 * k)
+            dx = Math.round(Math.sin(t * 61) * (1 + k))
+            hop = Math.round(Math.abs(Math.sin(t * 9)) * 4 * k)
+          }
+          const stage = T_CRACK.filter((c) => t >= c).length
+          const leak = t >= T_CRACK[2] ? span(t, T_CRACK[2], T_BURST) : 0
+          if (leak > 0) g.drawImage(glow(30, '#fff2b8', 1.5, 0.3 + 0.5 * leak), C.x - 30, C.y - 16 - 30)
+          const e = eggCanvas(stage, leak, t)
+          g.save()
+          g.translate(C.x + dx, C.y - 2 - hop)
+          g.rotate((ang * Math.PI) / 180)
+          g.drawImage(e, -Math.round(e.width / 2), -e.height)
+          g.restore()
+          // Light streaks out of the cracks just before it breaks.
+          if (leak > 0.45)
+            for (let i = 0; i < 6; i++) {
+              const a = -Math.PI * (0.1 + i * 0.16) + Math.sin(t * 3 + i) * 0.05
+              const L = Math.round(20 + 40 * leak)
+              line(
+                g,
+                C.x,
+                C.y - 18,
+                Math.round(C.x + Math.cos(a) * L),
+                Math.round(C.y - 18 + Math.sin(a) * L),
+                i % 2 ? '#ffffff' : '#fff2b8',
+              )
+            }
+        } else {
+          const hop = within(t, T_BURST + 0.6, T_BURST + 0.9)
+            ? Math.round(Math.sin(Math.PI * span(t, T_BURST + 0.6, T_BURST + 0.9)) * 6)
+            : within(t, T_HATCHED + 1.4, T_HATCHED + 1.7)
+              ? Math.round(Math.sin(Math.PI * span(t, T_HATCHED + 1.4, T_HATCHED + 1.7)) * 4)
+              : 0
+          sprite(g, B.key, C.x, C.y - 2 - hop, t * 1000, {
+            flash: 1 - span(t, T_BURST + 0.05, T_BURST + 0.45),
+          })
+        }
+        {
+          const p = span(t, T_BURST, T_BURST + 0.6)
+          if (p > 0 && p < 1) {
+            const R = Math.round(10 + 90 * ease.outC(p))
+            g.drawImage(ring(R, 3, '#ffffff', 1 - p), C.x - R - 1, C.y - 20 - R - 1)
+          }
+        }
+        s.amb.draw(g)
+        s.fx.draw(g)
+        g.restore()
+        if (t < 0.45) wash(g, '#ffffff', 1 - span(t, 0, 0.45))
+        if (within(t, T_BURST, T_BURST + 0.45)) wash(g, '#ffffff', 1 - span(t, T_BURST, T_BURST + 0.45))
+      },
+      init() {
+        const c = [
+          [WOB[0][0], say('Oh?')],
+          [T_CRACK[1], say('The Egg is moving!')],
+          [T_HATCHED, say(`${B.name} hatched from the Egg!`)],
+          [
+            T_BURST,
+            () => (
+              Sound.noise(0.35, { vol: 0.09, freq: 3000 }),
+              Sound.tone(1568, 0.3, { type: 'square', vol: 0.035 })
+            ),
+          ],
+        ]
+        for (const [t0, d, , n] of WOB)
+          for (let i = 0; i < n; i++)
+            c.push([t0 + (i * d) / n, () => Sound.noise(0.04, { vol: 0.05, freq: 900 })])
+        for (const tc of T_CRACK) c.push([tc, () => Sound.noise(0.08, { vol: 0.07, freq: 4200 })])
+        const FAN = [784, 988, 1175, 1568]
+        FAN.forEach((f, i) =>
+          c.push([
+            T_HATCHED + i * 0.14,
+            () => Sound.tone(f, i === 3 ? 0.5 : 0.12, { type: 'square', vol: 0.045 }),
+          ]),
+        )
+        this.cues = c.sort((a, b) => a[0] - b[0])
+      },
+    }
+  }
+
   const MAKE = {
     center: centerAnim,
     catch: catchAnim,
@@ -2311,6 +2861,8 @@
     electric: () => withRoll(electricAnim(), ATTACKS.electric),
     psychic: () => withRoll(psychicAnim(), ATTACKS.psychic),
     legend: legendAnim,
+    evolve: evolveAnim,
+    hatch: hatchAnim,
   }
-  window.ANIM = { W, H, MAKE, Player, ATTACKS, LEGENDS, Stage, shakeAt, comboOf, ROLL }
+  window.ANIM = { W, H, MAKE, Player, ATTACKS, LEGENDS, EVOS, BABIES, Stage, shakeAt, comboOf, ROLL }
 })()

@@ -20,6 +20,8 @@ A standalone page for deciding the game's next look, outside the app's build. Th
   - catching inside the battle scene
   - five typed attacks: Water, Grass, Fire, Electric, Psychic
   - a legendary encounter (Mewtwo, Articuno, Zapdos, Moltres)
+  - an evolution (Charmeleon → Charizard at Lv.36, Eevee → Jolteon with a Thunder Stone)
+  - an Egg hatching (the Gen 5 Egg, into Dratini or Eevee)
 
   You can play them at ¼ speed, step frame by frame, jump between beats, and turn on synthesised sound.
 - **Moodboards.** Five reference boards. Each has a palette, live technique tiles and linked references, both official and fan-made.

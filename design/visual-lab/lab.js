@@ -982,8 +982,18 @@
     ['catch', 'Catch', '#ec3b33'],
     ['attack', 'Typed attacks', '#ffb23a'],
     ['legend', 'Legendary', '#c26bf0'],
+    ['evolve', 'Evolution', '#7fd6d0'],
+    ['hatch', 'Egg hatching', '#9be3a0'],
   ]
-  const OPT = { anim: 'attack', ball: 'great', outcome: 'caught', type: 'fire', legend: 'mewtwo' }
+  const OPT = {
+    anim: 'attack',
+    ball: 'great',
+    outcome: 'caught',
+    type: 'fire',
+    legend: 'mewtwo',
+    evo: 'charmeleon',
+    baby: 'dratini',
+  }
   let player = null
 
   const HUD = {
@@ -1012,7 +1022,10 @@
       const s = CHOSEN
       clearInterval(this.timer)
       this.cfg = cfg
-      if (cfg.team) {
+      if (cfg.bare) {
+        // A moment outside battle (evolution, hatching): the dialogue alone.
+        this.foe.hidden = this.own.hidden = this.team.hidden = this.dice.hidden = true
+      } else if (cfg.team) {
         this.foe.hidden = this.own.hidden = true
         this.dice.hidden = true
         this.team.hidden = false
@@ -1247,6 +1260,8 @@
     if (OPT.anim === 'attack') return M[OPT.type]()
     if (OPT.anim === 'catch') return M.catch({ ball: OPT.ball, outcome: OPT.outcome })
     if (OPT.anim === 'legend') return M.legend({ legend: OPT.legend })
+    if (OPT.anim === 'evolve') return M.evolve({ evo: OPT.evo })
+    if (OPT.anim === 'hatch') return M.hatch({ baby: OPT.baby })
     return M.center()
   }
 
@@ -1280,6 +1295,16 @@
         ['articuno', 'Articuno', '#5fc0e0'],
         ['zapdos', 'Zapdos', '#ffd23a'],
         ['moltres', 'Moltres', '#ff8a1e'],
+      ])
+    else if (OPT.anim === 'evolve')
+      opts.innerHTML = seg('evo', 'EVOLUTION', [
+        ['charmeleon', 'Charmeleon → Charizard · Lv.36', '#ff8a3d'],
+        ['eevee', 'Eevee → Jolteon · Thunder Stone', '#ffd23a'],
+      ])
+    else if (OPT.anim === 'hatch')
+      opts.innerHTML = seg('baby', 'HATCHES INTO', [
+        ['dratini', 'Dratini', '#6f8cff'],
+        ['eevee', 'Eevee', '#c8945a'],
       ])
     else
       opts.innerHTML = `<p class="note" style="margin:0">Three balls (a team is three at most), the jingle on six beats, the team list refilling under the stage.</p>`
@@ -1324,7 +1349,11 @@
           ? `Legendary: ${ANIM.LEGENDS[OPT.legend].name}`
           : OPT.anim === 'catch'
             ? `Catch with a ${SCN.BALLS[OPT.ball].name}`
-            : 'Pokémon Center'
+            : OPT.anim === 'evolve'
+              ? `Evolution: ${ANIM.EVOS[OPT.evo].fromName} → ${ANIM.EVOS[OPT.evo].toName}`
+              : OPT.anim === 'hatch'
+                ? `Egg hatching: ${ANIM.BABIES[OPT.baby].name}`
+                : 'Pokémon Center'
     $('#beats').innerHTML =
       `<h3>${esc(name)}</h3><p class="sub">${d.dur.toFixed(1)} s · ${Math.round(d.dur * 60)} frames. Click a beat to jump to it.</p><ol>${d.beats.map(([t, l, txt], i) => `<li data-i="${i}" data-t="${t}" tabindex="0"><span class="ts">${t.toFixed(2)}s</span><span><b>${esc(l)}</b><span>${esc(txt)}</span></span></li>`).join('')}</ol>${RULES_ANIM}`
     $$('#beats li').forEach((li) => {
