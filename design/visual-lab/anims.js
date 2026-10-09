@@ -2876,6 +2876,643 @@
     }
   }
 
+  // ---------------------------------------------------------------- Mega Evolution and Gigantamax
+  // Both happen on your side of the battle stage, once per battle between them (src/engine/forms.ts): a Mega lasts until
+  // the battle ends and adds a die of the type it gains; Gigantamax adds a die of its first type for its next turn.
+  const PRISM = ['#ff6b8f', '#ffb23a', '#ffe14d', '#7cf07a', '#4ad7ff', '#8f7bff', '#e07bff']
+  const MEGAS = {
+    charizardx: {
+      from: 'back-charizard',
+      to: 'back-charizard-megax',
+      name: 'Charizard',
+      mega: 'Mega Charizard X',
+      die: 'Dragon',
+      lv: 52,
+      aura: ['#ffffff', '#b8f0ff', '#4ad7ff', '#1d7fe0'],
+      foe: 'front-dragonite',
+      foeName: 'Dragonite',
+      foeLv: 55,
+      foeTypes: ['dragon', 'flying'],
+    },
+    charizardy: {
+      from: 'back-charizard',
+      to: 'back-charizard-megay',
+      name: 'Charizard',
+      mega: 'Mega Charizard Y',
+      die: 'Fire',
+      lv: 52,
+      aura: ['#ffffff', '#ffe066', '#ffb23a', '#e8481c'],
+      foe: 'front-dragonite',
+      foeName: 'Dragonite',
+      foeLv: 55,
+      foeTypes: ['dragon', 'flying'],
+    },
+  }
+  const GMAXES = {
+    pikachu: {
+      from: 'back-pikachu',
+      to: 'back-pikachu-gmax',
+      name: 'Pikachu',
+      die: 'Electric',
+      lv: 50,
+      spark: ['#ffffff', '#fff6a8', '#ffe14d'],
+      foe: 'front-snorlax',
+      foeName: 'Snorlax',
+      foeLv: 52,
+      foeTypes: ['normal'],
+    },
+    lapras: {
+      from: 'back-lapras',
+      to: 'back-lapras-gmax',
+      name: 'Lapras',
+      die: 'Water',
+      lv: 50,
+      spark: ['#ffffff', '#c8efff', '#8fd3ff'],
+      foe: 'front-machamp',
+      foeName: 'Machamp',
+      foeLv: 52,
+      foeTypes: ['fighting'],
+    },
+  }
+  /** The Key Stone (and the Mega Stone it answers): a small orb whose colours turn. */
+  const STONE_MAP = ['..kkk..', '.kabck.', 'kabcdek', 'kbcdefk', 'kcdefak', '.kefak.', '..kkk..']
+  function keyStone(turn) {
+    const p = {}
+    'abcdef'.split('').forEach((ch, i) => (p[ch] = PRISM[(i + turn) % PRISM.length]))
+    return PX.icon(STONE_MAP, { k: '#24304f', ...p }, 1)
+  }
+  /** The Mega Evolution symbol: a ring in the seven colours around a white orb crossed by a helix. */
+  function megaSymbol(g, cx, cy, R, t) {
+    for (let i = 0; i < 14; i++) {
+      const a0 = (i / 14) * Math.PI * 2 + t,
+        a1 = a0 + (Math.PI * 2) / 14
+      ellipseLine(g, cx, cy, R, R, PRISM[i % PRISM.length], a0, a1)
+      ellipseLine(g, cx, cy, R - 1, R - 1, PRISM[i % PRISM.length], a0, a1)
+    }
+    ellipse(g, cx, cy, R - 2, R - 2, '#ffffff')
+    // The helix: two strands crossing, one dark, one in the ring's colours.
+    for (let y = -R + 3; y <= R - 3; y++) {
+      const w = Math.sin((y / (R - 2)) * Math.PI) * (R - 4)
+      px(g, Math.round(cx + w), cy + y, '#24304f')
+      px(g, Math.round(cx - w), cy + y, PRISM[(y + R) % PRISM.length])
+    }
+  }
+  /** Two strands of light twisting from a to b, drawn up to `prog`: the Key Stone reaching the Mega Stone. */
+  function helix(g, a, b, prog, t) {
+    const len = Math.hypot(b.x - a.x, b.y - a.y),
+      nx = -(b.y - a.y) / len,
+      ny = (b.x - a.x) / len
+    const n = Math.round(len / 2)
+    for (let i = 0; i <= n * prog; i++) {
+      const u = i / n
+      const x = lerp(a.x, b.x, u),
+        y = lerp(a.y, b.y, u)
+      const amp = 6 * Math.sin(Math.PI * u)
+      const w = Math.sin(u * Math.PI * 5 - t * 9)
+      for (const side of [1, -1]) {
+        const c = PRISM[Math.floor(u * 14 + t * 10 + (side > 0 ? 0 : 3)) % PRISM.length]
+        rect(g, Math.round(x + nx * w * amp * side), Math.round(y + ny * w * amp * side), 2, 2, c)
+      }
+      if (i % 6 === 0 && Math.abs(w) > 0.4)
+        line(
+          g,
+          Math.round(x + nx * w * amp),
+          Math.round(y + ny * w * amp),
+          Math.round(x - nx * w * amp),
+          Math.round(y - ny * w * amp),
+          '#ffffff',
+        )
+    }
+  }
+
+  function megaAnim(opts = {}) {
+    const M = MEGAS[opts.mega || 'charizardx']
+    const KEY = { x: 14, y: 148 }
+    const T_KEY = 0.35,
+      T_BEAM = 0.8,
+      T_LINK = 1.35,
+      T_ORB = 1.7,
+      T_SWAP = 2.2,
+      T_CRACK = 3.35,
+      T_BURST = 3.8,
+      T_MSG = 4.05,
+      dur = 6.6
+    const swaps = []
+    for (let t = T_SWAP, k = 0.32; t < T_CRACK; k = Math.max(0.05, k * 0.8)) swaps.push((t += k))
+    const formAt = (t) => swaps.filter((s) => s <= t).length % 2
+    return {
+      id: 'mega',
+      dur,
+      hud: () => ({
+        foe: { name: M.foeName, lv: M.foeLv, types: M.foeTypes, hp: 0.82 },
+        own: { name: M.name, lv: M.lv, hp: 0.91, max: 172 },
+        msg: `${M.name}'s Mega Stone is reacting to Sam's Key Stone!`,
+      }),
+      beats: [
+        [0, 'React', `The Key Stone glints at the trainer's side; the Mega Stone on ${M.name} answers.`],
+        [
+          T_BEAM,
+          'Link',
+          'Two strands of light twist from the Key Stone to the Mega Stone, in the seven colours of the symbol.',
+        ],
+        [
+          T_ORB,
+          'Sphere',
+          `${M.name} turns white inside a sphere of light whose rim turns through the colours.`,
+        ],
+        [
+          T_SWAP,
+          'Change',
+          `Inside, it flickers between ${M.name} and ${M.mega}, faster and faster; the field dims.`,
+        ],
+        [T_CRACK, 'Crack', 'Light leaks through cracks in the sphere; it shivers.'],
+        [
+          T_BURST,
+          'Burst',
+          'The sphere shatters into coloured shards, a white flash, the screen shakes; the Mega Evolution symbol flares above.',
+        ],
+        [
+          T_MSG,
+          'Mega',
+          `“${M.name} has Mega Evolved into ${M.mega}!” It gains a ${M.die} die until the battle ends; its new aura keeps rising.`,
+        ],
+      ],
+      setup(env) {
+        const s = new Stage(env, M.from, M.foe, 61)
+        s.shakes = [[T_BURST, 0.45, 3]]
+        s.screenShakes = s.shakes
+        s.stones = PRISM.map((_, i) => keyStone(i))
+        return s
+      },
+      step(s, t, dt) {
+        if (!s.step(t, dt)) return
+        const r = s.r
+        const sz = size(t < T_BURST ? M.from : M.to)
+        const C = { x: s.L.own.x, y: s.L.own.y - sz.h * 0.55 }
+        s.C = C
+        // Prismatic motes drawn into the sphere while it forms.
+        if (within(t, T_ORB, T_CRACK) && r() < 0.7) {
+          const a = r() * Math.PI * 2
+          s.fx.add({
+            x: C.x + Math.cos(a) * 90,
+            y: C.y + Math.sin(a) * 70,
+            home: { x: C.x, y: C.y, k: 300 },
+            life: 1.2,
+            size: r.int(1, 2),
+            shape: r() < 0.3 ? 'plus' : 'sq',
+            colors: [PRISM[r.int(0, 6)], '#ffffff'],
+          })
+        }
+        if (t >= T_BURST && t < T_BURST + STEP * 1.5)
+          for (let k = 0; k < 60; k++) {
+            const a = r() * Math.PI * 2,
+              sp = r.range(60, 170)
+            s.fx.add({
+              x: C.x + Math.cos(a) * 20,
+              y: C.y + Math.sin(a) * 20,
+              vx: Math.cos(a) * sp,
+              vy: Math.sin(a) * sp - 30,
+              ay: 160,
+              drag: 1.6,
+              life: r.range(0.7, 1.2),
+              size: r.int(1, 3),
+              shape: k % 4 ? 'sq' : 'star',
+              colors: [PRISM[k % 7], '#ffffff'],
+            })
+          }
+        // The new form's aura: flames of its colour licking upward.
+        if (t > T_BURST + 0.2 && r() < 0.55) {
+          s.fx.add({
+            x: C.x + r.range(-sz.w * 0.42, sz.w * 0.42),
+            y: s.L.own.y - r.range(4, sz.h * 0.7),
+            vx: r.range(-6, 6),
+            vy: r.range(-50, -25),
+            drag: 0.6,
+            life: r.range(0.4, 0.8),
+            size: r.int(1, 2),
+            size1: 0,
+            shape: 'sq',
+            colors: M.aura,
+          })
+        }
+      },
+      draw(g, s, t) {
+        s.absT = t
+        s.own = t < T_BURST ? M.from : M.to
+        s.begin(g, t)
+        s.drawFoe(g, t)
+        const C = s.C || { x: s.L.own.x, y: s.L.own.y - 46 }
+        const dim =
+          t < T_ORB
+            ? 0
+            : t < T_BURST
+              ? 0.5 * span(t, T_ORB, T_ORB + 0.5)
+              : 0.5 * (1 - span(t, T_BURST, T_BURST + 0.8))
+        if (dim > 0) wash(g, '#0a0820', dim, 12)
+        const ms = t * 1000
+        // The sphere's light behind.
+        if (within(t, T_ORB, T_BURST)) {
+          const p = span(t, T_ORB, T_ORB + 0.45)
+          const R = Math.round(10 + 44 * ease.outBack(p, 1.6) + Math.sin(t * 9) * (t > T_CRACK ? 2 : 1))
+          g.drawImage(glow(R, '#ffffff', 1.4, 0.35 + 0.3 * span(t, T_SWAP, T_CRACK)), C.x - R, C.y - R)
+        }
+        if (t < T_ORB) {
+          // Charizard, the Mega Stone answering on its chest.
+          s.drawOwn(g, t, { flash: span(t, T_ORB - 0.35, T_ORB) })
+        } else if (t < T_BURST) {
+          const key = t < T_SWAP || formAt(t) === 0 ? M.from : M.to
+          sprite(g, key, s.L.own.x, s.L.own.y, ms, { sil: '#ffffff', outline: PRISM[Math.floor(t * 12) % 7] })
+        } else {
+          s.drawOwn(g, t, { flash: 1 - span(t, T_BURST + 0.05, T_BURST + 0.55) })
+        }
+        // The sphere's rim: arcs in the seven colours, turning; cracks before it breaks.
+        if (within(t, T_ORB, T_BURST)) {
+          const p = span(t, T_ORB, T_ORB + 0.45)
+          const R = Math.round(10 + 44 * ease.outBack(p, 1.6))
+          for (let i = 0; i < 14; i++) {
+            const a0 = (i / 14) * Math.PI * 2 + t * 2.2,
+              a1 = a0 + (Math.PI * 2) / 14 - 0.05
+            ellipseLine(g, C.x, C.y, R, R, PRISM[i % 7], a0, a1)
+            if (i % 2) ellipseLine(g, C.x, C.y, R - 2, R - 2, '#ffffff', a0, a1)
+          }
+          if (t > T_CRACK) {
+            const k = span(t, T_CRACK, T_BURST)
+            const r = rng(13)
+            for (let c = 0; c < 6; c++) {
+              const a = r() * Math.PI * 2
+              const pts = bolt(
+                r,
+                C.x + Math.cos(a) * R,
+                C.y + Math.sin(a) * R,
+                C.x + Math.cos(a) * R * (1 - 0.7 * k),
+                C.y + Math.sin(a) * R * (1 - 0.7 * k),
+                0.4,
+                3,
+              )
+              polyline(g, pts, '#ffffff')
+            }
+          }
+        }
+        // The Key Stone and the strands to the Mega Stone.
+        const stone = s.stones[Math.floor(t * 8) % 7]
+        const chest = { x: s.L.own.x + 6, y: s.L.own.y - 52 }
+        if (within(t, T_KEY - 0.2, T_ORB + 0.3)) {
+          const k = span(t, T_KEY - 0.2, T_KEY + 0.1)
+          g.drawImage(glow(10, PRISM[Math.floor(t * 8) % 7], 1.5, 0.7 * k), KEY.x - 10, KEY.y - 10)
+          g.drawImage(stone, KEY.x - 3, KEY.y - 3)
+          g.drawImage(glow(7, '#ffffff', 1.5, 0.5 * k), chest.x - 7, chest.y - 7)
+          g.drawImage(stone, chest.x - 3, chest.y - 3)
+        }
+        if (within(t, T_BEAM, T_ORB + 0.2)) helix(g, KEY, chest, span(t, T_BEAM, T_LINK), t)
+        s.fx.draw(g)
+        // The symbol flares above the new form.
+        if (within(t, T_BURST + 0.05, T_BURST + 1.6)) {
+          const p = span(t, T_BURST + 0.05, T_BURST + 0.35)
+          const R = Math.max(3, Math.round(11 * ease.outBack(p, 2.2)))
+          const out = t > T_BURST + 1.3 && Math.floor(t * 20) % 2
+          if (!out) megaSymbol(g, C.x + 4, Math.max(14, s.L.own.y - size(M.to).h - 12), R, t * 1.5)
+        }
+        s.end(g)
+        if (within(t, T_BURST, T_BURST + 0.45)) wash(g, '#ffffff', 1 - span(t, T_BURST, T_BURST + 0.45))
+      },
+      init() {
+        const c = [
+          [0.02, (hud) => hud.show('own', true)],
+          [T_KEY, () => Sound.tone(1568, 0.15, { type: 'square', vol: 0.035 })],
+          [T_BEAM, () => Sound.tone(523, 0.55, { type: 'triangle', vol: 0.05, slide: 520 })],
+          [T_ORB, say(`${M.name} is changing!`)],
+          [T_ORB, () => Sound.tone(392, 0.5, { type: 'triangle', vol: 0.05, slide: 260 })],
+          [T_CRACK, () => Sound.noise(0.35, { freq: 1800, vol: 0.04 })],
+          [
+            T_BURST,
+            () => (
+              Sound.noise(0.6, { vol: 0.09, freq: 1500 }),
+              Sound.tone(784, 0.4, { type: 'square', vol: 0.04 })
+            ),
+          ],
+          [T_MSG, say(`${M.name} has Mega Evolved into ${M.mega}!`)],
+          [T_MSG + 0.1, (hud) => hud.form && hud.form('own', 'MEGA', '#c26bf0')],
+          [T_MSG + 0.6, (hud) => hud.chip(`+1 ${M.die} die · until the battle ends`)],
+        ]
+        swaps.forEach((sw, i) =>
+          c.push([sw, () => Sound.tone(440 + i * 30, 0.05, { type: 'square', vol: 0.025 })]),
+        )
+        ;[659, 784, 1047, 1319].forEach((f, i) =>
+          c.push([
+            T_MSG + 0.05 + i * 0.12,
+            () => Sound.tone(f, i === 3 ? 0.5 : 0.11, { type: 'square', vol: 0.04 }),
+          ]),
+        )
+        this.cues = c.sort((a, b) => a[0] - b[0])
+      },
+    }
+  }
+
+  /** The Dynamax sky: crimson clouds rolling over the top of the stage, built once. */
+  function dynamaxSky() {
+    return PX.cached('dynamax-sky', () => {
+      const c = canvas(W * 2, 64)
+      const r = rng(77)
+      const g = c.g
+      for (let i = 0; i < 46; i++) {
+        const x = r.int(0, W * 2),
+          y = r.int(-6, 34),
+          rx = r.int(14, 34),
+          ry = r.int(6, 13)
+        ellipse(g, x, y + 3, rx, ry, '#3a0718')
+        ellipse(g, x, y, rx - 2, ry - 2, '#6a1030')
+        ellipse(g, x - 3, y - 3, rx - 8, ry - 5, '#a01c48')
+        if (r() < 0.5) ellipseLine(g, x - 3, y - 3, rx - 8, ry - 5, '#ff5f8f', Math.PI * 1.1, Math.PI * 1.7)
+      }
+      // Wrap the seam so it scrolls without a jump.
+      g.drawImage(c.cv || c, 0, 0, W, 64, W, 0, W, 64)
+      return c
+    })
+  }
+  /** A small red cloud of the Gigantamax crown. */
+  function crownCloud(g, x, y, k) {
+    const n = (v) => Math.max(1, Math.round(v * k))
+    // A dark underside, three puffs on top lit from above, a pink rim.
+    ellipse(g, x, y + n(2), n(11), n(4), '#3a0718')
+    ellipse(g, x - n(5), y - n(1), n(6), n(4), '#8a1638')
+    ellipse(g, x + n(5), y - n(1), n(6), n(4), '#8a1638')
+    ellipse(g, x, y - n(3), n(6), n(5), '#b0204e')
+    ellipseLine(g, x, y - n(3), n(6), n(5), '#ff7ab0', Math.PI * 1.05, Math.PI * 1.75)
+    ellipseLine(g, x - n(5), y - n(1), n(6), n(4), '#ff7ab0', Math.PI * 1.1, Math.PI * 1.5)
+    px(g, x - n(2), y - n(6), '#ffd0de')
+  }
+
+  function gmaxAnim(opts = {}) {
+    const X = GMAXES[opts.gmax || 'pikachu']
+    const BP = { x: 30, y: 128 }
+    const T_RECALL = 0.35,
+      T_IN = 0.8,
+      T_GROW = 1.0,
+      T_THROW = 2.1,
+      T_OPEN = 2.55,
+      T_SKY = 2.3,
+      T_RISE = 2.75,
+      T_REVEAL = 3.9,
+      T_MSG = 4.15,
+      dur = 7.2
+    // Below the foe's plate, so nothing hides the ball opening.
+    const APEX = { x: 66, y: 48 }
+    return {
+      id: 'gmax',
+      dur,
+      hud: () => ({
+        foe: { name: X.foeName, lv: X.foeLv, types: X.foeTypes, hp: 0.74 },
+        own: { name: X.name, lv: X.lv, hp: 0.88, max: 120 },
+        msg: `${X.name}, come back!`,
+      }),
+      beats: [
+        [
+          T_RECALL,
+          'Recall',
+          `A red beam calls ${X.name} back; it turns red and shrinks into the ball at the trainer's side.`,
+        ],
+        [
+          T_GROW,
+          'Power',
+          'Dynamax energy pours into the ball from every edge, crackling red; the ball swells to four times its size.',
+        ],
+        [T_THROW, 'Throw', 'The giant ball is thrown up behind the field, spinning.'],
+        [T_SKY, 'Sky', 'Crimson clouds roll in over the top of the stage; the field darkens to red.'],
+        [T_OPEN, 'Open', 'The ball opens at the top of its arc; a column of red light falls to the ground.'],
+        [T_RISE, 'Rise', `A giant red silhouette rises in the light, the ground shaking at each step up.`],
+        [
+          T_REVEAL,
+          'G-Max',
+          `Its Gigantamax form breaks through the red: white flash, a shockwave on the ground, the cloud crown circling its head.`,
+        ],
+        [
+          T_MSG,
+          'Gigantamaxed',
+          `“${X.name} Gigantamaxed!” It gains a ${X.die} die for its next turn; red energy keeps rising.`,
+        ],
+      ],
+      setup(env) {
+        const s = new Stage(env, X.from, X.foe, 67)
+        s.screenShakes = [
+          [T_RISE + 0.25, 0.25, 2],
+          [T_RISE + 0.6, 0.25, 2],
+          [T_RISE + 0.95, 0.25, 2],
+          [T_REVEAL, 0.6, 4],
+        ]
+        s.sky = dynamaxSky()
+        return s
+      },
+      step(s, t, dt) {
+        if (!s.step(t, dt)) return
+        const r = s.r
+        const big = size(X.to)
+        s.top = s.L.own.y - big.h
+        // Energy pours into the ball from every edge.
+        if (within(t, T_GROW, T_THROW) && r() < 0.9) {
+          const a = r() * Math.PI * 2
+          s.fx.add({
+            x: BP.x + Math.cos(a) * 140,
+            y: BP.y + Math.sin(a) * 110,
+            home: { x: BP.x, y: BP.y, k: 380 },
+            life: 1.1,
+            size: r.int(1, 2),
+            shape: r() < 0.3 ? 'plus' : 'sq',
+            colors: ['#ffffff', '#ff7ab0', '#ff2d6f', '#c2185b'],
+          })
+        }
+        if (t >= T_REVEAL && t < T_REVEAL + STEP * 1.5)
+          for (let k = 0; k < 40; k++) {
+            const a = Math.PI + r() * Math.PI,
+              sp = r.range(50, 140)
+            s.fx.add({
+              x: s.L.own.x + r.range(-30, 30),
+              y: s.L.own.y - 6,
+              vx: Math.cos(a) * sp,
+              vy: Math.sin(a) * sp * 0.6,
+              ay: 140,
+              drag: 1.4,
+              life: r.range(0.5, 1),
+              size: r.int(1, 3),
+              shape: 'sq',
+              colors: k % 2 ? ['#ff7ab0', '#c2185b'] : ['#e8d8c0', '#8a7a68'],
+            })
+          }
+        // Red energy rising off the giant, sparks of its type.
+        if (t > T_REVEAL + 0.2 && r() < 0.6)
+          s.fx.add({
+            x: s.L.own.x + r.range(-big.w * 0.45, big.w * 0.45),
+            y: s.L.own.y - r.range(2, big.h * 0.8),
+            vx: r.range(-5, 5),
+            vy: r.range(-40, -18),
+            life: r.range(0.4, 0.9),
+            size: r.int(1, 2),
+            size1: 0,
+            shape: r() < 0.25 ? 'plus' : 'sq',
+            colors: r() < 0.3 ? X.spark : ['#ffb3c8', '#ff2d6f', '#8a1030'],
+          })
+      },
+      draw(g, s, t) {
+        s.absT = t
+        s.own = t < T_REVEAL ? X.from : X.to
+        s.begin(g, t)
+        // The sky and the field go red; the clouds come down and drift.
+        const red = span(t, T_SKY, T_SKY + 0.7)
+        if (red > 0) {
+          wash(g, '#2a0612', 0.45 * red, 12)
+          const yy = Math.round(-64 + 64 * ease.outC(red))
+          const off = Math.round(t * 6) % W
+          g.drawImage(s.sky.cv || s.sky, off, 0, W, 64, 0, yy, W, 64)
+        }
+        s.drawFoe(g, t, red > 0 ? { tint: { color: '#ff2d6f', a: 0.12 * red } } : {})
+        const ms = t * 1000
+        const big = size(X.to)
+        const cx = s.L.own.x,
+          gy = s.L.own.y
+        // The recall: red, shrinking toward the ball.
+        if (t < T_RECALL) s.drawOwn(g, t)
+        else if (t < T_IN) {
+          const p = span(t, T_RECALL, T_IN)
+          const x = Math.round(lerp(cx, BP.x, ease.inQ(p))),
+            y = Math.round(lerp(gy, BP.y + 8, ease.inQ(p)))
+          line(g, BP.x, BP.y, x, y - 20 * (1 - p), '#ff2d6f')
+          sprite(g, X.from, x, y, ms, {
+            sil: '#ff2d6f',
+            outline: '#ffb3c8',
+            sx: 1 - p * 0.92,
+            sy: 1 - p * 0.92,
+          })
+        }
+        // The column of red light from the open ball.
+        if (within(t, T_OPEN, T_REVEAL + 0.3)) {
+          const k = t < T_REVEAL ? span(t, T_OPEN, T_OPEN + 0.2) : 1 - span(t, T_REVEAL, T_REVEAL + 0.3)
+          const w = Math.round(14 + 30 * span(t, T_OPEN, T_REVEAL))
+          ditherFill(g, cx - w, APEX.y, w * 2, gy - APEX.y, '#ff2d6f', 0.45 * k)
+          ditherFill(g, cx - (w >> 1), APEX.y, w, gy - APEX.y, '#ffd0de', 0.35 * k)
+        }
+        // The giant: a red silhouette growing in steps, then the form itself.
+        if (within(t, T_RISE, T_REVEAL)) {
+          const steps = [0.3, 0.55, 0.8, 1]
+          const i = Math.min(3, Math.floor(span(t, T_RISE, T_REVEAL - 0.15) * 4))
+          const p = span(t, T_RISE + i * 0.3, T_RISE + i * 0.3 + 0.18)
+          const k = lerp(i ? steps[i - 1] : 0.1, steps[i], ease.outBack(p, 2))
+          sprite(g, X.to, cx, gy, ms, { sil: '#ff2d6f', outline: '#ffb3c8', sx: k, sy: k })
+        }
+        // The cloud crown: behind the head first, the giant, then the clouds in front.
+        const crown = t > T_REVEAL + 0.1
+        const crownAt = (i) => {
+          const a = t * 1.8 + (i * Math.PI * 2) / 4
+          return {
+            x: Math.round(cx + Math.cos(a) * big.w * 0.46),
+            y: Math.round(gy - big.h + 2 + Math.sin(a) * 6),
+            front: Math.sin(a) > 0,
+          }
+        }
+        const k = span(t, T_REVEAL + 0.1, T_REVEAL + 0.5)
+        if (crown)
+          for (let i = 0; i < 4; i++)
+            if (!crownAt(i).front) crownCloud(g, crownAt(i).x, Math.max(6, crownAt(i).y), k > 0.5 ? 1 : 0.7)
+        if (t >= T_REVEAL) {
+          if (t > T_REVEAL + 0.1)
+            g.drawImage(
+              glow(40, '#ff2d6f', 1.6, 0.35 + 0.1 * Math.sin(t * 6)),
+              cx - 40,
+              gy - big.h * 0.5 - 40,
+            )
+          s.drawOwn(g, t, {
+            flash: 1 - span(t, T_REVEAL + 0.05, T_REVEAL + 0.5),
+            dy: Math.round(Math.sin(t * 2.4) * 1),
+          })
+        }
+        if (crown)
+          for (let i = 0; i < 4; i++)
+            if (crownAt(i).front) crownCloud(g, crownAt(i).x, Math.max(6, crownAt(i).y), k > 0.5 ? 1 : 0.7)
+        // The shockwave on the ground.
+        {
+          const p = span(t, T_REVEAL, T_REVEAL + 0.6)
+          if (p > 0 && p < 1)
+            ellipseLine(
+              g,
+              cx,
+              gy - 4,
+              Math.round(20 + 90 * ease.outC(p)),
+              Math.round(4 + 14 * ease.outC(p)),
+              p < 0.5 ? '#ffffff' : '#ff7ab0',
+            )
+        }
+        // The ball: at the trainer's side, swelling, then thrown up and open.
+        if (within(t, T_IN - 0.1, T_OPEN + 0.5)) {
+          let x = BP.x,
+            y = BP.y,
+            R = 6,
+            ang = 0,
+            open = 0
+          if (t < T_THROW) {
+            R = Math.round(6 + 16 * ease.outQ(span(t, T_GROW, T_THROW - 0.15)))
+            ang = Math.sin(t * 30) * 0.12 * span(t, T_GROW, T_THROW)
+            const q = Math.round(Math.sin(t * 40) * (t > T_GROW ? 1 : 0))
+            x += q
+          } else {
+            const p = span(t, T_THROW, T_OPEN)
+            const pt = quad({ x: BP.x, y: BP.y }, { x: 8, y: 20 }, APEX, ease.outQ(p))
+            x = pt.x
+            y = pt.y
+            R = Math.round(lerp(22, 14, p))
+            ang = p * Math.PI * 3
+            open = span(t, T_OPEN, T_OPEN + 0.2)
+          }
+          if (t > T_GROW)
+            g.drawImage(glow(R + 10, '#ff2d6f', 1.4, 0.6), Math.round(x - R - 10), Math.round(y - R - 10))
+          const b = SCN.ball('poke', ang, { R, open, button: t > T_GROW ? '#ff7ab0' : '#ffffff' })
+          const bc = b.cv || b
+          if (t < T_OPEN + 0.5)
+            g.drawImage(bc, Math.round(x - (bc.width - 1) / 2), Math.round(y - (bc.height - 1) / 2))
+          // Red lightning crackles around it while it swells.
+          if (within(t, T_GROW, T_THROW) && Math.floor(t * 20) % 3 === 0) {
+            const r = rng(Math.floor(t * 20))
+            const a = r() * Math.PI * 2
+            polyline(
+              g,
+              bolt(r, x, y, x + Math.cos(a) * (R + 14), y + Math.sin(a) * (R + 14), 0.45, 3),
+              '#ffb3c8',
+            )
+          }
+        }
+        s.fx.draw(g)
+        s.end(g)
+        if (within(t, T_REVEAL, T_REVEAL + 0.4)) wash(g, '#ffffff', 1 - span(t, T_REVEAL, T_REVEAL + 0.4))
+      },
+      init() {
+        const c = [
+          [T_RECALL, () => Sound.tone(880, 0.3, { type: 'triangle', vol: 0.04, slide: -500 })],
+          [T_GROW, () => Sound.tone(110, 1.0, { type: 'sawtooth', vol: 0.04, slide: 220 })],
+          [T_THROW - 0.2, say('Dynamax energy floods the Poké Ball!')],
+          [T_THROW, () => Sound.noise(0.35, { freq: 900, vol: 0.05 })],
+          [T_OPEN, () => Sound.tone(220, 0.8, { type: 'square', vol: 0.035, slide: -80 })],
+          [T_RISE + 0.25, () => Sound.noise(0.2, { freq: 200, vol: 0.09 })],
+          [T_RISE + 0.6, () => Sound.noise(0.2, { freq: 200, vol: 0.09 })],
+          [T_RISE + 0.95, () => Sound.noise(0.2, { freq: 200, vol: 0.09 })],
+          [
+            T_REVEAL,
+            () => (
+              Sound.noise(0.8, { freq: 160, vol: 0.12 }),
+              Sound.tone(98, 0.8, { type: 'sawtooth', vol: 0.05 })
+            ),
+          ],
+          [T_MSG, say(`${X.name} Gigantamaxed!`)],
+          [T_MSG + 0.1, (hud) => hud.form && hud.form('own', 'G-MAX', '#e0245e')],
+          [T_MSG + 0.6, (hud) => hud.chip(`+1 ${X.die} die for its next turn`)],
+        ]
+        ;[392, 494, 587, 784].forEach((f, i) =>
+          c.push([
+            T_MSG + 0.05 + i * 0.14,
+            () => Sound.tone(f, i === 3 ? 0.55 : 0.12, { type: 'square', vol: 0.04 }),
+          ]),
+        )
+        this.cues = c.sort((a, b) => a[0] - b[0])
+      },
+    }
+  }
+
   const MAKE = {
     center: centerAnim,
     catch: catchAnim,
@@ -2887,6 +3524,8 @@
     legend: legendAnim,
     evolve: evolveAnim,
     hatch: hatchAnim,
+    mega: megaAnim,
+    gmax: gmaxAnim,
   }
   // The moves without the lab's roll prefix: the battle screen rolls its own dice first.
   const RAW = {
@@ -2896,5 +3535,21 @@
     electric: electricAnim,
     psychic: psychicAnim,
   }
-  window.ANIM = { W, H, MAKE, RAW, Player, ATTACKS, LEGENDS, EVOS, BABIES, Stage, shakeAt, comboOf, ROLL }
+  window.ANIM = {
+    W,
+    H,
+    MAKE,
+    RAW,
+    Player,
+    ATTACKS,
+    LEGENDS,
+    EVOS,
+    BABIES,
+    MEGAS,
+    GMAXES,
+    Stage,
+    shakeAt,
+    comboOf,
+    ROLL,
+  }
 })()

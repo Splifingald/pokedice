@@ -984,6 +984,8 @@
     ['legend', 'Legendary', '#c26bf0'],
     ['evolve', 'Evolution', '#7fd6d0'],
     ['hatch', 'Egg hatching', '#9be3a0'],
+    ['mega', 'Mega Evolution', '#c26bf0'],
+    ['gmax', 'Gigantamax', '#e0245e'],
   ]
   const OPT = {
     anim: 'attack',
@@ -993,6 +995,8 @@
     legend: 'mewtwo',
     evo: 'charmeleon',
     baby: 'dratini',
+    mega: 'charizardx',
+    gmax: 'pikachu',
   }
   let player = null
 
@@ -1090,6 +1094,11 @@
     },
     show(side, on) {
       this[side].classList.toggle('gone', !on)
+    },
+    /** A battle form on the plate: MEGA until the battle ends, G-MAX for a turn. */
+    form(side, label, color) {
+      $('.st-chip', this[side]).innerHTML =
+        `<span class="ui-chip" style="--chip:${color}">${esc(label)}</span>`
     },
     /** Build the roll for this animation; its look at any moment comes from tick(t). */
     setRoll(spec) {
@@ -1262,6 +1271,8 @@
     if (OPT.anim === 'legend') return M.legend({ legend: OPT.legend })
     if (OPT.anim === 'evolve') return M.evolve({ evo: OPT.evo })
     if (OPT.anim === 'hatch') return M.hatch({ baby: OPT.baby })
+    if (OPT.anim === 'mega') return M.mega({ mega: OPT.mega })
+    if (OPT.anim === 'gmax') return M.gmax({ gmax: OPT.gmax })
     return M.center()
   }
 
@@ -1305,6 +1316,16 @@
       opts.innerHTML = seg('baby', 'HATCHES INTO', [
         ['dratini', 'Dratini', '#6f8cff'],
         ['eevee', 'Eevee', '#c8945a'],
+      ])
+    else if (OPT.anim === 'mega')
+      opts.innerHTML = seg('mega', 'MEGA EVOLUTION', [
+        ['charizardx', 'Charizard → Mega Charizard X · +1 Dragon die', '#3ab0ff'],
+        ['charizardy', 'Charizard → Mega Charizard Y · +1 Fire die', '#ff8a3d'],
+      ])
+    else if (OPT.anim === 'gmax')
+      opts.innerHTML = seg('gmax', 'GIGANTAMAX', [
+        ['pikachu', 'Pikachu · +1 Electric die', '#ffd23a'],
+        ['lapras', 'Lapras · +1 Water die', '#4aa8ff'],
       ])
     else
       opts.innerHTML = `<p class="note" style="margin:0">Three balls (a team is three at most), the jingle on six beats, the team list refilling under the stage.</p>`
@@ -1353,7 +1374,11 @@
               ? `Evolution: ${ANIM.EVOS[OPT.evo].fromName} → ${ANIM.EVOS[OPT.evo].toName}`
               : OPT.anim === 'hatch'
                 ? `Egg hatching: ${ANIM.BABIES[OPT.baby].name}`
-                : 'Pokémon Center'
+                : OPT.anim === 'mega'
+                  ? `Mega Evolution: ${ANIM.MEGAS[OPT.mega].mega}`
+                  : OPT.anim === 'gmax'
+                    ? `Gigantamax: ${ANIM.GMAXES[OPT.gmax].name}`
+                    : 'Pokémon Center'
     $('#beats').innerHTML =
       `<h3>${esc(name)}</h3><p class="sub">${d.dur.toFixed(1)} s · ${Math.round(d.dur * 60)} frames. Click a beat to jump to it.</p><ol>${d.beats.map(([t, l, txt], i) => `<li data-i="${i}" data-t="${t}" tabindex="0"><span class="ts">${t.toFixed(2)}s</span><span><b>${esc(l)}</b><span>${esc(txt)}</span></span></li>`).join('')}</ol>${RULES_ANIM}`
     $$('#beats li').forEach((li) => {

@@ -28,6 +28,8 @@ A standalone page for deciding the game's next look, outside the app's build. Th
   - a legendary encounter (Mewtwo, Articuno, Zapdos, Moltres)
   - an evolution (Charmeleon → Charizard at Lv.36, Eevee → Jolteon with a Thunder Stone)
   - an Egg hatching (the Gen 5 Egg, into Dratini or Eevee)
+  - a Mega Evolution on the battle stage (Charizard into Mega Charizard X or Y): the Key Stone and the Mega Stone linked by two strands of light, a sphere in the seven colours, the change inside, the burst and the Mega symbol; +1 die of the type it gains, until the battle ends
+  - a Gigantamax (Pikachu or Lapras): recalled into the ball, Dynamax energy swelling it, thrown up behind the field under a crimson sky, a giant red silhouette rising in steps, then the G-Max form with its cloud crown; +1 die of its first type for its next turn
 
   You can play them at ¼ speed, step frame by frame, jump between beats, and turn on synthesised sound.
 - **Moodboards.** Five reference boards. Each has a palette, live technique tiles and linked references, both official and fan-made.
@@ -48,7 +50,7 @@ node design/visual-lab/serve.mjs   # http://localhost:4173
 |---|---|
 | `pixel.js` | The engine: sprite sheets, ordered dithering, glows, particles, a 5×7 bitmap font, lightning, synthesised sound |
 | `scenes.js` | Battle backgrounds per style, the Pokémon Center interior, the procedural Poké Balls (any angle, open lid, button glow) |
-| `anims.js` | The eight timelines and the player (60 fixed steps a second, hit-stops, cues for the HUD) |
+| `anims.js` | The timelines (Center, catch, five attacks, legendary, evolution, hatching, Mega Evolution, Gigantamax) and the player (60 fixed steps a second, hit-stops, cues for the HUD) |
 | `home.js` | The Home prototype: area scenery per biome, the team and how they get along, the area details, the Areas sheet with the region switcher, widgets, toasts, the three preview saves |
 | `pages.js` | The tabs behind Home: Team, Pokédex, Poké Mart, Upgrades, and the shared Pokémon sheet |
 | `battle.js` | The playable battle: the engine's damage, combo, type and status rules, the dice tray, the catch, and Versus on auto |
