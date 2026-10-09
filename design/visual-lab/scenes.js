@@ -527,13 +527,11 @@
       light: '#ff4f9a',
     },
   }
+  // One cradle per team member: a team is three Pokémon at most.
   const SLOTS = [
-    [100, 88],
-    [120, 88],
-    [140, 88],
-    [100, 98],
-    [120, 98],
-    [140, 98],
+    [102, 93],
+    [120, 93],
+    [138, 93],
   ]
 
   function center(style, W, H) {

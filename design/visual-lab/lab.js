@@ -470,6 +470,17 @@
         loRows: 2,
         shadow: { dx: 0, dy: 2, color: '#24304f66', dither: true },
       },
+      // Something new to open (a new region): the one gold button on the screen.
+      gold: {
+        prof: [2, 1],
+        ow: 1,
+        out: '#6b4300',
+        fill: '#ffbe2e',
+        hi: '#fff0b8',
+        lo: '#e08e00',
+        loRows: 2,
+        shadow: { dx: 0, dy: 2, color: '#24304f66', dither: true },
+      },
       off: { prof: [2, 1], ow: 1, out: '#a9b5cc', fill: '#eef2f8', dots: true },
     },
     night: {
@@ -646,6 +657,7 @@
       const sh = F.btn.shadow || { dy: 0 }
       css += `.ui-root[data-style="${style}"]{--fr-w:${S * 2}px;--fr-s:${S * k};--press:${sh.dy * 2 - 1}px;--lift:${sh.dy ? -1 : 0}px;`
       css += `--fr-panel:${url(F.panel)};--fr-dialog:${url(F.dialog)};--fr-btn:${url(F.btn)};--fr-btn-down:${url(F.btn, true)};--fr-primary:${url(F.primary)};--fr-primary-down:${url(F.primary, true)};--fr-off:${url(F.off)};`
+      if (F.gold) css += `--fr-gold:${url(F.gold)};--fr-gold-down:${url(F.gold, true)};`
       css += `--tex:url(${tex.toDataURL()});--texw:8}\n`
     }
     const st = document.createElement('style')
@@ -765,15 +777,14 @@
     { dex: 6, name: 'Charizard', lv: 36, types: ['fire', 'flying'], hp: [126, 126], dice: 4 },
     { dex: 25, name: 'Pikachu', lv: 32, types: ['electric'], hp: [71, 71], dice: 3 },
     { dex: 131, name: 'Lapras', lv: 30, types: ['water', 'ice'], hp: [140, 140], dice: 3 },
-    { dex: 143, name: 'Snorlax', lv: 31, types: ['normal'], hp: [160, 160], dice: 3 },
-    { dex: 65, name: 'Alakazam', lv: 33, types: ['psychic'], hp: [90, 90], dice: 4 },
-    { dex: 135, name: 'Jolteon', lv: 29, types: ['electric'], hp: [79, 79], dice: 3 },
   ]
+  // A team is three Pokémon at most (maxTeamSize); everyone else waits in the Box.
   function centerScreen(style) {
     return `<div class="ui-screen">${topBar(style)}<div class="ui-main">
       <h2 class="ui-h1">Pokémon Center</h2>
       <div class="ui-dialog">Your Pokémon are fighting fit! Tap one to check it, or swap it with the Box.</div>
       <ul class="ui-team">${TEAM.map((m) => `<li class="ui-panel ui-mon">${monIcon(m.dex)}<span class="ui-row"><span class="nm ui-trunc">${m.name}</span><span class="lv">Lv.${m.lv}</span></span><span class="ui-types">${m.types.map((t) => typeBadge(style, t)).join('')}</span>${hp(m.hp[0] / m.hp[1], `${m.hp[0]}/${m.hp[1]}`)}</li>`).join('')}</ul>
+      ${btn('Box · 58 Pokémon', { wide: true })}
       ${btn('Continue', { primary: true, wide: true })}
     </div>${nav(style, 'Team')}</div>`
   }
@@ -1002,7 +1013,7 @@
       this.say(cfg.msg || '', true)
     },
     teamRows(healed) {
-      const hurt = [[34, 'BRN'], [0, 'FNT'], [88], [51, 'PSN'], [12], [70]]
+      const hurt = [[34, 'BRN'], [0, 'FNT'], [88]]
       return TEAM.map((m, i) => {
         const [cur, st] = healed ? [m.hp[1]] : hurt[i]
         const p = cur / m.hp[1]
@@ -1249,7 +1260,7 @@
         ['moltres', 'Moltres', '#ff8a1e'],
       ])
     else
-      opts.innerHTML = `<p class="note" style="margin:0">Six balls, the jingle on six beats, the team list refilling under the stage.</p>`
+      opts.innerHTML = `<p class="note" style="margin:0">Three balls (a team is three at most), the jingle on six beats, the team list refilling under the stage.</p>`
     if (OPT.anim === 'catch' && OPT.ball === 'master')
       $$('[data-k="outcome"]', opts).forEach((b) => {
         b.disabled = b.dataset.v === 'fail'

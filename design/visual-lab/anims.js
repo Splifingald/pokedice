@@ -1992,10 +1992,11 @@
 
   // ---------------------------------------------------------------- Pokémon Center
   function centerAnim() {
-    const BALL_KINDS = ['poke', 'poke', 'great', 'ultra', 'poke', 'great']
-    const PLACE = (i) => 0.7 + i * 0.2
+    const BALL_KINDS = ['poke', 'great', 'ultra']
+    const PLACE = (i) => 0.7 + i * 0.3
     const NOTES = [2.1, 2.35, 2.6, 2.85, 3.2, 3.55]
-    const LIFT = (i) => 4.7 + i * 0.1
+    const LIFT = (i) => 4.7 + i * 0.15
+    const SEAT = (n) => n % SCN.SLOTS.length
     return {
       id: 'center',
       dur: 6.4,
@@ -2005,10 +2006,14 @@
         [
           0.7,
           'Place',
-          'Six balls drop into the cradles with a bounce, one every 200 ms; each seat lights up.',
+          'Three balls, one per team member, drop into the cradles with a bounce, one every 300 ms; each seat lights up.',
         ],
-        [2.1, 'Jingle', 'Six beats: each lights one ball, sends a note up and spikes the heart monitor.'],
-        [3.55, 'Healed', 'All six flash together; hearts and crosses rise from the machine.'],
+        [
+          2.1,
+          'Jingle',
+          'Six beats light the balls in turn: each sends a note up and spikes the heart monitor.',
+        ],
+        [3.55, 'Healed', 'All three flash together; hearts and crosses rise from the machine.'],
         [3.65, 'Refill', 'HP bars refill one after another; statuses clear; a fainted Pokémon comes back.'],
         [3.9, 'Joy', 'Chansey hops twice.'],
         [4.7, 'Return', 'The balls lift out of the cradles in order.'],
@@ -2028,7 +2033,7 @@
         const r = s.r
         NOTES.forEach((tn, i) => {
           if (t >= tn && t < tn + STEP * 1.5) {
-            const [x, y] = SCN.SLOTS[i]
+            const [x, y] = SCN.SLOTS[SEAT(i)]
             s.fx.add({
               x: x + 2,
               y: y - 6,
@@ -2101,14 +2106,14 @@
           const lit = t > t0 + 0.22
           if (lit && lift === 0) ellipse(g, x, y + 1, 5, 2, P.light)
           const n = NOTES.findIndex((tn) => within(t, tn, tn + 0.15))
-          const flash = n === i || within(t, NOTES[5], NOTES[5] + 0.3)
+          const flash = (n >= 0 && SEAT(n) === i) || within(t, NOTES[5], NOTES[5] + 0.3)
           const im = SCN.ball(BALL_KINDS[i], 0, {
             R: 5,
             button: flash ? '#ffffff' : lit ? P.light : '#ffffff',
           })
           if (flash) g.drawImage(glow(9, '#ffffff', 1.6, 0.85), x - 9, Math.round(by - 9))
           g.drawImage(im, Math.round(x - im.width / 2), Math.round(by - im.height / 2))
-          if (flash && n === i) rect(g, x - 1, Math.round(by) - 1, 2, 2, '#ffffff')
+          if (flash && n >= 0 && SEAT(n) === i) rect(g, x - 1, Math.round(by) - 1, 2, 2, '#ffffff')
         })
         s.fx.draw(g)
         if (t < 0.5) wash(g, '#ffffff', 1 - span(t, 0, 0.5))

@@ -462,7 +462,7 @@
   .team-line .ui-mon .nm { font-size: var(--u-fs-sm); }
   .team-line .ui-mon .ui-hp { grid-column: 1 / -1; }
   .team-line .ui-chip { font-size: 11px; padding: 0 5px; }
-  @media (max-width: 560px) { .team-line { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 560px) { .team-line .ui-mon { grid-template-columns: minmax(0, 1fr); justify-items: center; text-align: center; } .team-line .ui-mon .ico { grid-row: auto; margin: -4px 0 -2px; } .team-line .ui-mon .ui-row { justify-content: center; } .team-line .ui-mon .ui-hp { width: 100%; } }
   .stage-root[data-framed] .team-line .ui-mon { padding: 0 2px; }
   .transport { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 10px; }
   .transport .time { margin-left: auto; font-family: var(--f-mono); font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
@@ -542,7 +542,7 @@
   .home-device { position: sticky; top: 72px; }
   .home-bezel { padding: 8px; }
   #home-root { border-radius: 18px; overflow: hidden; }
-  .hm-screen { position: relative; height: 824px; display: flex; flex-direction: column; background-color: var(--u-bg); background-image: var(--tex); background-size: 16px auto; image-rendering: pixelated; overflow: hidden; }
+  .hm-screen { position: relative; height: 872px; display: flex; flex-direction: column; background-color: var(--u-bg); background-image: var(--tex); background-size: 16px auto; image-rendering: pixelated; overflow: hidden; }
   :where(.hm-screen) button { font: inherit; color: inherit; cursor: pointer; }
   .hm-screen .ico { display: inline-block; width: 40px; height: 30px; background: url(assets/dex-icons.png) no-repeat; image-rendering: pixelated; flex: none; }
   .hm-top { display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: #fbfdff; box-shadow: 0 2px 0 #24304f, 0 4px 0 #24304f22; position: relative; z-index: 3; }
@@ -679,6 +679,167 @@
   .hm-hit .ico { margin: -4px -4px -4px -8px; }
   .hm-hit.new { color: #c4382a; }
   .hm-empty { font-size: 18px; color: #5c6a8a; padding: 18px 4px; }
+  .hm-screen [hidden] { display: none !important; }
+  .hm-screen .it { display: inline-block; width: 30px; height: 30px; background: url(assets/items.png) no-repeat; image-rendering: pixelated; flex: none; }
+  .hm-screen .it.coin { width: 16px; height: 16px; margin: 7px; background: none; }
+  .hm-screen .ico.x2 { width: 80px; height: 60px; background-size: 1280px auto; }
+  .hm-ok { font-family: 'Jersey 15', sans-serif; font-size: 14px; line-height: 1; padding: 2px 6px 3px; background: #d8f5e4; color: #1d6b43; box-shadow: inset 0 0 0 2px #34c97a; white-space: nowrap; }
+  /* a pixel chevron, drawn from 2 px squares */
+  .hm-more, .hm-caret { position: relative; width: 22px; height: 22px; flex: none; background: #24304f; }
+  .hm-more::before, .hm-caret::before { content: ''; position: absolute; width: 2px; height: 2px; background: #fff; }
+  .hm-more::before { left: 8px; top: 5px; box-shadow: 2px 0 #fff, 2px 2px #fff, 4px 2px #fff, 4px 4px #fff, 6px 4px #fff, 4px 6px #fff, 2px 6px #fff, 2px 8px #fff, 0 8px #fff; }
+  .hm-caret::before { left: 5px; top: 7px; box-shadow: 0 2px #fff, 2px 2px #fff, 2px 4px #fff, 4px 4px #fff, 4px 6px #fff, 6px 4px #fff, 6px 6px #fff, 8px 2px #fff, 8px 4px #fff, 10px 0 #fff, 10px 2px #fff; }
+  .hm-region[aria-expanded='true'] .hm-caret { transform: scaleY(-1); }
+
+  /* the area plate is a button: it opens the area's details */
+  .hm-area { appearance: none; border: 0; text-align: left; font: inherit; color: inherit; cursor: pointer; }
+  .hm-area:active { transform: translateY(1px); }
+  .hm-area:focus-visible, .hm-info:focus-visible, .hm-region:focus-visible, .hm-reg:focus-visible, .hm-starters button:focus-visible, .hm-seg button:focus-visible { outline: 3px solid #f2553f; outline-offset: 2px; }
+  .hm-finds { display: inline-flex; align-items: center; font-family: 'Jersey 15', sans-serif; font-size: 16px; color: #8a5a00; white-space: nowrap; }
+  .hm-finds .it { margin: -8px -4px -8px -6px; }
+  .hm-finds .it.coin { margin: 0 2px 0 0; width: 12px; height: 12px; }
+  .hm-leg { color: #e8a800; font-size: 16px; line-height: 1; text-shadow: 0 1px 0 #24304f; }
+
+  /* the Areas button: plain, NEW dot, gold for a new region */
+  .hm-map { position: relative; }
+  .hm-map .dot { position: absolute; top: -7px; right: -7px; font-style: normal; min-width: 18px; height: 18px; padding: 0 4px; display: grid; place-items: center; background: #ffbe2e; color: #24304f; font-family: 'Jersey 15', sans-serif; font-size: 13px; line-height: 1; box-shadow: inset 0 0 0 2px #24304f; z-index: 1; }
+  [data-framed] .ui-btn.gold { border-image-source: var(--fr-gold); color: #3a2600; overflow: hidden; }
+  [data-framed] .ui-btn.gold:not(:disabled):active { border-image-source: var(--fr-gold-down); }
+  .hm-map.gold small { color: #4a3000; line-height: 1; white-space: normal; text-align: center; }
+  .hm-map.gold::after { content: ''; position: absolute; inset: 2px 4px 6px; background: linear-gradient(105deg, transparent 0 42%, #ffffff66 42% 47%, transparent 47% 52%, #ffffff40 52% 54%, transparent 54%) no-repeat; background-size: 260% 100%; animation: sheen 2.6s steps(20) infinite; pointer-events: none; }
+  .hm-map .spk { position: absolute; width: 2px; height: 2px; background: #fff; box-shadow: 2px 0 #fff, -2px 0 #fff, 0 2px #fff, 0 -2px #fff; animation: spk 1.5s steps(1) infinite; pointer-events: none; }
+  .hm-map .spk:nth-of-type(1) { left: 9px; top: 9px; }
+  .hm-map .spk:nth-of-type(2) { right: 9px; top: 14px; animation-delay: -0.5s; }
+  .hm-map .spk:nth-of-type(3) { right: 16px; top: 4px; animation-delay: -1s; }
+  @keyframes spk { 0%, 55% { opacity: 0; } 56%, 100% { opacity: 1; } }
+
+  /* Versus, once three Pokémon reach Lv.50 */
+  .hm-vs-w { grid-column: 1 / -1; }
+  .hm-vs { display: flex; align-items: center; gap: 8px; min-width: 0; }
+  .hm-vs-team { display: flex; flex: none; padding-left: 2px; }
+  .hm-vs-team .ico { margin: -2px -12px -4px -6px; }
+  .hm-vs-team .ico:last-child { margin-right: 0; }
+  .hm-vs-txt { display: grid; gap: 3px; flex: 1; min-width: 0; line-height: 1; }
+  .hm-vs-txt b { font-weight: 400; font-size: 20px; }
+  .hm-vs-txt small { font-family: 'Jersey 15', sans-serif; font-size: 15px; color: var(--u-muted); }
+  .hm-vs-go { flex: none; padding: 5px 10px 7px; background: #f2553f; color: #fff; font-size: 18px; line-height: 1; box-shadow: inset 0 0 0 2px #24304f, inset 0 -3px 0 #c4382a; }
+  .hm-vs-score { font-size: 14px; }
+  .hm-wipe p.vs { flex-direction: column; gap: 6px; }
+  .hm-vs-side { display: grid; justify-items: center; gap: 2px; font-size: 24px; }
+  .hm-vs-side:last-child { grid-auto-flow: row; }
+  .hm-vs-side:last-child b { order: -1; }
+  .hm-vs-icons { display: flex; }
+  .hm-vs-icons .ico { margin: 0 -12px; }
+  .hm-vs-big { font-size: 64px; line-height: 1; color: #ffbe2e; text-shadow: 0 4px 0 #c4382a, 4px 0 0 #c4382a; letter-spacing: 0.04em; }
+
+  /* the region switcher, in the Areas sheet */
+  .hm-region { appearance: none; border: 0; background: none; padding: 0 2px; margin-left: -2px; min-height: 44px; display: inline-flex; align-items: center; gap: 8px; font-size: 30px; line-height: 1; }
+  .hm-region b { font-weight: 400; }
+  .hm-region .hm-new { font-size: 13px; }
+  .hm-view { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+  .hm-regions { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 4px 14px 18px; display: grid; gap: 12px; align-content: start; }
+  .hm-reg { appearance: none; border: 0; width: 100%; display: grid; gap: 6px; padding: 6px 6px 10px; text-align: left; background: #ffffff; box-shadow: inset 0 0 0 2px #24304f, inset 0 -4px 0 #dfe7f2; }
+  .hm-reg.here { box-shadow: inset 0 0 0 3px #f2553f, inset 0 -5px 0 #ffd2c8; }
+  .hm-reg .hm-ban { box-shadow: none; }
+  .hm-reg-row { display: flex; align-items: center; gap: 8px; padding: 0 4px; min-width: 0; }
+  .hm-reg-row b { font-weight: 400; font-size: 24px; line-height: 1; flex: 1; }
+  .hm-reg-stats { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; padding: 0 4px; font-family: 'Jersey 15', sans-serif; font-size: 15px; color: #5c6a8a; }
+  .hm-reg-stats > span { display: inline-flex; align-items: center; gap: 4px; }
+  .hm-reg-stats img { width: 12px; height: 12px; }
+  .hm-reg.offer { gap: 8px; padding: 12px 12px 14px; background: #fff8e0; box-shadow: inset 0 0 0 2px #24304f, inset 0 0 0 6px #ffbe2e, inset 0 0 0 8px #24304f, inset 0 -12px 0 #ffe7a8; }
+  .hm-reg.offer .hm-reg-row { padding: 4px 4px 0; }
+  .hm-reg.offer .hm-reg-row .hm-reg-stats { margin-left: auto; padding: 0; }
+  .hm-reg.offer h3 { margin: 0; padding: 0 4px; font-weight: 400; font-size: 42px; line-height: 0.9; }
+  .hm-reg-pick { margin: 0 4px; font-size: 18px; }
+  .hm-starters { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; padding: 0 4px; }
+  .hm-starters button { appearance: none; border: 0; display: grid; justify-items: center; gap: 3px; padding: 2px 2px 8px; background: #ffffff; box-shadow: inset 0 0 0 2px #b6c3d9; min-width: 0; }
+  .hm-starters button[aria-checked='true'] { background: #fffbea; box-shadow: inset 0 0 0 3px #24304f, inset 0 -6px 0 #ffbe2e; }
+  .hm-starters b { font-weight: 400; font-size: 18px; line-height: 1; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+  .hm-type { font-family: 'Jersey 15', sans-serif; font-size: 13px; line-height: 1; padding: 1px 6px 2px; background: var(--c); color: #ffffff; text-transform: uppercase; letter-spacing: 0.05em; box-shadow: inset 0 0 0 1px #24304f; }
+  .hm-reg-note { margin: 0 4px; font-family: 'Jersey 15', sans-serif; font-size: 15px; line-height: 1.15; color: #5c6a8a; }
+  .hm-reg.offer .ui-btn { margin: 2px 4px 0; width: calc(100% - 8px); min-height: 52px; }
+  .hm-reg.teaser { grid-template-columns: 60px minmax(0, 1fr); align-items: center; gap: 12px; padding: 12px; background: #f1f4f9; box-shadow: inset 0 0 0 2px #b6c3d9; }
+  .hm-reg-q { width: 60px; height: 60px; display: grid; place-items: center; font-size: 46px; line-height: 1; color: #ffffff; background: #8592ad; box-shadow: inset 0 0 0 3px #5c6a8a; }
+  .hm-reg-tt { display: grid; gap: 5px; min-width: 0; }
+  .hm-reg-tt b { font-weight: 400; font-size: 22px; line-height: 1; }
+  .hm-reg-tt small { font-family: 'Jersey 15', sans-serif; font-size: 15px; line-height: 1.1; color: #5c6a8a; }
+  .hm-reg-foot { margin: 0; font-family: 'Jersey 15', sans-serif; font-size: 15px; color: #5c6a8a; text-align: center; padding: 0 12px; }
+
+  /* the area cards get a details button; tags sit top left */
+  .hm-ca-li { position: relative; }
+  .hm-tags { position: absolute; left: 4px; top: 4px; display: flex; gap: 4px; }
+  .hm-tags .hm-gym { position: static; }
+  .hm-gym.leg { background: #ffbe2e; color: #24304f; }
+  .hm-card-area .hm-finds { margin-left: auto; }
+  .hm-info { appearance: none; border: 0; position: absolute; top: 8px; right: 8px; width: 40px; height: 40px; display: grid; place-items: center; background: #fbfdff; box-shadow: inset 0 0 0 2px #24304f, inset 0 -4px 0 #dfe7f2; font-size: 24px; line-height: 1; }
+  .hm-info span { margin-top: -3px; }
+  .hm-info:active { box-shadow: inset 0 0 0 2px #24304f, inset 0 2px 0 #dfe7f2; }
+
+  /* an area's details */
+  .hm-detail .hm-panel { height: 92%; max-height: 92%; }
+  .hm-detail .hm-sheet-head h2 { font-size: 28px; }
+  .hm-d-body { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 2px 14px 16px; display: grid; gap: 14px; align-content: start; }
+  .hm-d-ban { box-shadow: 0 0 0 2px #24304f; margin: 0 2px; }
+  .hm-d-lock { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); display: inline-flex; align-items: center; gap: 6px; max-width: 92%; padding: 4px 10px 6px; background: #24304fe8; color: #ffffff; font-size: 17px; line-height: 1; white-space: nowrap; }
+  .hm-d-lock img { width: 16px; height: 16px; }
+  .hm-facts { display: grid; gap: 8px; }
+  .hm-fact { display: flex; align-items: center; gap: 10px; padding: 8px 10px; background: #ffffff; box-shadow: inset 0 0 0 2px #24304f, inset 0 -4px 0 #dfe7f2; }
+  .hm-fact > img { width: 24px; height: 24px; flex: none; }
+  .hm-fact > .ico { margin: -6px -8px -6px -10px; }
+  .hm-fact.legend { background: #fff8e0; box-shadow: inset 0 0 0 2px #24304f, inset 0 -4px 0 #ffe7a8; }
+  .hm-fact-t { display: grid; gap: 2px; flex: 1; min-width: 0; line-height: 1.05; }
+  .hm-fact-t small { font-family: 'Jersey 15', sans-serif; font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; color: #5c6a8a; }
+  .hm-fact-t b { font-weight: 400; font-size: 20px; }
+  .hm-fact-t em { font-style: normal; font-family: 'Jersey 15', sans-serif; font-size: 15px; color: #5c6a8a; }
+  .hm-d-sec { display: grid; gap: 8px; }
+  .hm-d-h { display: flex; align-items: center; gap: 8px; min-height: 36px; }
+  .hm-d-h h3 { margin: 0; flex: 1; font-weight: 400; font-size: 22px; line-height: 1; }
+  .hm-d-hint { font-family: 'Jersey 15', sans-serif; font-size: 15px; color: #5c6a8a; }
+  .hm-seg { display: flex; box-shadow: inset 0 0 0 2px #24304f; }
+  .hm-seg button { appearance: none; border: 0; min-height: 36px; padding: 0 10px; background: transparent; font-size: 17px; white-space: nowrap; }
+  .hm-seg button i { font-style: normal; font-family: 'Jersey 15', sans-serif; font-size: 14px; color: #5c6a8a; margin-left: 2px; }
+  .hm-seg button[aria-checked='true'] { background: #24304f; color: #fbfdff; }
+  .hm-seg button[aria-checked='true'] i { color: #ffe7a8; }
+  .hm-finds-list, .hm-mons, .hm-common, .hm-mix-k { list-style: none; margin: 0; padding: 0; }
+  .hm-finds-list { display: grid; gap: 6px; }
+  .hm-find { display: flex; align-items: center; gap: 8px; min-height: 46px; padding: 4px 10px 6px 6px; background: #fffbea; box-shadow: inset 0 0 0 2px #24304f, inset 0 -4px 0 #ffe7a8; }
+  .hm-find.done { background: #f1f4f9; box-shadow: inset 0 0 0 2px #b6c3d9; color: #5c6a8a; }
+  .hm-find.done .it { filter: grayscale(1) opacity(0.55); }
+  .hm-find-t { display: grid; flex: 1; min-width: 0; line-height: 1.05; }
+  .hm-find-t b { font-weight: 400; font-size: 19px; }
+  .hm-find-t small { font-family: 'Jersey 15', sans-serif; font-size: 14px; color: #5c6a8a; }
+  .hm-mons { display: grid; grid-template-columns: repeat(auto-fill, minmax(102px, 1fr)); gap: 6px; }
+  .hm-mon { position: relative; display: grid; justify-items: center; gap: 3px; padding: 4px 4px 8px; background: #ffffff; box-shadow: inset 0 0 0 2px #b6c3d9; text-align: center; min-width: 0; }
+  .hm-mon .ico { margin: -2px 0 -3px; }
+  .hm-mon b { font-weight: 400; font-size: 17px; line-height: 1; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .hm-rar { font-family: 'Jersey 15', sans-serif; font-size: 13px; line-height: 1; padding: 1px 5px 2px; white-space: nowrap; }
+  .hm-rar.com { background: #e6f0ff; color: #24304f; }
+  .hm-rar.unc { background: #d8f5e4; color: #1d6b43; }
+  .hm-rar.rare { background: #ffbe2e; color: #24304f; box-shadow: inset 0 0 0 1px #24304f; }
+  .hm-mon-lv { font-family: 'Jersey 15', sans-serif; font-size: 13px; line-height: 1; color: #5c6a8a; }
+  .hm-mon.got { background: #f6f8fb; }
+  .hm-mon.got .ico, .hm-mon.got b { opacity: 0.5; }
+  .hm-got { position: absolute; top: 5px; right: 5px; width: 12px; height: 12px; }
+  .hm-mon.unknown .ico { filter: brightness(0) opacity(0.4); }
+  .hm-d-empty { margin: 0; display: flex; align-items: center; gap: 6px; font-family: 'Jersey 15', sans-serif; font-size: 16px; color: #5c6a8a; }
+  .hm-d-empty img { width: 12px; height: 12px; }
+  .hm-mix { display: flex; gap: 2px; height: 16px; padding: 2px; background: #24304f; }
+  .hm-mix i { background: var(--c); min-width: 4px; }
+  .hm-mix-k { display: flex; flex-wrap: wrap; gap: 4px 14px; font-family: 'Jersey 15', sans-serif; font-size: 15px; color: #5c6a8a; }
+  .hm-mix-k li { display: inline-flex; align-items: center; gap: 5px; }
+  .hm-mix-k i { width: 10px; height: 10px; background: var(--c); box-shadow: inset 0 0 0 1px #24304f; }
+  .hm-mix-k b { font-weight: 400; color: #24304f; }
+  .hm-common { display: flex; flex-wrap: wrap; gap: 2px 12px; }
+  .hm-common li { display: inline-flex; align-items: center; font-family: 'Jersey 15', sans-serif; font-size: 15px; }
+  .hm-common .it { margin: -4px -2px -4px -6px; }
+  .hm-d-foot { padding: 10px 14px 14px; background: #fbfdff; box-shadow: 0 -2px 0 #dfe7f2; }
+  .hm-d-foot .ui-btn { min-height: 56px; }
+  .hm-d-foot .ui-btn img { width: 24px; height: 24px; }
+
+  /* the preview toggle above the phone */
+  .home-states { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin: 0 0 18px; }
+  .home-states .eyebrow { margin: 0; }
+  .home-states p { margin: 0; flex: 1 1 280px; font-size: 14px; color: #d6d0e4; max-width: 72ch; }
   .home-notes { min-width: 0; }
   .home-thesis { font-size: 17px; max-width: 60ch; color: #d6d0e4; margin: 0 0 18px; }
   .zones { list-style: none; margin: 0 0 24px; padding: 0; display: grid; gap: 10px; counter-reset: z; }
@@ -697,17 +858,19 @@
     .home-device { position: static; display: grid; justify-content: center; }
   }
   @media (max-width: 520px) {
-    .home-device { margin-inline: calc(-1 * clamp(16px, 3vw, 32px)); margin-top: -28px; display: block; }
+    .home-device { margin-inline: calc(-1 * clamp(16px, 3vw, 32px)); display: block; }
     .home-bezel { border: 0; border-radius: 0; padding: 0; background: none; box-shadow: none; }
     #home-root { border-radius: 0; }
     .hm-screen { height: auto; }
     .hm-sheet { position: fixed; z-index: 100; }
+    .hm-sheet.hm-detail { z-index: 101; }
+    .home-states { margin: -12px 0 14px; }
     .hm-toast { position: fixed; bottom: 92px; z-index: 110; }
     .hm-widgets { padding-bottom: 14px; }
     .hm-nav { position: sticky; bottom: 0; }
   }
   @media (prefers-reduced-motion: reduce) {
-    .hm-go::after, .hm-panel { animation: none; }
+    .hm-go::after, .hm-panel, .hm-map.gold::after, .hm-map .spk { animation: none; }
     .hm-wipe i, .hm-toast { transition: none; }
   }
 
@@ -735,28 +898,38 @@
 
 <main class="wrap">
   <section id="home" role="tabpanel" aria-labelledby="tab-home">
+    <div class="home-states">
+      <span class="eyebrow">PREVIEW A SAVE</span>
+      <div class="seg small" role="radiogroup" aria-label="Preview a save" id="hm-states">
+        <button type="button" role="radio" data-state="mid">Mid-game</button>
+        <button type="button" role="radio" data-state="versus">Versus opens</button>
+        <button type="button" role="radio" data-state="league">League beaten</button>
+      </div>
+      <p id="hm-state-note" aria-live="polite"></p>
+    </div>
     <div class="home-grid">
       <div class="home-device">
         <div class="bezel home-bezel">
           <div class="ui-root" data-style="daybreak" data-framed id="home-root">
             <div class="hm-screen">
               <header class="hm-top">
-                <button type="button" class="hm-trainer" data-soon="Trainer menu" aria-label="Trainer menu: Sam, 5 of 8 badges"><span class="ui-avatar" aria-hidden="true">S</span><span class="hm-tr-txt"><b>Sam</b><small><img id="hm-ico-badge" class="px" alt="" />5/8</small></span></button>
+                <button type="button" class="hm-trainer" id="hm-trainer" data-soon="Trainer menu" aria-label="Trainer menu"><span class="ui-avatar" aria-hidden="true">S</span><span class="hm-tr-txt"><b>Sam</b><small><img id="hm-ico-badge" class="px" alt="" /><span id="hm-badges">5/8</span></small></span></button>
                 <span class="sp"></span>
-                <button type="button" class="hm-pill" data-soon="Shop" aria-label="1,240 Pokédollars. Open the Shop"><img id="hm-ico-coin" class="px" alt="" />₽ 1,240<i aria-hidden="true">+</i></button>
+                <button type="button" class="hm-pill" id="hm-pill" data-soon="Shop" aria-label="Open the Shop"><img id="hm-ico-coin" class="px" alt="" /><span id="hm-gold">₽ 1,240</span><i aria-hidden="true">+</i></button>
                 <button type="button" class="hm-round" data-soon="Leaderboard" aria-label="Leaderboard"><img id="hm-ico-trophy" class="px" alt="" /></button>
               </header>
               <div class="hm-stage" id="hm-stage">
                 <canvas id="hm-cv" width="288" height="276" role="img" aria-label="Your team"></canvas>
-                <div class="hm-area hm-plate" id="hm-area"></div>
+                <button type="button" class="hm-area hm-plate" id="hm-area" aria-haspopup="dialog"></button>
                 <div class="hm-card hm-plate" id="hm-card" hidden></div>
                 <ul class="sr" id="hm-team" aria-label="Your team: tap one to check it"></ul>
               </div>
               <div class="hm-actions">
-                <button type="button" class="ui-btn hm-map" id="hm-areas" aria-haspopup="dialog" aria-label="Areas: change where you explore"><span><img id="hm-ico-map" class="px" alt="" /><small>Areas</small></span></button>
+                <button type="button" class="ui-btn hm-map" id="hm-areas" aria-haspopup="dialog" aria-label="Areas: change where you explore"></button>
                 <button type="button" class="ui-btn primary hm-go" id="hm-go"></button>
               </div>
               <div class="hm-widgets">
+                <button type="button" class="ui-panel hm-w hm-vs-w" id="hm-versus" hidden></button>
                 <button type="button" class="ui-panel hm-w" id="hm-secret"></button>
                 <button type="button" class="ui-panel hm-w" id="hm-daycare"></button>
               </div>
@@ -772,7 +945,8 @@
                 <div class="hm-scrim" data-close></div>
                 <div class="hm-panel" role="dialog" aria-modal="true" aria-labelledby="hm-sheet-title">
                   <div class="hm-grab" aria-hidden="true"></div>
-                  <header class="hm-sheet-head"><div><h2 id="hm-sheet-title">Kanto</h2><p id="hm-sheet-sub"></p></div><button type="button" class="hm-x" data-close aria-label="Close the areas">✕</button></header>
+                  <header class="hm-sheet-head"><div><h2 id="hm-sheet-title" class="sr">Areas</h2><button type="button" class="hm-region" id="hm-region" aria-controls="hm-regions" aria-expanded="false"></button><p id="hm-sheet-sub"></p></div><button type="button" class="hm-x" data-close aria-label="Close the areas">✕</button></header>
+                  <div class="hm-view" id="hm-areas-view">
                   <div class="hm-search"><label for="hm-q" class="sr">Search an area or a Pokémon</label><input id="hm-q" type="search" placeholder="Search an area or a Pokémon" autocomplete="off" spellcheck="false" /></div>
                   <div class="hm-chips" id="hm-chips" role="radiogroup" aria-label="Show">
                     <button type="button" role="radio" data-f="all">All <i></i></button>
@@ -784,6 +958,17 @@
                     <button type="button" role="radio" data-s="route">Route</button><button type="button" role="radio" data-s="level">Level</button><button type="button" role="radio" data-s="catch">Most to catch</button>
                   </div>
                   <ul class="hm-list" id="hm-list"></ul>
+                  </div>
+                  <div class="hm-regions" id="hm-regions" hidden></div>
+                </div>
+              </div>
+              <div class="hm-sheet hm-detail" id="hm-detail" hidden>
+                <div class="hm-scrim" data-close></div>
+                <div class="hm-panel" role="dialog" aria-modal="true" aria-labelledby="hm-d-title">
+                  <div class="hm-grab" aria-hidden="true"></div>
+                  <header class="hm-sheet-head"><div><h2 id="hm-d-title"></h2><p id="hm-d-sub"></p></div><button type="button" class="hm-x" data-close aria-label="Close the details">✕</button></header>
+                  <div class="hm-d-body" id="hm-d-body"></div>
+                  <div class="hm-d-foot"><button type="button" class="ui-btn primary wide" id="hm-d-go"></button></div>
                 </div>
               </div>
               <div class="hm-toast" id="hm-toast" role="status" aria-live="polite"></div>
@@ -797,17 +982,17 @@
         <p class="home-thesis">One big button to play, your team on show, everything else one tap away. It replaces the Map page as the place you land.</p>
         <ol class="zones">
           <li><b>Top bar</b><span>You, your badges, your gold. The <em>+</em> opens the Shop; the cup opens the leaderboard.</span></li>
-          <li><b>Where you are</b><span>Area, level range, rounds, species caught here. Nothing else.</span></li>
-          <li><b>Your team, roaming</b><span>Front sprites wander the area’s own scenery. Tap one for its level and HP. A tired one sweats, Snorlax naps, friends say hello.</span></li>
+          <li><b>Where you are</b><span>Area, level range, rounds, species caught here, limited finds left. Tap it for the <em>area’s details</em>: gym, legendary and when it shows up, one-time finds still there, Pokémon to catch with rarity and levels, what a round brings.</span></li>
+          <li><b>Your team, roaming</b><span>The three of them (a team is three at most) wander the area’s own scenery. Friends walk over to each other and hop, <em>little hearts</em> float up; Lapras starts a song and the others join, <em>notes</em> rising. Tap one: it hops, a heart pops, its card shows. A tired one sweats and naps.</span></li>
           <li><b>Continue</b><span>The only big button, in thumb reach, and it says what comes next.</span></li>
-          <li><b>Areas</b><span>A sheet, not a page. Search by area <em>or by Pokémon</em> (“Pikachu” finds where it lives), filter To catch, Secret or Cleared, sort by route, level or most to catch. Locked areas say what opens them.</span></li>
-          <li><b>Widgets</b><span>The newest secret area travels in one tap; when there is none, the next one shows its progress. The Day Care shows who is ready and collects in place.</span></li>
+          <li><b>Areas</b><span>A sheet, not a page. Search by area <em>or by Pokémon</em> (“Pikachu” finds where it lives), filter To catch, Secret or Cleared, sort by route, level or most to catch; <em>i</em> opens an area’s details, a locked card shows what opens it. The region name on top <em>switches region</em>: the next one appears once the League is won, starters included. The button itself has three states: plain, a NEW dot, <em>gold “New region”</em>.</span></li>
+          <li><b>Widgets</b><span><em>Versus</em> joins once three Pokémon reach Lv.50: Set team first, then Fight. The newest secret area travels in one tap; when there is none, the next one shows its progress. The Day Care shows who is ready and collects in place.</span></li>
           <li><b>Tab bar</b><span>Home in the middle. Dots only for things you can act on: affordable upgrades, a new Pokédex entry.</span></li>
         </ol>
         <h2 class="notes-h">Accessible by default</h2>
         <ul class="notes-list">
           <li>Every control is a real button, 44 px or more; the team is also a keyboard list of buttons.</li>
-          <li>The areas sheet is a dialog: focus moves in, stays in, Esc closes, focus comes back.</li>
+          <li>Both sheets (Areas, an area’s details) are dialogs: focus moves in, stays in, Esc closes the top one, focus comes back.</li>
           <li>Text is navy on paper (11:1); status is never colour alone (chips carry words).</li>
           <li>With reduced motion on, the team stands still and nothing pulses.</li>
         </ul>
