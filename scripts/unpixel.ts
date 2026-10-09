@@ -6,11 +6,14 @@
  *   1. find the fake-pixel grid: the column/row edge profiles peak on cell borders; the cell size is what fits the
  *      gaps between borders, and each gap is split evenly into whole cells, which absorbs the AI's drift;
  *   2. read each cell from its middle (the borders are blurred) and keep its majority colour;
- *   3. merge the near-duplicate shades the AI leaves behind into one palette;
+ *   3. merge the near-duplicate shades the AI leaves behind into one palette — of at most 256 colours when that
+ *      takes little, so the PNG can be indexed (about a third of the size);
  *   4. optionally, clear a flat background around a sprite.
  *
  * <in> is a PNG or a folder of PNGs (convert JPG/WebP first); [out] defaults to <in>/out. Options:
  *   --px <n>      cell size in source pixels, when auto-detection guesses wrong (e.g. --px 32 for a 64×64 sprite)
+ *   --size <WxH>  exactly this size, cropping or repeating the edge pixels — evens out the pixel or two by which
+ *                 a batch differs (e.g. --size 400x400 for Gemini's 2048×2048 images, drawn on a ~400 px grid)
  *   --merge <n>   colour distance under which shades merge into one (default 16; 0 keeps every shade)
  *   --bg <mode>   keep (default) | auto | #rrggbb — make a flat background transparent: auto takes the border's
  *                 colour, only if (nearly) the whole border is that colour; for sprites, not scenes
@@ -20,6 +23,7 @@
 import { mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { deflateSync } from 'node:zlib'
 import { PNG } from 'pngjs'
 
 export type Image = { width: number; height: number; data: Uint8Array }
@@ -312,28 +316,107 @@ export function clearBackground(img: Image, mode: string, tolerance = 40): boole
   return true
 }
 
-export type Options = { px?: number; merge: number; bg: string }
+export type Options = { px?: number; merge: number; bg: string; size?: [number, number] }
+
+/**
+ * Brings the image to exactly `w`×`h`, centred: extra rows or columns are cropped, missing ones repeat the edge. Meant
+ * for the pixel or two by which a batch's grids differ (an art pixel cut at the image's edge), not for resizing.
+ */
+export function fitTo(img: Image, w: number, h: number): Image {
+  const out: Image = { width: w, height: h, data: new Uint8Array(w * h * 4) }
+  const dx = Math.floor((img.width - w) / 2)
+  const dy = Math.floor((img.height - h) / 2)
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const sx = Math.min(img.width - 1, Math.max(0, x + dx))
+      const sy = Math.min(img.height - 1, Math.max(0, y + dy))
+      out.data.set(
+        img.data.subarray((sy * img.width + sx) * 4, (sy * img.width + sx) * 4 + 4),
+        (y * w + x) * 4,
+      )
+    }
+  }
+  return out
+}
 
 export function unpixel(
   img: Image,
   opts: Options,
 ): { out: Image; cell: number; colours: number; cleared: boolean } {
   const cell = opts.px ?? detectCellSize(img)
-  const out = sampleGrid(img, cutLines(img, 'x', cell), cutLines(img, 'y', cell))
+  const grid = sampleGrid(img, cutLines(img, 'x', cell), cutLines(img, 'y', cell))
+  const out = opts.size ? fitTo(grid, ...opts.size) : grid
   const cleared = opts.bg !== 'keep' && clearBackground(out, opts.bg)
-  const colours = mergeShades(out, opts.merge)
+  let colours = mergeShades(out, opts.merge)
+  // 256 colours fit an indexed PNG, a third the size of a full-colour one: fold the closest shades a bit further.
+  for (let t = opts.merge + 4; opts.merge > 0 && colours > 256 && t <= 48; t += 4)
+    colours = mergeShades(out, t)
   return { out, cell, colours, cleared }
 }
 
-function writePng(file: string, img: Image, scale = 1) {
-  const png = new PNG({ width: img.width * scale, height: img.height * scale })
-  for (let y = 0; y < png.height; y++) {
-    for (let x = 0; x < png.width; x++) {
-      const s = (Math.floor(y / scale) * img.width + Math.floor(x / scale)) * 4
-      png.data.set(img.data.subarray(s, s + 4), (y * png.width + x) * 4)
+const CRC = Array.from({ length: 256 }, (_, n) => {
+  let c = n
+  for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1
+  return c >>> 0
+})
+
+function chunk(type: string, data: Uint8Array): Buffer {
+  const out = Buffer.alloc(12 + data.length)
+  out.writeUInt32BE(data.length, 0)
+  out.write(type, 4, 'latin1')
+  out.set(data, 8)
+  let c = 0xffffffff
+  for (const b of out.subarray(4, 8 + data.length)) c = CRC[(c ^ b) & 255]! ^ (c >>> 8)
+  out.writeUInt32BE((c ^ 0xffffffff) >>> 0, 8 + data.length)
+  return out
+}
+
+/** A PNG of the image: indexed (one byte a pixel plus a palette) when it has 256 colours or fewer, else RGBA. */
+export function encodePng(img: Image): Buffer {
+  const index = new Map<number, number>()
+  const rows = Buffer.alloc((img.width + 1) * img.height) // each row starts with filter byte 0
+  for (let y = 0; y < img.height; y++) {
+    for (let x = 0; x < img.width; x++) {
+      const i = (y * img.width + x) * 4
+      const key = img.data[i + 3] ? Buffer.from(img.data.subarray(i, i + 4)).readUInt32BE(0) : 0
+      let n = index.get(key)
+      if (n === undefined) {
+        if (index.size === 256) {
+          const png = new PNG({ width: img.width, height: img.height })
+          png.data.set(img.data)
+          return PNG.sync.write(png, { colorType: 6 })
+        }
+        index.set(key, (n = index.size))
+      }
+      rows[y * (img.width + 1) + 1 + x] = n
     }
   }
-  writeFileSync(file, PNG.sync.write(png, { colorType: 6 }))
+  const keys = [...index.keys()]
+  const header = Buffer.alloc(13)
+  header.writeUInt32BE(img.width, 0)
+  header.writeUInt32BE(img.height, 4)
+  header.set([8, 3, 0, 0, 0], 8) // 8-bit, indexed colour
+  const alpha = keys.map((k) => k & 255)
+  return Buffer.concat([
+    Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+    chunk('IHDR', header),
+    chunk('PLTE', Buffer.from(keys.flatMap((k) => [k >>> 24, (k >>> 16) & 255, (k >>> 8) & 255]))),
+    ...(alpha.some((a) => a < 255) ? [chunk('tRNS', Buffer.from(alpha))] : []),
+    chunk('IDAT', deflateSync(rows, { level: 9 })),
+    chunk('IEND', Buffer.alloc(0)),
+  ])
+}
+
+function writePng(file: string, img: Image, scale = 1) {
+  const big: Image = { width: img.width * scale, height: img.height * scale, data: new Uint8Array(0) }
+  big.data = new Uint8Array(big.width * big.height * 4)
+  for (let y = 0; y < big.height; y++) {
+    for (let x = 0; x < big.width; x++) {
+      const s = (Math.floor(y / scale) * img.width + Math.floor(x / scale)) * 4
+      big.data.set(img.data.subarray(s, s + 4), (y * big.width + x) * 4)
+    }
+  }
+  writeFileSync(file, encodePng(big))
 }
 
 function main() {
@@ -343,16 +426,18 @@ function main() {
     return i < 0 ? undefined : args.splice(i, 2)[1]
   }
   const px = flag('px')
+  const size = flag('size')?.split('x').map(Number)
   const opts: Options = {
     px: px ? Number(px) : undefined,
     merge: Number(flag('merge') ?? 16),
     bg: flag('bg') ?? 'keep',
+    size: size?.length === 2 && size.every((n) => n > 0) ? [size[0]!, size[1]!] : undefined,
   }
   const preview = Number(flag('preview') ?? 0)
   const [input, output] = args
   if (!input) {
     console.error(
-      'usage: pnpm unpixel <image.png | folder> [out folder] [--px n] [--merge n] [--bg auto|keep|#rrggbb] [--preview n]',
+      'usage: pnpm unpixel <image.png | folder> [out folder] [--px n] [--size WxH] [--merge n] [--bg auto|keep|#rrggbb] [--preview n]',
     )
     process.exit(1)
   }
