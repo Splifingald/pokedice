@@ -127,16 +127,15 @@ test('the avatar drawer opens the profile, the guide and the settings', async ({
   const avatar = page.getByRole('button', { name: 'Your trainer menu' })
   await expect(avatar).toHaveText('Sam0/8')
 
-  // The drawer is titled with the player's name, offers CONNECT, and hides Admin from a non-admin.
+  // The avatar opens the trainer card, with the menu under it: CONNECT, and no Admin for a non-admin.
   await avatar.click()
-  await expect(page.getByRole('dialog', { name: 'Sam' })).toBeVisible()
-  await expect(page.getByRole('dialog').getByRole('button', { name: 'Admin' })).toHaveCount(0)
-  await expect(page.getByRole('dialog').getByRole('button', { name: 'CONNECT' })).toBeVisible()
-
-  // The profile: the player's name and the Kanto badge case, every badge still to win.
-  await page.getByRole('button', { name: 'Trainer card' }).click()
   const card = page.getByRole('dialog', { name: 'Trainer card' })
-  await expect(card.getByText('Sam')).toBeVisible()
+  await expect(card).toBeVisible()
+  await expect(card.getByRole('button', { name: 'Admin' })).toHaveCount(0)
+  await expect(card.getByRole('button', { name: 'CONNECT' })).toBeVisible()
+
+  // The card: the player's name and the Kanto badge case, every badge still to win.
+  await expect(card.getByText('Sam', { exact: true })).toBeVisible()
   await expect(card.getByRole('heading', { name: 'Badge case' })).toBeVisible()
   await expect(card.getByRole('img', { name: 'Boulder Badge — not earned yet' })).toBeVisible()
   await expect(card.getByText('Badges 0/8')).toBeVisible()

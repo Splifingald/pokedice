@@ -22,7 +22,7 @@ test('side menu → contact the developer: the warning, then title and descripti
 
   // The last row of the side menu, pinned under the others.
   await page.getByRole('button', { name: 'Your trainer menu' }).click()
-  const menu = page.getByRole('dialog', { name: 'Sam' })
+  const menu = page.getByRole('dialog', { name: 'Trainer card' })
   await expect(menu.getByRole('button').last()).toHaveText('Contact the developer')
   await menu.getByRole('button', { name: 'Contact the developer' }).click()
 

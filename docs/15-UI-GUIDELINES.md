@@ -324,3 +324,18 @@ in view) and the battle history sits beside it from 1024 px.
   note and "You're #N of M" (tap: your row scrolls into view and blinks) or "You're in the Hall of Fame"; a navy
   **Hall of Fame** button with the crown, how many maxed the board out and their faces, opening a sheet with the
   board's `ui.board.hallBody.*` text and their rows (a crown in place of the rank). Locked until the first badge.
+
+## 17. The trainer card and the menu
+
+- **The avatar opens the trainer card** (the drawer, titled "Trainer card"): a blue-framed card with "TRAINER CARD"
+  and an ID number, your look at 2×, your name with Change, then Money, Pokédex, Best level, Areas, Shinies and your
+  Versus record (or Locked) as a dotted list, and your team's icons with levels.
+- **Badge case** per region reached (`regionCases`): a navy case, each badge 12×12 pixel art at 3× (`BadgeIcon`:
+  Kanto's are the lab's maps, other regions use the same shapes in their own colours), then the **crown**
+  (`CrownIcon`) for clearing the region's last area. Unearned ones are grey at 40 % and their label says "not earned
+  yet".
+- **Look**: "How other trainers see you…" with Change opening a radio grid of every look, grouped by region. The same
+  crop (`TrainerLook`) is used wherever a trainer appears.
+- **The menu** under the card: rows with an icon tile, a label and a one-line description (Leaderboard, Versus with
+  "0/3 at Lv.50" while locked, Settings, How to play, Type chart, Admin for admins, Cloud backup, Connect). The label
+  alone names a row; the description is its `aria-describedby`.

@@ -25,6 +25,8 @@ import { Toggle } from '@/components/Toggle'
 import { TypeBadge, TypeSwatch } from '@/components/TypeBadge'
 import { pushToast, setSettings, useGame } from '@/store/game'
 import { BattleBits } from './kitchen/BattleBits'
+import { BadgeIcon, CrownIcon } from '@/components/BadgeIcon'
+import { BoardRow } from '@/components/BoardRow'
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -389,6 +391,59 @@ export function KitchenSink() {
             )}
           />
         </div>
+      </Section>
+
+      <Section title="Badges · crown · board rows">
+        <div className="flex flex-wrap gap-2 bg-[#2b3a63] p-2">
+          {[
+            'Boulder Badge',
+            'Cascade Badge',
+            'Thunder Badge',
+            'Rainbow Badge',
+            'Soul Badge',
+            'Marsh Badge',
+            'Volcano Badge',
+            'Earth Badge',
+            'Zephyr Badge',
+            'Storm Badge',
+            'Relic Badge',
+            'Glacier Badge',
+            'Fairy Badge',
+            'Normalium Z',
+          ].map((b) => (
+            <BadgeIcon key={b} badge={b} earned size={36} />
+          ))}
+          <BadgeIcon badge="Boulder Badge" earned={false} size={36} />
+          <CrownIcon earned size={36} label="Crown" />
+          <CrownIcon earned={false} size={36} label="Crown — not earned yet" />
+        </div>
+        <ol className="m-0 grid w-full max-w-[420px] list-none gap-1.5 p-0">
+          <BoardRow
+            rank={1}
+            look="/characters/red.png"
+            name="Red"
+            team={[
+              { dex: 25, level: 88 },
+              { dex: 6, level: 85 },
+            ]}
+            value="Lv.88"
+          />
+          <BoardRow
+            rank={2}
+            look="/characters/green.png"
+            name="Leaf"
+            isMe
+            team={[{ dex: 3, level: 60 }]}
+            value="Lv.60"
+          />
+          <BoardRow
+            rank={7}
+            look="/characters/red.png"
+            name="Blue"
+            team={[{ dex: 9, level: 41 }]}
+            value="Lv.41"
+          />
+        </ol>
       </Section>
 
       <Section title="Battle: stage, plates, tray, readout, team pips, Bag, catch">

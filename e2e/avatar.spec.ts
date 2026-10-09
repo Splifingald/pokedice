@@ -17,7 +17,6 @@ test('the trainer card picks the look shown on the leaderboard, and keeps the ch
   await signedIn(page, makeSave(4, { player: { name: 'Sam', character: 'green' } }))
   await page.goto('/home')
   await page.getByRole('button', { name: 'Your trainer menu' }).click()
-  await page.getByRole('dialog').getByRole('button', { name: 'Trainer card' }).click()
 
   const card = page.getByRole('dialog', { name: 'Trainer card' })
   // No pick yet: the look is the character, Leaf.
