@@ -746,9 +746,9 @@
     return `<div class="ui-screen">${topBar(style)}<div class="ui-main" style="gap:10px">
       <div class="ui-scene">
         <canvas data-scene width="240" height="140"></canvas>
-        <div class="ui-plate foe"><div class="ui-row"><span class="name ui-trunc">Gengar</span><span class="lv">Lv.34</span><span class="ui-grow"></span><span class="pips"><i class="on"></i><i class="on"></i><i></i></span></div>
-          <div class="ui-types">${typeBadge(style, 'ghost')}${typeBadge(style, 'poison')}</div>${hp(0.58, '')}</div>
-        <div class="ui-plate own"><div class="ui-row"><span class="name ui-trunc">Charizard</span><span class="lv">Lv.36</span></div>${hp(0.78, '98/126')}</div>
+        <div class="ui-plate foe"><div class="ui-row"><span class="name ui-trunc">Gengar</span><span class="lv">Lv.34</span><span class="ui-grow"></span><span class="pips" aria-label="Trainer has 2 of 3 Pokémon left"><i class="on"></i><i class="on"></i><i></i></span></div>
+          <div class="ui-row pl2"><span class="ui-types">${typeBadge(style, 'ghost')}${typeBadge(style, 'poison')}</span>${hp(0.58, '')}</div></div>
+        <div class="ui-plate own" aria-label="Charizard"><div class="ui-row"><span class="lv">Lv.36</span>${hp(0.78, '98/126')}</div></div>
       </div>
       <section class="ui-panel">
         <p class="ui-prompt">What will Charizard do?</p>
@@ -834,6 +834,8 @@
   }
 
   // ================================================================== styles tab
+  /** The direction picked after review: Johto Daybreak with Jersey 20. Home, the battle HUD and the stage use it. */
+  const CHOSEN = 'daybreak'
   let style = store.get('style', 'daybreak')
   if (!STYLE[style]) style = 'daybreak'
   let comparing = false
@@ -933,19 +935,6 @@
     renderIntro()
     renderScreens()
     renderSheet()
-    setRoot($('#stage-root'), s)
-    if (player && player.def) {
-      // The stage's scenery follows the style too: rebuild at the same time point.
-      const t = player.t
-      const was = player.playing
-      player.env.style = s
-      player.reset()
-      if (t > 0) {
-        player.advance(t)
-        player.render()
-      }
-      if (was) player.play()
-    }
     renderMoodHeaders()
   }
 
@@ -989,7 +978,7 @@
       this.team = $('#h-team')
     },
     reset(cfg) {
-      const s = style
+      const s = CHOSEN
       clearInterval(this.timer)
       this.cfg = cfg
       if (cfg.team) {
@@ -1002,9 +991,11 @@
         this.team.hidden = true
         const f = cfg.foe,
           o = cfg.own
-        this.foe.innerHTML = `<div class="ui-row"><span class="name ui-trunc">${f.name}</span><span class="lv">Lv.${f.lv}</span><span class="st-chip"></span></div><div class="ui-types">${f.types.map((t) => typeBadge(s, t)).join('')}</div>${hp(f.hp, '', { id: 'foe' })}`
+        this.foe.innerHTML = `<div class="ui-row"><span class="name ui-trunc">${f.name}</span><span class="lv">Lv.${f.lv}</span><span class="ui-grow"></span><span class="st-chip"></span></div><div class="ui-row pl2"><span class="ui-types">${f.types.map((t) => typeBadge(s, t)).join('')}</span>${hp(f.hp, '', { id: 'foe' })}</div>`
         const cur = Math.round(o.hp * o.max)
-        this.own.innerHTML = `<div class="ui-row"><span class="name ui-trunc">${o.name}</span><span class="lv">Lv.${o.lv}</span><span class="st-chip"></span></div>${hp(o.hp, `${cur}/${o.max}`, { id: 'own' })}`
+        // Your own box: no name (the prompt and the dialogue already say it), just level, HP and status.
+        this.own.setAttribute('aria-label', o.name)
+        this.own.innerHTML = `<div class="ui-row"><span class="lv">Lv.${o.lv}</span>${hp(o.hp, `${cur}/${o.max}`, { id: 'own' })}<span class="st-chip"></span></div>`
         this.foe.classList.toggle('gone', f.show === false)
         this.own.classList.toggle('gone', o.show === false)
       }
@@ -1065,7 +1056,7 @@
       box.innerHTML = ''
       box.hidden = !spec
       if (!spec) return
-      const s = style
+      const s = CHOSEN
       const tokens =
         spec.kind === 'attack'
           ? [
@@ -1349,7 +1340,7 @@
   function loadAnim(autoplay) {
     if (!player) return
     player.pause()
-    player.load(animDef(), { style })
+    player.load(animDef(), { style: CHOSEN })
     renderBeats()
     onTick(0)
     if (autoplay && !REDUCED) player.play()
@@ -1357,7 +1348,7 @@
   }
 
   function initAnims() {
-    setRoot($('#stage-root'), style)
+    setRoot($('#stage-root'), CHOSEN)
     HUD.build()
     player = new ANIM.Player($('#stage-cv'), HUD)
     player.onTick = onTick
@@ -2358,10 +2349,10 @@
   }
 
   // ================================================================== tabs, keys, boot
-  const TAB_IDS = ['styles', 'animations', 'moodboards']
+  const TAB_IDS = ['home', 'animations', 'styles', 'moodboards']
   let animsStarted = false
   function showTab(id, push = true) {
-    if (!TAB_IDS.includes(id)) id = 'styles'
+    if (!TAB_IDS.includes(id)) id = 'home'
     TAB_IDS.forEach((t) => {
       $('#' + t).hidden = t !== id
       $(`#tab-${t}`).setAttribute('aria-selected', String(t === id))
@@ -2392,7 +2383,7 @@
     $('.tabs').addEventListener('keydown', (e) => {
       if (!['ArrowLeft', 'ArrowRight'].includes(e.key)) return
       const cur = TAB_IDS.findIndex((t) => $(`#tab-${t}`).getAttribute('aria-selected') === 'true')
-      const n = TAB_IDS[(cur + (e.key === 'ArrowRight' ? 1 : 2)) % 3]
+      const n = TAB_IDS[(cur + (e.key === 'ArrowRight' ? 1 : TAB_IDS.length - 1)) % TAB_IDS.length]
       showTab(n)
       $(`#tab-${n}`).focus()
     })
@@ -2459,7 +2450,8 @@
     initAnims()
     renderMoods()
     const hash = (location.hash || '').slice(1)
-    showTab(TAB_IDS.includes(hash) ? hash : 'styles', false)
+    showTab(TAB_IDS.includes(hash) ? hash : 'home', false)
+    HOME.init()
     requestAnimationFrame(tick)
     // Hooks for scripted previews (seek a timeline, pick an animation).
     window.PDLAB = {

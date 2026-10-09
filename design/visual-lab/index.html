@@ -47,7 +47,7 @@
   .logo b { color: var(--red); font-weight: 400; }
   .brand .tag { font-family: var(--f-label); font-size: 8px; letter-spacing: 0.08em; color: var(--muted); transform: translateY(-2px); }
   .tabs { display: flex; gap: 4px; }
-  .tab { appearance: none; border: 0; background: transparent; color: var(--muted); padding: 6px 12px; font-family: var(--f-display); font-weight: 600; font-size: 15px; cursor: pointer; border-radius: 0; position: relative; }
+  .tab { appearance: none; border: 0; background: transparent; color: var(--muted); white-space: nowrap; padding: 6px 12px; font-family: var(--f-display); font-weight: 600; font-size: 15px; cursor: pointer; border-radius: 0; position: relative; }
   .tab:hover { color: var(--text); }
   .tab[aria-selected='true'] { color: var(--text); }
   .tab[aria-selected='true']::after { content: ''; position: absolute; left: 12px; right: 12px; bottom: 0; height: 3px; background: var(--gold); box-shadow: 0 3px 0 #8a6420; }
@@ -60,6 +60,8 @@
   .sw i { display: block; }
   @media (max-width: 760px) {
     .deck { position: static; }
+    .tabs { overflow-x: auto; scrollbar-width: none; max-width: 100%; }
+    .tab { padding: 6px 8px; font-size: 14px; }
     .switch { margin-left: 0; width: 100%; display: grid; grid-template-columns: 1fr 1fr; }
     .opt { padding: 7px 8px; }
     .deck-in { gap: 8px 14px; }
@@ -511,6 +513,204 @@
   .ref .links { font-size: 12.5px; display: flex; flex-wrap: wrap; gap: 4px 12px; }
   .note { font-size: 13px; color: var(--muted); max-width: 80ch; }
 
+
+  /* ------------------------------------------------------------------ deck note, lede side */
+  .deck-note { margin-left: auto; font-family: var(--f-label); font-size: 8px; letter-spacing: 0.08em; color: var(--muted); }
+  .lede-side { display: grid; gap: 10px; justify-items: end; }
+  @media (max-width: 760px) { .deck-note { display: none; } .lede-side { justify-items: start; } }
+
+  /* ------------------------------------------------------------------ compact battle boxes */
+  .ui-plate .pl2 { margin-top: 4px; gap: 6px; }
+  .ui-plate .pl2 .ui-types { margin: 0; flex: none; }
+  .ui-plate .pl2 .ui-hp, .ui-plate.own .ui-hp { flex: 1; min-width: 0; margin: 0; }
+  .ui-plate .ui-type { height: 16px; font-size: 13px; padding: 0 4px; }
+  .ui-plate.foe { width: 54%; }
+  .ui-plate.own { width: auto; min-width: 40%; max-width: 62%; }
+  .ui-plate .ui-hp .lbl { display: none; }
+  .ui-plate .ui-hp .track { min-width: 56px; }
+  .ui-plate.own .lv { white-space: nowrap; }
+  .stage .ui-plate.foe { width: 50%; }
+  .stage .ui-plate.own { width: auto; min-width: 38%; }
+  .ui-root[data-framed] .ui-plate { border: 0; border-image: none; padding: 5px 9px 7px; clip-path: polygon(2px 0, calc(100% - 2px) 0, calc(100% - 2px) 2px, 100% 2px, 100% calc(100% - 2px), calc(100% - 2px) calc(100% - 2px), calc(100% - 2px) 100%, 2px 100%, 2px calc(100% - 2px), 0 calc(100% - 2px), 0 2px, 2px 2px); }
+  .ui-root[data-style='daybreak'] .ui-plate, .hm-plate { background: #fbfdffeb; box-shadow: inset 0 0 0 2px #24304f, inset 0 -4px 0 #dfe7f2; }
+  .ui-root[data-style='night'] .ui-plate { background: #121731eb; box-shadow: inset 0 0 0 1px #3a4580, inset 2px 0 0 #3ef0ff; }
+  .ui-root[data-style='pop'] .ui-plate { background: #ffffff; box-shadow: inset 0 0 0 2px #1a1423, inset 0 -4px 0 #efe6ff; }
+  .ui-root[data-style='daybreak'] .ui-plate .name { font-size: 20px; }
+
+  /* ------------------------------------------------------------------ Home prototype */
+  .home-grid { display: grid; grid-template-columns: 406px minmax(0, 1fr); gap: 40px; align-items: start; }
+  .home-device { position: sticky; top: 72px; }
+  .home-bezel { padding: 8px; }
+  #home-root { border-radius: 18px; overflow: hidden; }
+  .hm-screen { position: relative; height: 824px; display: flex; flex-direction: column; background-color: var(--u-bg); background-image: var(--tex); background-size: 16px auto; image-rendering: pixelated; overflow: hidden; }
+  :where(.hm-screen) button { font: inherit; color: inherit; cursor: pointer; }
+  .hm-screen .ico { display: inline-block; width: 40px; height: 30px; background: url(assets/dex-icons.png) no-repeat; image-rendering: pixelated; flex: none; }
+  .hm-top { display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: #fbfdff; box-shadow: 0 2px 0 #24304f, 0 4px 0 #24304f22; position: relative; z-index: 3; }
+  .hm-top .sp { flex: 1; }
+  .hm-trainer { appearance: none; border: 0; background: none; display: flex; align-items: center; gap: 8px; padding: 0; min-height: 44px; text-align: left; }
+  .hm-trainer .ui-avatar { width: 38px; height: 38px; }
+  .hm-tr-txt { display: grid; line-height: 1; }
+  .hm-tr-txt b { font-weight: 400; font-size: 20px; }
+  .hm-tr-txt small { font-family: 'Jersey 15', sans-serif; font-size: 15px; color: var(--u-muted); display: flex; align-items: center; gap: 3px; }
+  .hm-tr-txt small img { width: 8px; height: 8px; }
+  .hm-pill { appearance: none; border: 0; min-height: 40px; display: inline-flex; align-items: center; gap: 6px; padding: 0 4px 0 10px; background: #24304f; color: #ffe7a8; font-family: 'Jersey 20', sans-serif !important; font-size: 19px; clip-path: polygon(2px 0, calc(100% - 2px) 0, calc(100% - 2px) 2px, 100% 2px, 100% calc(100% - 2px), calc(100% - 2px) calc(100% - 2px), calc(100% - 2px) 100%, 2px 100%, 2px calc(100% - 2px), 0 calc(100% - 2px), 0 2px, 2px 2px); }
+  .hm-pill img { width: 16px; height: 16px; }
+  .hm-pill i { font-style: normal; width: 26px; height: 26px; display: grid; place-items: center; background: #f2553f; color: #fff; font-size: 22px; line-height: 1; margin-left: 4px; }
+  .hm-round { appearance: none; width: 44px; height: 44px; border: 0; border-radius: 50%; background: #fbfdff; box-shadow: inset 0 0 0 2px #24304f, inset 0 -4px 0 #dfe7f2; display: grid; place-items: center; }
+  .hm-round img { width: 24px; height: 24px; }
+  .hm-stage { position: relative; container-type: inline-size; }
+  .hm-stage canvas { display: block; width: 100%; height: auto; aspect-ratio: 288 / 276; image-rendering: pixelated; image-rendering: crisp-edges; cursor: pointer; touch-action: manipulation; }
+  .hm-plate { clip-path: polygon(2px 0, calc(100% - 2px) 0, calc(100% - 2px) 2px, 100% 2px, 100% calc(100% - 2px), calc(100% - 2px) calc(100% - 2px), calc(100% - 2px) 100%, 2px 100%, 2px calc(100% - 2px), 0 calc(100% - 2px), 0 2px, 2px 2px); }
+  .hm-area { position: absolute; left: 8px; right: 8px; top: 8px; padding: 6px 10px 9px; display: grid; gap: 3px; }
+  .hm-area-row { display: flex; align-items: center; gap: 8px; min-width: 0; }
+  .hm-area-name { font-weight: 400; font-size: 24px; line-height: 1; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .hm-lv { font-family: 'Jersey 15', sans-serif; font-size: 16px; color: var(--u-muted); white-space: nowrap; }
+  .hm-rounds { display: flex; gap: 3px; flex: 1; }
+  .hm-rounds i { height: 8px; flex: 1; max-width: 34px; background: #dde5f0; box-shadow: inset 0 0 0 2px #b6c3d9; }
+  .hm-rounds i.on { background: #ffbe2e; box-shadow: inset 0 0 0 2px #24304f; }
+  .hm-rounds i.now { background: #fff2cc; box-shadow: inset 0 0 0 2px #24304f; }
+  .hm-caught { display: inline-flex; align-items: center; gap: 4px; font-family: 'Jersey 15', sans-serif; font-size: 16px; }
+  .hm-caught img { width: 12px; height: 12px; }
+  .hm-card { position: absolute; width: 170px; padding: 6px 10px 8px; display: grid; gap: 4px; z-index: 4; pointer-events: none; }
+  .hm-card-row { display: flex; align-items: baseline; gap: 6px; }
+  .hm-card-row b { font-weight: 400; font-size: 20px; }
+  .hm-card-note { font-family: 'Jersey 15', sans-serif; font-size: 15px; color: #c4382a; }
+  .hm-actions { display: grid; grid-template-columns: 76px minmax(0, 1fr); gap: 10px; padding: 12px 12px 6px; }
+  .hm-map { min-height: 72px; padding: 0 !important; }
+  .hm-map > span { flex-direction: column; gap: 2px !important; }
+  .hm-map img { width: 24px; height: 24px; }
+  .hm-map small { font-size: 15px; font-family: 'Jersey 15', sans-serif; letter-spacing: 0.04em; }
+  .hm-go { position: relative; min-height: 72px; overflow: hidden; }
+  .hm-go-in { display: flex !important; align-items: center; gap: 12px !important; }
+  .hm-go-in img { width: 24px; height: 24px; }
+  .hm-go-in > span { display: grid; text-align: left; line-height: 1; gap: 3px; }
+  .hm-go-in b { font-weight: 400; font-size: 30px; letter-spacing: 0.06em; }
+  .hm-go-in small { font-family: 'Jersey 15', sans-serif; font-size: 16px; text-transform: none; letter-spacing: 0.02em; color: #ffe2db; text-shadow: none; }
+  .hm-go::after { content: ''; position: absolute; top: 12px; bottom: 14px; left: 12px; right: 12px; background: linear-gradient(105deg, transparent 0 42%, #ffffff40 42% 47%, transparent 47% 52%, #ffffff26 52% 54%, transparent 54%) no-repeat; background-size: 260% 100%; animation: sheen 3.4s steps(26) infinite; pointer-events: none; }
+  @keyframes sheen { 0% { background-position: 130% 0; } 45%, 100% { background-position: -40% 0; } }
+  .hm-widgets { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 6px 12px 10px; flex: 1; align-content: start; }
+  .hm-w { appearance: none; display: flex; flex-direction: column; gap: 5px; text-align: left; padding: 2px 4px !important; min-width: 0; }
+  .hm-w-head { display: flex; align-items: center; gap: 6px; font-family: 'Jersey 15', sans-serif; font-size: 15px; color: var(--u-muted); }
+  .hm-w-head b { font-weight: 400; flex: 1; }
+  .hm-new { background: #ffbe2e; color: #24304f; padding: 1px 5px 2px; font-size: 13px; letter-spacing: 0.04em; box-shadow: inset 0 0 0 2px #24304f; }
+  .hm-ban { position: relative; display: block; line-height: 0; box-shadow: 0 0 0 2px #24304f; }
+  .hm-ban img { width: 100%; height: auto; image-rendering: pixelated; }
+  .hm-ban.flip img:first-child { transform: scaleX(-1); }
+  .hm-ban.dim img:first-child { filter: grayscale(0.7) brightness(0.92); }
+  .hm-ban img.lock { position: absolute; width: 16px; left: 50%; top: 50%; transform: translate(-50%, -50%); }
+  .hm-w-title { font-size: 20px; line-height: 1; }
+  .hm-w-sub { font-family: 'Jersey 15', sans-serif; font-size: 15px; color: var(--u-muted); line-height: 1; }
+  .hm-meter { display: block; height: 6px; background: #dde5f0; box-shadow: inset 0 0 0 1px #b6c3d9; position: relative; }
+  .hm-meter i { position: absolute; inset: 0 auto 0 0; background: #ffbe2e; }
+  .hm-meter.full i { background: #34c97a; }
+  .hm-dc { display: grid; grid-template-columns: 32px minmax(0, 1fr) auto; align-items: center; gap: 6px; min-height: 34px; }
+  .hm-ready { font-family: 'Jersey 15', sans-serif; font-size: 14px; line-height: 1; padding: 2px 5px 3px; background: #34c97a; color: #0f2e1d; box-shadow: inset 0 0 0 2px #24304f; }
+  .hm-dc .ico { width: 40px; margin-left: -6px; }
+  .hm-dc .ico.empty { background: none; box-shadow: inset 0 0 0 2px #b6c3d9; width: 28px; height: 22px; margin: 0 0 0 2px; }
+  .hm-dc-mid { display: grid; gap: 3px; min-width: 0; }
+  .hm-dc-name { font-size: 17px; line-height: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .hm-dc-name em { font-style: normal; font-family: 'Jersey 15', sans-serif; font-size: 14px; color: var(--u-muted); }
+  .hm-dc-time { font-family: 'Jersey 15', sans-serif; font-size: 15px; color: var(--u-muted); }
+  .hm-collect { appearance: none; border: 0; min-height: 34px; padding: 0 8px; background: #34c97a; color: #10301f; font-family: 'Jersey 20', sans-serif !important; font-size: 17px; box-shadow: inset 0 0 0 2px #24304f, inset 0 -3px 0 #1f9e5a; }
+  .hm-nav { display: grid; grid-template-columns: repeat(5, 1fr); align-items: end; background: #fbfdff; box-shadow: 0 -2px 0 #24304f, 0 -4px 0 #24304f18; position: relative; z-index: 3; padding-bottom: env(safe-area-inset-bottom, 0px); }
+  .hm-nav button { appearance: none; border: 0; background: none; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: end; gap: 2px; min-height: 60px; padding: 6px 0 8px; font-family: 'Jersey 15', sans-serif !important; font-size: 15px; color: #5c6a8a; }
+  .hm-nav img { width: 24px; height: 24px; }
+  .hm-nav .ico { width: 40px; height: 30px; margin: -3px 0 -3px; }
+  .hm-nav .home { justify-content: start; }
+  .hm-home-ball { width: 62px; height: 62px; margin-top: -26px; border-radius: 50%; background: #f2553f; box-shadow: inset 0 0 0 3px #24304f, inset 0 -6px 0 #c4382a, 0 0 0 4px #fbfdff; display: grid; place-items: center; }
+  .hm-home-ball img { width: 36px; height: 36px; }
+  .hm-nav .dot { position: absolute; top: 4px; left: calc(50% + 6px); font-style: normal; min-width: 18px; height: 18px; padding: 0 4px; display: grid; place-items: center; background: #f2553f; color: #fff; font-size: 13px; line-height: 1; box-shadow: inset 0 0 0 2px #24304f; }
+  .hm-nav .dot.new { background: #ffbe2e; color: #24304f; }
+  .hm-toast { position: absolute; left: 50%; bottom: 86px; transform: translate(-50%, 10px); max-width: calc(100% - 32px); width: max-content; padding: 8px 14px; background: #24304f; color: #fbfdff; font-size: 18px; line-height: 1.15; opacity: 0; transition: opacity 160ms, transform 160ms; pointer-events: none; z-index: 40; text-align: center; }
+  .hm-toast[data-on] { opacity: 1; transform: translate(-50%, 0); }
+  .hm-wipe { position: absolute; inset: 0; z-index: 30; display: grid; grid-template-rows: repeat(8, 1fr); overflow: hidden; }
+  .hm-wipe i { display: block; background: #24304f; transform: translateX(calc(var(--d, 1) * 101%)); transition: transform 240ms cubic-bezier(0.3, 0, 0.2, 1) calc(var(--i) * 35ms); }
+  .hm-wipe i:nth-child(odd) { --d: -1; background: #2c3a5e; }
+  .hm-wipe[data-on] i { transform: none; }
+  .hm-wipe[data-out] i { transform: translateX(calc(var(--d, 1) * -101%)); }
+  .hm-wipe p { position: absolute; left: 0; right: 0; top: 50%; transform: translateY(-50%); margin: 0; display: flex; justify-content: center; align-items: center; gap: 6px; color: #fbfdff; font-size: 26px; opacity: 0; transition: opacity 120ms 420ms; }
+  .hm-wipe[data-on] p { opacity: 1; }
+  .hm-wipe[data-out] p { opacity: 0; transition-delay: 0ms; }
+  .hm-sheet { position: absolute; inset: 0; z-index: 20; }
+  .hm-scrim { position: absolute; inset: 0; background: #24304f8c; }
+  .hm-panel { position: absolute; left: 0; right: 0; bottom: 0; max-height: 90%; height: 90%; display: flex; flex-direction: column; background: #fbfdff; box-shadow: 0 -2px 0 #24304f, 0 -6px 0 #24304f22; animation: sheet-up 220ms cubic-bezier(0.2, 0.9, 0.3, 1); }
+  @keyframes sheet-up { from { transform: translateY(40%); opacity: 0.4; } }
+  .hm-grab { width: 44px; height: 5px; background: #b6c3d9; margin: 8px auto 2px; }
+  .hm-sheet-head { display: flex; align-items: start; gap: 8px; padding: 2px 14px 8px; }
+  .hm-sheet-head > div { flex: 1; }
+  .hm-sheet-head h2 { margin: 0; font-weight: 400; font-size: 30px; line-height: 1; }
+  .hm-sheet-head p { margin: 2px 0 0; font-family: 'Jersey 15', sans-serif; font-size: 15px; color: var(--u-muted); }
+  .hm-x { appearance: none; border: 0; width: 44px; height: 44px; background: #fbfdff; box-shadow: inset 0 0 0 2px #24304f; font-size: 20px; }
+  .hm-search { padding: 0 14px 8px; }
+  .hm-search input { width: 100%; height: 44px; border: 0; padding: 0 12px; background: #ffffff; box-shadow: inset 0 0 0 2px #24304f, inset 0 3px 0 #dfe7f2; font-family: 'Jersey 20', sans-serif; font-size: 20px; color: #24304f; border-radius: 0; -webkit-appearance: none; }
+  .hm-search input::placeholder { color: #8592ad; }
+  .hm-search input:focus-visible { outline: 3px solid #f2553f; outline-offset: 1px; }
+  .hm-chips, .hm-sort { display: flex; gap: 6px; padding: 0 14px 8px; overflow-x: auto; scrollbar-width: none; align-items: center; }
+  .hm-chips::-webkit-scrollbar, .hm-sort::-webkit-scrollbar { display: none; }
+  .hm-chips button, .hm-sort button { appearance: none; border: 0; min-height: 36px; padding: 0 10px; white-space: nowrap; background: #ffffff; box-shadow: inset 0 0 0 2px #b6c3d9; font-family: 'Jersey 20', sans-serif !important; font-size: 18px; color: #24304f; }
+  .hm-chips button i { font-style: normal; font-family: 'Jersey 15', sans-serif; font-size: 15px; color: #5c6a8a; margin-left: 2px; }
+  .hm-chips button[aria-checked='true'] { background: #24304f; color: #fbfdff; box-shadow: none; }
+  .hm-chips button[aria-checked='true'] i { color: #ffe7a8; }
+  .hm-sort { padding-bottom: 10px; box-shadow: 0 2px 0 #dfe7f2; }
+  .hm-sort > span { font-family: 'Jersey 15', sans-serif; font-size: 15px; color: var(--u-muted); }
+  .hm-sort button { min-height: 32px; font-size: 16px; padding: 0 8px; }
+  .hm-sort button[aria-checked='true'] { box-shadow: inset 0 0 0 2px #24304f, inset 0 -3px 0 #ffbe2e; }
+  .hm-list { list-style: none; margin: 0; padding: 10px 14px 18px; overflow-y: auto; display: grid; gap: 10px; align-content: start; flex: 1; overscroll-behavior: contain; }
+  .hm-card-area { appearance: none; border: 0; width: 100%; display: grid; gap: 5px; padding: 6px 6px 8px; text-align: left; background: #ffffff; box-shadow: inset 0 0 0 2px #24304f, inset 0 -4px 0 #dfe7f2; }
+  .hm-card-area.here { box-shadow: inset 0 0 0 3px #f2553f, inset 0 -5px 0 #ffd2c8; }
+  .hm-card-area.locked { background: #f1f4f9; box-shadow: inset 0 0 0 2px #b6c3d9; color: #5c6a8a; }
+  .hm-card-area:not(.locked):hover { transform: translateY(-1px); }
+  .hm-card-area .hm-ban { box-shadow: none; }
+  .hm-gym { position: absolute; right: 4px; top: 4px; font-family: 'Jersey 15', sans-serif; font-size: 13px; line-height: 1; padding: 2px 4px; background: #24304f; color: #ffe7a8; }
+  .hm-ca-row { display: flex; align-items: center; gap: 8px; padding: 0 4px; min-width: 0; }
+  .hm-ca-row b { font-weight: 400; font-size: 21px; line-height: 1; flex: 1; min-width: 0; }
+  .hm-st { font-family: 'Jersey 15', sans-serif; font-size: 14px; line-height: 1; padding: 2px 6px 3px; white-space: nowrap; }
+  .hm-st.here { background: #f2553f; color: #fff; }
+  .hm-st.done { background: #d8f5e4; color: #1d6b43; box-shadow: inset 0 0 0 2px #34c97a; }
+  .hm-st.new { background: #ffbe2e; color: #24304f; box-shadow: inset 0 0 0 2px #24304f; }
+  .hm-st.open { background: #e6f0ff; color: #24304f; box-shadow: inset 0 0 0 2px #5b8def; }
+  .hm-st.lock { background: #e3e8f0; color: #5c6a8a; }
+  .hm-prog, .hm-why { display: inline-flex; align-items: center; gap: 4px; font-family: 'Jersey 15', sans-serif; font-size: 15px; color: #5c6a8a; min-width: 0; }
+  .hm-prog b { font-weight: 400; color: #c4382a; }
+  .hm-prog img { width: 12px; height: 12px; }
+  .hm-why img { width: 16px; height: 16px; }
+  .hm-hits { display: flex; flex-wrap: wrap; gap: 4px 10px; padding: 0 2px; }
+  .hm-hit { display: inline-flex; align-items: center; font-family: 'Jersey 15', sans-serif; font-size: 15px; color: #24304f; }
+  .hm-hit .ico { margin: -4px -4px -4px -8px; }
+  .hm-hit.new { color: #c4382a; }
+  .hm-empty { font-size: 18px; color: #5c6a8a; padding: 18px 4px; }
+  .home-notes { min-width: 0; }
+  .home-thesis { font-size: 17px; max-width: 60ch; color: #d6d0e4; margin: 0 0 18px; }
+  .zones { list-style: none; margin: 0 0 24px; padding: 0; display: grid; gap: 10px; counter-reset: z; }
+  .zones li { counter-increment: z; display: grid; grid-template-columns: 34px 150px minmax(0, 1fr); gap: 10px; align-items: baseline; padding: 10px 12px; background: var(--card); border: 1px solid var(--line); }
+  .zones li::before { content: counter(z); font-family: var(--f-display); font-weight: 700; color: var(--gold); }
+  .zones li b { font-family: var(--f-display); font-weight: 600; }
+  .zones li span { font-size: 14px; color: #d6d0e4; }
+  .zones em, .notes-list em { color: var(--gold); font-style: normal; }
+  @media (max-width: 1100px) { .zones li { grid-template-columns: 30px minmax(0, 1fr); } .zones li span { grid-column: 2; } }
+  .notes-h { font-family: var(--f-display); font-size: 20px; margin: 22px 0 10px; }
+  .notes-list { margin: 0; padding-left: 18px; display: grid; gap: 6px; font-size: 14px; color: #d6d0e4; }
+  .notes-list b { color: var(--text); }
+  .home-refs { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
+  @media (max-width: 960px) {
+    .home-grid { grid-template-columns: 1fr; }
+    .home-device { position: static; display: grid; justify-content: center; }
+  }
+  @media (max-width: 520px) {
+    .home-device { margin-inline: calc(-1 * clamp(16px, 3vw, 32px)); margin-top: -28px; display: block; }
+    .home-bezel { border: 0; border-radius: 0; padding: 0; background: none; box-shadow: none; }
+    #home-root { border-radius: 0; }
+    .hm-screen { height: auto; }
+    .hm-sheet { position: fixed; z-index: 100; }
+    .hm-toast { position: fixed; bottom: 92px; z-index: 110; }
+    .hm-widgets { padding-bottom: 14px; }
+    .hm-nav { position: sticky; bottom: 0; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .hm-go::after, .hm-panel { animation: none; }
+    .hm-wipe i, .hm-toast { transition: none; }
+  }
+
   footer.wrap { padding-block: 24px 40px; border-top: 1px solid var(--line); color: var(--muted); font-size: 13px; }
   footer p { margin: 0 0 6px; max-width: 90ch; }
 
@@ -524,16 +724,115 @@
   <div class="deck-in">
     <div class="brand"><span class="logo">POKÉ<b>DICE</b></span><span class="tag">VISUAL LAB</span></div>
     <div class="tabs" role="tablist" aria-label="Sections">
-      <button class="tab" role="tab" id="tab-styles" aria-controls="styles" data-tab="styles">UI styles</button>
+      <button class="tab" role="tab" id="tab-home" aria-controls="home" data-tab="home">Home</button>
       <button class="tab" role="tab" id="tab-animations" aria-controls="animations" data-tab="animations">Animations</button>
+      <button class="tab" role="tab" id="tab-styles" aria-controls="styles" data-tab="styles">Style lab</button>
       <button class="tab" role="tab" id="tab-moodboards" aria-controls="moodboards" data-tab="moodboards">Moodboards</button>
     </div>
-    <div class="switch" role="radiogroup" aria-label="UI style" id="switch"></div>
+    <span class="deck-note">Johto Daybreak · Jersey 20</span>
   </div>
 </header>
 
 <main class="wrap">
-  <section id="styles" role="tabpanel" aria-labelledby="tab-styles">
+  <section id="home" role="tabpanel" aria-labelledby="tab-home">
+    <div class="home-grid">
+      <div class="home-device">
+        <div class="bezel home-bezel">
+          <div class="ui-root" data-style="daybreak" data-framed id="home-root">
+            <div class="hm-screen">
+              <header class="hm-top">
+                <button type="button" class="hm-trainer" data-soon="Trainer menu" aria-label="Trainer menu: Sam, 5 of 8 badges"><span class="ui-avatar" aria-hidden="true">S</span><span class="hm-tr-txt"><b>Sam</b><small><img id="hm-ico-badge" class="px" alt="" />5/8</small></span></button>
+                <span class="sp"></span>
+                <button type="button" class="hm-pill" data-soon="Shop" aria-label="1,240 Pokédollars. Open the Shop"><img id="hm-ico-coin" class="px" alt="" />₽ 1,240<i aria-hidden="true">+</i></button>
+                <button type="button" class="hm-round" data-soon="Leaderboard" aria-label="Leaderboard"><img id="hm-ico-trophy" class="px" alt="" /></button>
+              </header>
+              <div class="hm-stage" id="hm-stage">
+                <canvas id="hm-cv" width="288" height="276" role="img" aria-label="Your team"></canvas>
+                <div class="hm-area hm-plate" id="hm-area"></div>
+                <div class="hm-card hm-plate" id="hm-card" hidden></div>
+                <ul class="sr" id="hm-team" aria-label="Your team: tap one to check it"></ul>
+              </div>
+              <div class="hm-actions">
+                <button type="button" class="ui-btn hm-map" id="hm-areas" aria-haspopup="dialog" aria-label="Areas: change where you explore"><span><img id="hm-ico-map" class="px" alt="" /><small>Areas</small></span></button>
+                <button type="button" class="ui-btn primary hm-go" id="hm-go"></button>
+              </div>
+              <div class="hm-widgets">
+                <button type="button" class="ui-panel hm-w" id="hm-secret"></button>
+                <button type="button" class="ui-panel hm-w" id="hm-daycare"></button>
+              </div>
+              <nav class="hm-nav" id="hm-nav" aria-label="Game menu">
+                <button type="button" data-tab="Shop"><img data-ico="potion" class="px" alt="" /><span>Shop</span></button>
+                <button type="button" data-tab="Upgrades"><img data-ico="up" class="px" alt="" /><span>Upgrades</span><i class="dot" aria-label="2 upgrades you can afford">2</i></button>
+                <button type="button" data-tab="home" class="home" aria-current="page" aria-label="Home"><span class="hm-home-ball"><img data-ico="ball" class="px" alt="" /></span></button>
+                <button type="button" data-tab="Team"><span class="ico" style="background-position:-200px 0" aria-hidden="true"></span><span>Team</span></button>
+                <button type="button" data-tab="Pokédex"><img data-ico="dex" class="px" alt="" /><span>Pokédex</span><i class="dot new" aria-label="1 new entry">NEW</i></button>
+              </nav>
+              <div class="hm-wipe" id="hm-wipe" hidden aria-hidden="true"></div>
+              <div class="hm-sheet" id="hm-sheet" hidden>
+                <div class="hm-scrim" data-close></div>
+                <div class="hm-panel" role="dialog" aria-modal="true" aria-labelledby="hm-sheet-title">
+                  <div class="hm-grab" aria-hidden="true"></div>
+                  <header class="hm-sheet-head"><div><h2 id="hm-sheet-title">Kanto</h2><p id="hm-sheet-sub"></p></div><button type="button" class="hm-x" data-close aria-label="Close the areas">✕</button></header>
+                  <div class="hm-search"><label for="hm-q" class="sr">Search an area or a Pokémon</label><input id="hm-q" type="search" placeholder="Search an area or a Pokémon" autocomplete="off" spellcheck="false" /></div>
+                  <div class="hm-chips" id="hm-chips" role="radiogroup" aria-label="Show">
+                    <button type="button" role="radio" data-f="all">All <i></i></button>
+                    <button type="button" role="radio" data-f="catch">To catch <i></i></button>
+                    <button type="button" role="radio" data-f="secret">Secret <i></i></button>
+                    <button type="button" role="radio" data-f="cleared">Cleared <i></i></button>
+                  </div>
+                  <div class="hm-sort" id="hm-sort" role="radiogroup" aria-label="Sort by"><span aria-hidden="true">Sort</span>
+                    <button type="button" role="radio" data-s="route">Route</button><button type="button" role="radio" data-s="level">Level</button><button type="button" role="radio" data-s="catch">Most to catch</button>
+                  </div>
+                  <ul class="hm-list" id="hm-list"></ul>
+                </div>
+              </div>
+              <div class="hm-toast" id="hm-toast" role="status" aria-live="polite"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <aside class="home-notes">
+        <p class="eyebrow">PAGE 1 OF THE UX PASS · HOME</p>
+        <h1 class="title">Home</h1>
+        <p class="home-thesis">One big button to play, your team on show, everything else one tap away. It replaces the Map page as the place you land.</p>
+        <ol class="zones">
+          <li><b>Top bar</b><span>You, your badges, your gold. The <em>+</em> opens the Shop; the cup opens the leaderboard.</span></li>
+          <li><b>Where you are</b><span>Area, level range, rounds, species caught here. Nothing else.</span></li>
+          <li><b>Your team, roaming</b><span>Front sprites wander the area’s own scenery. Tap one for its level and HP. A tired one sweats, Snorlax naps, friends say hello.</span></li>
+          <li><b>Continue</b><span>The only big button, in thumb reach, and it says what comes next.</span></li>
+          <li><b>Areas</b><span>A sheet, not a page. Search by area <em>or by Pokémon</em> (“Pikachu” finds where it lives), filter To catch, Secret or Cleared, sort by route, level or most to catch. Locked areas say what opens them.</span></li>
+          <li><b>Widgets</b><span>The newest secret area travels in one tap; when there is none, the next one shows its progress. The Day Care shows who is ready and collects in place.</span></li>
+          <li><b>Tab bar</b><span>Home in the middle. Dots only for things you can act on: affordable upgrades, a new Pokédex entry.</span></li>
+        </ol>
+        <h2 class="notes-h">Accessible by default</h2>
+        <ul class="notes-list">
+          <li>Every control is a real button, 44 px or more; the team is also a keyboard list of buttons.</li>
+          <li>The areas sheet is a dialog: focus moves in, stays in, Esc closes, focus comes back.</li>
+          <li>Text is navy on paper (11:1); status is never colour alone (chips carry words).</li>
+          <li>With reduced motion on, the team stands still and nothing pulses.</li>
+        </ul>
+        <h2 class="notes-h">Mobile game references</h2>
+        <div class="refs home-refs">
+          <article class="ref"><div class="k"><i class="Indie">MOBILE</i>Brawl Stars</div><h4>One bright Play button</h4><p>A design critique calls its big yellow Play button the clearest thing on the home screen, next to the brawler you picked. <em>Take:</em> CONTINUE, next to the team.</p><div class="links"><a href="https://ixd.prattsi.org/2025/02/design-critique-brawl-stars/" target="_blank" rel="noopener">Pratt IXD critique ↗</a></div></article>
+          <article class="ref"><div class="k"><i class="Indie">MOBILE</i>Animal Crossing: Pocket Camp</div><h4>The camp is the hub</h4><p>Visiting animals live at your campsite; tools sit in a bottom bar, shortcuts in a corner. <em>Take:</em> the team lives on Home, menus stay at the edges.</p><div class="links"><a href="https://www.nintendolife.com/news/2017/10/feature_our_first_steps_in_animal_crossing_pocket_camp" target="_blank" rel="noopener">Nintendo Life ↗</a><a href="https://nookipedia.com/wiki/Animal_Crossing:_Pocket_Camp" target="_blank" rel="noopener">Nookipedia ↗</a></div></article>
+          <article class="ref"><div class="k"><i class="Indie">MOBILE</i>Neko Atsume</div><h4>Progress while you’re gone</h4><p>A study of 1,972 players found that checking in became a habit. <em>Take:</em> the Day Care widget shows what happened while you were away.</p><div class="links"><a href="https://eprints.whiterose.ac.uk/id/eprint/135461/" target="_blank" rel="noopener">University of York ↗</a></div></article>
+          <article class="ref"><div class="k"><i class="Official">POKÉMON</i>Pokémon GO · Buddy</div><h4>A partner, not a stat block</h4><p>Niantic’s goal for the buddy was a Pokémon that feels like a true partner. <em>Take:</em> tap a Pokémon and it reacts before it shows numbers.</p><div class="links"><a href="https://pokemongo.com/news/buddyadventure-devinsights" target="_blank" rel="noopener">Developer insights ↗</a></div></article>
+          <article class="ref"><div class="k"><i class="Official">POKÉMON</i>Pokémon TCG Pocket</div><h4>The counter-example</h4><p>When older packs moved behind a small corner button, players thought they were gone. <em>Take:</em> nothing hides behind a corner; areas get search and filters.</p><div class="links"><a href="https://thefilibusterblog.com/fans-express-confusion-over-pokemon-tcg-pocket-ui-after-new-expansion-launch/" target="_blank" rel="noopener">Filibuster ↗</a><a href="https://ixd.prattsi.org/2025/09/design-critique-pokemon-tcg-pocket-android-app/" target="_blank" rel="noopener">Pratt IXD ↗</a></div></article>
+          <article class="ref"><div class="k"><i class="Craft">UX</i>Menus and retention</div><h4>Players leave at the menu</h4><p>Many players uninstall within a day and a quarter of them cite confusing interfaces; key controls belong in the thumb zone. <em>Take:</em> one action per screen, at the bottom.</p><div class="links"><a href="https://game-wisdom.com/general/ux-game-design-menus-might-killing-player-retention" target="_blank" rel="noopener">Game-Wisdom ↗</a><a href="https://uxplanet.org/game-design-ux-best-practices-the-ultimate-guide-4a3078c32099" target="_blank" rel="noopener">UX Planet ↗</a></div></article>
+        </div>
+        <h2 class="notes-h">Next in the UX pass</h2>
+        <ul class="notes-list next">
+          <li><b>Battle</b> slim boxes (done here), dice tray first, items in a drawer.</li>
+          <li><b>Team</b> drag to reorder, filter by type, sort by level or HP.</li>
+          <li><b>Pokédex</b> grid of 151 with search, “where to find” from the same data as Areas.</li>
+          <li><b>Shop &amp; Upgrades</b> one screen, what you can afford first.</li>
+          <li><b>Day Care</b> drop-off from the Box with search.</li>
+        </ul>
+      </aside>
+    </div>
+  </section>
+
+  <section id="styles" role="tabpanel" aria-labelledby="tab-styles" hidden>
     <div class="lede">
       <div>
         <p class="eyebrow" id="st-eyebrow">STYLE 0 / 3</p>
@@ -541,7 +840,8 @@
         <p id="st-thesis"></p>
         <div class="chips" id="st-chips"></div>
       </div>
-      <div>
+      <div class="lede-side">
+        <div class="switch" role="radiogroup" aria-label="UI style" id="switch"></div>
         <button class="btn" id="hold" type="button" aria-pressed="false" title="Hold (or press C) to show the current game in the same screens">Hold to compare with current <span class="k">C</span></button>
       </div>
     </div>
@@ -608,4 +908,5 @@
 <script src="pixel.js"></script>
 <script src="scenes.js"></script>
 <script src="anims.js"></script>
+<script src="home.js"></script>
 <script src="lab.js"></script>

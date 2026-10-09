@@ -451,6 +451,23 @@
           Math.max(1, Math.round(sy)),
         )
       }
+    } else if (o.flip) {
+      // Mirrored: the Pokémon faces the other way (front sprites look left; walking right flips them).
+      g.save()
+      g.translate(dx - Math.round(sx) + Math.round((m.w + 2) * sx), 0)
+      g.scale(-1, 1)
+      g.drawImage(
+        scratch,
+        0,
+        0,
+        m.w + 2,
+        m.h + 2,
+        0,
+        dy - Math.round(sy),
+        Math.round((m.w + 2) * sx),
+        Math.round((m.h + 2) * sy),
+      )
+      g.restore()
     } else
       g.drawImage(
         scratch,
