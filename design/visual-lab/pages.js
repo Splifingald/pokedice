@@ -172,6 +172,48 @@
     }
     return null
   }
+  // What a status face does, with the game's numbers (src/data/config.json).
+  const STATUS_NAME = {
+    burn: 'Burn',
+    paralyze: 'Paralyze',
+    frozen: 'Freeze',
+    poison: 'Poison',
+    confuse: 'Confuse',
+    heal: 'Heal',
+  }
+  const STATUS_LINE = {
+    burn: '1 face burns the foe: −4% HP a turn for 3 turns. Burns stack.',
+    paralyze: '2 faces in one roll: the foe misses its next turn.',
+    frozen: '3 faces in one roll: the foe is frozen for 2 turns.',
+    poison: '2 faces in one roll: the foe loses 10% HP a turn for 3 turns.',
+    confuse: '2 faces in one roll: the foe’s next attack hurts it too (20% recoil).',
+    heal: '2 faces in one roll: your Pokémon heals by the dice total.',
+  }
+  const light = (hex) => {
+    const [r, g, b] = PX.rgba(hex)
+    return 0.299 * r + 0.587 * g + 0.114 * b > 165
+  }
+  /** A die's six faces as little dice; a status face wears its colour and icon, and says what it does below. */
+  function faces(t) {
+    const D = G().dice[t],
+      col = t === 'base' ? '#f4f6fb' : UI().TYPE[t]
+    const st = [...new Set(D.faces.filter(Array.isArray).map((f) => f[1]))]
+    const tiles = D.faces
+      .map((f) => {
+        const s = Array.isArray(f) ? f[1] : null,
+          v = Array.isArray(f) ? f[0] : f
+        return s
+          ? `<i class="st" role="listitem" style="--stc:${UI().STATUS[s]}" aria-label="${v}, ${STATUS_NAME[s]} face"><img class="px" alt="" src="${UI().statusIcon(s, 2)}" />${v}</i>`
+          : `<i role="listitem" aria-label="${v}">${v}</i>`
+      })
+      .join('')
+    return `<span class="pg-faces${light(col) ? ' lt' : ''}" role="list" aria-label="${D.label} die faces" style="--c:${col}">${tiles}</span>${st
+      .map(
+        (s) =>
+          `<span class="pg-stline" style="--stc:${UI().STATUS[s]}"><img class="px" alt="" src="${UI().statusIcon(s, 2)}" /><span><b>${STATUS_NAME[s]}</b> ${STATUS_LINE[s]}</span></span>`,
+      )
+      .join('')}`
+  }
   const itemBy = (key) => G().items.find((i) => i.key === key)
   const itemName = (key) => (itemBy(key) || { name: key }).name
   /** Every Pokémon the player owns: the team first, then the Box. */
@@ -261,10 +303,7 @@
     const dieRows = groups
       .map(({ t, n }) => {
         const D = G().dice[t]
-        const st = D.faces.filter(Array.isArray)
-        return `<li class="pg-die"><span class="pg-die-name">${UI().die(t, 6, { size: 26 })}<b>${D.label}</b><em>×${n}</em></span>
-          <span class="pg-faces" style="--c:${t === 'base' ? '#f4f6fb' : UI().TYPE[t]}">${D.faces.map((f) => (Array.isArray(f) ? `<i class="st" style="--stc:${UI().STATUS[f[1]] || '#24304f'}" title="${f[1]}">${f[0]}</i>` : `<i>${f}</i>`)).join('')}</span>
-          ${st.length ? `<small>${st.map((f) => `${f[0]} = ${cap(f[1])}`).join(' · ')}</small>` : ''}</li>`
+        return `<li class="pg-die"><span class="pg-die-name">${UI().die(t, 6, { size: 26 })}<b>${D.label}</b><em>×${n}</em><small>${esc(D.desc)}</small></span>${faces(t)}</li>`
       })
       .join('')
     const next = s.ms.filter((x) => x[0] > m.lv).slice(0, 3)
@@ -393,7 +432,7 @@
     const T = A.TEAM
     const boxTypes = [...new Set(BOX.flatMap((b) => typesOf(b.dex)))].sort()
     el.innerHTML = `
-      <div class="pg-head"><h2>Team</h2><span class="pg-count">${T.length}/3</span><button type="button" class="pg-hint" data-hint><img class="px" alt="" src="${A.icons.LOCK}" />Swaps at a Center</button></div>
+      <div class="pg-head"><img class="px pg-h-ico" alt="" src="${A.icons.NAV.team}" /><h2>Team</h2><span class="pg-count">${T.length}/3</span><button type="button" class="pg-hint" data-hint><img class="px" alt="" src="${A.icons.LOCK}" />Swaps at a Center</button></div>
       <ol class="pg-team" aria-label="Your team, in send-out order">${T.map(
         (
           m,
@@ -517,7 +556,7 @@
     const fi = A.K.areas.find((a) => a.name === 'Faraway Island')
     const newest = [...A.caught].pop()
     el.innerHTML = `
-      <div class="pg-head"><h2>Pokédex</h2><span class="pg-count">${n}/151</span></div>
+      <div class="pg-head"><img class="px pg-h-ico" alt="" src="${A.icons.NAV.dex}" /><h2>Pokédex</h2><span class="pg-count">${n}/151</span></div>
       <div class="pg-progress"><span class="hm-meter" role="img" aria-label="${n} of 151 caught"><i style="width:${(n / 151) * 100}%"></i></span><small>${n >= 150 ? 'Faraway Island is open' : `${150 - n} more and ${esc(fi.name)} opens`}</small></div>
       <div class="pg-tools"><label class="sr" for="pg-dexq">Search by name or number</label><input id="pg-dexq" type="search" placeholder="Name or number" autocomplete="off" spellcheck="false" value="${esc(ST.dexQ)}" inputmode="search" /></div>
       <div class="hm-chips" role="radiogroup" aria-label="Show">${[
@@ -584,7 +623,7 @@
     const S = A.SAVE
     const tab = ST.shopTab
     el.innerHTML = `
-      <div class="pg-head"><h2>Poké Mart</h2><span class="pg-wallet"><img class="px" alt="" src="${A.icons.COIN}" />${money(S.gold)}</span></div>
+      <div class="pg-head"><img class="px pg-h-ico" alt="" src="${A.icons.NAV.shop}" /><h2>Poké Mart</h2><span class="pg-wallet"><img class="px" alt="" src="${A.icons.COIN}" />${money(S.gold)}</span></div>
       <div class="hm-seg pg-tabs" role="tablist" aria-label="Poké Mart">${[
         ['buy', 'Buy'],
         ['sell', 'Sell'],
@@ -739,7 +778,7 @@
     const open = list.filter((u) => !u.locked),
       locked = list.filter((u) => u.locked)
     el.innerHTML = `
-      <div class="pg-head"><h2>Upgrades</h2><span class="pg-wallet"><img class="px" alt="" src="${A.icons.COIN}" />${money(A.SAVE.gold)}</span></div>
+      <div class="pg-head"><img class="px pg-h-ico" alt="" src="${A.icons.NAV.upgrades}" /><h2>Upgrades</h2><span class="pg-wallet"><img class="px" alt="" src="${A.icons.COIN}" />${money(A.SAVE.gold)}</span></div>
       <div class="hm-seg pg-tabs" role="tablist" aria-label="Upgrades">${[
         ['combos', 'Combos'],
         ['dice', 'Dice'],
@@ -762,14 +801,15 @@
     const visual =
       u.kind === 'combo'
         ? `<span class="pg-ex">${u.ex.map((v) => UI().die('base', v, { size: 22 })).join('')}</span>`
-        : `<span class="pg-ex">${UI().die(u.key, 6, { size: 26 })}<small>on ${plural(u.n, 'Pokémon', 'Pokémon')}</small></span>`
+        : `<span class="pg-ex"><small>${u.n ? `on ${plural(u.n, 'Pokémon', 'Pokémon')}` : ''}</small></span>`
     const btn = u.locked
       ? `<span class="pg-upbtn off"><img class="px" alt="" src="${A.icons.LOCK}" />Locked</span>`
       : u.cost == null
         ? '<span class="pg-upbtn max">MAX</span>'
         : `<button type="button" class="pg-upbtn${can ? '' : ' poor'}" data-up="${u.kind}:${u.key}" ${can ? '' : 'aria-disabled="true"'} aria-label="Upgrade ${esc(u.name)} to level ${u.lv + 1} for ${u.cost} Pokédollars${can ? '' : ', not enough Pokédollars'}"><b>${money(u.cost)}</b><small>${can ? 'Upgrade' : `need ${money(u.cost - S.gold)}`}</small></button>`
     return `<li class="pg-up${u.locked ? ' locked' : ''}${can ? ' can' : ''}" data-key="${u.kind}:${u.key}">
-      <div class="pg-up-top"><b>${esc(u.name)}</b>${visual}</div>
+      <div class="pg-up-top">${u.kind === 'die' ? UI().die(u.key, 6, { size: 26 }) : ''}<span class="pg-up-name"><b>${esc(u.name)}</b>${u.kind === 'die' ? `<small>${esc(G().dice[u.key].desc)}</small>` : ''}</span>${visual}</div>
+      ${u.kind === 'die' ? faces(u.key) : ''}
       <div class="pg-up-mid">${pips(u.lv)}<span class="pg-up-lv">Lv.${u.lv}</span></div>
       <div class="pg-up-bot"><span class="pg-up-bonus">${u.kind === 'combo' ? `+${now} damage` : `+${now} a die`}${next != null ? ` <span class="pg-arrow">→</span> <em>+${next}</em>` : ''}</span>${btn}</div>
       ${u.locked ? `<p class="pg-up-why">${esc(u.why)}</p>` : ''}</li>`

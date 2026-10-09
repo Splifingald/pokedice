@@ -8,7 +8,7 @@ A standalone page for deciding the game's next look, outside the app's build. Th
   - CONTINUE is the one big action
   - an Areas sheet offers search by area or Pokémon, filters (To catch, Secret, Cleared), sorting and a region switcher; a card opens its details, GO travels, the outline gives the state; the Areas button turns gold when a new region opens
   - each area has one picture: the scene the team roams on Home, cropped to its middle in lists
-  - widgets show Versus (once three Pokémon reach Lv.50), the newest secret area and the Day Care
+  - widgets, two by two: the newest secret area and the Day Care, then Versus (locked until three Pokémon reach Lv.50) and a slot for special events
   - a game-style tab bar sits at the bottom
 
   - the tab bar works: **Team** (drag to reorder, the Box with search, sort and type filter, a sheet per Pokémon with its dice faces and what it learns next), **Pokédex** (silhouettes, search, All / Caught / Missing / Nearby, where to find with GO), **Poké Mart** (buy and sell by category, quantities, locked stock) and **Upgrades** (combos and dice, pip tracks, an affordable filter)

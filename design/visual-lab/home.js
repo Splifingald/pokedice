@@ -1348,18 +1348,32 @@
   }
 
   /** Versus joins Home once three Pokémon reach Lv.50: first to set a team, then to fight. */
+  /** Versus, under the secret area: locked (how close you are), new (set a team), then ready to fight. */
   function renderVersus() {
     const el = $('#hm-versus')
-    el.hidden = !SAVE.versus
-    if (!SAVE.versus) return
     const team = `<span class="hm-vs-team">${TEAM.map((m) => dexIco(m.dex)).join('')}</span>`
+    if (!SAVE.versus) {
+      const n = Math.min(3, TEAM.filter((m) => m.lv >= 50).length)
+      el.classList.add('locked')
+      el.innerHTML = `<span class="hm-w-head"><b>Versus</b><img class="px hm-w-lock" alt="" src="${LOCK}" /></span>
+        <span class="hm-vs-row">${team}</span>
+        <span class="hm-w-title">${n}/3 at Lv.50</span><span class="hm-meter"><i style="width:${(n / 3) * 100}%"></i></span><span class="hm-w-sub">Best Lv.${bestLv()}</span>`
+      el.setAttribute(
+        'aria-label',
+        `Versus is locked: it opens when 3 of your Pokémon reach Lv.50. ${n} of 3 so far`,
+      )
+      return
+    }
+    el.classList.remove('locked')
     if (SAVE.versus === 'new') {
       el.innerHTML = `<span class="hm-w-head"><b>Versus</b><span class="hm-new">NEW</span></span>
-        <span class="hm-vs">${team}<span class="hm-vs-txt"><b>Versus is open!</b><small>3 Pokémon at Lv.50 · fight other trainers</small></span><span class="hm-vs-go">Set team</span></span>`
+        <span class="hm-vs-row">${team}<span class="hm-vs-badge" aria-hidden="true">VS</span></span>
+        <span class="hm-w-title">Versus is open!</span><span class="hm-vs-act"><span class="hm-w-sub">3 at Lv.50</span><span class="hm-vs-go">Set team</span></span>`
       el.setAttribute('aria-label', 'New: Versus is open, three of your Pokémon reached Lv.50. Set your team')
     } else {
-      el.innerHTML = `<span class="hm-w-head"><b>Versus</b><span class="hm-vs-score">${plural(VS.defense, 'win')} in defense</span></span>
-        <span class="hm-vs">${team}<span class="hm-vs-txt"><b>${VS.toBeat} teams to beat</b><small>Fights play on auto at Lv.50</small></span><span class="hm-vs-go">Fight</span></span>`
+      el.innerHTML = `<span class="hm-w-head"><b>Versus</b><span class="hm-vs-score">${plural(VS.defense, 'win')}</span></span>
+        <span class="hm-vs-row">${team}<span class="hm-vs-badge" aria-hidden="true">VS</span></span>
+        <span class="hm-w-title">${VS.toBeat} teams to beat</span><span class="hm-vs-act"><span class="hm-w-sub">Auto · Lv.50</span><span class="hm-vs-go">Fight</span></span>`
       el.setAttribute(
         'aria-label',
         `Versus: ${VS.toBeat} teams to beat, ${plural(VS.defense, 'win')} in defense. Fight`,
@@ -1810,6 +1824,7 @@
     up: ['...kk...', '..kggk..', '.kggggk.', 'kkkggkkk', '..kggk..', '..kggk..', '..kggk..', '..kkkk..'],
     dex: ['kkkkkkk.', 'krrrrrrk', 'krwwrrrk', 'krrrrrrk', 'kkkkkkkk', 'kwwwwwwk', 'kwsswwwk', 'kkkkkkkk'],
     badge: ['...kk...', '..kyyk..', '.kyYyyk.', 'kyYyyyyk', 'kyyyyyok', '.kyyyok.', '..kyok..', '...kk...'],
+    star: ['...kk...', '...yy...', 'kkyYyykk', '.kyyyyk.', '..kyyk..', '.kykkyk.', '.kk..kk.', '........'],
   }
   const PAL = {
     k: '#24304f',
@@ -1824,6 +1839,121 @@
   }
   const url = (name, scale, pal = PAL) => PX.icon(ICO[name], pal, scale).toDataURL()
   let BALL, LOCK, LOCK3, PLAY, MAP, COIN, BADGE, BADGE3, TROPHY
+  // The tab bar's icons, 16×16 in the Daybreak style: navy outline, three tones, one idea each.
+  const NAVICO = {
+    shop: [
+      '................',
+      '.....kkkkkk.....',
+      '....kk....kk....',
+      '....k......k....',
+      '..kkkkkkkkkkkk..',
+      '..kYYYYYYYYYYk..',
+      '..kyyyyyyyyyok..',
+      '..kyyykkkkyyok..',
+      '..kyykrrrrkyok..',
+      '..kykrprrrrkok..',
+      '..kykkkwwkkkok..',
+      '..kykwwwwwwkok..',
+      '..kyykwwwwkyok..',
+      '..kyyykkkkyyok..',
+      '..kooooooooook..',
+      '..kkkkkkkkkkkk..',
+    ],
+    upgrades: [
+      '...........kk...',
+      '..........kGGk..',
+      '.........kGLGGk.',
+      '........kGLGGGGk',
+      '........kkkGGkkk',
+      '..........kGGk..',
+      'kkkkkkkkkkkGGk..',
+      'kwwwwwwwwkkGGk..',
+      'kwkkwwwwlkkGGk..',
+      'kwkkwwwwlkkkkk..',
+      'kwwwkkwwlk......',
+      'kwwwkkwwlk......',
+      'kwwwwwkklk......',
+      'kwwwwwkklk......',
+      'klllllllgk......',
+      'kkkkkkkkkk......',
+    ],
+    team: [
+      '......kkkk......',
+      '.....krrrrk.....',
+      '....krprrrrk....',
+      '....krrkkrrk....',
+      '....kkkwwkkk....',
+      '....kwwkkwwk....',
+      '.....kwwwwk.....',
+      '..kkkkkkkkkkkk..',
+      '.krrrrk..krrrrk.',
+      'krprrrrkkrprrrrk',
+      'krrkkrrkkrrkkrrk',
+      'kkkwwkkkkkkwwkkk',
+      'kwwkkwwkkwwkkwwk',
+      '.kwwwwk..kwwwwk.',
+      '..kkkk....kkkk..',
+      '................',
+    ],
+    dex: [
+      '.kkkkkkkkkkkkkk.',
+      'kppppppppppppppk',
+      'krkkkkrrrrrrrrRk',
+      'kkcwcckrwwyyGGRk',
+      'kkccbckrwwyyGGRk',
+      'kkcbbckrrrrrrrRk',
+      'krkkkkrrrrrrrrRk',
+      'krrrrrrrrrrrrrRk',
+      'krkkkkkkkkkkkrRk',
+      'krkeeeeeeeeekrRk',
+      'krkeddeeeeeekrRk',
+      'krkeeeedddeekrRk',
+      'krkkkkkkkkkkkrRk',
+      'krrrrrrrrrrrrrRk',
+      'kRRRRRRRRRRRRRRk',
+      '.kkkkkkkkkkkkkk.',
+    ],
+    ranks: [
+      '.......kk.......',
+      '......kYyk......',
+      '...kkkkyykkkk...',
+      '...kyyyyyyyyk...',
+      '....kyyyyyyk....',
+      '.....kyyyyk.....',
+      '....kyykkyyk....',
+      '....kkk..kkk....',
+      '.....kkkkkk.....',
+      '.....kYYYok.....',
+      'kkkkkkyyyok.....',
+      'kwwwgkyyyokkkkkk',
+      'klllgkyyyokFFFHk',
+      'klllgkyyyokfffHk',
+      'klllgkyyyokfffHk',
+      'kkkkkkkkkkkkkkkk',
+    ],
+  }
+  const NAVPAL = {
+    k: '#24304f',
+    w: '#ffffff',
+    l: '#dfe7f2',
+    g: '#b6c3d9',
+    r: '#f2553f',
+    R: '#c4382a',
+    p: '#ff9a85',
+    y: '#ffbe2e',
+    Y: '#ffe7a8',
+    o: '#e08e00',
+    G: '#34c97a',
+    L: '#a8f0c8',
+    c: '#7cc8f0',
+    b: '#3a7be0',
+    e: '#c8f0d0',
+    d: '#5f9a78',
+    F: '#f0a060',
+    f: '#d8783a',
+    H: '#a85a2a',
+  }
+  const NAV = {}
 
   function bind() {
     cv = $('#hm-cv')
@@ -1862,6 +1992,7 @@
       toast(`${names.join(', ')} · back in your Box`)
     })
     $('#hm-versus').addEventListener('click', () => {
+      if (!SAVE.versus) return toast('Versus opens when 3 of your Pokémon reach Lv.50')
       if (SAVE.versus === 'new') {
         SAVE.versus = 'set'
         renderVersus()
@@ -2029,9 +2160,12 @@
     BADGE3 = url('badge', 3)
     TROPHY = url('trophy', 2)
     $('#hm-ico-coin').src = COIN
-    $('#hm-ico-trophy').src = TROPHY
+    for (const k of Object.keys(NAVICO)) NAV[k] = PX.icon(NAVICO[k], NAVPAL, 2).toDataURL()
+    $('#hm-ico-trophy').src = NAV.ranks
     $('#hm-ico-badge').src = BADGE
+    $('#hm-ico-ev').src = url('star', 3, { k: '#b6c3d9', y: '#e3e9f2', Y: '#ffffff' })
     $$('#hm-nav [data-ico]').forEach((im) => (im.src = url(im.dataset.ico, 3)))
+    $$('#hm-nav [data-nav]').forEach((im) => (im.src = NAV[im.dataset.nav]))
     bind()
     applyState('mid')
     running = true
@@ -2057,7 +2191,7 @@
       return caught
     },
     get icons() {
-      return { BALL, LOCK, LOCK3, PLAY, MAP, COIN, BADGE, BADGE3, TROPHY }
+      return { BALL, LOCK, LOCK3, PLAY, MAP, COIN, BADGE, BADGE3, TROPHY, NAV }
     },
     REDUCED,
     $,

@@ -542,7 +542,7 @@
   .home-device { position: sticky; top: 72px; min-width: 0; }
   .home-bezel { padding: 8px; }
   #home-root { border-radius: 18px; overflow: hidden; }
-  .hm-screen { position: relative; height: 872px; display: flex; flex-direction: column; background-color: var(--u-bg); background-image: var(--tex); background-size: 16px auto; image-rendering: pixelated; overflow: hidden; }
+  .hm-screen { position: relative; height: 900px; display: flex; flex-direction: column; background-color: var(--u-bg); background-image: var(--tex); background-size: 16px auto; image-rendering: pixelated; overflow: hidden; }
   :where(.hm-screen) button { font: inherit; color: inherit; cursor: pointer; }
   .hm-screen .ico { display: inline-block; width: 40px; height: 30px; background: url(assets/dex-icons.png) no-repeat; image-rendering: pixelated; flex: none; }
   .hm-top { display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: #fbfdff; box-shadow: 0 2px 0 #24304f, 0 4px 0 #24304f22; position: relative; z-index: 3; }
@@ -557,7 +557,7 @@
   .hm-pill img { width: 16px; height: 16px; }
   .hm-pill i { font-style: normal; width: 26px; height: 26px; display: grid; place-items: center; background: #f2553f; color: #fff; font-size: 22px; line-height: 1; margin-left: 4px; }
   .hm-round { appearance: none; width: 44px; height: 44px; border: 0; border-radius: 50%; background: #fbfdff; box-shadow: inset 0 0 0 2px #24304f, inset 0 -4px 0 #dfe7f2; display: grid; place-items: center; }
-  .hm-round img { width: 24px; height: 24px; }
+  .hm-round img { width: 32px; height: 32px; }
   .hm-stage { position: relative; container-type: inline-size; }
   .hm-stage canvas { display: block; width: 100%; height: auto; aspect-ratio: 288 / 276; image-rendering: pixelated; image-rendering: crisp-edges; cursor: pointer; touch-action: manipulation; }
   .hm-plate { clip-path: polygon(2px 0, calc(100% - 2px) 0, calc(100% - 2px) 2px, 100% 2px, 100% calc(100% - 2px), calc(100% - 2px) calc(100% - 2px), calc(100% - 2px) 100%, 2px 100%, 2px calc(100% - 2px), 0 calc(100% - 2px), 0 2px, 2px 2px); }
@@ -613,8 +613,7 @@
   .hm-collect { appearance: none; border: 0; min-height: 34px; padding: 0 8px; background: #34c97a; color: #10301f; font-family: 'Jersey 20', sans-serif !important; font-size: 17px; box-shadow: inset 0 0 0 2px #24304f, inset 0 -3px 0 #1f9e5a; }
   .hm-nav { display: grid; grid-template-columns: repeat(5, 1fr); align-items: end; background: #fbfdff; box-shadow: 0 -2px 0 #24304f, 0 -4px 0 #24304f18; position: relative; z-index: 3; padding-bottom: env(safe-area-inset-bottom, 0px); }
   .hm-nav button { appearance: none; border: 0; background: none; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: end; gap: 2px; min-height: 60px; padding: 6px 0 8px; font-family: 'Jersey 15', sans-serif !important; font-size: 15px; color: #5c6a8a; }
-  .hm-nav img { width: 24px; height: 24px; }
-  .hm-nav .ico { width: 40px; height: 30px; margin: -3px 0 -3px; }
+  .hm-nav img { width: 32px; height: 32px; }
   .hm-nav .home { justify-content: start; }
   .hm-home-ball { width: 62px; height: 62px; margin-top: -26px; border-radius: 50%; background: #f2553f; box-shadow: inset 0 0 0 3px #24304f, inset 0 -6px 0 #c4382a, 0 0 0 4px #fbfdff; display: grid; place-items: center; }
   .hm-home-ball img { width: 36px; height: 36px; }
@@ -710,16 +709,20 @@
   @keyframes spk { 0%, 55% { opacity: 0; } 56%, 100% { opacity: 1; } }
 
   /* Versus, once three Pokémon reach Lv.50 */
-  .hm-vs-w { grid-column: 1 / -1; }
-  .hm-vs { display: flex; align-items: center; gap: 8px; min-width: 0; }
-  .hm-vs-team { display: flex; flex: none; padding-left: 2px; }
-  .hm-vs-team .ico { margin: -2px -12px -4px -6px; }
+  .hm-vs-row { display: flex; align-items: center; gap: 6px; min-height: 30px; }
+  .hm-vs-team { display: flex; flex: none; padding-left: 4px; }
+  .hm-vs-team .ico { margin: -2px -14px -2px -6px; }
   .hm-vs-team .ico:last-child { margin-right: 0; }
-  .hm-vs-txt { display: grid; gap: 3px; flex: 1; min-width: 0; line-height: 1; }
-  .hm-vs-txt b { font-weight: 400; font-size: 20px; }
-  .hm-vs-txt small { font-family: 'Jersey 15', sans-serif; font-size: 15px; color: var(--u-muted); }
-  .hm-vs-go { flex: none; padding: 5px 10px 7px; background: #f2553f; color: #fff; font-size: 18px; line-height: 1; box-shadow: inset 0 0 0 2px #24304f, inset 0 -3px 0 #c4382a; }
+  .hm-vs-w.locked .hm-vs-team .ico { filter: grayscale(1) opacity(0.5); }
+  .hm-vs-badge { margin-left: auto; font-size: 22px; line-height: 1; color: #ffbe2e; text-shadow: 0 2px 0 #c4382a, 2px 0 0 #c4382a; }
+  .hm-vs-act { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+  .hm-vs-go { flex: none; padding: 4px 8px 6px; background: #f2553f; color: #fff; font-size: 17px; line-height: 1; box-shadow: inset 0 0 0 2px #24304f, inset 0 -3px 0 #c4382a; }
   .hm-vs-score { font-size: 14px; }
+  .hm-w-lock { width: 16px; height: 16px; }
+  .hm-events { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; padding: 10px 8px; text-align: center; background: #f6f8fc80; outline: 2px dashed #b6c3d9; outline-offset: -2px; color: #8592ad; }
+  .hm-events .hm-w-head { justify-content: center; }
+  .hm-events .hm-w-head b { flex: none; }
+  .hm-ev-star { width: 24px; height: 24px; }
   .hm-wipe p.vs { flex-direction: column; gap: 6px; }
   .hm-vs-side { display: grid; justify-items: center; gap: 2px; font-size: 24px; }
   .hm-vs-side:last-child { grid-auto-flow: row; }
@@ -927,7 +930,7 @@
   .pg-up { display: grid; gap: 6px; padding: 8px 10px 10px; background: #ffffff; box-shadow: inset 0 0 0 2px #24304f, inset 0 -4px 0 #dfe7f2; }
   .pg-up.can { background: #fffdf3; box-shadow: inset 0 0 0 2px #24304f, inset 0 -4px 0 #ffe7a8; }
   .pg-up.locked { background: #f1f4f9; box-shadow: inset 0 0 0 2px #b6c3d9; color: #5c6a8a; }
-  .pg-up-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 30px; }
+  .pg-up-top { display: flex; align-items: center; gap: 8px; min-height: 30px; }
   .pg-up-top b { font-weight: 400; font-size: 20px; line-height: 1; }
   .pg-ex { display: inline-flex; align-items: center; gap: 3px; }
   .pg-ex small { font-family: 'Jersey 15', sans-serif; font-size: 14px; color: #5c6a8a; margin-left: 4px; }
@@ -974,9 +977,19 @@
   .pg-die-name b { font-weight: 400; font-size: 18px; }
   .pg-die-name em { font-style: normal; font-family: 'Jersey 15', sans-serif; color: #5c6a8a; }
   .pg-die small { font-family: 'Jersey 15', sans-serif; font-size: 13px; color: #5c6a8a; }
-  .pg-faces { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 3px; }
-  .pg-faces i { display: grid; place-items: center; height: 28px; font-style: normal; font-size: 18px; background: color-mix(in oklab, var(--c) 35%, #ffffff); box-shadow: inset 0 0 0 2px color-mix(in oklab, var(--c) 70%, #24304f); }
-  .pg-faces i.st { background: var(--stc); color: #ffffff; text-shadow: 0 1px 0 #24304f; box-shadow: inset 0 0 0 2px #24304f; }
+  .pg-faces { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 5px; }
+  .pg-faces i { position: relative; height: 38px; display: grid; place-items: center; font-style: normal; font-size: 22px; line-height: 1; color: #ffffff; text-shadow: 0 2px 0 #24304f; background: var(--c); box-shadow: inset 0 0 0 2px #24304f, inset -3px -3px 0 #0000002e, inset 3px 3px 0 #ffffff59; }
+  .pg-faces.lt i { color: #24304f; text-shadow: none; }
+  .pg-faces i.st, .pg-faces.lt i.st { display: flex; align-items: center; justify-content: center; gap: 2px; background: #3d4970; color: var(--stc); text-shadow: 0 2px 0 #1a2238; box-shadow: inset 0 0 0 2px #24304f, inset 0 0 0 4px var(--stc), 0 0 0 2px #ffffff, 0 0 0 4px var(--stc); z-index: 1; }
+  .pg-faces i.st img { width: 16px; height: 16px; flex: none; }
+  .pg-stline { display: flex; align-items: flex-start; gap: 7px; padding: 5px 8px 6px; background: color-mix(in oklab, var(--stc) 14%, #ffffff); box-shadow: inset 4px 0 0 var(--stc); font-family: 'Jersey 15', sans-serif; font-size: 15px; line-height: 1.15; color: #24304f; }
+  .pg-stline img { width: 16px; height: 16px; flex: none; margin-top: 1px; }
+  .pg-stline b { font-family: 'Jersey 20', sans-serif; font-weight: 400; font-size: 16px; }
+  .pg-up-name { display: grid; flex: 1; min-width: 0; line-height: 1.05; }
+  .pg-up-name small { font-family: 'Jersey 15', sans-serif; font-size: 14px; color: #5c6a8a; }
+  .pg-up-top .die-wrap { line-height: 0; }
+  .pg-h-ico { width: 32px; height: 32px; margin-right: -2px; }
+  .pg-die-name small { font-family: 'Jersey 15', sans-serif; font-size: 14px; color: #5c6a8a; margin-left: auto; }
   .pg-ms { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
   .pg-ms li { display: grid; grid-template-columns: 58px minmax(0, 1fr); align-items: center; gap: 3px 8px; font-size: 17px; line-height: 1.1; }
   .pg-ms-lv { padding: 2px 6px 3px; background: #24304f; color: #ffe7a8; font-family: 'Jersey 15', sans-serif; font-size: 14px; text-align: center; }
@@ -1105,9 +1118,10 @@
                 <button type="button" class="ui-btn primary hm-go" id="hm-go"></button>
               </div>
               <div class="hm-widgets">
-                <button type="button" class="ui-panel hm-w hm-vs-w" id="hm-versus" hidden></button>
                 <button type="button" class="ui-panel hm-w" id="hm-secret"></button>
                 <button type="button" class="ui-panel hm-w" id="hm-daycare"></button>
+                <button type="button" class="ui-panel hm-w hm-vs-w" id="hm-versus"></button>
+                <div class="hm-w hm-events" role="note" aria-label="Special events: coming later"><span class="hm-w-head"><b>Special events</b></span><img class="px hm-ev-star" id="hm-ico-ev" alt="" /><span class="hm-w-sub">Coming later</span></div>
               </div>
               </div>
               <section class="hm-page" data-page="team" aria-label="Team" hidden></section>
@@ -1115,11 +1129,11 @@
               <section class="hm-page" data-page="shop" aria-label="Poké Mart" hidden></section>
               <section class="hm-page" data-page="upgrades" aria-label="Upgrades" hidden></section>
               <nav class="hm-nav" id="hm-nav" aria-label="Game menu">
-                <button type="button" data-tab="shop"><img data-ico="potion" class="px" alt="" /><span>Shop</span></button>
-                <button type="button" data-tab="upgrades"><img data-ico="up" class="px" alt="" /><span>Upgrades</span><i class="dot" hidden></i></button>
+                <button type="button" data-tab="shop"><img data-nav="shop" class="px" alt="" /><span>Shop</span></button>
+                <button type="button" data-tab="upgrades"><img data-nav="upgrades" class="px" alt="" /><span>Upgrades</span><i class="dot" hidden></i></button>
                 <button type="button" data-tab="home" class="home" aria-current="page" aria-label="Home"><span class="hm-home-ball"><img data-ico="ball" class="px" alt="" /></span></button>
-                <button type="button" data-tab="team"><span class="ico" style="background-position:-200px 0" aria-hidden="true"></span><span>Team</span></button>
-                <button type="button" data-tab="dex"><img data-ico="dex" class="px" alt="" /><span>Pokédex</span><i class="dot new" hidden></i></button>
+                <button type="button" data-tab="team"><img data-nav="team" class="px" alt="" /><span>Team</span></button>
+                <button type="button" data-tab="dex"><img data-nav="dex" class="px" alt="" /><span>Pokédex</span><i class="dot new" hidden></i></button>
               </nav>
               <div class="hm-wipe" id="hm-wipe" hidden aria-hidden="true"></div>
               <div class="hm-sheet" id="hm-sheet" hidden>
@@ -1176,15 +1190,15 @@
           <li><b>Your team, roaming</b><span>The three of them (a team is three at most) wander the area’s own scenery. Friends walk over to each other and hop, <em>little hearts</em> float up; Lapras starts a song and the others join, <em>notes</em> rising. Tap one: it hops, a heart pops, its card shows. A tired one sweats and naps.</span></li>
           <li><b>Continue</b><span>The only big button, in thumb reach, and it says what comes next.</span></li>
           <li><b>Areas</b><span>A sheet, not a page. Search by area <em>or by Pokémon</em> (“Pikachu” finds where it lives), filter To catch, Secret or Cleared, sort by route, level or most to catch. A card opens the area’s details; <em>GO</em> travels. The outline is the state: <em>orange</em> where you are, <em>green</em> cleared, grey locked. Each area has one picture: the scene the team roams, and cards show its middle. <em>Regions</em>, next to the region name, switches region: the next one appears once the League is won, starters included. The Areas button has three states: plain, a NEW dot, <em>gold “New region”</em>.</span></li>
-          <li><b>Widgets</b><span><em>Versus</em> joins once three Pokémon reach Lv.50: Set team first, then Fight. The newest secret area travels in one tap; when there is none, the next one shows its progress. The Day Care shows who is ready and collects in place.</span></li>
-          <li><b>Tab bar</b><span>Home in the middle. Dots only for things you can act on: affordable upgrades, a new Pokédex entry.</span></li>
+          <li><b>Widgets</b><span>Two by two. The newest secret area travels in one tap; when there is none, the next one shows its progress. The Day Care shows who is ready and collects in place. <em>Versus</em> sits under the secret area: locked, it shows how close you are (3 Pokémon at Lv.50); then Set team, then Fight. Under the Day Care, an empty slot waits for <em>special events</em>.</span></li>
+          <li><b>Tab bar</b><span>Home in the middle. New 16×16 icons: a Mart bag, a die going up, three balls for the team, the red Pokédex; a podium for the leaderboard. Dots only for things you can act on: affordable upgrades, a new Pokédex entry.</span></li>
         </ol>
         <h2 class="notes-h">The tabs</h2>
         <ol class="zones">
           <li><b>Team</b><span>The three as cards: sprite, HP, XP, dice. <em>Drag one onto another</em> to change who goes out first; the lead wears gold. The Box below: search, sort by number, level or newest, filter by type. A card opens the Pokémon: stats, every die face, what it learns next, items to use. Swaps stay a Pokémon Center thing, said once at the top.</span></li>
           <li><b>Pokédex</b><span>151 tiles, silhouettes for the missing ones. Filters All, Caught, Missing and <em>Nearby</em> (catchable in an open area). A number finds anything; a name only what you’ve caught. A missing one shows where it lives, with the same <em>GO</em> as the Areas list.</span></li>
           <li><b>Poké Mart</b><span>Buy and Sell, category chips, Balls first. A row opens to pick ×1, ×5 or ×10; the button gives the total, or how much is missing. Items that need more badges wait under “Coming later”.</span></li>
-          <li><b>Upgrades</b><span>Combos and Dice. Each card: example dice, a 10-pip track, the bonus now → next, the price. <em>Affordable</em> narrows to what you can buy; the tab bar’s dot counts it. Locked ones say why.</span></li>
+          <li><b>Upgrades</b><span>Combos and Dice. Each card: example dice (or the die’s <em>six faces</em>), a 10-pip track, the bonus now → next, the price. Status faces are dark tiles with their icon, and say what they do with the game’s numbers. <em>Affordable</em> narrows to what you can buy; the tab bar’s dot counts it. Locked ones say why.</span></li>
         </ol>
         <h2 class="notes-h">Accessible by default</h2>
         <ul class="notes-list">
