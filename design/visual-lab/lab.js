@@ -1171,9 +1171,11 @@
           }
           if (verdict && lifted.includes(i)) pop = true
           if (pop) {
-            const q = PX.ease.outBack(Math.min(1, (lt - (verdict ? sp.verdictAt - sp.t0 : RES)) / 0.24), 2.6)
-            y = -12 * q
-            sx = sy = 1 + 0.16 * q
+            // A bounce that grows and settles back to 1×: the lift, the ring and the sparkles stay, and at rest
+            // the die is unscaled so its pips stay on whole pixels.
+            const k = Math.min(1, (lt - (verdict ? sp.verdictAt - sp.t0 : RES)) / 0.3)
+            y = -12 * PX.ease.outBack(k, 2.6)
+            sx = sy = 1 + 0.25 * Math.sin(Math.PI * k)
           }
           if (busted && lt - (sp.verdictAt - sp.t0) < 0.3) rot = Math.floor(lt * 40) % 2 ? 8 : -8
         }

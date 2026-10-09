@@ -160,9 +160,16 @@
   .ui-hp .trail { position: absolute; inset: 0 auto 0 0; width: 100%; transition: width 900ms cubic-bezier(0.2, 0.8, 0.2, 1) 280ms; }
   .ui-hp .num { min-width: 5.2ch; text-align: right; font-variant-numeric: tabular-nums; }
   .ui-dice { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; padding: 6px 0 2px; }
-  .ui-die { --s: 54px; width: var(--s); height: var(--s); position: relative; display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); padding: calc(var(--s) * 0.16); background: var(--c); }
-  .ui-die i { display: block; width: 100%; height: 100%; place-self: center; }
-  .ui-die i.on::before { content: ''; display: block; width: calc(var(--s) * 0.15); height: calc(var(--s) * 0.15); margin: auto; position: relative; top: 50%; transform: translateY(-50%); background: var(--pip); }
+  /* Pips sit on whole pixels: one even size per die, three fixed columns and rows, so every dot matches. */
+  .ui-die { --s: 54px; --pp: round(calc(var(--s) * 0.15), 2px); --m: round(calc(var(--s) * 0.2), 1px); width: var(--s); height: var(--s); position: relative; display: block; padding: 0; background: var(--c); }
+  .ui-die i { position: absolute; display: block; width: var(--pp); height: var(--pp); }
+  .ui-die i:nth-child(3n + 1) { left: var(--m); }
+  .ui-die i:nth-child(3n + 2) { left: calc((var(--s) - var(--pp)) / 2); }
+  .ui-die i:nth-child(3n) { left: calc(var(--s) - var(--m) - var(--pp)); }
+  .ui-die i:nth-child(-n + 3) { top: var(--m); }
+  .ui-die i:nth-child(n + 4):nth-child(-n + 6) { top: calc((var(--s) - var(--pp)) / 2); }
+  .ui-die i:nth-child(n + 7) { top: calc(var(--s) - var(--m) - var(--pp)); }
+  .ui-die i.on::before { content: ''; display: block; width: 100%; height: 100%; background: var(--pip); }
   .ui-die .tag { position: absolute; right: -6px; top: -6px; width: 16px; height: 16px; display: grid; place-items: center; }
   .ui-die .tag img { width: 16px; height: 16px; }
   .ui-die.sel { transform: translateY(-6px); }
@@ -269,8 +276,7 @@
   [data-style='daybreak'] .ui-hp .trail { background: #ffb3a8; inset: 2px auto 2px 2px; max-width: calc(100% - 4px); }
   [data-style='daybreak'] .ui-hp .fill { inset: 2px auto 2px 2px; max-width: calc(100% - 4px); background: linear-gradient(var(--hp) 0 0) 0 2px / 100% 100% no-repeat, color-mix(in oklab, var(--hp) 55%, #ffffff); }
   [data-style='daybreak'] .ui-hp .num { font-size: 15px; }
-  [data-style='daybreak'] .ui-die { box-shadow: inset 0 0 0 2px #24304f, inset 2px 4px 0 0 rgba(255, 255, 255, 0.45), inset -2px -4px 0 0 rgba(20, 30, 60, 0.18); clip-path: polygon(4px 0, calc(100% - 4px) 0, calc(100% - 4px) 2px, calc(100% - 2px) 2px, calc(100% - 2px) 4px, 100% 4px, 100% calc(100% - 4px), calc(100% - 2px) calc(100% - 4px), calc(100% - 2px) calc(100% - 2px), calc(100% - 4px) calc(100% - 2px), calc(100% - 4px) 100%, 4px 100%, 4px calc(100% - 2px), 2px calc(100% - 2px), 2px calc(100% - 4px), 0 calc(100% - 4px), 0 4px, 2px 4px, 2px 2px, 4px 2px); }
-  [data-style='daybreak'] .ui-die i.on::before { border-radius: 1px; box-shadow: 0 2px 0 rgba(0, 0, 0, 0.15); }
+  [data-style='daybreak'] .ui-die { box-shadow: inset 0 0 0 2px #24304f, inset 2px 4px 0 0 rgba(255, 255, 255, 0.45), inset -2px -4px 0 0 rgba(20, 30, 60, 0.18); }
   [data-style='daybreak'] .die-wrap { filter: drop-shadow(0 3px 0 rgba(36, 48, 79, 0.22)); }
   [data-style='daybreak'] .die-wrap.sel { filter: drop-shadow(0 0 0 #f2553f) drop-shadow(0 2px 0 #f2553f) drop-shadow(0 -2px 0 #f2553f) drop-shadow(2px 0 0 #f2553f) drop-shadow(-2px 0 0 #f2553f); }
   [data-style='daybreak'] .ui-die .tag { background: var(--stc); box-shadow: inset 0 0 0 2px #24304f; border-radius: 50%; }
@@ -348,7 +354,7 @@
   [data-style='pop'] .ui-hp .fill { inset: 2px auto 2px 2px; max-width: calc(100% - 4px); background: repeating-linear-gradient(135deg, var(--hp) 0 4px, color-mix(in oklab, var(--hp) 70%, #ffffff) 4px 8px); }
   [data-style='pop'] .ui-hp .num { font-size: 8px; font-weight: 700; }
   [data-style='pop'] .ui-die { border-radius: 6px; box-shadow: inset 0 0 0 3px #1a1423, inset 0 -6px 0 0 #00000038, inset 0 4px 0 2px #ffffff55; }
-  [data-style='pop'] .ui-die i.on::before { background: #ffffff; box-shadow: 0 0 0 2px #1a1423; border-radius: 50%; width: calc(var(--s) * 0.14); height: calc(var(--s) * 0.14); }
+  [data-style='pop'] .ui-die i.on::before { background: #ffffff; box-shadow: 0 0 0 2px #1a1423; border-radius: 50%; }
   [data-style='pop'] .die-wrap { filter: drop-shadow(3px 3px 0 #1a1423); }
   [data-style='pop'] .die-wrap.sel { filter: drop-shadow(3px 3px 0 #7b4dff); }
   [data-style='pop'] .die-wrap.sel .ui-die { box-shadow: inset 0 0 0 3px #1a1423, inset 0 0 0 6px #ffd84d, inset 0 -6px 0 0 #00000038; }
