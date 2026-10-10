@@ -16,6 +16,7 @@
   const PEOPLE = [
     {
       name: 'Mio',
+      raids: 14,
       look: 'beauty',
       vs: [146, 144, 135],
       lv: 100,
@@ -27,6 +28,7 @@
     },
     {
       name: 'Sora',
+      raids: 11,
       look: 'swimmer-f',
       vs: [150, 131, 143],
       lv: 100,
@@ -38,6 +40,7 @@
     },
     {
       name: 'Lea',
+      raids: 9,
       look: 'cooltrainer-f',
       vs: [149, 94, 130],
       lv: 74,
@@ -49,6 +52,7 @@
     },
     {
       name: 'Noor',
+      raids: 6,
       look: 'psychic-m',
       vs: [143, 65, 68],
       lv: 68,
@@ -60,6 +64,7 @@
     },
     {
       name: 'Ivy',
+      raids: 4,
       look: 'channeler',
       vs: [94, 65, 113],
       lv: 63,
@@ -69,9 +74,11 @@
       atk: 8,
       def: 4,
     },
-    { name: 'Kai', look: 'hiker', vs: [59, 145, 76], lv: 61, areas: 20, dex: 117, shiny: 1, atk: 7, def: 5 },
+    { name: 'Kai',
+      raids: 5, look: 'hiker', vs: [59, 145, 76], lv: 61, areas: 20, dex: 117, shiny: 1, atk: 7, def: 5 },
     {
       name: 'Ana',
+      raids: 2,
       look: 'ranger-f',
       vs: [113, 123, 131],
       lv: 58,
@@ -83,6 +90,7 @@
     },
     {
       name: 'Theo',
+      raids: 1,
       look: 'youngster',
       vs: [115, 128, 127],
       lv: 55,
@@ -94,6 +102,7 @@
     },
     {
       name: 'Rin',
+      raids: 0,
       look: 'black-belt',
       vs: [68, 128, 111],
       lv: 52,
@@ -103,11 +112,16 @@
       atk: 2,
       def: 1,
     },
-    { name: 'Jo', look: 'lass', team: [35, 39, 133], lv: 44, areas: 14, dex: 77, shiny: 0 },
-    { name: 'Ezra', look: 'scientist', team: [81, 100, 137], lv: 39, areas: 12, dex: 70, shiny: 1 },
-    { name: 'Pia', look: 'picnicker', team: [43, 69, 102], lv: 33, areas: 10, dex: 58, shiny: 0 },
-    { name: 'Max', look: 'camper', team: [19, 21, 27], lv: 27, areas: 8, dex: 41, shiny: 0 },
-    { name: 'Ben', look: 'bug-catcher', team: [10, 13, 48], lv: 21, areas: 6, dex: 35, shiny: 2 },
+    { name: 'Jo',
+      raids: 0, look: 'lass', team: [35, 39, 133], lv: 44, areas: 14, dex: 77, shiny: 0 },
+    { name: 'Ezra',
+      raids: 0, look: 'scientist', team: [81, 100, 137], lv: 39, areas: 12, dex: 70, shiny: 1 },
+    { name: 'Pia',
+      raids: 0, look: 'picnicker', team: [43, 69, 102], lv: 33, areas: 10, dex: 58, shiny: 0 },
+    { name: 'Max',
+      raids: 0, look: 'camper', team: [19, 21, 27], lv: 27, areas: 8, dex: 41, shiny: 0 },
+    { name: 'Ben',
+      raids: 0, look: 'bug-catcher', team: [10, 13, 48], lv: 21, areas: 6, dex: 35, shiny: 2 },
   ]
   const opponents = () => PEOPLE.filter((p) => p.vs)
   const ST = {
@@ -152,6 +166,7 @@
       shiny: own.filter((m) => m.shiny).length,
       atk: VSS.beaten.size,
       def: A.VS.defense,
+      raids: A.raidsWon || 0,
       vs: VSS.team,
       isMe: true,
     }
@@ -189,6 +204,14 @@
       fmt: (p) => plural(p.shiny, 'shiny', 'shinies'),
       max: () => Infinity,
     },
+    // Raids won: only the raids where the raid Pokémon was caught count (events.js).
+    raids: {
+      label: 'Raids',
+      note: 'Raids won: the raid Pokémon was caught.',
+      val: (p) => p.raids || 0,
+      fmt: (p) => plural(p.raids || 0, 'raid'),
+      max: () => Infinity,
+    },
   }
   /** One board: who's ranked, who's in the Hall of Fame (maxed out), with ties sharing a rank. */
   function ranked(key) {
@@ -217,7 +240,7 @@
     const meHall = hall.some((r) => r.isMe)
     p.innerHTML = `
       <div class="pg-head"><button type="button" class="pg-back" data-home aria-label="Back to Home"></button><img class="px pg-h-ico" alt="" src="${A.icons.NAV.ranks}" /><h2>Leaderboard</h2><span class="pg-count">Kanto</span></div>
-      <div class="hm-seg pg-tabs so-tabs4" role="tablist" aria-label="Sort by">${Object.entries(BOARDS)
+      <div class="hm-seg pg-tabs so-tabs4 so-tabs5" role="tablist" aria-label="Sort by">${Object.entries(BOARDS)
         .map(
           ([k, b]) =>
             `<button type="button" role="tab" data-board="${k}" aria-selected="${k === key}">${b.label}</button>`,
