@@ -1,6 +1,8 @@
 // One picture per area, drawn in code (no request): the scenery the team roams on Home, seen from the front, and the
 // strip lists cut from its middle. Areas that share a banner share a scene; '#flip' areas see it mirrored. From the
-// Visual Lab's home.js (paintOutdoor, paintForest, paintCave), with a desert added for the dunes areas.
+// Visual Lab's home.js (paintOutdoor, paintForest, paintCave), with a desert added for the dunes areas. An area with a
+// painted picture (src/fx/areaArt.ts) uses it instead (`worldOf`); its drawn scene stands in while it loads.
+import { pictureOf, type AreaPicture } from '@/fx/areaArt'
 import {
   bayer,
   canvas,
@@ -33,6 +35,8 @@ export interface World {
   fg: Canvas
   /** What moves: motes, glints, ripples, sparks. */
   dyn: (g: G, t: number, self?: World) => void
+  /** The area's picture, laid over `cv` once loaded; `cv` is then only its stand-in. */
+  art?: AreaPicture
 }
 
 interface Pal {
@@ -741,6 +745,37 @@ export function sceneOf(bannerUrl: string | null | undefined): World {
   const base = S.forest ? paintForest() : S.cave ? paintCave(S.cave) : paintOutdoor(S)
   const world = flip ? mirrored(base) : base
   worlds.set(id, world)
+  return world
+}
+
+const artWorlds = new Map<string, World>()
+
+/**
+ * The world of an area on Home: its picture's (where it walks, where it swims, measured on the picture), or the drawn
+ * scene. A picture's world keeps the drawn scene as `cv`, the stand-in until the picture has loaded; the team's ground
+ * never changes when it arrives.
+ */
+export function worldOf(area: { id: string; bannerUrl?: string | null }): World {
+  const art = pictureOf(area.id)
+  if (!art) return sceneOf(area.bannerUrl)
+  const id = `${art.id}|${area.bannerUrl ?? ''}`
+  const hit = artWorlds.get(id)
+  if (hit) return hit
+  const [x0, y0, x1, y1] = art.walk
+  const pond = art.pond ? { ...art.pond, rim: '#d8f1ff' } : null
+  const world: World = {
+    cv: sceneOf(area.bannerUrl).cv,
+    horizon: art.horizon ?? Math.round(H / 2),
+    walk: { x0, y0, x1, y1 },
+    pond,
+    fg: canvas(W, H),
+    // The picture has its own light; only the swimmers' water moves.
+    dyn: (g, t) => {
+      if (pond) ripple(g, pond, t, '#ffffff', '#bfe6ff')
+    },
+    art,
+  }
+  artWorlds.set(id, world)
   return world
 }
 

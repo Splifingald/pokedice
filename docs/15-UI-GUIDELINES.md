@@ -232,8 +232,9 @@ Sound is off by default and always respects `settings.sfx`.
 
 Players shouldn't have to make many requests:
 
-- **Draw in code** whatever can be: frames, the ground texture, icons, badges, Poké Balls, the Egg, area scenes and
-  battle backgrounds. They cost no request at all.
+- **Draw in code** whatever can be: frames, the ground texture, icons, badges, Poké Balls, the Egg, and the stand-in
+  area scenes and battle background (the painted area pictures, below, replace them where they exist). They cost no
+  request at all.
 - **Atlases** for sets of small pictures: the Pokémon menu icons (`src/assets/pokemon-icons.png`), the trainers (one
   sheet per region), the item icons (`src/assets/item-icons.png`, rebuilt by `pnpm item-sprites` when items change).
   One request, cached for a year (hashed Vite assets).
@@ -245,10 +246,24 @@ Players shouldn't have to make many requests:
   are preloaded.
 - Fonts are subset by unicode range; only Jersey 20 (latin) is preloaded.
 - Before adding an image file, ask whether code can draw it, or whether it belongs in an atlas.
-- **Painted backgrounds** (area scenes, battle backdrops), when they replace the code-drawn ones: one file per scene
-  at the stage's own size (WebP, hashed, cached a year), loaded only when that scene is on screen and the current
-  area's preloaded; lists of areas use one downscaled sheet of strips, never one file per card. The code-drawn scene
-  stays the fallback while a file loads or when it fails.
+- **Area pictures** (`public/area-art/<id>.png`): one painted picture per *scene* (87 shared scenes, lairs and
+  landmarks for 295 areas), 400 px of true pixel art (Gemini, then `unpixel`), as the Visual Lab's Backgrounds tab
+  composed them: **one picture, three uses**. Home shows the whole scene; lists show a strip cut around its horizon
+  (`AreaStrip`); the battle shows its middle 240 × 160 with the two zones drawn on top, translucent. The files are used
+  exactly as unpixel wrote them (PNG, ~22 KB): never resized, re-encoded or resampled to 288 or 240 on screen — they
+  are laid over their box at their own resolution, nearest-neighbour (`artPlacement`).
+  - **Code, not data**: the area → picture map is `src/fx/areaArtMap.ts`, keyed by area id (areas can come from the
+    remote config; `bannerUrl` and the database don't decide it), with each picture's measurements in scene pixels:
+    the horizon, the box the team walks in, and a pond only where the picture clearly has water to swim in. A
+    picture with no clear horizon has `horizon: null`: lists cut its middle and the battle takes its bottom.
+  - **Loaded when seen**: Home and the battle load the current area's picture; a strip loads its picture once it
+    scrolls into view, is cut once and kept. A list costs one request per distinct picture on screen, never one per
+    card.
+  - **Nothing jumps**: the code-drawn scene stands in while a picture loads, when it fails, and for areas without one.
+    The team's ground comes from the picture's measurements from the start, a strip keeps the same shape, and the
+    picture steps in over the stand-in.
+  - **Adding one**: a new area needs its line in `areaArtMap.ts`; a new picture needs measuring. `tests/area-art.test.ts`
+    checks every area has a picture, every picture a file 400 px wide, and lists the ones still to make.
 
 ## 12. Navigation, Home and stages
 
@@ -299,9 +314,12 @@ nav and the tab bar away while it is mounted. It must fit a 360×640 phone with 
 (`e2e/layout.spec.ts`). On desktop the column is at most 560 px wide (narrower on short screens, so the actions stay
 in view) and the battle history sits beside it from 1024 px.
 
-- **Stage** (`BattleStage`): 240×160 art pixels, scaled. The Daybreak background is drawn in code (no image), the two
-  Pokémon are the page's animated sprites on their platforms (foe front, yours from the back), and while a move, a
-  form change or an entrance plays, its timeline's canvas takes over the stage. Plates sit on the stage: the foe's
+- **Stage** (`BattleStage`): 240×160 art pixels, scaled. The background is the area's picture (its middle 240 × 160,
+  the horizon halfway down) with two translucent zones on its ground; Versus and areas without a picture keep the
+  Daybreak background drawn in code, with its platforms. The two Pokémon are the page's animated sprites (foe front,
+  yours from the back), and while a move, a form change or an entrance plays, its timeline's canvas takes over the
+  stage. Over a picture the timelines draw no background of their own (`setArtUnderStage`), so the picture stays put
+  under every move. Plates sit on the stage: the foe's
   top left (name, level, types, HP as a bar only, status, a trainer's party as small red squares), yours bottom right
   (level, HP with numbers, status). MEGA / G-MAX tags join the plate when the form changes.
 - **The log drives everything** (`useBattleAnimator`): each entry is a step; a hit is a *scene* the stage plays, and
@@ -382,7 +400,9 @@ in view) and the battle history sits beside it from 1024 px.
 
 - **One moment for every partner** (`PartnerMoment`): a new game and every new region open the professor's lab full
   screen (`useHoldFullscreen`), on top of whatever opened it (a `useDialog`, so Tab stays in and Esc answers it
-  first). The lab is code-drawn in the region's colours (`labColors`), with "WELCOME TO" and the region on a ribbon.
+  first). The lab is the lab picture (`moment-lab.png`), with "WELCOME TO" and the region on a ribbon; if it hasn't
+  loaded with the sprites (1.5 s at most), the code-drawn lab in the region's colours (`labColors`) takes its place
+  for the whole moment. Either way the balls rest on that lab's own cradles (`starterSeats`, measured on the picture).
 - **The drop**: three Poké Balls fall onto the table, one after another (`starter.drop`, `starter.land`); a tap on the
   stage lands them at once. Then "Choose your partner! Tap a Poké Ball."
 - **The balls are the buttons**: three transparent buttons over the balls ("Poké Ball 2 of 3"); hover or focus lifts

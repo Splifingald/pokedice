@@ -4,7 +4,7 @@ import { dexNo } from '@/lib/format'
 import { useT } from '@/i18n/react'
 import { useGame } from '@/store/game'
 import { cx } from '@/theme/util'
-import { stripOf } from '@/screens/home/scene'
+import { AreaStrip } from './AreaStrip'
 import { rarity } from './DexEntry'
 import { SpriteImg } from './SpriteImg'
 
@@ -46,8 +46,8 @@ export function AreaDex({ areaId, onOpenDex }: { areaId: string; onOpenDex: (dex
   const wild = mons.filter((m) => m.kind === 'wild')
   return (
     <div className="flex flex-col gap-3">
-      {/* The area's scene strip, drawn in code like Home's (no image request). */}
-      <img src={stripOf(area.bannerUrl, 40)} alt="" className="pixelated -mx-1 block h-auto w-[calc(100%+0.5rem)] max-w-none" />
+      {/* The area's scene strip, cut from the same picture as Home's. */}
+      <AreaStrip area={area} h={40} className="-mx-1 block h-auto w-[calc(100%+0.5rem)] max-w-none" />
       <div>
         <h2 className="text-[32px] leading-none">{area.name}</h2>
         <p className="text-lg text-muted">

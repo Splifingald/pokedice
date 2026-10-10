@@ -23,7 +23,7 @@ import { ItemSprite } from './ItemSprite'
 import { evolutionHow, PokemonSheet, useVisibleEvolutions } from './PokemonSheet'
 import { MiniSprite } from './SpriteImg'
 import { areaStatus, lockReason } from '@/screens/home/areas'
-import { stripOf } from '@/screens/home/scene'
+import { AreaStrip } from './AreaStrip'
 import { travelTo } from '@/store/travel'
 
 interface Spot {
@@ -152,10 +152,10 @@ function SpotCard({ spot, onTravel }: { spot: Spot; onTravel?: () => void }) {
               : 'bg-paper shadow-ring',
       )}
     >
-      <img
-        src={stripOf(area.bannerUrl, 48)}
-        alt=""
-        className={cx('pixelated h-12 w-[72px] shrink-0 shadow-halo', locked && 'grayscale-[0.7]', secret && 'blur-[1px]')}
+      <AreaStrip
+        area={area}
+        h={48}
+        className={cx('h-12 w-[72px] shrink-0 shadow-halo', locked && 'grayscale-[0.7]', secret && 'blur-[1px]')}
       />
       <span className="grid min-w-0 gap-[3px]">
         <b className="truncate text-[18px] font-normal leading-none">{name}</b>

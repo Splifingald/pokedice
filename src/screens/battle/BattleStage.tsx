@@ -2,12 +2,14 @@
 // animated sprites the browser plays, their plates, and — while a move, a form change or an intro plays — the
 // timeline's canvas on top (src/fx). docs/13-SHOWDOWN-SPRITES.md has why the sprites are page images.
 import { AnimatePresence, motion } from 'framer-motion'
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import type { Battler, Side } from '@/engine'
+import { AreaArt } from '@/components/AreaArt'
 import { PixelIcon, STATUS_ICON } from '@/components/icons'
 import { StageCanvas } from '@/components/StageCanvas'
 import { TrainerSprite } from '@/components/TrainerArt'
-import { background } from '@/fx/scenes'
+import { artPlacement, battleWindow, type AreaPicture } from '@/fx/areaArt'
+import { background, setArtUnderStage, zones } from '@/fx/scenes'
 import { loadSprite, placeSprite, spriteKey, stageSprite } from '@/fx/sprites'
 import { H, W, type Hud, type Timeline } from '@/fx/timeline'
 import { attackTimeline } from '@/fx/timelines/attacks'
@@ -19,6 +21,20 @@ import { cx } from '@/theme/util'
 import type { Fx, Scene } from './useBattleAnimator'
 
 const LAYOUT = background(W, H).layout
+
+/** The area picture's two zones, translucent on its ground (in place of the drawn background's platforms). */
+function Zones() {
+  const ref = useRef<HTMLCanvasElement>(null)
+  useEffect(() => {
+    const g = ref.current?.getContext('2d')
+    if (!g) return
+    g.imageSmoothingEnabled = false
+    g.drawImage(zones(W, H), 0, 0)
+  }, [])
+  return (
+    <canvas ref={ref} width={W} height={H} aria-hidden className="pixelated absolute inset-0 h-full w-full" />
+  )
+}
 
 /** The static background, with pollen drifting in the light unless the screen should stay calm. */
 function Backdrop({ calm }: { calm: boolean }) {
@@ -249,6 +265,7 @@ export function BattleStage({
   own,
   foe,
   fx,
+  art,
   ownShown,
   foeShown,
   trainer,
@@ -264,6 +281,8 @@ export function BattleStage({
   own: Battler
   foe: Battler
   fx: Fx
+  /** The area's picture (src/fx/areaArt.ts): its middle 240 × 160 is the battle background. Null: the drawn one. */
+  art?: AreaPicture | null
   ownShown: boolean
   foeShown: boolean
   /** A trainer stepping onto the field before their Pokémon (sprite URL), or null. */
@@ -288,6 +307,16 @@ export function BattleStage({
   const { level, calm } = useMotion()
   const scene = useSceneTimeline(fx.scene, own, foe, level === 'short')
   const playing = !!scene || !!overlay
+  const artId = art?.id ?? null
+  // Which picture has loaded and shows (the drawn background stands in until then).
+  const [shownArt, setShownArt] = useState<string | null>(null)
+  const artShown = !!artId && shownArt === artId
+  // Over a picture the timelines draw no background of their own (before it loads, the drawn one shows through).
+  useLayoutEffect(() => {
+    if (!artId) return
+    setArtUnderStage(true)
+    return () => setArtUnderStage(false)
+  }, [artId])
 
   // Keep both Pokémon ready on the canvas: a move can start any moment.
   useEffect(() => {
@@ -308,7 +337,16 @@ export function BattleStage({
 
   return (
     <div ref={box} className="relative isolate z-0 aspect-[3/2] w-full select-none overflow-hidden">
-      <Backdrop calm={calm} />
+      <Backdrop calm={calm || artShown} />
+      {art && (
+        <AreaArt
+          key={art.id}
+          src={art.url}
+          place={artPlacement(battleWindow(art))}
+          onShown={() => setShownArt(art.id)}
+        />
+      )}
+      {artShown && <Zones />}
       {scale > 0 && (
         <>
           <Mon

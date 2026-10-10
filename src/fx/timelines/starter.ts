@@ -48,8 +48,28 @@ const LABS: Record<string, LabColors> = {
 /** A region's lab: its own colours, or Johto's mint. */
 export const labColors = (region: string): LabColors => LABS[region] ?? LABS.johto!
 
-/** The three balls' resting places on the table, in stage pixels. */
-export const STARTER_SLOTS = [60, 120, 180] as const
+/** Where a ball rests, in stage pixels: its centre, sitting in a cradle. */
+export interface Seat {
+  x: number
+  y: number
+}
+/** The drawn lab's cradles (labBackground): a ball's bottom on each cradle's middle line. */
+const DRAWN_SEATS: readonly Seat[] = [
+  { x: 60, y: 120 },
+  { x: 120, y: 120 },
+  { x: 180, y: 120 },
+]
+/**
+ * The lab picture's cradles (public/area-art/moment-lab.png, 400 × 268 laid over the 240 × 160 stage), measured on
+ * the picture: the hollows sit at x 113, 201 and 288, y 175 of the picture, so a ball's bottom settles into each one.
+ */
+const PICTURE_SEATS: readonly Seat[] = [
+  { x: 68, y: 98 },
+  { x: 121, y: 98 },
+  { x: 173, y: 98 },
+]
+/** The three balls' resting places, left to right: on the lab picture's cradles, or the drawn lab's. */
+export const starterSeats = (picture: boolean) => (picture ? PICTURE_SEATS : DRAWN_SEATS)
 
 /**
  * The professor's lab: a bright back wall with a window, shelves and machines at the edges, a tiled floor, and the
@@ -156,9 +176,9 @@ export function labBackground(L: LabColors): Canvas {
     rect(g, 10, 129, 220, 1, '#dfe7f2')
     rect(g, 10, 134, 220, 1, '#8592ad')
     // Three cradles, gold-rimmed, where the balls come to rest.
-    for (const x of STARTER_SLOTS) {
-      ellipse(g, x, 127, 12, 3, '#e8b44a')
-      ellipse(g, x, 127, 10, 2, '#ffe7a8')
+    for (const s of DRAWN_SEATS) {
+      ellipse(g, s.x, s.y + 7, 12, 3, '#e8b44a')
+      ellipse(g, s.x, s.y + 7, 10, 2, '#ffe7a8')
     }
     // A few things on the table ends: papers, a beaker.
     rect(g, 22, 116, 14, 8, '#ffffff')
@@ -193,6 +213,11 @@ export interface StarterSceneOptions {
   ribbon: { welcome: string; region: string } | null
   /** Animations off: the balls are already on the table. */
   instant?: boolean
+  /**
+   * The lab picture lies under the canvas: draw no lab of our own, and rest the balls on the picture's cradles. The
+   * screen moves the picture with `shake`, so it lands with the balls.
+   */
+  picture?: boolean
 }
 
 /**
@@ -208,16 +233,22 @@ export class StarterScene {
   chosenAt: number | null = null
   private readonly r: Rng
   private readonly fx = new Particles()
-  private readonly bg: Canvas
+  private readonly bg: Canvas | null
   private readonly cursor: Canvas
   private readonly shakes: [number, number, number][] = []
   private readonly done = new Set<string>()
 
   constructor(private readonly o: StarterSceneOptions) {
     this.r = rng(83)
-    this.bg = labBackground(o.lab)
+    this.bg = o.picture ? null : labBackground(o.lab)
     this.cursor = icon(CURSOR, { k: '#24304f', w: '#ffffff' }, 1)
-    this.slots = STARTER_SLOTS.map((x, i) => ({ x, y: 120, t0: 0.8 + i * 0.32, openAt: null, closeAt: null }))
+    this.slots = starterSeats(!!o.picture).map((s, i) => ({
+      x: s.x,
+      y: s.y,
+      t0: 0.8 + i * 0.32,
+      openAt: null,
+      closeAt: null,
+    }))
     this.landed = o.instant ? 0 : this.slots[2]!.t0 + 0.55 + 0.45
   }
 
@@ -370,11 +401,16 @@ export class StarterScene {
     }
   }
 
+  /** How far the whole scene is shaken at t (a ball landing), in stage pixels. */
+  shake(t: number) {
+    return shakeAt(t, this.shakes)
+  }
+
   draw(g: G, t: number) {
-    const sh = shakeAt(t, this.shakes)
+    const sh = this.shake(t)
     g.save()
     g.translate(sh.x, sh.y)
-    g.drawImage(this.bg, 0, 0)
+    if (this.bg) g.drawImage(this.bg, 0, 0)
     // The region's name, in on a ribbon, then away as the balls fall.
     const rib = this.o.ribbon
     if (rib && !this.o.instant) {

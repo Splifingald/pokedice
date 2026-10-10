@@ -21,7 +21,7 @@ import { useGame } from '@/store/game'
 import { useNow } from '@/store/hooks'
 import { cx } from '@/theme/util'
 import { featuredSecret } from './areas'
-import { stripOf } from './scene'
+import { AreaStrip } from '@/components/AreaStrip'
 import { travelTo } from '@/store/travel'
 
 /** A widget's frame: a framed panel, a small header row, and whatever it shows. */
@@ -91,7 +91,7 @@ function SecretWidget({ onSecrets }: { onSecrets: () => void }) {
         onClick={() => travelTo(f.area)}
       >
         <span className="block w-full leading-[0] shadow-halo">
-          <img src={stripOf(f.area.bannerUrl)} alt="" className="pixelated h-auto w-full" />
+          <AreaStrip area={f.area} className="h-auto w-full" />
         </span>
         <span className="truncate text-[20px] leading-none">{f.area.name}</span>
         {cond && (
@@ -114,7 +114,7 @@ function SecretWidget({ onSecrets }: { onSecrets: () => void }) {
       onClick={onSecrets}
     >
       <span className="relative block w-full leading-[0] shadow-halo">
-        <img src={stripOf(f.area.bannerUrl)} alt="" className="pixelated h-auto w-full grayscale-[0.7]" />
+        <AreaStrip area={f.area} className="h-auto w-full grayscale-[0.7]" />
         <PixelIcon
           name="lock"
           size={16}

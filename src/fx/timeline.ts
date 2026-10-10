@@ -2,7 +2,7 @@
 // here; <StageCanvas> hosts a Player. House rules every timeline follows: anticipation before every release, a 3–5
 // frame hit-stop on contact, two white silhouette frames on a hit (never an opacity blink), ordered-dithered light and
 // smoke (never blur), particles stepping through a colour ramp, and no screen flash faster than 3 a second.
-import { background, type Background, type Layout, type Point } from './scenes'
+import { stageBackground, type Background, type Layout, type Point } from './scenes'
 import { clamp, ease, Particles, rng, text, textWidth, wash, type G, type Rng } from './pixel'
 import { drawSprite, spriteSize, type SpriteLook } from './sprites'
 
@@ -143,7 +143,8 @@ export class Stage {
   fx = new Particles()
   under = new Particles()
   constructor(f: Fighters, seed: number) {
-    this.bg = background(W, H)
+    // Over an area picture the stage draws no background: the picture under the canvas shows through.
+    this.bg = stageBackground(W, H)
     this.L = this.bg.layout
     this.own = f.own
     this.foe = f.foe

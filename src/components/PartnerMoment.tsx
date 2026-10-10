@@ -4,8 +4,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { createInstance, getSpecies, instanceStats, type RegionId } from '@/engine'
+import { LAB_ART, loadArt } from '@/fx/areaArt'
 import { loadSprite, spriteKey } from '@/fx/sprites'
-import { labColors, STARTER_SLOTS, StarterScene } from '@/fx/timelines/starter'
+import { labColors, starterSeats, StarterScene } from '@/fx/timelines/starter'
 import { H, setCalm, W } from '@/fx/timeline'
 import { useT } from '@/i18n/react'
 import { useHoldFullscreen } from '@/lib/fullscreen'
@@ -55,31 +56,39 @@ export function PartnerMoment({
   phaseRef.current = phase
   const [pick, setPick] = useState<number | null>(null)
   const [asking, setAsking] = useState(false)
-  const [ready, setReady] = useState(false)
+  // Settled once everything the lab needs has loaded (or 1.5 s passed): whether the lab picture is the stage.
+  const [lab, setLab] = useState<{ picture: boolean } | null>(null)
+  const labImg = useRef<HTMLImageElement>(null)
   const clock = useRef(0)
 
   const scene = useMemo(
     () =>
+      lab &&
       new StarterScene({
         lab: labColors(regionId),
         mons: starters.map((d) => spriteKey(d, false)),
         ribbon: { welcome: t('ui.partner.welcome'), region: regionName },
         instant,
+        picture: lab.picture,
       }),
     // One scene per moment.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [],
+    [lab],
   )
+  const seats = starterSeats(!!lab?.picture)
 
   useEffect(() => setCalm(calm), [calm])
 
-  // The three Pokémon are loaded first (they pop out of their balls on the canvas), at most 1.5 s.
+  // The three Pokémon (they pop out of their balls on the canvas) and the lab picture are loaded first, at most 1.5 s.
+  // The picture is used only if it came in time: once the balls fall, the cradles can't move under them.
   useEffect(() => {
     let live = true
+    let picture = false
+    const art = loadArt(LAB_ART).then((im) => void (picture = !!im))
     void Promise.race([
-      Promise.all(starters.map((d) => loadSprite(d, false))),
+      Promise.all([art, ...starters.map((d) => loadSprite(d, false))]),
       new Promise((r) => setTimeout(r, 1500)),
-    ]).then(() => live && setReady(true))
+    ]).then(() => live && setLab({ picture }))
     return () => {
       live = false
     }
@@ -88,7 +97,7 @@ export function PartnerMoment({
   // The clock and the drawing: 60 frames a second while the moment is open.
   useEffect(() => {
     const g = cv.current?.getContext('2d')
-    if (!g || !ready) return
+    if (!g || !scene) return
     g.imageSmoothingEnabled = false
     let raf = 0
     let last = performance.now()
@@ -101,22 +110,26 @@ export function PartnerMoment({
       scene.step(t, dt)
       g.clearRect(0, 0, W, H)
       scene.draw(g, t)
+      // The picture lands with the balls: it shakes with the scene.
+      const sh = scene.shake(t)
+      if (labImg.current)
+        labImg.current.style.transform = sh.x || sh.y ? `translate(${(sh.x / W) * 100}%, ${(sh.y / H) * 100}%)` : ''
       raf = requestAnimationFrame(frame)
     }
     raf = requestAnimationFrame(frame)
     return () => cancelAnimationFrame(raf)
-  }, [ready, scene])
+  }, [scene])
 
   // Focus follows the moment: the first ball, the question's yes, then "Let's go!".
   useEffect(() => {
-    if (phase === 'choose') firstRef.current?.focus({ preventScroll: true })
-  }, [phase])
+    if (phase === 'choose' && scene) firstRef.current?.focus({ preventScroll: true })
+  }, [phase, scene])
   useEffect(() => {
     if (asking) yesRef.current?.focus({ preventScroll: true })
   }, [asking])
 
   const open = (i: number) => {
-    if (phase === 'intro' || phase === 'done') return
+    if (!scene || phase === 'intro' || phase === 'done') return
     if (phase === 'ask') {
       if (i === pick) return
       scene.closeBall(pick!, clock.current)
@@ -129,14 +142,14 @@ export function PartnerMoment({
     setTimeout(() => setAsking(true), instant ? 0 : 520)
   }
   const back = useCallback(() => {
-    if (pick == null) return
+    if (pick == null || !scene) return
     scene.closeBall(pick, clock.current)
     setPick(null)
     setAsking(false)
     setPhase('choose')
   }, [pick, scene])
   const yes = () => {
-    if (pick == null) return
+    if (pick == null || !scene) return
     scene.choose(pick, clock.current)
     setAsking(false)
     setPhase('done')
@@ -187,38 +200,50 @@ export function PartnerMoment({
           className="relative shadow-ledge"
           onClick={() => {
             // A tap during the drop lets the balls land at once.
-            if (phase !== 'intro') return
+            if (phase !== 'intro' || !scene) return
             clock.current = Math.max(clock.current, scene.landed)
             scene.land()
           }}
         >
+          {lab?.picture && (
+            <img
+              ref={labImg}
+              src={LAB_ART}
+              alt=""
+              aria-hidden
+              draggable={false}
+              className="pixelated absolute inset-0 h-full w-full max-w-none object-cover"
+            />
+          )}
           <canvas
             ref={cv}
             width={W}
             height={H}
             aria-hidden
-            className="pixelated block aspect-[3/2] w-full"
+            className="pixelated relative block aspect-[3/2] w-full"
             style={{ imageRendering: 'pixelated' }}
           />
-          {STARTER_SLOTS.map((x, i) => (
+          {seats.map(({ x, y }, i) => (
             <button
               key={i}
               ref={i === 0 ? firstRef : undefined}
               type="button"
-              disabled={phase === 'intro' || phase === 'done'}
+              // Not before the lab is ready (the picture and sprites, 1.5 s at most): a tap then would go nowhere.
+              disabled={!scene || phase === 'intro' || phase === 'done'}
               onClick={(e) => {
                 e.stopPropagation()
                 open(i)
               }}
-              onMouseEnter={() => phase === 'choose' && (scene.focus = i)}
-              onFocus={() => phase === 'choose' && (scene.focus = i)}
+              onMouseEnter={() => phase === 'choose' && scene && (scene.focus = i)}
+              onFocus={() => phase === 'choose' && scene && (scene.focus = i)}
               aria-label={
                 pick === i
                   ? t('ui.partner.out', { name: getSpecies(data, starters[i]!).name })
                   : t('ui.partner.ball', { n: i + 1 })
               }
-              className="absolute top-[58%] h-[24%] w-[16%] -translate-x-1/2 focus-visible:outline-offset-0"
-              style={{ left: `${(x / W) * 100}%` }}
+              className="absolute h-[25%] w-[16%] -translate-x-1/2 focus-visible:outline-offset-0"
+              // Over its ball, and the Pokémon's feet once it is out.
+              style={{ left: `${(x / W) * 100}%`, top: `${((y - 24) / H) * 100}%` }}
             />
           ))}
           {onLeave && phase !== 'done' && (

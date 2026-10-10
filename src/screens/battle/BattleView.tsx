@@ -40,6 +40,7 @@ import { Sheet } from '@/components/Sheet'
 import { MiniSprite, SpriteImg } from '@/components/SpriteImg'
 import { TypeBadge } from '@/components/TypeBadge'
 import { TypeMatchups } from '@/components/TypeMatchups'
+import { pictureOf } from '@/fx/areaArt'
 import { ballOfItem } from '@/fx/scenes'
 import { loadSprite, spriteKey } from '@/fx/sprites'
 import { catchTimeline } from '@/fx/timelines/catch'
@@ -217,6 +218,8 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
 
   // A Versus fight has nothing to do with the area the player may be standing in.
   const enc = versus ? null : run.encounter
+  // The area's picture is the battle's background; Versus keeps the drawn one.
+  const art = useMemo(() => (versus ? null : pictureOf(run.areaId)), [versus, run.areaId])
   const isTrainerFight = !!versus || enc?.kind === 'trainer' || enc?.kind === 'gym'
   const trainerName = versus
     ? versus.trainerName
@@ -604,6 +607,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
         own={active}
         foe={st.enemy}
         fx={fx}
+        art={art}
         ownShown={ownOut}
         foeShown={foeOut}
         trainer={trainerIntro && isTrainerFight ? (trainerSprite ?? '') : null}
