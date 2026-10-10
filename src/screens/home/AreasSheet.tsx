@@ -203,12 +203,12 @@ function RegionCard({ region, onDone }: { region: Region; onDone: () => void }) 
     >
       {picture ? (
         <img
-          src={picture}
+          src={picture.url}
           alt=""
           width={400}
-          height={120}
-          className="pixelated aspect-[10/3] h-auto w-full object-cover"
-          style={{ imageRendering: 'pixelated' }}
+          height={200}
+          className="pixelated aspect-[2/1] h-auto w-full object-cover"
+          style={{ imageRendering: 'pixelated', objectPosition: `50% ${picture.focus}%` }}
         />
       ) : (
         first && <AreaStrip area={first} className="h-auto w-full" />
