@@ -20,6 +20,7 @@ import { Sheet } from '@/components/Sheet'
 import { MiniSprite } from '@/components/SpriteImg'
 import { TypeBadge } from '@/components/TypeBadge'
 import { useGame } from '@/store/game'
+import { SCENE_W } from '@/fx/areaArt'
 import { regionPicture } from '@/fx/regionArt'
 import { availableRegions, regionOnOffer, startRegion, switchRegion } from '@/store/regions'
 import { cx } from '@/theme/util'
@@ -206,9 +207,10 @@ function RegionCard({ region, onDone }: { region: Region; onDone: () => void }) 
           src={picture.url}
           alt=""
           width={400}
-          height={200}
-          className="pixelated aspect-[2/1] h-auto w-full object-cover"
-          style={{ imageRendering: 'pixelated', objectPosition: `50% ${picture.focus}%` }}
+          height={78}
+          className="pixelated h-auto w-full object-cover"
+          // A banner, cut like the areas' strips (AreaStrip, 288 × 56), on the region's landmark.
+          style={{ imageRendering: 'pixelated', aspectRatio: `${SCENE_W} / 56`, objectPosition: `50% ${picture.focus}%` }}
         />
       ) : (
         first && <AreaStrip area={first} className="h-auto w-full" />

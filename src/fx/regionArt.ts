@@ -3,19 +3,20 @@
 // every region looks like itself rather than like its first route. A region without one shows its first area's strip.
 
 /**
- * The regions with a picture in public/region-art/ (400 × 400), and where its landmark sits: the card shows a 2:1 band
- * of it, and this is the band's `object-position` (0% the top band, 100% the bottom). A new picture needs a line here.
+ * The regions with a picture in public/region-art/ (400 × 400), and where its landmark sits: the card shows it as a
+ * banner, the same thin strip as the areas' (AreaStrip: 288 × 56), and this is the strip's `object-position` (0% the
+ * top of the picture, 100% the bottom). A new picture needs a line here.
  */
 const REGION_ART: Readonly<Record<string, number>> = {
-  kanto: 26, // Indigo Plateau on its cliff, the town below
-  johto: 30, // the pagoda and the Burned Tower
+  kanto: 28, // Indigo Plateau on its cliff
+  johto: 54, // the pagoda over the maples
   hoenn: 50, // the smoking volcano over the bay
-  sinnoh: 34, // Mt. Coronet's peak and its pillars
+  sinnoh: 28, // Mt. Coronet's slopes and the lake
   unova: 50, // the skyline and the bridge
-  kalos: 40, // the lit tower over the city
+  kalos: 50, // the lit tower over the city
   alola: 50, // the islands at sunset
-  galar: 60, // the stadium, the clock tower, the wheel
-  paldea: 60, // the great crater
+  galar: 52, // the stadium, the clock tower, the wheel
+  paldea: 46, // the great crater
 }
 
 /** The region's picture and how to frame it, or null while it has none. */
