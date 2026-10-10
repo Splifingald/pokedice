@@ -2,9 +2,11 @@ import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import { useGame } from '@/store/game'
 import { useFullscreen } from '@/lib/fullscreen'
 import { useInFight } from '@/store/hooks'
+import { useServerTimeSync } from '@/store/serverTime'
 import { cx } from '@/theme/util'
 import { DayCareNotice, DayCareTutorial } from './DayCareTutorial'
 import { DonationPopup } from './DonationPopup'
+import { EventUnlockPopup } from './EventUnlockPopup'
 import { FriendsService } from './friends/FriendsService'
 import { BottomNav, Header, SideNav } from './Hud'
 import { LeaderboardTutorial } from './LeaderboardTutorial'
@@ -18,6 +20,8 @@ export function GameLayout() {
   // The battle takes the whole screen: no top bar, no side bar, no tab bar.
   const full = useFullscreen()
   const home = useLocation().pathname === '/home'
+  // The special events read the real time (docs/18): kept fresh while the game is open.
+  useServerTimeSync()
   if (!hasSave) return <Navigate to="/" replace />
   return (
     <div className="flex min-h-screen flex-col">
@@ -43,6 +47,7 @@ export function GameLayout() {
       <ShareTutorial />
       <ReplyPopup />
       <DonationPopup />
+      <EventUnlockPopup />
       <FriendsService />
     </div>
   )

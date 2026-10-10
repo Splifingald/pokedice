@@ -16,6 +16,7 @@ import {
   hatchEgg,
   markDayCareVisited,
   markDonationSeen,
+  markEventsSeen as markEventsSeenIn,
   rushEgg,
   withdrawPokemon,
   type ComboKey,
@@ -115,6 +116,14 @@ export function visitLeaderboard(): void {
 export function closeDonation(): void {
   mutateSave((s) => {
     const next = markDonationSeen(s, useGame.getState().data)
+    return next === s ? null : next
+  })
+}
+
+/** An event's unlock pop-up was shown: every open event counts as seen (docs/18). */
+export function markEventsSeen(): void {
+  mutateSave((s) => {
+    const next = markEventsSeenIn(s, useGame.getState().data)
     return next === s ? null : next
   })
 }

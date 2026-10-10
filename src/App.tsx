@@ -22,6 +22,7 @@ import { TeamScreen } from '@/screens/Team'
 import { Title } from '@/screens/Title'
 import { UpgradesScreen } from '@/screens/Upgrades'
 import { VersusScreen } from '@/screens/Versus'
+import { EventsScreen } from '@/screens/events/EventsScreen'
 import { soundOn } from '@/save/storage'
 import { useGame } from '@/store/game'
 import { startBackgroundServices } from '@/store/sync'
@@ -76,6 +77,7 @@ export function App() {
               <Route path="/leaderboard" element={<LeaderboardScreen />} />
               <Route path="/friends" element={<FriendsScreen />} />
               <Route path="/versus" element={<VersusScreen />} />
+              <Route path="/events/:id" element={<EventsScreen />} />
               <Route path="/settings" element={<SettingsScreen />} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />

@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   dayCareLevelProgress,
@@ -25,38 +25,8 @@ import { cx } from '@/theme/util'
 import { featuredSecret } from './areas'
 import { AreaStrip } from '@/components/AreaStrip'
 import { travelTo } from '@/store/travel'
-
-/** A widget's frame: a framed panel, a small header row, and whatever it shows. */
-function Widget({
-  title,
-  tag,
-  label,
-  onClick,
-  children,
-  className,
-}: {
-  title: string
-  tag?: ReactNode
-  label: string
-  onClick: () => void
-  children: ReactNode
-  className?: string
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-label={label}
-      className={cx('pixel-panel flex min-w-0 flex-col gap-[5px] px-2.5 pb-2.5 pt-2 text-left', className)}
-    >
-      <span className="flex w-full items-center gap-1.5 font-pixel-sm text-[15px] leading-none text-muted">
-        <span className="min-w-0 flex-1 truncate">{title}</span>
-        {tag}
-      </span>
-      {children}
-    </button>
-  )
-}
+import { EventWidgets } from '@/screens/events/EventWidgets'
+import { Widget } from './Widget'
 
 /** A thin progress meter: gold, green when full. */
 function Meter({ value, max }: { value: number; max: number }) {
@@ -332,30 +302,14 @@ function VersusWidget() {
   )
 }
 
-/** A slot kept for what comes later. */
-function EventsWidget() {
-  const { t } = useT()
-  return (
-    <div
-      role="note"
-      aria-label={t('ui.home.eventsLabel')}
-      className="flex min-h-[120px] flex-col items-center justify-center gap-1.5 bg-panel/50 p-2.5 text-center text-faint outline-dashed outline-2 -outline-offset-2 outline-shadow"
-    >
-      <span className="font-pixel-sm text-[15px] leading-none text-muted">{t('ui.home.events')}</span>
-      <PixelIcon name="star" size={24} style={{ filter: 'grayscale(1) opacity(0.4)' }} />
-      <span className="font-pixel-sm text-[15px] leading-none text-muted">{t('ui.shop.comingLater')}</span>
-    </div>
-  )
-}
-
-/** Home's widgets, two by two: the secret area and the Day Care, then Versus and special events. */
+/** Home's widgets, two by two: the secret area and the Day Care, then Versus and one square per special event. */
 export function Widgets({ onSecrets }: { onSecrets: () => void }) {
   return (
     <div className="grid grid-cols-2 content-start gap-2.5">
       <SecretWidget onSecrets={onSecrets} />
       <DayCareWidget />
       <VersusWidget />
-      <EventsWidget />
+      <EventWidgets />
     </div>
   )
 }

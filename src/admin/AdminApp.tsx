@@ -12,6 +12,7 @@ import { AnalyticsSection } from './sections/AnalyticsSection'
 import { AreasSection } from './sections/AreasSection'
 import { ConfigSection } from './sections/ConfigSection'
 import { DevToolsSection } from './sections/DevToolsSection'
+import { EventsSection } from './sections/EventsSection'
 import { MessagesSection } from './sections/MessagesSection'
 import { PullRemoteButton } from './PullRemoteButton'
 import { PokemonSection } from './sections/PokemonSection'
@@ -28,6 +29,7 @@ const SECTIONS: { id: string; label: string; C: ComponentType }[] = [
   { id: 'items', label: 'Items', C: ItemsSection },
   { id: 'typechart', label: 'Type Chart', C: TypeChartSection },
   { id: 'config', label: 'Config', C: ConfigSection },
+  { id: 'events', label: 'Events', C: EventsSection },
   { id: 'simulator', label: 'Simulator', C: SimulatorSection },
   { id: 'analytics', label: 'Analytics', C: AnalyticsSection },
   { id: 'messages', label: 'Messages', C: MessagesSection },
@@ -44,6 +46,7 @@ const SECTION_TABLES: Partial<Record<string, TableName[]>> = {
   items: ['items'],
   typechart: ['type_chart'],
   config: ['game_config', 'regions'],
+  events: ['game_config'],
 }
 
 function Gate() {

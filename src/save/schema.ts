@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import {
   COMBO_KEYS,
+  EVENT_IDS,
   POKE_TYPES,
   type ComboKey,
   type DayCareResident,
@@ -126,6 +127,18 @@ export const saveSchema = z.object({
   energy: z.object({ value: z.number().min(0), at: z.number() }).optional(),
   adminEditAt: z.number().optional(),
   leaderboardVisited: z.boolean().optional(),
+  events: z
+    .object({
+      seen: z.array(z.enum(EVENT_IDS)).optional(),
+      wheelDay: z.string().max(10).optional(),
+      wheelPending: z
+        .discriminatedUnion('kind', [
+          z.object({ kind: z.literal('gold'), amount: z.number().min(0) }),
+          z.object({ kind: z.literal('item'), key: z.string().min(1).max(60), qty: z.number().int().min(1) }),
+        ])
+        .optional(),
+    })
+    .optional(),
   region: z.string().optional(),
   parked: z.record(regionBlockSchema()).optional(),
   // Legacy: regions whose things were folded forward while that behaviour existed. Nothing reads it; it is kept so
