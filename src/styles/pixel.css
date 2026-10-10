@@ -1,84 +1,203 @@
-/* GBC cartridge framing: 3px ink border, 2px inner light border, hard drop shadow, radius <= 2px. */
-
-.pixel-panel {
-  background: #f7f2e0;
-  border: 3px solid #2a2438;
-  border-radius: 2px;
-  box-shadow:
-    inset 0 0 0 2px #ffffff,
-    4px 4px 0 0 #2a2438;
+/*
+ * Johto Daybreak frames (docs/15-UI-GUIDELINES.md). Every panel, dialogue box and button wears a pixel drawing from
+ * src/theme/frames.ts as a 9-slice border-image: a 2px outline in the border, the corners and the lip reaching 12px
+ * in, the drop shadow 4px under the box (outset, so it takes no room, like a box-shadow). The drawing's middle is
+ * empty: the element's background-color (inside the outline) is the fill, so `bg-*` utilities still recolour a frame.
+ */
+.pixel-panel,
+.pixel-panel-dark,
+.pixel-dialogue,
+.pixel-btn,
+.hatched {
+  border: 2px solid transparent;
+  border-image-source: var(--fr-panel);
+  border-image-slice: var(--fr-s);
+  border-image-width: 12px;
+  border-image-outset: 0 0 4px;
+  border-image-repeat: repeat;
+  background-clip: padding-box;
+  border-radius: 0;
 }
 
+.pixel-panel {
+  background-color: rgb(var(--c-panel));
+}
+
+/* The night panel: navy in light, deeper than the ground in dark. Its text stays white in both. */
 .pixel-panel-dark {
-  background: #2a2438;
-  color: #f7f2e0;
-  border: 3px solid #2a2438;
-  border-radius: 2px;
-  box-shadow:
-    inset 0 0 0 2px #6b6480,
-    4px 4px 0 0 #6b6480;
+  background-color: #24304f;
+  color: #fbfdff;
+  border-image-source: var(--fr-dark);
+}
+[data-theme='dark'] .pixel-panel-dark,
+[data-theme='dark'] .frame-dark {
+  background-color: #0b1122;
 }
 
 .pixel-dialogue {
-  background: #f7f2e0;
-  border: 3px solid #2a2438;
-  border-radius: 2px;
-  box-shadow:
-    inset 0 0 0 2px #f7f2e0,
-    inset 0 0 0 4px #6b6480,
-    4px 4px 0 0 #2a2438;
+  background-color: rgb(var(--c-paper));
+  border-image-source: var(--fr-dialog);
 }
 
-.pixel-btn {
-  border: 3px solid #2a2438;
-  border-radius: 2px;
-  box-shadow:
-    inset 0 -3px 0 0 rgba(0, 0, 0, 0.18),
-    inset 0 2px 0 0 rgba(255, 255, 255, 0.45),
-    3px 3px 0 0 #2a2438;
-  transition:
-    transform 60ms steps(2),
-    box-shadow 60ms steps(2);
-  user-select: none;
-}
-.pixel-btn:not(:disabled):active {
-  transform: translate(2px, 2px);
-  box-shadow:
-    inset 0 -3px 0 0 rgba(0, 0, 0, 0.18),
-    inset 0 2px 0 0 rgba(255, 255, 255, 0.45),
-    1px 1px 0 0 #2a2438;
-}
 /*
- * Disabled / unavailable: hatched and dashed, text kept at 5.9:1 (fading to 45 % read as broken and failed contrast).
- * `.hatched` is the same look for things that aren't form controls (a fainted Pokémon card, menus locked mid-fight).
+ * Buttons: white by default; `frame-*` picks the primary (red), gold, green or dark drawing. White text on the bright
+ * red is 3.4:1, enough only from 24px (large text): smaller red buttons wear `frame-deep` (5.3:1).
+ */
+.pixel-btn {
+  background-color: rgb(var(--c-paper));
+  border-image-source: var(--fr-btn);
+  color: rgb(var(--c-ink));
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+  transition: transform 60ms steps(2);
+}
+.frame-primary {
+  border-image-source: var(--fr-primary);
+  background-color: #f2553f;
+  color: #ffffff;
+  text-shadow: 0 2px 0 #b8352a;
+}
+.frame-deep,
+.frame-primary[data-small] {
+  border-image-source: var(--fr-deep);
+  background-color: #c4382a;
+  color: #ffffff;
+  text-shadow: 0 2px 0 #8e261c;
+}
+.frame-gold {
+  border-image-source: var(--fr-gold);
+  background-color: #ffbe2e;
+  color: #3a2600;
+}
+.frame-green {
+  border-image-source: var(--fr-green);
+  background-color: #34c97a;
+  color: #10301f;
+}
+.frame-dark {
+  border-image-source: var(--fr-dark);
+  background-color: #24304f;
+  color: #fbfdff;
+}
+
+/* Pressed: the button sinks onto its shadow, and its frame drops the shadow it no longer casts. */
+.pixel-btn:not(:disabled):not([aria-disabled='true']):active {
+  transform: translateY(4px);
+  border-image-source: var(--fr-btn-down);
+}
+.frame-primary:not(:disabled):not([aria-disabled='true']):active {
+  border-image-source: var(--fr-primary-down);
+}
+.frame-deep:not(:disabled):not([aria-disabled='true']):active,
+.frame-primary[data-small]:not(:disabled):not([aria-disabled='true']):active {
+  border-image-source: var(--fr-deep-down);
+}
+.frame-gold:not(:disabled):not([aria-disabled='true']):active {
+  border-image-source: var(--fr-gold-down);
+}
+.frame-green:not(:disabled):not([aria-disabled='true']):active {
+  border-image-source: var(--fr-green-down);
+}
+.frame-dark:not(:disabled):not([aria-disabled='true']):active {
+  border-image-source: var(--fr-dark-down);
+}
+
+/*
+ * Disabled / unavailable: a dotted outline on a pale fill, text kept at 4.8:1 (never a faded opacity, which reads as
+ * broken). `.hatched` is the same look for things that aren't form controls (a fainted Pokémon card, menus locked
+ * mid-fight).
  */
 .hatched,
 .pixel-btn:disabled,
 .pixel-btn[aria-disabled='true'],
 .pixel-panel:disabled {
-  color: #554d6a;
-  background-color: #ece5d0;
-  background-image: repeating-linear-gradient(135deg, rgba(42, 36, 56, 0.1) 0 3px, transparent 3px 8px);
-  border-style: dashed;
-  box-shadow: none;
+  border-image-source: var(--fr-off);
+  background-color: rgb(var(--c-well));
+  color: rgb(var(--c-muted));
+  text-shadow: none;
   cursor: not-allowed;
 }
 /* Focus rings live in index.css (one rule for every focusable element). */
 
-/* Dice */
-.die {
-  border: 3px solid #2a2438;
-  border-radius: 2px;
+/*
+ * A plate: the battle's name boxes and Home's area plate. A flat 2px ink outline with clipped corners and a lip, over
+ * a slightly see-through paper, so the scene shows behind it.
+ */
+.pixel-plate {
+  background: rgb(var(--c-panel) / 0.92);
   box-shadow:
-    inset 0 -4px 0 0 rgba(0, 0, 0, 0.2),
-    inset 0 3px 0 0 rgba(255, 255, 255, 0.35),
-    3px 3px 0 0 #2a2438;
+    inset 0 0 0 2px rgb(var(--c-edge)),
+    inset 0 -4px 0 rgb(var(--c-lip));
+  clip-path: polygon(
+    2px 0,
+    calc(100% - 2px) 0,
+    calc(100% - 2px) 2px,
+    100% 2px,
+    100% calc(100% - 2px),
+    calc(100% - 2px) calc(100% - 2px),
+    calc(100% - 2px) 100%,
+    2px 100%,
+    2px calc(100% - 2px),
+    0 calc(100% - 2px),
+    0 2px,
+    2px 2px
+  );
 }
 
-/* Mini dice (faces laid out flat): a thinner border and no shadow, so the digit gets the room. */
+/* The same clipped corners alone: chips, pills and tracks. */
+.pixel-corners {
+  clip-path: polygon(
+    2px 0,
+    calc(100% - 2px) 0,
+    calc(100% - 2px) 2px,
+    100% 2px,
+    100% calc(100% - 2px),
+    calc(100% - 2px) calc(100% - 2px),
+    calc(100% - 2px) 100%,
+    2px 100%,
+    2px calc(100% - 2px),
+    0 calc(100% - 2px),
+    0 2px,
+    2px 2px
+  );
+}
+
+/*
+ * Dice (Die.tsx): square corners, an ink edge, a light top-left and a shaded bottom-right, and a drop shadow under the
+ * wrapper. Selected = lifted with a red outline; combo = a gold ring; a status face = a white then a status-coloured
+ * ring (`--stc`).
+ */
+.die {
+  background: var(--c);
+  box-shadow:
+    inset 0 0 0 2px #24304f,
+    inset 2px 4px 0 0 rgba(255, 255, 255, 0.45),
+    inset -2px -4px 0 0 rgba(20, 30, 60, 0.18);
+}
 .die-mini {
-  border: 2px solid #2a2438;
-  border-radius: 2px;
+  background: var(--c);
+  box-shadow:
+    inset 0 0 0 2px #24304f,
+    inset 1px 2px 0 0 rgba(255, 255, 255, 0.45),
+    inset -1px -2px 0 0 rgba(20, 30, 60, 0.18);
+}
+.die-wrap {
+  display: inline-block;
+  filter: drop-shadow(0 3px 0 rgba(36, 48, 79, 0.22));
+}
+.die-wrap.st {
+  filter: drop-shadow(2px 0 0 #ffffff) drop-shadow(-2px 0 0 #ffffff) drop-shadow(0 2px 0 #ffffff)
+    drop-shadow(0 -2px 0 #ffffff) drop-shadow(2px 0 0 var(--stc)) drop-shadow(-2px 0 0 var(--stc))
+    drop-shadow(0 2px 0 var(--stc)) drop-shadow(0 -2px 0 var(--stc));
+}
+.die-wrap.combo {
+  filter: drop-shadow(2px 0 0 #ffbe2e) drop-shadow(-2px 0 0 #ffbe2e) drop-shadow(0 2px 0 #ffbe2e)
+    drop-shadow(0 -2px 0 #ffbe2e);
+}
+.die-wrap.sel {
+  filter: drop-shadow(2px 0 0 #f2553f) drop-shadow(-2px 0 0 #f2553f) drop-shadow(0 2px 0 #f2553f)
+    drop-shadow(0 -2px 0 #f2553f);
 }
 
 .pixel-scroll::-webkit-scrollbar {
@@ -86,15 +205,15 @@
   height: 10px;
 }
 .pixel-scroll::-webkit-scrollbar-thumb {
-  background: #6b6480;
-  border: 2px solid #f7f2e0;
+  background: rgb(var(--c-shadow));
+  border: 2px solid rgb(var(--c-panel));
 }
 .pixel-scroll::-webkit-scrollbar-track {
-  background: #e8e0c8;
+  background: rgb(var(--c-parchment));
 }
 
 .scanlines {
-  background-image: repeating-linear-gradient(to bottom, rgba(42, 36, 56, 0.05) 0 1px, transparent 1px 3px);
+  background-image: repeating-linear-gradient(to bottom, rgb(var(--c-ink) / 0.05) 0 1px, transparent 1px 3px);
 }
 
 @keyframes shake {
@@ -128,16 +247,36 @@
   animation: blink 1s steps(1) infinite;
 }
 
-@keyframes flash-white {
+/* The light that sweeps across the big CONTINUE and a gold "New region" button now and then. */
+@keyframes sheen {
   0% {
-    opacity: 0;
+    background-position: 130% 0;
   }
-  30% {
-    opacity: 1;
-  }
+  45%,
   100% {
-    opacity: 0;
+    background-position: -40% 0;
   }
+}
+.sheen {
+  position: relative;
+  overflow: hidden;
+}
+.sheen::after {
+  content: '';
+  position: absolute;
+  inset: 2px 4px 6px;
+  background: linear-gradient(
+      105deg,
+      transparent 0 42%,
+      #ffffff40 42% 47%,
+      transparent 47% 52%,
+      #ffffff26 52% 54%,
+      transparent 54%
+    )
+    no-repeat;
+  background-size: 260% 100%;
+  animation: sheen 3.4s steps(26) infinite;
+  pointer-events: none;
 }
 
 /* HpBar collapsible: under ~140px there is no room for a readable bar, so only "HP 20/35" stays. */
@@ -161,4 +300,44 @@
 }
 .mini-hop {
   animation: mini-hop 600ms step-end infinite;
+}
+
+/* Battle: after a K.O., the Pokémon that can go out next call for a tap (two steps, not a glide). */
+@keyframes bt-call {
+  50% {
+    box-shadow:
+      inset 0 0 0 2px rgb(var(--c-edge)),
+      inset 0 0 0 4px #ffbe2e;
+    transform: translateY(-3px);
+  }
+}
+.bt-call {
+  animation: bt-call 900ms steps(2) infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .bt-call {
+    animation: none;
+  }
+}
+
+/* A board row found with "show my row": three steps of gold. */
+@keyframes so-flash {
+  0%,
+  33%,
+  66% {
+    background-color: rgb(var(--c-gold-light));
+  }
+  17%,
+  50%,
+  83% {
+    background-color: rgb(var(--c-gold-pale));
+  }
+}
+.so-flash {
+  animation: so-flash 1.2s steps(6);
+}
+@media (prefers-reduced-motion: reduce) {
+  .so-flash {
+    animation: none;
+  }
 }

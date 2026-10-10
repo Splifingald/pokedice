@@ -1,6 +1,6 @@
 # Pokédice
 
-A dice battler over the original 151 Pokémon, in a Game Boy Color look. Every Pokémon owns 2–6 typed dice; you throw,
+A dice battler over the original 151 Pokémon (and the regions after Kanto), in the *Johto Daybreak* pixel look. Every Pokémon owns 2–6 typed dice; you throw,
 keep, reroll, and hit with the per-die type chart plus poker-style combos. Trainers pay gold, gold buys account-wide
 upgrades, and the goal is 151/151 in the Pokédex.
 
@@ -14,7 +14,8 @@ upgrades, and the goal is 151/151 in the Pokédex.
 The design lives in [`docs/`](docs): [game spec](docs/01-GAME-SPEC.md) · [data model](docs/02-DATA-MODEL.md) ·
 [build plan](docs/03-BUILD-PLAN.md) · [Sinnoh plan](docs/07-SINNOH-PLAN.md) · [Unova plan](docs/08-UNOVA-PLAN.md) · [Gen 6–9 plan](docs/11-GEN6-9-REGIONS-PLAN.md) ·
 [Gen 6–9 sprite sources](docs/10-GEN6-9-SPRITES.md) · [forms & Mega Evolution](docs/12-FORMS-AND-MEGA.md) ·
-[Showdown sprites](docs/13-SHOWDOWN-SPRITES.md).
+[Showdown sprites](docs/13-SHOWDOWN-SPRITES.md) · [the Daybreak port](docs/14-DAYBREAK-PORT.md) ·
+[**UI guidelines**](docs/15-UI-GUIDELINES.md) (the rules every screen follows).
 
 ## Quick start
 
@@ -36,7 +37,7 @@ For local cloud/admin work, copy `.env.example` to `.env.local` and fill it in. 
 |---|---|
 | `pnpm dev` / `pnpm build` / `pnpm preview` | Vite dev server / production build (type-checked) / preview |
 | `pnpm test` · `pnpm coverage` | Vitest — engine, data, save and a headless area-1 → area-2 run |
-| `pnpm e2e` | Playwright smoke tests (new game → win, buy an upgrade, mocked sign-in). Uses the installed Edge on Windows; elsewhere run `npx playwright install chromium` first |
+| `pnpm e2e` | Playwright: every screen at 360, 375, 768 and 1280 px and in all ten languages (fonts, 44 px targets, axe), the battle fitting 360×640, Home, the Day Care, Versus, the leaderboard, the trainer card, and smoke runs (new game → win, buy an upgrade, mocked sign-in). Uses the installed Edge on Windows; elsewhere run `npx playwright install chromium` first |
 | `pnpm lint` · `pnpm format` | ESLint (also enforces that `src/engine` stays pure) · Prettier |
 | `pnpm seed` | Reports how far the committed bundle has drifted from what the generator (PokeAPI + `scripts/content.ts`, Kanto only) would produce. Writes nothing. `pnpm seed --force` does the old destructive regeneration — see [docs/02](docs/02-DATA-MODEL.md#3-generating-the-386) |
 | `pnpm seed-regions` | Builds the regions after Kanto on top of the committed bundle: species, their areas, trainers and regions. Additive — it never drops an existing row, above or below the range. Defaults to the newest region (`--from 906 --to 1025`, Paldea); pass another range to regenerate an earlier one, which throws away its admin tuning |
@@ -50,6 +51,26 @@ For local cloud/admin work, copy `.env.example` to `.env.local` and fill it in. 
 | `pnpm balance [N] [seed]` | Simulated campaign with an upgrade-buying policy (the same engine as the admin Campaign simulator); reports fight length per area. `GOLD=0.8 HP=1.6 pnpm balance` tries other multipliers |
 | `pnpm balance table` | Every starter of every region over seeds 1–6 — the summary table of [docs/06](docs/06-REGION-BALANCE.md) |
 | `pnpm import-bundle <file>` | Turns an admin *Export bundle* download into `src/data/*.json` + `seed.sql` to commit |
+
+## The UI
+
+The *Johto Daybreak* look ([docs/15](docs/15-UI-GUIDELINES.md) is the reference; the Visual Lab it came from is in
+`design/visual-lab/`):
+
+- **Home** is the hub: the area's scene with your team roaming in it, the area plate, AREAS (a sheet with a search
+  that also finds Pokémon), one big CONTINUE, and widgets for what's next (secret areas, the Day Care, Versus).
+  A tab bar on phones (Poké Mart, Upgrades, Home, Team, Pokédex), a side nav on desktop; the avatar opens the trainer
+  card and the menu.
+- **The battle** is full screen on a 240×160 pixel stage: the background is drawn in code, the Pokémon are Showdown's
+  animated sprites, and every move, Mega Evolution, Gigantamax, legendary entrance and catch plays a timeline from
+  `src/fx` (60 fixed steps a second, cues for the HUD). The panel under it holds the dice tray, the damage readout,
+  REROLL / ATTACK, the Bag and the team.
+- **Motion** has three levels (`src/lib/motion.ts`): full; short (Settings → Animations: one generic hit, a flash for
+  form changes, a catch without wobbles); off (admins only: everything jumps to its end state).
+- **Requests stay few**: scenes, balls, the Egg, badges and icons are drawn in code; Pokémon menu icons, trainers and
+  items come from atlases; only the Pokémon on screen load a sprite.
+- **Dev pages**: `/kitchen-sink` shows every component in every state, `/kitchen-sink/fx` plays every timeline with
+  replay, ¼ speed and one-frame steps.
 
 ## Architecture
 
@@ -66,7 +87,9 @@ For local cloud/admin work, copy `.env.example` to `.env.local` and fill it in. 
 ```
 src/engine   rules          src/store    zustand (content, save, run, battle, ui)
 src/data     bundle         src/save     schema, storage, cloud sync
-src/config   bundle ⇄ DB    src/screens  game screens (battle, area, map, …)
+src/config   bundle ⇄ DB    src/screens  game screens (home, battle, area, team, …)
+src/fx       pixel stage, scenes and timelines (no React)
+src/components  shared Daybreak components (on /kitchen-sink)
 src/admin    admin panel    src/setup    /setup guide
 scripts/     seed, art, sim, balance, import-bundle
 supabase/    migrations/0001_init.sql, seed.sql (generated)

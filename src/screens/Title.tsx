@@ -21,7 +21,6 @@ export function Title() {
   const data = useGame((s) => s.data)
   const auth = useGame((s) => s.auth)
   const corrupt = useGame((s) => s.corruptSaveArchived)
-  const runArea = useGame((s) => s.run.areaId)
   const [confirmNew, setConfirmNew] = useState(false)
   const lead = save ? teamOf(save)[0] : undefined
 
@@ -35,7 +34,7 @@ export function Title() {
       >
         <h1
           className="text-7xl leading-none tracking-widest sm:text-8xl"
-          style={{ textShadow: '4px 4px 0 #6b6480, 8px 8px 0 #2a2438' }}
+          style={{ textShadow: '4px 4px 0 #b6c3d9, 8px 8px 0 #24304f' }}
         >
           POKÉ<span className="text-danger">DICE</span>
         </h1>
@@ -52,7 +51,7 @@ export function Title() {
           <PixelButton
             variant="primary"
             size="lg"
-            onClick={() => navigate(runArea ? '/area' : '/map')}
+            onClick={() => navigate('/home')}
             aria-label={lead ? t('ui.title.continueWith', { name: data.species[lead.dex]?.name ?? '' }) : t('ui.common.continue')}
           >
             {lead && <MiniSprite dex={lead.dex} size={48} className="-my-3 -ml-2" />}

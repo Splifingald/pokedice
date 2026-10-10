@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { comboBonus, computeDamage, detectCombos, longestRun, selectCombo, type UpgradeLevels } from '@/engine'
+import { comboBonus, comboDice, computeDamage, detectCombos, longestRun, selectCombo, type UpgradeLevels } from '@/engine'
 import { data, die, makeData } from '../fixtures'
 
 describe('combo detection', () => {
@@ -68,5 +68,23 @@ describe('combo payout', () => {
   it('clamps out-of-range levels', () => {
     expect(comboBonus('pair', 99, data)).toBe(11)
     expect(comboBonus('pair', 0, data)).toBe(2)
+  })
+})
+
+describe('comboDice', () => {
+  it('rings the dice that make each combo', () => {
+    expect(comboDice([4, 2, 4, 6], 'pair')).toEqual([0, 2])
+    expect(comboDice([2, 5, 2, 5, 1], 'two_pair')).toEqual([0, 1, 2, 3])
+    expect(comboDice([3, 3, 1, 3], 'three_kind')).toEqual([0, 1, 3])
+    expect(comboDice([6, 2, 6, 2, 6], 'full_house')).toEqual([0, 1, 2, 3, 4])
+    expect(comboDice([5, 5, 5, 5, 1], 'four_kind')).toEqual([0, 1, 2, 3])
+    expect(comboDice([1, 2, 3, 4, 5], 'full_straight')).toEqual([0, 1, 2, 3, 4])
+  })
+  it('takes one die per value of a straight, and the bigger pair on a tie', () => {
+    expect(comboDice([2, 3, 3, 4, 5], 'small_straight')).toEqual([0, 1, 3, 4])
+    expect(comboDice([2, 2, 6, 6], 'pair')).toEqual([2, 3])
+  })
+  it('is empty when the roll has no such combo', () => {
+    expect(comboDice([1, 2, 4, 6], 'pair')).toEqual([])
   })
 })

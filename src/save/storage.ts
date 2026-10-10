@@ -9,9 +9,17 @@ export const CORRUPT_KEY = 'pokedice.save.corrupt'
 export const SETTINGS_KEY = 'pokedice.settings'
 export const BACKUPS_KEY = 'pokedice.save.backups'
 
+/** How much the game animates: every timeline in full, or its short version (lib/motion.ts). */
+export type AnimationLevel = 'full' | 'short'
+/** Light (Daybreak), dark (Dusk), or whatever the device is set to (src/theme/theme.ts). */
+export type ThemeSetting = 'light' | 'dark' | 'auto'
+
 export interface Settings {
   sfx: boolean
+  /** No animations at all: every timeline jumps to its end. An admin-only switch. */
   reducedMotion: boolean
+  /** Full or short animations, the player's choice. Unset = full. */
+  animations?: AnimationLevel
   /** Multi EXP — on by default. */
   multiExp: boolean
   /** Auto-mode: fights in cleared areas play themselves — off by default. */
@@ -20,6 +28,8 @@ export interface Settings {
   typeHints?: boolean
   /** UI language. Unset on an older save: the browser's language decides, English if we don't speak it. */
   lang?: Lang
+  /** Light, dark or the device's. Unset = light. */
+  theme?: ThemeSetting
 }
 export const DEFAULT_SETTINGS: Settings = { sfx: false, reducedMotion: false, multiExp: true }
 
@@ -93,10 +103,12 @@ export function readSettings(): Settings {
     return {
       sfx: !!s.sfx,
       reducedMotion: !!s.reducedMotion,
+      animations: s.animations === 'short' ? 'short' : 'full',
       multiExp: s.multiExp !== false,
       autoMode: !!s.autoMode,
       typeHints: !!s.typeHints,
       lang: isLang(s.lang) ? s.lang : detectLang(),
+      theme: s.theme === 'dark' || s.theme === 'auto' ? s.theme : 'light',
     }
   } catch {
     return { ...DEFAULT_SETTINGS, lang: detectLang() }

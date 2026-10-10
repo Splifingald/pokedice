@@ -75,10 +75,12 @@ export const saveSchema = z.object({
   settings: z.object({
     sfx: z.boolean(),
     reducedMotion: z.boolean(),
+    animations: z.enum(['full', 'short']).optional(),
     multiExp: z.boolean().default(true),
     autoMode: z.boolean().optional(),
     typeHints: z.boolean().optional(),
     lang: z.enum(LANGS).optional(),
+    theme: z.enum(['light', 'dark', 'auto']).optional(),
   }),
   hpScale: z.number().positive().optional(),
   player: z.object({ name: z.string().max(12), character: z.enum(['red', 'green']), avatar: z.string().max(40).optional() }).optional(),

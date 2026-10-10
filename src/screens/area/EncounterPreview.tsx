@@ -9,6 +9,7 @@ import { useT } from '@/i18n/react'
 import { useIsDesktop } from '@/lib/useMediaQuery'
 import { BadgeIcon } from '@/components/BadgeIcon'
 import { DiceSet } from '@/components/DiceSet'
+import { ItemSprite } from '@/components/ItemSprite'
 import { PixelIcon } from '@/components/icons'
 import { LeadPicker, defaultLead } from '@/components/LeadPicker'
 import { PixelButton } from '@/components/PixelButton'
@@ -33,22 +34,22 @@ function WildCard({ enc }: { enc: Extract<Encounter, { kind: 'wild' | 'boss' }> 
       <motion.div
         initial={{ scale: 0.6, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
-        className={cx('shrink-0', boss ? 'border-[3px] border-gold bg-ink' : 'border-[3px] border-ink bg-parchment')}
+        className={cx('shrink-0', boss ? 'bg-night shadow-[inset_0_0_0_3px_#ffbe2e]' : 'bg-paper shadow-ring')}
       >
         <SpriteImg dex={enc.dex} size={desktop ? 144 : 104} shiny={enc.shiny} />
       </motion.div>
       <div className="flex min-w-0 flex-col gap-1">
         {boss && <div className="text-lg leading-none tracking-[0.35em] text-gold">{t('ui.enc.legendaryTag')}</div>}
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-          <span className="text-3xl leading-none sm:text-4xl">{sp.name}</span>
+          <span className="text-[30px] leading-none">{sp.name}</span>
           {enc.shiny && (
-            <span className="inline-flex items-center gap-1 border-2 border-ink bg-panel px-1.5 text-lg leading-tight text-ink">
+            <span className="inline-flex items-center gap-1 bg-paper px-1.5 text-lg leading-tight text-ink shadow-ring">
               <PixelIcon name="star" size={14} /> {t('ui.mon.shinyTag')}
             </span>
           )}
           {enc.kind === 'wild' &&
             (enc.isNew ? (
-              <span className="border-2 border-ink bg-gold px-1.5 text-lg leading-tight text-ink">{t('ui.enc.new')}</span>
+              <span className="bg-gold px-1.5 text-lg leading-tight text-ink shadow-ring">{t('ui.enc.new')}</span>
             ) : (
               <span className="inline-flex items-center gap-1 text-lg text-muted">
                 <PixelIcon name="ball" size={16} /> {t('ui.enc.caught')}
@@ -99,9 +100,9 @@ function ItemCard({ enc }: { enc: Extract<Encounter, { kind: 'item' }> }) {
           ₽
         </span>
       ) : item?.spriteUrl ? (
-        <img src={item.spriteUrl} alt="" width={80} height={80} className="pixelated" style={{ imageRendering: 'pixelated' }} />
+        <ItemSprite item={item} size={80} />
       ) : null}
-      <div className="text-4xl leading-none">
+      <div className="text-[32px] leading-none">
         {isMoney ? money(enc.qty) : `${item?.name ?? enc.itemKey}${enc.qty > 1 ? ` ×${enc.qty}` : ''}`}
       </div>
       {!isMoney && item && <p className="copy text-muted">{item.description ?? effectText(item)}</p>}
@@ -131,11 +132,11 @@ function TrainerCard({ enc }: { enc: Extract<Encounter, { kind: 'trainer' }> }) 
     <div className="flex items-center gap-3">
       <TrainerIntro src={enc.spriteUrl} size={desktop ? 192 : 128} />
       <div className="flex min-w-0 flex-col gap-1">
-        <div className="text-3xl leading-none sm:text-4xl">{enc.name}</div>
+        <div className="text-[30px] leading-none">{enc.name}</div>
         <div className="text-xl leading-tight text-muted">{t('ui.enc.wantsToBattle', { count: enc.team.length })}</div>
         <div className="flex flex-wrap gap-1.5">
           {enc.team.map((m, i) => (
-            <div key={i} className="flex flex-col items-center border-2 border-ink bg-panel px-1 py-0.5">
+            <div key={i} className="flex flex-col items-center bg-paper px-1 py-0.5 shadow-ring">
               <MiniSprite dex={m.dex} size={36} silhouette />
               <span className="text-base leading-none">{t('ui.common.level.short', { n: m.level })}</span>
             </div>
@@ -168,7 +169,7 @@ function GymCard({ enc }: { enc: Extract<Encounter, { kind: 'gym' }> }) {
       <div className="flex items-center gap-3">
         <TrainerIntro src={enc.spriteUrl} size={desktop ? 192 : 128} />
         <div className="flex min-w-0 flex-col gap-1">
-          <div className="text-3xl leading-none sm:text-4xl">
+          <div className="text-[30px] leading-none">
             {enc.role === 'leader' ? t('ui.trainer.gymLeader', { name: enc.name }) : enc.name}
           </div>
           {enc.badge && (
@@ -207,7 +208,7 @@ function CenterCard({ enc }: { enc: Extract<Encounter, { kind: 'center' }> }) {
           <PixelIcon key={i} name="ball" size={32} />
         ))}
       </div>
-      <div className="text-4xl">{t('ui.enc.centerTitle')}</div>
+      <div className="text-[32px] leading-none">{t('ui.enc.centerTitle')}</div>
       <div className="text-xl text-muted">
         {enc.forced
           ? t(
@@ -231,7 +232,7 @@ function CasinoCard() {
         <SpriteImg dex={slots.prizeDex} size={48} />
         <PixelIcon name="ball" size={32} />
       </div>
-      <div className="text-4xl">{t('ui.enc.casinoTitle')}</div>
+      <div className="text-[32px] leading-none">{t('ui.enc.casinoTitle')}</div>
       <div className="text-xl text-muted">{t('ui.enc.casinoIntro', { cost: slots.cost, prize })}</div>
     </div>
   )
@@ -261,7 +262,7 @@ export function EncounterPreview({ enc }: { enc: Encounter }) {
 
   return createPortal(
     <motion.div
-      className="fixed inset-0 z-[80] flex items-end justify-center bg-ink/60 sm:items-center sm:p-3"
+      className="fixed inset-0 z-[80] flex items-end justify-center bg-night/60 sm:items-center sm:p-3"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
     >
@@ -275,7 +276,7 @@ export function EncounterPreview({ enc }: { enc: Encounter }) {
         animate={{ y: 0, opacity: 1 }}
       >
         {/* Gym and legendary cards carry their own banner, so their title is for screen readers only. */}
-        <h2 id={titleId} className={dark ? 'sr-only' : 'border-b-[3px] border-ink px-3 py-2 text-center text-2xl leading-tight sm:text-3xl'}>
+        <h2 id={titleId} className={dark ? 'sr-only' : 'border-b-[3px] border-edge px-3 py-2 text-center text-2xl leading-tight sm:text-3xl'}>
           {t(TITLES[enc.kind])}
         </h2>
         <div className="pixel-scroll flex flex-col gap-3 overflow-y-auto p-3 sm:p-4">
@@ -306,7 +307,7 @@ export function EncounterPreview({ enc }: { enc: Encounter }) {
         </div>
 
         <div
-          className={cx('flex gap-2 border-t-[3px] p-3', dark ? 'border-shadow' : 'border-ink')}
+          className={cx('flex gap-2 border-t-[3px] p-3', dark ? 'border-shadow' : 'border-edge')}
           style={{ paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom))' }}
         >
           <PixelButton

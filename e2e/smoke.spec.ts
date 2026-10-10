@@ -23,13 +23,17 @@ test('new game → first battle → win', async ({ page }) => {
   await page.getByRole('radio', { name: 'Character 2' }).click()
   await page.getByLabel('Your name').fill('Sam')
   await page.getByRole('button', { name: 'NEXT ▸' }).click()
-  await page.getByRole('button', { name: /Squirtle/ }).first().click()
-  await page.getByRole('button', { name: 'YES!' }).click()
-  await expect(page).toHaveURL(/\/area$/)
+  // The professor's lab: three Poké Balls on the table; the third holds Squirtle.
+  await page.getByRole('button', { name: 'Poké Ball 3 of 3' }).click()
+  await page.getByRole('button', { name: 'Pick Squirtle' }).click()
+  await page.getByRole('button', { name: /let's go/i }).click()
+  // A new game lands on Home, the area hub: CONTINUE plays the area you're in.
+  await expect(page).toHaveURL(/\/home$/)
+  await expect(page.getByRole('heading', { name: /^Exploring / })).toBeAttached()
   // No badge yet: the leaderboard is locked.
   await page.goto('/leaderboard')
   await expect(page.getByText('Win your first badge to open the leaderboard')).toBeVisible()
-  await page.goto('/area')
+  await page.goto('/home')
 
   for (let i = 0; i < 400; i++) {
     if (await page.getByText('VICTORY!').isVisible()) break
@@ -52,12 +56,12 @@ test('buy an upgrade', async ({ page }) => {
   )
   await page.goto('/upgrades')
   await expect(page.getByRole('heading', { name: 'Upgrades' })).toBeVisible()
-  await page.getByRole('button', { name: /₽5/ }).first().click() // Pair → Lv.2 costs 5
+  await page.getByRole('button', { name: /^₽5 Upgrade/ }).first().click() // Pair → Lv.2 costs 5
   await expect(page.getByLabel('495 Pokédollars').first()).toBeVisible()
-  await expect(page.getByText(/\+3\s*→\s*\+4/).first()).toBeVisible()
+  await expect(page.getByText(/\+3 damage.*\+4/).first()).toBeVisible()
 
   await page.getByRole('tab', { name: 'Dice Types' }).click()
-  await page.getByRole('button', { name: /₽10/ }).first().click()
+  await page.getByRole('button', { name: /^₽10 Upgrade/ }).first().click()
   await expect(page.getByLabel('485 Pokédollars').first()).toBeVisible()
 })
 
@@ -105,8 +109,8 @@ test('sign-in flow (mocked Supabase)', async ({ page }) => {
   await page.getByRole('main').getByRole('button', { name: 'Disconnect' }).first().click()
   await page.getByRole('dialog').getByRole('button', { name: 'Disconnect' }).click()
   await expect(page.getByText(/local save is kept/)).toBeVisible()
-  await page.goto('/map')
-  await expect(page.getByRole('heading', { name: 'Kanto' })).toBeVisible()
+  await page.goto('/home')
+  await expect(page.getByRole('heading', { name: /^Exploring / })).toBeAttached()
 })
 
 test('the avatar drawer opens the profile, the guide and the settings', async ({ page }) => {
@@ -119,22 +123,21 @@ test('the avatar drawer opens the profile, the guide and the settings', async ({
     },
     [JSON.stringify(save), FAST],
   )
-  await page.goto('/map')
+  await page.goto('/home')
 
-  // Signed out: the circle in the header is the initial, not a Google picture.
+  // The header shows the trainer: their look, their name and their badges.
   const avatar = page.getByRole('button', { name: 'Your trainer menu' })
-  await expect(avatar).toHaveText('S')
+  await expect(avatar).toHaveText('Sam0/8')
 
-  // The drawer is titled with the player's name, offers CONNECT, and hides Admin from a non-admin.
+  // The avatar opens the trainer card, with the menu under it: CONNECT, and no Admin for a non-admin.
   await avatar.click()
-  await expect(page.getByRole('dialog', { name: 'Sam' })).toBeVisible()
-  await expect(page.getByRole('dialog').getByRole('button', { name: 'Admin' })).toHaveCount(0)
-  await expect(page.getByRole('dialog').getByRole('button', { name: 'CONNECT' })).toBeVisible()
-
-  // The profile: the player's name and the Kanto badge case, every badge still to win.
-  await page.getByRole('button', { name: 'Trainer card' }).click()
   const card = page.getByRole('dialog', { name: 'Trainer card' })
-  await expect(card.getByText('Sam')).toBeVisible()
+  await expect(card).toBeVisible()
+  await expect(card.getByRole('button', { name: 'Admin' })).toHaveCount(0)
+  await expect(card.getByRole('button', { name: 'CONNECT' })).toBeVisible()
+
+  // The card: the player's name and the Kanto badge case, every badge still to win.
+  await expect(card.getByText('Sam', { exact: true })).toBeVisible()
   await expect(card.getByRole('heading', { name: 'Badge case' })).toBeVisible()
   await expect(card.getByRole('img', { name: 'Boulder Badge — not earned yet' })).toBeVisible()
   await expect(card.getByText('Badges 0/8')).toBeVisible()

@@ -1,19 +1,29 @@
+// The leaderboard (the cup in the top bar): four boards for the region being played — Max level, Progression,
+// Pokédex, Shiny — your place on top, and the Hall of Fame for whoever has maxed a board out.
 import { useEffect, useMemo, useState } from 'react'
-import { useT } from '@/i18n/react'
+import { useNavigate } from 'react-router-dom'
+import { getRegion, leaderboardUnlocked, regionOf } from '@/engine'
+import { BoardRow, Crown } from '@/components/BoardRow'
 import { GoogleAccountButton } from '@/components/GoogleAccountButton'
 import { PixelIcon, type IconName } from '@/components/icons'
-import { MiniSprite } from '@/components/SpriteImg'
-import { Modal } from '@/components/Modal'
-import { TrainerSprite } from '@/components/TrainerArt'
+import { PageHead } from '@/components/PageHead'
+import { Sheet } from '@/components/Sheet'
+import { TrainerLook } from '@/components/TrainerLook'
+import { useT } from '@/i18n/react'
 import { avatarOf } from '@/lib/avatars'
+import {
+  fetchLeaderboard,
+  leaderboardError,
+  splitLeaderboard,
+  type LeaderboardRow,
+  type LeaderboardTab,
+} from '@/lib/leaderboard'
 import { useSnapToMe } from '@/lib/useSnapToMe'
-import { fetchLeaderboard, leaderboardError, splitLeaderboard, type LeaderboardRow, type LeaderboardTab, type RankedRow } from '@/lib/leaderboard'
-import { leaderboardUnlocked, regionOf } from '@/engine'
 import { visitLeaderboard } from '@/store/actions'
 import { useGame } from '@/store/game'
 import { cx } from '@/theme/util'
 
-/** Each tab is its icon; only the open one spells out its name. */
+/** Each tab is its icon; only the open one spells out its name (four names don't fit a phone in every language). */
 const TABS: { id: LeaderboardTab; label: string; icon: IconName }[] = [
   { id: 'level', label: 'ui.board.tabLevel', icon: 'up' },
   { id: 'progress', label: 'ui.board.tabProgress', icon: 'map' },
@@ -21,24 +31,23 @@ const TABS: { id: LeaderboardTab; label: string; icon: IconName }[] = [
   { id: 'shiny', label: 'ui.board.tabShiny', icon: 'star' },
 ]
 
-/** Gold, silver and bronze for the podium. */
-const PODIUM = ['bg-gold', 'bg-[#c9c6d4]', 'bg-[#d9a066]']
-
-type Load = { state: 'loading' } | { state: 'ready'; rows: LeaderboardRow[] } | { state: 'offline' } | { state: 'error'; why: string }
+type Load =
+  | { state: 'loading' }
+  | { state: 'ready'; rows: LeaderboardRow[] }
+  | { state: 'offline' }
+  | { state: 'error'; why: string }
 
 /** The board opens with the first badge; until then the screen only says so (a typed-in /leaderboard included). */
 export function LeaderboardScreen() {
   const { t } = useT()
+  const navigate = useNavigate()
   const open = useGame((s) => !!s.save && leaderboardUnlocked(s.save, s.data))
   if (open) return <Board />
   return (
-    <div className="mx-auto flex max-w-3xl flex-col gap-3">
-      <h1 className="flex items-center gap-3 text-5xl leading-none">
-        <PixelIcon name="trophy" size={36} />
-        {t('ui.board.title')}
-      </h1>
-      <p className="flex items-center justify-center gap-2 border-[3px] border-ink bg-parchment p-4 text-center text-2xl leading-tight">
-        <PixelIcon name="lock" size={20} />
+    <div className="mx-auto flex max-w-2xl flex-col gap-3">
+      <PageHead icon="navRanks" title={t('ui.board.title')} onBack={() => navigate('/home')} />
+      <p className="m-0 grid justify-items-center gap-2 bg-paper px-3.5 py-4 text-center text-[21px] leading-[1.1] shadow-card">
+        <PixelIcon name="lock" size={36} />
         {t('ui.nav.boardLocked')}
       </p>
     </div>
@@ -47,12 +56,15 @@ export function LeaderboardScreen() {
 
 function Board() {
   const { t, tPlural } = useT()
+  const navigate = useNavigate()
   const data = useGame((s) => s.data)
   const save = useGame((s) => s.save)!
   const auth = useGame((s) => s.auth)
   const [tab, setTab] = useState<LeaderboardTab>('level')
   const [load, setLoad] = useState<Load>({ state: 'loading' })
   const [hallOpen, setHallOpen] = useState(false)
+  // "Show my row" bumps this: the row blinks again.
+  const [found, setFound] = useState(0)
 
   useEffect(() => visitLeaderboard(), [])
 
@@ -70,31 +82,40 @@ function Board() {
     }
   }, [auth.userId])
 
-  // The board on screen is always the region the player is in: switching region on the map switches the board.
+  // The board on screen is always the region the player is in: switching region switches the board.
   const region = regionOf(save)
+  const regionName = getRegion(data, region)?.name ?? region
   // Whoever has maxed this tab out leaves the ranking for the Hall of Fame behind the button below.
   const { board, hall } = useMemo(
     () => (load.state === 'ready' ? splitLeaderboard(load.rows, tab, data, region) : { board: [], hall: [] }),
     [load, tab, data, region],
   )
   const signedIn = auth.status === 'signed_in'
-  const meRef = useSnapToMe(`${tab}:${board.findIndex((r) => r.isMe)}`)
+  const meRef = useSnapToMe(`${tab}:${board.findIndex((r) => r.isMe)}:${found}`)
+  const mine = board.find((r) => r.isMe)
+  const mineHall = hall.find((r) => r.isMe)
+  const me = mine ?? mineHall
+  const tabLabel = t(TABS.find((entry) => entry.id === tab)!.label)
+  // The area a player is on can be a long name: it goes under the team rather than at the end of the row.
+  const scoreAside = tab !== 'progress'
 
   return (
-    <div className="mx-auto flex max-w-3xl flex-col gap-3">
-      <h1 className="flex items-center gap-3 text-5xl leading-none">
-        <PixelIcon name="trophy" size={36} />
-        {t('ui.board.title')}
-      </h1>
+    <div className="mx-auto flex max-w-2xl flex-col gap-3">
+      <PageHead
+        icon="navRanks"
+        title={t('ui.board.title')}
+        count={regionName}
+        onBack={() => navigate('/home')}
+      />
 
       {!signedIn && (
-        <div className="flex flex-wrap items-center justify-between gap-2 border-[3px] border-ink bg-parchment p-3">
-          <p className="text-2xl leading-tight">{t('ui.board.connect')}</p>
+        <div className="flex flex-wrap items-center justify-between gap-2 bg-gold-pale p-3 shadow-card-gold">
+          <p className="m-0 text-[19px] leading-tight">{t('ui.board.connect')}</p>
           <GoogleAccountButton />
         </div>
       )}
 
-      <div role="tablist" aria-label={t('ui.board.sortBy')} className="flex gap-1.5">
+      <div role="tablist" aria-label={t('ui.board.sortBy')} className="flex shadow-ring">
         {TABS.map((entry) => {
           const open = tab === entry.id
           return (
@@ -102,137 +123,146 @@ function Board() {
               key={entry.id}
               type="button"
               role="tab"
+              id={`lb-${entry.id}`}
               aria-selected={open}
               aria-label={open ? undefined : t(entry.label)}
               title={open ? undefined : t(entry.label)}
               onClick={() => setTab(entry.id)}
               className={cx(
-                'pixel-btn flex min-h-[44px] items-center justify-center gap-2 text-lg leading-none sm:text-xl',
-                open ? 'min-w-0 flex-1 bg-gold px-3' : 'w-14 shrink-0 bg-panel px-1',
+                'flex min-h-[44px] items-center justify-center gap-2 text-[19px] leading-none',
+                open ? 'min-w-0 flex-1 bg-ink px-3 text-panel' : 'w-14 shrink-0 px-1 text-ink',
               )}
             >
-              <PixelIcon name={entry.icon} size={22} />
+              <PixelIcon name={entry.icon} size={20} />
               {open && <span className="truncate">{t(entry.label)}</span>}
             </button>
           )
         })}
       </div>
 
+      {me && (
+        <button
+          type="button"
+          onClick={() => (mine ? setFound((n) => n + 1) : setHallOpen(true))}
+          aria-label={t('ui.board.findMe', {
+            text: mine
+              ? t('ui.board.mine', { rank: mine.rank, total: board.length })
+              : t('ui.board.mineHall'),
+          })}
+          className="flex w-full items-center gap-2.5 bg-gold-pale pb-2 pl-2 pr-3 pt-1.5 text-left shadow-card-gold-lip"
+        >
+          <TrainerLook src={avatarOf(me.avatar).src} w={44} h={48} />
+          <span className="grid min-w-0 flex-1 gap-0.5">
+            <small className="font-pixel-sm text-[14px] leading-[1.1] text-muted">
+              {t(`ui.board.note.${tab}`, { region: regionName })}
+            </small>
+            <b className="text-[21px] font-normal leading-none">
+              {mine ? t('ui.board.mine', { rank: mine.rank, total: board.length }) : t('ui.board.mineHall')}
+            </b>
+          </span>
+          <b className="shrink-0 text-right text-[20px] font-normal leading-none">{me.score}</b>
+        </button>
+      )}
+
       {hall.length > 0 && (
         <button
           type="button"
           onClick={() => setHallOpen(true)}
-          className="pixel-btn flex min-h-[44px] items-center justify-center gap-2 bg-gold px-3 text-2xl leading-none"
+          className="light-scope flex w-full items-center gap-2.5 bg-night pb-2 pl-2.5 pr-3 pt-1.5 text-left text-gold-light shadow-[inset_0_-4px_0_#11182d]"
         >
-          <PixelIcon name="crown" size={20} />
-          {t('ui.board.hall')}
-          <span className="font-pixel-sm text-base">{tPlural('ui.board.hallCount', hall.length)}</span>
+          <Crown />
+          <span className="grid min-w-0 flex-1 gap-0.5">
+            <b className="text-[21px] font-normal leading-none">{t('ui.board.hall')}</b>
+            <small className="font-pixel-sm text-[14px] leading-[1.1] text-[#b6c3d9]">
+              {tPlural('ui.board.hallSub', hall.length)}
+            </small>
+          </span>
+          <span className="flex shrink-0 pl-1.5" aria-hidden>
+            {hall.slice(0, 4).map((r, i) => (
+              <TrainerLook
+                key={i}
+                src={avatarOf(r.avatar).src}
+                w={32}
+                h={32}
+                className="-ml-1.5 bg-[#3a4a72] shadow-halo"
+              />
+            ))}
+          </span>
         </button>
       )}
 
-      <div role="tabpanel" aria-label={t(TABS.find((entry) => entry.id === tab)!.label)}>
-        {load.state === 'loading' && <p className="p-4 text-center text-2xl text-muted">{t('ui.common.loading')}</p>}
+      <div role="tabpanel" aria-labelledby={`lb-${tab}`}>
+        {load.state === 'loading' && (
+          <p className="m-0 p-4 text-center text-[20px] text-muted">{t('ui.common.loading')}</p>
+        )}
         {load.state === 'error' && (
           <div className="flex flex-col items-center gap-1 p-4 text-center">
-            <p className="text-2xl text-danger">{t('ui.board.failed')}</p>
-            <p className="font-pixel-sm text-base text-muted">{load.why}</p>
+            <p className="m-0 text-[20px] text-danger">{t('ui.board.failed')}</p>
+            <p className="m-0 font-pixel-sm text-[15px] text-muted">{load.why}</p>
           </div>
         )}
         {load.state === 'offline' && (
-          <p className="p-4 text-center text-2xl text-muted">{t('ui.board.offline')}</p>
+          <p className="m-0 p-4 text-center text-[20px] text-muted">{t('ui.board.offline')}</p>
         )}
         {load.state === 'ready' && board.length === 0 && (
-          <p className="p-4 text-center text-2xl text-muted">{t(hall.length > 0 ? 'ui.board.allDone' : 'ui.board.empty')}</p>
+          <p className="m-0 p-4 text-center text-[20px] text-muted">
+            {t(hall.length > 0 ? 'ui.board.allDone' : 'ui.board.empty')}
+          </p>
         )}
         {board.length > 0 && (
-          <ol className="flex flex-col gap-2">
+          <ol className="m-0 grid list-none gap-1.5 p-0" aria-label={tabLabel}>
             {board.map((r, i) => (
-              <li
-                key={i}
-                ref={r.isMe ? meRef : undefined}
-                aria-current={r.isMe || undefined}
-                className={cx(
-                  'flex items-center gap-3 border-[3px] border-ink px-2 py-1.5 shadow-[3px_3px_0_#6b6480]',
-                  r.isMe ? 'bg-[#fbeeb0]' : 'bg-panel',
-                )}
-              >
-                <span
-                  className={cx(
-                    'flex h-11 min-w-[44px] shrink-0 items-center justify-center border-[3px] border-ink px-1 text-3xl leading-none',
-                    PODIUM[r.rank - 1] ?? 'bg-parchment',
-                  )}
-                  aria-label={t('ui.board.rank', { rank: r.rank })}
-                >
-                  {r.rank}
-                </span>
-                <div className="flex min-w-0 flex-1 flex-col items-center gap-1 sm:flex-row sm:gap-3">
-                  <div className="flex min-w-0 max-w-full items-center gap-2 sm:w-52 sm:shrink-0">
-                    <TrainerSprite src={avatarOf(r.avatar).src} size={48} className="shrink-0" />
-                    <div className="flex min-w-0 flex-col items-start">
-                      <span className="max-w-full truncate text-2xl leading-none">
-                        {r.name}
-                        {r.isMe && <span className="font-pixel-sm text-base">{t('ui.board.you')}</span>}
-                      </span>
-                      <span className={cx('font-pixel-sm max-w-full truncate text-base leading-tight', r.isMe ? 'text-ink' : 'text-muted')}>{r.score}</span>
-                    </div>
-                  </div>
-                  <ul className="flex flex-1 flex-wrap items-center justify-center gap-0.5" aria-label={t('ui.board.theirTeam', { name: r.name })}>
-                    {r.team.map((m, j) => {
-                      const label = t('ui.board.monTitle', { name: data.species[m.dex]?.name ?? t('ui.common.pokemon'), level: m.level })
-                      return (
-                        <li key={j} title={label}>
-                          <MiniSprite dex={m.dex} size={40} alt={label} />
-                        </li>
-                      )
-                    })}
-                  </ul>
-                </div>
-              </li>
+              <BoardRow
+                key={`${found}:${i}`}
+                rowRef={r.isMe ? meRef : undefined}
+                flash={r.isMe && found > 0}
+                rank={r.rank}
+                look={avatarOf(r.avatar).src}
+                name={r.name}
+                isMe={r.isMe}
+                team={r.team}
+                value={scoreAside ? r.score : undefined}
+                sub={
+                  !scoreAside && (
+                    <small className="truncate font-pixel-sm text-[14px] text-muted">{r.score}</small>
+                  )
+                }
+              />
             ))}
           </ol>
         )}
       </div>
 
-      <Modal open={hallOpen} onClose={() => setHallOpen(false)} title={t('ui.board.hall')} className="max-w-3xl">
-        <p className="copy mb-3 text-lg text-muted">{t(`ui.board.hallBody.${tab}`)}</p>
-        <ul className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+      <Sheet
+        open={hallOpen}
+        onClose={() => setHallOpen(false)}
+        title={t('ui.board.hall')}
+        sub={`${tabLabel} · ${tPlural('ui.board.hallCount', hall.length)}`}
+      >
+        {tab !== 'shiny' && (
+          <p className="m-0 mb-2 font-pixel-sm text-[15px] leading-[1.15] text-muted">
+            {t(`ui.board.hallBody.${tab}`)}
+          </p>
+        )}
+        <ul className="m-0 grid list-none gap-1.5 p-0">
           {hall.map((r, i) => (
-            <HallCell key={i} r={r} />
+            <BoardRow
+              key={i}
+              lead={<Crown />}
+              look={avatarOf(r.avatar).src}
+              name={r.name}
+              isMe={r.isMe}
+              team={r.team}
+              value={scoreAside ? r.score : undefined}
+              sub={
+                !scoreAside && (
+                  <small className="truncate font-pixel-sm text-[14px] text-muted">{r.score}</small>
+                )
+              }
+            />
           ))}
         </ul>
-      </Modal>
+      </Sheet>
     </div>
-  )
-}
-
-/** One trainer in the Hall of Fame grid: who they are, what they finished, and the team they did it with. */
-function HallCell({ r }: { r: RankedRow }) {
-  const { t } = useT()
-  const data = useGame((s) => s.data)
-  return (
-    <li
-      aria-current={r.isMe || undefined}
-      className={cx('flex flex-col items-center gap-1 border-[3px] border-ink p-2 text-center', r.isMe ? 'bg-[#fbeeb0]' : 'bg-panel')}
-    >
-      <TrainerSprite src={avatarOf(r.avatar).src} size={56} />
-      <span className="max-w-full truncate text-xl leading-none">
-        {r.name}
-        {r.isMe && <span className="font-pixel-sm text-base">{t('ui.board.you')}</span>}
-      </span>
-      <span className="font-pixel-sm flex items-center gap-1 text-base leading-none text-muted">
-        <PixelIcon name="crown" size={12} />
-        {r.score}
-      </span>
-      <ul className="flex flex-wrap justify-center gap-0.5" aria-label={t('ui.board.theirTeam', { name: r.name })}>
-        {r.team.map((m, j) => {
-          const label = t('ui.board.monTitle', { name: data.species[m.dex]?.name ?? t('ui.common.pokemon'), level: m.level })
-          return (
-            <li key={j} title={label}>
-              <MiniSprite dex={m.dex} size={28} alt={label} />
-            </li>
-          )
-        })}
-      </ul>
-    </li>
   )
 }

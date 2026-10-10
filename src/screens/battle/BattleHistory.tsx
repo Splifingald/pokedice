@@ -259,7 +259,7 @@ function HistoryRow({ r }: { r: Row }) {
           type="button"
           aria-expanded={open}
           onClick={() => setOpen((v) => !v)}
-          className="flex min-h-[44px] w-full items-center gap-2 px-1 text-left text-base hover:bg-white/60 md:min-h-[36px]"
+          className="flex min-h-[44px] w-full items-center gap-2 px-1 text-left text-base hover:bg-paper/60 md:min-h-[36px]"
         >
           {body}
         </button>

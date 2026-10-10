@@ -29,7 +29,7 @@ function Code({ children, label }: { children: string; label?: string }) {
       <pre
         tabIndex={0}
         aria-label={label ?? 'Code'}
-        className="pixel-scroll max-h-40 overflow-auto border-2 border-ink bg-ink p-2 pr-20 font-mono text-xs text-panel"
+        className="pixel-scroll max-h-40 overflow-auto border-2 border-edge bg-ink p-2 pr-20 font-mono text-xs text-panel"
       >
         {children}
       </pre>

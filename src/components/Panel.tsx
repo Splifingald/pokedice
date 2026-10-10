@@ -19,7 +19,7 @@ export function Panel({
   return (
     <div className={cx(VARIANT[variant], 'relative p-3', className)} {...rest}>
       {title != null && (
-        <div className="-mx-3 -mt-3 mb-2 flex items-center justify-between border-b-[3px] border-ink bg-ink px-3 py-1 text-panel">
+        <div className="-mx-1 mb-2 flex items-center justify-between gap-2 px-1 pb-1.5 text-[24px] leading-none shadow-[0_2px_0_rgb(var(--c-lip))]">
           {title}
         </div>
       )}

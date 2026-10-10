@@ -86,7 +86,7 @@ export function GoogleAccountButton({ size = 'md', className }: { size?: PixelBu
     <>
       <PixelButton
         size={size}
-        className={cx('bg-[#d9d3c3] text-muted', className)}
+        className={cx('bg-well-deep text-muted', className)}
         onClick={() => setConfirm(true)}
         title={auth.email ?? undefined}
         aria-label={t('ui.account.connectedLabel', { who: auth.email ?? t('ui.settings.yourGoogle') })}
@@ -98,7 +98,7 @@ export function GoogleAccountButton({ size = 'md', className }: { size?: PixelBu
             width={24}
             height={24}
             referrerPolicy="no-referrer"
-            className="h-6 w-6 shrink-0 border-2 border-ink object-cover"
+            className="h-6 w-6 shrink-0 border-2 border-edge object-cover"
             onError={() => setBroken(true)}
           />
         ) : (

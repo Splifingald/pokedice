@@ -1,6 +1,14 @@
 // Plays the engine's battle log one entry at a time. The UI never recomputes rules — it only animates the log.
-import { useEffect, useRef, useState } from 'react'
-import { activeBattler, type BattleState, type LogEntry, type RolledDie, type Side, type StatusKind } from '@/engine'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import {
+  activeBattler,
+  type BattleState,
+  type DieType,
+  type LogEntry,
+  type RolledDie,
+  type Side,
+  type StatusKind,
+} from '@/engine'
 import { t } from '@/i18n'
 import { comboName, typeName } from '@/lib/format'
 import { sfx, type SfxName } from '@/audio/sfx'
@@ -19,18 +27,36 @@ export interface Fx {
   flash: { id: number; target: Side } | null
   status: { id: number; target: Side; status: StatusKind } | null
   fly: { id: number; to: Side } | null
+  /** A timeline the stage is playing for the current log entry (a move, a form change): the log waits for it. */
+  scene: Scene | null
+  /** A note under the dice until the next roll: the die a Mega Evolution or Gigantamax gave. */
+  chip: { id: number; text: string } | null
+}
+
+/** What the battle stage plays for a log entry (src/fx timelines). */
+export interface Scene {
+  id: number
+  /** The log entry it belongs to. */
+  cursor: number
+  kind: 'attack' | 'mega' | 'gmax' | 'gmaxEnd'
+  /** Who acts: the attacker, or the Pokémon whose form changes. */
+  side: Side
+  type?: DieType
+  damage?: number
+  fromDex?: number
+  toDex?: number
 }
 
 export interface AnimatorContext {
   kind: BattleState['kind']
   trainerName: string | null
   itemName: (key: string) => string
-  colorOf: (type: string) => string
-  onHit: (target: Side, color: string, power: number) => void
   /** A species' (or form's) name, for the form changes. */
   speciesName: (dex: number) => string
   /** A Mega row's own mechanic (Primal Reversion, Ultra Burst), for the message. */
   megaMechanic: (dex: number) => 'primal' | 'ultra' | null
+  /** How many turns a Gigantamax lasts (config). */
+  gmaxTurns: number
 }
 
 let seq = 0
@@ -52,6 +78,8 @@ function initFx(b: BattleSlice): Fx {
     flash: null,
     status: null,
     fly: null,
+    scene: null,
+    chip: null,
   }
 }
 
@@ -60,6 +88,10 @@ interface Step {
   sound?: SfxName
   apply: (f: Fx) => Fx
   effect?: () => void
+  /** Played on the stage; `land` then applies when the hit lands (the HP drains with it), the rest when it ends. */
+  scene?: Omit<Scene, 'id' | 'cursor'>
+  /** What changes when the scene's hit lands — or right away when there is no scene. `staged`: a scene drew it. */
+  land?: (f: Fx, staged: boolean) => Fx
 }
 
 const STATUS_TEXT: Record<StatusKind, (n: string, stacks?: number) => string> = {
@@ -94,6 +126,7 @@ function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): Step {
           ...f,
           tray: null,
           fly: null,
+          chip: e.side === 'player' ? f.chip : null,
           message:
             e.side === 'player' ? t('ui.log.whatWillDo', { name: nameOf(e.uid) }) : t('ui.log.foeRolls', { foe: st.enemy.name }),
         }),
@@ -139,22 +172,24 @@ function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): Step {
               ? t('ui.log.noEffectBanner')
               : null
       const power = tone === 'super' ? (eff >= 3 ? 10 : 7) : tone === 'weak' ? 2 : tone === 'immune' ? 0 : 4
-      const color = ctx.colorOf(r.attackType ?? r.perDie[0]?.type ?? 'base')
       return {
         delay: 1300,
         sound: tone === 'super' ? 'super' : tone === 'immune' ? 'error' : 'hit',
-        apply: (f) => ({
+        // The dice fly at the target as the move starts; the HP waits for the hit.
+        apply: (f) => ({ ...f, fly: { id: nextId(), to: e.target } }),
+        // No effect: nothing to animate but the message.
+        scene: r.immune
+          ? undefined
+          : { kind: 'attack', side: e.side, type: r.attackType ?? r.perDie[0]?.type ?? 'base', damage: e.amount },
+        land: (f, staged) => ({
           ...f,
           message: textFor(f),
           hp: { ...f.hp, [e.targetUid]: e.hpAfter },
-          fly: { id: nextId(), to: e.target },
-          pop: { id: nextId(), target: e.target, amount: e.amount, tone },
+          // The stage draws its own damage number and shake.
+          pop: staged ? f.pop : { id: nextId(), target: e.target, amount: e.amount, tone },
           banner: banner ? { id: nextId(), text: banner, tone: tone === 'normal' ? 'info' : tone } : null,
-          shake: power ? { id: nextId(), power } : f.shake,
+          shake: staged ? f.shake : power ? { id: nextId(), power } : f.shake,
         }),
-        effect: () => {
-          if (!r.immune) ctx.onHit(e.target, color, power / 4 + 0.6)
-        },
       }
     }
     case 'status':
@@ -241,10 +276,26 @@ function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): Step {
             : e.reason === 'lowHp'
               ? t(e.revert ? 'ui.log.formBack' : 'ui.log.formChanged', { name: nameOf(e.uid) })
               : t('ui.log.typeChange', { name: nameOf(e.uid), type: typeName(e.dice[0] ?? 'normal') })
+      // Your Pokémon's new die, said under the dice until its next roll.
+      const gained =
+        e.side === 'player' && !e.revert && e.die && (e.reason === 'mega' || e.reason === 'gmax')
+          ? e.reason === 'mega'
+            ? t('ui.battle.megaDie', { type: typeName(e.die) })
+            : t(`ui.battle.gmaxDie.${ctx.gmaxTurns === 1 ? 'one' : 'other'}`, { type: typeName(e.die), n: ctx.gmaxTurns })
+          : null
+      const chip = (f: Fx) => (gained ? { id: nextId(), text: gained } : f.chip)
+      const scene: Step['scene'] =
+        e.reason === 'mega'
+          ? { kind: 'mega', side: e.side, fromDex: e.fromDex, toDex: e.toDex }
+          : e.reason === 'gmax'
+            ? { kind: e.revert ? 'gmaxEnd' : 'gmax', side: e.side, fromDex: e.fromDex, toDex: e.toDex }
+            : undefined
       return {
         delay: 1300,
         sound: 'levelup',
-        apply: (f) => ({ ...f, message: text, flash: { id: nextId(), target: e.side } }),
+        apply: (f) => (scene ? f : { ...f, message: text, chip: chip(f), flash: { id: nextId(), target: e.side } }),
+        scene,
+        land: scene ? (f) => ({ ...f, message: text, chip: chip(f) }) : undefined,
       }
     }
     case 'item': {
@@ -318,34 +369,78 @@ function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): Step {
   return { delay: 0, apply: (f) => f }
 }
 
-/** Returns the display state and whether every log entry has been played (inputs unlock only then). */
+/** A scene that never reports back (its stage went away) stops holding the log after this long. */
+const SCENE_TIMEOUT = 12_000
+
+/**
+ * Plays the log. Returns the display state, whether every entry has been played (inputs unlock only then), and the
+ * two calls the stage makes while it plays an entry's scene: the hit landed, the scene ended.
+ */
 export function useBattleAnimator(
   battle: BattleSlice,
-  reduced: boolean,
+  /** Animations off (or skipping): every step at once, no scenes. */
+  instant: boolean,
   ctx: AnimatorContext,
   /** Multiplies every step's delay (auto-mode plays faster). */
   pace = 1,
-): { fx: Fx; ready: boolean } {
+  /** An entrance is playing: the opening line shows, the rest of the log waits. */
+  hold = false,
+): { fx: Fx; ready: boolean; sceneContact: () => void; sceneDone: () => void } {
   const [fx, setFx] = useState(() => initFx(battle))
   const ctxRef = useRef(ctx)
   ctxRef.current = ctx
+  // What the scene playing now will apply when its hit lands.
+  const landing = useRef<((f: Fx, staged: boolean) => Fx) | null>(null)
   const pending = fx.cursor < battle.log.length
 
   useEffect(() => {
-    if (!pending) return
+    if (!pending || (hold && fx.cursor > 0)) return
     const cursor = fx.cursor
     const entry = battle.log[cursor]!
     const step = describe(entry, battle.state, ctxRef.current)
-    setFx((f) => step.apply(f))
+    if (step.scene && !instant) {
+      landing.current = step.land ?? null
+      setFx((f) => ({ ...step.apply(f), scene: { ...step.scene!, id: nextId(), cursor } }))
+      step.effect?.()
+      // The stage reports back; if it can't (it went away), the log moves on anyway.
+      const t = setTimeout(
+        () =>
+          setFx((f) => {
+            if (f.cursor !== cursor) return f
+            const land = landing.current
+            landing.current = null
+            return { ...(land ? land(f, true) : f), scene: null, cursor: cursor + 1 }
+          }),
+        SCENE_TIMEOUT,
+      )
+      return () => clearTimeout(t)
+    }
+    setFx((f) => {
+      const applied = step.apply(f)
+      return step.land ? step.land(applied, false) : applied
+    })
     if (step.sound) sfx(step.sound)
     step.effect?.()
     const t = setTimeout(
       () => setFx((f) => (f.cursor === cursor ? { ...f, cursor: cursor + 1 } : f)),
-      reduced ? 0 : step.delay * pace,
+      instant ? 0 : step.delay * pace,
     )
     return () => clearTimeout(t)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fx.cursor, pending])
+  }, [fx.cursor, pending, hold])
 
-  return { fx, ready: !pending }
+  /** The scene's hit landed: the HP drains now. */
+  const sceneContact = useCallback(() => {
+    const land = landing.current
+    landing.current = null
+    if (land) setFx((f) => land(f, true))
+  }, [])
+  /** The scene ended: whatever it didn't land yet lands, and the log moves on. */
+  const sceneDone = useCallback(() => {
+    const land = landing.current
+    landing.current = null
+    setFx((f) => (f.scene ? { ...(land ? land(f, true) : f), scene: null, cursor: f.scene.cursor + 1 } : f))
+  }, [])
+
+  return { fx, ready: !pending, sceneContact, sceneDone }
 }

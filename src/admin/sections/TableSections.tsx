@@ -69,7 +69,7 @@ function TeamEditor({ id, onClose }: { id: string; onClose: () => void }) {
         {items.map((k, i) => (
           <div key={i} className="flex items-center gap-2">
             <select
-              className="flex-1 border-2 border-ink bg-panel px-2 py-1"
+              className="flex-1 border-2 border-edge bg-panel px-2 py-1"
               value={k}
               onChange={(e) => setItems(items.map((x, j) => (j === i ? e.target.value : x)))}
             >
@@ -205,8 +205,8 @@ const describeEffect = (effect: unknown) => {
 function EffectEditor({ value, onDone }: { value: ItemEffect | undefined; onDone: (e: ItemEffect) => void }) {
   const [draft, setDraft] = useState<ItemEffect>(value && value.kind in EFFECT_DEFAULTS ? value : EFFECT_DEFAULTS.heal)
   return (
-    <div className="flex min-w-[220px] flex-col gap-1 border-2 border-ink bg-panel p-1">
-      <select className="border border-ink bg-panel text-lg" value={draft.kind} onChange={(e) => setDraft(EFFECT_DEFAULTS[e.target.value as ItemEffect['kind']])}>
+    <div className="flex min-w-[220px] flex-col gap-1 border-2 border-edge bg-panel p-1">
+      <select className="border border-edge bg-panel text-lg" value={draft.kind} onChange={(e) => setDraft(EFFECT_DEFAULTS[e.target.value as ItemEffect['kind']])}>
         <option value="heal">heal HP</option>
         <option value="revive">revive a K.O.'d Pokémon (% of max HP)</option>
         <option value="cure">cure status (battle)</option>
@@ -294,7 +294,7 @@ export function ItemsSection() {
           width: 130,
           render: (r) => (r.region ? (data?.regions.find((x) => x.id === r.region)?.name ?? s(r.region)) : 'all'),
           editor: (v, set) => (
-            <select className="border border-ink bg-panel text-lg" value={(v as string | null) ?? ''} onChange={(e) => set(e.target.value || null)}>
+            <select className="border border-edge bg-panel text-lg" value={(v as string | null) ?? ''} onChange={(e) => set(e.target.value || null)}>
               <option value="">— all regions —</option>
               {[...(data?.regions ?? [])]
                 .sort((a, b) => a.orderIndex - b.orderIndex)
@@ -312,7 +312,7 @@ export function ItemsSection() {
           width: 170,
           render: (r) => (r.shop_area ? (data?.areas.find((a) => a.id === r.shop_area)?.name ?? '?') : '—'),
           editor: (v, set) => (
-            <select className="border border-ink bg-panel text-lg" value={(v as string | null) ?? ''} onChange={(e) => set(e.target.value || null)}>
+            <select className="border border-edge bg-panel text-lg" value={(v as string | null) ?? ''} onChange={(e) => set(e.target.value || null)}>
               <option value="">— none —</option>
               {[...(data?.areas ?? [])]
                 .sort((a, b) => a.orderIndex - b.orderIndex)
@@ -334,10 +334,10 @@ export function ItemsSection() {
 function FaceSlot({ face, onChange, type, color }: { face: Face; onChange: (f: Face) => void; type: DieType; color: string }) {
   const value = useNumberField(face.value, (v) => onChange({ ...face, value: v ?? 0 } as Face))
   return (
-    <div className="flex flex-col items-center gap-1 border-2 border-ink bg-panel p-1">
+    <div className="flex flex-col items-center gap-1 border-2 border-edge bg-panel p-1">
       <Die type={type} face={face} size={40} color={color} />
       <select
-        className="w-full border border-ink bg-panel text-sm"
+        className="w-full border border-edge bg-panel text-sm"
         value={face.kind === 'status' ? face.status : 'number'}
         onChange={(e) => {
           const v = e.target.value
@@ -353,7 +353,7 @@ function FaceSlot({ face, onChange, type, color }: { face: Face; onChange: (f: F
       </select>
       <input
         type="number"
-        className="w-14 border border-ink bg-panel text-center font-mono text-sm"
+        className="w-14 border border-edge bg-panel text-center font-mono text-sm"
         value={value.value}
         title={face.kind === 'status' ? 'fallback value' : 'value'}
         onChange={(e) => value.onChange(e.target.value)}
@@ -382,7 +382,7 @@ export function DiceSection() {
               <div className="flex flex-wrap items-center gap-2">
                 <TypeBadge type={type} />
                 <TextInput className="w-32" value={s(r.label)} onChange={(v) => patch({ label: v })} />
-                <input type="color" value={s(r.color)} onChange={(e) => patch({ color: e.target.value })} className="h-8 w-10 border-2 border-ink" />
+                <input type="color" value={s(r.color)} onChange={(e) => patch({ color: e.target.value })} className="h-8 w-10 border-2 border-edge" />
                 <span className="font-mono text-sm">{s(r.color)}</span>
                 <span className="ml-auto text-lg">avg {avg.toFixed(2)}</span>
               </div>
@@ -414,7 +414,7 @@ export function DiceSection() {
 // ---------------------------------------------------------------- Type chart
 
 const CYCLE = [1, 2, 0.5, 0]
-const CELL_BG: Record<string, string> = { '2': '#4aa84a', '0.5': '#c2452d', '0': '#2a2438', '1': 'transparent' }
+const CELL_BG: Record<string, string> = { '2': '#34c97a', '0.5': '#f2553f', '0': '#24304f', '1': 'transparent' }
 
 export function TypeChartSection() {
   const rows = useAdmin((st) => st.rows.type_chart)
@@ -482,12 +482,12 @@ function Chart({ rows }: { rows: { level: number; bonus: number; cost: number }[
   const bw = W / Math.max(1, rows.length)
   const pts = rows.map((r, i) => `${i * bw + bw / 2},${H - (r.cost / maxC) * (H - 16) - 4}`).join(' ')
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="w-full max-w-md border-2 border-ink bg-panel" role="img" aria-label="Bonus (bars) and cost (line) per level">
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full max-w-md border-2 border-edge bg-panel" role="img" aria-label="Bonus (bars) and cost (line) per level">
       {rows.map((r, i) => (
-        <rect key={i} x={i * bw + 3} y={H - (r.bonus / maxB) * (H - 16)} width={bw - 6} height={(r.bonus / maxB) * (H - 16)} fill="#e8b44a" stroke="#2a2438" />
+        <rect key={i} x={i * bw + 3} y={H - (r.bonus / maxB) * (H - 16)} width={bw - 6} height={(r.bonus / maxB) * (H - 16)} fill="#ffbe2e" stroke="#24304f" />
       ))}
-      <polyline points={pts} fill="none" stroke="#c2452d" strokeWidth={2} />
-      <text x={4} y={12} fontSize={10} fill="#2a2438">
+      <polyline points={pts} fill="none" stroke="#f2553f" strokeWidth={2} />
+      <text x={4} y={12} fontSize={10} fill="#24304f">
         bars: bonus (max {maxB}) · line: cost (max {maxC})
       </text>
     </svg>
