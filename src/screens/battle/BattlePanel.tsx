@@ -182,7 +182,7 @@ export function TeamPips({
   const { t } = useT()
   const reduced = useGame((s) => s.settings.reducedMotion)
   return (
-    <div role="group" aria-label={t('ui.battle.switchGroup')} className="flex gap-1.5">
+    <div role="group" aria-label={t('ui.battle.switchGroup')} className="flex flex-wrap gap-1.5">
       {team.map((b) => {
         const hp = hpOf(b)
         const active = b.uid === activeUid

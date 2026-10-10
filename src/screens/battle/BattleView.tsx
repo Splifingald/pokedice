@@ -611,6 +611,49 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
       </div>
     )
 
+  // The Bag (or, in Versus, who you're up against) and the team pips: under the panel on phones, at the side when wide.
+  const bag = versus ? (
+    <span className="min-w-0 truncate text-[20px] text-muted">
+      {t('ui.battle.vsName', { name: versus.trainerName })}
+    </span>
+  ) : (
+    ownedItems.length > 0 &&
+    !auto && (
+      <BagButton
+        disabled={!canItem || usefulItems.length === 0}
+        title={st.itemUsedThisTurn ? t('ui.battle.oneItemPerTurn') : undefined}
+        onClick={() => setMenu('item')}
+      />
+    )
+  )
+  const pips = (
+    <TeamPips
+      team={st.player}
+      activeUid={active.uid}
+      hpOf={(b) => fx.hp[b.uid] ?? b.hp}
+      canSwitch={!auto && (forced || (canAct && showSwitch))}
+      calling={forced && !auto}
+      onPick={pickPip}
+    />
+  )
+  const teamRow = (
+    <div className="mt-auto flex items-center gap-2">
+      {bag}
+      <div className="ml-auto flex items-center gap-1.5">
+        {pips}
+        <button
+          type="button"
+          aria-label={t('ui.battle.history')}
+          title={t('ui.battle.history')}
+          onClick={() => setMenu('history')}
+          className="grid min-h-[48px] min-w-[44px] place-items-center bg-paper shadow-ring"
+        >
+          <PixelIcon name="history" size={20} />
+        </button>
+      </div>
+    </div>
+  )
+
   const stage = (
     <div ref={stageBox} className="shadow-ledge">
       <BattleStage
@@ -679,10 +722,12 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
 
   return (
     <BattleContexts pace={pace} motionCap={motionCap}>
-      <div className="mx-auto w-full lg:grid lg:max-w-[1000px] lg:grid-cols-[minmax(0,1fr)_300px] lg:items-start lg:gap-4 lg:p-4">
+      {/* Wide screens: the stage as big as the height allows (3:2, with the message, dice and actions under it still in
+          view: ≈340px), and a side column for the Bag, the team and the history. */}
+      <div className="mx-auto w-full lg:grid lg:grid-cols-[minmax(0,calc((100dvh-340px)*1.5))_320px] lg:items-start lg:justify-center lg:gap-4 lg:p-4">
         <section
           aria-label={heading}
-          className="mx-auto flex min-h-[100dvh] w-full max-w-[max(300px,min(560px,calc((100dvh_-_330px)_*_1.5)))] flex-col lg:min-h-0"
+          className="mx-auto flex min-h-[100dvh] w-full max-w-[max(300px,min(560px,calc((100dvh_-_330px)_*_1.5)))] flex-col lg:min-h-0 lg:max-w-none"
         >
           <h1 className="sr-only">{heading}</h1>
           {stage}
@@ -803,49 +848,20 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
                   </div>
                 )}
                 <div className="min-h-[56px]">{actions}</div>
-                <div className="mt-auto flex items-center gap-2">
-                  {versus ? (
-                    <span className="min-w-0 truncate text-[20px] text-muted">
-                      {t('ui.battle.vsName', { name: versus.trainerName })}
-                    </span>
-                  ) : (
-                    ownedItems.length > 0 &&
-                    !auto && (
-                      <BagButton
-                        disabled={!canItem || usefulItems.length === 0}
-                        title={st.itemUsedThisTurn ? t('ui.battle.oneItemPerTurn') : undefined}
-                        onClick={() => setMenu('item')}
-                      />
-                    )
-                  )}
-                  <div className="ml-auto flex items-center gap-1.5">
-                    <TeamPips
-                      team={st.player}
-                      activeUid={active.uid}
-                      hpOf={(b) => fx.hp[b.uid] ?? b.hp}
-                      canSwitch={!auto && (forced || (canAct && showSwitch))}
-                      calling={forced && !auto}
-                      onPick={pickPip}
-                    />
-                    {!wide && (
-                      <button
-                        type="button"
-                        aria-label={t('ui.battle.history')}
-                        title={t('ui.battle.history')}
-                        onClick={() => setMenu('history')}
-                        className="grid min-h-[48px] min-w-[44px] place-items-center bg-paper shadow-ring"
-                      >
-                        <PixelIcon name="history" size={20} />
-                      </button>
-                    )}
-                  </div>
-                </div>
+                {/* Phones: the Bag, the team and the history at the foot of the panel; wide screens: at the side. */}
+                {!wide && teamRow}
               </>
             )}
           </div>
         </section>
         {wide && (
           <aside className="flex flex-col gap-2">
+            {!catching && !over && (
+              <div className="flex flex-col gap-2 bg-paper p-2 shadow-ring-line">
+                {bag}
+                {pips}
+              </div>
+            )}
             <BattleHistory battle={battle} cursor={fx.cursor} defaultOpen />
             {canAct && !auto && (
               <p className="m-0 font-pixel-sm text-[15px] text-muted">
