@@ -25,6 +25,9 @@ interface Member {
  * Pokémon makes it hop and shows its card; the card (and the team list, for keyboards) opens its sheet. With calm
  * motion the team stands still. `children` sit on top of the scene (the area plate).
  */
+/** Two taps on the same Pokémon within this long open its sheet. */
+const DOUBLE_TAP_MS = 400
+
 export function SceneStage({
   area,
   team,
@@ -44,6 +47,7 @@ export function SceneStage({
   const front = useRef<HTMLCanvasElement>(null)
   const imgs = useRef<(HTMLImageElement | null)[]>([])
   const [card, setCard] = useState<{ uid: string; x: number; y: number } | null>(null)
+  const lastTap = useRef<{ uid: string; t: number } | null>(null)
 
   const members: Member[] = useMemo(
     () =>
@@ -186,8 +190,15 @@ export function SceneStage({
         if ((e.target as HTMLElement).closest('button')) return
         const r = e.currentTarget.getBoundingClientRect()
         const hit = herd.hitTest(((e.clientX - r.left) / r.width) * W, ((e.clientY - r.top) / r.height) * H)
-        if (hit) poke(hit)
-        else setCard(null)
+        if (!hit) return setCard(null)
+        // A second tap on the same Pokémon soon after the first opens its sheet, like tapping its card.
+        const now = e.timeStamp
+        if (lastTap.current?.uid === hit.def.uid && now - lastTap.current.t < DOUBLE_TAP_MS) {
+          lastTap.current = null
+          return onOpen(hit.def.uid)
+        }
+        lastTap.current = { uid: hit.def.uid, t: now }
+        poke(hit)
       }}
     >
       <canvas
