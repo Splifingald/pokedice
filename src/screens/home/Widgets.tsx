@@ -27,20 +27,7 @@ import { AreaStrip } from '@/components/AreaStrip'
 import { dayCarePicture } from '@/fx/areaArt'
 import { travelTo } from '@/store/travel'
 import { EventWidgets } from '@/screens/events/EventWidgets'
-import { Widget } from './Widget'
-
-/** A thin progress meter: gold, green when full. */
-function Meter({ value, max }: { value: number; max: number }) {
-  const k = max > 0 ? Math.min(1, value / max) : 0
-  return (
-    <span className="relative block h-1.5 w-full bg-line shadow-ring-line-thin" aria-hidden>
-      <i
-        className={cx('absolute inset-y-0 left-0 block', k >= 1 ? 'bg-hp-green' : 'bg-gold')}
-        style={{ width: `${k * 100}%` }}
-      />
-    </span>
-  )
-}
+import { HeadTag, Meter, Widget, WidgetBanner, WIDGET_BANNER_H, WidgetRows as DayCareRows } from './Widget'
 
 /** The newest secret area (one tap to travel), or the next one to open with how close it is. */
 function SecretWidget({ onSecrets }: { onSecrets: () => void }) {
@@ -120,7 +107,7 @@ function SecretWidget({ onSecrets }: { onSecrets: () => void }) {
 /** The Day Care's banner: a strip of its yard's picture (its drawn scene until the picture loads). */
 const DAY_CARE_SCENE = { id: 'daycare', bannerUrl: 'daycare.png' }
 /** The strip, in scene pixels: rows 60 to 152, the cottage down to the fence the Pokémon stand in front of. */
-const BANNER = { h: 92, top: 60 }
+const BANNER = { h: WIDGET_BANNER_H, top: 60 }
 /** The yard's picture, its strip cut at BANNER.top (a strip centres on the horizon: stripTop in fx/areaArt). */
 function bannerPicture() {
   const p = dayCarePicture()
@@ -166,37 +153,8 @@ function DayCareBanner({ dim, children }: { dim?: boolean; children?: (height: n
   )
 }
 
-/** Every widget's banner: the Day Care's shape (288 × BANNER.h), whatever it shows, so the widgets line up. */
-function WidgetBanner({ children }: { children: ReactNode }) {
-  return (
-    <span
-      className="relative block w-full overflow-hidden leading-[0] shadow-halo"
-      style={{ aspectRatio: `288 / ${BANNER.h}` }}
-    >
-      {children}
-    </span>
-  )
-}
-
-/** Every state's header holds the same height, a tag or not: the widget never grows by the tag's few pixels. */
-const HeadTag = ({ children }: { children?: ReactNode }) => <span className="flex h-[19px] items-center">{children}</span>
-
 /** Something centred on the banner: the lock, the Egg. */
 const OnBanner = ({ children }: { children: ReactNode }) => <span className="grid h-full place-items-center">{children}</span>
-
-/**
- * Under the banner, the same three rows in every state, so the widget never changes size: a line (the tags, or the
- * state in words), the gauge (or the room it takes), and the small print. Each is one line; the whole is in the label.
- */
-function DayCareRows({ top, meter, bottom }: { top: ReactNode; meter?: ReactNode; bottom: ReactNode }) {
-  return (
-    <span className="grid w-full grid-rows-[22px_6px_15px] gap-[5px]">
-      <span className="flex min-w-0 items-center">{top}</span>
-      <span>{meter}</span>
-      <span className="truncate font-pixel-sm text-[15px] leading-none text-muted">{bottom}</span>
-    </span>
-  )
-}
 
 /**
  * The Day Care, one for every region: its banner, with your two standing on it and the levels they gained there under

@@ -1,6 +1,7 @@
 // Home's squares for the special events (docs/18): one per open event, in the admin's order, beside the Day Care and
-// Versus. Before any event opens, one square holds the place: "coming later", then from the 3rd Kanto badge a locked
-// teaser naming the area that opens the first event.
+// Versus, in the same frame as theirs (a banner of the Day Care's shape, then the same three rows), so every square on
+// Home is the same size. Before any event opens, one square holds the place: "coming later", then from the 3rd Kanto
+// badge a locked teaser naming the area that opens the first event.
 import { useNavigate } from 'react-router-dom'
 import { activeEvents, currentTier, eventsTeaser, rebattleEncounter, rebattleOnHome, regionOf, type EventId } from '@/engine'
 import { PixelIcon } from '@/components/icons'
@@ -8,9 +9,11 @@ import { TrainerSprite } from '@/components/TrainerArt'
 import { useT } from '@/i18n/react'
 import { countdown } from '@/lib/format'
 import { useGame } from '@/store/game'
-import { Widget } from '@/screens/home/Widget'
+import { HeadTag, Meter, Widget, WidgetBanner, WIDGET_BANNER_H, WidgetRows } from '@/screens/home/Widget'
 import { Medal, tierName } from './RebattlePage'
-import { EVENT_ICON, RewardIcon, rewardName, useWheelDay } from './shared'
+import { EVENT_ICON, EventPicture, RewardIcon, rewardName, useWheelDay } from './shared'
+
+const DAY = 24 * 60 * 60 * 1000
 
 /**
  * The Fortune Wheel's square: its prizes rolling by (pictures only: the amounts and odds are on its page), and whether
@@ -31,24 +34,36 @@ function WheelSquare() {
     sub,
   })
   const row = prizes.map((p, i) => (
-    <span key={i} className="grid h-full w-[64px] place-items-center">
-      <RewardIcon reward={p.reward} data={data} size={64} />
+    <span key={i} className="grid h-full w-[56px] place-items-center">
+      <RewardIcon reward={p.reward} data={data} size={48} />
     </span>
   ))
   return (
-    <Widget title={name} label={label} onClick={() => navigate('/events/wheel')} className={ready ? 'panel-gold' : undefined}>
-      <span className="ev-car" aria-hidden>
-        <span className="ev-car-track">
-          {row}
-          {row.map((el, i) => (
-            <span key={`b${i}`} className="contents">
-              {el}
-            </span>
-          ))}
+    <Widget
+      title={name}
+      tag={<HeadTag />}
+      label={label}
+      onClick={() => navigate('/events/wheel')}
+      className={ready ? 'panel-gold' : undefined}
+    >
+      <WidgetBanner>
+        <span className="ev-car" aria-hidden>
+          <span className="ev-car-track">
+            {row}
+            {row.map((el, i) => (
+              <span key={`b${i}`} className="contents">
+                {el}
+              </span>
+            ))}
+          </span>
         </span>
-      </span>
-      <span className="text-[20px] leading-none">{ready ? t('ui.events.wheel.free') : t('ui.events.wheel.spun')}</span>
-      <span className="font-pixel-sm text-[15px] leading-none text-muted">{sub}</span>
+      </WidgetBanner>
+      {/* The gauge fills toward the next spin; full, and green, while today's is waiting. */}
+      <WidgetRows
+        top={<span className="truncate text-[20px] leading-none">{ready ? t('ui.events.wheel.free') : t('ui.events.wheel.spun')}</span>}
+        meter={day.known && <Meter value={day.ready ? DAY : DAY - day.msLeft} max={DAY} />}
+        bottom={sub}
+      />
     </Widget>
   )
 }
@@ -70,20 +85,31 @@ function RebattleSquare() {
   return (
     <Widget
       title={name}
-      tag={<Medal tier={tier} size="sm" />}
+      tag={
+        <HeadTag>
+          <Medal tier={tier} size="sm" />
+        </HeadTag>
+      }
       label={t('ui.events.rebattle.label', { name, tier: tierLabel, foe, sub })}
       onClick={() => navigate('/events/rebattle')}
     >
-      <span className="flex min-h-[64px] items-center gap-2">
-        <TrainerSprite src={next?.kind === 'gym' ? next.spriteUrl : null} size={56} />
-        <span className="grid min-w-0 gap-0.5 leading-none">
-          <small className="font-pixel-sm text-[14px] text-muted">{t('ui.events.rebattle.next')}</small>
-          <b className="line-clamp-2 text-[18px] font-normal leading-[1.05]">{foe}</b>
+      {/* The League's hall, the next trainer standing in it. */}
+      <WidgetBanner>
+        <span className="absolute inset-0">
+          <EventPicture id="rebattle" data={data} className="h-full w-full">
+            <TrainerSprite
+              src={next?.kind === 'gym' ? next.spriteUrl : null}
+              size={64}
+              className="absolute bottom-[-6px] left-1/2 -translate-x-1/2"
+            />
+          </EventPicture>
         </span>
-      </span>
-      <span className="font-pixel-sm text-[15px] leading-none text-muted">
-        {tierLabel} · {sub}
-      </span>
+      </WidgetBanner>
+      <WidgetRows
+        top={<span className="truncate text-[20px] leading-none">{foe}</span>}
+        meter={next?.kind === 'gym' && <Meter value={next.index - 1} max={next.total} />}
+        bottom={`${tierLabel} · ${sub}`}
+      />
     </Widget>
   )
 }
@@ -94,10 +120,13 @@ function EventSquare({ id }: { id: EventId }) {
   const navigate = useNavigate()
   const name = t(`ui.events.${id}.name`)
   return (
-    <Widget title={name} label={t('ui.events.open', { name })} onClick={() => navigate(`/events/${id}`)}>
-      <span className="grid min-h-[64px] place-items-center">
-        <PixelIcon name={EVENT_ICON[id]} size={40} />
-      </span>
+    <Widget title={name} tag={<HeadTag />} label={t('ui.events.open', { name })} onClick={() => navigate(`/events/${id}`)}>
+      <WidgetBanner>
+        <span className="grid h-full place-items-center bg-well">
+          <PixelIcon name={EVENT_ICON[id]} size={40} />
+        </span>
+      </WidgetBanner>
+      <WidgetRows top={null} bottom={t('ui.events.building', { name })} />
     </Widget>
   )
 }
@@ -110,14 +139,19 @@ function EventsTeaser({ areaName }: { areaName: string | null }) {
     <div
       role="note"
       aria-label={areaName ? t('ui.events.teaserLabel', { area: areaName }) : t('ui.home.eventsLabel')}
-      className="flex min-h-[120px] flex-col items-center justify-center gap-1.5 bg-panel/50 p-2.5 text-center text-faint outline-dashed outline-2 -outline-offset-2 outline-shadow"
+      className="flex min-w-0 flex-col gap-[5px] bg-panel/50 px-2.5 pb-2.5 pt-2 text-faint outline-dashed outline-2 -outline-offset-2 outline-shadow"
     >
-      <span className="flex items-center gap-1.5 font-pixel-sm text-[15px] leading-none text-muted">
-        {t('ui.home.events')}
-        {areaName && <PixelIcon name="lock" size={16} />}
+      {/* The same rows as a widget's, so the placeholder is the size of the squares beside it. */}
+      <span className="flex w-full items-center gap-1.5 text-[19px] leading-none text-muted">
+        <span className="min-w-0 flex-1 truncate">{t('ui.home.events')}</span>
+        <HeadTag>{areaName && <PixelIcon name="lock" size={16} />}</HeadTag>
       </span>
-      <PixelIcon name="star" size={24} style={{ filter: 'grayscale(1) opacity(0.4)' }} />
-      <span className="font-pixel-sm text-[15px] leading-none text-muted">{sub}</span>
+      <span className="block w-full" style={{ aspectRatio: `288 / ${WIDGET_BANNER_H}` }}>
+        <span className="grid h-full place-items-center">
+          <PixelIcon name="star" size={24} style={{ filter: 'grayscale(1) opacity(0.4)' }} />
+        </span>
+      </span>
+      <WidgetRows top={null} bottom={sub} />
     </div>
   )
 }

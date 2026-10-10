@@ -166,12 +166,12 @@
 }
 
 /* ---------------------------------------------------------------- Home's prize carousel */
+/* It fills the widget's banner (the Day Care's shape), so every Home square is the same size. */
 .ev-car {
-  position: relative;
+  position: absolute;
+  inset: 0;
   isolation: isolate;
   display: block;
-  height: 64px;
-  margin: 0 -4px;
   overflow: hidden;
   background: rgb(var(--c-well));
   box-shadow:
