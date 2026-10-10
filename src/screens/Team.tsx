@@ -7,7 +7,7 @@ import { PixelIcon } from '@/components/icons'
 import { ItemSprite } from '@/components/ItemSprite'
 import { MonTile, TILE_GRID } from '@/components/MonTile'
 import { PageHead } from '@/components/PageHead'
-import { FilterChips, SearchField, Seg } from '@/components/Segmented'
+import { SearchField, Seg } from '@/components/Segmented'
 import { SheetModal, type SheetView } from '@/components/SheetModal'
 import { countdown, typeName } from '@/lib/format'
 import { pushToast, useGame } from '@/store/game'
@@ -101,27 +101,31 @@ export function TeamScreen() {
               />
             </div>
             {boxTypes.length > 1 && (
-              <FilterChips
-                label={t('ui.team.filterType')}
-                value={type}
-                onChange={setType}
-                options={[
-                  { id: 'all', label: t('ui.team.allTypes') },
-                  ...boxTypes.map((ty) => ({
-                    id: ty,
-                    label: (
-                      <span className="inline-flex items-center gap-1.5">
-                        <i
-                          className="h-2.5 w-2.5 shadow-ring-thin"
-                          style={{ background: typeColor(ty) }}
-                          aria-hidden
-                        />
-                        {typeName(ty)}
-                      </span>
-                    ),
-                  })),
-                ]}
-              />
+              // One dropdown, not a row of eighteen chips: the type's colour sits beside it once one is picked.
+              <label className="flex items-center gap-2">
+                <span className="sr-only">{t('ui.team.filterType')}</span>
+                <i
+                  className="h-4 w-4 shrink-0 shadow-ring-thin"
+                  style={{ background: type === 'all' ? 'transparent' : typeColor(type) }}
+                  aria-hidden
+                />
+                <select
+                  value={type}
+                  onChange={(e) => setType(e.target.value as PokeType | 'all')}
+                  className="h-11 min-w-0 flex-1 appearance-none rounded-none bg-paper bg-[length:12px] bg-[right_12px_center] bg-no-repeat px-3 pr-9 font-pixel text-[20px] text-ink shadow-field sm:max-w-[260px] md:h-10"
+                  style={{
+                    backgroundImage:
+                      "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 6 4' shape-rendering='crispEdges'%3E%3Cpath d='M0 0h6v1H5v1H4v1H3v1H3V3H2V2H1V1H0z' fill='%2324304f'/%3E%3C/svg%3E\")",
+                  }}
+                >
+                  <option value="all">{t('ui.team.allTypes')}</option>
+                  {boxTypes.map((ty) => (
+                    <option key={ty} value={ty}>
+                      {typeName(ty)}
+                    </option>
+                  ))}
+                </select>
+              </label>
             )}
           </>
         )}
