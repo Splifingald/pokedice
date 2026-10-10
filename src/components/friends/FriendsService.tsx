@@ -7,7 +7,17 @@ import { useEffect, useRef, useState } from 'react'
 import { dayCareTutorialDue, leaderboardTutorialDue } from '@/engine'
 import { useT } from '@/i18n/react'
 import { clearInvite, readInvite } from '@/lib/friendInvite'
-import { addFriend, friendError, loadFriendStatus, lookupCode, takeUntold, useFriends, type FriendNotice } from '@/lib/friends'
+import {
+  addFriend,
+  clearFriends,
+  friendError,
+  loadFriendStatus,
+  lookupCode,
+  takeUntold,
+  useFriends,
+  type FriendNotice,
+} from '@/lib/friends'
+import { useFullscreen } from '@/lib/fullscreen'
 import { isSupabaseConfigured } from '@/lib/supabase'
 import { pushToast, useGame } from '@/store/game'
 import { useConnect } from '../AccountButton'
@@ -29,6 +39,7 @@ export function FriendsService() {
 
   useEffect(() => {
     if (isSupabaseConfigured && status === 'signed_in') void loadFriendStatus(true)
+    else if (status === 'signed_out' || status === 'unavailable') clearFriends()
   }, [status, userId])
 
   // New friends, said once on this device, between fights.
@@ -48,9 +59,12 @@ function InviteHandler() {
   const { t } = useT()
   const addText = useAddText()
   const status = useGame((s) => s.auth.status)
-  const ready = useGame(
+  // Between fights, after Prof. Oak's tutorials, and never over a full-screen moment (a battle, a hatching, the lab).
+  const full = useFullscreen()
+  const calm = useGame(
     (s) => s.run.phase === 'idle' && !!s.save && !dayCareTutorialDue(s.save, s.data) && !leaderboardTutorialDue(s.save, s.data),
   )
+  const ready = calm && !full
   const [code, setCode] = useState(() => readInvite())
   const [who, setWho] = useState<Who | null>(null)
   const [added, setAdded] = useState<FriendNotice | null>(null)

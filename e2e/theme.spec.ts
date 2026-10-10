@@ -63,6 +63,7 @@ for (const route of [
   '/upgrades',
   '/pokedex',
   '/leaderboard',
+  '/friends',
   '/settings',
   '/help',
 ]) {

@@ -74,7 +74,7 @@ function nonJerseyText(page: Page) {
   )
 }
 
-const ROUTES = ['/home', '/team', '/shop', '/upgrades', '/pokedex', '/leaderboard', '/settings']
+const ROUTES = ['/home', '/team', '/shop', '/upgrades', '/pokedex', '/leaderboard', '/friends', '/settings']
 const SIZES = [
   { width: 360, height: 640, phone: true },
   { width: 375, height: 812, phone: true },

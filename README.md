@@ -15,7 +15,8 @@ The design lives in [`docs/`](docs): [game spec](docs/01-GAME-SPEC.md) · [data 
 [build plan](docs/03-BUILD-PLAN.md) · [Sinnoh plan](docs/07-SINNOH-PLAN.md) · [Unova plan](docs/08-UNOVA-PLAN.md) · [Gen 6–9 plan](docs/11-GEN6-9-REGIONS-PLAN.md) ·
 [Gen 6–9 sprite sources](docs/10-GEN6-9-SPRITES.md) · [forms & Mega Evolution](docs/12-FORMS-AND-MEGA.md) ·
 [Showdown sprites](docs/13-SHOWDOWN-SPRITES.md) · [the Daybreak port](docs/14-DAYBREAK-PORT.md) ·
-[**UI guidelines**](docs/15-UI-GUIDELINES.md) (the rules every screen follows).
+[**UI guidelines**](docs/15-UI-GUIDELINES.md) (the rules every screen follows) · [friends](docs/16-FRIENDS-PLAN.md) ·
+[Discord sign-in setup](docs/17-DISCORD-SIGN-IN.md).
 
 ## Quick start
 
@@ -204,5 +205,19 @@ supabase/    migrations/0001_init.sql, seed.sql (generated)
   with their ace once the player has it too; auto battles use none of it. See
   [docs/12](docs/12-FORMS-AND-MEGA.md). Needs `supabase/migrations/0030_pokemon_forms.sql` (or `seed.sql`, which
   carries it) and the rows of `supabase/patches/pokemon-forms-and-mega.sql`.
+- **Friends** — trainer menu → Friends (`/friends`): a friend ID per player (`K7QM-4XD9`) with COPY and SHARE INVITE
+  LINK (`/f/<code>`: opening it makes the two players friends at once, after a sign-in if needed), ADD BY FRIEND ID,
+  and each friend's trainer card (look, team, badge cases, Versus team) with REMOVE FRIEND, which ends it for both. A
+  new friend is announced when the game loads or the player comes back to the tab (no Realtime), with a gold dot on
+  the avatar until the Friends page is opened. Friends get a blue row and a "Friend" tag on every board, and an
+  ALL / FRIENDS switch keeps the whole board's ranks; in Versus their teams come first. At most `maxFriends` each
+  (`game_config`, Admin → Config, default 100). See [docs/16](docs/16-FRIENDS-PLAN.md). Needs
+  `supabase/migrations/0033_friends.sql` run once on the live database (re-running `supabase/seed.sql` does it too):
+  it also moves the leaderboard onto small *player cards*, written once per cloud push, and retires the leaderboard
+  cache, its rebuild and its pg_cron job (0026, 0031, 0032), which were most of the database's work.
+- **Discord sign-in** — players can sign in with Discord as well as Google: same save, leaderboard, Versus and friends,
+  and Settings → Connected accounts links both to one account. CONNECT offers the choice only once Discord is switched
+  on in Supabase (the game reads Auth's public settings, kept a day); until then it goes straight to Google as before.
+  Setup in [docs/17](docs/17-DISCORD-SIGN-IN.md) and `/setup` step 7; no environment variable.
 - `allowVoluntarySwitch`, `enemyUpgradeLevel`, `goldMultiplier`, `forcedCenterWhenHurt` and `scaleLevelSpread` are
   `game_config` keys (the spec was silent on these).

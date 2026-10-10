@@ -6,9 +6,8 @@
 > **Time:** about 15 minutes. **No new environment variable and no Netlify change:** the Discord secret lives in
 > Supabase only. The game itself still only needs `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`.
 >
-> **When:** parts 1–3 can be done now. Part 4 checks the setup without the game. The game shows its Discord button once
-> phase 0 of [docs/16](16-FRIENDS-PLAN.md#10-build-order) is built (part 5). Until then, turning Discord on in Supabase
-> changes nothing for players.
+> **When:** the game is ready for it (built 10 Oct 2026, docs/16 phase 0). It offers Discord as soon as parts 1–3 are
+> done, and goes on offering Google alone until then. Part 4 checks the setup on its own; part 5 in the game.
 
 ## What you need
 
@@ -92,7 +91,7 @@ The game signs in with PKCE, so this test goes around the game and only checks D
      → **Delete user**). That is safe for a user with no save; deleting a user also deletes their save.
 5. An error page instead? See [Troubleshooting](#troubleshooting).
 
-## 5. Once the game has the Discord button (docs/16, phase 0)
+## 5. In the game
 
 - Title screen or trainer menu → **CONNECT** → **Continue with Discord** → **Authorize** → you are back in the game,
   signed in, and the save syncs as it does with Google.

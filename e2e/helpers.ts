@@ -34,18 +34,35 @@ export function withBadge(save: SaveData): SaveData {
 export const SUPABASE = 'http://127.0.0.1:54399'
 export const ADMIN = 'admin@example.com'
 
+export interface SupabaseMock {
+  /** What an RPC returns, by function name (friend_list, friend_add…); a function returns its value or the result. */
+  rpc?: Record<string, unknown | ((body: Record<string, unknown>) => unknown)>
+  /** Auth's public settings (/auth/v1/settings): which sign-in providers are on. Google only by default. */
+  authSettings?: unknown
+}
+
 /** Intercept every call to the fake Supabase. Returns the list of "METHOD path" calls seen. */
-export async function mockSupabase(page: Page): Promise<string[]> {
+export async function mockSupabase(page: Page, mock: SupabaseMock = {}): Promise<string[]> {
   const calls: string[] = []
   await page.route(`${SUPABASE}/**`, async (route) => {
     const req = route.request()
     const url = new URL(req.url())
     calls.push(`${req.method()} ${url.pathname}${url.search}`)
     if (url.pathname.startsWith('/auth/v1/authorize')) {
-      return route.fulfill({ status: 200, contentType: 'text/html', body: '<h1>mock google consent</h1>' })
+      return route.fulfill({ status: 200, contentType: 'text/html', body: '<h1>mock consent</h1>' })
     }
     if (url.pathname === '/auth/v1/user') {
       return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(fakeUser()) })
+    }
+    if (url.pathname === '/auth/v1/settings') {
+      const body = mock.authSettings ?? { external: { google: true, discord: false } }
+      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(body) })
+    }
+    const fn = url.pathname.startsWith('/rest/v1/rpc/') ? url.pathname.slice('/rest/v1/rpc/'.length) : null
+    if (fn && mock.rpc && fn in mock.rpc) {
+      const answer = mock.rpc[fn]
+      const value = typeof answer === 'function' ? answer(JSON.parse(req.postData() || '{}')) : answer
+      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(value ?? null) })
     }
     if (url.pathname === '/rest/v1/rpc/leaderboard') {
       return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(LEADERBOARD) })

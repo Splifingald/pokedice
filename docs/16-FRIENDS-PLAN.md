@@ -1,9 +1,34 @@
 # Pokédice — Friends Plan, with Discord sign-in
 
-> **Status: plan, nothing built yet.** Once it is built, where this document and the code disagree, the code is right.
-> Decisions settled on 10 Oct 2026 are in §12. Server load, measured on the live database the same day, is in §8:
-> with the changes there, friends leave the database **lighter than today**. One fix comes first: migration 0029 was
-> never applied to the live database (§8.5).
+> **Status: built** (10 Oct 2026), on top of the *Johto Daybreak* look ([docs/15](15-UI-GUIDELINES.md)), which every
+> screen here follows. Where this document and the code disagree, the code is right. What changed in the building is
+> just below; decisions are in §12; server load, measured on the live database, is in §8. One fix comes first, and is
+> not code: migration 0029 was never applied to the live database (§8.5).
+
+### What changed in the building
+
+- **Daybreak, not the old look.** The mockups below (§4) are screenshots of the screens as built. A friend's card is a
+  `Sheet` (Daybreak opens details in a sheet), drawn with the trainer card's own pieces — `CardFrame`, `Stat`,
+  `CardTeam`, `BadgeCases`, now exported from `TrainerCard.tsx` — so it looks exactly like yours. Adding a friend, the
+  invite pop-ups, removing and resetting are `Modal`s.
+- **Friends are sky blue.** Daybreak's blue tint (`sky`, the trainer card's colour) with a blue edge, and a **Friend**
+  tag beside the name, as the gold **you** tag sits beside yours: a word, never colour alone. No separate icon on the
+  rows. New-friend dots are **gold** (Daybreak: gold for what's new), not red, and the number is in the accessible name.
+- **Your friend ID is on your trainer card**, in place of the ID number, once the game knows it.
+- **The trainer menu row navigates** to `/friends`, as the Versus row does; the page has Daybreak's back chevron.
+- **No `⋯` menu** (Daybreak has none): *Reset my friend ID* is a quiet button at the bottom of the page, with a
+  confirmation.
+- **`leaderboard()` also returns `friend_id`**, for the caller's friends only, so a friend's row can open their card
+  (a button laid over the row; the row's content stays a plain list item).
+- **The leaderboard left 0016 for 0033**: `seed.sql` now inlines both, so re-running it never brings the cache back.
+- **`versus_board()` reads names from the cards** too (it read every team owner's whole save: 443 ms a call).
+- **A new friend is announced once per device**: the toast remembers who it has announced in localStorage; the dots
+  stay until the Friends page is opened (`friend_seen()`).
+- **Discord's mark** is the game's own pixel icon (as on *Join the Discord*), on a white button like Google's: no
+  blurple button, which would break "one red action per screen".
+- **Tests run the SQL**: `tests/friends-sql.test.ts` runs the real migrations in PGlite (in-process Postgres, a new
+  dev dependency) and checks the card-based board returns exactly the old rebuild's rows.
+- Docs moved to **16** and **17**: Daybreak took 14 and 15.
 
 A **Friends page**, opened from the trainer menu (the side drawer). Players add each other with a **friend ID** or an
 **invite link**, are told when someone becomes their friend, can open a friend's profile, and see their friends
@@ -19,10 +44,10 @@ in with **Discord** (§2; setup guide: [docs/17](17-DISCORD-SIGN-IN.md)).
 | The friend list is its own page, reached from the side menu | `/friends`, a game page like the leaderboard and Versus. The trainer menu gets a **Friends** row under Profile that goes there, as its Versus row goes to `/versus`. Mockups A, B |
 | Players share a friend invite link | `https://<site>/f/K7QM4XD9`: the native share sheet on phones, copied to the clipboard on desktop (the `ShareTutorial` pattern). **Opening the link makes the two players friends at once**, after a sign-in if needed. §3.3, mockup D |
 | Players share their friend ID and add by friend ID | Every signed-in player has one 8-character ID, `K7QM-4XD9`, shown at the top of the page with COPY. ADD BY FRIEND ID takes one. The link carries the same code. §3.1, mockups B, C |
-| A notification when they become friends with someone | A toast when they next open the game or come back to its tab (no Realtime needed). Until they look: a dot on the avatar button and on the Friends row, and a NEW tag on the friend on the page. §3.4, mockup H |
+| A notification when they become friends with someone | A toast when they next open the game or come back to its tab (no Realtime needed). Until they look: a dot on the avatar button and on the Friends row, and a NEW tag on the friend on the page. §3.4, screen A |
 | The friend's profile with their info | Tapping a friend opens their trainer card: look, name, last played, where they are, their team, a badge case per region with Pokédex / top level / shinies, and their Versus team. Friends only. Mockup E |
 | Removing a friend | From their profile. It removes the friendship for both players, without telling the other. §3.5 |
-| Friends highlighted in social features (every leaderboard) | The four region boards, their Hall of Fame, the two Versus boards and the Versus opponents list. A friend's row gets its own tint, a friends icon and "Friend" for screen readers. A **Friends** filter shows only you and your friends, still with your global ranks. Mockups F, G |
+| Friends highlighted in social features (every leaderboard) | The four region boards, their Hall of Fame, the two Versus boards and the Versus opponents list. A friend's row gets its own tint, a friends icon and "Friend" for screen readers. A **Friends** filter shows only you and your friends, still with your global ranks. Screen F |
 | Not relying on Google too much | Sign in with Google **or Discord**. Either opens the cloud save, the leaderboard, Versus and friends; one account can hold both. §2, mockups I, J |
 
 ---
@@ -254,350 +279,22 @@ next refresh). Their rows lose the friend treatment on the boards. Becoming frie
 
 ---
 
-## 4. Mockups
+## 4. Screens (Daybreak, as built)
 
-Phone width (360 px) unless noted. Legend:
+Screenshots of the real screens at 390×844, with the e2e mocks (`e2e/friends.spec.ts` drives the same screens). They
+replace the ASCII mockups of the first drafts, which predated the Daybreak look.
 
-```
-▓…▓  gold / selected (primary button, open tab, your own row)
-░    friend tint (pale blue, with a blue stripe on the left edge)
-▒    Discord blurple (#5865F2), white text
-◆    the new `friends` pixel icon (two heads)
-●    notification dot (red)
-▣    an existing pixel icon          ◘  a Pokémon menu icon (MiniSprite)
-▞▚   a trainer sprite (their look)   ★  shiny        ♛  crown
-G D  the Google and Discord marks
-```
-
-### A. Trainer menu: the Friends row
-
-```
-  top bar                      ┌──────────────────────────────────┐
-  ┌─────────────────────┐      │ ASH                            ✕ │
-  │ … ▣trophy  (A)●     │      ├──────────────────────────────────┤
-  └─────────────────────┘      │ ┌──────────────────────────────┐ │
-     ● = unseen friends        │ │ ▣  Profile                   │ │
-                               │ └──────────────────────────────┘ │
-                               │ ┌──────────────────────────────┐ │
-     new row, goes to ───────▶ │ │ ◆  Friends            ●2  12 │ │
-     /friends                  │ └──────────────────────────────┘ │
-                               │ ┌──────────────────────────────┐ │
-                               │ │ ▣  Versus                    │ │
-                               │ └──────────────────────────────┘ │
-                               │ ┌──────────────────────────────┐ │
-                               │ │ ▣  Settings                  │ │
-                               │ └──────────────────────────────┘ │
-                               │   … How to play, Types, Admin,   │
-                               │     SYNC ONLINE, Connect …       │
-                               ├──────────────────────────────────┤
-                               │ ▣  Join the Discord              │
-                               │ ▣  Contact the developer         │
-                               └──────────────────────────────────┘
-```
-
-`●2` = two friends not seen yet, `12` = friends in all. The row is hidden on a deployment without Supabase, like
-Contact the developer.
-
-### B. The Friends page (phone)
-
-```
-┌────────────────────────────────────┐
-│ ▣ POKÉDICE   ▣ 12  ₽ 3,400  ▣  (A) │   top bar, as on every page
-├────────────────────────────────────┤
-│ ◆ FRIENDS                          │
-│                                    │
-│ ┌─ YOUR FRIEND ID ───────────────┐ │
-│ │       K7QM-4XD9     [ COPY ]   │ │
-│ │ [     SHARE INVITE LINK      ] │ │
-│ └────────────────────────────────┘ │
-│ [ +  ADD BY FRIEND ID            ] │
-│                                    │
-│ 12 FRIENDS                      ⋯  │   ← ⋯ : Reset my friend ID
-│ ┌────────────────────────────────┐ │
-│ │ ▞▚  MISTY               ▓NEW▓  │ │
-│ │ ▚▞  Johto · Lv.54 · now        │ │
-│ └────────────────────────────────┘ │
-│ ┌────────────────────────────────┐ │
-│ │ ▞▚  BROCK                      │ │
-│ │ ▚▞  Kanto · Lv.38 · 2 h ago    │ │
-│ └────────────────────────────────┘ │
-│ ┌────────────────────────────────┐ │
-│ │ ▞▚  GARY                       │ │   ← muted: away more than 72 h
-│ │ ▚▞  Hoenn · Lv.70 · 9 days     │ │     (and so off the boards)
-│ └────────────────────────────────┘ │
-│                 …                  │
-├────────────────────────────────────┤
-│  ▣     ▣     ▣     ▣     ▣         │   bottom bar, as on every page
-└────────────────────────────────────┘
-```
-
-New friends first, then by last played, newest first. Each row is a button that opens the profile (E). No friends yet:
-"No friends yet. Share your invite link, or add a friend ID." under the ADD button.
-
-**B, desktop:** the same page in the main column, next to the side bar. The ID box and ADD sit side by side, and the
-list goes to two columns:
-
-```
-┌──────────────────────────────────────────────────────────────────────┐
-│ ◆ FRIENDS                                                            │
-│ ┌─ YOUR FRIEND ID ─────────────────────────┐ ┌────────────────────┐  │
-│ │  K7QM-4XD9   [ COPY ]  [ SHARE INVITE ]  │ │ + ADD BY FRIEND ID │  │
-│ └──────────────────────────────────────────┘ └────────────────────┘  │
-│ 12 FRIENDS                                                        ⋯  │
-│ ┌───────────────────────────────┐ ┌───────────────────────────────┐  │
-│ │ ▞▚  MISTY               ▓NEW▓ │ │ ▞▚  BROCK                     │  │
-│ │ ▚▞  Johto · Lv.54 · now       │ │ ▚▞  Kanto · Lv.38 · 2 h ago   │  │
-│ └───────────────────────────────┘ └───────────────────────────────┘  │
-│ ┌───────────────────────────────┐ ┌───────────────────────────────┐  │
-│ │ ▞▚  ERIKA                     │ │ ▞▚  GARY                      │  │
-│ │ ▚▞  Kanto · Lv.61 · today     │ │ ▚▞  Hoenn · Lv.70 · 9 days    │  │
-│ └───────────────────────────────┘ └───────────────────────────────┘  │
-└──────────────────────────────────────────────────────────────────────┘
-```
-
-**B′, signed out:**
-
-```
-┌────────────────────────────────────┐
-│ ◆ FRIENDS                          │
-│                                    │
-│   Friends are kept with your       │
-│   account. Connect with Google     │
-│   or Discord to add friends.       │
-│                                    │
-│   [▓        CONNECT        ▓]      │   ← opens the chooser (I)
-│                                    │
-└────────────────────────────────────┘
-```
-
-### C. Add by friend ID (a Modal over the page)
-
-```
-┌────────────────────────────────────┐
-│ ADD A FRIEND                     ✕ │
-├────────────────────────────────────┤
-│ Friend ID                          │
-│ ┌────────────────────────────────┐ │
-│ │ K7QM-4XD9                      │ │
-│ └────────────────────────────────┘ │
-│ ┌────────────────────────────────┐ │
-│ │ ▞▚  MISTY                      │ │   ← friend_lookup preview
-│ │ ▚▞  Johto · Lv.54              │ │
-│ └────────────────────────────────┘ │
-│                                    │
-│           [ CANCEL ]  [▓  ADD  ▓]  │
-└────────────────────────────────────┘
-
-  unknown code:  │ No trainer has this friend ID. │   (in red, under the field; ADD stays off)
-```
-
-### D. After opening an invite link
-
-Signed in, the friendship is already made when this shows:
-
-```
-┌────────────────────────────────────┐
-│ NEW FRIEND!                      ✕ │
-├────────────────────────────────────┤
-│                                    │
-│        ▞▀▀▀▚                       │
-│        ▌   ▐    MISTY              │
-│        ▚▄▄▄▞    Johto · Lv.54      │
-│                                    │
-│   You and MISTY are now friends!   │
-│                                    │
-│   [ SEE PROFILE ]     [▓  OK  ▓]   │
-└────────────────────────────────────┘
-```
-
-Signed out, before anything is made:
-
-```
-┌────────────────────────────────────┐
-│ FRIEND INVITE                    ✕ │
-├────────────────────────────────────┤
-│        ▞▀▀▀▚                       │
-│        ▌   ▐    MISTY              │
-│        ▚▄▄▄▞    Johto · Lv.54      │
-│                                    │
-│   MISTY invited you to be friends. │
-│   Connect to accept.               │
-│                                    │
-│   [ NOT NOW ]    [▓  CONNECT  ▓]   │   ← the chooser (I); back from it,
-└────────────────────────────────────┘     the add happens by itself
-
-  title screen, no save yet:
-  ┌────────────────────────────────────┐
-  │             POKÉDICE               │
-  │ ┌────────────────────────────────┐ │
-  │ │ ▞▚ MISTY invited you to        │ │   ← ribbon under the logo
-  │ │ ▚▞ Pokédice!                   │ │
-  │ └────────────────────────────────┘ │
-  │         [▓  NEW GAME  ▓]           │
-  └────────────────────────────────────┘
-```
-
-### E. Friend profile (a Modal over the Friends page or a board)
-
-```
-┌──────────────────────────────────────────┐
-│ MISTY                                  ✕ │
-├──────────────────────────────────────────┤
-│ ▞▀▀▀▚  MISTY                             │
-│ ▌   ▐  Friends since 3 Oct 2026          │
-│ ▚▄▄▄▞  Played 2 h ago                    │
-│                                          │
-│ NOW IN   Johto · Ecruteak City           │
-│                                          │
-│ TEAM                                     │
-│  ◘54   ◘52   ◘51★  ◘50   ◘49   ◘47       │
-│                                          │
-│ BADGE CASE                               │
-│ ┌──────────────────────────────────────┐ │
-│ │ Kanto  ♛                   8 badges  │ │
-│ │ ■ ■ ■ ■ ■ ■ ■ ■                      │ │
-│ │ Dex 151/151 · Lv.100 · 4★            │ │   ← new stat line
-│ └──────────────────────────────────────┘ │
-│ ┌──────────────────────────────────────┐ │
-│ │ Johto                      5/8       │ │
-│ │ ■ ■ ■ ■ ■ □ □ □                      │ │
-│ │ Dex 143/251 · Lv.54 · 1★             │ │
-│ └──────────────────────────────────────┘ │
-│                                          │
-│ VERSUS TEAM         12 wins · 7 held     │
-│  ◘50   ◘50   ◘50                         │
-│                                          │
-│ [ REMOVE FRIEND ]                        │
-└──────────────────────────────────────────┘
-```
-
-The badge case is `PlayerProfileModal`'s `RegionRow`, moved to its own file and reused as it is, plus one stat line
-per region. VERSUS TEAM shows only when they have set a team. REMOVE FRIEND is a plain button, last, and asks first.
-
-### F. Leaderboard with friends (desktop width)
-
-```
-┌──────────────────────────────────────────────────────────────┐
-│ ▣ LEADERBOARD                                                │
-│ [▓ ▣ Max level ▓] [▣] [▣] [▣]                                │
-│ [▓ ALL ▓|  ◆ FRIENDS 3 ]                ← new filter         │
-│ [ ♛ HALL OF FAME   3 trainers ]                              │
-│                                                              │
-│ ┌──────────────────────────────────────────────────────────┐ │
-│ │ ▓1▓  ▞▚ BLUE                 ◘ ◘ ◘ ◘ ◘ ◘                 │ │
-│ │      ▚▞ Lv.65                                            │ │
-│ └──────────────────────────────────────────────────────────┘ │
-│ ┌──────────────────────────────────────────────────────────┐ │
-│ │█░2░░ ▞▚ MISTY ◆ ░░░░░░░░░░░░ ◘ ◘ ◘ ◘ ◘ ◘ ░░░░░░░░░░░░░░░░│ │ ← friend: blue tint,
-│ │█░░░░ ▚▞ Lv.54 ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░│ │   left stripe, ◆ icon;
-│ └──────────────────────────────────────────────────────────┘ │   tap → profile (E)
-│ ┌──────────────────────────────────────────────────────────┐ │
-│ │ ▓3▓  ▞▚ ERIKA                ◘ ◘ ◘ ◘ ◘ ◘                 │ │
-│ │      ▚▞ Lv.53                                            │ │
-│ └──────────────────────────────────────────────────────────┘ │
-│ ┌──────────────────────────────────────────────────────────┐ │
-│ │▓ 4   ▞▚ ASH (you)            ◘ ◘ ◘ ◘ ◘ ◘                ▓│ │ ← you: gold, unchanged
-│ │▓     ▚▞ Lv.52                                           ▓│ │
-│ └──────────────────────────────────────────────────────────┘ │
-└──────────────────────────────────────────────────────────────┘
-
-  FRIENDS selected — only you and your friends, still with the global ranks:
-
-  │ ░2  MISTY ◆   Lv.54 │      │ ▓4  ASH (you)  Lv.52 │      │ ░17  BROCK ◆   Lv.38 │
-```
-
-The friend treatment, so it never relies on colour alone:
-
-- a pale blue fill (`friend` token, e.g. `#dcebf7`) where you are pale gold (`#fbeeb0`) and everyone else `bg-panel`;
-- a 6 px stripe on the left edge in the avatar blue (`#547acc`), as an inset shadow inside the 3 px ink border;
-- the `friends` icon after the name, with `<span class="sr-only">Friend</span>`;
-- the score line in ink, not muted (as for your own row);
-- the row is a button that opens the friend's profile (E). Other players' rows stay as they are (§1.5).
-
-The filter: an ALL / FRIENDS switch, shown only when you have friends. FRIENDS keeps the ranks of the full board, so it
-answers "where are my friends on the real board", and keeps snapping to your row. Empty: "None of your friends is on
-this board yet." The choice is remembered in localStorage (`pokedice.board.friendsOnly`, read in a try/catch).
-
-### G. Hall of Fame and Versus
-
-```
-  Hall of Fame grid                         Versus — opponents list
-┌──────────┐┌──────────┐┌──────────┐      ┌──────────────────────────────────┐
-│   ▞▚     ││░░░ ▞▚ ░░░││▓   ▞▚   ▓│      │█░ ▞▚ MISTY ◆  ◘50 ◘50 ◘50 [FIGHT]│ ← friends' unbeaten
-│  RED     ││░ MISTY ◆░││▓ ASH you▓│      ├──────────────────────────────────┤   teams come first
-│ ♛ Lv.100 ││░♛ Lv.100░││▓♛ Lv.100▓│      │   ▞▚ ERIKA    ◘50 ◘50 ◘50 [FIGHT]│
-│ ◘◘◘◘◘◘   ││░◘◘◘◘◘◘░░░││▓◘◘◘◘◘◘  ▓│      └──────────────────────────────────┘
-└──────────┘└──────────┘└──────────┘
-
-  Versus — attack / defense board
-┌──────────────────────────────────────────────┐
-│ ▓1▓  ▞▚ BLUE           24 wins               │
-├──────────────────────────────────────────────┤
-│█░2░░ ▞▚ MISTY ◆ ░░░░░░ 12 wins ░░░░░░░░░░░░░░│
-├──────────────────────────────────────────────┤
-│ ▓3▓  ▞▚ ERIKA           9 wins               │
-└──────────────────────────────────────────────┘
-```
-
-The attack and defense boards get the same tint, icon and filter as the region boards. In the opponents list,
-friends' teams not yet beaten come first, then the rest in today's order. Friend rows open the profile there too.
-
-### H. Notifications
-
-```
-  phone top bar, with a new friend:
-  ┌──────────────────────────────────────┐
-  │ POKÉDICE   ▣ 12   ₽ 3,400   ▣  (A)●  │   ← red dot on the avatar button
-  └──────────────────────────────────────┘
-          ┌──────────────────────────────┐
-          │ MISTY is now your friend!    │      ← toast, good tone (green); on phones
-          └──────────────────────────────┘        just under the top bar, as today
-
-  several while away:  │ 3 new friends! │
-```
-
-The avatar button's label becomes "Trainer menu, 2 new friends" while the dot shows.
-
-### I. The CONNECT chooser
-
-```
-┌────────────────────────────────────┐
-│ CONNECT                          ✕ │
-├────────────────────────────────────┤
-│ Back up your save and play with    │
-│ others: leaderboard, Versus and    │
-│ friends.                           │
-│                                    │
-│ [ G   Continue with Google       ] │
-│ [▒D▒▒ Continue with Discord ▒▒▒▒▒] │
-│                                    │
-│ Your save stays on this device     │
-│ too. Other players only see your   │
-│ trainer name and look.             │
-└────────────────────────────────────┘
-```
-
-Discord's button is only there while Supabase reports Discord on. With Google alone, CONNECT skips this and signs in
-with Google, as today (§2.3).
-
-### J. Settings → Connected accounts
-
-```
-┌─ CLOUD SAVE ─────────────────────────────┐
-│ Connected accounts                       │
-│ ┌──────────────────────────────────────┐ │
-│ │ G  Google      ash@gmail.com         │ │
-│ │                          [ UNLINK ]  │ │   ← UNLINK only while both are linked
-│ ├──────────────────────────────────────┤ │
-│ │ D  Discord     not linked            │ │
-│ │                          [  LINK  ]  │ │
-│ └──────────────────────────────────────┘ │
-│ Last synced 2 min ago   [ SYNC ONLINE ]  │
-│ [ DISCONNECT ]                           │
-└──────────────────────────────────────────┘
-```
-
-Only the player sees their own e-mail and Discord name here; nothing of it reaches other players.
+| | |
+| --- | --- |
+| ![Trainer menu with the Friends row](16-friends/trainer-menu.png) | **A. The trainer menu.** Under the trainer card (your friend ID in place of the ID number), a **Friends** row with Daybreak's icon tile and a one-line description. A gold dot with the number of new friends, on the row and on the avatar in the top bar; otherwise the row's hint is how many friends you have. |
+| ![The Friends page](16-friends/friends-page.png) | **B. The Friends page** (`/friends`). The back chevron, the friends icon and the count (`3/100`). Your friend ID on a sky card with **COPY**, and the page's one red action, **SHARE INVITE LINK**. **ADD BY FRIEND ID** below. Each friend is a row-button: look, name, **NEW** (gold) while new, their team as menu icons, then region · level · when they last played; away more than 72 h, the row is grey. **Reset my friend ID** waits quietly at the bottom. |
+| ![The Friends page at dusk](16-friends/friends-page-dark.png) | **B′. At dusk.** The same page in the dark theme: every colour is a theme token, and the contrast check runs on it (`e2e/friends.spec.ts`). |
+| ![Add by friend ID](16-friends/add-friend.png) | **C. Add by friend ID.** A field that reads any case, spaces and dashes, and shows `K7QM-4XD9`. At 8 good characters it shows who it is, so the player can check before **ADD**. "No trainer has this friend ID." in red under the field when nobody has it. |
+| ![A friend's card](16-friends/friend-card.png) | **E. A friend's card** (a sheet). Their name, "Friends since …", then the blue trainer card: their look at 2×, "Played …", where they are now, Pokédex, best level, areas, shinies, Versus record, their team. Their badge cases, region by region, as on yours. Their Versus team. **REMOVE FRIEND** in the footer, with a confirmation: gone for both, and the other isn't told. |
+| ![After opening an invite link](16-friends/invite.png) | **D. After opening an invite link.** Signed in, the two are friends before this shows: **SEE THEIR CARD** or **OK**. Signed out, the pop-up names who sent it and offers **CONNECT** (or *Not now*); without a game yet, the title screen shows a sky ribbon, "Misty invited you to Pokédice!". |
+| ![A friend on the leaderboard](16-friends/leaderboard.png) | **F. The boards.** A friend's row is sky blue with a blue edge and a **Friend** tag; it opens their card. **ALL / FRIENDS** (with counts), shown once you have friends, keeps the whole board's ranks. The same on the Hall of Fame and both Versus boards; in Versus, friends' teams come first among those still to beat. |
+| ![The CONNECT chooser](16-friends/connect-chooser.png) | **I. CONNECT, with Discord on.** *Continue with Google* and *Continue with Discord*, two white buttons with their marks, and what other players will see. With Discord off in Supabase, CONNECT skips this and goes to Google. |
+| ![Settings, connected accounts](16-friends/connected-accounts.png) | **J. Settings → Cloud backup.** "Backed up with Google (…)", then **Connected accounts**: each way in, Linked (green) or Not linked with **LINK**; **UNLINK** only while both are linked. |
 
 ---
 
@@ -763,44 +460,37 @@ Versus needs no SQL change: `versus_board()` already returns `user_id`.
 
 Discord's own changes are in §2.6.
 
-### 6.1 New files
+### 6.1 New files (as built)
 
 | File | What |
 | --- | --- |
-| `src/screens/Friends.tsx` | The page (B, B′): the ID box, ADD, the list, the `⋯` menu. Calls `friend_seen()` on open. |
-| `src/lib/friends.ts` | The Supabase calls (`fetchFriends`, `addFriend`, `removeFriend`, `lookupCode`, `myCode`, `resetCode`, `markSeen`, `fetchFriendProfile`). Parsing in the `parseLeaderboard` style: a default for every field, the look through `avatarOf`. `normalizeCode` / `formatCode`, `inviteUrl(code)`. A small zustand store, `useFriends` (`code`, `friends`, `ids: Set<string>`, `unseen`, `loadStatus()`, `loadList()`). `friend_status()` when sign-in settles (like `useInbox`); `friend_list()` only when the Friends page opens, at most once a minute. Kept on the device to save calls: the player's own friend ID in localStorage per user id (it only changes on a reset), and each opened profile in memory for 5 minutes. |
-| `src/lib/share.ts` | `shareOrCopy({ title, text, url }, copiedText)`, taken out of `ShareTutorial`, which then uses it. |
-| `src/components/friends/FriendRow.tsx` | One friend: look, name, NEW, region · level · last played. Reused for the previews in C and D. |
-| `src/components/friends/AddFriendModal.tsx` | C. |
-| `src/components/friends/FriendProfileModal.tsx` | E. |
-| `src/components/friends/FriendInviteHandler.tsx` | §3.3 and D, mounted in `GameLayout`, plus the title-screen ribbon. |
-| `src/screens/FriendInvite.tsx` | The `/f/:code` route: stores the invite and redirects. |
-| `src/components/RegionRow.tsx` | `RegionRow` moved out of `PlayerProfileModal`, with an optional stat line. |
+| `src/screens/Friends.tsx` | The page (B, B′): the ID card with COPY and SHARE INVITE LINK, ADD BY FRIEND ID, the list, *Reset my friend ID*. Loads the list, then calls `friend_seen()`. |
+| `src/screens/FriendInvite.tsx` | The `/f/:code` route: keeps the invite and goes on to `/friends` (or `/` without a game). |
+| `src/lib/friends.ts` | The calls (`loadFriendStatus`, `loadFriendList`, `markFriendsSeen`, `loadMyCode`, `resetMyCode`, `lookupCode`, `addFriend`, `removeFriend`, `fetchFriendProfile`), their parsing (a default for every field, the look through `avatarOf`), `normalizeCode` / `formatCode` / `inviteUrl`, `friendError`, `takeUntold` (announce once per device), and the `useFriends` store. Kept on the device: your friend ID (per account), each opened card for 5 minutes. |
+| `src/lib/friendInvite.ts` | The invite kept a week in localStorage, through the sign-in's trip to Google or Discord. |
+| `src/lib/share.ts` | `shareOrCopy` (taken out of `ShareTutorial`, which uses it now) and `copyText`. |
+| `src/lib/ago.ts` | "2 h ago", shared with SYNC ONLINE. |
+| `src/lib/useFriendsFilter.ts` | ALL / FRIENDS, remembered per browser. |
+| `src/components/friends/FriendBits.tsx` | The **Friend** tag, a trainer preview (C, D), a friend's one-line summary. |
+| `src/components/friends/AddFriendModal.tsx` | C, and the sentence for every add result and error. |
+| `src/components/friends/FriendProfileSheet.tsx` | E, with REMOVE FRIEND. |
+| `src/components/friends/FriendsService.tsx` | Mounted in `GameLayout`: `friend_status()` at sign-in, the toasts, the invite handling and its pop-ups (D). |
 
 ### 6.2 Changes to existing files
 
-- **`App.tsx`**: `<Route path="/friends" element={<FriendsScreen />} />` inside `GameLayout`, and
-  `<Route path="/f/:code" element={<FriendInvite />} />` outside it.
-- **`PlayerMenu.tsx`**: the Friends row (icon `friends`, the count as hint, the dot), `onClick={go('/friends')}`.
-  Hidden without Supabase.
-- **`Hud.tsx`** (header): the dot on the avatar button while `unseen > 0`, and the longer label.
-- **`src/engine/regions.ts`**: `regionCasesFrom(progressByRegion, data)`. `regionCases(save, data)` becomes a thin
-  wrapper around it. Pure and tested.
-- **`PlayerProfileModal.tsx`**: "Friend ID K7QM-4XD9 [COPY]" for signed-in players. `RegionRow` comes from its new file.
-- **`lib/leaderboard.ts`**: `isFriend` on `LeaderboardRow`, parsed from `is_friend`. `splitLeaderboard` doesn't change;
-  the FRIENDS filter runs after ranking, so ranks stay global: `board.filter((r) => !friendsOnly || r.isMe || r.isFriend)`.
-- **`Leaderboard.tsx`**: the tint and icon on rows and `HallCell`s, friend rows as buttons to `FriendProfileModal`,
-  and the ALL / FRIENDS switch.
-- **`lib/versus.ts` / `Versus.tsx`**: `isFriend` from `useFriends().ids`; the same tint, icon and filter on both boards;
-  `opponentsOf` putting friends first among the unbeaten; friend rows open the profile.
-- **`store/sync.ts`**: `checkFreshness(returning)` also calls `useFriends.getState().loadStatus()` when the player
-  comes back to the tab, signed in, at most every 5 minutes. New friends there give the toast (held while in a fight)
-  and the dots.
-- **`Title.tsx`**: the invite ribbon while an invite is pending.
-- **`icons.tsx`**: a new `friends` icon (two heads), drawn on the same grid as `user`.
-- **`tailwind.config.ts`**: `friend` (`#dcebf7`) and `friend-edge` (`#547acc`). Check `text-muted` on the tint against
-  the 4.5:1 rule of [docs/04](04-UX-PLAN.md); the score line uses ink anyway.
-- **`strings.csv`**: about 35 `ui.friends.*` rows in all 11 columns (the i18n test fails on an empty cell).
+- **`App.tsx`**: `/friends` inside `GameLayout`, `/f/:code` outside it.
+- **`PlayerMenu.tsx`**: the Friends row (dot or count) to `/friends`; the gold dot on the avatar and its longer label.
+- **`TrainerCard.tsx`**: exports `CardFrame`, `Stat`, `CardTeam`, `BadgeCases`; your friend ID replaces the ID number.
+- **`src/engine/regions.ts`**: `regionCaseOf(data, region, badgesWon, crown)`, sharing one builder with `regionCases`.
+- **`BoardRow.tsx`**: `isFriend` (the sky row and the tag) and `onOpen` (a button laid over the row).
+- **`lib/leaderboard.ts`**: `friendId` on each row (from `is_friend` / `friend_id`), and `friendsOnly()`, which
+  filters after ranking so ranks stay the whole board's.
+- **`Leaderboard.tsx`**, **`Versus.tsx`**, **`lib/versus.ts`**: friend rows, ALL / FRIENDS, friends' cards;
+  `opponentsOf(rows, friendIds)` puts friends first among those still to beat.
+- **`store/sync.ts`**: `checkFreshness(returning)` calls `loadFriendStatus()` (at most every 5 minutes).
+- **`Title.tsx`**: the invite ribbon. **`icons.tsx`**: `friends` (8×8) and `navFriends` (16×16).
+- **`strings.csv`**: the `ui.friends.*` rows in all ten languages; `src/i18n/cjk-chars.json` regenerated
+  (`pnpm i18n:fonts`).
 
 ---
 
@@ -923,36 +613,26 @@ but the tables it pruned are already dropped, so that one doesn't matter.
 
 ---
 
-## 9. Tests
+## 9. Tests (as built)
 
-**Vitest**
-
-- `tests/friends.test.ts`: `normalizeCode` / `formatCode` (O→0, dashes, lower case, wrong length), `inviteUrl`,
-  defaults in `parseFriends`, the unseen count, the plural of the toast, the invite kept and expired (7 days).
-- `tests/leaderboard.test.ts`: `is_friend` parsed, missing → false; the FRIENDS filter keeps global ranks and you.
-- `tests/versus-board.test.ts`: friends first among the unbeaten; the friends filter on both boards.
-- `tests/engine/…`: `regionCasesFrom` gives the same result as `regionCases` on the fixtures.
-- `tests/sync.test.ts`: `provider` and `providers` read from the session; `fetchAuthProviders` falls back to Google
-  only when the settings call fails.
-
-**The leaderboard on cards**, on a Supabase branch loaded with a copy of the saves: the new `leaderboard()` returns the
-same rows as the old `leaderboard_rows()` (same players, regions, teams, Pokédex, levels, shinies and progress), and
-`EXPLAIN ANALYZE` shows it in milliseconds. Then a save upload updates the card.
-
-**SQL**, by hand on a Supabase branch with two test accounts (one Google, one Discord): add, already, self, unknown,
-reset, remove (gone for both), the cap, the rate limit; a direct `select` on `friendships` refused for a player; the
-other account's `friend_status()` reporting the new friend once; the board's `is_friend`; the card backfill.
-
-**Playwright** (`mockSupabase` learns `rpc/friend_*`, `/auth/v1/settings` and Discord's authorize URL)
-
-- `e2e/friends.spec.ts`: menu → Friends page → the ID shows → add by ID (preview, toast, row with NEW) → profile →
-  remove.
-- An invite link: `/f/K7QM4XD9` signed in → friends at once, the NEW FRIEND pop-up; signed out → the CONNECT version.
-- The leaderboard and Versus: a friend's row has the tint, the icon and the "Friend" text; the FRIENDS filter.
-- Sign-in: with Discord on, CONNECT opens the chooser and Continue with Discord goes to `provider=discord`; with it
-  off, CONNECT goes straight to Google.
-- `layout.spec.ts`: the Friends page, the add dialog, a profile, the chooser and Connected accounts at 360×640 in every
-  language, through the existing contrast check.
+- **`tests/friends-sql.test.ts`** (Vitest + PGlite): runs 0001, 0011, 0016, 0018, 0032, then 0033, with stand-ins for
+  Supabase's `auth` schema and roles. The board on cards returns **exactly the old rebuild's rows** for a signed-in
+  caller, an inactive one and a signed-out one; the rules hold (badge, 72 hours, bans, one row per region); the cache,
+  rebuild and their functions are gone; cards hold badges, crown, Day Care and shinies; a save upload updates the card
+  and an unreadable save is still saved; `versus_board()` names come from cards; friend IDs (forgiving lookup, signed
+  out too), add / already / self / not found, both ways, `friend_status` until `friend_seen`, `is_friend` and
+  `friend_id` (friends only), profiles for friends only, removal for both, the cap on both sides, reset once an hour,
+  the rate limit, no table readable by a player, and a second run of the file.
+- **`tests/friends.test.ts`**: code format, parsing defaults, errors in words, announce once per device and account,
+  the invite kept a week, and `regionCaseOf` drawing the same badge case as your own save.
+- **`tests/auth-providers.test.ts`**: Auth's settings, linked providers, the errors a player can act on.
+- **`tests/leaderboard.test.ts`**, **`tests/versus-board.test.ts`**: friend rows parsed (none on a database without
+  0033), FRIENDS keeping global ranks, friends first among the unbeaten.
+- **`e2e/friends.spec.ts`** (Playwright, mocked Supabase): a new friend's toast and dots, the page, a friend's card,
+  removing; add by ID (typed any way, previewed; and refused with the reason); invite links signed in and out; friends
+  on the leaderboard with ALL / FRIENDS and their card; CONNECT with Discord on (the chooser, `provider=discord`) and
+  off (straight to Google); the page and the card at 360 and 1280, in Dusk, through axe.
+- **`e2e/layout.spec.ts`** and **`e2e/theme.spec.ts`** include `/friends`: every size, every language, Dusk contrast.
 
 ---
 
@@ -972,6 +652,16 @@ other account's `friend_status()` reporting the new friend once; the board's `is
 
 Phase 0 and phase 1 don't depend on each other. After phase 1, each friends phase can ship on its own; phase 6 can
 follow phase 2 directly.
+
+**All built on 10 Oct 2026**, on the Daybreak branch (`ccr-43d48ce2-umtc1l`): this work needs it merged first. Left,
+on the live services and not in code:
+
+1. Run `supabase/migrations/0029_force_reload.sql` (§8.5).
+2. Run `supabase/migrations/0033_friends.sql` (or re-run `seed.sql`, which carries it). Either order with the deploy
+   works: an old build ignores the new leaderboard columns, and a new build on an old database says "Friends aren't
+   set up on this server yet".
+3. For Discord, follow [docs/17](17-DISCORD-SIGN-IN.md) (Discord application, Supabase provider, manual linking).
+4. A day later, compare the database's query statistics with §8.1.
 
 ---
 

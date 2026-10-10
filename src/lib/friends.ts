@@ -242,6 +242,11 @@ export const useFriends = create<FriendsState>(() => ({ ...EMPTY }))
 export const STATUS_EVERY_MS = 5 * 60_000
 export const LIST_EVERY_MS = 60_000
 
+/** Signed out (or another account): nothing of the last account's friends stays on screen. */
+export function clearFriends() {
+  if (useFriends.getState().userId !== null) useFriends.setState({ ...EMPTY })
+}
+
 /** The signed-in account, or null; the store is cleared when it isn't the one it holds. */
 function signedInUser(): string | null {
   const { auth } = useGame.getState()
