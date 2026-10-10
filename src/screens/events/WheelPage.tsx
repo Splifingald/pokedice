@@ -87,7 +87,8 @@ export function WheelPage() {
     prizes: live.map((p) => `${p.count} × ${rewardName(p.reward, data)}`).join(', '),
   })
   return (
-    <div className="mx-auto flex w-full max-w-[440px] flex-col gap-1.5">
+    // The rays and the sparks reach past the wheel: clipped at the sides so a phone never scrolls sideways.
+    <div className="mx-auto flex w-full max-w-[440px] flex-col gap-1.5 overflow-x-clip">
       <div ref={box} className="ev-wheel">
         <span className="ev-wheel-rays" aria-hidden />
         <span ref={pointer} className="ev-pointer" aria-hidden />

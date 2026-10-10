@@ -115,3 +115,25 @@ export function fakeSession() {
 
 export const STORAGE_KEY = 'sb-127-auth-token'
 export const FAST = JSON.stringify({ sfx: false, sound: false, reducedMotion: true })
+
+/** Visible controls under 44px. Links inside a sentence are exempt (WCAG 2.5.8 "inline"). */
+export function smallControls(page: Page) {
+  return page.evaluate(() =>
+    Array.from(document.querySelectorAll<HTMLElement>('a,button,input,select,summary,[role=button],[role=tab]'))
+      .filter((el) => !(el.tagName === 'A' && el.closest('p')))
+      .map((el) => ({ el, r: el.getBoundingClientRect() }))
+      .filter(({ el, r }) => r.width > 0 && r.height > 0 && getComputedStyle(el).visibility !== 'hidden' && (r.width < 44 || r.height < 44))
+      .map(({ el, r }) => `${(el.getAttribute('aria-label') || el.textContent || el.tagName).trim().slice(0, 30)} ${Math.round(r.width)}×${Math.round(r.height)}`),
+  )
+}
+
+/** Visible text rendered in any face other than the Jersey fonts (the only fonts the app ships). */
+export function nonJerseyText(page: Page) {
+  return page.evaluate(() =>
+    Array.from(document.querySelectorAll<HTMLElement>('body *'))
+      .filter((el) => Array.from(el.childNodes).some((n) => n.nodeType === Node.TEXT_NODE && n.textContent!.trim()) || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName))
+      .filter((el) => el.getClientRects().length > 0 && !/^"?Jersey (15|25)"?(,|$)/.test(getComputedStyle(el).fontFamily))
+      .map((el) => `${el.tagName} "${(el.textContent || '').trim().slice(0, 20)}": ${getComputedStyle(el).fontFamily}`)
+      .slice(0, 10),
+  )
+}

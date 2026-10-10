@@ -113,7 +113,7 @@ export function RebattlePage() {
                     {' · '}₽×{x.gold}
                   </small>
                   {st === 'done' && <em className="bg-hp-green px-1.5 pb-0.5 font-pixel-sm text-[13px] not-italic text-ink">{t('ui.events.rebattle.cleared')}</em>}
-                  {st === 'locked' && <em className="bg-well-deep px-1.5 pb-0.5 font-pixel-sm text-[13px] not-italic text-muted">{t('ui.events.rebattle.locked')}</em>}
+                  {st === 'locked' && <em className="bg-well-deep px-1.5 pb-0.5 font-pixel-sm text-[13px] not-italic text-ink">{t('ui.events.rebattle.locked')}</em>}
                 </li>
               )
             })}
@@ -154,7 +154,7 @@ export function RebattlePage() {
                             <em className="ml-1 bg-gold px-1 pb-px align-[2px] font-pixel-sm text-[12px] not-italic text-ink">{t('ui.events.rebattle.championTag')}</em>
                           )}
                         </b>
-                        <span className="flex gap-0.5" aria-label={m.team.map((x) => data.species[x.dex]?.name ?? '').join(', ')}>
+                        <span className="flex gap-0.5" role="img" aria-label={m.team.map((x) => data.species[x.dex]?.name ?? '').join(', ')}>
                           {m.team.map((x, k) => (
                             <MiniSprite key={k} dex={x.dex} size={20} />
                           ))}

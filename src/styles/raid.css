@@ -316,9 +316,26 @@
   }
 }
 
+/* A summon pops into the queue in a flash of light. */
+.rd-arrive {
+  animation: rd-arrive 520ms cubic-bezier(0.3, 1.6, 0.5, 1);
+}
+@keyframes rd-arrive {
+  0% {
+    transform: scale(0.2);
+    filter: brightness(3);
+    opacity: 0;
+  }
+  60% {
+    filter: brightness(1.8);
+    opacity: 1;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .rd-bar-broke,
   .rd-shard,
+  .rd-arrive,
   .rd-intro.boom .rd-i-cv,
   .rd-intro.name,
   .rd-i-tape {

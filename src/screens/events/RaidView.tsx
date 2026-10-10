@@ -156,17 +156,34 @@ function AllyPlate({ b, hp, owner, mine, team, fx }: { b: Battler; hp: number; o
 }
 
 /** A Pokémon waiting at the side of the stage: its mini sprite and HP (a button when you can aim at it). */
-function QueueMon({ b, hp, label, onPick, fled, boss }: { b: Battler; hp: number; label: string; onPick?: () => void; fled?: boolean; boss?: boolean }) {
+function QueueMon({
+  b,
+  hp,
+  label,
+  onPick,
+  fled,
+  boss,
+  arrived,
+}: {
+  b: Battler
+  hp: number
+  label: string
+  onPick?: () => void
+  fled?: boolean
+  boss?: boolean
+  /** Just summoned: it pops in. */
+  arrived?: boolean
+}) {
   const pct = Math.max(0, Math.min(1, hp / b.maxHp))
   const Tag = onPick ? 'button' : 'span'
   return (
-    <li className={cx('transition-[transform,opacity] duration-500', fled && 'translate-x-10 opacity-0')}>
+    <li className={cx('transition-[transform,opacity] duration-500', fled && 'translate-x-10 opacity-0', arrived && 'rd-arrive')}>
       <Tag
-        {...(onPick ? { type: 'button' as const, onClick: onPick } : {})}
+        {...(onPick ? { type: 'button' as const, onClick: onPick } : { role: 'img' })}
         aria-label={label}
         title={label}
         className={cx(
-          'relative grid w-[38px] justify-items-center gap-px px-0.5 pb-[3px] pt-px shadow-[inset_0_0_0_2px_#24304f]',
+          'relative grid w-[44px] justify-items-center gap-px px-0.5 pb-[3px] pt-px shadow-[inset_0_0_0_2px_#24304f]',
           boss ? 'bg-[#fff3c4e0]' : 'bg-[#fbfdffe0]',
           onPick && 'min-h-[44px]',
         )}
@@ -395,6 +412,7 @@ export function RaidView({ run }: { run: RaidRun }) {
                     <QueueMon
                       key={uid}
                       b={b}
+                      arrived={fx.arrived?.uid === uid && !calm}
                       hp={fx.hp[uid] ?? b.hp}
                       boss={uid === BOSS_UID}
                       fled={!!fx.fled?.uids.includes(uid)}
@@ -475,8 +493,13 @@ export function RaidView({ run }: { run: RaidRun }) {
           ) : (
             <>
               {targets.length > 1 && (
-                <div role="radiogroup" aria-label={t('ui.raid.target')} className="flex flex-wrap items-center gap-1">
-                  <span className="mr-0.5 font-pixel-sm text-[14px] text-muted">{t('ui.raid.target')}</span>
+                // One even row, whatever the names: the foe you aim at is the dark one.
+                <div
+                  role="radiogroup"
+                  aria-label={t('ui.raid.target')}
+                  className="grid gap-1"
+                  style={{ gridTemplateColumns: `repeat(${targets.length}, minmax(0, 1fr))` }}
+                >
                   {targets.map((b) => {
                     const on = duel?.enemy.uid === b.uid
                     return (
@@ -488,12 +511,12 @@ export function RaidView({ run }: { run: RaidRun }) {
                         disabled={!(canAct || stunned)}
                         onClick={() => act({ t: 'TARGET', uid: b.uid })}
                         className={cx(
-                          'inline-flex min-h-[44px] items-center pr-2 text-[16px] leading-none',
+                          'flex min-h-[44px] min-w-0 items-center pr-1.5 text-[16px] leading-none',
                           on ? 'bg-ink text-paper' : 'bg-paper shadow-[inset_0_0_0_2px_#b6c3d9]',
                         )}
                       >
-                        <MiniSprite dex={b.dex} size={34} className="-my-1" />
-                        {b.name}
+                        <MiniSprite dex={b.dex} size={34} className="-my-1 shrink-0" />
+                        <span className="min-w-0 truncate">{b.name}</span>
                       </button>
                     )
                   })}

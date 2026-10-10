@@ -1,6 +1,7 @@
 # Special Events: build plan
 
-Status: **decisions taken, ready to build on your go** (2026-10-10). Branch `feature/version_2` (HEAD 9baaf9a).
+Status: **built, phases 1–7** (2026-10-10), on `feature/version_2` (worktree branch `feature/events`). What shipped,
+where it differs from the plan below, the raid balance options and the hand-over: §11 at the end.
 What to build is decided in `docs/18-SPECIAL-EVENTS-PLAN.md` and shown in the Visual Lab (`design/visual-lab/events.js`, published in the "Pokédice Visual Lab" artifact). This document says **how**: architecture, files, data, SQL, tests and the order of work.
 
 Rules that apply everywhere (CLAUDE.md, memory):
@@ -276,3 +277,51 @@ Each phase ends green (lint, build, test, e2e) and is one commit (or a few) on `
 - **D4 · Raids leaderboard:** one global count, shown the same in every region's Raids tab.
 - **D5 · Losing a rebattle:** the gauntlet restarts at the first trainer, the team is healed (like a wipe), the ₽ won is kept, nothing else changes.
 - **D6 · Exclusions:** two admin lists in the Events config: `exclude.pseudo` (the pseudo-legendaries) and `exclude.extra` (Ultra Beasts, paradox Pokémon, Rotom), on top of `isLegendary` and the regions' starter lines.
+
+---
+
+## 11. Status (2026-10-10)
+
+All seven phases are built and green (lint, build, unit + SQL tests, e2e incl. `e2e/events-layout.spec.ts`).
+
+| Phase | Commit | What |
+|---|---|---|
+| 1 Framework | 60caa6d | config + save, server time, Home squares + teaser, `/events/:id`, unlock pop-up, admin shell, migration 0035 |
+| 2 Fortune Wheel | 987d88f | `wheel_spin`, canvas wheel, odds sheet, admin wheel box, its own banner art |
+| 3 Elite Rebattle | 147e777 | II areas removed (0036 + `migrateLeagueII`), lineups, gauntlet, medals |
+| 4 Raids: content & pick | 00c4b09 | lairs, `raidCandidates`/`pickRaid`, `raid_today`, Pokédex rows, admin Raid box |
+| 5 Raids: battle | 6e973ef | `engine/raidBattle.ts`, `RaidView`, `RaidIntro`, catch to the home region's Box, `raid_close` |
+| 6 Raids: social | 8cc8de7 | raid team + editor, friends' teams, gifts + pop-up, Raids leaderboard tab |
+| 7 Polish | (phase 7) | phone layout/axe checks for the event pages and the raid fight, summon pop-in, admin raid simulator |
+
+### Where it differs from the plan
+- **The raid screen is its own `RaidView`**, composed from `BattleStage`, `DiceTray`, `Readout`, `CatchPanel` and the battle
+  animator's `describe()`, rather than a third mode inside `BattleView` (which the Battle UI session also edits). The
+  duel steps run through the real reducer: `BattleState.single` + phase `done` + `startDuelStep` in `battle.ts`.
+- **Your own side is never on auto in a raid**; friends' and NPC sides play themselves. The battle history isn't shown
+  in raids (it can only name one foe).
+- **Raid catch value** = the species' own catch value (edited in Admin → Pokémon); no separate raid table.
+- **NPC trainers** are generated: a random class trainer's name and sprite from the content, a team from `npcTeam`.
+- **Raids page order**: the card (catch value on it, as asked), START, tries, your raid team, your group, each ball's
+  chance with how many you own.
+- The raid team is registered on the server when you save it and on every raid start (signed in).
+
+### Raid balance — your pick
+Simulated with `pnpm raid-balance 40 5` (three random fully evolved Lv.50 sides, every raid, 40 raids each; target
+50–70 %). Real players bring their own best Pokémon and aim themselves, so expect a bit more than these:
+
+| Option | Bars | HP per bar | Raid upgrades | Pool win % | Fallback win % |
+|---|---|---|---|---:|---:|
+| A | 3 | 2× | 7 | 72 | 66 |
+| **B (shipped)** | 3 | 2× | 8 | 60 | 51 |
+| C | 5 | 1× | 9 | 64 | 58 |
+| D | 6 | 1× | 7 | 65 | 60 |
+
+The defaults are B; any of them is a change in Admin → Events → Raid Battles (Simulate the win rate is there too).
+
+### Hand-over (manual)
+1. Supabase SQL editor: run `supabase/migrations/0035_events.sql` (the clock, the wheel, raids, raid teams, gifts, and
+   `leaderboard()` with `raids_won`). Safe to run again.
+2. Run `supabase/migrations/0036_remove_league_ii.sql` once (Victory Road II / League II areas and their trainers).
+3. Admin → Publish, or paste `supabase/seed-parts/seed-01…09.sql` in order (rebattle trainers, lineups, raid lairs).
+4. Merge `feature/version_2` and deploy as usual.

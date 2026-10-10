@@ -1,7 +1,11 @@
 // Admin → Events (docs/18, docs/19): the special events' switches, Home order, unlock areas, banner pictures and the
 // rules their unlock pop-up lists. One game_config row, `events`; each event's own numbers get their box as it's built.
-import { useEffect, useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
+  createRng,
+  npcTeam,
+  regionOfArea,
+  simulateRaid,
   DEFAULT_CONFIG,
   EVENT_IDS,
   REBATTLE_TIER_IDS,
@@ -369,6 +373,108 @@ function DexList({ value, onChange }: { value: number[]; onChange: (v: number[])
   )
 }
 
+/**
+ * The admin's raid sims (`pnpm raid-balance` in the page): three sides of random raid-eligible Pokémon at the team cap,
+ * every side on the battle AI, against one raid or every one, with the numbers as edited (saved or not).
+ */
+function RaidSim({ raid }: { raid: RaidConfig }) {
+  const data = useAdminData()
+  const [dex, setDex] = useState<number | 'all'>('all')
+  const [n, setN] = useState(30)
+  const [rows, setRows] = useState<{ name: string; win: number; steps: number }[] | null>(null)
+  const [busy, setBusy] = useState(false)
+  if (!data) return null
+  const raids = [
+    ...raid.pool.flatMap((p) => {
+      const a = data.areas.find((x) => x.id === p.areaId)
+      return a ? [{ dex: p.dex, regionId: regionOfArea(a) }] : []
+    }),
+    ...raid.fallback.map((f) => ({ dex: f.dex, regionId: f.regionId })),
+  ]
+  const run = () => {
+    setBusy(true)
+    // A frame for "Simulating…" first: the sims run on the page's thread.
+    setTimeout(() => {
+      const sim = { ...data, config: { ...data.config, events: { ...data.config.events, raid: { ...data.config.events.raid, ...raid } } } }
+      const regions = data.regions.map((r) => r.id)
+      const rng = createRng(1)
+      // Species or areas missing from the content loaded here: those raids can't be played.
+      const out = raids
+        .filter((r) => (dex === 'all' || r.dex === dex) && !!data.species[r.dex])
+        .map((r) => {
+          let wins = 0
+          let steps = 0
+          for (let i = 0; i < n; i++) {
+            const sides = [0, 1, 2].map((k) => ({ owner: `Side ${k + 1}`, look: null, kind: 'npc' as const, team: npcTeam(sim, regions, rng, `s${k}`) }))
+            const res = simulateRaid({ boss: { dex: r.dex, shiny: false }, sides, regionId: r.regionId }, sim, rng)
+            if (res.won) wins++
+            steps += res.steps
+          }
+          return { name: data.species[r.dex]?.name ?? `#${r.dex}`, win: wins / n, steps: steps / n }
+        })
+      setRows(out)
+      setBusy(false)
+    }, 30)
+  }
+  const mean = rows?.length ? Math.round((rows.reduce((t, r) => t + r.win, 0) / rows.length) * 100) : null
+  return (
+    <details className="border-t-2 border-line pt-2">
+      <summary className="cursor-pointer text-xl">Simulate the win rate</summary>
+      <p className="m-0 mt-1 text-base text-muted">
+        Three sides of random fully evolved Pokémon (the NPC rules) at Lv.{raid.teamCap}, all on the battle AI. Target: about 50–70 %. Uses
+        the numbers above, saved or not.
+      </p>
+      <div className="mt-2 flex flex-wrap items-end gap-2">
+        <Field label="Raid">
+          <select className={inputCls} value={String(dex)} onChange={(e) => setDex(e.target.value === 'all' ? 'all' : Number(e.target.value))}>
+            <option value="all">Every raid ({raids.length})</option>
+            {raids.map((r) => (
+              <option key={r.dex} value={r.dex}>
+                {data.species[r.dex]?.name ?? `#${r.dex}`}
+              </option>
+            ))}
+          </select>
+        </Field>
+        <Field label="Raids each">
+          <NumInput min={5} max={200} value={n} onChange={(v) => setN(Math.max(5, Math.min(200, v ?? 30)))} />
+        </Field>
+        <button type="button" className="min-h-[44px] px-3 text-lg shadow-ring" disabled={busy} onClick={run}>
+          {busy ? 'Simulating…' : 'Run'}
+        </button>
+      </div>
+      {rows && (
+        <table className="mt-2 w-full text-lg">
+          <thead>
+            <tr className="text-left text-muted">
+              <th className="font-normal">Raid</th>
+              <th className="font-normal">Win %</th>
+              <th className="font-normal">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r) => (
+              <tr key={r.name} className="border-t border-shadow/40">
+                <td className="py-0.5">{r.name}</td>
+                <td className="font-mono">{Math.round(r.win * 100)}</td>
+                <td className="font-mono">{r.steps.toFixed(0)}</td>
+              </tr>
+            ))}
+          </tbody>
+          {rows.length > 1 && (
+            <tfoot>
+              <tr className="border-t-2 border-line">
+                <td className="py-0.5">Mean</td>
+                <td className="font-mono">{mean}</td>
+                <td />
+              </tr>
+            </tfoot>
+          )}
+        </table>
+      )}
+    </details>
+  )
+}
+
 /** Raid Battles: the fight's numbers, the pool (each mythical and the area that unlocks it), the fallback list, the
  *  species never used as NPC allies or summons, and the helpers' gifts. */
 function RaidBox({ raid, set }: { raid: RaidConfig; set: (patch: Partial<RaidConfig>) => void }) {
@@ -564,6 +670,7 @@ function RaidBox({ raid, set }: { raid: RaidConfig; set: (patch: Partial<RaidCon
           + Add a gift
         </button>
       </Field>
+      <RaidSim raid={raid} />
     </Box>
   )
 }
