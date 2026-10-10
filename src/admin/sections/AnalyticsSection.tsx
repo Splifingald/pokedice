@@ -1,4 +1,5 @@
 // Admin → Analytics: day-1 retention and the players, from the daily ping (migration 0028). Admin-only via RLS.
+import { PixelIcon } from '@/components/icons'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { dayKey, dayOneRetention, type D1Cohorts, type Retention } from '@/analytics/retention'
 import { PixelButton } from '@/components/PixelButton'
@@ -236,7 +237,10 @@ export function AnalyticsSection() {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-end gap-3">
-        <h2 className="text-4xl leading-none">Analytics</h2>
+        <h2 className="flex items-center gap-2 text-4xl leading-none">
+          <PixelIcon name="history" size={26} />
+          Analytics
+        </h2>
         <span className="flex-1" />
         <div className="flex flex-wrap gap-1" role="group" aria-label="Time frame">
           {FRAMES.map((f) => (

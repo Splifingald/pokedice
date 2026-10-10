@@ -56,7 +56,7 @@ function SlotMachineBox() {
   const pct = (x: number) => `${Math.round(x * 1000) / 10} %`
   return (
     <Box
-      title="Game Corner — slot machine"
+      title="Game Corner — slot machine" icon="coin"
       hint="Played on the Game Corner cards (Areas → Encounter deck). The result is drawn from these weights, then the reels are laid out to show it."
     >
       <div className="grid gap-3 sm:grid-cols-3">
@@ -123,7 +123,7 @@ function EnergyBox() {
   const perDay = cfg.minutesPerEnergy > 0 ? (24 * 60) / cfg.minutesPerEnergy : 0
   return (
     <Box
-      title="Energy"
+      title="Energy" icon="energy"
       hint="Each encounter discovered costs 1 (not gym / Elite / Champion battles, legendaries or Pokémon Centers). Refills in real time, offline too."
     >
       <div className="grid gap-3 sm:grid-cols-3">
@@ -152,7 +152,7 @@ function UniquePityBox() {
   const mid = Math.round((cfg.startRounds + cfg.fullRounds) / 2)
   return (
     <Box
-      title="Once-only finds — pity"
+      title="Once-only finds — pity" icon="crown"
       hint="The more rounds a player has done in an area, the likelier its once-only finds (Areas → Loot): × their odds per item find, never past 100 %."
     >
       <div className="grid gap-3 sm:grid-cols-3">
@@ -190,7 +190,7 @@ function DonationBox() {
   const urlOk = isDonationUrl(url)
   return (
     <Box
-      title="Keep the game alive (donations)"
+      title="Keep the game alive (donations)" icon="heart"
       hint="Prof. Oak asks players to help with the hosting costs, with a PayPal button. Once per region, when its 5th badge is won, between fights. Save, then Publish, for players to get the change."
     >
       <div className="grid gap-3 sm:grid-cols-3">
@@ -239,7 +239,7 @@ function DiscordBox() {
   const urlOk = isDonationUrl(url)
   return (
     <Box
-      title="Discord"
+      title="Discord" icon="discord"
       hint="A Discord button in the player menu (click the avatar, top right). Save, then Publish, for players to get the change."
     >
       <Field
@@ -278,7 +278,7 @@ function DayCareBox() {
   const pools = data ? enabledRegions(data).map((r) => ({ region: r, pool: eggSpecies(data, r.id) })) : []
   return (
     <Box
-      title="Pokémon Day Care"
+      title="Pokémon Day Care" icon="heal"
       hint="One for every region: your Pokémon train in real time, friends' Pokémon visit, and compatible pairs leave Eggs."
     >
       <div className="grid gap-3 sm:grid-cols-3">
@@ -439,7 +439,7 @@ function StatusRulesBox() {
   const num = (v: number | null | undefined, fallback: number, min = 0) => Math.max(min, v ?? fallback)
   const faces = 'faces needed in one roll'
   return (
-    <Box title="Status effects" hint="The dice faces that trigger each effect, and what it does. The help screen and the Upgrades screen quote these numbers.">
+    <Box title="Status effects" icon="burn" hint="The dice faces that trigger each effect, and what it does. The help screen and the Upgrades screen quote these numbers.">
       <div className="grid gap-3 sm:grid-cols-2">
         <fieldset className="flex flex-col gap-1 border-2 border-edge p-2">
           <legend className="px-1 text-lg">Burn (Fire)</legend>
@@ -514,12 +514,15 @@ export function ConfigSection() {
   return (
     <div className="flex flex-col gap-5">
       <div className="flex items-baseline justify-between">
-        <h2 className="text-3xl">Config</h2>
+        <h2 className="flex items-center gap-2 text-3xl">
+          <PixelIcon name="gear" size={26} />
+          Config
+        </h2>
         <span className="text-lg">content version {String(version)} (bumped by Publish)</span>
       </div>
 
       <div className="grid gap-4 xl:grid-cols-2">
-        <Box title="Pacing & rewards" hint="Fight length, levelling speed and money. Damage always equals the dice.">
+        <Box title="Pacing & rewards" icon="trophy" hint="Fight length, levelling speed and money. Damage always equals the dice.">
           <div className="grid gap-3 sm:grid-cols-2">
             <Field label="hpMultiplier" hint="× every Pokémon's HP, yours and foes' — the fight-length knob">
               <NumInput step={0.05} value={hpMultiplier} min={0.1} onChange={(v) => setHpMultiplier(Math.max(0.1, v ?? 1))} />
@@ -533,7 +536,7 @@ export function ConfigSection() {
           </div>
         </Box>
 
-        <Box title="Encounters" hint="How much each card counts is set per area (Areas → Encounter deck).">
+        <Box title="Encounters" icon="ball" hint="How much each card counts is set per area (Areas → Encounter deck).">
           <div className="grid gap-3 sm:grid-cols-2">
             <Field label="encounterMode" hint="deck: each area deals a shuffled deck (exact mix, no long droughts) · random: independent rolls">
               <Select value={encounterMode} options={['deck', 'random'] as const} onChange={setEncounterMode} />
@@ -556,7 +559,7 @@ export function ConfigSection() {
           </div>
         </Box>
 
-        <Box title="XP sharing">
+        <Box title="XP sharing" icon="up">
           <div className="grid gap-3 sm:grid-cols-2">
             <Field label="xpShareMode" hint="fighter: the Pokémon that fought · team: all three">
               <Select value={share} options={['fighter', 'team'] as const} onChange={setShare} />
@@ -576,7 +579,7 @@ export function ConfigSection() {
           </div>
         </Box>
 
-        <Box title="Battle">
+        <Box title="Battle" icon="sword">
           <div className="grid gap-3 sm:grid-cols-2">
             <Field label="comboPayoutMode">
               <Select value={payout} options={['highestDamage', 'highestRank'] as const} onChange={setPayout} />
@@ -596,7 +599,7 @@ export function ConfigSection() {
           </div>
         </Box>
 
-        <Box title="Cloud save" hint="How often signed-in players' saves go to Supabase. Fewer pushes = less database load.">
+        <Box title="Cloud save" icon="cloud" hint="How often signed-in players' saves go to Supabase. Fewer pushes = less database load.">
           <Field
             label="cloudSyncMinutes"
             hint="a signed-in player's save is pushed at most once every this many minutes while they play (and when the page closes) · players can still press SYNC ONLINE, once per 5 min"
@@ -605,13 +608,13 @@ export function ConfigSection() {
           </Field>
         </Box>
 
-        <Box title="Friends" hint="The friend list (docs/16). The database reads this key too: friend_add() refuses past it, on both sides.">
+        <Box title="Friends" icon="friends" hint="The friend list (docs/16). The database reads this key too: friend_add() refuses past it, on both sides.">
           <Field label="maxFriends" hint="friends per player; lowering it removes nobody, it only stops new friends past the cap">
             <NumInput value={maxFriends} min={1} max={500} onChange={(v) => setMaxFriends(Math.max(1, Math.min(500, v ?? 100)))} />
           </Field>
         </Box>
 
-        <Box title="Player help" hint="What the game shows players while they plan.">
+        <Box title="Player help" icon="book" hint="What the game shows players while they plan.">
           <label className="flex items-start gap-2 text-lg">
             <input type="checkbox" className="mt-1.5" checked={!!showRound} onChange={(e) => setShowRound(e.target.checked)} />
             <span>

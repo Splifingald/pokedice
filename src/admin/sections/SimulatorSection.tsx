@@ -1,4 +1,5 @@
 // Admin simulator: one battle, a team grinding one area, or a whole campaign — all on the unsaved working copy.
+import { PixelIcon } from '@/components/icons'
 import { useState } from 'react'
 import { PixelButton } from '@/components/PixelButton'
 import { useAdminData } from '../store'
@@ -19,7 +20,10 @@ export function SimulatorSection() {
 
   return (
     <div className="flex flex-col gap-4">
-      <h2 className="text-3xl">Simulator</h2>
+      <h2 className="flex items-center gap-2 text-3xl">
+          <PixelIcon name="play" size={26} />
+          Simulator
+        </h2>
       <p className="text-base text-muted">Everything here runs on your unsaved working copy, so you can try a change before saving it.</p>
       <div className="flex flex-wrap gap-2" role="tablist" aria-label="Simulator mode">
         {TABS.map((t) => (
