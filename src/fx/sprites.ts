@@ -138,6 +138,9 @@ export function loadSprite(dex: number, back: boolean, shiny = false): Promise<s
 /** Register a ready-made frame under a key (forms drawn in code, tests). */
 export const putSprite = (key: string, frame: Canvas) => void frames.set(key, frame)
 
+/** A loaded sprite's own canvas (undefined until it has loaded), to draw at any scale. */
+export const spriteFrame = (key: string): Canvas | undefined => frames.get(key)
+
 /** The drawn size of a sprite (its art box); 48×48 until it has loaded. */
 export function spriteSize(key: string): { w: number; h: number } {
   const f = frames.get(key)

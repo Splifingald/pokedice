@@ -5,8 +5,10 @@ import { Navigate, useNavigate, useParams } from 'react-router-dom'
 import { EVENT_IDS, eventUnlocked, type EventId } from '@/engine'
 import { BackButton } from '@/components/PageHead'
 import { useT } from '@/i18n/react'
+import { countdown } from '@/lib/format'
 import { useGame } from '@/store/game'
-import { EventPicture } from './shared'
+import { EventPicture, useWheelDay } from './shared'
+import { WheelPage } from './WheelPage'
 
 const isEventId = (id: string | undefined): id is EventId => !!id && (EVENT_IDS as readonly string[]).includes(id)
 
@@ -28,9 +30,19 @@ export function EventBanner({ id, status }: { id: EventId; status?: ReactNode })
   )
 }
 
+/** The banner's live line: the wheel's free spin or its countdown. */
+function useEventStatus(id: EventId): string | undefined {
+  const { t } = useT()
+  const wheel = useWheelDay()
+  if (id === 'wheel' && wheel.known)
+    return wheel.ready ? t('ui.events.wheel.daily') : t('ui.events.wheel.nextSpin', { time: countdown(wheel.msLeft) })
+  return undefined
+}
+
 /** Each event's page (docs/19 builds them one by one). */
 function EventBody({ id }: { id: EventId }) {
   const { t } = useT()
+  if (id === 'wheel') return <WheelPage />
   return <p className="m-0 font-pixel-sm text-[16px] text-muted">{t('ui.events.building', { name: t(`ui.events.${id}.name`) })}</p>
 }
 
@@ -40,9 +52,14 @@ export function EventsScreen() {
   const data = useGame((s) => s.data)
   // A closed or unknown event goes back Home (a stale link, an event switched off in Admin).
   if (!isEventId(id) || !save || !eventUnlocked(id, save, data)) return <Navigate to="/home" replace />
+  return <EventPage id={id} />
+}
+
+function EventPage({ id }: { id: EventId }) {
+  const status = useEventStatus(id)
   return (
     <div className="flex flex-col gap-3">
-      <EventBanner id={id} />
+      <EventBanner id={id} status={status} />
       <EventBody id={id} />
     </div>
   )

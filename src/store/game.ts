@@ -5,6 +5,7 @@ import {
   compileGameData,
   fitDayCare,
   migrateRounds,
+  payWheelPrize,
   reviveFossils,
   releaseDuplicates,
   syncHpScale,
@@ -141,8 +142,9 @@ function boot(): Pick<GameStore, 'data' | 'rawData' | 'save' | 'corruptSaveArchi
   setLangInternal(settings.lang ?? DEFAULT_LANG)
   const data = localizeGameData(rawData, settings.lang ?? DEFAULT_LANG)
   if (!save) return { data, rawData, save: null, corruptSaveArchived: corrupt, settings }
-  // Settle the save (HP scale, XP curve, duplicates) before the first render.
-  return { data, rawData, save: settle(save, data).save, corruptSaveArchived: corrupt, settings }
+  // Settle the save (HP scale, XP curve, duplicates) before the first render. A Fortune Wheel prize still waiting (the
+  // page closed while the wheel turned) is paid now.
+  return { data, rawData, save: settle(payWheelPrize(save, data), data).save, corruptSaveArchived: corrupt, settings }
 }
 
 export const useGame = create<GameStore>()(() => ({

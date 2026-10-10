@@ -1,8 +1,23 @@
 // Admin → Events (docs/18, docs/19): the special events' switches, Home order, unlock areas, banner pictures and the
 // rules their unlock pop-up lists. One game_config row, `events`; each event's own numbers get their box as it's built.
-import { DEFAULT_CONFIG, EVENT_IDS, type EventDef, type EventId, type EventsConfig } from '@/engine'
+import { useEffect, useMemo, useRef } from 'react'
+import {
+  DEFAULT_CONFIG,
+  EVENT_IDS,
+  prizeChances,
+  wheelSlices,
+  type EventDef,
+  type EventId,
+  type EventsConfig,
+  type GameData,
+  type WheelPrize,
+  type WheelReward,
+} from '@/engine'
 import { ART_GEOMETRY } from '@/fx/areaArtMap'
-import { bannerUrl } from '@/screens/events/shared'
+import { WheelStage } from '@/fx/wheel'
+import { money } from '@/lib/format'
+import { bannerUrl, RewardIcon } from '@/screens/events/shared'
+import { cx } from '@/theme/util'
 import { useAdminData } from '../store'
 import { Box, Field, NumInput, inputCls } from '../widgets'
 import { useConfigRow } from './ConfigSection'
@@ -94,6 +109,150 @@ function EventRow({ id, def, set }: { id: EventId; def: EventDef; set: (patch: P
   )
 }
 
+/** A live wheel, the way players see it (lights and all). */
+function WheelPreview({ prizes, data }: { prizes: WheelPrize[]; data: GameData }) {
+  const box = useRef<HTMLDivElement>(null)
+  const disc = useRef<HTMLCanvasElement>(null)
+  const fx = useRef<HTMLCanvasElement>(null)
+  const pointer = useRef<HTMLSpanElement>(null)
+  const stage = useRef<WheelStage | null>(null)
+  const slices = useMemo(
+    () =>
+      wheelSlices(prizes).map((i) => {
+        const r = prizes[i]!.reward
+        return r.kind === 'gold'
+          ? { reward: r, label: money(r.amount) }
+          : { reward: r, sprite: data.items[r.key]?.spriteUrl ?? undefined, label: r.qty > 1 ? `×${r.qty}` : '' }
+      }),
+    [prizes, data],
+  )
+  useEffect(() => {
+    if (!box.current || !disc.current || !fx.current || !pointer.current) return
+    const s = new WheelStage({ box: box.current, wheel: disc.current, fx: fx.current, pointer: pointer.current }, slices, 'off')
+    s.start(false)
+    stage.current = s
+    return () => s.stop()
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- mounted once; the slices follow below
+  }, [])
+  useEffect(() => stage.current?.setSlices(slices), [slices])
+  return (
+    <div ref={box} className="ev-wheel !m-0 !w-[200px]">
+      <span ref={pointer} className="ev-pointer" aria-hidden />
+      <canvas ref={disc} className="ev-wheel-disc" width={200} height={200} aria-label="Preview of the wheel" />
+      <canvas ref={fx} className="ev-wfx" aria-hidden />
+    </div>
+  )
+}
+
+/** The wheel's prizes: what each one is, how many slices it takes and the odds of each slice. */
+function WheelBox({ prizes, set }: { prizes: WheelPrize[]; set: (prizes: WheelPrize[]) => void }) {
+  const data = useAdminData()
+  const chances = prizeChances(prizes)
+  const sum = prizes.reduce((n, p) => n + Math.max(0, p.count) * Math.max(0, p.odds), 0)
+  const items = Object.values(data?.items ?? {}).sort((a, b) => a.name.localeCompare(b.name))
+  const setPrize = (i: number, patch: Partial<WheelPrize>) => set(prizes.map((p, j) => (j === i ? { ...p, ...patch } : p)))
+  const setReward = (i: number, reward: WheelReward) => setPrize(i, { reward })
+  const pct = (x: number) => `${+x.toFixed(2)} %`
+  const off = Math.abs(sum - 100) > 0.01
+  return (
+    <Box
+      title="Fortune Wheel — prizes"
+      hint="Equal slices on the wheel. A prize takes as many slices as its count, each won that % of the time. The server draws signed-in players' prizes from this list: Publish before players spin."
+    >
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_200px]">
+        <div className="min-w-0 overflow-x-auto">
+          <table className="w-full text-lg">
+            <thead>
+              <tr className="text-left">
+                <th className="font-normal">Prize</th>
+                <th className="font-normal">Amount</th>
+                <th className="font-normal">Slices</th>
+                <th className="font-normal">% each slice</th>
+                <th className="font-normal">Chance a spin</th>
+                <th />
+              </tr>
+            </thead>
+            <tbody>
+              {prizes.map((p, i) => {
+                const r = p.reward
+                return (
+                  <tr key={i} className="border-t border-shadow/40">
+                    <td className="py-1 pr-2">
+                      <span className="flex items-center gap-1.5">
+                        <span className="grid h-8 w-8 shrink-0 place-items-center">{data && <RewardIcon reward={r} data={data} size={28} />}</span>
+                        <select
+                          className={cx(inputCls, 'min-w-[150px]')}
+                          value={r.kind === 'gold' ? 'gold' : r.key}
+                          onChange={(e) =>
+                            setReward(
+                              i,
+                              e.target.value === 'gold'
+                                ? { kind: 'gold', amount: r.kind === 'gold' ? r.amount : 10 }
+                                : { kind: 'item', key: e.target.value, qty: r.kind === 'item' ? r.qty : 1 },
+                            )
+                          }
+                        >
+                          <option value="gold">Pokédollars</option>
+                          {items.map((it) => (
+                            <option key={it.key} value={it.key}>
+                              {it.name}
+                            </option>
+                          ))}
+                        </select>
+                      </span>
+                    </td>
+                    <td className="pr-2">
+                      <NumInput
+                        className="w-24"
+                        min={1}
+                        value={r.kind === 'gold' ? r.amount : r.qty}
+                        onChange={(v) => {
+                          const n = Math.max(1, Math.round(v ?? 1))
+                          setReward(i, r.kind === 'gold' ? { ...r, amount: n } : { ...r, qty: n })
+                        }}
+                      />
+                    </td>
+                    <td className="pr-2">
+                      <NumInput className="w-20" min={0} value={p.count} onChange={(v) => setPrize(i, { count: Math.max(0, Math.round(v ?? 0)) })} />
+                    </td>
+                    <td className="pr-2">
+                      <NumInput className="w-24" min={0} step={0.5} value={p.odds} onChange={(v) => setPrize(i, { odds: Math.max(0, v ?? 0) })} />
+                    </td>
+                    <td className="pr-2 font-mono">{pct(chances[i]!)}</td>
+                    <td>
+                      <button
+                        type="button"
+                        className="px-2 text-lg text-danger"
+                        onClick={() => set(prizes.filter((_, j) => j !== i))}
+                        aria-label="Remove this prize"
+                      >
+                        ✕
+                      </button>
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+          <button
+            type="button"
+            className="mt-2 px-2 py-1 text-lg shadow-ring"
+            onClick={() => set([...prizes, { reward: { kind: 'gold', amount: 10 }, count: 1, odds: 5 }])}
+          >
+            + Add a prize
+          </button>
+        </div>
+        {data && <WheelPreview prizes={prizes} data={data} />}
+      </div>
+      <p className={cx('text-lg', off && 'text-danger')}>
+        Slices × odds add up to <b>{pct(sum)}</b>
+        {off ? ': the game scales them to 100 % (the last column is what players get).' : '.'} {wheelSlices(prizes).length} slices
+        on the wheel.
+      </p>
+    </Box>
+  )
+}
+
 export function EventsSection() {
   const [cfg, set] = useEventsConfig()
   return (
@@ -109,6 +268,7 @@ export function EventsSection() {
           <EventRow key={id} id={id} def={cfg[id]} set={(patch) => set({ [id]: { ...cfg[id], ...patch } })} />
         ))}
       </Box>
+      <WheelBox prizes={cfg.wheel.prizes} set={(prizes) => set({ wheel: { ...cfg.wheel, prizes } })} />
     </div>
   )
 }
