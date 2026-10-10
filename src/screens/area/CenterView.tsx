@@ -8,6 +8,7 @@ import { PixelButton } from '@/components/PixelButton'
 import { SheetModal, type SheetView } from '@/components/SheetModal'
 import { StageCanvas, type StageHandle } from '@/components/StageCanvas'
 import { loadSprite, spriteKey } from '@/fx/sprites'
+import { loadCenterArt } from '@/fx/scenes'
 import { centerTimeline } from '@/fx/timelines/center'
 import { useMotion } from '@/lib/motion'
 import { putInTeam, removeFromTeam, reorderTeam } from '@/store/actions'
@@ -31,7 +32,7 @@ export function CenterView() {
   const teamSize = useGame((s) => s.save?.team.length ?? 1)
   // The machine's jingle plays once, on arrival (short motion: the quick version).
   const [scene] = useState(() => ({
-    ready: loadSprite(NURSE, false),
+    ready: Promise.all([loadSprite(NURSE, false), loadCenterArt()]),
     timeline: centerTimeline({ balls: teamSize, nurse: spriteKey(NURSE, false), short: level !== 'full' }),
   }))
 

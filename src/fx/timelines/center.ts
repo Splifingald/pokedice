@@ -1,9 +1,10 @@
-// The Pokémon Center: a Poké Ball per team member (nothing else on the machine) drops into the healing machine, the six-beat jingle lights them in turn
-// (each note spikes the heart monitor), they flash together, the team is healed, Chansey hops, the balls lift out.
+// The Pokémon Center, in its picture (scenes.ts CENTER_ART; the drawn room until it loads): a Poké Ball per team
+// member drops into one of the machine's three slots, the games' heal jingle lights them in turn (each note spikes the
+// heart monitor), they flash together, the team is healed, Chansey hops behind the counter, the balls lift out.
 // Short motion: the balls are already in place, one flash, healed.
 import { fxSound } from '@/audio/sfx'
 import { ease, ellipse, glow, lerp, Particles, px, rect, rng, span, wash, type Rng } from '../pixel'
-import { ball, center, CENTER, SLOTS } from '../scenes'
+import { ball, CENTER, CENTER_ART, centerRoom, SLOTS } from '../scenes'
 import { drawSprite } from '../sprites'
 import { H, screenFlash, STEP, W, within, type Cue, type Timeline } from '../timeline'
 
@@ -26,8 +27,8 @@ export function centerTimeline(p: CenterParams): Timeline<S> {
   const slots = SLOTS.slice(0, n)
   const short = !!p.short
   const PLACE = (i: number) => (short ? 0 : 0.7 + i * 0.3)
-  // Six beats, or a single flash when short.
-  const NOTES = short ? [0.45] : [2.1, 2.35, 2.6, 2.85, 3.2, 3.55]
+  // The jingle's seven notes (sfx 'center.note', timed like the games' tune), or a single flash when short.
+  const NOTES = short ? [0.45] : [2.1, 2.38, 2.6, 2.82, 3.08, 3.32, 3.5]
   const LAST = NOTES[NOTES.length - 1]!
   const T_HEAL = LAST + 0.1
   const T_JOY = LAST + 0.35
@@ -75,30 +76,36 @@ export function centerTimeline(p: CenterParams): Timeline<S> {
     },
     draw(g, s, t) {
       const P = CENTER
-      const bg = center(W, H)
+      const room = centerRoom(W, H)
+      const bg = room.cv
       g.drawImage(bg, 0, 0)
+      // Where things sit: in the picture's room, or in the drawn one.
+      const [sx0, sy0, sx1, sy1] = room.art ? CENTER_ART.screen : [35, 20, 69, 40]
+      const base = room.art ? Math.round((sy0 + sy1) / 2) : 33
+      const counterY = room.art ? CENTER_ART.counterY : 100
       // Heart monitor: a scrolling trace that spikes on each note.
-      for (let x = 35; x < 69; x++) {
-        const ts = t - (69 - x) * 0.012
+      for (let x = sx0 + 2; x < sx1 - 1; x++) {
+        const ts = t - (sx1 - 1 - x) * 0.012
         let v = 0
         for (const tn of NOTES) {
           const d = ts - tn
           if (d > 0 && d < 0.08) v = Math.max(v, Math.round(Math.sin((d / 0.08) * Math.PI * 2) * 7))
         }
         const beat = ts > 0.3 ? Math.round(Math.max(0, Math.sin(ts * 7.5) - 0.92) * 30) : 0
-        px(g, x, 33 - v - beat, P.light)
+        px(g, x, base - v - beat, P.light)
       }
       if (t > T_JOY) {
         // Done: a heart on the monitor.
         const m = ['.x.x.', 'xxxxx', 'xxxxx', '.xxx.', '..x..']
         for (let r = 0; r < 5; r++)
-          for (let q = 0; q < 5; q++) if (m[r]![q] === 'x') px(g, 62 + q, 24 + r, '#ff7aa0')
+          for (let q = 0; q < 5; q++)
+            if (m[r]![q] === 'x') px(g, sx1 - 9 + q, (room.art ? sy0 + 3 : 24) + r, '#ff7aa0')
       }
       // Chansey behind the counter, hopping when it's done.
       const hop =
         t > T_JOY && t < T_JOY + 0.5 ? -Math.round(Math.abs(Math.sin((t - T_JOY) * Math.PI * 4)) * 4) : 0
-      drawSprite(g, p.nurse, 194, 106 + hop)
-      g.drawImage(bg, 0, 100, W, H - 100, 0, 100, W, H - 100)
+      drawSprite(g, p.nurse, room.art ? CENTER_ART.nurseX : 194, counterY + 6 + hop)
+      g.drawImage(bg, 0, counterY, W, H - counterY, 0, counterY, W, H - counterY)
       if (within(t, LAST, LAST + 0.7)) {
         // The heal bloom sits behind the balls, so the balls stay crisp on top of it.
         const q = span(t, LAST, LAST + 0.7)
@@ -106,14 +113,11 @@ export function centerTimeline(p: CenterParams): Timeline<S> {
       }
       // Light bar on top of the machine.
       const pulse = NOTES.some((tn) => within(t, tn, tn + 0.12)) || within(t, LAST, LAST + 0.5)
-      rect(
-        g,
-        106,
-        77,
-        28,
-        3,
-        pulse ? '#ffffff' : t > NOTES[0]! - 0.1 && t < T_HEAL + 0.2 ? P.light : P.machine[0],
-      )
+      const lit = pulse ? '#ffffff' : t > NOTES[0]! - 0.1 && t < T_HEAL + 0.2 ? P.light : null
+      // The picture has its own strip, unlit: only a lit one is drawn over it.
+      if (room.art) {
+        if (lit) rect(g, ...CENTER_ART.strip, lit)
+      } else rect(g, 106, 77, 28, 3, lit ?? P.machine[0])
       // The balls.
       slots.forEach(([x, y], i) => {
         const t0 = PLACE(i)
@@ -122,7 +126,7 @@ export function centerTimeline(p: CenterParams): Timeline<S> {
         if (lift >= 1) return
         if (lift > 0.5 && Math.floor(t * 30) % 2) return
         const drop = short ? 1 : ease.outBounce(span(t, t0, t0 + 0.25))
-        const by = lerp(y - 30, y - 2, drop) - 26 * ease.inQ(lift)
+        const by = lerp(y - 30, y - (room.art ? 1 : 2), drop) - 26 * ease.inQ(lift)
         const lit = short || t > t0 + 0.22
         if (lit && lift === 0) ellipse(g, x, y + 1, 5, 2, P.light)
         const k = NOTES.findIndex((tn) => within(t, tn, tn + 0.15))
@@ -142,7 +146,7 @@ export function centerTimeline(p: CenterParams): Timeline<S> {
         [T_JOY, (hud) => hud.beat?.('healed')],
       ]
       if (!short) slots.forEach((_, i) => c.push([PLACE(i) + 0.22, () => fxSound('center.place', i)]))
-      NOTES.forEach((tn, i) => c.push([tn, () => fxSound('center.note', short ? 5 : i)]))
+      NOTES.forEach((tn, i) => c.push([tn, () => fxSound('center.note', short ? 6 : i)]))
       return c.sort((a, b) => a[0] - b[0])
     },
   }
