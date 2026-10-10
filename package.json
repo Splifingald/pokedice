@@ -18,6 +18,7 @@
     "seed-sql": "tsx scripts/write-seed-sql.ts",
     "seed-forms": "tsx scripts/seed-forms.ts",
     "art": "tsx scripts/art.ts",
+    "unpixel": "tsx scripts/unpixel.ts",
     "showdown-sprites": "tsx scripts/showdown-sprites.ts",
     "trainer-sprites": "tsx scripts/trainer-sprites.ts",
     "region-trainers": "tsx scripts/region-trainers.ts",
