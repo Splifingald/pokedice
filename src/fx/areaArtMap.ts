@@ -308,6 +308,8 @@ export const AREA_ART: Readonly<Record<string, string>> = {
  * swimmers keep to, only where the picture clearly has some.
  */
 export const ART_GEOMETRY: Readonly<Record<string, ArtGeometry>> = {
+  // The Day Care's yard (not an area: dayCarePicture() in areaArt.ts): the lawn under the fence, the pond bottom left.
+  daycare: { horizon: 118, walk: [24, 168, 264, 262], pond: { x: 76, y: 223, rx: 52, ry: 16 } },
   a121: { horizon: 142, walk: [24, 168, 264, 266] },
   a122: { horizon: 124, walk: [24, 178, 264, 266], pond: { x: 200, y: 148, rx: 50, ry: 12 } },
   a123: { horizon: 113, walk: [24, 152, 264, 266] },

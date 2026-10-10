@@ -39,6 +39,12 @@ export const artUrl = (id: string) => `/area-art/${id}.png`
 /** The professor's lab, the stage of picking a partner (240 × 160, drawn 400 px wide). */
 export const LAB_ART = artUrl('moment-lab')
 
+/** The Day Care's yard (docs/15). It isn't an area, so it has no line in AREA_ART; its picture is measured like theirs. */
+export function dayCarePicture(): AreaPicture | null {
+  const g = ART_GEOMETRY.daycare
+  return g ? { id: 'daycare', url: artUrl('daycare'), ...g } : null
+}
+
 /** An area's picture, or null: not mapped, or its picture isn't made yet. */
 export function pictureOf(areaId: string | null | undefined): AreaPicture | null {
   const id = areaId ? AREA_ART[areaId] : undefined

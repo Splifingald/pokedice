@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { artStrip, cachedStrip, pictureOf, SCENE_W } from '@/fx/areaArt'
+import { artStrip, cachedStrip, pictureOf, SCENE_W, type AreaPicture } from '@/fx/areaArt'
 import { stripOf } from '@/screens/home/scene'
 import { cx } from '@/theme/util'
 
@@ -10,14 +10,17 @@ import { cx } from '@/theme/util'
  */
 export function AreaStrip({
   area,
+  picture,
   h = 56,
   className,
 }: {
   area: { id: string; bannerUrl?: string | null }
+  /** A picture that isn't an area's (the Day Care's yard); otherwise the area's own. */
+  picture?: AreaPicture | null
   h?: number
   className?: string
 }) {
-  const pic = pictureOf(area.id)
+  const pic = picture === undefined ? pictureOf(area.id) : picture
   const key = `${area.id}|${h}`
   const ref = useRef<HTMLImageElement>(null)
   const [got, setGot] = useState<{ key: string; url: string } | null>(null)

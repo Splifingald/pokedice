@@ -2,7 +2,7 @@
 // strip lists cut from its middle. Areas that share a banner share a scene; '#flip' areas see it mirrored. From the
 // Visual Lab's home.js (paintOutdoor, paintForest, paintCave), with a desert added for the dunes areas. An area with a
 // painted picture (src/fx/areaArt.ts) uses it instead (`worldOf`); its drawn scene stands in while it loads.
-import { pictureOf, type AreaPicture } from '@/fx/areaArt'
+import { dayCarePicture, pictureOf, type AreaPicture } from '@/fx/areaArt'
 import {
   bayer,
   canvas,
@@ -761,8 +761,14 @@ export function sceneKeyOf(bannerUrl: string | null | undefined): { key: string;
 
 const worlds = new Map<string, World>()
 
-/** The Day Care's yard (docs/15): the same roaming world as an area's, with the cottage on the hill. */
-export const dayCareWorld = () => sceneOf('daycare.png')
+/**
+ * The Day Care's yard (docs/15): its picture (public/area-art/daycare.png), with the drawn meadow and cottage as its
+ * stand-in while it loads, or for good if it can't.
+ */
+export function dayCareWorld(): World {
+  const art = dayCarePicture()
+  return art ? pictureWorld(art, 'daycare.png') : sceneOf('daycare.png')
+}
 
 /** The scene of an area, drawn once and kept. */
 export function sceneOf(bannerUrl: string | null | undefined): World {
@@ -786,14 +792,18 @@ const artWorlds = new Map<string, World>()
  */
 export function worldOf(area: { id: string; bannerUrl?: string | null }): World {
   const art = pictureOf(area.id)
-  if (!art) return sceneOf(area.bannerUrl)
-  const id = `${art.id}|${area.bannerUrl ?? ''}`
+  return art ? pictureWorld(art, area.bannerUrl) : sceneOf(area.bannerUrl)
+}
+
+/** A picture's world: where it walks and swims, measured on the picture; `standIn`'s drawn scene shows until it loads. */
+function pictureWorld(art: AreaPicture, standIn: string | null | undefined): World {
+  const id = `${art.id}|${standIn ?? ''}`
   const hit = artWorlds.get(id)
   if (hit) return hit
   const [x0, y0, x1, y1] = art.walk
   const pond = art.pond ? { ...art.pond, rim: '#d8f1ff' } : null
   const world: World = {
-    cv: sceneOf(area.bannerUrl).cv,
+    cv: sceneOf(standIn).cv,
     horizon: art.horizon ?? Math.round(H / 2),
     walk: { x0, y0, x1, y1 },
     pond,

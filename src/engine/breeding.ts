@@ -123,6 +123,13 @@ export function nextClock(save: SaveData, data: GameData, now: number): { clock:
 /** When the next check that could leave an Egg runs (the widget and the Egg-now bar count down to it). */
 export const nextCheckAt = (save: SaveData, data: GameData, now: number) => nextClock(save, data, now).at
 
+/** How far that clock has run since its last check, 0 to 1: Home's gauge to the next Egg check. */
+export function nextCheckProgress(save: SaveData, data: GameData, now: number): { at: number; done: number } {
+  const { clock, at } = nextClock(save, data, now)
+  const step = clockMs(data, clock)
+  return { at, done: Math.min(1, Math.max(0, (now - (at - step)) / step)) }
+}
+
 /**
  * Runs both clocks up to `now`. Missed checks collapse into one (one Egg waits at a time anyway): a clock that is due
  * moves on by whole intervals, and if no Egg waits and it has pairs, a random pair of its own leaves one. The gift
