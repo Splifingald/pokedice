@@ -42,14 +42,17 @@ async function signedIn(page: Page, save: object, settings = FAST) {
   )
 }
 
-test('Versus is in the trainer menu, locked until three Pokémon reach Lv.50', async ({ page }) => {
+test('Versus is on Home, locked until three Pokémon reach Lv.50', async ({ page }) => {
   await mockSupabase(page)
   await signedIn(page, makeSave(4, { player: { name: 'Sam', character: 'red' } }))
   await page.goto('/home')
+  // Its widget, not the trainer menu: the menu no longer lists it.
   await page.getByRole('button', { name: 'Your trainer menu' }).click()
-  const row = page.getByRole('dialog').getByRole('button', { name: /Versus/ })
-  await expect(row).toContainText('0/3 at Lv.50')
-  await row.click()
+  await expect(page.getByRole('dialog').getByRole('button', { name: /Versus/ })).toHaveCount(0)
+  await page.keyboard.press('Escape')
+  const widget = page.getByRole('button', { name: /0\/3 at Lv\.50/ })
+  await expect(widget).toContainText('0/3 at Lv.50')
+  await widget.click()
   await expect(page.getByText('Versus opens when 3 of your Pokémon reach Lv.50.')).toBeVisible()
 })
 

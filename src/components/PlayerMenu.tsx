@@ -1,6 +1,6 @@
 import { lazy, Suspense, useId, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { badgeCase, discordUrl, leaderboardUnlocked, versusReadyCount, versusUnlocked, VERSUS_TEAM_SIZE } from '@/engine'
+import { badgeCase, discordUrl, leaderboardUnlocked } from '@/engine'
 import { useT } from '@/i18n/react'
 import { useFriends } from '@/lib/friends'
 import { isSupabaseConfigured } from '@/lib/supabase'
@@ -107,9 +107,6 @@ export function PlayerMenu() {
   const name = playerOf(save).name
   const badges = save ? badgeCase(save, data) : []
   const earned = badges.filter((b) => b.earned).length
-  // Versus shows from the start, with how far the player is from opening it (3 Pokémon at Lv.50).
-  const versusOpen = !!save && versusUnlocked(save, data)
-  const versusReady = save ? Math.min(versusReadyCount(save, data), VERSUS_TEAM_SIZE) : 0
   const boardOpen = !!save && leaderboardUnlocked(save, data)
   // The Connect row only makes sense when cloud backup exists on this deployment and nobody is signed in.
   const canConnect = isSupabaseConfigured && auth.status === 'signed_out'
@@ -195,13 +192,6 @@ export function PlayerMenu() {
               onClick={go('/friends')}
             />
           )}
-          <MenuRow
-            icon={versusOpen ? 'sword' : 'lock'}
-            label={t('ui.nav.versus')}
-            desc={t('ui.menu.versus')}
-            hint={versusOpen ? undefined : t('ui.versus.lockedCount', { n: versusReady })}
-            onClick={go('/versus')}
-          />
           <MenuRow icon="gear" label={t('ui.nav.settings')} desc={t('ui.menu.settings')} onClick={go('/settings')} />
           <MenuRow
             icon="book"
