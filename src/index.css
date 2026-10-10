@@ -165,8 +165,11 @@ button {
   }
 }
 
+/* Canvases too: a 240×160 stage drawn at 848px wide must stay sharp, not smoothed (the battle zones were blurry). */
 img.pixelated,
-.pixelated img {
+canvas.pixelated,
+.pixelated img,
+.pixelated canvas {
   image-rendering: pixelated;
 }
 
