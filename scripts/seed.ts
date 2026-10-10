@@ -839,13 +839,19 @@ export function gymPotions(role: string, badge: string | null | undefined): stri
 const RETIRED_CONFIG_KEYS = ['regenPercentPerHour']
 
 /**
- * Schema the data needs but 0001_init.sql has not got: the `regions` table, `areas.region_id`, and the per-region
- * `leaderboard()`. Folded into seed.sql so there is one file to run rather than two in a particular order. The
- * migration stays the single source of that SQL — it is written to be idempotent, so re-running it costs nothing.
+ * Schema the data needs but 0001_init.sql has not got: the `regions` table and `areas.region_id` (0016), then the
+ * player cards and the per-region `leaderboard()` that reads them (0033). Folded into seed.sql so there is one file to
+ * run rather than several in a particular order. The migrations stay the single source of that SQL — they are written
+ * to be idempotent, so re-running them costs little.
  */
 export async function regionsPrelude(): Promise<string> {
-  const file = path.join(ROOT, 'supabase', 'migrations', '0016_regions.sql')
-  return `-- ↓ supabase/migrations/0016_regions.sql, inlined so this file stands alone.\n${await readFile(file, 'utf8')}`
+  const parts = await Promise.all(
+    ['0016_regions.sql', '0033_friends.sql'].map(async (name) => {
+      const sql = await readFile(path.join(ROOT, 'supabase', 'migrations', name), 'utf8')
+      return `-- ↓ supabase/migrations/${name}, inlined so this file stands alone.\n${sql}`
+    }),
+  )
+  return parts.join('\n')
 }
 
 export function buildSql(b: {

@@ -486,6 +486,8 @@ export interface GameConfig {
   shinyChance: number
   /** Signed-in players' save goes to the cloud at most this often (minutes) while they play; SYNC ONLINE does it now. */
   cloudSyncMinutes: number
+  /** Friends each player can have (both sides of a friendship count it). The database reads the same key. */
+  maxFriends: number
   /** Energy: 1 per encounter discovered (not gyms, legendaries or Pokémon Centers), refilled over time. */
   energy: EnergyConfig
   status: StatusRules

@@ -438,6 +438,7 @@ export function ConfigSection() {
   const [showAhead, setShowAhead] = useConfigRow('showRoundPreview')
   const [shiny, setShiny] = useConfigRow('shinyChance')
   const [cloudSync, setCloudSync] = useConfigRow('cloudSyncMinutes')
+  const [maxFriends, setMaxFriends] = useConfigRow('maxFriends')
   const [fph, setFph] = useState(80)
   const curve = useMemo(() => ({ ...DEFAULT_CONFIG.xpCurve, ...xpCurve }), [xpCurve])
 
@@ -532,6 +533,12 @@ export function ConfigSection() {
             hint="a signed-in player's save is pushed at most once every this many minutes while they play (and when the page closes) · players can still press SYNC ONLINE, once per 5 min"
           >
             <NumInput value={cloudSync} min={1} max={240} onChange={(v) => setCloudSync(Math.max(1, Math.min(240, v ?? 15)))} />
+          </Field>
+        </Box>
+
+        <Box title="Friends" hint="The friend list (docs/16). The database reads this key too: friend_add() refuses past it, on both sides.">
+          <Field label="maxFriends" hint="friends per player; lowering it removes nobody, it only stops new friends past the cap">
+            <NumInput value={maxFriends} min={1} max={500} onChange={(v) => setMaxFriends(Math.max(1, Math.min(500, v ?? 100)))} />
           </Field>
         </Box>
 

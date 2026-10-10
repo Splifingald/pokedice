@@ -37,6 +37,7 @@ export const DEFAULT_CONFIG: GameConfig = {
   showRoundPreview: false,
   shinyChance: 0.01,
   cloudSyncMinutes: 15,
+  maxFriends: 100,
   energy: { enabled: true, max: 50, minutesPerEnergy: 30 },
   status: {
     burn: { threshold: 1, percentPerStack: 4, duration: 3 },
