@@ -379,16 +379,30 @@ function VersusWidget() {
     return (
       <Widget
         title={t('ui.versus.title')}
-        tag={<PixelIcon name="lock" size={16} />}
+        tag={
+          <HeadTag>
+            <PixelIcon name="lock" size={16} />
+          </HeadTag>
+        }
         label={`${t('ui.versus.locked')} ${t('ui.versus.lockedCount', { n })}`}
         onClick={() => navigate('/versus')}
       >
-        <span className="flex min-h-[30px] items-center">{team}</span>
-        <span className="text-[20px] leading-none">{t('ui.versus.lockedCount', { n })}</span>
-        <Meter value={n} max={VERSUS_TEAM_SIZE} />
-        <span className="font-pixel-sm text-[15px] leading-none text-muted">
-          {t('ui.home.bestLevel', { n: best })}
-        </span>
+        {/* Locked: the same banner greyed, the team waiting on it, then the same rows as every widget. */}
+        <WidgetBanner>
+          <img
+            src={VS_BANNER}
+            alt=""
+            className="pixelated absolute inset-0 h-full w-full object-cover grayscale-[0.7]"
+            style={{ imageRendering: 'pixelated', objectPosition: '50% 55%' }}
+          />
+          <span className="absolute inset-y-0 left-1 flex items-center">{team}</span>
+          <PixelIcon name="lock" size={16} className="absolute right-2 top-1/2 -translate-y-1/2" />
+        </WidgetBanner>
+        <DayCareRows
+          top={<span className="truncate text-[20px] leading-none">{t('ui.versus.lockedCount', { n })}</span>}
+          meter={<Meter value={n} max={VERSUS_TEAM_SIZE} />}
+          bottom={t('ui.home.bestLevel', { n: best })}
+        />
       </Widget>
     )
   }
