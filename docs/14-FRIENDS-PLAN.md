@@ -1,7 +1,9 @@
 # Pokédice — Friends Plan, with Discord sign-in
 
 > **Status: plan, nothing built yet.** Once it is built, where this document and the code disagree, the code is right.
-> Decisions settled on 10 Oct 2026 are in §12.
+> Decisions settled on 10 Oct 2026 are in §12. Server load, measured on the live database the same day, is in §8:
+> with the changes there, friends leave the database **lighter than today**. One fix comes first: migration 0029 was
+> never applied to the live database (§8.5).
 
 A **Friends page**, opened from the trainer menu (the side drawer). Players add each other with a **friend ID** or an
 **invite link**, are told when someone becomes their friend, can open a friend's profile, and see their friends
@@ -34,7 +36,8 @@ in with **Discord** (§2; setup guide: [docs/15](15-DISCORD-SIGN-IN.md)).
 | Six player-facing strings name Google (`ui.account.connectLabel`, `ui.settings.yourGoogle`, `ui.board.connect`, `ui.versus.connect`, `ui.versus.err.versus_signed_out`, the leaderboard tutorial), and `/setup` only covers Google. | They are reworded to "your account" (§2.7), and `/setup` gets an optional Discord step mirroring docs/15. |
 | `is_admin()` (0001) compares the session's e-mail with the admin's. | It keeps working with Discord. §2.5 explains why it stays safe, with an optional hardening. |
 | `leaderboard()` returns `is_me` but no user id, on purpose. `versus_board()` does return `user_id`. | The database marks friend rows on the region boards (`is_friend`); the browser never sees those ids. Versus compares ids in the browser, because it already has them. |
-| The board comes from `leaderboard_cache`, rebuilt by pg_cron every 5 minutes (0031), since the database stalled on 2026-10-07 from reading every save on every visit. | Nothing in this feature may read `saves.data` when a page, board or profile opens. A friend's profile comes from a small **player card** row, kept up to date when their save is written (§5.3). |
+| The board comes from `leaderboard_cache`, rebuilt by pg_cron every 5 minutes (0031), since the database stalled on 2026-10-07 from reading every save on every visit. | Nothing in this feature may read `saves.data` when a page, board or profile opens. A friend's profile comes from small **player card** rows, kept up to date when their save is written (§5.3). Measured on 10 Oct, that rebuild is still 65% of all database time (§8.1), so the cards go one step further: **the leaderboard reads them too**, and the 5-minute rebuild goes. |
+| Migration 0029 (force reload) was never applied to the live database: no `app_signals`, no `force_reload()`, no Realtime policy (checked 10 Oct). | Every tab's join to the `app` channel is refused, which makes Realtime restart every ~10 minutes and the API reload its schema each time: about 15% of database time for nothing (§8.5). Apply 0029 before any of this. The friends topic (§5.6) depends on the same Realtime setup. |
 | 0032 changed `leaderboard()`'s return type, so it had to drop and re-create it. `0016_regions.sql` carries the same pieces so that `seed.sql`, which inlines it, keeps them. | Adding `is_friend` repeats that: drop and re-create in the new migration **and** in `0016_regions.sql`. |
 | Leaderboard and Versus are pages inside `GameLayout`. The drawer's Versus row already closes the drawer and navigates (`go('/versus')`). | Friends follows the same pattern: a route inside `GameLayout`, and a row that navigates. |
 | Every visible tab joins the private Realtime channel `app` (0029). supabase-js multiplexes channels over one websocket. | A per-player topic `friends:<uid>` adds no connection: still one per tab against the plan's 200. |
@@ -93,6 +96,16 @@ list all get the friend treatment.
 A toast, a dot and a NEW tag. No e-mail and no web push: the game has no service worker, and a permission prompt for
 this is not worth it (§11).
 
+*(To confirm)* How fast the toast arrives while the player's game is open:
+
+- **Instantly** (recommended): a per-player Realtime topic (§5.6). It costs one more channel join each time a tab
+  becomes visible, about 6 ms of database time each, 1–2% of today's database time (§8.3).
+- **When the player comes back to the tab**: no Realtime for friends. The tiny `friend_status()` call (§5.4) runs on
+  return to the tab, at most every 5 minutes. Slightly cheaper, but a player who keeps the tab in front sees a new
+  friend only at their next reload or tab switch.
+
+Either way, a player who was away is told the next time the game loads.
+
 ### 1.8 Sign in with Google or Discord
 
 Both providers open the same things; a player can link both to one account. Details in §2.
@@ -122,8 +135,8 @@ and checked on its own (docs/15, part 4).
 - Every CONNECT in the game (title screen, trainer menu, leaderboard banner, Versus, the Friends page, the invite
   pop-up) opens a small chooser: **Continue with Google**, **Continue with Discord** (mockup I).
 - The game asks Supabase which providers are on: `GET <SUPABASE_URL>/auth/v1/settings` with the anon key returns
-  `external: { google: true, discord: false, … }`. It is read once per session (and kept in sessionStorage); if it
-  fails, the game assumes Google only, which is today's behaviour.
+  `external: { google: true, discord: false, … }`. It is kept in localStorage for 24 hours, so it costs about one call
+  per player per day; if it fails, the game assumes Google only, which is today's behaviour.
 - With only Google on, CONNECT signs in with Google directly, as today: no chooser, no extra tap. Discord shows up by
   itself the moment it is switched on in Supabase, and disappears if it is switched off.
 
@@ -156,7 +169,7 @@ Optional hardening, so that admin rights don't depend on e-mails at all: pin `is
 | File | Change |
 | --- | --- |
 | `src/store/sync.ts` | `signInWithGoogle()` becomes `signIn(provider: 'google' \| 'discord')`, same `redirectTo`, same `flushWrite()` first. New `linkProvider(provider)` and `unlinkProvider(provider)`. `handleSession` also stores `provider` (`app_metadata.provider`) and `providers` (from `user.identities`) in `auth`. The avatar already reads `user_metadata.avatar_url`, which Discord fills too. |
-| `src/lib/authProviders.ts` (new) | `fetchAuthProviders()` from `/auth/v1/settings`, cached for the session; `useAuthProviders()` hook. |
+| `src/lib/authProviders.ts` (new) | `fetchAuthProviders()` from `/auth/v1/settings`, kept 24 hours in localStorage (read in a try/catch); `useAuthProviders()` hook. |
 | `src/components/GoogleAccountButton.tsx` → `AccountButton.tsx` | `ConnectButton` opens the chooser (or signs in with Google straight away when Discord is off). `GoogleMark` stays; a `DiscordMark` joins it (the official white logo, on Discord's blurple `#5865F2`). The disconnect confirmation names the provider: "Backed up with Discord (ash@…)". |
 | `src/components/ConnectModal.tsx` (new) | The chooser (mockup I). |
 | `src/components/PlayerMenu.tsx` | The Connect row opens the chooser and shows both marks. |
@@ -229,9 +242,10 @@ When B adds A, by ID or by link:
 
 - **A is playing** (the tab is visible and on the Realtime socket): `friend_add` broadcasts `{ name, avatar }` on
   A's private topic `friends:<A>`. A gets a good-tone toast, "MISTY is now your friend!" (held until a fight in
-  progress ends), and the friend list refetches.
+  progress ends), and the friend ids refetch. (Or, if instant toasts are dropped, on A's next return to the tab: §1.7.)
 - **A is away**: the pair is stored as unseen by A. The next time A's game loads, once sign-in has settled (when
-  `ReplyPopup` loads its inbox), `friend_list()` reports it: one toast, "MISTY is now your friend!" or "3 new friends!".
+  `ReplyPopup` loads its inbox), the tiny `friend_status()` call (§5.4) reports it: one toast, "MISTY is now your
+  friend!" or "3 new friends!". The full list is only fetched when the Friends page opens.
 - Either way, until A opens the Friends page: a red dot on the avatar button in the top bar, a dot with the count on
   the Friends row in the trainer menu, and NEW on each new friend. Opening the page calls `friend_seen()`. The dots go
   at once; the NEW tags stay until A leaves the page, so A can still see who is new.
@@ -621,17 +635,30 @@ create table if not exists friendships (
 );
 create index if not exists friendships_b on friendships (user_b);
 
--- What another player may see of you: kept up to date by a trigger on saves (§5.3).
+-- What other players may see of you, kept up to date by a trigger on saves (§5.3). One row per player…
 create table if not exists player_cards (
   user_id uuid primary key references auth.users(id) on delete cascade,
   name text not null,
   avatar text not null,
-  region text not null,
+  region text not null,     -- the region they are playing now
   area_id text,
-  team jsonb not null,      -- [{dex, level, shiny}], the live team
-  regions jsonb not null,   -- {region: {pokedex, maxLevel, shinies, progress: {areaId: {cleared, gyms: [trainerId]}}}}
-  updated_at timestamptz not null,
-  constraint player_cards_small check (pg_column_size(regions) < 32000)
+  updated_at timestamptz not null   -- the save's: "played 2 h ago", and the leaderboard's 72-hour rule
+);
+create index if not exists player_cards_updated_at on player_cards (updated_at desc);
+
+-- …and one per player and region played: exactly what a leaderboard row needs, plus the badges for the profile.
+create table if not exists player_card_regions (
+  user_id uuid not null references player_cards(user_id) on delete cascade,
+  region text not null,
+  team jsonb not null,      -- [{dex, level, shiny}], that region's team
+  pokedex int not null,
+  max_level int not null,
+  shinies int not null,
+  progress jsonb not null,  -- {areaId: {cleared, gyms}}, as leaderboard() returns it today
+  badges text[] not null,   -- the gym leaders beaten whose `badge` is set: the badge case, and the board's badge rule
+  endgame boolean not null, -- the league area cleared: the crown
+  primary key (user_id, region),
+  constraint player_card_regions_small check (pg_column_size(progress) < 16000)
 );
 
 -- Lookups and adds, for the rate limit (§5.5). Pruned to the last hour as it goes.
@@ -647,17 +674,27 @@ create index if not exists friend_attempts_actor on friend_attempts (actor, at d
 `friend_code()` returns the caller's code, creating it with `extensions.gen_random_bytes` (pgcrypto, on in Supabase)
 and trying again on a unique violation. `friend_code_reset()` replaces it, at most once an hour.
 
-### 5.3 Player cards
+### 5.3 Player cards, which also become the leaderboard
 
-- `player_card_of(p_user uuid, p_data jsonb, p_at timestamptz)` builds a card from a save. It uses the same JSON paths
-  as `leaderboard_rows` (the live region plus every `parked` one), but with **no badge filter**, so a region shows on
-  the profile before its first badge, and with the gym **ids** rather than a count, so the badge case can be drawn.
-- Trigger `saves_card`, `after insert or update of data on saves`, upserts the card. It costs one pass over a save
-  already in memory, once per cloud push. Pushes are at most every `cloudSyncMinutes`, and no-op pushes are already
-  skipped. The work moves from every read to every write.
-- The migration ends with a backfill: `insert into player_cards select (player_card_of(user_id, data, updated_at)).*
-  from saves on conflict … do update`. That is one pass over `saves`, once.
-- For later, not in scope: `leaderboard_rebuild()` could read cards instead of saves.
+- `player_card_write(p_user uuid, p_data jsonb, p_at timestamptz)` builds the card from a save and writes it: the
+  `player_cards` row, and one `player_card_regions` row per region (the regions the save no longer has are deleted).
+  It uses the same JSON paths as `leaderboard_rows` (the live region plus every `parked` one), but with **no badge
+  filter**, so a region shows on a profile before its first badge, and it also keeps the badge **ids** and the crown.
+- Trigger `saves_card`, `after insert or update of data on saves`, calls it. That is one pass over a save already in
+  memory, once per cloud push: about 2,200 pushes in 10 hours today, an estimated 8 ms each (§8.2). Pushes happen at
+  most every `cloudSyncMinutes`, and no-op pushes are already skipped.
+- The migration ends with a backfill: `select player_card_write(user_id, data, updated_at) from saves`. That is one
+  pass over the 1,355 saves, once (an estimated 10–15 s; run it off-peak).
+- **The leaderboard reads the cards.** `leaderboard()` keeps its columns, but its rows come from
+  `player_card_regions` joined to `player_cards`, with the same rules as 0032: played in the last 72 hours (the card's
+  `updated_at`), at least one badge in the region (`badges` not empty), not banned, plus the caller's own rows at any
+  age. That is about 800 small rows instead of 458 saves, so there is no cache to rebuild:
+  `leaderboard_cache`, `leaderboard_cache_state`, `leaderboard_rows()`, `leaderboard_rebuild()`,
+  `leaderboard_refresh()` and the `leaderboard-rebuild` pg_cron job are retired (the job unscheduled, the tables
+  dropped at the end of the migration once the new `leaderboard()` answers). The caller's own rows also come from their
+  card: it is exactly as fresh as their last push, which is what the saved row is anyway.
+- `0016_regions.sql`, which `seed.sql` inlines, gets the same `leaderboard()` and loses the cache pieces, so that
+  re-running `seed.sql` doesn't bring the rebuild back.
 
 ### 5.4 Functions
 
@@ -671,7 +708,8 @@ All are `security definer set search_path = public` and need `auth.uid()`, excep
 | `friend_lookup(p_code text, p_device_id text) → (name, avatar, region, max_level)` | What an invite and the ADD dialog preview. Open to signed-out players, because a link can be opened before signing in. Rate limited (§5.5). |
 | `friend_add(p_code text) → (status, user_id, name, avatar)` | The statuses of §3.1. Inserts the pair (`least` / `greatest`), marks it seen for the caller, broadcasts to the other side (§5.6). Used by ADD and by an invite link alike. |
 | `friend_remove(p_friend uuid) → void` | Deletes the pair, from either side: gone for both. |
-| `friend_list() → setof (user_id, name, avatar, region, area_id, max_level, team, since, updated_at, is_new)` | One row per friend: friendships joined to `player_cards`. No save is read. A friend without a card yet comes back as "Trainer" with no game. |
+| `friend_status() → (ids uuid[], unseen jsonb)` | The one friends call at game load: the friend ids (for the Versus highlight) and the new friends' names and looks (for the toast). A few hundred bytes. |
+| `friend_list() → setof (user_id, name, avatar, region, area_id, max_level, team, since, updated_at, is_new)` | The Friends page only. One row per friend: friendships joined to the cards. No save is read. A friend without a card yet comes back as "Trainer" with no game. |
 | `friend_profile(p_friend uuid) → (card…, versus_team, attack_wins, defense_wins)` | The friend's whole card and their Versus team (`versus_teams`), only if they are the caller's friend; otherwise nothing (§1.5). |
 | `friend_seen() → void` | Marks the caller's unseen friendships as seen. |
 
@@ -701,8 +739,8 @@ add.
 
 ### 5.7 The leaderboard flag
 
-`leaderboard()` gains `is_friend boolean`. It works out the caller's friends once (100 rows at most) and joins them by
-hash against the board, rather than probing `friendships` for each of up to 3,000 rows:
+The new `leaderboard()` (§5.3) also gains `is_friend boolean`. It works out the caller's friends once (100 rows at
+most) and joins them by hash against the board, rather than probing `friendships` for each of up to 3,000 rows:
 
 ```sql
 with mine as (
@@ -711,19 +749,24 @@ with mine as (
   where f.user_a = auth.uid() or f.user_b = auth.uid()
 )
 select …, (m.id is not null) as is_friend
-from ( …the board as in 0032… ) r
+from ( …the board, from the cards… ) r
 left join mine m on m.id = r.user_id
 ```
 
-The return type changes, so: drop and create, as 0032 did, and the same edit in `0016_regions.sql` so that re-running
+The return type changes, so: drop and create, as 0032 did, and the same in `0016_regions.sql` so that re-running
 `supabase/seed.sql` keeps it. `parseLeaderboard` reads a missing `is_friend` as false (a database that hasn't run 0033).
 
 Versus needs no SQL change: `versus_board()` already returns `user_id`.
 
 ### 5.8 Deploying
 
+- **First, apply 0029** on the live database if it still isn't (§8.5). 0033's Realtime policy has the same shape and
+  needs the same setup.
 - A README "Rule additions" entry: "Needs `supabase/migrations/0033_friends.sql` run once on the live database
-  (re-running `supabase/seed.sql` brings the leaderboard part)." Another for Discord sign-in, pointing to docs/15.
+  (re-running `supabase/seed.sql` brings the leaderboard part). It replaces the leaderboard cache and its pg_cron job
+  with player cards." Another for Discord sign-in, pointing to docs/15.
+- After running it: check the board against the old one (§9), then watch Admin → Analytics and the database's query
+  stats for a day.
 - `pnpm seed-sql` regenerates `seed.sql` and its parts.
 - `maxFriends` goes in the engine defaults (`src/engine/defaults.ts`, `types.ts`) and the Admin → Config section.
 
@@ -738,7 +781,7 @@ Discord's own changes are in §2.6.
 | File | What |
 | --- | --- |
 | `src/screens/Friends.tsx` | The page (B, B′): the ID box, ADD, the list, the `⋯` menu. Calls `friend_seen()` on open. |
-| `src/lib/friends.ts` | The Supabase calls (`fetchFriends`, `addFriend`, `removeFriend`, `lookupCode`, `myCode`, `resetCode`, `markSeen`, `fetchFriendProfile`). Parsing in the `parseLeaderboard` style: a default for every field, the look through `avatarOf`. `normalizeCode` / `formatCode`, `inviteUrl(code)`. A small zustand store, `useFriends` (`code`, `friends`, `ids: Set<string>`, `unseen`, `load()`), loaded like `useInbox`: when sign-in settles, and when the page opens (at most once a minute). |
+| `src/lib/friends.ts` | The Supabase calls (`fetchFriends`, `addFriend`, `removeFriend`, `lookupCode`, `myCode`, `resetCode`, `markSeen`, `fetchFriendProfile`). Parsing in the `parseLeaderboard` style: a default for every field, the look through `avatarOf`. `normalizeCode` / `formatCode`, `inviteUrl(code)`. A small zustand store, `useFriends` (`code`, `friends`, `ids: Set<string>`, `unseen`, `loadStatus()`, `loadList()`). `friend_status()` when sign-in settles (like `useInbox`); `friend_list()` only when the Friends page opens, at most once a minute. Kept on the device to save calls: the player's own friend ID in localStorage per user id (it only changes on a reset), and each opened profile in memory for 5 minutes. |
 | `src/lib/share.ts` | `shareOrCopy({ title, text, url }, copiedText)`, taken out of `ShareTutorial`, which then uses it. |
 | `src/components/friends/FriendRow.tsx` | One friend: look, name, NEW, region · level · last played. Reused for the previews in C and D. |
 | `src/components/friends/AddFriendModal.tsx` | C. |
@@ -795,20 +838,101 @@ Discord's own changes are in §2.6.
 
 ---
 
-## 8. Database load
+## 8. Server load
 
-A budget, after the 2026-10-07 stall:
+Measured on the live database on 10 Oct 2026, over the 10 hours from 9 Oct 18:40 to 10 Oct 04:40 UTC (the database's
+query statistics and logs, read-only). That evening: 248 accounts active in the last 24 hours, 458 in the last 72,
+1,355 saves in all, averaging 18 KB stored (95th percentile 62 KB, largest 217 KB). The database is 80 MB.
 
-| Action | Cost |
+### 8.1 Today
+
+About 2,000 game loads in the 10 hours. Each makes about 7 database calls: the content-version check, the inbox, the
+daily ping, the save download, a save upload (more in a long session) and two attempts to join the `app` channel. The
+database spent **649 s** working:
+
+| What | Calls | Database time | Share |
+| --- | --- | --- | --- |
+| `leaderboard_rebuild()` (pg_cron, every 5 min, 3.5 s each) | 120 | 424 s | 65% |
+| API schema reloads (§8.5) | 143 | ~70 s | 11% |
+| Save uploads | 2,210 | 43 s | 7% |
+| Realtime join checks, all refused (§8.5) | 3,701 | 23 s | 4% |
+| Save downloads | 1,902 | 10 s | 2% |
+| `leaderboard()`, players opening the board (130–190 ms each) | 62 | 11 s | 2% |
+| Everything else (ping, inbox, content, Versus, sign-in) | | ~70 s | 9% |
+
+### 8.2 What this plan adds, as first written
+
+Estimates, from the costs above. A card costs about what one save costs the rebuild (3.5 s ÷ 458 saves ≈ 8 ms).
+
+| Piece | Calls in 10 h | Database time |
+| --- | --- | --- |
+| The card trigger on each save upload | ~2,200 | ~18 s |
+| Joining the friends topic | ~1 per visible tab | ~11–23 s |
+| The friend list at game load | ~2,000 | ~4 s |
+| Friends page, profiles, adds, `is_friend` on the board | a few hundred | under 2 s |
+| **Total** | **+2 calls per load** | **+35–45 s, about +6–7%** |
+
+Discord sign-in adds nothing to the database: the sign-in runs between the browser, Discord and Supabase Auth, as
+Google's does. Storage: a few KB of cards per account, 2–5 MB in all. Realtime: no new connection (the topic shares each
+tab's socket), and one message per add.
+
+### 8.3 Changes that keep it light, now part of the plan
+
+1. **The leaderboard reads the cards** (§5.3). The rebuild, its cache and its pg_cron job go: about −400 s, while the
+   card trigger adds ~18 s. Opening the board stops reading the player's own save on each visit too.
+2. **A tiny call at game load**, `friend_status()` (§5.4): ids and new friends only. The full list loads on the Friends
+   page.
+3. **Kept on the device:** the player's friend ID (localStorage, per account), the enabled sign-in providers (24 hours),
+   each opened profile (5 minutes in memory). Each costs about one call a day, not one per load.
+4. **The instant-toast topic is a choice** (§1.7): keep it (recommended, about 8–12 s per 10 hours, 1–2% of today,
+   once 0029 is applied and joins stop being retried every minute), or check on return to the tab instead.
+5. **Fix the Realtime loop first** (§8.5): about −75 s on its own (fewer schema reloads, no join retried every
+   minute), and it makes the friends topic work at all.
+
+### 8.4 After all of it
+
+| | Database time per 10 h |
 | --- | --- |
-| Open the Friends page | 1 call: up to 100 card rows by primary key |
-| Open a profile | 1 call: 1 card and 1 Versus team |
-| Open the leaderboard | One extra hash join on at most 100 friend ids |
-| A cloud push | One extra card upsert (the trigger) |
-| Being added | 1 broadcast |
-| Game load, signed in | 1 `friend_list`, and 1 `/auth/v1/settings` per session (Auth, not the database) |
+| Today | 649 s |
+| After §8.5 (0029 applied) | ~575 s |
+| After this plan, with §8.3 | ~170–200 s, **under a third of today**, friends included |
 
-No polling. The list refreshes when the page opens (at most once a minute), on a broadcast, and at sign-in.
+Requests per game load go from about 7 to about 8 (the friend status call; the provider check is once a day, and Auth,
+not the database). Every new call is a primary-key read of small rows.
+
+No polling anywhere. The friend list refreshes when the page opens (at most once a minute), on a broadcast, and at
+sign-in.
+
+### 8.5 Found while measuring: migration 0029 was never applied
+
+What the logs show, every ~10 minutes all night:
+
+1. Each open tab tries to join the private Realtime channel `app` (force reload, 0029). The database has no policy on
+   `realtime.messages` (0029 never ran: no `app_signals` table, no `force_reload()` either), so every join is refused:
+   *"Unauthorized: You do not have permissions to read from this Channel topic: app"*, **3,700 times** in 10 hours. The
+   game then tries again a minute later (`store/sync.ts`).
+2. With nobody ever connected, Realtime logs *"Tenant has no connected users, database connection will be
+   terminated"* and shuts down. The next join attempt starts it again (56 restarts in 10 hours, plus 14 cleanup runs).
+3. Each start runs *"Creating partitions for realtime.messages"*: `CREATE TABLE IF NOT EXISTS … PARTITION OF` and
+   `ALTER TABLE … OWNER TO supabase_realtime_admin` for five daily partitions.
+4. Supabase's `pgrst_ddl_watch` event trigger counts each `ALTER TABLE` as a schema change and sends
+   `NOTIFY pgrst, 'reload schema'`. The API (PostgREST) logs *"Received a schema cache reload message"* 351 times and
+   reloads its schema cache 143 times, each about 0.5 s of database time (most of it listing 1,196 time zones).
+
+The same missing table makes every tab's catch-up read, `GET /rest/v1/app_signals`, fail: 1,792 requests in the 10
+hours. And Admin → *Reload all players* can't work.
+
+**Fix: run `supabase/migrations/0029_force_reload.sql` on the live database, as is.** It is safe to re-run and starts
+with no reload signal, so it reloads nobody. Afterwards tabs stay joined; Realtime only restarts when no game is open,
+and the schema reloads should drop to the cleanup runs (about 14 in 10 hours instead of 143). To check, a day later:
+the "Unauthorized" lines and the "Tenant has no connected users" lines in the Realtime logs should be rare, and the
+`ALTER TABLE realtime.messages_…` counts in the query statistics far below 73 per 10 hours.
+
+Visible tabs will then hold Realtime connections (the free plan allows 200 at once). The game already handles going
+over: extra tabs read `app_signals` every 5 minutes instead.
+
+All the other migrations up to 0032 are in place (checked object by object). 0027's `analytics_prune()` is missing,
+but the tables it pruned are already dropped, so that one doesn't matter.
 
 ---
 
@@ -823,6 +947,10 @@ No polling. The list refreshes when the page opens (at most once a minute), on a
 - `tests/engine/…`: `regionCasesFrom` gives the same result as `regionCases` on the fixtures.
 - `tests/sync.test.ts`: `provider` and `providers` read from the session; `fetchAuthProviders` falls back to Google
   only when the settings call fails.
+
+**The leaderboard on cards**, on a Supabase branch loaded with a copy of the saves: the new `leaderboard()` returns the
+same rows as the old `leaderboard_rows()` (same players, regions, teams, Pokédex, levels, shinies and progress), and
+`EXPLAIN ANALYZE` shows it in milliseconds. Then a save upload updates the card.
 
 **SQL**, by hand on a Supabase branch with two test accounts (one Google, one Discord): add, already, self, unknown,
 reset, remove (gone for both), the cap, the rate limit; a direct `select` on `friendships` refused for a player; the
@@ -845,8 +973,9 @@ broadcast received by the other account; the board's `is_friend`; the card backf
 
 | Phase | Ships | Size |
 | --- | --- | --- |
+| Before anything: 0029 | Run `supabase/migrations/0029_force_reload.sql` on the live database (§8.5). Nothing to build. | — |
 | 0. Discord sign-in | Supabase set up from [docs/15](15-DISCORD-SIGN-IN.md); the chooser, Connected accounts (link / unlink), the six reworded strings, the `/setup` step. Independent of friends: it can ship first. | S–M |
-| 1. Database | 0033 (tables, cards and backfill, functions, Realtime policy, `is_friend`), the same edit in 0016, `seed.sql` regenerated | M |
+| 1. Database | 0033: friends tables, player cards and their backfill, the leaderboard on the cards (cache, rebuild and pg_cron job retired), `is_friend`, the functions, the Realtime policy; the same in 0016, `seed.sql` regenerated | M |
 | 2. Friends page | `/friends`, the menu row, `lib/friends`, the share helper, add by ID, the ID in the profile, strings | M |
 | 3. Profiles | `RegionRow` moved, `regionCasesFrom`, `FriendProfileModal`, remove | S–M |
 | 4. Invite links | `/f/:code`, the direct add, the pop-ups, the title ribbon, the invite kept across sign-in | S |
@@ -887,6 +1016,9 @@ Settled on 10 Oct 2026:
 | Who can open a profile? | Friends only. |
 | Do the Versus boards count as leaderboards? | Yes, with the opponents list. |
 | Google only? | No: Google or Discord, linkable to one account. Setup guide in docs/15. |
+
+Still open: how fast a new-friend toast arrives while the game is open (§1.7): instantly over Realtime (recommended),
+or on the next return to the tab.
 
 Assumed, say if not: the link path is `/f/<code>` (short to paste in a chat), and adding by ID keeps its preview and
 ADD button, since the player types the ID themselves.
