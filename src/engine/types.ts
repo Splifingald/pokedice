@@ -687,6 +687,18 @@ export interface BundleRaw {
   config: Record<string, unknown>
   /** Absent in bundles from before the second region: everything is then Kanto. */
   regions?: Region[]
+  /** Static canon, not content: src/config/bundle.ts adds it (src/data/egg-groups.json), the database never has it. */
+  eggGroups?: Record<string, EggGroupEntry>
+}
+
+/**
+ * A species' breeding data, from Pokémon Showdown (`pnpm egg-groups`): its Egg groups as Showdown names them ("Water
+ * 1", "Undiscovered"…), its gender when fixed (M, F or N for genderless), and `l: 1` for legendaries and mythicals.
+ */
+export interface EggGroupEntry {
+  g: string[]
+  s?: 'M' | 'F' | 'N'
+  l?: 1
 }
 
 export type RegionId = string
@@ -726,4 +738,6 @@ export interface GameData {
   config: GameConfig
   /** Every region, in order. Always at least Kanto. */
   regions: Region[]
+  /** Breeding data by dex (engine/daycare.ts): empty when a bundle came without it, and then nothing pairs. */
+  eggGroups: Record<number, EggGroupEntry>
 }

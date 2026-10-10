@@ -1,6 +1,6 @@
 // The one zustand store. Slices: content (GameData), save (persistent), run (transient), battle, ui.
 import { create } from 'zustand'
-import { BUNDLE } from '@/config/bundle'
+import { BUNDLE, withStatics } from '@/config/bundle'
 import {
   compileGameData,
   migrateRounds,
@@ -221,7 +221,7 @@ function setLanguage(lang: Lang) {
 
 /** Hot-swap content (bundle → Supabase, or an admin publish). */
 export function setContent(raw: BundleRaw, source: 'bundle' | 'remote') {
-  const rawData = compileGameData(raw)
+  const rawData = compileGameData(withStatics(raw))
   const data = localizeGameData(rawData, useGame.getState().settings.lang ?? DEFAULT_LANG)
   useGame.setState((s) => {
     // A new hpMultiplier keeps every HP % (syncHpScale); an admin may also have removed the area the player was in.

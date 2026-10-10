@@ -1,7 +1,7 @@
 // Admin working copy. Edits stay local until "Save changes"; RLS enforces who may write.
 import { useMemo } from 'react'
 import { create } from 'zustand'
-import { BUNDLE } from '@/config/bundle'
+import { BUNDLE, withStatics } from '@/config/bundle'
 import { bundleToRows, PRIMARY_KEYS, rowsToBundle, TABLES, type Row, type TableName, type TableRows } from '@/config/mapping'
 import { fetchAllRows } from '@/config/remote'
 import { compileGameData, type GameData } from '@/engine'
@@ -296,7 +296,7 @@ export function useAdminData(): GameData | null {
   const rows = useAdmin((s) => s.rows)
   return useMemo(() => {
     try {
-      return compileGameData(rowsToBundle(rows))
+      return compileGameData(withStatics(rowsToBundle(rows)))
     } catch {
       return null
     }

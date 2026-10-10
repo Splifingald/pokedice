@@ -103,6 +103,7 @@ export function compileGameData(raw: BundleRaw): GameData {
     trainers,
     config: mergeConfig(raw.config),
     regions: compileRegions(raw.regions, areas),
+    eggGroups: raw.eggGroups ?? {},
   }
 }
 
