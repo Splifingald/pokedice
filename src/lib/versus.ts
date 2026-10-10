@@ -73,10 +73,18 @@ export function rankVersus(rows: VersusEntry[], tab: VersusBoardTab): RankedVers
   })
 }
 
-/** The opponents to show: everyone but you, the ones still to beat first, then the newest teams (the SQL order). */
-export function opponentsOf(rows: VersusEntry[]): VersusEntry[] {
+/**
+ * The opponents to show: everyone but you, the ones still to beat first — your friends' among them first (docs/16) —
+ * then the newest teams (the SQL order).
+ */
+export function opponentsOf(rows: VersusEntry[], friends: ReadonlySet<string> = new Set()): VersusEntry[] {
   const others = rows.filter((r) => !r.isMe)
-  return [...others.filter((r) => !r.beaten), ...others.filter((r) => r.beaten)]
+  const toBeat = others.filter((r) => !r.beaten)
+  return [
+    ...toBeat.filter((r) => friends.has(r.userId)),
+    ...toBeat.filter((r) => !friends.has(r.userId)),
+    ...others.filter((r) => r.beaten),
+  ]
 }
 
 /** The known refusals of the Versus functions (their exception messages), for a translated line. */

@@ -1,9 +1,11 @@
 // Ranked rows, as on the leaderboard and Versus boards: a rank (gold, silver and bronze squares for 1–3), the
-// trainer's look, their name (and "you"), their team as menu icons, and the value at the end.
+// trainer's look, their name (and "you", or "Friend" for a friend: docs/16), their team as menu icons, and the value at
+// the end. A friend's row is sky blue with a blue edge, and can open their card.
 import type { ReactNode, Ref } from 'react'
 import { useT } from '@/i18n/react'
 import { useGame } from '@/store/game'
 import { cx } from '@/theme/util'
+import { FriendTag } from './friends/FriendBits'
 import { MiniSprite } from './SpriteImg'
 import { TrainerLook } from './TrainerLook'
 
@@ -75,6 +77,8 @@ export function BoardRow({
   look,
   name,
   isMe,
+  isFriend,
+  onOpen,
   team,
   value,
   sub,
@@ -89,6 +93,10 @@ export function BoardRow({
   look: string | null
   name: string
   isMe?: boolean
+  /** One of your friends: the blue row and tag. */
+  isFriend?: boolean
+  /** The whole row opens something (a friend's card): a button laid over it, the row's content stays as it is. */
+  onOpen?: () => void
   team: { dex: number; level: number; shiny?: boolean }[]
   value?: ReactNode
   sub?: ReactNode
@@ -106,15 +114,26 @@ export function BoardRow({
       ref={rowRef}
       aria-current={isMe || undefined}
       className={cx(
-        'flex items-center gap-2 pb-1.5 pl-1.5 pr-2.5 pt-1',
+        'relative flex items-center gap-2 pb-1.5 pl-1.5 pr-2.5 pt-1',
         isMe
           ? 'bg-gold-pale shadow-card-gold'
-          : dim
-            ? 'bg-well shadow-ring-line'
-            : 'bg-paper shadow-ring-line',
+          : isFriend
+            ? 'bg-sky shadow-[inset_5px_0_0_#5b8def,inset_0_0_0_2px_#5b8def]'
+            : dim
+              ? 'bg-well shadow-ring-line'
+              : 'bg-paper shadow-ring-line',
+        isFriend && !isMe && 'pl-2.5',
         flash && 'so-flash',
       )}
     >
+      {onOpen && (
+        <button
+          type="button"
+          onClick={onOpen}
+          aria-label={t('ui.board.openCard', { name })}
+          className="absolute inset-0 z-[1] cursor-pointer"
+        />
+      )}
       {lead ?? (rank != null && <RankMedal rank={rank} />)}
       <TrainerLook src={look} w={44} h={48} className={cx(dim && 'opacity-75 grayscale-[0.7]')} />
       <span className="grid min-w-0 flex-1 gap-px">
@@ -125,6 +144,7 @@ export function BoardRow({
               {t('ui.board.youTag')}
             </span>
           )}
+          {isFriend && !isMe && <FriendTag />}
         </b>
         <TeamIcons team={team} owner={name} />
         {sub}

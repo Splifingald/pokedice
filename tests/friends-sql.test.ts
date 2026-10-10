@@ -218,9 +218,11 @@ describe('0033: friends', () => {
     expect((await as<{ unseen: unknown[] }>(U.ash, 'select unseen from friend_status()'))[0]!.unseen).toEqual([])
   })
 
-  it('marks friends on the board', async () => {
-    const rows = await as<{ name: string; is_friend: boolean }>(U.ash, 'select name, is_friend from leaderboard() order by name, region')
-    expect(rows.filter((r) => r.is_friend).map((r) => r.name)).toEqual(['MISTY'])
+  it('marks friends on the board, with their id and nobody else’s', async () => {
+    const rows = await as<{ name: string; is_friend: boolean; friend_id: string | null }>(
+      U.ash, 'select name, is_friend, friend_id from leaderboard() order by name, region')
+    expect(rows.filter((r) => r.is_friend).map((r) => [r.name, r.friend_id])).toEqual([['MISTY', U.misty]])
+    expect(rows.filter((r) => !r.is_friend).every((r) => r.friend_id === null)).toBe(true)
     expect((await as<{ is_friend: boolean }>(null, 'select is_friend from leaderboard()')).every((r) => !r.is_friend)).toBe(true)
   })
 

@@ -1,4 +1,4 @@
-// The leaderboard: every cloud save (Google-signed-in players only) played in the last 72 hours, ranked by best level,
+// The leaderboard: every cloud save (signed-in players only, Google or Discord) played in the last 72 hours, ranked by best level,
 // campaign progress, Pokédex or shinies caught. The rows come from the `leaderboard()` SQL function, which leaves inactive players out
 // (migration 0023), and a region's row out until the player holds a badge there (0024); ranking happens here, against
 // the game data.
@@ -24,6 +24,8 @@ export interface LeaderboardRow {
   /** Shiny Pokémon caught in this region (all still owned: a shiny is never released). */
   shinies: number
   progress: Record<string, { cleared: boolean; gyms: number }>
+  /** One of the caller's friends (docs/16), with their id so the row can open their card; null for anyone else. */
+  friendId: string | null
 }
 
 export interface RankedRow extends LeaderboardRow {
@@ -139,6 +141,9 @@ interface RawRow {
   /** Missing on a database that hasn't run 0032_leaderboard_shiny.sql. */
   shinies?: number | null
   progress: Record<string, { cleared?: boolean; gyms?: number }> | null
+  /** Missing on a database that hasn't run 0033_friends.sql. */
+  is_friend?: boolean | null
+  friend_id?: string | null
 }
 
 export function parseLeaderboard(raw: RawRow[]): LeaderboardRow[] {
@@ -156,7 +161,16 @@ export function parseLeaderboard(raw: RawRow[]): LeaderboardRow[] {
     progress: Object.fromEntries(
       Object.entries(r.progress ?? {}).map(([id, p]) => [id, { cleared: !!p.cleared, gyms: Number(p.gyms) || 0 }]),
     ),
+    friendId: r.is_friend && r.friend_id ? String(r.friend_id) : null,
   }))
+}
+
+/**
+ * Only you and your friends, still with the ranks of the whole board (docs/16): it answers "where are my friends on
+ * the real board". Ranks are given before this filter, so they stay as they were.
+ */
+export function friendsOnly<T extends { isMe: boolean; friendId: string | null }>(rows: T[]): T[] {
+  return rows.filter((r) => r.isMe || !!r.friendId)
 }
 
 /** A short reason for the error line. PGRST202 = the database has no leaderboard() (migration 0011 not run). */

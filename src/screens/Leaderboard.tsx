@@ -4,6 +4,8 @@ import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getRegion, leaderboardUnlocked, regionOf } from '@/engine'
 import { BoardRow, Crown } from '@/components/BoardRow'
+import { FriendProfileSheet } from '@/components/friends/FriendProfileSheet'
+import { Seg } from '@/components/Segmented'
 import { AccountButton } from '@/components/AccountButton'
 import { PixelIcon, type IconName } from '@/components/icons'
 import { PageHead } from '@/components/PageHead'
@@ -11,8 +13,11 @@ import { Sheet } from '@/components/Sheet'
 import { TrainerLook } from '@/components/TrainerLook'
 import { useT } from '@/i18n/react'
 import { avatarOf } from '@/lib/avatars'
+import { useFriends } from '@/lib/friends'
+import { useFriendsFilter } from '@/lib/useFriendsFilter'
 import {
   fetchLeaderboard,
+  friendsOnly,
   leaderboardError,
   splitLeaderboard,
   type LeaderboardRow,
@@ -65,6 +70,9 @@ function Board() {
   const [hallOpen, setHallOpen] = useState(false)
   // "Show my row" bumps this: the row blinks again.
   const [found, setFound] = useState(0)
+  const [onlyFriends, setOnlyFriends] = useFriendsFilter()
+  const [card, setCard] = useState<{ id: string; name: string } | null>(null)
+  const hasFriends = useFriends((s) => s.ids.size > 0)
 
   useEffect(() => visitLeaderboard(), [])
 
@@ -91,7 +99,12 @@ function Board() {
     [load, tab, data, region],
   )
   const signedIn = auth.status === 'signed_in'
-  const meRef = useSnapToMe(`${tab}:${board.findIndex((r) => r.isMe)}:${found}`)
+  // FRIENDS keeps the whole board's ranks: the filter only hides rows.
+  const filtering = signedIn && hasFriends && onlyFriends
+  const shown = filtering ? friendsOnly(board) : board
+  const friendRows = board.filter((r) => r.friendId).length
+  const open = (r: LeaderboardRow) => (r.friendId ? () => setCard({ id: r.friendId!, name: r.name }) : undefined)
+  const meRef = useSnapToMe(`${tab}:${board.findIndex((r) => r.isMe)}:${found}:${filtering}`)
   const mine = board.find((r) => r.isMe)
   const mineHall = hall.find((r) => r.isMe)
   const me = mine ?? mineHall
@@ -139,6 +152,18 @@ function Board() {
           )
         })}
       </div>
+
+      {signedIn && hasFriends && (
+        <Seg
+          label={t('ui.friends.filterLabel')}
+          value={onlyFriends ? 'friends' : 'all'}
+          onChange={(v) => setOnlyFriends(v === 'friends')}
+          options={[
+            { id: 'all', label: t('ui.friends.filterAll'), count: board.length },
+            { id: 'friends', label: t('ui.friends.title'), count: friendRows },
+          ]}
+        />
+      )}
 
       {me && (
         <button
@@ -209,9 +234,12 @@ function Board() {
             {t(hall.length > 0 ? 'ui.board.allDone' : 'ui.board.empty')}
           </p>
         )}
-        {board.length > 0 && (
+        {filtering && board.length > 0 && friendRows === 0 && (
+          <p className="m-0 mb-1.5 p-2 text-center text-[19px] text-muted">{t('ui.friends.noneOnBoard')}</p>
+        )}
+        {shown.length > 0 && (
           <ol className="m-0 grid list-none gap-1.5 p-0" aria-label={tabLabel}>
-            {board.map((r, i) => (
+            {shown.map((r, i) => (
               <BoardRow
                 key={`${found}:${i}`}
                 rowRef={r.isMe ? meRef : undefined}
@@ -220,6 +248,8 @@ function Board() {
                 look={avatarOf(r.avatar).src}
                 name={r.name}
                 isMe={r.isMe}
+                isFriend={!!r.friendId}
+                onOpen={open(r)}
                 team={r.team}
                 value={scoreAside ? r.score : undefined}
                 sub={
@@ -252,6 +282,8 @@ function Board() {
               look={avatarOf(r.avatar).src}
               name={r.name}
               isMe={r.isMe}
+              isFriend={!!r.friendId}
+              onOpen={open(r)}
               team={r.team}
               value={scoreAside ? r.score : undefined}
               sub={
@@ -263,6 +295,8 @@ function Board() {
           ))}
         </ul>
       </Sheet>
+
+      <FriendProfileSheet userId={card?.id ?? null} name={card?.name} onClose={() => setCard(null)} />
     </div>
   )
 }

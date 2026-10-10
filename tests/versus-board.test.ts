@@ -42,6 +42,14 @@ describe('Versus board', () => {
     expect(opponentsOf(rows).map((r) => r.name)).toEqual(['Ash', 'Misty', 'Brock'])
   })
 
+  it('puts your friends’ teams first among the ones still to beat (docs/16)', () => {
+    const misty = rows.find((r) => r.name === 'Misty')!
+    expect(opponentsOf(rows, new Set([misty.userId])).map((r) => r.name)).toEqual(['Misty', 'Ash', 'Brock'])
+    // A beaten friend stays with the beaten.
+    const brock = rows.find((r) => r.name === 'Brock')!
+    expect(opponentsOf(rows, new Set([brock.userId])).map((r) => r.name)).toEqual(['Ash', 'Misty', 'Brock'])
+  })
+
   it('parses defensively', () => {
     const [r] = parseVersusBoard([{ ...raw('', 0, 0), name: null, character: 'blue', version: null }])
     expect(r).toMatchObject({ name: 'Trainer', avatar: 'red', version: 1 })

@@ -20,6 +20,7 @@ import {
   type VersusFight,
 } from '@/engine'
 import { BoardRow, TeamIcons } from '@/components/BoardRow'
+import { FriendProfileSheet } from '@/components/friends/FriendProfileSheet'
 import { Chip } from '@/components/Chip'
 import { AccountButton } from '@/components/AccountButton'
 import { PixelIcon } from '@/components/icons'
@@ -32,6 +33,9 @@ import { avatarOf } from '@/lib/avatars'
 import { useSnapToMe } from '@/lib/useSnapToMe'
 import { searchFold } from '@/i18n'
 import { useT } from '@/i18n/react'
+import { useFriends } from '@/lib/friends'
+import { friendsOnly } from '@/lib/leaderboard'
+import { useFriendsFilter } from '@/lib/useFriendsFilter'
 import {
   fetchVersusBoard,
   opponentsOf,
@@ -277,7 +281,8 @@ function Opponents({
   const data = useGame((s) => s.data)
   const [q, setQ] = useState('')
   const [show, setShow] = useState<Show>('all')
-  const list = useMemo(() => opponentsOf(rows), [rows])
+  const friends = useFriends((s) => s.ids)
+  const list = useMemo(() => opponentsOf(rows, friends), [rows, friends])
   const beaten = list.filter((r) => r.beaten).length
   const needle = searchFold(q.trim())
   const shown = list
@@ -348,6 +353,7 @@ function Opponents({
                   key={r.userId}
                   look={avatarOf(r.avatar).src}
                   name={r.name}
+                  isFriend={friends.has(r.userId)}
                   team={r.team}
                   dim={r.beaten}
                   sub={
@@ -560,8 +566,18 @@ function TeamEditor({
 function Board({ rows }: { rows: VersusEntry[] }) {
   const { t, tPlural } = useT()
   const [tab, setTab] = useState<VersusBoardTab>('attack')
-  const ranked = useMemo(() => rankVersus(rows, tab), [rows, tab])
-  const meRef = useSnapToMe(`${tab}:${ranked.findIndex((r) => r.isMe)}`)
+  const friends = useFriends((s) => s.ids)
+  const [onlyFriends, setOnlyFriends] = useFriendsFilter('pokedice.versus.friendsOnly')
+  const [card, setCard] = useState<{ id: string; name: string } | null>(null)
+  const ranked = useMemo(
+    () => rankVersus(rows, tab).map((r) => ({ ...r, friendId: friends.has(r.userId) ? r.userId : null })),
+    [rows, tab, friends],
+  )
+  // FRIENDS keeps the whole board's ranks, as on the leaderboard.
+  const filtering = friends.size > 0 && onlyFriends
+  const shown = filtering ? friendsOnly(ranked) : ranked
+  const friendRows = ranked.filter((r) => r.friendId).length
+  const meRef = useSnapToMe(`${tab}:${ranked.findIndex((r) => r.isMe)}:${filtering}`)
   return (
     <>
       <Seg
@@ -578,11 +594,25 @@ function Board({ rows }: { rows: VersusEntry[] }) {
       <p className="m-0 font-pixel-sm text-[15px] leading-[1.15] text-muted">
         {t(tab === 'attack' ? 'ui.versus.boardAttack' : 'ui.versus.boardDefense')}
       </p>
+      {friends.size > 0 && (
+        <Seg
+          label={t('ui.friends.filterLabel')}
+          value={onlyFriends ? 'friends' : 'all'}
+          onChange={(v) => setOnlyFriends(v === 'friends')}
+          options={[
+            { id: 'all', label: t('ui.friends.filterAll'), count: ranked.length },
+            { id: 'friends', label: t('ui.friends.title'), count: friendRows },
+          ]}
+        />
+      )}
       {ranked.length === 0 && (
         <p className="m-0 p-4 text-center text-[20px] text-muted">{t('ui.versus.boardEmpty')}</p>
       )}
+      {filtering && ranked.length > 0 && friendRows === 0 && (
+        <p className="m-0 p-2 text-center text-[19px] text-muted">{t('ui.friends.noneOnBoard')}</p>
+      )}
       <ol className="m-0 grid list-none gap-1.5 p-0">
-        {ranked.map((r) => (
+        {shown.map((r) => (
           <BoardRow
             key={r.userId}
             rowRef={r.isMe ? meRef : undefined}
@@ -590,6 +620,8 @@ function Board({ rows }: { rows: VersusEntry[] }) {
             look={avatarOf(r.avatar).src}
             name={r.name}
             isMe={r.isMe}
+            isFriend={!!r.friendId}
+            onOpen={r.friendId ? () => setCard({ id: r.userId, name: r.name }) : undefined}
             team={r.team}
             value={
               <span className="font-pixel-sm text-[16px]">
@@ -599,6 +631,7 @@ function Board({ rows }: { rows: VersusEntry[] }) {
           />
         ))}
       </ol>
+      <FriendProfileSheet userId={card?.id ?? null} name={card?.name} onClose={() => setCard(null)} />
     </>
   )
 }

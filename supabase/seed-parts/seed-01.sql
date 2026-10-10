@@ -50,7 +50,8 @@ create index if not exists areas_region_idx on areas (region_id, order_index);
 -- 2. The leaderboard reads the cards. The cache, its rebuild and the 5-minute pg_cron job of 0026–0032 are retired:
 --    that rebuild re-read every active save 12 times an hour and was 65% of the database's time (measured 10 Oct 2026).
 --    Same rules as before: played in the last 72 hours, a badge in the region, not banned, plus the caller's own rows.
---    Each row also says whether its player is the caller's friend (`is_friend`).
+--    Each row also says whether its player is the caller's friend (`is_friend`), and for friends only, who they are
+--    (`friend_id`, so a friend's row can open their card; nobody else's id is ever returned).
 -- 3. Friends: a friend ID per player (8 characters of Crockford base32), friendships (mutual, at most game_config
 --    `maxFriends` each, 100 by default), and the functions the game calls. Players never touch these tables: only the
 --    security definer functions below do.
@@ -541,7 +542,7 @@ create table if not exists leaderboard_bans (
 );
 alter table leaderboard_bans enable row level security;
 
--- Its columns grew (is_friend); a function's return type can't change in place.
+-- Its columns grew (is_friend, friend_id); a function's return type can't change in place.
 drop function if exists leaderboard();
 create or replace function leaderboard()
 returns table (
@@ -554,11 +555,12 @@ returns table (
   max_level int,
   shinies int,
   progress jsonb,
-  is_friend boolean
+  is_friend boolean,
+  friend_id uuid
 )
 language sql stable security definer set search_path = public as $$
   select r.region, r.user_id = auth.uid(), c.name, c.avatar, r.team, r.pokedex, r.max_level, r.shinies, r.progress,
-         m.id is not null
+         m.id is not null, m.id
   from player_card_regions r
   join player_cards c on c.user_id = r.user_id
   left join friend_ids_of(auth.uid()) m on m.id = r.user_id
