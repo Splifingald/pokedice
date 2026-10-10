@@ -15,6 +15,7 @@ import { BadgeIcon } from '@/components/BadgeIcon'
 import { Chip } from '@/components/Chip'
 import { rarity } from '@/components/DexEntry'
 import { PixelIcon } from '@/components/icons'
+import { ItemInfo } from '@/components/ItemInfo'
 import { ItemSprite } from '@/components/ItemSprite'
 import { SheetSection } from '@/components/SheetSection'
 import { PixelButton } from '@/components/PixelButton'
@@ -173,12 +174,12 @@ function DetailsBody({ area }: { area: Area }) {
   const save = useGame((s) => s.save)!
   const data = useGame((s) => s.data)
   const [view, setView] = useState<SheetView | null>(null)
+  const [itemKey, setItemKey] = useState<string | null>(null)
   const p = progressOf(save, area.id)
   const st = areaStatus(save, data, area)
   const locked = st === 'locked'
   const side = playerSideOf(save)
   const avg = teamAverageLevel(save)
-  const span = useLevelSpan(area)
 
   // The gym, or the League's battles.
   const gyms = gymsFor(area, data, side)
@@ -359,7 +360,6 @@ function DetailsBody({ area }: { area: Area }) {
               const got = save.pokedex.includes(m.dex)
               const unknown = locked && !got
               const r = m.share >= 0.15 ? 'com' : m.share >= 0.06 ? 'unc' : 'rare'
-              const levels = area.scalesToTeam ? levelText(span) : levelText({ min: m.min, max: m.max })
               return (
                 <li key={m.dex}>
                   <button
@@ -396,7 +396,6 @@ function DetailsBody({ area }: { area: Area }) {
                     >
                       {rarity(m.share)} · {Math.round(m.share * 100)}%
                     </span>
-                    <span className="font-pixel-sm text-[13px] leading-none text-muted">{levels}</span>
                     {got && (
                       <PixelIcon
                         name="ball"
@@ -437,15 +436,25 @@ function DetailsBody({ area }: { area: Area }) {
 
       {common.length > 0 && (
         <SheetSection title={t('ui.home.alsoHere')} hint={t('ui.home.anyTime')}>
-          <ul className="flex flex-wrap gap-x-3 gap-y-0.5">
+          {/* Three to a row; an item opens its card (the Pokédollars have none). */}
+          <ul className="grid grid-cols-3 gap-1.5">
             {common.map((e) => (
-              <li key={e.id} className="inline-flex items-center gap-1 font-pixel-sm text-[15px]">
+              <li key={e.id}>
                 {e.itemKey === MONEY ? (
-                  <PixelIcon name="coin" size={16} />
+                  <span className="flex min-h-[44px] items-center gap-1 px-1 font-pixel-sm text-[15px] leading-tight">
+                    <PixelIcon name="coin" size={16} />
+                    {t('ui.home.pokedollars')}
+                  </span>
                 ) : (
-                  <ItemSprite item={data.items[e.itemKey]} size={26} />
+                  <button
+                    type="button"
+                    onClick={() => setItemKey(e.itemKey)}
+                    className="flex min-h-[44px] w-full min-w-0 items-center gap-1 bg-paper px-1 text-left font-pixel-sm text-[15px] leading-tight shadow-ring-line"
+                  >
+                    <ItemSprite item={data.items[e.itemKey]} size={26} />
+                    <span className="min-w-0">{itemName(e.itemKey)}</span>
+                  </button>
                 )}
-                {e.itemKey === MONEY ? t('ui.home.pokedollars') : itemName(e.itemKey)}
               </li>
             ))}
           </ul>
@@ -453,6 +462,7 @@ function DetailsBody({ area }: { area: Area }) {
       )}
 
       <SheetModal view={view} onClose={() => setView(null)} />
+      <ItemInfo itemKey={itemKey} onClose={() => setItemKey(null)} />
     </div>
   )
 }

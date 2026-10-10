@@ -138,7 +138,7 @@ export function TeamCards({
                 )}
                 aria-hidden
               >
-                {lead && <PixelIcon name="crown" size={10} />}
+                {lead && <PixelIcon name="crown" size={14} />}
                 {lead ? t('ui.team.leadTag') : i + 1}
               </span>
               <span

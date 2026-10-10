@@ -1,10 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   dayCareLevelProgress,
   dayCareOf,
   isDayCareOpen,
-  nextCheckAt,
+  nextCheckProgress,
   speciesCaughtEverywhere,
   teamOf,
   versusReadyCount,
@@ -24,6 +24,7 @@ import { useNow } from '@/store/hooks'
 import { cx } from '@/theme/util'
 import { featuredSecret } from './areas'
 import { AreaStrip } from '@/components/AreaStrip'
+import { dayCarePicture } from '@/fx/areaArt'
 import { travelTo } from '@/store/travel'
 import { EventWidgets } from '@/screens/events/EventWidgets'
 import { Widget } from './Widget'
@@ -62,15 +63,13 @@ function SecretWidget({ onSecrets }: { onSecrets: () => void }) {
         label={t('ui.home.secretNewLabel', { area: f.area.name })}
         onClick={() => travelTo(f.area)}
       >
-        <span className="block w-full leading-[0] shadow-halo">
-          <AreaStrip area={f.area} className="h-auto w-full" />
-        </span>
-        <span className="truncate text-[20px] leading-none">{f.area.name}</span>
-        {cond && (
-          <span className="truncate font-pixel-sm text-[15px] leading-none text-muted">
-            {conditionLabel(cond, data)}
-          </span>
-        )}
+        <WidgetBanner>
+          <AreaStrip area={f.area} h={BANNER.h} className="absolute inset-0 h-full w-full" />
+        </WidgetBanner>
+        <DayCareRows
+          top={<span className="truncate text-[20px] leading-none">{f.area.name}</span>}
+          bottom={cond ? conditionLabel(cond, data) : ''}
+        />
       </Widget>
     )
   const label = cond ? conditionLabel(cond, data) : ''
@@ -85,18 +84,20 @@ function SecretWidget({ onSecrets }: { onSecrets: () => void }) {
       })}
       onClick={onSecrets}
     >
-      <span className="relative block w-full leading-[0] shadow-halo">
-        <AreaStrip area={f.area} className="h-auto w-full grayscale-[0.7]" />
+      <WidgetBanner>
+        <AreaStrip area={f.area} h={BANNER.h} className="absolute inset-0 h-full w-full grayscale-[0.7]" />
         <PixelIcon
           name="lock"
           size={16}
           className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
         />
-      </span>
-      <span className="truncate text-[20px] leading-none">{f.area.name}</span>
-      <Meter value={f.current} max={f.target} />
-      {/* What the numbers count, said: "22/133 in Pokédex" with its icon, not a bare fraction. */}
-      <span className="flex min-w-0 items-center gap-1 font-pixel-sm text-[15px] leading-none text-muted">
+      </WidgetBanner>
+      <DayCareRows
+        top={<span className="truncate text-[20px] leading-none">{f.area.name}</span>}
+        meter={<Meter value={f.current} max={f.target} />}
+        bottom={
+      // What the numbers count, said: "22/133 in Pokédex" with its icon, not a bare fraction.
+      <span className="flex min-w-0 items-center gap-1">
         {cond?.kind === 'pokedex' ? (
           <PixelIcon name="navDex" size={16} />
         ) : cond?.kind === 'maxLevel' ? (
@@ -110,14 +111,98 @@ function SecretWidget({ onSecrets }: { onSecrets: () => void }) {
               : label || `${Math.min(f.current, f.target)}/${f.target}`}
         </span>
       </span>
+        }
+      />
     </Widget>
   )
 }
 
+/** The Day Care's banner: a strip of its yard's picture (its drawn scene until the picture loads). */
+const DAY_CARE_SCENE = { id: 'daycare', bannerUrl: 'daycare.png' }
+/** The strip, in scene pixels: rows 60 to 152, the cottage down to the fence the Pokémon stand in front of. */
+const BANNER = { h: 92, top: 60 }
+/** The yard's picture, its strip cut at BANNER.top (a strip centres on the horizon: stripTop in fx/areaArt). */
+function bannerPicture() {
+  const p = dayCarePicture()
+  return p && { ...p, id: 'daycare-banner', horizon: Math.round(BANNER.top + BANNER.h * 0.55) }
+}
+
+/** An element's height in CSS pixels, kept up to date (0 until measured). */
+function useHeight<T extends HTMLElement>() {
+  const ref = useRef<T>(null)
+  const [h, setH] = useState(0)
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    setH(el.getBoundingClientRect().height)
+    if (typeof ResizeObserver === 'undefined') return
+    const ro = new ResizeObserver((es) => setH(es[0]?.contentRect.height ?? 0))
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
+  return [ref, h] as const
+}
+
 /**
- * The Day Care, one for every region: locked (how close, all regions counted), your residents with the way to their
- * next level and when the next Egg check runs, or, with an Egg waiting, gold with the Egg shaking. It only ever opens
- * the Day Care page (with an Egg, straight into the hatching); it never acts on the Pokémon.
+ * The banner keeps its shape whether its picture has loaded or not, so the widget never changes size. `children` sit
+ * on it, given its height (the Pokémon are drawn to it).
+ */
+function DayCareBanner({ dim, children }: { dim?: boolean; children?: (height: number) => ReactNode }) {
+  const [ref, height] = useHeight<HTMLSpanElement>()
+  return (
+    <span
+      ref={ref}
+      className="relative block w-full overflow-hidden shadow-halo"
+      style={{ aspectRatio: `288 / ${BANNER.h}` }}
+    >
+      <AreaStrip
+        area={DAY_CARE_SCENE}
+        picture={bannerPicture()}
+        h={BANNER.h}
+        className={cx('absolute inset-0 h-full w-full', dim && 'grayscale-[0.7]')}
+      />
+      {children && <span className="absolute inset-0 leading-none">{children(height)}</span>}
+    </span>
+  )
+}
+
+/** Every widget's banner: the Day Care's shape (288 × BANNER.h), whatever it shows, so the widgets line up. */
+function WidgetBanner({ children }: { children: ReactNode }) {
+  return (
+    <span
+      className="relative block w-full overflow-hidden leading-[0] shadow-halo"
+      style={{ aspectRatio: `288 / ${BANNER.h}` }}
+    >
+      {children}
+    </span>
+  )
+}
+
+/** Every state's header holds the same height, a tag or not: the widget never grows by the tag's few pixels. */
+const HeadTag = ({ children }: { children?: ReactNode }) => <span className="flex h-[19px] items-center">{children}</span>
+
+/** Something centred on the banner: the lock, the Egg. */
+const OnBanner = ({ children }: { children: ReactNode }) => <span className="grid h-full place-items-center">{children}</span>
+
+/**
+ * Under the banner, the same three rows in every state, so the widget never changes size: a line (the tags, or the
+ * state in words), the gauge (or the room it takes), and the small print. Each is one line; the whole is in the label.
+ */
+function DayCareRows({ top, meter, bottom }: { top: ReactNode; meter?: ReactNode; bottom: ReactNode }) {
+  return (
+    <span className="grid w-full grid-rows-[22px_6px_15px] gap-[5px]">
+      <span className="flex min-w-0 items-center">{top}</span>
+      <span>{meter}</span>
+      <span className="truncate font-pixel-sm text-[15px] leading-none text-muted">{bottom}</span>
+    </span>
+  )
+}
+
+/**
+ * The Day Care, one for every region: its banner, with your two standing on it and the levels they gained there under
+ * them (MAX at the level cap), the gauge to the next Egg check and its time; locked (how close, all regions counted);
+ * or, with an Egg waiting, gold with the Egg shaking on the banner. The same size in every state. It only ever opens
+ * the Day Care page (with an Egg, straight into the hatching).
  */
 function DayCareWidget() {
   const { t, tPlural } = useT()
@@ -131,13 +216,22 @@ function DayCareWidget() {
     return (
       <Widget
         title={t('ui.home.dayCare')}
-        tag={<PixelIcon name="lock" size={16} />}
+        tag={<HeadTag />}
         label={t('ui.home.dcLockedLabel', { count: cfg.unlockPokedex, n: have })}
         onClick={() => pushToast(t('ui.home.dcLockedToast', { count: cfg.unlockPokedex }))}
       >
-        <span className="text-[20px] leading-none">{t('ui.home.dcCaught', { n: have, max: cfg.unlockPokedex })}</span>
-        <Meter value={have} max={cfg.unlockPokedex} />
-        <span className="font-pixel-sm text-[15px] leading-tight text-muted">{t('ui.home.dcOpensAll')}</span>
+        <DayCareBanner dim>
+          {() => (
+            <OnBanner>
+              <PixelIcon name="lock" size={16} />
+            </OnBanner>
+          )}
+        </DayCareBanner>
+        <DayCareRows
+          top={<span className="truncate text-[20px] leading-none">{t('ui.home.dcCaught', { n: have, max: cfg.unlockPokedex })}</span>}
+          meter={<Meter value={have} max={cfg.unlockPokedex} />}
+          bottom={t('ui.home.dcOpensAll')}
+        />
       </Widget>
     )
   }
@@ -146,18 +240,29 @@ function DayCareWidget() {
     return (
       <Widget
         title={t('ui.home.dayCare')}
-        tag={<Chip tone="gold">{t('ui.home.eggTag')}</Chip>}
+        tag={
+          <HeadTag>
+            <Chip tone="gold">{t('ui.home.eggTag')}</Chip>
+          </HeadTag>
+        }
         label={t('ui.home.dcEggLabel')}
         onClick={() => navigate('/daycare', { state: { hatch: true } })}
         className="panel-gold"
       >
-        <span className="grid h-11 w-full place-items-center">
-          <EggSprite size={28} shake />
-        </span>
-        <span className="text-[20px] leading-none">{t('ui.dayCare.eggWaiting')}</span>
-        <span className="font-pixel-sm text-[15px] leading-none text-ink">{t('ui.home.dcTapHatch')}</span>
+        <DayCareBanner>
+          {(h) => (
+            <OnBanner>
+              <EggSprite size={Math.max(20, Math.round(h * 0.42))} shake />
+            </OnBanner>
+          )}
+        </DayCareBanner>
+        <DayCareRows
+          top={<span className="truncate text-[20px] leading-none">{t('ui.dayCare.eggWaiting')}</span>}
+          bottom={<span className="text-ink">{t('ui.home.dcTapHatch')}</span>}
+        />
       </Widget>
     )
+  const slots = Array.from({ length: Math.max(cfg.slots, dc.residents.length) }, (_, i) => dc.residents[i])
   const rows = dc.residents.map((r) => ({
     r,
     p: dayCareLevelProgress(r, now, data),
@@ -165,37 +270,70 @@ function DayCareWidget() {
   }))
   const free = Math.max(0, cfg.slots - rows.length)
   const friends = dc.guests.length
-  const next = t('ui.home.dcNextCheck', { time: waitText(nextCheckAt(save, data, now) - now) })
-  const sub = [friends ? tPlural('ui.home.dcFriends', friends, { n: friends }) : null, next].filter(Boolean).join(' · ')
+  const check = nextCheckProgress(save, data, now)
+  const next = t('ui.home.dcNextCheck', { time: waitText(check.at - now) })
   const words = [
     ...rows.map((x) => t('ui.home.dcMon', { name: x.name, level: t('ui.common.level.short', { n: x.p.level }) })),
     ...Array.from({ length: free }, () => t('ui.home.dcFree')),
-    sub,
+    ...(friends ? [tPlural('ui.home.dcFriends', friends, { n: friends })] : []),
+    next,
   ].join('. ')
+  const cols = { gridTemplateColumns: `repeat(${slots.length}, minmax(0, 1fr))` }
   return (
-    <Widget title={t('ui.home.dayCare')} label={t('ui.home.dayCareLabel', { state: words })} onClick={() => navigate('/daycare')}>
-      {rows.map((x) => (
-        <span key={x.r.inst.id} className="grid w-full grid-cols-[32px_minmax(0,1fr)] items-center gap-1.5">
-          <MiniSprite dex={x.r.inst.dex} size={32} />
-          <span className="grid min-w-0 gap-[3px]">
-            <span className="truncate text-[17px] leading-none">
-              {x.name}
-              <span className="font-pixel-sm text-[14px] text-muted"> {t('ui.common.level.short', { n: x.p.level })}</span>
-            </span>
-            <Meter value={x.p.toNext ? x.p.xp : 1} max={x.p.toNext || 1} />
+    <Widget
+      title={t('ui.home.dayCare')}
+      tag={<HeadTag />}
+      label={t('ui.home.dayCareLabel', { state: words })}
+      onClick={() => navigate('/daycare')}
+    >
+      <DayCareBanner>
+        {(h) => (
+          // Your two stand in front of the fence, as tall as the banner; a free slot is a dashed space.
+          <span className="grid h-full items-end" style={cols} aria-hidden>
+            {slots.map((r, i) =>
+              r ? (
+                <span key={r.inst.id} className="grid justify-items-center">
+                  {/* MiniSprite's box is 1.5× the size asked; its icon fills the lower part, so it may bleed a little. */}
+                  <MiniSprite dex={r.inst.dex} size={Math.max(24, Math.round((h * 1.05) / 1.5))} className="translate-y-[12%]" />
+                </span>
+              ) : (
+                <span key={`free-${i}`} className="grid justify-items-center pb-[8%]">
+                  <span
+                    className="bg-paper/40 outline-dashed outline-2 -outline-offset-2 outline-paper"
+                    style={{ width: Math.round(h * 0.5), height: Math.round(h * 0.42) }}
+                  />
+                </span>
+              ),
+            )}
           </span>
-        </span>
-      ))}
-      {Array.from({ length: free }, (_, i) => (
-        <span key={`free-${i}`} className="grid w-full grid-cols-[32px_minmax(0,1fr)] items-center gap-1.5">
-          <span className="ml-0.5 h-[22px] w-7 shadow-ring-line" aria-hidden />
-          <span className="grid min-w-0 gap-[3px]">
-            <span className="truncate text-[17px] leading-none">{t('ui.home.freeSlot')}</span>
-            <span className="truncate font-pixel-sm text-[15px] leading-none text-muted">{t('ui.dayCare.leaveOne')}</span>
+        )}
+      </DayCareBanner>
+      <DayCareRows
+        top={
+          <span className="grid w-full" style={cols} aria-hidden>
+            {slots.map((r, i) => {
+              if (!r)
+                return (
+                  <span key={`free-${i}`} className="truncate text-center font-pixel-sm text-[14px] leading-none text-muted">
+                    {t('ui.home.freeSlot')}
+                  </span>
+                )
+              const level = dayCareLevelProgress(r, now, data).level
+              return (
+                <span key={r.inst.id} className="grid justify-items-center">
+                  {level >= data.config.maxLevel ? (
+                    <Chip tone="gold">{t('ui.mon.xpMax')}</Chip>
+                  ) : (
+                    <Chip tone="done">{t('ui.dayCare.gainedLv', { n: level - r.inst.level })}</Chip>
+                  )}
+                </span>
+              )
+            })}
           </span>
-        </span>
-      ))}
-      <span className="font-pixel-sm text-[15px] leading-tight text-muted">{sub}</span>
+        }
+        meter={<Meter value={check.done} max={1} />}
+        bottom={next}
+      />
     </Widget>
   )
 }
@@ -241,16 +379,30 @@ function VersusWidget() {
     return (
       <Widget
         title={t('ui.versus.title')}
-        tag={<PixelIcon name="lock" size={16} />}
+        tag={
+          <HeadTag>
+            <PixelIcon name="lock" size={16} />
+          </HeadTag>
+        }
         label={`${t('ui.versus.locked')} ${t('ui.versus.lockedCount', { n })}`}
         onClick={() => navigate('/versus')}
       >
-        <span className="flex min-h-[30px] items-center">{team}</span>
-        <span className="text-[20px] leading-none">{t('ui.versus.lockedCount', { n })}</span>
-        <Meter value={n} max={VERSUS_TEAM_SIZE} />
-        <span className="font-pixel-sm text-[15px] leading-none text-muted">
-          {t('ui.home.bestLevel', { n: best })}
-        </span>
+        {/* Locked: the same banner greyed, the team waiting on it, then the same rows as every widget. */}
+        <WidgetBanner>
+          <img
+            src={VS_BANNER}
+            alt=""
+            className="pixelated absolute inset-0 h-full w-full object-cover grayscale-[0.7]"
+            style={{ imageRendering: 'pixelated', objectPosition: '50% 55%' }}
+          />
+          <span className="absolute inset-y-0 left-1 flex items-center">{team}</span>
+          <PixelIcon name="lock" size={16} className="absolute right-2 top-1/2 -translate-y-1/2" />
+        </WidgetBanner>
+        <DayCareRows
+          top={<span className="truncate text-[20px] leading-none">{t('ui.versus.lockedCount', { n })}</span>}
+          meter={<Meter value={n} max={VERSUS_TEAM_SIZE} />}
+          bottom={t('ui.home.bestLevel', { n: best })}
+        />
       </Widget>
     )
   }
@@ -261,52 +413,50 @@ function VersusWidget() {
   return (
     <Widget
       title={t('ui.versus.title')}
-      tag={
-        set ? (
-          // Attack wins (sword) / defense wins (shield).
-          <span
-            className="inline-flex items-center gap-1 text-[15px] leading-none"
-            aria-label={`${tPlural('ui.versus.wins', me!.attackWins)} · ${tPlural('ui.versus.defenseWins', me!.defenseWins)}`}
-          >
-            {me!.attackWins}
-            <PixelIcon name="sword" size={14} />
-            <span className="text-muted">/</span>
-            {me!.defenseWins}
-            <PixelIcon name="shield" size={14} />
-          </span>
-        ) : (
-          <NewTag />
-        )
-      }
+      tag={<HeadTag>{!set && <NewTag />}</HeadTag>}
       label={set ? t('ui.home.vsSetLabel', { wins: me!.defenseWins, n: me!.attackWins }) : t('ui.home.vsOpenLabel')}
       onClick={() => navigate('/versus')}
     >
-      {/* A stadium under its floodlights as the banner, the team big on it and a bold VS. */}
-      <span className="relative block w-full overflow-hidden leading-[0] shadow-halo">
+      {/* A stadium as the banner: the team from the left, spaced out, and a bold VS, both centred in its height. */}
+      <WidgetBanner>
         <img
           src={VS_BANNER}
           alt=""
-          className="pixelated block h-auto w-full object-cover"
-          style={{ imageRendering: 'pixelated', aspectRatio: '288 / 96', objectPosition: '50% 55%' }}
+          className="pixelated absolute inset-0 h-full w-full object-cover"
+          style={{ imageRendering: 'pixelated', objectPosition: '50% 55%' }}
         />
-        <span className="absolute inset-x-1 bottom-0 flex items-end" aria-hidden>
+        <span className="absolute inset-y-0 left-1 flex items-center gap-1" aria-hidden>
           {shown.slice(0, VERSUS_TEAM_SIZE).map((m, i) => (
-            <MiniSprite key={i} dex={m.dex} size={44} className="-mx-2.5 -mb-1.5 first:ml-0" />
+            <MiniSprite key={i} dex={m.dex} size={44} className="-mx-1.5" />
           ))}
         </span>
         <span
-          className="absolute right-2 top-1/2 -translate-y-1/2 text-[40px] leading-none text-gold [text-shadow:0_3px_0_#c4382a,3px_0_0_#c4382a,-2px_0_0_#24304f,0_-2px_0_#24304f]"
+          className="absolute inset-y-0 right-2 flex items-center text-[48px] leading-none text-gold [text-shadow:0_4px_0_#c4382a,4px_0_0_#c4382a,-2px_0_0_#24304f,0_-2px_0_#24304f]"
           aria-hidden
         >
           VS
         </span>
-      </span>
-      {!set && <span className="text-[18px] leading-tight">{t('ui.home.vsOpen')}</span>}
-      <span className="flex w-full justify-end">
-        <span className="bg-crimson px-2 pb-1.5 pt-1 text-[17px] leading-none text-white shadow-ring">
-          {set ? t('ui.home.vsFight') : t('ui.home.vsSetTeam')}
-        </span>
-      </span>
+      </WidgetBanner>
+      <DayCareRows
+        top={
+          set ? (
+            // Attack wins (sword) / defense wins (shield).
+            <span
+              className="inline-flex items-center gap-1.5 text-[20px] leading-none"
+              aria-label={`${tPlural('ui.versus.wins', me!.attackWins)} · ${tPlural('ui.versus.defenseWins', me!.defenseWins)}`}
+            >
+              {me!.attackWins}
+              <PixelIcon name="sword" size={16} />
+              <span className="text-muted">/</span>
+              {me!.defenseWins}
+              <PixelIcon name="shield" size={16} />
+            </span>
+          ) : (
+            <span className="truncate text-[20px] leading-none">{t('ui.home.vsOpen')}</span>
+          )
+        }
+        bottom={t('ui.versus.tabFight')}
+      />
     </Widget>
   )
 }

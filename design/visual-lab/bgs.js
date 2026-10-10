@@ -7,7 +7,7 @@
  * one family. The preview fits a generated image to the game's pixel grid and shows its three uses.
  * Regions: one more picture per region, the region's own card in the region switcher (public/region-art/<id>.png).
  * Center & Day Care: the room behind the Center's healing scene (public/backgrounds/pokemon-center.png) and the Day
- * Care's yard, a Home-style scene (public/area-art/daycare.png).
+ * Care's yard, a Home-style scene (public/area-art/daycare.png); the Versus widget's banner (public/backgrounds/versus.png).
  * Special events: each event's banner, on its page and its unlock pop-up (public/event-art/<id>.png), a wide strip.
  * Self-contained: it renders the first time its tab is shown.
  */
@@ -176,7 +176,7 @@ Composition: a front-facing, eye-level view. The horizon (or, indoors, the foot 
     own: { label: 'Landmarks', one: 'Landmark', note: 'a place of its own' },
     moment: { label: 'Story moments', one: 'Story moment', note: 'not an area: the stage of a moment in the game' },
     region: { label: 'Regions', one: 'Region card', note: "not an area: the region's own picture on its card in the region switcher" },
-    place: { label: 'Center & Day Care', one: 'Place', note: 'not an area: the backdrops of the Pokémon Center and the Day Care' },
+    place: { label: 'Center, Day Care & Versus', one: 'Place', note: 'not an area: the backdrops of the Pokémon Center and the Day Care, and the Versus banner' },
     event: { label: 'Special events', one: 'Event banner', note: "not an area: an event's banner, on its page and its unlock pop-up" },
   }
   // Story moments: full-stage scenes (240 × 160) for moments of the game rather than areas. Their stand-in is drawn
@@ -372,7 +372,47 @@ Composition (positions as a share of the square, from its top-left corner): a fr
 - A small round pond in the lower left, centred about 26 % across and 79 % down, about 30 % of the width wide and 7 % tall: calm blue water with a pale rim and a couple of lily pads; reeds and smooth stones on its edge only. Creatures that swim keep to it.
 - Lower right, around 74 % across and 86 % down, a plain patch of lawn: the game puts an Egg's nest there.
 - Between the fence and the house: a little flower and vegetable garden to the right of the house, a few bushes. Tall things (a round tree, a tall flowering shrub) stand at the far left and far right edges, the outer twelfth on each side; maybe a wooden bench or a water trough by the fence at the far right. Bigger grass tufts and flowers along the very bottom edge. Gentle depth: smaller details near the horizon.`
-  const PLACES = [CENTER_PIC, DAYCARE_PIC]
+  // The Versus banner: the strip at the top of Home's Versus widget (src/screens/home/Widgets.tsx, VersusWidget),
+  // shown 3:1 (aspect 288 / 96, object-cover, object-position 50% 55%). A 16:9 picture 400 px wide (400 × 225) shows
+  // its rows 51–184, about 23 % to 82 % of its height, full width. The game draws the player's three Versus Pokémon big
+  // and side by side on the floor in the middle, and a bold gold "VS" on the right; today it borrows region-art/galar.
+  const VERSUS_PIC = {
+    id: 'versus-banner',
+    kind: 'place',
+    name: 'Versus banner',
+    areas: [],
+    file: 'public/backgrounds/versus.png',
+    size: '400 px wide, ask 16:9 · shown 3:1',
+    ask: '16:9',
+    width: 400,
+    uses: ["The banner of Home's Versus widget (a 3:1 strip, 23–82 % of the picture's height)"],
+    empty: ['the floor in the middle: the three Pokémon', 'the right fifth: the gold VS'],
+    then: "<code>VS_BANNER</code> in <code>src/screens/home/Widgets.tsx</code> becomes <code>'/backgrounds/versus.png'</code> instead of the Galar region picture (the app doesn't read it yet)",
+    head: 'Pixel-art background for a Pokémon-style mobile game: a wide banner for the Versus mode, where trainers pit their teams against each other, a battle arena at dusk under floodlights. Generic: no named stadium, no team colours of a real club.',
+    avoid:
+      'The flat painted Poké Ball centre circle is the only circle on the ground (no battle platforms). No creatures or trainers on the pitch, no people in the stands (only a soft silhouette band), no scoreboard text, letters, numbers or "VS": the game draws them. No banners with writing, no logos on the pitch.',
+    now: () => null,
+    nowAlt: '',
+    comp: () => versusComp(),
+    mood: 'Dusk floodlights',
+    sw: ['#24304f', '#36256a', '#f2553f', '#5b8def', '#fff3b0', '#79bf62'],
+    scene:
+      'A battle arena seen from the edge of its pitch at dusk: a flat, bright pitch in the foreground with a simple centre line and a big Poké Ball-shaped centre circle painted on it, the near half washed in warm red light and the far side in cool blue, tall floodlight masts on both sides throwing beams down, the stands as a soft dark silhouette band of a crowd under a deep evening sky. Dramatic, exciting, but clean and calm in the middle.',
+    palette:
+      'Palette: blue hour under floodlights. Sky navy #24304F at the top through indigo #36256A to a last violet-rose glow #82568E at the rim of the stands; first stars as single pixels. Stands a dark silhouette band #2E2548 to #4A3C6A with tiny dithered specks of light #FFE7A8 for the crowd. Floodlights pale yellow #FFF3B0 with dithered beams and halos. Pitch grass #79BF62 to #55A466, lit pale #A7DE82 in the centre, mown stripes one tone apart; pitch lines and centre circle white #FBFDFF. The left side warmed by red light #F2553F and #FF8A73, the right side cooled by blue light #5B8DEF and #A9D3FF, meeting softly in the middle. Navy #24304F is the darkest colour.',
+  }
+  const versusComp = () =>
+    `Format: one wide landscape image (16:9). It will be shrunk to 400 × 225 pixels, so draw it as if on a 400 × 225 canvas enlarged with nearest-neighbour: every art pixel a clean square block about 5 screen pixels wide.
+It is the banner of the game's Versus button: the game shows a full-width 3:1 strip of it, from about 23 % to 82 % of the way down (the top and bottom fifths are cropped), and draws on top of it the player's three creatures, big and side by side, standing on the pitch in the middle, and a big bold gold "VS" on the right. So their places must stay open and calm.
+Composition (positions as a share of the picture, from its top-left corner): a front-facing view from pitch level, slightly raised, perfectly level lines.
+- The pitch: a flat, open, evenly lit lawn from about 55 % down to the bottom edge, across the whole width. In the middle, from 22 % to 78 % across and from 55 % to 82 % down, it is plain: only soft mown stripes and the painted lines, nothing standing on it. The three creatures stand there, their feet around 78 % down, their heads reaching about 38 % down.
+- The markings: a straight white centre line running from the near edge to the far edge at 50 % across, and a big round centre circle shaped like a Poké Ball (a circle split by a horizontal band with a small ring in the middle) painted flat on the grass, centred at 50 % across and about 70 % down, seen in gentle perspective as a wide oval. Flat paint only, no raised objects.
+- The right fifth, from 76 % to 97 % across and from 30 % to 75 % down: calm and fairly dark (the darker blue side of the stands and pitch), with no floodlight, mast or bright detail in it, so the gold "VS" reads on top.
+- The stands: a wide, soft silhouette band of a crowd across the back, from about 30 % to 52 % down, with tiny specks of light; no faces, no flags with writing, no scoreboard.
+- The floodlights: two tall, thin masts at the very left and very right edges (the outer 3 %), their lamp banks near the top (10 to 25 % down) throwing dithered beams that meet over the middle of the pitch, lighting it brighter than the edges.
+- The light: the left half warmed in red, the right half cooled in blue, blending smoothly across the centre line: a red-versus-blue duel mood.
+- The sky above the stands: deep evening navy to indigo, mostly cropped away, so keep it simple.`
+  const PLACES = [CENTER_PIC, DAYCARE_PIC, VERSUS_PIC]
   // Special events (docs/18): each event's banner, at the top of its page (a strip from about 3:1 on a phone to 8:1 on
   // a wide screen, 132 px tall, the title plate and the back arrow over its top-left corner) and of its unlock pop-up
   // (about 3.4:1, a NEW EVENT tag top-left). The game crops it from the vertical middle (object-position 50% 55%), so
@@ -974,7 +1014,7 @@ Composition: a wide panoramic view from a slightly raised eye level, front-facin
     const onlyPlaces = list.length && list.every((p) => p.kind === 'place')
     const onlyEvents = list.length && list.every((p) => p.kind === 'event')
     $('#bg-status').innerHTML = onlyPlaces || onlyEvents
-      ? `<b>${list.length}</b> ${list.length === 1 ? 'prompt' : 'prompts'} for ${onlyEvents ? 'event banners' : 'the Center and the Day Care'} · ${list.map((p) => `${esc(p.name)}: ask ${p.ask}, ${p.width} px wide`).join(' · ')}${S.ref ? ' · with reference image' : ''}`
+      ? `<b>${list.length}</b> ${list.length === 1 ? 'prompt' : 'prompts'} for ${onlyEvents ? 'event banners' : 'the Center, the Day Care and Versus'} · ${list.map((p) => `${esc(p.name)}: ask ${p.ask}, ${p.width} px wide`).join(' · ')}${S.ref ? ' · with reference image' : ''}`
       : onlyMoments
       ? `<b>${list.length}</b> ${list.length === 1 ? 'prompt' : 'prompts'} for story moments · 240 × 160, ask 3:2${S.ref ? ' · with reference image' : ''}${L}`
       : onlyRegions

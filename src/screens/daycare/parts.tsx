@@ -5,9 +5,10 @@ import { Chip } from '@/components/Chip'
 import { EggSprite } from '@/components/EggSprite'
 import { PixelIcon } from '@/components/icons'
 import { PixelButton } from '@/components/PixelButton'
-import { SpriteImg } from '@/components/SpriteImg'
+import { showdownView, SpriteImg } from '@/components/SpriteImg'
 import { useT } from '@/i18n/react'
 import { money } from '@/lib/format'
+import { artBox } from '@/lib/showdown'
 import { cx } from '@/theme/util'
 
 /** Your first and second Pokémon each have a colour: a heart in it means "can make an Egg with it". */
@@ -64,6 +65,23 @@ export function Mate({ name, slot }: { name: string; slot: number | null }) {
   )
 }
 
+/** The card's sprite tile: its height, and how much of it the art may take (clear of the edges and the lip). */
+const TILE = { h: 76, artH: 62, artW: 132 }
+
+/**
+ * The SpriteImg box that shows a Pokémon's art at ×1.17 on the tile, or smaller when that wouldn't fit (Lugia, Onix).
+ * SpriteImg draws Showdown's art at `size / max(96, canvas)` per pixel, so the box follows from the scale wanted.
+ */
+function tileSpriteSize(dex: number, shiny?: boolean): number {
+  const view = showdownView(dex, false, !!shiny)
+  if (!view) return TILE.h + 8
+  const [x0, y0, x1, y1] = artBox(view.box)
+  const w = x1 - x0 + 1
+  const h = y1 - y0 + 1
+  const scale = Math.min(112 / 96, TILE.artH / h, TILE.artW / w)
+  return Math.round(scale * Math.max(96, view.box[0], view.box[1]))
+}
+
 /**
  * One Pokémon at the Day Care, in a two-column grid: a 4 px band in its slot's colour (grey for a friend's), the head
  * (whose it is, and a tag), the animated sprite on a pale tile, the name and level, `children` (the XP bar, who it
@@ -97,9 +115,11 @@ export function SlotCard({
         {head}
         {tag && <span className="ml-auto">{tag}</span>}
       </span>
-      <span className="grid h-[76px] place-items-center overflow-hidden bg-sky shadow-[inset_0_-6px_0_rgb(var(--c-sky-line))]">
-        {/* A bigger box than the tile: Showdown's art scales with it (×1.17), centred, the tile clipping any excess. */}
-        <SpriteImg dex={dex} size={112} shiny={shiny} />
+      <span className="relative block h-[76px] overflow-hidden bg-sky shadow-[inset_0_-6px_0_rgb(var(--c-sky-line))]">
+        {/* Centred on the tile above its 6 px lip, whatever the box's size (a grid would start an oversized box at the top). */}
+        <span className="absolute left-1/2 top-[calc(50%-3px)] -translate-x-1/2 -translate-y-1/2">
+          <SpriteImg dex={dex} size={tileSpriteSize(dex, shiny)} shiny={shiny} />
+        </span>
       </span>
       <span className="mt-0.5 flex flex-wrap items-baseline gap-x-1.5">
         <b className="text-[20px] font-normal leading-none [overflow-wrap:anywhere]">{name}</b>

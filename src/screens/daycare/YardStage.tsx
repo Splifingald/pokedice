@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, type ReactNode } from 'react'
+import { AreaArt } from '@/components/AreaArt'
 import { EGG_COLORS, EGG_MAP } from '@/components/EggSprite'
+import { artPlacement, homeWindow } from '@/fx/areaArt'
 import { ellipse, icon } from '@/fx/pixel'
 import { stageSprite } from '@/fx/sprites'
 import { useT } from '@/i18n/react'
@@ -114,6 +116,7 @@ export function YardStage({
         className="pixelated absolute inset-0 h-full w-full"
         style={{ imageRendering: 'pixelated' }}
       />
+      {herd.world.art && <AreaArt key={herd.world.art.id} src={herd.world.art.url} place={artPlacement(homeWindow())} />}
       <canvas
         ref={back}
         width={W}

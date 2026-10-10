@@ -148,7 +148,7 @@ All live in `src/components/`. Every component, in every state, is on `/kitchen-
 | `MonTile` / `TileTag` | A grid of Pokémon (Box, Pokédex) | Menu icon from the atlas, number, name, a line under it; `missing` = grey tile + silhouette; corner tags NEW (gold) and Nearby (green). `TILE_GRID` = ~84 px columns |
 | `FaceDice` / `StatusLines` | What a die does | Its six faces as real dice, value under each; a status face keeps its ring and badge and gets its short name in a chip. One tinted line per status: when it triggers and what it does, with the live numbers (`statusEffects`) |
 | `ItemSprite` | An item's picture | From the item atlas (one request); falls back to the item's own URL for items added since the atlas was built |
-| `PixelIcon` | Every icon | Pixel maps in `icons.tsx` (8×8, 12×12 and the 16×16 tab-bar set `nav*`), drawn as SVG rects. One shared palette (`ICON_PALETTE`); a map may have its own (`OWN_PALETTE`) |
+| `PixelIcon` | Every icon | Pixel maps drawn as SVG rects: the Pokémon ones hand-drawn in `icons.tsx` (balls, Pokédex, badges, status symbols), the generic UI ones (coin, heart, shop, trophy, settings…) from the "1-bit Pixel Icons" pack, recoloured into `packIcons.ts` by `scripts/import-icons.ts` (11–16 px squares; the tab bar's on 16×16). Draw them at 12 px or more. One shared palette (`ICON_PALETTE`); a map may have its own (`OWN_PALETTE`) |
 
 Dialog behaviour (`src/lib/useDialog.ts`, used by `Modal`, `Sheet`, `SidePanel`): focus moves in, **Tab stays inside**,
 **Esc closes the top dialog only**, focus returns to what opened it.
@@ -379,8 +379,8 @@ in view) and the battle history sits beside it from 1024 px.
 One Day Care for every region (docs/15-DAYCARE-BREEDING.md). The page (`src/screens/DayCareScreen.tsx`, its pieces in
 `src/screens/daycare/`) is laid out like Home, with no CONTINUE and no Areas button; its name shows once.
 
-- **The yard** (`YardStage`) takes the place and size of Home's scene: the meadow with the cottage on the hill
-  (`dayCareWorld()` in `scene.ts`), everyone at the Day Care roaming with Home's herd. Pairs that could make an Egg
+- **The yard** (`YardStage`) takes the place and size of Home's scene: its picture (`public/area-art/daycare.png`,
+  measured in `ART_GEOMETRY.daycare`; the drawn meadow and cottage stand in while it loads, `dayCareWorld()`), everyone at the Day Care roaming with Home's herd. Pairs that could make an Egg
   seek each other out (`likes`) and send hearts; nobody sings (`quiet`). A tap makes a Pokémon hop with a heart; with
   an Egg waiting, a nest with the Egg shaking sits in the yard and a tap on it hatches. The plate is the page's only
   title: the back arrow, "Day Care", "Every region · 4 Pokémon here". The canvas has a label, and every Pokémon and
@@ -405,9 +405,11 @@ One Day Care for every region (docs/15-DAYCARE-BREEDING.md). The page (`src/scre
   team (TEAM tag; your last team member greyed with the reason), then the Box, each with its Egg groups and a pink
   "Compatible with Jolteon" tag in the colour of the slot being filled. Add a friend's Pokémon has a search (friend or
   Pokémon) and a Compatible only toggle, grouped by friend, the best matches first.
-- **The Home widget** shows your two with the bar to their next level and the next check; with an Egg waiting it turns
-  gold (`panel-gold`) with an EGG! tag and the Egg shaking, and a tap opens the page straight into the hatching. Locked,
-  it says how many species are caught across every region.
+- **The Home widget** is the same size in every state: the Day Care's banner (a fixed-shape strip of its yard's
+  picture), your two standing on it as icons as tall as the banner (no names), the levels they gained there under each
+  (+3 Lv, MAX at the level cap), the gauge to the next Egg check and its time. With an Egg waiting it turns gold (`panel-gold`) with an Egg! tag and the Egg shaking on the banner, and a tap
+  opens the page straight into the hatching. Locked, the banner is greyed with a lock, and it says how many species are
+  caught across every region.
 - **Hatching** is full screen (`useHoldFullscreen`): the hatching timeline (with `shiny`, two rings of stars and a
   chime just after the reveal), the message box, Skip (Escape skips to the end); then what hatched (NEW, ✦ Shiny),
   where it went or why it wasn't kept (with the ₽ from the Day Care couple), and Done. The money pill bumps once the
