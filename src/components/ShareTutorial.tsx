@@ -1,8 +1,8 @@
 // Prof. Oak's share prompt: once per region, when the player holds its 2nd badge (between fights). The button opens
 // the native share sheet on phones, or copies the link where there is none (desktop). Remembered in localStorage.
-// The donation pop-up goes first when both are waiting.
+// The donation pop-up and a special event's unlock pop-up go first when they're waiting too.
 import { useState } from 'react'
-import { badgeCase, dayCareTutorialDue, donationDue, leaderboardTutorialDue, regionOf } from '@/engine'
+import { badgeCase, dayCareTutorialDue, donationDue, eventUnlockDue, leaderboardTutorialDue, regionOf } from '@/engine'
 import { useT } from '@/i18n/react'
 import { shareOrCopy } from '@/lib/share'
 import { useGame } from '@/store/game'
@@ -28,7 +28,8 @@ export function ShareTutorial() {
       badgeCase(s.save, s.data).filter((b) => b.earned).length >= 2 &&
       !dayCareTutorialDue(s.save, s.data) &&
       !leaderboardTutorialDue(s.save, s.data) &&
-      !donationDue(s.save, s.data),
+      !donationDue(s.save, s.data) &&
+      !eventUnlockDue(s.save, s.data),
   )
   const idle = useGame((s) => s.run.phase === 'idle')
   const [closed, setClosed] = useState<string[]>([])

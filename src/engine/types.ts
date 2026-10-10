@@ -441,6 +441,44 @@ export interface DonationConfig {
   round: number
 }
 
+/** The special events (docs/18, docs/19), in the order they open: the Fortune Wheel, Raid Battles, the Elite Rebattle. */
+export const EVENT_IDS = ['wheel', 'raid', 'rebattle'] as const
+export type EventId = (typeof EVENT_IDS)[number]
+
+/** What every event has, whatever it does (Admin → Events). */
+export interface EventDef {
+  /** Off = the event is nowhere in the game: no square on Home, no page, no pop-up. */
+  enabled: boolean
+  /** Order of the squares on Home: lower comes first. */
+  priority: number
+  /**
+   * The area whose clearing opens it, in any region (the wheel: Routes 7 & 8, the raids: the Safari Zone). Null for the
+   * rebattle, which each region's league opens for that region.
+   */
+  unlockAreaId: string | null
+  /** Its picture, for the page's banner and the unlock pop-up: an area picture's key (public/area-art) or a path. */
+  banner: string
+  /** The unlock pop-up's 2–4 rules: strings.csv keys. They read their numbers from this config (engine/events ruleParams). */
+  rules: string[]
+}
+
+export type WheelReward = { kind: 'gold'; amount: number } | { kind: 'item'; key: string; qty: number }
+
+/** One prize of the Fortune Wheel: it takes `count` equal slices, each won `odds` % of the time. */
+export interface WheelPrize {
+  reward: WheelReward
+  count: number
+  odds: number
+}
+
+export interface EventsConfig {
+  /** Home shows a locked "Special events" square from this many Kanto badges until the first event opens. */
+  teaserBadges: number
+  wheel: EventDef & { prizes: WheelPrize[] }
+  raid: EventDef
+  rebattle: EventDef
+}
+
 export interface GameConfig {
   configVersion: number
   xpCurve: { A: number; B: number; C: number }
@@ -515,6 +553,8 @@ export interface GameConfig {
   formChangesPerBattle: number
   /** Once-only finds get likelier the more rounds a player has done in their area. */
   uniquePity: UniquePityConfig
+  /** The special events (docs/18): one game_config row for all of them. */
+  events: EventsConfig
 }
 
 /**
@@ -650,6 +690,18 @@ export interface SaveData {
   donationSeen?: { round: number; regions: RegionId[] }
   /** The regions whose "a new region is open" pop-up has been closed: it opens by itself once per region. */
   regionOfferSeen?: RegionId[]
+  /** The special events (docs/18): what's been seen and done. Shared by every region; absent = nothing yet. */
+  events?: EventsSave
+}
+
+/** The special events' state in a save. Every field is optional: absent means "never". */
+export interface EventsSave {
+  /** Events whose unlock pop-up has been shown (or that opened alongside the one that was). */
+  seen?: EventId[]
+  /** The UTC day (yyyy-mm-dd) of the last Fortune Wheel spin. */
+  wheelDay?: string
+  /** That spin's prize until it's paid (when the wheel stops, or on the next start if the page closed mid-spin). */
+  wheelPending?: WheelReward
 }
 
 /**

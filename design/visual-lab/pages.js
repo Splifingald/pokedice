@@ -418,7 +418,9 @@
     const fromLine = from
       ? `<p class="pg-evo-from">${dexIco(from[0])}Evolves from ${esc(nameOf(from[0]))}${from[1][1] ? ` at Lv.${from[1][1]}` : from[1][2] ? ` with a ${esc(itemName(from[1][2]))}` : ''}</p>`
       : ''
-    return `<section class="hm-d-sec"><div class="hm-d-h"><h3>Where to find it</h3></div>${rows.length ? `<ul class="pg-wherelist">${rows.join('')}</ul>` : `<p class="hm-d-empty">Not in the wild in Kanto.</p>`}${fromLine}</section>`
+    // Raids (events.js): a raid species says how to unlock its raid.
+    const raid = A.raidWhere ? A.raidWhere(d) : ''
+    return `<section class="hm-d-sec"><div class="hm-d-h"><h3>Where to find it</h3></div>${rows.length ? `<ul class="pg-wherelist">${rows.join('')}${raid}</ul>` : `<p class="hm-d-empty">Not in the wild in Kanto.</p>${raid ? `<ul class="pg-wherelist">${raid}</ul>` : ''}`}${fromLine}</section>`
   }
 
   // ------------------------------------------------------------------ Team

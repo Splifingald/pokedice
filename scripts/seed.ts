@@ -847,7 +847,7 @@ const RETIRED_CONFIG_KEYS = ['regenPercentPerHour']
  */
 export async function regionsPrelude(): Promise<string> {
   const parts = await Promise.all(
-    ['0016_regions.sql', '0033_friends.sql', '0034_day_care.sql'].map(async (name) => {
+    ['0016_regions.sql', '0033_friends.sql', '0034_day_care.sql', '0035_events.sql'].map(async (name) => {
       const sql = await readFile(path.join(ROOT, 'supabase', 'migrations', name), 'utf8')
       return `-- ↓ supabase/migrations/${name}, inlined so this file stands alone.\n${sql}`
     }),

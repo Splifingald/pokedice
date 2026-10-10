@@ -106,4 +106,40 @@ export const DEFAULT_CONFIG: GameConfig = {
   // A once-only find in a big loot deck can take a hundred rounds to turn up: from the 5th round done in its area, its
   // odds climb to ×10 at the 50th.
   uniquePity: { startRounds: 5, fullRounds: 50, maxMultiplier: 10 },
+  // The special events (docs/18). Each one is switched on as it's built (docs/19); until then Home keeps a locked
+  // square from the 3rd Kanto badge. Banners borrow area pictures until the event art exists.
+  events: {
+    teaserBadges: 3,
+    wheel: {
+      enabled: false,
+      priority: 5,
+      // Routes 7 & 8 (Celadon), Kanto.
+      unlockAreaId: '8cf87ee3-f7a5-568e-bc22-54f643572535',
+      banner: 'evening',
+      rules: ['wheel.daily', 'wheel.prizes', 'wheel.odds'],
+      // Nine equal slices: 4 × ₽10, 2 Poké Balls, a Great, an Ultra and a Master Ball. The odds add up to 100 %.
+      prizes: [
+        { reward: { kind: 'gold', amount: 10 }, count: 4, odds: 12.5 },
+        { reward: { kind: 'item', key: 'poke-ball', qty: 1 }, count: 2, odds: 12.5 },
+        { reward: { kind: 'item', key: 'great-ball', qty: 1 }, count: 1, odds: 12.5 },
+        { reward: { kind: 'item', key: 'ultra-ball', qty: 1 }, count: 1, odds: 10 },
+        { reward: { kind: 'item', key: 'master-ball', qty: 1 }, count: 1, odds: 2.5 },
+      ],
+    },
+    raid: {
+      enabled: false,
+      priority: 3,
+      // The Safari Zone, Kanto.
+      unlockAreaId: '2238f26a-2629-5f28-af07-e74cb41d5f7a',
+      banner: 'lair-shrine',
+      rules: ['raid.daily', 'raid.sides', 'raid.bars', 'raid.catch'],
+    },
+    rebattle: {
+      enabled: false,
+      priority: 4,
+      unlockAreaId: null,
+      banner: 'champion',
+      rules: ['rebattle.tiers', 'rebattle.gauntlet', 'rebattle.gold'],
+    },
+  },
 }

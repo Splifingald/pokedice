@@ -25,7 +25,7 @@ import { DataTable } from '../DataTable'
 import { addRows, rowKey, updateRow, useAdmin, useAdminData } from '../store'
 import { Box, Field, NumInput, PokemonPicker, inputCls } from '../widgets'
 
-function useConfigRow<K extends keyof GameConfig>(key: K): [GameConfig[K], (v: GameConfig[K]) => void] {
+export function useConfigRow<K extends keyof GameConfig>(key: K): [GameConfig[K], (v: GameConfig[K]) => void] {
   const rows = useAdmin((st) => st.rows.game_config)
   const row = rows.find((r) => r.key === key)
   const value = (row ? row.value : DEFAULT_CONFIG[key]) as GameConfig[K]
