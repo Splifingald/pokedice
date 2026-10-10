@@ -1,10 +1,13 @@
 // The Day Care unlock tutorial: once enough species are in the Pokédex, Professor Oak sends the player there. The
 // pop-up can't be dismissed — its only button goes to the Day Care, and the first visit ends it (saved, so it syncs).
+import { useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { dayCareTutorialDue } from '@/engine'
+import { joinList, t } from '@/i18n'
 import { useT } from '@/i18n/react'
-import { useGame } from '@/store/game'
-import { EggSprite } from '@/screens/DayCareScreen'
+import { takeDayCareNotice } from '@/store/actions'
+import { pushToast, useGame } from '@/store/game'
+import { EggSprite } from './EggSprite'
 import { Modal } from './Modal'
 import { PixelButton } from './PixelButton'
 import { TrainerSprite } from '@/components/TrainerArt'
@@ -36,4 +39,21 @@ export function DayCareTutorial() {
       </div>
     </Modal>
   )
+}
+
+/**
+ * The Day Care sent residents home (the Day Cares became one and it had more than its slots): one toast on the next
+ * screen, then the notice is gone.
+ */
+export function DayCareNotice() {
+  const pending = useGame((s) => !!s.save?.dayCareNotice)
+  const data = useGame((s) => s.data)
+  useEffect(() => {
+    if (!pending) return
+    const dex = takeDayCareNotice()
+    if (!dex.length) return
+    const names = joinList(dex.map((d) => data.species[d]?.name ?? `#${d}`))
+    pushToast(t('ui.dayCare.roomFor', { slots: data.config.dayCare.slots, names }), 'info', 6000)
+  }, [pending, data])
+  return null
 }

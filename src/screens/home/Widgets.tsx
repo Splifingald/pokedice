@@ -1,23 +1,25 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
-  dayCareFullAt,
+  dayCareLevelProgress,
   dayCareOf,
-  dayCareXp,
   isDayCareOpen,
+  nextCheckAt,
+  speciesCaughtEverywhere,
   teamOf,
   versusReadyCount,
   versusUnlocked,
   VERSUS_TEAM_SIZE,
 } from '@/engine'
 import { useT } from '@/i18n/react'
-import { conditionLabel } from '@/i18n/text'
+import { conditionLabel, waitText } from '@/i18n/text'
 import { Chip, NewTag } from '@/components/Chip'
+import { EggSprite } from '@/components/EggSprite'
 import { PixelIcon } from '@/components/icons'
 import { MiniSprite } from '@/components/SpriteImg'
 import { isSupabaseConfigured } from '@/lib/supabase'
 import { opponentsOf, versusBoardCached, type VersusEntry } from '@/lib/versus'
-import { useGame } from '@/store/game'
+import { pushToast, useGame } from '@/store/game'
 import { useNow } from '@/store/hooks'
 import { cx } from '@/theme/util'
 import { featuredSecret } from './areas'
@@ -130,95 +132,76 @@ function SecretWidget({ onSecrets }: { onSecrets: () => void }) {
   )
 }
 
-const short = (ms: number) => {
-  const m = Math.ceil(ms / 60_000)
-  return m < 60 ? `${m}m` : `${Math.floor(m / 60)}h`
-}
-
-/** The Day Care: residents with their XP toward the cap and the time to full, READY when full; a free slot. */
+/**
+ * The Day Care, one for every region: locked (how close, all regions counted), your residents with the way to their
+ * next level and when the next Egg check runs, or, with an Egg waiting, gold with the Egg shaking. It only ever opens
+ * the Day Care page (with an Egg, straight into the hatching); it never acts on the Pokémon.
+ */
 function DayCareWidget() {
-  const { t } = useT()
+  const { t, tPlural } = useT()
   const navigate = useNavigate()
   const save = useGame((s) => s.save)!
   const data = useGame((s) => s.data)
   const now = useNow(30_000)
   const cfg = data.config.dayCare
   if (!isDayCareOpen(save, data)) {
-    const have = new Set(save.pokedex).size
+    const have = Math.min(speciesCaughtEverywhere(save), cfg.unlockPokedex)
     return (
-      <div className="pixel-panel flex min-w-0 flex-col gap-[5px] px-2.5 pb-2.5 pt-2" role="note">
-        <span className="font-pixel-sm text-[15px] leading-none text-muted">{t('ui.home.dayCare')}</span>
-        <span className="flex items-center gap-1.5 text-[20px] leading-none">
-          <PixelIcon name="lock" size={14} /> {t('ui.map.aSecretPlace')}
-        </span>
+      <Widget
+        title={t('ui.home.dayCare')}
+        tag={<PixelIcon name="lock" size={16} />}
+        label={t('ui.home.dcLockedLabel', { count: cfg.unlockPokedex, n: have })}
+        onClick={() => pushToast(t('ui.home.dcLockedToast', { count: cfg.unlockPokedex }))}
+      >
+        <span className="text-[20px] leading-none">{t('ui.home.dcCaught', { n: have, max: cfg.unlockPokedex })}</span>
         <Meter value={have} max={cfg.unlockPokedex} />
-        <span className="font-pixel-sm text-[15px] leading-tight text-muted">
-          {t('ui.unlock.pokedex', { count: cfg.unlockPokedex })} · {Math.min(have, cfg.unlockPokedex)}/
-          {cfg.unlockPokedex}
-        </span>
-      </div>
+        <span className="font-pixel-sm text-[15px] leading-tight text-muted">{t('ui.home.dcOpensAll')}</span>
+      </Widget>
     )
   }
   const dc = dayCareOf(save)
-  const rows = dc.residents.map((r) => {
-    const xp = dayCareXp(r, now, data)
-    const full = xp >= cfg.maxXp
-    const at = dayCareFullAt(r, data)
-    return {
-      r,
-      xp,
-      full,
-      left: at != null ? Math.max(0, at - now) : 0,
-      name: data.species[r.inst.dex]?.name ?? t('ui.common.pokemon'),
-    }
-  })
-  const ready = rows.some((x) => x.full)
+  if (dc.egg)
+    return (
+      <Widget
+        title={t('ui.home.dayCare')}
+        tag={<Chip tone="gold">{t('ui.home.eggTag')}</Chip>}
+        label={t('ui.home.dcEggLabel')}
+        onClick={() => navigate('/daycare', { state: { hatch: true } })}
+        className="panel-gold"
+      >
+        <span className="grid h-11 w-full place-items-center">
+          <EggSprite size={28} shake />
+        </span>
+        <span className="text-[20px] leading-none">{t('ui.dayCare.eggWaiting')}</span>
+        <span className="font-pixel-sm text-[15px] leading-none text-ink">{t('ui.home.dcTapHatch')}</span>
+      </Widget>
+    )
+  const rows = dc.residents.map((r) => ({
+    r,
+    p: dayCareLevelProgress(r, now, data),
+    name: data.species[r.inst.dex]?.name ?? t('ui.common.pokemon'),
+  }))
   const free = Math.max(0, cfg.slots - rows.length)
+  const friends = dc.guests.length
+  const next = t('ui.home.dcNextCheck', { time: waitText(nextCheckAt(save, data, now) - now) })
+  const sub = [friends ? tPlural('ui.home.dcFriends', friends, { n: friends }) : null, next].filter(Boolean).join(' · ')
   const words = [
-    ...rows.map((x) =>
-      x.full
-        ? t('ui.home.dcReady', { name: x.name })
-        : t('ui.home.dcFullIn', { name: x.name, time: short(x.left) }),
-    ),
+    ...rows.map((x) => t('ui.home.dcMon', { name: x.name, level: t('ui.common.level.short', { n: x.p.level }) })),
     ...Array.from({ length: free }, () => t('ui.home.dcFree')),
-    ...(!dc.eggClaimed ? [t('ui.home.dcEgg')] : []),
+    sub,
   ].join('. ')
   return (
-    <Widget
-      title={t('ui.home.dayCare')}
-      tag={
-        ready ? (
-          <Chip tone="gold">{t('ui.home.ready')}</Chip>
-        ) : !dc.eggClaimed ? (
-          <Chip tone="gold">{t('ui.home.egg')}</Chip>
-        ) : undefined
-      }
-      label={t('ui.home.dayCareLabel', { state: words })}
-      onClick={() => navigate('/daycare')}
-    >
+    <Widget title={t('ui.home.dayCare')} label={t('ui.home.dayCareLabel', { state: words })} onClick={() => navigate('/daycare')}>
       {rows.map((x) => (
-        <span
-          key={x.r.inst.id}
-          className="grid w-full grid-cols-[32px_minmax(0,1fr)_auto] items-center gap-1.5"
-        >
+        <span key={x.r.inst.id} className="grid w-full grid-cols-[32px_minmax(0,1fr)] items-center gap-1.5">
           <MiniSprite dex={x.r.inst.dex} size={32} />
           <span className="grid min-w-0 gap-[3px]">
             <span className="truncate text-[17px] leading-none">
               {x.name}
-              {!x.full && (
-                <span className="font-pixel-sm text-[14px] text-muted">
-                  {' '}
-                  {t('ui.common.level.short', { n: x.r.inst.level })}
-                </span>
-              )}
+              <span className="font-pixel-sm text-[14px] text-muted"> {t('ui.common.level.short', { n: x.p.level })}</span>
             </span>
-            <Meter value={x.xp} max={cfg.maxXp} />
+            <Meter value={x.p.toNext ? x.p.xp : 1} max={x.p.toNext || 1} />
           </span>
-          {x.full ? (
-            <Chip tone="green">{t('ui.home.ready')}</Chip>
-          ) : (
-            <span className="font-pixel-sm text-[15px] text-muted">{short(x.left)}</span>
-          )}
         </span>
       ))}
       {Array.from({ length: free }, (_, i) => (
@@ -226,12 +209,11 @@ function DayCareWidget() {
           <span className="ml-0.5 h-[22px] w-7 shadow-ring-line" aria-hidden />
           <span className="grid min-w-0 gap-[3px]">
             <span className="truncate text-[17px] leading-none">{t('ui.home.freeSlot')}</span>
-            <span className="truncate font-pixel-sm text-[15px] leading-none text-muted">
-              {t('ui.dayCare.leaveOne')}
-            </span>
+            <span className="truncate font-pixel-sm text-[15px] leading-none text-muted">{t('ui.dayCare.leaveOne')}</span>
           </span>
         </span>
       ))}
+      <span className="font-pixel-sm text-[15px] leading-tight text-muted">{sub}</span>
     </Widget>
   )
 }

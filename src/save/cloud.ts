@@ -90,8 +90,9 @@ export function progressTotals(s: SaveData) {
     }
     for (const dex of block.pokedex) species.add(dex)
     for (const p of block.box) levels += p.level
-    for (const r of block.dayCare?.residents ?? []) levels += r.inst.level
   }
+  // One Day Care for every region: its residents count once, whichever region they came from.
+  for (const r of s.dayCare?.residents ?? []) levels += r.inst.level
   return { regions: regionBlocks(s).length, cleared, gyms, species: species.size, levels }
 }
 

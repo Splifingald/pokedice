@@ -263,6 +263,8 @@ const FX_SOUNDS = {
     tone(1568, 0.3, { type: 'square', vol: 0.035 })
   },
   'hatch.fanfare': (n = 0) => tone(HATCH_FANFARE[n]!, n === 3 ? 0.5 : 0.12, { type: 'square', vol: 0.045 }),
+  // A shiny hatchling: the two-tone chime (B6, then E7), as the stars ring out.
+  'hatch.shiny': (n = 0) => tone(n ? 2637 : 1976, n ? 0.2 : 0.12, { type: 'square', vol: n ? 0.03 : 0.035 }),
   'mega.key': () => tone(1568, 0.15, { type: 'square', vol: 0.035 }),
   'mega.beam': () => tone(523, 0.55, { type: 'triangle', vol: 0.05, slide: 520 }),
   'mega.orb': () => tone(392, 0.5, { type: 'triangle', vol: 0.05, slide: 260 }),

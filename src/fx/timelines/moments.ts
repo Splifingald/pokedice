@@ -353,8 +353,10 @@ function eggCanvas(stage: number, leak: number, t: number): Canvas {
 }
 
 export interface HatchParams {
-  /** The baby's front sprite key. */
+  /** The baby's front sprite key (its shiny one for a shiny). */
   baby: string
+  /** A shiny hatchling: two rings of stars just after the reveal, and the shiny chime. */
+  shiny?: boolean
 }
 
 interface HatchState {
@@ -376,6 +378,14 @@ export function hatchTimeline(p: HatchParams): Timeline<HatchState> {
   const T_SHAKE = 4.0
   const T_BURST = 4.85
   const T_HATCHED = 5.5
+  // The shiny sparkle, just after the reveal: two rings of stars a beat apart.
+  const T_SHINY = T_HATCHED - 0.35
+  const RINGS = p.shiny
+    ? ([
+        [T_SHINY, 18],
+        [T_SHINY + 0.25, 30],
+      ] as const)
+    : []
   return {
     id: 'hatch',
     dur: 9,
@@ -466,6 +476,22 @@ export function hatchTimeline(p: HatchParams): Timeline<HatchState> {
           })
         }
       }
+      for (const [t0, R] of RINGS)
+        if (t >= t0 && t < t0 + STEP * 1.5)
+          for (let k = 0; k < 12; k++) {
+            const a = (k / 12) * Math.PI * 2
+            s.fx.add({
+              x: C.x + Math.cos(a) * R * 0.4,
+              y: C.y - 24 + Math.sin(a) * R * 0.4,
+              vx: Math.cos(a) * R * 2.2,
+              vy: Math.sin(a) * R * 2.2,
+              drag: 3,
+              life: 0.55,
+              size: 2,
+              shape: 'star',
+              colors: ['#ffffff', '#fff6a8', '#ffe14d'],
+            })
+          }
       if (t >= T_HATCHED && t < T_HATCHED + 1.6 && r() < 0.06)
         s.amb.add({
           x: C.x + r.range(-16, 16),
@@ -551,6 +577,7 @@ export function hatchTimeline(p: HatchParams): Timeline<HatchState> {
         for (let i = 0; i < n; i++) c.push([t0 + (i * d) / n, () => fxSound('hatch.wobble')])
       for (const tc of T_CRACK) c.push([tc, () => fxSound('hatch.crack')])
       for (let i = 0; i < 4; i++) c.push([T_HATCHED + i * 0.14, () => fxSound('hatch.fanfare', i)])
+      if (p.shiny) c.push([T_SHINY, () => fxSound('hatch.shiny', 0)], [T_SHINY + 0.12, () => fxSound('hatch.shiny', 1)])
       return c.sort((a, b) => a[0] - b[0])
     },
   }

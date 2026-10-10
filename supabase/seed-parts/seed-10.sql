@@ -849,7 +849,7 @@ insert into game_config (key, value) values
   ('hpMultiplier', '1'::jsonb),
   ('goldMultiplier', '0.5'::jsonb),
   ('status', '{"burn":{"duration":3,"threshold":1,"percentPerStack":4},"heal":{"amount":"rollTotal","threshold":2},"frozen":{"stunTurns":2,"threshold":3},"poison":{"percent":10,"duration":3,"threshold":2},"confuse":{"threshold":2,"recoilPercent":20},"paralyze":{"stunTurns":1,"threshold":2}}'::jsonb),
-  ('dayCare', '{"maxXp":200,"slots":2,"eggPrice":50,"hatchRank":3,"xpPerTick":1,"hatchOffset":5,"tickMinutes":10,"hatchMinLevel":5,"unlockPokedex":20,"unownedWeight":4}'::jsonb),
+  ('dayCare', '{"slots":2,"friendSlots":4,"hatchRank":3,"xpPerTick":1,"breedHours":12,"hatchOffset":5,"rushPrice":200,"notKeptGold":10,"shinyChance":0.01,"tickMinutes":10,"hatchMinLevel":5,"unlockPokedex":20,"unownedWeight":4,"breedDittoHours":24}'::jsonb),
   ('xpCurve', '{"A":0.8,"B":1.25,"C":1}'::jsonb),
   ('gymGoldMultiplier', '2'::jsonb),
   ('forcedCenterWhenHurt', 'true'::jsonb),

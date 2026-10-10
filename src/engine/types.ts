@@ -302,19 +302,30 @@ export interface SlotMachineConfig {
   prizeLevel: number
 }
 
-/** The Pokémon Day Care: a secret place where Pokémon gain XP in real time, and where Eggs are sold. */
+/**
+ * The Pokémon Day Care, one for every region (docs/15): your Pokémon gain XP in real time, friends' Pokémon visit, and
+ * a compatible pair leaves an Egg at each check.
+ */
 export interface DayCareConfig {
-  /** Opens (on the Map, with a free Egg) once this many species are in the Pokédex. */
+  /** Opens (with a free Egg) once this many distinct species are caught, counted across every region's Pokédex. */
   unlockPokedex: number
-  /** How many Pokémon can stay at once. */
+  /** How many of your Pokémon can stay at once. */
   slots: number
-  /** XP a resident gains every `tickMinutes` of real time… */
+  /** How many Pokémon from friends' Day Cares can visit at once. */
+  friendSlots: number
+  /** XP a resident gains every `tickMinutes` of real time, all the way to the level cap. */
   xpPerTick: number
   tickMinutes: number
-  /** …up to this much per stay (it stops gaining until it's picked up). */
-  maxXp: number
-  /** Pokédollars for an Egg (the first one is free). */
-  eggPrice: number
+  /** Hours between two Egg-group checks: each pair sharing a group can leave an Egg. */
+  breedHours: number
+  /** Hours between two checks of the pairs with a Ditto in them (Ditto pairs with all but legendaries, slower). */
+  breedDittoHours: number
+  /** ₽ for Egg now: the next check runs at once and its Egg hatches. */
+  rushPrice: number
+  /** ₽ the Day Care couple gives when a hatchling isn't kept (you own a plain copy at its level or higher). */
+  notKeptGold: number
+  /** Chance (0–1) that a Day Care Egg hatches shiny (the wild `shinyChance` is separate). */
+  shinyChance: number
   /** Eggs favour species missing from the Pokédex: their weight is this, an owned species' is 1. */
   unownedWeight: number
   /** A hatchling's level: the `hatchRank`-th lowest level you own, minus `hatchOffset`, never below `hatchMinLevel`. */
@@ -614,8 +625,13 @@ export interface SaveData {
   hpScale?: number
   /** Who the player is: a name and one of the two trainer sprites (absent on older saves = Red, no name). */
   player?: PlayerProfile
-  /** The Day Care: who's staying (out of the team and the Box meanwhile), and whether the free Egg was taken. */
+  /**
+   * The Day Care, one for every region whichever is live: who's staying (out of their region's team and Box
+   * meanwhile), friends' visitors, the two check clocks and the Egg waiting.
+   */
   dayCare?: DayCareState
+  /** Residents the Day Care sent home when it had too many (the move to one Day Care): one toast, then cleared. */
+  dayCareNotice?: { dex: number[] }
   /** When the admin last edited this save (cheats): that cloud save then wins the next sync, even with less progress. */
   adminEditAt?: number
   /** Energy held at `at` (ms); it refills from there (see engine/energy). Absent = full. */
@@ -650,7 +666,6 @@ export interface RegionSave {
   dieLevels: Record<PokeType, number>
   currentAreaId: string
   areaProgress: Record<string, AreaProgress>
-  dayCare?: DayCareState
   boughtUnique?: string[]
 }
 
@@ -658,13 +673,50 @@ export interface DayCareResident {
   inst: PokemonInstance
   /** When it was dropped off (ms): XP accrues from here, in real time. */
   since: number
+  /** The region it was left from: taking it back puts it in that region's Box (regions never pool). */
+  region: RegionId
+}
+
+/**
+ * A friend's Pokémon visiting: a snapshot of one sitting in their Day Care (docs/15, Phase 4). The save never holds
+ * the friend's instance and never writes to their save; it stays theirs.
+ */
+export interface DayCareGuest {
+  /** The friend's user id. */
+  owner: string
+  /** For "Lea's", as it was when invited. */
+  ownerName: string
+  ownerAvatar: string
+  /** The friend's instance id, to check it is still there. */
+  inst: string
+  dex: number
+  /** Its level when last refreshed. */
+  level: number
+  shiny?: boolean
+  addedAt: number
+}
+
+/** One parent of an Egg, for "Eevee and Ditto (Noor) left it": the species, and whose it is when it's a visitor. */
+export interface EggParent {
+  dex: number
+  /** The friend's name, for a guest. */
+  owner?: string
 }
 
 export interface DayCareState {
   residents: DayCareResident[]
+  /** Friends' Pokémon visiting, at most `friendSlots`, no empty entries (the UI draws the free slots). */
+  guests: DayCareGuest[]
+  /** The gift Egg (the first one) has been hatched. */
   eggClaimed: boolean
   /** The player has been to the Day Care screen (the unlock tutorial sends them there once). */
   visited?: boolean
+  /** When the last Egg-group check ran (ms). */
+  breedAt?: number
+  /** When the last Ditto check ran (ms). */
+  dittoAt?: number
+  /** The Egg waiting to hatch: one at a time. `gift` is the free first one. */
+  egg?: { at: number; parents?: [EggParent, EggParent]; gift?: true }
 }
 
 export type PlayerCharacter = 'red' | 'green'

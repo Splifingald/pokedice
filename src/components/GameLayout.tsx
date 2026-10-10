@@ -3,7 +3,7 @@ import { useGame } from '@/store/game'
 import { useFullscreen } from '@/lib/fullscreen'
 import { useInFight } from '@/store/hooks'
 import { cx } from '@/theme/util'
-import { DayCareTutorial } from './DayCareTutorial'
+import { DayCareNotice, DayCareTutorial } from './DayCareTutorial'
 import { DonationPopup } from './DonationPopup'
 import { FriendsService } from './friends/FriendsService'
 import { BottomNav, Header, SideNav } from './Hud'
@@ -34,6 +34,7 @@ export function GameLayout() {
       </div>
       {!full && <BottomNav />}
       <DayCareTutorial />
+      <DayCareNotice />
       <LeaderboardTutorial />
       <ShareTutorial />
       <ReplyPopup />

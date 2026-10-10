@@ -16,13 +16,16 @@ import {
   hatchEgg,
   markDayCareVisited,
   markDonationSeen,
+  rushEgg,
   withdrawPokemon,
   type ComboKey,
   type DepositError,
   type Hatch,
   type Pickup,
   type PokeType,
+  type RushRefusal,
 } from '@/engine'
+import { tickDayCare } from './daycare'
 import { mutateSave, pushToast, useGame } from './game'
 import { newId } from './run'
 import { t } from '@/i18n'
@@ -140,14 +143,42 @@ export function pickUpFromDayCare(uid: string): Pickup | null {
   return res
 }
 
-/** The free Egg (once), or one bought for the configured price. It hatches on the spot. */
-export function hatchDayCareEgg(free: boolean): Hatch | null {
+/** The Egg waiting hatches (the gift, or one a pair left). Null when none waits. */
+export function hatchDayCareEgg(): Hatch | null {
   const { save, data } = useGame.getState()
-  const res = save ? hatchEgg(save, data, createRng(randomSeed()), Date.now(), newId, { free }) : null
-  if (!res) {
-    if (!free) pushToast(t('ui.toast.tooPoor'), 'bad')
-    return null
-  }
+  const res = save ? hatchEgg(save, data, createRng(randomSeed()), Date.now(), newId) : null
+  if (!res) return null
   mutateSave(() => res.save)
+  // The clocks kept running while it waited: a check that came due meanwhile can leave the next one now.
+  tickDayCare()
   return res
+}
+
+/**
+ * Egg now: the checks that are due run first (one may leave an Egg on its own, and then there is nothing to buy),
+ * then the next check runs early for `rushPrice` and its Egg hatches at once: one commit, one moment.
+ */
+export function rushDayCareEgg(): { hatch: Hatch } | { refused: RushRefusal } {
+  tickDayCare()
+  const { save, data } = useGame.getState()
+  if (!save) return { refused: 'pair' }
+  const now = Date.now()
+  const rng = createRng(randomSeed())
+  const rushed = rushEgg(save, data, now, rng)
+  if ('refused' in rushed) return rushed
+  const hatch = hatchEgg(rushed.save, data, rng, now, newId)
+  if (!hatch) return { refused: 'pair' }
+  mutateSave(() => hatch.save)
+  return { hatch }
+}
+
+/** The residents the Day Care sent home when it had too many: read once, for the toast. */
+export function takeDayCareNotice(): number[] {
+  const dex = useGame.getState().save?.dayCareNotice?.dex ?? []
+  mutateSave((s) => {
+    if (!s.dayCareNotice) return null
+    const { dayCareNotice: _shown, ...rest } = s
+    return rest
+  })
+  return dex
 }

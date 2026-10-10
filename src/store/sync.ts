@@ -21,6 +21,7 @@ import { backupSave, flushWrite } from '@/save/storage'
 import { commitSave, initialRun, onSaveCommitted, pushToast, setContent, tickFossils, useGame, type AuthProvider } from './game'
 import { t } from '@/i18n'
 import { rescueIfRegionDisabled } from './regions'
+import { armDayCareTimer, tickDayCare } from './daycare'
 
 let syncedUser: string | null = null
 /** Nothing is pushed until the first sync for the signed-in user is settled — no overwrite while we compare. */
@@ -531,10 +532,14 @@ export function startBackgroundServices() {
   void initAuth()
   void checkContent()
   void listenForReload(false)
+  tickDayCare()
   setInterval(() => {
     if (document.visibilityState === 'visible') checkFreshness(false)
     tickFossils()
   }, 60_000)
+  // The Day Care's timer is set from the save as it was; whatever changes it later (a resident left, a friend's
+  // Pokémon invited) sets it again here.
+  useGame.subscribe((s, prev) => s.save?.dayCare !== prev.save?.dayCare && armDayCareTimer())
   // Closing the page sends what the automatic sync hasn't yet. Merely switching away doesn't: on phones that happens
   // all the time, and the local save keeps everything until the next sync.
   window.addEventListener('pagehide', () => {
@@ -549,6 +554,7 @@ export function startBackgroundServices() {
     } else {
       checkFreshness(true)
       tickFossils()
+      tickDayCare()
     }
   })
 }

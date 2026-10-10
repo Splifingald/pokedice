@@ -42,16 +42,20 @@
   }
  },
  "dayCare": {
-  "maxXp": 200,
   "slots": 2,
-  "eggPrice": 50,
+  "friendSlots": 4,
   "hatchRank": 3,
   "xpPerTick": 1,
+  "breedHours": 12,
   "hatchOffset": 5,
+  "rushPrice": 200,
+  "notKeptGold": 10,
+  "shinyChance": 0.01,
   "tickMinutes": 10,
   "hatchMinLevel": 5,
   "unlockPokedex": 20,
-  "unownedWeight": 4
+  "unownedWeight": 4,
+  "breedDittoHours": 24
  },
  "xpCurve": {
   "A": 0.8,

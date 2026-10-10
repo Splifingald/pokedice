@@ -179,10 +179,13 @@ export function pickUpItem(
   return next
 }
 
-/** Every Pokémon the player owns: the Box (team included) and the Day Care's residents. */
+/**
+ * Every Pokémon the player owns here: the Box (team included) and the Day Care's residents left from this region.
+ * The Day Care is shared, but regions never pool: a Johto resident is nobody's in Kanto.
+ */
 export const ownedPokemon = (save: SaveData): PokemonInstance[] => [
   ...save.box,
-  ...(save.dayCare?.residents.map((r) => r.inst) ?? []),
+  ...(save.dayCare?.residents ?? []).filter((r) => (r.region ?? regionOf(save)) === regionOf(save)).map((r) => r.inst),
 ]
 
 export const maxOwnedLevel = (save: SaveData) => ownedPokemon(save).reduce((m, p) => Math.max(m, p.level), 0)

@@ -341,3 +341,35 @@
     animation: none;
   }
 }
+
+/* A panel in gold: Home's Day Care widget while an Egg waits (one new thing to open). */
+.pixel-panel.panel-gold {
+  border-image-source: var(--fr-gold);
+  background-color: rgb(var(--c-gold-pale));
+}
+
+/* An Egg about to hatch: a wobble now and then, from its base (steps, not a glide). */
+@keyframes egg-shake {
+  0%,
+  31%,
+  100% {
+    transform: none;
+  }
+  6%,
+  18% {
+    transform: rotate(-12deg);
+  }
+  12%,
+  24% {
+    transform: rotate(12deg);
+  }
+}
+.egg-shake {
+  animation: egg-shake 1.6s steps(1) infinite;
+  transform-origin: 50% 100%;
+}
+@media (prefers-reduced-motion: reduce) {
+  .egg-shake {
+    animation: none;
+  }
+}

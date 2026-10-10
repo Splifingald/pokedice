@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import {
   DEFAULT_CONFIG,
   eggSpecies,
+  eggsPerWeek,
   isDonationUrl,
   enabledRegions,
   slotOdds,
@@ -257,33 +258,68 @@ function DiscordBox() {
   )
 }
 
-/** Pokémon Day Care: when it opens, how fast residents train, and what Eggs cost and hatch into. */
+/**
+ * Pokémon Day Care, one for every region: when it opens, how fast residents train, the friend slots, the two Egg
+ * checks, Egg now and what Eggs hatch into.
+ */
 function DayCareBox() {
   const data = useAdminData()
   const [raw, setRaw] = useConfigRow('dayCare')
-  const cfg: DayCareConfig = { ...DEFAULT_CONFIG.dayCare, ...raw }
+  // The live row may still carry the keys v2 retired (the stay's XP cap, the bought Egg): drop them on the next edit.
+  const { maxXp: _maxXp, eggPrice: _eggPrice, ...kept } = (raw ?? {}) as DayCareConfig & { maxXp?: number; eggPrice?: number }
+  const cfg: DayCareConfig = { ...DEFAULT_CONFIG.dayCare, ...kept }
   const set = (patch: Partial<DayCareConfig>) => setRaw({ ...cfg, ...patch })
   const num = (k: keyof DayCareConfig, min = 0) => (
     <NumInput min={min} value={cfg[k]} onChange={(v) => set({ [k]: Math.max(min, v ?? min) })} />
   )
   const perDay = cfg.tickMinutes > 0 ? (cfg.xpPerTick * 24 * 60) / cfg.tickMinutes : 0
+  const week = (clock: 'breed' | 'ditto') => (data ? eggsPerWeek({ ...data, config: { ...data.config, dayCare: cfg } }, clock) : 0)
   // An Egg belongs to the region it is hatched in, so the pool is shown region by region.
   const pools = data ? enabledRegions(data).map((r) => ({ region: r, pool: eggSpecies(data, r.id) })) : []
   return (
-    <Box title="Pokémon Day Care" hint="A secret place on the Map (not an area): Pokémon train in real time, and Eggs hatch on the spot.">
+    <Box
+      title="Pokémon Day Care"
+      hint="One for every region: your Pokémon train in real time, friends' Pokémon visit, and compatible pairs leave Eggs."
+    >
       <div className="grid gap-3 sm:grid-cols-3">
-        <Field label="Opens at (Pokédex)" hint="species caught; a free Egg waits on the first visit">
+        <Field label="Opens at (species, all regions)" hint="distinct species across every region's Pokédex; a free Egg waits">
           {num('unlockPokedex', 0)}
         </Field>
-        <Field label="Slots">{num('slots', 1)}</Field>
-        <Field label="Max XP per stay">{num('maxXp', 0)}</Field>
+        <Field label="Slots" hint="your Pokémon">
+          {num('slots', 1)}
+        </Field>
+        <Field label="Friend slots" hint="Pokémon from friends' Day Cares">
+          {num('friendSlots', 0)}
+        </Field>
         <Field label="XP per tick">{num('xpPerTick', 0)}</Field>
         <Field label="Tick (minutes)">{num('tickMinutes', 1)}</Field>
-        <Field label="Egg price (₽)">{num('eggPrice', 0)}</Field>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-4">
+        <Field label="Egg check (hours)" hint="pairs sharing an Egg group">
+          {num('breedHours', 1)}
+        </Field>
+        <Field label="Ditto check (hours)" hint="pairs with a Ditto">
+          {num('breedDittoHours', 1)}
+        </Field>
+        <Field label="Egg now (₽)" hint="skip the wait: the next check runs and its Egg hatches">
+          {num('rushPrice', 0)}
+        </Field>
+        <Field label="Not kept (₽)" hint="from the Day Care couple when a hatchling isn't kept">
+          {num('notKeptGold', 0)}
+        </Field>
+        <Field label="Shiny chance (%)" hint="Day Care Eggs only; the wild shiny chance is separate">
+          <NumInput
+            min={0}
+            max={100}
+            step={0.1}
+            value={Math.round(cfg.shinyChance * 10_000) / 100}
+            onChange={(v) => set({ shinyChance: Math.min(1, Math.max(0, (v ?? 0) / 100)) })}
+          />
+        </Field>
       </div>
       <p className="text-lg">
-        {perDay.toFixed(1)} XP per day · the {cfg.maxXp} XP cap is reached after{' '}
-        {perDay > 0 ? `${(cfg.maxXp / perDay).toFixed(1)} days` : 'never'}. Residents level up but never evolve here.
+        {perDay.toFixed(1)} XP a day. Residents level up to Lv.100 and never evolve here. With a compatible pair, about{' '}
+        {week('breed').toFixed(1)} Eggs a week (Ditto pairs: {week('ditto').toFixed(1)}).
       </p>
       <div className="grid gap-3 sm:grid-cols-4">
         <Field label="Unowned weight" hint="× odds of a species not in the Pokédex (owned = 1)">

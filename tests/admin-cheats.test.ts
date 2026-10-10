@@ -41,7 +41,7 @@ describe('admin cheats', () => {
     expect(s.team).toEqual(['pika'])
     expect(s.pokedex).toContain(base.box[0]!.dex)
     const inst = two.box.find((p) => p.id === 'pika')!
-    const withDayCare: SaveData = { ...base, dayCare: { residents: [{ inst, since: 1 }], eggClaimed: false } }
+    const withDayCare: SaveData = { ...base, dayCare: { residents: [{ inst, since: 1, region: 'kanto' }], guests: [], eggClaimed: false } }
     expect(adminRemovePokemon(withDayCare, 'pika', 4000).dayCare!.residents).toEqual([])
   })
 

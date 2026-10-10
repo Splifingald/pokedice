@@ -83,10 +83,12 @@ test('CONTINUE plays the area on /area, and an idle /area goes back Home', async
 test("Home's widgets say what's next: the Day Care's unlock and how close Versus is", async ({ page }) => {
   await boot(page, makeSave(4))
   await page.goto('/home')
-  // Locked widgets are notes, not buttons, and say what opens them.
-  const dayCare = page.getByRole('note').filter({ hasText: 'Day Care' })
-  await expect(dayCare).toContainText('A secret place')
-  await expect(dayCare).toContainText('Catch 20 Pokémon')
+  // A locked widget says what opens it and how far you are; a tap says it again.
+  const dayCare = page.getByRole('button', { name: 'Day Care: opens at 20 Pokémon caught, 1 so far' })
+  await expect(dayCare).toContainText('1/20 caught')
+  await expect(dayCare).toContainText('Opens for every region')
+  await dayCare.click()
+  await expect(page.getByText('The Day Care opens at 20 Pokémon caught, in every region')).toBeVisible()
   const versus = page.getByRole('button', { name: /Versus opens when 3 of your Pokémon reach Lv\.50/ })
   await expect(versus).toContainText('0/3 at Lv.50')
   expect(await seriousAxe(page)).toEqual([])

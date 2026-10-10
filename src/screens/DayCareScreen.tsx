@@ -3,23 +3,22 @@
 import { motion } from 'framer-motion'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { Navigate, useNavigate } from 'react-router-dom'
+import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 import {
-  dayCareFullAt,
+  dayCareLevelProgress,
   dayCareOf,
-  dayCareXp,
   depositError,
-  eggOdds,
-  hatchLevel,
+  getRegion,
   isDayCareOpen,
-  nextDayCareTick,
-  residentNow,
+  nextCheckAt,
+  pairs,
   type DayCareResident,
   type DepositError,
   type Hatch,
 } from '@/engine'
 import { sfx } from '@/audio/sfx'
 import { Chip, NewTag } from '@/components/Chip'
+import { EggSprite } from '@/components/EggSprite'
 import { PageHead } from '@/components/PageHead'
 import { PixelButton } from '@/components/PixelButton'
 import { SearchField } from '@/components/Segmented'
@@ -28,60 +27,16 @@ import { MiniSprite, SpriteImg } from '@/components/SpriteImg'
 import { StageCanvas, type StageHandle } from '@/components/StageCanvas'
 import { loadSprite, spriteKey } from '@/fx/sprites'
 import { hatchTimeline } from '@/fx/timelines/moments'
-import { searchFold, t } from '@/i18n'
+import { searchFold } from '@/i18n'
 import { useT } from '@/i18n/react'
+import { waitText } from '@/i18n/text'
 import { money } from '@/lib/format'
 import { useHoldFullscreen } from '@/lib/fullscreen'
-import { hatchDayCareEgg, leaveAtDayCare, pickUpFromDayCare, visitDayCare } from '@/store/actions'
+import { useMotion } from '@/lib/motion'
+import { hatchDayCareEgg, leaveAtDayCare, pickUpFromDayCare, rushDayCareEgg, visitDayCare } from '@/store/actions'
+import { parentName, tickDayCare } from '@/store/daycare'
 import { pushToast, useGame } from '@/store/game'
 import { cx } from '@/theme/util'
-
-// 12×14 pixel Egg: k outline, w shell, s shade, g spots.
-const EGG = [
-  '....kkkk....',
-  '...kwwwwk...',
-  '..kwwggwwk..',
-  '.kwwgggwwwk.',
-  '.kwwwggwwwk.',
-  'kwwwwwwwggwk',
-  'kwggwwwwggwk',
-  'kwgggwwwwwsk',
-  'kwwggwwwwwsk',
-  'kwwwwwwgwwsk',
-  '.kwwwwwggssk',
-  '.kswwwwwsssk',
-  '..kssssssk..',
-  '...kkkkkk...',
-]
-const EGG_COLORS: Record<string, string> = { k: '#24304f', w: '#fbfdff', s: '#d8cfb4', g: '#34c97a' }
-
-export function EggSprite({ size = 64, className }: { size?: number; className?: string }) {
-  return (
-    <svg
-      width={size}
-      height={(size * EGG.length) / EGG[0]!.length}
-      viewBox={`0 0 ${EGG[0]!.length} ${EGG.length}`}
-      shapeRendering="crispEdges"
-      className={className}
-      aria-hidden
-    >
-      {EGG.flatMap((row, y) =>
-        [...row].map((ch, x) =>
-          ch === '.' ? null : (
-            <rect key={`${x}-${y}`} x={x} y={y} width={1} height={1} fill={EGG_COLORS[ch]} />
-          ),
-        ),
-      )}
-    </svg>
-  )
-}
-
-const duration = (ms: number) => {
-  const m = Math.max(1, Math.ceil(ms / 60_000))
-  return m >= 60
-    ? t('ui.dayCare.hours', { h: Math.floor(m / 60), m: String(m % 60).padStart(2, '0') })
-    : t('ui.dayCare.minutes', { n: m })
-}
 
 /** Re-render every 20 s so levels and countdowns stay current. */
 function useNow(ms = 20_000) {
@@ -95,68 +50,43 @@ function useNow(ms = 20_000) {
 
 const CARD = 'bg-paper shadow-card'
 
-/** One resident: its sprite, Lv now → Lv after, the stay's XP bar, when the next XP comes and when it is full. */
+/** One resident: its sprite, the level it came at → its level now, the bar to the next level. */
 function Resident({ res, now, onTake }: { res: DayCareResident; now: number; onTake: () => void }) {
   const { t } = useT()
   const data = useGame((s) => s.data)
-  const cfg = data.config.dayCare
-  const grown = residentNow(res, now, data)
-  const xp = dayCareXp(res, now, data)
-  const next = nextDayCareTick(res, now, data)
-  const fullAt = dayCareFullAt(res, data)
-  const ready = next == null
+  const p = dayCareLevelProgress(res, now, data)
   const name = data.species[res.inst.dex]?.name ?? t('ui.common.unknown')
-  const status = ready
-    ? t('ui.dayCare.fullShort')
-    : [
-        t('ui.dayCare.nextTick', { xp: cfg.xpPerTick, time: duration(next) }),
-        fullAt != null ? t('ui.dayCare.fullIn', { time: duration(fullAt - now) }) : null,
-      ]
-        .filter(Boolean)
-        .join(' · ')
+  const lv = (n: number) => t('ui.common.level.short', { n })
+  const line = p.toNext
+    ? t('ui.dayCare.toNext', { next: lv(p.level + 1), from: lv(res.inst.level) })
+    : t('ui.dayCare.maxed', { level: lv(p.level) })
   return (
-    <li
-      className={cx(
-        'grid grid-cols-[84px_minmax(0,1fr)] items-center gap-x-2.5 gap-y-1.5 px-2.5 pb-2.5 pt-2',
-        ready
-          ? 'bg-[#f2fff6] shadow-[inset_0_0_0_2px_rgb(var(--c-edge)),inset_0_0_0_4px_#34c97a,inset_0_-6px_0_rgb(var(--c-good-pale))] dark:bg-[#12261c]'
-          : CARD,
-      )}
-    >
+    <li className={cx('grid grid-cols-[84px_minmax(0,1fr)] items-center gap-x-2.5 gap-y-1.5 px-2.5 pb-2.5 pt-2', CARD)}>
       <SpriteImg dex={res.inst.dex} size={84} shiny={res.inst.shiny} />
       <div className="grid min-w-0 gap-1">
-        <span className="flex items-center gap-2">
-          <b className="min-w-0 truncate text-[22px] font-normal leading-none">{name}</b>
-          {ready && <Chip tone="green">{t('ui.home.ready')}</Chip>}
-        </span>
+        <b className="min-w-0 truncate text-[22px] font-normal leading-none">{name}</b>
         <span className="text-[18px] leading-none">
-          {t('ui.common.level.short', { n: res.inst.level })}
-          {grown.level > res.inst.level && (
+          {lv(res.inst.level)}
+          {p.level > res.inst.level && (
             <>
               {' '}
               <span aria-hidden className="text-muted">
                 →
               </span>{' '}
-              <span className="text-good">{t('ui.common.level.short', { n: grown.level })}</span>
+              <span className="text-good">{lv(p.level)}</span>
             </>
           )}
         </span>
-        <span
-          className="relative block h-2 bg-line shadow-ring-thin"
-          role="img"
-          aria-label={t('ui.dayCare.xpOf', { xp, max: cfg.maxXp })}
-        >
+        <span className="relative block h-2 bg-line shadow-ring-thin" role="img" aria-label={line}>
           <i
-            className={cx('absolute inset-y-px left-px block', ready ? 'bg-hp-green' : 'bg-[#5b8def]')}
-            style={{ width: `calc(${Math.min(100, (xp / Math.max(1, cfg.maxXp)) * 100)}% - 2px)` }}
+            className="absolute inset-y-px left-px block bg-[#5b8def]"
+            style={{ width: `calc(${p.toNext ? Math.min(100, (p.xp / p.toNext) * 100) : 100}% - 2px)` }}
           />
         </span>
-        <small className="font-pixel-sm text-[14px] leading-[1.15] text-muted">
-          {t('ui.dayCare.xpOf', { xp, max: cfg.maxXp })} · {status}
-        </small>
+        <small className="font-pixel-sm text-[14px] leading-[1.15] text-muted">{line}</small>
       </div>
       <PixelButton
-        variant={ready ? 'primary' : 'secondary'}
+        variant="secondary"
         className="col-span-2 w-full"
         aria-label={t('ui.dayCare.takeBackName', { name })}
         onClick={onTake}
@@ -198,7 +128,11 @@ function LeaveSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
       open={open}
       onClose={onClose}
       title={t('ui.dayCare.leaveWhich')}
-      sub={t('ui.dayCare.depositHint', { xp: cfg.xpPerTick, minutes: cfg.tickMinutes, max: cfg.maxXp })}
+      sub={t('ui.dayCare.depositHint', {
+        xp: cfg.xpPerTick,
+        minutes: cfg.tickMinutes,
+        max: t('ui.common.level.short', { n: data.config.maxLevel }),
+      })}
       head={
         <SearchField
           id="dc-q"
@@ -236,12 +170,7 @@ function LeaveSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
                   <span className="grid min-w-0 flex-1 leading-[1.05]">
                     <b className="truncate text-[18px] font-normal">{name}</b>
                     <small className="font-pixel-sm text-[14px] text-ink">
-                      {why
-                        ? t(REFUSED[why])
-                        : t('ui.dayCare.gainsUpTo', {
-                            level: t('ui.common.level.short', { n: p.level }),
-                            max: cfg.maxXp,
-                          })}
+                      {why ? t(REFUSED[why]) : t('ui.common.level.short', { n: p.level })}
                     </small>
                   </span>
                   {save.team.includes(p.id) && <Chip tone="dark">{t('ui.dayCare.teamTag')}</Chip>}
@@ -257,28 +186,19 @@ function LeaveSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
 
 /**
  * The hatching, full screen over the page: the timeline on the stage (src/fx/timelines/moments.ts) with Skip, then
- * what hatched and where it went, Done and "Another".
+ * what hatched (NEW, ✦ Shiny) and where it went, and Done. Escape skips to the end, then closes.
  */
-function HatchMoment({
-  hatch,
-  onDone,
-  onAgain,
-}: {
-  hatch: Hatch
-  onDone: () => void
-  onAgain: (() => void) | null
-}) {
+function HatchMoment({ hatch, onDone }: { hatch: Hatch; onDone: () => void }) {
   const { t } = useT()
   useHoldFullscreen()
   const data = useGame((s) => s.data)
-  const price = data.config.dayCare.eggPrice
   const stage = useRef<StageHandle>(null)
   const doneRef = useRef<HTMLButtonElement>(null)
   const [open, setOpen] = useState(false)
   const scene = useMemo(
     () => ({
       ready: loadSprite(hatch.inst.dex, false, hatch.inst.shiny),
-      timeline: hatchTimeline({ baby: spriteKey(hatch.inst.dex, false, hatch.inst.shiny) }),
+      timeline: hatchTimeline({ baby: spriteKey(hatch.inst.dex, false, hatch.inst.shiny), shiny: hatch.shiny }),
     }),
     [hatch],
   )
@@ -293,10 +213,15 @@ function HatchMoment({
     if (open) doneRef.current?.focus({ preventScroll: true })
   }, [open])
   const where = !hatch.kept
-    ? t('ui.dayCare.keptStronger', { name })
+    ? hatch.gold > 0
+      ? t('ui.dayCare.keptStrongerGold', { name, gold: money(hatch.gold) })
+      : t('ui.dayCare.keptStronger', { name })
     : `${hatch.replaced ? t('ui.dayCare.replacedYours', { level: hatch.replaced.level, name }) : ''}${t(
         hatch.joinedTeam ? 'ui.dayCare.joinedTeam' : 'ui.dayCare.wentToBox',
       )}`
+  const said = open
+    ? t(hatch.shiny ? 'ui.dayCare.hatchedShiny' : 'ui.dayCare.hatched', { name })
+    : t('ui.dayCare.eggMoving')
   return createPortal(
     <motion.div
       role="dialog"
@@ -305,7 +230,11 @@ function HatchMoment({
       className="fixed inset-0 z-[100] overflow-y-auto bg-paper"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      onKeyDown={(e) => e.key === 'Escape' && open && onDone()}
+      onKeyDown={(e) => {
+        if (e.key !== 'Escape') return
+        if (open) onDone()
+        else stage.current?.skip()
+      }}
     >
       <div className="mx-auto flex min-h-full w-full max-w-[560px] flex-col gap-3 pb-4">
         <div className="shadow-ledge">
@@ -315,14 +244,14 @@ function HatchMoment({
             ready={scene.ready}
             hud={{ beat: (b) => b === 'hatched' && reveal() }}
             onEnd={reveal}
-            label={open ? t('ui.dayCare.hatched', { name }) : t('ui.dayCare.eggMoving')}
+            label={said}
           />
         </div>
         <p
           className="pixel-dialogue mx-3 my-0 flex min-h-[64px] items-center px-3 py-1.5 text-[20px] leading-[1.15]"
           aria-live="polite"
         >
-          {open ? t('ui.dayCare.hatched', { name }) : t('ui.dayCare.eggMoving')}
+          {said}
         </p>
         {!open ? (
           <PixelButton className="mx-3 self-end" size="sm" onClick={() => stage.current?.skip()}>
@@ -330,25 +259,19 @@ function HatchMoment({
           </PixelButton>
         ) : (
           <div className={cx('mx-3 grid gap-2 px-3 pb-3 pt-2.5', CARD)}>
-            <p className="m-0 flex items-center gap-1.5 text-[22px] leading-none">
+            <p className="m-0 flex flex-wrap items-center gap-1.5 text-[22px] leading-none">
               <MiniSprite dex={hatch.inst.dex} size={40} className="-my-2" />
               <b className="font-normal">{name}</b>
               <span className="font-pixel-sm text-[17px] text-muted">
                 {t('ui.common.level.short', { n: hatch.inst.level })}
               </span>
+              {hatch.shiny && <Chip tone="gold">{t('ui.dayCare.shinyTag')}</Chip>}
               {hatch.isNew && <NewTag />}
             </p>
             <p className="m-0 font-pixel-sm text-[16px] leading-tight text-muted">{where}</p>
-            <div className={cx('grid gap-2.5', onAgain ? 'grid-cols-[1fr_1.4fr]' : 'grid-cols-1')}>
-              <PixelButton ref={doneRef} onClick={onDone}>
-                {t('ui.dayCare.done')}
-              </PixelButton>
-              {onAgain && (
-                <PixelButton variant="primary" className="whitespace-nowrap px-2" onClick={onAgain}>
-                  {t('ui.dayCare.another', { price })}
-                </PixelButton>
-              )}
-            </div>
+            <PixelButton ref={doneRef} onClick={onDone}>
+              {t('ui.dayCare.done')}
+            </PixelButton>
           </div>
         )}
       </div>
@@ -357,57 +280,60 @@ function HatchMoment({
   )
 }
 
-/** The Egg: free once, then bought; the level it hatches at and the odds of a missing species, from the engine. */
-function EggCard({ onHatch }: { onHatch: (free: boolean) => void }) {
+/** The Egg waiting, in gold: who left it (or the gift), and Hatch it. */
+function EggCard({ onHatch }: { onHatch: () => void }) {
+  const { t } = useT()
+  const save = useGame((s) => s.save)!
+  const egg = dayCareOf(save).egg
+  if (!egg) return null
+  const from = egg.parents
+    ? t('ui.dayCare.eggFrom', { a: parentName(egg.parents[0]), b: parentName(egg.parents[1]) })
+    : t('ui.dayCare.eggGift')
+  return (
+    <div className="grid grid-cols-[56px_minmax(0,1fr)] items-center gap-x-3 gap-y-2 bg-gold-pale px-3 pb-3 pt-2.5 shadow-card-gold-lip">
+      <EggSprite size={36} shake className="mx-auto" />
+      <div className="grid min-w-0 gap-1">
+        <b className="text-[22px] font-normal leading-none">{t('ui.dayCare.eggWaiting')}</b>
+        <p className="m-0 font-pixel-sm text-[15px] leading-[1.15] text-ink">
+          {from} {t('ui.dayCare.eggHatchesInto')}
+        </p>
+      </div>
+      <PixelButton variant="gold" className="col-span-2 w-full" onClick={onHatch}>
+        {t('ui.dayCare.hatchIt')}
+      </PixelButton>
+    </div>
+  )
+}
+
+/** When the next check runs, how many pairs could leave an Egg, and Egg now (skip the wait for ₽). */
+function RushBar({ now, onRush }: { now: number; onRush: () => void }) {
   const { t, tPlural } = useT()
   const save = useGame((s) => s.save)!
   const data = useGame((s) => s.data)
-  const cfg = data.config.dayCare
-  const free = !dayCareOf(save).eggClaimed
-  const short = Math.max(0, cfg.eggPrice - save.gold)
-  const missing = eggOdds(save, data).filter((o) => o.weight > 1).length
+  const price = data.config.dayCare.rushPrice
+  const n = pairs(save, data).length
+  const short = Math.max(0, price - save.gold)
   return (
-    <div
-      className={cx(
-        'grid grid-cols-[72px_minmax(0,1fr)] items-center gap-x-3 gap-y-2 px-3 pb-3 pt-2.5',
-        free
-          ? 'bg-gold-pale shadow-card-gold-lip'
-          : 'bg-sand shadow-[inset_0_0_0_2px_rgb(var(--c-edge)),inset_0_-4px_0_rgb(var(--c-sand-lip))]',
-      )}
-    >
-      <EggSprite size={64} className="mx-auto" />
-      <div className="grid min-w-0 gap-1">
-        <b className="text-[22px] font-normal leading-none">
-          {t(free ? 'ui.dayCare.eggForYou' : 'ui.dayCare.buyTitle')}
+    <div className={cx('flex items-center gap-2.5 py-2 pl-3 pr-2.5', CARD)}>
+      <span className="grid min-w-0 flex-1 gap-px">
+        <small className="font-pixel-sm text-[14px] leading-none text-muted">{t('ui.dayCare.nextCheck')}</small>
+        <b className="text-[24px] font-normal leading-none">
+          {t('ui.dayCare.inTime', { time: waitText(nextCheckAt(save, data, now) - now) })}
         </b>
-        <p className="m-0 font-pixel-sm text-[15px] leading-[1.15] text-muted">
-          {free ? t('ui.dayCare.freeEgg') : t('ui.dayCare.buyEgg', { price: cfg.eggPrice })}
-        </p>
-        <ul className="m-0 mt-0.5 flex list-none flex-wrap gap-1 p-0">
-          <li className="bg-paper px-1.5 pb-0.5 pt-px font-pixel-sm text-[14px] text-ink shadow-[inset_0_0_0_1px_#d8c8a8] dark:shadow-[inset_0_0_0_1px_rgb(var(--c-sand-lip))]">
-            {t('ui.dayCare.hatchAt', { level: t('ui.common.level.short', { n: hatchLevel(save, data) }) })}
-          </li>
-          <li className="bg-paper px-1.5 pb-0.5 pt-px font-pixel-sm text-[14px] text-ink shadow-[inset_0_0_0_1px_#d8c8a8] dark:shadow-[inset_0_0_0_1px_rgb(var(--c-sand-lip))]">
-            {missing > 0
-              ? tPlural('ui.dayCare.missing', missing, { n: missing, k: cfg.unownedWeight })
-              : t('ui.dayCare.haveAll')}
-          </li>
-        </ul>
-      </div>
+        <small className="font-pixel-sm text-[14px] leading-tight text-muted">
+          {n ? tPlural('ui.dayCare.pairsCan', n, { n }) : t('ui.dayCare.noPairYet')}
+        </small>
+      </span>
       <PixelButton
-        variant="primary"
-        className="col-span-2 w-full"
-        aria-disabled={!free && short > 0}
-        onClick={() => {
-          if (!free && short > 0) pushToast(t('ui.shop.needMore', { price: money(short) }), 'bad')
-          else onHatch(free)
-        }}
+        variant="gold"
+        disabled={!n}
+        aria-disabled={short > 0 || undefined}
+        aria-label={t('ui.dayCare.eggNowLabel', { price: money(price) })}
+        className="grid min-h-[56px] shrink-0 justify-items-center gap-0.5 px-3.5"
+        onClick={() => (short > 0 ? pushToast(t('ui.shop.needMore', { price: money(short) }), 'bad') : onRush())}
       >
-        {free
-          ? t('ui.dayCare.takeEgg')
-          : short > 0
-            ? t('ui.shop.needMore', { price: money(short) })
-            : t('ui.dayCare.buy', { price: cfg.eggPrice })}
+        <span className="text-[19px] leading-none">{t('ui.dayCare.eggNow')}</span>
+        <span className={cx('font-pixel-sm text-[15px] leading-none', short > 0 && 'text-danger')}>{money(price)}</span>
       </PixelButton>
     </div>
   )
@@ -423,21 +349,45 @@ export function DayCareScreen() {
   const [hatch, setHatch] = useState<Hatch | null>(null)
   const [hatchId, setHatchId] = useState(0)
   const open = !!save && isDayCareOpen(save, data)
+  const { calm } = useMotion()
+  const location = useLocation()
+  // From Home's gold widget: the page opens, and the Egg starts hatching a moment later.
+  const wantsHatch = !!(location.state as { hatch?: boolean } | null)?.hatch
   useEffect(() => {
-    if (open) visitDayCare()
+    if (!open) return
+    visitDayCare()
+    tickDayCare()
   }, [open])
+  useEffect(() => {
+    if (!open || !wantsHatch) return
+    const id = setTimeout(
+      () => {
+        // Forget the request, so going back and forth (or a reload) doesn't hatch again.
+        navigate(location.pathname, { replace: true, state: null })
+        const res = hatchDayCareEgg()
+        if (res) {
+          setHatch(res)
+          setHatchId((n) => n + 1)
+        }
+      },
+      calm ? 0 : 450,
+    )
+    return () => clearTimeout(id)
+  }, [open, wantsHatch, calm, navigate, location.pathname])
   if (!save) return <Navigate to="/" replace />
   if (!open) return <Navigate to="/home" replace />
   const cfg = data.config.dayCare
   const dc = dayCareOf(save)
-  const free = !dc.eggClaimed
 
-  const takeEgg = (isFree: boolean) => {
-    const res = hatchDayCareEgg(isFree)
-    if (res) {
-      setHatch(res)
-      setHatchId((n) => n + 1)
-    }
+  const show = (res: Hatch | null) => {
+    if (!res) return
+    setHatch(res)
+    setHatchId((n) => n + 1)
+  }
+  const rush = () => {
+    const res = rushDayCareEgg()
+    if ('hatch' in res) show(res.hatch)
+    else if (res.refused === 'pair') pushToast(t('ui.dayCare.noPairYet'), 'bad')
   }
   const take = (uid: string) => {
     const res = pickUpFromDayCare(uid)
@@ -452,13 +402,11 @@ export function DayCareScreen() {
             level: res.inst.level,
           })
         : t('ui.dayCare.gainedXp', { xp: res.xpGained })
-    pushToast(
-      `${t('ui.dayCare.isBack', { name })} ${grew} ${t(res.joinedTeam ? 'ui.dayCare.rejoined' : 'ui.dayCare.wentToBox')}`,
-      'good',
-      5000,
-    )
+    const where = !res.live
+      ? t('ui.dayCare.inRegionBox', { region: getRegion(data, res.region)?.name ?? res.region })
+      : t(res.joinedTeam ? 'ui.dayCare.rejoined' : 'ui.dayCare.wentToBox')
+    pushToast(`${t('ui.dayCare.isBack', { name })} ${grew} ${where}`, 'good', 5000)
   }
-  const canAgain = save.gold >= cfg.eggPrice
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-3">
@@ -467,12 +415,12 @@ export function DayCareScreen() {
         count={`${dc.residents.length}/${cfg.slots}`}
         onBack={() => navigate('/home')}
       />
+      {dc.egg ? <EggCard onHatch={() => show(hatchDayCareEgg())} /> : <RushBar now={now} onRush={rush} />}
       <p className="m-0 font-pixel-sm text-[15px] leading-[1.15] text-muted">
-        {t('ui.dayCare.intro', {
-          slots: cfg.slots,
+        {t('ui.dayCare.yoursNote', {
           xp: cfg.xpPerTick,
           minutes: cfg.tickMinutes,
-          max: cfg.maxXp,
+          max: t('ui.common.level.short', { n: data.config.maxLevel }),
         })}
       </p>
 
@@ -502,21 +450,8 @@ export function DayCareScreen() {
         ))}
       </ul>
 
-      <div className="mt-1 flex items-baseline gap-2">
-        <h2 className="m-0 text-[24px] font-normal leading-none">{t('ui.dayCare.eggs')}</h2>
-        {free && <Chip tone="gold">{t('ui.dayCare.freeChip')}</Chip>}
-      </div>
-      <EggCard onHatch={takeEgg} />
-
       <LeaveSheet open={leaving} onClose={() => setLeaving(false)} />
-      {hatch && (
-        <HatchMoment
-          key={hatchId}
-          hatch={hatch}
-          onDone={() => setHatch(null)}
-          onAgain={canAgain ? () => takeEgg(false) : null}
-        />
-      )}
+      {hatch && <HatchMoment key={hatchId} hatch={hatch} onDone={() => setHatch(null)} />}
     </div>
   )
 }

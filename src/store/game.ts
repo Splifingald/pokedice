@@ -3,6 +3,7 @@ import { create } from 'zustand'
 import { BUNDLE, withStatics } from '@/config/bundle'
 import {
   compileGameData,
+  fitDayCare,
   migrateRounds,
   reviveFossils,
   releaseDuplicates,
@@ -125,7 +126,9 @@ export const initialRun = (): RunState => ({
 function settle(save: SaveData, data: GameData) {
   // Fossils due by now revive first, so they count as the species they are.
   const fossils = reviveFossils(migrateRounds(save, data), data, Date.now())
-  const dup = releaseDuplicates(syncXpCurve(syncHpScale(fossils.save, data), data))
+  // More Day Care residents than slots (the Day Cares became one): the extra ones go home before duplicates are seen.
+  const fitted = fitDayCare(fossils.save, data, Date.now())
+  const dup = releaseDuplicates(syncXpCurve(syncHpScale(fitted, data), data))
   return { ...dup, revived: fossils.revived }
 }
 

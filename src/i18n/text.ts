@@ -2,7 +2,7 @@
 // the Multi EXP share, a secret area's unlock condition. They live here, not in the engine, because
 // the engine also runs under `tsx` in the seed and sim scripts, where the CSV import has no loader.
 import type { GameData, ItemDef, UnlockCondition } from '@/engine/types'
-import { joinList, t } from '.'
+import { hasKey, joinList, t } from '.'
 
 /** One-line effect for menus: "+20 HP", "Cures paralysis", "+1 reroll", "+2 to the catch die". */
 export function effectText(item: ItemDef): string {
@@ -43,4 +43,18 @@ export function conditionLabel(cond: UnlockCondition, data: GameData): string {
     return t('ui.unlock.area', { area: data.areas.find((a) => a.id === cond.areaId)?.name ?? t('ui.unlock.unknownArea') })
   if (cond.kind === 'pokedex') return t('ui.unlock.pokedex', { count: cond.count })
   return t('ui.unlock.maxLevel', { level: cond.level })
+}
+
+/** An Egg group as Showdown names it ("Water 1", "Human-Like"), in the player's language. */
+export function eggGroupName(group: string): string {
+  const key = `ui.eggGroup.${group.toLowerCase().replace(/[^a-z0-9]/g, '')}`
+  return hasKey(key) ? t(key) : group
+}
+
+/** A wait, as the Day Care counts it down: "45 min", "7 h 14". */
+export function waitText(ms: number): string {
+  const m = Math.max(1, Math.ceil(ms / 60_000))
+  return m >= 60
+    ? t('ui.dayCare.hours', { h: Math.floor(m / 60), m: String(m % 60).padStart(2, '0') })
+    : t('ui.dayCare.minutes', { n: m })
 }
