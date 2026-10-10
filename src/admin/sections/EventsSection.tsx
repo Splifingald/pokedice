@@ -11,6 +11,7 @@ import {
   type EventId,
   type EventsConfig,
   type GameData,
+  type RaidConfig,
   type RebattleLineups,
   type RebattleTier,
   type RebattleTierId,
@@ -350,6 +351,222 @@ function RebattleBox({ tiers, set }: { tiers: RebattleTier[]; set: (tiers: Rebat
   )
 }
 
+/** Dex numbers as "149, 248, 373": typed freely, kept as the numbers in it. */
+function DexList({ value, onChange }: { value: number[]; onChange: (v: number[]) => void }) {
+  return (
+    <input
+      className={inputCls}
+      defaultValue={value.join(', ')}
+      onBlur={(e) =>
+        onChange(
+          e.target.value
+            .split(/[\s,]+/)
+            .map(Number)
+            .filter((n) => Number.isInteger(n) && n > 0),
+        )
+      }
+    />
+  )
+}
+
+/** Raid Battles: the fight's numbers, the pool (each mythical and the area that unlocks it), the fallback list, the
+ *  species never used as NPC allies or summons, and the helpers' gifts. */
+function RaidBox({ raid, set }: { raid: RaidConfig; set: (patch: Partial<RaidConfig>) => void }) {
+  const data = useAdminData()
+  const areas = (data?.areas ?? []).slice().sort((a, b) => a.orderIndex - b.orderIndex)
+  const name = (dex: number) => data?.species[dex]?.name ?? `#${dex}`
+  const num = (label: string, key: keyof RaidConfig, o: { min?: number; max?: number; step?: number; hint?: string } = {}) => (
+    <Field label={label} hint={o.hint}>
+      <NumInput
+        min={o.min ?? 0}
+        max={o.max}
+        step={o.step}
+        value={raid[key] as number}
+        onChange={(v) => set({ [key]: Math.max(o.min ?? 0, v ?? 0) } as Partial<RaidConfig>)}
+      />
+    </Field>
+  )
+  const totalGifts = raid.gifts.reduce((n, g) => n + Math.max(0, g.weight), 0)
+  return (
+    <Box
+      title="Raid Battles"
+      hint="One raid a UTC day per player: the pool's mythicals to catch (their area cleared), then their shinies, then the fallback species of the regions reached. You and up to two friends, three Pokémon each; NPC trainers fill the empty sides."
+    >
+      <div className="grid gap-3 sm:grid-cols-3">
+        {num('HP bars', 'bars', { min: 1, max: 6 })}
+        {num('Summons at the start', 'startAllies', { max: 6 })}
+        {num('Summon points per bar', 'summonPerBreak', { max: 6 })}
+        {num('Summons beside it at most', 'maxField', { min: 1, max: 4 })}
+        {num('Raid level', 'level', { min: 1, max: 100 })}
+        {num('Raid upgrade level', 'upgradeLevel', { min: 1, max: 10, hint: 'Dice and combos of the raid Pokémon and its summons.' })}
+        {num('Team level cap', 'teamCap', { min: 1, max: 100 })}
+        {num('Sides’ upgrade level', 'sideUpgradeLevel', { min: 1, max: 10 })}
+        {num('Friends per raid', 'maxFriends', { max: 2 })}
+        {num('Fallback shiny chance', 'fallbackShiny', { max: 1, step: 0.05, hint: '0–1 (0.3 = 30 %).' })}
+        {num('No repeat for (hours)', 'repeatHours', { max: 240 })}
+        {num('Gifts per helper a day', 'helperDailyCap', { max: 20 })}
+      </div>
+      <Field label="Bar colours, first to last">
+        <span className="flex flex-wrap gap-2">
+          {raid.barColors.map((c, i) => (
+            <input
+              key={i}
+              type="color"
+              value={c}
+              aria-label={`Bar ${i + 1}`}
+              onChange={(e) => set({ barColors: raid.barColors.map((x, j) => (j === i ? e.target.value : x)) })}
+              className="h-9 w-12 shadow-ring"
+            />
+          ))}
+        </span>
+      </Field>
+      <details className="border-t-2 border-line pt-2">
+        <summary className="cursor-pointer text-xl">Raid pool · {raid.pool.length} mythicals</summary>
+        <table className="mt-2 w-full text-lg">
+          <tbody>
+            {raid.pool.map((p, i) => (
+              <tr key={i} className="border-t border-shadow/40">
+                <td className="py-1 pr-2">
+                  <NumInput
+                    className="w-24"
+                    min={1}
+                    value={p.dex}
+                    onChange={(v) => set({ pool: raid.pool.map((x, j) => (j === i ? { ...x, dex: Math.max(1, v ?? 1) } : x)) })}
+                  />
+                </td>
+                <td className="pr-2">{name(p.dex)}</td>
+                <td className="pr-2">
+                  <select
+                    className={inputCls}
+                    value={p.areaId}
+                    onChange={(e) => set({ pool: raid.pool.map((x, j) => (j === i ? { ...x, areaId: e.target.value } : x)) })}
+                  >
+                    {areas.map((a) => (
+                      <option key={a.id} value={a.id}>
+                        {(a.regionId ?? 'kanto').toUpperCase()} · {a.name}
+                      </option>
+                    ))}
+                  </select>
+                </td>
+                <td>
+                  <button type="button" className="px-2 text-lg text-danger" onClick={() => set({ pool: raid.pool.filter((_, j) => j !== i) })} aria-label="Remove">
+                    ✕
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <button
+          type="button"
+          className="mt-2 px-2 py-1 text-lg shadow-ring"
+          onClick={() => set({ pool: [...raid.pool, { dex: 151, areaId: areas[0]?.id ?? '' }] })}
+        >
+          + Add a pool species
+        </button>
+      </details>
+      <details className="border-t-2 border-line pt-2">
+        <summary className="cursor-pointer text-xl">Fallback · {raid.fallback.length} species</summary>
+        <table className="mt-2 w-full text-lg">
+          <tbody>
+            {raid.fallback.map((f, i) => (
+              <tr key={i} className="border-t border-shadow/40">
+                <td className="py-1 pr-2">
+                  <NumInput
+                    className="w-24"
+                    min={1}
+                    value={f.dex}
+                    onChange={(v) => set({ fallback: raid.fallback.map((x, j) => (j === i ? { ...x, dex: Math.max(1, v ?? 1) } : x)) })}
+                  />
+                </td>
+                <td className="pr-2">{name(f.dex)}</td>
+                <td className="pr-2">
+                  <select
+                    className={inputCls}
+                    value={f.regionId}
+                    onChange={(e) => set({ fallback: raid.fallback.map((x, j) => (j === i ? { ...x, regionId: e.target.value } : x)) })}
+                  >
+                    {(data?.regions ?? []).map((r) => (
+                      <option key={r.id} value={r.id}>
+                        from {r.name}
+                      </option>
+                    ))}
+                  </select>
+                </td>
+                <td>
+                  <button
+                    type="button"
+                    className="px-2 text-lg text-danger"
+                    onClick={() => set({ fallback: raid.fallback.filter((_, j) => j !== i) })}
+                    aria-label="Remove"
+                  >
+                    ✕
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <button
+          type="button"
+          className="mt-2 px-2 py-1 text-lg shadow-ring"
+          onClick={() => set({ fallback: [...raid.fallback, { dex: 149, regionId: 'kanto' }] })}
+        >
+          + Add a fallback species
+        </button>
+      </details>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Field label="Never an ally or a summon: pseudo-legendaries" hint="Dex numbers. Legendaries, mythicals and starter lines are always left out.">
+          <DexList value={raid.exclude.pseudo} onChange={(pseudo) => set({ exclude: { ...raid.exclude, pseudo } })} />
+        </Field>
+        <Field label="… and these" hint="Ultra Beasts, Paradox Pokémon…">
+          <DexList value={raid.exclude.extra} onChange={(extra) => set({ exclude: { ...raid.exclude, extra } })} />
+        </Field>
+      </div>
+      <Field label="Helpers’ gifts (a friend who fought beside you, once the raid Pokémon is caught)">
+        <table className="w-full text-lg">
+          <tbody>
+            {raid.gifts.map((g, i) => (
+              <tr key={i} className="border-t border-shadow/40">
+                <td className="py-1 pr-2">
+                  <select
+                    className={inputCls}
+                    value={g.key}
+                    onChange={(e) => set({ gifts: raid.gifts.map((x, j) => (j === i ? { ...x, key: e.target.value } : x)) })}
+                  >
+                    {Object.values(data?.items ?? {}).map((it) => (
+                      <option key={it.key} value={it.key}>
+                        {it.name}
+                      </option>
+                    ))}
+                  </select>
+                </td>
+                <td className="pr-2">
+                  <NumInput
+                    className="w-24"
+                    min={0}
+                    value={g.weight}
+                    onChange={(v) => set({ gifts: raid.gifts.map((x, j) => (j === i ? { ...x, weight: Math.max(0, v ?? 0) } : x)) })}
+                  />
+                </td>
+                <td className="pr-2 font-mono">{totalGifts ? `${Math.round((Math.max(0, g.weight) * 100) / totalGifts)} %` : '—'}</td>
+                <td>
+                  <button type="button" className="px-2 text-lg text-danger" onClick={() => set({ gifts: raid.gifts.filter((_, j) => j !== i) })} aria-label="Remove">
+                    ✕
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <button type="button" className="mt-2 px-2 py-1 text-lg shadow-ring" onClick={() => set({ gifts: [...raid.gifts, { key: 'potion', weight: 10 }] })}>
+          + Add a gift
+        </button>
+      </Field>
+    </Box>
+  )
+}
+
 export function EventsSection() {
   const [cfg, set] = useEventsConfig()
   return (
@@ -366,6 +583,7 @@ export function EventsSection() {
         ))}
       </Box>
       <WheelBox prizes={cfg.wheel.prizes} set={(prizes) => set({ wheel: { ...cfg.wheel, prizes } })} />
+      <RaidBox raid={cfg.raid} set={(patch) => set({ raid: { ...cfg.raid, ...patch } })} />
       <RebattleBox tiers={cfg.rebattle.tiers} set={(tiers) => set({ rebattle: { ...cfg.rebattle, tiers } })} />
     </div>
   )

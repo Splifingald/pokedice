@@ -7,7 +7,9 @@ import { BackButton } from '@/components/PageHead'
 import { useT } from '@/i18n/react'
 import { countdown } from '@/lib/format'
 import { useGame } from '@/store/game'
+import { useTodayRaid } from '@/store/raid'
 import { currentTier, rebattleComplete, rebattleEncounter, regionOf } from '@/engine'
+import { RaidPage } from './RaidPage'
 import { RebattlePage, tierName } from './RebattlePage'
 import { EventPicture, useWheelDay } from './shared'
 import { WheelPage } from './WheelPage'
@@ -36,8 +38,11 @@ export function EventBanner({ id, status }: { id: EventId; status?: ReactNode })
 function useEventStatus(id: EventId): string | undefined {
   const { t } = useT()
   const wheel = useWheelDay()
+  const raid = useTodayRaid()
   const save = useGame((s) => s.save)
   const data = useGame((s) => s.data)
+  if (id === 'raid' && raid.raid && raid.msLeft != null)
+    return t(raid.raid.caught ? 'ui.events.raid.newIn' : 'ui.events.raid.endsIn', { time: countdown(raid.msLeft) })
   if (id === 'wheel' && wheel.known)
     return wheel.ready ? t('ui.events.wheel.daily') : t('ui.events.wheel.nextSpin', { time: countdown(wheel.msLeft) })
   if (id === 'rebattle' && save) {
@@ -55,6 +60,7 @@ function EventBody({ id }: { id: EventId }) {
   const { t } = useT()
   if (id === 'wheel') return <WheelPage />
   if (id === 'rebattle') return <RebattlePage />
+  if (id === 'raid') return <RaidPage />
   return <p className="m-0 font-pixel-sm text-[16px] text-muted">{t('ui.events.building', { name: t(`ui.events.${id}.name`) })}</p>
 }
 

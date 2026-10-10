@@ -145,8 +145,10 @@ describe('secret areas', () => {
     expect(r.events).toContainEqual({ kind: 'secret_unlocked', areaId: POWER.id })
   })
 
-  it('Mew can be challenged on Faraway Island from the first visit', () => {
-    expect(challengeEncounter(FARAWAY, emptyProgress(), data, 70)).toEqual({ kind: 'boss', dex: 151, level: 65 })
+  it('Faraway Island is Mew’s raid lair: one round of wild Pokémon, no boss (clearing it unlocks the raid)', () => {
+    expect(challengeEncounter(FARAWAY, emptyProgress(), data, 70)).toBeNull()
+    expect(FARAWAY.roundsToClear).toBe(1)
+    expect(data.config.events.raid.pool).toContainEqual({ dex: 151, areaId: FARAWAY.id })
   })
 })
 
@@ -160,7 +162,7 @@ describe('area type profiles', () => {
 
   it('trainer-only areas use their trainers; an empty area has no profile', () => {
     expect(areaTypeProfile(byName('Silph Co.'), data).main.length).toBeGreaterThan(0)
-    expect(areaTypeProfile(FARAWAY, data)).toEqual({ main: [], shares: {} })
+    expect(areaTypeProfile(data.areas.find((a) => a.name === 'Newmoon Island')!, data)).toEqual({ main: [], shares: {} })
   })
 
   it("names a trainer's specialty", () => {

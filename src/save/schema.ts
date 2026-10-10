@@ -137,6 +137,18 @@ export const saveSchema = z.object({
           z.object({ kind: z.literal('item'), key: z.string().min(1).max(60), qty: z.number().int().min(1) }),
         ])
         .optional(),
+      raid: z
+        .object({
+          day: z.string().max(10),
+          dex: z.number().int().min(1),
+          shiny: z.boolean(),
+          areaId: z.string().max(60),
+          caught: z.boolean(),
+          tries: z.number().int().min(0).default(0),
+        })
+        .optional(),
+      raidHistory: z.array(z.object({ day: z.string().max(10), dex: z.number().int().min(1) })).optional(),
+      raidPool: z.array(z.number().int().min(1)).optional(),
       rebattle: z
         .record(
           z.object({

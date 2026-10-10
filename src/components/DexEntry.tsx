@@ -5,6 +5,7 @@ import {
   isAreaClosed,
   isAreaUnlocked,
   progressOf,
+  raidPool,
   regionOf,
   regionOfArea,
   shopSells,
@@ -191,6 +192,74 @@ function SpotCard({ spot, onTravel }: { spot: Spot; onTravel?: () => void }) {
   )
 }
 
+/** The species comes up in Raid Battles: one of the raid pool's mythicals, or a fallback raid. */
+function useRaidRole(dex: number): { pool?: { areaId: string }; fallback?: boolean } | null {
+  const cfg = useGame((s) => s.data.config.events.raid)
+  if (!cfg.enabled) return null
+  const pool = cfg.pool.find((p) => p.dex === dex)
+  if (pool) return { pool }
+  return cfg.fallback.some((f) => f.dex === dex) ? { fallback: true } : null
+}
+
+/**
+ * Where to find it, for Raid Battles: a pool mythical says which area unlocks its raid, or that it's in the raid pool
+ * (GO to the raids); a fallback species says when it comes up.
+ */
+function RaidSpot({ dex, onTravel }: { dex: number; onTravel?: () => void }) {
+  const { t } = useT()
+  const save = useGame((s) => s.save)
+  const data = useGame((s) => s.data)
+  const navigate = useNavigate()
+  const role = useRaidRole(dex)
+  if (!save || !role) return null
+  const inPool = !!role.pool && raidPool(save, data).some((p) => p.dex === dex)
+  const area = role.pool && data.areas.find((a) => a.id === role.pool!.areaId)
+  const text = role.pool
+    ? inPool
+      ? t('ui.events.raid.dexInPool')
+      : t('ui.events.raid.dexUnlock', { area: area?.name ?? '' })
+    : t('ui.events.raid.dexFallback', { chance: Math.round(data.config.events.raid.fallbackShiny * 100) })
+  return (
+    <li className={cx('relative flex min-h-[62px] items-center gap-2 py-1.5 pl-1.5 pr-[78px]', inPool ? 'bg-paper shadow-ring' : 'bg-well shadow-ring-line')}>
+      {area ? (
+        <span className="relative h-12 w-[72px] shrink-0" aria-hidden>
+          <AreaStrip area={area} h={48} className={cx('h-12 w-[72px] shadow-halo', !inPool && 'grayscale-[0.7]')} />
+          <span className="absolute bottom-0.5 left-0.5 grid h-5 w-5 place-items-center bg-night">
+            <PixelIcon name="star" size={12} />
+          </span>
+        </span>
+      ) : (
+        <span className="grid h-12 w-[72px] shrink-0 place-items-center bg-night shadow-halo" aria-hidden>
+          <PixelIcon name="star" size={24} />
+        </span>
+      )}
+      <span className="grid min-w-0 gap-[3px]">
+        <b className="truncate text-[18px] font-normal leading-none">{t('ui.events.raid.name')}</b>
+        <small className="font-pixel-sm text-[14px] leading-tight text-muted">{text}</small>
+      </span>
+      {inPool ? (
+        <button
+          type="button"
+          onClick={() => {
+            onTravel?.()
+            navigate('/events/raid')
+          }}
+          aria-label={t('ui.events.open', { name: t('ui.events.raid.name') })}
+          className="pixel-btn frame-primary absolute right-2.5 top-1/2 h-11 w-[60px] -translate-y-1/2 text-[24px] uppercase leading-none tracking-[0.06em]"
+        >
+          {t('ui.home.go')}
+        </button>
+      ) : (
+        role.pool && (
+          <span className="absolute right-2.5 top-1/2 grid h-11 w-[60px] -translate-y-1/2 place-items-center bg-well-deep shadow-ring-line" aria-hidden>
+            <PixelIcon name="lock" size={16} />
+          </span>
+        )
+      )}
+    </li>
+  )
+}
+
 /** The areas of the region being played where `dex` turns up, plus a hint when the run is pinning the player down. */
 function useSpots(dex: number) {
   const data = useGame((s) => s.data)
@@ -330,6 +399,7 @@ function MissingEntry({ dex, onOpenDex, onTravel }: { dex: number; onOpenDex?: (
   const { t } = useT()
   const data = useGame((s) => s.data)
   const { spots, travelHint } = useSpots(dex)
+  const raid = useRaidRole(dex)
   const from = data.speciesList.flatMap((s) => {
     const evo = s.evolutions.find((e) => e.toDex === dex)
     return evo ? [{ species: s, evo }] : []
@@ -346,10 +416,15 @@ function MissingEntry({ dex, onOpenDex, onTravel }: { dex: number; onOpenDex?: (
       <section className="flex flex-col gap-2">
         <h3 className="text-[22px] leading-none">{t('ui.dex.whereToFindHeading')}</h3>
         {spots.length > 0 && <SpotList spots={spots} onTravel={onTravel} />}
+        {raid && (
+          <ul className="grid gap-1.5">
+            <RaidSpot dex={dex} onTravel={onTravel} />
+          </ul>
+        )}
         {from.map(({ species, evo }) => (
           <EvolutionStep key={species.dex} dex={species.dex} evo={evo} direction="from" onOpenDex={onOpenDex} onTravel={onTravel} />
         ))}
-        {spots.length === 0 && from.length === 0 && <p className="copy text-muted">{t('ui.dex.notSpotted')}</p>}
+        {spots.length === 0 && from.length === 0 && !raid && <p className="copy text-muted">{t('ui.dex.notSpotted')}</p>}
         {travelHint && <p className="font-pixel-sm text-[15px] text-muted">{t('ui.home.finishFirst')}</p>}
       </section>
       <EvolvesInto dex={dex} onOpenDex={onOpenDex} onTravel={onTravel} />
@@ -361,12 +436,18 @@ function MissingEntry({ dex, onOpenDex, onTravel }: { dex: number; onOpenDex?: (
 function CaughtSpots({ dex, onTravel }: { dex: number; onTravel?: () => void }) {
   const { t } = useT()
   const { spots, travelHint } = useSpots(dex)
+  const raid = useRaidRole(dex)
   // Evolved-only species: the sheet's evolution track already says where they come from.
-  if (spots.length === 0) return null
+  if (spots.length === 0 && !raid) return null
   return (
     <section className="flex flex-col gap-2">
       <h3 className="text-[22px] leading-none">{t('ui.dex.whereToFindHeading')}</h3>
-      <SpotList spots={spots} onTravel={onTravel} />
+      {spots.length > 0 && <SpotList spots={spots} onTravel={onTravel} />}
+      {raid && (
+        <ul className="grid gap-1.5">
+          <RaidSpot dex={dex} onTravel={onTravel} />
+        </ul>
+      )}
       {travelHint && <p className="font-pixel-sm text-[15px] text-muted">{t('ui.home.finishFirst')}</p>}
     </section>
   )

@@ -38,6 +38,7 @@ import { liveDicePlan, type LegendKind } from './dice-live'
 import type { AreaPlan } from './content'
 import type { Area, BattleBackground, Evolution, ItemDef, PokeType, Region, Species, Trainer } from '../src/engine/types'
 import { LEAGUE_II } from '../src/engine/rebattle'
+import { raidAreas } from './raid-areas'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const CACHE_DIR = path.join(ROOT, 'scripts', '.cache')
@@ -1191,7 +1192,13 @@ async function main() {
   const rebuilt = buildRegions(out, keptAreas, keptTrainers, new Set(items.map((i) => i.key)))
   // Victory Road II and League II left the game (the Elite Rebattle replaces them, docs/19 §5.4): the content files
   // still describe them, so they're dropped here, with the trainers only they used.
-  const builtAreas = rebuilt.areas.filter((a) => !(a.id in LEAGUE_II))
+  // The raid pool's mythicals left their lairs for the raids (scripts/raid-areas.ts).
+  const eggs = await readJson<Record<string, { l?: number }>>('egg-groups.json')
+  const builtAreas = raidAreas(
+    rebuilt.areas.filter((a) => !(a.id in LEAGUE_II)),
+    (dex) => !!eggs[String(dex)]?.l,
+    (dex) => !out.find((s) => s.dex === dex)?.evolutions.length,
+  )
   const usedIds = new Set([...builtAreas.flatMap((a) => [...a.gyms, ...a.trainerPool.map((t) => t.trainerId)]), ...lineupIds])
   const built = { ...rebuilt, areas: builtAreas, trainers: rebuilt.trainers.filter((t) => usedIds.has(t.id)) }
 

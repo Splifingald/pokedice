@@ -483,6 +483,47 @@ export interface RebattleTier {
   upgradeDelta: number | 'max'
 }
 
+/** A raid pool species: clearing `areaId` puts it in the player's raid pool (docs/18 §3). */
+export interface RaidPoolEntry {
+  dex: number
+  areaId: string
+}
+
+/** A powerful species raided once the pool has nothing left, from when the player reaches its region. */
+export interface RaidFallback {
+  dex: number
+  regionId: string
+}
+
+/** Raid Battles' numbers (docs/18 §3). */
+export interface RaidConfig {
+  /** HP bars, each the boss's full HP at `level`; their colours, first to last. */
+  bars: number
+  barColors: string[]
+  /** Summons beside the boss at the start, points gained per bar broken, and the most beside it at once. */
+  startAllies: number
+  summonPerBreak: number
+  maxField: number
+  /** The boss's (and its summons') level and dice / combo upgrade level. */
+  level: number
+  upgradeLevel: number
+  /** The sides' Pokémon fight at this level at most, at this upgrade level. */
+  teamCap: number
+  sideUpgradeLevel: number
+  /** Friends a raid can bring (the other sides are NPC trainers). */
+  maxFriends: number
+  /** A fallback raid's shiny chance (0–1), and how long a species waits before it's raided again. */
+  fallbackShiny: number
+  repeatHours: number
+  /** Gifts a helper can get a day, and what they are. */
+  helperDailyCap: number
+  gifts: { key: string; weight: number }[]
+  pool: RaidPoolEntry[]
+  fallback: RaidFallback[]
+  /** Never an NPC ally or a summon, on top of legendaries, mythicals and starter lines. */
+  exclude: { pseudo: number[]; extra: number[] }
+}
+
 /** Each region's rebattle lineups: per tier, the trainer ids in fight order (scripts/rebattle-teams.ts). */
 export type RebattleLineups = Record<string, Partial<Record<RebattleTierId, string[]>>>
 
@@ -490,7 +531,7 @@ export interface EventsConfig {
   /** Home shows a locked "Special events" square from this many Kanto badges until the first event opens. */
   teaserBadges: number
   wheel: EventDef & { prizes: WheelPrize[] }
-  raid: EventDef
+  raid: EventDef & RaidConfig
   rebattle: EventDef & { tiers: RebattleTier[] }
 }
 
@@ -721,6 +762,21 @@ export interface EventsSave {
   wheelPending?: WheelReward
   /** The Elite Rebattle, per region. */
   rebattle?: Record<string, RebattleProgress>
+  /** Today's raid, and the last week's (the repeat window reads it). */
+  raid?: TodayRaid
+  raidHistory?: { day: string; dex: number }[]
+  /** Pool species unlocked (also worked out from cleared areas and catches; this keeps what a moment announced). */
+  raidPool?: number[]
+}
+
+/** The day's raid: the UTC day, the species and whether it's shiny, the area it's fought in front of. */
+export interface TodayRaid {
+  day: string
+  dex: number
+  shiny: boolean
+  areaId: string
+  caught: boolean
+  tries: number
 }
 
 /** Where a player stands in one region's Elite Rebattle. */

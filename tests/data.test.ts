@@ -9,6 +9,7 @@ import areas from '@/data/areas.json'
 import trainers from '@/data/trainers.json'
 import upgrades from '@/data/upgrades.json'
 import { BUNDLE } from '@/config/bundle'
+import { DEFAULT_CONFIG } from '@/engine'
 import { bundleToRows, TABLES } from '@/config/mapping'
 import { validateRow } from '@/admin/schemas'
 import { compileGameData, effectiveStats } from '@/engine'
@@ -148,10 +149,13 @@ describe('areas & trainers', () => {
   it('keeps legendaries out of every wild pool, in every region', () => {
     const wild = new Set(everyArea.flatMap((a) => a.wildPool.filter((w) => w.weight > 0).map((w) => w.dex)))
     for (const l of ALL_LEGENDARIES) expect(wild.has(l), `#${l}`).toBe(false)
-    // Each is attached to an area as a boss — except the three roamers, which have no area at all.
+    // Each is attached to an area as a boss — except the three roamers, which have no area at all, and the raid
+    // pool's mythicals, met in Raid Battles once their lair is cleared.
     const bosses = new Set(everyArea.flatMap((a) => a.legendaryBoss ?? []).map((b) => b.dex))
     const roamers = new Set(BUNDLE.config.roamers ? (BUNDLE.config.roamers as { dex: number[] }).dex : [])
-    for (const l of ALL_LEGENDARIES) expect(bosses.has(l) || roamers.has(l), `#${l}`).toBe(true)
+    const raids = new Set(DEFAULT_CONFIG.events.raid.pool.map((p) => p.dex))
+    for (const l of ALL_LEGENDARIES) expect(bosses.has(l) || roamers.has(l) || raids.has(l), `#${l}`).toBe(true)
+    for (const r of raids) expect(bosses.has(r), `#${r} is a raid, not a boss`).toBe(false)
   })
 
   it('keeps the starters rare in the wild (weight 3 in the catch-all, 1 elsewhere), never in trainer teams', () => {
@@ -258,7 +262,8 @@ describe('Kanto structure', () => {
     expect(bossOf('Power Plant')).toEqual([145])
     expect(bossOf('Victory Road')).toEqual([146])
     expect(bossOf('Cerulean Cave')).toEqual([150])
-    expect(bossOf('Faraway Island')).toEqual([151])
+    // Mew is a raid: Faraway Island, its lair, unlocks it.
+    expect(allAreas.find((a) => a.name === 'Faraway Island')!.legendaryBoss).toBeNull()
   })
 })
 

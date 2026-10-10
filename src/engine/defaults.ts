@@ -134,6 +134,86 @@ export const DEFAULT_CONFIG: GameConfig = {
       unlockAreaId: '2238f26a-2629-5f28-af07-e74cb41d5f7a',
       banner: 'lair-shrine',
       rules: ['raid.daily', 'raid.sides', 'raid.bars', 'raid.catch'],
+      // Three bars at Lv.50, two summons to start and two points a break, two beside it at most; upgrades 7 for the
+      // raid's side, 5 for yours (Versus's level); you and up to two friends, three Pokémon each, Lv.50 at most.
+      bars: 3,
+      barColors: ['#34c97a', '#ffbe2e', '#f2553f'],
+      startAllies: 2,
+      summonPerBreak: 2,
+      maxField: 2,
+      level: 50,
+      upgradeLevel: 7,
+      teamCap: 50,
+      sideUpgradeLevel: 5,
+      maxFriends: 2,
+      fallbackShiny: 0.3,
+      repeatHours: 72,
+      helperDailyCap: 5,
+      gifts: [
+        { key: 'ultra-ball', weight: 40 },
+        { key: 'hyper-potion', weight: 25 },
+        { key: 'revive', weight: 20 },
+        { key: 'rare-candy', weight: 15 },
+      ],
+      // The mythicals of the raid pool: clearing their area unlocks their raid (scripts/raid-areas.ts took them out of
+      // those areas' bosses).
+      pool: [
+        { dex: 151, areaId: '050ff505-ff8e-5251-8499-842a2cfc2986' }, // Mew, Faraway Island
+        { dex: 251, areaId: '100e6644-3f5b-553a-ad22-e26551b04edc' }, // Celebi, Ilex Shrine
+        { dex: 385, areaId: '57008453-b26b-5c52-a88e-e777d39ab364' }, // Jirachi, Birth Island
+        { dex: 386, areaId: '57008453-b26b-5c52-a88e-e777d39ab364' }, // Deoxys, Birth Island
+        { dex: 384, areaId: '4ef12821-79bb-5aa1-ad96-5bd2fbba093f' }, // Rayquaza, Sky Pillar
+        { dex: 381, areaId: '07e40731-d45b-4e84-8c81-df5470d2f0c3' }, // Latios, Southern Island II
+        { dex: 489, areaId: '75d4e417-4ae4-523a-bc44-d1efa9e5ed5e' }, // Phione, The Seabreak Path
+        { dex: 490, areaId: '75d4e417-4ae4-523a-bc44-d1efa9e5ed5e' }, // Manaphy, The Seabreak Path
+        { dex: 492, areaId: 'fc27382b-919d-50d0-9f21-23dd16cf99d0' }, // Shaymin, Flower Paradise
+        { dex: 493, areaId: 'df1bb846-fc11-590f-afec-45ef39b63deb' }, // Arceus, The Hall of Origin
+        { dex: 488, areaId: '1bef9b55-6556-5a47-b728-8dc5dba851c7' }, // Cresselia, Fullmoon Island
+        { dex: 494, areaId: '285d4dfb-dd01-59eb-a632-0602a135a88e' }, // Victini, Liberty Garden
+        { dex: 647, areaId: 'a536039f-e897-5697-a75e-15d8060e96e3' }, // Keldeo, The Moor of Icirrus Spring
+        { dex: 648, areaId: 'f014aa64-1215-5a78-be22-b1ee72f0d1e7' }, // Meloetta, The Castelia Café
+        { dex: 649, areaId: 'e3ab5fdf-99ee-5feb-b6fd-1d47352b267e' }, // Genesect, The P2 Laboratory
+        { dex: 719, areaId: '64740605-3951-57d0-9217-1d9ad7752eff' }, // Diancie, The Diamond Domain
+        { dex: 720, areaId: '532b27a7-bfb1-5b03-ae0f-a611995dffa2' }, // Hoopa, Hoopa's Ring
+        { dex: 721, areaId: '9394fdfc-182a-5c7d-92a2-3fb38c339f28' }, // Volcanion, The Nebel Plateau
+        { dex: 808, areaId: 'bf277850-73f7-569e-8657-fa5298161229' }, // Meltan, The Mystery Box
+        { dex: 801, areaId: '28487bdf-d4f4-5fc9-860e-accef6b9677f' }, // Magearna, Magearna's Workshop
+        { dex: 802, areaId: 'e8c9b515-3421-5bdb-ade2-b101f1e6885d' }, // Marshadow, Ten Carat Hill's Farthest Hollow
+        { dex: 807, areaId: '4a29a297-7cb0-5f5d-b6f0-f36210ff02e4' }, // Zeraora, The Blush Mountain Storm
+        { dex: 893, areaId: '4aed8f3a-c216-5713-ac05-5a66d5c6998e' }, // Zarude, The Forest of Focus
+      ],
+      // The pseudo-legendaries and a few powerful Pokémon, from when their region is reached.
+      fallback: [
+        { dex: 149, regionId: 'kanto' },
+        { dex: 130, regionId: 'kanto' },
+        { dex: 131, regionId: 'kanto' },
+        { dex: 143, regionId: 'kanto' },
+        { dex: 248, regionId: 'johto' },
+        { dex: 373, regionId: 'hoenn' },
+        { dex: 376, regionId: 'hoenn' },
+        { dex: 445, regionId: 'sinnoh' },
+        { dex: 448, regionId: 'sinnoh' },
+        { dex: 635, regionId: 'unova' },
+        { dex: 637, regionId: 'unova' },
+        { dex: 706, regionId: 'kalos' },
+        { dex: 681, regionId: 'kalos' },
+        { dex: 784, regionId: 'alola' },
+        { dex: 887, regionId: 'galar' },
+        { dex: 998, regionId: 'paldea' },
+        { dex: 983, regionId: 'paldea' },
+      ],
+      exclude: {
+        // Every pseudo-legendary line.
+        pseudo: [
+          147, 148, 149, 246, 247, 248, 371, 372, 373, 374, 375, 376, 443, 444, 445, 633, 634, 635, 704, 705, 706, 782, 783,
+          784, 885, 886, 887, 996, 997, 998,
+        ],
+        // The Ultra Beasts and the Paradox Pokémon.
+        extra: [
+          793, 794, 795, 796, 797, 798, 799, 803, 804, 805, 806, 984, 985, 986, 987, 988, 989, 990, 991, 992, 993, 994, 995,
+          1005, 1006, 1007, 1008, 1009, 1010, 1020, 1021, 1022, 1023,
+        ],
+      },
     },
     rebattle: {
       enabled: true,

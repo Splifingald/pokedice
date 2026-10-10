@@ -113,6 +113,31 @@ describe('0035: wheel_spin', () => {
   })
 })
 
+describe('0035: raid_today', () => {
+  const today = () => new Date().toISOString().slice(0, 10)
+  const ask = async (user: string | null, candidates: unknown) =>
+    (await as<{ r: Record<string, unknown> }>(user, 'select raid_today($1) as r', [JSON.stringify(candidates)]))[0]!.r
+  const pool = { kind: 'pool', fallbackShiny: 0.3, list: [{ dex: 151, shiny: false, areaId: 'faraway' }, { dex: 251, shiny: false, areaId: 'ilex' }] }
+
+  it('picks one of the candidates and keeps it all day, whatever a later call sends', async () => {
+    const first = await ask(U.ash, pool)
+    expect(first).toMatchObject({ day: today(), shiny: false, caught: false })
+    expect([151, 251]).toContain(first.dex)
+    expect(await ask(U.ash, { kind: 'pool', list: [{ dex: 385, shiny: false, areaId: 'birth' }] })).toEqual(first)
+  })
+
+  it('a new day picks again; a shiny candidate stays shiny', async () => {
+    await db.query(`update event_state set raid = jsonb_set(raid, '{day}', '"2000-01-01"') where user_id = $1`, [U.ash])
+    const next = await ask(U.ash, { kind: 'shiny', list: [{ dex: 151, shiny: true, areaId: 'faraway' }] })
+    expect(next).toMatchObject({ day: today(), dex: 151, shiny: true, areaId: 'faraway' })
+  })
+
+  it('needs a signed-in player and a candidate', async () => {
+    await expect(ask(null, pool)).rejects.toThrow(/events_signed_out/)
+    await expect(ask(U.misty, { kind: 'pool', list: [] })).rejects.toThrow(/events_no_raid/)
+  })
+})
+
 describe('0036: Victory Road II and League II leave', () => {
   const ROAD2 = '35c40458-61da-5321-adda-6df33b930671'
   const LEAGUE = 'bbe7e459-a138-5106-bd01-fce7ff422e7f'

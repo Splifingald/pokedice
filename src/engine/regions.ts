@@ -137,6 +137,11 @@ export function regionSpecies(data: GameData, regionId: RegionId): Set<number> {
   if (hasGameCorner && data.species[data.config.slotMachine.prizeDex]) out.add(data.config.slotMachine.prizeDex)
   // The roamers belong to their region without sitting in any one area (see engine/encounters.ts).
   for (const dex of data.config.roamers?.regionId === regionId ? (data.config.roamers?.dex ?? []) : []) out.add(dex)
+  // So do the raid pool's mythicals: met in Raid Battles once their lair, an area of the region, is cleared.
+  for (const p of data.config.events.raid.pool) {
+    const lair = data.areas.find((a) => a.id === p.areaId)
+    if (lair && regionOfArea(lair) === regionId && data.species[p.dex]) out.add(p.dex)
+  }
 
   // Whatever all of that evolves into is yours here too. Iterating the Set as it grows walks a line to its end:
   // Magikarp adds Gyarados, and Gyarados is then visited in the same pass.

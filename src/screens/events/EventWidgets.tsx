@@ -4,11 +4,15 @@
 // badge a locked teaser naming the area that opens the first event.
 import { useNavigate } from 'react-router-dom'
 import { activeEvents, currentTier, eventsTeaser, rebattleEncounter, rebattleOnHome, regionOf, type EventId } from '@/engine'
+import { AreaStrip } from '@/components/AreaStrip'
+import { Chip } from '@/components/Chip'
 import { PixelIcon } from '@/components/icons'
+import { SpriteImg } from '@/components/SpriteImg'
 import { TrainerSprite } from '@/components/TrainerArt'
 import { useT } from '@/i18n/react'
 import { countdown } from '@/lib/format'
 import { useGame } from '@/store/game'
+import { useTodayRaid } from '@/store/raid'
 import { HeadTag, Meter, Widget, WidgetBanner, WIDGET_BANNER_H, WidgetRows } from '@/screens/home/Widget'
 import { Medal, tierName } from './RebattlePage'
 import { EVENT_ICON, EventPicture, RewardIcon, rewardName, useWheelDay } from './shared'
@@ -63,6 +67,48 @@ function WheelSquare() {
         top={<span className="truncate text-[20px] leading-none">{ready ? t('ui.events.wheel.free') : t('ui.events.wheel.spun')}</span>}
         meter={day.known && <Meter value={day.ready ? DAY : DAY - day.msLeft} max={DAY} />}
         bottom={sub}
+      />
+    </Widget>
+  )
+}
+
+/**
+ * The Raid Battles' square: today's raid Pokémon on its area, LIVE or CAUGHT on the picture (the title keeps the whole
+ * header), the day's time left (the gauge and the line under it).
+ */
+function RaidSquare() {
+  const { t, tPlural } = useT()
+  const navigate = useNavigate()
+  const data = useGame((s) => s.data)
+  const { raid, msLeft } = useTodayRaid()
+  const name = t('ui.events.raid.name')
+  const mon = raid ? (raid.shiny ? t('ui.events.raid.shinyName', { name: data.species[raid.dex]?.name ?? '' }) : (data.species[raid.dex]?.name ?? '')) : ''
+  const time = raid && msLeft != null ? t(raid.caught ? 'ui.events.raid.newIn' : 'ui.events.raid.endsIn', { time: countdown(msLeft) }) : '…'
+  const sub = raid ? `${time} · ${tPlural('ui.events.raid.tries', raid.tries, { n: raid.tries })}` : t('ui.events.raid.loading')
+  return (
+    <Widget
+      title={name}
+      tag={<HeadTag />}
+      label={t('ui.events.raid.label', { name, mon, sub })}
+      onClick={() => navigate('/events/raid')}
+    >
+      <WidgetBanner>
+        {raid && (
+          <>
+            <AreaStrip area={{ id: raid.areaId }} h={WIDGET_BANNER_H} className="absolute inset-0 h-full w-full" />
+            <span className="absolute inset-0 grid place-items-center">
+              <SpriteImg dex={raid.dex} size={56} shiny={raid.shiny} className={raid.caught ? 'grayscale-[0.5]' : 'ev-bob'} />
+            </span>
+            <Chip tone={raid.caught ? 'done' : 'gold'} className="absolute right-1 top-1 tracking-[0.04em]">
+              {t(raid.caught ? 'ui.events.raid.caught' : 'ui.events.raid.live')}
+            </Chip>
+          </>
+        )}
+      </WidgetBanner>
+      <WidgetRows
+        top={<span className="truncate text-[20px] leading-none">{mon}</span>}
+        meter={raid && msLeft != null && <Meter value={DAY - msLeft} max={DAY} />}
+        bottom={raid ? time : sub}
       />
     </Widget>
   )
@@ -165,7 +211,15 @@ export function EventWidgets() {
   const onHome = open.filter((id) => id !== 'rebattle' || rebattleOnHome(save, data))
   if (open.length)
     return onHome.map((id) =>
-      id === 'wheel' ? <WheelSquare key={id} /> : id === 'rebattle' ? <RebattleSquare key={id} /> : <EventSquare key={id} id={id} />,
+      id === 'wheel' ? (
+        <WheelSquare key={id} />
+      ) : id === 'rebattle' ? (
+        <RebattleSquare key={id} />
+      ) : id === 'raid' ? (
+        <RaidSquare key={id} />
+      ) : (
+        <EventSquare key={id} id={id} />
+      ),
     )
   const teaser = eventsTeaser(save, data)
   const area = teaser?.kind === 'soon' ? data.areas.find((a) => a.id === teaser.areaId) : null

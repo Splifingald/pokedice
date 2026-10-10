@@ -5,24 +5,18 @@
   "regionId": "sinnoh",
   "name": "Fullmoon Island",
   "bannerUrl": "/banners/beach.png#flip",
-  "roundsToClear": null,
+  "roundsToClear": 1,
   "minLevel": 50,
   "maxLevel": 62,
   "encounterWeights": {
    "item": 0,
-   "wild": 0,
+   "wild": 8,
    "casino": 0,
    "center": 0,
    "trainer": 0
   },
   "backtrackMultiplier": 0.5,
-  "legendaryBoss": [
-   {
-    "dex": 488,
-    "level": 55,
-    "teamAvgThreshold": 0
-   }
-  ],
+  "legendaryBoss": null,
   "scalesToTeam": false,
   "easyMode": false,
   "enemyUpgradeLevel": 9,
@@ -39,7 +33,36 @@
    }
   ],
   "gyms": [],
-  "wildPool": [],
+  "wildPool": [
+   {
+    "id": "d283de4f-a64a-5ae2-970f-6cf4a0636747",
+    "dex": 219,
+    "weight": 10,
+    "minLevel": 50,
+    "maxLevel": 62
+   },
+   {
+    "id": "e4e9b02c-77a2-575a-97aa-244d4d09487e",
+    "dex": 324,
+    "weight": 8,
+    "minLevel": 50,
+    "maxLevel": 62
+   },
+   {
+    "id": "bd65b1ab-65c0-55eb-a958-3b5e5f8ec94c",
+    "dex": 460,
+    "weight": 6,
+    "minLevel": 50,
+    "maxLevel": 62
+   },
+   {
+    "id": "fc56deae-4781-5147-8fd8-1cd814bf8611",
+    "dex": 461,
+    "weight": 4,
+    "minLevel": 50,
+    "maxLevel": 62
+   }
+  ],
   "trainerPool": [],
   "lootPool": [
    {
@@ -2681,24 +2704,18 @@
   "regionId": "hoenn",
   "name": "Southern Island II",
   "bannerUrl": "/banners/beach.png",
-  "roundsToClear": null,
+  "roundsToClear": 1,
   "minLevel": 40,
   "maxLevel": 50,
   "encounterWeights": {
    "item": 1,
-   "wild": 7,
+   "wild": 8,
    "casino": 0,
    "center": 0,
    "trainer": 0
   },
   "backtrackMultiplier": 0.5,
-  "legendaryBoss": [
-   {
-    "dex": 381,
-    "level": 50,
-    "teamAvgThreshold": 0
-   }
-  ],
+  "legendaryBoss": null,
   "scalesToTeam": false,
   "easyMode": false,
   "enemyUpgradeLevel": 9,
@@ -4209,12 +4226,7 @@
    "trainer": 0
   },
   "backtrackMultiplier": 0.5,
-  "legendaryBoss": [
-   {
-    "dex": 251,
-    "level": 50
-   }
-  ],
+  "legendaryBoss": null,
   "scalesToTeam": false,
   "easyMode": false,
   "enemyUpgradeLevel": 9,
@@ -6517,23 +6529,17 @@
   "regionId": "kanto",
   "name": "Faraway Island",
   "bannerUrl": "/banners/beach.png#flip",
-  "roundsToClear": null,
+  "roundsToClear": 1,
   "minLevel": 60,
   "maxLevel": 70,
   "encounterWeights": {
    "item": 0,
-   "wild": 0,
-   "center": 10,
+   "wild": 8,
+   "center": 1,
    "trainer": 0
   },
   "backtrackMultiplier": 0.5,
-  "legendaryBoss": [
-   {
-    "dex": 151,
-    "level": 65,
-    "teamAvgThreshold": 0
-   }
-  ],
+  "legendaryBoss": null,
   "scalesToTeam": false,
   "easyMode": false,
   "enemyUpgradeLevel": 9,
@@ -6546,7 +6552,36 @@
    }
   ],
   "gyms": [],
-  "wildPool": [],
+  "wildPool": [
+   {
+    "id": "f1b47233-ec3e-55c0-bdbe-a572551cd3f2",
+    "dex": 20,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 70
+   },
+   {
+    "id": "428fac49-0d4d-5967-85ad-86ad47666cd3",
+    "dex": 49,
+    "weight": 8,
+    "minLevel": 60,
+    "maxLevel": 70
+   },
+   {
+    "id": "574ea22a-38a6-5886-8cc6-ee260a2e088c",
+    "dex": 105,
+    "weight": 6,
+    "minLevel": 60,
+    "maxLevel": 70
+   },
+   {
+    "id": "01ad9614-55c9-59e4-8d1b-f3452c0da103",
+    "dex": 22,
+    "weight": 4,
+    "minLevel": 60,
+    "maxLevel": 70
+   }
+  ],
   "trainerPool": [],
   "lootPool": []
  },
@@ -9433,29 +9468,18 @@
   "regionId": "sinnoh",
   "name": "The Seabreak Path",
   "bannerUrl": "/banners/ocean.png",
-  "roundsToClear": null,
+  "roundsToClear": 1,
   "minLevel": 50,
   "maxLevel": 62,
   "encounterWeights": {
    "item": 0,
-   "wild": 0,
+   "wild": 8,
    "casino": 0,
    "center": 0,
    "trainer": 0
   },
   "backtrackMultiplier": 0.5,
-  "legendaryBoss": [
-   {
-    "dex": 489,
-    "level": 50,
-    "teamAvgThreshold": 0
-   },
-   {
-    "dex": 490,
-    "level": 55,
-    "teamAvgThreshold": 0
-   }
-  ],
+  "legendaryBoss": null,
   "scalesToTeam": false,
   "easyMode": false,
   "enemyUpgradeLevel": 9,
@@ -9472,7 +9496,36 @@
    }
   ],
   "gyms": [],
-  "wildPool": [],
+  "wildPool": [
+   {
+    "id": "1a51620b-6b7b-5189-badf-524f80dbe97e",
+    "dex": 219,
+    "weight": 10,
+    "minLevel": 50,
+    "maxLevel": 62
+   },
+   {
+    "id": "addd2bbe-377a-5628-808c-ae70cdbeb01d",
+    "dex": 324,
+    "weight": 8,
+    "minLevel": 50,
+    "maxLevel": 62
+   },
+   {
+    "id": "2fb394fa-c57d-53cb-8ca4-10c3354b240f",
+    "dex": 460,
+    "weight": 6,
+    "minLevel": 50,
+    "maxLevel": 62
+   },
+   {
+    "id": "84d07b2a-7e70-588b-a658-f7f71502da74",
+    "dex": 461,
+    "weight": 4,
+    "minLevel": 50,
+    "maxLevel": 62
+   }
+  ],
   "trainerPool": [],
   "lootPool": [
    {
@@ -9531,24 +9584,18 @@
   "regionId": "sinnoh",
   "name": "Flower Paradise",
   "bannerUrl": "/banners/flowers.png",
-  "roundsToClear": null,
+  "roundsToClear": 1,
   "minLevel": 55,
   "maxLevel": 68,
   "encounterWeights": {
    "item": 0,
-   "wild": 0,
+   "wild": 8,
    "casino": 0,
    "center": 0,
    "trainer": 0
   },
   "backtrackMultiplier": 0.5,
-  "legendaryBoss": [
-   {
-    "dex": 492,
-    "level": 60,
-    "teamAvgThreshold": 0
-   }
-  ],
+  "legendaryBoss": null,
   "scalesToTeam": false,
   "easyMode": false,
   "enemyUpgradeLevel": 9,
@@ -9565,7 +9612,36 @@
    }
   ],
   "gyms": [],
-  "wildPool": [],
+  "wildPool": [
+   {
+    "id": "417e8351-4c13-55b8-a828-3f5c36633779",
+    "dex": 219,
+    "weight": 10,
+    "minLevel": 55,
+    "maxLevel": 68
+   },
+   {
+    "id": "7f3a5734-b408-549b-b80f-ac2bcd19cd53",
+    "dex": 324,
+    "weight": 8,
+    "minLevel": 55,
+    "maxLevel": 68
+   },
+   {
+    "id": "80cecbb3-8cb8-53e0-a02d-2ca8c083ccfc",
+    "dex": 460,
+    "weight": 6,
+    "minLevel": 55,
+    "maxLevel": 68
+   },
+   {
+    "id": "b3e6dae8-a5e1-5e66-98e8-a1c4fd6f72fa",
+    "dex": 461,
+    "weight": 4,
+    "minLevel": 55,
+    "maxLevel": 68
+   }
+  ],
   "trainerPool": [],
   "lootPool": [
    {
@@ -23704,19 +23780,13 @@
   "maxLevel": 68,
   "encounterWeights": {
    "item": 2,
-   "wild": 0,
+   "wild": 8,
    "casino": 0,
-   "center": 6,
+   "center": 1,
    "trainer": 0
   },
   "backtrackMultiplier": 0.5,
-  "legendaryBoss": [
-   {
-    "dex": 719,
-    "level": 65,
-    "teamAvgThreshold": 0
-   }
-  ],
+  "legendaryBoss": null,
   "scalesToTeam": false,
   "easyMode": false,
   "enemyUpgradeLevel": 9,
@@ -23737,7 +23807,36 @@
    }
   ],
   "gyms": [],
-  "wildPool": [],
+  "wildPool": [
+   {
+    "id": "10387934-a8b6-5838-ab57-9cd17aabfe99",
+    "dex": 168,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 68
+   },
+   {
+    "id": "8c6cf153-cf6f-598f-883c-07d2ff1bee02",
+    "dex": 327,
+    "weight": 8,
+    "minLevel": 60,
+    "maxLevel": 68
+   },
+   {
+    "id": "efbbc7ba-2cab-584d-9281-7a0acd834596",
+    "dex": 334,
+    "weight": 6,
+    "minLevel": 60,
+    "maxLevel": 68
+   },
+   {
+    "id": "933a623f-60db-5f18-93b5-15e13e758ac6",
+    "dex": 632,
+    "weight": 4,
+    "minLevel": 60,
+    "maxLevel": 68
+   }
+  ],
   "trainerPool": [],
   "lootPool": [
    {
@@ -23801,19 +23900,13 @@
   "maxLevel": 70,
   "encounterWeights": {
    "item": 2,
-   "wild": 0,
+   "wild": 8,
    "casino": 0,
-   "center": 6,
+   "center": 1,
    "trainer": 0
   },
   "backtrackMultiplier": 0.5,
-  "legendaryBoss": [
-   {
-    "dex": 720,
-    "level": 68,
-    "teamAvgThreshold": 0
-   }
-  ],
+  "legendaryBoss": null,
   "scalesToTeam": false,
   "easyMode": false,
   "enemyUpgradeLevel": 9,
@@ -23834,7 +23927,36 @@
    }
   ],
   "gyms": [],
-  "wildPool": [],
+  "wildPool": [
+   {
+    "id": "d4a31b86-5582-5f6c-af5d-4eec02de81fc",
+    "dex": 632,
+    "weight": 10,
+    "minLevel": 62,
+    "maxLevel": 70
+   },
+   {
+    "id": "ae7c08ec-42a7-5fb0-8bb7-e3c1f6509241",
+    "dex": 76,
+    "weight": 8,
+    "minLevel": 62,
+    "maxLevel": 70
+   },
+   {
+    "id": "e6f4f99e-c199-591f-b6a5-9ebb0b5edf58",
+    "dex": 168,
+    "weight": 6,
+    "minLevel": 62,
+    "maxLevel": 70
+   },
+   {
+    "id": "5542af7d-e359-5bbb-a599-726a830cdf46",
+    "dex": 28,
+    "weight": 4,
+    "minLevel": 62,
+    "maxLevel": 70
+   }
+  ],
   "trainerPool": [],
   "lootPool": [
    {
@@ -23898,19 +24020,13 @@
   "maxLevel": 72,
   "encounterWeights": {
    "item": 2,
-   "wild": 0,
+   "wild": 8,
    "casino": 0,
-   "center": 6,
+   "center": 1,
    "trainer": 0
   },
   "backtrackMultiplier": 0.5,
-  "legendaryBoss": [
-   {
-    "dex": 721,
-    "level": 70,
-    "teamAvgThreshold": 0
-   }
-  ],
+  "legendaryBoss": null,
   "scalesToTeam": false,
   "easyMode": false,
   "enemyUpgradeLevel": 9,
@@ -23931,7 +24047,36 @@
    }
   ],
   "gyms": [],
-  "wildPool": [],
+  "wildPool": [
+   {
+    "id": "8874ac4d-a10d-50d9-914c-90f4607ef1c9",
+    "dex": 632,
+    "weight": 10,
+    "minLevel": 64,
+    "maxLevel": 72
+   },
+   {
+    "id": "482e5b4f-c00f-5883-bf10-d8dd4599b1fa",
+    "dex": 76,
+    "weight": 8,
+    "minLevel": 64,
+    "maxLevel": 72
+   },
+   {
+    "id": "72730006-5064-5b20-86eb-af2efbd37477",
+    "dex": 168,
+    "weight": 6,
+    "minLevel": 64,
+    "maxLevel": 72
+   },
+   {
+    "id": "9f489404-4470-5362-adf5-5a4273765f85",
+    "dex": 28,
+    "weight": 4,
+    "minLevel": 64,
+    "maxLevel": 72
+   }
+  ],
   "trainerPool": [],
   "lootPool": [
    {
@@ -26086,29 +26231,18 @@
   "regionId": "hoenn",
   "name": "Birth Island",
   "bannerUrl": "/banners/sunset.png#flip",
-  "roundsToClear": null,
+  "roundsToClear": 1,
   "minLevel": 60,
   "maxLevel": 70,
   "encounterWeights": {
    "item": 0,
-   "wild": 6,
+   "wild": 8,
    "casino": 0,
    "center": 0,
    "trainer": 0
   },
   "backtrackMultiplier": 0.5,
-  "legendaryBoss": [
-   {
-    "dex": 385,
-    "level": 60,
-    "teamAvgThreshold": 0
-   },
-   {
-    "dex": 386,
-    "level": 65,
-    "teamAvgThreshold": 0
-   }
-  ],
+  "legendaryBoss": null,
   "scalesToTeam": false,
   "easyMode": false,
   "enemyUpgradeLevel": 9,
@@ -35471,12 +35605,7 @@
    "trainer": 0
   },
   "backtrackMultiplier": 0.5,
-  "legendaryBoss": [
-   {
-    "dex": 384,
-    "level": 70
-   }
-  ],
+  "legendaryBoss": null,
   "scalesToTeam": false,
   "easyMode": false,
   "enemyUpgradeLevel": 9,
@@ -39834,24 +39963,18 @@
   "regionId": "sinnoh",
   "name": "The Hall of Origin",
   "bannerUrl": "/banners/sky.png#flip",
-  "roundsToClear": null,
+  "roundsToClear": 1,
   "minLevel": 60,
   "maxLevel": 75,
   "encounterWeights": {
    "item": 0,
-   "wild": 0,
+   "wild": 8,
    "casino": 0,
    "center": 0,
    "trainer": 0
   },
   "backtrackMultiplier": 0.5,
-  "legendaryBoss": [
-   {
-    "dex": 493,
-    "level": 70,
-    "teamAvgThreshold": 0
-   }
-  ],
+  "legendaryBoss": null,
   "scalesToTeam": false,
   "easyMode": false,
   "enemyUpgradeLevel": 9,
@@ -39868,7 +39991,36 @@
    }
   ],
   "gyms": [],
-  "wildPool": [],
+  "wildPool": [
+   {
+    "id": "ee8dc549-1d5b-5f76-a9b1-cd9c5f961a98",
+    "dex": 219,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 75
+   },
+   {
+    "id": "ff16df05-eb74-528b-b689-da3d05cf9741",
+    "dex": 324,
+    "weight": 8,
+    "minLevel": 60,
+    "maxLevel": 75
+   },
+   {
+    "id": "8773283e-36f2-5007-b25f-e9388cfc01f3",
+    "dex": 232,
+    "weight": 6,
+    "minLevel": 60,
+    "maxLevel": 75
+   },
+   {
+    "id": "dfff2c36-7ffb-5810-9eb9-381214d43f0c",
+    "dex": 430,
+    "weight": 4,
+    "minLevel": 60,
+    "maxLevel": 75
+   }
+  ],
   "trainerPool": [],
   "lootPool": [
    {
@@ -41165,19 +41317,13 @@
   "maxLevel": 68,
   "encounterWeights": {
    "item": 2,
-   "wild": 0,
+   "wild": 8,
    "casino": 0,
-   "center": 6,
+   "center": 1,
    "trainer": 0
   },
   "backtrackMultiplier": 0.5,
-  "legendaryBoss": [
-   {
-    "dex": 801,
-    "level": 65,
-    "teamAvgThreshold": 0
-   }
-  ],
+  "legendaryBoss": null,
   "scalesToTeam": false,
   "easyMode": false,
   "enemyUpgradeLevel": 9,
@@ -41198,7 +41344,36 @@
    }
   ],
   "gyms": [],
-  "wildPool": [],
+  "wildPool": [
+   {
+    "id": "6a0970e2-c094-57d2-a46f-1b0a9c5d6948",
+    "dex": 604,
+    "weight": 10,
+    "minLevel": 60,
+    "maxLevel": 68
+   },
+   {
+    "id": "53fe1f25-1a08-55b3-af0d-db5d0f1633a5",
+    "dex": 748,
+    "weight": 8,
+    "minLevel": 60,
+    "maxLevel": 68
+   },
+   {
+    "id": "490fa33f-38eb-57e9-abbe-7baaf6d68bc1",
+    "dex": 770,
+    "weight": 6,
+    "minLevel": 60,
+    "maxLevel": 68
+   },
+   {
+    "id": "94b9f2d2-14fb-59b9-bd59-869fa7f58111",
+    "dex": 428,
+    "weight": 4,
+    "minLevel": 60,
+    "maxLevel": 68
+   }
+  ],
   "trainerPool": [],
   "lootPool": [
    {
@@ -41262,19 +41437,13 @@
   "maxLevel": 70,
   "encounterWeights": {
    "item": 2,
-   "wild": 0,
+   "wild": 8,
    "casino": 0,
-   "center": 6,
+   "center": 1,
    "trainer": 0
   },
   "backtrackMultiplier": 0.5,
-  "legendaryBoss": [
-   {
-    "dex": 802,
-    "level": 67,
-    "teamAvgThreshold": 0
-   }
-  ],
+  "legendaryBoss": null,
   "scalesToTeam": false,
   "easyMode": false,
   "enemyUpgradeLevel": 9,
@@ -41295,7 +41464,36 @@
    }
   ],
   "gyms": [],
-  "wildPool": [],
+  "wildPool": [
+   {
+    "id": "ada473c1-1aac-5e29-80d8-d42983f83d6c",
+    "dex": 770,
+    "weight": 10,
+    "minLevel": 62,
+    "maxLevel": 70
+   },
+   {
+    "id": "b1370f0c-334a-59c9-a734-b78c077ed003",
+    "dex": 776,
+    "weight": 8,
+    "minLevel": 62,
+    "maxLevel": 70
+   },
+   {
+    "id": "3a220ad7-45d9-5620-99c4-7ce690f3e5a5",
+    "dex": 553,
+    "weight": 6,
+    "minLevel": 62,
+    "maxLevel": 70
+   },
+   {
+    "id": "67034e59-ff3c-5271-a22b-0dd05365c1ef",
+    "dex": 738,
+    "weight": 4,
+    "minLevel": 62,
+    "maxLevel": 70
+   }
+  ],
   "trainerPool": [],
   "lootPool": [
    {
@@ -41359,19 +41557,13 @@
   "maxLevel": 72,
   "encounterWeights": {
    "item": 2,
-   "wild": 0,
+   "wild": 8,
    "casino": 0,
-   "center": 6,
+   "center": 1,
    "trainer": 0
   },
   "backtrackMultiplier": 0.5,
-  "legendaryBoss": [
-   {
-    "dex": 807,
-    "level": 70,
-    "teamAvgThreshold": 0
-   }
-  ],
+  "legendaryBoss": null,
   "scalesToTeam": false,
   "easyMode": false,
   "enemyUpgradeLevel": 9,
@@ -41392,7 +41584,36 @@
    }
   ],
   "gyms": [],
-  "wildPool": [],
+  "wildPool": [
+   {
+    "id": "4500c8ce-0548-5520-b093-1701718c1782",
+    "dex": 776,
+    "weight": 10,
+    "minLevel": 64,
+    "maxLevel": 72
+   },
+   {
+    "id": "0aef6d03-52e7-5c6e-bf09-452381ca068c",
+    "dex": 754,
+    "weight": 8,
+    "minLevel": 64,
+    "maxLevel": 72
+   },
+   {
+    "id": "8d98ef6a-7782-514e-b5ea-60fcb9db1e12",
+    "dex": 756,
+    "weight": 6,
+    "minLevel": 64,
+    "maxLevel": 72
+   },
+   {
+    "id": "db2d1057-fb6b-5f75-9fb8-599817f5242a",
+    "dex": 763,
+    "weight": 4,
+    "minLevel": 64,
+    "maxLevel": 72
+   }
+  ],
   "trainerPool": [],
   "lootPool": [
    {
@@ -41456,19 +41677,13 @@
   "maxLevel": 50,
   "encounterWeights": {
    "item": 2,
-   "wild": 0,
+   "wild": 8,
    "casino": 0,
-   "center": 6,
+   "center": 1,
    "trainer": 0
   },
   "backtrackMultiplier": 0.5,
-  "legendaryBoss": [
-   {
-    "dex": 808,
-    "level": 40,
-    "teamAvgThreshold": 0
-   }
-  ],
+  "legendaryBoss": null,
   "scalesToTeam": false,
   "easyMode": false,
   "enemyUpgradeLevel": 7,
@@ -41489,7 +41704,36 @@
    }
   ],
   "gyms": [],
-  "wildPool": [],
+  "wildPool": [
+   {
+    "id": "7edd951d-7782-5132-8237-b02b8d68152a",
+    "dex": 279,
+    "weight": 10,
+    "minLevel": 40,
+    "maxLevel": 50
+   },
+   {
+    "id": "02774e4b-d415-5a6c-a436-8181434e17d4",
+    "dex": 10106,
+    "weight": 8,
+    "minLevel": 40,
+    "maxLevel": 50
+   },
+   {
+    "id": "e0133b1d-1d48-5c5e-918f-e4b502ae35d6",
+    "dex": 210,
+    "weight": 6,
+    "minLevel": 40,
+    "maxLevel": 50
+   },
+   {
+    "id": "18aba2b6-72dc-5ee5-b766-88b7f4387bb4",
+    "dex": 359,
+    "weight": 4,
+    "minLevel": 40,
+    "maxLevel": 50
+   }
+  ],
   "trainerPool": [],
   "lootPool": [
    {
@@ -49206,13 +49450,7 @@
    "trainer": 0
   },
   "backtrackMultiplier": 0.5,
-  "legendaryBoss": [
-   {
-    "dex": 893,
-    "level": 70,
-    "teamAvgThreshold": 0
-   }
-  ],
+  "legendaryBoss": null,
   "scalesToTeam": false,
   "easyMode": false,
   "enemyUpgradeLevel": 9,
@@ -57435,12 +57673,7 @@
    "trainer": 0
   },
   "backtrackMultiplier": 0.5,
-  "legendaryBoss": [
-   {
-    "dex": 649,
-    "level": 60
-   }
-  ],
+  "legendaryBoss": null,
   "scalesToTeam": false,
   "easyMode": false,
   "enemyUpgradeLevel": 9,
@@ -57706,19 +57939,13 @@
   "maxLevel": 33,
   "encounterWeights": {
    "item": 0,
-   "wild": 0,
+   "wild": 8,
    "casino": 0,
    "center": 0,
    "trainer": 0
   },
   "backtrackMultiplier": 0.5,
-  "legendaryBoss": [
-   {
-    "dex": 494,
-    "level": 30,
-    "teamAvgThreshold": 0
-   }
-  ],
+  "legendaryBoss": null,
   "scalesToTeam": false,
   "easyMode": false,
   "enemyUpgradeLevel": 5,
@@ -57735,7 +57962,36 @@
    }
   ],
   "gyms": [],
-  "wildPool": [],
+  "wildPool": [
+   {
+    "id": "005c7b23-b06a-57c1-9757-da1dec631280",
+    "dex": 523,
+    "weight": 10,
+    "minLevel": 25,
+    "maxLevel": 33
+   },
+   {
+    "id": "ee5b1caa-bbcb-5078-b5cd-c12df0662b99",
+    "dex": 505,
+    "weight": 8,
+    "minLevel": 25,
+    "maxLevel": 33
+   },
+   {
+    "id": "6b128296-e8ed-5c0e-9891-f118038dc952",
+    "dex": 587,
+    "weight": 6,
+    "minLevel": 25,
+    "maxLevel": 33
+   },
+   {
+    "id": "b49d79ab-10e1-5ed1-bfe2-f53437386b30",
+    "dex": 585,
+    "weight": 4,
+    "minLevel": 25,
+    "maxLevel": 33
+   }
+  ],
   "trainerPool": [],
   "lootPool": [
    {
@@ -57839,19 +58095,13 @@
   "maxLevel": 55,
   "encounterWeights": {
    "item": 0,
-   "wild": 0,
+   "wild": 8,
    "casino": 0,
    "center": 0,
    "trainer": 0
   },
   "backtrackMultiplier": 0.5,
-  "legendaryBoss": [
-   {
-    "dex": 648,
-    "level": 50,
-    "teamAvgThreshold": 0
-   }
-  ],
+  "legendaryBoss": null,
   "scalesToTeam": false,
   "easyMode": false,
   "enemyUpgradeLevel": 9,
@@ -57868,7 +58118,36 @@
    }
   ],
   "gyms": [],
-  "wildPool": [],
+  "wildPool": [
+   {
+    "id": "a5024591-7706-5cc9-be49-487e27810ea8",
+    "dex": 530,
+    "weight": 10,
+    "minLevel": 45,
+    "maxLevel": 55
+   },
+   {
+    "id": "85aac1c7-b9ad-5c0d-a5c5-33a869b2d25f",
+    "dex": 626,
+    "weight": 8,
+    "minLevel": 45,
+    "maxLevel": 55
+   },
+   {
+    "id": "0971fb74-369b-5703-826e-a86551621e4b",
+    "dex": 526,
+    "weight": 6,
+    "minLevel": 45,
+    "maxLevel": 55
+   },
+   {
+    "id": "c2699923-3642-57eb-ac59-433a4a0662e4",
+    "dex": 542,
+    "weight": 4,
+    "minLevel": 45,
+    "maxLevel": 55
+   }
+  ],
   "trainerPool": [],
   "lootPool": [
    {
@@ -59374,19 +59653,13 @@
   "maxLevel": 58,
   "encounterWeights": {
    "item": 0,
-   "wild": 0,
+   "wild": 8,
    "casino": 0,
    "center": 0,
    "trainer": 0
   },
   "backtrackMultiplier": 0.5,
-  "legendaryBoss": [
-   {
-    "dex": 647,
-    "level": 55,
-    "teamAvgThreshold": 0
-   }
-  ],
+  "legendaryBoss": null,
   "scalesToTeam": false,
   "easyMode": false,
   "enemyUpgradeLevel": 9,
@@ -59403,7 +59676,36 @@
    }
   ],
   "gyms": [],
-  "wildPool": [],
+  "wildPool": [
+   {
+    "id": "e9df1e48-5aaf-5ef9-99e7-977eba574b51",
+    "dex": 632,
+    "weight": 10,
+    "minLevel": 50,
+    "maxLevel": 58
+   },
+   {
+    "id": "874a1246-9b0d-50ea-8ce9-4bb7144afa10",
+    "dex": 530,
+    "weight": 8,
+    "minLevel": 50,
+    "maxLevel": 58
+   },
+   {
+    "id": "f423c996-810e-55ab-8f09-f911fcfcb98f",
+    "dex": 526,
+    "weight": 6,
+    "minLevel": 50,
+    "maxLevel": 58
+   },
+   {
+    "id": "560abfd7-ab8b-5ac4-8ae4-f69cbc197057",
+    "dex": 542,
+    "weight": 4,
+    "minLevel": 50,
+    "maxLevel": 58
+   }
+  ],
   "trainerPool": [],
   "lootPool": [
    {
