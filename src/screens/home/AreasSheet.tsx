@@ -29,6 +29,7 @@ import {
   areaSpecies,
   areaStatus,
   lockReason,
+  playable,
   regionAreaList,
   regionSummary,
   type AreaStatus,
@@ -68,6 +69,8 @@ function AreaCard({
   const left = species.filter((d) => !save.pokedex.includes(d))
   const hits = areaSearch(area, data, query).hits
   const locked = st === 'locked'
+  // Nothing left to meet (a league area, every member beaten): no GO that would go nowhere.
+  const closed = !locked && st !== 'here' && !playable(save, data, area)
   const why = locked ? lockReason(save, data, area) : ''
   const words: Record<AreaStatus, string> = {
     here: t('ui.home.st.here'),
@@ -150,7 +153,7 @@ function AreaCard({
         >
           <PixelIcon name="lock" size={16} />
         </span>
-      ) : (
+      ) : closed ? null : (
         <button
           type="button"
           onClick={onGo}
