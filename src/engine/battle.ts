@@ -102,7 +102,7 @@ export interface BattleState {
   gmaxAllowed?: boolean
   /** Mega Evolutions and Gigantamax the player's side has used this battle (they share one limit). */
   megaUsed?: number
-  /** An auto battle: no Mega Evolution, Gigantamax or type change, on either side. */
+  /** An auto battle: no Mega Evolution or Gigantamax on either side, and no foe type change; yours is auto-mode's pick. */
   auto?: boolean
   /** What the foe does on its first turn — a trainer's ace Mega Evolving or Gigantamaxing — and whether it changes type. */
   enemyPlan?: EnemyPlan
@@ -248,7 +248,7 @@ export interface CreateBattleOptions {
   gmaxAllowed?: boolean
   /** The foe's Mega / Gigantamax / type change (see `enemyPlanFor`). */
   enemyPlan?: EnemyPlan | null
-  /** An auto battle: none of the above, for either side. */
+  /** An auto battle: none of the above, for either side — auto-mode still changes your type (see `autoTypeForm`). */
   auto?: boolean
 }
 
@@ -340,22 +340,32 @@ function typeForms(b: Battler, data: GameData): Species[] {
 }
 
 /**
- * The foe's pick: the type form whose type hits your Pokémon hardest, if it beats every type it rolls now (an Arceus
- * facing a Pokémon its Normal dice can't touch turns Fighting, or whatever is best).
+ * The type forms whose type hits `target` hardest, when that beats every type `b` rolls now (an Arceus facing a
+ * Pokémon its Normal dice can't touch turns Fighting, or whatever is best). Empty when none does better.
  */
-function bestTypeForm(b: Battler, target: Battler, data: GameData): Species | null {
+function bestTypeForms(b: Battler, target: Battler, forms: Species[], data: GameData): Species[] {
   const score = (t: PokeType) => attackMultiplier(t, target.types, data)
-  const now = Math.max(0, ...b.dice.filter((d): d is PokeType => d !== 'base').map(score))
-  let best: Species | null = null
-  let bestScore = now
-  for (const f of typeForms(b, data)) {
+  let bestScore = Math.max(0, ...b.dice.filter((d): d is PokeType => d !== 'base').map(score))
+  let best: Species[] = []
+  for (const f of forms) {
     const sc = score(choiceFormDie(f))
     if (sc > bestScore) {
-      best = f
+      best = [f]
       bestScore = sc
-    }
+    } else if (sc === bestScore && best.length) best.push(f)
   }
   return best
+}
+
+/** The foe's pick: the first of the type forms best against your Pokémon. */
+function bestTypeForm(b: Battler, target: Battler, data: GameData): Species | null {
+  return bestTypeForms(b, target, typeForms(b, data), data)[0] ?? null
+}
+
+/** Auto-mode's pick for the Pokémon in battle: a type form best against the foe, at random among equals. */
+export function autoTypeForm(s: BattleState, data: GameData, rng: Rng): Species | null {
+  const best = bestTypeForms(activeBattler(s), s.enemy, formChoices(s, data), data)
+  return best.length ? rng.pick(best) : null
 }
 
 /**
@@ -405,7 +415,6 @@ export function gmaxChoices(s: BattleState, data: GameData): Species[] {
 
 /** The types the Pokémon in battle could take right now (empty when it has none, or the change is spent). */
 export function formChoices(s: BattleState, data: GameData): Species[] {
-  if (s.auto) return []
   if (s.phase !== 'player_roll' && s.phase !== 'player_reroll') return []
   const a = activeBattler(s)
   // Each Pokémon has its own changes for the battle.
