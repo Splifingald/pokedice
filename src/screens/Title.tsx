@@ -9,7 +9,7 @@ import { teamOf } from '@/engine'
 import { useT } from '@/i18n/react'
 import { isSupabaseConfigured } from '@/lib/supabase'
 import { useGame } from '@/store/game'
-import { GoogleAccountButton } from '@/components/GoogleAccountButton'
+import { AccountButton } from '@/components/AccountButton'
 import type { DieType } from '@/engine/types'
 
 const DECOR: DieType[] = ['fire', 'water', 'grass', 'electric', 'psychic']
@@ -64,7 +64,7 @@ export function Title() {
         <PixelButton size="md" variant="ghost" onClick={() => navigate('/help')}>
           {t('ui.title.howToPlay')}
         </PixelButton>
-        {isSupabaseConfigured && <GoogleAccountButton />}
+        {isSupabaseConfigured && <AccountButton />}
       </div>
 
       {corrupt && (

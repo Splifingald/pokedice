@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getRegion, leaderboardUnlocked, regionOf } from '@/engine'
 import { BoardRow, Crown } from '@/components/BoardRow'
-import { GoogleAccountButton } from '@/components/GoogleAccountButton'
+import { AccountButton } from '@/components/AccountButton'
 import { PixelIcon, type IconName } from '@/components/icons'
 import { PageHead } from '@/components/PageHead'
 import { Sheet } from '@/components/Sheet'
@@ -111,7 +111,7 @@ function Board() {
       {!signedIn && (
         <div className="flex flex-wrap items-center justify-between gap-2 bg-gold-pale p-3 shadow-card-gold">
           <p className="m-0 text-[19px] leading-tight">{t('ui.board.connect')}</p>
-          <GoogleAccountButton />
+          <AccountButton />
         </div>
       )}
 

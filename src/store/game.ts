@@ -69,12 +69,19 @@ export interface BattleSlice {
   id: number
 }
 
+/** The ways in: Supabase Auth providers the game offers (docs/17). */
+export type AuthProvider = 'google' | 'discord'
+
 export interface AuthState {
   status: 'unknown' | 'signed_out' | 'signed_in' | 'unavailable'
   userId: string | null
   email: string | null
-  /** Google profile picture, when the provider gives one. */
+  /** The provider's profile picture (Google or Discord), when it gives one. */
   avatarUrl?: string | null
+  /** The provider this session signed in with. */
+  provider?: AuthProvider | null
+  /** Every provider linked to the account: either one signs in to the same save. */
+  providers?: AuthProvider[]
 }
 
 export interface GameStore {

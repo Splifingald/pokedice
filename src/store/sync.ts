@@ -1,8 +1,9 @@
 // Auth + cloud save sync + background content hot-swap. Never blocks the UI on the network.
-import type { RealtimeChannel, Session, SupabaseClient } from '@supabase/supabase-js'
+import type { AuthError, RealtimeChannel, Session, SupabaseClient, User } from '@supabase/supabase-js'
 import { create } from 'zustand'
 import { startAnalytics } from '@/analytics/ping'
 import { fetchContentUpdate } from '@/config/remote'
+import { AUTH_PROVIDERS, loadAuthProviders } from '@/lib/authProviders'
 import { getSupabase } from '@/lib/supabase'
 import {
   cancelPush,
@@ -16,7 +17,7 @@ import {
 } from '@/save/cloud'
 import type { SaveData } from '@/engine/types'
 import { backupSave, flushWrite } from '@/save/storage'
-import { commitSave, initialRun, onSaveCommitted, pushToast, setContent, tickFossils, useGame } from './game'
+import { commitSave, initialRun, onSaveCommitted, pushToast, setContent, tickFossils, useGame, type AuthProvider } from './game'
 import { t } from '@/i18n'
 import { rescueIfRegionDisabled } from './regions'
 
@@ -107,9 +108,18 @@ async function handleSession(client: SupabaseClient, session: Session | null) {
     useGame.setState({ auth: { status: 'signed_out', userId: null, email: null } })
     return
   }
-  const { id, email, user_metadata: meta } = session.user
+  const { id, email, user_metadata: meta, app_metadata: app } = session.user
   const avatarUrl = (meta?.avatar_url ?? meta?.picture ?? null) as string | null
-  useGame.setState({ auth: { status: 'signed_in', userId: id, email: email ?? null, avatarUrl } })
+  useGame.setState({
+    auth: {
+      status: 'signed_in',
+      userId: id,
+      email: email ?? null,
+      avatarUrl,
+      provider: asProvider(app?.provider),
+      providers: providersOf(session.user),
+    },
+  })
   if (syncedUser === id) return
   syncedUser = id
   try {
@@ -195,6 +205,8 @@ export async function initAuth() {
     useGame.setState({ auth: { status: 'unavailable', userId: null, email: null } })
     return
   }
+  void loadAuthProviders()
+  sayReturnedAuthError()
   onSaveCommitted((save) => {
     const { auth } = useGame.getState()
     if (!save || !pushAllowed || auth.status !== 'signed_in' || !auth.userId) return
@@ -224,18 +236,100 @@ export async function pushSaveNow(): Promise<boolean> {
   return true
 }
 
-export async function signInWithGoogle() {
+const asProvider = (p: unknown): AuthProvider | null =>
+  (AUTH_PROVIDERS as unknown[]).includes(p) ? (p as AuthProvider) : null
+
+/** Every provider linked to the account, from its identities (and the provider list Auth keeps in app_metadata). */
+export function providersOf(user: Pick<User, 'identities' | 'app_metadata'>): AuthProvider[] {
+  const seen = [...(user.identities ?? []).map((i) => i.provider), ...((user.app_metadata?.providers as unknown[]) ?? [])]
+  return AUTH_PROVIDERS.filter((p) => seen.includes(p))
+}
+
+export const providerName = (p: AuthProvider) => t(p === 'discord' ? 'ui.account.providerDiscord' : 'ui.account.providerGoogle')
+
+/** Back where the player was, after the provider's page. */
+const here = () => `${window.location.origin}${window.location.pathname}`
+
+/** Linking: remembered across the provider's page, so an error coming back can name it. */
+const LINKING_KEY = 'pokedice.linking'
+
+/** Auth's error codes the player can act on, in words; anything else as Auth says it. */
+export function authErrorText(code: string | null | undefined, provider: AuthProvider | null, fallback: string): string {
+  if (code === 'identity_already_exists' && provider) return t('ui.account.err.alreadyLinked', { provider: providerName(provider) })
+  if (code === 'manual_linking_disabled') return t('ui.account.err.linkingOff')
+  return fallback
+}
+
+const errorCode = (error: AuthError) => (error as AuthError & { code?: string }).code ?? null
+
+/** Sign in with Google or Discord: the provider's page, then back here. */
+export async function signIn(provider: AuthProvider = 'google') {
   const client = await getSupabase()
   if (!client) {
     pushToast(t('ui.toast.cloudNotConfigured'), 'bad')
     return
   }
   flushWrite()
-  const { error } = await client.auth.signInWithOAuth({
-    provider: 'google',
-    options: { redirectTo: `${window.location.origin}${window.location.pathname}` },
-  })
-  if (error) pushToast(error.message, 'bad')
+  const { error } = await client.auth.signInWithOAuth({ provider, options: { redirectTo: here() } })
+  if (error) pushToast(authErrorText(errorCode(error), provider, error.message), 'bad')
+}
+
+/** The admin panel's sign-in: the admin's Google account. */
+export const signInWithGoogle = () => signIn('google')
+
+/** Adds another way in to the signed-in account (Settings → Connected accounts): the provider's page, then back. */
+export async function linkProvider(provider: AuthProvider) {
+  const client = await getSupabase()
+  if (!client) return
+  flushWrite()
+  try {
+    sessionStorage.setItem(LINKING_KEY, provider)
+  } catch {
+    /* the error, if any, just won't name the provider */
+  }
+  const { error } = await client.auth.linkIdentity({ provider, options: { redirectTo: here() } })
+  if (error) pushToast(authErrorText(errorCode(error), provider, error.message), 'bad')
+}
+
+/** Removes a way in. Auth refuses to remove the last one, and so does the Settings screen. */
+export async function unlinkProvider(provider: AuthProvider) {
+  const client = await getSupabase()
+  if (!client) return
+  const { data, error } = await client.auth.getUserIdentities()
+  const identity = data?.identities.find((i) => i.provider === provider)
+  if (error || !identity) {
+    pushToast(error?.message ?? t('ui.toast.syncUnavailable'), 'bad')
+    return
+  }
+  const res = await client.auth.unlinkIdentity(identity)
+  if (res.error) {
+    pushToast(authErrorText(errorCode(res.error), provider, res.error.message), 'bad')
+    return
+  }
+  // The session's copy of the user still lists it: refresh, and the auth listener updates Settings.
+  await client.auth.refreshSession()
+  pushToast(t('ui.account.unlinked', { provider: providerName(provider) }), 'info')
+}
+
+/** An error Auth sent back on the return from a provider's page (`?error_code=…`): said once, then taken off the URL. */
+function sayReturnedAuthError() {
+  if (typeof window === 'undefined') return
+  const search = new URLSearchParams(window.location.search)
+  const hash = new URLSearchParams(window.location.hash.replace(/^#/, ''))
+  const code = search.get('error_code') ?? hash.get('error_code')
+  const description = search.get('error_description') ?? hash.get('error_description')
+  if (!code && !description) return
+  let provider: AuthProvider | null = null
+  try {
+    provider = asProvider(sessionStorage.getItem(LINKING_KEY))
+    sessionStorage.removeItem(LINKING_KEY)
+  } catch {
+    /* storage blocked */
+  }
+  pushToast(authErrorText(code, provider, description ?? code ?? ''), 'bad')
+  for (const k of ['error', 'error_code', 'error_description']) search.delete(k)
+  const rest = search.toString()
+  window.history.replaceState(null, '', `${window.location.pathname}${rest ? `?${rest}` : ''}`)
 }
 
 /** Sign-out keeps the local save. */

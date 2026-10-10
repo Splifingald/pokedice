@@ -21,7 +21,7 @@ import {
 } from '@/engine'
 import { BoardRow, TeamIcons } from '@/components/BoardRow'
 import { Chip } from '@/components/Chip'
-import { GoogleAccountButton } from '@/components/GoogleAccountButton'
+import { AccountButton } from '@/components/AccountButton'
 import { PixelIcon } from '@/components/icons'
 import { PageHead } from '@/components/PageHead'
 import { PixelButton } from '@/components/PixelButton'
@@ -140,7 +140,7 @@ export function VersusScreen() {
       {!signedIn && (
         <div className="flex flex-wrap items-center justify-between gap-2 bg-gold-pale p-3 shadow-card-gold">
           <p className="m-0 text-[19px] leading-tight">{t('ui.versus.connect')}</p>
-          <GoogleAccountButton />
+          <AccountButton />
         </div>
       )}
 

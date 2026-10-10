@@ -5,11 +5,10 @@ import { useT } from '@/i18n/react'
 import { isSupabaseConfigured } from '@/lib/supabase'
 import { useGame } from '@/store/game'
 import { useInFight, useIsAdmin } from '@/store/hooks'
-import { signInWithGoogle } from '@/store/sync'
 import { cx } from '@/theme/util'
 import { CloudSyncButton } from './CloudSyncButton'
 import { ContactModal } from './ContactModal'
-import { GoogleMark } from './GoogleAccountButton'
+import { ConnectMarks, useConnect } from './AccountButton'
 import { PixelIcon, type IconName } from './icons'
 import { Modal } from './Modal'
 import { TrainerLook } from './TrainerLook'
@@ -49,7 +48,7 @@ function MenuRow({
   const body = (
     <>
       <span className="grid h-8 w-8 shrink-0 place-items-center bg-sky shadow-ring">
-        {mark ? <GoogleMark /> : icon && <PixelIcon name={icon} size={18} />}
+        {mark ? <ConnectMarks size={14} /> : icon && <PixelIcon name={icon} size={18} />}
       </span>
       <span className="grid min-w-0 flex-1 gap-0.5">
         <b className="truncate text-[20px] font-normal leading-none">{label}</b>
@@ -92,6 +91,7 @@ export function PlayerMenu() {
   const [guide, setGuide] = useState(false)
   const [types, setTypes] = useState(false)
   const [contact, setContact] = useState(false)
+  const { connect, chooser } = useConnect()
 
   const name = playerOf(save).name
   const badges = save ? badgeCase(save, data) : []
@@ -196,9 +196,10 @@ export function PlayerMenu() {
             <MenuRow
               mark
               label={t('ui.account.connect')}
+              desc={t('ui.menu.connect')}
               onClick={() => {
                 setOpen(false)
-                void signInWithGoogle()
+                connect()
               }}
             />
           )}
@@ -206,6 +207,8 @@ export function PlayerMenu() {
       </SidePanel>
 
       <ContactModal open={contact} onClose={() => setContact(false)} />
+
+      {chooser}
 
       <Modal open={guide} onClose={() => setGuide(false)} title={t('ui.settings.howToPlay')} className="max-w-3xl">
         <Suspense fallback={<p className="text-xl">{t('ui.common.loading')}</p>}>

@@ -6,6 +6,7 @@ import { PixelIcon } from '@/components/icons'
 import { Panel } from '@/components/Panel'
 import { PixelButton } from '@/components/PixelButton'
 import { TABLES } from '@/config/mapping'
+import { parseAuthSettings } from '@/lib/authProviders'
 import { ADMIN_EMAIL, getSupabase, isAdminEmail, SUPABASE_ANON_KEY, SUPABASE_URL } from '@/lib/supabase'
 import { pushToast, useGame } from '@/store/game'
 
@@ -52,6 +53,8 @@ interface Check {
   label: string
   ok: boolean | null
   detail?: string
+  /** An optional part: off is a dash, not a failure. */
+  optional?: boolean
 }
 
 function jwtRole(key: string): string | null {
@@ -99,6 +102,19 @@ function useChecks() {
     } catch (err) {
       push({ label: 'Supabase is reachable', ok: false, detail: String(err) })
     }
+    try {
+      const res = await fetch(`${SUPABASE_URL}/auth/v1/settings`, { headers: { apikey: SUPABASE_ANON_KEY } })
+      const providers = parseAuthSettings(res.ok ? await res.json() : null)
+      push({ label: 'Google sign-in is on', ok: res.ok && providers.google, detail: res.ok ? undefined : `HTTP ${res.status}` })
+      push({
+        label: 'Discord sign-in is on (optional)',
+        ok: res.ok && providers.discord,
+        optional: true,
+        detail: providers.discord ? undefined : 'not set — step 7 above, or docs/17-DISCORD-SIGN-IN.md',
+      })
+    } catch (err) {
+      push({ label: 'Sign-in providers', ok: false, detail: String(err) })
+    }
     const client = await getSupabase()
     if (client) {
       for (const t of [...TABLES, 'saves'] as const) {
@@ -143,7 +159,7 @@ export default function SetupPage() {
         </div>
         <p className="copy">
           The game already works offline with no backend at all. These steps add the optional parts: a public URL, cloud
-          save backup with Google sign-in, and the admin panel. Budget about 30 minutes. Everything used here has a free tier.
+          save backup with Google (and, if you like, Discord) sign-in, and the admin panel. Budget about 30 minutes. Everything used here has a free tier.
         </p>
 
         <Step n={1} title="Netlify — host the site">
@@ -208,7 +224,29 @@ export default function SetupPage() {
           <Code label="Redirect URLs">{`${origin.includes('localhost') ? 'https://your-site.netlify.app' : origin}/**\nhttp://localhost:5173/**`}</Code>
         </Step>
 
-        <Step n={7} title="Netlify — environment variables">
+        <Step n={7} title="Discord — a second way to sign in (optional)">
+          <p>
+            Players without Google, or who prefer Discord, can sign in with it: same save, leaderboard, Versus and friends. Skip
+            this step if you don't want it; the game only offers Discord once it is on. The full guide, with a test you can
+            run before the game has the button, is <code>docs/17-DISCORD-SIGN-IN.md</code>.
+          </p>
+          <ol className="ml-6 list-decimal">
+            <li>discord.com/developers/applications → New Application → “Pokédice” → Create. Give it the game's logo (General Information).</li>
+            <li>OAuth2 → copy the Client ID; Reset Secret → copy the Client Secret (shown once).</li>
+            <li>OAuth2 → Redirects → Add Redirect → exactly this (Supabase's callback, the same as Google's) → Save Changes:</li>
+          </ol>
+          <Code label="Discord redirect">{`${supa}/auth/v1/callback`}</Code>
+          <ol className="ml-6 list-decimal" start={4}>
+            <li>Supabase → Authentication → Sign In / Providers → Discord → enable, paste the Client ID and Client Secret → Save.</li>
+            <li>
+              Same page, User Signups → turn on <b>Allow manual linking</b>, so a player can add Discord to the save they already
+              back up with Google (Settings → Connected accounts), and the reverse.
+            </li>
+          </ol>
+          <p>No environment variable and no redeploy: the secret stays in Supabase.</p>
+        </Step>
+
+        <Step n={8} title="Netlify — environment variables">
           <p>Site configuration → Environment variables → add these three, then Deploys → Trigger deploy → Clear cache and deploy.</p>
           <Code label="Env vars">{`VITE_SUPABASE_URL=${SUPABASE_URL || 'https://<project-ref>.supabase.co'}\nVITE_SUPABASE_ANON_KEY=<the anon / publishable key>\nVITE_ADMIN_EMAIL=gregoire.ftn@gmail.com`}</Code>
           <p className="copy text-muted">
@@ -216,13 +254,21 @@ export default function SetupPage() {
           </p>
         </Step>
 
-        <Step n={8} title="Verify">
+        <Step n={9} title="Verify">
           <p>These checks run live against this deployment. Sign in (title screen → “Back up your save”) to complete the last ones.</p>
           <ul className="flex flex-col gap-1">
             {checks.map((c, i) => (
               <li key={i} className="flex items-start gap-2 text-lg">
                 <span className="mt-0.5 w-6 shrink-0 text-center">
-                  {c.ok === null ? '…' : c.ok ? <PixelIcon name="check" size={16} title="ok" /> : <span className="text-danger">✗</span>}
+                  {c.ok === null ? (
+                    '…'
+                  ) : c.ok ? (
+                    <PixelIcon name="check" size={16} title="ok" />
+                  ) : c.optional ? (
+                    <span className="text-muted">–</span>
+                  ) : (
+                    <span className="text-danger">✗</span>
+                  )}
                 </span>
                 <span className="flex-1">
                   {c.label}
@@ -239,7 +285,7 @@ export default function SetupPage() {
           </p>
         </Step>
 
-        <Step n={9} title="Troubleshooting">
+        <Step n={10} title="Troubleshooting">
           <dl className="flex flex-col gap-2">
             <dt className="text-2xl">Error 400: redirect_uri_mismatch</dt>
             <dd>The redirect URI in Google must be the Supabase callback ({supa}/auth/v1/callback), character for character — not your Netlify URL.</dd>
@@ -254,6 +300,14 @@ export default function SetupPage() {
             <dd>The SPA redirect is missing. Keep netlify.toml's “/* → /index.html 200” rule, and make sure the site URL is in Supabase's Redirect URLs.</dd>
             <dt className="text-2xl">Env vars changed but nothing happens</dt>
             <dd>Vite bakes them in at build time: trigger a fresh deploy (Clear cache and deploy).</dd>
+            <dt className="text-2xl">Discord: “Invalid OAuth2 redirect_uri”</dt>
+            <dd>The redirect in the Discord application must be the Supabase callback ({supa}/auth/v1/callback), character for character.</dd>
+            <dt className="text-2xl">Discord: “Error getting user email from external provider”</dt>
+            <dd>That Discord account has no verified e-mail. Discord → User Settings → My Account → verify it, then sign in again.</dd>
+            <dt className="text-2xl">Discord: “invalid_client”, or it stopped working</dt>
+            <dd>The Client Secret was reset in Discord: paste the new one in Supabase → Authentication → Sign In / Providers → Discord.</dd>
+            <dt className="text-2xl">“Manual linking is disabled”</dt>
+            <dd>Turn on Allow manual linking (Authentication → Sign In / Providers → User Signups).</dd>
           </dl>
         </Step>
       </div>

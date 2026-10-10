@@ -15,8 +15,8 @@ import { parseSave } from '@/save/schema'
 import { pushToast, setSettings, useGame } from '@/store/game'
 import { deleteSave, replaceSave } from '@/store/run'
 import { useIsAdmin } from '@/store/hooks'
-import { checkContent } from '@/store/sync'
-import { DisconnectButton, GoogleAccountButton } from '@/components/GoogleAccountButton'
+import { checkContent, providerName } from '@/store/sync'
+import { AccountButton, ConnectedAccounts, DisconnectButton } from '@/components/AccountButton'
 import { SaveFacts } from '@/components/SyncConflictModal'
 import { backupSave, readBackups } from '@/save/storage'
 
@@ -140,13 +140,21 @@ export function SettingsScreen() {
             </Link>
           </p>
         ) : (
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <span className="copy">
-              {auth.status === 'signed_in'
-                ? t('ui.settings.cloudOn', { who: auth.email ?? t('ui.settings.yourGoogle') })
-                : t('ui.settings.cloudConnect')}
-            </span>
-            {auth.status === 'signed_in' ? <DisconnectButton size="sm" /> : <GoogleAccountButton size="sm" />}
+          <div className="flex flex-col gap-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="copy">
+                {auth.status !== 'signed_in'
+                  ? t('ui.settings.cloudConnect')
+                  : auth.provider
+                    ? t('ui.account.signedInWith', {
+                        provider: providerName(auth.provider),
+                        who: auth.email ?? t('ui.settings.yourGoogle'),
+                      })
+                    : t('ui.settings.cloudOn', { who: auth.email ?? t('ui.settings.yourGoogle') })}
+              </span>
+              {auth.status === 'signed_in' ? <DisconnectButton size="sm" /> : <AccountButton size="sm" />}
+            </div>
+            <ConnectedAccounts />
           </div>
         )}
       </Panel>
