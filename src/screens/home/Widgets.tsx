@@ -63,7 +63,7 @@ function SecretWidget({ onSecrets }: { onSecrets: () => void }) {
         onClick={() => travelTo(f.area)}
       >
         <span className="block w-full leading-[0] shadow-halo">
-          <AreaStrip area={f.area} className="h-auto w-full" />
+          <AreaStrip area={f.area} h={120} className="h-auto w-full" />
         </span>
         <span className="truncate text-[20px] leading-none">{f.area.name}</span>
         {cond && (
@@ -86,7 +86,7 @@ function SecretWidget({ onSecrets }: { onSecrets: () => void }) {
       onClick={onSecrets}
     >
       <span className="relative block w-full leading-[0] shadow-halo">
-        <AreaStrip area={f.area} className="h-auto w-full grayscale-[0.7]" />
+        <AreaStrip area={f.area} h={120} className="h-auto w-full grayscale-[0.7]" />
         <PixelIcon
           name="lock"
           size={16}
@@ -281,32 +281,27 @@ function VersusWidget() {
       label={set ? t('ui.home.vsSetLabel', { wins: me!.defenseWins, n: me!.attackWins }) : t('ui.home.vsOpenLabel')}
       onClick={() => navigate('/versus')}
     >
-      {/* A stadium under its floodlights as the banner, the team big on it and a bold VS. */}
+      {/* A stadium as the banner, as tall as the Day Care's: the team big in the middle and a bold VS over it. */}
       <span className="relative block w-full overflow-hidden leading-[0] shadow-halo">
         <img
           src={VS_BANNER}
           alt=""
           className="pixelated block h-auto w-full object-cover"
-          style={{ imageRendering: 'pixelated', aspectRatio: '288 / 96', objectPosition: '50% 55%' }}
+          style={{ imageRendering: 'pixelated', aspectRatio: '288 / 120', objectPosition: '50% 55%' }}
         />
-        <span className="absolute inset-x-1 bottom-0 flex items-end" aria-hidden>
+        <span className="absolute inset-x-0 bottom-0 flex items-end justify-center" aria-hidden>
           {shown.slice(0, VERSUS_TEAM_SIZE).map((m, i) => (
-            <MiniSprite key={i} dex={m.dex} size={44} className="-mx-2.5 -mb-1.5 first:ml-0" />
+            <MiniSprite key={i} dex={m.dex} size={52} className="-mx-3 -mb-2" />
           ))}
         </span>
         <span
-          className="absolute right-2 top-1/2 -translate-y-1/2 text-[40px] leading-none text-gold [text-shadow:0_3px_0_#c4382a,3px_0_0_#c4382a,-2px_0_0_#24304f,0_-2px_0_#24304f]"
+          className="absolute right-2 top-2 text-[52px] leading-none text-gold [text-shadow:0_4px_0_#c4382a,4px_0_0_#c4382a,-2px_0_0_#24304f,0_-2px_0_#24304f]"
           aria-hidden
         >
           VS
         </span>
       </span>
       {!set && <span className="text-[18px] leading-tight">{t('ui.home.vsOpen')}</span>}
-      <span className="flex w-full justify-end">
-        <span className="bg-crimson px-2 pb-1.5 pt-1 text-[17px] leading-none text-white shadow-ring">
-          {set ? t('ui.home.vsFight') : t('ui.home.vsSetTeam')}
-        </span>
-      </span>
     </Widget>
   )
 }

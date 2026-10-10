@@ -1,6 +1,7 @@
 // Run flow: map → area → encounter preview → battle → rewards → next. Thin glue over the pure engine.
 import {
   applyCatch,
+  emptyProgress,
   applyHp,
   applyVictory,
   applyWipe,
@@ -90,7 +91,14 @@ export function deleteSave() {
 export function enterArea(areaId: string): boolean {
   const { save, data } = useGame.getState()
   if (!save || !isAreaUnlocked(save, areaId, data) || isAreaClosed(save, areaId, data)) return false
-  if (save.currentAreaId !== areaId) commitSave({ ...save, currentAreaId: areaId })
+  // Entering is visiting: an area entered once is no longer "new" (a secret area stops being featured on Home).
+  const visited = !!save.areaProgress[areaId]
+  if (save.currentAreaId !== areaId || !visited)
+    commitSave({
+      ...save,
+      currentAreaId: areaId,
+      areaProgress: visited ? save.areaProgress : { ...save.areaProgress, [areaId]: emptyProgress() },
+    })
   useGame.setState({ run: { ...initialRun(), areaId, firstInArea: true, forceNext: useGame.getState().run.forceNext }, battle: null })
   return true
 }

@@ -1830,8 +1830,6 @@ ui.home.bestLevel,Best Lv.{n},Meilleur N.{n},Mejor Nv.{n},Höchstes Lv.{n},Migli
 ui.home.vsOpen,Versus is open!,Versus est ouvert !,¡Versus está abierto!,Versus ist offen!,Versus è aperto!,O Versus está aberto!,O Versus está aberto!,Versusが開いた！,Versus가 열렸다!,Versus 开放了！
 ui.home.vsOpenLabel,Versus is open: set your team,Versus est ouvert : choisis ton équipe,Versus está abierto: elige tu equipo,Versus ist offen: stell dein Team auf,Versus è aperto: scegli la tua squadra,O Versus está aberto: escolhe a tua equipa,O Versus está aberto: escolha sua equipe,Versusが開いた：チームを決めよう,Versus가 열렸다: 팀을 정하자,Versus 开放了：设置你的队伍
 ui.home.vsSetLabel,"Versus: {n} attack wins, {wins} defense wins. Fight","Versus : {n} victoires en attaque, {wins} victoires en défense. Combattre","Versus: {n} victorias en ataque, {wins} victorias en defensa. Luchar","Versus: {n} Siege im Angriff, {wins} Siege in der Verteidigung. Kämpfen","Versus: {n} vittorie in attacco, {wins} vittorie in difesa. Lotta","Versus: {n} vitórias no ataque, {wins} vitórias na defesa. Lutar","Versus: {n} vitórias no ataque, {wins} vitórias na defesa. Lutar",Versus：攻撃勝利{n}、防衛勝利{wins}。たたかう,"Versus: 공격 승리 {n}, 방어 승리 {wins}. 싸운다",Versus：进攻胜利 {n}，防守胜利 {wins}。战斗
-ui.home.vsFight,Fight,Combattre,Luchar,Kämpfen,Lotta,Lutar,Lutar,たたかう,싸운다,战斗
-ui.home.vsSetTeam,Set team,Équipe,Equipo,Team,Squadra,Equipa,Equipe,チーム,팀,队伍
 ui.home.events,Special events,Événements spéciaux,Eventos especiales,Sonderevents,Eventi speciali,Eventos especiais,Eventos especiais,スペシャルイベント,스페셜 이벤트,特别活动
 ui.home.eventsLabel,Special events: coming later,Événements spéciaux : bientôt,Eventos especiales: próximamente,Sonderevents: kommen später,Eventi speciali: in arrivo,Eventos especiais: em breve,Eventos especiais: em breve,スペシャルイベント：近日公開,스페셜 이벤트: 준비 중,特别活动：敬请期待
 ui.home.regions,Regions,Régions,Regiones,Regionen,Regioni,Regiões,Regiões,地方,지방,地区
@@ -1908,6 +1906,7 @@ ui.home.kind.center,Pokémon Center,Centre Pokémon,Centro Pokémon,Pokémon-Cen
 ui.home.kind.item,Items,Objets,Objetos,Items,Strumenti,Objetos,Itens,どうぐ,도구,道具
 ui.home.kind.casino,Game Corner,Casino,Casino,Spielhalle,Sala Giochi,Casino,Cassino,ゲームコーナー,게임코너,游戏城
 ui.home.alsoHere,Also found here,Aussi par ici,También se encuentra aquí,Auch hier zu finden,Si trova anche qui,Também se encontra aqui,Também se encontra aqui,ここでも見つかる,여기서도 발견,这里也能找到
+ui.item.inBag,In your bag: ×{n},Dans ton sac : ×{n},En tu mochila: ×{n},In deinem Beutel: ×{n},Nella borsa: ×{n},Na tua mochila: ×{n},Na sua mochila: ×{n},バッグの中：×{n},가방 안: ×{n},背包里：×{n}
 ui.home.anyTime,Any time,À tout moment,En cualquier momento,Jederzeit,In qualsiasi momento,A qualquer momento,A qualquer momento,いつでも,언제든,随时
 ui.home.pokedollars,Pokédollars,Pokédollars,Pokédólares,Pokédollar,Pokédollari,Pokédólares,Pokédólares,おかね,돈,金钱
 ui.contact.title,Contact the developer,Contacter le développeur,Contactar al desarrollador,Entwickler kontaktieren,Contatta lo sviluppatore,Contactar o programador,Falar com o desenvolvedor,開発者に連絡,개발자에게 연락,联系开发者
