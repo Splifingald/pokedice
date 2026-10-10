@@ -80,6 +80,7 @@
 .bg-card.k-own { --accent: var(--gold); }
 .bg-card.k-moment { --accent: #ff8fa3; }
 .bg-card.k-region { --accent: #3ec8c0; }
+.bg-card.k-place { --accent: #f0627e; }
 .bg-moment-img { display: block; width: 100%; height: auto; image-rendering: pixelated; image-rendering: crisp-edges; border: 1px solid var(--line); background: #0d0b12; }
 .bg-sub-h { grid-column: 1 / -1; margin: 6px 0 -4px; font-family: var(--f-label); font-size: 8px; letter-spacing: 0.1em; font-weight: 400; color: var(--muted); text-transform: uppercase; }
 .bg-body { padding: 12px 14px 14px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 9px; }

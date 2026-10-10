@@ -6,6 +6,8 @@
  * Prompts are assembled from a shared style block, a light (mood + palette) and the picture's scene, so the set stays
  * one family. The preview fits a generated image to the game's pixel grid and shows its three uses.
  * Regions: one more picture per region, the region's own card in the region switcher (public/region-art/<id>.png).
+ * Center & Day Care: the room behind the Center's healing scene (public/backgrounds/pokemon-center.png) and the Day
+ * Care's yard, a Home-style scene (public/area-art/daycare.png).
  * Self-contained: it renders the first time its tab is shown.
  */
 ;(function () {
@@ -173,6 +175,7 @@ Composition: a front-facing, eye-level view. The horizon (or, indoors, the foot 
     own: { label: 'Landmarks', one: 'Landmark', note: 'a place of its own' },
     moment: { label: 'Story moments', one: 'Story moment', note: 'not an area: the stage of a moment in the game' },
     region: { label: 'Regions', one: 'Region card', note: "not an area: the region's own picture on its card in the region switcher" },
+    place: { label: 'Center & Day Care', one: 'Place', note: 'not an area: the backdrops of the Pokémon Center and the Day Care' },
   }
   // Story moments: full-stage scenes (240 × 160) for moments of the game rather than areas. Their stand-in is drawn
   // by the lab (anims.js) until the generated picture replaces it.
@@ -285,6 +288,89 @@ Composition: a front-facing, eye-level view. The horizon (or, indoors, the foot 
         'Palette: hot Mediterranean noon. Sky deep #6CC0F0 to pale #E2F2FB at the horizon, few clouds. Plains gold #E8D29A and #CFAE6E, mesas ochre #E08A5A to #B8885A, crater cliffs #C86A48 and #885E40, its clouds #FBFDFF shaded #D6E2F0, crystal glints #C8A0FF and #8FF0FF. Olive trees #8CA050 and #5F7A3E. White-washed walls #FBFDFF shaded #DDE5F0, terracotta roofs #E0604A and #C8402E.',
     },
   ]
+  // The Pokémon Center: the room behind the healing scene (src/fx/timelines/center.ts), a 240 × 160 stage the game
+  // draws in code today (src/fx/scenes.ts center()). The game keeps drawing its moving parts on top, so the picture
+  // leaves their places empty: the machine is in the picture but its three slots (SLOTS) stay empty for the balls, Chansey behind the
+  // counter at the right, the heart trace on the wall screen. Its palette is CENTER's, from scenes.ts.
+  const CENTER_PIC = {
+    id: 'center-interior',
+    kind: 'place',
+    name: 'Pokémon Center',
+    areas: [],
+    file: 'public/backgrounds/pokemon-center.png',
+    size: '240 × 160, ask 3:2',
+    ask: '3:2',
+    width: 240,
+    uses: ['The healing scene at a Pokémon Center (full-screen pop-up)'],
+    empty: ["the machine's 3 slots (balls drop in)", 'Chansey, behind the counter right', 'the trace on the wall screen'],
+    then: "<code>src/fx/scenes.ts</code> <code>center()</code> draws it as the Center's background instead of the drawn room (the app doesn't read it yet)",
+    head: 'Pixel-art background for a Pokémon-style mobile game: the inside of a Pokémon Center, the room behind the scene where the team is healed. Generic: no named town, no named nurse.',
+    avoid:
+      'No Poké Balls in the slots or anywhere on the counter (the flat wall emblem is the only Poké Ball shape), no nurse or Chansey, no trace or heart on the monitor, no glow: the game draws them. No lettering on the wall, the counter, the machine or the screen.',
+    now: () => window.SCN?.center?.('daybreak', 240, 160),
+    nowAlt: 'as the game draws it today',
+    comp: () => centerComp(),
+    mood: 'Warm and cosy',
+    sw: ['#fff8f6', '#ff8fa3', '#f0627e', '#ffc2cd', '#f4f1fb', '#24304f'],
+    scene:
+      'The inside of a Pokémon Center, seen from the front: a long white-and-pink reception counter across the lower part of the room, the healing machine on its middle with three empty Poké Ball slots, its right end left bare, a cream back wall with a pink stripe, a big Poké Ball emblem on the wall at the centre, a dark heart-monitor screen on the wall at the upper left, a checkered floor in front. Bright, clean, cosy and warm: a safe place to rest.',
+    palette:
+      'Palette: the classic Pokémon Center, warm and soft. Back wall cream-white #FFF8F6 shading to blush #FFEAE6 and #F6D6D2 near the counter, thin vertical wall seams #F6D6D2. The wall stripe coral-pink #FF8FA3 with a deeper #F0627E lower edge. Counter top white #FFFFFF with a pink edge #FFD8DF and shade #E9A8B6; counter front panel soft pink #FFC2CD with seams #F3A2B3 and a navy #24304F foot line. Floor tiles pale lilac-white #F4F1FB and #E6E2F3. Emblem pink #FF8FA3 softened toward the wall colour, its band and outline #F6D6D2. The healing machine blue-grey #8AA0C8 and #5D74A3 with a lighter top edge, its slots deep navy #24304F with #8AA0C8 rims. Plants #7CC574 and #55A466 in white pots. The monitor frame and screen deep navy #24304F. Soft warm light from above, no harsh shadows.',
+  }
+  const centerComp = () =>
+    `Format: one landscape image (3:2). It will be shrunk to 240 × 160 pixels, so draw it as if on a 240 × 160 canvas enlarged with nearest-neighbour: every art pixel a clean square block about 4 screen pixels wide.
+It is the whole stage of the game's healing scene, shown full screen. The game draws its moving parts on top of this picture, so their places must stay EMPTY and calm: up to three Poké Balls dropping into the machine's slots, the nurse Pokémon behind the counter, the heart-rate trace on the wall screen, hearts and sparkles rising from the machine.
+Composition (positions on the 240 × 160 canvas): a front-facing, eye-level view, perfectly symmetrical lines, no perspective tilt.
+- The counter runs across the full width. Its white top edge is one straight, level line at y = 100 (62 % of the way down), about 7 pixels deep; its pink front panel runs from y = 107 down to y = 131 (82 %), with evenly spaced vertical seams and a thin dark foot line. Nothing stands in front of the counter.
+- The healing machine: it sits on the counter top in the middle, a low, wide, rounded console from x = 84 to x = 156 and from y = 80 down to the counter (y = 104), in soft blue-grey metal with a navy outline, a lighter top edge and a darker base. On its top, a tray with three round, EMPTY Poké Ball slots: shallow oval hollows about 14 pixels wide and 8 tall, dark inside with a light rim on their lower half, evenly spaced and centred at (102, 93), (120, 93) and (138, 93), that is 42.5 %, 50 % and 57.5 % of the width, about 58 % of the way down. Nothing in the slots: the game drops the Poké Balls into them. Behind the tray, a small flat light strip along the top of the machine from x = 104 to x = 136 at y = 76 to 81, plain and unlit (the game lights it). The wall right behind the machine is plain and light: hearts and a soft glow rise there.
+- The nurse's spot: behind the counter at the right, from x = 170 to x = 220, the wall from y = 55 down to the counter is plain, with nothing on the counter there: the game draws a nurse Pokémon standing behind the counter whose lower body the counter hides.
+- The heart-rate monitor: a wall screen at the upper left, a navy frame around a dark, EMPTY screen spanning about x = 34 to 70 and y = 22 to 44, on a short stand or bracket. No trace, no line, no heart, no glyphs on it: the game draws them.
+- The emblem: a big flat Poké Ball emblem, about 45 pixels wide, centred on the back wall at x = 120, y = 30, in soft pink and white, painted flat on the wall.
+- The wall stripe: a coral-pink horizontal band across the back wall from y = 60 to y = 70.
+- The floor: from y = 132 to the bottom, a clean checkered tile floor of large pale tiles (about 12 × 6 pixels each), a little darker just in front of the counter.
+- The top fifth is a calm ceiling edge with a couple of flat light panels. Decor stays at the far left and right edges (the outer twelfth of each side): a potted plant at the far left and far right, maybe a small bench; nothing tall in the middle.`
+  // The Day Care's yard: the top of the Day Care screen, laid out like Home (a 288 × 276 scene the residents roam).
+  // It is an area-style picture (1:1, 400 px, public/area-art/, read through artUrl and ART_GEOMETRY in
+  // src/fx/areaArt.ts). The game's Day Care screen has no yard yet; the lab draws one (home.js, scene 'daycare'), and
+  // the composition keeps its geometry: horizon 98, walk 22–266 × 160–268, pond at 75,221 (44 × 13), the Egg's nest
+  // at 214,236, all in scene pixels. In the square: scene y → 8 + y × 1.39, scene x → x × 1.39.
+  const DAYCARE_PIC = {
+    id: 'daycare-yard',
+    kind: 'place',
+    name: 'Day Care',
+    areas: [],
+    file: 'public/area-art/daycare.png',
+    size: '400 px, ask 1:1 · Home-style scene',
+    ask: '1:1',
+    width: 400,
+    uses: ["The Day Care screen's yard, on top like Home's scene, the residents roaming it"],
+    empty: ['the lawn from 57 % down, 8–92 % across', 'the nest spot, lower right', 'the pond water (swimmers)'],
+    then: "the Day Care screen shows it as its yard; its geometry for <code>ART_GEOMETRY</code> in <code>src/fx/areaArtMap.ts</code>: horizon 98, walk [22, 160, 266, 268], pond { x: 75, y: 221, rx: 44, ry: 13 } (the app has no yard yet)",
+    head: "Pixel-art background for a Pokémon-style mobile game: the Day Care, a cosy countryside house where trainers leave their creatures to be looked after, seen from its fenced yard. Generic: no named town, no named keeper.",
+    avoid:
+      'No creatures, eggs or nests anywhere: the game draws them. No lettering on the sign or the house, no path crossing the lawn, nothing standing on the lawn.',
+    now: () => labScene('daycare', false),
+    nowAlt: "the yard as the lab draws it today",
+    comp: () => dayCareComp(),
+    mood: 'Sunny morning',
+    sw: ['#76bff3', '#a7de82', '#fbf3e2', '#f07a3a', '#5aa9e0', '#ff8fb0'],
+    scene:
+      "The Day Care's yard on a sunny morning: a small cream cottage with a warm orange roof on a gentle grassy rise at the back, a white picket fence running across the scene in front of it, then a wide open lawn where the residents play, a little round pond in the lower left, a flower and vegetable garden along the fence, trees at the far edges. Peaceful, homely and safe.",
+    palette:
+      'Palette: clear early morning in the countryside. Sky azure #76BFF3 through pale blue #BFE4F9 to cream #F1EFE6 at the horizon, a few round white clouds with #D3E3F3 undersides; far hills periwinkle #C8D6F0 to #93A8D9. Lawn #A7DE82 to #79BF62 with tufts #5FAE55; trees in round clumps #7CC574, #55A466, #3C8457. The cottage: walls cream #FBF3E2 shaded #E8D8B8, roof orange #F07A3A with a light ridge #FFB070, chimney and door warm wood #9A5A3A and #A0704A, windows #A9D3FF, flower boxes pink #FF8FB0, the round sign white #FBFDFF with a soft green Egg #9BE3A0. Fence white #FFFFFF shaded #C8DCC0. Pond #5AA9E0 and #4A96D4 with a pale rim #BFE6FF and banks #6FB978; flowers in pink #FF9CC2, yellow #FFE07A and white.',
+  }
+  const dayCareComp = () =>
+    `Format: one square image (1:1). It will be shrunk to 400 × 400 pixels, so draw it as if on a 400 × 400 canvas enlarged with nearest-neighbour: every art pixel a clean square block about 5 screen pixels wide.
+It is the yard at the top of the game's Day Care screen, shown like its Home scene: the game trims a sliver off the top and the bottom, prints a title plate over the top, and draws the resident creatures roaming the lawn, an Egg in its nest, hearts and notes. So the lawn must stay open and EMPTY.
+Composition (positions as a share of the square, from its top-left corner): a front-facing view from a slightly raised eye level.
+- The horizon, the foot of soft far hills, is one straight, level line about 36 % of the way down. Keep the top fifth simple, sky only: the title plate covers it.
+- The Day Care house stands at the back, on a gentle grassy rise a little left of centre (around 30 % across), its base on the horizon: a small, cosy cottage about a fifth of the picture wide, cream walls, a warm orange roof with a chimney, two windows with pink flower boxes, a wooden door, and a round sign over the door showing a plain Egg shape, no letters.
+- A white picket fence runs straight across the whole width at about 43 % down, closing the yard; a small open gate in it below the house.
+- The lawn: from about 57 % down to the bottom edge and from 8 % to 92 % across, open, flat, sunny grass with light texture only (short grass, clover, a few tiny flowers). No path crosses it; no rocks, bushes, toys or objects stand on it: the game's creatures walk here.
+- A small round pond in the lower left, centred about 26 % across and 79 % down, about 30 % of the width wide and 7 % tall: calm blue water with a pale rim and a couple of lily pads; reeds and smooth stones on its edge only. Creatures that swim keep to it.
+- Lower right, around 74 % across and 86 % down, a plain patch of lawn: the game puts an Egg's nest there.
+- Between the fence and the house: a little flower and vegetable garden to the right of the house, a few bushes. Tall things (a round tree, a tall flowering shrub) stand at the far left and far right edges, the outer twelfth on each side; maybe a wooden bench or a water trough by the fence at the far right. Bigger grass tufts and flowers along the very bottom edge. Gentle depth: smaller details near the horizon.`
+  const PLACES = [CENTER_PIC, DAYCARE_PIC]
   const S = {
     region: store.get('region', 'all'),
     kind: store.get('kind', 'all'),
@@ -444,6 +530,18 @@ Composition: a front-facing, eye-level view. The table top is one level band acr
 It is the picture on the ${p.name} card in the game's region switcher. The card shows it as a wide 10:3 banner: a full-width strip cut from the middle of the square, from about 35 % to 65 % of the way down. So compose for that strip first: ${p.landmark} and the horizon sit inside that middle band, and the strip alone must say "${p.name}" at a glance. The whole square still has to read as a finished picture, so the top and the bottom simply extend the scene: open sky above, calm foreground below, nothing important in either.
 Composition: a wide panoramic view from a slightly raised eye level, front-facing. The horizon is one straight, level line a little below the middle (about 55 % of the way down). The landmark stands near the centre with a clear, simple silhouette that reads at 400 × 120; smaller supporting details at either side of it, inside the band; bigger, simpler shapes in the foreground. Clean, uncluttered, readable at a small size. The game prints the region's name under the picture, never on it.`
   function promptOf(p) {
+    if (p.kind === 'place')
+      return [
+        p.head,
+        `The place: ${p.scene}`,
+        p.palette,
+        '',
+        p.comp(),
+        '',
+        STYLE,
+        ...(S.ref ? [REF] : []),
+        `${AVOID} ${p.avoid}`,
+      ].join('\n')
     if (p.kind === 'region')
       return [
         `Pixel-art background for a Pokémon-style mobile game: the picture for the ${p.name} region, one panorama that says "${p.name}" at a glance through its landmark, its climate and its colours, inspired by the ${p.name} region of the Pokémon games. An original evocation, not a copy of a game screen.`,
@@ -661,7 +759,7 @@ Composition: a wide panoramic view from a slightly raised eye level, front-facin
       if (S.show === 'todo' && DONE[p.id]) return false
       if (S.show === 'done' && !DONE[p.id]) return false
       if (!q) return true
-      if (p.kind === 'region') return fold([p.name, p.mood, p.scene, p.file].join(' ')).includes(q)
+      if (p.kind === 'region' || p.kind === 'place') return fold([p.name, p.mood, p.scene, p.file].join(' ')).includes(q)
       if (p.kind === 'moment') return fold([p.name, p.scene, ...p.uses].join(' ')).includes(q)
       return fold(
         [p.name, p.scene, ...p.areas.flatMap((o) => { const a = AREA[o]; return [a.n, REGION[a.r], ...a.gym, ...a.leg, ...a.mons] })].join(' '),
@@ -722,7 +820,48 @@ Composition: a wide panoramic view from a slightly raised eye level, front-facin
       </div>
     </article>`
   }
+  /** A place as the lab draws it today (a canvas or an image URL), at 2× as an image, or '' when it isn't loaded. */
+  function placeNow(p) {
+    try {
+      const c = p.now()
+      if (!c) return ''
+      let src = c
+      if (typeof c !== 'string') {
+        const cv = c.cv || c
+        const big = document.createElement('canvas')
+        big.width = cv.width * 2
+        big.height = cv.height * 2
+        const g = big.getContext('2d')
+        g.imageSmoothingEnabled = false
+        g.drawImage(cv, 0, 0, big.width, big.height)
+        src = big.toDataURL('image/png')
+      }
+      return `<img class="bg-moment-img" src="${src}" alt="${esc(p.name)}, ${esc(p.nowAlt)}" />`
+    } catch {
+      return ''
+    }
+  }
+  function placeCard(p) {
+    const on = !!DONE[p.id]
+    return `<article class="bg-card k-place${on ? ' done' : ''}" data-p="${p.id}">
+      <div class="bg-body">
+        <div class="bg-head"><div class="bg-hd"><span class="bg-kind">${KINDS.place.one} · ${esc(p.size)}</span><h3>${esc(p.name)}</h3></div><button type="button" class="bg-done" data-done aria-pressed="${on}"${mode === 'db' || mode === 'local' ? '' : ' disabled'} title="Mark this picture as generated"><span class="box" aria-hidden="true"></span>Done</button></div>
+        <div class="bg-tags"><span class="bg-tag">${swatch(p.sw.slice(0, 4))}${esc(p.mood)}</span></div>
+        <p class="bg-scene">${esc(p.scene)}</p>
+        <dl class="bg-uses" aria-label="Where the game shows it">
+          <div class="bg-use"><dt>Used for</dt><dd>${p.uses.map((u) => `<span>${esc(u)}</span>`).join('')}</dd></div>
+          <div class="bg-use"><dt>Left empty</dt><dd>${p.empty.map((u) => `<span>${esc(u)}</span>`).join('')}</dd></div>
+          <div class="bg-use on"><dt>Save as</dt><dd><code>${esc(p.file)}</code></dd></div>
+          <div class="bg-use"><dt>Then</dt><dd><span><code>pnpm unpixel &lt;in&gt; --width ${p.width}</code></span><span>${p.then}</span></dd></div>
+        </dl>
+        ${placeNow(p)}
+        <div class="bg-act"><button class="btn go" type="button" data-copy>Copy prompt</button><button class="btn" type="button" data-show aria-expanded="false">Show prompt</button></div>
+        <pre class="bg-prompt" hidden tabindex="0"></pre>
+      </div>
+    </article>`
+  }
   function card(p) {
+    if (p.kind === 'place') return placeCard(p)
     if (p.kind === 'moment') return momentCard(p)
     if (p.kind === 'region') return regionCard(p)
     const L = LIGHTS[p.light]
@@ -791,7 +930,10 @@ Composition: a wide panoramic view from a slightly raised eye level, front-facin
     // Story moments alone: they cover no area and have their own size.
     const onlyMoments = list.length && list.every((p) => p.kind === 'moment')
     const onlyRegions = list.length && list.every((p) => p.kind === 'region')
-    $('#bg-status').innerHTML = onlyMoments
+    const onlyPlaces = list.length && list.every((p) => p.kind === 'place')
+    $('#bg-status').innerHTML = onlyPlaces
+      ? `<b>${list.length}</b> ${list.length === 1 ? 'prompt' : 'prompts'} for the Center and the Day Care · ${list.map((p) => `${esc(p.name)}: ask ${p.ask}, ${p.width} px wide`).join(' · ')}${S.ref ? ' · with reference image' : ''}`
+      : onlyMoments
       ? `<b>${list.length}</b> ${list.length === 1 ? 'prompt' : 'prompts'} for story moments · 240 × 160, ask 3:2${S.ref ? ' · with reference image' : ''}${L}`
       : onlyRegions
       ? `<b>${list.length}</b> ${list.length === 1 ? 'prompt' : 'prompts'} for region cards · 400 × 400, ask 1:1, shown as a 10:3 strip from the middle · saved to <code>public/region-art/</code>${S.ref ? ' · with reference image' : ''}`
@@ -885,6 +1027,8 @@ Composition: a wide panoramic view from a slightly raised eye level, front-facin
       const list = visible()
       const txt = list
         .map((p) => {
+          if (p.kind === 'place')
+            return `=== ${KINDS.place.one} · ${p.name} (ask ${p.ask}) ===\nSave as: ${p.file}\n\n${promptOf(p)}`
           if (p.kind === 'region')
             return `=== ${KINDS.region.one} · ${p.name} (ask 1:1) ===\nSave as: ${p.file}\n\n${promptOf(p)}`
           if (p.kind === 'moment')
@@ -1296,6 +1440,7 @@ Composition: a wide panoramic view from a slightly raised eye level, front-facin
         file: REGION_FILE(x.r),
       })),
     )
+    D.pictures.push(...PLACES)
     if (S.region !== 'all' && !REGION[S.region]) S.region = 'all'
     if (S.kind !== 'all' && !KINDS[S.kind]) S.kind = 'all'
     if (!['all', 'todo', 'done'].includes(S.show)) S.show = 'all'
