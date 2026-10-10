@@ -254,32 +254,8 @@ function MilestoneTrack({ species, level, onOpenDex }: { species: Species; level
     const before = ms.filter((r) => r.level < row.level).pop()?.level ?? 1
     return Math.max(0, Math.min(1, (level - before) / Math.max(1, row.level - before)))
   }
-  return (
-    <SheetSection title={t('ui.sheet.whatsNext')}>
-      {ahead.length === 0 && !byStone.length ? (
-        <p className="font-pixel-sm text-[16px] text-muted">{t('ui.sheet.fullyGrown')}</p>
-      ) : (
-        <ol className="grid gap-2">
-          {ahead.map((row, i) => (
-            <MilestoneRow
-              key={i}
-              chip={<LevelChip level={row.level} />}
-              progress={progressTo(row)}
-              next={level != null && i === 0}
-            >
-              {what(row)}
-            </MilestoneRow>
-          ))}
-          {byStone.map((e) => (
-            <MilestoneRow key={`stone-${e.toDex}`} chip={<StoneChip itemKey={e.item} />}>
-              <span>
-                {evolutionHow(e, data)}: {t('ui.sheet.evolvesInto')}{' '}
-                <EvoLink toDex={e.toDex} how={evolutionHow(e, data)} onOpenDex={onOpenDex} />
-              </span>
-            </MilestoneRow>
-          ))}
-        </ol>
-      )}
+  const notes = (
+    <>
       {byLevel.length > 1 && <p className="font-pixel-sm text-[15px] text-muted">{t('ui.sheet.oneAtRandom')}</p>}
       {megas.length > 0 && <p className="copy font-pixel-sm text-[15px] text-muted">{t('ui.sheet.megaNote')}</p>}
       {gmax && (
@@ -293,23 +269,57 @@ function MilestoneTrack({ species, level, onOpenDex }: { species: Species; level
           </span>
         </p>
       )}
-      {done.length > 0 && (
-        <details className="group">
-          <summary className="flex min-h-[44px] cursor-pointer items-center gap-1.5 font-pixel-sm text-[16px] text-muted md:min-h-[32px]">
-            <span className="inline-block transition-transform group-open:rotate-90" aria-hidden>
-              ▶
+    </>
+  )
+  const reachedRows = done.map((row, i) => (
+    <MilestoneRow key={`done-${i}`} chip={<LevelChip level={row.level} reached />} reached>
+      {what(row)}
+    </MilestoneRow>
+  ))
+
+  // Every milestone reached (and no stone left to use): one MAXED OUT button, which still opens the list.
+  if (ahead.length === 0 && !byStone.length)
+    return (
+      <details className="group">
+        <summary className="pixel-btn frame-gold flex min-h-[44px] w-full cursor-pointer list-none items-center justify-center gap-2 px-3 text-[22px] uppercase leading-none tracking-[0.04em] [&::-webkit-details-marker]:hidden">
+          <PixelIcon name="crown" size={18} />
+          {t('ui.sheet.maxedOut')}
+          <span className="inline-block text-[14px] transition-transform group-open:rotate-90" aria-hidden>
+            ▶
+          </span>
+        </summary>
+        <div className="mt-2 grid gap-2">
+          <ol className="grid gap-2 opacity-80">{reachedRows}</ol>
+          {notes}
+        </div>
+      </details>
+    )
+
+  // Still growing: every milestone in order, the reached ones ticked off above what's ahead.
+  return (
+    <SheetSection title={t('ui.sheet.whatsNext')}>
+      <ol className="grid gap-2">
+        {reachedRows}
+        {ahead.map((row, i) => (
+          <MilestoneRow
+            key={i}
+            chip={<LevelChip level={row.level} />}
+            progress={progressTo(row)}
+            next={level != null && i === 0}
+          >
+            {what(row)}
+          </MilestoneRow>
+        ))}
+        {byStone.map((e) => (
+          <MilestoneRow key={`stone-${e.toDex}`} chip={<StoneChip itemKey={e.item} />}>
+            <span>
+              {evolutionHow(e, data)}: {t('ui.sheet.evolvesInto')}{' '}
+              <EvoLink toDex={e.toDex} how={evolutionHow(e, data)} onOpenDex={onOpenDex} />
             </span>
-            {t(`ui.sheet.reachedCount.${done.length === 1 ? 'one' : 'other'}`, { n: done.length })}
-          </summary>
-          <ol className="mt-1 grid gap-2 opacity-80">
-            {done.map((row, i) => (
-              <MilestoneRow key={i} chip={<LevelChip level={row.level} reached />} reached>
-                {what(row)}
-              </MilestoneRow>
-            ))}
-          </ol>
-        </details>
-      )}
+          </MilestoneRow>
+        ))}
+      </ol>
+      {notes}
     </SheetSection>
   )
 }

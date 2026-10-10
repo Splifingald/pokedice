@@ -1,13 +1,14 @@
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useT } from '@/i18n/react'
 import { getLang } from '@/i18n'
-import { leaderboardUnlocked } from '@/engine'
+import { donationEnabled, leaderboardUnlocked } from '@/engine'
 import { useDexNew } from '@/lib/dexSeen'
 import { affordableUpgrades } from '@/lib/upgrades'
 import { pushToast, useGame } from '@/store/game'
 import { useInFight } from '@/store/hooks'
 import { CloudSyncButton } from './CloudSyncButton'
+import { DonationModal } from './DonationPopup'
 import { PlayerMenu } from './PlayerMenu'
 import { cx } from '@/theme/util'
 import { useCountUp } from './GoldPill'
@@ -202,9 +203,11 @@ export function Header() {
   )
 }
 
-/** Desktop: the game menus down the left, and SYNC ONLINE at the bottom. */
+/** Desktop: the game menus down the left; at the bottom HELP POKÉDICE (when donations are on), then SYNC ONLINE. */
 export function SideNav() {
   const { t } = useT()
+  const canDonate = useGame((s) => donationEnabled(s.data))
+  const [donating, setDonating] = useState(false)
   return (
     <aside className="sticky top-14 hidden h-[calc(100vh-3.5rem)] w-52 shrink-0 flex-col gap-3 overflow-y-auto bg-panel p-3 shadow-[2px_0_0_rgb(var(--c-edge))] md:flex lg:w-56">
       <nav aria-label={t('ui.nav.menus')} className="flex flex-col gap-2.5">
@@ -212,9 +215,20 @@ export function SideNav() {
           <NavEntry key={n.to} n={n} variant="side" />
         ))}
       </nav>
-      <div className="mt-auto">
+      <div className="mt-auto flex flex-col gap-2.5">
+        {canDonate && (
+          <button
+            type="button"
+            onClick={() => setDonating(true)}
+            className="pixel-btn flex min-h-[48px] items-center justify-center gap-2 bg-rose px-3 py-2 text-[20px] leading-none text-danger"
+          >
+            <PixelIcon name="heart" size={22} />
+            {t('ui.settings.helpPokedice')}
+          </button>
+        )}
         <CloudSyncButton />
       </div>
+      <DonationModal open={donating} onClose={() => setDonating(false)} />
     </aside>
   )
 }

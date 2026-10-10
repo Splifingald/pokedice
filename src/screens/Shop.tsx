@@ -59,7 +59,10 @@ function CatChips({ items, value, onChange }: { items: ItemDef[]; value: Cat; on
 const inCat = (cat: Cat) => (it: ItemDef) =>
   cat === 'all' || GROUPS.find((g) => g.id === cat)!.kinds.includes(it.effect.kind)
 
-/** A shelf row: the item, what it does, how many you hold and its price; tapping opens the quantity picker. */
+/**
+ * A shelf tile (two to a row on phones, three on wider screens): the item, what it does, how many you hold and its
+ * price; tapping opens the quantity picker, and the open tile takes the whole row so the picker keeps its room.
+ */
 function Row({
   it,
   open,
@@ -85,7 +88,7 @@ function Row({
     <li
       className={cx(
         open
-          ? 'bg-cream shadow-[inset_0_0_0_3px_rgb(var(--c-edge)),inset_0_-4px_0_rgb(var(--c-gold-light))]'
+          ? 'col-span-full bg-cream shadow-[inset_0_0_0_3px_rgb(var(--c-edge)),inset_0_-4px_0_rgb(var(--c-gold-light))]'
           : 'bg-paper shadow-card',
       )}
     >
@@ -95,15 +98,17 @@ function Row({
         disabled={!onToggle}
         aria-expanded={onToggle ? open : undefined}
         aria-controls={onToggle && open ? id : undefined}
-        className="flex min-h-[54px] w-full items-center gap-2 pb-[9px] pl-1.5 pr-2 pt-1.5 text-left"
+        className="flex h-full min-h-[54px] w-full flex-col gap-1 pb-[9px] pl-1.5 pr-1.5 pt-1.5 text-left"
       >
-        <ItemSprite item={it} size={32} />
-        <span className="grid min-w-0 flex-1 leading-[1.05]">
-          <b className="truncate text-[19px] font-normal">{it.name}</b>
-          <small className="font-pixel-sm text-[14px] text-muted">{sub}</small>
+        <span className="flex w-full min-w-0 items-center gap-1.5">
+          <ItemSprite item={it} size={32} />
+          <b className="line-clamp-2 min-w-0 flex-1 text-[18px] font-normal leading-[1.05]">{it.name}</b>
         </span>
-        {owned > 0 && <em className="font-pixel-sm text-[15px] not-italic text-muted">×{owned}</em>}
-        {pill}
+        <small className="font-pixel-sm text-[13px] leading-tight text-muted">{sub}</small>
+        <span className="mt-auto flex w-full items-end justify-between gap-1">
+          <em className="font-pixel-sm text-[15px] not-italic text-muted">{owned > 0 ? `×${owned}` : ''}</em>
+          {pill}
+        </span>
       </button>
       {open && children && (
         <div id={id} className="grid gap-2 px-2.5 pb-3">
@@ -171,7 +176,7 @@ function BuyTab({ badges }: { badges: number }) {
           setOpen(null)
         }}
       />
-      <ul className="grid gap-1.5">
+      <ul className="grid grid-cols-2 gap-1.5 md:grid-cols-3">
         {shelf.map((it) => {
           const total = it.price * n
           const can = total <= gold
@@ -246,18 +251,18 @@ function BuyTab({ badges }: { badges: number }) {
           <h2 id="mart-later" className="mt-1 text-[24px] leading-none">
             {t('ui.shop.comingLater')}
           </h2>
-          <ul className="grid gap-1.5">
+          <ul className="grid grid-cols-2 gap-1.5 md:grid-cols-3">
             {later.map((it) => (
               <li
                 key={it.key}
-                className="flex min-h-[54px] items-center gap-2 bg-well px-2 py-1.5 text-muted shadow-ring-line"
+                className="flex min-h-[54px] flex-col gap-1 bg-well px-1.5 py-1.5 text-muted shadow-ring-line"
               >
-                <ItemSprite item={it} size={32} className="opacity-55 grayscale" />
-                <span className="grid min-w-0 flex-1 leading-[1.05]">
-                  <b className="truncate text-[19px] font-normal">{it.name}</b>
-                  <small className="font-pixel-sm text-[14px]">{effectText(it)}</small>
+                <span className="flex min-w-0 items-center gap-1.5">
+                  <ItemSprite item={it} size={32} className="opacity-55 grayscale" />
+                  <b className="line-clamp-2 min-w-0 flex-1 text-[18px] font-normal leading-[1.05]">{it.name}</b>
                 </span>
-                <span className="inline-flex shrink-0 items-center gap-1 bg-well-deep px-1.5 pb-1 pt-[3px] font-pixel-sm text-[14px] text-ink">
+                <small className="font-pixel-sm text-[13px] leading-tight">{effectText(it)}</small>
+                <span className="mt-auto inline-flex items-center gap-1 self-end bg-well-deep px-1.5 pb-1 pt-[3px] font-pixel-sm text-[14px] text-ink">
                   {badges < it.shopBadges && <PixelIcon name="badge" size={8} />}
                   {needs(it)}
                 </span>
@@ -299,7 +304,7 @@ function SellTab() {
           setOpen(null)
         }}
       />
-      <ul className="grid gap-1.5">
+      <ul className="grid grid-cols-2 gap-1.5 md:grid-cols-3">
         {rows.map(({ it, owned }) => {
           const unit = sellPrice(it)
           const sellable = unit > 0
