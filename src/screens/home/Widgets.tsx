@@ -63,15 +63,13 @@ function SecretWidget({ onSecrets }: { onSecrets: () => void }) {
         label={t('ui.home.secretNewLabel', { area: f.area.name })}
         onClick={() => travelTo(f.area)}
       >
-        <span className="block w-full leading-[0] shadow-halo">
-          <AreaStrip area={f.area} h={120} className="h-auto w-full" />
-        </span>
-        <span className="truncate text-[20px] leading-none">{f.area.name}</span>
-        {cond && (
-          <span className="truncate font-pixel-sm text-[15px] leading-none text-muted">
-            {conditionLabel(cond, data)}
-          </span>
-        )}
+        <WidgetBanner>
+          <AreaStrip area={f.area} h={BANNER.h} className="absolute inset-0 h-full w-full" />
+        </WidgetBanner>
+        <DayCareRows
+          top={<span className="truncate text-[20px] leading-none">{f.area.name}</span>}
+          bottom={cond ? conditionLabel(cond, data) : ''}
+        />
       </Widget>
     )
   const label = cond ? conditionLabel(cond, data) : ''
@@ -86,18 +84,20 @@ function SecretWidget({ onSecrets }: { onSecrets: () => void }) {
       })}
       onClick={onSecrets}
     >
-      <span className="relative block w-full leading-[0] shadow-halo">
-        <AreaStrip area={f.area} h={120} className="h-auto w-full grayscale-[0.7]" />
+      <WidgetBanner>
+        <AreaStrip area={f.area} h={BANNER.h} className="absolute inset-0 h-full w-full grayscale-[0.7]" />
         <PixelIcon
           name="lock"
           size={16}
           className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
         />
-      </span>
-      <span className="truncate text-[20px] leading-none">{f.area.name}</span>
-      <Meter value={f.current} max={f.target} />
-      {/* What the numbers count, said: "22/133 in Pokédex" with its icon, not a bare fraction. */}
-      <span className="flex min-w-0 items-center gap-1 font-pixel-sm text-[15px] leading-none text-muted">
+      </WidgetBanner>
+      <DayCareRows
+        top={<span className="truncate text-[20px] leading-none">{f.area.name}</span>}
+        meter={<Meter value={f.current} max={f.target} />}
+        bottom={
+      // What the numbers count, said: "22/133 in Pokédex" with its icon, not a bare fraction.
+      <span className="flex min-w-0 items-center gap-1">
         {cond?.kind === 'pokedex' ? (
           <PixelIcon name="navDex" size={16} />
         ) : cond?.kind === 'maxLevel' ? (
@@ -111,6 +111,8 @@ function SecretWidget({ onSecrets }: { onSecrets: () => void }) {
               : label || `${Math.min(f.current, f.target)}/${f.target}`}
         </span>
       </span>
+        }
+      />
     </Widget>
   )
 }
@@ -160,6 +162,18 @@ function DayCareBanner({ dim, children }: { dim?: boolean; children?: (height: n
         className={cx('absolute inset-0 h-full w-full', dim && 'grayscale-[0.7]')}
       />
       {children && <span className="absolute inset-0 leading-none">{children(height)}</span>}
+    </span>
+  )
+}
+
+/** Every widget's banner: the Day Care's shape (288 × BANNER.h), whatever it shows, so the widgets line up. */
+function WidgetBanner({ children }: { children: ReactNode }) {
+  return (
+    <span
+      className="relative block w-full overflow-hidden leading-[0] shadow-halo"
+      style={{ aspectRatio: `288 / ${BANNER.h}` }}
+    >
+      {children}
     </span>
   )
 }
@@ -385,47 +399,50 @@ function VersusWidget() {
   return (
     <Widget
       title={t('ui.versus.title')}
-      tag={
-        set ? (
-          // Attack wins (sword) / defense wins (shield).
-          <span
-            className="inline-flex items-center gap-1 text-[15px] leading-none"
-            aria-label={`${tPlural('ui.versus.wins', me!.attackWins)} · ${tPlural('ui.versus.defenseWins', me!.defenseWins)}`}
-          >
-            {me!.attackWins}
-            <PixelIcon name="sword" size={14} />
-            <span className="text-muted">/</span>
-            {me!.defenseWins}
-            <PixelIcon name="shield" size={14} />
-          </span>
-        ) : (
-          <NewTag />
-        )
-      }
+      tag={<HeadTag>{!set && <NewTag />}</HeadTag>}
       label={set ? t('ui.home.vsSetLabel', { wins: me!.defenseWins, n: me!.attackWins }) : t('ui.home.vsOpenLabel')}
       onClick={() => navigate('/versus')}
     >
-      {/* A stadium as the banner, as tall as the Day Care's: the team big in the middle and a bold VS over it. */}
-      <span className="relative block w-full overflow-hidden leading-[0] shadow-halo">
+      {/* A stadium as the banner: the team from the left, spaced out, and a bold VS, both centred in its height. */}
+      <WidgetBanner>
         <img
           src={VS_BANNER}
           alt=""
-          className="pixelated block h-auto w-full object-cover"
-          style={{ imageRendering: 'pixelated', aspectRatio: '288 / 120', objectPosition: '50% 55%' }}
+          className="pixelated absolute inset-0 h-full w-full object-cover"
+          style={{ imageRendering: 'pixelated', objectPosition: '50% 55%' }}
         />
-        <span className="absolute inset-x-0 bottom-0 flex items-end justify-center" aria-hidden>
+        <span className="absolute inset-y-0 left-1 flex items-center gap-1" aria-hidden>
           {shown.slice(0, VERSUS_TEAM_SIZE).map((m, i) => (
-            <MiniSprite key={i} dex={m.dex} size={52} className="-mx-3 -mb-2" />
+            <MiniSprite key={i} dex={m.dex} size={44} className="-mx-1.5" />
           ))}
         </span>
         <span
-          className="absolute right-2 top-2 text-[52px] leading-none text-gold [text-shadow:0_4px_0_#c4382a,4px_0_0_#c4382a,-2px_0_0_#24304f,0_-2px_0_#24304f]"
+          className="absolute inset-y-0 right-2 flex items-center text-[48px] leading-none text-gold [text-shadow:0_4px_0_#c4382a,4px_0_0_#c4382a,-2px_0_0_#24304f,0_-2px_0_#24304f]"
           aria-hidden
         >
           VS
         </span>
-      </span>
-      {!set && <span className="text-[18px] leading-tight">{t('ui.home.vsOpen')}</span>}
+      </WidgetBanner>
+      <DayCareRows
+        top={
+          set ? (
+            // Attack wins (sword) / defense wins (shield).
+            <span
+              className="inline-flex items-center gap-1.5 text-[20px] leading-none"
+              aria-label={`${tPlural('ui.versus.wins', me!.attackWins)} · ${tPlural('ui.versus.defenseWins', me!.defenseWins)}`}
+            >
+              {me!.attackWins}
+              <PixelIcon name="sword" size={16} />
+              <span className="text-muted">/</span>
+              {me!.defenseWins}
+              <PixelIcon name="shield" size={16} />
+            </span>
+          ) : (
+            <span className="truncate text-[20px] leading-none">{t('ui.home.vsOpen')}</span>
+          )
+        }
+        bottom={t('ui.versus.tabFight')}
+      />
     </Widget>
   )
 }

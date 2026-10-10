@@ -24,7 +24,7 @@ export function Widget({
       aria-label={label}
       className={cx('pixel-panel flex min-w-0 flex-col gap-[5px] px-2.5 pb-2.5 pt-2 text-left', className)}
     >
-      <span className="flex w-full items-center gap-1.5 font-pixel-sm text-[15px] leading-none text-muted">
+      <span className="flex w-full items-center gap-1.5 text-[19px] leading-none text-ink">
         <span className="min-w-0 flex-1 truncate">{title}</span>
         {tag}
       </span>
