@@ -53,6 +53,16 @@ export interface Timeline<S = unknown> {
 }
 
 // ---------------------------------------------------------------- shared helpers
+/** The same timeline, `k` times faster: its clock, its particles and its cues all run at that speed. */
+export function quicken<S>(tl: Timeline<S>, k: number): Timeline<S> {
+  return {
+    ...tl,
+    dur: tl.dur / k,
+    step: (s, t, dt) => tl.step(s, t * k, dt * k),
+    draw: (g, s, t) => tl.draw(g, s, t * k),
+    cues: (s) => tl.cues(s).map(([t, fn]) => [t / k, fn] as const),
+  }
+}
 export const frozenFor = (t: number, wins: readonly (readonly [number, number])[]) =>
   wins.reduce((a, [s, e]) => a + Math.max(0, Math.min(t, e) - s), 0)
 export const within = (t: number, a: number, b: number) => t >= a && t < b
@@ -236,6 +246,17 @@ export class Stage {
       else if (h.tint && Math.floor(p * 15) % 2 === 0) tint = { color: h.tint, a: 0.45 * (1 - p / h.dur) }
     }
     return { flash, tint }
+  }
+  private lastLive = -Infinity
+  /**
+   * Which moments the clock passed since the last step that ran: call it after `step` succeeds. A burst timed on the
+   * contact still fires (on the first frame after the hit-stop that starts at that same moment), where a window like
+   * `t < t0 + STEP * 1.5` falls entirely inside the stop and never does.
+   */
+  passed(t: number) {
+    const p = this.lastLive
+    this.lastLive = t
+    return (t0: number) => p < t0 && t >= t0
   }
   step(t: number, dt: number) {
     if (this.stopped(t)) return false

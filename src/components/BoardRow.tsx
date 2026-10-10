@@ -61,7 +61,13 @@ export function TeamIcons({
           level: m.level,
         })
         return (
-          <li key={i} title={label} className="-mx-[3px] first:ml-[-6px]">
+          // The icons draw half again as big as `size` (MiniSprite) with empty space round them: they overlap so a
+          // row keeps the width it had.
+          <li
+            key={i}
+            title={label}
+            style={{ marginLeft: Math.round(-size * (i === 0 ? 0.5 : 0.34)), marginRight: Math.round(-size * 0.34) }}
+          >
             <MiniSprite dex={m.dex} size={size} alt={label} />
           </li>
         )

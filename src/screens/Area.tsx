@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Navigate } from 'react-router-dom'
 import {
   deckSize,
@@ -13,6 +13,7 @@ import {
   type DeckCard,
 } from '@/engine'
 import { AreaTypes } from '@/components/AreaTypes'
+import { AutoModeToggle } from '@/components/AutoModeToggle'
 import { BadgeIcon } from '@/components/BadgeIcon'
 import { PixelIcon, type IconName } from '@/components/icons'
 import { preloadSprites } from '@/components/SpriteImg'
@@ -24,6 +25,7 @@ import { BattleView } from './battle/BattleView'
 import { CasinoView } from './area/CasinoView'
 import { CenterView } from './area/CenterView'
 import { EncounterPreview } from './area/EncounterPreview'
+import { AreaDetails } from './home/AreaDetails'
 import { AreaStrip } from '@/components/AreaStrip'
 
 const CARD_ICON: Record<DeckCard, IconName> = {
@@ -138,7 +140,10 @@ export function RoundGauge({ area, progress }: { area: Area; progress: AreaProgr
   )
 }
 
-/** Encounter types, a slim banner, then the name with its round (or a checkmark) and levels, and the round gauge. */
+/**
+ * Encounter types, a slim banner, then the name with its round (or a checkmark) and levels, the round gauge and, in a
+ * cleared area, the auto-mode switch.
+ */
 function AreaHeader({ area, progress, teamAvg }: { area: Area; progress: AreaProgress; teamAvg: number }) {
   const { t } = useT()
   const data = useGame((s) => s.data)
@@ -150,8 +155,10 @@ function AreaHeader({ area, progress, teamAvg }: { area: Area; progress: AreaPro
   // "Round 2/3" while rounds are still needed; a checkmark once they're all done (secret areas: nothing).
   const need = area.roundsToClear
   const done = progress.roundsDone ?? 0
+  const [details, setDetails] = useState(false)
   return (
     <section className="pixel-panel overflow-hidden p-0" aria-labelledby="area-title">
+      <AreaDetails area={details ? area : null} onClose={() => setDetails(false)} />
       {/* The encounter types sit on the banner's top right corner. */}
       <div className="relative">
         <AreaStrip area={area} h={40} className="block h-auto w-full" />
@@ -160,8 +167,16 @@ function AreaHeader({ area, progress, teamAvg }: { area: Area; progress: AreaPro
       <div className="flex flex-col gap-1.5 px-3 pb-3 pt-2">
         <div className="flex items-baseline justify-between gap-3">
           <div className="flex min-w-0 flex-wrap items-baseline gap-x-2.5">
-            <h1 id="area-title" className="min-w-0 text-[32px] leading-none">
-              {area.name}
+            {/* The title opens the area's details, as its plate does on Home. */}
+            <h1 id="area-title" className="m-0 min-w-0 text-[32px] font-normal leading-none">
+              <button
+                type="button"
+                onClick={() => setDetails(true)}
+                aria-haspopup="dialog"
+                className="min-h-[44px] text-left underline decoration-dotted decoration-2 underline-offset-4 md:min-h-0"
+              >
+                {area.name}
+              </button>
             </h1>
             {need != null &&
               (done >= need ? (
@@ -187,6 +202,12 @@ function AreaHeader({ area, progress, teamAvg }: { area: Area; progress: AreaPro
         </div>
         {notes.length > 0 && <div className="text-lg leading-tight text-muted">{notes.join(' · ')}</div>}
         <RoundGauge area={area} progress={progress} />
+        {/* A cleared area can play itself: switched here, between its encounters, without a trip Home. */}
+        {progress.cleared && (
+          <div className="flex justify-end">
+            <AutoModeToggle />
+          </div>
+        )}
       </div>
     </section>
   )

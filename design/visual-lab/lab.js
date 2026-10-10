@@ -2463,7 +2463,7 @@
   }
 
   // ================================================================== tabs, keys, boot
-  const TAB_IDS = ['home', 'animations', 'styles', 'moodboards']
+  const TAB_IDS = ['home', 'animations', 'styles', 'moodboards', 'backgrounds']
   let animsStarted = false
   function showTab(id, push = true) {
     if (!TAB_IDS.includes(id)) id = 'home'

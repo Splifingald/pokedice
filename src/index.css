@@ -1,22 +1,22 @@
 @import './styles/pixel.css';
 
-/* Jersey 20: Daybreak's face for titles, names, buttons and most text. */
+/* Jersey 25: Daybreak's face for titles, names, buttons and most text. */
 @font-face {
-  font-family: 'Jersey 20';
+  font-family: 'Jersey 25';
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url('/fonts/jersey20-latin.woff2') format('woff2');
+  src: url('/fonts/jersey25-latin.woff2') format('woff2');
   unicode-range:
     U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F,
     U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 @font-face {
-  font-family: 'Jersey 20';
+  font-family: 'Jersey 25';
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url('/fonts/jersey20-latin-ext.woff2') format('woff2');
+  src: url('/fonts/jersey25-latin-ext.woff2') format('woff2');
   unicode-range:
     U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020,
     U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
@@ -124,7 +124,7 @@ body {
   background-image: var(--tex);
   background-size: 16px 16px;
   color: rgb(var(--c-ink));
-  font-family: 'Jersey 20', 'Jersey 15', var(--font-cjk);
+  font-family: 'Jersey 25', 'Jersey 15', var(--font-cjk);
   font-size: 20px;
   line-height: 1.2;
   letter-spacing: 0.02em;
@@ -153,20 +153,23 @@ button {
 }
 
 /*
- * Paragraphs of two lines or more: Jersey 15, the Jersey cut drawn for small text. Jersey 20 stays for headings,
+ * Paragraphs of two lines or more: Jersey 15, the Jersey cut drawn for small text. Jersey 25 stays for headings,
  * names, buttons. In the components layer so a text-* utility can still bump the size (e.g. `copy text-lg`).
  */
 @layer components {
   .copy {
-    font-family: 'Jersey 15', 'Jersey 20', var(--font-cjk);
+    font-family: 'Jersey 15', 'Jersey 25', var(--font-cjk);
     font-size: 20px;
     line-height: 1.35;
     letter-spacing: 0.02em;
   }
 }
 
+/* Canvases too: a 240×160 stage drawn at 848px wide must stay sharp, not smoothed (the battle zones were blurry). */
 img.pixelated,
-.pixelated img {
+canvas.pixelated,
+.pixelated img,
+.pixelated canvas {
   image-rendering: pixelated;
 }
 

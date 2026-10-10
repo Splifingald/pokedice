@@ -5,7 +5,8 @@ import { faceOf, type Battler, type DamageResult, type RolledDie, type Side, typ
 import { Chip, StatusChip } from '@/components/Chip'
 import { Die } from '@/components/Die'
 import { PixelIcon } from '@/components/icons'
-import { MiniSprite } from '@/components/SpriteImg'
+import { HpBar } from '@/components/HpBar'
+import { MiniSprite, SpriteImg } from '@/components/SpriteImg'
 import { useT } from '@/i18n/react'
 import { comboName, statusName } from '@/lib/format'
 import { useGame } from '@/store/game'
@@ -83,8 +84,8 @@ export interface Preview {
 }
 
 /**
- * Under the tray: the combo chip (or "No combo"), `(sum + bonus) × mult = damage` with the damage big (a button: the
- * full breakdown), how effective it is, and a chip per status face — lit once its threshold is met.
+ * Under the tray: the combo chip (or "No combo"), the damage, big (a button: the math behind it, shown once, under the
+ * readout), how effective it is, and a chip per status face — lit once its threshold is met.
  */
 export function Readout({
   preview,
@@ -100,8 +101,6 @@ export function Readout({
 }) {
   const { t } = useT()
   const { r } = preview
-  const sum = r.perDie.reduce((n, p) => n + p.value + p.bonus, 0)
-  const mult = r.perDie[0]?.multiplier ?? 1
   const eff = r.immune ? 'none' : r.effectiveness > 1 ? 'up' : r.effectiveness < 1 ? 'down' : null
   return (
     <>
@@ -123,13 +122,11 @@ export function Readout({
         })}
         title={t('ui.battle.damageTitle')}
         onClick={onToggle}
-        className="inline-flex min-h-[44px] items-center gap-1 whitespace-nowrap px-1 font-pixel-sm text-[18px] leading-none text-ink md:min-h-[32px]"
+        className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center gap-1 whitespace-nowrap px-1 font-pixel-sm text-[18px] leading-none text-ink md:min-h-[32px]"
       >
-        <span aria-hidden>
-          ({sum}
-          {r.combo ? ` + ${r.combo.bonus}` : ''}){mult !== 1 ? ` × ${mult}` : ''} =
-        </span>
-        <b className="font-pixel text-[26px] font-normal leading-none">{r.final}</b>
+        <b className="font-pixel text-[26px] font-normal leading-none underline decoration-dotted decoration-2 underline-offset-4">
+          {r.final}
+        </b>
       </button>
       {eff && (
         <span
@@ -186,7 +183,7 @@ export function TeamPips({
   const { t } = useT()
   const reduced = useGame((s) => s.settings.reducedMotion)
   return (
-    <div role="group" aria-label={t('ui.battle.switchGroup')} className="flex gap-1.5">
+    <div role="group" aria-label={t('ui.battle.switchGroup')} className="flex flex-wrap gap-1.5">
       {team.map((b) => {
         const hp = hpOf(b)
         const active = b.uid === activeUid
@@ -225,6 +222,70 @@ export function TeamPips({
                   background: pct > 0.5 ? PALETTE.hpGreen : pct > 0.2 ? PALETTE.hpYellow : PALETTE.hpRed,
                 }}
               />
+            </span>
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
+/**
+ * Wide screens: the team as a column of cards (sprite, name, level, HP), the same choices as the pips — tap one to send
+ * it in; after a K.O. the ones that can go out pulse.
+ */
+export function TeamColumn({
+  team,
+  activeUid,
+  hpOf,
+  canSwitch,
+  calling,
+  onPick,
+}: {
+  team: Battler[]
+  activeUid: string
+  hpOf: (b: Battler) => number
+  canSwitch: boolean
+  calling: boolean
+  onPick: (b: Battler) => void
+}) {
+  const { t } = useT()
+  const reduced = useGame((s) => s.settings.reducedMotion)
+  return (
+    <div role="group" aria-label={t('ui.battle.switchGroup')} className="flex flex-col gap-2">
+      {team.map((b) => {
+        const hp = hpOf(b)
+        const active = b.uid === activeUid
+        const out = hp <= 0
+        const open = canSwitch && !active && !out
+        return (
+          <button
+            key={b.uid}
+            type="button"
+            onClick={open ? () => onPick(b) : undefined}
+            aria-disabled={!open}
+            aria-label={
+              out
+                ? t('ui.battle.pipFainted', { name: b.name })
+                : t(active ? 'ui.battle.pipActive' : 'ui.battle.pipSwitch', { name: b.name, hp, max: b.maxHp })
+            }
+            className={cx(
+              'flex w-full items-center gap-2 bg-paper p-1.5 text-left shadow-ring',
+              active && 'bg-gold-pale shadow-card-gold',
+              out && 'opacity-55 grayscale',
+              !open && 'cursor-default',
+              calling && open && !reduced && 'bt-call',
+            )}
+          >
+            <SpriteImg dex={b.dex} size={80} shiny={b.shiny} className="-my-2 shrink-0" />
+            <span className="flex min-w-0 flex-1 flex-col gap-1">
+              <span className="flex items-baseline justify-between gap-1">
+                <b className="truncate text-[19px] font-normal leading-none">{b.name}</b>
+                <span className="shrink-0 font-pixel-sm text-[14px] leading-none">
+                  {t('ui.common.level.short', { n: b.level })}
+                </span>
+              </span>
+              <HpBar hp={hp} max={b.maxHp} height={8} />
             </span>
           </button>
         )

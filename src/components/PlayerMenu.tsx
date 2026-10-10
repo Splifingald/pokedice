@@ -129,7 +129,7 @@ export function PlayerMenu() {
         aria-expanded={open}
         aria-label={newFriends ? t('ui.profile.menuLabelNew', { n: newFriends }) : t('ui.profile.menuLabel')}
         title={t(inFight ? 'ui.nav.finishFight' : 'ui.profile.menuLabel')}
-        className={cx('flex min-h-[44px] min-w-0 items-center gap-2 text-left', inFight && 'pointer-events-none opacity-60')}
+        className={cx('flex min-h-[44px] min-w-0 shrink flex-row-reverse items-center gap-2 text-right', inFight && 'pointer-events-none opacity-60')}
       >
         <span className="relative shrink-0">
           <span className="grid h-[38px] w-[38px] place-items-center overflow-hidden rounded-full bg-[#7fb4ff] shadow-[inset_0_0_0_2px_rgb(var(--c-edge)),inset_0_-4px_0_#4f86d8]">
@@ -146,7 +146,7 @@ export function PlayerMenu() {
         </span>
         <span className="grid min-w-0 leading-none">
           <b className="truncate text-[20px] font-normal">{name || t('ui.profile.title')}</b>
-          <small className="flex items-center gap-[3px] font-pixel-sm text-[15px] text-muted">
+          <small className="flex items-center justify-end gap-[3px] font-pixel-sm text-[15px] text-muted">
             <PixelIcon name="badge" size={8} />
             {earned}/{badges.length}
           </small>

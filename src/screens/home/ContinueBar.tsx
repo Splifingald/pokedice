@@ -10,7 +10,6 @@ import {
   type Area,
 } from '@/engine'
 import { useT } from '@/i18n/react'
-import { AutoModeToggle } from '@/components/AutoModeToggle'
 import { PixelIcon } from '@/components/icons'
 import { PixelButton } from '@/components/PixelButton'
 import { countdown, trainerTitle } from '@/lib/format'
@@ -92,7 +91,7 @@ export function useContinue(area: Area) {
 
 /**
  * The Areas button and CONTINUE, the one big action (useContinue). When a gym or a legendary waits, "keep exploring"
- * sits under it; in a cleared area, auto-mode.
+ * sits under it. (Auto-mode is switched in the area itself, on the encounter screens.)
  */
 export function ContinueBar({
   area,
@@ -105,7 +104,7 @@ export function ContinueBar({
   onAreas: () => void
 }) {
   const { t } = useT()
-  const { label, sub, go, explore, off, gym, boss, closed, empty, busy, cleared } = useContinue(area)
+  const { label, sub, go, explore, off, gym, boss, closed, empty, busy } = useContinue(area)
   const subId = useId()
 
   return (
@@ -167,14 +166,11 @@ export function ContinueBar({
           </span>
         </PixelButton>
       </div>
-      {(gym || boss || cleared) && !busy && (
+      {(gym || boss) && !closed && !busy && (
         <div className="flex flex-wrap items-center justify-end gap-2">
-          {(gym || boss) && !closed && (
-            <PixelButton size="sm" onClick={explore} disabled={empty}>
-              {t('ui.home.keepExploring')}
-            </PixelButton>
-          )}
-          {cleared && <AutoModeToggle />}
+          <PixelButton size="sm" onClick={explore} disabled={empty}>
+            {t('ui.home.keepExploring')}
+          </PixelButton>
         </div>
       )}
     </div>

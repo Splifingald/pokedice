@@ -13,7 +13,7 @@ The game's engine and data decide every rule and number shown. The UI only prese
 A pale morning sky (`#e9f0f8`, a faint dot texture) under crisp pixel-art frames with **ink outlines** (`#24304f`),
 white paper panels, **one red action** per screen (`#f2553f`) and **gold for what's new** (`#ffbe2e`). Everything is
 drawn on a pixel grid: square corners cut by a 1–3 pixel stair, never `border-radius`, never blur, never a soft
-shadow. Fonts are **Jersey 20** (titles, names, buttons, most text) and **Jersey 15** (labels, numbers, paragraphs).
+shadow. Fonts are **Jersey 25** (titles, names, buttons, most text) and **Jersey 15** (labels, numbers, paragraphs).
 
 **Dusk**, the dark theme, is the same lab after sundown: a night-blue ground (`#10172a`), panels a step lighter, pale
 ink text and softer slate outlines (`#7d8bb2`) so frames don't glare; red, gold, the HP colours and all the art stay
@@ -87,10 +87,10 @@ Rules:
 
 | Role | Font | Size | Notes |
 |---|---|---|---|
-| Page title (`h1`) | Jersey 20 | 30–40 px (`text-title`, `text-display`) | One `<h1>` per route |
-| Section title | Jersey 20 | 24 px | |
-| Body, names | Jersey 20 | 20 px (`text-body`); 17 small; 22 large | |
-| Buttons | Jersey 20 | 24 px (md), 18 (sm), 26 (lg), 30 (xl) | Uppercase, 0.04em tracking |
+| Page title (`h1`) | Jersey 25 | 30–40 px (`text-title`, `text-display`) | One `<h1>` per route |
+| Section title | Jersey 25 | 24 px | |
+| Body, names | Jersey 25 | 20 px (`text-body`); 17 small; 22 large | |
+| Buttons | Jersey 25 | 24 px (md), 18 (sm), 26 (lg), 30 (xl) | Uppercase, 0.04em tracking |
 | Labels, numbers, captions | Jersey 15 (`font-pixel-sm`) | 15 px (`text-label`) | `tabular-nums` for counters |
 | Paragraphs (2+ lines) | Jersey 15 (`.copy`) | 20 px, line-height 1.35 | |
 
@@ -206,7 +206,7 @@ motion `off` the stage jumps to the end and still fires every cue, so the screen
 
 | Timeline | full | short |
 |---|---|---|
-| Attacks (Flamethrower, Hydro Pump, Razor Leaf, Thunderbolt, Psychic; a generic impact in the type's colour for the rest) | the typed move | one generic hit |
+| Attacks: one move per type (Flamethrower, Hydro Pump, Razor Leaf, Thunderbolt, Psychic in `attacks.ts`; Tackle, jabs and a fist, gusts and a wing slash, Sludge Bomb, earth spikes, Rock Slide, a swarm and X-Scissor, Shadow Ball, Metal Claw, Ice Beam, Dragon Breath, Dark Pulse and Crunch, Moonblast in `attacks-types.ts`); a generic impact for typeless dice | the typed move | one generic hit |
 | Catch | throw, beam, drop, wobbles, result | throw and drop, result at once |
 | Pokémon Center | three balls, six-beat jingle | one flash, healed |
 | Mega Evolution, Gigantamax | the full change | a white flash and the new sprite |
@@ -244,6 +244,8 @@ Players shouldn't have to make many requests:
 - **Atlases** for sets of small pictures: the Pokémon menu icons (`src/assets/pokemon-icons.png`), the trainers (one
   sheet per region), the item icons (`src/assets/item-icons.png`, rebuilt by `pnpm item-sprites` when items change).
   One request, cached for a year (hashed Vite assets).
+- **Menu icons draw at 1.5× the size asked** (`MiniSprite`): they read too small at their nominal size, so the
+  component scales them everywhere; callers keep passing the nominal size.
 - **Grids use icons, not sprites**: the Box and the Pokédex show menu icons from the atlas (a 151-entry Pokédex costs
   one request). Showdown's animated sprites are for the places where one Pokémon is the subject: team cards, a
   Pokémon's sheet, the scene.
@@ -253,7 +255,7 @@ Players shouldn't have to make many requests:
 - **Cries** come from Showdown's CDN too: one request per cry actually played (~9 KB), cached by the browser; never
   preloaded, never one for a cry Showdown doesn't have (a form without its own plays its species'), none while sound
   is off.
-- Fonts are subset by unicode range; only Jersey 20 (latin) is preloaded.
+- Fonts are subset by unicode range; only Jersey 25 (latin) is preloaded.
 - Before adding an image file, ask whether code can draw it, or whether it belongs in an atlas.
 - **Area pictures** (`public/area-art/<id>.png`): one painted picture per *scene* (87 shared scenes, lairs and
   landmarks for 295 areas), 400 px of true pixel art (Gemini, then `unpixel`), as the Visual Lab's Backgrounds tab
@@ -276,12 +278,19 @@ Players shouldn't have to make many requests:
 
 ## 12. Navigation, Home and stages
 
-- **Top bar** (`Header` in `src/components/Hud.tsx`): you (trainer look, name, badges → the trainer menu), energy, gold
-  as a navy pill whose red "+" opens the Poké Mart, and the cup (→ the leaderboard; greyed until the first badge, and a
-  tap says what opens it). Everything in it is disabled mid-fight and says why.
-- **Tab bar** (phones): Poké Mart, Upgrades, **Home** (a raised Poké Ball in the middle, under the thumb), Team,
+- **Top bar** (`Header` in `src/components/Hud.tsx`): energy on the left; on the right the gold as a navy pill (a tap
+  opens the Poké Mart, no "+"), the cup (→ the leaderboard; greyed until the first badge, and a tap says what opens
+  it) and, last, you (name and badge count, then your trainer look → the trainer menu, which slides in from that side).
+  Everything in it is disabled mid-fight and says why.
+- **Tab bar** (phones): Poké Mart, Upgrades, **Home** (in the middle, under the thumb: a tab like the others, its Poké Ball icon and label), Team,
   Pokédex. The side nav (desktop) has the same entries with Home first. A tab's hit area is the whole column, at
   least 60 px tall, even where the drawing is smaller.
+- **Region cards** (Areas sheet → regions): each region's own picture (`public/region-art/<id>.png`, from the Visual
+  Lab's region prompts; its first area's strip until it has one), name, counts and GO. A tap moves there and closes
+  the sheet.
+- **Area screen**: its title opens the area's details (the same sheet as Home's plate, without the travel footer).
+- **Pokémon Center**: the healing scene (a Poké Ball per team member) at phone size (420 px at most on wide screens), then Home or **Next
+  encounter**, so a run through an area never needs a trip Home.
 - **Dots only for something you can act on**: the number of upgrades you can afford (9+ at most), a gold NEW for
   Pokédex entries you haven't looked at. The dot is in the link's accessible name, never colour alone.
 - **Home is the area hub** (`/home`; `/map` redirects there): the area's scene with your team roaming in it, the area
@@ -337,24 +346,33 @@ in view) and the battle history sits beside it from 1024 px.
 - **Panel**, top to bottom, each part keeping its height so nothing jumps: the message box (two lines; "Tap dice to
   throw them again." is added on your turn), the dice tray (your dice up to 54 px and never under 44, lifted with a
   red outline when picked, the combo's dice in a gold ring; the foe's dice smaller, not buttons), the readout (combo
-  chip or "No combo", `(sum + bonus) × mult = damage` with the damage big — a button for the breakdown — how
-  effective it is, a `StatusChip` per status face, lit once its threshold is met), the extras (Mega, G-MAX, Type,
+  chip or "No combo", the damage alone and big — a button: the math, `(sum + bonus) × mult = damage`, shows once,
+  under the readout — how effective it is, a `StatusChip` per status face, lit once its threshold is met), the extras (Mega, G-MAX, Type,
   Run) only when they exist, the actions (REROLL with its count, ATTACK in red; SKIP TURN when stunned; the AUTO note
-  with STOP or SKIP ▸▸), then the Bag, the team pips and the history.
+  with STOP, none in Versus), then the Bag, the team pips and the history.
+- **Auto battles** (auto-mode, Versus) play at the `short` motion level unless animations are off (`MotionCap`).
+  Auto-mode is switched in the area (under its header), never from Home.
 - **Team pips**: menu icon + an HP bar, the one in battle ringed in gold, fainted ones grey. Tapping one switches
-  (it costs the turn; the dialog also holds Forfeit). After a K.O. the message asks "Choose your next Pokémon" and
-  the pips that can go out pulse (two steps, not a glide; still when the OS asks for reduced motion).
+  (it costs the turn; the dialog also holds Forfeit). After a K.O. the message asks "Choose your next Pokémon",
+  the pips that can go out pulse (two steps, not a glide; still when the OS asks for reduced motion), and the actions
+  become a list right under the stage: each Pokémon that can go out with its level, HP, types and dice, then Forfeit.
 - **The Bag** is a `Sheet`: every item usable in battle with what it does and how many you have; one that can't help
   anyone is greyed. One item a turn, and it doesn't end the turn.
 - **The catch happens on the stage**: the worn-out foe stays on its platform, greyed; the panel shows a radio group
   of balls (each with its chance from `catchChance`, how many you have, "not needed" when a weaker one is already
-  certain), the catch math (`d6 + bonus ≥ need`), and one throw. The catch timeline plays; the die shows on its
-  `roll` beat and the result on `catchResult`. A throw that can't miss has no die.
-- **Result cards** rise from the bottom over the panel, the stage still in view: XP per Pokémon, the catch (NEW when
+  certain), the catch math (`d6 + bonus ≥ need`), and one throw. The catch timeline plays; the die and the
+  result show together on `catchResult`, never before (the die would spoil the wobbles). A throw that can't miss has
+  no die.
+- **Result cards** rise from the bottom over the panel on every screen size, wild and trainer fights alike, the stage
+  still in view: XP per Pokémon, the catch (NEW when
   the species is new to the Pokédex), "Wild battles pay no ₽" when that is why no money came; **Home** and **Next
-  encounter** (what Home's CONTINUE would start). Versus ends on its own card in the panel: Victory / Defeat,
-  Rematch, Back to Versus.
-- **Versus** plays on auto; SKIP ▸▸ only fast-forwards the replay, since the result was recorded before it started.
+  encounter** (what Home's CONTINUE would start). Between a trainer's Pokémon, the card shows the trainer and the
+  sprite of the one about to come out. Versus ends on its own card in the panel: Victory / Defeat and Back to
+  Versus — once a fight is done, it's done (no rematch).
+- **Versus** plays on auto, to its end: no skip.
+- **The stage draws the forms the log has reached** (`Fx.dex`), not the state's: a Gigantamax still attacks as
+  itself (the revert comes after), and a trainer's Mega shows only once its scene has played. Mega Evolution and
+  Gigantamax play 1.6× faster in battle than drawn in the Visual Lab.
 
 ## 15. Day Care and Eggs
 
@@ -419,11 +437,11 @@ One Day Care for every region (docs/15-DAYCARE-BREEDING.md). The page (`src/scre
 - **The avatar opens the trainer card** (the drawer, titled "Trainer card"): a blue-framed card with "TRAINER CARD"
   and an ID number, your look at 2×, your name with Change, then Money, Pokédex, Best level, Areas, Shinies and your
   Versus record (or Locked) as a dotted list, and your team's icons with levels.
-- **Badge case** per region reached (`regionCases`): a navy case, each badge 12×12 pixel art at 3× (`BadgeIcon`:
+- **Badge case** per region reached (`regionCases`), on a friend's card only (yours is the count on the top bar): a navy case, each badge 12×12 pixel art at 3× (`BadgeIcon`:
   Kanto's are the lab's maps, other regions use the same shapes in their own colours), then the **crown**
   (`CrownIcon`) for clearing the region's last area. Unearned ones are grey at 40 % and their label says "not earned
   yet".
-- **Look**: "How other trainers see you…" with Change opening a radio grid of every look, grouped by region. The same
+- **Look**: "How other trainers see you…" with Change opening a radio grid of every look, in one block (no region headings); picking one closes it. The same
   crop (`TrainerLook`) is used wherever a trainer appears.
 - **The menu** under the card: rows with an icon tile, a label and a one-line description (Leaderboard, Versus with
   "0/3 at Lv.50" while locked, Settings, How to play, Type chart, Admin for admins, Cloud backup, Connect). The label

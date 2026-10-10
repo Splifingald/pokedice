@@ -25,6 +25,9 @@ interface Member {
  * Pokémon makes it hop and shows its card; the card (and the team list, for keyboards) opens its sheet. With calm
  * motion the team stands still. `children` sit on top of the scene (the area plate).
  */
+/** Two taps on the same Pokémon within this long open its sheet. */
+const DOUBLE_TAP_MS = 400
+
 export function SceneStage({
   area,
   team,
@@ -44,6 +47,7 @@ export function SceneStage({
   const front = useRef<HTMLCanvasElement>(null)
   const imgs = useRef<(HTMLImageElement | null)[]>([])
   const [card, setCard] = useState<{ uid: string; x: number; y: number } | null>(null)
+  const lastTap = useRef<{ uid: string; t: number } | null>(null)
 
   const members: Member[] = useMemo(
     () =>
@@ -90,10 +94,11 @@ export function SceneStage({
   const sprites = useMemo(() => members.map((m) => m.sprite), [members])
   useHerdLoop(herd, sprites, { still, back, front, imgs })
 
-  // The card hides itself after a moment.
+  // The card hides itself after a moment. It sits above the area plate (z 460): near the top of the scene the two
+  // overlap, and a tap on the card's name or HP must open the Pokémon, not the area.
   useEffect(() => {
     if (!card) return
-    const id = setTimeout(() => setCard(null), 3200)
+    const id = setTimeout(() => setCard(null), 5000)
     return () => clearTimeout(id)
   }, [card])
 
@@ -123,8 +128,15 @@ export function SceneStage({
         if ((e.target as HTMLElement).closest('button')) return
         const r = e.currentTarget.getBoundingClientRect()
         const hit = herd.hitTest(((e.clientX - r.left) / r.width) * W, ((e.clientY - r.top) / r.height) * H)
-        if (hit) poke(hit)
-        else setCard(null)
+        if (!hit) return setCard(null)
+        // A second tap on the same Pokémon soon after the first opens its sheet, like tapping its card.
+        const now = e.timeStamp
+        if (lastTap.current?.uid === hit.def.uid && now - lastTap.current.t < DOUBLE_TAP_MS) {
+          lastTap.current = null
+          return onOpen(hit.def.uid)
+        }
+        lastTap.current = { uid: hit.def.uid, t: now }
+        poke(hit)
       }}
     >
       <canvas
@@ -178,7 +190,7 @@ export function SceneStage({
           type="button"
           onClick={() => onOpen(shown.inst.id)}
           aria-label={t('ui.home.openMon', { name: shown.name })}
-          className="pixel-plate absolute z-[450] flex w-[170px] flex-col gap-1 px-2.5 pb-2 pt-1.5 text-left"
+          className="pixel-plate absolute z-[470] flex w-[170px] flex-col gap-1 px-2.5 pb-2 pt-1.5 text-left"
           style={{
             left: `clamp(6px, calc(${(card.x / W) * 100}% - 85px), calc(100% - 176px))`,
             top: `max(54px, calc(${((card.y - 8) / H) * 100}% - 70px))`,

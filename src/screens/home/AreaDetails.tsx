@@ -27,7 +27,7 @@ import { useGame } from '@/store/game'
 import { cx } from '@/theme/util'
 import { RoundGauge } from '../Area'
 import { levelText, useLevelSpan } from './AreaPlate'
-import { areaStatus, lockReason } from './areas'
+import { areaStatus, lockReason, playable } from './areas'
 import { AreaStrip } from '@/components/AreaStrip'
 
 /** Encounter kinds in the round mix: a colour each (the legend carries the words). */
@@ -75,7 +75,7 @@ function Fact({
 /**
  * An area's details, in a sheet: its gym and legendary (and when the legendary shows up), the one-time finds still
  * there, the Pokémon to catch with rarity, odds, levels and a caught mark, what a round brings, and what turns up any
- * time. The footer continues here, travels here, or says why it's locked.
+ * time. The footer continues here, travels here, or says why it's locked; a closed area has none.
  */
 export function AreaDetails({
   area,
@@ -85,16 +85,26 @@ export function AreaDetails({
 }: {
   area: Area | null
   onClose: () => void
-  onPlay: () => void
-  onTravel: (area: Area) => void
+  /** Without them (opened from the area itself, mid-run) the sheet is information only: no footer. */
+  onPlay?: () => void
+  onTravel?: (area: Area) => void
 }) {
+  const save = useGame((s) => s.save)
+  const data = useGame((s) => s.data)
+  // A closed area (a league area once every member is beaten: nothing left to meet) has no button at all.
+  const closed =
+    !!save &&
+    !!area &&
+    area.id !== save.currentAreaId &&
+    areaStatus(save, data, area) !== 'locked' &&
+    !playable(save, data, area)
   return (
     <Sheet
       open={!!area}
       onClose={onClose}
       title={area?.name ?? ''}
       sub={area ? <DetailsSub area={area} /> : null}
-      footer={area ? <DetailsFoot area={area} onPlay={onPlay} onTravel={onTravel} /> : null}
+      footer={area && onPlay && onTravel && !closed ? <DetailsFoot area={area} onPlay={onPlay} onTravel={onTravel} /> : null}
     >
       {area && <DetailsBody key={area.id} area={area} />}
     </Sheet>

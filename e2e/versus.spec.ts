@@ -84,11 +84,11 @@ test('fight a team: the result is recorded before the fight plays', async ({ pag
   // Then it plays on auto — no controls to take over — and ends on the result.
   await expect(page.getByText('AUTO-MODE')).toBeVisible()
   await expect(page.getByRole('button', { name: 'STOP' })).toHaveCount(0)
-  // The result is already written, so SKIP only fast-forwards the replay.
-  await page.getByRole('button', { name: 'Skip ▸▸' }).click()
-  await expect(page.getByText('VICTORY!')).toBeVisible({ timeout: 30_000 })
+  // It plays to its end: no SKIP, and once it's done there's no rematch.
+  await expect(page.getByRole('button', { name: 'Skip ▸▸' })).toHaveCount(0)
+  await expect(page.getByText('VICTORY!')).toBeVisible({ timeout: 90_000 })
   await expect(page.getByText("You beat Blue's team!")).toBeVisible()
-  await expect(page.getByRole('button', { name: 'Rematch' })).toBeEnabled()
+  await expect(page.getByRole('button', { name: 'Rematch' })).toHaveCount(0)
   await page.getByRole('button', { name: 'BACK TO VERSUS' }).click()
   await expect(page.getByRole('heading', { name: 'Versus' })).toBeVisible()
 

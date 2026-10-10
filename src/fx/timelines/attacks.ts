@@ -1,6 +1,7 @@
-// The attack timelines: Flamethrower, Hydro Pump, Razor Leaf, Thunderbolt and Psychic for those types, a generic
-// impact in the type's colour for the others, and the one-hit short version (Settings → Animations: short). Every
-// one plays either way: the stage speaks of attacker and target, so the foe's move flies right to left.
+// The attack timelines: Flamethrower, Hydro Pump, Razor Leaf, Thunderbolt and Psychic here (every other type's move
+// is in attacks-types.ts), a generic impact in the type's colour for typeless dice, and the one-hit short version
+// (Settings → Animations: short). Every one plays either way: the stage speaks of attacker and target, so the foe's
+// move flies right to left.
 import { fxSound } from '@/audio/sfx'
 import type { DieType, StatusKind } from '@/engine/types'
 import { STATUS_COLORS } from '@/theme/colors'
@@ -37,13 +38,13 @@ import {
   screenFlash,
   screenShake,
   Stage,
-  STEP,
   W,
   within,
   type Cue,
   type Fighters,
   type Timeline,
 } from '../timeline'
+import { moreTyped } from './attacks-types'
 
 const FIRE = ['#ffffff', '#fff6b8', '#ffe066', '#ffb23a', '#ff7a1e', '#e8481c', '#b02a1a', '#5a3030']
 const WATER = ['#ffffff', '#c8efff', '#8fd3ff', '#4aa8ff', '#1d5fc8']
@@ -62,7 +63,7 @@ export interface AttackParams extends Fighters {
 }
 
 /** The cues every attack shares: the hit landing, then the status. */
-function attackCues<S>(tHit: number, tStatus: number | null, extra: Cue<S>[]): Cue<S>[] {
+export function attackCues<S>(tHit: number, tStatus: number | null, extra: Cue<S>[]): Cue<S>[] {
   const c: Cue<S>[] = [[tHit, (hud) => hud.contact?.()], ...extra]
   if (tStatus != null)
     c.push([tStatus, (hud, s) => hud.status?.((s as unknown as Stage).by === 'own' ? 'foe' : 'own')])
@@ -70,12 +71,12 @@ function attackCues<S>(tHit: number, tStatus: number | null, extra: Cue<S>[]): C
 }
 
 /** Damage number over the target's head. */
-function damagePop(g: G, s: Stage, p: AttackParams, x: number, t: number, t0: number) {
+export function damagePop(g: G, s: Stage, p: AttackParams, x: number, t: number, t0: number) {
   if (p.damage != null) pop(g, `-${p.damage}`, x, s.tgt.at.y - s.tgt.size.h - 2, t, t0, '#ffd23a')
 }
 
 /** The status pops over the target as a flickering tint in its colour. */
-const statusTint = (p: AttackParams, t: number, t0: number) =>
+export const statusTint = (p: AttackParams, t: number, t0: number) =>
   p.status && t > t0 && t < t0 + 0.8 && Math.floor(t * 12) % 2 === 0
     ? { color: STATUS_COLORS[p.status], a: 0.35 }
     : null
@@ -515,6 +516,7 @@ function grassAnim(p: AttackParams): Timeline<Stage & { F: Point; T: Point; leav
     },
     step(s, t, dt) {
       if (!s.step(t, dt)) return
+      const at = s.passed(t)
       const r = s.r
       for (let i = 0; i < N; i++) {
         const L = s.leaves[i]!
@@ -541,7 +543,7 @@ function grassAnim(p: AttackParams): Timeline<Stage & { F: Point; T: Point; leav
             })
         }
       }
-      if (t >= SLASH && t < SLASH + STEP * 1.5)
+      if (at(SLASH))
         for (let k = 0; k < 9; k++)
           s.fx.add({
             x: s.T.x + r.range(-14, 14),
@@ -620,9 +622,10 @@ function electricAnim(p: AttackParams): Timeline<Stage & { P: Point; T: Point }>
     },
     step(s, t, dt) {
       if (!s.step(t, dt)) return
+      const at = s.passed(t)
       const r = s.r
       for (const t0 of STRIKES)
-        if (t >= t0 && t < t0 + STEP * 1.5)
+        if (at(t0))
           for (let k = 0; k < 12; k++) {
             const a = r() * Math.PI * 2
             const sp = r.range(40, 120)
@@ -743,8 +746,9 @@ function psychicAnim(p: AttackParams): Timeline<Stage & { S: Point[]; O: Point; 
     },
     step(s, t, dt) {
       if (!s.step(t, dt)) return
+      const at = s.passed(t)
       const r = s.r
-      if (t >= SLAM && t < SLAM + STEP * 1.5)
+      if (at(SLAM))
         for (let k = 0; k < 16; k++) {
           const a = (k / 16) * Math.PI * 2
           s.fx.add({
@@ -883,8 +887,9 @@ function impactAnim(
     },
     step(s, t, dt) {
       if (!s.step(t, dt)) return
+      const at = s.passed(t)
       const r = s.r
-      if (t >= s.tHit && t < s.tHit + STEP * 1.5)
+      if (at(s.tHit))
         for (let k = 0; k < (short ? 8 : 14); k++) {
           const a = r() * Math.PI * 2
           const sp = r.range(50, 130)
@@ -935,6 +940,8 @@ const TYPED: Partial<Record<DieType, (p: AttackParams) => Timeline<never>>> = {
   grass: grassAnim as never,
   electric: electricAnim as never,
   psychic: psychicAnim as never,
+  // Every other type's move lives in attacks-types.ts.
+  ...(moreTyped() as Partial<Record<DieType, (p: AttackParams) => Timeline<never>>>),
 }
 
 /** The timeline for one hit: the typed move when there is one, else the generic impact; short motion → one hit. */

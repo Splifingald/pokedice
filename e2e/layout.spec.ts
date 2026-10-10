@@ -75,7 +75,7 @@ function nonJerseyText(page: Page) {
   return page.evaluate(() =>
     Array.from(document.querySelectorAll<HTMLElement>('body *'))
       .filter((el) => Array.from(el.childNodes).some((n) => n.nodeType === Node.TEXT_NODE && n.textContent!.trim()) || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName))
-      .filter((el) => el.getClientRects().length > 0 && !/^"?Jersey (15|20)"?(,|$)/.test(getComputedStyle(el).fontFamily))
+      .filter((el) => el.getClientRects().length > 0 && !/^"?Jersey (15|25)"?(,|$)/.test(getComputedStyle(el).fontFamily))
       .map((el) => `${el.tagName} "${(el.textContent || '').trim().slice(0, 20)}": ${getComputedStyle(el).fontFamily}`)
       .slice(0, 10),
   )
@@ -168,8 +168,8 @@ test('the avatar drawer and the profile hold up at every size', async ({ page })
     expect(await nonJerseyText(page), `drawer at ${size.width}: fonts`).toEqual([])
     if (size.phone) expect(await smallControls(page), `drawer at ${size.width}: controls under 44px`).toEqual([])
 
-    // The trainer card is the drawer itself: the badge case is the densest thing it draws.
-    await expect(page.getByRole('heading', { name: 'Badge case' })).toBeVisible()
+    // The trainer card is the drawer itself.
+    await expect(page.getByRole('dialog', { name: 'Trainer card' })).toBeVisible()
     await settled(page)
     expect(await nonJerseyText(page), `profile at ${size.width}: fonts`).toEqual([])
     if (size.phone) expect(await smallControls(page), `profile at ${size.width}: controls under 44px`).toEqual([])

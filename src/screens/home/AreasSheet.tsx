@@ -20,6 +20,8 @@ import { Sheet } from '@/components/Sheet'
 import { MiniSprite } from '@/components/SpriteImg'
 import { TypeBadge } from '@/components/TypeBadge'
 import { useGame } from '@/store/game'
+import { SCENE_W } from '@/fx/areaArt'
+import { regionPicture } from '@/fx/regionArt'
 import { availableRegions, regionOnOffer, startRegion, switchRegion } from '@/store/regions'
 import { cx } from '@/theme/util'
 import { levelText, useLevelSpan } from './AreaPlate'
@@ -28,6 +30,7 @@ import {
   areaSpecies,
   areaStatus,
   lockReason,
+  playable,
   regionAreaList,
   regionSummary,
   type AreaStatus,
@@ -67,6 +70,8 @@ function AreaCard({
   const left = species.filter((d) => !save.pokedex.includes(d))
   const hits = areaSearch(area, data, query).hits
   const locked = st === 'locked'
+  // Nothing left to meet (a league area, every member beaten): no GO that would go nowhere.
+  const closed = !locked && st !== 'here' && !playable(save, data, area)
   const why = locked ? lockReason(save, data, area) : ''
   const words: Record<AreaStatus, string> = {
     here: t('ui.home.st.here'),
@@ -149,7 +154,7 @@ function AreaCard({
         >
           <PixelIcon name="lock" size={16} />
         </span>
-      ) : (
+      ) : closed ? null : (
         <button
           type="button"
           onClick={onGo}
@@ -167,13 +172,17 @@ function AreaCard({
   )
 }
 
-/** A region the player has reached: its picture, areas, catches and badges. Tapping it moves there. */
-function RegionCard({ region, onBack }: { region: Region; onBack: () => void }) {
+/**
+ * A region the player has reached: its picture, areas, catches and badges, and GO. Tapping it moves there and closes
+ * the sheet (the region you're in just closes it).
+ */
+function RegionCard({ region, onDone }: { region: Region; onDone: () => void }) {
   const { t } = useT()
   const save = useGame((s) => s.save)!
   const data = useGame((s) => s.data)
   const here = regionOf(save) === region.id
   const first = regionAreas(data, region.id)[0]
+  const picture = regionPicture(region.id)
   const species = regionSpecies(data, region.id)
   const dex = new Set(here ? save.pokedex : (save.parked?.[region.id]?.pokedex ?? []))
   const caught = [...species].filter((d) => dex.has(d)).length
@@ -184,7 +193,7 @@ function RegionCard({ region, onBack }: { region: Region; onBack: () => void }) 
   return (
     <button
       type="button"
-      onClick={() => (here ? onBack() : switchRegion(region.id))}
+      onClick={() => (here || switchRegion(region.id)) && onDone()}
       aria-label={label}
       className={cx(
         'grid w-full gap-1.5 bg-paper px-1.5 pb-2.5 pt-1.5 text-left',
@@ -193,10 +202,29 @@ function RegionCard({ region, onBack }: { region: Region; onBack: () => void }) 
           : 'shadow-card',
       )}
     >
-      {first && <AreaStrip area={first} className="h-auto w-full" />}
+      {picture ? (
+        <img
+          src={picture.url}
+          alt=""
+          width={400}
+          height={78}
+          className="pixelated h-auto w-full object-cover"
+          // A banner, cut like the areas' strips (AreaStrip, 288 × 56), on the region's landmark.
+          style={{ imageRendering: 'pixelated', aspectRatio: `${SCENE_W} / 56`, objectPosition: `50% ${picture.focus}%` }}
+        />
+      ) : (
+        first && <AreaStrip area={first} className="h-auto w-full" />
+      )}
       <span className="flex items-center gap-2 px-1">
         <b className="flex-1 text-[24px] font-normal leading-none">{region.name}</b>
         {here && <Chip tone="red">{t('ui.dex.youAreHere')}</Chip>}
+        {/* The whole card is the button; GO says so. */}
+        <span
+          aria-hidden
+          className="pixel-btn frame-primary grid h-11 w-[60px] shrink-0 place-items-center text-[24px] uppercase leading-none tracking-[0.06em]"
+        >
+          {t('ui.home.go')}
+        </span>
       </span>
       <span className="flex flex-wrap items-center gap-x-3 gap-y-1 px-1 font-pixel-sm text-[15px] text-muted">
         <span>{t('ui.home.regionAreas', { n: regionAreaList(data, region.id).length })}</span>
@@ -435,7 +463,14 @@ export function AreasSheet({
       ) : (
         <div className="flex flex-col gap-3 pt-1">
           {regions.map((r) => (
-            <RegionCard key={r.id} region={r} onBack={() => setView('areas')} />
+            <RegionCard
+              key={r.id}
+              region={r}
+              onDone={() => {
+                setView('areas')
+                onClose()
+              }}
+            />
           ))}
           {offer ? (
             <OfferCard region={offer} onStarted={onClose} />
