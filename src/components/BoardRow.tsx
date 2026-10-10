@@ -3,6 +3,7 @@
 // the end. A friend's row is sky blue with a blue edge, and can open their card.
 import type { ReactNode, Ref } from 'react'
 import { useT } from '@/i18n/react'
+import { useMediaQuery } from '@/lib/useMediaQuery'
 import { useGame } from '@/store/game'
 import { cx } from '@/theme/util'
 import { FriendTag } from './friends/FriendBits'
@@ -57,7 +58,11 @@ export function TeamIcons({
   const { t } = useT()
   const species = useGame((s) => s.data.species)
   return (
-    <ul className="m-0 flex list-none items-center p-0" aria-label={t('ui.board.theirTeam', { name: owner })}>
+    // Spaced (a board row): a long team wraps to a second line rather than pushing the row past a phone's width.
+    <ul
+      className={cx('m-0 flex min-w-0 list-none items-center p-0', spaced && 'flex-wrap')}
+      aria-label={t('ui.board.theirTeam', { name: owner })}
+    >
       {team.map((m, i) => {
         const label = t('ui.board.monTitle', {
           name: species[m.dex]?.name ?? t('ui.common.pokemon'),
@@ -126,6 +131,7 @@ export function BoardRow({
   children?: ReactNode
 }) {
   const { t } = useT()
+  const wide = useMediaQuery('(min-width: 640px)')
   return (
     <li
       ref={rowRef}
@@ -163,8 +169,9 @@ export function BoardRow({
           )}
           {isFriend && !isMe && <FriendTag />}
         </b>
-        {/* Half again as big as elsewhere, and spaced out: the team is what a row is read for. */}
-        <TeamIcons team={team} owner={name} size={48} spaced />
+        {/* Half again as big as elsewhere, and spaced out: the team is what a row is read for (a little smaller on
+            phones, where the row has no room to spare). */}
+        <TeamIcons team={team} owner={name} size={wide ? 48 : 38} spaced />
         {sub}
       </span>
       {children ??
