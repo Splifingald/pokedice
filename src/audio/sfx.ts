@@ -198,8 +198,13 @@ export function hiss(dur: number, { vol = 0.08, at = 0, freq = 1200, q = 0.8, sl
   s.start(t0)
 }
 
-/** The Pokémon Center's six-beat jingle, and the evolution and hatching fanfares. */
-const CENTER_MELODY = [523, 659, 784, 659, 880, 1047]
+/**
+ * The Pokémon Center's jingle, the games' own heal tune read off a recording: "ding-dong" three times, then the high
+ * note held (B5 G♯5 B5 G♯5 B5 G♯5 E6), each with the harmony under it (E5, G♯4, and E4 under the last). Then the
+ * evolution and hatching fanfares.
+ */
+const CENTER_MELODY = [988, 831, 988, 831, 988, 831, 1319]
+const CENTER_HARMONY = [659, 415, 659, 415, 659, 415, 330]
 const EVOLVE_FANFARE = [523, 659, 784, 1047, 784, 1047]
 const HATCH_FANFARE = [784, 988, 1175, 1568]
 
@@ -242,11 +247,13 @@ const FX_SOUNDS = {
   },
   'ball.pop': () => tone(700, 0.15, { vol: 0.04, slide: 500 }),
   'center.place': (n = 0) => tone(660 + n * 70, 0.06, { vol: 0.03 }),
+  // 8-bit: a square lead over a triangle harmony, a short attack, the last note held.
   'center.note': (n = 0) => {
-    const f = CENTER_MELODY[n % CENTER_MELODY.length]!
-    const long = n === CENTER_MELODY.length - 1
-    tone(f, long ? 0.6 : 0.2, { type: 'square', vol: 0.05 })
-    tone(f / 2, long ? 0.6 : 0.2, { type: 'triangle', vol: 0.05 })
+    const i = n % CENTER_MELODY.length
+    const long = i === CENTER_MELODY.length - 1
+    tone(CENTER_MELODY[i]!, long ? 0.7 : 0.22, { type: 'square', vol: 0.05, attack: 0.004 })
+    tone(CENTER_HARMONY[i]!, long ? 0.7 : 0.22, { type: 'triangle', vol: 0.07, attack: 0.004 })
+    if (long) tone(988, 0.7, { type: 'square', vol: 0.025, attack: 0.004 })
   },
   'evolve.white': () => tone(392, 0.4, { type: 'triangle', vol: 0.05, slide: 200 }),
   'evolve.touch': () => tone(1319, 0.2, { type: 'square', vol: 0.04 }),

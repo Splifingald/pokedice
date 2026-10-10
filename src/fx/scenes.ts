@@ -10,6 +10,7 @@ import {
   rect,
   rng,
   shade,
+  canvas,
   softEllipse,
   clamp,
   type Canvas,
@@ -325,6 +326,44 @@ export const SLOTS: readonly (readonly [number, number])[] = [
   [120, 93],
   [138, 93],
 ]
+
+/**
+ * The Pokémon Center's picture (public/backgrounds/pokemon-center.png, 240 × 160, from the Visual Lab's prompt): the
+ * room the healing plays in. Its machine's three empty slots are SLOTS, its light strip and wall screen are where
+ * CENTER_ART says, and the counter's top edge is at `counterY`. The drawn room (`center`) stands in until it loads.
+ */
+export const CENTER_ART = {
+  url: '/backgrounds/pokemon-center.png',
+  /** The counter's top edge: what stands behind it is hidden below this line. */
+  counterY: 103,
+  /** The light strip on top of the machine. */
+  strip: [104, 81, 32, 3] as const,
+  /** The wall screen's dark inside: x0, y0, x1, y1. */
+  screen: [27, 28, 71, 51] as const,
+  /** Where Chansey stands, behind the counter's low middle (the raised end begins at x 203). */
+  nurseX: 178,
+}
+let centerArt: Canvas | null = null
+let centerArtLoad: Promise<void> | null = null
+/** Loads the Center's picture once; resolves either way (a failed load keeps the drawn room). */
+export function loadCenterArt(): Promise<void> {
+  if (typeof Image === 'undefined') return Promise.resolve()
+  return (centerArtLoad ??= new Promise<void>((res) => {
+    const im = new Image()
+    im.onload = () => {
+      const c = canvas(im.naturalWidth, im.naturalHeight)
+      c.g.imageSmoothingEnabled = false
+      c.g.drawImage(im, 0, 0)
+      centerArt = c
+      res()
+    }
+    im.onerror = () => res()
+    im.src = CENTER_ART.url
+  }))
+}
+/** The Center's room as it stands: the picture once loaded, the drawn room until then. */
+export const centerRoom = (W: number, H: number): { cv: Canvas; art: boolean } =>
+  centerArt ? { cv: centerArt, art: true } : { cv: center(W, H), art: false }
 
 export function center(W: number, H: number): Canvas {
   return cached(`center|daybreak|${W}|${H}`, () => {
