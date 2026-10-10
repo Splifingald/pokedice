@@ -136,7 +136,11 @@ function TeamChoice() {
   const name = data.species[caught.dex]?.name
   return (
     <div className="mt-3 flex flex-col gap-2">
-      <div className="text-2xl">{t('ui.victory.addToTeam', { name: name ?? '' })}</div>
+      {/* The cycling arrow: a swap, here and on each card. */}
+      <div className="flex items-center gap-2 text-2xl">
+        <PixelIcon name="reroll" size={20} />
+        {t('ui.victory.addToTeam', { name: name ?? '' })}
+      </div>
       <ul className="grid grid-cols-3 gap-2">
         {teamOf(save).map((p) => {
           const species = data.species[p.dex]
@@ -153,7 +157,10 @@ function TeamChoice() {
                 <span className="w-full truncate text-lg leading-none">{species?.name}</span>
                 <span className="text-base leading-none text-muted">{t('ui.common.level.short', { n: p.level })}</span>
                 <HpBar hp={p.currentHp} max={stats.maxHp} className="w-full" height={6} />
-                <span className="text-base leading-none">{t('ui.victory.swapOut')}</span>
+                <span className="inline-flex items-center gap-1 text-base leading-none">
+                  <PixelIcon name="reroll" size={14} />
+                  {t('ui.victory.swapOut')}
+                </span>
               </button>
             </li>
           )

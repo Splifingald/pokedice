@@ -18,7 +18,7 @@ import { EggSprite } from '@/components/EggSprite'
 import { PixelIcon } from '@/components/icons'
 import { MiniSprite } from '@/components/SpriteImg'
 import { isSupabaseConfigured } from '@/lib/supabase'
-import { opponentsOf, versusBoardCached, type VersusEntry } from '@/lib/versus'
+import { versusBoardCached, type VersusEntry } from '@/lib/versus'
 import { pushToast, useGame } from '@/store/game'
 import { useNow } from '@/store/hooks'
 import { cx } from '@/theme/util'
@@ -201,8 +201,11 @@ function DayCareWidget() {
 }
 
 /** Versus: locked (how close the team is), open (set a team), then teams to beat and defense wins. */
+/** The Versus widget's banner: Galar's stadium under its floodlights (public/region-art). */
+const VS_BANNER = '/region-art/galar.png'
+
 function VersusWidget() {
-  const { t } = useT()
+  const { t, tPlural } = useT()
   const navigate = useNavigate()
   const save = useGame((s) => s.save)!
   const data = useGame((s) => s.data)
@@ -253,47 +256,53 @@ function VersusWidget() {
   }
   const me = board?.find((r) => r.isMe)
   const set = !!me?.team.length
-  const toBeat = board ? opponentsOf(board).filter((r) => !r.beaten).length : null
-  const vs = (
-    <span
-      className="ml-auto text-[22px] leading-none text-gold [text-shadow:0_2px_0_#c4382a,2px_0_0_#c4382a]"
-      aria-hidden
-    >
-      VS
-    </span>
-  )
+  // The team on the board (the three chosen for Versus), or the party until one is set.
+  const shown = set ? me!.team : teamOf(save).map((p) => ({ dex: p.dex, level: p.level, shiny: p.shiny }))
   return (
     <Widget
       title={t('ui.versus.title')}
       tag={
         set ? (
-          <span className="text-[14px]">
-            {t(`ui.versus.defenseWins.${me!.defenseWins === 1 ? 'one' : 'other'}`, {
-              count: me!.defenseWins,
-            })}
+          // Attack wins (sword) / defense wins (shield).
+          <span
+            className="inline-flex items-center gap-1 text-[15px] leading-none"
+            aria-label={`${tPlural('ui.versus.wins', me!.attackWins)} · ${tPlural('ui.versus.defenseWins', me!.defenseWins)}`}
+          >
+            {me!.attackWins}
+            <PixelIcon name="sword" size={14} />
+            <span className="text-muted">/</span>
+            {me!.defenseWins}
+            <PixelIcon name="shield" size={14} />
           </span>
         ) : (
           <NewTag />
         )
       }
-      label={
-        set && toBeat != null
-          ? t('ui.home.vsSetLabel', { n: toBeat, wins: me!.defenseWins })
-          : t('ui.home.vsOpenLabel')
-      }
+      label={set ? t('ui.home.vsSetLabel', { wins: me!.defenseWins, n: me!.attackWins }) : t('ui.home.vsOpenLabel')}
       onClick={() => navigate('/versus')}
     >
-      <span className="flex min-h-[30px] w-full items-center">
-        {team}
-        {vs}
+      {/* A stadium under its floodlights as the banner, the team big on it and a bold VS. */}
+      <span className="relative block w-full overflow-hidden leading-[0] shadow-halo">
+        <img
+          src={VS_BANNER}
+          alt=""
+          className="pixelated block h-auto w-full object-cover"
+          style={{ imageRendering: 'pixelated', aspectRatio: '288 / 96', objectPosition: '50% 55%' }}
+        />
+        <span className="absolute inset-x-1 bottom-0 flex items-end" aria-hidden>
+          {shown.slice(0, VERSUS_TEAM_SIZE).map((m, i) => (
+            <MiniSprite key={i} dex={m.dex} size={44} className="-mx-2.5 -mb-1.5 first:ml-0" />
+          ))}
+        </span>
+        <span
+          className="absolute right-2 top-1/2 -translate-y-1/2 text-[40px] leading-none text-gold [text-shadow:0_3px_0_#c4382a,3px_0_0_#c4382a,-2px_0_0_#24304f,0_-2px_0_#24304f]"
+          aria-hidden
+        >
+          VS
+        </span>
       </span>
-      <span className="text-[20px] leading-none">
-        {set && toBeat != null
-          ? t(`ui.home.vsToBeat.${toBeat === 1 ? 'one' : 'other'}`, { n: toBeat })
-          : t('ui.home.vsOpen')}
-      </span>
-      <span className="flex w-full items-center justify-between gap-1.5">
-        <span className="font-pixel-sm text-[15px] leading-none text-muted">{t('ui.home.vsAuto')}</span>
+      {!set && <span className="text-[18px] leading-tight">{t('ui.home.vsOpen')}</span>}
+      <span className="flex w-full justify-end">
         <span className="bg-crimson px-2 pb-1.5 pt-1 text-[17px] leading-none text-white shadow-ring">
           {set ? t('ui.home.vsFight') : t('ui.home.vsSetTeam')}
         </span>
