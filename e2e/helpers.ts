@@ -20,8 +20,10 @@ export function gameData() {
 
 export function makeSave(starter: number, patch: Partial<SaveData> = {}): SaveData {
   let c = 0
-  // Prof. Oak's leaderboard pop-up would cover every screen of a fresh save.
-  return { ...newSave(starter, gameData(), Date.now(), () => `e2e-${++c}`), leaderboardVisited: true, ...patch }
+  const save = newSave(starter, gameData(), Date.now(), () => `e2e-${++c}`)
+  // Prof. Oak's leaderboard pop-up would cover every screen of a fresh save. Quiet, as tests have always run: no
+  // cries asked of Showdown unless a test turns sound on.
+  return { ...save, settings: { ...save.settings, sfx: false, sound: false }, leaderboardVisited: true, ...patch }
 }
 
 /** The save with its region's first gym badge won: the leaderboard stays locked until then. */
@@ -112,4 +114,4 @@ export function fakeSession() {
 }
 
 export const STORAGE_KEY = 'sb-127-auth-token'
-export const FAST = JSON.stringify({ sfx: false, reducedMotion: true })
+export const FAST = JSON.stringify({ sfx: false, sound: false, reducedMotion: true })

@@ -74,6 +74,7 @@ export const saveSchema = z.object({
   areaProgress: z.record(progressSchema),
   settings: z.object({
     sfx: z.boolean(),
+    sound: z.boolean().optional(),
     reducedMotion: z.boolean(),
     animations: z.enum(['full', 'short']).optional(),
     multiExp: z.boolean().default(true),

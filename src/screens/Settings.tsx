@@ -18,7 +18,7 @@ import { useIsAdmin } from '@/store/hooks'
 import { checkContent, providerName } from '@/store/sync'
 import { AccountButton, ConnectedAccounts, DisconnectButton } from '@/components/AccountButton'
 import { SaveFacts } from '@/components/SyncConflictModal'
-import { backupSave, readBackups } from '@/save/storage'
+import { backupSave, readBackups, soundOn } from '@/save/storage'
 
 export function SettingsScreen() {
   const { t } = useT()
@@ -70,10 +70,10 @@ export function SettingsScreen() {
 
       <Panel title={t('ui.settings.game')}>
         <Toggle
-          label={t('ui.settings.sfx')}
-          hint={t('ui.settings.sfxHint')}
-          on={settings.sfx}
-          onChange={(v) => setSettings({ sfx: v })}
+          label={t('ui.settings.sound')}
+          hint={t('ui.settings.soundHint')}
+          on={soundOn(settings)}
+          onChange={(v) => setSettings({ sound: v, sfx: v })}
         />
         <Toggle
           label={t('ui.settings.multiExp')}

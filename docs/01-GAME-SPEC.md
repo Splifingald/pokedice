@@ -528,9 +528,9 @@ Validated with Zod on load; a failure falls back to a fresh save and archives th
 - `prefers-reduced-motion` and the in-game setting collapse everything to instant transitions.
 - Layout: desktop = fixed 3-panel battle scene (enemy top-right, player bottom-left, dice tray along the bottom). Mobile stacks to one column with the tray pinned to the bottom safe area. Minimum width 360 px.
 
-### 10.2 Audio — SFX only, off by default
+### 10.2 Audio — SFX and cries, on by default
 
-~10 short CC0 8-bit samples, total under 300 KB: dice rattle, dice land, hit, super-effective, faint, level-up, catch, gold, button, error. **Muted by default** (browsers block autoplay anyway) with a clear toggle in the HUD and in Settings. No music in v1.
+8-bit sound effects synthesised at runtime (dice rattle, dice land, hit, super-effective, faint, level-up, catch, gold, button, error, and the animation cues), plus the Pokémon cries from Pokémon Showdown's CDN (battle entrances, Megas with a cry of their own, a button on a Pokémon's sheet). **One Sound switch in Settings, on by default.** No music in v1. Details in `13-SHOWDOWN-SPRITES.md` → Cries and `15-UI-GUIDELINES.md` §9.
 
 ---
 

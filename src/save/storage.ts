@@ -15,7 +15,13 @@ export type AnimationLevel = 'full' | 'short'
 export type ThemeSetting = 'light' | 'dark' | 'auto'
 
 export interface Settings {
+  /**
+   * Sound before `sound` covered the cries: the 8-bit effects only, off by default. Kept in step with `sound` for a
+   * tab still running an older build; nothing reads it any more (`soundOn`).
+   */
   sfx: boolean
+  /** Sound: the 8-bit effects and the Pokémon cries. Unset = on, so it is on for saves from before it too. */
+  sound?: boolean
   /** No animations at all: every timeline jumps to its end. An admin-only switch. */
   reducedMotion: boolean
   /** Full or short animations, the player's choice. Unset = full. */
@@ -31,7 +37,10 @@ export interface Settings {
   /** Light, dark or the device's. Unset = light. */
   theme?: ThemeSetting
 }
-export const DEFAULT_SETTINGS: Settings = { sfx: false, reducedMotion: false, multiExp: true }
+export const DEFAULT_SETTINGS: Settings = { sfx: true, sound: true, reducedMotion: false, multiExp: true }
+
+/** Whether the game makes any sound: one switch for the effects and the cries. */
+export const soundOn = (s: Pick<Settings, 'sound'>) => s.sound !== false
 
 function storage(): Storage | null {
   try {
@@ -101,7 +110,8 @@ export function readSettings(): Settings {
     if (!raw) return { ...DEFAULT_SETTINGS, lang: detectLang() }
     const s = JSON.parse(raw) as Partial<Settings>
     return {
-      sfx: !!s.sfx,
+      sfx: soundOn(s),
+      sound: soundOn(s),
       reducedMotion: !!s.reducedMotion,
       animations: s.animations === 'short' ? 'short' : 'full',
       multiExp: s.multiExp !== false,

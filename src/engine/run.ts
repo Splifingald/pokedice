@@ -60,7 +60,7 @@ export function newSave(starterDex: number, data: GameData, now: number, newId: 
     dieLevels,
     currentAreaId: linearAreas(data, data.regions[0]?.id)[0]?.id ?? data.areas[0]?.id ?? '',
     areaProgress: {},
-    settings: { sfx: false, reducedMotion: false, multiExp: true },
+    settings: { sfx: true, sound: true, reducedMotion: false, multiExp: true },
     hpScale: data.config.hpMultiplier,
     // A new game starts in the first region, with none parked behind it.
     region: data.regions[0]?.id ?? KANTO,

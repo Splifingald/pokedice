@@ -1,8 +1,8 @@
 /**
  * Showdown sprites: one source, Pokémon Showdown, for every Pokémon and trainer picture (docs/13-SHOWDOWN-SPRITES.md).
  *
- * `pnpm showdown-sprites [pokemon] [icons] [trainers]` (all three when none is named). Every download is cached under
- * scripts/.cache/showdown, misses included, so a re-run is offline.
+ * `pnpm showdown-sprites [pokemon] [icons] [cries] [trainers]` (all four when none is named). Every download is cached
+ * under scripts/.cache/showdown, misses included, so a re-run is offline.
  *
  * - `pokemon`: per species and form, the pixel-art animated GIF of each view (`gen5ani`, `gen5ani-back`, `-shiny`,
  *   `-back-shiny`: Black/White's animated sprites, and the community's in that style after #649), or Showdown's static
@@ -14,6 +14,9 @@
  * - `icons`: Showdown's menu icon sheet (pokemonicons-sheet.png, 40×30 icons, 390 KB) copied as it is to
  *   src/assets/pokemon-icons.png — one request for every icon in the game, cached for a year by its hashed name — and
  *   each dex's cell in it, by Showdown's own rule.
+ * - `cries`: which of Showdown's cries (`audio/cries/<id>.mp3`) exist, checked with a HEAD request each. The game
+ *   plays them from Showdown's CDN, nothing is copied. A form without a cry of its own gets its base species' as `c`
+ *   in src/data/showdown-sprites.json, so the game never asks for a cry that isn't there.
  * - `trainers`: downloads Showdown's 80×80 trainer sprite for every Kanto–Unova class and character (TRAINERS below;
  *   Kalos onward came from Showdown already, see region-trainers.ts) over the files in public/, then packs every
  *   sprite the game refers to into one sheet per region (src/assets/trainers/<region>.png) and writes their cells to
@@ -33,6 +36,7 @@ import {
   ICON_COLS,
   ICON_H,
   ICON_W,
+  SHOWDOWN_CRIES,
   SHOWDOWN_SPRITES,
   SHOWDOWN_VIEWS,
   TRAINER_CELL,
@@ -70,6 +74,30 @@ async function fetchCached(url: string, file: string): Promise<Buffer | null> {
       const buf = Buffer.from(await res.arrayBuffer())
       await writeFile(file, buf)
       return buf
+    } catch (err) {
+      lastErr = err
+      await new Promise((r) => setTimeout(r, 300 * 2 ** attempt))
+    }
+  }
+  throw lastErr
+}
+
+/** Whether `url` exists (a HEAD request), or the answer cached in `file` (`<file>.ok` or `<file>.404`). */
+async function existsCached(url: string, file: string): Promise<boolean> {
+  if (existsSync(`${file}.ok`)) return true
+  if (existsSync(`${file}.404`)) return false
+  await mkdir(path.dirname(file), { recursive: true })
+  let lastErr: unknown
+  for (let attempt = 0; attempt < 5; attempt++) {
+    try {
+      const res = await fetch(url, { method: 'HEAD' })
+      if (res.status === 404) {
+        await writeFile(`${file}.404`, '')
+        return false
+      }
+      if (!res.ok) throw new Error(`${res.status} ${res.statusText} for ${url}`)
+      await writeFile(`${file}.ok`, '')
+      return true
     } catch (err) {
       lastErr = err
       await new Promise((r) => setTimeout(r, 300 * 2 ** attempt))
@@ -398,6 +426,8 @@ async function buildPokemon(entries: Record<string, ShowdownEntry>) {
       id,
       v: kinds.join(''),
       i: entries[dex]?.i ?? 0,
+      // The cries step owns `c`; it re-checks it whenever it runs (after this step when both do).
+      ...(entries[dex]?.c !== undefined && entries[dex]?.id === id && { c: entries[dex]!.c }),
       ...(f && { f }),
       ...(b && { b }),
       ...(fs && !sameBox(fs, f) && { fs }),
@@ -409,6 +439,37 @@ async function buildPokemon(entries: Record<string, ShowdownEntry>) {
   )
   for (const r of results)
     if (r.kinds.includes('-')) console.log(`  no Showdown sprite: #${r.dex} ${r.id} ${r.kinds.join('')}`)
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Cries
+
+async function buildCries(entries: Record<string, ShowdownEntry>) {
+  const has = (id: string) =>
+    existsCached(`${SHOWDOWN_CRIES}/${id}.mp3`, path.join(CACHE, 'cries', `${id}.mp3`))
+  const list = Object.values(entries)
+  const own = await pool(list, 16, (e) => has(e.id))
+  const counts = { own: 0, base: 0, none: 0 }
+  for (const [n, e] of list.entries()) {
+    delete e.c
+    if (own[n]) {
+      counts.own++
+      continue
+    }
+    // Showdown's ids are the base species' id, then `-` and the forme: a form without a cry sounds like its species.
+    const base = e.id.split('-')[0]!
+    if (base !== e.id && (await has(base))) {
+      e.c = base
+      counts.base++
+    } else {
+      e.c = ''
+      counts.none++
+      console.log(`  no Showdown cry: ${e.id}`)
+    }
+  }
+  console.log(
+    `Cries: ${counts.own} of their own, ${counts.base} forms with their species' cry, ${counts.none} none`,
+  )
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -870,15 +931,16 @@ async function buildTrainers() {
 
 async function main() {
   const args = process.argv.slice(2)
-  const steps = args.length ? args : ['pokemon', 'icons', 'trainers']
+  const steps = args.length ? args : ['pokemon', 'icons', 'cries', 'trainers']
   for (const s of steps)
-    if (!['pokemon', 'icons', 'trainers'].includes(s)) throw new Error(`Unknown step: ${s}`)
+    if (!['pokemon', 'icons', 'cries', 'trainers'].includes(s)) throw new Error(`Unknown step: ${s}`)
   const entries: Record<string, ShowdownEntry> = existsSync(SPRITES_JSON)
     ? JSON.parse(await readFile(SPRITES_JSON, 'utf8'))
     : {}
   if (steps.includes('pokemon')) await buildPokemon(entries)
   if (steps.includes('icons')) await buildIcons(entries)
-  if (steps.includes('pokemon') || steps.includes('icons')) {
+  if (steps.includes('cries')) await buildCries(entries)
+  if (steps.some((s) => s !== 'trainers')) {
     const sorted = Object.fromEntries(Object.entries(entries).sort(([a], [b]) => Number(a) - Number(b)))
     await writeFile(SPRITES_JSON, `${JSON.stringify(sorted)}\n`)
   }

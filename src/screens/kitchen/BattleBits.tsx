@@ -69,6 +69,7 @@ export function BattleBits() {
     fly: null,
     scene: null,
     chip: null,
+    cry: null,
   }
   return (
     <>

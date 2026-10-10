@@ -2,6 +2,8 @@
 // Shared by the components and by scripts/showdown-sprites.ts, which writes the tables these read.
 
 export const SHOWDOWN_SPRITES = 'https://play.pokemonshowdown.com/sprites'
+/** Showdown's cries, one MP3 per Pokémon (`<id>.mp3`), loaded straight from its CDN like the sprites. */
+export const SHOWDOWN_CRIES = 'https://play.pokemonshowdown.com/audio/cries'
 
 /** A sprite's views, in the order `ShowdownEntry.v` lists them. */
 export const SHOWDOWN_VIEWS = ['front', 'back', 'front-shiny', 'back-shiny'] as const
@@ -48,7 +50,15 @@ export interface ShowdownEntry {
   /** The shiny views' boxes, only where they differ from the plain ones. */
   fs?: ShowdownBox
   bs?: ShowdownBox
+  /**
+   * The cry to play, only where it isn't `id`'s own: the base species' (`vulpix` for `vulpix-alola`) for a form
+   * Showdown has no cry of its own for, or '' when it has none at all.
+   */
+  c?: string
 }
+
+/** The cry file's id for an entry, or null when Showdown has no cry for it. */
+export const cryId = (e: ShowdownEntry): string | null => (e.c === undefined ? e.id : e.c || null)
 
 /** The icon sheet (src/assets/pokemon-icons.png): Showdown's own, 40×30 menu icons, ICON_COLS to a row. */
 export const ICON_W = 40

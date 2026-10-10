@@ -9,7 +9,8 @@ upgrades, and the goal is 151/151 in the Pokédex.
 > animated Pokémon load from its sprite server, its menu icons and trainer sprites are bundled (credits in
 > [docs/13](docs/13-SHOWDOWN-SPRITES.md#credits)). The offline fallback sprites come from the public
 > [PokeAPI sprites](https://github.com/PokeAPI/sprites) repository. Area banners and trainer badges are original,
-> generated pixel art; sound effects are synthesised at runtime. Made by Splifingald.
+> generated pixel art; sound effects are synthesised at runtime, and the Pokémon cries load from Showdown's audio
+> server. Made by Splifingald.
 
 The design lives in [`docs/`](docs): [game spec](docs/01-GAME-SPEC.md) · [data model](docs/02-DATA-MODEL.md) ·
 [build plan](docs/03-BUILD-PLAN.md) · [Sinnoh plan](docs/07-SINNOH-PLAN.md) · [Unova plan](docs/08-UNOVA-PLAN.md) · [Gen 6–9 plan](docs/11-GEN6-9-REGIONS-PLAN.md) ·

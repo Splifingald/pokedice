@@ -1,5 +1,6 @@
 // 8-bit SFX synthesised at runtime with WebAudio — zero bytes of samples, original by construction.
-// Muted by default; browsers block audio until a user gesture anyway.
+// Off until App applies the player's sound setting (settings.sound, on by default); browsers block audio until a user
+// gesture anyway.
 
 export type SfxName =
   | 'rattle'
@@ -140,7 +141,7 @@ export function sfx(name: SfxName) {
 
 // ---------------------------------------------------------------------------------------------------------------------
 // The animation cues (src/fx timelines): each one a named sound built from two primitives, a tone and a filtered
-// noise burst, scheduled `at` seconds ahead. Same switch as every other sound (`settings.sfx`).
+// noise burst, scheduled `at` seconds ahead. Same switch as every other sound (`settings.sound`).
 
 interface ToneOpts {
   type?: OscillatorType
