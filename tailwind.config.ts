@@ -38,13 +38,13 @@ export default {
       },
       fontFamily: {
         // Jersey only, everywhere (sans/serif/mono included so no utility or preflight default reaches a system font),
-        // then the pixel CJK face for Japanese, Korean and Chinese characters (src/index.css). Jersey 20 for titles,
+        // then the pixel CJK face for Japanese, Korean and Chinese characters (src/index.css). Jersey 25 for titles,
         // names, buttons and most text; Jersey 15 for labels, numbers and paragraphs.
-        pixel: ['"Jersey 20"', '"Jersey 15"', 'var(--font-cjk)'],
-        'pixel-sm': ['"Jersey 15"', '"Jersey 20"', 'var(--font-cjk)'],
-        sans: ['"Jersey 20"', '"Jersey 15"', 'var(--font-cjk)'],
-        serif: ['"Jersey 20"', '"Jersey 15"', 'var(--font-cjk)'],
-        mono: ['"Jersey 15"', '"Jersey 20"', 'var(--font-cjk)'],
+        pixel: ['"Jersey 25"', '"Jersey 15"', 'var(--font-cjk)'],
+        'pixel-sm': ['"Jersey 15"', '"Jersey 25"', 'var(--font-cjk)'],
+        sans: ['"Jersey 25"', '"Jersey 15"', 'var(--font-cjk)'],
+        serif: ['"Jersey 25"', '"Jersey 15"', 'var(--font-cjk)'],
+        mono: ['"Jersey 15"', '"Jersey 25"', 'var(--font-cjk)'],
       },
       fontSize: {
         // Daybreak's scale: labels 15, small 17, base 20, large 22, button 22, titles 30–40.

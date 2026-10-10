@@ -13,7 +13,7 @@ The game's engine and data decide every rule and number shown. The UI only prese
 A pale morning sky (`#e9f0f8`, a faint dot texture) under crisp pixel-art frames with **ink outlines** (`#24304f`),
 white paper panels, **one red action** per screen (`#f2553f`) and **gold for what's new** (`#ffbe2e`). Everything is
 drawn on a pixel grid: square corners cut by a 1–3 pixel stair, never `border-radius`, never blur, never a soft
-shadow. Fonts are **Jersey 20** (titles, names, buttons, most text) and **Jersey 15** (labels, numbers, paragraphs).
+shadow. Fonts are **Jersey 25** (titles, names, buttons, most text) and **Jersey 15** (labels, numbers, paragraphs).
 
 **Dusk**, the dark theme, is the same lab after sundown: a night-blue ground (`#10172a`), panels a step lighter, pale
 ink text and softer slate outlines (`#7d8bb2`) so frames don't glare; red, gold, the HP colours and all the art stay
@@ -87,10 +87,10 @@ Rules:
 
 | Role | Font | Size | Notes |
 |---|---|---|---|
-| Page title (`h1`) | Jersey 20 | 30–40 px (`text-title`, `text-display`) | One `<h1>` per route |
-| Section title | Jersey 20 | 24 px | |
-| Body, names | Jersey 20 | 20 px (`text-body`); 17 small; 22 large | |
-| Buttons | Jersey 20 | 24 px (md), 18 (sm), 26 (lg), 30 (xl) | Uppercase, 0.04em tracking |
+| Page title (`h1`) | Jersey 25 | 30–40 px (`text-title`, `text-display`) | One `<h1>` per route |
+| Section title | Jersey 25 | 24 px | |
+| Body, names | Jersey 25 | 20 px (`text-body`); 17 small; 22 large | |
+| Buttons | Jersey 25 | 24 px (md), 18 (sm), 26 (lg), 30 (xl) | Uppercase, 0.04em tracking |
 | Labels, numbers, captions | Jersey 15 (`font-pixel-sm`) | 15 px (`text-label`) | `tabular-nums` for counters |
 | Paragraphs (2+ lines) | Jersey 15 (`.copy`) | 20 px, line-height 1.35 | |
 
@@ -255,7 +255,7 @@ Players shouldn't have to make many requests:
 - **Cries** come from Showdown's CDN too: one request per cry actually played (~9 KB), cached by the browser; never
   preloaded, never one for a cry Showdown doesn't have (a form without its own plays its species'), none while sound
   is off.
-- Fonts are subset by unicode range; only Jersey 20 (latin) is preloaded.
+- Fonts are subset by unicode range; only Jersey 25 (latin) is preloaded.
 - Before adding an image file, ask whether code can draw it, or whether it belongs in an atlas.
 - **Area pictures** (`public/area-art/<id>.png`): one painted picture per *scene* (87 shared scenes, lairs and
   landmarks for 295 areas), 400 px of true pixel art (Gemini, then `unpixel`), as the Visual Lab's Backgrounds tab
@@ -282,13 +282,14 @@ Players shouldn't have to make many requests:
   opens the Poké Mart, no "+"), the cup (→ the leaderboard; greyed until the first badge, and a tap says what opens
   it) and, last, you (name and badge count, then your trainer look → the trainer menu, which slides in from that side).
   Everything in it is disabled mid-fight and says why.
-- **Tab bar** (phones): Poké Mart, Upgrades, **Home** (a raised Poké Ball in the middle, under the thumb), Team,
+- **Tab bar** (phones): Poké Mart, Upgrades, **Home** (in the middle, under the thumb: a tab like the others, its Poké Ball icon and label), Team,
   Pokédex. The side nav (desktop) has the same entries with Home first. A tab's hit area is the whole column, at
   least 60 px tall, even where the drawing is smaller.
 - **Region cards** (Areas sheet → regions): each region's own picture (`public/region-art/<id>.png`, from the Visual
   Lab's region prompts; its first area's strip until it has one), name, counts and GO. A tap moves there and closes
   the sheet.
-- **Pokémon Center**: the healing scene at phone size (420 px at most on wide screens), then Home or **Next
+- **Area screen**: its title opens the area's details (the same sheet as Home's plate, without the travel footer).
+- **Pokémon Center**: the healing scene (a Poké Ball per team member) at phone size (420 px at most on wide screens), then Home or **Next
   encounter**, so a run through an area never needs a trip Home.
 - **Dots only for something you can act on**: the number of upgrades you can afford (9+ at most), a gold NEW for
   Pokédex entries you haven't looked at. The dot is in the link's accessible name, never colour alone.

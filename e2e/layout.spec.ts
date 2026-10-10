@@ -68,7 +68,7 @@ function nonJerseyText(page: Page) {
   return page.evaluate(() =>
     Array.from(document.querySelectorAll<HTMLElement>('body *'))
       .filter((el) => Array.from(el.childNodes).some((n) => n.nodeType === Node.TEXT_NODE && n.textContent!.trim()) || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName))
-      .filter((el) => el.getClientRects().length > 0 && !/^"?Jersey (15|20)"?(,|$)/.test(getComputedStyle(el).fontFamily))
+      .filter((el) => el.getClientRects().length > 0 && !/^"?Jersey (15|25)"?(,|$)/.test(getComputedStyle(el).fontFamily))
       .map((el) => `${el.tagName} "${(el.textContent || '').trim().slice(0, 20)}": ${getComputedStyle(el).fontFamily}`)
       .slice(0, 10),
   )

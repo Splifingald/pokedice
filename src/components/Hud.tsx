@@ -30,7 +30,7 @@ const DEX: NavItem = { to: '/pokedex', label: 'ui.nav.pokedex', icon: 'navDex' }
 
 /** Side bar (desktop): Home first. */
 const SIDE_NAV = [HOME, TEAM, SHOP, UPGRADES, DEX]
-/** Bottom bar (phones): Home in the middle, under the thumb. */
+/** Bottom bar (phones): Home in the middle, under the thumb, a tab like the others. */
 const BOTTOM_NAV = [SHOP, UPGRADES, HOME, TEAM, DEX]
 
 /** Home stays lit while an encounter plays on /area: it is where you are. */
@@ -89,20 +89,6 @@ function NavEntry({ n, variant }: { n: NavItem; variant: 'side' | 'bottom' }) {
         <PixelIcon name={n.icon} size={n === HOME ? 22 : 28} />
         <span>{label}</span>
         {dot && <Dot dot={dot} className="ml-auto" />}
-      </Link>
-    )
-  if (n === HOME)
-    return (
-      <Link {...common} className={cx('relative flex min-h-[60px] flex-1 flex-col items-center justify-start', inFight && 'pointer-events-none opacity-60')}>
-        {/* Home: a raised Poké Ball in the middle of the bar. */}
-        <span
-          className={cx(
-            '-mt-[26px] grid h-[62px] w-[62px] place-items-center rounded-full shadow-[inset_0_0_0_3px_rgb(var(--c-edge)),inset_0_-6px_0_#c4382a,0_0_0_4px_rgb(var(--c-panel))]',
-            active ? 'bg-accent' : 'bg-crimson',
-          )}
-        >
-          <PixelIcon name="ball" size={36} />
-        </span>
       </Link>
     )
   return (

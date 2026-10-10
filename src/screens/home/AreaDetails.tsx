@@ -85,8 +85,9 @@ export function AreaDetails({
 }: {
   area: Area | null
   onClose: () => void
-  onPlay: () => void
-  onTravel: (area: Area) => void
+  /** Without them (opened from the area itself, mid-run) the sheet is information only: no footer. */
+  onPlay?: () => void
+  onTravel?: (area: Area) => void
 }) {
   return (
     <Sheet
@@ -94,7 +95,7 @@ export function AreaDetails({
       onClose={onClose}
       title={area?.name ?? ''}
       sub={area ? <DetailsSub area={area} /> : null}
-      footer={area ? <DetailsFoot area={area} onPlay={onPlay} onTravel={onTravel} /> : null}
+      footer={area && onPlay && onTravel ? <DetailsFoot area={area} onPlay={onPlay} onTravel={onTravel} /> : null}
     >
       {area && <DetailsBody key={area.id} area={area} />}
     </Sheet>

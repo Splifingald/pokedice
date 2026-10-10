@@ -1,9 +1,9 @@
-// The Pokémon Center: a ball per team member drops into the healing machine, the six-beat jingle lights them in turn
+// The Pokémon Center: a Poké Ball per team member (nothing else on the machine) drops into the healing machine, the six-beat jingle lights them in turn
 // (each note spikes the heart monitor), they flash together, the team is healed, Chansey hops, the balls lift out.
 // Short motion: the balls are already in place, one flash, healed.
 import { fxSound } from '@/audio/sfx'
 import { ease, ellipse, glow, lerp, Particles, px, rect, rng, span, wash, type Rng } from '../pixel'
-import { ball, center, CENTER, SLOTS, type BallKind } from '../scenes'
+import { ball, center, CENTER, SLOTS } from '../scenes'
 import { drawSprite } from '../sprites'
 import { H, screenFlash, STEP, W, within, type Cue, type Timeline } from '../timeline'
 
@@ -15,7 +15,6 @@ export interface CenterParams {
   short?: boolean
 }
 
-const KINDS: BallKind[] = ['poke', 'great', 'ultra']
 
 interface S {
   r: Rng
@@ -128,7 +127,7 @@ export function centerTimeline(p: CenterParams): Timeline<S> {
         if (lit && lift === 0) ellipse(g, x, y + 1, 5, 2, P.light)
         const k = NOTES.findIndex((tn) => within(t, tn, tn + 0.15))
         const flash = (k >= 0 && seat(k) === i) || within(t, LAST, LAST + 0.3)
-        const im = ball(KINDS[i]!, 0, { R: 5, button: flash ? '#ffffff' : lit ? P.light : '#ffffff' })
+        const im = ball('poke', 0, { R: 5, button: flash ? '#ffffff' : lit ? P.light : '#ffffff' })
         if (flash) g.drawImage(glow(9, '#ffffff', 1.6, 0.85), x - 9, Math.round(by - 9))
         g.drawImage(im, Math.round(x - im.width / 2), Math.round(by - im.height / 2))
         if (flash && k >= 0 && seat(k) === i) rect(g, x - 1, Math.round(by) - 1, 2, 2, '#ffffff')
