@@ -57,7 +57,7 @@ import { setSettings, useGame, type BattleSlice } from '@/store/game'
 import { dispatchBattle, throwBall } from '@/store/run'
 import { cx } from '@/theme/util'
 import { BattleHistory, BattleHistoryList, DamageRecap } from './BattleHistory'
-import { BagButton, DiceTray, Readout, TeamPips, type Preview, type TrayDice } from './BattlePanel'
+import { BagButton, DiceTray, Readout, TeamColumn, TeamPips, type Preview, type TrayDice } from './BattlePanel'
 import { BattleStage, type StageOverlay } from './BattleStage'
 import { CatchPanel, catchMessage } from './CatchPanel'
 import { FoePlate, OwnPlate } from './Plates'
@@ -723,8 +723,8 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
   return (
     <BattleContexts pace={pace} motionCap={motionCap}>
       {/* Wide screens: the stage as big as the height allows (3:2, with the message, dice and actions under it still in
-          view: ≈340px), and a side column for the Bag, the team and the history. */}
-      <div className="mx-auto w-full lg:grid lg:grid-cols-[minmax(0,calc((100dvh-340px)*1.5))_320px] lg:items-start lg:justify-center lg:gap-4 lg:p-4">
+          view: ≈340px); the Bag and the team on its left, the history on its right. */}
+      <div className="mx-auto w-full lg:grid lg:grid-cols-[220px_minmax(0,calc((100dvh-340px)*1.5))_300px] lg:items-start lg:justify-center lg:gap-4 lg:p-4">
         <section
           aria-label={heading}
           className="mx-auto flex min-h-[100dvh] w-full max-w-[max(300px,min(560px,calc((100dvh_-_330px)_*_1.5)))] flex-col lg:min-h-0 lg:max-w-none"
@@ -854,14 +854,26 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
             )}
           </div>
         </section>
+        {/* Wide screens, left of the stage: the Bag and the team, bigger than the pips. */}
+        {wide && (
+          <aside className="flex flex-col gap-2 lg:order-first" aria-label={t('ui.battle.switchGroup')}>
+            {!catching && !over && (
+              <>
+                {bag}
+                <TeamColumn
+                  team={st.player}
+                  activeUid={active.uid}
+                  hpOf={(b) => fx.hp[b.uid] ?? b.hp}
+                  canSwitch={!auto && (forced || (canAct && showSwitch))}
+                  calling={forced && !auto}
+                  onPick={pickPip}
+                />
+              </>
+            )}
+          </aside>
+        )}
         {wide && (
           <aside className="flex flex-col gap-2">
-            {!catching && !over && (
-              <div className="flex flex-col gap-2 bg-paper p-2 shadow-ring-line">
-                {bag}
-                {pips}
-              </div>
-            )}
             <BattleHistory battle={battle} cursor={fx.cursor} defaultOpen />
             {canAct && !auto && (
               <p className="m-0 font-pixel-sm text-[15px] text-muted">
@@ -971,7 +983,10 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
       >
         {!itemKey ? (
           <div className="flex flex-col gap-2">
-            {ownedItems.map(([k, n]) => {
+            {/* The ones that would do something right now first. */}
+            {[...ownedItems]
+              .sort(([a], [b]) => Number(st.player.some((p) => itemHelps(b, p))) - Number(st.player.some((p) => itemHelps(a, p))))
+              .map(([k, n]) => {
               const it = data.items[k]!
               const useful = st.player.some((p) => itemHelps(k, p))
               return (

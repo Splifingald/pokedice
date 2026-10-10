@@ -12,7 +12,7 @@ import {
 } from '@/engine'
 import { Toggle } from '@/components/Toggle'
 import { useGame } from '@/store/game'
-import { BagButton, DiceTray, Readout, TeamPips, type Preview } from '../battle/BattlePanel'
+import { BagButton, DiceTray, Readout, TeamColumn, TeamPips, type Preview } from '../battle/BattlePanel'
 import { BattleStage } from '../battle/BattleStage'
 import { CatchPanel } from '../battle/CatchPanel'
 import { FoePlate, OwnPlate } from '../battle/Plates'
@@ -126,6 +126,17 @@ export function BattleBits() {
               onPick={() => {}}
             />
           </div>
+        </div>
+        {/* Wide screens: the same team as a column of cards, left of the stage. */}
+        <div className="w-[220px]">
+          <TeamColumn
+            team={team}
+            activeUid={own.uid}
+            hpOf={(b) => b.hp}
+            canSwitch
+            calling={calling}
+            onPick={() => {}}
+          />
         </div>
         <Toggle label="Who goes out next? (pips call)" on={calling} onChange={setCalling} />
       </div>
