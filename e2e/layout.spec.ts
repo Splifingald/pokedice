@@ -161,8 +161,8 @@ test('the avatar drawer and the profile hold up at every size', async ({ page })
     expect(await nonJerseyText(page), `drawer at ${size.width}: fonts`).toEqual([])
     if (size.phone) expect(await smallControls(page), `drawer at ${size.width}: controls under 44px`).toEqual([])
 
-    // The trainer card is the drawer itself: the badge case is the densest thing it draws.
-    await expect(page.getByRole('heading', { name: 'Badge case' })).toBeVisible()
+    // The trainer card is the drawer itself.
+    await expect(page.getByRole('dialog', { name: 'Trainer card' })).toBeVisible()
     await settled(page)
     expect(await nonJerseyText(page), `profile at ${size.width}: fonts`).toEqual([])
     if (size.phone) expect(await smallControls(page), `profile at ${size.width}: controls under 44px`).toEqual([])

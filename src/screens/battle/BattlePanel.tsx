@@ -121,7 +121,7 @@ export function Readout({
         })}
         title={t('ui.battle.damageTitle')}
         onClick={onToggle}
-        className="inline-flex min-h-[44px] items-center gap-1 whitespace-nowrap px-1 font-pixel-sm text-[18px] leading-none text-ink md:min-h-[32px]"
+        className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center gap-1 whitespace-nowrap px-1 font-pixel-sm text-[18px] leading-none text-ink md:min-h-[32px]"
       >
         <b className="font-pixel text-[26px] font-normal leading-none underline decoration-dotted decoration-2 underline-offset-4">
           {r.final}

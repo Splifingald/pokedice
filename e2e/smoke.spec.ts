@@ -136,11 +136,9 @@ test('the avatar drawer opens the profile, the guide and the settings', async ({
   await expect(card.getByRole('button', { name: 'Admin' })).toHaveCount(0)
   await expect(card.getByRole('button', { name: 'CONNECT' })).toBeVisible()
 
-  // The card: the player's name and the Kanto badge case, every badge still to win.
+  // The card: the player's name. The badges are the count on the top bar; the case itself is only on a friend's card.
   await expect(card.getByText('Sam', { exact: true })).toBeVisible()
-  await expect(card.getByRole('heading', { name: 'Badge case' })).toBeVisible()
-  await expect(card.getByRole('img', { name: 'Boulder Badge — not earned yet' })).toBeVisible()
-  await expect(card.getByText('Badges 0/8')).toBeVisible()
+  await expect(card.getByRole('heading', { name: 'Badge case' })).toHaveCount(0)
   await page.keyboard.press('Escape')
 
   // The guide is the rules, in a modal rather than its own screen.
