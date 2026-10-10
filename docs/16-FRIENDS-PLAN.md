@@ -8,7 +8,7 @@
 A **Friends page**, opened from the trainer menu (the side drawer). Players add each other with a **friend ID** or an
 **invite link**, are told when someone becomes their friend, can open a friend's profile, and see their friends
 highlighted on every leaderboard, Versus included. So that friends don't hang on Google alone, players can also sign
-in with **Discord** (§2; setup guide: [docs/15](15-DISCORD-SIGN-IN.md)).
+in with **Discord** (§2; setup guide: [docs/17](17-DISCORD-SIGN-IN.md)).
 
 ---
 
@@ -33,7 +33,7 @@ in with **Discord** (§2; setup guide: [docs/15](15-DISCORD-SIGN-IN.md)).
 | --- | --- |
 | The cloud knows a player by their account (`auth.users`, `saves.user_id`), and today the only way in is Google. A guest is only a random `deviceId` in localStorage, gone when the browser is cleared. The leaderboard and Versus are already account-only. | **Friends need a signed-in account.** This plan adds Discord as a second way in (§2), so that account doesn't have to be Google. A guest still sees the Friends row; the page then shows the connect prompt. A pending invite waits through the sign-in. |
 | Every cloud feature keys on `auth.uid()`; nothing in the database reads the provider. Sign-in is one call, `signInWithOAuth({ provider: 'google' })` in `store/sync.ts`, with PKCE. | Discord is mostly a client change: the database, RLS and RPCs work for a Discord account as they are. |
-| Six player-facing strings name Google (`ui.account.connectLabel`, `ui.settings.yourGoogle`, `ui.board.connect`, `ui.versus.connect`, `ui.versus.err.versus_signed_out`, the leaderboard tutorial), and `/setup` only covers Google. | They are reworded to "your account" (§2.7), and `/setup` gets an optional Discord step mirroring docs/15. |
+| Six player-facing strings name Google (`ui.account.connectLabel`, `ui.settings.yourGoogle`, `ui.board.connect`, `ui.versus.connect`, `ui.versus.err.versus_signed_out`, the leaderboard tutorial), and `/setup` only covers Google. | They are reworded to "your account" (§2.7), and `/setup` gets an optional Discord step mirroring docs/17. |
 | `is_admin()` (0001) compares the session's e-mail with the admin's. | It keeps working with Discord. §2.5 explains why it stays safe, with an optional hardening. |
 | `leaderboard()` returns `is_me` but no user id, on purpose. `versus_board()` does return `user_id`. | The database marks friend rows on the region boards (`is_friend`); the browser never sees those ids. Versus compares ids in the browser, because it already has them. |
 | The board comes from `leaderboard_cache`, rebuilt by pg_cron every 5 minutes (0031), since the database stalled on 2026-10-07 from reading every save on every visit. | Nothing in this feature may read `saves.data` when a page, board or profile opens. A friend's profile comes from small **player card** rows, kept up to date when their save is written (§5.3). Measured on 10 Oct, that rebuild is still 65% of all database time (§8.1), so the cards go one step further: **the leaderboard reads them too**, and the 5-minute rebuild goes. |
@@ -117,13 +117,13 @@ community already lives on Discord (the trainer menu's Join the Discord row), so
 
 ### 2.2 Setting it up
 
-Step by step in **[docs/15 — Discord sign-in: setup guide](15-DISCORD-SIGN-IN.md)**: a Discord application with
+Step by step in **[docs/17 — Discord sign-in: setup guide](17-DISCORD-SIGN-IN.md)**: a Discord application with
 Supabase's callback as its redirect, then Discord switched on in Supabase with the client ID and secret, and **Allow
 manual linking** on. No new environment variable and no Netlify change. It can be done before the game has the button,
-and checked on its own (docs/15, part 4).
+and checked on its own (docs/17, part 4).
 
 `/setup` gets the same as an optional step after Google ("Discord, optional"), a Verify line "Discord sign-in is on"
-(shown as *not set*, not as a failure, while it is off), and the Discord rows of docs/15's troubleshooting.
+(shown as *not set*, not as a failure, while it is off), and the Discord rows of docs/17's troubleshooting.
 
 ### 2.3 The CONNECT chooser, and which providers are on
 
@@ -751,7 +751,7 @@ Versus needs no SQL change: `versus_board()` already returns `user_id`.
   fixes is the second-biggest load on the database.
 - A README "Rule additions" entry: "Needs `supabase/migrations/0033_friends.sql` run once on the live database
   (re-running `supabase/seed.sql` brings the leaderboard part). It replaces the leaderboard cache and its pg_cron job
-  with player cards." Another for Discord sign-in, pointing to docs/15.
+  with player cards." Another for Discord sign-in, pointing to docs/17.
 - After running it: check the board against the old one (§9), then watch Admin → Analytics and the database's query
   stats for a day.
 - `pnpm seed-sql` regenerates `seed.sql` and its parts.
@@ -961,7 +961,7 @@ other account's `friend_status()` reporting the new friend once; the board's `is
 | Phase | Ships | Size |
 | --- | --- | --- |
 | Before anything: 0029 | Run `supabase/migrations/0029_force_reload.sql` on the live database (§8.5). Nothing to build. | — |
-| 0. Discord sign-in | Supabase set up from [docs/15](15-DISCORD-SIGN-IN.md); the chooser, Connected accounts (link / unlink), the six reworded strings, the `/setup` step. Independent of friends: it can ship first. | S–M |
+| 0. Discord sign-in | Supabase set up from [docs/17](17-DISCORD-SIGN-IN.md); the chooser, Connected accounts (link / unlink), the six reworded strings, the `/setup` step. Independent of friends: it can ship first. | S–M |
 | 1. Database | 0033: friends tables, player cards and their backfill, the leaderboard on the cards (cache, rebuild and pg_cron job retired), `is_friend`, the functions; the same in 0016, `seed.sql` regenerated | M |
 | 2. Friends page | `/friends`, the menu row, `lib/friends`, the share helper, add by ID, the ID in the profile, strings | M |
 | 3. Profiles | `RegionRow` moved, `regionCasesFrom`, `FriendProfileModal`, remove | S–M |
@@ -1002,7 +1002,7 @@ Settled on 10 Oct 2026:
 | Removing | Either player can remove a friend; it removes the friendship both ways. |
 | Who can open a profile? | Friends only. |
 | Do the Versus boards count as leaderboards? | Yes, with the opponents list. |
-| Google only? | No: Google or Discord, linkable to one account. Setup guide in docs/15. |
+| Google only? | No: Google or Discord, linkable to one account. Setup guide in docs/17. |
 | When does a new-friend notification arrive? | At game load and when the player comes back to the tab (at most every 5 minutes). No Realtime for friends. |
 
 Assumed, say if not: the link path is `/f/<code>` (short to paste in a chat), and adding by ID keeps its preview and

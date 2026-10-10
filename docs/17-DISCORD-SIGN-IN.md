@@ -1,13 +1,13 @@
 # Pokédice — Discord sign-in: setup guide
 
 > **What this gives:** players can sign in with **Discord** as well as Google. Either one opens everything the cloud
-> does: the cloud save, the leaderboard, Versus, Contact the developer and, once built, friends ([docs/14](14-FRIENDS-PLAN.md)).
+> does: the cloud save, the leaderboard, Versus, Contact the developer and, once built, friends ([docs/16](16-FRIENDS-PLAN.md)).
 >
 > **Time:** about 15 minutes. **No new environment variable and no Netlify change:** the Discord secret lives in
 > Supabase only. The game itself still only needs `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`.
 >
 > **When:** parts 1–3 can be done now. Part 4 checks the setup without the game. The game shows its Discord button once
-> phase 0 of [docs/14](14-FRIENDS-PLAN.md#10-build-order) is built (part 5). Until then, turning Discord on in Supabase
+> phase 0 of [docs/16](16-FRIENDS-PLAN.md#10-build-order) is built (part 5). Until then, turning Discord on in Supabase
 > changes nothing for players.
 
 ## What you need
@@ -92,7 +92,7 @@ The game signs in with PKCE, so this test goes around the game and only checks D
      → **Delete user**). That is safe for a user with no save; deleting a user also deletes their save.
 5. An error page instead? See [Troubleshooting](#troubleshooting).
 
-## 5. Once the game has the Discord button (docs/14, phase 0)
+## 5. Once the game has the Discord button (docs/16, phase 0)
 
 - Title screen or trainer menu → **CONNECT** → **Continue with Discord** → **Authorize** → you are back in the game,
   signed in, and the save syncs as it does with Google.
@@ -115,7 +115,7 @@ For support questions, and for Admin → Messages.
 | Linking a Discord account that already has its own Pokédice account | Refused ("Identity is already linked to another user"). The player keeps playing it with Discord alone, or you delete that user in Supabase (its save goes with it) and they link again. |
 | Unlinking | Settings → **UNLINK**, only while both are linked: the last way in can't be removed. |
 | What other players see | The in-game trainer name and look only. Never the Discord username, the Google name, an e-mail or a profile picture. |
-| Admin rights | `is_admin()` checks the account's e-mail, whichever provider signed in. Supabase only takes an e-mail Discord reports as verified (for an unverified one it asks for a confirmation e-mail first), so a Discord account can carry the admin e-mail only if its owner controls that inbox. To stop depending on e-mails at all, pin `is_admin()` to your user id ([docs/14 §2.5](14-FRIENDS-PLAN.md#25-admin-rights)). |
+| Admin rights | `is_admin()` checks the account's e-mail, whichever provider signed in. Supabase only takes an e-mail Discord reports as verified (for an unverified one it asks for a confirmation e-mail first), so a Discord account can carry the admin e-mail only if its owner controls that inbox. To stop depending on e-mails at all, pin `is_admin()` to your user id ([docs/16 §2.5](16-FRIENDS-PLAN.md#25-admin-rights)). |
 
 ---
 
