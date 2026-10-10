@@ -4,6 +4,7 @@ import {
   deckCounts,
   lootCopies,
   trainerSpecialty,
+  uniqueFindChance,
   type BattleBackground,
   type BossDef,
   type DeckCounts,
@@ -150,6 +151,14 @@ function AreaEditor({ area }: { area: Row }) {
   const setBosses = (next: BossDef[]) => patch({ legendary_boss: next.length ? next : null })
   const lootLabel = (k: string) => (k === 'money' ? '₽ Pokédollars' : (data.items[k]?.name ?? `${k} (unknown item)`))
   const pct = (x: number) => `${(x * 100).toFixed(1)} %`
+  // Once-only finds share the pity's boost (game_config.uniquePity) by their copies: their odds once it is full.
+  const pity = data.config.uniquePity
+  const uniqueCopies = lootHere.reduce((sum, l) => sum + (l.unique_find ? copiesOf(l) : 0), 0)
+  const fullPity = uniqueCopies ? uniqueFindChance(uniqueCopies / lootTotal, pity.fullRounds, pity) / uniqueCopies : 0
+  const perFind = (l: Row) =>
+    l.unique_find && pity.maxMultiplier > 1 && copiesOf(l)
+      ? `${pct(copiesOf(l) / lootTotal)} → ${pct(copiesOf(l) * fullPity)}`
+      : pct(copiesOf(l) / lootTotal)
 
   return (
     <div className="flex flex-col gap-4">
@@ -493,12 +502,13 @@ function AreaEditor({ area }: { area: Row }) {
             { key: 'min_qty', label: 'Min qty', kind: 'number', width: 80 },
             { key: 'max_qty', label: 'Max qty', kind: 'number', width: 80 },
             { key: 'unique_find', label: 'Once only', kind: 'bool' },
-            { key: 'chance', label: 'Per find', readOnly: true, render: (r) => pct(copiesOf(r) / lootTotal) },
+            { key: 'chance', label: 'Per find', readOnly: true, render: perFind },
           ]}
         />
         <p className="text-base text-muted">
           Min–Max qty is the quantity found (for Pokédollars, the ₽ amount). “Once only” finds leave this area's table after the
-          first time.
+          first time. Their odds rise with the rounds a player has done here (Config → pity): Per find shows their usual odds →
+          their odds from {pity.fullRounds} rounds on.
         </p>
       </Box>
     </div>

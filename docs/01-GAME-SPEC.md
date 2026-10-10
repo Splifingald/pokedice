@@ -348,6 +348,7 @@ Each item has `in_shop` and `shop_badges` (admin-editable, with its effect and p
 
 - `item` is a fourth encounter kind — default **1 card per 10-card encounter deck**. An item find draws from the area's **loot deck**: its loot table (`area_loot_pool`: an item or `money`, weight, quantity range, once-only flag) where each weight is that find's number of copies (a once-only find: one), shuffled exactly like the encounter deck; what's left is saved per area.
 - The loot grows with the journey: Potions, Poké Balls and small change early; Great Balls and status heals mid-game; Hyper Potions, Ultra Balls, Max Ethers, Rare Candy and bigger Pokédollar finds late. **Once-only finds** — a Rare Candy in Mt. Moon, the Nugget's ₽250 on Nugget Bridge, the Master Ball in Silph Co.… — leave the table once found (one card per deck at most until then).
+- **Pity for once-only finds** (`game_config.uniquePity`): the more rounds a player has done in an area, the likelier its once-only finds. Up to `startRounds` (5) rounds done the loot deck decides alone; from there the chance that an item find is once-only rises linearly to `maxMultiplier` (×10) its usual odds (its share of the loot deck) at `fullRounds` (50), and stays there — never past 100 %. A roll before the draw tops the deck's odds up; the find's own card stays in the deck and is skipped once it has been found. Admin → Config → *Once-only finds — pity*; Areas → Loot shows each once-only find's usual odds → its odds at full pity.
 - Picking it up is the whole encounter; it can't be skipped.
 
 ---

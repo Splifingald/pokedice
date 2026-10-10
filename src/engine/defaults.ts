@@ -96,4 +96,7 @@ export const DEFAULT_CONFIG: GameConfig = {
   // use it with their ace.
   gigantamax: { region: 'galar', turns: 1, trainerRegions: ['galar'] },
   formChangesPerBattle: 1,
+  // A once-only find in a big loot deck can take a hundred rounds to turn up: from the 5th round done in its area, its
+  // odds climb to ×10 at the 50th.
+  uniquePity: { startRounds: 5, fullRounds: 50, maxMultiplier: 10 },
 }

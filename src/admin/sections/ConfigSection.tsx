@@ -6,6 +6,7 @@ import {
   enabledRegions,
   slotOdds,
   slotReturnPerSpin,
+  uniquePityMultiplier,
   xpToNext,
   type DayCareConfig,
   type DonationConfig,
@@ -14,6 +15,7 @@ import {
   type SlotMachineConfig,
   type SlotOutcomeKey,
   type StatusRules,
+  type UniquePityConfig,
 } from '@/engine'
 import { PixelIcon } from '@/components/icons'
 import { SpriteImg } from '@/components/SpriteImg'
@@ -136,6 +138,37 @@ function EnergyBox() {
       </div>
       <p className="text-lg">
         {perDay.toFixed(1)} energy per day · empty to full in {((cfg.max * cfg.minutesPerEnergy) / 60).toFixed(1)} h
+      </p>
+    </Box>
+  )
+}
+
+/** Pity for once-only finds: their odds climb with the rounds a player has done in the area. */
+function UniquePityBox() {
+  const [raw, setRaw] = useConfigRow('uniquePity')
+  const cfg: UniquePityConfig = { ...DEFAULT_CONFIG.uniquePity, ...raw }
+  const set = (patch: Partial<UniquePityConfig>) => setRaw({ ...cfg, ...patch })
+  const mid = Math.round((cfg.startRounds + cfg.fullRounds) / 2)
+  return (
+    <Box
+      title="Once-only finds — pity"
+      hint="The more rounds a player has done in an area, the likelier its once-only finds (Areas → Loot): × their odds per item find, never past 100 %."
+    >
+      <div className="grid gap-3 sm:grid-cols-3">
+        <Field label="Starts after (rounds)" hint="×1 up to here">
+          <NumInput min={0} value={cfg.startRounds} onChange={(v) => set({ startRounds: Math.max(0, v ?? 5) })} />
+        </Field>
+        <Field label="Full at (rounds)" hint="rises linearly until here">
+          <NumInput min={0} value={cfg.fullRounds} onChange={(v) => set({ fullRounds: Math.max(0, v ?? 50) })} />
+        </Field>
+        <Field label="Max ×" hint="1 = no pity">
+          <NumInput min={1} step={0.5} value={cfg.maxMultiplier} onChange={(v) => set({ maxMultiplier: Math.max(1, v ?? 10) })} />
+        </Field>
+      </div>
+      <p className="text-lg">
+        {[cfg.startRounds, mid, cfg.fullRounds]
+          .map((r) => `${r} rounds ×${uniquePityMultiplier(r, cfg).toFixed(1)}`)
+          .join(' · ')}
       </p>
     </Box>
   )
@@ -591,6 +624,8 @@ export function ConfigSection() {
       </section>
 
       <EnergyBox />
+
+      <UniquePityBox />
 
       <DonationBox />
 

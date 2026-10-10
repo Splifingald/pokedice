@@ -500,6 +500,21 @@ export interface GameConfig {
   gigantamax: GigantamaxConfig
   /** Arceus, Silvally and Ogerpon can each change type this many times per battle (the TYPE menu). */
   formChangesPerBattle: number
+  /** Once-only finds get likelier the more rounds a player has done in their area. */
+  uniquePity: UniquePityConfig
+}
+
+/**
+ * Pity for an area's once-only finds: past `startRounds` rounds done there, the chance that an item find is one of them
+ * rises linearly to `maxMultiplier` × its usual odds at `fullRounds`, and stays there. It never passes 100 %.
+ */
+export interface UniquePityConfig {
+  /** Rounds done in the area before the odds start to rise (×1 up to here). */
+  startRounds: number
+  /** Rounds done at which the odds reach `maxMultiplier`. */
+  fullRounds: number
+  /** × the usual odds from `fullRounds` on. 1 = no pity. */
+  maxMultiplier: number
 }
 
 /** Gigantamax: a button in battle once the player has reached `region`; never in the same battle as a Mega. */
