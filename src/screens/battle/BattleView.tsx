@@ -387,7 +387,8 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
   }, [auto, ready, intro, menu, autoPhase, st.phase, data, quick, pace, battle.log.length, dispatch])
 
   const usefulItems = ownedItems.filter(([k]) => st.player.some((p) => itemHelps(k, p)))
-  const showSwitch = data.config.allowVoluntarySwitch && switchTargets.length > 0
+  // Kept with no one left to switch to: the menu is also where FORFEIT lives.
+  const showSwitch = data.config.allowVoluntarySwitch
   // Mega Evolution (once per battle, Lv.50+, from Kalos on), Gigantamax and Arceus's types.
   const megaOpts = versus ? [] : megaChoices(st, data)
   const gmaxOpts = versus ? [] : gmaxChoices(st, data)
@@ -849,6 +850,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
       {/* Switching in: it costs the turn. Forfeit lives here too. */}
       <Modal open={menu === 'switch'} onClose={() => setMenu(null)} title={t('ui.battle.switchCosts')}>
         <div className="flex flex-col gap-2">
+          {switchTargets.length === 0 && <p className="copy text-lg text-muted">{t('ui.battle.noSwitch')}</p>}
           {switchTargets.map((p) => (
             <SwitchRow
               key={p.uid}
