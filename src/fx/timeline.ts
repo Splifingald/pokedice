@@ -247,6 +247,17 @@ export class Stage {
     }
     return { flash, tint }
   }
+  private lastLive = -Infinity
+  /**
+   * Which moments the clock passed since the last step that ran: call it after `step` succeeds. A burst timed on the
+   * contact still fires (on the first frame after the hit-stop that starts at that same moment), where a window like
+   * `t < t0 + STEP * 1.5` falls entirely inside the stop and never does.
+   */
+  passed(t: number) {
+    const p = this.lastLive
+    this.lastLive = t
+    return (t0: number) => p < t0 && t >= t0
+  }
   step(t: number, dt: number) {
     if (this.stopped(t)) return false
     this.fx.update(dt)

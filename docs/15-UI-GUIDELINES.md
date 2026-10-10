@@ -206,7 +206,7 @@ motion `off` the stage jumps to the end and still fires every cue, so the screen
 
 | Timeline | full | short |
 |---|---|---|
-| Attacks (Flamethrower, Hydro Pump, Razor Leaf, Thunderbolt, Psychic; a generic impact in the type's colour for the rest) | the typed move | one generic hit |
+| Attacks: one move per type (Flamethrower, Hydro Pump, Razor Leaf, Thunderbolt, Psychic in `attacks.ts`; Tackle, jabs and a fist, gusts and a wing slash, Sludge Bomb, earth spikes, Rock Slide, a swarm and X-Scissor, Shadow Ball, Metal Claw, Ice Beam, Dragon Breath, Dark Pulse and Crunch, Moonblast in `attacks-types.ts`); a generic impact for typeless dice | the typed move | one generic hit |
 | Catch | throw, beam, drop, wobbles, result | throw and drop, result at once |
 | Pokémon Center | three balls, six-beat jingle | one flash, healed |
 | Mega Evolution, Gigantamax | the full change | a white flash and the new sprite |
