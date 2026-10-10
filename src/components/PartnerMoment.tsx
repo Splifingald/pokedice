@@ -122,8 +122,8 @@ export function PartnerMoment({
 
   // Focus follows the moment: the first ball, the question's yes, then "Let's go!".
   useEffect(() => {
-    if (phase === 'choose') firstRef.current?.focus({ preventScroll: true })
-  }, [phase])
+    if (phase === 'choose' && scene) firstRef.current?.focus({ preventScroll: true })
+  }, [phase, scene])
   useEffect(() => {
     if (asking) yesRef.current?.focus({ preventScroll: true })
   }, [asking])
@@ -228,7 +228,8 @@ export function PartnerMoment({
               key={i}
               ref={i === 0 ? firstRef : undefined}
               type="button"
-              disabled={phase === 'intro' || phase === 'done'}
+              // Not before the lab is ready (the picture and sprites, 1.5 s at most): a tap then would go nowhere.
+              disabled={!scene || phase === 'intro' || phase === 'done'}
               onClick={(e) => {
                 e.stopPropagation()
                 open(i)
