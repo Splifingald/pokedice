@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion'
 import { useId, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { catchTarget, catchValueOf, effectiveStats, getSpecies, MONEY, type Encounter } from '@/engine'
+import { catchTarget, catchValueOf, effectiveStats, getSpecies, MONEY, paidKey, rebattleProgress, rebattleTiers, type Encounter } from '@/engine'
 import { joinList } from '@/i18n'
 import { effectText } from '@/i18n/text'
 import { money } from '@/lib/format'
@@ -193,10 +193,25 @@ function GymCard({ enc }: { enc: Extract<Encounter, { kind: 'gym' }> }) {
         ))}
       </div>
       <div className="text-base leading-tight">
-        {t(data.config.noEscape ? 'ui.enc.gymPays' : 'ui.enc.gymPaysNoRun', { multiplier: data.config.gymGoldMultiplier })}
+        {enc.rebattle ? (
+          <RebattlePays enc={enc} rebattle={enc.rebattle} />
+        ) : (
+          t(data.config.noEscape ? 'ui.enc.gymPays' : 'ui.enc.gymPaysNoRun', { multiplier: data.config.gymGoldMultiplier })
+        )}
       </div>
     </div>
   )
+}
+
+/** An Elite Rebattle trainer: each of their Pokémon pays at the tier's multiplier, once in the tier. */
+function RebattlePays({ enc, rebattle }: { enc: Extract<Encounter, { kind: 'gym' }>; rebattle: { regionId: string; tier: number } }) {
+  const { t } = useT()
+  const save = useGame((s) => s.save)
+  const data = useGame((s) => s.data)
+  const paid = save ? rebattleProgress(save, rebattle.regionId).paid : []
+  const allPaid = enc.team.every((_, i) => paid.includes(paidKey(rebattle.tier, enc.trainerId, i)))
+  const gold = rebattleTiers(data)[rebattle.tier]?.gold ?? 1
+  return <>{allPaid ? t('ui.events.rebattle.allPaid') : t('ui.events.rebattle.pays', { gold })}</>
 }
 
 function CenterCard({ enc }: { enc: Extract<Encounter, { kind: 'center' }> }) {

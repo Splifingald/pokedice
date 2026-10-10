@@ -1,5 +1,6 @@
 @import './styles/pixel.css';
 @import './styles/events.css';
+@import './styles/rebattle.css';
 
 /* Jersey 25: Daybreak's face for titles, names, buttons and most text. */
 @font-face {

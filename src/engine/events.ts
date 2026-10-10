@@ -21,7 +21,9 @@ export const eventDef = (data: GameData, id: EventId): EventDef => data.config.e
 export function eventUnlocked(id: EventId, save: SaveData, data: GameData): boolean {
   const def = eventDef(data, id)
   if (!def?.enabled) return false
-  if (id === 'rebattle') return enabledRegions(data).some((r) => leagueDone(save, data, r.id))
+  // The rebattle: a League won in a region that has a rebattle lineup.
+  if (id === 'rebattle')
+    return enabledRegions(data).some((r) => Object.keys(data.config.rebattleLineups[r.id] ?? {}).length > 0 && leagueDone(save, data, r.id))
   return !!def.unlockAreaId && !!areaProgressAnywhere(save, data, def.unlockAreaId)?.cleared
 }
 

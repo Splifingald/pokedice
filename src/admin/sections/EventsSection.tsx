@@ -4,12 +4,17 @@ import { useEffect, useMemo, useRef } from 'react'
 import {
   DEFAULT_CONFIG,
   EVENT_IDS,
+  REBATTLE_TIER_IDS,
   prizeChances,
   wheelSlices,
   type EventDef,
   type EventId,
   type EventsConfig,
   type GameData,
+  type RebattleLineups,
+  type RebattleTier,
+  type RebattleTierId,
+  type Trainer,
   type WheelPrize,
   type WheelReward,
 } from '@/engine'
@@ -253,6 +258,94 @@ function WheelBox({ prizes, set }: { prizes: WheelPrize[]; set: (prizes: WheelPr
   )
 }
 
+/** The Elite Rebattle: each tier's ₽ and upgrade step, and every region's lineups (the trainers are tuned in Trainers). */
+function RebattleBox({ tiers, set }: { tiers: RebattleTier[]; set: (tiers: RebattleTier[]) => void }) {
+  const data = useAdminData()
+  const [raw, setLineups] = useConfigRow('rebattleLineups')
+  // Until the row is saved, the lineups the game ships (config.json, written by scripts/rebattle-teams.ts).
+  const lineups: RebattleLineups = raw && Object.keys(raw).length ? raw : (data?.config.rebattleLineups ?? {})
+  const setTier = (i: number, patch: Partial<RebattleTier>) => set(tiers.map((x, j) => (j === i ? { ...x, ...patch } : x)))
+  const league = (Object.values(data?.trainers ?? {}) as Trainer[])
+    .filter((t) => t.role === 'elite' || t.role === 'champion')
+    .sort((a, b) => a.name.localeCompare(b.name))
+  const label = (t: Trainer) =>
+    `${t.name}${t.rivalOf != null ? ` (vs starter #${t.rivalOf})` : ''} · Lv.${Math.min(...t.team.map((m) => m.level))}–${Math.max(...t.team.map((m) => m.level))}`
+  const setSlot = (region: string, tier: RebattleTierId, i: number, id: string) => {
+    const cur = [...(lineups[region]?.[tier] ?? [])]
+    if (id) cur[i] = id
+    else cur.splice(i, 1)
+    setLineups({ ...lineups, [region]: { ...lineups[region], [tier]: cur } })
+  }
+  const regions = (data?.regions ?? []).filter((r) => lineups[r.id])
+  return (
+    <Box
+      title="Elite Rebattle — tiers and lineups"
+      hint="A region's League again in three tiers, once its League is won. Each tier is a gauntlet in this order; a loss starts it over. Each Pokémon pays once per tier (a League trainer's ₽ × the tier's multiplier). Teams, levels and potions are the trainers' own (Trainers section). Kanto's Champion seat lists one rival per starter: the player meets theirs."
+    >
+      <table className="w-full text-lg">
+        <thead>
+          <tr className="text-left">
+            <th className="font-normal">Tier</th>
+            <th className="font-normal">₽ multiplier</th>
+            <th className="font-normal">Upgrade level</th>
+          </tr>
+        </thead>
+        <tbody>
+          {tiers.map((x, i) => (
+            <tr key={x.id} className="border-t border-shadow/40">
+              <td className="py-1 pr-2 capitalize">{x.id}</td>
+              <td className="pr-2">
+                <NumInput className="w-24" min={0} step={0.5} value={x.gold} onChange={(v) => setTier(i, { gold: Math.max(0, v ?? 1) })} />
+              </td>
+              <td>
+                <label className="flex flex-wrap items-center gap-2">
+                  <span className="text-base text-muted">League +</span>
+                  <NumInput
+                    className="w-20"
+                    min={0}
+                    max={9}
+                    value={x.upgradeDelta === 'max' ? null : x.upgradeDelta}
+                    nullable
+                    onChange={(v) => setTier(i, { upgradeDelta: v == null ? 'max' : Math.max(0, Math.round(v)) })}
+                  />
+                  <span className="text-base text-muted">(empty = 10, the max)</span>
+                </label>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      {regions.map((r) => (
+        <details key={r.id} className="border-t-2 border-line pt-2">
+          <summary className="cursor-pointer text-xl">
+            {r.name} · {REBATTLE_TIER_IDS.map((tier) => (lineups[r.id]?.[tier] ?? []).length).join(' / ')} trainers
+          </summary>
+          <div className="mt-2 grid gap-3 lg:grid-cols-3">
+            {REBATTLE_TIER_IDS.map((tier) => {
+              const ids = lineups[r.id]?.[tier] ?? []
+              return (
+                <div key={tier} className="grid content-start gap-1.5">
+                  <h4 className="m-0 text-lg capitalize">{tier}</h4>
+                  {[...ids, ''].map((id, i) => (
+                    <select key={`${i}-${id}`} className={inputCls} value={id} onChange={(e) => setSlot(r.id, tier, i, e.target.value)}>
+                      <option value="">{id ? '— remove —' : '+ add a trainer'}</option>
+                      {league.map((t) => (
+                        <option key={t.id} value={t.id}>
+                          {label(t)}
+                        </option>
+                      ))}
+                    </select>
+                  ))}
+                </div>
+              )
+            })}
+          </div>
+        </details>
+      ))}
+    </Box>
+  )
+}
+
 export function EventsSection() {
   const [cfg, set] = useEventsConfig()
   return (
@@ -269,6 +362,7 @@ export function EventsSection() {
         ))}
       </Box>
       <WheelBox prizes={cfg.wheel.prizes} set={(prizes) => set({ wheel: { ...cfg.wheel, prizes } })} />
+      <RebattleBox tiers={cfg.rebattle.tiers} set={(tiers) => set({ rebattle: { ...cfg.rebattle, tiers } })} />
     </div>
   )
 }

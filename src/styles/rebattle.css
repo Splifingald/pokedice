@@ -1,0 +1,68 @@
+/*
+ * The Elite Rebattle's tier medals (docs/18): Bronze a diamond, Silver a pentagon, Gold a hexagon, never I / II / III.
+ * Struck metal in either theme: a navy rim, a bright edge, the face, a darker lower half and a small inset of the
+ * same shape.
+ */
+.ev-medal {
+  --shape: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+  --m1: #e9a466;
+  --m2: #b06a2e;
+  --hi: #ffd2a8;
+  position: relative;
+  display: block;
+  flex: none;
+  width: 40px;
+  height: 40px;
+  background: #24304f;
+  clip-path: var(--shape);
+}
+.ev-medal::before {
+  content: '';
+  position: absolute;
+  inset: 3px;
+  background: linear-gradient(160deg, var(--hi) 0 22%, var(--m1) 22% 58%, var(--m2) 58%);
+  clip-path: var(--shape);
+}
+.ev-medal::after {
+  content: '';
+  position: absolute;
+  inset: 31%;
+  background: var(--m1);
+  box-shadow: 0 0 0 2px var(--m2);
+  clip-path: var(--shape);
+  opacity: 0.9;
+}
+.ev-medal.m1 {
+  --shape: polygon(50% 0, 100% 38%, 81% 100%, 19% 100%, 0 38%);
+  --m1: #dfe5ee;
+  --m2: #8f9bb3;
+  --hi: #ffffff;
+}
+.ev-medal.m2 {
+  --shape: polygon(25% 4%, 75% 4%, 100% 50%, 75% 96%, 25% 96%, 0 50%);
+  --m1: #ffd23a;
+  --m2: #c88a1a;
+  --hi: #fff3b0;
+}
+.ev-medal.sm {
+  width: 22px;
+  height: 22px;
+}
+.ev-medal.sm::before {
+  inset: 2px;
+}
+.ev-medal.big {
+  width: 96px;
+  height: 96px;
+  margin: 6px auto 0;
+  animation: ev-medal-pop 420ms cubic-bezier(0.2, 1.6, 0.4, 1);
+}
+.ev-medal.big::before {
+  inset: 6px;
+}
+@keyframes ev-medal-pop {
+  from {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+}

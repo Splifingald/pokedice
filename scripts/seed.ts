@@ -19,6 +19,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { TYPE_COLORS } from '../src/theme/colors'
 import { DEFAULT_CONFIG } from '../src/engine/defaults'
+import { LEAGUE_II } from '../src/engine/rebattle'
 import { createRng } from '../src/engine/rng'
 import {
   COMBO_KEYS,
@@ -1059,7 +1060,11 @@ async function generate() {
   await mkdir(CACHE_DIR, { recursive: true })
   const pokemon = await fetchSpecies()
   const typeChart = await fetchTypeChart()
-  const { areas, trainers } = buildAreasAndTrainers(pokemon)
+  const all = buildAreasAndTrainers(pokemon)
+  // Victory Road II and Indigo Plateau II left the game (the Elite Rebattle replaces them): content.ts still has them.
+  const areas = all.areas.filter((a) => !(a.id in LEAGUE_II))
+  const used = new Set(areas.flatMap((a) => [...a.gyms, ...a.trainerPool.map((t) => t.trainerId)]))
+  const trainers = all.trainers.filter((t) => used.has(t.id))
   return {
     pokemon,
     typeChart,

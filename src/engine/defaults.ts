@@ -135,11 +135,19 @@ export const DEFAULT_CONFIG: GameConfig = {
       rules: ['raid.daily', 'raid.sides', 'raid.bars', 'raid.catch'],
     },
     rebattle: {
-      enabled: false,
+      enabled: true,
       priority: 4,
       unlockAreaId: null,
       banner: 'champion',
       rules: ['rebattle.tiers', 'rebattle.gauntlet', 'rebattle.gold'],
+      // League I levels +10 / +25 / Lv.100 (the trainers' teams, scripts/rebattle-teams.ts); ₽ and upgrades here.
+      tiers: [
+        { id: 'bronze', gold: 1.5, upgradeDelta: 1 },
+        { id: 'silver', gold: 2, upgradeDelta: 2 },
+        { id: 'gold', gold: 3, upgradeDelta: 'max' },
+      ],
     },
   },
+  // Filled from src/data/config.json (scripts/rebattle-teams.ts): no lineup, no rebattle in that region.
+  rebattleLineups: {},
 }

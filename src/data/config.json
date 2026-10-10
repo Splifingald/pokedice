@@ -123,5 +123,226 @@
    250
   ]
  },
- "showRoundPreview": false
+ "showRoundPreview": false,
+ "rebattleLineups": {
+  "kanto": {
+   "bronze": [
+    "b688f70f-67b7-5c2d-8e7a-123a81911528",
+    "54f921f0-53f3-52eb-9558-49492cec021e",
+    "4acbaff9-058a-5e9a-be10-e4fcff7a29f0",
+    "4494d340-98a5-50e8-a6c7-8995c35189da",
+    "d27f3cca-3fd7-56c2-90c9-9a885dab811f",
+    "968c87e8-d4a1-5391-b579-144d3ffd5da1",
+    "94ee51c4-ca3f-571b-8504-d06e61326e2b"
+   ],
+   "silver": [
+    "b38dae2f-713e-5386-a2fb-d80be95af0c3",
+    "646e6f0c-2215-50af-9f10-17dc29eac8fb",
+    "c73160b1-1073-5a02-a6b7-d8f70c717a2b",
+    "bb0444d5-6eb0-5156-a9ed-e6cbaeec0065",
+    "4468db74-9fb5-577b-bb52-aa9c16cd3b15",
+    "fbf3bd5a-9a20-57b7-bded-d3d05abb9f0c",
+    "eb3663b3-93e8-5c02-836f-9635ee6dfe64"
+   ],
+   "gold": [
+    "44dcabe5-c9b8-551e-92c9-7b8687ca447b",
+    "1e7705e9-5322-5017-acf5-5d5160779554",
+    "be14b8d9-5b20-5aa2-9c79-3d6435b54423",
+    "562057d5-01da-5ea1-8171-acb91d3ac899",
+    "d8dbd2da-79c2-594f-9106-097c8c3e8fb1",
+    "e8eed7e6-97e3-594c-941f-0dac877f1d6a",
+    "39b7635c-efbd-5ca1-a7b8-f1e6cf4bf71c"
+   ]
+  },
+  "johto": {
+   "bronze": [
+    "ec452cca-6b69-5f89-8e96-cb76eac2af8e",
+    "58588a5c-3be1-5b1e-8897-eab4c202ac1c",
+    "a07a8af1-ba65-57c6-8696-c1de09dbff80",
+    "080c3e8f-33e7-5eea-a38d-194bc623ac3d",
+    "13cd2b7e-d24f-5cb7-a23f-a2fa44fd7b02"
+   ],
+   "silver": [
+    "ec7611ef-7b6d-52e1-88ca-fdd4d655f67c",
+    "6d13a024-fc3e-5ea3-bd64-e5ac0c005d07",
+    "a7a23b70-bee7-5e01-8e19-a36d48fe28c4",
+    "27fc3814-f24c-53d6-ae84-15a3e37ad8f6",
+    "464e24e3-44fe-5c70-a561-bb8ef777086b"
+   ],
+   "gold": [
+    "3f7f8e17-e5a9-5ea3-bc6f-94a2ae7b46fd",
+    "f45643d2-d0ff-5673-aca1-31baafd0830b",
+    "a9deafe9-f3b4-5f3d-8503-05df4013e706",
+    "7287d4f5-c0c0-5f80-bfca-181a135addca",
+    "7bfe7eaa-3f65-5858-b37c-c4860d7455dc"
+   ]
+  },
+  "hoenn": {
+   "bronze": [
+    "cd035191-e067-5319-b2e5-26eb65f4874c",
+    "73e99bf2-b781-52fb-8208-630bfd39059c",
+    "645ad15f-0644-5ce3-b16a-230e68b6bdb5",
+    "2270302c-7c43-57f8-91f0-67613334a8f5",
+    "4c35f9ee-9498-59c8-8041-941a7f57d3fb"
+   ],
+   "silver": [
+    "502bf701-91f8-571c-901c-bfc6304eb1f9",
+    "7ca70319-aab4-587f-9d79-a49a8938b395",
+    "f5627ec1-d37e-5cde-8144-077b750d2849",
+    "32b86b89-b866-5253-abd8-e8e4f8c6ab3f",
+    "338f12d3-901c-5714-81ae-7b85948f7810"
+   ],
+   "gold": [
+    "bf8af9e6-2ca1-5c4e-b359-59b294529855",
+    "c380599c-c75d-54c1-9dcd-baaea4d4c789",
+    "17a766b5-d9af-5f59-905f-d42f2a9093e7",
+    "14605bd9-9ba6-59a6-aa22-511e32b39dbf",
+    "68f3eb34-ef19-5961-9553-979429f08497"
+   ]
+  },
+  "sinnoh": {
+   "bronze": [
+    "44c93a5f-d9f4-5df0-b7bc-ebc96322b165",
+    "8a521b6b-98e9-5132-9ea0-cb3a393ec684",
+    "0f282df4-0d5c-5b8f-882a-8008d657ed1d",
+    "333d3aac-1b57-5307-935f-129c4b5b0037",
+    "2a206ecf-35d8-5b15-9ad8-b2f10758faa2"
+   ],
+   "silver": [
+    "b65ff872-d846-5810-9ca5-6e8782f52794",
+    "cc94c61b-6c26-536c-9771-82f747899d23",
+    "76ba0b85-a3e4-539b-b714-093a6f19a192",
+    "c278fb0b-5905-5645-a86a-c680eb9ee32f",
+    "5b4d5778-da23-5bff-ad14-69370285dbfe"
+   ],
+   "gold": [
+    "95ec8afc-4fb4-5e2b-a871-bf39f53c3054",
+    "3fdc8b1b-ae3f-590c-a490-f949cf4211f5",
+    "98a72873-937d-570c-9860-69d6940591c8",
+    "45d0a6d6-f9ee-5009-a308-0d93b875e79e",
+    "f354e571-253e-5c17-9817-5ca8edd12134"
+   ]
+  },
+  "unova": {
+   "bronze": [
+    "5517f310-236f-5701-af72-d28b64ac003c",
+    "fe2be174-3a1f-5e1c-bfcd-e43ba61a2558",
+    "5f3f17f1-dc44-5b19-8f2c-652841e5f6b5",
+    "001170e1-c16d-5f49-813e-3c2e6037c5c2",
+    "d89d2b06-1746-584c-8fcf-3bde60125abf",
+    "f2d7f77b-7432-5271-8344-62648afa60ae"
+   ],
+   "silver": [
+    "01fda961-7819-589b-a220-4bf067d21ea8",
+    "d7b5479e-876e-5e48-8bb7-e99a39fee8d1",
+    "a9f4e8ff-23cd-58ee-9f30-e1bcc39daf63",
+    "6ee2c30c-149a-5ace-834f-8e88734c7aaf",
+    "0894b753-26c1-5f4b-91f0-7d7f6046ade9",
+    "01bc6612-c5a2-5f7e-8d9d-863e38486401"
+   ],
+   "gold": [
+    "6ef76ec3-d004-57ad-bf66-3f0aacae9b61",
+    "cd044ab6-0003-5bc2-9611-3a525602d117",
+    "dd7fcb30-ea75-52ca-bf95-5c5143138cf3",
+    "d8a13126-451b-5028-8525-3216ec336182",
+    "61b7966d-503c-547e-9379-551971f1f0f6",
+    "c24fc25d-99e0-504d-8fc4-2a3a4db320b3"
+   ]
+  },
+  "kalos": {
+   "bronze": [
+    "ab898418-6798-5ee7-9ec2-361df4931bc5",
+    "2fe851a0-e3ea-5ec9-b231-d8d66c8fbf30",
+    "e54964db-d027-5b33-8ae5-1168036c1666",
+    "caa9399c-2379-5c81-b4de-07d6abcea425",
+    "122352d2-d4b4-5d28-904e-60e3e48dfb29"
+   ],
+   "silver": [
+    "f1035b21-df43-5786-835e-5167b4f793da",
+    "8b854b1c-88b6-5a79-be4e-111c5dac2e47",
+    "05e38b04-883b-5c6e-a4dc-fe663b7a6503",
+    "55580c8f-b37a-53a8-8068-b3d2172ee927",
+    "19b3f684-e643-5aa1-bf2f-ad62dfec5dd4"
+   ],
+   "gold": [
+    "317bce5f-ff01-588a-97fa-975643b524da",
+    "1444e460-c0f9-5521-b902-ecdd63adeec6",
+    "72ccbee0-89f5-5417-9034-11740321eeac",
+    "7b2cc57d-94da-5950-bc17-853092f3f98e",
+    "ac82ac88-8c95-5bb5-bb0b-0c3ef82de723"
+   ]
+  },
+  "alola": {
+   "bronze": [
+    "a93321ba-edff-50c5-bf49-6c7250738f3c",
+    "046f07e9-345c-5c87-880b-e223ecd13f57",
+    "16dc1bd6-9ff8-5138-883d-537f147dba4b",
+    "b354713b-4618-5499-8157-c21b8a604193",
+    "d21d0e0e-0055-5cfa-941d-6805de532af6"
+   ],
+   "silver": [
+    "762703a3-5c9f-51d2-9cb0-2592db67b6d1",
+    "f5cc2f1c-381d-5425-af1f-ee8115d2dacd",
+    "a9880cb7-b84a-5045-bb48-86509e806ec2",
+    "12dd8f50-2e9d-5605-be91-e42cb15bf717",
+    "b070af03-5ea1-5fa3-ac76-8a7ddda1febd"
+   ],
+   "gold": [
+    "7565fa6e-f439-5efb-bb60-5aaf7c32651b",
+    "ce61cf16-bb8a-5941-8064-ae649ff9e79d",
+    "07ddb1d5-0a1d-56fd-a6d6-77bc72cb886a",
+    "83c64cdc-80ea-53ea-ae73-c8518502e4bb",
+    "3ea8ff08-1e15-520b-acf4-cd8bd9518149"
+   ]
+  },
+  "galar": {
+   "bronze": [
+    "210b0509-7019-578e-a116-f96e1bd293c8",
+    "569b5e84-781e-54c1-897c-870d045858a5",
+    "8b71b171-0025-54c7-8f4f-817d90095767",
+    "b050d29d-f895-5bdd-9ad7-9d22788d2c54",
+    "d109dc8a-eb95-535b-9614-5cb21582d90f"
+   ],
+   "silver": [
+    "187481fd-1c52-5d91-8573-79b625dde8e0",
+    "e518cf32-ade6-522d-bff3-01ed9e070724",
+    "1c4204d6-15ec-52cc-a2c3-2d03f6cd4ed6",
+    "8f3fe06f-31bf-51b4-bc39-d68d10890212",
+    "7d815839-36bd-5d1e-b104-c528c9c751fe"
+   ],
+   "gold": [
+    "faf09658-47e0-5dfa-9437-14114410c2f4",
+    "a9c420b0-cb96-5dca-b472-1ebeefd5baee",
+    "8266e1df-d60a-515a-b687-bde5bb5046ca",
+    "fcdc888f-c2ed-56c9-b18c-c9b6dd003e29",
+    "f0514643-0b7d-5e9f-9971-62bca8c68368"
+   ]
+  },
+  "paldea": {
+   "bronze": [
+    "a7076079-966d-59d8-a335-4d6f869a516b",
+    "ab4c6b91-828a-5a71-87e0-39e44bb59a31",
+    "ef14c7ea-8cfe-54fb-abb6-c601ec19d56a",
+    "43232b00-218b-5b90-846a-7285f316ec98",
+    "2b84c56d-72c2-50d3-b58a-2db2e8834960",
+    "9f8548e8-3808-5f68-9e6a-51aa7bb53048"
+   ],
+   "silver": [
+    "572dc4c2-03d2-5516-b4e2-83b5c4cb08d0",
+    "cb64b3b7-be82-5a33-b487-5b93bab755a6",
+    "d02a5e47-34c1-5309-8e74-a0c211d9be09",
+    "f945c149-b2ce-54dc-b9b1-0e1c4c232043",
+    "3a2feb28-7c72-5c40-b4b7-edbd09b38818",
+    "3c9cef25-f994-549d-8733-e288ac5be57b"
+   ],
+   "gold": [
+    "4cf384f3-8cbd-5646-97ba-e676c54decf4",
+    "dcc6bd13-af30-567a-8eeb-c17e4d0d5262",
+    "5b99a243-8ece-57dc-81ea-d08d4e9e9b78",
+    "96030b3d-8bd5-5ea9-8eda-ce3786518b3d",
+    "11fe02b9-85d2-534d-86a4-659abf4e4d71",
+    "a303311d-2a93-58b4-8b81-a5d1e43b0f0f"
+   ]
+  }
+ }
 }

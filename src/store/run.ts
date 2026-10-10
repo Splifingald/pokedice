@@ -2,6 +2,8 @@
 import {
   applyCatch,
   applyHp,
+  applyRebattleKO,
+  applyRebattleLoss,
   applyVictory,
   applyWipe,
   ballBonus,
@@ -56,6 +58,7 @@ import {
   type SpinResult,
 } from '@/engine'
 import { commitSave, initialRun, mutateSave, pushToast, useGame, type RunState } from './game'
+import { useRebattleMedal } from './rebattle'
 import { t } from '@/i18n'
 import { money } from '@/lib/format'
 
@@ -211,6 +214,8 @@ export function challenge() {
 /** NOT YET: back out of a challenge you picked. Nothing is used up; the gauge stays full. */
 export function declineChallenge() {
   setRun({ phase: 'idle', encounter: null })
+  // A rebattle fight put off: the run ends here (the Area screen sends an idle rebattle run to its page).
+  if (useGame.getState().run.rebattle) setRun({ areaId: null })
 }
 
 export function canSkipCurrent(): boolean {
@@ -343,6 +348,38 @@ function settleBattle(stalemate: boolean) {
   const out = battleOutcome(s)
   const withHp = applyHp(save, out.hp)
 
+  // The Elite Rebattle: its own pay, no area, a loss (or a stalemate) starts the tier over.
+  if (run.rebattle) {
+    const enc = run.encounter
+    if (out.result === 'won' && enc?.kind === 'gym' && run.trainer) {
+      const tier = run.rebattle.tier
+      const res = applyRebattleKO(
+        withHp,
+        {
+          regionId: run.rebattle.regionId,
+          tier,
+          trainerId: enc.trainerId,
+          index: run.trainer.index,
+          last: run.trainer.index + 1 >= enc.team.length,
+          enemyLevel: s.enemy.level,
+          fighterUid: out.fighterUid,
+        },
+        data,
+        runRng,
+      )
+      commitSave(res.save)
+      const gold = res.events.reduce((g, e) => (e.kind === 'gold' ? g + e.amount : g), 0)
+      if (res.events.some((e) => e.kind === 'rebattle_cleared'))
+        useRebattleMedal.setState({ medal: { regionId: run.rebattle.regionId, tier, gold } })
+      setRun({ phase: 'victory', events: res.events, pendingCatchId: null, catch: null, trainer: { ...run.trainer, gold: run.trainer.gold + gold } })
+      return
+    }
+    if (out.result === 'won') return
+    commitSave(applyRebattleLoss(withHp, data, run.rebattle.regionId))
+    setRun({ phase: 'wipe', trainer: null, events: [] })
+    return
+  }
+
   if (out.result === 'won') {
     const enc = run.encounter
     const gym = enc?.kind === 'gym'
@@ -452,6 +489,8 @@ export function continueAfterVictory(leadUid?: string) {
   if (run.trainer && run.trainer.gold > 0) pushToast(t('ui.toast.trainerBeaten', { gold: run.trainer.gold }), 'good')
   useGame.setState({ battle: null })
   setRun({ events: [], trainer: null })
+  // The rebattle has no area to go back to: the caller starts the next fight or leaves for the rebattle page.
+  if (run.rebattle) return
   backToArea()
 }
 
@@ -484,12 +523,16 @@ export function forfeit() {
     return
   }
   if (run.phase !== 'victory' || !trainerHasNext()) return
-  commitSave(applyWipe(save, run.areaId, data))
+  commitSave(run.rebattle ? applyRebattleLoss(save, data, run.rebattle.regionId) : applyWipe(save, run.areaId, data))
   setRun({ phase: 'wipe', trainer: null, events: [] })
 }
 
 export function afterWipe() {
-  useGame.setState((s) => ({ battle: null, run: { ...initialRun(), areaId: s.run.areaId, firstInArea: true } }))
+  useGame.setState((s) =>
+    s.run.rebattle
+      ? { battle: null, run: { ...initialRun(), rebattle: s.run.rebattle } }
+      : { battle: null, run: { ...initialRun(), areaId: s.run.areaId, firstInArea: true } },
+  )
 }
 
 export function afterStalemate() {

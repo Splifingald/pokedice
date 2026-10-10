@@ -1,6 +1,7 @@
-// Migration 0035 against a real Postgres (PGlite, in process): the clock anyone can read, and the Fortune Wheel's one
-// spin per UTC day with the prize drawn by the server. Supabase's own pieces (the auth schema, the anon /
-// authenticated roles) are stood in for at the top, as in friends-sql.test.ts.
+// Migrations 0035 and 0036 against a real Postgres (PGlite, in process): the clock anyone can read, the Fortune Wheel's
+// one spin per UTC day with the prize drawn by the server, and Victory Road II / League II leaving the database.
+// Supabase's own pieces (the auth schema, the anon / authenticated roles) are stood in for at the top, as in
+// friends-sql.test.ts.
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { PGlite } from '@electric-sql/pglite'
@@ -109,5 +110,34 @@ describe('0035: wheel_spin', () => {
     await setEvents({ wheel: { prizes: [{ reward: { kind: 'gold', amount: 10 }, count: 1, odds: 0 }] } })
     await expect(spin(U.misty)).rejects.toThrow(/events_wheel_empty/)
     await db.exec(`delete from game_config where key = 'events'`)
+  })
+})
+
+describe('0036: Victory Road II and League II leave', () => {
+  const ROAD2 = '35c40458-61da-5321-adda-6df33b930671'
+  const LEAGUE = 'bbe7e459-a138-5106-bd01-fce7ff422e7f'
+  const area = (id: string, order: number, name: string) =>
+    db.query(
+      `insert into areas (id, order_index, name, min_level, max_level, encounter_weights) values ($1, $2, $3, 1, 2, '{}')`,
+      [id, order, name],
+    )
+  const trainer = (id: string, name: string) => db.query(`insert into trainers (id, name, team) values ($1, $2, '[]')`, [id, name])
+
+  it('deletes those areas with their pools, and the trainers only they used; the rest stays', async () => {
+    const del = sql('0036_remove_league_ii.sql')
+    const gone = del.slice(del.indexOf('delete from trainers')).match(/'([0-9a-f-]{36})'/)![1]!
+    await area(ROAD2, 9023, 'Victory Road II')
+    await area(LEAGUE, 9022, 'Indigo Plateau')
+    await trainer(gone, 'Cooltrainer')
+    await trainer('11111111-1111-4111-8111-111111111111', 'Elite Four Lorelei')
+    await db.query(`insert into area_trainer_pool (area_id, trainer_id) values ($1, $2)`, [ROAD2, gone])
+    await db.exec(del)
+    const ids = async (table: string) => (await db.query<{ id: string }>(`select id from ${table}`)).rows.map((r) => r.id)
+    expect(await ids('areas')).toEqual([LEAGUE])
+    expect(await ids('trainers')).toEqual(['11111111-1111-4111-8111-111111111111'])
+    expect(await ids('area_trainer_pool')).toEqual([])
+    // Safe to run again.
+    await db.exec(del)
+    expect(await ids('areas')).toEqual([LEAGUE])
   })
 })

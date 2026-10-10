@@ -312,6 +312,8 @@ export type RunEvent =
   | { kind: 'gym_defeated'; trainerId: string; name: string; badge: string | null; role: TrainerRole }
   | { kind: 'area_cleared'; areaId: string; nextAreaId: string | null }
   | { kind: 'secret_unlocked'; areaId: string }
+  /** An Elite Rebattle tier won: every trainer of its gauntlet beaten in a row. */
+  | { kind: 'rebattle_cleared'; regionId: string; tier: number }
 
 export interface VictoryInput {
   areaId: string
@@ -330,6 +332,53 @@ export interface VictoryResult {
 }
 
 /**
+ * A K.O.'s XP: the foe's level × xpMultiplier (× the area's backtrack when it's cleared) to the fighter (or the whole
+ * team), and Multi EXP's shares to the bench. Level-ups, milestones and evolutions go into `events`; an evolution adds
+ * its species to the Pokédex.
+ */
+export function awardBattleXp(
+  save: SaveData,
+  enemyLevel: number,
+  fighterUid: string,
+  area: Area,
+  cleared: boolean,
+  data: GameData,
+  rng: Rng,
+  events: RunEvent[],
+): SaveData {
+  let next: SaveData = { ...save, pokedex: [...save.pokedex] }
+  const xp = pokemonXp(enemyLevel, area, cleared, data)
+  // Cross-generation evolutions wait for their generation; the gate is the same for every award in this battle.
+  const allowDex = evolutionGate(save, data)
+  const award = (uid: string, amount: number, shared: boolean) => {
+    const inst = getInstance(next, uid)
+    if (!inst) return
+    events.push(shared ? { kind: 'xp', uid, amount, shared } : { kind: 'xp', uid, amount })
+    const res = gainXp(inst, amount, data, rng, { owned: save.pokedex, allowDex })
+    next = replaceInstance(next, res.inst)
+    events.push(...res.events)
+    for (const ev of res.events)
+      if (ev.kind === 'evolve' && !next.pokedex.includes(ev.toDex)) next.pokedex.push(ev.toDex)
+  }
+  const recipients = data.config.xpShareMode === 'team' ? next.team : [fighterUid]
+  // Multi EXP compares levels from before this K.O.'s XP.
+  const fighterLevel = getInstance(next, fighterUid)?.level ?? 1
+  for (const uid of recipients) award(uid, xp, false)
+
+  // Multi EXP: team members who didn't fight (and are still standing) get a share, bigger the further behind they are.
+  if (data.config.multiExpShare > 0 && next.settings?.multiExp !== false && data.config.xpShareMode !== 'team') {
+    for (const uid of [...next.team]) {
+      if (recipients.includes(uid)) continue
+      const inst = getInstance(next, uid)
+      if (!inst || inst.currentHp <= 0) continue
+      const share = multiExpShareFor(fighterLevel, inst.level, data)
+      if (share > 0) award(uid, Math.max(1, Math.round(xp * share)), true)
+    }
+  }
+  return next
+}
+
+/**
  * Everything a K.O. pays out: XP to the fighter (or team), trainer Pokédollars, boss, area unlock.
  * Catching is its own step afterwards — the catch die (catching.ts).
  */
@@ -345,37 +394,7 @@ export function applyVictory(
   let progress = progressOf(save, area.id)
   const events: RunEvent[] = []
   const hiddenBefore = new Set(unlockedHiddenAreas(save, data))
-  let next: SaveData = { ...save, pokedex: [...save.pokedex] }
-
-  // XP: the foe's level × xpMultiplier.
-  const xp = pokemonXp(input.enemyLevel, area, progress.cleared, data)
-  // Cross-generation evolutions wait for their generation; the gate is the same for every award in this battle.
-  const allowDex = evolutionGate(save, data)
-  const award = (uid: string, amount: number, shared: boolean) => {
-    const inst = getInstance(next, uid)
-    if (!inst) return
-    events.push(shared ? { kind: 'xp', uid, amount, shared } : { kind: 'xp', uid, amount })
-    const res = gainXp(inst, amount, data, rng, { owned: save.pokedex, allowDex })
-    next = replaceInstance(next, res.inst)
-    events.push(...res.events)
-    for (const ev of res.events)
-      if (ev.kind === 'evolve' && !next.pokedex.includes(ev.toDex)) next.pokedex.push(ev.toDex)
-  }
-  const recipients = data.config.xpShareMode === 'team' ? next.team : [input.fighterUid]
-  // Multi EXP compares levels from before this K.O.'s XP.
-  const fighterLevel = getInstance(next, input.fighterUid)?.level ?? 1
-  for (const uid of recipients) award(uid, xp, false)
-
-  // Multi EXP: team members who didn't fight (and are still standing) get a share, bigger the further behind they are.
-  if (data.config.multiExpShare > 0 && next.settings?.multiExp !== false && data.config.xpShareMode !== 'team') {
-    for (const uid of [...next.team]) {
-      if (recipients.includes(uid)) continue
-      const inst = getInstance(next, uid)
-      if (!inst || inst.currentHp <= 0) continue
-      const share = multiExpShareFor(fighterLevel, inst.level, data)
-      if (share > 0) award(uid, Math.max(1, Math.round(xp * share)), true)
-    }
-  }
+  let next = awardBattleXp(save, input.enemyLevel, input.fighterUid, area, progress.cleared, data, rng, events)
 
   // Gold — trainers only (gym leaders, the Elite Four and the Champion pay extra)
   if (input.kind === 'trainer' || input.kind === 'gym') {

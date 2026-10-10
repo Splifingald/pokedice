@@ -17,6 +17,8 @@
     "seed-regions": "tsx scripts/seed-regions.ts",
     "seed-sql": "tsx scripts/write-seed-sql.ts",
     "seed-forms": "tsx scripts/seed-forms.ts",
+    "rebattle-teams": "tsx scripts/rebattle-teams.ts",
+    "remove-league-ii": "tsx scripts/remove-league-ii.ts",
     "art": "tsx scripts/art.ts",
     "unpixel": "tsx scripts/unpixel.ts",
     "showdown-sprites": "tsx scripts/showdown-sprites.ts",

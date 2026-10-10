@@ -33,6 +33,10 @@ export type Encounter =
       /** 1-based position among the area's gym battles, and their count (Elite Four = 5). */
       index: number
       total: number
+      /** The upgrade level its Pokémon fight at, when not the trainer's or the area's (the Elite Rebattle's tiers). */
+      upgradeLevel?: number
+      /** An Elite Rebattle fight: the region and the tier (0 = Bronze). */
+      rebattle?: { regionId: string; tier: number }
     }
   /** `reason`: 'round' opens a new round; 'fainted' follows a K.O. in an easy area. */
   | { kind: 'center'; forced: boolean; reason?: 'fainted' | 'round' }
@@ -480,6 +484,7 @@ export function canSkip(enc: Encounter, policy: SkipPolicy, skipsThisEncounter: 
  */
 export function enemyUpgradeLevelFor(enc: Encounter, area: Area | undefined, data: GameData): number {
   let own: number | null | undefined
+  if (enc.kind === 'gym' && enc.upgradeLevel != null) return enc.upgradeLevel
   if (enc.kind === 'trainer' || enc.kind === 'gym') own = data.trainers[enc.trainerId]?.upgradeLevel
   else if (enc.kind === 'boss') own = area?.legendaryBoss?.find((b) => b.dex === enc.dex)?.upgradeLevel
   return own ?? area?.enemyUpgradeLevel ?? data.config.enemyUpgradeLevel

@@ -2,12 +2,14 @@
 // Versus. Before any event opens, one square holds the place: "coming later", then from the 3rd Kanto badge a locked
 // teaser naming the area that opens the first event.
 import { useNavigate } from 'react-router-dom'
-import { activeEvents, eventsTeaser, type EventId } from '@/engine'
+import { activeEvents, currentTier, eventsTeaser, rebattleEncounter, rebattleOnHome, regionOf, type EventId } from '@/engine'
 import { PixelIcon } from '@/components/icons'
+import { TrainerSprite } from '@/components/TrainerArt'
 import { useT } from '@/i18n/react'
 import { countdown } from '@/lib/format'
 import { useGame } from '@/store/game'
 import { Widget } from '@/screens/home/Widget'
+import { Medal, tierName } from './RebattlePage'
 import { EVENT_ICON, RewardIcon, rewardName, useWheelDay } from './shared'
 
 /**
@@ -51,6 +53,41 @@ function WheelSquare() {
   )
 }
 
+/** The Elite Rebattle's square: the tier's medal, the next trainer to beat and where the gauntlet stands. */
+function RebattleSquare() {
+  const { t } = useT()
+  const navigate = useNavigate()
+  const save = useGame((s) => s.save)
+  const data = useGame((s) => s.data)
+  if (!save) return null
+  const region = regionOf(save)
+  const tier = currentTier(save, data, region)
+  const next = rebattleEncounter(save, data, region)
+  const name = t('ui.events.rebattle.name')
+  const tierLabel = tierName(t, data, tier)
+  const sub = next?.kind === 'gym' ? t('ui.events.rebattle.fightOf', { n: next.index, total: next.total }) : ''
+  const foe = next?.kind === 'gym' ? next.name : ''
+  return (
+    <Widget
+      title={name}
+      tag={<Medal tier={tier} size="sm" />}
+      label={t('ui.events.rebattle.label', { name, tier: tierLabel, foe, sub })}
+      onClick={() => navigate('/events/rebattle')}
+    >
+      <span className="flex min-h-[64px] items-center gap-2">
+        <TrainerSprite src={next?.kind === 'gym' ? next.spriteUrl : null} size={56} />
+        <span className="grid min-w-0 gap-0.5 leading-none">
+          <small className="font-pixel-sm text-[14px] text-muted">{t('ui.events.rebattle.next')}</small>
+          <b className="line-clamp-2 text-[18px] font-normal leading-[1.05]">{foe}</b>
+        </span>
+      </span>
+      <span className="font-pixel-sm text-[15px] leading-none text-muted">
+        {tierLabel} · {sub}
+      </span>
+    </Widget>
+  )
+}
+
 /** An event's square. Each event draws its own inside (docs/19); this is the frame they share. */
 function EventSquare({ id }: { id: EventId }) {
   const { t } = useT()
@@ -90,7 +127,12 @@ export function EventWidgets() {
   const data = useGame((s) => s.data)
   if (!save) return null
   const open = activeEvents(save, data)
-  if (open.length) return open.map((id) => (id === 'wheel' ? <WheelSquare key={id} /> : <EventSquare key={id} id={id} />))
+  // The rebattle only shows while the region being played has tiers left to fight.
+  const onHome = open.filter((id) => id !== 'rebattle' || rebattleOnHome(save, data))
+  if (open.length)
+    return onHome.map((id) =>
+      id === 'wheel' ? <WheelSquare key={id} /> : id === 'rebattle' ? <RebattleSquare key={id} /> : <EventSquare key={id} id={id} />,
+    )
   const teaser = eventsTeaser(save, data)
   const area = teaser?.kind === 'soon' ? data.areas.find((a) => a.id === teaser.areaId) : null
   return <EventsTeaser areaName={area?.name ?? null} />

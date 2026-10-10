@@ -137,6 +137,15 @@ export const saveSchema = z.object({
           z.object({ kind: z.literal('item'), key: z.string().min(1).max(60), qty: z.number().int().min(1) }),
         ])
         .optional(),
+      rebattle: z
+        .record(
+          z.object({
+            done: z.number().int().min(0),
+            step: z.number().int().min(0),
+            paid: z.array(z.string().max(120)).default([]),
+          }),
+        )
+        .optional(),
     })
     .optional(),
   region: z.string().optional(),

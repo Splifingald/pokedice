@@ -26,6 +26,7 @@ import { CasinoView } from './area/CasinoView'
 import { CenterView } from './area/CenterView'
 import { EncounterPreview } from './area/EncounterPreview'
 import { AreaDetails } from './home/AreaDetails'
+import { RebattleHeader } from './events/RebattlePage'
 import { AreaStrip } from '@/components/AreaStrip'
 
 const CARD_ICON: Record<DeckCard, IconName> = {
@@ -230,12 +231,13 @@ export function AreaScreen() {
 
   if (!save) return <Navigate to="/" replace />
   if (battle) return <BattleView key={battle.id} battle={battle} />
-  if (!area || !run.areaId || run.phase === 'idle') return <Navigate to="/home" replace />
+  // An Elite Rebattle run ends on its own page.
+  if (!area || !run.areaId || run.phase === 'idle') return <Navigate to={run.rebattle ? '/events/rebattle' : '/home'} replace />
 
   const progress = progressOf(save, area.id)
   return (
     <div className="flex flex-col gap-4">
-      <AreaHeader area={area} progress={progress} teamAvg={teamAverageLevel(save)} />
+      {run.rebattle ? <RebattleHeader /> : <AreaHeader area={area} progress={progress} teamAvg={teamAverageLevel(save)} />}
       {run.phase === 'preview' && run.encounter && <EncounterPreview enc={run.encounter} />}
       {run.phase === 'center' && <CenterView />}
       {run.phase === 'casino' && <CasinoView />}

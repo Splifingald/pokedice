@@ -7,6 +7,8 @@ import { BackButton } from '@/components/PageHead'
 import { useT } from '@/i18n/react'
 import { countdown } from '@/lib/format'
 import { useGame } from '@/store/game'
+import { currentTier, rebattleComplete, rebattleEncounter, regionOf } from '@/engine'
+import { RebattlePage, tierName } from './RebattlePage'
 import { EventPicture, useWheelDay } from './shared'
 import { WheelPage } from './WheelPage'
 
@@ -34,8 +36,17 @@ export function EventBanner({ id, status }: { id: EventId; status?: ReactNode })
 function useEventStatus(id: EventId): string | undefined {
   const { t } = useT()
   const wheel = useWheelDay()
+  const save = useGame((s) => s.save)
+  const data = useGame((s) => s.data)
   if (id === 'wheel' && wheel.known)
     return wheel.ready ? t('ui.events.wheel.daily') : t('ui.events.wheel.nextSpin', { time: countdown(wheel.msLeft) })
+  if (id === 'rebattle' && save) {
+    const region = regionOf(save)
+    if (rebattleComplete(save, data, region)) return t('ui.events.rebattle.medalTitle', { tier: tierName(t, data, 2) })
+    const next = rebattleEncounter(save, data, region)
+    if (next?.kind === 'gym')
+      return `${tierName(t, data, currentTier(save, data, region))} · ${t('ui.events.rebattle.fightOf', { n: next.index, total: next.total })}`
+  }
   return undefined
 }
 
@@ -43,6 +54,7 @@ function useEventStatus(id: EventId): string | undefined {
 function EventBody({ id }: { id: EventId }) {
   const { t } = useT()
   if (id === 'wheel') return <WheelPage />
+  if (id === 'rebattle') return <RebattlePage />
   return <p className="m-0 font-pixel-sm text-[16px] text-muted">{t('ui.events.building', { name: t(`ui.events.${id}.name`) })}</p>
 }
 

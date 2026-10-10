@@ -1,7 +1,17 @@
 // Result screens: victory (XP, level-ups, milestones, gold, catch, then evolutions), wipe and stalemate.
 import { AnimatePresence, motion } from 'framer-motion'
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
-import { getInstance, instanceStats, progressOf, teamOf, type DieType, type Milestone, type RunEvent } from '@/engine'
+import {
+  getInstance,
+  instanceStats,
+  progressOf,
+  rebattleEncounter,
+  rebattleLineup,
+  teamOf,
+  type DieType,
+  type Milestone,
+  type RunEvent,
+} from '@/engine'
 import { sfx } from '@/audio/sfx'
 import { EvolutionQueue, type EvolutionShow } from '@/components/Evolution'
 import { RoundsCounter } from '@/components/RoundsCounter'
@@ -32,6 +42,8 @@ import {
   resolveCatch,
   trainerHasNext,
 } from '@/store/run'
+import { leaveRebattle, startRebattle } from '@/store/rebattle'
+import { Medal, tierName } from '@/screens/events/RebattlePage'
 import { cx, shade, typeColor } from '@/theme/util'
 
 /**
@@ -296,6 +308,18 @@ function useRecap(events: RunEvent[]): { mons: MonRecap[]; extras: Extra[]; evol
           })
           return
         }
+        case 'rebattle_cleared':
+          extras.push({
+            key: k,
+            sound: 'levelup',
+            node: (
+              <div className="flex items-center justify-center gap-3 bg-gold p-2 text-center shadow-ring">
+                <Medal tier={e.tier} />
+                <div className="text-2xl leading-none">{t('ui.events.rebattle.medalTitle', { tier: tierName(t, data, e.tier) })}</div>
+              </div>
+            ),
+          })
+          return
         case 'area_cleared': {
           const next = data.areas.find((a) => a.id === e.nextAreaId)
           extras.push({
@@ -495,6 +519,8 @@ export function VictoryView() {
     <PixelButton variant="primary" size="lg" className="w-full" onClick={go(() => continueAfterVictory(lead ?? stillIn ?? defaultLead()))}>
       {t('ui.victory.nextBattle')}
     </PixelButton>
+  ) : run.rebattle ? (
+    <RebattleNext go={go} />
   ) : (
     <div className="flex flex-col gap-2">
       {nextArea && (
@@ -592,7 +618,88 @@ export function VictoryView() {
   )
 }
 
+/**
+ * After a rebattle trainer: the next one of the gauntlet, or a pause back on the rebattle page. A cleared tier goes back
+ * there, to its medal card.
+ */
+function RebattleNext({ go }: { go: (action: () => void) => () => void }) {
+  const { t } = useT()
+  const save = useGame((s) => s.save)
+  const data = useGame((s) => s.data)
+  const run = useGame((s) => s.run)
+  const cleared = run.events.some((e) => e.kind === 'rebattle_cleared')
+  const next = save && run.rebattle && !cleared ? rebattleEncounter(save, data, run.rebattle.regionId) : null
+  const leave = go(() => {
+    continueAfterVictory()
+    leaveRebattle()
+  })
+  if (!next || next.kind !== 'gym')
+    return (
+      <PixelButton variant="primary" size="lg" className="w-full" onClick={leave}>
+        {t('ui.events.rebattle.backToPage')}
+      </PixelButton>
+    )
+  return (
+    <div className="grid grid-cols-[1fr_1.6fr] gap-2.5">
+      <PixelButton size="lg" className="whitespace-nowrap px-2" onClick={leave}>
+        {t('ui.events.rebattle.later')}
+      </PixelButton>
+      <PixelButton
+        variant="primary"
+        size="lg"
+        className="min-w-0 px-2"
+        onClick={go(() => {
+          continueAfterVictory()
+          startRebattle()
+        })}
+      >
+        <span className="truncate">{t('ui.events.rebattle.nextFight', { name: next.name })}</span>
+      </PixelButton>
+    </div>
+  )
+}
+
+/** A rebattle lost: back to the tier's first trainer, healed; the ₽ won is kept. */
+function RebattleWipe() {
+  const { t } = useT()
+  const save = useGame((s) => s.save)
+  const data = useGame((s) => s.data)
+  const rb = useGame((s) => s.run.rebattle)
+  const first = save && rb ? rebattleLineup(save, data, rb.regionId, rb.tier)[0] : undefined
+  return (
+    <Overlay
+      label={t('ui.wipe.title')}
+      footer={
+        <div className="grid grid-cols-[1fr_1.4fr] gap-2.5">
+          <PixelButton size="lg" className="whitespace-nowrap px-2" onClick={afterWipe}>
+            {t('ui.events.rebattle.later')}
+          </PixelButton>
+          <PixelButton
+            variant="primary"
+            size="lg"
+            className="whitespace-nowrap px-2"
+            onClick={() => {
+              afterWipe()
+              startRebattle()
+            }}
+          >
+            {t('ui.wipe.tryAgain')}
+          </PixelButton>
+        </div>
+      }
+    >
+      <h2 className="mb-2 text-center text-[32px] font-normal leading-none">{t('ui.wipe.title')}</h2>
+      <p className="copy text-lg">{t('ui.events.rebattle.lostBody', { name: first?.name ?? '' })}</p>
+    </Overlay>
+  )
+}
+
 export function WipeView() {
+  const rebattle = useGame((s) => !!s.run.rebattle)
+  return rebattle ? <RebattleWipe /> : <AreaWipe />
+}
+
+function AreaWipe() {
   const { t } = useT()
   const save = useGame((s) => s.save)
   const data = useGame((s) => s.data)

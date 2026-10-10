@@ -16,14 +16,14 @@ function wheelSave(seen = true): SaveData {
 const today = () => new Date().toISOString().slice(0, 10)
 const eventTime = () => ({ now: new Date().toISOString(), day: today() })
 
-async function boot(page: Page, save: SaveData, signedIn = false) {
+async function boot(page: Page, save: SaveData, signedIn = false, settings = FAST) {
   await page.addInitScript(
     ([key, session, s, f]) => {
       if (session) localStorage.setItem(key!, session)
       localStorage.setItem('pokedice.save', s!)
       localStorage.setItem('pokedice.settings', f!)
     },
-    [STORAGE_KEY, signedIn ? JSON.stringify(fakeSession()) : '', JSON.stringify(save), FAST],
+    [STORAGE_KEY, signedIn ? JSON.stringify(fakeSession()) : '', JSON.stringify(save), settings],
   )
 }
 
@@ -110,4 +110,87 @@ test("signed in, the server draws the prize; a second device's spin is already s
   await expect.poll(async () => (await stored(page)).events?.wheelDay).toBe(today())
   expect((await stored(page)).inventory['master-ball'] ?? 0).toBe(save.inventory['master-ball'] ?? 0)
   expect(spins).toBe(2)
+})
+
+/** Click the first visible, enabled button among `names` (exact accessible names, or patterns). */
+async function clickAny(page: Page, names: (string | RegExp)[]): Promise<boolean> {
+  for (const name of names) {
+    const btn = page.getByRole('button', typeof name === 'string' ? { name, exact: true } : { name }).first()
+    if ((await btn.isVisible().catch(() => false)) && (await btn.isEnabled().catch(() => false))) {
+      await btn.click()
+      return true
+    }
+  }
+  return false
+}
+
+/** The League area is cleared, so its fights can play themselves (auto mode): only the rewards' buttons to press. */
+const AUTO = JSON.stringify({ ...JSON.parse(FAST), autoMode: true })
+const FIGHT_ON = ['GOT IT', 'SKIP ▸▸', 'NEXT BATTLE']
+
+/** The Kanto League won, and a team for the rebattle: three Lv.100s with every upgrade (`level` 5: a team to lose). */
+function leagueSave(level = 100): SaveData {
+  const base = makeSave(4, { player: { name: 'Sam', character: 'red' } })
+  const mon = (id: string, dex: number) => ({ id, dex, level, xp: 0, currentHp: 999, caughtAt: 0 })
+  const max = <K extends string>(r: Record<K, number>) => Object.fromEntries(Object.keys(r).map((k) => [k, level > 50 ? 10 : 1])) as Record<K, number>
+  const league = 'bbe7e459-a138-5106-bd01-fce7ff422e7f'
+  return {
+    ...base,
+    box: [mon('a', 150), mon('b', 149), mon('c', 248)],
+    team: ['a', 'b', 'c'],
+    comboLevels: max(base.comboLevels),
+    dieLevels: max(base.dieLevels),
+    pokedex: [...base.pokedex, 150, 149, 248],
+    areaProgress: { ...base.areaProgress, [league]: cleared },
+    events: { seen: ['wheel', 'rebattle'] },
+    regionOfferSeen: ['johto'],
+    settings: { ...base.settings, autoMode: true },
+  }
+}
+
+test('the Elite Rebattle: a gauntlet fight pays, the next trainer waits, and the page keeps the place', async ({ page }) => {
+  await mockSupabase(page, { rpc: { event_time: eventTime } })
+  const save = leagueSave()
+  await boot(page, save, false, AUTO)
+  await page.goto('/home')
+  await page.getByRole('button', { name: /^Elite Rebattle, Bronze tier: next, Elite Four Lorelei/ }).click()
+  await expect(page).toHaveURL(/\/events\/rebattle$/)
+  await page.getByRole('button', { name: 'Start the Bronze tier' }).click()
+  await expect(page.getByText('Each of their Pokémon pays ₽×1.5, once in this tier.')).toBeVisible()
+  await page.getByRole('button', { name: 'FIGHT', exact: true }).click()
+
+  const next = page.getByRole('button', { name: 'Next: Elite Four Bruno' })
+  for (let i = 0; i < 300 && !(await next.isVisible()); i++) {
+    await clickAny(page, FIGHT_ON)
+    await page.waitForTimeout(80)
+  }
+  await expect(next).toBeVisible()
+  // Lorelei's three Pokémon paid, once each.
+  await expect.poll(async () => (await stored(page)).gold).toBeGreaterThan(save.gold)
+  expect((await stored(page)).events?.rebattle?.kanto).toMatchObject({ done: 0, step: 1 })
+
+  await page.getByRole('button', { name: 'Later', exact: true }).click()
+  await expect(page).toHaveURL(/\/events\/rebattle$/)
+  await expect(page.getByRole('button', { name: 'Continue: Elite Four Bruno' })).toBeVisible()
+  await expect(page.getByLabel('Beaten')).toHaveCount(1)
+})
+
+test('the Elite Rebattle: a loss starts the tier over, the team healed', async ({ page }) => {
+  await mockSupabase(page, { rpc: { event_time: eventTime } })
+  await boot(page, leagueSave(5), false, AUTO)
+  await page.goto('/events/rebattle')
+  await page.getByRole('button', { name: 'Start the Bronze tier' }).click()
+  await page.getByRole('button', { name: 'FIGHT', exact: true }).click()
+  const lost = page.getByText('The gauntlet starts over from Elite Four Lorelei.', { exact: false })
+  for (let i = 0; i < 300 && !(await lost.isVisible()); i++) {
+    await clickAny(page, FIGHT_ON)
+    await page.waitForTimeout(80)
+  }
+  await expect(lost).toBeVisible()
+  await page.getByRole('button', { name: 'Later', exact: true }).click()
+  await expect(page).toHaveURL(/\/events\/rebattle$/)
+  await expect(page.getByRole('button', { name: 'Start the Bronze tier' })).toBeVisible()
+  const after = await stored(page)
+  expect(after.events?.rebattle?.kanto?.step).toBe(0)
+  for (const p of after.box) expect(p.currentHp).toBeGreaterThan(0)
 })

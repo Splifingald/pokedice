@@ -471,12 +471,27 @@ export interface WheelPrize {
   odds: number
 }
 
+export const REBATTLE_TIER_IDS = ['bronze', 'silver', 'gold'] as const
+export type RebattleTierId = (typeof REBATTLE_TIER_IDS)[number]
+
+/** One tier of the Elite Rebattle: its ₽ multiplier and how far above the League's its upgrade level goes. */
+export interface RebattleTier {
+  id: RebattleTierId
+  /** Every K.O. pays a League trainer's ₽ × this (once per Pokémon per tier). */
+  gold: number
+  /** Upgrade levels above the League's, or 'max' (10). A trainer's own upgrade level wins over it. */
+  upgradeDelta: number | 'max'
+}
+
+/** Each region's rebattle lineups: per tier, the trainer ids in fight order (scripts/rebattle-teams.ts). */
+export type RebattleLineups = Record<string, Partial<Record<RebattleTierId, string[]>>>
+
 export interface EventsConfig {
   /** Home shows a locked "Special events" square from this many Kanto badges until the first event opens. */
   teaserBadges: number
   wheel: EventDef & { prizes: WheelPrize[] }
   raid: EventDef
-  rebattle: EventDef
+  rebattle: EventDef & { tiers: RebattleTier[] }
 }
 
 export interface GameConfig {
@@ -555,6 +570,8 @@ export interface GameConfig {
   uniquePity: UniquePityConfig
   /** The special events (docs/18): one game_config row for all of them. */
   events: EventsConfig
+  /** The Elite Rebattle's trainers, per region and tier (a row of its own, written by scripts/rebattle-teams.ts). */
+  rebattleLineups: RebattleLineups
 }
 
 /**
@@ -702,6 +719,18 @@ export interface EventsSave {
   wheelDay?: string
   /** That spin's prize until it's paid (when the wheel stops, or on the next start if the page closed mid-spin). */
   wheelPending?: WheelReward
+  /** The Elite Rebattle, per region. */
+  rebattle?: Record<string, RebattleProgress>
+}
+
+/** Where a player stands in one region's Elite Rebattle. */
+export interface RebattleProgress {
+  /** Tiers cleared (0–3). */
+  done: number
+  /** The next trainer of the current tier's gauntlet (0 = its first). */
+  step: number
+  /** The K.O.s already paid: `tier:trainerId:index` (each Pokémon pays once per tier). */
+  paid: string[]
 }
 
 /**

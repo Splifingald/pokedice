@@ -1,8 +1,9 @@
 // A special event has opened (docs/18): once, between fights, its picture as a banner, its 2–4 rules (with the admin's
-// numbers) and a button straight to it. It waits for Prof. Oak's tutorials and the donation pop-up. Only the newest
-// open event shows; the others count as seen with it.
+// numbers) and a button straight to it. It waits for Prof. Oak's tutorials, the donation pop-up and a new region's
+// offer (winning a League opens both that and the rebattle). Only the newest open event shows; the others count as
+// seen with it.
 import { useLocation, useNavigate } from 'react-router-dom'
-import { dayCareTutorialDue, donationDue, eventUnlockDue, leaderboardTutorialDue } from '@/engine'
+import { dayCareTutorialDue, donationDue, eventUnlockDue, leaderboardTutorialDue, regionOfferDue } from '@/engine'
 import { useT } from '@/i18n/react'
 import { markEventsSeen } from '@/store/actions'
 import { useGame } from '@/store/game'
@@ -17,7 +18,11 @@ export function EventUnlockPopup() {
   const onEvents = useLocation().pathname.startsWith('/events')
   const data = useGame((s) => s.data)
   const due = useGame((s) =>
-    s.save && !dayCareTutorialDue(s.save, s.data) && !leaderboardTutorialDue(s.save, s.data) && !donationDue(s.save, s.data)
+    s.save &&
+    !dayCareTutorialDue(s.save, s.data) &&
+    !leaderboardTutorialDue(s.save, s.data) &&
+    !donationDue(s.save, s.data) &&
+    !regionOfferDue(s.save, s.data)
       ? eventUnlockDue(s.save, s.data)
       : null,
   )

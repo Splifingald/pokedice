@@ -4,6 +4,7 @@ import { BUNDLE, withStatics } from '@/config/bundle'
 import {
   compileGameData,
   fitDayCare,
+  migrateLeagueII,
   migrateRounds,
   payWheelPrize,
   reviveFossils,
@@ -61,6 +62,8 @@ export interface RunState {
   catch: CatchState | null
   /** Dev tools: force the next encounter type. */
   forceNext: ForceKind | null
+  /** An Elite Rebattle gauntlet is being fought: its region and tier (the fights run on its League area). */
+  rebattle?: { regionId: string; tier: number } | null
 }
 
 export interface BattleSlice {
@@ -118,6 +121,7 @@ export const initialRun = (): RunState => ({
   pendingCatchId: null,
   catch: null,
   forceNext: null,
+  rebattle: null,
 })
 
 /**
@@ -125,8 +129,9 @@ export const initialRun = (): RunState => ({
  * current curve, and one copy per species in the Box (releaseDuplicates). `released` lists the copies let go.
  */
 function settle(save: SaveData, data: GameData) {
-  // Fossils due by now revive first, so they count as the species they are.
-  const fossils = reviveFossils(migrateRounds(save, data), data, Date.now())
+  // Fossils due by now revive first, so they count as the species they are. A save standing in Victory Road II or
+  // League II (gone, the Elite Rebattle replaced them) goes back to its League first.
+  const fossils = reviveFossils(migrateRounds(migrateLeagueII(save), data), data, Date.now())
   // More Day Care residents than slots (the Day Cares became one): the extra ones go home before duplicates are seen.
   const fitted = fitDayCare(fossils.save, data, Date.now())
   const dup = releaseDuplicates(syncXpCurve(syncHpScale(fitted, data), data))

@@ -151,6 +151,7 @@ describe('a save from before regions', () => {
     // Progress is keyed by area id. If the seeder ever re-derived these, every player's campaign would reset.
     for (const a of chain) expect(a.id).toMatch(/^[0-9a-f-]{36}$/)
     expect(chain.map((a) => a.name)).toContain('Route 1')
-    expect(chain).toHaveLength(24)
+    // Route 1 → Indigo Plateau (Victory Road II and Indigo Plateau II left for the Elite Rebattle).
+    expect(chain).toHaveLength(22)
   })
 })
