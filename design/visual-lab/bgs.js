@@ -8,6 +8,7 @@
  * Regions: one more picture per region, the region's own card in the region switcher (public/region-art/<id>.png).
  * Center & Day Care: the room behind the Center's healing scene (public/backgrounds/pokemon-center.png) and the Day
  * Care's yard, a Home-style scene (public/area-art/daycare.png).
+ * Special events: each event's banner, on its page and its unlock pop-up (public/event-art/<id>.png), a wide strip.
  * Self-contained: it renders the first time its tab is shown.
  */
 ;(function () {
@@ -176,6 +177,7 @@ Composition: a front-facing, eye-level view. The horizon (or, indoors, the foot 
     moment: { label: 'Story moments', one: 'Story moment', note: 'not an area: the stage of a moment in the game' },
     region: { label: 'Regions', one: 'Region card', note: "not an area: the region's own picture on its card in the region switcher" },
     place: { label: 'Center & Day Care', one: 'Place', note: 'not an area: the backdrops of the Pokémon Center and the Day Care' },
+    event: { label: 'Special events', one: 'Event banner', note: "not an area: an event's banner, on its page and its unlock pop-up" },
   }
   // Story moments: full-stage scenes (240 × 160) for moments of the game rather than areas. Their stand-in is drawn
   // by the lab (anims.js) until the generated picture replaces it.
@@ -371,6 +373,45 @@ Composition (positions as a share of the square, from its top-left corner): a fr
 - Lower right, around 74 % across and 86 % down, a plain patch of lawn: the game puts an Egg's nest there.
 - Between the fence and the house: a little flower and vegetable garden to the right of the house, a few bushes. Tall things (a round tree, a tall flowering shrub) stand at the far left and far right edges, the outer twelfth on each side; maybe a wooden bench or a water trough by the fence at the far right. Bigger grass tufts and flowers along the very bottom edge. Gentle depth: smaller details near the horizon.`
   const PLACES = [CENTER_PIC, DAYCARE_PIC]
+  // Special events (docs/18): each event's banner, at the top of its page (a strip from about 3:1 on a phone to 8:1 on
+  // a wide screen, 132 px tall, the title plate and the back arrow over its top-left corner) and of its unlock pop-up
+  // (about 3.4:1, a NEW EVENT tag top-left). The game crops it from the vertical middle (object-position 50% 55%), so
+  // the subject lives in a horizontal band through the centre. Until the art exists the game borrows an area picture.
+  const WHEEL_BANNER = {
+    id: 'event-wheel',
+    kind: 'event',
+    name: 'Fortune Wheel',
+    areas: [],
+    file: 'public/event-art/wheel.png',
+    size: '480 × 206, ask 21:9 · shown as a wide strip',
+    ask: '21:9',
+    width: 480,
+    uses: ["The Fortune Wheel's page banner (Home → Fortune Wheel)", 'Its unlock pop-up (when Routes 7 & 8 are cleared)'],
+    empty: ['the top-left corner (title plate, back arrow, NEW EVENT tag)', 'no lettering anywhere: the game prints the name'],
+    then: "set the Fortune Wheel's banner to <code>/event-art/wheel.png</code> in Admin → Events (and in <code>DEFAULT_CONFIG.events.wheel.banner</code>)",
+    head: 'Pixel-art banner for a Pokémon-style mobile game: the "Fortune Wheel", a daily prize-wheel event where the player spins a big lit wheel once a day to win Poké Balls and coins. Generic: no named place, no host, no logo.',
+    avoid:
+      'No lettering, numbers, prices or symbols on the wheel, the booth, the signs or the bunting: the game prints the event name. No people, no creatures, no hands on the wheel. No casino chips, cards or dice, nothing that reads as gambling for money: a friendly fairground prize game.',
+    now: () => 'assets/ev/art/evening.png',
+    nowAlt: 'the area picture the game borrows until then (Routes 7 & 8, evening)',
+    comp: () => wheelBannerComp(),
+    mood: 'Festive golden evening',
+    sw: ['#7a5a9e', '#f4a07c', '#ffbe2e', '#fff6c0', '#f2553f', '#24304f'],
+    scene:
+      'A festive prize booth at an evening fair in a bright city. At its heart, slightly right of centre, a big upright prize wheel on a sturdy stand, facing the viewer: a perfectly round wheel (a circle, not an ellipse) with nine equal slices in soft alternating pastel colours (cream-gold, coral, sky blue, silver-grey, lilac), a few slices showing a simple round red-and-white capsule-ball icon or a gold coin, a white hub with a red centre, a ring of glowing marquee bulbs around its golden rim, and a red arrow pointer at the very top. Behind and around it: a booth with a red-and-cream striped awning, strings of round festoon lights looping across the scene, little triangle bunting flags, gift boxes with ribbons and a few balloons stacked at the foot of the stand, sparkles in the air. Far behind, the warm skyline of a city of tall department stores and lit windows against a golden-hour sky. Cheerful, generous, inviting: today might be your lucky day.',
+    palette:
+      'Palette: festive golden hour. Sky from lavender #7A5A9E through rose #E0808A and apricot #F4A07C to honey #FFE0A8 at the horizon; city silhouettes mauve #B58AB8 to #6C5290 with warm windows #FFE7A8. The wheel: rim gold #FFBE2E shaded #E8A21C with a navy #24304F edge, bulbs warm white #FFF6C0 with a dithered glow, slices #FFE7A8/#FFD76A, #FFC2B8/#FF8F7F, #B8D4FF/#8AB4FF, #D6DBE6/#AAB4C8, #E2C4FF/#C58AFF, hub white #FBFDFF, pointer red #F2553F. Awning red #F2553F and cream #FFF8EC; festoon bulbs #FFF6C0; bunting coral, sky blue #5B8DEF and gold; gift boxes in the slice colours with white ribbons; booth floor warm wood #B8885A shaded #885E40.',
+  }
+  const wheelBannerComp = () =>
+    `Format: one wide landscape image (21:9). It will be shrunk to 480 × 206 pixels, so draw it as if on a 480 × 206 canvas enlarged with nearest-neighbour: every art pixel a clean square block about 4 screen pixels wide.
+It is a banner. The game shows it as a wide strip cut from its vertical middle: about 3:1 on a phone, as wide as 8:1 on a wide screen (then only the middle third of the height shows), 132 pixels tall; on the event's pop-up about 3.4:1. A small title plate with a back arrow, or a NEW EVENT tag, sits over the top-left corner.
+Composition: a front-facing, eye-level view, level lines, no tilt.
+- The wheel's hub sits a little right of centre, about 58 % across and 52 % down, so the strip shows the hub and the bulb-lit slices around it at any width; the whole wheel is about 70 % of the image height tall, round and upright.
+- Everything that says "prize wheel" reads inside the middle band, from about 35 % to 68 % of the way down: the hub, the slices, the bulbs, the festoon lights and the tops of the gift boxes.
+- The top-left quarter stays calm: open sky and soft festoon lights only, under the title plate.
+- The booth's awning and stand frame the wheel; the skyline and sky fill the far left; gift boxes and balloons stand at the foot of the stand, lower right; the booth floor runs across the bottom.
+- Clean, uncluttered and readable at a small size: big simple shapes, the wheel's silhouette the clearest thing in the picture.`
+  const EVENTS = [WHEEL_BANNER]
   const S = {
     region: store.get('region', 'all'),
     kind: store.get('kind', 'all'),
@@ -530,7 +571,7 @@ Composition: a front-facing, eye-level view. The table top is one level band acr
 It is the picture on the ${p.name} card in the game's region switcher. The card shows it as a wide 10:3 banner: a full-width strip cut from the middle of the square, from about 35 % to 65 % of the way down. So compose for that strip first: ${p.landmark} and the horizon sit inside that middle band, and the strip alone must say "${p.name}" at a glance. The whole square still has to read as a finished picture, so the top and the bottom simply extend the scene: open sky above, calm foreground below, nothing important in either.
 Composition: a wide panoramic view from a slightly raised eye level, front-facing. The horizon is one straight, level line a little below the middle (about 55 % of the way down). The landmark stands near the centre with a clear, simple silhouette that reads at 400 × 120; smaller supporting details at either side of it, inside the band; bigger, simpler shapes in the foreground. Clean, uncluttered, readable at a small size. The game prints the region's name under the picture, never on it.`
   function promptOf(p) {
-    if (p.kind === 'place')
+    if (p.kind === 'place' || p.kind === 'event')
       return [
         p.head,
         `The place: ${p.scene}`,
@@ -759,7 +800,7 @@ Composition: a wide panoramic view from a slightly raised eye level, front-facin
       if (S.show === 'todo' && DONE[p.id]) return false
       if (S.show === 'done' && !DONE[p.id]) return false
       if (!q) return true
-      if (p.kind === 'region' || p.kind === 'place') return fold([p.name, p.mood, p.scene, p.file].join(' ')).includes(q)
+      if (p.kind === 'region' || p.kind === 'place' || p.kind === 'event') return fold([p.name, p.mood, p.scene, p.file].join(' ')).includes(q)
       if (p.kind === 'moment') return fold([p.name, p.scene, ...p.uses].join(' ')).includes(q)
       return fold(
         [p.name, p.scene, ...p.areas.flatMap((o) => { const a = AREA[o]; return [a.n, REGION[a.r], ...a.gym, ...a.leg, ...a.mons] })].join(' '),
@@ -845,7 +886,7 @@ Composition: a wide panoramic view from a slightly raised eye level, front-facin
     const on = !!DONE[p.id]
     return `<article class="bg-card k-place${on ? ' done' : ''}" data-p="${p.id}">
       <div class="bg-body">
-        <div class="bg-head"><div class="bg-hd"><span class="bg-kind">${KINDS.place.one} · ${esc(p.size)}</span><h3>${esc(p.name)}</h3></div><button type="button" class="bg-done" data-done aria-pressed="${on}"${mode === 'db' || mode === 'local' ? '' : ' disabled'} title="Mark this picture as generated"><span class="box" aria-hidden="true"></span>Done</button></div>
+        <div class="bg-head"><div class="bg-hd"><span class="bg-kind">${KINDS[p.kind].one} · ${esc(p.size)}</span><h3>${esc(p.name)}</h3></div><button type="button" class="bg-done" data-done aria-pressed="${on}"${mode === 'db' || mode === 'local' ? '' : ' disabled'} title="Mark this picture as generated"><span class="box" aria-hidden="true"></span>Done</button></div>
         <div class="bg-tags"><span class="bg-tag">${swatch(p.sw.slice(0, 4))}${esc(p.mood)}</span></div>
         <p class="bg-scene">${esc(p.scene)}</p>
         <dl class="bg-uses" aria-label="Where the game shows it">
@@ -861,7 +902,7 @@ Composition: a wide panoramic view from a slightly raised eye level, front-facin
     </article>`
   }
   function card(p) {
-    if (p.kind === 'place') return placeCard(p)
+    if (p.kind === 'place' || p.kind === 'event') return placeCard(p)
     if (p.kind === 'moment') return momentCard(p)
     if (p.kind === 'region') return regionCard(p)
     const L = LIGHTS[p.light]
@@ -931,8 +972,9 @@ Composition: a wide panoramic view from a slightly raised eye level, front-facin
     const onlyMoments = list.length && list.every((p) => p.kind === 'moment')
     const onlyRegions = list.length && list.every((p) => p.kind === 'region')
     const onlyPlaces = list.length && list.every((p) => p.kind === 'place')
-    $('#bg-status').innerHTML = onlyPlaces
-      ? `<b>${list.length}</b> ${list.length === 1 ? 'prompt' : 'prompts'} for the Center and the Day Care · ${list.map((p) => `${esc(p.name)}: ask ${p.ask}, ${p.width} px wide`).join(' · ')}${S.ref ? ' · with reference image' : ''}`
+    const onlyEvents = list.length && list.every((p) => p.kind === 'event')
+    $('#bg-status').innerHTML = onlyPlaces || onlyEvents
+      ? `<b>${list.length}</b> ${list.length === 1 ? 'prompt' : 'prompts'} for ${onlyEvents ? 'event banners' : 'the Center and the Day Care'} · ${list.map((p) => `${esc(p.name)}: ask ${p.ask}, ${p.width} px wide`).join(' · ')}${S.ref ? ' · with reference image' : ''}`
       : onlyMoments
       ? `<b>${list.length}</b> ${list.length === 1 ? 'prompt' : 'prompts'} for story moments · 240 × 160, ask 3:2${S.ref ? ' · with reference image' : ''}${L}`
       : onlyRegions
@@ -1027,8 +1069,8 @@ Composition: a wide panoramic view from a slightly raised eye level, front-facin
       const list = visible()
       const txt = list
         .map((p) => {
-          if (p.kind === 'place')
-            return `=== ${KINDS.place.one} · ${p.name} (ask ${p.ask}) ===\nSave as: ${p.file}\n\n${promptOf(p)}`
+          if (p.kind === 'place' || p.kind === 'event')
+            return `=== ${KINDS[p.kind].one} · ${p.name} (ask ${p.ask}) ===\nSave as: ${p.file}\n\n${promptOf(p)}`
           if (p.kind === 'region')
             return `=== ${KINDS.region.one} · ${p.name} (ask 1:1) ===\nSave as: ${p.file}\n\n${promptOf(p)}`
           if (p.kind === 'moment')
@@ -1441,6 +1483,7 @@ Composition: a wide panoramic view from a slightly raised eye level, front-facin
       })),
     )
     D.pictures.push(...PLACES)
+    D.pictures.push(...EVENTS)
     if (S.region !== 'all' && !REGION[S.region]) S.region = 'all'
     if (S.kind !== 'all' && !KINDS[S.kind]) S.kind = 'all'
     if (!['all', 'todo', 'done'].includes(S.show)) S.show = 'all'
