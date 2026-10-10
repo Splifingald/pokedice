@@ -27,10 +27,11 @@ import {
 } from '@/engine'
 import { t } from '@/i18n'
 import { avatarOf, playerAvatarId } from '@/lib/avatars'
-import { getSupabase } from '@/lib/supabase'
+import { closeRaid, setRaidTeam, type RaidFriend } from '@/lib/raid'
 import { commitSave, mutateSave, pushToast, useGame } from './game'
 import { newId } from './run'
 import { serverNow } from './serverTime'
+import { pushSaveNow } from './sync'
 
 export type RaidStage = 'intro' | 'fight' | 'catch' | 'result'
 
@@ -45,6 +46,8 @@ export interface RaidCatch {
 export interface RaidRun {
   /** Changes with every new fight, so the screen starts over. */
   id: number
+  /** The friends whose raid teams fight beside you: they get a gift if you catch it. */
+  friends: RaidFriend[]
   raid: TodayRaid
   state: RaidState
   log: RaidLogEntry[]
@@ -53,6 +56,42 @@ export interface RaidRun {
 }
 
 export const useRaidRun = create<{ run: RaidRun | null }>(() => ({ run: null }))
+
+/** The friends picked for your group on the Raids page (for this visit; empty slots fill with NPCs at the start). */
+export const useRaidGroup = create<{ friends: RaidFriend[] }>(() => ({ friends: [] }))
+
+/** Puts a friend in your group (up to the raid's friend slots), or takes them out. */
+export function toggleRaidFriend(f: RaidFriend) {
+  const { data } = useGame.getState()
+  const max = Math.min(2, data.config.events.raid.maxFriends)
+  useRaidGroup.setState(({ friends }) =>
+    friends.some((x) => x.userId === f.userId)
+      ? { friends: friends.filter((x) => x.userId !== f.userId) }
+      : friends.length >= max
+        ? { friends }
+        : { friends: [...friends, f] },
+  )
+}
+
+/**
+ * Registers your raid team on the server for friends to bring (signed in): the save first, since the team is built
+ * from the cloud copy. Quiet when it can't (offline); `loud` says so.
+ */
+export async function syncRaidTeam(loud = false): Promise<boolean> {
+  const { save, data, auth } = useGame.getState()
+  if (!save || auth.status !== 'signed_in') return false
+  const ids = raidTeam(save, data).map((m) => m.id)
+  if (!ids.length) return false
+  try {
+    if (!(await pushSaveNow())) throw new Error('events_no_save')
+    await setRaidTeam(ids)
+    return true
+  } catch (err) {
+    console.warn('[raid] team not registered', err)
+    if (loud) pushToast(t('ui.raid.teamNotSaved'), 'bad')
+    return false
+  }
+}
 
 let seq = 0
 let rng = createRng(randomSeed())
@@ -90,8 +129,23 @@ function npcSides(count: number): RaidSideSeed[] {
   })
 }
 
-/** Starts today's raid: you and NPC trainers in the empty sides. The try counts now. */
-export function startRaid(): boolean {
+/** A friend's side: their registered raid team, played by the battle AI. */
+function friendSide(f: RaidFriend, k: number): RaidSideSeed {
+  const cap = useGame.getState().data.config.events.raid.teamCap
+  return {
+    owner: f.name,
+    look: avatarOf(f.avatar).src,
+    kind: 'friend',
+    userId: f.userId,
+    team: f.team.slice(0, 3).map((m, i) => ({ uid: `s${k}-${i}`, dex: m.dex, level: Math.min(m.level, cap), hp: Number.MAX_SAFE_INTEGER, shiny: m.shiny })),
+  }
+}
+
+/**
+ * Starts today's raid: you, the friends picked (their raid teams), and NPC trainers in the sides left. The try counts
+ * now. Signed in, your own raid team is registered for your friends on the way.
+ */
+export function startRaid(friends: RaidFriend[] = useRaidGroup.getState().friends): boolean {
   const { save, data } = useGame.getState()
   const raid = liveRaid()
   if (!save || !raid) return false
@@ -104,14 +158,16 @@ export function startRaid(): boolean {
     kind: 'me',
     team: team.map((m, i) => ({ uid: `s0-${i}`, dex: m.dex, level: m.level, hp: Number.MAX_SAFE_INTEGER, shiny: m.shiny })),
   }
-  const sides = [me, ...npcSides(2)]
+  const picked = friends.filter((f) => f.team.length > 0).slice(0, 2)
+  const sides = [me, ...picked.map((f, i) => friendSide(f, i + 1)), ...npcSides(2 - picked.length)]
   const { state, log } = createRaid(
     { boss: { dex: raid.dex, shiny: raid.shiny }, sides, regionId: raidHomeRegion(data, raid) },
     data,
     rng,
   )
   mutateSave((s) => countRaidTry(s, raid.day))
-  useRaidRun.setState({ run: { id: ++seq, raid, state, log, stage: 'intro', catch: null } })
+  useRaidRun.setState({ run: { id: ++seq, friends: picked, raid, state, log, stage: 'intro', catch: null } })
+  void syncRaidTeam()
   return true
 }
 
@@ -141,13 +197,15 @@ export function raidFightOver() {
   else if (run.state.phase === 'lost') useRaidRun.setState({ run: { ...run, stage: 'result' } })
 }
 
-/** Tells the server today's raid is caught (signed in): the Raids leaderboard counts it. */
-async function closeOnServer() {
+/** Tells the server today's raid is caught (signed in): the Raids leaderboard counts it, the friends who helped get a gift. */
+async function closeOnServer(helpers: string[]) {
   if (useGame.getState().auth.status !== 'signed_in') return
-  const client = await getSupabase()
-  if (!client) return
-  const { error } = await client.rpc('raid_close')
-  if (error) pushToast(t('ui.raid.closeFailed'), 'bad')
+  try {
+    await closeRaid(helpers)
+  } catch (err) {
+    console.warn('[raid] close failed', err)
+    pushToast(t('ui.raid.closeFailed'), 'bad')
+  }
 }
 
 /** One throw at the worn-out raid Pokémon. Caught: it goes to its home region's Box. Missed: it flees, the raid stays open. */
@@ -165,7 +223,7 @@ export function throwRaidBall(ballKey: string | null) {
     const res = applyRaidCatch(next, data, today, Date.now(), newId)
     next = res.save
     landing = { region: res.region, live: res.live }
-    void closeOnServer()
+    void closeOnServer(run.friends.map((f) => f.userId))
   }
   commitSave(next)
   useRaidRun.setState({ run: { ...run, catch: { result: { ...roll, ballKey }, ...landing } } })

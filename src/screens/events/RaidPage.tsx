@@ -1,19 +1,20 @@
 // Raid Battles' page (docs/18 §3, the Visual Lab's mockup): today's raid Pokémon on the picture of the area that
 // unlocked it, the time left, the tries, a CAUGHT stamp once it's caught, and START right under it.
 import { useState, type ReactNode } from 'react'
-import { ballBonus, catchChance, catchValueOf, raidTeam, type TodayRaid } from '@/engine'
+import { ballBonus, catchChance, catchValueOf, type TodayRaid } from '@/engine'
 import { PixelIcon } from '@/components/icons'
 import { ItemSprite } from '@/components/ItemSprite'
 import { statHint, statLabel } from '@/components/StatChip'
 import { Modal } from '@/components/Modal'
 import { PixelButton } from '@/components/PixelButton'
-import { MiniSprite, SpriteImg } from '@/components/SpriteImg'
+import { SpriteImg } from '@/components/SpriteImg'
 import { artPlacement, battleWindow, pictureOf } from '@/fx/areaArt'
 import { useT } from '@/i18n/react'
 import { countdown } from '@/lib/format'
 import { pushToast, useGame } from '@/store/game'
 import { useTodayRaid } from '@/store/raid'
-import { startRaid } from '@/store/raidBattle'
+import { startRaid, useRaidGroup } from '@/store/raidBattle'
+import { RaidGroupSection, RaidTeamSection } from './RaidSetup'
 import { cx } from '@/theme/util'
 
 /** The raid's area picture, cut like a battle's (its middle 240 × 160, the horizon halfway down). */
@@ -121,34 +122,12 @@ function BallOdds({ dex }: { dex: number }) {
   )
 }
 
-/** The three Pokémon you bring, as clones at the raid's level cap. */
-function RaidTeamRow() {
-  const { t } = useT()
-  const save = useGame((s) => s.save)
-  const data = useGame((s) => s.data)
-  if (!save) return null
-  const team = raidTeam(save, data)
-  return (
-    <section aria-label={t('ui.raid.teamTitle')} className="grid gap-1.5">
-      <h2 className="m-0 text-[22px] font-normal leading-none">{t('ui.raid.teamTitle')}</h2>
-      <ul className="m-0 grid list-none grid-cols-3 gap-1.5 p-0">
-        {team.map((m) => (
-          <li key={m.id} className="grid justify-items-center gap-0.5 bg-paper px-1 pb-1.5 pt-1 shadow-ring">
-            <MiniSprite dex={m.dex} size={48} />
-            <span className="max-w-full truncate text-[17px] leading-none">{data.species[m.dex]?.name}</span>
-            <small className="font-pixel-sm text-[14px] leading-none text-muted">{t('ui.common.level.short', { n: m.level })}</small>
-          </li>
-        ))}
-      </ul>
-      <p className="m-0 font-pixel-sm text-[14px] leading-tight text-muted">{t('ui.raid.teamHint', { cap: data.config.events.raid.teamCap })}</p>
-    </section>
-  )
-}
-
 export function RaidPage() {
   const { t, tPlural } = useT()
   const { raid, msLeft } = useTodayRaid()
   const [asking, setAsking] = useState(false)
+  const friends = useRaidGroup((s) => s.friends)
+  const slots = useGame((s) => Math.min(2, s.data.config.events.raid.maxFriends))
   if (!raid) return <p className="m-0 text-center font-pixel-sm text-[16px] text-muted">{t('ui.events.raid.loading')}</p>
   const go = () => {
     setAsking(false)
@@ -158,13 +137,20 @@ export function RaidPage() {
     <div className="mx-auto flex w-full max-w-[560px] flex-col gap-3">
       <RaidCard raid={raid} msLeft={msLeft} />
       {!raid.caught && (
-        <PixelButton variant="primary" size="lg" className="w-full" onClick={() => setAsking(true)}>
+        <PixelButton
+          variant="primary"
+          size="lg"
+          className="w-full"
+          // Empty slots in the group: say NPC trainers will fill them first.
+          onClick={() => (friends.length >= slots ? go() : setAsking(true))}
+        >
           {t('ui.events.raid.start')}
         </PixelButton>
       )}
       <p className="m-0 text-center font-pixel-sm text-[15px] text-muted">{tPlural('ui.events.raid.tries', raid.tries, { n: raid.tries })}</p>
+      <RaidTeamSection />
+      {!raid.caught && <RaidGroupSection />}
       {!raid.caught && <BallOdds dex={raid.dex} />}
-      <RaidTeamRow />
       {/* Your group's empty slots: NPC trainers fill them, only once you start. */}
       <Modal open={asking} onClose={() => setAsking(false)} title={t('ui.raid.npcTitle')}>
         <div className="grid gap-3">

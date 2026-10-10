@@ -266,3 +266,66 @@ test('a raid: NPC trainers fill the group, you fight to a result, and a catch cl
     await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible()
   }
 })
+
+const FARAWAY = '050ff505-ff8e-5251-8499-842a2cfc2986'
+const mewToday = () => ({ day: today(), dex: 151, shiny: false, areaId: FARAWAY, caught: false })
+const friend = (id: string, name: string, avatar: string, dex: number[], helped = 0) => ({
+  user_id: id,
+  name,
+  avatar,
+  team: dex.map((d) => ({ dex: d, level: 50, shiny: false })),
+  helped,
+})
+
+test('signed in: gifts from friends\u2019 raids pop up and go in the bag', async ({ page }) => {
+  let given = false
+  await mockSupabase(page, {
+    rpc: {
+      event_time: eventTime,
+      raid_today: mewToday,
+      raid_gifts_claim: () => (given ? [] : ((given = true), [{ id: 7, raider_name: 'Gary', dex: 151, item_key: 'ultra-ball' }])),
+    },
+  })
+  const save = raidSave()
+  await boot(page, save, true)
+  await page.goto('/home')
+  const pop = page.getByRole('dialog', { name: "Gifts from your friends' raids" })
+  await expect(pop.getByText('Your team helped Gary catch Mew!')).toBeVisible()
+  await pop.getByRole('button', { name: 'OK', exact: true }).click()
+  await expect(pop).toHaveCount(0)
+  await expect.poll(async () => (await stored(page)).inventory['ultra-ball']).toBe((save.inventory['ultra-ball'] ?? 0) + 1)
+})
+
+test('signed in: two friends in the group, and the raid starts with their teams, no NPC', async ({ page }) => {
+  const calls = await mockSupabase(page, {
+    rpc: {
+      event_time: eventTime,
+      raid_today: mewToday,
+      raid_gifts_claim: [],
+      raid_set_team: [],
+      raid_friend_teams: [
+        friend('22222222-0000-4000-8000-000000000001', 'Gary', 'green', [9, 65, 59], 1),
+        friend('22222222-0000-4000-8000-000000000002', 'Erika', 'red', [45, 3]),
+      ],
+    },
+  })
+  await boot(page, raidSave(), true)
+  await page.goto('/events/raid')
+  await expect(page.getByRole('heading', { name: 'Your group' })).toBeVisible()
+  await page.getByRole('button', { name: /^Add a friend/ }).first().click()
+  const sheet = page.getByRole('dialog', { name: 'Raid with a friend' })
+  await sheet.getByRole('button', { name: /Gary/ }).click()
+  await sheet.getByRole('button', { name: /Erika/ }).click()
+  await expect(sheet.getByRole('button', { name: /Gary/ })).toHaveAttribute('aria-pressed', 'true')
+  await sheet.getByRole('button', { name: 'OK', exact: true }).click()
+  await expect(page.getByText('Helped you once')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Take Erika out of your group' })).toBeVisible()
+
+  // A full group: no NPC pop-up, straight into the raid, the friends' trainers beside you.
+  await page.getByRole('button', { name: 'Start the raid' }).click()
+  await expect(page.getByRole('dialog', { name: 'Empty slots' })).toHaveCount(0)
+  await expect(page.getByRole('heading', { name: 'Raid battle: Mew' })).toBeAttached()
+  await expect(page.getByRole('list', { name: 'Your group' }).getByLabel(/^(Gary|Erika)'s /).first()).toBeAttached()
+  // Your raid team is registered for your friends on the way.
+  await expect.poll(() => calls.some((c) => c.includes('/rpc/raid_set_team'))).toBe(true)
+})

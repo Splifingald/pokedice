@@ -15,6 +15,8 @@ const U = {
   ash: '00000000-0000-4000-8000-000000000001',
   misty: '00000000-0000-4000-8000-000000000002',
   brock: '00000000-0000-4000-8000-000000000003',
+  gary: '00000000-0000-4000-8000-000000000004',
+  erika: '00000000-0000-4000-8000-000000000005',
 }
 
 interface Spin {
@@ -48,6 +50,9 @@ beforeAll(async () => {
     create function auth.jwt() returns jsonb language sql stable as $$ select '{}'::jsonb $$;
   `)
   await db.exec(sql('0001_init.sql').replace('create extension if not exists pgcrypto;', ''))
+  // What 0035 builds on: the leaderboard (0011, 0016, 0032), Versus (0018) and friends (0033).
+  for (const f of ['0011_leaderboard.sql', '0016_regions.sql', '0018_versus.sql', '0032_leaderboard_shiny.sql', '0033_friends.sql'])
+    await db.exec(sql(f))
   await db.exec(sql('0035_events.sql'))
   // Run twice: the migration must stay safe to run again.
   await db.exec(sql('0035_events.sql'))
@@ -140,14 +145,15 @@ describe('0035: raid_today', () => {
 })
 
 describe('0035: raid_close', () => {
-  const close = async (user: string | null) => (await as<{ r: { raidsWon: number } }>(user, 'select raid_close() as r'))[0]!.r
+  const close = async (user: string | null) =>
+    (await as<{ r: { raidsWon: number; gifts: number } }>(user, 'select raid_close() as r'))[0]!.r
   const pool = { kind: 'pool', fallbackShiny: 0, list: [{ dex: 151, shiny: false, areaId: 'faraway' }] }
 
   it('closes today’s raid once and counts it', async () => {
     await as(U.brock, 'select raid_today($1)', [JSON.stringify(pool)])
-    expect(await close(U.brock)).toEqual({ raidsWon: 1 })
+    expect(await close(U.brock)).toEqual({ raidsWon: 1, gifts: 0 })
     // Caught already: the same count, nothing more.
-    expect(await close(U.brock)).toEqual({ raidsWon: 1 })
+    expect(await close(U.brock)).toEqual({ raidsWon: 1, gifts: 0 })
     const row = await db.query<{ raid: { caught: boolean } }>('select raid from event_state where user_id = $1', [U.brock])
     expect(row.rows[0]!.raid.caught).toBe(true)
   })
@@ -155,7 +161,7 @@ describe('0035: raid_close', () => {
   it('a new day’s raid counts again', async () => {
     await db.query(`update event_state set raid = jsonb_set(raid, '{day}', '"2000-01-01"') where user_id = $1`, [U.brock])
     await as(U.brock, 'select raid_today($1)', [JSON.stringify(pool)])
-    expect(await close(U.brock)).toEqual({ raidsWon: 2 })
+    expect(await close(U.brock)).toEqual({ raidsWon: 2, gifts: 0 })
   })
 
   it('needs a signed-in player with a raid today', async () => {
@@ -191,5 +197,107 @@ describe('0036: Victory Road II and League II leave', () => {
     // Safe to run again.
     await db.exec(del)
     expect(await ids('areas')).toEqual([LEAGUE])
+  })
+})
+
+describe('0035: raiding with friends', () => {
+  const mon = (id: string, dex: number, level: number, extra: Record<string, unknown> = {}) => ({ id, dex, level, ...extra })
+  const pool = { kind: 'pool', fallbackShiny: 0, list: [{ dex: 151, shiny: false, areaId: 'faraway' }] }
+  const friends = (a: string, b: string) =>
+    db.query('insert into friendships (user_a, user_b, added_by) values ($1, $2, $1) on conflict do nothing', [a < b ? a : b, a < b ? b : a])
+  const saveOf = (user: string, data: unknown) =>
+    db.query('insert into saves (user_id, data) values ($1, $2) on conflict (user_id) do update set data = excluded.data', [
+      user,
+      JSON.stringify(data),
+    ])
+  const setTeam = async (user: string, ids: string[]) =>
+    (await as<{ t: { dex: number; level: number; shiny: boolean }[] }>(user, 'select raid_set_team($1) as t', [ids]))[0]!.t
+  const closeWith = async (user: string, helpers: string[]) =>
+    (await as<{ r: { raidsWon: number; gifts: number } }>(user, 'select raid_close($1) as r', [helpers]))[0]!.r
+  const claim = (user: string) => as<{ id: number; raider_name: string; dex: number; item_key: string }>(user, 'select * from raid_gifts_claim()')
+  const newDay = (user: string) => db.query(`update event_state set raid = jsonb_set(raid, '{day}', '"2000-01-01"') where user_id = $1`, [user])
+
+  beforeAll(async () => {
+    await saveOf(U.gary, {
+      region: 'kanto',
+      player: { name: 'Gary', character: 'green' },
+      box: [mon('g1', 9, 70), mon('g2', 65, 40, { shiny: true }), mon('g3', 59, 55), mon('egg', 142, 1, { revivesAt: 9 })],
+      parked: { johto: { box: [mon('j1', 248, 60)] } },
+    })
+    await saveOf(U.erika, { region: 'kanto', player: { name: 'Erika' }, box: [mon('e1', 45, 50)] })
+    await saveOf(U.misty, { region: 'kanto', player: { name: 'Misty' }, box: [mon('m1', 121, 50)] })
+    await friends(U.ash, U.gary)
+    await friends(U.ash, U.erika)
+  })
+
+  it('a raid team comes from the cloud save, any region, capped at the raid team cap', async () => {
+    expect(await setTeam(U.gary, ['g1', 'j1', 'g2'])).toEqual([
+      { dex: 9, level: 50, shiny: false },
+      { dex: 248, level: 50, shiny: false },
+      { dex: 65, level: 40, shiny: true },
+    ])
+    await expect(setTeam(U.gary, ['g1', 'nope'])).rejects.toThrow(/events_not_eligible/)
+    await expect(setTeam(U.gary, ['egg'])).rejects.toThrow(/events_not_eligible/)
+    await expect(setTeam(U.gary, ['g1', 'g1'])).rejects.toThrow(/events_team_size/)
+    await expect(setTeam(U.gary, ['g1', 'g2', 'g3', 'j1'])).rejects.toThrow(/events_team_size/)
+    await expect(setTeam(U.ash, ['g1'])).rejects.toThrow(/events_no_save/)
+    expect(await setTeam(U.erika, ['e1'])).toEqual([{ dex: 45, level: 50, shiny: false }])
+    expect(await setTeam(U.misty, ['m1'])).toHaveLength(1)
+  })
+
+  it('your friends’ raid teams, never a stranger’s', async () => {
+    const rows = await as<{ user_id: string; name: string; avatar: string; team: unknown[]; helped: number }>(
+      U.ash,
+      'select * from raid_friend_teams()',
+    )
+    expect(rows.map((r) => r.name).sort()).toEqual(['Erika', 'Gary'])
+    expect(rows.find((r) => r.name === 'Gary')).toMatchObject({ avatar: 'green', helped: 0 })
+  })
+
+  it('a catch gives each friend who helped a gift, a stranger none; the helper claims it once', async () => {
+    await newDay(U.ash)
+    await as(U.ash, 'select raid_today($1)', [JSON.stringify(pool)])
+    // Misty isn't Ash's friend; Ash can't help himself; Gary twice is Gary once.
+    expect(await closeWith(U.ash, [U.gary, U.erika, U.misty, U.ash, U.gary])).toMatchObject({ gifts: 2 })
+    const gifts = await claim(U.gary)
+    expect(gifts).toHaveLength(1)
+    expect(gifts[0]).toMatchObject({ raider_name: 'Trainer', dex: 151 })
+    expect(DEFAULT_CONFIG.events.raid.gifts.map((g) => g.key)).toContain(gifts[0]!.item_key)
+    expect(await claim(U.gary)).toEqual([])
+    expect(await claim(U.misty)).toEqual([])
+    const helped = await as<{ name: string; helped: number }>(U.ash, 'select name, helped from raid_friend_teams()')
+    expect(helped.find((r) => r.name === 'Gary')!.helped).toBe(1)
+  })
+
+  it('a helper gets helperDailyCap gifts a day at most, whoever they help', async () => {
+    await setEvents({ ...DEFAULT_CONFIG.events, raid: { ...DEFAULT_CONFIG.events.raid, helperDailyCap: 2 } })
+    // Gary got one today already; one more fits, then none.
+    await newDay(U.ash)
+    await as(U.ash, 'select raid_today($1)', [JSON.stringify(pool)])
+    expect((await closeWith(U.ash, [U.gary])).gifts).toBe(1)
+    await friends(U.brock, U.gary)
+    await newDay(U.brock)
+    await as(U.brock, 'select raid_today($1)', [JSON.stringify(pool)])
+    expect((await closeWith(U.brock, [U.gary])).gifts).toBe(0)
+    expect(await claim(U.gary)).toHaveLength(1)
+    await db.query(`delete from game_config where key = 'events'`)
+  })
+
+  it('the leaderboard carries each player’s raids won', async () => {
+    const won = (await db.query<{ n: number }>('select raids_won as n from event_state where user_id = $1', [U.ash])).rows[0]!.n
+    // Ash's card, with a badge in Kanto: their row says how many raids they won.
+    await db.query(
+      `insert into player_cards (user_id, name, avatar, region, updated_at) values ($1, 'Ash', 'red', 'kanto', now())
+       on conflict (user_id) do nothing`,
+      [U.ash],
+    )
+    await db.query(
+      `insert into player_card_regions (user_id, region, team, pokedex, max_level, shinies, progress, badges, endgame)
+       values ($1, 'kanto', '[]', 1, 5, 0, '{}', '{boulder}', false) on conflict do nothing`,
+      [U.ash],
+    )
+    const rows = await as<{ is_me: boolean; raids_won: number }>(U.ash, 'select is_me, raids_won from leaderboard()')
+    expect(rows.find((r) => r.is_me)?.raids_won).toBe(won)
+    expect(won).toBeGreaterThan(0)
   })
 })

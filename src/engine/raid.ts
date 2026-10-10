@@ -205,3 +205,15 @@ export function applyRaidCatch(
     live: false,
   }
 }
+
+/** Gifts from friends' raids (one of each key): into the live region's bag. Unknown items are skipped. */
+export function addRaidGifts(save: SaveData, data: GameData, keys: string[]): SaveData {
+  const inventory = { ...save.inventory }
+  for (const k of keys) if (data.items[k]) inventory[k] = (inventory[k] ?? 0) + 1
+  return { ...save, inventory }
+}
+
+/** Saves your raid team: up to three instance ids, in order (any region's Box). */
+export function setRaidTeamIds(save: SaveData, ids: string[]): SaveData {
+  return { ...save, events: { ...save.events, raidTeam: [...new Set(ids)].slice(0, 3) } }
+}

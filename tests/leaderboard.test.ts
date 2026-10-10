@@ -17,6 +17,7 @@ const row = (name: string, p: Partial<LeaderboardRow>): LeaderboardRow => ({
   pokedex: 1,
   maxLevel: 5,
   shinies: 0,
+  raidsWon: 0,
   progress: {},
   friendId: null,
   ...p,
@@ -112,8 +113,8 @@ describe('parseLeaderboard', () => {
       { region: null, is_me: null, name: null, character: 'purple', team: null, pokedex: null, max_level: 12, progress: { x: { cleared: true } } },
     ])
     // A row from a database that predates regions reads as Kanto.
-    // …and one from a database without 0032 has no shinies, without 0033 no friends.
-    expect(r).toEqual({ region: 'kanto', isMe: false, name: 'Trainer', avatar: 'red', team: [], pokedex: 0, maxLevel: 12, shinies: 0, progress: { x: { cleared: true, gyms: 0 } }, friendId: null })
+    // …and one from a database without 0032 has no shinies, without 0033 no friends, without 0035 no raids.
+    expect(r).toEqual({ region: 'kanto', isMe: false, name: 'Trainer', avatar: 'red', team: [], pokedex: 0, maxLevel: 12, shinies: 0, raidsWon: 0, progress: { x: { cleared: true, gyms: 0 } }, friendId: null })
   })
 
   it('keeps a look from the list and nothing else', () => {
@@ -151,5 +152,24 @@ describe('friends on the board (docs/16)', () => {
       ['Misty', 2],
       ['Ash', 4],
     ])
+  })
+})
+
+describe('the Raids tab', () => {
+  it('ranks by raids won, a count with no Hall of Fame, and parses it from the board', () => {
+    const rows = [row('Ash', { raidsWon: 2 }), row('Gary', { raidsWon: 5 }), row('Misty', { raidsWon: 2, pokedex: 9 })]
+    const ranked = rankLeaderboard(rows, 'raids', data, 'kanto')
+    expect(ranked.map((r) => [r.name, r.rank])).toEqual([
+      ['Gary', 1],
+      ['Misty', 2],
+      ['Ash', 3],
+    ])
+    expect(ranked[0]!.score).toBe('5 raids won')
+    expect(splitLeaderboard(rows, 'raids', data, 'kanto').hall).toEqual([])
+    const parsed = parseLeaderboard([
+      { region: 'kanto', is_me: false, name: 'Gary', character: 'green', team: [], pokedex: 1, max_level: 5, progress: {}, raids_won: 3 },
+      { region: 'kanto', is_me: false, name: 'Old', character: 'red', team: [], pokedex: 1, max_level: 5, progress: {} },
+    ])
+    expect(parsed.map((r) => r.raidsWon)).toEqual([3, 0])
   })
 })

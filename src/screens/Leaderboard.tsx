@@ -34,6 +34,7 @@ const TABS: { id: LeaderboardTab; label: string; icon: IconName }[] = [
   { id: 'progress', label: 'ui.board.tabProgress', icon: 'map' },
   { id: 'dex', label: 'ui.board.tabDex', icon: 'dex' },
   { id: 'shiny', label: 'ui.board.tabShiny', icon: 'star' },
+  { id: 'raids', label: 'ui.board.tabRaids', icon: 'ball' },
 ]
 
 type Load =
@@ -269,7 +270,7 @@ function Board() {
         title={t('ui.board.hall')}
         sub={`${tabLabel} · ${tPlural('ui.board.hallCount', hall.length)}`}
       >
-        {tab !== 'shiny' && (
+        {tab !== 'shiny' && tab !== 'raids' && (
           <p className="m-0 mb-2 font-pixel-sm text-[15px] leading-[1.15] text-muted">
             {t(`ui.board.hallBody.${tab}`)}
           </p>
