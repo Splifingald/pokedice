@@ -27,6 +27,8 @@ import {
   teamAverageLevel,
   teamOf,
   uniformLevels,
+  uniqueFindChance,
+  uniquePityMultiplier,
   type Area,
   type GameData,
   type LootEntry,
@@ -102,6 +104,70 @@ describe('loot', () => {
     expect(progressOf(after, area.id).uniqueFound).toEqual(['candy'])
     expect(lootPoolFor(area, progressOf(after, area.id), d)).toHaveLength(0)
     expect(drawLoot(area, progressOf(after, area.id), d, createRng(1))).toBeNull()
+  })
+
+  describe('pity for once-only finds', () => {
+    const pity = { startRounds: 5, fullRounds: 50, maxMultiplier: 10 }
+    const bigDeck: LootEntry = { ...potions, weight: 99 } // the candy is 1 card in 100
+    const area = { ...ROUTE1, lootPool: [candy, bigDeck] }
+    const d: GameData = { ...withArea(area), config: { ...data.config, uniquePity: pity } }
+    const after = (roundsDone: number) => ({ ...emptyProgress(), roundsDone })
+    /** Share of `n` finds that are the candy, each from a fresh loot deck. */
+    const candyRate = (roundsDone: number, n = 4000, game = d) => {
+      const rng = createRng(7)
+      let hits = 0
+      for (let i = 0; i < n; i++) if (drawLoot(area, after(roundsDone), game, rng)!.entry.id === 'candy') hits++
+      return hits / n
+    }
+
+    it('×1 up to the 5th round done, then linear to ×10 at the 50th, and no further', () => {
+      expect(data.config.uniquePity).toEqual(pity)
+      expect(uniquePityMultiplier(0, pity)).toBe(1)
+      expect(uniquePityMultiplier(5, pity)).toBe(1)
+      expect(uniquePityMultiplier(15, pity)).toBe(3)
+      expect(uniquePityMultiplier(27.5, pity)).toBe(5.5)
+      expect(uniquePityMultiplier(50, pity)).toBe(10)
+      expect(uniquePityMultiplier(500, pity)).toBe(10)
+      expect(uniquePityMultiplier(500, { ...pity, maxMultiplier: 1 })).toBe(1)
+    })
+
+    it('the odds of a find being once-only are multiplied, never past 100 %', () => {
+      expect(uniqueFindChance(0.01, 50, pity)).toBeCloseTo(0.1)
+      expect(uniqueFindChance(0.2, 50, pity)).toBe(1)
+      expect(uniqueFindChance(0.2, 5, pity)).toBe(0.2)
+    })
+
+    it('a 1-in-100 find turns up about 10 times as often after 50 rounds', () => {
+      expect(candyRate(0)).toBeCloseTo(0.01, 2)
+      expect(candyRate(50)).toBeCloseTo(0.1, 1)
+      expect(candyRate(27)).toBeGreaterThan(candyRate(5) + 0.02)
+    })
+
+    it('capped at 100 %: past the cap, every find is the once-only one', () => {
+      const small = { ...ROUTE1, lootPool: [candy, potions] } // 1 card in 6: ×10 would be 167 %
+      const game: GameData = { ...withArea(small), config: { ...data.config, uniquePity: pity } }
+      const rng = createRng(3)
+      for (let i = 0; i < 50; i++) expect(drawLoot(small, after(50), game, rng)!.entry.id).toBe('candy')
+    })
+
+    it('below the threshold the draw is exactly the deck, as before', () => {
+      const off: GameData = { ...d, config: { ...d.config, uniquePity: { ...pity, maxMultiplier: 1 } } }
+      for (const seed of [1, 2, 3]) expect(drawLoot(area, after(5), d, createRng(seed))).toEqual(drawLoot(area, after(5), off, createRng(seed)))
+    })
+
+    it('a pity find leaves the loot deck as it was; its card is skipped once it has been picked up', () => {
+      const lootDeck = ['pots', 'pots', 'candy'] // drawn from the end: the candy's card is on top
+      const always = { ...ROUTE1, lootPool: [candy, potions] }
+      const game: GameData = { ...withArea(always), config: { ...data.config, uniquePity: pity } }
+      const loot = drawLoot(always, { ...after(50), lootDeck }, game, createRng(1))!
+      expect(loot.entry.id).toBe('candy')
+      expect(loot.lootDeck).toEqual(lootDeck)
+      const s = { ...fresh(), areaProgress: { [always.id]: { ...after(50), lootDeck } } }
+      const picked = pickUpItem(s, always.id, { entryId: 'candy', itemKey: 'rare-candy', qty: 1 }, game)
+      const next = drawLoot(always, progressOf(picked, always.id), game, createRng(1))!
+      expect(next.entry.id).toBe('pots')
+      expect(next.lootDeck).toEqual(['pots']) // the candy's card went by unused
+    })
   })
 
   it('Pokédollars go straight to the wallet', () => {
