@@ -34,17 +34,20 @@ export function useFriendLine() {
   }
 }
 
-/** A trainer as an invite or the ADD dialog shows them: their look, their name, where they are. */
+/**
+ * A trainer as an invite or the ADD dialog shows them: their look, their name, where they are. `region` left out (not
+ * null, which means "no game yet") when it isn't known: no line then.
+ */
 export function FriendPreview({
   name,
   avatar,
   region,
-  maxLevel,
+  maxLevel = 0,
 }: {
   name: string
   avatar: string
-  region: string | null
-  maxLevel: number
+  region?: string | null
+  maxLevel?: number
 }) {
   const line = useFriendLine()
   return (
@@ -52,9 +55,11 @@ export function FriendPreview({
       <TrainerLook src={avatarOf(avatar).src} w={44} h={48} />
       <span className="grid min-w-0 gap-0.5">
         <b className="truncate text-[21px] font-normal leading-none">{name}</b>
-        <small className="truncate font-pixel-sm text-[14px] leading-none text-muted">
-          {line({ region, maxLevel }, Date.now())}
-        </small>
+        {region !== undefined && (
+          <small className="truncate font-pixel-sm text-[14px] leading-none text-muted">
+            {line({ region, maxLevel }, Date.now())}
+          </small>
+        )}
       </span>
     </div>
   )

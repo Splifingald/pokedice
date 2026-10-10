@@ -70,10 +70,10 @@ test('sign-in flow (mocked Supabase)', async ({ page }) => {
   await page.addInitScript((s) => localStorage.setItem('pokedice.settings', s), FAST)
   await page.goto('/')
 
-  // 1. CONNECT starts the Google OAuth redirect through Supabase.
+  // 1. CONNECT starts the Google OAuth redirect through Supabase (Discord is off here, so there is no chooser).
   const [req] = await Promise.all([
     page.waitForRequest(/\/auth\/v1\/authorize\?provider=google/),
-    page.getByRole('button', { name: /Connect with Google/ }).click(),
+    page.getByRole('button', { name: 'Connect to back up your save' }).click(),
   ])
   expect(req.url()).toContain('redirect_to=')
 
@@ -88,7 +88,7 @@ test('sign-in flow (mocked Supabase)', async ({ page }) => {
     [STORAGE_KEY, JSON.stringify(fakeSession()), JSON.stringify(save), FAST],
   )
   await page.goto('/settings')
-  await expect(page.getByText('Backed up as admin@example.com')).toBeVisible()
+  await expect(page.getByText('Backed up with Google (admin@example.com).')).toBeVisible()
   await expect.poll(() => calls.some((c) => c.startsWith('POST /rest/v1/saves'))).toBe(true)
   // The day's one analytics call.
   await expect.poll(() => calls.filter((c) => c.startsWith('POST /rest/v1/rpc/player_ping')).length).toBe(1)

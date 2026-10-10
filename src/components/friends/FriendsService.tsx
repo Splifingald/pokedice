@@ -140,7 +140,7 @@ function InviteHandler() {
       <Modal open={!!added} onClose={() => setAdded(null)} title={t('ui.friends.newFriendTitle')}>
         {added && (
           <div className="flex flex-col gap-3">
-            <FriendPreview name={added.name} avatar={added.avatar} region={null} maxLevel={0} />
+            <FriendPreview name={added.name} avatar={added.avatar} />
             <p className="copy m-0">{t('ui.friends.added', { name: added.name })}</p>
             <div className="flex justify-end gap-2">
               <PixelButton
