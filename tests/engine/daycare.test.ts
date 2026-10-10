@@ -3,6 +3,7 @@ import {
   createInstance,
   createRng,
   dayCareOf,
+  dayCareFullAt,
   badgeCase,
   dayCareTutorialDue,
   dayCareXp,
@@ -76,6 +77,15 @@ describe('Day Care', () => {
     expect(dayCareXp(res, 10_000 * cap * MIN, data)).toBe(cap)
     expect(nextDayCareTick(res, Math.floor(1.5 * tick) * MIN, data)).toBe(Math.ceil(0.5 * tick) * MIN)
     expect(nextDayCareTick(res, 10_000 * cap * MIN, data)).toBeNull()
+  })
+
+  it('is full the moment its last XP tick lands', () => {
+    const { tickMinutes: tick, maxXp: cap, xpPerTick: per } = data.config.dayCare
+    const res = { inst: createInstance(4, 10, data, 'x', 0), since: 5 * MIN }
+    const full = dayCareFullAt(res, data)!
+    expect(full).toBe(5 * MIN + Math.ceil(cap / per) * tick * MIN)
+    expect(dayCareXp(res, full, data)).toBe(cap)
+    expect(dayCareXp(res, full - 1, data)).toBeLessThan(cap)
   })
 
   it('levels up with Day Care XP but never evolves; it evolves on its next XP in battle', () => {

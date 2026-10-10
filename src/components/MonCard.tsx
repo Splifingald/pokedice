@@ -8,6 +8,7 @@ import { cx } from '@/theme/util'
 import { DiceSet } from './DiceSet'
 import { HpBar } from './HpBar'
 import { PixelIcon } from './icons'
+import { ItemSprite } from './ItemSprite'
 import { MiniSprite } from './SpriteImg'
 import { TypeBadge } from './TypeBadge'
 
@@ -21,7 +22,7 @@ export function RevivalBar({ inst, className }: { inst: PokemonInstance; classNa
   return (
     <div className={cx('flex items-center gap-2', className)} role="img" aria-label={t('ui.mon.revivesIn', { time: countdown(left) })}>
       <span className="text-sm leading-none">{t('ui.mon.reviving')}</span>
-      <div className="h-2 flex-1 border border-ink bg-ink" style={{ borderRadius: 1 }}>
+      <div className="h-2 flex-1 border border-edge bg-night" style={{ borderRadius: 1 }}>
         <div className="h-full bg-gold" style={{ width: `${pct * 100}%` }} />
       </div>
       <span className="min-w-[7ch] text-right font-mono text-xs tabular-nums leading-none">{left > 0 ? countdown(left) : t('ui.mon.soon')}</span>
@@ -37,7 +38,7 @@ export function XpBar({ inst, className }: { inst: PokemonInstance; className?: 
   return (
     <div className={cx('flex items-center gap-2', className)}>
       <span className="text-sm leading-none">{t('ui.mon.xp')}</span>
-      <div className="h-1.5 flex-1 border border-ink bg-ink" style={{ borderRadius: 1 }}>
+      <div className="h-1.5 flex-1 border border-edge bg-night" style={{ borderRadius: 1 }}>
         <div className="h-full bg-type-water" style={{ width: `${pct * 100}%`, transition: 'width 700ms ease-out' }} />
       </div>
       <span className="min-w-[4.5ch] text-right font-mono text-xs tabular-nums leading-none">
@@ -83,7 +84,7 @@ export function MonCard({
   const card = cx(
     'pixel-panel flex w-full items-center gap-2 p-2 text-left',
     selected && 'outline outline-[3px] outline-offset-2 outline-gold',
-    onClick && !disabled && 'cursor-pointer hover:bg-white',
+    onClick && !disabled && 'cursor-pointer hover:bg-paper',
     // Hatched, not faded: the name and HP stay readable on a Pokémon you can't pick.
     (disabled || fainted) && 'hatched',
     className,
@@ -95,11 +96,7 @@ export function MonCard({
         <div className="flex items-start gap-2">
           {/* Party icons sit low in their box: pull it up so the creature lines up with the name. */}
           {reviving ? (
-            fossil?.spriteUrl ? (
-              <img src={fossil.spriteUrl} alt="" width={32} height={32} className="-mt-1 shrink-0" style={{ imageRendering: 'pixelated' }} />
-            ) : (
-              <span className="h-8 w-8 shrink-0" />
-            )
+            <ItemSprite item={fossil} size={32} className="-mt-1" />
           ) : (
             <MiniSprite dex={inst.dex} size={40} className={cx('-mb-2 -ml-1 -mt-4 shrink-0', fainted && 'grayscale')} />
           )}

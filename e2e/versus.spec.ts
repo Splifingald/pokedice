@@ -45,7 +45,7 @@ async function signedIn(page: Page, save: object, settings = FAST) {
 test('Versus is in the trainer menu, locked until three Pokémon reach Lv.50', async ({ page }) => {
   await mockSupabase(page)
   await signedIn(page, makeSave(4, { player: { name: 'Sam', character: 'red' } }))
-  await page.goto('/map')
+  await page.goto('/home')
   await page.getByRole('button', { name: 'Your trainer menu' }).click()
   const row = page.getByRole('dialog').getByRole('button', { name: /Versus/ })
   await expect(row).toContainText('0/3 at Lv.50')
@@ -84,8 +84,11 @@ test('fight a team: the result is recorded before the fight plays', async ({ pag
   // Then it plays on auto — no controls to take over — and ends on the result.
   await expect(page.getByText('AUTO-MODE')).toBeVisible()
   await expect(page.getByRole('button', { name: 'STOP' })).toHaveCount(0)
-  await expect(page.getByText('VICTORY!')).toBeVisible({ timeout: 90_000 })
+  // The result is already written, so SKIP only fast-forwards the replay.
+  await page.getByRole('button', { name: 'Skip ▸▸' }).click()
+  await expect(page.getByText('VICTORY!')).toBeVisible({ timeout: 30_000 })
   await expect(page.getByText("You beat Blue's team!")).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Rematch' })).toBeEnabled()
   await page.getByRole('button', { name: 'BACK TO VERSUS' }).click()
   await expect(page.getByRole('heading', { name: 'Versus' })).toBeVisible()
 
@@ -131,12 +134,13 @@ test('set your team: three picks in fight order, saved from the cloud save, and 
   // Every region's Box can send a Pokémon: each says where it comes from.
   await expect(page.getByRole('button', { name: /Charizard/ })).toContainText('Lv.50 (72) · Kanto')
   await expect(page.getByRole('button', { name: /Blastoise/ })).toContainText('Johto')
-  const pushesBefore = calls.filter((c) => c.startsWith('POST /rest/v1/saves')).length
   await page.getByRole('button', { name: 'SAVE TEAM' }).click()
 
   await expect(page.getByText('Team saved!')).toBeVisible()
   expect(teams).toEqual([{ ids: ['vn', 'cz', 'bl'] }])
-  expect(calls.filter((c) => c.startsWith('POST /rest/v1/saves')).length).toBeGreaterThan(pushesBefore)
+  // The team is built from the cloud save, so it must be there: pushed by the first sync. An unchanged save isn't
+  // pushed a second time (only its timestamps would differ).
+  expect(calls.filter((c) => c.startsWith('POST /rest/v1/saves')).length).toBeGreaterThan(0)
   // The picks stay, the button says the team is saved, and the team shows at the top.
   await expect(page.getByRole('button', { name: 'TEAM SAVED', exact: true })).toBeDisabled()
   await expect(page.getByRole('button', { name: /Venusaur/ })).toHaveAttribute('aria-pressed', 'true')

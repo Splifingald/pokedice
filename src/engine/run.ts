@@ -302,7 +302,8 @@ export type RunEvent =
   | { kind: 'xp'; uid: string; amount: number; shared?: boolean }
   | { kind: 'gold'; amount: number }
   /** `replacedLevel`: a stronger copy replaced the one you had at that level. */
-  | { kind: 'caught'; uid: string; dex: number; level: number; joinedTeam: boolean; replacedLevel?: number }
+  /** `isNew`: the species wasn't in the Pokédex before this catch. */
+  | { kind: 'caught'; uid: string; dex: number; level: number; joinedTeam: boolean; replacedLevel?: number; isNew?: boolean }
   | { kind: 'fled'; dex: number }
   | { kind: 'boss_defeated'; dex: number }
   | { kind: 'gym_defeated'; trainerId: string; name: string; badge: string | null; role: TrainerRole }

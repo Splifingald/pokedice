@@ -97,7 +97,7 @@ function Message({
       <p className="text-lg text-muted">{sender(m)}</p>
       <p className="copy whitespace-pre-wrap break-words text-lg leading-snug">{m.message}</p>
       {m.reply && draft === null && (
-        <div className="border-2 border-ink bg-gold/30 p-2">
+        <div className="border-2 border-edge bg-gold/30 p-2">
           <p className="flex flex-wrap items-baseline justify-between gap-x-2 text-lg leading-none">
             <b>Your answer</b>
             <span className="text-base text-muted">
@@ -117,7 +117,7 @@ function Message({
             maxLength={FEEDBACK_MESSAGE_MAX}
             rows={5}
             autoFocus
-            className="copy w-full resize-y border-[3px] border-ink bg-panel p-2 text-lg leading-snug"
+            className="copy w-full resize-y border-[3px] border-edge bg-panel p-2 text-lg leading-snug"
           />
         </label>
       )}

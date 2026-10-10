@@ -117,13 +117,13 @@ export function BackgroundPicker({
         ))}
       </select>
       {value && (
-        <img src={`/battle/${value}.png`} alt="" width={96} height={45} className="border-2 border-ink" style={{ imageRendering: 'pixelated' }} />
+        <img src={`/battle/${value}.png`} alt="" width={96} height={45} className="border-2 border-edge" style={{ imageRendering: 'pixelated' }} />
       )}
     </div>
   )
 }
 
-export const inputCls = 'min-h-[34px] w-full border-2 border-ink bg-panel px-2 py-0.5 text-lg'
+export const inputCls = 'min-h-[34px] w-full border-2 border-edge bg-panel px-2 py-0.5 text-lg'
 
 /**
  * A number field you can actually empty.
@@ -211,7 +211,7 @@ export function Slider({ value, onChange, min = 0, max = 100, step = 1 }: { valu
   return (
     <input
       type="range"
-      className="w-full accent-[#e8b44a]"
+      className="w-full accent-[#ffbe2e]"
       value={value}
       min={min}
       max={max}

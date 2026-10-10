@@ -1,81 +1,143 @@
-// Dev route: every design-system component in every state. Check at 360 px and 1440 px.
+// Dev route: every design-system component in every state (docs/15-UI-GUIDELINES.md). Check at 360 px and 1440 px.
 import { useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
-import { DIE_TYPES, POKE_TYPES, emptyStatus, type Species } from '@/engine'
+import { DIE_TYPES, POKE_TYPES, STATUS_KINDS, emptyStatus, type Species } from '@/engine'
+import { Chip, LevelTag, NewTag, StatusChip } from '@/components/Chip'
 import { Dialogue } from '@/components/Dialogue'
 import { Die, DieFaces } from '@/components/Die'
+import { FaceDice, facesStatuses, StatusLines } from '@/components/FaceDice'
 import { Gauge } from '@/components/Gauge'
 import { GoldPill } from '@/components/GoldPill'
 import { HpBar } from '@/components/HpBar'
 import { ICONS, PixelIcon, type IconName } from '@/components/icons'
+import { ItemSprite } from '@/components/ItemSprite'
 import { Modal } from '@/components/Modal'
+import { MonTile, TILE_GRID, TileTag } from '@/components/MonTile'
+import { PageHead, Wallet } from '@/components/PageHead'
 import { Panel } from '@/components/Panel'
 import { PixelButton } from '@/components/PixelButton'
 import { SearchSelect } from '@/components/SearchSelect'
+import { FilterChips, SearchField, Seg } from '@/components/Segmented'
+import { Sheet } from '@/components/Sheet'
 import { SpriteImg } from '@/components/SpriteImg'
 import { StatusIcons } from '@/components/StatusIcons'
+import { Toggle } from '@/components/Toggle'
 import { TypeBadge, TypeSwatch } from '@/components/TypeBadge'
 import { pushToast, setSettings, useGame } from '@/store/game'
+import { BattleBits } from './kitchen/BattleBits'
+import { PartnerBits } from './kitchen/PartnerBits'
+import { BadgeIcon, CrownIcon } from '@/components/BadgeIcon'
+import { BoardRow } from '@/components/BoardRow'
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <Panel title={<span className="text-xl">{title}</span>} className="mb-5">
+    <Panel title={<h2 className="text-[24px] leading-none">{title}</h2>} className="mb-5">
       <div className="flex flex-wrap items-start gap-3">{children}</div>
     </Panel>
   )
 }
 
+const VARIANTS = ['primary', 'secondary', 'gold', 'success', 'danger', 'ghost', 'dark'] as const
+
 export function KitchenSink() {
   const data = useGame((s) => s.data)
   const settings = useGame((s) => s.settings)
   const [hp, setHp] = useState(80)
-  const [gold, setGold] = useState(120)
+  const [gold, setGold] = useState(1240)
   const [roll, setRoll] = useState(0)
   const [selected, setSelected] = useState<number[]>([1])
   const [modal, setModal] = useState(false)
+  const [sheet, setSheet] = useState(false)
   const [mon, setMon] = useState<Species | null>(data.species[6] ?? null)
   const [gaugeVal, setGaugeVal] = useState(30)
+  const [seg, setSeg] = useState<'combos' | 'dice'>('combos')
+  const [filter, setFilter] = useState<'all' | 'catch' | 'secret' | 'cleared'>('all')
+  const [q, setQ] = useState('')
+  const [toggle, setToggle] = useState(true)
 
   const faceFor = (t: (typeof DIE_TYPES)[number], i: number) => data.diceTypes[t]?.faces[(i + roll) % 6] ?? null
+  const statusFace = (t: (typeof DIE_TYPES)[number]) => data.diceTypes[t]?.faces.find((f) => f.kind === 'status') ?? null
 
   return (
-    <div className="mx-auto max-w-6xl px-3 py-6">
+    <main className="mx-auto max-w-6xl px-3 py-6">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-5xl">Kitchen sink</h1>
-        <div className="flex gap-2">
-          <PixelButton size="sm" variant={settings.reducedMotion ? 'primary' : 'secondary'} onClick={() => setSettings({ reducedMotion: !settings.reducedMotion })}>
-            Reduced motion: {settings.reducedMotion ? 'ON' : 'off'}
-          </PixelButton>
-          <Link to="/" className="pixel-btn bg-panel px-2 py-1 text-lg">
+        <h1 className="text-display">Kitchen sink</h1>
+        <Link to="/kitchen-sink/fx" className="underline">
+          FX lab ▶
+        </Link>
+        <div className="flex flex-wrap gap-2">
+          <Seg
+            label="Animations"
+            value={settings.reducedMotion ? 'off' : (settings.animations ?? 'full')}
+            onChange={(v) => setSettings(v === 'off' ? { reducedMotion: true } : { reducedMotion: false, animations: v })}
+            options={[
+              { id: 'full', label: 'Full' },
+              { id: 'short', label: 'Short' },
+              { id: 'off', label: 'None' },
+            ]}
+          />
+          {/* Every component in both themes: flip this and scroll. */}
+          <Seg
+            label="Theme"
+            value={settings.theme ?? 'light'}
+            onChange={(v) => setSettings({ theme: v })}
+            options={[
+              { id: 'light', label: 'Light' },
+              { id: 'dark', label: 'Dark' },
+              { id: 'auto', label: 'Auto' },
+            ]}
+          />
+          <Link to="/" className="pixel-btn flex min-h-[44px] items-center px-3 text-lg">
             Title
           </Link>
         </div>
       </div>
 
-      <Section title="Panels">
-        <Panel className="w-56">Light panel</Panel>
+      <Section title="Frames">
+        <Panel className="w-56">Panel: the 9-slice frame, a lip, a dithered shadow.</Panel>
         <Panel variant="dark" className="w-56">
           Dark panel
         </Panel>
         <Panel variant="dialogue" className="w-56">
-          Dialogue frame
+          Dialogue frame, with its inner ring.
         </Panel>
-        <Panel title="With title" className="w-56">
+        <Panel title="With a title" className="w-56">
           Body
         </Panel>
+        <div className="pixel-plate w-56 px-2.5 pb-2.5 pt-1.5">
+          <div className="flex items-center gap-2">
+            <span className="text-[24px] leading-none">Safari Zone</span>
+            <LevelTag level={24} className="ml-auto" />
+          </div>
+          <span className="font-pixel-sm text-[15px] text-muted">Plate: flat ring, clipped corners</span>
+        </div>
+        <div className="hatched w-56 p-3">Unavailable (dotted)</div>
       </Section>
 
       <Section title="PixelButton">
-        {(['primary', 'secondary', 'danger', 'success', 'ghost', 'dark'] as const).map((v) => (
+        {VARIANTS.map((v) => (
           <PixelButton key={v} variant={v}>
             {v}
           </PixelButton>
         ))}
-        <PixelButton size="sm">small</PixelButton>
-        <PixelButton size="lg" variant="primary">
-          LARGE
-        </PixelButton>
-        <PixelButton disabled>disabled</PixelButton>
+        <div className="flex w-full flex-wrap items-end gap-3">
+          <PixelButton size="sm">small</PixelButton>
+          <PixelButton size="md">medium</PixelButton>
+          <PixelButton size="lg" variant="primary">
+            Large
+          </PixelButton>
+          <PixelButton size="xl" variant="primary" className="sheen">
+            <PixelIcon name="play" size={24} />
+            Continue
+          </PixelButton>
+          <PixelButton size="lg" variant="gold" className="sheen">
+            New region
+          </PixelButton>
+          <PixelButton disabled>disabled</PixelButton>
+          <PixelButton variant="primary" disabled>
+            primary off
+          </PixelButton>
+        </div>
         {/* The tight case: a full-width button, the largest size, and the longest label a translation produces.
             The label shrinks to fit rather than running past the frame. */}
         <div className="w-[300px]" data-test="fit">
@@ -84,6 +146,49 @@ export function KitchenSink() {
             ALLER À LA NOUVELLE ZONE
           </PixelButton>
         </div>
+      </Section>
+
+      <Section title="Chips · tags · toggle">
+        {(['plain', 'gold', 'green', 'done', 'red', 'blue', 'lock', 'dark'] as const).map((tone) => (
+          <Chip key={tone} tone={tone}>
+            {tone}
+          </Chip>
+        ))}
+        <NewTag />
+        <LevelTag level={36} />
+        <div className="flex w-full flex-wrap gap-2">
+          {STATUS_KINDS.map((s, i) => (
+            <StatusChip key={s} status={s} count={i % 2 ? '1/2' : undefined} lit={i % 3 !== 2} />
+          ))}
+        </div>
+        <Toggle label="A toggle" hint="Its hint, in Jersey 15" on={toggle} onChange={setToggle} className="w-full max-w-md" />
+      </Section>
+
+      <Section title="Segmented · filter chips · search">
+        <Seg
+          label="Upgrades"
+          tabs
+          value={seg}
+          onChange={setSeg}
+          options={[
+            { id: 'combos', label: 'Combos', count: 5 },
+            { id: 'dice', label: 'Dice', count: 15 },
+          ]}
+          className="w-full max-w-sm"
+        />
+        <FilterChips
+          label="Show"
+          value={filter}
+          onChange={setFilter}
+          options={[
+            { id: 'all', label: 'All', count: 28 },
+            { id: 'catch', label: 'To catch', count: 4 },
+            { id: 'secret', label: 'Secret', count: 4 },
+            { id: 'cleared', label: 'Cleared', count: 15 },
+          ]}
+          className="w-full"
+        />
+        <SearchField id="ks-search" label="Search an area or a Pokémon" value={q} onChange={setQ} className="w-full max-w-sm" />
       </Section>
 
       <Section title="Dialogue">
@@ -102,7 +207,7 @@ export function KitchenSink() {
             <TypeBadge key={t} type={t} size="sm" />
           ))}
         </div>
-        <div className="flex gap-1">
+        <div className="flex flex-wrap gap-1">
           {DIE_TYPES.map((t) => (
             <TypeSwatch key={t} type={t} />
           ))}
@@ -146,31 +251,72 @@ export function KitchenSink() {
                 selected={selected.includes(i)}
                 onClick={() => setSelected((s) => (s.includes(i) ? s.filter((x) => x !== i) : [...s, i]))}
               />
-              <span className="text-sm">{t}</span>
+              <span className="font-pixel-sm text-sm">{t}</span>
             </div>
           ))}
         </div>
         <PixelButton variant="primary" onClick={() => setRoll((r) => r + 1)}>
           Reroll all
         </PixelButton>
-        <div className="flex gap-3">
+        <div className="flex flex-wrap items-end gap-4">
+          <Die type="fire" face={statusFace('fire')} label="status face" />
+          <Die type="ice" face={statusFace('ice')} />
+          <Die type="electric" face={statusFace('electric')} />
+          <Die type="poison" face={statusFace('poison')} />
+          <Die type="psychic" face={statusFace('psychic')} />
+          <Die type="grass" face={data.diceTypes.grass.faces[3]} combo label="combo" />
+          <Die type="grass" face={data.diceTypes.grass.faces[3]} combo label="combo" />
+          <Die type="water" face={data.diceTypes.water.faces[2]} selected label="selected" />
           <Die type="fire" face={data.diceTypes.fire.faces[0]} locked label="locked" />
-          <Die type="ice" face={data.diceTypes.ice.faces[0]} />
-          <Die type="electric" face={data.diceTypes.electric.faces[3]} />
-          <Die type="psychic" face={data.diceTypes.psychic.faces[5]} />
-          <Die type="poison" face={data.diceTypes.poison.faces[0]} />
-          <Die type="ghost" face={data.diceTypes.ghost.faces[5]} />
-          <Die type="ground" face={data.diceTypes.ground.faces[5]} />
-          <Die type="ghost" face={data.diceTypes.ghost.faces[0]} size={40} />
           <Die type="water" face={null} />
         </div>
+        <div className="flex flex-wrap items-end gap-3">
+          {[24, 28, 32, 40, 44, 54, 64, 80].map((s) => (
+            <Die key={s} type="base" face={{ kind: 'number', value: 5 }} size={s} label={`${s}px`} />
+          ))}
+        </div>
         <div className="flex w-full flex-col gap-2">
-          {(['base', 'normal', 'dragon', 'bug'] as const).map((t) => (
+          {(['base', 'normal', 'dragon', 'bug', 'fire'] as const).map((t) => (
             <div key={t} className="flex items-center gap-2">
-              <span className="w-20">{t}</span>
-              <DieFaces type={t} faces={data.diceTypes[t].faces} />
+              <span className="w-20 font-pixel-sm">{t}</span>
+              <DieFaces type={t} faces={data.diceTypes[t].faces} size={40} />
             </div>
           ))}
+        </div>
+      </Section>
+
+      <Section title="FaceDice · StatusLines (Pokémon sheet, Upgrades)">
+        <div className="flex w-full max-w-md flex-col gap-2">
+          {(['electric', 'fire', 'grass'] as const).map((ty) => (
+            <div key={ty} className="flex flex-col gap-1">
+              <FaceDice type={ty} faces={data.diceTypes[ty].faces} />
+              <StatusLines statuses={facesStatuses(data.diceTypes[ty].faces)} />
+            </div>
+          ))}
+        </div>
+      </Section>
+
+      <Section title="PageHead · Wallet · MonTile · ItemSprite (atlas)">
+        <div className="flex w-full flex-col gap-2">
+          <PageHead icon="navShop" title="Poké Mart" as="h2">
+            <Wallet />
+          </PageHead>
+          <ul className={TILE_GRID}>
+            <li>
+              <MonTile dex={25} number="#025" name="Pikachu" label="Pikachu" onClick={() => {}} tags={<TileTag tone="new">NEW</TileTag>} />
+            </li>
+            <li>
+              <MonTile dex={1} number="#001" name="???" missing label="???" onClick={() => {}} tags={<TileTag tone="near">Nearby</TileTag>} />
+            </li>
+            <li>
+              <MonTile dex={6} name="Charizard" sub="Lv.36" label="Charizard" onClick={() => {}} />
+            </li>
+          </ul>
+          <div className="flex flex-wrap gap-2">
+            {['poke-ball', 'great-ball', 'potion', 'thunder-stone', 'old-amber'].map((k) => (
+              <ItemSprite key={k} item={data.items[k]} size={32} />
+            ))}
+          </div>
         </div>
       </Section>
 
@@ -186,7 +332,7 @@ export function KitchenSink() {
         </div>
       </Section>
 
-      <Section title="GoldPill · Toast · Modal">
+      <Section title="GoldPill · Toast · Modal · Sheet">
         <GoldPill amount={gold} />
         <PixelButton size="sm" onClick={() => setGold((g) => g + 57)}>
           +57 gold
@@ -203,12 +349,39 @@ export function KitchenSink() {
         <PixelButton size="sm" variant="dark" onClick={() => setModal(true)}>
           Open modal
         </PixelButton>
+        <PixelButton size="sm" onClick={() => setSheet(true)}>
+          Open sheet
+        </PixelButton>
         <Modal open={modal} onClose={() => setModal(false)} title="A modal">
-          <p className="mb-3 text-xl">Escape or click outside to close.</p>
-          <PixelButton variant="primary" onClick={() => setModal(false)}>
-            OK
-          </PixelButton>
+          <p className="copy mb-3">Escape or click outside to close. Tab stays inside.</p>
+          <div className="flex gap-2">
+            <PixelButton variant="primary" onClick={() => setModal(false)}>
+              OK
+            </PixelButton>
+            <PixelButton onClick={() => setSheet(true)}>Sheet on top</PixelButton>
+          </div>
         </Modal>
+        <Sheet
+          open={sheet}
+          onClose={() => setSheet(false)}
+          title="Kanto"
+          sub="15 cleared · 2/4 secrets found · 61/151 caught"
+          head={<SearchField id="ks-sheet-q" label="Search an area or a Pokémon" value={q} onChange={setQ} />}
+          footer={
+            <PixelButton variant="primary" className="w-full" onClick={() => setSheet(false)}>
+              Continue here
+            </PixelButton>
+          }
+        >
+          <ul className="flex flex-col gap-2.5">
+            {data.areas.slice(0, 12).map((a) => (
+              <li key={a.id} className="flex items-center gap-2 bg-paper p-2.5 shadow-card">
+                <span className="min-w-0 flex-1 truncate text-[21px] leading-none">{a.name}</span>
+                <LevelTag level={a.minLevel} />
+              </li>
+            ))}
+          </ul>
+        </Sheet>
       </Section>
 
       <Section title="SearchSelect">
@@ -232,19 +405,80 @@ export function KitchenSink() {
         </div>
       </Section>
 
+      <Section title="Badges · crown · board rows">
+        <div className="flex flex-wrap gap-2 bg-[#2b3a63] p-2">
+          {[
+            'Boulder Badge',
+            'Cascade Badge',
+            'Thunder Badge',
+            'Rainbow Badge',
+            'Soul Badge',
+            'Marsh Badge',
+            'Volcano Badge',
+            'Earth Badge',
+            'Zephyr Badge',
+            'Storm Badge',
+            'Relic Badge',
+            'Glacier Badge',
+            'Fairy Badge',
+            'Normalium Z',
+          ].map((b) => (
+            <BadgeIcon key={b} badge={b} earned size={36} />
+          ))}
+          <BadgeIcon badge="Boulder Badge" earned={false} size={36} />
+          <CrownIcon earned size={36} label="Crown" />
+          <CrownIcon earned={false} size={36} label="Crown — not earned yet" />
+        </div>
+        <ol className="m-0 grid w-full max-w-[420px] list-none gap-1.5 p-0">
+          <BoardRow
+            rank={1}
+            look="/characters/red.png"
+            name="Red"
+            team={[
+              { dex: 25, level: 88 },
+              { dex: 6, level: 85 },
+            ]}
+            value="Lv.88"
+          />
+          <BoardRow
+            rank={2}
+            look="/characters/green.png"
+            name="Leaf"
+            isMe
+            team={[{ dex: 3, level: 60 }]}
+            value="Lv.60"
+          />
+          <BoardRow
+            rank={7}
+            look="/characters/red.png"
+            name="Blue"
+            team={[{ dex: 9, level: 41 }]}
+            value="Lv.41"
+          />
+        </ol>
+      </Section>
+
+      <Section title="Battle: stage, plates, tray, readout, team pips, Bag, catch">
+        <BattleBits />
+      </Section>
+
+      <Section title="PartnerMoment: the lab (new game, new region)">
+        <PartnerBits />
+      </Section>
+
       <Section title="StatusIcons · PixelIcon">
         <StatusIcons
           status={{ ...emptyStatus(), burn: { stacks: 3, turns: 2 }, poison: { turns: 3 }, frozen: 2, paralyze: 1, confused: true }}
         />
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-3">
           {(Object.keys(ICONS) as IconName[]).map((n) => (
-            <span key={n} className="flex flex-col items-center text-xs">
-              <PixelIcon name={n} size={24} />
+            <span key={n} className="flex flex-col items-center gap-1 font-pixel-sm text-[12px]">
+              <PixelIcon name={n} size={n.startsWith('nav') ? 32 : 24} />
               {n}
             </span>
           ))}
         </div>
       </Section>
-    </div>
+    </main>
   )
 }

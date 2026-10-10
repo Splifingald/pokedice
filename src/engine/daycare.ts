@@ -71,6 +71,13 @@ export function nextDayCareTick(res: DayCareResident, now: number, data: GameDat
   return t - (Math.max(0, now - res.since) % t)
 }
 
+/** When a resident's stay is full (its XP cap reached); null when the Day Care gives no XP. */
+export function dayCareFullAt(res: DayCareResident, data: GameData): number | null {
+  const cfg = data.config.dayCare
+  if (cfg.xpPerTick <= 0) return null
+  return res.since + Math.ceil(cfg.maxXp / cfg.xpPerTick) * tickMs(data)
+}
+
 /** The resident as it stands now: its Day Care XP applied as levels (never an evolution). */
 export function residentNow(res: DayCareResident, now: number, data: GameData): PokemonInstance {
   // No evolution means no random branch: the rng is never read.

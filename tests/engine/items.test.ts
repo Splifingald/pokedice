@@ -238,4 +238,11 @@ describe('items in battle', () => {
     const p = getInstance(r.save, r.caughtId)!
     expect(p.currentHp).toBe(createInstance(16, 4, data, 'x', 0).currentHp)
   })
+
+  it('a catch says whether the species is new to the Pokédex', () => {
+    const first = applyCatch(fresh(), { dex: 16, level: 4 }, { mode: 'new' }, data, 0, newId)
+    expect(first.events).toContainEqual(expect.objectContaining({ kind: 'caught', dex: 16, isNew: true }))
+    const again = applyCatch(first.save, { dex: 16, level: 5 }, { mode: 'new' }, data, 0, newId)
+    expect(again.events).toContainEqual(expect.objectContaining({ kind: 'caught', dex: 16, isNew: false }))
+  })
 })

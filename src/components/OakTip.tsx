@@ -34,7 +34,7 @@ export function useOneTimeTip(key: string): [boolean, () => void] {
 export function OakTip({ children, onClose }: { children: ReactNode; onClose: () => void }) {
   const { t } = useT()
   return (
-    <div className="flex w-full items-start gap-2 border-[3px] border-ink bg-parchment p-2 text-left">
+    <div className="flex w-full items-start gap-2 bg-sand p-2 shadow-[inset_0_0_0_2px_rgb(var(--c-edge)),inset_0_-4px_0_rgb(var(--c-sand-lip))] text-left">
       <TrainerSprite src="/characters/prof-oak.png" alt={t('ui.newGame.oak')} size={56} className="shrink-0" />
       <div className="flex min-w-0 flex-1 flex-col gap-1">
         <div className="text-lg leading-snug">

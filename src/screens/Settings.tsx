@@ -4,6 +4,7 @@ import { DonationModal } from '@/components/DonationPopup'
 import { Modal } from '@/components/Modal'
 import { Panel } from '@/components/Panel'
 import { PixelButton } from '@/components/PixelButton'
+import { Seg } from '@/components/Segmented'
 import { Toggle } from '@/components/Toggle'
 import { donationEnabled } from '@/engine'
 import { LANG_LABELS, LANGS, type Lang } from '@/i18n'
@@ -14,8 +15,8 @@ import { parseSave } from '@/save/schema'
 import { pushToast, setSettings, useGame } from '@/store/game'
 import { deleteSave, replaceSave } from '@/store/run'
 import { useIsAdmin } from '@/store/hooks'
-import { checkContent } from '@/store/sync'
-import { DisconnectButton, GoogleAccountButton } from '@/components/GoogleAccountButton'
+import { checkContent, providerName } from '@/store/sync'
+import { AccountButton, ConnectedAccounts, DisconnectButton } from '@/components/AccountButton'
 import { SaveFacts } from '@/components/SyncConflictModal'
 import { backupSave, readBackups } from '@/save/storage'
 
@@ -59,7 +60,7 @@ export function SettingsScreen() {
   return (
     <div className="flex max-w-2xl flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-5xl">{t('ui.settings.title')}</h1>
+        <h1 className="text-[32px] leading-none">{t('ui.settings.title')}</h1>
         {canDonate && (
           <PixelButton variant="primary" size="sm" onClick={() => setDonating(true)}>
             {t('ui.settings.helpPokedice')}
@@ -84,7 +85,40 @@ export function SettingsScreen() {
           on={settings.multiExp}
           onChange={(v) => setSettings({ multiExp: v })}
         />
-        {/* Admins only — but a player who already turned it on still sees it, so they can turn it off. */}
+        <div className="flex flex-col gap-1.5 py-1">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <span className="text-2xl">{t('ui.settings.animations')}</span>
+            <Seg
+              label={t('ui.settings.animations')}
+              value={settings.animations ?? 'full'}
+              onChange={(v) => setSettings({ animations: v })}
+              options={[
+                { id: 'full', label: t('ui.settings.animFull') },
+                { id: 'short', label: t('ui.settings.animShort') },
+              ]}
+              className="min-w-[12rem]"
+            />
+          </div>
+          <span className="copy block text-muted">{t('ui.settings.animationsHint')}</span>
+        </div>
+        <div className="flex flex-col gap-1.5 py-1">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <span className="text-2xl">{t('ui.settings.theme')}</span>
+            <Seg
+              label={t('ui.settings.theme')}
+              value={settings.theme ?? 'light'}
+              onChange={(v) => setSettings({ theme: v })}
+              options={[
+                { id: 'light', label: t('ui.settings.themeLight') },
+                { id: 'dark', label: t('ui.settings.themeDark') },
+                { id: 'auto', label: t('ui.settings.themeAuto') },
+              ]}
+              className="min-w-[15rem]"
+            />
+          </div>
+          <span className="copy block text-muted">{t('ui.settings.themeHint')}</span>
+        </div>
+        {/* No animations: admins only — but a player who already turned it on still sees it, so they can turn it off. */}
         {(isAdmin || settings.reducedMotion) && (
           <Toggle
             label={t('ui.settings.reducedMotion')}
@@ -106,13 +140,21 @@ export function SettingsScreen() {
             </Link>
           </p>
         ) : (
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <span className="copy">
-              {auth.status === 'signed_in'
-                ? t('ui.settings.cloudOn', { who: auth.email ?? t('ui.settings.yourGoogle') })
-                : t('ui.settings.cloudConnect')}
-            </span>
-            {auth.status === 'signed_in' ? <DisconnectButton size="sm" /> : <GoogleAccountButton size="sm" />}
+          <div className="flex flex-col gap-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="copy">
+                {auth.status !== 'signed_in'
+                  ? t('ui.settings.cloudConnect')
+                  : auth.provider
+                    ? t('ui.account.signedInWith', {
+                        provider: providerName(auth.provider),
+                        who: auth.email ?? t('ui.settings.yourGoogle'),
+                      })
+                    : t('ui.settings.cloudOn', { who: auth.email ?? t('ui.settings.yourGoogle') })}
+              </span>
+              {auth.status === 'signed_in' ? <DisconnectButton size="sm" /> : <AccountButton size="sm" />}
+            </div>
+            <ConnectedAccounts />
           </div>
         )}
       </Panel>
@@ -132,7 +174,7 @@ export function SettingsScreen() {
           value={importText}
           onChange={(e) => setImportText(e.target.value)}
           placeholder={t('ui.settings.importPlaceholder')}
-          className="mt-3 h-24 w-full border-2 border-ink bg-panel p-2 font-mono text-xs"
+          className="mt-3 h-24 w-full bg-paper shadow-field p-2 font-mono text-xs"
         />
         <PixelButton size="sm" className="mt-1" disabled={!importText.trim()} onClick={doImport}>
           {t('ui.settings.importSave')}
@@ -202,7 +244,7 @@ function BackupsPanel() {
       <p className="copy mb-2 text-muted">{t('ui.settings.backupsHint')}</p>
       <ul className="flex flex-col gap-2">
         {list.map((b) => (
-          <li key={b.at} className="flex flex-wrap items-center gap-3 border-2 border-ink bg-panel p-2">
+          <li key={b.at} className="flex flex-wrap items-center gap-3 bg-paper p-2 shadow-ring">
             <div className="min-w-0 flex-1">
               <div className="text-lg leading-tight">{b.reason}</div>
               <div className="text-base text-muted">{t('ui.settings.setAside', { when: new Date(b.at).toLocaleString() })}</div>

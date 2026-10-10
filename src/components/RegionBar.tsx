@@ -8,16 +8,17 @@ import { donationDue, getRegion, regionOf, regionOfferDue, tutorialPending, type
 import { useT } from '@/i18n/react'
 import { Modal } from '@/components/Modal'
 import { PixelButton } from '@/components/PixelButton'
-import { SpriteImg } from '@/components/SpriteImg'
-import { TypeBadge } from '@/components/TypeBadge'
+import { PartnerMoment } from '@/components/PartnerMoment'
 import { availableRegions, closeRegionOffer, regionOnOffer, startRegion, switchRegion } from '@/store/regions'
 import { useGame } from '@/store/game'
 import { cx } from '@/theme/util'
 import { TrainerSprite } from '@/components/TrainerArt'
 
-export function RegionBar() {
+/** `modalOnly`: just the offer's pop-up (Home shows the regions in its Areas sheet). */
+export function RegionBar({ modalOnly = false }: { modalOnly?: boolean }) {
   const { t } = useT()
   const save = useGame((s) => s.save)!
+  const data = useGame((s) => s.data)
   // Prof. Oak's one-time pop-ups queue rather than stack, and they go first: the offer waits its turn behind them,
   // and the banner keeps it on screen meanwhile. The donation pop-up goes first too.
   const waiting = useGame((s) => !!s.save && (tutorialPending(s.save, s.data) || donationDue(s.save, s.data)))
@@ -39,7 +40,7 @@ export function RegionBar() {
 
   return (
     <>
-      {regions.length > 1 && (
+      {!modalOnly && regions.length > 1 && (
         <nav aria-label={t('ui.region.label')} className="flex flex-wrap items-center gap-2">
           <span className="text-lg text-muted">{t('ui.region.label')}</span>
           {regions.map((r) => (
@@ -49,8 +50,8 @@ export function RegionBar() {
               aria-current={r.id === current ? 'page' : undefined}
               onClick={() => switchRegion(r.id)}
               className={cx(
-                'min-h-[34px] border-2 border-ink px-2 text-xl leading-tight',
-                r.id === current ? 'bg-gold text-ink' : 'bg-panel hover:bg-white',
+                'min-h-[34px] border-2 border-edge px-2 text-xl leading-tight',
+                r.id === current ? 'bg-gold text-ink' : 'bg-panel hover:bg-paper',
               )}
             >
               {r.name}
@@ -59,7 +60,7 @@ export function RegionBar() {
         </nav>
       )}
 
-      {offer && (
+      {!modalOnly && offer && (
         <motion.div
           className="pixel-panel flex flex-wrap items-center gap-3 border-gold p-3"
           initial={{ y: -8, opacity: 0 }}
@@ -75,26 +76,24 @@ export function RegionBar() {
         </motion.div>
       )}
 
-      {/* One modal, two panels: the terms, then the starters. Two modals would stack and cross-fade over each other. */}
+      {/* The terms, then the professor's lab: the three balls drop onto the table and one becomes the partner. */}
       {offer && (
-        <Modal
-          open={offerOpen || picking}
-          onClose={() => {
-            setPicking(false)
-            closeOffer()
-          }}
-          title={t(picking ? 'ui.region.choosePartner' : 'ui.region.awaits', { region: offer.name })}
-        >
-          {picking ? (
-            <StarterPicker region={offer} onBack={() => setPicking(false)} onDone={() => setPicking(false)} />
-          ) : (
-            <RegionTerms
-              region={offer}
-              onClose={closeOffer}
-              onAccept={() => setPicking(true)}
-            />
-          )}
+        <Modal open={offerOpen} onClose={closeOffer} title={t('ui.region.awaits', { region: offer.name })}>
+          <RegionTerms region={offer} onClose={closeOffer} onAccept={() => setPicking(true)} />
         </Modal>
+      )}
+      {offer && picking && (
+        <PartnerMoment
+          starters={offer.starters.filter((d) => data.species[d])}
+          regionId={offer.id}
+          regionName={offer.name}
+          level={data.config.starterLevel}
+          onLeave={() => setPicking(false)}
+          onPick={(dex) => {
+            setPicking(false)
+            startRegion(offer.id, dex)
+          }}
+        />
       )}
     </>
   )
@@ -120,7 +119,7 @@ function RegionTerms({
         <TrainerSprite src="/characters/prof-oak.png" size={96} />
       </div>
       <p className="text-xl leading-tight">{t('ui.region.termsIntro', { here, region: region.name })}</p>
-      <ul className="flex flex-col gap-1 border-[3px] border-ink bg-parchment p-2 text-lg leading-tight">
+      <ul className="flex flex-col gap-1 bg-paper p-2 text-lg shadow-ring leading-tight">
         <li>{t('ui.region.termsSelf')}</li>
         <li>{t('ui.region.termsStay', { here })}</li>
         <li>{t('ui.region.termsBack')}</li>
@@ -136,63 +135,6 @@ function RegionTerms({
           }}
         >
           {t('ui.region.goTo', { region: region.name })}
-        </PixelButton>
-      </div>
-    </div>
-  )
-}
-
-/** The region's three starters. Picking one begins the region. */
-function StarterPicker({
-  region,
-  onBack,
-  onDone,
-}: {
-  region: Region
-  onBack: () => void
-  onDone: () => void
-}) {
-  const { t } = useT()
-  const data = useGame((s) => s.data)
-  const [choice, setChoice] = useState<number | null>(null)
-  const starters = region.starters.filter((d) => data.species[d])
-
-  return (
-    <div className="flex flex-col gap-3">
-      <div className="flex flex-wrap justify-center gap-2">
-        {starters.map((dex) => {
-          const s = data.species[dex]!
-          return (
-            <button
-              key={dex}
-              type="button"
-              aria-pressed={choice === dex}
-              onClick={() => setChoice(dex)}
-              className={cx(
-                'pixel-panel flex flex-col items-center gap-1 p-2',
-                choice === dex ? 'bg-gold' : 'hover:bg-white',
-              )}
-            >
-              <SpriteImg dex={dex} size={96} />
-              <span className="text-xl leading-none">{s.name}</span>
-              <span className="flex gap-1">
-                <TypeBadge type={s.type1} size="sm" />
-                {s.type2 && <TypeBadge type={s.type2} size="sm" />}
-              </span>
-            </button>
-          )
-        })}
-      </div>
-      <div className="flex flex-wrap items-center justify-end gap-2">
-        <PixelButton onClick={onBack}>{t('ui.region.back')}</PixelButton>
-        <PixelButton
-          variant="primary"
-          disabled={choice == null}
-          onClick={() => {
-            if (choice != null && startRegion(region.id, choice)) onDone()
-          }}
-        >
-          {choice != null ? t('ui.region.setOff', { name: data.species[choice]?.name ?? '' }) : t('ui.region.pickOne')}
         </PixelButton>
       </div>
     </div>

@@ -21,7 +21,7 @@ export function DiceSet({ dice, size = 16, className }: { dice: DieType[]; size?
         <span
           key={i}
           title={t('ui.die.name', { type: typeName(type) })}
-          className="relative inline-block border-2 border-ink"
+          className="relative inline-block border-2 border-edge"
           style={{
             width: px,
             height: px,

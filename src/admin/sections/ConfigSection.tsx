@@ -294,9 +294,9 @@ function XpPlot({ A, B, C, fightsPerHour, mult }: { A: number; B: number; C: num
   const perHour = (L: number) => (fightsPerHour * L * mult) / xpToNext(L, cfg)
   return (
     <div className="flex flex-wrap items-start gap-4">
-      <svg viewBox={`0 0 ${W} ${H}`} className="w-full max-w-sm border-2 border-ink bg-panel" role="img" aria-label="XP to next level by level">
+      <svg viewBox={`0 0 ${W} ${H}`} className="w-full max-w-sm border-2 border-edge bg-panel" role="img" aria-label="XP to next level by level">
         <polyline points={path} fill="none" stroke="#547acc" strokeWidth={2} />
-        <text x={4} y={12} fontSize={10} fill="#2a2438">
+        <text x={4} y={12} fontSize={10} fill="#24304f">
           xpToNext(L), L = 1…100 (max {max})
         </text>
       </svg>
@@ -372,34 +372,34 @@ function StatusRulesBox() {
   return (
     <Box title="Status effects" hint="The dice faces that trigger each effect, and what it does. The help screen and the Upgrades screen quote these numbers.">
       <div className="grid gap-3 sm:grid-cols-2">
-        <fieldset className="flex flex-col gap-1 border-2 border-ink p-2">
+        <fieldset className="flex flex-col gap-1 border-2 border-edge p-2">
           <legend className="px-1 text-lg">Burn (Fire)</legend>
           <Field label="threshold" hint={faces}><NumInput value={r.burn.threshold} min={1} onChange={(v) => patch('burn', { threshold: num(v, 1, 1) })} /></Field>
           <Field label="percentPerStack" hint="% of the victim's max HP per stack, each of its turns (min 1)"><NumInput value={r.burn.percentPerStack} min={0} onChange={(v) => patch('burn', { percentPerStack: num(v, 4) })} /></Field>
           <Field label="duration" hint="turns (refreshed by a new burn)"><NumInput value={r.burn.duration} min={1} onChange={(v) => patch('burn', { duration: num(v, 3, 1) })} /></Field>
         </fieldset>
-        <fieldset className="flex flex-col gap-1 border-2 border-ink p-2">
+        <fieldset className="flex flex-col gap-1 border-2 border-edge p-2">
           <legend className="px-1 text-lg">Poison (Poison)</legend>
           <Field label="threshold" hint={faces}><NumInput value={r.poison.threshold} min={1} onChange={(v) => patch('poison', { threshold: num(v, 2, 1) })} /></Field>
           <Field label="percent" hint="% of the victim's max HP, each of its turns (min 1)"><NumInput value={r.poison.percent} min={0} onChange={(v) => patch('poison', { percent: num(v, 10) })} /></Field>
           <Field label="duration" hint="turns"><NumInput value={r.poison.duration} min={1} onChange={(v) => patch('poison', { duration: num(v, 3, 1) })} /></Field>
         </fieldset>
-        <fieldset className="flex flex-col gap-1 border-2 border-ink p-2">
+        <fieldset className="flex flex-col gap-1 border-2 border-edge p-2">
           <legend className="px-1 text-lg">Frozen (Ice)</legend>
           <Field label="threshold" hint={faces}><NumInput value={r.frozen.threshold} min={1} onChange={(v) => patch('frozen', { threshold: num(v, 3, 1) })} /></Field>
           <Field label="stunTurns" hint="turns the foe skips"><NumInput value={r.frozen.stunTurns} min={1} onChange={(v) => patch('frozen', { stunTurns: num(v, 2, 1) })} /></Field>
         </fieldset>
-        <fieldset className="flex flex-col gap-1 border-2 border-ink p-2">
+        <fieldset className="flex flex-col gap-1 border-2 border-edge p-2">
           <legend className="px-1 text-lg">Paralyze (Electric)</legend>
           <Field label="threshold" hint={faces}><NumInput value={r.paralyze.threshold} min={1} onChange={(v) => patch('paralyze', { threshold: num(v, 2, 1) })} /></Field>
           <Field label="stunTurns" hint="turns the foe skips"><NumInput value={r.paralyze.stunTurns} min={1} onChange={(v) => patch('paralyze', { stunTurns: num(v, 1, 1) })} /></Field>
         </fieldset>
-        <fieldset className="flex flex-col gap-1 border-2 border-ink p-2">
+        <fieldset className="flex flex-col gap-1 border-2 border-edge p-2">
           <legend className="px-1 text-lg">Confuse (Psychic)</legend>
           <Field label="threshold" hint={`${faces}; the foe's next attack takes recoil`}><NumInput value={r.confuse.threshold} min={1} onChange={(v) => patch('confuse', { threshold: num(v, 2, 1) })} /></Field>
           <Field label="recoilPercent" hint="% of the confused attacker's max HP it loses after its attack (min 1)"><NumInput value={r.confuse.recoilPercent} min={0} onChange={(v) => patch('confuse', { recoilPercent: num(v, 10, 0) })} /></Field>
         </fieldset>
-        <fieldset className="flex flex-col gap-1 border-2 border-ink p-2">
+        <fieldset className="flex flex-col gap-1 border-2 border-edge p-2">
           <legend className="px-1 text-lg">Heal (Grass)</legend>
           <Field label="threshold" hint={faces}><NumInput value={r.heal.threshold} min={1} onChange={(v) => patch('heal', { threshold: num(v, 2, 1) })} /></Field>
           <Field label="amount" hint="rollTotal: the total of the dice rolled · healFaces: the Heal faces' values">
@@ -438,6 +438,7 @@ export function ConfigSection() {
   const [showAhead, setShowAhead] = useConfigRow('showRoundPreview')
   const [shiny, setShiny] = useConfigRow('shinyChance')
   const [cloudSync, setCloudSync] = useConfigRow('cloudSyncMinutes')
+  const [maxFriends, setMaxFriends] = useConfigRow('maxFriends')
   const [fph, setFph] = useState(80)
   const curve = useMemo(() => ({ ...DEFAULT_CONFIG.xpCurve, ...xpCurve }), [xpCurve])
 
@@ -532,6 +533,12 @@ export function ConfigSection() {
             hint="a signed-in player's save is pushed at most once every this many minutes while they play (and when the page closes) · players can still press SYNC ONLINE, once per 5 min"
           >
             <NumInput value={cloudSync} min={1} max={240} onChange={(v) => setCloudSync(Math.max(1, Math.min(240, v ?? 15)))} />
+          </Field>
+        </Box>
+
+        <Box title="Friends" hint="The friend list (docs/16). The database reads this key too: friend_add() refuses past it, on both sides.">
+          <Field label="maxFriends" hint="friends per player; lowering it removes nobody, it only stops new friends past the cap">
+            <NumInput value={maxFriends} min={1} max={500} onChange={(v) => setMaxFriends(Math.max(1, Math.min(500, v ?? 100)))} />
           </Field>
         </Box>
 

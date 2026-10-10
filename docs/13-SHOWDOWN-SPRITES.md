@@ -67,6 +67,28 @@ Showdown's pixel-art sprites are drawn for Black/White's 96 px canvas. Most GIFs
   shrunk only if it doesn't fit.
 - Rendering stays `image-rendering: pixelated`, like the rest of the game.
 
+## On a canvas (the animation timelines)
+
+The battle stage, the Pokémon Center, evolutions and Egg hatching are drawn on a pixel canvas by timelines
+(`src/fx`, docs/15 §8), and a timeline needs to draw the Pokémon itself: two white frames on a hit, a red silhouette
+shrinking into a ball, a white silhouette flickering between two forms. Three ways were weighed:
+
+1. **Decode the GIFs at runtime** (`ImageDecoder`, or a GIF decoder library) into frame sheets. Every frame on
+   canvas, but Showdown sends no CORS headers, so the bytes can't be read in the page without a proxy; and a decoder
+   is code and memory for every sprite shown.
+2. **Pre-built frame sheets** (extend `pnpm showdown-sprites` the way the Visual Lab's `sheets.py` did). Every frame,
+   but a second copy of every animated sprite to host and download: the very requests this project removes.
+3. **The browser animates, the canvas borrows a still** — chosen. Outside an effect the animated GIF is an ordinary
+   `<img>` layered on the stage (Home's scene does this) and the browser plays it. While an effect needs the Pokémon,
+   the canvas draws `drawImage(img)`'s still frame (the GIF's first frame), cropped to the art box this table already
+   holds and scaled like the stage (`src/fx/sprites.ts`: `loadSprite`, `drawSprite`). Same URL as the `<img>`, so
+   the browser cache answers it: no second download, no proxy. The canvas never reads pixels back (silhouettes and
+   tints are compositing operations), so the missing CORS headers don't matter.
+
+The cost: during an effect the Pokémon holds its first pose instead of animating; effects are short and busy, and
+the white frames, silhouettes and tints are what the eye follows there. Forms come from the same table
+(`charizard-megax`, `pikachu-gmax`…); most have only a static `g` sprite, which the canvas draws the same way.
+
 ## Ids
 
 - **Pokémon**: Showdown's sprite id is its base species as an id, plus `-` and the forme as an id: `mrmime`,

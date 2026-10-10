@@ -1,74 +1,181 @@
-import { useState, type ReactNode } from 'react'
-import { evolutionGate, levelEvolutions, sendOnBlocked, sendOnTarget, type PokemonInstance } from '@/engine'
-import { t } from '@/i18n'
+import { useRef, useState, type ReactNode } from 'react'
+import {
+  evolutionGate,
+  instanceMaxHp,
+  levelEvolutions,
+  nationalDex,
+  sendOnBlocked,
+  sendOnTarget,
+  type PokemonInstance,
+} from '@/engine'
+import { dexNo } from '@/lib/format'
 import { useT } from '@/i18n/react'
-import { evolveAtLevelCap } from '@/store/actions'
-import { useGame } from '@/store/game'
+import { evolveAtLevelCap, reorderTeam } from '@/store/actions'
+import { pushToast, useGame } from '@/store/game'
 import { sendPokemonOn } from '@/store/regions'
 import { AreaDex } from './AreaDex'
 import { DexEntry } from './DexEntry'
 import { EvolutionQueue, type EvolutionShow } from './Evolution'
-import { Modal } from './Modal'
+import { PixelIcon } from './icons'
+import { ItemPanel, useHasFieldItems } from './ItemPanel'
 import { PixelButton } from './PixelButton'
 import { PokemonSheet } from './PokemonSheet'
+import { Sheet } from './Sheet'
 
-/** What the details modal opens on: one of your Pokémon, a Pokédex entry, or an area's Pokémon. */
+/** What the details sheet opens on: one of your Pokémon, a Pokédex entry, or an area's Pokémon. */
 export type SheetView = { kind: 'inst'; id: string } | { kind: 'dex'; dex: number } | { kind: 'area'; areaId: string }
+/** Views reached from inside the sheet: also the "Use an item" list for one of your Pokémon. */
+type StackView = SheetView | { kind: 'items'; id: string }
 
 const viewKey = (v: SheetView) => (v.kind === 'inst' ? `i-${v.id}` : v.kind === 'dex' ? `d-${v.dex}` : `a-${v.areaId}`)
 
-/** Pokémon details in a modal. Tapping an evolution opens its Pokédex entry on top, with Back. */
+/**
+ * Pokémon details in a sheet (from the bottom on phones). Tapping an evolution opens its Pokédex entry on top, with
+ * Back. `manage` adds the footer the Team and Home use: Make lead and Use an item for a team member, the Center rule
+ * and Use an item for one in the Box. `instExtra` adds actions inside the body (the Pokémon Center's team moves).
+ */
 export function SheetModal({
   view,
   onClose,
   instExtra,
+  manage,
 }: {
   view: SheetView | null
   onClose: () => void
-  /** Extra actions under one of your Pokémon (e.g. "Use an item" on the Team screen). */
   instExtra?: (inst: PokemonInstance) => ReactNode
+  manage?: boolean
 }) {
+  // The last view stays while the sheet slides away.
+  const last = useRef(view)
+  if (view) last.current = view
+  const shown = view ?? last.current
+  if (!shown) return null
   return (
-    <Modal open={!!view} onClose={onClose} label={t('ui.newGame.details')}>
-      {view && <SheetStack key={viewKey(view)} initial={view} instExtra={instExtra} onClose={onClose} />}
-    </Modal>
+    <SheetStack
+      key={viewKey(shown)}
+      open={!!view}
+      initial={shown}
+      instExtra={instExtra}
+      manage={manage}
+      onClose={onClose}
+    />
   )
 }
 
 function SheetStack({
+  open,
   initial,
   instExtra,
+  manage,
   onClose,
 }: {
+  open: boolean
   initial: SheetView
   instExtra?: (inst: PokemonInstance) => ReactNode
+  manage?: boolean
   onClose: () => void
 }) {
   const { t } = useT()
-  const box = useGame((s) => s.save?.box)
-  const [stack, setStack] = useState<SheetView[]>([initial])
+  const save = useGame((s) => s.save)
+  const data = useGame((s) => s.data)
+  const hasItems = useHasFieldItems()
+  const [stack, setStack] = useState<StackView[]>([initial])
   const top = stack[stack.length - 1]!
-  const open = (dex: number) => setStack((s) => [...s, { kind: 'dex', dex }])
-  const inst = top.kind === 'inst' ? box?.find((p) => p.id === top.id) : undefined
+  const push = (v: StackView) => setStack((s) => [...s, v])
+  const back = () => setStack((s) => s.slice(0, -1))
+  const openDex = (dex: number) => push({ kind: 'dex', dex })
+  const inst = top.kind === 'inst' || top.kind === 'items' ? save?.box.find((p) => p.id === top.id) : undefined
+  const species = (dex: number) => data.species[dex]?.name ?? t('ui.common.unknown')
+  const no = (dex: number) => dexNo(nationalDex(data, dex))
+
+  let title = ''
+  let sub: string | undefined
+  if (top.kind === 'area') title = data.areas.find((a) => a.id === top.areaId)?.name ?? ''
+  else if (top.kind === 'dex') {
+    const caught = !!save?.pokedex.includes(top.dex)
+    title = caught ? species(top.dex) : t('ui.common.unknown')
+    sub = caught ? no(top.dex) : `${no(top.dex)} · ${t('ui.sheet.notCaughtYet')}`
+  } else if (inst && top.kind === 'items') {
+    title = t('ui.itemPanel.title')
+    sub = t('ui.sheet.itemsOn', { name: species(inst.dex), hp: inst.currentHp, max: instanceMaxHp(inst, data) })
+  } else if (inst) {
+    const at = save?.team.indexOf(inst.id) ?? -1
+    title = species(inst.dex)
+    sub = [
+      no(inst.dex),
+      t('ui.common.level.short', { n: inst.level }),
+      at === 0 ? t('ui.sheet.subLead') : at > 0 ? t('ui.sheet.subOut', { n: at + 1 }) : t('ui.sheet.subBox'),
+    ].join(' · ')
+  }
+
+  let footer: ReactNode = null
+  if (top.kind === 'items') {
+    footer = (
+      <PixelButton className="w-full" onClick={back}>
+        {t('ui.common.back')}
+      </PixelButton>
+    )
+  } else if (manage && top.kind === 'inst' && inst && save) {
+    const at = save.team.indexOf(inst.id)
+    const useItem = hasItems && inst.revivesAt == null && (
+      <PixelButton variant="primary" size="lg" className="flex-1" onClick={() => push({ kind: 'items', id: inst.id })}>
+        {t('ui.itemPanel.title')}
+      </PixelButton>
+    )
+    footer =
+      at >= 0 ? (
+        <div className="flex items-center gap-2">
+          {at > 0 ? (
+            <PixelButton
+              size="lg"
+              className="flex-1"
+              onClick={() => {
+                reorderTeam([inst.id, ...save.team.filter((x) => x !== inst.id)])
+                pushToast(t('ui.team.leadsNow', { name: species(inst.dex) }), 'good')
+                onClose()
+              }}
+            >
+              {t('ui.team.makeLead')}
+            </PixelButton>
+          ) : (
+            <span className="grid flex-1 place-items-center font-pixel-sm text-[16px] text-muted">{t('ui.sheet.leadsTeam')}</span>
+          )}
+          {useItem}
+        </div>
+      ) : (
+        <div className="flex flex-col gap-2">
+          <p className="flex items-center gap-1.5 font-pixel-sm text-[15px] leading-tight text-muted">
+            <PixelIcon name="lock" size={16} className="shrink-0" />
+            {t('ui.team.boxAtCenter', { name: species(inst.dex) })}
+          </p>
+          {useItem && <div className="flex">{useItem}</div>}
+        </div>
+      )
+  }
+
   return (
-    <div className="flex flex-col gap-2">
-      {stack.length > 1 && (
-        <button type="button" className="min-h-[44px] self-start text-xl underline" onClick={() => setStack((s) => s.slice(0, -1))}>
-          {t('ui.sheet.backStack')}
-        </button>
-      )}
-      {top.kind === 'area' ? (
-        <AreaDex areaId={top.areaId} onOpenDex={open} />
-      ) : top.kind === 'dex' ? (
-        <DexEntry key={top.dex} dex={top.dex} onOpenDex={open} onTravel={onClose} />
-      ) : inst ? (
-        <PokemonSheet dex={inst.dex} inst={inst} onOpenDex={open}>
-          <SendOnPanel inst={inst} onSent={onClose} />
-          {instExtra?.(inst)}
-          <LevelCapEvolvePanel inst={inst} />
-        </PokemonSheet>
-      ) : null}
-    </div>
+    <Sheet open={open} onClose={onClose} title={title} sub={sub} footer={footer}>
+      <div className="flex flex-col gap-3">
+        {stack.length > 1 && top.kind !== 'items' && (
+          <button type="button" className="min-h-[44px] self-start text-[20px] underline" onClick={back}>
+            {t('ui.sheet.backStack')}
+          </button>
+        )}
+        {top.kind === 'area' ? (
+          <AreaDex areaId={top.areaId} onOpenDex={openDex} />
+        ) : top.kind === 'dex' ? (
+          <DexEntry key={top.dex} dex={top.dex} onOpenDex={openDex} onTravel={onClose} />
+        ) : top.kind === 'items' && inst ? (
+          <ItemPanel inst={inst} onUsed={back} />
+        ) : inst ? (
+          <PokemonSheet dex={inst.dex} inst={inst} onOpenDex={openDex}>
+            <SendOnPanel inst={inst} onSent={onClose} />
+            {instExtra?.(inst)}
+            <LevelCapEvolvePanel inst={inst} />
+          </PokemonSheet>
+        ) : null}
+      </div>
+    </Sheet>
   )
 }
 

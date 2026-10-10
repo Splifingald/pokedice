@@ -87,7 +87,7 @@ function SaveBar() {
   const undo = useAdmin((s) => s.undo)
   const mode = useAdmin((s) => s.mode)
   return (
-    <section aria-label="Save changes" className="fixed inset-x-0 bottom-0 z-40 border-t-[3px] border-ink bg-panel px-3 py-2 shadow-[0_-3px_0_#6b6480]">
+    <section aria-label="Save changes" className="fixed inset-x-0 bottom-0 z-40 border-t-[3px] border-edge bg-panel px-3 py-2 shadow-[0_-2px_0_rgb(var(--c-edge)),0_-4px_0_rgb(var(--c-edge)/0.09)]">
       <div className="mx-auto flex max-w-[1400px] flex-wrap items-center gap-2">
         <span className={cx('text-lg', dirty.length ? 'text-danger' : 'text-muted')}>
           {dirty.length ? `Unsaved: ${dirty.join(', ')}` : 'All changes saved'}
@@ -170,7 +170,7 @@ export default function AdminApp() {
 
   return (
     <div className="min-h-screen">
-      <header className="sticky top-0 z-30 border-b-[3px] border-ink bg-ink text-panel">
+      <header className="sticky top-0 z-30 border-b-[3px] border-edge bg-ink text-panel">
         <div className="mx-auto flex max-w-[1400px] flex-wrap items-center gap-3 px-3 py-2">
           <h1 className="text-2xl leading-none">
             POKÉ<span className="text-danger-light">DICE</span> Admin
@@ -179,7 +179,7 @@ export default function AdminApp() {
             {mode === 'remote' ? 'LIVE · Supabase' : 'OFFLINE · this session only'}
           </span>
           <span className="flex-1" />
-          <Link to="/map" className="underline">
+          <Link to="/home" className="underline">
             Back to game
           </Link>
         </div>

@@ -2,80 +2,68 @@ import { motion } from 'framer-motion'
 import type { DieType, Face } from '@/engine/types'
 import { usePace } from '@/lib/pace'
 import { PALETTE, STATUS_COLORS } from '@/theme/colors'
-import { cx, shade, textOn, typeColor } from '@/theme/util'
-import { PixelIcon, STATUS_GLYPH } from './icons'
+import { cx, hexToRgb, typeColor } from '@/theme/util'
+import { PixelIcon, STATUS_ICON } from './icons'
 import { t } from '@/i18n'
 import { statusName, typeName } from '@/lib/format'
 
-const PIPS: Record<number, [number, number][]> = {
-  1: [[1, 1]],
-  2: [
-    [0, 0],
-    [2, 2],
-  ],
-  3: [
-    [0, 0],
-    [1, 1],
-    [2, 2],
-  ],
-  4: [
-    [0, 0],
-    [2, 0],
-    [0, 2],
-    [2, 2],
-  ],
-  5: [
-    [0, 0],
-    [2, 0],
-    [1, 1],
-    [0, 2],
-    [2, 2],
-  ],
-  6: [
-    [0, 0],
-    [2, 0],
-    [0, 1],
-    [2, 1],
-    [0, 2],
-    [2, 2],
-  ],
+/** Which of the nine pip cells (0–8, row by row) each value lights. 0 is a blank face; some typed dice reach 7 and 8. */
+const PIPS: Record<number, number[]> = {
+  0: [],
+  1: [4],
+  2: [0, 8],
+  3: [0, 4, 8],
+  4: [0, 2, 6, 8],
+  5: [0, 2, 4, 6, 8],
+  6: [0, 2, 3, 5, 6, 8],
+  7: [0, 2, 3, 4, 5, 6, 8],
+  8: [0, 1, 2, 3, 5, 6, 7, 8],
 }
 
-/** Under this size a die is "mini" (faces laid out flat): digits instead of pips, which can't be read that small. */
+/** Under this size a die drops its 3D lip for a thinner one. */
 const MINI = 40
 
-/** A status face's colour, or null for a plain number. */
+/**
+ * Pip geometry on whole pixels: one even pip size per die and three fixed columns and rows, so every dot on a die is
+ * the same size whatever the die's size (a fractional pip renders as a blur or a lopsided dot).
+ */
+export function pipLayout(size: number) {
+  const pip = Math.max(2, Math.round((size * 0.15) / 2) * 2)
+  const margin = Math.round(size * 0.2)
+  const at = [margin, Math.round((size - pip) / 2), size - margin - pip]
+  return { pip, at }
+}
+
+/** Ink pips on light dice, white on dark ones (perceived brightness, as the lab draws them). */
+const pipColor = (fill: string) => {
+  const [r, g, b] = hexToRgb(fill)
+  return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.6 ? PALETTE.ink : '#ffffff'
+}
+
 const statusColor = (face: Face | null | undefined): string | null =>
   face?.kind === 'status' ? (STATUS_COLORS[face.status as keyof typeof STATUS_COLORS] ?? PALETTE.gold) : null
 
-/** A status face is drawn like any other (its number) — the die's coloured outline and corner tag say it's special. */
-function FaceArt({ face, size, color, ink }: { face: Face; size: number; color: string; ink: string }) {
-  const mini = size < MINI
-  const pips = mini ? undefined : PIPS[face.value]
-  if (!pips) {
+function FaceArt({ face, size, ink }: { face: Face; size: number; ink: string }) {
+  const lit = PIPS[face.value]
+  if (!lit) {
+    // A value with no pip layout: its number.
     return (
-      <span
-        className={cx('leading-none', mini ? 'font-pixel-sm' : 'font-pixel')}
-        style={{ fontSize: mini ? Math.round(size * 0.8) : size * 0.62, color: ink }}
-      >
+      <span className="font-pixel leading-none" style={{ fontSize: Math.round(size * 0.62), color: ink }}>
         {face.value}
       </span>
     )
   }
-  const pip = Math.max(4, Math.round(size * 0.16))
+  const { pip, at } = pipLayout(size)
   return (
-    <div className="grid h-full w-full grid-cols-3 grid-rows-3" style={{ padding: size * 0.14 }}>
-      {Array.from({ length: 9 }, (_, i) => {
-        const x = i % 3
-        const y = Math.floor(i / 3)
-        const on = pips.some(([px, py]) => px === x && py === y)
-        return (
-          <div key={i} className="flex items-center justify-center">
-            {on && <span style={{ width: pip, height: pip, background: ink, boxShadow: `1px 1px 0 ${color}` }} />}
-          </div>
-        )
-      })}
-    </div>
+    <>
+      {lit.map((cell) => (
+        <i
+          key={cell}
+          className="absolute block"
+          style={{ left: at[cell % 3], top: at[Math.floor(cell / 3)], width: pip, height: pip, background: ink }}
+        />
+      ))}
+    </>
   )
 }
 
@@ -83,7 +71,10 @@ export interface DieProps {
   type: DieType
   face?: Face | null
   size?: number
+  /** Picked to be thrown again: lifted, with a red outline. */
   selected?: boolean
+  /** One of the dice that make the combo: a gold ring. */
+  combo?: boolean
   locked?: boolean
   /** Change this to replay the tumble-and-settle animation. */
   rollKey?: string | number
@@ -99,16 +90,13 @@ export interface DieProps {
   className?: string
 }
 
-/** A die in its type skin. Base dice: off-white with grey pips. Normal: warm tan. */
-export function Die({ type, face, size = 56, selected, locked, rollKey, delay = 0, color, onClick, asButton, label, className }: DieProps) {
-  const bg = typeColor(type, color)
-  const mini = size < MINI
+/** A die in its type colour: sharp corners, an ink edge, pips on whole pixels. */
+export function Die({ type, face, size = 56, selected, combo, locked, rollKey, delay = 0, color, onClick, asButton, label, className }: DieProps) {
+  const fill = typeColor(type, color)
   const pace = usePace()
-  // Base dice have grey pips; a mini digit needs full ink to be read.
-  const ink = type === 'base' && !mini ? PALETTE.muted : type === 'base' ? PALETTE.ink : textOn(bg)
+  const ink = pipColor(fill)
   const interactive = !!onClick && !locked
   const special = statusColor(face)
-  const ring = mini ? 2 : 3
   const name =
     label ??
     (face
@@ -120,52 +108,47 @@ export function Die({ type, face, size = 56, selected, locked, rollKey, delay = 
               : face.value,
         })
       : t('ui.die.name', { type: typeName(type) }))
-  const base = {
-    className: cx(mini ? 'die-mini' : 'die', 'relative flex select-none items-center justify-center', interactive && 'cursor-pointer', className),
-    style: {
-      width: size,
-      height: size,
-      background: `linear-gradient(135deg, ${shade(bg, 1.08)} 0%, ${bg} 55%, ${shade(bg, 0.88)} 100%)`,
-      outline: selected ? '3px dashed #e8b44a' : undefined,
-      outlineOffset: special ? ring + 5 : 3,
-      // A status face: a ring in its colour, edged in ink, round the die (in place of the drop shadow).
-      boxShadow: special
-        ? `inset 0 -4px 0 0 rgba(0, 0, 0, 0.2), inset 0 3px 0 0 rgba(255, 255, 255, 0.35), 0 0 0 ${ring}px ${special}, 0 0 0 ${ring + 2}px ${PALETTE.ink}`
-        : undefined,
-      opacity: locked ? 0.55 : 1,
-      transformStyle: 'preserve-3d' as const,
-    },
-    initial: rollKey !== undefined ? { rotateX: 540, rotateZ: 200, y: -size * 1.2, scale: 0.6, opacity: 0 } : (false as const),
-    animate: { rotateX: 0, rotateZ: 0, y: selected ? -8 : 0, scale: 1, opacity: locked ? 0.55 : 1 },
-    transition: {
-      default: { duration: 0.6 * pace, delay, ease: [0.2, 0.9, 0.3, 1.2] },
-      y: { duration: 0.12 * pace },
-    },
-  }
-  const content = face ? (
-    <>
-      <FaceArt face={face} size={size} color={bg} ink={ink} />
-      {special && face.kind === 'status' && size >= MINI && (
-        <span
-          className="absolute flex items-center justify-center border-2 border-ink"
-          style={{ top: -ring - 6, right: -ring - 6, width: size * 0.36, height: size * 0.36, background: special, borderRadius: 2 }}
-          aria-hidden
-        >
-          <PixelIcon name={STATUS_GLYPH[face.status] ?? 'star'} size={size * 0.24} color={PALETTE.ink} />
+  const tag = Math.max(14, Math.round(size * 0.3))
+  const body = (
+    <span
+      className={cx(size < MINI ? 'die-mini' : 'die', 'relative block')}
+      style={{ width: size, height: size, ['--c' as string]: fill, opacity: locked ? 0.8 : 1 }}
+    >
+      {face ? (
+        <FaceArt face={face} size={size} ink={ink} />
+      ) : (
+        <span className="absolute inset-0 flex items-center justify-center font-pixel leading-none text-muted" style={{ fontSize: size * 0.5 }} aria-hidden>
+          ?
         </span>
       )}
-    </>
-  ) : (
-    <span className="font-pixel text-muted" style={{ fontSize: size * 0.5 }} aria-hidden>
-      ?
+      {special && face?.kind === 'status' && size >= 24 && (
+        <span
+          className="absolute flex items-center justify-center rounded-full"
+          style={{ right: -tag / 3, top: -tag / 3, width: tag, height: tag, background: special, boxShadow: `inset 0 0 0 2px ${PALETTE.ink}` }}
+          aria-hidden
+        >
+          <PixelIcon name={STATUS_ICON[face.status] ?? 'star'} size={Math.round(tag * 0.7)} />
+        </span>
+      )}
     </span>
   )
+  const wrap = cx('die-wrap', special && 'st', combo && !selected && 'combo', selected && 'sel')
+  const motionProps = {
+    className: cx(wrap, 'relative select-none', interactive && 'cursor-pointer', className),
+    style: { ['--stc' as string]: special ?? undefined, transformStyle: 'preserve-3d' as const },
+    initial: rollKey !== undefined ? { rotateX: 540, rotateZ: 200, y: -size * 1.2, scale: 0.6, opacity: 0 } : (false as const),
+    animate: { rotateX: 0, rotateZ: 0, y: selected ? -6 : combo ? -5 : 0, scale: 1, opacity: 1 },
+    transition: {
+      default: { duration: 0.6 * pace, delay, ease: [0.2, 0.9, 0.3, 1.2] },
+      y: { duration: 0.12 * pace, ease: 'linear' },
+    },
+  }
 
   if (!(asButton ?? !!onClick)) {
     // A die you can't press is an image, not a disabled button.
     return (
-      <motion.span key={rollKey} role="img" aria-label={name} {...base}>
-        {content}
+      <motion.span key={rollKey} role="img" aria-label={name} {...motionProps}>
+        {body}
       </motion.span>
     )
   }
@@ -178,17 +161,17 @@ export function Die({ type, face, size = 56, selected, locked, rollKey, delay = 
       aria-pressed={interactive ? !!selected : undefined}
       aria-label={name}
       whileTap={interactive ? { scale: 0.92 } : undefined}
-      {...base}
+      {...motionProps}
     >
-      {content}
+      {body}
     </motion.button>
   )
 }
 
-/** Six faces laid out flat — used in the starter picker, dex sheets and the admin dice editor. */
+/** Six faces laid out flat, each a real die — used in the starter picker, dex sheets and the admin dice editor. */
 export function DieFaces({ type, faces, size = 28, color }: { type: DieType; faces: Face[]; size?: number; color?: string }) {
   return (
-    <div className="flex flex-wrap gap-1.5">
+    <div className="flex flex-wrap gap-2">
       {faces.map((f, i) => (
         <Die key={i} type={type} face={f} size={size} color={color} />
       ))}

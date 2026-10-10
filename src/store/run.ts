@@ -452,6 +452,15 @@ export function continueAfterVictory(leadUid?: string) {
   backToArea()
 }
 
+/**
+ * NEXT ENCOUNTER on a result card: what Home's CONTINUE would start next (a waiting gym or legendary first), without
+ * the trip Home. Call it once the battle is closed (continueAfterVictory).
+ */
+export function continueExploring() {
+  challenge()
+  if (useGame.getState().run.phase === 'idle') rollNext()
+}
+
 /** "Add to team?" — swap the new catch in for `replaceId`, or send it to the Box (null). */
 export function resolveCatch(replaceId: string | null) {
   const { run, data } = useGame.getState()

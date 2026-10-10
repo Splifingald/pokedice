@@ -4,10 +4,16 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="theme-color" content="#2a2438" />
+    <meta name="theme-color" content="#24304f" />
     <meta name="description" content="Pokédice — a dice battler over the original 151. A personal, non-commercial fan project." />
-    <link rel="preload" href="/fonts/jersey25-latin.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/jersey20-latin.woff2" as="font" type="font/woff2" crossorigin />
     <title>Pokédice</title>
+    <script>
+      // The theme before anything loads (src/theme/theme.ts keeps pokedice.theme up to date): no light flash.
+      try {
+        if (localStorage.getItem('pokedice.theme') === 'dark') document.documentElement.dataset.theme = 'dark'
+      } catch (e) {}
+    </script>
   </head>
   <body>
     <div id="root"></div>

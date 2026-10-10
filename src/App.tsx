@@ -9,8 +9,10 @@ import { SyncConflictModal } from '@/components/SyncConflictModal'
 import { ToastStack } from '@/components/Toast'
 import { AreaScreen } from '@/screens/Area'
 import { DayCareScreen } from '@/screens/DayCareScreen'
+import { FriendInvite } from '@/screens/FriendInvite'
+import { FriendsScreen } from '@/screens/Friends'
+import { HomeScreen } from '@/screens/Home'
 import { LeaderboardScreen } from '@/screens/Leaderboard'
-import { MapScreen } from '@/screens/MapScreen'
 import { NewGame } from '@/screens/NewGame'
 import { PokedexScreen } from '@/screens/Pokedex'
 import { SettingsScreen } from '@/screens/Settings'
@@ -27,6 +29,7 @@ const AdminApp = lazy(() => import('@/admin/AdminApp'))
 const SetupPage = lazy(() => import('@/setup/SetupPage'))
 const HelpPage = lazy(() => import('@/screens/Help').then((m) => ({ default: m.HelpPage })))
 const KitchenSink = lazy(() => import('@/screens/KitchenSink').then((m) => ({ default: m.KitchenSink })))
+const FxLab = lazy(() => import('@/screens/FxLab').then((m) => ({ default: m.FxLab })))
 
 function Lazy({ children }: { children: ReactNode }) {
   return <Suspense fallback={<div className="p-6 text-3xl">{t('ui.common.loading')}</div>}>{children}</Suspense>
@@ -49,13 +52,17 @@ export function App() {
           <Routes>
             <Route path="/" element={<Title />} />
             <Route path="/new" element={<NewGame />} />
+            <Route path="/f/:code" element={<FriendInvite />} />
             <Route path="/help" element={<Lazy><HelpPage /></Lazy>} />
             <Route path="/setup" element={<Lazy><SetupPage /></Lazy>} />
             <Route path="/admin" element={<Lazy><AdminApp /></Lazy>} />
             <Route path="/admin/:section" element={<Lazy><AdminApp /></Lazy>} />
             {import.meta.env.DEV && <Route path="/kitchen-sink" element={<Lazy><KitchenSink /></Lazy>} />}
+            {import.meta.env.DEV && <Route path="/kitchen-sink/fx" element={<Lazy><FxLab /></Lazy>} />}
             <Route element={<GameLayout />}>
-              <Route path="/map" element={<MapScreen />} />
+              <Route path="/home" element={<HomeScreen />} />
+              {/* Home replaced the Map as the landing screen: old links land there. */}
+              <Route path="/map" element={<Navigate to="/home" replace />} />
               <Route path="/daycare" element={<DayCareScreen />} />
               <Route path="/area" element={<AreaScreen />} />
               <Route path="/team" element={<TeamScreen />} />
@@ -63,6 +70,7 @@ export function App() {
               <Route path="/upgrades" element={<UpgradesScreen />} />
               <Route path="/pokedex" element={<PokedexScreen />} />
               <Route path="/leaderboard" element={<LeaderboardScreen />} />
+              <Route path="/friends" element={<FriendsScreen />} />
               <Route path="/versus" element={<VersusScreen />} />
               <Route path="/settings" element={<SettingsScreen />} />
             </Route>

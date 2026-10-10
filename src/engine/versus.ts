@@ -5,7 +5,8 @@ import { uniformLevels } from './damage'
 import { regionOf } from './regions'
 import { autoEvents } from './sim'
 import { createRng } from './rng'
-import type { GameData, PokemonInstance, RegionId, SaveData } from './types'
+import { typeMultiplier } from './typechart'
+import type { GameData, PokeType, PokemonInstance, RegionId, SaveData } from './types'
 
 /** Every Pokémon of a Versus team fights at this level: higher ones are brought down to it, lower ones can't enter. */
 export const VERSUS_LEVEL = 50
@@ -31,14 +32,43 @@ export interface VersusCandidate {
  * Box of every region the player has played, the one being played first.
  */
 export function versusCandidates(save: SaveData, data: GameData): VersusCandidate[] {
+  return everyBox(save).flatMap(([region, box]) => box.filter((p) => eligible(p, data)).map((inst) => ({ inst, region })))
+}
+
+/** Every region's Box the player has played, the one being played first. */
+function everyBox(save: SaveData): [RegionId, PokemonInstance[]][] {
   const live = regionOf(save)
-  const blocks: [RegionId, PokemonInstance[]][] = [
+  return [
     [live, save.box],
     ...Object.entries(save.parked ?? {})
       .filter(([region, b]) => region !== live && !!b)
       .map(([region, b]): [RegionId, PokemonInstance[]] => [region as RegionId, b!.box]),
   ]
-  return blocks.flatMap(([region, box]) => box.filter((p) => eligible(p, data)).map((inst) => ({ inst, region })))
+}
+
+/** While Versus is locked: the `n` Pokémon closest to Lv.50 (highest level first), from every region's Box. */
+export function versusClosest(save: SaveData, data: GameData, n = VERSUS_TEAM_SIZE): VersusCandidate[] {
+  return everyBox(save)
+    .flatMap(([region, box]) => box.filter((p) => p.revivesAt == null && !!data.species[p.dex]).map((inst) => ({ inst, region })))
+    .sort((a, b) => b.inst.level - a.inst.level)
+    .slice(0, n)
+}
+
+/**
+ * How many of their Pokémon your team hits super effectively: one of your Pokémon's types does more than ×1 against
+ * all of its types together. A quick read of a matchup before the fight, not a prediction.
+ */
+export function versusEdge(mine: readonly number[], theirs: readonly number[], data: GameData): number {
+  const attacking = [...new Set(mine.flatMap((dex) => speciesTypes(data, dex)))]
+  return theirs.filter((dex) => {
+    const defending = speciesTypes(data, dex)
+    return defending.length > 0 && attacking.some((ty) => typeMultiplier(data.typeChart, ty, defending) > 1)
+  }).length
+}
+
+const speciesTypes = (data: GameData, dex: number): PokeType[] => {
+  const s = data.species[dex]
+  return s ? (s.type2 ? [s.type1, s.type2] : [s.type1]) : []
 }
 
 /** How many Pokémon at Lv.50 or more the player has, across every region they have played. */

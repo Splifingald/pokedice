@@ -1,122 +1,173 @@
 import { useState } from 'react'
-import { teamOf, type PokemonInstance } from '@/engine'
+import { POKE_TYPES, teamOf, type PokemonInstance, type PokeType } from '@/engine'
 import { searchFold } from '@/i18n'
 import { useT } from '@/i18n/react'
-import { BoxSortPicker, sortBox, type BoxSort } from '@/components/BoxSort'
+import { sortBox, type BoxSort } from '@/components/BoxSort'
 import { PixelIcon } from '@/components/icons'
-import { ItemPanel } from '@/components/ItemPanel'
-import { MonCard } from '@/components/MonCard'
-import { PixelButton } from '@/components/PixelButton'
+import { ItemSprite } from '@/components/ItemSprite'
+import { MonTile, TILE_GRID } from '@/components/MonTile'
+import { PageHead } from '@/components/PageHead'
+import { FilterChips, SearchField, Seg } from '@/components/Segmented'
 import { SheetModal, type SheetView } from '@/components/SheetModal'
-import { reorderTeam } from '@/store/actions'
-import { useGame } from '@/store/game'
+import { countdown, typeName } from '@/lib/format'
+import { pushToast, useGame } from '@/store/game'
+import { useNow } from '@/store/hooks'
+import { typeColor } from '@/theme/util'
+import { TeamCards } from './team/TeamCards'
 
-/** The Box gets a search field once it holds more than this. */
-const SEARCH_FROM = 20
+type Sort = Exclude<BoxSort, 'type'>
 
 export function TeamScreen() {
   const { t } = useT()
   const save = useGame((s) => s.save)
   const data = useGame((s) => s.data)
-  // Inside a Pokémon Center the team can change, so the warning has nothing to warn about.
+  // Inside a Pokémon Center the team can change, so the rule has nothing to warn about.
   const atCenter = useGame((s) => s.run.phase === 'center')
+  const now = useNow(30_000)
   const [view, setView] = useState<SheetView | null>(null)
-  const [sort, setSort] = useState<BoxSort>('dex')
+  const [sort, setSort] = useState<Sort>('dex')
+  const [type, setType] = useState<PokeType | 'all'>('all')
   const [q, setQ] = useState('')
   if (!save) return null
   const team = teamOf(save)
   const name = (p: PokemonInstance) => data.species[p.dex]?.name ?? t('ui.common.unknown')
-  const boxAll = save.box.filter((p) => !save.team.includes(p.id))
-  const needle = searchFold(q)
-  const box = sortBox(boxAll.filter((p) => !needle || searchFold(name(p)).includes(needle)), sort, data)
-  const move = (i: number, d: -1 | 1) => {
-    const ids = [...save.team]
-    const j = i + d
-    if (j < 0 || j >= ids.length) return
-    ;[ids[i], ids[j]] = [ids[j]!, ids[i]!]
-    reorderTeam(ids)
+  const typesOf = (p: PokemonInstance) => {
+    const s = data.species[p.dex]
+    return s ? [s.type1, ...(s.type2 ? [s.type2] : [])] : []
   }
+  const boxAll = save.box.filter((p) => !save.team.includes(p.id))
+  const boxTypes = POKE_TYPES.filter((ty) => boxAll.some((p) => typesOf(p).includes(ty)))
+  const needle = searchFold(q)
+  const box = sortBox(
+    boxAll.filter(
+      (p) =>
+        (!needle || searchFold(name(p)).includes(needle)) && (type === 'all' || typesOf(p).includes(type)),
+    ),
+    sort,
+    data,
+  )
   const open = (p: PokemonInstance) => setView({ kind: 'inst', id: p.id })
 
-  // Inside the details sheet: "Make lead" for a team member, then "Use an item".
-  const sheetExtra = (p: PokemonInstance) => (
-    <>
-      {save.team.includes(p.id) && save.team[0] !== p.id && (
-        <PixelButton variant="primary" className="self-start" onClick={() => reorderTeam([p.id, ...save.team.filter((x) => x !== p.id)])}>
-          {t('ui.team.makeLead')}
-        </PixelButton>
-      )}
-      {!save.team.includes(p.id) && <p className="copy text-base text-muted">{t('ui.team.boxAtCenter', { name: name(p) })}</p>}
-      <ItemPanel inst={p} />
-    </>
-  )
-
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col gap-4">
-      <h1 className="text-5xl">{t('ui.team.title')}</h1>
-      {!atCenter && (
-        <p role="note" className="pixel-panel copy flex items-center gap-2 px-3 py-2 text-lg">
-          <PixelIcon name="warning" size={24} className="shrink-0" />
-          <span>{t('ui.team.centerOnly')}</span>
+    <div className="mx-auto flex w-full max-w-3xl flex-col gap-3">
+      <PageHead icon="navTeam" title={t('ui.team.title')} count={`${team.length}/${data.config.maxTeamSize}`}>
+        {!atCenter && (
+          <button
+            type="button"
+            onClick={() => pushToast(t('ui.team.swapsRule'), 'info')}
+            className="inline-flex min-h-[44px] items-center gap-1.5 bg-well px-2.5 font-pixel-sm text-[15px] text-muted shadow-ring-line md:min-h-[36px]"
+          >
+            <PixelIcon name="lock" size={16} />
+            {t('ui.team.swapsHint')}
+          </button>
+        )}
+      </PageHead>
+
+      <TeamCards team={team} onOpen={open} />
+      {team.length > 1 && (
+        <p className="-mt-1 text-center font-pixel-sm text-[15px] leading-tight text-muted">
+          {t('ui.team.dragTip')}
         </p>
       )}
-      <ol className="flex flex-col gap-2">
-        {team.map((p, i) => (
-          <li key={p.id}>
-            <MonCard
-              inst={p}
-              showXp
-              showDice
-              onClick={() => open(p)}
-              badge={i === 0 ? <PixelIcon name="crown" size={20} title={t('ui.team.lead')} /> : null}
-            >
-              <div className="flex flex-col gap-1">
-                <PixelButton size="sm" disabled={i === 0} onClick={() => move(i, -1)} aria-label={t('ui.team.moveUp', { name: name(p) })}>
-                  ▲
-                </PixelButton>
-                <PixelButton size="sm" disabled={i === team.length - 1} onClick={() => move(i, 1)} aria-label={t('ui.team.moveDown', { name: name(p) })}>
-                  ▼
-                </PixelButton>
-              </div>
-            </MonCard>
-          </li>
-        ))}
-      </ol>
 
       <section className="flex flex-col gap-2" aria-labelledby="box-title">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 id="box-title" className="text-3xl">
-            {t('ui.team.box', { count: boxAll.length })}
+        <div className="mt-1 flex items-baseline gap-2">
+          <h2 id="box-title" className="text-[24px] leading-none">
+            {t('ui.team.boxHeading')}
           </h2>
-          {boxAll.length > 1 && <BoxSortPicker sort={sort} onChange={setSort} />}
+          <span className="font-pixel-sm text-[17px] text-muted">{boxAll.length}</span>
         </div>
-        {boxAll.length > SEARCH_FROM && (
+        {boxAll.length === 0 && <p className="copy text-muted">{t('ui.team.boxEmpty')}</p>}
+        {boxAll.length > 1 && (
           <>
-            <label htmlFor="box-search" className="sr-only">
-              {t('ui.team.searchBoxLabel')}
-            </label>
-            <input
-              id="box-search"
-              type="search"
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              placeholder={t('ui.team.searchBox')}
-              className="min-h-[44px] w-full border-[3px] border-ink bg-panel px-2 text-xl md:min-h-[38px] md:w-64"
-            />
+            <div className="flex flex-wrap items-center gap-2">
+              <SearchField
+                id="box-search"
+                value={q}
+                onChange={setQ}
+                label={t('ui.team.searchBoxLabel')}
+                placeholder={t('ui.team.searchBox')}
+                className="min-w-0 flex-[1_1_150px]"
+              />
+              <Seg
+                label={t('ui.team.sortBox')}
+                value={sort}
+                onChange={setSort}
+                options={[
+                  { id: 'dex', label: t('ui.team.sortDex') },
+                  { id: 'level', label: t('ui.team.sortLevel') },
+                  { id: 'newest', label: t('ui.team.sortNewest') },
+                ]}
+              />
+            </div>
+            {boxTypes.length > 1 && (
+              <FilterChips
+                label={t('ui.team.filterType')}
+                value={type}
+                onChange={setType}
+                options={[
+                  { id: 'all', label: t('ui.team.allTypes') },
+                  ...boxTypes.map((ty) => ({
+                    id: ty,
+                    label: (
+                      <span className="inline-flex items-center gap-1.5">
+                        <i
+                          className="h-2.5 w-2.5 shadow-ring-thin"
+                          style={{ background: typeColor(ty) }}
+                          aria-hidden
+                        />
+                        {typeName(ty)}
+                      </span>
+                    ),
+                  })),
+                ]}
+              />
+            )}
           </>
         )}
-        {boxAll.length === 0 && <p className="copy text-muted">{t('ui.team.boxEmpty')}</p>}
-        {boxAll.length > 0 && box.length === 0 && <p className="copy text-muted">{t('ui.team.boxNoMatch', { query: q })}</p>}
-        <ul className="flex flex-col gap-2">
-          {box.map((p) => (
-            <li key={p.id}>
-              <MonCard inst={p} onClick={() => open(p)} />
-            </li>
-          ))}
+        {boxAll.length > 0 && box.length === 0 && (
+          <p className="copy text-muted">
+            {q ? t('ui.team.boxNoMatch', { query: q }) : t('ui.team.boxNoType')}
+          </p>
+        )}
+        <ul className={TILE_GRID}>
+          {box.map((p) => {
+            const fossil = p.revivesAt != null && p.fossil ? data.items[p.fossil] : undefined
+            const reviving = p.revivesAt != null
+            const left = reviving ? Math.max(0, p.revivesAt! - now) : 0
+            const sub = reviving
+              ? left > 0
+                ? countdown(left)
+                : t('ui.mon.soon')
+              : t('ui.common.level.short', { n: p.level })
+            return (
+              <li key={p.id}>
+                <MonTile
+                  dex={p.dex}
+                  name={name(p)}
+                  sub={sub}
+                  icon={reviving ? <ItemSprite item={fossil} size={40} /> : undefined}
+                  label={[
+                    name(p),
+                    p.shiny ? t('ui.mon.shiny') : null,
+                    reviving
+                      ? t('ui.mon.revivesIn', { time: sub })
+                      : t('ui.common.level.short', { n: p.level }),
+                  ]
+                    .filter(Boolean)
+                    .join(', ')}
+                  onClick={() => open(p)}
+                  tags={
+                    p.shiny && <PixelIcon name="star" size={12} className="absolute left-[5px] top-[5px]" />
+                  }
+                />
+              </li>
+            )
+          })}
         </ul>
       </section>
 
-      <SheetModal view={view} onClose={() => setView(null)} instExtra={sheetExtra} />
+      <SheetModal view={view} onClose={() => setView(null)} manage />
     </div>
   )
 }

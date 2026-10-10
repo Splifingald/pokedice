@@ -11,8 +11,8 @@ import { badgeColors, cx, typeColor } from '@/theme/util'
 
 /** `words` is a sheet key: the cell's meaning, read out in the player's language. */
 const CELL: Record<string, { label: string; cls: string; words: string }> = {
-  '2': { label: '2', cls: 'bg-hp-green text-ink', words: 'ui.help.superEffective' },
-  '0.5': { label: '½', cls: 'bg-[#e8905a] text-ink', words: 'ui.help.notVeryEffective' },
+  '2': { label: '2', cls: 'bg-hp-green text-night', words: 'ui.help.superEffective' },
+  '0.5': { label: '½', cls: 'light-scope bg-[#e8905a] text-ink', words: 'ui.help.notVeryEffective' },
   '0': { label: '0', cls: 'bg-ink text-panel', words: 'ui.help.noEffect' },
   '1': { label: '', cls: '', words: 'ui.help.normalEffect' },
 }
@@ -21,7 +21,7 @@ function TypeHeader({ type }: { type: PokeType }) {
   const { bg, fg } = badgeColors(typeColor(type))
   return (
     <span
-      className="flex h-6 w-8 items-center justify-center border border-ink font-mono text-xs font-bold"
+      className="flex h-6 w-8 items-center justify-center border border-edge font-mono text-xs font-bold"
       style={{ background: bg, color: fg }}
       title={typeName(type)}
     >
@@ -79,13 +79,13 @@ export function TypeChart() {
       </table>
       <div className="mt-1 flex flex-wrap gap-3 text-lg">
         <span className="flex items-center gap-1">
-          <span className="inline-block h-4 w-5 border border-ink bg-hp-green" /> ×2
+          <span className="inline-block h-4 w-5 border border-edge bg-hp-green" /> ×2
         </span>
         <span className="flex items-center gap-1">
-          <span className="inline-block h-4 w-5 border border-ink bg-[#e8905a]" /> ×½
+          <span className="inline-block h-4 w-5 border border-edge bg-[#e8905a]" /> ×½
         </span>
         <span className="flex items-center gap-1">
-          <span className="inline-block h-4 w-5 border border-ink bg-ink" /> ×0
+          <span className="inline-block h-4 w-5 border border-edge bg-ink" /> ×0
         </span>
         <span className="flex items-center gap-1">
           <span className="inline-block h-4 w-5 border border-shadow/40" /> ×1
