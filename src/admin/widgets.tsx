@@ -1,3 +1,4 @@
+import { PixelIcon, type IconName } from '@/components/icons'
 import { useState, type ReactNode } from 'react'
 import { PixelButton } from '@/components/PixelButton'
 import { SearchSelect } from '@/components/SearchSelect'
@@ -224,12 +225,15 @@ export function Slider({ value, onChange, min = 0, max = 100, step = 1 }: { valu
 /** A titled box grouping related settings. */
 export function Box({
   title,
+  icon,
   hint,
   actions,
   children,
   className,
 }: {
   title: ReactNode
+  /** A pixel icon before the title. */
+  icon?: IconName
   hint?: ReactNode
   actions?: ReactNode
   children: ReactNode
@@ -238,7 +242,10 @@ export function Box({
   return (
     <section className={cx('pixel-panel flex min-w-0 flex-col gap-3 p-3', className)}>
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h3 className="text-2xl leading-none">{title}</h3>
+        <h3 className="flex items-center gap-2 text-2xl leading-none">
+          {icon && <PixelIcon name={icon} size={20} />}
+          {title}
+        </h3>
         {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
       </div>
       {hint && <p className="-mt-1 text-base leading-snug text-muted">{hint}</p>}

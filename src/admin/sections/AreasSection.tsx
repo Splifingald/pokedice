@@ -1,3 +1,4 @@
+import { PixelIcon } from '@/components/icons'
 import { useMemo, useState } from 'react'
 import type { Row } from '@/config/mapping'
 import {
@@ -163,7 +164,7 @@ function AreaEditor({ area }: { area: Row }) {
   return (
     <div className="flex flex-col gap-4">
       <div className="grid gap-4 2xl:grid-cols-2">
-        <Box title="Area">
+        <Box title="Area" icon="map">
           <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
             <Field label="Name" className="col-span-2">
               <TextInput value={s(area.name)} onChange={(v) => patch({ name: v })} />
@@ -244,7 +245,7 @@ function AreaEditor({ area }: { area: Row }) {
         </Box>
 
         <Box
-          title="Encounter deck"
+          title="Encounter deck" icon="dice"
           hint="Each number is how many copies of that card go in the area's deck. Going through the deck is a round; a new round deals it again, shuffled, and opens with a Pokémon Center when one would help (on top of the Center cards here). Gym battles and legendaries are challenges the player picks, on top of the deck."
         >
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
@@ -275,7 +276,7 @@ function AreaEditor({ area }: { area: Row }) {
 
       <div className="grid gap-4 2xl:grid-cols-2">
         <Box
-          title="Legendary bosses"
+          title="Legendary bosses" icon="star"
           hint="Fought once, can't be fled. One that flees the catch throw comes back through a 'legend' card in later decks."
           actions={
             <PixelButton size="sm" onClick={() => setBosses([...bosses, { dex: 144, level: Math.max(1, n(area.max_level, 30)) }])}>
@@ -296,7 +297,7 @@ function AreaEditor({ area }: { area: Row }) {
         </Box>
 
         <Box
-          title="Gym / Elite battles"
+          title="Gym / Elite battles" icon="badge"
           hint="Fought in this order once every round is done; the area clears when all are beaten."
           actions={
             <PixelButton
@@ -363,7 +364,7 @@ function AreaEditor({ area }: { area: Row }) {
 
       {!!area.hidden && (
         <Box
-          title="Unlock conditions"
+          title="Unlock conditions" icon="lock"
           hint="All of them must hold for the secret area to appear on the Map."
           actions={
             <PixelButton size="sm" onClick={() => patch({ unlock_conditions: [...conditions, { kind: 'maxLevel', level: 50 }] })}>
@@ -407,7 +408,7 @@ function AreaEditor({ area }: { area: Row }) {
         </Box>
       )}
 
-      <Box title="Wild pool" hint={`When a Wild card is drawn, one of these is picked by weight. ${deck.wild} Wild card(s) per deck.`}>
+      <Box title="Wild pool" icon="ball" hint={`When a Wild card is drawn, one of these is picked by weight. ${deck.wild} Wild card(s) per deck.`}>
         <DataTable
           table="area_wild_pool"
           pageSize={50}
@@ -445,7 +446,7 @@ function AreaEditor({ area }: { area: Row }) {
         />
       </Box>
 
-      <Box title="Trainer pool" hint={`When a Trainer card is drawn, one of these is picked by weight. ${deck.trainer} Trainer card(s) per deck.`}>
+      <Box title="Trainer pool" icon="user" hint={`When a Trainer card is drawn, one of these is picked by weight. ${deck.trainer} Trainer card(s) per deck.`}>
         <DataTable
           table="area_trainer_pool"
           where={(r) => r.area_id === id}
@@ -473,7 +474,7 @@ function AreaEditor({ area }: { area: Row }) {
       </Box>
 
       <Box
-        title="Loot (item finds)"
+        title="Loot (item finds)" icon="box"
         hint={`Copies = how many cards of that find go in the loot deck (a once-only find counts as one). Loot deck: ${lootHere.length ? lootTotal : 0} cards.`}
       >
         <DataTable
@@ -557,7 +558,10 @@ export function AreasSection() {
   return (
     <div className="grid gap-4 xl:grid-cols-[300px_1fr]">
       <aside className="flex flex-col gap-2 xl:sticky xl:top-16 xl:max-h-[calc(100vh-9rem)]">
-        <h2 className="text-3xl">Areas</h2>
+        <h2 className="flex items-center gap-2 text-3xl">
+          <PixelIcon name="map" size={26} />
+          Areas
+        </h2>
         <input className={inputCls} placeholder="Filter areas…" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Filter areas" />
         <p className="text-sm text-muted">The order is the Map order: drag, or use ▲▼.</p>
         <ol className="pixel-scroll flex min-h-0 flex-col gap-1 overflow-y-auto pr-1">

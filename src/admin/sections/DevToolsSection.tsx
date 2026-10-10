@@ -1,4 +1,5 @@
 // Admin-only tools operating on YOUR OWN save. Balancing a 100-level game without these is not realistic.
+import { PixelIcon } from '@/components/icons'
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import {
@@ -151,11 +152,14 @@ export function DevToolsSection() {
 
   return (
     <div className="flex flex-col gap-4">
-      <h2 className="text-3xl">Dev Tools</h2>
+      <h2 className="flex items-center gap-2 text-3xl">
+          <PixelIcon name="wrench" size={26} />
+          Dev Tools
+        </h2>
       <p className="text-base text-muted">These act on your own save only.</p>
 
       <div className="grid gap-3 lg:grid-cols-2">
-        <Panel title="Economy">
+        <Panel title="Economy" icon="coin">
           <div className="flex flex-wrap items-end gap-2">
             <Field label="Gold">
               <NumInput className="w-32" value={gold} onChange={(v) => setGold(v ?? 0)} />
@@ -172,7 +176,7 @@ export function DevToolsSection() {
           </div>
         </Panel>
 
-        <Panel title="Regions">
+        <Panel title="Regions" icon="map">
           <p className="mb-2 text-base text-muted">
             How a region gets tested without playing to it. Everything here edits your own save.
           </p>
@@ -236,7 +240,7 @@ export function DevToolsSection() {
           </div>
         </Panel>
 
-        <Panel title="Progress">
+        <Panel title="Progress" icon="flag">
           <div className="flex flex-wrap gap-2">
             <PixelButton size="sm" onClick={unlockAll}>
               Unlock all areas
@@ -270,7 +274,7 @@ export function DevToolsSection() {
           </div>
         </Panel>
 
-        <Panel title="Catch any Pokémon">
+        <Panel title="Catch any Pokémon" icon="ball">
           <div className="flex flex-wrap items-end gap-2">
             <PokemonPicker
               className="min-w-[240px] flex-1"
@@ -291,7 +295,7 @@ export function DevToolsSection() {
           </div>
         </Panel>
 
-        <Panel title="Set a Pokémon's level">
+        <Panel title="Set a Pokémon's level" icon="up">
           <div className="flex flex-wrap items-end gap-2">
             <select
               className={`${inputCls} flex-1`}
@@ -318,7 +322,7 @@ export function DevToolsSection() {
           </div>
         </Panel>
 
-        <Panel title="Save file" className="lg:col-span-2">
+        <Panel title="Save file" icon="box" className="lg:col-span-2">
           <div className="flex flex-wrap gap-2">
             <PixelButton
               size="sm"

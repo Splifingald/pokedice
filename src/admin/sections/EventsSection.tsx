@@ -165,7 +165,7 @@ function WheelBox({ prizes, set }: { prizes: WheelPrize[]; set: (prizes: WheelPr
   const off = Math.abs(sum - 100) > 0.01
   return (
     <Box
-      title="Fortune Wheel — prizes"
+      title="Fortune Wheel — prizes" icon="reroll"
       hint="Equal slices on the wheel. A prize takes as many slices as its count, each won that % of the time. The server draws signed-in players' prizes from this list: Publish before players spin."
     >
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_200px]">
@@ -283,7 +283,7 @@ function RebattleBox({ tiers, set }: { tiers: RebattleTier[]; set: (tiers: Rebat
   const regions = (data?.regions ?? []).filter((r) => lineups[r.id])
   return (
     <Box
-      title="Elite Rebattle — tiers and lineups"
+      title="Elite Rebattle — tiers and lineups" icon="trophy"
       hint="A region's League again in three tiers, once its League is won. Each tier is a gauntlet in this order; a loss starts it over. Each Pokémon pays once per tier (a League trainer's ₽ × the tier's multiplier). Teams, levels and potions are the trainers' own (Trainers section). Kanto's Champion seat lists one rival per starter: the player meets theirs."
     >
       <table className="w-full text-lg">
@@ -355,7 +355,7 @@ export function EventsSection() {
   return (
     <div className="flex flex-col gap-4">
       <Box
-        title="Special events"
+        title="Special events" icon="star"
         hint="Each event shows up on Home once it's on and its area is cleared, in this order, with a pop-up the first time. Saved with the rest of the config (Publish)."
       >
         <Field label="Teaser from this many Kanto badges" hint="Before the first event opens, Home shows a locked square naming its area.">

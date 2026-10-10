@@ -1,4 +1,5 @@
 // Trainers, Items, Dice types, Type chart and Upgrades.
+import { PixelIcon } from '@/components/icons'
 import { useMemo, useState } from 'react'
 import type { Row } from '@/config/mapping'
 import {
@@ -368,7 +369,10 @@ export function DiceSection() {
   const sorted = [...rows].sort((a, b) => n(a.sort_order) - n(b.sort_order))
   return (
     <div className="flex flex-col gap-3">
-      <h2 className="text-3xl">Dice</h2>
+      <h2 className="flex items-center gap-2 text-3xl">
+        <PixelIcon name="dice" size={26} />
+        Dice
+      </h2>
       <p className="text-base text-muted">Each face is a number, or a status with its fallback value (used for damage and combos).</p>
       <div className="grid gap-3 xl:grid-cols-2">
         {sorted.map((r) => {
@@ -427,7 +431,10 @@ export function TypeChartSection() {
   }
   return (
     <div className="flex flex-col gap-2">
-      <h2 className="text-3xl">Type chart</h2>
+      <h2 className="flex items-center gap-2 text-3xl">
+        <PixelIcon name="vs" size={26} />
+        Type chart
+      </h2>
       <p className="text-base text-muted">Rows attack, columns defend. Click a cell to cycle ×1 → ×2 → ×½ → ×0. Only non-1 entries are stored.</p>
       <div className="pixel-scroll overflow-auto">
         <table className="border-collapse text-sm">
