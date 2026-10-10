@@ -297,8 +297,12 @@ function DayCareWidget() {
 }
 
 /** Versus: locked (how close the team is), open (set a team), then teams to beat and defense wins. */
-/** The Versus widget's banner: Galar's stadium under its floodlights (public/region-art). */
-const VS_BANNER = '/region-art/galar.png'
+/**
+ * The Versus widget's banner (public/backgrounds/versus.png, 478 × 265, from the Visual Lab's prompt): a stadium at
+ * night, red against blue; framed on the crowd and the centre circle (VS_FOCUS is its object-position).
+ */
+const VS_BANNER = '/backgrounds/versus.png'
+const VS_FOCUS = '50% 75%'
 
 function VersusWidget() {
   const { t, tPlural } = useT()
@@ -351,7 +355,7 @@ function VersusWidget() {
             src={VS_BANNER}
             alt=""
             className="pixelated absolute inset-0 h-full w-full object-cover grayscale-[0.7]"
-            style={{ imageRendering: 'pixelated', objectPosition: '50% 55%' }}
+            style={{ imageRendering: 'pixelated', objectPosition: VS_FOCUS }}
           />
           <span className="absolute inset-y-0 left-1 flex items-center">{team}</span>
           <PixelIcon name="lock" size={16} className="absolute right-2 top-1/2 -translate-y-1/2" />
@@ -381,7 +385,7 @@ function VersusWidget() {
           src={VS_BANNER}
           alt=""
           className="pixelated absolute inset-0 h-full w-full object-cover"
-          style={{ imageRendering: 'pixelated', objectPosition: '50% 55%' }}
+          style={{ imageRendering: 'pixelated', objectPosition: VS_FOCUS }}
         />
         <span className="absolute inset-y-0 left-1 flex items-center gap-1" aria-hidden>
           {shown.slice(0, VERSUS_TEAM_SIZE).map((m, i) => (
