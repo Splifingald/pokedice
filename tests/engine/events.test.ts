@@ -62,9 +62,12 @@ describe('special events: unlocking', () => {
   const data = allOn()
   const fresh = newSave(4, data, 1000, newId)
 
-  it('ship switched off: nothing opens until each event is built', () => {
-    const off = makeData()
+  it('the wheel ships on; the others stay off until they are built', () => {
+    const shipped = makeData()
     const late = clear(fresh, ROUTES_7_8, SAFARI)
+    expect(activeEvents(late, shipped)).toEqual(['wheel'])
+    const d = DEFAULT_CONFIG.events
+    const off = makeData({ events: { ...d, wheel: { ...d.wheel, enabled: false } } })
     expect(activeEvents(late, off)).toEqual([])
     expect(eventUnlockDue(late, off)).toBeNull()
   })
@@ -131,7 +134,9 @@ describe('special events: the teaser', () => {
 
   it('is gone once an event opens, and stays "later" while every event is off', () => {
     expect(eventsTeaser(clear(withBadges(fresh, data, 4), ROUTES_7_8), data)).toBeNull()
-    expect(eventsTeaser(withBadges(fresh, makeData(), 3), makeData())).toEqual({ kind: 'later' })
+    const d = DEFAULT_CONFIG.events
+    const none = makeData({ events: { ...d, wheel: { ...d.wheel, enabled: false } } })
+    expect(eventsTeaser(withBadges(fresh, none, 3), none)).toEqual({ kind: 'later' })
   })
 })
 

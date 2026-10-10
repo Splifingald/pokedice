@@ -106,12 +106,12 @@ export const DEFAULT_CONFIG: GameConfig = {
   // A once-only find in a big loot deck can take a hundred rounds to turn up: from the 5th round done in its area, its
   // odds climb to ×10 at the 50th.
   uniquePity: { startRounds: 5, fullRounds: 50, maxMultiplier: 10 },
-  // The special events (docs/18). Each one is switched on as it's built (docs/19); until then Home keeps a locked
-  // square from the 3rd Kanto badge. Banners borrow area pictures until the event art exists.
+  // The special events (docs/18). Each one is switched on as it's built (docs/19); before the first opens, Home keeps
+  // a locked square from the 3rd Kanto badge. Banners borrow area pictures until the event art exists.
   events: {
     teaserBadges: 3,
     wheel: {
-      enabled: false,
+      enabled: true,
       priority: 5,
       // Routes 7 & 8 (Celadon), Kanto.
       unlockAreaId: '8cf87ee3-f7a5-568e-bc22-54f643572535',

@@ -1,0 +1,207 @@
+/*
+ * The special events (docs/18), from the Visual Lab's mockups. The Fortune Wheel is a painted object, gold and navy in
+ * either theme; its box's data-phase (spinning · landed) and data-win (win · jackpot) are set by src/fx/wheel.ts.
+ */
+
+@keyframes ev-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ---------------------------------------------------------------- the wheel */
+.ev-wheel {
+  --spin: 0;
+  position: relative;
+  align-self: center;
+  width: 288px;
+  max-width: 100%;
+  aspect-ratio: 1;
+  margin: 14px 0 6px;
+  isolation: isolate;
+}
+.ev-wheel::before {
+  content: '';
+  position: absolute;
+  inset: -6%;
+  z-index: -1;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 214, 102, calc(0.25 + var(--spin) * 0.5)) 0 45%, transparent 70%);
+  transition: background 300ms;
+}
+.ev-wheel-rays {
+  position: absolute;
+  inset: -16%;
+  z-index: -2;
+  border-radius: 50%;
+  background: repeating-conic-gradient(from 0deg, rgba(255, 214, 102, 0.28) 0 9deg, transparent 9deg 18deg);
+  -webkit-mask: radial-gradient(circle, #000 35%, transparent 70%);
+  mask: radial-gradient(circle, #000 35%, transparent 70%);
+  animation: ev-spin 24s linear infinite;
+}
+.ev-wheel[data-phase='spinning'] .ev-wheel-rays {
+  animation-duration: 3s;
+}
+.ev-wheel[data-phase='landed'] .ev-wheel-rays {
+  inset: -24%;
+  animation-duration: 6s;
+  background: repeating-conic-gradient(from 0deg, rgba(255, 190, 46, 0.55) 0 9deg, transparent 9deg 18deg);
+}
+.ev-wheel[data-phase='landed'][data-win='jackpot'] .ev-wheel-rays {
+  background: repeating-conic-gradient(
+    from 0deg,
+    rgba(255, 255, 255, 0.7) 0 6deg,
+    rgba(197, 138, 255, 0.5) 6deg 12deg,
+    transparent 12deg 18deg
+  );
+}
+.ev-wheel[data-phase='landed'] {
+  animation: ev-land 420ms steps(6);
+}
+@keyframes ev-land {
+  20% {
+    transform: translate(-4px, 3px) rotate(-1deg);
+  }
+  45% {
+    transform: translate(4px, -2px) rotate(1deg);
+  }
+  70% {
+    transform: translate(-2px, 1px);
+  }
+}
+.ev-wheel-disc {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+/* The effects canvas reaches past the wheel so sparks and coins can fly out of it. */
+.ev-wfx {
+  position: absolute;
+  left: -22%;
+  top: -22%;
+  z-index: 3;
+  width: 144%;
+  max-width: none;
+  height: 160%;
+  pointer-events: none;
+}
+.ev-pointer {
+  position: absolute;
+  left: 50%;
+  top: -6px;
+  z-index: 2;
+  width: 24px;
+  height: 28px;
+  margin-left: -12px;
+  background: #f2553f;
+  clip-path: polygon(0 0, 100% 0, 100% 40%, 50% 100%, 0 40%);
+  filter: drop-shadow(0 2px 0 #24304f);
+  transform-origin: 50% 0;
+}
+.ev-pointer::after {
+  content: '';
+  position: absolute;
+  left: 7px;
+  top: 4px;
+  width: 10px;
+  height: 6px;
+  background: #ffb3a8;
+}
+.ev-wheel[data-phase='spinning'] .ev-pointer {
+  filter: drop-shadow(0 2px 0 #24304f) drop-shadow(0 0 6px #ffbe2e);
+}
+.ev-pointer.flick {
+  animation: ev-flick 110ms steps(2);
+}
+@keyframes ev-flick {
+  50% {
+    transform: rotate(-14deg);
+  }
+}
+
+/* The blue Info button under the wheel. */
+.ev-info {
+  display: grid;
+  min-height: 64px;
+  place-items: center;
+  border: 0;
+  background: #5b8def;
+  color: #fbfdff;
+  font-family: 'Jersey 25', 'Jersey 15', var(--font-cjk);
+  font-size: 24px;
+  letter-spacing: 0.04em;
+  text-shadow: 0 2px 0 #2f5fb8;
+  box-shadow:
+    inset 0 0 0 2px #24304f,
+    inset 0 -5px 0 #3a6fd0,
+    inset 0 3px 0 #9dbdff;
+}
+.ev-info:active {
+  padding-top: 3px;
+  box-shadow:
+    inset 0 0 0 2px #24304f,
+    inset 0 3px 0 #3a6fd0;
+}
+
+/* ---------------------------------------------------------------- the reward card */
+.ev-rays {
+  position: absolute;
+  left: 50%;
+  top: 70px;
+  width: 300px;
+  height: 300px;
+  margin: -150px 0 0 -150px;
+  border-radius: 50%;
+  background: repeating-conic-gradient(rgb(255 231 168 / 0.5) 0 10deg, transparent 10deg 20deg);
+  animation: ev-spin 9s linear infinite;
+  pointer-events: none;
+}
+.ev-bob {
+  animation: ev-bob 1.6s steps(4) infinite;
+}
+@keyframes ev-bob {
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+/* ---------------------------------------------------------------- Home's prize carousel */
+.ev-car {
+  position: relative;
+  isolation: isolate;
+  display: block;
+  height: 64px;
+  margin: 0 -4px;
+  overflow: hidden;
+  background: rgb(var(--c-well));
+  box-shadow:
+    inset 0 2px 0 rgb(var(--c-line)),
+    inset 0 -2px 0 rgb(var(--c-line));
+}
+.ev-car-track {
+  display: flex;
+  width: max-content;
+  height: 100%;
+  align-items: center;
+  animation: ev-car 14s linear infinite;
+}
+@keyframes ev-car {
+  to {
+    transform: translateX(-50%);
+  }
+}
+.ev-car::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgb(var(--c-panel)), transparent 16%, transparent 84%, rgb(var(--c-panel)));
+  pointer-events: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ev-car {
+    overflow-x: auto;
+  }
+}
+html.reduce-motion .ev-car {
+  overflow-x: auto;
+}
