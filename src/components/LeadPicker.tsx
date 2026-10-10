@@ -55,7 +55,7 @@ export function LeadPicker({
               <div className="flex min-w-0 items-center gap-0.5">
                 <MiniSprite dex={p.dex} size={32} className={cx('-my-1 -ml-1', fainted && 'grayscale')} />
                 <span className="truncate text-lg leading-none">{species.name}</span>
-                {p.shiny && <PixelIcon name="star" size={10} title={t('ui.mon.shiny')} className="shrink-0" />}
+                {p.shiny && <PixelIcon name="star" size={12} title={t('ui.mon.shiny')} className="shrink-0" />}
                 {edge !== 1 && (
                   <PixelIcon
                     name={edge > 1 ? 'thumbUp' : 'thumbDown'}
