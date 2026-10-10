@@ -12,6 +12,7 @@ import {
   dayCareLevelProgress,
   dayCareOf,
   depositError,
+  friendMonLevel,
   getRegion,
   guestKey,
   isDayCareOpen,
@@ -27,6 +28,7 @@ import {
   type Hatch,
 } from '@/engine'
 import { sfx } from '@/audio/sfx'
+import { AccountButton } from '@/components/AccountButton'
 import { Chip, NewTag } from '@/components/Chip'
 import { bumpGold } from '@/components/GoldPill'
 import { BackButton } from '@/components/PageHead'
@@ -38,15 +40,17 @@ import { StageCanvas, type StageHandle } from '@/components/StageCanvas'
 import { TrainerLook } from '@/components/TrainerLook'
 import { loadSprite, spriteKey } from '@/fx/sprites'
 import { hatchTimeline } from '@/fx/timelines/moments'
-import { searchFold } from '@/i18n'
+import { joinList, searchFold } from '@/i18n'
 import { useT } from '@/i18n/react'
 import { eggGroupName, waitText } from '@/i18n/text'
 import { avatarOf } from '@/lib/avatars'
+import { useFriendCares } from '@/lib/friends'
+import { isSupabaseConfigured } from '@/lib/supabase'
 import { money } from '@/lib/format'
 import { useHoldFullscreen } from '@/lib/fullscreen'
 import { useMotion } from '@/lib/motion'
 import { hatchDayCareEgg, leaveAtDayCare, pickUpFromDayCare, rushDayCareEgg, visitDayCare } from '@/store/actions'
-import { parentName, tickDayCare } from '@/store/daycare'
+import { inviteFriendMon, parentName, sendGuestBack, syncFriendDayCares, tickDayCare } from '@/store/daycare'
 import { pushToast, useGame } from '@/store/game'
 import { cx } from '@/theme/util'
 import {
@@ -346,6 +350,155 @@ function LeaveSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
 }
 
 /**
+ * Add a friend's Pokémon: a search (friend or Pokémon) and Compatible only, grouped by friend, the best matches
+ * first. Each row says which of yours it would pair with, in their hearts' colours; Ditto with all but legendaries,
+ * on its slower clock; one already here is greyed as Invited.
+ */
+function FriendSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const { t, tPlural } = useT()
+  const save = useGame((s) => s.save)
+  const data = useGame((s) => s.data)
+  const rows = useFriendCares((s) => s.rows)
+  const state = useFriendCares((s) => s.state)
+  const error = useFriendCares((s) => s.error)
+  const nameOf = useNameOf()
+  const [q, setQ] = useState('')
+  const [only, setOnly] = useState(false)
+  useEffect(() => {
+    if (!open) return
+    setQ('')
+    void syncFriendDayCares()
+  }, [open])
+  if (!save) return null
+  const cfg = data.config.dayCare
+  const now = Date.now()
+  const dc = dayCareOf(save)
+  const taken = new Set(dc.guests.map(guestKey))
+  const pairsWith = (dex: number) => dc.residents.flatMap((r, i) => (compatible(data, r.inst.dex, dex) ? [i] : []))
+  const needle = searchFold(q.trim())
+  const groups = rows
+    .map((f) => {
+      const list = f.mons
+        .filter((m) => !needle || searchFold(f.name).includes(needle) || searchFold(nameOf(m)).includes(needle))
+        .map((m) => ({ m, idx: pairsWith(m.dex) }))
+        .filter((x) => !only || x.idx.length > 0)
+      return { f, list, best: Math.max(0, ...list.map((x) => x.idx.length)) }
+    })
+    .filter((g) => g.list.length > 0)
+    .sort((a, b) => b.best - a.best)
+  const hearts = (idx: number[]) => idx.map((i) => <Heart key={i} color={slotColor(i)} />)
+  const empty =
+    state === 'error'
+      ? t(error === 'not_set_up' ? 'ui.dayCare.friendsNoServer' : 'ui.dayCare.friendsFailed')
+      : state !== 'ready'
+        ? t('ui.common.loading')
+        : !rows.length
+          ? t('ui.dayCare.noFriendCare')
+          : only
+            ? t('ui.dayCare.noFriendCompatible')
+            : t('ui.dayCare.noFriendMatch')
+  return (
+    <Sheet
+      open={open}
+      onClose={onClose}
+      title={t('ui.dayCare.friendPickTitle')}
+      sub={t('ui.dayCare.friendPickSub')}
+      head={
+        <div className="flex items-center gap-2">
+          <div className="min-w-0 flex-1">
+            <SearchField
+              id="dc-fq"
+              value={q}
+              onChange={setQ}
+              label={t('ui.dayCare.friendSearchLabel')}
+              placeholder={t('ui.dayCare.friendSearch')}
+            />
+          </div>
+          <button
+            type="button"
+            aria-pressed={only}
+            onClick={() => setOnly((v) => !v)}
+            className={cx(
+              'min-h-[44px] shrink-0 px-3 font-pixel-sm text-[15px] leading-none shadow-ring',
+              only ? 'bg-gold text-night' : 'bg-paper text-ink',
+            )}
+          >
+            {t('ui.dayCare.compatibleOnly')}
+          </button>
+        </div>
+      }
+    >
+      {groups.length === 0 ? (
+        <p className="m-0 p-2 text-center font-pixel-sm text-[16px] text-muted">{empty}</p>
+      ) : (
+        <div className="grid gap-3">
+          {groups.map(({ f, list }) => (
+            <section key={f.owner} className="grid gap-1.5" aria-label={f.name}>
+              <h3 className="m-0 flex items-center gap-1.5 text-[19px] font-normal leading-none">
+                <TrainerLook src={avatarOf(f.avatar).src} w={26} h={26} />
+                <span className="min-w-0 truncate">{f.name}</span>
+                <small className="ml-auto font-pixel-sm text-[13px] text-muted">
+                  {tPlural('ui.dayCare.atDayCare', f.mons.length, { n: f.mons.length })}
+                </small>
+              </h3>
+              <ul className="m-0 grid list-none gap-1.5 p-0">
+                {list.map(({ m, idx }) => {
+                  const added = taken.has(guestKey({ owner: f.owner, inst: m.inst }))
+                  const name = nameOf(m)
+                  const groupsLine = (data.eggGroups[m.dex]?.g ?? []).map(eggGroupName).join(' · ')
+                  const tag = added ? (
+                    <PairTag tone="plain">{t('ui.dayCare.invited')}</PairTag>
+                  ) : isDitto(data, m.dex) ? (
+                    <PairTag>
+                      {hearts(idx)}
+                      {t('ui.dayCare.compatDitto', { h: cfg.breedDittoHours })}
+                    </PairTag>
+                  ) : idx.length ? (
+                    <PairTag>
+                      {hearts(idx)}
+                      {t('ui.dayCare.compatWith', { names: joinList(idx.map((i) => nameOf(dc.residents[i]!.inst))) })}
+                    </PairTag>
+                  ) : (
+                    <PairTag tone="plain">{t('ui.dayCare.noMatchYours')}</PairTag>
+                  )
+                  return (
+                    <li key={m.inst}>
+                      <button
+                        type="button"
+                        disabled={added}
+                        onClick={() => {
+                          if (inviteFriendMon(f, m)) onClose()
+                        }}
+                        className={cx(
+                          'flex min-h-[52px] w-full items-center gap-2 py-1.5 pl-1.5 pr-2.5 text-left',
+                          added ? 'bg-well text-ink shadow-ring-line' : CARD,
+                        )}
+                      >
+                        <MiniSprite dex={m.dex} size={40} className={cx('-my-1', added && 'opacity-60 grayscale')} />
+                        <span className="grid min-w-0 flex-1 leading-[1.05]">
+                          <b className="truncate text-[18px] font-normal">
+                            {name}{' '}
+                            <small className="font-pixel-sm text-[13px] text-muted">
+                              {t('ui.common.level.short', { n: friendMonLevel(m, now, data) })}
+                            </small>
+                          </b>
+                          <small className="font-pixel-sm text-[14px] text-ink">{groupsLine}</small>
+                          <span className="mt-1">{tag}</span>
+                        </span>
+                      </button>
+                    </li>
+                  )
+                })}
+              </ul>
+            </section>
+          ))}
+        </div>
+      )}
+    </Sheet>
+  )
+}
+
+/**
  * The hatching, full screen over the page: the timeline on the stage (src/fx/timelines/moments.ts) with Skip, then
  * what hatched (NEW, ✦ Shiny) and where it went, and Done. Escape skips to the end, then closes.
  */
@@ -464,10 +617,13 @@ export function DayCareScreen() {
   const navigate = useNavigate()
   const now = useNow()
   const [leaving, setLeaving] = useState(false)
+  const [inviting, setInviting] = useState(false)
   const [hatch, setHatch] = useState<Hatch | null>(null)
   const [hatchId, setHatchId] = useState(0)
   const open = !!save && isDayCareOpen(save, data)
   const { calm } = useMotion()
+  const auth = useGame((s) => s.auth.status)
+  const caresError = useFriendCares((s) => s.error)
   const location = useLocation()
   // From Home's gold widget: the page opens, and the Egg starts hatching a moment later.
   const wantsHatch = !!(location.state as { hatch?: boolean } | null)?.hatch
@@ -476,6 +632,10 @@ export function DayCareScreen() {
     visitDayCare()
     tickDayCare()
   }, [open])
+  // Friends' Day Cares, read when the page opens (at most once a minute), refresh the visitors.
+  useEffect(() => {
+    if (open && auth === 'signed_in') void syncFriendDayCares()
+  }, [open, auth])
   useEffect(() => {
     if (!open || !wantsHatch) return
     const id = setTimeout(
@@ -543,6 +703,17 @@ export function DayCareScreen() {
   const short = Math.max(0, price - save.gold)
   const freeMine = Math.max(0, cfg.slots - dc.residents.length)
   const freeFriends = Math.max(0, cfg.friendSlots - dc.guests.length)
+  // Why the friend slots wait, if they do: no online service, the sign-in still being checked, or a database without
+  // 0034. Signed out, the friend list's connect prompt takes their place.
+  const offline = !isSupabaseConfigured || auth === 'unavailable'
+  const friendsWait = offline
+    ? t('ui.friends.offline')
+    : auth === 'unknown'
+      ? t('ui.common.loading')
+      : auth === 'signed_in' && caresError === 'not_set_up'
+        ? t('ui.dayCare.friendsNoServer')
+        : null
+  const promptSignIn = auth === 'signed_out' && !offline
 
   return (
     <div className="flex flex-col gap-3 md:gap-4 lg:grid lg:grid-cols-[minmax(0,460px)_minmax(0,1fr)] lg:items-start lg:gap-5">
@@ -607,21 +778,36 @@ export function DayCareScreen() {
             count={`${dc.guests.length}/${cfg.friendSlots}`}
             note={t('ui.dayCare.friendsNote')}
           />
-          <ul className="m-0 grid list-none grid-cols-2 gap-2 p-0">
-            {dc.guests.map((g) => (
-              <GuestCard key={guestKey(g)} g={g} onSend={() => undefined} />
-            ))}
-            {/* The friend list's Day Cares come with migration 0034: until then the slots wait, and say why. */}
-            {Array.from({ length: freeFriends }, (_, i) => (
-              <EmptySlot key={`friend-${i}`} title={t('ui.dayCare.addFriend')} sub={t('ui.dayCare.friendsSoon')} disabled />
-            ))}
-          </ul>
+          {(dc.guests.length > 0 || !promptSignIn) && (
+            <ul className="m-0 grid list-none grid-cols-2 gap-2 p-0">
+              {dc.guests.map((g) => (
+                <GuestCard key={guestKey(g)} g={g} onSend={() => sendGuestBack(g)} />
+              ))}
+              {!promptSignIn &&
+                Array.from({ length: freeFriends }, (_, i) => (
+                  <EmptySlot
+                    key={`friend-${i}`}
+                    title={t('ui.dayCare.addFriend')}
+                    sub={friendsWait ?? t('ui.dayCare.addFriendSub')}
+                    disabled={!!friendsWait}
+                    onClick={() => setInviting(true)}
+                  />
+                ))}
+            </ul>
+          )}
+          {promptSignIn && (
+            <div className="flex flex-col items-center gap-3 bg-gold-pale px-3.5 py-4 text-center shadow-card-gold">
+              <p className="m-0 text-[20px] leading-[1.15]">{t('ui.friends.signedOut')}</p>
+              <AccountButton />
+            </div>
+          )}
         </section>
 
         <ChecksSection now={now} />
       </div>
 
       <LeaveSheet open={leaving} onClose={() => setLeaving(false)} />
+      <FriendSheet open={inviting} onClose={() => setInviting(false)} />
       {hatch && (
         <HatchMoment
           key={hatchId}

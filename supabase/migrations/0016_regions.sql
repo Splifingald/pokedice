@@ -29,4 +29,6 @@ create index if not exists areas_region_idx on areas (region_id, order_index);
 -- ---------------------------------------------------------------- leaderboard
 --
 -- The per-region leaderboard used to live here (0016, then 0023, 0024, 0026, 0031, 0032). It now reads player cards
--- and lives in 0033_friends.sql, which seed.sql inlines right after this file.
+-- and lives in 0033_friends.sql, which seed.sql inlines right after this file. The cards' one Day Care (each resident
+-- counted for its own region, the residents for the friend picker, friend_day_cares()) is 0034_day_care.sql, inlined
+-- after 0033.

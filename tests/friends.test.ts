@@ -9,6 +9,7 @@ import {
   inviteUrl,
   isCode,
   normalizeCode,
+  parseFriendDayCares,
   parseFriendList,
   parseProfile,
   parseStatus,
@@ -145,5 +146,37 @@ describe('a friend’s badge case', () => {
     const mine = regionCases({ ...save, areaProgress: { ...save.areaProgress, ...progress, [kanto.leagueAreaId]: { cleared: true } } } as typeof save, data)[0]!
     expect(regionCaseOf(data, 'kanto', won, true)).toEqual(mine)
     expect(regionCaseOf(data, 'nowhere', [], false)).toBeNull()
+  })
+})
+
+describe("friends' Day Cares (0034)", () => {
+  it('parses friend_day_cares() rows with a default for every field, dropping what can not be used', () => {
+    const rows = parseFriendDayCares([
+      {
+        owner: 'u1',
+        name: 'Lea',
+        avatar: 'not-a-look',
+        day_care: [
+          { inst: 'a', dex: 133, level: 24, xp: 3, since: 1000, shiny: true },
+          { inst: 'b', dex: '135', level: 300 },
+          { inst: '', dex: 1 },
+          { dex: 0, inst: 'c' },
+        ],
+      },
+      { owner: 'u2', name: '  ', day_care: [] },
+      { name: 'nobody', day_care: [{ inst: 'x', dex: 1 }] },
+    ])
+    expect(rows).toHaveLength(1)
+    expect(rows[0]!.owner).toBe('u1')
+    expect(rows[0]!.name).toBe('Lea')
+    expect(rows[0]!.mons).toEqual([
+      { inst: 'a', dex: 133, level: 24, xp: 3, since: 1000, shiny: true },
+      { inst: 'b', dex: 135, level: 100, xp: 0, since: 0, shiny: false },
+    ])
+    expect(parseFriendDayCares(null)).toEqual([])
+  })
+
+  it('a database without 0034 reads as not set up', () => {
+    expect(friendError({ code: 'PGRST202', message: 'Could not find the function public.friend_day_cares' })).toBe('not_set_up')
   })
 })

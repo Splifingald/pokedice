@@ -397,3 +397,84 @@ export function takeUntold(userId: string, unseen: FriendNotice[]): FriendNotice
   }
   return fresh
 }
+
+// ---------------------------------------------------------------- friends' Day Cares (docs/15, migration 0034)
+
+/** One Pokémon in a friend's Day Care, from their card: the instance at drop-off, and since when (ms). */
+export interface FriendCareMonRow {
+  inst: string
+  dex: number
+  level: number
+  xp: number
+  since: number
+  shiny: boolean
+}
+
+/** A friend's Day Care, as friend_day_cares() reads it from their card. */
+export interface FriendDayCareRow {
+  owner: string
+  name: string
+  avatar: string
+  mons: FriendCareMonRow[]
+}
+
+export function parseFriendDayCares(raw: unknown): FriendDayCareRow[] {
+  return (Array.isArray(raw) ? raw : [])
+    .map((r) => ({
+      owner: String(r?.owner ?? ''),
+      name: text(r?.name, 'Trainer'),
+      avatar: avatarOf(r?.avatar).id,
+      mons: (Array.isArray(r?.day_care) ? r.day_care : [])
+        .map((m: Record<string, unknown> | null) => ({
+          inst: String(m?.inst ?? ''),
+          dex: Number(m?.dex) || 0,
+          level: Math.min(100, Math.max(1, Number(m?.level) || 1)),
+          xp: Math.max(0, Number(m?.xp) || 0),
+          since: Number(m?.since) || 0,
+          shiny: !!m?.shiny,
+        }))
+        .filter((m: FriendCareMonRow) => m.dex > 0 && !!m.inst),
+    }))
+    .filter((r) => !!r.owner && r.mons.length > 0)
+}
+
+/** friend_day_cares(): the friends with a Pokémon at their Day Care. */
+export async function fetchFriendDayCares(): Promise<FriendDayCareRow[]> {
+  return parseFriendDayCares(await rpc('friend_day_cares'))
+}
+
+interface FriendCaresState {
+  userId: string | null
+  rows: FriendDayCareRow[]
+  state: 'idle' | 'loading' | 'ready' | 'error'
+  error: FriendError | null
+  at: number
+}
+
+const NO_CARES: FriendCaresState = { userId: null, rows: [], state: 'idle', error: null, at: 0 }
+
+export const useFriendCares = create<FriendCaresState>(() => ({ ...NO_CARES }))
+
+/** Friends' Day Cares change slowly: read at most once a minute, when the Day Care page or its picker opens. */
+export const CARES_EVERY_MS = 60_000
+
+/** Reads friend_day_cares() unless it was read under a minute ago. True when fresh rows came in. */
+export async function loadFriendDayCares(force = false, now = Date.now()): Promise<boolean> {
+  const user = signedInUser()
+  if (useFriendCares.getState().userId !== user) useFriendCares.setState({ ...NO_CARES, userId: user })
+  if (!user) return false
+  const st = useFriendCares.getState()
+  if (!force && st.state === 'ready' && now - st.at < CARES_EVERY_MS) return false
+  if (st.state === 'loading') return false
+  useFriendCares.setState({ state: st.state === 'ready' ? 'ready' : 'loading', at: now })
+  try {
+    const rows = await fetchFriendDayCares()
+    if (useFriendCares.getState().userId !== user) return false
+    useFriendCares.setState({ rows, state: 'ready', error: null })
+    return true
+  } catch (err) {
+    console.warn('[friends] Day Cares not loaded:', err instanceof Error ? err.message : err)
+    useFriendCares.setState({ state: 'error', error: friendError(err) })
+    return false
+  }
+}

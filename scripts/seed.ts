@@ -840,13 +840,14 @@ const RETIRED_CONFIG_KEYS = ['regenPercentPerHour']
 
 /**
  * Schema the data needs but 0001_init.sql has not got: the `regions` table and `areas.region_id` (0016), then the
- * player cards and the per-region `leaderboard()` that reads them (0033). Folded into seed.sql so there is one file to
+ * player cards and the per-region `leaderboard()` that reads them (0033), and the cards' one Day Care (0034, which
+ * redefines 0033's card writer, so it comes after it). Folded into seed.sql so there is one file to
  * run rather than several in a particular order. The migrations stay the single source of that SQL — they are written
  * to be idempotent, so re-running them costs little.
  */
 export async function regionsPrelude(): Promise<string> {
   const parts = await Promise.all(
-    ['0016_regions.sql', '0033_friends.sql'].map(async (name) => {
+    ['0016_regions.sql', '0033_friends.sql', '0034_day_care.sql'].map(async (name) => {
       const sql = await readFile(path.join(ROOT, 'supabase', 'migrations', name), 'utf8')
       return `-- ↓ supabase/migrations/${name}, inlined so this file stands alone.\n${sql}`
     }),

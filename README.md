@@ -220,6 +220,19 @@ supabase/    migrations/0001_init.sql, seed.sql (generated)
   `supabase/migrations/0033_friends.sql` run once on the live database (re-running `supabase/seed.sql` does it too):
   it also moves the leaderboard onto small *player cards*, written once per cloud push, and retires the leaderboard
   cache, its rebuild and its pg_cron job (0026, 0031, 0032), which were most of the database's work.
+- **Day Care v2** — one Day Care for every region (it no longer resets with a region and shows the same in each),
+  open from 20 species caught across every region's Pokédex. Two of your Pokémon train there to Lv.100 (+1 XP every
+  10 min, no other cap); a Pokémon taken back goes to its own region's Box. Up to four Pokémon from friends' Day Cares
+  visit (they stay theirs: nothing changes for the friend). Eggs are bred from the real Egg groups (Showdown data,
+  `pnpm egg-groups`): every 12 h each of yours checks everyone there and a compatible pair leaves an Egg; Ditto pairs
+  with all but legendaries, on its own 24 h check; one Egg waits at a time. EGG NOW (₽200) runs the next check at once
+  and hatches its Egg. The first Egg is still a gift; the ₽50 Egg is gone. Day Care Eggs hatch shiny 1 time in 100,
+  and a hatchling you don't keep brings ₽10 from the Day Care couple. Every number is in Admin → Config → Pokémon Day
+  Care. Old saves merge their regions' Day Cares on load (the two that stayed longest stay, the others go home with
+  their levels). See [docs/15](docs/15-DAYCARE-BREEDING.md). Needs `supabase/migrations/0034_day_care.sql` run once on
+  the live database after 0033 (re-running `supabase/seed.sql` does it too): each resident counts on its own region's
+  player card, the cards carry the residents for the friend picker, and `friend_day_cares()` reads them. Then
+  **Admin → Reload all players**, so no tab still running the old game strips the new save fields.
 - **Discord sign-in** — players can sign in with Discord as well as Google: same save, leaderboard, Versus and friends,
   and Settings → Connected accounts links both to one account. CONNECT offers the choice only once Discord is switched
   on in Supabase (the game reads Auth's public settings, kept a day); until then it goes straight to Google as before.

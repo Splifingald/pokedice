@@ -377,6 +377,9 @@ One Day Care for every region (docs/15-DAYCARE-BREEDING.md). The page (`src/scre
   name and level, then for yours the XP bar to the next level ("To Lv.25 · came at Lv.22", "Lv.100: it can't grow
   more"), "Pairs with" and the partners' names, each of yours with its heart. The button (Take back, Send back) sits
   at the bottom so both cards' buttons line up. A free slot is a dashed card with a blue +.
+- **Friend slots** work once signed in (friends' Day Cares are read when the page or its picker opens, at most once a
+  minute). Signed out, the friend list's connect prompt takes their place; without the online service, or on a
+  database without migration 0034, they are greyed and say why.
 - **Hearts mean "can make an Egg with it"**, always next to a name: a heart is never the only sign.
 - **Egg checks** list the rule, the two clocks (Egg groups, Ditto) with their next time, and every pair with a tag:
   the shared group and its pace ("Field · every 12 h"), or Ditto's slower pace in purple.
