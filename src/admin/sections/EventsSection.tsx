@@ -27,6 +27,9 @@ import { useAdminData } from '../store'
 import { Box, Field, NumInput, inputCls } from '../widgets'
 import { useConfigRow } from './ConfigSection'
 
+/** Pictures made for the events (public/backgrounds). */
+const EVENT_BANNERS = ['/backgrounds/fortune-wheel.png']
+
 const NAMES: Record<EventId, string> = { wheel: 'Fortune Wheel', raid: 'Raid Battles', rebattle: 'Elite Rebattle' }
 
 /** The rule ids the unlock pop-up knows (strings.csv `ui.events.rules.<id>.title/text`). */
@@ -54,7 +57,8 @@ export function useEventsConfig(): [EventsConfig, (patch: Partial<EventsConfig>)
 function EventRow({ id, def, set }: { id: EventId; def: EventDef; set: (patch: Partial<EventDef>) => void }) {
   const data = useAdminData()
   const areas = (data?.areas ?? []).slice().sort((a, b) => a.orderIndex - b.orderIndex)
-  const pictures = Object.keys(ART_GEOMETRY).sort()
+  // The events' own pictures first, then every area picture.
+  const pictures = [...EVENT_BANNERS, ...Object.keys(ART_GEOMETRY).sort()]
   return (
     <div className="grid gap-3 border-t-2 border-line pt-3 md:grid-cols-[minmax(0,1fr)_200px]">
       <div className="grid gap-2 sm:grid-cols-2">
@@ -84,7 +88,7 @@ function EventRow({ id, def, set }: { id: EventId; def: EventDef; set: (patch: P
             </select>
           </Field>
         )}
-        <Field label="Banner picture" hint="An area picture until the event's own art exists.">
+        <Field label="Banner picture" hint="The event's own picture, or an area picture.">
           <select className={inputCls} value={def.banner} onChange={(e) => set({ banner: e.target.value })}>
             {!pictures.includes(def.banner) && <option value={def.banner}>{def.banner}</option>}
             {pictures.map((p) => (

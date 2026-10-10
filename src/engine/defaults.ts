@@ -107,7 +107,7 @@ export const DEFAULT_CONFIG: GameConfig = {
   // odds climb to ×10 at the 50th.
   uniquePity: { startRounds: 5, fullRounds: 50, maxMultiplier: 10 },
   // The special events (docs/18). Each one is switched on as it's built (docs/19); before the first opens, Home keeps
-  // a locked square from the 3rd Kanto badge. Banners borrow area pictures until the event art exists.
+  // a locked square from the 3rd Kanto badge. Banners: an event's own picture, or an area picture until it has one.
   events: {
     teaserBadges: 3,
     wheel: {
@@ -115,7 +115,8 @@ export const DEFAULT_CONFIG: GameConfig = {
       priority: 5,
       // Routes 7 & 8 (Celadon), Kanto.
       unlockAreaId: '8cf87ee3-f7a5-568e-bc22-54f643572535',
-      banner: 'evening',
+      // A carnival booth with the big wheel at dusk (349 × 144, the wheel on the right, clear of the title plate).
+      banner: '/backgrounds/fortune-wheel.png',
       rules: ['wheel.daily', 'wheel.prizes', 'wheel.odds'],
       // Nine equal slices: 4 × ₽10, 2 Poké Balls, a Great, an Ultra and a Master Ball. The odds add up to 100 %.
       prizes: [

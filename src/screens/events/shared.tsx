@@ -88,7 +88,8 @@ export function EventPicture({ id, data, className, children }: { id: EventId; d
     ro.observe(el)
     return () => ro.disconnect()
   }, [])
-  let objectPosition = '50% 55%'
+  // An event's own picture is composed for a strip from its middle; an area picture centres on its horizon.
+  let objectPosition = '50% 50%'
   if (geo && box && box.w > box.h) {
     // The picture is square, drawn box.w wide: its horizon (in picture pixels) lands 60 % down the strip.
     const horizon = (ART_CROP + horizonOf(geo) * ART_K) * (box.w / ART_PX)
