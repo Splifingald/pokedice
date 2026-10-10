@@ -7,14 +7,15 @@ A standalone page for deciding the game's next look, outside the app's build. Th
   - the area plate on top opens the area's details: gym, legendary, one-time finds still there, Pokémon to catch with rarity and levels, the round mix
   - CONTINUE is the one big action
   - an Areas sheet offers search by area or Pokémon, filters (To catch, Secret, Cleared), sorting and a region switcher; a card opens its details, GO travels, the outline gives the state; the Areas button turns gold when a new region opens
+  - entering a new region starts the partner pick: in the professor's lab, three Poké Balls drop onto the table, a tap opens one, and the question comes with the Pokémon's type, matchups and dice (`starter.js`)
   - each area has one picture: the scene the team roams on Home, cropped to its middle in lists
-  - widgets, two by two: the newest secret area and the Day Care, then Versus (locked until three Pokémon reach Lv.50) and a slot for special events
+  - widgets, two by two: the newest secret area and the Day Care (gold with a shaking Egg when one waits), then Versus (locked until three Pokémon reach Lv.50) and a slot for special events
   - a game-style tab bar sits at the bottom
 
   - the tab bar works: **Team** (drag to reorder, the Box with search, sort and type filter, a sheet per Pokémon with its dice faces and what it learns next), **Pokédex** (silhouettes, search, All / Caught / Missing / Nearby, where to find with GO), **Poké Mart** (buy and sell by category, quantities, locked stock) and **Upgrades** (combos and dice, pip tracks, an affordable filter)
   - the screens off Home work too:
     - **Battle**, from CONTINUE: a wild Pokémon from the area, full screen. The dice roll by themselves; you tap the ones to throw again, then ATTACK. The readout under the tray shows the combo, the sum, the type multiplier and the status faces, with the engine's rules. The move plays the Animations tab's timeline, and the foe rolls its own dice. Other parts: the bag (one item a turn), switching, burn and poison ticks, a free switch after a K.O., and the catch with the ball picker and chances, then XP.
-    - **Day Care**, from its widget: two slots with XP toward the 200 cap and the time left. You can take one back, or leave one from the team or the Box (with search). The Egg is free the first time, then ₽50, and hatches with the Animations tab's timeline into a species weighted toward the ones you're missing.
+    - **Day Care**, from its widget: one for every region, open from 20 Pokémon caught. The yard sits on top like Home's, with everyone there roaming. Below it are two slots for your Pokémon, which gain XP up to Lv.100 (the only cap). You can take one back, or leave one from the team or the Box (with search). Four more slots hold friends' Pokémon, invited from their Day Cares; nothing changes for the friend. Pairs follow the real Egg groups, and the pickers tag "Compatible with …" with coloured hearts. Ditto pairs with everyone but legendaries, on a slower check. Every 12 h (Ditto: 24 h) a compatible pair leaves an Egg, and **Egg now** skips the wait for ₽200. It hatches with the Animations tab's timeline into a species weighted toward the ones you're missing, shiny 1 time in 100. The preview bar has buttons to run either check. The integration plan is `docs/15-DAYCARE-BREEDING.md`.
     - **Versus**, from its widget: locked until three Pokémon reach Lv.50 (with who's closest). It has three tabs: My team (three Lv.50 clones, in order), Opponents (search, To beat / Beaten, how many of theirs you hit super effectively, FIGHT) and the Attack / Defense board. A fight plays on its own on the battle stage: the trainer sends out three in turn, and SKIP jumps to the result.
     - **Leaderboard**, from the cup: Max level, Progression, Pokédex, Shiny. It shows your rank on top (tap it to find your row), and a Hall of Fame for trainers who maxed a board out.
     - **Trainer card**, from the avatar: your look (the game's trainer sprites), name, money, Pokédex, best level, areas, shinies, Versus record, the badge case with the crown, and the menu.
@@ -29,6 +30,7 @@ A standalone page for deciding the game's next look, outside the app's build. Th
   - an evolution (Charmeleon → Charizard at Lv.36, Eevee → Jolteon with a Thunder Stone)
   - an Egg hatching (the Gen 5 Egg, into Dratini or Eevee)
   - a Mega Evolution on the battle stage (Charizard into Mega Charizard X or Y): the Key Stone and the Mega Stone linked by two strands of light, a sphere in the seven colours, the change inside, the burst and the Mega symbol; +1 die of the type it gains, until the battle ends
+  - the partner pick (Johto when a region opens, Kanto for a new game): in the professor's lab: a welcome ribbon, three Poké Balls dropping onto their cradles one after another, the choice, the yes, the other two flying home
   - a Gigantamax (Pikachu or Lapras): recalled into the ball, Dynamax energy swelling it, thrown up behind the field under a crimson sky, a giant red silhouette rising in steps, then the G-Max form with its cloud crown; +1 die of its first type for its next turn
 
   You can play them at ¼ speed, step frame by frame, jump between beats, and turn on synthesised sound.
@@ -54,7 +56,8 @@ node design/visual-lab/serve.mjs   # http://localhost:4173
 | `home.js` | The Home prototype: area scenery per biome, the team and how they get along, the area details, the Areas sheet with the region switcher, widgets, toasts, the three preview saves |
 | `pages.js` | The tabs behind Home: Team, Pokédex, Poké Mart, Upgrades, and the shared Pokémon sheet |
 | `battle.js` | The playable battle: the engine's damage, combo, type and status rules, the dice tray, the catch, and Versus on auto |
-| `daycare.js` | The Day Care: slots, drop-off, take back, Eggs and the hatching moment |
+| `daycare.js` | The Day Care: the yard, your two and four friends' slots, Egg-group compatibility (Ditto slower), the checks, the hatching moment |
+| `starter.js` | The partner pick when a region opens: drives the Animations tab's starter scene from taps and keys, the question with type, matchups and dice |
 | `social.js` | Versus (team, opponents, board), the leaderboard with its Hall of Fame, the trainer card with the badge case and looks |
 | `lab.js` | Styles, the 9-slice frame generator (`makeFrame`), the mock screens, the HUD, the moodboards |
 | `assets/` | Showdown's Black/White animated sprites as de-duplicated sheets (`sprites.json` = frame order and timings), menu icons (`dex-icons.png`: #1 to #251), item icons (`items.png`), trainer looks (`trainers.png`: Red, Leaf and 22 trainer classes, 80×80, from `public/`), `game.json` (from `src/data`: species dice, stats, milestones and evolutions, shop items, upgrade tracks, die faces), `kanto.json` (from `src/data`: areas with levels, wild Pokémon and their odds, gyms, legendaries, one-time and common finds, the round mix, unlocks; regions with their starters), the current grass background |

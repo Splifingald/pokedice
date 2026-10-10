@@ -20,6 +20,7 @@
     glow,
     shade,
     canvas,
+    ditherFill,
     bayer,
     sprite,
     size,
@@ -86,6 +87,16 @@
       hp: [1, 1, 0.62],
       secretSeen: true,
       versus: 'new',
+      dayCare: {
+        own: [
+          { dex: 133, name: 'Eevee', lv: 31, from: 22, xp: 0.18 },
+          { dex: 147, name: 'Dratini', lv: 27, from: 18, xp: 0.84 },
+        ],
+        friends: [{ friend: 'Lea', dex: 135, lv: 41 }, { friend: 'Noor', dex: 132, lv: 30 }, null, null],
+        egg: true,
+        next: 702,
+        nextDitto: 1422,
+      },
     },
     league: {
       label: 'League beaten',
@@ -101,6 +112,21 @@
       secretSeen: true,
       versus: 'set',
       offer: 'johto',
+      dayCare: {
+        own: [
+          { dex: 133, name: 'Eevee', lv: 38, from: 22, xp: 0.4 },
+          { dex: 147, name: 'Dratini', lv: 33, from: 18, xp: 0.55 },
+        ],
+        friends: [
+          { friend: 'Lea', dex: 135, lv: 41 },
+          { friend: 'Kai', dex: 59, lv: 50 },
+          { friend: 'Sora', dex: 130, lv: 52 },
+          null,
+        ],
+        egg: true,
+        next: 95,
+        nextDitto: 815,
+      },
     },
   }
   const SAVE = {}
@@ -121,12 +147,19 @@
       offer: null,
       offerSeen: false,
       found: {},
-      // The Day Care: XP earned this stay (1 every 10 min, up to 200) and minutes to the next point.
-      dayCare: [
-        { dex: 133, name: 'Eevee', lv: 22, gain: 2, xp: 200 },
-        { dex: 147, name: 'Dratini', lv: 18, gain: 1, xp: 90, next: 4 },
-      ],
-      eggFree: true,
+      // The Day Care, one for every region: your two (their level now, the level they came in at, the way to the
+      // next level), the friends' Pokémon you invited (nothing changes for the friend), an Egg waiting or not, and
+      // the minutes until the next compatibility check (every 12 h).
+      dayCare: {
+        own: [
+          { dex: 133, name: 'Eevee', lv: 24, from: 22, xp: 0.62 },
+          { dex: 147, name: 'Dratini', lv: 19, from: 18, xp: 0.31 },
+        ],
+        friends: [{ friend: 'Lea', dex: 135, lv: 41 }, null, null, null],
+        egg: false,
+        next: 434,
+        nextDitto: 1154,
+      },
       ...JSON.parse(JSON.stringify(S)),
     })
     TEAM = MONS.map((m, i) => {
@@ -278,6 +311,8 @@
     plains: { pal: 'meadow', pond: true },
     default: { pal: 'meadow', pond: true },
     flowers: { pal: 'meadow', pond: true, flowers: 0.4, fence: true },
+    // The Day Care's yard: the house at the back, a fence, flowers, a pond.
+    daycare: { pal: 'meadow', pond: true, flowers: 0.3, fence: true, daycare: true },
     mountains: { pal: 'meadow', pond: true, peaks: true },
     sky: { pal: 'meadow', pond: true, plateau: true },
     snow_mountains: { pal: 'snow', pond: true, peaks: true },
@@ -454,6 +489,27 @@
       rect(g, bx - 4, by - 9, 8, 9, '#ffbe2e')
       rect(g, bx - 18, by - 11, 6, 4, '#5b8def')
       rect(g, bx + 12, by - 11, 6, 4, '#5b8def')
+    }
+    if (S.daycare) {
+      // The Day Care: a cottage on the hill, orange roof, a round sign with an Egg on it, flower boxes.
+      const bx = Math.round(W * 0.3),
+        by = hill[bx] + 2
+      rect(g, bx - 26, by - 22, 52, 22, '#24304f')
+      rect(g, bx - 25, by - 21, 50, 21, '#fbf3e2')
+      ditherFill(g, bx - 25, by - 6, 50, 6, '#e8d8b8', 0.5)
+      for (let i = 0; i < 9; i++)
+        rect(g, bx - 29 + i, by - 30 + i, 58 - i * 2, 1, i < 1 ? '#24304f' : i < 3 ? '#ffb070' : '#f07a3a')
+      rect(g, bx + 14, by - 36, 5, 8, '#9a5a3a')
+      rect(g, bx - 4, by - 12, 9, 12, '#a0704a')
+      px(g, bx + 3, by - 6, '#ffbe2e')
+      for (const wx of [bx - 19, bx + 10]) {
+        rect(g, wx, by - 16, 9, 7, '#24304f')
+        rect(g, wx + 1, by - 15, 7, 5, '#a9d3ff')
+        rect(g, wx, by - 9, 9, 2, '#ff8fb0')
+      }
+      ellipse(g, bx, by - 27, 4, 4, '#24304f')
+      ellipse(g, bx, by - 27, 3, 3, '#fbfdff')
+      ellipse(g, bx, by - 27, 1, 2, '#9be3a0')
     }
     if (S.fence) {
       // A white picket fence along the meadow.
@@ -1054,8 +1110,18 @@
       const roll = this.r()
       if (this.tired && roll < 0.3) return this.rest()
       // Lapras opens with a song soon after you land (updateSong); after that, songs come now and then.
-      if (!SONG && songs && free.length && t - lastSong > 12 && roll < (this.singer ? 0.3 : 0.06))
+      if (
+        !this.quiet &&
+        !SONG &&
+        songs &&
+        free.length &&
+        t - lastSong > 12 &&
+        roll < (this.singer ? 0.3 : 0.06)
+      )
         return startSong(this, t, mons)
+      // At the Day Care, a Pokémon goes to one it can make an Egg with, more often than not.
+      const mates = this.likes ? free.filter((o) => this.likes.includes(o.uid)) : []
+      if (mates.length && roll < 0.75 && this.visit(this.r.pick(mates), world)) return
       if (free.length && roll < 0.66 && this.visit(this.r.pick(free), world)) return
       if (roll < 0.9) return this.wander(world, mons)
       this.face = -this.face
@@ -1184,7 +1250,8 @@
     a.hopAt(t + 0.05)
     b.hopAt(t + 0.3)
     a.hopAt(t + 0.7)
-    const kind = a.r() < 0.72 ? 'heart' : 'note'
+    const pair = a.likes && a.likes.includes(b.uid)
+    const kind = pair || a.r() < 0.72 ? 'heart' : 'note'
     const x = Math.round((a.x + b.x) / 2),
       y = Math.min(a.head.y, b.head.y) + 2
     emit(kind, x - 3, y, t + 0.1)
@@ -1221,6 +1288,85 @@
         m.state = 'idle'
         m.timer = m.r.range(1.5, 3.5)
       }
+  }
+
+  // ------------------------------------------------------------------ a second scene: the Day Care's yard
+  /**
+   * The same roaming as Home, on another canvas: the Day Care's residents and visitors. Pokémon that can make an Egg
+   * together (`likes`) seek each other out, and their meetings always end in hearts. It keeps its own hearts, notes
+   * and songs, swapped in for its frames, so it never mixes with Home's.
+   */
+  function makeYard(canvasEl, defs) {
+    const yw = sceneOf('daycare', false)
+    const yg = canvasEl.getContext('2d')
+    yg.imageSmoothingEnabled = false
+    const own = { fx: [], song: null, last: -20, songs: 1 }
+    let ymons = defs.map(
+      (d, i) => new Mon({ hp: [1, 1], speed: 12, hop: 2, ...d, quiet: true }, rng(d.dex * 7 + i)),
+    )
+    ymons.forEach((m) => m.place(yw, ymons))
+    let yt = 0,
+      ylast = performance.now(),
+      alive = true,
+      extra = null
+    const swap = (fn) => {
+      const keep = [FX, SONG, lastSong, songs]
+      ;[FX, SONG, lastSong, songs] = [own.fx, own.song, own.last, own.songs]
+      try {
+        fn()
+      } finally {
+        ;[own.fx, own.song, own.last, own.songs] = [FX, SONG, lastSong, songs]
+        ;[FX, SONG, lastSong, songs] = keep
+      }
+    }
+    const drawYard = () => {
+      yg.clearRect(0, 0, W, H)
+      yg.drawImage(yw.cv, 0, 0)
+      yw.dyn(yg, yt)
+      if (extra) extra(yg, yt, 'back')
+      for (const m of [...ymons].sort((a, b) => a.y - b.y)) m.draw(yg, yt, yw)
+      yg.drawImage(yw.fg, 0, 0)
+      if (extra) extra(yg, yt, 'front')
+      drawFx(yg, yt)
+    }
+    const frameY = (now) => {
+      if (!alive) return
+      const dt = Math.min(0.05, (now - ylast) / 1000)
+      ylast = now
+      if (canvasEl.isConnected && canvasEl.offsetParent) {
+        yt += dt
+        swap(() => {
+          for (const m of ymons) m.update(dt, yt, yw, ymons)
+          drawYard()
+        })
+      }
+      requestAnimationFrame(frameY)
+    }
+    requestAnimationFrame(frameY)
+    swap(drawYard)
+    return {
+      world: yw,
+      get t() {
+        return yt
+      },
+      stop() {
+        alive = false
+      },
+      /** Something drawn with the yard (the Egg in its nest): `draw(g, t, layer)`. */
+      overlay(fn) {
+        extra = fn
+        swap(drawYard)
+      },
+      hit(x, y) {
+        return [...ymons].sort((a, b) => b.y - a.y).find((m) => m.hit(x, y))
+      },
+      poke(m) {
+        swap(() => {
+          m.hopT = 0
+          emit('heart', m.head.x + 3, m.head.y - 6, yt)
+        })
+      },
+    }
   }
 
   // ------------------------------------------------------------------ the screen
@@ -1298,7 +1444,8 @@
   function renderAreasBtn() {
     const b = $('#hm-areas')
     const gold = !!SAVE.offer && !SAVE.offerSeen
-    const fresh = K.areas.some((a) => statusOf(a) === 'new') || !!SAVE.offer
+    // A new region stays news until its partner is picked.
+    const fresh = K.areas.some((a) => statusOf(a) === 'new') || (!!SAVE.offer && !SAVE.partner)
     b.classList.toggle('gold', gold)
     b.innerHTML = `<span><img class="px" alt="" src="${MAP}" /><small>${gold ? 'New region' : 'Areas'}</small></span>${gold ? '<i class="spk" aria-hidden="true"></i><i class="spk" aria-hidden="true"></i><i class="spk" aria-hidden="true"></i>' : fresh ? '<i class="dot new" aria-hidden="true">NEW</i>' : ''}`
     b.setAttribute(
@@ -1311,13 +1458,23 @@
     )
   }
 
-  // The Day Care's numbers (src/data/config.json): 2 slots, +1 XP every 10 min up to 200 a stay, Eggs at ₽50.
-  const DC = { slots: 2, per: 1, tick: 10, max: 200, egg: 50 }
-  const dcReady = (d) => d.xp >= DC.max
-  /** Minutes until a resident is full. */
-  const dcLeft = (d) => Math.max(0, ((DC.max - d.xp) / DC.per - 1) * DC.tick + (d.next ?? DC.tick))
-  const dcShort = (m) => (m < 60 ? `${m}m` : `${Math.floor(m / 60)}h`)
-  const dcLong = (m) => (m < 60 ? `${m} min` : `${Math.floor(m / 60)} h${m % 60 ? ` ${m % 60}` : ''}`)
+  // The Day Care's rules (admin settings in the game): one for every region, open from 20 species caught; two of
+  // yours and four friends' Pokémon; +1 XP every 10 min with Lv.100 as the only cap; a compatibility check every 12 h
+  // leaves an Egg when a pair matches; Ditto pairs with everyone but legendaries, on its own slower check (every 24 h);
+  // Egg now skips the wait for ₽200; Eggs hatch shiny 1 time in 100.
+  const DC = {
+    own: 2,
+    friends: 4,
+    per: 1,
+    tick: 10,
+    checkHours: 12,
+    dittoHours: 24,
+    rushPrice: 200,
+    shiny: 0.01,
+    unlock: 20,
+  }
+  const dcTime = (m) =>
+    m < 60 ? `${m} min` : `${Math.floor(m / 60)} h${m % 60 ? ` ${String(m % 60).padStart(2, '0')}` : ''}`
 
   function renderWidgets() {
     renderVersus()
@@ -1342,24 +1499,47 @@
         `Next secret area: ${fi.name}. ${caught.size} of ${n} species caught. Open the areas list.`,
       )
     }
-    const ready = SAVE.dayCare.filter((d) => d && dcReady(d))
-    const dc = $('#hm-daycare')
-    dc.innerHTML = `<span class="hm-w-head"><b>Day Care</b>${ready.length ? `<span class="hm-new">READY</span>` : ''}</span>
-      ${SAVE.dayCare
+    renderDayCareW()
+  }
+  /**
+   * The Day Care widget: your two with their level and the way to the next one, the friends' count and the next
+   * check. With an Egg waiting it turns gold and an Egg shakes in place of the Pokémon. Locked under 20 species.
+   */
+  function renderDayCareW() {
+    const D = SAVE.dayCare,
+      dc = $('#hm-daycare')
+    dc.classList.toggle('gold', !!D.egg && caught.size >= DC.unlock)
+    dc.classList.toggle('locked', caught.size < DC.unlock)
+    if (caught.size < DC.unlock) {
+      dc.innerHTML = `<span class="hm-w-head"><b>Day Care</b><img class="px hm-w-lock" alt="" src="${LOCK}" /></span>
+        <span class="hm-w-title">${caught.size}/${DC.unlock} caught</span><span class="hm-meter"><i style="width:${(caught.size / DC.unlock) * 100}%"></i></span><span class="hm-w-sub">Opens for every region</span>`
+      return dc.setAttribute(
+        'aria-label',
+        `Day Care: opens at ${DC.unlock} Pokémon caught, ${caught.size} so far`,
+      )
+    }
+    if (D.egg) {
+      dc.innerHTML = `<span class="hm-w-head"><b>Day Care</b><span class="hm-new">EGG!</span></span>
+        <span class="hm-dc-egg"><img class="px" alt="" src="assets/front-egg.png" /></span>
+        <span class="hm-w-title">An Egg is waiting!</span><span class="hm-w-sub">Tap to hatch it</span>`
+      return dc.setAttribute('aria-label', 'Day Care: an Egg is waiting. Open the Day Care and hatch it.')
+    }
+    const friends = D.friends.filter(Boolean).length
+    const next = API.dcNext ? API.dcNext() : D.next
+    dc.innerHTML = `<span class="hm-w-head"><b>Day Care</b></span>
+      ${D.own
         .map((d) =>
           d
-            ? `<span class="hm-dc">${dexIco(d.dex)}
-               <span class="hm-dc-mid"><span class="hm-dc-name">${esc(d.name)}${dcReady(d) ? '' : ` <em>Lv.${d.lv}</em>`}</span><span class="hm-meter${dcReady(d) ? ' full' : ''}"><i style="width:${(d.xp / DC.max) * 100}%"></i></span></span>
-               ${dcReady(d) ? '<span class="hm-ready">Ready</span>' : `<span class="hm-dc-time">${dcShort(dcLeft(d))}</span>`}</span>`
+            ? `<span class="hm-dc">${dexIco(d.dex)}<span class="hm-dc-mid"><span class="hm-dc-name">${esc(d.name)} <em>Lv.${d.lv}</em></span><span class="hm-meter"><i style="width:${d.xp * 100}%"></i></span></span></span>`
             : `<span class="hm-dc empty"><span class="ico empty" aria-hidden="true"></span><span class="hm-dc-mid"><span class="hm-dc-name">Free slot</span><span class="hm-w-sub">Leave a Pokémon</span></span></span>`,
         )
-        .join('')}`
-    const words = SAVE.dayCare
-      .map((d) =>
-        !d ? 'one free slot' : dcReady(d) ? `${d.name} is ready` : `${d.name}, full in ${dcLong(dcLeft(d))}`,
-      )
-      .join('. ')
-    dc.setAttribute('aria-label', `Day Care: ${words}. Open the Day Care.`)
+        .join('')}
+      <span class="hm-w-sub">${friends ? `+${plural(friends, "friend's Pokémon", "friends' Pokémon")} · ` : ''}Egg check in ${dcTime(next)}</span>`
+    const words = D.own.map((d) => (d ? `${d.name}, Lv.${d.lv}` : 'one free slot')).join('. ')
+    dc.setAttribute(
+      'aria-label',
+      `Day Care: ${words}. ${plural(friends, "friend's Pokémon", "friends' Pokémon")}. Next Egg check in ${dcTime(next)}. Open the Day Care.`,
+    )
   }
 
   /** Versus joins Home once three Pokémon reach Lv.50: first to set a team, then to fight. */
@@ -1424,7 +1604,7 @@
   })
 
   // ------------------------------------------------------------------ the areas sheet, with the region switcher
-  const SHEET = { q: '', filter: 'all', sort: 'route', view: 'areas', starter: 0 }
+  const SHEET = { q: '', filter: 'all', sort: 'route', view: 'areas' }
   const regionName = (id) => (K.regions.find((r) => r.id === id) || {}).name || ''
   function openSheet(o = {}) {
     if (o.filter) SHEET.filter = o.filter
@@ -1538,7 +1718,6 @@
       .join('')
   }
 
-  const TYPE_COL = { grass: '#34c97a', fire: '#ff7a3d', water: '#3a9be8' }
   function renderRegions() {
     const kanto = K.regions[0],
       next = K.regions.find((r) => r.id === kanto.next)
@@ -1558,19 +1737,21 @@
       `<p class="hm-reg-foot">More regions open one League at a time. Each keeps its own team, Box, bag and gold.</p>`
   }
   function offerCard(r) {
-    const pick = SHEET.starter
-    return `<section class="hm-reg offer" aria-labelledby="hm-offer-h">
-      <span class="hm-reg-row"><span class="hm-st new">NEW REGION</span><span class="hm-reg-stats"><span>${r.areas} areas</span><span>${r.species} new Pokémon</span></span></span>
+    const stats = `<span class="hm-reg-row"><span class="hm-st new">NEW REGION</span><span class="hm-reg-stats"><span>${r.areas} areas</span><span>${r.species} new Pokémon</span></span></span>`
+    // Picked already: the partner, and the way back into the moment (for the preview).
+    if (SAVE.partner)
+      return `<section class="hm-reg offer" aria-labelledby="hm-offer-h">${stats}
+        <h3 id="hm-offer-h">${esc(r.name)}</h3>
+        <p class="hm-reg-partner">${dexIco(SAVE.partner, 'x2')}<span><b>${esc(K.names[SAVE.partner])}</b><small>Your partner in ${esc(r.name)}</small></span></p>
+        <p class="hm-reg-note">Kanto stays as you left it: its team, Box and bag wait here. Switch back any time.</p>
+        <button type="button" class="ui-btn wide" id="hm-enter"><span>See the pick again</span></button>
+      </section>`
+    return `<section class="hm-reg offer" aria-labelledby="hm-offer-h">${stats}
       <h3 id="hm-offer-h">${esc(r.name)}</h3>
-      <p class="hm-reg-pick" id="hm-pick-h">Pick a partner to start with</p>
-      <div class="hm-starters" role="radiogroup" aria-labelledby="hm-pick-h">${r.starters
-        .map((d) => {
-          const ty = K.types[d][0]
-          return `<button type="button" role="radio" aria-checked="${pick === d}" data-starter="${d}">${dexIco(d, 'x2')}<b>${esc(K.names[d])}</b><span class="hm-type" style="--c:${TYPE_COL[ty] || '#8592ad'}">${ty}</span></button>`
-        })
-        .join('')}</div>
+      <p class="hm-reg-balls" aria-hidden="true">${r.starters.map(() => `<img class="px" alt="" src="${BALL3}" />`).join('')}</p>
+      <p class="hm-reg-pick">Three partners are waiting. Enter to meet them and pick one.</p>
       <p class="hm-reg-note">Kanto stays as you left it: its team, Box and bag wait here. Switch back any time.</p>
-      <button type="button" class="ui-btn wide${pick ? ' primary' : ''}" id="hm-start"${pick ? '' : ' disabled'}><span>${pick ? `Start ${esc(r.name)} with ${esc(K.names[pick])}` : 'Pick a partner first'}</span></button>
+      <button type="button" class="ui-btn wide gold" id="hm-enter"><span>Enter ${esc(r.name)}</span></button>
     </section>`
   }
 
@@ -1843,7 +2024,7 @@
     s: '#8592ad',
   }
   const url = (name, scale, pal = PAL) => PX.icon(ICO[name], pal, scale).toDataURL()
-  let BALL, LOCK, LOCK3, PLAY, MAP, COIN, BADGE, BADGE3, TROPHY
+  let BALL, BALL3, LOCK, LOCK3, PLAY, MAP, COIN, BADGE, BADGE3, TROPHY
   // The tab bar's icons, 16×16 in the Daybreak style: navy outline, three tones, one idea each.
   const NAVICO = {
     shop: [
@@ -1986,7 +2167,13 @@
       if (statusOf(pp) === 'new') travel(pp)
       else openSheet({ filter: 'secret' })
     })
-    $('#hm-daycare').addEventListener('click', () => showPage('daycare'))
+    // The Day Care widget opens the Day Care (it never collects in place); with an Egg waiting, the Egg hatches there.
+    $('#hm-daycare').addEventListener('click', () => {
+      if (caught.size < DC.unlock)
+        return toast(`The Day Care opens at ${DC.unlock} Pokémon caught, in every region`)
+      if (API.openDayCare) API.openDayCare({ hatch: !!SAVE.dayCare.egg })
+      else showPage('daycare')
+    })
     $('#hm-versus').addEventListener('click', () => showPage('versus'))
     $$('#hm-nav button').forEach((b) => b.addEventListener('click', () => showPage(b.dataset.tab)))
     $('#hm-trainer').addEventListener('click', () => showPage('trainer'))
@@ -2026,17 +2213,10 @@
     })
     $('#hm-regions').addEventListener('click', (e) => {
       if (e.target.closest('[data-back]')) return setView('areas')
-      const s = e.target.closest('[data-starter]')
-      if (s) {
-        SHEET.starter = Number(s.dataset.starter)
-        renderRegions()
-        $(`[data-starter="${SHEET.starter}"]`).focus({ preventScroll: true })
-        return
-      }
-      if (e.target.closest('#hm-start')) {
-        const r = K.regions.find((x) => x.id === SAVE.offer)
+      // ENTER: the partner pick, full screen (starter.js).
+      if (e.target.closest('#hm-enter')) {
         closeAll()
-        toast(`${r.name} with ${K.names[SHEET.starter]}: next in the UX pass`)
+        if (API.startStarter) API.startStarter(SAVE.offer)
       }
     })
 
@@ -2088,7 +2268,6 @@
     loadState(id)
     buildPokedex()
     SHEET.view = 'areas'
-    SHEET.starter = 0
     $$('#hm-states button').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.state === id)))
     $('#hm-state-note').textContent = STATES[id].note
     renderTop()
@@ -2143,6 +2322,7 @@
       ['assets/kanto.json', 'assets/game.json'].map((u) => fetch(u).then((r) => r.json())),
     )
     BALL = url('ball', 1)
+    BALL3 = url('ball', 3)
     LOCK = url('lock', 2)
     LOCK3 = url('lock', 3)
     PLAY = url('play', 3, { k: '#ffffff', w: '#ffffff' })
@@ -2187,9 +2367,8 @@
     },
     REDUCED,
     DC,
-    dcReady,
-    dcLeft,
-    dcLong,
+    dcTime,
+    makeYard,
     $,
     $$,
     esc,
@@ -2212,6 +2391,8 @@
     renderTop,
     renderNavDots,
     renderWidgets,
+    renderAreasBtn,
+    openRegions: () => openSheet({ view: 'regions' }),
     showPage,
     /** The team changed outside Home (the Day Care): rebuild the scene and the widgets. */
     refreshTeam() {

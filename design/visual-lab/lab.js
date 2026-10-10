@@ -986,6 +986,7 @@
     ['hatch', 'Egg hatching', '#9be3a0'],
     ['mega', 'Mega Evolution', '#c26bf0'],
     ['gmax', 'Gigantamax', '#e0245e'],
+    ['starter', 'Starter pick', '#7ac74c'],
   ]
   const OPT = {
     anim: 'attack',
@@ -995,8 +996,11 @@
     legend: 'mewtwo',
     evo: 'charmeleon',
     baby: 'dratini',
+    shiny: 'no',
     mega: 'charizardx',
     gmax: 'pikachu',
+    starterSet: 'johto',
+    starterPick: '1',
   }
   let player = null
 
@@ -1244,10 +1248,14 @@
       total.classList.toggle('ok', sp.kind === 'catch' && verdict && sp.success)
       total.classList.toggle('ko', busted)
     },
+    /** One chip, or several (an array) that wrap onto new lines on a narrow screen. */
     chip(text) {
       this.dice.hidden = false
       const host = $('.roll .extra', this.dice) || this.dice
-      host.innerHTML = `<span class="ui-chip">${esc(text)}</span>`
+      host.innerHTML = []
+        .concat(text)
+        .map((t) => `<span class="ui-chip">${esc(t)}</span>`)
+        .join('')
     },
     heal() {
       $$('.ui-mon', this.team).forEach((row, i) => {
@@ -1270,9 +1278,10 @@
     if (OPT.anim === 'catch') return M.catch({ ball: OPT.ball, outcome: OPT.outcome })
     if (OPT.anim === 'legend') return M.legend({ legend: OPT.legend })
     if (OPT.anim === 'evolve') return M.evolve({ evo: OPT.evo })
-    if (OPT.anim === 'hatch') return M.hatch({ baby: OPT.baby })
+    if (OPT.anim === 'hatch') return M.hatch({ baby: OPT.baby, shiny: OPT.shiny === 'yes' })
     if (OPT.anim === 'mega') return M.mega({ mega: OPT.mega })
     if (OPT.anim === 'gmax') return M.gmax({ gmax: OPT.gmax })
+    if (OPT.anim === 'starter') return M.starter({ set: OPT.starterSet, pick: Number(OPT.starterPick) })
     return M.center()
   }
 
@@ -1313,15 +1322,31 @@
         ['eevee', 'Eevee → Jolteon · Thunder Stone', '#ffd23a'],
       ])
     else if (OPT.anim === 'hatch')
-      opts.innerHTML = seg('baby', 'HATCHES INTO', [
-        ['dratini', 'Dratini', '#6f8cff'],
-        ['eevee', 'Eevee', '#c8945a'],
-      ])
+      opts.innerHTML =
+        seg('baby', 'HATCHES INTO', [
+          ['dratini', 'Dratini', '#6f8cff'],
+          ['eevee', 'Eevee', '#c8945a'],
+        ]) +
+        seg('shiny', 'SHINY (DAY CARE: 1 IN 100)', [
+          ['no', 'Not shiny'],
+          ['yes', 'Shiny', '#ffe14d'],
+        ])
     else if (OPT.anim === 'mega')
       opts.innerHTML = seg('mega', 'MEGA EVOLUTION', [
         ['charizardx', 'Charizard → Mega Charizard X · +1 Dragon die', '#3ab0ff'],
         ['charizardy', 'Charizard → Mega Charizard Y · +1 Fire die', '#ff8a3d'],
       ])
+    else if (OPT.anim === 'starter')
+      opts.innerHTML =
+        seg('starterSet', 'REGION', [
+          ['johto', 'Johto · a new region opens', '#e8b44a'],
+          ['kanto', 'Kanto · a new game', '#ec3b33'],
+        ]) +
+        seg(
+          'starterPick',
+          'PICKS',
+          ANIM.STARTER_SETS[OPT.starterSet].mons.map((m, i) => [String(i), m.name, TYPE_MOD[m.types[0]]]),
+        )
     else if (OPT.anim === 'gmax')
       opts.innerHTML = seg('gmax', 'GIGANTAMAX', [
         ['pikachu', 'Pikachu · +1 Electric die', '#ffd23a'],
@@ -1378,7 +1403,9 @@
                   ? `Mega Evolution: ${ANIM.MEGAS[OPT.mega].mega}`
                   : OPT.anim === 'gmax'
                     ? `Gigantamax: ${ANIM.GMAXES[OPT.gmax].name}`
-                    : 'Pokémon Center'
+                    : OPT.anim === 'starter'
+                      ? `Starter pick: ${ANIM.STARTER_SETS[OPT.starterSet].region}, ${ANIM.STARTER_SETS[OPT.starterSet].mons[Number(OPT.starterPick)].name}`
+                      : 'Pokémon Center'
     $('#beats').innerHTML =
       `<h3>${esc(name)}</h3><p class="sub">${d.dur.toFixed(1)} s · ${Math.round(d.dur * 60)} frames. Click a beat to jump to it.</p><ol>${d.beats.map(([t, l, txt], i) => `<li data-i="${i}" data-t="${t}" tabindex="0"><span class="ts">${t.toFixed(2)}s</span><span><b>${esc(l)}</b><span>${esc(txt)}</span></span></li>`).join('')}</ol>${RULES_ANIM}`
     $$('#beats li').forEach((li) => {
