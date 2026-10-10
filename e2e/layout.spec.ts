@@ -197,7 +197,13 @@ test('a battle fits a 360×640 phone', async ({ page }) => {
   // Home's CONTINUE starts the area; the encounter plays on /area.
   await page.goto('/home')
   const attack = page.getByRole('button', { name: 'ATTACK', exact: true })
+  const healing = page.getByRole('dialog', { name: 'Healing…' })
   for (let i = 0; i < 150 && !(await attack.isVisible().catch(() => false)); i++) {
+    // The deck may open on a Pokémon Center: its healing plays full screen over the buttons until SKIP.
+    if (await healing.isVisible().catch(() => false)) {
+      await healing.getByRole('button', { name: 'SKIP ▸▸' }).click()
+      continue
+    }
     // Random fights: the lead may faint before the controls show — send in the next one (its pip pulses).
     if (await page.getByText('Choose your next Pokémon').isVisible().catch(() => false))
       await page.getByRole('group', { name: 'Switch Pokémon' }).getByRole('button', { name: /Switch in$/ }).first().click()
