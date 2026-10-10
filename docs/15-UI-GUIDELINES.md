@@ -417,7 +417,7 @@ in view) and the battle history sits beside it from 1024 px.
   Kanto's are the lab's maps, other regions use the same shapes in their own colours), then the **crown**
   (`CrownIcon`) for clearing the region's last area. Unearned ones are grey at 40 % and their label says "not earned
   yet".
-- **Look**: "How other trainers see you…" with Change opening a radio grid of every look, grouped by region. The same
+- **Look**: "How other trainers see you…" with Change opening a radio grid of every look, in one block (no region headings); picking one closes it. The same
   crop (`TrainerLook`) is used wherever a trainer appears.
 - **The menu** under the card: rows with an icon tile, a label and a one-line description (Leaderboard, Versus with
   "0/3 at Lv.50" while locked, Settings, How to play, Type chart, Admin for admins, Cloud backup, Connect). The label

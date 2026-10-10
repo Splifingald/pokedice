@@ -247,44 +247,39 @@ export function TrainerCard() {
             {picking ? t('ui.card.done') : t('ui.settings.change')}
           </PixelButton>
         </div>
-        {picking &&
-          AVATAR_GROUPS.map(({ group, avatars }) => {
-            const name = t(group === 'default' ? 'ui.profile.lookDefault' : `region.${group}`)
-            return (
-              <section key={group} className="flex flex-col gap-1.5">
-                <h4 className="m-0 text-[19px] font-normal leading-none">{name}</h4>
-                <div
-                  role="radiogroup"
-                  aria-label={name}
-                  className="grid grid-cols-[repeat(auto-fill,minmax(56px,1fr))] gap-1.5"
+        {/* Every look in one grid, no region headings; picking one closes it. */}
+        {picking && (
+          <div
+            role="radiogroup"
+            aria-label={t('ui.profile.lookTitle')}
+            className="grid grid-cols-[repeat(auto-fill,minmax(56px,1fr))] gap-1.5"
+          >
+            {AVATAR_GROUPS.flatMap(({ avatars }) => avatars).map((a) => {
+              const label = t(a.labelKey)
+              const on = a.id === look.id
+              return (
+                <button
+                  key={a.id}
+                  type="button"
+                  role="radio"
+                  aria-checked={on}
+                  aria-label={label}
+                  title={label}
+                  onClick={() => {
+                    mutateSave((s) => (s.player ? { ...s, player: { ...s.player, avatar: a.id } } : s))
+                    setPicking(false)
+                  }}
+                  className={cx(
+                    'grid min-h-[60px] place-items-center pt-1',
+                    on ? 'bg-gold-pale shadow-card-gold' : 'bg-paper shadow-ring-line',
+                  )}
                 >
-                  {avatars.map((a) => {
-                    const label = t(a.labelKey)
-                    const on = a.id === look.id
-                    return (
-                      <button
-                        key={a.id}
-                        type="button"
-                        role="radio"
-                        aria-checked={on}
-                        aria-label={label}
-                        title={label}
-                        onClick={() =>
-                          mutateSave((s) => (s.player ? { ...s, player: { ...s.player, avatar: a.id } } : s))
-                        }
-                        className={cx(
-                          'grid min-h-[60px] place-items-center pt-1',
-                          on ? 'bg-gold-pale shadow-card-gold' : 'bg-paper shadow-ring-line',
-                        )}
-                      >
-                        <TrainerLook src={a.src} w={44} h={52} />
-                      </button>
-                    )
-                  })}
-                </div>
-              </section>
-            )
-          })}
+                  <TrainerLook src={a.src} w={44} h={52} />
+                </button>
+              )
+            })}
+          </div>
+        )}
       </section>
     </div>
   )
