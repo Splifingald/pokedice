@@ -3363,7 +3363,6 @@ ui.events.open,Open {name},Ouvrir {name},Abrir {name},{name} öffnen,Apri {name}
 ui.events.teaser,Soon: clear {area},Bientôt : termine {area},Pronto: completa {area},Bald: {area} abschließen,Presto: completa {area},Em breve: conclui {area},Em breve: conclua {area},近日：{area}をクリア,곧: {area} 클리어,即将开放：通关{area}
 ui.events.teaserLabel,Special events: the first one opens when you clear {area},Événements spéciaux : le premier s'ouvre quand tu termines {area},Eventos especiales: el primero se abre al completar {area},"Sonderevents: Das erste öffnet sich, wenn du {area} abschließt",Eventi speciali: il primo si apre quando completi {area},Eventos especiais: o primeiro abre quando concluíres {area},Eventos especiais: o primeiro abre quando você concluir {area},スペシャルイベント：{area}をクリアすると最初のイベントが始まります,스페셜 이벤트: {area}을(를) 클리어하면 첫 이벤트가 열립니다,特别活动：通关{area}后开放第一个活动
 ui.events.building,{name}: coming soon.,{name} : bientôt.,{name}: próximamente.,{name}: kommt bald.,{name}: in arrivo.,{name}: em breve.,{name}: em breve.,{name}：近日公開,{name}: 준비 중,{name}：敬请期待
-ui.events.unlocked,New event: {name},Nouvel événement : {name},Nuevo evento: {name},Neues Event: {name},Nuovo evento: {name},Novo evento: {name},Novo evento: {name},新イベント：{name},새 이벤트: {name},新活动：{name}
 ui.events.newEvent,NEW EVENT,NOUVEL ÉVÉNEMENT,NUEVO EVENTO,NEUES EVENT,NUOVO EVENTO,NOVO EVENTO,NOVO EVENTO,新イベント,새 이벤트,新活动
 ui.events.later,Later,Plus tard,Más tarde,Später,Più tardi,Mais tarde,Depois,あとで,나중에,稍后
 ui.events.go,Let's go!,C'est parti !,¡Vamos!,Los geht's!,Andiamo!,Vamos!,Vamos lá!,行ってみよう！,가자!,出发！

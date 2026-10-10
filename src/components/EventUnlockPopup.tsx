@@ -30,7 +30,7 @@ export function EventUnlockPopup() {
     navigate(`/events/${due}`)
   }
   return (
-    <Modal open={open} onClose={markEventsSeen} label={t('ui.events.unlocked', { name })} className="max-w-md">
+    <Modal open={open} onClose={markEventsSeen} title={name} className="max-w-md">
       <div className="flex flex-col gap-3">
         <EventPicture id={due} data={data} className="-mx-4 h-[124px] shadow-[0_3px_0_rgb(var(--c-edge)),0_-2px_0_rgb(var(--c-edge))]">
           <span className="absolute left-2.5 top-2.5 inline-flex items-center gap-1 bg-gold px-1.5 pb-0.5 pt-px font-pixel-sm text-[14px] tracking-[0.08em] text-ink shadow-ring-line">
@@ -38,7 +38,6 @@ export function EventUnlockPopup() {
             {t('ui.events.newEvent')}
           </span>
         </EventPicture>
-        <h2 className="m-0 text-[28px] font-normal leading-none">{name}</h2>
         <EventRules id={due} data={data} />
         <div className="grid grid-cols-[1fr_1.5fr] gap-2.5 pt-1">
           <PixelButton onClick={markEventsSeen}>{t('ui.events.later')}</PixelButton>
