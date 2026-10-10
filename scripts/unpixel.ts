@@ -12,8 +12,10 @@
  *
  * <in> is a PNG or a folder of PNGs (convert JPG/WebP first); [out] defaults to <in>/out. Options:
  *   --px <n>      cell size in source pixels, when auto-detection guesses wrong (e.g. --px 32 for a 64×64 sprite)
- *   --size <WxH>  exactly this size, cropping or repeating the edge pixels — evens out the pixel or two by which
- *                 a batch differs (e.g. --size 400x400 for Gemini's 2048×2048 images, drawn on a ~400 px grid)
+ *   --width <n>   exactly this wide, and as tall as the source's shape gives (400 → 400×400 for a square picture),
+ *                 cropping or repeating the edge pixels — evens out the pixel or two by which a batch differs
+ *                 (Gemini's 2048×2048 images are drawn on a ~400 px grid). The log flags a grid more than 2 % off.
+ *   --size <WxH>  the same with both sides given
  *   --merge <n>   colour distance under which shades merge into one (default 16; 0 keeps every shade)
  *   --bg <mode>   keep (default) | auto | #rrggbb — make a flat background transparent: auto takes the border's
  *                 colour, only if (nearly) the whole border is that colour; for sprites, not scenes
@@ -316,7 +318,7 @@ export function clearBackground(img: Image, mode: string, tolerance = 40): boole
   return true
 }
 
-export type Options = { px?: number; merge: number; bg: string; size?: [number, number] }
+export type Options = { px?: number; merge: number; bg: string; size?: [number, number]; width?: number }
 
 /**
  * Brings the image to exactly `w`×`h`, centred: extra rows or columns are cropped, missing ones repeat the edge. Meant
@@ -342,16 +344,19 @@ export function fitTo(img: Image, w: number, h: number): Image {
 export function unpixel(
   img: Image,
   opts: Options,
-): { out: Image; cell: number; colours: number; cleared: boolean } {
+): { out: Image; grid: [number, number]; cell: number; colours: number; cleared: boolean } {
   const cell = opts.px ?? detectCellSize(img)
   const grid = sampleGrid(img, cutLines(img, 'x', cell), cutLines(img, 'y', cell))
-  const out = opts.size ? fitTo(grid, ...opts.size) : grid
+  // --width keeps the source's shape: 400 wide gives 400×400 for a square picture, 400×267 for a 3:2 one.
+  const size: [number, number] | undefined =
+    opts.size ?? (opts.width ? [opts.width, Math.round((opts.width * img.height) / img.width)] : undefined)
+  const out = size ? fitTo(grid, ...size) : grid
   const cleared = opts.bg !== 'keep' && clearBackground(out, opts.bg)
   let colours = mergeShades(out, opts.merge)
   // 256 colours fit an indexed PNG, a third the size of a full-colour one: fold the closest shades a bit further.
   for (let t = opts.merge + 4; opts.merge > 0 && colours > 256 && t <= 48; t += 4)
     colours = mergeShades(out, t)
-  return { out, cell, colours, cleared }
+  return { out, grid: [grid.width, grid.height], cell, colours, cleared }
 }
 
 const CRC = Array.from({ length: 256 }, (_, n) => {
@@ -432,12 +437,13 @@ function main() {
     merge: Number(flag('merge') ?? 16),
     bg: flag('bg') ?? 'keep',
     size: size?.length === 2 && size.every((n) => n > 0) ? [size[0]!, size[1]!] : undefined,
+    width: Number(flag('width')) || undefined,
   }
   const preview = Number(flag('preview') ?? 0)
   const [input, output] = args
   if (!input) {
     console.error(
-      'usage: pnpm unpixel <image.png | folder> [out folder] [--px n] [--size WxH] [--merge n] [--bg auto|keep|#rrggbb] [--preview n]',
+      'usage: pnpm unpixel <image.png | folder> [out folder] [--px n] [--width n | --size WxH] [--merge n] [--bg auto|keep|#rrggbb] [--preview n]',
     )
     process.exit(1)
   }
@@ -449,21 +455,35 @@ function main() {
     : [input]
   const outDir = output ?? path.join(isDir ? input : path.dirname(input), 'out')
   mkdirSync(outDir, { recursive: true })
+  let failed = 0
   for (const file of files) {
-    const src = PNG.sync.read(readFileSync(file))
-    const { out, cell, colours, cleared } = unpixel(
-      { width: src.width, height: src.height, data: src.data },
-      opts,
-    )
-    const dest = path.join(outDir, path.basename(file))
-    writePng(dest, out)
-    if (preview > 1) writePng(dest.replace(/\.png$/i, `@${preview}x.png`), out, preview)
-    const kb = (n: number) => `${(n / 1024).toFixed(n < 10240 ? 1 : 0)} KB`
-    console.log(
-      `${path.basename(file)}: ${src.width}×${src.height} → ${out.width}×${out.height} (cell ${cell.toFixed(2)} px, ${colours} colours${cleared ? ', background cleared' : ''}) ` +
-        `${kb(statSync(file).size)} → ${kb(statSync(dest).size)}`,
-    )
+    try {
+      const src = PNG.sync.read(readFileSync(file))
+      const { out, grid, cell, colours, cleared } = unpixel(
+        { width: src.width, height: src.height, data: src.data },
+        opts,
+      )
+      const dest = path.join(outDir, path.basename(file))
+      writePng(dest, out)
+      if (preview > 1) writePng(dest.replace(/\.png$/i, `@${preview}x.png`), out, preview)
+      const kb = (n: number) => `${(n / 1024).toFixed(n < 10240 ? 1 : 0)} KB`
+      // Fitting is for a pixel or two: a grid much bigger or smaller than the target means the art is drawn at
+      // another size, or the grid was misread, and the fit crops or stretches the picture's edges.
+      const off = Math.max(
+        Math.abs(grid[0] - out.width) / out.width,
+        Math.abs(grid[1] - out.height) / out.height,
+      )
+      console.log(
+        `${path.basename(file)}: ${src.width}×${src.height} → ${out.width}×${out.height} (grid ${grid.join('×')}, cell ${cell.toFixed(2)} px, ${colours} colours${cleared ? ', background cleared' : ''}) ` +
+          `${kb(statSync(file).size)} → ${kb(statSync(dest).size)}` +
+          (off > 0.02 ? `  CHECK: the grid is ${Math.round(off * 100)}% off the target size` : ''),
+      )
+    } catch (e) {
+      failed++
+      console.error(`${path.basename(file)}: FAILED, ${(e as Error).message}`)
+    }
   }
+  if (failed) process.exitCode = 1
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) main()
