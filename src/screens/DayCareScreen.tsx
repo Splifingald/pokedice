@@ -716,7 +716,9 @@ export function DayCareScreen() {
   const promptSignIn = auth === 'signed_out' && !offline
 
   return (
-    <div className="flex flex-col gap-3 md:gap-4 lg:grid lg:grid-cols-[minmax(0,460px)_minmax(0,1fr)] lg:items-start lg:gap-5">
+    // Home's grid: on wide screens the yard takes the room it can at its own shape, the Egg card or the Egg-now bar
+    // under it standing where CONTINUE stands on Home, and the slots beside it.
+    <div className="flex flex-col gap-3 md:gap-4 lg:grid lg:grid-cols-[minmax(320px,min(calc((100dvh-184px)*288/276),58%))_minmax(0,1fr)] lg:items-start lg:gap-5">
       <section className="flex flex-col gap-3">
         <div className="-mx-3 -mt-4 overflow-hidden shadow-ledge md:pixel-panel md:m-0 md:p-0 md:shadow-none">
           <YardStage members={yard} egg={!!dc.egg} onHatch={() => show(hatchDayCareEgg())}>
