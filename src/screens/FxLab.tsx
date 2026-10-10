@@ -20,7 +20,8 @@ import { labColors, starterTimeline } from '@/fx/timelines/starter'
 interface Preset {
   name: string
   /** [dex, back, shiny] sprites to load first. */
-  sprites: [number, boolean][]
+  /** Dex, back view, and shiny. */
+  sprites: [number, boolean, boolean?][]
   item?: string
   make: (o: Opts) => Timeline<unknown>
 }
@@ -122,6 +123,11 @@ const PRESETS: Preset[] = [
   },
   { name: 'Egg hatching (Dratini)', sprites: [[147, false]], make: () => hatchTimeline({ baby: foe(147) }) },
   {
+    name: 'Egg hatching, shiny (Eevee)',
+    sprites: [[133, false, true]],
+    make: () => hatchTimeline({ baby: spriteKey(133, false, true), shiny: true }),
+  },
+  {
     name: 'Starter choice (Johto lab)',
     sprites: [
       [152, false],
@@ -221,7 +227,7 @@ export function FxLab() {
   const ready = useMemo(
     () =>
       Promise.all([
-        ...preset.sprites.map(([dex, back]) => loadSprite(dex, back)),
+        ...preset.sprites.map(([dex, back, shiny]) => loadSprite(dex, back, shiny)),
         ...(preset.item ? [loadItemSprite(preset.item)] : []),
       ]),
     [preset],

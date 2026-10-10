@@ -10,7 +10,7 @@ import { useInFight } from '@/store/hooks'
 import { CloudSyncButton } from './CloudSyncButton'
 import { PlayerMenu } from './PlayerMenu'
 import { cx } from '@/theme/util'
-import { useCountUp } from './GoldPill'
+import { useCountUp, useGoldBump } from './GoldPill'
 import { EnergyPill } from './EnergyPill'
 import { PixelIcon, type IconName } from './icons'
 
@@ -126,9 +126,11 @@ function GoldButton() {
   const gold = useGame((s) => s.save?.gold ?? 0)
   const inFight = useInFight()
   const shown = useCountUp(gold)
+  const bump = useGoldBump()
   const text = shown.toLocaleString(getLang())
   return (
     <Link
+      key={bump}
       to={inFight ? '#' : '/shop'}
       onClick={(e) => inFight && e.preventDefault()}
       aria-disabled={inFight || undefined}
@@ -136,6 +138,7 @@ function GoldButton() {
       className={cx(
         'pixel-corners inline-flex min-h-[44px] light-scope shrink-0 items-center gap-1.5 bg-night pl-2.5 pr-1 text-[19px] leading-none text-gold-light md:min-h-[40px]',
         inFight && 'pointer-events-none opacity-60',
+        bump > 0 && 'gold-bump',
       )}
     >
       <PixelIcon name="coin" size={16} />

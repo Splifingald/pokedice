@@ -373,3 +373,18 @@
     animation: none;
   }
 }
+
+/* The top bar's money pill when ₽ came in out of sight (a hatching): one hop, in steps. */
+@keyframes gold-bump {
+  40% {
+    transform: translateY(-3px) scale(1.06);
+  }
+}
+.gold-bump {
+  animation: gold-bump 320ms steps(4);
+}
+@media (prefers-reduced-motion: reduce) {
+  .gold-bump {
+    animation: none;
+  }
+}

@@ -27,6 +27,7 @@ import { TypeBadge, TypeSwatch } from '@/components/TypeBadge'
 import { soundOn } from '@/save/storage'
 import { pushToast, setSettings, useGame } from '@/store/game'
 import { BattleBits } from './kitchen/BattleBits'
+import { DayCareBits } from './kitchen/DayCareBits'
 import { PartnerBits } from './kitchen/PartnerBits'
 import { BadgeIcon, CrownIcon } from '@/components/BadgeIcon'
 import { BoardRow } from '@/components/BoardRow'
@@ -489,6 +490,10 @@ export function KitchenSink() {
 
       <Section title="PartnerMoment: the lab (new game, new region)">
         <PartnerBits />
+      </Section>
+
+      <Section title="Day Care: Egg, hearts, tags, slot cards, empty slots, Egg now, the Egg card">
+        <DayCareBits />
       </Section>
 
       <Section title="StatusIcons · PixelIcon">

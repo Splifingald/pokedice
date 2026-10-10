@@ -18,8 +18,15 @@ function save(theme?: 'light' | 'dark' | 'auto'): SaveData {
     ...base,
     box: [...base.box, ...extra],
     team: [base.team[0]!, extra[0]!.id],
-    pokedex: [...base.pokedex, 25, 74],
+    // Twenty species open the Day Care: one of yours, a friend's Ditto (a pair), and short of ₽ for Egg now.
+    pokedex: [...new Set([...base.pokedex, 25, 74, ...Array.from({ length: 20 }, (_, i) => i + 1)])],
     settings: { ...base.settings, ...JSON.parse(FAST), theme },
+    dayCare: {
+      residents: [{ inst: createInstance(133, 24, data, 'th-dc', Date.now()), since: Date.now(), region: 'kanto' }],
+      guests: [{ owner: 'u-lea', ownerName: 'Lea', ownerAvatar: 'red', inst: 'g-1', dex: 132, level: 30, addedAt: 0 }],
+      eggClaimed: true,
+      visited: true,
+    },
   }
 }
 
@@ -66,6 +73,7 @@ for (const route of [
   '/friends',
   '/settings',
   '/help',
+  '/daycare',
 ]) {
   test(`dark ${route}: every text keeps its contrast`, async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 })

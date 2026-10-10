@@ -27,6 +27,11 @@ export interface MonDef {
   /** The sprite's art size, in art pixels. */
   w: number
   h: number
+  /**
+   * The ones it could make an Egg with (the Day Care's yard, by uid): most of its visits go to them, and their
+   * meetings always end in hearts.
+   */
+  likes?: readonly string[]
 }
 
 type State = 'idle' | 'walk' | 'wait' | 'meet' | 'sing' | 'rest'
@@ -296,10 +301,13 @@ export class Herd {
   private readonly r: Rng
   /** Stand still: no roaming, no songs (reduced motion). */
   calm: boolean
+  /** Nobody sings (the Day Care's yard: it's about the pairs). */
+  readonly quiet: boolean
 
-  constructor(world: World, defs: MonDef[], seed: number, calm: boolean) {
+  constructor(world: World, defs: MonDef[], seed: number, calm: boolean, quiet = false) {
     this.world = world
     this.calm = calm
+    this.quiet = quiet
     this.r = rng(seed)
     this.mons = defs.map((d, i) => new Mon(d, rng(d.dex * 13 + seed + i), world))
     const singer = [...this.mons].sort((a, b) => singRank(a) - singRank(b))[0]
@@ -332,7 +340,9 @@ export class Herd {
     a.hopAt(t + 0.05)
     b.hopAt(t + 0.3)
     a.hopAt(t + 0.7)
-    const kind = a.r() < 0.72 ? 'heart' : 'note'
+    // A pair that could make an Egg always sends hearts.
+    const pair = a.def.likes?.includes(b.def.uid)
+    const kind = pair || a.r() < 0.72 ? 'heart' : 'note'
     const x = Math.round((a.x + b.x) / 2)
     const y = Math.min(a.head.y, b.head.y) + 2
     this.emit(kind, x - 3, y, t + 0.1)
@@ -357,6 +367,7 @@ export class Herd {
   }
 
   private updateSong() {
+    if (this.quiet) return
     const t = this.t
     if (!this.songs && !this.song && t > 3.5 && !this.calm && this.mons.length > 1) {
       // The first song comes early: the singer stops what it is doing (unless it is with a friend) and starts.
@@ -381,6 +392,7 @@ export class Herd {
     if (m.tired && roll < 0.3) return m.rest()
     // The singer opens with a song soon after you land; after that, songs come now and then.
     if (
+      !this.quiet &&
       !this.song &&
       this.songs &&
       free.length &&
@@ -388,6 +400,9 @@ export class Herd {
       roll < (m.singer ? 0.3 : 0.06)
     )
       return this.startSong(m)
+    // At the Day Care, a Pokémon goes to one it can make an Egg with, more often than not.
+    const mates = m.def.likes ? free.filter((o) => m.def.likes!.includes(o.def.uid)) : []
+    if (mates.length && roll < 0.75 && m.visit(m.r.pick(mates), this.world)) return
     if (free.length && roll < 0.66 && m.visit(m.r.pick(free), this.world)) return
     if (roll < 0.9) return m.wander(this.world, this.mons)
     m.face = m.face === 1 ? -1 : 1

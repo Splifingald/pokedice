@@ -7,6 +7,7 @@ import {
   bayer,
   canvas,
   clamp,
+  ditherFill,
   ellipse,
   ellipseLine,
   glow,
@@ -151,6 +152,8 @@ interface SceneSpec {
   fence?: boolean
   peaks?: boolean
   plateau?: boolean
+  /** The Day Care's cottage on the hill (its yard, docs/15). */
+  daycare?: boolean
   coast?: boolean
   palms?: boolean
   bridge?: boolean
@@ -168,6 +171,8 @@ const SCENES: Record<string, SceneSpec> = {
   plains: { pal: 'meadow', pond: true },
   default: { pal: 'meadow', pond: true },
   flowers: { pal: 'meadow', pond: true, flowers: 0.4, fence: true },
+  // The Day Care's yard: the cottage at the back, a fence, flowers, a pond.
+  daycare: { pal: 'meadow', pond: true, flowers: 0.3, fence: true, daycare: true },
   mountains: { pal: 'meadow', pond: true, peaks: true },
   sky: { pal: 'meadow', pond: true, plateau: true },
   snow_mountains: { pal: 'snow', pond: true, peaks: true },
@@ -384,6 +389,27 @@ function paintOutdoor(S: SceneSpec): World {
     rect(g, bx - 4, by - 9, 8, 9, '#ffbe2e')
     rect(g, bx - 18, by - 11, 6, 4, '#5b8def')
     rect(g, bx + 12, by - 11, 6, 4, '#5b8def')
+  }
+  if (S.daycare) {
+    // The Day Care: a cottage on the hill, orange roof and chimney, a round sign with an Egg on it, flower boxes.
+    const bx = Math.round(W * 0.3)
+    const by = hill[bx]! + 2
+    rect(g, bx - 26, by - 22, 52, 22, '#24304f')
+    rect(g, bx - 25, by - 21, 50, 21, '#fbf3e2')
+    ditherFill(g, bx - 25, by - 6, 50, 6, '#e8d8b8', 0.5)
+    for (let i = 0; i < 9; i++)
+      rect(g, bx - 29 + i, by - 30 + i, 58 - i * 2, 1, i < 1 ? '#24304f' : i < 3 ? '#ffb070' : '#f07a3a')
+    rect(g, bx + 14, by - 36, 5, 8, '#9a5a3a')
+    rect(g, bx - 4, by - 12, 9, 12, '#a0704a')
+    px(g, bx + 3, by - 6, '#ffbe2e')
+    for (const wx of [bx - 19, bx + 10]) {
+      rect(g, wx, by - 16, 9, 7, '#24304f')
+      rect(g, wx + 1, by - 15, 7, 5, '#a9d3ff')
+      rect(g, wx, by - 9, 9, 2, '#ff8fb0')
+    }
+    ellipse(g, bx, by - 27, 4, 4, '#24304f')
+    ellipse(g, bx, by - 27, 3, 3, '#fbfdff')
+    ellipse(g, bx, by - 27, 1, 2, '#9be3a0')
   }
   if (S.fence) {
     // A white picket fence along the meadow.
@@ -734,6 +760,9 @@ export function sceneKeyOf(bannerUrl: string | null | undefined): { key: string;
 }
 
 const worlds = new Map<string, World>()
+
+/** The Day Care's yard (docs/15): the same roaming world as an area's, with the cottage on the hill. */
+export const dayCareWorld = () => sceneOf('daycare.png')
 
 /** The scene of an area, drawn once and kept. */
 export function sceneOf(bannerUrl: string | null | undefined): World {

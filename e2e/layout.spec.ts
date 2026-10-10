@@ -31,10 +31,17 @@ function midGameSave(): SaveData {
     ...base,
     box: [...base.box, ...extra],
     team: [base.team[0]!, extra[0]!.id, extra[1]!.id],
-    pokedex: [...new Set([...base.pokedex, ...extra.map((p) => p.dex)])],
+    // Twenty species open the Day Care, which holds one of yours and a friend's Ditto.
+    pokedex: [...new Set([...base.pokedex, ...extra.map((p) => p.dex), ...Array.from({ length: 20 }, (_, i) => i + 1)])],
     inventory: { potion: 4, 'poke-ball': 8, 'great-ball': 2 },
     areaProgress,
     currentAreaId: chain[6]!.id,
+    dayCare: {
+      residents: [{ inst: mk(133, 24), since: Date.now() - 3_600_000, region: 'kanto' }],
+      guests: [{ owner: 'u-lea', ownerName: 'Lea', ownerAvatar: 'red', inst: 'g-1', dex: 132, level: 30, addedAt: 0 }],
+      eggClaimed: true,
+      visited: true,
+    },
   }
 }
 
@@ -74,7 +81,7 @@ function nonJerseyText(page: Page) {
   )
 }
 
-const ROUTES = ['/home', '/team', '/shop', '/upgrades', '/pokedex', '/leaderboard', '/friends', '/settings']
+const ROUTES = ['/home', '/team', '/shop', '/upgrades', '/pokedex', '/leaderboard', '/friends', '/settings', '/daycare']
 const SIZES = [
   { width: 360, height: 640, phone: true },
   { width: 375, height: 812, phone: true },

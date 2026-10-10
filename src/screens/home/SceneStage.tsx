@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react'
 import { instanceMaxHp, type Area, type PokemonInstance } from '@/engine'
 import { useT } from '@/i18n/react'
 import { HpBar } from '@/components/HpBar'
@@ -6,7 +6,7 @@ import { LevelTag } from '@/components/Chip'
 import { placeSprite, stageSprite, type StageSprite } from '@/fx/sprites'
 import { useMotion } from '@/lib/motion'
 import { useGame } from '@/store/game'
-import { clamp } from '@/fx/pixel'
+import { clamp, type G } from '@/fx/pixel'
 import { artPlacement, homeWindow } from '@/fx/areaArt'
 import { AreaArt } from '@/components/AreaArt'
 import { H, W, worldOf } from './scene'
@@ -87,71 +87,8 @@ export function SceneStage({
     herd.calm = calm
   }, [herd, calm])
 
-  // The scenery itself, drawn once: the area's drawn scene, or the stand-in under its picture.
-  useEffect(() => {
-    const g = still.current?.getContext('2d')
-    if (!g) return
-    g.imageSmoothingEnabled = false
-    g.clearRect(0, 0, W, H)
-    g.drawImage(herd.world.cv, 0, 0)
-  }, [herd])
-
-  // The loop: update the herd, draw both canvases, move the sprites. Paused while the scene is off screen.
-  useEffect(() => {
-    const bg = back.current?.getContext('2d')
-    const fg = front.current?.getContext('2d')
-    if (!bg || !fg) return
-    bg.imageSmoothingEnabled = false
-    fg.imageSmoothingEnabled = false
-    let raf = 0
-    let last = performance.now()
-    let visible = true
-    const place = () => {
-      herd.mons.forEach((m, i) => {
-        const el = imgs.current[i]
-        const s = members[i]?.sprite
-        if (!el || !s) return
-        const p = herd.pose(m)
-        const box = placeSprite(s, p.x, p.y - p.lift)
-        el.style.left = `${(box.left / W) * 100}%`
-        el.style.top = `${(box.top / H) * 100}%`
-        el.style.width = `${(box.w / W) * 100}%`
-        el.style.height = `${(box.h / H) * 100}%`
-        el.style.zIndex = String(10 + p.z)
-        el.style.transform = p.flip ? 'scaleX(-1)' : ''
-        // A swimmer's lower half is under water: hide what lies below the waterline (y − 7).
-        const under = p.swim ? clamp((7 - p.lift + s.below * s.k) / box.h, 0, 1) : 0
-        el.style.clipPath = under > 0 ? `inset(0 0 ${under * 100}% 0)` : ''
-      })
-    }
-    const draw = () => {
-      bg.clearRect(0, 0, W, H)
-      herd.drawBack(bg)
-      fg.clearRect(0, 0, W, H)
-      herd.drawFront(fg)
-      place()
-    }
-    const frame = (now: number) => {
-      const dt = Math.min(0.05, (now - last) / 1000)
-      last = now
-      if (visible) {
-        herd.update(dt)
-        draw()
-      }
-      raf = requestAnimationFrame(frame)
-    }
-    draw()
-    raf = requestAnimationFrame(frame)
-    const io =
-      typeof IntersectionObserver !== 'undefined' && back.current
-        ? new IntersectionObserver((es) => (visible = !!es[0]?.isIntersecting))
-        : null
-    if (io && back.current) io.observe(back.current)
-    return () => {
-      cancelAnimationFrame(raf)
-      io?.disconnect()
-    }
-  }, [herd, members])
+  const sprites = useMemo(() => members.map((m) => m.sprite), [members])
+  useHerdLoop(herd, sprites, { still, back, front, imgs })
 
   // The card hides itself after a moment.
   useEffect(() => {
@@ -280,4 +217,92 @@ export function SceneStage({
       </ul>
     </div>
   )
+}
+
+/** Something drawn with the herd, under the sprites (`back`) or over them (`front`): the Day Care's nest. */
+export type HerdOverlay = (g: G, t: number, layer: 'back' | 'front') => void
+
+/**
+ * A herd on a stage: the scenery drawn once on `still`, then every frame the herd moves, both canvases are drawn and
+ * the sprites (the DOM <img>s in `imgs`, in the herd's order) are placed. Paused while the stage is off screen.
+ */
+export function useHerdLoop(
+  herd: Herd,
+  sprites: StageSprite[],
+  refs: {
+    still: RefObject<HTMLCanvasElement>
+    back: RefObject<HTMLCanvasElement>
+    front: RefObject<HTMLCanvasElement>
+    imgs: RefObject<(HTMLImageElement | null)[]>
+  },
+  overlay?: HerdOverlay,
+) {
+  const { still, back, front, imgs } = refs
+  // The scenery itself, drawn once: the area's drawn scene, or the stand-in under its picture.
+  useEffect(() => {
+    const g = still.current?.getContext('2d')
+    if (!g) return
+    g.imageSmoothingEnabled = false
+    g.clearRect(0, 0, W, H)
+    g.drawImage(herd.world.cv, 0, 0)
+  }, [herd, still])
+
+  // The loop: update the herd, draw both canvases, move the sprites. Paused while the scene is off screen.
+  useEffect(() => {
+    const bg = back.current?.getContext('2d')
+    const fg = front.current?.getContext('2d')
+    if (!bg || !fg) return
+    bg.imageSmoothingEnabled = false
+    fg.imageSmoothingEnabled = false
+    let raf = 0
+    let last = performance.now()
+    let visible = true
+    const place = () => {
+      herd.mons.forEach((m, i) => {
+        const el = imgs.current?.[i]
+        const s = sprites[i]
+        if (!el || !s) return
+        const p = herd.pose(m)
+        const box = placeSprite(s, p.x, p.y - p.lift)
+        el.style.left = `${(box.left / W) * 100}%`
+        el.style.top = `${(box.top / H) * 100}%`
+        el.style.width = `${(box.w / W) * 100}%`
+        el.style.height = `${(box.h / H) * 100}%`
+        el.style.zIndex = String(10 + p.z)
+        el.style.transform = p.flip ? 'scaleX(-1)' : ''
+        // A swimmer's lower half is under water: hide what lies below the waterline (y − 7).
+        const under = p.swim ? clamp((7 - p.lift + s.below * s.k) / box.h, 0, 1) : 0
+        el.style.clipPath = under > 0 ? `inset(0 0 ${under * 100}% 0)` : ''
+      })
+    }
+    const draw = () => {
+      bg.clearRect(0, 0, W, H)
+      herd.drawBack(bg)
+      overlay?.(bg, herd.t, 'back')
+      fg.clearRect(0, 0, W, H)
+      herd.drawFront(fg)
+      overlay?.(fg, herd.t, 'front')
+      place()
+    }
+    const frame = (now: number) => {
+      const dt = Math.min(0.05, (now - last) / 1000)
+      last = now
+      if (visible) {
+        herd.update(dt)
+        draw()
+      }
+      raf = requestAnimationFrame(frame)
+    }
+    draw()
+    raf = requestAnimationFrame(frame)
+    const io =
+      typeof IntersectionObserver !== 'undefined' && back.current
+        ? new IntersectionObserver((es) => (visible = !!es[0]?.isIntersecting))
+        : null
+    if (io && back.current) io.observe(back.current)
+    return () => {
+      cancelAnimationFrame(raf)
+      io?.disconnect()
+    }
+  }, [herd, sprites, overlay, back, front, imgs])
 }

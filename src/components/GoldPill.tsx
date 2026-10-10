@@ -48,3 +48,29 @@ export function GoldPill({ amount, className }: { amount: number; className?: st
     </span>
   )
 }
+
+let pendingBump = false
+const bumpers = new Set<() => void>()
+
+/**
+ * The gold just went up somewhere the top bar couldn't show it (a hatching, full screen): the pill bumps now if it is
+ * on screen, else as soon as it is back.
+ */
+export function bumpGold() {
+  if (bumpers.size) bumpers.forEach((f) => f())
+  else pendingBump = true
+}
+
+/** A key that changes on every bump: put it on the element that plays `.gold-bump`. */
+export function useGoldBump(): number {
+  const [n, setN] = useState(() => (pendingBump ? 1 : 0))
+  useEffect(() => {
+    pendingBump = false
+    const f = () => setN((x) => x + 1)
+    bumpers.add(f)
+    return () => {
+      bumpers.delete(f)
+    }
+  }, [])
+  return n
+}

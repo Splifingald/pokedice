@@ -358,18 +358,39 @@ in view) and the battle history sits beside it from 1024 px.
 
 ## 15. Day Care and Eggs
 
-- **Residents** are cards: the animated sprite, the name (READY in green once the stay is full), "Lv.20 → Lv.22",
-  the stay's XP bar (blue, green when full) and one muted line: "18 of 200 XP · +1 XP in 8 min · full in 30 h 18".
-  TAKE BACK is the card's own button (red once it is ready); what happened is said in a toast (XP and levels gained,
-  back in the team or in the Box).
-- **An empty slot** is a dashed button with a blue +: "Leave a Pokémon / From your team or your Box". It opens a
-  sheet with a search: the team first (TEAM tag), then the Box, lowest level first; a Pokémon that can't stay is
-  greyed with the reason (your last team member, still a fossil).
-- **The Egg card**: gold when the free Egg waits ("1 FREE" by the heading), cream otherwise; two facts as small tags
-  (hatches at Lv.N, how many species you're missing and their odds, from `eggOdds`), and one button: Take the Egg,
-  Buy · ₽50, or "Need ₽x more" (focusable, explains in a toast).
-- **Hatching** is full screen (`useHoldFullscreen`): the hatching timeline, the message box, Skip; then what hatched
-  (NEW when it's new to the Pokédex), where it went, Done and Another · ₽50 when you can afford one.
+One Day Care for every region (docs/15-DAYCARE-BREEDING.md). The page (`src/screens/DayCareScreen.tsx`, its pieces in
+`src/screens/daycare/`) is laid out like Home, with no CONTINUE and no Areas button; its name shows once.
+
+- **The yard** (`YardStage`) takes the place and size of Home's scene: the meadow with the cottage on the hill
+  (`dayCareWorld()` in `scene.ts`), everyone at the Day Care roaming with Home's herd. Pairs that could make an Egg
+  seek each other out (`likes`) and send hearts; nobody sings (`quiet`). A tap makes a Pokémon hop with a heart; with
+  an Egg waiting, a nest with the Egg shaking sits in the yard and a tap on it hatches. The plate is the page's only
+  title: the back arrow, "Day Care", "Every region · 4 Pokémon here". The canvas has a label, and every Pokémon and
+  the Egg are buttons in a hidden list.
+- **Under the yard, one of two:** the gold **Egg card** while one waits (the Egg shaking, who left it or "A gift for
+  your first visit", Hatch it), or the **Egg-now bar**: "Next Egg check", the time left in large type, how many pairs
+  could leave one, and the gold EGG NOW with the coin and its price. Disabled without a pair; short of ₽ it stays
+  focusable, the price turns red and a tap says what's missing.
+- **Slots are cards in two columns** (`SlotCard`): a 4 px band in the slot's colour (pink `#ff5a7a` for your first,
+  blue `#5b8def` for your second, grey for a friend's), the head (that colour's heart and "Yours", or the friend's
+  trainer head and "Lea's"; a green tag with the levels gained here or New), the animated sprite on a pale tile, the
+  name and level, then for yours the XP bar to the next level ("To Lv.25 · came at Lv.22", "Lv.100: it can't grow
+  more"), "Pairs with" and the partners' names, each of yours with its heart. The button (Take back, Send back) sits
+  at the bottom so both cards' buttons line up. A free slot is a dashed card with a blue +.
+- **Hearts mean "can make an Egg with it"**, always next to a name: a heart is never the only sign.
+- **Egg checks** list the rule, the two clocks (Egg groups, Ditto) with their next time, and every pair with a tag:
+  the shared group and its pace ("Field · every 12 h"), or Ditto's slower pace in purple.
+- **Pickers** (the shared `Sheet`): Leave which Pokémon? lists those that would pair with someone here first, then the
+  team (TEAM tag; your last team member greyed with the reason), then the Box, each with its Egg groups and a pink
+  "Compatible with Jolteon" tag in the colour of the slot being filled. Add a friend's Pokémon has a search (friend or
+  Pokémon) and a Compatible only toggle, grouped by friend, the best matches first.
+- **The Home widget** shows your two with the bar to their next level and the next check; with an Egg waiting it turns
+  gold (`panel-gold`) with an EGG! tag and the Egg shaking, and a tap opens the page straight into the hatching. Locked,
+  it says how many species are caught across every region.
+- **Hatching** is full screen (`useHoldFullscreen`): the hatching timeline (with `shiny`, two rings of stars and a
+  chime just after the reveal), the message box, Skip (Escape skips to the end); then what hatched (NEW, ✦ Shiny),
+  where it went or why it wasn't kept (with the ₽ from the Day Care couple), and Done. The money pill bumps once the
+  top bar is back (`bumpGold`).
 
 ## 16. Versus and the boards
 
