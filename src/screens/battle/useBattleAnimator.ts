@@ -11,6 +11,7 @@ import {
 } from '@/engine'
 import { t } from '@/i18n'
 import { comboName, typeName } from '@/lib/format'
+import { hasOwnCry } from '@/audio/cries'
 import { sfx, type SfxName } from '@/audio/sfx'
 import type { BattleSlice } from '@/store/game'
 
@@ -31,6 +32,8 @@ export interface Fx {
   scene: Scene | null
   /** A note under the dice until the next roll: the die a Mega Evolution or Gigantamax gave. */
   chip: { id: number; text: string } | null
+  /** A cry the screen plays: a Mega's, once it stands there. */
+  cry: { id: number; dex: number } | null
 }
 
 /** What the battle stage plays for a log entry (src/fx timelines). */
@@ -80,6 +83,7 @@ function initFx(b: BattleSlice): Fx {
     fly: null,
     scene: null,
     chip: null,
+    cry: null,
   }
 }
 
@@ -284,6 +288,9 @@ function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): Step {
             : t(`ui.battle.gmaxDie.${ctx.gmaxTurns === 1 ? 'one' : 'other'}`, { type: typeName(e.die), n: ctx.gmaxTurns })
           : null
       const chip = (f: Fx) => (gained ? { id: nextId(), text: gained } : f.chip)
+      // A Mega with a cry of its own lets it out in place of the jingle (Showdown has none for the Gigantamax forms).
+      const cryDex = e.reason === 'mega' && !e.revert && hasOwnCry(e.toDex) ? e.toDex : null
+      const cry = (f: Fx) => (cryDex ? { id: nextId(), dex: cryDex } : f.cry)
       const scene: Step['scene'] =
         e.reason === 'mega'
           ? { kind: 'mega', side: e.side, fromDex: e.fromDex, toDex: e.toDex }
@@ -292,10 +299,10 @@ function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): Step {
             : undefined
       return {
         delay: 1300,
-        sound: 'levelup',
+        sound: cryDex ? undefined : 'levelup',
         apply: (f) => (scene ? f : { ...f, message: text, chip: chip(f), flash: { id: nextId(), target: e.side } }),
         scene,
-        land: scene ? (f) => ({ ...f, message: text, chip: chip(f) }) : undefined,
+        land: scene ? (f) => ({ ...f, message: text, chip: chip(f), cry: cry(f) }) : undefined,
       }
     }
     case 'item': {

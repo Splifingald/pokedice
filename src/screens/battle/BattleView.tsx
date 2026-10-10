@@ -27,6 +27,7 @@ import {
   type Battler,
   type Side,
 } from '@/engine'
+import { playCry } from '@/audio/cries'
 import { Chip } from '@/components/Chip'
 import { DiceSet } from '@/components/DiceSet'
 import { ForfeitButton } from '@/components/ForfeitButton'
@@ -290,6 +291,21 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
   }, [ready, intro, st.phase, quick, pace, battle.log.length, dispatch])
 
   const active = st.player.find((p) => p.uid === fx.activeUid) ?? activeBattler(st)
+  // Cries: the foe's as it comes out, yours as each of yours does (after the foe's when both come out at once), a
+  // Mega's once it stands there. Not while a Versus replay is skipped through.
+  useEffect(() => {
+    if (foeOut && !fast) playCry(st.enemy.dex)
+    // Once per Pokémon coming out: a form change later is the Mega's own cry, below.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [foeOut, st.enemy.uid])
+  useEffect(() => {
+    if (ownOut && !fast) playCry(active.dex, { wait: true })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ownOut, active.uid])
+  useEffect(() => {
+    if (fx.cry && !fast) playCry(fx.cry.dex)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fx.cry?.id])
   // A send-out, a faint or the end of the fight makes the open pop-up stale.
   useEffect(() => setMatchups(null), [active.uid, st.enemy.uid, st.phase])
 

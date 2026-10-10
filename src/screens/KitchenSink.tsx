@@ -3,6 +3,7 @@ import { useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { DIE_TYPES, POKE_TYPES, STATUS_KINDS, emptyStatus, type Species } from '@/engine'
 import { Chip, LevelTag, NewTag, StatusChip } from '@/components/Chip'
+import { CryButton } from '@/components/CryButton'
 import { Dialogue } from '@/components/Dialogue'
 import { Die, DieFaces } from '@/components/Die'
 import { FaceDice, facesStatuses, StatusLines } from '@/components/FaceDice'
@@ -23,6 +24,7 @@ import { SpriteImg } from '@/components/SpriteImg'
 import { StatusIcons } from '@/components/StatusIcons'
 import { Toggle } from '@/components/Toggle'
 import { TypeBadge, TypeSwatch } from '@/components/TypeBadge'
+import { soundOn } from '@/save/storage'
 import { pushToast, setSettings, useGame } from '@/store/game'
 import { BattleBits } from './kitchen/BattleBits'
 import { PartnerBits } from './kitchen/PartnerBits'
@@ -38,6 +40,14 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
 }
 
 const VARIANTS = ['primary', 'secondary', 'gold', 'success', 'danger', 'ghost', 'dark'] as const
+
+/** The real setting, so the cry buttons' "off" state shows too. */
+function SoundToggle() {
+  const on = useGame((s) => soundOn(s.settings))
+  return (
+    <Toggle label="Sound" on={on} onChange={(v) => setSettings({ sound: v, sfx: v })} className="w-full max-w-md" />
+  )
+}
 
 export function KitchenSink() {
   const data = useGame((s) => s.data)
@@ -146,6 +156,21 @@ export function KitchenSink() {
             ALLER À LA NOUVELLE ZONE
           </PixelButton>
         </div>
+      </Section>
+
+      <Section title="CryButton">
+        {/* A species, a Mega with its own cry, a form that borrows its species'. Gone while sound is off. */}
+        {[
+          [25, 'Pikachu'],
+          [10034, 'Mega Charizard X'],
+          [10103, 'Alolan Vulpix'],
+        ].map(([dex, name]) => (
+          <div key={dex} className="flex items-center gap-2">
+            <CryButton dex={dex as number} name={name as string} />
+            <span className="text-lg">{name}</span>
+          </div>
+        ))}
+        <SoundToggle />
       </Section>
 
       <Section title="Chips · tags · toggle">

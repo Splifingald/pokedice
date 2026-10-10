@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect, type ReactNode } from 'react'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { MotionConfig } from 'framer-motion'
+import { setCriesEnabled, unlockCriesOnFirstTap } from '@/audio/cries'
 import { setSfxEnabled } from '@/audio/sfx'
 import { t } from '@/i18n'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
@@ -21,6 +22,7 @@ import { TeamScreen } from '@/screens/Team'
 import { Title } from '@/screens/Title'
 import { UpgradesScreen } from '@/screens/Upgrades'
 import { VersusScreen } from '@/screens/Versus'
+import { soundOn } from '@/save/storage'
 import { useGame } from '@/store/game'
 import { startBackgroundServices } from '@/store/sync'
 
@@ -40,10 +42,12 @@ export function App() {
 
   useEffect(() => {
     document.documentElement.classList.toggle('reduce-motion', settings.reducedMotion)
-    setSfxEnabled(settings.sfx)
+    setSfxEnabled(soundOn(settings))
+    setCriesEnabled(soundOn(settings))
   }, [settings])
 
   useEffect(() => startBackgroundServices(), [])
+  useEffect(() => unlockCriesOnFirstTap(), [])
 
   return (
     <MotionConfig reducedMotion={settings.reducedMotion ? 'always' : 'user'}>

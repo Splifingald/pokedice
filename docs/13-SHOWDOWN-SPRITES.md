@@ -12,6 +12,7 @@
 | Pokémon, battle and every screen (front, back, both shiny) | Showdown's **pixel-art animated** sprites, `sprites/gen5ani{,-back}{,-shiny}/<id>.gif`: Black/White's own for #1–649, the community's in the same style after. Where no animation is drawn yet, Showdown's static pixel-art set, `sprites/gen5…/<id>.png` | **Showdown's CDN**, loaded directly. Nothing is copied into the repo | one per sprite actually shown, all served by Showdown (none by our host), cached by the browser |
 | Box / menu icons (`MiniSprite`) | Showdown's icon sheet, `sprites/pokemonicons-sheet.png`: 40×30, every Pokémon and form | `src/assets/pokemon-icons.png`, the sheet as it is (390 KB) | **one**, ever: a hashed `/assets/` file, cached for a year |
 | Trainers, the two player characters, Professor Oak (`TrainerSprite`) | Showdown's trainer sprites, `sprites/trainers/<id>.png`, 80×80 | `src/assets/trainers/<region>.png`: one sheet per region of every sprite the game names | **one per region** played, ever: hashed, cached for a year |
+| Cries (not a picture: see [Cries](#cries)) | Showdown's cries, `audio/cries/<id>.mp3`, ~9 KB each | **Showdown's CDN**, loaded directly. Nothing is copied into the repo | one per cry actually played, all served by Showdown (none by our host), cached by the browser; none while sound is off |
 
 **Pixel art only.** Showdown also serves `sprites/ani/`, animations rendered from the 3D models. Those are not pixel
 art and clash with the game's look, so they are never used. Coverage of the pixel-art set:
@@ -42,6 +43,26 @@ The brief was to make as few web requests as possible:
   now each costs one, and the sheets are content-hashed Vite assets under `/assets/`, which `netlify.toml` already
   caches as immutable. The 1,252 `NNN_mini.png` files are gone.
 - `preloadSprites` still warms only the current area's fronts, which the player is about to see anyway.
+
+### Cries
+
+`src/audio/cries.ts` plays Showdown's cry MP3s straight from its CDN (`cache-control: max-age=2678400`, 31 days), so
+they cost our host nothing either: 1,123 cries, about 10 MB, none of it in the repo.
+
+- **Where:** the battle, as each Pokémon comes out (the foe's, then yours; yours again on each switch); a Mega
+  Evolution, Primal Reversion or Ultra Burst once the new form stands there, in place of the jingle, when Showdown
+  has that form's own cry (96 do; the Gigantamax forms and Curly Mega Tatsugiri have none, so they keep the jingle);
+  and the speaker button on a Pokémon's sheet (`CryButton`). Nothing while a Versus replay is skipped through.
+- **When:** only as one plays: nothing is fetched ahead, and nothing at all while sound is off (Settings → Sound, one
+  switch for the cries and the 8-bit sounds, on by default).
+- **No request for a cry that doesn't exist.** `pnpm showdown-sprites cries` checks every entry's
+  `audio/cries/<id>.mp3`. The 129 forms without their own (regional forms, Gigantamax, the Arceus and Silvally types,
+  Ogerpon's masks…) get their species' id as `c`; a form with none at all would get `c: ''` and stay silent.
+- **One player:** a single audio element, so a new cry cuts the last one off; when a battle opens with both Pokémon
+  out at once, yours waits for the foe's. iOS only lets an element play on its own after a tap has touched it, so
+  the first tap anywhere calls `load()` on it (no request).
+- **Misses:** a cry that can't load (offline, Showdown down or blocking us) is simply not heard: no retry, no
+  message, and the next one plays.
 
 ### Offline and misses
 
@@ -116,14 +137,16 @@ the white frames, silhouettes and tints are what the eye follows there. Forms co
 ## Re-running
 
 ```bash
-pnpm showdown-sprites            # all three steps
-pnpm showdown-sprites pokemon    # after adding species or forms
+pnpm showdown-sprites            # all four steps
+pnpm showdown-sprites pokemon    # after adding species or forms (then `cries`)
+pnpm showdown-sprites cries      # which cries Showdown has: one HEAD request per id, cached
 pnpm showdown-sprites trainers   # after adding trainers or social looks
 ```
 
 Downloads are cached under `scripts/.cache/showdown`, 404s included, so a re-run is offline. The first full run fetches
-about 200 MB. `tests/showdown-sprites.test.ts` checks the following: every species has an entry, every sprite a
-trainer, avatar or character names is in a sheet, and every cell is inside its sheet.
+about 200 MB. `tests/showdown-sprites.test.ts` checks the following: every species has an entry and its own cry, every
+borrowed cry is one Showdown has, every sprite a trainer, avatar or character names is in a sheet, and every cell is
+inside its sheet.
 
 ## Credits
 
@@ -131,6 +154,7 @@ trainer, avatar or character names is in a sheet, and every cell is inside its s
   by the Showdown and Smogon sprite contributors. #1–649 are Black/White's own. The Black/White-style sprites after
   #649, animated and static, are the [Smogon Sprite Project](https://github.com/smogon/sprites)'s work.
 - **Icons**: Showdown's menu icon sheet (`pokemonicons-sheet.png`).
+- **Cries**: the games' cries as Pokémon Showdown serves them (`play.pokemonshowdown.com/audio/cries`).
 - **Trainers**: Showdown's trainer sprites, credited per artist in `smogon/pokemon-showdown` →
   `server/chat-commands/avatars.tsx`. Kanto–Unova uses 193 from Showdown's main set, plus Kyledove (Aqua Grunt, Hex
   Maniac, Kindler, Triathlete, Professor Oak, Schoolboy, Schoolgirl), Brumirage (Archie, Phoebe, Tate & Liza),

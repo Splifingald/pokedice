@@ -25,6 +25,7 @@ import { useT } from '@/i18n/react'
 import { useGame } from '@/store/game'
 import { cx, typeColor } from '@/theme/util'
 import { Chip } from './Chip'
+import { CryButton } from './CryButton'
 import { DiceSet } from './DiceSet'
 import { FaceDice, facesStatuses, StatusLines } from './FaceDice'
 import { HpBar } from './HpBar'
@@ -370,6 +371,7 @@ export function PokemonSheet({
                 <PixelIcon name="star" size={12} /> {t('ui.mon.shinyTag')}
               </Chip>
             )}
+            {inst?.revivesAt == null && <CryButton dex={dex} name={species.name} className="ml-auto" />}
           </div>
           {inst?.revivesAt != null ? (
             <RevivalBar inst={inst} />

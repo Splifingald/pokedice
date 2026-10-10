@@ -8,7 +8,15 @@ import showdown from '@/data/showdown-sprites.json'
 import atlas from '@/data/trainer-atlas.json'
 import trainers from '@/data/trainers.json'
 import { AVATAR_GROUPS } from '@/lib/avatars'
-import { artBox, ICON_COLS, ICON_H, TRAINER_COLS, TRAINER_PITCH, type ShowdownEntry } from '@/lib/showdown'
+import {
+  artBox,
+  cryId,
+  ICON_COLS,
+  ICON_H,
+  TRAINER_COLS,
+  TRAINER_PITCH,
+  type ShowdownEntry,
+} from '@/lib/showdown'
 
 const entries = showdown as unknown as Record<string, ShowdownEntry>
 const cells = (atlas as unknown as { cells: Record<string, [string, number]> }).cells
@@ -31,6 +39,19 @@ describe('Showdown Pokémon sprites (pnpm showdown-sprites)', () => {
         expect(x1 >= x0 && y1 >= y0 && x1 < box[0] && y1 < box[1], `#${p.dex} ${box}`).toBe(true)
       }
     }
+  })
+
+  it("gives a form without a cry of its own its species' cry, never a file Showdown doesn't have", () => {
+    const withOwnCry = new Set(Object.values(entries).flatMap((e) => (e.c === undefined ? [e.id] : [])))
+    for (const [dex, e] of Object.entries(entries)) {
+      const id = cryId(e)
+      if (id === null) continue
+      expect(withOwnCry.has(id), `#${dex} ${e.id} → ${id}`).toBe(true)
+      if (e.c) expect(e.id.startsWith(`${e.c}-`), `#${dex} ${e.id} → ${e.c}`).toBe(true)
+    }
+    // Every species (as opposed to a form) has its own.
+    for (const p of pokemon as { dex: number }[])
+      if (p.dex <= 1025) expect(entries[p.dex]!.c, `#${p.dex}`).toBeUndefined()
   })
 
   it('points every icon at a cell of the bundled sheet', () => {

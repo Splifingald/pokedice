@@ -219,7 +219,13 @@ your side or the foe's, the cue log. Sounds are named in `src/audio/sfx.ts` (`fx
 ## 9. Sound
 
 8-bit sounds are synthesised in `src/audio/sfx.ts` (no sample files). Each cue has a name; add new ones there.
-Sound is off by default and always respects `settings.sfx`.
+The Pokémon cries are Showdown's MP3s, played from its CDN by `src/audio/cries.ts`: in battle as each Pokémon comes
+out and when a Mega has its own cry, and from the speaker button on a Pokémon's sheet (`CryButton`, hidden while
+sound is off). Details in [docs/13 → Cries](13-SHOWDOWN-SPRITES.md#cries).
+
+**One switch for both**, Settings → Sound (`settings.sound`, read through `soundOn`): on by default, and on for
+saves from before it (unset = on). `settings.sfx` is the old effects-only switch, kept in step for older builds; don't
+read it. Sound off means no sound and no cry request at all.
 
 ## 10. Words and numbers
 
@@ -244,6 +250,9 @@ Players shouldn't have to make many requests:
 - **Pokémon sprites** come from Pokémon Showdown's CDN: one request per sprite actually shown, cached by the browser;
   never a request for a view Showdown doesn't have (`src/data/showdown-sprites.json`); only the current area's fronts
   are preloaded.
+- **Cries** come from Showdown's CDN too: one request per cry actually played (~9 KB), cached by the browser; never
+  preloaded, never one for a cry Showdown doesn't have (a form without its own plays its species'), none while sound
+  is off.
 - Fonts are subset by unicode range; only Jersey 20 (latin) is preloaded.
 - Before adding an image file, ask whether code can draw it, or whether it belongs in an atlas.
 - **Area pictures** (`public/area-art/<id>.png`): one painted picture per *scene* (87 shared scenes, lairs and

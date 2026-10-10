@@ -600,7 +600,9 @@ export interface SaveData {
   currentAreaId: string
   areaProgress: Record<string, AreaProgress>
   settings: {
+    /** Superseded by `sound` (src/save/storage.ts). */
     sfx: boolean
+    sound?: boolean
     reducedMotion: boolean
     animations?: 'full' | 'short'
     multiExp: boolean
