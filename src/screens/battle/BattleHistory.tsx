@@ -283,12 +283,22 @@ export function BattleHistoryList({ battle, cursor }: { battle: BattleSlice; cur
   return <ol aria-label={t('ui.hist.label')}>{rows.map((r) => <HistoryRow key={r.key} r={r} />)}</ol>
 }
 
-/** Desktop: a toggle under the battle, open by default. */
-export function BattleHistory({ battle, cursor, defaultOpen }: { battle: BattleSlice; cursor: number; defaultOpen: boolean }) {
+/** Desktop: a toggle beside the battle, open by default; `fill` stretches it to its column's height. */
+export function BattleHistory({
+  battle,
+  cursor,
+  defaultOpen,
+  fill,
+}: {
+  battle: BattleSlice
+  cursor: number
+  defaultOpen: boolean
+  fill?: boolean
+}) {
   const { t } = useT()
   const [open, setOpen] = useState(defaultOpen)
   return (
-    <section className="pixel-panel p-2">
+    <section className={cx('pixel-panel p-2', fill && open && 'flex min-h-0 flex-1 flex-col')}>
       <button
         type="button"
         aria-expanded={open}
@@ -302,7 +312,7 @@ export function BattleHistory({ battle, cursor, defaultOpen }: { battle: BattleS
         </span>
       </button>
       {open && (
-        <div className="pixel-scroll mt-1 max-h-72 overflow-y-auto">
+        <div className={cx('pixel-scroll mt-1 overflow-y-auto', fill ? 'min-h-0 flex-1' : 'max-h-72')}>
           <BattleHistoryList battle={battle} cursor={cursor} />
         </div>
       )}

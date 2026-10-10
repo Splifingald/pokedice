@@ -873,8 +873,9 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
           </aside>
         )}
         {wide && (
-          <aside className="flex flex-col gap-2">
-            <BattleHistory battle={battle} cursor={fx.cursor} defaultOpen />
+          // The history runs the page's whole height, and stays there while the page scrolls.
+          <aside className="sticky top-4 flex h-[calc(100dvh-2rem)] flex-col gap-2">
+            <BattleHistory battle={battle} cursor={fx.cursor} defaultOpen fill />
             {canAct && !auto && (
               <p className="m-0 font-pixel-sm text-[15px] text-muted">
                 {t('ui.battle.keys', { action: t(rolling ? 'ui.battle.keyAttack' : 'ui.battle.keyRoll') })}
