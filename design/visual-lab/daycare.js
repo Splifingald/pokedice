@@ -475,9 +475,12 @@
     const best = Math.max(0, ...copies.map((m) => m.lv))
     let where
     const max = A.hpAt(dex, lv)
-    if (copies.length && best >= lv && !shiny)
-      where = `You already have a stronger ${name}: the Day Care couple will look after this one.`
-    else if (copies.length && !shiny) {
+    if (copies.length && best >= lv && !shiny) {
+      // Not kept: the Day Care couple keeps it, and gives a little money for the trouble (admin setting, ₽10).
+      A.SAVE.gold += A.DC.notKeptGold
+      A.bumpGold()
+      where = `You already have a stronger ${name}: the Day Care couple will look after this one, and they give you ${A.money(A.DC.notKeptGold)} for your trouble.`
+    } else if (copies.length && !shiny) {
       const weak = copies.sort((a, b) => a.lv - b.lv)[0]
       if (weak.where === 'team') {
         Object.assign(A.TEAM[weak.i], { lv, hp: [max, max] })

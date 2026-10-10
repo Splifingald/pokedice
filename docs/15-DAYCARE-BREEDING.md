@@ -24,11 +24,11 @@ commit message.
 | Eggs | Free once, then bought for ₽50 | **Bred.** Every 12 h each of your Pokémon checks everyone at the Day Care; a compatible pair leaves an Egg. **Ditto pairs with everyone but legendaries, on a slower check: every 24 h.** The free first Egg stays; the ₽50 Egg goes |
 | Egg now | — | **Skip the wait for ₽200:** the next check runs now, a pair leaves an Egg, and it hatches right away |
 | Compatibility | — | The **real Egg groups** (data from Pokémon Showdown) |
-| What hatches | Random, missing species ×4, from the region's pool | Unchanged: random, not the parents' species |
+| What hatches | Random, missing species ×4, from the region's pool | Unchanged: random, not the parents' species. **When it isn't kept** (you already own one at its level or higher), **the Day Care couple gives ₽10** |
 | Shiny | — | Day Care Eggs have their **own shiny odds**, 1 % by default |
 | Home widget | Residents with XP to the cap | Your two with XP to the next level; with an Egg waiting it turns **gold** with an Egg shaking, and a tap opens the Day Care **straight into the hatching** |
 
-Every number above (12 h, 24 h, ₽200, 1 %, 20, 2, 4) is an admin setting.
+Every number above (12 h, 24 h, ₽200, ₽10, 1 %, 20, 2, 4) is an admin setting.
 
 **The mockup** is the Visual Lab's Home tab: https://claude.ai/artifact/EtDYmxgAmoFifQWSjtk3nD (source
 `design/visual-lab/` on `claude/modest-knuth-ph81n4`).
@@ -248,7 +248,9 @@ What changes:
 - Nothing is paid: the `opts.free` / `paid` paths and `eggPrice` go.
 - **Shiny:** `rng.chance(config.dayCare.shinyChance)`. A shiny hatchling is a Pokémon of its own (the catching rule):
   it never replaces a copy, nothing holds it back, so it is always kept.
-- `Hatch` returns `shiny`, for the moment and the result card.
+- **Not kept, a little money:** when the hatchling isn't kept (`kept` false: you own a plain copy at its level or
+  higher), the Day Care couple gives `notKeptGold` (₽10): `save.gold += notKeptGold`.
+- `Hatch` returns `shiny` and `gold` (the ₽ given, 0 when kept), for the moment and the result card.
 
 ## Phase 3 · Save, migration, config, admin
 
@@ -296,6 +298,7 @@ players** (`force_reload`, migration 0029).
 | `breedHours` | 12 | new: the Egg-group check |
 | `breedDittoHours` | 24 | new: Ditto's check |
 | `rushPrice` | 200 | new: Egg now, in ₽ |
+| `notKeptGold` | 10 | new: ₽ from the Day Care couple when a hatchling isn't kept |
 | `shinyChance` | 0.01 | new: Day Care Eggs only (the wild `shinyChance` is separate) |
 | ~~`eggPrice`~~ | — | removed |
 | `unownedWeight`, `hatchRank`, `hatchOffset`, `hatchMinLevel` | 4, 3, 5, 5 | unchanged |
@@ -308,7 +311,7 @@ The live `game_config` row `dayCare` lacks the new keys: make sure the loader me
 - Fields:
   - Opens at (species, **all regions**), Slots, **Friend slots**;
   - XP per tick, Tick (minutes);
-  - **Egg check (hours)**, **Ditto check (hours)**, **Egg now (₽)**;
+  - **Egg check (hours)**, **Ditto check (hours)**, **Egg now (₽)**, **Not kept (₽)**;
   - **Shiny chance (%)**, shown as a percentage and stored as 0–1;
   - Unowned weight and the three hatch numbers.
 - Drop Max XP and Egg price.
@@ -462,7 +465,9 @@ Laid out like Home, with no CONTINUE and no Areas button. The name shows **once*
   - a two-tone chime;
   - the line "A shiny Eevee hatched from the Egg!".
 - Skip, and Escape skips to the end.
-- The result card: NEW, ✦ SHINY, and where it went.
+- The result card: NEW, ✦ SHINY, and where it went. When it isn't kept: "You already have a stronger Paras: the
+  Day Care couple will look after this one, and they give you ₽10 for your trouble." The money pill in the header
+  bumps.
 
 ### Remove
 
@@ -511,6 +516,8 @@ Laid out like Home, with no CONTINUE and no Areas button. The name shows **once*
   - a save that already claimed it never gets another.
 - **Hatch:**
   - shiny when `rng.chance` hits (a stub rng), and the shiny is always kept;
+  - not kept (a plain copy at its level or higher): +`notKeptGold` and `gold` in the result; kept, replacing or new:
+    no money; a shiny never brings money (it is always kept);
   - the Egg is cleared;
   - the species comes from the live region's pool.
 - **Regions:**
@@ -559,3 +566,4 @@ Each ends green: `pnpm lint`, `pnpm build`, `pnpm test`, `pnpm e2e`. Add a READM
 | D10 | The Egg's species | The live region's pool, as today, wherever the parents came from |
 | D11 | Egg now | ₽200, hatches at once, restarts the clock it skipped (it buys the check early, not an extra one) |
 | D12 | Legendaries | Never pair with anyone (follows from D2 and the Egg groups) |
+| D13 | A hatchling you don't keep | The Day Care couple gives ₽10 (`notKeptGold`, admin): whenever it isn't kept, at its level or under your copy's |
