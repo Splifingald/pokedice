@@ -40,7 +40,7 @@ commit. Don't start a phase while the previous one is red.
    | `home.js` | Home: the area scenery per biome (`paintOutdoor`, `paintForest`, `paintCave`, `SCENES`, `PALS`), the team roaming (`Mon`: idle, walk, meet, sing, rest; hearts and notes), the area plate, CONTINUE, the Areas sheet (`renderSheet`, `renderList`, `renderRegions`), the area details (`renderDetail`), the widgets (`renderWidgets`, `renderVersus`), the tab bar and its dots (`renderNavDots`), the 16×16 nav icons (`NAVICO`, `NAVPAL`), dialogs | `src/screens/Home.tsx` + `src/screens/home/*` |
    | `pages.js` | Team, Pokédex, Poké Mart, Upgrades, and the shared Pokémon sheet (`openMon`, `faces`, `openItems`, `openDex`, `whereToFind`) | the existing `Team.tsx`, `Pokedex.tsx`, `Shop.tsx`, `Upgrades.tsx` |
    | `battle.js` | The battle screen: tray, readout, reroll, attack, foe turn, statuses, bag, switching, the catch panel, victory and wipe cards, Versus on auto with SKIP | `src/screens/battle/*` |
-   | `daycare.js` | The Day Care page, the drop-off sheet, the Egg and the hatching moment | `src/screens/DayCareScreen.tsx` |
+   | `daycare.js` | The Day Care page (v2: the yard, your two, four friends' slots, Egg-group pairs, the checks), the pickers, the hatching moment | `src/screens/DayCareScreen.tsx` (see docs/15) |
    | `social.js` | Versus (opponents, my team, board), the leaderboard with its Hall of Fame, the trainer card with the badge case and looks (and the 8 badge maps + crown) | `Versus.tsx`, `Leaderboard.tsx`, `PlayerProfileModal.tsx` |
    | `assets/` | `trainers.png` (24 trainer looks, 80×80 cells; the order is `LOOKS` in `battle.js`, head offsets in `LOOK_TOP`), `sprites.json` + sheets (animated Showdown sprites cut into frames) | see Phase 5 for sprites |
 
@@ -155,7 +155,8 @@ working). It is the area hub; everything the Map and Area screens did stays reac
   the details. Next to the region name, a **Regions** button (map icon) switches to the region view: the regions
   reached, and the next one with its three starters once offered.
 - **Widgets, two by two:** the newest secret area (travels in one tap; when none is new, the next secret's progress);
-  the **Day Care** (residents with XP bars and time to full, READY when full; opens the Day Care); **Versus** under the
+  the **Day Care** (your two with XP bars to the next level and the next Egg check; gold with a shaking Egg when one
+  waits, and then a tap opens the Day Care straight into the hatching; see docs/15); **Versus** under the
   secret area (locked: "n/3 at Lv.50" with a meter; new: NEW + "Set team"; set: teams to beat, defense wins, Fight);
   an empty **Special events** slot under the Day Care ("Coming later").
 - **Tab bar** (phones; the desktop SideNav gets the same items and icons): Shop, Upgrades, **Home in the middle** (a
@@ -249,7 +250,7 @@ sprites: use them).
 | Flamethrower, Hydro Pump, Razor Leaf, Thunderbolt, Psychic | attacks of those types; others get the generic impact |
 | Legendary encounter (Mewtwo, Articuno, Zapdos, Moltres) | boss intros |
 | Evolution (silhouette, flicker that speeds up, rays, burst, reveal; with a stone it floats down first) | replaces `EvolutionSequence` in `src/components/Evolution.tsx` |
-| Egg hatching (nest, three wobbles, cracks, light, burst, hello hop, hearts) | `HatchModal` in the Day Care |
+| Egg hatching (nest, three wobbles, cracks, light, burst, hello hop, hearts; the shiny beat: stars and a chime) | `HatchModal` in the Day Care |
 | Mega Evolution (Key Stone ↔ Mega Stone strands in seven colours, a sphere, the change inside, cracks, shatter, the Mega symbol; MEGA on the plate, the die gained) | MEGA in battle, both for you and for a trainer's ace |
 | Gigantamax (red recall into the ball, Dynamax energy swells it, thrown up under a crimson sky, a red silhouette rising in steps, the G-Max form with its cloud crown and a shockwave; G-MAX on the plate, the die for its next turn; on `ui.log.gmaxEnd` it shrinks back) | G-MAX in battle |
 
@@ -258,18 +259,11 @@ Each one: a reduced-motion end state, sound cues through `sfx.ts`, and a dev pag
 
 ## Phase 6 · Day Care
 
-Restyle `DayCareScreen` from `daycare.js`, with the engine's `src/engine/daycare.ts` for every number (2 slots,
-+1 XP every 10 min, 200 XP a stay, the Egg ₽50 and free once, hatch level = your 3rd lowest level − 5, at least 5,
-missing species weighted ×4, one copy per species kept):
-
-- Each resident: animated sprite, name, Lv now → Lv after, an XP bar to the cap, "+1 XP in 4 min · full in 18 h 14",
-  READY in green when full; **Take back** (to the team if there's room, otherwise the Box; the toast says which).
-- An empty slot: "Leave a Pokémon" → a sheet with search: the team first (TEAM tag; your last team member disabled),
-  then the Box, lowest level first.
-- **Eggs:** the Egg sprite, "An Egg for you!" (free) or "Buy an Egg", facts (hatches at Lv.N, how many you don't have
-  and the ×4 odds), Take the Egg / Buy · ₽50 / "Need ₽x more". It hatches **right there**: the hatching timeline full
-  screen over the page, a Skip button, then the result (NEW tag, and where it went: team, Box, kept a stronger one,
-  replaced your weaker one), Done and "Another · ₽50".
+The Day Care changed after this brief was written (v2: one Day Care for every region, four friends' slots, real Egg
+groups, breeding checks every 12 h and Ditto's every 24 h, Lv.100 as the only cap, its own shiny odds). Build it from
+**docs/15-DAYCARE-BREEDING.md**, which covers the engine, the save migration, config and admin, the friend-list hook
+and the UI, and matches the lab's `daycare.js` as it is now. Do that doc's phases here, in its order. Its Phase 4
+(friends) waits for the friend list.
 
 ## Phase 7 · Versus
 

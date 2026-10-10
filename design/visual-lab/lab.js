@@ -996,6 +996,7 @@
     legend: 'mewtwo',
     evo: 'charmeleon',
     baby: 'dratini',
+    shiny: 'no',
     mega: 'charizardx',
     gmax: 'pikachu',
     starterSet: 'johto',
@@ -1277,7 +1278,7 @@
     if (OPT.anim === 'catch') return M.catch({ ball: OPT.ball, outcome: OPT.outcome })
     if (OPT.anim === 'legend') return M.legend({ legend: OPT.legend })
     if (OPT.anim === 'evolve') return M.evolve({ evo: OPT.evo })
-    if (OPT.anim === 'hatch') return M.hatch({ baby: OPT.baby })
+    if (OPT.anim === 'hatch') return M.hatch({ baby: OPT.baby, shiny: OPT.shiny === 'yes' })
     if (OPT.anim === 'mega') return M.mega({ mega: OPT.mega })
     if (OPT.anim === 'gmax') return M.gmax({ gmax: OPT.gmax })
     if (OPT.anim === 'starter') return M.starter({ set: OPT.starterSet, pick: Number(OPT.starterPick) })
@@ -1321,10 +1322,15 @@
         ['eevee', 'Eevee → Jolteon · Thunder Stone', '#ffd23a'],
       ])
     else if (OPT.anim === 'hatch')
-      opts.innerHTML = seg('baby', 'HATCHES INTO', [
-        ['dratini', 'Dratini', '#6f8cff'],
-        ['eevee', 'Eevee', '#c8945a'],
-      ])
+      opts.innerHTML =
+        seg('baby', 'HATCHES INTO', [
+          ['dratini', 'Dratini', '#6f8cff'],
+          ['eevee', 'Eevee', '#c8945a'],
+        ]) +
+        seg('shiny', 'SHINY (DAY CARE: 1 IN 100)', [
+          ['no', 'Not shiny'],
+          ['yes', 'Shiny', '#ffe14d'],
+        ])
     else if (OPT.anim === 'mega')
       opts.innerHTML = seg('mega', 'MEGA EVOLUTION', [
         ['charizardx', 'Charizard → Mega Charizard X · +1 Dragon die', '#3ab0ff'],

@@ -1306,6 +1306,70 @@
   .hm-reg-partner > span { display: grid; gap: 2px; }
   .hm-reg-partner b { font-weight: 400; font-size: 22px; line-height: 1; }
   .hm-reg-partner small { font-family: 'Jersey 15', sans-serif; font-size: 15px; color: #5c6a8a; }
+  /* Day Care v2 (daycare.js): the widget's Egg, the yard, your two, the friends' four, the pairs. */
+  [data-framed] .hm-w.gold { border-image-source: var(--fr-gold); }
+  .hm-w.gold .hm-w-head b, .hm-w.gold .hm-w-title { color: #3a2600; }
+  .hm-w.gold .hm-w-sub { color: #6b4300; }
+  .hm-dc-egg { display: grid; place-items: center; height: 44px; }
+  .hm-dc-egg img { width: 28px; height: 30px; animation: dc-shake 1.6s steps(1) infinite; transform-origin: 50% 100%; }
+  @keyframes dc-shake { 0%, 31%, 100% { transform: none; } 6%, 18% { transform: rotate(-12deg); } 12%, 24% { transform: rotate(12deg); } }
+  .dc-yard { position: relative; flex: none; margin: 0 -12px; box-shadow: 0 2px 0 #24304f; }
+  .dc-yard canvas { display: block; width: 100%; height: auto; aspect-ratio: 288 / 276; image-rendering: pixelated; touch-action: manipulation; }
+  .dc-yplate { position: absolute; left: 8px; right: 8px; top: 8px; display: flex; align-items: baseline; justify-content: space-between; gap: 8px; padding: 6px 10px 8px; }
+  .dc-yplate b { font-weight: 400; font-size: 20px; line-height: 1; }
+  .dc-yplate span { font-family: 'Jersey 15', sans-serif; font-size: 15px; color: #5c6a8a; }
+  .dc-eggcard { display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-areas: 'egg txt' 'btn btn'; gap: 8px 12px; align-items: center; padding: 10px 12px 12px; background: #fff4d6; box-shadow: inset 0 0 0 2px #24304f, inset 0 0 0 4px #ffbe2e, inset 0 -6px 0 #ffe7a8; }
+  .dc-eggspr { grid-area: egg; width: 48px; height: 48px; display: grid; place-items: center; }
+  .dc-eggspr img { width: 28px; height: 30px; animation: dc-shake 1.6s steps(1) infinite; transform-origin: 50% 100%; }
+  .dc-egg-t { grid-area: txt; display: grid; gap: 3px; }
+  .dc-egg-t b { font-weight: 400; font-size: 22px; line-height: 1; }
+  .dc-egg-t small { font-family: 'Jersey 15', sans-serif; font-size: 15px; line-height: 1.15; color: #6b4300; }
+  .dc-eggcard .ui-btn { grid-area: btn; width: 100%; }
+  .dc-own { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+  .dc-own .dc-res { position: relative; grid-template-areas: 'spr txt' 'spr btn'; }
+  .dc-own .dc-take { justify-self: end; width: auto; min-height: 40px; padding-inline: 14px; font-size: 17px; }
+  .dc-mark { position: absolute; left: 8px; top: 8px; }
+  .dc-heart { width: 10px; height: 10px; flex: none; }
+  .dc-res .dc-pw { color: #24304f; }
+  .dc-res .dc-pw b { font-weight: 400; }
+  .dc-fr { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .dc-fslot { position: relative; display: grid; gap: 4px; min-height: 104px; padding: 6px 8px 8px; background: #ffffff; box-shadow: inset 0 0 0 2px #24304f, inset 0 -4px 0 #dfe7f2; }
+  .dc-fwho { display: flex; align-items: center; gap: 4px; font-family: 'Jersey 15', sans-serif; font-size: 14px; color: #5c6a8a; padding-right: 32px; }
+  .dc-fwho .lk { margin: -4px 0 -6px -4px; }
+  .dc-fmon { display: flex; align-items: center; gap: 2px; min-width: 0; }
+  .dc-fmon .ico { margin: -6px -4px -6px -8px; }
+  .dc-fmon > span { display: grid; min-width: 0; }
+  .dc-fmon b { font-weight: 400; font-size: 18px; line-height: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .dc-fmon small, .dc-fh small { font-family: 'Jersey 15', sans-serif; font-size: 13px; color: #5c6a8a; }
+  .dc-fh { display: flex; align-items: center; gap: 3px; }
+  .dc-nomatch { color: #8592ad !important; }
+  .dc-fx { appearance: none; border: 0; position: absolute; right: 2px; top: 2px; width: 44px; height: 40px; background: none; font-size: 16px; color: #5c6a8a; }
+  .dc-fx:focus-visible, .dc-invite:focus-visible { outline: 3px solid #5b8def; outline-offset: -3px; }
+  .dc-fslot.empty { padding: 0; background: none; box-shadow: none; }
+  .dc-invite { appearance: none; border: 0; width: 100%; height: 100%; min-height: 104px; display: grid; place-items: center; align-content: center; gap: 6px; padding: 8px; background: #f6f9fd; box-shadow: inset 0 0 0 2px #8592ad; outline: 2px dashed #b6c3d9; outline-offset: -6px; font-size: 17px; color: #24304f; }
+  .dc-plus.small { width: 32px; height: 32px; font-size: 24px; }
+  .dc-check { display: grid; gap: 8px; padding: 10px 12px 12px; background: #ffffff; box-shadow: inset 0 0 0 2px #b6c3d9; }
+  .dc-check h3 { margin: 0; font-weight: 400; font-size: 21px; line-height: 1; }
+  .dc-pairs { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+  .dc-pairs li { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; font-size: 18px; line-height: 1.1; }
+  .dc-pairs b { font-weight: 400; }
+  .dc-pairs small { font-family: 'Jersey 15', sans-serif; font-size: 14px; color: #5c6a8a; }
+  .dc-pairs em { margin-left: auto; font-style: normal; font-family: 'Jersey 15', sans-serif; font-size: 13px; padding: 1px 6px 2px; background: #f1f4f9; box-shadow: inset 0 0 0 1px #b6c3d9; color: #24304f; }
+  .dc-timers { margin: 0; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 2px 10px; font-family: 'Jersey 15', sans-serif; font-size: 15px; color: #24304f; }
+  .dc-timers dt { color: #5c6a8a; }
+  .dc-timers dd { margin: 0; }
+  .dc-pairs li.slow em { background: #f4efff; box-shadow: inset 0 0 0 1px #b9a6e8; color: #4a3486; }
+  .dc-nopair { margin: 0; font-family: 'Jersey 15', sans-serif; font-size: 15px; line-height: 1.2; color: #b0402a; }
+  .dc-pgroup { display: grid; gap: 6px; margin-top: 10px; }
+  .dc-pgroup h4 { margin: 0; display: flex; align-items: center; gap: 6px; font-weight: 400; font-size: 19px; }
+  .dc-pgroup h4 small { margin-left: auto; font-family: 'Jersey 15', sans-serif; font-size: 13px; color: #5c6a8a; }
+  .dc-pgroup ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+  .dc-prow { flex-wrap: wrap; }
+  .dc-prow b small { font-family: 'Jersey 15', sans-serif; font-size: 13px; color: #5c6a8a; }
+  .dc-tag { display: inline-flex; align-items: center; gap: 4px; font-style: normal; font-family: 'Jersey 15', sans-serif; font-size: 13px; line-height: 1.1; padding: 2px 6px 3px; background: #f1f4f9; box-shadow: inset 0 0 0 1px #b6c3d9; color: #5c6a8a; }
+  .dc-tag.ok { background: #fff0f3; box-shadow: inset 0 0 0 1px #ff9ab5; color: #8a1f3d; }
+  .dc-m-who em.shiny { background: #fff6a8; }
+  @media (prefers-reduced-motion: reduce) { .hm-dc-egg img, .dc-eggspr img { animation: none; } }
   @media (max-width: 520px) { .hm-page { overflow: visible; } }
   @media (prefers-reduced-motion: reduce) { .hm-pill.bump, .pg-pips i.pop, .bt-team.force .bt-pip, .so-row.flash { animation: none; } }
 
@@ -1313,6 +1377,7 @@
   .home-states { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin: 0 0 18px; }
   .home-states .eyebrow { margin: 0; }
   .home-states p { margin: 0; flex: 1 1 280px; font-size: 14px; color: #d6d0e4; max-width: 72ch; }
+  .home-states .btn.small { padding: 6px 11px; font-size: 13px; }
   .home-notes { min-width: 0; }
   .home-thesis { font-size: 17px; max-width: 60ch; color: #d6d0e4; margin: 0 0 18px; }
   .zones { list-style: none; margin: 0 0 24px; padding: 0; display: grid; gap: 10px; counter-reset: z; }
@@ -1379,6 +1444,8 @@
         <button type="button" role="radio" data-state="league">League beaten</button>
       </div>
       <p id="hm-state-note" aria-live="polite"></p>
+      <button type="button" class="btn small" id="hm-dc-check" title="In the game this check runs every 12 hours of real time">Run the Day Care’s 12 h check</button>
+      <button type="button" class="btn small" id="hm-dc-ditto" title="In the game Ditto’s check runs every 24 hours of real time">Run Ditto’s 24 h check</button>
     </div>
     <div class="home-grid">
       <div class="home-device">
@@ -1480,7 +1547,7 @@
           <li><b>Your team, roaming</b><span>The three of them (a team is three at most) wander the area’s own scenery. Friends walk over to each other and hop, <em>little hearts</em> float up; Lapras starts a song and the others join, <em>notes</em> rising. Tap one: it hops, a heart pops, its card shows. A tired one sweats and naps.</span></li>
           <li><b>Continue</b><span>The only big button, in thumb reach, and it says what comes next.</span></li>
           <li><b>Areas</b><span>A sheet, not a page. Search by area <em>or by Pokémon</em> (“Pikachu” finds where it lives), filter To catch, Secret or Cleared, sort by route, level or most to catch. A card opens the area’s details; <em>GO</em> travels. The outline is the state: <em>orange</em> where you are, <em>green</em> cleared, grey locked. Each area has one picture: the scene the team roams, and cards show its middle. <em>Regions</em>, next to the region name, switches region: the next one appears once the League is won. <em>Enter</em> starts the partner pick: in the professor’s lab, three Poké Balls drop onto the table, a tap opens one, and “Do you want to pick it?” comes with its type, what it hits hard, what hits it hard and its dice; no sends it back into its ball. The Areas button has three states: plain, a NEW dot, <em>gold “New region”</em>.</span></li>
-          <li><b>Widgets</b><span>Two by two. The newest secret area travels in one tap; when there is none, the next one shows its progress. The Day Care shows who is ready and how long the others need; it opens the <em>Day Care</em>. <em>Versus</em> sits under the secret area: locked, it shows how close you are (3 Pokémon at Lv.50); then Set team, then Fight. Under the Day Care, an empty slot waits for <em>special events</em>.</span></li>
+          <li><b>Widgets</b><span>Two by two. The newest secret area travels in one tap; when there is none, the next one shows its progress. The Day Care shows your two with their level and XP, the friends’ count and the next Egg check; it opens the <em>Day Care</em> and never acts on its own. With an Egg waiting it turns <em>gold</em>, an Egg shakes in place of the Pokémon, and a tap opens the Day Care straight into the hatching. Locked, it counts to 20 Pokémon caught, once for every region. <em>Versus</em> sits under the secret area: locked, it shows how close you are (3 Pokémon at Lv.50); then Set team, then Fight. Under the Day Care, an empty slot waits for <em>special events</em>.</span></li>
           <li><b>Tab bar</b><span>Home in the middle. New 16×16 icons: a Mart bag, a die going up, three balls for the team, the red Pokédex; a podium for the leaderboard. Dots only for things you can act on: affordable upgrades, a new Pokédex entry.</span></li>
         </ol>
         <h2 class="notes-h">The tabs</h2>
@@ -1509,7 +1576,7 @@
         <h2 class="notes-h">The screens off Home</h2>
         <ol class="zones">
           <li><b>Battle</b><span>From CONTINUE, full screen. The dice roll by themselves; <em>tap the ones to throw again</em>, then ATTACK. Under the tray, the combo, the sum, the type multiplier and the status faces, with the engine’s rules. The move is the Animations tab’s timeline; the foe rolls its own dice. Bag (one item a turn), switches, and a free switch after a K.O. The catch happens in the scene: each ball shows its chance, and one throw decides.</span></li>
-          <li><b>Day Care</b><span>From its widget. Two slots with XP toward the 200 cap and the time left; TAKE BACK. Leave one from the team or the Box (search). The Egg: free once, then ₽50. It <em>hatches right there</em>, weighted toward species you’re missing, and says where it went.</span></li>
+          <li><b>Day Care</b><span>One for every region, open from 20 caught. Laid out like Home: the yard on top with everyone roaming (pairs seek each other out, hearts fly), no play button. Below, <em>your two</em> (XP toward the next level, Lv.100 the only cap, TAKE BACK) and <em>four friends’ slots</em>: pick a Pokémon from a friend’s Day Care, it visits and nothing changes for the friend. The picker tags who can pair: <em>Compatible with Eevee</em>, with a heart in that Pokémon’s colour. Real Egg groups decide; Ditto pairs with everyone but slower. Every 12 h (Ditto: 24 h) a compatible pair leaves an Egg, random as before, shiny 1 in 100. The preview bar runs either check on demand.</span></li>
           <li><b>Versus</b><span>From its widget. Locked, it shows who’s closest to Lv.50. My team: three Lv.50 clones, in order. Opponents: search, To beat / Beaten, and <em>how many of theirs you hit super effectively</em>. FIGHT: the trainer sends out three in turn, both sides on auto; SKIP jumps to the result, decided when the fight starts. A board for Attack and Defense.</span></li>
           <li><b>Leaderboard</b><span>From the cup. Max level, Progression, Pokédex, Shiny. Your rank sits on top (tap it to find your row); trainers who maxed a board out go to the <em>Hall of Fame</em>.</span></li>
           <li><b>Trainer card</b><span>From the avatar. Your look (the game’s trainer sprites, the one others see), name, money, Pokédex, best level, areas, shinies, Versus record; the badge case with the crown; the menu.</span></li>

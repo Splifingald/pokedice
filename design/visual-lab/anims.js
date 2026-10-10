@@ -2664,7 +2664,11 @@
   }
   function hatchAnim(opts = {}) {
     // A baby from the list, or any sprite (the Day Care passes the species it rolled).
-    const B = opts.key ? { key: opts.key, name: opts.name } : BABIES[opts.baby || 'dratini']
+    const B0 = opts.key ? { key: opts.key, name: opts.name } : BABIES[opts.baby || 'dratini']
+    // A shiny (Day Care Eggs: 1 in 100) uses its shiny sprite when there is one, and sparkles once it's out.
+    const shiny = !!opts.shiny
+    const B = shiny && PX.SPR.meta[`${B0.key}-shiny`] ? { ...B0, key: `${B0.key}-shiny` } : B0
+    const T_SHINY = 5.15
     const C = { x: 120, y: 112 }
     const WOB = [
       [0.8, 0.55, 5, 2],
@@ -2687,6 +2691,15 @@
         [T_CRACK[2], 'Light', 'Light leaks through the cracks; the Egg shakes without stopping and hops.'],
         [T_BURST, 'Burst', 'A white flash, shell pieces fly out and fall, stars ring out.'],
         [T_BURST + 0.1, 'Hello', `${B.name} fades in from white and hops; hearts float up.`],
+        ...(shiny
+          ? [
+              [
+                T_SHINY,
+                'Shiny',
+                'Two rings of white and gold stars burst around it, the shiny chime: it hatched shiny (Day Care Eggs, 1 in 100).',
+              ],
+            ]
+          : []),
         [T_HATCHED, 'Hatched', `“${B.name} hatched from the Egg!” and the fanfare.`],
       ],
       setup(env) {
@@ -2769,6 +2782,27 @@
             })
           }
         }
+        // Shiny: the sparkle, two rings of stars a beat apart.
+        if (shiny)
+          for (const [t0, R] of [
+            [T_SHINY, 18],
+            [T_SHINY + 0.25, 30],
+          ])
+            if (t >= t0 && t < t0 + STEP * 1.5)
+              for (let k = 0; k < 12; k++) {
+                const a = (k / 12) * Math.PI * 2
+                s.fx.add({
+                  x: C.x + Math.cos(a) * R * 0.4,
+                  y: C.y - 24 + Math.sin(a) * R * 0.4,
+                  vx: Math.cos(a) * R * 2.2,
+                  vy: Math.sin(a) * R * 2.2,
+                  drag: 3,
+                  life: 0.55,
+                  size: 2,
+                  shape: 'star',
+                  colors: ['#ffffff', '#fff6a8', '#ffe14d'],
+                })
+              }
         if (t >= T_HATCHED && t < T_HATCHED + 1.6 && r() < 0.06)
           s.amb.add({
             x: C.x + r.range(-16, 16),
@@ -2851,7 +2885,16 @@
         const c = [
           [WOB[0][0], say('Oh?')],
           [T_CRACK[1], say('The Egg is moving!')],
-          [T_HATCHED, say(`${B.name} hatched from the Egg!`)],
+          [
+            T_HATCHED,
+            say(shiny ? `A shiny ${B.name} hatched from the Egg!` : `${B.name} hatched from the Egg!`),
+          ],
+          ...(shiny
+            ? [
+                [T_SHINY, () => Sound.tone(1976, 0.12, { type: 'square', vol: 0.035 })],
+                [T_SHINY + 0.12, () => Sound.tone(2637, 0.2, { type: 'square', vol: 0.03 })],
+              ]
+            : []),
           [
             T_BURST,
             () => (

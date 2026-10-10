@@ -226,7 +226,7 @@
     ST.boxQ = ST.dexQ = ''
     // The Box: everyone caught who isn't in the team or at the Day Care, at the level they were caught.
     const team = new Set(A.TEAM.map((m) => m.dex)),
-      care = new Set(S.dayCare.filter(Boolean).map((d) => d.dex))
+      care = new Set(S.dayCare.own.filter(Boolean).map((d) => d.dex))
     const first = {}
     for (const a of [...A.K.areas].sort((x, y) => x.order - y.order))
       for (const w of a.wild || []) if (!first[w.d]) first[w.d] = w
