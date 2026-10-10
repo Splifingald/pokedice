@@ -209,6 +209,11 @@ function Mon({
 
 const key = (b: Battler, back: boolean, dex = b.dex) => spriteKey(dex, back, b.shiny)
 
+const asShown = (b: Battler, fx: Fx): Battler => {
+  const dex = fx.dex[b.uid]
+  return dex == null || dex === b.dex ? b : { ...b, dex }
+}
+
 /** The timeline for a scene of the log, and the sprites it needs loaded first. */
 function useSceneTimeline(scene: Scene | null, own: Battler, foe: Battler, short: boolean) {
   const data = useGame((s) => s.data)
@@ -262,8 +267,8 @@ export interface StageOverlay {
 }
 
 export function BattleStage({
-  own,
-  foe,
+  own: ownNow,
+  foe: foeNow,
   fx,
   art,
   ownShown,
@@ -301,6 +306,9 @@ export function BattleStage({
   /** Plates and pop-ups over the stage. */
   children?: ReactNode
 }) {
+  // Each in the form the log has reached, not the state's (which may already be past a form change).
+  const own = asShown(ownNow, fx)
+  const foe = asShown(foeNow, fx)
   const box = useRef<HTMLDivElement>(null)
   const [scale, setScale] = useState(0)
   const pace = usePace()

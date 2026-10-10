@@ -13,6 +13,7 @@ import {
   type DeckCard,
 } from '@/engine'
 import { AreaTypes } from '@/components/AreaTypes'
+import { AutoModeToggle } from '@/components/AutoModeToggle'
 import { BadgeIcon } from '@/components/BadgeIcon'
 import { PixelIcon, type IconName } from '@/components/icons'
 import { preloadSprites } from '@/components/SpriteImg'
@@ -138,7 +139,10 @@ export function RoundGauge({ area, progress }: { area: Area; progress: AreaProgr
   )
 }
 
-/** Encounter types, a slim banner, then the name with its round (or a checkmark) and levels, and the round gauge. */
+/**
+ * Encounter types, a slim banner, then the name with its round (or a checkmark) and levels, the round gauge and, in a
+ * cleared area, the auto-mode switch.
+ */
 function AreaHeader({ area, progress, teamAvg }: { area: Area; progress: AreaProgress; teamAvg: number }) {
   const { t } = useT()
   const data = useGame((s) => s.data)
@@ -187,6 +191,12 @@ function AreaHeader({ area, progress, teamAvg }: { area: Area; progress: AreaPro
         </div>
         {notes.length > 0 && <div className="text-lg leading-tight text-muted">{notes.join(' · ')}</div>}
         <RoundGauge area={area} progress={progress} />
+        {/* A cleared area can play itself: switched here, between its encounters, without a trip Home. */}
+        {progress.cleared && (
+          <div className="flex justify-end">
+            <AutoModeToggle />
+          </div>
+        )}
       </div>
     </section>
   )

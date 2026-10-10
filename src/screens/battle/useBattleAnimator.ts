@@ -21,6 +21,11 @@ export interface Fx {
   hp: Record<string, number>
   activeUid: string
   fainted: Record<string, boolean>
+  /**
+   * The form each Pokémon shows, as the log has played so far: the state is already past the log (a Gigantamax has
+   * reverted by the time its attack plays; a trainer's Mega stands there before its scene), so the stage draws this.
+   */
+  dex: Record<string, number>
   tray: { side: Side; dice: RolledDie[]; keys: string[] } | null
   pop: { id: number; target: Side; amount: number; tone: 'super' | 'weak' | 'immune' | 'normal' | 'heal' } | null
   banner: { id: number; text: string; tone: 'super' | 'weak' | 'immune' | 'info' } | null
@@ -68,12 +73,16 @@ const nextId = () => ++seq
 function initFx(b: BattleSlice): Fx {
   const hp: Record<string, number> = { [b.state.enemy.uid]: b.state.enemy.hp }
   for (const p of b.state.player) hp[p.uid] = p.hp
+  // The forms as of the log's start: replaying it from there changes them on its form entries.
+  const dex: Record<string, number> = {}
+  for (const e of b.log) if (e.kind === 'form' && !(e.uid in dex)) dex[e.uid] = e.fromDex
   return {
     cursor: 0,
     message: '',
     hp,
     activeUid: activeBattler(b.state).uid,
     fainted: {},
+    dex,
     tray: null,
     pop: null,
     banner: null,
@@ -297,12 +306,14 @@ function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): Step {
           : e.reason === 'gmax'
             ? { kind: e.revert ? 'gmaxEnd' : 'gmax', side: e.side, fromDex: e.fromDex, toDex: e.toDex }
             : undefined
+      const formed = (f: Fx) => ({ ...f.dex, [e.uid]: e.toDex })
       return {
         delay: 1300,
         sound: cryDex ? undefined : 'levelup',
-        apply: (f) => (scene ? f : { ...f, message: text, chip: chip(f), flash: { id: nextId(), target: e.side } }),
+        apply: (f) =>
+          scene ? f : { ...f, dex: formed(f), message: text, chip: chip(f), flash: { id: nextId(), target: e.side } },
         scene,
-        land: scene ? (f) => ({ ...f, message: text, chip: chip(f), cry: cry(f) }) : undefined,
+        land: scene ? (f) => ({ ...f, dex: formed(f), message: text, chip: chip(f), cry: cry(f) }) : undefined,
       }
     }
     case 'item': {

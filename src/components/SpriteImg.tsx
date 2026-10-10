@@ -201,9 +201,12 @@ export function SpriteImg({
  * sheet (src/assets/pokemon-icons.png), so a whole Box costs a single request. Every mini on screen shares the same
  * beat (the animation is offset by the wall clock). Sits before a Pokémon's name in lists and cards.
  */
+/** Every mini is drawn half again as big as the size its caller asks for: the icons read too small in game. */
+const MINI_SCALE = 1.5
+
 export function MiniSprite({
   dex,
-  size = 40,
+  size: asked = 40,
   silhouette = false,
   className,
   alt = '',
@@ -217,6 +220,7 @@ export function MiniSprite({
   const reduced = useGame((s) => s.settings.reducedMotion)
   const [delay] = useState(() => `-${Date.now() % 600}ms`)
   const cell = SHOWDOWN[dex]?.i ?? 0
+  const size = Math.round(asked * MINI_SCALE)
   const k = size / ICON_W
   return (
     <span

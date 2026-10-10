@@ -35,14 +35,15 @@ import {
 import { cx, shade, typeColor } from '@/theme/util'
 
 /**
- * A result card over the battle: on phones it rises from the bottom over the panel, the stage still in view above it;
- * the content scrolls and the `footer` (the action buttons) stays pinned at the bottom, never below the fold.
+ * A result card over the battle: it rises from the bottom over the panel (on every screen, wild or trainer fight), the
+ * stage still in view above it; the content scrolls and the `footer` (the action buttons) stays pinned at the bottom,
+ * never below the fold.
  */
 export function Overlay({ children, footer, label }: { children: ReactNode; footer?: ReactNode; label?: string }) {
   const reduced = useGame((s) => s.settings.reducedMotion)
   return (
     <motion.div
-      className="fixed inset-0 z-[80] flex items-end justify-center bg-night/45 sm:items-center sm:p-3"
+      className="fixed inset-0 z-[80] flex items-end justify-center bg-night/45 sm:px-3"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: reduced ? 0 : 0.16 }}
@@ -51,10 +52,10 @@ export function Overlay({ children, footer, label }: { children: ReactNode; foot
         role="dialog"
         aria-modal="true"
         aria-label={label}
-        className="pixel-panel flex max-h-[78dvh] w-full max-w-xl flex-col sm:max-h-[90vh]"
-        initial={reduced ? false : { y: 40 }}
+        className="pixel-panel flex max-h-[78dvh] w-full max-w-xl flex-col"
+        initial={reduced ? false : { y: '100%' }}
         animate={{ y: 0 }}
-        transition={{ duration: 0.22, ease: 'easeOut' }}
+        transition={{ duration: 0.28, ease: 'easeOut' }}
       >
         <div className="pixel-scroll min-h-0 flex-1 overflow-auto p-3 sm:p-4">{children}</div>
         {footer && (
@@ -558,6 +559,15 @@ export function VictoryView() {
           <div className="flex items-center gap-2">
             <motion.div className="shrink-0" initial={reduced ? false : { x: -30, opacity: 0 }} animate={{ x: 0, opacity: 1 }}>
               <TrainerSprite src={enc?.kind === 'trainer' || enc?.kind === 'gym' ? enc.spriteUrl : null} size={72} />
+            </motion.div>
+            {/* Who's coming, as well as said: the sprite next to the line. */}
+            <motion.div
+              className="shrink-0"
+              initial={reduced ? false : { scale: 0, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ delay: reduced ? 0 : 0.25 }}
+            >
+              <SpriteImg dex={nextMon.dex} size={64} shiny={!!nextMon.shiny} />
             </motion.div>
             <div className="text-lg leading-tight">
               {t('ui.victory.aboutToSend', {

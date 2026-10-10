@@ -53,6 +53,16 @@ export interface Timeline<S = unknown> {
 }
 
 // ---------------------------------------------------------------- shared helpers
+/** The same timeline, `k` times faster: its clock, its particles and its cues all run at that speed. */
+export function quicken<S>(tl: Timeline<S>, k: number): Timeline<S> {
+  return {
+    ...tl,
+    dur: tl.dur / k,
+    step: (s, t, dt) => tl.step(s, t * k, dt * k),
+    draw: (g, s, t) => tl.draw(g, s, t * k),
+    cues: (s) => tl.cues(s).map(([t, fn]) => [t / k, fn] as const),
+  }
+}
 export const frozenFor = (t: number, wins: readonly (readonly [number, number])[]) =>
   wins.reduce((a, [s, e]) => a + Math.max(0, Math.min(t, e) - s), 0)
 export const within = (t: number, a: number, b: number) => t >= a && t < b

@@ -1,9 +1,9 @@
 // The trainer card, opened from the avatar in the top bar: your look at 2×, your name (Change), an ID number (your
-// friend ID once you have one), the numbers that say how far you are, your team, the badge case of every region you've
-// reached, and the look other trainers see on the leaderboard and in Versus. A friend's card (docs/16) is drawn with the
+// friend ID once you have one), the numbers that say how far you are, your team, and the look other trainers see on the
+// leaderboard and in Versus (the badges are a count on the top bar; the full case is on a friend's card). A friend's card (docs/16) is drawn with the
 // same pieces: CardFrame, Stat, CardTeam and BadgeCases.
 import { useEffect, useState, type ReactNode } from 'react'
-import { linearAreas, regionCases, regionOf, regionSpecies, teamOf, versusUnlocked, type RegionCase } from '@/engine'
+import { linearAreas, regionOf, regionSpecies, teamOf, versusUnlocked, type RegionCase } from '@/engine'
 import { slug } from '@/i18n/names'
 import { useT } from '@/i18n/react'
 import { AVATAR_GROUPS, avatarOf, playerAvatarId } from '@/lib/avatars'
@@ -159,7 +159,6 @@ export function TrainerCard() {
   const species = regionSpecies(data, region)
   const areas = linearAreas(data, region)
   const best = Math.max(0, ...save.box.map((p) => p.level))
-  const regions = regionCases(save, data)
 
   if (renaming)
     return (
@@ -228,8 +227,6 @@ export function TrainerCard() {
         </div>
         <CardTeam team={teamOf(save)} label={t('ui.team.title')} />
       </CardFrame>
-
-      <BadgeCases regions={regions} hint />
 
       <section className="flex flex-col gap-2">
         <h3 className="m-0 text-[24px] font-normal leading-none">{t('ui.profile.look')}</h3>

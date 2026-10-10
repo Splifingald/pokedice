@@ -50,7 +50,7 @@ import { useT } from '@/i18n/react'
 import { effectText } from '@/i18n/text'
 import { statusName, trainerTitle, typeName } from '@/lib/format'
 import { useHoldFullscreen } from '@/lib/fullscreen'
-import { useMotion } from '@/lib/motion'
+import { capMotion, MotionCap, useMotion, type MotionLevel } from '@/lib/motion'
 import { AUTO_PACE, PaceContext, VERSUS_PACE } from '@/lib/pace'
 import { useMediaQuery } from '@/lib/useMediaQuery'
 import { setSettings, useGame, type BattleSlice } from '@/store/game'
@@ -179,9 +179,6 @@ export interface VersusReplay {
   foeIndex: number
   /** Called once when this battle has played out; may hand back a cleanup (a pending timer). */
   onPlayed: () => void | (() => void)
-  /** SKIP ▸▸ was pressed: the rest of the replay plays at once (the result was decided before it started). */
-  fast: boolean
-  onSkip: () => void
   /** The result card, once the whole fight is over. */
   end?: ReactNode
 }
@@ -196,10 +193,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
   const data = useGame((s) => s.data)
   const save = useGame((s) => s.save)
   const run = useGame((s) => s.run)
-  const { level, calm } = useMotion()
-  const fast = !!versus?.fast
-  // Nothing to wait for: animations off, or a Versus replay being skipped.
-  const quick = level === 'off' || fast
+  const { level: chosenLevel, calm } = useMotion()
   const wide = useMediaQuery('(min-width: 1024px)')
   const st = battle.state
   const stageBox = useRef<HTMLDivElement>(null)
@@ -216,6 +210,11 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
   const auto = !!versus || (autoOn && !!save && !!run.areaId && progressOf(save, run.areaId).cleared)
   // Auto-mode plays the whole fight faster: animations, dice and timers.
   const pace = versus ? VERSUS_PACE : auto ? AUTO_PACE : 1
+  // A fight that plays itself is watched, not played: short animations unless the player turned them off altogether.
+  const motionCap: MotionLevel | null = auto ? 'short' : null
+  const level = capMotion(chosenLevel, motionCap)
+  // Nothing to wait for: animations off.
+  const quick = level === 'off'
 
   // A Versus fight has nothing to do with the area the player may be standing in.
   const enc = versus ? null : run.encounter
@@ -273,15 +272,6 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
     const t = setTimeout(() => setOwnOut(true), quick ? 0 : SEND_OUT_MS * pace)
     return () => clearTimeout(t)
   }, [ownOut, foeOut, bossIntro, quick, pace])
-  // SKIP ▸▸: whatever is playing ends now.
-  useEffect(() => {
-    if (!fast) return
-    setTrainerIntro(false)
-    setBossIntro(false)
-    setFoeOut(true)
-    setOwnOut(true)
-    if (fx.scene) sceneDone()
-  }, [fast, fx.scene, sceneDone])
 
   // The enemy acts on its own once the log has caught up.
   useEffect(() => {
@@ -292,18 +282,18 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
 
   const active = st.player.find((p) => p.uid === fx.activeUid) ?? activeBattler(st)
   // Cries: the foe's as it comes out, yours as each of yours does (after the foe's when both come out at once), a
-  // Mega's once it stands there. Not while a Versus replay is skipped through.
+  // Mega's once it stands there.
   useEffect(() => {
-    if (foeOut && !fast) playCry(st.enemy.dex)
+    if (foeOut) playCry(st.enemy.dex)
     // Once per Pokémon coming out: a form change later is the Mega's own cry, below.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [foeOut, st.enemy.uid])
   useEffect(() => {
-    if (ownOut && !fast) playCry(active.dex, { wait: true })
+    if (ownOut) playCry(active.dex, { wait: true })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ownOut, active.uid])
   useEffect(() => {
-    if (fx.cry && !fast) playCry(fx.cry.dex)
+    if (fx.cry) playCry(fx.cry.dex)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fx.cry?.id])
   // A send-out, a faint or the end of the fight makes the open pop-up stale.
@@ -445,7 +435,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
   // ---- The catch, in the scene: the worn-out foe waits on its platform; one throw plays the catch timeline.
   const catching = !versus && ready && run.phase === 'catch' && !!run.catch
   const [thrown, setThrown] = useState<StageOverlay | null>(null)
-  const [catchBeat, setCatchBeat] = useState({ rolled: false, revealed: false })
+  const [revealed, setRevealed] = useState(false)
   const onThrow = (ballKey: string | null) => {
     throwBall(ballKey)
     const r = useGame.getState().run.catch?.result
@@ -463,11 +453,8 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
       label: t('ui.catch.throwing', {
         ball: data.items[r.ballKey ?? 'poke-ball']?.name ?? t('ui.catch.aBall'),
       }),
-      hud: {
-        beat: (b) => b === 'roll' && setCatchBeat((s) => ({ ...s, rolled: true })),
-        catchResult: () => setCatchBeat({ rolled: true, revealed: true }),
-      },
-      onEnd: () => setCatchBeat({ rolled: true, revealed: true }),
+      hud: { catchResult: () => setRevealed(true) },
+      onEnd: () => setRevealed(true),
     })
   }
 
@@ -550,7 +537,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
 
   const over = !!versus && played && !!versus.end
   const message = catching
-    ? catchMessage(run.catch!, st.enemy.name, catchBeat)
+    ? catchMessage(run.catch!, st.enemy.name, { revealed })
     : forced && !auto
       ? t('ui.battle.chooseNext')
       : canAct && rolling && !auto && active.rerollsLeft > 0
@@ -574,12 +561,8 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
           <Chip tone="plain">{t('ui.battle.autoMode')}</Chip>
           {t('ui.battle.autoNote')}
         </p>
-        {/* A Versus fight is decided already: skipping only fast-forwards the replay. */}
-        {versus ? (
-          <PixelButton size="md" disabled={fast} onClick={versus.onSkip}>
-            {t('ui.battle.skipReplay')}
-          </PixelButton>
-        ) : (
+        {/* A Versus fight is decided already: it plays to its end. */}
+        {!versus && (
           <PixelButton size="md" onClick={() => setSettings({ autoMode: false })}>
             {t('ui.battle.stop')}
           </PixelButton>
@@ -592,7 +575,18 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
         {t('ui.battle.skipTurn')}
       </PixelButton>
     )
-  else if (forced) actions = <ForfeitButton />
+  else if (forced)
+    // After a K.O. the choice sits right under the battle, with what each one brings against this foe.
+    actions = (
+      <div className="flex flex-col gap-2">
+        {st.player
+          .filter((p) => p.hp > 0)
+          .map((p) => (
+            <SwitchRow key={p.uid} b={p} detailed onPick={() => dispatch({ t: 'SWITCH', instanceId: p.uid })} />
+          ))}
+        <ForfeitButton />
+      </div>
+    )
   else if (rolling && !terminal)
     actions = (
       <div className="grid grid-cols-[1fr_1.4fr] gap-2.5">
@@ -684,7 +678,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
   )
 
   return (
-    <PaceContext.Provider value={pace}>
+    <BattleContexts pace={pace} motionCap={motionCap}>
       <div className="mx-auto w-full lg:grid lg:max-w-[1000px] lg:grid-cols-[minmax(0,1fr)_300px] lg:items-start lg:gap-4 lg:p-4">
         <section
           aria-label={heading}
@@ -707,8 +701,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
               <CatchPanel
                 c={run.catch!}
                 onThrow={onThrow}
-                rolled={catchBeat.rolled}
-                revealed={catchBeat.revealed}
+                revealed={revealed}
               />
             ) : over ? (
               <div className="mt-auto">{actions}</div>
@@ -1012,11 +1005,31 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
       {!versus && ready && run.phase === 'victory' && <VictoryView />}
       {!versus && ready && run.phase === 'wipe' && <WipeView />}
       {!versus && ready && run.phase === 'stalemate' && <StalemateView />}
+    </BattleContexts>
+  )
+}
+
+/** The battle's pace and motion cap, for everything on screen (the result cards included). */
+function BattleContexts({ pace, motionCap, children }: { pace: number; motionCap: MotionLevel | null; children: ReactNode }) {
+  return (
+    <PaceContext.Provider value={pace}>
+      <MotionCap.Provider value={motionCap}>{children}</MotionCap.Provider>
     </PaceContext.Provider>
   )
 }
 
-function SwitchRow({ b, onPick, disabled }: { b: Battler; onPick: () => void; disabled?: boolean }) {
+function SwitchRow({
+  b,
+  onPick,
+  disabled,
+  detailed,
+}: {
+  b: Battler
+  onPick: () => void
+  disabled?: boolean
+  /** Its types, dice and rerolls too: the pick after a K.O. */
+  detailed?: boolean
+}) {
   const { t } = useT()
   return (
     <button
@@ -1034,6 +1047,19 @@ function SwitchRow({ b, onPick, disabled }: { b: Battler; onPick: () => void; di
           <span>{t('ui.common.level.short', { n: b.level })}</span>
         </div>
         <HpBar hp={b.hp} max={b.maxHp} height={8} className="mt-1" />
+        {detailed && (
+          <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1">
+            <span className="flex gap-1">
+              {b.types.map((x) => (
+                <TypeBadge key={x} type={x} size="sm" />
+              ))}
+            </span>
+            <DiceSet dice={b.dice} size={20} />
+            <span className="ml-auto font-pixel-sm text-[15px] leading-none tabular-nums text-muted">
+              {b.hp}/{b.maxHp}
+            </span>
+          </div>
+        )}
       </div>
     </button>
   )

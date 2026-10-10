@@ -12,7 +12,7 @@ import { centerTimeline } from '@/fx/timelines/center'
 import { useMotion } from '@/lib/motion'
 import { putInTeam, removeFromTeam, reorderTeam } from '@/store/actions'
 import { useGame } from '@/store/game'
-import { finishCenter } from '@/store/run'
+import { continueExploring, finishCenter } from '@/store/run'
 
 /** Chansey, behind the healing machine's counter. */
 const NURSE = 113
@@ -101,7 +101,8 @@ export function CenterView() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="pixel-panel overflow-hidden p-0">
+      {/* The machine at phone size: on a wide screen it would fill the page. */}
+      <div className="pixel-panel w-full self-center overflow-hidden p-0 md:max-w-[420px]">
         <StageCanvas
           timeline={scene.timeline}
           ready={scene.ready}
@@ -156,9 +157,23 @@ export function CenterView() {
 
       {/* Always on screen, above the phone bottom bar. */}
       <div className="sticky z-30 -mx-3 border-t-[3px] border-edge bg-parchment px-3 py-2" style={{ bottom: 'var(--bottom-nav)' }}>
-        <PixelButton variant="primary" size="lg" className="w-full md:mx-auto md:flex md:w-80" onClick={finishCenter}>
-          {t('ui.common.continue')}
-        </PixelButton>
+        {/* Healed: back Home, or straight on to this area's next encounter. */}
+        <div className="grid grid-cols-[1fr_1.4fr] gap-2.5 md:mx-auto md:max-w-md">
+          <PixelButton size="lg" className="whitespace-nowrap px-2" onClick={finishCenter}>
+            {t('ui.nav.home')}
+          </PixelButton>
+          <PixelButton
+            variant="primary"
+            size="lg"
+            className="whitespace-nowrap px-2"
+            onClick={() => {
+              finishCenter()
+              continueExploring()
+            }}
+          >
+            {t('ui.area.nextEncounter')}
+          </PixelButton>
+        </div>
       </div>
 
       <SheetModal view={view} onClose={done} instExtra={teamActions} />

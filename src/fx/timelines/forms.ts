@@ -30,7 +30,7 @@ import {
 } from '../pixel'
 import { ball, type Point } from '../scenes'
 import { drawSprite, spriteSize, type SpriteLook } from '../sprites'
-import { quad, screenFlash, Stage, STEP, W, within, type Cue, type Side, type Timeline } from '../timeline'
+import { quad, quicken, screenFlash, Stage, STEP, W, within, type Cue, type Side, type Timeline } from '../timeline'
 
 const PRISM = ['#ff6b8f', '#ffb23a', '#ffe14d', '#7cf07a', '#4ad7ff', '#8f7bff', '#e07bff']
 
@@ -617,7 +617,10 @@ export function gmaxEndTimeline(p: FormParams): Timeline<Stage> {
 }
 
 /** The form change for a motion level: the full timeline, or the short flash-and-swap. */
-export const megaFor = (p: FormParams) => (p.short ? flashSwap(p, 'mega') : megaTimeline(p))
+/** In a fight the full scenes play this much faster than the Visual Lab drew them (6.6 s and 7.2 s felt slow). */
+const IN_BATTLE = 1.6
+
+export const megaFor = (p: FormParams) => (p.short ? flashSwap(p, 'mega') : quicken(megaTimeline(p), IN_BATTLE))
 export const gmaxFor = (p: FormParams) =>
   // A trainer's Gigantamax has no ball at your side to come from: it changes with the flash.
-  p.short || p.side === 'foe' ? flashSwap(p, 'gmax') : gmaxTimeline(p)
+  p.short || p.side === 'foe' ? flashSwap(p, 'gmax') : quicken(gmaxTimeline(p), IN_BATTLE)

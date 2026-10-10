@@ -263,27 +263,71 @@ const FX_SOUNDS = {
     tone(1568, 0.3, { type: 'square', vol: 0.035 })
   },
   'hatch.fanfare': (n = 0) => tone(HATCH_FANFARE[n]!, n === 3 ? 0.5 : 0.12, { type: 'square', vol: 0.045 }),
-  'mega.key': () => tone(1568, 0.15, { type: 'square', vol: 0.035 }),
-  'mega.beam': () => tone(523, 0.55, { type: 'triangle', vol: 0.05, slide: 520 }),
-  'mega.orb': () => tone(392, 0.5, { type: 'triangle', vol: 0.05, slide: 260 }),
-  'mega.swap': (n = 0) => tone(440 + n * 30, 0.05, { type: 'square', vol: 0.025 }),
-  'mega.crack': () => hiss(0.35, { freq: 1800, vol: 0.04 }),
+  // Mega Evolution and Gigantamax are the biggest moments of a fight: layered chords, a sub boom and a rising charge,
+  // not single beeps.
+  'mega.key': () => {
+    tone(1568, 0.25, { type: 'square', vol: 0.05 })
+    tone(2093, 0.3, { type: 'triangle', vol: 0.05, at: 0.06 })
+  },
+  'mega.beam': () => {
+    tone(392, 0.7, { type: 'sawtooth', vol: 0.05, slide: 700 })
+    tone(523, 0.7, { type: 'triangle', vol: 0.07, slide: 900 })
+    hiss(0.6, { freq: 2400, vol: 0.05, slide: 2000 })
+  },
+  'mega.orb': () => {
+    tone(196, 0.8, { type: 'sawtooth', vol: 0.06, slide: 400 })
+    tone(392, 0.8, { type: 'triangle', vol: 0.07, slide: 520 })
+  },
+  'mega.swap': (n = 0) => tone(440 + n * 45, 0.06, { type: 'square', vol: 0.04 }),
+  'mega.crack': () => {
+    hiss(0.45, { freq: 2200, vol: 0.08 })
+    tone(1760, 0.3, { type: 'square', vol: 0.035, slide: 800 })
+  },
   'mega.burst': () => {
-    hiss(0.6, { vol: 0.09, freq: 1500 })
-    tone(784, 0.4, { type: 'square', vol: 0.04 })
+    hiss(0.9, { vol: 0.16, freq: 1200, slide: -900 })
+    tone(55, 0.9, { type: 'sine', vol: 0.22, slide: -20 })
+    tone(110, 0.7, { type: 'sawtooth', vol: 0.06, slide: -40 })
+    ;[784, 988, 1175].forEach((f) => tone(f, 0.6, { type: 'square', vol: 0.035 }))
   },
-  'mega.fanfare': (n = 0) => tone([659, 784, 1047, 1319][n]!, n === 3 ? 0.5 : 0.11, { type: 'square', vol: 0.04 }),
-  'gmax.recall': () => tone(880, 0.3, { type: 'triangle', vol: 0.04, slide: -500 }),
-  'gmax.grow': () => tone(110, 1.0, { type: 'sawtooth', vol: 0.04, slide: 220 }),
-  'gmax.throw': () => hiss(0.35, { freq: 900, vol: 0.05 }),
-  'gmax.open': () => tone(220, 0.8, { type: 'square', vol: 0.035, slide: -80 }),
-  'gmax.step': () => hiss(0.2, { freq: 200, vol: 0.09 }),
+  'mega.fanfare': (n = 0) => {
+    const f = [659, 784, 1047, 1319][n]!
+    const d = n === 3 ? 0.8 : 0.13
+    tone(f, d, { type: 'square', vol: 0.055 })
+    tone(f * 0.75, d, { type: 'square', vol: 0.03 })
+    tone(f / 2, d, { type: 'triangle', vol: 0.06 })
+  },
+  'gmax.recall': () => tone(880, 0.35, { type: 'triangle', vol: 0.06, slide: -600 }),
+  'gmax.grow': () => {
+    tone(82, 1.1, { type: 'sawtooth', vol: 0.06, slide: 260 })
+    tone(41, 1.1, { type: 'sine', vol: 0.16, slide: 120 })
+    hiss(1.0, { freq: 300, vol: 0.06, slide: 900 })
+  },
+  'gmax.throw': () => hiss(0.4, { freq: 900, vol: 0.08, slide: 1200 }),
+  'gmax.open': () => {
+    tone(220, 0.9, { type: 'square', vol: 0.05, slide: -100 })
+    tone(55, 0.9, { type: 'sine', vol: 0.18 })
+  },
+  'gmax.step': () => {
+    hiss(0.3, { freq: 160, vol: 0.16 })
+    tone(45, 0.35, { type: 'sine', vol: 0.25, slide: -15 })
+  },
   'gmax.reveal': () => {
-    hiss(0.8, { freq: 160, vol: 0.12 })
-    tone(98, 0.8, { type: 'sawtooth', vol: 0.05 })
+    hiss(1.1, { freq: 160, vol: 0.18 })
+    tone(49, 1.2, { type: 'sine', vol: 0.25 })
+    tone(98, 1.0, { type: 'sawtooth', vol: 0.07 })
+    ;[196, 247, 294].forEach((f) => tone(f, 0.9, { type: 'square', vol: 0.03 }))
   },
-  'gmax.fanfare': (n = 0) => tone([392, 494, 587, 784][n]!, n === 3 ? 0.55 : 0.12, { type: 'square', vol: 0.04 }),
-  'gmax.shrink': () => tone(440, 0.5, { type: 'triangle', vol: 0.04, slide: -300 }),
+  'gmax.fanfare': (n = 0) => {
+    const f = [392, 494, 587, 784][n]!
+    const d = n === 3 ? 0.85 : 0.14
+    tone(f, d, { type: 'square', vol: 0.055 })
+    tone(f * 0.75, d, { type: 'square', vol: 0.03 })
+    tone(f / 4, d, { type: 'sawtooth', vol: 0.05 })
+  },
+  'gmax.shrink': () => {
+    tone(440, 0.6, { type: 'triangle', vol: 0.06, slide: -320 })
+    hiss(0.5, { freq: 1200, vol: 0.05, slide: -900 })
+  },
   'form.flash': () => tone(1047, 0.25, { type: 'square', vol: 0.04 }),
   'starter.drop': () => tone(1200, 0.5, { type: 'triangle', vol: 0.03, slide: -700 }),
   'starter.land': () => hiss(0.08, { freq: 500, vol: 0.06 }),

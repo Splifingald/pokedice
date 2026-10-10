@@ -83,8 +83,8 @@ export interface Preview {
 }
 
 /**
- * Under the tray: the combo chip (or "No combo"), `(sum + bonus) × mult = damage` with the damage big (a button: the
- * full breakdown), how effective it is, and a chip per status face — lit once its threshold is met.
+ * Under the tray: the combo chip (or "No combo"), the damage, big (a button: the math behind it, shown once, under the
+ * readout), how effective it is, and a chip per status face — lit once its threshold is met.
  */
 export function Readout({
   preview,
@@ -100,8 +100,6 @@ export function Readout({
 }) {
   const { t } = useT()
   const { r } = preview
-  const sum = r.perDie.reduce((n, p) => n + p.value + p.bonus, 0)
-  const mult = r.perDie[0]?.multiplier ?? 1
   const eff = r.immune ? 'none' : r.effectiveness > 1 ? 'up' : r.effectiveness < 1 ? 'down' : null
   return (
     <>
@@ -125,11 +123,9 @@ export function Readout({
         onClick={onToggle}
         className="inline-flex min-h-[44px] items-center gap-1 whitespace-nowrap px-1 font-pixel-sm text-[18px] leading-none text-ink md:min-h-[32px]"
       >
-        <span aria-hidden>
-          ({sum}
-          {r.combo ? ` + ${r.combo.bonus}` : ''}){mult !== 1 ? ` × ${mult}` : ''} =
-        </span>
-        <b className="font-pixel text-[26px] font-normal leading-none">{r.final}</b>
+        <b className="font-pixel text-[26px] font-normal leading-none underline decoration-dotted decoration-2 underline-offset-4">
+          {r.final}
+        </b>
       </button>
       {eff && (
         <span

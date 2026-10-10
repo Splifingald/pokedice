@@ -122,8 +122,6 @@ export function VersusScreen() {
         key={fight.n}
         fight={fight.fight}
         foe={fight.foe}
-        busy={busy}
-        onRematch={() => void startFight(fight.foe)}
         onExit={() => {
           setFight(null)
           refresh()
@@ -643,15 +641,10 @@ let replaySeq = 1_000_000
 function VersusFightView({
   fight,
   foe,
-  busy,
-  onRematch,
   onExit,
 }: {
   fight: VersusFight
   foe: VersusEntry
-  /** A rematch is being computed and recorded. */
-  busy: boolean
-  onRematch: () => void
   onExit: () => void
 }) {
   const { t } = useT()
@@ -663,8 +656,6 @@ function VersusFightView({
     id: ++replaySeq,
   }))
   const [over, setOver] = useState(false)
-  // SKIP ▸▸: the result is decided before the fight starts, so skipping only plays the rest of the replay at once.
-  const [fast, setFast] = useState(false)
   const cursor = useRef(0)
   const won = fight.winner === 'attacker'
 
@@ -684,10 +675,10 @@ function VersusFightView({
         setRoundIndex(roundIndex + 1)
         setSlice({ state: next.start.state, log: next.start.log, id: ++replaySeq })
       },
-      fast ? 0 : 700,
+      700,
     )
     return () => clearTimeout(timer)
-  }, [fight, roundIndex, fast])
+  }, [fight, roundIndex])
 
   const replay: VersusReplay = {
     dispatch: (e: BattleEvent) => {
@@ -702,8 +693,6 @@ function VersusFightView({
     foeCount: foe.team.length,
     foeIndex: round.defenderIndex,
     onPlayed,
-    fast,
-    onSkip: () => setFast(true),
     end: over ? (
       <div className="grid gap-2 bg-paper p-3 shadow-card" role="status">
         <div className="flex items-center gap-2">
@@ -715,14 +704,10 @@ function VersusFightView({
         <p className="m-0 font-pixel-sm text-[16px] leading-tight text-muted">
           {t(won ? 'ui.versus.won.body' : 'ui.versus.lost.body', { name: foe.name })}
         </p>
-        <div className="grid grid-cols-[1fr_1.4fr] gap-2.5">
-          <PixelButton size="lg" className="whitespace-nowrap px-2" disabled={busy} onClick={onRematch}>
-            {t('ui.battle.rematch')}
-          </PixelButton>
-          <PixelButton variant="primary" size="lg" className="whitespace-nowrap px-2" onClick={onExit}>
-            {t('ui.versus.back')}
-          </PixelButton>
-        </div>
+        {/* Once it's done, it's done: no rematch from here. */}
+        <PixelButton variant="primary" size="lg" className="w-full whitespace-nowrap px-2" onClick={onExit}>
+          {t('ui.versus.back')}
+        </PixelButton>
       </div>
     ) : undefined,
   }

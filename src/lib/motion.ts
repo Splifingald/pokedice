@@ -1,4 +1,5 @@
 // How much the game animates, in one place: every timeline and transition asks here (docs/15-UI-GUIDELINES.md).
+import { createContext, useContext } from 'react'
 import { useGame } from '@/store/game'
 import { useMediaQuery } from './useMediaQuery'
 
@@ -20,10 +21,17 @@ export function motionLevel(
   return s.animations === 'short' || osReduce ? 'short' : 'full'
 }
 
+/** A screen that wants less motion than the setting (an auto battle plays `short`) caps it for everything inside. */
+export const MotionCap = createContext<MotionLevel | null>(null)
+
+const RANK: Record<MotionLevel, number> = { off: 0, short: 1, full: 2 }
+export const capMotion = (level: MotionLevel, cap: MotionLevel | null): MotionLevel =>
+  cap && RANK[cap] < RANK[level] ? cap : level
+
 export function useMotion(): { level: MotionLevel; calm: boolean } {
   const s = useGame((g) => g.settings)
   const osReduce = useMediaQuery('(prefers-reduced-motion: reduce)')
-  const level = motionLevel(s, osReduce)
+  const level = capMotion(motionLevel(s, osReduce), useContext(MotionCap))
   // No screen shake, no flashing, a still Home team: what the OS setting and "no animations" both ask for.
   return { level, calm: level === 'off' || osReduce }
 }

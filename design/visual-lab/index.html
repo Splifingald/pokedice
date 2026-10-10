@@ -6,6 +6,7 @@
   rel="stylesheet"
   href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Doto:wght@600;800&family=Handjet:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Jersey+15&family=Jersey+20&family=Jersey+25&family=Pixelify+Sans:wght@400;500;600;700&family=Silkscreen:wght@400;700&display=swap"
 />
+<link rel="stylesheet" href="bgs.css" />
 <style>
   /*
    * Layout: a sticky control deck (sections + the global style switch) over one centred column, 1280 px at most.
@@ -1443,6 +1444,7 @@
       <button class="tab" role="tab" id="tab-animations" aria-controls="animations" data-tab="animations">Animations</button>
       <button class="tab" role="tab" id="tab-styles" aria-controls="styles" data-tab="styles">Style lab</button>
       <button class="tab" role="tab" id="tab-moodboards" aria-controls="moodboards" data-tab="moodboards">Moodboards</button>
+      <button class="tab" role="tab" id="tab-backgrounds" aria-controls="backgrounds" data-tab="backgrounds">Backgrounds</button>
     </div>
     <span class="deck-note">Johto Daybreak · Jersey 20</span>
   </div>
@@ -1665,6 +1667,9 @@
     <div class="mb-index seg small" id="mb-index" role="group" aria-label="Jump to moodboard"></div>
     <div id="mb-list"></div>
   </section>
+  <section id="backgrounds" role="tabpanel" aria-labelledby="tab-backgrounds" hidden>
+    <div id="bg-app"></div>
+  </section>
 </main>
 
 <footer class="wrap">
@@ -1682,3 +1687,4 @@
 <script src="social.js"></script>
 <script src="starter.js"></script>
 <script src="lab.js"></script>
+<script src="bgs.js"></script>

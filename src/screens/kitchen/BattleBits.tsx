@@ -60,6 +60,7 @@ export function BattleBits() {
     hp: {},
     activeUid: own.uid,
     fainted: {},
+    dex: {},
     tray: null,
     pop: null,
     banner: null,
@@ -132,7 +133,6 @@ export function BattleBits() {
         <CatchPanel
           c={{ dex: 130, level: 30, kind: 'wild', target: { mode: 'new' }, result: null }}
           onThrow={() => {}}
-          rolled={false}
           revealed={false}
         />
       </div>

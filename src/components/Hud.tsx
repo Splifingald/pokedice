@@ -120,7 +120,7 @@ function NavEntry({ n, variant }: { n: NavItem; variant: 'side' | 'bottom' }) {
   )
 }
 
-/** The gold, as a navy pill; its red "+" opens the Poké Mart. */
+/** The gold, as a navy pill; a tap opens the Poké Mart. */
 function GoldButton() {
   const { t } = useT()
   const gold = useGame((s) => s.save?.gold ?? 0)
@@ -134,15 +134,12 @@ function GoldButton() {
       aria-disabled={inFight || undefined}
       aria-label={t('ui.nav.goldShop', { amount: gold.toLocaleString(getLang()) })}
       className={cx(
-        'pixel-corners inline-flex min-h-[44px] light-scope shrink-0 items-center gap-1.5 bg-night pl-2.5 pr-1 text-[19px] leading-none text-gold-light md:min-h-[40px]',
+        'pixel-corners inline-flex min-h-[44px] light-scope shrink-0 items-center gap-1.5 bg-night px-2.5 text-[19px] leading-none text-gold-light md:min-h-[40px]',
         inFight && 'pointer-events-none opacity-60',
       )}
     >
       <PixelIcon name="coin" size={16} />
       <span className="tabular-nums">₽ {text}</span>
-      <i className="grid h-[26px] w-[26px] place-items-center bg-crimson text-[22px] not-italic leading-none text-white" aria-hidden>
-        +
-      </i>
     </Link>
   )
 }
@@ -172,8 +169,8 @@ function RoundLink({ to, label, children, blocked, current, onBlocked }: { to: s
 }
 
 /**
- * Top bar: you (your look, name and badges: the trainer menu), energy, your gold (→ Poké Mart) and the cup (→ the
- * leaderboard, locked until the first badge). Menus mid-fight are disabled.
+ * Top bar: energy on the left; on the right your gold (→ Poké Mart), the cup (→ the leaderboard, locked until the
+ * first badge) and, last, you (your look, name and badges: the trainer menu). Menus mid-fight are disabled.
  */
 export function Header() {
   const { t } = useT()
@@ -187,9 +184,8 @@ export function Header() {
   return (
     <header className="sticky top-0 z-40 bg-panel shadow-[0_2px_0_rgb(var(--c-edge)),0_4px_0_rgb(var(--c-edge)/0.13)]">
       <div className="mx-auto flex h-14 max-w-6xl items-center gap-2 px-2.5 md:max-w-none">
-        <PlayerMenu />
-        <span className="flex-1" />
         <EnergyPill />
+        <span className="flex-1" />
         <GoldButton />
         <RoundLink
           to="/leaderboard"
@@ -200,6 +196,7 @@ export function Header() {
         >
           <PixelIcon name="navRanks" size={30} />
         </RoundLink>
+        <PlayerMenu />
       </div>
     </header>
   )

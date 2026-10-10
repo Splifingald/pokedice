@@ -20,7 +20,7 @@ const CATCH_TIP_KEY = 'pokedice.tip.catch'
 type Catch = NonNullable<RunState['catch']>
 
 /** What the message box says during the catch. */
-export function catchMessage(c: Catch, name: string, thrown: { rolled: boolean; revealed: boolean }): string {
+export function catchMessage(c: Catch, name: string, thrown: { revealed: boolean }): string {
   const r = c.result
   if (!r)
     return tr('ui.catch.wornOut', {
@@ -31,25 +31,19 @@ export function catchMessage(c: Catch, name: string, thrown: { rolled: boolean; 
     return r.caught
       ? tr('ui.catch.caught', { name })
       : tr('ui.catch.missed', { need: Math.max(1, r.need - r.bonus) })
+  // Nothing about the result until the ball has finished its wobbles: the die would give it away.
   const data = useGame.getState().data
-  // A throw that can't miss has no die to roll.
-  const certain = catchChance(catchValueOf(data, c.dex), r.bonus) >= 1
-  return thrown.rolled && !certain
-    ? tr('ui.catch.rolling')
-    : tr('ui.catch.throwing', { ball: data.items[r.ballKey ?? 'poke-ball']?.name ?? tr('ui.catch.aBall') })
+  return tr('ui.catch.throwing', { ball: data.items[r.ballKey ?? 'poke-ball']?.name ?? tr('ui.catch.aBall') })
 }
 
 /** The ball picker, the catch math and the throw; after it, the die and CONTINUE. */
 export function CatchPanel({
   c,
   onThrow,
-  rolled,
   revealed,
 }: {
   c: Catch
   onThrow: (ballKey: string | null) => void
-  /** The catch die has landed (the timeline's 'roll' beat). */
-  rolled: boolean
   /** The result is out. */
   revealed: boolean
 }) {
@@ -87,7 +81,8 @@ export function CatchPanel({
     return (
       <>
         <div className="flex min-h-[64px] items-center justify-center gap-2.5 font-pixel text-[24px] leading-none text-ink">
-          {rolled && !certain && (
+          {/* The die shows with the result, never before it: it would spoil the wobbles. */}
+          {revealed && !certain && (
             <>
               <Die
                 type="base"
