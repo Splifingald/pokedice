@@ -1,12 +1,14 @@
-// The trainer card, opened from the avatar in the top bar: your look at 2×, your name (Change), an ID number, the
-// numbers that say how far you are, your team, the badge case of every region you've reached, and the look other
-// trainers see on the leaderboard and in Versus.
-import { useEffect, useState } from 'react'
-import { linearAreas, regionCases, regionOf, regionSpecies, teamOf, versusUnlocked } from '@/engine'
+// The trainer card, opened from the avatar in the top bar: your look at 2×, your name (Change), an ID number (your
+// friend ID once you have one), the numbers that say how far you are, your team, the badge case of every region you've
+// reached, and the look other trainers see on the leaderboard and in Versus. A friend's card (docs/16) is drawn with the
+// same pieces: CardFrame, Stat, CardTeam and BadgeCases.
+import { useEffect, useState, type ReactNode } from 'react'
+import { linearAreas, regionCases, regionOf, regionSpecies, teamOf, versusUnlocked, type RegionCase } from '@/engine'
 import { slug } from '@/i18n/names'
 import { useT } from '@/i18n/react'
 import { AVATAR_GROUPS, avatarOf, playerAvatarId } from '@/lib/avatars'
 import { money } from '@/lib/format'
+import { formatCode, useFriends } from '@/lib/friends'
 import { fetchVersusBoard } from '@/lib/versus'
 import { CharacterSelect } from '@/screens/NewGame'
 import { mutateSave, useGame } from '@/store/game'
@@ -43,7 +45,7 @@ function useVersusRecord(enabled: boolean): { won: number; held: number } | null
   return rec
 }
 
-function Stat({ label, value }: { label: string; value: string }) {
+export function Stat({ label, value }: { label: string; value: string }) {
   return (
     <>
       <dt className="font-pixel-sm text-[15px] text-muted">{label}</dt>
@@ -51,6 +53,90 @@ function Stat({ label, value }: { label: string; value: string }) {
         {value}
       </dd>
     </>
+  )
+}
+
+/** The blue trainer card: a small caps label and a note on top (an ID, "friends since"), then whatever it holds. */
+export function CardFrame({ label, note, children }: { label: string; note?: string; children: ReactNode }) {
+  return (
+    <div className="grid gap-2 bg-[linear-gradient(rgb(var(--c-sky)),rgb(var(--c-paper))_60%)] px-2.5 pb-3 pt-2 shadow-[inset_0_0_0_2px_rgb(var(--c-edge)),inset_0_0_0_5px_#5b8def,inset_0_0_0_7px_rgb(var(--c-edge)),inset_0_-10px_0_rgb(var(--c-sky-line))]">
+      <div className="flex justify-between gap-2 px-1.5 pt-1 font-pixel-sm text-[14px] uppercase tracking-[0.06em] text-[#2f5fb8] dark:text-[#8fb4ff]">
+        <span>{label}</span>
+        {note && <span className="truncate">{note}</span>}
+      </div>
+      {children}
+    </div>
+  )
+}
+
+/** A team under the card's numbers: menu icons with their levels. */
+export function CardTeam({ team, label }: { team: { dex: number; level: number }[]; label: string }) {
+  const { t } = useT()
+  const species = useGame((s) => s.data.species)
+  return (
+    <ul className="m-0 flex list-none justify-center gap-1 border-t-2 border-sky-line p-0 pt-1" aria-label={label}>
+      {team.map((p, i) => (
+        <li key={i} className="grid justify-items-center">
+          <MiniSprite dex={p.dex} size={40} alt={species[p.dex]?.name ?? ''} />
+          <small className="-mt-1 font-pixel-sm text-[13px] text-muted">{t('ui.common.level.short', { n: p.level })}</small>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+/** A navy badge case per region, each badge at 3×, then the crown for clearing the region. */
+export function BadgeCases({ regions, hint }: { regions: RegionCase[]; hint?: boolean }) {
+  const { t } = useT()
+  if (!regions.length) return null
+  return (
+    <section className="flex flex-col gap-2">
+      <h3 className="m-0 text-[24px] font-normal leading-none">{t('ui.profile.badgeCase')}</h3>
+      {regions.map((r) => (
+        <div key={r.id} className="flex flex-col gap-1">
+          <div className="flex items-baseline gap-2">
+            <span className="text-[20px] leading-none">{r.name}</span>
+            <span className="ml-auto font-pixel-sm text-[15px] text-muted">
+              {t('ui.map.badges', { earned: r.earned, total: r.badges.length })}
+            </span>
+          </div>
+          <ul
+            aria-label={t('ui.map.badgesLabel', { earned: r.earned, total: r.badges.length })}
+            className="m-0 grid list-none grid-cols-[repeat(auto-fill,minmax(62px,1fr))] gap-x-1 gap-y-2 bg-[#2b3a63] px-2 py-2.5 shadow-[inset_0_0_0_2px_rgb(var(--c-edge)),inset_0_4px_0_#1b2647]"
+          >
+            {r.badges.map((b) => (
+              <li key={b.trainerId} className="grid justify-items-center gap-[3px] text-center">
+                <span className={cx(!b.earned && 'opacity-40')}>
+                  <BadgeIcon badge={b.badge} earned={b.earned} size={36} />
+                </span>
+                <span
+                  aria-hidden
+                  className={cx('font-pixel-sm text-[13px] leading-none', b.earned ? 'text-[#e3e9f2]' : 'text-[#b6c3d9]')}
+                >
+                  {t(`badge.${slug(b.badge)}`)}
+                </span>
+              </li>
+            ))}
+            <li className="grid justify-items-center gap-[3px] text-center">
+              <span className={cx(!r.endgameCleared && 'opacity-40')}>
+                <CrownIcon
+                  earned={r.endgameCleared}
+                  size={36}
+                  label={r.endgameCleared ? t('ui.card.crown') : t('ui.profile.badgeLocked', { badge: t('ui.card.crown') })}
+                />
+              </span>
+              <span
+                aria-hidden
+                className={cx('font-pixel-sm text-[13px] leading-none', r.endgameCleared ? 'text-[#e3e9f2]' : 'text-[#b6c3d9]')}
+              >
+                {t('ui.card.crown')}
+              </span>
+            </li>
+          </ul>
+        </div>
+      ))}
+      {hint && <p className="m-0 font-pixel-sm text-[15px] leading-[1.15] text-muted">{t('ui.profile.crownHint')}</p>}
+    </section>
   )
 }
 
@@ -63,6 +149,8 @@ export function TrainerCard() {
   const [picking, setPicking] = useState(false)
   const versusOpen = !!save && versusUnlocked(save, data)
   const record = useVersusRecord(versusOpen && auth.status === 'signed_in')
+  // Your friend ID stands in for the ID number once this device knows it (docs/16).
+  const friendCode = useFriends((st) => (st.userId && st.userId === auth.userId ? st.code : null))
   if (!save) return null
   const me = playerOf(save)
   const look = avatarOf(playerAvatarId(save.player))
@@ -89,11 +177,14 @@ export function TrainerCard() {
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="grid gap-2 bg-[linear-gradient(rgb(var(--c-sky)),rgb(var(--c-paper))_60%)] px-2.5 pb-3 pt-2 shadow-[inset_0_0_0_2px_rgb(var(--c-edge)),inset_0_0_0_5px_#5b8def,inset_0_0_0_7px_rgb(var(--c-edge)),inset_0_-10px_0_rgb(var(--c-sky-line))]">
-        <div className="flex justify-between px-1.5 pt-1 font-pixel-sm text-[14px] uppercase tracking-[0.06em] text-[#2f5fb8] dark:text-[#8fb4ff]">
-          <span>{t('ui.profile.title')}</span>
-          <span>{t('ui.card.idNo', { n: idNumber(auth.userId ?? `${me.name}|${me.character}`) })}</span>
-        </div>
+      <CardFrame
+        label={t('ui.profile.title')}
+        note={
+          friendCode
+            ? t('ui.card.idNo', { n: formatCode(friendCode) })
+            : t('ui.card.idNo', { n: idNumber(auth.userId ?? `${me.name}|${me.character}`) })
+        }
+      >
         <div className="grid grid-cols-[96px_minmax(0,1fr)] items-start gap-2.5 px-1">
           <TrainerLook src={look.src} w={96} h={124} zoom={2} className="bg-paper shadow-ring" />
           <div className="grid min-w-0 gap-1.5">
@@ -135,82 +226,10 @@ export function TrainerCard() {
             </dl>
           </div>
         </div>
-        <ul
-          className="m-0 flex list-none justify-center gap-1 border-t-2 border-sky-line p-0 pt-1"
-          aria-label={t('ui.team.title')}
-        >
-          {teamOf(save).map((p) => (
-            <li key={p.id} className="grid justify-items-center">
-              <MiniSprite dex={p.dex} size={40} alt={data.species[p.dex]?.name ?? ''} />
-              <small className="-mt-1 font-pixel-sm text-[13px] text-muted">
-                {t('ui.common.level.short', { n: p.level })}
-              </small>
-            </li>
-          ))}
-        </ul>
-      </div>
+        <CardTeam team={teamOf(save)} label={t('ui.team.title')} />
+      </CardFrame>
 
-      {regions.length > 0 && (
-        <section className="flex flex-col gap-2">
-          <h3 className="m-0 text-[24px] font-normal leading-none">{t('ui.profile.badgeCase')}</h3>
-          {regions.map((r) => (
-            <div key={r.id} className="flex flex-col gap-1">
-              <div className="flex items-baseline gap-2">
-                <span className="text-[20px] leading-none">{r.name}</span>
-                <span className="ml-auto font-pixel-sm text-[15px] text-muted">
-                  {t('ui.map.badges', { earned: r.earned, total: r.badges.length })}
-                </span>
-              </div>
-              <ul
-                aria-label={t('ui.map.badgesLabel', { earned: r.earned, total: r.badges.length })}
-                className="m-0 grid list-none grid-cols-[repeat(auto-fill,minmax(62px,1fr))] gap-x-1 gap-y-2 bg-[#2b3a63] px-2 py-2.5 shadow-[inset_0_0_0_2px_rgb(var(--c-edge)),inset_0_4px_0_#1b2647]"
-              >
-                {r.badges.map((b) => (
-                  <li key={b.trainerId} className="grid justify-items-center gap-[3px] text-center">
-                    <span className={cx(!b.earned && 'opacity-40')}>
-                      <BadgeIcon badge={b.badge} earned={b.earned} size={36} />
-                    </span>
-                    <span
-                      aria-hidden
-                      className={cx(
-                        'font-pixel-sm text-[13px] leading-none',
-                        b.earned ? 'text-[#e3e9f2]' : 'text-[#b6c3d9]',
-                      )}
-                    >
-                      {t(`badge.${slug(b.badge)}`)}
-                    </span>
-                  </li>
-                ))}
-                <li className="grid justify-items-center gap-[3px] text-center">
-                  <span className={cx(!r.endgameCleared && 'opacity-40')}>
-                    <CrownIcon
-                      earned={r.endgameCleared}
-                      size={36}
-                      label={
-                        r.endgameCleared
-                          ? t('ui.card.crown')
-                          : t('ui.profile.badgeLocked', { badge: t('ui.card.crown') })
-                      }
-                    />
-                  </span>
-                  <span
-                    aria-hidden
-                    className={cx(
-                      'font-pixel-sm text-[13px] leading-none',
-                      r.endgameCleared ? 'text-[#e3e9f2]' : 'text-[#b6c3d9]',
-                    )}
-                  >
-                    {t('ui.card.crown')}
-                  </span>
-                </li>
-              </ul>
-            </div>
-          ))}
-          <p className="m-0 font-pixel-sm text-[15px] leading-[1.15] text-muted">
-            {t('ui.profile.crownHint')}
-          </p>
-        </section>
-      )}
+      <BadgeCases regions={regions} hint />
 
       <section className="flex flex-col gap-2">
         <h3 className="m-0 text-[24px] font-normal leading-none">{t('ui.profile.look')}</h3>

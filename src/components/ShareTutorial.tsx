@@ -4,7 +4,8 @@
 import { useState } from 'react'
 import { badgeCase, dayCareTutorialDue, donationDue, leaderboardTutorialDue, regionOf } from '@/engine'
 import { useT } from '@/i18n/react'
-import { pushToast, useGame } from '@/store/game'
+import { shareOrCopy } from '@/lib/share'
+import { useGame } from '@/store/game'
 import { Modal } from './Modal'
 import { PixelButton } from './PixelButton'
 import { TrainerSprite } from '@/components/TrainerArt'
@@ -44,17 +45,9 @@ export function ShareTutorial() {
   }
 
   const share = async () => {
-    const url = window.location.origin
-    try {
-      if (navigator.share) await navigator.share({ title: 'Pokédice', text: t('ui.share.text'), url })
-      else {
-        await navigator.clipboard.writeText(url)
-        pushToast(t('ui.share.copied'), 'good')
-      }
+    // A cancelled share sheet keeps the pop-up.
+    if (await shareOrCopy({ title: 'Pokédice', text: t('ui.share.text'), url: window.location.origin }, t('ui.share.copied')))
       close()
-    } catch {
-      /* share sheet cancelled: keep the pop-up */
-    }
   }
 
   return (

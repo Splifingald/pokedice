@@ -2,6 +2,7 @@ import { lazy, Suspense, useId, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { badgeCase, discordUrl, leaderboardUnlocked, versusReadyCount, versusUnlocked, VERSUS_TEAM_SIZE } from '@/engine'
 import { useT } from '@/i18n/react'
+import { useFriends } from '@/lib/friends'
 import { isSupabaseConfigured } from '@/lib/supabase'
 import { useGame } from '@/store/game'
 import { useInFight, useIsAdmin } from '@/store/hooks'
@@ -31,6 +32,7 @@ function MenuRow({
   label,
   desc,
   hint,
+  dot,
   href,
   onClick,
 }: {
@@ -39,6 +41,8 @@ function MenuRow({
   label: string
   desc?: string
   hint?: string
+  /** A gold dot with a number: something new to look at (it is also in the label). */
+  dot?: number
   href?: string
   onClick?: () => void
 }) {
@@ -58,10 +62,15 @@ function MenuRow({
           </small>
         )}
       </span>
+      {!!dot && (
+        <em aria-hidden className="grid h-6 min-w-6 shrink-0 place-items-center bg-gold px-1 font-pixel-sm text-[15px] not-italic text-ink shadow-ring">
+          {dot > 9 ? '9+' : dot}
+        </em>
+      )}
       {hint && <em className="light-scope shrink-0 bg-night px-2 pb-[3px] pt-0.5 text-[15px] not-italic text-gold-light">{hint}</em>}
     </>
   )
-  const a11y = { 'aria-label': label, 'aria-describedby': desc ? descId : undefined }
+  const a11y = { 'aria-label': dot ? `${label} (${dot})` : label, 'aria-describedby': desc ? descId : undefined }
   return href ? (
     <a href={href} target="_blank" rel="noopener noreferrer" onClick={onClick} className={className} {...a11y}>
       {body}
@@ -92,6 +101,8 @@ export function PlayerMenu() {
   const [types, setTypes] = useState(false)
   const [contact, setContact] = useState(false)
   const { connect, chooser } = useConnect()
+  const newFriends = useFriends((s) => (s.userId && s.userId === auth.userId ? s.unseen.length : 0))
+  const friendCount = useFriends((s) => s.ids.size)
 
   const name = playerOf(save).name
   const badges = save ? badgeCase(save, data) : []
@@ -116,12 +127,22 @@ export function PlayerMenu() {
         aria-disabled={inFight || undefined}
         aria-haspopup="dialog"
         aria-expanded={open}
-        aria-label={t('ui.profile.menuLabel')}
+        aria-label={newFriends ? t('ui.profile.menuLabelNew', { n: newFriends }) : t('ui.profile.menuLabel')}
         title={t(inFight ? 'ui.nav.finishFight' : 'ui.profile.menuLabel')}
         className={cx('flex min-h-[44px] min-w-0 items-center gap-2 text-left', inFight && 'pointer-events-none opacity-60')}
       >
-        <span className="grid h-[38px] w-[38px] shrink-0 place-items-center overflow-hidden rounded-full bg-[#7fb4ff] shadow-[inset_0_0_0_2px_rgb(var(--c-edge)),inset_0_-4px_0_#4f86d8]">
-          <TrainerLook src={avatarOf(playerAvatarId(save?.player)).src} w={30} h={30} />
+        <span className="relative shrink-0">
+          <span className="grid h-[38px] w-[38px] place-items-center overflow-hidden rounded-full bg-[#7fb4ff] shadow-[inset_0_0_0_2px_rgb(var(--c-edge)),inset_0_-4px_0_#4f86d8]">
+            <TrainerLook src={avatarOf(playerAvatarId(save?.player)).src} w={30} h={30} />
+          </span>
+          {newFriends > 0 && (
+            <span
+              aria-hidden
+              className="absolute -right-1 -top-1 grid h-[18px] min-w-[18px] place-items-center bg-gold px-0.5 font-pixel-sm text-[13px] leading-none text-ink shadow-ring"
+            >
+              {newFriends > 9 ? '9+' : newFriends}
+            </span>
+          )}
         </span>
         <span className="grid min-w-0 leading-none">
           <b className="truncate text-[20px] font-normal">{name || t('ui.profile.title')}</b>
@@ -164,6 +185,16 @@ export function PlayerMenu() {
             desc={boardOpen ? t('ui.menu.board') : t('ui.nav.boardLocked')}
             onClick={go('/leaderboard')}
           />
+          {isSupabaseConfigured && (
+            <MenuRow
+              icon="friends"
+              label={t('ui.friends.title')}
+              desc={t('ui.menu.friends')}
+              dot={newFriends}
+              hint={!newFriends && friendCount ? String(friendCount) : undefined}
+              onClick={go('/friends')}
+            />
+          )}
           <MenuRow
             icon={versusOpen ? 'sword' : 'lock'}
             label={t('ui.nav.versus')}

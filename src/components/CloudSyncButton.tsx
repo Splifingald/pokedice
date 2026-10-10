@@ -1,21 +1,11 @@
 import { useT } from '@/i18n/react'
+import { agoText } from '@/lib/ago'
 import { useGame } from '@/store/game'
 import { useNow } from '@/store/hooks'
 import { SYNC_COOLDOWN_MS, syncBlockedBy, syncNow, useCloudSync } from '@/store/sync'
 import { cx } from '@/theme/util'
 import { PixelIcon } from './icons'
 
-/** "3 min ago" from a timestamp. */
-function useAgo(): (at: number, now: number) => string {
-  const { t } = useT()
-  return (at, now) => {
-    const min = Math.floor((now - at) / 60_000)
-    if (min < 1) return t('ui.sync.justNow')
-    if (min < 60) return t('ui.sync.minAgo', { n: min })
-    if (min < 24 * 60) return t('ui.sync.hAgo', { n: Math.floor(min / 60) })
-    return t('ui.sync.dAgo', { n: Math.floor(min / (24 * 60)) })
-  }
-}
 
 const mmss = (ms: number) => {
   const s = Math.max(0, Math.ceil(ms / 1000))
@@ -29,7 +19,6 @@ const mmss = (ms: number) => {
  */
 export function CloudSyncButton() {
   const { t } = useT()
-  const ago = useAgo()
   const signedIn = useGame((s) => s.auth.status === 'signed_in')
   // Re-render on everything the block depends on, and every second for the countdown.
   useGame((s) => s.run.phase)
@@ -44,7 +33,7 @@ export function CloudSyncButton() {
     : blocked === 'cooldown' && lastAt != null
       ? t('ui.sync.again', { time: mmss(lastAt + SYNC_COOLDOWN_MS - now) })
       : null
-  const last = lastAt == null ? t('ui.sync.never') : t('ui.sync.last', { when: ago(lastAt, now) })
+  const last = lastAt == null ? t('ui.sync.never') : t('ui.sync.last', { when: agoText(lastAt, now) })
   return (
     <button
       type="button"

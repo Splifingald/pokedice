@@ -294,6 +294,8 @@ export const ICONS = {
     '....kkkkk...',
   ],
   user: ['..kkkk..', '.kwwwwk.', '.kwwwwk.', '.kwwwwk.', '..kkkk..', '.kbbbbk.', 'kbbbbbbk', 'kbbbbbbk'],
+  /** Two trainers side by side: friends. */
+  friends: ['.kk..kk.', 'kwwkkwwk', 'kwwkkwwk', '.kk..kk.', 'kbbkkrrk', 'kbbkkrrk', 'kbbkkrrk', 'kkkkkkkk'],
   book: ['kkkkkkkk', 'kwwwkwwk', 'kwwwkwwk', 'kwkwkwkk', 'kwwwkwwk', 'kwkwkwkk', 'kwwwkwwk', 'kkkkkkkk'],
   mail: ['........', 'kkkkkkkk', 'kkwwwwkk', 'kwkwwkwk', 'kwwkkwwk', 'kwwwwwwk', 'kkkkkkkk', '........'],
   discord: ['........', '.kk..kk.', 'kbbkkbbk', 'kbbbbbbk', 'kbwbbwbk', 'kbbbbbbk', '.kbkkbk.', '..k..k..'],
@@ -390,6 +392,24 @@ export const ICONS = {
     'klllgkyyyokfffHk',
     'kkkkkkkkkkkkkkkk',
   ],
+  navFriends: [
+    '................',
+    '................',
+    '.kkkkk....kkkkk.',
+    'kbwbbbk..krprrrk',
+    'kkkkkkk..kkkkkkk',
+    'kYYYYYk..kYYYYYk',
+    'kYkYkYk..kYkYkYk',
+    'kYYYYYk..kYYYYYk',
+    '.kkkkk....kkkkk.',
+    'kbbbbbk..krrrrrk',
+    'kbbbbbk..krrrrrk',
+    'kbbbbbk..krrrrrk',
+    'kkkkkkk..kkkkkkk',
+    '................',
+    '................',
+    '................',
+  ],
   wrench: ['....kkk.', '...kssk.', '...ksskk', '..kssk..', '.kssk...', 'kssk....', 'kssk....', '.kkk....'],
 } as const
 
@@ -402,6 +422,7 @@ const OWN_PALETTE: Partial<Record<IconName, Record<string, string>>> = {
   navTeam: NAV_PAL,
   navDex: NAV_PAL,
   navRanks: NAV_PAL,
+  navFriends: NAV_PAL,
 }
 
 export function PixelIcon({

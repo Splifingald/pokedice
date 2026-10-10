@@ -374,21 +374,35 @@ export function regionCases(save: SaveData, data: GameData): RegionCase[] {
   return unlockedRegions(save, data).map((region) => {
     const live = regionOf(save) === region.id
     const progress = live ? save.areaProgress : (save.parked?.[region.id]?.areaProgress ?? {})
-    const badges: BadgeInfo[] = []
-    for (const area of regionAreas(data, region.id)) {
-      const defeated = progress[area.id]?.gymsDefeated ?? []
-      for (const id of area.gyms) {
-        const trainer = data.trainers[id]
-        if (trainer?.badge)
-          badges.push({ trainerId: id, areaId: area.id, leader: trainer.name, badge: trainer.badge, earned: defeated.includes(id) })
-      }
-    }
-    return {
-      id: region.id,
-      name: region.name,
-      badges,
-      earned: badges.filter((b) => b.earned).length,
-      endgameCleared: !!progress[region.leagueAreaId]?.cleared,
-    }
+    return buildCase(data, region, (areaId, id) => (progress[areaId]?.gymsDefeated ?? []).includes(id), !!progress[region.leagueAreaId]?.cleared)
   })
+}
+
+/**
+ * A region's badge case from the badges won there and the crown, rather than from a save: a friend's trainer card,
+ * which only carries those (docs/16). Null for a region the game doesn't know (or no longer has).
+ */
+export function regionCaseOf(data: GameData, regionId: RegionId, earned: Iterable<string>, endgameCleared: boolean): RegionCase | null {
+  const region = getRegion(data, regionId)
+  if (!region) return null
+  const won = new Set(earned)
+  return buildCase(data, region, (_areaId, id) => won.has(id), endgameCleared)
+}
+
+function buildCase(data: GameData, region: Region, earned: (areaId: string, trainerId: string) => boolean, endgameCleared: boolean): RegionCase {
+  const badges: BadgeInfo[] = []
+  for (const area of regionAreas(data, region.id)) {
+    for (const id of area.gyms) {
+      const trainer = data.trainers[id]
+      if (trainer?.badge)
+        badges.push({ trainerId: id, areaId: area.id, leader: trainer.name, badge: trainer.badge, earned: earned(area.id, id) })
+    }
+  }
+  return {
+    id: region.id,
+    name: region.name,
+    badges,
+    earned: badges.filter((b) => b.earned).length,
+    endgameCleared,
+  }
 }
