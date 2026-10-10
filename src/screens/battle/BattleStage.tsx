@@ -69,6 +69,42 @@ function Backdrop({ calm }: { calm: boolean }) {
   )
 }
 
+/** Five key frames round the orbit; star `i` starts a third of a turn after the one before. */
+const ORBIT = [0, 1, 2, 3, 4]
+const angle = (j: number, i: number) => ((j / 4) * 2 + (i * 2) / 3) * Math.PI
+
+/** Three stars going round above a worn-out Pokémon's head (still when animations are off). */
+function DizzyStars({ size, still }: { size: number; still: boolean }) {
+  return (
+    <div
+      aria-hidden
+      className="pointer-events-none absolute left-1/2 top-[8%] z-10 h-0 w-0"
+      style={{ transform: `translateX(${-size / 2}px)` }}
+    >
+      {[0, 1, 2].map((i) => (
+        <motion.div
+          key={i}
+          className="absolute"
+          initial={false}
+          animate={
+            still
+              ? { x: (i - 1) * size * 1.2, y: 0 }
+              : {
+                  // An ellipse, each star a third of a turn behind the last; the far side drawn smaller.
+                  x: ORBIT.map((j) => Math.round(Math.sin(angle(j, i)) * size * 1.4)),
+                  y: ORBIT.map((j) => Math.round(Math.cos(angle(j, i)) * size * 0.35)),
+                  scale: ORBIT.map((j) => 0.8 + 0.25 * Math.cos(angle(j, i))),
+                }
+          }
+          transition={still ? undefined : { duration: 1.2, repeat: Infinity, ease: 'linear' }}
+        >
+          <PixelIcon name="star" size={size} />
+        </motion.div>
+      ))}
+    </div>
+  )
+}
+
 /** Two white silhouette frames (never an opacity blink), then the sprite again. */
 function useFlash(id: number | null, still: boolean) {
   const [on, setOn] = useState(false)
@@ -121,6 +157,20 @@ function Mon({
   const at = back ? LAYOUT.own : LAYOUT.foe
   const box = placeSprite(s, at.x, at.y)
   const flash = useFlash(fx.flash?.target === side ? fx.flash.id : null, still)
+  // Worn out, waiting for the ball: the animated sprite stops on the frame it was showing (a still copy on a canvas).
+  const img = useRef<HTMLImageElement>(null)
+  const frozen = useRef<HTMLCanvasElement>(null)
+  useEffect(() => {
+    const im = img.current
+    const cv = frozen.current
+    if (!worn || !im || !cv || !im.complete || !im.naturalWidth) return
+    cv.width = im.naturalWidth
+    cv.height = im.naturalHeight
+    const g = cv.getContext('2d')
+    if (!g) return
+    g.imageSmoothingEnabled = false
+    g.drawImage(im, 0, 0)
+  }, [worn])
   return (
     <div
       className="absolute"
@@ -142,6 +192,16 @@ function Mon({
             ? { opacity: 0, y: box.h * scale * 0.4, transition: { duration: still ? 0 : 0.6 * pace } }
             : !shown
               ? { opacity: 0, scale: back ? 0 : 1, x: back ? 0 : 60 * scale, transition: { duration: 0 } }
+              : worn
+                ? // Out of strength, it reels, then sags on its platform, leaning a little to the right.
+                  {
+                    opacity: 1,
+                    x: still ? 0 : [0, -3, 3, -2, 2, 0].map((d) => d * scale),
+                    y: box.h * scale * 0.05,
+                    rotate: 8,
+                    scale: 1,
+                    transition: { duration: still ? 0 : 0.6 * pace },
+                  }
               : {
                   opacity: 1,
                   x: 0,
@@ -152,6 +212,7 @@ function Mon({
         }
       >
         <img
+          ref={img}
           src={s.url}
           alt=""
           draggable={false}
@@ -163,10 +224,20 @@ function Mon({
           // A flash (a faint, a form change with no timeline) turns the sprite into a white silhouette for a moment.
           style={{
             imageRendering: 'pixelated',
-            filter: flash ? 'brightness(0) invert(1)' : worn ? 'saturate(0.3) brightness(0.9)' : undefined,
+            filter: flash ? 'brightness(0) invert(1)' : undefined,
+            opacity: worn ? 0 : 1,
           }}
         />
+        {/* Worn out: the frozen frame, all grey. */}
+        <canvas
+          ref={frozen}
+          aria-hidden
+          className="pixelated absolute inset-0 h-full w-full"
+          style={{ imageRendering: 'pixelated', filter: 'grayscale(1) brightness(0.95)', display: worn ? 'block' : 'none' }}
+        />
       </motion.div>
+      {/* Worn out: dizzy stars circling over its head until the ball is thrown. */}
+      {worn && shown && !hidden && <DizzyStars size={Math.max(10, Math.round(box.w * scale * 0.14))} still={still} />}
       {onTap && shown && !fainted && !hidden && (
         <button type="button" onClick={onTap} aria-label={tapLabel} className="absolute inset-0 z-[1]" />
       )}
@@ -362,7 +433,7 @@ export function BattleStage({
             side="enemy"
             scale={scale}
             shown={foeShown}
-            fainted={!!fx.fainted[foe.uid] && !worn}
+            fainted={(!!fx.fainted[foe.uid] || !!fx.wornOut[foe.uid]) && !worn}
             hidden={playing}
             worn={worn}
             fx={fx}

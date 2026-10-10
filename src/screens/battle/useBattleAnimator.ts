@@ -26,6 +26,8 @@ export interface Fx {
    * reverted by the time its attack plays; a trainer's Mega stands there before its scene), so the stage draws this.
    */
   dex: Record<string, number>
+  /** A K.O.'d foe that's about to be caught stays on the field, worn out, instead of fainting away. */
+  wornOut: Record<string, boolean>
   tray: { side: Side; dice: RolledDie[]; keys: string[] } | null
   pop: { id: number; target: Side; amount: number; tone: 'super' | 'weak' | 'immune' | 'normal' | 'heal' } | null
   banner: { id: number; text: string; tone: 'super' | 'weak' | 'immune' | 'info' } | null
@@ -58,6 +60,8 @@ export interface Scene {
 export interface AnimatorContext {
   kind: BattleState['kind']
   trainerName: string | null
+  /** The foe goes to the catch throw once it's K.O.'d (wild or legendary, and a catch on offer). */
+  catchable: boolean
   itemName: (key: string) => string
   /** A species' (or form's) name, for the form changes. */
   speciesName: (dex: number) => string
@@ -83,6 +87,7 @@ function initFx(b: BattleSlice): Fx {
     activeUid: activeBattler(b.state).uid,
     fainted: {},
     dex,
+    wornOut: {},
     tray: null,
     pop: null,
     banner: null,
@@ -246,6 +251,19 @@ function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): Step {
         }),
       }
     case 'faint':
+      if (e.side === 'enemy' && ctx.catchable)
+        return {
+          delay: 1200,
+          apply: (f) => ({
+            ...f,
+            message: t('ui.catch.wornOut', {
+              who: t(ctx.kind === 'boss' ? 'ui.catch.theLegendary' : 'ui.catch.theWild'),
+              name: nameOf(e.uid),
+            }),
+            wornOut: { ...f.wornOut, [e.uid]: true },
+            tray: null,
+          }),
+        }
       return {
         delay: 1200,
         sound: 'faint',

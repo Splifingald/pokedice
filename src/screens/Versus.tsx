@@ -622,8 +622,13 @@ function Board({ rows }: { rows: VersusEntry[] }) {
             onOpen={r.friendId ? () => setCard({ id: r.userId, name: r.name }) : undefined}
             team={r.team}
             value={
-              <span className="font-pixel-sm text-[16px]">
-                {tPlural(tab === 'attack' ? 'ui.versus.wins' : 'ui.versus.defenseWins', r.score)}
+              // The count and what it counts, as the sword (attack) or the shield (defense).
+              <span
+                className="inline-flex items-center gap-1.5 font-pixel-sm text-[20px] leading-none"
+                aria-label={tPlural(tab === 'attack' ? 'ui.versus.wins' : 'ui.versus.defenseWins', r.score)}
+              >
+                {r.score}
+                <PixelIcon name={tab === 'attack' ? 'sword' : 'shield'} size={20} />
               </span>
             }
           />

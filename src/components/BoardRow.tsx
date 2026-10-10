@@ -46,10 +46,13 @@ export function TeamIcons({
   team,
   owner,
   size = 32,
+  spaced,
 }: {
   team: { dex: number; level: number; shiny?: boolean }[]
   owner: string
   size?: number
+  /** A little room between the icons instead of the tight overlap. */
+  spaced?: boolean
 }) {
   const { t } = useT()
   const species = useGame((s) => s.data.species)
@@ -66,7 +69,15 @@ export function TeamIcons({
           <li
             key={i}
             title={label}
-            style={{ marginLeft: Math.round(-size * (i === 0 ? 0.5 : 0.34)), marginRight: Math.round(-size * 0.34) }}
+            style={
+              spaced
+                ? {
+                    marginLeft: Math.round(-size * (i === 0 ? 0.3 : 0.15)),
+                    marginRight: Math.round(-size * 0.15),
+                    marginBlock: Math.round(-size * 0.22),
+                  }
+                : { marginLeft: Math.round(-size * (i === 0 ? 0.5 : 0.34)), marginRight: Math.round(-size * 0.34) }
+            }
           >
             <MiniSprite dex={m.dex} size={size} alt={label} />
           </li>
@@ -152,7 +163,8 @@ export function BoardRow({
           )}
           {isFriend && !isMe && <FriendTag />}
         </b>
-        <TeamIcons team={team} owner={name} />
+        {/* Half again as big as elsewhere, and spaced out: the team is what a row is read for. */}
+        <TeamIcons team={team} owner={name} size={48} spaced />
         {sub}
       </span>
       {children ??

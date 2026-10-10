@@ -61,6 +61,7 @@ export function BattleBits() {
     activeUid: own.uid,
     fainted: {},
     dex: {},
+    wornOut: {},
     tray: null,
     pop: null,
     banner: null,

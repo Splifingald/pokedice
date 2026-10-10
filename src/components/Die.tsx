@@ -7,17 +7,17 @@ import { PixelIcon, STATUS_ICON } from './icons'
 import { t } from '@/i18n'
 import { statusName, typeName } from '@/lib/format'
 
-/** Which of the nine pip cells (0–8, row by row) each value lights. 0 is a blank face; some typed dice reach 7 and 8. */
+/**
+ * Which of the nine pip cells (0–8, row by row) each value lights: a die's own 1 to 6. Anything else (0, 7, 8, a
+ * negative face) has no pips and shows its number, so it reads at a glance as out of the ordinary.
+ */
 const PIPS: Record<number, number[]> = {
-  0: [],
   1: [4],
   2: [0, 8],
   3: [0, 4, 8],
   4: [0, 2, 6, 8],
   5: [0, 2, 4, 6, 8],
   6: [0, 2, 3, 5, 6, 8],
-  7: [0, 2, 3, 4, 5, 6, 8],
-  8: [0, 1, 2, 3, 5, 6, 7, 8],
 }
 
 /** Under this size a die drops its 3D lip for a thinner one. */

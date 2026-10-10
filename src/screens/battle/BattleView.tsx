@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode, type
 import {
   activeBattler,
   autoEvents,
+  catchTarget,
   comboDice,
   computeDamage,
   confusionRecoil,
@@ -239,12 +240,19 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
   const [ownOut, setOwnOut] = useState(quick)
   const intro = bossIntro || trainerIntro || !ownOut
 
+  // A wild or legendary foe the player can still catch isn't knocked out of the scene: the catch throw comes next.
+  const catchable =
+    !versus &&
+    (st.kind === 'wild' || st.kind === 'boss') &&
+    !!save &&
+    !!catchTarget(save, st.enemy.baseDex ?? st.enemy.dex, st.enemy.level, st.kind, data, st.enemy.shiny)
   const { fx, ready, sceneContact, sceneDone } = useBattleAnimator(
     battle,
     quick,
     {
       kind: st.kind,
       trainerName,
+      catchable,
       itemName: (k) => data.items[k]?.name ?? k,
       speciesName: (dex) => data.species[dex]?.name ?? `#${dex}`,
       megaMechanic: (dex) => data.species[dex]?.form?.mechanic ?? null,
@@ -665,7 +673,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
         foeShown={foeOut}
         trainer={trainerIntro && isTrainerFight ? (trainerSprite ?? '') : null}
         overlay={legend ?? thrown}
-        worn={catching && !thrown}
+        worn={(catching || !!fx.wornOut[st.enemy.uid]) && !thrown}
         onContact={sceneContact}
         onSceneDone={sceneDone}
         onTap={tapMatchups}

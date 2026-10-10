@@ -229,6 +229,21 @@ export const ICONS = {
     'kkk..kk.....',
     'kk..........',
   ],
+  // Versus defense: the shield beside the attack's sword.
+  shield: [
+    '.kkkkkkkkkk.',
+    'kbbbbbbbbbbk',
+    'kbwwbbbbbbbk',
+    'kbwbbbbbbbbk',
+    'kbbbbbbbbbbk',
+    'kbbbbbbbbbbk',
+    '.kbbbbbbbbk.',
+    '.kbbbbbbbbk.',
+    '..kbbbbbbk..',
+    '...kbbbbk...',
+    '....kbbk....',
+    '.....kk.....',
+  ],
   run: [
     '......kkk...',
     '......kkk...',
