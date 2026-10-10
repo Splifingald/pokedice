@@ -4,9 +4,11 @@ import {
   instanceMaxHp,
   levelEvolutions,
   nationalDex,
+  regionSpecies,
   sendOnBlocked,
-  sendOnTarget,
+  sendTargets,
   type PokemonInstance,
+  type RegionId,
 } from '@/engine'
 import { dexNo } from '@/lib/format'
 import { useT } from '@/i18n/react'
@@ -180,38 +182,46 @@ function SheetStack({
 }
 
 /**
- * "Send to Johto": once this region's league is done and the next one has been started, a Pokémon that region could
- * have given the player itself may follow them there. It is the only thing that ever crosses between regions, so the
- * reason it can't is always spelled out rather than the button just vanishing.
+ * "Send to Kanto", "Send to Johto"…: one button per region whose league is done and whose Pokédex lists this
+ * Pokémon — the regions it could follow the player to. It is the only thing that ever crosses between regions, so
+ * the reason it can't is always spelled out rather than the buttons just vanishing.
  */
 function SendOnPanel({ inst, onSent }: { inst: PokemonInstance; onSent: () => void }) {
   const { t } = useT()
   const save = useGame((s) => s.save)
   const data = useGame((s) => s.data)
-  const [asked, setAsked] = useState(false)
+  const [asked, setAsked] = useState<RegionId | null>(null)
   if (!save) return null
-  const target = sendOnTarget(save, data)
-  if (!target) return null
-  const why = sendOnBlocked(save, data, inst, target)
-  // Not one of that region's own Pokémon: it has no business there, and saying so would only be noise.
-  if (why === 'species') return null
+  // Not one of a region's own Pokémon: it has no business there, and offering it would only be noise.
+  const targets = sendTargets(save, data).filter((r) => regionSpecies(data, r.id).has(inst.dex))
+  if (!targets.length) return null
+  // With the species settled, what is left ('last', 'reviving') is about this Pokémon, the same for every region.
+  const why = sendOnBlocked(save, data, inst, targets[0]!)
+  const hinted = targets.find((r) => r.id === asked) ?? (targets.length === 1 ? targets[0] : undefined)
 
   const name = data.species[inst.dex]?.name ?? t('ui.common.pokemon')
   return (
     <section className="flex flex-col items-start gap-1 border-t-[3px] border-dashed border-shadow/40 pt-2">
-      <PixelButton
-        variant="primary"
-        disabled={!!why}
-        onClick={() => (asked ? (sendPokemonOn(inst.id), onSent()) : setAsked(true))}
-      >
-        {asked ? t('ui.sheet.sendOnConfirm') : t('ui.sheet.sendOn', { region: target.name })}
-      </PixelButton>
+      <div className="flex flex-wrap gap-2">
+        {targets.map((r) => (
+          <PixelButton
+            key={r.id}
+            variant="primary"
+            disabled={!!why}
+            onClick={() => (asked === r.id ? (sendPokemonOn(inst.id, r.id), onSent()) : setAsked(r.id))}
+          >
+            {asked === r.id ? t('ui.sheet.sendOnConfirm') : t('ui.sheet.sendOn', { region: r.name })}
+          </PixelButton>
+        ))}
+      </div>
       <p className="copy text-base text-muted">
         {why === 'last'
           ? t('ui.sheet.sendOnLast')
           : why === 'reviving'
             ? t('ui.sheet.sendOnReviving')
-            : t('ui.sheet.sendOnHint', { name, region: target.name })}
+            : hinted
+              ? t('ui.sheet.sendOnHint', { name, region: hinted.name })
+              : t('ui.sheet.sendOnPick', { name })}
       </p>
     </section>
   )
