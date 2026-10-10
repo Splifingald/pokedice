@@ -195,6 +195,8 @@ export function rollNext() {
   if (cost > 0) recorded = spendEnergy(recorded, data.config.energy, Date.now(), cost) ?? recorded
   if (recorded !== save) commitSave(recorded)
   setRun({ phase: 'preview', encounter, firstInArea: false, forceNext: forceKind === run.forceNext ? null : run.forceNext })
+  // A Pokémon Center is never a choice (no skipping it, nothing to pick): straight in, no preview card.
+  if (encounter.kind === 'center') engage()
 }
 
 /** CHALLENGE: bring on the gym battle (or legendary) waiting at the full gauge — only when the player chooses to. */
