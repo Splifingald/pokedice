@@ -1,7 +1,8 @@
 /**
  * Regions: Kanto, Johto, Hoenn. Each is a self-contained run — its own areas, Box, bag, ₽, upgrade tracks and
  * Pokédex — and the player carries only their character between them. Nothing pools, ever: what a region holds
- * stays in it. The one thread between them is `sendPokemonOn`, which walks a single Pokémon one region forward.
+ * stays in it. The one thread between them is `sendPokemonOn`, which walks a single Pokémon into another region whose
+ * league is done.
  *
  * The save keeps the **live** region at the top level of `SaveData`, exactly where it has always been, and parks the
  * others in `save.parked`. So every engine function and every screen goes on reading `save.box` and `save.gold`
@@ -272,20 +273,18 @@ export function startRegion(save: SaveData, region: Region, block: RegionSave): 
 }
 
 /**
- * The region a Pokémon can be sent on to from here: the one after this, once this region's league is done and that
- * region has actually been started. Null the rest of the time, which is what keeps the button out of sight.
+ * The regions a Pokémon can be sent to from here: every other region whose league is done and that is still being
+ * played (started, and not switched off). Empty the rest of the time, which is what keeps the button out of sight.
  *
  * Regions do not pool: a Box, a bag, a purse and an upgrade track belong to one region for good. Sending a Pokémon
- * on is the single thread between them, and it goes one hop forward at a time — Kanto to Johto, then Johto to Hoenn
- * once Johto's league has fallen too.
+ * on is the single thread between them, and it only lands in a region that is behind the player — its league won —
+ * so it can never carry a team into a region still being fought through. Direction does not matter: from Hoenn a
+ * Pokémon can go back to Kanto just as one from Kanto can go on to Hoenn, once each of them is done.
  */
-export function sendOnTarget(save: SaveData, data: GameData): Region | null {
-  const here = getRegion(data, regionOf(save))
-  if (!here?.nextRegion || !leagueDone(save, data, here.id)) return null
-  const next = getRegion(data, here.nextRegion)
+export function sendTargets(save: SaveData, data: GameData): Region[] {
+  const here = regionOf(save)
   // It has to be a region being played: its parked block is the Box the Pokémon arrives in.
-  if (!next || (!next.enabled && next.id !== KANTO) || !save.parked?.[next.id]) return null
-  return next
+  return enabledRegions(data).filter((r) => r.id !== here && !!save.parked?.[r.id] && leagueDone(save, data, r.id))
 }
 
 /** Why this Pokémon cannot go, or null when it can. */
@@ -304,15 +303,16 @@ export function sendOnBlocked(save: SaveData, data: GameData, inst: PokemonInsta
 }
 
 /**
- * Moves one Pokémon out of the live region and into the next one's parked Box, where it is the player's to use the
+ * Moves one Pokémon out of the live region and into another one's parked Box, where it is the player's to use the
  * moment they travel. It leaves the team behind it — and if it was the whole team, the Box promotes a replacement,
  * because a region with nobody in its team cannot be played.
  *
  * It also enters the target's Pokédex: it is sitting in that Box, and a Pokémon you own reading as never seen is
- * the kind of thing that looks broken.
+ * the kind of thing that looks broken. The region it leaves keeps it in its own Pokédex — it was caught there, and
+ * that count never drops.
  */
-export function sendPokemonOn(save: SaveData, data: GameData, instId: string): SaveData | null {
-  const target = sendOnTarget(save, data)
+export function sendPokemonOn(save: SaveData, data: GameData, instId: string, targetId: RegionId): SaveData | null {
+  const target = sendTargets(save, data).find((r) => r.id === targetId)
   if (!target) return null
   const inst = save.box.find((p) => p.id === instId)
   if (!inst || sendOnBlocked(save, data, inst, target)) return null
