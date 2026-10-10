@@ -277,7 +277,7 @@ export function TeamColumn({
               calling && open && !reduced && 'bt-call',
             )}
           >
-            <SpriteImg dex={b.dex} size={64} shiny={b.shiny} className="shrink-0" />
+            <SpriteImg dex={b.dex} size={80} shiny={b.shiny} className="-my-2 shrink-0" />
             <span className="flex min-w-0 flex-1 flex-col gap-1">
               <span className="flex items-baseline justify-between gap-1">
                 <b className="truncate text-[19px] font-normal leading-none">{b.name}</b>
