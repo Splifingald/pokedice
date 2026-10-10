@@ -158,6 +158,51 @@ export interface Background {
   dyn: (g: G, t: number) => void
 }
 
+/**
+ * The two battle zones for an area picture: translucent ovals on the picture's own ground where the painted
+ * background has its platforms (the Visual Lab's Backgrounds tab, bgs.js `zone`): a soft navy shadow, a pale fill, a
+ * darker rim and a lit top edge.
+ */
+export function zones(W: number, H: number): Canvas {
+  return cached(`zones|${W}|${H}`, () => {
+    const L = layoutFor(W, H)
+    const c = shade(W, H, () => null)
+    const g = c.g
+    for (const [x, y, rx, ry] of [
+      [L.foe.x, L.foe.y + 2, 46, 11],
+      [L.own.x, L.own.y - 4, 72, 16],
+    ] as const) {
+      g.globalAlpha = 0.18
+      ellipse(g, x, y + 2, rx, ry, '#24304f')
+      g.globalAlpha = 0.34
+      ellipse(g, x, y, rx, ry, '#fbfdff')
+      g.globalAlpha = 0.55
+      ellipseLine(g, x, y, rx, ry, '#24304f')
+      g.globalAlpha = 0.6
+      ellipseLine(g, x, y - 1, rx - 3, ry - 2, '#ffffff', Math.PI, Math.PI * 2)
+    }
+    g.globalAlpha = 1
+    return c
+  })
+}
+
+let artUnder = false
+/**
+ * An area picture lies under the battle stage (BattleStage sets it while it shows one): the timelines draw no
+ * background of their own, so the picture and its zones show through them and nothing changes when a move plays.
+ */
+export const setArtUnderStage = (on: boolean) => void (artUnder = on)
+
+/** The background a battle timeline draws: the Daybreak one, or nothing over an area picture. */
+export function stageBackground(W: number, H: number): Background {
+  if (!artUnder) return background(W, H)
+  return cached(`bg|clear|${W}|${H}`, () => ({
+    cv: shade(W, H, () => null),
+    layout: layoutFor(W, H),
+    dyn: () => {},
+  }))
+}
+
 /** The Daybreak battle background at W×H, with its platforms and the drifting pollen. */
 export function background(W: number, H: number): Background {
   return cached(`bg|daybreak|${W}|${H}`, () => {
