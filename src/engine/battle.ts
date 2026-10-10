@@ -102,7 +102,7 @@ export interface BattleState {
   gmaxAllowed?: boolean
   /** Mega Evolutions and Gigantamax the player's side has used this battle (they share one limit). */
   megaUsed?: number
-  /** An auto battle: no Mega Evolution or Gigantamax on either side, and no foe type change; yours is auto-mode's pick. */
+  /** An auto battle: no Mega Evolution or Gigantamax on either side; type changers on both pick their type themselves. */
   auto?: boolean
   /** What the foe does on its first turn — a trainer's ace Mega Evolving or Gigantamaxing — and whether it changes type. */
   enemyPlan?: EnemyPlan
@@ -248,7 +248,7 @@ export interface CreateBattleOptions {
   gmaxAllowed?: boolean
   /** The foe's Mega / Gigantamax / type change (see `enemyPlanFor`). */
   enemyPlan?: EnemyPlan | null
-  /** An auto battle: none of the above, for either side — auto-mode still changes your type (see `autoTypeForm`). */
+  /** An auto battle: no Mega Evolution or Gigantamax, for either side — only the foe's type change is kept. */
   auto?: boolean
 }
 
@@ -357,9 +357,11 @@ function bestTypeForms(b: Battler, target: Battler, forms: Species[], data: Game
   return best
 }
 
-/** The foe's pick: the first of the type forms best against your Pokémon. */
-function bestTypeForm(b: Battler, target: Battler, data: GameData): Species | null {
-  return bestTypeForms(b, target, typeForms(b, data), data)[0] ?? null
+/** The foe's pick: a type form best against your Pokémon — the first of them, or in an auto battle one at random. */
+function foeTypeForm(s: BattleState, b: Battler, target: Battler, data: GameData, rng: Rng): Species | null {
+  const best = bestTypeForms(b, target, typeForms(b, data), data)
+  if (!best.length) return null
+  return s.auto ? rng.pick(best) : best[0]!
 }
 
 /** Auto-mode's pick for the Pokémon in battle: a type form best against the foe, at random among equals. */
@@ -455,7 +457,7 @@ export function createBattle(opts: CreateBattleOptions, data: GameData): { state
     lastDamage: null,
     itemUsedThisTurn: false,
     ...(opts.auto
-      ? { auto: true }
+      ? { auto: true, ...(opts.enemyPlan?.formChanges && { enemyPlan: { formChanges: true } }) }
       : {
           ...(opts.megaAllowed && { megaAllowed: true }),
           ...(opts.gmaxAllowed && { gmaxAllowed: true }),
@@ -790,7 +792,7 @@ export function reduce(
         s.enemyPlanDone = true
       }
       if (plan?.formChanges && (en.formChanges ?? 0) < data.config.formChangesPerBattle) {
-        const form = bestTypeForm(en, target, data)
+        const form = foeTypeForm(s, en, target, data, rng)
         if (form) {
           changeForm(s, 'enemy', en, form, log)
           en.formChanges = (en.formChanges ?? 0) + 1

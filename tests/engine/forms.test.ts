@@ -296,7 +296,7 @@ describe('Gigantamax', () => {
 })
 
 describe('auto battles and foes', () => {
-  it('an auto battle has no Mega or Gigantamax on either side, and no foe plan', () => {
+  it('an auto battle has no Mega or Gigantamax on either side, and keeps only the foe’s type change', () => {
     const s = createBattle(
       {
         kind: 'trainer',
@@ -317,6 +317,37 @@ describe('auto battles and foes', () => {
     // Your type changer keeps its menu: auto-mode picks from it.
     expect(formChoices(p, data)).toHaveLength(17)
     expect(s.enemyPlan).toBeUndefined()
+  })
+
+  it('in an auto battle the foe’s type changer takes a type best against yours too, at random among equals', () => {
+    const foe = (seed: number) => {
+      const s = createBattle(
+        {
+          kind: 'boss',
+          team: [{ uid: 'a', dex: 6, level: 60, hp: 9999 }],
+          enemy: { dex: 493, level: 80 },
+          playerLevels: uniformLevels(1),
+          enemyLevels: uniformLevels(1),
+          enemyPlan: { formChanges: true, mega: 10034 },
+          auto: true,
+        },
+        data,
+      ).state
+      expect(s.enemyPlan).toEqual({ formChanges: true })
+      const log = reduce({ ...s, phase: 'enemy_turn', actor: 'enemy' }, { t: 'AI_TURN' }, data, createRng(seed)).log
+      return log.filter((l) => l.kind === 'form')
+    }
+    const picks = new Set<number>()
+    for (let seed = 1; seed <= 80; seed++) {
+      const forms = foe(seed)
+      expect(forms).toHaveLength(1)
+      picks.add((forms[0] as { toDex: number }).toDex)
+    }
+    const arceus = data.speciesList.filter((f) => f.form?.of === 493 && f.form.kind === 'battle')
+    const top = Math.max(...arceus.map((f) => attackMultiplier(f.type1, ['fire', 'flying'], data)))
+    const best = arceus.filter((f) => attackMultiplier(f.type1, ['fire', 'flying'], data) === top).map((f) => f.dex)
+    expect(best.length).toBeGreaterThan(1)
+    expect([...picks].sort((a, b) => a - b)).toEqual(best.sort((a, b) => a - b))
   })
 
   const autoBattle = (enemy: number, auto = true, team = [{ uid: 'a', dex: 493, level: 80, hp: 9999 }]) =>

@@ -233,8 +233,8 @@ function startBattle(kind: BattleKind, enemy: { dex: number; level: number; shin
   const area = data.areas.find((a) => a.id === run.areaId)
   const upgradeLevel = run.encounter ? enemyUpgradeLevelFor(run.encounter, area, data) : (area?.enemyUpgradeLevel ?? data.config.enemyUpgradeLevel)
   const team = teamOf(save).map((p) => ({ uid: p.id, dex: p.dex, level: p.level, hp: p.currentHp, shiny: p.shiny }))
-  // Auto-mode (a cleared area) fights without Mega Evolution or Gigantamax, on both sides, and the foe keeps its type;
-  // your type changer (Arceus…) takes a better type by itself (see autoTypeForm).
+  // Auto-mode (a cleared area) fights without Mega Evolution or Gigantamax, on both sides; type changers (Arceus…) on
+  // both sides take a better type by themselves.
   const auto = !!useGame.getState().settings.autoMode && !!run.areaId && progressOf(save, run.areaId).cleared
   // A trainer's ace — its strongest, the last of them if several — may Mega Evolve or Gigantamax (see enemyPlanFor).
   const enc = run.encounter
