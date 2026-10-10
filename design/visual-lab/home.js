@@ -1461,7 +1461,8 @@
   // The Day Care's rules (admin settings in the game): one for every region, open from 20 species caught; two of
   // yours and four friends' Pokémon; +1 XP every 10 min with Lv.100 as the only cap; a compatibility check every 12 h
   // leaves an Egg when a pair matches; Ditto pairs with everyone but legendaries, on its own slower check (every 24 h);
-  // Egg now skips the wait for ₽200; Eggs hatch shiny 1 time in 100.
+  // Egg now skips the wait for ₽200; Eggs hatch shiny 1 time in 100; a hatchling you don't keep (you own a stronger
+  // one) brings ₽10 from the Day Care couple.
   const DC = {
     own: 2,
     friends: 4,
@@ -1470,6 +1471,7 @@
     checkHours: 12,
     dittoHours: 24,
     rushPrice: 200,
+    notKeptGold: 10,
     shiny: 0.01,
     unlock: 20,
   }
