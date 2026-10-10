@@ -26,9 +26,10 @@ export function GameLayout() {
         {!full && <SideNav />}
         <main
           className={cx(
-            // Home spreads over wide screens (its scene grows with them); every other screen keeps a reading width.
+            // Home and the battle spread over wide screens (the scene and the stage grow with them); every other screen
+            // keeps a reading width.
             'mx-auto w-full min-w-0 flex-1',
-            home ? 'max-w-[1760px]' : 'max-w-6xl',
+            full ? 'max-w-none' : home ? 'max-w-[1760px]' : 'max-w-6xl',
             full ? 'p-0' : inFight ? 'px-3 pb-2 pt-2 md:pb-10 md:pt-4' : 'px-3 pb-24 pt-4 md:pb-10 md:pt-4',
           )}
         >
