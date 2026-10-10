@@ -1313,11 +1313,23 @@
   .hm-dc-egg { display: grid; place-items: center; height: 44px; }
   .hm-dc-egg img { width: 28px; height: 30px; animation: dc-shake 1.6s steps(1) infinite; transform-origin: 50% 100%; }
   @keyframes dc-shake { 0%, 31%, 100% { transform: none; } 6%, 18% { transform: rotate(-12deg); } 12%, 24% { transform: rotate(12deg); } }
-  .dc-yard { position: relative; flex: none; margin: 0 -12px; box-shadow: 0 2px 0 #24304f; }
+  .dc-yard { position: relative; flex: none; margin: -10px -12px 0; box-shadow: 0 2px 0 #24304f; }
   .dc-yard canvas { display: block; width: 100%; height: auto; aspect-ratio: 288 / 276; image-rendering: pixelated; touch-action: manipulation; }
-  .dc-yplate { position: absolute; left: 8px; right: 8px; top: 8px; display: flex; align-items: baseline; justify-content: space-between; gap: 8px; padding: 6px 10px 8px; }
-  .dc-yplate b { font-weight: 400; font-size: 20px; line-height: 1; }
-  .dc-yplate span { font-family: 'Jersey 15', sans-serif; font-size: 15px; color: #5c6a8a; }
+  .dc-yplate { position: absolute; left: 8px; right: 8px; top: 8px; display: flex; align-items: center; gap: 2px; padding: 2px 10px 6px 2px; }
+  .dc-yplate .pg-back { margin: 0; width: 40px; height: 44px; }
+  .dc-yp-t { display: grid; gap: 2px; min-width: 0; }
+  .dc-yp-t h2 { margin: 0; font-weight: 400; font-size: 24px; line-height: 1; }
+  .dc-yp-t small { font-family: 'Jersey 15', sans-serif; font-size: 14px; line-height: 1; color: #5c6a8a; }
+  .dc-rush { display: flex; align-items: center; gap: 10px; padding: 8px 10px 10px 12px; background: #ffffff; box-shadow: inset 0 0 0 2px #24304f, inset 0 -4px 0 #dfe7f2; }
+  .dc-rush-t { flex: 1; min-width: 0; display: grid; gap: 1px; }
+  .dc-rush-t b { font-weight: 400; font-size: 24px; line-height: 1; }
+  .dc-rush-t small { font-family: 'Jersey 15', sans-serif; font-size: 14px; line-height: 1.1; color: #5c6a8a; }
+  .dc-rush-btn { flex: none; display: grid; justify-items: center; gap: 2px; min-height: 56px; padding: 4px 14px; }
+  .dc-rush-l { font-size: 19px; line-height: 1; }
+  .dc-rush-p { display: inline-flex; align-items: center; gap: 4px; font-family: 'Jersey 15', sans-serif; font-size: 15px; line-height: 1; }
+  .dc-rush-p img { width: 12px; height: 12px; }
+  .dc-rush-btn.poor .dc-rush-p { color: #b0402a; }
+  .dc-rush-btn:disabled { filter: grayscale(1); opacity: 0.6; }
   .dc-eggcard { display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-areas: 'egg txt' 'btn btn'; gap: 8px 12px; align-items: center; padding: 10px 12px 12px; background: #fff4d6; box-shadow: inset 0 0 0 2px #24304f, inset 0 0 0 4px #ffbe2e, inset 0 -6px 0 #ffe7a8; }
   .dc-eggspr { grid-area: egg; width: 48px; height: 48px; display: grid; place-items: center; }
   .dc-eggspr img { width: 28px; height: 30px; animation: dc-shake 1.6s steps(1) infinite; transform-origin: 50% 100%; }
@@ -1325,29 +1337,31 @@
   .dc-egg-t b { font-weight: 400; font-size: 22px; line-height: 1; }
   .dc-egg-t small { font-family: 'Jersey 15', sans-serif; font-size: 15px; line-height: 1.15; color: #6b4300; }
   .dc-eggcard .ui-btn { grid-area: btn; width: 100%; }
-  .dc-own { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
-  .dc-own .dc-res { position: relative; grid-template-areas: 'spr txt' 'spr btn'; }
-  .dc-own .dc-take { justify-self: end; width: auto; min-height: 40px; padding-inline: 14px; font-size: 17px; }
-  .dc-mark { position: absolute; left: 8px; top: 8px; }
+  .dc-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .dc-card { position: relative; display: flex; flex-direction: column; gap: 4px; min-width: 0; padding: 10px 8px 8px; background: #ffffff; box-shadow: inset 0 0 0 2px #24304f, inset 0 -4px 0 #dfe7f2; }
+  .dc-card::before { content: ''; position: absolute; left: 2px; right: 2px; top: 2px; height: 4px; background: var(--hc, #b6c3d9); }
+  .dc-c-head { display: flex; align-items: center; gap: 4px; min-height: 22px; font-family: 'Jersey 15', sans-serif; font-size: 15px; color: #5c6a8a; }
+  .dc-c-head em { margin-left: auto; font-style: normal; font-size: 13px; padding: 1px 5px 2px; background: #eaf7ee; box-shadow: inset 0 0 0 1px #8fd3a6; color: #2f7d3a; }
+  .dc-c-head .lk.av { width: 26px; height: 26px; margin: -4px 0 -4px -2px; }
   .dc-heart { width: 10px; height: 10px; flex: none; }
-  .dc-res .dc-pw { color: #24304f; }
-  .dc-res .dc-pw b { font-weight: 400; }
-  .dc-fr { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
-  .dc-fslot { position: relative; display: grid; gap: 4px; min-height: 104px; padding: 6px 8px 8px; background: #ffffff; box-shadow: inset 0 0 0 2px #24304f, inset 0 -4px 0 #dfe7f2; }
-  .dc-fwho { display: flex; align-items: center; gap: 4px; font-family: 'Jersey 15', sans-serif; font-size: 14px; color: #5c6a8a; padding-right: 32px; }
-  .dc-fwho .lk { margin: -4px 0 -6px -4px; }
-  .dc-fmon { display: flex; align-items: center; gap: 2px; min-width: 0; }
-  .dc-fmon .ico { margin: -6px -4px -6px -8px; }
-  .dc-fmon > span { display: grid; min-width: 0; }
-  .dc-fmon b { font-weight: 400; font-size: 18px; line-height: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .dc-fmon small, .dc-fh small { font-family: 'Jersey 15', sans-serif; font-size: 13px; color: #5c6a8a; }
-  .dc-fh { display: flex; align-items: center; gap: 3px; }
-  .dc-nomatch { color: #8592ad !important; }
-  .dc-fx { appearance: none; border: 0; position: absolute; right: 2px; top: 2px; width: 44px; height: 40px; background: none; font-size: 16px; color: #5c6a8a; }
-  .dc-fx:focus-visible, .dc-invite:focus-visible { outline: 3px solid #5b8def; outline-offset: -3px; }
-  .dc-fslot.empty { padding: 0; background: none; box-shadow: none; }
-  .dc-invite { appearance: none; border: 0; width: 100%; height: 100%; min-height: 104px; display: grid; place-items: center; align-content: center; gap: 6px; padding: 8px; background: #f6f9fd; box-shadow: inset 0 0 0 2px #8592ad; outline: 2px dashed #b6c3d9; outline-offset: -6px; font-size: 17px; color: #24304f; }
-  .dc-plus.small { width: 32px; height: 32px; font-size: 24px; }
+  .dc-c-spr { display: grid; place-items: center; height: 76px; background: #eef4fb; box-shadow: inset 0 -6px 0 #dde7f3; }
+  .dc-c-spr .pg-spr { width: 96px; height: 72px; max-width: 100%; }
+  .dc-c-name { display: flex; align-items: baseline; flex-wrap: wrap; gap: 0 6px; margin-top: 2px; }
+  .dc-c-name b { font-weight: 400; font-size: 20px; line-height: 1; overflow-wrap: anywhere; }
+  .dc-c-name span { font-size: 15px; line-height: 1; color: #5c6a8a; }
+  .dc-card > small { font-family: 'Jersey 15', sans-serif; font-size: 13px; line-height: 1.15; color: #5c6a8a; }
+  .dc-c-mates { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 8px; font-family: 'Jersey 15', sans-serif; font-size: 14px; line-height: 1.15; color: #24304f; }
+  .dc-c-mates small { width: 100%; font-size: 13px; color: #5c6a8a; }
+  .dc-c-mates span { display: inline-flex; align-items: center; gap: 3px; }
+  .dc-card .dc-c-btn { margin-top: auto; width: 100%; min-height: 40px; padding-inline: 4px; font-size: 16px; }
+  .dc-card.empty { padding: 0; background: none; box-shadow: none; }
+  .dc-card.empty::before { content: none; }
+  .dc-add { appearance: none; border: 0; flex: 1; width: 100%; min-height: 168px; display: grid; place-items: center; align-content: center; gap: 4px; padding: 10px 8px; text-align: center; background: #f6f9fd; box-shadow: inset 0 0 0 2px #8592ad; outline: 2px dashed #b6c3d9; outline-offset: -6px; color: #24304f; }
+  .dc-add:hover { background: #ffffff; }
+  .dc-add:focus-visible { outline: 3px solid #5b8def; outline-offset: -3px; }
+  .dc-add b { font-weight: 400; font-size: 18px; line-height: 1; }
+  .dc-add .dc-plus { width: 36px; height: 36px; font-size: 26px; margin-bottom: 4px; }
+  .dc-add small { font-family: 'Jersey 15', sans-serif; font-size: 13px; line-height: 1.15; color: #5c6a8a; }
   .dc-check { display: grid; gap: 8px; padding: 10px 12px 12px; background: #ffffff; box-shadow: inset 0 0 0 2px #b6c3d9; }
   .dc-check h3 { margin: 0; font-weight: 400; font-size: 21px; line-height: 1; }
   .dc-pairs { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
@@ -1576,7 +1590,7 @@
         <h2 class="notes-h">The screens off Home</h2>
         <ol class="zones">
           <li><b>Battle</b><span>From CONTINUE, full screen. The dice roll by themselves; <em>tap the ones to throw again</em>, then ATTACK. Under the tray, the combo, the sum, the type multiplier and the status faces, with the engine’s rules. The move is the Animations tab’s timeline; the foe rolls its own dice. Bag (one item a turn), switches, and a free switch after a K.O. The catch happens in the scene: each ball shows its chance, and one throw decides.</span></li>
-          <li><b>Day Care</b><span>One for every region, open from 20 caught. Laid out like Home: the yard on top with everyone roaming (pairs seek each other out, hearts fly), no play button. Below, <em>your two</em> (XP toward the next level, Lv.100 the only cap, TAKE BACK) and <em>four friends’ slots</em>: pick a Pokémon from a friend’s Day Care, it visits and nothing changes for the friend. The picker tags who can pair: <em>Compatible with Eevee</em>, with a heart in that Pokémon’s colour. Real Egg groups decide; Ditto pairs with everyone but slower. Every 12 h (Ditto: 24 h) a compatible pair leaves an Egg, random as before, shiny 1 in 100. The preview bar runs either check on demand.</span></li>
+          <li><b>Day Care</b><span>One for every region, open from 20 caught. Laid out like Home: the yard on top with everyone roaming (pairs seek each other out, hearts fly), no play button. Below, <em>your two</em> (XP toward the next level, Lv.100 the only cap, TAKE BACK) and <em>four friends’ slots</em>: pick a Pokémon from a friend’s Day Care, it visits and nothing changes for the friend. The picker tags who can pair: <em>Compatible with Eevee</em>, with a heart in that Pokémon’s colour. Real Egg groups decide; Ditto pairs with everyone but legendaries, slower. Every 12 h (Ditto: 24 h) a compatible pair leaves an Egg, random as before, shiny 1 in 100; <em>Egg now</em> skips the wait for ₽200 and hatches it on the spot. The name shows once, in the yard’s plate; your two and the four friends’ slots are cards in two columns. The preview bar runs either check on demand.</span></li>
           <li><b>Versus</b><span>From its widget. Locked, it shows who’s closest to Lv.50. My team: three Lv.50 clones, in order. Opponents: search, To beat / Beaten, and <em>how many of theirs you hit super effectively</em>. FIGHT: the trainer sends out three in turn, both sides on auto; SKIP jumps to the result, decided when the fight starts. A board for Attack and Defense.</span></li>
           <li><b>Leaderboard</b><span>From the cup. Max level, Progression, Pokédex, Shiny. Your rank sits on top (tap it to find your row); trainers who maxed a board out go to the <em>Hall of Fame</em>.</span></li>
           <li><b>Trainer card</b><span>From the avatar. Your look (the game’s trainer sprites, the one others see), name, money, Pokédex, best level, areas, shinies, Versus record; the badge case with the crown; the menu.</span></li>

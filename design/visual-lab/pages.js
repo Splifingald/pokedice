@@ -980,6 +980,7 @@
     sprCanvas,
     spriteKey,
     money,
+    bumpGold,
     typeBadges,
     owned,
     boxAdd(m) {

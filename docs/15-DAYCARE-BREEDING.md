@@ -15,7 +15,8 @@
 | Your Pokémon | 2 slots | 2 slots (unchanged) |
 | XP | +1 every 10 min, **200 XP cap per stay** | +1 every 10 min, **no cap but Lv.100** |
 | Friends | — | **4 friend slots**: invite a Pokémon that is sitting in a friend's Day Care. It visits; nothing changes for the friend |
-| Eggs | Free once, then bought for ₽50; hatch on the spot | **Bred.** Every 12 h (admin) each of your Pokémon checks everyone at the Day Care; a compatible pair leaves an Egg. **Ditto pairs with everyone, but on a slower check: every 24 h (admin)** |
+| Eggs | Free once, then bought for ₽50; hatch on the spot | **Bred.** Every 12 h (admin) each of your Pokémon checks everyone at the Day Care; a compatible pair leaves an Egg. **Ditto pairs with everyone but legendaries, on a slower check: every 24 h (admin).** The first visit's **free Egg stays**; the ₽50 Egg goes |
+| Egg now | — | **Skip the wait for ₽200 (admin):** the next check runs now, a pair leaves an Egg, and it hatches right away |
 | Compatibility | — | The **real Egg groups** (data from Pokémon Showdown) |
 | What hatches | Random, missing species ×4, from the region's pool | Unchanged: still random, not the parents' species |
 | Shiny | — | Day Care Eggs have their **own shiny odds** (admin, default 1 %) |
@@ -24,7 +25,7 @@
 The mockup is the Visual Lab's Home tab (artifact: https://claude.ai/artifact/EtDYmxgAmoFifQWSjtk3nD, source
 `design/visual-lab/`). Open the Day Care widget on Home. The preview bar above the phone has **Run the Day Care's 12 h
 check** and **Run Ditto's 24 h check**, and its three saves show the three widget states (Mid-game: residents;
-Versus opens and League beaten: an Egg waiting, a Ditto visiting).
+Versus opens and League beaten: an Egg waiting, a Ditto visiting). Under the yard, **Egg now · ₽200** skips the wait.
 
 ## Phase 0 · Read before writing
 
@@ -32,6 +33,7 @@ Versus opens and League beaten: an Egg waiting, a Ditto visiting).
    - open the Day Care from its widget;
    - invite a friend's Pokémon (try the **Compatible only** toggle and the search);
    - run both checks, then hatch from the widget, from the gold card and by tapping the Egg in the yard;
+   - press **Egg now** (₽200), with and without enough gold;
    - take one of yours back and leave another.
 2. Read the lab side:
    - `design/visual-lab/daycare.js` (the whole page, `compatible()`, `pairs()`, the pickers, the checks, the hatch);
@@ -68,11 +70,14 @@ not something an admin edits.
   `{ "133": { "g": ["Field"] }, "132": { "g": ["Ditto"] }, "81": { "g": ["Mineral"], "s": "N" }, "128": { "g": ["Field"], "s": "M" } }`.
   - `g` is Showdown's `eggGroups` as is ("Water 1", "Human-Like", "Undiscovered"…).
   - `s` is Showdown's `gender`, present only when the species is fixed: `"M"`, `"F"` or `"N"` (genderless).
+  - `l: 1` for legendaries and mythicals: Showdown's `tags` holds `Sub-Legendary`, `Restricted Legendary` or `Mythical`.
+    Ditto doesn't pair with them.
   - Use the base species' entry. Forms share their base's groups in every case Pokédice has.
-- Load it in `src/engine/data.ts` into `GameData` as `eggGroups: Record<number, { g: string[]; s?: 'M' | 'F' | 'N' }>`.
+- Load it in `src/engine/data.ts` into `GameData` as
+  `eggGroups: Record<number, { g: string[]; s?: 'M' | 'F' | 'N'; l?: 1 }>`.
   The size is about 30 KB raw, 5 KB gzipped.
 - Test: every dex in `pokemon.json` has an entry; Ditto (132) is `["Ditto"]`; Eevee (133) is `["Field"]`; Magnemite
-  (81) is genderless; Tauros (128) is male-only.
+  (81) is genderless; Tauros (128) is male-only; Mewtwo (150) and Celebi (251) are legendary.
 
 ## Phase 2 · Engine
 
@@ -90,7 +95,8 @@ export function compatible(data: GameData, a: number, b: number): boolean
 
 The rules, in this order (same as `compatible()` in `daycare.js`):
 
-1. Either one is a Ditto → **true** (Ditto pairs with everyone; see decision D2 for Undiscovered and Ditto × Ditto).
+1. Either one is a Ditto → **true unless the other is a legendary or mythical** (`l`). Ditto pairs with everyone else,
+   babies and another Ditto included.
 2. Either one is in `Undiscovered` → false.
 3. Either one is genderless (`s: 'N'`) → false (only Ditto breeds with them).
 4. Both have the same fixed gender (two male-only, or two female-only) → false. Pokédice has no genders, so this is
@@ -195,12 +201,26 @@ for each clock (Egg groups: breedHours, the non-slow pairs; Ditto: breedDittoHou
 Changes:
 
 - It needs `dayCare.egg`, and clears it.
-- The Egg is no longer paid for: the `opts.free` and `paid` paths go, unless decision D1 keeps the free first Egg.
+- No Egg is bought any more: the `paid` path and `eggPrice` go.
+- **The free first Egg stays.** While `eggClaimed` is false and no Egg waits, `processDayCare` puts one there:
+  `egg = { at: now, gift: true }`. Hatching it sets `eggClaimed`. The unlock tutorial still ends with a hatch, and the
+  gift takes the one Egg place until it hatches.
 - **Shiny:** `rng.chance(config.dayCare.shinyChance)`. A shiny hatchling is a Pokémon of its own (the catching rule):
   - it never replaces a copy;
   - it is never held back by one;
   - so it is always kept.
 - Return `shiny` in `Hatch`, for the hatching moment and the result card.
+
+### Egg now (skip the wait)
+
+`rushEgg(save, data, now, rng): { save, egg } | { refused: 'egg' | 'pair' | 'gold' }`:
+
+- Refused when an Egg already waits (`egg`), when no pair can make one (`pair`), or when `gold < rushPrice`
+  (`gold`).
+- Otherwise it takes `rushPrice` and runs the clock the bar counts down to (`nextCheckAt`'s) **now**: that clock
+  starts over from `now`, and a random pair from it leaves the Egg.
+- The store hatches it right away (`hatchEgg`), so the player sees one moment: pay → the hatching → the result.
+- The other clock keeps running.
 
 ## Phase 3 · Save, migration, config, admin
 
@@ -210,7 +230,7 @@ Changes:
   - `residents[].region` (optional on parse);
   - `guests` (default `[]`);
   - `breedAt`, `dittoAt` (optional);
-  - `egg` (optional);
+  - `egg` (optional): `{ at, parents?: [string, string], gift?: true }`;
   - keep `eggClaimed` and `visited`.
 - `regionBlockSchema` keeps `dayCare` **optional, for reading old saves only**. Nothing writes it any more.
 
@@ -247,7 +267,8 @@ Old clients would strip the new fields when they load and save again. Ship this 
 | `breedHours` | 12 | new: the Egg-group check |
 | `breedDittoHours` | 24 | new: Ditto's check |
 | `shinyChance` | 0.01 | new: Day Care Eggs only (the wild `shinyChance` is separate) |
-| `eggPrice` | — | removed, or kept for the first Egg only: decision D1 |
+| `rushPrice` | 200 | new: Egg now, in ₽ |
+| ~~`eggPrice`~~ | — | removed: Eggs are bred (the first one is still free) |
 | `unownedWeight`, `hatchRank`, `hatchOffset`, `hatchMinLevel` | 4, 3, 5, 5 | unchanged |
 
 The remote `game_config` row `dayCare` may lack the new keys: make sure the loader merges `DEFAULT_CONFIG.dayCare`
@@ -257,9 +278,10 @@ under it, as `DayCareBox` already does.
 
 - Fields:
   - Opens at (species, **all regions**), Slots, **Friend slots**, XP per tick, Tick (minutes);
-  - **Egg check (hours)**, **Ditto check (hours)**, **Shiny chance (%)**: show it as a percentage, store it as 0–1;
+  - **Egg check (hours)**, **Ditto check (hours)**, **Egg now (₽)**, **Shiny chance (%)**: show it as a percentage,
+    store it as 0–1;
   - Unowned weight, the three hatch numbers.
-- Drop Max XP (and Egg price, per D1).
+- Drop Max XP and Egg price.
 - Replace the cap sentence with: "N XP a day. Residents level up to Lv.100 and never evolve here. With a compatible
   pair, about N Eggs a week (Ditto pairs: N)".
 - The per-region Egg pools stay as they are.
@@ -314,42 +336,48 @@ Match the lab. Every string is in `src/i18n/strings.csv`, in all ten columns.
 
 ### The Day Care page (`render` in `daycare.js`)
 
-Laid out like Home, with no CONTINUE and no Areas button.
+Laid out like Home, with no CONTINUE and no Areas button, and the name said once.
 
-1. **Header:** back arrow, "Day Care", "Every region".
-2. **The yard**, the size and place of Home's scene:
+1. **The yard**, the size and place of Home's scene, right under the top bar:
    - a meadow with a pond, a white fence, and the Day Care cottage on the hill (orange roof, chimney, flower boxes, an
      Egg on the sign): `SCENES.daycare` and the `daycare` branch of `paintOutdoor`;
    - everyone at the Day Care roams with Home's `Mon` engine (your two and the guests);
    - pairs **seek each other out** (`likes`: 75 % of their visits go to a compatible Pokémon) and send hearts;
    - no songs (`quiet`);
    - tapping a Pokémon makes it hop with a heart;
-   - the plate reads "Pokémon Day Care · Egg check in 7 h 14", or "An Egg is waiting!";
+   - the plate is the page's only title: the back arrow, "Day Care", and under it "Every region · 4 Pokémon here";
    - with an Egg waiting, a **nest with the Egg shaking** sits in the yard; tapping it hatches.
-3. **Egg card** (only while one waits): gold, the Egg shaking, "An Egg is waiting!", "Eevee and Ditto (Noor) left it.
-   It hatches into a young Pokémon, often one you don't have yet.", **Hatch it**.
-4. **Your Pokémon · 1/2**: "They gain 1 XP every 10 min, even while you're away, all the way to Lv.100. One Day Care
-   for every region." Each card:
-   - a heart in that slot's colour: pink `#ff5a7a` for the first, blue `#5b8def` for the second;
-   - the sprite, name and Lv;
-   - an XP bar to the next level, "To Lv.25 · came at Lv.22, +2 levels" (at Lv.100: "Lv.100: it can't grow any more
-     here");
-   - "Pairs with **Jolteon** (Lea), **Ditto** (Noor), every 24 h", or "No partner here yet";
-   - **Take back**.
+2. Under the yard, one of two:
+   - **Egg card** (while one waits): gold, the Egg shaking, "An Egg is waiting!", "Eevee and Ditto (Noor) left it. It
+     hatches into a young Pokémon, often one you don't have yet." (the gift: "A gift for your first visit"),
+     **Hatch it**;
+   - otherwise the **Egg-now bar**: "Next Egg check", "in 7 h 14" large, "3 pairs can leave one" (or "No pair can make
+     an Egg yet"), and a gold **EGG NOW** button with the coin and "₽200". It is disabled without a pair. Short of
+     gold, the price turns red and a tap says "Need ₽80 more".
+3. **Your Pokémon · 2/2**: "They gain 1 XP every 10 min, even while you're away, all the way to Lv.100." **Two
+   columns**, one card per slot:
+   - a 4 px band across the top in the slot's colour (pink `#ff5a7a` for the first, blue `#5b8def` for the second);
+   - the head: that colour's heart, "Yours", and a green tag with the levels gained here ("+2 Lv", or "New");
+   - the animated sprite on a pale tile;
+   - the name and Lv, an XP bar to the next level, "To Lv.25 · came at Lv.22" (at Lv.100: "Lv.100: it can't grow
+     more");
+   - "Pairs with" and the partners' names ("Pairs with all but legendaries" for a Ditto, "No partner here yet");
+   - **Take back** at the bottom, so both cards' buttons line up.
 
-   An empty slot is "Leave a Pokémon · From your team or your Box".
-5. **Friends' Pokémon · 2/4**: "Invite a Pokémon from a friend's Day Care to make Eggs with yours. It stays theirs:
-   nothing changes for your friend." A 2×2 grid. Each card:
-   - the owner's look and "Lea's";
-   - the icon, name and Lv;
-   - the hearts of whichever of yours it pairs with, plus "Pairs", or "No match";
-   - an ✕ to send it back.
+   An empty slot is a dashed card: "+", "Leave a Pokémon", "From your team or your Box".
+4. **Friends' Pokémon · 2/4**: "Invite a Pokémon from a friend's Day Care to make Eggs with yours. It stays theirs:
+   nothing changes for your friend." Two columns, the same card:
+   - a grey band, and the head: the owner's trainer head and "Lea's";
+   - the animated sprite on a pale tile, the name and Lv;
+   - "Pairs with" and your Pokémon it pairs with, each with its heart ("♥ Eevee ♥ Dratini"), or "No match with
+     yours";
+   - **Send back** at the bottom.
 
-   An empty slot is "+ Add from a friend".
-6. **Egg checks:**
-   - the title "Next Egg check in 7 h 14";
-   - the rule ("Every 12 h, each of your Pokémon checks everyone here… Ditto pairs with everyone, but slower: its
-     pairs are checked every 24 h. One Egg waits at a time.");
+   An empty slot is a dashed card: "+", "Add from a friend", "A Pokémon from their Day Care".
+5. **Egg checks:**
+   - the title "Egg checks" (the countdown is already in the bar above);
+   - the rule ("Every 12 h, each of your Pokémon checks everyone here… Ditto pairs with everyone but legendaries,
+     slower: its pairs are checked every 24 h. One Egg waits at a time.");
    - the two clocks ("Egg groups · every 12 h · next in 7 h 14", "Ditto · every 24 h · next in 19 h 14");
    - every pair: the heart, "Eevee + Jolteon Lea's", and a tag with the shared group and its pace ("Field · every
      12 h", in purple "Ditto · every 24 h");
@@ -362,7 +390,7 @@ Laid out like Home, with no CONTINUE and no Areas button.
   - grouped by friend (look, name, "2 Pokémon at the Day Care"), the friends with the best match first;
   - each row: the icon, name, Lv and Egg groups, and a tag:
     - **"Compatible with Eevee and Dratini"**, with each one's coloured heart;
-    - Ditto: "Compatible with everyone · Egg check every 24 h";
+    - Ditto: "Compatible with all but legendaries · 24 h";
     - "No match with yours";
     - "Invited" (disabled).
 - **Leave which Pokémon?**:
@@ -379,7 +407,7 @@ Laid out like Home, with no CONTINUE and no Areas button.
 
 ### Remove
 
-- The Buy / ₽50 Egg UI (per D1).
+- The Buy / ₽50 Egg UI and "Another · ₽50" (the free first Egg keeps its card, as the gift).
 - "full in 18 h 14" and READY: no cap means no "full".
 
 ## Phase 6 · Tests (`tests/engine/daycare.test.ts`, plus `tests/save/*`)
@@ -398,7 +426,10 @@ Laid out like Home, with no CONTINUE and no Areas button.
   | Tauros × Miltank | ✓ | male × female, Field |
   | Chansey × Blissey | ✗ | both female-only (both Fairy) |
   | Pichu × Pikachu | ✗ | Undiscovered |
-  | Ditto × Mewtwo, Ditto × Ditto | ✓ | as D2 says |
+  | Ditto × Pichu | ✓ | Ditto, slow (babies aren't legendary) |
+  | Ditto × Ditto | ✓ | Ditto, slow |
+  | Ditto × Mewtwo | ✗ | legendary |
+  | Ditto × Celebi | ✗ | mythical |
 - **XP:** XP beyond the old 200 keeps levelling; it stops at Lv.100; `nextDayCareTick` is null at Lv.100.
 - **Checks:**
   - nothing before 12 h; one Egg at 12 h with a pair;
@@ -410,6 +441,10 @@ Laid out like Home, with no CONTINUE and no Areas button.
   - guest × guest never breeds.
 - **Hatch:** shiny when `rng.chance` hits (a stub rng), and the shiny is always kept; the Egg is cleared; the species
   comes from the live region's pool.
+- **The gift:** a save that never claimed the free Egg gets one when the Day Care opens; hatching it sets
+  `eggClaimed`; a save that already claimed it never gets another.
+- **Egg now:** refused with an Egg waiting, without a pair, or short of gold (nothing changes); otherwise ₽200 less,
+  an Egg from the next clock's pairs, that clock restarted at `now`, the other untouched.
 - **Regions:**
   - leaving in Kanto, switching to Johto: the resident is still there;
   - taking it back in Johto puts it in Kanto's parked Box;
@@ -424,6 +459,7 @@ Laid out like Home, with no CONTINUE and no Areas button.
 - **e2e** (`pnpm e2e`):
   - widget → page;
   - the gold widget opens into the hatching;
+  - Egg now pays and hatches;
   - leave and take back;
   - the friend slots are disabled before Phase 4.
 
@@ -436,16 +472,16 @@ Laid out like Home, with no CONTINUE and no Areas button.
 
 Each ends green: `pnpm lint`, `pnpm build`, `pnpm test`, `pnpm e2e`.
 
-## Open decisions (ask the human; the defaults are what the lab shows)
+## Decisions
 
-- **D1 · Bought and free Eggs.**
-  - Default: the ₽50 Egg goes, since breeding replaces it.
-  - Open: keep the one free Egg on the first visit, so the unlock tutorial still ends with a hatch? (The lab doesn't
-    show it.)
-- **D2 · Ditto "compatible with everyone".**
-  - Default, taken literally: it pairs with every Pokémon, including Undiscovered ones (legendaries, babies) and
-    another Ditto.
-  - In the games, neither of those breeds. Say if those two should stay out.
+Settled by the human:
+
+- **D1 · Eggs:** the free first Egg stays (the gift); the ₽50 Egg goes.
+- **D2 · Ditto** pairs with everyone **but legendaries and mythicals**. Babies and another Ditto still pair with it.
+- **Egg now** costs ₽200 (admin) and hatches right away.
+
+Still open (ask the human; the defaults are what the lab shows):
+
 - **D3 · One Egg waits at a time.** Checks while an Egg waits leave nothing. Default yes.
 - **D4 · Who checks.** Your two with everyone; guest × guest pairs don't count. Default yes, as asked ("the player's
   Pokémon do a compatibility check with all the Pokémon in the Day Care").
@@ -458,3 +494,4 @@ Each ends green: `pnpm lint`, `pnpm build`, `pnpm test`, `pnpm e2e`.
 - **D8 · Unlock count.** Default: 20 distinct species across every region's Pokédex.
 - **D9 · Two clocks** (12 h for Egg groups, 24 h for Ditto), rather than a clock per pair. Default: two clocks.
 - **D10 · The Egg's species** comes from the live region's pool, as today, wherever the parents came from. Default yes.
+- **D11 · Egg now restarts the clock it skips.** Default: yes, so ₽200 buys the check early, not an extra one.

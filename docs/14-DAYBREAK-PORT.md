@@ -260,7 +260,8 @@ Each one: a reduced-motion end state, sound cues through `sfx.ts`, and a dev pag
 ## Phase 6 · Day Care
 
 The Day Care changed after this brief was written (v2: one Day Care for every region, four friends' slots, real Egg
-groups, breeding checks every 12 h and Ditto's every 24 h, Lv.100 as the only cap, its own shiny odds). Build it from
+groups, breeding checks every 12 h and Ditto's every 24 h, Egg now for ₽200, Lv.100 as the only cap, its own shiny
+odds). Build it from
 **docs/15-DAYCARE-BREEDING.md**, which covers the engine, the save migration, config and admin, the friend-list hook
 and the UI, and matches the lab's `daycare.js` as it is now. Do that doc's phases here, in its order. Its Phase 4
 (friends) waits for the friend list.

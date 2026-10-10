@@ -68,16 +68,17 @@
 
   // ------------------------------------------------------------------ Egg groups (the real ones)
   const isDitto = (d) => (A.G.eggs[d] || []).includes('Ditto')
-  /** A pair with a Ditto in it: it pairs with everyone, but its check comes every 24 h instead of 12. */
+  const isLegend = (d) => A.G.legendary.includes(d)
+  /** A pair with a Ditto in it: it pairs with everyone but legendaries, and its check comes every 24 h, not 12. */
   const slow = (a, b) => isDitto(a) || isDitto(b)
   /**
-   * Two Pokémon can make an Egg when they share an Egg group. Ditto pairs with everyone (slower, see above);
-   * Undiscovered (legendaries, babies) never breeds otherwise; genderless ones (Magnemite, Voltorb…) only with Ditto;
-   * two of a male-only or two of a female-only species can't. Pokédice has no genders: this is the closest to the
-   * games without them.
+   * Two Pokémon can make an Egg when they share an Egg group. Ditto pairs with everyone but legendaries and mythicals
+   * (slower, see above); Undiscovered (legendaries, babies) never breeds otherwise; genderless ones (Magnemite,
+   * Voltorb…) only with Ditto; two of a male-only or two of a female-only species can't. Pokédice has no genders:
+   * this is the closest to the games without them.
    */
   function compatible(a, b) {
-    if (slow(a, b)) return true
+    if (slow(a, b)) return !isLegend(a) && !isLegend(b)
     const E = A.G.eggs,
       Gd = A.G.gender
     const ga = E[a] || [],
@@ -98,7 +99,7 @@
   function tagFor(dex, idx, heartsOf = idx) {
     const own = A.SAVE.dayCare.own
     if (isDitto(dex))
-      return `<em class="dc-tag ok">${hearts(heartsOf)}Compatible with everyone · Egg check every ${A.DC.dittoHours} h</em>`
+      return `<em class="dc-tag ok">${hearts(heartsOf)}Compatible with all but legendaries · ${A.DC.dittoHours} h</em>`
     if (!idx.length) return ''
     const names = idx.map((i) =>
       isDitto(own[i].dex) ? `${own[i].name} (every ${A.DC.dittoHours} h)` : own[i].name,
@@ -162,19 +163,18 @@
     const fN = D.friends.filter(Boolean).length
     if (yard) yard.stop()
     p.innerHTML = `
-      <div class="pg-head"><button type="button" class="pg-back" data-home aria-label="Back to Home"></button><h2>Day Care</h2><span class="pg-count">Every region</span></div>
       <div class="dc-yard" id="dc-yard"><canvas width="288" height="276" role="img" aria-label="The Day Care's yard: ${esc(all.map((m) => m.name).join(', '))}"></canvas>
-        <div class="dc-yplate hm-plate"><b>Pokémon Day Care</b><span>${D.egg ? 'An Egg is waiting!' : `Egg check in ${A.dcTime(nextCheck())}`}</span></div></div>
-      ${D.egg ? `<div class="dc-eggcard"><span class="dc-eggspr" aria-hidden="true"><img class="px" alt="" src="assets/front-egg.png" /></span><span class="dc-egg-t"><b>An Egg is waiting!</b><small>${D.eggFrom ? `${esc(D.eggFrom[0])} and ${esc(D.eggFrom[1])} left it` : 'Left by a pair at the last check'}. It hatches into a young Pokémon, often one you don’t have yet.</small></span><button type="button" class="ui-btn gold" data-hatch><span>Hatch it</span></button></div>` : ''}
+        <div class="dc-yplate hm-plate"><button type="button" class="pg-back" data-home aria-label="Back to Home"></button><span class="dc-yp-t"><h2>Day Care</h2><small>Every region · ${plural(all.length, 'Pokémon', 'Pokémon')} here</small></span></div></div>
+      ${D.egg ? eggCard(D) : rushBar(ps)}
       <div class="pg-sec-h"><h3>Your Pokémon</h3><span class="pg-count">${D.own.filter(Boolean).length}/${DC.own}</span></div>
-      <p class="pg-note">They gain ${DC.per} XP every ${DC.tick} min, even while you’re away, all the way to Lv.100. One Day Care for every region.</p>
-      <ul class="dc-own">${D.own.map((d, i) => (d ? ownCard(d, i) : emptyOwn(i))).join('')}</ul>
+      <p class="pg-note">They gain ${DC.per} XP every ${DC.tick} min, even while you’re away, all the way to Lv.100.</p>
+      <ul class="dc-grid">${D.own.map((d, i) => (d ? ownCard(d, i) : emptyOwn(i))).join('')}</ul>
       <div class="pg-sec-h"><h3>Friends’ Pokémon</h3><span class="pg-count">${fN}/${DC.friends}</span></div>
       <p class="pg-note">Invite a Pokémon from a friend’s Day Care to make Eggs with yours. It stays theirs: nothing changes for your friend.</p>
-      <ul class="dc-fr">${D.friends.map((d, i) => (d ? friendCard(d, i) : emptyFriend(i))).join('')}</ul>
+      <ul class="dc-grid">${D.friends.map((d, i) => (d ? friendCard(d, i) : emptyFriend(i))).join('')}</ul>
       <section class="dc-check" aria-labelledby="dc-check-h">
-        <h3 id="dc-check-h">${D.egg ? 'Egg checks' : `Next Egg check in ${A.dcTime(nextCheck())}`}</h3>
-        <p class="pg-note">Every ${DC.checkHours} h, each of your Pokémon checks everyone here: a pair from the same Egg group leaves an Egg. Ditto pairs with everyone, but slower: its pairs are checked every ${DC.dittoHours} h.${D.egg ? ' One Egg waits at a time: hatch it so the next check can leave another.' : ''}</p>
+        <h3 id="dc-check-h">Egg checks</h3>
+        <p class="pg-note">Every ${DC.checkHours} h, each of your Pokémon checks everyone here: a pair from the same Egg group leaves an Egg. Ditto pairs with everyone but legendaries, slower: its pairs are checked every ${DC.dittoHours} h. One Egg waits at a time.</p>
         <dl class="dc-timers"><dt>Egg groups</dt><dd>every ${DC.checkHours} h · next in ${A.dcTime(D.next)}</dd><dt>Ditto</dt><dd>every ${DC.dittoHours} h · next in ${A.dcTime(D.nextDitto)}</dd></dl>
         ${ps.length ? `<ul class="dc-pairs">${ps.map((pr) => `<li${pr.slow ? ' class="slow"' : ''}>${hearts([pr[0].mine])}<b>${esc(pr[0].name)}</b><span aria-hidden="true">+</span><b>${esc(pr[1].name)}</b>${pr[1].friend ? `<small>${esc(pr[1].friend)}’s</small>` : ''}<em>${esc(why(pr[0].dex, pr[1].dex))}</em></li>`).join('')}</ul>` : '<p class="dc-nopair">No pair can make an Egg yet. Invite a friend’s Pokémon from the same Egg group, or a Ditto: the picker shows which.</p>'}
       </section>`
@@ -205,35 +205,49 @@
     PX.sprite(g, 'front-egg', NEST.x + shake, NEST.y + 1, 0, {})
     PX.ellipse(g, NEST.x, NEST.y + 2, 12, 2, '#a0704a')
   }
+  /** The Egg waiting, in gold, where the Egg-now bar sits otherwise. */
+  const eggCard = (D) =>
+    `<div class="dc-eggcard"><span class="dc-eggspr" aria-hidden="true"><img class="px" alt="" src="assets/front-egg.png" /></span><span class="dc-egg-t"><b>An Egg is waiting!</b><small>${D.eggFrom ? `${esc(D.eggFrom[0])} and ${esc(D.eggFrom[1])} left it` : 'Left by a pair at the last check'}. It hatches into a young Pokémon, often one you don’t have yet.</small></span><button type="button" class="ui-btn gold" data-hatch><span>Hatch it</span></button></div>`
+  /** The next check, and the button that skips the wait for gold (admin setting, ₽200). */
+  function rushBar(ps) {
+    const price = A.DC.rushPrice
+    const poor = A.SAVE.gold < price
+    return `<div class="dc-rush">
+      <span class="dc-rush-t"><small>Next Egg check</small><b>in ${A.dcTime(nextCheck())}</b><small>${ps.length ? plural(ps.length, 'pair') + ' can leave one' : 'No pair can make an Egg yet'}</small></span>
+      <button type="button" class="ui-btn gold dc-rush-btn${poor ? ' poor' : ''}" data-rush${ps.length ? '' : ' disabled'} aria-label="Skip the wait: an Egg now for ${A.money(price)}"><span class="dc-rush-l">Egg now</span><span class="dc-rush-p"><img class="px" alt="" src="${A.icons.COIN}" />${A.money(price)}</span></button>
+    </div>`
+  }
+  /** Who a Pokémon here pairs with, as hearts and names. */
+  const mateList = (list) =>
+    list.map((o) => `<span>${o.mine != null ? hearts([o.mine]) : ''}${esc(o.name)}</span>`).join('')
   function ownCard(d, i) {
-    const DC = A.DC
     const others = everyone().filter((o) => o.uid !== `o${i}` && compatible(o.dex, d.dex))
-    return `<li class="dc-res" style="--hc:${HEART[i]}">
-      <span class="dc-mark"><img class="px dc-heart" alt="" src="${heartImg(HEART[i])}" /></span>
-      ${A.sprCanvas(d.dex, 84, 74)}
-      <div class="dc-res-t">
-        <span class="dc-name"><b>${esc(d.name)}</b><span class="dc-lv">Lv.${d.lv}</span></span>
-        <span class="dc-xp" role="img" aria-label="${Math.round(d.xp * 100)}% of the way to Lv.${d.lv + 1}"><i style="width:${d.xp * 100}%"></i></span>
-        <small>${d.lv >= 100 ? 'Lv.100: it can’t grow any more here.' : `To Lv.${d.lv + 1} · came at Lv.${d.from}${d.lv > d.from ? `, +${plural(d.lv - d.from, 'level')}` : ''}`}</small>
-        <small class="dc-pw">${isDitto(d.dex) ? `Pairs with everyone, every ${DC.dittoHours} h` : others.length ? `Pairs with ${others.map((o) => `<b>${esc(o.name)}</b>${o.friend ? ` (${esc(o.friend)})` : ''}${isDitto(o.dex) ? `, every ${DC.dittoHours} h` : ''}`).join(', ')}` : 'No partner here yet'}</small>
-      </div>
-      <button type="button" class="ui-btn dc-take" data-take="${i}" aria-label="Take back ${esc(d.name)}"><span>Take back</span></button>
+    return `<li class="dc-card mine" style="--hc:${HEART[i]}">
+      <span class="dc-c-head"><img class="px dc-heart" alt="" src="${heartImg(HEART[i])}" /><span>Yours</span><em>${d.lv > d.from ? `+${d.lv - d.from} Lv` : 'New'}</em></span>
+      <span class="dc-c-spr">${A.sprCanvas(d.dex, 96, 72)}</span>
+      <span class="dc-c-name"><b>${esc(d.name)}</b><span>Lv.${d.lv}</span></span>
+      <span class="dc-xp" role="img" aria-label="${Math.round(d.xp * 100)}% of the way to Lv.${d.lv + 1}"><i style="width:${d.xp * 100}%"></i></span>
+      <small>${d.lv >= 100 ? 'Lv.100: it can’t grow more' : `To Lv.${d.lv + 1} · came at Lv.${d.from}`}</small>
+      <span class="dc-c-mates">${isDitto(d.dex) ? '<small>Pairs with all but legendaries</small>' : others.length ? `<small>Pairs with</small>${mateList(others)}` : '<small>No partner here yet</small>'}</span>
+      <button type="button" class="ui-btn dc-c-btn" data-take="${i}" aria-label="Take back ${esc(d.name)}"><span>Take back</span></button>
     </li>`
   }
   const emptyOwn = (i) =>
-    `<li class="dc-res empty"><button type="button" class="dc-leave" data-leave="${i}"><span class="dc-plus" aria-hidden="true">+</span><span><b>Leave a Pokémon</b><small>From your team or your Box</small></span></button></li>`
+    `<li class="dc-card empty"><button type="button" class="dc-add" data-leave="${i}"><span class="dc-plus" aria-hidden="true">+</span><b>Leave a Pokémon</b><small>From your team or your Box</small></button></li>`
   function friendCard(d, i) {
     const f = friendOf(d.friend)
-    const idx = pairsWith(d.dex)
-    return `<li class="dc-fslot">
-      <span class="dc-fwho">${A.lookOf(f.look, 'sm')}<span>${esc(d.friend)}’s</span></span>
-      <span class="dc-fmon">${dexIco(d.dex)}<span><b>${esc(nameOf(d.dex))}</b><small>Lv.${d.lv}</small></span></span>
-      <span class="dc-fh">${idx.length ? `${hearts(idx)}<small>Pairs</small>` : '<small class="dc-nomatch">No match</small>'}</span>
-      <button type="button" class="dc-fx" data-unvite="${i}" aria-label="Send ${esc(nameOf(d.dex))} back to ${esc(d.friend)}’s Day Care">✕</button>
+    const own = everyone().filter((o) => o.mine != null && compatible(o.dex, d.dex))
+    const name = nameOf(d.dex)
+    return `<li class="dc-card guest">
+      <span class="dc-c-head">${A.lookOf(f.look, 'av')}<span>${esc(d.friend)}’s</span></span>
+      <span class="dc-c-spr">${A.sprCanvas(d.dex, 96, 72)}</span>
+      <span class="dc-c-name"><b>${esc(name)}</b><span>Lv.${d.lv}</span></span>
+      <span class="dc-c-mates">${own.length ? `<small>Pairs with</small>${mateList(own)}` : '<small>No match with yours</small>'}</span>
+      <button type="button" class="ui-btn dc-c-btn" data-unvite="${i}" aria-label="Send ${esc(name)} back to ${esc(d.friend)}’s Day Care"><span>Send back</span></button>
     </li>`
   }
   const emptyFriend = (i) =>
-    `<li class="dc-fslot empty"><button type="button" class="dc-invite" data-invite="${i}"><span class="dc-plus small" aria-hidden="true">+</span><span>Add from a friend</span></button></li>`
+    `<li class="dc-card empty"><button type="button" class="dc-add" data-invite="${i}"><span class="dc-plus" aria-hidden="true">+</span><b>Add from a friend</b><small>A Pokémon from their Day Care</small></button></li>`
 
   // ------------------------------------------------------------------ adding: a friend's Pokémon, or one of yours
   function friendSheet(slot) {
@@ -408,6 +422,30 @@
     A.renderWidgets()
     rerender()
   }
+  /**
+   * Egg now: skip the wait for gold. The check that comes next (the one the bar counts down to) runs now and starts
+   * over; a pair from it leaves an Egg, and it hatches right away.
+   */
+  function rush() {
+    const D = A.SAVE.dayCare,
+      price = A.DC.rushPrice
+    const ps = pairs()
+    if (D.egg || !ps.length) return
+    if (A.SAVE.gold < price) return A.toast(`Need ${A.money(price - A.SAVE.gold)} more`)
+    const plain = ps.filter((p) => !p.slow),
+      dit = ps.filter((p) => p.slow)
+    const ditto = !plain.length || (dit.length && D.nextDitto < D.next)
+    const pool = ditto ? dit : plain
+    if (ditto) D.nextDitto = A.DC.dittoHours * 60
+    else D.next = A.DC.checkHours * 60
+    A.SAVE.gold -= price
+    A.bumpGold()
+    const [a, b] = pool[Math.floor(Math.random() * pool.length)]
+    D.egg = true
+    D.eggFrom = [a.name, b.friend ? `${b.name} (${b.friend})` : b.name]
+    rerender()
+    hatch()
+  }
   function hatchLevel() {
     const lv = A.owned()
       .map((m) => m.lv)
@@ -561,6 +599,7 @@
           if ((b = t.closest('[data-invite]'))) return friendSheet(Number(b.dataset.invite))
           if ((b = t.closest('[data-unvite]'))) return uninvite(Number(b.dataset.unvite))
           if (t.closest('[data-hatch]')) return hatch()
+          if (t.closest('[data-rush]')) return rush()
         })
         // The yard: tap a Pokémon (a hop and a heart) or the Egg (it hatches).
         p.addEventListener('pointerdown', (e) => {
