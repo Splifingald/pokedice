@@ -19,7 +19,7 @@ in with **Discord** (§2; setup guide: [docs/15](15-DISCORD-SIGN-IN.md)).
 | The friend list is its own page, reached from the side menu | `/friends`, a game page like the leaderboard and Versus. The trainer menu gets a **Friends** row under Profile that goes there, as its Versus row goes to `/versus`. Mockups A, B |
 | Players share a friend invite link | `https://<site>/f/K7QM4XD9`: the native share sheet on phones, copied to the clipboard on desktop (the `ShareTutorial` pattern). **Opening the link makes the two players friends at once**, after a sign-in if needed. §3.3, mockup D |
 | Players share their friend ID and add by friend ID | Every signed-in player has one 8-character ID, `K7QM-4XD9`, shown at the top of the page with COPY. ADD BY FRIEND ID takes one. The link carries the same code. §3.1, mockups B, C |
-| A notification when they become friends with someone | A toast right away if their game is open (Realtime), otherwise the next time it opens. Until they look: a dot on the avatar button and on the Friends row, and a NEW tag on the friend on the page. §3.4, mockup H |
+| A notification when they become friends with someone | A toast when they next open the game or come back to its tab (no Realtime needed). Until they look: a dot on the avatar button and on the Friends row, and a NEW tag on the friend on the page. §3.4, mockup H |
 | The friend's profile with their info | Tapping a friend opens their trainer card: look, name, last played, where they are, their team, a badge case per region with Pokédex / top level / shinies, and their Versus team. Friends only. Mockup E |
 | Removing a friend | From their profile. It removes the friendship for both players, without telling the other. §3.5 |
 | Friends highlighted in social features (every leaderboard) | The four region boards, their Hall of Fame, the two Versus boards and the Versus opponents list. A friend's row gets its own tint, a friends icon and "Friend" for screen readers. A **Friends** filter shows only you and your friends, still with your global ranks. Mockups F, G |
@@ -37,10 +37,10 @@ in with **Discord** (§2; setup guide: [docs/15](15-DISCORD-SIGN-IN.md)).
 | `is_admin()` (0001) compares the session's e-mail with the admin's. | It keeps working with Discord. §2.5 explains why it stays safe, with an optional hardening. |
 | `leaderboard()` returns `is_me` but no user id, on purpose. `versus_board()` does return `user_id`. | The database marks friend rows on the region boards (`is_friend`); the browser never sees those ids. Versus compares ids in the browser, because it already has them. |
 | The board comes from `leaderboard_cache`, rebuilt by pg_cron every 5 minutes (0031), since the database stalled on 2026-10-07 from reading every save on every visit. | Nothing in this feature may read `saves.data` when a page, board or profile opens. A friend's profile comes from small **player card** rows, kept up to date when their save is written (§5.3). Measured on 10 Oct, that rebuild is still 65% of all database time (§8.1), so the cards go one step further: **the leaderboard reads them too**, and the 5-minute rebuild goes. |
-| Migration 0029 (force reload) was never applied to the live database: no `app_signals`, no `force_reload()`, no Realtime policy (checked 10 Oct). | Every tab's join to the `app` channel is refused, which makes Realtime restart every ~10 minutes and the API reload its schema each time: about 15% of database time for nothing (§8.5). Apply 0029 before any of this. The friends topic (§5.6) depends on the same Realtime setup. |
+| Migration 0029 (force reload) was never applied to the live database: no `app_signals`, no `force_reload()`, no Realtime policy (checked 10 Oct). | Every tab's join to the `app` channel is refused, which makes Realtime restart every ~10 minutes and the API reload its schema each time: about 15% of database time for nothing (§8.5). Apply 0029 before any of this. |
 | 0032 changed `leaderboard()`'s return type, so it had to drop and re-create it. `0016_regions.sql` carries the same pieces so that `seed.sql`, which inlines it, keeps them. | Adding `is_friend` repeats that: drop and re-create in the new migration **and** in `0016_regions.sql`. |
 | Leaderboard and Versus are pages inside `GameLayout`. The drawer's Versus row already closes the drawer and navigates (`go('/versus')`). | Friends follows the same pattern: a route inside `GameLayout`, and a row that navigates. |
-| Every visible tab joins the private Realtime channel `app` (0029). supabase-js multiplexes channels over one websocket. | A per-player topic `friends:<uid>` adds no connection: still one per tab against the plan's 200. |
+| Every visible tab joins the private Realtime channel `app` (0029), and `store/sync.ts` already runs a check each time the player comes back to the tab (`checkFreshness`). | Friends use no Realtime at all (§1.7): the new-friend check rides on that return-to-tab hook. |
 | `ReplyPopup` already shows "between fights, after Prof. Oak's tutorials, never in a fight". `ShareTutorial` already shares through the share sheet or the clipboard. | The invite result reuses that gating. The share code moves into a helper that both use. |
 | Netlify already rewrites `/*` to `index.html`. | `/f/:code` and `/friends` need no hosting change. |
 | `PlayerProfileModal` draws the badge case with `regionCases(save, data)`, which only reads each region's `areaProgress` (live and parked). | Split it into `regionCasesFrom(progressByRegion, data)`, so that a friend's card renders with the same `RegionRow`. |
@@ -96,15 +96,10 @@ list all get the friend treatment.
 A toast, a dot and a NEW tag. No e-mail and no web push: the game has no service worker, and a permission prompt for
 this is not worth it (§11).
 
-*(To confirm)* How fast the toast arrives while the player's game is open:
-
-- **Instantly** (recommended): a per-player Realtime topic (§5.6). It costs one more channel join each time a tab
-  becomes visible, about 6 ms of database time each, 1–2% of today's database time (§8.3).
-- **When the player comes back to the tab**: no Realtime for friends. The tiny `friend_status()` call (§5.4) runs on
-  return to the tab, at most every 5 minutes. Slightly cheaper, but a player who keeps the tab in front sees a new
-  friend only at their next reload or tab switch.
-
-Either way, a player who was away is told the next time the game loads.
+**When the toast comes** (decided 10 Oct): when the game loads, and when the player comes back to its tab, at most
+every 5 minutes. Both run the tiny `friend_status()` call (§5.4). Friends use **no Realtime**: no extra channel join,
+no broadcast. A player who keeps the tab in front the whole time sees a new friend at their next tab switch or reload.
+That is the trade for the lightest option (§8.3).
 
 ### 1.8 Sign in with Google or Discord
 
@@ -240,9 +235,9 @@ without Supabase, `/f/…` just goes on to `/`.
 
 When B adds A, by ID or by link:
 
-- **A is playing** (the tab is visible and on the Realtime socket): `friend_add` broadcasts `{ name, avatar }` on
-  A's private topic `friends:<A>`. A gets a good-tone toast, "MISTY is now your friend!" (held until a fight in
-  progress ends), and the friend ids refetch. (Or, if instant toasts are dropped, on A's next return to the tab: §1.7.)
+- **A's game is open**: the pair is stored as unseen by A. The next time A comes back to the game's tab (at most
+  every 5 minutes), `friend_status()` reports it, and A gets a good-tone toast, "MISTY is now your friend!" (held until
+  a fight in progress ends). Nothing is pushed to A's browser (§1.7).
 - **A is away**: the pair is stored as unseen by A. The next time A's game loads, once sign-in has settled (when
   `ReplyPopup` loads its inbox), the tiny `friend_status()` call (§5.4) reports it: one toast, "MISTY is now your
   friend!" or "3 new friends!". The full list is only fetched when the Friends page opens.
@@ -706,7 +701,7 @@ All are `security definer set search_path = public` and need `auth.uid()`, excep
 | `friend_code() → text` | The caller's ID, created on the first call. |
 | `friend_code_reset() → text` | A new ID; old links stop working. Once an hour. |
 | `friend_lookup(p_code text, p_device_id text) → (name, avatar, region, max_level)` | What an invite and the ADD dialog preview. Open to signed-out players, because a link can be opened before signing in. Rate limited (§5.5). |
-| `friend_add(p_code text) → (status, user_id, name, avatar)` | The statuses of §3.1. Inserts the pair (`least` / `greatest`), marks it seen for the caller, broadcasts to the other side (§5.6). Used by ADD and by an invite link alike. |
+| `friend_add(p_code text) → (status, user_id, name, avatar)` | The statuses of §3.1. Inserts the pair (`least` / `greatest`), marks it seen for the caller; the other side learns it from `friend_status()` (§3.4). Used by ADD and by an invite link alike. |
 | `friend_remove(p_friend uuid) → void` | Deletes the pair, from either side: gone for both. |
 | `friend_status() → (ids uuid[], unseen jsonb)` | The one friends call at game load: the friend ids (for the Versus highlight) and the new friends' names and looks (for the toast). A few hundred bytes. |
 | `friend_list() → setof (user_id, name, avatar, region, area_id, max_level, team, since, updated_at, is_new)` | The Friends page only. One row per friend: friendships joined to the cards. No save is read. A friend without a card yet comes back as "Trainer" with no game. |
@@ -724,18 +719,10 @@ All are `security definer set search_path = public` and need `auth.uid()`, excep
   the boards, as today.
 - **Deleted accounts:** every table cascades from `auth.users`.
 
-### 5.6 Realtime topic
+### 5.6 No Realtime
 
-```sql
-drop policy if exists friends_channel_listen on realtime.messages;
-create policy friends_channel_listen on realtime.messages for select to authenticated
-  using ((select realtime.topic()) = 'friends:' || (select auth.uid())::text and extension = 'broadcast');
-```
-
-No insert policy, so browsers can't broadcast on it. `friend_add` calls
-`realtime.send(jsonb_build_object('name', …, 'avatar', …), 'friend_added', 'friends:' || other_id, true)` inside a
-`begin … exception when others then raise warning` block, as `force_reload()` does. A Realtime hiccup never fails an
-add.
+Friends add no Realtime topic, policy or broadcast (§1.7). New friends are found by `friend_status()`, at game load
+and on return to the tab.
 
 ### 5.7 The leaderboard flag
 
@@ -760,8 +747,8 @@ Versus needs no SQL change: `versus_board()` already returns `user_id`.
 
 ### 5.8 Deploying
 
-- **First, apply 0029** on the live database if it still isn't (§8.5). 0033's Realtime policy has the same shape and
-  needs the same setup.
+- **First, apply 0029** on the live database if it still isn't (§8.5). Friends don't need it, but the reload loop it
+  fixes is the second-biggest load on the database.
 - A README "Rule additions" entry: "Needs `supabase/migrations/0033_friends.sql` run once on the live database
   (re-running `supabase/seed.sql` brings the leaderboard part). It replaces the leaderboard cache and its pg_cron job
   with player cards." Another for Discord sign-in, pointing to docs/15.
@@ -806,9 +793,9 @@ Discord's own changes are in §2.6.
   and the ALL / FRIENDS switch.
 - **`lib/versus.ts` / `Versus.tsx`**: `isFriend` from `useFriends().ids`; the same tint, icon and filter on both boards;
   `opponentsOf` putting friends first among the unbeaten; friend rows open the profile.
-- **`store/sync.ts`**: when signed in, join `friends:<uid>` on the same client, and leave it on sign-out. The handler
-  calls `useFriends.getState().onAdded(payload)`: a toast (held while in a fight) and a reload of the list. It drops
-  and re-joins the same way as the `app` channel.
+- **`store/sync.ts`**: `checkFreshness(returning)` also calls `useFriends.getState().loadStatus()` when the player
+  comes back to the tab, signed in, at most every 5 minutes. New friends there give the toast (held while in a fight)
+  and the dots.
 - **`Title.tsx`**: the invite ribbon while an invite is pending.
 - **`icons.tsx`**: a new `friends` icon (two heads), drawn on the same grid as `user`.
 - **`tailwind.config.ts`**: `friend` (`#dcebf7`) and `friend-edge` (`#547acc`). Check `text-muted` on the tint against
@@ -822,7 +809,7 @@ Discord's own changes are in §2.6.
 | Case | Behaviour |
 | --- | --- |
 | Guest | The Friends page shows the connect prompt (B′). A pending invite waits for the sign-in. |
-| Signs out | `useFriends` is cleared and the channel left. |
+| Signs out | `useFriends` is cleared. |
 | Two accounts on one device (Google and an unlinked Discord, or two Googles) | Everything reloads when `auth.userId` changes, as the leaderboard already does. Each account has its own friend ID and list. |
 | Linking Discord to an account | Same `auth.uid()`, so friends, ID and save stay as they were. |
 | A friend renames or changes their look | Shown after their next cloud push (the card trigger). |
@@ -873,8 +860,7 @@ Estimates, from the costs above. A card costs about what one save costs the rebu
 | **Total** | **+2 calls per load** | **+35–45 s, about +6–7%** |
 
 Discord sign-in adds nothing to the database: the sign-in runs between the browser, Discord and Supabase Auth, as
-Google's does. Storage: a few KB of cards per account, 2–5 MB in all. Realtime: no new connection (the topic shares each
-tab's socket), and one message per add.
+Google's does. Storage: a few KB of cards per account, 2–5 MB in all.
 
 ### 8.3 Changes that keep it light, now part of the plan
 
@@ -884,10 +870,10 @@ tab's socket), and one message per add.
    page.
 3. **Kept on the device:** the player's friend ID (localStorage, per account), the enabled sign-in providers (24 hours),
    each opened profile (5 minutes in memory). Each costs about one call a day, not one per load.
-4. **The instant-toast topic is a choice** (§1.7): keep it (recommended, about 8–12 s per 10 hours, 1–2% of today,
-   once 0029 is applied and joins stop being retried every minute), or check on return to the tab instead.
+4. **No Realtime for friends** (§1.7, decided): the topic's joins (~11–23 s) go. In their place, `friend_status()` on
+   return to the tab, at most every 5 minutes: an estimated 1,500 calls of about 1 ms, ~2 s.
 5. **Fix the Realtime loop first** (§8.5): about −75 s on its own (fewer schema reloads, no join retried every
-   minute), and it makes the friends topic work at all.
+   minute).
 
 ### 8.4 After all of it
 
@@ -895,13 +881,14 @@ tab's socket), and one message per add.
 | --- | --- |
 | Today | 649 s |
 | After §8.5 (0029 applied) | ~575 s |
-| After this plan, with §8.3 | ~170–200 s, **under a third of today**, friends included |
+| After this plan, with §8.3 | ~160–190 s, **under a third of today**, friends included |
 
 Requests per game load go from about 7 to about 8 (the friend status call; the provider check is once a day, and Auth,
-not the database). Every new call is a primary-key read of small rows.
+not the database), plus one status call per return to the tab, at most every 5 minutes. Every new call is a
+primary-key read of small rows.
 
-No polling anywhere. The friend list refreshes when the page opens (at most once a minute), on a broadcast, and at
-sign-in.
+No polling while the tab stays in front. The friend list refreshes when the page opens (at most once a minute); the
+status at game load and on return to the tab.
 
 ### 8.5 Found while measuring: migration 0029 was never applied
 
@@ -954,7 +941,7 @@ same rows as the old `leaderboard_rows()` (same players, regions, teams, Pokéde
 
 **SQL**, by hand on a Supabase branch with two test accounts (one Google, one Discord): add, already, self, unknown,
 reset, remove (gone for both), the cap, the rate limit; a direct `select` on `friendships` refused for a player; the
-broadcast received by the other account; the board's `is_friend`; the card backfill.
+other account's `friend_status()` reporting the new friend once; the board's `is_friend`; the card backfill.
 
 **Playwright** (`mockSupabase` learns `rpc/friend_*`, `/auth/v1/settings` and Discord's authorize URL)
 
@@ -975,11 +962,11 @@ broadcast received by the other account; the board's `is_friend`; the card backf
 | --- | --- | --- |
 | Before anything: 0029 | Run `supabase/migrations/0029_force_reload.sql` on the live database (§8.5). Nothing to build. | — |
 | 0. Discord sign-in | Supabase set up from [docs/15](15-DISCORD-SIGN-IN.md); the chooser, Connected accounts (link / unlink), the six reworded strings, the `/setup` step. Independent of friends: it can ship first. | S–M |
-| 1. Database | 0033: friends tables, player cards and their backfill, the leaderboard on the cards (cache, rebuild and pg_cron job retired), `is_friend`, the functions, the Realtime policy; the same in 0016, `seed.sql` regenerated | M |
+| 1. Database | 0033: friends tables, player cards and their backfill, the leaderboard on the cards (cache, rebuild and pg_cron job retired), `is_friend`, the functions; the same in 0016, `seed.sql` regenerated | M |
 | 2. Friends page | `/friends`, the menu row, `lib/friends`, the share helper, add by ID, the ID in the profile, strings | M |
 | 3. Profiles | `RegionRow` moved, `regionCasesFrom`, `FriendProfileModal`, remove | S–M |
 | 4. Invite links | `/f/:code`, the direct add, the pop-ups, the title ribbon, the invite kept across sign-in | S |
-| 5. Notifications | The channel, toasts, dots, `friend_seen` | S |
+| 5. Notifications | `friend_status()` at load and on return to the tab, toasts, dots, `friend_seen` | S |
 | 6. Leaderboards | The tint, the filter, the Hall of Fame, both Versus boards and the opponents list | S |
 | 7. Wrap-up | e2e, layout, the README entries | S |
 
@@ -1016,9 +1003,7 @@ Settled on 10 Oct 2026:
 | Who can open a profile? | Friends only. |
 | Do the Versus boards count as leaderboards? | Yes, with the opponents list. |
 | Google only? | No: Google or Discord, linkable to one account. Setup guide in docs/15. |
-
-Still open: how fast a new-friend toast arrives while the game is open (§1.7): instantly over Realtime (recommended),
-or on the next return to the tab.
+| When does a new-friend notification arrive? | At game load and when the player comes back to the tab (at most every 5 minutes). No Realtime for friends. |
 
 Assumed, say if not: the link path is `/f/<code>` (short to paste in a chat), and adding by ID keeps its preview and
 ADD button, since the player types the ID themselves.
