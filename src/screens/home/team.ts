@@ -11,7 +11,6 @@ import {
   rect,
   rng,
   shade,
-  softEllipse,
   cached,
   type G,
   type Rng,
@@ -470,12 +469,9 @@ export class Herd {
     }
   }
 
-  /** Under the sprites: the scene's moving bits and each Pokémon's contact shadow. */
+  /** Under the sprites: the scene's moving bits (no contact shadows: the Pokémon stand on the picture as drawn). */
   drawBack(g: G) {
     this.world.dyn(g, this.t)
-    for (const m of this.mons)
-      if (!m.water)
-        softEllipse(g, Math.round(m.x), Math.round(m.y), Math.round(m.sz.w * 0.28), 3, '#24304f', 0.4, 0.8)
   }
 
   /** Over the sprites: the water's edge on swimmers, the tall grass, sweat drops, bubbles and floating hearts and notes. */

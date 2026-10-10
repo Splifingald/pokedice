@@ -123,8 +123,20 @@ function SecretWidget({ onSecrets }: { onSecrets: () => void }) {
       </span>
       <span className="truncate text-[20px] leading-none">{f.area.name}</span>
       <Meter value={f.current} max={f.target} />
-      <span className="truncate font-pixel-sm text-[15px] leading-none text-muted">
-        {Math.min(f.current, f.target)}/{f.target}
+      {/* What the numbers count, said: "22/133 in Pokédex" with its icon, not a bare fraction. */}
+      <span className="flex min-w-0 items-center gap-1 font-pixel-sm text-[15px] leading-none text-muted">
+        {cond?.kind === 'pokedex' ? (
+          <PixelIcon name="navDex" size={16} />
+        ) : cond?.kind === 'maxLevel' ? (
+          <PixelIcon name="up" size={14} />
+        ) : null}
+        <span className="truncate">
+          {cond?.kind === 'pokedex'
+            ? t('ui.home.secretDex', { current: Math.min(f.current, f.target), target: f.target })
+            : cond?.kind === 'maxLevel'
+              ? t('ui.home.secretLevel', { current: Math.min(f.current, f.target), target: f.target })
+              : label || `${Math.min(f.current, f.target)}/${f.target}`}
+        </span>
       </span>
     </Widget>
   )
