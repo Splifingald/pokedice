@@ -32,7 +32,7 @@ import {
   regionSummary,
   type AreaStatus,
 } from './areas'
-import { stripOf } from './scene'
+import { AreaStrip } from '@/components/AreaStrip'
 
 export type AreasFilter = 'all' | 'catch' | 'secret' | 'cleared'
 type Sort = 'route' | 'level' | 'catch'
@@ -86,11 +86,7 @@ function AreaCard({
         className={cx('grid w-full gap-[5px] px-1.5 pb-2 pt-1.5 text-left', CARD[st])}
       >
         <span className="relative block leading-[0]">
-          <img
-            src={stripOf(area.bannerUrl)}
-            alt=""
-            className={cx('pixelated h-auto w-full', locked && 'brightness-[0.92] grayscale-[0.7]')}
-          />
+          <AreaStrip area={area} className={cx('h-auto w-full', locked && 'brightness-[0.92] grayscale-[0.7]')} />
           <span className="absolute left-1 top-1 flex gap-1">
             {st === 'new' && <Chip tone="gold">{t('ui.common.new')}</Chip>}
             {area.gyms.length > 0 && <Chip tone="dark">{t('ui.home.gymTag')}</Chip>}
@@ -197,7 +193,7 @@ function RegionCard({ region, onBack }: { region: Region; onBack: () => void }) 
           : 'shadow-card',
       )}
     >
-      {first && <img src={stripOf(first.bannerUrl)} alt="" className="pixelated h-auto w-full" />}
+      {first && <AreaStrip area={first} className="h-auto w-full" />}
       <span className="flex items-center gap-2 px-1">
         <b className="flex-1 text-[24px] font-normal leading-none">{region.name}</b>
         {here && <Chip tone="red">{t('ui.dex.youAreHere')}</Chip>}

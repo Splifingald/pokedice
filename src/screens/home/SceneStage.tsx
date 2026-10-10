@@ -7,7 +7,9 @@ import { placeSprite, stageSprite, type StageSprite } from '@/fx/sprites'
 import { useMotion } from '@/lib/motion'
 import { useGame } from '@/store/game'
 import { clamp } from '@/fx/pixel'
-import { H, sceneOf, W } from './scene'
+import { artPlacement, homeWindow } from '@/fx/areaArt'
+import { AreaArt } from '@/components/AreaArt'
+import { H, W, worldOf } from './scene'
 import { Herd, type Mon } from './team'
 
 interface Member {
@@ -37,6 +39,7 @@ export function SceneStage({
   const { t } = useT()
   const data = useGame((s) => s.data)
   const { calm } = useMotion()
+  const still = useRef<HTMLCanvasElement>(null)
   const back = useRef<HTMLCanvasElement>(null)
   const front = useRef<HTMLCanvasElement>(null)
   const imgs = useRef<(HTMLImageElement | null)[]>([])
@@ -60,7 +63,7 @@ export function SceneStage({
     )
     .join('|')
   const herd = useMemo(() => {
-    const world = sceneOf(area.bannerUrl)
+    const world = worldOf(area)
     const seed = [...area.id].reduce((n, c) => (n * 31 + c.charCodeAt(0)) | 0, 7)
     return new Herd(
       world,
@@ -83,6 +86,15 @@ export function SceneStage({
   useEffect(() => {
     herd.calm = calm
   }, [herd, calm])
+
+  // The scenery itself, drawn once: the area's drawn scene, or the stand-in under its picture.
+  useEffect(() => {
+    const g = still.current?.getContext('2d')
+    if (!g) return
+    g.imageSmoothingEnabled = false
+    g.clearRect(0, 0, W, H)
+    g.drawImage(herd.world.cv, 0, 0)
+  }, [herd])
 
   // The loop: update the herd, draw both canvases, move the sprites. Paused while the scene is off screen.
   useEffect(() => {
@@ -114,7 +126,6 @@ export function SceneStage({
     }
     const draw = () => {
       bg.clearRect(0, 0, W, H)
-      bg.drawImage(herd.world.cv, 0, 0)
       herd.drawBack(bg)
       fg.clearRect(0, 0, W, H)
       herd.drawFront(fg)
@@ -153,6 +164,7 @@ export function SceneStage({
     herd.poke(m)
     setCard({ uid: m.def.uid, x: m.x, y: m.y - m.sz.h })
   }
+  const art = herd.world.art
   const names = members.map((m) => m.name).join(', ')
   const shown = card ? members.find((m) => m.inst.id === card.uid) : null
   const shownMon = card ? herd.mons.find((m) => m.def.uid === card.uid) : null
@@ -178,6 +190,15 @@ export function SceneStage({
         else setCard(null)
       }}
     >
+      <canvas
+        ref={still}
+        width={W}
+        height={H}
+        aria-hidden
+        className="pixelated absolute inset-0 h-full w-full"
+        style={{ imageRendering: 'pixelated' }}
+      />
+      {art && <AreaArt key={art.id} src={art.url} place={artPlacement(homeWindow())} />}
       <canvas
         ref={back}
         width={W}

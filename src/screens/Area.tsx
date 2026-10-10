@@ -24,7 +24,7 @@ import { BattleView } from './battle/BattleView'
 import { CasinoView } from './area/CasinoView'
 import { CenterView } from './area/CenterView'
 import { EncounterPreview } from './area/EncounterPreview'
-import { stripOf } from './home/scene'
+import { AreaStrip } from '@/components/AreaStrip'
 
 const CARD_ICON: Record<DeckCard, IconName> = {
   wild: 'ball',
@@ -154,7 +154,7 @@ function AreaHeader({ area, progress, teamAvg }: { area: Area; progress: AreaPro
     <section className="pixel-panel overflow-hidden p-0" aria-labelledby="area-title">
       {/* The encounter types sit on the banner's top right corner. */}
       <div className="relative">
-        <img src={stripOf(area.bannerUrl, 40)} alt="" className="pixelated block h-auto w-full" />
+        <AreaStrip area={area} h={40} className="block h-auto w-full" />
         <AreaTypes area={area} className="absolute left-2 right-2 top-2" />
       </div>
       <div className="flex flex-col gap-1.5 px-3 pb-3 pt-2">

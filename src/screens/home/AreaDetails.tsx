@@ -28,7 +28,7 @@ import { cx } from '@/theme/util'
 import { RoundGauge } from '../Area'
 import { levelText, useLevelSpan } from './AreaPlate'
 import { areaStatus, lockReason } from './areas'
-import { stripOf } from './scene'
+import { AreaStrip } from '@/components/AreaStrip'
 
 /** Encounter kinds in the round mix: a colour each (the legend carries the words). */
 const MIX: Record<EncounterKind, string> = {
@@ -208,10 +208,10 @@ function DetailsBody({ area }: { area: Area }) {
   return (
     <div className="grid gap-3.5 pt-0.5">
       <div className="relative mx-0.5 leading-[0] shadow-halo">
-        <img
-          src={stripOf(area.bannerUrl, 96)}
-          alt=""
-          className={cx('pixelated h-auto w-full', locked && 'brightness-[0.92] grayscale-[0.7]')}
+        <AreaStrip
+          area={area}
+          h={96}
+          className={cx('h-auto w-full', locked && 'brightness-[0.92] grayscale-[0.7]')}
         />
         {locked && (
           <span className="absolute left-1/2 top-1/2 inline-flex max-w-[92%] -translate-x-1/2 -translate-y-1/2 items-center gap-1.5 whitespace-nowrap bg-night/90 px-2.5 pb-1.5 pt-1 text-[17px] leading-none text-white">
