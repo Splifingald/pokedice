@@ -499,6 +499,8 @@ export interface RaidFallback {
 export interface RaidConfig {
   /** HP bars, each the boss's full HP at `level`; their colours, first to last. */
   bars: number
+  /** Each bar's HP, in the raid Pokémon's own max HP at `level` (1 = one full HP bar each). */
+  barHp: number
   barColors: string[]
   /** Summons beside the boss at the start, points gained per bar broken, and the most beside it at once. */
   startAllies: number
@@ -767,6 +769,10 @@ export interface EventsSave {
   raidHistory?: { day: string; dex: number }[]
   /** Pool species unlocked (also worked out from cleared areas and catches; this keeps what a moment announced). */
   raidPool?: number[]
+  /** Your raid team: three instance ids, any region's Box (until set, your three highest-level Pokémon). */
+  raidTeam?: string[]
+  /** Raids won, a raid being won when its Pokémon is caught (the server keeps the count the leaderboard shows). */
+  raidsWon?: number
 }
 
 /** The day's raid: the UTC day, the species and whether it's shiny, the area it's fought in front of. */

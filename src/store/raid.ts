@@ -1,7 +1,7 @@
 // Raid Battles, the day's raid (docs/19 §6.2): picked once per UTC day and kept in the save. A guest's is picked here,
 // the same all day on this device; a signed-in player's by raid_today() (migration 0035), the same on every device.
 import { useEffect } from 'react'
-import { msToUtcMidnight, pickRaid, raidCandidates, setTodayRaid, todayRaid, utcDay, type TodayRaid } from '@/engine'
+import { eventUnlocked, msToUtcMidnight, pickRaid, raidCandidates, setTodayRaid, todayRaid, utcDay, type TodayRaid } from '@/engine'
 import { deviceId } from '@/lib/device'
 import { getSupabase } from '@/lib/supabase'
 import { mutateSave, useGame } from './game'
@@ -24,7 +24,8 @@ export function ensureTodayRaid(): Promise<void> {
     const { save, data, auth } = useGame.getState()
     const now = serverNow()
     // Signed in or not isn't known yet: a guest's pick now could differ from the server's.
-    if (!save || now == null || auth.status === 'unknown' || !data.config.events.raid.enabled) return
+    // Only once raids are open (an Events page asks for every event's status, open or not).
+    if (!save || now == null || auth.status === 'unknown' || !eventUnlocked('raid', save, data)) return
     const day = utcDay(now)
     if (todayRaid(save, day)) return
     let raid: TodayRaid | null

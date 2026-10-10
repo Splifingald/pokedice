@@ -41,11 +41,14 @@ export function CatchPanel({
   c,
   onThrow,
   revealed,
+  onContinue = finishCatch,
 }: {
   c: Catch
   onThrow: (ballKey: string | null) => void
   /** The result is out. */
   revealed: boolean
+  /** CONTINUE after the throw (a raid has its own result card). */
+  onContinue?: () => void
 }) {
   const { t } = useT()
   const data = useGame((s) => s.data)
@@ -99,7 +102,7 @@ export function CatchPanel({
         </div>
         <div className="min-h-[56px]">
           {revealed && (
-            <PixelButton variant="primary" size="lg" className="w-full" onClick={finishCatch}>
+            <PixelButton variant="primary" size="lg" className="w-full" onClick={onContinue}>
               {t('ui.common.continue')}
             </PixelButton>
           )}

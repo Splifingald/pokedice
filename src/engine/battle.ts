@@ -33,6 +33,8 @@ export type BattlePhase =
   | 'won'
   | 'lost'
   | 'fled'
+  /** A raid step is over (`single`): the raid takes it from here. */
+  | 'done'
 
 export interface Battler {
   uid: string
@@ -108,6 +110,11 @@ export interface BattleState {
   enemyPlan?: EnemyPlan
   /** The plan's Mega / Gigantamax has been used. */
   enemyPlanDone?: boolean
+  /**
+   * A raid step (engine/raidBattle.ts): one actor's one action, then phase 'done'. No next turn, no K.O. handling, no
+   * end of battle and no statuses cleared: the raid decides what a K.O. means and who acts next.
+   */
+  single?: boolean
 }
 
 export interface EnemyPlan {
@@ -222,7 +229,7 @@ export function makeBattler(seed: BattlerSeed, data: GameData): Battler {
  * Ditto copies whoever it faces: the dice of the opponent now in front of it (a copying opponent lends its own set).
  * Called when a battle starts and whenever either side's active Pokémon changes.
  */
-function copyFoeDice(s: BattleState, log: LogEntry[]) {
+export function copyFoeDice(s: BattleState, log: LogEntry[]) {
   const mine = activeBattler(s)
   for (const [side, b, foe] of [
     ['player', mine, s.enemy],
@@ -523,11 +530,29 @@ function deadlocked(s: BattleState, data: GameData): boolean {
   return !s.player.some((p) => p.hp > 0 && canHurt(p, foe, data))
 }
 
+/** A raid step has had its action (or lost it to a stun or a K.O. at its start). */
+function endStep(s: BattleState) {
+  s.phase = 'done'
+  s.dice = []
+  s.selected = []
+}
+
+/**
+ * A raid step: `side` takes one turn in this one-on-one duel. It starts like any turn (the DoT ticks, then the stun
+ * check: the player may still cure it) and ends with phase 'done' after its one action.
+ */
+export function startDuelStep(s: BattleState, side: Side, data: GameData, log: LogEntry[]) {
+  s.single = true
+  copyFoeDice(s, log)
+  beginTurn(s, side, data, log)
+}
+
 /** Turn start: DoT tick (can K.O.), then the stun check (skips the turn), then the actor may act. */
 function beginTurn(s: BattleState, side: Side, data: GameData, log: LogEntry[]) {
   const rules = data.config.status
   for (let guard = 0; guard < 50; guard++) {
-    if (s.turn >= data.config.maxBattleTurns || deadlocked(s, data)) {
+    // A raid keeps its own count of turns.
+    if (!s.single && (s.turn >= data.config.maxBattleTurns || deadlocked(s, data))) {
       // No rewards, no wipe; HP damage is kept like a RUN.
       finish(s, 'fled', log, 'stalemate')
       return
@@ -547,6 +572,7 @@ function beginTurn(s: BattleState, side: Side, data: GameData, log: LogEntry[]) 
       log.push({ kind: 'status_tick', target: side, targetUid: b.uid, status: t.status, amount: t.amount, hpAfter: b.hp })
     }
     if (ticks.length) checkHpForms(s, data, log)
+    if (b.hp <= 0 && s.single) return endStep(s)
     if (b.hp <= 0) {
       // A K.O. here ends the turn.
       if (checkKnockouts(s, log) && s.phase === 'player_switch') s.nextActor = other(side)
@@ -563,6 +589,7 @@ function beginTurn(s: BattleState, side: Side, data: GameData, log: LogEntry[]) 
     if (stun) {
       b.status = consumeStun(b.status)
       log.push({ kind: 'stunned', side, uid: b.uid, status: stun })
+      if (s.single) return endStep(s)
       side = other(side)
       continue
     }
@@ -573,6 +600,7 @@ function beginTurn(s: BattleState, side: Side, data: GameData, log: LogEntry[]) 
 
 function afterAction(s: BattleState, side: Side, data: GameData, log: LogEntry[]) {
   tickGmax(s, side, data, log)
+  if (s.single) return endStep(s)
   if (checkKnockouts(s, log)) {
     if (s.phase === 'player_switch') s.nextActor = other(side)
     return
@@ -640,7 +668,7 @@ export function reduce(
   data: GameData,
   rng: Rng,
 ): { state: BattleState; log: LogEntry[] } {
-  const terminal = state.phase === 'won' || state.phase === 'lost' || state.phase === 'fled'
+  const terminal = state.phase === 'won' || state.phase === 'lost' || state.phase === 'fled' || state.phase === 'done'
   if (terminal) return NOOP(state)
   const s = structuredClone(state)
   const log: LogEntry[] = []
@@ -741,7 +769,8 @@ export function reduce(
       const a = activeBattler(s)
       a.status = consumeStun(a.status)
       tickGmax(s, 'player', data, log)
-      beginTurn(s, 'enemy', data, log)
+      if (s.single) endStep(s)
+      else beginTurn(s, 'enemy', data, log)
       break
     }
     case 'SWITCH': {

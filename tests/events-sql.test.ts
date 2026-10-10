@@ -14,6 +14,7 @@ const sql = (file: string) => readFileSync(path.join(MIG, file), 'utf8')
 const U = {
   ash: '00000000-0000-4000-8000-000000000001',
   misty: '00000000-0000-4000-8000-000000000002',
+  brock: '00000000-0000-4000-8000-000000000003',
 }
 
 interface Spin {
@@ -135,6 +136,32 @@ describe('0035: raid_today', () => {
   it('needs a signed-in player and a candidate', async () => {
     await expect(ask(null, pool)).rejects.toThrow(/events_signed_out/)
     await expect(ask(U.misty, { kind: 'pool', list: [] })).rejects.toThrow(/events_no_raid/)
+  })
+})
+
+describe('0035: raid_close', () => {
+  const close = async (user: string | null) => (await as<{ r: { raidsWon: number } }>(user, 'select raid_close() as r'))[0]!.r
+  const pool = { kind: 'pool', fallbackShiny: 0, list: [{ dex: 151, shiny: false, areaId: 'faraway' }] }
+
+  it('closes today’s raid once and counts it', async () => {
+    await as(U.brock, 'select raid_today($1)', [JSON.stringify(pool)])
+    expect(await close(U.brock)).toEqual({ raidsWon: 1 })
+    // Caught already: the same count, nothing more.
+    expect(await close(U.brock)).toEqual({ raidsWon: 1 })
+    const row = await db.query<{ raid: { caught: boolean } }>('select raid from event_state where user_id = $1', [U.brock])
+    expect(row.rows[0]!.raid.caught).toBe(true)
+  })
+
+  it('a new day’s raid counts again', async () => {
+    await db.query(`update event_state set raid = jsonb_set(raid, '{day}', '"2000-01-01"') where user_id = $1`, [U.brock])
+    await as(U.brock, 'select raid_today($1)', [JSON.stringify(pool)])
+    expect(await close(U.brock)).toEqual({ raidsWon: 2 })
+  })
+
+  it('needs a signed-in player with a raid today', async () => {
+    await expect(close(null)).rejects.toThrow(/events_signed_out/)
+    await db.query(`update event_state set raid = jsonb_set(raid, '{day}', '"2000-01-01"') where user_id = $1`, [U.brock])
+    await expect(close(U.brock)).rejects.toThrow(/events_no_raid/)
   })
 })
 

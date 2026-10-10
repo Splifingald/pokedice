@@ -4,6 +4,7 @@
 // unless nothing else is left. The pick is stored with the day, so a reload never changes it.
 import { daysBetween } from './eventTime'
 import { areaProgressAnywhere } from './events'
+import { createInstance } from './progression'
 import { regionOf, regionOfArea } from './regions'
 import { createRng } from './rng'
 import type { GameData, RaidPoolEntry, SaveData, TodayRaid } from './types'
@@ -119,4 +120,88 @@ export const todayRaid = (save: SaveData, day: string): TodayRaid | null => {
 export function setTodayRaid(save: SaveData, raid: TodayRaid): SaveData {
   const history = [...(save.events?.raidHistory ?? []).filter((h) => h.day !== raid.day && daysBetween(h.day, raid.day) < 7), { day: raid.day, dex: raid.dex }]
   return { ...save, events: { ...save.events, raid, raidHistory: history } }
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Fighting it (phase 5): the team you bring, the tries, and where a caught raid Pokémon goes.
+
+/** A Pokémon fighting in a raid: a clone of one of yours at the raid's team cap at most, full HP. */
+export interface RaidMon {
+  /** The instance it's cloned from. */
+  id: string
+  dex: number
+  level: number
+  shiny: boolean
+}
+
+/**
+ * Your raid team: the three you registered (from any region's Box), or until then the three highest-level Pokémon you
+ * have. Each fights as a clone at the raid's team cap at most.
+ */
+export function raidTeam(save: SaveData, data: GameData): RaidMon[] {
+  const cap = data.config.events.raid.teamCap
+  const every = everyInstance(save).filter((p) => p.revivesAt == null && !!data.species[p.dex])
+  const chosen = (save.events?.raidTeam ?? []).flatMap((id) => every.filter((p) => p.id === id).slice(0, 1))
+  const team = chosen.length ? chosen : [...every].sort((a, b) => b.level - a.level).slice(0, 3)
+  return team.slice(0, 3).map((p) => ({ id: p.id, dex: p.dex, level: Math.min(p.level, cap), shiny: !!p.shiny }))
+}
+
+/** Another try at today's raid (counted when it starts). */
+export function countRaidTry(save: SaveData, day: string): SaveData {
+  const raid = todayRaid(save, day)
+  return raid ? { ...save, events: { ...save.events, raid: { ...raid, tries: raid.tries + 1 } } } : save
+}
+
+/** The region a raid Pokémon belongs to: its lair's (or, for a fallback raid, the region of the area it's fought in). */
+export function raidHomeRegion(data: GameData, raid: Pick<TodayRaid, 'areaId'>): string {
+  const area = data.areas.find((a) => a.id === raid.areaId)
+  return area ? regionOfArea(area) : (data.regions[0]?.id ?? 'kanto')
+}
+
+/**
+ * Today's raid Pokémon is caught: the raid closes for the day, the count of raids won goes up, and the Pokémon joins
+ * its home region's Box (D3) as a new Pokémon, whatever copies you have: the live save's when it's the region being
+ * played (the team takes it if there's room), else that region's parked Box and Pokédex.
+ */
+export function applyRaidCatch(
+  save: SaveData,
+  data: GameData,
+  raid: TodayRaid,
+  now: number,
+  newId: () => string,
+): { save: SaveData; region: string; instId: string; live: boolean } {
+  const level = data.config.events.raid.level
+  const inst = createInstance(raid.dex, level, data, newId(), now)
+  if (raid.shiny) inst.shiny = true
+  const home = raidHomeRegion(data, raid)
+  const block = home === regionOf(save) ? null : save.parked?.[home]
+  const events = { ...save.events, raid: { ...raid, caught: true }, raidsWon: (save.events?.raidsWon ?? 0) + 1 }
+  if (!block) {
+    const joined = save.team.length < data.config.maxTeamSize
+    return {
+      save: {
+        ...save,
+        events,
+        box: [...save.box, inst],
+        pokedex: save.pokedex.includes(raid.dex) ? save.pokedex : [...save.pokedex, raid.dex],
+        team: joined ? [...save.team, inst.id] : save.team,
+      },
+      region: regionOf(save),
+      instId: inst.id,
+      live: true,
+    }
+  }
+  return {
+    save: {
+      ...save,
+      events,
+      parked: {
+        ...save.parked,
+        [home]: { ...block, box: [...block.box, inst], pokedex: block.pokedex.includes(raid.dex) ? block.pokedex : [...block.pokedex, raid.dex] },
+      },
+    },
+    region: home,
+    instId: inst.id,
+    live: false,
+  }
 }

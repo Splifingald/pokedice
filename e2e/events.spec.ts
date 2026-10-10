@@ -194,3 +194,75 @@ test('the Elite Rebattle: a loss starts the tier over, the team healed', async (
   expect(after.events?.rebattle?.kanto?.step).toBe(0)
   for (const p of after.box) expect(p.currentHp).toBeGreaterThan(0)
 })
+
+/** The Safari Zone and Faraway Island cleared: Mew is today's raid. Three Dark Pokémon (Lv.100, fighting at Lv.50). */
+function raidSave(): SaveData {
+  const base = makeSave(4, { player: { name: 'Sam', character: 'red' } })
+  const mon = (id: string, dex: number) => ({ id, dex, level: 100, xp: 0, currentHp: 999, caughtAt: 0 })
+  return {
+    ...base,
+    box: [mon('a', 248), mon('b', 359), mon('c', 197)],
+    team: ['a', 'b', 'c'],
+    pokedex: [...base.pokedex, 248, 359, 197],
+    inventory: { ...base.inventory, 'ultra-ball': 3 },
+    areaProgress: {
+      ...base.areaProgress,
+      [DEFAULT_CONFIG.events.raid.unlockAreaId!]: cleared,
+      '050ff505-ff8e-5251-8499-842a2cfc2986': cleared,
+    },
+    events: { seen: ['wheel', 'raid'] },
+    // No animations: the fight plays at once between your turns.
+    settings: { ...base.settings, reducedMotion: true },
+  }
+}
+
+test('a raid: NPC trainers fill the group, you fight to a result, and a catch closes the day', async ({ page }) => {
+  test.setTimeout(180_000)
+  await mockSupabase(page, { rpc: { event_time: eventTime } })
+  await boot(page, raidSave())
+  await page.goto('/home')
+  await page.getByRole('button', { name: /^Raid Battles: Mew/ }).click()
+  await expect(page).toHaveURL(/\/events\/raid$/)
+  await expect(page.getByRole('heading', { name: 'Your raid team' })).toBeVisible()
+  await page.getByRole('button', { name: 'Start the raid' }).click()
+  const pop = page.getByRole('dialog', { name: 'Empty slots' })
+  await expect(pop.getByText('The empty slots in your group will be filled with NPC, invite friends next time!')).toBeVisible()
+  await pop.getByRole('button', { name: 'Start', exact: true }).click()
+
+  // The fight (animations off): the target is yours to pick, the attack too, until the raid is won or lost.
+  await expect(page.getByRole('heading', { name: 'Raid battle: Mew' })).toBeAttached()
+  const caught = page.getByRole('button', { name: /ROLL TO CATCH|CATCH/ })
+  const lost = page.getByRole('heading', { name: 'The raid is lost' })
+  for (let i = 0; i < 400 && !(await caught.isVisible()) && !(await lost.isVisible()); i++) {
+    await clickAny(page, ['ATTACK', 'SKIP TURN'])
+    await page.waitForTimeout(120)
+  }
+  expect((await stored(page)).events?.raid?.tries).toBe(1)
+  if (await lost.isVisible()) {
+    // Lost: the raid stays open for another try.
+    await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible()
+    await page.getByRole('button', { name: 'Back to the raids' }).click()
+    await expect(page.getByRole('button', { name: 'Start the raid' })).toBeVisible()
+    return
+  }
+  await page.getByRole('radio', { name: /Ultra Ball/ }).click()
+  await caught.click()
+  const result = page.getByRole('button', { name: 'CONTINUE' })
+  await expect(result).toBeVisible()
+  await result.click()
+  const ending = page.getByRole('heading', { name: /^Mew (was caught|got away)!$/ })
+  await expect(ending).toBeVisible()
+  if ((await ending.textContent()) === 'Mew was caught!') {
+    // The save is written a moment after it changes.
+    await expect.poll(async () => (await stored(page)).events?.raidsWon).toBe(1)
+    const after = await stored(page)
+    expect(after.events?.raid?.caught).toBe(true)
+    expect(after.box.some((p) => p.dex === 151 && p.level === 50)).toBe(true)
+    await page.getByRole('button', { name: 'Back to the raids' }).click()
+    await expect(page.getByText('CAUGHT', { exact: true })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Start the raid' })).toHaveCount(0)
+  } else {
+    await expect(page.getByRole('heading', { name: 'Mew got away!' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible()
+  }
+})

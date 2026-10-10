@@ -101,7 +101,7 @@ function initFx(b: BattleSlice): Fx {
   }
 }
 
-interface Step {
+export interface Step {
   delay: number
   sound?: SfxName
   apply: (f: Fx) => Fx
@@ -121,7 +121,7 @@ const STATUS_TEXT: Record<StatusKind, (n: string, stacks?: number) => string> = 
   heal: (name) => t('ui.log.healing', { name }),
 }
 
-function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): Step {
+export function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): Step {
   const nameOf = (uid: string) =>
     uid === st.enemy.uid ? st.enemy.name : (st.player.find((p) => p.uid === uid)?.name ?? t('ui.common.unknown'))
   const sideUid = (side: Side, f: Fx) => (side === 'enemy' ? st.enemy.uid : f.activeUid)
@@ -406,7 +406,7 @@ function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): Step {
 }
 
 /** A scene that never reports back (its stage went away) stops holding the log after this long. */
-const SCENE_TIMEOUT = 12_000
+export const SCENE_TIMEOUT = 12_000
 
 /**
  * Plays the log. Returns the display state, whether every entry has been played (inputs unlock only then), and the

@@ -852,6 +852,10 @@ $$;
 -- 4. raid_today(p_candidates): one raid per player and UTC day, the same on every device. The first call of the day
 --    picks one of the candidates the game sends (its rules: the raid pool, then shinies, then the fallback species,
 --    without the last days' raids) and keeps it; every later call that day returns it.
+
+-- Phase 5, the raid fight:
+-- 5. raid_close(): today's raid Pokémon is caught. The raid closes for the day and raids_won (the Raids leaderboard)
+--    goes up by one, once: a second call the same day changes nothing and returns the same count.
 --
 -- seed.sql inlines this file after 0034, so a database that only re-runs seed.sql gets it too.
 
@@ -979,6 +983,32 @@ begin
 end $$;
 revoke all on function raid_today(jsonb) from public;
 grant execute on function raid_today(jsonb) to authenticated;
+
+-- ---------------------------------------------------------------- the raid fight
+
+alter table event_state add column if not exists raids_won int not null default 0;
+
+create or replace function raid_close()
+returns jsonb
+language plpgsql volatile security definer set search_path = public as $$
+declare
+  me uuid := auth.uid();
+  today text := to_char((now() at time zone 'UTC')::date, 'YYYY-MM-DD');
+  st event_state;
+begin
+  if me is null then raise exception 'events_signed_out'; end if;
+  select * into st from event_state where user_id = me for update;
+  if st.raid is null or st.raid ->> 'day' <> today then raise exception 'events_no_raid'; end if;
+  if not coalesce((st.raid ->> 'caught')::boolean, false) then
+    update event_state
+      set raid = jsonb_set(st.raid, '{caught}', 'true'), raids_won = st.raids_won + 1, updated_at = now()
+      where user_id = me
+      returning * into st;
+  end if;
+  return jsonb_build_object('raidsWon', st.raids_won);
+end $$;
+revoke all on function raid_close() from public;
+grant execute on function raid_close() to authenticated;
 
 insert into type_chart (attacking, defending, multiplier) values
   ('bug', 'dark', 2),

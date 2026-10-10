@@ -128,21 +128,23 @@ export const DEFAULT_CONFIG: GameConfig = {
       ],
     },
     raid: {
-      enabled: false,
+      enabled: true,
       priority: 3,
       // The Safari Zone, Kanto.
       unlockAreaId: '2238f26a-2629-5f28-af07-e74cb41d5f7a',
       banner: 'lair-shrine',
       rules: ['raid.daily', 'raid.sides', 'raid.bars', 'raid.catch'],
-      // Three bars at Lv.50, two summons to start and two points a break, two beside it at most; upgrades 7 for the
-      // raid's side, 5 for yours (Versus's level); you and up to two friends, three Pokémon each, Lv.50 at most.
+      // Three bars of twice its HP at Lv.50, two summons to start and two points a break, two beside it at most;
+      // upgrades 8 for the raid's side, 5 for yours (Versus's level); you and up to two friends, three Pokémon each,
+      // Lv.50 at most. `pnpm raid-balance`: about 60 % wins for three random fully evolved teams (target 50–70 %).
       bars: 3,
+      barHp: 2,
       barColors: ['#34c97a', '#ffbe2e', '#f2553f'],
       startAllies: 2,
       summonPerBreak: 2,
       maxField: 2,
       level: 50,
-      upgradeLevel: 7,
+      upgradeLevel: 8,
       teamCap: 50,
       sideUpgradeLevel: 5,
       maxFriends: 2,

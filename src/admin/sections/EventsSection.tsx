@@ -394,6 +394,7 @@ function RaidBox({ raid, set }: { raid: RaidConfig; set: (patch: Partial<RaidCon
     >
       <div className="grid gap-3 sm:grid-cols-3">
         {num('HP bars', 'bars', { min: 1, max: 6 })}
+        {num('HP per bar', 'barHp', { min: 0.5, max: 5, step: 0.1, hint: 'In the raid Pokémon’s own max HP (2 = each bar holds twice its HP).' })}
         {num('Summons at the start', 'startAllies', { max: 6 })}
         {num('Summon points per bar', 'summonPerBreak', { max: 6 })}
         {num('Summons beside it at most', 'maxField', { min: 1, max: 4 })}

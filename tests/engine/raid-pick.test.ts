@@ -3,7 +3,14 @@
 // then their shinies, then the fallback species of the regions reached, never one raided in the last 72 h.
 import { describe, expect, it } from 'vitest'
 import {
+  applyRaidCatch,
+  countRaidTry,
+  createInstance,
   emptyProgress,
+  newRegionBlock,
+  raidHomeRegion,
+  raidTeam,
+  startRegion,
   newSave,
   pickRaid,
   raidCandidates,
@@ -110,5 +117,55 @@ describe("the day's raid", () => {
     expect(s.events?.raidHistory).toEqual([{ day: '2026-10-08', dex: 149 }, { day: DAY, dex: 151 }])
     const back = parseSave(JSON.parse(JSON.stringify(s)))
     expect(back.ok && back.save.events?.raid).toEqual(raid)
+  })
+})
+
+describe('fighting the raid (phase 5)', () => {
+  const MEW = { day: DAY, dex: 151, shiny: false, areaId: FARAWAY, caught: false, tries: 0 }
+
+  it('your raid team: the three you registered, else your three highest-level Pokémon, capped at the raid level', () => {
+    let s = fresh()
+    const strong = [createInstance(6, 80, data, 'c', 0), createInstance(9, 40, data, 'b', 0), createInstance(3, 60, data, 'v', 0)]
+    s = { ...s, box: [...s.box, ...strong] }
+    expect(raidTeam(s, data).map((m) => [m.dex, m.level])).toEqual([
+      [6, cfg.teamCap],
+      [3, cfg.teamCap],
+      [9, 40],
+    ])
+    s = { ...s, events: { raidTeam: ['b', 'nobody', 'c'] } }
+    expect(raidTeam(s, data).map((m) => m.id)).toEqual(['b', 'c'])
+  })
+
+  it('counts a try on today’s raid only', () => {
+    const s = setTodayRaid(fresh(), MEW)
+    expect(countRaidTry(s, DAY).events?.raid?.tries).toBe(1)
+    expect(countRaidTry(s, '2026-10-11')).toBe(s)
+  })
+
+  it('a catch in the region being played: Box, Pokédex and team, the raid closed, one more raid won', () => {
+    const s = setTodayRaid(fresh(), MEW)
+    const r = applyRaidCatch(s, data, s.events!.raid!, 5, newId)
+    expect(r).toMatchObject({ region: 'kanto', live: true })
+    const mew = r.save.box.find((p) => p.id === r.instId)!
+    expect(mew).toMatchObject({ dex: 151, level: cfg.level })
+    expect(r.save.pokedex).toContain(151)
+    expect(r.save.team).toContain(r.instId)
+    expect(r.save.events?.raid?.caught).toBe(true)
+    expect(r.save.events?.raidsWon).toBe(1)
+  })
+
+  it('a catch from another region goes to that region’s Box, which stays parked (D3)', () => {
+    const johto = data.regions.find((r) => r.id === 'johto')!
+    let s = setTodayRaid(fresh(), MEW)
+    s = startRegion(s, johto, newRegionBlock(johto, johto.starters[0]!, data, 0, newId, createInstance))
+    const r = applyRaidCatch(s, data, s.events!.raid!, 5, newId)
+    expect(raidHomeRegion(data, MEW)).toBe('kanto')
+    expect(r).toMatchObject({ region: 'kanto', live: false })
+    expect(r.save.box.some((p) => p.dex === 151)).toBe(false)
+    expect(r.save.parked?.kanto?.box.find((p) => p.id === r.instId)?.dex).toBe(151)
+    expect(r.save.parked?.kanto?.pokedex).toContain(151)
+    // A shiny raid comes out shiny.
+    const shiny = applyRaidCatch(s, data, { ...MEW, shiny: true }, 5, newId)
+    expect(shiny.save.parked?.kanto?.box.find((p) => p.id === shiny.instId)?.shiny).toBe(true)
   })
 })

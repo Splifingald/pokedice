@@ -9,7 +9,9 @@ import { countdown } from '@/lib/format'
 import { useGame } from '@/store/game'
 import { useTodayRaid } from '@/store/raid'
 import { currentTier, rebattleComplete, rebattleEncounter, regionOf } from '@/engine'
+import { useRaidRun } from '@/store/raidBattle'
 import { RaidPage } from './RaidPage'
+import { RaidView } from './RaidView'
 import { RebattlePage, tierName } from './RebattlePage'
 import { EventPicture, useWheelDay } from './shared'
 import { WheelPage } from './WheelPage'
@@ -68,8 +70,11 @@ export function EventsScreen() {
   const { id } = useParams()
   const save = useGame((s) => s.save)
   const data = useGame((s) => s.data)
+  const raidRun = useRaidRun((s) => s.run)
   // A closed or unknown event goes back Home (a stale link, an event switched off in Admin).
   if (!isEventId(id) || !save || !eventUnlocked(id, save, data)) return <Navigate to="/home" replace />
+  // A raid being fought takes the whole screen.
+  if (id === 'raid' && raidRun) return <RaidView key={raidRun.id} run={raidRun} />
   return <EventPage id={id} />
 }
 
