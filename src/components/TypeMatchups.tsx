@@ -49,7 +49,7 @@ export function foeTypes(data: GameData, enc: Encounter): PokeType[] | undefined
 
 type Row = { label: string; list: PokeType[] }
 
-/** Only the rows with something in them, so the pop-up stays small. */
+/** Only the groups with something in them, two to a row (a 2×2 grid at most screens), so it stays compact. */
 export function TypeMatchups({
   types,
   dice,
@@ -71,11 +71,11 @@ export function TypeMatchups({
   ].filter((r) => r.list.length > 0)
   if (!rows.length) return null
   return (
-    <dl className={cx('grid gap-x-2 gap-y-1 text-base sm:grid-cols-[auto_1fr]', className)}>
+    <dl className={cx('grid grid-cols-2 gap-1.5', className)}>
       {rows.map((r) => (
-        <div key={r.label} className="contents">
-          <dt className="text-muted first-letter:uppercase">{r.label}</dt>
-          <dd className="flex flex-wrap gap-1">
+        <div key={r.label} className="flex min-w-0 flex-col gap-1 bg-paper px-1.5 pb-1.5 pt-1 shadow-ring-line">
+          <dt className="font-pixel-sm text-[14px] leading-none text-muted first-letter:uppercase">{r.label}</dt>
+          <dd className="m-0 flex flex-wrap gap-0.5">
             {r.list.map((x) => (
               <TypeBadge key={x} type={x} size="sm" />
             ))}
