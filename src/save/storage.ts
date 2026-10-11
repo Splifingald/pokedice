@@ -12,9 +12,14 @@ export const BACKUPS_KEY = 'pokedice.save.backups'
 export const SLOT_KEY = 'pokedice.slot'
 
 /** The main save keeps the keys it always had; the Extreme save has its own beside them. */
-const KEYS: Record<SaveMode, { save: string; corrupt: string; backups: string }> = {
-  main: { save: SAVE_KEY, corrupt: CORRUPT_KEY, backups: BACKUPS_KEY },
-  extreme: { save: 'pokedice.save.extreme', corrupt: 'pokedice.save.extreme.corrupt', backups: 'pokedice.save.extreme.backups' },
+const KEYS: Record<SaveMode, { save: string; corrupt: string; backups: string; cloud: string }> = {
+  main: { save: SAVE_KEY, corrupt: CORRUPT_KEY, backups: BACKUPS_KEY, cloud: 'pokedice.save.cloud' },
+  extreme: {
+    save: 'pokedice.save.extreme',
+    corrupt: 'pokedice.save.extreme.corrupt',
+    backups: 'pokedice.save.extreme.backups',
+    cloud: 'pokedice.save.extreme.cloud',
+  },
 }
 
 /** The save this device plays, as stored. Read once per page: switching reloads the page. */
@@ -211,6 +216,44 @@ export function backupSave(save: SaveData, reason: string) {
 }
 
 /**
+ * What this device knows of a save's cloud copy, kept across reloads (src/store/sync.ts): the copy as the device last
+ * matched it — its `updated_at` and its pushKey — and when the device last uploaded it.
+ */
+export interface CloudMark {
+  user: string
+  /** The row's `updated_at`, in ms; null when it isn't known. */
+  at: number | null
+  /** pushKey of what the row holds. */
+  key: string
+  /** When this device last uploaded the save; 0 for never. */
+  pushedAt: number
+}
+
+export function readCloudMark(which: SaveMode = slot): CloudMark | null {
+  try {
+    const raw = storage()?.getItem(KEYS[which].cloud)
+    const m = raw ? (JSON.parse(raw) as Partial<CloudMark>) : null
+    if (!m || typeof m.user !== 'string' || typeof m.key !== 'string') return null
+    return {
+      user: m.user,
+      at: typeof m.at === 'number' ? m.at : null,
+      key: m.key,
+      pushedAt: typeof m.pushedAt === 'number' ? m.pushedAt : 0,
+    }
+  } catch {
+    return null
+  }
+}
+
+export function writeCloudMark(which: SaveMode, mark: CloudMark) {
+  try {
+    storage()?.setItem(KEYS[which].cloud, JSON.stringify(mark))
+  } catch {
+    /* the next load just reads the cloud copy again */
+  }
+}
+
+/**
  * What a "delete all my data" leaves on the device: the player's settings (language, theme, sound) and what belongs to
  * the device or the deployment, not to the player (the analytics device id and its daily ping, the sign-in options).
  */
@@ -224,7 +267,10 @@ const DEVICE_KEYS = new Set([
   'pokedice.devConfig',
 ])
 
-/** One save gone from this device: the save, its backups and its archived corrupt copy (Delete my Extreme save). */
+/**
+ * One save gone from this device: the save, its backups, its archived corrupt copy and what the device knew of its
+ * cloud copy (Delete my Extreme save).
+ */
 export function wipeSlot(which: SaveMode) {
   if (which === slot) {
     if (timer) clearTimeout(timer)

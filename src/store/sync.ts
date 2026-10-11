@@ -8,17 +8,32 @@ import { loadFriendStatus } from '@/lib/friends'
 import { getSupabase } from '@/lib/supabase'
 import {
   cancelPush,
+  cloudSaveAt,
+  cloudUnchanged,
   decideSync,
   flushPush,
+  isRateLimited,
   pullCloudSave,
+  PUSH_GAP_MS,
   pushCloudSave,
   pushesSettled,
+  pushGapLeft,
   pushKey,
   sameSave,
   schedulePush,
 } from '@/save/cloud'
 import type { SaveData, SaveMode } from '@/engine/types'
-import { activeSlot, backupSave, flushWrite, readSave, wipePlayerData, wipeSlot, writeSlot } from '@/save/storage'
+import {
+  activeSlot,
+  backupSave,
+  flushWrite,
+  readCloudMark,
+  readSave,
+  wipePlayerData,
+  wipeSlot,
+  writeCloudMark,
+  writeSlot,
+} from '@/save/storage'
 import { commitSave, initialRun, onSaveCommitted, pushToast, setContent, tickFossils, useGame, type AuthProvider } from './game'
 import { t } from '@/i18n'
 import { rescueIfRegionDisabled } from './regions'
@@ -52,6 +67,20 @@ const inFight = () => {
   return phase === 'battle' || phase === 'catch' || phase === 'victory'
 }
 
+const realmOf = (save: SaveData): SaveMode => (save.mode === 'extreme' ? 'extreme' : 'main')
+
+/** The cloud copy now holds the save with this key, stamped `at`: kept on the device for the next load. */
+function rememberCloud(user: string, realm: SaveMode, at: number | null, key: string, pushedAt?: number) {
+  const known = readCloudMark(realm)
+  writeCloudMark(realm, { user, at, key, pushedAt: pushedAt ?? (known?.user === user ? known.pushedAt : 0) })
+}
+
+/** This device may upload the signed-in player's save on its own now: its last upload is PUSH_GAP_MS behind. */
+const pushDue = () => {
+  const user = useGame.getState().auth.userId
+  return !user || pushGapLeft(readCloudMark(activeSlot()), user) === 0
+}
+
 async function push(client: SupabaseClient, userId: string, save: SaveData) {
   lastTry = Date.now()
   const key = pushKey(save)
@@ -59,23 +88,56 @@ async function push(client: SupabaseClient, userId: string, save: SaveData) {
   if (key !== cloudKey) {
     await pushCloudSave(client, userId, save)
     cloudKey = key
+    // The row is stamped with the save's updatedAt (src/save/cloud.ts).
+    rememberCloud(userId, realmOf(save), save.updatedAt, key, Date.now())
   }
   markSynced()
 }
 
 /**
- * Compares this device's save with the cloud copy and settles them: the newest wins, unless it has less progress —
- * then the player chooses (SyncConflictModal → resolveSyncConflict). Run at sign-in and by SYNC ONLINE. A save that
- * already matches the cloud costs the one read. Throws when the cloud can't be reached.
+ * Upload now — or, if the database says this player uploaded too often (0040), once PUSH_GAP_MS is over. The save
+ * stays on the device meanwhile, and the sync carries on.
  */
-async function reconcile(client: SupabaseClient, id: string): Promise<'loaded' | 'pushed' | 'same' | 'ask'> {
+async function pushOrWait(client: SupabaseClient, userId: string, save: SaveData) {
+  try {
+    await push(client, userId, save)
+  } catch (err) {
+    if (!isRateLimited(err)) throw err
+    schedulePush(() => push(client, userId, save), PUSH_GAP_MS)
+  }
+}
+
+/**
+ * Compares this device's save with the cloud copy and settles them: the newest wins, unless it has less progress —
+ * then the player chooses (SyncConflictModal → resolveSyncConflict). Run at sign-in and by SYNC ONLINE (`manual`).
+ * Throws when the cloud can't be reached.
+ *
+ * The copy's stamp is read first, and the save is downloaded only when something else wrote it (another device, the
+ * admin) since this device last matched it. Otherwise the cloud holds what this device already has, or had before
+ * playing on, and what changed since goes up — automatically at most once per PUSH_GAP_MS, reloads included. A page
+ * reloaded every few seconds used to download the whole save and upload it again on every load.
+ */
+export async function reconcile(client: SupabaseClient, id: string, manual = false): Promise<'loaded' | 'pushed' | 'same' | 'ask'> {
   pushAllowed = false
   cloudKey = null
   cancelPush() // whatever was waiting goes out below, if this device wins
   lastTry = Date.now()
   const local = useGame.getState().save
   // The save this page plays: the main one, or the Extreme one beside it (docs/22).
-  const cloud = await pullCloudSave(client, id, activeSlot())
+  const realm = activeSlot()
+  const known = readCloudMark(realm)
+  if (local && known?.user === id && cloudUnchanged(known, id, await cloudSaveAt(client, id, realm))) {
+    cloudKey = known.key
+    if (pushKey(local) !== known.key) {
+      const wait = manual ? 0 : pushGapLeft(known, id)
+      if (wait) schedulePush(() => push(client, id, local), wait)
+      else await pushOrWait(client, id, local)
+    }
+    markSynced()
+    pushAllowed = true
+    return 'same'
+  }
+  const { save: cloud, at } = await pullCloudSave(client, id, realm)
   const decision = decideSync(local, cloud)
   if (decision === 'ask' && local && cloud) {
     useGame.setState({ syncConflict: { local, cloud } })
@@ -89,14 +151,15 @@ async function reconcile(client: SupabaseClient, id: string): Promise<'loaded' |
     pushToast(t('ui.toast.cloudNewer'), 'good')
     outcome = 'loaded'
     cloudKey = pushKey(cloud)
+    rememberCloud(id, realm, at, cloudKey)
   } else if (decision === 'local' && local && !(cloud && sameSave(local, cloud))) {
     if (cloud) backupSave(cloud, t('ui.sync.replacedByLocal'))
-    await pushCloudSave(client, id, local)
+    await pushOrWait(client, id, local)
     pushToast(t(cloud ? 'ui.toast.localNewer' : 'ui.toast.backedUp'), 'good')
     outcome = 'pushed'
-    cloudKey = pushKey(local)
   } else if (cloud) {
     cloudKey = pushKey(cloud)
+    rememberCloud(id, realm, at, cloudKey)
   }
   markSynced()
   pushAllowed = true
@@ -163,7 +226,7 @@ export async function syncNow() {
   const was = { pushAllowed, syncedUser }
   try {
     syncedUser = userId
-    if ((await reconcile(client, userId)) === 'same') pushToast(t('ui.toast.synced'), 'good')
+    if ((await reconcile(client, userId, true)) === 'same') pushToast(t('ui.toast.synced'), 'good')
   } catch (err) {
     console.warn('[cloud] sync failed', err)
     pushAllowed = was.pushAllowed
@@ -185,6 +248,8 @@ export async function resolveSyncConflict(keep: 'local' | 'cloud') {
     commitSave(cloud, { silent: true, keepTimestamp: true })
     resetRun()
     cloudKey = pushKey(cloud)
+    // The row is stamped with the save's updatedAt; were it not, the next load just reads the cloud again.
+    if (auth.userId) rememberCloud(auth.userId, realmOf(cloud), cloud.updatedAt, cloudKey)
     markSynced()
   } else {
     backupSave(cloud, t('ui.sync.cloudPicked'))
@@ -216,9 +281,11 @@ export async function initAuth() {
     const { auth } = useGame.getState()
     if (!save || !pushAllowed || auth.status !== 'signed_in' || !auth.userId) return
     const userId = auth.userId
-    // At most once per cloudSyncMinutes, counted from the last sync or attempt.
+    // At most once per cloudSyncMinutes, counted from the last sync or attempt, and never within PUSH_GAP_MS of this
+    // device's last upload.
     const since = Math.max(useCloudSync.getState().lastAt ?? 0, lastTry)
-    schedulePush(() => push(client, userId, save), Math.max(0, since + syncEveryMs() - Date.now()))
+    const gap = pushGapLeft(readCloudMark(realmOf(save)), userId)
+    schedulePush(() => push(client, userId, save), Math.max(0, since + syncEveryMs() - Date.now(), gap))
   })
   client.auth.onAuthStateChange((_event, session) => {
     // Defer: supabase-js warns against awaiting other calls inside this callback.
@@ -653,11 +720,12 @@ export function startBackgroundServices() {
   // Pokémon invited) sets it again here.
   useGame.subscribe((s, prev) => s.save?.dayCare !== prev.save?.dayCare && armDayCareTimer())
   // Closing the page sends what the automatic sync hasn't yet. Merely switching away doesn't: on phones that happens
-  // all the time, and the local save keeps everything until the next sync.
+  // all the time, and the local save keeps everything until the next sync. Nor does a close within PUSH_GAP_MS of the
+  // last upload — a page reloaded over and over would upload on every reload: it goes up at the next load instead.
   window.addEventListener('pagehide', () => {
     markAway()
     flushWrite()
-    flushPush()
+    if (pushDue()) flushPush()
   })
   document.addEventListener('visibilitychange', () => {
     clearTimeout(leaveTimer)

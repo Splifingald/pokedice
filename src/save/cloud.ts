@@ -5,6 +5,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { liveBlock } from '@/engine/regions'
 import type { RegionSave, SaveData, SaveMode } from '@/engine/types'
 import { parseSave } from './schema'
+import type { CloudMark } from './storage'
 
 /** The database has no `realm` column yet (0039 not run): only the main save syncs, as before Extreme mode. */
 let noRealm = false
@@ -20,12 +21,12 @@ export class NoRealmError extends Error {
 }
 
 /**
- * The cloud copy of one of the player's two saves (docs/22). The main one is read the old way on a database without
- * realms, so the game keeps syncing while 0039 waits to be run.
+ * The player's row for one of their two saves (docs/22), or null. The main one is read the old way on a database
+ * without realms, so the game keeps syncing while 0039 waits to be run.
  */
-export async function pullCloudSave(client: SupabaseClient, userId: string, realm: SaveMode = 'main'): Promise<SaveData | null> {
+async function readRow(client: SupabaseClient, userId: string, realm: SaveMode, columns: string) {
   const read = (withRealm: boolean) => {
-    const q = client.from('saves').select('data').eq('user_id', userId)
+    const q = client.from('saves').select(columns).eq('user_id', userId)
     return (withRealm ? q.eq('realm', realm) : q).maybeSingle()
   }
   if (noRealm && realm === 'extreme') throw new NoRealmError()
@@ -36,9 +37,32 @@ export async function pullCloudSave(client: SupabaseClient, userId: string, real
     res = await read(false)
   }
   if (res.error) throw res.error
-  if (!res.data) return null
-  const parsed = parseSave((res.data as { data: unknown }).data)
-  return parsed.ok ? parsed.save : null
+  return res.data as Record<string, unknown> | null
+}
+
+/** A row's `updated_at` in ms. Postgres timestamps carry microseconds, which not every browser parses: keep ms. */
+function stampOf(at: unknown): number | null {
+  const ms = typeof at === 'string' ? Date.parse(at.replace(/(\.\d{3})\d+/, '$1')) : NaN
+  return Number.isFinite(ms) ? ms : null
+}
+
+/** The cloud copy of a save and its row's `updated_at` (null without a row). `save` is null when it can't be read. */
+export interface CloudCopy {
+  save: SaveData | null
+  at: number | null
+}
+
+export async function pullCloudSave(client: SupabaseClient, userId: string, realm: SaveMode = 'main'): Promise<CloudCopy> {
+  const row = await readRow(client, userId, realm, 'data, updated_at')
+  if (!row) return { save: null, at: null }
+  const parsed = parseSave(row.data)
+  return { save: parsed.ok ? parsed.save : null, at: stampOf(row.updated_at) }
+}
+
+/** Only the cloud copy's `updated_at` (null without a row): a few bytes, where the save itself is 30–400 kB. */
+export async function cloudSaveAt(client: SupabaseClient, userId: string, realm: SaveMode = 'main'): Promise<number | null> {
+  const row = await readRow(client, userId, realm, 'updated_at')
+  return row ? stampOf(row.updated_at) : null
 }
 
 /** Writes the save to its own realm's row: the main save as it always was, the Extreme one beside it. */
@@ -186,10 +210,49 @@ export function sameSave(a: SaveData, b: SaveData): boolean {
   return strip(a) === strip(b)
 }
 
+/** A 64-bit fingerprint of a string (cyrb53, in hex): short enough to keep on the device in place of a whole save. */
+export function fingerprint(s: string): string {
+  let h1 = 0xdeadbeef
+  let h2 = 0x41c6ce57
+  for (let i = 0; i < s.length; i++) {
+    const c = s.charCodeAt(i)
+    h1 = Math.imul(h1 ^ c, 2654435761)
+    h2 = Math.imul(h2 ^ c, 1597334677)
+  }
+  h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909)
+  h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909)
+  return (h2 >>> 0).toString(16).padStart(8, '0') + (h1 >>> 0).toString(16).padStart(8, '0')
+}
+
 /**
- * The save as far as a push is concerned: everything but its timestamps. Settings count, so a change made only there
- * still reaches the cloud. Two saves with the same key, and the second push would change nothing.
+ * The save as far as a push is concerned: a fingerprint of everything but its timestamps. Settings count, so a change
+ * made only there still reaches the cloud. Two saves with the same key, and the second push would change nothing.
  */
 export function pushKey(s: SaveData): string {
-  return canonical({ ...s, updatedAt: 0, lastRegenTick: 0 })
+  return fingerprint(canonical({ ...s, updatedAt: 0, lastRegenTick: 0 }))
+}
+
+/**
+ * Automatic uploads from one device are at least this far apart, reloads included. A save is 30–400 kB and each upload
+ * rebuilds the player's card on the database (~230 ms there): on 2026-10-11 a few players reloading the game every few
+ * seconds uploaded on every load and took the database down. What waits stays in the local save and goes up at the next
+ * load or sync after the gap.
+ */
+export const PUSH_GAP_MS = 2 * 60_000
+
+/** The database refused an upload: this player uploaded too often (migration 0040's budget; HTTP 429). */
+export const isRateLimited = (e: unknown) => (e as { code?: string } | null)?.code === 'PT429'
+
+/** How long before this device may upload `user`'s save again on its own (SYNC ONLINE doesn't wait). */
+export function pushGapLeft(mark: CloudMark | null, user: string, now = Date.now()): number {
+  if (!mark || mark.user !== user) return 0
+  return Math.max(0, Math.min(PUSH_GAP_MS, mark.pushedAt + PUSH_GAP_MS - now))
+}
+
+/**
+ * The cloud copy is still the one this device last matched: same player, same row stamp. Every write to a save sets its
+ * stamp (the game's and the admin's alike), so the copy holds what `mark.key` says and needn't be downloaded again.
+ */
+export function cloudUnchanged(mark: CloudMark | null, user: string, at: number | null): mark is CloudMark {
+  return !!mark && mark.user === user && at != null && mark.at === at
 }
