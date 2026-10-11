@@ -83,17 +83,15 @@ describe('the Elite Rebattle opens', () => {
 
 describe('the rival Champion', () => {
   it.each([
-    [1, 6, 130],
-    [4, 9, 59],
-    [7, 3, 59],
-  ])('a player who started with #%i faces #%i with #%i and Raichu, at the tier’s levels', (starter, ace, second) => {
+    [1, 6],
+    [4, 9],
+    [7, 3],
+  ])('a player who started with #%i faces #%i last, at the tier’s levels', (starter, ace) => {
     const lineup = rebattleLineup(champion(save(starter)), data, 'kanto', 0)
     expect(lineup.map((t) => t.role)).toEqual(['elite', 'elite', 'elite', 'elite', 'champion'])
-    expect(lineup.at(-1)!.team).toEqual([
-      { dex: 26, level: 69 },
-      { dex: second, level: 71 },
-      { dex: ace, level: 73 },
-    ])
+    const team = lineup.at(-1)!.team
+    expect(team.map((m) => m.level)).toEqual([69, 71, 73])
+    expect(team.at(-1)!.dex).toBe(ace)
   })
 
   it('is the character the player did not pick', () => {

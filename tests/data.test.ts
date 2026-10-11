@@ -15,6 +15,7 @@ import { validateRow } from '@/admin/schemas'
 import { compileGameData, effectiveStats } from '@/engine'
 import type { Area, DiceEntry, Species, Trainer } from '@/engine/types'
 import { composeDice, diceCountFromBst, hpAtLevel, stableUuid } from '../scripts/seed'
+import { KANTO_RIVAL, MIN_BENCH, ROSTERS } from '../scripts/rebattle-teams'
 import { TUNED_STARTERS } from './fixtures'
 
 const species = pokemon as Species[]
@@ -239,10 +240,39 @@ describe('Kanto structure', () => {
       const gyms = tier(id)
       expect(gyms.map((t) => t.role)).toEqual(['elite', 'elite', 'elite', 'elite', 'champion', 'champion', 'champion'])
       for (const t of gyms) expect(t.team.length).toBeLessThanOrEqual(3)
-      const rival = (starter: number) => gyms.find((t) => t.rivalOf === starter)!.team.map((m) => [m.dex, m.level])
-      expect(rival(1)).toEqual([[26, levels[0]], [130, levels[1]], [6, levels[2]]]) // Bulbasaur → Raichu, Gyarados, Charizard
-      expect(rival(4)).toEqual([[26, levels[0]], [59, levels[1]], [9, levels[2]]]) // Charmander → Raichu, Arcanine, Blastoise
-      expect(rival(7)).toEqual([[26, levels[0]], [59, levels[1]], [3, levels[2]]]) // Squirtle → Raichu, Arcanine, Venusaur
+      // The rival: the starter that beats the player's last, the two others from his Champion team (and Raichu).
+      for (const [starter, roster] of Object.entries(KANTO_RIVAL)) {
+        const team = gyms.find((t) => t.rivalOf === Number(starter))!.team
+        expect(team.map((m) => m.level)).toEqual(levels)
+        expect(team[2]!.dex).toBe(roster[roster.length - 1])
+        for (const m of team.slice(0, 2)) expect(roster.slice(0, -1)).toContain(m.dex)
+      }
+    }
+  })
+
+  it('draws each rematch from the member’s own roster: the ace stays, the others change tier to tier', () => {
+    const lineups = BUNDLE.config.rebattleLineups as Record<string, Record<string, string[]>>
+    for (const [regionId, tiers] of Object.entries(lineups)) {
+      const region = BUNDLE.regions!.find((r) => r.id === regionId)!
+      const league = (areas as Area[]).find((a) => a.id === region.leagueAreaId)!.gyms.map((id) => tById.get(id)!)
+      tiers.bronze!.forEach((bronzeId, i) => {
+        const bronze = tById.get(bronzeId)!
+        const teams = Object.values(tiers).map((ids) => tById.get(ids[i]!)!.team)
+        const label = `${regionId} ${bronze.name}`
+        // The ace, last, in every tier; no two tiers in a row field the same three.
+        const aces = new Set(teams.map((t) => t[t.length - 1]!.dex))
+        expect(aces.size, label).toBe(1)
+        const key = (t: { dex: number }[]) => t.map((m) => m.dex).sort((a, b) => a - b).join(',')
+        for (let k = 1; k < teams.length; k++) expect(key(teams[k]!), label).not.toBe(key(teams[k - 1]!))
+        expect(new Set(teams.map(key)).size, label).toBeGreaterThanOrEqual(3)
+        // The others: the roster in the games and League I's team (a member with too few is topped up by type).
+        const member = league.find((t) => t.name === bronze.name)
+        const roster = bronze.rivalOf != null ? KANTO_RIVAL[bronze.rivalOf]! : ROSTERS[`${regionId}:${bronze.name}`]!
+        expect(roster, label).toBeDefined()
+        const ace = [...aces][0]
+        const own = new Set([...roster, ...(member?.team ?? []).map((m) => m.dex)].filter((d) => d !== ace))
+        if (own.size >= MIN_BENCH) for (const t of teams) for (const m of t.slice(0, -1)) expect(own.has(m.dex), label).toBe(true)
+      })
     }
   })
 

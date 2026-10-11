@@ -137,7 +137,7 @@ Guests: no row; their state lives in `SaveData.events`, and they only need `even
 
 ### 5.1 Content
 - **`scripts/rebattle-teams.ts`** (writes `trainers.json` + `config.json` `events.rebattle.regions`): for each region with a league, from the League I Elite Four and Champion:
-  - Bronze: League I levels + 10, one Pokémon swapped for another of the member's type; Silver: + 25, another swap; Gold: everyone Lv.100. **Three Pokémon max per trainer**, the ace last.
+  - Bronze: League I levels + 10; Silver: + 20; Gold: + 30; Diamond: everyone Lv.100. **Three Pokémon max per trainer**: League I's ace last, and two from the member's roster in the games (`ROSTERS`), a different pair per tier (docs/18 §Teams).
   - Champion slot: Kanto uses the rival per starter (`rivalOf` 1/4/7, the three existing League II rival trainers re-teamed per tier); other regions use their League I champion's stronger copy.
   - Trainer `upgradeLevel` = league level + `upgradeDelta` (max = 10); potions like League II (`gymPotions` rule).
   - Stable ids (`stableUuid`), so re-running the script updates the same rows. Teams are then tuned in the admin.

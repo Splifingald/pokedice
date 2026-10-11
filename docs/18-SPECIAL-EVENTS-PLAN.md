@@ -141,17 +141,18 @@ Pool and fallback lists with region gates; shiny chance (30 %); repeat window (7
 
 | Tier (medal) | Levels | Gold | Foe upgrade level |
 |---|---|---|---|
-| Bronze (bronze diamond) | League I + 10, with some Pokémon swapped | ×1 | League + 1 |
+| Bronze (bronze diamond) | League I + 10 | ×1 | League + 1 |
 | Silver (silver pentagon) | League I + 20 | ×1.5 | League + 2 |
 | Gold (gold hexagon) | League I + 30 | ×2 | League + 3 |
 | Diamond (blue circle) | everyone Lv.100 | ×3 | max |
 
 The tiers are named Bronze, Silver, Gold and Diamond and drawn as their medals, with no I / II / III (user's call,
 2026-10-10; Diamond added 2026-10-11, the levels and ₽ re-spread over four tiers). The Home widget shows the current
-tier's medal. The live database gets the four tiers from `supabase/migrations/0041_rebattle_diamond.sql`
-(`pnpm rebattle-sql`); saves keep their place (a player past the old Gold, Lv.100, now faces Diamond).
+tier's medal. The live database got the four tiers from `supabase/migrations/0041_rebattle_diamond.sql` and the
+roster teams from `0042_rebattle_rosters.sql` (`pnpm rebattle-sql`, both applied 2026-10-11); saves keep their place
+(a player past the old Gold, Lv.100, now faces Diamond).
 
-- **Teams:** generated per region by a script (`scripts/rebattle-teams.ts`) into `trainers.json`. Each tier is a copy of the E4 member. **Trainers keep three Pokémon at most:** tier 1 swaps one Pokémon for another signature-type pick, tier 2 swaps another, tier 3 keeps tier 2's team at League I + 30, tier 4 is that team at Lv.100. The ace goes last. All of them are hand-editable in the admin team editor. Champion slot = **the rival** (`rivalOf`, per starter) where League II had one (Kanto); elsewhere the League II champion.
+- **Teams:** generated per region by a script (`scripts/rebattle-teams.ts`) into `trainers.json`. Each tier is a copy of the E4 member. **Trainers keep three Pokémon at most:** League I's ace, last, in every tier, and two from the member's **roster in the games** (`ROSTERS`: their five or six, plus their League I ones), a different pair each tier, so every rematch brings a different team (user's call, 2026-10-11). The pairs go round before one comes back: a member with only three to choose from (Kanto's Bruno, Agatha and Lance, Unova's and Kalos's Elite Four…) fights Diamond with Bronze's pair at Lv.100. A member with fewer than three (Emerald's Phoebe and Glacia) is topped up with Pokémon of their type from their region. All of them are hand-editable in the admin team editor. Champion slot = **the rival** (`rivalOf`, per starter) where League II had one (Kanto); elsewhere the League II champion.
 - **Gauntlet:** the 5 fights back to back, no Center, items allowed. A loss → back to member 1 of that tier; ₽ already won is kept. **Each trainer pays once per tier (user's rule, 2026-10-10):** beaten again after a restart, they give no ₽. The save keeps the paid trainers per tier (`rebattle.paid`, e.g. `kanto:1:lorelei`), the ladder shows "₽ already paid", and the rules pop-up says so. The Events tab shows the 5 portraits with check marks and the tier medallions (bronze / silver / gold / diamond).
 - **Juice:** a tier medallion stamp, a "Hall of Fame"-style finale per tier, a rising-pitch walk-in for each member.
 
