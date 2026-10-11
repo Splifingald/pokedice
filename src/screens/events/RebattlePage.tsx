@@ -1,4 +1,4 @@
-// The Elite Rebattle's page (docs/18, the Visual Lab's mockup): the regions whose League is won, the three tiers as
+// The Elite Rebattle's page (docs/18, the Visual Lab's mockup): the region being played (its rebattle), the three tiers as
 // medals (a bronze diamond, a silver pentagon, a gold hexagon), the gauntlet's ladder with what each trainer still pays,
 // and START / CONTINUE. The fights themselves are League battles on the usual screens (/area); a cleared tier comes
 // back here to its medal card.
@@ -26,7 +26,7 @@ import { MiniSprite } from '@/components/SpriteImg'
 import { TrainerSprite } from '@/components/TrainerArt'
 import { useT } from '@/i18n/react'
 import { money } from '@/lib/format'
-import { pushToast, useGame } from '@/store/game'
+import { useGame } from '@/store/game'
 import { clearRebattleRun, startRebattle, useRebattleMedal } from '@/store/rebattle'
 import { cx } from '@/theme/util'
 import { EventInfo, EventPicture } from './shared'
@@ -68,26 +68,14 @@ export function RebattlePage() {
   }
   return (
     <div className="mx-auto flex w-full max-w-[560px] flex-col gap-3">
-      {open.length > 1 && (
-        <div role="radiogroup" aria-label={t('ui.events.rebattle.region')} className="flex flex-wrap gap-1.5">
-          {open.map((id) => (
-            <button
-              key={id}
-              type="button"
-              role="radio"
-              aria-checked={id === live}
-              aria-disabled={id !== live}
-              onClick={() => id !== live && pushToast(t('ui.events.rebattle.travel', { region: regionName(id) }))}
-              className={cx(
-                'flex min-h-[36px] items-center gap-1.5 px-2.5 text-[18px] shadow-ring-line',
-                id === live ? 'bg-gold text-ink shadow-ring' : 'bg-well text-muted',
-              )}
-            >
-              {regionName(id)}
-              {rebattleComplete(save, data, id) && <Medal tier={2} size="sm" />}
-              {id !== live && <PixelIcon name="lock" size={14} />}
-            </button>
-          ))}
+      {/* Only the region being played: its rebattle is the one on this page (each region has its own). */}
+      {here && (
+        <div className="flex items-center gap-2.5">
+          <span className="flex min-h-[36px] shrink-0 items-center gap-1.5 bg-gold px-2.5 text-[18px] text-ink shadow-ring">
+            {regionName(live)}
+            {complete && <Medal tier={2} size="sm" />}
+          </span>
+          <p className="m-0 min-w-0 font-pixel-sm text-[15px] leading-[1.15] text-muted">{t('ui.events.rebattle.thisRegion')}</p>
         </div>
       )}
       {!here ? (

@@ -2,6 +2,7 @@
 // Versus, in the same frame as theirs (a banner of the Day Care's shape, then the same three rows), so every square on
 // Home is the same size. Before any event opens, one square holds the place: "coming later", then from the 3rd Kanto
 // badge a locked teaser naming the area that opens the first event.
+import { useLayoutEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { activeEvents, currentTier, eventsTeaser, rebattleEncounter, rebattleOnHome, regionOf, type EventId } from '@/engine'
 import { AreaStrip } from '@/components/AreaStrip'
@@ -115,6 +116,30 @@ function RaidSquare() {
   )
 }
 
+/**
+ * The next trainer on the hall's picture, as tall as the banner and centred in it. The banner grows with the widget
+ * (a phone's half width up to a wide screen's column), so a fixed size was tiny on the big ones.
+ */
+function TrainerFit({ src }: { src: string | null }) {
+  const ref = useRef<HTMLSpanElement>(null)
+  const [h, setH] = useState(0)
+  useLayoutEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const measure = () => setH(el.clientHeight)
+    measure()
+    if (typeof ResizeObserver === 'undefined') return
+    const ro = new ResizeObserver(measure)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
+  return (
+    <span ref={ref} className="absolute inset-0 flex items-center justify-center">
+      {h > 0 && <TrainerSprite src={src} size={Math.round(h)} />}
+    </span>
+  )
+}
+
 /** The Elite Rebattle's square: the tier's medal, the next trainer to beat and where the gauntlet stands. */
 function RebattleSquare() {
   const { t } = useT()
@@ -144,11 +169,7 @@ function RebattleSquare() {
       <WidgetBanner>
         <span className="absolute inset-0">
           <EventPicture id="rebattle" data={data} className="h-full w-full">
-            <TrainerSprite
-              src={next?.kind === 'gym' ? next.spriteUrl : null}
-              size={64}
-              className="absolute bottom-[-6px] left-1/2 -translate-x-1/2"
-            />
+            <TrainerFit src={next?.kind === 'gym' ? next.spriteUrl : null} />
           </EventPicture>
         </span>
       </WidgetBanner>

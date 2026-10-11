@@ -119,12 +119,14 @@ function DetailsSub({ area }: { area: Area }) {
   const span = useLevelSpan(area)
   const st = areaStatus(save, data, area)
   const rounds = area.roundsToClear
+  // "3/5 rounds": the rounds done here over the rounds that clear the area (more can be played once it's cleared).
+  const done = progressOf(save, area.id).roundsDone ?? 0
   return (
     <>
       {[
         levelText(span),
         rounds != null
-          ? t(`ui.home.rounds.${rounds === 1 ? 'one' : 'other'}`, { n: rounds })
+          ? t(`ui.home.rounds.${rounds === 1 ? 'one' : 'other'}`, { n: `${done}/${rounds}` })
           : t('ui.home.secretArea'),
         t(`ui.home.stTitle.${st}`),
       ].join(' · ')}
