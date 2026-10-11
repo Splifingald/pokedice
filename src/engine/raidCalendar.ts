@@ -8,7 +8,7 @@ import { isLegendary } from './breeding'
 import { raidAllyAllowed } from './raidBattle'
 import { regionOf, regionOfArea, regionOfSpecies } from './regions'
 import { createRng } from './rng'
-import type { Area, GameData, SaveData } from './types'
+import type { Area, GameData, RaidMonRules, SaveData } from './types'
 
 /** What kind of raid a day holds: a fixed date's, a mythical, a shiny legendary, a pseudo-legendary or a shiny filler. */
 export type RaidKind = 'special' | 'mythical' | 'legendary' | 'pseudo' | 'filler'
@@ -19,6 +19,31 @@ export interface RaidDay {
   /** Its area: the raid is fought in front of its picture, and a catch unlocks once it's completed. */
   areaId: string
   kind: RaidKind
+  /** Set by hand in the admin (not the plan's). */
+  manual?: true
+}
+
+/** The numbers a raid Pokémon's own rules can change. */
+export const RAID_MON_KEYS = ['bars', 'barHp', 'startAllies', 'summonPerBreak', 'maxField', 'level', 'upgradeLevel'] as const
+export type RaidRules = Required<RaidMonRules>
+
+/** A raid Pokémon's numbers: its own (Admin → Raids → Raid Pokémon) over the defaults. */
+export function raidRules(data: GameData, dex: number): RaidRules {
+  const cfg = data.config.events.raid
+  const own = cfg.perMon?.[dex] ?? {}
+  const pick = (k: keyof RaidMonRules) => {
+    const v = Number(own[k])
+    return own[k] != null && Number.isFinite(v) ? v : (cfg[k] as number)
+  }
+  return {
+    bars: Math.max(1, Math.round(pick('bars'))),
+    barHp: Math.max(0.1, pick('barHp') ?? 1),
+    startAllies: Math.max(0, Math.round(pick('startAllies'))),
+    summonPerBreak: Math.max(0, Math.round(pick('summonPerBreak'))),
+    maxField: Math.max(0, Math.round(pick('maxField'))),
+    level: Math.max(1, Math.min(100, Math.round(pick('level')))),
+    upgradeLevel: Math.max(1, Math.min(10, Math.round(pick('upgradeLevel')))),
+  }
 }
 
 /** A species' earlier stages (Dratini → Dragonair for Dragonite), nearest first. */
@@ -108,21 +133,45 @@ function daysOf(year: number): { day: string; md: string; weekday: number }[] {
 
 const same = (a: Pick<RaidDay, 'dex' | 'shiny'>, b: Pick<RaidDay, 'dex' | 'shiny'>) => a.dex === b.dex && a.shiny === b.shiny
 
+/** The seed in force on a day ('YYYY-MM-DD'): the last one whose `from` is on or before it, else 0. */
+export function raidSeedOn(data: GameData, day: string): number {
+  let seed = 0
+  for (const s of [...(data.config.events.raid.calendar.seeds ?? [])].sort((a, b) => a.from.localeCompare(b.from))) if (s.from <= day) seed = s.seed
+  return seed
+}
+
 /**
- * A year's raids, one per day: the anchors on their dates, the mythicals and legendaries on the weekends (then Fridays
- * when there are more of them than weekend days), the pseudo-legendaries evenly spread, the fillers on the rest. The
- * same year always gives the same calendar (its order is shuffled from the year), so every player has the same raid.
+ * A year's plan, one raid per day: the anchors on their dates, the mythicals and legendaries on the weekends (then
+ * Fridays when there are more of them than weekend days), the pseudo-legendaries evenly spread, the fillers on the rest.
+ * Its order is shuffled from the year and the seed, so every player has the same raid. When the seed changes during
+ * the year, the days before the change keep their raids and the rest of the year is laid out again from what's left.
  */
 export function buildRaidCalendar(data: GameData, year: number): RaidDay[] {
+  const days = daysOf(year)
+  let slots: (RaidDay | null)[] = layoutYear(data, year, raidSeedOn(data, days[0]!.day), days.map(() => null))
+  const changes = [...(data.config.events.raid.calendar.seeds ?? [])]
+    .filter((s) => s.from > days[0]!.day && s.from.startsWith(`${year}-`))
+    .sort((a, b) => a.from.localeCompare(b.from))
+  for (const c of changes) {
+    const at = days.findIndex((d) => d.day >= c.from)
+    if (at < 0) continue
+    slots = layoutYear(data, year, c.seed, slots.map((s, i) => (i < at ? s : null)))
+  }
+  return slots.map((s) => s ?? { dex: 0, shiny: false, areaId: '', kind: 'filler' as const })
+}
+
+/** Lays a year out from a seed around the days already `kept` (they stay, and their raids aren't used again). */
+function layoutYear(data: GameData, year: number, seed: number, kept: (RaidDay | null)[]): (RaidDay | null)[] {
   const cfg = data.config.events.raid
   const days = daysOf(year)
-  const slots: (RaidDay | null)[] = days.map(() => null)
-  const group: ('anchor' | 'big' | 'pseudo' | 'filler' | null)[] = days.map(() => null)
+  const slots: (RaidDay | null)[] = [...kept]
+  const group: ('anchor' | 'big' | 'pseudo' | 'filler' | null)[] = kept.map((k) => (k ? 'anchor' : null))
   const entries = raidEntries(data)
   const all = [...entries.mythical, ...entries.legendary, ...entries.pseudo, ...entries.filler]
-  let big = [...entries.mythical, ...entries.legendary]
-  let pseudo = [...entries.pseudo]
-  let filler = [...entries.filler]
+  const used = (e: RaidDay) => kept.some((k) => k && same(k, e))
+  let big = [...entries.mythical, ...entries.legendary].filter((e) => !used(e))
+  let pseudo = entries.pseudo.filter((e) => !used(e))
+  let filler = entries.filler.filter((e) => !used(e))
   // The fixed dates: their raid, and it isn't laid out again that year.
   for (const a of cfg.calendar.anchors) {
     const i = days.findIndex((d) => d.md === a.date)
@@ -136,7 +185,8 @@ export function buildRaidCalendar(data: GameData, year: number): RaidDay[] {
     pseudo = pseudo.filter((e) => !same(e, a))
     filler = filler.filter((e) => !same(e, a))
   }
-  const rng = createRng(year * 7919 + 17)
+  // Seed 0 is the calendar as it was first laid out.
+  const rng = createRng(year * 7919 + 17 + seed * 104_729)
   const shuffle = <T,>(xs: T[]) => {
     const a = [...xs]
     for (let i = a.length - 1; i > 0; i--) {
@@ -167,8 +217,9 @@ export function buildRaidCalendar(data: GameData, year: number): RaidDay[] {
     }
   })
   // The fillers on the rest, round again if there are more days than fillers.
+  const pool = filler.length ? filler : entries.filler.length ? entries.filler : entries.legendary
   free().forEach((d, k) => {
-    const e = filler.length ? filler[k % filler.length]! : entries.legendary[k % Math.max(1, entries.legendary.length)]
+    const e = pool[k % Math.max(1, pool.length)]
     if (e) {
       slots[d.i] = e
       group[d.i] = 'filler'
@@ -187,19 +238,37 @@ export function buildRaidCalendar(data: GameData, year: number): RaidDay[] {
       break
     }
   }
-  return slots.map((s) => s ?? { dex: 0, shiny: false, areaId: '', kind: 'filler' as const })
+  return slots
 }
 
-const cache = new WeakMap<GameData, Map<number, RaidDay[]>>()
+const cache = new WeakMap<object, Map<number, { plan: RaidDay[]; cal: RaidDay[] }>>()
 
-/** A year's calendar, built once per content. */
-export function raidCalendar(data: GameData, year: number): RaidDay[] {
-  let byYear = cache.get(data)
-  if (!byYear) cache.set(data, (byYear = new Map()))
-  let cal = byYear.get(year)
-  if (!cal) byYear.set(year, (cal = buildRaidCalendar(data, year)))
-  return cal
+/** A year's plan and its calendar (the plan with the days set by hand), built once per raid config. */
+function yearOf(data: GameData, year: number): { plan: RaidDay[]; cal: RaidDay[] } {
+  const key = data.config.events.raid
+  let byYear = cache.get(key)
+  if (!byYear) cache.set(key, (byYear = new Map()))
+  let got = byYear.get(year)
+  if (!got) {
+    const plan = buildRaidCalendar(data, year)
+    const overrides = data.config.events.raid.calendar.overrides ?? {}
+    const entries = raidEntries(data)
+    const all = [...entries.mythical, ...entries.legendary, ...entries.pseudo, ...entries.filler]
+    const days = daysOf(year)
+    const cal = plan.map((r, i) => {
+      const o = overrides[days[i]!.day]
+      if (!o || !data.species[o.dex]) return r
+      const known = all.find((e) => same(e, o))
+      const areaId = known?.areaId ?? raidHomeArea(data, o.dex)?.id
+      return areaId ? { dex: o.dex, shiny: !!o.shiny, areaId, kind: known?.kind ?? ('special' as const), manual: true as const } : r
+    })
+    byYear.set(year, (got = { plan, cal }))
+  }
+  return got
 }
+
+/** A year's calendar: the plan, with the days set by hand. */
+export const raidCalendar = (data: GameData, year: number): RaidDay[] => yearOf(data, year).cal
 
 /** The day's position in its year (0-based) and the year, from 'YYYY-MM-DD'. */
 function indexOf(day: string): { year: number; i: number } {
@@ -211,6 +280,13 @@ function indexOf(day: string): { year: number; i: number } {
 export function raidOfDay(data: GameData, day: string): RaidDay | null {
   const { year, i } = indexOf(day)
   const r = raidCalendar(data, year)[i]
+  return r && r.dex ? r : null
+}
+
+/** What the plan gives a day, whatever was set by hand (the admin shows both). */
+export function raidPlanOf(data: GameData, day: string): RaidDay | null {
+  const { year, i } = indexOf(day)
+  const r = yearOf(data, year).plan[i]
   return r && r.dex ? r : null
 }
 

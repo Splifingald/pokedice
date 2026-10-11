@@ -1,7 +1,7 @@
 // Raid Battles' page (docs/18 §3, the Visual Lab's mockup): today's raid Pokémon on the picture of the area that
 // unlocked it, the time left, the tries, a CAUGHT stamp once it's caught, and START right under it.
 import { useState, type ReactNode } from 'react'
-import { ballBonus, catchChance, catchValueOf, raidLocked, raidRegion, regionStarted, upcomingRaids, type TodayRaid } from '@/engine'
+import { ballBonus, catchChance, catchValueOf, raidLocked, raidRegion, raidRules, regionStarted, upcomingRaids, type TodayRaid } from '@/engine'
 import { PixelIcon } from '@/components/icons'
 import { ItemSprite } from '@/components/ItemSprite'
 import { statHint, statLabel } from '@/components/StatChip'
@@ -41,6 +41,8 @@ export function RaidCard({ raid, msLeft }: { raid: TodayRaid; msLeft: number | n
   const { t } = useT()
   const data = useGame((s) => s.data)
   const cfg = data.config.events.raid
+  // This raid Pokémon's own numbers (Admin → Raids), over the defaults.
+  const rules = raidRules(data, raid.dex)
   const area = data.areas.find((a) => a.id === raid.areaId)
   const name = data.species[raid.dex]?.name ?? `#${raid.dex}`
   return (
@@ -70,10 +72,10 @@ export function RaidCard({ raid, msLeft }: { raid: TodayRaid; msLeft: number | n
       </span>
       <span className="absolute bottom-2 left-2.5 grid gap-0.5 leading-none text-white [text-shadow:0_2px_0_#24304f]">
         <b className="text-[28px] font-normal">{raid.shiny ? t('ui.events.raid.shinyName', { name }) : name}</b>
-        <small className="font-pixel-sm text-[15px] text-gold-light">{t('ui.events.raid.sub', { level: cfg.level, bars: cfg.bars })}</small>
+        <small className="font-pixel-sm text-[15px] text-gold-light">{t('ui.events.raid.sub', { level: rules.level, bars: rules.bars })}</small>
       </span>
       <span className="absolute bottom-3 right-2.5 flex gap-[3px]" aria-hidden>
-        {Array.from({ length: cfg.bars }, (_, i) => (
+        {Array.from({ length: rules.bars }, (_, i) => (
           <i key={i} className="block h-2 w-[18px] shadow-[0_0_0_2px_#24304f]" style={{ background: cfg.barColors[i % cfg.barColors.length] }} />
         ))}
       </span>

@@ -14,7 +14,6 @@ import { AreasSection } from './sections/AreasSection'
 import { ConfigSection } from './sections/ConfigSection'
 import { DevToolsSection } from './sections/DevToolsSection'
 import { EventsSection } from './sections/EventsSection'
-import { LiveEventsSection } from './sections/LiveEventsSection'
 import { MessagesSection } from './sections/MessagesSection'
 import { PullRemoteButton } from './PullRemoteButton'
 import { PokemonSection } from './sections/PokemonSection'
@@ -33,7 +32,6 @@ const SECTIONS: { id: string; label: string; icon: IconName; C: ComponentType }[
   { id: 'typechart', label: 'Type Chart', icon: 'vs', C: TypeChartSection },
   { id: 'config', label: 'Config', icon: 'gear', C: ConfigSection },
   { id: 'events', label: 'Events', icon: 'star', C: EventsSection },
-  { id: 'live', label: 'Live events', icon: 'sparkle', C: LiveEventsSection },
   { id: 'simulator', label: 'Simulator', icon: 'play', C: SimulatorSection },
   { id: 'analytics', label: 'Analytics', icon: 'history', C: AnalyticsSection },
   { id: 'messages', label: 'Messages', icon: 'mail', C: MessagesSection },
@@ -51,7 +49,6 @@ const SECTION_TABLES: Partial<Record<string, TableName[]>> = {
   typechart: ['type_chart'],
   config: ['game_config', 'regions'],
   events: ['game_config'],
-  live: ['game_config'],
 }
 
 function Gate() {

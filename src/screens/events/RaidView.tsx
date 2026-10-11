@@ -334,7 +334,7 @@ export function RaidView({ run }: { run: RaidRun }) {
   const catchState = run.catch
     ? {
         dex: run.raid.dex,
-        level: cfg.level,
+        level: run.state.boss.level,
         shiny: run.raid.shiny,
         kind: 'boss' as const,
         target: { mode: 'new' as const },

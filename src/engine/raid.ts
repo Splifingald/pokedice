@@ -3,7 +3,7 @@
 // Pokémon joins its home region's Box once its area there is completed, and waits locked until then.
 import { areaProgressAnywhere } from './events'
 import { createInstance } from './progression'
-import { raidOfDay, raidRegion } from './raidCalendar'
+import { raidOfDay, raidRegion, raidRules } from './raidCalendar'
 import { regionOf } from './regions'
 import type { GameData, PokemonInstance, RaidLock, SaveData, TodayRaid } from './types'
 
@@ -75,7 +75,8 @@ export const raidHomeRegion = (data: GameData, raid: Pick<TodayRaid, 'areaId'>):
  * being played (the team takes it if there's room), else that region's parked Box and Pokédex.
  */
 function addToRegion(save: SaveData, data: GameData, lock: Omit<RaidLock, 'day'>, now: number, newId: () => string) {
-  const inst = createInstance(lock.dex, data.config.events.raid.level, data, newId(), now)
+  // At the level it was fought at (its own, Admin → Raids, or the default).
+  const inst = createInstance(lock.dex, raidRules(data, lock.dex).level, data, newId(), now)
   if (lock.shiny) inst.shiny = true
   const home = raidRegion(data, lock.areaId)
   const block = home === regionOf(save) ? null : save.parked?.[home]

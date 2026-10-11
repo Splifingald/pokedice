@@ -183,7 +183,10 @@ export const DEFAULT_CONFIG: GameConfig = {
         { dex: 893, areaId: '4aed8f3a-c216-5713-ac05-5a66d5c6998e' }, // Zarude, The Forest of Focus
         { dex: 1025, areaId: '168b74c9-3359-5581-a214-1f5be8da9b3e' }, // Pecharunt, Kitakami Hall
       ],
+      perMon: {},
       calendar: {
+        seeds: [],
+        overrides: {},
         // Days that mean something (engine/raidCalendar.ts lays out the rest, legendaries on the weekends).
         anchors: [
           { date: '01-01', dex: 493, shiny: false }, // New Year: Arceus, who shaped the world

@@ -16,6 +16,7 @@ import {
 } from './battle'
 import { isLegendary } from './breeding'
 import { uniformLevels, type UpgradeLevels } from './damage'
+import { raidRules, type RaidRules } from './raidCalendar'
 import { regionSpecies } from './regions'
 import type { Rng } from './rng'
 import { autoEvents } from './sim'
@@ -72,6 +73,8 @@ export interface RaidState {
   duel: BattleState | null
   /** Actions so far (the raid ends as a loss at `RAID_MAX_STEPS`). */
   steps: number
+  /** This raid Pokémon's numbers (its own over the defaults), fixed when the raid starts. */
+  rules?: RaidRules
   sideLevels: UpgradeLevels
   foeLevels: UpgradeLevels
   /** Every side plays itself (the sims). */
@@ -167,6 +170,9 @@ const activeOf = (side: RaidSide) => side.mons[side.active]!
 const foes = (s: RaidState) => [s.boss, ...s.summons]
 const foeOf = (s: RaidState, uid: string) => foes(s).find((f) => f.uid === uid) ?? null
 
+/** The raid's numbers: fixed at its start (an older state without them reads them again). */
+const rulesOf = (s: RaidState, data: GameData): RaidRules => s.rules ?? raidRules(data, s.boss.dex)
+
 function putFoe(s: RaidState, b: Battler) {
   if (b.uid === s.boss.uid) s.boss = b
   else s.summons = s.summons.map((m) => (m.uid === b.uid ? b : m))
@@ -174,9 +180,11 @@ function putFoe(s: RaidState, b: Battler) {
 
 export function createRaid(opts: CreateRaidOptions, data: GameData, rng: Rng): { state: RaidState; log: RaidLogEntry[] } {
   const cfg = data.config.events.raid
-  const boss = makeBattler({ uid: BOSS_UID, dex: opts.boss.dex, level: cfg.level, hp: Number.MAX_SAFE_INTEGER, shiny: opts.boss.shiny }, data)
+  // This raid Pokémon's own numbers (Admin → Raids), over the defaults.
+  const rules = raidRules(data, opts.boss.dex)
+  const boss = makeBattler({ uid: BOSS_UID, dex: opts.boss.dex, level: rules.level, hp: Number.MAX_SAFE_INTEGER, shiny: opts.boss.shiny }, data)
   // A bar holds `barHp` times its own HP.
-  boss.maxHp = Math.max(1, Math.round(boss.maxHp * Math.max(0.1, cfg.barHp ?? 1)))
+  boss.maxHp = Math.max(1, Math.round(boss.maxHp * rules.barHp))
   boss.hp = boss.maxHp
   const sides: RaidSide[] = opts.sides.map((seed) => {
     const { team, ...who } = seed
@@ -188,7 +196,8 @@ export function createRaid(opts: CreateRaidOptions, data: GameData, rng: Rng): {
     phase: 'running',
     sides,
     boss,
-    bars: Math.max(1, cfg.bars),
+    bars: rules.bars,
+    rules,
     broken: 0,
     summons: [],
     points: 0,
@@ -201,13 +210,13 @@ export function createRaid(opts: CreateRaidOptions, data: GameData, rng: Rng): {
     duel: null,
     steps: 0,
     sideLevels: uniformLevels(cfg.sideUpgradeLevel),
-    foeLevels: uniformLevels(cfg.upgradeLevel),
+    foeLevels: uniformLevels(rules.upgradeLevel),
     ...(opts.auto && { auto: true }),
   }
   const log: RaidLogEntry[] = []
   // The first summons come free.
   const first: Battler[] = []
-  for (let i = 0; i < Math.min(cfg.startAllies, cfg.maxField); i++) {
+  for (let i = 0; i < Math.min(rules.startAllies, rules.maxField); i++) {
     const m = summonOne(s, data, rng)
     if (m) first.push(structuredClone(m))
   }
@@ -223,7 +232,7 @@ function summonOne(s: RaidState, data: GameData, rng: Rng): Battler | null {
   if (!pool.length) return null
   s.summoned += 1
   const m = makeBattler(
-    { uid: `raid-summon-${s.summoned}`, dex: rng.pick(pool), level: data.config.events.raid.level, hp: Number.MAX_SAFE_INTEGER },
+    { uid: `raid-summon-${s.summoned}`, dex: rng.pick(pool), level: rulesOf(s, data).level, hp: Number.MAX_SAFE_INTEGER },
     data,
   )
   s.summons.push(m)
@@ -333,10 +342,9 @@ function sideTurn(s: RaidState, sideIdx: number, data: GameData, rng: Rng, log: 
 }
 
 function foeTurn(s: RaidState, uid: string, data: GameData, rng: Rng, log: RaidLogEntry[]) {
-  const cfg = data.config.events.raid
   // The boss fills its free slots first, a point each.
   if (uid === s.boss.uid) {
-    while (s.summons.length < cfg.maxField && s.points > 0) {
+    while (s.summons.length < rulesOf(s, data).maxField && s.points > 0) {
       const m = summonOne(s, data, rng)
       if (!m) break
       s.points -= 1
@@ -386,7 +394,7 @@ function breakBar(s: RaidState, overflow: number, data: GameData, log: RaidLogEn
   if (s.broken >= s.bars) return finish(s, 'won', log)
   // A new bar never empties on the hit that broke the last one.
   s.boss.hp = Math.max(1, s.boss.maxHp - overflow)
-  s.points += data.config.events.raid.summonPerBreak
+  s.points += rulesOf(s, data).summonPerBreak
   log.push({ kind: 'raid_bar', broken: s.broken, barsLeft: s.bars - s.broken, points: s.points, hpAfter: s.boss.hp })
 }
 

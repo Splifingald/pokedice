@@ -503,6 +503,23 @@ export interface RaidAnchor {
   shiny: boolean
 }
 
+/** One raid Pokémon's own numbers (Admin → Events → Raids), over the defaults; a missing one uses the default. */
+export interface RaidMonRules {
+  bars?: number
+  barHp?: number
+  startAllies?: number
+  summonPerBreak?: number
+  maxField?: number
+  level?: number
+  upgradeLevel?: number
+}
+
+/** A day of the raid calendar set by hand ('YYYY-MM-DD' → its raid). */
+export interface RaidOverride {
+  dex: number
+  shiny: boolean
+}
+
 /** Raid Battles' numbers (docs/18 §3). */
 export interface RaidConfig {
   /** HP bars, each the boss's full HP at `level`; their colours, first to last. */
@@ -527,8 +544,18 @@ export interface RaidConfig {
   gifts: { key: string; weight: number }[]
   /** The mythicals (each a raid of the calendar, never shiny there) and their lairs. */
   pool: RaidPoolEntry[]
-  /** The calendar: its fixed dates, and the lowest level a shiny filler's area may start at. */
-  calendar: { anchors: RaidAnchor[]; fillerMinLevel: number }
+  /**
+   * The calendar: its fixed dates, the lowest level a shiny filler's area may start at, the seed (by the day it applies
+   * from: a new one re-plans only the days after it) and the days set by hand.
+   */
+  calendar: {
+    anchors: RaidAnchor[]
+    fillerMinLevel: number
+    seeds?: { from: string; seed: number }[]
+    overrides?: Record<string, RaidOverride>
+  }
+  /** Each raid Pokémon's own numbers, by dex. */
+  perMon?: Record<string, RaidMonRules>
   /** Never an NPC ally or a summon, on top of legendaries, mythicals and starter lines. */
   exclude: { pseudo: number[]; extra: number[] }
 }
