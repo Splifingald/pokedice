@@ -23,8 +23,10 @@ import {
   type EncounterContext,
   playerSideOf,
   consumeItem,
+  earnedGold,
   MONEY,
   pickUpItem,
+  shinyBoost,
   recordDraws,
   rollCatch,
   spinSlots,
@@ -59,6 +61,7 @@ import {
   type SpinResult,
 } from '@/engine'
 import { commitSave, initialRun, mutateSave, pushToast, useGame, type RunState } from './game'
+import { currentLive } from './live'
 import { useRebattleMedal } from './rebattle'
 import { t } from '@/i18n'
 import { money } from '@/lib/format'
@@ -166,6 +169,8 @@ function encounterContext(save: SaveData, areaId: string, forceKind: ForceKind |
     forceKind,
     centerUseful: centerWouldHelp(save, data),
     player: playerSideOf(save),
+    // A Shiny Parade covering this area: wild Pokémon are more often shiny.
+    shinyBoost: shinyBoost(currentLive(), area),
   }
 }
 
@@ -315,9 +320,10 @@ export function engage(leadUid?: string) {
     }
     case 'item': {
       if (!run.areaId) return
-      commitSave(pickUpItem(save, run.areaId, enc, data, Date.now(), newId))
+      const live = currentLive()
+      commitSave(pickUpItem(save, run.areaId, enc, data, Date.now(), newId, live))
       const item = data.items[enc.itemKey]
-      const what = enc.itemKey === MONEY ? money(enc.qty) : `${item?.name ?? enc.itemKey}${enc.qty > 1 ? ` ×${enc.qty}` : ''}`
+      const what = enc.itemKey === MONEY ? money(earnedGold(enc.qty, live).amount) : `${item?.name ?? enc.itemKey}${enc.qty > 1 ? ` ×${enc.qty}` : ''}`
       if (item?.effect.kind === 'fossil')
         pushToast(
           t('ui.toast.foundFossil', {
@@ -374,6 +380,7 @@ function settleBattle(stalemate: boolean) {
         },
         data,
         runRng,
+        currentLive(),
       )
       commitSave(res.save)
       const gold = res.events.reduce((g, e) => (e.kind === 'gold' ? g + e.amount : g), 0)
@@ -407,6 +414,7 @@ function settleBattle(stalemate: boolean) {
       runRng,
       Date.now(),
       newId,
+      currentLive(),
     )
     commitSave(res.save)
     // The round's last card was this fight: count it now, so "AREA CLEARED" is part of the rewards.
@@ -556,7 +564,7 @@ export function finishCenter() {
 export function spinSlotMachine(): SpinResult | null {
   const { save, data, run } = useGame.getState()
   if (!save || run.phase !== 'casino') return null
-  const res = spinSlots(save, data, runRng, Date.now(), newId)
+  const res = spinSlots(save, data, runRng, Date.now(), newId, currentLive())
   if (!res) {
     pushToast(t('ui.toast.tooPoor'), 'bad')
     return null

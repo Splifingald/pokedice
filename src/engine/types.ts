@@ -537,6 +537,43 @@ export interface EventsConfig {
   rebattle: EventDef & { tiers: RebattleTier[] }
 }
 
+/** Live events (docs/20): the kinds the admin can schedule. */
+export const LIVE_TYPES = ['shiny', 'shop', 'cash'] as const
+export type LiveType = (typeof LIVE_TYPES)[number]
+
+/** One item of a Special Shop: its event price, how many each player may buy (null = no limit), where it's sold. */
+export interface LiveShopItem {
+  key: string
+  price: number
+  limit: number | null
+  /** Sold while the player plays one of these regions; 'all' = everywhere. */
+  regions: RegionId[] | 'all'
+}
+
+/**
+ * A live event (docs/20): the whole game changes for a while, the same for everyone, between `start` and `end` (ISO,
+ * UTC, server time). Only the settings of its `type` count; the others stay so switching type back keeps them.
+ */
+export interface LiveEvent {
+  /** Stable: the pop-up's "seen" and the shop's per-player counts are kept by it. */
+  id: string
+  type: LiveType
+  start: string
+  end: string
+  /** Its picture on Home, in the pop-up and over the shop's section: an area picture's key or a path. */
+  banner: string
+  /** A custom title for an occasion, per language (others fall back to English); empty = the type's own name. */
+  title: Partial<Record<string, string>>
+  /** Shown (and in effect) from this many badges, every region's counted. */
+  minBadges: number
+  /** Shiny Parade: wild shiny odds × `multiplier` in some areas, one region or everywhere. */
+  shiny: { multiplier: number; scope: 'areas' | 'region' | 'all'; areaIds: string[]; regionId: RegionId | null }
+  /** Special Shop: its items. */
+  shop: { items: LiveShopItem[] }
+  /** Cash Flow: every ₽ earned × `multiplier` (1.5 = +50 %), selling excluded. */
+  cash: { multiplier: number }
+}
+
 export interface GameConfig {
   configVersion: number
   xpCurve: { A: number; B: number; C: number }
@@ -615,6 +652,8 @@ export interface GameConfig {
   events: EventsConfig
   /** The Elite Rebattle's trainers, per region and tier (a row of its own, written by scripts/rebattle-teams.ts). */
   rebattleLineups: RebattleLineups
+  /** Live events (docs/20): the admin's list, past, running and to come; one runs at a time. A row of its own. */
+  liveEvents: { list: LiveEvent[] }
 }
 
 /**
@@ -777,6 +816,10 @@ export interface EventsSave {
   raidTeam?: string[]
   /** Raids won, a raid being won when its Pokémon is caught (the server keeps the count the leaderboard shows). */
   raidsWon?: number
+  /** Live events whose pop-up has been shown (ids). */
+  liveSeen?: string[]
+  /** Special Shop purchases, per live event id then item key: what counts against each item's limit. */
+  liveBought?: Record<string, Record<string, number>>
 }
 
 /** A raid catch waiting for its area: it joins that area's region's Box once the area is completed. */

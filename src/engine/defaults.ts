@@ -238,4 +238,5 @@ export const DEFAULT_CONFIG: GameConfig = {
   },
   // Filled from src/data/config.json (scripts/rebattle-teams.ts): no lineup, no rebattle in that region.
   rebattleLineups: {},
+  liveEvents: { list: [] },
 }

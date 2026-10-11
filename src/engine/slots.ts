@@ -1,9 +1,10 @@
 // Game Corner slot machine (Rocket Hideout). The result is drawn from the configured weights first, then the three reels
 // are laid out to show it — so the odds are exactly what the admin set, whatever the reels look like.
 import { applyCatch, catchTarget } from './catching'
+import { earnedGold } from './liveEvents'
 import type { Rng } from './rng'
 import type { RunEvent } from './run'
-import type { GameData, SaveData, SlotMachineConfig } from './types'
+import type { GameData, LiveEvent, SaveData, SlotMachineConfig } from './types'
 
 export type SlotSymbol = 'ball' | 'prize'
 export type SlotOutcomeKey = 'oneBall' | 'twoBalls' | 'threeBalls' | 'jackpot'
@@ -31,8 +32,9 @@ export interface SpinResult {
   save: SaveData
   reels: [SlotSymbol, SlotSymbol, SlotSymbol]
   outcome: SlotOutcomeKey
-  /** Pokédollars paid out (the spin's cost is already taken off `save.gold`). */
+  /** Pokédollars paid out (the spin's cost is already taken off `save.gold`), and Cash Flow's part of them. */
   gold: number
+  bonus: number
   /** Jackpot: the prize Pokémon joined (new) or replaced a weaker copy; null when it paid gold instead. */
   prize: { uid: string; dex: number; level: number; joinedTeam: boolean; replacedLevel?: number } | null
   events: RunEvent[]
@@ -45,6 +47,7 @@ export function spinSlots(
   rng: Rng,
   now: number,
   newId: () => string,
+  live: LiveEvent | null = null,
 ): SpinResult | null {
   const cfg = data.config.slotMachine
   const cost = Math.max(0, Math.round(cfg.cost))
@@ -84,6 +87,7 @@ export function spinSlots(
         }
     } else gold = Math.max(0, Math.round(cfg.jackpot.gold))
   }
-  next = { ...next, gold: next.gold + gold }
-  return { save: next, reels: reels as SpinResult['reels'], outcome, gold, prize, events }
+  const paid = earnedGold(gold, live)
+  next = { ...next, gold: next.gold + paid.amount }
+  return { save: next, reels: reels as SpinResult['reels'], outcome, gold: paid.amount, bonus: paid.bonus, prize, events }
 }

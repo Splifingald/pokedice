@@ -69,6 +69,8 @@ export interface EncounterContext {
   centerUseful?: boolean
   /** The player's starter and character: picks the rival version of a trainer. */
   player?: PlayerSide | null
+  /** × the wild shiny odds here: a Shiny Parade live event covering the area (liveEvents shinyBoost). */
+  shinyBoost?: number
 }
 
 /** Every round the area asks for is done: its gym / legendary waits, and the area can clear. */
@@ -114,9 +116,9 @@ export function dueBoss(area: Area, progress: AreaProgress, teamAvgLevel: number
   return null
 }
 
-/** One roll of the wild shiny odds (`shinyChance`). */
-const rollShiny = (data: GameData, rng: Rng): boolean => {
-  const chance = data.config.shinyChance ?? 0
+/** One roll of the wild shiny odds (`shinyChance`), × a Shiny Parade's boost for wild Pokémon. */
+const rollShiny = (data: GameData, rng: Rng, boost = 1): boolean => {
+  const chance = Math.min(1, (data.config.shinyChance ?? 0) * Math.max(1, boost))
   return chance > 0 && rng.next() < chance
 }
 
@@ -210,7 +212,7 @@ export function rollWild(ctx: EncounterContext, rng: Rng): Encounter | null {
   const entry = rng.weighted(ctx.area.wildPool, (w) => (ctx.data.species[w.dex] ? w.weight : 0))
   if (!entry) return null
   const level = enemyLevel(rng.int(entry.minLevel, Math.max(entry.minLevel, entry.maxLevel)), ctx, rng)
-  const shiny = !shinyLocked(ctx.data, entry.dex) && rollShiny(ctx.data, rng)
+  const shiny = !shinyLocked(ctx.data, entry.dex) && rollShiny(ctx.data, rng, ctx.shinyBoost)
   return { kind: 'wild', dex: entry.dex, level, isNew: !ctx.pokedex.includes(entry.dex), ...(shiny && { shiny }) }
 }
 

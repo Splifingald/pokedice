@@ -35,7 +35,7 @@ import { Box, Field, NumInput, inputCls } from '../widgets'
 import { useConfigRow } from './ConfigSection'
 
 /** Pictures made for the events (public/backgrounds). */
-const EVENT_BANNERS = ['/backgrounds/fortune-wheel.png']
+export const EVENT_BANNERS = ['/backgrounds/fortune-wheel.png']
 
 const NAMES: Record<EventId, string> = { wheel: 'Fortune Wheel', raid: 'Raid Battles', rebattle: 'Elite Rebattle' }
 

@@ -1,8 +1,8 @@
 # Live events: plan (for validation)
 
-Status: **mockups, step 3 of 5** (2026-10-11): questions (done) → this plan (done) → Visual Lab mockups (done:
-`design/visual-lab/live.js`, Home tab, "Live event" preview bar) → your validation → integration. Branch
-`feature/events`, fast-forwarded into `feature/version_2` once green.
+Status: **integration, step 5 of 5** (2026-10-11): questions → plan → Visual Lab mockups (`design/visual-lab/live.js`,
+Home tab, "Live event" preview bar) → validation (done, §6) → integration: **phase 1 done** (engine, config, save,
+admin, unit tests), phase 2 next. Branch `feature/events`, fast-forwarded into `feature/version_2` once green.
 
 Event type 4 in the special events framework (docs/18): **Live events**, priority 2 (above Raids). They change the
 whole game for a while, the same for every player, scheduled by you in the admin. No page of their own: a Home square
@@ -94,15 +94,26 @@ interface LiveEvent {
 - E2E (server clock mocked like the raids): the pop-up once, the square's timer, a shop purchase up to its limit, a
   Cash Flow victory paying +50 %, a phone layout check of the square, pop-up and shop.
 
-## 6. Questions to settle at validation
-1. **Titles in 10 languages:** (a) you type the title per language in the admin (English required, others fall back
-   to it), or (b) each type has a fixed title from the strings ("Shiny Parade", "Special Shop", "Cash Flow") plus
-   automatic details ("in Kanto", "×5") — no typing, always translated. *I'd suggest (b), with an optional custom
-   title per language for special occasions.*
-2. **Shop items in other regions:** a Special Shop item set to "Kanto" — sold only while playing Kanto, or shown
-   everywhere but deliverable only to the Kanto bag? *I'd suggest: sold where the player is playing, if that region is
-   in the item's list.*
-3. **Cash Flow on the Fortune Wheel's ₽:** included (as all ₽ earned) — confirm.
+## 6. Settled at validation (2026-10-11)
+1. **Titles:** the type's own name, translated ("Shiny Parade", "Special Shop", "Cash Flow"), with automatic details
+   ("×5 shiny in Kanto"); an optional custom title per language for an occasion (empty languages show the English one).
+2. **Home:** a **square** like the others, first among the event squares (priority 2), not a wide banner.
+3. **Region-only shop items:** sold only while the player plays that region.
+4. **Cash Flow on the wheel:** yes, the wheel's ₽ count as ₽ earned.
+
+## 6b. Built (phase 1)
+- `engine/liveEvents.ts`: `liveEvents` (the admin's list, normalised), `liveState`, `liveEventAt`, `badgesHeld`,
+  `liveFor` (running + badges), `liveLeft`, `livePopupDue` / `markLiveSeen`, Cash Flow's `earnedGold` (amount + bonus)
+  and `cashReward` (the wheel), the Shiny Parade's `liveCovers` / `shinyBoost`, the Special Shop's `liveShopRows` /
+  `buyLiveItem` (a price is never below the Mart's buy-back, so buying to sell back can't pay), and the admin's
+  `liveOverlap` / `liveProblems`.
+- Cash Flow paid at: trainer and gym victories, ₽ found in areas, the Elite Rebattle, the Game Corner, the Day Care's
+  ₽, the wheel (boosted when the spin is taken). The `gold` run event carries `bonus`.
+- Shiny Parade: `EncounterContext.shinyBoost`, wild Pokémon only (legendaries stay shiny-locked).
+- Store: `store/live.ts` (`currentLive` on the server's clock, `useLive`, `buyLive`, `markLivePopupSeen`).
+- Admin → **Live events**: the list (state, Edit, End now, Delete) and the editor as a draft, applied only without
+  problems (an overlap is refused).
+- Save: `events.liveSeen` (last 50), `events.liveBought`.
 
 ## 7. Mockups (Visual Lab, Home tab: the "Live event" preview bar)
 1. Home with the Live square for each type, first among the event squares, or **wide** over them (to choose).

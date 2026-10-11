@@ -6,13 +6,14 @@
 import { trainerGoldFor } from './economy'
 import type { Encounter } from './encounters'
 import { areaProgressAnywhere } from './events'
+import { earnedGold } from './liveEvents'
 import { regionOf } from './regions'
 import { asSeenBy, playerSideOf } from './rival'
 import { awardBattleXp, getArea, type RunEvent } from './run'
 import { instanceMaxHp } from './progression'
 import type { Rng } from './rng'
 import { dealTrainerItems } from './trainerItems'
-import type { Area, GameData, RebattleProgress, RebattleTier, SaveData, Trainer } from './types'
+import type { Area, GameData, LiveEvent, RebattleProgress, RebattleTier, SaveData, Trainer } from './types'
 
 /**
  * The areas the rebattle replaced, and where a save standing in one goes back to: its region's League (docs/19 §5.4).
@@ -177,7 +178,13 @@ export interface RebattleKO {
  * trainer's last Pokémon moves the gauntlet on; the last trainer's clears the tier (the next one opens, from its first
  * trainer). No badge, no area progress.
  */
-export function applyRebattleKO(save: SaveData, ko: RebattleKO, data: GameData, rng: Rng): { save: SaveData; events: RunEvent[] } {
+export function applyRebattleKO(
+  save: SaveData,
+  ko: RebattleKO,
+  data: GameData,
+  rng: Rng,
+  live: LiveEvent | null = null,
+): { save: SaveData; events: RunEvent[] } {
   const league = leagueArea(data, ko.regionId)
   const events: RunEvent[] = []
   let next = league ? awardBattleXp(save, ko.enemyLevel, ko.fighterUid, getArea(data, league.id), false, data, rng, events) : save
@@ -185,11 +192,11 @@ export function applyRebattleKO(save: SaveData, ko: RebattleKO, data: GameData, 
   const key = paidKey(ko.tier, ko.trainerId, ko.index)
   let paid = prog.paid
   if (!paid.includes(key)) {
-    const gold = rebattleGold(data, ko.regionId, ko.tier, ko.enemyLevel)
+    const { amount, bonus } = earnedGold(rebattleGold(data, ko.regionId, ko.tier, ko.enemyLevel), live)
     paid = [...paid, key]
-    if (gold > 0) {
-      next = { ...next, gold: next.gold + gold }
-      events.push({ kind: 'gold', amount: gold })
+    if (amount > 0) {
+      next = { ...next, gold: next.gold + amount }
+      events.push(bonus ? { kind: 'gold', amount, bonus } : { kind: 'gold', amount })
     }
   }
   let { done, step } = prog

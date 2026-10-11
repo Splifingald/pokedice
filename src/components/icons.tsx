@@ -156,6 +156,8 @@ export const ICONS = {
     '.kkkkkkkkkk',
   ],
   badge: ['...kk...', '..kyyk..', '.kyYyyk.', 'kyYyyyyk', 'kyyyyyok', '.kyyyok.', '..kyok..', '...kk...'],
+  // A shiny's twinkle (the Shiny Parade's chips): a four-point star.
+  sparkle: ['....k....', '...kyk...', '...kyk...', '.kkyYykk.', 'kyyYwYyyk', '.kkyYykk.', '...kyk...', '...kyk...', '....k....'],
   // The tab bar (NAV_PAL): three balls for the team, a red Pokédex (the shop, upgrades, ranks and friends are in PACK_ICONS).
   navTeam: [
     '......kkkk......',
