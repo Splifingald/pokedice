@@ -402,8 +402,9 @@ One Day Care for every region (docs/15-DAYCARE-BREEDING.md). The page (`src/scre
 - **Hearts mean "can make an Egg with it"**, always next to a name: a heart is never the only sign.
 - **Egg checks** list the rule, the two clocks (Egg groups, Ditto) with their next time, and every pair with a tag:
   the shared group and its pace ("Field · every 12 h"), or Ditto's slower pace in purple.
-- **Pickers** (the shared `Sheet`): Leave which Pokémon? lists those that would pair with someone here first, then the
-  team (TEAM tag; your last team member greyed with the reason), then the Box, each with its Egg groups and a pink
+- **Pickers** (the shared `Sheet`): Leave which Pokémon? lists every region's Box (the region after the level once
+  several are played) by level, lowest or highest first, with a search and, once someone is here, Compatible only;
+  the team has the TEAM tag (the last of a region's team greyed with the reason), each row its Egg groups and a pink
   "Compatible with Jolteon" tag in the colour of the slot being filled. Add a friend's Pokémon has a search (friend or
   Pokémon) and a Compatible only toggle, grouped by friend, the best matches first.
 - **The Home widget** is the same size in every state: the Day Care's banner (a fixed-shape strip of its yard's

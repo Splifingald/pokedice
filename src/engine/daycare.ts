@@ -4,7 +4,7 @@
 // breeding.ts.
 import { earnedGold } from './liveEvents'
 import { createInstance, gainXp, instanceMaxHp, xpToNext } from './progression'
-import { regionCases, regionOf, regionOfSpecies } from './regions'
+import { regionCases, regionOf, regionOfSpecies, unlockedRegions } from './regions'
 import { createRng, type Rng } from './rng'
 import { badgeCase, ownedPokemon } from './run'
 import type {
@@ -125,27 +125,62 @@ export const liveResidents = (save: SaveData): DayCareResident[] =>
 
 export type DepositError = 'full' | 'last' | 'missing' | 'fossil'
 
-/** Why this Pokémon can't be left here, or null when it can (keeps at least one Pokémon in the team). */
+/** A Pokémon in one of the regions' Boxes, and where: its region, whether that's the live one, whether it's in its team. */
+export interface BoxedMon {
+  inst: PokemonInstance
+  region: RegionId
+  live: boolean
+  inTeam: boolean
+}
+
+/**
+ * Every Pokémon the Day Care can take, from every region played: the live region's Box first, then each parked one's,
+ * in region order (regions switched off in Admin stay out of sight, as everywhere).
+ */
+export function everyRegionBox(save: SaveData, data: GameData): BoxedMon[] {
+  const here = regionOf(save)
+  const out: BoxedMon[] = save.box.map((inst) => ({ inst, region: here, live: true, inTeam: save.team.includes(inst.id) }))
+  for (const r of unlockedRegions(save, data)) {
+    const block = r.id === here ? null : save.parked?.[r.id]
+    if (block) out.push(...block.box.map((inst) => ({ inst, region: r.id, live: false, inTeam: block.team.includes(inst.id) })))
+  }
+  return out
+}
+
+/** The Box and team a Pokémon is in: the live region's at the top level, a parked one's in `save.parked`. */
+const blockOf = (save: SaveData, at: BoxedMon) => (at.live ? save : save.parked![at.region]!)
+
+/**
+ * Why this Pokémon can't be left here, or null when it can. It may come from any region's Box (the Day Care is one for
+ * every region), but never as the last of its region's team, nor its region's last Pokémon.
+ */
 export function depositError(save: SaveData, uid: string, data: GameData): DepositError | null {
-  const inst = save.box.find((p) => p.id === uid)
-  if (!inst) return 'missing'
-  if (inst.revivesAt != null) return 'fossil'
+  const at = everyRegionBox(save, data).find((m) => m.inst.id === uid)
+  return at ? boxedDepositError(save, at, data) : 'missing'
+}
+
+/** `depositError` for an entry of `everyRegionBox`, so a list of them doesn't search every Box for each. */
+export function boxedDepositError(save: SaveData, at: BoxedMon, data: GameData): DepositError | null {
+  if (at.inst.revivesAt != null) return 'fossil'
   if (dayCareOf(save).residents.length >= data.config.dayCare.slots) return 'full'
-  if (save.team.includes(uid) && save.team.length <= 1) return 'last'
+  const { team, box } = blockOf(save, at)
+  if ((at.inTeam && team.length <= 1) || box.length <= 1) return 'last'
   return null
 }
 
-/** Leave a Pokémon from the live region's team or Box: it remembers the region, to go back to its Box. */
+/** Leave a Pokémon from any region's team or Box: it remembers its region, to go back to that Box. */
 export function depositPokemon(save: SaveData, uid: string, data: GameData, now: number): SaveData | null {
   if (depositError(save, uid, data)) return null
-  const inst = save.box.find((p) => p.id === uid)!
+  const at = everyRegionBox(save, data).find((m) => m.inst.id === uid)!
   const dc = dayCareOf(save)
-  return {
-    ...save,
-    box: save.box.filter((p) => p.id !== uid),
-    team: save.team.filter((id) => id !== uid),
-    dayCare: { ...dc, residents: [...dc.residents, { inst, since: now, region: regionOf(save) }] },
-  }
+  const dayCare = { ...dc, residents: [...dc.residents, { inst: at.inst, since: now, region: at.region }] }
+  const without = <T extends { box: PokemonInstance[]; team: string[] }>(b: T): T => ({
+    ...b,
+    box: b.box.filter((p) => p.id !== uid),
+    team: b.team.filter((id) => id !== uid),
+  })
+  if (at.live) return { ...without(save), dayCare }
+  return { ...save, dayCare, parked: { ...save.parked, [at.region]: without(save.parked![at.region]!) } }
 }
 
 export interface Pickup {

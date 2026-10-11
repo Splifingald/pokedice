@@ -81,6 +81,8 @@ test('a Pokémon stays at the Day Care and comes back', async ({ page }) => {
     .first()
     .click()
   const sheet = page.getByRole('dialog', { name: 'Leave which Pokémon?' })
+  // Nothing here yet: nothing to be compatible with.
+  await expect(sheet.getByRole('button', { name: 'Compatible only' })).toHaveCount(0)
   await sheet.getByLabel('Search your Pokémon').fill('charm')
   await sheet.getByRole('button', { name: /Charmander/ }).click()
   await expect(page.getByText('Charmander is staying at the Day Care.')).toBeVisible()
@@ -88,6 +90,51 @@ test('a Pokémon stays at the Day Care and comes back', async ({ page }) => {
   // It trains in its slot; TAKE BACK says where it went.
   await page.getByRole('button', { name: 'Take back Charmander' }).click()
   await expect(page.getByText(/Charmander is back!/)).toBeVisible()
+})
+
+test('the leave picker lists every region’s Box by level, and Compatible only once someone is here', async ({ page }) => {
+  const data = gameData()
+  const base = open()
+  // Kanto live: Charmander (Lv.5, the team) and Eevee 12 in the Box; Johto parked: Totodile 20 (its team), Sentret 30.
+  const eevee = createInstance(133, 12, data, 'eevee', 0)
+  const [totodile, sentret] = [createInstance(158, 20, data, 'toto', 0), createInstance(161, 30, data, 'sentret', 0)]
+  const johto = {
+    gold: 0,
+    pokedex: [158, 161],
+    box: [totodile, sentret],
+    team: [totodile.id],
+    inventory: {},
+    comboLevels: base.comboLevels,
+    dieLevels: base.dieLevels,
+    currentAreaId: '',
+    areaProgress: {},
+  }
+  // Jolteon is here: Eevee and Sentret share its Field group.
+  const jolteon = { inst: createInstance(135, 25, data, 'jolt', 0), since: Date.now(), region: 'kanto' }
+  const dayCare = { residents: [jolteon], guests: [], eggClaimed: true, visited: true }
+  await boot(page, { ...base, box: [...base.box, eevee], parked: { johto }, dayCare })
+  await page.goto('/daycare')
+
+  await page
+    .getByRole('button', { name: /Leave a Pokémon/ })
+    .first()
+    .click()
+  const sheet = page.getByRole('dialog', { name: 'Leave which Pokémon?' })
+  const names = sheet.getByRole('listitem').locator('b')
+  // Every region's Box, lowest level first; each says its region.
+  await expect(names).toHaveText([/^Charmander Lv\.5 · Kanto/, /^Eevee Lv\.12 · Kanto/, /^Totodile Lv\.20 · Johto/, /^Sentret Lv\.30 · Johto/])
+  // Totodile is the last of Johto's team.
+  await expect(sheet.getByRole('button', { name: /Totodile/ })).toBeDisabled()
+  await sheet.getByRole('radio', { name: 'Highest Lv' }).click()
+  await expect(names.first()).toHaveText(/^Sentret/)
+  await sheet.getByRole('button', { name: 'Compatible only' }).click()
+  await expect(names).toHaveText([/^Sentret/, /^Eevee/])
+
+  // Sentret leaves Johto's Box, and goes back to it.
+  await sheet.getByRole('button', { name: /Sentret/ }).click()
+  await expect(page.getByText('Sentret is staying at the Day Care.')).toBeVisible()
+  await page.getByRole('button', { name: 'Take back Sentret' }).click()
+  await expect(page.getByText(/Sentret is back!.*Johto Box/)).toBeVisible()
 })
 
 for (const theme of ['light', 'dark'] as const)
