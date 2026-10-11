@@ -181,7 +181,7 @@ function encounterContext(save: SaveData, areaId: string, forceKind: ForceKind |
 }
 
 /**
- * NEXT ENCOUNTER needs energy, unless what comes next is free anyway (a Pokémon Center, or nobody can fight).
+ * The next encounter (CONTINUE) needs energy, unless what comes next is free anyway (a Pokémon Center, or nobody can fight).
  * False when the energy system is off.
  */
 export function outOfEnergy(): boolean {
@@ -248,7 +248,7 @@ export function canSkipCurrent(): boolean {
   return !!run.encounter && !data.config.noEscape && canSkip(run.encounter, data.config.skipPolicy, run.skipsUsed)
 }
 
-/** FLEE / AVOID: back to the area screen (heal, check the team…); the next encounter waits for NEXT ENCOUNTER. */
+/** FLEE / AVOID: back to the area screen (heal, check the team…); the next encounter waits for CONTINUE. */
 export function skipEncounter() {
   if (!canSkipCurrent()) return
   const { run } = useGame.getState()
@@ -524,7 +524,7 @@ export function continueAfterVictory(leadUid?: string) {
 }
 
 /**
- * NEXT ENCOUNTER on a result card: what Home's CONTINUE would start next (a waiting gym or legendary first), without
+ * CONTINUE on a result card: what Home's CONTINUE would start next (a waiting gym or legendary first), without
  * the trip Home. Call it once the battle is closed (continueAfterVictory).
  */
 export function continueExploring() {

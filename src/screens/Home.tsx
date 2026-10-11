@@ -40,7 +40,10 @@ function HomeView({ area }: { area: Area }) {
     null,
   )
   const [mon, setMon] = useState<SheetView | null>(null)
-  const { go } = useContinue(area)
+  const { go, latest, keepExploring } = useContinue(area)
+  // What sits under CONTINUE takes its height off the scene on wide screens, so the whole bar stays on screen: the
+  // green GO TO (a 56px button and its gap) and "keep exploring" (36px and its gap).
+  const below = (latest ? 64 : 0) + (keepExploring ? 44 : 0)
 
   // Arriving with no run (a reload, the first visit): start the save's current area, so CONTINUE plays right there.
   useEffect(() => {
@@ -66,9 +69,12 @@ function HomeView({ area }: { area: Area }) {
   return (
     // Wide screens: the scene takes all the room it can (same shape, never resized out of it) while the widgets keep
     // their two columns and CONTINUE stays above the fold: its height is the viewport less the top bar, the page's
-    // padding and the Continue bar (≈184px), its width follows from the scene's 288:276 shape, and it never takes
-    // more than 58% of the row (on a 1024px screen the widgets would be squeezed out).
-    <div className="flex flex-col gap-3 md:gap-4 lg:grid lg:grid-cols-[minmax(320px,min(calc((100dvh-184px)*288/276),58%))_minmax(0,1fr)] lg:items-start lg:gap-5">
+    // padding and the Continue bar (≈184px, plus what sits under it: --below), its width follows from the scene's
+    // 288:276 shape, and it never takes more than 58% of the row (on a 1024px screen the widgets would be squeezed out).
+    <div
+      className="flex flex-col gap-3 md:gap-4 lg:grid lg:grid-cols-[minmax(320px,min(calc((100dvh-184px-var(--below))*288/276),58%))_minmax(0,1fr)] lg:items-start lg:gap-5"
+      style={{ ['--below' as string]: `${below}px` }}
+    >
       <h1 className="sr-only">{t('ui.home.heading', { area: area.name })}</h1>
       <section className="flex flex-col gap-3" aria-label={area.name}>
         <div className="-mx-3 -mt-4 overflow-hidden shadow-ledge md:pixel-panel md:m-0 md:p-0 md:shadow-none">

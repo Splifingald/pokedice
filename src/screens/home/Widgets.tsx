@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   dayCareLevelProgress,
@@ -16,7 +16,7 @@ import { conditionLabel, waitText } from '@/i18n/text'
 import { Chip, NewTag } from '@/components/Chip'
 import { EggSprite } from '@/components/EggSprite'
 import { PixelIcon } from '@/components/icons'
-import { MiniSprite } from '@/components/SpriteImg'
+import { MINI_SCALE, MiniSprite } from '@/components/SpriteImg'
 import { isSupabaseConfigured } from '@/lib/supabase'
 import { versusBoardCached, type VersusEntry } from '@/lib/versus'
 import { pushToast, useGame } from '@/store/game'
@@ -304,6 +304,49 @@ function DayCareWidget() {
 const VS_BANNER = '/backgrounds/versus.png'
 const VS_FOCUS = '50% 75%'
 
+/** The tightest a team gets before its icons shrink: a step of 60 % of an icon's box (the art has room around it). */
+const FAN_MIN_STEP = 0.6
+
+/**
+ * A team spread over the room it is given, so it never runs under what sits beside it (the VS, the lock). Each
+ * Pokémon is `step` px to the right of the one before when there is room; on a narrow widget (a phone's half width)
+ * the steps shrink, down to FAN_MIN_STEP of an icon, and only then do the icons get smaller.
+ */
+function TeamFan({ dexes, size, step, className }: { dexes: number[]; size: number; step: number; className?: string }) {
+  const ref = useRef<HTMLSpanElement>(null)
+  const [fit, setFit] = useState(size)
+  const n = dexes.length
+  useLayoutEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const measure = () => {
+      const room = el.clientWidth
+      if (!room || n < 2) return setFit(size)
+      // The biggest icon whose team still fits at the tightest step.
+      const box = Math.min(size * MINI_SCALE, room / (1 + FAN_MIN_STEP * (n - 1)))
+      setFit(Math.max(16, Math.floor(box / MINI_SCALE)))
+    }
+    measure()
+    const ro = new ResizeObserver(measure)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [n, size])
+  return (
+    <span ref={ref} className="flex h-full w-full min-w-0 items-center" aria-hidden>
+      {dexes.map((dex, i) =>
+        i < n - 1 ? (
+          // A slot that can shrink: its icon keeps its size and spills over the next one.
+          <span key={i} className="flex min-w-0" style={{ flex: `0 1 ${Math.round((step * fit) / size)}px` }}>
+            <MiniSprite dex={dex} size={fit} className={className} />
+          </span>
+        ) : (
+          <MiniSprite key={i} dex={dex} size={fit} className={className} />
+        ),
+      )}
+    </span>
+  )
+}
+
 function VersusWidget() {
   const { t, tPlural } = useT()
   const navigate = useNavigate()
@@ -324,16 +367,7 @@ function VersusWidget() {
   }, [open, signedIn])
 
   const team = (
-    <span className="flex pl-1" aria-hidden>
-      {teamOf(save).map((p) => (
-        <MiniSprite
-          key={p.id}
-          dex={p.dex}
-          size={34}
-          className={cx('-mx-1.5', !open && 'opacity-50 grayscale')}
-        />
-      ))}
-    </span>
+    <TeamFan dexes={teamOf(save).map((p) => p.dex)} size={34} step={39} className={cx(!open && 'opacity-50 grayscale')} />
   )
   if (!open) {
     const n = Math.min(versusReadyCount(save, data), VERSUS_TEAM_SIZE)
@@ -357,7 +391,8 @@ function VersusWidget() {
             className="pixelated absolute inset-0 h-full w-full object-cover grayscale-[0.7]"
             style={{ imageRendering: 'pixelated', objectPosition: VS_FOCUS }}
           />
-          <span className="absolute inset-y-0 left-1 flex items-center">{team}</span>
+          {/* The team up to the lock. */}
+          <span className="absolute inset-y-0 left-0.5 right-6 flex items-center">{team}</span>
           <PixelIcon name="lock" size={16} className="absolute right-2 top-1/2 -translate-y-1/2" />
         </WidgetBanner>
         <DayCareRows
@@ -387,10 +422,9 @@ function VersusWidget() {
           className="pixelated absolute inset-0 h-full w-full object-cover"
           style={{ imageRendering: 'pixelated', objectPosition: VS_FOCUS }}
         />
-        <span className="absolute inset-y-0 left-1 flex items-center gap-1" aria-hidden>
-          {shown.slice(0, VERSUS_TEAM_SIZE).map((m, i) => (
-            <MiniSprite key={i} dex={m.dex} size={44} className="-mx-1.5" />
-          ))}
+        {/* The team up to the VS: spaced out when there's room, closer together on a phone. */}
+        <span className="absolute inset-y-0 left-0 right-12 flex items-center">
+          <TeamFan dexes={shown.slice(0, VERSUS_TEAM_SIZE).map((m) => m.dex)} size={44} step={58} />
         </span>
         <span
           className="absolute inset-y-0 right-2 flex items-center text-[48px] leading-none text-gold [text-shadow:0_4px_0_#c4382a,4px_0_0_#c4382a,-2px_0_0_#24304f,0_-2px_0_#24304f]"

@@ -71,7 +71,7 @@ export function AreaIdle({ area }: { area: Area }) {
             </PixelButton>
             <PixelButton variant="primary" size="lg" className="px-2" disabled={off} onClick={go}>
               {(gym || boss) && <PixelIcon name="sword" size={22} />}
-              {gym || boss ? label : t('ui.area.nextEncounter')}
+              {gym || boss ? label : t('ui.common.continue')}
             </PixelButton>
           </div>
         </div>

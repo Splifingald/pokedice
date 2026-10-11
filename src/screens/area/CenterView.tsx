@@ -213,7 +213,7 @@ export function CenterView() {
               continueExploring()
             }}
           >
-            {t('ui.area.nextEncounter')}
+            {t('ui.common.continue')}
           </PixelButton>
         </div>
       </div>

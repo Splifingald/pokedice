@@ -535,7 +535,7 @@ export function VictoryView() {
   ) : (
     <div className="flex flex-col gap-2">
       {nextArea && (
-        // A new area just opened: travelling there is the green offer, above Home / Next encounter.
+        // A new area just opened: travelling there is the green offer, above Home / Continue.
         <PixelButton
           variant="success"
           size="lg"
@@ -571,7 +571,7 @@ export function VictoryView() {
             continueExploring()
           })}
         >
-          {t('ui.area.nextEncounter')}
+          {t('ui.common.continue')}
         </PixelButton>
       </div>
     </div>

@@ -20,7 +20,7 @@ async function boot(page: Page, save: SaveData, settings = FAST) {
 const hurt = (save: SaveData): SaveData => ({ ...save, box: save.box.map((p) => ({ ...p, currentHp: 1 })) })
 
 test('the Pokémon Center: SKIP ends the healing, and back from Home it opens on the team', async ({ page }) => {
-  // A tall phone: the page is short, and HOME / NEXT ENCOUNTER still sit right on the tab bar.
+  // A tall phone: the page is short, and HOME / CONTINUE still sit right on the tab bar.
   await page.setViewportSize({ width: 390, height: 844 })
   await boot(page, hurt(makeSave(4)), MOTION_ON)
   await page.goto('/home')
@@ -31,7 +31,7 @@ test('the Pokémon Center: SKIP ends the healing, and back from Home it opens on
   await healing.getByRole('button', { name: /SKIP/ }).click()
   await expect(healing).toHaveCount(0)
 
-  const next = page.getByRole('button', { name: 'NEXT ENCOUNTER', exact: true })
+  const next = page.getByRole('button', { name: 'CONTINUE', exact: true })
   const bar = await next.boundingBox()
   const tabs = await page.getByRole('navigation', { name: 'Menus' }).last().boundingBox()
   expect(bar!.y + bar!.height).toBeGreaterThan(tabs!.y - 16)
@@ -75,7 +75,7 @@ test('after an encounter the player stays in the area; HOME is the way back', as
   // Still in the area: the team, and what comes next.
   await expect(page).toHaveURL(/\/area$/)
   await expect(page.getByText('Back on the trail')).toBeVisible()
-  await expect(page.getByRole('button', { name: 'NEXT ENCOUNTER', exact: true })).toBeEnabled()
+  await expect(page.getByRole('button', { name: 'CONTINUE', exact: true })).toBeEnabled()
   expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(0)
 
   await page.getByRole('button', { name: 'Home', exact: true }).click()

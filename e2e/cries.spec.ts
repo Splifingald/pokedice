@@ -54,7 +54,7 @@ test('a battle plays the foe’s cry, then yours', async ({ page }) => {
   await boot(page, makeSave(4), true)
   await page.goto('/home')
   for (let i = 0; i < 200 && !asked.includes(`${CRIES}charmander.mp3`); i++) {
-    for (const name of ['CONTINUE', 'EXPLORE', 'NEXT ENCOUNTER', 'ENTER', 'PICK IT UP', 'FIGHT']) {
+    for (const name of ['CONTINUE', 'EXPLORE', 'ENTER', 'PICK IT UP', 'FIGHT']) {
       const btn = page.getByRole('button', { name, exact: true }).first()
       if ((await btn.isVisible().catch(() => false)) && (await btn.isEnabled().catch(() => false))) {
         await btn.click()

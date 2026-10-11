@@ -202,7 +202,7 @@ export function SpriteImg({
  * beat (the animation is offset by the wall clock). Sits before a Pokémon's name in lists and cards.
  */
 /** Every mini is drawn half again as big as the size its caller asks for: the icons read too small in game. */
-const MINI_SCALE = 1.5
+export const MINI_SCALE = 1.5
 
 export function MiniSprite({
   dex,

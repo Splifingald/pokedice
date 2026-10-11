@@ -97,12 +97,16 @@ export function useContinue(area: Area) {
     explore()
   }
   const off = !busy && (resting || (!gym && !boss && (closed || empty)))
+  // Under CONTINUE: the green GO TO when behind in the region's main chain (not mid-encounter), and "keep exploring"
+  // when a gym or a legendary waits. Home sizes its scene around them.
+  const latest = useGame((s) => (busy || !s.save ? null : latestOpenArea(s.save, s.data)))
+  const keepExploring = !!(gym || boss) && !closed && !busy && !resting
   const label = gym
     ? t('ui.area.challenge', { name: gym.name.toUpperCase() })
     : boss
       ? t('ui.area.faceIt')
       : t('ui.common.continue')
-  return { label, sub, go, explore, off, gym, boss, closed, empty, busy, resting, cleared: progress.cleared }
+  return { label, sub, go, explore, off, gym, boss, closed, empty, busy, resting, cleared: progress.cleared, latest, keepExploring }
 }
 
 /**
@@ -120,10 +124,8 @@ export function ContinueBar({
   onAreas: () => void
 }) {
   const { t } = useT()
-  const { label, sub, go, explore, off, gym, boss, closed, empty, busy, resting } = useContinue(area)
+  const { label, sub, go, explore, off, gym, boss, empty, resting, latest, keepExploring } = useContinue(area)
   const subId = useId()
-  // Behind in the region's main chain: one tap to its furthest open area (not mid-encounter).
-  const latest = useGame((s) => (s.save ? latestOpenArea(s.save, s.data) : null))
 
   return (
     <div className="flex flex-col gap-2">
@@ -185,13 +187,13 @@ export function ContinueBar({
         </PixelButton>
       </div>
       {resting && <RestingPanel />}
-      {latest && !busy && (
+      {latest && (
         <PixelButton variant="success" size="lg" className="w-full" onClick={() => travelTo(latest)}>
           <PixelIcon name="map" size={20} />
           {t('ui.victory.goToArea', { name: latest.name })}
         </PixelButton>
       )}
-      {(gym || boss) && !closed && !busy && !resting && (
+      {keepExploring && (
         <div className="flex flex-wrap items-center justify-end gap-2">
           <PixelButton size="sm" onClick={explore} disabled={empty}>
             {t('ui.home.keepExploring')}

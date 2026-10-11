@@ -165,7 +165,7 @@ Dialog behaviour (`src/lib/useDialog.ts`, used by `Modal`, `Sheet`, `SidePanel`)
 - **Two buttons side by side** share a grid of `minmax(0, …)` tracks (`grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]`), never
   plain `fr`: a plain track can't go narrower than its label, so a long translation ran off the edge and squeezed its
   neighbour. In a shrinkable track `PixelButton` shrinks the label to fit.
-- **Action bars** (the Pokémon Center's and the area's HOME / NEXT ENCOUNTER, the Game Corner's LEAVE) are pinned
+- **Action bars** (the Pokémon Center's and the area's HOME / CONTINUE, the Game Corner's LEAVE) are pinned
   right above the tab bar on phones (`fixed`, `bottom: var(--bottom-nav)`, and room under the page for them), even
   when the page is short; from 768 px they stick to the bottom of the content column.
 - Page gutter 12 px; gaps 8–12 px between cards; a panel's padding 12 px.
@@ -308,7 +308,7 @@ Players shouldn't have to make many requests:
 - **Pokémon Center**: the healing scene (a Poké Ball per team member) at phone size (420 px at most on wide screens),
   over everything (on `<body>`); SKIP (focused, so Enter, Space or Escape) just closes it, without playing the rest of
   the jingle at once. It plays once: back from Home, the Center opens on the team (`run.healShown`). Then Home or
-  **Next encounter**, so a run through an area never needs a trip Home.
+  **Continue** (the next encounter), so a run through an area never needs a trip Home.
 - **Dots only for something you can act on**: the number of upgrades you can afford (9+ at most), a gold NEW for
   Pokédex entries you haven't looked at. The dot is in the link's accessible name, never colour alone.
 - **Home is the area hub** (`/home`; `/map` redirects there): the area's scene with your team roaming in it, the area
@@ -318,12 +318,16 @@ Players shouldn't have to make many requests:
   lit in the menus while it does.
 - **After an encounter the player stays in the area** (a trainer, a wild Pokémon, a find, the Center, the Game
   Corner, fleeing): `/area` between encounters (`AreaIdle`) is the area's header, "Back on the trail…", the team (each
-  card opens its sheet) and the action bar, HOME or NEXT ENCOUNTER (or the gym or legend waiting, with Keep exploring);
+  card opens its sheet) and the action bar, HOME or CONTINUE, the next encounter (or the gym or legend waiting, with Keep exploring);
   when the next one can't start, the reason sits over the buttons. Only a full K.O. ends the run and goes back Home,
   and the HOME buttons.
 - **Behind in the region**: under CONTINUE, a green GO TO {area} travels to the furthest open area of the region's
   main chain (`latestOpenArea`; secret areas don't count), until the player is there or the whole chain is cleared.
-  Not while an encounter is under way.
+  Not while an encounter is under way. On wide screens the scene gives up the height of what sits under CONTINUE (this
+  button, Keep exploring), so the whole bar stays on screen without scrolling.
+- **A team on a widget banner** (Versus, locked or open) spreads over the room up to what sits beside it (the VS, the
+  lock): its usual spacing when there is room, tighter on a phone's half-width widget, and only past 60 % of an icon do
+  the icons get smaller (`TeamFan`). It never runs under the VS.
 - Home's widgets show what's next (the next secret, the Day Care, Versus, events) and are buttons when they lead
   somewhere; a locked one says what opens it and how far you are.
 - **Stages** (a canvas scene: Home, the battle, a hatching) are a background canvas, the Pokémon as DOM `<img>`s
