@@ -226,13 +226,15 @@ describe('Kanto structure', () => {
     for (const t of [...leaders, ...indigo]) expect(t.spriteUrl).toMatch(/^\/trainers\/classes\/(champion|elite|blue)-/)
   })
 
-  it('comes back as the Elite Rebattle: the Elite Four and a rival Champion per starter, in three tiers', () => {
+  it('comes back as the Elite Rebattle: the Elite Four and a rival Champion per starter, in four tiers', () => {
     const lineups = BUNDLE.config.rebattleLineups as Record<string, Record<string, string[]>>
     const tier = (id: string) => lineups.kanto![id]!.map((x) => tById.get(x)!)
+    // League I's levels + 10, + 20, + 30, then Lv.100.
     for (const [id, levels] of [
       ['bronze', [69, 71, 73]],
-      ['silver', [84, 86, 88]],
-      ['gold', [100, 100, 100]],
+      ['silver', [79, 81, 83]],
+      ['gold', [89, 91, 93]],
+      ['diamond', [100, 100, 100]],
     ] as const) {
       const gyms = tier(id)
       expect(gyms.map((t) => t.role)).toEqual(['elite', 'elite', 'elite', 'elite', 'champion', 'champion', 'champion'])

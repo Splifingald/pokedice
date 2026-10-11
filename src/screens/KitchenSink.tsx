@@ -20,6 +20,7 @@ import { PixelButton } from '@/components/PixelButton'
 import { SearchSelect } from '@/components/SearchSelect'
 import { FilterChips, SearchField, Seg } from '@/components/Segmented'
 import { TypeSelect } from '@/components/TypeSelect'
+import { Medal } from '@/screens/events/RebattlePage'
 import { Sheet } from '@/components/Sheet'
 import { SpriteImg } from '@/components/SpriteImg'
 import { StatusIcons } from '@/components/StatusIcons'
@@ -355,6 +356,16 @@ export function KitchenSink() {
             ))}
           </div>
         </div>
+      </Section>
+
+      <Section title="Rebattle medals — Bronze, Silver, Gold, Diamond (sm · md · big)">
+        {(['sm', 'md', 'big'] as const).map((size) => (
+          <div key={size} className="flex items-end gap-4">
+            {[0, 1, 2, 3].map((tier) => (
+              <Medal key={tier} tier={tier} size={size} />
+            ))}
+          </div>
+        ))}
       </Section>
 
       <Section title="Gauge">

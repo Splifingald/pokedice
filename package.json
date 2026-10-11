@@ -18,6 +18,7 @@
     "seed-sql": "tsx scripts/write-seed-sql.ts",
     "seed-forms": "tsx scripts/seed-forms.ts",
     "rebattle-teams": "tsx scripts/rebattle-teams.ts",
+    "rebattle-sql": "tsx scripts/rebattle-sql.ts",
     "remove-league-ii": "tsx scripts/remove-league-ii.ts",
     "raid-balance": "tsx scripts/raid-balance.ts",
     "raid-areas": "tsx scripts/raid-areas.ts",

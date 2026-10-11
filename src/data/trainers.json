@@ -20007,15 +20007,15 @@
   "team": [
    {
     "dex": 91,
-    "level": 77
+    "level": 72
    },
    {
     "dex": 131,
-    "level": 79
+    "level": 74
    },
    {
     "dex": 124,
-    "level": 79
+    "level": 74
    }
   ],
   "role": "elite",
@@ -20033,15 +20033,15 @@
   "team": [
    {
     "dex": 62,
-    "level": 78
+    "level": 73
    },
    {
     "dex": 107,
-    "level": 79
+    "level": 74
    },
    {
     "dex": 68,
-    "level": 81
+    "level": 76
    }
   ],
   "role": "elite",
@@ -20059,15 +20059,15 @@
   "team": [
    {
     "dex": 45,
-    "level": 79
+    "level": 74
    },
    {
     "dex": 73,
-    "level": 81
+    "level": 76
    },
    {
     "dex": 94,
-    "level": 83
+    "level": 78
    }
   ],
   "role": "elite",
@@ -20085,15 +20085,15 @@
   "team": [
    {
     "dex": 148,
-    "level": 79
+    "level": 74
    },
    {
     "dex": 142,
-    "level": 83
+    "level": 78
    },
    {
     "dex": 149,
-    "level": 85
+    "level": 80
    }
   ],
   "role": "elite",
@@ -20111,15 +20111,15 @@
   "team": [
    {
     "dex": 26,
-    "level": 84
+    "level": 79
    },
    {
     "dex": 130,
-    "level": 86
+    "level": 81
    },
    {
     "dex": 6,
-    "level": 88
+    "level": 83
    }
   ],
   "role": "champion",
@@ -20138,15 +20138,15 @@
   "team": [
    {
     "dex": 26,
-    "level": 84
+    "level": 79
    },
    {
     "dex": 59,
-    "level": 86
+    "level": 81
    },
    {
     "dex": 9,
-    "level": 88
+    "level": 83
    }
   ],
   "role": "champion",
@@ -20165,15 +20165,15 @@
   "team": [
    {
     "dex": 26,
-    "level": 84
+    "level": 79
    },
    {
     "dex": 59,
-    "level": 86
+    "level": 81
    },
    {
     "dex": 3,
-    "level": 88
+    "level": 83
    }
   ],
   "role": "champion",
@@ -20187,6 +20187,191 @@
  },
  {
   "id": "44dcabe5-c9b8-551e-92c9-7b8687ca447b",
+  "name": "Elite Four Lorelei",
+  "spriteUrl": "/trainers/classes/elite-lorelei.png",
+  "team": [
+   {
+    "dex": 91,
+    "level": 82
+   },
+   {
+    "dex": 131,
+    "level": 84
+   },
+   {
+    "dex": 124,
+    "level": 84
+   }
+  ],
+  "role": "elite",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ]
+ },
+ {
+  "id": "1e7705e9-5322-5017-acf5-5d5160779554",
+  "name": "Elite Four Bruno",
+  "spriteUrl": "/trainers/classes/elite-bruno.png",
+  "team": [
+   {
+    "dex": 62,
+    "level": 83
+   },
+   {
+    "dex": 107,
+    "level": 84
+   },
+   {
+    "dex": 68,
+    "level": 86
+   }
+  ],
+  "role": "elite",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ]
+ },
+ {
+  "id": "be14b8d9-5b20-5aa2-9c79-3d6435b54423",
+  "name": "Elite Four Agatha",
+  "spriteUrl": "/trainers/classes/elite-agatha.png",
+  "team": [
+   {
+    "dex": 45,
+    "level": 84
+   },
+   {
+    "dex": 73,
+    "level": 86
+   },
+   {
+    "dex": 94,
+    "level": 88
+   }
+  ],
+  "role": "elite",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ]
+ },
+ {
+  "id": "562057d5-01da-5ea1-8171-acb91d3ac899",
+  "name": "Elite Four Lance",
+  "spriteUrl": "/trainers/classes/elite-lance.png",
+  "team": [
+   {
+    "dex": 148,
+    "level": 84
+   },
+   {
+    "dex": 142,
+    "level": 88
+   },
+   {
+    "dex": 149,
+    "level": 90
+   }
+  ],
+  "role": "elite",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ]
+ },
+ {
+  "id": "d8dbd2da-79c2-594f-9106-097c8c3e8fb1",
+  "name": "Champion Rival",
+  "spriteUrl": "/characters/green.png",
+  "team": [
+   {
+    "dex": 26,
+    "level": 89
+   },
+   {
+    "dex": 130,
+    "level": 91
+   },
+   {
+    "dex": 6,
+    "level": 93
+   }
+  ],
+  "role": "champion",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ],
+  "rivalOf": 1
+ },
+ {
+  "id": "e8eed7e6-97e3-594c-941f-0dac877f1d6a",
+  "name": "Champion Rival",
+  "spriteUrl": "/characters/green.png",
+  "team": [
+   {
+    "dex": 26,
+    "level": 89
+   },
+   {
+    "dex": 59,
+    "level": 91
+   },
+   {
+    "dex": 9,
+    "level": 93
+   }
+  ],
+  "role": "champion",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ],
+  "rivalOf": 4
+ },
+ {
+  "id": "39b7635c-efbd-5ca1-a7b8-f1e6cf4bf71c",
+  "name": "Champion Rival",
+  "spriteUrl": "/characters/green.png",
+  "team": [
+   {
+    "dex": 26,
+    "level": 89
+   },
+   {
+    "dex": 59,
+    "level": 91
+   },
+   {
+    "dex": 3,
+    "level": 93
+   }
+  ],
+  "role": "champion",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ],
+  "rivalOf": 7
+ },
+ {
+  "id": "ec78dee7-168c-5b1c-baa2-cdc56396166e",
   "name": "Elite Four Lorelei",
   "spriteUrl": "/trainers/classes/elite-lorelei.png",
   "team": [
@@ -20212,7 +20397,7 @@
   ]
  },
  {
-  "id": "1e7705e9-5322-5017-acf5-5d5160779554",
+  "id": "ffd2cd5a-91c6-5630-ba6e-f65b077e4505",
   "name": "Elite Four Bruno",
   "spriteUrl": "/trainers/classes/elite-bruno.png",
   "team": [
@@ -20238,7 +20423,7 @@
   ]
  },
  {
-  "id": "be14b8d9-5b20-5aa2-9c79-3d6435b54423",
+  "id": "847afbeb-3c73-5635-9b72-f14f6351e177",
   "name": "Elite Four Agatha",
   "spriteUrl": "/trainers/classes/elite-agatha.png",
   "team": [
@@ -20264,7 +20449,7 @@
   ]
  },
  {
-  "id": "562057d5-01da-5ea1-8171-acb91d3ac899",
+  "id": "4aea5b2a-f100-5af1-9f81-bede00f7cce9",
   "name": "Elite Four Lance",
   "spriteUrl": "/trainers/classes/elite-lance.png",
   "team": [
@@ -20290,7 +20475,7 @@
   ]
  },
  {
-  "id": "d8dbd2da-79c2-594f-9106-097c8c3e8fb1",
+  "id": "5597c292-8376-5f9a-a9ae-4940860e43b2",
   "name": "Champion Rival",
   "spriteUrl": "/characters/green.png",
   "team": [
@@ -20317,7 +20502,7 @@
   "rivalOf": 1
  },
  {
-  "id": "e8eed7e6-97e3-594c-941f-0dac877f1d6a",
+  "id": "58014f0d-125c-552f-a727-60341bf33894",
   "name": "Champion Rival",
   "spriteUrl": "/characters/green.png",
   "team": [
@@ -20344,7 +20529,7 @@
   "rivalOf": 4
  },
  {
-  "id": "39b7635c-efbd-5ca1-a7b8-f1e6cf4bf71c",
+  "id": "689cb21f-b960-5820-b5e9-dff200838d39",
   "name": "Champion Rival",
   "spriteUrl": "/characters/green.png",
   "team": [
@@ -20507,15 +20692,15 @@
   "team": [
    {
     "dex": 196,
-    "level": 76
+    "level": 71
    },
    {
     "dex": 202,
-    "level": 78
+    "level": 73
    },
    {
     "dex": 103,
-    "level": 80
+    "level": 75
    }
   ],
   "role": "elite",
@@ -20533,15 +20718,15 @@
   "team": [
    {
     "dex": 213,
-    "level": 78
+    "level": 73
    },
    {
     "dex": 214,
-    "level": 80
+    "level": 75
    },
    {
     "dex": 205,
-    "level": 82
+    "level": 77
    }
   ],
   "role": "elite",
@@ -20559,15 +20744,15 @@
   "team": [
    {
     "dex": 214,
-    "level": 80
+    "level": 75
    },
    {
     "dex": 68,
-    "level": 82
+    "level": 77
    },
    {
     "dex": 106,
-    "level": 84
+    "level": 79
    }
   ],
   "role": "elite",
@@ -20585,15 +20770,15 @@
   "team": [
    {
     "dex": 248,
-    "level": 81
+    "level": 76
    },
    {
     "dex": 229,
-    "level": 83
+    "level": 78
    },
    {
     "dex": 197,
-    "level": 85
+    "level": 80
    }
   ],
   "role": "elite",
@@ -20611,15 +20796,15 @@
   "team": [
    {
     "dex": 130,
+    "level": 79
+   },
+   {
+    "dex": 149,
+    "level": 81
+   },
+   {
+    "dex": 149,
     "level": 84
-   },
-   {
-    "dex": 149,
-    "level": 86
-   },
-   {
-    "dex": 149,
-    "level": 89
    }
   ],
   "role": "champion",
@@ -20632,6 +20817,136 @@
  },
  {
   "id": "3f7f8e17-e5a9-5ea3-bc6f-94a2ae7b46fd",
+  "name": "Elite Four Will",
+  "spriteUrl": "/trainers/classes/johto/elite-will.png",
+  "team": [
+   {
+    "dex": 196,
+    "level": 81
+   },
+   {
+    "dex": 202,
+    "level": 83
+   },
+   {
+    "dex": 103,
+    "level": 85
+   }
+  ],
+  "role": "elite",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ]
+ },
+ {
+  "id": "f45643d2-d0ff-5673-aca1-31baafd0830b",
+  "name": "Elite Four Koga",
+  "spriteUrl": "/trainers/classes/johto/elite-koga.png",
+  "team": [
+   {
+    "dex": 213,
+    "level": 83
+   },
+   {
+    "dex": 214,
+    "level": 85
+   },
+   {
+    "dex": 205,
+    "level": 87
+   }
+  ],
+  "role": "elite",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ]
+ },
+ {
+  "id": "a9deafe9-f3b4-5f3d-8503-05df4013e706",
+  "name": "Elite Four Bruno",
+  "spriteUrl": "/trainers/classes/johto/elite-bruno.png",
+  "team": [
+   {
+    "dex": 214,
+    "level": 85
+   },
+   {
+    "dex": 68,
+    "level": 87
+   },
+   {
+    "dex": 106,
+    "level": 89
+   }
+  ],
+  "role": "elite",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ]
+ },
+ {
+  "id": "7287d4f5-c0c0-5f80-bfca-181a135addca",
+  "name": "Elite Four Karen",
+  "spriteUrl": "/trainers/classes/johto/elite-karen.png",
+  "team": [
+   {
+    "dex": 248,
+    "level": 86
+   },
+   {
+    "dex": 229,
+    "level": 88
+   },
+   {
+    "dex": 197,
+    "level": 90
+   }
+  ],
+  "role": "elite",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ]
+ },
+ {
+  "id": "7bfe7eaa-3f65-5858-b37c-c4860d7455dc",
+  "name": "Champion Lance",
+  "spriteUrl": "/trainers/classes/johto/champion-lance.png",
+  "team": [
+   {
+    "dex": 130,
+    "level": 89
+   },
+   {
+    "dex": 149,
+    "level": 91
+   },
+   {
+    "dex": 149,
+    "level": 94
+   }
+  ],
+  "role": "champion",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ]
+ },
+ {
+  "id": "61435ef0-7d7c-5b3c-85a7-b8dcbd80f427",
   "name": "Elite Four Will",
   "spriteUrl": "/trainers/classes/johto/elite-will.png",
   "team": [
@@ -20657,7 +20972,7 @@
   ]
  },
  {
-  "id": "f45643d2-d0ff-5673-aca1-31baafd0830b",
+  "id": "5ec4b239-97e2-55ed-a51f-6e500d463ddf",
   "name": "Elite Four Koga",
   "spriteUrl": "/trainers/classes/johto/elite-koga.png",
   "team": [
@@ -20683,7 +20998,7 @@
   ]
  },
  {
-  "id": "a9deafe9-f3b4-5f3d-8503-05df4013e706",
+  "id": "2fd30cf7-f282-5479-b7ed-ee4be7ea8a11",
   "name": "Elite Four Bruno",
   "spriteUrl": "/trainers/classes/johto/elite-bruno.png",
   "team": [
@@ -20709,7 +21024,7 @@
   ]
  },
  {
-  "id": "7287d4f5-c0c0-5f80-bfca-181a135addca",
+  "id": "ab9bacef-682c-50bc-b4a4-7f710f8444ee",
   "name": "Elite Four Karen",
   "spriteUrl": "/trainers/classes/johto/elite-karen.png",
   "team": [
@@ -20735,7 +21050,7 @@
   ]
  },
  {
-  "id": "7bfe7eaa-3f65-5858-b37c-c4860d7455dc",
+  "id": "4d5685b7-ac52-5682-ba11-8ba8ba13bd75",
   "name": "Champion Lance",
   "spriteUrl": "/trainers/classes/johto/champion-lance.png",
   "team": [
@@ -20897,15 +21212,15 @@
   "team": [
    {
     "dex": 342,
-    "level": 75
+    "level": 70
    },
    {
     "dex": 332,
-    "level": 77
+    "level": 72
    },
    {
     "dex": 359,
-    "level": 78
+    "level": 73
    }
   ],
   "role": "elite",
@@ -20923,15 +21238,15 @@
   "team": [
    {
     "dex": 292,
-    "level": 77
+    "level": 72
    },
    {
     "dex": 94,
-    "level": 78
+    "level": 73
    },
    {
     "dex": 356,
-    "level": 80
+    "level": 75
    }
   ],
   "role": "elite",
@@ -20949,15 +21264,15 @@
   "team": [
    {
     "dex": 225,
-    "level": 79
+    "level": 74
    },
    {
     "dex": 87,
-    "level": 79
+    "level": 74
    },
    {
     "dex": 365,
-    "level": 82
+    "level": 77
    }
   ],
   "role": "elite",
@@ -20975,15 +21290,15 @@
   "team": [
    {
     "dex": 230,
-    "level": 81
+    "level": 76
    },
    {
     "dex": 149,
-    "level": 82
+    "level": 77
    },
    {
     "dex": 373,
-    "level": 84
+    "level": 79
    }
   ],
   "role": "elite",
@@ -21001,15 +21316,15 @@
   "team": [
    {
     "dex": 340,
-    "level": 84
+    "level": 79
    },
    {
     "dex": 272,
-    "level": 85
+    "level": 80
    },
    {
     "dex": 350,
-    "level": 87
+    "level": 82
    }
   ],
   "role": "champion",
@@ -21022,6 +21337,136 @@
  },
  {
   "id": "bf8af9e6-2ca1-5c4e-b359-59b294529855",
+  "name": "Elite Four Sidney",
+  "spriteUrl": "/trainers/classes/hoenn/elite-sidney.png",
+  "team": [
+   {
+    "dex": 342,
+    "level": 80
+   },
+   {
+    "dex": 332,
+    "level": 82
+   },
+   {
+    "dex": 359,
+    "level": 83
+   }
+  ],
+  "role": "elite",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ]
+ },
+ {
+  "id": "c380599c-c75d-54c1-9dcd-baaea4d4c789",
+  "name": "Elite Four Phoebe",
+  "spriteUrl": "/trainers/classes/hoenn/elite-phoebe.png",
+  "team": [
+   {
+    "dex": 292,
+    "level": 82
+   },
+   {
+    "dex": 94,
+    "level": 83
+   },
+   {
+    "dex": 356,
+    "level": 85
+   }
+  ],
+  "role": "elite",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ]
+ },
+ {
+  "id": "17a766b5-d9af-5f59-905f-d42f2a9093e7",
+  "name": "Elite Four Glacia",
+  "spriteUrl": "/trainers/classes/hoenn/elite-glacia.png",
+  "team": [
+   {
+    "dex": 225,
+    "level": 84
+   },
+   {
+    "dex": 87,
+    "level": 84
+   },
+   {
+    "dex": 365,
+    "level": 87
+   }
+  ],
+  "role": "elite",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ]
+ },
+ {
+  "id": "14605bd9-9ba6-59a6-aa22-511e32b39dbf",
+  "name": "Elite Four Drake",
+  "spriteUrl": "/trainers/classes/hoenn/elite-drake.png",
+  "team": [
+   {
+    "dex": 230,
+    "level": 86
+   },
+   {
+    "dex": 149,
+    "level": 87
+   },
+   {
+    "dex": 373,
+    "level": 89
+   }
+  ],
+  "role": "elite",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ]
+ },
+ {
+  "id": "68f3eb34-ef19-5961-9553-979429f08497",
+  "name": "Champion Wallace",
+  "spriteUrl": "/trainers/classes/hoenn/champion-wallace.png",
+  "team": [
+   {
+    "dex": 340,
+    "level": 89
+   },
+   {
+    "dex": 272,
+    "level": 90
+   },
+   {
+    "dex": 350,
+    "level": 92
+   }
+  ],
+  "role": "champion",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ]
+ },
+ {
+  "id": "ce9b0db5-9880-5b74-a943-98c2c8597ccf",
   "name": "Elite Four Sidney",
   "spriteUrl": "/trainers/classes/hoenn/elite-sidney.png",
   "team": [
@@ -21047,7 +21492,7 @@
   ]
  },
  {
-  "id": "c380599c-c75d-54c1-9dcd-baaea4d4c789",
+  "id": "1b66b538-aed8-5154-be3e-dff0134cd193",
   "name": "Elite Four Phoebe",
   "spriteUrl": "/trainers/classes/hoenn/elite-phoebe.png",
   "team": [
@@ -21073,7 +21518,7 @@
   ]
  },
  {
-  "id": "17a766b5-d9af-5f59-905f-d42f2a9093e7",
+  "id": "cab26ffb-3067-544b-bb77-69334a2c7f9f",
   "name": "Elite Four Glacia",
   "spriteUrl": "/trainers/classes/hoenn/elite-glacia.png",
   "team": [
@@ -21099,7 +21544,7 @@
   ]
  },
  {
-  "id": "14605bd9-9ba6-59a6-aa22-511e32b39dbf",
+  "id": "aa2d5e67-f623-58ec-9f67-cf7064c1d442",
   "name": "Elite Four Drake",
   "spriteUrl": "/trainers/classes/hoenn/elite-drake.png",
   "team": [
@@ -21125,7 +21570,7 @@
   ]
  },
  {
-  "id": "68f3eb34-ef19-5961-9553-979429f08497",
+  "id": "db38e94f-5d32-5fe3-b579-01fd9ceba00b",
   "name": "Champion Wallace",
   "spriteUrl": "/trainers/classes/hoenn/champion-wallace.png",
   "team": [
@@ -21287,15 +21732,15 @@
   "team": [
    {
     "dex": 414,
-    "level": 78
+    "level": 73
    },
    {
     "dex": 402,
-    "level": 79
+    "level": 74
    },
    {
     "dex": 469,
-    "level": 80
+    "level": 75
    }
   ],
   "role": "elite",
@@ -21313,15 +21758,15 @@
   "team": [
    {
     "dex": 423,
-    "level": 80
+    "level": 75
    },
    {
     "dex": 472,
-    "level": 80
+    "level": 75
    },
    {
     "dex": 464,
-    "level": 82
+    "level": 77
    }
   ],
   "role": "elite",
@@ -21339,15 +21784,15 @@
   "team": [
    {
     "dex": 38,
-    "level": 82
+    "level": 77
    },
    {
     "dex": 324,
-    "level": 82
+    "level": 77
    },
    {
     "dex": 467,
-    "level": 84
+    "level": 79
    }
   ],
   "role": "elite",
@@ -21365,15 +21810,15 @@
   "team": [
    {
     "dex": 344,
-    "level": 82
+    "level": 77
    },
    {
     "dex": 202,
-    "level": 83
+    "level": 78
    },
    {
     "dex": 475,
-    "level": 85
+    "level": 80
    }
   ],
   "role": "elite",
@@ -21391,15 +21836,15 @@
   "team": [
    {
     "dex": 442,
-    "level": 83
+    "level": 78
    },
    {
     "dex": 468,
-    "level": 85
+    "level": 80
    },
    {
     "dex": 445,
-    "level": 87
+    "level": 82
    }
   ],
   "role": "champion",
@@ -21412,6 +21857,136 @@
  },
  {
   "id": "95ec8afc-4fb4-5e2b-a871-bf39f53c3054",
+  "name": "Elite Four Aaron",
+  "spriteUrl": "/trainers/classes/sinnoh/elite-aaron.png",
+  "team": [
+   {
+    "dex": 414,
+    "level": 83
+   },
+   {
+    "dex": 402,
+    "level": 84
+   },
+   {
+    "dex": 469,
+    "level": 85
+   }
+  ],
+  "role": "elite",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ]
+ },
+ {
+  "id": "3fdc8b1b-ae3f-590c-a490-f949cf4211f5",
+  "name": "Elite Four Bertha",
+  "spriteUrl": "/trainers/classes/sinnoh/elite-bertha.png",
+  "team": [
+   {
+    "dex": 423,
+    "level": 85
+   },
+   {
+    "dex": 472,
+    "level": 85
+   },
+   {
+    "dex": 464,
+    "level": 87
+   }
+  ],
+  "role": "elite",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ]
+ },
+ {
+  "id": "98a72873-937d-570c-9860-69d6940591c8",
+  "name": "Elite Four Flint",
+  "spriteUrl": "/trainers/classes/sinnoh/elite-flint.png",
+  "team": [
+   {
+    "dex": 38,
+    "level": 87
+   },
+   {
+    "dex": 324,
+    "level": 87
+   },
+   {
+    "dex": 467,
+    "level": 89
+   }
+  ],
+  "role": "elite",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ]
+ },
+ {
+  "id": "45d0a6d6-f9ee-5009-a308-0d93b875e79e",
+  "name": "Elite Four Lucian",
+  "spriteUrl": "/trainers/classes/sinnoh/elite-lucian.png",
+  "team": [
+   {
+    "dex": 344,
+    "level": 87
+   },
+   {
+    "dex": 202,
+    "level": 88
+   },
+   {
+    "dex": 475,
+    "level": 90
+   }
+  ],
+  "role": "elite",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ]
+ },
+ {
+  "id": "f354e571-253e-5c17-9817-5ca8edd12134",
+  "name": "Champion Cynthia",
+  "spriteUrl": "/trainers/classes/sinnoh/champion-cynthia.png",
+  "team": [
+   {
+    "dex": 442,
+    "level": 88
+   },
+   {
+    "dex": 468,
+    "level": 90
+   },
+   {
+    "dex": 445,
+    "level": 92
+   }
+  ],
+  "role": "champion",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ]
+ },
+ {
+  "id": "a219e63d-91d7-568c-8fe5-dfca24347a73",
   "name": "Elite Four Aaron",
   "spriteUrl": "/trainers/classes/sinnoh/elite-aaron.png",
   "team": [
@@ -21437,7 +22012,7 @@
   ]
  },
  {
-  "id": "3fdc8b1b-ae3f-590c-a490-f949cf4211f5",
+  "id": "a839035e-93b5-5624-b823-9c937cc981c2",
   "name": "Elite Four Bertha",
   "spriteUrl": "/trainers/classes/sinnoh/elite-bertha.png",
   "team": [
@@ -21463,7 +22038,7 @@
   ]
  },
  {
-  "id": "98a72873-937d-570c-9860-69d6940591c8",
+  "id": "c145472c-4d75-59ca-8731-42687f15b5a5",
   "name": "Elite Four Flint",
   "spriteUrl": "/trainers/classes/sinnoh/elite-flint.png",
   "team": [
@@ -21489,7 +22064,7 @@
   ]
  },
  {
-  "id": "45d0a6d6-f9ee-5009-a308-0d93b875e79e",
+  "id": "f79ea9a9-3ca8-52da-b147-63ea6c2ba606",
   "name": "Elite Four Lucian",
   "spriteUrl": "/trainers/classes/sinnoh/elite-lucian.png",
   "team": [
@@ -21515,7 +22090,7 @@
   ]
  },
  {
-  "id": "f354e571-253e-5c17-9817-5ca8edd12134",
+  "id": "da394ed1-6f83-54f7-9ae5-1a283dd3d7c3",
   "name": "Champion Cynthia",
   "spriteUrl": "/trainers/classes/sinnoh/champion-cynthia.png",
   "team": [
@@ -21703,15 +22278,15 @@
   "team": [
    {
     "dex": 593,
-    "level": 73
+    "level": 68
    },
    {
     "dex": 302,
-    "level": 73
+    "level": 68
    },
    {
     "dex": 609,
-    "level": 75
+    "level": 70
    }
   ],
   "role": "elite",
@@ -21729,15 +22304,15 @@
   "team": [
    {
     "dex": 630,
-    "level": 73
+    "level": 68
    },
    {
     "dex": 635,
-    "level": 73
+    "level": 68
    },
    {
     "dex": 625,
-    "level": 75
+    "level": 70
    }
   ],
   "role": "elite",
@@ -21755,15 +22330,15 @@
   "team": [
    {
     "dex": 518,
-    "level": 73
+    "level": 68
    },
    {
     "dex": 528,
-    "level": 73
+    "level": 68
    },
    {
     "dex": 576,
-    "level": 75
+    "level": 70
    }
   ],
   "role": "elite",
@@ -21781,15 +22356,15 @@
   "team": [
    {
     "dex": 560,
-    "level": 73
+    "level": 68
    },
    {
     "dex": 620,
-    "level": 73
+    "level": 68
    },
    {
     "dex": 534,
-    "level": 75
+    "level": 70
    }
   ],
   "role": "elite",
@@ -21807,15 +22382,15 @@
   "team": [
    {
     "dex": 571,
-    "level": 75
+    "level": 70
    },
    {
     "dex": 601,
-    "level": 75
+    "level": 70
    },
    {
     "dex": 565,
-    "level": 76
+    "level": 71
    }
   ],
   "role": "elite",
@@ -21833,15 +22408,15 @@
   "team": [
    {
     "dex": 625,
-    "level": 77
+    "level": 72
    },
    {
     "dex": 537,
-    "level": 77
+    "level": 72
    },
    {
     "dex": 635,
-    "level": 79
+    "level": 74
    }
   ],
   "role": "champion",
@@ -21854,6 +22429,162 @@
  },
  {
   "id": "6ef76ec3-d004-57ad-bf66-3f0aacae9b61",
+  "name": "Elite Four Shauntal",
+  "spriteUrl": "/trainers/classes/unova/elite-shauntal.png",
+  "team": [
+   {
+    "dex": 593,
+    "level": 78
+   },
+   {
+    "dex": 302,
+    "level": 78
+   },
+   {
+    "dex": 609,
+    "level": 80
+   }
+  ],
+  "role": "elite",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ]
+ },
+ {
+  "id": "cd044ab6-0003-5bc2-9611-3a525602d117",
+  "name": "Elite Four Grimsley",
+  "spriteUrl": "/trainers/classes/unova/elite-grimsley.png",
+  "team": [
+   {
+    "dex": 630,
+    "level": 78
+   },
+   {
+    "dex": 635,
+    "level": 78
+   },
+   {
+    "dex": 625,
+    "level": 80
+   }
+  ],
+  "role": "elite",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ]
+ },
+ {
+  "id": "dd7fcb30-ea75-52ca-bf95-5c5143138cf3",
+  "name": "Elite Four Caitlin",
+  "spriteUrl": "/trainers/classes/unova/elite-caitlin.png",
+  "team": [
+   {
+    "dex": 518,
+    "level": 78
+   },
+   {
+    "dex": 528,
+    "level": 78
+   },
+   {
+    "dex": 576,
+    "level": 80
+   }
+  ],
+  "role": "elite",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ]
+ },
+ {
+  "id": "d8a13126-451b-5028-8525-3216ec336182",
+  "name": "Elite Four Marshal",
+  "spriteUrl": "/trainers/classes/unova/elite-marshal.png",
+  "team": [
+   {
+    "dex": 560,
+    "level": 78
+   },
+   {
+    "dex": 620,
+    "level": 78
+   },
+   {
+    "dex": 534,
+    "level": 80
+   }
+  ],
+  "role": "elite",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ]
+ },
+ {
+  "id": "61b7966d-503c-547e-9379-551971f1f0f6",
+  "name": "N",
+  "spriteUrl": "/trainers/classes/unova/n.png",
+  "team": [
+   {
+    "dex": 571,
+    "level": 80
+   },
+   {
+    "dex": 601,
+    "level": 80
+   },
+   {
+    "dex": 565,
+    "level": 81
+   }
+  ],
+  "role": "elite",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ]
+ },
+ {
+  "id": "c24fc25d-99e0-504d-8fc4-2a3a4db320b3",
+  "name": "Ghetsis",
+  "spriteUrl": "/trainers/classes/unova/ghetsis.png",
+  "team": [
+   {
+    "dex": 625,
+    "level": 82
+   },
+   {
+    "dex": 537,
+    "level": 82
+   },
+   {
+    "dex": 635,
+    "level": 84
+   }
+  ],
+  "role": "champion",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ]
+ },
+ {
+  "id": "04dbe1bb-fb45-5c40-832e-ee540f6e588f",
   "name": "Elite Four Shauntal",
   "spriteUrl": "/trainers/classes/unova/elite-shauntal.png",
   "team": [
@@ -21879,7 +22610,7 @@
   ]
  },
  {
-  "id": "cd044ab6-0003-5bc2-9611-3a525602d117",
+  "id": "8119cdf2-b369-58d4-9c48-347fa6f076d7",
   "name": "Elite Four Grimsley",
   "spriteUrl": "/trainers/classes/unova/elite-grimsley.png",
   "team": [
@@ -21905,7 +22636,7 @@
   ]
  },
  {
-  "id": "dd7fcb30-ea75-52ca-bf95-5c5143138cf3",
+  "id": "cf46649c-02ad-5248-83ba-62e5a36583be",
   "name": "Elite Four Caitlin",
   "spriteUrl": "/trainers/classes/unova/elite-caitlin.png",
   "team": [
@@ -21931,7 +22662,7 @@
   ]
  },
  {
-  "id": "d8a13126-451b-5028-8525-3216ec336182",
+  "id": "16869b8e-a4b3-5537-8a6b-0ff02ba54a6a",
   "name": "Elite Four Marshal",
   "spriteUrl": "/trainers/classes/unova/elite-marshal.png",
   "team": [
@@ -21957,7 +22688,7 @@
   ]
  },
  {
-  "id": "61b7966d-503c-547e-9379-551971f1f0f6",
+  "id": "b1b9773f-1303-5014-975c-775cae5e4a95",
   "name": "N",
   "spriteUrl": "/trainers/classes/unova/n.png",
   "team": [
@@ -21983,7 +22714,7 @@
   ]
  },
  {
-  "id": "c24fc25d-99e0-504d-8fc4-2a3a4db320b3",
+  "id": "2b64f063-2df9-53ca-ab9f-9b888c850693",
   "name": "Ghetsis",
   "spriteUrl": "/trainers/classes/unova/ghetsis.png",
   "team": [
@@ -22145,15 +22876,15 @@
   "team": [
    {
     "dex": 136,
-    "level": 88
+    "level": 83
    },
    {
     "dex": 324,
-    "level": 88
+    "level": 83
    },
    {
     "dex": 663,
-    "level": 90
+    "level": 85
    }
   ],
   "role": "elite",
@@ -22171,15 +22902,15 @@
   "team": [
    {
     "dex": 279,
-    "level": 88
+    "level": 83
    },
    {
     "dex": 91,
-    "level": 88
+    "level": 83
    },
    {
     "dex": 689,
-    "level": 90
+    "level": 85
    }
   ],
   "role": "elite",
@@ -22197,15 +22928,15 @@
   "team": [
    {
     "dex": 589,
-    "level": 88
+    "level": 83
    },
    {
     "dex": 303,
-    "level": 88
+    "level": 83
    },
    {
     "dex": 681,
-    "level": 90
+    "level": 85
    }
   ],
   "role": "elite",
@@ -22223,15 +22954,15 @@
   "team": [
    {
     "dex": 706,
-    "level": 88
+    "level": 83
    },
    {
     "dex": 697,
-    "level": 88
+    "level": 83
    },
    {
     "dex": 715,
-    "level": 90
+    "level": 85
    }
   ],
   "role": "elite",
@@ -22249,15 +22980,15 @@
   "team": [
    {
     "dex": 697,
-    "level": 90
+    "level": 85
    },
    {
     "dex": 699,
-    "level": 90
+    "level": 85
    },
    {
     "dex": 706,
-    "level": 91
+    "level": 86
    }
   ],
   "role": "champion",
@@ -22270,6 +23001,136 @@
  },
  {
   "id": "317bce5f-ff01-588a-97fa-975643b524da",
+  "name": "Elite Four Malva",
+  "spriteUrl": "/trainers/classes/kalos/elite-malva.png",
+  "team": [
+   {
+    "dex": 136,
+    "level": 93
+   },
+   {
+    "dex": 324,
+    "level": 93
+   },
+   {
+    "dex": 663,
+    "level": 95
+   }
+  ],
+  "role": "elite",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ]
+ },
+ {
+  "id": "1444e460-c0f9-5521-b902-ecdd63adeec6",
+  "name": "Elite Four Siebold",
+  "spriteUrl": "/trainers/classes/kalos/elite-siebold.png",
+  "team": [
+   {
+    "dex": 279,
+    "level": 93
+   },
+   {
+    "dex": 91,
+    "level": 93
+   },
+   {
+    "dex": 689,
+    "level": 95
+   }
+  ],
+  "role": "elite",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ]
+ },
+ {
+  "id": "72ccbee0-89f5-5417-9034-11740321eeac",
+  "name": "Elite Four Wikstrom",
+  "spriteUrl": "/trainers/classes/kalos/elite-wikstrom.png",
+  "team": [
+   {
+    "dex": 589,
+    "level": 93
+   },
+   {
+    "dex": 303,
+    "level": 93
+   },
+   {
+    "dex": 681,
+    "level": 95
+   }
+  ],
+  "role": "elite",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ]
+ },
+ {
+  "id": "7b2cc57d-94da-5950-bc17-853092f3f98e",
+  "name": "Elite Four Drasna",
+  "spriteUrl": "/trainers/classes/kalos/elite-drasna.png",
+  "team": [
+   {
+    "dex": 706,
+    "level": 93
+   },
+   {
+    "dex": 697,
+    "level": 93
+   },
+   {
+    "dex": 715,
+    "level": 95
+   }
+  ],
+  "role": "elite",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ]
+ },
+ {
+  "id": "ac82ac88-8c95-5bb5-bb0b-0c3ef82de723",
+  "name": "Champion Diantha",
+  "spriteUrl": "/trainers/classes/kalos/champion-diantha.png",
+  "team": [
+   {
+    "dex": 697,
+    "level": 95
+   },
+   {
+    "dex": 699,
+    "level": 95
+   },
+   {
+    "dex": 706,
+    "level": 96
+   }
+  ],
+  "role": "champion",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ]
+ },
+ {
+  "id": "58bc0559-2e4b-58a5-8b59-45ab890fedc4",
   "name": "Elite Four Malva",
   "spriteUrl": "/trainers/classes/kalos/elite-malva.png",
   "team": [
@@ -22295,7 +23156,7 @@
   ]
  },
  {
-  "id": "1444e460-c0f9-5521-b902-ecdd63adeec6",
+  "id": "7e85fdd7-fddc-503c-bcc8-0253677216de",
   "name": "Elite Four Siebold",
   "spriteUrl": "/trainers/classes/kalos/elite-siebold.png",
   "team": [
@@ -22321,7 +23182,7 @@
   ]
  },
  {
-  "id": "72ccbee0-89f5-5417-9034-11740321eeac",
+  "id": "20974f36-661d-55f2-b577-fae7ca253d08",
   "name": "Elite Four Wikstrom",
   "spriteUrl": "/trainers/classes/kalos/elite-wikstrom.png",
   "team": [
@@ -22347,7 +23208,7 @@
   ]
  },
  {
-  "id": "7b2cc57d-94da-5950-bc17-853092f3f98e",
+  "id": "a0454f54-ce3a-5201-8da7-8dac12133581",
   "name": "Elite Four Drasna",
   "spriteUrl": "/trainers/classes/kalos/elite-drasna.png",
   "team": [
@@ -22373,7 +23234,7 @@
   ]
  },
  {
-  "id": "ac82ac88-8c95-5bb5-bb0b-0c3ef82de723",
+  "id": "dbfe2722-72fa-54e3-8b7f-05d8fc19d242",
   "name": "Champion Diantha",
   "spriteUrl": "/trainers/classes/kalos/champion-diantha.png",
   "team": [
@@ -22535,15 +23396,15 @@
   "team": [
    {
     "dex": 766,
-    "level": 79
+    "level": 74
    },
    {
     "dex": 784,
-    "level": 79
+    "level": 74
    },
    {
     "dex": 740,
-    "level": 80
+    "level": 75
    }
   ],
   "role": "elite",
@@ -22561,15 +23422,15 @@
   "team": [
    {
     "dex": 774,
-    "level": 79
+    "level": 74
    },
    {
     "dex": 699,
-    "level": 79
+    "level": 74
    },
    {
     "dex": 745,
-    "level": 80
+    "level": 75
    }
   ],
   "role": "elite",
@@ -22587,15 +23448,15 @@
   "team": [
    {
     "dex": 778,
-    "level": 79
+    "level": 74
    },
    {
     "dex": 609,
-    "level": 79
+    "level": 74
    },
    {
     "dex": 770,
-    "level": 80
+    "level": 75
    }
   ],
   "role": "elite",
@@ -22613,15 +23474,15 @@
   "team": [
    {
     "dex": 774,
-    "level": 79
+    "level": 74
    },
    {
     "dex": 416,
-    "level": 79
+    "level": 74
    },
    {
     "dex": 733,
-    "level": 80
+    "level": 75
    }
   ],
   "role": "elite",
@@ -22639,15 +23500,15 @@
   "team": [
    {
     "dex": 10104,
-    "level": 81
+    "level": 76
    },
    {
     "dex": 143,
-    "level": 81
+    "level": 76
    },
    {
     "dex": 745,
-    "level": 82
+    "level": 77
    }
   ],
   "role": "champion",
@@ -22660,6 +23521,136 @@
  },
  {
   "id": "7565fa6e-f439-5efb-bb60-5aaf7c32651b",
+  "name": "Elite Four Hala",
+  "spriteUrl": "/trainers/classes/alola/hala.png",
+  "team": [
+   {
+    "dex": 766,
+    "level": 84
+   },
+   {
+    "dex": 784,
+    "level": 84
+   },
+   {
+    "dex": 740,
+    "level": 85
+   }
+  ],
+  "role": "elite",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ]
+ },
+ {
+  "id": "ce61cf16-bb8a-5941-8064-ae649ff9e79d",
+  "name": "Elite Four Olivia",
+  "spriteUrl": "/trainers/classes/alola/olivia.png",
+  "team": [
+   {
+    "dex": 774,
+    "level": 84
+   },
+   {
+    "dex": 699,
+    "level": 84
+   },
+   {
+    "dex": 745,
+    "level": 85
+   }
+  ],
+  "role": "elite",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ]
+ },
+ {
+  "id": "07ddb1d5-0a1d-56fd-a6d6-77bc72cb886a",
+  "name": "Elite Four Acerola",
+  "spriteUrl": "/trainers/classes/alola/acerola.png",
+  "team": [
+   {
+    "dex": 778,
+    "level": 84
+   },
+   {
+    "dex": 609,
+    "level": 84
+   },
+   {
+    "dex": 770,
+    "level": 85
+   }
+  ],
+  "role": "elite",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ]
+ },
+ {
+  "id": "83c64cdc-80ea-53ea-ae73-c8518502e4bb",
+  "name": "Elite Four Kahili",
+  "spriteUrl": "/trainers/classes/alola/elite-kahili.png",
+  "team": [
+   {
+    "dex": 774,
+    "level": 84
+   },
+   {
+    "dex": 416,
+    "level": 84
+   },
+   {
+    "dex": 733,
+    "level": 85
+   }
+  ],
+  "role": "elite",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ]
+ },
+ {
+  "id": "3ea8ff08-1e15-520b-acf4-cd8bd9518149",
+  "name": "Professor Kukui",
+  "spriteUrl": "/trainers/classes/alola/champion-kukui.png",
+  "team": [
+   {
+    "dex": 10104,
+    "level": 86
+   },
+   {
+    "dex": 143,
+    "level": 86
+   },
+   {
+    "dex": 745,
+    "level": 87
+   }
+  ],
+  "role": "champion",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ]
+ },
+ {
+  "id": "bc64eb9d-d564-57ee-98c8-4ad20f242e97",
   "name": "Elite Four Hala",
   "spriteUrl": "/trainers/classes/alola/hala.png",
   "team": [
@@ -22685,7 +23676,7 @@
   ]
  },
  {
-  "id": "ce61cf16-bb8a-5941-8064-ae649ff9e79d",
+  "id": "a9076d25-bf89-59c0-8669-0b26130f0c4a",
   "name": "Elite Four Olivia",
   "spriteUrl": "/trainers/classes/alola/olivia.png",
   "team": [
@@ -22711,7 +23702,7 @@
   ]
  },
  {
-  "id": "07ddb1d5-0a1d-56fd-a6d6-77bc72cb886a",
+  "id": "4b9c423f-fe93-52da-96e0-0b78d59118a3",
   "name": "Elite Four Acerola",
   "spriteUrl": "/trainers/classes/alola/acerola.png",
   "team": [
@@ -22737,7 +23728,7 @@
   ]
  },
  {
-  "id": "83c64cdc-80ea-53ea-ae73-c8518502e4bb",
+  "id": "fdccca72-8db5-500c-b791-2d02e71470df",
   "name": "Elite Four Kahili",
   "spriteUrl": "/trainers/classes/alola/elite-kahili.png",
   "team": [
@@ -22763,7 +23754,7 @@
   ]
  },
  {
-  "id": "3ea8ff08-1e15-520b-acf4-cd8bd9518149",
+  "id": "e677605b-a3af-50cc-b2c6-71aa017cc325",
   "name": "Professor Kukui",
   "spriteUrl": "/trainers/classes/alola/champion-kukui.png",
   "team": [
@@ -22925,15 +23916,15 @@
   "team": [
    {
     "dex": 862,
-    "level": 82
+    "level": 77
    },
    {
     "dex": 904,
-    "level": 83
+    "level": 78
    },
    {
     "dex": 861,
-    "level": 84
+    "level": 79
    }
   ],
   "role": "elite",
@@ -22951,15 +23942,15 @@
   "team": [
    {
     "dex": 902,
-    "level": 84
+    "level": 79
    },
    {
     "dex": 882,
-    "level": 85
+    "level": 80
    },
    {
     "dex": 834,
-    "level": 86
+    "level": 81
    }
   ],
   "role": "elite",
@@ -22977,15 +23968,15 @@
   "team": [
    {
     "dex": 903,
-    "level": 85
+    "level": 80
    },
    {
     "dex": 760,
-    "level": 85
+    "level": 80
    },
    {
     "dex": 870,
-    "level": 86
+    "level": 81
    }
   ],
   "role": "elite",
@@ -23003,15 +23994,15 @@
   "team": [
    {
     "dex": 887,
-    "level": 86
+    "level": 81
    },
    {
     "dex": 841,
-    "level": 86
+    "level": 81
    },
    {
     "dex": 884,
-    "level": 87
+    "level": 82
    }
   ],
   "role": "elite",
@@ -23029,15 +24020,15 @@
   "team": [
    {
     "dex": 887,
-    "level": 87
+    "level": 82
    },
    {
     "dex": 866,
-    "level": 89
+    "level": 84
    },
    {
     "dex": 6,
-    "level": 90
+    "level": 85
    }
   ],
   "role": "champion",
@@ -23050,6 +24041,136 @@
  },
  {
   "id": "faf09658-47e0-5dfa-9437-14114410c2f4",
+  "name": "Marnie",
+  "spriteUrl": "/trainers/classes/galar/marnie.png",
+  "team": [
+   {
+    "dex": 862,
+    "level": 87
+   },
+   {
+    "dex": 904,
+    "level": 88
+   },
+   {
+    "dex": 861,
+    "level": 89
+   }
+  ],
+  "role": "elite",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ]
+ },
+ {
+  "id": "a9c420b0-cb96-5dca-b472-1ebeefd5baee",
+  "name": "Nessa",
+  "spriteUrl": "/trainers/classes/galar/nessa.png",
+  "team": [
+   {
+    "dex": 902,
+    "level": 89
+   },
+   {
+    "dex": 882,
+    "level": 90
+   },
+   {
+    "dex": 834,
+    "level": 91
+   }
+  ],
+  "role": "elite",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ]
+ },
+ {
+  "id": "8266e1df-d60a-515a-b687-bde5bb5046ca",
+  "name": "Bea",
+  "spriteUrl": "/trainers/classes/galar/bea.png",
+  "team": [
+   {
+    "dex": 903,
+    "level": 90
+   },
+   {
+    "dex": 760,
+    "level": 90
+   },
+   {
+    "dex": 870,
+    "level": 91
+   }
+  ],
+  "role": "elite",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ]
+ },
+ {
+  "id": "fcdc888f-c2ed-56c9-b18c-c9b6dd003e29",
+  "name": "Raihan",
+  "spriteUrl": "/trainers/classes/galar/raihan.png",
+  "team": [
+   {
+    "dex": 887,
+    "level": 91
+   },
+   {
+    "dex": 841,
+    "level": 91
+   },
+   {
+    "dex": 884,
+    "level": 92
+   }
+  ],
+  "role": "elite",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ]
+ },
+ {
+  "id": "f0514643-0b7d-5e9f-9971-62bca8c68368",
+  "name": "Champion Leon",
+  "spriteUrl": "/trainers/classes/galar/champion-leon.png",
+  "team": [
+   {
+    "dex": 887,
+    "level": 92
+   },
+   {
+    "dex": 866,
+    "level": 94
+   },
+   {
+    "dex": 6,
+    "level": 95
+   }
+  ],
+  "role": "champion",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ]
+ },
+ {
+  "id": "52f521b0-a795-59df-b126-a0d6c058744b",
   "name": "Marnie",
   "spriteUrl": "/trainers/classes/galar/marnie.png",
   "team": [
@@ -23075,7 +24196,7 @@
   ]
  },
  {
-  "id": "a9c420b0-cb96-5dca-b472-1ebeefd5baee",
+  "id": "5d7afff5-df47-5e40-95f2-ea402ea70204",
   "name": "Nessa",
   "spriteUrl": "/trainers/classes/galar/nessa.png",
   "team": [
@@ -23101,7 +24222,7 @@
   ]
  },
  {
-  "id": "8266e1df-d60a-515a-b687-bde5bb5046ca",
+  "id": "f0905e37-5e0d-5336-b7de-53b8a6612950",
   "name": "Bea",
   "spriteUrl": "/trainers/classes/galar/bea.png",
   "team": [
@@ -23127,7 +24248,7 @@
   ]
  },
  {
-  "id": "fcdc888f-c2ed-56c9-b18c-c9b6dd003e29",
+  "id": "5247ac44-5056-54ff-b6dd-ce189504d391",
   "name": "Raihan",
   "spriteUrl": "/trainers/classes/galar/raihan.png",
   "team": [
@@ -23153,7 +24274,7 @@
   ]
  },
  {
-  "id": "f0514643-0b7d-5e9f-9971-62bca8c68368",
+  "id": "824483ad-678e-5a8d-8d7a-fe936fd23c34",
   "name": "Champion Leon",
   "spriteUrl": "/trainers/classes/galar/champion-leon.png",
   "team": [
@@ -23341,15 +24462,15 @@
   "team": [
    {
     "dex": 949,
-    "level": 82
+    "level": 77
    },
    {
     "dex": 450,
-    "level": 82
+    "level": 77
    },
    {
     "dex": 980,
-    "level": 83
+    "level": 78
    }
   ],
   "role": "elite",
@@ -23367,15 +24488,15 @@
   "team": [
    {
     "dex": 1018,
-    "level": 83
+    "level": 78
    },
    {
     "dex": 983,
-    "level": 83
+    "level": 78
    },
    {
     "dex": 959,
-    "level": 84
+    "level": 79
    }
   ],
   "role": "elite",
@@ -23393,15 +24514,15 @@
   "team": [
    {
     "dex": 931,
-    "level": 84
+    "level": 79
    },
    {
     "dex": 941,
-    "level": 84
+    "level": 79
    },
    {
     "dex": 973,
-    "level": 85
+    "level": 80
    }
   ],
   "role": "elite",
@@ -23419,15 +24540,15 @@
   "team": [
    {
     "dex": 1019,
-    "level": 85
+    "level": 80
    },
    {
     "dex": 1018,
-    "level": 85
+    "level": 80
    },
    {
     "dex": 998,
-    "level": 86
+    "level": 81
    }
   ],
   "role": "elite",
@@ -23445,15 +24566,15 @@
   "team": [
    {
     "dex": 956,
-    "level": 86
+    "level": 81
    },
    {
     "dex": 983,
-    "level": 86
+    "level": 81
    },
    {
     "dex": 970,
-    "level": 87
+    "level": 82
    }
   ],
   "role": "champion",
@@ -23471,15 +24592,15 @@
   "team": [
    {
     "dex": 982,
-    "level": 90
+    "level": 85
    },
    {
     "dex": 968,
-    "level": 90
+    "level": 85
    },
    {
     "dex": 923,
-    "level": 90
+    "level": 85
    }
   ],
   "role": "champion",
@@ -23492,6 +24613,162 @@
  },
  {
   "id": "4cf384f3-8cbd-5646-97ba-e676c54decf4",
+  "name": "Elite Four Rika",
+  "spriteUrl": "/trainers/classes/paldea/elite-rika.png",
+  "team": [
+   {
+    "dex": 949,
+    "level": 87
+   },
+   {
+    "dex": 450,
+    "level": 87
+   },
+   {
+    "dex": 980,
+    "level": 88
+   }
+  ],
+  "role": "elite",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ]
+ },
+ {
+  "id": "dcc6bd13-af30-567a-8eeb-c17e4d0d5262",
+  "name": "Elite Four Poppy",
+  "spriteUrl": "/trainers/classes/paldea/elite-poppy.png",
+  "team": [
+   {
+    "dex": 1018,
+    "level": 88
+   },
+   {
+    "dex": 983,
+    "level": 88
+   },
+   {
+    "dex": 959,
+    "level": 89
+   }
+  ],
+  "role": "elite",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ]
+ },
+ {
+  "id": "5b99a243-8ece-57dc-81ea-d08d4e9e9b78",
+  "name": "Elite Four Larry",
+  "spriteUrl": "/trainers/classes/paldea/larry.png",
+  "team": [
+   {
+    "dex": 931,
+    "level": 89
+   },
+   {
+    "dex": 941,
+    "level": 89
+   },
+   {
+    "dex": 973,
+    "level": 90
+   }
+  ],
+  "role": "elite",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ]
+ },
+ {
+  "id": "96030b3d-8bd5-5ea9-8eda-ce3786518b3d",
+  "name": "Elite Four Hassel",
+  "spriteUrl": "/trainers/classes/paldea/elite-hassel.png",
+  "team": [
+   {
+    "dex": 1019,
+    "level": 90
+   },
+   {
+    "dex": 1018,
+    "level": 90
+   },
+   {
+    "dex": 998,
+    "level": 91
+   }
+  ],
+  "role": "elite",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ]
+ },
+ {
+  "id": "11fe02b9-85d2-534d-86a4-659abf4e4d71",
+  "name": "Champion Geeta",
+  "spriteUrl": "/trainers/classes/paldea/champion-geeta.png",
+  "team": [
+   {
+    "dex": 956,
+    "level": 91
+   },
+   {
+    "dex": 983,
+    "level": 91
+   },
+   {
+    "dex": 970,
+    "level": 92
+   }
+  ],
+  "role": "champion",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ]
+ },
+ {
+  "id": "a303311d-2a93-58b4-8b81-a5d1e43b0f0f",
+  "name": "Champion Nemona",
+  "spriteUrl": "/trainers/classes/paldea/nemona.png",
+  "team": [
+   {
+    "dex": 982,
+    "level": 95
+   },
+   {
+    "dex": 968,
+    "level": 95
+   },
+   {
+    "dex": 923,
+    "level": 95
+   }
+  ],
+  "role": "champion",
+  "badge": null,
+  "upgradeLevel": null,
+  "battleBackground": "default",
+  "items": [
+   "hyper-potion"
+  ]
+ },
+ {
+  "id": "903b4c14-faf2-5a8f-8692-7da415f0327c",
   "name": "Elite Four Rika",
   "spriteUrl": "/trainers/classes/paldea/elite-rika.png",
   "team": [
@@ -23517,7 +24794,7 @@
   ]
  },
  {
-  "id": "dcc6bd13-af30-567a-8eeb-c17e4d0d5262",
+  "id": "8a3494cc-6c06-5354-bf55-f98ccdbe1ee1",
   "name": "Elite Four Poppy",
   "spriteUrl": "/trainers/classes/paldea/elite-poppy.png",
   "team": [
@@ -23543,7 +24820,7 @@
   ]
  },
  {
-  "id": "5b99a243-8ece-57dc-81ea-d08d4e9e9b78",
+  "id": "6e54f883-9a2b-50be-a160-734940611b93",
   "name": "Elite Four Larry",
   "spriteUrl": "/trainers/classes/paldea/larry.png",
   "team": [
@@ -23569,7 +24846,7 @@
   ]
  },
  {
-  "id": "96030b3d-8bd5-5ea9-8eda-ce3786518b3d",
+  "id": "b72cd70f-c9a7-5b1c-9fa7-e59018f5faa0",
   "name": "Elite Four Hassel",
   "spriteUrl": "/trainers/classes/paldea/elite-hassel.png",
   "team": [
@@ -23595,7 +24872,7 @@
   ]
  },
  {
-  "id": "11fe02b9-85d2-534d-86a4-659abf4e4d71",
+  "id": "f5132648-4481-572b-9ce2-0d24134b3ccf",
   "name": "Champion Geeta",
   "spriteUrl": "/trainers/classes/paldea/champion-geeta.png",
   "team": [
@@ -23621,7 +24898,7 @@
   ]
  },
  {
-  "id": "a303311d-2a93-58b4-8b81-a5d1e43b0f0f",
+  "id": "57870aeb-b6dd-5ab1-a965-9b3122c9f4c4",
   "name": "Champion Nemona",
   "spriteUrl": "/trainers/classes/paldea/nemona.png",
   "team": [

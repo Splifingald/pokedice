@@ -141,14 +141,18 @@ Pool and fallback lists with region gates; shiny chance (30 %); repeat window (7
 
 | Tier (medal) | Levels | Gold | Foe upgrade level |
 |---|---|---|---|
-| Bronze (bronze diamond) | League I + 10, with some Pokémon swapped | ×1.5 | League + 1 |
-| Silver (silver pentagon) | League I + 25 | ×2 | League + 2 |
-| Gold (gold hexagon) | everyone Lv.100 | ×3 | max |
+| Bronze (bronze diamond) | League I + 10, with some Pokémon swapped | ×1 | League + 1 |
+| Silver (silver pentagon) | League I + 20 | ×1.5 | League + 2 |
+| Gold (gold hexagon) | League I + 30 | ×2 | League + 3 |
+| Diamond (blue circle) | everyone Lv.100 | ×3 | max |
 
-The tiers are named Bronze, Silver and Gold and drawn as their medals, with no I / II / III (user's call, 2026-10-10). The Home widget shows the current tier's medal.
+The tiers are named Bronze, Silver, Gold and Diamond and drawn as their medals, with no I / II / III (user's call,
+2026-10-10; Diamond added 2026-10-11, the levels and ₽ re-spread over four tiers). The Home widget shows the current
+tier's medal. The live database gets the four tiers from `supabase/migrations/0040_rebattle_diamond.sql`
+(`pnpm rebattle-sql`); saves keep their place (a player past the old Gold, Lv.100, now faces Diamond).
 
-- **Teams:** generated per region by a script (`scripts/rebattle-teams.ts`) into `trainers.json`. Each tier is a copy of the E4 member. **Trainers keep three Pokémon at most:** tier 1 swaps one Pokémon for another signature-type pick, tier 2 swaps another, tier 3 is three at Lv.100. The ace goes last. All of them are hand-editable in the admin team editor. Champion slot = **the rival** (`rivalOf`, per starter) where League II had one (Kanto); elsewhere the League II champion.
-- **Gauntlet:** the 5 fights back to back, no Center, items allowed. A loss → back to member 1 of that tier; ₽ already won is kept. **Each trainer pays once per tier (user's rule, 2026-10-10):** beaten again after a restart, they give no ₽. The save keeps the paid trainers per tier (`rebattle.paid`, e.g. `kanto:1:lorelei`), the ladder shows "₽ already paid", and the rules pop-up says so. The Events tab shows the 5 portraits with check marks and the tier medallions (bronze / silver / gold).
+- **Teams:** generated per region by a script (`scripts/rebattle-teams.ts`) into `trainers.json`. Each tier is a copy of the E4 member. **Trainers keep three Pokémon at most:** tier 1 swaps one Pokémon for another signature-type pick, tier 2 swaps another, tier 3 keeps tier 2's team at League I + 30, tier 4 is that team at Lv.100. The ace goes last. All of them are hand-editable in the admin team editor. Champion slot = **the rival** (`rivalOf`, per starter) where League II had one (Kanto); elsewhere the League II champion.
+- **Gauntlet:** the 5 fights back to back, no Center, items allowed. A loss → back to member 1 of that tier; ₽ already won is kept. **Each trainer pays once per tier (user's rule, 2026-10-10):** beaten again after a restart, they give no ₽. The save keeps the paid trainers per tier (`rebattle.paid`, e.g. `kanto:1:lorelei`), the ladder shows "₽ already paid", and the rules pop-up says so. The Events tab shows the 5 portraits with check marks and the tier medallions (bronze / silver / gold / diamond).
 - **Juice:** a tier medallion stamp, a "Hall of Fame"-style finale per tier, a rising-pitch walk-in for each member.
 
 ## 5. Visual Lab mockups (next step, before code)

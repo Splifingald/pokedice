@@ -478,7 +478,7 @@ export interface WheelPrize {
   odds: number
 }
 
-export const REBATTLE_TIER_IDS = ['bronze', 'silver', 'gold'] as const
+export const REBATTLE_TIER_IDS = ['bronze', 'silver', 'gold', 'diamond'] as const
 export type RebattleTierId = (typeof REBATTLE_TIER_IDS)[number]
 
 /** One tier of the Elite Rebattle: its ₽ multiplier and how far above the League's its upgrade level goes. */

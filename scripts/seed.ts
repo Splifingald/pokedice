@@ -777,7 +777,7 @@ const sqlVal = (v: unknown): string => {
 /** Rows per insert statement: small enough that `splitSeedSql` can cut the file into pasteable parts between them. */
 const ROWS_PER_INSERT = 250
 
-function upsert(table: string, cols: string[], rows: unknown[][], conflict: string[]): string {
+export function upsert(table: string, cols: string[], rows: unknown[][], conflict: string[]): string {
   if (!rows.length) return `-- ${table}: no rows\n`
   const updates = cols.filter((c) => !conflict.includes(c))
   const onConflict = updates.length

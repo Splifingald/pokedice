@@ -1,4 +1,4 @@
-// The Elite Rebattle (docs/18, docs/19 phase 3): a region's League again in three tiers, once it's won. Kanto's
+// The Elite Rebattle (docs/18, docs/19 phase 3): a region's League again in four tiers, once it's won. Kanto's
 // Champion seat is the rival, one version per starter, met as the character the player didn't pick. A tier is a
 // gauntlet; each Pokémon pays once per tier; a loss starts the tier over, healed. Victory Road II and League II are gone
 // and old saves standing there go back to their League.
@@ -24,6 +24,7 @@ import {
   rebattleOnHome,
   rebattleOpen,
   rebattleProgress,
+  rebattleTiers,
   rebattleUpgradeLevel,
   startRegion,
   type SaveData,
@@ -113,7 +114,8 @@ describe('the gauntlet', () => {
     expect(enc).toMatchObject({ kind: 'gym', role: 'elite', index: 1, total: 5, badge: null, rebattle: { regionId: 'kanto', tier: 0 } })
     const base = KANTO_LEAGUE.enemyUpgradeLevel ?? data.config.enemyUpgradeLevel
     expect(rebattleUpgradeLevel(data, 'kanto', 0)).toBe(Math.min(10, base + 1))
-    expect(rebattleUpgradeLevel(data, 'kanto', 2)).toBe(10)
+    expect(rebattleUpgradeLevel(data, 'kanto', 2)).toBe(Math.min(10, base + 3))
+    expect(rebattleUpgradeLevel(data, 'kanto', 3)).toBe(10)
   })
 
   it('pays each Pokémon once per tier, at the tier’s multiplier', () => {
@@ -167,7 +169,7 @@ describe('the gauntlet', () => {
 
   it('leaves Home once every tier is cleared', () => {
     let s = champion(save(1))
-    for (let tier = 0; tier < 3; tier++) for (let i = 0; i < 5; i++) s = beatTrainer(s).save
+    for (let tier = 0; tier < rebattleTiers(data).length; tier++) for (let i = 0; i < 5; i++) s = beatTrainer(s).save
     expect(rebattleComplete(s, data, 'kanto')).toBe(true)
     expect(rebattleOnHome(s, data)).toBe(false)
   })

@@ -1,8 +1,8 @@
-// The Elite Rebattle (docs/18, docs/19 §5): a region's Elite Four and Champion again, in three tiers (Bronze, Silver,
-// Gold), once its League is won. A tier is a gauntlet: every member in a row, no Pokémon Center, items allowed; a loss
-// sends the player back to the first member with the team healed. Each Pokémon a member sends out pays once per tier,
-// at the tier's ₽ multiplier: beaten again after a restart, it pays nothing. Only the region being played can be
-// fought. Victory Road II and League II, the endgame lap this replaces, are gone (LEAGUE_II below moves old saves).
+// The Elite Rebattle (docs/18, docs/19 §5): a region's Elite Four and Champion again, in four tiers (Bronze, Silver,
+// Gold, Diamond), once its League is won. A tier is a gauntlet: every member in a row, no Pokémon Center, items
+// allowed; a loss sends the player back to the first member with the team healed. Each Pokémon a member sends out
+// pays once per tier, at the tier's ₽ multiplier: beaten again after a restart, it pays nothing. Only the region
+// being played can be fought. Victory Road II and League II, the endgame lap this replaces, are gone (LEAGUE_II below moves old saves).
 import { trainerGoldFor } from './economy'
 import type { Encounter } from './encounters'
 import { areaProgressAnywhere } from './events'
@@ -67,7 +67,7 @@ export function migrateLeagueII(save: SaveData): SaveData {
   return live === save && parked === save.parked ? save : { ...live, parked }
 }
 
-/** The tiers, from the config (Bronze, Silver, Gold by default). */
+/** The tiers, from the config (Bronze, Silver, Gold, Diamond by default). */
 export const rebattleTiers = (data: GameData): RebattleTier[] => data.config.events.rebattle.tiers
 
 /** A region's League area (the rebattle is fought there: its picture, its scene). */
@@ -95,7 +95,7 @@ export function rebattleProgress(save: SaveData, regionId: string): RebattleProg
   return save.events?.rebattle?.[regionId] ?? { done: 0, step: 0, paid: [] }
 }
 
-/** The tier being fought: the first not cleared yet, or Gold again once every tier is. */
+/** The tier being fought: the first not cleared yet, or the last one again once every tier is. */
 export function currentTier(save: SaveData, data: GameData, regionId: string): number {
   return Math.min(rebattleProgress(save, regionId).done, rebattleTiers(data).length - 1)
 }
@@ -211,7 +211,7 @@ export function applyRebattleKO(
     step += 1
     if (step >= total) {
       step = 0
-      // Replaying Gold after every tier is cleared doesn't count past it.
+      // Replaying the last tier after every tier is cleared doesn't count past it.
       if (ko.tier === done) done += 1
       events.push({ kind: 'rebattle_cleared', regionId: ko.regionId, tier: ko.tier })
     }

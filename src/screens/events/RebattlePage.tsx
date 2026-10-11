@@ -1,5 +1,5 @@
-// The Elite Rebattle's page (docs/18, the Visual Lab's mockup): the region being played (its rebattle), the three tiers as
-// medals (a bronze diamond, a silver pentagon, a gold hexagon), the gauntlet's ladder with what each trainer still pays,
+// The Elite Rebattle's page (docs/18, the Visual Lab's mockup): the region being played (its rebattle), the four tiers as
+// medals (a bronze diamond, a silver pentagon, a gold hexagon, a blue circle for Diamond), the gauntlet's ladder with what each trainer still pays,
 // and START / CONTINUE. The fights themselves are League battles on the usual screens (/area); a cleared tier comes
 // back here to its medal card.
 import { useEffect } from 'react'
@@ -31,14 +31,16 @@ import { clearRebattleRun, startRebattle, useRebattleMedal } from '@/store/rebat
 import { cx } from '@/theme/util'
 import { EventInfo, EventPicture } from './shared'
 
-/** A tier's medal: Bronze a diamond, Silver a pentagon, Gold a hexagon (never I, II, III). */
+/** A tier's medal: Bronze a diamond, Silver a pentagon, Gold a hexagon, Diamond a blue circle (never I, II, III). */
 export function Medal({ tier, size = 'md', className }: { tier: number; size?: 'sm' | 'md' | 'big'; className?: string }) {
-  return <span className={cx('ev-medal', `m${Math.min(2, tier)}`, size !== 'md' && size, className)} aria-hidden />
+  return <span className={cx('ev-medal', `m${Math.min(3, Math.max(0, tier))}`, size !== 'md' && size, className)} aria-hidden />
 }
 
 /** A tier's name in the player's language ("Bronze"). */
-export const tierName = (t: (k: string) => string, data: GameData, tier: number) =>
-  t(`ui.events.rebattle.tier.${rebattleTiers(data)[tier]?.id ?? 'gold'}`)
+export const tierName = (t: (k: string) => string, data: GameData, tier: number) => {
+  const tiers = rebattleTiers(data)
+  return t(`ui.events.rebattle.tier.${(tiers[tier] ?? tiers[tiers.length - 1])?.id ?? 'diamond'}`)
+}
 
 /** The level span of a tier's trainers, for its medal ("Lv.64–73"). */
 function tierLevels(save: SaveData, data: GameData, regionId: string, tier: number) {
@@ -73,7 +75,7 @@ export function RebattlePage() {
         <div className="flex items-center gap-2.5">
           <span className="flex min-h-[36px] shrink-0 items-center gap-1.5 bg-gold px-2.5 text-[18px] text-ink shadow-ring">
             {regionName(live)}
-            {complete && <Medal tier={2} size="sm" />}
+            {complete && <Medal tier={tiers.length - 1} size="sm" />}
           </span>
           <p className="m-0 min-w-0 font-pixel-sm text-[15px] leading-[1.15] text-muted">{t('ui.events.rebattle.thisRegion')}</p>
         </div>
@@ -82,7 +84,8 @@ export function RebattlePage() {
         <p className="copy m-0 bg-well p-3 text-[18px] shadow-ring-line">{t('ui.events.rebattle.notHere', { region: regionName(live) })}</p>
       ) : (
         <>
-          <ol className="m-0 grid list-none grid-cols-3 gap-1.5 p-0">
+          {/* Four medals: two by two on a phone, in one row from 480px. */}
+          <ol className="m-0 grid list-none grid-cols-2 gap-1.5 p-0 min-[480px]:grid-cols-4">
             {tiers.map((x, i) => {
               const st = i < prog.done ? 'done' : i === tier && !complete ? 'now' : 'locked'
               const lv = tierLevels(save, data, live, i)

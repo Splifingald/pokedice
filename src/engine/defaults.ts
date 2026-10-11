@@ -246,11 +246,12 @@ export const DEFAULT_CONFIG: GameConfig = {
       unlockAreaId: null,
       banner: 'champion',
       rules: ['rebattle.tiers', 'rebattle.gauntlet', 'rebattle.gold'],
-      // League I levels +10 / +25 / Lv.100 (the trainers' teams, scripts/rebattle-teams.ts); ₽ and upgrades here.
+      // League I levels +10 / +20 / +30 / Lv.100 (the trainers' teams, scripts/rebattle-teams.ts); ₽ and upgrades here.
       tiers: [
-        { id: 'bronze', gold: 1.5, upgradeDelta: 1 },
-        { id: 'silver', gold: 2, upgradeDelta: 2 },
-        { id: 'gold', gold: 3, upgradeDelta: 'max' },
+        { id: 'bronze', gold: 1, upgradeDelta: 1 },
+        { id: 'silver', gold: 1.5, upgradeDelta: 2 },
+        { id: 'gold', gold: 2, upgradeDelta: 3 },
+        { id: 'diamond', gold: 3, upgradeDelta: 'max' },
       ],
     },
   },

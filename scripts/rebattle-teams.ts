@@ -1,11 +1,12 @@
 /**
  * pnpm rebattle-teams — the Elite Rebattle's trainers (docs/18, docs/19 §5.1).
  *
- * For every region with a league, its League I Elite Four and Champion come back in three tiers, three Pokémon each,
+ * For every region with a league, its League I Elite Four and Champion come back in four tiers, three Pokémon each,
  * the ace last:
  * - Bronze: their League I levels + 10, one Pokémon (not the ace) swapped for another of the member's type;
- * - Silver: + 25, a second one swapped;
- * - Gold: Silver's team, every Pokémon Lv.100.
+ * - Silver: + 20, a second one swapped;
+ * - Gold: + 30, Silver's team;
+ * - Diamond: Silver's team, every Pokémon Lv.100.
  * Kanto's Champion seat is the rival, one version per starter (`rivalOf`), as in the games.
  *
  * Writes src/data/trainers.json (the tier trainers, upserted under stable ids, so a re-run updates the same rows) and
@@ -23,14 +24,15 @@ const DATA = path.join(ROOT, 'src', 'data')
 const readJson = async <T>(f: string): Promise<T> => JSON.parse(await readFile(path.join(DATA, f), 'utf8')) as T
 const writeJson = (f: string, v: unknown) => writeFile(path.join(DATA, f), `${JSON.stringify(v, null, 1)}\n`)
 
-export const REBATTLE_TIERS = ['bronze', 'silver', 'gold'] as const
+export const REBATTLE_TIERS = ['bronze', 'silver', 'gold', 'diamond'] as const
 type TierId = (typeof REBATTLE_TIERS)[number]
 
 /** Each tier's levels (added to League I's, or a flat level), swaps, and the potions its trainers carry (a Hyper Potion each, like every League trainer). */
 const TIER: Record<TierId, { add?: number; level?: number; swaps: number; potions: number }> = {
   bronze: { add: 10, swaps: 1, potions: 1 },
-  silver: { add: 25, swaps: 2, potions: 1 },
-  gold: { level: 100, swaps: 2, potions: 1 },
+  silver: { add: 20, swaps: 2, potions: 1 },
+  gold: { add: 30, swaps: 2, potions: 1 },
+  diamond: { level: 100, swaps: 2, potions: 1 },
 }
 
 /**

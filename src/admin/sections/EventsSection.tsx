@@ -289,7 +289,7 @@ function RebattleBox({ tiers, set }: { tiers: RebattleTier[]; set: (tiers: Rebat
   return (
     <Box
       title="Elite Rebattle — tiers and lineups" icon="trophy"
-      hint="A region's League again in three tiers, once its League is won. Each tier is a gauntlet in this order; a loss starts it over. Each Pokémon pays once per tier (a League trainer's ₽ × the tier's multiplier). Teams, levels and potions are the trainers' own (Trainers section). Kanto's Champion seat lists one rival per starter: the player meets theirs."
+      hint="A region's League again in four tiers (Bronze, Silver, Gold, Diamond), once its League is won. Each tier is a gauntlet in this order; a loss starts it over. Each Pokémon pays once per tier (a League trainer's ₽ × the tier's multiplier). Teams, levels and potions are the trainers' own (Trainers section). Kanto's Champion seat lists one rival per starter: the player meets theirs."
     >
       <table className="w-full text-lg">
         <thead>
@@ -329,7 +329,7 @@ function RebattleBox({ tiers, set }: { tiers: RebattleTier[]; set: (tiers: Rebat
           <summary className="cursor-pointer text-xl">
             {r.name} · {REBATTLE_TIER_IDS.map((tier) => (lineups[r.id]?.[tier] ?? []).length).join(' / ')} trainers
           </summary>
-          <div className="mt-2 grid gap-3 lg:grid-cols-3">
+          <div className="mt-2 grid gap-3 lg:grid-cols-4">
             {REBATTLE_TIER_IDS.map((tier) => {
               const ids = lineups[r.id]?.[tier] ?? []
               return (
