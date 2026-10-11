@@ -1,22 +1,28 @@
 # Extreme mode — plan (for validation)
 
-Status: **draft, awaiting the user's go-ahead.** Branch `feature/version_2`. Nothing is built yet: this page and the
-mockups (a design canvas, https://claude.ai/artifact/Vq8m9ru7sxYC3HEr27RgRz) are the whole deliverable for now.
+Status: **questions answered (2026-10-11), awaiting the go-ahead to build.** Branch `feature/version_2`. Nothing is
+built yet: this page and the mockups (a design canvas, https://claude.ai/artifact/Vq8m9ru7sxYC3HEr27RgRz) are the
+whole deliverable for now.
 
-## 0. The ask, and what this plan assumes
+## 0. The ask, and the decisions
 
 > A secondary save, **Extreme mode**, open once the player has finished the **second league**. A rules pop-up. Completely
 > separate from the normal save: Extreme players can't interact with the others and vice versa, **like a different
 > server**. **No Pokémon Centers.** A **K.O. Pokémon takes 12 hours to come back to 1 HP.** Any Pokémon **heals 10 % HP
 > per hour while the player is out of the app**, and only then. These are **admin parameters**.
 
-| Topic | Assumed (each one is a question in §9) |
+Asked in the Q&A of 2026-10-11 (§9), unless marked *plan*:
+
+| Topic | Decision |
 |---|---|
-| "Second league" | The league of the **second region in order** (Johto by default). League II no longer exists (0036). An admin setting picks the region. |
-| Starting an Extreme save | A **fresh new game**: the lab and a partner, Kanto, ₽ and bag at their new-game values. Only the trainer's look and name are offered again (editable). Nothing carries over. |
-| Different server | **Everything online is per world**: save, trainer card, friend ID and friend list, leaderboard, Versus, Day Care visitors, special events, raids. |
-| Items | Potions, Revives and Max Revives **work as usual** (the way out of a team that's all K.O.). One admin switch turns them off. |
-| Sign-in | **Not required**, as in the main game. The timers run on the server's clock, which guests already get (`serverTime.ts`). |
+| "Second league" | The **Johto League** (the second region's). League II no longer exists (0036). An admin setting picks the region. |
+| Starting an Extreme save | A **fresh new game in Kanto**: the lab and a partner, ₽ and bag at their new-game values. Only the trainer's look and name are offered again (editable). Nothing carries over. |
+| Friends | **Same friends, play apart.** One friend ID and one friend list for both saves. Whatever you see of a friend, or do with one, uses their save in the world you're playing: their card, team, Day Care, Versus team, raid team. A friend without an Extreme save shows "Not in Extreme mode" there. |
+| Everything else online | **Per world**: save, trainer card, leaderboard, Versus, Day Care visitors, special events, raids. |
+| Special events | **On, with their own progress**: each save has its own daily spin, raid and Rebattle tiers; prizes land in that save. A player with both saves gets one spin a day in each. |
+| Items | **Potions and Revives work as usual** (the way out of a team that's all K.O.). One admin switch turns them off. |
+| Leaving mid-fight | **Heal after the fight**: the fight is kept as it was; the time away still counts and heals once it ends. |
+| Sign-in | *Plan:* **not required**, as in the main game. The timers run on the server's clock, which guests already get (`serverTime.ts`). |
 
 ## 1. The rules
 
@@ -70,9 +76,13 @@ mockups (a design canvas, https://claude.ai/artifact/Vq8m9ru7sxYC3HEr27RgRz) are
 
 - Two saves on the device and in the cloud: **Main** and **Extreme**. One is active at a time; switching reloads the
   page (the stores hold one save's friends, events and Versus in memory, as the delete button already handles).
-- Online, every player-facing table is split by **realm** (`'main' | 'extreme'`), so an Extreme player only ever
-  meets Extreme players: their own friend ID and list, their own leaderboard (all four boards), Versus opponents,
-  Day Care visitors, raid helpers and gifts, the Fortune Wheel's daily spin.
+- Online, every player-facing table but the friend list is split by **realm** (`'main' | 'extreme'`), so an Extreme
+  player only ever meets Extreme saves: their own leaderboard (all four boards), Versus opponents, Day Care visitors,
+  raid helpers and gifts, the Fortune Wheel's daily spin.
+- **Friends are shared**: the same friend ID and list in both worlds, added from either. In Extreme, a friend's card,
+  Day Care, Versus and raid team are their Extreme ones; a friend who has no Extreme save is listed greyed, "Not in
+  Extreme mode", and can't be visited, fought or brought to a raid. Their main save is never shown in Extreme, and the
+  other way round.
 - The two saves never exchange anything: no Pokémon, items, ₽, Pokédex or badges either way.
 
 ## 2. Admin parameters
@@ -124,14 +134,18 @@ Dev tools (admins, DevToolsSection): **Unlock Extreme**, **Switch save**, **Skip
 ### 3.3 Online (migration `0038_extreme_realm.sql`)
 
 - `realm text not null default 'main' check (realm in ('main','extreme'))` on `saves`, `player_cards`,
-  `player_card_regions`, `friend_codes`, `friendships`, `versus_teams`, `versus_battles`, `event_state`,
-  `raid_teams`, `raid_gifts`. Primary keys gain `realm` (`saves (user_id, realm)`, …). Existing rows are `main`.
-- Every function takes `p_realm text default 'main'`: `friend_*`, `leaderboard()`, `versus_*`, `wheel_spin`,
-  `raid_*`, `friend_day_cares`, and the `saves_card` trigger writes the card of the save's own realm. The default
-  keeps clients that haven't updated working on the main world.
+  `player_card_regions`, `versus_teams`, `versus_battles`, `event_state`, `raid_teams`, `raid_gifts`. Primary keys
+  gain `realm` (`saves (user_id, realm)`, …). Existing rows are `main`.
+- `friend_codes`, `friendships` and `friend_attempts` stay as they are: friends are the same in both worlds.
+- Every function that shows or touches a friend's game, or your own, takes `p_realm text default 'main'`:
+  `friend_list` / `friend_profile` (the cards of that realm, and whether the friend has one), `friend_day_cares`,
+  `leaderboard()`, `versus_*`, `wheel_spin`, `raid_*`; the `saves_card` trigger writes the card of the save's own
+  realm. `friend_code`, `friend_add`, `friend_remove` don't need it. The default keeps clients that haven't updated
+  working on the main world.
 - `delete_my_data()` (0037) deletes both realms; a new `delete_my_data(p_realm)` deletes one (§5).
 - Analytics: the daily ping carries the realm in its snapshot; the admin's player view shows both saves.
-- Tested on PGlite like 0033–0037: two players, one in each realm, can't see each other anywhere.
+- Tested on PGlite like 0033–0037: two friends, one with only a main save, the other with both, see each other only in
+  the world they share; no board, Versus list or raid ever mixes the two.
 
 ## 4. The rules pop-up
 
@@ -139,8 +153,8 @@ Dev tools (admins, DevToolsSection): **Unlock Extreme**, **Switch save**, **Skip
 
 - **Banner**: a night picture (Mt. Silver's art) with a crimson EXTREME plate; a NOW OPEN tag on the unlock.
 - **Four rows**, numbers from `extremeRules(data)`:
-  1. **A world of its own** — "A new save with its own friends, leaderboard, Versus and events. Your main save is kept
-     as it is."
+  1. **A world of its own** — "A new save with its own leaderboard, Versus and events. Your friends come along, but you
+     only meet their Extreme saves. Your main save stays as it is."
   2. **No Pokémon Centers** — "Nothing heals you on the road, and losing a round doesn't either."
   3. **K.O. lasts 12 h** — "A Pokémon that faints comes back at 1 HP 12 hours later. Revives still work."
   4. **Rest while away** — "Your Pokémon heal 10 % an hour while you're out of the game. Never while you play."
@@ -158,6 +172,7 @@ Dev tools (admins, DevToolsSection): **Unlock Extreme**, **Switch save**, **Skip
 | **Team / Box / sheets** | K.O. Pokémon: grey, a moon icon and the countdown; the sheet says "Back at 1 HP in 11 h 42 m" and offers Revive. Team pips show the same. |
 | **Battle** | No change in the fight. After a wipe: "Your team is out. No Center in Extreme mode: they rest 12 h." |
 | **While you were away** | A card on return: time away, HP healed per Pokémon (a green +n bar), who's back from K.O. |
+| **Friends** | The same list in both worlds. In Extreme, each row shows the friend's Extreme trainer and team, or greys out with "Not in Extreme mode". |
 | **Settings** | An Extreme section: the rules (INFO), **Delete my Extreme save** (two pop-ups, like Delete all my data; deletes only this world). Delete all my data says it deletes both saves. |
 | **Admin → Config** | The Extreme mode panel (§2). |
 
@@ -184,6 +199,9 @@ Each step ships on its own behind `extreme.enabled = false` until step 4 is in.
   working while it rolls out, and the PGlite tests check each function both ways.
 - **Two tabs**, one per world: the slot is per device, so a second tab that loads the other world would write the
   wrong slot. The slot is read once per page load, and a tab that sees `pokedice.slot` change reloads.
+- **Shared friends, separate games**: every friend screen has to ask for the right realm, or a main-save card would
+  leak into Extreme. One helper in `src/lib/friends.ts` adds the active realm to every call, and the e2e checks a
+  friend with only a main save is greyed in Extreme.
 - **Away healing and sync**: the save with `awayFrom` that wins the sync is the one that heals; the heal clears
   `awayFrom` before the save is pushed, so it can't be applied twice on two devices.
 
@@ -192,12 +210,13 @@ Each step ships on its own behind `extreme.enabled = false` until step 4 is in.
 Leaderboards across both worlds, moving Pokémon between saves, an Extreme-only Pokédex or areas, Extreme rewards in
 the main game.
 
-## 9. Questions before building
+## 9. Questions asked (2026-10-11)
 
-1. **"Second league"** = Johto's league (the second region's)? Or another one?
-2. **Friends**: a separate friend ID and list in Extreme (a true second server, as assumed), or the same friends
-   with only the interactions kept apart?
-3. **Special events** in Extreme: on, with their own daily spin and raid (a player with both saves gets two), or off?
-4. **Items**: Potions and Revives allowed in Extreme (assumed), or Revives only, or none?
-5. **The Extreme save's start**: a fresh new game in Kanto with nothing carried over (assumed)?
-6. **Leaving the app mid-fight**: heal after the fight (assumed), or does leaving forfeit the fight?
+| Question | Answer |
+|---|---|
+| Which league opens Extreme mode? | Johto League |
+| How separate are friends? | Same friends, play apart |
+| Special events in Extreme? | On, with their own progress |
+| Healing items in Extreme? | Potions and Revives |
+| How does an Extreme save start? | A fresh game in Kanto |
+| Leaving the app mid-fight? | Heal after the fight |
