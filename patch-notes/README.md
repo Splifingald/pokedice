@@ -2,7 +2,7 @@
 
 Each file here is one update's notes. When the push that adds a note reaches `main`, GitHub Actions waits until the
 live site serves that push, then posts the note to the Discord server's #patch-notes and pings Patch Notes Pings
-(`.github/workflows/discord-patch-notes.yml`, docs/22-DISCORD-SERVER.md).
+(`.github/workflows/discord-patch-notes.yml`, docs/23-DISCORD-SERVER.md).
 
 - **Name:** `YYYY-MM-DD-short-name.md`, e.g. `2026-10-20-version-2.md`. No spaces. The date is the release day.
 - **First line:** `# Title`, the post's title, e.g. `# Version 2: raids, events and the Fortune Wheel`.

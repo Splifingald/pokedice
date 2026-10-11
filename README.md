@@ -17,7 +17,7 @@ The design lives in [`docs/`](docs): [game spec](docs/01-GAME-SPEC.md) · [data 
 [Gen 6–9 sprite sources](docs/10-GEN6-9-SPRITES.md) · [forms & Mega Evolution](docs/12-FORMS-AND-MEGA.md) ·
 [Showdown sprites](docs/13-SHOWDOWN-SPRITES.md) · [the Daybreak port](docs/14-DAYBREAK-PORT.md) ·
 [**UI guidelines**](docs/15-UI-GUIDELINES.md) (the rules every screen follows) · [friends](docs/16-FRIENDS-PLAN.md) ·
-[Discord sign-in setup](docs/17-DISCORD-SIGN-IN.md) · [the Discord server](docs/22-DISCORD-SERVER.md) (`pnpm discord`,
+[Discord sign-in setup](docs/17-DISCORD-SIGN-IN.md) · [the Discord server](docs/23-DISCORD-SERVER.md) (`pnpm discord`,
 the daily raid and patch-notes posts).
 
 ## Quick start

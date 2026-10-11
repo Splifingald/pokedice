@@ -1,4 +1,4 @@
-# Posts the day's raid to the Discord server's #daily-raid (docs/22-DISCORD-SERVER.md). The raid comes from the game's
+# Posts the day's raid to the Discord server's #daily-raid (docs/23-DISCORD-SERVER.md). The raid comes from the game's
 # own calendar over the live content, so the post names the raid players get. Nothing is posted while Admin → Events
 # has raids Off or On for admin, nor before the DISCORD_RAID_WEBHOOK secret exists.
 name: Discord daily raid

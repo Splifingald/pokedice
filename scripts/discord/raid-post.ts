@@ -136,7 +136,7 @@ async function main() {
   }
   const webhook = env.DISCORD_RAID_WEBHOOK?.trim()
   if (!webhook) {
-    console.log('No DISCORD_RAID_WEBHOOK: nothing posted. `pnpm discord --apply` writes it to .env.discord (docs/22).')
+    console.log('No DISCORD_RAID_WEBHOOK: nothing posted. `pnpm discord --apply` writes it to .env.discord (docs/23).')
     return
   }
   await postWebhook(webhook, message)

@@ -1,5 +1,5 @@
 # Posts each patch note a push to main adds (patch-notes/*.md) to the Discord server's #patch-notes, once the live site
-# serves that push (docs/22-DISCORD-SERVER.md). Run it by hand to post a note again.
+# serves that push (docs/23-DISCORD-SERVER.md). Run it by hand to post a note again.
 name: Discord patch notes
 
 on:

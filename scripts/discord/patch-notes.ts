@@ -138,7 +138,7 @@ async function main() {
   const site = env.POKEDICE_SITE?.trim() || SITE
   const webhook = env.DISCORD_PATCH_WEBHOOK?.trim()
   if (!dry && !webhook) {
-    console.log('No DISCORD_PATCH_WEBHOOK: nothing posted. `pnpm discord --apply` writes it to .env.discord (docs/22).')
+    console.log('No DISCORD_PATCH_WEBHOOK: nothing posted. `pnpm discord --apply` writes it to .env.discord (docs/23).')
     return
   }
   if (wait && !dry) {

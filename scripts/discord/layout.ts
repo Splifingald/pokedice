@@ -1,4 +1,4 @@
-// The Pokédice Discord server as it should be (docs/22-DISCORD-SERVER.md): roles, categories, channels and their
+// The Pokédice Discord server as it should be (docs/23-DISCORD-SERVER.md): roles, categories, channels and their
 // permissions, the server's safety settings, AutoMod, the Channels & Roles questions, the welcome and rules posts, and
 // the webhooks the daily raid and the patch notes post through. `pnpm discord` compares the live server with this
 // and lists the differences; `pnpm discord --apply` makes them. Edit this file to change the server, then run both.

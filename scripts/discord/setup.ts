@@ -4,7 +4,7 @@
  * pnpm discord --apply             — make those changes, then check the server matches.
  * --archive-unmanaged              — also move the channels the layout doesn't know into a read-only Archive category.
  *
- * Needs DISCORD_BOT_TOKEN and DISCORD_GUILD_ID in .env.discord (docs/22-DISCORD-SERVER.md). Each run keeps a copy of
+ * Needs DISCORD_BOT_TOKEN and DISCORD_GUILD_ID in .env.discord (docs/23-DISCORD-SERVER.md). Each run keeps a copy of
  * the server as it found it in scripts/.cache/discord/, and --apply writes the webhook URLs and ping role ids the
  * posters need back into .env.discord. Nothing is ever deleted.
  */
@@ -97,7 +97,7 @@ async function main() {
   const token = env.DISCORD_BOT_TOKEN?.trim()
   const guildId = env.DISCORD_GUILD_ID?.trim()
   if (!token || !guildId) {
-    console.error('Put DISCORD_BOT_TOKEN and DISCORD_GUILD_ID in .env.discord first (docs/22-DISCORD-SERVER.md, steps 1 and 2).')
+    console.error('Put DISCORD_BOT_TOKEN and DISCORD_GUILD_ID in .env.discord first (docs/23-DISCORD-SERVER.md, steps 1 and 2).')
     process.exit(1)
   }
   const api = discordClient(token)

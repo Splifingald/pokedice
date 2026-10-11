@@ -1,4 +1,4 @@
-// What the server setup would change (docs/22): the live server (a Snapshot) against the layout (layout.ts), phase by
+// What the server setup would change (docs/23): the live server (a Snapshot) against the layout (layout.ts), phase by
 // phase. Pure: every phase reads the snapshot and returns the calls to make. Each call carries its effect on the
 // snapshot, so the next phase sees the server as it will be: after the real call when applying, after a pretend one
 // when only planning. Running the phases again on the result finds nothing left to do (tests/discord.test.ts).
@@ -915,12 +915,12 @@ export function blockers(snap: Snapshot): string[] {
   if (!snap.guild.features.includes('COMMUNITY'))
     out.push(
       'Community is off. Forums, announcement channels and Channels & Roles need it: Server Settings → Enable Community ' +
-        '(docs/22, step 3). Let Discord create its #rules and #moderator-only channels; the setup adopts them.',
+        '(docs/23, step 3). Let Discord create its #rules and #moderator-only channels; the setup adopts them.',
     )
   const botPerms = snap.roles
     .filter((r) => r.id === g(snap) || snap.botRoles.includes(r.id))
     .reduce((acc, r) => acc | bigintOf(r.permissions), 0n)
   if (!(botPerms & (1n << 3n)))
-    out.push("The bot isn't an Administrator. Invite it with the link in docs/22 (step 2), or give its role Administrator.")
+    out.push("The bot isn't an Administrator. Invite it with the link in docs/23 (step 2), or give its role Administrator.")
   return out
 }

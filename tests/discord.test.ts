@@ -1,4 +1,4 @@
-// The Discord tools (docs/22): the server setup's plan, the daily raid post and the patch notes.
+// The Discord tools (docs/23): the server setup's plan, the daily raid post and the patch notes.
 import { describe, expect, it } from 'vitest'
 import type { DChannel, DRole } from '../scripts/discord/api'
 import { LAYOUT } from '../scripts/discord/layout'
