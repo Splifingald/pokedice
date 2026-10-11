@@ -134,9 +134,20 @@ export function decideSync(local: SaveData | null, cloud: SaveData | null): Sync
   return cloudNewer ? 'cloud' : 'local'
 }
 
+/**
+ * JSON with every object's keys sorted. The cloud copy comes back from Postgres (jsonb) with its keys reordered, so
+ * plain JSON.stringify would call a save that only went to the cloud and back a different save — and push it again.
+ */
+const canonical = (v: unknown) =>
+  JSON.stringify(v, (_k, x: unknown) =>
+    x && typeof x === 'object' && !Array.isArray(x)
+      ? Object.fromEntries(Object.keys(x).sort().map((k) => [k, (x as Record<string, unknown>)[k]]))
+      : x,
+  )
+
 /** Same game state, ignoring bookkeeping (timestamps, settings; `lastRegenTick` from saves made before regen was removed). */
 export function sameSave(a: SaveData, b: SaveData): boolean {
-  const strip = (s: SaveData) => JSON.stringify({ ...s, updatedAt: 0, lastRegenTick: 0, settings: null })
+  const strip = (s: SaveData) => canonical({ ...s, updatedAt: 0, lastRegenTick: 0, settings: null })
   return strip(a) === strip(b)
 }
 
@@ -145,5 +156,5 @@ export function sameSave(a: SaveData, b: SaveData): boolean {
  * still reaches the cloud. Two saves with the same key, and the second push would change nothing.
  */
 export function pushKey(s: SaveData): string {
-  return JSON.stringify({ ...s, updatedAt: 0, lastRegenTick: 0 })
+  return canonical({ ...s, updatedAt: 0, lastRegenTick: 0 })
 }
