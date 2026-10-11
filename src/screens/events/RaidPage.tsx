@@ -15,7 +15,7 @@ import { pushToast, useGame } from '@/store/game'
 import { useTodayRaid } from '@/store/raid'
 import { startRaid, useRaidGroup } from '@/store/raidBattle'
 import { RaidGroupSection, RaidTeamSection } from './RaidSetup'
-import { EventInfo, raidDate } from './shared'
+import { EventInfo, raidDate, raidDateParts } from './shared'
 import { cx } from '@/theme/util'
 
 /** The raid's area picture, cut like a battle's (its middle 240 × 160, the horizon halfway down). */
@@ -153,32 +153,63 @@ function LockNotice({ raid }: { raid: TodayRaid }) {
   )
 }
 
-/** The raids of the next days: the same for everyone, to plan for (balls, team, friends). */
-function ComingUp({ day }: { day: string }) {
+/** The calendar button under Info: the next two weeks of raids (today first) in a pop-up, under a "may change" note. */
+function RaidCalendar({ today, day }: { today: TodayRaid; day: string }) {
   const { t } = useT()
   const data = useGame((s) => s.data)
-  const next = upcomingRaids(data, day, 6)
+  const [open, setOpen] = useState(false)
+  const days = open ? [{ day, raid: today }, ...upcomingRaids(data, day, 13)] : []
   return (
-    <section aria-labelledby="raid-next-h" className="grid gap-1.5">
-      <h2 id="raid-next-h" className="m-0 text-[22px] font-normal leading-none">
-        {t('ui.raid.comingUp')}
-      </h2>
-      <ol className="m-0 grid list-none grid-cols-3 gap-1.5 p-0 sm:grid-cols-6">
-        {next.map(({ day: d, raid: r }) => {
-          const name = data.species[r.dex]?.name ?? ''
-          return (
-            <li key={d} className="grid justify-items-center gap-0.5 bg-paper px-1 pb-1.5 pt-1 text-center shadow-ring">
-              <small className="font-pixel-sm text-[13px] leading-none text-muted">{raidDate(d)}</small>
-              <SpriteImg dex={r.dex} size={48} shiny={r.shiny} alt="" />
-              <span className="flex max-w-full items-center gap-0.5 text-[15px] leading-none">
-                {r.shiny && <PixelIcon name="star" size={10} title={t('ui.mon.shiny')} className="shrink-0" />}
-                <span className="truncate">{name}</span>
-              </span>
-            </li>
-          )
-        })}
-      </ol>
-    </section>
+    <>
+      <PixelButton size="lg" className="w-full" onClick={() => setOpen(true)} aria-label={t('ui.raid.calendarLabel')}>
+        <PixelIcon name="calendar" size={22} />
+        {t('ui.raid.calendar')}
+      </PixelButton>
+      <Modal open={open} onClose={() => setOpen(false)} title={t('ui.raid.calendarTitle')} className="max-w-md">
+        <div className="grid gap-3">
+          <p role="note" className="m-0 flex items-start gap-2 bg-gold-pale p-2.5 font-pixel-sm text-[15px] leading-tight text-ink shadow-[inset_0_0_0_2px_#d99a1e]">
+            <PixelIcon name="warning" size={18} className="mt-px" />
+            {t('ui.raid.calendarNote')}
+          </p>
+          <ol className="m-0 grid list-none gap-1.5 p-0">
+            {days.map(({ day: d, raid: r }, i) => {
+              const date = raidDateParts(d)
+              return (
+                <li
+                  key={d}
+                  className={cx('flex min-h-[64px] items-center gap-2.5 bg-paper p-1.5 pr-2.5', i === 0 ? 'shadow-card-gold' : 'shadow-ring-line')}
+                  aria-current={i === 0 ? 'date' : undefined}
+                >
+                  <span className="sr-only">{raidDate(d)}</span>
+                  {/* A calendar page: the weekday on its red strip, the day, the month. */}
+                  <span className="grid w-[50px] shrink-0 bg-well text-center leading-none shadow-ring-line" aria-hidden>
+                    <small className={cx('px-0.5 pb-0.5 pt-px font-pixel-sm text-[13px]', i === 0 ? 'bg-gold text-night' : 'bg-crimson text-white')}>
+                      {date.weekday}
+                    </small>
+                    <b className="pt-0.5 text-[22px] font-normal tabular-nums">{date.date}</b>
+                    <small className="pb-1 font-pixel-sm text-[13px] text-muted">{date.month}</small>
+                  </span>
+                  <SpriteImg dex={r.dex} size={48} shiny={r.shiny} alt="" />
+                  <span className="grid min-w-0 flex-1 gap-0.5 leading-none">
+                    <b className="truncate text-[20px] font-normal">{data.species[r.dex]?.name ?? `#${r.dex}`}</b>
+                    {i === 0 && <small className="font-pixel-sm text-[14px] text-muted">{t('ui.raid.today')}</small>}
+                  </span>
+                  {r.shiny && (
+                    <span className="flex shrink-0 items-center gap-1 bg-gold-pale px-1.5 pb-0.5 font-pixel-sm text-[14px] text-ink shadow-ring-line">
+                      <PixelIcon name="star" size={12} />
+                      {t('ui.mon.shiny')}
+                    </span>
+                  )}
+                </li>
+              )
+            })}
+          </ol>
+          <PixelButton variant="primary" onClick={() => setOpen(false)}>
+            {t('ui.common.ok')}
+          </PixelButton>
+        </div>
+      </Modal>
+    </>
   )
 }
 
@@ -248,8 +279,8 @@ export function RaidPage() {
       {!raid.caught && <RaidGroupSection />}
       {!raid.caught && <BallOdds dex={raid.dex} />}
       <Waiting />
-      {day && <ComingUp day={day} />}
       <EventInfo id="raid" />
+      {day && <RaidCalendar today={raid} day={day} />}
       {/* Your group's empty slots: NPC trainers fill them, only once you start. */}
       <Modal open={asking} onClose={() => setAsking(false)} title={t('ui.raid.npcTitle')}>
         <div className="grid gap-3">

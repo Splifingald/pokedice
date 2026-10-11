@@ -82,6 +82,28 @@ for (const size of [
   })
 }
 
+test('the raid calendar lists the next two weeks under its note', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 640 })
+  await boot(page)
+  await page.goto('/events/raid')
+  await page.getByRole('button', { name: 'Calendar: the raids of the next two weeks' }).click()
+  const dialog = page.getByRole('dialog', { name: 'Raids calendar' })
+  await expect(dialog.getByRole('note')).toHaveText('The raids calendar might change at any time without notice.')
+  const days = dialog.getByRole('listitem')
+  await expect(days).toHaveCount(14)
+  await expect(days.first()).toHaveAttribute('aria-current', 'date')
+  await expect(days.first()).toContainText('Today')
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)
+  expect(overflow, `the calendar scrolls sideways: ${(await wide(page)).join(' | ')}`).toBeLessThanOrEqual(0)
+  expect(await nonJerseyText(page), 'calendar: fonts').toEqual([])
+  expect(await smallControls(page), 'calendar: controls under 44px').toEqual([])
+  const axe = await new AxeBuilder({ page }).include('[role="dialog"]').withTags(['wcag2a', 'wcag2aa']).analyze()
+  const bad = axe.violations.filter((v) => v.impact === 'serious' || v.impact === 'critical')
+  expect(bad.map((v) => `${v.id}: ${v.nodes.length} node(s) — ${v.nodes[0]?.target.join(' ')}`), 'calendar: axe').toEqual([])
+  await dialog.getByRole('button', { name: 'OK' }).click()
+  await expect(dialog).toBeHidden()
+})
+
 test('a raid fight fits a 360×640 phone', async ({ page }) => {
   await page.setViewportSize({ width: 360, height: 640 })
   await boot(page)
