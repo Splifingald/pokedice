@@ -1,5 +1,5 @@
 // Admin → Analytics: day-1 retention and the players, from the daily ping (migration 0028), and players per hour
-// (0041, on demand). Admin-only via RLS.
+// (0042, on demand). Admin-only via RLS.
 import { PixelIcon } from '@/components/icons'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { dayKey, dayOneRetention, type D1Cohorts, type Retention } from '@/analytics/retention'
