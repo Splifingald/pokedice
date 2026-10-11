@@ -4,6 +4,8 @@ import { useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { canSpin, msToUtcMidnight, utcDay, type EventId, type GameData, type WheelReward } from '@/engine'
 import { PixelIcon, type IconName } from '@/components/icons'
 import { ItemSprite } from '@/components/ItemSprite'
+import { Modal } from '@/components/Modal'
+import { PixelButton } from '@/components/PixelButton'
 import { ART_CROP, ART_K, ART_PX, artUrl, horizonOf } from '@/fx/areaArt'
 import { ART_GEOMETRY } from '@/fx/areaArtMap'
 import { useT } from '@/i18n/react'
@@ -69,6 +71,33 @@ export function EventRules({ id, data }: { id: EventId; data: GameData }) {
         </li>
       ))}
     </ul>
+  )
+}
+
+/**
+ * The Info button at the foot of an event's page (the wheel's look): its rules again, as the unlock pop-up showed
+ * them, with the admin's numbers.
+ */
+export function EventInfo({ id }: { id: EventId }) {
+  const { t } = useT()
+  const data = useGame((s) => s.data)
+  const [open, setOpen] = useState(false)
+  const name = t(`ui.events.${id}.name`)
+  return (
+    <>
+      <button type="button" className="ev-info w-full" onClick={() => setOpen(true)} aria-label={t('ui.events.infoLabel', { name })}>
+        {t('ui.events.info')}
+      </button>
+      <Modal open={open} onClose={() => setOpen(false)} title={name} className="max-w-md">
+        <div className="flex flex-col gap-3">
+          <EventPicture id={id} data={data} className="-mx-4 h-[124px] shadow-[0_3px_0_rgb(var(--c-edge)),0_-2px_0_rgb(var(--c-edge))]" />
+          <EventRules id={id} data={data} />
+          <PixelButton variant="primary" onClick={() => setOpen(false)}>
+            {t('ui.common.ok')}
+          </PixelButton>
+        </div>
+      </Modal>
+    </>
   )
 }
 
