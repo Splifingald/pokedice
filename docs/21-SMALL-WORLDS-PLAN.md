@@ -1,7 +1,7 @@
 # Small worlds: plan (for validation)
 
-Status: **plan, step 2 of 5** (2026-10-11): questions (done) → this plan → Visual Lab mockups → your validation →
-integration. Branch `feature/events` only (not `feature/version_2` until you say so).
+Status: **validated** (2026-10-11): questions → plan → Visual Lab mockups (`design/visual-lab/worlds.js`, Home tab,
+"Small world" preview bar) → validation (§5, answered) → integration next. Branch `feature/events`.
 
 Event type 5 in the special events framework (docs/18): **Small worlds**, priority 1 (first on Home). A small world is a
 time-limited, themed region you build in the admin, where the **shiny mythicals** are won: a fresh start on one of its
@@ -89,16 +89,18 @@ interface SmallWorld {
   to its areas and trainers in their sections (filtered to the world). Checks: dates, the mythical's area in the world,
   three starters, overlaps with another world.
 
-## 5. Questions for validation (after the mockups)
-1. **Pokédex**: world catches stay on the world's own Pokédex page and vanish with it (my suggestion, as "keep only
-   the mythical"), or count in your Pokédex for good?
-2. **The mythical**: straight into the Box of the region you play (my suggestion), or its home region's, locked until
-   you complete its area there (the raids' rule)?
-3. **Live events** (Shiny Parade, Special Shop, Cash Flow) don't reach inside a world (my suggestion), or do?
-4. **Energy**: encounters in the world cost energy as usual (my suggestion), or the world is free?
-5. **Home inside the world**: only the world's things (my suggestion: its banner, areas, Mart, Back), the main game's
-   squares waiting outside?
-6. **One world at a time**, which may run while a live event runs (my suggestion)?
+## 5. Settled at validation (2026-10-11)
+1. **Pokédex**: world catches stay on the world's own Pokédex page and close with it.
+2. **The mythical** is the only Pokémon that leaves the world: it goes to the Box of **its own region in the real
+   games** (Mew → Kanto, Celebi → Johto, Victini → Unova…). Not locked to an area there. *My addition, to confirm:* if
+   the player hasn't started that region yet, it waits (like a locked raid catch) and joins that region's Box the
+   moment the region is started, with a toast.
+3. **No event reaches inside a world**: no live event (Shiny Parade, Special Shop, Cash Flow), no Fortune Wheel, Raids
+   or Elite Rebattle while playing it (their pages say to leave the world first).
+4. **Energy**: the world's encounters cost energy as usual.
+5. **Home inside the world**: only the world's things (its banner and countdown, areas, the mythical, its Mart, Back);
+   the main game's squares wait outside.
+6. **One world at a time**; it may run while a live event runs (which stays outside it).
 
 ## 6. Mockups (next step, Visual Lab)
 1. Home with the Small world square first, and its pop-up.
@@ -109,6 +111,35 @@ interface SmallWorld {
 6. The final fight: the shiny mythical's entrance, the catch.
 7. The world closing (the pop-up).
 8. The admin editor.
+
+## 6b. Technical design (from a survey of the engine, 2026-10-11)
+- **A world is a region row** (Config → Regions: its name, a `dexRange` that overlaps no real region, e.g. `[0, 0]`,
+  starter level 5) **named by a world in `smallWorlds.list`** (`regionId`). It is *not* `enabled: false`: the game moves
+  a player out of a disabled region on every load. Instead `isWorldRegion(data, id)` keeps worlds out of everything a
+  real region is part of: `enabledRegions` / `unlockedRegions` (switcher chips, the Areas sheet's "more to come"),
+  `offeredRegion` and the league chain, `sendTargets`, `regionCases` (badges, the leaderboard gate, live events'
+  badge count, donations), `reached()` (Mega / Gigantamax), `speciesAllowedIn` / `evolutionGate` (inside a world every
+  generation may evolve), `regionOfSpecies`, the Pokédex totals of `speciesCaughtEverywhere` and `progressTotals`,
+  `everyBox` (Versus) and `everyInstance` (raid teams). The server's leaderboard keeps only rows with badges, and a
+  world has none.
+- **Entering**: the first time, the partner pick (`PartnerMoment`) then `newRegionBlock(world region, starter)` +
+  `startRegion`; later `switchRegion`. `events.worldFrom` remembers the region to go back to. **Leaving**:
+  `switchRegion(worldFrom)`. **Closing** (its end, the switch turned off, or a later world): the block is dropped from
+  `parked` (or the player is switched back first), with a pop-up.
+- **Area dates**: `SmallWorld.opens: Record<areaId, ISO>`; the store's `enterArea` and the Areas list check them on the
+  server's clock (`isAreaUnlocked` stays clock-free).
+- **Dice by level**: battle creation passes per-Pokémon levels instead of the save's tracks when the live region is a
+  world: `UpgradeLevels` gains `byLevel?: true`, and `computeDamage` reads `floor(level / 10)` for the attacker's dice
+  and combos (foes too, ignoring the area's enemy upgrade level). The Upgrades tab says so.
+- **XP ×**: `pokemonXp` × the world's `xpMultiplier` for a world area.
+- **Boosters**: `UpgradeLevels.typeBoost` (both sides), applied in `computeDamage` after the type multiplier, kept out of
+  `effectiveness`, and shown as its own line in the damage recap (`DamageResult.boost`).
+- **The mythical**: the last area's boss, `BossDef.shiny` honoured for the world's mythical only (`legendShiny`); a catch
+  goes to its home region (`regionOfSpecies`, real regions only) through an exported `addToRegion`, or waits in
+  `events.worldPending` until that region is started.
+- **No events inside**: `eventUnlocked`, `eventsTeaser`, `liveFor` and the raid / wheel / rebattle pages return nothing
+  while the live region is a world.
+- **Day Care**: closed inside a world (no deposit from it); a world's ₽, bag and Box never leave it.
 
 ## 7. Integration phases (after validation)
 1. Data and engine: region kind 'world', `smallWorlds` config and switch, area dates, dice by level, XP ×, boosters,
