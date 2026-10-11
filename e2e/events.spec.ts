@@ -171,7 +171,7 @@ test('the Elite Rebattle: a gauntlet fight pays, the next trainer waits, and the
   await expect(rules.getByText(/^Five fights in a row with no Pokémon Center\./)).toBeVisible()
   await rules.getByRole('button', { name: 'OK', exact: true }).click()
   await page.getByRole('button', { name: 'Start the Bronze tier' }).click()
-  await expect(page.getByText('Each of their Pokémon pays ₽×1.5, once in this tier.')).toBeVisible()
+  await expect(page.getByText('Each of their Pokémon pays ₽×1, once in this tier.')).toBeVisible()
   await page.getByRole('button', { name: 'FIGHT', exact: true }).click()
 
   const next = page.getByRole('button', { name: 'Next: Elite Four Bruno' })

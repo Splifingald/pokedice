@@ -97,3 +97,15 @@ test('Home offers the furthest open area of the region when the player is behind
   // There now: nothing more to offer.
   await expect(go).toHaveCount(0)
 })
+
+test("the area's details count the rounds done over the rounds that clear it, past the goal too", async ({ page }) => {
+  const data = gameData()
+  const base = makeSave(4)
+  const route = linearAreas(data, regionOf(base))[0]!
+  const need = route.roundsToClear!
+  const areaProgress = { ...base.areaProgress, [route.id]: { ...emptyProgress(), roundsDone: need + 1, cleared: true } }
+  await boot(page, { ...base, areaProgress, currentAreaId: route.id })
+  await page.goto('/home')
+  await page.getByRole('button', { name: /Open the area details/ }).click()
+  await expect(page.getByRole('dialog', { name: route.name })).toContainText(`${need + 1}/${need} round`)
+})

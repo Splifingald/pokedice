@@ -305,6 +305,8 @@ Players shouldn't have to make many requests:
   Lab's region prompts; its first area's strip until it has one), name, counts and GO. A tap moves there and closes
   the sheet.
 - **Area screen**: its title opens the area's details (the same sheet as Home's plate, without the travel footer).
+  Under the details' name: the levels, the rounds done over the rounds that clear the area ("3/5 rounds"; more can be
+  played once it's cleared, "7/5") or "Secret area", and where it stands.
 - **Pokémon Center**: the healing scene (a Poké Ball per team member) at phone size (420 px at most on wide screens),
   over everything (on `<body>`); SKIP (focused, so Enter, Space or Escape) just closes it, without playing the rest of
   the jingle at once. It plays once: back from Home, the Center opens on the team (`run.healShown`). Then Home or

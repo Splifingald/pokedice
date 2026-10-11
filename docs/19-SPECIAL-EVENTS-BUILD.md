@@ -162,7 +162,7 @@ Guests: no row; their state lives in `SaveData.events`, and they only need `even
 - **Side effects to check**: `lib/leaderboard.ts` `clearedRegion` (every linear area cleared → Hall of Fame) now ends at the league; the crown is already the league I clear (`regionCases`); `legacyGauge.ts` keeps its Kanto ids harmlessly.
 
 ### 5.5 UI
-- Rebattle page: region chips (live region active; others "Travel to … to fight", decision D2), tier medals (bronze diamond, silver pentagon, gold hexagon, CSS clip-paths), gauntlet ladder with paid marks, rules, Start / Continue.
+- Rebattle page: the live region only, with a line saying its rebattle is the one shown (each region has its own; the old chips of locked regions are gone), tier medals (bronze diamond, silver pentagon, gold hexagon, Diamond's blue circle drawn as a stepped octagon; CSS clip-paths), gauntlet ladder with paid marks, rules, Start / Continue.
 - The fights are normal `BattleView` trainer fights. A tier clear shows the medal card (stamp + confetti).
 
 ---

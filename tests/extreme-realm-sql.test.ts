@@ -164,8 +164,15 @@ describe('0039: two saves, two worlds', () => {
     expect(await as(U.ash, 'select user_id from raid_friend_teams()')).toEqual([])
   })
 
-  it("re-running seed.sql's schema part (0016, 0033–0035, then 0039) ends on the realm versions only", async () => {
-    for (const f of ['0016_regions.sql', '0033_friends.sql', '0034_day_care.sql', '0035_events.sql', '0039_extreme_realm.sql'])
+  it("re-running seed.sql's schema part (0016, 0033–0035, 0039, then 0040) ends on the realm versions only", async () => {
+    for (const f of [
+      '0016_regions.sql',
+      '0033_friends.sql',
+      '0034_day_care.sql',
+      '0035_events.sql',
+      '0039_extreme_realm.sql',
+      '0040_lighter_save_writes.sql',
+    ])
       await db.exec(sql(f))
     const overloads = await db.query<{ proname: string; n: number }>(
       `select proname, count(*)::int n from pg_proc

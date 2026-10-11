@@ -152,6 +152,15 @@
     "d8dbd2da-79c2-594f-9106-097c8c3e8fb1",
     "e8eed7e6-97e3-594c-941f-0dac877f1d6a",
     "39b7635c-efbd-5ca1-a7b8-f1e6cf4bf71c"
+   ],
+   "diamond": [
+    "ec78dee7-168c-5b1c-baa2-cdc56396166e",
+    "ffd2cd5a-91c6-5630-ba6e-f65b077e4505",
+    "847afbeb-3c73-5635-9b72-f14f6351e177",
+    "4aea5b2a-f100-5af1-9f81-bede00f7cce9",
+    "5597c292-8376-5f9a-a9ae-4940860e43b2",
+    "58014f0d-125c-552f-a727-60341bf33894",
+    "689cb21f-b960-5820-b5e9-dff200838d39"
    ]
   },
   "johto": {
@@ -175,6 +184,13 @@
     "a9deafe9-f3b4-5f3d-8503-05df4013e706",
     "7287d4f5-c0c0-5f80-bfca-181a135addca",
     "7bfe7eaa-3f65-5858-b37c-c4860d7455dc"
+   ],
+   "diamond": [
+    "61435ef0-7d7c-5b3c-85a7-b8dcbd80f427",
+    "5ec4b239-97e2-55ed-a51f-6e500d463ddf",
+    "2fd30cf7-f282-5479-b7ed-ee4be7ea8a11",
+    "ab9bacef-682c-50bc-b4a4-7f710f8444ee",
+    "4d5685b7-ac52-5682-ba11-8ba8ba13bd75"
    ]
   },
   "hoenn": {
@@ -198,6 +214,13 @@
     "17a766b5-d9af-5f59-905f-d42f2a9093e7",
     "14605bd9-9ba6-59a6-aa22-511e32b39dbf",
     "68f3eb34-ef19-5961-9553-979429f08497"
+   ],
+   "diamond": [
+    "ce9b0db5-9880-5b74-a943-98c2c8597ccf",
+    "1b66b538-aed8-5154-be3e-dff0134cd193",
+    "cab26ffb-3067-544b-bb77-69334a2c7f9f",
+    "aa2d5e67-f623-58ec-9f67-cf7064c1d442",
+    "db38e94f-5d32-5fe3-b579-01fd9ceba00b"
    ]
   },
   "sinnoh": {
@@ -221,6 +244,13 @@
     "98a72873-937d-570c-9860-69d6940591c8",
     "45d0a6d6-f9ee-5009-a308-0d93b875e79e",
     "f354e571-253e-5c17-9817-5ca8edd12134"
+   ],
+   "diamond": [
+    "a219e63d-91d7-568c-8fe5-dfca24347a73",
+    "a839035e-93b5-5624-b823-9c937cc981c2",
+    "c145472c-4d75-59ca-8731-42687f15b5a5",
+    "f79ea9a9-3ca8-52da-b147-63ea6c2ba606",
+    "da394ed1-6f83-54f7-9ae5-1a283dd3d7c3"
    ]
   },
   "unova": {
@@ -247,6 +277,14 @@
     "d8a13126-451b-5028-8525-3216ec336182",
     "61b7966d-503c-547e-9379-551971f1f0f6",
     "c24fc25d-99e0-504d-8fc4-2a3a4db320b3"
+   ],
+   "diamond": [
+    "04dbe1bb-fb45-5c40-832e-ee540f6e588f",
+    "8119cdf2-b369-58d4-9c48-347fa6f076d7",
+    "cf46649c-02ad-5248-83ba-62e5a36583be",
+    "16869b8e-a4b3-5537-8a6b-0ff02ba54a6a",
+    "b1b9773f-1303-5014-975c-775cae5e4a95",
+    "2b64f063-2df9-53ca-ab9f-9b888c850693"
    ]
   },
   "kalos": {
@@ -270,6 +308,13 @@
     "72ccbee0-89f5-5417-9034-11740321eeac",
     "7b2cc57d-94da-5950-bc17-853092f3f98e",
     "ac82ac88-8c95-5bb5-bb0b-0c3ef82de723"
+   ],
+   "diamond": [
+    "58bc0559-2e4b-58a5-8b59-45ab890fedc4",
+    "7e85fdd7-fddc-503c-bcc8-0253677216de",
+    "20974f36-661d-55f2-b577-fae7ca253d08",
+    "a0454f54-ce3a-5201-8da7-8dac12133581",
+    "dbfe2722-72fa-54e3-8b7f-05d8fc19d242"
    ]
   },
   "alola": {
@@ -293,6 +338,13 @@
     "07ddb1d5-0a1d-56fd-a6d6-77bc72cb886a",
     "83c64cdc-80ea-53ea-ae73-c8518502e4bb",
     "3ea8ff08-1e15-520b-acf4-cd8bd9518149"
+   ],
+   "diamond": [
+    "bc64eb9d-d564-57ee-98c8-4ad20f242e97",
+    "a9076d25-bf89-59c0-8669-0b26130f0c4a",
+    "4b9c423f-fe93-52da-96e0-0b78d59118a3",
+    "fdccca72-8db5-500c-b791-2d02e71470df",
+    "e677605b-a3af-50cc-b2c6-71aa017cc325"
    ]
   },
   "galar": {
@@ -316,6 +368,13 @@
     "8266e1df-d60a-515a-b687-bde5bb5046ca",
     "fcdc888f-c2ed-56c9-b18c-c9b6dd003e29",
     "f0514643-0b7d-5e9f-9971-62bca8c68368"
+   ],
+   "diamond": [
+    "52f521b0-a795-59df-b126-a0d6c058744b",
+    "5d7afff5-df47-5e40-95f2-ea402ea70204",
+    "f0905e37-5e0d-5336-b7de-53b8a6612950",
+    "5247ac44-5056-54ff-b6dd-ce189504d391",
+    "824483ad-678e-5a8d-8d7a-fe936fd23c34"
    ]
   },
   "paldea": {
@@ -342,6 +401,14 @@
     "96030b3d-8bd5-5ea9-8eda-ce3786518b3d",
     "11fe02b9-85d2-534d-86a4-659abf4e4d71",
     "a303311d-2a93-58b4-8b81-a5d1e43b0f0f"
+   ],
+   "diamond": [
+    "903b4c14-faf2-5a8f-8692-7da415f0327c",
+    "8a3494cc-6c06-5354-bf55-f98ccdbe1ee1",
+    "6e54f883-9a2b-50be-a160-734940611b93",
+    "b72cd70f-c9a7-5b1c-9fa7-e59018f5faa0",
+    "f5132648-4481-572b-9ce2-0d24134b3ccf",
+    "57870aeb-b6dd-5ab1-a965-9b3122c9f4c4"
    ]
   }
  },
@@ -744,16 +811,21 @@
    "tiers": [
     {
      "id": "bronze",
-     "gold": 1.5,
+     "gold": 1,
      "upgradeDelta": 1
     },
     {
      "id": "silver",
-     "gold": 2,
+     "gold": 1.5,
      "upgradeDelta": 2
     },
     {
      "id": "gold",
+     "gold": 2,
+     "upgradeDelta": 3
+    },
+    {
+     "id": "diamond",
      "gold": 3,
      "upgradeDelta": "max"
     }
