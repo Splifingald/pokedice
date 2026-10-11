@@ -15,6 +15,7 @@ import { validateRow } from '@/admin/schemas'
 import { compileGameData, effectiveStats } from '@/engine'
 import type { Area, DiceEntry, Species, Trainer } from '@/engine/types'
 import { composeDice, diceCountFromBst, hpAtLevel, stableUuid } from '../scripts/seed'
+import { TUNED_STARTERS } from './fixtures'
 
 const species = pokemon as Species[]
 const byDex = (dex: number) => species.find((p) => p.dex === dex)!
@@ -164,7 +165,7 @@ describe('areas & trainers', () => {
       for (const s of STARTERS) {
         const entry = a.wildPool.find((w) => w.dex === s)
         if (a === vr) expect(entry?.weight).toBe(3)
-        else if (entry) expect(entry.weight, a.name).toBe(1)
+        else if (entry) expect(entry.weight, a.name).toBe(TUNED_STARTERS[`${a.id}/${s}`] ?? 1)
       }
     }
     for (const t of allTrainers) for (const m of t.team) expect(STARTERS).not.toContain(m.dex)

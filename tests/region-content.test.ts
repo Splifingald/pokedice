@@ -4,7 +4,7 @@ import { existsSync } from 'node:fs'
 import path from 'node:path'
 import { linearAreas, regionOfArea, regionSpecies, type Area, type Region, type Trainer } from '@/engine'
 import { BUNDLE } from '@/config/bundle'
-import { data } from './fixtures'
+import { data, TUNED_STARTERS } from './fixtures'
 
 /** The raid pool's mythicals whose lair is in this region. */
 const raidsOf = (regionId: string) =>
@@ -146,7 +146,7 @@ describe('regions', () => {
         if (a.scalesToTeam) continue
         for (const s of r.starters) {
           const entry = a.wildPool.find((w) => w.dex === s)
-          if (entry) expect(entry.weight, `${r.id} / ${a.name}`).toBe(1)
+          if (entry) expect(entry.weight, `${r.id} / ${a.name}`).toBe(TUNED_STARTERS[`${a.id}/${s}`] ?? 1)
         }
       }
       for (const a of of(r.id)) {
