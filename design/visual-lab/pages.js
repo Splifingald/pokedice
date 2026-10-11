@@ -616,6 +616,9 @@
     ['fossil', 'Fossils'],
   ]
   function shopRender(el) {
+    // Inside a small world (worlds.js) the Mart is the world's.
+    const world = A.worldShop ? A.worldShop() : ''
+    if (world) return void (el.innerHTML = world)
     const S = A.SAVE
     const tab = ST.shopTab
     el.innerHTML = `
@@ -768,6 +771,9 @@
   }
   const affordable = (u) => !u.locked && u.cost != null && u.cost <= A.SAVE.gold
   function upRender(el) {
+    // Inside a small world (worlds.js) dice follow the level: no upgrades to buy.
+    const world = A.worldUpgrades ? A.worldUpgrades() : ''
+    if (world) return void (el.innerHTML = world)
     const U = upgrades()
     const can = [...U.combos, ...U.dice].filter(affordable).length
     const list = U[ST.upTab].filter((u) => !ST.upAfford || affordable(u))

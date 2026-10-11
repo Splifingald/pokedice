@@ -338,8 +338,8 @@
     const el = $('#hm-events')
     if (!el) return
     const list = active()
-    // A live event (live.js, priority 2) comes first, whatever else is open.
-    const live = A.liveWidget ? A.liveWidget() : ''
+    // A small world (worlds.js, priority 1), then a live event (live.js, priority 2), first, whatever else is open.
+    const live = (A.worldWidget ? A.worldWidget() : '') + (A.liveWidget ? A.liveWidget() : '')
     if (!list.length) {
       const teaser = A.SAVE.badges >= CFG.teaserBadges
       el.innerHTML = `${live}<div class="hm-w hm-events" role="note" aria-label="${teaser ? 'Special events: the first one opens when you clear Routes 7 and 8' : 'Special events: coming later'}"><span class="hm-w-head"><b>Special events</b>${teaser ? `<img class="px hm-w-lock" alt="" src="${A.icons.LOCK}" />` : ''}</span><img class="px hm-ev-star" alt="" src="${starURL()}" /><span class="hm-w-sub">${teaser ? 'Soon: clear Routes 7 & 8' : 'Coming later'}</span></div>`

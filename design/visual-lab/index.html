@@ -1912,6 +1912,117 @@
   .ad-areas { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 2px 10px; margin: 0 0 8px; padding: 6px 8px; border: 1px solid var(--line); }
   .ad-areas legend { padding: 0 4px; color: var(--muted); }
   .ad-areas label { display: flex; gap: 6px; align-items: center; }
+
+  /* small worlds (docs/21): the square, the pop-up, the world's Home in its colours, its areas, battle, Mart, the end */
+  .hm-w.sw-w::after { box-shadow: inset 0 0 0 3px #24304f, inset 0 0 0 5px var(--w-accent), inset 0 0 0 7px #24304f80; }
+  .sw-w .lv-w-top { align-items: start; }
+  .sw-tag { display: inline-flex; align-items: center; gap: 3px; font-family: 'Jersey 15', sans-serif; font-size: 13px; line-height: 1; letter-spacing: 0.04em; padding: 2px 5px 3px; background: var(--w-main, #5b3a9e); color: #fff; box-shadow: inset 0 0 0 2px #24304f; white-space: nowrap; }
+  .sw-tag.star { background: #ffbe2e; color: #24304f; }
+  .sw-tag.sm { font-size: 12px; }
+  .sw-tag.here { background: #f2553f; }
+  .sw-tag.next { background: var(--w-accent, #ff6f9c); color: #24304f; }
+  .sw-tag.lock { background: #dde5f0; color: #5c6a8a; box-shadow: inset 0 0 0 2px #b6c3d9; letter-spacing: 0; }
+  .sw-w-mon { position: relative; display: grid; place-items: center; flex: 1; min-height: 56px; }
+  .sw-w-mon .lv-fx-spk { z-index: 0; }
+  .sw-sil { position: relative; z-index: 1; width: 64px; height: 64px; filter: brightness(0) drop-shadow(0 0 5px var(--w-accent, #ff6f9c)); animation: evbob 2.4s steps(6) infinite; }
+  .sw-sil.got { filter: drop-shadow(0 0 6px #ffe7a8); }
+  .sw-sil.big { width: 108px; height: 108px; }
+  .sw-pop-tag { background: var(--w-main); color: #fff; }
+  .sw-pop .ev-pop-banner { overflow: hidden; isolation: isolate; }
+  .sw-closed { filter: grayscale(0.7); }
+  .ui-btn.sw-btn, .in-world #hm-go { border-image-source: none !important; border: 0; background: var(--w-main) !important; color: #fff; box-shadow: inset 0 0 0 2px #24304f, inset 0 -5px 0 #00000040, inset 0 3px 0 #ffffff40; }
+  .sw-foot { width: 100%; padding: 4px 0 0; }
+  .sw-die { display: grid; grid-template-columns: repeat(3, 6px); gap: 2px; padding: 4px; background: #fff; box-shadow: inset 0 0 0 2px #24304f; }
+  .sw-die i, .sw-die b { width: 6px; height: 6px; background: #24304f; }
+  .sw-die b { background: none; }
+  .in-world #hm-areas .hm-new, .in-world #hm-areas i { display: none; }
+  .sw-dot { width: 20px; height: 20px; box-shadow: inset 0 0 0 2px #24304f; }
+  .sw-type { display: inline-block; font-family: 'Jersey 15', sans-serif; font-size: 13px; line-height: 1; padding: 2px 5px 3px; margin: 1px; background: var(--c); color: #fff; text-shadow: 0 1px 0 #24304f; box-shadow: inset 0 0 0 2px #24304f; white-space: nowrap; }
+  /* the partner pick */
+  .sw-pick { background: linear-gradient(var(--w-ground), #fbfdff 60%); }
+  .sw-pk-list { list-style: none; margin: 0; padding: 0; width: 100%; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+  .sw-pk-card { width: 100%; min-height: 120px; display: grid; justify-items: center; align-content: center; gap: 4px; padding: 6px 2px; background: #fff; border: 0; box-shadow: inset 0 0 0 2px #24304f, inset 0 -4px 0 var(--w-accent); font: inherit; color: inherit; cursor: pointer; }
+  .sw-pk-card b { font-weight: 400; font-size: 18px; }
+  .sw-pk-big { display: grid; place-items: center; min-height: 64px; }
+  .sw-pk-types { margin: 0; }
+  /* the world's Home, in its colours */
+  .hm-screen.in-world { background-color: var(--w-ground); }
+  .in-world .hm-top { background: var(--w-main); color: #fff; box-shadow: 0 2px 0 #24304f; }
+  .in-world .hm-tr-txt small { color: #ffe7a8; }
+  .in-world .hm-round { background: #fff; }
+  .in-world .hm-pill { box-shadow: 0 0 0 2px var(--w-accent); }
+  .in-world .hm-nav button[aria-current] { color: var(--w-main); }
+  .in-world .hm-widgets:not(#sw-widgets), .in-world #hm-area { display: none !important; }
+  .in-world #hm-cv { visibility: hidden; }
+  #sw-widgets:empty, #sw-strip:empty { display: none; }
+  #sw-stage { position: absolute; inset: 0; pointer-events: none; }
+  #sw-stage:empty { display: none; }
+  #sw-stage .sw-plate { pointer-events: auto; }
+  .sw-scene { position: absolute; inset: 0; overflow: hidden; }
+  .sw-scene img { width: 100%; height: 100%; object-fit: cover; image-rendering: pixelated; }
+  .sw-scene-mon { position: absolute; left: 50%; bottom: 18%; transform: translateX(-50%); animation: evbob 2s steps(4) infinite; filter: drop-shadow(0 3px 0 #24304f60); }
+  .sw-booster-row { display: flex; flex-wrap: wrap; gap: 2px; flex: 1; min-width: 0; }
+  .sw-strip { position: relative; isolation: isolate; display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: var(--art) center var(--pos, 50%) / cover no-repeat; image-rendering: pixelated; color: #fff; box-shadow: 0 2px 0 #24304f; }
+  .sw-strip::before { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(90deg, color-mix(in srgb, var(--w-main) 88%, transparent), color-mix(in srgb, var(--w-main) 30%, transparent)); }
+  .sw-strip-t { display: grid; gap: 2px; flex: 1; min-width: 0; line-height: 1; text-shadow: 0 2px 0 #24304f; }
+  .sw-strip-t b { font-weight: 400; font-size: 22px; }
+  .sw-strip-t small { font-family: 'Jersey 15', sans-serif; font-size: 15px; color: #ffe7a8; }
+  .sw-strip-t small.hot { color: #ffb3a8; }
+  .sw-back { appearance: none; border: 0; min-height: 40px; padding: 0 10px 2px; font-family: 'Jersey 20', sans-serif; font-size: 17px; background: #fff; color: #24304f; box-shadow: inset 0 0 0 2px #24304f, inset 0 -3px 0 #dfe7f2; cursor: pointer; }
+  .sw-wd .sw-wd-mon { display: grid; place-items: center; height: 64px; background: radial-gradient(circle at 50% 70%, color-mix(in srgb, var(--w-accent) 35%, transparent) 0 30%, transparent 62%); }
+  .sw-wd .sw-sil { width: 56px; height: 56px; }
+  .sw-wd-items { display: flex; justify-content: center; align-items: center; gap: 4px; height: 64px; }
+  /* the world's areas */
+  .sw-areas { max-height: 92%; overflow-y: auto; }
+  .sw-ar-sub { margin: -6px 0 0; padding: 0 16px; font-family: 'Jersey 15', sans-serif; font-size: 15px; color: #5c6a8a; }
+  .sw-ar-list { list-style: none; margin: 0; padding: 0 12px; display: grid; gap: 6px; }
+  .sw-ar { display: flex; align-items: center; gap: 8px; padding: 4px 4px 6px; background: #fff; box-shadow: inset 0 0 0 2px #24304f, inset 0 -4px 0 #dfe7f2; }
+  .sw-ar.off { background: #f1f4f9; box-shadow: inset 0 0 0 2px #b6c3d9; color: #5c6a8a; }
+  .sw-ar.final { box-shadow: inset 0 0 0 2px #24304f, inset 0 0 0 4px #ffbe2e; }
+  .sw-ar .hm-gobtn { position: static; flex: none; }
+  .sw-ar-pic { position: relative; flex: none; width: 76px; height: 52px; background: var(--art) center var(--pos, 50%) / cover no-repeat; image-rendering: pixelated; box-shadow: inset 0 0 0 2px #24304f; }
+  .sw-ar.off .sw-ar-pic { filter: grayscale(0.7) brightness(0.95); }
+  .sw-ar-pic .sw-tag { position: absolute; left: 2px; bottom: 2px; }
+  .sw-ar-t { display: grid; gap: 2px; flex: 1; min-width: 0; line-height: 1.05; justify-items: start; }
+  .sw-ar-t b { font-weight: 400; font-size: 19px; }
+  .sw-ar-t small { font-family: 'Jersey 15', sans-serif; font-size: 14px; color: #5c6a8a; }
+  /* a battle here */
+  .sw-bt-vs { width: 100%; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 4px; }
+  .sw-bt-vs > span:not(.sw-vs) { display: grid; justify-items: center; gap: 2px; line-height: 1.05; }
+  .sw-bt-vs b { font-weight: 400; font-size: 17px; }
+  .sw-bt-vs small { font-family: 'Jersey 15', sans-serif; font-size: 13px; color: #5c6a8a; }
+  .sw-vs { font-size: 22px; color: var(--w-main); }
+  .sw-bt-roll { width: 100%; display: grid; justify-items: center; gap: 6px; padding: 8px; background: var(--w-ground); box-shadow: inset 0 0 0 2px #24304f; }
+  .sw-dice { display: flex; gap: 6px; }
+  .sw-dice i { font-style: normal; width: 32px; height: 32px; display: grid; place-items: center; font-size: 20px; background: #fff; box-shadow: inset 0 0 0 2px #24304f, inset 0 -3px 0 #dfe7f2; }
+  .sw-calc { font-family: 'Jersey 15', sans-serif; font-size: 16px; display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 4px; }
+  .sw-boost { font-size: 13px; padding: 2px 5px 3px; background: var(--w-accent); color: #24304f; box-shadow: inset 0 0 0 2px #24304f; letter-spacing: 0.04em; }
+  .sw-dmg { font-weight: 400; font-size: 26px; color: #c2331f; }
+  /* the final fight */
+  .sw-final { background: linear-gradient(color-mix(in srgb, var(--w-main) 22%, #fff), #fbfdff 70%); }
+  .sw-fn-mon { position: relative; display: grid; place-items: center; width: 140px; height: 128px; }
+  .sw-fn-mon img { position: relative; z-index: 1; width: 128px; height: 128px; animation: evbob 2s steps(4) infinite; filter: drop-shadow(0 0 8px #ffe7a8); }
+  .sw-fn-mon .lv-fx-spk { z-index: 0; }
+  .sw-worn { filter: grayscale(0.3) drop-shadow(0 0 4px #ffe7a8) !important; animation: none !important; transform: rotate(8deg); }
+  .sw-gone { opacity: 0.25; animation: none !important; }
+  .sw-balls { list-style: none; margin: 0; padding: 0; width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .sw-ball { width: 100%; min-height: 64px; display: grid; justify-items: center; gap: 2px; background: #fff; border: 0; box-shadow: inset 0 0 0 2px #24304f, inset 0 -4px 0 var(--w-accent); font: inherit; color: inherit; cursor: pointer; padding: 6px; }
+  .sw-ball b { font-weight: 400; font-size: 17px; }
+  .sw-ball small { font-family: 'Jersey 15', sans-serif; font-size: 14px; color: #5c6a8a; }
+  /* the world's Mart and Upgrades */
+  .sw-shop { background: var(--w-ground); box-shadow: inset 0 0 0 3px #24304f, inset 0 0 0 5px var(--w-accent); }
+  .sw-up { display: grid; gap: 8px; padding: 12px; background: var(--w-ground); box-shadow: inset 0 0 0 3px #24304f, inset 0 0 0 5px var(--w-accent); }
+  .sw-up h3 { margin: 0; font-weight: 400; font-size: 24px; }
+  .sw-up p { margin: 0; font-family: 'Jersey 15', sans-serif; font-size: 16px; line-height: 1.15; color: #3d4a6b; }
+  .sw-up-t { border-collapse: collapse; font-size: 17px; background: #fff; box-shadow: inset 0 0 0 2px #24304f; }
+  .sw-up-t th, .sw-up-t td { padding: 4px 6px; text-align: center; font-weight: 400; border-bottom: 1px solid #dfe7f2; }
+  .sw-up-me { display: flex; align-items: center; gap: 8px; }
+  .sw-up-me b { font-weight: 400; font-size: 18px; }
+  .ad-switch { display: inline-flex; gap: 4px; margin-bottom: 8px; }
+  .ad-switch button { padding: 4px 10px; background: #0f0c1d; color: var(--muted); border: 1px solid var(--line); font: inherit; cursor: pointer; }
+  .ad-switch button[aria-checked='true'] { background: var(--gold); color: #1a1423; }
+  .ad-inline { display: inline-flex; gap: 6px; align-items: center; margin-left: 8px; }
+  @media (prefers-reduced-motion: reduce) { .sw-sil, .sw-scene-mon, .sw-fn-mon img { animation: none !important; } }
 </style>
 
 <header class="deck">
@@ -1980,6 +2091,23 @@
       </div>
       <button type="button" class="btn small" data-lvpop>Replay its pop-up</button>
       <button type="button" class="btn small" data-lvwin>Trainer victory (₽)</button>
+    </div>
+    <div class="home-states ev-controls" id="sw-controls">
+      <span class="eyebrow">SMALL WORLD</span>
+      <div class="seg small" role="radiogroup" aria-label="Where the player is">
+        <button type="button" role="radio" data-swphase="none" aria-checked="false">None</button>
+        <button type="button" role="radio" data-swphase="outside" aria-checked="true">Outside (square)</button>
+        <button type="button" role="radio" data-swphase="inside" aria-checked="false">Inside the world</button>
+      </div>
+      <div class="seg small" role="radiogroup" aria-label="How far into the world">
+        <button type="button" role="radio" data-swtime="start" aria-checked="false">Just opened</button>
+        <button type="button" role="radio" data-swtime="mid" aria-checked="true">Halfway</button>
+        <button type="button" role="radio" data-swtime="last" aria-checked="false">Last day</button>
+      </div>
+      <button type="button" class="btn small" data-swpop>Its pop-up</button>
+      <button type="button" class="btn small" data-swpick>Partner pick</button>
+      <button type="button" class="btn small" data-swfinal>Final fight</button>
+      <button type="button" class="btn small" data-swclose>The world closes</button>
     </div>
     <div class="home-grid">
       <div class="home-device">
@@ -2116,6 +2244,29 @@
         </ol>
         <h2 class="notes-h">Admin · Live events (mock)</h2>
         <div class="ev-admin" id="lv-admin"></div>
+        <h2 class="notes-h">Small worlds <span class="ev-newtag">NEW</span></h2>
+        <p class="ad-intro">Event type 5, priority 1: a time-limited themed region you build, where the shiny mythicals are won. The preview bar above goes outside or inside the world and picks how far into it you are. The plan is docs/21-SMALL-WORLDS-PLAN.md.</p>
+        <ol class="zones">
+          <li><b>On Home</b><span>First of all the event squares: the world’s picture with a ring in its accent colour, WORLD, the mythical’s <em>silhouette</em> (in colour once caught), its name, areas cleared, your partner, the time left and a gauge (red in the last day). A tap enters it; the first time, the partner pick.</span></li>
+          <li><b>The pop-up</b><span>Once when it opens for you: its picture, the time left, its rules in four lines (XP ×5, dice by level, the booster types, the shiny mythical at the end). <em>Later</em> or <em>Enter</em>.</span></li>
+          <li><b>A fresh start</b><span>Three starters set in admin, Lv.5, in the world’s colours. The partner stays in the world when it closes.</span></li>
+          <li><b>Inside</b><span>Home in the world’s <em>colours</em> (main, accent, ground: try them in the admin below): its banner strip with the time left and <em>Back to Kanto</em>, the area’s picture, the booster chips and XP ×5 on the plate, the mythical and the World Mart as squares. The purse is the <em>world’s own ₽</em> (Kanto’s waits outside). CONTINUE plays a battle here; Areas lists the world’s areas: one opens on a date (<em>Opens Fri…</em>), the last holds the mythical.</span></li>
+          <li><b>Battle</b><span>Each side’s dice level is its level ÷ 10 (<em>Lv.27 → 2</em>); a boosted type’s hit shows its <em>×1.5 BOOSTER</em> chip in the readout. XP is ×5 on the victory card; the ₽ are the world’s.</span></li>
+          <li><b>Mart and Upgrades</b><span>The Shop tab is the World Mart: the admin’s items in world ₽ with limits. The Upgrades tab explains dice by level instead of selling upgrades.</span></li>
+          <li><b>The final fight</b><span>The shiny mythical’s entrance; win, then pick a ball (the catch dice decide). Caught: it leaves the world, into your Box, to keep. Missed: fight again until the world closes.</span></li>
+          <li><b>The end</b><span>When it closes, a pop-up says what you kept (the mythical, or nothing) and that the rest closed with it; a player inside is sent back home.</span></li>
+        </ol>
+        <h2 class="notes-h">To decide at validation</h2>
+        <ol class="zones">
+          <li><b>Pokédex</b><span>World catches stay on the world’s Pokédex page and close with it (suggested), or count in yours for good?</span></li>
+          <li><b>The mythical</b><span>Into the Box of the region you play (suggested), or its home region’s, locked until its area is completed (the raids’ rule)?</span></li>
+          <li><b>Live events inside</b><span>A Shiny Parade, Special Shop or Cash Flow doesn’t reach inside a world (suggested), or does?</span></li>
+          <li><b>Energy</b><span>The world’s encounters cost energy as usual (suggested), or it’s free?</span></li>
+          <li><b>Home inside</b><span>Only the world’s things (suggested), the main game’s squares waiting outside?</span></li>
+          <li><b>One at a time</b><span>One world at a time, which may run while a live event runs (suggested)?</span></li>
+        </ol>
+        <h2 class="notes-h">Admin · Small worlds (mock)</h2>
+        <div class="ev-admin" id="sw-admin"></div>
         <h2 class="notes-h">The tabs</h2>
         <ol class="zones">
           <li><b>Team</b><span>The three as cards: sprite, HP, XP, dice. <em>Drag one onto another</em> to change who goes out first; the lead wears gold. The Box below: search, sort by number, level or newest, filter by type. A card opens the Pokémon: stats, every die face, what it learns next, items to use. Swaps stay a Pokémon Center thing, said once at the top.</span></li>
@@ -2237,6 +2388,7 @@
 <script src="social.js"></script>
 <script src="events.js"></script>
 <script src="live.js"></script>
+<script src="worlds.js"></script>
 <script src="starter.js"></script>
 <script src="lab.js"></script>
 <script src="bgs.js"></script>
