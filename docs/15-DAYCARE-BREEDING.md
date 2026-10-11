@@ -21,7 +21,7 @@ commit message.
 | Your Pokémon | 2 slots | 2 slots |
 | XP | +1 every 10 min, **200 XP cap per stay**, READY when full | +1 every 10 min, **no cap but Lv.100** |
 | Friends | — | **4 friend slots**: invite a Pokémon that is sitting in a friend's Day Care. It visits; nothing changes for the friend |
-| Eggs | Free once, then bought for ₽50 | **Bred.** Every 12 h each of your Pokémon checks everyone at the Day Care; a compatible pair leaves an Egg. **Ditto pairs with everyone but legendaries, on a slower check: every 24 h.** The free first Egg stays; the ₽50 Egg goes |
+| Eggs | Free once, then bought for ₽50 | **Bred.** Every 12 h each of your Pokémon checks everyone at the Day Care; a compatible pair leaves an Egg. **Ditto pairs with everyone but legendaries, on a slower check: every 24 h.** The 12 h start once a compatible pair is here, and start over when no pair is left. The free first Egg stays; the ₽50 Egg goes |
 | Egg now | — | **Skip the wait for ₽200:** the next check runs now, a pair leaves an Egg, and it hatches right away |
 | Compatibility | — | The **real Egg groups** (data from Pokémon Showdown) |
 | What hatches | Random, missing species ×4, from the region's pool | Unchanged: random, not the parents' species. **When it isn't kept** (you already own one at its level or higher), **the Day Care couple gives ₽10** |
@@ -193,8 +193,8 @@ export interface DayCareGuest {
 New state on `DayCareState`:
 
 ```ts
-breedAt?: number   // when the last Egg-group check ran (ms)
-dittoAt?: number   // when the last Ditto check ran (ms)
+breedAt?: number   // when the last Egg-group check ran (ms); unset while that clock has no pair
+dittoAt?: number   // when the last Ditto check ran (ms); unset while that clock has no pair
 egg?: { at: number; parents?: [string, string]; gift?: true }   // parents for display: "Eevee", "Ditto (Noor)"
 ```
 
@@ -203,16 +203,28 @@ egg?: { at: number; parents?: [string, string]; gift?: true }   // parents for d
 - each pair is tagged `slow` when it has a Ditto;
 - a guest × guest pair never counts: your Pokémon do the checking.
 
-`processDayCare(save, data, now, rng): { save, laid?: true }` runs both clocks:
+**A clock only runs while it has a pair** (2026-10-11): nothing is checked while nobody here can make an Egg.
+`syncEggClocks(save, data, now)` keeps each clock in step with its pairs:
+- a clock that has a pair and isn't running starts at `now`: the first check comes a whole interval after two
+  compatible Pokémon are here;
+- a clock whose last pair leaves stops and forgets how far it had got (`breedAt` / `dittoAt` unset): when a pair forms
+  again, it starts over;
+- a clock that still has one pair left keeps running (Jolteon leaves, Eevee × a friend's Vaporeon is still a pair).
+
+The store runs it on every save it takes in (`settle` in `src/store/game.ts`), so the clocks start and stop at the
+change itself, whichever action made it (a Pokémon left or taken back, a friend's invited or gone, an Egg hatched
+that replaced a resident, a cloud pull).
+
+`processDayCare(save, data, now, rng): { save, laid?: true }` runs the clocks that have pairs:
 
 ```
+syncEggClocks(now)                    // a clock with no pair stops; one with a pair that never ran starts now
 gift: if the Day Care is open, !eggClaimed and no Egg waits → egg = { at: now, gift: true }
-for each clock (Egg groups: breedHours, the plain pairs; Ditto: breedDittoHours, the slow pairs):
-  lastAt ??= now
+for each running clock (Egg groups: breedHours, the plain pairs; Ditto: breedDittoHours, the slow pairs):
   due = floor((now − lastAt) / interval)
   if due ≥ 1:
     lastAt += due × interval          // missed checks collapse into one: one Egg waits at a time anyway
-    if no Egg waits and this clock's pairs aren't empty:
+    if no Egg waits:
       egg = { at: lastAt, parents: a random pair from this clock's list }
 ```
 
@@ -220,10 +232,11 @@ for each clock (Egg groups: breedHours, the plain pairs; Ditto: breedDittoHours,
   - at app start;
   - on `visibilitychange` back to visible;
   - when the Day Care page opens;
-  - from one timer set to `nextCheckAt(save, data)`.
+  - from one timer set to `nextCheckAt(save, data)` (no timer while no clock runs).
 - It is idempotent: twice at the same `now` changes nothing.
-- `nextCheckAt` is the next due time of a clock that has pairs, the sooner of the two; with no pairs, the Egg-group
-  clock. The widget and the Egg-now bar show it ("in 7 h 14").
+- `nextCheckAt` is the next due time of a clock that has pairs, the sooner of the two; null with no pair. The widget
+  and the Egg-now bar show it ("in 7 h 14"); with no pair the bar says "On hold", the widget "Waiting for a pair", and
+  the Egg checks list each idle clock as "every 12 h · waiting for a pair".
 
 ### Egg now (skip the wait)
 
@@ -276,7 +289,7 @@ What changes:
 3. Merge them into the top-level Day Care:
    - `visited` and `eggClaimed` are OR-ed;
    - `guests` starts as `[]`;
-   - `breedAt` and `dittoAt` stay unset, so the first `processDayCare` sets them.
+   - `breedAt` and `dittoAt` stay unset: a clock starts once it has a pair (`syncEggClocks`).
 4. **More than `slots` residents** (two regions each had two): keep the `slots` that have stayed longest (oldest
    `since`). Send the others home to their region's Box, with their Day Care XP applied (`residentNow`) and fully
    healed. Set `dayCareNotice`, and the next screen shows one toast: "The Day Care now has room for 2: Pidgey and
@@ -503,7 +516,9 @@ Laid out like Home, with no CONTINUE and no Areas button. The name shows **once*
 - **XP:** XP past the old 200 keeps levelling; it stops at Lv.100; `nextDayCareTick` is null at Lv.100.
 - **Checks:**
   - nothing before 12 h; one Egg at 12 h with a pair;
-  - none without a pair, but the clock still advances;
+  - no pair, no clock: nothing is checked, and a clock left running by an old save stops;
+  - the clock starts when a pair forms (12 h from then), starts over when the pair breaks up, and keeps running while
+    one of its pairs stays; each clock follows its own pairs;
   - a waiting Egg blocks the next one;
   - Ditto pairs only on the 24 h clock, plain pairs only on the 12 h one;
   - 3 days away give one Egg, not six;

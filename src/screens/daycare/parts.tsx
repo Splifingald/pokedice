@@ -231,8 +231,9 @@ export function EggCardView({ from, onHatch }: { from: string; onHatch: () => vo
 }
 
 /**
- * The next check and Egg now: "in 7 h 14" in large type, how many pairs could leave an Egg, and the gold button with
- * the coin and its price. Disabled without a pair; short of ₽ the price turns red and a tap says what's missing.
+ * The next check and Egg now: "in 7 h 14" in large type ("On hold" while no pair is here: no clock runs), how many
+ * pairs could leave an Egg, and the gold button with the coin and its price. Disabled without a pair; short of ₽ the
+ * price turns red and a tap says what's missing.
  */
 export function RushBarView({
   wait,
@@ -242,7 +243,8 @@ export function RushBarView({
   onRush,
   onShort,
 }: {
-  wait: string
+  /** The time to the next check; null when none is coming (no pair). */
+  wait: string | null
   pairs: number
   price: number
   short: number
@@ -255,7 +257,9 @@ export function RushBarView({
       {/* Never narrower than the countdown, kept on one line: the button gives way first. */}
       <span className="grid flex-1 gap-px">
         <small className="font-pixel-sm text-[14px] leading-none text-muted">{t('ui.dayCare.nextCheck')}</small>
-        <b className="whitespace-nowrap text-[24px] font-normal leading-none">{t('ui.dayCare.inTime', { time: wait })}</b>
+        <b className="whitespace-nowrap text-[24px] font-normal leading-none">
+          {wait == null ? t('ui.dayCare.onHold') : t('ui.dayCare.inTime', { time: wait })}
+        </b>
         <small className="font-pixel-sm text-[14px] leading-tight text-muted">
           {pairs ? tPlural('ui.dayCare.pairsCan', pairs, { n: pairs }) : t('ui.dayCare.noPairYet')}
         </small>

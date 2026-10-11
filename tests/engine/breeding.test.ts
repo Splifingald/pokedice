@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  clockDueAt,
   compatible,
   createInstance,
   createRng,
@@ -10,6 +11,8 @@ import {
   processDayCare,
   rushEgg,
   sharedGroups,
+  syncEggClocks,
+  withdrawPokemon,
   type DayCareGuest,
   type DayCareState,
   type SaveData,
@@ -47,6 +50,11 @@ function at(mine: number[], guests: number[] = [], dc: Partial<DayCareState> = {
 }
 const run = (s: SaveData, now: number) => processDayCare(s, data, now, rng())
 const egg = (s: SaveData) => dayCareOf(s).egg
+/** A save's clocks, to carry them over to another line-up (as when someone arrives or leaves). */
+function clocksOf(s: SaveData): Partial<DayCareState> {
+  const { breedAt, dittoAt } = dayCareOf(s)
+  return { ...(breedAt != null && { breedAt }), ...(dittoAt != null && { dittoAt }) }
+}
 
 describe('Egg groups: who pairs with whom', () => {
   const table: [string, number, number, boolean][] = [
@@ -105,12 +113,58 @@ describe('The checks', () => {
     expect(egg(laid.save)).toEqual({ at: T0 + cfg.breedHours * HOUR, parents: [{ dex: 133 }, { dex: 135 }] })
   })
 
-  it('no Egg without a pair, but the clock still moves on', () => {
-    const s = run(at([133, 147]), T0).save
-    const later = run(s, T0 + cfg.breedHours * HOUR)
-    expect(later.laid).toBeUndefined()
-    expect(egg(later.save)).toBeUndefined()
-    expect(dayCareOf(later.save).breedAt).toBe(T0 + cfg.breedHours * HOUR)
+  it('no pair, no clock: nothing is checked, and a clock left running stops', () => {
+    for (const s of [at([133, 147]), at([])]) {
+      expect(run(s, T0).save).toBe(s)
+      expect(run(s, T0 + 10 * cfg.breedDittoHours * HOUR).save).toBe(s)
+    }
+    // A save from before the rule: both clocks ran with nobody to pair. They stop, and nothing is laid.
+    const old = run(at([133, 147], [], { breedAt: T0 - 50 * HOUR, dittoAt: T0 - 50 * HOUR }), T0)
+    expect(old.laid).toBeUndefined()
+    expect(dayCareOf(old.save)).not.toHaveProperty('breedAt')
+    expect(dayCareOf(old.save)).not.toHaveProperty('dittoAt')
+  })
+
+  it('the clock starts when two here can pair, not before', () => {
+    // Eevee alone for two days: no clock.
+    const alone = run(at([133]), T0).save
+    expect(dayCareOf(alone).breedAt).toBeUndefined()
+    // Jolteon arrives: the Egg-group clock starts there, and a whole interval passes before the first check.
+    const arrive = T0 + 48 * HOUR
+    const both = syncEggClocks(at([133, 135], [], clocksOf(alone)), data, arrive)
+    expect(dayCareOf(both)).toMatchObject({ breedAt: arrive })
+    expect(dayCareOf(both).dittoAt).toBeUndefined()
+    expect(egg(run(both, arrive + cfg.breedHours * HOUR - 1).save)).toBeUndefined()
+    expect(run(both, arrive + cfg.breedHours * HOUR).laid).toBe(true)
+  })
+
+  it('starts over when the pair breaks up', () => {
+    const s = run(at([133, 135]), T0).save
+    // Jolteon goes home an hour before the check: the clock stops and forgets.
+    const split = T0 + cfg.breedHours * HOUR - HOUR
+    const alone = syncEggClocks(withdrawPokemon(s, 'r1', data, split)!.save, data, split)
+    expect(dayCareOf(alone)).not.toHaveProperty('breedAt')
+    expect(run(alone, T0 + 3 * cfg.breedHours * HOUR).laid).toBeUndefined()
+    // Back two hours later: a whole interval from then.
+    const back = split + 2 * HOUR
+    const again = syncEggClocks(at([133, 135], [], clocksOf(alone)), data, back)
+    expect(dayCareOf(again).breedAt).toBe(back)
+    expect(run(again, back + cfg.breedHours * HOUR - 1).laid).toBeUndefined()
+    expect(run(again, back + cfg.breedHours * HOUR).laid).toBe(true)
+  })
+
+  it('keeps running while one of its pairs stays; each clock follows its own pairs', () => {
+    // Eevee, Jolteon and a friend's Vaporeon: Field pairs. Jolteon leaves, Eevee × Vaporeon keeps the clock going.
+    const s = run(at([133, 135], [134]), T0).save
+    const left = withdrawPokemon(s, 'r1', data, T0 + HOUR)!.save
+    expect(syncEggClocks(left, data, T0 + HOUR)).toBe(left)
+    expect(dayCareOf(left).breedAt).toBe(T0)
+    // A friend's Ditto starts the Ditto clock only; sent back, that clock stops and the other runs on.
+    const ditto = syncEggClocks(at([133, 135], [132], clocksOf(s)), data, T0 + 2 * HOUR)
+    expect(dayCareOf(ditto)).toMatchObject({ breedAt: T0, dittoAt: T0 + 2 * HOUR })
+    const gone = syncEggClocks(at([133, 135], [], clocksOf(ditto)), data, T0 + 3 * HOUR)
+    expect(dayCareOf(gone).breedAt).toBe(T0)
+    expect(dayCareOf(gone)).not.toHaveProperty('dittoAt')
   })
 
   it('a waiting Egg blocks the next one', () => {
@@ -127,12 +181,12 @@ describe('The checks', () => {
     expect(egg(run(ditto, T0 + cfg.breedHours * HOUR).save)).toBeUndefined()
     expect(egg(run(ditto, T0 + cfg.breedDittoHours * HOUR).save)?.parents).toEqual([{ dex: 132 }, { dex: 143 }])
 
-    // A plain pair lays on the Egg-group clock even when the Ditto clock is due first.
-    const plain = run(at([133, 135], [], { breedAt: T0, dittoAt: T0 - cfg.breedDittoHours * HOUR + 1 }), T0).save
-    const when = run(plain, T0 + 1)
-    expect(when.laid).toBeUndefined()
-    expect(dayCareOf(when.save).dittoAt).toBe(T0 + 1)
-    expect(run(plain, T0 + cfg.breedHours * HOUR).laid).toBe(true)
+    // With both kinds here, the clock that is due picks among its own pairs: the Ditto one, a pair with the Ditto.
+    const both = run(at([133, 135], [132], { breedAt: T0, dittoAt: T0 - cfg.breedDittoHours * HOUR + 1 }), T0).save
+    const when = run(both, T0 + 1)
+    expect(when.laid).toBe(true)
+    expect(egg(when.save)?.parents?.[1]).toEqual({ dex: 132, owner: 'Lea' })
+    expect(dayCareOf(when.save)).toMatchObject({ breedAt: T0, dittoAt: T0 + 1 })
   })
 
   it('three days away leave one Egg, not six', () => {
@@ -161,11 +215,15 @@ describe('The checks', () => {
     expect(run(shut, T0).save).toBe(shut)
   })
 
-  it('counts down to the sooner clock that has pairs, the Egg-group one without any', () => {
+  it('counts down to the sooner clock that has pairs, and to nothing without any', () => {
     const s = at([133, 135], [132], { breedAt: T0, dittoAt: T0 - 20 * HOUR })
     expect(nextCheckAt(s, data, T0)).toBe(T0 - 20 * HOUR + cfg.breedDittoHours * HOUR)
+    const plain = at([133, 135], [], { breedAt: T0 })
+    expect(clockDueAt(plain, data, 'breed', T0)).toBe(T0 + cfg.breedHours * HOUR)
+    expect(clockDueAt(plain, data, 'ditto', T0)).toBeNull()
     const none = at([133, 147], [], { breedAt: T0, dittoAt: T0 - 20 * HOUR })
-    expect(nextCheckAt(none, data, T0)).toBe(T0 + cfg.breedHours * HOUR)
+    expect(nextCheckAt(none, data, T0)).toBeNull()
+    expect(nextCheckAt(at([]), data, T0)).toBeNull()
   })
 })
 

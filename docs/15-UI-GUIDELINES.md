@@ -425,8 +425,9 @@ One Day Care for every region (docs/15-DAYCARE-BREEDING.md). The page (`src/scre
 - **Under the yard, one of two:** the gold **Egg card** while one waits (the Egg shaking, who left it or "A gift for
   your first visit", Hatch it), or the **Egg-now bar**: "Next Egg check", the time left in large type, how many pairs
   could leave one, and the gold EGG NOW with the coin and its price under it (at most 55 % of the row: the countdown
-  stays on one line and the button's label shrinks first). Disabled without a pair; short of ₽ it stays
-  focusable, the price turns red and a tap says what's missing.
+  stays on one line and the button's label shrinks first). Without a pair no clock runs: "On hold" takes the
+  countdown's place and the button is disabled. Short of ₽ it stays focusable, the price turns red and a tap says
+  what's missing.
 - **Slots are cards in two columns** (`SlotCard`): a 4 px band in the slot's colour (pink `#ff5a7a` for your first,
   blue `#5b8def` for your second, grey for a friend's), the head (that colour's heart and "Yours", or the friend's
   trainer head and "Lea's"; a green tag with the levels gained here or New), the animated sprite on a pale tile, the
@@ -437,8 +438,9 @@ One Day Care for every region (docs/15-DAYCARE-BREEDING.md). The page (`src/scre
   minute). Signed out, the friend list's connect prompt takes their place; without the online service, or on a
   database without migration 0034, they are greyed and say why.
 - **Hearts mean "can make an Egg with it"**, always next to a name: a heart is never the only sign.
-- **Egg checks** list the rule, the two clocks (Egg groups, Ditto) with their next time, and every pair with a tag:
-  the shared group and its pace ("Field · every 12 h"), or Ditto's slower pace in purple.
+- **Egg checks** list the rule, the two clocks (Egg groups, Ditto) with their next time ("waiting for a pair" for a
+  clock with none), and every pair with a tag: the shared group and its pace ("Field · every 12 h"), or Ditto's slower
+  pace in purple.
 - **Pickers** (the shared `Sheet`): Leave which Pokémon? lists every region's Box (the region after the level once
   several are played) by level, lowest or highest first, with a search and, once someone is here, Compatible only;
   the team has the TEAM tag (the last of a region's team greyed with the reason), each row its Egg groups and a pink
@@ -446,7 +448,8 @@ One Day Care for every region (docs/15-DAYCARE-BREEDING.md). The page (`src/scre
   Pokémon) and a Compatible only toggle, grouped by friend, the best matches first.
 - **The Home widget** is the same size in every state: the Day Care's banner (a fixed-shape strip of its yard's
   picture), your two standing on it as icons as tall as the banner (no names), the levels they gained there under each
-  (+3 Lv, MAX at the level cap), the gauge to the next Egg check and its time. With an Egg waiting it turns gold (`panel-gold`) with an Egg! tag and the Egg shaking on the banner, and a tap
+  (+3 Lv, MAX at the level cap), the gauge to the next Egg check and its time (no gauge and "Waiting for a pair" while
+  nobody here can pair). With an Egg waiting it turns gold (`panel-gold`) with an Egg! tag and the Egg shaking on the banner, and a tap
   opens the page straight into the hatching. Locked, the banner is greyed with a lock, and it says how many species are
   caught across every region.
 - **Hatching** is full screen (`useHoldFullscreen`): the hatching timeline (with `shiny`, two rings of stars and a
