@@ -414,7 +414,8 @@ One Day Care for every region (docs/15-DAYCARE-BREEDING.md). The page (`src/scre
   the Egg are buttons in a hidden list.
 - **Under the yard, one of two:** the gold **Egg card** while one waits (the Egg shaking, who left it or "A gift for
   your first visit", Hatch it), or the **Egg-now bar**: "Next Egg check", the time left in large type, how many pairs
-  could leave one, and the gold EGG NOW with the coin and its price. Disabled without a pair; short of ₽ it stays
+  could leave one, and the gold EGG NOW with the coin and its price under it (at most 55 % of the row: the countdown
+  stays on one line and the button's label shrinks first). Disabled without a pair; short of ₽ it stays
   focusable, the price turns red and a tap says what's missing.
 - **Slots are cards in two columns** (`SlotCard`): a 4 px band in the slot's colour (pink `#ff5a7a` for your first,
   blue `#5b8def` for your second, grey for a friend's), the head (that colour's heart and "Yours", or the friend's

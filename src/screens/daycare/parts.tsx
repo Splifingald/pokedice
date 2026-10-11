@@ -252,26 +252,37 @@ export function RushBarView({
   const { t, tPlural } = useT()
   return (
     <div className="flex items-center gap-2.5 bg-paper py-2 pl-3 pr-2.5 shadow-card">
-      <span className="grid min-w-0 flex-1 gap-px">
+      {/* Never narrower than the countdown, kept on one line: the button gives way first. */}
+      <span className="grid flex-1 gap-px">
         <small className="font-pixel-sm text-[14px] leading-none text-muted">{t('ui.dayCare.nextCheck')}</small>
-        <b className="text-[24px] font-normal leading-none">{t('ui.dayCare.inTime', { time: wait })}</b>
+        <b className="whitespace-nowrap text-[24px] font-normal leading-none">{t('ui.dayCare.inTime', { time: wait })}</b>
         <small className="font-pixel-sm text-[14px] leading-tight text-muted">
           {pairs ? tPlural('ui.dayCare.pairsCan', pairs, { n: pairs }) : t('ui.dayCare.noPairYet')}
         </small>
       </span>
+      {/* At most a little over half the row, so the countdown and its line keep room (a long "Egg now", as in French,
+          used to squeeze them into a column). The label and the price are sized in em: when the button is narrower
+          than its label, PixelButton shrinks the two together. */}
       <PixelButton
         variant="gold"
         disabled={!pairs}
         aria-disabled={short > 0 || undefined}
         aria-label={t('ui.dayCare.eggNowLabel', { price: money(price) })}
-        className="grid min-h-[56px] shrink-0 justify-items-center gap-0.5 px-3.5"
+        className="min-h-[56px] min-w-0 max-w-[55%] px-2.5"
         onClick={() => (short > 0 ? onShort() : onRush())}
       >
-        <span className="text-[19px] leading-none">{t('ui.dayCare.eggNow')}</span>
-        {/* The button stays gold in both themes, so the "short" red is a fixed one that reads on gold. */}
-        <span className={cx('inline-flex items-center gap-1 font-pixel-sm text-[15px] leading-none', short > 0 && 'text-[#9b2416]')}>
-          <PixelIcon name="coin" size={12} />
-          {money(price)}
+        <span className="grid justify-items-center gap-0.5">
+          <span className="text-[0.8em] leading-none">{t('ui.dayCare.eggNow')}</span>
+          {/* The button stays gold in both themes, so the "short" red is a fixed one that reads on gold. */}
+          <span
+            className={cx(
+              'inline-flex items-center gap-1 font-pixel-sm text-[0.625em] leading-none',
+              short > 0 && 'text-[#9b2416]',
+            )}
+          >
+            <PixelIcon name="coin" size={12} />
+            {money(price)}
+          </span>
         </span>
       </PixelButton>
     </div>
