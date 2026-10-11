@@ -9,6 +9,7 @@ import { addFossil, isReviving } from './fossils'
 import { LEGACY_GAUGE } from './legacyGauge'
 import { MONEY, sellPrice, shopSells, usableIn } from './items'
 import { earnedGold } from './liveEvents'
+import { areaOpenAt } from './worldList'
 import {
   averageLevel,
   createInstance,
@@ -248,12 +249,15 @@ export function isAreaUnlocked(save: SaveData, areaId: string, data: GameData, d
 
 /**
  * The furthest area of the region's main chain the player can play (secret areas don't count), when they stand
- * somewhere else: Home offers to go there. Null once the whole chain is cleared, or when they are already there.
+ * somewhere else: Home offers to go there. Null once the whole chain is cleared, or when they are already there. With
+ * the server's time (`now`), a small world's area still waiting for its date doesn't count.
  */
-export function latestOpenArea(save: SaveData, data: GameData): Area | null {
+export function latestOpenArea(save: SaveData, data: GameData, now?: number | null): Area | null {
   const chain = linearAreas(data, regionOf(save))
   if (!chain.length || chain.every((a) => progressOf(save, a.id).cleared)) return null
-  const latest = [...chain].reverse().find((a) => isAreaUnlocked(save, a.id, data) && !isAreaClosed(save, a.id, data))
+  const latest = [...chain]
+    .reverse()
+    .find((a) => isAreaUnlocked(save, a.id, data) && !isAreaClosed(save, a.id, data) && (now === undefined || areaOpenAt(data, a.id, now)))
   return latest && latest.id !== save.currentAreaId ? latest : null
 }
 

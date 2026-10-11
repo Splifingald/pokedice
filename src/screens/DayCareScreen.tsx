@@ -71,6 +71,7 @@ import {
   slotColor,
 } from './daycare/parts'
 import { YardStage, type YardMember } from './daycare/YardStage'
+import { useInWorld, WorldAwayPage } from '@/screens/events/world'
 
 /** Re-render every 20 s so levels and countdowns stay current. */
 function useNow(ms = 20_000) {
@@ -642,7 +643,7 @@ function YardPlate({ count, onBack }: { count: number; onBack: () => void }) {
   )
 }
 
-export function DayCareScreen() {
+function DayCareScreenMain() {
   const { t } = useT()
   const save = useGame((s) => s.save)
   const data = useGame((s) => s.data)
@@ -852,4 +853,11 @@ export function DayCareScreen() {
       )}
     </div>
   )
+}
+
+/** The main game's: inside a small world it waits outside (docs/21), and the page says so. */
+export function DayCareScreen() {
+  const { t } = useT()
+  const inside = useInWorld().inside
+  return inside ? <WorldAwayPage title={t('ui.home.dayCare')} kind="main" /> : <DayCareScreenMain />
 }

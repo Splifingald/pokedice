@@ -536,3 +536,45 @@ switched it on (Off by default; Off / On for admin / On for everyone, like the e
   resting and until when.
 - **Friends** are the same in both worlds; in Extreme, a friend without an Extreme save is listed greyed with "Not in
   Extreme mode" and the skull, and doesn't open.
+
+## 20. Small worlds
+
+A time-limited region of its own, built in the admin (docs/21-SMALL-WORLDS-PLAN.md), where a shiny mythical is won. Its
+pieces are in `src/screens/events/world.tsx` (the lab in `worldPick.tsx`, styles in `src/styles/world.css`), every state
+on `/kitchen-sink` (`WorldBits`). Every rule and number comes from `engine/worlds.ts`; the clocks read the server's time.
+
+- **Its colours**: the admin's three (main, accent, ground) as `--w-main`, `--w-accent`, `--w-ground` (`worldVars`), with
+  the ink that reads on each (`textOn`: navy on a light one, white on a dark one). A bad value falls back to Mirage
+  Island's purple, pink and lilac. They tint the world's pieces only: the CTA stays red, the money gold, the HP green.
+- **WORLD** (`WorldTag`, in the main colour) marks everything of a world; **SHINY MEW** (gold, with the sparkle) is what
+  it's for. The mythical is a silhouette glowing in the accent until it's caught, then its shiny colours (`MythicalArt`).
+- **Outside, Home's square** (`WorldSquare`) is first among the event squares, on the Live square's frame: the world's
+  picture, WORLD and SHINY MEW, the silhouette, the name, the gauge draining and "Areas 3/8 · Ends in 2d 4h" (red in
+  the last day). The second line says the partner once the player has been in. A tap goes in (the lab first).
+- **The pop-up** (`WorldPopup`): once, between fights, after Prof. Oak's tutorials and the other one-time pop-ups and
+  before the live event's (never on the Poké Mart). The banner with the silhouette, the time left and until when, the
+  rules (`WorldRules`: XP ×, dice by level, each booster, the shiny mythical at the end), Later and Enter.
+- **The partner pick** is the lab (§18) in the world's colours (`PartnerMoment` `theme`): the drawn lab in them, the
+  picture under a veil of the main colour, the world's name on the ribbon.
+- **Inside**, the page wears the world's ground (`.in-world`, faint in dark mode) and a **strip** sits under the top bar
+  (`WorldStrip`): its picture, WORLD, its name, the time left (red in the last day) and **Back to Kanto** (the region the
+  player came from). It is Home's only way out, and the one way back while the world's content is still on its way
+  (`WorldWaiting`). Home shows no region offer and no region switcher; the Areas sheet has no Regions view.
+- **Home's squares inside** (`WorldWidgets`), and nothing else: the mythical (its silhouette on the world's ground,
+  Lv. · name, where it is: "In Dream Peak", "Waiting: fight it!", "In your Kanto Box", "Waits for Johto"; a tap travels
+  to its area once open) and the world's Mart (three of its items, the world's own ₽).
+- **An area waiting for its date** is locked like any other, with "Opens {date}" (the local date and time, `dayTime`).
+- **The Poké Mart inside is the World Mart** (`WorldShop`): the world's picture and time left over the admin's list,
+  each row with its limit ("8 of 10 left", Sold out); buying only, no Sell tab.
+- **Upgrades inside** explain the dice instead of selling them (`WorldUpgrades`): "Dice follow the level here", the
+  table of levels to dice levels, the team's own lines ("Lv.24 → dice level 2").
+- **In battle**, each plate carries its Pokémon's **dice level** (`DiceLevelTag`, "Dice level 2: Lv.24 ÷ 10" for screen
+  readers), and a **booster** shows as its own chip, the type's badge and "×1.5" (`BoosterChip`), beside the damage in
+  the readout and as its own factor in the damage recap: never hidden in the type's multiplier, never in
+  "super effective".
+- **The mythical caught**: its own line on the result card (`WorldMythicalCard`, gold with rays): "The shiny Mew is
+  yours!" and where it went ("in your Kanto Box now, to keep", or that it waits for its region).
+- **The main game's pages inside** (the events, the Day Care, Versus, by a link or a reload) keep their title and show
+  why they wait (`WorldAwayPage`), with Back to Kanto.
+- **Closing**: the world gone grey (`WorldByePopup`), once, to whoever played it or saw it open: the mythical kept (or
+  "got away"), and that the partner, the world's Pokémon, items and ₽ closed with it.

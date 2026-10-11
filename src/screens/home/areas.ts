@@ -1,6 +1,8 @@
 // What Home says about areas: each one's state (where you are, cleared, next, a new secret, locked and why), the region
 // at a glance, and the secret area to show off. Reads the engine's rules; decides nothing itself.
 import {
+  areaOpenAt,
+  areaOpensAt,
   conditionStatus,
   isAreaClosed,
   isAreaUnlocked,
@@ -17,6 +19,8 @@ import {
 import { t } from '@/i18n'
 import { conditionLabel } from '@/i18n/text'
 import { searchFold } from '@/i18n'
+import { dayTime } from '@/lib/format'
+import { serverNow } from '@/store/serverTime'
 
 /** here · cleared · next (open, not cleared yet) · new (a secret never played) · open (a secret) · locked */
 export type AreaStatus = 'here' | 'cleared' | 'next' | 'new' | 'open' | 'locked'
@@ -30,7 +34,8 @@ export const areaSpecies = (area: Area): number[] => [
 const played = (save: SaveData, area: Area) => !!save.areaProgress[area.id]
 
 export function areaStatus(save: SaveData, data: GameData, area: Area): AreaStatus {
-  if (!isAreaUnlocked(save, area.id, data)) return 'locked'
+  // A small world's area may also wait for its date (docs/21), on the server's clock.
+  if (!isAreaUnlocked(save, area.id, data) || !areaOpenAt(data, area.id, serverNow())) return 'locked'
   if (area.id === save.currentAreaId) return 'here'
   if (progressOf(save, area.id).cleared) return 'cleared'
   if (area.hidden) return played(save, area) ? 'open' : 'new'
@@ -39,6 +44,10 @@ export function areaStatus(save: SaveData, data: GameData, area: Area): AreaStat
 
 /** Why an area is locked, in words: "Clear Route 3", "Catch 60 Pokémon · 41/60". */
 export function lockReason(save: SaveData, data: GameData, area: Area): string {
+  // Its turn has come but not its date: "Opens Sat 18 Oct, 18:00".
+  const opens = areaOpensAt(data, area.id)
+  if (opens != null && isAreaUnlocked(save, area.id, data) && !areaOpenAt(data, area.id, serverNow()))
+    return t('ui.world.opens', { date: dayTime(opens) })
   if (!area.hidden) {
     const chain = linearAreas(data, regionOfArea(area))
     const prev = chain[chain.findIndex((a) => a.id === area.id) - 1]
@@ -116,6 +125,6 @@ export function areaSearch(area: Area, data: GameData, query: string): { name: b
   }
 }
 
-/** The area can be played: open, and not closed (nothing left to meet there). */
+/** The area can be played: open (its date come, in a small world), and not closed (nothing left to meet there). */
 export const playable = (save: SaveData, data: GameData, area: Area) =>
-  isAreaUnlocked(save, area.id, data) && !isAreaClosed(save, area.id, data)
+  isAreaUnlocked(save, area.id, data) && areaOpenAt(data, area.id, serverNow()) && !isAreaClosed(save, area.id, data)

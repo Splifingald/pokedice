@@ -67,3 +67,20 @@ export const worldOfArea = (data: Pick<GameData, 'config'>, area: Pick<Area, 're
 /** This boss is a small world's shiny mythical, in its own area: the one legendary that is never shiny-locked. */
 export const isWorldMythical = (data: Pick<GameData, 'config'>, areaId: string, dex: number): boolean =>
   smallWorlds(data).some((w) => w.mythical.areaId === areaId && w.mythical.dex === dex)
+
+/** When this area of a small world opens (ms, UTC), if it waits for a date. */
+export function areaOpensAt(data: Pick<GameData, 'config' | 'areas'>, areaId: string): number | null {
+  const area = data.areas.find((a) => a.id === areaId)
+  const iso = worldOfArea(data, area)?.opens[areaId]
+  const t = iso ? Date.parse(iso) : NaN
+  return Number.isFinite(t) ? t : null
+}
+
+/**
+ * The area's date has come, on the server's clock (no date: always; time unknown: not yet). On top of the usual rule
+ * (`isAreaUnlocked`: the one before cleared), which stays clock-free.
+ */
+export function areaOpenAt(data: Pick<GameData, 'config' | 'areas'>, areaId: string, now: number | null): boolean {
+  const t = areaOpensAt(data, areaId)
+  return t == null || (now != null && now >= t)
+}

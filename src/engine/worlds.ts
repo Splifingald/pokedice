@@ -32,7 +32,17 @@ import type { RunEvent } from './run'
 import type { GameData, ItemDef, RegionId, SaveData, SmallWorld, WorldCatch, WorldSave } from './types'
 import { smallWorlds, worldById, worldOfArea, worldOfRegion } from './worldList'
 
-export { isWorldMythical, newSmallWorld, normaliseWorld, smallWorlds, worldById, worldOfArea, worldOfRegion } from './worldList'
+export {
+  areaOpenAt,
+  areaOpensAt,
+  isWorldMythical,
+  newSmallWorld,
+  normaliseWorld,
+  smallWorlds,
+  worldById,
+  worldOfArea,
+  worldOfRegion,
+} from './worldList'
 
 const at = (iso: string): number => Date.parse(iso)
 
@@ -243,23 +253,6 @@ export function markWorldBye(save: SaveData, id: string): SaveData {
 }
 
 // ------------------------------------------------------------------ its rules
-
-/** When this area of a small world opens (ms, UTC), if it waits for a date. */
-export function areaOpensAt(data: GameData, areaId: string): number | null {
-  const area = data.areas.find((a) => a.id === areaId)
-  const iso = worldOfArea(data, area)?.opens[areaId]
-  const t = iso ? at(iso) : NaN
-  return Number.isFinite(t) ? t : null
-}
-
-/**
- * The area's date has come, on the server's clock (no date: always; time unknown: not yet). On top of the usual rule
- * (`isAreaUnlocked`: the one before cleared), which stays clock-free.
- */
-export function areaOpenAt(data: GameData, areaId: string, now: number | null): boolean {
-  const t = areaOpensAt(data, areaId)
-  return t == null || (now != null && now >= t)
-}
 
 /**
  * A fight in a small world's area: no upgrades on either side — each Pokémon's dice and combos at its own level ÷ 10

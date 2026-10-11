@@ -1,19 +1,20 @@
 // Picking a partner, full screen: in the professor's lab three Poké Balls drop onto the table (src/fx/timelines/
 // starter.ts). Tap one and its Pokémon comes out; "Do you want to pick it?" with its types, what it hits hard, what
-// hits it hard and its dice. Yes makes it your partner; no sends it back. Used by a new game and by a new region.
+// hits it hard and its dice. Yes makes it your partner; no sends it back. Used by a new game, by a new region and by a
+// small world's fresh start (in that world's colours).
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { createInstance, getSpecies, instanceStats, type RegionId } from '@/engine'
 import { LAB_ART, loadArt } from '@/fx/areaArt'
 import { loadSprite, spriteKey } from '@/fx/sprites'
-import { labColors, starterSeats, StarterScene } from '@/fx/timelines/starter'
+import { labColors, starterSeats, StarterScene, type LabColors } from '@/fx/timelines/starter'
 import { H, setCalm, W } from '@/fx/timeline'
 import { useT } from '@/i18n/react'
 import { useHoldFullscreen } from '@/lib/fullscreen'
 import { useMotion } from '@/lib/motion'
 import { useDialog } from '@/lib/useDialog'
 import { useGame } from '@/store/game'
-import { cx } from '@/theme/util'
+import { cx, mix } from '@/theme/util'
 import { DiceSet } from './DiceSet'
 import { PixelButton } from './PixelButton'
 import { MiniSprite } from './SpriteImg'
@@ -30,6 +31,7 @@ export function PartnerMoment({
   level,
   onPick,
   onLeave,
+  theme,
 }: {
   /** The region's three starters, in ball order. */
   starters: readonly number[]
@@ -40,6 +42,8 @@ export function PartnerMoment({
   onPick: (dex: number) => void
   /** ✕ and Escape: back out (absent on a new game, where there is nothing to go back to). */
   onLeave?: () => void
+  /** A small world's colours (docs/21): the lab is drawn in them, and its picture wears a veil of its main colour. */
+  theme?: { main: string; accent: string; ground: string }
 }) {
   const { t } = useT()
   useHoldFullscreen()
@@ -65,7 +69,7 @@ export function PartnerMoment({
     () =>
       lab &&
       new StarterScene({
-        lab: labColors(regionId),
+        lab: theme ? themedLab(theme) : labColors(regionId),
         mons: starters.map((d) => spriteKey(d, false)),
         ribbon: { welcome: t('ui.partner.welcome'), region: regionName },
         instant,
@@ -215,6 +219,9 @@ export function PartnerMoment({
               className="pixelated absolute inset-0 h-full w-full max-w-none object-cover"
             />
           )}
+          {lab?.picture && theme && (
+            <span aria-hidden className="pointer-events-none absolute inset-0 mix-blend-multiply" style={{ background: theme.main, opacity: 0.22 }} />
+          )}
           <canvas
             ref={cv}
             width={W}
@@ -336,4 +343,13 @@ export function PartnerMoment({
     </div>,
     document.body,
   )
+}
+
+/** A small world's lab: its ground's tint on the walls, its accent mixed into the floor. */
+function themedLab(theme: { main: string; accent: string; ground: string }): LabColors {
+  const hex = /^#[0-9a-f]{6}$/i
+  const ground = hex.test(theme.ground) ? theme.ground : '#efe6fb'
+  const accent = hex.test(theme.accent) ? theme.accent : '#ff6f9c'
+  const main = hex.test(theme.main) ? theme.main : '#5b3a9e'
+  return { wall: ground, low: mix(ground, main, 0.18), floorA: mix('#ffffff', ground, 0.5), floorB: mix(ground, accent, 0.18) }
 }

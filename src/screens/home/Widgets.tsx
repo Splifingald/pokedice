@@ -27,6 +27,7 @@ import { AreaStrip } from '@/components/AreaStrip'
 import { dayCarePicture } from '@/fx/areaArt'
 import { travelTo } from '@/store/travel'
 import { EventWidgets } from '@/screens/events/EventWidgets'
+import { useInWorld, WorldWidgets } from '@/screens/events/world'
 import { HeadTag, Meter, Widget, WidgetBanner, WIDGET_BANNER_H, WidgetRows as DayCareRows } from './Widget'
 
 /** The newest secret area (one tap to travel), or the next one to open with how close it is. */
@@ -457,8 +458,18 @@ function VersusWidget() {
   )
 }
 
-/** Home's widgets, two by two: the secret area and the Day Care, then Versus and one square per special event. */
+/**
+ * Home's widgets, two by two: the secret area and the Day Care, then Versus and one square per special event. Inside a
+ * small world, only the world's: its mythical and its Mart (the main game's wait outside, docs/21).
+ */
 export function Widgets({ onSecrets }: { onSecrets: () => void }) {
+  const inside = useInWorld().inside
+  if (inside)
+    return (
+      <div className="grid grid-cols-2 content-start gap-2.5">
+        <WorldWidgets />
+      </div>
+    )
   return (
     <div className="grid grid-cols-2 content-start gap-2.5">
       <SecretWidget onSecrets={onSecrets} />

@@ -22,14 +22,12 @@ import {
   type WorldShopItem,
 } from '@/engine'
 import type { Row } from '@/config/mapping'
-import { PixelIcon } from '@/components/icons'
 import { ItemSprite } from '@/components/ItemSprite'
 import { PixelButton } from '@/components/PixelButton'
-import { SpriteImg } from '@/components/SpriteImg'
 import { ART_GEOMETRY } from '@/fx/areaArtMap'
 import { LANGS } from '@/i18n/langs'
 import { money } from '@/lib/format'
-import { bannerUrl } from '@/screens/events/shared'
+import { WorldSquareView } from '@/screens/events/world'
 import { useNow } from '@/store/hooks'
 import { cx } from '@/theme/util'
 import { addRows, newUuid, rowKey, updateRow, useAdmin, useAdminData } from '../../store'
@@ -392,38 +390,13 @@ function WorldEditor({
   )
 }
 
-/** How Home's square looks in these colours (players see it first among the events). */
+/** How Home's square looks in these colours: the game's own square (players see it first among the events). */
 function SquarePreview({ w, data }: { w: SmallWorld; data: GameData }) {
-  const name = titleOf(w, data)
-  const mythical = data.species[w.mythical.dex]
   const total = regionAreas(data, w.regionId).length
   return (
     <div className="grid content-start gap-1">
       <span className="text-base text-muted">Home's square</span>
-      <div
-        className="relative isolate flex aspect-square w-full flex-col justify-between overflow-hidden p-2 shadow-ring"
-        style={{ background: w.theme.main, boxShadow: `inset 0 0 0 3px ${w.theme.accent}` }}
-      >
-        {w.banner && <img src={bannerUrl(w.banner)} alt="" className="pixelated absolute inset-0 -z-10 h-full w-full object-cover opacity-70" />}
-        <span className="flex flex-wrap gap-1">
-          <span className="px-1 text-base leading-tight text-white" style={{ background: w.theme.main }}>
-            WORLD
-          </span>
-          {mythical && (
-            <span className="flex items-center gap-1 px-1 text-base leading-tight text-ink" style={{ background: w.theme.accent }}>
-              <PixelIcon name="sparkle" size={11} /> SHINY {mythical.name.toUpperCase()}
-            </span>
-          )}
-        </span>
-        {mythical && <SpriteImg dex={mythical.dex} shiny silhouette size={72} className="mx-auto" />}
-        <span className="grid gap-0.5 px-1 py-0.5" style={{ background: `${w.theme.main}cc` }}>
-          <b className="truncate text-xl font-normal leading-none text-white">{name}</b>
-          <small className="text-base leading-none text-white/80">Areas 0/{total} · fresh start</small>
-          <span className="block h-1.5 w-full" style={{ background: w.theme.ground }}>
-            <i className="block h-full w-2/3" style={{ background: w.theme.accent }} />
-          </span>
-        </span>
-      </div>
+      <WorldSquareView world={w} now={Math.min(Date.now(), Date.parse(w.end))} cleared={0} total={total} partner={null} caught={false} onClick={() => {}} />
     </div>
   )
 }

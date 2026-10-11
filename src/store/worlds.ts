@@ -124,6 +124,19 @@ const calm = () => {
  * once the sign-in is known), or moved to later: the player is sent out and the world keeps their place.
  */
 export function settleWorlds(): void {
+  // What it does (a new save, the run reset) wakes it again: that inner call has nothing to add, and one acting on the
+  // save as it was before this one commits would never end.
+  if (settling) return
+  settling = true
+  try {
+    settleOnce()
+  } finally {
+    settling = false
+  }
+}
+let settling = false
+
+function settleOnce(): void {
   const { save, data, contentChecked, auth } = useGame.getState()
   const held = save && heldWorld(save)
   if (!save || !held) return
@@ -133,8 +146,8 @@ export function settleWorlds(): void {
   if (worldOver(save, data, now, contentChecked)) {
     const next = closeWorld(save, data)
     if (next === save) return
-    if (inside) useGame.setState({ run: initialRun() })
     commitSave(next)
+    if (inside) useGame.setState({ run: initialRun() })
     return
   }
   if (!inside || !contentChecked || now == null) return
@@ -148,8 +161,8 @@ export function settleWorlds(): void {
   if (!hidden) return
   const next = leaveWorld(save, data)
   if (!next) return
-  useGame.setState({ run: initialRun() })
   commitSave(next)
+  useGame.setState({ run: initialRun() })
   pushToast(t('ui.world.paused', { world: worldName(world, data) }), 'info', 6000)
 }
 

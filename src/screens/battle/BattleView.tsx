@@ -690,6 +690,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
             b={st.enemy}
             hp={fx.hp[st.enemy.uid] ?? st.enemy.hp}
             party={party}
+            byLevel={!!st.enemyLevels.byLevel}
             onClick={tapMatchups && (() => tapMatchups('enemy'))}
             open={matchups === 'enemy'}
           />
@@ -698,6 +699,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
           <OwnPlate
             b={active}
             hp={fx.hp[active.uid] ?? active.hp}
+            byLevel={!!st.playerLevels.byLevel}
             onClick={tapMatchups && (() => tapMatchups('player'))}
             open={matchups === 'player'}
           />

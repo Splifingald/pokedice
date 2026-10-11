@@ -9,6 +9,8 @@ import { DonationPopup } from './DonationPopup'
 import { EventUnlockPopup } from './EventUnlockPopup'
 import { AwayReportModal, ExtremeUnlockPopup } from './Extreme'
 import { LivePopup } from '@/screens/events/live'
+import { useInWorld, worldVars, WorldByePopup, WorldPopup } from '@/screens/events/world'
+import { WorldPick } from '@/screens/events/worldPick'
 import { VersusUnlockPopup } from './FeatureRules'
 import { RaidGiftPopup } from './RaidGiftPopup'
 import { FriendsService } from './friends/FriendsService'
@@ -24,11 +26,13 @@ export function GameLayout() {
   // The battle takes the whole screen: no top bar, no side bar, no tab bar.
   const full = useFullscreen()
   const home = useLocation().pathname === '/home'
+  // Inside a small world (docs/21) the page wears its colours.
+  const { inside, world } = useInWorld()
   // The special events read the real time (docs/18): kept fresh while the game is open.
   useServerTimeSync()
   if (!hasSave) return <Navigate to="/" replace />
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className={cx('flex min-h-screen flex-col', inside && 'in-world')} style={inside ? worldVars(world) : undefined}>
       {!full && <Header />}
       <div className="flex flex-1">
         {!full && <SideNav />}
@@ -56,6 +60,9 @@ export function GameLayout() {
       <ExtremeUnlockPopup />
       <AwayReportModal />
       <RaidGiftPopup />
+      <WorldPopup />
+      <WorldPick />
+      <WorldByePopup />
       <LivePopup />
       <FriendsService />
     </div>

@@ -47,6 +47,7 @@ import {
 import { leaveRebattle, startRebattle } from '@/store/rebattle'
 import { Medal, tierName } from '@/screens/events/RebattlePage'
 import { cx, shade, typeColor } from '@/theme/util'
+import { WorldMythicalCard } from '@/screens/events/world'
 
 /**
  * A result card over the battle: it rises from the bottom over the panel (on every screen, wild or trainer fight), the
@@ -318,6 +319,10 @@ function useRecap(events: RunEvent[]): { mons: MonRecap[]; extras: Extra[]; evol
           })
           return
         }
+        case 'world_mythical':
+          // A small world's shiny mythical (docs/21): gone home to its region's Box, or waiting for it.
+          extras.push({ key: k, sound: 'catch', node: <WorldMythicalCard dex={e.dex} region={e.region} waiting={e.waiting} /> })
+          return
         case 'rebattle_cleared':
           extras.push({
             key: k,

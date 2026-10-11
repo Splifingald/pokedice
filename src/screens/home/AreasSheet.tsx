@@ -37,6 +37,8 @@ import {
 } from './areas'
 import { AreaStrip } from '@/components/AreaStrip'
 import { ShinyParadeChip, useParadeLabel } from '@/screens/events/live'
+import { useInWorld } from '@/screens/events/world'
+import { worldName } from '@/store/worlds'
 
 export type AreasFilter = 'all' | 'catch' | 'secret' | 'cleared'
 type Sort = 'route' | 'level' | 'catch'
@@ -345,8 +347,10 @@ export function AreasSheet({
   const [sort, setSort] = useState<Sort>('route')
   const [view, setView] = useState(initialView)
   const region = regionOf(save)
-  const regionName = getRegion(data, region)?.name ?? ''
-  const offer = regionOnOffer()
+  // Inside a small world the sheet is the world's alone: its name, no Regions view, nothing on offer (docs/21).
+  const { inside, world } = useInWorld()
+  const regionName = inside ? worldName(world, data) : (getRegion(data, region)?.name ?? '')
+  const offer = inside ? null : regionOnOffer()
 
   const all = useMemo(
     () => regionAreaList(data, region).map((a) => ({ a, st: areaStatus(save, data, a) })),
@@ -418,7 +422,7 @@ export function AreasSheet({
       open={open}
       onClose={onClose}
       title={view === 'regions' ? t('ui.home.regions') : regionName}
-      titleExtra={regionsBtn}
+      titleExtra={inside ? undefined : regionsBtn}
       sub={
         view === 'regions'
           ? offer

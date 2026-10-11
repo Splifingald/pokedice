@@ -9,6 +9,7 @@ import {
   dayCareTutorialDue,
   donationDue,
   eventUnlockDue,
+  inWorld,
   leaderboardTutorialDue,
   liveCovers,
   liveLeft,
@@ -17,6 +18,8 @@ import {
   regionOfferDue,
   shinyBoost,
   versusRulesDue,
+  worldFor,
+  worldPopupDue,
   type Area,
   type GameData,
   type LiveEvent,
@@ -31,6 +34,7 @@ import { PixelButton } from '@/components/PixelButton'
 import { countdown, money } from '@/lib/format'
 import { useGame } from '@/store/game'
 import { markLivePopupSeen, useLive } from '@/store/live'
+import { serverNow } from '@/store/serverTime'
 import { useRaidGifts } from '@/store/raidGifts'
 import { HeadTag, WidgetRows, WIDGET_BANNER_H } from '@/screens/home/Widget'
 import { cx } from '@/theme/util'
@@ -287,7 +291,9 @@ export function LivePopup() {
       donationDue(s.save, s.data) ||
       regionOfferDue(s.save, s.data) ||
       !!eventUnlockDue(s.save, s.data) ||
-      versusRulesDue(s.save, s.data),
+      versusRulesDue(s.save, s.data) ||
+      // A small world's pop-up (priority 1) goes first.
+      (!inWorld(s.save, s.data) && worldPopupDue(s.save, worldFor(s.save, s.data, serverNow()))),
   )
   const idle = useGame((s) => s.run.phase === 'idle')
   const { live, now } = useLive(asked ? 1000 : 5000)

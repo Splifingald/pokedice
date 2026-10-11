@@ -1,8 +1,9 @@
 # Small worlds: plan (for validation)
 
-Status: **integration, phase 1 built** (2026-10-11): questions → plan → Visual Lab mockups (`design/visual-lab/worlds.js`,
-Home tab, "Small world" preview bar) → validation (§5, answered) → integration (§8). Branch `feature/small-worlds`
-(from `feature/version_2`). Phase 1 (engine, store, save, admin, tests) is done; phase 2 (what players see) is next.
+Status: **integrated** (2026-10-11): questions → plan → Visual Lab mockups (`design/visual-lab/worlds.js`, Home tab,
+"Small world" preview bar) → validation (§5, answered) → integration (§8). Branch `feature/small-worlds` (from
+`feature/version_2`). Phase 1 (engine, store, save, admin, tests) and phase 2 (what players see) are built; the UI's
+rules are in docs/15 §20.
 
 Event type 5 in the special events framework (docs/18): **Small worlds**, priority 1 (first on Home). A small world is a
 time-limited, themed region you build in the admin, where the **shiny mythicals** are won: a fresh start on one of its
@@ -199,6 +200,27 @@ interface SmallWorld {
 - **Admin → Areas**: a Region field per area, a region filter, `?area=` links.
 - **Tests**: `tests/engine/small-worlds.test.ts` (30), `e2e/admin-events.spec.ts` (the Small worlds tab).
 
+### 8b'. Phase 2, built
+- **Outside** (`screens/events/world.tsx`, the lab in `worldPick.tsx`, `styles/world.css`): Home's square
+  (`WorldSquare`, first of the event squares, on the Live square's frame), the pop-up (`WorldPopup`, once, after the
+  tutorials and other pop-ups, before the live event's; the live event's waits for it), the partner pick (`WorldPick`:
+  `PartnerMoment` with the world's `theme`), the closing pop-up (`WorldByePopup`). All three mounted once in
+  `GameLayout`.
+- **Inside**: the world's colours (`worldVars`, `.in-world` on the layout), the strip on Home (`WorldStrip`: name, time
+  left, Back to Kanto), Home's two squares (`WorldWidgets`: the mythical, the World Mart) in place of every other, no
+  region offer or switcher, "Opens {date}" on an area waiting for its date (`home/areas.ts`; CONTINUE's GO TO waits
+  for it too), the World Mart (`Shop.tsx`, `WorldShop`), Upgrades' explanation (`Upgrades.tsx`, `WorldUpgrades`), and
+  the main game's pages (the events, the Day Care, Versus) saying why they wait (`WorldAwayPage`). The upgrades dot
+  stays dark inside.
+- **Battle**: the dice level on each plate (`DiceLevelTag`), the booster chip (`BoosterChip`) in the readout and as its
+  own factor in the damage recap, the mythical's line on the result card (`WorldMythicalCard`, run event
+  `world_mythical`).
+- **Strings**: 48 more `ui.world.*` keys (55 in all) in the ten languages. **Kitchen sink**: `WorldBits` (every state of each piece).
+- **Tests**: `tests/world-clock.test.ts` (the store's clock: closing, Off, mid-fight), `e2e/worlds.spec.ts` (the
+  pop-up, the pick, Home inside, its Mart, Upgrades and an event's page, Back; a battle with the dice levels and a
+  booster, an area waiting for its date; the final fight and the catch going to the Kanto Box; the closing; a
+  360×640 phone outside and inside).
+
 ### 8c. Where it differs from the plan
 - **No Config → Regions editor exists** in the admin: the Small worlds tab makes the world's region row itself (id
   `world-<name>`, `dexRange` `[99999, 99999]` — the admin's checks want numbers ≥ 1 and it's past every species and
@@ -214,4 +236,10 @@ interface SmallWorld {
 - **Its Mart's prices** are never below the usual buy-back (as the Special Shop's), so buying to sell can't pay.
 - **No SQL**: the `smallWorlds` game_config row is written by Publish. The server's leaderboard keeps only rows with
   badges: don't give a world's gym trainers a badge.
-
+- **The strip is Home's**, not under the top bar on every page: the other pages inside are the world's own (the World
+  Mart, Upgrades) or say to leave it first, each with the way back. The CTA stays red and the money gold: the world's
+  colours tint its own pieces and the page's ground only.
+- **Booted inside a world before the content is in** (the game starts on its own bundle, which never holds the admin's
+  worlds), Home shows the strip and "The world is on its way" until the content arrives (`WorldWaiting`).
+- **A world's partners against its wild Pokémon**: a type that can't touch them (Gastly against Normal types) is a
+  stalemate in the world as anywhere; the admin's pools and partners decide it.
