@@ -161,3 +161,36 @@ export function backupSave(save: SaveData, reason: string) {
     console.warn('[save] backup failed', err)
   }
 }
+
+/**
+ * What a "delete all my data" leaves on the device: the player's settings (language, theme, sound) and what belongs to
+ * the device or the deployment, not to the player (the analytics device id and its daily ping, the sign-in options).
+ */
+const DEVICE_KEYS = new Set([
+  SETTINGS_KEY,
+  'pokedice.theme',
+  'pokedice.analytics.device',
+  'pokedice.analytics.pinged',
+  'pokedice.authProviders',
+])
+
+/**
+ * Every other key the game keeps here: the save and its backups, the archived corrupt one, Pokédex "seen" marks, tips
+ * already shown, the friend ID and friend notices. Matched by prefix, so a key added later goes too.
+ */
+export function wipePlayerData() {
+  // A save write still waiting would put the save straight back.
+  if (timer) clearTimeout(timer)
+  timer = null
+  pending = undefined
+  const ls = storage()
+  if (!ls) return
+  try {
+    const keys = Array.from({ length: ls.length }, (_, i) => ls.key(i)).filter(
+      (k): k is string => !!k && k.startsWith('pokedice.') && !DEVICE_KEYS.has(k),
+    )
+    for (const k of keys) ls.removeItem(k)
+  } catch (err) {
+    console.warn('[save] wipe failed', err)
+  }
+}

@@ -12,12 +12,13 @@ import {
   flushPush,
   pullCloudSave,
   pushCloudSave,
+  pushesSettled,
   pushKey,
   sameSave,
   schedulePush,
 } from '@/save/cloud'
 import type { SaveData } from '@/engine/types'
-import { backupSave, flushWrite } from '@/save/storage'
+import { backupSave, flushWrite, wipePlayerData } from '@/save/storage'
 import { commitSave, initialRun, onSaveCommitted, pushToast, setContent, tickFossils, useGame, type AuthProvider } from './game'
 import { t } from '@/i18n'
 import { rescueIfRegionDisabled } from './regions'
@@ -332,6 +333,43 @@ function sayReturnedAuthError() {
   for (const k of ['error', 'error_code', 'error_description']) search.delete(k)
   const rest = search.toString()
   window.history.replaceState(null, '', `${window.location.pathname}${rest ? `?${rest}` : ''}`)
+}
+
+/**
+ * Settings → Delete all my data: signed in, every row the online database keeps about the player
+ * (`delete_my_data()`, migration 0037), then everything the game keeps on this device but its settings. Online first:
+ * a local delete alone would get the save back from the cloud at the next sync, so if the online one fails nothing is
+ * deleted and this returns false. The caller reloads the page, which clears what the stores still hold in memory.
+ */
+export async function deleteAllData(): Promise<boolean> {
+  const { auth } = useGame.getState()
+  // Not known yet whether a session is stored, or a sync running: either could bring a cloud save straight back.
+  if (auth.status === 'unknown' || useCloudSync.getState().busy) return false
+  if (auth.status === 'signed_in' && auth.userId) {
+    const client = await getSupabase()
+    if (!client) return false
+    const was = pushAllowed
+    // No push may land after the delete: the waiting one goes now, the next ones wait for the answer.
+    pushAllowed = false
+    await pushesSettled()
+    let error: unknown = null
+    try {
+      error = (await client.rpc('delete_my_data')).error
+    } catch (err) {
+      error = err
+    }
+    if (error) {
+      console.warn('[cloud] delete failed', error)
+      pushAllowed = was
+      return false
+    }
+    cloudKey = null
+  }
+  // Out of the store too, so nothing commits the old save again before the reload.
+  useGame.setState({ save: null })
+  resetRun()
+  wipePlayerData()
+  return true
 }
 
 /** Sign-out keeps the local save. */

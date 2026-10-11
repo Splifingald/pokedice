@@ -15,7 +15,7 @@ import { parseSave } from '@/save/schema'
 import { pushToast, setSettings, useGame } from '@/store/game'
 import { deleteSave, replaceSave } from '@/store/run'
 import { useIsAdmin } from '@/store/hooks'
-import { checkContent, providerName } from '@/store/sync'
+import { checkContent, deleteAllData, providerName } from '@/store/sync'
 import { AccountButton, ConnectedAccounts, DisconnectButton } from '@/components/AccountButton'
 import { SaveFacts } from '@/components/SyncConflictModal'
 import { backupSave, readBackups, soundOn } from '@/save/storage'
@@ -210,6 +210,8 @@ export function SettingsScreen() {
         </div>
       )}
 
+      <DeleteAllData />
+
       <DonationModal open={donating} onClose={() => setDonating(false)} />
 
       <Modal open={confirmDelete} onClose={() => setConfirmDelete(false)} title={t('ui.settings.deleteTitle')}>
@@ -226,6 +228,58 @@ export function SettingsScreen() {
             }}
           >
             {t('ui.settings.delete')}
+          </PixelButton>
+        </div>
+      </Modal>
+    </div>
+  )
+}
+
+/**
+ * The red button at the very bottom: everything the game keeps about the player, in this browser and online, deleted.
+ * Two pop-ups in a row so it is never a mis-tap: what goes, then a last "really?". Then the title screen, from scratch.
+ */
+function DeleteAllData() {
+  const { t } = useT()
+  const online = useGame((s) => s.auth.status === 'signed_in')
+  const [step, setStep] = useState<0 | 1 | 2>(0)
+  const [busy, setBusy] = useState(false)
+  const close = () => {
+    if (!busy) setStep(0)
+  }
+  const wipe = async () => {
+    setBusy(true)
+    // A reload, not a navigation: the stores still hold the old save, friends and events in memory.
+    if (await deleteAllData()) return window.location.assign('/')
+    setBusy(false)
+    setStep(0)
+    pushToast(t('ui.settings.wipeFailed'), 'bad')
+  }
+  return (
+    <div className="flex justify-center">
+      {/* Full width on phones, so a long translation shrinks to fit instead of pushing the page sideways. */}
+      <PixelButton variant="danger" className="w-full sm:w-auto" onClick={() => setStep(1)}>
+        {t('ui.settings.wipe')}
+      </PixelButton>
+
+      <Modal open={step === 1} onClose={close} title={t('ui.settings.wipeTitle')}>
+        <p className="copy mb-4 text-lg">{t(online ? 'ui.settings.wipeBodyOnline' : 'ui.settings.wipeBodyLocal')}</p>
+        <div className="flex flex-wrap justify-end gap-2">
+          <PixelButton onClick={close}>{t('ui.common.cancel')}</PixelButton>
+          <PixelButton variant="danger" onClick={() => setStep(2)}>
+            {t('ui.common.continue')}
+          </PixelButton>
+        </div>
+      </Modal>
+
+      <Modal open={step === 2} onClose={close} dismissable={!busy} title={t('ui.settings.wipeSureTitle')}>
+        <p className="copy mb-4 text-lg">{t('ui.settings.wipeSureBody')}</p>
+        <div className="flex flex-wrap justify-end gap-2">
+          <PixelButton onClick={close} disabled={busy}>
+            {t('ui.common.cancel')}
+          </PixelButton>
+          <PixelButton variant="danger" onClick={() => void wipe()} disabled={busy}>
+            {t(busy ? 'ui.settings.wiping' : 'ui.settings.wipeConfirm')}
           </PixelButton>
         </div>
       </Modal>

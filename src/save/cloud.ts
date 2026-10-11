@@ -53,6 +53,12 @@ export function flushPush() {
   pushing = pushing.then(run).catch((err) => console.warn('[cloud] push failed', err))
 }
 
+/** Sends the waiting save now; resolves once every push has landed or failed (a push never rejects). */
+export function pushesSettled(): Promise<void> {
+  flushPush()
+  return pushing
+}
+
 /** Forget the waiting push: the caller is pushing the latest save itself. */
 export function cancelPush() {
   if (pushTimer) clearTimeout(pushTimer)
