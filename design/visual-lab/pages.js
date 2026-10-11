@@ -670,7 +670,7 @@
             : ''
         }</li>`
     }
-    return `<ul class="pg-items">${open.map(row).join('') || '<li class="hm-empty">Nothing in this category yet.</li>'}</ul>${
+    return `${A.liveShop ? A.liveShop(ST.shopCat) : ''}<ul class="pg-items">${open.map(row).join('') || '<li class="hm-empty">Nothing in this category yet.</li>'}</ul>${
       later.length
         ? `<div class="pg-sec-h"><h3>Coming later</h3></div><ul class="pg-items later">${later.map((it) => `<li class="pg-it locked"><span class="pg-it-main">${A.itemIco(it)}<span class="pg-it-t"><b>${esc(it.name)}</b><small>${esc(shortEffect(it))}</small></span><span class="pg-lockbadge"><img class="px" alt="" src="${A.icons.BADGE}" />${it.badges} badges</span></span></li>`).join('')}</ul>`
         : ''

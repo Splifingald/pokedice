@@ -1793,6 +1793,125 @@
   .ad-cols { display: flex; gap: 4px; }
   .ad-cols input { width: 26px; height: 22px; padding: 0; border: 1px solid var(--line); background: none; }
   .ad-dev { display: flex; flex-wrap: wrap; gap: 6px; }
+
+  /* live events (docs/20): the Home square, the pop-up, the Special Shop, the chips */
+  .hm-w.lv-w { position: relative; overflow: hidden; isolation: isolate; display: flex; flex-direction: column; justify-content: space-between; gap: 0; min-height: 150px; padding: 0 !important; border: 0; text-align: left; color: #fbfdff; background: #24304f var(--art) center var(--pos, 55%) / cover no-repeat; image-rendering: pixelated; clip-path: polygon(3px 0, calc(100% - 3px) 0, calc(100% - 3px) 3px, 100% 3px, 100% calc(100% - 3px), calc(100% - 3px) calc(100% - 3px), calc(100% - 3px) 100%, 3px 100%, 3px calc(100% - 3px), 0 calc(100% - 3px), 0 3px, 3px 3px); }
+  .lv-w::before { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(#24304f30, transparent 30%, #24304fd0 66%); }
+  .lv-w::after { content: ''; position: absolute; inset: 0; box-shadow: inset 0 0 0 3px #24304f, inset 0 0 0 5px #ffbe2e, inset 0 0 0 7px #24304f80; pointer-events: none; }
+  .lv-w:focus-visible { outline: none; }
+  .lv-w:focus-visible::after { box-shadow: inset 0 0 0 3px #24304f, inset 0 0 0 6px #f2553f; }
+  .lv-w.wide { grid-column: 1 / -1; order: -1; min-height: 118px; }
+  .lv-w-top { display: flex; justify-content: space-between; align-items: center; gap: 6px; padding: 9px 9px 0; }
+  .lv-live { display: inline-flex; align-items: center; gap: 4px; font-family: 'Jersey 15', sans-serif; font-size: 13px; line-height: 1; letter-spacing: 0.06em; padding: 2px 5px 3px; background: #f2553f; color: #fff; box-shadow: inset 0 0 0 2px #24304f; }
+  .lv-live i { width: 6px; height: 6px; background: #fff; animation: lvblink 1.2s steps(2) infinite; }
+  @keyframes lvblink { 50% { opacity: 0.2; } }
+  .lv-tag { display: inline-flex; align-items: center; gap: 4px; font-family: 'Jersey 15', sans-serif; font-size: 14px; line-height: 1; padding: 2px 5px 3px; background: #ffbe2e; color: #24304f; box-shadow: inset 0 0 0 2px #24304f; white-space: nowrap; }
+  .t-shop .lv-tag { background: #c58aff; }
+  .t-cash .lv-tag { background: #34c97a; color: #0f2e1d; }
+  .lv-spk { display: inline-block; width: 11px; height: 11px; background: currentColor; clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%); flex: none; }
+  .lv-w-bot { display: grid; gap: 3px; padding: 0 10px 12px; min-width: 0; }
+  .lv-w-title { font-weight: 400; font-size: 22px; line-height: 1; text-shadow: 0 2px 0 #24304f; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .lv-w-sub { font-family: 'Jersey 15', sans-serif; font-size: 15px; line-height: 1; color: #ffe7a8; text-shadow: 0 1px 0 #24304f; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .lv-time { font-family: 'Jersey 15', sans-serif; font-size: 15px; line-height: 1; margin-top: 3px; color: #fbfdff; text-shadow: 0 1px 0 #24304f; }
+  .lv-gauge { display: block; height: 8px; background: #0f1830; box-shadow: 0 0 0 2px #24304f; overflow: hidden; }
+  .lv-gauge i { display: block; height: 100%; background: linear-gradient(#ffe7a8 0 35%, #ffbe2e 35% 70%, #e8a21c 70%); transition: width 600ms steps(6); }
+  .lv-w.hot .lv-gauge i, .lv-pop.hot .lv-gauge i { background: linear-gradient(#ffb3a8 0 35%, #f2553f 35% 70%, #c2331f 70%); animation: lvblink 1.6s steps(2) infinite; }
+  .lv-w.hot .lv-time { color: #ffb3a8; }
+  /* what floats over the picture: sparkles, coins, the shop's items */
+  .lv-fx-spk, .lv-fx-coins, .lv-fx-shelf { position: absolute; inset: 0; z-index: -1; pointer-events: none; }
+  .lv-fx-spk i { position: absolute; width: 18px; height: 18px; filter: drop-shadow(0 0 3px #fff6a8) drop-shadow(0 2px 0 #24304f); animation: lvtw 1.6s steps(3) infinite; }
+  .lv-fx-spk i::before { content: ''; position: absolute; inset: 0; background: #fffbe0; clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%); }
+  @keyframes lvtw { 0%, 100% { opacity: 0; transform: scale(0.3); } 50% { opacity: 1; transform: scale(1); } }
+  .lv-fx-spk i:nth-child(1) { left: 18%; top: 38px; }
+  .lv-fx-spk i:nth-child(2) { left: 62%; top: 26px; animation-delay: 0.5s; width: 26px; height: 26px; }
+  .lv-fx-spk i:nth-child(3) { left: 82%; top: 58px; animation-delay: 1s; }
+  .lv-fx-spk i:nth-child(4) { left: 40%; top: 60px; animation-delay: 0.25s; width: 12px; height: 12px; }
+  .lv-fx-spk i:nth-child(5) { left: 8%; top: 70px; animation-delay: 0.8s; width: 12px; height: 12px; }
+  .lv-fx-spk.big i:nth-child(1) { left: 12%; top: 22px; width: 24px; height: 24px; }
+  .lv-fx-spk.big i:nth-child(2) { left: 74%; top: 14px; width: 34px; height: 34px; }
+  .lv-fx-spk.big i:nth-child(3) { left: 86%; top: 74px; }
+  .lv-fx-spk.big i:nth-child(4) { left: 26%; top: 84px; }
+  .lv-fx-spk.big i:nth-child(5) { left: 6%; top: 64px; }
+  .lv-fx-spk.big i:nth-child(6) { left: 62%; top: 88px; animation-delay: 0.6s; width: 14px; height: 14px; }
+  .lv-fx-spk.big i:nth-child(7) { left: 44%; top: 12px; animation-delay: 1.2s; width: 14px; height: 14px; }
+  .lv-fx-coins img { position: absolute; top: -32px; left: calc(14% + var(--i) * 20%); width: 32px; height: 32px; animation: lvfall 2.6s linear infinite; animation-delay: calc(var(--i) * -0.9s); }
+  .lv-fx-coins.big img { width: 40px; height: 40px; left: calc(6% + var(--i) * 19%); }
+  @keyframes lvfall { 0% { transform: translateY(0); } 100% { transform: translateY(190px); } }
+  .lv-fx-shelf { display: flex; justify-content: center; align-items: start; gap: 2px; padding-top: 34px; }
+  .lv-fx-shelf > span { display: grid; place-items: center; width: 40px; height: 40px; background: #fbfdffd8; box-shadow: inset 0 0 0 2px #24304f; animation: evbob 2.2s steps(4) infinite; animation-delay: calc(var(--i) * 0.3s); }
+  .lv-fx-shelf.big { padding-top: 30px; gap: 8px; }
+  .lv-fx-shelf.big > span { width: 76px; height: 76px; background: #fbfdffe8; box-shadow: inset 0 0 0 3px #24304f; }
+  .hm-screen .it.lv-it2 { width: 60px; height: 60px; background-size: 1440px 60px; }
+  .lv-w.wide .lv-fx-shelf { justify-content: end; padding: 30px 12px 0 0; }
+  /* the pop-up */
+  .lv-pop .ev-pop-banner { height: 128px; overflow: hidden; isolation: isolate; }
+  .lv-pop .ev-pop-banner::before { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(transparent 40%, #24304fa0); }
+  .lv-pop-tag { background: #f2553f; color: #fff; }
+  .lv-pop-big { position: relative; font-size: 64px; line-height: 1; color: #ffe7a8; text-shadow: 0 4px 0 #24304f, 3px 0 0 #24304f, -3px 0 0 #24304f, 0 -3px 0 #24304f; animation: evpop 420ms cubic-bezier(0.2, 1.6, 0.4, 1); }
+  .lv-pop.t-cash .lv-pop-big { color: #b6f5cf; }
+  .lv-pop-when { display: grid; gap: 6px; margin-top: -4px; padding: 0 16px; font-family: 'Jersey 15', sans-serif; font-size: 16px; line-height: 1; color: #5c6a8a; }
+  .lv-pop-when b { font-weight: 400; color: #24304f; }
+  .ev-pop-foot.one { grid-template-columns: 1fr; }
+  .lv-ri-spk { position: relative; width: 30px; height: 30px; }
+  .lv-ri-spk { filter: drop-shadow(1px 0 0 #24304f) drop-shadow(-1px 0 0 #24304f) drop-shadow(0 1px 0 #24304f) drop-shadow(0 -1px 0 #24304f); }
+  .lv-ri-spk i { position: absolute; width: 14px; height: 14px; background: #ffd23a; clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%); }
+  .lv-ri-spk i:nth-child(1) { left: 0; top: 1px; }
+  .lv-ri-spk i:nth-child(2) { left: 12px; top: 8px; width: 20px; height: 20px; }
+  .lv-ri-spk i:nth-child(3) { left: 3px; top: 18px; width: 10px; height: 10px; }
+  .lv-ri-grass { display: flex; align-items: end; gap: 2px; height: 22px; }
+  .lv-ri-grass i { width: 6px; height: 14px; background: #34c97a; box-shadow: 0 0 0 2px #24304f; }
+  .lv-ri-grass i:nth-child(2) { height: 20px; }
+  /* Cash Flow on a victory */
+  .lv-vic-xp { list-style: none; margin: 0; padding: 0; width: 100%; display: grid; gap: 2px; }
+  .lv-vic-xp li { display: flex; align-items: center; gap: 6px; font-size: 18px; }
+  .lv-vic-xp li b { flex: 1; font-weight: 400; text-align: left; }
+  .lv-vic-xp li span { font-family: 'Jersey 15', sans-serif; font-size: 16px; color: #5c6a8a; }
+  .lv-vic-gold { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 8px 6px 10px; background: #fff3cc; box-shadow: inset 0 0 0 2px #24304f; font-size: 34px; line-height: 1; }
+  .lv-vic-gold img { width: 28px; height: 28px; }
+  .lv-vic-gold b { font-weight: 400; min-width: 4ch; text-align: left; font-variant-numeric: tabular-nums; }
+  .lv-vic-note { margin: -2px 0 2px; font-family: 'Jersey 15', sans-serif; font-size: 16px; color: #1d6b43; }
+  /* chips where it applies */
+  .lv-chip { display: inline-flex; align-items: center; gap: 4px; flex: none; font-family: 'Jersey 15', sans-serif; font-size: 15px; line-height: 1; padding: 2px 6px 3px; background: #ffbe2e; color: #24304f; box-shadow: inset 0 0 0 2px #24304f; white-space: nowrap; }
+  .lv-chip.cash { background: #34c97a; color: #0f2e1d; font-size: 16px; }
+  .hm-gym.lv-gtag { display: inline-flex; align-items: center; gap: 3px; background: #ffbe2e; color: #24304f; box-shadow: inset 0 0 0 1px #24304f; }
+  .lv-purse { flex: none; font-family: 'Jersey 15', sans-serif; font-size: 14px; line-height: 1; padding: 3px 5px 4px; margin-right: -4px; background: #34c97a; color: #0f2e1d; box-shadow: inset 0 0 0 2px #24304f; }
+  .lv-navtag { position: absolute; top: 2px; left: calc(50% + 2px); font-style: normal; font-size: 12px; line-height: 1; padding: 2px 4px 3px; background: #c58aff; color: #24304f; box-shadow: inset 0 0 0 2px #24304f; }
+  /* the shop's Special section */
+  .lv-shop { display: grid; gap: 8px; margin-bottom: 12px; padding-bottom: 10px; background: #fbf4ff; box-shadow: inset 0 0 0 3px #24304f, inset 0 0 0 5px #c58aff; }
+  .lv-shop-h { position: relative; isolation: isolate; display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 6px 8px; min-height: 92px; align-content: end; padding: 10px 12px 12px; background: var(--art) center var(--pos, 55%) / cover no-repeat; image-rendering: pixelated; color: #fbfdff; box-shadow: inset 0 0 0 3px #24304f, 0 3px 0 #24304f; }
+  .lv-shop-h::before { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(transparent 20%, #24304fd0); }
+  .lv-shop-h h3 { margin: 0; font-weight: 400; font-size: 28px; line-height: 1; text-shadow: 0 2px 0 #24304f; }
+  .lv-shop-left { grid-column: 1 / -1; display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 10px; font-family: 'Jersey 15', sans-serif; font-size: 16px; line-height: 1; color: #ffe7a8; text-shadow: 0 1px 0 #24304f; }
+  .lv-items { padding: 0 8px; }
+  .lv-it .pg-it-t small { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .lv-it-tag { font-style: normal; font-size: 13px; line-height: 1; padding: 1px 4px 2px; color: #24304f; box-shadow: inset 0 0 0 1px #24304f; }
+  .lv-it-tag.never { background: #e2c4ff; }
+  .lv-it-tag.sale { background: #f2553f; color: #fff; }
+  .lv-stock { color: #5c6a8a; }
+  .lv-stock.low { color: #c2331f; }
+  .lv-price { display: grid; justify-items: center; gap: 2px; }
+  .lv-price s { font-size: 14px; color: #a7b2c8; text-decoration-thickness: 2px; }
+  .pg-it.lv-out { background: #f1f4f9; box-shadow: inset 0 0 0 2px #b6c3d9; color: #5c6a8a; }
+  .pg-it.lv-out .pg-price { background: #e3e8f0; color: #8592ad; font-size: 15px; }
+  .lv-one { font-family: 'Jersey 15', sans-serif; font-size: 15px; color: #5c6a8a; align-self: center; }
+  .lv-shop-note { margin: 0; padding: 0 12px; font-family: 'Jersey 15', sans-serif; font-size: 14px; color: #5c6a8a; }
+  @media (prefers-reduced-motion: reduce) { .lv-live i, .lv-fx-spk i, .lv-fx-coins img, .lv-fx-shelf > span, .lv-gauge i, .lv-pop-big { animation: none !important; } .lv-fx-coins img { top: calc(10px + var(--i) * 12px); } }
+  /* the live events admin mock */
+  .ad-st { display: inline-block; padding: 1px 6px; font-size: 12px; letter-spacing: 0.04em; background: #3a3354; color: #d6d0e4; }
+  .ad-st.live { background: #1d6b43; color: #fff; }
+  .ad-st.scheduled { background: #2f4f8f; color: #fff; }
+  .ad-t tr.sel td { background: #ffffff0d; }
+  .ad-t td small { display: block; color: var(--muted); }
+  .ad-acts { white-space: nowrap; }
+  .ad-acts .btn + .btn { margin-left: 4px; }
+  .ad-grid .ad-wide { grid-column: 1 / -1; justify-content: start; flex-wrap: wrap; }
+  .ad-grid .ad-wide span { min-width: 104px; }
+  .ad-grid input[type='text'], .ad-grid input[type='datetime-local'], .ad-grid select { padding: 3px 5px; background: #0f0c1d; color: var(--text); border: 1px solid var(--line); font: inherit; color-scheme: dark; }
+  .ad-grid input[type='text'] { flex: 1; min-width: 0; }
+  .ad-grid small { color: var(--muted); }
+  .ad-areas { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 2px 10px; margin: 0 0 8px; padding: 6px 8px; border: 1px solid var(--line); }
+  .ad-areas legend { padding: 0 4px; color: var(--muted); }
+  .ad-areas label { display: flex; gap: 6px; align-items: center; }
 </style>
 
 <header class="deck">
@@ -1839,6 +1958,28 @@
       <button type="button" class="btn small" data-evpop>Replay unlock pop-ups</button>
       <button type="button" class="btn small" data-evgift>Helper gift pop-up</button>
       <button type="button" class="btn small" data-evsound aria-pressed="false">Sound off</button>
+    </div>
+    <div class="home-states ev-controls" id="lv-controls">
+      <span class="eyebrow">LIVE EVENT</span>
+      <div class="seg small" role="radiogroup" aria-label="Which live event runs">
+        <button type="button" role="radio" data-lvpick="none" aria-checked="false">None</button>
+        <button type="button" role="radio" data-lvpick="shiny-areas" aria-checked="false">Shiny: areas</button>
+        <button type="button" role="radio" data-lvpick="shiny-region" aria-checked="true">Shiny: Kanto</button>
+        <button type="button" role="radio" data-lvpick="shiny-all" aria-checked="false">Shiny: everywhere</button>
+        <button type="button" role="radio" data-lvpick="shop" aria-checked="false">Special Shop</button>
+        <button type="button" role="radio" data-lvpick="cash" aria-checked="false">Cash Flow</button>
+      </div>
+      <div class="seg small" role="radiogroup" aria-label="How far into it">
+        <button type="button" role="radio" data-lvtime="start" aria-checked="false">Just started</button>
+        <button type="button" role="radio" data-lvtime="mid" aria-checked="true">Halfway</button>
+        <button type="button" role="radio" data-lvtime="last" aria-checked="false">Last hour</button>
+      </div>
+      <div class="seg small" role="radiogroup" aria-label="Home square size">
+        <button type="button" role="radio" data-lvwide="false" aria-checked="true">Square</button>
+        <button type="button" role="radio" data-lvwide="true" aria-checked="false">Wide</button>
+      </div>
+      <button type="button" class="btn small" data-lvpop>Replay its pop-up</button>
+      <button type="button" class="btn small" data-lvwin>Trainer victory (₽)</button>
     </div>
     <div class="home-grid">
       <div class="home-device">
@@ -1956,6 +2097,25 @@
         <h2 class="notes-h">Admin · Events (mock)</h2>
         <p class="ad-intro">Edits here change the phone right away: wheel rows and odds, raid bars and colours, priorities, banners.</p>
         <div class="ev-admin" id="ev-admin"></div>
+        <h2 class="notes-h">Live events <span class="ev-newtag">NEW</span></h2>
+        <p class="ad-intro">Event type 4, priority 2: the whole game changes for a while, the same for everyone, scheduled in the admin. One at a time. The preview bar above picks which one runs and how far into it you are.</p>
+        <ol class="zones">
+          <li><b>On Home</b><span>First among the event squares: the <em>picture</em> picked in admin, a red LIVE tag, the type’s tag (<em>×5 ✦</em>, <em>SALE</em>, <em>+50 % ₽</em>), the title, what it does, <em>Ends in 1 d 12 h</em> and a gauge of the time left (red in its last 3 hours). Sparkles, falling coins or the shop’s items float over the picture. A tap reopens the pop-up, or opens the shop for a Special Shop. Before it starts and once it ends, no square. <em>Square</em> sits with the others; <em>Wide</em> spans the row above them (to choose).</span></li>
+          <li><b>The pop-up</b><span>Once per event per player, on Home, after the game’s other pop-ups: the banner with a red LIVE EVENT tag and the big number, the title, the time left and when it ends (your time), two or three lines that say what it does with the admin’s numbers. <em>OK</em>; a Special Shop adds <em>Go to the shop</em>.</span></li>
+          <li><b>Shiny Parade</b><span>Wild encounters only, in some areas, one region or the whole game; shiny odds × the admin’s number. Where it applies, the area plate on Home and the area cards carry a <em>×5</em> chip with a sparkle (try <em>Shiny: areas</em>: Viridian Forest, the Safari Zone, Seafoam Islands). Trainers, bosses, Eggs and raids keep their odds; legendaries stay shiny-locked.</span></li>
+          <li><b>Special Shop</b><span>A <em>Special</em> section tops the Mart’s Buy list, under the event’s picture with its timer and gauge: items the Mart never sells (<em>NOT IN THE MART</em>), items at a special price (the usual price struck out, <em>−25 %</em>), and stock per trainer (<em>2 of 3 left</em>, then SOLD OUT). The Shop tab wears a <em>SALE</em> tag while it runs. Try buying the Master Ball twice.</span></li>
+          <li><b>Cash Flow</b><span>Every ₽ earned × the multiplier: trainers and Gyms, ₽ found in areas, the Elite Rebattle, the Game Corner, the Day Care, the wheel. Selling isn’t boosted (no buy-and-sell loop). The purse in the top bar wears <em>+50 %</em>; a victory’s ₽ line counts up with the bonus beside it and says how much came from Cash Flow (<em>Trainer victory</em> above).</span></li>
+          <li><b>Admin</b><span>The list (scheduled, live, ended) with <em>End now</em> on the live one; the editor: type, banner, badges needed, an optional custom title, start and end in UTC (your time beside), then the type’s settings. An overlap with another event is refused. Edits here change the phone right away.</span></li>
+        </ol>
+        <h2 class="notes-h">To decide at validation</h2>
+        <ol class="zones">
+          <li><b>Titles</b><span>(a) The type’s name, translated in the 10 languages, plus its details (“×5 shiny in Kanto”), with an optional custom title for an occasion (the mock’s choice), or (b) a title typed per language every time.</span></li>
+          <li><b>Square or wide</b><span>The live square among the other squares, or a wide banner over them.</span></li>
+          <li><b>Region-only shop items</b><span>Sold only while you play that region (the mock: the Moon Stone is Kanto-only), or shown everywhere.</span></li>
+          <li><b>Cash Flow on the wheel</b><span>The Fortune Wheel’s ₽ counts as ₽ earned (included in the mock).</span></li>
+        </ol>
+        <h2 class="notes-h">Admin · Live events (mock)</h2>
+        <div class="ev-admin" id="lv-admin"></div>
         <h2 class="notes-h">The tabs</h2>
         <ol class="zones">
           <li><b>Team</b><span>The three as cards: sprite, HP, XP, dice. <em>Drag one onto another</em> to change who goes out first; the lead wears gold. The Box below: search, sort by number, level or newest, filter by type. A card opens the Pokémon: stats, every die face, what it learns next, items to use. Swaps stay a Pokémon Center thing, said once at the top.</span></li>
@@ -2076,6 +2236,7 @@
 <script src="daycare.js"></script>
 <script src="social.js"></script>
 <script src="events.js"></script>
+<script src="live.js"></script>
 <script src="starter.js"></script>
 <script src="lab.js"></script>
 <script src="bgs.js"></script>

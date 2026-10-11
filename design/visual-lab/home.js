@@ -1424,7 +1424,7 @@
     const done = clearedArea(a) ? rounds : roundOf(a) - 1
     const el = $('#hm-area')
     el.innerHTML = `
-      <span class="hm-area-row"><b class="hm-area-name">${esc(a.name)}</b><span class="hm-lv">Lv.${a.lv[0]}–${a.lv[1]}</span></span>
+      <span class="hm-area-row"><b class="hm-area-name">${esc(a.name)}</b>${API.liveChip ? API.liveChip(a) : ''}<span class="hm-lv">Lv.${a.lv[0]}–${a.lv[1]}</span></span>
       <span class="hm-area-row"><span class="hm-rounds">${Array.from({ length: rounds }, (_, i) => `<i class="${i < done ? 'on' : i === done ? 'now' : ''}"></i>`).join('')}</span>
       ${a.dex.length ? `<span class="hm-caught"><img class="px" alt="" src="${BALL}" />${a.dex.length - left.length}/${a.dex.length}</span>` : `<span class="hm-caught">${a.gyms && a.gyms.length > 1 ? 'Pokémon League' : 'Trainers only'}</span>`}</span>`
     el.setAttribute(
@@ -1712,7 +1712,7 @@
         }[st]
         const label = `${a.name}, levels ${a.lv[0]} to ${a.lv[1]}, ${words}. See the details`
         return `<li class="hm-ca-li"><button type="button" class="hm-card-area st-${st}" data-order="${a.order}" aria-label="${esc(label)}">
-          <span class="hm-ban${locked ? ' dim' : ''}"><img class="px" alt="" src="${stripOf(a)}" /><span class="hm-tags">${st === 'new' ? '<span class="hm-gym new">NEW</span>' : ''}${a.gym ? '<span class="hm-gym">GYM</span>' : ''}${a.legend ? '<span class="hm-gym leg">★ LEGEND</span>' : ''}</span></span>
+          <span class="hm-ban${locked ? ' dim' : ''}"><img class="px" alt="" src="${stripOf(a)}" /><span class="hm-tags">${st === 'new' ? '<span class="hm-gym new">NEW</span>' : ''}${a.gym ? '<span class="hm-gym">GYM</span>' : ''}${a.legend ? '<span class="hm-gym leg">★ LEGEND</span>' : ''}${API.liveTag ? API.liveTag(a) : ''}</span></span>
           <span class="hm-ca-row"><b>${esc(a.name)}</b></span>
           <span class="hm-ca-row"><span class="hm-lv">Lv.${a.lv[0]}–${a.lv[1]}</span>${catchLine}</span>${hitIcons}</button>
           ${locked ? `<span class="hm-gobtn off" aria-hidden="true"><img class="px" alt="" src="${LOCK}" /></span>` : `<button type="button" class="hm-gobtn" data-go="${a.order}" aria-label="${st === 'here' ? `Play ${esc(a.name)}` : `Go to ${esc(a.name)}`}">GO</button>`}</li>`
@@ -2393,6 +2393,7 @@
     renderTop,
     renderNavDots,
     renderWidgets,
+    renderArea,
     renderAreasBtn,
     openRegions: () => openSheet({ view: 'regions' }),
     showPage,

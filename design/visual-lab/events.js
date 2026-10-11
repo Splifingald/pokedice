@@ -338,13 +338,16 @@
     const el = $('#hm-events')
     if (!el) return
     const list = active()
+    // A live event (live.js, priority 2) comes first, whatever else is open.
+    const live = A.liveWidget ? A.liveWidget() : ''
     if (!list.length) {
       const teaser = A.SAVE.badges >= CFG.teaserBadges
-      el.innerHTML = `<div class="hm-w hm-events" role="note" aria-label="${teaser ? 'Special events: the first one opens when you clear Routes 7 and 8' : 'Special events: coming later'}"><span class="hm-w-head"><b>Special events</b>${teaser ? `<img class="px hm-w-lock" alt="" src="${A.icons.LOCK}" />` : ''}</span><img class="px hm-ev-star" alt="" src="${starURL()}" /><span class="hm-w-sub">${teaser ? 'Soon: clear Routes 7 & 8' : 'Coming later'}</span></div>`
+      el.innerHTML = `${live}<div class="hm-w hm-events" role="note" aria-label="${teaser ? 'Special events: the first one opens when you clear Routes 7 and 8' : 'Special events: coming later'}"><span class="hm-w-head"><b>Special events</b>${teaser ? `<img class="px hm-w-lock" alt="" src="${A.icons.LOCK}" />` : ''}</span><img class="px hm-ev-star" alt="" src="${starURL()}" /><span class="hm-w-sub">${teaser ? 'Soon: clear Routes 7 & 8' : 'Coming later'}</span></div>`
       return
     }
-    el.innerHTML = list.map(widgetHTML).join('')
+    el.innerHTML = live + list.map(widgetHTML).join('')
   }
+  A.renderEventWidgets = renderWidget
   /** The countdowns tick without rebuilding the widgets (the prize carousel keeps rolling). */
   function tick() {
     $$('[data-ev-sub]').forEach((s) => (s.textContent = subText(s.dataset.evSub)))
@@ -2407,6 +2410,7 @@
   }
   $('#hm-events') &&
     $('#hm-events').addEventListener('click', (e) => {
+      if (e.target.closest('[data-lv]')) return
       const b = e.target.closest('[data-ev]')
       if (b) {
         EVS.tab = b.dataset.ev
