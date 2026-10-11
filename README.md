@@ -181,7 +181,10 @@ supabase/    migrations/0001_init.sql, seed.sql (generated)
 - **Cloud sync** — a signed-in player's save goes to Supabase at most once every `cloudSyncMinutes` (Admin → Config,
   default 15) while they play, and when the page closes; no longer every 30 s or on every tab switch. SYNC ONLINE, at
   the bottom of the side bar (in the avatar's drawer on phones), shows the last sync and syncs now — the same
-  compare-and-settle as at sign-in — then rests 5 minutes. A save that already matches the cloud isn't re-uploaded.
+  compare-and-settle as at sign-in — then rests 5 minutes. A save that already matches the cloud isn't re-uploaded,
+  whatever order Postgres hands its keys back in (it used to be: every game load uploaded the whole save again).
+  `supabase/migrations/0037_skip_unchanged_saves.sql`, run once on the live database, has the database drop such an
+  upload too, for tabs still on an older build: no write, no WAL, no trigger.
 - **Fewer web requests** — the images in `public/` (`pokemon`, `trainers`, `banners`, `battle`, `characters`) are kept in
   the browser for a month (`netlify.toml`) instead of being re-checked with Netlify on every visit. They have no content
   hash, so a *replaced* image can take up to a month to reach returning players: give it a new name, or a `?v=` in its
@@ -199,7 +202,9 @@ supabase/    migrations/0001_init.sql, seed.sql (generated)
   that was offline or in the background catches up from table `app_signals` when it comes back. The admin panel and
   `/setup` never reload on their own. Needs `supabase/migrations/0029_force_reload.sql` run once on the live database.
   Each visible tab is one Realtime connection: past the plan's limit (200 at once on the free plan) the extra tabs
-  read `app_signals` instead, at most every 5 minutes, so they reload a few minutes late rather than never.
+  read `app_signals` instead, at most every 5 minutes, so they reload a few minutes late rather than never. A new page
+  joins only once it has been open 30 s (reading `app_signals` as it does), so a page reloaded again and again opens
+  no connection.
 - **Forms & Mega Evolution** — regional forms (Alolan, Galarian, Hisuian, Paldean) are Pokémon of their own, caught in
   their region; evolving in that region gives the regional form (Pikachu → Alolan Raichu in Alola). Once the player has
   reached Kalos, a Lv.50 Pokémon with a Mega form gets a MEGA button in battle — no stone, no item, one per battle — and
