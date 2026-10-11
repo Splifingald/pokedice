@@ -7,7 +7,7 @@
 >
 > **How:** the server is described in one file, `scripts/discord/layout.ts`. `pnpm discord` compares the live server
 > with that file and lists the differences without changing anything. `pnpm discord --apply` makes them. It adopts
-> what is already there (your `#général` stays your `#général`) and never deletes anything.
+> what is already there (your `#général` becomes `#🎲-general`, history and all) and never deletes anything.
 >
 > **Time:** about 20 minutes the first time. Parts 1–4 are yours (Discord's website and app), part 5 is two commands,
 > part 7 is GitHub settings.
@@ -16,12 +16,11 @@
 
 | Category | Channels | For |
 | --- | --- | --- |
-| **Start here** (read-only) | `#welcome` · `#rules` · `#announcements` · `#patch-notes` · `#daily-raid` | The welcome and rules posts (by the bot), news, the two automatic posts. The last three are announcement channels, so other servers can follow them. |
-| **Pokédice** | `#general` · `#help` (forum) · `#strategy` · `#raid-squad` (30 s slowmode) · `#show-off` | Chat, questions that stay findable, team building, finding raid friends, best catches. |
-| **Feedback** | `#bug-reports` (forum) · `#suggestions` (forum, 👍 to vote) | One post per bug or idea, with tags. Status tags (Confirmed, Fixed, Planned, Done…) are moderator-only. |
-| **International** | `#français` · `#español` · `#deutsch` | Opt-in: members pick them in Channels & Roles. |
-| **Voice** | Lounge · Raid Room (3 people, like a raid group) | |
-| **Staff** (hidden) | `#staff-chat` · `#mod-updates` · `#mod-log` | Staff talk, Discord's Community notices, AutoMod's alerts. |
+| **Start here** (read-only) | `#👋-welcome` · `#📜-rules` · `#📣-announcements` · `#📝-patch-notes` · `#🔥-daily-raid` | The welcome and rules posts (by the bot), news, the two automatic posts. The last three are announcement channels, so other servers can follow them. |
+| **Pokédice** | `#🎲-general` · `#🙋-help` (forum) · `#🧠-strategy` · `#🫂-raid-squad` (30 s slowmode) · `#✨-show-off` · `#💬-off-topic` · `#🥖-français` | Chat, questions that stay findable, team building, finding raid friends, best catches, the rest, and French (opt-in: members pick it in Channels & Roles). |
+| **Feedback** | `#🐛-bug-reports` (forum) · `#💡-suggestions` (forum, 👍 to vote) | One post per bug or idea, with tags. Status tags (Confirmed, Fixed, Planned, Done…) are moderator-only. |
+| **Voice** | 🎧 Lounge · 🐉 Raid Room (3 people, like a raid group) | |
+| **Staff** (hidden) | `#🔒-staff-chat` · `#📬-mod-updates` · `#📋-mod-log` | Staff talk, Discord's Community notices, AutoMod's alerts. |
 
 | Role | Is | Can |
 | --- | --- | --- |
@@ -30,9 +29,9 @@
 | **Raid Pings** · **Patch Notes Pings** · **Event Pings** | members who asked | nothing extra: they get pinged by the daily raid, the patch notes, and your event news |
 
 Server settings: members must have a verified e-mail and be on Discord for 5 minutes before talking. Images from
-everyone are scanned. Notifications default to mentions only. Discord's join messages land in `#general`. AutoMod
+everyone are scanned. Notifications default to mentions only. Discord's join messages land in `#🎲-general`. AutoMod
 blocks spam, mass mentions (with a 10-minute timeout) and slurs or sexual content, and reports each block in
-`#mod-log`; staff are exempt.
+`#📋-mod-log`; staff are exempt.
 
 ---
 
@@ -75,7 +74,7 @@ Forums, announcement channels and Channels & Roles need it. **Server Settings** 
 
 1. **Safety check:** tick **Verified email required** and **Scan media content from all members** → **Next**.
 2. **Set up basics:** Rules channel → **Create one for me**. Community updates channel → **Create one for me** →
-   **Next**. The setup adopts both: `#rules` as it is, `#moderator-only` renamed `#mod-updates`.
+   **Next**. The setup adopts both: `#📜-rules` as it is, `#moderator-only` renamed `#📬-mod-updates`.
 3. **Finishing touches:** tick all three (mentions-only notifications, no moderation permissions for @everyone, the
    guidelines) → **Finish Set Up**.
 
@@ -124,7 +123,7 @@ private channel stays private, and the history stays. Delete the ones you don't 
 
 - **Server Settings → Onboarding**: the setup filled **Default Channels** and **Questions** (pings, languages).
   Check them in **Preview**. **Server Guide** is the one part Discord doesn't let a bot fill in. Add a welcome sign and
-  three to-dos: *Read the rules* → `#rules`, *Say hi* → `#general`, *Check today's raid* → `#daily-raid`.
+  three to-dos: *Read the rules* → `#📜-rules`, *Say hi* → `#🎲-general`, *Check today's raid* → `#🔥-daily-raid`.
 - **Roles**: give **Gym Leader** to your moderators and **Professor** to co-admins (Server Settings → Members →
   `+` next to a name).
 - **The invite**: the game's Discord button opens `https://discord.gg/XKJQYw3p9` (Admin → Config → Discord). Keep it
@@ -166,7 +165,7 @@ gh variable set DISCORD_RAID_ROLE --body "the-id"
 
 ## 8. The daily raid post
 
-Every day at about 00:07 UTC (GitHub's schedules can run a few minutes late), `#daily-raid` gets the day's raid
+Every day at about 00:07 UTC (GitHub's schedules can run a few minutes late), `#🔥-daily-raid` gets the day's raid
 Pokémon: its name (✨ when shiny), level and HP bars, its lair, its catch value and each ball's odds, a countdown to
 the next raid, its animated sprite and its area's picture. It pings Raid Pings. The raid comes from the game's own
 calendar over the live content, so it's the raid players get, including your anchors and swaps in Admin → Events.
@@ -181,7 +180,7 @@ next midnight posts.
 
 Write `patch-notes/YYYY-MM-DD-short-name.md` ([patch-notes/README.md](../patch-notes/README.md) has the format, and
 `_template.md` a starting point). When the push that adds it reaches `main`, the workflow waits until Netlify serves
-that push (it reads `/version.json`, 15 minutes at most), then posts the note to `#patch-notes` and pings Patch Notes
+that push (it reads `/version.json`, 15 minutes at most), then posts the note to `#📝-patch-notes` and pings Patch Notes
 Pings.
 
 - Preview: `pnpm discord:patch-notes patch-notes/2026-10-20-version-2.md --dry`.
@@ -195,12 +194,14 @@ questions. Then `pnpm discord`, read, and `pnpm discord --apply`.
 What the setup matches and never touches:
 
 - An existing role, category or channel counts as the layout's when its name matches the name or an alias, ignoring
-  case, accents, emoji and separators (`🎲・Général` = `general`). It keeps your styling of the name; only a match
-  through an alias is renamed.
+  case, accents, emoji and separators (`Général` = `🎲-general`). It then takes the layout's exact name, emoji
+  included: every channel has one in front.
 - It never deletes anything. It doesn't touch roles above the bot's, permission bits the layout doesn't know, your
   overwrites for other roles or members, your own forum tags, or your own onboarding questions.
 - The welcome and rules posts are the bot's own messages, edited in place. Write your own posts in those channels
-  freely.
+  freely. While `#📜-rules` holds posts of yours, the layout's rules post is left out (delete yours and run again to
+  use it instead).
+- Discord's own AutoMod rule from Community (`Block Mention Spam`) can't be edited by a bot: adjust it by hand.
 
 ---
 

@@ -35,6 +35,7 @@ async function snapshot(api: Discord, guildId: string): Promise<Snapshot> {
     automod,
     onboarding,
     messages: {},
+    othersPosted: {},
     webhooks: {},
     env: {},
   }
@@ -48,6 +49,7 @@ async function readContent(api: Discord, snap: Snapshot, layout: Layout): Promis
     if (!c || isNew(c.id)) continue
     const recent = await api.get<DMessage[]>(`/channels/${c.id}/messages?limit=50`)
     snap.messages[c.id] = recent.filter((x) => x.author.id === snap.botId).reverse()
+    snap.othersPosted[c.id] = recent.filter((x) => x.author.id !== snap.botId).length
   }
   for (const w of layout.webhooks) {
     const c = chans.get(w.channel)

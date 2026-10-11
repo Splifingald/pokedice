@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import type { DChannel, DRole } from '../scripts/discord/api'
 import { LAYOUT } from '../scripts/discord/layout'
 import { P } from '../scripts/discord/perms'
-import { blockers, fillMentions, matchChannels, matchRoles, planAll, rolesPhase, type Snapshot } from '../scripts/discord/plan'
+import { blockers, contentPhase, fillMentions, matchChannels, matchRoles, planAll, rolesPhase, type Snapshot } from '../scripts/discord/plan'
 import { raidMessage } from '../scripts/discord/raid-post'
 import { DESCRIPTION_MAX, MESSAGE_MAX, noteMessages, parseNote, splitText } from '../scripts/discord/patch-notes'
 import { raidOfDay } from '@/engine'
@@ -58,6 +58,8 @@ function frenchServer(): Snapshot {
     channels: [
       ch('cat-text', 'Salons textuels', 4, 0, null),
       ch('gen', 'général', 0, 0, 'cat-text'),
+      ch('flood', '💬-flood', 0, 3, 'cat-text'),
+      ch('fr', '🥖-french-only', 0, 4, 'cat-text'),
       ch('secret', 'secret', 0, 1, 'cat-text', { permission_overwrites: [{ id: 'g', type: 0, allow: '0', deny: String(P.VIEW_CHANNEL) }] }),
       ch('memes', 'memes', 0, 2, 'cat-text', { permission_overwrites: [{ id: 'someone', type: 1, allow: String(P.SEND_MESSAGES), deny: '0' }] }),
       ch('cat-voice', 'Salons vocaux', 4, 1, null),
@@ -71,27 +73,39 @@ function frenchServer(): Snapshot {
     automod: [],
     onboarding: { prompts: [], default_channel_ids: [], enabled: false, mode: 0 },
     messages: {},
+    othersPosted: {},
     webhooks: {},
     env: {},
   }
 }
 
 describe('Discord server setup', () => {
-  it('adopts what is there: names kept when they match, renamed only through an alias', () => {
+  it("adopts what is there, under the layout's exact names (emoji included)", () => {
     const snap = frenchServer()
     planAll(snap, LAYOUT)
     const chans = matchChannels(snap, LAYOUT)
     expect(chans.get('general')?.id).toBe('gen')
-    expect(chans.get('general')?.name).toBe('général')
-    expect(chans.get('lounge')).toMatchObject({ id: 'vgen', name: 'Lounge' })
+    expect(chans.get('general')?.name).toBe('🎲-general')
+    expect(chans.get('lounge')).toMatchObject({ id: 'vgen', name: '🎧 Lounge' })
     expect(chans.get('rules')?.id).toBe('rules')
-    expect(chans.get('modUpdates')).toMatchObject({ id: 'modonly', name: 'mod-updates' })
+    expect(chans.get('modUpdates')).toMatchObject({ id: 'modonly', name: '📬-mod-updates' })
     // Moved under the layout's categories.
     const cat = (key: string) => snap.channels.find((c) => c.type === 4 && c.name === LAYOUT.categories.find((x) => x.key === key)!.name)!.id
     expect(chans.get('rules')?.parent_id).toBe(cat('start'))
     expect(chans.get('general')?.parent_id).toBe(cat('game'))
     expect(chans.get('help')?.type).toBe(15)
     expect(chans.get('dailyRaid')?.type).toBe(5)
+  })
+
+  it("adopts the server's own channels through aliases, then leaves the names alone", () => {
+    const snap = frenchServer()
+    const actions = planAll(snap, LAYOUT)
+    const chans = matchChannels(snap, LAYOUT)
+    expect(chans.get('offTopic')).toMatchObject({ id: 'flood', name: '💬-off-topic' })
+    expect(chans.get('fr')).toMatchObject({ id: 'fr', name: '🥖-français' })
+    expect(actions.some((a) => a.path === '/channels/rules' && (a.body as { name?: string }).name)).toBe(true)
+    // Second run: names now equal the layout's, nothing renamed again.
+    expect(planAll(snap, LAYOUT).filter((a) => (a.body as { name?: string } | null)?.name)).toEqual([])
   })
 
   it('makes the missing roles, orders them, and keeps the permission bits it does not know', () => {
@@ -159,19 +173,29 @@ describe('Discord server setup', () => {
     expect(blockers(snap)).toHaveLength(2)
   })
 
-  it('writes mentions with real ids, and names for what is not made yet', () => {
+  it('leaves the rules post out while the rules channel has posts of yours', () => {
     const snap = frenchServer()
-    expect(fillMentions('{#general} {#help}', snap, LAYOUT)).toBe('<#gen> #help')
+    snap.othersPosted.rules = 1
+    const { actions, notes } = contentPhase(snap, LAYOUT, { archiveUnmanaged: false })
+    expect(actions.some((a) => a.path === '/channels/rules/messages')).toBe(false)
+    expect(notes).toEqual([expect.stringContaining('already has posts of yours')])
+    snap.othersPosted.rules = 0
+    expect(contentPhase(snap, LAYOUT, { archiveUnmanaged: false }).actions.some((a) => a.path === '/channels/rules/messages')).toBe(true)
   })
 
-  it('sets up Channels & Roles with the ping roles and the language channels', () => {
+  it('writes mentions with real ids, and names for what is not made yet', () => {
+    const snap = frenchServer()
+    expect(fillMentions('{#general} {#help}', snap, LAYOUT)).toBe('<#gen> #🙋-help')
+  })
+
+  it('sets up Channels & Roles with the ping roles and the French channel', () => {
     const snap = frenchServer()
     planAll(snap, LAYOUT)
     const roles = matchRoles(snap, LAYOUT)
     const chans = matchChannels(snap, LAYOUT)
     const [pings, langs] = snap.onboarding!.prompts
     expect(pings!.options.map((o) => o.role_ids[0])).toEqual([roles.get('raidPings')!.id, roles.get('patchPings')!.id, roles.get('eventPings')!.id])
-    expect(langs!.options.map((o) => o.channel_ids[0])).toEqual([chans.get('fr')!.id, chans.get('es')!.id, chans.get('de')!.id])
+    expect(langs!.options.map((o) => o.channel_ids[0])).toEqual([chans.get('fr')!.id])
     expect(snap.onboarding!.default_channel_ids).not.toContain(chans.get('fr')!.id)
     expect(snap.onboarding!.default_channel_ids).toContain(chans.get('general')!.id)
   })

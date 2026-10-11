@@ -32,6 +32,8 @@ export interface Snapshot {
   onboarding: DOnboarding | null
   /** The bot's own messages per channel id, oldest first, and each channel's webhooks: read just before their phase. */
   messages: Record<string, DMessage[]>
+  /** How many of each channel's recent messages someone else wrote. */
+  othersPosted: Record<string, number>
   webhooks: Record<string, DWebhook[]>
   /** Lines for .env.discord: webhook URLs and ping role ids. */
   env: Record<string, string>
@@ -77,6 +79,15 @@ export const norm = (s: string): string =>
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-|-$/g, '')
+
+/** A name as Discord stores it: text, announcement and forum channel names are lowercase with dashes. */
+const stored = (name: string, lower: boolean) => {
+  const s = name.replace(/️/g, '')
+  return lower ? s.toLowerCase().replace(/\s+/g, '-') : s
+}
+
+/** Whether a matched item already has the layout's exact name (the emoji included). */
+const sameName = (have: string, want: string, lower = false) => stored(have, lower) === stored(want, lower)
 
 /** Emoji compare without the variation selector Discord sometimes drops. */
 const emojiKey = (e: string | null | undefined) => (e ?? '').replace(/️/g, '')
@@ -250,10 +261,8 @@ export const rolesPhase: Phase = (snap, layout) => {
         path: `/guilds/${g(snap)}/roles`,
         body,
         effect: (s, res) => {
-          // A new role starts just above @everyone and pushes the others up, the bot's own too.
-          for (const r of s.roles) if (r.position >= 1) r.position++
+          // A new role starts at position 1, tied with the others there; the role order phase sorts them out.
           s.roles.push((res as DRole) ?? { id: `new:${spec.key}`, ...body, position: 1, managed: false })
-          s.botTop = Math.max(0, ...s.roles.filter((r) => s.botRoles.includes(r.id)).map((r) => r.position))
         },
       })
       continue
@@ -279,7 +288,7 @@ export const rolesPhase: Phase = (snap, layout) => {
 function roleChanges(role: DRole, spec: RoleSpec): { body: Partial<DRole>; detail: string[] } {
   const body: Partial<DRole> = {}
   const detail: string[] = []
-  if (norm(role.name) !== norm(spec.name)) body.name = spec.name
+  if (!sameName(role.name, spec.name)) body.name = spec.name
   const cur = bigintOf(role.permissions)
   const want = (cur & ~KNOWN) | spec.permissions
   if (cur !== want) {
@@ -311,8 +320,16 @@ export const roleOrderPhase: Phase = (snap, layout) => {
     ...below.filter((r) => !ours.has(r.id)),
     ...pings.filter((r): r is DRole => !!r),
   ]
-  if (order.map((r) => r.id).join() === below.map((r) => r.id).join()) return { actions: [], notes: [] }
-  const body = order.map((r, i) => ({ id: r.id, position: order.length - i }))
+  // New roles all start at position 1, tied: renumber until every role has its own place.
+  const tied = new Set(below.map((r) => r.position)).size !== below.length
+  if (!tied && order.map((r) => r.id).join() === below.map((r) => r.id).join()) return { actions: [], notes: [] }
+  // The whole list, the bot's role and any above it unchanged in order: there may be fewer free numbers below the bot
+  // than roles to place there.
+  const above = snap.roles
+    .filter((r) => r.id !== g(snap) && r.position >= snap.botTop)
+    .sort((a, b) => b.position - a.position || a.id.localeCompare(b.id))
+  const all = [...above, ...order]
+  const body = all.map((r, i) => ({ id: r.id, position: all.length - i }))
   return {
     actions: [
       {
@@ -326,6 +343,7 @@ export const roleOrderPhase: Phase = (snap, layout) => {
             const r = s.roles.find((x) => x.id === id)
             if (r) r.position = position
           }
+          s.botTop = Math.max(0, ...s.roles.filter((r) => s.botRoles.includes(r.id)).map((r) => r.position))
         },
       },
     ],
@@ -360,7 +378,7 @@ export const categoriesPhase: Phase = (snap, layout, opts) => {
       continue
     }
     const body: Partial<DChannel> = {}
-    if (norm(cat.name) !== norm(spec.name)) body.name = spec.name
+    if (!sameName(cat.name, spec.name)) body.name = spec.name
     if (overwriteKey(cat.permission_overwrites) !== overwriteKey(overwrites)) body.permission_overwrites = overwrites
     if (Object.keys(body).length)
       actions.push({
@@ -399,7 +417,7 @@ function channelBody(snap: Snapshot, layout: Layout, spec: ChannelSpec, cat: Cat
 /** The fields of `want` that differ from the channel as it is. */
 function channelChanges(ch: DChannel, want: Partial<DChannel>): Partial<DChannel> {
   const out: Partial<DChannel> = {}
-  if (want.name !== undefined && norm(ch.name) !== norm(want.name)) out.name = want.name
+  if (want.name !== undefined && !sameName(ch.name, want.name, want.type !== T.voice)) out.name = want.name
   if (want.type !== undefined && ch.type !== want.type && !(want.type === T.voice && ch.type === T.stage)) out.type = want.type
   if (want.parent_id !== undefined && (ch.parent_id ?? null) !== want.parent_id) out.parent_id = want.parent_id
   if (want.topic !== undefined && (ch.topic ?? '') !== want.topic) out.topic = want.topic
@@ -432,7 +450,7 @@ const FIELD_LABEL: Record<string, string> = {
   default_forum_layout: 'layout',
 }
 
-const sigil = (spec: ChannelSpec) => (spec.kind === 'voice' ? '🔊 ' : '#')
+const sigil = (spec: ChannelSpec) => (spec.kind === 'voice' ? '' : '#')
 
 export const channelsPhase: Phase = (snap, layout) => {
   const actions: Action[] = []
@@ -442,7 +460,8 @@ export const channelsPhase: Phase = (snap, layout) => {
     const ch = matched.get(spec.key)
     if (!ch) {
       const body = channelBody(snap, layout, spec, cat)
-      const clash = snap.channels.find((c) => c.type !== T.category && norm(c.name) === norm(spec.name))
+      const names = [spec.name, ...(spec.aliases ?? [])].map(norm)
+      const clash = snap.channels.find((c) => c.type !== T.category && names.includes(norm(c.name)))
       if (clash)
         notes.push(
           `#${clash.name} is a ${typeName(clash.type)} channel and the layout wants a ${spec.kind}: Discord can't convert it, so a new ` +
@@ -598,8 +617,30 @@ const automodActionsKey = (a: DAutomodAction[]) =>
     .sort()
     .join('|')
 
+/** A snowflake older than the server's own: made by Discord before the server existed. */
+function olderThanServer(id: string, guildId: string): boolean {
+  try {
+    return BigInt(id) < BigInt(guildId)
+  } catch {
+    return false
+  }
+}
+
+function automodSame(rule: DAutomodRule, spec: Layout['automod'][number], actions: DAutomodAction[], exempt: string[]): boolean {
+  const metaSame = Object.entries(spec.metadata ?? {}).every(
+    ([k, v]) => JSON.stringify(sorted(rule.trigger_metadata[k])) === JSON.stringify(sorted(v)),
+  )
+  return (
+    rule.enabled &&
+    metaSame &&
+    automodActionsKey(rule.actions) === automodActionsKey(actions) &&
+    [...rule.exempt_roles].sort().join() === exempt.join()
+  )
+}
+
 export const automodPhase: Phase = (snap, layout) => {
   const actions: Action[] = []
+  const notes: string[] = []
   const roles = matchRoles(snap, layout)
   const alerts = channelIdOf(snap, layout, layout.automodAlerts)
   const exempt = layout.automodExempt.map((k) => whoId(snap, roles, k)).sort()
@@ -623,6 +664,12 @@ export const automodPhase: Phase = (snap, layout) => {
       enabled: true,
       exempt_roles: exempt,
     }
+    if (rule && olderThanServer(rule.id, g(snap))) {
+      // Older than the server: one of Discord's own rules (Community's "Block Mention Spam"), which bots can't edit.
+      if (!automodSame(rule, spec, ruleActions, exempt))
+        notes.push(`"${rule.name}" is Discord's own rule, which a bot can't change: adjust it by hand in Server Settings → AutoMod if you like.`)
+      continue
+    }
     if (!rule) {
       actions.push({
         label: `+ AutoMod rule "${spec.name}"`,
@@ -633,15 +680,7 @@ export const automodPhase: Phase = (snap, layout) => {
       })
       continue
     }
-    const metaSame = Object.entries(spec.metadata ?? {}).every(
-      ([k, v]) => JSON.stringify(sorted(rule.trigger_metadata[k])) === JSON.stringify(sorted(v)),
-    )
-    const same =
-      rule.enabled &&
-      metaSame &&
-      automodActionsKey(rule.actions) === automodActionsKey(ruleActions) &&
-      [...rule.exempt_roles].sort().join() === exempt.join()
-    if (same) continue
+    if (automodSame(rule, spec, ruleActions, exempt)) continue
     const { event_type: _e, trigger_type: _t, ...patch } = body
     actions.push({
       label: `~ AutoMod rule "${rule.name}"`,
@@ -655,7 +694,7 @@ export const automodPhase: Phase = (snap, layout) => {
         ),
     })
   }
-  return { actions, notes: [] }
+  return { actions, notes }
 }
 
 /** A snowflake-shaped id for a new onboarding prompt or option (Discord wants the client to pick them). */
@@ -779,6 +818,7 @@ const embedKey = (e: DEmbed) =>
 /** The welcome and rules posts (the bot's own messages, edited in place), the posters' webhooks, the ids to keep. */
 export const contentPhase: Phase = (snap, layout) => {
   const actions: Action[] = []
+  const notes: string[] = []
   const chans = matchChannels(snap, layout)
   for (const spec of layout.messages) {
     const ch = chans.get(spec.channel)
@@ -786,6 +826,10 @@ export const contentPhase: Phase = (snap, layout) => {
     const mine = snap.messages[channelId] ?? []
     const want = renderEmbeds(spec, snap, layout)
     const old = mine[0]
+    if (!old && spec.onlyIfEmpty && (snap.othersPosted[channelId] ?? 0) > 0) {
+      notes.push(`#${ch?.name ?? spec.channel} already has posts of yours: the layout's "${want[0]?.title}" post is left out. Delete yours and run again to post it.`)
+      continue
+    }
     if (old && old.embeds.length === want.length && old.embeds.every((e, i) => embedKey(e) === embedKey(want[i]!))) continue
     const body = { content: '', embeds: want, allowed_mentions: { parse: [] } }
     actions.push(
@@ -836,7 +880,7 @@ export const contentPhase: Phase = (snap, layout) => {
     const id = roles.get(key)?.id
     if (id && !isNew(id)) snap.env[env] = id
   }
-  return { actions, notes: [] }
+  return { actions, notes }
 }
 
 /** Every phase, in the order they run: each needs what the ones before it made (roles before overwrites, …). */

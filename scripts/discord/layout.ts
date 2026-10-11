@@ -4,8 +4,8 @@
 // and lists the differences; `pnpm discord --apply` makes them. Edit this file to change the server, then run both.
 //
 // Matching: an existing role, category or channel counts as one of these when its name matches the name or an alias,
-// ignoring case, accents, emoji and separators ("🎲・Général" matches "general"). A match keeps its own styling of
-// the name; only a match through an alias is renamed. Nothing is ever deleted.
+// ignoring case, accents, emoji and separators ("🎲・Général" matches "🎲-general"). A match takes the layout's exact
+// name, emoji included (the user's rule: layout names, always an emoji in front). Nothing is ever deleted.
 import { bits, type PermName } from './perms'
 
 export const SITE = 'https://poke-dice.netlify.app'
@@ -80,6 +80,8 @@ export interface CategorySpec {
 
 export interface MessageSpec {
   channel: string
+  /** Leave it out while someone else has posted in the channel (your own rules stay the only rules). */
+  onlyIfEmpty?: boolean
   /** Embeds in Discord's shape; `{#key}` becomes a channel mention, `{@&key}` a role mention. */
   embeds: {
     title: string
@@ -230,35 +232,35 @@ export const LAYOUT: Layout = {
       channels: [
         {
           key: 'welcome',
-          name: 'welcome',
+          name: '👋-welcome',
           kind: 'text',
           aliases: ['start-here', 'bienvenue', 'accueil', 'info', 'infos', 'information', 'informations'],
-          topic: 'Start here: what Pokédice is, where to play it, and how to pick your pings and languages.',
+          topic: 'Start here: what Pokédice is, where to play it, and how to pick your pings.',
         },
         {
           key: 'rules',
-          name: 'rules',
+          name: '📜-rules',
           kind: 'text',
           aliases: ['regles', 'reglement', 'server-rules'],
           topic: 'The server rules. Breaking them can get your messages removed, or you muted.',
         },
         {
           key: 'announcements',
-          name: 'announcements',
+          name: '📣-announcements',
           kind: 'announcement',
           aliases: ['annonces', 'news', 'announcement', 'annonce'],
           topic: 'News from the developer: big updates, events and maintenance. Get Event Pings in Channels & Roles.',
         },
         {
           key: 'patchNotes',
-          name: 'patch-notes',
+          name: '📝-patch-notes',
           kind: 'announcement',
           aliases: ['changelog', 'updates', 'patchnotes', 'mises-a-jour', 'maj'],
           topic: 'What changed in each update, posted automatically once it is live. Get Patch Notes Pings in Channels & Roles.',
         },
         {
           key: 'dailyRaid',
-          name: 'daily-raid',
+          name: '🔥-daily-raid',
           kind: 'announcement',
           aliases: ['raids', 'raid', 'raid-du-jour'],
           topic: "Today's raid Pokémon, posted at 00:00 UTC every day. Get Raid Pings in Channels & Roles.",
@@ -273,19 +275,19 @@ export const LAYOUT: Layout = {
       channels: [
         {
           key: 'general',
-          name: 'general',
+          name: '🎲-general',
           kind: 'text',
           aliases: ['chat', 'general-chat', 'discussion', 'discussions', 'blabla'],
-          topic: 'Talk about Pokédice and anything Pokémon. English here; French, Spanish and German have their own channels.',
+          topic: 'Talk about Pokédice and anything Pokémon, in English. French speakers have their own channel too.',
         },
         {
           key: 'help',
-          name: 'help',
+          name: '🙋-help',
           kind: 'forum',
           aliases: ['aide', 'questions', 'support', 'faq'],
           topic:
             'Ask how something works: one question per post, with a tag. Someone who knows will answer, and the post stays ' +
-            'for the next player with the same question. Something broken? That goes in #bug-reports.',
+            'for the next player with the same question. Something broken? That goes in the bug reports forum.',
           tags: [
             { name: 'Battles', emoji: '⚔️' },
             { name: 'Catching', emoji: '🎯' },
@@ -299,16 +301,16 @@ export const LAYOUT: Layout = {
         },
         {
           key: 'strategy',
-          name: 'strategy',
+          name: '🧠-strategy',
           kind: 'text',
           aliases: ['strategie', 'teams', 'team-building'],
           topic: 'Teams, dice upgrades, type coverage, and how to get past that one gym.',
         },
         {
           key: 'raidSquad',
-          name: 'raid-squad',
+          name: '🫂-raid-squad',
           kind: 'text',
-          aliases: ['find-friends', 'friend-codes', 'friends', 'amis', 'lfg'],
+          aliases: ['codes-ami', 'code-ami', 'find-friends', 'friend-codes', 'friends', 'amis', 'lfg'],
           topic:
             'Find raid partners: post your trainer name, add each other as friends in the game, and bring your teams to ' +
             "each other's raids.",
@@ -316,10 +318,25 @@ export const LAYOUT: Layout = {
         },
         {
           key: 'showOff',
-          name: 'show-off',
+          name: '✨-show-off',
           kind: 'text',
           aliases: ['screenshots', 'captures', 'shinies', 'shiny', 'showcase', 'media'],
           topic: 'Shinies, legendaries, a finished Pokédex, a lucky roll: show it here. Screenshots welcome.',
+        },
+        {
+          key: 'offTopic',
+          name: '💬-off-topic',
+          kind: 'text',
+          aliases: ['flood', 'hors-sujet', 'random', 'offtopic'],
+          topic: "Anything that isn't Pokédice.",
+        },
+        {
+          key: 'fr',
+          name: '🥖-français',
+          kind: 'text',
+          aliases: ['french-only', 'french', 'francais-only', 'fr'],
+          topic: 'Discussion en français.',
+          onboardingDefault: false,
         },
       ],
     },
@@ -331,7 +348,7 @@ export const LAYOUT: Layout = {
       channels: [
         {
           key: 'bugs',
-          name: 'bug-reports',
+          name: '🐛-bug-reports',
           kind: 'forum',
           aliases: ['bugs', 'bug', 'bug-report', 'signalements'],
           topic:
@@ -354,7 +371,7 @@ export const LAYOUT: Layout = {
         },
         {
           key: 'ideas',
-          name: 'suggestions',
+          name: '💡-suggestions',
           kind: 'forum',
           aliases: ['ideas', 'idees', 'feedback', 'suggestion'],
           topic: 'One idea per post, with a tag. Like an idea? React 👍 on its first message: that is how ideas get counted.',
@@ -375,24 +392,13 @@ export const LAYOUT: Layout = {
       ],
     },
     {
-      key: 'international',
-      name: 'International',
-      aliases: ['languages', 'langues', 'international'],
-      overwrites: [],
-      channels: [
-        { key: 'fr', name: 'français', kind: 'text', aliases: ['french', 'fr'], topic: 'Discussion en français.', onboardingDefault: false },
-        { key: 'es', name: 'español', kind: 'text', aliases: ['spanish', 'es'], topic: 'Charla en español.', onboardingDefault: false },
-        { key: 'de', name: 'deutsch', kind: 'text', aliases: ['german', 'de'], topic: 'Unterhaltung auf Deutsch.', onboardingDefault: false },
-      ],
-    },
-    {
       key: 'voice',
       name: 'Voice',
       aliases: ['voice-channels', 'salons-vocaux', 'vocal', 'vocaux'],
       overwrites: [],
       channels: [
-        { key: 'lounge', name: 'Lounge', kind: 'voice', aliases: ['general', 'salon', 'vocal'] },
-        { key: 'raidRoom', name: 'Raid Room', kind: 'voice', userLimit: 3 },
+        { key: 'lounge', name: '🎧 Lounge', kind: 'voice', aliases: ['general', 'salon', 'vocal'] },
+        { key: 'raidRoom', name: '🐉 Raid Room', kind: 'voice', userLimit: 3 },
       ],
     },
     {
@@ -401,10 +407,10 @@ export const LAYOUT: Layout = {
       aliases: ['moderation', 'mods', 'admin', 'staff-only'],
       overwrites: STAFF_ONLY,
       channels: [
-        { key: 'staffChat', name: 'staff-chat', kind: 'text', aliases: ['staff', 'mods', 'moderation'], onboardingDefault: false },
+        { key: 'staffChat', name: '🔒-staff-chat', kind: 'text', aliases: ['staff', 'mods', 'moderation'], onboardingDefault: false },
         {
           key: 'modUpdates',
-          name: 'mod-updates',
+          name: '📬-mod-updates',
           kind: 'text',
           aliases: ['moderator-only', 'community-updates'],
           topic: "Discord's notices for Community servers.",
@@ -412,7 +418,7 @@ export const LAYOUT: Layout = {
         },
         {
           key: 'modLog',
-          name: 'mod-log',
+          name: '📋-mod-log',
           kind: 'text',
           aliases: ['logs', 'log', 'automod'],
           topic: 'What AutoMod blocked, and Discord safety alerts.',
@@ -461,12 +467,8 @@ export const LAYOUT: Layout = {
       ],
     },
     {
-      title: 'Do you speak another language?',
-      options: [
-        { title: 'Français', emoji: '🇫🇷', channels: ['fr'] },
-        { title: 'Español', emoji: '🇪🇸', channels: ['es'] },
-        { title: 'Deutsch', emoji: '🇩🇪', channels: ['de'] },
-      ],
+      title: 'Do you speak French?',
+      options: [{ title: 'Français', description: 'Le salon pour parler en français', emoji: '🥖', channels: ['fr'] }],
     },
   ],
 
@@ -483,11 +485,11 @@ export const LAYOUT: Layout = {
             `**[Play now: ${SITE.replace('https://', '')}](${SITE})**`,
           fields: [
             { name: 'Start here', value: '{#rules} the rules\n{#announcements} news\n{#patchNotes} what each update changed\n{#dailyRaid} today\'s raid' },
-            { name: 'Talk', value: '{#general} chat\n{#help} questions\n{#strategy} teams and dice\n{#raidSquad} find raid partners\n{#showOff} your best catches' },
+            { name: 'Talk', value: '{#general} chat\n{#help} questions\n{#strategy} teams and dice\n{#raidSquad} find raid partners\n{#showOff} your best catches\n{#offTopic} anything else' },
             { name: 'Feedback', value: '{#bugs} something broke\n{#ideas} ideas and votes' },
             {
               name: 'Pings and languages',
-              value: 'Open **Channels & Roles** at the top of the channel list to get pinged for raids, patch notes or events, and to join the French, Spanish or German channels.',
+              value: 'Open **Channels & Roles** at the top of the channel list to get pinged for raids, patch notes or events, and to join the French channel.',
             },
           ],
           footer: 'Pokédice is a non-commercial fan project, not affiliated with Nintendo, Game Freak, Creatures or The Pokémon Company.',
@@ -496,6 +498,7 @@ export const LAYOUT: Layout = {
     },
     {
       channel: 'rules',
+      onlyIfEmpty: true,
       embeds: [
         {
           title: 'Rules',
