@@ -167,6 +167,8 @@ test('on a 360×640 phone: the square, the pop-up and the shop fit, in the Jerse
     await page.goto(route)
     if (route === '/shop') await expect(page.getByRole('region', { name: 'Special Shop' })).toBeVisible({ timeout: 15_000 })
     else await expect(square).toBeVisible({ timeout: 15_000 })
+    // The content swap's "Content updated" toast (166×44) goes first: it isn't the page's.
+    await expect(page.getByText('Content updated')).toHaveCount(0, { timeout: 10_000 })
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)
     expect(overflow, `${route} scrolls sideways`).toBeLessThanOrEqual(0)
     expect(await nonJerseyText(page), `${route}: fonts`).toEqual([])
