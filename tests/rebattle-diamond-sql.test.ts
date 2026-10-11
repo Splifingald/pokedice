@@ -1,4 +1,4 @@
-// Migration 0040 against a real Postgres (PGlite, in process): the Elite Rebattle in four tiers. It upserts the
+// Migration 0041 against a real Postgres (PGlite, in process): the Elite Rebattle in four tiers. It upserts the
 // rebattle trainers and the lineups, and changes only the tiers inside the `events` row — the admin's other event
 // settings (who can play, the wheel's prizes…) must come out as they went in. Safe to run twice.
 import { readFileSync } from 'node:fs'
@@ -7,7 +7,7 @@ import { PGlite } from '@electric-sql/pglite'
 import { beforeAll, describe, expect, it } from 'vitest'
 import config from '@/data/config.json'
 
-const PATCH = readFileSync(path.join(__dirname, '..', 'supabase', 'migrations', '0040_rebattle_diamond.sql'), 'utf8')
+const PATCH = readFileSync(path.join(__dirname, '..', 'supabase', 'migrations', '0041_rebattle_diamond.sql'), 'utf8')
 const lineups = config.rebattleLineups as Record<string, Record<string, string[]>>
 const kantoDiamond = lineups.kanto!.diamond!
 
@@ -41,7 +41,7 @@ beforeAll(async () => {
   await db.exec(PATCH)
 })
 
-describe('migration 0040: the Elite Rebattle in four tiers', () => {
+describe('migration 0041: the Elite Rebattle in four tiers', () => {
   it('sets the four tiers and leaves every other event setting as it was', async () => {
     const events = (await value('events')) as {
       teaserBadges: number

@@ -148,7 +148,7 @@ Pool and fallback lists with region gates; shiny chance (30 %); repeat window (7
 
 The tiers are named Bronze, Silver, Gold and Diamond and drawn as their medals, with no I / II / III (user's call,
 2026-10-10; Diamond added 2026-10-11, the levels and ₽ re-spread over four tiers). The Home widget shows the current
-tier's medal. The live database gets the four tiers from `supabase/migrations/0040_rebattle_diamond.sql`
+tier's medal. The live database gets the four tiers from `supabase/migrations/0041_rebattle_diamond.sql`
 (`pnpm rebattle-sql`); saves keep their place (a player past the old Gold, Lv.100, now faces Diamond).
 
 - **Teams:** generated per region by a script (`scripts/rebattle-teams.ts`) into `trainers.json`. Each tier is a copy of the E4 member. **Trainers keep three Pokémon at most:** tier 1 swaps one Pokémon for another signature-type pick, tier 2 swaps another, tier 3 keeps tier 2's team at League I + 30, tier 4 is that team at Lv.100. The ace goes last. All of them are hand-editable in the admin team editor. Champion slot = **the rival** (`rivalOf`, per starter) where League II had one (Kanto); elsewhere the League II champion.

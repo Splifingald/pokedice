@@ -12,7 +12,7 @@ import type { Trainer } from '../src/engine'
 import { upsert } from './seed'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
-const OUT = process.argv[2] ?? path.join('supabase', 'migrations', '0040_rebattle_diamond.sql')
+const OUT = process.argv[2] ?? path.join('supabase', 'migrations', '0041_rebattle_diamond.sql')
 
 const config = BUNDLE.config as unknown as {
   rebattleLineups: Record<string, Record<string, string[]>>
