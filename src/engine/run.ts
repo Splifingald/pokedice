@@ -134,19 +134,33 @@ export function recordDraws(
   const p = progressOf(save, areaId)
   const lastCenter = roll.encounter ? roll.encounter.kind === 'center' : p.lastCenter
   if (!roll.deck && !roll.lootDeck) {
-    return !!lastCenter === !!p.lastCenter ? save : withProgress(save, areaId, { ...p, lastCenter })
+    return spendLoneCenters(!!lastCenter === !!p.lastCenter ? save : withProgress(save, areaId, { ...p, lastCenter }), areaId)
   }
   const round = roll.newRound ? (p.round ?? 0) + 1 : p.round
   const drawn = roll.newRound ? (roll.drawn ?? []) : roll.drawn ? [...(p.drawn ?? []), ...roll.drawn] : p.drawn
-  return withProgress(save, areaId, {
-    ...p,
-    ...(roll.deck ? { deck: roll.deck } : {}),
-    ...(roll.lootDeck ? { lootDeck: roll.lootDeck } : {}),
-    ...(round != null ? { round } : {}),
-    ...(drawn ? { drawn } : {}),
-    ...(roll.newRound ? { roundCounted: false } : {}),
-    lastCenter,
-  })
+  return spendLoneCenters(
+    withProgress(save, areaId, {
+      ...p,
+      ...(roll.deck ? { deck: roll.deck } : {}),
+      ...(roll.lootDeck ? { lootDeck: roll.lootDeck } : {}),
+      ...(round != null ? { round } : {}),
+      ...(drawn ? { drawn } : {}),
+      ...(roll.newRound ? { roundCounted: false } : {}),
+      lastCenter,
+    }),
+    areaId,
+  )
+}
+
+/**
+ * Right after a Pokémon Center, Centers left on their own in the deck can't be met (never two in a row): they are
+ * turned over at once and the round ends, so it counts. A legendary's lair is mostly Centers; set aside one draw at a
+ * time instead, they emptied the deck in the middle of a draw, a new one was dealt and the round never counted.
+ */
+function spendLoneCenters(save: SaveData, areaId: string): SaveData {
+  const p = progressOf(save, areaId)
+  if (!p.lastCenter || !p.deck?.length || p.deck.some((c) => c !== 'center')) return save
+  return withProgress(save, areaId, { ...p, deck: [], drawn: [...(p.drawn ?? []), ...p.deck] })
 }
 
 /** A Pokémon Center would do something: a Pokémon (team or Box) below full HP, or one in the Box to swap in. */

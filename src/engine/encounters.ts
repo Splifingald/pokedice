@@ -426,15 +426,15 @@ function drawFromDeck(ctx: EncounterContext, rng: Rng): EncounterRoll {
     }
     if (card === 'center' && afterCenter) {
       // A Center right after a Center (e.g. a forced one came first): meet the next other card now, keep the Center
-      // on top for later. Only Centers left → this one is set aside.
+      // on top for later. Only Centers left can't happen any more (recordDraws spends them, ending the round); a save
+      // from before that meets this one anyway: setting them aside emptied the deck mid-round and dealt a new one, so
+      // the round in progress never counted (the gauge jumped back, a lair's legendary never came).
       let j = deck.length - 1
       while (j >= 0 && deck[j] === 'center') j--
-      if (j < 0) {
-        drawn.push(card)
-        continue
+      if (j >= 0) {
+        card = deck.splice(j, 1)[0]!
+        deck.push('center')
       }
-      card = deck.splice(j, 1)[0]!
-      deck.push('center')
     }
     drawn.push(card)
     if (card === 'item') {

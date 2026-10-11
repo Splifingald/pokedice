@@ -623,7 +623,9 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
 
   // The Bag (or, in Versus, who you're up against) and the team pips: under the panel on phones, at the side when wide.
   const bag = versus ? (
-    <span className="min-w-0 truncate text-[20px] text-muted">
+    // Only the room the team leaves (flex-1 from zero): sized to its text, a long name shrank the team too and the
+    // pips wrapped onto two rows.
+    <span className="min-w-0 flex-1 truncate text-[20px] text-muted">
       {t('ui.battle.vsName', { name: versus.trainerName })}
     </span>
   ) : (
