@@ -29,6 +29,8 @@ import {
 } from '@/engine'
 import { sfx } from '@/audio/sfx'
 import { AccountButton } from '@/components/AccountButton'
+import { DayCareRulesModal } from '@/components/FeatureRules'
+import { InfoButton } from '@/components/RulesModal'
 import { Chip, NewTag } from '@/components/Chip'
 import { bumpGold } from '@/components/GoldPill'
 import { BackButton } from '@/components/PageHead'
@@ -122,12 +124,12 @@ function MineCard({ res, slot, now, onTake }: { res: DayCareResident; slot: numb
     >
       <XpBar k={p.toNext ? p.xp / p.toNext : 1} line={line} />
       {isDitto(data, res.inst.dex) ? (
-        <MatesLine lead={t('ui.dayCare.pairsAll')} />
+        <MatesLine lead={t('ui.dayCare.allButLegends')} />
       ) : mates.length ? (
         <MatesLine
-          lead={t('ui.dayCare.pairsWith')}
+          // Every partner wears a heart: yours in their own colour, a friend's in this card's.
           mates={mates.map((m) => (
-            <Mate key={m.key} name={nameOf(m)} slot={m.mine} />
+            <Mate key={m.key} name={nameOf(m)} slot={m.mine ?? slot} />
           ))}
         />
       ) : (
@@ -166,7 +168,6 @@ function GuestCard({ g, onSend }: { g: DayCareGuest; onSend: () => void }) {
     >
       {mates.length ? (
         <MatesLine
-          lead={t('ui.dayCare.pairsWith')}
           mates={mates.map((m) => (
             <Mate key={m.key} name={nameOf(m)} slot={m.mine} />
           ))}
@@ -193,9 +194,6 @@ function ChecksSection({ now }: { now: number }) {
       <h2 id="dc-checks" className="m-0 text-[21px] font-normal leading-none">
         {t('ui.dayCare.checks')}
       </h2>
-      <p className="m-0 font-pixel-sm text-[15px] leading-[1.15] text-muted">
-        {t('ui.dayCare.checksRule', { h: cfg.breedHours, d: cfg.breedDittoHours, ditto })}
-      </p>
       <dl className="m-0 grid grid-cols-[auto_minmax(0,1fr)] gap-x-2.5 gap-y-0.5 font-pixel-sm text-[15px] text-ink">
         <dt className="text-muted">{t('ui.dayCare.clockGroups')}</dt>
         <dd className="m-0">{t('ui.dayCare.clockLine', { h: cfg.breedHours, time: next('breed') })}</dd>
@@ -229,7 +227,7 @@ function ChecksSection({ now }: { now: number }) {
           ))}
         </ul>
       ) : (
-        <p className="m-0 font-pixel-sm text-[15px] leading-[1.2] text-danger">{t('ui.dayCare.noPairHelp', { ditto })}</p>
+        <p className="m-0 font-pixel-sm text-[15px] leading-[1.2] text-muted">{t('ui.dayCare.noPairYet')}</p>
       )}
     </section>
   )
@@ -618,6 +616,7 @@ export function DayCareScreen() {
   const now = useNow()
   const [leaving, setLeaving] = useState(false)
   const [inviting, setInviting] = useState(false)
+  const [rules, setRules] = useState(false)
   const [hatch, setHatch] = useState<Hatch | null>(null)
   const [hatchId, setHatchId] = useState(0)
   const open = !!save && isDayCareOpen(save, data)
@@ -752,11 +751,6 @@ export function DayCareScreen() {
             id="dc-yours"
             title={t('ui.dayCare.yours')}
             count={`${dc.residents.length}/${cfg.slots}`}
-            note={t('ui.dayCare.yoursNote', {
-              xp: cfg.xpPerTick,
-              minutes: cfg.tickMinutes,
-              max: t('ui.common.level.short', { n: data.config.maxLevel }),
-            })}
           />
           <ul className="m-0 grid list-none grid-cols-2 gap-2 p-0">
             {dc.residents.map((r, i) => (
@@ -766,7 +760,6 @@ export function DayCareScreen() {
               <EmptySlot
                 key={`free-${i}`}
                 title={t('ui.dayCare.leaveOne')}
-                sub={t('ui.dayCare.leaveFrom')}
                 onClick={() => setLeaving(true)}
               />
             ))}
@@ -778,7 +771,6 @@ export function DayCareScreen() {
             id="dc-friends"
             title={t('ui.dayCare.friends')}
             count={`${dc.guests.length}/${cfg.friendSlots}`}
-            note={t('ui.dayCare.friendsNote')}
           />
           {(dc.guests.length > 0 || !promptSignIn) && (
             <ul className="m-0 grid list-none grid-cols-2 gap-2 p-0">
@@ -790,7 +782,7 @@ export function DayCareScreen() {
                   <EmptySlot
                     key={`friend-${i}`}
                     title={t('ui.dayCare.addFriend')}
-                    sub={friendsWait ?? t('ui.dayCare.addFriendSub')}
+                    sub={friendsWait ?? undefined}
                     disabled={!!friendsWait}
                     onClick={() => setInviting(true)}
                   />
@@ -806,8 +798,11 @@ export function DayCareScreen() {
         </section>
 
         <ChecksSection now={now} />
+        {/* The rules, as the unlock pop-up gave them: the Fortune Wheel's INFO button. */}
+        <InfoButton name={t('ui.home.dayCare')} onClick={() => setRules(true)} />
       </div>
 
+      <DayCareRulesModal open={rules} onClose={() => setRules(false)} />
       <LeaveSheet open={leaving} onClose={() => setLeaving(false)} />
       <FriendSheet open={inviting} onClose={() => setInviting(false)} />
       {hatch && (

@@ -128,6 +128,11 @@ export function markEventsSeen(): void {
   })
 }
 
+/** Versus's rules pop-up was shown (or its page opened): it doesn't open by itself again. */
+export function markVersusRulesSeen(): void {
+  mutateSave((s) => (s.versusRulesSeen ? null : { ...s, versusRulesSeen: true }))
+}
+
 /** The first visit ends the unlock tutorial. */
 export function visitDayCare(): void {
   mutateSave((s) => (dayCareOf(s).visited ? null : markDayCareVisited(s)))

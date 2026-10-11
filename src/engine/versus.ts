@@ -81,6 +81,10 @@ export function versusUnlocked(save: SaveData, data: GameData): boolean {
   return versusReadyCount(save, data) >= VERSUS_TEAM_SIZE
 }
 
+/** Versus is open and its rules pop-up hasn't been shown yet (the other one-time pop-ups queue ahead of it). */
+export const versusRulesDue = (save: SaveData, data: GameData): boolean =>
+  !save.versusRulesSeen && versusUnlocked(save, data)
+
 /** The clone that fights for `p`: the same species and colours, at Lv.50 at most. */
 export function cloneForVersus(p: Pick<PokemonInstance, 'dex' | 'level' | 'shiny'>): VersusMon {
   return { dex: p.dex, level: Math.min(p.level, VERSUS_LEVEL), shiny: !!p.shiny }

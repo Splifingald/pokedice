@@ -127,6 +127,7 @@ export const saveSchema = z.object({
   energy: z.object({ value: z.number().min(0), at: z.number() }).optional(),
   adminEditAt: z.number().optional(),
   leaderboardVisited: z.boolean().optional(),
+  versusRulesSeen: z.boolean().optional(),
   events: z
     .object({
       seen: z.array(z.enum(EVENT_IDS)).optional(),

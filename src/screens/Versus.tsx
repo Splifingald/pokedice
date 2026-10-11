@@ -23,6 +23,8 @@ import { BoardRow, TeamIcons } from '@/components/BoardRow'
 import { FriendProfileSheet } from '@/components/friends/FriendProfileSheet'
 import { Chip } from '@/components/Chip'
 import { AccountButton } from '@/components/AccountButton'
+import { VersusRulesModal } from '@/components/FeatureRules'
+import { InfoButton } from '@/components/RulesModal'
 import { PixelIcon } from '@/components/icons'
 import { PageHead } from '@/components/PageHead'
 import { PixelButton } from '@/components/PixelButton'
@@ -46,6 +48,7 @@ import {
   type VersusBoardTab,
   type VersusEntry,
 } from '@/lib/versus'
+import { markVersusRulesSeen } from '@/store/actions'
 import { pushToast, useGame, type BattleSlice } from '@/store/game'
 import { holdReload, pushSaveNow } from '@/store/sync'
 import { cx } from '@/theme/util'
@@ -72,6 +75,12 @@ export function VersusScreen() {
   const [fight, setFight] = useState<{ fight: VersusFight; foe: VersusEntry; n: number } | null>(null)
   const fights = useRef(0)
   const [busy, setBusy] = useState(false)
+  const [rules, setRules] = useState(false)
+  const open = versusUnlocked(save, data)
+  // Opening Versus is as good as its rules pop-up: it won't open by itself afterwards (the INFO button stays).
+  useEffect(() => {
+    if (open) markVersusRulesSeen()
+  }, [open])
 
   const refresh = useCallback(() => {
     let live = true
@@ -186,6 +195,8 @@ export function VersusScreen() {
         )}
         {load.state === 'ready' && tab === 'board' && <Board rows={rows} />}
       </div>
+      <InfoButton name={t('ui.versus.title')} onClick={() => setRules(true)} />
+      <VersusRulesModal open={rules} onClose={() => setRules(false)} />
     </div>
   )
 }
@@ -206,6 +217,7 @@ function Meter({ value, className }: { value: number; className?: string }) {
 /** Versus is closed: how far the player is from opening it, and the three Pokémon closest to Lv.50. */
 function Locked() {
   const { t } = useT()
+  const [rules, setRules] = useState(false)
   const navigate = useNavigate()
   const data = useGame((s) => s.data)
   const save = useGame((s) => s.save)!
@@ -254,6 +266,8 @@ function Locked() {
         </>
       )}
       <p className="m-0 font-pixel-sm text-[15px] leading-[1.15] text-muted">{t('ui.versus.intro')}</p>
+      <InfoButton name={t('ui.versus.title')} onClick={() => setRules(true)} />
+      <VersusRulesModal open={rules} onClose={() => setRules(false)} />
     </div>
   )
 }

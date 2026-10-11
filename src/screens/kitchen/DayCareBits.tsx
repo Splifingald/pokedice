@@ -46,7 +46,7 @@ export function DayCareBits() {
       <ul className="m-0 grid max-w-md list-none grid-cols-2 gap-2 p-0">
         <SlotCard band={SLOT_COLORS[0]} head={yours(0)} tag={<GainTag>+2 Lv</GainTag>} dex={133} name="Eevee" level="Lv.24" action={take}>
           <XpBar k={0.4} line="To Lv.25 · came at Lv.22" />
-          <MatesLine lead="Pairs with" mates={<><Mate name="Jolteon" slot={null} /><Mate name="Ditto" slot={null} /></>} />
+          <MatesLine mates={<><Mate name="Jolteon" slot={0} /><Mate name="Dratini" slot={1} /></>} />
         </SlotCard>
         <SlotCard band={SLOT_COLORS[1]} head={yours(1)} tag={<GainTag>New</GainTag>} dex={147} name="Dratini" level="Lv.30" action={take}>
           <XpBar k={0} line="To Lv.31 · came at Lv.30" />
@@ -54,16 +54,16 @@ export function DayCareBits() {
         </SlotCard>
         <SlotCard band={SLOT_COLORS[0]} head={yours(0)} tag={<GainTag>+12 Lv</GainTag>} dex={132} shiny name="Ditto" level="Lv.100" action={take}>
           <XpBar k={1} line="Lv.100: it can’t grow more" />
-          <MatesLine lead="Pairs with all but legendaries" />
+          <MatesLine lead="All but legendaries" />
         </SlotCard>
-        <EmptySlot title="Leave a Pokémon" sub="From your team or your Box" onClick={noop} />
+        <EmptySlot title="Leave a Pokémon" onClick={noop} />
         <SlotCard band="rgb(var(--c-shadow))" head={guest('Lea')} dex={135} name="Jolteon" level="Lv.41" action={send}>
-          <MatesLine lead="Pairs with" mates={<Mate name="Eevee" slot={0} />} />
+          <MatesLine mates={<Mate name="Eevee" slot={0} />} />
         </SlotCard>
         <SlotCard band="rgb(var(--c-shadow))" head={guest('Kai')} dex={59} name="Arcanine" level="Lv.50" action={send}>
           <MatesLine lead="No match with yours" />
         </SlotCard>
-        <EmptySlot title="Add from a friend" sub="A Pokémon from their Day Care" onClick={noop} />
+        <EmptySlot title="Add from a friend" onClick={noop} />
         <EmptySlot title="Add from a friend" sub="Friends’ Pokémon · with the friend list" disabled />
       </ul>
 

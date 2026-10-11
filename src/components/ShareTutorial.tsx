@@ -2,7 +2,7 @@
 // the native share sheet on phones, or copies the link where there is none (desktop). Remembered in localStorage.
 // The donation pop-up and a special event's unlock pop-up go first when they're waiting too.
 import { useState } from 'react'
-import { badgeCase, dayCareTutorialDue, donationDue, eventUnlockDue, leaderboardTutorialDue, regionOf } from '@/engine'
+import { badgeCase, dayCareTutorialDue, donationDue, eventUnlockDue, leaderboardTutorialDue, regionOf, versusRulesDue } from '@/engine'
 import { useT } from '@/i18n/react'
 import { shareOrCopy } from '@/lib/share'
 import { useGame } from '@/store/game'
@@ -29,7 +29,9 @@ export function ShareTutorial() {
       !dayCareTutorialDue(s.save, s.data) &&
       !leaderboardTutorialDue(s.save, s.data) &&
       !donationDue(s.save, s.data) &&
-      !eventUnlockDue(s.save, s.data),
+      !eventUnlockDue(s.save, s.data) &&
+      // Versus's rules pop-up goes first: one pop-up at a time.
+      !versusRulesDue(s.save, s.data),
   )
   const idle = useGame((s) => s.run.phase === 'idle')
   const [closed, setClosed] = useState<string[]>([])

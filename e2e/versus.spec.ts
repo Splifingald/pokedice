@@ -173,3 +173,34 @@ test("a team the server doesn't show back is not called saved", async ({ page })
   await expect(page.getByText(/the server doesn't show it back/)).toBeVisible()
   await expect(page.getByText('Team saved!')).toHaveCount(0)
 })
+
+test('Versus opening: its rules pop up once, then live behind the INFO button', async ({ page }) => {
+  await mockSupabase(page)
+  await page.route('**/rest/v1/rpc/versus_board', (route) =>
+    route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(BOARD) }),
+  )
+  await signedIn(page, { ...readySave(), versusRulesSeen: false })
+  await page.goto('/home')
+  const pop = page.getByRole('dialog', { name: 'Versus' })
+  await expect(pop.getByText('Now open')).toBeVisible()
+  await expect(pop.getByText('Same for everyone')).toBeVisible()
+  await pop.getByRole('button', { name: "Let's go!" }).click()
+  await expect(page).toHaveURL(/\/versus$/)
+
+  // The same rules from the page's INFO button, without the "now open" tag.
+  await page.getByRole('button', { name: 'Info: how Versus works' }).click()
+  const info = page.getByRole('dialog', { name: 'Versus' })
+  await expect(info.getByText('Auto battles')).toBeVisible()
+  await expect(info.getByText('Now open')).toHaveCount(0)
+  await info.getByRole('button', { name: 'OK', exact: true }).click()
+  await expect(info).toHaveCount(0)
+
+  // Seen, and saved: it doesn't open by itself again.
+  await expect
+    .poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('pokedice.save') ?? '{}').versusRulesSeen))
+    .toBe(true)
+  await page.getByRole('button', { name: 'Back to Home' }).click()
+  await expect(page).toHaveURL(/\/home$/)
+  await page.waitForTimeout(600)
+  await expect(page.getByRole('dialog', { name: 'Versus' })).toHaveCount(0)
+})
