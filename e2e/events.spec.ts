@@ -249,8 +249,8 @@ test('a raid: the day’s raid, its lock, NPC trainers in the group, the fight t
   const lock = page.getByRole('note')
   await expect(lock.getByText('Celebi will wait for you')).toBeVisible()
   await expect(lock.getByText(/joins your Box once you reach Johto and complete Ilex Shrine/)).toBeVisible()
-  // The next days, the same for everyone.
-  await expect(page.getByRole('heading', { name: 'Coming up' })).toBeVisible()
+  // The next days, the same for everyone, are in the calendar.
+  await expect(page.getByRole('button', { name: 'Calendar: the raids of the next two weeks' })).toBeVisible()
   await page.getByRole('button', { name: 'Info: how Raid Battles works' }).click()
   const rules = page.getByRole('dialog', { name: 'Raid Battles' })
   await expect(rules.getByText(/^One raid a day, the same for everyone/)).toBeVisible()

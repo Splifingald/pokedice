@@ -23,6 +23,14 @@ export function raidDate(day: string): string {
   )
 }
 
+/** A raid day's calendar page, in the player's language: weekday "Sat", day "22", month "Oct". */
+export function raidDateParts(day: string): { weekday: string; date: string; month: string } {
+  const [y, m, d] = day.split('-').map(Number) as [number, number, number]
+  const at = new Date(Date.UTC(y, m - 1, d))
+  const part = (o: Intl.DateTimeFormatOptions) => new Intl.DateTimeFormat(getLang(), { ...o, timeZone: 'UTC' }).format(at)
+  return { weekday: part({ weekday: 'short' }), date: part({ day: 'numeric' }), month: part({ month: 'short' }) }
+}
+
 /** Each event's icon (Home's square, the pop-up's banner tag). */
 export const EVENT_ICON: Record<EventId, IconName> = { wheel: 'coin', raid: 'star', rebattle: 'trophy' }
 
