@@ -1,4 +1,4 @@
-// Migration 0042 against a real Postgres (PGlite, in process), on top of 0041: each Elite Rebattle member's teams
+// Migration 0043 against a real Postgres (PGlite, in process), on top of 0041: each Elite Rebattle member's teams
 // drawn from their roster. Every rebattle trainer must come out as the bundle has it, the admin's event settings as they
 // went in, and a second run must change nothing.
 import { readFileSync } from 'node:fs'
@@ -40,10 +40,10 @@ beforeAll(async () => {
     JSON.stringify({ wheel: { access: 'all' }, rebattle: { access: 'admin', priority: 4, tiers: [] } }),
   ])
   await db.exec(migration('0041_rebattle_diamond.sql'))
-  await db.exec(migration('0042_rebattle_rosters.sql'))
+  await db.exec(migration('0043_rebattle_rosters.sql'))
 })
 
-describe('migration 0042: rematch teams from each member’s roster', () => {
+describe('migration 0043: rematch teams from each member’s roster', () => {
   it('leaves every rebattle trainer as the bundle has it', async () => {
     const stored = await teams()
     expect(Object.keys(stored)).toHaveLength(bundled.length)
@@ -63,7 +63,7 @@ describe('migration 0042: rematch teams from each member’s roster', () => {
 
   it('can run again and ends in the same place', async () => {
     const before = await teams()
-    await db.exec(migration('0042_rebattle_rosters.sql'))
+    await db.exec(migration('0043_rebattle_rosters.sql'))
     expect(await teams()).toEqual(before)
   })
 })

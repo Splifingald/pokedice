@@ -12,8 +12,8 @@ import type { Trainer } from '../src/engine'
 import { upsert } from './seed'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
-// The latest patch (0041 brought Diamond; 0042 each member's teams from their roster). A path argument writes elsewhere.
-const OUT = process.argv[2] ?? path.join('supabase', 'migrations', '0042_rebattle_rosters.sql')
+// The latest patch (0041 brought Diamond; 0043 each member's teams from their roster). A path argument writes elsewhere.
+const OUT = process.argv[2] ?? path.join('supabase', 'migrations', '0043_rebattle_rosters.sql')
 
 const config = BUNDLE.config as unknown as {
   rebattleLineups: Record<string, Record<string, string[]>>

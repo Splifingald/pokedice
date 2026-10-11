@@ -149,7 +149,7 @@ Pool and fallback lists with region gates; shiny chance (30 %); repeat window (7
 The tiers are named Bronze, Silver, Gold and Diamond and drawn as their medals, with no I / II / III (user's call,
 2026-10-10; Diamond added 2026-10-11, the levels and ₽ re-spread over four tiers). The Home widget shows the current
 tier's medal. The live database got the four tiers from `supabase/migrations/0041_rebattle_diamond.sql` and the
-roster teams from `0042_rebattle_rosters.sql` (`pnpm rebattle-sql`, both applied 2026-10-11); saves keep their place
+roster teams from `0043_rebattle_rosters.sql` (`pnpm rebattle-sql`, both applied 2026-10-11); saves keep their place
 (a player past the old Gold, Lv.100, now faces Diamond).
 
 - **Teams:** generated per region by a script (`scripts/rebattle-teams.ts`) into `trainers.json`. Each tier is a copy of the E4 member. **Trainers keep three Pokémon at most:** League I's ace, last, in every tier, and two from the member's **roster in the games** (`ROSTERS`: their five or six, plus their League I ones), a different pair each tier, so every rematch brings a different team (user's call, 2026-10-11). The pairs go round before one comes back: a member with only three to choose from (Kanto's Bruno, Agatha and Lance, Unova's and Kalos's Elite Four…) fights Diamond with Bronze's pair at Lv.100. A member with fewer than three (Emerald's Phoebe and Glacia) is topped up with Pokémon of their type from their region. All of them are hand-editable in the admin team editor. Champion slot = **the rival** (`rivalOf`, per starter) where League II had one (Kanto); elsewhere the League II champion.
