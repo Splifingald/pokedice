@@ -313,11 +313,11 @@ Simulated with `pnpm raid-balance 40 5` (three random fully evolved Lv.50 sides,
 | Option | Bars | HP per bar | Raid upgrades | Pool win % | Fallback win % |
 |---|---|---|---|---:|---:|
 | A | 3 | 2× | 7 | 72 | 66 |
-| **B (shipped)** | 3 | 2× | 8 | 60 | 51 |
+| **B (chosen)** | 3 | 2× | 8 | 60 | 51 |
 | C | 5 | 1× | 9 | 64 | 58 |
 | D | 6 | 1× | 7 | 65 | 60 |
 
-The defaults are B; any of them is a change in Admin → Events → Raid Battles (Simulate the win rate is there too).
+You chose B (2026-10-11), the defaults. Any of the others is a change in Admin → Events → Raid Battles (Simulate the win rate is there too).
 
 ### Hand-over (manual)
 1. Supabase SQL editor: run `supabase/migrations/0035_events.sql` (the clock, the wheel, raids, raid teams, gifts, and
