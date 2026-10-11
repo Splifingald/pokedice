@@ -4,7 +4,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   cloneForVersus,
-  getRegion,
   versusClosest,
   versusEdge,
   VERSUS_LEVEL,
@@ -12,11 +11,14 @@ import {
   sameEvent,
   simulateVersus,
   versusCandidates,
+  versusChoices,
   versusMoveAt,
   versusReadyCount,
   versusUnlocked,
   VERSUS_TEAM_SIZE,
+  POKE_TYPES,
   type BattleEvent,
+  type PokeType,
   type VersusFight,
 } from '@/engine'
 import { BoardRow, TeamIcons } from '@/components/BoardRow'
@@ -31,9 +33,12 @@ import { PixelButton } from '@/components/PixelButton'
 import { FilterChips, SearchField, Seg } from '@/components/Segmented'
 import { MiniSprite, SpriteImg } from '@/components/SpriteImg'
 import { TrainerSprite } from '@/components/TrainerArt'
+import { TypeBadge } from '@/components/TypeBadge'
+import { speciesTypes } from '@/components/TypeMatchups'
+import { TypeSelect } from '@/components/TypeSelect'
 import { avatarOf } from '@/lib/avatars'
 import { useSnapToMe } from '@/lib/useSnapToMe'
-import { searchFold } from '@/i18n'
+import { getLang, searchFold } from '@/i18n'
 import { useT } from '@/i18n/react'
 import { useFriends } from '@/lib/friends'
 import { friendsOnly } from '@/lib/leaderboard'
@@ -426,20 +431,31 @@ function TeamEditor({
   const [picks, setPicks] = useState<string[]>(() => me?.ids ?? [])
   const [saving, setSaving] = useState(false)
   const [q, setQ] = useState('')
-  // Every region's Box, strongest first; the region being played, then the Box order, break ties.
-  const candidates = useMemo(
-    () => [...versusCandidates(save, data)].sort((a, b) => b.inst.level - a.inst.level),
-    [save, data],
-  )
-  // Several regions played: each Pokémon says which one it comes from.
-  const manyRegions = new Set(candidates.map((c) => c.region)).size > 1
-  // The search narrows the list by name; picks it hides stay picked.
-  const needle = searchFold(q)
-  const shown = needle
-    ? candidates.filter((c) => searchFold(data.species[c.inst.dex]?.name ?? '').includes(needle))
-    : candidates
+  const [sort, setSort] = useState<'dex' | 'az'>('dex')
+  const [type, setType] = useState<PokeType | 'all'>('all')
+  // Every region's Box: the slots can show any of them.
+  const candidates = useMemo(() => versusCandidates(save, data), [save, data])
   // A pick that has left the Box (released, or sent to the Day Care) is dropped.
   const valid = picks.filter((id) => candidates.some((c) => c.inst.id === id))
+  const name = (dex: number) => data.species[dex]?.name ?? t('ui.common.pokemon')
+  // The list: each species once (its shiny apart), by National Dex number or by name. Everyone is Lv.50 here, so
+  // levels would only add noise. The search and the type narrow it; picks they hide stay picked.
+  const choices = versusChoices(save, data, valid)
+  const types = POKE_TYPES.filter((ty) => choices.some((c) => speciesTypes(data, c.inst.dex).includes(ty)))
+  const collator = new Intl.Collator(getLang())
+  const needle = searchFold(q)
+  const shown = choices
+    .filter(
+      (c) =>
+        (!needle || searchFold(name(c.inst.dex)).includes(needle) || String(c.inst.dex) === needle.replace(/^#?0*/, '')) &&
+        (type === 'all' || speciesTypes(data, c.inst.dex).includes(type)),
+    )
+    .sort(
+      (a, b) =>
+        (sort === 'az' ? collator.compare(name(a.inst.dex), name(b.inst.dex)) : 0) ||
+        a.inst.dex - b.inst.dex ||
+        Number(!!a.inst.shiny) - Number(!!b.inst.shiny),
+    )
   // The picks are the team already saved: nothing to save.
   const isSaved = !!me?.ids && me.ids.length === valid.length && me.ids.every((id, i) => valid[i] === id)
 
@@ -512,21 +528,32 @@ function TeamEditor({
         })}
       </ol>
 
-      <SearchField
-        id="vs-team-q"
-        value={q}
-        onChange={setQ}
-        label={t('ui.versus.searchLabel')}
-        placeholder={t('ui.versus.search')}
-      />
+      <div className="flex flex-wrap items-center gap-2">
+        <SearchField
+          id="vs-team-q"
+          value={q}
+          onChange={setQ}
+          label={t('ui.versus.searchLabel')}
+          placeholder={t('ui.versus.search')}
+          className="min-w-0 flex-[1_1_150px]"
+        />
+        <Seg
+          label={t('ui.versus.sortLabel')}
+          value={sort}
+          onChange={setSort}
+          options={[
+            { id: 'dex', label: t('ui.team.sortDex') },
+            { id: 'az', label: t('ui.versus.sortAz') },
+          ]}
+        />
+      </div>
+      {types.length > 1 && <TypeSelect value={type} onChange={setType} types={types} />}
       {shown.length === 0 && (
         <p className="m-0 text-center font-pixel-sm text-[16px] text-muted">{t('ui.search.noMatch')}</p>
       )}
       <ul className="m-0 grid list-none gap-1.5 p-0 sm:grid-cols-2">
-        {shown.map(({ inst: p, region }) => {
+        {shown.map(({ inst: p }) => {
           const order = valid.indexOf(p.id)
-          const clone = cloneForVersus(p)
-          const name = data.species[p.dex]?.name ?? t('ui.common.pokemon')
           return (
             <li key={p.id}>
               <button
@@ -539,13 +566,16 @@ function TeamEditor({
                 )}
               >
                 <MiniSprite dex={p.dex} size={40} className="-my-1" />
-                <span className="grid min-w-0 flex-1 leading-[1.05]">
-                  <b className="truncate text-[18px] font-normal">{name}</b>
-                  <small className="font-pixel-sm text-[14px] text-muted">
-                    {t('ui.common.level.short', { n: clone.level })}
-                    {p.level > clone.level && ` (${p.level})`}
-                    {manyRegions && ` · ${getRegion(data, region)?.name ?? region}`}
-                  </small>
+                <span className="grid min-w-0 flex-1 gap-1 leading-[1.05]">
+                  <span className="flex min-w-0 items-center gap-1">
+                    <b className="truncate text-[18px] font-normal">{name(p.dex)}</b>
+                    {p.shiny && <PixelIcon name="star" size={12} title={t('ui.mon.shiny')} className="shrink-0" />}
+                  </span>
+                  <span className="flex gap-1">
+                    {speciesTypes(data, p.dex).map((ty) => (
+                      <TypeBadge key={ty} type={ty} size="sm" />
+                    ))}
+                  </span>
                 </span>
                 {order >= 0 && (
                   <span className="grid h-7 w-7 light-scope shrink-0 place-items-center bg-night text-[18px] leading-none text-gold-light">
@@ -558,7 +588,7 @@ function TeamEditor({
         })}
       </ul>
 
-      <div className="grid grid-cols-[1fr_1.6fr] gap-2.5">
+      <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.6fr)] gap-2.5">
         <PixelButton disabled={!valid.length || saving} onClick={() => setPicks([])}>
           {t('ui.versus.clear')}
         </PixelButton>

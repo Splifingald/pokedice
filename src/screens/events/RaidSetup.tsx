@@ -94,7 +94,7 @@ function TeamEditor({ initial, onClose }: { initial: string[]; onClose: () => vo
       onClose={onClose}
       title={t('ui.raid.teamTitle')}
       footer={
-        <div className="grid grid-cols-[1fr_1.6fr] gap-2.5">
+        <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.6fr)] gap-2.5">
           <PixelButton disabled={!valid.length || saving} onClick={() => setPicks([])}>
             {t('ui.versus.clear')}
           </PixelButton>

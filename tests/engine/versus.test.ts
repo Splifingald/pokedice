@@ -9,6 +9,7 @@ import {
   sameEvent,
   simulateVersus,
   versusCandidates,
+  versusChoices,
   versusClosest,
   versusEdge,
   versusMoveAt,
@@ -54,6 +55,16 @@ describe('Versus teams', () => {
       ['kanto', 64],
       ['johto', 70],
     ])
+  })
+
+  it('lists each species once in the picker, its shiny apart, the region being played first', () => {
+    const save = newSave(1, data, 0, () => 'x')
+    const at = (id: string, dex: number, level: number, shiny = false) => ({ id, dex, level, xp: 0, currentHp: 1, caughtAt: 0, shiny })
+    const live = { ...save, box: [at('pk', 25, 60), at('pks', 25, 52, true), at('cz', 6, 51)] }
+    const parked = { ...live, parked: { johto: { ...liveBlock(save), box: [at('pk2', 25, 80), at('cz2', 6, 70)] } } }
+    expect(versusChoices(parked, data).map((c) => c.inst.id)).toEqual(['pk', 'pks', 'cz'])
+    // A pick keeps its place in the list, even one from another region.
+    expect(versusChoices(parked, data, ['pk2']).map((c) => c.inst.id)).toEqual(['pk2', 'pks', 'cz'])
   })
 
   it('while locked, lists the three closest to Lv.50 from every Box, highest first, fossils left out', () => {

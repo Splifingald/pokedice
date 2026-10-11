@@ -1,6 +1,7 @@
 // Result screens: victory (XP, level-ups, milestones, gold, catch, then evolutions), wipe and stalemate.
 import { AnimatePresence, motion } from 'framer-motion'
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   getInstance,
   instanceStats,
@@ -65,7 +66,7 @@ export function Overlay({ children, footer, label }: { children: ReactNode; foot
         role="dialog"
         aria-modal="true"
         aria-label={label}
-        className="pixel-panel flex max-h-[78dvh] w-full max-w-xl flex-col"
+        className="pixel-panel flex max-h-[78dvh] w-full min-w-0 max-w-xl flex-col"
         initial={reduced ? false : { y: '100%' }}
         animate={{ y: 0 }}
         transition={{ duration: 0.28, ease: 'easeOut' }}
@@ -470,6 +471,7 @@ function MonRow({ m }: { m: MonRecap }) {
  */
 export function VictoryView() {
   const { t } = useT()
+  const navigate = useNavigate()
   const run = useGame((s) => s.run)
   const battle = useGame((s) => s.battle)
   const data = useGame((s) => s.data)
@@ -548,8 +550,16 @@ export function VictoryView() {
           {t('ui.victory.goToNewArea')}
         </PixelButton>
       )}
-      <div className="grid grid-cols-[1fr_1.4fr] gap-2.5">
-        <PixelButton size="lg" className="whitespace-nowrap px-2" onClick={go(() => continueAfterVictory())}>
+      <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] gap-2.5">
+        <PixelButton
+          size="lg"
+          className="whitespace-nowrap px-2"
+          onClick={go(() => {
+            // Closing the card keeps the player in the area; HOME is the one way out of it.
+            continueAfterVictory()
+            navigate('/home')
+          })}
+        >
           {t('ui.nav.home')}
         </PixelButton>
         <PixelButton
@@ -649,7 +659,7 @@ function RebattleNext({ go }: { go: (action: () => void) => () => void }) {
       </PixelButton>
     )
   return (
-    <div className="grid grid-cols-[1fr_1.6fr] gap-2.5">
+    <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.6fr)] gap-2.5">
       <PixelButton size="lg" className="whitespace-nowrap px-2" onClick={leave}>
         {t('ui.events.rebattle.later')}
       </PixelButton>
@@ -679,7 +689,7 @@ function RebattleWipe() {
     <Overlay
       label={t('ui.wipe.title')}
       footer={
-        <div className="grid grid-cols-[1fr_1.4fr] gap-2.5">
+        <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] gap-2.5">
           <PixelButton size="lg" className="whitespace-nowrap px-2" onClick={afterWipe}>
             {t('ui.events.rebattle.later')}
           </PixelButton>

@@ -7,6 +7,7 @@ import {
   firstComeback,
   hasAbleTeam,
   isAreaClosed,
+  latestOpenArea,
   playerSideOf,
   progressOf,
   teamAverageLevel,
@@ -20,6 +21,7 @@ import { countdown, trainerTitle } from '@/lib/format'
 import { useGame } from '@/store/game'
 import { useEnergy } from '@/store/hooks'
 import { challenge, enterArea, outOfEnergy, rollNext } from '@/store/run'
+import { travelTo } from '@/store/travel'
 import { cx } from '@/theme/util'
 
 /** The run must be in this area before anything is rolled: arriving from another one starts it afresh. */
@@ -104,8 +106,8 @@ export function useContinue(area: Area) {
 }
 
 /**
- * The Areas button and CONTINUE, the one big action (useContinue). When a gym or a legendary waits, "keep exploring"
- * sits under it. (Auto-mode is switched in the area itself, on the encounter screens.)
+ * The Areas button and CONTINUE, the one big action (useContinue). Under it, when the player is behind in the region's
+ * main chain, the green GO TO its furthest open area; when a gym or a legendary waits, "keep exploring". (Auto-mode is switched in the area itself, on the encounter screens.)
  */
 export function ContinueBar({
   area,
@@ -120,6 +122,8 @@ export function ContinueBar({
   const { t } = useT()
   const { label, sub, go, explore, off, gym, boss, closed, empty, busy, resting } = useContinue(area)
   const subId = useId()
+  // Behind in the region's main chain: one tap to its furthest open area (not mid-encounter).
+  const latest = useGame((s) => (s.save ? latestOpenArea(s.save, s.data) : null))
 
   return (
     <div className="flex flex-col gap-2">
@@ -181,6 +185,12 @@ export function ContinueBar({
         </PixelButton>
       </div>
       {resting && <RestingPanel />}
+      {latest && !busy && (
+        <PixelButton variant="success" size="lg" className="w-full" onClick={() => travelTo(latest)}>
+          <PixelIcon name="map" size={20} />
+          {t('ui.victory.goToArea', { name: latest.name })}
+        </PixelButton>
+      )}
       {(gym || boss) && !closed && !busy && !resting && (
         <div className="flex flex-wrap items-center justify-end gap-2">
           <PixelButton size="sm" onClick={explore} disabled={empty}>

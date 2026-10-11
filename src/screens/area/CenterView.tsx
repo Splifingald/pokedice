@@ -1,4 +1,6 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
+import { useNavigate } from 'react-router-dom'
 import { teamOf, type PokemonInstance } from '@/engine'
 import { useT } from '@/i18n/react'
 import { BoxSortPicker, sortBox, type BoxSort } from '@/components/BoxSort'
@@ -6,14 +8,14 @@ import { PixelIcon } from '@/components/icons'
 import { MonCard } from '@/components/MonCard'
 import { PixelButton } from '@/components/PixelButton'
 import { SheetModal, type SheetView } from '@/components/SheetModal'
-import { StageCanvas, type StageHandle } from '@/components/StageCanvas'
+import { StageCanvas } from '@/components/StageCanvas'
 import { loadSprite, spriteKey } from '@/fx/sprites'
 import { loadCenterArt } from '@/fx/scenes'
 import { centerTimeline } from '@/fx/timelines/center'
 import { useMotion } from '@/lib/motion'
 import { putInTeam, removeFromTeam, reorderTeam } from '@/store/actions'
 import { useGame } from '@/store/game'
-import { continueExploring, finishCenter } from '@/store/run'
+import { continueExploring, finishCenter, markHealShown } from '@/store/run'
 
 /** Chansey, behind the healing machine's counter. */
 const NURSE = 113
@@ -21,12 +23,13 @@ const NURSE = 113
 /** Pokémon Center: heal jingle, then team management — tap any Pokémon for its sheet and team actions. */
 export function CenterView() {
   const { t } = useT()
+  const navigate = useNavigate()
   const save = useGame((s) => s.save)
   const data = useGame((s) => s.data)
   const { level } = useMotion()
-  // Nothing to watch with animations off: straight to the Center.
-  const [healed, setHealed] = useState(level === 'off')
-  const stage = useRef<StageHandle>(null)
+  // Nothing to watch with animations off, or when it already played (back from Home): straight to the Center.
+  const [healed, setHealed] = useState(() => level === 'off' || !!useGame.getState().run.healShown)
+  const skip = useRef<HTMLButtonElement>(null)
   const [view, setView] = useState<SheetView | null>(null)
   const [sort, setSort] = useState<BoxSort>('dex')
   const teamSize = useGame((s) => s.save?.team.length ?? 1)
@@ -35,6 +38,12 @@ export function CenterView() {
     ready: Promise.all([loadSprite(NURSE, false), loadCenterArt()]),
     timeline: centerTimeline({ balls: teamSize, nurse: spriteKey(NURSE, false), short: level !== 'full' }),
   }))
+  // The team is healed already (engage): once the jingle has started, leaving and coming back doesn't play it again.
+  useEffect(() => markHealShown(), [])
+  // SKIP has the focus, so Enter, Space and Escape all end it.
+  useEffect(() => {
+    if (!healed) skip.current?.focus()
+  }, [healed])
 
   if (!save) return null
   const team = teamOf(save)
@@ -103,36 +112,34 @@ export function CenterView() {
   }
 
   return (
-    <div className="flex flex-col gap-4">
-      {/* The healing plays over everything, as big as the screen allows; SKIP ends it, and it closes itself once done. */}
-      {!healed && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-label={t('ui.center.healing')}
-          className="fixed inset-0 z-[90] flex flex-col items-center justify-center gap-3 bg-night/80 p-3"
-        >
-          <div className="pixel-panel w-[min(100%,calc((100dvh-120px)*1.5))] overflow-hidden p-0">
-            <StageCanvas
-              ref={stage}
-              timeline={scene.timeline}
-              ready={scene.ready}
-              onEnd={() => setTimeout(() => setHealed(true), 400)}
-              label={t('ui.center.healing')}
-            />
-          </div>
-          <PixelButton
-            size="lg"
-            className="min-w-[200px]"
-            onClick={() => {
-              stage.current?.skip()
-              setHealed(true)
-            }}
+    // Phones: room at the bottom for the action bar, which is pinned over the tab bar.
+    <div className="flex flex-col gap-4 pb-[76px] md:pb-0">
+      {/* The healing plays over everything (on <body>, so nothing on the page can sit over it), as big as the screen
+          allows; it closes itself once done. SKIP just closes it: the team is already healed, and jumping the timeline
+          to its end would play every note left of the jingle at once. */}
+      {!healed &&
+        createPortal(
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label={t('ui.center.healing')}
+            className="fixed inset-0 z-[90] flex flex-col items-center justify-center gap-3 bg-night/80 p-3"
+            onKeyDown={(e) => e.key === 'Escape' && setHealed(true)}
           >
-            {t('ui.victory.skip')}
-          </PixelButton>
-        </div>
-      )}
+            <div className="pixel-panel w-[min(100%,calc((100dvh-120px)*1.5))] overflow-hidden p-0">
+              <StageCanvas
+                timeline={scene.timeline}
+                ready={scene.ready}
+                onEnd={() => setTimeout(() => setHealed(true), 400)}
+                label={t('ui.center.healing')}
+              />
+            </div>
+            <PixelButton ref={skip} size="lg" className="min-w-[200px]" onClick={() => setHealed(true)}>
+              {t('ui.victory.skip')}
+            </PixelButton>
+          </div>,
+          document.body,
+        )}
 
       {/* Then, before going on: where you are and what you can do here. */}
       <p className="pixel-dialogue m-0 flex items-center gap-3 px-3 py-2.5 text-[20px] leading-[1.15]" aria-live="polite">
@@ -179,11 +186,22 @@ export function CenterView() {
         </ul>
       </section>
 
-      {/* Always on screen, above the phone bottom bar. */}
-      <div className="sticky z-30 -mx-3 border-t-[3px] border-edge bg-parchment px-3 py-2" style={{ bottom: 'var(--bottom-nav)' }}>
+      {/* Always on screen: phones pin it right above the tab bar, even when the page is short; from 768px it follows
+          the content column (the side nav is there) and sticks to the bottom. */}
+      <div
+        className="fixed inset-x-0 z-30 border-t-[3px] border-edge bg-parchment px-3 py-2 md:sticky md:inset-x-auto md:-mx-3"
+        style={{ bottom: 'var(--bottom-nav)' }}
+      >
         {/* Healed: back Home, or straight on to this area's next encounter. */}
-        <div className="grid grid-cols-[1fr_1.4fr] gap-2.5 md:mx-auto md:max-w-md">
-          <PixelButton size="lg" className="whitespace-nowrap px-2" onClick={finishCenter}>
+        <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] gap-2.5 md:mx-auto md:max-w-md">
+          <PixelButton
+            size="lg"
+            className="whitespace-nowrap px-2"
+            onClick={() => {
+              finishCenter()
+              navigate('/home')
+            }}
+          >
             {t('ui.nav.home')}
           </PixelButton>
           <PixelButton

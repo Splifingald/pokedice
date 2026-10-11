@@ -1,7 +1,7 @@
 // Dev route: every design-system component in every state (docs/15-UI-GUIDELINES.md). Check at 360 px and 1440 px.
 import { useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
-import { DIE_TYPES, POKE_TYPES, STATUS_KINDS, emptyStatus, type Species } from '@/engine'
+import { DIE_TYPES, POKE_TYPES, STATUS_KINDS, emptyStatus, type PokeType, type Species } from '@/engine'
 import { Chip, LevelTag, NewTag, StatusChip } from '@/components/Chip'
 import { CryButton } from '@/components/CryButton'
 import { Dialogue } from '@/components/Dialogue'
@@ -19,6 +19,7 @@ import { Panel } from '@/components/Panel'
 import { PixelButton } from '@/components/PixelButton'
 import { SearchSelect } from '@/components/SearchSelect'
 import { FilterChips, SearchField, Seg } from '@/components/Segmented'
+import { TypeSelect } from '@/components/TypeSelect'
 import { Sheet } from '@/components/Sheet'
 import { SpriteImg } from '@/components/SpriteImg'
 import { StatusIcons } from '@/components/StatusIcons'
@@ -66,6 +67,7 @@ export function KitchenSink() {
   const [seg, setSeg] = useState<'combos' | 'dice'>('combos')
   const [filter, setFilter] = useState<'all' | 'catch' | 'secret' | 'cleared'>('all')
   const [q, setQ] = useState('')
+  const [ksType, setKsType] = useState<PokeType | 'all'>('all')
   const [toggle, setToggle] = useState(true)
 
   const faceFor = (t: (typeof DIE_TYPES)[number], i: number) => data.diceTypes[t]?.faces[(i + roll) % 6] ?? null
@@ -217,6 +219,9 @@ export function KitchenSink() {
           className="w-full"
         />
         <SearchField id="ks-search" label="Search an area or a Pokémon" value={q} onChange={setQ} className="w-full max-w-sm" />
+        {/* TypeSelect: every type, then one picked (its colour beside it). */}
+        <TypeSelect value={ksType} onChange={setKsType} types={['fire', 'water', 'grass', 'electric']} className="w-full" />
+        <TypeSelect value="fire" onChange={() => undefined} types={['fire', 'water']} className="w-full" />
       </Section>
 
       <Section title="Dialogue">
@@ -297,6 +302,10 @@ export function KitchenSink() {
           <Die type="water" face={data.diceTypes.water.faces[2]} selected label="selected" />
           <Die type="fire" face={data.diceTypes.fire.faces[0]} locked label="locked" />
           <Die type="water" face={null} />
+          {/* Values without pips show their number, centred like the pips. */}
+          <Die type="ground" face={{ kind: 'number', value: 0 }} label="number face 0" />
+          <Die type="flying" face={{ kind: 'number', value: 7 }} label="number face 7" />
+          <Die type="dragon" face={{ kind: 'number', value: 8 }} label="number face 8" />
         </div>
         <div className="flex flex-wrap items-end gap-3">
           {[24, 28, 32, 40, 44, 54, 64, 80].map((s) => (

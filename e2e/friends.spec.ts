@@ -95,7 +95,10 @@ test('the Friends page: a new friend is announced, your ID, your friends, a frie
   const card = page.getByRole('dialog', { name: 'Misty' })
   await expect(card).toBeVisible()
   await expect(card).toContainText('Friends since')
-  await expect(card).toContainText('Badge case')
+  // Their badges as one count, every region together (two won in Kanto): no badge cases.
+  await expect(card.getByRole('term').filter({ hasText: 'Badges' })).toBeVisible()
+  await expect(card.getByRole('definition').filter({ hasText: /^2$/ })).toBeVisible()
+  await expect(card.getByRole('heading', { name: 'Badge case' })).toHaveCount(0)
   await expect(card).toContainText('Versus team')
   await expect(card).toContainText('3 won · 2 held')
   expect(await seriousAxe(page, '[role="dialog"]')).toEqual([])

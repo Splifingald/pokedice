@@ -66,7 +66,8 @@ export function Sheet({
             aria-modal="true"
             aria-labelledby={titleId}
             className={cx(
-              'flex w-full flex-col bg-panel outline-none',
+              // min-w-0: a flex item, it would otherwise grow to its widest unbreakable line and run off a phone.
+              'flex w-full min-w-0 flex-col bg-panel outline-none',
               desktop
                 ? cx('pixel-panel max-h-[85vh]', wide ? 'max-w-3xl' : 'max-w-xl')
                 : 'max-h-[90dvh] shadow-[0_-2px_0_rgb(var(--c-edge)),0_-6px_0_rgb(var(--c-edge)/0.13)]',

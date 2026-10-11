@@ -254,7 +254,7 @@ export function RaidPage() {
       <Modal open={asking} onClose={() => setAsking(false)} title={t('ui.raid.npcTitle')}>
         <div className="grid gap-3">
           <p className="copy m-0 text-lg">{t('ui.raid.npcBody')}</p>
-          <div className="grid grid-cols-[1fr_1.4fr] gap-2.5">
+          <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] gap-2.5">
             <PixelButton size="lg" onClick={() => setAsking(false)}>
               {t('ui.common.back')}
             </PixelButton>

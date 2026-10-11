@@ -9,7 +9,7 @@
 
 - **Daybreak, not the old look.** The mockups below (§4) are screenshots of the screens as built. A friend's card is a
   `Sheet` (Daybreak opens details in a sheet), drawn with the trainer card's own pieces — `CardFrame`, `Stat`,
-  `CardTeam`, `BadgeCases`, now exported from `TrainerCard.tsx` — so it looks exactly like yours. Adding a friend, the
+  `CardTeam` (and, at first, `BadgeCases`; since replaced by one Badges count across every region), exported from `TrainerCard.tsx` — so it looks exactly like yours. Adding a friend, the
   invite pop-ups, removing and resetting are `Modal`s.
 - **Friends are sky blue.** Daybreak's blue tint (`sky`, the trainer card's colour) with a blue edge, and a **Friend**
   tag beside the name, as the gold **you** tag sits beside yours: a word, never colour alone. No separate icon on the

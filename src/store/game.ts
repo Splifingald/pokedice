@@ -69,6 +69,8 @@ export interface RunState {
   forceNext: ForceKind | null
   /** An Elite Rebattle gauntlet is being fought: its region and tier (the fights run on its League area). */
   rebattle?: { regionId: string; tier: number } | null
+  /** The Pokémon Center's healing has played: back from Home, the Center opens on the team, not on the jingle again. */
+  healShown?: boolean
 }
 
 export interface BattleSlice {

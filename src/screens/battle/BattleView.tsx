@@ -566,7 +566,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
   if (over) actions = versus!.end
   else if (auto && !terminal)
     actions = (
-      <div className="grid grid-cols-[1.4fr_1fr] items-center gap-2.5" role="status">
+      <div className="grid grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] items-center gap-2.5" role="status">
         <p className="m-0 flex items-center gap-2 font-pixel-sm text-[16px] leading-[1.1] text-muted">
           <Chip tone="plain">{t('ui.battle.autoMode')}</Chip>
           {t('ui.battle.autoNote')}
@@ -599,7 +599,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
     )
   else if (rolling && !terminal)
     actions = (
-      <div className="grid grid-cols-[1fr_1.4fr] gap-2.5">
+      <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] gap-2.5">
         <PixelButton
           size="lg"
           className="whitespace-nowrap px-2"

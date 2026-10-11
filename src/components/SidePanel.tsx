@@ -51,7 +51,7 @@ export function SidePanel({
             aria-modal="true"
             aria-labelledby={titleId}
             className={cx(
-              'flex h-full w-full max-w-[24rem] flex-col bg-parchment outline-none',
+              'flex h-full w-full min-w-0 max-w-[24rem] flex-col bg-parchment outline-none',
               'shadow-[-2px_0_0_rgb(var(--c-edge)),-6px_0_0_rgb(var(--c-edge)/0.13)]',
             )}
             style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}

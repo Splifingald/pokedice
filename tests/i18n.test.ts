@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import areas from '@/data/areas.json'
+import diceTypes from '@/data/dice-types.json'
 import items from '@/data/items.json'
 import pokemon from '@/data/pokemon.json'
 import trainers from '@/data/trainers.json'
@@ -8,7 +9,7 @@ import regions from '@/data/regions.json'
 import { allKeys, CJK_LANGS, detectLang, hasKey, LANGS, searchFold, tableFor, tIn } from '@/i18n'
 import { CJK_RANGES, cjkFontFile, isCjkChar } from '@/i18n/cjk'
 import fontChars from '@/i18n/cjk-chars.json'
-import { areaKey, itemDescKey, itemKey, pokemonKey, slug, splitTrainerName, trainerClassKey } from '@/i18n/names'
+import { areaKey, diceDescKey, itemDescKey, itemKey, pokemonKey, slug, splitTrainerName, trainerClassKey } from '@/i18n/names'
 
 const missing = (keys: string[]) => keys.filter((k) => !hasKey(k))
 
@@ -20,6 +21,10 @@ describe('the localization sheet', () => {
   it('names and describes every item', () => {
     const keys = (items as { key: string }[]).flatMap((i) => [itemKey(i.key), itemDescKey(i.key)])
     expect(missing(keys)).toEqual([])
+  })
+
+  it('describes every die type', () => {
+    expect(missing((diceTypes as { type: string }[]).map((d) => diceDescKey(d.type)))).toEqual([])
   })
 
   it('names every area', () => {
@@ -102,6 +107,13 @@ describe('searchFold', () => {
     expect(searchFold('ぴかちゅう')).toBe(searchFold('ピカチュウ'))
     expect(searchFold('＃０２５')).toBe('#025')
     expect(searchFold(' Pikachu ')).toBe('pikachu')
+  })
+
+  it('drops Latin accents, and keeps kana with dakuten apart', () => {
+    expect(searchFold('Évoli')).toBe('evoli')
+    expect(searchFold('Mélofée')).toBe(searchFold('melofee'))
+    expect(searchFold('ガーディ')).not.toBe(searchFold('カーディ'))
+    expect(searchFold('ガーディ')).toBe('ガーディ')
   })
 })
 

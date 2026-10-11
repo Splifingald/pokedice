@@ -233,6 +233,17 @@ export function isAreaUnlocked(save: SaveData, areaId: string, data: GameData, d
 }
 
 /**
+ * The furthest area of the region's main chain the player can play (secret areas don't count), when they stand
+ * somewhere else: Home offers to go there. Null once the whole chain is cleared, or when they are already there.
+ */
+export function latestOpenArea(save: SaveData, data: GameData): Area | null {
+  const chain = linearAreas(data, regionOf(save))
+  if (!chain.length || chain.every((a) => progressOf(save, a.id).cleared)) return null
+  const latest = [...chain].reverse().find((a) => isAreaUnlocked(save, a.id, data) && !isAreaClosed(save, a.id, data))
+  return latest && latest.id !== save.currentAreaId ? latest : null
+}
+
+/**
  * An area with no deck — no wild Pokémon, trainers or Game Corner to meet, only Pokémon Centers and items, e.g. a
  * legendary's lair — closes once nothing is left to do there: every gym battle won, every legendary beaten and caught.
  * It can't be entered anymore. Areas with a deck, and ones with nothing special to begin with, never close.

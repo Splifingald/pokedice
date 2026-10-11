@@ -79,7 +79,7 @@ export function RulesModal({
         </div>
         <RuleList rules={rules} />
         {onGo ? (
-          <div className="grid grid-cols-[1fr_1.5fr] gap-2.5 pt-1">
+          <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)] gap-2.5 pt-1">
             <PixelButton onClick={onClose}>{t('ui.events.later')}</PixelButton>
             <PixelButton variant="primary" onClick={onGo}>
               {t('ui.events.go')}

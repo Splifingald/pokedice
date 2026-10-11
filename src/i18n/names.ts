@@ -157,6 +157,7 @@ export function splitRematch(given: string): { base: string; suffix: string } {
 export const pokemonKey = (dex: number) => `pokemon.${dex}`
 export const itemKey = (key: string) => `item.${key}`
 export const itemDescKey = (key: string) => `itemDesc.${key}`
+export const diceDescKey = (type: string) => `diceDesc.${type}`
 export const areaKey = (name: string) => `area.${slug(name)}`
 export const trainerClassKey = (cls: string) => `trainerClass.${slug(cls)}`
 export const trainerNameKey = (given: string) => `trainerName.${slug(given)}`

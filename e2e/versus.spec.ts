@@ -134,9 +134,16 @@ test('set your team: three picks in fight order, saved from the cloud save, and 
   await page.getByRole('button', { name: /Venusaur/ }).click()
   await page.getByRole('button', { name: /Charizard/ }).click()
   await page.getByRole('button', { name: /Blastoise/ }).click()
-  // Every region's Box can send a Pokémon: each says where it comes from.
-  await expect(page.getByRole('button', { name: /Charizard/ })).toContainText('Lv.50 (72) · Kanto')
-  await expect(page.getByRole('button', { name: /Blastoise/ })).toContainText('Johto')
+  // Every region's Box can send a Pokémon (Blastoise waits in Johto's). Everyone fights at Lv.50, so a row shows the
+  // types, not a level.
+  await expect(page.getByRole('button', { name: /Charizard/ })).toContainText('Fire')
+  await expect(page.getByRole('button', { name: /Charizard/ })).not.toContainText('Lv.')
+  // The type filter and A–Z narrow and reorder the list; the picks stay picked.
+  await page.getByRole('combobox', { name: 'Filter by type' }).selectOption('water')
+  await expect(page.locator('button[aria-pressed]')).toHaveCount(1)
+  await page.getByRole('combobox', { name: 'Filter by type' }).selectOption('all')
+  await page.getByRole('radio', { name: 'A–Z' }).click()
+  await expect(page.locator('button[aria-pressed]').first()).toContainText('Blastoise')
   await page.getByRole('button', { name: 'SAVE TEAM' }).click()
 
   await expect(page.getByText('Team saved!')).toBeVisible()

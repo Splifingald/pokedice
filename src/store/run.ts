@@ -315,7 +315,7 @@ export function engage(leadUid?: string) {
   switch (enc.kind) {
     case 'center':
       commitSave(centerHeal(save, data))
-      setRun({ phase: 'center' })
+      setRun({ phase: 'center', healShown: false })
       return
     case 'casino':
       setRun({ phase: 'casino' })
@@ -556,11 +556,12 @@ export function forfeit() {
   setRun({ phase: 'wipe', trainer: null, events: [] })
 }
 
+/** After a full K.O. the run is over: Home (where CONTINUE starts the area afresh), or the rebattle page. */
 export function afterWipe() {
   useGame.setState((s) =>
     s.run.rebattle
       ? { battle: null, run: { ...initialRun(), rebattle: s.run.rebattle } }
-      : { battle: null, run: { ...initialRun(), areaId: s.run.areaId, firstInArea: true } },
+      : { battle: null, run: { ...initialRun(), forceNext: s.run.forceNext } },
   )
 }
 
@@ -571,6 +572,11 @@ export function afterStalemate() {
 
 export function finishCenter() {
   backToArea()
+}
+
+/** The healing has started playing: leaving for Home and coming back won't play it again. */
+export function markHealShown() {
+  if (useGame.getState().run.phase === 'center') setRun({ healShown: true })
 }
 
 /** One pull of the Game Corner slot machine; null (and a toast) when the player can't pay for it. */

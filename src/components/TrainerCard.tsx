@@ -1,10 +1,9 @@
 // The trainer card, opened from the avatar in the top bar: your look at 2×, your name (Change), an ID number (your
-// friend ID once you have one), the numbers that say how far you are, your team, and the look other trainers see on the
-// leaderboard and in Versus (the badges are a count on the top bar; the full case is on a friend's card). A friend's card (docs/16) is drawn with the
-// same pieces: CardFrame, Stat, CardTeam and BadgeCases.
+// friend ID once you have one), the numbers that say how far you are (the badges counted across every region), your
+// team, and the look other trainers see on the leaderboard and in Versus. A friend's card (docs/16) is drawn with the
+// same pieces: CardFrame, Stat and CardTeam.
 import { useEffect, useState, type ReactNode } from 'react'
-import { linearAreas, regionOf, regionSpecies, teamOf, versusUnlocked, type RegionCase } from '@/engine'
-import { slug } from '@/i18n/names'
+import { badgesHeld, linearAreas, regionOf, regionSpecies, teamOf, versusUnlocked } from '@/engine'
 import { useT } from '@/i18n/react'
 import { AVATAR_GROUPS, avatarOf, playerAvatarId } from '@/lib/avatars'
 import { money } from '@/lib/format'
@@ -13,7 +12,6 @@ import { fetchVersusBoard } from '@/lib/versus'
 import { CharacterSelect } from '@/screens/NewGame'
 import { mutateSave, useGame } from '@/store/game'
 import { cx } from '@/theme/util'
-import { BadgeIcon, CrownIcon } from './BadgeIcon'
 import { PixelButton } from './PixelButton'
 import { MiniSprite } from './SpriteImg'
 import { playerOf } from './TrainerArt'
@@ -82,61 +80,6 @@ export function CardTeam({ team, label }: { team: { dex: number; level: number }
         </li>
       ))}
     </ul>
-  )
-}
-
-/** A navy badge case per region, each badge at 3×, then the crown for clearing the region. */
-export function BadgeCases({ regions, hint }: { regions: RegionCase[]; hint?: boolean }) {
-  const { t } = useT()
-  if (!regions.length) return null
-  return (
-    <section className="flex flex-col gap-2">
-      <h3 className="m-0 text-[24px] font-normal leading-none">{t('ui.profile.badgeCase')}</h3>
-      {regions.map((r) => (
-        <div key={r.id} className="flex flex-col gap-1">
-          <div className="flex items-baseline gap-2">
-            <span className="text-[20px] leading-none">{r.name}</span>
-            <span className="ml-auto font-pixel-sm text-[15px] text-muted">
-              {t('ui.map.badges', { earned: r.earned, total: r.badges.length })}
-            </span>
-          </div>
-          <ul
-            aria-label={t('ui.map.badgesLabel', { earned: r.earned, total: r.badges.length })}
-            className="m-0 grid list-none grid-cols-[repeat(auto-fill,minmax(62px,1fr))] gap-x-1 gap-y-2 bg-[#2b3a63] px-2 py-2.5 shadow-[inset_0_0_0_2px_rgb(var(--c-edge)),inset_0_4px_0_#1b2647]"
-          >
-            {r.badges.map((b) => (
-              <li key={b.trainerId} className="grid justify-items-center gap-[3px] text-center">
-                <span className={cx(!b.earned && 'opacity-40')}>
-                  <BadgeIcon badge={b.badge} earned={b.earned} size={36} />
-                </span>
-                <span
-                  aria-hidden
-                  className={cx('font-pixel-sm text-[13px] leading-none', b.earned ? 'text-[#e3e9f2]' : 'text-[#b6c3d9]')}
-                >
-                  {t(`badge.${slug(b.badge)}`)}
-                </span>
-              </li>
-            ))}
-            <li className="grid justify-items-center gap-[3px] text-center">
-              <span className={cx(!r.endgameCleared && 'opacity-40')}>
-                <CrownIcon
-                  earned={r.endgameCleared}
-                  size={36}
-                  label={r.endgameCleared ? t('ui.card.crown') : t('ui.profile.badgeLocked', { badge: t('ui.card.crown') })}
-                />
-              </span>
-              <span
-                aria-hidden
-                className={cx('font-pixel-sm text-[13px] leading-none', r.endgameCleared ? 'text-[#e3e9f2]' : 'text-[#b6c3d9]')}
-              >
-                {t('ui.card.crown')}
-              </span>
-            </li>
-          </ul>
-        </div>
-      ))}
-      {hint && <p className="m-0 font-pixel-sm text-[15px] leading-[1.15] text-muted">{t('ui.profile.crownHint')}</p>}
-    </section>
   )
 }
 
@@ -211,6 +154,7 @@ export function TrainerCard() {
                 label={t('ui.card.areas')}
                 value={`${areas.filter((a) => save.areaProgress[a.id]?.cleared).length}/${areas.length}`}
               />
+              <Stat label={t('ui.card.badges')} value={String(badgesHeld(save, data))} />
               <Stat label={t('ui.card.shinies')} value={String(save.box.filter((p) => p.shiny).length)} />
               <Stat
                 label={t('ui.card.versus')}

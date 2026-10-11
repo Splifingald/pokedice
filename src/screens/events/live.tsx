@@ -318,7 +318,7 @@ export function LivePopup() {
         </div>
         <LiveRules e={live} />
         {live.type === 'shop' ? (
-          <div className="grid grid-cols-[1fr_1.5fr] gap-2.5 pt-1">
+          <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)] gap-2.5 pt-1">
             <PixelButton onClick={close}>{t('ui.common.ok')}</PixelButton>
             <PixelButton
               variant="primary"

@@ -46,9 +46,12 @@ const statusColor = (face: Face | null | undefined): string | null =>
 function FaceArt({ face, size, ink }: { face: Face; size: number; ink: string }) {
   const lit = PIPS[face.value]
   if (!lit) {
-    // A value with no pip layout: its number.
+    // A value with no pip layout: its number, centred on the face like the pips are.
     return (
-      <span className="font-pixel leading-none" style={{ fontSize: Math.round(size * 0.62), color: ink }}>
+      <span
+        className="absolute inset-0 flex items-center justify-center font-pixel leading-none"
+        style={{ fontSize: Math.round(size * 0.62), color: ink }}
+      >
         {face.value}
       </span>
     )
