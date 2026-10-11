@@ -7,6 +7,7 @@ import { cx } from '@/theme/util'
 import { DayCareNotice, DayCareTutorial } from './DayCareTutorial'
 import { DonationPopup } from './DonationPopup'
 import { EventUnlockPopup } from './EventUnlockPopup'
+import { VersusUnlockPopup } from './FeatureRules'
 import { RaidGiftPopup } from './RaidGiftPopup'
 import { FriendsService } from './friends/FriendsService'
 import { BottomNav, Header, SideNav } from './Hud'
@@ -49,6 +50,7 @@ export function GameLayout() {
       <ReplyPopup />
       <DonationPopup />
       <EventUnlockPopup />
+      <VersusUnlockPopup />
       <RaidGiftPopup />
       <FriendsService />
     </div>

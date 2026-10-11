@@ -149,6 +149,7 @@ All live in `src/components/`. Every component, in every state, is on `/kitchen-
 | `FaceDice` / `StatusLines` | What a die does | Its six faces as real dice, value under each; a status face keeps its ring and badge and gets its short name in a chip. One tinted line per status: when it triggers and what it does, with the live numbers (`statusEffects`) |
 | `ItemSprite` | An item's picture | From the item atlas (one request); falls back to the item's own URL for items added since the atlas was built |
 | `PixelIcon` | Every icon | Pixel maps drawn as SVG rects: the Pokémon ones hand-drawn in `icons.tsx` (balls, Pokédex, badges, status symbols), the generic UI ones (coin, heart, shop, trophy, settings…) from the "1-bit Pixel Icons" pack, recoloured into `packIcons.ts` by `scripts/import-icons.ts` (11–16 px squares; the tab bar's on 16×16). Draw them at 12 px or more. One shared palette (`ICON_PALETTE`); a map may have its own (`OWN_PALETTE`) |
+| `RulesModal` / `InfoButton` | A feature's rules: once when it unlocks, then from the blue INFO button at the bottom of its page | The special events' pop-up: its picture as a banner (a NOW OPEN tag on the unlock), 2–4 `RuleList` rows (an icon, a short title, a line with the config's numbers); Later and Let's go! on the unlock, Got it from INFO. The Day Care and Versus use it (`FeatureRules.tsx`); the events have their own copy (`EventUnlockPopup`) |
 
 Dialog behaviour (`src/lib/useDialog.ts`, used by `Modal`, `Sheet`, `SidePanel`): focus moves in, **Tab stays inside**,
 **Esc closes the top dialog only**, focus returns to what opened it.
@@ -416,6 +417,10 @@ One Day Care for every region (docs/15-DAYCARE-BREEDING.md). The page (`src/scre
   top bar is back (`bumpGold`).
 
 ## 16. Versus and the boards
+
+- **Versus's rules** are the rules pop-up (`VersusRulesModal`): once when Versus opens (three Pokémon at Lv.50,
+  `versusRulesSeen` in the save; it queues behind the other one-time pop-ups), and from the INFO button at the bottom of
+  its page, locked or not. Opening the page also counts as seen.
 
 - **Screens reached from Home** (Day Care, Versus, the leaderboard) put a back chevron before their title
   (`PageHead onBack`); the tab bar stays.

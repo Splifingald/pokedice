@@ -21,9 +21,16 @@ export function gameData() {
 export function makeSave(starter: number, patch: Partial<SaveData> = {}): SaveData {
   let c = 0
   const save = newSave(starter, gameData(), Date.now(), () => `e2e-${++c}`)
-  // Prof. Oak's leaderboard pop-up would cover every screen of a fresh save. Quiet, as tests have always run: no
-  // cries asked of Showdown unless a test turns sound on.
-  return { ...save, settings: { ...save.settings, sfx: false, sound: false }, leaderboardVisited: true, ...patch }
+  // Prof. Oak's leaderboard pop-up would cover every screen of a fresh save, and Versus's rules pop-up every save
+  // with three Pokémon at Lv.50. Quiet, as tests have always run: no cries asked of Showdown unless a test turns
+  // sound on.
+  return {
+    ...save,
+    settings: { ...save.settings, sfx: false, sound: false },
+    leaderboardVisited: true,
+    versusRulesSeen: true,
+    ...patch,
+  }
 }
 
 /** The save with its region's first gym badge won: the leaderboard stays locked until then. */

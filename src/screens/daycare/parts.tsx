@@ -133,25 +133,22 @@ export function SlotCard({
   )
 }
 
-/** "Pairs with" and the partners, or the line that says why there are none. */
-export function MatesLine({ lead, mates }: { lead: string; mates?: ReactNode }) {
+/** The partners, each with its heart (the hearts say "pairs with"), or a short line when there are none. */
+export function MatesLine({ lead, mates }: { lead?: string; mates?: ReactNode }) {
   return (
     <span className="flex flex-wrap items-center gap-x-2 gap-y-0.5 font-pixel-sm text-[14px] leading-[1.15] text-ink">
-      <small className="w-full text-[13px] text-muted">{lead}</small>
+      {lead && <small className="text-[13px] text-muted">{lead}</small>}
       {mates}
     </span>
   )
 }
 
-/** The XP bar to the next level, and the line under it. */
+/** The XP bar to the next level; `line` says it in words, for screen readers (the card shows the bar alone). */
 export function XpBar({ k, line }: { k: number; line: string }) {
   return (
-    <>
-      <span className="relative block h-2 bg-line shadow-ring-thin" role="img" aria-label={line}>
-        <i className="absolute inset-y-px left-px block bg-[#5b8def]" style={{ width: `calc(${Math.min(1, k) * 100}% - 2px)` }} />
-      </span>
-      <small className="font-pixel-sm text-[13px] leading-[1.15] text-muted">{line}</small>
-    </>
+    <span className="relative block h-2 bg-line shadow-ring-thin" role="img" aria-label={line}>
+      <i className="absolute inset-y-px left-px block bg-[#5b8def]" style={{ width: `calc(${Math.min(1, k) * 100}% - 2px)` }} />
+    </span>
   )
 }
 
@@ -163,7 +160,8 @@ export function EmptySlot({
   disabled,
 }: {
   title: string
-  sub: string
+  /** A disabled slot's reason (an enabled one needs none). */
+  sub?: string
   onClick?: () => void
   disabled?: boolean
 }) {
@@ -190,7 +188,7 @@ export function EmptySlot({
           +
         </span>
         <b className="text-[18px] font-normal leading-none">{title}</b>
-        <small className="font-pixel-sm text-[13px] leading-[1.15] text-muted">{sub}</small>
+        {sub && <small className="font-pixel-sm text-[13px] leading-[1.15] text-muted">{sub}</small>}
       </button>
     </li>
   )
@@ -222,7 +220,7 @@ export function EggCardView({ from, onHatch }: { from: string; onHatch: () => vo
       <span className="grid min-w-0 gap-[3px]">
         <b className="text-[22px] font-normal leading-none">{t('ui.dayCare.eggWaiting')}</b>
         <small className="font-pixel-sm text-[15px] leading-[1.15] text-ink">
-          {from} {t('ui.dayCare.eggHatchesInto')}
+          {from}
         </small>
       </span>
       <PixelButton variant="gold" className="col-span-2 w-full" onClick={onHatch}>

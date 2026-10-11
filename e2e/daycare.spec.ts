@@ -221,3 +221,39 @@ test('signed out, the friend slots are the friend list’s connect prompt', asyn
   await expect(page.getByText('Friends are kept with your account. Connect to add friends.')).toBeVisible()
   await expect(page.getByRole('button', { name: /Add from a friend/ })).toHaveCount(0)
 })
+
+// ---------------------------------------------------------------- the rules (the special events' pop-up)
+
+test('the Day Care opening: its rules pop up once, then live behind the INFO button', async ({ page }) => {
+  // Twenty species and never been in: the unlock pop-up is due.
+  await boot(page, open())
+  await page.goto('/home')
+  const pop = page.getByRole('dialog', { name: 'Day Care' })
+  await expect(pop.getByText('Now open')).toBeVisible()
+  for (const rule of ['Training', 'Eggs', "Friends' Pokémon", 'Egg now']) await expect(pop.getByText(rule, { exact: true })).toBeVisible()
+  await pop.getByRole('button', { name: "Let's go!" }).click()
+  await expect(page).toHaveURL(/\/daycare$/)
+
+  // The same rules from the INFO button at the bottom of the page.
+  await page.getByRole('button', { name: 'Info: how Day Care works' }).click()
+  const info = page.getByRole('dialog', { name: 'Day Care' })
+  await expect(info.getByText('Training', { exact: true })).toBeVisible()
+  await expect(info.getByText('Now open')).toHaveCount(0)
+  await info.getByRole('button', { name: 'Got it' }).click()
+  await expect(info).toHaveCount(0)
+})
+
+test('Later closes the Day Care pop-up for good', async ({ page }) => {
+  await boot(page, open())
+  await page.goto('/home')
+  await page.getByRole('dialog', { name: 'Day Care' }).getByRole('button', { name: 'Later' }).click()
+  await expect(page.getByRole('dialog', { name: 'Day Care' })).toHaveCount(0)
+  // Saved as visited (the boot above re-seeds the save on a reload, so the save itself is read).
+  await expect
+    .poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('pokedice.save') ?? '{}').dayCare?.visited))
+    .toBe(true)
+  await page.getByRole('link', { name: 'Team', exact: true }).first().click()
+  await page.getByRole('link', { name: 'Home', exact: true }).first().click()
+  await page.waitForTimeout(600)
+  await expect(page.getByRole('dialog', { name: 'Day Care' })).toHaveCount(0)
+})

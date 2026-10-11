@@ -738,6 +738,8 @@ export interface SaveData {
   energy?: { value: number; at: number }
   /** The player has opened the leaderboard (Prof. Oak sends them there once). */
   leaderboardVisited?: boolean
+  /** Versus's rules pop-up has been shown (once, when Versus opens; its INFO button shows them again). */
+  versusRulesSeen?: boolean
   /** The region being played. Absent on saves from before the second region = 'kanto'. */
   region?: RegionId
   /** The regions not being played, each holding everything that region owns. */
