@@ -239,7 +239,7 @@ test('the Day Care opening: its rules pop up once, then live behind the INFO but
   const info = page.getByRole('dialog', { name: 'Day Care' })
   await expect(info.getByText('Training', { exact: true })).toBeVisible()
   await expect(info.getByText('Now open')).toHaveCount(0)
-  await info.getByRole('button', { name: 'Got it' }).click()
+  await info.getByRole('button', { name: 'OK', exact: true }).click()
   await expect(info).toHaveCount(0)
 })
 

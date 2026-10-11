@@ -1,6 +1,6 @@
 // A feature's rules in the special events' pop-up (docs/18): its picture as a banner, two to four rule rows (an icon, a
 // short title, a line or two) and its buttons. Opened once when the feature unlocks (Later / Let's go!), and again
-// from the INFO button at the bottom of its page (just Got it). The Day Care and Versus use it (FeatureRules.tsx).
+// from the INFO button at the bottom of its page (just OK). The Day Care and Versus use it (FeatureRules.tsx).
 import type { ReactNode } from 'react'
 import { useT } from '@/i18n/react'
 import { cx } from '@/theme/util'
@@ -56,7 +56,7 @@ export function RulesModal({
   /** The banner's tag icon; with `onGo` (the unlock), the tag says it's now open. */
   icon: IconName
   rules: RuleRow[]
-  /** The unlock: Later and Let's go! (to the feature). Without it, the INFO copy: Got it. */
+  /** The unlock: Later and Let's go! (to the feature). Without it, the INFO copy: OK. */
   onGo?: () => void
 }) {
   const { t } = useT()
@@ -78,25 +78,30 @@ export function RulesModal({
           )}
         </div>
         <RuleList rules={rules} />
-        <div className={cx('grid gap-2.5 pt-1', onGo && 'grid-cols-[1fr_1.5fr]')}>
-          <PixelButton onClick={onClose}>{t(onGo ? 'ui.events.later' : 'ui.rules.gotIt')}</PixelButton>
-          {onGo && (
+        {onGo ? (
+          <div className="grid grid-cols-[1fr_1.5fr] gap-2.5 pt-1">
+            <PixelButton onClick={onClose}>{t('ui.events.later')}</PixelButton>
             <PixelButton variant="primary" onClick={onGo}>
               {t('ui.events.go')}
             </PixelButton>
-          )}
-        </div>
+          </div>
+        ) : (
+          // The INFO copy closes on OK, as the events' (EventInfo) does.
+          <PixelButton variant="primary" onClick={onClose}>
+            {t('ui.common.ok')}
+          </PixelButton>
+        )}
       </div>
     </Modal>
   )
 }
 
-/** The blue INFO button at the bottom of a feature's page (the Fortune Wheel's), opening its rules. */
+/** The blue INFO button at the bottom of a feature's page (the events' EventInfo, the same words), opening its rules. */
 export function InfoButton({ name, onClick, className }: { name: string; onClick: () => void; className?: string }) {
   const { t } = useT()
   return (
-    <button type="button" className={cx('ev-info w-full', className)} onClick={onClick} aria-label={t('ui.rules.infoLabel', { name })}>
-      {t('ui.rules.info')}
+    <button type="button" className={cx('ev-info w-full', className)} onClick={onClick} aria-label={t('ui.events.infoLabel', { name })}>
+      {t('ui.events.info')}
     </button>
   )
 }

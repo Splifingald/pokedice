@@ -1,5 +1,5 @@
 // Kitchen sink: a feature's rules in the special events' pop-up, as it opens when the feature unlocks (Later / Let's
-// go!) and from the INFO button at the bottom of its page (Got it).
+// go!) and from the INFO button at the bottom of its page (OK).
 import { useState } from 'react'
 import { DayCareRulesModal, VersusRulesModal } from '@/components/FeatureRules'
 import { PixelButton } from '@/components/PixelButton'

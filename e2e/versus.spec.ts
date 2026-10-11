@@ -192,7 +192,7 @@ test('Versus opening: its rules pop up once, then live behind the INFO button', 
   const info = page.getByRole('dialog', { name: 'Versus' })
   await expect(info.getByText('Auto battles')).toBeVisible()
   await expect(info.getByText('Now open')).toHaveCount(0)
-  await info.getByRole('button', { name: 'Got it' }).click()
+  await info.getByRole('button', { name: 'OK', exact: true }).click()
   await expect(info).toHaveCount(0)
 
   // Seen, and saved: it doesn't open by itself again.
