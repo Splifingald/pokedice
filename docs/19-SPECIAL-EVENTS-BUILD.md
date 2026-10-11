@@ -320,8 +320,10 @@ Simulated with `pnpm raid-balance 40 5` (three random fully evolved Lv.50 sides,
 You chose B (2026-10-11), the defaults. Any of the others is a change in Admin → Events → Raid Battles (Simulate the win rate is there too).
 
 ### Hand-over (manual)
-1. Supabase SQL editor: run `supabase/migrations/0035_events.sql` (the clock, the wheel, raids, raid teams, gifts, and
-   `leaderboard()` with `raids_won`). Safe to run again.
+0. **Every event ships off** (2026-10-11): Admin → Events, each one Off / On for admin / On for everyone; Admin → Live
+   events has its own. Try one "On for admin" in production first, then "On for everyone", then Publish.
+1. Supabase SQL editor: run `supabase/migrations/0035_events.sql` (the clock, the wheel and its on/off switch, raids,
+   raid teams, gifts, and `leaderboard()` with `raids_won`). Safe to run again.
 2. Run `supabase/migrations/0036_remove_league_ii.sql` once (Victory Road II / League II areas and their trainers).
 3. Admin → Publish, or paste `supabase/seed-parts/seed-01…09.sql` in order (rebattle trainers, lineups, raid lairs).
 4. Merge `feature/version_2` and deploy as usual.

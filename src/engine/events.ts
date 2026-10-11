@@ -2,7 +2,7 @@
 // share: which are open, in which order Home shows them, and which unlock pop-up is due. Each event's own rules live
 // in its own file.
 import { enabledRegions, leagueDone, regionCases, regionOf, regionOfArea } from './regions'
-import { EVENT_IDS, type AreaProgress, type EventDef, type EventId, type GameData, type SaveData } from './types'
+import { EVENT_IDS, type AreaProgress, type EventAccess, type EventDef, type EventId, type GameData, type SaveData } from './types'
 
 /** An area's progress wherever its region is: the live block or a parked one. */
 export function areaProgressAnywhere(save: SaveData, data: GameData, areaId: string): AreaProgress | undefined {
@@ -14,13 +14,20 @@ export function areaProgressAnywhere(save: SaveData, data: GameData, areaId: str
 
 export const eventDef = (data: GameData, id: EventId): EventDef => data.config.events[id]
 
+/** Switched on for whoever is playing: for everyone, or for the admin alone while the admin plays (to try it first). */
+export const eventOpenTo = (access: EventAccess | undefined, data: GameData): boolean =>
+  access === 'all' || (access === 'admin' && !!data.viewer?.admin)
+
+/** This event is switched on for whoever is playing. */
+export const eventOn = (data: GameData, id: EventId): boolean => eventOpenTo(eventDef(data, id)?.access, data)
+
 /**
  * An event is open once it's switched on and its moment has come: the wheel and the raids when their area is cleared
  * (in whichever region holds it), the rebattle once any region's league is beaten.
  */
 export function eventUnlocked(id: EventId, save: SaveData, data: GameData): boolean {
   const def = eventDef(data, id)
-  if (!def?.enabled) return false
+  if (!def || !eventOn(data, id)) return false
   // The rebattle: a League won in a region that has a rebattle lineup.
   if (id === 'rebattle')
     return enabledRegions(data).some((r) => Object.keys(data.config.rebattleLineups[r.id] ?? {}).length > 0 && leagueDone(save, data, r.id))
@@ -64,8 +71,9 @@ export function eventsTeaser(save: SaveData, data: GameData): { kind: 'soon'; ar
   if (activeEvents(save, data).length) return null
   if (kantoBadges(save, data) < data.config.events.teaserBadges) return { kind: 'later' }
   // The first switched-on event whose area isn't cleared yet, in the order the areas come.
-  const next = EVENT_IDS.map((id) => eventDef(data, id))
-    .filter((d) => d.enabled && d.unlockAreaId && !areaProgressAnywhere(save, data, d.unlockAreaId)?.cleared)
+  const next = EVENT_IDS.filter((id) => eventOn(data, id))
+    .map((id) => eventDef(data, id))
+    .filter((d) => d.unlockAreaId && !areaProgressAnywhere(save, data, d.unlockAreaId)?.cleared)
     .map((d) => data.areas.find((a) => a.id === d.unlockAreaId))
     .filter((a) => !!a)
     .sort((a, b) => a.orderIndex - b.orderIndex)[0]

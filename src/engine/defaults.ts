@@ -106,12 +106,13 @@ export const DEFAULT_CONFIG: GameConfig = {
   // A once-only find in a big loot deck can take a hundred rounds to turn up: from the 5th round done in its area, its
   // odds climb to ×10 at the 50th.
   uniquePity: { startRounds: 5, fullRounds: 50, maxMultiplier: 10 },
-  // The special events (docs/18). Each one is switched on as it's built (docs/19); before the first opens, Home keeps
-  // a locked square from the 3rd Kanto badge. Banners: an event's own picture, or an area picture until it has one.
+  // The special events (docs/18). Each is off until the admin switches it on, for the admin alone or for everyone;
+  // before the first opens, Home keeps a locked square from the 3rd Kanto badge. Banners: an event's own picture, or an
+  // area picture until it has one.
   events: {
     teaserBadges: 3,
     wheel: {
-      enabled: true,
+      access: 'off',
       priority: 5,
       // Routes 7 & 8 (Celadon), Kanto.
       unlockAreaId: '8cf87ee3-f7a5-568e-bc22-54f643572535',
@@ -128,7 +129,7 @@ export const DEFAULT_CONFIG: GameConfig = {
       ],
     },
     raid: {
-      enabled: true,
+      access: 'off',
       priority: 3,
       // The Safari Zone, Kanto.
       unlockAreaId: '2238f26a-2629-5f28-af07-e74cb41d5f7a',
@@ -223,7 +224,7 @@ export const DEFAULT_CONFIG: GameConfig = {
       },
     },
     rebattle: {
-      enabled: true,
+      access: 'off',
       priority: 4,
       unlockAreaId: null,
       banner: 'champion',
@@ -238,5 +239,6 @@ export const DEFAULT_CONFIG: GameConfig = {
   },
   // Filled from src/data/config.json (scripts/rebattle-teams.ts): no lineup, no rebattle in that region.
   rebattleLineups: {},
-  liveEvents: { list: [] },
+  // Off until the admin switches it on (for the admin alone, or everyone).
+  liveEvents: { access: 'off', list: [] },
 }

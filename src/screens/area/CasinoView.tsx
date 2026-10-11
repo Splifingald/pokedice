@@ -5,6 +5,7 @@ import { sfx } from '@/audio/sfx'
 import { joinList, t } from '@/i18n'
 import { useT } from '@/i18n/react'
 import { GoldPill } from '@/components/GoldPill'
+import { CashChip } from '@/screens/events/live'
 import { PixelIcon } from '@/components/icons'
 import { PixelButton } from '@/components/PixelButton'
 import { SpriteImg } from '@/components/SpriteImg'
@@ -165,6 +166,7 @@ export function CasinoView() {
           aria-live="polite"
         >
           {spinning ? t('ui.casino.spinning') : last ? resultText(last, prizeName) : t('ui.casino.idle', { cost })}
+          {!spinning && last && last.bonus > 0 && <CashChip className="ml-2 align-middle" />}
         </p>
 
         <PixelButton

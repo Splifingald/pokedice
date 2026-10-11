@@ -445,10 +445,17 @@ export interface DonationConfig {
 export const EVENT_IDS = ['wheel', 'raid', 'rebattle'] as const
 export type EventId = (typeof EVENT_IDS)[number]
 
+/**
+ * Each event type's switch in the admin (the user's rule, 2026-10-11): off (nowhere in the game), on for the admin only
+ * (to try it in production first), on for everyone. Off by default.
+ */
+export const EVENT_ACCESS = ['off', 'admin', 'all'] as const
+export type EventAccess = (typeof EVENT_ACCESS)[number]
+
 /** What every event has, whatever it does (Admin → Events). */
 export interface EventDef {
-  /** Off = the event is nowhere in the game: no square on Home, no page, no pop-up. */
-  enabled: boolean
+  /** Off = the event is nowhere in the game: no square on Home, no page, no pop-up. Admin = only the admin sees it. */
+  access: EventAccess
   /** Order of the squares on Home: lower comes first. */
   priority: number
   /**
@@ -652,8 +659,8 @@ export interface GameConfig {
   events: EventsConfig
   /** The Elite Rebattle's trainers, per region and tier (a row of its own, written by scripts/rebattle-teams.ts). */
   rebattleLineups: RebattleLineups
-  /** Live events (docs/20): the admin's list, past, running and to come; one runs at a time. A row of its own. */
-  liveEvents: { list: LiveEvent[] }
+  /** Live events (docs/20): their switch, and the admin's list, past, running and to come; one runs at a time. */
+  liveEvents: { access: EventAccess; list: LiveEvent[] }
 }
 
 /**
@@ -991,4 +998,6 @@ export interface GameData {
   regions: Region[]
   /** Breeding data by dex (engine/daycare.ts): empty when a bundle came without it, and then nothing pairs. */
   eggGroups: Record<number, EggGroupEntry>
+  /** Who's playing, set by the store: the admin sees the events switched on for the admin only. Absent = a player. */
+  viewer?: { admin: boolean }
 }

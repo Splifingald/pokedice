@@ -53,7 +53,7 @@ function ev(over: Partial<LiveEvent> = {}): LiveEvent {
 const shiny = (s: Partial<LiveEvent['shiny']>, over: Partial<LiveEvent> = {}) => ev({ type: 'shiny', shiny: { ...ev().shiny, ...s }, ...over })
 const cash = (multiplier = 1.5, over: Partial<LiveEvent> = {}) => ev({ type: 'cash', cash: { multiplier }, ...over })
 const shop = (items: LiveEvent['shop']['items'], over: Partial<LiveEvent> = {}) => ev({ type: 'shop', shop: { items }, ...over })
-const withLive = (...list: LiveEvent[]): GameData => makeData({ liveEvents: { list } })
+const withLive = (...list: LiveEvent[]): GameData => makeData({ liveEvents: { access: 'all', list } })
 
 const fresh = (): SaveData => newSave(4, data, 0, newId)
 const rich = (gold = 100_000): SaveData => ({ ...fresh(), gold })
@@ -101,8 +101,18 @@ describe('when a live event runs', () => {
     expect(liveEventAt(data, T0)).toBeNull()
   })
 
+  it('runs only when switched on: off by default, for the admin alone, for everyone', () => {
+    const list = [cash()]
+    const off = makeData({ liveEvents: { access: 'off', list } })
+    expect(liveEventAt(off, T0)).toBeNull()
+    const admin = makeData({ liveEvents: { access: 'admin', list } })
+    expect(liveEventAt(admin, T0)).toBeNull()
+    expect(liveEventAt({ ...admin, viewer: { admin: true } }, T0)?.type).toBe('cash')
+    expect(liveEventAt(withLive(...list), T0)?.type).toBe('cash')
+  })
+
   it('a row saved by an older admin, missing settings, still reads', () => {
-    const d = makeData({ liveEvents: { list: [{ id: 'old', type: 'cash', start: iso(T0), end: iso(T0 + H) } as LiveEvent] } })
+    const d = makeData({ liveEvents: { access: 'all', list: [{ id: 'old', type: 'cash', start: iso(T0), end: iso(T0 + H) } as LiveEvent] } })
     const e = liveEventAt(d, T0)!
     expect(e.cash.multiplier).toBe(1.5)
     expect(e.shiny.areaIds).toEqual([])

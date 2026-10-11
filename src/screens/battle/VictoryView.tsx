@@ -16,7 +16,7 @@ import { sfx } from '@/audio/sfx'
 import { EvolutionQueue, type EvolutionShow } from '@/components/Evolution'
 import { RoundsCounter } from '@/components/RoundsCounter'
 import { useCountUp } from '@/components/GoldPill'
-import { NewTag } from '@/components/Chip'
+import { Chip, NewTag } from '@/components/Chip'
 import { PixelIcon } from '@/components/icons'
 import { LeadPicker, defaultLead } from '@/components/LeadPicker'
 import { ForfeitButton } from '@/components/ForfeitButton'
@@ -80,11 +80,19 @@ export function Overlay({ children, footer, label }: { children: ReactNode; foot
   )
 }
 
-function GoldCard({ amount }: { amount: number }) {
+function GoldCard({ amount, bonus = 0 }: { amount: number; bonus?: number }) {
+  const { t } = useT()
   const n = useCountUp(amount, 800)
+  // Cash Flow (docs/20): what it added, as a share of the usual pay.
+  const pct = bonus > 0 && amount > bonus ? Math.round((bonus / (amount - bonus)) * 100) : 0
   return (
     <div className="flex items-center gap-2 text-3xl text-ink">
       <PixelIcon name="coin" size={28} /> +{money(n)}
+      {pct > 0 && (
+        <span role="img" aria-label={t('ui.live.chip.cash', { pct })} className="inline-flex">
+          <Chip tone="green">{t('ui.live.pct', { pct })}</Chip>
+        </span>
+      )}
     </div>
   )
 }
@@ -246,7 +254,7 @@ function useRecap(events: RunEvent[]): { mons: MonRecap[]; extras: Extra[]; evol
           return
         }
         case 'gold':
-          extras.push({ key: k, sound: 'gold', node: <GoldCard amount={e.amount} /> })
+          extras.push({ key: k, sound: 'gold', node: <GoldCard amount={e.amount} bonus={e.bonus} /> })
           return
         case 'caught':
           extras.push({

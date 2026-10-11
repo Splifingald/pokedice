@@ -7,6 +7,7 @@ import {
   progressOf,
   eventUnlocked,
   nextRaidsOf,
+  eventOn,
   raidHomeArea,
   raidLocked,
   raidRegion,
@@ -204,7 +205,7 @@ function useRaidRole(dex: number): { day: string; shiny: boolean }[] | null {
   const data = useGame((s) => s.data)
   const now = useServerNow(60_000)
   const today = utcDay(now ?? Date.now())
-  const dates = useMemo(() => (data.config.events.raid.enabled ? nextRaidsOf(data, dex, today, 2) : []), [data, dex, today])
+  const dates = useMemo(() => (eventOn(data, 'raid') ? nextRaidsOf(data, dex, today, 2) : []), [data, dex, today])
   return dates.length ? dates : null
 }
 

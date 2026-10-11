@@ -1,8 +1,8 @@
-# Live events: plan (for validation)
+# Live events: plan and build
 
-Status: **integration, step 5 of 5** (2026-10-11): questions → plan → Visual Lab mockups (`design/visual-lab/live.js`,
-Home tab, "Live event" preview bar) → validation (done, §6) → integration: **phase 1 done** (engine, config, save,
-admin, unit tests), phase 2 next. Branch `feature/events`, fast-forwarded into `feature/version_2` once green.
+Status: **built** (2026-10-11): questions → plan → Visual Lab mockups (`design/visual-lab/live.js`, Home tab, "Live
+event" preview bar) → validation (§6) → integration, phases 1 and 2 (§6b, §6c). Branch `feature/events` only: the user
+asked (2026-10-11) not to touch `feature/version_2` until they say so.
 
 Event type 4 in the special events framework (docs/18): **Live events**, priority 2 (above Raids). They change the
 whole game for a while, the same for every player, scheduled by you in the admin. No page of their own: a Home square
@@ -114,6 +114,27 @@ interface LiveEvent {
 - Admin → **Live events**: the list (state, Edit, End now, Delete) and the editor as a draft, applied only without
   problems (an overlap is refused).
 - Save: `events.liveSeen` (last 50), `events.liveBought`.
+
+## 6c. Built (phase 2) and the switch
+- **The switch (the user's rule, 2026-10-11): every event type has Off / On for admin / On for everyone in the admin,
+  Off by default** — the Fortune Wheel, Raids, the Elite Rebattle (`events.<id>.access`) and Live events
+  (`liveEvents.access`); Small worlds will get one too. "On for admin" shows the event only while the admin is signed in,
+  to try it in production first. The store puts who's playing into the game data (`data.viewer.admin`), the engine reads
+  it (`eventOpenTo`), and `wheel_spin()` checks the same switch with `is_admin()` (0035). A row saved before this has no
+  `access`: the event is off until switched on.
+- `screens/events/live.tsx`: Home's **square** (the Day Care's frame and rows, the event's picture behind, a gold ring,
+  LIVE, the type's tag, the time left as a draining gauge, red in its last 3 hours), the **pop-up** (once per event, after
+  the other pop-ups and never mid-fight; again from the square), `ShinyParadeChip` (area plate, area cards, the encounter
+  pop-up; said in the plate's and cards' labels too), `CashChip` (by the purse, the wheel's prize, the Game Corner),
+  the victory card's `+50%` beside the ₽.
+- The Poké Mart's **Special** section (`screens/Shop.tsx`): the event's picture and timer, its items with the usual price
+  struck out or NEVER SOLD, what's left of each player's limit, SOLD OUT. The Shop tab wears SALE.
+- Fixed on the way: an opened Mart tile on a phone spilled its quantity picker over the next row (the tile kept its
+  closed height); it now grows with what it shows.
+- 47 strings × 10 languages (`ui.live.*`). E2E `e2e/live.spec.ts`: the content reaches the game as a newer
+  configVersion from the content cache (the way a player gets admin content), on a mocked server clock.
+- The dev server reads `pokedice.devConfig` (localStorage JSON over the bundle's config): the e2e tests switch the
+  events on with it; a production build has none of it.
 
 ## 7. Mockups (Visual Lab, Home tab: the "Live event" preview bar)
 1. Home with the Live square for each type, first among the event squares, or **wide** over them (to choose).

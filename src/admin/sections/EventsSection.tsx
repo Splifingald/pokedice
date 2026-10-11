@@ -31,7 +31,7 @@ import { money } from '@/lib/format'
 import { bannerUrl, RewardIcon } from '@/screens/events/shared'
 import { cx } from '@/theme/util'
 import { useAdminData } from '../store'
-import { Box, Field, NumInput, inputCls } from '../widgets'
+import { AccessSwitch, Box, Field, NumInput, inputCls } from '../widgets'
 import { useConfigRow } from './ConfigSection'
 
 /** Pictures made for the events (public/backgrounds). */
@@ -69,10 +69,10 @@ function EventRow({ id, def, set }: { id: EventId; def: EventDef; set: (patch: P
   return (
     <div className="grid gap-3 border-t-2 border-line pt-3 md:grid-cols-[minmax(0,1fr)_200px]">
       <div className="grid gap-2 sm:grid-cols-2">
-        <label className="flex items-center gap-2 text-xl sm:col-span-2">
-          <input type="checkbox" checked={def.enabled} onChange={(e) => set({ enabled: e.target.checked })} className="h-5 w-5" />
-          {NAMES[id]}
-        </label>
+        <div className="flex flex-wrap items-center gap-2 sm:col-span-2">
+          <span className="text-xl">{NAMES[id]}</span>
+          <AccessSwitch value={def.access ?? 'off'} onChange={(access) => set({ access })} label={`${NAMES[id]}: who sees it`} />
+        </div>
         <Field label="Order on Home" hint="Lower comes first.">
           <NumInput value={def.priority} min={1} max={9} onChange={(v) => set({ priority: v ?? 1 })} />
         </Field>
@@ -733,7 +733,7 @@ export function EventsSection() {
     <div className="flex flex-col gap-4">
       <Box
         title="Special events" icon="star"
-        hint="Each event shows up on Home once it's on and its area is cleared, in this order, with a pop-up the first time. Saved with the rest of the config (Publish)."
+        hint="Each event is off until you switch it on: for you alone (signed in as admin, to try it in production first) or for everyone. Then it shows up on Home once its area is cleared, in this order, with a pop-up the first time. Saved with the rest of the config (Publish)."
       >
         <Field label="Teaser from this many Kanto badges" hint="Before the first event opens, Home shows a locked square naming its area.">
           <NumInput value={cfg.teaserBadges} min={0} max={8} onChange={(v) => set({ teaserBadges: v ?? 0 })} />

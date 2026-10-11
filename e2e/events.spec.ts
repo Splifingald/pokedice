@@ -45,6 +45,16 @@ test('the wheel opens with a pop-up that goes straight to it', async ({ page }) 
   await expect(pop).toHaveCount(0)
 })
 
+test('the events ship off: no wheel until the admin switches it on', async ({ page }) => {
+  await mockSupabase(page, { rpc: { event_time: eventTime }, eventsOff: true })
+  await boot(page, wheelSave(false))
+  await page.goto('/home')
+  await expect(page.getByRole('button', { name: 'CONTINUE', exact: true })).toBeVisible()
+  await page.waitForTimeout(1000)
+  await expect(page.getByRole('dialog', { name: 'Fortune Wheel' })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: /^Fortune Wheel/ })).toHaveCount(0)
+})
+
 test('a guest spins once a day: the odds, the prize in the bag, then the countdown', async ({ page }) => {
   const calls = await mockSupabase(page, { rpc: { event_time: eventTime } })
   const save = wheelSave()

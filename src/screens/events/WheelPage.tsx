@@ -11,6 +11,7 @@ import { countdown, money } from '@/lib/format'
 import { useMotion } from '@/lib/motion'
 import { pushToast, useGame } from '@/store/game'
 import { collectWheelPrize, spinWheel } from '@/store/wheel'
+import { CashChip } from './live'
 import { RewardIcon, rewardName, useWheelDay } from './shared'
 
 const toSlice = (p: WheelPrize, data: GameData): WheelSlice => {
@@ -204,7 +205,10 @@ function RewardCard({ reward, data, onClose, calm }: { reward: WheelReward | nul
           <p className="relative m-0 font-pixel-sm text-[16px] tracking-[0.1em] text-ink">
             {big ? t('ui.events.wheel.jackpot') : t('ui.events.wheel.won')}
           </p>
-          <h3 className="relative m-0 text-[28px] font-normal leading-[1.05]">+{rewardName(reward, data)}</h3>
+          <h3 className="relative m-0 inline-flex items-center gap-2 text-[28px] font-normal leading-[1.05]">
+            +{rewardName(reward, data)}
+            {reward.kind === 'gold' && <CashChip />}
+          </h3>
           <p className="relative m-0 mb-1 font-pixel-sm text-[16px] text-muted">
             {reward.kind === 'gold' ? t('ui.events.wheel.toMoney') : t('ui.events.wheel.toBag')}
           </p>

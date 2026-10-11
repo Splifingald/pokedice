@@ -24,7 +24,7 @@ import { useNow } from '@/store/hooks'
 import { cx } from '@/theme/util'
 import { PixelButton } from '@/components/PixelButton'
 import { useAdminData } from '../store'
-import { Box, Field, NumInput, inputCls } from '../widgets'
+import { AccessSwitch, Box, Field, NumInput, inputCls } from '../widgets'
 import { useConfigRow } from './ConfigSection'
 import { EVENT_BANNERS } from './EventsSection'
 
@@ -71,7 +71,8 @@ export function LiveEventsSection() {
   const list = useMemo(() => (raw?.list ?? []).map((e) => normaliseLiveEvent(e)), [raw])
   const now = useNow(30_000)
   const [draft, setDraft] = useState<LiveEvent | null>(null)
-  const write = (next: LiveEvent[]) => setRaw({ ...raw, list: next })
+  const access = raw?.access ?? 'off'
+  const write = (next: LiveEvent[]) => setRaw({ ...raw, access, list: next })
   const problems = draft && data ? liveProblems(list, draft, data) : []
   const isNew = !!draft && !list.some((e) => e.id === draft.id)
   const apply = () => {
@@ -98,6 +99,17 @@ export function LiveEventsSection() {
           </PixelButton>
         }
       >
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xl">Who sees them</span>
+          <AccessSwitch value={access} onChange={(a) => setRaw({ list: raw?.list ?? [], access: a })} label="Live events: who sees them" />
+          <span className="text-base text-muted">
+            {access === 'off'
+              ? 'None runs, whatever the list says.'
+              : access === 'admin'
+                ? 'Only you, signed in as admin, see them.'
+                : 'Every player sees them.'}
+          </span>
+        </div>
         {sorted.length ? (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[640px] border-collapse text-lg">

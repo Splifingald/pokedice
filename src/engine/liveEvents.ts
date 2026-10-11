@@ -5,6 +5,7 @@
 //  - Cash Flow: every ₽ earned × n (selling excluded, so buying and selling back never pays).
 // Time is the server's (store/serverTime): it starts and ends at the same moment for everyone; while the time is
 // unknown, no event runs. A player sees it, and gets it, from the event's badge count on.
+import { eventOpenTo } from './events'
 import { addFossil } from './fossils'
 import { sellPrice } from './items'
 import { regionCases, regionOf, regionOfArea } from './regions'
@@ -42,9 +43,9 @@ export function liveState(e: Pick<LiveEvent, 'start' | 'end'>, now: number): 'sc
   return now < s ? 'scheduled' : now < end ? 'live' : 'ended'
 }
 
-/** The event running at that server time; null when none is, or while the time is unknown. */
+/** The event running at that server time; null when none is, while the time is unknown, or when they're switched off. */
 export function liveEventAt(data: GameData, now: number | null): LiveEvent | null {
-  if (now == null) return null
+  if (now == null || !eventOpenTo(data.config.liveEvents?.access, data)) return null
   return liveEvents(data).find((e) => liveState(e, now) === 'live') ?? null
 }
 

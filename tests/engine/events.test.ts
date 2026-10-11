@@ -19,26 +19,16 @@ import {
   type EventsConfig,
   type GameData,
   type SaveData,
+  eventOn,
 } from '@/engine'
 import { parseSave } from '@/save/schema'
-import { makeData, newId } from '../fixtures'
+import { EVENTS_ON, makeData, newId } from '../fixtures'
 
 const ROUTES_7_8 = DEFAULT_CONFIG.events.wheel.unlockAreaId!
 const SAFARI = DEFAULT_CONFIG.events.raid.unlockAreaId!
 
-/** All three events on (they ship off until each is built). */
-const allOn = (patch: Partial<EventsConfig> = {}): GameData => {
-  const d = DEFAULT_CONFIG.events
-  return makeData({
-    events: {
-      ...d,
-      wheel: { ...d.wheel, enabled: true },
-      raid: { ...d.raid, enabled: true },
-      rebattle: { ...d.rebattle, enabled: true },
-      ...patch,
-    },
-  })
-}
+/** All three events on for everyone. */
+const allOn = (patch: Partial<EventsConfig> = {}): GameData => makeData({ events: { ...EVENTS_ON, ...patch } })
 
 const progress = (cleared: boolean) => ({ roundsDone: 1, cleared, bossDefeated: false, bossesDefeated: [], gymsDefeated: [] })
 
@@ -62,14 +52,20 @@ describe('special events: unlocking', () => {
   const data = allOn()
   const fresh = newSave(4, data, 1000, newId)
 
-  it('the wheel and the raids ship on; switched off in Admin, an event closes', () => {
-    const shipped = makeData()
+  it('every event ships off; the admin switches it on for the admin alone, then for everyone', () => {
     const late = clear(fresh, ROUTES_7_8, SAFARI)
-    expect(activeEvents(late, shipped)).toEqual(['raid', 'wheel'])
     const d = DEFAULT_CONFIG.events
-    const off = makeData({ events: { ...d, wheel: { ...d.wheel, enabled: false }, raid: { ...d.raid, enabled: false } } })
-    expect(activeEvents(late, off)).toEqual([])
-    expect(eventUnlockDue(late, off)).toBeNull()
+    expect([d.wheel.access, d.raid.access, d.rebattle.access, DEFAULT_CONFIG.liveEvents.access]).toEqual(['off', 'off', 'off', 'off'])
+    const shipped = makeData({ events: d })
+    expect(activeEvents(late, shipped)).toEqual([])
+    expect(eventUnlockDue(late, shipped)).toBeNull()
+    // On for the admin: the admin sees them, a player doesn't.
+    const adminOnly = makeData({ events: { ...d, wheel: { ...d.wheel, access: 'admin' }, raid: { ...d.raid, access: 'admin' } } })
+    expect(activeEvents(late, adminOnly)).toEqual([])
+    expect(activeEvents(late, { ...adminOnly, viewer: { admin: true } })).toEqual(['raid', 'wheel'])
+    expect(eventOn({ ...adminOnly, viewer: { admin: false } }, 'wheel')).toBe(false)
+    // On for everyone.
+    expect(activeEvents(late, data)).toEqual(['raid', 'wheel'])
   })
 
   it('open when their area is cleared', () => {
@@ -93,8 +89,7 @@ describe('special events: unlocking', () => {
   })
 
   it('follows the admin order', () => {
-    const d = DEFAULT_CONFIG.events
-    const reordered = allOn({ wheel: { ...d.wheel, enabled: true, priority: 1 } })
+    const reordered = allOn({ wheel: { ...EVENTS_ON.wheel, priority: 1 } })
     expect(activeEvents(clear(fresh, ROUTES_7_8, SAFARI), reordered)).toEqual(['wheel', 'raid'])
   })
 })
@@ -134,10 +129,7 @@ describe('special events: the teaser', () => {
 
   it('is gone once an event opens, and stays "later" while every event is off', () => {
     expect(eventsTeaser(clear(withBadges(fresh, data, 4), ROUTES_7_8), data)).toBeNull()
-    const d = DEFAULT_CONFIG.events
-    const none = makeData({
-      events: { ...d, wheel: { ...d.wheel, enabled: false }, raid: { ...d.raid, enabled: false }, rebattle: { ...d.rebattle, enabled: false } },
-    })
+    const none = makeData({ events: DEFAULT_CONFIG.events })
     expect(eventsTeaser(withBadges(fresh, none, 3), none)).toEqual({ kind: 'later' })
   })
 })

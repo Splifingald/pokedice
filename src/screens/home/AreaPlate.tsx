@@ -3,6 +3,7 @@ import { t } from '@/i18n'
 import { useT } from '@/i18n/react'
 import { PixelIcon } from '@/components/icons'
 import { useGame } from '@/store/game'
+import { ShinyParadeChip, useParadeLabel } from '@/screens/events/live'
 import { cx } from '@/theme/util'
 import { areaSpecies } from './areas'
 
@@ -32,6 +33,7 @@ export function AreaPlate({ area, onOpen }: { area: Area; onOpen: () => void }) 
   const species = areaSpecies(area)
   const caught = species.filter((d) => save.pokedex.includes(d)).length
   const levels = levelText(span)
+  const parade = useParadeLabel(area)
   const what = species.length
     ? t('ui.map.speciesCaught', { caught, total: species.length })
     : area.gyms.length > 1
@@ -47,11 +49,12 @@ export function AreaPlate({ area, onOpen }: { area: Area; onOpen: () => void }) 
         levels,
         rounds: need != null ? t('ui.home.roundsDone', { done, total: need }) : t('ui.home.secretArea'),
         what,
-      })}
+      }) + parade}
       className="pixel-plate absolute left-2 right-2 top-2 z-[460] grid gap-[3px] px-2.5 pb-[9px] pt-1.5 text-left active:translate-y-px"
     >
       <span className="flex min-w-0 items-center gap-2">
         <span className="min-w-0 flex-1 truncate text-[24px] leading-none">{area.name}</span>
+        <ShinyParadeChip area={area} />
         <span className="whitespace-nowrap font-pixel-sm text-[16px] leading-none text-muted">{levels}</span>
       </span>
       <span className="flex min-w-0 items-center gap-2">

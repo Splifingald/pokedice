@@ -26,6 +26,7 @@ import {
 import { DEFAULT_SETTINGS, readSave, readSettings, scheduleWrite, writeSettings, type Settings } from '@/save/storage'
 import { DEFAULT_LANG, setLangInternal, t, type Lang } from '@/i18n'
 import { localizeGameData } from '@/i18n/data'
+import { isAdminEmail } from '@/lib/supabase'
 
 export type ToastTone = 'info' | 'good' | 'bad'
 export interface Toast {
@@ -170,6 +171,20 @@ export const useGame = create<GameStore>()(() => ({
   toasts: [],
   syncConflict: null,
 }))
+
+/**
+ * Who's playing goes into the game data: an event the admin switched on "for the admin" (to try it in production
+ * first) shows only while the admin is signed in. Kept up to date as the sign-in and the content change.
+ */
+function withViewer(data: GameData, auth: AuthState): GameData {
+  const admin = auth.status === 'signed_in' && isAdminEmail(auth.email)
+  return !!data.viewer?.admin === admin ? data : { ...data, viewer: { admin } }
+}
+useGame.subscribe((s, prev) => {
+  if (s.auth === prev.auth && s.data === prev.data) return
+  const data = withViewer(s.data, s.auth)
+  if (data !== s.data) useGame.setState({ data })
+})
 
 // ---------------------------------------------------------------- core actions
 

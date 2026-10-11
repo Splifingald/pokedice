@@ -929,9 +929,11 @@ declare
   w numeric;
   x numeric;
   pick int;
+  -- The admin's switch: off (the default), on for the admin only (to try it in production), on for everyone.
+  access text := coalesce((select value #>> '{wheel,access}' from game_config where key = 'events'), 'off');
 begin
   if me is null then raise exception 'events_signed_out'; end if;
-  if not coalesce((select (value #>> '{wheel,enabled}')::boolean from game_config where key = 'events'), true) then
+  if not (access = 'all' or (access = 'admin' and is_admin())) then
     raise exception 'events_wheel_off';
   end if;
   insert into event_state (user_id) values (me) on conflict (user_id) do nothing;
