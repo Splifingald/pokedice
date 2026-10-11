@@ -1,5 +1,5 @@
 // Admin → Analytics → Players per hour: how many different players played in each of the last 24 hours
-// (analytics_hourly, migration 0040). The database is asked only when the button is pressed, never on its own.
+// (analytics_hourly, migration 0041). The database is asked only when the button is pressed, never on its own.
 import { useState } from 'react'
 import { PixelButton } from '@/components/PixelButton'
 import { getSupabase } from '@/lib/supabase'
@@ -240,7 +240,7 @@ export function HourlyPlayers() {
       </div>
       {error && (
         <p className="text-lg text-danger-light">
-          Could not count: {error}. Has supabase/migrations/0040_player_hours.sql been run?
+          Could not count: {error}. Has supabase/migrations/0041_player_hours.sql been run?
         </p>
       )}
       {!data && !error && (

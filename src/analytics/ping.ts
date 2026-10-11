@@ -1,6 +1,6 @@
 // Analytics, all of it: one call per player per day (player_ping, migration 0028). That day counts for day-1
 // retention, and the player's row in Admin → Analytics gets their name and a snapshot of their game. Each later hour
-// they play in costs one tiny call (player_seen, migration 0040) for the players-per-hour chart. Nothing else is sent.
+// they play in costs one tiny call (player_seen, migration 0041) for the players-per-hour chart. Nothing else is sent.
 // A day or hour already sent is remembered in localStorage, so reloads and new tabs cost nothing.
 import { getSupabase, isSupabaseConfigured } from '@/lib/supabase'
 import { deviceId } from '@/lib/device'
