@@ -36,7 +36,10 @@
     "sync": "pnpm pull-remote --write && pnpm seed-regions && pnpm seed-forms && pnpm seed-sql && pnpm test && node -e \"console.log('\\n==============================================\\n  SYNC OK - your data now matches Supabase, with Paldea added.\\n  Next: Supabase -> SQL Editor -> paste supabase/seed.sql -> Run\\n==============================================')\"",
     "i18n:names": "tsx scripts/i18n-names.ts",
     "i18n:fonts": "tsx scripts/i18n-fonts.ts",
-    "e2e": "playwright test"
+    "e2e": "playwright test",
+    "discord": "tsx scripts/discord/setup.ts",
+    "discord:raid": "tsx scripts/discord/raid-post.ts",
+    "discord:patch-notes": "tsx scripts/discord/patch-notes.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.4",
