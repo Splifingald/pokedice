@@ -2,6 +2,7 @@
 import { describe, expect, it } from 'vitest'
 import { liveBlock, newSave, syncXpCurve, xpToNext, type SaveData } from '@/engine'
 import { compareProgress, decideSync, progressTotals, pushKey, sameSave } from '@/save/cloud'
+import { parseSave } from '@/save/schema'
 import { data, newId } from './fixtures'
 
 const base = newSave(4, data, 1000, newId)
@@ -73,6 +74,34 @@ describe('decideSync', () => {
     // Unlike sameSave, a settings change is worth sending.
     const muted: SaveData = { ...base, settings: { ...base.settings, sfx: !base.settings.sfx } }
     expect(pushKey(muted)).not.toBe(pushKey(base))
+  })
+
+  it('sees a save back from the cloud as the same save, whatever order Postgres gave its keys', () => {
+    // jsonb hands objects back with their keys sorted by length, then bytes — not in the order the game wrote them.
+    const jsonbOrder = (v: unknown): unknown =>
+      Array.isArray(v)
+        ? v.map(jsonbOrder)
+        : v && typeof v === 'object'
+          ? Object.fromEntries(
+              Object.keys(v)
+                .sort((a, b) => a.length - b.length || (a < b ? -1 : a > b ? 1 : 0))
+                .map((k) => [k, jsonbOrder((v as Record<string, unknown>)[k])]),
+            )
+          : v
+    const [a1, a2] = data.areas.map((a) => a.id).sort().reverse()
+    const progress = { roundsDone: 1, cleared: false, bossDefeated: false, bossesDefeated: [], gymsDefeated: [] }
+    const played: SaveData = {
+      ...base,
+      inventory: { 'ultra-ball': 2, potion: 3 },
+      areaProgress: { [a1!]: progress, [a2!]: progress },
+    }
+    const res = parseSave(jsonbOrder(JSON.parse(JSON.stringify(played))))
+    if (!res.ok) throw new Error('round trip did not parse')
+    const back = res.save
+
+    // Signing in again on the same device: nothing to send (src/store/sync.ts reconcile).
+    expect(sameSave(played, back)).toBe(true)
+    expect(pushKey(played)).toBe(pushKey(back))
   })
 })
 

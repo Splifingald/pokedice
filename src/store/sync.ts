@@ -446,6 +446,11 @@ const RELOAD_SIGNAL_KEY = 'pokedice.reloadSignal'
 const RELISTEN_MS = 5 * 60_000
 /** A tab hidden this long leaves the channel; it catches up from app_signals when it comes back. */
 const HIDDEN_LEAVE_MS = 5 * 60_000
+/**
+ * A new page joins only once it has stayed this long: each join is a connection and a policy check on the database, and
+ * a page reloaded over and over (seen live: every 1–2 s for hours) would otherwise open one per load.
+ */
+const JOIN_AFTER_LOAD_MS = 30_000
 let channel: RealtimeChannel | null = null
 let lastListen = 0
 let leaveTimer: ReturnType<typeof setTimeout> | undefined
@@ -531,7 +536,10 @@ export function startBackgroundServices() {
   startAnalytics()
   void initAuth()
   void checkContent()
-  void listenForReload(false)
+  // Catching up covers a request sent before the join; hidden by then, it joins when the player comes back (relisten).
+  setTimeout(() => {
+    if (document.visibilityState === 'visible') void listenForReload(true)
+  }, JOIN_AFTER_LOAD_MS)
   tickDayCare()
   setInterval(() => {
     if (document.visibilityState === 'visible') checkFreshness(false)
