@@ -9,6 +9,7 @@ import {
   dayCareXp,
   depositError,
   depositPokemon,
+  everyRegionBox,
   eggOdds,
   eggSpecies,
   fitDayCare,
@@ -180,6 +181,38 @@ describe('One Day Care for every region', () => {
     expect(back.save.box.some((p) => p.id === id)).toBe(false)
     expect(back.save.team).not.toContain(id)
     expect(back.save.parked!.kanto!.box.some((p) => p.id === id)).toBe(true)
+  })
+
+  it('takes Pokémon from every region’s Box, the live one first, each with its region and team', () => {
+    const j = inJohto(withMons([10, 12, 14, 16]))
+    const all = everyRegionBox(j, data)
+    expect(all.map((m) => m.region)).toEqual(['johto', 'kanto', 'kanto', 'kanto', 'kanto'])
+    expect(all[0]).toMatchObject({ live: true, inTeam: true })
+    expect(all.slice(1).map((m) => m.inTeam)).toEqual([true, true, true, false])
+    expect(all.slice(1).every((m) => !m.live)).toBe(true)
+  })
+
+  it('leaves a Kanto Pokémon from Johto: out of the Kanto team and Box, tagged Kanto, back to the Kanto Box', () => {
+    const j = inJohto(withMons([10, 12, 14, 16]))
+    const id = j.parked!.kanto!.team[0]!
+    const left = depositPokemon(j, id, data, 0)!
+    expect(left.parked!.kanto!.box.some((p) => p.id === id)).toBe(false)
+    expect(left.parked!.kanto!.team).not.toContain(id)
+    expect(left.box).toEqual(j.box)
+    expect(left.team).toEqual(j.team)
+    expect(dayCareOf(left).residents.map((r) => [r.inst.id, r.region])).toEqual([[id, 'kanto']])
+    const back = withdrawPokemon(left, id, data, 0)!
+    expect(back.save.parked!.kanto!.box.some((p) => p.id === id)).toBe(true)
+  })
+
+  it('never takes the last of a parked region’s team, nor its last Pokémon', () => {
+    const j = inJohto(withMons([10, 12]))
+    const [a, b] = j.parked!.kanto!.box
+    const one = { ...j, parked: { kanto: { ...j.parked!.kanto!, team: [a!.id] } } }
+    expect(depositError(one, a!.id, data)).toBe('last')
+    expect(depositError(one, b!.id, data)).toBe(null)
+    const alone = { ...j, parked: { kanto: { ...j.parked!.kanto!, box: [b!], team: [] } } }
+    expect(depositError(alone, b!.id, data)).toBe('last')
   })
 
   it('counts a resident as owned only in its own region', () => {

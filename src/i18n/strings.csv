@@ -1364,6 +1364,10 @@ ui.dayCare.takeBackName,Take back {name},Récupérer {name},Recoger a {name},{na
 ui.dayCare.fossil,Still a fossil,Encore un fossile,Todavía es un fósil,Noch ein Fossil,Ancora un fossile,Ainda é um fóssil,Ainda é um fóssil,まだカセキ,아직 화석,还是化石
 ui.dayCare.searchLabel,Search your Pokémon,Chercher tes Pokémon,Buscar tus Pokémon,Deine Pokémon durchsuchen,Cerca i tuoi Pokémon,Procurar os teus Pokémon,Buscar seus Pokémon,ポケモンをさがす,포켓몬 검색,搜索你的宝可梦
 ui.dayCare.noMatch,No Pokémon by that name.,Aucun Pokémon de ce nom.,Ningún Pokémon con ese nombre.,Kein Pokémon mit diesem Namen.,Nessun Pokémon con quel nome.,Nenhum Pokémon com esse nome.,Nenhum Pokémon com esse nome.,その名前のポケモンはいません。,그 이름의 포켓몬이 없어요.,没有这个名字的宝可梦。
+ui.dayCare.sortLevel,Sort by level,Trier par niveau,Ordenar por nivel,Nach Level sortieren,Ordina per livello,Ordenar por nível,Ordenar por nível,レベルで並べ替え,레벨순 정렬,按等级排序
+ui.dayCare.lowFirst,Lowest Lv,N. bas,Nv. bajo,Lv. niedrig,Lv. basso,Nv. baixo,Nv. baixo,Lv.低い順,Lv. 낮은 순,等级从低到高
+ui.dayCare.highFirst,Highest Lv,N. haut,Nv. alto,Lv. hoch,Lv. alto,Nv. alto,Nv. alto,Lv.高い順,Lv. 높은 순,等级从高到低
+ui.dayCare.noCompatibleMine,None of your Pokémon pairs with those at the Day Care.,Aucun de tes Pokémon ne va avec ceux de la Pension.,Ninguno de tus Pokémon es compatible con los de la Guardería.,Keins deiner Pokémon passt zu denen in der Pension.,Nessuno dei tuoi Pokémon è compatibile con quelli della Pensione.,Nenhum dos teus Pokémon é compatível com os da Creche.,Nenhum dos seus Pokémon é compatível com os da Creche.,そだてやのポケモンと相性のいいポケモンがいない。,키우미집 포켓몬과 짝이 되는 포켓몬이 없어요.,你没有能和培育屋里的宝可梦配对的宝可梦。
 ui.dayCare.staysToast,{name} is staying at the Day Care.,{name} reste à la Pension.,{name} se queda en la Guardería.,{name} bleibt in der Pension.,{name} resta alla Pensione.,{name} fica na Creche.,{name} fica na Creche.,{name}をそだてやにあずけた。,{name}를(을) 키우미집에 맡겼어요.,{name}留在了培育屋。
 ui.dayCare.done,Done,Terminé,Listo,Fertig,Fatto,Concluído,Pronto,おわる,완료,完成
 ui.dayCare.inTime,in {time},dans {time},en {time},in {time},tra {time},daqui a {time},em {time},{time}後,{time} 후,{time}后
