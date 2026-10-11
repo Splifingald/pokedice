@@ -255,13 +255,15 @@ export function writeCloudMark(which: SaveMode, mark: CloudMark) {
 
 /**
  * What a "delete all my data" leaves on the device: the player's settings (language, theme, sound) and what belongs to
- * the device or the deployment, not to the player (the analytics device id and its daily ping, the sign-in options).
+ * the device or the deployment, not to the player (the analytics device id and its daily and hourly pings, the sign-in
+ * options).
  */
 const DEVICE_KEYS = new Set([
   SETTINGS_KEY,
   'pokedice.theme',
   'pokedice.analytics.device',
   'pokedice.analytics.pinged',
+  'pokedice.analytics.hour',
   'pokedice.authProviders',
   // The dev server's config override (src/config/bundle.ts): the developer's, not the player's.
   'pokedice.devConfig',

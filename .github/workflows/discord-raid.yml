@@ -1,0 +1,43 @@
+# Posts the day's raid to the Discord server's #daily-raid (docs/23-DISCORD-SERVER.md). The raid comes from the game's
+# own calendar over the live content, so the post names the raid players get. Nothing is posted while Admin → Events
+# has raids Off or On for admin, nor before the DISCORD_RAID_WEBHOOK secret exists.
+name: Discord daily raid
+
+on:
+  schedule:
+    # 00:07 UTC: GitHub starts scheduled runs late at the top of the hour, the busiest minute of its day.
+    - cron: '7 0 * * *'
+  workflow_dispatch:
+    inputs:
+      force:
+        description: Post even while raids aren't on for everyone
+        type: boolean
+        default: false
+
+concurrency: discord-raid
+
+permissions:
+  contents: read
+
+jobs:
+  post:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Post today's raid
+        run: pnpm discord:raid $FORCE
+        env:
+          FORCE: ${{ inputs.force && '--force' || '' }}
+          DISCORD_RAID_WEBHOOK: ${{ secrets.DISCORD_RAID_WEBHOOK }}
+          DISCORD_RAID_ROLE: ${{ vars.DISCORD_RAID_ROLE }}
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}

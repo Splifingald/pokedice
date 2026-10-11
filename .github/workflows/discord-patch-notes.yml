@@ -1,0 +1,58 @@
+# Posts each patch note a push to main adds (patch-notes/*.md) to the Discord server's #patch-notes, once the live site
+# serves that push (docs/23-DISCORD-SERVER.md). Run it by hand to post a note again.
+name: Discord patch notes
+
+on:
+  push:
+    branches: [main]
+    paths: ['patch-notes/**']
+  workflow_dispatch:
+    inputs:
+      files:
+        description: Notes to post, separated by spaces (patch-notes/2026-10-20-version-2.md)
+        required: true
+
+concurrency: discord-patch-notes
+
+permissions:
+  contents: read
+
+jobs:
+  post:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Find the new notes
+        id: notes
+        env:
+          EVENT: ${{ github.event_name }}
+          FILES_INPUT: ${{ inputs.files }}
+          BEFORE: ${{ github.event.before }}
+        run: |
+          if [ "$EVENT" = "workflow_dispatch" ]; then
+            FILES="$FILES_INPUT"
+          else
+            if [ -z "$BEFORE" ] || ! git cat-file -e "$BEFORE^{commit}" 2>/dev/null; then BEFORE="$(git rev-list --max-parents=0 HEAD | tail -1)"; fi
+            FILES="$(git diff --name-only --diff-filter=A "$BEFORE" "$GITHUB_SHA" -- 'patch-notes/*.md' | grep -v -e '/_' -e '/README.md$' | tr '\n' ' ' || true)"
+          fi
+          echo "files=$FILES" >> "$GITHUB_OUTPUT"
+          echo "Notes: ${FILES:-none}"
+      - name: Post them
+        if: steps.notes.outputs.files != ''
+        run: pnpm discord:patch-notes $NOTES $WAIT
+        env:
+          NOTES: ${{ steps.notes.outputs.files }}
+          WAIT: ${{ github.event_name == 'push' && format('--wait-deploy {0}', github.sha) || '' }}
+          DISCORD_PATCH_WEBHOOK: ${{ secrets.DISCORD_PATCH_WEBHOOK }}
+          DISCORD_PATCH_ROLE: ${{ vars.DISCORD_PATCH_ROLE }}
