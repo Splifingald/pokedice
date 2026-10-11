@@ -136,13 +136,14 @@ All live in `src/components/`. Every component, in every state, is on `/kitchen-
 | `StatusChip` / `StatusIcons` | A status | Icon + short name (BRN, PAR…) + counter, ring in the status colour; `lit=false` before its threshold. **Status is never colour alone** |
 | `Seg` | Two to four views of one thing (tabs) | `tabs` → `role=tablist`; otherwise a radio group. Counts after labels. Arrow keys move |
 | `FilterChips` | Narrowing a list | A radio group with counts; scrolls sideways when it runs out of room |
-| `SearchField` | Searching a list | 44 px, an ink ring, a top lip, a screen-reader label |
+| `SearchField` | Searching a list | 44 px, an ink ring, a top lip, a screen-reader label. The search ignores case and Latin accents (`searchFold`: "evoli" finds Évoli) |
+| `TypeSelect` | Narrowing a list of Pokémon to one type (the Box, Versus's picks) | One dropdown, "All types" first, only the types the list holds; the picked type's colour beside it |
 | `Sheet` | Anything opened from a screen: details, lists, pickers | Phones: from the bottom, grab handle, ✕, 90 % tall at most, `head` (filters) pinned, body scrolls, `footer` pinned. Desktop: a centred panel |
 | `Modal` | A short decision or message | Centred framed panel; `dismissable={false}` for a choice that must be made |
 | `SidePanel` | The trainer menu drawer | From the right |
 | `HpBar` | HP | Track with ink ring; the fill drains over 700 ms, the trail waits 280 ms then follows over 900 ms; numbers for your own, words for a foe's (screen readers) |
 | `TypeBadge`, `TypeSwatch` | A type | `md` 20 px, `sm` 16 px (plates) |
-| `Die` | A die face | Square corners; pips on whole pixels (`pipLayout`: one even pip size, three fixed columns) at any size; ink pips on light dice, white on dark; status face = white + status ring and a round badge with its icon; `selected` = lifted 6 px with a red outline; `combo` = a gold ring; values without a pip layout show their number |
+| `Die` | A die face | Square corners; pips on whole pixels (`pipLayout`: one even pip size, three fixed columns) at any size; ink pips on light dice, white on dark; status face = white + status ring and a round badge with its icon; `selected` = lifted 6 px with a red outline; `combo` = a gold ring; values without a pip layout (0, 7, 8…) show their number, centred on the face |
 | `PageHead` / `Wallet` | A tab's title row | Tab icon, the one `<h1>` (`as="h2"` where the page has its own), a count ("3/3", "81/151") or the gold as a navy plate |
 | `SheetSection` | A titled block inside a sheet | 22 px heading, a muted hint on the same row, extra controls |
 | `MonTile` / `TileTag` | A grid of Pokémon (Box, Pokédex) | Menu icon from the atlas, number, name, a line under it; `missing` = grey tile + silhouette; corner tags NEW (gold) and Nearby (green). `TILE_GRID` = ~84 px columns |
@@ -157,6 +158,16 @@ Dialog behaviour (`src/lib/useDialog.ts`, used by `Modal`, `Sheet`, `SidePanel`)
 ## 6. Layout
 
 - Phone first, from **360 px**. Nothing scrolls sideways at 360, 375, 768 or 1280 (`e2e/layout.spec.ts`).
+- **No zoom on phones**: `touch-action: pan-x pan-y` on the page (no pinch, no double-tap zoom) and Safari's gesture
+  events cancelled (`main.tsx`). Not through the viewport tag, which axe counts as a critical issue.
+- **A pop-up is never wider than the screen**: a sheet, the result card or the drawer that is a flex item carries
+  `min-w-0`, or one long label would stretch it past the edge; a panel that scrolls is capped already.
+- **Two buttons side by side** share a grid of `minmax(0, …)` tracks (`grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]`), never
+  plain `fr`: a plain track can't go narrower than its label, so a long translation ran off the edge and squeezed its
+  neighbour. In a shrinkable track `PixelButton` shrinks the label to fit.
+- **Action bars** (the Pokémon Center's and the area's HOME / CONTINUE, the Game Corner's LEAVE) are pinned
+  right above the tab bar on phones (`fixed`, `bottom: var(--bottom-nav)`, and room under the page for them), even
+  when the page is short; from 768 px they stick to the bottom of the content column.
 - Page gutter 12 px; gaps 8–12 px between cards; a panel's padding 12 px.
 - **Tap targets ≥ 44 px on phones** (inline links in a sentence excepted). From 768 px, tighter sizes are allowed.
 - One `<h1>` per route; headings in order; landmarks (`main`, `nav`).
@@ -232,6 +243,10 @@ read it. Sound off means no sound and no cry request at all.
 
 - **Strings:** `src/i18n/strings.csv` is the only place for text, in all ten columns (en, fr, es, de, it, pt, pt-BR,
   ja, ko, zh-Hans); no empty cell. Use `useT()` / `t()`. Reuse a key when the meaning matches.
+- **Content text** from the data is swapped for the player's language once (`localizeGameData`): species, items and
+  their descriptions, areas, badges, a die type's one-line nature (`diceDesc.*`), trainer classes and the named
+  characters — gym leaders, Elite Four, champions, rivals, villains — under each language's official name (Brock is
+  Pierre in French, Rocko in German); English in Portuguese, which the games never had.
 - **Numbers:** every number shown (damage, combos, multipliers, status thresholds, catch chance, XP, prices, unlocks)
   comes from the engine's helpers (`src/engine`). The UI never recomputes a rule.
 
@@ -290,15 +305,29 @@ Players shouldn't have to make many requests:
   Lab's region prompts; its first area's strip until it has one), name, counts and GO. A tap moves there and closes
   the sheet.
 - **Area screen**: its title opens the area's details (the same sheet as Home's plate, without the travel footer).
-- **Pokémon Center**: the healing scene (a Poké Ball per team member) at phone size (420 px at most on wide screens), then Home or **Next
-  encounter**, so a run through an area never needs a trip Home.
+- **Pokémon Center**: the healing scene (a Poké Ball per team member) at phone size (420 px at most on wide screens),
+  over everything (on `<body>`); SKIP (focused, so Enter, Space or Escape) just closes it, without playing the rest of
+  the jingle at once. It plays once: back from Home, the Center opens on the team (`run.healShown`). Then Home or
+  **Continue** (the next encounter), so a run through an area never needs a trip Home.
 - **Dots only for something you can act on**: the number of upgrades you can afford (9+ at most), a gold NEW for
   Pokédex entries you haven't looked at. The dot is in the link's accessible name, never colour alone.
 - **Home is the area hub** (`/home`; `/map` redirects there): the area's scene with your team roaming in it, the area
   plate (name, levels, rounds, caught → the area's details), AREAS (the area list, its search also finds Pokémon,
   filters and the Regions view in the same sheet) and one big CONTINUE whose second line says what comes next
-  (round n of m, the gym leader, the legend, a new region). The encounter itself plays on `/area`; an idle `/area`
-  goes back Home, and Home stays lit in the menus while it plays.
+  (round n of m, the gym leader, the legend, a new region). The encounter itself plays on `/area`, and Home stays
+  lit in the menus while it does.
+- **After an encounter the player stays in the area** (a trainer, a wild Pokémon, a find, the Center, the Game
+  Corner, fleeing): `/area` between encounters (`AreaIdle`) is the area's header, "Back on the trail…", the team (each
+  card opens its sheet) and the action bar, HOME or CONTINUE, the next encounter (or the gym or legend waiting, with Keep exploring);
+  when the next one can't start, the reason sits over the buttons. Only a full K.O. ends the run and goes back Home,
+  and the HOME buttons.
+- **Behind in the region**: under CONTINUE, a green GO TO {area} travels to the furthest open area of the region's
+  main chain (`latestOpenArea`; secret areas don't count), until the player is there or the whole chain is cleared.
+  Not while an encounter is under way. On wide screens the scene gives up the height of what sits under CONTINUE (this
+  button, Keep exploring), so the whole bar stays on screen without scrolling.
+- **A team on a widget banner** (Versus, locked or open) spreads over the room up to what sits beside it (the VS, the
+  lock): its usual spacing when there is room, tighter on a phone's half-width widget, and only past 60 % of an icon do
+  the icons get smaller (`TeamFan`). It never runs under the VS.
 - Home's widgets show what's next (the next secret, the Day Care, Versus, events) and are buttons when they lead
   somewhere; a locked one says what opens it and how far you are.
 - **Stages** (a canvas scene: Home, the battle, a hatching) are a background canvas, the Pokémon as DOM `<img>`s
@@ -352,7 +381,8 @@ in view) and the battle history sits beside it from 1024 px.
   Run) only when they exist, the actions (REROLL with its count, ATTACK in red; SKIP TURN when stunned; the AUTO note
   with STOP, none in Versus), then the Bag, the team pips and the history.
 - **Auto battles** (auto-mode, Versus) play at the `short` motion level unless animations are off (`MotionCap`).
-  Auto-mode is switched in the area (under its header), never from Home.
+  Auto-mode is switched in the area (under its header), never from Home. Prof. Oak's tip about it, the first time,
+  takes the full width above the switch (never squeezed into a column beside it).
 - **Team pips**: menu icon + an HP bar, the one in battle ringed in gold, fainted ones grey. Tapping one switches
   (it costs the turn; the dialog also holds Forfeit). After a K.O. the message asks "Choose your next Pokémon",
   the pips that can go out pulse (two steps, not a glide; still when the OS asks for reduced motion), and the actions
@@ -388,7 +418,8 @@ One Day Care for every region (docs/15-DAYCARE-BREEDING.md). The page (`src/scre
   the Egg are buttons in a hidden list.
 - **Under the yard, one of two:** the gold **Egg card** while one waits (the Egg shaking, who left it or "A gift for
   your first visit", Hatch it), or the **Egg-now bar**: "Next Egg check", the time left in large type, how many pairs
-  could leave one, and the gold EGG NOW with the coin and its price. Disabled without a pair; short of ₽ it stays
+  could leave one, and the gold EGG NOW with the coin and its price under it (at most 55 % of the row: the countdown
+  stays on one line and the button's label shrinks first). Disabled without a pair; short of ₽ it stays
   focusable, the price turns red and a tap says what's missing.
 - **Slots are cards in two columns** (`SlotCard`): a 4 px band in the slot's colour (pink `#ff5a7a` for your first,
   blue `#5b8def` for your second, grey for a friend's), the head (that colour's heart and "Yours", or the friend's
@@ -402,8 +433,9 @@ One Day Care for every region (docs/15-DAYCARE-BREEDING.md). The page (`src/scre
 - **Hearts mean "can make an Egg with it"**, always next to a name: a heart is never the only sign.
 - **Egg checks** list the rule, the two clocks (Egg groups, Ditto) with their next time, and every pair with a tag:
   the shared group and its pace ("Field · every 12 h"), or Ditto's slower pace in purple.
-- **Pickers** (the shared `Sheet`): Leave which Pokémon? lists those that would pair with someone here first, then the
-  team (TEAM tag; your last team member greyed with the reason), then the Box, each with its Egg groups and a pink
+- **Pickers** (the shared `Sheet`): Leave which Pokémon? lists every region's Box (the region after the level once
+  several are played) by level, lowest or highest first, with a search and, once someone is here, Compatible only;
+  the team has the TEAM tag (the last of a region's team greyed with the reason), each row its Egg groups and a pink
   "Compatible with Jolteon" tag in the colour of the slot being filled. Add a friend's Pokémon has a search (friend or
   Pokémon) and a Compatible only toggle, grouped by friend, the best matches first.
 - **The Home widget** is the same size in every state: the Day Care's banner (a fixed-shape strip of its yard's
@@ -432,7 +464,10 @@ One Day Care for every region (docs/15-DAYCARE-BREEDING.md). The page (`src/scre
 - **Versus locked**: what opens it, a meter n/3, and the three Pokémon closest to Lv.50 with how many levels to go
   (`versusClosest`). Unlocked: tabs Opponents (with the count still to beat) / My team / Leaderboard; Opponents has
   your team strip with Change, a search by trainer *or* Pokémon and To beat / Beaten / All chips with counts. My team
-  shows three numbered slots ("Lv.72 → 50") over the eligible list (order badges 1–3), then Clear and Save team.
+  shows three numbered slots ("Lv.72 → 50") over the eligible list (order badges 1–3), then Clear and Save team. The
+  list holds each species once, its shiny apart (`versusChoices`: they fight alike at Lv.50, from whichever region), a
+  row its name, ✦ and types (no level: everyone is Lv.50 here); a search, No. / A–Z and a `TypeSelect` order and narrow
+  it, and picks they hide stay picked.
 - **The leaderboard**: the region's name as the head's count; four tabs that are icons, only the open one spelling
   out its name (four names don't fit a phone in every language); a gold card with your look, the board's one-line
   note and "You're #N of M" (tap: your row scrolls into view and blinks) or "You're in the Hall of Fame"; a navy
@@ -442,12 +477,13 @@ One Day Care for every region (docs/15-DAYCARE-BREEDING.md). The page (`src/scre
 ## 17. The trainer card and the menu
 
 - **The avatar opens the trainer card** (the drawer, titled "Trainer card"): a blue-framed card with "TRAINER CARD"
-  and an ID number, your look at 2×, your name with Change, then Money, Pokédex, Best level, Areas, Shinies and your
-  Versus record (or Locked) as a dotted list, and your team's icons with levels.
-- **Badge case** per region reached (`regionCases`), on a friend's card only (yours is the count on the top bar): a navy case, each badge 12×12 pixel art at 3× (`BadgeIcon`:
-  Kanto's are the lab's maps, other regions use the same shapes in their own colours), then the **crown**
-  (`CrownIcon`) for clearing the region's last area. Unearned ones are grey at 40 % and their label says "not earned
-  yet".
+  and an ID number, your look at 2×, your name with Change, then Money, Pokédex, Best level, Areas, Badges (every
+  region's together, `badgesHeld`; the top bar counts the region being played), Shinies and your Versus record (or
+  Locked) as a dotted list, and your team's icons with levels.
+- **A friend's card** is drawn the same way, with their badges as the same one count across every region (no badge
+  cases).
+- **Invite a friend**: Prof. Oak's pop-up once per region at its 2nd badge; INVITE shares the friend invite link
+  (`/f/<code>`, opening it makes you friends), or the game's own link while signed out (no friend ID then).
 - **Look**: "How other trainers see you…" with Change opening a radio grid of every look, in one block (no region headings); picking one closes it. The same
   crop (`TrainerLook`) is used wherever a trainer appears.
 - **The menu** under the card: rows with an icon tile, a label and a one-line description (Leaderboard, Versus with
@@ -472,3 +508,29 @@ One Day Care for every region (docs/15-DAYCARE-BREEDING.md). The page (`src/scre
 - **Leaving**: a new region has ✕ (Not now) and Esc; a new game has nothing to go back to. With motion `off` the balls
   are already on the table.
 
+
+## 19. Extreme mode
+
+A second save in a world of its own (docs/22-EXTREME-MODE-PLAN.md), opened by the Johto League once the admin has
+switched it on (Off by default; Off / On for admin / On for everyone, like the events). The pieces are in
+`src/components/Extreme.tsx`, every state of them on `/kitchen-sink` (`ExtremeBits`).
+
+- **Which world is in play is never in doubt**: a crimson band under the top bar ("Extreme mode · no Pokémon Centers",
+  22 px, `ExtremeBand`) and a skull on the trainer's avatar (`ExtremeMark`). Crimson (`bg-crimson`, under `light-scope`)
+  and the skull are Extreme mode's only marks; nothing else in the game uses the skull.
+- **Its rules** are the rules pop-up (`ExtremeRulesModal`, Mt. Silver's champion hall as its banner): once when it opens
+  (Later / Let's go!, which goes straight to the Extreme save), and from INFO on the title card and in Settings.
+- **The title** shows the save in play first (CONTINUE, with the skull when it's the Extreme one). From the main save, the
+  Extreme card sits under it (`ExtremeTitleCard`: trainer, region, badges, its team, who's resting, PLAY EXTREME or NEW
+  EXTREME GAME after the rules, INFO); from the Extreme save, "Continue the main game". Switching always asks first
+  (`SwitchSaveModal`) and reloads the page.
+- **A resting Pokémon** (K.O., on its 12-hour clock) says when it's back wherever it appears: "K.O. · 11h 42m" with the
+  moon (`KoTag`) on cards and in lists, and on its sheet the night panel with the 12-hour track and what a Revive would
+  do (`KoPanel`). The countdowns read the server's clock.
+- **Nobody able to fight**: CONTINUE greys and says who's back first and when; the resting panel under it
+  (`RestingPanel`) offers the two ways out, Team (with how many in the Box can fight) and the Poké Mart.
+- **Back in the game**: "While you were away" (`AwayReportModal`) once, between fights: the time away, then one row per
+  Pokémon the absence changed — a green bar with the part healed in pale green, "Back from K.O.", "Full", or still
+  resting and until when.
+- **Friends** are the same in both worlds; in Extreme, a friend without an Extreme save is listed greyed with "Not in
+  Extreme mode" and the skull, and doesn't open.

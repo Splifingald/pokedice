@@ -44,7 +44,7 @@ export function EventUnlockPopup() {
           </span>
         </EventPicture>
         <EventRules id={due} data={data} />
-        <div className="grid grid-cols-[1fr_1.5fr] gap-2.5 pt-1">
+        <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)] gap-2.5 pt-1">
           <PixelButton onClick={markEventsSeen}>{t('ui.events.later')}</PixelButton>
           <PixelButton variant="primary" onClick={go}>
             {t('ui.events.go')}

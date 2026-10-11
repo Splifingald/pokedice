@@ -4,11 +4,21 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { createInstance } from '@/engine/progression'
 import { getRegion, newRegionBlock, regionOf, startRegion, switchRegion } from '@/engine/regions'
 import { progressOf } from '@/engine/run'
-import type { GameData, SaveData } from '@/engine/types'
+import type { GameData, SaveData, SaveMode } from '@/engine/types'
 import { parseSave } from '@/save/schema'
 
-export async function fetchPlayerSave(client: SupabaseClient, userId: string): Promise<SaveData | null> {
-  const { data, error } = await client.from('saves').select('data').eq('user_id', userId).maybeSingle()
+/** Postgres' "no such column": a database before Extreme mode's realms (0039). */
+const noRealm = (e: { code?: string } | null) => e?.code === '42703'
+
+/** One of the player's two saves (docs/22): the main one, or their Extreme one. */
+export async function fetchPlayerSave(client: SupabaseClient, userId: string, realm: SaveMode = 'main'): Promise<SaveData | null> {
+  const read = (withRealm: boolean) => {
+    const q = client.from('saves').select('data').eq('user_id', userId)
+    return (withRealm ? q.eq('realm', realm) : q).maybeSingle()
+  }
+  let got = await read(true)
+  if (got.error && noRealm(got.error) && realm === 'main') got = await read(false)
+  const { data, error } = got
   if (error) throw error
   if (!data) return null
   const res = parseSave((data as { data: unknown }).data)
@@ -16,11 +26,13 @@ export async function fetchPlayerSave(client: SupabaseClient, userId: string): P
   return res.save
 }
 
-export async function pushPlayerSave(client: SupabaseClient, userId: string, save: SaveData): Promise<void> {
-  const { error } = await client
-    .from('saves')
-    .update({ data: save, updated_at: new Date(save.updatedAt).toISOString() })
-    .eq('user_id', userId)
+export async function pushPlayerSave(client: SupabaseClient, userId: string, save: SaveData, realm: SaveMode = 'main'): Promise<void> {
+  const write = (withRealm: boolean) => {
+    const q = client.from('saves').update({ data: save, updated_at: new Date(save.updatedAt).toISOString() }).eq('user_id', userId)
+    return withRealm ? q.eq('realm', realm) : q
+  }
+  let { error } = await write(true)
+  if (error && noRealm(error) && realm === 'main') ({ error } = await write(false))
   if (error) throw error
 }
 

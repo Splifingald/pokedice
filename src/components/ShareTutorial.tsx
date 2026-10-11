@@ -1,9 +1,12 @@
-// Prof. Oak's share prompt: once per region, when the player holds its 2nd badge (between fights). The button opens
-// the native share sheet on phones, or copies the link where there is none (desktop). Remembered in localStorage.
-// The donation pop-up and a special event's unlock pop-up go first when they're waiting too.
-import { useState } from 'react'
+// Prof. Oak's "invite a friend" prompt: once per region, when the player holds its 2nd badge (between fights). INVITE
+// shares the player's friend invite link (opening it makes the two of them friends, docs/16); signed out there is no
+// friend ID, so it shares the game's own link. The native share sheet on phones, or a copied link where there is none
+// (desktop). Remembered in localStorage. The donation pop-up and a special event's unlock pop-up go first when they're
+// waiting too.
+import { useEffect, useState } from 'react'
 import { badgeCase, dayCareTutorialDue, donationDue, eventUnlockDue, leaderboardTutorialDue, regionOf, versusRulesDue } from '@/engine'
 import { useT } from '@/i18n/react'
+import { formatCode, inviteUrl, loadMyCode, useFriends } from '@/lib/friends'
 import { shareOrCopy } from '@/lib/share'
 import { useGame } from '@/store/game'
 import { Modal } from './Modal'
@@ -36,6 +39,12 @@ export function ShareTutorial() {
   const idle = useGame((s) => s.run.phase === 'idle')
   const [closed, setClosed] = useState<string[]>([])
   const open = !!region && due && idle && !closed.includes(region) && !seen(region)
+  const signedIn = useGame((s) => s.auth.status === 'signed_in')
+  const code = useFriends((s) => s.code)
+  // Fetched as the pop-up opens, not on the tap: a share sheet must open straight from the tap that asked for it.
+  useEffect(() => {
+    if (open && signedIn) void loadMyCode().catch(() => null)
+  }, [open, signedIn])
 
   const close = () => {
     if (!region) return
@@ -48,9 +57,15 @@ export function ShareTutorial() {
   }
 
   const share = async () => {
+    const invite = signedIn && code
+    const shared = invite
+      ? await shareOrCopy(
+          { title: 'Pokédice', text: t('ui.friends.shareText', { code: formatCode(code) }), url: inviteUrl(code) },
+          t('ui.friends.linkCopied'),
+        )
+      : await shareOrCopy({ title: 'Pokédice', text: t('ui.share.text'), url: window.location.origin }, t('ui.share.copied'))
     // A cancelled share sheet keeps the pop-up.
-    if (await shareOrCopy({ title: 'Pokédice', text: t('ui.share.text'), url: window.location.origin }, t('ui.share.copied')))
-      close()
+    if (shared) close()
   }
 
   return (

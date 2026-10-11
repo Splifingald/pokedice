@@ -334,7 +334,7 @@ export function RaidView({ run }: { run: RaidRun }) {
   const catchState = run.catch
     ? {
         dex: run.raid.dex,
-        level: cfg.level,
+        level: run.state.boss.level,
         shiny: run.raid.shiny,
         kind: 'boss' as const,
         target: { mode: 'new' as const },
@@ -461,7 +461,7 @@ export function RaidView({ run }: { run: RaidRun }) {
     )
   else if (rolling && mine)
     actions = (
-      <div className="grid grid-cols-[1fr_1.4fr] gap-2.5">
+      <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] gap-2.5">
         <PixelButton
           size="lg"
           className="whitespace-nowrap px-2"
@@ -708,7 +708,7 @@ function RaidResult({ run }: { run: RaidRun }) {
     <div className="grid gap-2.5 bg-paper p-3 shadow-card" role="status">
       <h2 className="m-0 text-[28px] font-normal leading-none">{t(fled ? 'ui.raid.result.fledTitle' : 'ui.raid.result.lostTitle', { name })}</h2>
       <p className="copy m-0 text-lg">{t(fled ? 'ui.raid.result.fled' : 'ui.raid.result.lost', { name })}</p>
-      <div className="grid grid-cols-[1fr_1.4fr] gap-2.5">
+      <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] gap-2.5">
         <PixelButton size="lg" onClick={leaveRaid}>
           {t('ui.raid.back')}
         </PixelButton>

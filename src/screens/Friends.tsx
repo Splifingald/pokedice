@@ -182,15 +182,19 @@ function FriendsBody() {
 
 /** One friend: their look, name (NEW while new), team, and where they are. The whole row opens their card. */
 function FriendListRow({ friend: f, onOpen }: { friend: FriendRow; onOpen: () => void }) {
+  const { t } = useT()
   const line = useFriendLine()
   const now = Date.now()
-  const away = !f.updatedAt || now - f.updatedAt > AWAY_MS
-  const summary = line(f, now)
+  // Extreme mode (docs/22): a friend without an Extreme save is listed, greyed, and has no card to open here.
+  const elsewhere = !f.inRealm
+  const away = elsewhere || !f.updatedAt || now - f.updatedAt > AWAY_MS
+  const summary = elsewhere ? t('ui.extreme.notIn') : line(f, now)
   return (
     <li>
       <button
         type="button"
-        onClick={onOpen}
+        onClick={elsewhere ? undefined : onOpen}
+        aria-disabled={elsewhere || undefined}
         aria-label={`${f.name}, ${summary}`}
         className={cx(
           'flex min-h-[60px] w-full items-center gap-2 pb-1.5 pl-1.5 pr-2.5 pt-1 text-left',
@@ -214,7 +218,11 @@ function FriendListRow({ friend: f, onOpen }: { friend: FriendRow; onOpen: () =>
           )}
           <small className={cx('truncate font-pixel-sm text-[14px] leading-tight', away ? 'text-ink' : 'text-muted')}>{summary}</small>
         </span>
-        <span aria-hidden className="block h-[14px] w-[10px] shrink-0 bg-shadow [clip-path:polygon(0_0,100%_50%,0_100%,0_70%,50%_50%,0_30%)]" />
+        {elsewhere ? (
+          <PixelIcon name="skull" size={14} className="shrink-0 opacity-60" />
+        ) : (
+          <span aria-hidden className="block h-[14px] w-[10px] shrink-0 bg-shadow [clip-path:polygon(0_0,100%_50%,0_100%,0_70%,50%_50%,0_30%)]" />
+        )}
       </button>
     </li>
   )

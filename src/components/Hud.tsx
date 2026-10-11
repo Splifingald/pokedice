@@ -9,6 +9,7 @@ import { pushToast, useGame } from '@/store/game'
 import { useInFight } from '@/store/hooks'
 import { CloudSyncButton } from './CloudSyncButton'
 import { DonationModal } from './DonationPopup'
+import { ExtremeBand } from './Extreme'
 import { PlayerMenu } from './PlayerMenu'
 import { cx } from '@/theme/util'
 import { useCountUp, useGoldBump } from './GoldPill'
@@ -193,6 +194,7 @@ export function Header() {
         </RoundLink>
         <PlayerMenu />
       </div>
+      <ExtremeBand />
     </header>
   )
 }
@@ -201,9 +203,16 @@ export function Header() {
 export function SideNav() {
   const { t } = useT()
   const canDonate = useGame((s) => donationEnabled(s.data))
+  // Extreme mode's band (22 px) sits under the top bar.
+  const extreme = useGame((s) => s.save?.mode === 'extreme')
   const [donating, setDonating] = useState(false)
   return (
-    <aside className="sticky top-14 hidden h-[calc(100vh-3.5rem)] w-52 shrink-0 flex-col gap-3 overflow-y-auto bg-panel p-3 shadow-[2px_0_0_rgb(var(--c-edge))] md:flex lg:w-56">
+    <aside
+      className={cx(
+        extreme ? 'top-[78px] h-[calc(100vh-78px)]' : 'top-14 h-[calc(100vh-3.5rem)]',
+        'sticky hidden w-52 shrink-0 flex-col gap-3 overflow-y-auto bg-panel p-3 shadow-[2px_0_0_rgb(var(--c-edge))] md:flex lg:w-56',
+      )}
+    >
       <nav aria-label={t('ui.nav.menus')} className="flex flex-col gap-2.5">
         {SIDE_NAV.map((n) => (
           <NavEntry key={n.to} n={n} variant="side" />

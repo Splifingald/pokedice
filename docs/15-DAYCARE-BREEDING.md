@@ -149,7 +149,8 @@ Fairy but genderless (rule 3), and rule 1 refuses them to Ditto.
   - `liveBlock` and `withBlock` stop carrying it.
   - `newRegionBlock` never creates one.
 - Each resident remembers where it came from: `DayCareResident { inst, since, region: RegionId }`.
-  - **Leaving** a Pokémon takes it from the live region's team or Box, as today.
+  - **Leaving** a Pokémon takes it from any region's team or Box (`everyRegionBox`), never the last of that
+    region's team nor its last Pokémon.
   - **Taking back** puts it in **that region's** Box: the live one through the top level, a parked one through
     `save.parked[region]`. It joins the team only when its region is live and the team has room.
   - The toast says where: "Eevee is back in your Kanto Box".
@@ -451,9 +452,10 @@ Laid out like Home, with no CONTINUE and no Areas button. The name shows **once*
     - "No match with yours";
     - "Invited" (disabled).
 - **Leave which Pokémon?**:
-  - search;
-  - those that pair with someone already here come first, then the team (TEAM tag; your last team member is
-    disabled), then the Box;
+  - every region's Box, each row saying its region once several are played;
+  - search, a level sort (lowest or highest first) and, once someone is here (yours or a friend's), **Compatible
+    only**;
+  - the team has the TEAM tag; the last of a region's team is disabled;
   - the tag is "Compatible with Jolteon", in the colour of the slot being filled.
 
 ### The hatching
@@ -559,7 +561,7 @@ Each ends green: `pnpm lint`, `pnpm build`, `pnpm test`, `pnpm e2e`. Add a READM
 | D3 | Eggs at once | One Egg waits at a time; checks meanwhile leave nothing |
 | D4 | Who checks | Your two with everyone; guest × guest pairs don't count |
 | D5 | A guest leaves | When its owner takes it back, or the friendship ends: seen at the next refresh |
-| D6 | Regions | Leave from the live region only; a Pokémon goes back to its own region's Box ("regions never pool") |
+| D6 | Regions | Leave from any region's Box; a Pokémon goes back to its own region's Box ("regions never pool") |
 | D7 | Migration overflow | Keep the two that have stayed longest, send the rest home with their levels |
 | D8 | Unlock | 20 distinct species across every region's Pokédex |
 | D9 | Clocks | Two clocks (12 h Egg groups, 24 h Ditto), not one per pair |

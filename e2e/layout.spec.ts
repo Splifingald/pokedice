@@ -185,7 +185,7 @@ test('a battle fits a 360×640 phone', async ({ page }) => {
     // Random fights: the lead may faint before the controls show — send in the next one (its pip pulses).
     if (await page.getByText('Choose your next Pokémon').isVisible().catch(() => false))
       await page.getByRole('group', { name: 'Switch Pokémon' }).getByRole('button', { name: /Switch in$/ }).first().click()
-    for (const name of ['FIGHT', 'EXPLORE', 'NEXT ENCOUNTER', 'ENTER', 'PICK IT UP', 'CONTINUE', 'SKIP TURN']) {
+    for (const name of ['FIGHT', 'EXPLORE', 'ENTER', 'PICK IT UP', 'CONTINUE', 'SKIP TURN']) {
       const b = page.getByRole('button', { name, exact: true }).first()
       if ((await b.isVisible().catch(() => false)) && (await b.isEnabled().catch(() => false))) {
         await b.click()

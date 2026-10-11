@@ -106,6 +106,20 @@ export const DEFAULT_CONFIG: GameConfig = {
   // A once-only find in a big loot deck can take a hundred rounds to turn up: from the 5th round done in its area, its
   // odds climb to ×10 at the 50th.
   uniquePity: { startRounds: 5, fullRounds: 50, maxMultiplier: 10 },
+  // Extreme mode (docs/22): off until the admin switches it on, for the admin alone or for everyone. Opened by the
+  // Johto League; no Pokémon Centers and no healing after a lost round; a K.O. rests 12 h and comes back at 1 HP; out
+  // of the game, every Pokémon heals 10 % an hour (absences under 2 min don't count). Potions and Revives work.
+  extreme: {
+    access: 'off',
+    unlockRegion: 'johto',
+    centers: false,
+    wipeHeals: false,
+    koHours: 12,
+    koReviveHp: 1,
+    awayHealPctPerHour: 10,
+    awayMinMinutes: 2,
+    items: true,
+  },
   // The special events (docs/18). Each is off until the admin switches it on, for the admin alone or for everyone;
   // before the first opens, Home keeps a locked square from the 3rd Kanto badge. Banners: an event's own picture, or an
   // area picture until it has one.
@@ -183,7 +197,10 @@ export const DEFAULT_CONFIG: GameConfig = {
         { dex: 893, areaId: '4aed8f3a-c216-5713-ac05-5a66d5c6998e' }, // Zarude, The Forest of Focus
         { dex: 1025, areaId: '168b74c9-3359-5581-a214-1f5be8da9b3e' }, // Pecharunt, Kitakami Hall
       ],
+      perMon: {},
       calendar: {
+        seeds: [],
+        overrides: {},
         // Days that mean something (engine/raidCalendar.ts lays out the rest, legendaries on the weekends).
         anchors: [
           { date: '01-01', dex: 493, shiny: false }, // New Year: Arceus, who shaped the world

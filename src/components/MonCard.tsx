@@ -6,6 +6,7 @@ import { useGame } from '@/store/game'
 import { useNow } from '@/store/hooks'
 import { cx } from '@/theme/util'
 import { DiceSet } from './DiceSet'
+import { KoTag } from './Extreme'
 import { HpBar } from './HpBar'
 import { PixelIcon } from './icons'
 import { ItemSprite } from './ItemSprite'
@@ -108,7 +109,9 @@ export function MonCard({
             <span className="flex flex-wrap items-center gap-1">
               <TypeBadge type={species.type1} size="sm" />
               {species.type2 && <TypeBadge type={species.type2} size="sm" />}
-              {fainted && <span className="text-sm text-danger">{t('ui.mon.fainted')}</span>}
+              {/* Extreme mode: a resting Pokémon says when it's back instead (docs/22). */}
+              {fainted && inst.koAt == null && <span className="text-sm text-danger">{t('ui.mon.fainted')}</span>}
+              {fainted && <KoTag inst={inst} />}
               {reviving && (
                 <span className="text-sm text-muted">
                   {fossil ? t('ui.mon.fromFossil', { fossil: fossil.name }) : t('ui.mon.fossil')}

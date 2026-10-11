@@ -53,6 +53,9 @@ export const EVENTS_ON = {
   },
 }
 
+/** Extreme mode switched on for everyone (it ships off), with the events: for e2e/extreme.spec.ts. */
+export const EXTREME_ON = { ...EVENTS_ON, extreme: { ...DEFAULT_CONFIG.extreme, access: 'all' } }
+
 export interface SupabaseMock {
   /** What an RPC returns, by function name (friend_list, friend_add…); a function returns its value or the result. */
   rpc?: Record<string, unknown | ((body: Record<string, unknown>) => unknown)>

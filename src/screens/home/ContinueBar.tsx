@@ -1,21 +1,27 @@
 import { useId } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
+  centersOn,
   dueBoss,
   dueGym,
+  firstComeback,
+  hasAbleTeam,
   isAreaClosed,
+  latestOpenArea,
   playerSideOf,
   progressOf,
   teamAverageLevel,
   type Area,
 } from '@/engine'
 import { useT } from '@/i18n/react'
+import { RestingPanel } from '@/components/Extreme'
 import { PixelIcon } from '@/components/icons'
 import { PixelButton } from '@/components/PixelButton'
 import { countdown, trainerTitle } from '@/lib/format'
 import { useGame } from '@/store/game'
 import { useEnergy } from '@/store/hooks'
 import { challenge, enterArea, outOfEnergy, rollNext } from '@/store/run'
+import { travelTo } from '@/store/travel'
 import { cx } from '@/theme/util'
 
 /** The run must be in this area before anything is rolled: arriving from another one starts it afresh. */
@@ -48,10 +54,20 @@ export function useContinue(area: Area) {
   const empty = !!energy && energy.value < 1 && run.areaId === area.id && outOfEnergy()
   const need = area.roundsToClear
   const done = progress.roundsDone ?? 0
+  // Extreme mode (docs/22): nobody can fight and no Center will come — the team rests.
+  const resting = !busy && !hasAbleTeam(save) && !centersOn(save, data)
+  const back = resting ? firstComeback(save, data) : null
 
   const sub = busy
     ? t('ui.home.backToEncounter')
-    : gym
+    : resting
+      ? back
+        ? t('ui.extreme.card.resting', {
+            name: data.species[back.inst.dex]?.name ?? '',
+            time: countdown(back.at - (energy?.now ?? Date.now())),
+          })
+        : t('ui.extreme.resting.title')
+      : gym
       ? t('ui.home.gymReady', { name: trainerTitle(gym) })
       : boss
         ? t('ui.home.legendReady')
@@ -80,18 +96,22 @@ export function useContinue(area: Area) {
     }
     explore()
   }
-  const off = !busy && !gym && !boss && (closed || empty)
+  const off = !busy && (resting || (!gym && !boss && (closed || empty)))
+  // Under CONTINUE: the green GO TO when behind in the region's main chain (not mid-encounter), and "keep exploring"
+  // when a gym or a legendary waits. Home sizes its scene around them.
+  const latest = useGame((s) => (busy || !s.save ? null : latestOpenArea(s.save, s.data)))
+  const keepExploring = !!(gym || boss) && !closed && !busy && !resting
   const label = gym
     ? t('ui.area.challenge', { name: gym.name.toUpperCase() })
     : boss
       ? t('ui.area.faceIt')
       : t('ui.common.continue')
-  return { label, sub, go, explore, off, gym, boss, closed, empty, busy, cleared: progress.cleared }
+  return { label, sub, go, explore, off, gym, boss, closed, empty, busy, resting, cleared: progress.cleared, latest, keepExploring }
 }
 
 /**
- * The Areas button and CONTINUE, the one big action (useContinue). When a gym or a legendary waits, "keep exploring"
- * sits under it. (Auto-mode is switched in the area itself, on the encounter screens.)
+ * The Areas button and CONTINUE, the one big action (useContinue). Under it, when the player is behind in the region's
+ * main chain, the green GO TO its furthest open area; when a gym or a legendary waits, "keep exploring". (Auto-mode is switched in the area itself, on the encounter screens.)
  */
 export function ContinueBar({
   area,
@@ -104,7 +124,7 @@ export function ContinueBar({
   onAreas: () => void
 }) {
   const { t } = useT()
-  const { label, sub, go, explore, off, gym, boss, closed, empty, busy } = useContinue(area)
+  const { label, sub, go, explore, off, gym, boss, empty, resting, latest, keepExploring } = useContinue(area)
   const subId = useId()
 
   return (
@@ -166,7 +186,14 @@ export function ContinueBar({
           </span>
         </PixelButton>
       </div>
-      {(gym || boss) && !closed && !busy && (
+      {resting && <RestingPanel />}
+      {latest && (
+        <PixelButton variant="success" size="lg" className="w-full" onClick={() => travelTo(latest)}>
+          <PixelIcon name="map" size={20} />
+          {t('ui.victory.goToArea', { name: latest.name })}
+        </PixelButton>
+      )}
+      {keepExploring && (
         <div className="flex flex-wrap items-center justify-end gap-2">
           <PixelButton size="sm" onClick={explore} disabled={empty}>
             {t('ui.home.keepExploring')}

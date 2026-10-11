@@ -13,6 +13,7 @@ import {
   catchTarget,
   catchValueOf,
   centerHeal,
+  centersOn,
   centerWouldHelp,
   challengeEncounter,
   centerIsNext,
@@ -35,6 +36,7 @@ import {
   enemyUpgradeLevelFor,
   hasAbleTeam,
   hasFaintedMember,
+  healItemsOn,
   isAreaClosed,
   isAreaUnlocked,
   isTeamHurt,
@@ -60,6 +62,7 @@ import {
   type SaveData,
   type SpinResult,
 } from '@/engine'
+import { activeSlot } from '@/save/storage'
 import { commitSave, initialRun, mutateSave, pushToast, useGame, type RunState } from './game'
 import { currentLive } from './live'
 import { useRebattleMedal } from './rebattle'
@@ -85,7 +88,9 @@ const setRun = (patch: Partial<RunState>) => useGame.setState((s) => ({ run: { .
 
 export function startNewGame(starterDex: number, player?: PlayerProfile) {
   const { data } = useGame.getState()
-  commitSave(newSave(starterDex, data, Date.now(), newId, player))
+  const save = newSave(starterDex, data, Date.now(), newId, player)
+  // The page plays the Extreme slot (docs/22): the new game is an Extreme save.
+  commitSave(activeSlot() === 'extreme' ? { ...save, mode: 'extreme' } : save)
   useGame.setState({ run: initialRun(), battle: null })
 }
 
@@ -169,13 +174,14 @@ function encounterContext(save: SaveData, areaId: string, forceKind: ForceKind |
     forceKind,
     centerUseful: centerWouldHelp(save, data),
     player: playerSideOf(save),
+    noCenters: !centersOn(save, data),
     // A Shiny Parade covering this area: wild Pokémon are more often shiny.
     shinyBoost: shinyBoost(currentLive(), area),
   }
 }
 
 /**
- * NEXT ENCOUNTER needs energy, unless what comes next is free anyway (a Pokémon Center, or nobody can fight).
+ * The next encounter (CONTINUE) needs energy, unless what comes next is free anyway (a Pokémon Center, or nobody can fight).
  * False when the energy system is off.
  */
 export function outOfEnergy(): boolean {
@@ -196,8 +202,14 @@ export function rollNext() {
     pushToast(t('ui.toast.outOfEnergy'), 'bad')
     return
   }
-  // Nobody able to fight (e.g. after a stalemate) → the Center is the only sensible next stop.
+  // Nobody able to fight (e.g. after a stalemate) → the Center is the only sensible next stop. Extreme mode has none:
+  // the team rests (Home and the area say until when).
   const noneAble = !hasAbleTeam(save)
+  if (noneAble && !centersOn(save, data)) {
+    setRun({ phase: 'idle', encounter: null })
+    pushToast(t('ui.extreme.restingToast'), 'bad')
+    return
+  }
   const forceKind = noneAble ? 'center' : run.forceNext
   const ctx = encounterContext(save, run.areaId, forceKind)
   if (!ctx) return
@@ -236,7 +248,7 @@ export function canSkipCurrent(): boolean {
   return !!run.encounter && !data.config.noEscape && canSkip(run.encounter, data.config.skipPolicy, run.skipsUsed)
 }
 
-/** FLEE / AVOID: back to the area screen (heal, check the team…); the next encounter waits for NEXT ENCOUNTER. */
+/** FLEE / AVOID: back to the area screen (heal, check the team…); the next encounter waits for CONTINUE. */
 export function skipEncounter() {
   if (!canSkipCurrent()) return
   const { run } = useGame.getState()
@@ -280,6 +292,7 @@ function startBattle(kind: BattleKind, enemy: { dex: number; level: number; shin
       enemyLevels: uniformLevels(upgradeLevel),
       megaAllowed: megaUnlocked(save, data),
       gmaxAllowed: gmaxUnlocked(save, data),
+      noHealItems: !healItemsOn(save, data),
       enemyPlan: enemyPlanFor(save, data, enemy, trainer),
       auto,
     },
@@ -302,7 +315,7 @@ export function engage(leadUid?: string) {
   switch (enc.kind) {
     case 'center':
       commitSave(centerHeal(save, data))
-      setRun({ phase: 'center' })
+      setRun({ phase: 'center', healShown: false })
       return
     case 'casino':
       setRun({ phase: 'casino' })
@@ -511,7 +524,7 @@ export function continueAfterVictory(leadUid?: string) {
 }
 
 /**
- * NEXT ENCOUNTER on a result card: what Home's CONTINUE would start next (a waiting gym or legendary first), without
+ * CONTINUE on a result card: what Home's CONTINUE would start next (a waiting gym or legendary first), without
  * the trip Home. Call it once the battle is closed (continueAfterVictory).
  */
 export function continueExploring() {
@@ -543,11 +556,12 @@ export function forfeit() {
   setRun({ phase: 'wipe', trainer: null, events: [] })
 }
 
+/** After a full K.O. the run is over: Home (where CONTINUE starts the area afresh), or the rebattle page. */
 export function afterWipe() {
   useGame.setState((s) =>
     s.run.rebattle
       ? { battle: null, run: { ...initialRun(), rebattle: s.run.rebattle } }
-      : { battle: null, run: { ...initialRun(), areaId: s.run.areaId, firstInArea: true } },
+      : { battle: null, run: { ...initialRun(), forceNext: s.run.forceNext } },
   )
 }
 
@@ -558,6 +572,11 @@ export function afterStalemate() {
 
 export function finishCenter() {
   backToArea()
+}
+
+/** The healing has started playing: leaving for Home and coming back won't play it again. */
+export function markHealShown() {
+  if (useGame.getState().run.phase === 'center') setRun({ healShown: true })
 }
 
 /** One pull of the Game Corner slot machine; null (and a toast) when the player can't pay for it. */

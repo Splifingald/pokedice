@@ -1,7 +1,7 @@
-// A friend's trainer card (docs/16): drawn with the same pieces as your own — the blue card, the badge cases — from
-// their player card, as of their last cloud push. Friends only; REMOVE FRIEND ends it for both.
+// A friend's trainer card (docs/16): drawn with the same pieces as your own — the blue card, their badges counted
+// across every region — from their player card, as of their last cloud push. Friends only; REMOVE FRIEND ends it for both.
 import { useEffect, useState } from 'react'
-import { linearAreas, regionCaseOf, regionSpecies, type RegionCase } from '@/engine'
+import { linearAreas, regionCaseOf, regionSpecies } from '@/engine'
 import { getLang } from '@/i18n'
 import { useT } from '@/i18n/react'
 import { agoText } from '@/lib/ago'
@@ -12,7 +12,7 @@ import { TeamIcons } from '../BoardRow'
 import { Modal } from '../Modal'
 import { PixelButton } from '../PixelButton'
 import { Sheet } from '../Sheet'
-import { BadgeCases, CardFrame, CardTeam, Stat } from '../TrainerCard'
+import { CardFrame, CardTeam, Stat } from '../TrainerCard'
 import { TrainerLook } from '../TrainerLook'
 import { useAddText } from './AddFriendModal'
 
@@ -58,14 +58,11 @@ export function FriendProfileSheet({
   const species = profile?.region ? regionSpecies(data, profile.region) : null
   const chain = profile?.region ? linearAreas(data, profile.region) : []
   const area = profile?.areaId ? data.areas.find((a) => a.id === profile.areaId) : undefined
-  // The badge cases in the regions' own order.
-  const cases: RegionCase[] = profile
-    ? data.regions
-        .map((rg) => profile.regions.find((r) => r.region === rg.id))
-        .filter((r) => !!r)
-        .map((r) => regionCaseOf(data, r.region, r.badges, r.endgame))
-        .filter((c): c is RegionCase => !!c)
-    : []
+  // Badges won in every region, as the game knows them (a region or gym since removed doesn't count).
+  const badges = (profile?.regions ?? []).reduce(
+    (n, r) => n + (regionCaseOf(data, r.region, r.badges, r.endgame)?.earned ?? 0),
+    0,
+  )
 
   const remove = async () => {
     if (!userId || busy) return
@@ -132,6 +129,7 @@ export function FriendProfileSheet({
                           value={`${chain.filter((a) => here.progress[a.id]?.cleared).length}/${chain.length}`}
                         />
                       )}
+                      <Stat label={t('ui.card.badges')} value={String(badges)} />
                       {here && <Stat label={t('ui.card.shinies')} value={String(here.shinies)} />}
                       <Stat
                         label={t('ui.card.versus')}
@@ -147,8 +145,6 @@ export function FriendProfileSheet({
               </div>
               {here && here.team.length > 0 && <CardTeam team={here.team} label={t('ui.board.theirTeam', { name: profile.name })} />}
             </CardFrame>
-
-            <BadgeCases regions={cases} />
 
             {profile.versus && profile.versus.team.length > 0 && (
               <section className="flex flex-col gap-1.5">

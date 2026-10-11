@@ -37,7 +37,7 @@ test('new game → first battle → win', async ({ page }) => {
 
   for (let i = 0; i < 400; i++) {
     if (await page.getByText('VICTORY!').isVisible()) break
-    await clickAny(page, ['EXPLORE', 'NEXT ENCOUNTER', 'ENTER', 'PICK IT UP', 'ROLL TO CATCH', 'CATCH', 'CONTINUE', 'TRY AGAIN', 'FIGHT', 'SKIP TURN', 'ATTACK'])
+    await clickAny(page, ['EXPLORE', 'ENTER', 'PICK IT UP', 'ROLL TO CATCH', 'CATCH', 'CONTINUE', 'TRY AGAIN', 'FIGHT', 'SKIP TURN', 'ATTACK'])
     await page.waitForTimeout(60)
   }
   await expect(page.getByText('VICTORY!')).toBeVisible()
@@ -136,8 +136,9 @@ test('the avatar drawer opens the profile, the guide and the settings', async ({
   await expect(card.getByRole('button', { name: 'Admin' })).toHaveCount(0)
   await expect(card.getByRole('button', { name: 'CONNECT' })).toBeVisible()
 
-  // The card: the player's name. The badges are the count on the top bar; the case itself is only on a friend's card.
+  // The card: the player's name and, among its numbers, the badges won in every region (none yet).
   await expect(card.getByText('Sam', { exact: true })).toBeVisible()
+  await expect(card.getByRole('term').filter({ hasText: 'Badges' })).toBeVisible()
   await expect(card.getByRole('heading', { name: 'Badge case' })).toHaveCount(0)
   await page.keyboard.press('Escape')
 

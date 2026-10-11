@@ -121,6 +121,12 @@ body,
   min-height: 100%;
 }
 
+/* No pinch or double-tap zoom: every screen is laid out for the phone it's on, and a zoomed page leaves the tab bar
+   and the pop-ups half off screen. Scrolling stays. (iOS ignores this for pinching: main.tsx cancels its gestures.) */
+html {
+  touch-action: pan-x pan-y;
+}
+
 /* The ground: Daybreak's pale sky under its dot texture (src/theme/frames.ts draws --tex), two CSS px per art px. */
 body {
   margin: 0;

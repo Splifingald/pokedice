@@ -838,99 +838,99 @@ trainerClass.swimmers,Swimmers,Nageurs,Nadadores,Schwimmer-Duo,Nuotatori,Nadador
 trainerClass.kimono-girl,Kimono Girl,Kimono Girl,Chica Kimono,Kimono-Girl,Ragazza Kimono,Rapariga de Quimono,Garota de Quimono,まいこはん,기모노 아가씨,舞妓
 trainerClass.officer,Officer,Policier,Policía,Polizist,Poliziotto,Polícia,Policial,おまわりさん,순경,警察
 # --- Gym Leader / Elite Four / Champion names - kept in Latin languages; official names in Japanese / Korean / Chinese,,,,,,,,,,
-trainerName.brock,Brock,Brock,Brock,Brock,Brock,Brock,Brock,タケシ,웅,小刚
-trainerName.misty,Misty,Misty,Misty,Misty,Misty,Misty,Misty,カスミ,이슬,小霞
-trainerName.lt-surge,Lt. Surge,Lt. Surge,Lt. Surge,Lt. Surge,Lt. Surge,Lt. Surge,Lt. Surge,マチス,마티스,马志士
+trainerName.brock,Brock,Pierre,Brock,Rocko,Brock,Brock,Brock,タケシ,웅,小刚
+trainerName.misty,Misty,Ondine,Misty,Misty,Misty,Misty,Misty,カスミ,이슬,小霞
+trainerName.lt-surge,Lt. Surge,Major Bob,Lt. Surge,Major Bob,Lt. Surge,Lt. Surge,Lt. Surge,マチス,마티스,马志士
 trainerName.erika,Erika,Erika,Erika,Erika,Erika,Erika,Erika,エリカ,민화,莉佳
 trainerName.koga,Koga,Koga,Koga,Koga,Koga,Koga,Koga,キョウ,독수,阿桔
-trainerName.sabrina,Sabrina,Sabrina,Sabrina,Sabrina,Sabrina,Sabrina,Sabrina,ナツメ,초련,娜姿
-trainerName.blaine,Blaine,Blaine,Blaine,Blaine,Blaine,Blaine,Blaine,カツラ,강연,夏伯
+trainerName.sabrina,Sabrina,Morgane,Sabrina,Sabrina,Sabrina,Sabrina,Sabrina,ナツメ,초련,娜姿
+trainerName.blaine,Blaine,Auguste,Blaine,Pyro,Blaine,Blaine,Blaine,カツラ,강연,夏伯
 trainerName.giovanni,Giovanni,Giovanni,Giovanni,Giovanni,Giovanni,Giovanni,Giovanni,サカキ,비주기,坂木
-trainerName.blue,Blue,Blue,Blue,Blue,Blue,Blue,Blue,グリーン,그린,青绿
-trainerName.red,Red,Red,Red,Red,Red,Red,Red,レッド,레드,赤红
+trainerName.blue,Blue,Blue,Azul,Blau,Blu,Blue,Blue,グリーン,그린,青绿
+trainerName.red,Red,Red,Rojo,Rot,Rosso,Red,Red,レッド,레드,赤红
 trainerName.green,Green,Green,Green,Green,Green,Green,Green,ブルー,블루,小蓝
 trainerName.leaf,Leaf,Leaf,Hoja,Leaf,Leaf,Leaf,Leaf,リーフ,리프,叶子
-trainerName.silver,Silver,Silver,Silver,Silver,Silver,Silver,Silver,シルバー,실버,银
-trainerName.lance,Lance,Lance,Lance,Lance,Lance,Lance,Lance,ワタル,목호,阿渡
-trainerName.lorelei,Lorelei,Lorelei,Lorelei,Lorelei,Lorelei,Lorelei,Lorelei,カンナ,칸나,科拿
-trainerName.bruno,Bruno,Bruno,Bruno,Bruno,Bruno,Bruno,Bruno,シバ,시바,希巴
-trainerName.agatha,Agatha,Agatha,Agatha,Agatha,Agatha,Agatha,Agatha,キクコ,국화,菊子
+trainerName.silver,Silver,Silver,Plata,Silber,Argento,Silver,Silver,シルバー,실버,银
+trainerName.lance,Lance,Peter,Lance,Siegfried,Lance,Lance,Lance,ワタル,목호,阿渡
+trainerName.lorelei,Lorelei,Olga,Lorelei,Lorelei,Lorelei,Lorelei,Lorelei,カンナ,칸나,科拿
+trainerName.bruno,Bruno,Aldo,Bruno,Bruno,Bruno,Bruno,Bruno,シバ,시바,希巴
+trainerName.agatha,Agatha,Agatha,Agatha,Agathe,Agatha,Agatha,Agatha,キクコ,국화,菊子
 trainerName.rival,Rival,Rival,Rival,Rival,Rivale,Rival,Rival,ライバル,라이벌,劲敌
-trainerName.falkner,Falkner,Falkner,Falkner,Falkner,Falkner,Falkner,Falkner,ハヤト,비상,阿速
-trainerName.bugsy,Bugsy,Bugsy,Bugsy,Bugsy,Bugsy,Bugsy,Bugsy,ツクシ,호일,阿笔
-trainerName.whitney,Whitney,Whitney,Whitney,Whitney,Whitney,Whitney,Whitney,アカネ,꼭두,小茜
-trainerName.morty,Morty,Morty,Morty,Morty,Morty,Morty,Morty,マツバ,유빈,松叶
-trainerName.chuck,Chuck,Chuck,Chuck,Chuck,Chuck,Chuck,Chuck,シジマ,사도,阿四
-trainerName.jasmine,Jasmine,Jasmine,Jasmine,Jasmine,Jasmine,Jasmine,Jasmine,ミカン,규리,阿蜜
-trainerName.pryce,Pryce,Pryce,Pryce,Pryce,Pryce,Pryce,Pryce,ヤナギ,류옹,柳伯
-trainerName.clair,Clair,Clair,Clair,Clair,Clair,Clair,Clair,イブキ,이향,小椿
-trainerName.roxanne,Roxanne,Roxanne,Roxanne,Roxanne,Roxanne,Roxanne,Roxanne,ツツジ,원규,杜鹃
-trainerName.brawly,Brawly,Brawly,Brawly,Brawly,Brawly,Brawly,Brawly,トウキ,철구,藤树
-trainerName.wattson,Wattson,Wattson,Wattson,Wattson,Wattson,Wattson,Wattson,テッセン,암페어,铁旋
-trainerName.flannery,Flannery,Flannery,Flannery,Flannery,Flannery,Flannery,Flannery,アスナ,민지,亚莎
+trainerName.falkner,Falkner,Albert,Pegaso,Falk,Valerio,Falkner,Falkner,ハヤト,비상,阿速
+trainerName.bugsy,Bugsy,Hector,Antón,Kai,Raffaello,Bugsy,Bugsy,ツクシ,호일,阿笔
+trainerName.whitney,Whitney,Blanche,Blanca,Bianka,Chiara,Whitney,Whitney,アカネ,꼭두,小茜
+trainerName.morty,Morty,Mortimer,Morti,Jens,Angelo,Morty,Morty,マツバ,유빈,松叶
+trainerName.chuck,Chuck,Chuck,Aníbal,Hartwig,Furio,Chuck,Chuck,シジマ,사도,阿四
+trainerName.jasmine,Jasmine,Jasmine,Yasmina,Jasmin,Jasmine,Jasmine,Jasmine,ミカン,규리,阿蜜
+trainerName.pryce,Pryce,Frédo,Fredo,Norbert,Alfredo,Pryce,Pryce,ヤナギ,류옹,柳伯
+trainerName.clair,Clair,Sandra,Débora,Sandra,Sandra,Clair,Clair,イブキ,이향,小椿
+trainerName.roxanne,Roxanne,Roxanne,Petra,Felizia,Petra,Roxanne,Roxanne,ツツジ,원규,杜鹃
+trainerName.brawly,Brawly,Bastien,Marcial,Kamillo,Rudi,Brawly,Brawly,トウキ,철구,藤树
+trainerName.wattson,Wattson,Voltère,Erico,Walter,Walter,Wattson,Wattson,テッセン,암페어,铁旋
+trainerName.flannery,Flannery,Adriane,Candela,Flavia,Fiammetta,Flannery,Flannery,アスナ,민지,亚莎
 trainerName.norman,Norman,Norman,Norman,Norman,Norman,Norman,Norman,センリ,종길,千里
-trainerName.winona,Winona,Winona,Winona,Winona,Winona,Winona,Winona,ナギ,은송,娜琪
-trainerName.juan,Juan,Juan,Juan,Juan,Juan,Juan,Juan,アダン,아단,亚当
-trainerName.maxie,Maxie,Maxie,Maxie,Maxie,Maxie,Maxie,Maxie,マツブサ,마적,赤焰松
-trainerName.archie,Archie,Archie,Archie,Archie,Archie,Archie,Archie,アオギリ,아강,水梧桐
-trainerName.steven,Steven,Steven,Steven,Steven,Steven,Steven,Steven,ダイゴ,성호,大吾
-trainerName.ariana,Ariana,Ariana,Ariana,Ariana,Ariana,Ariana,Ariana,アテナ,아테나,雅典娜
-trainerName.petrel,Petrel,Petrel,Petrel,Petrel,Petrel,Petrel,Petrel,ラムダ,람다,拉姆达
-trainerName.tate-liza,Tate & Liza,Tate & Liza,Tate & Liza,Tate & Liza,Tate & Liza,Tate & Liza,Tate & Liza,フウとラン,풍과 란,小枫与小南
+trainerName.winona,Winona,Alizée,Alana,Wibke,Alice,Winona,Winona,ナギ,은송,娜琪
+trainerName.juan,Juan,Juan,Galano,Juan,Rodolfo,Juan,Juan,アダン,아단,亚当
+trainerName.maxie,Maxie,Max,Magno,Marc,Max,Maxie,Maxie,マツブサ,마적,赤焰松
+trainerName.archie,Archie,Arthur,Aquiles,Adrian,Ivan,Archie,Archie,アオギリ,아강,水梧桐
+trainerName.steven,Steven,Pierre Rochard,Máximo,Troy,Rocco,Steven,Steven,ダイゴ,성호,大吾
+trainerName.ariana,Ariana,Ariane,Atenea,Athena,Atena,Ariana,Ariana,アテナ,아테나,雅典娜
+trainerName.petrel,Petrel,Lambda,Petrel,Lambda,Maxus,Petrel,Petrel,ラムダ,람다,拉姆达
+trainerName.tate-liza,Tate & Liza,Lévy & Tatia,Vito & Leti,Ben & Svenja,Tell & Pat,Tate & Liza,Tate & Liza,フウとラン,풍과 란,小枫与小南
 trainerName.amy-may,Amy & May,Amy & May,Amy & May,Amy & May,Amy & May,Amy & May,Amy & May,Amy & May,Amy & May,Amy & May
-trainerName.will,Will,Will,Will,Will,Will,Will,Will,イツキ,일목,一树
-trainerName.karen,Karen,Karen,Karen,Karen,Karen,Karen,Karen,カリン,카렌,梨花
-trainerName.sidney,Sidney,Sidney,Sidney,Sidney,Sidney,Sidney,Sidney,カゲツ,혁진,花月
-trainerName.phoebe,Phoebe,Phoebe,Phoebe,Phoebe,Phoebe,Phoebe,Phoebe,フヨウ,회연,芙蓉
-trainerName.glacia,Glacia,Glacia,Glacia,Glacia,Glacia,Glacia,Glacia,プリム,미혜,波妮
-trainerName.drake,Drake,Drake,Drake,Drake,Drake,Drake,Drake,ゲンジ,권수,源治
-trainerName.wallace,Wallace,Wallace,Wallace,Wallace,Wallace,Wallace,Wallace,ミクリ,윤진,米可利
-trainerName.roark,Roark,Roark,Roark,Roark,Roark,Roark,Roark,ヒョウタ,강석,瓢太
-trainerName.gardenia,Gardenia,Gardenia,Gardenia,Gardenia,Gardenia,Gardenia,Gardenia,ナタネ,유채,菜种
-trainerName.fantina,Fantina,Fantina,Fantina,Fantina,Fantina,Fantina,Fantina,メリッサ,멜리사,梅丽莎
-trainerName.maylene,Maylene,Maylene,Maylene,Maylene,Maylene,Maylene,Maylene,スモモ,자두,阿李
-trainerName.crasher-wake,Crasher Wake,Crasher Wake,Crasher Wake,Crasher Wake,Crasher Wake,Crasher Wake,Crasher Wake,マキシ,맥시,吉宪
-trainerName.byron,Byron,Byron,Byron,Byron,Byron,Byron,Byron,トウガン,동관,东瓜
-trainerName.candice,Candice,Candice,Candice,Candice,Candice,Candice,Candice,スズナ,무청,小菘
-trainerName.volkner,Volkner,Volkner,Volkner,Volkner,Volkner,Volkner,Volkner,デンジ,전진,电次
-trainerName.aaron,Aaron,Aaron,Aaron,Aaron,Aaron,Aaron,Aaron,リョウ,충호,阿柳
-trainerName.bertha,Bertha,Bertha,Bertha,Bertha,Bertha,Bertha,Bertha,キクノ,들국화,菊野
-trainerName.flint,Flint,Flint,Flint,Flint,Flint,Flint,Flint,オーバ,대엽,大叶
-trainerName.lucian,Lucian,Lucian,Lucian,Lucian,Lucian,Lucian,Lucian,ゴヨウ,오엽,悟松
-trainerName.cynthia,Cynthia,Cynthia,Cynthia,Cynthia,Cynthia,Cynthia,Cynthia,シロナ,난천,竹兰
-trainerName.barry,Barry,Barry,Barry,Barry,Barry,Barry,Barry,ジュン,용식,阿驯
-trainerName.cheryl,Cheryl,Cheryl,Cheryl,Cheryl,Cheryl,Cheryl,Cheryl,モミ,모미,米依
-trainerName.riley,Riley,Riley,Riley,Riley,Riley,Riley,Riley,ゲン,현,亚玄
-trainerName.marley,Marley,Marley,Marley,Marley,Marley,Marley,Marley,ミル,미르,米露
-trainerName.buck,Buck,Buck,Buck,Buck,Buck,Buck,Buck,バク,대호,麦
-trainerName.cyrus,Cyrus,Cyrus,Cyrus,Cyrus,Cyrus,Cyrus,Cyrus,アカギ,태홍,赤日
-trainerName.mars,Mars,Mars,Mars,Mars,Mars,Mars,Mars,マーズ,마스,玛尔丝
-trainerName.jupiter,Jupiter,Jupiter,Jupiter,Jupiter,Jupiter,Jupiter,Jupiter,ジュピター,주피터,朱庇特
-trainerName.saturn,Saturn,Saturn,Saturn,Saturn,Saturn,Saturn,Saturn,サターン,새턴,萨坦
-trainerName.thorton,Thorton,Thorton,Thorton,Thorton,Thorton,Thorton,Thorton,ネジキ,네지키,捩木
-trainerName.argenta,Argenta,Argenta,Argenta,Argenta,Argenta,Argenta,Argenta,ケイト,케이트,凯特
-trainerName.darach,Darach,Darach,Darach,Darach,Darach,Darach,Darach,コクラン,코크런,柯克兰
-trainerName.palmer,Palmer,Palmer,Palmer,Palmer,Palmer,Palmer,Palmer,クロツグ,크로츠그,黑次
-trainerName.cheren,Cheren,Cheren,Cheren,Cheren,Cheren,Cheren,Cheren,チェレン,체렌,黑连
-trainerName.bianca,Bianca,Bianca,Bianca,Bianca,Bianca,Bianca,Bianca,ベル,벨,贝尔
-trainerName.chili,Chili,Chili,Chili,Chili,Chili,Chili,Chili,ポッド,팟,伯特
-trainerName.cress,Cress,Cress,Cress,Cress,Cress,Cress,Cress,コーン,콘,寇恩
-trainerName.cilan,Cilan,Cilan,Cilan,Cilan,Cilan,Cilan,Cilan,デント,덴트,天桐
-trainerName.lenora,Lenora,Lenora,Lenora,Lenora,Lenora,Lenora,Lenora,アロエ,알로에,芦荟
-trainerName.burgh,Burgh,Burgh,Burgh,Burgh,Burgh,Burgh,Burgh,アーティ,아티,亚堤
-trainerName.elesa,Elesa,Elesa,Elesa,Elesa,Elesa,Elesa,Elesa,カミツレ,카밀레,小菊儿
-trainerName.clay,Clay,Clay,Clay,Clay,Clay,Clay,Clay,ヤーコン,야콘,菊老大
-trainerName.skyla,Skyla,Skyla,Skyla,Skyla,Skyla,Skyla,Skyla,フウロ,풍란,风露
-trainerName.brycen,Brycen,Brycen,Brycen,Brycen,Brycen,Brycen,Brycen,ハチク,담죽,哈奇库
-trainerName.drayden,Drayden,Drayden,Drayden,Drayden,Drayden,Drayden,Drayden,シャガ,사간,夏卡
+trainerName.will,Will,Clément,Mento,Willi,Pino,Will,Will,イツキ,일목,一树
+trainerName.karen,Karen,Marion,Karen,Melanie,Karen,Karen,Karen,カリン,카렌,梨花
+trainerName.sidney,Sidney,Damien,Sixto,Ulrich,Fosco,Sidney,Sidney,カゲツ,혁진,花月
+trainerName.phoebe,Phoebe,Spectra,Fátima,Antonia,Ester,Phoebe,Phoebe,フヨウ,회연,芙蓉
+trainerName.glacia,Glacia,Glacia,Nívea,Frosina,Frida,Glacia,Glacia,プリム,미혜,波妮
+trainerName.drake,Drake,Aragon,Dracón,Dragan,Drake,Drake,Drake,ゲンジ,권수,源治
+trainerName.wallace,Wallace,Marc,Plubio,Wassili,Adriano,Wallace,Wallace,ミクリ,윤진,米可利
+trainerName.roark,Roark,Pierrick,Roco,Veit,Pedro,Roark,Roark,ヒョウタ,강석,瓢太
+trainerName.gardenia,Gardenia,Flo,Gardenia,Silvana,Gardenia,Gardenia,Gardenia,ナタネ,유채,菜种
+trainerName.fantina,Fantina,Kiméra,Fantina,Lamina,Fannie,Fantina,Fantina,メリッサ,멜리사,梅丽莎
+trainerName.maylene,Maylene,Mélina,Brega,Hilda,Marzia,Maylene,Maylene,スモモ,자두,阿李
+trainerName.crasher-wake,Crasher Wake,Lovis,Mananti,Marinus,Omar,Crasher Wake,Crasher Wake,マキシ,맥시,吉宪
+trainerName.byron,Byron,Charles,Acerón,Adam,Ferruccio,Byron,Byron,トウガン,동관,东瓜
+trainerName.candice,Candice,Gladys,Inverna,Frida,Bianca,Candice,Candice,スズナ,무청,小菘
+trainerName.volkner,Volkner,Tanguy,Lectro,Volkner,Corrado,Volkner,Volkner,デンジ,전진,电次
+trainerName.aaron,Aaron,Aaron,Alecrán,Herbaro,Aaron,Aaron,Aaron,リョウ,충호,阿柳
+trainerName.bertha,Bertha,Terry,Gaia,Teresa,Terrie,Bertha,Bertha,キクノ,들국화,菊野
+trainerName.flint,Flint,Adrien,Fausto,Ignaz,Vulcano,Flint,Flint,オーバ,대엽,大叶
+trainerName.lucian,Lucian,Lucio,Delos,Lucian,Luciano,Lucian,Lucian,ゴヨウ,오엽,悟松
+trainerName.cynthia,Cynthia,Cynthia,Cintia,Cynthia,Camilla,Cynthia,Cynthia,シロナ,난천,竹兰
+trainerName.barry,Barry,René,Israel,Barry,Barry,Barry,Barry,ジュン,용식,阿驯
+trainerName.cheryl,Cheryl,Sara,Malta,Raissa,Demetra,Cheryl,Cheryl,モミ,모미,米依
+trainerName.riley,Riley,Armand,Quinoa,Urs,Marisio,Riley,Riley,ゲン,현,亚玄
+trainerName.marley,Marley,Viviane,Sémola,Charlie,Risetta,Marley,Marley,ミル,미르,米露
+trainerName.buck,Buck,Cornil,Bulgur,Avenaro,Chicco,Buck,Buck,バク,대호,麦
+trainerName.cyrus,Cyrus,Hélio,Helio,Zyrus,Cyrus,Cyrus,Cyrus,アカギ,태홍,赤日
+trainerName.mars,Mars,Mars,Venus,Mars,Martes,Mars,Mars,マーズ,마스,玛尔丝
+trainerName.jupiter,Jupiter,Jupiter,Ceres,Jupiter,Giovia,Jupiter,Jupiter,ジュピター,주피터,朱庇特
+trainerName.saturn,Saturn,Saturne,Saturno,Saturn,Saturno,Saturn,Saturn,サターン,새턴,萨坦
+trainerName.thorton,Thorton,Cardus,Espinal,Distmar,Spino,Thorton,Thorton,ネジキ,네지키,捩木
+trainerName.argenta,Argenta,Célosia,Argenta,Argenta,Mara,Argenta,Argenta,ケイト,케이트,凯特
+trainerName.darach,Darach,Parsley,Kokuran,Perenus,Paride,Darach,Darach,コクラン,코크런,柯克兰
+trainerName.palmer,Palmer,Koner,Jericor,Viktor,Palmer,Palmer,Palmer,クロツグ,크로츠그,黑次
+trainerName.cheren,Cheren,Tcheren,Cheren,Cheren,Komor,Cheren,Cheren,チェレン,체렌,黑连
+trainerName.bianca,Bianca,Bianca,Bel,Bell,Belle,Bianca,Bianca,ベル,벨,贝尔
+trainerName.chili,Chili,Armando,Zeo,Maik,Chicco,Chili,Chili,ポッド,팟,伯特
+trainerName.cress,Cress,Noa,Maíz,Colin,Maisello,Cress,Cress,コーン,콘,寇恩
+trainerName.cilan,Cilan,Rachid,Millo,Benny,Spighetto,Cilan,Cilan,デント,덴트,天桐
+trainerName.lenora,Lenora,Aloé,Aloe,Aloe,Aloé,Lenora,Lenora,アロエ,알로에,芦荟
+trainerName.burgh,Burgh,Artie,Camus,Artie,Artemisio,Burgh,Burgh,アーティ,아티,亚堤
+trainerName.elesa,Elesa,Inezia,Camila,Kamilla,Camelia,Elesa,Elesa,カミツレ,카밀레,小菊儿
+trainerName.clay,Clay,Bardane,Yakón,Turner,Rafan,Clay,Clay,ヤーコン,야콘,菊老大
+trainerName.skyla,Skyla,Carolina,Gerania,Géraldine,Anemone,Skyla,Skyla,フウロ,풍란,风露
+trainerName.brycen,Brycen,Zhu,Junco,Sandro,Silvestro,Brycen,Brycen,ハチク,담죽,哈奇库
+trainerName.drayden,Drayden,Watson,Lirio,Lysander,Aristide,Drayden,Drayden,シャガ,사간,夏卡
 trainerName.n,N,N,N,N,N,N,N,N,N,N
-trainerName.ghetsis,Ghetsis,Ghetsis,Ghetsis,Ghetsis,Ghetsis,Ghetsis,Ghetsis,ゲーチス,게치스,魁奇思
-trainerName.zinzolin,Zinzolin,Zinzolin,Zinzolin,Zinzolin,Zinzolin,Zinzolin,Zinzolin,ヴィオ,비오,维奥
-trainerName.shauntal,Shauntal,Shauntal,Shauntal,Shauntal,Shauntal,Shauntal,Shauntal,シキミ,망초,婉龙
-trainerName.grimsley,Grimsley,Grimsley,Grimsley,Grimsley,Grimsley,Grimsley,Grimsley,ギーマ,블래리,越橘
-trainerName.caitlin,Caitlin,Caitlin,Caitlin,Caitlin,Caitlin,Caitlin,Caitlin,カトレア,카틀레야,嘉德丽雅
-trainerName.marshal,Marshal,Marshal,Marshal,Marshal,Marshal,Marshal,Marshal,レンブ,연무,连武
-trainerName.alder,Alder,Alder,Alder,Alder,Alder,Alder,Alder,アデク,노간주,阿戴克
+trainerName.ghetsis,Ghetsis,Ghetis,Ghechis,G-Cis,Ghecis,Ghetsis,Ghetsis,ゲーチス,게치스,魁奇思
+trainerName.zinzolin,Zinzolin,Lilien,Menek,Violaceus,Violante,Zinzolin,Zinzolin,ヴィオ,비오,维奥
+trainerName.shauntal,Shauntal,Anis,Anís,Anissa,Antemia,Shauntal,Shauntal,シキミ,망초,婉龙
+trainerName.grimsley,Grimsley,Pieris,Aza,Astor,Mirton,Grimsley,Grimsley,ギーマ,블래리,越橘
+trainerName.caitlin,Caitlin,Percila,Catleya,Kattlea,Catlina,Caitlin,Caitlin,カトレア,카틀레야,嘉德丽雅
+trainerName.marshal,Marshal,Kunz,Lotto,Eugen,Marzio,Marshal,Marshal,レンブ,연무,连武
+trainerName.alder,Alder,Goyah,Mirto,Lauro,Nardo,Alder,Alder,アデク,노간주,阿戴克
 # --- UI,,,,,,,,,,
 ui.type.base,Base,Base,Base,Basis,Base,Base,Base,ベース,베이스,基础
 ui.type.normal,Normal,Normal,Normal,Normal,Normale,Normal,Normal,ノーマル,노말,一般
@@ -1032,7 +1032,7 @@ ui.area.autoMode,AUTO-MODE: {state},MODE AUTO : {state},MODO AUTO: {state},AUTO-
 ui.area.yourTeam,Your team,Ton équipe,Tu equipo,Dein Team,La tua squadra,A tua equipa,Sua equipe,手持ち,내 팀,你的队伍
 ui.area.tapToHeal,Tap one to heal it or check it,Touche-en un pour le soigner ou le consulter,Toca uno para curarlo o consultarlo,"Tippe eines an, um es zu heilen oder anzusehen",Toccane uno per curarlo o controllarlo,Toca num para o curar ou ver,Toque em um para curar ou ver,タップで回復・確認,눌러서 회복하거나 확인,点击以回复或查看
 ui.area.explore,EXPLORE,EXPLORER,EXPLORAR,ERKUNDEN,ESPLORA,EXPLORAR,EXPLORAR,たんけんする,탐험하기,探索
-ui.area.nextEncounter,NEXT ENCOUNTER,RENCONTRE SUIVANTE,SIGUIENTE ENCUENTRO,NÄCHSTE BEGEGNUNG,PROSSIMO INCONTRO,PRÓXIMO ENCONTRO,PRÓXIMO ENCONTRO,次の遭遇へ,다음 조우,下一次遭遇
+ui.area.between,"Back on the trail: check on your team, then keep going.","De retour sur le chemin : jette un œil à ton équipe, puis continue.",De vuelta al camino: revisa tu equipo y sigue adelante.,Zurück auf dem Weg: Sieh nach deinem Team und zieh dann weiter.,"Di nuovo in cammino: controlla la tua squadra, poi prosegui.",De volta ao caminho: vê como está a tua equipa e continua.,De volta ao caminho: confira sua equipe e siga em frente.,道に戻った。手持ちのようすを確かめて、先へ進もう。,다시 길 위로! 팀 상태를 확인하고 계속 나아가자.,回到路上了：看看队伍的状态，然后继续前进。
 ui.area.outOfEnergy,Out of energy · next in {time},Plus d'énergie · prochaine dans {time},Sin energía · la siguiente en {time},Keine Energie · nächste in {time},Energia esaurita · la prossima tra {time},Sem energia · a próxima daqui a {time},Sem energia · a próxima em {time},エネルギー切れ・次の回復まで{time},에너지 없음 · 다음 회복까지 {time},能量不足 · {time}后恢复
 ui.area.gymReady,Every round done — {trainer} is ready when you are.,Toutes les manches sont faites — {trainer} t'attend quand tu veux.,Todas las rondas completadas: {trainer} te espera cuando quieras.,"Alle Runden geschafft — {trainer} ist bereit, wenn du es bist.",Tutti i giri completati — {trainer} ti aspetta quando vuoi.,Todas as rondas concluídas — {trainer} está pronto quando quiseres.,Todas as rodadas concluídas — {trainer} está pronto quando você quiser.,全ラウンド完了 — {trainer}がいつでも待っている。,모든 라운드 완료 — {trainer}이(가) 기다리고 있다.,所有轮次已完成 — {trainer}随时恭候。
 ui.area.bossWaiting,The ground trembles. Something powerful is waiting…,Le sol tremble. Quelque chose de puissant attend…,El suelo tiembla. Algo poderoso espera…,Der Boden bebt. Etwas Mächtiges wartet …,Il terreno trema. Qualcosa di potente ti aspetta…,O chão treme. Algo poderoso está à espera…,O chão treme. Algo poderoso está esperando…,地面がゆれている。何か強大なものが待ち受けている…,땅이 흔들린다. 무언가 강력한 것이 기다리고 있다…,大地在颤抖。有什么强大的东西在等待着…
@@ -1364,6 +1364,10 @@ ui.dayCare.takeBackName,Take back {name},Récupérer {name},Recoger a {name},{na
 ui.dayCare.fossil,Still a fossil,Encore un fossile,Todavía es un fósil,Noch ein Fossil,Ancora un fossile,Ainda é um fóssil,Ainda é um fóssil,まだカセキ,아직 화석,还是化石
 ui.dayCare.searchLabel,Search your Pokémon,Chercher tes Pokémon,Buscar tus Pokémon,Deine Pokémon durchsuchen,Cerca i tuoi Pokémon,Procurar os teus Pokémon,Buscar seus Pokémon,ポケモンをさがす,포켓몬 검색,搜索你的宝可梦
 ui.dayCare.noMatch,No Pokémon by that name.,Aucun Pokémon de ce nom.,Ningún Pokémon con ese nombre.,Kein Pokémon mit diesem Namen.,Nessun Pokémon con quel nome.,Nenhum Pokémon com esse nome.,Nenhum Pokémon com esse nome.,その名前のポケモンはいません。,그 이름의 포켓몬이 없어요.,没有这个名字的宝可梦。
+ui.dayCare.sortLevel,Sort by level,Trier par niveau,Ordenar por nivel,Nach Level sortieren,Ordina per livello,Ordenar por nível,Ordenar por nível,レベルで並べ替え,레벨순 정렬,按等级排序
+ui.dayCare.lowFirst,Lowest Lv,N. bas,Nv. bajo,Lv. niedrig,Lv. basso,Nv. baixo,Nv. baixo,Lv.低い順,Lv. 낮은 순,等级从低到高
+ui.dayCare.highFirst,Highest Lv,N. haut,Nv. alto,Lv. hoch,Lv. alto,Nv. alto,Nv. alto,Lv.高い順,Lv. 높은 순,等级从高到低
+ui.dayCare.noCompatibleMine,None of your Pokémon pairs with those at the Day Care.,Aucun de tes Pokémon ne va avec ceux de la Pension.,Ninguno de tus Pokémon es compatible con los de la Guardería.,Keins deiner Pokémon passt zu denen in der Pension.,Nessuno dei tuoi Pokémon è compatibile con quelli della Pensione.,Nenhum dos teus Pokémon é compatível com os da Creche.,Nenhum dos seus Pokémon é compatível com os da Creche.,そだてやのポケモンと相性のいいポケモンがいない。,키우미집 포켓몬과 짝이 되는 포켓몬이 없어요.,你没有能和培育屋里的宝可梦配对的宝可梦。
 ui.dayCare.staysToast,{name} is staying at the Day Care.,{name} reste à la Pension.,{name} se queda en la Guardería.,{name} bleibt in der Pension.,{name} resta alla Pensione.,{name} fica na Creche.,{name} fica na Creche.,{name}をそだてやにあずけた。,{name}를(을) 키우미집에 맡겼어요.,{name}留在了培育屋。
 ui.dayCare.done,Done,Terminé,Listo,Fertig,Fatto,Concluído,Pronto,おわる,완료,完成
 ui.dayCare.inTime,in {time},dans {time},en {time},in {time},tra {time},daqui a {time},em {time},{time}後,{time} 후,{time}后
@@ -1632,9 +1636,9 @@ ui.rounds.progress,{done} of {need} rounds done,{done} manches sur {need},{done}
 ui.tutorial.boardTitle,The leaderboard,Le classement,La clasificación,Die Bestenliste,La classifica,A classificação,A classificação,ランキング,랭킹,排行榜
 ui.tutorial.boardBody,"Trainers all over the world are on the same journey as you! The leaderboard ranks them by their best Pokémon level, how far they got, and their Pokédex. Open it any time with the trophy button at the top. Connect to take your place on it!","Des Dresseurs du monde entier vivent le même voyage que toi ! Le classement les range selon le niveau de leur meilleur Pokémon, leur avancée et leur Pokédex. Ouvre-le quand tu veux avec le bouton trophée en haut. Connecte-toi pour y prendre ta place !","¡Entrenadores de todo el mundo están en el mismo viaje que tú! La clasificación los ordena por el nivel de su mejor Pokémon, lo lejos que han llegado y su Pokédex. Ábrela cuando quieras con el botón del trofeo de arriba. ¡Conéctate para ocupar tu sitio en ella!","Trainer auf der ganzen Welt sind auf derselben Reise wie du! Die Bestenliste ordnet sie nach dem Level ihres besten Pokémon, wie weit sie gekommen sind und ihrem Pokédex. Öffne sie jederzeit mit der Pokal-Schaltfläche oben. Verbinde dich, um deinen Platz einzunehmen!","Allenatori di tutto il mondo fanno il tuo stesso viaggio! La classifica li ordina per il livello del loro Pokémon migliore, per quanto sono arrivati lontano e per il Pokédex. Aprila quando vuoi con il pulsante del trofeo in alto. Collegati per prendere il tuo posto!","Treinadores de todo o mundo fazem a mesma viagem que tu! A classificação ordena-os pelo nível do seu melhor Pokémon, por quão longe chegaram e pela sua Pokédex. Abre-a quando quiseres com o botão do troféu no topo. Liga-te para ocupares o teu lugar!","Treinadores do mundo todo estão na mesma jornada que você! A classificação ordena todos pelo nível do melhor Pokémon, por quão longe chegaram e pela Pokédex. Abra quando quiser pelo botão do troféu no topo. Conecte-se para ocupar o seu lugar!",世界中のトレーナーがきみと同じ旅をしている！ランキングでは、いちばん高いポケモンのレベル、進み具合、図鑑で順位が決まる。上のトロフィーボタンでいつでも見られるよ。連携して、ランキングに名を連ねよう！,"전 세계의 트레이너들이 너와 같은 여행을 하고 있어! 랭킹은 가장 높은 포켓몬 레벨, 진행도, 도감으로 순위를 매겨. 위쪽의 트로피 버튼으로 언제든 열 수 있어. 연결하고 랭킹에 이름을 올려 봐!",世界各地的训练家都在和你进行同样的旅程！排行榜按最高宝可梦等级、进度和图鉴来排名。随时可以点击顶部的奖杯按钮打开。连接账号，登上排行榜吧！
 ui.tutorial.seeBoard,SEE THE LEADERBOARD,VOIR LE CLASSEMENT,VER LA CLASIFICACIÓN,ZUR BESTENLISTE,VEDI LA CLASSIFICA,VER A CLASSIFICAÇÃO,VER A CLASSIFICAÇÃO,ランキングを見る,랭킹 보기,查看排行榜
-ui.share.title,Enjoying the game?,Tu aimes le jeu ?,¿Te gusta el juego?,Gefällt dir das Spiel?,Ti piace il gioco?,Estás a gostar do jogo?,Está curtindo o jogo?,楽しんでる？,재미있나요?,玩得开心吗？
-ui.share.body,You like the game? Share it to a friend!,Tu aimes le jeu ? Partage-le à un ami !,¿Te gusta el juego? ¡Compártelo con un amigo!,Gefällt dir das Spiel? Teile es mit einem Freund!,Ti piace il gioco? Condividilo con un amico!,Gostas do jogo? Partilha-o com um amigo!,Gostou do jogo? Compartilhe com um amigo!,このゲームが気に入った？友だちにシェアしよう！,게임이 마음에 드나요? 친구에게 공유해 주세요!,喜欢这个游戏吗？分享给朋友吧！
-ui.share.button,SHARE,PARTAGER,COMPARTIR,TEILEN,CONDIVIDI,PARTILHAR,COMPARTILHAR,シェア,공유,分享
+ui.share.title,Invite a friend,Invite un ami,Invita a un amigo,Lade einen Freund ein,Invita un amico,Convida um amigo,Convide um amigo,友だちを招待しよう,친구를 초대하자,邀请好友
+ui.share.body,You like the game? Invite a friend to play with you!,Tu aimes le jeu ? Invite un ami à jouer avec toi !,¿Te gusta el juego? ¡Invita a un amigo a jugar contigo!,"Gefällt dir das Spiel? Lade einen Freund ein, mit dir zu spielen!",Ti piace il gioco? Invita un amico a giocare con te!,Gostas do jogo? Convida um amigo para jogar contigo!,Curtiu o jogo? Convide um amigo para jogar com você!,ゲームは楽しい？友だちを招待して、いっしょに遊ぼう！,게임이 재미있나요? 친구를 초대해서 같이 플레이해요!,喜欢这个游戏吗？邀请好友一起来玩吧！
+ui.share.button,INVITE,INVITER,INVITAR,EINLADEN,INVITA,CONVIDAR,CONVIDAR,招待する,초대하기,邀请
 ui.share.later,LATER,PLUS TARD,MÁS TARDE,SPÄTER,PIÙ TARDI,MAIS TARDE,MAIS TARDE,あとで,나중에,以后再说
 ui.share.text,Catch them all with dice in Pokédice!,Attrape-les tous avec des dés dans Pokédice !,¡Atrápalos a todos con dados en Pokédice!,Schnapp sie dir alle mit Würfeln in Pokédice!,Acchiappali tutti con i dadi in Pokédice!,Apanha-os todos com dados no Pokédice!,Pegue todos com dados no Pokédice!,Pokédiceでダイスを振ってポケモンをゲットしよう！,Pokédice에서 주사위로 포켓몬을 모두 잡아 보자!,在Pokédice里用骰子收服所有宝可梦吧！
 ui.share.copied,Link copied — send it to a friend!,Lien copié — envoie-le à un ami !,Enlace copiado: ¡envíaselo a un amigo!,Link kopiert — schick ihn einem Freund!,Link copiato: mandalo a un amico!,Link copiado — envia-o a um amigo!,Link copiado — mande para um amigo!,リンクをコピーした — 友だちに送ろう！,링크를 복사했어요 — 친구에게 보내세요!,链接已复制 — 发给朋友吧！
@@ -1729,9 +1733,7 @@ ui.profile.title,Trainer card,Carte de Dresseur,Tarjeta de Entrenador,Trainerkar
 ui.profile.menuLabel,Your trainer menu,Ton menu de Dresseur,Tu menú de Entrenador,Dein Trainer-Menü,Il tuo menu allenatore,O teu menu de treinador,Seu menu de treinador,トレーナーメニュー,트레이너 메뉴,训练家菜单
 ui.profile.menuLabelNew,"Trainer menu, new friends: {n}","Menu du dresseur, nouveaux amis : {n}","Menú del entrenador, amigos nuevos: {n}","Trainermenü, neue Freunde: {n}","Menu allenatore, nuovi amici: {n}","Menu do treinador, novos amigos: {n}","Menu do treinador, novos amigos: {n}",トレーナーメニュー・新しいフレンド：{n},"트레이너 메뉴, 새 친구: {n}",训练家菜单，新好友：{n}
 ui.profile.guide,How to play,Comment jouer,Cómo jugar,Spielanleitung,Come si gioca,Como jogar,Como jogar,あそびかた,플레이 방법,玩法说明
-ui.profile.badgeCase,Badge case,Boîte à badges,Estuche de medallas,Ordensetui,Portamedaglie,Estojo de insígnias,Estojo de insígnias,バッジケース,배지 케이스,徽章盒
 ui.profile.badgeLocked,{badge} — not earned yet,{badge} — pas encore gagné,{badge}: aún no conseguida,{badge} — noch nicht verdient,{badge}: non ancora ottenuta,{badge} — ainda não conquistada,{badge} — ainda não conquistada,{badge} — まだ手に入れていない,{badge} — 아직 얻지 못함,{badge} — 尚未获得
-ui.profile.crownHint,The crown is for clearing the region's last area.,La couronne récompense la dernière zone de la région.,La corona es por completar la última zona de la región.,Die Krone gibt es für das letzte Gebiet der Region.,La corona si ottiene completando l'ultima area della regione.,A coroa é para quem conclui a última área da região.,A coroa é para quem conclui a última área da região.,王冠は、その地方の最後のエリアをクリアした証です。,왕관은 그 지방의 마지막 지역을 클리어한 증표예요.,王冠是通关该地区最后一个区域的证明。
 ui.profile.look,Leaderboard & Versus,Classement et Versus,Clasificación y Versus,Bestenliste & Versus,Classifica e Versus,Classificação e Versus,Classificação e Versus,ランキングと対戦,랭킹과 대전,排行榜与对战
 ui.profile.lookHint,How other trainers see you. Your character in battle doesn't change.,C'est ainsi que les autres Dresseurs te voient. Ton personnage en combat ne change pas.,Así te ven los demás Entrenadores. Tu personaje en combate no cambia.,So sehen dich andere Trainer. Deine Figur im Kampf bleibt gleich.,Così ti vedono gli altri allenatori. Il tuo personaggio in battaglia non cambia.,É assim que os outros treinadores te veem. A tua personagem em combate não muda.,É assim que os outros treinadores veem você. Seu personagem na batalha não muda.,ほかのトレーナーから見える姿です。バトルでのキャラクターは変わりません。,다른 트레이너에게 보이는 모습이에요. 배틀 속 캐릭터는 그대로예요.,其他训练家看到的你的形象。对战中的角色不会改变。
 ui.profile.lookTitle,Choose your look,Choisis ton apparence,Elige tu aspecto,Wähle dein Aussehen,Scegli il tuo aspetto,Escolhe o teu visual,Escolha seu visual,見た目を選ぼう,모습을 고르세요,选择你的形象
@@ -1741,11 +1743,11 @@ ui.card.money,Money,Argent,Dinero,Geld,Soldi,Dinheiro,Dinheiro,おこづかい,�
 ui.card.dex,Pokédex,Pokédex,Pokédex,Pokédex,Pokédex,Pokédex,Pokédex,ずかん,도감,图鉴
 ui.card.best,Best level,Meilleur niveau,Nivel máximo,Höchstes Level,Livello massimo,Melhor nível,Melhor nível,最高レベル,최고 레벨,最高等级
 ui.card.areas,Areas,Zones,Zonas,Gebiete,Zone,Zonas,Áreas,エリア,지역,区域
+ui.card.badges,Badges,Badges,Medallas,Orden,Medaglie,Insígnias,Insígnias,バッジ,배지,徽章
 ui.card.shinies,Shinies,Chromatiques,Variocolor,Schillernde,Cromatici,Brilhantes,Brilhantes,色ちがい,이로치,异色
 ui.card.versus,Versus,Versus,Versus,Versus,Versus,Versus,Versus,対戦,대결,对战
 ui.card.versusRecord,{won} won · {held} held,{won} gagnés · {held} tenus,{won} ganados · {held} resistidos,{won} gewonnen · {held} gehalten,{won} vinti · {held} difesi,{won} ganhos · {held} defendidos,{won} ganhos · {held} defendidos,{won}勝・防衛{held},{won}승 · 방어 {held},{won}胜 · 守住{held}
 ui.card.locked,Locked,Verrouillé,Bloqueado,Gesperrt,Bloccato,Bloqueado,Bloqueado,まだ,잠김,未解锁
-ui.card.crown,Crown,Couronne,Corona,Krone,Corona,Coroa,Coroa,王冠,왕관,王冠
 ui.card.rename,Change your name,Changer ton nom,Cambiar tu nombre,Namen ändern,Cambia il tuo nome,Mudar o teu nome,Mudar seu nome,名前をかえる,이름 바꾸기,更改名字
 ui.card.lookIs,How other trainers see you: {look}. Your character in battle doesn't change.,Comment les autres dresseurs te voient : {look}. Ton personnage en combat ne change pas.,Cómo te ven los demás entrenadores: {look}. Tu personaje en combate no cambia.,So sehen dich andere Trainer: {look}. Deine Figur im Kampf bleibt gleich.,Come ti vedono gli altri allenatori: {look}. Il tuo personaggio in lotta non cambia.,Como os outros treinadores te veem: {look}. A tua personagem em combate não muda.,Como os outros treinadores veem você: {look}. Seu personagem em batalha não muda.,ほかのトレーナーからの見え方：{look}。バトルのキャラクターは変わらない。,다른 트레이너에게 보이는 모습: {look}. 배틀 캐릭터는 바뀌지 않아요.,其他训练家看到的你：{look}。对战中的角色不变。
 ui.card.done,Done,Terminé,Listo,Fertig,Fatto,Concluído,Pronto,おわる,완료,完成
@@ -2047,6 +2049,67 @@ ui.settings.deleteTitle,Delete your save?,Supprimer ta sauvegarde ?,¿Borrar tu 
 ui.settings.deleteBody,This can't be undone{cloud}.,C'est irréversible{cloud}.,Esto no se puede deshacer{cloud}.,Das lässt sich nicht rückgängig machen{cloud}.,Non si può annullare{cloud}.,Isto não pode ser desfeito{cloud}.,Isso não pode ser desfeito{cloud}.,元に戻せません{cloud}。,되돌릴 수 없어요{cloud}.,此操作无法撤销{cloud}。
 ui.settings.deleteCloudNote, (the cloud copy stays until you start a new game), (la copie en ligne reste jusqu'à ce que tu commences une nouvelle partie), (la copia en la nube permanece hasta que empieces una partida nueva)," (die Cloud-Kopie bleibt, bis du ein neues Spiel beginnst)", (la copia nel cloud resta finché non inizi una nuova partita), (a cópia na nuvem fica até começares um jogo novo), (a cópia na nuvem fica até você começar um jogo novo), （クラウドのコピーは新しいゲームを始めるまで残ります）, (클라우드 사본은 새 게임을 시작할 때까지 남아요), （云端副本会保留到你开始新游戏为止）
 ui.settings.delete,Delete,Supprimer,Borrar,Löschen,Elimina,Apagar,Excluir,削除,삭제,删除
+ui.settings.wipe,Delete all my data,Supprimer toutes mes données,Borrar todos mis datos,Alle meine Daten löschen,Elimina tutti i miei dati,Apagar todos os meus dados,Excluir todos os meus dados,すべてのデータを削除,모든 데이터 삭제,删除我的所有数据
+ui.settings.wipeTitle,Delete all your data?,Supprimer toutes tes données ?,¿Borrar todos tus datos?,Alle deine Daten löschen?,Eliminare tutti i tuoi dati?,Apagar todos os teus dados?,Excluir todos os seus dados?,すべてのデータを削除する？,모든 데이터를 삭제할까요?,要删除你的所有数据吗？
+ui.settings.wipeBodyOnline,"Your save, its backups and everything the game keeps in this browser will be deleted, and so will everything it keeps online: your cloud save, trainer card, friends, Versus team and special events progress. Your account and your settings stay.","Ta sauvegarde, ses copies de secours et tout ce que le jeu garde dans ce navigateur seront supprimés, ainsi que tout ce qu'il garde en ligne : ta sauvegarde en ligne, ta carte de Dresseur, tes amis, ton équipe Versus et ta progression dans les événements spéciaux. Ton compte et tes réglages restent.","Se borrarán tu partida, sus copias de seguridad y todo lo que el juego guarda en este navegador, y también todo lo que guarda en línea: tu partida en la nube, tu tarjeta de entrenador, tus amigos, tu equipo de Versus y tu progreso en los eventos especiales. Tu cuenta y tus ajustes se quedan.","Dein Spielstand, seine Sicherungen und alles, was das Spiel in diesem Browser speichert, werden gelöscht – ebenso alles, was es online speichert: dein Cloud-Spielstand, deine Trainerkarte, deine Freunde, dein Versus-Team und dein Fortschritt bei den Sonderevents. Dein Konto und deine Einstellungen bleiben.","Il tuo salvataggio, i suoi backup e tutto ciò che il gioco conserva in questo browser verranno eliminati, e così anche tutto ciò che conserva online: il salvataggio nel cloud, la scheda allenatore, gli amici, la squadra Versus e i progressi negli eventi speciali. Il tuo account e le impostazioni restano.","O teu jogo, as suas cópias de segurança e tudo o que o jogo guarda neste navegador serão apagados, tal como tudo o que guarda online: o teu jogo na nuvem, o teu cartão de treinador, os teus amigos, a tua equipa Versus e o teu progresso nos eventos especiais. A tua conta e as tuas definições ficam.","Seu jogo, os backups dele e tudo o que o jogo guarda neste navegador serão excluídos, assim como tudo o que ele guarda online: seu jogo na nuvem, seu cartão de treinador, seus amigos, seu time de Versus e seu progresso nos eventos especiais. Sua conta e suas configurações ficam.",セーブデータ、そのバックアップ、このブラウザにゲームが保存しているものがすべて削除されます。オンラインに保存しているものもすべて削除されます：クラウドのセーブデータ、トレーナーカード、フレンド、対戦のチーム、スペシャルイベントの進行状況。アカウントと設定は残ります。,"저장 데이터와 그 백업, 이 브라우저에 게임이 보관한 모든 것이 삭제돼요. 온라인에 보관한 모든 것도 삭제돼요: 클라우드 저장 데이터, 트레이너 카드, 친구, 대전 팀, 스페셜 이벤트 진행 상황. 계정과 설정은 남아요.",你的存档、存档备份以及游戏在这个浏览器中保存的一切都会被删除，在线保存的一切也会被删除：云端存档、训练家卡、好友、对战队伍和特别活动进度。你的账号和设置会保留。
+ui.settings.wipeBodyLocal,"Your save, its backups and everything the game keeps in this browser will be deleted. Your settings stay. A cloud save stays too: connect first to delete it as well.","Ta sauvegarde, ses copies de secours et tout ce que le jeu garde dans ce navigateur seront supprimés. Tes réglages restent. Une sauvegarde en ligne reste aussi : connecte-toi d'abord pour la supprimer également.","Se borrarán tu partida, sus copias de seguridad y todo lo que el juego guarda en este navegador. Tus ajustes se quedan. Una partida en la nube también se queda: conéctate primero para borrarla también.","Dein Spielstand, seine Sicherungen und alles, was das Spiel in diesem Browser speichert, werden gelöscht. Deine Einstellungen bleiben. Ein Cloud-Spielstand bleibt auch: Verbinde dich zuerst, um ihn ebenfalls zu löschen.","Il tuo salvataggio, i suoi backup e tutto ciò che il gioco conserva in questo browser verranno eliminati. Le impostazioni restano. Anche un salvataggio nel cloud resta: collegati prima per eliminare anche quello.","O teu jogo, as suas cópias de segurança e tudo o que o jogo guarda neste navegador serão apagados. As tuas definições ficam. Um jogo na nuvem também fica: liga-te primeiro para o apagar também.","Seu jogo, os backups dele e tudo o que o jogo guarda neste navegador serão excluídos. Suas configurações ficam. Um jogo na nuvem também fica: conecte-se primeiro para excluí-lo também.",セーブデータ、そのバックアップ、このブラウザにゲームが保存しているものがすべて削除されます。設定は残ります。クラウドのセーブデータも残ります。それも削除するには、先に連携してください。,"저장 데이터와 그 백업, 이 브라우저에 게임이 보관한 모든 것이 삭제돼요. 설정은 남아요. 클라우드 저장 데이터도 남아요: 함께 삭제하려면 먼저 연결하세요.",你的存档、存档备份以及游戏在这个浏览器中保存的一切都会被删除。你的设置会保留。云端存档也会保留：要一并删除，请先连接。
+ui.settings.wipeSureTitle,Really delete everything?,Vraiment tout supprimer ?,¿De verdad lo borras todo?,Wirklich alles löschen?,Eliminare davvero tutto?,Apagar mesmo tudo?,Excluir tudo mesmo?,本当にすべて削除する？,정말 모두 삭제할까요?,真的要全部删除吗？
+ui.settings.wipeSureBody,"Last step. Once deleted, your data is gone for good: this can't be undone.","Dernière étape. Une fois supprimées, tes données sont perdues pour de bon : c'est irréversible.","Último paso. Una vez borrados, tus datos se pierden para siempre: esto no se puede deshacer.","Letzter Schritt. Einmal gelöscht, sind deine Daten für immer weg: Das lässt sich nicht rückgängig machen.","Ultimo passo. Una volta eliminati, i tuoi dati sono persi per sempre: non si può annullare.","Último passo. Depois de apagados, os teus dados desaparecem para sempre: isto não pode ser desfeito.","Último passo. Depois de excluídos, seus dados somem para sempre: isso não pode ser desfeito.",これが最後の確認です。削除したデータは二度と戻りません。元に戻せません。,마지막 단계예요. 삭제한 데이터는 영영 사라져요. 되돌릴 수 없어요.,这是最后一步。数据一旦删除就永远消失了，此操作无法撤销。
+ui.settings.wipeConfirm,Delete everything,Tout supprimer,Borrarlo todo,Alles löschen,Elimina tutto,Apagar tudo,Excluir tudo,すべて削除,모두 삭제,全部删除
+ui.settings.wiping,Deleting…,Suppression…,Borrando…,Wird gelöscht…,Eliminazione…,A apagar…,Excluindo…,削除中…,삭제 중…,正在删除…
+ui.settings.wipeFailed,"Your online data couldn't be deleted, so nothing was. Try again later.","Tes données en ligne n'ont pas pu être supprimées, donc rien ne l'a été. Réessaie plus tard.","No se pudieron borrar tus datos en línea, así que no se borró nada. Inténtalo más tarde.","Deine Online-Daten konnten nicht gelöscht werden, also wurde nichts gelöscht. Versuch es später noch einmal.","Non è stato possibile eliminare i tuoi dati online, quindi non è stato eliminato nulla. Riprova più tardi.","Não foi possível apagar os teus dados online, por isso nada foi apagado. Tenta mais tarde.","Não foi possível excluir seus dados online, então nada foi excluído. Tente de novo mais tarde.",オンラインのデータを削除できなかったため、何も削除していません。あとでもう一度お試しください。,온라인 데이터를 삭제하지 못해서 아무것도 삭제하지 않았어요. 나중에 다시 시도해 주세요.,无法删除你的在线数据，所以什么都没有删除。请稍后再试。
+ui.extreme.name,Extreme mode,Mode Extrême,Modo Extremo,Extrem-Modus,Modalità Estrema,Modo Extremo,Modo Extremo,エクストリームモード,익스트림 모드,极限模式
+ui.extreme.chip,Extreme,Extrême,Extremo,Extrem,Estrema,Extremo,Extremo,エクストリーム,익스트림,极限
+ui.extreme.band,Extreme mode · no Pokémon Centers,Mode Extrême · pas de Centre Pokémon,Modo Extremo · sin Centros Pokémon,Extrem-Modus · keine Pokémon-Center,Modalità Estrema · niente Centri Pokémon,Modo Extremo · sem Centros Pokémon,Modo Extremo · sem Centros Pokémon,エクストリームモード・ポケモンセンターなし,익스트림 모드 · 포켓몬센터 없음,极限模式 · 没有宝可梦中心
+ui.extreme.rules.world.title,A world of its own,Un monde à part,Un mundo aparte,Eine eigene Welt,Un mondo a parte,Um mundo à parte,Um mundo à parte,もうひとつの世界,또 하나의 세계,独立的世界
+ui.extreme.rules.world.text,"A new save with its own leaderboard, Versus and events. Your friends come along, but you only meet their Extreme saves.","Une nouvelle partie avec son propre classement, ses Versus et ses événements. Tes amis te suivent, mais tu ne croises que leurs parties Extrêmes.","Una partida nueva con su propia clasificación, Versus y eventos. Tus amigos te acompañan, pero solo te cruzas con sus partidas Extremas.","Ein neuer Spielstand mit eigener Bestenliste, eigenem Versus und eigenen Events. Deine Freunde kommen mit, aber du triffst nur ihre Extrem-Spielstände.","Un nuovo salvataggio con la sua classifica, i suoi Versus e i suoi eventi. I tuoi amici vengono con te, ma incontri solo i loro salvataggi Estremi.","Um jogo novo com a sua própria classificação, Versus e eventos. Os teus amigos vêm contigo, mas só encontras os jogos Extremos deles.","Um jogo novo com sua própria classificação, Versus e eventos. Seus amigos vêm junto, mas você só encontra os jogos Extremos deles.",ランキング、対戦、イベントが別になった新しいセーブデータ。フレンドはそのままだけど、出会えるのは相手のエクストリームのセーブデータだけ。,"랭킹, 대전, 이벤트가 따로인 새 저장 데이터예요. 친구는 그대로지만, 친구의 익스트림 저장 데이터만 만나요.",一个全新的存档，有自己的排行榜、对战和活动。好友会一起来，但你只会遇到他们的极限存档。
+ui.extreme.rules.centers.title,No Pokémon Centers,Pas de Centre Pokémon,Sin Centros Pokémon,Keine Pokémon-Center,Niente Centri Pokémon,Sem Centros Pokémon,Sem Centros Pokémon,ポケモンセンターなし,포켓몬센터 없음,没有宝可梦中心
+ui.extreme.rules.centers.text,"Nothing heals you on the road, and losing a round doesn't either.","Rien ne te soigne en route, et perdre une manche non plus.","Nada te cura por el camino, y perder una ronda tampoco.","Unterwegs heilt dich nichts, und eine verlorene Runde auch nicht.","Niente ti cura per strada, e nemmeno perdere un giro.","Nada te cura pelo caminho, e perder uma ronda também não.","Nada cura você pelo caminho, e perder uma rodada também não.",道中で回復する手段はなく、ラウンドに負けても回復しない。,"길에서 회복할 방법이 없고, 라운드에서 져도 회복되지 않아요.",路上没有任何回复，输掉一轮也不会回复。
+ui.extreme.rules.ko.title,K.O. lasts {h} h,Un K.O. dure {h} h,Debilitado {h} h,Besiegt für {h} Std.,Esausto per {h} h,Um K.O. dura {h} h,Um K.O. dura {h} h,ひんしは{h}時間,기절은 {h}시간,濒死持续{h}小时
+ui.extreme.rules.ko.text,A Pokémon that faints comes back at {hp} HP {h} hours later. Revives still work.,Un Pokémon K.O. revient avec {hp} PV {h} heures plus tard. Les Rappels marchent toujours.,Un Pokémon debilitado vuelve con {hp} PS {h} horas después. Los Revivir siguen funcionando.,Ein besiegtes Pokémon kommt {h} Stunden später mit {hp} KP zurück. Beleber wirken weiterhin.,Un Pokémon esausto torna con {hp} PS {h} ore dopo. I Revitalizzanti funzionano ancora.,Um Pokémon K.O. volta com {hp} PS {h} horas depois. Os Reviver continuam a funcionar.,Um Pokémon K.O. volta com {hp} PS {h} horas depois. Os Reviver continuam funcionando.,ひんしになったポケモンは{h}時間後にHP{hp}で戻ってくる。げんきのかけらは使える。,기절한 포켓몬은 {h}시간 뒤에 HP {hp}로 돌아와요. 기력의조각은 그대로 쓸 수 있어요.,濒死的宝可梦会在{h}小时后以{hp}点HP回来。活力碎片依然有效。
+ui.extreme.rules.ko.textNoItems,A Pokémon that faints comes back at {hp} HP {h} hours later.,Un Pokémon K.O. revient avec {hp} PV {h} heures plus tard.,Un Pokémon debilitado vuelve con {hp} PS {h} horas después.,Ein besiegtes Pokémon kommt {h} Stunden später mit {hp} KP zurück.,Un Pokémon esausto torna con {hp} PS {h} ore dopo.,Um Pokémon K.O. volta com {hp} PS {h} horas depois.,Um Pokémon K.O. volta com {hp} PS {h} horas depois.,ひんしになったポケモンは{h}時間後にHP{hp}で戻ってくる。,기절한 포켓몬은 {h}시간 뒤에 HP {hp}로 돌아와요.,濒死的宝可梦会在{h}小时后以{hp}点HP回来。
+ui.extreme.rules.away.title,Rest while away,Repos pendant ton absence,Descanso mientras no estás,"Erholung, während du weg bist",Riposo mentre sei via,Descanso enquanto estás fora,Descanso enquanto você está fora,いない間に休む,없는 동안 휴식,离开时休息
+ui.extreme.rules.away.text,Your Pokémon heal {pct}% an hour while you're out of the game. Never while you play.,Tes Pokémon récupèrent {pct} % par heure quand tu n'es pas dans le jeu. Jamais pendant que tu joues.,Tus Pokémon se curan un {pct} % por hora mientras estás fuera del juego. Nunca mientras juegas.,"Deine Pokémon heilen {pct} % pro Stunde, während du nicht im Spiel bist. Nie, während du spielst.",I tuoi Pokémon recuperano il {pct}% all'ora mentre sei fuori dal gioco. Mai mentre giochi.,Os teus Pokémon recuperam {pct}% por hora enquanto estás fora do jogo. Nunca enquanto jogas.,Seus Pokémon recuperam {pct}% por hora enquanto você está fora do jogo. Nunca enquanto você joga.,ゲームを閉じている間、ポケモンは1時間に{pct}%回復する。遊んでいる間は回復しない。,게임을 떠나 있는 동안 포켓몬은 1시간에 {pct}%씩 회복해요. 플레이 중에는 회복하지 않아요.,离开游戏时，宝可梦每小时回复{pct}%。游玩时不会回复。
+ui.extreme.rules.away.off,Time out of the game heals nothing: only items do.,Le temps passé hors du jeu ne soigne rien : seuls les objets le font.,El tiempo fuera del juego no cura nada: solo los objetos.,Zeit außerhalb des Spiels heilt nichts: nur Items tun das.,Il tempo fuori dal gioco non cura nulla: solo gli strumenti lo fanno.,O tempo fora do jogo não cura nada: só os objetos.,O tempo fora do jogo não cura nada: só os itens.,ゲームの外で過ごしても回復しない。回復できるのはどうぐだけ。,게임 밖에서 보낸 시간으로는 회복되지 않아요. 도구로만 회복해요.,离开游戏的时间不会回复任何HP，只有道具可以。
+ui.extreme.card.play,Play Extreme,Jouer en Extrême,Jugar en Extremo,Extrem spielen,Gioca in Estrema,Jogar no Extremo,Jogar no Extremo,エクストリームで遊ぶ,익스트림 플레이,玩极限模式
+ui.extreme.card.new,New Extreme game,Nouvelle partie Extrême,Nueva partida Extrema,Neues Extrem-Spiel,Nuova partita Estrema,Novo jogo Extremo,Novo jogo Extremo,エクストリームを始める,새 익스트림 게임,新的极限游戏
+ui.extreme.card.facts,{region} · {badges} badges · Pokédex {dex},{region} · {badges} badges · Pokédex {dex},{region} · {badges} medallas · Pokédex {dex},{region} · {badges} Orden · Pokédex {dex},{region} · {badges} medaglie · Pokédex {dex},{region} · {badges} insígnias · Pokédex {dex},{region} · {badges} insígnias · Pokédex {dex},{region}・バッジ{badges}個・図鑑{dex},{region} · 배지 {badges}개 · 도감 {dex},{region} · {badges}枚徽章 · 图鉴{dex}
+ui.extreme.card.resting,{name} is resting · back in {time},{name} se repose · de retour dans {time},{name} descansa · vuelve en {time},{name} ruht sich aus · zurück in {time},{name} riposa · torna tra {time},{name} está a descansar · volta em {time},{name} está descansando · volta em {time},{name}は休んでいる・あと{time}で復帰,{name} 휴식 중 · {time} 뒤 복귀,{name}正在休息 · {time}后回来
+ui.extreme.card.main,Main game,Partie principale,Partida principal,Hauptspiel,Partita principale,Jogo principal,Jogo principal,メインのゲーム,메인 게임,主游戏
+ui.extreme.card.continueMain,Continue the main game,Continuer la partie principale,Seguir la partida principal,Hauptspiel fortsetzen,Continua la partita principale,Continuar o jogo principal,Continuar o jogo principal,メインのゲームをつづける,메인 게임 계속하기,继续主游戏
+ui.extreme.menu.toExtreme,Extreme mode,Mode Extrême,Modo Extremo,Extrem-Modus,Modalità Estrema,Modo Extremo,Modo Extremo,エクストリームモード,익스트림 모드,极限模式
+ui.extreme.menu.toExtremeDesc,Switch to your Extreme save,Passer à ta partie Extrême,Cambiar a tu partida Extrema,Zu deinem Extrem-Spielstand wechseln,Passa al tuo salvataggio Estremo,Mudar para o teu jogo Extremo,Mudar para o seu jogo Extremo,エクストリームのセーブデータに切り替える,익스트림 저장 데이터로 전환,切换到你的极限存档
+ui.extreme.menu.toMain,Main game,Partie principale,Partida principal,Hauptspiel,Partita principale,Jogo principal,Jogo principal,メインのゲーム,메인 게임,主游戏
+ui.extreme.menu.toMainDesc,Switch to your main save,Revenir à ta partie principale,Volver a tu partida principal,Zurück zu deinem Hauptspielstand,Torna al tuo salvataggio principale,Voltar ao teu jogo principal,Voltar ao seu jogo principal,メインのセーブデータに戻る,메인 저장 데이터로 돌아가기,回到你的主存档
+ui.extreme.switch.toExtremeTitle,Play Extreme mode?,Jouer en mode Extrême ?,¿Jugar en Modo Extremo?,Im Extrem-Modus spielen?,Giocare in Modalità Estrema?,Jogar no Modo Extremo?,Jogar no Modo Extremo?,エクストリームモードで遊ぶ？,익스트림 모드로 플레이할까요?,要玩极限模式吗？
+ui.extreme.switch.toMainTitle,Back to the main game?,Revenir à la partie principale ?,¿Volver a la partida principal?,Zurück zum Hauptspiel?,Tornare alla partita principale?,Voltar ao jogo principal?,Voltar ao jogo principal?,メインのゲームに戻る？,메인 게임으로 돌아갈까요?,要回到主游戏吗？
+ui.extreme.switch.body,Your progress here is saved. The game reloads on your other save.,Ta progression ici est sauvegardée. Le jeu se recharge sur ton autre partie.,Tu progreso aquí está guardado. El juego se recarga con tu otra partida.,Dein Fortschritt hier ist gespeichert. Das Spiel lädt deinen anderen Spielstand neu.,I tuoi progressi qui sono salvati. Il gioco si ricarica sull'altro salvataggio.,O teu progresso aqui está guardado. O jogo recarrega no teu outro jogo.,Seu progresso aqui está salvo. O jogo recarrega no seu outro jogo.,ここまでの進み具合はセーブされる。もうひとつのセーブデータで読み込み直すよ。,여기까지의 진행은 저장돼요. 다른 저장 데이터로 게임을 다시 불러와요.,这里的进度已保存。游戏会用你的另一个存档重新载入。
+ui.extreme.switch.go,Switch,Changer,Cambiar,Wechseln,Cambia,Mudar,Trocar,切り替える,전환,切换
+ui.extreme.resting.title,Your team is resting,Ton équipe se repose,Tu equipo descansa,Dein Team ruht sich aus,La tua squadra riposa,A tua equipa está a descansar,Sua equipe está descansando,手持ちは休んでいる,팀이 휴식 중이에요,你的队伍正在休息
+ui.extreme.resting.first,"First back: {name} in {time}, at {hp} HP","Premier de retour : {name} dans {time}, avec {hp} PV","El primero en volver: {name} en {time}, con {hp} PS","Als Erstes zurück: {name} in {time}, mit {hp} KP","Il primo a tornare: {name} tra {time}, con {hp} PS","O primeiro a voltar: {name} em {time}, com {hp} PS","O primeiro a voltar: {name} em {time}, com {hp} PS",最初に戻るのは{name}：あと{time}、HP{hp}で,"가장 먼저 돌아오는 포켓몬: {name}, {time} 뒤 HP {hp}",最先回来的是{name}：{time}后，HP为{hp}
+ui.extreme.resting.hint,Close the game and your team heals {pct}% an hour. A Revive brings one back now.,Ferme le jeu et ton équipe récupère {pct} % par heure. Un Rappel en ramène un tout de suite.,Cierra el juego y tu equipo se cura un {pct} % por hora. Un Revivir trae a uno ya.,"Schließ das Spiel, und dein Team heilt {pct} % pro Stunde. Ein Beleber holt eines sofort zurück.",Chiudi il gioco e la squadra recupera il {pct}% all'ora. Un Revitalizzante ne fa tornare uno subito.,Fecha o jogo e a tua equipa recupera {pct}% por hora. Um Reviver traz um de volta já.,Feche o jogo e sua equipe recupera {pct}% por hora. Um Reviver traz um de volta agora.,ゲームを閉じれば手持ちは1時間に{pct}%回復する。げんきのかけらならすぐに1匹戻せる。,게임을 닫으면 팀이 1시간에 {pct}%씩 회복해요. 기력의조각을 쓰면 바로 한 마리가 돌아와요.,关闭游戏后，队伍每小时回复{pct}%。用活力碎片可以马上让一只回来。
+ui.extreme.restingToast,"Your team is resting: nobody can fight. Use a Revive, swap in from the Box, or come back later.","Ton équipe se repose : personne ne peut se battre. Utilise un Rappel, fais entrer un Pokémon de la Boîte, ou reviens plus tard.","Tu equipo descansa: nadie puede luchar. Usa un Revivir, saca a uno de la Caja o vuelve más tarde.","Dein Team ruht sich aus: Keiner kann kämpfen. Nimm einen Beleber, hol eines aus der Box oder komm später wieder.","La squadra riposa: nessuno può lottare. Usa un Revitalizzante, prendine uno dal Box o torna più tardi.","A tua equipa está a descansar: ninguém pode lutar. Usa um Reviver, tira um da Caixa ou volta mais tarde.","Sua equipe está descansando: ninguém pode lutar. Use um Reviver, traga um da Caixa ou volte mais tarde.",手持ちは休んでいて、戦えるポケモンがいない。げんきのかけらを使うか、ボックスから入れ替えるか、あとで戻ってこよう。,"팀이 휴식 중이라 싸울 수 있는 포켓몬이 없어요. 기력의조각을 쓰거나, 박스에서 교체하거나, 나중에 다시 오세요.",你的队伍正在休息，没有宝可梦能战斗。使用活力碎片、从盒子里换上，或者稍后再来。
+ui.extreme.backToast,{name} is back from its rest.,{name} est de retour de son repos.,{name} ha vuelto de su descanso.,{name} hat sich erholt und ist zurück.,{name} è tornato dal suo riposo.,{name} voltou do descanso.,{name} voltou do descanso.,{name}が休みから戻ってきた。,{name}이(가) 휴식을 마치고 돌아왔어요.,{name}休息好回来了。
+ui.extreme.koShort,K.O. · {time},K.O. · {time},Debilitado · {time},Besiegt · {time},Esausto · {time},K.O. · {time},K.O. · {time},ひんし・{time},기절 · {time},濒死 · {time}
+ui.extreme.koTitle,Resting after a K.O.,Au repos après un K.O.,Descansando tras debilitarse,Ruht sich nach einer Niederlage aus,Riposa dopo essere stato sconfitto,A descansar depois de um K.O.,Descansando depois de um K.O.,ひんしのあと休んでいる,기절 후 휴식 중,濒死后正在休息
+ui.extreme.koBack,Back at {hp} HP in {time},De retour avec {hp} PV dans {time},Vuelve con {hp} PS en {time},Zurück mit {hp} KP in {time},Torna con {hp} PS tra {time},Volta com {hp} PS em {time},Volta com {hp} PS em {time},あと{time}でHP{hp}で戻る,{time} 뒤 HP {hp}로 복귀,{time}后以{hp}点HP回来
+ui.extreme.koHint,"No Pokémon Center in Extreme mode. A Revive brings it back now; otherwise it rests, then heals while you're away.","Pas de Centre Pokémon en mode Extrême. Un Rappel le ramène tout de suite ; sinon il se repose, puis récupère pendant ton absence.","No hay Centros Pokémon en el Modo Extremo. Un Revivir lo trae ya; si no, descansa y luego se cura mientras no estás.","Im Extrem-Modus gibt es kein Pokémon-Center. Ein Beleber holt es sofort zurück; sonst ruht es sich aus und heilt dann, während du weg bist.","Niente Centri Pokémon in Modalità Estrema. Un Revitalizzante lo fa tornare subito; altrimenti riposa, poi recupera mentre sei via.",Não há Centros Pokémon no Modo Extremo. Um Reviver trá-lo de volta já; senão descansa e depois recupera enquanto estás fora.,Não há Centros Pokémon no Modo Extremo. Um Reviver traz ele de volta agora; senão ele descansa e depois recupera enquanto você está fora.,エクストリームモードにポケモンセンターはない。げんきのかけらならすぐに戻せる。使わなければ休んだあと、いない間に回復する。,"익스트림 모드에는 포켓몬센터가 없어요. 기력의조각을 쓰면 바로 돌아오고, 아니면 쉰 뒤 없는 동안 회복해요.",极限模式没有宝可梦中心。活力碎片能让它马上回来；否则它会先休息，然后在你离开时回复。
+ui.extreme.away.title,While you were away,Pendant ton absence,Mientras no estabas,Während du weg warst,Mentre eri via,Enquanto estiveste fora,Enquanto você estava fora,いない間に,없는 동안,你离开的这段时间
+ui.extreme.away.for,Out of the game for {time},Hors du jeu pendant {time},Fuera del juego durante {time},{time} nicht im Spiel,Fuori dal gioco per {time},Fora do jogo durante {time},Fora do jogo por {time},{time}ゲームの外にいた,{time} 동안 게임 밖에 있었어요,离开游戏{time}
+ui.extreme.away.back,Back from K.O. · +{pct}%,De retour de K.O. · +{pct} %,Recuperado · +{pct} %,Wieder fit · +{pct} %,Di nuovo in forma · +{pct}%,De volta do K.O. · +{pct}%,De volta do K.O. · +{pct}%,ひんしから復帰・+{pct}%,기절에서 복귀 · +{pct}%,从濒死中回来 · +{pct}%
+ui.extreme.away.healed,+{pct}% · {from} → {to}%,+{pct} % · {from} → {to} %,+{pct} % · {from} → {to} %,+{pct} % · {from} → {to} %,+{pct}% · {from} → {to}%,+{pct}% · {from} → {to}%,+{pct}% · {from} → {to}%,+{pct}%・{from} → {to}%,+{pct}% · {from} → {to}%,+{pct}% · {from} → {to}%
+ui.extreme.away.full,Full · +{pct}%,Au max · +{pct} %,Al máximo · +{pct} %,Voll · +{pct} %,Al massimo · +{pct}%,Cheio · +{pct}%,Cheio · +{pct}%,全回復・+{pct}%,가득 참 · +{pct}%,全满 · +{pct}%
+ui.extreme.away.rule,"Your Pokémon heal {pct}% an hour while you're away, never while you play. One back from a K.O. starts healing once it's back.","Tes Pokémon récupèrent {pct} % par heure pendant ton absence, jamais pendant que tu joues. Un Pokémon de retour de K.O. commence à récupérer une fois revenu.","Tus Pokémon se curan un {pct} % por hora mientras no estás, nunca mientras juegas. Uno que se recupera de un debilitamiento empieza a curarse al volver.","Deine Pokémon heilen {pct} % pro Stunde, während du weg bist, nie während du spielst. Ein besiegtes beginnt zu heilen, sobald es zurück ist.","I tuoi Pokémon recuperano il {pct}% all'ora mentre sei via, mai mentre giochi. Uno esausto inizia a recuperare quando torna.","Os teus Pokémon recuperam {pct}% por hora enquanto estás fora, nunca enquanto jogas. Um que volte de um K.O. começa a recuperar quando volta.","Seus Pokémon recuperam {pct}% por hora enquanto você está fora, nunca enquanto joga. Um que volte de um K.O. começa a recuperar quando volta.",ポケモンはいない間に1時間に{pct}%回復し、遊んでいる間は回復しない。ひんしのポケモンは戻ってから回復し始める。,"포켓몬은 없는 동안 1시간에 {pct}%씩 회복하고, 플레이 중에는 회복하지 않아요. 기절한 포켓몬은 돌아온 뒤부터 회복해요.",你离开时，宝可梦每小时回复{pct}%，游玩时不会回复。濒死的宝可梦回来后才开始回复。
+ui.wipe.bodyExtreme,"You hurried back to the start of {area}. No Pokémon Center in Extreme mode: your fainted Pokémon rest {h} h before they can fight again. You keep your Pokédollars, items and your Pokémon's levels. The round is lost{kept}.","Tu es revenu en hâte au début de {area}. Pas de Centre Pokémon en mode Extrême : tes Pokémon K.O. se reposent {h} h avant de pouvoir se battre à nouveau. Tu gardes tes Pokédollars, tes objets et les niveaux de tes Pokémon. La manche est perdue{kept}.","Has vuelto corriendo al inicio de {area}. No hay Centros Pokémon en el Modo Extremo: tus Pokémon debilitados descansan {h} h antes de poder luchar otra vez. Conservas tus Pokédólares, tus objetos y los niveles de tus Pokémon. La ronda está perdida{kept}.","Du bist eilig zum Anfang von {area} zurückgekehrt. Im Extrem-Modus gibt es kein Pokémon-Center: Deine besiegten Pokémon ruhen sich {h} Std. aus, bevor sie wieder kämpfen können. Du behältst deine Pokédollar, Items und die Level deiner Pokémon. Die Runde ist verloren{kept}.","Sei tornato di corsa all'inizio di {area}. Niente Centri Pokémon in Modalità Estrema: i tuoi Pokémon esausti riposano {h} h prima di poter lottare di nuovo. Tieni Pokédollari, strumenti e livelli dei Pokémon. Il giro è perso{kept}.","Voltaste a correr ao início de {area}. Não há Centros Pokémon no Modo Extremo: os teus Pokémon K.O. descansam {h} h antes de poderem lutar de novo. Manténs os Pokédólares, os objetos e os níveis dos teus Pokémon. A ronda está perdida{kept}.","Você voltou correndo ao início de {area}. Não há Centros Pokémon no Modo Extremo: seus Pokémon K.O. descansam {h} h antes de poderem lutar de novo. Você mantém os Pokédólares, os itens e os níveis dos seus Pokémon. A rodada está perdida{kept}.",{area}の入口まで急いで戻った。エクストリームモードにポケモンセンターはない：ひんしのポケモンは{h}時間休まないと戦えない。お金、どうぐ、ポケモンのレベルはそのまま。このラウンドは失われた{kept}。,"{area}의 입구로 서둘러 돌아왔다. 익스트림 모드에는 포켓몬센터가 없다: 기절한 포켓몬은 {h}시간을 쉬어야 다시 싸울 수 있다. 돈과 도구, 포켓몬의 레벨은 그대로다. 이번 라운드는 실패했다{kept}.",你急忙回到了{area}的入口。极限模式没有宝可梦中心：濒死的宝可梦要休息{h}小时才能再战斗。金钱、道具和宝可梦的等级都保留着。本轮失败了{kept}。
+ui.extreme.settings.hint,"Your second save, in a world of its own, with no Pokémon Centers.","Ta deuxième partie, dans un monde à part, sans Centre Pokémon.","Tu segunda partida, en un mundo aparte, sin Centros Pokémon.","Dein zweiter Spielstand, in einer eigenen Welt, ohne Pokémon-Center.","Il tuo secondo salvataggio, in un mondo a parte, senza Centri Pokémon.","O teu segundo jogo, num mundo à parte, sem Centros Pokémon.","Seu segundo jogo, num mundo à parte, sem Centros Pokémon.",ふたつめのセーブデータ。もうひとつの世界で、ポケモンセンターはない。,"두 번째 저장 데이터예요. 또 하나의 세계에서, 포켓몬센터 없이 플레이해요.",你的第二个存档，在独立的世界里，没有宝可梦中心。
+ui.extreme.settings.rules,Rules,Règles,Reglas,Regeln,Regole,Regras,Regras,ルール,규칙,规则
+ui.extreme.settings.delete,Delete my Extreme save,Supprimer ma partie Extrême,Borrar mi partida Extrema,Meinen Extrem-Spielstand löschen,Elimina il mio salvataggio Estremo,Apagar o meu jogo Extremo,Excluir meu jogo Extremo,エクストリームのセーブデータを削除,익스트림 저장 데이터 삭제,删除我的极限存档
+ui.extreme.settings.deleteTitle,Delete your Extreme save?,Supprimer ta partie Extrême ?,¿Borrar tu partida Extrema?,Deinen Extrem-Spielstand löschen?,Eliminare il salvataggio Estremo?,Apagar o teu jogo Extremo?,Excluir seu jogo Extremo?,エクストリームのセーブデータを削除する？,익스트림 저장 데이터를 삭제할까요?,要删除你的极限存档吗？
+ui.extreme.settings.deleteBody,"Your Extreme save and its backups will be deleted, in this browser and online. Your main save stays as it is.","Ta partie Extrême et ses copies de secours seront supprimées, dans ce navigateur et en ligne. Ta partie principale reste telle quelle.","Se borrarán tu partida Extrema y sus copias de seguridad, en este navegador y en línea. Tu partida principal se queda como está.","Dein Extrem-Spielstand und seine Sicherungen werden gelöscht, in diesem Browser und online. Dein Hauptspielstand bleibt, wie er ist.","Il salvataggio Estremo e i suoi backup verranno eliminati, in questo browser e online. Il salvataggio principale resta com'è.","O teu jogo Extremo e as suas cópias de segurança serão apagados, neste navegador e online. O teu jogo principal fica como está.","Seu jogo Extremo e os backups dele serão excluídos, neste navegador e online. Seu jogo principal fica como está.",エクストリームのセーブデータとそのバックアップが、このブラウザとオンラインから削除されます。メインのセーブデータはそのまま残ります。,익스트림 저장 데이터와 그 백업이 이 브라우저와 온라인에서 삭제돼요. 메인 저장 데이터는 그대로 남아요.,你的极限存档和存档备份会从这个浏览器和线上删除。你的主存档保持不变。
+ui.settings.wipeBothNote,Your Extreme save goes too.,Ta partie Extrême aussi.,Tu partida Extrema también.,Dein Extrem-Spielstand auch.,Anche il salvataggio Estremo.,O teu jogo Extremo também.,Seu jogo Extremo também.,エクストリームのセーブデータも削除されます。,익스트림 저장 데이터도 삭제돼요.,你的极限存档也会删除。
+ui.extreme.infoLabel,Extreme mode rules,Règles du mode Extrême,Reglas del Modo Extremo,Regeln des Extrem-Modus,Regole della Modalità Estrema,Regras do Modo Extremo,Regras do Modo Extremo,エクストリームモードのルール,익스트림 모드 규칙,极限模式规则
+ui.extreme.notIn,Not in Extreme mode,Pas en mode Extrême,No está en el Modo Extremo,Nicht im Extrem-Modus,Non è in Modalità Estrema,Não está no Modo Extremo,Não está no Modo Extremo,エクストリームモードにいない,익스트림 모드 아님,不在极限模式
+ui.extreme.noItems,No Potions or Revives in Extreme mode,Pas de Potion ni de Rappel en mode Extrême,Sin Pociones ni Revivir en el Modo Extremo,Keine Tränke oder Beleber im Extrem-Modus,Niente Pozioni né Revitalizzanti in Modalità Estrema,Sem Poções nem Reviver no Modo Extremo,Sem Poções nem Reviver no Modo Extremo,エクストリームモードではキズぐすりもげんきのかけらも使えない,익스트림 모드에서는 상처약도 기력의조각도 쓸 수 없어요,极限模式中不能使用伤药或活力碎片
 ui.effect.heal,+{amount} HP,+{amount} PV,+{amount} PS,+{amount} KP,+{amount} PS,+{amount} PS,+{amount} PS,HP+{amount},HP +{amount},HP+{amount}
 ui.effect.reviveFull,"Revives, full HP","Ranime, PV au max",Revive con todos los PS,"Belebt wieder, volle KP","Rianima, PS pieni","Reanima, PS completos","Reanima, PS completos",復活・HP全回復,되살림 · HP 전부,复活 · HP全满
 ui.effect.revivePercent,"Revives, {percent} % HP","Ranime, {percent} % des PV",Revive con el {percent} % de PS,"Belebt wieder, {percent} % KP","Rianima, {percent} % dei PS","Reanima, {percent} % dos PS","Reanima, {percent} % dos PS",復活・HP{percent}%,되살림 · HP {percent}%,复活 · HP{percent}%
@@ -2253,6 +2316,8 @@ ui.versus.noTeam,No team yet.,Pas encore d'équipe.,Aún no hay equipo.,Noch kei
 ui.versus.pickHint,"Pick three Pokémon at Lv.50 or more, in the order they go out.","Choisis trois Pokémon de niveau 50 ou plus, dans l'ordre où ils entreront en combat.","Elige tres Pokémon de nivel 50 o más, en el orden en que saldrán.","Wähle drei Pokémon ab Lv.50, in der Reihenfolge, in der sie antreten.","Scegli tre Pokémon di Lv.50 o più, nell'ordine in cui scendono in campo.","Escolhe três Pokémon de Nv.50 ou mais, pela ordem em que entram em campo.","Escolha três Pokémon de Nv.50 ou mais, na ordem em que entram em campo.",Lv.50以上のポケモンを3匹、くりだす順に選ぼう。,Lv.50 이상인 포켓몬 3마리를 나가는 순서대로 고르세요.,按上场顺序选择3只Lv.50以上的宝可梦。
 ui.versus.search,Search Pokémon,Chercher un Pokémon,Buscar Pokémon,Pokémon suchen,Cerca Pokémon,Procurar Pokémon,Buscar Pokémon,ポケモンを検索,포켓몬 검색,搜索宝可梦
 ui.versus.searchLabel,Search your Pokémon by name,Chercher tes Pokémon par nom,Busca tus Pokémon por nombre,Deine Pokémon nach Namen suchen,Cerca i tuoi Pokémon per nome,Procura os teus Pokémon por nome,Busque seus Pokémon por nome,名前でポケモンを検索,이름으로 포켓몬 검색,按名字搜索你的宝可梦
+ui.versus.sortLabel,Sort your Pokémon,Trier tes Pokémon,Ordenar tus Pokémon,Deine Pokémon sortieren,Ordina i tuoi Pokémon,Ordenar os teus Pokémon,Ordenar seus Pokémon,ポケモンを並べ替える,포켓몬 정렬,排列宝可梦
+ui.versus.sortAz,A–Z,A–Z,A–Z,A–Z,A–Z,A–Z,A–Z,名前順,이름순,名称
 ui.versus.rules,"They fight as clones at Lv.50, and every upgrade is the same for everyone: levelling up later changes nothing. A new team can be fought again by everyone.","Ils combattent en clones au N.50, et les améliorations sont les mêmes pour tout le monde : monter de niveau ensuite n'y change rien. Une nouvelle équipe peut être réaffrontée par tout le monde.","Luchan como clones al Nv.50, y las mejoras son las mismas para todos: subir de nivel después no cambia nada. Todos pueden volver a desafiar un equipo nuevo.","Sie kämpfen als Klone auf Lv.50, und die Upgrades sind für alle gleich: Spätere Level-ups ändern nichts. Gegen ein neues Team dürfen alle wieder kämpfen.","Lottano come cloni al Lv.50, e tutti i potenziamenti sono uguali per tutti: salire di livello dopo non cambia niente. Una nuova squadra può essere sfidata di nuovo da tutti.","Lutam como clones no Nv.50, e todas as melhorias são iguais para todos: subir de nível depois não muda nada. Uma equipa nova pode voltar a ser desafiada por todos.","Lutam como clones no Nv.50, e todas as melhorias são iguais para todos: subir de nível depois não muda nada. Uma equipe nova pode ser desafiada de novo por todos.",Lv.50のコピーとして戦い、強化は全員同じです：あとでレベルを上げても何も変わりません。新しいチームには、全員がまた挑戦できます。,"Lv.50의 복제로 싸우고, 강화는 모두 같아요: 나중에 레벨을 올려도 아무것도 바뀌지 않아요. 새 팀에는 모두가 다시 도전할 수 있어요.",以Lv.50的复制体进行战斗，所有人的强化都相同：之后升级也不会改变什么。新的队伍可以被所有人再次挑战。
 ui.versus.save,SAVE TEAM,ENREGISTRER,GUARDAR EQUIPO,TEAM SPEICHERN,SALVA SQUADRA,GUARDAR EQUIPA,SALVAR EQUIPE,チームを保存,팀 저장,保存队伍
 ui.versus.clear,Clear,Effacer,Borrar,Leeren,Svuota,Limpar,Limpar,クリア,지우기,清空
@@ -2708,27 +2773,27 @@ trainerClass.team-flare-grunt,Team Flare Grunt,Sbire Flare,Recluta Flare,Rüpel 
 trainerClass.flare-admin,Flare Admin,Admin Flare,Admin. Flare,Flare-Admin,Admin Team Flare,Admin da Equipa Flare,Admin da Equipe Flare,フレア団幹部,플레어단 간부,闪焰队干部
 trainerClass.furisode-girl,Furisode Girl,Fille en Furisode,Chica Furisode,Furisode-Mädchen,Ragazza Furisode,Moça de Furisode,Moça de Furisode,ふりそでさん,후리소데 아가씨,振袖小姐
 trainerClass.battle-chatelaine,Battle Chatelaine,Châtelaine,Castellana,Schlossherrin,Castellana,Castelã,Castelã,バトルシャトレーヌ,배틀샤틀렌,对战城主
-trainerName.viola,Viola,Viola,Viola,Viola,Viola,Viola,Viola,ビオラ,비올라,紫罗兰
-trainerName.grant,Grant,Grant,Grant,Grant,Grant,Grant,Grant,ザクロ,자크로,查克洛
-trainerName.korrina,Korrina,Korrina,Korrina,Korrina,Korrina,Korrina,Korrina,コルニ,코르니,可尔妮
-trainerName.ramos,Ramos,Ramos,Ramos,Ramos,Ramos,Ramos,Ramos,フクジ,후쿠지,福爷
-trainerName.clemont,Clemont,Clemont,Clemont,Clemont,Clemont,Clemont,Clemont,シトロン,시트론,希特隆
-trainerName.valerie,Valerie,Valerie,Valerie,Valerie,Valerie,Valerie,Valerie,マーシュ,마슈,玛绣
-trainerName.olympia,Olympia,Olympia,Olympia,Olympia,Olympia,Olympia,Olympia,ゴジカ,고지카,葛吉花
-trainerName.wulfric,Wulfric,Wulfric,Wulfric,Wulfric,Wulfric,Wulfric,Wulfric,ウルップ,우르프,得抚
-trainerName.malva,Malva,Malva,Malva,Malva,Malva,Malva,Malva,パキラ,파키라,帕琪拉
-trainerName.siebold,Siebold,Siebold,Siebold,Siebold,Siebold,Siebold,Siebold,ズミ,즈미,志米
-trainerName.wikstrom,Wikstrom,Wikstrom,Wikstrom,Wikstrom,Wikstrom,Wikstrom,Wikstrom,ガンピ,간피,雁铠
-trainerName.drasna,Drasna,Drasna,Drasna,Drasna,Drasna,Drasna,Drasna,ドラセナ,드라세나,朵拉塞娜
-trainerName.diantha,Diantha,Diantha,Diantha,Diantha,Diantha,Diantha,Diantha,カルネ,카르네,卡露妮
+trainerName.viola,Viola,Violette,Violeta,Viola,Violetta,Viola,Viola,ビオラ,비올라,紫罗兰
+trainerName.grant,Grant,Lino,Lino,Lino,Lino,Grant,Grant,ザクロ,자크로,查克洛
+trainerName.korrina,Korrina,Cornélia,Corelia,Connie,Ornella,Korrina,Korrina,コルニ,코르니,可尔妮
+trainerName.ramos,Ramos,Amaro,Amaro,Amaro,Amur,Ramos,Ramos,フクジ,후쿠지,福爷
+trainerName.clemont,Clemont,Lem,Lem,Citro,Lem,Clemont,Clemont,シトロン,시트론,希特隆
+trainerName.valerie,Valerie,Valériane,Valeria,Valerie,Valérie,Valerie,Valerie,マーシュ,마슈,玛绣
+trainerName.olympia,Olympia,Astera,Ástrid,Astrid,Astra,Olympia,Olympia,ゴジカ,고지카,葛吉花
+trainerName.wulfric,Wulfric,Urup,Édel,Galantho,Edel,Wulfric,Wulfric,ウルップ,우르프,得抚
+trainerName.malva,Malva,Malva,Malva,Pachira,Malva,Malva,Malva,パキラ,파키라,帕琪拉
+trainerName.siebold,Siebold,Narcisse,Narciso,Narcisse,Narciso,Siebold,Siebold,ズミ,즈미,志米
+trainerName.wikstrom,Wikstrom,Thyméo,Tileo,Thymelot,Timeus,Wikstrom,Wikstrom,ガンピ,간피,雁铠
+trainerName.drasna,Drasna,Dracéna,Drácena,Dracena,Lilia,Drasna,Drasna,ドラセナ,드라세나,朵拉塞娜
+trainerName.diantha,Diantha,Dianthéa,Dianta,Diantha,Diantha,Diantha,Diantha,カルネ,카르네,卡露妮
 trainerName.serena,Serena,Serena,Serena,Serena,Serena,Serena,Serena,セレナ,세레나,莎莉娜
-trainerName.shauna,Shauna,Shauna,Shauna,Shauna,Shauna,Shauna,Shauna,サナ,사나,莎娜
-trainerName.tierno,Tierno,Tierno,Tierno,Tierno,Tierno,Tierno,Tierno,ティエルノ,티에르노,蒂艾路诺
-trainerName.trevor,Trevor,Trevor,Trevor,Trevor,Trevor,Trevor,Trevor,トロバ,트로바,托罗巴
-trainerName.lysandre,Lysandre,Lysandre,Lysandre,Lysandre,Lysandre,Lysandre,Lysandre,フラダリ,플라드리,弗拉达利
-trainerName.xerosic,Xerosic,Xerosic,Xerosic,Xerosic,Xerosic,Xerosic,Xerosic,クセロシキ,크세로시키,库瑟洛斯奇
-trainerName.bryony,Bryony,Bryony,Bryony,Bryony,Bryony,Bryony,Bryony,バラ,바라,芭菈
-trainerName.mable,Mable,Mable,Mable,Mable,Mable,Mable,Mable,モミジ,모미지,茉蜜姬
+trainerName.shauna,Shauna,Sannah,Xana,Sannah,Shana,Shauna,Shauna,サナ,사나,莎娜
+trainerName.tierno,Tierno,Tierno,Beni,Tierno,Tierno,Tierno,Tierno,ティエルノ,티에르노,蒂艾路诺
+trainerName.trevor,Trevor,Trovato,Trovato,Trovato,Trovato,Trevor,Trevor,トロバ,트로바,托罗巴
+trainerName.lysandre,Lysandre,Lysandre,Lysson,Flordelis,Elisio,Lysandre,Lysandre,フラダリ,플라드리,弗拉达利
+trainerName.xerosic,Xerosic,Xanthin,Xero,Xeros,Xante,Xerosic,Xerosic,クセロシキ,크세로시키,库瑟洛斯奇
+trainerName.bryony,Bryony,Brasénie,Begonia,Begonia,Bromelia,Bryony,Bryony,バラ,바라,芭菈
+trainerName.mable,Mable,Myosotis,Melia,Magnolia,Martynia,Mable,Mable,モミジ,모미지,茉蜜姬
 itemDesc.jaw-fossil,"A fossil of an ancient Pokémon. Tyrunt waits in your Box and is revived after 24 hours, at Lv.20.","Un fossile d'un Pokémon ancien. Ptyranidur attend dans votre Boîte et revit après 24 heures, au N.20.","Un fósil de un Pokémon antiguo. Tyrunt espera en tu Caja y revive tras 24 horas, al Nv.20.",Ein Fossil eines urzeitlichen Pokémon. Balgoras wartet in deiner Box und wird nach 24 Stunden auf Lv.20 wiederbelebt.,"Il fossile di un Pokémon antico. Tyrunt aspetta nel tuo Box e torna in vita dopo 24 ore, al Lv.20.","O fóssil de um Pokémon antigo. Tyrunt espera na tua Caixa e é reanimado após 24 horas, no Nv.20.","O fóssil de um Pokémon antigo. Tyrunt espera na sua Caixa e é reanimado após 24 horas, no Nv.20.",古代のポケモンの化石。チゴラスがボックスで待ち、24時間後にLv.20で復元される。,고대 포켓몬의 화석. 티고라스가 박스에서 기다리다가 24시간 후 Lv.20으로 복원된다.,古代宝可梦的化石。宝宝暴龙会在盒子里等待，24小时后以Lv.20复活。
 itemDesc.sail-fossil,"A fossil of an ancient Pokémon. Amaura waits in your Box and is revived after 24 hours, at Lv.20.","Un fossile d'un Pokémon ancien. Amagara attend dans votre Boîte et revit après 24 heures, au N.20.","Un fósil de un Pokémon antiguo. Amaura espera en tu Caja y revive tras 24 horas, al Nv.20.",Ein Fossil eines urzeitlichen Pokémon. Amarino wartet in deiner Box und wird nach 24 Stunden auf Lv.20 wiederbelebt.,"Il fossile di un Pokémon antico. Amaura aspetta nel tuo Box e torna in vita dopo 24 ore, al Lv.20.","O fóssil de um Pokémon antigo. Amaura espera na tua Caixa e é reanimado após 24 horas, no Nv.20.","O fóssil de um Pokémon antigo. Amaura espera na sua Caixa e é reanimado após 24 horas, no Nv.20.",古代のポケモンの化石。アマルスがボックスで待ち、24時間後にLv.20で復元される。,고대 포켓몬의 화석. 아마루스가 박스에서 기다리다가 24시간 후 Lv.20으로 복원된다.,古代宝可梦的化石。冰雪龙会在盒子里等待，24小时后以Lv.20复活。
 itemDesc.sachet,Makes certain Pokémon evolve: Spritzee (Aromatisse). Use it from the Team screen.,Fait évoluer certains Pokémon : Fluvetin (Cocotine). À utiliser depuis l'écran Équipe.,Hace evolucionar a ciertos Pokémon: Spritzee (Aromatisse). Úsalo desde la pantalla Equipo.,Lässt bestimmte Pokémon entwickeln: Parfi (Parfinesse). Im Team-Bildschirm einsetzbar.,Fa evolvere alcuni Pokémon: Spritzee (Aromatisse). Usala dalla schermata Squadra.,Faz evoluir certos Pokémon: Spritzee (Aromatisse). Usa-a no ecrã Equipa.,Faz certos Pokémon evoluírem: Spritzee (Aromatisse). Use na tela Equipe.,特定のポケモンを進化させる：シュシュプ（フレフワン）。「手持ち」画面で使う。,특정 포켓몬을 진화시킨다: 슈쁘(프레프티르). 팀 화면에서 사용한다.,让特定的宝可梦进化：粉香香（芳香精）。在队伍画面中使用。
@@ -2883,25 +2948,25 @@ trainerClass.surfer,Surfer,Surfeur,Surfista,Surfer,Surfista,Surfista,Surfista,�
 trainerClass.team-skull-grunt,Team Skull Grunt,Sbire Skull,Recluta Skull,Rüpel von Team Skull,Recluta Team Skull,Recruta da Equipa Skull,Recruta da Equipe Skull,スカル団員,스컬단 조무래기,骷髅队手下
 trainerClass.trial-guide,Trial Guide,Guide d'Épreuve,Guía de Prueba,Prüfungsführer,Guida della Prova,Guia de Provação,Guia de Provação,しれんサポーター,시련서포터,试炼支持者
 trainerClass.young-athlete,Young Athlete,Jeune Athlète,Joven Atleta,Jungsportler,Giovane Atleta,Jovem Atleta,Jovem Atleta,ジュニアアスリート,주니어애슬리트,青年运动员
-trainerName.ilima,Ilima,Ilima,Ilima,Ilima,Ilima,Ilima,Ilima,イリマ,일리마,伊里马
-trainerName.lana,Lana,Lana,Lana,Lana,Lana,Lana,Lana,スイレン,수련,水莲
-trainerName.kiawe,Kiawe,Kiawe,Kiawe,Kiawe,Kiawe,Kiawe,Kiawe,カキ,카키,卡奇
-trainerName.mallow,Mallow,Mallow,Mallow,Mallow,Mallow,Mallow,Mallow,マオ,마오,玛奥
-trainerName.sophocles,Sophocles,Sophocles,Sophocles,Sophocles,Sophocles,Sophocles,Sophocles,マーマネ,마마네,马玛内
-trainerName.acerola,Acerola,Acerola,Acerola,Acerola,Acerola,Acerola,Acerola,アセロラ,아세로라,阿塞萝拉
-trainerName.mina,Mina,Mina,Mina,Mina,Mina,Mina,Mina,マツリカ,마쓰리카,茉莉花
-trainerName.hala,Hala,Hala,Hala,Hala,Hala,Hala,Hala,ハラ,할라,哈拉
-trainerName.olivia,Olivia,Olivia,Olivia,Olivia,Olivia,Olivia,Olivia,ライチ,라이치,丽姿
-trainerName.nanu,Nanu,Nanu,Nanu,Nanu,Nanu,Nanu,Nanu,クチナシ,쿠치나시,库奇纳希
-trainerName.hapu,Hapu,Hapu,Hapu,Hapu,Hapu,Hapu,Hapu,ハプウ,하푸,哈普乌
+trainerName.ilima,Ilima,Althéo,Liam,Elima,Liam,Ilima,Ilima,イリマ,일리마,伊里马
+trainerName.lana,Lana,Néphie,Nereida,Tracy,Suiren,Lana,Lana,スイレン,수련,水莲
+trainerName.kiawe,Kiawe,Kiawe,Kiawe,Kiawe,Kawe,Kiawe,Kiawe,カキ,카키,卡奇
+trainerName.mallow,Mallow,Barbara,Lulú,Maho,Ibis,Mallow,Mallow,マオ,마오,玛奥
+trainerName.sophocles,Sophocles,Chrys,Chris,Chrys,Chrys,Sophocles,Sophocles,マーマネ,마마네,马玛内
+trainerName.acerola,Acerola,Margie,Zarala,Lola,Malpi,Acerola,Acerola,アセロラ,아세로라,阿塞萝拉
+trainerName.mina,Mina,Oléa,Rika,Matsurika,Rika,Mina,Mina,マツリカ,마쓰리카,茉莉花
+trainerName.hala,Hala,Pectorius,Kaudan,Hala,Hala,Hala,Hala,ハラ,할라,哈拉
+trainerName.olivia,Olivia,Alyxia,Mayla,Mayla,Alyxia,Olivia,Olivia,ライチ,라이치,丽姿
+trainerName.nanu,Nanu,Danh,Denio,Yasu,Augusto,Nanu,Nanu,クチナシ,쿠치나시,库奇纳希
+trainerName.hapu,Hapu,Paulie,Hela,Hapu'u,Hapi,Hapu,Hapu,ハプウ,하푸,哈普乌
 trainerName.kahili,Kahili,Kahili,Kahili,Kahili,Kahili,Kahili,Kahili,カヒリ,카일리,卡希丽
-trainerName.kukui,Kukui,Kukui,Kukui,Kukui,Kukui,Kukui,Kukui,ククイ,쿠쿠이,库库伊
-trainerName.hau,Hau,Hau,Hau,Hau,Hau,Hau,Hau,ハウ,하우,哈乌
-trainerName.gladion,Gladion,Gladion,Gladion,Gladion,Gladion,Gladion,Gladion,グラジオ,글라디오,格拉吉欧
-trainerName.guzma,Guzma,Guzma,Guzma,Guzma,Guzma,Guzma,Guzma,グズマ,구즈마,古兹马
-trainerName.plumeria,Plumeria,Plumeria,Plumeria,Plumeria,Plumeria,Plumeria,Plumeria,プルメリ,플루메리,布尔美丽
-trainerName.lusamine,Lusamine,Lusamine,Lusamine,Lusamine,Lusamine,Lusamine,Lusamine,ルザミーネ,루자미네,露莎米奈
-trainerName.faba,Faba,Faba,Faba,Faba,Faba,Faba,Faba,ザオボー,자오보,扎奥博
+trainerName.kukui,Kukui,Euphorbe,Kukui,Kukui,Kukui,Kukui,Kukui,ククイ,쿠쿠이,库库伊
+trainerName.hau,Hau,Tili,Tilo,Tali,Hau,Hau,Hau,ハウ,하우,哈乌
+trainerName.gladion,Gladion,Gladio,Gladio,Gladio,Iridio,Gladion,Gladion,グラジオ,글라디오,格拉吉欧
+trainerName.guzma,Guzma,Guzma,Guzmán,Bromley,Guzman,Guzma,Guzma,グズマ,구즈마,古兹马
+trainerName.plumeria,Plumeria,Apocyne,Francine,Fran,Plumeria,Plumeria,Plumeria,プルメリ,플루메리,布尔美丽
+trainerName.lusamine,Lusamine,Elsa-Mina,Samina,Samantha,Samina,Lusamine,Lusamine,ルザミーネ,루자미네,露莎米奈
+trainerName.faba,Faba,Saubohne,Fabio,Fabian,Vicio,Faba,Faba,ザオボー,자오보,扎奥博
 pokemon.810,Grookey,Ouistempo,Grookey,Chimpep,Grookey,Grookey,Grookey,サルノリ,흥나숭,敲音猴
 pokemon.811,Thwackey,Badabouin,Thwackey,Chimstix,Thwackey,Thwackey,Thwackey,バチンキー,채키몽,啪咚猴
 pokemon.812,Rillaboom,Gorythmic,Rillaboom,Gortrom,Rillaboom,Rillaboom,Rillaboom,ゴリランダー,고릴타,轰擂金刚猩
@@ -3053,25 +3118,25 @@ trainerClass.doctor,Doctor,Docteur,Doctor,Arzt,Dottore,Médico,Médico,ドクタ
 trainerClass.madame,Madame,Madame,Madame,Madame,Madame,Madame,Madame,マダム,마담,夫人
 trainerClass.reporter,Reporter,Reporter,Reportera,Reporterin,Reporter,Repórter,Repórter,インタビュアー,인터뷰어,采访者
 trainerClass.policeman,Policeman,Policier,Policía,Polizist,Poliziotto,Policial,Policial,おまわりさん,경찰관,警察
-trainerName.milo,Milo,Milo,Milo,Milo,Milo,Milo,Milo,ヤロー,야로,亚洛
-trainerName.nessa,Nessa,Nessa,Nessa,Nessa,Nessa,Nessa,Nessa,ルリナ,야청,露璃娜
-trainerName.kabu,Kabu,Kabu,Kabu,Kabu,Kabu,Kabu,Kabu,カブ,순무,卡芜
-trainerName.bea,Bea,Bea,Bea,Bea,Bea,Bea,Bea,サイトウ,채두,彩豆
-trainerName.allister,Allister,Allister,Allister,Allister,Allister,Allister,Allister,オニオン,어니언,欧尼奥
-trainerName.opal,Opal,Opal,Opal,Opal,Opal,Opal,Opal,ポプラ,포플러,波普菈
-trainerName.gordie,Gordie,Gordie,Gordie,Gordie,Gordie,Gordie,Gordie,マクワ,마쿠와,玛瓜
-trainerName.melony,Melony,Melony,Melony,Melony,Melony,Melony,Melony,メロン,멜론,美蓉
-trainerName.piers,Piers,Piers,Piers,Piers,Piers,Piers,Piers,ネズ,두송,聂梓
-trainerName.raihan,Raihan,Raihan,Raihan,Raihan,Raihan,Raihan,Raihan,キバナ,금랑,奇巴纳
-trainerName.leon,Leon,Leon,Leon,Leon,Leon,Leon,Leon,ダンデ,단델,丹帝
-trainerName.hop,Hop,Hop,Hop,Hop,Hop,Hop,Hop,ホップ,호브,赫普
-trainerName.marnie,Marnie,Marnie,Marnie,Marnie,Marnie,Marnie,Marnie,マリィ,마리,玛俐
-trainerName.bede,Bede,Bede,Bede,Bede,Bede,Bede,Bede,ビート,비트,彼特
-trainerName.rose,Rose,Rose,Rose,Rose,Rose,Rose,Rose,ローズ,로즈,洛兹
-trainerName.oleana,Oleana,Oleana,Oleana,Oleana,Oleana,Oleana,Oleana,オリーヴ,올리브,奥利薇
-trainerName.klara,Klara,Klara,Klara,Klara,Klara,Klara,Klara,クララ,클라라,克拉拉
-trainerName.avery,Avery,Avery,Avery,Avery,Avery,Avery,Avery,セイボリー,세이보리,赛宝利
-trainerName.peony,Peony,Peony,Peony,Peony,Peony,Peony,Peony,ピオニー,피오니,皮欧尼
+trainerName.milo,Milo,Percy,Percy,Yarro,Yarrow,Milo,Milo,ヤロー,야로,亚洛
+trainerName.nessa,Nessa,Donna,Cathy,Kate,Azzurra,Nessa,Nessa,ルリナ,야청,露璃娜
+trainerName.kabu,Kabu,Kabu,Naboru,Kabu,Kabu,Kabu,Kabu,カブ,순무,卡芜
+trainerName.bea,Bea,Faïza,Judith,Saida,Fabia,Bea,Bea,サイトウ,채두,彩豆
+trainerName.allister,Allister,Alistair,Alistair,Nio,Onion,Allister,Allister,オニオン,어니언,欧尼奥
+trainerName.opal,Opal,Sally,Sally,Papella,Poppy,Opal,Opal,ポプラ,포플러,波普菈
+trainerName.gordie,Gordie,Chaz,Morris,Mac,Milo,Gordie,Gordie,マクワ,마쿠와,玛瓜
+trainerName.melony,Melony,Lona,Mel,Mel,Melania,Melony,Melony,メロン,멜론,美蓉
+trainerName.piers,Piers,Peterson,Nerio,Nezz,Ginepro,Piers,Piers,ネズ,두송,聂梓
+trainerName.raihan,Raihan,Roy,Roy,Roy,Laburno,Raihan,Raihan,キバナ,금랑,奇巴纳
+trainerName.leon,Leon,Tarak,Lionel,Delion,Dandel,Leon,Leon,ダンデ,단델,丹帝
+trainerName.hop,Hop,Nabil,Paul,Hop,Hop,Hop,Hop,ホップ,호브,赫普
+trainerName.marnie,Marnie,Rosemary,Roxy,Mary,Mary,Marnie,Marnie,マリィ,마리,玛俐
+trainerName.bede,Bede,Travis,Berto,Betys,Beet,Bede,Bede,ビート,비트,彼特
+trainerName.rose,Rose,Shehroz,Rose,Rose,Rose,Rose,Rose,ローズ,로즈,洛兹
+trainerName.oleana,Oleana,Liv,Olivia,Olivia,Olive,Oleana,Oleana,オリーヴ,올리브,奥利薇
+trainerName.klara,Klara,Sophora,Sófora,Sophora,Sofora,Klara,Klara,クララ,클라라,克拉拉
+trainerName.avery,Avery,Saturnin,Dreo,Saverio,Savory,Avery,Avery,セイボリー,세이보리,赛宝利
+trainerName.peony,Peony,Dhilan,Peony,Peony,Peony,Peony,Peony,ピオニー,피오니,皮欧尼
 item.bird-and-drake-fossils,Fossilized Bird & Drake,Fossile Oiseau & Fossile Dragon,Fósil Pájaro y Fósil Dragón,Vogel- & Drachenfossil,Fossiluccello e Fossildrago,Fóssil de Pássaro e de Dragão,Fóssil de Pássaro e de Dragão,カセキのトリとカセキのリュウ,화석새·화석드래곤,化石鸟与化石龙
 item.bird-and-dino-fossils,Fossilized Bird & Dino,Fossile Oiseau & Fossile Dino,Fósil Pájaro y Fósil Dino,Vogel- & Dinofossil,Fossiluccello e Fossildino,Fóssil de Pássaro e de Dinossauro,Fóssil de Pássaro e de Dinossauro,カセキのトリとカセキのクビナガ,화석새·화석수장룡,化石鸟与化石首长龙
 item.fish-and-drake-fossils,Fossilized Fish & Drake,Fossile Poisson & Fossile Dragon,Fósil Pez y Fósil Dragón,Fisch- & Drachenfossil,Fossilpesce e Fossildrago,Fóssil de Peixe e de Dragão,Fóssil de Peixe e de Dragão,カセキのサカナとカセキのリュウ,화석물고기·화석드래곤,化石鱼与化石龙
@@ -3250,33 +3315,33 @@ trainerClass.team-star-grunt,Team Star Grunt,Sbire de la Team Star,Recluta del T
 trainerClass.bodybuilder,Bodybuilder,Culturiste,Culturista,Bodybuilder,Culturista,Fisiculturista,Fisiculturista,ボディビルダー,보디빌더,健美运动员
 trainerClass.cabbie,Cabbie,Chauffeur de taxi,Taxista,Taxifahrer,Tassista,Taxista,Taxista,タクシードライバー,택시 운전사,出租车司机
 trainerClass.cook,Cook,Cuisinier,Cocinero,Koch,Cuoco,Cozinheiro,Cozinheiro,コック,요리사,厨师
-trainerName.nemona,Nemona,Nemona,Nemona,Nemona,Nemona,Nemona,Nemona,ネモ,네모,妮莫
-trainerName.arven,Arven,Arven,Arven,Arven,Arven,Arven,Arven,ペパー,페퍼,派帕
-trainerName.penny,Penny,Penny,Penny,Penny,Penny,Penny,Penny,ボタン,모란,牡丹
-trainerName.katy,Katy,Katy,Katy,Katy,Katy,Katy,Katy,カエデ,단풍,阿枫
-trainerName.brassius,Brassius,Brassius,Brassius,Brassius,Brassius,Brassius,Brassius,コルサ,콜사,寇沙
-trainerName.iono,Iono,Iono,Iono,Iono,Iono,Iono,Iono,ナンジャモ,모야모,奇树
-trainerName.kofu,Kofu,Kofu,Kofu,Kofu,Kofu,Kofu,Kofu,ハイダイ,곤포,海岱
-trainerName.larry,Larry,Larry,Larry,Larry,Larry,Larry,Larry,アオキ,청목,青木
-trainerName.ryme,Ryme,Ryme,Ryme,Ryme,Ryme,Ryme,Ryme,ライム,라임,莱姆
-trainerName.tulip,Tulip,Tulip,Tulip,Tulip,Tulip,Tulip,Tulip,リップ,립,莉普
+trainerName.nemona,Nemona,Menzi,Mencía,Nemila,Nemi,Nemona,Nemona,ネモ,네모,妮莫
+trainerName.arven,Arven,Pepper,Damián,Pepper,Pepe,Arven,Arven,ペパー,페퍼,派帕
+trainerName.penny,Penny,Pania,Noa,Cosima,Penny,Penny,Penny,ボタン,모란,牡丹
+trainerName.katy,Katy,Éra,Araceli,Ronah,Aceria,Katy,Katy,カエデ,단풍,阿枫
+trainerName.brassius,Brassius,Colza,Brais,Colzo,Brassius,Brassius,Brassius,コルサ,콜사,寇沙
+trainerName.iono,Iono,Mashynn,e-Nigma,Enigmara,Kissara,Iono,Iono,ナンジャモ,모야모,奇树
+trainerName.kofu,Kofu,Kombu,Fuco,Kombu,Algaro,Kofu,Kofu,ハイダイ,곤포,海岱
+trainerName.larry,Larry,Okuba,Laureano,Aoki,Ubaldo,Larry,Larry,アオキ,청목,青木
+trainerName.ryme,Ryme,Laïm,Lima,Etta,Lima,Ryme,Ryme,ライム,라임,莱姆
+trainerName.tulip,Tulip,Tully,Tuli,Tulia,Tulipa,Tulip,Tulip,リップ,립,莉普
 trainerName.grusha,Grusha,Grusha,Grusha,Grusha,Grusha,Grusha,Grusha,グルーシャ,그루샤,古鲁夏
-trainerName.giacomo,Giacomo,Giacomo,Giacomo,Giacomo,Giacomo,Giacomo,Giacomo,ピーニャ,Giacomo,Giacomo
-trainerName.mela,Mela,Mela,Mela,Mela,Mela,Mela,Mela,メロコ,Mela,Mela
-trainerName.atticus,Atticus,Atticus,Atticus,Atticus,Atticus,Atticus,Atticus,シュウメイ,Atticus,Atticus
-trainerName.ortega,Ortega,Ortega,Ortega,Ortega,Ortega,Ortega,Ortega,オルティガ,Ortega,Ortega
-trainerName.eri,Eri,Eri,Eri,Eri,Eri,Eri,Eri,ビワ,Eri,Eri
-trainerName.rika,Rika,Rika,Rika,Rika,Rika,Rika,Rika,チリ,Rika,Rika
-trainerName.poppy,Poppy,Poppy,Poppy,Poppy,Poppy,Poppy,Poppy,ポピー,Poppy,Poppy
-trainerName.hassel,Hassel,Hassel,Hassel,Hassel,Hassel,Hassel,Hassel,ハッサク,Hassel,八朔
-trainerName.geeta,Geeta,Geeta,Geeta,Geeta,Geeta,Geeta,Geeta,オモダカ,Geeta,Geeta
-trainerName.sada,Sada,Sada,Sada,Sada,Sada,Sada,Sada,オーリム,Sada,Sada
-trainerName.turo,Turo,Turo,Turo,Turo,Turo,Turo,Turo,フトゥー,Turo,Turo
-trainerName.kieran,Kieran,Kieran,Kieran,Kieran,Kieran,Kieran,Kieran,スグリ,Kieran,Kieran
-trainerName.crispin,Crispin,Crispin,Crispin,Crispin,Crispin,Crispin,Crispin,アカマツ,Crispin,Crispin
-trainerName.amarys,Amarys,Amarys,Amarys,Amarys,Amarys,Amarys,Amarys,ネリネ,Amarys,Amarys
-trainerName.lacey,Lacey,Lacey,Lacey,Lacey,Lacey,Lacey,Lacey,タロ,Lacey,Lacey
-trainerName.drayton,Drayton,Drayton,Drayton,Drayton,Drayton,Drayton,Drayton,カキツバタ,Drayton,Drayton
+trainerName.giacomo,Giacomo,Brome,Anán,Pinio,Romelio,Giacomo,Giacomo,ピーニャ,Giacomo,Giacomo
+trainerName.mela,Mela,Meloco,Melo,Irsa,Pruna,Mela,Mela,メロコ,Mela,Mela
+trainerName.atticus,Atticus,Erio,Henzo,Shugi,Henzo,Atticus,Atticus,シュウメイ,Atticus,Atticus
+trainerName.ortega,Ortega,Ortiga,Gus,Otis,Ortiz,Ortega,Ortega,オルティガ,Ortega,Ortega
+trainerName.eri,Eri,Nèflie,Erin,Rioba,Nespera,Eri,Eri,ビワ,Eri,Eri
+trainerName.rika,Rika,Cayenn,Cayena,Cay,Capsi,Rika,Rika,チリ,Rika,Rika
+trainerName.poppy,Poppy,Popi,Pola,Poppy,Verina,Poppy,Poppy,ポピー,Poppy,Poppy
+trainerName.hassel,Hassel,Hassa,Hesperio,Sinius,Oranzio,Hassel,Hassel,ハッサク,Hassel,八朔
+trainerName.geeta,Geeta,Alisma,Ságita,Sagaria,Alisma,Geeta,Geeta,オモダカ,Geeta,Geeta
+trainerName.sada,Sada,Olim,Albora,Antiqua,Olim,Sada,Sada,オーリム,Sada,Sada
+trainerName.turo,Turo,Turum,Turo,Futurus,Turum,Turo,Turo,フトゥー,Turo,Turo
+trainerName.kieran,Kieran,Kassis,Cass,Jo,Riben,Kieran,Kieran,スグリ,Kieran,Kieran
+trainerName.crispin,Crispin,Rubépin,Denis,Matt,Piros,Crispin,Crispin,アカマツ,Crispin,Crispin
+trainerName.amarys,Amarys,Nérine,Nerina,Erin,Erin,Amarys,Amarys,ネリネ,Amarys,Amarys
+trainerName.lacey,Lacey,Taro,Aroa,Tara,Rupi,Lacey,Lacey,タロ,Lacey,Lacey
+trainerName.drayton,Drayton,Irido,Levi,Levy,Aris,Drayton,Drayton,カキツバタ,Drayton,Drayton
 itemDesc.auspicious-armor,Makes certain Pokémon evolve: Charcadet (Armarouge). Use it from the Team screen.,Fait évoluer certains Pokémon : Charbambin (Carmadura). À utiliser depuis l'écran Équipe.,Hace evolucionar a ciertos Pokémon: Charcadet (Armarouge). Úsalo desde la pantalla Equipo.,Lässt bestimmte Pokémon entwickeln: Knarbon (Crimanzo). Im Team-Bildschirm einsetzbar.,Fa evolvere alcuni Pokémon: Charcadet (Armarouge). Usala dalla schermata Squadra.,Faz evoluir certos Pokémon: Charcadet (Armarouge). Usa-a no ecrã Equipa.,Faz certos Pokémon evoluírem: Charcadet (Armarouge). Use na tela Equipe.,特定のポケモンを進化させる：カルボウ（グレンアルマ）。「手持ち」画面で使う。,특정 포켓몬을 진화시킨다: 카르본(카디나르마). 팀 화면에서 사용한다.,让特定的宝可梦进化：炭小侍（红莲铠骑）。在队伍画面中使用。
 itemDesc.malicious-armor,Makes certain Pokémon evolve: Charcadet (Ceruledge). Use it from the Team screen.,Fait évoluer certains Pokémon : Charbambin (Malvalame). À utiliser depuis l'écran Équipe.,Hace evolucionar a ciertos Pokémon: Charcadet (Ceruledge). Úsalo desde la pantalla Equipo.,Lässt bestimmte Pokémon entwickeln: Knarbon (Azugladis). Im Team-Bildschirm einsetzbar.,Fa evolvere alcuni Pokémon: Charcadet (Ceruledge). Usala dalla schermata Squadra.,Faz evoluir certos Pokémon: Charcadet (Ceruledge). Usa-a no ecrã Equipa.,Faz certos Pokémon evoluírem: Charcadet (Ceruledge). Use na tela Equipe.,特定のポケモンを進化させる：カルボウ（ソウブレイズ）。「手持ち」画面で使う。,특정 포켓몬을 진화시킨다: 카르본(파라블레이즈). 팀 화면에서 사용한다.,让特定的宝可梦进化：炭小侍（苍炎刃鬼）。在队伍画面中使用。
 itemDesc.syrupy-apple,Makes certain Pokémon evolve: Applin (Dipplin). Use it from the Team screen.,Fait évoluer certains Pokémon : Verpom (Pomdramour). À utiliser depuis l'écran Équipe.,Hace evolucionar a ciertos Pokémon: Applin (Dipplin). Úsalo desde la pantalla Equipo.,Lässt bestimmte Pokémon entwickeln: Knapfel (Sirapfel). Im Team-Bildschirm einsetzbar.,Fa evolvere alcuni Pokémon: Applin (Dipplin). Usala dalla schermata Squadra.,Faz evoluir certos Pokémon: Applin (Dipplin). Usa-a no ecrã Equipa.,Faz certos Pokémon evoluírem: Applin (Dipplin). Use na tela Equipe.,特定のポケモンを進化させる：カジッチュ（カミッチュ）。「手持ち」画面で使う。,특정 포켓몬을 진화시킨다: 과사삭벌레(과미르). 팀 화면에서 사용한다.,让特定的宝可梦进化：啃果虫（裹蜜虫）。在队伍画面中使用。
@@ -3539,7 +3604,11 @@ ui.raid.dexLocked,A catch waits until you complete {area} ({region}).,Une captur
 ui.raid.lockTitle,{name} will wait for you,{name} t'attendra,{name} te esperará,{name} wartet auf dich,{name} ti aspetterà,{name} vai esperar por ti,{name} vai esperar por você,{name}は待っています,{name}이(가) 기다릴게요,{name}会等你
 ui.raid.lockText,Fight and catch it today: it joins your {region} Box once you complete {area}.,Combats-le et capture-le aujourd'hui : il rejoint ta Boîte de {region} dès que tu termines {area}.,Lucha y atrápalo hoy: se une a tu Caja de {region} cuando completes {area}.,"Bekämpfe und fang es heute: Es kommt in deine Box in {region}, sobald du {area} abschließt.",Sfidalo e catturalo oggi: entra nel tuo Box di {region} appena completi {area}.,Luta e captura-o hoje: entra na tua Caixa de {region} quando concluíres {area}.,Lute e capture-o hoje: ele entra na sua Caixa de {region} quando você concluir {area}.,今日戦って捕まえよう：{area}をクリアすると{region}のボックスに入ります。,오늘 싸워서 잡아요: {area}을(를) 클리어하면 {region}의 박스에 들어와요.,今天就挑战并捕获它：完成{area}后，它会进入你{region}的盒子。
 ui.raid.lockTextNew,Fight and catch it today: it joins your Box once you reach {region} and complete {area}.,Combats-le et capture-le aujourd'hui : il rejoint ta Boîte dès que tu arrives à {region} et termines {area}.,Lucha y atrápalo hoy: se une a tu Caja cuando llegues a {region} y completes {area}.,"Bekämpfe und fang es heute: Es kommt in deine Box, sobald du {region} erreichst und {area} abschließt.",Sfidalo e catturalo oggi: entra nel tuo Box appena raggiungi {region} e completi {area}.,Luta e captura-o hoje: entra na tua Caixa quando chegares a {region} e concluíres {area}.,Lute e capture-o hoje: ele entra na sua Caixa quando você chegar a {region} e concluir {area}.,今日戦って捕まえよう：{region}に行って{area}をクリアするとボックスに入ります。,오늘 싸워서 잡아요: {region}에 가서 {area}을(를) 클리어하면 박스에 들어와요.,今天就挑战并捕获它：到达{region}并完成{area}后，它会进入你的盒子。
-ui.raid.comingUp,Coming up,À venir,Próximamente,Demnächst,In arrivo,A seguir,Em breve,これからのレイド,다가오는 레이드,即将到来
+ui.raid.calendar,Calendar,Calendrier,Calendario,Kalender,Calendario,Calendário,Calendário,カレンダー,캘린더,日历
+ui.raid.calendarLabel,Calendar: the raids of the next two weeks,Calendrier : les raids des deux prochaines semaines,Calendario: las incursiones de las próximas dos semanas,Kalender: die Raids der nächsten zwei Wochen,Calendario: i raid delle prossime due settimane,Calendário: os raides das próximas duas semanas,Calendário: as reides das próximas duas semanas,カレンダー：これから2週間のレイド,캘린더: 앞으로 2주간의 레이드,日历：未来两周的团体战
+ui.raid.calendarTitle,Raids calendar,Calendrier des raids,Calendario de incursiones,Raid-Kalender,Calendario dei raid,Calendário dos raides,Calendário das reides,レイドカレンダー,레이드 캘린더,团体战日历
+ui.raid.calendarNote,The raids calendar might change at any time without notice.,Le calendrier des raids peut changer à tout moment sans préavis.,El calendario de incursiones puede cambiar en cualquier momento sin previo aviso.,Der Raid-Kalender kann sich jederzeit ohne Vorankündigung ändern.,Il calendario dei raid può cambiare in qualsiasi momento senza preavviso.,O calendário dos raides pode mudar a qualquer momento sem aviso prévio.,O calendário das reides pode mudar a qualquer momento sem aviso prévio.,レイドカレンダーは予告なく変更されることがあります。,레이드 캘린더는 예고 없이 언제든지 바뀔 수 있어요.,团体战日历可能随时变更，恕不另行通知。
+ui.raid.today,Today,Aujourd'hui,Hoy,Heute,Oggi,Hoje,Hoje,今日,오늘,今天
 ui.raid.waitingTitle,Waiting for you,Ils t'attendent,Te esperan,Warten auf dich,Ti aspettano,À tua espera,Esperando por você,待っているポケモン,기다리는 포켓몬,等待你的宝可梦
 ui.raid.waitingFor,Complete {area} in {region} to get it,Termine {area} à {region} pour l'avoir,Completa {area} en {region} para tenerlo,"Schließe {area} in {region} ab, um es zu bekommen",Completa {area} a {region} per averlo,Conclui {area} em {region} para o ter,Conclua {area} em {region} para tê-lo,{region}の{area}をクリアすると手に入ります,{region}의 {area}을(를) 클리어하면 받아요,在{region}完成{area}即可获得
 ui.raid.result.locked,"{name} is yours, locked for now: it joins your {region} Box once you complete {area}.","{name} est à toi, verrouillé pour l'instant : il rejoint ta Boîte de {region} dès que tu termines {area}.","{name} es tuyo, bloqueado por ahora: se une a tu Caja de {region} cuando completes {area}.","{name} gehört dir, vorerst gesperrt: Es kommt in deine Box in {region}, sobald du {area} abschließt.","{name} è tuo, bloccato per ora: entra nel tuo Box di {region} appena completi {area}.","{name} é teu, bloqueado por agora: entra na tua Caixa de {region} quando concluíres {area}.","{name} é seu, bloqueado por enquanto: entra na sua Caixa de {region} quando você concluir {area}.",{name}はあなたのもの。今はロック中：{area}をクリアすると{region}のボックスに入ります。,{name}은(는) 당신 거예요. 지금은 잠겨 있어요: {area}을(를) 클리어하면 {region}의 박스에 들어와요.,{name}归你了，但暂时锁定：完成{area}后，它会进入你{region}的盒子。
@@ -3823,4 +3892,23 @@ item.galarica-cuff,Galarica Cuff,Bracelet Galanoa,Brazal Galanuez,Galarnuss-Reif
 item.galarica-wreath,Galarica Wreath,Couronne Galanoa,Corona Galanuez,Galarnuss-Kranz,Corona Galarnoce,Coroa Galárica,Coroa Galárica,ガラナツリース,가라두구머리장식,伽勒豆蔻花圈
 itemDesc.galarica-cuff,Makes certain Pokémon evolve: Galarian Slowpoke (Galarian Slowbro). Use it from the Team screen.,Fait évoluer certains Pokémon : Ramoloss de Galar (Flagadoss de Galar). À utiliser depuis l'écran Équipe.,Hace evolucionar a ciertos Pokémon: Slowpoke de Galar (Slowbro de Galar). Úsalo desde la pantalla Equipo.,Lässt bestimmte Pokémon entwickeln: Galar-Flegmon (Galar-Lahmus). Im Team-Bildschirm einsetzbar.,Fa evolvere alcuni Pokémon: Slowpoke di Galar (Slowbro di Galar). Usalo dalla schermata Squadra.,Faz evoluir certos Pokémon: Slowpoke de Galar (Slowbro de Galar). Usa-o no ecrã Equipa.,Faz certos Pokémon evoluírem: Slowpoke de Galar (Slowbro de Galar). Use na tela Equipe.,特定のポケモンを進化させる：ガラルヤドン（ガラルヤドラン）。「手持ち」画面で使う。,특정 포켓몬을 진화시킨다: 가라르 야돈(가라르 야도란). 팀 화면에서 사용한다.,让特定的宝可梦进化：伽勒尔呆呆兽（伽勒尔呆壳兽）。在队伍画面中使用。
 itemDesc.galarica-wreath,Makes certain Pokémon evolve: Galarian Slowpoke (Galarian Slowking). Use it from the Team screen.,Fait évoluer certains Pokémon : Ramoloss de Galar (Roigada de Galar). À utiliser depuis l'écran Équipe.,Hace evolucionar a ciertos Pokémon: Slowpoke de Galar (Slowking de Galar). Úsalo desde la pantalla Equipo.,Lässt bestimmte Pokémon entwickeln: Galar-Flegmon (Galar-Laschoking). Im Team-Bildschirm einsetzbar.,Fa evolvere alcuni Pokémon: Slowpoke di Galar (Slowking di Galar). Usala dalla schermata Squadra.,Faz evoluir certos Pokémon: Slowpoke de Galar (Slowking de Galar). Usa-a no ecrã Equipa.,Faz certos Pokémon evoluírem: Slowpoke de Galar (Slowking de Galar). Use na tela Equipe.,特定のポケモンを進化させる：ガラルヤドン（ガラルヤドキング）。「手持ち」画面で使う。,특정 포켓몬을 진화시킨다: 가라르 야돈(가라르 야도킹). 팀 화면에서 사용한다.,让特定的宝可梦进化：伽勒尔呆呆兽（伽勒尔呆呆王）。在队伍画面中使用。
+diceDesc.base,Plain 1 to 6,"Simple, de 1 à 6","Simple, del 1 al 6","Schlicht, 1 bis 6","Semplice, da 1 a 6","Simples, de 1 a 6","Simples, de 1 a 6",ふつうの1〜6,평범한 1~6,普通的1到6
+diceDesc.normal,Steady 1 to 6,"Régulier, de 1 à 6","Constante, del 1 al 6","Beständig, 1 bis 6","Costante, da 1 a 6","Constante, de 1 a 6","Constante, de 1 a 6",安定の1〜6,안정적인 1~6,稳定的1到6
+diceDesc.fire,Stacking burn,Brûlure cumulable,Quemadura acumulable,Stapelbare Verbrennung,Scottatura cumulabile,Queimadura acumulável,Queimadura acumulável,やけどが重なる,누적되는 화상,可叠加的灼伤
+diceDesc.water,"Reliable, no 1s or 6s","Fiable, ni 1 ni 6","Fiable, sin 1 ni 6","Verlässlich, ohne 1 und 6","Affidabile, niente 1 né 6","Fiável, sem 1 nem 6","Confiável, sem 1 nem 6",堅実、1と6が出ない,"믿음직함, 1과 6 없음",可靠，没有1和6
+diceDesc.electric,Chance to paralyze,Peut paralyser,Puede paralizar,Kann paralysieren,Può paralizzare,Pode paralisar,Pode paralisar,まひさせることがある,마비시킬 수 있음,有机会麻痹
+diceDesc.grass,Chance to heal,Peut soigner,Puede curar,Kann heilen,Può curare,Pode curar,Pode curar,回復することがある,회복할 수 있음,有机会回复
+diceDesc.ice,Chance to freeze,Peut geler,Puede congelar,Kann einfrieren,Può congelare,Pode congelar,Pode congelar,こおらせることがある,얼릴 수 있음,有机会冰冻
+diceDesc.fighting,"Hard hitter, 2 to 7","Cogneur, de 2 à 7","Pega fuerte, del 2 al 7","Schlägt hart zu, 2 bis 7","Picchia duro, da 2 a 7","Bate forte, de 2 a 7","Bate forte, de 2 a 7",強打、2〜7,"강타, 2~7",重击，2到7
+diceDesc.poison,Chance to poison,Peut empoisonner,Puede envenenar,Kann vergiften,Può avvelenare,Pode envenenar,Pode envenenar,どくにすることがある,독에 걸리게 할 수 있음,有机会中毒
+diceDesc.ground,All or nothing,Tout ou rien,Todo o nada,Alles oder nichts,Tutto o niente,Tudo ou nada,Tudo ou nada,一か八か,모 아니면 도,孤注一掷
+diceDesc.flying,Chance of a big 7,Un gros 7 possible,Puede salir un gran 7,Chance auf eine große 7,Possibile un grosso 7,Pode sair um grande 7,Pode sair um grande 7,大きな7が出ることも,큰 7이 나올 수 있음,有机会掷出大7
+diceDesc.psychic,Chance to confuse,Peut rendre confus,Puede confundir,Kann verwirren,Può confondere,Pode confundir,Pode confundir,こんらんさせることがある,혼란시킬 수 있음,有机会混乱
+diceDesc.bug,Only 1s and 4s,Que des 1 et des 4,Solo 1 y 4,Nur Einsen und Vieren,Solo 1 e 4,Só 1 e 4,Só 1 e 4,1と4だけ,1과 4뿐,只有1和4
+diceDesc.rock,Low but sturdy,Faible mais solide,Bajo pero firme,"Niedrig, aber solide",Basso ma solido,Baixo mas sólido,"Baixo, mas sólido",低めだが堅実,낮지만 견고함,点数低但稳
+diceDesc.ghost,Blanks or big hits,Rien ou gros coups,Fallos o golpes fuertes,Nieten oder Volltreffer,A vuoto o colpi forti,Em branco ou golpes fortes,Em branco ou golpes fortes,空振りか大当たり,헛방 아니면 강타,落空或重击
+diceDesc.dragon,"Strong, up to 8","Puissant, jusqu'à 8","Fuerte, hasta 8","Stark, bis 8","Forte, fino a 8","Forte, até 8","Forte, até 8",強力、最大8,"강력, 최대 8",强力，最高8
+diceDesc.dark,"Risky, up to 7","Risqué, jusqu'à 7","Arriesgado, hasta 7","Riskant, bis 7","Rischioso, fino a 7","Arriscado, até 7","Arriscado, até 7",ハイリスク、最大7,"위험, 최대 7",冒险，最高7
+diceDesc.steel,Always 3 or 4,Toujours 3 ou 4,Siempre 3 o 4,Immer 3 oder 4,Sempre 3 o 4,Sempre 3 ou 4,Sempre 3 ou 4,いつも3か4,항상 3 또는 4,总是3或4
+diceDesc.fairy,Even numbers only,Que des nombres pairs,Solo números pares,Nur gerade Zahlen,Solo numeri pari,Só números pares,Só números pares,偶数だけ,짝수만,只有偶数
 area.dyna-tree-hill,Dyna Tree Hill,Butte du Dynarbre,Colina del Árbol Dinamax,Hügel des Dyna-Baums,Collina dell'Albero Dynamax,Colina da Árvore Dynamax,Colina da Árvore Dynamax,ダイ木の丘,다이나무 언덕,极巨树之丘

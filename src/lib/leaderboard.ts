@@ -8,6 +8,7 @@ import type { GameData, RegionId } from '@/engine/types'
 import { avatarOf } from './avatars'
 import { getSupabase } from './supabase'
 import { t, tPlural } from '@/i18n'
+import { realmArgs } from '@/lib/realm'
 
 export type LeaderboardTab = 'level' | 'progress' | 'dex' | 'shiny' | 'raids'
 
@@ -191,7 +192,7 @@ export function leaderboardError(err: unknown): string {
 export async function fetchLeaderboard(): Promise<LeaderboardRow[] | null> {
   const client = await getSupabase()
   if (!client) return null
-  const { data, error } = await client.rpc('leaderboard')
+  const { data, error } = await client.rpc('leaderboard', realmArgs())
   if (error) throw error
   return parseLeaderboard((data ?? []) as RawRow[])
 }

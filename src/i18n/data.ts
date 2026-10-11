@@ -1,9 +1,9 @@
 // Content names come out of src/data/*.json in English. Rather than translate at every render site,
 // the store swaps the whole compiled GameData when the language changes, so `species.name`,
-// `area.name`, `item.name` and `trainer.name` are already in the player's language everywhere.
+// `area.name`, `item.name`, `trainer.name` and a die type's `description` are already in the player's language everywhere.
 import type { GameData } from '@/engine'
 import { tIn, type Lang } from '.'
-import { areaKey, itemDescKey, itemKey, pokemonKey, slug, splitRematch, splitTrainerName, trainerClassKey, trainerNameKey } from './names'
+import { areaKey, diceDescKey, itemDescKey, itemKey, pokemonKey, slug, splitRematch, splitTrainerName, trainerClassKey, trainerNameKey } from './names'
 
 /** A key the sheet has nothing for falls back to the English name it was built from. */
 const pick = (lang: Lang, key: string, english: string) => {
@@ -18,8 +18,9 @@ export const localizeRegionName = (lang: Lang, id: string, english: string) => p
 
 /**
  * `Bug Catcher Kent` → `Chasseur d'insectes Kent`: the class is translated; a given name only when the sheet has a row
- * for it (gym leaders, the Elite Four, champions: official names in CJK, kept in Latin languages). `Lance II` reads
- * the `Lance` row.
+ * for it (gym leaders, the Elite Four, champions, rivals, villains: each language's official name, Brock → Pierre in
+ * French, Rocko in German; English in Portuguese, which the games were never translated into). `Lance II` reads the
+ * `Lance` row.
  */
 export function localizeTrainerName(lang: Lang, english: string): string {
   const { cls, given } = splitTrainerName(english)
@@ -45,6 +46,11 @@ export function localizeGameData(data: GameData, lang: Lang): GameData {
       description: item.description ? pick(lang, itemDescKey(item.key), item.description) : item.description,
     }
 
+  // A die type's one-line nature ("Steady 1 to 6"), shown beside its name on a Pokémon's sheet.
+  const diceTypes = { ...data.diceTypes }
+  for (const def of Object.values(data.diceTypes))
+    if (def.description) diceTypes[def.type] = { ...def, description: pick(lang, diceDescKey(def.type), def.description) }
+
   const trainers: GameData['trainers'] = {}
   for (const [id, tr] of Object.entries(data.trainers))
     trainers[id] = { ...tr, name: localizeTrainerName(lang, tr.name), badge: tr.badge ? localizeBadge(lang, tr.badge) : tr.badge }
@@ -57,6 +63,7 @@ export function localizeGameData(data: GameData, lang: Lang): GameData {
     species,
     speciesList: Object.values(species).sort((a, b) => a.dex - b.dex),
     items,
+    diceTypes,
     trainers,
     areas,
     regions,

@@ -195,6 +195,24 @@ export const ICONS = {
     'kRRRRRRRRRRRRRRk',
     '.kkkkkkkkkkkkkk.',
   ],
+  // Extreme mode (docs/22): its emblem, and a Pokémon resting after a K.O.
+  skull: ['..kkkkkk..', '.kwwwwwwk.', 'kwwwwwwwwk', 'kwkkwwkkwk', 'kwkkwwkkwk', 'kwwwkkwwwk', '.kwwwwwwk.', '..kwwwwk..', '..kwkkwk..', '...kkkk...'],
+  moon: ['..kkkk..', '.kyykk..', 'kyyk....', 'kyk.....', 'kyk.....', 'kyyk....', '.kyykk..', '..kkkk..'],
+  // The raids' calendar: two rings, a red header, a grid of days.
+  calendar: [
+    '..k.....k..',
+    'kkwkkkkkwkk',
+    'krkrrrrrkrk',
+    'krrrrrrrrrk',
+    'kkkkkkkkkkk',
+    'kwwwwwwwwwk',
+    'kwkwkwkwkwk',
+    'kwwwwwwwwwk',
+    'kwkwkwkwkwk',
+    'kwwwwwwwwwk',
+    'kwkwkwwwwwk',
+    'kkkkkkkkkkk',
+  ],
   ...PACK_ICONS,
 } as const
 

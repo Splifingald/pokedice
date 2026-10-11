@@ -349,3 +349,23 @@ The day's raid is no longer picked per player: **one raid a UTC day, the same fo
 - **Pokédex:** a species' row shows its next raid days (GO on the day), and the lock when its area isn't completed.
 - **Raids page:** the lock notice, START, your team and group, the ball odds, the catches waiting, the next six days.
 - `pnpm raid-balance` now plays the calendar's species: mythicals 51 %, legendaries 56 %, pseudo 59 % (10 raids each).
+
+### The events admin (2026-10-11, the user's ask)
+- **Admin → Events has sub-tabs**: General (each event's Off / On for admin / On for everyone switch, Home order,
+  unlock area, banner, pop-up rules, the teaser; Live events' switch too), Fortune Wheel, Raids, Elite Rebattle, Live
+  events (moved here from its own section). The tab is in the address (`?tab=raids`).
+- **Raids tab** (`admin/sections/events/RaidsTab.tsx`):
+  - **Calendar**: a month view with each day's Pokémon (shiny marked, ringed in its kind's colour, today in red, past
+    days dimmed, days set by hand tagged). A day opens a panel: its Pokémon and area, what the plan had, and from
+    tomorrow on **change it** (any Pokémon, shiny or not), **swap it with another day**, or put it back to the plan.
+  - **The seed**: the calendar is generated from the rules and a seed (`calendar.seeds`, by the day it applies from).
+    A new seed applies from tomorrow: the days before keep their raids, the rest of the year is laid out again from
+    what is left (no mythical or legendary twice a year). Seed 0 is the calendar as it was.
+  - **Today never changes**: any change to the plan (seed, fixed dates, mythicals, exclusions, days set by hand) pins
+    today's raid as a day set by hand first.
+  - **Raid Pokémon**: every Pokémon of the calendar with its icon, kind and next dates, and **its own numbers** (HP
+    bars, HP per bar, summons at the start, summon points per bar, summons beside it, level, dice level) over the
+    defaults (`raid.perMon`; empty = default, shown greyed). The fight, the raid card and the catch level use them.
+  - Fixed dates and mythicals with their icons and a Pokémon picker; exclusions as icon chips; helpers' gifts; the
+    win-rate simulator over the next two weeks, each raid with its own numbers.
+- Tests: `tests/engine/raid-admin.test.ts` (own numbers, seeds, days by hand), `e2e/admin-events.spec.ts`.

@@ -4,6 +4,7 @@ import { KANTO, evolutionGate, regionOf, regionOfArea } from './regions'
 import { asSeenBy, gymsFor, playerSideOf } from './rival'
 import { nextComboCost, nextDieCost, pokemonXp, trainerGoldFor, healAmount, multiExpShareFor } from './economy'
 import { deckAbilities, deckCounts, roundsComplete } from './encounters'
+import { centersOn, healItemsOn, wipeHeals } from './extreme'
 import { addFossil, isReviving } from './fossils'
 import { LEGACY_GAUGE } from './legacyGauge'
 import { MONEY, sellPrice, shopSells, usableIn } from './items'
@@ -133,19 +134,33 @@ export function recordDraws(
   const p = progressOf(save, areaId)
   const lastCenter = roll.encounter ? roll.encounter.kind === 'center' : p.lastCenter
   if (!roll.deck && !roll.lootDeck) {
-    return !!lastCenter === !!p.lastCenter ? save : withProgress(save, areaId, { ...p, lastCenter })
+    return spendLoneCenters(!!lastCenter === !!p.lastCenter ? save : withProgress(save, areaId, { ...p, lastCenter }), areaId)
   }
   const round = roll.newRound ? (p.round ?? 0) + 1 : p.round
   const drawn = roll.newRound ? (roll.drawn ?? []) : roll.drawn ? [...(p.drawn ?? []), ...roll.drawn] : p.drawn
-  return withProgress(save, areaId, {
-    ...p,
-    ...(roll.deck ? { deck: roll.deck } : {}),
-    ...(roll.lootDeck ? { lootDeck: roll.lootDeck } : {}),
-    ...(round != null ? { round } : {}),
-    ...(drawn ? { drawn } : {}),
-    ...(roll.newRound ? { roundCounted: false } : {}),
-    lastCenter,
-  })
+  return spendLoneCenters(
+    withProgress(save, areaId, {
+      ...p,
+      ...(roll.deck ? { deck: roll.deck } : {}),
+      ...(roll.lootDeck ? { lootDeck: roll.lootDeck } : {}),
+      ...(round != null ? { round } : {}),
+      ...(drawn ? { drawn } : {}),
+      ...(roll.newRound ? { roundCounted: false } : {}),
+      lastCenter,
+    }),
+    areaId,
+  )
+}
+
+/**
+ * Right after a Pokémon Center, Centers left on their own in the deck can't be met (never two in a row): they are
+ * turned over at once and the round ends, so it counts. A legendary's lair is mostly Centers; set aside one draw at a
+ * time instead, they emptied the deck in the middle of a draw, a new one was dealt and the round never counted.
+ */
+function spendLoneCenters(save: SaveData, areaId: string): SaveData {
+  const p = progressOf(save, areaId)
+  if (!p.lastCenter || !p.deck?.length || p.deck.some((c) => c !== 'center')) return save
+  return withProgress(save, areaId, { ...p, deck: [], drawn: [...(p.drawn ?? []), ...p.deck] })
 }
 
 /** A Pokémon Center would do something: a Pokémon (team or Box) below full HP, or one in the Box to swap in. */
@@ -229,6 +244,17 @@ export function isAreaUnlocked(save: SaveData, areaId: string, data: GameData, d
   const idx = chain.findIndex((a) => a.id === areaId)
   if (idx <= 0) return idx === 0
   return progressOf(save, chain[idx - 1]!.id).cleared
+}
+
+/**
+ * The furthest area of the region's main chain the player can play (secret areas don't count), when they stand
+ * somewhere else: Home offers to go there. Null once the whole chain is cleared, or when they are already there.
+ */
+export function latestOpenArea(save: SaveData, data: GameData): Area | null {
+  const chain = linearAreas(data, regionOf(save))
+  if (!chain.length || chain.every((a) => progressOf(save, a.id).cleared)) return null
+  const latest = [...chain].reverse().find((a) => isAreaUnlocked(save, a.id, data) && !isAreaClosed(save, a.id, data))
+  return latest && latest.id !== save.currentAreaId ? latest : null
 }
 
 /**
@@ -503,19 +529,20 @@ export function finishRound(
 /**
  * Wipe: the round is lost. Back to the start of the area, team fully healed; the deck is dropped, so the round in
  * progress never counts and the next encounter starts a new, freshly shuffled round. Rounds already done stay done.
- * Pokémon levels and XP, items and Pokédollars are all kept.
+ * Pokémon levels and XP, items and Pokédollars are all kept. In Extreme mode nothing heals: the team rests.
  */
 export function applyWipe(save: SaveData, areaId: string, data: GameData): SaveData {
   const p = progressOf(save, areaId)
-  const healed = new Set(save.team)
+  const healed = new Set(wipeHeals(save, data) ? save.team : [])
   return {
     ...withProgress(save, areaId, { ...p, deck: [], drawn: [] }),
     box: save.box.map((inst) => (healed.has(inst.id) ? { ...inst, currentHp: instanceMaxHp(inst, data) } : inst)),
   }
 }
 
-/** Pokémon Center: full heal for team and box. */
+/** Pokémon Center: full heal for team and box. None in Extreme mode (unless the admin turns them back on). */
 export function centerHeal(save: SaveData, data: GameData): SaveData {
+  if (!centersOn(save, data)) return save
   return { ...save, box: save.box.map((inst) => ({ ...inst, currentHp: instanceMaxHp(inst, data) })) }
 }
 
@@ -614,6 +641,7 @@ export function applyFieldItem(
   const inst = getInstance(save, instId)
   if (!item || !inst || isReviving(inst) || !usableIn(item, 'field') || (save.inventory[key] ?? 0) <= 0) return null
   if (item.effect.kind === 'heal' || item.effect.kind === 'revive') {
+    if (!healItemsOn(save, data)) return null
     const healed = applyItemToInstance(save, key, instId, data)
     return healed ? { save: healed, events: [] } : null
   }

@@ -343,6 +343,8 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
   const itemHelps = (key: string, p: Battler) => {
     const e = data.items[key]?.effect
     if (!e) return false
+    // Extreme mode with the admin's items switch off: no Potion or Revive works (docs/22).
+    if (st.noHealItems && (e.kind === 'heal' || e.kind === 'revive')) return false
     if (e.kind === 'revive') return p.hp <= 0
     if (p.hp <= 0) return false
     if (e.kind === 'heal') return p.hp < p.maxHp
@@ -564,7 +566,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
   if (over) actions = versus!.end
   else if (auto && !terminal)
     actions = (
-      <div className="grid grid-cols-[1.4fr_1fr] items-center gap-2.5" role="status">
+      <div className="grid grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] items-center gap-2.5" role="status">
         <p className="m-0 flex items-center gap-2 font-pixel-sm text-[16px] leading-[1.1] text-muted">
           <Chip tone="plain">{t('ui.battle.autoMode')}</Chip>
           {t('ui.battle.autoNote')}
@@ -597,7 +599,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
     )
   else if (rolling && !terminal)
     actions = (
-      <div className="grid grid-cols-[1fr_1.4fr] gap-2.5">
+      <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] gap-2.5">
         <PixelButton
           size="lg"
           className="whitespace-nowrap px-2"
@@ -621,7 +623,9 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
 
   // The Bag (or, in Versus, who you're up against) and the team pips: under the panel on phones, at the side when wide.
   const bag = versus ? (
-    <span className="min-w-0 truncate text-[20px] text-muted">
+    // Only the room the team leaves (flex-1 from zero): sized to its text, a long name shrank the team too and the
+    // pips wrapped onto two rows.
+    <span className="min-w-0 flex-1 truncate text-[20px] text-muted">
       {t('ui.battle.vsName', { name: versus.trainerName })}
     </span>
   ) : (
@@ -1016,7 +1020,9 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
                   <span className="flex min-w-0 flex-1 flex-col">
                     <span className="text-[20px] leading-none">{it.name}</span>
                     <span className="font-pixel-sm text-[15px] leading-tight text-muted">
-                      {effectText(it)}
+                      {st.noHealItems && (it.effect.kind === 'heal' || it.effect.kind === 'revive')
+                        ? t('ui.extreme.noItems')
+                        : effectText(it)}
                     </span>
                   </span>
                   <span className="font-pixel-sm text-[16px] tabular-nums">×{n}</span>

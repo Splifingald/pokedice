@@ -15,6 +15,10 @@ useGame.subscribe((s, prev) => {
   if (s.settings.theme !== prev.settings.theme) applyTheme(s.settings.theme)
 })
 
+// Safari pinch-zooms whatever touch-action says (index.css): its own gesture events are the way to stop it.
+for (const type of ['gesturestart', 'gesturechange'])
+  document.addEventListener(type, (e) => e.preventDefault(), { passive: false })
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <App />

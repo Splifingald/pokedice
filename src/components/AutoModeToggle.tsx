@@ -12,8 +12,9 @@ export function AutoModeToggle() {
   const { t } = useT()
   const on = useGame((s) => !!s.settings.autoMode)
   const [tip, closeTip] = useOneTimeTip(AUTO_TIP_KEY)
+  // Its own column: the tip takes the full width above the button, never squeezed beside it in a row.
   return (
-    <>
+    <div className="flex w-full flex-col items-end gap-2">
       {tip && <OakTip onClose={closeTip}>{t('ui.area.autoTip')}</OakTip>}
       <PixelButton
         size="sm"
@@ -24,6 +25,6 @@ export function AutoModeToggle() {
         <PixelIcon name="dice" size={16} />
         {t('ui.area.autoMode', { state: t(on ? 'ui.common.on' : 'ui.common.off') })}
       </PixelButton>
-    </>
+    </div>
   )
 }

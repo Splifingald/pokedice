@@ -96,7 +96,7 @@ export function WheelPage() {
         <canvas ref={disc} className="ev-wheel-disc" width={288} height={288} role="img" aria-label={wheelLabel} />
         <canvas ref={fx} className="ev-wfx" aria-hidden />
       </div>
-      <div className="grid grid-cols-[1fr_2.2fr] items-stretch gap-2.5">
+      <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,2.2fr)] items-stretch gap-2.5">
         <button type="button" className="ev-info" onClick={() => setOdds(true)} aria-label={t('ui.events.wheel.infoLabel')}>
           {t('ui.events.wheel.info')}
         </button>

@@ -23,6 +23,7 @@ import { useGame } from '@/store/game'
 import { cx } from '@/theme/util'
 import { BattleView } from './battle/BattleView'
 import { CasinoView } from './area/CasinoView'
+import { AreaIdle } from './area/AreaIdle'
 import { CenterView } from './area/CenterView'
 import { EncounterPreview } from './area/EncounterPreview'
 import { AreaDetails } from './home/AreaDetails'
@@ -216,7 +217,8 @@ function AreaHeader({ area, progress, teamAvg }: { area: Area; progress: AreaPro
 
 /**
  * The encounter route: the preview of what CONTINUE rolled on Home, the Pokémon Center, the Game Corner and the battle.
- * Between encounters there is nothing to do here: Home is the area hub, so an idle run goes back there.
+ * Between encounters the player stays here (AreaIdle: the team, HOME or the next encounter); only a full K.O. (which
+ * ends the run) or the HOME buttons go back Home.
  */
 export function AreaScreen() {
   const save = useGame((s) => s.save)
@@ -232,7 +234,8 @@ export function AreaScreen() {
   if (!save) return <Navigate to="/" replace />
   if (battle) return <BattleView key={battle.id} battle={battle} />
   // An Elite Rebattle run ends on its own page.
-  if (!area || !run.areaId || run.phase === 'idle') return <Navigate to={run.rebattle ? '/events/rebattle' : '/home'} replace />
+  if (!area || !run.areaId || (run.phase === 'idle' && run.rebattle))
+    return <Navigate to={run.rebattle ? '/events/rebattle' : '/home'} replace />
 
   const progress = progressOf(save, area.id)
   return (
@@ -241,6 +244,7 @@ export function AreaScreen() {
       {run.phase === 'preview' && run.encounter && <EncounterPreview enc={run.encounter} />}
       {run.phase === 'center' && <CenterView />}
       {run.phase === 'casino' && <CasinoView />}
+      {run.phase === 'idle' && <AreaIdle area={area} />}
     </div>
   )
 }

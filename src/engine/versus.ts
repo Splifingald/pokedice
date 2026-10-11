@@ -35,6 +35,24 @@ export function versusCandidates(save: SaveData, data: GameData): VersusCandidat
   return everyBox(save).flatMap(([region, box]) => box.filter((p) => eligible(p, data)).map((inst) => ({ inst, region })))
 }
 
+/**
+ * The team picker's list: one Pokémon per species, and one more for its shiny. Two of them fight exactly alike in
+ * Versus (cloneForVersus keeps only the species, Lv.50 and the shine), so a species owned in several regions shows
+ * once, the region being played first. Picked ones (`keep`) are always listed and take their species' place.
+ */
+export function versusChoices(save: SaveData, data: GameData, keep: readonly string[] = []): VersusCandidate[] {
+  const all = versusCandidates(save, data)
+  const kind = (c: VersusCandidate) => `${c.inst.dex}:${c.inst.shiny ? 'shiny' : ''}`
+  const out = all.filter((c) => keep.includes(c.inst.id))
+  const listed = new Set(out.map(kind))
+  for (const c of all)
+    if (!listed.has(kind(c))) {
+      out.push(c)
+      listed.add(kind(c))
+    }
+  return out
+}
+
 /** Every region's Box the player has played, the one being played first. */
 function everyBox(save: SaveData): [RegionId, PokemonInstance[]][] {
   const live = regionOf(save)

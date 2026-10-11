@@ -5,6 +5,7 @@
 import { useEffect } from 'react'
 import { create } from 'zustand'
 import { getSupabase } from '@/lib/supabase'
+import { anchorClock } from './clock'
 import { useNow } from './hooks'
 
 interface ServerTime {
@@ -34,6 +35,7 @@ async function fromSite(): Promise<number | null> {
 /** Reads the real time and keeps how far the device's clock is from it. Failures leave the last value. */
 export async function syncServerTime(): Promise<void> {
   const before = Date.now()
+  const perfBefore = performance.now()
   let server: number | null = null
   try {
     server = await fromDatabase()
@@ -49,6 +51,7 @@ export async function syncServerTime(): Promise<void> {
   }
   if (server == null) return
   // Halfway through the round trip is the best guess for when the server read its clock.
+  anchorClock(server, (perfBefore + performance.now()) / 2)
   useServerTime.setState({ offset: server - (before + Date.now()) / 2 })
 }
 

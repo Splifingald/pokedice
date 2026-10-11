@@ -47,6 +47,9 @@ function useFitText(label: ReactNode) {
       const base = Number.parseFloat(getComputedStyle(el).fontSize)
       const room = el.clientWidth
       if (!base || !room) return
+      // Measured from the start edge: centred, an overflow spills out on both sides and scrollWidth only counts the
+      // half on the right, so the loop below under-corrected and could stop with the label still clipped.
+      el.style.justifyContent = 'flex-start'
       const floor = base * MIN_FIT_SCALE
       let size = base
       // An icon beside the text keeps its size whatever the font does, so a single ratio undershoots. Close in
@@ -55,6 +58,7 @@ function useFitText(label: ReactNode) {
         size = Math.max(floor, size * (room / el.scrollWidth))
         el.style.fontSize = `${size}px`
       }
+      el.style.justifyContent = ''
       // A red button's white label under 24px needs the deeper red to stay readable (pixel.css).
       el.parentElement?.toggleAttribute('data-small', size < 24)
     }

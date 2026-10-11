@@ -6,7 +6,7 @@ import { Panel } from '@/components/Panel'
 import { PixelButton } from '@/components/PixelButton'
 import { Seg } from '@/components/Segmented'
 import { Toggle } from '@/components/Toggle'
-import { donationEnabled } from '@/engine'
+import { donationEnabled, extremeOpen, isExtreme } from '@/engine'
 import { LANG_LABELS, LANGS, type Lang } from '@/i18n'
 import { multiExpText } from '@/i18n/text'
 import { useT } from '@/i18n/react'
@@ -15,7 +15,9 @@ import { parseSave } from '@/save/schema'
 import { pushToast, setSettings, useGame } from '@/store/game'
 import { deleteSave, replaceSave } from '@/store/run'
 import { useIsAdmin } from '@/store/hooks'
-import { checkContent, providerName } from '@/store/sync'
+import { checkContent, deleteAllData, deleteExtremeSave, providerName } from '@/store/sync'
+import { otherSave } from '@/store/extreme'
+import { ExtremeRulesModal } from '@/components/Extreme'
 import { AccountButton, ConnectedAccounts, DisconnectButton } from '@/components/AccountButton'
 import { SaveFacts } from '@/components/SyncConflictModal'
 import { backupSave, readBackups, soundOn } from '@/save/storage'
@@ -182,6 +184,8 @@ export function SettingsScreen() {
         </details>
       </Panel>
 
+      <ExtremePanel />
+
       <BackupsPanel />
 
       <Panel title={t('ui.settings.content')}>
@@ -210,6 +214,8 @@ export function SettingsScreen() {
         </div>
       )}
 
+      <DeleteData />
+
       <DonationModal open={donating} onClose={() => setDonating(false)} />
 
       <Modal open={confirmDelete} onClose={() => setConfirmDelete(false)} title={t('ui.settings.deleteTitle')}>
@@ -230,6 +236,91 @@ export function SettingsScreen() {
         </div>
       </Modal>
     </div>
+  )
+}
+
+/**
+ * The red button at the very bottom: everything the game keeps about the player, in this browser and online, deleted
+ * (both saves, docs/22). Two pop-ups in a row so it is never a mis-tap: what goes, then a last "really?". Then the
+ * title screen, from scratch. `extreme`: the Extreme save only, from its own section.
+ */
+function DeleteData({ scope = 'all' }: { scope?: 'all' | 'extreme' }) {
+  const { t } = useT()
+  const online = useGame((s) => s.auth.status === 'signed_in')
+  const playingExtreme = useGame((s) => isExtreme(s.save))
+  const hasExtreme = playingExtreme || isExtreme(otherSave())
+  const [step, setStep] = useState<0 | 1 | 2>(0)
+  const [busy, setBusy] = useState(false)
+  const all = scope === 'all'
+  const close = () => {
+    if (!busy) setStep(0)
+  }
+  const wipe = async () => {
+    setBusy(true)
+    // A reload, not a navigation: the stores still hold the old save, friends and events in memory.
+    if (await (all ? deleteAllData() : deleteExtremeSave())) return window.location.assign('/')
+    setBusy(false)
+    setStep(0)
+    pushToast(t('ui.settings.wipeFailed'), 'bad')
+  }
+  const body = all
+    ? [t(online ? 'ui.settings.wipeBodyOnline' : 'ui.settings.wipeBodyLocal'), hasExtreme ? t('ui.settings.wipeBothNote') : '']
+        .filter(Boolean)
+        .join(' ')
+    : t('ui.extreme.settings.deleteBody')
+  return (
+    <div className={all ? 'flex justify-center' : 'flex'}>
+      {/* Full width on phones, so a long translation shrinks to fit instead of pushing the page sideways. */}
+      <PixelButton variant="danger" size={all ? 'md' : 'sm'} className={all ? 'w-full sm:w-auto' : undefined} onClick={() => setStep(1)}>
+        {t(all ? 'ui.settings.wipe' : 'ui.extreme.settings.delete')}
+      </PixelButton>
+
+      <Modal open={step === 1} onClose={close} title={t(all ? 'ui.settings.wipeTitle' : 'ui.extreme.settings.deleteTitle')}>
+        <p className="copy mb-4 text-lg">{body}</p>
+        <div className="flex flex-wrap justify-end gap-2">
+          <PixelButton onClick={close}>{t('ui.common.cancel')}</PixelButton>
+          <PixelButton variant="danger" onClick={() => setStep(2)}>
+            {t('ui.common.continue')}
+          </PixelButton>
+        </div>
+      </Modal>
+
+      <Modal open={step === 2} onClose={close} dismissable={!busy} title={t('ui.settings.wipeSureTitle')}>
+        <p className="copy mb-4 text-lg">{t('ui.settings.wipeSureBody')}</p>
+        <div className="flex flex-wrap justify-end gap-2">
+          <PixelButton onClick={close} disabled={busy}>
+            {t('ui.common.cancel')}
+          </PixelButton>
+          <PixelButton variant="danger" onClick={() => void wipe()} disabled={busy}>
+            {t(busy ? 'ui.settings.wiping' : 'ui.settings.wipeConfirm')}
+          </PixelButton>
+        </div>
+      </Modal>
+    </div>
+  )
+}
+
+/** Extreme mode (docs/22): what it is, its rules, and deleting its save. Once it's open, or a save of it exists. */
+function ExtremePanel() {
+  const { t } = useT()
+  const save = useGame((s) => s.save)
+  const data = useGame((s) => s.data)
+  const [rules, setRules] = useState(false)
+  const extreme = isExtreme(save)
+  const other = otherSave()
+  const hasSave = extreme || isExtreme(other)
+  if (!extreme && !hasSave && !extremeOpen(save, data)) return null
+  return (
+    <Panel title={t('ui.extreme.name')}>
+      <p className="copy text-muted">{t('ui.extreme.settings.hint')}</p>
+      <div className="mt-2 flex flex-wrap gap-2">
+        <PixelButton size="sm" onClick={() => setRules(true)} aria-label={t('ui.extreme.infoLabel')}>
+          {t('ui.extreme.settings.rules')}
+        </PixelButton>
+        {hasSave && <DeleteData scope="extreme" />}
+      </div>
+      <ExtremeRulesModal open={rules} onClose={() => setRules(false)} />
+    </Panel>
   )
 }
 

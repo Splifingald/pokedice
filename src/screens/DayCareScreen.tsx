@@ -11,7 +11,8 @@ import {
   compatible,
   dayCareLevelProgress,
   dayCareOf,
-  depositError,
+  boxedDepositError,
+  everyRegionBox,
   friendMonLevel,
   getRegion,
   guestKey,
@@ -35,7 +36,7 @@ import { Chip, NewTag } from '@/components/Chip'
 import { bumpGold } from '@/components/GoldPill'
 import { BackButton } from '@/components/PageHead'
 import { PixelButton } from '@/components/PixelButton'
-import { SearchField } from '@/components/Segmented'
+import { SearchField, Seg } from '@/components/Segmented'
 import { Sheet } from '@/components/Sheet'
 import { MiniSprite } from '@/components/SpriteImg'
 import { StageCanvas, type StageHandle } from '@/components/StageCanvas'
@@ -241,9 +242,9 @@ const REFUSED: Record<DepositError, string> = {
 }
 
 /**
- * Leave which Pokémon? A search; those that would pair with someone already here first, then the team (TEAM tag; your
- * last team member is greyed), then the Box, lowest level first. The tag says who it would pair with, in the colour
- * of the slot being filled.
+ * Leave which Pokémon? Every region's Box (each says its region once several are played), by level, lowest or highest
+ * first; a search, and Compatible only once someone is here, yours or a friend's. A team member has the TEAM tag; the
+ * last of a region's team is greyed. The tag says who it would pair with, in the colour of the slot being filled.
  */
 function LeaveSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { t } = useT()
@@ -251,6 +252,8 @@ function LeaveSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
   const data = useGame((s) => s.data)
   const nameOf = useNameOf()
   const [q, setQ] = useState('')
+  const [order, setOrder] = useState<'low' | 'high'>('low')
+  const [only, setOnly] = useState(false)
   useEffect(() => {
     if (open) setQ('')
   }, [open])
@@ -258,16 +261,17 @@ function LeaveSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
   const cfg = data.config.dayCare
   const slot = dayCareOf(save).residents.length
   const here = careMembers(save)
+  // Nothing to be compatible with until someone is here.
+  const compatOnly = only && here.length > 0
   const needle = searchFold(q.trim())
-  const inTeam = (id: string) => save.team.includes(id)
-  const rows = save.box
-    .filter((p) => !needle || searchFold(nameOf(p)).includes(needle))
-    .map((p) => ({ p, mates: here.filter((o) => compatible(data, o.dex, p.dex)) }))
-    .sort(
-      (a, b) =>
-        Number(b.mates.length > 0) - Number(a.mates.length > 0) ||
-        (inTeam(a.p.id) === inTeam(b.p.id) ? a.p.level - b.p.level : inTeam(a.p.id) ? -1 : 1),
-    )
+  const all = everyRegionBox(save, data)
+  const manyRegions = new Set(all.map((m) => m.region)).size > 1
+  // By level; ties keep every region's Box order, the region being played first.
+  const rows = all
+    .filter((m) => !needle || searchFold(nameOf(m.inst)).includes(needle))
+    .map((m) => ({ ...m, mates: here.filter((o) => compatible(data, o.dex, m.inst.dex)) }))
+    .filter((r) => !compatOnly || r.mates.length > 0)
+    .sort((a, b) => (order === 'low' ? a.inst.level - b.inst.level : b.inst.level - a.inst.level))
   const mateName = (m: CareMember) =>
     isDitto(data, m.dex) ? t('ui.dayCare.everyH', { name: nameOf(m), h: cfg.breedDittoHours }) : nameOf(m)
   return (
@@ -281,21 +285,50 @@ function LeaveSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
         max: t('ui.common.level.short', { n: data.config.maxLevel }),
       })}
       head={
-        <SearchField
-          id="dc-q"
-          value={q}
-          onChange={setQ}
-          label={t('ui.dayCare.searchLabel')}
-          placeholder={t('ui.dayCare.searchLabel')}
-        />
+        <div className="grid gap-2">
+          <SearchField
+            id="dc-q"
+            value={q}
+            onChange={setQ}
+            label={t('ui.dayCare.searchLabel')}
+            placeholder={t('ui.dayCare.searchLabel')}
+          />
+          <div className="flex flex-wrap items-center gap-2">
+            <Seg
+              label={t('ui.dayCare.sortLevel')}
+              value={order}
+              onChange={setOrder}
+              options={[
+                { id: 'low', label: t('ui.dayCare.lowFirst') },
+                { id: 'high', label: t('ui.dayCare.highFirst') },
+              ]}
+            />
+            {here.length > 0 && (
+              <button
+                type="button"
+                aria-pressed={only}
+                onClick={() => setOnly((v) => !v)}
+                className={cx(
+                  'ml-auto min-h-[44px] shrink-0 px-3 font-pixel-sm text-[15px] leading-none shadow-ring',
+                  only ? 'bg-gold text-night' : 'bg-paper text-ink',
+                )}
+              >
+                {t('ui.dayCare.compatibleOnly')}
+              </button>
+            )}
+          </div>
+        </div>
       }
     >
       {rows.length === 0 ? (
-        <p className="m-0 p-2 text-center font-pixel-sm text-[16px] text-muted">{t('ui.dayCare.noMatch')}</p>
+        <p className="m-0 p-2 text-center font-pixel-sm text-[16px] text-muted">
+          {t(compatOnly && !needle ? 'ui.dayCare.noCompatibleMine' : 'ui.dayCare.noMatch')}
+        </p>
       ) : (
         <ul className="m-0 grid list-none gap-1.5 p-0">
-          {rows.map(({ p, mates }) => {
-            const why = depositError(save, p.id, data)
+          {rows.map((row) => {
+            const { inst: p, region, inTeam, mates } = row
+            const why = boxedDepositError(save, row, data)
             const name = nameOf(p)
             const groups = (data.eggGroups[p.dex]?.g ?? []).map(eggGroupName).join(' · ')
             const tag = isDitto(data, p.dex) ? (
@@ -331,12 +364,13 @@ function LeaveSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
                       {name}{' '}
                       <small className="font-pixel-sm text-[13px] text-muted">
                         {t('ui.common.level.short', { n: p.level })}
+                        {manyRegions && ` · ${getRegion(data, region)?.name ?? region}`}
                       </small>
                     </b>
                     <small className="font-pixel-sm text-[14px] text-ink">{why ? t(REFUSED[why]) : groups}</small>
                     {!why && tag && <span className="mt-1">{tag}</span>}
                   </span>
-                  {inTeam(p.id) && <Chip tone="dark">{t('ui.dayCare.teamTag')}</Chip>}
+                  {inTeam && <Chip tone="dark">{t('ui.dayCare.teamTag')}</Chip>}
                 </button>
               </li>
             )

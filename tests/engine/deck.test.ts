@@ -6,12 +6,14 @@ import {
   centerWouldHelp,
   deckCounts,
   deckSize,
+  finishRound,
   hasFaintedMember,
   isAreaClosed,
   recordDraws,
   linearAreas,
   newSave,
   nextEncounter,
+  pickUpItem,
   progressOf,
   setAreaDeck,
   teamAverageLevel,
@@ -249,5 +251,90 @@ describe('closed areas', () => {
     const d = { ...data, areas: data.areas.map((a) => (a.id === LAIR.id ? lair : a)) }
     const done = { ...withProgress(save, LAIR, { bossesDefeated: [dex] }), pokedex: [...save.pokedex, dex] }
     expect(isAreaClosed(done, LAIR.id, d)).toBe(false)
+  })
+})
+
+describe('a legendary lair: mostly Centers and a few finds (Ultra Megalopolis, the Altar of the Sunne and Moone)', () => {
+  const lairs = data.areas.filter((a) => a.name === 'Ultra Megalopolis' || a.name === 'The Altar of the Sunne and Moone')
+
+  /** One encounter as the store plays it: settle the round, draw, note the draw, take a find. */
+  const play = (save: SaveData, area: Area, rng: ReturnType<typeof createRng>) => {
+    const settled = finishRound(save, area.id, data)
+    const roll = nextEncounter(ctx(settled.save, area, { centerUseful: true }), rng)
+    let next = recordDraws(settled.save, area.id, roll)
+    if (roll.encounter.kind === 'item') next = pickUpItem(next, area.id, roll.encounter, data, 0)
+    return { save: next, roll, roundDone: settled.roundDone }
+  }
+
+  it('turns over every card of the round, one at a time, and counts the round', () => {
+    expect(lairs).toHaveLength(2)
+    for (const area of lairs)
+      for (let seed = 1; seed <= 40; seed++) {
+        const rng = createRng(seed)
+        let save = newSave(4, data, 0, newId)
+        let seen = 0
+        let rounds = 0
+        // A round is one deck, plus the Center that may open it: it can't take more than that.
+        for (let i = 0; i < 3 * (deckSize(area) + 1) && rounds < 2; i++) {
+          const step = play(save, area, rng)
+          if (step.roundDone) rounds++
+          const drawn = progressOf(step.save, area.id).drawn?.length ?? 0
+          // The gauge never jumps back mid-round: it only moves on, or starts over with a new deck.
+          if (!step.roll.newRound) expect(drawn, `${area.name} seed ${seed} step ${i}`).toBeGreaterThanOrEqual(seen)
+          else expect(seen === 0 || rounds > 0 || step.roundDone, `${area.name} seed ${seed} step ${i}: a new deck before the round was counted`).toBe(true)
+          seen = drawn
+          save = step.save
+        }
+        expect(rounds, `${area.name} seed ${seed}`).toBeGreaterThanOrEqual(1)
+      }
+  })
+})
+
+describe('Centers left on their own right after a Center', () => {
+  const lair = data.areas.find((a) => a.name === 'Ultra Megalopolis')!
+
+  it('are turned over at once: the round ends and counts (a forced Center before the last card of a deck)', () => {
+    let save = newSave(4, data, 0, newId)
+    save = setAreaDeck(save, ROUTE1.id, ['center'])
+    save = recordDraws(save, ROUTE1.id, { encounter: { kind: 'center' }, deck: null })
+    expect(progressOf(save, ROUTE1.id).deck).toEqual([])
+    const settled = finishRound(save, ROUTE1.id, data)
+    expect(settled.roundDone).toBe(true)
+    expect(progressOf(settled.save, ROUTE1.id).roundsDone).toBe(1)
+  })
+
+  it('a save caught in the middle of a lair with only Centers left meets one, then the round counts', () => {
+    let save = newSave(4, data, 0, newId)
+    save = setAreaDeck(save, lair.id, ['center', 'center', 'center'])
+    // Saved before the fix: the Centers were left in the deck after a Center.
+    const p = progressOf(save, lair.id)
+    save = { ...save, areaProgress: { ...save.areaProgress, [lair.id]: { ...p, lastCenter: true, drawn: ['item', 'center'] } } }
+    const roll = nextEncounter(ctx(save, lair), createRng(1))
+    expect(roll.newRound).toBeFalsy()
+    expect(roll.encounter.kind).toBe('center')
+    save = recordDraws(save, lair.id, roll)
+    expect(finishRound(save, lair.id, data).roundDone).toBe(true)
+  })
+})
+
+describe('every area', () => {
+  it('never deals a new deck before the round in progress counted', () => {
+    const broken: string[] = []
+    for (const area of data.areas)
+      for (let seed = 1; seed <= 3; seed++) {
+        const rng = createRng(seed)
+        let save = newSave(4, data, 0, newId)
+        let seen = 0
+        for (let i = 0; i < 3 * (deckSize(area) + 1); i++) {
+          const settled = finishRound(save, area.id, data)
+          const roll = nextEncounter(ctx(settled.save, area, { centerUseful: rng.next() < 0.5 }), rng)
+          if (roll.newRound && seen > 0 && !settled.roundDone && !progressOf(settled.save, area.id).roundCounted)
+            broken.push(`${area.name} (seed ${seed}, encounter ${i + 1})`)
+          save = recordDraws(settled.save, area.id, roll)
+          if (roll.encounter.kind === 'item') save = pickUpItem(save, area.id, roll.encounter, data, 0)
+          seen = progressOf(save, area.id).drawn?.length ?? 0
+        }
+      }
+    expect(broken.slice(0, 10)).toEqual([])
   })
 })

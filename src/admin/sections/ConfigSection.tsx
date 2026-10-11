@@ -3,6 +3,7 @@ import {
   DEFAULT_CONFIG,
   eggSpecies,
   eggsPerWeek,
+  extremeRules,
   isDonationUrl,
   enabledRegions,
   slotOdds,
@@ -12,6 +13,7 @@ import {
   type DayCareConfig,
   type DonationConfig,
   type EnergyConfig,
+  type ExtremeConfig,
   type GameConfig,
   type SlotMachineConfig,
   type SlotOutcomeKey,
@@ -23,7 +25,7 @@ import { SpriteImg } from '@/components/SpriteImg'
 import { cx } from '@/theme/util'
 import { DataTable } from '../DataTable'
 import { addRows, rowKey, updateRow, useAdmin, useAdminData } from '../store'
-import { Box, Field, NumInput, PokemonPicker, inputCls } from '../widgets'
+import { AccessSwitch, Box, Field, NumInput, PokemonPicker, inputCls } from '../widgets'
 
 export function useConfigRow<K extends keyof GameConfig>(key: K): [GameConfig[K], (v: GameConfig[K]) => void] {
   const rows = useAdmin((st) => st.rows.game_config)
@@ -262,6 +264,79 @@ function DiscordBox() {
  * Pokémon Day Care, one for every region: when it opens, how fast residents train, the friend slots, the two Egg
  * checks, Egg now and what Eggs hatch into.
  */
+/**
+ * Extreme mode (docs/22): the second save that a league opens, with no Pokémon Centers, K.O.s that rest for hours and
+ * healing only while the player is away. Every number here is read by the game's engine (engine/extreme).
+ */
+function ExtremeBox() {
+  const data = useAdminData()
+  const [raw, setRaw] = useConfigRow('extreme')
+  // An early draft had an on/off `enabled`: the three-way switch (`access`) replaced it, so it goes on the next edit.
+  const { enabled: _enabled, ...kept } = (raw ?? {}) as ExtremeConfig & { enabled?: boolean }
+  const cfg: ExtremeConfig = { ...DEFAULT_CONFIG.extreme, ...kept }
+  const set = (patch: Partial<ExtremeConfig>) => setRaw({ ...cfg, ...patch })
+  const num = (k: 'koHours' | 'koReviveHp' | 'awayHealPctPerHour' | 'awayMinMinutes', min = 0, max?: number) => (
+    <NumInput min={min} max={max} value={cfg[k]} onChange={(v) => set({ [k]: Math.max(min, Math.min(max ?? Infinity, v ?? min)) })} />
+  )
+  const check = (k: 'centers' | 'wipeHeals' | 'items', label: string) => (
+    <label className="flex items-center gap-2 text-lg">
+      <input type="checkbox" checked={!!cfg[k]} onChange={(e) => set({ [k]: e.target.checked })} /> {label}
+    </label>
+  )
+  const r = data ? extremeRules({ ...data, config: { ...data.config, extreme: cfg } }) : null
+  return (
+    <Box
+      title="Extreme mode" icon="skull"
+      hint="A second save, opened by a league of the main one: a world of its own (its own board, Versus and events; the same friends), with no Pokémon Centers."
+    >
+      <div className="flex flex-wrap items-center gap-3">
+        <span className="text-lg">Who can play it</span>
+        <AccessSwitch value={cfg.access ?? 'off'} onChange={(access) => set({ access })} label="Extreme mode: who can play it" />
+        <span className="text-base text-muted">
+          {cfg.access === 'all'
+            ? 'Open to every player who has beaten the league.'
+            : cfg.access === 'admin'
+              ? 'Only you see it (to try it first). Players see nothing yet.'
+              : 'Off: no way in anywhere in the game. Extreme saves already made are kept.'}
+        </span>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-3">
+        {check('centers', 'Pokémon Centers')}
+        {check('wipeHeals', 'a lost round heals')}
+        {check('items', 'Potions and Revives')}
+      </div>
+      <div className="grid gap-3 sm:grid-cols-5">
+        <Field label="Opens after the league of" hint="in the main save">
+          <select className={inputCls} value={cfg.unlockRegion} onChange={(e) => set({ unlockRegion: e.target.value })}>
+            {(data?.regions ?? []).map((reg) => (
+              <option key={reg.id} value={reg.id}>
+                {reg.name}
+              </option>
+            ))}
+          </select>
+        </Field>
+        <Field label="A K.O. lasts (hours)" hint="real time, on the server's clock">
+          {num('koHours', 0)}
+        </Field>
+        <Field label="Comes back with (HP)">{num('koReviveHp', 1)}</Field>
+        <Field label="Heals while away (% / hour)" hint="of max HP, to the minute; 0 = never">
+          {num('awayHealPctPerHour', 0, 100)}
+        </Field>
+        <Field label="Shortest absence (minutes)" hint="shorter ones don't heal">
+          {num('awayMinMinutes', 0)}
+        </Field>
+      </div>
+      {r && (
+        <p className="text-lg">
+          A K.O. Pokémon is back at {r.koHp} HP after {r.koHours} h.{' '}
+          {r.fullHours != null ? `From ${r.koHp} HP to full while away: about ${r.fullHours} h.` : 'Nothing heals with time.'} While
+          playing: never.{!cfg.centers && ' No Pokémon Center is ever dealt.'}
+        </p>
+      )}
+    </Box>
+  )
+}
+
 function DayCareBox() {
   const data = useAdminData()
   const [raw, setRaw] = useConfigRow('dayCare')
@@ -680,6 +755,8 @@ export function ConfigSection() {
       <SlotMachineBox />
 
       <DayCareBox />
+
+      <ExtremeBox />
 
       <StatusRulesBox />
 

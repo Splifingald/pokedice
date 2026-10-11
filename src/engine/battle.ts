@@ -95,6 +95,8 @@ export interface BattleState {
   /** Player instance ids that were sent out in this battle. */
   participants: string[]
   canRun: boolean
+  /** Extreme mode with the admin's items switch off: no Potion or Revive works. */
+  noHealItems?: boolean
   lastDamage: DamageResult | null
   /** One item per turn — it doesn't end the turn. */
   itemUsedThisTurn: boolean
@@ -257,6 +259,8 @@ export interface CreateBattleOptions {
   enemyPlan?: EnemyPlan | null
   /** An auto battle: no Mega Evolution or Gigantamax, for either side — only the foe's type change is kept. */
   auto?: boolean
+  /** No Potion or Revive works (Extreme mode, items switched off). */
+  noHealItems?: boolean
 }
 
 /** Takes on a form's look and types (the dice are the caller's business). */
@@ -461,6 +465,7 @@ export function createBattle(opts: CreateBattleOptions, data: GameData): { state
     enemyLevels: opts.enemyLevels,
     participants: [lead.uid],
     canRun: opts.kind === 'wild' && !data.config.noEscape,
+    ...(opts.noHealItems && { noHealItems: true }),
     lastDamage: null,
     itemUsedThisTurn: false,
     ...(opts.auto
@@ -712,6 +717,7 @@ export function reduce(
       const target = s.player.find((b) => b.uid === (e.targetUid ?? activeBattler(s).uid))
       if (!item || !target) return NOOP(state)
       const fx = item.effect
+      if (s.noHealItems && (fx.kind === 'heal' || fx.kind === 'revive')) return NOOP(state)
       // Only a revive works on a K.O.'d Pokémon (a benched one: the active can't be K.O. on your turn), and only on one.
       if ((fx.kind === 'revive') !== target.hp <= 0) return NOOP(state)
       if (fx.kind === 'revive') {

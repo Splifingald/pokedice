@@ -24,6 +24,7 @@ const instanceSchema = z.object({
   shiny: z.boolean().optional(),
   revivesAt: z.number().optional(),
   fossil: z.string().optional(),
+  koAt: z.number().optional(),
 })
 
 const progressSchema = z.object({
@@ -177,6 +178,15 @@ export const saveSchema = z.object({
   boughtUnique: z.array(z.string()).optional(),
   donationSeen: z.object({ round: z.number().int().min(0), regions: z.array(z.string()) }).optional(),
   regionOfferSeen: z.array(z.string()).optional(),
+  mode: z.enum(['main', 'extreme']).optional(),
+  extreme: z
+    .object({
+      awayFrom: z.number().optional(),
+      pending: z.array(z.tuple([z.number(), z.number()])).max(20).optional(),
+    })
+    .optional(),
+  extremeUnlockedAt: z.number().optional(),
+  extremeRulesSeen: z.boolean().optional(),
 })
 
 /**

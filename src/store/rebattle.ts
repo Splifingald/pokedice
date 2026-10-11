@@ -10,7 +10,8 @@ import {
   rebattleEncounter,
   regionOf,
 } from '@/engine'
-import { commitSave, initialRun, useGame } from './game'
+import { t } from '@/i18n'
+import { commitSave, initialRun, pushToast, useGame } from './game'
 
 /** A tier just cleared: its medal card waits on the rebattle page. */
 export const useRebattleMedal = create<{ medal: { regionId: string; tier: number; gold: number } | null }>(() => ({ medal: null }))
@@ -27,6 +28,11 @@ export function startRebattle(): boolean {
   if (!hasAbleTeam(save)) {
     save = applyRebattleLoss(save, data, regionId)
     commitSave(save)
+    // Extreme mode heals nobody: the team rests before it can fight again.
+    if (!hasAbleTeam(save)) {
+      pushToast(t('ui.extreme.restingToast'), 'bad')
+      return false
+    }
   }
   const encounter = rebattleEncounter(save, data, regionId)
   const league = leagueArea(data, regionId)

@@ -126,7 +126,8 @@ export function CasinoView() {
   const win = last && (last.outcome === 'jackpot' || last.outcome === 'threeBalls')
 
   return (
-    <div className="flex flex-col gap-4">
+    // Phones: room at the bottom for the action bar, which is pinned over the tab bar.
+    <div className="flex flex-col gap-4 pb-[76px] md:pb-0">
       <section
         className="pixel-panel-dark mx-auto flex w-full max-w-lg flex-col items-center gap-4 p-4"
         aria-label={t('ui.casino.machine')}
@@ -212,9 +213,9 @@ export function CasinoView() {
         </ul>
       </section>
 
-      {/* Always on screen, above the phone bottom bar. */}
+      {/* Always on screen: pinned right above the phone tab bar, even when the page is short (as in the Center). */}
       <div
-        className="sticky z-30 -mx-3 border-t-[3px] border-edge bg-parchment px-3 py-2"
+        className="fixed inset-x-0 z-30 border-t-[3px] border-edge bg-parchment px-3 py-2 md:sticky md:inset-x-auto md:-mx-3"
         style={{ bottom: 'var(--bottom-nav)' }}
       >
         <PixelButton
