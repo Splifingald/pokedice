@@ -1,4 +1,4 @@
-// Extreme mode's clocks (docs/20): K.O. rests that end on the real time, and healing for the time spent out of the
+// Extreme mode's clocks (docs/22): K.O. rests that end on the real time, and healing for the time spent out of the
 // game. The rules and numbers are the engine's (engine/extreme); this keeps the save in step with the clock.
 import { create } from 'zustand'
 import { addAwayWindow, awayHeal, isExtreme, settleKo, type AwayHeal, type SaveData, type SaveMode } from '@/engine'

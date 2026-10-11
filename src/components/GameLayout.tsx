@@ -8,6 +8,7 @@ import { DayCareNotice, DayCareTutorial } from './DayCareTutorial'
 import { DonationPopup } from './DonationPopup'
 import { EventUnlockPopup } from './EventUnlockPopup'
 import { AwayReportModal, ExtremeUnlockPopup } from './Extreme'
+import { LivePopup } from '@/screens/events/live'
 import { VersusUnlockPopup } from './FeatureRules'
 import { RaidGiftPopup } from './RaidGiftPopup'
 import { FriendsService } from './friends/FriendsService'
@@ -55,6 +56,7 @@ export function GameLayout() {
       <ExtremeUnlockPopup />
       <AwayReportModal />
       <RaidGiftPopup />
+      <LivePopup />
       <FriendsService />
     </div>
   )

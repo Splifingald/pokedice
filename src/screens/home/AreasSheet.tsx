@@ -36,6 +36,7 @@ import {
   type AreaStatus,
 } from './areas'
 import { AreaStrip } from '@/components/AreaStrip'
+import { ShinyParadeChip, useParadeLabel } from '@/screens/events/live'
 
 export type AreasFilter = 'all' | 'catch' | 'secret' | 'cleared'
 type Sort = 'route' | 'level' | 'catch'
@@ -82,12 +83,13 @@ function AreaCard({
     locked: t('ui.home.st.locked', { why }),
   }
   const legend = (area.legendaryBoss ?? []).length > 0
+  const parade = useParadeLabel(area)
   return (
     <li className="relative">
       <button
         type="button"
         onClick={onDetails}
-        aria-label={t('ui.home.cardLabel', { area: area.name, levels: levelText(span), state: words[st] })}
+        aria-label={t('ui.home.cardLabel', { area: area.name, levels: levelText(span), state: words[st] }) + parade}
         className={cx('grid w-full gap-[5px] px-1.5 pb-2 pt-1.5 text-left', CARD[st])}
       >
         <span className="relative block leading-[0]">
@@ -96,6 +98,7 @@ function AreaCard({
             {st === 'new' && <Chip tone="gold">{t('ui.common.new')}</Chip>}
             {area.gyms.length > 0 && <Chip tone="dark">{t('ui.home.gymTag')}</Chip>}
             {legend && <Chip tone="gold">{t('ui.home.legendTag')}</Chip>}
+            <ShinyParadeChip area={area} />
           </span>
         </span>
         <span className="flex min-w-0 items-center gap-2 px-1 pr-[70px]">

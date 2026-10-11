@@ -445,10 +445,17 @@ export interface DonationConfig {
 export const EVENT_IDS = ['wheel', 'raid', 'rebattle'] as const
 export type EventId = (typeof EVENT_IDS)[number]
 
+/**
+ * Each event type's switch in the admin (the user's rule, 2026-10-11): off (nowhere in the game), on for the admin only
+ * (to try it in production first), on for everyone. Off by default.
+ */
+export const EVENT_ACCESS = ['off', 'admin', 'all'] as const
+export type EventAccess = (typeof EVENT_ACCESS)[number]
+
 /** What every event has, whatever it does (Admin → Events). */
 export interface EventDef {
-  /** Off = the event is nowhere in the game: no square on Home, no page, no pop-up. */
-  enabled: boolean
+  /** Off = the event is nowhere in the game: no square on Home, no page, no pop-up. Admin = only the admin sees it. */
+  access: EventAccess
   /** Order of the squares on Home: lower comes first. */
   priority: number
   /**
@@ -483,16 +490,17 @@ export interface RebattleTier {
   upgradeDelta: number | 'max'
 }
 
-/** A raid pool species: clearing `areaId` puts it in the player's raid pool (docs/18 §3). */
+/** A mythical and its lair: the area its raid is fought in front of, and the one to complete to get it. */
 export interface RaidPoolEntry {
   dex: number
   areaId: string
 }
 
-/** A powerful species raided once the pool has nothing left, from when the player reaches its region. */
-export interface RaidFallback {
+/** A fixed date of the raid calendar: 'MM-DD', every year (Pokémon Day's shiny Pikachu, Earth Day's Celebi…). */
+export interface RaidAnchor {
+  date: string
   dex: number
-  regionId: string
+  shiny: boolean
 }
 
 /** Raid Battles' numbers (docs/18 §3). */
@@ -514,14 +522,13 @@ export interface RaidConfig {
   sideUpgradeLevel: number
   /** Friends a raid can bring (the other sides are NPC trainers). */
   maxFriends: number
-  /** A fallback raid's shiny chance (0–1), and how long a species waits before it's raided again. */
-  fallbackShiny: number
-  repeatHours: number
   /** Gifts a helper can get a day, and what they are. */
   helperDailyCap: number
   gifts: { key: string; weight: number }[]
+  /** The mythicals (each a raid of the calendar, never shiny there) and their lairs. */
   pool: RaidPoolEntry[]
-  fallback: RaidFallback[]
+  /** The calendar: its fixed dates, and the lowest level a shiny filler's area may start at. */
+  calendar: { anchors: RaidAnchor[]; fillerMinLevel: number }
   /** Never an NPC ally or a summon, on top of legendaries, mythicals and starter lines. */
   exclude: { pseudo: number[]; extra: number[] }
 }
@@ -535,6 +542,43 @@ export interface EventsConfig {
   wheel: EventDef & { prizes: WheelPrize[] }
   raid: EventDef & RaidConfig
   rebattle: EventDef & { tiers: RebattleTier[] }
+}
+
+/** Live events (docs/20): the kinds the admin can schedule. */
+export const LIVE_TYPES = ['shiny', 'shop', 'cash'] as const
+export type LiveType = (typeof LIVE_TYPES)[number]
+
+/** One item of a Special Shop: its event price, how many each player may buy (null = no limit), where it's sold. */
+export interface LiveShopItem {
+  key: string
+  price: number
+  limit: number | null
+  /** Sold while the player plays one of these regions; 'all' = everywhere. */
+  regions: RegionId[] | 'all'
+}
+
+/**
+ * A live event (docs/20): the whole game changes for a while, the same for everyone, between `start` and `end` (ISO,
+ * UTC, server time). Only the settings of its `type` count; the others stay so switching type back keeps them.
+ */
+export interface LiveEvent {
+  /** Stable: the pop-up's "seen" and the shop's per-player counts are kept by it. */
+  id: string
+  type: LiveType
+  start: string
+  end: string
+  /** Its picture on Home, in the pop-up and over the shop's section: an area picture's key or a path. */
+  banner: string
+  /** A custom title for an occasion, per language (others fall back to English); empty = the type's own name. */
+  title: Partial<Record<string, string>>
+  /** Shown (and in effect) from this many badges, every region's counted. */
+  minBadges: number
+  /** Shiny Parade: wild shiny odds × `multiplier` in some areas, one region or everywhere. */
+  shiny: { multiplier: number; scope: 'areas' | 'region' | 'all'; areaIds: string[]; regionId: RegionId | null }
+  /** Special Shop: its items. */
+  shop: { items: LiveShopItem[] }
+  /** Cash Flow: every ₽ earned × `multiplier` (1.5 = +50 %), selling excluded. */
+  cash: { multiplier: number }
 }
 
 export interface GameConfig {
@@ -615,17 +659,22 @@ export interface GameConfig {
   events: EventsConfig
   /** The Elite Rebattle's trainers, per region and tier (a row of its own, written by scripts/rebattle-teams.ts). */
   rebattleLineups: RebattleLineups
-  /** Extreme mode (docs/20): the second save's rules. */
+  /** Extreme mode (docs/22): the second save's rules. */
   extreme: ExtremeConfig
+  /** Live events (docs/20): their switch, and the admin's list, past, running and to come; one runs at a time. */
+  liveEvents: { access: EventAccess; list: LiveEvent[] }
 }
 
 /**
- * Extreme mode (docs/20): a second save, opened by a league, with no Pokémon Centers, K.O.s that last hours, and
+ * Extreme mode (docs/22): a second save, opened by a league, with no Pokémon Centers, K.O.s that last hours, and
  * healing only while the player is out of the game.
  */
 export interface ExtremeConfig {
-  /** Off hides the mode everywhere: no pop-up, no title card, no menu row. Extreme saves are kept. */
-  enabled: boolean
+  /**
+   * The admin's switch, as for the events: off (nowhere: no pop-up, no title card, no menu row; Extreme saves are
+   * kept), on for the admin only (to try it in production first), on for everyone. Off by default.
+   */
+  access: EventAccess
   /** The region whose league opens it in the main save ("the second league"). */
   unlockRegion: RegionId
   /** Pokémon Centers in the encounter deck, as in the main game. */
@@ -783,7 +832,7 @@ export interface SaveData {
   regionOfferSeen?: RegionId[]
   /** The special events (docs/18): what's been seen and done. Shared by every region; absent = nothing yet. */
   events?: EventsSave
-  /** Which save this is (docs/20). Absent = the main one, so every save from before is main. */
+  /** Which save this is (docs/22). Absent = the main one, so every save from before is main. */
   mode?: SaveMode
   /** An Extreme save's away-healing bookkeeping. */
   extreme?: ExtremeSave
@@ -818,10 +867,25 @@ export interface EventsSave {
   raidHistory?: { day: string; dex: number }[]
   /** Pool species unlocked (also worked out from cleared areas and catches; this keeps what a moment announced). */
   raidPool?: number[]
+  /** Raid Pokémon caught before completing their area: each joins its region's Box once that area is completed. */
+  raidLocked?: RaidLock[]
   /** Your raid team: three instance ids, any region's Box (until set, your three highest-level Pokémon). */
   raidTeam?: string[]
   /** Raids won, a raid being won when its Pokémon is caught (the server keeps the count the leaderboard shows). */
   raidsWon?: number
+  /** Live events whose pop-up has been shown (ids). */
+  liveSeen?: string[]
+  /** Special Shop purchases, per live event id then item key: what counts against each item's limit. */
+  liveBought?: Record<string, Record<string, number>>
+}
+
+/** A raid catch waiting for its area: it joins that area's region's Box once the area is completed. */
+export interface RaidLock {
+  dex: number
+  shiny: boolean
+  areaId: string
+  /** The UTC day it was caught. */
+  day: string
 }
 
 /** The day's raid: the UTC day, the species and whether it's shiny, the area it's fought in front of. */
@@ -984,4 +1048,6 @@ export interface GameData {
   regions: Region[]
   /** Breeding data by dex (engine/daycare.ts): empty when a bundle came without it, and then nothing pairs. */
   eggGroups: Record<number, EggGroupEntry>
+  /** Who's playing, set by the store: the admin sees the events switched on for the admin only. Absent = a player. */
+  viewer?: { admin: boolean }
 }

@@ -25,7 +25,7 @@ import { SpriteImg } from '@/components/SpriteImg'
 import { cx } from '@/theme/util'
 import { DataTable } from '../DataTable'
 import { addRows, rowKey, updateRow, useAdmin, useAdminData } from '../store'
-import { Box, Field, NumInput, PokemonPicker, inputCls } from '../widgets'
+import { AccessSwitch, Box, Field, NumInput, PokemonPicker, inputCls } from '../widgets'
 
 export function useConfigRow<K extends keyof GameConfig>(key: K): [GameConfig[K], (v: GameConfig[K]) => void] {
   const rows = useAdmin((st) => st.rows.game_config)
@@ -265,18 +265,20 @@ function DiscordBox() {
  * checks, Egg now and what Eggs hatch into.
  */
 /**
- * Extreme mode (docs/20): the second save that a league opens, with no Pokémon Centers, K.O.s that rest for hours and
+ * Extreme mode (docs/22): the second save that a league opens, with no Pokémon Centers, K.O.s that rest for hours and
  * healing only while the player is away. Every number here is read by the game's engine (engine/extreme).
  */
 function ExtremeBox() {
   const data = useAdminData()
   const [raw, setRaw] = useConfigRow('extreme')
-  const cfg: ExtremeConfig = { ...DEFAULT_CONFIG.extreme, ...raw }
+  // An early draft had an on/off `enabled`: the three-way switch (`access`) replaced it, so it goes on the next edit.
+  const { enabled: _enabled, ...kept } = (raw ?? {}) as ExtremeConfig & { enabled?: boolean }
+  const cfg: ExtremeConfig = { ...DEFAULT_CONFIG.extreme, ...kept }
   const set = (patch: Partial<ExtremeConfig>) => setRaw({ ...cfg, ...patch })
   const num = (k: 'koHours' | 'koReviveHp' | 'awayHealPctPerHour' | 'awayMinMinutes', min = 0, max?: number) => (
     <NumInput min={min} max={max} value={cfg[k]} onChange={(v) => set({ [k]: Math.max(min, Math.min(max ?? Infinity, v ?? min)) })} />
   )
-  const check = (k: 'enabled' | 'centers' | 'wipeHeals' | 'items', label: string) => (
+  const check = (k: 'centers' | 'wipeHeals' | 'items', label: string) => (
     <label className="flex items-center gap-2 text-lg">
       <input type="checkbox" checked={!!cfg[k]} onChange={(e) => set({ [k]: e.target.checked })} /> {label}
     </label>
@@ -287,8 +289,18 @@ function ExtremeBox() {
       title="Extreme mode" icon="skull"
       hint="A second save, opened by a league of the main one: a world of its own (its own board, Versus and events; the same friends), with no Pokémon Centers."
     >
-      <div className="grid gap-3 sm:grid-cols-4">
-        {check('enabled', 'enabled')}
+      <div className="flex flex-wrap items-center gap-3">
+        <span className="text-lg">Who can play it</span>
+        <AccessSwitch value={cfg.access ?? 'off'} onChange={(access) => set({ access })} label="Extreme mode: who can play it" />
+        <span className="text-base text-muted">
+          {cfg.access === 'all'
+            ? 'Open to every player who has beaten the league.'
+            : cfg.access === 'admin'
+              ? 'Only you see it (to try it first). Players see nothing yet.'
+              : 'Off: no way in anywhere in the game. Extreme saves already made are kept.'}
+        </span>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-3">
         {check('centers', 'Pokémon Centers')}
         {check('wipeHeals', 'a lost round heals')}
         {check('items', 'Potions and Revives')}

@@ -1,4 +1,4 @@
-// Which world the database calls are about (docs/20, migration 0039): the main save's, or the Extreme one's.
+// Which world the database calls are about (docs/22, migration 0039): the main save's, or the Extreme one's.
 import { activeSlot } from '@/save/storage'
 
 /**

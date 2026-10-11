@@ -1,13 +1,14 @@
 /**
  * pnpm raid-balance [raids per species=60] [seed=1]
  * Raid Battles' win rate (docs/19 §6.3): three sides of three random raid-eligible Pokémon (fully evolved, no
- * legendary, starter line or pseudo-legendary, Lv. teamCap), every side on the battle AI, against each pool mythical
- * and each fallback species, with today's raid config. The target is about 50–70 % for such a group.
+ * legendary, starter line or pseudo-legendary, Lv. teamCap), every side on the battle AI, against every species of the
+ * raid calendar (mythicals, legendaries, pseudo-legendaries; fillers with FILLERS=1), with today's raid config. The
+ * target is about 50–70 % for such a group.
  * Try changes without editing the config:
  *   BARS=3  BAR_HP=1  UPG=7  SIDE_UPG=5  START=2  PER_BREAK=2  FIELD=2  LEVEL=50  CAP=50
  */
 import { BUNDLE } from '../src/config/bundle'
-import { compileGameData, createRng, DEFAULT_CONFIG, npcTeam, regionOfArea, simulateRaid, type RaidConfig } from '../src/engine'
+import { compileGameData, createRng, DEFAULT_CONFIG, npcTeam, raidEntries, raidRegion, simulateRaid, type RaidConfig } from '../src/engine'
 
 const N = Number(process.argv[2] ?? 60)
 const seed = Number(process.argv[3] ?? 1)
@@ -33,11 +34,15 @@ const data = compileGameData({
 const regions = data.regions.map((r) => r.id)
 const rng = createRng(seed)
 
-const rows: { name: string; win: number; steps: number; bars: number }[] = []
-const raids = [
-  ...raid.pool.map((p) => ({ dex: p.dex, regionId: regionOfArea(data.areas.find((a) => a.id === p.areaId)!) })),
-  ...raid.fallback.map((f) => ({ dex: f.dex, regionId: f.regionId })),
-]
+const rows: { name: string; kind: string; win: number; steps: number; bars: number }[] = []
+const entries = raidEntries(data)
+const kinds = [entries.mythical, entries.legendary, entries.pseudo, ...(process.env.FILLERS ? [entries.filler] : [])]
+const seen = new Set<number>()
+const raids = kinds.flat().flatMap((e) => {
+  if (seen.has(e.dex)) return []
+  seen.add(e.dex)
+  return [{ dex: e.dex, regionId: raidRegion(data, e.areaId), kind: e.kind }]
+})
 for (const r of raids) {
   let wins = 0
   let steps = 0
@@ -54,7 +59,7 @@ for (const r of raids) {
     steps += res.steps
     bars += res.barsBroken
   }
-  rows.push({ name: data.species[r.dex]?.name ?? `#${r.dex}`, win: wins / N, steps: steps / N, bars: bars / N })
+  rows.push({ name: data.species[r.dex]?.name ?? `#${r.dex}`, kind: r.kind, win: wins / N, steps: steps / N, bars: bars / N })
 }
 
 console.log(
@@ -63,6 +68,10 @@ console.log(
 console.log('| Raid | Win % | Actions | Bars broken |')
 console.log('|---|---:|---:|---:|')
 for (const r of rows) console.log(`| ${r.name} | ${Math.round(r.win * 100)} | ${r.steps.toFixed(0)} | ${r.bars.toFixed(1)} |`)
-const pool = rows.slice(0, raid.pool.length)
 const mean = (xs: typeof rows) => Math.round((xs.reduce((n, r) => n + r.win, 0) / Math.max(1, xs.length)) * 100)
-console.log(`\nPool mean ${mean(pool)} % · fallback mean ${mean(rows.slice(raid.pool.length))} % · all ${mean(rows)} %`)
+const of = (k: string) => rows.filter((r) => r.kind === k)
+console.log(
+  `\nMythicals ${mean(of('mythical'))} % · legendaries ${mean(of('legendary'))} % · pseudo ${mean(of('pseudo'))} %` +
+    (process.env.FILLERS ? ` · fillers ${mean(of('filler'))} %` : '') +
+    ` · all ${mean(rows)} %`,
+)

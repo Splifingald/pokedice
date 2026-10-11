@@ -688,7 +688,15 @@ function RaidResult({ run }: { run: RaidRun }) {
       <div className="grid gap-2.5 bg-paper p-3 shadow-card" role="status">
         <h2 className="m-0 text-[28px] font-normal leading-none">{t('ui.raid.result.caught', { name })}</h2>
         <p className="copy m-0 text-lg">
-          {run.catch?.live ? t('ui.raid.result.here', { name }) : t('ui.raid.result.sent', { name, region: regionName(run.catch?.region) })}
+          {run.catch?.locked
+            ? t('ui.raid.result.locked', {
+                name,
+                area: data.areas.find((x) => x.id === run.raid.areaId)?.name ?? '',
+                region: regionName(run.catch?.region),
+              })
+            : run.catch?.live
+              ? t('ui.raid.result.here', { name })
+              : t('ui.raid.result.sent', { name, region: regionName(run.catch?.region) })}
         </p>
         <PixelButton variant="primary" size="lg" className="w-full" onClick={leaveRaid}>
           {t('ui.raid.back')}

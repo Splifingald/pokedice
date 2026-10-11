@@ -78,12 +78,10 @@ describe('roaming legendaries', () => {
     }
   })
 
-  it('rolls the wild shiny odds each time it shows up', () => {
-    const meet = (shinyChance: number) => {
-      const d = makeData({ shinyChance, roamers: { ...roamers, chance: 1 } })
-      return rollRoamer({ ...ctx(johtoRoute, [249, 250]), data: d }, createRng(1))
-    }
-    expect(meet(1)).toMatchObject({ kind: 'boss', shiny: true })
-    expect(meet(0)).not.toHaveProperty('shiny')
+  it('is never shiny: a shiny legendary comes only from Raid Battles', () => {
+    const d = makeData({ shinyChance: 1, roamers: { ...roamers, chance: 1 } })
+    const met = rollRoamer({ ...ctx(johtoRoute, [249, 250]), data: d }, createRng(1))
+    expect(met).toMatchObject({ kind: 'boss' })
+    expect(met).not.toHaveProperty('shiny')
   })
 })

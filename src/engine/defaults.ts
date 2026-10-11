@@ -106,11 +106,11 @@ export const DEFAULT_CONFIG: GameConfig = {
   // A once-only find in a big loot deck can take a hundred rounds to turn up: from the 5th round done in its area, its
   // odds climb to ×10 at the 50th.
   uniquePity: { startRounds: 5, fullRounds: 50, maxMultiplier: 10 },
-  // Extreme mode (docs/20): opened by the Johto League; no Pokémon Centers and no healing after a lost round; a K.O.
-  // rests 12 h and comes back at 1 HP; out of the game, every Pokémon heals 10 % an hour (absences under 2 min don't
-  // count). Potions and Revives work.
+  // Extreme mode (docs/22): off until the admin switches it on, for the admin alone or for everyone. Opened by the
+  // Johto League; no Pokémon Centers and no healing after a lost round; a K.O. rests 12 h and comes back at 1 HP; out
+  // of the game, every Pokémon heals 10 % an hour (absences under 2 min don't count). Potions and Revives work.
   extreme: {
-    enabled: true,
+    access: 'off',
     unlockRegion: 'johto',
     centers: false,
     wipeHeals: false,
@@ -120,12 +120,13 @@ export const DEFAULT_CONFIG: GameConfig = {
     awayMinMinutes: 2,
     items: true,
   },
-  // The special events (docs/18). Each one is switched on as it's built (docs/19); before the first opens, Home keeps
-  // a locked square from the 3rd Kanto badge. Banners: an event's own picture, or an area picture until it has one.
+  // The special events (docs/18). Each is off until the admin switches it on, for the admin alone or for everyone;
+  // before the first opens, Home keeps a locked square from the 3rd Kanto badge. Banners: an event's own picture, or an
+  // area picture until it has one.
   events: {
     teaserBadges: 3,
     wheel: {
-      enabled: true,
+      access: 'off',
       priority: 5,
       // Routes 7 & 8 (Celadon), Kanto.
       unlockAreaId: '8cf87ee3-f7a5-568e-bc22-54f643572535',
@@ -142,7 +143,7 @@ export const DEFAULT_CONFIG: GameConfig = {
       ],
     },
     raid: {
-      enabled: true,
+      access: 'off',
       priority: 3,
       // The Safari Zone, Kanto.
       unlockAreaId: '2238f26a-2629-5f28-af07-e74cb41d5f7a',
@@ -162,8 +163,6 @@ export const DEFAULT_CONFIG: GameConfig = {
       teamCap: 50,
       sideUpgradeLevel: 5,
       maxFriends: 2,
-      fallbackShiny: 0.3,
-      repeatHours: 72,
       helperDailyCap: 5,
       gifts: [
         { key: 'ultra-ball', weight: 40 },
@@ -171,20 +170,18 @@ export const DEFAULT_CONFIG: GameConfig = {
         { key: 'revive', weight: 20 },
         { key: 'rare-candy', weight: 15 },
       ],
-      // The mythicals of the raid pool: clearing their area unlocks their raid (scripts/raid-areas.ts took them out of
-      // those areas' bosses).
+      // The mythicals, each a raid (never a shiny one: those are for other events); their lair is the area a catch waits for (scripts/raid-areas.ts
+      // took them out of those areas' bosses). The legendaries are shiny raids and stay their areas' bosses.
       pool: [
         { dex: 151, areaId: '050ff505-ff8e-5251-8499-842a2cfc2986' }, // Mew, Faraway Island
         { dex: 251, areaId: '100e6644-3f5b-553a-ad22-e26551b04edc' }, // Celebi, Ilex Shrine
         { dex: 385, areaId: '57008453-b26b-5c52-a88e-e777d39ab364' }, // Jirachi, Birth Island
         { dex: 386, areaId: '57008453-b26b-5c52-a88e-e777d39ab364' }, // Deoxys, Birth Island
-        { dex: 384, areaId: '4ef12821-79bb-5aa1-ad96-5bd2fbba093f' }, // Rayquaza, Sky Pillar
-        { dex: 381, areaId: '07e40731-d45b-4e84-8c81-df5470d2f0c3' }, // Latios, Southern Island II
         { dex: 489, areaId: '75d4e417-4ae4-523a-bc44-d1efa9e5ed5e' }, // Phione, The Seabreak Path
         { dex: 490, areaId: '75d4e417-4ae4-523a-bc44-d1efa9e5ed5e' }, // Manaphy, The Seabreak Path
+        { dex: 491, areaId: '5e2e78f9-5ad7-5e3c-a9f2-518a4c11799c' }, // Darkrai, Newmoon Island
         { dex: 492, areaId: 'fc27382b-919d-50d0-9f21-23dd16cf99d0' }, // Shaymin, Flower Paradise
         { dex: 493, areaId: 'df1bb846-fc11-590f-afec-45ef39b63deb' }, // Arceus, The Hall of Origin
-        { dex: 488, areaId: '1bef9b55-6556-5a47-b728-8dc5dba851c7' }, // Cresselia, Fullmoon Island
         { dex: 494, areaId: '285d4dfb-dd01-59eb-a632-0602a135a88e' }, // Victini, Liberty Garden
         { dex: 647, areaId: 'a536039f-e897-5697-a75e-15d8060e96e3' }, // Keldeo, The Moor of Icirrus Spring
         { dex: 648, areaId: 'f014aa64-1215-5a78-be22-b1ee72f0d1e7' }, // Meloetta, The Castelia Café
@@ -193,31 +190,40 @@ export const DEFAULT_CONFIG: GameConfig = {
         { dex: 720, areaId: '532b27a7-bfb1-5b03-ae0f-a611995dffa2' }, // Hoopa, Hoopa's Ring
         { dex: 721, areaId: '9394fdfc-182a-5c7d-92a2-3fb38c339f28' }, // Volcanion, The Nebel Plateau
         { dex: 808, areaId: 'bf277850-73f7-569e-8657-fa5298161229' }, // Meltan, The Mystery Box
+        { dex: 809, areaId: 'bf277850-73f7-569e-8657-fa5298161229' }, // Melmetal, The Mystery Box
         { dex: 801, areaId: '28487bdf-d4f4-5fc9-860e-accef6b9677f' }, // Magearna, Magearna's Workshop
         { dex: 802, areaId: 'e8c9b515-3421-5bdb-ade2-b101f1e6885d' }, // Marshadow, Ten Carat Hill's Farthest Hollow
         { dex: 807, areaId: '4a29a297-7cb0-5f5d-b6f0-f36210ff02e4' }, // Zeraora, The Blush Mountain Storm
         { dex: 893, areaId: '4aed8f3a-c216-5713-ac05-5a66d5c6998e' }, // Zarude, The Forest of Focus
+        { dex: 1025, areaId: '168b74c9-3359-5581-a214-1f5be8da9b3e' }, // Pecharunt, Kitakami Hall
       ],
-      // The pseudo-legendaries and a few powerful Pokémon, from when their region is reached.
-      fallback: [
-        { dex: 149, regionId: 'kanto' },
-        { dex: 130, regionId: 'kanto' },
-        { dex: 131, regionId: 'kanto' },
-        { dex: 143, regionId: 'kanto' },
-        { dex: 248, regionId: 'johto' },
-        { dex: 373, regionId: 'hoenn' },
-        { dex: 376, regionId: 'hoenn' },
-        { dex: 445, regionId: 'sinnoh' },
-        { dex: 448, regionId: 'sinnoh' },
-        { dex: 635, regionId: 'unova' },
-        { dex: 637, regionId: 'unova' },
-        { dex: 706, regionId: 'kalos' },
-        { dex: 681, regionId: 'kalos' },
-        { dex: 784, regionId: 'alola' },
-        { dex: 887, regionId: 'galar' },
-        { dex: 998, regionId: 'paldea' },
-        { dex: 983, regionId: 'paldea' },
-      ],
+      calendar: {
+        // Days that mean something (engine/raidCalendar.ts lays out the rest, legendaries on the weekends).
+        anchors: [
+          { date: '01-01', dex: 493, shiny: false }, // New Year: Arceus, who shaped the world
+          { date: '02-14', dex: 905, shiny: true }, // Valentine's Day: Enamorus, the love-hate Pokémon
+          { date: '02-27', dex: 25, shiny: true }, // Pokémon Day: a shiny Pikachu
+          { date: '03-20', dex: 492, shiny: false }, // spring equinox: Shaymin, when the Gracidea blooms
+          { date: '03-22', dex: 382, shiny: true }, // World Water Day: Kyogre
+          { date: '04-01', dex: 720, shiny: false }, // April Fools' Day: Hoopa, the mischief Pokémon
+          { date: '04-22', dex: 251, shiny: false }, // Earth Day: Celebi, the voice of the forest
+          { date: '06-08', dex: 490, shiny: false }, // World Oceans Day: Manaphy, the prince of the sea
+          { date: '06-20', dex: 791, shiny: true }, // summer solstice: Solgaleo, the sun
+          { date: '06-21', dex: 648, shiny: false }, // Fête de la Musique: Meloetta
+          { date: '07-07', dex: 385, shiny: false }, // Tanabata, the star festival: Jirachi grants wishes
+          { date: '07-14', dex: 494, shiny: false }, // Bastille Day's fireworks: Victini, the victory Pokémon
+          { date: '08-12', dex: 386, shiny: false }, // the Perseids: Deoxys came on a meteor
+          { date: '10-30', dex: 487, shiny: true }, // Halloween eve: Giratina, from the Distortion World
+          { date: '10-31', dex: 491, shiny: false }, // Halloween: Darkrai and its nightmares
+          { date: '11-01', dex: 802, shiny: false }, // All Saints' Day: Marshadow, of the shadows
+          { date: '12-21', dex: 792, shiny: true }, // winter solstice, the longest night: Lunala, the moon
+          { date: '12-24', dex: 225, shiny: true }, // Christmas Eve: a shiny Delibird with its presents
+          { date: '12-25', dex: 801, shiny: false }, // Christmas: Magearna, made as a gift
+          { date: '12-31', dex: 483, shiny: true }, // New Year's Eve: Dialga, master of time
+        ],
+        // Shiny fillers come from areas starting at Lv.40 or more: a Lv.50 catch never lands in an early area.
+        fillerMinLevel: 40,
+      },
       exclude: {
         // Every pseudo-legendary line.
         pseudo: [
@@ -232,7 +238,7 @@ export const DEFAULT_CONFIG: GameConfig = {
       },
     },
     rebattle: {
-      enabled: true,
+      access: 'off',
       priority: 4,
       unlockAreaId: null,
       banner: 'champion',
@@ -247,4 +253,6 @@ export const DEFAULT_CONFIG: GameConfig = {
   },
   // Filled from src/data/config.json (scripts/rebattle-teams.ts): no lineup, no rebattle in that region.
   rebattleLineups: {},
+  // Off until the admin switches it on (for the admin alone, or everyone).
+  liveEvents: { access: 'off', list: [] },
 }

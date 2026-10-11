@@ -241,7 +241,7 @@ export function SettingsScreen() {
 
 /**
  * The red button at the very bottom: everything the game keeps about the player, in this browser and online, deleted
- * (both saves, docs/20). Two pop-ups in a row so it is never a mis-tap: what goes, then a last "really?". Then the
+ * (both saves, docs/22). Two pop-ups in a row so it is never a mis-tap: what goes, then a last "really?". Then the
  * title screen, from scratch. `extreme`: the Extreme save only, from its own section.
  */
 function DeleteData({ scope = 'all' }: { scope?: 'all' | 'extreme' }) {
@@ -300,7 +300,7 @@ function DeleteData({ scope = 'all' }: { scope?: 'all' | 'extreme' }) {
   )
 }
 
-/** Extreme mode (docs/20): what it is, its rules, and deleting its save. Once it's open, or a save of it exists. */
+/** Extreme mode (docs/22): what it is, its rules, and deleting its save. Once it's open, or a save of it exists. */
 function ExtremePanel() {
   const { t } = useT()
   const save = useGame((s) => s.save)
@@ -309,7 +309,7 @@ function ExtremePanel() {
   const extreme = isExtreme(save)
   const other = otherSave()
   const hasSave = extreme || isExtreme(other)
-  if (!extreme && !hasSave && !(data.config.extreme.enabled && extremeOpen(save, data))) return null
+  if (!extreme && !hasSave && !extremeOpen(save, data)) return null
   return (
     <Panel title={t('ui.extreme.name')}>
       <p className="copy text-muted">{t('ui.extreme.settings.hint')}</p>

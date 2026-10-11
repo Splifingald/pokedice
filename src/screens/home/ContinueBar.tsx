@@ -52,7 +52,7 @@ export function useContinue(area: Area) {
   const empty = !!energy && energy.value < 1 && run.areaId === area.id && outOfEnergy()
   const need = area.roundsToClear
   const done = progress.roundsDone ?? 0
-  // Extreme mode (docs/20): nobody can fight and no Center will come — the team rests.
+  // Extreme mode (docs/22): nobody can fight and no Center will come — the team rests.
   const resting = !busy && !hasAbleTeam(save) && !centersOn(save, data)
   const back = resting ? firstComeback(save, data) : null
 

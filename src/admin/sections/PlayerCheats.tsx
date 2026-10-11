@@ -35,7 +35,7 @@ export function PlayerCheats({ player, name }: { player: string; name: string })
   const [regionLevel, setRegionLevel] = useState(50)
   const [itemKey, setItemKey] = useState('rare-candy')
   const [qty, setQty] = useState(1)
-  // Which of the player's two saves the cheats edit (Extreme mode, docs/20).
+  // Which of the player's two saves the cheats edit (Extreme mode, docs/22).
   const [realm, setRealm] = useState<SaveMode>('main')
 
   useEffect(() => {

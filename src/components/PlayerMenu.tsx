@@ -1,6 +1,6 @@
 import { lazy, Suspense, useId, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { badgeCase, discordUrl, extremeOpen, isExtreme, leaderboardUnlocked } from '@/engine'
+import { badgeCase, discordUrl, extremeOn, extremeOpen, isExtreme, leaderboardUnlocked } from '@/engine'
 import { otherSave } from '@/store/extreme'
 import { useT } from '@/i18n/react'
 import { useFriends } from '@/lib/friends'
@@ -113,9 +113,9 @@ export function PlayerMenu() {
   const boardOpen = !!save && leaderboardUnlocked(save, data)
   // The Connect row only makes sense when cloud backup exists on this deployment and nobody is signed in.
   const canConnect = isSupabaseConfigured && auth.status === 'signed_out'
-  // Extreme mode (docs/20): from the main save once it's open (or an Extreme save exists); back from Extreme always.
+  // Extreme mode (docs/22): from the main save once it's open (or an Extreme save exists); back from Extreme always.
   const extreme = isExtreme(save)
-  const canSwitch = extreme || (data.config.extreme.enabled && (extremeOpen(save, data) || !!otherSave()))
+  const canSwitch = extreme || (extremeOn(data) && (extremeOpen(save, data) || !!otherSave()))
 
   const go = (to: string) => () => {
     setOpen(false)

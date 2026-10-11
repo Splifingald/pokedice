@@ -20,7 +20,7 @@ export class NoRealmError extends Error {
 }
 
 /**
- * The cloud copy of one of the player's two saves (docs/20). The main one is read the old way on a database without
+ * The cloud copy of one of the player's two saves (docs/22). The main one is read the old way on a database without
  * realms, so the game keeps syncing while 0039 waits to be run.
  */
 export async function pullCloudSave(client: SupabaseClient, userId: string, realm: SaveMode = 'main'): Promise<SaveData | null> {

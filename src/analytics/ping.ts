@@ -40,7 +40,7 @@ export async function pingToday(now = new Date()) {
   try {
     const client = await getSupabase()
     if (!client) return
-    // An Extreme save (docs/20) counts the day played, but leaves the admin's picture of the player — their name and
+    // An Extreme save (docs/22) counts the day played, but leaves the admin's picture of the player — their name and
     // snapshot — to the main save.
     const extreme = save.mode === 'extreme'
     const { error } = await client.rpc('player_ping', {

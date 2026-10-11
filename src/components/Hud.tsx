@@ -15,6 +15,8 @@ import { cx } from '@/theme/util'
 import { useCountUp, useGoldBump } from './GoldPill'
 import { EnergyPill } from './EnergyPill'
 import { PixelIcon, type IconName } from './icons'
+import { CashChip } from '@/screens/events/live'
+import { useLive } from '@/store/live'
 
 interface NavItem {
   to: string
@@ -42,6 +44,8 @@ function useNavDot(n: NavItem): { text: string; label: string; gold?: boolean } 
   const { t } = useT()
   const upgrades = useGame((s) => (n === UPGRADES && s.save ? affordableUpgrades(s.save, s.data) : 0))
   const dexNew = useDexNew()
+  const { live } = useLive(15_000)
+  if (n === SHOP && live?.type === 'shop') return { text: t('ui.live.sale'), label: t('ui.live.shopDot'), gold: true }
   if (n === UPGRADES && upgrades > 0) return { text: upgrades > 9 ? '9+' : String(upgrades), label: t('ui.nav.upgradesDot', { n: upgrades }) }
   if (n === DEX && dexNew > 0) return { text: t('ui.common.new'), label: t('ui.nav.dexDot', { n: dexNew }), gold: true }
   return null
@@ -177,6 +181,7 @@ export function Header() {
       <div className="mx-auto flex h-14 max-w-6xl items-center gap-2 px-2.5 md:max-w-none">
         <EnergyPill />
         <span className="flex-1" />
+        <CashChip />
         <GoldButton />
         <RoundLink
           to="/leaderboard"

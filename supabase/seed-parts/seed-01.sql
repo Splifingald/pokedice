@@ -927,9 +927,11 @@ declare
   w numeric;
   x numeric;
   pick int;
+  -- The admin's switch: off (the default), on for the admin only (to try it in production), on for everyone.
+  access text := coalesce((select value #>> '{wheel,access}' from game_config where key = 'events'), 'off');
 begin
   if me is null then raise exception 'events_signed_out'; end if;
-  if not coalesce((select (value #>> '{wheel,enabled}')::boolean from game_config where key = 'events'), true) then
+  if not (access = 'all' or (access = 'admin' and is_admin())) then
     raise exception 'events_wheel_off';
   end if;
   insert into event_state (user_id) values (me) on conflict (user_id) do nothing;
@@ -1213,7 +1215,7 @@ revoke all on function leaderboard() from public;
 grant execute on function leaderboard() to anon, authenticated;
 
 -- ↓ supabase/migrations/0039_extreme_realm.sql, inlined so this file stands alone.
--- Extreme mode (docs/20-EXTREME-MODE-PLAN.md): every player can have a second save, the Extreme one, in a world of its
+-- Extreme mode (docs/22-EXTREME-MODE-PLAN.md): every player can have a second save, the Extreme one, in a world of its
 -- own. Each player-facing table gets a `realm` ('main' or 'extreme'), and every function that reads or writes them
 -- takes `p_realm` (default 'main'), so an Extreme save only ever meets Extreme saves: its own trainer card, its own
 -- leaderboard, Versus, Day Care visitors, Fortune Wheel spin, raids and raid gifts.
@@ -1761,9 +1763,11 @@ declare
   w numeric;
   x numeric;
   pick int;
+  -- The admin's switch (0035): off (the default), on for the admin only (to try it in production), on for everyone.
+  access text := coalesce((select value #>> '{wheel,access}' from game_config where key = 'events'), 'off');
 begin
   if me is null then raise exception 'events_signed_out'; end if;
-  if not coalesce((select (value #>> '{wheel,enabled}')::boolean from game_config where key = 'events'), true) then
+  if not (access = 'all' or (access = 'admin' and is_admin())) then
     raise exception 'events_wheel_off';
   end if;
   insert into event_state (user_id, realm) values (me, p_realm) on conflict (user_id, realm) do nothing;

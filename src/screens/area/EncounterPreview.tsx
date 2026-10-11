@@ -18,6 +18,7 @@ import { StatChip } from '@/components/StatChip'
 import { TrainerSprite } from '@/components/TrainerArt'
 import { TypeBadge } from '@/components/TypeBadge'
 import { foeTypes } from '@/components/TypeMatchups'
+import { ShinyParadeChip } from '@/screens/events/live'
 import { useGame } from '@/store/game'
 import { canSkipCurrent, declineChallenge, engage, skipEncounter } from '@/store/run'
 import { cx } from '@/theme/util'
@@ -29,6 +30,7 @@ function WildCard({ enc }: { enc: Extract<Encounter, { kind: 'wild' | 'boss' }> 
   const sp = getSpecies(data, enc.dex)
   const stats = effectiveStats(sp, enc.level, data)
   const boss = enc.kind === 'boss'
+  const area = useGame((s) => s.data.areas.find((a) => a.id === s.run.areaId))
   return (
     <div className="flex items-center gap-3 sm:gap-4">
       <motion.div
@@ -47,6 +49,7 @@ function WildCard({ enc }: { enc: Extract<Encounter, { kind: 'wild' | 'boss' }> 
               <PixelIcon name="star" size={14} /> {t('ui.mon.shinyTag')}
             </span>
           )}
+          {enc.kind === 'wild' && <ShinyParadeChip area={area} />}
           {enc.kind === 'wild' &&
             (enc.isNew ? (
               <span className="bg-gold px-1.5 text-lg leading-tight text-ink shadow-ring">{t('ui.enc.new')}</span>

@@ -475,7 +475,8 @@ One Day Care for every region (docs/15-DAYCARE-BREEDING.md). The page (`src/scre
 
 ## 19. Extreme mode
 
-A second save in a world of its own (docs/20-EXTREME-MODE-PLAN.md), opened by the Johto League. The pieces are in
+A second save in a world of its own (docs/22-EXTREME-MODE-PLAN.md), opened by the Johto League once the admin has
+switched it on (Off by default; Off / On for admin / On for everyone, like the events). The pieces are in
 `src/components/Extreme.tsx`, every state of them on `/kitchen-sink` (`ExtremeBits`).
 
 - **Which world is in play is never in doubt**: a crimson band under the top bar ("Extreme mode · no Pokémon Centers",

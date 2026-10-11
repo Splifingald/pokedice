@@ -29,6 +29,7 @@ import { t } from '@/i18n'
 import { avatarOf, playerAvatarId } from '@/lib/avatars'
 import { closeRaid, setRaidTeam, type RaidFriend } from '@/lib/raid'
 import { commitSave, mutateSave, pushToast, useGame } from './game'
+import { recordOnServer } from './raid'
 import { newId } from './run'
 import { serverNow } from './serverTime'
 import { pushSaveNow } from './sync'
@@ -38,9 +39,11 @@ export type RaidStage = 'intro' | 'fight' | 'catch' | 'result'
 export interface RaidCatch {
   /** The throw, once made. */
   result: (CatchRoll & { ballKey: string | null }) | null
-  /** Where a caught raid Pokémon went: its home region, and whether that's the region being played. */
+  /** Where a caught raid Pokémon went: its home region, whether that's the region being played, or that it waits
+   *  locked for its area. */
   region?: string
   live?: boolean
+  locked?: boolean
 }
 
 export interface RaidRun {
@@ -201,6 +204,9 @@ export function raidFightOver() {
 async function closeOnServer(helpers: string[]) {
   if (useGame.getState().auth.status !== 'signed_in') return
   try {
+    // The server must know today's raid first (a player who signed in after it was set).
+    const raid = useRaidRun.getState().run?.raid
+    if (raid) await recordOnServer(raid)
     await closeRaid(helpers)
   } catch (err) {
     console.warn('[raid] close failed', err)
@@ -217,12 +223,12 @@ export function throwRaidBall(ballKey: string | null) {
   if (ballKey && (!ball || ball.effect.kind !== 'ball' || (save.inventory[ballKey] ?? 0) <= 0)) return
   let next = ballKey ? (consumeItem(save, ballKey) ?? save) : save
   const roll = rollCatch(catchValueOf(data, run.raid.dex), ballBonus(ball), rng)
-  let landing: Pick<RaidCatch, 'region' | 'live'> = {}
+  let landing: Pick<RaidCatch, 'region' | 'live' | 'locked'> = {}
   if (roll.caught) {
     const today = todayRaid(next, run.raid.day) ?? run.raid
     const res = applyRaidCatch(next, data, today, Date.now(), newId)
     next = res.save
-    landing = { region: res.region, live: res.live }
+    landing = { region: res.region, live: res.live, locked: res.locked }
     void closeOnServer(run.friends.map((f) => f.userId))
   }
   commitSave(next)

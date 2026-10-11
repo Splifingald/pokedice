@@ -9,9 +9,18 @@ import {
   type StatusKind,
 } from '@/engine'
 
+/** Every event switched on for everyone: rules tests check what they do; the switch has tests of its own. */
+const d = DEFAULT_CONFIG.events
+export const EVENTS_ON = {
+  ...d,
+  wheel: { ...d.wheel, access: 'all' as const },
+  raid: { ...d.raid, access: 'all' as const },
+  rebattle: { ...d.rebattle, access: 'all' as const },
+}
+
 /**
  * Rules tests pin the pacing knobs to neutral (×1), and status effects and the shiny rate to the defaults, so
- * their arithmetic documents the formulas, not the tuning done in admin.
+ * their arithmetic documents the formulas, not the tuning done in admin. The events are on.
  */
 export function makeData(config: Partial<GameConfig> = {}): GameData {
   return compileGameData({
@@ -23,6 +32,8 @@ export function makeData(config: Partial<GameConfig> = {}): GameData {
       xpMultiplier: 1,
       shinyChance: DEFAULT_CONFIG.shinyChance,
       status: DEFAULT_CONFIG.status,
+      events: EVENTS_ON,
+      liveEvents: { access: 'all', list: [] },
       ...config,
     },
   })

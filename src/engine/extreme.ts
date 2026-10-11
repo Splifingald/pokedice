@@ -1,6 +1,7 @@
-// Extreme mode (docs/20-EXTREME-MODE-PLAN.md): a second save, opened by a league of the main one, with no Pokémon
+// Extreme mode (docs/22-EXTREME-MODE-PLAN.md): a second save, opened by a league of the main one, with no Pokémon
 // Centers, K.O.s that rest for hours, and healing only while the player is out of the game. Every rule and number of
 // it is decided here; the screens only show them.
+import { eventOpenTo } from './events'
 import { instanceMaxHp } from './progression'
 import { getRegion, leagueDone } from './regions'
 import type { DayCareState, ExtremeConfig, GameData, PokemonInstance, RegionSave, SaveData } from './types'
@@ -22,6 +23,12 @@ export const healItemsOn = (save: Pick<SaveData, 'mode'>, data: GameData): boole
 
 // ---------------------------------------------------------------- opening it
 
+/**
+ * The admin has switched Extreme mode on for whoever is playing (as for the events: off, on for the admin alone, on
+ * for everyone; off by default). Off, it's nowhere: no pop-up, no title card, no menu row. Extreme saves are kept.
+ */
+export const extremeOn = (data: GameData): boolean => eventOpenTo(cfg(data).access, data)
+
 /** The main save has beaten the league that opens Extreme mode. */
 export function extremeLeagueDone(save: SaveData, data: GameData): boolean {
   return !isExtreme(save) && !!getRegion(data, cfg(data).unlockRegion) && leagueDone(save, data, cfg(data).unlockRegion)
@@ -38,7 +45,7 @@ export function stampExtremeUnlock(save: SaveData, data: GameData, now: number):
 
 /** Extreme mode can be played from this main save. */
 export function extremeOpen(save: SaveData | null, data: GameData): boolean {
-  if (!save || isExtreme(save) || !cfg(data).enabled) return false
+  if (!save || isExtreme(save) || !extremeOn(data)) return false
   return save.extremeUnlockedAt != null || extremeLeagueDone(save, data)
 }
 

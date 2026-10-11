@@ -4,8 +4,10 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   createRng,
   npcTeam,
+  raidOfDay,
   regionOfArea,
   simulateRaid,
+  upcomingRaids,
   DEFAULT_CONFIG,
   EVENT_IDS,
   REBATTLE_TIER_IDS,
@@ -29,11 +31,11 @@ import { money } from '@/lib/format'
 import { bannerUrl, RewardIcon } from '@/screens/events/shared'
 import { cx } from '@/theme/util'
 import { useAdminData } from '../store'
-import { Box, Field, NumInput, inputCls } from '../widgets'
+import { AccessSwitch, Box, Field, NumInput, inputCls } from '../widgets'
 import { useConfigRow } from './ConfigSection'
 
 /** Pictures made for the events (public/backgrounds). */
-const EVENT_BANNERS = ['/backgrounds/fortune-wheel.png']
+export const EVENT_BANNERS = ['/backgrounds/fortune-wheel.png']
 
 const NAMES: Record<EventId, string> = { wheel: 'Fortune Wheel', raid: 'Raid Battles', rebattle: 'Elite Rebattle' }
 
@@ -67,10 +69,10 @@ function EventRow({ id, def, set }: { id: EventId; def: EventDef; set: (patch: P
   return (
     <div className="grid gap-3 border-t-2 border-line pt-3 md:grid-cols-[minmax(0,1fr)_200px]">
       <div className="grid gap-2 sm:grid-cols-2">
-        <label className="flex items-center gap-2 text-xl sm:col-span-2">
-          <input type="checkbox" checked={def.enabled} onChange={(e) => set({ enabled: e.target.checked })} className="h-5 w-5" />
-          {NAMES[id]}
-        </label>
+        <div className="flex flex-wrap items-center gap-2 sm:col-span-2">
+          <span className="text-xl">{NAMES[id]}</span>
+          <AccessSwitch value={def.access ?? 'off'} onChange={(access) => set({ access })} label={`${NAMES[id]}: who sees it`} />
+        </div>
         <Field label="Order on Home" hint="Lower comes first.">
           <NumInput value={def.priority} min={1} max={9} onChange={(v) => set({ priority: v ?? 1 })} />
         </Field>
@@ -384,13 +386,16 @@ function RaidSim({ raid }: { raid: RaidConfig }) {
   const [rows, setRows] = useState<{ name: string; win: number; steps: number }[] | null>(null)
   const [busy, setBusy] = useState(false)
   if (!data) return null
-  const raids = [
-    ...raid.pool.flatMap((p) => {
-      const a = data.areas.find((x) => x.id === p.areaId)
-      return a ? [{ dex: p.dex, regionId: regionOfArea(a) }] : []
-    }),
-    ...raid.fallback.map((f) => ({ dex: f.dex, regionId: f.regionId })),
-  ]
+  // The coming two weeks' raids, as the calendar has them with the numbers as edited.
+  const edited = { ...data, config: { ...data.config, events: { ...data.config.events, raid: { ...data.config.events.raid, ...raid } } } }
+  const today = new Date().toISOString().slice(0, 10)
+  const seen = new Set<number>()
+  const raids = [{ day: today, raid: raidOfDay(edited, today) }, ...upcomingRaids(edited, today, 13)].flatMap(({ raid: r }) => {
+    if (!r || seen.has(r.dex)) return []
+    seen.add(r.dex)
+    const a = data.areas.find((x) => x.id === r.areaId)
+    return a ? [{ dex: r.dex, regionId: regionOfArea(a) }] : []
+  })
   const run = () => {
     setBusy(true)
     // A frame for "Simulating…" first: the sims run on the page's thread.
@@ -427,7 +432,7 @@ function RaidSim({ raid }: { raid: RaidConfig }) {
       <div className="mt-2 flex flex-wrap items-end gap-2">
         <Field label="Raid">
           <select className={inputCls} value={String(dex)} onChange={(e) => setDex(e.target.value === 'all' ? 'all' : Number(e.target.value))}>
-            <option value="all">Every raid ({raids.length})</option>
+            <option value="all">The next two weeks ({raids.length})</option>
             {raids.map((r) => (
               <option key={r.dex} value={r.dex}>
                 {data.species[r.dex]?.name ?? `#${r.dex}`}
@@ -475,6 +480,104 @@ function RaidSim({ raid }: { raid: RaidConfig }) {
   )
 }
 
+/**
+ * The raid calendar: its fixed dates (every year, 'MM-DD'), how late a shiny filler's area must start, and the coming
+ * two weeks as every player will see them.
+ */
+function RaidCalendarBox({ raid, set }: { raid: RaidConfig; set: (patch: Partial<RaidConfig>) => void }) {
+  const data = useAdminData()
+  const cal = raid.calendar
+  const name = (dex: number) => data?.species[dex]?.name ?? `#${dex}`
+  const setCal = (patch: Partial<RaidConfig['calendar']>) => set({ calendar: { ...cal, ...patch } })
+  const edited = data ? { ...data, config: { ...data.config, events: { ...data.config.events, raid: { ...data.config.events.raid, ...raid } } } } : null
+  const today = new Date().toISOString().slice(0, 10)
+  const next = edited ? [{ day: today, raid: raidOfDay(edited, today) }, ...upcomingRaids(edited, today, 13)] : []
+  return (
+    <details className="border-t-2 border-line pt-2">
+      <summary className="cursor-pointer text-xl">Calendar · {cal.anchors.length} fixed dates</summary>
+      <p className="m-0 mt-1 text-base text-muted">
+        One raid a UTC day, the same for everyone. Fixed dates first; then the mythicals and every legendary as a shiny on the
+        weekends, the pseudo-legendaries spread over the year, and shiny fully evolved Pokémon on the other
+        days. Laid out per year from the year itself, so every player gets the same.
+      </p>
+      <div className="mt-2 grid gap-3 sm:grid-cols-3">
+        <Field label="Fillers from areas starting at Lv." hint="A shiny filler comes from an area at least this high, so a Lv.50 catch never lands early.">
+          <NumInput min={1} max={100} value={cal.fillerMinLevel} onChange={(v) => setCal({ fillerMinLevel: Math.max(1, v ?? 40) })} />
+        </Field>
+      </div>
+      <table className="mt-2 w-full text-lg">
+        <thead>
+          <tr className="text-left text-muted">
+            <th className="font-normal">Date (MM-DD)</th>
+            <th className="font-normal">Dex</th>
+            <th className="font-normal">Pokémon</th>
+            <th className="font-normal">Shiny</th>
+            <th />
+          </tr>
+        </thead>
+        <tbody>
+          {cal.anchors.map((a, i) => (
+            <tr key={i} className="border-t border-shadow/40">
+              <td className="py-1 pr-2">
+                <input
+                  className={cx(inputCls, 'w-24')}
+                  defaultValue={a.date}
+                  pattern="[0-9]{2}-[0-9]{2}"
+                  onBlur={(e) => {
+                    const v = e.target.value.trim()
+                    if (/^[0-9]{2}-[0-9]{2}$/.test(v)) setCal({ anchors: cal.anchors.map((x, j) => (j === i ? { ...x, date: v } : x)) })
+                  }}
+                />
+              </td>
+              <td className="pr-2">
+                <NumInput
+                  className="w-24"
+                  min={1}
+                  value={a.dex}
+                  onChange={(v) => setCal({ anchors: cal.anchors.map((x, j) => (j === i ? { ...x, dex: Math.max(1, v ?? 1) } : x)) })}
+                />
+              </td>
+              <td className="pr-2">{name(a.dex)}</td>
+              <td className="pr-2">
+                <input
+                  type="checkbox"
+                  className="h-5 w-5"
+                  checked={a.shiny}
+                  aria-label={`Shiny ${name(a.dex)}`}
+                  onChange={(e) => setCal({ anchors: cal.anchors.map((x, j) => (j === i ? { ...x, shiny: e.target.checked } : x)) })}
+                />
+              </td>
+              <td>
+                <button type="button" className="px-2 text-lg text-danger" onClick={() => setCal({ anchors: cal.anchors.filter((_, j) => j !== i) })} aria-label="Remove">
+                  ✕
+                </button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <button type="button" className="mt-2 px-2 py-1 text-lg shadow-ring" onClick={() => setCal({ anchors: [...cal.anchors, { date: '01-01', dex: 151, shiny: false }] })}>
+        + Add a date
+      </button>
+      {next.length > 0 && (
+        <>
+          <h4 className="m-0 mt-3 text-xl font-normal">The next two weeks</h4>
+          <ol className="m-0 mt-1 grid list-none gap-0.5 p-0 text-lg sm:grid-cols-2">
+            {next.map(({ day, raid: r }) => (
+              <li key={day} className="flex gap-2">
+                <span className="w-28 shrink-0 font-mono text-muted">{day}</span>
+                <span>
+                  {r ? `${name(r.dex)}${r.shiny ? ' (shiny)' : ''} · ${r.kind} · ${data?.areas.find((x) => x.id === r.areaId)?.name ?? '?'}` : '—'}
+                </span>
+              </li>
+            ))}
+          </ol>
+        </>
+      )}
+    </details>
+  )
+}
+
 /** Raid Battles: the fight's numbers, the pool (each mythical and the area that unlocks it), the fallback list, the
  *  species never used as NPC allies or summons, and the helpers' gifts. */
 function RaidBox({ raid, set }: { raid: RaidConfig; set: (patch: Partial<RaidConfig>) => void }) {
@@ -509,8 +612,6 @@ function RaidBox({ raid, set }: { raid: RaidConfig; set: (patch: Partial<RaidCon
         {num('Team level cap', 'teamCap', { min: 1, max: 100 })}
         {num('Sides’ upgrade level', 'sideUpgradeLevel', { min: 1, max: 10 })}
         {num('Friends per raid', 'maxFriends', { max: 2 })}
-        {num('Fallback shiny chance', 'fallbackShiny', { max: 1, step: 0.05, hint: '0–1 (0.3 = 30 %).' })}
-        {num('No repeat for (hours)', 'repeatHours', { max: 240 })}
         {num('Gifts per helper a day', 'helperDailyCap', { max: 20 })}
       </div>
       <Field label="Bar colours, first to last">
@@ -528,7 +629,7 @@ function RaidBox({ raid, set }: { raid: RaidConfig; set: (patch: Partial<RaidCon
         </span>
       </Field>
       <details className="border-t-2 border-line pt-2">
-        <summary className="cursor-pointer text-xl">Raid pool · {raid.pool.length} mythicals</summary>
+        <summary className="cursor-pointer text-xl">Mythicals · {raid.pool.length}, each a raid (never shiny), with their lair</summary>
         <table className="mt-2 w-full text-lg">
           <tbody>
             {raid.pool.map((p, i) => (
@@ -569,59 +670,10 @@ function RaidBox({ raid, set }: { raid: RaidConfig; set: (patch: Partial<RaidCon
           className="mt-2 px-2 py-1 text-lg shadow-ring"
           onClick={() => set({ pool: [...raid.pool, { dex: 151, areaId: areas[0]?.id ?? '' }] })}
         >
-          + Add a pool species
+          + Add a mythical
         </button>
       </details>
-      <details className="border-t-2 border-line pt-2">
-        <summary className="cursor-pointer text-xl">Fallback · {raid.fallback.length} species</summary>
-        <table className="mt-2 w-full text-lg">
-          <tbody>
-            {raid.fallback.map((f, i) => (
-              <tr key={i} className="border-t border-shadow/40">
-                <td className="py-1 pr-2">
-                  <NumInput
-                    className="w-24"
-                    min={1}
-                    value={f.dex}
-                    onChange={(v) => set({ fallback: raid.fallback.map((x, j) => (j === i ? { ...x, dex: Math.max(1, v ?? 1) } : x)) })}
-                  />
-                </td>
-                <td className="pr-2">{name(f.dex)}</td>
-                <td className="pr-2">
-                  <select
-                    className={inputCls}
-                    value={f.regionId}
-                    onChange={(e) => set({ fallback: raid.fallback.map((x, j) => (j === i ? { ...x, regionId: e.target.value } : x)) })}
-                  >
-                    {(data?.regions ?? []).map((r) => (
-                      <option key={r.id} value={r.id}>
-                        from {r.name}
-                      </option>
-                    ))}
-                  </select>
-                </td>
-                <td>
-                  <button
-                    type="button"
-                    className="px-2 text-lg text-danger"
-                    onClick={() => set({ fallback: raid.fallback.filter((_, j) => j !== i) })}
-                    aria-label="Remove"
-                  >
-                    ✕
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        <button
-          type="button"
-          className="mt-2 px-2 py-1 text-lg shadow-ring"
-          onClick={() => set({ fallback: [...raid.fallback, { dex: 149, regionId: 'kanto' }] })}
-        >
-          + Add a fallback species
-        </button>
-      </details>
+      <RaidCalendarBox raid={raid} set={set} />
       <div className="grid gap-3 sm:grid-cols-2">
         <Field label="Never an ally or a summon: pseudo-legendaries" hint="Dex numbers. Legendaries, mythicals and starter lines are always left out.">
           <DexList value={raid.exclude.pseudo} onChange={(pseudo) => set({ exclude: { ...raid.exclude, pseudo } })} />
@@ -681,7 +733,7 @@ export function EventsSection() {
     <div className="flex flex-col gap-4">
       <Box
         title="Special events" icon="star"
-        hint="Each event shows up on Home once it's on and its area is cleared, in this order, with a pop-up the first time. Saved with the rest of the config (Publish)."
+        hint="Each event is off until you switch it on: for you alone (signed in as admin, to try it in production first) or for everyone. Then it shows up on Home once its area is cleared, in this order, with a pop-up the first time. Saved with the rest of the config (Publish)."
       >
         <Field label="Teaser from this many Kanto badges" hint="Before the first event opens, Home shows a locked square naming its area.">
           <NumInput value={cfg.teaserBadges} min={0} max={8} onChange={(v) => set({ teaserBadges: v ?? 0 })} />

@@ -51,7 +51,7 @@ export interface FriendRow {
   since: number | null
   updatedAt: number | null
   isNew: boolean
-  /** They have a save in the world being played (Extreme mode, docs/20): else only their name and look. */
+  /** They have a save in the world being played (Extreme mode, docs/22): else only their name and look. */
   inRealm: boolean
 }
 

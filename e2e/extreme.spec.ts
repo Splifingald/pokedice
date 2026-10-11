@@ -1,16 +1,18 @@
-// Extreme mode (docs/20): the second save a league opens. Its rules pop-up and the way in, a new Extreme game beside the
+// Extreme mode (docs/22): the second save a league opens. Its rules pop-up and the way in, a new Extreme game beside the
 // main one, the resting team, a resting Pokémon's countdown, healing for the time away, deleting the Extreme save, and
 // the database told which world it is talking about.
 import { expect, test, type Page } from '@playwright/test'
 import { instanceMaxHp } from '../src/engine'
-import { FAST, fakeSession, gameData, makeSave, mockSupabase, STORAGE_KEY, withBadge } from './helpers'
+import { EXTREME_ON, FAST, fakeSession, gameData, makeSave, mockSupabase, STORAGE_KEY, withBadge } from './helpers'
 
 const H = 3_600_000
 
 /** The saves and the slot on the device, on the first load only (later reloads see what the game wrote). */
 async function seed(page: Page, o: { main?: object | null; extreme?: object | null; slot?: 'main' | 'extreme'; session?: boolean }) {
   await page.addInitScript(
-    ([m, x, slot, f, auth, key]) => {
+    ([m, x, slot, f, auth, key, on]) => {
+      // Extreme mode ships off: on for everyone here (after mockSupabase's events, which this keeps).
+      localStorage.setItem('pokedice.devConfig', on!)
       if (sessionStorage.getItem('e2e.seeded')) return
       sessionStorage.setItem('e2e.seeded', '1')
       if (m) localStorage.setItem('pokedice.save', m)
@@ -26,6 +28,7 @@ async function seed(page: Page, o: { main?: object | null; extreme?: object | nu
       FAST,
       o.session ? JSON.stringify(fakeSession()) : '',
       STORAGE_KEY,
+      JSON.stringify(EXTREME_ON),
     ] as const,
   )
 }
@@ -72,6 +75,23 @@ test('the league opens it: the rules, then a new Extreme game beside the main sa
   expect(m.box[0].dex).toBe(4)
   expect(m.extremeRulesSeen).toBe(true)
   expect(m.mode).toBeUndefined()
+})
+
+test('off by default: the league beaten, still no pop-up, no title card, no menu row', async ({ page }) => {
+  await mockSupabase(page)
+  await page.addInitScript((save) => {
+    if (sessionStorage.getItem('e2e.seeded')) return
+    sessionStorage.setItem('e2e.seeded', '1')
+    localStorage.setItem('pokedice.save', save)
+  }, JSON.stringify({ ...main(), extremeRulesSeen: false }))
+  await page.goto('/home')
+  await expect(page.getByRole('heading', { name: /^Exploring / })).toBeAttached()
+  await expect(page.getByRole('dialog', { name: 'Extreme mode' })).toHaveCount(0)
+  await page.getByRole('button', { name: 'Your trainer menu' }).click()
+  await expect(page.getByRole('dialog').getByRole('button', { name: 'Extreme mode' })).toHaveCount(0)
+  await page.keyboard.press('Escape')
+  await page.goto('/')
+  await expect(page.getByRole('heading', { name: 'Extreme mode' })).toHaveCount(0)
 })
 
 test('the whole team resting: CONTINUE waits, says when, and points to the Team and the Mart', async ({ page }) => {

@@ -3,6 +3,7 @@
 // evolving line, favouring species the player doesn't have yet. The Egg-group checks that lay the Eggs are in
 // breeding.ts.
 import { isExtreme } from './extreme'
+import { earnedGold } from './liveEvents'
 import { createInstance, gainXp, instanceMaxHp, xpToNext } from './progression'
 import { regionCases, regionOf, regionOfSpecies } from './regions'
 import { createRng, type Rng } from './rng'
@@ -12,6 +13,7 @@ import type {
   DayCareResident,
   DayCareState,
   GameData,
+  LiveEvent,
   PokemonInstance,
   RegionId,
   SaveData,
@@ -345,8 +347,9 @@ export interface Hatch {
   replaced?: PokemonInstance
   joinedTeam: boolean
   shiny: boolean
-  /** ₽ from the Day Care couple: `notKeptGold` when it isn't kept, else 0. */
+  /** ₽ from the Day Care couple: `notKeptGold` when it isn't kept, else 0; and Cash Flow's part of it. */
   gold: number
+  bonus: number
   /** It was the free first Egg. */
   gift: boolean
 }
@@ -357,7 +360,14 @@ export interface Hatch {
  * A shiny is a Pokémon of its own (the catching rule): it never replaces a copy, nothing holds it back, so it is
  * always kept.
  */
-export function hatchEgg(save: SaveData, data: GameData, rng: Rng, now: number, newId: () => string): Hatch | null {
+export function hatchEgg(
+  save: SaveData,
+  data: GameData,
+  rng: Rng,
+  now: number,
+  newId: () => string,
+  live: LiveEvent | null = null,
+): Hatch | null {
   const dc = dayCareOf(save)
   if (!dc.egg) return null
   const cfg = data.config.dayCare
@@ -370,7 +380,7 @@ export function hatchEgg(save: SaveData, data: GameData, rng: Rng, now: number, 
   const copies = shiny ? [] : ownedPokemon(save).filter((p) => p.dex === inst.dex && !p.shiny)
   const kept = copies.every((p) => p.level < inst.level)
   const replaced = kept ? copies.sort((a, b) => a.level - b.level)[0] : undefined
-  const gold = kept ? 0 : Math.max(0, Math.round(cfg.notKeptGold))
+  const { amount: gold, bonus } = earnedGold(kept ? 0 : cfg.notKeptGold, live)
   const gift = !!dc.egg.gift
   const { egg: _hatched, ...rest } = dc
   const cleared: DayCareState = { ...rest, eggClaimed: dc.eggClaimed || gift }
@@ -380,7 +390,7 @@ export function hatchEgg(save: SaveData, data: GameData, rng: Rng, now: number, 
     pokedex: isNew ? [...save.pokedex, inst.dex] : save.pokedex,
     dayCare: cleared,
   }
-  const out = { inst, isNew, kept, shiny, gold, gift }
+  const out = { inst, isNew, kept, shiny, gold, bonus, gift }
   if (!kept) return { ...out, save: base, joinedTeam: false }
   const inTeam = replaced ? save.team.includes(replaced.id) : false
   const box = save.box.filter((p) => p.id !== replaced?.id)

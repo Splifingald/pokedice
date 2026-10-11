@@ -62,7 +62,7 @@ const SEAFOAM = byName('Seafoam Islands')
 const CAVE = byName('Cerulean Cave')
 /** Seafoam with a round legendary (due once every round is done, needed to clear): the bundled one may be admin-tuned otherwise. */
 const SEAFOAM_GAUGE: Area = { ...SEAFOAM, legendaryBoss: [{ dex: 144, level: 50 }] }
-const NEWMOON = byName('Newmoon Island')
+const FULLMOON = byName('Fullmoon Island')
 
 const fresh = () => newSave(4, data, 1000, newId)
 
@@ -138,13 +138,13 @@ describe('encounters', () => {
     expect(challengeEncounter(SEAFOAM, p, data, 10)).toEqual({ kind: 'boss', dex: 144, level: 50 })
   })
 
-  it('team-average bosses (Cerulean Cave) and arrival bosses (Newmoon Island)', () => {
+  it('team-average bosses (Cerulean Cave) and arrival bosses (Fullmoon Island)', () => {
     const p = emptyProgress()
     const at = CAVE.legendaryBoss![0]!.teamAvgThreshold!
     expect(dueBoss(CAVE, p, at - 1)).toBeNull()
     expect(dueBoss(CAVE, p, at)?.dex).toBe(150)
     expect(dueBoss(CAVE, { ...p, bossesDefeated: [150] }, 90)).toBeNull()
-    expect(dueBoss(NEWMOON, p, 1)?.dex).toBe(491)
+    expect(dueBoss(FULLMOON, p, 1)?.dex).toBe(488)
   })
 
   it('scaling areas draw enemy levels from the team average ± 3', () => {

@@ -77,6 +77,8 @@ beforeAll(async () => {
     insert into regions (id, name, order_index, dex_range, starters, league_area_id, next_region) values
       ('kanto', 'Kanto', 1, '[1,151]', '[1,4,7]', '${LEAGUE}', null);
     insert into trainers (id, name, team, role, badge) values ('${BOULDER}', 'Brock', '[]', 'leader', 'Boulder Badge');
+    -- The wheel is off by default (0035): on for everyone here.
+    insert into game_config (key, value) values ('events', '{"wheel": {"access": "all"}}');
   `)
   // Misty's main save is there before the migration: it must stay hers, as her main one.
   await db.query(`insert into saves (user_id, data) values ($1, $2)`, [U.misty, JSON.stringify(save('MISTY'))])

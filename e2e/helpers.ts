@@ -1,6 +1,6 @@
 import type { Page } from '@playwright/test'
 import { readFileSync } from 'node:fs'
-import { badgeCase, compileGameData, newSave, progressOf, type BundleRaw, type SaveData } from '../src/engine'
+import { badgeCase, compileGameData, DEFAULT_CONFIG, newSave, progressOf, type BundleRaw, type SaveData } from '../src/engine'
 
 const load = (f: string) => JSON.parse(readFileSync(new URL(`../src/data/${f}`, import.meta.url), 'utf8'))
 
@@ -43,9 +43,24 @@ export function withBadge(save: SaveData): SaveData {
 export const SUPABASE = 'http://127.0.0.1:54399'
 export const ADMIN = 'admin@example.com'
 
+/** The special events switched on for everyone (they ship off): the dev server reads it (src/config/bundle.ts). */
+export const EVENTS_ON = {
+  events: {
+    ...DEFAULT_CONFIG.events,
+    wheel: { ...DEFAULT_CONFIG.events.wheel, access: 'all' },
+    raid: { ...DEFAULT_CONFIG.events.raid, access: 'all' },
+    rebattle: { ...DEFAULT_CONFIG.events.rebattle, access: 'all' },
+  },
+}
+
+/** Extreme mode switched on for everyone (it ships off), with the events: for e2e/extreme.spec.ts. */
+export const EXTREME_ON = { ...EVENTS_ON, extreme: { ...DEFAULT_CONFIG.extreme, access: 'all' } }
+
 export interface SupabaseMock {
   /** What an RPC returns, by function name (friend_list, friend_add…); a function returns its value or the result. */
   rpc?: Record<string, unknown | ((body: Record<string, unknown>) => unknown)>
+  /** The special events as they ship (off), instead of switched on for everyone. */
+  eventsOff?: boolean
   /** Auth's public settings (/auth/v1/settings): which sign-in providers are on. Google only by default. */
   authSettings?: unknown
 }
@@ -53,6 +68,8 @@ export interface SupabaseMock {
 /** Intercept every call to the fake Supabase. Returns the list of "METHOD path" calls seen. */
 export async function mockSupabase(page: Page, mock: SupabaseMock = {}): Promise<string[]> {
   const calls: string[] = []
+  // The events are switched on in these tests, as they will be in the game; a test of the switch asks for them off.
+  await page.addInitScript((cfg) => localStorage.setItem('pokedice.devConfig', cfg), mock.eventsOff ? '{}' : JSON.stringify(EVENTS_ON))
   await page.route(`${SUPABASE}/**`, async (route) => {
     const req = route.request()
     const url = new URL(req.url())

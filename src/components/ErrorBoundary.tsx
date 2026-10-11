@@ -10,7 +10,7 @@ interface State {
 
 function saveText(): string {
   try {
-    // The save this page plays: the main one, or the Extreme one (docs/20).
+    // The save this page plays: the main one, or the Extreme one (docs/22).
     return localStorage.getItem(saveKeyOf()) ?? JSON.stringify(useGame.getState().save)
   } catch {
     return JSON.stringify(useGame.getState().save)

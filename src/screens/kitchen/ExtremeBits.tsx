@@ -1,4 +1,4 @@
-// Kitchen sink: Extreme mode's pieces (docs/20) in every state — the rules (unlock and INFO), the band and the mark, the
+// Kitchen sink: Extreme mode's pieces (docs/22) in every state — the rules (unlock and INFO), the band and the mark, the
 // title card (no save yet, playing, someone resting), a resting Pokémon's tag and panel, the resting team, the
 // welcome-back card and the switch.
 import { useMemo, useState } from 'react'

@@ -27,6 +27,7 @@ import {
   type RushRefusal,
 } from '@/engine'
 import { tickDayCare } from './daycare'
+import { currentLive } from './live'
 import { mutateSave, pushToast, useGame } from './game'
 import { newId } from './run'
 import { t } from '@/i18n'
@@ -160,7 +161,7 @@ export function pickUpFromDayCare(uid: string): Pickup | null {
 /** The Egg waiting hatches (the gift, or one a pair left). Null when none waits. */
 export function hatchDayCareEgg(): Hatch | null {
   const { save, data } = useGame.getState()
-  const res = save ? hatchEgg(save, data, createRng(randomSeed()), Date.now(), newId) : null
+  const res = save ? hatchEgg(save, data, createRng(randomSeed()), Date.now(), newId, currentLive()) : null
   if (!res) return null
   mutateSave(() => res.save)
   // The clocks kept running while it waited: a check that came due meanwhile can leave the next one now.
@@ -180,7 +181,7 @@ export function rushDayCareEgg(): { hatch: Hatch } | { refused: RushRefusal } {
   const rng = createRng(randomSeed())
   const rushed = rushEgg(save, data, now, rng)
   if ('refused' in rushed) return rushed
-  const hatch = hatchEgg(rushed.save, data, rng, now, newId)
+  const hatch = hatchEgg(rushed.save, data, rng, now, newId, currentLive())
   if (!hatch) return { refused: 'pair' }
   mutateSave(() => hatch.save)
   return { hatch }

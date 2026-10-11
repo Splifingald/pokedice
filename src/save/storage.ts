@@ -8,7 +8,7 @@ export const SAVE_KEY = 'pokedice.save'
 export const CORRUPT_KEY = 'pokedice.save.corrupt'
 export const SETTINGS_KEY = 'pokedice.settings'
 export const BACKUPS_KEY = 'pokedice.save.backups'
-/** Which of the two saves this device plays (docs/20): 'main' (absent) or 'extreme'. */
+/** Which of the two saves this device plays (docs/22): 'main' (absent) or 'extreme'. */
 export const SLOT_KEY = 'pokedice.slot'
 
 /** The main save keeps the keys it always had; the Extreme save has its own beside them. */
@@ -220,6 +220,8 @@ const DEVICE_KEYS = new Set([
   'pokedice.analytics.device',
   'pokedice.analytics.pinged',
   'pokedice.authProviders',
+  // The dev server's config override (src/config/bundle.ts): the developer's, not the player's.
+  'pokedice.devConfig',
 ])
 
 /** One save gone from this device: the save, its backups and its archived corrupt copy (Delete my Extreme save). */

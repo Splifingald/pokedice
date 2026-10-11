@@ -34,8 +34,10 @@ Asked in the Q&A of 2026-10-11 (§9), unless marked *plan*:
 - The **rules pop-up** (§4) opens once, at the next calm moment after the league (it queues behind the league-cleared
   pop-up and the new-region prompt, like the other one-time pop-ups). **Later** closes it; **Start Extreme mode**
   goes to the new Extreme save.
-- An admin switch (`extreme.enabled`) hides the mode everywhere: no pop-up, no title card, no menu row. An Extreme
-  save that already exists is kept and comes back when it's switched on again.
+- An admin switch (`extreme.access`, as for the events: **Off**, **On for admin**, **On for everyone**; Off by default)
+  closes every way in: no pop-up, no title card, no menu row. An Extreme save that already exists is kept and comes
+  back when it's switched on again; one being played when it goes off isn't pulled away mid-game (the admin flag only
+  arrives with the sign-in), and its way back to the main game stays.
 
 ### 1.2 No Pokémon Centers
 
@@ -94,7 +96,7 @@ One `game_config` row, `extreme`, edited in **Admin → Config → Extreme mode*
 
 | Key | Default | What it does |
 |---|---|---|
-| `enabled` | `true` | Off hides the mode everywhere (saves are kept). |
+| `access` | `'off'` | Who can play it: `'off'` hides the mode everywhere (saves are kept), `'admin'` the admin alone, `'all'` everyone. |
 | `unlockRegion` | `'johto'` | The region whose league opens Extreme mode ("the second league"). |
 | `centers` | `false` | Pokémon Centers in the deck. |
 | `wipeHeals` | `false` | A lost round heals the team, as in the main game. |
@@ -193,7 +195,7 @@ welcome-back card and the admin panel: https://claude.ai/artifact/Vq8m9ru7sxYC3H
    `/kitchen-sink`; e2e: unlock → rules → new Extreme game, no Center in a whole round, K.O. timer, away heal with a
    mocked server clock, the two worlds' leaderboards apart.
 
-Each step ships on its own behind `extreme.enabled = false` until step 4 is in.
+Each step ships on its own behind `extreme.access = 'off'` until step 4 is in; it stays off until the admin opens it.
 
 ## 7. Risks
 

@@ -1,4 +1,4 @@
-// Extreme mode's two saves on the device (docs/20): each written under its own key whatever the slot says, a write
+// Extreme mode's two saves on the device (docs/22): each written under its own key whatever the slot says, a write
 // asked for before a switch can't land on the other save, backups kept apart, and deleting one save leaves the other.
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { compileGameData, newSave, type SaveData } from '@/engine'

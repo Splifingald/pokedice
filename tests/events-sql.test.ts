@@ -34,6 +34,15 @@ async function as<T = Record<string, unknown>>(user: string | null, q: string, p
 }
 
 const spin = async (user: string | null) => (await as<{ s: Spin }>(user, 'select wheel_spin() as s'))[0]!.s
+/** The same, signed in with this email (the admin's is in 0001's is_admin()). */
+async function spinAs(user: string, email: string) {
+  await db.query(`select set_config('request.jwt.claim.email', $1, false)`, [email])
+  try {
+    return await spin(user)
+  } finally {
+    await db.query(`select set_config('request.jwt.claim.email', '', false)`)
+  }
+}
 const setEvents = (value: unknown) =>
   db.query(`insert into game_config (key, value) values ('events', $1) on conflict (key) do update set value = excluded.value`, [
     JSON.stringify(value),
@@ -47,7 +56,8 @@ beforeAll(async () => {
     create table auth.users (id uuid primary key);
     create function auth.uid() returns uuid language sql stable as $$
       select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $$;
-    create function auth.jwt() returns jsonb language sql stable as $$ select '{}'::jsonb $$;
+    create function auth.jwt() returns jsonb language sql stable as $$
+      select jsonb_strip_nulls(jsonb_build_object('email', nullif(current_setting('request.jwt.claim.email', true), ''))) $$;
   `)
   await db.exec(sql('0001_init.sql').replace('create extension if not exists pgcrypto;', ''))
   // What 0035 builds on: the leaderboard (0011, 0016, 0032), Versus (0018) and friends (0033).
@@ -68,6 +78,17 @@ describe('0035: event_time', () => {
 })
 
 describe('0035: wheel_spin', () => {
+  it('is off until the admin switches it on: for the admin alone, then for everyone', async () => {
+    await db.query(`delete from game_config where key = 'events'`)
+    await expect(spin(U.ash)).rejects.toThrow(/events_wheel_off/)
+    await setEvents({ wheel: { access: 'admin' } })
+    await expect(spin(U.ash)).rejects.toThrow(/events_wheel_off/)
+    expect((await spinAs(U.ash, 'gregoire.ftn@gmail.com')).fresh).toBe(true)
+    await db.query('delete from event_state where user_id = $1', [U.ash])
+    // On for everyone: the tests below spin as players.
+    await setEvents({ wheel: { access: 'all' } })
+  })
+
   it("has the game's default prizes when the admin hasn't saved any", async () => {
     const [{ p }] = (await db.query<{ p: unknown }>('select wheel_prizes() as p')).rows as [{ p: unknown }]
     expect(p).toEqual(DEFAULT_CONFIG.events.wheel.prizes)
@@ -94,6 +115,7 @@ describe('0035: wheel_spin', () => {
   it("draws from the admin's prizes, never one without a chance", async () => {
     await setEvents({
       wheel: {
+        access: 'all',
         prizes: [
           { reward: { kind: 'gold', amount: 10 }, count: 4, odds: 0 },
           { reward: { kind: 'item', key: 'master-ball', qty: 1 }, count: 1, odds: 5 },
@@ -111,9 +133,9 @@ describe('0035: wheel_spin', () => {
 
   it('refuses when the admin switched the wheel off, or left nothing to win', async () => {
     await db.query('delete from event_state where user_id = $1', [U.misty])
-    await setEvents({ wheel: { enabled: false } })
+    await setEvents({ wheel: { access: 'off' } })
     await expect(spin(U.misty)).rejects.toThrow(/events_wheel_off/)
-    await setEvents({ wheel: { prizes: [{ reward: { kind: 'gold', amount: 10 }, count: 1, odds: 0 }] } })
+    await setEvents({ wheel: { access: 'all', prizes: [{ reward: { kind: 'gold', amount: 10 }, count: 1, odds: 0 }] } })
     await expect(spin(U.misty)).rejects.toThrow(/events_wheel_empty/)
     await db.exec(`delete from game_config where key = 'events'`)
   })

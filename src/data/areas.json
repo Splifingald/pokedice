@@ -5,18 +5,24 @@
   "regionId": "sinnoh",
   "name": "Fullmoon Island",
   "bannerUrl": "/banners/beach.png#flip",
-  "roundsToClear": 1,
+  "roundsToClear": null,
   "minLevel": 50,
   "maxLevel": 62,
   "encounterWeights": {
    "item": 0,
-   "wild": 8,
+   "wild": 0,
    "casino": 0,
    "center": 0,
    "trainer": 0
   },
   "backtrackMultiplier": 0.5,
-  "legendaryBoss": null,
+  "legendaryBoss": [
+   {
+    "dex": 488,
+    "level": 55,
+    "teamAvgThreshold": 0
+   }
+  ],
   "scalesToTeam": false,
   "easyMode": false,
   "enemyUpgradeLevel": 9,
@@ -33,36 +39,7 @@
    }
   ],
   "gyms": [],
-  "wildPool": [
-   {
-    "id": "d283de4f-a64a-5ae2-970f-6cf4a0636747",
-    "dex": 219,
-    "weight": 10,
-    "minLevel": 50,
-    "maxLevel": 62
-   },
-   {
-    "id": "e4e9b02c-77a2-575a-97aa-244d4d09487e",
-    "dex": 324,
-    "weight": 8,
-    "minLevel": 50,
-    "maxLevel": 62
-   },
-   {
-    "id": "bd65b1ab-65c0-55eb-a958-3b5e5f8ec94c",
-    "dex": 460,
-    "weight": 6,
-    "minLevel": 50,
-    "maxLevel": 62
-   },
-   {
-    "id": "fc56deae-4781-5147-8fd8-1cd814bf8611",
-    "dex": 461,
-    "weight": 4,
-    "minLevel": 50,
-    "maxLevel": 62
-   }
-  ],
+  "wildPool": [],
   "trainerPool": [],
   "lootPool": [
    {
@@ -121,24 +98,18 @@
   "regionId": "sinnoh",
   "name": "Newmoon Island",
   "bannerUrl": "/banners/haunted.png#flip",
-  "roundsToClear": null,
+  "roundsToClear": 1,
   "minLevel": 55,
   "maxLevel": 66,
   "encounterWeights": {
    "item": 0,
-   "wild": 0,
+   "wild": 8,
    "casino": 0,
    "center": 0,
    "trainer": 0
   },
   "backtrackMultiplier": 0.5,
-  "legendaryBoss": [
-   {
-    "dex": 491,
-    "level": 60,
-    "teamAvgThreshold": 0
-   }
-  ],
+  "legendaryBoss": null,
   "scalesToTeam": false,
   "easyMode": false,
   "enemyUpgradeLevel": 9,
@@ -151,7 +122,36 @@
    }
   ],
   "gyms": [],
-  "wildPool": [],
+  "wildPool": [
+   {
+    "id": "d27b29a4-307e-5e1a-9569-0bacedbcacf6",
+    "dex": 219,
+    "weight": 10,
+    "minLevel": 55,
+    "maxLevel": 66
+   },
+   {
+    "id": "4c43bc34-ce81-5b66-9bed-0b92b7843a88",
+    "dex": 324,
+    "weight": 8,
+    "minLevel": 55,
+    "maxLevel": 66
+   },
+   {
+    "id": "8158fa80-f735-5e06-8ea2-72fce712dcba",
+    "dex": 460,
+    "weight": 6,
+    "minLevel": 55,
+    "maxLevel": 66
+   },
+   {
+    "id": "a917ee3a-881c-5338-8a50-6ca22a9a5c6e",
+    "dex": 461,
+    "weight": 4,
+    "minLevel": 55,
+    "maxLevel": 66
+   }
+  ],
   "trainerPool": [],
   "lootPool": [
    {
@@ -2704,18 +2704,24 @@
   "regionId": "hoenn",
   "name": "Southern Island II",
   "bannerUrl": "/banners/beach.png",
-  "roundsToClear": 1,
+  "roundsToClear": null,
   "minLevel": 40,
   "maxLevel": 50,
   "encounterWeights": {
    "item": 1,
-   "wild": 8,
+   "wild": 7,
    "casino": 0,
    "center": 0,
    "trainer": 0
   },
   "backtrackMultiplier": 0.5,
-  "legendaryBoss": null,
+  "legendaryBoss": [
+   {
+    "dex": 381,
+    "level": 50,
+    "teamAvgThreshold": 0
+   }
+  ],
   "scalesToTeam": false,
   "easyMode": false,
   "enemyUpgradeLevel": 9,
@@ -35605,7 +35611,12 @@
    "trainer": 0
   },
   "backtrackMultiplier": 0.5,
-  "legendaryBoss": null,
+  "legendaryBoss": [
+   {
+    "dex": 384,
+    "level": 70
+   }
+  ],
   "scalesToTeam": false,
   "easyMode": false,
   "enemyUpgradeLevel": 9,
@@ -56515,19 +56526,13 @@
   "maxLevel": 90,
   "encounterWeights": {
    "item": 2,
-   "wild": 0,
+   "wild": 8,
    "casino": 0,
-   "center": 6,
+   "center": 1,
    "trainer": 0
   },
   "backtrackMultiplier": 0.5,
-  "legendaryBoss": [
-   {
-    "dex": 1025,
-    "level": 88,
-    "teamAvgThreshold": 0
-   }
-  ],
+  "legendaryBoss": null,
   "scalesToTeam": false,
   "easyMode": false,
   "enemyUpgradeLevel": 9,
@@ -56548,7 +56553,36 @@
    }
   ],
   "gyms": [],
-  "wildPool": [],
+  "wildPool": [
+   {
+    "id": "4d8eb358-e4d6-5de6-8782-57ee0fe21b6f",
+    "dex": 164,
+    "weight": 10,
+    "minLevel": 80,
+    "maxLevel": 90
+   },
+   {
+    "id": "2e9c06e8-4f4b-51e6-a35c-e78c2ba30f39",
+    "dex": 227,
+    "weight": 8,
+    "minLevel": 80,
+    "maxLevel": 90
+   },
+   {
+    "id": "810f9996-f4a8-5064-baa1-9329019c409a",
+    "dex": 323,
+    "weight": 6,
+    "minLevel": 80,
+    "maxLevel": 90
+   },
+   {
+    "id": "43a9f276-f63a-5637-a456-e7b77d4f4c7d",
+    "dex": 469,
+    "weight": 4,
+    "minLevel": 80,
+    "maxLevel": 90
+   }
+  ],
   "trainerPool": [],
   "lootPool": [
    {

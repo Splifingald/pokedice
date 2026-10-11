@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react'
-import { badgeCase, isAreaUnlocked, regionOf, sellPrice, shopStock, type ItemDef } from '@/engine'
+import { badgeCase, isAreaUnlocked, liveLeft, liveShopRows, regionOf, sellPrice, shopStock, type ItemDef } from '@/engine'
 import { effectText } from '@/i18n/text'
 import { useT } from '@/i18n/react'
 import { sfx } from '@/audio/sfx'
@@ -11,6 +11,9 @@ import { PixelButton } from '@/components/PixelButton'
 import { FilterChips, Seg } from '@/components/Segmented'
 import { money } from '@/lib/format'
 import { buy, sell } from '@/store/actions'
+import { buyLive, useLive } from '@/store/live'
+import { Chip } from '@/components/Chip'
+import { LiveBadge, LiveGauge, LivePicture, liveName, liveTime } from '@/screens/events/live'
 import { pushToast, useGame } from '@/store/game'
 import { cx } from '@/theme/util'
 
@@ -76,8 +79,8 @@ function Row({
   it: ItemDef
   open: boolean
   onToggle?: () => void
-  side: 'buy' | 'sell'
-  sub: string
+  side: 'buy' | 'sell' | 'live'
+  sub: ReactNode
   /** The price plate at the end of the row. */
   pill?: ReactNode
   owned: number
@@ -98,13 +101,15 @@ function Row({
         disabled={!onToggle}
         aria-expanded={onToggle ? open : undefined}
         aria-controls={onToggle && open ? id : undefined}
-        className="flex h-full min-h-[54px] w-full flex-col gap-1 pb-[9px] pl-1.5 pr-1.5 pt-1.5 text-left"
+        // Closed, the tile fills its row (its neighbours line up); open, it takes its own height and the picker sits
+        // under it inside the tile, not over the next row.
+        className={cx('flex min-h-[54px] w-full flex-col gap-1 pb-[9px] pl-1.5 pr-1.5 pt-1.5 text-left', !open && 'h-full')}
       >
         <span className="flex w-full min-w-0 items-center gap-1.5">
           <ItemSprite item={it} size={32} />
           <b className="line-clamp-2 min-w-0 flex-1 text-[18px] font-normal leading-[1.05]">{it.name}</b>
         </span>
-        <small className="font-pixel-sm text-[13px] leading-tight text-muted">{sub}</small>
+        <small className="flex flex-wrap items-center gap-1 font-pixel-sm text-[13px] leading-tight text-muted">{sub}</small>
         <span className="mt-auto flex w-full items-end justify-between gap-1">
           <em className="font-pixel-sm text-[15px] not-italic text-muted">{owned > 0 ? `×${owned}` : ''}</em>
           {pill}
@@ -116,6 +121,128 @@ function Row({
         </div>
       )}
     </li>
+  )
+}
+
+/**
+ * A live event's Special Shop (docs/20), over the Mart's own shelves: its picture, the time left, then its items — at
+ * their event price (the usual one struck out), the ones the Mart never sells, and what's left of each player's limit.
+ */
+function LiveShopSection() {
+  const { t } = useT()
+  const { live, now } = useLive(1000)
+  const save = useGame((s) => s.save)
+  const data = useGame((s) => s.data)
+  const [open, setOpen] = useState<string | null>(null)
+  const [qty, setQty] = useState<'1' | '5' | '10'>('1')
+  if (!live || live.type !== 'shop' || !save || now == null) return null
+  const rows = liveShopRows(save, data, live)
+  if (!rows.length) return null
+  const left = liveLeft(live, now)
+  return (
+    <section aria-labelledby="live-shop" className="lv-shop flex flex-col gap-2 pb-2.5">
+      <header className="lv-shop-head relative isolate grid min-h-[92px] content-end gap-1.5 overflow-hidden px-3 pb-3 pt-2.5">
+        <LivePicture e={live} className="absolute inset-0 -z-10" />
+        <span className="flex min-w-0 items-center gap-2">
+          <LiveBadge />
+          <h2 id="live-shop" className="lv-ink m-0 min-w-0 truncate text-[28px] leading-none">
+            {liveName(live)}
+          </h2>
+        </span>
+        <span className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-2.5 font-pixel-sm text-[16px] leading-none">
+          <span className="lv-ink text-gold-light">{t('ui.live.endsIn', { time: liveTime(left.ms) })}</span>
+          <LiveGauge share={left.share} hot={left.ms < 3 * 3_600_000} />
+        </span>
+      </header>
+      <ul className="grid grid-cols-2 gap-1.5 px-2 md:grid-cols-3">
+        {rows.map((r) => {
+          const out = r.left === 0
+          const sale = r.usual != null && r.price < r.usual
+          const steps = (['1', '5', '10'] as const).filter((q) => r.left == null || Number(q) <= r.left)
+          const n = Math.min(Number(qty), r.left ?? Infinity)
+          const total = r.price * n
+          const can = total <= save.gold
+          return (
+            <Row
+              key={r.item.key}
+              it={r.item}
+              side="live"
+              open={open === r.item.key && !out}
+              onToggle={
+                out
+                  ? undefined
+                  : () => {
+                      setOpen(open === r.item.key ? null : r.item.key)
+                      setQty('1')
+                    }
+              }
+              sub={
+                <>
+                  {r.usual == null ? (
+                    <Chip tone="dark">{t('ui.live.shop.never')}</Chip>
+                  ) : (
+                    sale && <Chip tone="red">{t('ui.live.shop.off', { pct: Math.round((1 - r.price / r.usual) * 100) })}</Chip>
+                  )}
+                  <span className={cx(r.left != null && r.left <= 2 && 'text-danger')}>
+                    {r.limit == null
+                      ? t('ui.live.shop.noLimit')
+                      : out
+                        ? t('ui.live.shop.soldOut')
+                        : t('ui.live.shop.left', { left: r.left!, limit: r.limit })}
+                  </span>
+                </>
+              }
+              pill={
+                <span
+                  className={cx(
+                    'grid min-w-[62px] justify-items-center gap-0.5 px-2 pb-2 pt-1.5 text-center text-[18px] leading-none',
+                    out || r.price > save.gold ? 'bg-well-deep text-ink' : 'light-scope bg-night text-gold-light',
+                  )}
+                >
+                  {sale && !out && (
+                    <s className="text-[14px] opacity-70" aria-label={t('ui.live.shop.usually', { price: money(r.usual!) })}>
+                      {money(r.usual!)}
+                    </s>
+                  )}
+                  {out ? t('ui.live.shop.soldOut') : money(r.price)}
+                </span>
+              }
+              owned={save.inventory[r.item.key] ?? 0}
+            >
+              {r.item.description && (
+                <p className="copy font-pixel-sm text-[15px] leading-tight text-muted">{r.item.description}</p>
+              )}
+              <div className="flex items-center gap-2">
+                {steps.length > 1 ? (
+                  <Seg
+                    label={t('ui.shop.howMany', { item: r.item.name })}
+                    value={steps.includes(qty) ? qty : '1'}
+                    onChange={setQty}
+                    options={steps.map((q) => ({ id: q, label: `×${q}` }))}
+                  />
+                ) : (
+                  <span className="font-pixel-sm text-[15px] text-muted">{t('ui.live.shop.onePer')}</span>
+                )}
+                <PixelButton
+                  variant={can ? 'primary' : 'secondary'}
+                  className="min-h-[50px] flex-1"
+                  disabled={!can}
+                  onClick={() => {
+                    if (!buyLive(r.item.key, n)) return
+                    sfx('gold')
+                    if (r.left != null && r.left - n <= 0) setOpen(null)
+                    pushToast(t('ui.shop.bought', { n, item: r.item.name, left: money(useGame.getState().save?.gold ?? 0) }), 'good')
+                  }}
+                >
+                  {can ? t('ui.shop.buyFor', { price: money(total) }) : t('ui.shop.needMore', { price: money(total - save.gold) })}
+                </PixelButton>
+              </div>
+            </Row>
+          )
+        })}
+      </ul>
+      <p className="m-0 px-3 font-pixel-sm text-[14px] leading-tight text-muted">{t('ui.live.shop.note')}</p>
+    </section>
   )
 }
 
@@ -168,6 +295,7 @@ function BuyTab({ badges }: { badges: number }) {
           </PixelButton>
         </div>
       </Modal>
+      <LiveShopSection />
       <CatChips
         items={all}
         value={cat}

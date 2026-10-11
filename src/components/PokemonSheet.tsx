@@ -390,7 +390,7 @@ export function PokemonSheet({
             <>
               <HpBar hp={inst.currentHp} max={stats.maxHp} />
               <XpBar inst={inst} />
-              {/* Extreme mode: resting after a K.O., and until when (docs/20). */}
+              {/* Extreme mode: resting after a K.O., and until when (docs/22). */}
               {inst.currentHp <= 0 && <KoPanel inst={inst} />}
             </>
           ) : (

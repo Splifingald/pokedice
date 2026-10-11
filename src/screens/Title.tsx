@@ -5,7 +5,7 @@ import { Die } from '@/components/Die'
 import { Modal } from '@/components/Modal'
 import { PixelButton } from '@/components/PixelButton'
 import { MiniSprite } from '@/components/SpriteImg'
-import { extremeOpen, isExtreme, teamOf } from '@/engine'
+import { extremeOn, extremeOpen, isExtreme, teamOf } from '@/engine'
 import { ExtremeMark, ExtremeTitleCard, SwitchSaveModal } from '@/components/Extreme'
 import { otherSave } from '@/store/extreme'
 import { useT } from '@/i18n/react'
@@ -55,11 +55,11 @@ export function Title() {
   const [confirmNew, setConfirmNew] = useState(false)
   const [toMain, setToMain] = useState(false)
   const lead = save ? teamOf(save)[0] : undefined
-  // Extreme mode (docs/20): this page plays one of two saves; the other one is a card (or a button) away.
+  // Extreme mode (docs/22): this page plays one of two saves; the other one is a card (or a button) away.
   const extreme = isExtreme(save) || activeSlot() === 'extreme'
   const other = otherSave()
   const mainSave = extreme ? other : save
-  const showExtremeCard = !extreme && data.config.extreme.enabled && (!!other || extremeOpen(mainSave, data))
+  const showExtremeCard = !extreme && extremeOn(data) && (!!other || extremeOpen(mainSave, data))
 
   return (
     <main className="scanlines flex min-h-screen flex-col items-center justify-center gap-8 px-4 py-10">

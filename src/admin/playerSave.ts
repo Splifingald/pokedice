@@ -10,7 +10,7 @@ import { parseSave } from '@/save/schema'
 /** Postgres' "no such column": a database before Extreme mode's realms (0039). */
 const noRealm = (e: { code?: string } | null) => e?.code === '42703'
 
-/** One of the player's two saves (docs/20): the main one, or their Extreme one. */
+/** One of the player's two saves (docs/22): the main one, or their Extreme one. */
 export async function fetchPlayerSave(client: SupabaseClient, userId: string, realm: SaveMode = 'main'): Promise<SaveData | null> {
   const read = (withRealm: boolean) => {
     const q = client.from('saves').select('data').eq('user_id', userId)

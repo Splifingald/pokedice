@@ -109,7 +109,7 @@ export function MonCard({
             <span className="flex flex-wrap items-center gap-1">
               <TypeBadge type={species.type1} size="sm" />
               {species.type2 && <TypeBadge type={species.type2} size="sm" />}
-              {/* Extreme mode: a resting Pokémon says when it's back instead (docs/20). */}
+              {/* Extreme mode: a resting Pokémon says when it's back instead (docs/22). */}
               {fainted && inst.koAt == null && <span className="text-sm text-danger">{t('ui.mon.fainted')}</span>}
               {fainted && <KoTag inst={inst} />}
               {reviving && (

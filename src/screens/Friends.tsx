@@ -185,7 +185,7 @@ function FriendListRow({ friend: f, onOpen }: { friend: FriendRow; onOpen: () =>
   const { t } = useT()
   const line = useFriendLine()
   const now = Date.now()
-  // Extreme mode (docs/20): a friend without an Extreme save is listed, greyed, and has no card to open here.
+  // Extreme mode (docs/22): a friend without an Extreme save is listed, greyed, and has no card to open here.
   const elsewhere = !f.inRealm
   const away = elsewhere || !f.updatedAt || now - f.updatedAt > AWAY_MS
   const summary = elsewhere ? t('ui.extreme.notIn') : line(f, now)

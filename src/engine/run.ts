@@ -8,6 +8,7 @@ import { centersOn, healItemsOn, wipeHeals } from './extreme'
 import { addFossil, isReviving } from './fossils'
 import { LEGACY_GAUGE } from './legacyGauge'
 import { MONEY, sellPrice, shopSells, usableIn } from './items'
+import { earnedGold } from './liveEvents'
 import {
   averageLevel,
   createInstance,
@@ -28,6 +29,7 @@ import {
   type AreaProgress,
   type ComboKey,
   type GameData,
+  type LiveEvent,
   type PokeType,
   type PlayerProfile,
   type PokemonInstance,
@@ -160,12 +162,13 @@ export function pickUpItem(
   data: GameData,
   now = Date.now(),
   newId: () => string = () => `fossil-${now}`,
+  live: LiveEvent | null = null,
 ): SaveData {
   const qty = Math.max(0, Math.floor(find.qty))
   const item = data.items[find.itemKey]
   let next: SaveData =
     find.itemKey === MONEY
-      ? { ...save, gold: save.gold + qty }
+      ? { ...save, gold: save.gold + earnedGold(qty, live).amount }
       : item?.effect.kind === 'fossil'
         ? addFossil(save, item, data, now, newId()) // straight to the Box, reviving
         : item
@@ -304,7 +307,8 @@ export function applyHp(save: SaveData, hpByUid: Record<string, number>): SaveDa
 export type RunEvent =
   | ProgressEvent
   | { kind: 'xp'; uid: string; amount: number; shared?: boolean }
-  | { kind: 'gold'; amount: number }
+  /** `bonus`: the part of `amount` a Cash Flow live event added. */
+  | { kind: 'gold'; amount: number; bonus?: number }
   /** `replacedLevel`: a stronger copy replaced the one you had at that level. */
   /** `isNew`: the species wasn't in the Pokédex before this catch. */
   | { kind: 'caught'; uid: string; dex: number; level: number; joinedTeam: boolean; replacedLevel?: number; isNew?: boolean }
@@ -390,6 +394,8 @@ export function applyVictory(
   rng: Rng,
   now: number,
   newId: () => string,
+  /** The live event running for this player (Cash Flow pays more). */
+  live: LiveEvent | null = null,
 ): VictoryResult {
   const area = getArea(data, input.areaId)
   let progress = progressOf(save, area.id)
@@ -397,11 +403,11 @@ export function applyVictory(
   const hiddenBefore = new Set(unlockedHiddenAreas(save, data))
   let next = awardBattleXp(save, input.enemyLevel, input.fighterUid, area, progress.cleared, data, rng, events)
 
-  // Gold — trainers only (gym leaders, the Elite Four and the Champion pay extra)
+  // Gold — trainers only (gym leaders, the Elite Four and the Champion pay extra), more under Cash Flow
   if (input.kind === 'trainer' || input.kind === 'gym') {
-    const gold = trainerGoldFor(input.enemyLevel, area, progress.cleared, data, input.kind === 'gym')
-    next = { ...next, gold: next.gold + gold }
-    events.push({ kind: 'gold', amount: gold })
+    const { amount, bonus } = earnedGold(trainerGoldFor(input.enemyLevel, area, progress.cleared, data, input.kind === 'gym'), live)
+    next = { ...next, gold: next.gold + amount }
+    events.push(bonus ? { kind: 'gold', amount, bonus } : { kind: 'gold', amount })
   }
 
   // Boss

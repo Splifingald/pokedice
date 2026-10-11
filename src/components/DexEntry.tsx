@@ -5,7 +5,13 @@ import {
   isAreaClosed,
   isAreaUnlocked,
   progressOf,
-  raidPool,
+  eventUnlocked,
+  nextRaidsOf,
+  eventOn,
+  raidHomeArea,
+  raidLocked,
+  raidRegion,
+  utcDay,
   regionOf,
   regionOfArea,
   shopSells,
@@ -18,6 +24,8 @@ import {
 import { t } from '@/i18n'
 import { useT } from '@/i18n/react'
 import { useGame } from '@/store/game'
+import { useServerNow } from '@/store/serverTime'
+import { raidDate } from '@/screens/events/shared'
 import { cx } from '@/theme/util'
 import { PixelIcon } from './icons'
 import { ItemSprite } from './ItemSprite'
@@ -192,40 +200,40 @@ function SpotCard({ spot, onTravel }: { spot: Spot; onTravel?: () => void }) {
   )
 }
 
-/** The species comes up in Raid Battles: one of the raid pool's mythicals, or a fallback raid. */
-function useRaidRole(dex: number): { pool?: { areaId: string }; fallback?: boolean } | null {
-  const cfg = useGame((s) => s.data.config.events.raid)
-  if (!cfg.enabled) return null
-  const pool = cfg.pool.find((p) => p.dex === dex)
-  if (pool) return { pool }
-  return cfg.fallback.some((f) => f.dex === dex) ? { fallback: true } : null
+/** The next days the species is the raid (the shared calendar), normal or shiny; none when raids are off. */
+function useRaidRole(dex: number): { day: string; shiny: boolean }[] | null {
+  const data = useGame((s) => s.data)
+  const now = useServerNow(60_000)
+  const today = utcDay(now ?? Date.now())
+  const dates = useMemo(() => (eventOn(data, 'raid') ? nextRaidsOf(data, dex, today, 2) : []), [data, dex, today])
+  return dates.length ? dates : null
 }
 
 /**
- * Where to find it, for Raid Battles: a pool mythical says which area unlocks its raid, or that it's in the raid pool
- * (GO to the raids); a fallback species says when it comes up.
+ * Where to find it, for Raid Battles: its next raid days, and whether a catch would wait for its area (grey, with the
+ * area to complete). GO when it's today's raid and the raids are open.
  */
 function RaidSpot({ dex, onTravel }: { dex: number; onTravel?: () => void }) {
   const { t } = useT()
   const save = useGame((s) => s.save)
   const data = useGame((s) => s.data)
   const navigate = useNavigate()
-  const role = useRaidRole(dex)
-  if (!save || !role) return null
-  const inPool = !!role.pool && raidPool(save, data).some((p) => p.dex === dex)
-  const area = role.pool && data.areas.find((a) => a.id === role.pool!.areaId)
-  const text = role.pool
-    ? inPool
-      ? t('ui.events.raid.dexInPool')
-      : t('ui.events.raid.dexUnlock', { area: area?.name ?? '' })
-    : t('ui.events.raid.dexFallback', { chance: Math.round(data.config.events.raid.fallbackShiny * 100) })
+  const dates = useRaidRole(dex)
+  const now = useServerNow(60_000)
+  if (!save || !dates) return null
+  const today = utcDay(now ?? Date.now())
+  const area = raidHomeArea(data, dex)
+  const locked = !!area && raidLocked(save, data, area.id)
+  const live = dates[0]!.day === today && eventUnlocked('raid', save, data)
+  const when = dates.map((d) => (d.shiny ? t('ui.raid.dexShinyOn', { date: raidDate(d.day) }) : raidDate(d.day))).join(' · ')
+  const region = area ? (data.regions.find((r) => r.id === raidRegion(data, area.id))?.name ?? '') : ''
   return (
-    <li className={cx('relative flex min-h-[62px] items-center gap-2 py-1.5 pl-1.5 pr-[78px]', inPool ? 'bg-paper shadow-ring' : 'bg-well shadow-ring-line')}>
+    <li className={cx('relative flex min-h-[62px] items-center gap-2 py-1.5 pl-1.5', live ? 'bg-paper pr-[78px] shadow-ring' : 'bg-well pr-2 shadow-ring-line')}>
       {area ? (
         <span className="relative h-12 w-[72px] shrink-0" aria-hidden>
-          <AreaStrip area={area} h={48} className={cx('h-12 w-[72px] shadow-halo', !inPool && 'grayscale-[0.7]')} />
+          <AreaStrip area={area} h={48} className={cx('h-12 w-[72px] shadow-halo', locked && 'grayscale-[0.7]')} />
           <span className="absolute bottom-0.5 left-0.5 grid h-5 w-5 place-items-center bg-night">
-            <PixelIcon name="star" size={12} />
+            <PixelIcon name={locked ? 'lock' : 'star'} size={12} />
           </span>
         </span>
       ) : (
@@ -235,9 +243,12 @@ function RaidSpot({ dex, onTravel }: { dex: number; onTravel?: () => void }) {
       )}
       <span className="grid min-w-0 gap-[3px]">
         <b className="truncate text-[18px] font-normal leading-none">{t('ui.events.raid.name')}</b>
-        <small className="font-pixel-sm text-[14px] leading-tight text-muted">{text}</small>
+        <small className="font-pixel-sm text-[14px] leading-tight text-muted">
+          {live ? t('ui.raid.dexToday') : t('ui.raid.dexNext', { dates: when })}
+          {locked && area && ` ${t('ui.raid.dexLocked', { area: area.name, region })}`}
+        </small>
       </span>
-      {inPool ? (
+      {live && (
         <button
           type="button"
           onClick={() => {
@@ -249,12 +260,6 @@ function RaidSpot({ dex, onTravel }: { dex: number; onTravel?: () => void }) {
         >
           {t('ui.home.go')}
         </button>
-      ) : (
-        role.pool && (
-          <span className="absolute right-2.5 top-1/2 grid h-11 w-[60px] -translate-y-1/2 place-items-center bg-well-deep shadow-ring-line" aria-hidden>
-            <PixelIcon name="lock" size={16} />
-          </span>
-        )
       )}
     </li>
   )

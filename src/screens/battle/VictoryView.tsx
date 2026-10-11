@@ -5,7 +5,6 @@ import {
   getInstance,
   instanceStats,
   progressOf,
-  raidUnlockedBy,
   rebattleEncounter,
   rebattleLineup,
   teamOf,
@@ -18,7 +17,7 @@ import { sfx } from '@/audio/sfx'
 import { EvolutionQueue, type EvolutionShow } from '@/components/Evolution'
 import { RoundsCounter } from '@/components/RoundsCounter'
 import { useCountUp } from '@/components/GoldPill'
-import { NewTag } from '@/components/Chip'
+import { Chip, NewTag } from '@/components/Chip'
 import { PixelIcon } from '@/components/icons'
 import { LeadPicker, defaultLead } from '@/components/LeadPicker'
 import { ForfeitButton } from '@/components/ForfeitButton'
@@ -82,11 +81,19 @@ export function Overlay({ children, footer, label }: { children: ReactNode; foot
   )
 }
 
-function GoldCard({ amount }: { amount: number }) {
+function GoldCard({ amount, bonus = 0 }: { amount: number; bonus?: number }) {
+  const { t } = useT()
   const n = useCountUp(amount, 800)
+  // Cash Flow (docs/20): what it added, as a share of the usual pay.
+  const pct = bonus > 0 && amount > bonus ? Math.round((bonus / (amount - bonus)) * 100) : 0
   return (
     <div className="flex items-center gap-2 text-3xl text-ink">
       <PixelIcon name="coin" size={28} /> +{money(n)}
+      {pct > 0 && (
+        <span role="img" aria-label={t('ui.live.chip.cash', { pct })} className="inline-flex">
+          <Chip tone="green">{t('ui.live.pct', { pct })}</Chip>
+        </span>
+      )}
     </div>
   )
 }
@@ -248,7 +255,7 @@ function useRecap(events: RunEvent[]): { mons: MonRecap[]; extras: Extra[]; evol
           return
         }
         case 'gold':
-          extras.push({ key: k, sound: 'gold', node: <GoldCard amount={e.amount} /> })
+          extras.push({ key: k, sound: 'gold', node: <GoldCard amount={e.amount} bonus={e.bonus} /> })
           return
         case 'caught':
           extras.push({
@@ -336,22 +343,6 @@ function useRecap(events: RunEvent[]): { mons: MonRecap[]; extras: Extra[]; evol
               </div>
             ),
           })
-          // A raid lair: its mythical's raid is now in the raid pool.
-          const raids = data.config.events.raid.enabled ? raidUnlockedBy(data, e.areaId) : []
-          for (const r of raids)
-            extras.push({
-              key: `${k}-raid-${r.dex}`,
-              sound: 'catch',
-              node: (
-                <div className="flex items-center justify-center gap-2 pixel-panel-dark p-2 text-center">
-                  <SpriteImg dex={r.dex} size={48} silhouette />
-                  <div>
-                    <div className="text-xl text-gold">{t('ui.events.raid.unlocked', { name: data.species[r.dex]?.name ?? '' })}</div>
-                    <div className="text-lg">{t('ui.events.raid.unlockedText')}</div>
-                  </div>
-                </div>
-              ),
-            })
           return
         }
       }
@@ -736,7 +727,7 @@ function AreaWipe() {
     >
       <h2 className="mb-2 text-center text-[32px] font-normal leading-none">{t('ui.wipe.title')}</h2>
       <p className="copy mb-3 text-lg">
-        {/* Extreme mode heals nobody after a lost round: the fainted ones rest (docs/20). */}
+        {/* Extreme mode heals nobody after a lost round: the fainted ones rest (docs/22). */}
         {save && !wipeHeals(save, data)
           ? t('ui.wipe.bodyExtreme', {
               area: area?.name ?? '',

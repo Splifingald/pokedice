@@ -1,4 +1,4 @@
-// The real time for Extreme mode's clocks (docs/20): the server's time at the last sync, carried forward on the page's
+// The real time for Extreme mode's clocks (docs/22): the server's time at the last sync, carried forward on the page's
 // own monotonic clock (performance.now), so moving the device's clock changes nothing. No imports: the game store reads
 // it while settling a save, and serverTime.ts sets it on each sync.
 

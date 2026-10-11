@@ -10,6 +10,7 @@ import {
   createBattle,
   createRng,
   DEFAULT_CONFIG,
+  extremeOn,
   extremeOpen,
   extremeRules,
   extremeRulesDue,
@@ -68,29 +69,42 @@ function johtoLeagueDone(save: SaveData): SaveData {
 }
 
 describe('opening Extreme mode', () => {
+  // Off by default: these switch it on for everyone.
+  const on = extremeData({ access: 'all' })
+
   it('opens once the Johto League is beaten, in any region of the main save, and stays open', () => {
     const fresh = main()
-    expect(extremeOpen(fresh, data)).toBe(false)
-    expect(stampExtremeUnlock(fresh, data, 5)).toBe(fresh)
+    expect(extremeOpen(fresh, on)).toBe(false)
+    expect(stampExtremeUnlock(fresh, on, 5)).toBe(fresh)
 
     const done = johtoLeagueDone(fresh)
-    expect(extremeOpen(done, data)).toBe(true)
-    const stamped = stampExtremeUnlock(done, data, 5)
+    expect(extremeOpen(done, on)).toBe(true)
+    const stamped = stampExtremeUnlock(done, on, 5)
     expect(stamped.extremeUnlockedAt).toBe(5)
-    expect(stampExtremeUnlock(stamped, data, 9)).toBe(stamped) // stamped once
+    expect(stampExtremeUnlock(stamped, on, 9)).toBe(stamped) // stamped once
 
     // The admin moves the unlock to a later league: a player who already had it keeps it.
-    const later = extremeData({ unlockRegion: 'hoenn' })
+    const later = extremeData({ access: 'all', unlockRegion: 'hoenn' })
     expect(extremeOpen(done, later)).toBe(false)
     expect(extremeOpen(stamped, later)).toBe(true)
   })
 
+  it('is off by default; on for the admin, only the admin sees it; on for everyone, everyone does', () => {
+    const done = stampExtremeUnlock(johtoLeagueDone(main()), on, 5)
+    expect(DEFAULT_CONFIG.extreme.access).toBe('off')
+    expect(extremeOn(data)).toBe(false)
+    expect(extremeOpen(done, data)).toBe(false)
+    const admin = extremeData({ access: 'admin' })
+    expect(extremeOpen(done, admin)).toBe(false)
+    expect(extremeOpen(done, { ...admin, viewer: { admin: true } })).toBe(true)
+    expect(extremeOpen(done, on)).toBe(true)
+  })
+
   it('the rules pop-up is due once; nothing shows while the admin has the mode off', () => {
-    const open = stampExtremeUnlock(johtoLeagueDone(main()), data, 5)
-    expect(extremeRulesDue(open, data)).toBe(true)
-    expect(extremeRulesDue({ ...open, extremeRulesSeen: true }, data)).toBe(false)
-    expect(extremeOpen(open, extremeData({ enabled: false }))).toBe(false)
-    expect(extremeRulesDue(open, extremeData({ enabled: false }))).toBe(false)
+    const open = stampExtremeUnlock(johtoLeagueDone(main()), on, 5)
+    expect(extremeRulesDue(open, on)).toBe(true)
+    expect(extremeRulesDue({ ...open, extremeRulesSeen: true }, on)).toBe(false)
+    expect(extremeRulesDue(open, extremeData({ access: 'off' }))).toBe(false)
   })
 
   it('an Extreme save never opens it again, nor stamps anything', () => {

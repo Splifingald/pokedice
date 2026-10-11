@@ -3,8 +3,10 @@
 // when it stops: a reload can neither spin twice nor lose it.
 import {
   canSpin,
+  cashReward,
   createRng,
   drawPrize,
+  liveFor,
   payWheelPrize,
   randomSeed,
   sameReward,
@@ -48,13 +50,16 @@ export async function spinWheel(): Promise<Spin> {
   if (!save || now == null || auth.status === 'unknown') return { ok: false, reason: 'time' }
   const day = utcDay(now)
   if (!canSpin(save, day)) return { ok: false, reason: 'spent' }
+  // Cash Flow, if it runs: the wheel stops on its slice, the ₽ paid are boosted.
+  const live = liveFor(save, data, now)
   const prizes = data.config.events.wheel.prizes
   const slices = wheelSlices(prizes)
   const rng = createRng(randomSeed())
   if (auth.status !== 'signed_in') {
     const prize = drawPrize(prizes, rng)
-    mutateSave((s) => takeSpin(s, day, prizes[prize]!.reward))
-    return { ok: true, slice: sliceFor(slices, prize, rng), reward: prizes[prize]!.reward }
+    const paid = cashReward(prizes[prize]!.reward, live)
+    mutateSave((s) => takeSpin(s, day, paid))
+    return { ok: true, slice: sliceFor(slices, prize, rng), reward: paid }
   }
   let res: ServerSpin
   try {
@@ -67,11 +72,12 @@ export async function spinWheel(): Promise<Spin> {
     mutateSave((s) => spinSpent(s, res.day))
     return { ok: false, reason: 'spent' }
   }
-  mutateSave((s) => takeSpin(s, res.day, res.reward))
+  const paid = cashReward(res.reward, live)
+  mutateSave((s) => takeSpin(s, res.day, paid))
   // The server's prize is the one paid; the wheel stops on one of its slices (by index, or by the same reward if the
   // admin's list changed while this page was open).
   const prize = prizes[res.prize] && sameReward(prizes[res.prize]!.reward, res.reward) ? res.prize : prizes.findIndex((p) => sameReward(p.reward, res.reward))
-  return { ok: true, slice: prize >= 0 ? sliceFor(slices, prize, rng) : 0, reward: res.reward }
+  return { ok: true, slice: prize >= 0 ? sliceFor(slices, prize, rng) : 0, reward: paid }
 }
 
 /** Pays the waiting prize (the wheel has stopped, or the page closed while it turned). */

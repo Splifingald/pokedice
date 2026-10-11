@@ -1,4 +1,4 @@
-// Extreme mode's pieces (docs/20): its rules pop-up, the band that says which world is in play, a resting Pokémon's
+// Extreme mode's pieces (docs/22): its rules pop-up, the band that says which world is in play, a resting Pokémon's
 // countdown, the resting team's panel, the welcome-back card and the switch between the two saves. Every number comes
 // from the engine (engine/extreme); these only show them.
 import { useState } from 'react'

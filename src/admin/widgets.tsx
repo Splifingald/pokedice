@@ -4,7 +4,7 @@ import { PixelButton } from '@/components/PixelButton'
 import { SearchSelect } from '@/components/SearchSelect'
 import { SpriteImg } from '@/components/SpriteImg'
 import { TypeBadge, TypeSwatch } from '@/components/TypeBadge'
-import { BATTLE_BACKGROUNDS, DIE_TYPES, POKE_TYPES, type BattleBackground, type DieType, type GameData, type Species } from '@/engine'
+import { BATTLE_BACKGROUNDS, DIE_TYPES, EVENT_ACCESS, POKE_TYPES, type BattleBackground, type DieType, type EventAccess, type GameData, type Species } from '@/engine'
 import { dexNo } from '@/lib/format'
 import { cx } from '@/theme/util'
 
@@ -296,3 +296,28 @@ export function Stepper({
 
 export const n = (v: unknown, d = 0) => (typeof v === 'number' && Number.isFinite(v) ? v : v == null || v === '' ? d : Number(v) || d)
 export const s = (v: unknown) => (v == null ? '' : String(v))
+
+const ACCESS_LABEL: Record<EventAccess, string> = { off: 'Off', admin: 'On for admin', all: 'On for everyone' }
+
+/** An event type's switch: off, on for the admin only (to try it in production first), on for everyone. */
+export function AccessSwitch({ value, onChange, label }: { value: EventAccess; onChange: (v: EventAccess) => void; label: string }) {
+  return (
+    <span role="radiogroup" aria-label={label} className="inline-flex flex-wrap gap-1">
+      {EVENT_ACCESS.map((a) => (
+        <button
+          key={a}
+          type="button"
+          role="radio"
+          aria-checked={value === a}
+          onClick={() => onChange(a)}
+          className={cx(
+            'min-h-[34px] px-2.5 text-lg leading-none shadow-ring',
+            value === a ? (a === 'off' ? 'bg-well-deep text-ink' : a === 'admin' ? 'bg-gold text-ink' : 'bg-good text-white') : 'bg-panel text-muted',
+          )}
+        >
+          {ACCESS_LABEL[a]}
+        </button>
+      ))}
+    </span>
+  )
+}

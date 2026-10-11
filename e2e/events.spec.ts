@@ -45,6 +45,16 @@ test('the wheel opens with a pop-up that goes straight to it', async ({ page }) 
   await expect(pop).toHaveCount(0)
 })
 
+test('the events ship off: no wheel until the admin switches it on', async ({ page }) => {
+  await mockSupabase(page, { rpc: { event_time: eventTime }, eventsOff: true })
+  await boot(page, wheelSave(false))
+  await page.goto('/home')
+  await expect(page.getByRole('button', { name: 'CONTINUE', exact: true })).toBeVisible()
+  await page.waitForTimeout(1000)
+  await expect(page.getByRole('dialog', { name: 'Fortune Wheel' })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: /^Fortune Wheel/ })).toHaveCount(0)
+})
+
 test('a guest spins once a day: the odds, the prize in the bag, then the countdown', async ({ page }) => {
   const calls = await mockSupabase(page, { rpc: { event_time: eventTime } })
   const save = wheelSave()
@@ -165,11 +175,12 @@ test('the Elite Rebattle: a gauntlet fight pays, the next trainer waits, and the
   await page.getByRole('button', { name: 'FIGHT', exact: true }).click()
 
   const next = page.getByRole('button', { name: 'Next: Elite Four Bruno' })
-  for (let i = 0; i < 300 && !(await next.isVisible()); i++) {
+  // Bounded by time, not clicks: an unlucky roll of the dice can make Lorelei's fight long.
+  for (const until = Date.now() + 90_000; Date.now() < until && !(await next.isVisible()); ) {
     await clickAny(page, FIGHT_ON)
     await page.waitForTimeout(80)
   }
-  await expect(next).toBeVisible()
+  await expect(next).toBeVisible({ timeout: 10_000 })
   // Lorelei's three Pokémon paid, once each.
   await expect.poll(async () => (await stored(page)).gold).toBeGreaterThan(save.gold)
   expect((await stored(page)).events?.rebattle?.kanto).toMatchObject({ done: 0, step: 1 })
@@ -200,7 +211,13 @@ test('the Elite Rebattle: a loss starts the tier over, the team healed', async (
   for (const p of after.box) expect(p.currentHp).toBeGreaterThan(0)
 })
 
-/** The Safari Zone and Faraway Island cleared: Mew is today's raid. Three Dark Pokémon (Lv.100, fighting at Lv.50). */
+/**
+ * Raids open (the Safari Zone cleared), three Dark Pokémon (Lv.100, fighting at Lv.50). The raid tests run on Earth Day
+ * 2027 (the server's clock says so): Celebi, whose lair is in Johto, so a catch waits for it.
+ */
+const RAID_DAY = '2027-04-22'
+const raidTime = () => ({ now: `${RAID_DAY}T12:00:00.000Z`, day: RAID_DAY })
+
 function raidSave(): SaveData {
   const base = makeSave(4, { player: { name: 'Sam', character: 'red' } })
   const mon = (id: string, dex: number) => ({ id, dex, level: 100, xp: 0, currentHp: 999, caughtAt: 0 })
@@ -213,7 +230,6 @@ function raidSave(): SaveData {
     areaProgress: {
       ...base.areaProgress,
       [DEFAULT_CONFIG.events.raid.unlockAreaId!]: cleared,
-      '050ff505-ff8e-5251-8499-842a2cfc2986': cleared,
     },
     events: { seen: ['wheel', 'raid'] },
     // No animations: the fight plays at once between your turns.
@@ -221,17 +237,23 @@ function raidSave(): SaveData {
   }
 }
 
-test('a raid: NPC trainers fill the group, you fight to a result, and a catch closes the day', async ({ page }) => {
+test('a raid: the day’s raid, its lock, NPC trainers in the group, the fight to a result, a locked catch', async ({ page }) => {
   test.setTimeout(180_000)
-  await mockSupabase(page, { rpc: { event_time: eventTime } })
+  await mockSupabase(page, { rpc: { event_time: raidTime } })
   await boot(page, raidSave())
   await page.goto('/home')
-  await page.getByRole('button', { name: /^Raid Battles: Mew/ }).click()
+  await page.getByRole('button', { name: /^Raid Battles: Celebi/ }).click()
   await expect(page).toHaveURL(/\/events\/raid$/)
   await expect(page.getByRole('heading', { name: 'Your raid team' })).toBeVisible()
+  // Celebi's lair is in Johto, not started: it'll wait for the player, who can still fight and catch it.
+  const lock = page.getByRole('note')
+  await expect(lock.getByText('Celebi will wait for you')).toBeVisible()
+  await expect(lock.getByText(/joins your Box once you reach Johto and complete Ilex Shrine/)).toBeVisible()
+  // The next days, the same for everyone.
+  await expect(page.getByRole('heading', { name: 'Coming up' })).toBeVisible()
   await page.getByRole('button', { name: 'Info: how Raid Battles works' }).click()
   const rules = page.getByRole('dialog', { name: 'Raid Battles' })
-  await expect(rules.getByText('A raid lasts until midnight (UTC). It never runs away: try again until you catch it.')).toBeVisible()
+  await expect(rules.getByText(/^One raid a day, the same for everyone/)).toBeVisible()
   await rules.getByRole('button', { name: 'OK', exact: true }).click()
   await page.getByRole('button', { name: 'Start the raid' }).click()
   const pop = page.getByRole('dialog', { name: 'Empty slots' })
@@ -239,7 +261,7 @@ test('a raid: NPC trainers fill the group, you fight to a result, and a catch cl
   await pop.getByRole('button', { name: 'Start', exact: true }).click()
 
   // The fight (animations off): the target is yours to pick, the attack too, until the raid is won or lost.
-  await expect(page.getByRole('heading', { name: 'Raid battle: Mew' })).toBeAttached()
+  await expect(page.getByRole('heading', { name: 'Raid battle: Celebi' })).toBeAttached()
   const caught = page.getByRole('button', { name: /ROLL TO CATCH|CATCH/ })
   const lost = page.getByRole('heading', { name: 'The raid is lost' })
   for (let i = 0; i < 400 && !(await caught.isVisible()) && !(await lost.isVisible()); i++) {
@@ -259,25 +281,29 @@ test('a raid: NPC trainers fill the group, you fight to a result, and a catch cl
   const result = page.getByRole('button', { name: 'CONTINUE' })
   await expect(result).toBeVisible()
   await result.click()
-  const ending = page.getByRole('heading', { name: /^Mew (was caught|got away)!$/ })
+  const ending = page.getByRole('heading', { name: /^Celebi (was caught|got away)!$/ })
   await expect(ending).toBeVisible()
-  if ((await ending.textContent()) === 'Mew was caught!') {
+  if ((await ending.textContent()) === 'Celebi was caught!') {
+    // Caught, but locked: it waits for Ilex Shrine, in Johto.
+    await expect(page.getByText(/Celebi is yours, locked for now: it joins your Johto Box once you complete Ilex Shrine/)).toBeVisible()
     // The save is written a moment after it changes.
     await expect.poll(async () => (await stored(page)).events?.raidsWon).toBe(1)
     const after = await stored(page)
     expect(after.events?.raid?.caught).toBe(true)
-    expect(after.box.some((p) => p.dex === 151 && p.level === 50)).toBe(true)
+    expect(after.box.some((p) => p.dex === 251)).toBe(false)
+    expect(after.events?.raidLocked).toMatchObject([{ dex: 251, shiny: false, day: RAID_DAY }])
     await page.getByRole('button', { name: 'Back to the raids' }).click()
     await expect(page.getByText('CAUGHT', { exact: true })).toBeVisible()
     await expect(page.getByRole('button', { name: 'Start the raid' })).toHaveCount(0)
+    await expect(page.getByRole('heading', { name: 'Waiting for you' })).toBeVisible()
+    await expect(page.getByText('Complete Ilex Shrine in Johto to get it')).toBeVisible()
   } else {
-    await expect(page.getByRole('heading', { name: 'Mew got away!' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Celebi got away!' })).toBeVisible()
     await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible()
   }
 })
 
-const FARAWAY = '050ff505-ff8e-5251-8499-842a2cfc2986'
-const mewToday = () => ({ day: today(), dex: 151, shiny: false, areaId: FARAWAY, caught: false })
+const raidToday = () => ({ day: RAID_DAY, dex: 251, shiny: false, areaId: 'ilex', caught: false })
 const friend = (id: string, name: string, avatar: string, dex: number[], helped = 0) => ({
   user_id: id,
   name,
@@ -290,8 +316,8 @@ test('signed in: gifts from friends\u2019 raids pop up and go in the bag', async
   let given = false
   await mockSupabase(page, {
     rpc: {
-      event_time: eventTime,
-      raid_today: mewToday,
+      event_time: raidTime,
+      raid_today: raidToday,
       raid_gifts_claim: () => (given ? [] : ((given = true), [{ id: 7, raider_name: 'Gary', dex: 151, item_key: 'ultra-ball' }])),
     },
   })
@@ -308,8 +334,8 @@ test('signed in: gifts from friends\u2019 raids pop up and go in the bag', async
 test('signed in: two friends in the group, and the raid starts with their teams, no NPC', async ({ page }) => {
   const calls = await mockSupabase(page, {
     rpc: {
-      event_time: eventTime,
-      raid_today: mewToday,
+      event_time: raidTime,
+      raid_today: raidToday,
       raid_gifts_claim: [],
       raid_set_team: [],
       raid_friend_teams: [
@@ -333,7 +359,7 @@ test('signed in: two friends in the group, and the raid starts with their teams,
   // A full group: no NPC pop-up, straight into the raid, the friends' trainers beside you.
   await page.getByRole('button', { name: 'Start the raid' }).click()
   await expect(page.getByRole('dialog', { name: 'Empty slots' })).toHaveCount(0)
-  await expect(page.getByRole('heading', { name: 'Raid battle: Mew' })).toBeAttached()
+  await expect(page.getByRole('heading', { name: 'Raid battle: Celebi' })).toBeAttached()
   await expect(page.getByRole('list', { name: 'Your group' }).getByLabel(/^(Gary|Erika)'s /).first()).toBeAttached()
   // Your raid team is registered for your friends on the way.
   await expect.poll(() => calls.some((c) => c.includes('/rpc/raid_set_team'))).toBe(true)

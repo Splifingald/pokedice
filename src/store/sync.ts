@@ -74,7 +74,7 @@ async function reconcile(client: SupabaseClient, id: string): Promise<'loaded' |
   cancelPush() // whatever was waiting goes out below, if this device wins
   lastTry = Date.now()
   const local = useGame.getState().save
-  // The save this page plays: the main one, or the Extreme one beside it (docs/20).
+  // The save this page plays: the main one, or the Extreme one beside it (docs/22).
   const cloud = await pullCloudSave(client, id, activeSlot())
   const decision = decideSync(local, cloud)
   if (decision === 'ask' && local && cloud) {
@@ -375,7 +375,7 @@ export async function deleteAllData(): Promise<boolean> {
 }
 
 /**
- * Play the other save (docs/20). The one being left is written and goes to the cloud first, and counts as left (an
+ * Play the other save (docs/22). The one being left is written and goes to the cloud first, and counts as left (an
  * Extreme save heals for the time spent away from it); then the page reloads on the other one, since every store
  * holds one save's friends, events and Versus in memory.
  */
@@ -397,7 +397,7 @@ export async function switchSave(to: SaveMode): Promise<boolean> {
 }
 
 /**
- * Settings → Delete my Extreme save (docs/20): its rows online (`delete_my_data('extreme')`), then the save on this
+ * Settings → Delete my Extreme save (docs/22): its rows online (`delete_my_data('extreme')`), then the save on this
  * device. The main save and everything shared (the account, friends) stay. Online first, for the same reason as
  * deleteAllData. Playing it now: the page goes back to the main save (the caller reloads).
  */
@@ -642,7 +642,7 @@ export function startBackgroundServices() {
     if (document.visibilityState === 'visible') void listenForReload(true)
   }, JOIN_AFTER_LOAD_MS)
   tickDayCare()
-  // Extreme mode (docs/20): K.O. rests end on the clock, and time out of the game heals.
+  // Extreme mode (docs/22): K.O. rests end on the clock, and time out of the game heals.
   startExtremeClocks()
   setInterval(() => {
     if (document.visibilityState === 'visible') checkFreshness(false)

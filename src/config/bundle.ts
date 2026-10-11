@@ -11,6 +11,20 @@ import regions from '@/data/regions.json'
 import eggGroups from '@/data/egg-groups.json'
 import type { BundleRaw } from '@/engine/types'
 
+/**
+ * The dev server only (the e2e tests, local previews): `pokedice.devConfig` in localStorage, JSON over the bundle's
+ * config, e.g. the events switched on. A production build has none of this: import.meta.env.DEV is false there.
+ */
+function devConfig(): Record<string, unknown> {
+  // Node scripts (pnpm seed-sql…) have no import.meta.env.
+  if (!import.meta.env?.DEV) return {}
+  try {
+    return (JSON.parse(globalThis.localStorage?.getItem('pokedice.devConfig') ?? '{}') as Record<string, unknown>) ?? {}
+  } catch {
+    return {}
+  }
+}
+
 export const BUNDLE: BundleRaw = {
   pokemon,
   typeChart,
@@ -19,7 +33,7 @@ export const BUNDLE: BundleRaw = {
   trainers,
   upgrades,
   items,
-  config,
+  config: { ...config, ...devConfig() },
   regions,
   eggGroups,
 } as unknown as BundleRaw
