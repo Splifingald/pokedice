@@ -4898,7 +4898,7 @@
    {
     "id": "f81bb425-66b7-51d5-8de4-f8ec2ea74ad0",
     "itemKey": "oval-stone",
-    "weight": 8,
+    "weight": 80,
     "unique": true,
     "minQty": 1,
     "maxQty": 1
@@ -5615,18 +5615,18 @@
     "maxLevel": 15
    },
    {
-    "id": "2be7db26-cfb2-55bf-bd2a-1dba22de280c",
-    "dex": 7,
-    "weight": 1,
-    "minLevel": 12,
-    "maxLevel": 15
-   },
-   {
     "id": "262ef8cc-ff7f-5f8d-a080-9aebd756eb82",
     "dex": 122,
     "weight": 2,
     "minLevel": 13,
     "maxLevel": 17
+   },
+   {
+    "id": "2be7db26-cfb2-55bf-bd2a-1dba22de280c",
+    "dex": 7,
+    "weight": 3,
+    "minLevel": 12,
+    "maxLevel": 15
    }
   ],
   "trainerPool": [
@@ -18527,7 +18527,7 @@
   "encounterWeights": {
    "item": 1,
    "wild": 0,
-   "casino": 3,
+   "casino": 1,
    "center": 1,
    "trainer": 5
   },
@@ -24176,13 +24176,6 @@
     "maxLevel": 4
    },
    {
-    "id": "477342a1-6271-55ca-981c-b550f7d2401a",
-    "dex": 10091,
-    "weight": 16,
-    "minLevel": 2,
-    "maxLevel": 4
-   },
-   {
     "id": "048a7d9a-8afa-5329-95d2-e3a6fcc27959",
     "dex": 165,
     "weight": 10,
@@ -24223,6 +24216,13 @@
     "weight": 2,
     "minLevel": 3,
     "maxLevel": 5
+   },
+   {
+    "id": "477342a1-6271-55ca-981c-b550f7d2401a",
+    "dex": 10091,
+    "weight": 16,
+    "minLevel": 2,
+    "maxLevel": 4
    }
   ],
   "trainerPool": [],
@@ -26664,25 +26664,11 @@
     "maxLevel": 8
    },
    {
-    "id": "21d205f8-37df-596b-acc6-3e22ca5ad8b4",
-    "dex": 10107,
-    "weight": 10,
-    "minLevel": 5,
-    "maxLevel": 8
-   },
-   {
     "id": "9e69e4cc-ff33-551c-93de-6a98a6988e97",
     "dex": 79,
     "weight": 8,
     "minLevel": 4,
     "maxLevel": 7
-   },
-   {
-    "id": "942e59f5-031c-549e-96db-c59ff4f45190",
-    "dex": 10112,
-    "weight": 8,
-    "minLevel": 5,
-    "maxLevel": 8
    },
    {
     "id": "98249806-12d5-5923-a77f-cabc3d596a7f",
@@ -26732,6 +26718,20 @@
     "weight": 4,
     "minLevel": 6,
     "maxLevel": 9
+   },
+   {
+    "id": "21d205f8-37df-596b-acc6-3e22ca5ad8b4",
+    "dex": 10107,
+    "weight": 10,
+    "minLevel": 5,
+    "maxLevel": 8
+   },
+   {
+    "id": "942e59f5-031c-549e-96db-c59ff4f45190",
+    "dex": 10112,
+    "weight": 8,
+    "minLevel": 5,
+    "maxLevel": 8
    }
   ],
   "trainerPool": [
@@ -27246,16 +27246,16 @@
     "maxLevel": 11
    },
    {
-    "id": "5f13bd85-ac13-50fb-bcb3-4feceee64eef",
-    "dex": 10105,
-    "weight": 8,
+    "id": "c74ba0e3-cfa0-544a-aa7b-c236f52a1a7f",
+    "dex": 714,
+    "weight": 4,
     "minLevel": 8,
     "maxLevel": 11
    },
    {
-    "id": "c74ba0e3-cfa0-544a-aa7b-c236f52a1a7f",
-    "dex": 714,
-    "weight": 4,
+    "id": "5f13bd85-ac13-50fb-bcb3-4feceee64eef",
+    "dex": 10105,
+    "weight": 8,
     "minLevel": 8,
     "maxLevel": 11
    }
@@ -28767,13 +28767,6 @@
     "maxLevel": 21
    },
    {
-    "id": "7e78c1c7-2480-5a1d-865c-6eecd3462739",
-    "dex": 10105,
-    "weight": 8,
-    "minLevel": 19,
-    "maxLevel": 23
-   },
-   {
     "id": "1b7a0539-2896-5c21-bdd4-ce68b812a16b",
     "dex": 299,
     "weight": 6,
@@ -28806,6 +28799,13 @@
     "dex": 246,
     "weight": 2,
     "minLevel": 20,
+    "maxLevel": 23
+   },
+   {
+    "id": "7e78c1c7-2480-5a1d-865c-6eecd3462739",
+    "dex": 10105,
+    "weight": 8,
+    "minLevel": 19,
     "maxLevel": 23
    }
   ],
@@ -32291,13 +32291,6 @@
     "maxLevel": 28
    },
    {
-    "id": "a2a3f824-a8f5-5b7a-b8d3-1d5b97ee5f53",
-    "dex": 10112,
-    "weight": 10,
-    "minLevel": 24,
-    "maxLevel": 28
-   },
-   {
     "id": "7e6fdc29-1468-524a-a28c-606d8c3f28b1",
     "dex": 81,
     "weight": 8,
@@ -32310,13 +32303,6 @@
     "weight": 6,
     "minLevel": 25,
     "maxLevel": 28
-   },
-   {
-    "id": "25f117d9-a6e8-5a99-b7f8-14ebf16cf9f5",
-    "dex": 10107,
-    "weight": 8,
-    "minLevel": 24,
-    "maxLevel": 27
    },
    {
     "id": "243fb2d3-54a2-5a1f-89a0-c8ce08d447a0",
@@ -32359,6 +32345,20 @@
     "weight": 6,
     "minLevel": 24,
     "maxLevel": 28
+   },
+   {
+    "id": "a2a3f824-a8f5-5b7a-b8d3-1d5b97ee5f53",
+    "dex": 10112,
+    "weight": 10,
+    "minLevel": 24,
+    "maxLevel": 28
+   },
+   {
+    "id": "25f117d9-a6e8-5a99-b7f8-14ebf16cf9f5",
+    "dex": 10107,
+    "weight": 8,
+    "minLevel": 24,
+    "maxLevel": 27
    }
   ],
   "trainerPool": [
@@ -32745,13 +32745,6 @@
     "maxLevel": 32
    },
    {
-    "id": "87b9c0d0-3ed8-52b0-880c-5c240cbbb70d",
-    "dex": 10109,
-    "weight": 8,
-    "minLevel": 23,
-    "maxLevel": 24
-   },
-   {
     "id": "4886e088-9e95-5ff3-b96a-a254166a60fb",
     "dex": 737,
     "weight": 6,
@@ -32785,6 +32778,13 @@
     "weight": 6,
     "minLevel": 30,
     "maxLevel": 32
+   },
+   {
+    "id": "87b9c0d0-3ed8-52b0-880c-5c240cbbb70d",
+    "dex": 10109,
+    "weight": 8,
+    "minLevel": 23,
+    "maxLevel": 24
    }
   ],
   "trainerPool": [
@@ -32950,13 +32950,6 @@
     "maxLevel": 35
    },
    {
-    "id": "d551aeb6-5bf2-5b2d-92c0-d8808df05c15",
-    "dex": 10106,
-    "weight": 8,
-    "minLevel": 28,
-    "maxLevel": 33
-   },
-   {
     "id": "65780d76-479c-5ed9-910c-1eb6aed464e1",
     "dex": 343,
     "weight": 6,
@@ -32995,6 +32988,13 @@
     "id": "602b00f9-28ca-5ae0-a011-625f271fcc5a",
     "dex": 359,
     "weight": 4,
+    "minLevel": 28,
+    "maxLevel": 33
+   },
+   {
+    "id": "d551aeb6-5bf2-5b2d-92c0-d8808df05c15",
+    "dex": 10106,
+    "weight": 8,
     "minLevel": 28,
     "maxLevel": 33
    },
@@ -33372,13 +33372,6 @@
     "maxLevel": 36
    },
    {
-    "id": "59933c3b-9ce5-588f-bc4d-af7ebfe277ea",
-    "dex": 10110,
-    "weight": 8,
-    "minLevel": 31,
-    "maxLevel": 36
-   },
-   {
     "id": "0eb2de92-e2bf-5223-81bb-fb813fdc0294",
     "dex": 227,
     "weight": 6,
@@ -33410,6 +33403,13 @@
     "id": "cce5a868-a927-5685-bba3-b57979344d74",
     "dex": 704,
     "weight": 4,
+    "minLevel": 31,
+    "maxLevel": 36
+   },
+   {
+    "id": "59933c3b-9ce5-588f-bc4d-af7ebfe277ea",
+    "dex": 10110,
+    "weight": 8,
     "minLevel": 31,
     "maxLevel": 36
    }
@@ -33949,20 +33949,6 @@
     "maxLevel": 46
    },
    {
-    "id": "3dc817bf-5434-5dd7-99f9-22bb47c964f8",
-    "dex": 10114,
-    "weight": 8,
-    "minLevel": 40,
-    "maxLevel": 45
-   },
-   {
-    "id": "f5aab237-a122-511e-ab4f-b50694567017",
-    "dex": 10106,
-    "weight": 10,
-    "minLevel": 41,
-    "maxLevel": 45
-   },
-   {
     "id": "ca01a1ab-74fa-55e1-8763-59f8298d30c6",
     "dex": 42,
     "weight": 10,
@@ -34010,6 +33996,20 @@
     "weight": 2,
     "minLevel": 41,
     "maxLevel": 44
+   },
+   {
+    "id": "3dc817bf-5434-5dd7-99f9-22bb47c964f8",
+    "dex": 10114,
+    "weight": 8,
+    "minLevel": 40,
+    "maxLevel": 45
+   },
+   {
+    "id": "f5aab237-a122-511e-ab4f-b50694567017",
+    "dex": 10106,
+    "weight": 10,
+    "minLevel": 41,
+    "maxLevel": 45
    }
   ],
   "trainerPool": [
@@ -34182,20 +34182,6 @@
     "maxLevel": 41
    },
    {
-    "id": "1291abbc-4f06-5b43-822f-2d164967e0ee",
-    "dex": 10101,
-    "weight": 6,
-    "minLevel": 46,
-    "maxLevel": 51
-   },
-   {
-    "id": "96d66dbd-1d65-5d31-a676-19a0a3ef2cf7",
-    "dex": 10103,
-    "weight": 6,
-    "minLevel": 46,
-    "maxLevel": 51
-   },
-   {
     "id": "eba51e05-245b-500b-98b9-a050fc21f48d",
     "dex": 583,
     "weight": 6,
@@ -34220,6 +34206,20 @@
     "id": "f449123b-848f-5e9f-a7ef-8e528b28dbf9",
     "dex": 739,
     "weight": 8,
+    "minLevel": 46,
+    "maxLevel": 51
+   },
+   {
+    "id": "1291abbc-4f06-5b43-822f-2d164967e0ee",
+    "dex": 10101,
+    "weight": 6,
+    "minLevel": 46,
+    "maxLevel": 51
+   },
+   {
+    "id": "96d66dbd-1d65-5d31-a676-19a0a3ef2cf7",
+    "dex": 10103,
+    "weight": 6,
     "minLevel": 46,
     "maxLevel": 51
    }
@@ -42029,18 +42029,18 @@
     "maxLevel": 6
    },
    {
-    "id": "5227b392-5df1-5c32-923f-a1622ade346d",
-    "dex": 10174,
-    "weight": 4,
-    "minLevel": 5,
-    "maxLevel": 7
-   },
-   {
     "id": "0b225fbd-36ef-557c-9be0-63aa13b8a090",
     "dex": 129,
     "weight": 8,
     "minLevel": 4,
     "maxLevel": 6
+   },
+   {
+    "id": "5227b392-5df1-5c32-923f-a1622ade346d",
+    "dex": 10174,
+    "weight": 4,
+    "minLevel": 5,
+    "maxLevel": 7
    }
   ],
   "trainerPool": [
@@ -42519,13 +42519,6 @@
   ],
   "wildPool": [
    {
-    "id": "a260758f-4f4a-5e1e-978f-70b73a8a0f52",
-    "dex": 10161,
-    "weight": 12,
-    "minLevel": 13,
-    "maxLevel": 16
-   },
-   {
     "id": "012ff627-8920-56b1-9c5d-83b1c244b8b1",
     "dex": 868,
     "weight": 8,
@@ -42600,6 +42593,13 @@
     "dex": 133,
     "weight": 2,
     "minLevel": 14,
+    "maxLevel": 16
+   },
+   {
+    "id": "a260758f-4f4a-5e1e-978f-70b73a8a0f52",
+    "dex": 10161,
+    "weight": 12,
+    "minLevel": 13,
     "maxLevel": 16
    }
   ],
@@ -42794,13 +42794,6 @@
     "maxLevel": 18
    },
    {
-    "id": "4234dd2f-9414-5f02-a140-ef6d98df2acb",
-    "dex": 10166,
-    "weight": 4,
-    "minLevel": 19,
-    "maxLevel": 21
-   },
-   {
     "id": "68ddd333-5169-547c-8409-8dab951b8346",
     "dex": 846,
     "weight": 10,
@@ -42820,6 +42813,13 @@
     "weight": 4,
     "minLevel": 20,
     "maxLevel": 24
+   },
+   {
+    "id": "4234dd2f-9414-5f02-a140-ef6d98df2acb",
+    "dex": 10166,
+    "weight": 4,
+    "minLevel": 19,
+    "maxLevel": 21
    }
   ],
   "trainerPool": [
@@ -43022,13 +43022,6 @@
     "maxLevel": 24
    },
    {
-    "id": "74fd3a38-6a6e-5425-8273-4d267e9252ea",
-    "dex": 10180,
-    "weight": 4,
-    "minLevel": 20,
-    "maxLevel": 24
-   },
-   {
     "id": "7cad5f16-6879-5481-8521-8e7047bfa98b",
     "dex": 213,
     "weight": 2,
@@ -43039,6 +43032,13 @@
     "id": "e613b4a0-cd6b-5dd7-9dd1-c2532a4df235",
     "dex": 850,
     "weight": 6,
+    "minLevel": 20,
+    "maxLevel": 24
+   },
+   {
+    "id": "74fd3a38-6a6e-5425-8273-4d267e9252ea",
+    "dex": 10180,
+    "weight": 4,
     "minLevel": 20,
     "maxLevel": 24
    }
@@ -43393,13 +43393,6 @@
     "maxLevel": 30
    },
    {
-    "id": "b236491b-473e-5ca9-8964-f860283268f2",
-    "dex": 10179,
-    "weight": 10,
-    "minLevel": 29,
-    "maxLevel": 33
-   },
-   {
     "id": "3d517945-c16d-5913-a0a2-1330115e838d",
     "dex": 694,
     "weight": 8,
@@ -43468,6 +43461,13 @@
     "weight": 2,
     "minLevel": 28,
     "maxLevel": 30
+   },
+   {
+    "id": "b236491b-473e-5ca9-8964-f860283268f2",
+    "dex": 10179,
+    "weight": 10,
+    "minLevel": 29,
+    "maxLevel": 33
    }
   ],
   "trainerPool": [
@@ -43668,13 +43668,6 @@
     "maxLevel": 34
    },
    {
-    "id": "acd5b800-4cee-5af4-a710-70cfe541e36d",
-    "dex": 10179,
-    "weight": 6,
-    "minLevel": 30,
-    "maxLevel": 33
-   },
-   {
     "id": "eea6e102-b820-5b1c-8f66-5a8e7493c1d5",
     "dex": 538,
     "weight": 6,
@@ -43694,6 +43687,13 @@
     "weight": 4,
     "minLevel": 30,
     "maxLevel": 34
+   },
+   {
+    "id": "acd5b800-4cee-5af4-a710-70cfe541e36d",
+    "dex": 10179,
+    "weight": 6,
+    "minLevel": 30,
+    "maxLevel": 33
    }
   ],
   "trainerPool": [
@@ -43889,13 +43889,6 @@
     "maxLevel": 36
    },
    {
-    "id": "1441a38f-bb5c-5f7b-b6ad-7186c6278b74",
-    "dex": 10162,
-    "weight": 4,
-    "minLevel": 34,
-    "maxLevel": 36
-   },
-   {
     "id": "2ad04d8a-1746-577c-8ced-c0efb4fb5b89",
     "dex": 766,
     "weight": 4,
@@ -43905,6 +43898,13 @@
    {
     "id": "c0f92d60-c07a-5f69-9bc6-5ccfb8be3eaf",
     "dex": 765,
+    "weight": 4,
+    "minLevel": 34,
+    "maxLevel": 36
+   },
+   {
+    "id": "1441a38f-bb5c-5f7b-b6ad-7186c6278b74",
+    "dex": 10162,
     "weight": 4,
     "minLevel": 34,
     "maxLevel": 36
@@ -44336,13 +44336,6 @@
     "maxLevel": 43
    },
    {
-    "id": "f871aba8-5467-5c5f-8238-f20a6ab622de",
-    "dex": 10176,
-    "weight": 2,
-    "minLevel": 33,
-    "maxLevel": 34
-   },
-   {
     "id": "692081d0-f679-569f-899a-72a2611b1e1a",
     "dex": 538,
     "weight": 2,
@@ -44355,6 +44348,13 @@
     "weight": 2,
     "minLevel": 39,
     "maxLevel": 43
+   },
+   {
+    "id": "f871aba8-5467-5c5f-8238-f20a6ab622de",
+    "dex": 10176,
+    "weight": 2,
+    "minLevel": 33,
+    "maxLevel": 34
    }
   ],
   "trainerPool": [
@@ -44572,18 +44572,18 @@
     "maxLevel": 37
    },
    {
-    "id": "248bc243-2981-5c51-85c2-339d823c3d40",
-    "dex": 10173,
-    "weight": 4,
-    "minLevel": 36,
-    "maxLevel": 37
-   },
-   {
     "id": "1640b4a7-8c89-547b-abf3-e8135fb0cfda",
     "dex": 712,
     "weight": 6,
     "minLevel": 36,
     "maxLevel": 36
+   },
+   {
+    "id": "248bc243-2981-5c51-85c2-339d823c3d40",
+    "dex": 10173,
+    "weight": 4,
+    "minLevel": 36,
+    "maxLevel": 37
    }
   ],
   "trainerPool": [
@@ -44947,13 +44947,6 @@
     "maxLevel": 50
    },
    {
-    "id": "6caab479-8a07-5cb5-902d-dd45022de22f",
-    "dex": 10168,
-    "weight": 6,
-    "minLevel": 40,
-    "maxLevel": 41
-   },
-   {
     "id": "2cd685ea-79fd-5e31-b3ef-3f08a18e8dfc",
     "dex": 583,
     "weight": 6,
@@ -45008,6 +45001,13 @@
     "weight": 2,
     "minLevel": 44,
     "maxLevel": 46
+   },
+   {
+    "id": "6caab479-8a07-5cb5-902d-dd45022de22f",
+    "dex": 10168,
+    "weight": 6,
+    "minLevel": 40,
+    "maxLevel": 41
    }
   ],
   "trainerPool": [
@@ -46692,20 +46692,6 @@
     "maxLevel": 66
    },
    {
-    "id": "5181ab2b-867d-58ac-adf1-5f2174ee44f8",
-    "dex": 10166,
-    "weight": 6,
-    "minLevel": 27,
-    "maxLevel": 29
-   },
-   {
-    "id": "00db66ff-14c9-534f-8eea-bc03ebb52463",
-    "dex": 10176,
-    "weight": 6,
-    "minLevel": 33,
-    "maxLevel": 34
-   },
-   {
     "id": "79acd5be-4a89-557e-9ffb-fa554cdf7d53",
     "dex": 622,
     "weight": 6,
@@ -46760,6 +46746,20 @@
     "weight": 2,
     "minLevel": 62,
     "maxLevel": 66
+   },
+   {
+    "id": "5181ab2b-867d-58ac-adf1-5f2174ee44f8",
+    "dex": 10166,
+    "weight": 6,
+    "minLevel": 27,
+    "maxLevel": 29
+   },
+   {
+    "id": "00db66ff-14c9-534f-8eea-bc03ebb52463",
+    "dex": 10176,
+    "weight": 6,
+    "minLevel": 33,
+    "maxLevel": 34
    },
    {
     "id": "ef2e395c-15e5-58b6-8be0-551ee56b6d19",
@@ -48738,20 +48738,6 @@
     "maxLevel": 64
    },
    {
-    "id": "fe9c7756-5c36-5404-8a7d-493c1b10f6ce",
-    "dex": 10234,
-    "weight": 8,
-    "minLevel": 27,
-    "maxLevel": 29
-   },
-   {
-    "id": "d8d7a829-7173-58d7-ba47-f22c36b17052",
-    "dex": 10235,
-    "weight": 8,
-    "minLevel": 37,
-    "maxLevel": 39
-   },
-   {
     "id": "072c0103-48e2-54f2-b63a-fc88bf62412d",
     "dex": 550,
     "weight": 8,
@@ -48776,6 +48762,20 @@
     "id": "13d8178b-e47c-58a3-b98c-1ec3e7088512",
     "dex": 77,
     "weight": 6,
+    "minLevel": 37,
+    "maxLevel": 39
+   },
+   {
+    "id": "fe9c7756-5c36-5404-8a7d-493c1b10f6ce",
+    "dex": 10234,
+    "weight": 8,
+    "minLevel": 27,
+    "maxLevel": 29
+   },
+   {
+    "id": "d8d7a829-7173-58d7-ba47-f22c36b17052",
+    "dex": 10235,
+    "weight": 8,
     "minLevel": 37,
     "maxLevel": 39
    },
@@ -49872,13 +49872,6 @@
     "maxLevel": 8
    },
    {
-    "id": "0e272441-e1e2-5e73-9b77-7a0c0c2479f0",
-    "dex": 10253,
-    "weight": 6,
-    "minLevel": 4,
-    "maxLevel": 8
-   },
-   {
     "id": "f134d558-f8cc-559e-a7fc-314cce01006f",
     "dex": 664,
     "weight": 6,
@@ -49930,6 +49923,13 @@
    {
     "id": "a4bc5f00-e548-52c8-96cb-8eb873ec9351",
     "dex": 661,
+    "weight": 6,
+    "minLevel": 4,
+    "maxLevel": 8
+   },
+   {
+    "id": "0e272441-e1e2-5e73-9b77-7a0c0c2479f0",
+    "dex": 10253,
     "weight": 6,
     "minLevel": 4,
     "maxLevel": 8
@@ -51771,13 +51771,6 @@
     "maxLevel": 33
    },
    {
-    "id": "c82a5f4d-097a-5c8f-8751-007cc8ed9010",
-    "dex": 128,
-    "weight": 0,
-    "minLevel": 30,
-    "maxLevel": 35
-   },
-   {
     "id": "6ef89764-b428-59d1-85da-f9ca22b11c5f",
     "dex": 775,
     "weight": 4,
@@ -51795,6 +51788,13 @@
     "id": "61c747e2-3bd1-5ba1-8b62-ac472710bb27",
     "dex": 941,
     "weight": 4,
+    "minLevel": 30,
+    "maxLevel": 35
+   },
+   {
+    "id": "c82a5f4d-097a-5c8f-8751-007cc8ed9010",
+    "dex": 128,
+    "weight": 0,
     "minLevel": 30,
     "maxLevel": 35
    },
