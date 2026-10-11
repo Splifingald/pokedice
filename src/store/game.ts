@@ -12,6 +12,7 @@ import {
   releaseRaidLocks,
   settleKo,
   stampExtremeUnlock,
+  syncEggClocks,
   syncHpScale,
   syncXpCurve,
   type BattleState,
@@ -146,7 +147,8 @@ function settle(save: SaveData, data: GameData) {
   // League II (gone, the Elite Rebattle replaced them) goes back to its League first.
   const fossils = reviveFossils(migrateRounds(migrateLeagueII(inSlot(save)), data), data, Date.now())
   // More Day Care residents than slots (the Day Cares became one): the extra ones go home before duplicates are seen.
-  const fitted = fitDayCare(fossils.save, data, Date.now())
+  // Then the Egg clocks follow who is there: one starts when a pair forms, and resets when its last pair leaves.
+  const fitted = syncEggClocks(fitDayCare(fossils.save, data, Date.now()), data, Date.now())
   // Raid catches locked until their area was completed: one completed since joins its region's Box.
   const raids = releaseRaidLocks(fitted, data, Date.now(), raidId)
   const dup = releaseDuplicates(syncXpCurve(syncHpScale(raids.save, data), data))

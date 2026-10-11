@@ -36,9 +36,11 @@ test('the gold widget opens the Day Care straight into the hatching of the gift 
   await expect(moment.getByText(/hatched from the Egg!/).first()).toBeVisible()
   await moment.getByRole('button', { name: 'Done' }).click()
   await expect(moment).toHaveCount(0)
-  // No Egg waits any more, and nothing is sold: the bar counts down to the next check.
+  // No Egg waits any more, and nothing is sold. Nobody here can pair: no clock runs, the bar says it's on hold.
   await expect(page.getByText('Next Egg check')).toBeVisible()
+  await expect(page.getByText('On hold')).toBeVisible()
   await expect(page.getByText('No pair can make an Egg yet').first()).toBeVisible()
+  await expect(page.getByText('every 12 h · waiting for a pair')).toBeVisible()
 })
 
 test('Egg now pays and hatches at once', async ({ page }) => {
@@ -69,8 +71,8 @@ test('a Pokémon stays at the Day Care and comes back', async ({ page }) => {
   await boot(page, { ...save, box: [...save.box, pidgey], team: [...save.team, pidgey.id] })
   await page.goto('/home')
 
-  // Home's widget opens the page; the yard's plate is its one title.
-  await page.getByRole('button', { name: /^Day Care: one free slot\. one free slot\. Egg check in/ }).click()
+  // Home's widget opens the page; the yard's plate is its one title. Nobody here, so no Egg check is coming.
+  await page.getByRole('button', { name: /^Day Care: one free slot\. one free slot\. Waiting for a pair/ }).click()
   await expect(page).toHaveURL(/\/daycare$/)
   await expect(page.getByRole('heading', { level: 1, name: 'Day Care' })).toBeVisible()
   await expect(page.getByText('Every region · 0 Pokémon here')).toBeVisible()
