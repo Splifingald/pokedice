@@ -162,16 +162,29 @@ describe('no Pokémon Centers', () => {
 describe('K.O. lasts 12 hours', () => {
   it('a Pokémon at 0 HP starts resting; it comes back at 1 HP 12 h later, on the real clock only', () => {
     const down = withLead(extreme(), 0)
+    // While the real time is unknown, nothing moves: the device's clock neither starts nor ends a rest.
+    expect(settleKo(down, data, null).save).toBe(down)
     const started = settleKo(down, data, 1000).save
     expect(lead(started).koAt).toBe(1000)
     expect(koLeft(lead(started), 1000 + HOUR_MS, data)).toBe(11 * HOUR_MS)
     expect(settleKo(started, data, 1000 + 12 * HOUR_MS - 1).save).toBe(started)
-    // The device's clock alone never ends a rest.
-    expect(settleKo(started, data, 1000 + 13 * HOUR_MS, false).save).toBe(started)
+    expect(settleKo(started, data, null).save).toBe(started)
     const back = settleKo(started, data, 1000 + 12 * HOUR_MS)
     expect(back.back).toEqual([lead(started).id])
     expect(lead(back.save).currentHp).toBe(1)
     expect(lead(back.save).koAt).toBeUndefined()
+  })
+
+  it('while an absence is open or waiting, a rest is left for the away heal to end', () => {
+    const resting = withLead(extreme(), 0, 0)
+    const open = { ...resting, extreme: { awayFrom: HOUR_MS } }
+    const waiting = { ...resting, extreme: { pending: [[HOUR_MS, 14 * HOUR_MS]] as [number, number][] } }
+    expect(settleKo(open, data, 14 * HOUR_MS).save).toBe(open)
+    expect(settleKo(waiting, data, 14 * HOUR_MS).save).toBe(waiting)
+    // The heal ends it at 12 h and heals the 2 h after, not the whole 13.
+    const max = maxHp(lead(resting))
+    const healed = awayHeal(waiting, data, waiting.extreme.pending)
+    expect(lead(healed.save).currentHp).toBe(1 + Math.floor(max * 0.1 * 2))
   })
 
   it('a Revive stops the clock; a main save never has one', () => {

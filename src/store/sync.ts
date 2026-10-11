@@ -379,12 +379,13 @@ export async function deleteAllData(): Promise<boolean> {
  * Extreme save heals for the time spent away from it); then the page reloads on the other one, since every store
  * holds one save's friends, events and Versus in memory.
  */
-export async function switchSave(to: SaveMode) {
-  if (activeSlot() === to) return
+export async function switchSave(to: SaveMode): Promise<boolean> {
+  if (activeSlot() === to) return false
   markAway()
   flushWrite()
   try {
-    await pushSaveNow()
+    // A slow network doesn't hold the switch: closing the page sends what's still waiting anyway.
+    await Promise.race([pushSaveNow(), new Promise((done) => setTimeout(done, 4000))])
   } catch (err) {
     console.warn('[cloud] push before switching failed', err)
   }
@@ -392,6 +393,7 @@ export async function switchSave(to: SaveMode) {
   // Without a save on this device, the title: the sign-in sync may still bring the cloud's (a new game there would
   // write over it).
   window.location.assign(readSave(to).save ? '/home' : '/')
+  return true
 }
 
 /**

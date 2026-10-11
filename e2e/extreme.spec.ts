@@ -2,7 +2,8 @@
 // main one, the resting team, a resting Pokémon's countdown, healing for the time away, deleting the Extreme save, and
 // the database told which world it is talking about.
 import { expect, test, type Page } from '@playwright/test'
-import { FAST, fakeSession, makeSave, mockSupabase, STORAGE_KEY, withBadge } from './helpers'
+import { instanceMaxHp } from '../src/engine'
+import { FAST, fakeSession, gameData, makeSave, mockSupabase, STORAGE_KEY, withBadge } from './helpers'
 
 const H = 3_600_000
 
@@ -109,6 +110,21 @@ test('time out of the game heals, and says so once', async ({ page }) => {
   const healed = await stored(page, 'pokedice.save.extreme')
   expect(healed.extreme?.awayFrom).toBeUndefined()
   expect(healed.extreme?.pending).toBeUndefined()
+})
+
+test('a rest that ends during the absence: back at 1 HP then, and healed for the time after only', async ({ page }) => {
+  await mockSupabase(page)
+  const base = extreme()
+  // K.O. 13 h ago, away for the last 3 h: back at 1 HP an hour ago, then one hour of healing (not three).
+  const resting = { ...base, box: base.box.map((p) => ({ ...p, currentHp: 0, koAt: now - 13 * H })), extreme: { awayFrom: now - 3 * H } }
+  await seed(page, { main: main(), extreme: resting, slot: 'extreme' })
+  await page.goto('/home')
+
+  const card = page.getByRole('dialog', { name: 'While you were away' })
+  await expect(card).toContainText('Back from K.O.')
+  const max = instanceMaxHp(base.box[0]!, gameData())
+  await expect.poll(async () => (await stored(page, 'pokedice.save.extreme')).box[0].currentHp).toBe(1 + Math.floor(max * 0.1))
+  expect((await stored(page, 'pokedice.save.extreme')).box[0].koAt).toBeUndefined()
 })
 
 test('Delete my Extreme save: two pop-ups, and the main save stays', async ({ page }) => {

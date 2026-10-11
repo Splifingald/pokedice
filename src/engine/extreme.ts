@@ -153,11 +153,14 @@ export interface KoSettled {
 
 /**
  * Keeps every K.O. clock of an Extreme save right: a Pokémon at 0 HP starts resting at `now`, one above 0 (a Revive)
- * stops, and one whose rest is over comes back at `koReviveHp`. `trusted`: the real time is known — without it clocks
- * start but never end, so a device's clock can't cut a rest short. A main save comes back as it is.
+ * stops, and one whose rest is over comes back at `koReviveHp`. `now` is the real time, or null while it's unknown:
+ * then nothing moves, so the device's clock can neither start nor end a rest. While an absence is open or waiting to
+ * heal, rests don't end here: `awayHeal` ends those that end within it, at the right moment, and heals from there.
+ * A main save comes back as it is.
  */
-export function settleKo(save: SaveData, data: GameData, now: number, trusted = true): KoSettled {
-  if (!isExtreme(save)) return { save, back: [] }
+export function settleKo(save: SaveData, data: GameData, now: number | null): KoSettled {
+  if (!isExtreme(save) || now == null) return { save, back: [] }
+  const away = save.extreme?.awayFrom != null || !!save.extreme?.pending?.length
   const back: string[] = []
   const next = mapEveryInstance(save, (p) => {
     if (p.revivesAt != null) return p
@@ -167,7 +170,7 @@ export function settleKo(save: SaveData, data: GameData, now: number, trusted = 
       return rest
     }
     if (p.koAt == null) return { ...p, koAt: now }
-    if (!trusted || now < p.koAt + koMs(data)) return p
+    if (away || now < p.koAt + koMs(data)) return p
     back.push(p.id)
     const { koAt: _k, ...rest } = p
     return { ...rest, currentHp: reviveHp(p, data) }

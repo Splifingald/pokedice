@@ -27,7 +27,7 @@ import { parseSave } from '@/save/schema'
 import { mutateSave, pushToast, useGame } from '@/store/game'
 import { deleteSave, newId, replaceSave, setForceNext } from '@/store/run'
 import { healPending, settleExtreme } from '@/store/extreme'
-import { serverNow } from '@/store/serverTime'
+import { trustedNow } from '@/store/clock'
 import { switchSave } from '@/store/sync'
 import { Field, NumInput, PokemonPicker, inputCls } from '../widgets'
 
@@ -361,7 +361,7 @@ export function DevToolsSection() {
                   size="sm"
                   onClick={() => {
                     // An hour ago to now, as if the page had been closed for it.
-                    const now = serverNow() ?? Date.now()
+                    const now = trustedNow() ?? Date.now()
                     mutateSave((s) => addAwayWindow(s, now - 3_600_000, now))
                     healPending()
                   }}
@@ -371,7 +371,7 @@ export function DevToolsSection() {
                 <PixelButton
                   size="sm"
                   onClick={() => {
-                    const done = (serverNow() ?? Date.now()) - data.config.extreme.koHours * 3_600_000 - 1000
+                    const done = (trustedNow() ?? Date.now()) - data.config.extreme.koHours * 3_600_000 - 1000
                     mutateSave((s) => ({ ...s, box: s.box.map((p) => (p.koAt != null ? { ...p, koAt: done } : p)) }))
                     settleExtreme()
                   }}

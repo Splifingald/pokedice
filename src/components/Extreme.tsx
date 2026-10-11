@@ -300,7 +300,12 @@ export function SwitchSaveModal({ to, open, onClose }: { to: SaveMode; open: boo
           disabled={busy}
           onClick={() => {
             setBusy(true)
-            void switchSave(to)
+            // Already on that save (nothing to switch): the dialog closes rather than wait forever.
+            void switchSave(to).then((switched) => {
+              if (switched) return
+              setBusy(false)
+              onClose()
+            })
           }}
         >
           {busy ? t('ui.common.loading') : t('ui.extreme.switch.go')}

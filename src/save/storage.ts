@@ -114,7 +114,11 @@ export function readSave(which: SaveMode = slot): ReadResult {
   return { save: null, corrupt: true }
 }
 
-export function writeSave(save: SaveData | null, which: SaveMode = slot) {
+/** Where a save goes: an Extreme save to the Extreme key, any other to the main one; nothing (a delete), the slot's. */
+const keyOf = (save: SaveData | null, fallback: SaveMode): SaveMode =>
+  save ? (save.mode === 'extreme' ? 'extreme' : 'main') : fallback
+
+export function writeSave(save: SaveData | null, which: SaveMode = keyOf(save, slot)) {
   const ls = storage()
   if (!ls) return
   const key = KEYS[which].save
@@ -126,12 +130,13 @@ export function writeSave(save: SaveData | null, which: SaveMode = slot) {
   }
 }
 
-let pending: SaveData | null | undefined
+/** The write waiting, with its key fixed when it was asked for (a slot switch can't send it to the other save). */
+let pending: { save: SaveData | null; which: SaveMode } | undefined
 let timer: ReturnType<typeof setTimeout> | null = null
 
 /** Debounced write (500 ms). */
 export function scheduleWrite(save: SaveData | null, delay = 500) {
-  pending = save
+  pending = { save, which: keyOf(save, slot) }
   if (timer) clearTimeout(timer)
   timer = setTimeout(flushWrite, delay)
 }
@@ -139,7 +144,7 @@ export function scheduleWrite(save: SaveData | null, delay = 500) {
 export function flushWrite() {
   if (timer) clearTimeout(timer)
   timer = null
-  if (pending !== undefined) writeSave(pending)
+  if (pending !== undefined) writeSave(pending.save, pending.which)
   pending = undefined
 }
 
