@@ -20,6 +20,7 @@ import {
 import { getSupabase } from '@/lib/supabase'
 import { mutateSave, useGame } from './game'
 import { serverNow } from './serverTime'
+import { realmArgs } from '@/lib/realm'
 
 export type Spin =
   | { ok: true; slice: number; reward: WheelReward }
@@ -36,7 +37,7 @@ interface ServerSpin {
 async function serverSpin(): Promise<ServerSpin> {
   const client = await getSupabase()
   if (!client) throw new Error('events_signed_out')
-  const { data, error } = await client.rpc('wheel_spin')
+  const { data, error } = await client.rpc('wheel_spin', realmArgs())
   if (error) throw error
   return data as ServerSpin
 }

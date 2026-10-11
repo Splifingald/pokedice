@@ -686,8 +686,38 @@ export interface GameConfig {
   events: EventsConfig
   /** The Elite Rebattle's trainers, per region and tier (a row of its own, written by scripts/rebattle-teams.ts). */
   rebattleLineups: RebattleLineups
+  /** Extreme mode (docs/22): the second save's rules. */
+  extreme: ExtremeConfig
   /** Live events (docs/20): their switch, and the admin's list, past, running and to come; one runs at a time. */
   liveEvents: { access: EventAccess; list: LiveEvent[] }
+}
+
+/**
+ * Extreme mode (docs/22): a second save, opened by a league, with no Pokémon Centers, K.O.s that last hours, and
+ * healing only while the player is out of the game.
+ */
+export interface ExtremeConfig {
+  /**
+   * The admin's switch, as for the events: off (nowhere: no pop-up, no title card, no menu row; Extreme saves are
+   * kept), on for the admin only (to try it in production first), on for everyone. Off by default.
+   */
+  access: EventAccess
+  /** The region whose league opens it in the main save ("the second league"). */
+  unlockRegion: RegionId
+  /** Pokémon Centers in the encounter deck, as in the main game. */
+  centers: boolean
+  /** A lost round heals the team, as in the main game. */
+  wipeHeals: boolean
+  /** Real hours a K.O. Pokémon rests before it comes back. */
+  koHours: number
+  /** The HP it comes back with. */
+  koReviveHp: number
+  /** % of max HP healed per hour spent out of the game (0 = never). */
+  awayHealPctPerHour: number
+  /** Absences shorter than this (minutes) don't heal. */
+  awayMinMinutes: number
+  /** Potions and Revives can be used. */
+  items: boolean
 }
 
 /**
@@ -742,6 +772,8 @@ export interface PokemonInstance {
   revivesAt?: number
   /** The fossil item it came from (for its picture while it revives). */
   fossil?: string
+  /** Extreme mode: when it was K.O. (ms, server time). It rests until `koHours` later. Absent = not on the clock. */
+  koAt?: number
 }
 
 export interface AreaProgress {
@@ -827,6 +859,24 @@ export interface SaveData {
   regionOfferSeen?: RegionId[]
   /** The special events (docs/18): what's been seen and done. Shared by every region; absent = nothing yet. */
   events?: EventsSave
+  /** Which save this is (docs/22). Absent = the main one, so every save from before is main. */
+  mode?: SaveMode
+  /** An Extreme save's away-healing bookkeeping. */
+  extreme?: ExtremeSave
+  /** Main save: when the unlock league was first seen done. Extreme mode stays open from then on. */
+  extremeUnlockedAt?: number
+  /** Main save: Extreme mode's rules pop-up has been shown (once, when it opens; INFO shows it again). */
+  extremeRulesSeen?: boolean
+}
+
+export type SaveMode = 'main' | 'extreme'
+
+/** Time spent out of the game, waiting to heal (all in ms, server time). */
+export interface ExtremeSave {
+  /** The page went hidden or closed here, and hasn't been back since. */
+  awayFrom?: number
+  /** Absences already over but not healed yet (the player came back mid-fight, or the real time wasn't known). */
+  pending?: [number, number][]
 }
 
 /** The special events' state in a save. Every field is optional: absent means "never". */

@@ -6,6 +6,7 @@
 import { trainerGoldFor } from './economy'
 import type { Encounter } from './encounters'
 import { areaProgressAnywhere } from './events'
+import { wipeHeals } from './extreme'
 import { earnedGold } from './liveEvents'
 import { regionOf } from './regions'
 import { asSeenBy, playerSideOf } from './rival'
@@ -221,7 +222,8 @@ export function applyRebattleKO(
 /** A loss: back to the tier's first trainer, the team healed. The ₽ won and the paid marks stay. */
 export function applyRebattleLoss(save: SaveData, data: GameData, regionId: string): SaveData {
   const prog = rebattleProgress(save, regionId)
-  const team = new Set(save.team)
+  // Extreme mode: a lost tier heals nobody, like a lost round.
+  const team = new Set(wipeHeals(save, data) ? save.team : [])
   return withRebattle(
     { ...save, box: save.box.map((p) => (team.has(p.id) ? { ...p, currentHp: instanceMaxHp(p, data) } : p)) },
     regionId,

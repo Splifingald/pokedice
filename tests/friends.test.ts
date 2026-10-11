@@ -70,7 +70,13 @@ describe('parsing', () => {
       since: null,
       updatedAt: null,
       isNew: true,
+      inRealm: true,
     })
+  })
+
+  it("says when a friend has no save in the world being played (Extreme mode's in_realm, 0039)", () => {
+    expect(parseFriendList([{ user_id: 'u1', in_realm: false }])[0]!.inRealm).toBe(false)
+    expect(parseFriendList([{ user_id: 'u1', in_realm: true }])[0]!.inRealm).toBe(true)
   })
 
   it('reads friend_status, with or without friends', () => {

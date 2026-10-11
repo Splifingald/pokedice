@@ -2,6 +2,7 @@ import { useRef, useState, type PointerEvent } from 'react'
 import { effectiveStats, getSpecies, xpToNext, type PokemonInstance } from '@/engine'
 import { useT } from '@/i18n/react'
 import { HpBar } from '@/components/HpBar'
+import { KoTag } from '@/components/Extreme'
 import { PixelIcon } from '@/components/icons'
 import { SpriteImg } from '@/components/SpriteImg'
 import { reorderTeam } from '@/store/actions'
@@ -147,9 +148,13 @@ export function TeamCards({
                 <SpriteImg dex={p.dex} size={80} shiny={p.shiny} />
               </span>
               <b className="max-w-full truncate text-[18px] font-normal leading-none">{name(p)}</b>
-              <span className="font-pixel-sm text-[15px] leading-none text-muted">
-                {fainted ? t('ui.mon.fainted') : t('ui.common.level.short', { n: p.level })}
-              </span>
+              {fainted && p.koAt != null ? (
+                <KoTag inst={p} />
+              ) : (
+                <span className="font-pixel-sm text-[15px] leading-none text-muted">
+                  {fainted ? t('ui.mon.fainted') : t('ui.common.level.short', { n: p.level })}
+                </span>
+              )}
               <HpBar hp={p.currentHp} max={stats.maxHp} compact height={8} className="w-full" />
               <span className="block h-1 w-full bg-well-deep" aria-hidden>
                 <i className="block h-full bg-type-water" style={{ width: `${xp * 100}%` }} />

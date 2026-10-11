@@ -13,6 +13,7 @@ import {
   catchTarget,
   catchValueOf,
   centerHeal,
+  centersOn,
   centerWouldHelp,
   challengeEncounter,
   centerIsNext,
@@ -35,6 +36,7 @@ import {
   enemyUpgradeLevelFor,
   hasAbleTeam,
   hasFaintedMember,
+  healItemsOn,
   isAreaClosed,
   isAreaUnlocked,
   isTeamHurt,
@@ -60,6 +62,7 @@ import {
   type SaveData,
   type SpinResult,
 } from '@/engine'
+import { activeSlot } from '@/save/storage'
 import { commitSave, initialRun, mutateSave, pushToast, useGame, type RunState } from './game'
 import { currentLive } from './live'
 import { useRebattleMedal } from './rebattle'
@@ -85,7 +88,9 @@ const setRun = (patch: Partial<RunState>) => useGame.setState((s) => ({ run: { .
 
 export function startNewGame(starterDex: number, player?: PlayerProfile) {
   const { data } = useGame.getState()
-  commitSave(newSave(starterDex, data, Date.now(), newId, player))
+  const save = newSave(starterDex, data, Date.now(), newId, player)
+  // The page plays the Extreme slot (docs/22): the new game is an Extreme save.
+  commitSave(activeSlot() === 'extreme' ? { ...save, mode: 'extreme' } : save)
   useGame.setState({ run: initialRun(), battle: null })
 }
 
@@ -169,6 +174,7 @@ function encounterContext(save: SaveData, areaId: string, forceKind: ForceKind |
     forceKind,
     centerUseful: centerWouldHelp(save, data),
     player: playerSideOf(save),
+    noCenters: !centersOn(save, data),
     // A Shiny Parade covering this area: wild Pokémon are more often shiny.
     shinyBoost: shinyBoost(currentLive(), area),
   }
@@ -196,8 +202,14 @@ export function rollNext() {
     pushToast(t('ui.toast.outOfEnergy'), 'bad')
     return
   }
-  // Nobody able to fight (e.g. after a stalemate) → the Center is the only sensible next stop.
+  // Nobody able to fight (e.g. after a stalemate) → the Center is the only sensible next stop. Extreme mode has none:
+  // the team rests (Home and the area say until when).
   const noneAble = !hasAbleTeam(save)
+  if (noneAble && !centersOn(save, data)) {
+    setRun({ phase: 'idle', encounter: null })
+    pushToast(t('ui.extreme.restingToast'), 'bad')
+    return
+  }
   const forceKind = noneAble ? 'center' : run.forceNext
   const ctx = encounterContext(save, run.areaId, forceKind)
   if (!ctx) return
@@ -280,6 +292,7 @@ function startBattle(kind: BattleKind, enemy: { dex: number; level: number; shin
       enemyLevels: uniformLevels(upgradeLevel),
       megaAllowed: megaUnlocked(save, data),
       gmaxAllowed: gmaxUnlocked(save, data),
+      noHealItems: !healItemsOn(save, data),
       enemyPlan: enemyPlanFor(save, data, enemy, trainer),
       auto,
     },

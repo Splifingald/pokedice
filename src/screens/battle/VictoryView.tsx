@@ -8,6 +8,7 @@ import {
   rebattleEncounter,
   rebattleLineup,
   teamOf,
+  wipeHeals,
   type DieType,
   type Milestone,
   type RunEvent,
@@ -726,7 +727,14 @@ function AreaWipe() {
     >
       <h2 className="mb-2 text-center text-[32px] font-normal leading-none">{t('ui.wipe.title')}</h2>
       <p className="copy mb-3 text-lg">
-        {t('ui.wipe.body', { area: area?.name ?? '', kept: done > 0 ? t('ui.wipe.keptRounds') : '' })}
+        {/* Extreme mode heals nobody after a lost round: the fainted ones rest (docs/22). */}
+        {save && !wipeHeals(save, data)
+          ? t('ui.wipe.bodyExtreme', {
+              area: area?.name ?? '',
+              h: data.config.extreme.koHours,
+              kept: done > 0 ? t('ui.wipe.keptRounds') : '',
+            })
+          : t('ui.wipe.body', { area: area?.name ?? '', kept: done > 0 ? t('ui.wipe.keptRounds') : '' })}
       </p>
       {area && p && <RoundsCounter area={area} progress={p} />}
     </Overlay>

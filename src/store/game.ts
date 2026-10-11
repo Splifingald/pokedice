@@ -10,6 +10,8 @@ import {
   reviveFossils,
   releaseDuplicates,
   releaseRaidLocks,
+  settleKo,
+  stampExtremeUnlock,
   syncHpScale,
   syncXpCurve,
   type BattleState,
@@ -23,7 +25,8 @@ import {
   type RunEvent,
   type SaveData,
 } from '@/engine'
-import { DEFAULT_SETTINGS, readSave, readSettings, scheduleWrite, writeSettings, type Settings } from '@/save/storage'
+import { activeSlot, DEFAULT_SETTINGS, readSave, readSettings, scheduleWrite, writeSettings, type Settings } from '@/save/storage'
+import { trustedNow } from './clock'
 import { DEFAULT_LANG, setLangInternal, t, type Lang } from '@/i18n'
 import { localizeGameData } from '@/i18n/data'
 import { isAdminEmail } from '@/lib/supabase'
@@ -139,13 +142,27 @@ const raidId = (): string =>
 function settle(save: SaveData, data: GameData) {
   // Fossils due by now revive first, so they count as the species they are. A save standing in Victory Road II or
   // League II (gone, the Elite Rebattle replaced them) goes back to its League first.
-  const fossils = reviveFossils(migrateRounds(migrateLeagueII(save), data), data, Date.now())
+  const fossils = reviveFossils(migrateRounds(migrateLeagueII(inSlot(save)), data), data, Date.now())
   // More Day Care residents than slots (the Day Cares became one): the extra ones go home before duplicates are seen.
   const fitted = fitDayCare(fossils.save, data, Date.now())
   // Raid catches locked until their area was completed: one completed since joins its region's Box.
   const raids = releaseRaidLocks(fitted, data, Date.now(), raidId)
   const dup = releaseDuplicates(syncXpCurve(syncHpScale(raids.save, data), data))
-  return { ...dup, revived: fossils.revived, raidsReleased: raids.released }
+  // Extreme mode (docs/22): the main save beat the league that opens it (noted once, so it stays open); an Extreme
+  // save's K.O. clocks, on the real time.
+  const ko = settleKo(stampExtremeUnlock(dup.save, data, Date.now()), data, trustedNow())
+  return { ...dup, save: ko.save, revived: fossils.revived, raidsReleased: raids.released, back: ko.back }
+}
+
+/**
+ * A save is the one of the slot this page plays (docs/22): an import, a backup or a cloud copy on the Extreme slot is
+ * the Extreme save, and the other way round, so it's always written and pushed where it belongs.
+ */
+function inSlot(save: SaveData): SaveData {
+  if (activeSlot() === 'extreme') return save.mode === 'extreme' ? save : { ...save, mode: 'extreme' }
+  if (save.mode == null) return save
+  const { mode: _m, ...main } = save
+  return main
 }
 
 function boot(): Pick<GameStore, 'data' | 'rawData' | 'save' | 'corruptSaveArchived' | 'settings'> {
@@ -219,6 +236,10 @@ export function commitSave(next: SaveData | null, opts: { silent?: boolean; keep
   if (!opts.silent) for (const fn of saveListeners) fn(stamped, prev)
   for (const p of settled?.revived ?? [])
     pushToast(t('ui.toast.revivedFossil', { name: data.species[p.dex]?.name ?? `#${p.dex}` }), 'good', 4500)
+  for (const id of settled?.back ?? []) {
+    const inst = stamped?.box.find((p) => p.id === id)
+    if (inst) pushToast(t('ui.extreme.backToast', { name: data.species[inst.dex]?.name ?? '' }), 'good', 4000)
+  }
   for (const p of settled?.released ?? [])
     pushToast(t('ui.toast.releasedWeaker', { name: data.species[p.dex]?.name ?? `#${p.dex}`, level: p.level }), 'info', 4000)
   for (const p of settled?.raidsReleased ?? [])

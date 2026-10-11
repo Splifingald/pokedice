@@ -3,6 +3,7 @@
 import type { VersusMon } from '@/engine'
 import { avatarOf } from './avatars'
 import { getSupabase } from './supabase'
+import { realmArgs } from '@/lib/realm'
 
 export type VersusBoardTab = 'attack' | 'defense'
 
@@ -117,7 +118,7 @@ let lastBoard: { at: number; rows: VersusEntry[] | null } | null = null
 export async function fetchVersusBoard(): Promise<VersusEntry[] | null> {
   const client = await getSupabase()
   if (!client) return null
-  const { data, error } = await client.rpc('versus_board')
+  const { data, error } = await client.rpc('versus_board', realmArgs())
   if (error) throw error
   const rows = parseVersusBoard((data ?? []) as RawEntry[])
   lastBoard = { at: Date.now(), rows }
@@ -134,7 +135,7 @@ export async function versusBoardCached(maxAgeMs = 10 * 60_000): Promise<VersusE
 export async function setVersusTeam(ids: string[]): Promise<number> {
   const client = await getSupabase()
   if (!client) throw new Error('versus_signed_out')
-  const { data, error } = await client.rpc('versus_set_team', { ids })
+  const { data, error } = await client.rpc('versus_set_team', { ids, ...realmArgs() })
   if (error) throw error
   return Number(data) || 1
 }
@@ -143,6 +144,12 @@ export async function setVersusTeam(ids: string[]): Promise<number> {
 export async function recordVersus(defender: VersusEntry, seed: number, won: boolean): Promise<void> {
   const client = await getSupabase()
   if (!client) throw new Error('versus_signed_out')
-  const { error } = await client.rpc('versus_record', { defender: defender.userId, defender_version: defender.version, seed, won })
+  const { error } = await client.rpc('versus_record', {
+    defender: defender.userId,
+    defender_version: defender.version,
+    seed,
+    won,
+    ...realmArgs(),
+  })
   if (error) throw error
 }

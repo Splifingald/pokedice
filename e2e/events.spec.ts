@@ -175,11 +175,12 @@ test('the Elite Rebattle: a gauntlet fight pays, the next trainer waits, and the
   await page.getByRole('button', { name: 'FIGHT', exact: true }).click()
 
   const next = page.getByRole('button', { name: 'Next: Elite Four Bruno' })
-  for (let i = 0; i < 300 && !(await next.isVisible()); i++) {
+  // Bounded by time, not clicks: an unlucky roll of the dice can make Lorelei's fight long.
+  for (const until = Date.now() + 90_000; Date.now() < until && !(await next.isVisible()); ) {
     await clickAny(page, FIGHT_ON)
     await page.waitForTimeout(80)
   }
-  await expect(next).toBeVisible()
+  await expect(next).toBeVisible({ timeout: 10_000 })
   // Lorelei's three Pokémon paid, once each.
   await expect.poll(async () => (await stored(page)).gold).toBeGreaterThan(save.gold)
   expect((await stored(page)).events?.rebattle?.kanto).toMatchObject({ done: 0, step: 1 })

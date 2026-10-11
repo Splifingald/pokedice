@@ -5,13 +5,16 @@ import { Die } from '@/components/Die'
 import { Modal } from '@/components/Modal'
 import { PixelButton } from '@/components/PixelButton'
 import { MiniSprite } from '@/components/SpriteImg'
-import { teamOf } from '@/engine'
+import { extremeOn, extremeOpen, isExtreme, teamOf } from '@/engine'
+import { ExtremeMark, ExtremeTitleCard, SwitchSaveModal } from '@/components/Extreme'
+import { otherSave } from '@/store/extreme'
 import { useT } from '@/i18n/react'
 import { readInvite } from '@/lib/friendInvite'
 import { lookupCode, type FriendNotice } from '@/lib/friends'
 import { isSupabaseConfigured } from '@/lib/supabase'
 import { avatarOf } from '@/lib/avatars'
 import { TrainerLook } from '@/components/TrainerLook'
+import { activeSlot } from '@/save/storage'
 import { useGame } from '@/store/game'
 import { AccountButton } from '@/components/AccountButton'
 import type { DieType } from '@/engine/types'
@@ -50,7 +53,13 @@ export function Title() {
   const auth = useGame((s) => s.auth)
   const corrupt = useGame((s) => s.corruptSaveArchived)
   const [confirmNew, setConfirmNew] = useState(false)
+  const [toMain, setToMain] = useState(false)
   const lead = save ? teamOf(save)[0] : undefined
+  // Extreme mode (docs/22): this page plays one of two saves; the other one is a card (or a button) away.
+  const extreme = isExtreme(save) || activeSlot() === 'extreme'
+  const other = otherSave()
+  const mainSave = extreme ? other : save
+  const showExtremeCard = !extreme && extremeOn(data) && (!!other || extremeOpen(mainSave, data))
 
   return (
     <main className="scanlines flex min-h-screen flex-col items-center justify-center gap-8 px-4 py-10">
@@ -86,6 +95,13 @@ export function Title() {
           >
             {lead && <MiniSprite dex={lead.dex} size={48} className="-my-3 -ml-2" />}
             {t('ui.common.continue')}
+            {extreme && <ExtremeMark />}
+          </PixelButton>
+        )}
+        {showExtremeCard && <ExtremeTitleCard save={other} />}
+        {extreme && mainSave && (
+          <PixelButton size="md" onClick={() => setToMain(true)}>
+            {t('ui.extreme.card.continueMain')}
           </PixelButton>
         )}
         <PixelButton size="lg" variant={save ? 'secondary' : 'primary'} onClick={() => (save ? setConfirmNew(true) : navigate('/new'))}>
@@ -114,6 +130,8 @@ export function Title() {
           )}
         </div>
       </footer>
+
+      <SwitchSaveModal to="main" open={toMain} onClose={() => setToMain(false)} />
 
       <Modal open={confirmNew} onClose={() => setConfirmNew(false)} title={t('ui.title.startOver')}>
         <p className="copy mb-4 text-lg">

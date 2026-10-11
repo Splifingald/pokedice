@@ -343,6 +343,8 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
   const itemHelps = (key: string, p: Battler) => {
     const e = data.items[key]?.effect
     if (!e) return false
+    // Extreme mode with the admin's items switch off: no Potion or Revive works (docs/22).
+    if (st.noHealItems && (e.kind === 'heal' || e.kind === 'revive')) return false
     if (e.kind === 'revive') return p.hp <= 0
     if (p.hp <= 0) return false
     if (e.kind === 'heal') return p.hp < p.maxHp
@@ -1016,7 +1018,9 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
                   <span className="flex min-w-0 flex-1 flex-col">
                     <span className="text-[20px] leading-none">{it.name}</span>
                     <span className="font-pixel-sm text-[15px] leading-tight text-muted">
-                      {effectText(it)}
+                      {st.noHealItems && (it.effect.kind === 'heal' || it.effect.kind === 'revive')
+                        ? t('ui.extreme.noItems')
+                        : effectText(it)}
                     </span>
                   </span>
                   <span className="font-pixel-sm text-[16px] tabular-nums">×{n}</span>

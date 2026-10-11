@@ -29,6 +29,7 @@ import { pushToast, setSettings, useGame } from '@/store/game'
 import { BattleBits } from './kitchen/BattleBits'
 import { DayCareBits } from './kitchen/DayCareBits'
 import { RulesBits } from './kitchen/RulesBits'
+import { ExtremeBits } from './kitchen/ExtremeBits'
 import { PartnerBits } from './kitchen/PartnerBits'
 import { BadgeIcon, CrownIcon } from '@/components/BadgeIcon'
 import { BoardRow } from '@/components/BoardRow'
@@ -499,6 +500,10 @@ export function KitchenSink() {
 
       <Section title="RulesModal · InfoButton: a feature's rules (the unlock pop-up, the INFO copy)">
         <RulesBits />
+      </Section>
+
+      <Section title="Extreme mode: rules, band, title card, K.O. rest, resting team, while you were away, switch">
+        <ExtremeBits />
       </Section>
 
       <Section title="StatusIcons · PixelIcon">

@@ -5,6 +5,7 @@ import { calendarRaid, eventUnlocked, msToUtcMidnight, setTodayRaid, todayRaid, 
 import { getSupabase } from '@/lib/supabase'
 import { mutateSave, useGame } from './game'
 import { serverNow, useServerNow } from './serverTime'
+import { realmArgs } from '@/lib/realm'
 
 /** Records the day's raid on the server (signed in): quietly, the game doesn't wait for it. */
 export async function recordOnServer(raid: TodayRaid) {
@@ -12,6 +13,7 @@ export async function recordOnServer(raid: TodayRaid) {
   if (!client) return
   const { error } = await client.rpc('raid_today', {
     p_candidates: { kind: 'calendar', list: [{ dex: raid.dex, shiny: raid.shiny, areaId: raid.areaId }] },
+    ...realmArgs(),
   })
   if (error) console.warn('[raid] raid_today', error.message)
 }

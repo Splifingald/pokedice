@@ -3,6 +3,7 @@ import { PixelIcon } from '@/components/icons'
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import {
+  addAwayWindow,
   centerHeal,
   COMBO_KEYS,
   createInstance,
@@ -12,6 +13,7 @@ import {
   maxComboLevel,
   maxDieLevel,
   POKE_TYPES,
+  isExtreme,
   type AreaProgress,
   type ComboKey,
   type ForceKind,
@@ -24,6 +26,9 @@ import { PixelButton } from '@/components/PixelButton'
 import { parseSave } from '@/save/schema'
 import { mutateSave, pushToast, useGame } from '@/store/game'
 import { deleteSave, newId, replaceSave, setForceNext } from '@/store/run'
+import { healPending, settleExtreme } from '@/store/extreme'
+import { trustedNow } from '@/store/clock'
+import { switchSave } from '@/store/sync'
 import { Field, NumInput, PokemonPicker, inputCls } from '../widgets'
 
 const emptyProgress = (): AreaProgress => ({
@@ -248,7 +253,17 @@ export function DevToolsSection() {
             <PixelButton size="sm" disabled={!area} onClick={fillGauge}>
               Finish {area?.name ?? 'current'} rounds
             </PixelButton>
-            <PixelButton size="sm" onClick={() => mutateSave((s) => centerHeal(s, data))}>
+            {/* A Center heals nobody in Extreme mode: the dev heal is the admin's, every rest ended too. */}
+            <PixelButton
+              size="sm"
+              onClick={() =>
+                mutateSave((s) =>
+                  isExtreme(s)
+                    ? { ...s, box: s.box.map(({ koAt: _k, ...p }) => ({ ...p, currentHp: instanceMaxHp(p, data) })) }
+                    : centerHeal(s, data),
+                )
+              }
+            >
               Heal everything
             </PixelButton>
             <PixelButton size="sm" onClick={hurtAll}>
@@ -319,6 +334,52 @@ export function DevToolsSection() {
             <PixelButton size="sm" variant="primary" onClick={setInstLevel}>
               Set
             </PixelButton>
+          </div>
+        </Panel>
+
+        <Panel title="Extreme mode" icon="skull" className="lg:col-span-2">
+          <p className="mb-2 text-base text-muted">
+            {isExtreme(save) ? 'Playing the Extreme save.' : 'Playing the main save.'} Rests:{' '}
+            {save.box.filter((p) => p.koAt != null).length} · absences waiting: {save.extreme?.pending?.length ?? 0}
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {!isExtreme(save) && (
+              <PixelButton
+                size="sm"
+                disabled={save.extremeUnlockedAt != null}
+                onClick={() => mutateSave((s) => ({ ...s, extremeUnlockedAt: Date.now(), extremeRulesSeen: false }))}
+              >
+                Unlock Extreme
+              </PixelButton>
+            )}
+            <PixelButton size="sm" onClick={() => void switchSave(isExtreme(save) ? 'main' : 'extreme')}>
+              Switch to {isExtreme(save) ? 'main' : 'Extreme'} save
+            </PixelButton>
+            {isExtreme(save) && (
+              <>
+                <PixelButton
+                  size="sm"
+                  onClick={() => {
+                    // An hour ago to now, as if the page had been closed for it.
+                    const now = trustedNow() ?? Date.now()
+                    mutateSave((s) => addAwayWindow(s, now - 3_600_000, now))
+                    healPending()
+                  }}
+                >
+                  Skip 1 h away
+                </PixelButton>
+                <PixelButton
+                  size="sm"
+                  onClick={() => {
+                    const done = (trustedNow() ?? Date.now()) - data.config.extreme.koHours * 3_600_000 - 1000
+                    mutateSave((s) => ({ ...s, box: s.box.map((p) => (p.koAt != null ? { ...p, koAt: done } : p)) }))
+                    settleExtreme()
+                  }}
+                >
+                  End K.O. rests
+                </PixelButton>
+              </>
+            )}
           </div>
         </Panel>
 

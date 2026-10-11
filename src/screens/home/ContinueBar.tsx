@@ -1,8 +1,11 @@
 import { useId } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
+  centersOn,
   dueBoss,
   dueGym,
+  firstComeback,
+  hasAbleTeam,
   isAreaClosed,
   playerSideOf,
   progressOf,
@@ -10,6 +13,7 @@ import {
   type Area,
 } from '@/engine'
 import { useT } from '@/i18n/react'
+import { RestingPanel } from '@/components/Extreme'
 import { PixelIcon } from '@/components/icons'
 import { PixelButton } from '@/components/PixelButton'
 import { countdown, trainerTitle } from '@/lib/format'
@@ -48,10 +52,20 @@ export function useContinue(area: Area) {
   const empty = !!energy && energy.value < 1 && run.areaId === area.id && outOfEnergy()
   const need = area.roundsToClear
   const done = progress.roundsDone ?? 0
+  // Extreme mode (docs/22): nobody can fight and no Center will come — the team rests.
+  const resting = !busy && !hasAbleTeam(save) && !centersOn(save, data)
+  const back = resting ? firstComeback(save, data) : null
 
   const sub = busy
     ? t('ui.home.backToEncounter')
-    : gym
+    : resting
+      ? back
+        ? t('ui.extreme.card.resting', {
+            name: data.species[back.inst.dex]?.name ?? '',
+            time: countdown(back.at - (energy?.now ?? Date.now())),
+          })
+        : t('ui.extreme.resting.title')
+      : gym
       ? t('ui.home.gymReady', { name: trainerTitle(gym) })
       : boss
         ? t('ui.home.legendReady')
@@ -80,13 +94,13 @@ export function useContinue(area: Area) {
     }
     explore()
   }
-  const off = !busy && !gym && !boss && (closed || empty)
+  const off = !busy && (resting || (!gym && !boss && (closed || empty)))
   const label = gym
     ? t('ui.area.challenge', { name: gym.name.toUpperCase() })
     : boss
       ? t('ui.area.faceIt')
       : t('ui.common.continue')
-  return { label, sub, go, explore, off, gym, boss, closed, empty, busy, cleared: progress.cleared }
+  return { label, sub, go, explore, off, gym, boss, closed, empty, busy, resting, cleared: progress.cleared }
 }
 
 /**
@@ -104,7 +118,7 @@ export function ContinueBar({
   onAreas: () => void
 }) {
   const { t } = useT()
-  const { label, sub, go, explore, off, gym, boss, closed, empty, busy } = useContinue(area)
+  const { label, sub, go, explore, off, gym, boss, closed, empty, busy, resting } = useContinue(area)
   const subId = useId()
 
   return (
@@ -166,7 +180,8 @@ export function ContinueBar({
           </span>
         </PixelButton>
       </div>
-      {(gym || boss) && !closed && !busy && (
+      {resting && <RestingPanel />}
+      {(gym || boss) && !closed && !busy && !resting && (
         <div className="flex flex-wrap items-center justify-end gap-2">
           <PixelButton size="sm" onClick={explore} disabled={empty}>
             {t('ui.home.keepExploring')}

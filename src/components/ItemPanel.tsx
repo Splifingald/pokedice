@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { evolutionGate, instanceMaxHp, stoneEvolution, usableIn, type PokemonInstance } from '@/engine'
+import { evolutionGate, healItemsOn, instanceMaxHp, stoneEvolution, usableIn, type PokemonInstance } from '@/engine'
 import { effectText } from '@/i18n/text'
 import { useT } from '@/i18n/react'
 import { applyBagItem } from '@/store/actions'
@@ -37,6 +37,7 @@ export function ItemPanel({ inst, onUsed }: { inst: PokemonInstance; onUsed?: ()
   const whyNot = (key: string): string | null => {
     const fx = data.items[key]?.effect
     if (inst.revivesAt != null) return t('ui.sheet.itemReviving')
+    if ((fx?.kind === 'heal' || fx?.kind === 'revive') && save && !healItemsOn(save, data)) return t('ui.extreme.noItems')
     if (fx?.kind === 'stone') {
       // A stone whose only branch is a later generation's does nothing yet, so it must not offer to be used.
       const to = save ? stoneEvolution(inst, key, data, evolutionGate(save, data)) : null
