@@ -106,6 +106,20 @@ export const DEFAULT_CONFIG: GameConfig = {
   // A once-only find in a big loot deck can take a hundred rounds to turn up: from the 5th round done in its area, its
   // odds climb to ×10 at the 50th.
   uniquePity: { startRounds: 5, fullRounds: 50, maxMultiplier: 10 },
+  // Extreme mode (docs/20): opened by the Johto League; no Pokémon Centers and no healing after a lost round; a K.O.
+  // rests 12 h and comes back at 1 HP; out of the game, every Pokémon heals 10 % an hour (absences under 2 min don't
+  // count). Potions and Revives work.
+  extreme: {
+    enabled: true,
+    unlockRegion: 'johto',
+    centers: false,
+    wipeHeals: false,
+    koHours: 12,
+    koReviveHp: 1,
+    awayHealPctPerHour: 10,
+    awayMinMinutes: 2,
+    items: true,
+  },
   // The special events (docs/18). Each one is switched on as it's built (docs/19); before the first opens, Home keeps
   // a locked square from the 3rd Kanto badge. Banners: an event's own picture, or an area picture until it has one.
   events: {

@@ -1,6 +1,7 @@
 import { lazy, Suspense, useId, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { badgeCase, discordUrl, leaderboardUnlocked } from '@/engine'
+import { badgeCase, discordUrl, extremeOpen, isExtreme, leaderboardUnlocked } from '@/engine'
+import { otherSave } from '@/store/extreme'
 import { useT } from '@/i18n/react'
 import { useFriends } from '@/lib/friends'
 import { isSupabaseConfigured } from '@/lib/supabase'
@@ -8,6 +9,7 @@ import { useGame } from '@/store/game'
 import { useInFight, useIsAdmin } from '@/store/hooks'
 import { cx } from '@/theme/util'
 import { CloudSyncButton } from './CloudSyncButton'
+import { ExtremeMark, SwitchSaveModal } from './Extreme'
 import { ContactModal } from './ContactModal'
 import { ConnectMarks, useConnect } from './AccountButton'
 import { PixelIcon, type IconName } from './icons'
@@ -100,6 +102,7 @@ export function PlayerMenu() {
   const [guide, setGuide] = useState(false)
   const [types, setTypes] = useState(false)
   const [contact, setContact] = useState(false)
+  const [switching, setSwitching] = useState(false)
   const { connect, chooser } = useConnect()
   const newFriends = useFriends((s) => (s.userId && s.userId === auth.userId ? s.unseen.length : 0))
   const friendCount = useFriends((s) => s.ids.size)
@@ -110,6 +113,9 @@ export function PlayerMenu() {
   const boardOpen = !!save && leaderboardUnlocked(save, data)
   // The Connect row only makes sense when cloud backup exists on this deployment and nobody is signed in.
   const canConnect = isSupabaseConfigured && auth.status === 'signed_out'
+  // Extreme mode (docs/20): from the main save once it's open (or an Extreme save exists); back from Extreme always.
+  const extreme = isExtreme(save)
+  const canSwitch = extreme || (data.config.extreme.enabled && (extremeOpen(save, data) || !!otherSave()))
 
   const go = (to: string) => () => {
     setOpen(false)
@@ -132,6 +138,7 @@ export function PlayerMenu() {
           <span className="grid h-[38px] w-[38px] place-items-center overflow-hidden rounded-full bg-[#7fb4ff] shadow-[inset_0_0_0_2px_rgb(var(--c-edge)),inset_0_-4px_0_#4f86d8]">
             <TrainerLook src={avatarOf(playerAvatarId(save?.player)).src} w={30} h={30} />
           </span>
+          {extreme && <ExtremeMark className="absolute -bottom-1 -left-1" />}
           {newFriends > 0 && (
             <span
               aria-hidden
@@ -192,6 +199,17 @@ export function PlayerMenu() {
               onClick={go('/friends')}
             />
           )}
+          {canSwitch && (
+            <MenuRow
+              icon={extreme ? 'play' : 'skull'}
+              label={t(extreme ? 'ui.extreme.menu.toMain' : 'ui.extreme.menu.toExtreme')}
+              desc={t(extreme ? 'ui.extreme.menu.toMainDesc' : 'ui.extreme.menu.toExtremeDesc')}
+              onClick={() => {
+                setOpen(false)
+                setSwitching(true)
+              }}
+            />
+          )}
           <MenuRow icon="gear" label={t('ui.nav.settings')} desc={t('ui.menu.settings')} onClick={go('/settings')} />
           <MenuRow
             icon="book"
@@ -228,6 +246,7 @@ export function PlayerMenu() {
       </SidePanel>
 
       <ContactModal open={contact} onClose={() => setContact(false)} />
+      <SwitchSaveModal to={extreme ? 'main' : 'extreme'} open={switching} onClose={() => setSwitching(false)} />
 
       {chooser}
 

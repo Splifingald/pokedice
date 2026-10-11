@@ -3,21 +3,56 @@
 // holds, not just the one it was last played in.
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { liveBlock } from '@/engine/regions'
-import type { RegionSave, SaveData } from '@/engine/types'
+import type { RegionSave, SaveData, SaveMode } from '@/engine/types'
 import { parseSave } from './schema'
 
-export async function pullCloudSave(client: SupabaseClient, userId: string): Promise<SaveData | null> {
-  const { data, error } = await client.from('saves').select('data').eq('user_id', userId).maybeSingle()
-  if (error) throw error
-  if (!data) return null
-  const res = parseSave((data as { data: unknown }).data)
-  return res.ok ? res.save : null
+/** The database has no `realm` column yet (0039 not run): only the main save syncs, as before Extreme mode. */
+let noRealm = false
+
+/** Postgres' "no such column" (a filter on it) and PostgREST's (a write to it). */
+const missingColumn = (e: { code?: string } | null) => e?.code === '42703' || e?.code === 'PGRST204'
+
+/** An Extreme save can't sync until the database has its realm (0039). */
+export class NoRealmError extends Error {
+  constructor() {
+    super('extreme_realm_missing')
+  }
 }
 
+/**
+ * The cloud copy of one of the player's two saves (docs/20). The main one is read the old way on a database without
+ * realms, so the game keeps syncing while 0039 waits to be run.
+ */
+export async function pullCloudSave(client: SupabaseClient, userId: string, realm: SaveMode = 'main'): Promise<SaveData | null> {
+  const read = (withRealm: boolean) => {
+    const q = client.from('saves').select('data').eq('user_id', userId)
+    return (withRealm ? q.eq('realm', realm) : q).maybeSingle()
+  }
+  if (noRealm && realm === 'extreme') throw new NoRealmError()
+  let res = await read(!noRealm)
+  if (res.error && missingColumn(res.error)) {
+    noRealm = true
+    if (realm === 'extreme') throw new NoRealmError()
+    res = await read(false)
+  }
+  if (res.error) throw res.error
+  if (!res.data) return null
+  const parsed = parseSave((res.data as { data: unknown }).data)
+  return parsed.ok ? parsed.save : null
+}
+
+/** Writes the save to its own realm's row: the main save as it always was, the Extreme one beside it. */
 export async function pushCloudSave(client: SupabaseClient, userId: string, save: SaveData): Promise<void> {
-  const { error } = await client
-    .from('saves')
-    .upsert({ user_id: userId, data: save, updated_at: new Date(save.updatedAt).toISOString() })
+  const extreme = save.mode === 'extreme'
+  if (extreme && noRealm) throw new NoRealmError()
+  // The main row is written as before (its realm is the column's default), so an older database takes it too.
+  const row: Record<string, unknown> = { user_id: userId, data: save, updated_at: new Date(save.updatedAt).toISOString() }
+  if (extreme) row.realm = 'extreme'
+  const { error } = await client.from('saves').upsert(row)
+  if (error && extreme && missingColumn(error)) {
+    noRealm = true
+    throw new NoRealmError()
+  }
   if (error) throw error
 }
 

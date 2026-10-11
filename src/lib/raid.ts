@@ -2,6 +2,7 @@
 // catch leaves the friends who helped, and the close of the day's raid. All through migration 0035's functions.
 import { avatarOf } from './avatars'
 import { getSupabase } from './supabase'
+import { realmArgs } from '@/lib/realm'
 
 export interface RaidFriend {
   userId: string
@@ -24,7 +25,7 @@ export interface RaidGift {
 export async function setRaidTeam(ids: string[]): Promise<void> {
   const client = await getSupabase()
   if (!client) throw new Error('events_signed_out')
-  const { error } = await client.rpc('raid_set_team', { p_ids: ids })
+  const { error } = await client.rpc('raid_set_team', { p_ids: ids, ...realmArgs() })
   if (error) throw error
 }
 
@@ -32,7 +33,7 @@ export async function setRaidTeam(ids: string[]): Promise<void> {
 export async function fetchRaidFriends(): Promise<RaidFriend[] | null> {
   const client = await getSupabase()
   if (!client) return null
-  const { data, error } = await client.rpc('raid_friend_teams')
+  const { data, error } = await client.rpc('raid_friend_teams', realmArgs())
   if (error || !Array.isArray(data)) return null
   return (data as { user_id: string; name: string; avatar: string; team: RaidFriend['team'] | null; helped: number }[]).map((r) => ({
     userId: String(r.user_id),
@@ -47,7 +48,7 @@ export async function fetchRaidFriends(): Promise<RaidFriend[] | null> {
 export async function closeRaid(helpers: string[]): Promise<void> {
   const client = await getSupabase()
   if (!client) throw new Error('events_signed_out')
-  const { error } = await client.rpc('raid_close', { p_helpers: helpers })
+  const { error } = await client.rpc('raid_close', { p_helpers: helpers, ...realmArgs() })
   if (error) throw error
 }
 
@@ -55,7 +56,7 @@ export async function closeRaid(helpers: string[]): Promise<void> {
 export async function claimRaidGifts(): Promise<RaidGift[]> {
   const client = await getSupabase()
   if (!client) return []
-  const { data, error } = await client.rpc('raid_gifts_claim')
+  const { data, error } = await client.rpc('raid_gifts_claim', realmArgs())
   if (error || !Array.isArray(data)) return []
   return (data as { id: number; raider_name: string; dex: number; item_key: string }[]).map((g) => ({
     id: Number(g.id),

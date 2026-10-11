@@ -6,11 +6,12 @@ import { deviceId } from '@/lib/device'
 import { getSupabase } from '@/lib/supabase'
 import { mutateSave, useGame } from './game'
 import { serverNow, useServerNow } from './serverTime'
+import { realmArgs } from '@/lib/realm'
 
 async function serverPick(candidates: ReturnType<typeof raidCandidates>, fallbackShiny: number): Promise<TodayRaid | null> {
   const client = await getSupabase()
   if (!client) return null
-  const { data, error } = await client.rpc('raid_today', { p_candidates: { ...candidates, fallbackShiny } })
+  const { data, error } = await client.rpc('raid_today', { p_candidates: { ...candidates, fallbackShiny }, ...realmArgs() })
   if (error || !data) return null
   const r = data as Omit<TodayRaid, 'tries'>
   return { ...r, tries: 0 }

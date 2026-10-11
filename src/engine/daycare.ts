@@ -2,6 +2,7 @@
 // the level cap and never evolve from it; friends' Pokémon visit; Eggs hatch on the spot into the first form of an
 // evolving line, favouring species the player doesn't have yet. The Egg-group checks that lay the Eggs are in
 // breeding.ts.
+import { isExtreme } from './extreme'
 import { createInstance, gainXp, instanceMaxHp, xpToNext } from './progression'
 import { regionCases, regionOf, regionOfSpecies } from './regions'
 import { createRng, type Rng } from './rng'
@@ -158,15 +159,23 @@ export interface Pickup {
   live: boolean
 }
 
+function keepHpPercent(before: PokemonInstance, after: PokemonInstance, data: GameData): PokemonInstance {
+  if (before.currentHp <= 0) return { ...after, currentHp: 0 }
+  const max = instanceMaxHp(after, data)
+  const pct = before.currentHp / Math.max(1, instanceMaxHp(before, data))
+  return { ...after, currentHp: Math.max(1, Math.min(max, Math.round(pct * max))) }
+}
+
 /**
- * A resident goes home, its XP turned into levels and fully healed: to its own region's Box, the live one through the
+ * A resident goes home, its XP turned into levels and fully healed (Extreme mode: with its HP %): to its own region's Box, the live one through the
  * top level, a parked one through `save.parked`. It joins the team only when its region is live, the team has room,
  * and `team` allows it. A region that no longer exists falls back to the live one.
  */
 function sendHome(save: SaveData, res: DayCareResident, data: GameData, now: number, team: boolean): Pickup {
   const dc = dayCareOf(save)
   const grown = residentNow(res, now, data)
-  const inst = { ...grown, currentHp: instanceMaxHp(grown, data) }
+  // Extreme mode: the Day Care is no Pokémon Center. It comes home with its HP % (still resting if it was K.O.).
+  const inst = isExtreme(save) ? keepHpPercent(res.inst, grown, data) : { ...grown, currentHp: instanceMaxHp(grown, data) }
   const rest: DayCareState = { ...dc, residents: dc.residents.filter((r) => r.inst.id !== res.inst.id) }
   const base = { inst, xpGained: dayCareXp(res, now, data), levelsGained: inst.level - res.inst.level }
   const here = regionOf(save)

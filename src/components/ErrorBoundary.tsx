@@ -1,6 +1,6 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react'
 import { t } from '@/i18n'
-import { SAVE_KEY } from '@/save/storage'
+import { saveKeyOf } from '@/save/storage'
 import { useGame } from '@/store/game'
 
 interface State {
@@ -10,7 +10,8 @@ interface State {
 
 function saveText(): string {
   try {
-    return localStorage.getItem(SAVE_KEY) ?? JSON.stringify(useGame.getState().save)
+    // The save this page plays: the main one, or the Extreme one (docs/20).
+    return localStorage.getItem(saveKeyOf()) ?? JSON.stringify(useGame.getState().save)
   } catch {
     return JSON.stringify(useGame.getState().save)
   }

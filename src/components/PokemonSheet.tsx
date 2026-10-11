@@ -28,6 +28,7 @@ import { Chip } from './Chip'
 import { CryButton } from './CryButton'
 import { DiceSet } from './DiceSet'
 import { FaceDice, facesStatuses, StatusLines } from './FaceDice'
+import { KoPanel } from './Extreme'
 import { HpBar } from './HpBar'
 import { PixelIcon, type IconName } from './icons'
 import { ItemSprite } from './ItemSprite'
@@ -389,6 +390,8 @@ export function PokemonSheet({
             <>
               <HpBar hp={inst.currentHp} max={stats.maxHp} />
               <XpBar inst={inst} />
+              {/* Extreme mode: resting after a K.O., and until when (docs/20). */}
+              {inst.currentHp <= 0 && <KoPanel inst={inst} />}
             </>
           ) : (
             <StatChip

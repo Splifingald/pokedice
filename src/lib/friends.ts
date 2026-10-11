@@ -6,6 +6,7 @@ import { create } from 'zustand'
 import { useGame } from '@/store/game'
 import { avatarOf } from './avatars'
 import { deviceId } from './device'
+import { realmArgs } from './realm'
 import { getSupabase } from './supabase'
 
 /** Crockford base32, as the database makes friend IDs: no I, L, O or U. */
@@ -50,6 +51,8 @@ export interface FriendRow {
   since: number | null
   updatedAt: number | null
   isNew: boolean
+  /** They have a save in the world being played (Extreme mode, docs/20): else only their name and look. */
+  inRealm: boolean
 }
 
 /** A friend in a toast or a preview: who they are and nothing more. */
@@ -125,6 +128,8 @@ export function parseFriendList(raw: unknown): FriendRow[] {
     since: time(r.since),
     updatedAt: time(r.updated_at),
     isNew: !!r.is_new,
+    // A database before 0039 doesn't say: everyone is in the one world there is.
+    inRealm: r.in_realm !== false,
   }))
 }
 
@@ -261,7 +266,7 @@ export async function loadFriendStatus(force = false, now = Date.now()): Promise
   if (!force && now - useFriends.getState().statusAt < STATUS_EVERY_MS) return
   useFriends.setState({ statusAt: now })
   try {
-    const { ids, unseen } = parseStatus(await rpc('friend_status'))
+    const { ids, unseen } = parseStatus(await rpc('friend_status', realmArgs()))
     useFriends.setState({ ids: new Set(ids), unseen })
   } catch (err) {
     console.warn('[friends] status not loaded:', err instanceof Error ? err.message : err)
@@ -275,7 +280,7 @@ export async function loadFriendList(force = false, now = Date.now()): Promise<v
   if (!force && st.listState === 'ready' && now - st.listAt < LIST_EVERY_MS) return
   useFriends.setState({ listState: st.list ? 'ready' : 'loading', listAt: now })
   try {
-    const list = parseFriendList(await rpc('friend_list'))
+    const list = parseFriendList(await rpc('friend_list', realmArgs()))
     useFriends.setState({ list, listState: 'ready', listError: null, ids: new Set(list.map((f) => f.userId)) })
   } catch (err) {
     console.warn('[friends] list not loaded:', err instanceof Error ? err.message : err)
@@ -321,6 +326,7 @@ export async function lookupCode(code: string): Promise<(FriendNotice & { region
   const rows = await rpc<{ name: string; avatar: string; region: string | null; max_level: number }[]>('friend_lookup', {
     p_code: code,
     p_device_id: deviceId(),
+    ...realmArgs(),
   })
   const r = rows?.[0]
   return r
@@ -332,6 +338,7 @@ export async function lookupCode(code: string): Promise<(FriendNotice & { region
 export async function addFriend(code: string): Promise<{ status: AddStatus; friend: FriendNotice | null }> {
   const rows = await rpc<{ status: AddStatus; user_id: string | null; name: string | null; avatar: string | null }[]>('friend_add', {
     p_code: code,
+    ...realmArgs(),
   })
   const r = rows?.[0]
   const status = (r?.status ?? 'not_found') as AddStatus
@@ -370,7 +377,7 @@ export function forgetProfile(userId: string) {
 export async function fetchFriendProfile(userId: string, now = Date.now()): Promise<FriendProfile | null> {
   const kept = profiles.get(userId)
   if (kept && now - kept.at < PROFILE_KEEP_MS) return kept.profile
-  const profile = parseProfile(await rpc('friend_profile', { p_friend: userId }))
+  const profile = parseProfile(await rpc('friend_profile', { p_friend: userId, ...realmArgs() }))
   profiles.set(userId, { at: now, profile })
   return profile
 }
@@ -440,7 +447,7 @@ export function parseFriendDayCares(raw: unknown): FriendDayCareRow[] {
 
 /** friend_day_cares(): the friends with a Pokémon at their Day Care. */
 export async function fetchFriendDayCares(): Promise<FriendDayCareRow[]> {
-  return parseFriendDayCares(await rpc('friend_day_cares'))
+  return parseFriendDayCares(await rpc('friend_day_cares', realmArgs()))
 }
 
 interface FriendCaresState {

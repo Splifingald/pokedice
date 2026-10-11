@@ -1,8 +1,8 @@
 # Extreme mode — plan (for validation)
 
-Status: **questions answered (2026-10-11), awaiting the go-ahead to build.** Branch `feature/version_2`. Nothing is
-built yet: this page and the mockups (a design canvas, https://claude.ai/artifact/Vq8m9ru7sxYC3HEr27RgRz) are the
-whole deliverable for now.
+Status: **built** on branch `feature/extreme-mode` (from `feature/version_2`), not merged yet. Mockups: a design
+canvas, https://claude.ai/artifact/Vq8m9ru7sxYC3HEr27RgRz. Online, it needs migration `0039_extreme_realm.sql` (until it
+runs, the Extreme save stays on the device and the main game syncs as before).
 
 ## 0. The ask, and the decisions
 
@@ -69,6 +69,8 @@ Asked in the Q&A of 2026-10-11 (§9), unless marked *plan*:
 - **Server time only**: changing the device clock changes nothing. Until the server time is known (offline), the heal
   waits; `awayFrom` stays put.
 - Leaving in the middle of a fight: the fight's HP aren't touched. The heal is applied when the fight ends.
+- *Decided while building*: switching to the main save counts as leaving the Extreme one — the time spent playing the
+  main game heals the Extreme team, as time away from it.
 - A **"While you were away"** card says what happened, once: how long, how much each Pokémon healed, who's back from
   K.O. It only shows when something changed.
 

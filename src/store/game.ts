@@ -9,6 +9,7 @@ import {
   payWheelPrize,
   reviveFossils,
   releaseDuplicates,
+  stampExtremeUnlock,
   syncHpScale,
   syncXpCurve,
   type BattleState,
@@ -135,7 +136,8 @@ function settle(save: SaveData, data: GameData) {
   // More Day Care residents than slots (the Day Cares became one): the extra ones go home before duplicates are seen.
   const fitted = fitDayCare(fossils.save, data, Date.now())
   const dup = releaseDuplicates(syncXpCurve(syncHpScale(fitted, data), data))
-  return { ...dup, revived: fossils.revived }
+  // The main save beat the league that opens Extreme mode (docs/20): noted once, so it stays open.
+  return { ...dup, save: stampExtremeUnlock(dup.save, data, Date.now()), revived: fossils.revived }
 }
 
 function boot(): Pick<GameStore, 'data' | 'rawData' | 'save' | 'corruptSaveArchived' | 'settings'> {

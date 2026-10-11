@@ -472,3 +472,28 @@ One Day Care for every region (docs/15-DAYCARE-BREEDING.md). The page (`src/scre
 - **Leaving**: a new region has ✕ (Not now) and Esc; a new game has nothing to go back to. With motion `off` the balls
   are already on the table.
 
+
+## 19. Extreme mode
+
+A second save in a world of its own (docs/20-EXTREME-MODE-PLAN.md), opened by the Johto League. The pieces are in
+`src/components/Extreme.tsx`, every state of them on `/kitchen-sink` (`ExtremeBits`).
+
+- **Which world is in play is never in doubt**: a crimson band under the top bar ("Extreme mode · no Pokémon Centers",
+  22 px, `ExtremeBand`) and a skull on the trainer's avatar (`ExtremeMark`). Crimson (`bg-crimson`, under `light-scope`)
+  and the skull are Extreme mode's only marks; nothing else in the game uses the skull.
+- **Its rules** are the rules pop-up (`ExtremeRulesModal`, Mt. Silver's champion hall as its banner): once when it opens
+  (Later / Let's go!, which goes straight to the Extreme save), and from INFO on the title card and in Settings.
+- **The title** shows the save in play first (CONTINUE, with the skull when it's the Extreme one). From the main save, the
+  Extreme card sits under it (`ExtremeTitleCard`: trainer, region, badges, its team, who's resting, PLAY EXTREME or NEW
+  EXTREME GAME after the rules, INFO); from the Extreme save, "Continue the main game". Switching always asks first
+  (`SwitchSaveModal`) and reloads the page.
+- **A resting Pokémon** (K.O., on its 12-hour clock) says when it's back wherever it appears: "K.O. · 11h 42m" with the
+  moon (`KoTag`) on cards and in lists, and on its sheet the night panel with the 12-hour track and what a Revive would
+  do (`KoPanel`). The countdowns read the server's clock.
+- **Nobody able to fight**: CONTINUE greys and says who's back first and when; the resting panel under it
+  (`RestingPanel`) offers the two ways out, Team (with how many in the Box can fight) and the Poké Mart.
+- **Back in the game**: "While you were away" (`AwayReportModal`) once, between fights: the time away, then one row per
+  Pokémon the absence changed — a green bar with the part healed in pale green, "Back from K.O.", "Full", or still
+  resting and until when.
+- **Friends** are the same in both worlds; in Extreme, a friend without an Extreme save is listed greyed with "Not in
+  Extreme mode" and the skull, and doesn't open.

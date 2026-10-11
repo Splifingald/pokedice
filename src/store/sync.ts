@@ -17,12 +17,13 @@ import {
   sameSave,
   schedulePush,
 } from '@/save/cloud'
-import type { SaveData } from '@/engine/types'
-import { backupSave, flushWrite, wipePlayerData } from '@/save/storage'
+import type { SaveData, SaveMode } from '@/engine/types'
+import { activeSlot, backupSave, flushWrite, readSave, wipePlayerData, wipeSlot, writeSlot } from '@/save/storage'
 import { commitSave, initialRun, onSaveCommitted, pushToast, setContent, tickFossils, useGame, type AuthProvider } from './game'
 import { t } from '@/i18n'
 import { rescueIfRegionDisabled } from './regions'
 import { armDayCareTimer, tickDayCare } from './daycare'
+import { comeBack, markAway, settleExtreme, startExtremeClocks } from './extreme'
 
 let syncedUser: string | null = null
 /** Nothing is pushed until the first sync for the signed-in user is settled — no overwrite while we compare. */
@@ -73,7 +74,8 @@ async function reconcile(client: SupabaseClient, id: string): Promise<'loaded' |
   cancelPush() // whatever was waiting goes out below, if this device wins
   lastTry = Date.now()
   const local = useGame.getState().save
-  const cloud = await pullCloudSave(client, id)
+  // The save this page plays: the main one, or the Extreme one beside it (docs/20).
+  const cloud = await pullCloudSave(client, id, activeSlot())
   const decision = decideSync(local, cloud)
   if (decision === 'ask' && local && cloud) {
     useGame.setState({ syncConflict: { local, cloud } })
@@ -372,6 +374,65 @@ export async function deleteAllData(): Promise<boolean> {
   return true
 }
 
+/**
+ * Play the other save (docs/20). The one being left is written and goes to the cloud first, and counts as left (an
+ * Extreme save heals for the time spent away from it); then the page reloads on the other one, since every store
+ * holds one save's friends, events and Versus in memory.
+ */
+export async function switchSave(to: SaveMode) {
+  if (activeSlot() === to) return
+  markAway()
+  flushWrite()
+  try {
+    await pushSaveNow()
+  } catch (err) {
+    console.warn('[cloud] push before switching failed', err)
+  }
+  writeSlot(to)
+  // Without a save on this device, the title: the sign-in sync may still bring the cloud's (a new game there would
+  // write over it).
+  window.location.assign(readSave(to).save ? '/home' : '/')
+}
+
+/**
+ * Settings → Delete my Extreme save (docs/20): its rows online (`delete_my_data('extreme')`), then the save on this
+ * device. The main save and everything shared (the account, friends) stay. Online first, for the same reason as
+ * deleteAllData. Playing it now: the page goes back to the main save (the caller reloads).
+ */
+export async function deleteExtremeSave(): Promise<boolean> {
+  const { auth } = useGame.getState()
+  if (auth.status === 'unknown' || useCloudSync.getState().busy) return false
+  const playing = activeSlot() === 'extreme'
+  if (auth.status === 'signed_in' && auth.userId) {
+    const client = await getSupabase()
+    if (!client) return false
+    const was = pushAllowed
+    if (playing) {
+      pushAllowed = false
+      await pushesSettled()
+    }
+    let error: unknown = null
+    try {
+      error = (await client.rpc('delete_my_data', { p_realm: 'extreme' })).error
+    } catch (err) {
+      error = err
+    }
+    if (error) {
+      console.warn('[cloud] delete failed', error)
+      pushAllowed = was
+      return false
+    }
+    if (playing) cloudKey = null
+  }
+  if (playing) {
+    useGame.setState({ save: null })
+    resetRun()
+    writeSlot('main')
+  }
+  wipeSlot('extreme')
+  return true
+}
+
 /** Sign-out keeps the local save. */
 export async function signOut() {
   const client = await getSupabase()
@@ -579,9 +640,12 @@ export function startBackgroundServices() {
     if (document.visibilityState === 'visible') void listenForReload(true)
   }, JOIN_AFTER_LOAD_MS)
   tickDayCare()
+  // Extreme mode (docs/20): K.O. rests end on the clock, and time out of the game heals.
+  startExtremeClocks()
   setInterval(() => {
     if (document.visibilityState === 'visible') checkFreshness(false)
     tickFossils()
+    settleExtreme()
   }, 60_000)
   // The Day Care's timer is set from the save as it was; whatever changes it later (a resident left, a friend's
   // Pokémon invited) sets it again here.
@@ -589,18 +653,21 @@ export function startBackgroundServices() {
   // Closing the page sends what the automatic sync hasn't yet. Merely switching away doesn't: on phones that happens
   // all the time, and the local save keeps everything until the next sync.
   window.addEventListener('pagehide', () => {
+    markAway()
     flushWrite()
     flushPush()
   })
   document.addEventListener('visibilitychange', () => {
     clearTimeout(leaveTimer)
     if (document.visibilityState === 'hidden') {
+      markAway()
       flushWrite()
       leaveTimer = setTimeout(leaveChannel, HIDDEN_LEAVE_MS)
     } else {
       checkFreshness(true)
       tickFossils()
       tickDayCare()
+      void comeBack()
     }
   })
 }

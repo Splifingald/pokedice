@@ -68,6 +68,8 @@ export interface EncounterContext {
   centerUseful?: boolean
   /** The player's starter and character: picks the rival version of a trainer. */
   player?: PlayerSide | null
+  /** Extreme mode: no Pokémon Center is ever dealt or sent. */
+  noCenters?: boolean
 }
 
 /** Every round the area asks for is done: its gym / legendary waits, and the area can clear. */
@@ -256,10 +258,11 @@ export function buildDeck(
   data: GameData,
   rng: Rng,
   extra: readonly DeckCard[] = [],
-  opts: { noCenterFirst?: boolean } = {},
+  opts: { noCenterFirst?: boolean; noCenters?: boolean } = {},
 ): DeckCard[] {
   void data
-  const c = deckCounts(area.encounterWeights, deckAbilities(area))
+  const counts = deckCounts(area.encounterWeights, deckAbilities(area))
+  const c = opts.noCenters ? { ...counts, center: 0 } : counts
   const others = shuffle([...DECK_KINDS.filter((k) => k !== 'center').flatMap((k) => Array.from({ length: c[k] }, (): DeckCard => k)), ...extra], rng)
   // Centers go into distinct gaps between the other cards (gap i = just before the i-th card drawn).
   const gaps = shuffle(Array.from({ length: others.length + 1 }, (_, i) => i).filter((i) => !opts.noCenterFirst || i > 0 || others.length === 0), rng)
@@ -294,7 +297,7 @@ export interface EncounterRoll {
  */
 export function dueCenter(ctx: EncounterContext): 'round' | 'hurt' | 'fainted' | null {
   const { area, data } = ctx
-  if (ctx.progress.lastCenter) return null
+  if (ctx.noCenters || ctx.progress.lastCenter) return null
   // A round is one full deck. A new one opens with a Pokémon Center, outside the deck — unless it would do nothing.
   if (data.config.encounterMode !== 'random' && !ctx.progress.deck?.length && ctx.centerUseful) return 'round'
   if (ctx.isFirstInArea && ctx.teamHurt && data.config.forcedCenterWhenHurt) return 'hurt'
@@ -386,7 +389,7 @@ const legendCards = (ctx: EncounterContext): DeckCard[] => (fledLegendary(ctx.ar
 
 function drawFromDeck(ctx: EncounterContext, rng: Rng): EncounterRoll {
   const afterCenter = !!ctx.progress.lastCenter
-  const deal = () => buildDeck(ctx.area, ctx.data, rng, legendCards(ctx), { noCenterFirst: afterCenter })
+  const deal = () => buildDeck(ctx.area, ctx.data, rng, legendCards(ctx), { noCenterFirst: afterCenter, noCenters: ctx.noCenters })
   let newRound = !ctx.progress.deck?.length
   let deck = newRound ? deal() : [...ctx.progress.deck!]
   let drawn: DeckCard[] = []
@@ -397,8 +400,14 @@ function drawFromDeck(ctx: EncounterContext, rng: Rng): EncounterRoll {
       deck = deal()
       newRound = true
       drawn = []
+      if (!deck.length) break // nothing the area can deal (Extreme mode, an area of Centers only)
     }
     let card = deck.pop()!
+    // A Center dealt before Extreme mode's rule applied to this deck: set aside.
+    if (card === 'center' && ctx.noCenters) {
+      drawn.push(card)
+      continue
+    }
     if (card === 'center' && afterCenter) {
       // A Center right after a Center (e.g. a forced one came first): meet the next other card now, keep the Center
       // on top for later. Only Centers left → this one is set aside.
@@ -429,7 +438,7 @@ function rollWeighted(ctx: EncounterContext, rng: Rng): EncounterRoll {
   const kinds: { kind: 'wild' | 'trainer' | 'center' | 'item' | 'casino'; weight: number }[] = [
     { kind: 'wild', weight: can.wild ? w.wild : 0 },
     { kind: 'trainer', weight: can.trainer ? w.trainer : 0 },
-    { kind: 'center', weight: w.center },
+    { kind: 'center', weight: ctx.noCenters ? 0 : w.center },
     { kind: 'item', weight: can.item ? (w.item ?? 0) : 0 },
     { kind: 'casino', weight: w.casino ?? 0 },
   ]

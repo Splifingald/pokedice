@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { PixelButton } from '@/components/PixelButton'
 import { SpriteImg } from '@/components/SpriteImg'
 import { regionOf } from '@/engine'
-import type { PokemonInstance, SaveData } from '@/engine/types'
+import type { PokemonInstance, SaveData, SaveMode } from '@/engine/types'
 import { getSupabase } from '@/lib/supabase'
 import { pushToast, useGame } from '@/store/game'
 import { newId } from '@/store/run'
@@ -35,6 +35,8 @@ export function PlayerCheats({ player, name }: { player: string; name: string })
   const [regionLevel, setRegionLevel] = useState(50)
   const [itemKey, setItemKey] = useState('rare-candy')
   const [qty, setQty] = useState(1)
+  // Which of the player's two saves the cheats edit (Extreme mode, docs/20).
+  const [realm, setRealm] = useState<SaveMode>('main')
 
   useEffect(() => {
     if (guest) return
@@ -44,14 +46,14 @@ export function PlayerCheats({ player, name }: { player: string; name: string })
     void (async () => {
       const client = await getSupabase()
       if (!client) throw new Error('Supabase is not configured')
-      return fetchPlayerSave(client, player)
+      return fetchPlayerSave(client, player, realm)
     })()
       .then((s) => live && setSave(s))
       .catch((e: unknown) => live && setErr(e instanceof Error ? e.message : String(e)))
     return () => {
       live = false
     }
-  }, [player, guest])
+  }, [player, guest, realm])
 
   if (guest) {
     return (
@@ -68,9 +70,9 @@ export function PlayerCheats({ player, name }: { player: string; name: string })
       const client = await getSupabase()
       if (!client) throw new Error('Supabase is not configured')
       // Edit the latest cloud save, not the one loaded when the panel opened.
-      const latest = (await fetchPlayerSave(client, player)) ?? save
+      const latest = (await fetchPlayerSave(client, player, realm)) ?? save
       const next = edit(latest)
-      await pushPlayerSave(client, player, next)
+      await pushPlayerSave(client, player, next, realm)
       setSave(next)
       pushToast(done, 'good')
     } catch (e) {
@@ -123,6 +125,13 @@ export function PlayerCheats({ player, name }: { player: string; name: string })
         Edits {name}'s cloud save. They get it the next time they open the game: if they're playing right now,
         their game will overwrite it, so do this while they're away.
       </p>
+      <div className="flex items-center gap-2" role="radiogroup" aria-label="Which save">
+        {(['main', 'extreme'] as const).map((r) => (
+          <PixelButton key={r} size="sm" role="radio" aria-checked={realm === r} variant={realm === r ? 'dark' : 'secondary'} onClick={() => setRealm(r)}>
+            {r === 'main' ? 'Main save' : 'Extreme save'}
+          </PixelButton>
+        ))}
+      </div>
       {err && <p className="text-danger">Could not load this player's save: {err}</p>}
       {save === undefined && !err && <p className="text-lg text-muted">Loading save…</p>}
       {save === null && <p className="text-lg text-muted">No cloud save for this player.</p>}
