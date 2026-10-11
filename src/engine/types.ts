@@ -483,16 +483,17 @@ export interface RebattleTier {
   upgradeDelta: number | 'max'
 }
 
-/** A raid pool species: clearing `areaId` puts it in the player's raid pool (docs/18 §3). */
+/** A mythical and its lair: the area its raid is fought in front of, and the one to complete to get it. */
 export interface RaidPoolEntry {
   dex: number
   areaId: string
 }
 
-/** A powerful species raided once the pool has nothing left, from when the player reaches its region. */
-export interface RaidFallback {
+/** A fixed date of the raid calendar: 'MM-DD', every year (Pokémon Day's shiny Pikachu, Earth Day's Celebi…). */
+export interface RaidAnchor {
+  date: string
   dex: number
-  regionId: string
+  shiny: boolean
 }
 
 /** Raid Battles' numbers (docs/18 §3). */
@@ -514,14 +515,13 @@ export interface RaidConfig {
   sideUpgradeLevel: number
   /** Friends a raid can bring (the other sides are NPC trainers). */
   maxFriends: number
-  /** A fallback raid's shiny chance (0–1), and how long a species waits before it's raided again. */
-  fallbackShiny: number
-  repeatHours: number
   /** Gifts a helper can get a day, and what they are. */
   helperDailyCap: number
   gifts: { key: string; weight: number }[]
+  /** The mythicals (each a raid of the calendar, never shiny there) and their lairs. */
   pool: RaidPoolEntry[]
-  fallback: RaidFallback[]
+  /** The calendar: its fixed dates, and the lowest level a shiny filler's area may start at. */
+  calendar: { anchors: RaidAnchor[]; fillerMinLevel: number }
   /** Never an NPC ally or a summon, on top of legendaries, mythicals and starter lines. */
   exclude: { pseudo: number[]; extra: number[] }
 }
@@ -769,10 +769,21 @@ export interface EventsSave {
   raidHistory?: { day: string; dex: number }[]
   /** Pool species unlocked (also worked out from cleared areas and catches; this keeps what a moment announced). */
   raidPool?: number[]
+  /** Raid Pokémon caught before completing their area: each joins its region's Box once that area is completed. */
+  raidLocked?: RaidLock[]
   /** Your raid team: three instance ids, any region's Box (until set, your three highest-level Pokémon). */
   raidTeam?: string[]
   /** Raids won, a raid being won when its Pokémon is caught (the server keeps the count the leaderboard shows). */
   raidsWon?: number
+}
+
+/** A raid catch waiting for its area: it joins that area's region's Box once the area is completed. */
+export interface RaidLock {
+  dex: number
+  shiny: boolean
+  areaId: string
+  /** The UTC day it was caught. */
+  day: string
 }
 
 /** The day's raid: the UTC day, the species and whether it's shiny, the area it's fought in front of. */

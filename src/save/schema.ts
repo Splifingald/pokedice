@@ -150,6 +150,10 @@ export const saveSchema = z.object({
       raidHistory: z.array(z.object({ day: z.string().max(10), dex: z.number().int().min(1) })).optional(),
       raidPool: z.array(z.number().int().min(1)).optional(),
       raidTeam: z.array(z.string().max(80)).max(3).optional(),
+      raidLocked: z
+        .array(z.object({ dex: z.number().int().min(1), shiny: z.boolean(), areaId: z.string().max(60), day: z.string().max(10) }))
+        .max(500)
+        .optional(),
       raidsWon: z.number().int().min(0).optional(),
       rebattle: z
         .record(

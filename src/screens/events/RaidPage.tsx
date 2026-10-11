@@ -1,13 +1,13 @@
 // Raid Battles' page (docs/18 §3, the Visual Lab's mockup): today's raid Pokémon on the picture of the area that
 // unlocked it, the time left, the tries, a CAUGHT stamp once it's caught, and START right under it.
 import { useState, type ReactNode } from 'react'
-import { ballBonus, catchChance, catchValueOf, type TodayRaid } from '@/engine'
+import { ballBonus, catchChance, catchValueOf, raidLocked, raidRegion, regionStarted, upcomingRaids, type TodayRaid } from '@/engine'
 import { PixelIcon } from '@/components/icons'
 import { ItemSprite } from '@/components/ItemSprite'
 import { statHint, statLabel } from '@/components/StatChip'
 import { Modal } from '@/components/Modal'
 import { PixelButton } from '@/components/PixelButton'
-import { SpriteImg } from '@/components/SpriteImg'
+import { MiniSprite, SpriteImg } from '@/components/SpriteImg'
 import { artPlacement, battleWindow, pictureOf } from '@/fx/areaArt'
 import { useT } from '@/i18n/react'
 import { countdown } from '@/lib/format'
@@ -15,7 +15,7 @@ import { pushToast, useGame } from '@/store/game'
 import { useTodayRaid } from '@/store/raid'
 import { startRaid, useRaidGroup } from '@/store/raidBattle'
 import { RaidGroupSection, RaidTeamSection } from './RaidSetup'
-import { EventInfo } from './shared'
+import { EventInfo, raidDate } from './shared'
 import { cx } from '@/theme/util'
 
 /** The raid's area picture, cut like a battle's (its middle 240 × 160, the horizon halfway down). */
@@ -123,9 +123,101 @@ function BallOdds({ dex }: { dex: number }) {
   )
 }
 
+/**
+ * Today's raid Pokémon would wait for you: its area, in its region, isn't completed yet. You can still fight and catch
+ * it; it joins that region's Box once the area is completed.
+ */
+function LockNotice({ raid }: { raid: TodayRaid }) {
+  const { t } = useT()
+  const save = useGame((s) => s.save)
+  const data = useGame((s) => s.data)
+  if (!save || !raidLocked(save, data, raid.areaId)) return null
+  const area = data.areas.find((a) => a.id === raid.areaId)
+  const regionId = raidRegion(data, raid.areaId)
+  const region = data.regions.find((r) => r.id === regionId)?.name ?? regionId
+  const name = data.species[raid.dex]?.name ?? ''
+  return (
+    <div role="note" className="flex items-start gap-2.5 bg-gold-pale p-2.5 shadow-[inset_0_0_0_2px_#d99a1e]">
+      <span className="grid h-9 w-9 shrink-0 place-items-center bg-paper shadow-ring-line" aria-hidden>
+        <PixelIcon name="lock" size={18} />
+      </span>
+      <span className="grid gap-0.5 leading-tight">
+        <b className="text-[19px] font-normal leading-none">{t('ui.raid.lockTitle', { name })}</b>
+        <small className="font-pixel-sm text-[15px] text-ink">
+          {t(regionStarted(save, regionId) ? 'ui.raid.lockText' : 'ui.raid.lockTextNew', { name, area: area?.name ?? '', region })}
+        </small>
+      </span>
+    </div>
+  )
+}
+
+/** The raids of the next days: the same for everyone, to plan for (balls, team, friends). */
+function ComingUp({ day }: { day: string }) {
+  const { t } = useT()
+  const data = useGame((s) => s.data)
+  const next = upcomingRaids(data, day, 6)
+  return (
+    <section aria-labelledby="raid-next-h" className="grid gap-1.5">
+      <h2 id="raid-next-h" className="m-0 text-[22px] font-normal leading-none">
+        {t('ui.raid.comingUp')}
+      </h2>
+      <ol className="m-0 grid list-none grid-cols-3 gap-1.5 p-0 sm:grid-cols-6">
+        {next.map(({ day: d, raid: r }) => {
+          const name = data.species[r.dex]?.name ?? ''
+          return (
+            <li key={d} className="grid justify-items-center gap-0.5 bg-paper px-1 pb-1.5 pt-1 text-center shadow-ring">
+              <small className="font-pixel-sm text-[13px] leading-none text-muted">{raidDate(d)}</small>
+              <SpriteImg dex={r.dex} size={48} shiny={r.shiny} alt="" />
+              <span className="flex max-w-full items-center gap-0.5 text-[15px] leading-none">
+                {r.shiny && <PixelIcon name="star" size={10} title={t('ui.mon.shiny')} className="shrink-0" />}
+                <span className="truncate">{name}</span>
+              </span>
+            </li>
+          )
+        })}
+      </ol>
+    </section>
+  )
+}
+
+/** Raid Pokémon you caught that wait for their area: what to complete, and where. */
+function Waiting() {
+  const { t } = useT()
+  const save = useGame((s) => s.save)
+  const data = useGame((s) => s.data)
+  const locks = save?.events?.raidLocked ?? []
+  if (!locks.length) return null
+  return (
+    <section aria-labelledby="raid-wait-h" className="grid gap-1.5">
+      <h2 id="raid-wait-h" className="m-0 text-[22px] font-normal leading-none">
+        {t('ui.raid.waitingTitle')}
+      </h2>
+      <ul className="m-0 grid list-none gap-1.5 p-0">
+        {locks.map((l, i) => {
+          const area = data.areas.find((a) => a.id === l.areaId)
+          const regionId = raidRegion(data, l.areaId)
+          const region = data.regions.find((r) => r.id === regionId)?.name ?? regionId
+          return (
+            <li key={`${l.day}-${i}`} className="flex min-h-[52px] items-center gap-2 bg-well py-1 pl-1 pr-2.5 shadow-ring-line">
+              <MiniSprite dex={l.dex} size={40} className="-my-1 grayscale-[0.6]" />
+              <span className="grid min-w-0 flex-1 leading-[1.05]">
+                <b className="truncate text-[18px] font-normal">
+                  {l.shiny ? t('ui.events.raid.shinyName', { name: data.species[l.dex]?.name ?? '' }) : data.species[l.dex]?.name}
+                </b>
+                <small className="font-pixel-sm text-[14px] text-muted">{t('ui.raid.waitingFor', { area: area?.name ?? '', region })}</small>
+              </span>
+              <PixelIcon name="lock" size={16} />
+            </li>
+          )
+        })}
+      </ul>
+    </section>
+  )
+}
+
 export function RaidPage() {
   const { t, tPlural } = useT()
-  const { raid, msLeft } = useTodayRaid()
+  const { raid, msLeft, day } = useTodayRaid()
   const [asking, setAsking] = useState(false)
   const friends = useRaidGroup((s) => s.friends)
   const slots = useGame((s) => Math.min(2, s.data.config.events.raid.maxFriends))
@@ -137,6 +229,7 @@ export function RaidPage() {
   return (
     <div className="mx-auto flex w-full max-w-[560px] flex-col gap-3">
       <RaidCard raid={raid} msLeft={msLeft} />
+      {!raid.caught && <LockNotice raid={raid} />}
       {!raid.caught && (
         <PixelButton
           variant="primary"
@@ -152,6 +245,8 @@ export function RaidPage() {
       <RaidTeamSection />
       {!raid.caught && <RaidGroupSection />}
       {!raid.caught && <BallOdds dex={raid.dex} />}
+      <Waiting />
+      {day && <ComingUp day={day} />}
       <EventInfo id="raid" />
       {/* Your group's empty slots: NPC trainers fill them, only once you start. */}
       <Modal open={asking} onClose={() => setAsking(false)} title={t('ui.raid.npcTitle')}>

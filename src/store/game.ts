@@ -9,6 +9,7 @@ import {
   payWheelPrize,
   reviveFossils,
   releaseDuplicates,
+  releaseRaidLocks,
   syncHpScale,
   syncXpCurve,
   type BattleState,
@@ -128,14 +129,22 @@ export const initialRun = (): RunState => ({
  * Every save that enters the store is brought up to date: HP to the current hpMultiplier (keeps every HP %), XP to the
  * current curve, and one copy per species in the Box (releaseDuplicates). `released` lists the copies let go.
  */
+/** An id for a Pokémon joining a Box here (store/run.ts's newId, which can't be imported from this file). */
+const raidId = (): string =>
+  typeof crypto !== 'undefined' && 'randomUUID' in crypto
+    ? crypto.randomUUID()
+    : `${Date.now().toString(36)}-${Math.floor(Math.random() * 1e9).toString(36)}`
+
 function settle(save: SaveData, data: GameData) {
   // Fossils due by now revive first, so they count as the species they are. A save standing in Victory Road II or
   // League II (gone, the Elite Rebattle replaced them) goes back to its League first.
   const fossils = reviveFossils(migrateRounds(migrateLeagueII(save), data), data, Date.now())
   // More Day Care residents than slots (the Day Cares became one): the extra ones go home before duplicates are seen.
   const fitted = fitDayCare(fossils.save, data, Date.now())
-  const dup = releaseDuplicates(syncXpCurve(syncHpScale(fitted, data), data))
-  return { ...dup, revived: fossils.revived }
+  // Raid catches locked until their area was completed: one completed since joins its region's Box.
+  const raids = releaseRaidLocks(fitted, data, Date.now(), raidId)
+  const dup = releaseDuplicates(syncXpCurve(syncHpScale(raids.save, data), data))
+  return { ...dup, revived: fossils.revived, raidsReleased: raids.released }
 }
 
 function boot(): Pick<GameStore, 'data' | 'rawData' | 'save' | 'corruptSaveArchived' | 'settings'> {
@@ -197,6 +206,15 @@ export function commitSave(next: SaveData | null, opts: { silent?: boolean; keep
     pushToast(t('ui.toast.revivedFossil', { name: data.species[p.dex]?.name ?? `#${p.dex}` }), 'good', 4500)
   for (const p of settled?.released ?? [])
     pushToast(t('ui.toast.releasedWeaker', { name: data.species[p.dex]?.name ?? `#${p.dex}`, level: p.level }), 'info', 4000)
+  for (const p of settled?.raidsReleased ?? [])
+    pushToast(
+      t('ui.raid.toastUnlocked', {
+        name: data.species[p.dex]?.name ?? `#${p.dex}`,
+        region: data.regions.find((r) => r.id === p.region)?.name ?? p.region,
+      }),
+      'good',
+      5000,
+    )
 }
 
 export function mutateSave(fn: (s: SaveData) => SaveData | null | undefined): boolean {

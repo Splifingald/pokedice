@@ -1,8 +1,8 @@
 /**
  * pnpm raid-areas — the raid pool's areas (docs/18 §3, docs/19 §6.1, decision D1).
  *
- * The 23 mythicals of the raid pool (DEFAULT_CONFIG.events.raid.pool) stop being bosses of their areas: clearing the
- * area puts them in the player's raid pool instead. Those areas were legendary lairs with nothing else to do, so each
+ * The mythicals (DEFAULT_CONFIG.events.raid.pool) stop being bosses of their areas: they are raids of the shared
+ * calendar, and a catch waits until its lair is completed. Those areas were lairs with nothing else to do, so each
  * gets one round of a small wild pool: four species of its region's areas closest to it in level (fully evolved ones
  * first, the ones seen most), at the area's levels.
  * Writes src/data/areas.json; `pnpm seed-regions` applies `raidAreas` too, so rebuilding a region keeps it.

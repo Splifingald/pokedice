@@ -148,33 +148,26 @@ describe('an always-shiny legendary', () => {
 })
 
 describe('any other legendary', () => {
-  // Not flagged shiny: every time it shows up, it rolls the wild odds afresh.
+  // Shiny-locked in its area (the user's rule, 2026-10-11): a shiny legendary comes only from Raid Battles.
   const ISLANDS = data.areas.find((a) => (a.legendaryBoss ?? []).some((b) => b.dex === 144 && !b.shiny))!
   const area = { ...ISLANDS, legendaryBoss: [(ISLANDS.legendaryBoss ?? []).find((b) => b.dex === 144)!] }
   const ready = () => ({ ...emptyProgress(), roundsDone: area.roundsToClear ?? 0 })
-  const odds = new Map<number, GameData>()
-  const withOdds = (shinyChance: number) => odds.get(shinyChance) ?? odds.set(shinyChance, makeData({ shinyChance })).get(shinyChance)!
+  const always = makeData({ shinyChance: 1 })
   // Articuno waits for a team average of 50.
-  const challenge = (shinyChance: number, rng = createRng(1)) => challengeEncounter(area, ready(), withOdds(shinyChance), 60, null, rng)
-  const isShiny = (e: ReturnType<typeof challenge>) => e?.kind === 'boss' && !!e.shiny
+  const challenge = (d: GameData, a = area) => challengeEncounter(a, ready(), d, 60, null, createRng(1))
 
-  it('can be shiny at the wild odds, on the challenge card and when it comes back', () => {
-    expect(challenge(1)).toMatchObject({ kind: 'boss', dex: 144, shiny: true })
-    expect(challenge(0)).not.toHaveProperty('shiny')
+  it('is never shiny, on the challenge card or when it comes back, whatever the odds', () => {
+    expect(challenge(always)).toMatchObject({ kind: 'boss', dex: 144 })
+    expect(challenge(always)).not.toHaveProperty('shiny')
     const beaten = { ...ready(), bossesDefeated: [144] }
-    const back = (shinyChance: number) =>
-      rollEncounter({ ...ctx(withOdds(shinyChance)), area, progress: beaten, pokedex: [], forceKind: 'boss' }, createRng(3))
-    expect(back(1)).toMatchObject({ kind: 'boss', dex: 144, returning: true, shiny: true })
-    expect(back(0)).not.toHaveProperty('shiny')
+    const back = rollEncounter({ ...ctx(always), area, progress: beaten, pokedex: [], forceKind: 'boss' }, createRng(3))
+    expect(back).toMatchObject({ kind: 'boss', dex: 144, returning: true })
+    expect(back).not.toHaveProperty('shiny')
   })
 
-  it('rolls again each time it is challenged: declining or abandoning gives another chance', () => {
-    const rng = createRng(5)
-    const n = 4000
-    let shiny = 0
-    for (let i = 0; i < n; i++) if (isShiny(challenge(0.1, rng))) shiny++
-    expect(shiny / n).toBeGreaterThan(0.07)
-    expect(shiny / n).toBeLessThan(0.13)
+  it('even flagged shiny in the content', () => {
+    const flagged = { ...area, legendaryBoss: [{ ...area.legendaryBoss[0]!, shiny: true }] }
+    expect(challenge(data, flagged)).not.toHaveProperty('shiny')
   })
 })
 

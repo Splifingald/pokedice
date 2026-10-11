@@ -5,7 +5,6 @@ import {
   getInstance,
   instanceStats,
   progressOf,
-  raidUnlockedBy,
   rebattleEncounter,
   rebattleLineup,
   teamOf,
@@ -335,22 +334,6 @@ function useRecap(events: RunEvent[]): { mons: MonRecap[]; extras: Extra[]; evol
               </div>
             ),
           })
-          // A raid lair: its mythical's raid is now in the raid pool.
-          const raids = data.config.events.raid.enabled ? raidUnlockedBy(data, e.areaId) : []
-          for (const r of raids)
-            extras.push({
-              key: `${k}-raid-${r.dex}`,
-              sound: 'catch',
-              node: (
-                <div className="flex items-center justify-center gap-2 pixel-panel-dark p-2 text-center">
-                  <SpriteImg dex={r.dex} size={48} silhouette />
-                  <div>
-                    <div className="text-xl text-gold">{t('ui.events.raid.unlocked', { name: data.species[r.dex]?.name ?? '' })}</div>
-                    <div className="text-lg">{t('ui.events.raid.unlockedText')}</div>
-                  </div>
-                </div>
-              ),
-            })
           return
         }
       }

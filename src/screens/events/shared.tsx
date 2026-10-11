@@ -8,11 +8,20 @@ import { Modal } from '@/components/Modal'
 import { PixelButton } from '@/components/PixelButton'
 import { ART_CROP, ART_K, ART_PX, artUrl, horizonOf } from '@/fx/areaArt'
 import { ART_GEOMETRY } from '@/fx/areaArtMap'
+import { getLang } from '@/i18n'
 import { useT } from '@/i18n/react'
 import { money } from '@/lib/format'
 import { useGame } from '@/store/game'
 import { useServerNow } from '@/store/serverTime'
 import { cx } from '@/theme/util'
+
+/** A raid day ('YYYY-MM-DD', UTC) as the player reads dates: "Sat 22 Apr", in their language. */
+export function raidDate(day: string): string {
+  const [y, m, d] = day.split('-').map(Number) as [number, number, number]
+  return new Intl.DateTimeFormat(getLang(), { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' }).format(
+    new Date(Date.UTC(y, m - 1, d)),
+  )
+}
 
 /** Each event's icon (Home's square, the pop-up's banner tag). */
 export const EVENT_ICON: Record<EventId, IconName> = { wheel: 'coin', raid: 'star', rebattle: 'trophy' }

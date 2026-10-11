@@ -162,7 +162,7 @@ describe('area type profiles', () => {
 
   it('trainer-only areas use their trainers; an empty area has no profile', () => {
     expect(areaTypeProfile(byName('Silph Co.'), data).main.length).toBeGreaterThan(0)
-    expect(areaTypeProfile(data.areas.find((a) => a.name === 'Newmoon Island')!, data)).toEqual({ main: [], shares: {} })
+    expect(areaTypeProfile(data.areas.find((a) => a.name === 'Fullmoon Island')!, data)).toEqual({ main: [], shares: {} })
   })
 
   it("names a trainer's specialty", () => {

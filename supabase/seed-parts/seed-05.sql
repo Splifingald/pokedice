@@ -638,10 +638,10 @@ insert into trainers (id, name, sprite_url, team, role, badge, upgrade_level, ba
 on conflict (id) do update set name = excluded.name, sprite_url = excluded.sprite_url, team = excluded.team, role = excluded.role, badge = excluded.badge, upgrade_level = excluded.upgrade_level, battle_background = excluded.battle_background, rival_of = excluded.rival_of, items = excluded.items;
 
 insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level) values
-  ('d283de4f-a64a-5ae2-970f-6cf4a0636747', '1bef9b55-6556-5a47-b728-8dc5dba851c7', 219, 10, 50, 62),
-  ('e4e9b02c-77a2-575a-97aa-244d4d09487e', '1bef9b55-6556-5a47-b728-8dc5dba851c7', 324, 8, 50, 62),
-  ('bd65b1ab-65c0-55eb-a958-3b5e5f8ec94c', '1bef9b55-6556-5a47-b728-8dc5dba851c7', 460, 6, 50, 62),
-  ('fc56deae-4781-5147-8fd8-1cd814bf8611', '1bef9b55-6556-5a47-b728-8dc5dba851c7', 461, 4, 50, 62),
+  ('d27b29a4-307e-5e1a-9569-0bacedbcacf6', '5e2e78f9-5ad7-5e3c-a9f2-518a4c11799c', 219, 10, 55, 66),
+  ('4c43bc34-ce81-5b66-9bed-0b92b7843a88', '5e2e78f9-5ad7-5e3c-a9f2-518a4c11799c', 324, 8, 55, 66),
+  ('8158fa80-f735-5e06-8ea2-72fce712dcba', '5e2e78f9-5ad7-5e3c-a9f2-518a4c11799c', 460, 6, 55, 66),
+  ('a917ee3a-881c-5338-8a50-6ca22a9a5c6e', '5e2e78f9-5ad7-5e3c-a9f2-518a4c11799c', 461, 4, 55, 66),
   ('e99affd2-7566-58c5-9580-ea93833e9cae', '43ad7294-47a6-5c1c-b068-5743d4eb5562', 19, 10, 60, 76),
   ('445d17f9-b5f7-5832-9696-8b801030081a', '43ad7294-47a6-5c1c-b068-5743d4eb5562', 35, 10, 60, 76),
   ('14b01323-15bb-5676-bc60-cca778f99ec6', '43ad7294-47a6-5c1c-b068-5743d4eb5562', 41, 10, 60, 76),

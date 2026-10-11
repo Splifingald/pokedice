@@ -1,3 +1,4 @@
+import { isLegendary } from './breeding'
 import { shuffle } from './deal'
 import { regionOfArea } from './regions'
 import { drawLoot } from './items'
@@ -120,10 +121,18 @@ const rollShiny = (data: GameData, rng: Rng): boolean => {
 }
 
 /**
- * A legendary's colours each time it shows up: always shiny when its data says so, else a fresh roll of the wild odds —
- * so declining the challenge, losing, or seeing it come back after the throw missed all roll again.
+ * Legendaries and mythicals are shiny-locked wherever they're met in an area (a boss, a roamer, a wild one): a shiny one
+ * comes only from Raid Battles' calendar (the user's rule, 2026-10-11).
  */
-const legendShiny = (b: BossDef, data: GameData, rng?: Rng): boolean => !!b.shiny || (!!rng && rollShiny(data, rng))
+export const shinyLocked = (data: GameData, dex: number): boolean => isLegendary(data, dex)
+
+/**
+ * A boss's colours each time it shows up: always shiny when its data says so, else a fresh roll of the wild odds — so
+ * declining the challenge, losing, or seeing it come back after the throw missed all roll again. Never for a
+ * legendary or mythical (shinyLocked).
+ */
+const legendShiny = (b: BossDef, data: GameData, rng?: Rng): boolean =>
+  !shinyLocked(data, b.dex) && (!!b.shiny || (!!rng && rollShiny(data, rng)))
 
 /** A legendary beaten earlier that fled the catch. It keeps coming back — one card per encounter deck — until caught. */
 export function fledLegendary(area: Area, progress: AreaProgress, pokedex: readonly number[]): BossDef | null {
@@ -185,7 +194,12 @@ export function rollRoamer(ctx: EncounterContext, rng: Rng): Encounter | null {
     if (caught.has(dex) || !ctx.data.species[dex]) continue
     // A roamer is met afresh each time it shows up, so each meeting rolls the wild odds.
     if (rng.next() < roamers.chance)
-      return { kind: 'boss', dex, level: clampLevel(roamers.level, ctx.data), ...(rollShiny(ctx.data, rng) && { shiny: true }) }
+      return {
+        kind: 'boss',
+        dex,
+        level: clampLevel(roamers.level, ctx.data),
+        ...(!shinyLocked(ctx.data, dex) && rollShiny(ctx.data, rng) && { shiny: true }),
+      }
   }
   return null
 }
@@ -196,7 +210,7 @@ export function rollWild(ctx: EncounterContext, rng: Rng): Encounter | null {
   const entry = rng.weighted(ctx.area.wildPool, (w) => (ctx.data.species[w.dex] ? w.weight : 0))
   if (!entry) return null
   const level = enemyLevel(rng.int(entry.minLevel, Math.max(entry.minLevel, entry.maxLevel)), ctx, rng)
-  const shiny = rollShiny(ctx.data, rng)
+  const shiny = !shinyLocked(ctx.data, entry.dex) && rollShiny(ctx.data, rng)
   return { kind: 'wild', dex: entry.dex, level, isNew: !ctx.pokedex.includes(entry.dex), ...(shiny && { shiny }) }
 }
 

@@ -325,3 +325,25 @@ You chose B (2026-10-11), the defaults. Any of the others is a change in Admin �
 2. Run `supabase/migrations/0036_remove_league_ii.sql` once (Victory Road II / League II areas and their trainers).
 3. Admin → Publish, or paste `supabase/seed-parts/seed-01…09.sql` in order (rebattle trainers, lineups, raid lairs).
 4. Merge `feature/version_2` and deploy as usual.
+
+### The raid calendar (2026-10-11, the user's redesign)
+The day's raid is no longer picked per player: **one raid a UTC day, the same for everyone** (`engine/raidCalendar.ts`).
+- **What's in it:** the 23 mythicals (normal only: shiny mythicals are kept for other events), every legendary as a
+  **shiny** (their normal form stays the boss of its area), the 10 pseudo-legendaries normal and shiny, and shiny fully
+  evolved Pokémon from areas starting at Lv.40+ for the rest (`calendar.fillerMinLevel`).
+- **Laid out per year:** fixed dates first (`calendar.anchors`: Pokémon Day's shiny Pikachu, Earth Day's Celebi,
+  Tanabata's Jirachi, Halloween's Darkrai and shiny Giratina, Christmas…), then the mythicals and legendaries on that
+  year's weekends (Fridays when they overflow), the pseudo-legendaries spread evenly, the fillers on the other days.
+  Each entry once a year, never the same species two days running; the order is shuffled from the year itself.
+- **Its area:** a mythical's lair, a legendary's boss area (the roamers': the latest of the areas that wake them),
+  else where it (or an earlier stage) lives in its home region. The raid is fought in front of that picture.
+- **The lock:** anyone with raids open can fight any day's raid. A catch whose area isn't completed (in its region,
+  started or not) waits in `events.raidLocked` and joins that region's Box the moment the area is completed
+  (`releaseRaidLocks` in the store's `settle`, with a toast). The Raids page warns before START, the result card says
+  so, and a "Waiting for you" list names what to complete.
+- **The shiny lock:** a legendary or mythical met in an area (boss, returning, roamer, wild) is never shiny.
+- **Content:** Latios, Rayquaza and Cresselia are their areas' bosses again; Darkrai and Pecharunt joined the mythicals
+  (Newmoon Island and Kitakami Hall became lairs); Melmetal shares Meltan's lair.
+- **Pokédex:** a species' row shows its next raid days (GO on the day), and the lock when its area isn't completed.
+- **Raids page:** the lock notice, START, your team and group, the ball odds, the catches waiting, the next six days.
+- `pnpm raid-balance` now plays the calendar's species: mythicals 51 %, legendaries 56 %, pseudo 59 % (10 raids each).
