@@ -1,4 +1,5 @@
-// Admin → Analytics: day-1 retention and the players, from the daily ping (migration 0028). Admin-only via RLS.
+// Admin → Analytics: day-1 retention and the players, from the daily ping (migration 0028), and players per hour
+// (0040, on demand). Admin-only via RLS.
 import { PixelIcon } from '@/components/icons'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { dayKey, dayOneRetention, type D1Cohorts, type Retention } from '@/analytics/retention'
@@ -6,6 +7,7 @@ import { PixelButton } from '@/components/PixelButton'
 import { getSupabase, isSupabaseConfigured } from '@/lib/supabase'
 import { cx } from '@/theme/util'
 import { inputCls } from '../widgets'
+import { HourlyPlayers } from './AnalyticsHourly'
 import { errorText, PlayerPanel } from './AnalyticsPlayer'
 
 interface PlayerRow {
@@ -261,6 +263,8 @@ export function AnalyticsSection() {
       </div>
 
       <RetentionHero r={status === 'loading' ? null : retention} />
+
+      <HourlyPlayers />
 
       {status === 'error' && (
         <div className="pixel-panel p-3 text-lg">
