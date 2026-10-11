@@ -19,8 +19,9 @@ export const EVENTS_ON = {
 }
 
 /**
- * Rules tests pin the pacing knobs to neutral (×1), and status effects and the shiny rate to the defaults, so
- * their arithmetic documents the formulas, not the tuning done in admin. The events are on.
+ * Rules tests pin the pacing knobs to neutral (×1), and status effects, the shiny rate, Multi EXP, the once-only pity,
+ * the donation pop-up and the Discord link to the defaults, so their arithmetic documents the formulas, not the tuning
+ * done in admin. The events are on.
  */
 export function makeData(config: Partial<GameConfig> = {}): GameData {
   return compileGameData({
@@ -32,6 +33,10 @@ export function makeData(config: Partial<GameConfig> = {}): GameData {
       xpMultiplier: 1,
       shinyChance: DEFAULT_CONFIG.shinyChance,
       status: DEFAULT_CONFIG.status,
+      multiExpShare: DEFAULT_CONFIG.multiExpShare,
+      uniquePity: DEFAULT_CONFIG.uniquePity,
+      donation: DEFAULT_CONFIG.donation,
+      discordUrl: DEFAULT_CONFIG.discordUrl,
       events: EVENTS_ON,
       liveEvents: { access: 'all', list: [] },
       ...config,
@@ -40,6 +45,11 @@ export function makeData(config: Partial<GameConfig> = {}): GameData {
 }
 
 export const data = makeData()
+
+/** Starters the admin made less rare in an area (`areaId/dex` → weight), kept by the live bundle of 2026-10-11. */
+export const TUNED_STARTERS: Record<string, number> = {
+  'bec52d1b-4c7c-5503-810a-5d4b8e5336ec/7': 3, // Squirtle on Routes 5 & 6
+}
 
 /** A die of `type` showing the first numeric face equal to `value`. */
 export function die(type: DieType, value: number, d: GameData = data): RolledDie {
