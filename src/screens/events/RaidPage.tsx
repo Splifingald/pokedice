@@ -15,6 +15,7 @@ import { pushToast, useGame } from '@/store/game'
 import { useTodayRaid } from '@/store/raid'
 import { startRaid, useRaidGroup } from '@/store/raidBattle'
 import { RaidGroupSection, RaidTeamSection } from './RaidSetup'
+import { EventInfo } from './shared'
 import { cx } from '@/theme/util'
 
 /** The raid's area picture, cut like a battle's (its middle 240 × 160, the horizon halfway down). */
@@ -151,6 +152,7 @@ export function RaidPage() {
       <RaidTeamSection />
       {!raid.caught && <RaidGroupSection />}
       {!raid.caught && <BallOdds dex={raid.dex} />}
+      <EventInfo id="raid" />
       {/* Your group's empty slots: NPC trainers fill them, only once you start. */}
       <Modal open={asking} onClose={() => setAsking(false)} title={t('ui.raid.npcTitle')}>
         <div className="grid gap-3">

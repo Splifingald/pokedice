@@ -59,6 +59,10 @@ function useFitText(label: ReactNode) {
       el.parentElement?.toggleAttribute('data-small', size < 24)
     }
     fit()
+    // Measured before the Jersey fonts arrived (a cold load), the label would be sized for the narrower fallback face:
+    // once they're in, measure again.
+    let live = true
+    void document.fonts?.ready.then(() => live && fit())
     // Re-fit on a real width change only: reacting to our own font change would loop.
     const ro = new ResizeObserver((entries) => {
       const w = entries[0]?.contentRect.width ?? 0
@@ -67,7 +71,10 @@ function useFitText(label: ReactNode) {
       fit()
     })
     ro.observe(el)
-    return () => ro.disconnect()
+    return () => {
+      live = false
+      ro.disconnect()
+    }
   }, [label])
   return ref
 }

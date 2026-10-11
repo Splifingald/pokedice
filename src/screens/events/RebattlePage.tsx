@@ -29,7 +29,7 @@ import { money } from '@/lib/format'
 import { pushToast, useGame } from '@/store/game'
 import { clearRebattleRun, startRebattle, useRebattleMedal } from '@/store/rebattle'
 import { cx } from '@/theme/util'
-import { EventPicture, EventRules } from './shared'
+import { EventInfo, EventPicture } from './shared'
 
 /** A tier's medal: Bronze a diamond, Silver a pentagon, Gold a hexagon (never I, II, III). */
 export function Medal({ tier, size = 'md', className }: { tier: number; size?: 'sm' | 'md' | 'big'; className?: string }) {
@@ -174,7 +174,6 @@ export function RebattlePage() {
                   )
                 })}
               </ol>
-              <EventRules id="rebattle" data={data} />
               <PixelButton variant="primary" size="lg" className="w-full" onClick={go}>
                 {prog.step && lineup[prog.step]
                   ? t('ui.events.rebattle.continue', { name: lineup[prog.step]!.name })
@@ -184,6 +183,7 @@ export function RebattlePage() {
           )}
         </>
       )}
+      <EventInfo id="rebattle" />
       <MedalCard />
     </div>
   )
