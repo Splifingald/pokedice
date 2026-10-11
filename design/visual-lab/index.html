@@ -2023,6 +2023,147 @@
   .ad-switch button[aria-checked='true'] { background: var(--gold); color: #1a1423; }
   .ad-inline { display: inline-flex; gap: 6px; align-items: center; margin-left: 8px; }
   @media (prefers-reduced-motion: reduce) { .sw-sil, .sw-scene-mon, .sw-fn-mon img { animation: none !important; } }
+
+  /* trades (docs/23): the page, the board, your listings, a listing, the pickers, New listing, sharing, the pop-up */
+  [data-framed] .ui-btn[aria-disabled='true'] { border-image-source: var(--fr-off); color: var(--u-muted); cursor: not-allowed; }
+  [data-framed] .ui-btn[aria-disabled='true']:active { border-image-source: var(--fr-off); }
+  .hm-page .tr-sort { padding: 0; }
+  .tr-board, .tr-slots, .tr-dones, .tr-friends { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+  .tr-row { appearance: none; border: 0; width: 100%; display: grid; grid-template-columns: minmax(0, 1.15fr) auto minmax(0, 0.85fr); grid-template-areas: 'mon for want' 'why why why'; align-items: center; gap: 3px 6px; padding: 5px 8px 9px 4px; text-align: left; background: #ffffff; box-shadow: inset 0 0 0 2px #24304f, inset 0 -4px 0 #dfe7f2; }
+  .tr-row.fr { background: #e8f1ff; box-shadow: inset 0 0 0 2px #24304f, inset 0 -4px 0 #cfe0fb; }
+  .tr-row.me { background: #fff4d6; box-shadow: inset 0 0 0 2px #24304f, inset 0 -4px 0 #ffe7a8; }
+  .tr-row.off { background: #f1f4f9; box-shadow: inset 0 0 0 2px #b6c3d9; }
+  .tr-row.off .ico { filter: grayscale(0.6) opacity(0.7); }
+  .tr-row:hover:not(.off) { box-shadow: inset 0 0 0 2px #24304f, inset 0 -4px 0 #ffbe2e; }
+  .tr-row-mon { grid-area: mon; display: flex; align-items: center; gap: 2px; min-width: 0; }
+  .tr-row-t { display: grid; gap: 1px; min-width: 0; line-height: 1.05; }
+  .tr-row-t b { font-weight: 400; font-size: 19px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tr-row-t small { font-family: 'Jersey 15', sans-serif; font-size: 14px; color: #5c6a8a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tr-for { grid-area: for; font-family: 'Jersey 15', sans-serif; font-size: 14px; color: #5c6a8a; }
+  .tr-want { grid-area: want; display: flex; align-items: center; gap: 2px; min-width: 0; padding: 0 6px 0 0; background: #f1f4f9; box-shadow: inset 0 0 0 2px #b6c3d9; }
+  .tr-want b { font-weight: 400; font-size: 16px; line-height: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tr-want.big { padding: 2px 10px 4px 2px; background: #ffffff; box-shadow: inset 0 0 0 2px #24304f, inset 0 -4px 0 #dfe7f2; }
+  .tr-want.big b { font-size: 20px; }
+  .tr-anytile { flex: none; display: grid; place-items: center; width: 40px; height: 30px; font-family: 'Jersey 15', sans-serif; font-size: 14px; letter-spacing: 0.06em; color: #24304f; background: repeating-linear-gradient(45deg, #dde5f0 0 4px, #f1f4f9 4px 8px); box-shadow: inset 0 0 0 2px #24304f; }
+  .tr-anytile.new { background: #ffbe2e; }
+  .tr-row-why { grid-area: why; justify-self: start; font-family: 'Jersey 15', sans-serif; font-size: 14px; line-height: 1; padding: 2px 6px 3px; margin-left: 4px; color: #24304f; background: #e3e8f0; }
+  .tr-row-why.ok { color: #1d6b43; background: #d8f5e4; box-shadow: inset 0 0 0 2px #34c97a; }
+  em.tr-new, em.tr-fr, em.tr-you, em.tr-strong, em.tr-evo, em.tr-team, em.tr-regsm, em.tr-own, .tr-reg { font-style: normal; font-family: 'Jersey 15', sans-serif; font-size: 12px; line-height: 1; padding: 1px 4px 2px; margin-left: 4px; vertical-align: 2px; white-space: nowrap; color: #24304f; }
+  em.tr-new { background: #ffbe2e; box-shadow: inset 0 0 0 1px #24304f; }
+  em.tr-fr { background: #cfe0fb; box-shadow: inset 0 0 0 1px #5b8def; }
+  em.tr-you { background: #24304f; color: #ffe7a8; }
+  em.tr-strong, em.tr-own { background: #d8f5e4; color: #1d6b43; box-shadow: inset 0 0 0 1px #34c97a; }
+  em.tr-evo { background: #fff4d6; box-shadow: inset 0 0 0 1px #ffbe2e; }
+  em.tr-team { background: #24304f; color: #fbfdff; }
+  em.tr-regsm, .tr-reg { background: #e3e8f0; }
+  em.tr-regsm.first { margin-left: 0; vertical-align: 1px; }
+  .tr-star { font-style: normal; color: #e8a800; text-shadow: 0 1px 0 #24304f; margin-left: 2px; }
+  .tr-dot { display: inline-block; width: 10px; height: 10px; margin-left: 4px; background: #ffbe2e; box-shadow: 0 0 0 2px #24304f; vertical-align: 1px; }
+  .tr-vis { flex: none; font-family: 'Jersey 15', sans-serif; font-size: 13px; line-height: 1; padding: 2px 6px 3px; white-space: nowrap; color: #24304f; background: #ffffff; box-shadow: inset 0 0 0 2px #24304f; }
+  .tr-vis.friends { background: #cfe0fb; }
+  .tr-vis.private { background: #24304f; color: #ffe7a8; }
+  .tr-info { appearance: none; border: 0; align-self: center; min-height: 40px; padding: 0 20px 2px; font-size: 18px; letter-spacing: 0.06em; background: #3a6fd8; color: #ffffff; box-shadow: inset 0 0 0 2px #24304f, inset 0 -4px 0 #24304f55; }
+  .tr-slot { display: grid; gap: 6px; padding: 8px 10px 12px; background: #ffffff; box-shadow: inset 0 0 0 2px #24304f, inset 0 -4px 0 #dfe7f2; }
+  .tr-slot.empty { appearance: none; border: 0; width: 100%; min-height: 60px; display: flex; align-items: center; justify-content: center; gap: 8px; background: #f1f4f9; box-shadow: none; outline: 2px dashed #8592ad; outline-offset: -2px; font-size: 20px; color: #24304f; }
+  .tr-slot.empty b { font-weight: 400; }
+  .tr-plus { width: 28px; height: 28px; display: grid; place-items: center; font-size: 22px; line-height: 1; background: #5b8def; color: #ffffff; box-shadow: inset 0 0 0 2px #24304f; }
+  .tr-slot-top { display: flex; align-items: center; gap: 4px; min-width: 0; }
+  .tr-slot-top .tr-row-t { flex: 1; }
+  .tr-slot-want { display: flex; align-items: center; gap: 6px; min-width: 0; }
+  .tr-slot-want .tr-want { flex: 0 1 auto; }
+  .tr-slot-time { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 8px; font-family: 'Jersey 15', sans-serif; font-size: 15px; color: #5c6a8a; }
+  .tr-slot-btns { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; }
+  .lv-gauge.hot i { background: linear-gradient(#ffb3a8 0 35%, #f2553f 35% 70%, #c2331f 70%); }
+  .tr-done { display: flex; align-items: center; gap: 6px; padding: 4px 8px 6px 4px; background: #ffffff; box-shadow: inset 0 0 0 2px #b6c3d9; }
+  .tr-done-pair { display: flex; align-items: center; flex: none; }
+  .tr-done-arrow { font-size: 16px; color: #5c6a8a; margin: 0 -4px; }
+  .tr-done .tr-row-t { flex: 1; }
+  .tr-done .tr-row-t b { font-size: 17px; white-space: normal; }
+  .tr-done .tr-row-t small { white-space: normal; }
+  .tr-connect { display: grid; justify-items: center; gap: 8px; padding: 14px 14px 16px; text-align: center; background: #e8f1ff; box-shadow: inset 0 0 0 2px #24304f, inset 0 -4px 0 #cfe0fb; }
+  .tr-connect b { font-weight: 400; font-size: 22px; line-height: 1.05; }
+  .tr-connect p { margin: 0; font-family: 'Jersey 15', sans-serif; font-size: 16px; line-height: 1.2; color: #3d4a6b; }
+  .tr-connect-pic { display: flex; align-items: center; gap: 4px; }
+  .tr-connect-pic img { width: 32px; height: 32px; }
+  /* a listing's sheet */
+  .tr-hero { position: relative; isolation: isolate; display: flex; align-items: center; gap: 12px; }
+  .tr-hero .pg-spr, .tr-hero .pg-spr-ico { width: 112px; height: 104px; flex: none; display: grid; place-items: center; background: #eef4fb; box-shadow: inset 0 0 0 2px #24304f; }
+  .tr-hero .lv-fx-spk { z-index: 1; right: auto; width: 112px; }
+  .tr-owner { display: flex; align-items: center; gap: 6px; min-width: 0; }
+  .tr-owner b { font-weight: 400; font-size: 20px; line-height: 1; }
+  .tr-owner .lk.sm { background-color: #e9f0f8; box-shadow: inset 0 0 0 2px #24304f; }
+  .tr-owner .pg-hint { margin-left: auto; }
+  .tr-tags { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+  .tr-tags em, .tr-tags .tr-reg { margin-left: 0; vertical-align: 0; }
+  .tr-wants { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; }
+  .tr-wants-h { font-family: 'Jersey 15', sans-serif; font-size: 15px; color: #5c6a8a; }
+  .tr-wants small { flex-basis: 100%; font-family: 'Jersey 15', sans-serif; font-size: 15px; color: #5c6a8a; }
+  .tr-time { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 10px; font-family: 'Jersey 15', sans-serif; font-size: 16px; color: #5c6a8a; }
+  .tr-time b { font-family: 'Jersey 20', sans-serif; font-weight: 400; color: #24304f; }
+  .tr-facts { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+  .tr-facts li { display: grid; gap: 2px; padding: 6px 10px 8px; line-height: 1.1; background: #f1f4f9; box-shadow: inset 3px 0 0 #5b8def; }
+  .tr-facts b { font-weight: 400; font-size: 18px; }
+  .tr-facts small { font-family: 'Jersey 15', sans-serif; font-size: 15px; color: #3d4a6b; }
+  .tr-why { margin: 0 0 6px; font-family: 'Jersey 15', sans-serif; font-size: 16px; color: #5c6a8a; text-align: center; }
+  .tr-picks .pg-useit { flex-wrap: wrap; row-gap: 2px; }
+  .tr-picks .pg-useit > span:not(.ico) { flex: 1 1 180px; }
+  .tr-picks .pg-useit > em { margin-left: 0; }
+  .tr-pick.meh { background: #f1f4f9; }
+  .tr-swap { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 6px; text-align: center; }
+  .tr-swap > span:not(.tr-swap-arrow) { display: grid; justify-items: center; gap: 2px; padding: 6px 4px 8px; background: #ffffff; box-shadow: inset 0 0 0 2px #24304f, inset 0 -4px 0 #dfe7f2; }
+  .tr-swap b { font-weight: 400; font-size: 19px; line-height: 1; }
+  .tr-swap small { font-family: 'Jersey 15', sans-serif; font-size: 15px; color: #5c6a8a; }
+  .tr-swap-arrow { font-size: 28px; color: #3a6fd8; }
+  .tr-confirm { margin: 0; font-family: 'Jersey 15', sans-serif; font-size: 18px; line-height: 1.25; }
+  .tr-confirm b { font-family: 'Jersey 20', sans-serif; font-weight: 400; }
+  /* New listing: three steps on one page */
+  .tr-step { display: grid; gap: 8px; padding-bottom: 12px; border-bottom: 3px dashed #b6c3d966; }
+  .tr-step h3 { margin: 0; display: flex; align-items: center; gap: 8px; font-weight: 400; font-size: 22px; line-height: 1; }
+  .tr-step h3 span { width: 26px; height: 26px; display: grid; place-items: center; font-size: 17px; background: #24304f; color: #ffe7a8; }
+  .tr-step .hm-chips { padding: 0; }
+  .tr-picked { display: flex; align-items: center; gap: 4px; min-width: 0; padding: 4px 8px 8px 4px; background: #fff4d6; box-shadow: inset 0 0 0 2px #24304f, inset 0 -4px 0 #ffe7a8; }
+  .tr-picked .tr-row-t { flex: 1; }
+  .tr-mongrid, .tr-grid { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+  .tr-mongrid { grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); }
+  .tr-grid { grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); }
+  .tr-mt.off { background: #f1f4f9; cursor: not-allowed; }
+  .tr-mt.off .ico { filter: grayscale(1) opacity(0.5); }
+  .tr-mt-why { font-family: 'Jersey 15', sans-serif; font-size: 12px; line-height: 1; padding: 1px 3px 2px; color: #24304f; background: #e3e8f0; }
+  em.tr-team.tl { position: absolute; right: 3px; top: 3px; margin: 0; }
+  .tr-kinds button { font-size: 17px; padding: 0 4px; white-space: normal; line-height: 1; }
+  .tr-tile { appearance: none; border: 0; position: relative; width: 100%; display: grid; justify-items: center; gap: 2px; padding: 4px 3px 7px; background: #ffffff; box-shadow: inset 0 0 0 2px #b6c3d9; }
+  .tr-tile:hover { box-shadow: inset 0 0 0 2px #24304f; }
+  .tr-tile-n { justify-self: start; font-family: 'Jersey 15', sans-serif; font-size: 12px; line-height: 1; color: #5c6a8a; }
+  .tr-tile .ico { margin-top: -6px; }
+  .tr-tile b { font-weight: 400; font-size: 15px; line-height: 1; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .tr-tile em { margin: 0; }
+  .tr-kind-note { margin: 0; font-family: 'Jersey 15', sans-serif; font-size: 16px; line-height: 1.2; color: #5c6a8a; }
+  .tr-summary { margin: 0; padding: 8px 10px; font-family: 'Jersey 15', sans-serif; font-size: 16px; line-height: 1.25; color: #3d4a6b; background: #fff8ec; box-shadow: inset 0 0 0 2px #f3e2c4; }
+  .tr-summary b { font-family: 'Jersey 20', sans-serif; font-weight: 400; color: #24304f; }
+  /* sharing, friends, the menu */
+  .tr-share { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: 'l l' 'c b'; align-items: center; gap: 4px 8px; padding: 10px 12px 12px; background: #e8f1ff; box-shadow: inset 0 0 0 2px #24304f, inset 0 0 0 5px #5b8def, inset 0 0 0 7px #24304f; }
+  .tr-share-l { grid-area: l; font-family: 'Jersey 15', sans-serif; font-size: 14px; letter-spacing: 0.08em; color: #2f5fb8; }
+  .tr-share code { grid-area: c; font-family: 'Jersey 20', sans-serif; font-size: 18px; overflow-wrap: anywhere; }
+  .tr-share .ui-btn { grid-area: b; }
+  .tr-frow { appearance: none; border: 0; width: 100%; text-align: left; }
+  .tr-frow small { font-family: 'Jersey 15', sans-serif; font-size: 14px; color: #5c6a8a; }
+  .tc-menu .tr-mi-fr { overflow: hidden; align-items: end; background: #cfe0fb; }
+  .tc-menu em.tr-menu-dot { background: #ffbe2e; color: #24304f; box-shadow: inset 0 0 0 2px #24304f; }
+  .hm-trainer.tr-av-dot { position: relative; }
+  .hm-trainer.tr-av-dot::after { content: ''; position: absolute; left: 30px; top: 0; width: 12px; height: 12px; background: #ffbe2e; box-shadow: 0 0 0 2px #24304f; }
+  .tr-sendon { display: grid; gap: 6px; padding-top: 10px; border-top: 3px dashed #b6c3d966; }
+  .tr-sendon-btns { display: flex; flex-wrap: wrap; gap: 8px; }
+  /* the pop-up and the scene */
+  .tr-pop { justify-items: center; text-align: center; padding: 14px 0; }
+  .tr-pop .ev-rules { text-align: left; }
+  .tr-pop .ev-pop-foot { width: 100%; box-sizing: border-box; }
+  .tr-pop-top { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 0 16px; }
+  .tr-pop-top > span { display: grid; justify-items: center; }
+  .tr-pop-top small { font-family: 'Jersey 15', sans-serif; font-size: 14px; color: #5c6a8a; margin-top: -6px; }
+  .tr-pop-ico { width: 32px; height: 32px; animation: evbob 1.6s steps(4) infinite; }
+  .tr-pop-line { margin: 0; padding: 0 16px; font-family: 'Jersey 15', sans-serif; font-size: 18px; color: #3d4a6b; }
+  .tr-moment .dc-m-stage { background: #132044; }
+  @media (prefers-reduced-motion: reduce) { .tr-pop-ico { animation: none; } }
 </style>
 
 <header class="deck">
@@ -2109,6 +2250,28 @@
       <button type="button" class="btn small" data-swfinal>Final fight</button>
       <button type="button" class="btn small" data-swclose>The world closes</button>
     </div>
+    <div class="home-states ev-controls" id="tr-controls">
+      <span class="eyebrow">TRADES</span>
+      <div class="seg small" role="radiogroup" aria-label="Signed in or not">
+        <button type="button" role="radio" data-trsign="in" aria-checked="true">Signed in</button>
+        <button type="button" role="radio" data-trsign="out" aria-checked="false">Guest</button>
+      </div>
+      <div class="seg small" role="radiogroup" aria-label="Regions started">
+        <button type="button" role="radio" data-trreg="kanto" aria-checked="true">Kanto only</button>
+        <button type="button" role="radio" data-trreg="both" aria-checked="false">Kanto + Johto</button>
+      </div>
+      <div class="seg small" role="radiogroup" aria-label="Trades taken today">
+        <button type="button" role="radio" data-trcap="ok" aria-checked="true">Trades left today</button>
+        <button type="button" role="radio" data-trcap="full" aria-checked="false">Daily cap reached</button>
+      </div>
+      <button type="button" class="btn small" data-tropen>Open Trades</button>
+      <button type="button" class="btn small" data-trtaken>A listing was taken</button>
+      <button type="button" class="btn small" data-trout>A listing ran out</button>
+      <button type="button" class="btn small" data-trlink="friend">Shared link</button>
+      <button type="button" class="btn small" data-trlink="out">Link, signed out</button>
+      <button type="button" class="btn small" data-trlink="stranger">Link, Friends only</button>
+      <button type="button" class="btn small" data-trscene>Trade scene + evolution</button>
+    </div>
     <div class="home-grid">
       <div class="home-device">
         <div class="bezel home-bezel">
@@ -2149,6 +2312,7 @@
               <section class="hm-page" data-page="trainer" aria-label="Trainer card" hidden></section>
               <section class="hm-page" data-page="events" aria-label="Events" hidden></section>
               <section class="hm-page" data-page="raid" aria-label="Raid battle" hidden></section>
+              <section class="hm-page" data-page="trades" aria-label="Trades" hidden></section>
               <nav class="hm-nav" id="hm-nav" aria-label="Game menu">
                 <button type="button" data-tab="shop"><img data-nav="shop" class="px" alt="" /><span>Shop</span></button>
                 <button type="button" data-tab="upgrades"><img data-nav="upgrades" class="px" alt="" /><span>Upgrades</span><i class="dot" hidden></i></button>
@@ -2267,6 +2431,30 @@
         </ol>
         <h2 class="notes-h">Admin · Small worlds (mock)</h2>
         <div class="ev-admin" id="sw-admin"></div>
+        <h2 class="notes-h">Trades <span class="ev-newtag">NEW</span></h2>
+        <p class="ad-intro">Like the games’ GTS: put one of your Pokémon up, say what you want for it, and anyone allowed to see the listing takes it while you’re away. Everything is asynchronous. The preview bar above signs you in or out, starts Johto, fills the daily cap and plays the moments. The plan is docs/23-TRADING-PLAN.md.</p>
+        <ol class="zones">
+          <li><b>Where</b><span>Avatar → trainer card → <em>Trades</em>, under Friends (both rows are new to the lab’s menu). A gold dot on the avatar and the row while a trade of yours waits to be seen. A guest sees the row with the connect prompt, and the board’s newest public listings under it.</span></li>
+          <li><b>Board</b><span>Public listings and your friends’ (sky blue, FRIEND). Search a Pokémon or a trainer; chips All, Friends, New for me, <em>I can trade</em>; sort Tradable first (what you can take now, friends first, then ending soonest), Ending soon, Newest. A row: what’s offered (NEW when it isn’t in your Pokédex, ★ shiny, its region when not Kanto), who and the time left, what they want (a species, or a <em>NEW</em> / <em>ANY</em> tile), then <em>You can trade</em> or the reason it’s greyed: You have no Haunter, Start Johto first, No trades left today.</span></li>
+          <li><b>A listing</b><span>Its sheet: the Pokémon large (sparkles when shiny), types, whose (Their card for a friend), what they want and whether you have it, the time left, then the level rule with <em>this species’ minimum and why</em> (“Lv.16 at least: Squirtle evolves at 16”), a trade evolution, where it lands. TRADE, or the reason in its place.</span></li>
+          <li><b>Taking it</b><span>TRADE lists your Pokémon that match, every region’s Box: <em>You get Kadabra Lv.30</em>, with NEW, STRONGER, → Alakazam, or <em>You have Lv.30: nothing gained</em>; the Day Care, a reviving fossil and legendaries greyed with why. The confirm says it plainly (“Pidgey Lv.22 leaves your Box for good, its Pokédex entry stays”), then the <em>trade scene</em> (the Animations tab’s Trade), a trade evolution after it, and what you got and where it went.</span></li>
+          <li><b>Mine</b><span>Your 4 slots: each listing with its want, Public / Friends / Private (link), the time left, SHARE and CANCEL; an empty one is <em>+ New listing</em>. Below, <em>Done</em>: your last trades, both ways.</span></li>
+          <li><b>New listing</b><span>One sheet, three steps. <em>Your Pokémon</em>: region tabs once two are started, search, sort, the ones that can’t go greyed with why. <em>In exchange</em>: A species (a grid of every species of the regions you’ve started, no legendaries: search by name or number, Not owned / Owned / All with counts, region chips, Owned and NEW tags; a pick folds it, with Change), Any I don’t own, or Anything. <em>Who can see it</em>. Then the summary and POST; a private listing opens the share sheet. A Pokémon’s sheet has <em>Trade</em> beside Send on, which opens it with that Pokémon picked.</span></li>
+          <li><b>Links and friends</b><span>SHARE copies <em>/t/K7QM4XD9</em> (the share sheet on phones). Opened signed out: “Sora wants to trade. Connect to take part”; a Friends-only one opened by a non-friend: “Only Sora’s friends can take it” with ADD SORA. A friend’s card gets a <em>Their trades</em> row.</span></li>
+          <li><b>Coming back</b><span><em>A listing was taken</em>: “Trade done! Misty took your Charmander”, See it plays the scene, then “Wartortle Lv.16 joined your Box”, raised from Lv.12 to its minimum. <em>A listing ran out</em>: a toast, and it’s back in the Box.</span></li>
+        </ol>
+        <h2 class="notes-h">To decide at validation</h2>
+        <ol class="zones">
+          <li><b>Any I don’t own</b><span>Not in the Box it would land in right now, or a shiny you don’t have (the plan), or not in your Pokédex?</span></li>
+          <li><b>Trade evolutions</b><span>On arrival (the plan, and the mock), or only by level as today?</span></li>
+          <li><b>Badges</b><span>From the first badge (the plan), or from the start?</span></li>
+          <li><b>Daily cap</b><span>5 trades a day for takers (the plan), or no cap?</span></li>
+          <li><b>A Home square</b><span>Or only the menu row, the friend cards and the dot (the plan, and the mock)?</span></li>
+          <li><b>Level floor, shiny-only wants</b><span>“Pikachu Lv.20 or more”, “a shiny Magikarp”: not in the plan.</span></li>
+          <li><b>Found while mocking</b><span>(a) A rules pop-up the first time and an INFO button, like the Day Care and Versus (the mock has them). (b) Your own public listings on the board, tagged YOURS (the mock), or only under Mine? (c) Guests see the four newest public listings under the connect prompt (the mock), or nothing? (d) Ultra Beasts aren’t flagged legendary in the data, so they could be traded: fine, or out with the legendaries? (e) Eleven species arrive above Lv.50, not two: Bisharp 52, Braviary and Mandibuzz 54, Baxcalibur 54, Dragonite and Tyranitar 55, Volcarona 59, Naganadel, Dragapult and Kingambit 60, Hydreigon 64.</span></li>
+        </ol>
+        <h2 class="notes-h">Admin · Trades (mock)</h2>
+        <div class="ev-admin" id="tr-admin"></div>
         <h2 class="notes-h">The tabs</h2>
         <ol class="zones">
           <li><b>Team</b><span>The three as cards: sprite, HP, XP, dice. <em>Drag one onto another</em> to change who goes out first; the lead wears gold. The Box below: search, sort by number, level or newest, filter by type. A card opens the Pokémon: stats, every die face, what it learns next, items to use. Swaps stay a Pokémon Center thing, said once at the top.</span></li>
@@ -2389,6 +2577,7 @@
 <script src="events.js"></script>
 <script src="live.js"></script>
 <script src="worlds.js"></script>
+<script src="trades.js"></script>
 <script src="starter.js"></script>
 <script src="lab.js"></script>
 <script src="bgs.js"></script>
