@@ -56,7 +56,7 @@ function Block({
   className?: string
 }) {
   return (
-    <div className={cx('flex flex-col gap-2 border-2 border-ink bg-panel p-3', className)}>
+    <div className={cx('flex flex-col gap-2 border-2 border-edge bg-panel p-3', className)}>
       <h4 className="text-xl leading-none">{title}</h4>
       {children}
     </div>
@@ -105,7 +105,7 @@ export function PlayerPanel({ player, name }: { player: string; name: string }) 
               <span className="text-4xl leading-none">{s.dex.length}</span>
               <span className="text-lg text-muted">/ {data.speciesList.length} caught</span>
             </div>
-            <div className="h-3 border-2 border-ink bg-parchment">
+            <div className="h-3 border-2 border-edge bg-parchment">
               <div
                 className="h-full bg-hp-green"
                 style={{ width: `${(s.dex.length / Math.max(1, data.speciesList.length)) * 100}%` }}
@@ -119,7 +119,7 @@ export function PlayerPanel({ player, name }: { player: string; name: string }) 
           </Block>
 
           <Block title="Current area">
-            {area?.bannerUrl && <AreaBanner url={area.bannerUrl} className="h-14 border-2 border-ink" />}
+            {area?.bannerUrl && <AreaBanner url={area.bannerUrl} className="h-14 border-2 border-edge" />}
             <div className="text-2xl leading-none">{area?.name ?? (s.area || '?')}</div>
             <div className="text-lg text-muted">
               {s.badges} badge{s.badges === 1 ? '' : 's'} · {s.box} in the Box
@@ -130,7 +130,10 @@ export function PlayerPanel({ player, name }: { player: string; name: string }) 
           <Block title="Team">
             <ul className="flex flex-wrap gap-2">
               {s.team.map((m, i) => (
-                <li key={i} className="flex flex-col items-center border-2 border-ink bg-parchment px-2 py-1">
+                <li
+                  key={i}
+                  className="flex flex-col items-center border-2 border-edge bg-parchment px-2 py-1"
+                >
                   <SpriteImg dex={m.dex} size={64} shiny={m.shiny} />
                   <span className="text-lg leading-none">{data.species[m.dex]?.name ?? `#${m.dex}`}</span>
                   <span className="text-base text-muted">Lv.{m.level}</span>

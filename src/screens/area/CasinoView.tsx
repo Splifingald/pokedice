@@ -5,6 +5,7 @@ import { sfx } from '@/audio/sfx'
 import { joinList, t } from '@/i18n'
 import { useT } from '@/i18n/react'
 import { GoldPill } from '@/components/GoldPill'
+import { CashChip } from '@/screens/events/live'
 import { PixelIcon } from '@/components/icons'
 import { PixelButton } from '@/components/PixelButton'
 import { SpriteImg } from '@/components/SpriteImg'
@@ -136,7 +137,7 @@ export function CasinoView() {
         </div>
 
         <div
-          className="flex justify-center gap-2 border-[3px] border-gold bg-ink p-2 sm:gap-3 sm:p-3"
+          className="flex justify-center gap-2 border-[3px] border-gold bg-night p-2 sm:gap-3 sm:p-3"
           role="img"
           aria-label={
             spinning
@@ -147,7 +148,7 @@ export function CasinoView() {
           {[0, 1, 2].map((i) => (
             <motion.div
               key={i}
-              className="flex h-24 w-20 items-center justify-center border-[3px] border-ink bg-panel sm:h-28 sm:w-24"
+              className="flex h-24 w-20 items-center justify-center bg-paper shadow-ring sm:h-28 sm:w-24"
               style={{ boxShadow: 'inset 0 6px 0 rgba(0,0,0,0.18), inset 0 -6px 0 rgba(0,0,0,0.18)' }}
               animate={spinning && i >= stopped ? { y: [0, -3, 0] } : { y: 0 }}
               transition={spinning && i >= stopped ? { duration: 0.18, repeat: Infinity } : { duration: 0.1 }}
@@ -165,6 +166,7 @@ export function CasinoView() {
           aria-live="polite"
         >
           {spinning ? t('ui.casino.spinning') : last ? resultText(last, prizeName) : t('ui.casino.idle', { cost })}
+          {!spinning && last && last.bonus > 0 && <CashChip className="ml-2 align-middle" />}
         </p>
 
         <PixelButton
@@ -212,7 +214,7 @@ export function CasinoView() {
 
       {/* Always on screen, above the phone bottom bar. */}
       <div
-        className="sticky z-30 -mx-3 border-t-[3px] border-ink bg-parchment px-3 py-2"
+        className="sticky z-30 -mx-3 border-t-[3px] border-edge bg-parchment px-3 py-2"
         style={{ bottom: 'var(--bottom-nav)' }}
       >
         <PixelButton

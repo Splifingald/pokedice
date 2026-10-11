@@ -1,6 +1,7 @@
 // Admin → Messages: what players sent through the side menu → Contact the developer (table feedback, migration 0019,
 // admin-only reads via RLS). Newest first; answer (migration 0025: the player sees it, and it marks the message read),
 // mark read / unread, or delete.
+import { PixelIcon } from '@/components/icons'
 import { useCallback, useEffect, useState } from 'react'
 import { PixelButton } from '@/components/PixelButton'
 import { FEEDBACK_MESSAGE_MAX, type FeedbackRow } from '@/lib/feedback'
@@ -97,7 +98,7 @@ function Message({
       <p className="text-lg text-muted">{sender(m)}</p>
       <p className="copy whitespace-pre-wrap break-words text-lg leading-snug">{m.message}</p>
       {m.reply && draft === null && (
-        <div className="border-2 border-ink bg-gold/30 p-2">
+        <div className="border-2 border-edge bg-gold/30 p-2">
           <p className="flex flex-wrap items-baseline justify-between gap-x-2 text-lg leading-none">
             <b>Your answer</b>
             <span className="text-base text-muted">
@@ -117,7 +118,7 @@ function Message({
             maxLength={FEEDBACK_MESSAGE_MAX}
             rows={5}
             autoFocus
-            className="copy w-full resize-y border-[3px] border-ink bg-panel p-2 text-lg leading-snug"
+            className="copy w-full resize-y border-[3px] border-edge bg-panel p-2 text-lg leading-snug"
           />
         </label>
       )}
@@ -192,7 +193,10 @@ export function MessagesSection() {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-end gap-3">
-        <h2 className="text-4xl leading-none">Messages</h2>
+        <h2 className="flex items-center gap-2 text-4xl leading-none">
+          <PixelIcon name="mail" size={26} />
+          Messages
+        </h2>
         {rows && (
           <span className="text-xl text-muted">
             {rows.length} total · {unread} unread

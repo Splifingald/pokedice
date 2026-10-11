@@ -1,6 +1,6 @@
 # Pokédice
 
-A dice battler over the original 151 Pokémon, in a Game Boy Color look. Every Pokémon owns 2–6 typed dice; you throw,
+A dice battler over the original 151 Pokémon (and the regions after Kanto), in the *Johto Daybreak* pixel look. Every Pokémon owns 2–6 typed dice; you throw,
 keep, reroll, and hit with the per-die type chart plus poker-style combos. Trainers pay gold, gold buys account-wide
 upgrades, and the goal is 151/151 in the Pokédex.
 
@@ -9,12 +9,15 @@ upgrades, and the goal is 151/151 in the Pokédex.
 > animated Pokémon load from its sprite server, its menu icons and trainer sprites are bundled (credits in
 > [docs/13](docs/13-SHOWDOWN-SPRITES.md#credits)). The offline fallback sprites come from the public
 > [PokeAPI sprites](https://github.com/PokeAPI/sprites) repository. Area banners and trainer badges are original,
-> generated pixel art; sound effects are synthesised at runtime. Made by Splifingald.
+> generated pixel art; sound effects are synthesised at runtime, and the Pokémon cries load from Showdown's audio
+> server. Made by Splifingald.
 
 The design lives in [`docs/`](docs): [game spec](docs/01-GAME-SPEC.md) · [data model](docs/02-DATA-MODEL.md) ·
 [build plan](docs/03-BUILD-PLAN.md) · [Sinnoh plan](docs/07-SINNOH-PLAN.md) · [Unova plan](docs/08-UNOVA-PLAN.md) · [Gen 6–9 plan](docs/11-GEN6-9-REGIONS-PLAN.md) ·
 [Gen 6–9 sprite sources](docs/10-GEN6-9-SPRITES.md) · [forms & Mega Evolution](docs/12-FORMS-AND-MEGA.md) ·
-[Showdown sprites](docs/13-SHOWDOWN-SPRITES.md).
+[Showdown sprites](docs/13-SHOWDOWN-SPRITES.md) · [the Daybreak port](docs/14-DAYBREAK-PORT.md) ·
+[**UI guidelines**](docs/15-UI-GUIDELINES.md) (the rules every screen follows) · [friends](docs/16-FRIENDS-PLAN.md) ·
+[Discord sign-in setup](docs/17-DISCORD-SIGN-IN.md).
 
 ## Quick start
 
@@ -36,7 +39,7 @@ For local cloud/admin work, copy `.env.example` to `.env.local` and fill it in. 
 |---|---|
 | `pnpm dev` / `pnpm build` / `pnpm preview` | Vite dev server / production build (type-checked) / preview |
 | `pnpm test` · `pnpm coverage` | Vitest — engine, data, save and a headless area-1 → area-2 run |
-| `pnpm e2e` | Playwright smoke tests (new game → win, buy an upgrade, mocked sign-in). Uses the installed Edge on Windows; elsewhere run `npx playwright install chromium` first |
+| `pnpm e2e` | Playwright: every screen at 360, 375, 768 and 1280 px and in all ten languages (fonts, 44 px targets, axe), the battle fitting 360×640, Home, the Day Care, Versus, the leaderboard, the trainer card, and smoke runs (new game → win, buy an upgrade, mocked sign-in). Uses the installed Edge on Windows; elsewhere run `npx playwright install chromium` first |
 | `pnpm lint` · `pnpm format` | ESLint (also enforces that `src/engine` stays pure) · Prettier |
 | `pnpm seed` | Reports how far the committed bundle has drifted from what the generator (PokeAPI + `scripts/content.ts`, Kanto only) would produce. Writes nothing. `pnpm seed --force` does the old destructive regeneration — see [docs/02](docs/02-DATA-MODEL.md#3-generating-the-386) |
 | `pnpm seed-regions` | Builds the regions after Kanto on top of the committed bundle: species, their areas, trainers and regions. Additive — it never drops an existing row, above or below the range. Defaults to the newest region (`--from 906 --to 1025`, Paldea); pass another range to regenerate an earlier one, which throws away its admin tuning |
@@ -46,10 +49,31 @@ For local cloud/admin work, copy `.env.example` to `.env.local` and fill it in. 
 | `pnpm seed-sql` | Regenerates `supabase/seed.sql` from the committed bundle, without rebuilding the bundle. That one file is all a live database needs — it carries the post-`0001` schema changes too, and is safe to re-run. It also writes `supabase/seed-parts/seed-NN.sql`, the same SQL in parts small enough to paste into the Supabase SQL editor: run them in order, part 1 first (the /setup page has a Copy button per part) |
 | `pnpm showdown-sprites` | Rebuilds every sprite table from Pokémon Showdown ([docs/13](docs/13-SHOWDOWN-SPRITES.md)): the animated sprite of each Pokémon view and its size (`src/data/showdown-sprites.json`), the menu icon sheet (`src/assets/pokemon-icons.png`), and the trainer sprites with their per-region sheets (`src/assets/trainers/`, `src/data/trainer-atlas.json`). Pass `pokemon`, `icons` or `trainers` to run one step. Run it after adding species or trainers |
 | `pnpm art` | Regenerates the 5 area banners and 19 trainer badges in `public/` |
+| `pnpm unpixel <png or folder> [out]` | Turns AI "pixel art" (e.g. 2048×2048 Gemini images, ~2–3 MB) into true pixel art at its native size (~400×400 for Gemini, ~20–40 KB as an indexed PNG): finds the fake-pixel grid and keeps one colour per cell. `--width 400` evens out a batch to one exact width (height from the source's shape), `--px <n>` forces the cell size, `--bg auto` clears a sprite's flat background, `--preview 4` also writes an enlarged copy to compare. Show the output with `image-rendering: pixelated` |
 | `pnpm sim` | 1000 random battles + the §2.3 turns-to-kill table (spec methodology and played-out) |
 | `pnpm balance [N] [seed]` | Simulated campaign with an upgrade-buying policy (the same engine as the admin Campaign simulator); reports fight length per area. `GOLD=0.8 HP=1.6 pnpm balance` tries other multipliers |
 | `pnpm balance table` | Every starter of every region over seeds 1–6 — the summary table of [docs/06](docs/06-REGION-BALANCE.md) |
 | `pnpm import-bundle <file>` | Turns an admin *Export bundle* download into `src/data/*.json` + `seed.sql` to commit |
+
+## The UI
+
+The *Johto Daybreak* look ([docs/15](docs/15-UI-GUIDELINES.md) is the reference; the Visual Lab it came from is in
+`design/visual-lab/`):
+
+- **Home** is the hub: the area's scene with your team roaming in it, the area plate, AREAS (a sheet with a search
+  that also finds Pokémon), one big CONTINUE, and widgets for what's next (secret areas, the Day Care, Versus).
+  A tab bar on phones (Poké Mart, Upgrades, Home, Team, Pokédex), a side nav on desktop; the avatar opens the trainer
+  card and the menu.
+- **The battle** is full screen on a 240×160 pixel stage: the background is drawn in code, the Pokémon are Showdown's
+  animated sprites, and every move, Mega Evolution, Gigantamax, legendary entrance and catch plays a timeline from
+  `src/fx` (60 fixed steps a second, cues for the HUD). The panel under it holds the dice tray, the damage readout,
+  REROLL / ATTACK, the Bag and the team.
+- **Motion** has three levels (`src/lib/motion.ts`): full; short (Settings → Animations: one generic hit, a flash for
+  form changes, a catch without wobbles); off (admins only: everything jumps to its end state).
+- **Requests stay few**: scenes, balls, the Egg, badges and icons are drawn in code; Pokémon menu icons, trainers and
+  items come from atlases; only the Pokémon on screen load a sprite.
+- **Dev pages**: `/kitchen-sink` shows every component in every state, `/kitchen-sink/fx` plays every timeline with
+  replay, ¼ speed and one-frame steps.
 
 ## Architecture
 
@@ -66,7 +90,9 @@ For local cloud/admin work, copy `.env.example` to `.env.local` and fill it in. 
 ```
 src/engine   rules          src/store    zustand (content, save, run, battle, ui)
 src/data     bundle         src/save     schema, storage, cloud sync
-src/config   bundle ⇄ DB    src/screens  game screens (battle, area, map, …)
+src/config   bundle ⇄ DB    src/screens  game screens (home, battle, area, team, …)
+src/fx       pixel stage, scenes and timelines (no React)
+src/components  shared Daybreak components (on /kitchen-sink)
 src/admin    admin panel    src/setup    /setup guide
 scripts/     seed, art, sim, balance, import-bundle
 supabase/    migrations/0001_init.sql, seed.sql (generated)
@@ -95,6 +121,9 @@ supabase/    migrations/0001_init.sql, seed.sql (generated)
   best dice type against the foe; a no-effect attack inflicts no status; hopeless fights end as a stalemate at once.
 - **Deck weights are copies (v1.6)** — an area's encounter weights and loot weights are the number of copies of each
   card in its deck (the old `encounterDeckSize` / `lootDeckSize` scaling is gone).
+- **Once-only find pity** — after 5 rounds done in an area, the odds that an item find there is one of its once-only
+  finds rise linearly to ×10 at 50 rounds (never past 100 %). The three numbers are `uniquePity` in Admin → Config;
+  see [docs/01](docs/01-GAME-SPEC.md) §5.4.
 - **Pacing** — `hpMultiplier` 1 (fight length; 1.4 before the v1.8 dice schedule) and `goldMultiplier` 0.5 (economy), tuned with `pnpm balance` on the Kanto content. Damage has no global multiplier: a hit is exactly what the dice show (× type effectiveness, + the combo bonus).
 - `maxBattleTurns` (150) ends fights between two mutually-immune Pokémon in a no-reward stalemate.
 - **Versus** — trainer menu → Versus, open once 3 Pokémon reach Lv.50. A player leaves a team of three (cloned from
@@ -152,7 +181,10 @@ supabase/    migrations/0001_init.sql, seed.sql (generated)
 - **Cloud sync** — a signed-in player's save goes to Supabase at most once every `cloudSyncMinutes` (Admin → Config,
   default 15) while they play, and when the page closes; no longer every 30 s or on every tab switch. SYNC ONLINE, at
   the bottom of the side bar (in the avatar's drawer on phones), shows the last sync and syncs now — the same
-  compare-and-settle as at sign-in — then rests 5 minutes. A save that already matches the cloud isn't re-uploaded.
+  compare-and-settle as at sign-in — then rests 5 minutes. A save that already matches the cloud isn't re-uploaded,
+  whatever order Postgres hands its keys back in (it used to be: every game load uploaded the whole save again).
+  `supabase/migrations/0037_skip_unchanged_saves.sql`, run once on the live database, has the database drop such an
+  upload too, for tabs still on an older build: no write, no WAL, no trigger.
 - **Fewer web requests** — the images in `public/` (`pokemon`, `trainers`, `banners`, `battle`, `characters`) are kept in
   the browser for a month (`netlify.toml`) instead of being re-checked with Netlify on every visit. They have no content
   hash, so a *replaced* image can take up to a month to reach returning players: give it a new name, or a `?v=` in its
@@ -170,7 +202,9 @@ supabase/    migrations/0001_init.sql, seed.sql (generated)
   that was offline or in the background catches up from table `app_signals` when it comes back. The admin panel and
   `/setup` never reload on their own. Needs `supabase/migrations/0029_force_reload.sql` run once on the live database.
   Each visible tab is one Realtime connection: past the plan's limit (200 at once on the free plan) the extra tabs
-  read `app_signals` instead, at most every 5 minutes, so they reload a few minutes late rather than never.
+  read `app_signals` instead, at most every 5 minutes, so they reload a few minutes late rather than never. A new page
+  joins only once it has been open 30 s (reading `app_signals` as it does), so a page reloaded again and again opens
+  no connection.
 - **Forms & Mega Evolution** — regional forms (Alolan, Galarian, Hisuian, Paldean) are Pokémon of their own, caught in
   their region; evolving in that region gives the regional form (Pikachu → Alolan Raichu in Alola). Once the player has
   reached Kalos, a Lv.50 Pokémon with a Mega form gets a MEGA button in battle — no stone, no item, one per battle — and
@@ -181,5 +215,32 @@ supabase/    migrations/0001_init.sql, seed.sql (generated)
   with their ace once the player has it too; auto battles use none of it. See
   [docs/12](docs/12-FORMS-AND-MEGA.md). Needs `supabase/migrations/0030_pokemon_forms.sql` (or `seed.sql`, which
   carries it) and the rows of `supabase/patches/pokemon-forms-and-mega.sql`.
+- **Friends** — trainer menu → Friends (`/friends`): a friend ID per player (`K7QM-4XD9`) with COPY and SHARE INVITE
+  LINK (`/f/<code>`: opening it makes the two players friends at once, after a sign-in if needed), ADD BY FRIEND ID,
+  and each friend's trainer card (look, team, badge cases, Versus team) with REMOVE FRIEND, which ends it for both. A
+  new friend is announced when the game loads or the player comes back to the tab (no Realtime), with a gold dot on
+  the avatar until the Friends page is opened. Friends get a blue row and a "Friend" tag on every board, and an
+  ALL / FRIENDS switch keeps the whole board's ranks; in Versus their teams come first. At most `maxFriends` each
+  (`game_config`, Admin → Config, default 100). See [docs/16](docs/16-FRIENDS-PLAN.md). Needs
+  `supabase/migrations/0033_friends.sql` run once on the live database (re-running `supabase/seed.sql` does it too):
+  it also moves the leaderboard onto small *player cards*, written once per cloud push, and retires the leaderboard
+  cache, its rebuild and its pg_cron job (0026, 0031, 0032), which were most of the database's work.
+- **Day Care v2** — one Day Care for every region (it no longer resets with a region and shows the same in each),
+  open from 20 species caught across every region's Pokédex. Two of your Pokémon train there to Lv.100 (+1 XP every
+  10 min, no other cap); a Pokémon taken back goes to its own region's Box. Up to four Pokémon from friends' Day Cares
+  visit (they stay theirs: nothing changes for the friend). Eggs are bred from the real Egg groups (Showdown data,
+  `pnpm egg-groups`): every 12 h each of yours checks everyone there and a compatible pair leaves an Egg; Ditto pairs
+  with all but legendaries, on its own 24 h check; one Egg waits at a time. EGG NOW (₽200) runs the next check at once
+  and hatches its Egg. The first Egg is still a gift; the ₽50 Egg is gone. Day Care Eggs hatch shiny 1 time in 100,
+  and a hatchling you don't keep brings ₽10 from the Day Care couple. Every number is in Admin → Config → Pokémon Day
+  Care. Old saves merge their regions' Day Cares on load (the two that stayed longest stay, the others go home with
+  their levels). See [docs/15](docs/15-DAYCARE-BREEDING.md). Needs `supabase/migrations/0034_day_care.sql` run once on
+  the live database after 0033 (re-running `supabase/seed.sql` does it too): each resident counts on its own region's
+  player card, the cards carry the residents for the friend picker, and `friend_day_cares()` reads them. Then
+  **Admin → Reload all players**, so no tab still running the old game strips the new save fields.
+- **Discord sign-in** — players can sign in with Discord as well as Google: same save, leaderboard, Versus and friends,
+  and Settings → Connected accounts links both to one account. CONNECT offers the choice only once Discord is switched
+  on in Supabase (the game reads Auth's public settings, kept a day); until then it goes straight to Google as before.
+  Setup in [docs/17](docs/17-DISCORD-SIGN-IN.md) and `/setup` step 7; no environment variable.
 - `allowVoluntarySwitch`, `enemyUpgradeLevel`, `goldMultiplier`, `forcedCenterWhenHurt` and `scaleLevelSpread` are
   `game_config` keys (the spec was silent on these).

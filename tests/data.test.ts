@@ -9,11 +9,13 @@ import areas from '@/data/areas.json'
 import trainers from '@/data/trainers.json'
 import upgrades from '@/data/upgrades.json'
 import { BUNDLE } from '@/config/bundle'
+import { DEFAULT_CONFIG } from '@/engine'
 import { bundleToRows, TABLES } from '@/config/mapping'
 import { validateRow } from '@/admin/schemas'
 import { compileGameData, effectiveStats } from '@/engine'
 import type { Area, DiceEntry, Species, Trainer } from '@/engine/types'
 import { composeDice, diceCountFromBst, hpAtLevel, stableUuid } from '../scripts/seed'
+import { TUNED_STARTERS } from './fixtures'
 
 const species = pokemon as Species[]
 const byDex = (dex: number) => species.find((p) => p.dex === dex)!
@@ -138,8 +140,8 @@ describe('areas & trainers', () => {
   const allTrainers = trainers as Trainer[]
   const allAreas = everyArea.filter((a) => (a.regionId ?? 'kanto') === 'kanto')
 
-  it('has 28 Kanto areas with valid dex references', () => {
-    expect(allAreas).toHaveLength(28)
+  it('has 26 Kanto areas with valid dex references', () => {
+    expect(allAreas).toHaveLength(26)
     for (const a of allAreas) for (const w of a.wildPool) expect(w.dex).toBeGreaterThanOrEqual(1)
     for (const a of allAreas) for (const w of a.wildPool) expect(w.dex).toBeLessThanOrEqual(151)
     for (const t of allTrainers) for (const m of t.team) expect(m.dex).toBeGreaterThanOrEqual(1)
@@ -148,10 +150,13 @@ describe('areas & trainers', () => {
   it('keeps legendaries out of every wild pool, in every region', () => {
     const wild = new Set(everyArea.flatMap((a) => a.wildPool.filter((w) => w.weight > 0).map((w) => w.dex)))
     for (const l of ALL_LEGENDARIES) expect(wild.has(l), `#${l}`).toBe(false)
-    // Each is attached to an area as a boss — except the three roamers, which have no area at all.
+    // Each is attached to an area as a boss — except the three roamers, which have no area at all, and the raid
+    // pool's mythicals, met in Raid Battles once their lair is cleared.
     const bosses = new Set(everyArea.flatMap((a) => a.legendaryBoss ?? []).map((b) => b.dex))
     const roamers = new Set(BUNDLE.config.roamers ? (BUNDLE.config.roamers as { dex: number[] }).dex : [])
-    for (const l of ALL_LEGENDARIES) expect(bosses.has(l) || roamers.has(l), `#${l}`).toBe(true)
+    const raids = new Set(DEFAULT_CONFIG.events.raid.pool.map((p) => p.dex))
+    for (const l of ALL_LEGENDARIES) expect(bosses.has(l) || roamers.has(l) || raids.has(l), `#${l}`).toBe(true)
+    for (const r of raids) expect(bosses.has(r), `#${r} is a raid, not a boss`).toBe(false)
   })
 
   it('keeps the starters rare in the wild (weight 3 in the catch-all, 1 elsewhere), never in trainer teams', () => {
@@ -160,7 +165,7 @@ describe('areas & trainers', () => {
       for (const s of STARTERS) {
         const entry = a.wildPool.find((w) => w.dex === s)
         if (a === vr) expect(entry?.weight).toBe(3)
-        else if (entry) expect(entry.weight, a.name).toBe(1)
+        else if (entry) expect(entry.weight, a.name).toBe(TUNED_STARTERS[`${a.id}/${s}`] ?? 1)
       }
     }
     for (const t of allTrainers) for (const m of t.team) expect(STARTERS).not.toContain(m.dex)
@@ -187,10 +192,11 @@ describe('Kanto structure', () => {
   const linear = allAreas.filter((a) => !a.hidden).sort((a, b) => a.orderIndex - b.orderIndex)
   const hidden = allAreas.filter((a) => a.hidden)
 
-  it('has 24 linear areas in order, Route 1 → Indigo Plateau → the endgame lap, and 4 secret areas with conditions', () => {
-    expect(linear.map((a) => a.orderIndex)).toEqual(Array.from({ length: 24 }, (_, i) => i + 1))
+  it('has 22 linear areas in order, Route 1 → Indigo Plateau, and 4 secret areas with conditions', () => {
+    // Victory Road II and Indigo Plateau II left for the Elite Rebattle (special events).
+    expect(linear.map((a) => a.orderIndex)).toEqual(Array.from({ length: 22 }, (_, i) => i + 1))
     expect(linear[0]!.name).toBe('Route 1')
-    expect(linear.slice(21).map((a) => a.name)).toEqual(['Indigo Plateau', 'Victory Road II', 'Indigo Plateau II'])
+    expect(linear.at(-1)!.name).toBe('Indigo Plateau')
     expect(hidden.map((a) => a.name).sort()).toEqual(['Cerulean Cave', 'Faraway Island', 'Power Plant', 'Rocket Hideout'])
     for (const a of hidden) expect(a.unlockConditions?.length).toBeGreaterThan(0)
     expect(allAreas.find((a) => a.name === 'Faraway Island')!.unlockConditions).toEqual([{ kind: 'pokedex', count: 150 }])
@@ -220,14 +226,22 @@ describe('Kanto structure', () => {
     for (const t of [...leaders, ...indigo]) expect(t.spriteUrl).toMatch(/^\/trainers\/classes\/(champion|elite|blue)-/)
   })
 
-  it('ends with an Elite Four around Lv.70 and a rival Champion per starter, their counter starter at Lv.80', () => {
-    const gyms = linear[23]!.gyms.map((id) => tById.get(id)!)
-    expect(gyms.map((t) => t.role)).toEqual(['elite', 'elite', 'elite', 'elite', 'champion', 'champion', 'champion'])
-    for (const t of gyms.slice(0, 4)) for (const m of t.team) expect(Math.abs(m.level - 70)).toBeLessThanOrEqual(3)
-    const rival = (starter: number) => gyms.find((t) => t.rivalOf === starter)!.team.map((m) => [m.dex, m.level])
-    expect(rival(1)).toEqual([[26, 75], [130, 76], [6, 80]]) // Bulbasaur → Raichu, Gyarados, Charizard
-    expect(rival(4)).toEqual([[26, 75], [59, 76], [9, 80]]) // Charmander → Raichu, Arcanine, Blastoise
-    expect(rival(7)).toEqual([[26, 75], [59, 76], [3, 80]]) // Squirtle → Raichu, Arcanine, Venusaur
+  it('comes back as the Elite Rebattle: the Elite Four and a rival Champion per starter, in three tiers', () => {
+    const lineups = BUNDLE.config.rebattleLineups as Record<string, Record<string, string[]>>
+    const tier = (id: string) => lineups.kanto![id]!.map((x) => tById.get(x)!)
+    for (const [id, levels] of [
+      ['bronze', [69, 71, 73]],
+      ['silver', [84, 86, 88]],
+      ['gold', [100, 100, 100]],
+    ] as const) {
+      const gyms = tier(id)
+      expect(gyms.map((t) => t.role)).toEqual(['elite', 'elite', 'elite', 'elite', 'champion', 'champion', 'champion'])
+      for (const t of gyms) expect(t.team.length).toBeLessThanOrEqual(3)
+      const rival = (starter: number) => gyms.find((t) => t.rivalOf === starter)!.team.map((m) => [m.dex, m.level])
+      expect(rival(1)).toEqual([[26, levels[0]], [130, levels[1]], [6, levels[2]]]) // Bulbasaur → Raichu, Gyarados, Charizard
+      expect(rival(4)).toEqual([[26, levels[0]], [59, levels[1]], [9, levels[2]]]) // Charmander → Raichu, Arcanine, Blastoise
+      expect(rival(7)).toEqual([[26, levels[0]], [59, levels[1]], [3, levels[2]]]) // Squirtle → Raichu, Arcanine, Venusaur
+    }
   })
 
   it('gives every trainer a sprite cut from the trainer sheet', () => {
@@ -249,7 +263,8 @@ describe('Kanto structure', () => {
     expect(bossOf('Power Plant')).toEqual([145])
     expect(bossOf('Victory Road')).toEqual([146])
     expect(bossOf('Cerulean Cave')).toEqual([150])
-    expect(bossOf('Faraway Island')).toEqual([151])
+    // Mew is a raid: Faraway Island, its lair, unlocks it.
+    expect(allAreas.find((a) => a.name === 'Faraway Island')!.legendaryBoss).toBeNull()
   })
 })
 

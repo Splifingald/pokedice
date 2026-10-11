@@ -1,8 +1,10 @@
 // Auth + cloud save sync + background content hot-swap. Never blocks the UI on the network.
-import type { RealtimeChannel, Session, SupabaseClient } from '@supabase/supabase-js'
+import type { AuthError, RealtimeChannel, Session, SupabaseClient, User } from '@supabase/supabase-js'
 import { create } from 'zustand'
 import { startAnalytics } from '@/analytics/ping'
 import { fetchContentUpdate } from '@/config/remote'
+import { AUTH_PROVIDERS, loadAuthProviders } from '@/lib/authProviders'
+import { loadFriendStatus } from '@/lib/friends'
 import { getSupabase } from '@/lib/supabase'
 import {
   cancelPush,
@@ -10,15 +12,18 @@ import {
   flushPush,
   pullCloudSave,
   pushCloudSave,
+  pushesSettled,
   pushKey,
   sameSave,
   schedulePush,
 } from '@/save/cloud'
-import type { SaveData } from '@/engine/types'
-import { backupSave, flushWrite } from '@/save/storage'
-import { commitSave, initialRun, onSaveCommitted, pushToast, setContent, tickFossils, useGame } from './game'
+import type { SaveData, SaveMode } from '@/engine/types'
+import { activeSlot, backupSave, flushWrite, readSave, wipePlayerData, wipeSlot, writeSlot } from '@/save/storage'
+import { commitSave, initialRun, onSaveCommitted, pushToast, setContent, tickFossils, useGame, type AuthProvider } from './game'
 import { t } from '@/i18n'
 import { rescueIfRegionDisabled } from './regions'
+import { armDayCareTimer, tickDayCare } from './daycare'
+import { comeBack, markAway, settleExtreme, startExtremeClocks } from './extreme'
 
 let syncedUser: string | null = null
 /** Nothing is pushed until the first sync for the signed-in user is settled — no overwrite while we compare. */
@@ -69,7 +74,8 @@ async function reconcile(client: SupabaseClient, id: string): Promise<'loaded' |
   cancelPush() // whatever was waiting goes out below, if this device wins
   lastTry = Date.now()
   const local = useGame.getState().save
-  const cloud = await pullCloudSave(client, id)
+  // The save this page plays: the main one, or the Extreme one beside it (docs/22).
+  const cloud = await pullCloudSave(client, id, activeSlot())
   const decision = decideSync(local, cloud)
   if (decision === 'ask' && local && cloud) {
     useGame.setState({ syncConflict: { local, cloud } })
@@ -107,9 +113,18 @@ async function handleSession(client: SupabaseClient, session: Session | null) {
     useGame.setState({ auth: { status: 'signed_out', userId: null, email: null } })
     return
   }
-  const { id, email, user_metadata: meta } = session.user
+  const { id, email, user_metadata: meta, app_metadata: app } = session.user
   const avatarUrl = (meta?.avatar_url ?? meta?.picture ?? null) as string | null
-  useGame.setState({ auth: { status: 'signed_in', userId: id, email: email ?? null, avatarUrl } })
+  useGame.setState({
+    auth: {
+      status: 'signed_in',
+      userId: id,
+      email: email ?? null,
+      avatarUrl,
+      provider: asProvider(app?.provider),
+      providers: providersOf(session.user),
+    },
+  })
   if (syncedUser === id) return
   syncedUser = id
   try {
@@ -195,6 +210,8 @@ export async function initAuth() {
     useGame.setState({ auth: { status: 'unavailable', userId: null, email: null } })
     return
   }
+  void loadAuthProviders()
+  sayReturnedAuthError()
   onSaveCommitted((save) => {
     const { auth } = useGame.getState()
     if (!save || !pushAllowed || auth.status !== 'signed_in' || !auth.userId) return
@@ -224,18 +241,198 @@ export async function pushSaveNow(): Promise<boolean> {
   return true
 }
 
-export async function signInWithGoogle() {
+const asProvider = (p: unknown): AuthProvider | null =>
+  (AUTH_PROVIDERS as unknown[]).includes(p) ? (p as AuthProvider) : null
+
+/** Every provider linked to the account, from its identities (and the provider list Auth keeps in app_metadata). */
+export function providersOf(user: Pick<User, 'identities' | 'app_metadata'>): AuthProvider[] {
+  const seen = [...(user.identities ?? []).map((i) => i.provider), ...((user.app_metadata?.providers as unknown[]) ?? [])]
+  return AUTH_PROVIDERS.filter((p) => seen.includes(p))
+}
+
+export const providerName = (p: AuthProvider) => t(p === 'discord' ? 'ui.account.providerDiscord' : 'ui.account.providerGoogle')
+
+/** Back where the player was, after the provider's page. */
+const here = () => `${window.location.origin}${window.location.pathname}`
+
+/** Linking: remembered across the provider's page, so an error coming back can name it. */
+const LINKING_KEY = 'pokedice.linking'
+
+/** Auth's error codes the player can act on, in words; anything else as Auth says it. */
+export function authErrorText(code: string | null | undefined, provider: AuthProvider | null, fallback: string): string {
+  if (code === 'identity_already_exists' && provider) return t('ui.account.err.alreadyLinked', { provider: providerName(provider) })
+  if (code === 'manual_linking_disabled') return t('ui.account.err.linkingOff')
+  return fallback
+}
+
+const errorCode = (error: AuthError) => (error as AuthError & { code?: string }).code ?? null
+
+/** Sign in with Google or Discord: the provider's page, then back here. */
+export async function signIn(provider: AuthProvider = 'google') {
   const client = await getSupabase()
   if (!client) {
     pushToast(t('ui.toast.cloudNotConfigured'), 'bad')
     return
   }
   flushWrite()
-  const { error } = await client.auth.signInWithOAuth({
-    provider: 'google',
-    options: { redirectTo: `${window.location.origin}${window.location.pathname}` },
-  })
-  if (error) pushToast(error.message, 'bad')
+  const { error } = await client.auth.signInWithOAuth({ provider, options: { redirectTo: here() } })
+  if (error) pushToast(authErrorText(errorCode(error), provider, error.message), 'bad')
+}
+
+/** The admin panel's sign-in: the admin's Google account. */
+export const signInWithGoogle = () => signIn('google')
+
+/** Adds another way in to the signed-in account (Settings → Connected accounts): the provider's page, then back. */
+export async function linkProvider(provider: AuthProvider) {
+  const client = await getSupabase()
+  if (!client) return
+  flushWrite()
+  try {
+    sessionStorage.setItem(LINKING_KEY, provider)
+  } catch {
+    /* the error, if any, just won't name the provider */
+  }
+  const { error } = await client.auth.linkIdentity({ provider, options: { redirectTo: here() } })
+  if (error) pushToast(authErrorText(errorCode(error), provider, error.message), 'bad')
+}
+
+/** Removes a way in. Auth refuses to remove the last one, and so does the Settings screen. */
+export async function unlinkProvider(provider: AuthProvider) {
+  const client = await getSupabase()
+  if (!client) return
+  const { data, error } = await client.auth.getUserIdentities()
+  const identity = data?.identities.find((i) => i.provider === provider)
+  if (error || !identity) {
+    pushToast(error?.message ?? t('ui.toast.syncUnavailable'), 'bad')
+    return
+  }
+  const res = await client.auth.unlinkIdentity(identity)
+  if (res.error) {
+    pushToast(authErrorText(errorCode(res.error), provider, res.error.message), 'bad')
+    return
+  }
+  // The session's copy of the user still lists it: refresh, and the auth listener updates Settings.
+  await client.auth.refreshSession()
+  pushToast(t('ui.account.unlinked', { provider: providerName(provider) }), 'info')
+}
+
+/** An error Auth sent back on the return from a provider's page (`?error_code=…`): said once, then taken off the URL. */
+function sayReturnedAuthError() {
+  if (typeof window === 'undefined') return
+  const search = new URLSearchParams(window.location.search)
+  const hash = new URLSearchParams(window.location.hash.replace(/^#/, ''))
+  const code = search.get('error_code') ?? hash.get('error_code')
+  const description = search.get('error_description') ?? hash.get('error_description')
+  if (!code && !description) return
+  let provider: AuthProvider | null = null
+  try {
+    provider = asProvider(sessionStorage.getItem(LINKING_KEY))
+    sessionStorage.removeItem(LINKING_KEY)
+  } catch {
+    /* storage blocked */
+  }
+  pushToast(authErrorText(code, provider, description ?? code ?? ''), 'bad')
+  for (const k of ['error', 'error_code', 'error_description']) search.delete(k)
+  const rest = search.toString()
+  window.history.replaceState(null, '', `${window.location.pathname}${rest ? `?${rest}` : ''}`)
+}
+
+/**
+ * Settings → Delete all my data: signed in, every row the online database keeps about the player
+ * (`delete_my_data()`, migration 0038), then everything the game keeps on this device but its settings. Online first:
+ * a local delete alone would get the save back from the cloud at the next sync, so if the online one fails nothing is
+ * deleted and this returns false. The caller reloads the page, which clears what the stores still hold in memory.
+ */
+export async function deleteAllData(): Promise<boolean> {
+  const { auth } = useGame.getState()
+  // Not known yet whether a session is stored, or a sync running: either could bring a cloud save straight back.
+  if (auth.status === 'unknown' || useCloudSync.getState().busy) return false
+  if (auth.status === 'signed_in' && auth.userId) {
+    const client = await getSupabase()
+    if (!client) return false
+    const was = pushAllowed
+    // No push may land after the delete: the waiting one goes now, the next ones wait for the answer.
+    pushAllowed = false
+    await pushesSettled()
+    let error: unknown = null
+    try {
+      error = (await client.rpc('delete_my_data')).error
+    } catch (err) {
+      error = err
+    }
+    if (error) {
+      console.warn('[cloud] delete failed', error)
+      pushAllowed = was
+      return false
+    }
+    cloudKey = null
+  }
+  // Out of the store too, so nothing commits the old save again before the reload.
+  useGame.setState({ save: null })
+  resetRun()
+  wipePlayerData()
+  return true
+}
+
+/**
+ * Play the other save (docs/22). The one being left is written and goes to the cloud first, and counts as left (an
+ * Extreme save heals for the time spent away from it); then the page reloads on the other one, since every store
+ * holds one save's friends, events and Versus in memory.
+ */
+export async function switchSave(to: SaveMode): Promise<boolean> {
+  if (activeSlot() === to) return false
+  markAway()
+  flushWrite()
+  try {
+    // A slow network doesn't hold the switch: closing the page sends what's still waiting anyway.
+    await Promise.race([pushSaveNow(), new Promise((done) => setTimeout(done, 4000))])
+  } catch (err) {
+    console.warn('[cloud] push before switching failed', err)
+  }
+  writeSlot(to)
+  // Without a save on this device, the title: the sign-in sync may still bring the cloud's (a new game there would
+  // write over it).
+  window.location.assign(readSave(to).save ? '/home' : '/')
+  return true
+}
+
+/**
+ * Settings → Delete my Extreme save (docs/22): its rows online (`delete_my_data('extreme')`), then the save on this
+ * device. The main save and everything shared (the account, friends) stay. Online first, for the same reason as
+ * deleteAllData. Playing it now: the page goes back to the main save (the caller reloads).
+ */
+export async function deleteExtremeSave(): Promise<boolean> {
+  const { auth } = useGame.getState()
+  if (auth.status === 'unknown' || useCloudSync.getState().busy) return false
+  const playing = activeSlot() === 'extreme'
+  if (auth.status === 'signed_in' && auth.userId) {
+    const client = await getSupabase()
+    if (!client) return false
+    const was = pushAllowed
+    if (playing) {
+      pushAllowed = false
+      await pushesSettled()
+    }
+    let error: unknown = null
+    try {
+      error = (await client.rpc('delete_my_data', { p_realm: 'extreme' })).error
+    } catch (err) {
+      error = err
+    }
+    if (error) {
+      console.warn('[cloud] delete failed', error)
+      pushAllowed = was
+      return false
+    }
+    if (playing) cloudKey = null
+  }
+  if (playing) {
+    useGame.setState({ save: null })
+    resetRun()
+    writeSlot('main')
+  }
+  wipeSlot('extreme')
+  return true
 }
 
 /** Sign-out keeps the local save. */
@@ -350,6 +547,11 @@ const RELOAD_SIGNAL_KEY = 'pokedice.reloadSignal'
 const RELISTEN_MS = 5 * 60_000
 /** A tab hidden this long leaves the channel; it catches up from app_signals when it comes back. */
 const HIDDEN_LEAVE_MS = 5 * 60_000
+/**
+ * A new page joins only once it has stayed this long: each join is a connection and a policy check on the database, and
+ * a page reloaded over and over (seen live: every 1–2 s for hours) would otherwise open one per load.
+ */
+const JOIN_AFTER_LOAD_MS = 30_000
 let channel: RealtimeChannel | null = null
 let lastListen = 0
 let leaveTimer: ReturnType<typeof setTimeout> | undefined
@@ -419,6 +621,8 @@ function relisten() {
 function checkFreshness(returning: boolean) {
   reloadIfSafe()
   relisten()
+  // New friends, on the way back to the tab (at most every 5 minutes): no Realtime for friends (docs/16 §1.7).
+  if (returning) void loadFriendStatus()
   if (Date.now() - loadedAt >= MAX_PAGE_AGE_MS) return reloadWhenSafe()
   if (Date.now() - lastVersionCheck >= (returning ? VERSION_ON_RETURN_MS : VERSION_WHILE_OPEN_MS))
     void checkForNewBuild()
@@ -433,25 +637,39 @@ export function startBackgroundServices() {
   startAnalytics()
   void initAuth()
   void checkContent()
-  void listenForReload(false)
+  // Catching up covers a request sent before the join; hidden by then, it joins when the player comes back (relisten).
+  setTimeout(() => {
+    if (document.visibilityState === 'visible') void listenForReload(true)
+  }, JOIN_AFTER_LOAD_MS)
+  tickDayCare()
+  // Extreme mode (docs/22): K.O. rests end on the clock, and time out of the game heals.
+  startExtremeClocks()
   setInterval(() => {
     if (document.visibilityState === 'visible') checkFreshness(false)
     tickFossils()
+    settleExtreme()
   }, 60_000)
+  // The Day Care's timer is set from the save as it was; whatever changes it later (a resident left, a friend's
+  // Pokémon invited) sets it again here.
+  useGame.subscribe((s, prev) => s.save?.dayCare !== prev.save?.dayCare && armDayCareTimer())
   // Closing the page sends what the automatic sync hasn't yet. Merely switching away doesn't: on phones that happens
   // all the time, and the local save keeps everything until the next sync.
   window.addEventListener('pagehide', () => {
+    markAway()
     flushWrite()
     flushPush()
   })
   document.addEventListener('visibilitychange', () => {
     clearTimeout(leaveTimer)
     if (document.visibilityState === 'hidden') {
+      markAway()
       flushWrite()
       leaveTimer = setTimeout(leaveChannel, HIDDEN_LEAVE_MS)
     } else {
       checkFreshness(true)
       tickFossils()
+      tickDayCare()
+      void comeBack()
     }
   })
 }

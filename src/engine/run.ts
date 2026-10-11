@@ -4,9 +4,11 @@ import { KANTO, evolutionGate, regionOf, regionOfArea } from './regions'
 import { asSeenBy, gymsFor, playerSideOf } from './rival'
 import { nextComboCost, nextDieCost, pokemonXp, trainerGoldFor, healAmount, multiExpShareFor } from './economy'
 import { deckAbilities, deckCounts, roundsComplete } from './encounters'
+import { centersOn, healItemsOn, wipeHeals } from './extreme'
 import { addFossil, isReviving } from './fossils'
 import { LEGACY_GAUGE } from './legacyGauge'
 import { MONEY, sellPrice, shopSells, usableIn } from './items'
+import { earnedGold } from './liveEvents'
 import {
   averageLevel,
   createInstance,
@@ -27,6 +29,7 @@ import {
   type AreaProgress,
   type ComboKey,
   type GameData,
+  type LiveEvent,
   type PokeType,
   type PlayerProfile,
   type PokemonInstance,
@@ -60,7 +63,7 @@ export function newSave(starterDex: number, data: GameData, now: number, newId: 
     dieLevels,
     currentAreaId: linearAreas(data, data.regions[0]?.id)[0]?.id ?? data.areas[0]?.id ?? '',
     areaProgress: {},
-    settings: { sfx: false, reducedMotion: false, multiExp: true },
+    settings: { sfx: true, sound: true, reducedMotion: false, multiExp: true },
     hpScale: data.config.hpMultiplier,
     // A new game starts in the first region, with none parked behind it.
     region: data.regions[0]?.id ?? KANTO,
@@ -159,12 +162,13 @@ export function pickUpItem(
   data: GameData,
   now = Date.now(),
   newId: () => string = () => `fossil-${now}`,
+  live: LiveEvent | null = null,
 ): SaveData {
   const qty = Math.max(0, Math.floor(find.qty))
   const item = data.items[find.itemKey]
   let next: SaveData =
     find.itemKey === MONEY
-      ? { ...save, gold: save.gold + qty }
+      ? { ...save, gold: save.gold + earnedGold(qty, live).amount }
       : item?.effect.kind === 'fossil'
         ? addFossil(save, item, data, now, newId()) // straight to the Box, reviving
         : item
@@ -179,10 +183,13 @@ export function pickUpItem(
   return next
 }
 
-/** Every Pokémon the player owns: the Box (team included) and the Day Care's residents. */
+/**
+ * Every Pokémon the player owns here: the Box (team included) and the Day Care's residents left from this region.
+ * The Day Care is shared, but regions never pool: a Johto resident is nobody's in Kanto.
+ */
 export const ownedPokemon = (save: SaveData): PokemonInstance[] => [
   ...save.box,
-  ...(save.dayCare?.residents.map((r) => r.inst) ?? []),
+  ...(save.dayCare?.residents ?? []).filter((r) => (r.region ?? regionOf(save)) === regionOf(save)).map((r) => r.inst),
 ]
 
 export const maxOwnedLevel = (save: SaveData) => ownedPokemon(save).reduce((m, p) => Math.max(m, p.level), 0)
@@ -300,14 +307,18 @@ export function applyHp(save: SaveData, hpByUid: Record<string, number>): SaveDa
 export type RunEvent =
   | ProgressEvent
   | { kind: 'xp'; uid: string; amount: number; shared?: boolean }
-  | { kind: 'gold'; amount: number }
+  /** `bonus`: the part of `amount` a Cash Flow live event added. */
+  | { kind: 'gold'; amount: number; bonus?: number }
   /** `replacedLevel`: a stronger copy replaced the one you had at that level. */
-  | { kind: 'caught'; uid: string; dex: number; level: number; joinedTeam: boolean; replacedLevel?: number }
+  /** `isNew`: the species wasn't in the Pokédex before this catch. */
+  | { kind: 'caught'; uid: string; dex: number; level: number; joinedTeam: boolean; replacedLevel?: number; isNew?: boolean }
   | { kind: 'fled'; dex: number }
   | { kind: 'boss_defeated'; dex: number }
   | { kind: 'gym_defeated'; trainerId: string; name: string; badge: string | null; role: TrainerRole }
   | { kind: 'area_cleared'; areaId: string; nextAreaId: string | null }
   | { kind: 'secret_unlocked'; areaId: string }
+  /** An Elite Rebattle tier won: every trainer of its gauntlet beaten in a row. */
+  | { kind: 'rebattle_cleared'; regionId: string; tier: number }
 
 export interface VictoryInput {
   areaId: string
@@ -326,25 +337,22 @@ export interface VictoryResult {
 }
 
 /**
- * Everything a K.O. pays out: XP to the fighter (or team), trainer Pokédollars, boss, area unlock.
- * Catching is its own step afterwards — the catch die (catching.ts).
+ * A K.O.'s XP: the foe's level × xpMultiplier (× the area's backtrack when it's cleared) to the fighter (or the whole
+ * team), and Multi EXP's shares to the bench. Level-ups, milestones and evolutions go into `events`; an evolution adds
+ * its species to the Pokédex.
  */
-export function applyVictory(
+export function awardBattleXp(
   save: SaveData,
-  input: VictoryInput,
+  enemyLevel: number,
+  fighterUid: string,
+  area: Area,
+  cleared: boolean,
   data: GameData,
   rng: Rng,
-  now: number,
-  newId: () => string,
-): VictoryResult {
-  const area = getArea(data, input.areaId)
-  let progress = progressOf(save, area.id)
-  const events: RunEvent[] = []
-  const hiddenBefore = new Set(unlockedHiddenAreas(save, data))
+  events: RunEvent[],
+): SaveData {
   let next: SaveData = { ...save, pokedex: [...save.pokedex] }
-
-  // XP: the foe's level × xpMultiplier.
-  const xp = pokemonXp(input.enemyLevel, area, progress.cleared, data)
+  const xp = pokemonXp(enemyLevel, area, cleared, data)
   // Cross-generation evolutions wait for their generation; the gate is the same for every award in this battle.
   const allowDex = evolutionGate(save, data)
   const award = (uid: string, amount: number, shared: boolean) => {
@@ -357,9 +365,9 @@ export function applyVictory(
     for (const ev of res.events)
       if (ev.kind === 'evolve' && !next.pokedex.includes(ev.toDex)) next.pokedex.push(ev.toDex)
   }
-  const recipients = data.config.xpShareMode === 'team' ? next.team : [input.fighterUid]
+  const recipients = data.config.xpShareMode === 'team' ? next.team : [fighterUid]
   // Multi EXP compares levels from before this K.O.'s XP.
-  const fighterLevel = getInstance(next, input.fighterUid)?.level ?? 1
+  const fighterLevel = getInstance(next, fighterUid)?.level ?? 1
   for (const uid of recipients) award(uid, xp, false)
 
   // Multi EXP: team members who didn't fight (and are still standing) get a share, bigger the further behind they are.
@@ -372,12 +380,34 @@ export function applyVictory(
       if (share > 0) award(uid, Math.max(1, Math.round(xp * share)), true)
     }
   }
+  return next
+}
 
-  // Gold — trainers only (gym leaders, the Elite Four and the Champion pay extra)
+/**
+ * Everything a K.O. pays out: XP to the fighter (or team), trainer Pokédollars, boss, area unlock.
+ * Catching is its own step afterwards — the catch die (catching.ts).
+ */
+export function applyVictory(
+  save: SaveData,
+  input: VictoryInput,
+  data: GameData,
+  rng: Rng,
+  now: number,
+  newId: () => string,
+  /** The live event running for this player (Cash Flow pays more). */
+  live: LiveEvent | null = null,
+): VictoryResult {
+  const area = getArea(data, input.areaId)
+  let progress = progressOf(save, area.id)
+  const events: RunEvent[] = []
+  const hiddenBefore = new Set(unlockedHiddenAreas(save, data))
+  let next = awardBattleXp(save, input.enemyLevel, input.fighterUid, area, progress.cleared, data, rng, events)
+
+  // Gold — trainers only (gym leaders, the Elite Four and the Champion pay extra), more under Cash Flow
   if (input.kind === 'trainer' || input.kind === 'gym') {
-    const gold = trainerGoldFor(input.enemyLevel, area, progress.cleared, data, input.kind === 'gym')
-    next = { ...next, gold: next.gold + gold }
-    events.push({ kind: 'gold', amount: gold })
+    const { amount, bonus } = earnedGold(trainerGoldFor(input.enemyLevel, area, progress.cleared, data, input.kind === 'gym'), live)
+    next = { ...next, gold: next.gold + amount }
+    events.push(bonus ? { kind: 'gold', amount, bonus } : { kind: 'gold', amount })
   }
 
   // Boss
@@ -474,19 +504,20 @@ export function finishRound(
 /**
  * Wipe: the round is lost. Back to the start of the area, team fully healed; the deck is dropped, so the round in
  * progress never counts and the next encounter starts a new, freshly shuffled round. Rounds already done stay done.
- * Pokémon levels and XP, items and Pokédollars are all kept.
+ * Pokémon levels and XP, items and Pokédollars are all kept. In Extreme mode nothing heals: the team rests.
  */
 export function applyWipe(save: SaveData, areaId: string, data: GameData): SaveData {
   const p = progressOf(save, areaId)
-  const healed = new Set(save.team)
+  const healed = new Set(wipeHeals(save, data) ? save.team : [])
   return {
     ...withProgress(save, areaId, { ...p, deck: [], drawn: [] }),
     box: save.box.map((inst) => (healed.has(inst.id) ? { ...inst, currentHp: instanceMaxHp(inst, data) } : inst)),
   }
 }
 
-/** Pokémon Center: full heal for team and box. */
+/** Pokémon Center: full heal for team and box. None in Extreme mode (unless the admin turns them back on). */
 export function centerHeal(save: SaveData, data: GameData): SaveData {
+  if (!centersOn(save, data)) return save
   return { ...save, box: save.box.map((inst) => ({ ...inst, currentHp: instanceMaxHp(inst, data) })) }
 }
 
@@ -585,6 +616,7 @@ export function applyFieldItem(
   const inst = getInstance(save, instId)
   if (!item || !inst || isReviving(inst) || !usableIn(item, 'field') || (save.inventory[key] ?? 0) <= 0) return null
   if (item.effect.kind === 'heal' || item.effect.kind === 'revive') {
+    if (!healItemsOn(save, data)) return null
     const healed = applyItemToInstance(save, key, instId, data)
     return healed ? { save: healed, events: [] } : null
   }

@@ -1,3 +1,4 @@
+import { isLegendary } from './breeding'
 import { shuffle } from './deal'
 import { regionOfArea } from './regions'
 import { drawLoot } from './items'
@@ -33,6 +34,10 @@ export type Encounter =
       /** 1-based position among the area's gym battles, and their count (Elite Four = 5). */
       index: number
       total: number
+      /** The upgrade level its Pokémon fight at, when not the trainer's or the area's (the Elite Rebattle's tiers). */
+      upgradeLevel?: number
+      /** An Elite Rebattle fight: the region and the tier (0 = Bronze). */
+      rebattle?: { regionId: string; tier: number }
     }
   /** `reason`: 'round' opens a new round; 'fainted' follows a K.O. in an easy area. */
   | { kind: 'center'; forced: boolean; reason?: 'fainted' | 'round' }
@@ -64,6 +69,10 @@ export interface EncounterContext {
   centerUseful?: boolean
   /** The player's starter and character: picks the rival version of a trainer. */
   player?: PlayerSide | null
+  /** Extreme mode: no Pokémon Center is ever dealt or sent. */
+  noCenters?: boolean
+  /** × the wild shiny odds here: a Shiny Parade live event covering the area (liveEvents shinyBoost). */
+  shinyBoost?: number
 }
 
 /** Every round the area asks for is done: its gym / legendary waits, and the area can clear. */
@@ -109,17 +118,25 @@ export function dueBoss(area: Area, progress: AreaProgress, teamAvgLevel: number
   return null
 }
 
-/** One roll of the wild shiny odds (`shinyChance`). */
-const rollShiny = (data: GameData, rng: Rng): boolean => {
-  const chance = data.config.shinyChance ?? 0
+/** One roll of the wild shiny odds (`shinyChance`), × a Shiny Parade's boost for wild Pokémon. */
+const rollShiny = (data: GameData, rng: Rng, boost = 1): boolean => {
+  const chance = Math.min(1, (data.config.shinyChance ?? 0) * Math.max(1, boost))
   return chance > 0 && rng.next() < chance
 }
 
 /**
- * A legendary's colours each time it shows up: always shiny when its data says so, else a fresh roll of the wild odds —
- * so declining the challenge, losing, or seeing it come back after the throw missed all roll again.
+ * Legendaries and mythicals are shiny-locked wherever they're met in an area (a boss, a roamer, a wild one): a shiny one
+ * comes only from Raid Battles' calendar (the user's rule, 2026-10-11).
  */
-const legendShiny = (b: BossDef, data: GameData, rng?: Rng): boolean => !!b.shiny || (!!rng && rollShiny(data, rng))
+export const shinyLocked = (data: GameData, dex: number): boolean => isLegendary(data, dex)
+
+/**
+ * A boss's colours each time it shows up: always shiny when its data says so, else a fresh roll of the wild odds — so
+ * declining the challenge, losing, or seeing it come back after the throw missed all roll again. Never for a
+ * legendary or mythical (shinyLocked).
+ */
+const legendShiny = (b: BossDef, data: GameData, rng?: Rng): boolean =>
+  !shinyLocked(data, b.dex) && (!!b.shiny || (!!rng && rollShiny(data, rng)))
 
 /** A legendary beaten earlier that fled the catch. It keeps coming back — one card per encounter deck — until caught. */
 export function fledLegendary(area: Area, progress: AreaProgress, pokedex: readonly number[]): BossDef | null {
@@ -181,7 +198,12 @@ export function rollRoamer(ctx: EncounterContext, rng: Rng): Encounter | null {
     if (caught.has(dex) || !ctx.data.species[dex]) continue
     // A roamer is met afresh each time it shows up, so each meeting rolls the wild odds.
     if (rng.next() < roamers.chance)
-      return { kind: 'boss', dex, level: clampLevel(roamers.level, ctx.data), ...(rollShiny(ctx.data, rng) && { shiny: true }) }
+      return {
+        kind: 'boss',
+        dex,
+        level: clampLevel(roamers.level, ctx.data),
+        ...(!shinyLocked(ctx.data, dex) && rollShiny(ctx.data, rng) && { shiny: true }),
+      }
   }
   return null
 }
@@ -192,7 +214,7 @@ export function rollWild(ctx: EncounterContext, rng: Rng): Encounter | null {
   const entry = rng.weighted(ctx.area.wildPool, (w) => (ctx.data.species[w.dex] ? w.weight : 0))
   if (!entry) return null
   const level = enemyLevel(rng.int(entry.minLevel, Math.max(entry.minLevel, entry.maxLevel)), ctx, rng)
-  const shiny = rollShiny(ctx.data, rng)
+  const shiny = !shinyLocked(ctx.data, entry.dex) && rollShiny(ctx.data, rng, ctx.shinyBoost)
   return { kind: 'wild', dex: entry.dex, level, isNew: !ctx.pokedex.includes(entry.dex), ...(shiny && { shiny }) }
 }
 
@@ -252,10 +274,11 @@ export function buildDeck(
   data: GameData,
   rng: Rng,
   extra: readonly DeckCard[] = [],
-  opts: { noCenterFirst?: boolean } = {},
+  opts: { noCenterFirst?: boolean; noCenters?: boolean } = {},
 ): DeckCard[] {
   void data
-  const c = deckCounts(area.encounterWeights, deckAbilities(area))
+  const counts = deckCounts(area.encounterWeights, deckAbilities(area))
+  const c = opts.noCenters ? { ...counts, center: 0 } : counts
   const others = shuffle([...DECK_KINDS.filter((k) => k !== 'center').flatMap((k) => Array.from({ length: c[k] }, (): DeckCard => k)), ...extra], rng)
   // Centers go into distinct gaps between the other cards (gap i = just before the i-th card drawn).
   const gaps = shuffle(Array.from({ length: others.length + 1 }, (_, i) => i).filter((i) => !opts.noCenterFirst || i > 0 || others.length === 0), rng)
@@ -290,7 +313,7 @@ export interface EncounterRoll {
  */
 export function dueCenter(ctx: EncounterContext): 'round' | 'hurt' | 'fainted' | null {
   const { area, data } = ctx
-  if (ctx.progress.lastCenter) return null
+  if (ctx.noCenters || ctx.progress.lastCenter) return null
   // A round is one full deck. A new one opens with a Pokémon Center, outside the deck — unless it would do nothing.
   if (data.config.encounterMode !== 'random' && !ctx.progress.deck?.length && ctx.centerUseful) return 'round'
   if (ctx.isFirstInArea && ctx.teamHurt && data.config.forcedCenterWhenHurt) return 'hurt'
@@ -382,7 +405,7 @@ const legendCards = (ctx: EncounterContext): DeckCard[] => (fledLegendary(ctx.ar
 
 function drawFromDeck(ctx: EncounterContext, rng: Rng): EncounterRoll {
   const afterCenter = !!ctx.progress.lastCenter
-  const deal = () => buildDeck(ctx.area, ctx.data, rng, legendCards(ctx), { noCenterFirst: afterCenter })
+  const deal = () => buildDeck(ctx.area, ctx.data, rng, legendCards(ctx), { noCenterFirst: afterCenter, noCenters: ctx.noCenters })
   let newRound = !ctx.progress.deck?.length
   let deck = newRound ? deal() : [...ctx.progress.deck!]
   let drawn: DeckCard[] = []
@@ -393,8 +416,14 @@ function drawFromDeck(ctx: EncounterContext, rng: Rng): EncounterRoll {
       deck = deal()
       newRound = true
       drawn = []
+      if (!deck.length) break // nothing the area can deal (Extreme mode, an area of Centers only)
     }
     let card = deck.pop()!
+    // A Center dealt before Extreme mode's rule applied to this deck: set aside.
+    if (card === 'center' && ctx.noCenters) {
+      drawn.push(card)
+      continue
+    }
     if (card === 'center' && afterCenter) {
       // A Center right after a Center (e.g. a forced one came first): meet the next other card now, keep the Center
       // on top for later. Only Centers left → this one is set aside.
@@ -425,7 +454,7 @@ function rollWeighted(ctx: EncounterContext, rng: Rng): EncounterRoll {
   const kinds: { kind: 'wild' | 'trainer' | 'center' | 'item' | 'casino'; weight: number }[] = [
     { kind: 'wild', weight: can.wild ? w.wild : 0 },
     { kind: 'trainer', weight: can.trainer ? w.trainer : 0 },
-    { kind: 'center', weight: w.center },
+    { kind: 'center', weight: ctx.noCenters ? 0 : w.center },
     { kind: 'item', weight: can.item ? (w.item ?? 0) : 0 },
     { kind: 'casino', weight: w.casino ?? 0 },
   ]
@@ -480,6 +509,7 @@ export function canSkip(enc: Encounter, policy: SkipPolicy, skipsThisEncounter: 
  */
 export function enemyUpgradeLevelFor(enc: Encounter, area: Area | undefined, data: GameData): number {
   let own: number | null | undefined
+  if (enc.kind === 'gym' && enc.upgradeLevel != null) return enc.upgradeLevel
   if (enc.kind === 'trainer' || enc.kind === 'gym') own = data.trainers[enc.trainerId]?.upgradeLevel
   else if (enc.kind === 'boss') own = area?.legendaryBoss?.find((b) => b.dex === enc.dex)?.upgradeLevel
   return own ?? area?.enemyUpgradeLevel ?? data.config.enemyUpgradeLevel

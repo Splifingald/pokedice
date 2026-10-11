@@ -302,19 +302,30 @@ export interface SlotMachineConfig {
   prizeLevel: number
 }
 
-/** The Pokémon Day Care: a secret place where Pokémon gain XP in real time, and where Eggs are sold. */
+/**
+ * The Pokémon Day Care, one for every region (docs/15): your Pokémon gain XP in real time, friends' Pokémon visit, and
+ * a compatible pair leaves an Egg at each check.
+ */
 export interface DayCareConfig {
-  /** Opens (on the Map, with a free Egg) once this many species are in the Pokédex. */
+  /** Opens (with a free Egg) once this many distinct species are caught, counted across every region's Pokédex. */
   unlockPokedex: number
-  /** How many Pokémon can stay at once. */
+  /** How many of your Pokémon can stay at once. */
   slots: number
-  /** XP a resident gains every `tickMinutes` of real time… */
+  /** How many Pokémon from friends' Day Cares can visit at once. */
+  friendSlots: number
+  /** XP a resident gains every `tickMinutes` of real time, all the way to the level cap. */
   xpPerTick: number
   tickMinutes: number
-  /** …up to this much per stay (it stops gaining until it's picked up). */
-  maxXp: number
-  /** Pokédollars for an Egg (the first one is free). */
-  eggPrice: number
+  /** Hours between two Egg-group checks: each pair sharing a group can leave an Egg. */
+  breedHours: number
+  /** Hours between two checks of the pairs with a Ditto in them (Ditto pairs with all but legendaries, slower). */
+  breedDittoHours: number
+  /** ₽ for Egg now: the next check runs at once and its Egg hatches. */
+  rushPrice: number
+  /** ₽ the Day Care couple gives when a hatchling isn't kept (you own a plain copy at its level or higher). */
+  notKeptGold: number
+  /** Chance (0–1) that a Day Care Egg hatches shiny (the wild `shinyChance` is separate). */
+  shinyChance: number
   /** Eggs favour species missing from the Pokédex: their weight is this, an owned species' is 1. */
   unownedWeight: number
   /** A hatchling's level: the `hatchRank`-th lowest level you own, minus `hatchOffset`, never below `hatchMinLevel`. */
@@ -430,6 +441,173 @@ export interface DonationConfig {
   round: number
 }
 
+/** The special events (docs/18, docs/19), in the order they open: the Fortune Wheel, Raid Battles, the Elite Rebattle. */
+export const EVENT_IDS = ['wheel', 'raid', 'rebattle'] as const
+export type EventId = (typeof EVENT_IDS)[number]
+
+/**
+ * Each event type's switch in the admin (the user's rule, 2026-10-11): off (nowhere in the game), on for the admin only
+ * (to try it in production first), on for everyone. Off by default.
+ */
+export const EVENT_ACCESS = ['off', 'admin', 'all'] as const
+export type EventAccess = (typeof EVENT_ACCESS)[number]
+
+/** What every event has, whatever it does (Admin → Events). */
+export interface EventDef {
+  /** Off = the event is nowhere in the game: no square on Home, no page, no pop-up. Admin = only the admin sees it. */
+  access: EventAccess
+  /** Order of the squares on Home: lower comes first. */
+  priority: number
+  /**
+   * The area whose clearing opens it, in any region (the wheel: Routes 7 & 8, the raids: the Safari Zone). Null for the
+   * rebattle, which each region's league opens for that region.
+   */
+  unlockAreaId: string | null
+  /** Its picture, for the page's banner and the unlock pop-up: an area picture's key (public/area-art) or a path. */
+  banner: string
+  /** The unlock pop-up's 2–4 rules: strings.csv keys. They read their numbers from this config (engine/events ruleParams). */
+  rules: string[]
+}
+
+export type WheelReward = { kind: 'gold'; amount: number } | { kind: 'item'; key: string; qty: number }
+
+/** One prize of the Fortune Wheel: it takes `count` equal slices, each won `odds` % of the time. */
+export interface WheelPrize {
+  reward: WheelReward
+  count: number
+  odds: number
+}
+
+export const REBATTLE_TIER_IDS = ['bronze', 'silver', 'gold'] as const
+export type RebattleTierId = (typeof REBATTLE_TIER_IDS)[number]
+
+/** One tier of the Elite Rebattle: its ₽ multiplier and how far above the League's its upgrade level goes. */
+export interface RebattleTier {
+  id: RebattleTierId
+  /** Every K.O. pays a League trainer's ₽ × this (once per Pokémon per tier). */
+  gold: number
+  /** Upgrade levels above the League's, or 'max' (10). A trainer's own upgrade level wins over it. */
+  upgradeDelta: number | 'max'
+}
+
+/** A mythical and its lair: the area its raid is fought in front of, and the one to complete to get it. */
+export interface RaidPoolEntry {
+  dex: number
+  areaId: string
+}
+
+/** A fixed date of the raid calendar: 'MM-DD', every year (Pokémon Day's shiny Pikachu, Earth Day's Celebi…). */
+export interface RaidAnchor {
+  date: string
+  dex: number
+  shiny: boolean
+}
+
+/** One raid Pokémon's own numbers (Admin → Events → Raids), over the defaults; a missing one uses the default. */
+export interface RaidMonRules {
+  bars?: number
+  barHp?: number
+  startAllies?: number
+  summonPerBreak?: number
+  maxField?: number
+  level?: number
+  upgradeLevel?: number
+}
+
+/** A day of the raid calendar set by hand ('YYYY-MM-DD' → its raid). */
+export interface RaidOverride {
+  dex: number
+  shiny: boolean
+}
+
+/** Raid Battles' numbers (docs/18 §3). */
+export interface RaidConfig {
+  /** HP bars, each the boss's full HP at `level`; their colours, first to last. */
+  bars: number
+  /** Each bar's HP, in the raid Pokémon's own max HP at `level` (1 = one full HP bar each). */
+  barHp: number
+  barColors: string[]
+  /** Summons beside the boss at the start, points gained per bar broken, and the most beside it at once. */
+  startAllies: number
+  summonPerBreak: number
+  maxField: number
+  /** The boss's (and its summons') level and dice / combo upgrade level. */
+  level: number
+  upgradeLevel: number
+  /** The sides' Pokémon fight at this level at most, at this upgrade level. */
+  teamCap: number
+  sideUpgradeLevel: number
+  /** Friends a raid can bring (the other sides are NPC trainers). */
+  maxFriends: number
+  /** Gifts a helper can get a day, and what they are. */
+  helperDailyCap: number
+  gifts: { key: string; weight: number }[]
+  /** The mythicals (each a raid of the calendar, never shiny there) and their lairs. */
+  pool: RaidPoolEntry[]
+  /**
+   * The calendar: its fixed dates, the lowest level a shiny filler's area may start at, the seed (by the day it applies
+   * from: a new one re-plans only the days after it) and the days set by hand.
+   */
+  calendar: {
+    anchors: RaidAnchor[]
+    fillerMinLevel: number
+    seeds?: { from: string; seed: number }[]
+    overrides?: Record<string, RaidOverride>
+  }
+  /** Each raid Pokémon's own numbers, by dex. */
+  perMon?: Record<string, RaidMonRules>
+  /** Never an NPC ally or a summon, on top of legendaries, mythicals and starter lines. */
+  exclude: { pseudo: number[]; extra: number[] }
+}
+
+/** Each region's rebattle lineups: per tier, the trainer ids in fight order (scripts/rebattle-teams.ts). */
+export type RebattleLineups = Record<string, Partial<Record<RebattleTierId, string[]>>>
+
+export interface EventsConfig {
+  /** Home shows a locked "Special events" square from this many Kanto badges until the first event opens. */
+  teaserBadges: number
+  wheel: EventDef & { prizes: WheelPrize[] }
+  raid: EventDef & RaidConfig
+  rebattle: EventDef & { tiers: RebattleTier[] }
+}
+
+/** Live events (docs/20): the kinds the admin can schedule. */
+export const LIVE_TYPES = ['shiny', 'shop', 'cash'] as const
+export type LiveType = (typeof LIVE_TYPES)[number]
+
+/** One item of a Special Shop: its event price, how many each player may buy (null = no limit), where it's sold. */
+export interface LiveShopItem {
+  key: string
+  price: number
+  limit: number | null
+  /** Sold while the player plays one of these regions; 'all' = everywhere. */
+  regions: RegionId[] | 'all'
+}
+
+/**
+ * A live event (docs/20): the whole game changes for a while, the same for everyone, between `start` and `end` (ISO,
+ * UTC, server time). Only the settings of its `type` count; the others stay so switching type back keeps them.
+ */
+export interface LiveEvent {
+  /** Stable: the pop-up's "seen" and the shop's per-player counts are kept by it. */
+  id: string
+  type: LiveType
+  start: string
+  end: string
+  /** Its picture on Home, in the pop-up and over the shop's section: an area picture's key or a path. */
+  banner: string
+  /** A custom title for an occasion, per language (others fall back to English); empty = the type's own name. */
+  title: Partial<Record<string, string>>
+  /** Shown (and in effect) from this many badges, every region's counted. */
+  minBadges: number
+  /** Shiny Parade: wild shiny odds × `multiplier` in some areas, one region or everywhere. */
+  shiny: { multiplier: number; scope: 'areas' | 'region' | 'all'; areaIds: string[]; regionId: RegionId | null }
+  /** Special Shop: its items. */
+  shop: { items: LiveShopItem[] }
+  /** Cash Flow: every ₽ earned × `multiplier` (1.5 = +50 %), selling excluded. */
+  cash: { multiplier: number }
+}
+
 export interface GameConfig {
   configVersion: number
   xpCurve: { A: number; B: number; C: number }
@@ -486,6 +664,8 @@ export interface GameConfig {
   shinyChance: number
   /** Signed-in players' save goes to the cloud at most this often (minutes) while they play; SYNC ONLINE does it now. */
   cloudSyncMinutes: number
+  /** Friends each player can have (both sides of a friendship count it). The database reads the same key. */
+  maxFriends: number
   /** Energy: 1 per encounter discovered (not gyms, legendaries or Pokémon Centers), refilled over time. */
   energy: EnergyConfig
   status: StatusRules
@@ -500,6 +680,57 @@ export interface GameConfig {
   gigantamax: GigantamaxConfig
   /** Arceus, Silvally and Ogerpon can each change type this many times per battle (the TYPE menu). */
   formChangesPerBattle: number
+  /** Once-only finds get likelier the more rounds a player has done in their area. */
+  uniquePity: UniquePityConfig
+  /** The special events (docs/18): one game_config row for all of them. */
+  events: EventsConfig
+  /** The Elite Rebattle's trainers, per region and tier (a row of its own, written by scripts/rebattle-teams.ts). */
+  rebattleLineups: RebattleLineups
+  /** Extreme mode (docs/22): the second save's rules. */
+  extreme: ExtremeConfig
+  /** Live events (docs/20): their switch, and the admin's list, past, running and to come; one runs at a time. */
+  liveEvents: { access: EventAccess; list: LiveEvent[] }
+}
+
+/**
+ * Extreme mode (docs/22): a second save, opened by a league, with no Pokémon Centers, K.O.s that last hours, and
+ * healing only while the player is out of the game.
+ */
+export interface ExtremeConfig {
+  /**
+   * The admin's switch, as for the events: off (nowhere: no pop-up, no title card, no menu row; Extreme saves are
+   * kept), on for the admin only (to try it in production first), on for everyone. Off by default.
+   */
+  access: EventAccess
+  /** The region whose league opens it in the main save ("the second league"). */
+  unlockRegion: RegionId
+  /** Pokémon Centers in the encounter deck, as in the main game. */
+  centers: boolean
+  /** A lost round heals the team, as in the main game. */
+  wipeHeals: boolean
+  /** Real hours a K.O. Pokémon rests before it comes back. */
+  koHours: number
+  /** The HP it comes back with. */
+  koReviveHp: number
+  /** % of max HP healed per hour spent out of the game (0 = never). */
+  awayHealPctPerHour: number
+  /** Absences shorter than this (minutes) don't heal. */
+  awayMinMinutes: number
+  /** Potions and Revives can be used. */
+  items: boolean
+}
+
+/**
+ * Pity for an area's once-only finds: past `startRounds` rounds done there, the chance that an item find is one of them
+ * rises linearly to `maxMultiplier` × its usual odds at `fullRounds`, and stays there. It never passes 100 %.
+ */
+export interface UniquePityConfig {
+  /** Rounds done in the area before the odds start to rise (×1 up to here). */
+  startRounds: number
+  /** Rounds done at which the odds reach `maxMultiplier`. */
+  fullRounds: number
+  /** × the usual odds from `fullRounds` on. 1 = no pity. */
+  maxMultiplier: number
 }
 
 /** Gigantamax: a button in battle once the player has reached `region`; never in the same battle as a Mega. */
@@ -541,6 +772,8 @@ export interface PokemonInstance {
   revivesAt?: number
   /** The fossil item it came from (for its picture while it revives). */
   fossil?: string
+  /** Extreme mode: when it was K.O. (ms, server time). It rests until `koHours` later. Absent = not on the clock. */
+  koAt?: number
 }
 
 export interface AreaProgress {
@@ -582,19 +815,36 @@ export interface SaveData {
   dieLevels: Record<PokeType, number>
   currentAreaId: string
   areaProgress: Record<string, AreaProgress>
-  settings: { sfx: boolean; reducedMotion: boolean; multiExp: boolean; autoMode?: boolean; lang?: Lang }
+  settings: {
+    /** Superseded by `sound` (src/save/storage.ts). */
+    sfx: boolean
+    sound?: boolean
+    reducedMotion: boolean
+    animations?: 'full' | 'short'
+    multiExp: boolean
+    autoMode?: boolean
+    lang?: Lang
+    theme?: 'light' | 'dark' | 'auto'
+  }
   /** The hpMultiplier current HP was last measured against (absent = ×1), so a change keeps every HP %. */
   hpScale?: number
   /** Who the player is: a name and one of the two trainer sprites (absent on older saves = Red, no name). */
   player?: PlayerProfile
-  /** The Day Care: who's staying (out of the team and the Box meanwhile), and whether the free Egg was taken. */
+  /**
+   * The Day Care, one for every region whichever is live: who's staying (out of their region's team and Box
+   * meanwhile), friends' visitors, the two check clocks and the Egg waiting.
+   */
   dayCare?: DayCareState
+  /** Residents the Day Care sent home when it had too many (the move to one Day Care): one toast, then cleared. */
+  dayCareNotice?: { dex: number[] }
   /** When the admin last edited this save (cheats): that cloud save then wins the next sync, even with less progress. */
   adminEditAt?: number
   /** Energy held at `at` (ms); it refills from there (see engine/energy). Absent = full. */
   energy?: { value: number; at: number }
   /** The player has opened the leaderboard (Prof. Oak sends them there once). */
   leaderboardVisited?: boolean
+  /** Versus's rules pop-up has been shown (once, when Versus opens; its INFO button shows them again). */
+  versusRulesSeen?: boolean
   /** The region being played. Absent on saves from before the second region = 'kanto'. */
   region?: RegionId
   /** The regions not being played, each holding everything that region owns. */
@@ -607,6 +857,82 @@ export interface SaveData {
   donationSeen?: { round: number; regions: RegionId[] }
   /** The regions whose "a new region is open" pop-up has been closed: it opens by itself once per region. */
   regionOfferSeen?: RegionId[]
+  /** The special events (docs/18): what's been seen and done. Shared by every region; absent = nothing yet. */
+  events?: EventsSave
+  /** Which save this is (docs/22). Absent = the main one, so every save from before is main. */
+  mode?: SaveMode
+  /** An Extreme save's away-healing bookkeeping. */
+  extreme?: ExtremeSave
+  /** Main save: when the unlock league was first seen done. Extreme mode stays open from then on. */
+  extremeUnlockedAt?: number
+  /** Main save: Extreme mode's rules pop-up has been shown (once, when it opens; INFO shows it again). */
+  extremeRulesSeen?: boolean
+}
+
+export type SaveMode = 'main' | 'extreme'
+
+/** Time spent out of the game, waiting to heal (all in ms, server time). */
+export interface ExtremeSave {
+  /** The page went hidden or closed here, and hasn't been back since. */
+  awayFrom?: number
+  /** Absences already over but not healed yet (the player came back mid-fight, or the real time wasn't known). */
+  pending?: [number, number][]
+}
+
+/** The special events' state in a save. Every field is optional: absent means "never". */
+export interface EventsSave {
+  /** Events whose unlock pop-up has been shown (or that opened alongside the one that was). */
+  seen?: EventId[]
+  /** The UTC day (yyyy-mm-dd) of the last Fortune Wheel spin. */
+  wheelDay?: string
+  /** That spin's prize until it's paid (when the wheel stops, or on the next start if the page closed mid-spin). */
+  wheelPending?: WheelReward
+  /** The Elite Rebattle, per region. */
+  rebattle?: Record<string, RebattleProgress>
+  /** Today's raid, and the last week's (the repeat window reads it). */
+  raid?: TodayRaid
+  raidHistory?: { day: string; dex: number }[]
+  /** Pool species unlocked (also worked out from cleared areas and catches; this keeps what a moment announced). */
+  raidPool?: number[]
+  /** Raid Pokémon caught before completing their area: each joins its region's Box once that area is completed. */
+  raidLocked?: RaidLock[]
+  /** Your raid team: three instance ids, any region's Box (until set, your three highest-level Pokémon). */
+  raidTeam?: string[]
+  /** Raids won, a raid being won when its Pokémon is caught (the server keeps the count the leaderboard shows). */
+  raidsWon?: number
+  /** Live events whose pop-up has been shown (ids). */
+  liveSeen?: string[]
+  /** Special Shop purchases, per live event id then item key: what counts against each item's limit. */
+  liveBought?: Record<string, Record<string, number>>
+}
+
+/** A raid catch waiting for its area: it joins that area's region's Box once the area is completed. */
+export interface RaidLock {
+  dex: number
+  shiny: boolean
+  areaId: string
+  /** The UTC day it was caught. */
+  day: string
+}
+
+/** The day's raid: the UTC day, the species and whether it's shiny, the area it's fought in front of. */
+export interface TodayRaid {
+  day: string
+  dex: number
+  shiny: boolean
+  areaId: string
+  caught: boolean
+  tries: number
+}
+
+/** Where a player stands in one region's Elite Rebattle. */
+export interface RebattleProgress {
+  /** Tiers cleared (0–3). */
+  done: number
+  /** The next trainer of the current tier's gauntlet (0 = its first). */
+  step: number
+  /** The K.O.s already paid: `tier:trainerId:index` (each Pokémon pays once per tier). */
+  paid: string[]
 }
 
 /**
@@ -623,7 +949,6 @@ export interface RegionSave {
   dieLevels: Record<PokeType, number>
   currentAreaId: string
   areaProgress: Record<string, AreaProgress>
-  dayCare?: DayCareState
   boughtUnique?: string[]
 }
 
@@ -631,13 +956,50 @@ export interface DayCareResident {
   inst: PokemonInstance
   /** When it was dropped off (ms): XP accrues from here, in real time. */
   since: number
+  /** The region it was left from: taking it back puts it in that region's Box (regions never pool). */
+  region: RegionId
+}
+
+/**
+ * A friend's Pokémon visiting: a snapshot of one sitting in their Day Care (docs/15, Phase 4). The save never holds
+ * the friend's instance and never writes to their save; it stays theirs.
+ */
+export interface DayCareGuest {
+  /** The friend's user id. */
+  owner: string
+  /** For "Lea's", as it was when invited. */
+  ownerName: string
+  ownerAvatar: string
+  /** The friend's instance id, to check it is still there. */
+  inst: string
+  dex: number
+  /** Its level when last refreshed. */
+  level: number
+  shiny?: boolean
+  addedAt: number
+}
+
+/** One parent of an Egg, for "Eevee and Ditto (Noor) left it": the species, and whose it is when it's a visitor. */
+export interface EggParent {
+  dex: number
+  /** The friend's name, for a guest. */
+  owner?: string
 }
 
 export interface DayCareState {
   residents: DayCareResident[]
+  /** Friends' Pokémon visiting, at most `friendSlots`, no empty entries (the UI draws the free slots). */
+  guests: DayCareGuest[]
+  /** The gift Egg (the first one) has been hatched. */
   eggClaimed: boolean
   /** The player has been to the Day Care screen (the unlock tutorial sends them there once). */
   visited?: boolean
+  /** When the last Egg-group check ran (ms). */
+  breedAt?: number
+  /** When the last Ditto check ran (ms). */
+  dittoAt?: number
+  /** The Egg waiting to hatch: one at a time. `gift` is the free first one. */
+  egg?: { at: number; parents?: [EggParent, EggParent]; gift?: true }
 }
 
 export type PlayerCharacter = 'red' | 'green'
@@ -660,6 +1022,18 @@ export interface BundleRaw {
   config: Record<string, unknown>
   /** Absent in bundles from before the second region: everything is then Kanto. */
   regions?: Region[]
+  /** Static canon, not content: src/config/bundle.ts adds it (src/data/egg-groups.json), the database never has it. */
+  eggGroups?: Record<string, EggGroupEntry>
+}
+
+/**
+ * A species' breeding data, from Pokémon Showdown (`pnpm egg-groups`): its Egg groups as Showdown names them ("Water
+ * 1", "Undiscovered"…), its gender when fixed (M, F or N for genderless), and `l: 1` for legendaries and mythicals.
+ */
+export interface EggGroupEntry {
+  g: string[]
+  s?: 'M' | 'F' | 'N'
+  l?: 1
 }
 
 export type RegionId = string
@@ -699,4 +1073,8 @@ export interface GameData {
   config: GameConfig
   /** Every region, in order. Always at least Kanto. */
   regions: Region[]
+  /** Breeding data by dex (engine/daycare.ts): empty when a bundle came without it, and then nothing pairs. */
+  eggGroups: Record<number, EggGroupEntry>
+  /** Who's playing, set by the store: the admin sees the events switched on for the admin only. Absent = a player. */
+  viewer?: { admin: boolean }
 }

@@ -1,6 +1,6 @@
 import type { Page } from '@playwright/test'
 import { readFileSync } from 'node:fs'
-import { badgeCase, compileGameData, newSave, progressOf, type BundleRaw, type SaveData } from '../src/engine'
+import { badgeCase, compileGameData, DEFAULT_CONFIG, newSave, progressOf, type BundleRaw, type SaveData } from '../src/engine'
 
 const load = (f: string) => JSON.parse(readFileSync(new URL(`../src/data/${f}`, import.meta.url), 'utf8'))
 
@@ -20,8 +20,17 @@ export function gameData() {
 
 export function makeSave(starter: number, patch: Partial<SaveData> = {}): SaveData {
   let c = 0
-  // Prof. Oak's leaderboard pop-up would cover every screen of a fresh save.
-  return { ...newSave(starter, gameData(), Date.now(), () => `e2e-${++c}`), leaderboardVisited: true, ...patch }
+  const save = newSave(starter, gameData(), Date.now(), () => `e2e-${++c}`)
+  // Prof. Oak's leaderboard pop-up would cover every screen of a fresh save, and Versus's rules pop-up every save
+  // with three Pokémon at Lv.50. Quiet, as tests have always run: no cries asked of Showdown unless a test turns
+  // sound on.
+  return {
+    ...save,
+    settings: { ...save.settings, sfx: false, sound: false },
+    leaderboardVisited: true,
+    versusRulesSeen: true,
+    ...patch,
+  }
 }
 
 /** The save with its region's first gym badge won: the leaderboard stays locked until then. */
@@ -34,18 +43,52 @@ export function withBadge(save: SaveData): SaveData {
 export const SUPABASE = 'http://127.0.0.1:54399'
 export const ADMIN = 'admin@example.com'
 
+/** The special events switched on for everyone (they ship off): the dev server reads it (src/config/bundle.ts). */
+export const EVENTS_ON = {
+  events: {
+    ...DEFAULT_CONFIG.events,
+    wheel: { ...DEFAULT_CONFIG.events.wheel, access: 'all' },
+    raid: { ...DEFAULT_CONFIG.events.raid, access: 'all' },
+    rebattle: { ...DEFAULT_CONFIG.events.rebattle, access: 'all' },
+  },
+}
+
+/** Extreme mode switched on for everyone (it ships off), with the events: for e2e/extreme.spec.ts. */
+export const EXTREME_ON = { ...EVENTS_ON, extreme: { ...DEFAULT_CONFIG.extreme, access: 'all' } }
+
+export interface SupabaseMock {
+  /** What an RPC returns, by function name (friend_list, friend_add…); a function returns its value or the result. */
+  rpc?: Record<string, unknown | ((body: Record<string, unknown>) => unknown)>
+  /** The special events as they ship (off), instead of switched on for everyone. */
+  eventsOff?: boolean
+  /** Auth's public settings (/auth/v1/settings): which sign-in providers are on. Google only by default. */
+  authSettings?: unknown
+}
+
 /** Intercept every call to the fake Supabase. Returns the list of "METHOD path" calls seen. */
-export async function mockSupabase(page: Page): Promise<string[]> {
+export async function mockSupabase(page: Page, mock: SupabaseMock = {}): Promise<string[]> {
   const calls: string[] = []
+  // The events are switched on in these tests, as they will be in the game; a test of the switch asks for them off.
+  await page.addInitScript((cfg) => localStorage.setItem('pokedice.devConfig', cfg), mock.eventsOff ? '{}' : JSON.stringify(EVENTS_ON))
   await page.route(`${SUPABASE}/**`, async (route) => {
     const req = route.request()
     const url = new URL(req.url())
     calls.push(`${req.method()} ${url.pathname}${url.search}`)
     if (url.pathname.startsWith('/auth/v1/authorize')) {
-      return route.fulfill({ status: 200, contentType: 'text/html', body: '<h1>mock google consent</h1>' })
+      return route.fulfill({ status: 200, contentType: 'text/html', body: '<h1>mock consent</h1>' })
     }
     if (url.pathname === '/auth/v1/user') {
       return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(fakeUser()) })
+    }
+    if (url.pathname === '/auth/v1/settings') {
+      const body = mock.authSettings ?? { external: { google: true, discord: false } }
+      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(body) })
+    }
+    const fn = url.pathname.startsWith('/rest/v1/rpc/') ? url.pathname.slice('/rest/v1/rpc/'.length) : null
+    if (fn && mock.rpc && fn in mock.rpc) {
+      const answer = mock.rpc[fn]
+      const value = typeof answer === 'function' ? answer(JSON.parse(req.postData() || '{}')) : answer
+      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(value ?? null) })
     }
     if (url.pathname === '/rest/v1/rpc/leaderboard') {
       return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(LEADERBOARD) })
@@ -95,4 +138,26 @@ export function fakeSession() {
 }
 
 export const STORAGE_KEY = 'sb-127-auth-token'
-export const FAST = JSON.stringify({ sfx: false, reducedMotion: true })
+export const FAST = JSON.stringify({ sfx: false, sound: false, reducedMotion: true })
+
+/** Visible controls under 44px. Links inside a sentence are exempt (WCAG 2.5.8 "inline"). */
+export function smallControls(page: Page) {
+  return page.evaluate(() =>
+    Array.from(document.querySelectorAll<HTMLElement>('a,button,input,select,summary,[role=button],[role=tab]'))
+      .filter((el) => !(el.tagName === 'A' && el.closest('p')))
+      .map((el) => ({ el, r: el.getBoundingClientRect() }))
+      .filter(({ el, r }) => r.width > 0 && r.height > 0 && getComputedStyle(el).visibility !== 'hidden' && (r.width < 44 || r.height < 44))
+      .map(({ el, r }) => `${(el.getAttribute('aria-label') || el.textContent || el.tagName).trim().slice(0, 30)} ${Math.round(r.width)}×${Math.round(r.height)}`),
+  )
+}
+
+/** Visible text rendered in any face other than the Jersey fonts (the only fonts the app ships). */
+export function nonJerseyText(page: Page) {
+  return page.evaluate(() =>
+    Array.from(document.querySelectorAll<HTMLElement>('body *'))
+      .filter((el) => Array.from(el.childNodes).some((n) => n.nodeType === Node.TEXT_NODE && n.textContent!.trim()) || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName))
+      .filter((el) => el.getClientRects().length > 0 && !/^"?Jersey (15|25)"?(,|$)/.test(getComputedStyle(el).fontFamily))
+      .map((el) => `${el.tagName} "${(el.textContent || '').trim().slice(0, 20)}": ${getComputedStyle(el).fontFamily}`)
+      .slice(0, 10),
+  )
+}

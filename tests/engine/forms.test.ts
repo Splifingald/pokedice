@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   activeBattler,
   attackMultiplier,
+  autoEvents,
   createBattle,
   createRng,
   evolutionGate,
@@ -20,6 +21,7 @@ import {
   stoneEvolution,
   uniformLevels,
   type BattleState,
+  type PokeType,
   type PokemonInstance,
   type SaveData,
 } from '@/engine'
@@ -294,7 +296,7 @@ describe('Gigantamax', () => {
 })
 
 describe('auto battles and foes', () => {
-  it('an auto battle has no Mega, Gigantamax or type change, on either side', () => {
+  it('an auto battle has no Mega or Gigantamax on either side, and keeps only the foe’s type change', () => {
     const s = createBattle(
       {
         kind: 'trainer',
@@ -311,8 +313,93 @@ describe('auto battles and foes', () => {
     ).state
     const p = playerTurn(s)
     expect(megaChoices(p, data)).toEqual([])
-    expect(formChoices(p, data)).toEqual([])
+    expect(gmaxChoices(p, data)).toEqual([])
+    // Your type changer keeps its menu: auto-mode picks from it.
+    expect(formChoices(p, data)).toHaveLength(17)
     expect(s.enemyPlan).toBeUndefined()
+  })
+
+  it('in an auto battle the foe’s type changer takes a type best against yours too, at random among equals', () => {
+    const foe = (seed: number) => {
+      const s = createBattle(
+        {
+          kind: 'boss',
+          team: [{ uid: 'a', dex: 6, level: 60, hp: 9999 }],
+          enemy: { dex: 493, level: 80 },
+          playerLevels: uniformLevels(1),
+          enemyLevels: uniformLevels(1),
+          enemyPlan: { formChanges: true, mega: 10034 },
+          auto: true,
+        },
+        data,
+      ).state
+      expect(s.enemyPlan).toEqual({ formChanges: true })
+      const log = reduce({ ...s, phase: 'enemy_turn', actor: 'enemy' }, { t: 'AI_TURN' }, data, createRng(seed)).log
+      return log.filter((l) => l.kind === 'form')
+    }
+    const picks = new Set<number>()
+    for (let seed = 1; seed <= 80; seed++) {
+      const forms = foe(seed)
+      expect(forms).toHaveLength(1)
+      picks.add((forms[0] as { toDex: number }).toDex)
+    }
+    const arceus = data.speciesList.filter((f) => f.form?.of === 493 && f.form.kind === 'battle')
+    const top = Math.max(...arceus.map((f) => attackMultiplier(f.type1, ['fire', 'flying'], data)))
+    const best = arceus.filter((f) => attackMultiplier(f.type1, ['fire', 'flying'], data) === top).map((f) => f.dex)
+    expect(best.length).toBeGreaterThan(1)
+    expect([...picks].sort((a, b) => a - b)).toEqual(best.sort((a, b) => a - b))
+  })
+
+  const autoBattle = (enemy: number, auto = true, team = [{ uid: 'a', dex: 493, level: 80, hp: 9999 }]) =>
+    playerTurn(
+      createBattle(
+        { kind: 'trainer', team, leadUid: 'a', enemy: { dex: enemy, level: 60 }, playerLevels: uniformLevels(1), enemyLevels: uniformLevels(1), auto },
+        data,
+      ).state,
+    )
+
+  /** The forms auto-mode picks over many seeds, and the forms that hit `types` hardest. */
+  const autoPicks = (s: BattleState, types: PokeType[]) => {
+    const picks = new Set<number>()
+    for (let seed = 1; seed <= 80; seed++) {
+      const [e] = autoEvents(s, data, createRng(seed))
+      picks.add(e?.t === 'CHANGE_FORM' ? e.toDex : -1)
+    }
+    const forms = formChoices(s, data)
+    const top = Math.max(...forms.map((f) => attackMultiplier(f.type1, types, data)))
+    const best = forms.filter((f) => attackMultiplier(f.type1, types, data) === top).map((f) => f.dex)
+    const byDex = (a: number, b: number) => a - b
+    return { picks: [...picks].sort(byDex), best: best.sort(byDex) }
+  }
+
+  it('auto-mode changes your type changer to a type best against the foe, at random among equals', () => {
+    // Charizard (Fire / Flying): Water, Electric and Rock all hit it hardest — any of them.
+    const { picks, best } = autoPicks(autoBattle(6), ['fire', 'flying'])
+    expect(best).toContain(20012)
+    expect(best.length).toBeGreaterThan(1)
+    expect(picks).toEqual(best)
+  })
+
+  it('auto-mode rolls when no type does better, the change is spent, or it is not an auto battle', () => {
+    let s = autoBattle(6)
+    s = reduce(s, { t: 'CHANGE_FORM', toDex: 20012 }, data, rng).state
+    expect(autoEvents(s, data, createRng(1))).toEqual([{ t: 'ROLL' }])
+    // Already Rock, nothing beats ×4 against Charizard: a second change (if allowed) wouldn't be taken.
+    const more = { ...s, player: s.player.map((p) => ({ ...p, formChanges: 0 })) }
+    expect(formChoices(more, data).length).toBeGreaterThan(0)
+    expect(autoEvents(more, data, createRng(1))).toEqual([{ t: 'ROLL' }])
+    expect(autoEvents(autoBattle(6, false), data, createRng(1))).toEqual([{ t: 'ROLL' }])
+  })
+
+  it('auto-mode turns an Arceus that can’t touch a Ghost to a type that hits it hardest, rather than switching it', () => {
+    const s = autoBattle(92, true, [
+      { uid: 'a', dex: 493, level: 80, hp: 9999 },
+      { uid: 'b', dex: 6, level: 60, hp: 9999 },
+    ])
+    // Plenty of types would touch Gastly; only the ones that hit it hardest are picked.
+    const { picks, best } = autoPicks(s, ['ghost', 'poison'])
+    expect(picks).toEqual(best)
+    expect(attackMultiplier(data.species[best[0]!]!.type1, ['ghost', 'poison'], data)).toBeGreaterThan(1)
   })
 
   it('a trainer’s ace Mega Evolves in the regions that have it, once the player has it too', () => {

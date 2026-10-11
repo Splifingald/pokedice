@@ -1,7 +1,8 @@
 /**
  * Regions: Kanto, Johto, Hoenn. Each is a self-contained run — its own areas, Box, bag, ₽, upgrade tracks and
  * Pokédex — and the player carries only their character between them. Nothing pools, ever: what a region holds
- * stays in it. The one thread between them is `sendPokemonOn`, which walks a single Pokémon one region forward.
+ * stays in it. The one thread between them is `sendPokemonOn`, which walks a single Pokémon into another region whose
+ * league is done.
  *
  * The save keeps the **live** region at the top level of `SaveData`, exactly where it has always been, and parks the
  * others in `save.parked`. So every engine function and every screen goes on reading `save.box` and `save.gold`
@@ -136,6 +137,11 @@ export function regionSpecies(data: GameData, regionId: RegionId): Set<number> {
   if (hasGameCorner && data.species[data.config.slotMachine.prizeDex]) out.add(data.config.slotMachine.prizeDex)
   // The roamers belong to their region without sitting in any one area (see engine/encounters.ts).
   for (const dex of data.config.roamers?.regionId === regionId ? (data.config.roamers?.dex ?? []) : []) out.add(dex)
+  // So do the raid pool's mythicals: met in Raid Battles once their lair, an area of the region, is cleared.
+  for (const p of data.config.events.raid.pool) {
+    const lair = data.areas.find((a) => a.id === p.areaId)
+    if (lair && regionOfArea(lair) === regionId && data.species[p.dex]) out.add(p.dex)
+  }
 
   // Whatever all of that evolves into is yours here too. Iterating the Set as it grows walks a line to its end:
   // Magikarp adds Gyarados, and Gyarados is then visited in the same pass.
@@ -198,14 +204,16 @@ export function liveBlock(save: SaveData): RegionSave {
     dieLevels: save.dieLevels,
     currentAreaId: save.currentAreaId,
     areaProgress: save.areaProgress,
-    ...(save.dayCare ? { dayCare: save.dayCare } : {}),
     ...(save.boughtUnique ? { boughtUnique: save.boughtUnique } : {}),
   }
 }
 
-/** Puts a block back at the top level, as the live region. */
+/**
+ * Puts a block back at the top level, as the live region. The Day Care isn't a region's: it stays at the top level
+ * whichever region is live (docs/15).
+ */
 function withBlock(save: SaveData, regionId: RegionId, block: RegionSave): SaveData {
-  const { dayCare: _drop, boughtUnique: _alsoDrop, ...rest } = save
+  const { boughtUnique: _drop, ...rest } = save
   return {
     ...rest,
     region: regionId,
@@ -218,7 +226,6 @@ function withBlock(save: SaveData, regionId: RegionId, block: RegionSave): SaveD
     dieLevels: block.dieLevels,
     currentAreaId: block.currentAreaId,
     areaProgress: block.areaProgress,
-    ...(block.dayCare ? { dayCare: block.dayCare } : {}),
     ...(block.boughtUnique ? { boughtUnique: block.boughtUnique } : {}),
   }
 }
@@ -272,20 +279,18 @@ export function startRegion(save: SaveData, region: Region, block: RegionSave): 
 }
 
 /**
- * The region a Pokémon can be sent on to from here: the one after this, once this region's league is done and that
- * region has actually been started. Null the rest of the time, which is what keeps the button out of sight.
+ * The regions a Pokémon can be sent to from here: every other region whose league is done and that is still being
+ * played (started, and not switched off). Empty the rest of the time, which is what keeps the button out of sight.
  *
  * Regions do not pool: a Box, a bag, a purse and an upgrade track belong to one region for good. Sending a Pokémon
- * on is the single thread between them, and it goes one hop forward at a time — Kanto to Johto, then Johto to Hoenn
- * once Johto's league has fallen too.
+ * on is the single thread between them, and it only lands in a region that is behind the player — its league won —
+ * so it can never carry a team into a region still being fought through. Direction does not matter: from Hoenn a
+ * Pokémon can go back to Kanto just as one from Kanto can go on to Hoenn, once each of them is done.
  */
-export function sendOnTarget(save: SaveData, data: GameData): Region | null {
-  const here = getRegion(data, regionOf(save))
-  if (!here?.nextRegion || !leagueDone(save, data, here.id)) return null
-  const next = getRegion(data, here.nextRegion)
+export function sendTargets(save: SaveData, data: GameData): Region[] {
+  const here = regionOf(save)
   // It has to be a region being played: its parked block is the Box the Pokémon arrives in.
-  if (!next || (!next.enabled && next.id !== KANTO) || !save.parked?.[next.id]) return null
-  return next
+  return enabledRegions(data).filter((r) => r.id !== here && !!save.parked?.[r.id] && leagueDone(save, data, r.id))
 }
 
 /** Why this Pokémon cannot go, or null when it can. */
@@ -304,15 +309,16 @@ export function sendOnBlocked(save: SaveData, data: GameData, inst: PokemonInsta
 }
 
 /**
- * Moves one Pokémon out of the live region and into the next one's parked Box, where it is the player's to use the
+ * Moves one Pokémon out of the live region and into another one's parked Box, where it is the player's to use the
  * moment they travel. It leaves the team behind it — and if it was the whole team, the Box promotes a replacement,
  * because a region with nobody in its team cannot be played.
  *
  * It also enters the target's Pokédex: it is sitting in that Box, and a Pokémon you own reading as never seen is
- * the kind of thing that looks broken.
+ * the kind of thing that looks broken. The region it leaves keeps it in its own Pokédex — it was caught there, and
+ * that count never drops.
  */
-export function sendPokemonOn(save: SaveData, data: GameData, instId: string): SaveData | null {
-  const target = sendOnTarget(save, data)
+export function sendPokemonOn(save: SaveData, data: GameData, instId: string, targetId: RegionId): SaveData | null {
+  const target = sendTargets(save, data).find((r) => r.id === targetId)
   if (!target) return null
   const inst = save.box.find((p) => p.id === instId)
   if (!inst || sendOnBlocked(save, data, inst, target)) return null
@@ -374,21 +380,35 @@ export function regionCases(save: SaveData, data: GameData): RegionCase[] {
   return unlockedRegions(save, data).map((region) => {
     const live = regionOf(save) === region.id
     const progress = live ? save.areaProgress : (save.parked?.[region.id]?.areaProgress ?? {})
-    const badges: BadgeInfo[] = []
-    for (const area of regionAreas(data, region.id)) {
-      const defeated = progress[area.id]?.gymsDefeated ?? []
-      for (const id of area.gyms) {
-        const trainer = data.trainers[id]
-        if (trainer?.badge)
-          badges.push({ trainerId: id, areaId: area.id, leader: trainer.name, badge: trainer.badge, earned: defeated.includes(id) })
-      }
-    }
-    return {
-      id: region.id,
-      name: region.name,
-      badges,
-      earned: badges.filter((b) => b.earned).length,
-      endgameCleared: !!progress[region.leagueAreaId]?.cleared,
-    }
+    return buildCase(data, region, (areaId, id) => (progress[areaId]?.gymsDefeated ?? []).includes(id), !!progress[region.leagueAreaId]?.cleared)
   })
+}
+
+/**
+ * A region's badge case from the badges won there and the crown, rather than from a save: a friend's trainer card,
+ * which only carries those (docs/16). Null for a region the game doesn't know (or no longer has).
+ */
+export function regionCaseOf(data: GameData, regionId: RegionId, earned: Iterable<string>, endgameCleared: boolean): RegionCase | null {
+  const region = getRegion(data, regionId)
+  if (!region) return null
+  const won = new Set(earned)
+  return buildCase(data, region, (_areaId, id) => won.has(id), endgameCleared)
+}
+
+function buildCase(data: GameData, region: Region, earned: (areaId: string, trainerId: string) => boolean, endgameCleared: boolean): RegionCase {
+  const badges: BadgeInfo[] = []
+  for (const area of regionAreas(data, region.id)) {
+    for (const id of area.gyms) {
+      const trainer = data.trainers[id]
+      if (trainer?.badge)
+        badges.push({ trainerId: id, areaId: area.id, leader: trainer.name, badge: trainer.badge, earned: earned(area.id, id) })
+    }
+  }
+  return {
+    id: region.id,
+    name: region.name,
+    badges,
+    earned: badges.filter((b) => b.earned).length,
+    endgameCleared,
+  }
 }

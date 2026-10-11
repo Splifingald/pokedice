@@ -1,9 +1,10 @@
+import { PixelIcon, type IconName } from '@/components/icons'
 import { useState, type ReactNode } from 'react'
 import { PixelButton } from '@/components/PixelButton'
 import { SearchSelect } from '@/components/SearchSelect'
 import { SpriteImg } from '@/components/SpriteImg'
 import { TypeBadge, TypeSwatch } from '@/components/TypeBadge'
-import { BATTLE_BACKGROUNDS, DIE_TYPES, POKE_TYPES, type BattleBackground, type DieType, type GameData, type Species } from '@/engine'
+import { BATTLE_BACKGROUNDS, DIE_TYPES, EVENT_ACCESS, POKE_TYPES, type BattleBackground, type DieType, type EventAccess, type GameData, type Species } from '@/engine'
 import { dexNo } from '@/lib/format'
 import { cx } from '@/theme/util'
 
@@ -117,13 +118,13 @@ export function BackgroundPicker({
         ))}
       </select>
       {value && (
-        <img src={`/battle/${value}.png`} alt="" width={96} height={45} className="border-2 border-ink" style={{ imageRendering: 'pixelated' }} />
+        <img src={`/battle/${value}.png`} alt="" width={96} height={45} className="border-2 border-edge" style={{ imageRendering: 'pixelated' }} />
       )}
     </div>
   )
 }
 
-export const inputCls = 'min-h-[34px] w-full border-2 border-ink bg-panel px-2 py-0.5 text-lg'
+export const inputCls = 'min-h-[34px] w-full border-2 border-edge bg-panel px-2 py-0.5 text-lg'
 
 /**
  * A number field you can actually empty.
@@ -211,7 +212,7 @@ export function Slider({ value, onChange, min = 0, max = 100, step = 1 }: { valu
   return (
     <input
       type="range"
-      className="w-full accent-[#e8b44a]"
+      className="w-full accent-[#ffbe2e]"
       value={value}
       min={min}
       max={max}
@@ -224,12 +225,15 @@ export function Slider({ value, onChange, min = 0, max = 100, step = 1 }: { valu
 /** A titled box grouping related settings. */
 export function Box({
   title,
+  icon,
   hint,
   actions,
   children,
   className,
 }: {
   title: ReactNode
+  /** A pixel icon before the title. */
+  icon?: IconName
   hint?: ReactNode
   actions?: ReactNode
   children: ReactNode
@@ -238,7 +242,10 @@ export function Box({
   return (
     <section className={cx('pixel-panel flex min-w-0 flex-col gap-3 p-3', className)}>
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h3 className="text-2xl leading-none">{title}</h3>
+        <h3 className="flex items-center gap-2 text-2xl leading-none">
+          {icon && <PixelIcon name={icon} size={20} />}
+          {title}
+        </h3>
         {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
       </div>
       {hint && <p className="-mt-1 text-base leading-snug text-muted">{hint}</p>}
@@ -289,3 +296,28 @@ export function Stepper({
 
 export const n = (v: unknown, d = 0) => (typeof v === 'number' && Number.isFinite(v) ? v : v == null || v === '' ? d : Number(v) || d)
 export const s = (v: unknown) => (v == null ? '' : String(v))
+
+const ACCESS_LABEL: Record<EventAccess, string> = { off: 'Off', admin: 'On for admin', all: 'On for everyone' }
+
+/** An event type's switch: off, on for the admin only (to try it in production first), on for everyone. */
+export function AccessSwitch({ value, onChange, label }: { value: EventAccess; onChange: (v: EventAccess) => void; label: string }) {
+  return (
+    <span role="radiogroup" aria-label={label} className="inline-flex flex-wrap gap-1">
+      {EVENT_ACCESS.map((a) => (
+        <button
+          key={a}
+          type="button"
+          role="radio"
+          aria-checked={value === a}
+          onClick={() => onChange(a)}
+          className={cx(
+            'min-h-[34px] px-2.5 text-lg leading-none shadow-ring',
+            value === a ? (a === 'off' ? 'bg-well-deep text-ink' : a === 'admin' ? 'bg-gold text-ink' : 'bg-good text-white') : 'bg-panel text-muted',
+          )}
+        >
+          {ACCESS_LABEL[a]}
+        </button>
+      ))}
+    </span>
+  )
+}

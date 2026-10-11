@@ -4,8 +4,9 @@ import { DonationModal } from '@/components/DonationPopup'
 import { Modal } from '@/components/Modal'
 import { Panel } from '@/components/Panel'
 import { PixelButton } from '@/components/PixelButton'
+import { Seg } from '@/components/Segmented'
 import { Toggle } from '@/components/Toggle'
-import { donationEnabled } from '@/engine'
+import { donationEnabled, extremeOpen, isExtreme } from '@/engine'
 import { LANG_LABELS, LANGS, type Lang } from '@/i18n'
 import { multiExpText } from '@/i18n/text'
 import { useT } from '@/i18n/react'
@@ -14,10 +15,12 @@ import { parseSave } from '@/save/schema'
 import { pushToast, setSettings, useGame } from '@/store/game'
 import { deleteSave, replaceSave } from '@/store/run'
 import { useIsAdmin } from '@/store/hooks'
-import { checkContent } from '@/store/sync'
-import { DisconnectButton, GoogleAccountButton } from '@/components/GoogleAccountButton'
+import { checkContent, deleteAllData, deleteExtremeSave, providerName } from '@/store/sync'
+import { otherSave } from '@/store/extreme'
+import { ExtremeRulesModal } from '@/components/Extreme'
+import { AccountButton, ConnectedAccounts, DisconnectButton } from '@/components/AccountButton'
 import { SaveFacts } from '@/components/SyncConflictModal'
-import { backupSave, readBackups } from '@/save/storage'
+import { backupSave, readBackups, soundOn } from '@/save/storage'
 
 export function SettingsScreen() {
   const { t } = useT()
@@ -59,7 +62,7 @@ export function SettingsScreen() {
   return (
     <div className="flex max-w-2xl flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-5xl">{t('ui.settings.title')}</h1>
+        <h1 className="text-[32px] leading-none">{t('ui.settings.title')}</h1>
         {canDonate && (
           <PixelButton variant="primary" size="sm" onClick={() => setDonating(true)}>
             {t('ui.settings.helpPokedice')}
@@ -69,10 +72,10 @@ export function SettingsScreen() {
 
       <Panel title={t('ui.settings.game')}>
         <Toggle
-          label={t('ui.settings.sfx')}
-          hint={t('ui.settings.sfxHint')}
-          on={settings.sfx}
-          onChange={(v) => setSettings({ sfx: v })}
+          label={t('ui.settings.sound')}
+          hint={t('ui.settings.soundHint')}
+          on={soundOn(settings)}
+          onChange={(v) => setSettings({ sound: v, sfx: v })}
         />
         <Toggle
           label={t('ui.settings.multiExp')}
@@ -84,7 +87,40 @@ export function SettingsScreen() {
           on={settings.multiExp}
           onChange={(v) => setSettings({ multiExp: v })}
         />
-        {/* Admins only — but a player who already turned it on still sees it, so they can turn it off. */}
+        <div className="flex flex-col gap-1.5 py-1">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <span className="text-2xl">{t('ui.settings.animations')}</span>
+            <Seg
+              label={t('ui.settings.animations')}
+              value={settings.animations ?? 'full'}
+              onChange={(v) => setSettings({ animations: v })}
+              options={[
+                { id: 'full', label: t('ui.settings.animFull') },
+                { id: 'short', label: t('ui.settings.animShort') },
+              ]}
+              className="min-w-[12rem]"
+            />
+          </div>
+          <span className="copy block text-muted">{t('ui.settings.animationsHint')}</span>
+        </div>
+        <div className="flex flex-col gap-1.5 py-1">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <span className="text-2xl">{t('ui.settings.theme')}</span>
+            <Seg
+              label={t('ui.settings.theme')}
+              value={settings.theme ?? 'light'}
+              onChange={(v) => setSettings({ theme: v })}
+              options={[
+                { id: 'light', label: t('ui.settings.themeLight') },
+                { id: 'dark', label: t('ui.settings.themeDark') },
+                { id: 'auto', label: t('ui.settings.themeAuto') },
+              ]}
+              className="min-w-[15rem]"
+            />
+          </div>
+          <span className="copy block text-muted">{t('ui.settings.themeHint')}</span>
+        </div>
+        {/* No animations: admins only — but a player who already turned it on still sees it, so they can turn it off. */}
         {(isAdmin || settings.reducedMotion) && (
           <Toggle
             label={t('ui.settings.reducedMotion')}
@@ -106,13 +142,21 @@ export function SettingsScreen() {
             </Link>
           </p>
         ) : (
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <span className="copy">
-              {auth.status === 'signed_in'
-                ? t('ui.settings.cloudOn', { who: auth.email ?? t('ui.settings.yourGoogle') })
-                : t('ui.settings.cloudConnect')}
-            </span>
-            {auth.status === 'signed_in' ? <DisconnectButton size="sm" /> : <GoogleAccountButton size="sm" />}
+          <div className="flex flex-col gap-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="copy">
+                {auth.status !== 'signed_in'
+                  ? t('ui.settings.cloudConnect')
+                  : auth.provider
+                    ? t('ui.account.signedInWith', {
+                        provider: providerName(auth.provider),
+                        who: auth.email ?? t('ui.settings.yourGoogle'),
+                      })
+                    : t('ui.settings.cloudOn', { who: auth.email ?? t('ui.settings.yourGoogle') })}
+              </span>
+              {auth.status === 'signed_in' ? <DisconnectButton size="sm" /> : <AccountButton size="sm" />}
+            </div>
+            <ConnectedAccounts />
           </div>
         )}
       </Panel>
@@ -132,13 +176,15 @@ export function SettingsScreen() {
           value={importText}
           onChange={(e) => setImportText(e.target.value)}
           placeholder={t('ui.settings.importPlaceholder')}
-          className="mt-3 h-24 w-full border-2 border-ink bg-panel p-2 font-mono text-xs"
+          className="mt-3 h-24 w-full bg-paper shadow-field p-2 font-mono text-xs"
         />
         <PixelButton size="sm" className="mt-1" disabled={!importText.trim()} onClick={doImport}>
           {t('ui.settings.importSave')}
         </PixelButton>
         </details>
       </Panel>
+
+      <ExtremePanel />
 
       <BackupsPanel />
 
@@ -168,6 +214,8 @@ export function SettingsScreen() {
         </div>
       )}
 
+      <DeleteData />
+
       <DonationModal open={donating} onClose={() => setDonating(false)} />
 
       <Modal open={confirmDelete} onClose={() => setConfirmDelete(false)} title={t('ui.settings.deleteTitle')}>
@@ -191,6 +239,91 @@ export function SettingsScreen() {
   )
 }
 
+/**
+ * The red button at the very bottom: everything the game keeps about the player, in this browser and online, deleted
+ * (both saves, docs/22). Two pop-ups in a row so it is never a mis-tap: what goes, then a last "really?". Then the
+ * title screen, from scratch. `extreme`: the Extreme save only, from its own section.
+ */
+function DeleteData({ scope = 'all' }: { scope?: 'all' | 'extreme' }) {
+  const { t } = useT()
+  const online = useGame((s) => s.auth.status === 'signed_in')
+  const playingExtreme = useGame((s) => isExtreme(s.save))
+  const hasExtreme = playingExtreme || isExtreme(otherSave())
+  const [step, setStep] = useState<0 | 1 | 2>(0)
+  const [busy, setBusy] = useState(false)
+  const all = scope === 'all'
+  const close = () => {
+    if (!busy) setStep(0)
+  }
+  const wipe = async () => {
+    setBusy(true)
+    // A reload, not a navigation: the stores still hold the old save, friends and events in memory.
+    if (await (all ? deleteAllData() : deleteExtremeSave())) return window.location.assign('/')
+    setBusy(false)
+    setStep(0)
+    pushToast(t('ui.settings.wipeFailed'), 'bad')
+  }
+  const body = all
+    ? [t(online ? 'ui.settings.wipeBodyOnline' : 'ui.settings.wipeBodyLocal'), hasExtreme ? t('ui.settings.wipeBothNote') : '']
+        .filter(Boolean)
+        .join(' ')
+    : t('ui.extreme.settings.deleteBody')
+  return (
+    <div className={all ? 'flex justify-center' : 'flex'}>
+      {/* Full width on phones, so a long translation shrinks to fit instead of pushing the page sideways. */}
+      <PixelButton variant="danger" size={all ? 'md' : 'sm'} className={all ? 'w-full sm:w-auto' : undefined} onClick={() => setStep(1)}>
+        {t(all ? 'ui.settings.wipe' : 'ui.extreme.settings.delete')}
+      </PixelButton>
+
+      <Modal open={step === 1} onClose={close} title={t(all ? 'ui.settings.wipeTitle' : 'ui.extreme.settings.deleteTitle')}>
+        <p className="copy mb-4 text-lg">{body}</p>
+        <div className="flex flex-wrap justify-end gap-2">
+          <PixelButton onClick={close}>{t('ui.common.cancel')}</PixelButton>
+          <PixelButton variant="danger" onClick={() => setStep(2)}>
+            {t('ui.common.continue')}
+          </PixelButton>
+        </div>
+      </Modal>
+
+      <Modal open={step === 2} onClose={close} dismissable={!busy} title={t('ui.settings.wipeSureTitle')}>
+        <p className="copy mb-4 text-lg">{t('ui.settings.wipeSureBody')}</p>
+        <div className="flex flex-wrap justify-end gap-2">
+          <PixelButton onClick={close} disabled={busy}>
+            {t('ui.common.cancel')}
+          </PixelButton>
+          <PixelButton variant="danger" onClick={() => void wipe()} disabled={busy}>
+            {t(busy ? 'ui.settings.wiping' : 'ui.settings.wipeConfirm')}
+          </PixelButton>
+        </div>
+      </Modal>
+    </div>
+  )
+}
+
+/** Extreme mode (docs/22): what it is, its rules, and deleting its save. Once it's open, or a save of it exists. */
+function ExtremePanel() {
+  const { t } = useT()
+  const save = useGame((s) => s.save)
+  const data = useGame((s) => s.data)
+  const [rules, setRules] = useState(false)
+  const extreme = isExtreme(save)
+  const other = otherSave()
+  const hasSave = extreme || isExtreme(other)
+  if (!extreme && !hasSave && !extremeOpen(save, data)) return null
+  return (
+    <Panel title={t('ui.extreme.name')}>
+      <p className="copy text-muted">{t('ui.extreme.settings.hint')}</p>
+      <div className="mt-2 flex flex-wrap gap-2">
+        <PixelButton size="sm" onClick={() => setRules(true)} aria-label={t('ui.extreme.infoLabel')}>
+          {t('ui.extreme.settings.rules')}
+        </PixelButton>
+        {hasSave && <DeleteData scope="extreme" />}
+      </div>
+      <ExtremeRulesModal open={rules} onClose={() => setRules(false)} />
+    </Panel>
+  )
+}
+
 /** Saves replaced by a cloud sync (or a restore) on this device — a wrong choice can be undone here. */
 function BackupsPanel() {
   const { t } = useT()
@@ -202,7 +335,7 @@ function BackupsPanel() {
       <p className="copy mb-2 text-muted">{t('ui.settings.backupsHint')}</p>
       <ul className="flex flex-col gap-2">
         {list.map((b) => (
-          <li key={b.at} className="flex flex-wrap items-center gap-3 border-2 border-ink bg-panel p-2">
+          <li key={b.at} className="flex flex-wrap items-center gap-3 bg-paper p-2 shadow-ring">
             <div className="min-w-0 flex-1">
               <div className="text-lg leading-tight">{b.reason}</div>
               <div className="text-base text-muted">{t('ui.settings.setAside', { when: new Date(b.at).toLocaleString() })}</div>

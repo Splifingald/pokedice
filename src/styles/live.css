@@ -1,0 +1,202 @@
+/*
+ * Live events (docs/20): Home's square (the event's picture behind the usual rows, a gold ring), the pop-up's banner,
+ * the Poké Mart's Special section; sparkles, coins and items floating over the picture; the time-left gauge.
+ */
+
+/* White text on a picture: a navy drop under it. */
+.lv-ink {
+  color: #fbfdff;
+  text-shadow: 0 2px 0 #24304f;
+}
+
+/* The picture, darker at the foot where the rows sit. */
+.lv-pic {
+  position: relative;
+}
+.lv-pic::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: linear-gradient(rgb(36 48 79 / 0.25), transparent 30%, rgb(36 48 79 / 0.82) 66%);
+  pointer-events: none;
+}
+
+/* Home's square: a gold ring inside the panel's outline. */
+.lv-square::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  box-shadow:
+    inset 0 0 0 2px #ffbe2e,
+    inset 0 0 0 4px rgb(36 48 79 / 0.5);
+  pointer-events: none;
+}
+.lv-square:focus-visible::after {
+  box-shadow: inset 0 0 0 3px #f2553f;
+}
+
+/* LIVE's dot. */
+.lv-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  background: #fff;
+  animation: lv-blink 1.2s steps(2) infinite;
+}
+@keyframes lv-blink {
+  50% {
+    opacity: 0.2;
+  }
+}
+
+/* The time left, draining: gold, red in its last hours. */
+.lv-gauge {
+  background: #0f1830;
+  box-shadow: 0 0 0 2px #24304f;
+}
+.lv-gauge.lv-gauge-light {
+  background: rgb(var(--c-line));
+  box-shadow: inset 0 0 0 1px rgb(var(--c-edge));
+}
+.lv-gauge i {
+  background: linear-gradient(#ffe7a8 0 35%, #ffbe2e 35% 70%, #e08e00 70%);
+}
+.lv-gauge.hot i {
+  background: linear-gradient(#ffb3a8 0 35%, #f2553f 35% 70%, #c4382a 70%);
+  animation: lv-blink 1.6s steps(2) infinite;
+}
+
+/* What floats over the picture (above its darkened foot). */
+.lv-fx {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+.lv-fx i {
+  position: absolute;
+  display: grid;
+  place-items: center;
+}
+.lv-spk i {
+  filter: drop-shadow(0 0 3px #fff6a8);
+  animation: lv-twinkle 1.6s steps(3) infinite;
+}
+.lv-spk i:nth-child(1) { left: 14%; top: 26%; }
+.lv-spk i:nth-child(2) { left: 58%; top: 8%; animation-delay: 0.5s; }
+.lv-spk i:nth-child(3) { left: 80%; top: 46%; animation-delay: 1s; }
+.lv-spk i:nth-child(4) { left: 36%; top: 52%; animation-delay: 0.25s; }
+.lv-spk i:nth-child(5) { left: 4%; top: 60%; animation-delay: 0.8s; }
+.lv-spk i:nth-child(6) { left: 64%; top: 62%; animation-delay: 0.6s; }
+.lv-spk i:nth-child(7) { left: 44%; top: 4%; animation-delay: 1.2s; }
+@keyframes lv-twinkle {
+  0%,
+  100% {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+.lv-coins {
+  overflow: hidden;
+}
+.lv-coins i {
+  top: -32px;
+  left: calc(12% + var(--i) * 30%);
+  animation: lv-fall 2.6s linear infinite;
+  animation-delay: calc(var(--i) * -0.9s);
+}
+.lv-coins.big i {
+  left: calc(6% + var(--i) * 19%);
+}
+@keyframes lv-fall {
+  to {
+    transform: translateY(190px);
+  }
+}
+.lv-shelf {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+}
+.lv-shelf i {
+  position: static;
+  width: 38px;
+  height: 38px;
+  background: rgb(251 253 255 / 0.85);
+  box-shadow: inset 0 0 0 2px #24304f;
+  animation: ev-bob 2.2s steps(4) infinite;
+  animation-delay: calc(var(--i) * 0.3s);
+}
+.lv-shelf.big {
+  gap: 8px;
+}
+.lv-shelf.big i {
+  width: 72px;
+  height: 72px;
+  box-shadow: inset 0 0 0 3px #24304f;
+}
+
+/* The pop-up's big number: ×5, +50%. */
+.lv-big {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  font-size: 64px;
+  line-height: 1;
+  color: #ffe7a8;
+  text-shadow:
+    0 4px 0 #24304f,
+    3px 0 0 #24304f,
+    -3px 0 0 #24304f,
+    0 -3px 0 #24304f;
+}
+.lv-big.cash {
+  color: #b6f5cf;
+}
+
+/* The Poké Mart's Special section: a purple ring, the event's picture as its header. */
+.lv-shop {
+  background: #fbf4ff;
+  box-shadow:
+    inset 0 0 0 3px rgb(var(--c-edge)),
+    inset 0 0 0 5px #c58aff;
+}
+[data-theme='dark'] .lv-shop {
+  background: #241c35;
+}
+.lv-shop-head {
+  box-shadow:
+    inset 0 0 0 3px rgb(var(--c-edge)),
+    0 3px 0 rgb(var(--c-edge));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lv-dot,
+  .lv-gauge.hot i,
+  .lv-spk i,
+  .lv-coins i,
+  .lv-shelf i {
+    animation: none;
+  }
+  .lv-coins i {
+    top: calc(8% + var(--i) * 14%);
+  }
+}
+html.reduce-motion .lv-dot,
+html.reduce-motion .lv-gauge.hot i,
+html.reduce-motion .lv-spk i,
+html.reduce-motion .lv-coins i,
+html.reduce-motion .lv-shelf i {
+  animation: none;
+}
+html.reduce-motion .lv-coins i {
+  top: calc(8% + var(--i) * 14%);
+}

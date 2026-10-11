@@ -1,386 +1,855 @@
-import { AnimatePresence, motion } from 'framer-motion'
-import { useEffect, useState } from 'react'
-import { Navigate, useNavigate } from 'react-router-dom'
+// The Pokémon Day Care, one for every region (docs/15): laid out like Home, with the yard on top (everyone at the Day
+// Care roaming, pairs seeking each other out, the Egg in its nest), the Egg card or the Egg-now bar under it, then your
+// two, your friends' four, and the Egg checks. Eggs hatch full screen. Every number comes from src/engine.
+import { motion } from 'framer-motion'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
+import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 import {
+  careMembers,
+  clockDueAt,
+  compatible,
+  dayCareLevelProgress,
   dayCareOf,
-  dayCareXp,
-  depositError,
+  boxedDepositError,
+  everyRegionBox,
+  friendMonLevel,
+  getRegion,
+  guestKey,
   isDayCareOpen,
-  nextDayCareTick,
-  residentNow,
+  isDitto,
+  matesOf,
+  nextCheckAt,
+  pairs,
+  sharedGroups,
+  type CareMember,
+  type DayCareGuest,
   type DayCareResident,
+  type DepositError,
   type Hatch,
-  type Pickup,
 } from '@/engine'
 import { sfx } from '@/audio/sfx'
-import { t } from '@/i18n'
-import { useT } from '@/i18n/react'
-import { Modal } from '@/components/Modal'
-import { MonCard } from '@/components/MonCard'
+import { AccountButton } from '@/components/AccountButton'
+import { DayCareRulesModal } from '@/components/FeatureRules'
+import { InfoButton } from '@/components/RulesModal'
+import { Chip, NewTag } from '@/components/Chip'
+import { bumpGold } from '@/components/GoldPill'
+import { BackButton } from '@/components/PageHead'
 import { PixelButton } from '@/components/PixelButton'
-import { SpriteImg } from '@/components/SpriteImg'
-import { TypeBadge } from '@/components/TypeBadge'
-import { hatchDayCareEgg, leaveAtDayCare, pickUpFromDayCare, visitDayCare } from '@/store/actions'
-import { useGame } from '@/store/game'
+import { SearchField, Seg } from '@/components/Segmented'
+import { Sheet } from '@/components/Sheet'
+import { MiniSprite } from '@/components/SpriteImg'
+import { StageCanvas, type StageHandle } from '@/components/StageCanvas'
+import { TrainerLook } from '@/components/TrainerLook'
+import { loadSprite, spriteKey } from '@/fx/sprites'
+import { hatchTimeline } from '@/fx/timelines/moments'
+import { joinList, searchFold } from '@/i18n'
+import { useT } from '@/i18n/react'
+import { eggGroupName, waitText } from '@/i18n/text'
+import { avatarOf } from '@/lib/avatars'
+import { useFriendCares } from '@/lib/friends'
+import { isSupabaseConfigured } from '@/lib/supabase'
+import { money } from '@/lib/format'
+import { useHoldFullscreen } from '@/lib/fullscreen'
+import { useMotion } from '@/lib/motion'
+import { hatchDayCareEgg, leaveAtDayCare, pickUpFromDayCare, rushDayCareEgg, visitDayCare } from '@/store/actions'
+import { inviteFriendMon, parentName, sendGuestBack, syncFriendDayCares, tickDayCare } from '@/store/daycare'
+import { pushToast, useGame } from '@/store/game'
 import { cx } from '@/theme/util'
-
-// 12×14 pixel Egg: k outline, w shell, s shade, g spots.
-const EGG = [
-  '....kkkk....',
-  '...kwwwwk...',
-  '..kwwggwwk..',
-  '.kwwgggwwwk.',
-  '.kwwwggwwwk.',
-  'kwwwwwwwggwk',
-  'kwggwwwwggwk',
-  'kwgggwwwwwsk',
-  'kwwggwwwwwsk',
-  'kwwwwwwgwwsk',
-  '.kwwwwwggssk',
-  '.kswwwwwsssk',
-  '..kssssssk..',
-  '...kkkkkk...',
-]
-const EGG_COLORS: Record<string, string> = { k: '#2a2438', w: '#f7f2e0', s: '#d8cfb4', g: '#4aa84a' }
-
-export function EggSprite({ size = 64, className }: { size?: number; className?: string }) {
-  return (
-    <svg
-      width={size}
-      height={(size * EGG.length) / EGG[0]!.length}
-      viewBox={`0 0 ${EGG[0]!.length} ${EGG.length}`}
-      shapeRendering="crispEdges"
-      className={className}
-      aria-hidden
-    >
-      {EGG.flatMap((row, y) =>
-        [...row].map((ch, x) =>
-          ch === '.' ? null : (
-            <rect key={`${x}-${y}`} x={x} y={y} width={1} height={1} fill={EGG_COLORS[ch]} />
-          ),
-        ),
-      )}
-    </svg>
-  )
-}
-
-const minutes = (ms: number) => {
-  const m = Math.ceil(ms / 60_000)
-  return m >= 60
-    ? t('ui.dayCare.hours', { h: Math.floor(m / 60), m: String(m % 60).padStart(2, '0') })
-    : t('ui.dayCare.minutes', { n: m })
-}
+import {
+  EggCardView,
+  EmptySlot,
+  GainTag,
+  Heart,
+  Mate,
+  MatesLine,
+  PairTag,
+  RushBarView,
+  SectionHead,
+  SlotCard,
+  XpBar,
+  slotColor,
+} from './daycare/parts'
+import { YardStage, type YardMember } from './daycare/YardStage'
 
 /** Re-render every 20 s so levels and countdowns stay current. */
 function useNow(ms = 20_000) {
   const [now, setNow] = useState(() => Date.now())
   useEffect(() => {
-    const t = setInterval(() => setNow(Date.now()), ms)
-    return () => clearInterval(t)
+    const id = setInterval(() => setNow(Date.now()), ms)
+    return () => clearInterval(id)
   }, [ms])
   return now
 }
 
-function ResidentCard({ res, now, onPickUp }: { res: DayCareResident; now: number; onPickUp: () => void }) {
+const CARD = 'bg-paper shadow-card'
+/** A friend's card wears a grey band: it isn't one of your slots. */
+const GUEST_BAND = 'rgb(var(--c-shadow))'
+
+/** A member's name: the species, the same for yours and a friend's (the card says whose). */
+function useNameOf() {
   const { t } = useT()
   const data = useGame((s) => s.data)
-  const cfg = data.config.dayCare
-  const grown = residentNow(res, now, data)
-  const xp = dayCareXp(res, now, data)
-  const next = nextDayCareTick(res, now, data)
-  const species = data.species[res.inst.dex]
-  const gained = grown.level - res.inst.level
+  return (m: { dex: number }) => data.species[m.dex]?.name ?? t('ui.common.pokemon')
+}
+
+/** One of yours: its slot's colour, the levels gained here, the bar to the next level, who it pairs with. */
+function MineCard({ res, slot, now, onTake }: { res: DayCareResident; slot: number; now: number; onTake: () => void }) {
+  const { t } = useT()
+  const save = useGame((s) => s.save)!
+  const data = useGame((s) => s.data)
+  const nameOf = useNameOf()
+  const p = dayCareLevelProgress(res, now, data)
+  const name = nameOf(res.inst)
+  const lv = (n: number) => t('ui.common.level.short', { n })
+  const line = p.toNext
+    ? t('ui.dayCare.toNext', { next: lv(p.level + 1), from: lv(res.inst.level) })
+    : t('ui.dayCare.maxed', { level: lv(p.level) })
+  const gained = p.level - res.inst.level
+  const mates = matesOf(save, data, res.inst.id)
   return (
-    <div className="pixel-panel flex flex-col gap-2 p-3">
-      <div className="flex items-center gap-3">
-        <SpriteImg
-          dex={res.inst.dex}
-          size={80}
-          shiny={res.inst.shiny}
-          className="border-[3px] border-ink bg-parchment"
+    <SlotCard
+      band={slotColor(slot)}
+      head={
+        <>
+          <Heart color={slotColor(slot)} />
+          <span>{t('ui.dayCare.yoursTag')}</span>
+        </>
+      }
+      tag={<GainTag>{gained > 0 ? t('ui.dayCare.gainedLv', { n: gained }) : t('ui.dayCare.newHere')}</GainTag>}
+      dex={res.inst.dex}
+      shiny={res.inst.shiny}
+      name={name}
+      level={lv(p.level)}
+      action={{ label: t('ui.dayCare.takeBack'), aria: t('ui.dayCare.takeBackName', { name }), onClick: onTake }}
+    >
+      <XpBar k={p.toNext ? p.xp / p.toNext : 1} line={line} />
+      {isDitto(data, res.inst.dex) ? (
+        <MatesLine lead={t('ui.dayCare.allButLegends')} />
+      ) : mates.length ? (
+        <MatesLine
+          // Every partner wears a heart: yours in their own colour, a friend's in this card's.
+          mates={mates.map((m) => (
+            <Mate key={m.key} name={nameOf(m)} slot={m.mine ?? slot} />
+          ))}
         />
-        <div className="min-w-0 flex-1">
-          <div className="truncate text-3xl leading-none">{species?.name ?? t('ui.common.unknown')}</div>
-          <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xl">
-            <span>{t('ui.common.level.short', { n: res.inst.level })}</span>
-            {gained > 0 && (
-              <>
-                <span aria-hidden>→</span>
-                <span className="border-2 border-ink bg-gold px-1 leading-none">
-                  {t('ui.common.level.short', { n: grown.level })}
-                </span>
-                <span className="text-good">+{gained}</span>
-              </>
+      ) : (
+        <MatesLine lead={t('ui.dayCare.noPartner')} />
+      )}
+    </SlotCard>
+  )
+}
+
+/** A friend's Pokémon visiting: whose it is, its level, which of yours it pairs with, and Send back. */
+function GuestCard({ g, onSend }: { g: DayCareGuest; onSend: () => void }) {
+  const { t } = useT()
+  const save = useGame((s) => s.save)!
+  const data = useGame((s) => s.data)
+  const nameOf = useNameOf()
+  const name = nameOf(g)
+  const mates = matesOf(save, data, guestKey(g)).filter((m) => m.mine != null)
+  return (
+    <SlotCard
+      band={GUEST_BAND}
+      head={
+        <>
+          <TrainerLook src={avatarOf(g.ownerAvatar).src} w={26} h={26} className="-my-1 -ml-0.5" />
+          <span className="truncate">{t('ui.dayCare.ownerTag', { name: g.ownerName })}</span>
+        </>
+      }
+      dex={g.dex}
+      shiny={g.shiny}
+      name={name}
+      level={t('ui.common.level.short', { n: g.level })}
+      action={{
+        label: t('ui.dayCare.sendBack'),
+        aria: t('ui.dayCare.sendBackName', { name, owner: g.ownerName }),
+        onClick: onSend,
+      }}
+    >
+      {mates.length ? (
+        <MatesLine
+          mates={mates.map((m) => (
+            <Mate key={m.key} name={nameOf(m)} slot={m.mine} />
+          ))}
+        />
+      ) : (
+        <MatesLine lead={t('ui.dayCare.noMatchYours')} />
+      )}
+    </SlotCard>
+  )
+}
+
+/** The Egg checks: the rule, the two clocks, and every pair with what makes it one (and how often it's checked). */
+function ChecksSection({ now }: { now: number }) {
+  const { t } = useT()
+  const save = useGame((s) => s.save)!
+  const data = useGame((s) => s.data)
+  const nameOf = useNameOf()
+  const cfg = data.config.dayCare
+  const ditto = data.species[132]?.name ?? 'Ditto'
+  const ps = pairs(save, data)
+  const next = (clock: 'breed' | 'ditto') => waitText(clockDueAt(save, data, clock, now) - now)
+  return (
+    <section aria-labelledby="dc-checks" className="grid gap-2 bg-paper px-3 pb-3 pt-2.5 shadow-ring-line">
+      <h2 id="dc-checks" className="m-0 text-[21px] font-normal leading-none">
+        {t('ui.dayCare.checks')}
+      </h2>
+      <dl className="m-0 grid grid-cols-[auto_minmax(0,1fr)] gap-x-2.5 gap-y-0.5 font-pixel-sm text-[15px] text-ink">
+        <dt className="text-muted">{t('ui.dayCare.clockGroups')}</dt>
+        <dd className="m-0">{t('ui.dayCare.clockLine', { h: cfg.breedHours, time: next('breed') })}</dd>
+        <dt className="text-muted">{ditto}</dt>
+        <dd className="m-0">{t('ui.dayCare.clockLine', { h: cfg.breedDittoHours, time: next('ditto') })}</dd>
+      </dl>
+      {ps.length ? (
+        <ul className="m-0 grid list-none gap-1 p-0">
+          {ps.map((p) => (
+            <li key={`${p.a.key}+${p.b.key}`} className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[18px] leading-[1.1]">
+              <Heart color={slotColor(p.a.mine ?? 0)} />
+              <b className="font-normal">{nameOf(p.a)}</b>
+              <span aria-hidden>+</span>
+              <b className="font-normal">{nameOf(p.b)}</b>
+              {p.b.guest && (
+                <small className="font-pixel-sm text-[14px] text-muted">
+                  {t('ui.dayCare.ownerTag', { name: p.b.guest.ownerName })}
+                </small>
+              )}
+              <span className="ml-auto">
+                <PairTag tone={p.slow ? 'slow' : 'plain'}>
+                  {p.slow
+                    ? t('ui.dayCare.pairTag', { groups: ditto, h: cfg.breedDittoHours })
+                    : t('ui.dayCare.pairTag', {
+                        groups: sharedGroups(data, p.a.dex, p.b.dex).map(eggGroupName).join(' · '),
+                        h: cfg.breedHours,
+                      })}
+                </PairTag>
+              </span>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="m-0 font-pixel-sm text-[15px] leading-[1.2] text-muted">{t('ui.dayCare.noPairYet')}</p>
+      )}
+    </section>
+  )
+}
+
+const REFUSED: Record<DepositError, string> = {
+  full: 'ui.toast.dayCareFull',
+  last: 'ui.dayCare.lastMember',
+  missing: 'ui.toast.notWithYou',
+  fossil: 'ui.dayCare.fossil',
+}
+
+/**
+ * Leave which Pokémon? Every region's Box (each says its region once several are played), by level, lowest or highest
+ * first; a search, and Compatible only once someone is here, yours or a friend's. A team member has the TEAM tag; the
+ * last of a region's team is greyed. The tag says who it would pair with, in the colour of the slot being filled.
+ */
+function LeaveSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const { t } = useT()
+  const save = useGame((s) => s.save)
+  const data = useGame((s) => s.data)
+  const nameOf = useNameOf()
+  const [q, setQ] = useState('')
+  const [order, setOrder] = useState<'low' | 'high'>('low')
+  const [only, setOnly] = useState(false)
+  useEffect(() => {
+    if (open) setQ('')
+  }, [open])
+  if (!save) return null
+  const cfg = data.config.dayCare
+  const slot = dayCareOf(save).residents.length
+  const here = careMembers(save)
+  // Nothing to be compatible with until someone is here.
+  const compatOnly = only && here.length > 0
+  const needle = searchFold(q.trim())
+  const all = everyRegionBox(save, data)
+  const manyRegions = new Set(all.map((m) => m.region)).size > 1
+  // By level; ties keep every region's Box order, the region being played first.
+  const rows = all
+    .filter((m) => !needle || searchFold(nameOf(m.inst)).includes(needle))
+    .map((m) => ({ ...m, mates: here.filter((o) => compatible(data, o.dex, m.inst.dex)) }))
+    .filter((r) => !compatOnly || r.mates.length > 0)
+    .sort((a, b) => (order === 'low' ? a.inst.level - b.inst.level : b.inst.level - a.inst.level))
+  const mateName = (m: CareMember) =>
+    isDitto(data, m.dex) ? t('ui.dayCare.everyH', { name: nameOf(m), h: cfg.breedDittoHours }) : nameOf(m)
+  return (
+    <Sheet
+      open={open}
+      onClose={onClose}
+      title={t('ui.dayCare.leaveWhich')}
+      sub={t('ui.dayCare.depositHint', {
+        xp: cfg.xpPerTick,
+        minutes: cfg.tickMinutes,
+        max: t('ui.common.level.short', { n: data.config.maxLevel }),
+      })}
+      head={
+        <div className="grid gap-2">
+          <SearchField
+            id="dc-q"
+            value={q}
+            onChange={setQ}
+            label={t('ui.dayCare.searchLabel')}
+            placeholder={t('ui.dayCare.searchLabel')}
+          />
+          <div className="flex flex-wrap items-center gap-2">
+            <Seg
+              label={t('ui.dayCare.sortLevel')}
+              value={order}
+              onChange={setOrder}
+              options={[
+                { id: 'low', label: t('ui.dayCare.lowFirst') },
+                { id: 'high', label: t('ui.dayCare.highFirst') },
+              ]}
+            />
+            {here.length > 0 && (
+              <button
+                type="button"
+                aria-pressed={only}
+                onClick={() => setOnly((v) => !v)}
+                className={cx(
+                  'ml-auto min-h-[44px] shrink-0 px-3 font-pixel-sm text-[15px] leading-none shadow-ring',
+                  only ? 'bg-gold text-night' : 'bg-paper text-ink',
+                )}
+              >
+                {t('ui.dayCare.compatibleOnly')}
+              </button>
             )}
           </div>
         </div>
-      </div>
-      <div>
-        <div className="flex justify-between text-base">
-          <span>{t('ui.dayCare.xp')}</span>
-          <span className="font-mono">
-            {xp}/{cfg.maxXp}
-          </span>
+      }
+    >
+      {rows.length === 0 ? (
+        <p className="m-0 p-2 text-center font-pixel-sm text-[16px] text-muted">
+          {t(compatOnly && !needle ? 'ui.dayCare.noCompatibleMine' : 'ui.dayCare.noMatch')}
+        </p>
+      ) : (
+        <ul className="m-0 grid list-none gap-1.5 p-0">
+          {rows.map((row) => {
+            const { inst: p, region, inTeam, mates } = row
+            const why = boxedDepositError(save, row, data)
+            const name = nameOf(p)
+            const groups = (data.eggGroups[p.dex]?.g ?? []).map(eggGroupName).join(' · ')
+            const tag = isDitto(data, p.dex) ? (
+              <PairTag>
+                <Heart color={slotColor(slot)} />
+                {t('ui.dayCare.compatDitto', { h: cfg.breedDittoHours })}
+              </PairTag>
+            ) : mates.length ? (
+              <PairTag>
+                <Heart color={slotColor(slot)} />
+                {t('ui.dayCare.compatWith', { names: mates.map(mateName).join(', ') })}
+              </PairTag>
+            ) : null
+            return (
+              <li key={p.id}>
+                <button
+                  type="button"
+                  disabled={!!why}
+                  onClick={() => {
+                    if (leaveAtDayCare(p.id)) {
+                      pushToast(t('ui.dayCare.staysToast', { name }), 'good')
+                      onClose()
+                    }
+                  }}
+                  className={cx(
+                    'flex min-h-[52px] w-full items-center gap-2 py-1.5 pl-1.5 pr-2.5 text-left',
+                    why ? 'bg-well text-ink shadow-ring-line' : CARD,
+                  )}
+                >
+                  <MiniSprite dex={p.dex} size={40} className={cx('-my-1', why && 'opacity-60 grayscale')} />
+                  <span className="grid min-w-0 flex-1 leading-[1.05]">
+                    <b className="truncate text-[18px] font-normal">
+                      {name}{' '}
+                      <small className="font-pixel-sm text-[13px] text-muted">
+                        {t('ui.common.level.short', { n: p.level })}
+                        {manyRegions && ` · ${getRegion(data, region)?.name ?? region}`}
+                      </small>
+                    </b>
+                    <small className="font-pixel-sm text-[14px] text-ink">{why ? t(REFUSED[why]) : groups}</small>
+                    {!why && tag && <span className="mt-1">{tag}</span>}
+                  </span>
+                  {inTeam && <Chip tone="dark">{t('ui.dayCare.teamTag')}</Chip>}
+                </button>
+              </li>
+            )
+          })}
+        </ul>
+      )}
+    </Sheet>
+  )
+}
+
+/**
+ * Add a friend's Pokémon: a search (friend or Pokémon) and Compatible only, grouped by friend, the best matches
+ * first. Each row says which of yours it would pair with, in their hearts' colours; Ditto with all but legendaries,
+ * on its slower clock; one already here is greyed as Invited.
+ */
+function FriendSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const { t, tPlural } = useT()
+  const save = useGame((s) => s.save)
+  const data = useGame((s) => s.data)
+  const rows = useFriendCares((s) => s.rows)
+  const state = useFriendCares((s) => s.state)
+  const error = useFriendCares((s) => s.error)
+  const nameOf = useNameOf()
+  const [q, setQ] = useState('')
+  const [only, setOnly] = useState(false)
+  useEffect(() => {
+    if (!open) return
+    setQ('')
+    void syncFriendDayCares()
+  }, [open])
+  if (!save) return null
+  const cfg = data.config.dayCare
+  const now = Date.now()
+  const dc = dayCareOf(save)
+  const taken = new Set(dc.guests.map(guestKey))
+  const pairsWith = (dex: number) => dc.residents.flatMap((r, i) => (compatible(data, r.inst.dex, dex) ? [i] : []))
+  const needle = searchFold(q.trim())
+  const groups = rows
+    .map((f) => {
+      const list = f.mons
+        .filter((m) => !needle || searchFold(f.name).includes(needle) || searchFold(nameOf(m)).includes(needle))
+        .map((m) => ({ m, idx: pairsWith(m.dex) }))
+        .filter((x) => !only || x.idx.length > 0)
+      return { f, list, best: Math.max(0, ...list.map((x) => x.idx.length)) }
+    })
+    .filter((g) => g.list.length > 0)
+    .sort((a, b) => b.best - a.best)
+  const hearts = (idx: number[]) => idx.map((i) => <Heart key={i} color={slotColor(i)} />)
+  const empty =
+    state === 'error'
+      ? t(error === 'not_set_up' ? 'ui.dayCare.friendsNoServer' : 'ui.dayCare.friendsFailed')
+      : state !== 'ready'
+        ? t('ui.common.loading')
+        : !rows.length
+          ? t('ui.dayCare.noFriendCare')
+          : only
+            ? t('ui.dayCare.noFriendCompatible')
+            : t('ui.dayCare.noFriendMatch')
+  return (
+    <Sheet
+      open={open}
+      onClose={onClose}
+      title={t('ui.dayCare.friendPickTitle')}
+      sub={t('ui.dayCare.friendPickSub')}
+      head={
+        <div className="flex items-center gap-2">
+          <div className="min-w-0 flex-1">
+            <SearchField
+              id="dc-fq"
+              value={q}
+              onChange={setQ}
+              label={t('ui.dayCare.friendSearchLabel')}
+              placeholder={t('ui.dayCare.friendSearch')}
+            />
+          </div>
+          <button
+            type="button"
+            aria-pressed={only}
+            onClick={() => setOnly((v) => !v)}
+            className={cx(
+              'min-h-[44px] shrink-0 px-3 font-pixel-sm text-[15px] leading-none shadow-ring',
+              only ? 'bg-gold text-night' : 'bg-paper text-ink',
+            )}
+          >
+            {t('ui.dayCare.compatibleOnly')}
+          </button>
         </div>
-        <div className="h-3 border-2 border-ink bg-panel" role="img" aria-label={t('ui.dayCare.xpOf', { xp, max: cfg.maxXp })}>
-          <div
-            className="h-full bg-hp-green"
-            style={{ width: `${Math.min(100, (xp / Math.max(1, cfg.maxXp)) * 100)}%` }}
+      }
+    >
+      {groups.length === 0 ? (
+        <p className="m-0 p-2 text-center font-pixel-sm text-[16px] text-muted">{empty}</p>
+      ) : (
+        <div className="grid gap-3">
+          {groups.map(({ f, list }) => (
+            <section key={f.owner} className="grid gap-1.5" aria-label={f.name}>
+              <h3 className="m-0 flex items-center gap-1.5 text-[19px] font-normal leading-none">
+                <TrainerLook src={avatarOf(f.avatar).src} w={26} h={26} />
+                <span className="min-w-0 truncate">{f.name}</span>
+                <small className="ml-auto font-pixel-sm text-[13px] text-muted">
+                  {tPlural('ui.dayCare.atDayCare', f.mons.length, { n: f.mons.length })}
+                </small>
+              </h3>
+              <ul className="m-0 grid list-none gap-1.5 p-0">
+                {list.map(({ m, idx }) => {
+                  const added = taken.has(guestKey({ owner: f.owner, inst: m.inst }))
+                  const name = nameOf(m)
+                  const groupsLine = (data.eggGroups[m.dex]?.g ?? []).map(eggGroupName).join(' · ')
+                  const tag = added ? (
+                    <PairTag tone="plain">{t('ui.dayCare.invited')}</PairTag>
+                  ) : isDitto(data, m.dex) ? (
+                    <PairTag>
+                      {hearts(idx)}
+                      {t('ui.dayCare.compatDitto', { h: cfg.breedDittoHours })}
+                    </PairTag>
+                  ) : idx.length ? (
+                    <PairTag>
+                      {hearts(idx)}
+                      {t('ui.dayCare.compatWith', { names: joinList(idx.map((i) => nameOf(dc.residents[i]!.inst))) })}
+                    </PairTag>
+                  ) : (
+                    <PairTag tone="plain">{t('ui.dayCare.noMatchYours')}</PairTag>
+                  )
+                  return (
+                    <li key={m.inst}>
+                      <button
+                        type="button"
+                        disabled={added}
+                        onClick={() => {
+                          if (inviteFriendMon(f, m)) onClose()
+                        }}
+                        className={cx(
+                          'flex min-h-[52px] w-full items-center gap-2 py-1.5 pl-1.5 pr-2.5 text-left',
+                          added ? 'bg-well text-ink shadow-ring-line' : CARD,
+                        )}
+                      >
+                        <MiniSprite dex={m.dex} size={40} className={cx('-my-1', added && 'opacity-60 grayscale')} />
+                        <span className="grid min-w-0 flex-1 leading-[1.05]">
+                          <b className="truncate text-[18px] font-normal">
+                            {name}{' '}
+                            <small className="font-pixel-sm text-[13px] text-muted">
+                              {t('ui.common.level.short', { n: friendMonLevel(m, now, data) })}
+                            </small>
+                          </b>
+                          <small className="font-pixel-sm text-[14px] text-ink">{groupsLine}</small>
+                          <span className="mt-1">{tag}</span>
+                        </span>
+                      </button>
+                    </li>
+                  )
+                })}
+              </ul>
+            </section>
+          ))}
+        </div>
+      )}
+    </Sheet>
+  )
+}
+
+/**
+ * The hatching, full screen over the page: the timeline on the stage (src/fx/timelines/moments.ts) with Skip, then
+ * what hatched (NEW, ✦ Shiny) and where it went, and Done. Escape skips to the end, then closes.
+ */
+function HatchMoment({ hatch, onDone }: { hatch: Hatch; onDone: () => void }) {
+  const { t } = useT()
+  useHoldFullscreen()
+  const data = useGame((s) => s.data)
+  const stage = useRef<StageHandle>(null)
+  const doneRef = useRef<HTMLButtonElement>(null)
+  const [open, setOpen] = useState(false)
+  const scene = useMemo(
+    () => ({
+      ready: loadSprite(hatch.inst.dex, false, hatch.inst.shiny),
+      timeline: hatchTimeline({ baby: spriteKey(hatch.inst.dex, false, hatch.inst.shiny), shiny: hatch.shiny }),
+    }),
+    [hatch],
+  )
+  const sp = data.species[hatch.inst.dex]
+  const name = sp?.name ?? t('ui.common.aPokemon')
+  const reveal = () => {
+    if (open) return
+    setOpen(true)
+    sfx('levelup')
+  }
+  useEffect(() => {
+    if (open) doneRef.current?.focus({ preventScroll: true })
+  }, [open])
+  const where = !hatch.kept
+    ? hatch.gold > 0
+      ? t('ui.dayCare.keptStrongerGold', { name, gold: money(hatch.gold) })
+      : t('ui.dayCare.keptStronger', { name })
+    : `${hatch.replaced ? t('ui.dayCare.replacedYours', { level: hatch.replaced.level, name }) : ''}${t(
+        hatch.joinedTeam ? 'ui.dayCare.joinedTeam' : 'ui.dayCare.wentToBox',
+      )}`
+  const said = open
+    ? t(hatch.shiny ? 'ui.dayCare.hatchedShiny' : 'ui.dayCare.hatched', { name })
+    : t('ui.dayCare.eggMoving')
+  return createPortal(
+    <motion.div
+      role="dialog"
+      aria-modal="true"
+      aria-label={t('ui.dayCare.eggHatching')}
+      className="fixed inset-0 z-[100] overflow-y-auto bg-paper"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      onKeyDown={(e) => {
+        if (e.key !== 'Escape') return
+        if (open) onDone()
+        else stage.current?.skip()
+      }}
+    >
+      <div className="mx-auto flex min-h-full w-full max-w-[560px] flex-col gap-3 pb-4">
+        <div className="shadow-ledge">
+          <StageCanvas
+            ref={stage}
+            timeline={scene.timeline}
+            ready={scene.ready}
+            hud={{ beat: (b) => b === 'hatched' && reveal() }}
+            onEnd={reveal}
+            label={said}
           />
         </div>
-        <p className="mt-1 text-base text-muted">
-          {next == null ? t('ui.dayCare.full') : t('ui.dayCare.nextTick', { xp: cfg.xpPerTick, time: minutes(next) })}
+        <p
+          className="pixel-dialogue mx-3 my-0 flex min-h-[64px] items-center px-3 py-1.5 text-[20px] leading-[1.15]"
+          aria-live="polite"
+        >
+          {said}
         </p>
+        {!open ? (
+          <PixelButton className="mx-3 self-end" size="sm" onClick={() => stage.current?.skip()}>
+            {t('ui.evolution.skip')}
+          </PixelButton>
+        ) : (
+          <div className={cx('mx-3 grid gap-2 px-3 pb-3 pt-2.5', CARD)}>
+            <p className="m-0 flex flex-wrap items-center gap-1.5 text-[22px] leading-none">
+              <MiniSprite dex={hatch.inst.dex} size={40} className="-my-2" />
+              <b className="font-normal">{name}</b>
+              <span className="font-pixel-sm text-[17px] text-muted">
+                {t('ui.common.level.short', { n: hatch.inst.level })}
+              </span>
+              {hatch.shiny && <Chip tone="gold">{t('ui.dayCare.shinyTag')}</Chip>}
+              {hatch.isNew && <NewTag />}
+            </p>
+            <p className="m-0 font-pixel-sm text-[16px] leading-tight text-muted">{where}</p>
+            <PixelButton ref={doneRef} onClick={onDone}>
+              {t('ui.dayCare.done')}
+            </PixelButton>
+          </div>
+        )}
       </div>
-      <PixelButton variant="primary" onClick={onPickUp}>
-        {t('ui.dayCare.takeBack')}
-      </PixelButton>
+    </motion.div>,
+    document.body,
+  )
+}
+
+/** The plate on the yard: the back arrow, the page's one title, and "Every region · 4 Pokémon here". */
+function YardPlate({ count, onBack }: { count: number; onBack: () => void }) {
+  const { t, tPlural } = useT()
+  return (
+    <div className="pixel-plate absolute left-2 right-2 top-2 z-[460] flex items-center gap-0.5 pb-1.5 pl-1 pr-2.5 pt-0.5">
+      <BackButton onClick={onBack} />
+      <span className="grid min-w-0 gap-0.5">
+        <h1 className="m-0 text-[24px] font-normal leading-none">{t('ui.home.dayCare')}</h1>
+        <small className="truncate font-pixel-sm text-[14px] leading-none text-muted">
+          {tPlural('ui.dayCare.plateSub', count, { n: count })}
+        </small>
+      </span>
     </div>
   )
 }
 
-/** Choose who stays: team first, then the Box. The last team member can't be left. */
-function DepositModal({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const { t } = useT()
-  const save = useGame((s) => s.save)
-  const data = useGame((s) => s.data)
-  if (!save) return null
-  const mons = [...save.box].sort((a, b) => {
-    const ta = save.team.indexOf(a.id)
-    const tb = save.team.indexOf(b.id)
-    return (ta < 0 ? 99 : ta) - (tb < 0 ? 99 : tb) || a.dex - b.dex || b.level - a.level
-  })
-  return (
-    <Modal open={open} onClose={onClose} title={t('ui.dayCare.leaveWhich')} className="max-w-2xl">
-      <p className="mb-2 text-lg text-muted">
-        {t('ui.dayCare.depositHint', {
-          xp: data.config.dayCare.xpPerTick,
-          minutes: data.config.dayCare.tickMinutes,
-          max: data.config.dayCare.maxXp,
-        })}
-      </p>
-      <ul className="grid gap-2 sm:grid-cols-2">
-        {mons.map((p) => {
-          const why = depositError(save, p.id, data)
-          return (
-            <li key={p.id}>
-              <MonCard
-                inst={p}
-                disabled={!!why}
-                onClick={() => {
-                  if (leaveAtDayCare(p.id)) onClose()
-                }}
-                badge={
-                  save.team.includes(p.id) ? (
-                    <span className="border-2 border-ink px-1 text-sm">{t('ui.dayCare.teamTag')}</span>
-                  ) : null
-                }
-              >
-                {why === 'last' && <span className="text-sm text-muted">{t('ui.dayCare.lastMember')}</span>}
-              </MonCard>
-            </li>
-          )
-        })}
-      </ul>
-    </Modal>
-  )
-}
-
-function HatchModal({ hatch, onClose }: { hatch: Hatch | null; onClose: () => void }) {
-  const { t } = useT()
-  const data = useGame((s) => s.data)
-  const reduced = useGame((s) => s.settings.reducedMotion)
-  const [open, setOpen] = useState(false)
-  useEffect(() => {
-    if (!hatch) return
-    setOpen(reduced)
-    if (reduced) return
-    const t = setTimeout(() => {
-      setOpen(true)
-      sfx('catch')
-    }, 1600)
-    return () => clearTimeout(t)
-  }, [hatch, reduced])
-  const sp = hatch ? data.species[hatch.inst.dex] : undefined
-  return (
-    <Modal open={!!hatch} onClose={open ? onClose : undefined} dismissable={open} label={t('ui.dayCare.eggHatching')}>
-      {hatch && (
-        <div className="flex flex-col items-center gap-3 py-2 text-center">
-          {/* The Egg and the hatchling share one spot: a quick crossfade, no wait between them. */}
-          <div className="relative h-40 w-40">
-            <AnimatePresence>
-              {!open ? (
-                <motion.div
-                  key="egg"
-                  className="absolute inset-0 flex items-center justify-center"
-                  animate={{ rotate: [0, -12, 12, -12, 12, 0] }}
-                  transition={{ duration: 0.8, repeat: 1 }}
-                  exit={{ scale: 1.5, opacity: 0, transition: { duration: 0.2 } }}
-                >
-                  <EggSprite size={96} />
-                </motion.div>
-              ) : (
-                <motion.div
-                  key="mon"
-                  className="absolute inset-0 flex items-center justify-center"
-                  initial={{ scale: 0.4, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  transition={{ duration: 0.25 }}
-                >
-                  <SpriteImg dex={hatch.inst.dex} size={144} />
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-          <p className="text-3xl leading-tight" aria-live="polite">
-            {open ? t('ui.dayCare.hatched', { name: sp?.name ?? t('ui.common.aPokemon') }) : t('ui.dayCare.eggMoving')}
-          </p>
-          {open && sp && (
-            <>
-              <div className="flex flex-wrap items-center justify-center gap-2 text-xl">
-                <span>{t('ui.common.level.short', { n: hatch.inst.level })}</span>
-                <TypeBadge type={sp.type1} />
-                {sp.type2 && <TypeBadge type={sp.type2} />}
-                {hatch.isNew && <span className="border-2 border-ink bg-gold px-1.5 leading-tight">{t('ui.dayCare.newTag')}</span>}
-              </div>
-              <p className="text-lg text-muted">
-                {!hatch.kept
-                  ? t('ui.dayCare.keptStronger', { name: sp.name })
-                  : `${hatch.replaced ? t('ui.dayCare.replacedYours', { level: hatch.replaced.level, name: sp.name }) : ''}${t(
-                      hatch.joinedTeam ? 'ui.dayCare.joinedTeam' : 'ui.dayCare.wentToBox',
-                    )}`}
-              </p>
-              <PixelButton variant="primary" onClick={onClose}>
-                {t('ui.common.ok')}
-              </PixelButton>
-            </>
-          )}
-        </div>
-      )}
-    </Modal>
-  )
-}
-
-/** The Pokémon Day Care: two Pokémon train on their own (real time), and Eggs hatch on the spot. */
 export function DayCareScreen() {
   const { t } = useT()
   const save = useGame((s) => s.save)
   const data = useGame((s) => s.data)
   const navigate = useNavigate()
   const now = useNow()
-  const [depositing, setDepositing] = useState(false)
+  const [leaving, setLeaving] = useState(false)
+  const [inviting, setInviting] = useState(false)
+  const [rules, setRules] = useState(false)
   const [hatch, setHatch] = useState<Hatch | null>(null)
-  const [pickup, setPickup] = useState<Pickup | null>(null)
+  const [hatchId, setHatchId] = useState(0)
   const open = !!save && isDayCareOpen(save, data)
+  const { calm } = useMotion()
+  const auth = useGame((s) => s.auth.status)
+  const caresError = useFriendCares((s) => s.error)
+  const location = useLocation()
+  // From Home's gold widget: the page opens, and the Egg starts hatching a moment later.
+  const wantsHatch = !!(location.state as { hatch?: boolean } | null)?.hatch
   useEffect(() => {
-    if (open) visitDayCare()
+    if (!open) return
+    visitDayCare()
+    tickDayCare()
   }, [open])
+  // Friends' Day Cares, read when the page opens (at most once a minute), refresh the visitors.
+  useEffect(() => {
+    if (open && auth === 'signed_in') void syncFriendDayCares()
+  }, [open, auth])
+  useEffect(() => {
+    if (!open || !wantsHatch) return
+    const id = setTimeout(
+      () => {
+        // Forget the request, so going back and forth (or a reload) doesn't hatch again.
+        navigate(location.pathname, { replace: true, state: null })
+        const res = hatchDayCareEgg()
+        if (res) {
+          setHatch(res)
+          setHatchId((n) => n + 1)
+        }
+      },
+      calm ? 0 : 450,
+    )
+    return () => clearTimeout(id)
+  }, [open, wantsHatch, calm, navigate, location.pathname])
+  const yard = useMemo<YardMember[]>(() => {
+    if (!save) return []
+    const all = careMembers(save)
+    return all.map((m) => ({
+      key: m.key,
+      dex: m.dex,
+      shiny: m.resident?.inst.shiny ?? m.guest?.shiny,
+      name: data.species[m.dex]?.name ?? '',
+      // Pairs seek each other out: yours with everyone, a visitor with yours.
+      likes: all
+        .filter((o) => o !== m && (o.mine != null || m.mine != null) && compatible(data, o.dex, m.dex))
+        .map((o) => o.key),
+    }))
+  }, [save, data])
   if (!save) return <Navigate to="/" replace />
-  if (!isDayCareOpen(save, data)) return <Navigate to="/map" replace />
+  if (!open) return <Navigate to="/home" replace />
   const cfg = data.config.dayCare
   const dc = dayCareOf(save)
-  const free = !dc.eggClaimed
-  const canBuy = save.gold >= cfg.eggPrice
 
-  const takeEgg = () => {
-    const res = hatchDayCareEgg(free)
-    if (res) setHatch(res)
+  const show = (res: Hatch | null) => {
+    if (!res) return
+    setHatch(res)
+    setHatchId((n) => n + 1)
   }
-  const pickUp = (uid: string) => {
+  const rush = () => {
+    const res = rushDayCareEgg()
+    if ('hatch' in res) show(res.hatch)
+    else if (res.refused === 'pair') pushToast(t('ui.dayCare.noPairYet'), 'bad')
+  }
+  const take = (uid: string) => {
     const res = pickUpFromDayCare(uid)
-    if (res) {
-      sfx(res.levelsGained > 0 ? 'levelup' : 'button')
-      setPickup(res)
-    }
+    if (!res) return
+    sfx(res.levelsGained > 0 ? 'levelup' : 'button')
+    const name = data.species[res.inst.dex]?.name ?? t('ui.common.unknown')
+    const grew =
+      res.levelsGained > 0
+        ? t(`ui.dayCare.grewLevels.${res.levelsGained === 1 ? 'one' : 'other'}`, {
+            xp: res.xpGained,
+            levels: res.levelsGained,
+            level: res.inst.level,
+          })
+        : t('ui.dayCare.gainedXp', { xp: res.xpGained })
+    const where = !res.live
+      ? t('ui.dayCare.inRegionBox', { region: getRegion(data, res.region)?.name ?? res.region })
+      : t(res.joinedTeam ? 'ui.dayCare.rejoined' : 'ui.dayCare.wentToBox')
+    pushToast(`${t('ui.dayCare.isBack', { name })} ${grew} ${where}`, 'good', 5000)
   }
-  const picked = pickup ? data.species[pickup.inst.dex]?.name : null
-  const eggPanel = (
-    <section
-      className={cx(
-        'flex flex-col items-center gap-3 p-4 text-center sm:flex-row sm:text-left',
-        free ? 'pixel-panel-dark' : 'pixel-panel',
-      )}
-      aria-label={t('ui.dayCare.eggs')}
-    >
-      <motion.div
-        animate={free ? { rotate: [0, -8, 8, 0] } : {}}
-        transition={{ duration: 0.6, repeat: Infinity, repeatDelay: 1.6 }}
-      >
-        <EggSprite size={72} />
-      </motion.div>
-      <div className="flex flex-1 flex-col gap-1">
-        <h2 className={cx('text-3xl leading-none', free && 'text-gold')}>
-          {t(free ? 'ui.dayCare.eggForYou' : 'ui.dayCare.eggs')}
-        </h2>
-        <p className="text-lg">
-          {free ? t('ui.dayCare.freeEgg') : t('ui.dayCare.buyEgg', { price: cfg.eggPrice })}
-        </p>
-      </div>
-      <PixelButton variant="primary" size="lg" disabled={!free && !canBuy} onClick={takeEgg}>
-        {free ? t('ui.dayCare.takeEgg') : t('ui.dayCare.buy', { price: cfg.eggPrice })}
-      </PixelButton>
-    </section>
-  )
+  const price = cfg.rushPrice
+  const short = Math.max(0, price - save.gold)
+  const freeMine = Math.max(0, cfg.slots - dc.residents.length)
+  const freeFriends = Math.max(0, cfg.friendSlots - dc.guests.length)
+  // Why the friend slots wait, if they do: no online service, the sign-in still being checked, or a database without
+  // 0034. Signed out, the friend list's connect prompt takes their place.
+  const offline = !isSupabaseConfigured || auth === 'unavailable'
+  const friendsWait = offline
+    ? t('ui.friends.offline')
+    : auth === 'unknown'
+      ? t('ui.common.loading')
+      : auth === 'signed_in' && caresError === 'not_set_up'
+        ? t('ui.dayCare.friendsNoServer')
+        : null
+  const promptSignIn = auth === 'signed_out' && !offline
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-end justify-between gap-2">
-        <h1 className="text-5xl leading-none">{t('ui.dayCare.title')}</h1>
-        <PixelButton size="sm" onClick={() => navigate('/map')}>
-          {t('ui.dayCare.map')}
-        </PixelButton>
-      </div>
-      <p className="copy text-muted">
-        {t('ui.dayCare.intro', { slots: cfg.slots, xp: cfg.xpPerTick, minutes: cfg.tickMinutes, max: cfg.maxXp })}
-      </p>
-
-      {free && eggPanel}
-      <section className="flex flex-col gap-2" aria-label={t('ui.dayCare.staying')}>
-        <h2 className="text-3xl">{t('ui.dayCare.stayingCount', { count: dc.residents.length, slots: cfg.slots })}</h2>
-        <div className="grid gap-3 md:grid-cols-2">
-          {dc.residents.map((r) => (
-            <ResidentCard key={r.inst.id} res={r} now={now} onPickUp={() => pickUp(r.inst.id)} />
-          ))}
-          {Array.from({ length: Math.max(0, cfg.slots - dc.residents.length) }, (_, i) => (
-            <button
-              key={`empty-${i}`}
-              type="button"
-              onClick={() => setDepositing(true)}
-              className="flex min-h-[120px] flex-col items-center justify-center gap-1 border-[3px] border-dashed border-shadow text-2xl text-muted hover:bg-panel"
-            >
-              <span aria-hidden className="text-4xl leading-none">
-                +
-              </span>
-              {t('ui.dayCare.leaveOne')}
-            </button>
-          ))}
+    // Home's grid: on wide screens the yard takes the room it can at its own shape, the Egg card or the Egg-now bar
+    // under it standing where CONTINUE stands on Home, and the slots beside it.
+    <div className="flex flex-col gap-3 md:gap-4 lg:grid lg:grid-cols-[minmax(320px,min(calc((100dvh-184px)*288/276),58%))_minmax(0,1fr)] lg:items-start lg:gap-5">
+      <section className="flex flex-col gap-3">
+        <div className="-mx-3 -mt-4 overflow-hidden shadow-ledge md:pixel-panel md:m-0 md:p-0 md:shadow-none">
+          <YardStage members={yard} egg={!!dc.egg} onHatch={() => show(hatchDayCareEgg())}>
+            <YardPlate count={yard.length} onBack={() => navigate('/home')} />
+          </YardStage>
         </div>
+        {dc.egg ? (
+          <EggCardView
+            from={
+              dc.egg.parents
+                ? t('ui.dayCare.eggFrom', { a: parentName(dc.egg.parents[0]), b: parentName(dc.egg.parents[1]) })
+                : t('ui.dayCare.eggGift')
+            }
+            onHatch={() => show(hatchDayCareEgg())}
+          />
+        ) : (
+          <RushBarView
+            wait={waitText(nextCheckAt(save, data, now) - now)}
+            pairs={pairs(save, data).length}
+            price={price}
+            short={short}
+            onRush={rush}
+            onShort={() => pushToast(t('ui.shop.needMore', { price: money(short) }), 'bad')}
+          />
+        )}
       </section>
 
-      {!free && eggPanel}
+      <div className="flex flex-col gap-4">
+        <section aria-labelledby="dc-yours" className="grid gap-2">
+          <SectionHead
+            id="dc-yours"
+            title={t('ui.dayCare.yours')}
+            count={`${dc.residents.length}/${cfg.slots}`}
+          />
+          <ul className="m-0 grid list-none grid-cols-2 gap-2 p-0">
+            {dc.residents.map((r, i) => (
+              <MineCard key={r.inst.id} res={r} slot={i} now={now} onTake={() => take(r.inst.id)} />
+            ))}
+            {Array.from({ length: freeMine }, (_, i) => (
+              <EmptySlot
+                key={`free-${i}`}
+                title={t('ui.dayCare.leaveOne')}
+                onClick={() => setLeaving(true)}
+              />
+            ))}
+          </ul>
+        </section>
 
-      <DepositModal open={depositing} onClose={() => setDepositing(false)} />
-      <HatchModal hatch={hatch} onClose={() => setHatch(null)} />
-      <Modal open={!!pickup} onClose={() => setPickup(null)} title={picked ? t('ui.dayCare.isBack', { name: picked }) : ''}>
-        {pickup && (
-          <div className="flex flex-col items-center gap-2 text-center">
-            <SpriteImg dex={pickup.inst.dex} size={112} />
-            <p className="text-xl">
-              {pickup.levelsGained > 0
-                ? t(`ui.dayCare.grewLevels.${pickup.levelsGained === 1 ? 'one' : 'other'}`, {
-                    xp: pickup.xpGained,
-                    levels: pickup.levelsGained,
-                    level: pickup.inst.level,
-                  })
-                : t('ui.dayCare.gainedXp', { xp: pickup.xpGained })}{' '}
-              {t(pickup.joinedTeam ? 'ui.dayCare.rejoined' : 'ui.dayCare.wentToBox')}
-            </p>
-            <PixelButton variant="primary" onClick={() => setPickup(null)}>
-              {t('ui.common.ok')}
-            </PixelButton>
-          </div>
-        )}
-      </Modal>
+        <section aria-labelledby="dc-friends" className="grid gap-2">
+          <SectionHead
+            id="dc-friends"
+            title={t('ui.dayCare.friends')}
+            count={`${dc.guests.length}/${cfg.friendSlots}`}
+          />
+          {(dc.guests.length > 0 || !promptSignIn) && (
+            <ul className="m-0 grid list-none grid-cols-2 gap-2 p-0">
+              {dc.guests.map((g) => (
+                <GuestCard key={guestKey(g)} g={g} onSend={() => sendGuestBack(g)} />
+              ))}
+              {!promptSignIn &&
+                Array.from({ length: freeFriends }, (_, i) => (
+                  <EmptySlot
+                    key={`friend-${i}`}
+                    title={t('ui.dayCare.addFriend')}
+                    sub={friendsWait ?? undefined}
+                    disabled={!!friendsWait}
+                    onClick={() => setInviting(true)}
+                  />
+                ))}
+            </ul>
+          )}
+          {promptSignIn && (
+            <div className="flex flex-col items-center gap-3 bg-gold-pale px-3.5 py-4 text-center shadow-card-gold">
+              <p className="m-0 text-[20px] leading-[1.15]">{t('ui.friends.signedOut')}</p>
+              <AccountButton />
+            </div>
+          )}
+        </section>
+
+        <ChecksSection now={now} />
+        {/* The rules, as the unlock pop-up gave them: the Fortune Wheel's INFO button. */}
+        <InfoButton name={t('ui.home.dayCare')} onClick={() => setRules(true)} />
+      </div>
+
+      <DayCareRulesModal open={rules} onClose={() => setRules(false)} />
+      <LeaveSheet open={leaving} onClose={() => setLeaving(false)} />
+      <FriendSheet open={inviting} onClose={() => setInviting(false)} />
+      {hatch && (
+        <HatchMoment
+          key={hatchId}
+          hatch={hatch}
+          onDone={() => {
+            // The Day Care couple's ₽ came in while the top bar was hidden: its pill bumps when it's back.
+            if (hatch.gold > 0) bumpGold()
+            setHatch(null)
+          }}
+        />
+      )}
     </div>
   )
 }

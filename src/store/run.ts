@@ -1,7 +1,10 @@
 // Run flow: map → area → encounter preview → battle → rewards → next. Thin glue over the pure engine.
 import {
   applyCatch,
+  emptyProgress,
   applyHp,
+  applyRebattleKO,
+  applyRebattleLoss,
   applyVictory,
   applyWipe,
   ballBonus,
@@ -10,6 +13,7 @@ import {
   catchTarget,
   catchValueOf,
   centerHeal,
+  centersOn,
   centerWouldHelp,
   challengeEncounter,
   centerIsNext,
@@ -20,8 +24,10 @@ import {
   type EncounterContext,
   playerSideOf,
   consumeItem,
+  earnedGold,
   MONEY,
   pickUpItem,
+  shinyBoost,
   recordDraws,
   rollCatch,
   spinSlots,
@@ -30,6 +36,7 @@ import {
   enemyUpgradeLevelFor,
   hasAbleTeam,
   hasFaintedMember,
+  healItemsOn,
   isAreaClosed,
   isAreaUnlocked,
   isTeamHurt,
@@ -55,7 +62,10 @@ import {
   type SaveData,
   type SpinResult,
 } from '@/engine'
+import { activeSlot } from '@/save/storage'
 import { commitSave, initialRun, mutateSave, pushToast, useGame, type RunState } from './game'
+import { currentLive } from './live'
+import { useRebattleMedal } from './rebattle'
 import { t } from '@/i18n'
 import { money } from '@/lib/format'
 
@@ -78,7 +88,9 @@ const setRun = (patch: Partial<RunState>) => useGame.setState((s) => ({ run: { .
 
 export function startNewGame(starterDex: number, player?: PlayerProfile) {
   const { data } = useGame.getState()
-  commitSave(newSave(starterDex, data, Date.now(), newId, player))
+  const save = newSave(starterDex, data, Date.now(), newId, player)
+  // The page plays the Extreme slot (docs/22): the new game is an Extreme save.
+  commitSave(activeSlot() === 'extreme' ? { ...save, mode: 'extreme' } : save)
   useGame.setState({ run: initialRun(), battle: null })
 }
 
@@ -90,7 +102,14 @@ export function deleteSave() {
 export function enterArea(areaId: string): boolean {
   const { save, data } = useGame.getState()
   if (!save || !isAreaUnlocked(save, areaId, data) || isAreaClosed(save, areaId, data)) return false
-  if (save.currentAreaId !== areaId) commitSave({ ...save, currentAreaId: areaId })
+  // Entering is visiting: an area entered once is no longer "new" (a secret area stops being featured on Home).
+  const visited = !!save.areaProgress[areaId]
+  if (save.currentAreaId !== areaId || !visited)
+    commitSave({
+      ...save,
+      currentAreaId: areaId,
+      areaProgress: visited ? save.areaProgress : { ...save.areaProgress, [areaId]: emptyProgress() },
+    })
   useGame.setState({ run: { ...initialRun(), areaId, firstInArea: true, forceNext: useGame.getState().run.forceNext }, battle: null })
   return true
 }
@@ -155,6 +174,9 @@ function encounterContext(save: SaveData, areaId: string, forceKind: ForceKind |
     forceKind,
     centerUseful: centerWouldHelp(save, data),
     player: playerSideOf(save),
+    noCenters: !centersOn(save, data),
+    // A Shiny Parade covering this area: wild Pokémon are more often shiny.
+    shinyBoost: shinyBoost(currentLive(), area),
   }
 }
 
@@ -180,8 +202,14 @@ export function rollNext() {
     pushToast(t('ui.toast.outOfEnergy'), 'bad')
     return
   }
-  // Nobody able to fight (e.g. after a stalemate) → the Center is the only sensible next stop.
+  // Nobody able to fight (e.g. after a stalemate) → the Center is the only sensible next stop. Extreme mode has none:
+  // the team rests (Home and the area say until when).
   const noneAble = !hasAbleTeam(save)
+  if (noneAble && !centersOn(save, data)) {
+    setRun({ phase: 'idle', encounter: null })
+    pushToast(t('ui.extreme.restingToast'), 'bad')
+    return
+  }
   const forceKind = noneAble ? 'center' : run.forceNext
   const ctx = encounterContext(save, run.areaId, forceKind)
   if (!ctx) return
@@ -195,6 +223,8 @@ export function rollNext() {
   if (cost > 0) recorded = spendEnergy(recorded, data.config.energy, Date.now(), cost) ?? recorded
   if (recorded !== save) commitSave(recorded)
   setRun({ phase: 'preview', encounter, firstInArea: false, forceNext: forceKind === run.forceNext ? null : run.forceNext })
+  // A Pokémon Center is never a choice (no skipping it, nothing to pick): straight in, no preview card.
+  if (encounter.kind === 'center') engage()
 }
 
 /** CHALLENGE: bring on the gym battle (or legendary) waiting at the full gauge — only when the player chooses to. */
@@ -209,6 +239,8 @@ export function challenge() {
 /** NOT YET: back out of a challenge you picked. Nothing is used up; the gauge stays full. */
 export function declineChallenge() {
   setRun({ phase: 'idle', encounter: null })
+  // A rebattle fight put off: the run ends here (the Area screen sends an idle rebattle run to its page).
+  if (useGame.getState().run.rebattle) setRun({ areaId: null })
 }
 
 export function canSkipCurrent(): boolean {
@@ -233,7 +265,8 @@ function startBattle(kind: BattleKind, enemy: { dex: number; level: number; shin
   const area = data.areas.find((a) => a.id === run.areaId)
   const upgradeLevel = run.encounter ? enemyUpgradeLevelFor(run.encounter, area, data) : (area?.enemyUpgradeLevel ?? data.config.enemyUpgradeLevel)
   const team = teamOf(save).map((p) => ({ uid: p.id, dex: p.dex, level: p.level, hp: p.currentHp, shiny: p.shiny }))
-  // Auto-mode (a cleared area) fights without Mega Evolution, Gigantamax or type changes, on both sides.
+  // Auto-mode (a cleared area) fights without Mega Evolution or Gigantamax, on both sides; type changers (Arceus…) on
+  // both sides take a better type by themselves.
   const auto = !!useGame.getState().settings.autoMode && !!run.areaId && progressOf(save, run.areaId).cleared
   // A trainer's ace — its strongest, the last of them if several — may Mega Evolve or Gigantamax (see enemyPlanFor).
   const enc = run.encounter
@@ -259,6 +292,7 @@ function startBattle(kind: BattleKind, enemy: { dex: number; level: number; shin
       enemyLevels: uniformLevels(upgradeLevel),
       megaAllowed: megaUnlocked(save, data),
       gmaxAllowed: gmaxUnlocked(save, data),
+      noHealItems: !healItemsOn(save, data),
       enemyPlan: enemyPlanFor(save, data, enemy, trainer),
       auto,
     },
@@ -299,9 +333,10 @@ export function engage(leadUid?: string) {
     }
     case 'item': {
       if (!run.areaId) return
-      commitSave(pickUpItem(save, run.areaId, enc, data, Date.now(), newId))
+      const live = currentLive()
+      commitSave(pickUpItem(save, run.areaId, enc, data, Date.now(), newId, live))
       const item = data.items[enc.itemKey]
-      const what = enc.itemKey === MONEY ? money(enc.qty) : `${item?.name ?? enc.itemKey}${enc.qty > 1 ? ` ×${enc.qty}` : ''}`
+      const what = enc.itemKey === MONEY ? money(earnedGold(enc.qty, live).amount) : `${item?.name ?? enc.itemKey}${enc.qty > 1 ? ` ×${enc.qty}` : ''}`
       if (item?.effect.kind === 'fossil')
         pushToast(
           t('ui.toast.foundFossil', {
@@ -340,6 +375,39 @@ function settleBattle(stalemate: boolean) {
   const out = battleOutcome(s)
   const withHp = applyHp(save, out.hp)
 
+  // The Elite Rebattle: its own pay, no area, a loss (or a stalemate) starts the tier over.
+  if (run.rebattle) {
+    const enc = run.encounter
+    if (out.result === 'won' && enc?.kind === 'gym' && run.trainer) {
+      const tier = run.rebattle.tier
+      const res = applyRebattleKO(
+        withHp,
+        {
+          regionId: run.rebattle.regionId,
+          tier,
+          trainerId: enc.trainerId,
+          index: run.trainer.index,
+          last: run.trainer.index + 1 >= enc.team.length,
+          enemyLevel: s.enemy.level,
+          fighterUid: out.fighterUid,
+        },
+        data,
+        runRng,
+        currentLive(),
+      )
+      commitSave(res.save)
+      const gold = res.events.reduce((g, e) => (e.kind === 'gold' ? g + e.amount : g), 0)
+      if (res.events.some((e) => e.kind === 'rebattle_cleared'))
+        useRebattleMedal.setState({ medal: { regionId: run.rebattle.regionId, tier, gold } })
+      setRun({ phase: 'victory', events: res.events, pendingCatchId: null, catch: null, trainer: { ...run.trainer, gold: run.trainer.gold + gold } })
+      return
+    }
+    if (out.result === 'won') return
+    commitSave(applyRebattleLoss(withHp, data, run.rebattle.regionId))
+    setRun({ phase: 'wipe', trainer: null, events: [] })
+    return
+  }
+
   if (out.result === 'won') {
     const enc = run.encounter
     const gym = enc?.kind === 'gym'
@@ -359,6 +427,7 @@ function settleBattle(stalemate: boolean) {
       runRng,
       Date.now(),
       newId,
+      currentLive(),
     )
     commitSave(res.save)
     // The round's last card was this fight: count it now, so "AREA CLEARED" is part of the rewards.
@@ -449,7 +518,18 @@ export function continueAfterVictory(leadUid?: string) {
   if (run.trainer && run.trainer.gold > 0) pushToast(t('ui.toast.trainerBeaten', { gold: run.trainer.gold }), 'good')
   useGame.setState({ battle: null })
   setRun({ events: [], trainer: null })
+  // The rebattle has no area to go back to: the caller starts the next fight or leaves for the rebattle page.
+  if (run.rebattle) return
   backToArea()
+}
+
+/**
+ * NEXT ENCOUNTER on a result card: what Home's CONTINUE would start next (a waiting gym or legendary first), without
+ * the trip Home. Call it once the battle is closed (continueAfterVictory).
+ */
+export function continueExploring() {
+  challenge()
+  if (useGame.getState().run.phase === 'idle') rollNext()
 }
 
 /** "Add to team?" — swap the new catch in for `replaceId`, or send it to the Box (null). */
@@ -472,12 +552,16 @@ export function forfeit() {
     return
   }
   if (run.phase !== 'victory' || !trainerHasNext()) return
-  commitSave(applyWipe(save, run.areaId, data))
+  commitSave(run.rebattle ? applyRebattleLoss(save, data, run.rebattle.regionId) : applyWipe(save, run.areaId, data))
   setRun({ phase: 'wipe', trainer: null, events: [] })
 }
 
 export function afterWipe() {
-  useGame.setState((s) => ({ battle: null, run: { ...initialRun(), areaId: s.run.areaId, firstInArea: true } }))
+  useGame.setState((s) =>
+    s.run.rebattle
+      ? { battle: null, run: { ...initialRun(), rebattle: s.run.rebattle } }
+      : { battle: null, run: { ...initialRun(), areaId: s.run.areaId, firstInArea: true } },
+  )
 }
 
 export function afterStalemate() {
@@ -493,7 +577,7 @@ export function finishCenter() {
 export function spinSlotMachine(): SpinResult | null {
   const { save, data, run } = useGame.getState()
   if (!save || run.phase !== 'casino') return null
-  const res = spinSlots(save, data, runRng, Date.now(), newId)
+  const res = spinSlots(save, data, runRng, Date.now(), newId, currentLive())
   if (!res) {
     pushToast(t('ui.toast.tooPoor'), 'bad')
     return null

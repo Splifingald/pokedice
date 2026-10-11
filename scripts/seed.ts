@@ -19,6 +19,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { TYPE_COLORS } from '../src/theme/colors'
 import { DEFAULT_CONFIG } from '../src/engine/defaults'
+import { LEAGUE_II } from '../src/engine/rebattle'
 import { createRng } from '../src/engine/rng'
 import {
   COMBO_KEYS,
@@ -839,13 +840,22 @@ export function gymPotions(role: string, badge: string | null | undefined): stri
 const RETIRED_CONFIG_KEYS = ['regenPercentPerHour']
 
 /**
- * Schema the data needs but 0001_init.sql has not got: the `regions` table, `areas.region_id`, and the per-region
- * `leaderboard()`. Folded into seed.sql so there is one file to run rather than two in a particular order. The
- * migration stays the single source of that SQL — it is written to be idempotent, so re-running it costs nothing.
+ * Schema the data needs but 0001_init.sql has not got: the `regions` table and `areas.region_id` (0016), then the
+ * player cards and the per-region `leaderboard()` that reads them (0033), and the cards' one Day Care (0034, which
+ * redefines 0033's card writer, so it comes after it), the events (0035), and Extreme mode's realms (0039, last: it
+ * redefines the cards', the friends' and the events' functions, so a re-run never leaves an older one behind). Folded
+ * into seed.sql so there is one file to
+ * run rather than several in a particular order. The migrations stay the single source of that SQL — they are written
+ * to be idempotent, so re-running them costs little.
  */
 export async function regionsPrelude(): Promise<string> {
-  const file = path.join(ROOT, 'supabase', 'migrations', '0016_regions.sql')
-  return `-- ↓ supabase/migrations/0016_regions.sql, inlined so this file stands alone.\n${await readFile(file, 'utf8')}`
+  const parts = await Promise.all(
+    ['0016_regions.sql', '0033_friends.sql', '0034_day_care.sql', '0035_events.sql', '0039_extreme_realm.sql'].map(async (name) => {
+      const sql = await readFile(path.join(ROOT, 'supabase', 'migrations', name), 'utf8')
+      return `-- ↓ supabase/migrations/${name}, inlined so this file stands alone.\n${sql}`
+    }),
+  )
+  return parts.join('\n')
 }
 
 export function buildSql(b: {
@@ -1052,7 +1062,11 @@ async function generate() {
   await mkdir(CACHE_DIR, { recursive: true })
   const pokemon = await fetchSpecies()
   const typeChart = await fetchTypeChart()
-  const { areas, trainers } = buildAreasAndTrainers(pokemon)
+  const all = buildAreasAndTrainers(pokemon)
+  // Victory Road II and Indigo Plateau II left the game (the Elite Rebattle replaces them): content.ts still has them.
+  const areas = all.areas.filter((a) => !(a.id in LEAGUE_II))
+  const used = new Set(areas.flatMap((a) => [...a.gyms, ...a.trainerPool.map((t) => t.trainerId)]))
+  const trainers = all.trainers.filter((t) => used.has(t.id))
   return {
     pokemon,
     typeChart,

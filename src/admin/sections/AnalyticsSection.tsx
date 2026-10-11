@@ -1,4 +1,5 @@
 // Admin → Analytics: day-1 retention and the players, from the daily ping (migration 0028). Admin-only via RLS.
+import { PixelIcon } from '@/components/icons'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { dayKey, dayOneRetention, type D1Cohorts, type Retention } from '@/analytics/retention'
 import { PixelButton } from '@/components/PixelButton'
@@ -69,7 +70,7 @@ async function fetchPlayers(since: Date | null, max = 10_000): Promise<PlayerRow
 }
 
 const rateColor = (pct: number | null) =>
-  pct == null ? '#6b6480' : pct >= 40 ? '#4aa84a' : pct >= 20 ? '#e8b44a' : '#c2452d'
+  pct == null ? '#b6c3d9' : pct >= 40 ? '#34c97a' : pct >= 20 ? '#ffbe2e' : '#f2553f'
 
 function RetentionHero({ r }: { r: Retention | null }) {
   const pct = r?.rate == null ? null : Math.round(r.rate * 100)
@@ -236,7 +237,10 @@ export function AnalyticsSection() {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-end gap-3">
-        <h2 className="text-4xl leading-none">Analytics</h2>
+        <h2 className="flex items-center gap-2 text-4xl leading-none">
+          <PixelIcon name="history" size={26} />
+          Analytics
+        </h2>
         <span className="flex-1" />
         <div className="flex flex-wrap gap-1" role="group" aria-label="Time frame">
           {FRAMES.map((f) => (
@@ -268,7 +272,7 @@ export function AnalyticsSection() {
       {selected && <PlayerPanel key={selected.player} player={selected.player} name={selected.label} />}
 
       <section className="pixel-panel overflow-hidden p-0" aria-label="Players">
-        <h3 className="flex flex-wrap items-center gap-3 border-b-[3px] border-ink px-3 py-1 text-2xl">
+        <h3 className="flex flex-wrap items-center gap-3 border-b-[3px] border-edge px-3 py-1 text-2xl">
           Players
           <span className="text-lg text-muted">
             {rows.length.toLocaleString()} seen · {newInFrame.toLocaleString()} new
@@ -344,7 +348,7 @@ export function AnalyticsSection() {
                     <span className="flex items-center gap-2">
                       <span
                         className={cx(
-                          'border-2 border-ink px-1 text-sm leading-none',
+                          'border-2 border-edge px-1 text-sm leading-none',
                           p.guest ? 'bg-parchment text-muted' : 'bg-hp-green text-ink',
                         )}
                         title={p.guest ? 'Playing without an account' : 'Signed in with Google'}
@@ -376,7 +380,7 @@ export function AnalyticsSection() {
           </table>
         </div>
         {players.length > shown && (
-          <div className="border-t-[3px] border-ink p-2 text-center">
+          <div className="border-t-[3px] border-edge p-2 text-center">
             <PixelButton size="sm" onClick={() => setShown((n) => n + 300)}>
               Show more ({(players.length - shown).toLocaleString()} left)
             </PixelButton>

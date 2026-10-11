@@ -4,7 +4,18 @@ import { existsSync } from 'node:fs'
 import path from 'node:path'
 import { linearAreas, regionOfArea, regionSpecies, type Area, type Region, type Trainer } from '@/engine'
 import { BUNDLE } from '@/config/bundle'
-import { data } from './fixtures'
+import { data, TUNED_STARTERS } from './fixtures'
+
+/** The raid pool's mythicals whose lair is in this region. */
+const raidsOf = (regionId: string) =>
+  new Set(
+    data.config.events.raid.pool
+      .filter((p) => {
+        const lair = data.areas.find((a) => a.id === p.areaId)
+        return !!lair && regionOfArea(lair) === regionId
+      })
+      .map((p) => p.dex),
+  )
 
 const areas = BUNDLE.areas as Area[]
 const trainers = BUNDLE.trainers as Trainer[]
@@ -86,7 +97,9 @@ describe('regions', () => {
           obtainable.add(i.key)
         }
       }
-      const reachable = (dex: number): boolean => catchable.has(dex) || fossils.has(dex) || dex === prize
+      // The raid pool's mythicals are caught in Raid Battles once their lair here is cleared.
+      const raids = raidsOf(r.id)
+      const reachable = (dex: number): boolean => catchable.has(dex) || fossils.has(dex) || dex === prize || raids.has(dex)
       // The evolution gate (engine/regions.ts) needs no clause here: this loop only asks about dex numbers inside
       // this region's own range, and those always belong to this region, which is unlocked while you play it. What
       // the gate does change is the *other* direction — a Kanto Golbat filling Johto's #169 — and that is allowed
@@ -133,7 +146,7 @@ describe('regions', () => {
         if (a.scalesToTeam) continue
         for (const s of r.starters) {
           const entry = a.wildPool.find((w) => w.dex === s)
-          if (entry) expect(entry.weight, `${r.id} / ${a.name}`).toBe(1)
+          if (entry) expect(entry.weight, `${r.id} / ${a.name}`).toBe(TUNED_STARTERS[`${a.id}/${s}`] ?? 1)
         }
       }
       for (const a of of(r.id)) {
@@ -227,12 +240,14 @@ describe('regions', () => {
       const here = of(r.id)
       const wild = new Set(here.filter((a) => !a.scalesToTeam).flatMap((a) => a.wildPool.map((w) => w.dex)))
       const bosses = new Set(here.flatMap((a) => (a.legendaryBoss ?? []).map((b) => b.dex)))
+      const raids = raidsOf(r.id)
       // Johto's beasts roam instead of waiting in an area.
       const roamers = new Set(data.config.roamers.regionId === r.id ? data.config.roamers.dex : [])
       const found = (dex: number, depth = 0): boolean =>
         wild.has(dex) ||
         fossils.has(dex) ||
         bosses.has(dex) ||
+        raids.has(dex) ||
         roamers.has(dex) ||
         dex === data.config.slotMachine.prizeDex ||
         (depth < 4 && (parent.get(dex) ?? []).some((p) => found(p, depth + 1)))

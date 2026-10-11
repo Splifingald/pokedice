@@ -98,4 +98,6 @@ species in this game), and **Mega Zygarde**, which PokeAPI has no sprite for yet
     hardest, once, when that beats every type it rolls;
   - the below-half-HP forms work for both sides.
 - **Auto battles** (auto-mode in a cleared area, Versus) have none of these on either side, except the below-half-HP
-  forms, which are not a choice.
+  forms, which are not a choice — and, in auto-mode, the Arceus, Silvally and Ogerpon of both sides: at the start of its
+  turn each takes the type that hits the other side hardest, when that beats every type it rolls now (at random among
+  equally good ones), within its `formChangesPerBattle`.

@@ -1,6 +1,6 @@
 // Headless battles: both sides driven by the §8 AI. Powers the admin simulator and the balance scripts.
 import { aiRerollMask } from './ai'
-import { activeBattler, canHurt, createBattle, reduce, type BattleEvent, type BattleState, type LogEntry } from './battle'
+import { activeBattler, autoTypeForm, canHurt, createBattle, reduce, type BattleEvent, type BattleState, type LogEntry } from './battle'
 import { computeDamage, uniformLevels, type UpgradeLevels } from './damage'
 import { getSpecies } from './data'
 import { rollAll, rerollMasked } from './dice'
@@ -31,6 +31,9 @@ export interface SimResult {
 export function autoEvents(state: BattleState, data: GameData, rng: Rng): BattleEvent[] {
   switch (state.phase) {
     case 'player_roll': {
+      // In an auto battle a type changer (Arceus…) first takes a type that hits the foe harder, if it has one.
+      const form = state.auto ? autoTypeForm(state, data, rng) : null
+      if (form) return [{ t: 'CHANGE_FORM', toDex: form.dex }]
       // Like a player would: a Pokémon that can't touch the foe (Normal vs Ghost) makes way for one that can.
       const a = activeBattler(state)
       const better = !canHurt(a, state.enemy, data) && state.player.find((b) => b.hp > 0 && canHurt(b, state.enemy, data))

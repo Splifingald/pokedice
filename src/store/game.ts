@@ -1,11 +1,17 @@
 // The one zustand store. Slices: content (GameData), save (persistent), run (transient), battle, ui.
 import { create } from 'zustand'
-import { BUNDLE } from '@/config/bundle'
+import { BUNDLE, withStatics } from '@/config/bundle'
 import {
   compileGameData,
+  fitDayCare,
+  migrateLeagueII,
   migrateRounds,
+  payWheelPrize,
   reviveFossils,
   releaseDuplicates,
+  releaseRaidLocks,
+  settleKo,
+  stampExtremeUnlock,
   syncHpScale,
   syncXpCurve,
   type BattleState,
@@ -19,9 +25,11 @@ import {
   type RunEvent,
   type SaveData,
 } from '@/engine'
-import { DEFAULT_SETTINGS, readSave, readSettings, scheduleWrite, writeSettings, type Settings } from '@/save/storage'
+import { activeSlot, DEFAULT_SETTINGS, readSave, readSettings, scheduleWrite, writeSettings, type Settings } from '@/save/storage'
+import { trustedNow } from './clock'
 import { DEFAULT_LANG, setLangInternal, t, type Lang } from '@/i18n'
 import { localizeGameData } from '@/i18n/data'
+import { isAdminEmail } from '@/lib/supabase'
 
 export type ToastTone = 'info' | 'good' | 'bad'
 export interface Toast {
@@ -59,6 +67,8 @@ export interface RunState {
   catch: CatchState | null
   /** Dev tools: force the next encounter type. */
   forceNext: ForceKind | null
+  /** An Elite Rebattle gauntlet is being fought: its region and tier (the fights run on its League area). */
+  rebattle?: { regionId: string; tier: number } | null
 }
 
 export interface BattleSlice {
@@ -69,12 +79,19 @@ export interface BattleSlice {
   id: number
 }
 
+/** The ways in: Supabase Auth providers the game offers (docs/17). */
+export type AuthProvider = 'google' | 'discord'
+
 export interface AuthState {
   status: 'unknown' | 'signed_out' | 'signed_in' | 'unavailable'
   userId: string | null
   email: string | null
-  /** Google profile picture, when the provider gives one. */
+  /** The provider's profile picture (Google or Discord), when it gives one. */
   avatarUrl?: string | null
+  /** The provider this session signed in with. */
+  provider?: AuthProvider | null
+  /** Every provider linked to the account: either one signs in to the same save. */
+  providers?: AuthProvider[]
 }
 
 export interface GameStore {
@@ -109,17 +126,43 @@ export const initialRun = (): RunState => ({
   pendingCatchId: null,
   catch: null,
   forceNext: null,
+  rebattle: null,
 })
 
 /**
  * Every save that enters the store is brought up to date: HP to the current hpMultiplier (keeps every HP %), XP to the
  * current curve, and one copy per species in the Box (releaseDuplicates). `released` lists the copies let go.
  */
+/** An id for a Pokémon joining a Box here (store/run.ts's newId, which can't be imported from this file). */
+const raidId = (): string =>
+  typeof crypto !== 'undefined' && 'randomUUID' in crypto
+    ? crypto.randomUUID()
+    : `${Date.now().toString(36)}-${Math.floor(Math.random() * 1e9).toString(36)}`
+
 function settle(save: SaveData, data: GameData) {
-  // Fossils due by now revive first, so they count as the species they are.
-  const fossils = reviveFossils(migrateRounds(save, data), data, Date.now())
-  const dup = releaseDuplicates(syncXpCurve(syncHpScale(fossils.save, data), data))
-  return { ...dup, revived: fossils.revived }
+  // Fossils due by now revive first, so they count as the species they are. A save standing in Victory Road II or
+  // League II (gone, the Elite Rebattle replaced them) goes back to its League first.
+  const fossils = reviveFossils(migrateRounds(migrateLeagueII(inSlot(save)), data), data, Date.now())
+  // More Day Care residents than slots (the Day Cares became one): the extra ones go home before duplicates are seen.
+  const fitted = fitDayCare(fossils.save, data, Date.now())
+  // Raid catches locked until their area was completed: one completed since joins its region's Box.
+  const raids = releaseRaidLocks(fitted, data, Date.now(), raidId)
+  const dup = releaseDuplicates(syncXpCurve(syncHpScale(raids.save, data), data))
+  // Extreme mode (docs/22): the main save beat the league that opens it (noted once, so it stays open); an Extreme
+  // save's K.O. clocks, on the real time.
+  const ko = settleKo(stampExtremeUnlock(dup.save, data, Date.now()), data, trustedNow())
+  return { ...dup, save: ko.save, revived: fossils.revived, raidsReleased: raids.released, back: ko.back }
+}
+
+/**
+ * A save is the one of the slot this page plays (docs/22): an import, a backup or a cloud copy on the Extreme slot is
+ * the Extreme save, and the other way round, so it's always written and pushed where it belongs.
+ */
+function inSlot(save: SaveData): SaveData {
+  if (activeSlot() === 'extreme') return save.mode === 'extreme' ? save : { ...save, mode: 'extreme' }
+  if (save.mode == null) return save
+  const { mode: _m, ...main } = save
+  return main
 }
 
 function boot(): Pick<GameStore, 'data' | 'rawData' | 'save' | 'corruptSaveArchived' | 'settings'> {
@@ -131,8 +174,9 @@ function boot(): Pick<GameStore, 'data' | 'rawData' | 'save' | 'corruptSaveArchi
   setLangInternal(settings.lang ?? DEFAULT_LANG)
   const data = localizeGameData(rawData, settings.lang ?? DEFAULT_LANG)
   if (!save) return { data, rawData, save: null, corruptSaveArchived: corrupt, settings }
-  // Settle the save (HP scale, XP curve, duplicates) before the first render.
-  return { data, rawData, save: settle(save, data).save, corruptSaveArchived: corrupt, settings }
+  // Settle the save (HP scale, XP curve, duplicates) before the first render. A Fortune Wheel prize still waiting (the
+  // page closed while the wheel turned) is paid now.
+  return { data, rawData, save: settle(payWheelPrize(save, data), data).save, corruptSaveArchived: corrupt, settings }
 }
 
 export const useGame = create<GameStore>()(() => ({
@@ -144,6 +188,20 @@ export const useGame = create<GameStore>()(() => ({
   toasts: [],
   syncConflict: null,
 }))
+
+/**
+ * Who's playing goes into the game data: an event the admin switched on "for the admin" (to try it in production
+ * first) shows only while the admin is signed in. Kept up to date as the sign-in and the content change.
+ */
+function withViewer(data: GameData, auth: AuthState): GameData {
+  const admin = auth.status === 'signed_in' && isAdminEmail(auth.email)
+  return !!data.viewer?.admin === admin ? data : { ...data, viewer: { admin } }
+}
+useGame.subscribe((s, prev) => {
+  if (s.auth === prev.auth && s.data === prev.data) return
+  const data = withViewer(s.data, s.auth)
+  if (data !== s.data) useGame.setState({ data })
+})
 
 // ---------------------------------------------------------------- core actions
 
@@ -178,8 +236,21 @@ export function commitSave(next: SaveData | null, opts: { silent?: boolean; keep
   if (!opts.silent) for (const fn of saveListeners) fn(stamped, prev)
   for (const p of settled?.revived ?? [])
     pushToast(t('ui.toast.revivedFossil', { name: data.species[p.dex]?.name ?? `#${p.dex}` }), 'good', 4500)
+  for (const id of settled?.back ?? []) {
+    const inst = stamped?.box.find((p) => p.id === id)
+    if (inst) pushToast(t('ui.extreme.backToast', { name: data.species[inst.dex]?.name ?? '' }), 'good', 4000)
+  }
   for (const p of settled?.released ?? [])
     pushToast(t('ui.toast.releasedWeaker', { name: data.species[p.dex]?.name ?? `#${p.dex}`, level: p.level }), 'info', 4000)
+  for (const p of settled?.raidsReleased ?? [])
+    pushToast(
+      t('ui.raid.toastUnlocked', {
+        name: data.species[p.dex]?.name ?? `#${p.dex}`,
+        region: data.regions.find((r) => r.id === p.region)?.name ?? p.region,
+      }),
+      'good',
+      5000,
+    )
 }
 
 export function mutateSave(fn: (s: SaveData) => SaveData | null | undefined): boolean {
@@ -214,7 +285,7 @@ function setLanguage(lang: Lang) {
 
 /** Hot-swap content (bundle → Supabase, or an admin publish). */
 export function setContent(raw: BundleRaw, source: 'bundle' | 'remote') {
-  const rawData = compileGameData(raw)
+  const rawData = compileGameData(withStatics(raw))
   const data = localizeGameData(rawData, useGame.getState().settings.lang ?? DEFAULT_LANG)
   useGame.setState((s) => {
     // A new hpMultiplier keeps every HP % (syncHpScale); an admin may also have removed the area the player was in.

@@ -63,7 +63,7 @@ export function SearchSelect<T>({
         <button
           type="button"
           disabled={disabled}
-          className="flex min-h-[36px] w-full items-center gap-2 border-2 border-ink bg-panel px-2 py-1 text-left text-lg disabled:opacity-50"
+          className="flex min-h-[36px] w-full items-center gap-2 border-2 border-edge bg-panel px-2 py-1 text-left text-lg disabled:opacity-50"
           style={{ borderRadius: 2 }}
           onClick={() => {
             setOpen(true)
@@ -82,7 +82,7 @@ export function SearchSelect<T>({
           role="combobox"
           aria-expanded
           aria-controls={listId}
-          className="min-h-[36px] w-full border-2 border-ink bg-panel px-2 py-1 text-lg"
+          className="min-h-[36px] w-full border-2 border-edge bg-panel px-2 py-1 text-lg"
           style={{ borderRadius: 2 }}
           onChange={(e) => {
             setQuery(e.target.value)
@@ -109,7 +109,7 @@ export function SearchSelect<T>({
         <ul
           id={listId}
           role="listbox"
-          className="pixel-scroll absolute left-0 right-0 z-50 mt-1 max-h-72 overflow-auto border-2 border-ink bg-panel shadow-hard-sm"
+          className="pixel-scroll absolute left-0 right-0 z-50 mt-1 max-h-72 overflow-auto border-2 border-edge bg-panel shadow-hard-sm"
         >
           {filtered.length === 0 && <li className="px-2 py-1 text-muted">{t('ui.search.noMatch')}</li>}
           {filtered.map((o, i) => (

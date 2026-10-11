@@ -22,7 +22,7 @@ const when = (iso: string) =>
 export function ReplyBox({ reply, at }: { reply: string; at: string | null }) {
   const { t } = useT()
   return (
-    <div className="border-2 border-ink bg-gold/30 p-2">
+    <div className="bg-gold-pale p-2 shadow-ring">
       <p className="flex flex-wrap items-baseline justify-between gap-x-2 text-lg leading-none">
         <b>{t('ui.contact.answer')}</b>
         {at && <span className="text-base text-muted">{when(at)}</span>}
@@ -57,7 +57,7 @@ function History() {
       {messages.map((m) => (
         <li
           key={m.id}
-          className="flex flex-col gap-1 border-b-2 border-ink/20 pb-3 last:border-b-0 last:pb-0"
+          className="flex flex-col gap-1 border-b-2 border-edge/20 pb-3 last:border-b-0 last:pb-0"
         >
           <div className="flex flex-wrap items-baseline justify-between gap-x-2">
             <p className="min-w-0 break-words text-xl leading-tight">{m.title}</p>
@@ -125,7 +125,7 @@ export function ContactModal({ open, onClose }: { open: boolean; onClose: () => 
           >
             {f.label}
             {f.id === 'history' && unseen > 0 && (
-              <span className="bg-danger px-1 text-base leading-tight text-panel">{unseen}</span>
+              <span className="bg-crimson px-1 text-base leading-tight text-white">{unseen}</span>
             )}
           </button>
         ))}
@@ -134,7 +134,7 @@ export function ContactModal({ open, onClose }: { open: boolean; onClose: () => 
         <History />
       ) : (
         <form onSubmit={(e) => void submit(e)} className="flex flex-col gap-3">
-          <p className="copy border-2 border-ink bg-gold/30 p-2 text-lg leading-snug">
+          <p className="copy bg-gold-pale p-2 text-lg leading-snug shadow-ring">
             {t('ui.contact.warning')}
           </p>
           <label className="flex flex-col gap-1 text-xl">
@@ -143,7 +143,7 @@ export function ContactModal({ open, onClose }: { open: boolean; onClose: () => 
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               maxLength={FEEDBACK_TITLE_MAX}
-              className="min-h-[44px] w-full border-[3px] border-ink bg-panel px-2 text-xl"
+              className="min-h-[44px] w-full bg-paper shadow-field px-2 text-xl"
               required
             />
           </label>
@@ -154,7 +154,7 @@ export function ContactModal({ open, onClose }: { open: boolean; onClose: () => 
               onChange={(e) => setMessage(e.target.value)}
               maxLength={FEEDBACK_MESSAGE_MAX}
               rows={7}
-              className="copy w-full resize-y border-[3px] border-ink bg-panel p-2 text-lg leading-snug"
+              className="copy w-full resize-y bg-paper shadow-field p-2 text-lg leading-snug"
               required
             />
           </label>

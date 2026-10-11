@@ -1,5 +1,10 @@
 @import './styles/pixel.css';
+@import './styles/events.css';
+@import './styles/rebattle.css';
+@import './styles/raid.css';
+@import './styles/live.css';
 
+/* Jersey 25: Daybreak's face for titles, names, buttons and most text. */
 @font-face {
   font-family: 'Jersey 25';
   font-style: normal;
@@ -18,10 +23,10 @@
   src: url('/fonts/jersey25-latin-ext.woff2') format('woff2');
   unicode-range:
     U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020,
-    U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+    U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
 }
 
-/* Jersey 15: the same pixel face drawn for small sizes — mini dice digits, bottom-bar labels, tiny captions. */
+/* Jersey 15: the same pixel face drawn for small sizes — labels, numbers, paragraph copy, tab-bar captions. */
 @font-face {
   font-family: 'Jersey 15';
   font-style: normal;
@@ -82,8 +87,7 @@
 @tailwind utilities;
 
 :root {
-  color-scheme: light;
-  /* Height of the phone bottom bar; sticky footers (the Pokémon Center's CONTINUE) sit on top of it. */
+  /* The theme's colours (--c-*) and color-scheme come from tailwind.config.ts. Height of the phone bottom bar; sticky footers (the Pokémon Center's CONTINUE) sit on top of it. */
   --bottom-nav: 0px;
   /* The CJK pixel face, after Jersey in every font stack (tailwind.config.ts). Players' CJK names in a Latin UI use
      the Japanese build. */
@@ -117,10 +121,13 @@ body,
   min-height: 100%;
 }
 
+/* The ground: Daybreak's pale sky under its dot texture (src/theme/frames.ts draws --tex), two CSS px per art px. */
 body {
   margin: 0;
-  background: #e8e0c8;
-  color: #2a2438;
+  background-color: rgb(var(--c-parchment));
+  background-image: var(--tex);
+  background-size: 16px 16px;
+  color: rgb(var(--c-ink));
   font-family: 'Jersey 25', 'Jersey 15', var(--font-cjk);
   font-size: 20px;
   line-height: 1.2;
@@ -134,23 +141,24 @@ button {
   font: inherit;
 }
 
-/* Keyboard focus: a solid ink ring (≈12:1 on parchment and panels), gold on dark grounds (≈8:1 on ink). */
+/* Keyboard focus: a solid ink ring (11:1 on the ground and panels), gold on dark grounds (8.9:1 on ink). */
 :focus-visible {
-  outline: 3px solid #2a2438;
+  outline: 3px solid rgb(var(--c-ink));
   outline-offset: 2px;
 }
 .pixel-panel-dark :focus-visible,
-.bg-ink :focus-visible {
-  outline-color: #e8b44a;
+.bg-night :focus-visible,
+:root:not([data-theme='dark']) .bg-ink :focus-visible {
+  outline-color: #ffbe2e;
 }
 .pixel-panel-dark .bg-panel :focus-visible,
 .pixel-panel-dark .pixel-panel :focus-visible {
-  outline-color: #2a2438;
+  outline-color: rgb(var(--c-ink));
 }
 
 /*
- * Paragraphs of two lines or more: Jersey 15, the Jersey cut drawn for small text. Jersey 25 stays for headings, buttons, numbers.
- * In the components layer so a text-* utility can still bump the size (e.g. `copy text-lg` in dialogs).
+ * Paragraphs of two lines or more: Jersey 15, the Jersey cut drawn for small text. Jersey 25 stays for headings,
+ * names, buttons. In the components layer so a text-* utility can still bump the size (e.g. `copy text-lg`).
  */
 @layer components {
   .copy {
@@ -161,8 +169,11 @@ button {
   }
 }
 
+/* Canvases too: a 240×160 stage drawn at 848px wide must stay sharp, not smoothed (the battle zones were blurry). */
 img.pixelated,
-.pixelated img {
+canvas.pixelated,
+.pixelated img,
+.pixelated canvas {
   image-rendering: pixelated;
 }
 

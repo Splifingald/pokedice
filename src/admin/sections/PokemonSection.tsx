@@ -43,7 +43,7 @@ function DiceEditor({ value, onChange, types, data }: { value: DiceEntry[]; onCh
   return (
     <div className="flex flex-col gap-2">
       {value.map((d, i) => (
-        <div key={i} className="flex flex-wrap items-center gap-2 border-2 border-ink p-1.5" style={{ background: `${typeColor(d.type)}33` }}>
+        <div key={i} className="flex flex-wrap items-center gap-2 border-2 border-edge p-1.5" style={{ background: `${typeColor(d.type)}33` }}>
           <TypePicker className="w-40" allowBase value={d.type} onChange={(t) => t && onChange(value.map((x, j) => (j === i ? { ...x, type: t } : x)))} />
           <PixelButton size="sm" onClick={() => onChange(value.map((x, j) => (j === i ? { ...x, count: Math.max(1, x.count - 1) } : x)))}>
             −
@@ -76,9 +76,9 @@ const EFFECT_COLOR: Record<MilestoneEffect, string> = {
   UPGRADE_DIE: '#d44873',
   REPLACE_DIE: '#a2478f',
   ADD_REROLL: '#547acc',
-  ADD_DIE: '#e8b44a',
-  ADD_HP: '#4aa84a',
-  EVOLVE: '#2a2438',
+  ADD_DIE: '#ffbe2e',
+  ADD_HP: '#34c97a',
+  EVOLVE: '#24304f',
 }
 
 function MilestoneEditor({ value, onChange }: { value: Milestone[]; onChange: (m: Milestone[]) => void }) {
@@ -86,7 +86,7 @@ function MilestoneEditor({ value, onChange }: { value: Milestone[]; onChange: (m
   return (
     <div className="flex flex-col gap-2">
       <div
-        className="relative h-10 cursor-crosshair border-2 border-ink bg-parchment"
+        className="relative h-10 cursor-crosshair border-2 border-edge bg-parchment"
         title="Click to add a milestone at that level"
         onClick={(e) => {
           const r = e.currentTarget.getBoundingClientRect()
@@ -102,7 +102,7 @@ function MilestoneEditor({ value, onChange }: { value: Milestone[]; onChange: (m
         {value.map((m, i) => (
           <span
             key={i}
-            className="absolute top-0 h-6 w-2 -translate-x-1/2 border border-ink"
+            className="absolute top-0 h-6 w-2 -translate-x-1/2 border border-edge"
             style={{ left: `${((m.level - 1) / 99) * 100}%`, background: EFFECT_COLOR[m.effect] }}
             title={`Lv.${m.level} ${m.effect}`}
           />
@@ -112,7 +112,7 @@ function MilestoneEditor({ value, onChange }: { value: Milestone[]; onChange: (m
         <div key={i} className="flex flex-wrap items-center gap-2">
           <NumInput className="w-20" value={m.level} min={1} max={100} onChange={(v) => onChange(value.map((x, j) => (j === i ? { ...x, level: v ?? 1 } : x)))} />
           <select
-            className="min-h-[34px] border-2 border-ink bg-panel px-1 text-lg"
+            className="min-h-[34px] border-2 border-edge bg-panel px-1 text-lg"
             value={m.effect}
             onChange={(e) => onChange(value.map((x, j) => (j === i ? { level: x.level, effect: e.target.value as MilestoneEffect } : x)))}
           >
@@ -216,7 +216,7 @@ function PokemonEditor({ dex, onClose, onStep }: { dex: number; onClose: () => v
           <span className="text-base text-muted">← → to browse · edits stay in the working copy until you save</span>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <SpriteImg dex={dex} size={96} className="border-2 border-ink" />
+          <SpriteImg dex={dex} size={96} className="border-2 border-edge" />
           <div className="grid flex-1 grid-cols-2 gap-2 sm:grid-cols-3">
             <Field label="Name">
               <TextInput value={s(row.name)} onChange={(v) => patch({ name: v })} />

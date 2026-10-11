@@ -1,8 +1,12 @@
 import { useT } from '@/i18n/react'
 import { usePace } from '@/lib/pace'
-import { cx, hpColor } from '@/theme/util'
+import { cx, hpColor, mixOklab } from '@/theme/util'
 
-/** HP bar with an eased drain and a lagging damage trail. Colour: green > 50 % > yellow > 20 % > red. */
+/**
+ * HP bar: a track with an ink edge and clipped corners, the fill (a lighter top row over the HP colour) and a pale red
+ * trail. On a hit the fill drains over 700 ms; the trail waits 280 ms, then follows over 900 ms. Colour: green > 50 %
+ * > yellow > 20 % > red.
+ */
 export function HpBar({
   hp,
   max,
@@ -11,6 +15,7 @@ export function HpBar({
   height = 10,
   collapsible = false,
   approximate = false,
+  compact = false,
 }: {
   hp: number
   max: number
@@ -24,17 +29,20 @@ export function HpBar({
   collapsible?: boolean
   /** A foe's bar: screen readers get "high / half / low", never the exact HP. */
   approximate?: boolean
+  /** Narrow cards (the Team's): no "HP" word in front, smaller numbers. */
+  compact?: boolean
 }) {
   const { t } = useT()
   const pace = usePace()
   const pct = max > 0 ? Math.max(0, Math.min(1, hp / max)) : 0
   const collapse = collapsible && showNumbers
+  const color = hpColor(pct)
   return (
-    <div className={cx('flex items-center gap-2', collapse && 'hp-collapsible justify-between', className)}>
-      <span className="text-sm leading-none text-ink">{t('ui.mon.hp')}</span>
+    <div className={cx('flex items-center', compact ? 'gap-1' : 'gap-2', collapse && 'hp-collapsible justify-between', className)}>
+      {!compact && <span className="font-pixel-sm text-sm leading-none text-muted">{t('ui.mon.hp')}</span>}
       <div
-        className="hp-track relative flex-1 overflow-hidden border-2 border-ink bg-ink"
-        style={{ height, borderRadius: 2 }}
+        className="hp-track pixel-corners relative flex-1 overflow-hidden bg-line shadow-ring"
+        style={{ height: Math.max(8, height) }}
         role="meter"
         aria-valuemin={0}
         aria-valuemax={approximate ? 100 : max}
@@ -45,21 +53,23 @@ export function HpBar({
         aria-label={t('ui.mon.hpLong')}
       >
         <div
-          className="absolute inset-y-0 left-0 bg-danger/80"
-          style={{ width: `${pct * 100}%`, transition: `width ${900 * pace}ms cubic-bezier(.2,.8,.2,1) ${250 * pace}ms` }}
+          className="absolute bottom-[2px] left-[2px] top-[2px] bg-hp-trail"
+          style={{
+            width: `calc(${pct * 100}% - ${pct * 4}px)`,
+            transition: `width ${900 * pace}ms cubic-bezier(.2,.8,.2,1) ${280 * pace}ms`,
+          }}
         />
         <div
-          className="absolute inset-y-0 left-0"
+          className="absolute bottom-[2px] left-[2px] top-[2px]"
           style={{
-            width: `${pct * 100}%`,
-            background: hpColor(pct),
-            boxShadow: 'inset 0 2px 0 rgba(255,255,255,0.35)',
-            transition: `width ${600 * pace}ms cubic-bezier(.2,.8,.2,1), background-color ${300 * pace}ms`,
+            width: `calc(${pct * 100}% - ${pct * 4}px)`,
+            background: `linear-gradient(${color} 0 0) 0 2px / 100% 100% no-repeat, ${mixOklab(color, 0.55, '#ffffff')}`,
+            transition: `width ${700 * pace}ms cubic-bezier(.2,.8,.2,1), background-color ${300 * pace}ms`,
           }}
         />
       </div>
       {showNumbers && (
-        <span className="min-w-[4.5ch] text-right font-mono text-sm tabular-nums leading-none">
+        <span className={cx('text-right font-mono tabular-nums leading-none', compact ? 'text-[13px]' : 'min-w-[4.5ch] text-[15px]')}>
           {Math.max(0, Math.round(hp))}/{max}
         </span>
       )}

@@ -1,5 +1,5 @@
-// The leaderboard: every cloud save (Google-signed-in players only) played in the last 72 hours, ranked by best level,
-// campaign progress, Pokédex or shinies caught. The rows come from the `leaderboard()` SQL function, which leaves inactive players out
+// The leaderboard: every cloud save (signed-in players only, Google or Discord) played in the last 72 hours, ranked by best level,
+// campaign progress, Pokédex, shinies caught or raids won. The rows come from the `leaderboard()` SQL function, which leaves inactive players out
 // (migration 0023), and a region's row out until the player holds a badge there (0024); ranking happens here, against
 // the game data.
 import { linearAreas } from '@/engine/data'
@@ -8,8 +8,9 @@ import type { GameData, RegionId } from '@/engine/types'
 import { avatarOf } from './avatars'
 import { getSupabase } from './supabase'
 import { t, tPlural } from '@/i18n'
+import { realmArgs } from '@/lib/realm'
 
-export type LeaderboardTab = 'level' | 'progress' | 'dex' | 'shiny'
+export type LeaderboardTab = 'level' | 'progress' | 'dex' | 'shiny' | 'raids'
 
 export interface LeaderboardRow {
   /** Which region this row is about: a player who has played several appears once per region. */
@@ -23,7 +24,11 @@ export interface LeaderboardRow {
   maxLevel: number
   /** Shiny Pokémon caught in this region (all still owned: a shiny is never released). */
   shinies: number
+  /** Raids won — their raid Pokémon caught — over every region (D4: the same on each region's board). */
+  raidsWon: number
   progress: Record<string, { cleared: boolean; gyms: number }>
+  /** One of the caller's friends (docs/16), with their id so the row can open their card; null for anyone else. */
+  friendId: string | null
 }
 
 export interface RankedRow extends LeaderboardRow {
@@ -68,7 +73,7 @@ export function clearedRegion(row: LeaderboardRow, data: GameData): boolean {
 export function atMax(row: LeaderboardRow, tab: LeaderboardTab, data: GameData, region: RegionId): boolean {
   if (tab === 'level') return row.maxLevel >= data.config.maxLevel
   if (tab === 'dex') return row.pokedex >= dexTotal(data, region)
-  if (tab === 'shiny') return false
+  if (tab === 'shiny' || tab === 'raids') return false
   return clearedRegion(row, data)
 }
 
@@ -78,6 +83,7 @@ function sortKey(row: LeaderboardRow, tab: LeaderboardTab, data: GameData): numb
   if (tab === 'level') return [row.maxLevel, cleared, gyms, row.pokedex]
   if (tab === 'dex') return [row.pokedex, cleared, gyms, row.maxLevel]
   if (tab === 'shiny') return [row.shinies, row.pokedex, cleared, gyms, row.maxLevel]
+  if (tab === 'raids') return [row.raidsWon, row.pokedex, cleared, gyms, row.maxLevel]
   return [cleared, gyms, row.maxLevel, row.pokedex]
 }
 
@@ -85,6 +91,7 @@ function scoreLabel(row: LeaderboardRow, tab: LeaderboardTab, data: GameData, to
   if (tab === 'level') return t('ui.common.level.short', { n: row.maxLevel })
   if (tab === 'dex') return `${row.pokedex}/${total}`
   if (tab === 'shiny') return tPlural('ui.board.shinies', row.shinies)
+  if (tab === 'raids') return tPlural('ui.board.raids', row.raidsWon)
   return frontierArea(row, data)
 }
 
@@ -139,6 +146,11 @@ interface RawRow {
   /** Missing on a database that hasn't run 0032_leaderboard_shiny.sql. */
   shinies?: number | null
   progress: Record<string, { cleared?: boolean; gyms?: number }> | null
+  /** Missing on a database that hasn't run 0035_events.sql. */
+  raids_won?: number | null
+  /** Missing on a database that hasn't run 0033_friends.sql. */
+  is_friend?: boolean | null
+  friend_id?: string | null
 }
 
 export function parseLeaderboard(raw: RawRow[]): LeaderboardRow[] {
@@ -153,10 +165,20 @@ export function parseLeaderboard(raw: RawRow[]): LeaderboardRow[] {
     pokedex: Number(r.pokedex) || 0,
     maxLevel: Number(r.max_level) || 0,
     shinies: Number(r.shinies) || 0,
+    raidsWon: Number(r.raids_won) || 0,
     progress: Object.fromEntries(
       Object.entries(r.progress ?? {}).map(([id, p]) => [id, { cleared: !!p.cleared, gyms: Number(p.gyms) || 0 }]),
     ),
+    friendId: r.is_friend && r.friend_id ? String(r.friend_id) : null,
   }))
+}
+
+/**
+ * Only you and your friends, still with the ranks of the whole board (docs/16): it answers "where are my friends on
+ * the real board". Ranks are given before this filter, so they stay as they were.
+ */
+export function friendsOnly<T extends { isMe: boolean; friendId: string | null }>(rows: T[]): T[] {
+  return rows.filter((r) => r.isMe || !!r.friendId)
 }
 
 /** A short reason for the error line. PGRST202 = the database has no leaderboard() (migration 0011 not run). */
@@ -170,7 +192,7 @@ export function leaderboardError(err: unknown): string {
 export async function fetchLeaderboard(): Promise<LeaderboardRow[] | null> {
   const client = await getSupabase()
   if (!client) return null
-  const { data, error } = await client.rpc('leaderboard')
+  const { data, error } = await client.rpc('leaderboard', realmArgs())
   if (error) throw error
   return parseLeaderboard((data ?? []) as RawRow[])
 }

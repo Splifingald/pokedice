@@ -1,10 +1,11 @@
 // Prof. Oak's share prompt: once per region, when the player holds its 2nd badge (between fights). The button opens
 // the native share sheet on phones, or copies the link where there is none (desktop). Remembered in localStorage.
-// The donation pop-up goes first when both are waiting.
+// The donation pop-up and a special event's unlock pop-up go first when they're waiting too.
 import { useState } from 'react'
-import { badgeCase, dayCareTutorialDue, donationDue, leaderboardTutorialDue, regionOf } from '@/engine'
+import { badgeCase, dayCareTutorialDue, donationDue, eventUnlockDue, leaderboardTutorialDue, regionOf, versusRulesDue } from '@/engine'
 import { useT } from '@/i18n/react'
-import { pushToast, useGame } from '@/store/game'
+import { shareOrCopy } from '@/lib/share'
+import { useGame } from '@/store/game'
 import { Modal } from './Modal'
 import { PixelButton } from './PixelButton'
 import { TrainerSprite } from '@/components/TrainerArt'
@@ -27,7 +28,10 @@ export function ShareTutorial() {
       badgeCase(s.save, s.data).filter((b) => b.earned).length >= 2 &&
       !dayCareTutorialDue(s.save, s.data) &&
       !leaderboardTutorialDue(s.save, s.data) &&
-      !donationDue(s.save, s.data),
+      !donationDue(s.save, s.data) &&
+      !eventUnlockDue(s.save, s.data) &&
+      // Versus's rules pop-up goes first: one pop-up at a time.
+      !versusRulesDue(s.save, s.data),
   )
   const idle = useGame((s) => s.run.phase === 'idle')
   const [closed, setClosed] = useState<string[]>([])
@@ -44,17 +48,9 @@ export function ShareTutorial() {
   }
 
   const share = async () => {
-    const url = window.location.origin
-    try {
-      if (navigator.share) await navigator.share({ title: 'Pokédice', text: t('ui.share.text'), url })
-      else {
-        await navigator.clipboard.writeText(url)
-        pushToast(t('ui.share.copied'), 'good')
-      }
+    // A cancelled share sheet keeps the pop-up.
+    if (await shareOrCopy({ title: 'Pokédice', text: t('ui.share.text'), url: window.location.origin }, t('ui.share.copied')))
       close()
-    } catch {
-      /* share sheet cancelled: keep the pop-up */
-    }
   }
 
   return (

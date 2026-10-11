@@ -3,6 +3,7 @@
 import type { VersusMon } from '@/engine'
 import { avatarOf } from './avatars'
 import { getSupabase } from './supabase'
+import { realmArgs } from '@/lib/realm'
 
 export type VersusBoardTab = 'attack' | 'defense'
 
@@ -73,10 +74,18 @@ export function rankVersus(rows: VersusEntry[], tab: VersusBoardTab): RankedVers
   })
 }
 
-/** The opponents to show: everyone but you, the ones still to beat first, then the newest teams (the SQL order). */
-export function opponentsOf(rows: VersusEntry[]): VersusEntry[] {
+/**
+ * The opponents to show: everyone but you, the ones still to beat first — your friends' among them first (docs/16) —
+ * then the newest teams (the SQL order).
+ */
+export function opponentsOf(rows: VersusEntry[], friends: ReadonlySet<string> = new Set()): VersusEntry[] {
   const others = rows.filter((r) => !r.isMe)
-  return [...others.filter((r) => !r.beaten), ...others.filter((r) => r.beaten)]
+  const toBeat = others.filter((r) => !r.beaten)
+  return [
+    ...toBeat.filter((r) => friends.has(r.userId)),
+    ...toBeat.filter((r) => !friends.has(r.userId)),
+    ...others.filter((r) => r.beaten),
+  ]
 }
 
 /** The known refusals of the Versus functions (their exception messages), for a translated line. */
@@ -102,20 +111,31 @@ export function versusErrorCode(err: unknown): VersusErrorCode {
   return VERSUS_ERRORS.find((k) => e.message?.includes(k)) ?? 'versus_unknown'
 }
 
+/** The last board fetched, and when: Home's Versus widget reads it rather than asking again. */
+let lastBoard: { at: number; rows: VersusEntry[] | null } | null = null
+
 /** null when the cloud isn't configured on this site. */
 export async function fetchVersusBoard(): Promise<VersusEntry[] | null> {
   const client = await getSupabase()
   if (!client) return null
-  const { data, error } = await client.rpc('versus_board')
+  const { data, error } = await client.rpc('versus_board', realmArgs())
   if (error) throw error
-  return parseVersusBoard((data ?? []) as RawEntry[])
+  const rows = parseVersusBoard((data ?? []) as RawEntry[])
+  lastBoard = { at: Date.now(), rows }
+  return rows
+}
+
+/** The board, fetched at most once every `maxAgeMs` (the Versus screen always fetches it fresh). */
+export async function versusBoardCached(maxAgeMs = 10 * 60_000): Promise<VersusEntry[] | null> {
+  if (lastBoard && Date.now() - lastBoard.at < maxAgeMs) return lastBoard.rows
+  return fetchVersusBoard()
 }
 
 /** Registers the team (three Box ids, in fight order) from the cloud save. Returns the team's version. */
 export async function setVersusTeam(ids: string[]): Promise<number> {
   const client = await getSupabase()
   if (!client) throw new Error('versus_signed_out')
-  const { data, error } = await client.rpc('versus_set_team', { ids })
+  const { data, error } = await client.rpc('versus_set_team', { ids, ...realmArgs() })
   if (error) throw error
   return Number(data) || 1
 }
@@ -124,6 +144,12 @@ export async function setVersusTeam(ids: string[]): Promise<number> {
 export async function recordVersus(defender: VersusEntry, seed: number, won: boolean): Promise<void> {
   const client = await getSupabase()
   if (!client) throw new Error('versus_signed_out')
-  const { error } = await client.rpc('versus_record', { defender: defender.userId, defender_version: defender.version, seed, won })
+  const { error } = await client.rpc('versus_record', {
+    defender: defender.userId,
+    defender_version: defender.version,
+    seed,
+    won,
+    ...realmArgs(),
+  })
   if (error) throw error
 }

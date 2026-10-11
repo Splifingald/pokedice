@@ -27,7 +27,7 @@ export function Toggle({
         role="switch"
         aria-checked={on}
         onClick={() => onChange(!on)}
-        className={`pixel-btn min-h-[44px] min-w-[72px] px-2 py-1 text-xl ${on ? 'bg-hp-green' : 'bg-parchment'}`}
+        className={`pixel-btn min-h-[44px] min-w-[72px] shrink-0 px-2 py-1 text-xl uppercase ${on ? 'frame-green' : ''}`}
       >
         {t(on ? 'ui.common.on' : 'ui.common.off')}
       </button>

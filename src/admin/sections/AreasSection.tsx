@@ -1,9 +1,11 @@
+import { PixelIcon } from '@/components/icons'
 import { useMemo, useState } from 'react'
 import type { Row } from '@/config/mapping'
 import {
   deckCounts,
   lootCopies,
   trainerSpecialty,
+  uniqueFindChance,
   type BattleBackground,
   type BossDef,
   type DeckCounts,
@@ -26,10 +28,10 @@ import { AreaBanner } from '@/components/AreaBanner'
 
 const KINDS: EncounterKind[] = ['wild', 'trainer', 'center', 'item', 'casino']
 const CARD: Record<EncounterKind, { label: string; color: string }> = {
-  wild: { label: 'Wild', color: '#4aa84a' },
-  trainer: { label: 'Trainer', color: '#c2452d' },
+  wild: { label: 'Wild', color: '#34c97a' },
+  trainer: { label: 'Trainer', color: '#f2553f' },
   center: { label: 'Center', color: '#d44873' },
-  item: { label: 'Item', color: '#e8b44a' },
+  item: { label: 'Item', color: '#ffbe2e' },
   casino: { label: 'Game Corner', color: '#6b3fa0' },
 }
 
@@ -49,7 +51,7 @@ function DeckPreview({ deck }: { deck: DeckCounts }) {
         Array.from({ length: deck[k] }, (_, i) => (
           <span
             key={`${k}${i}`}
-            className="flex h-10 w-7 items-center justify-center border-2 border-ink font-pixel-sm text-base"
+            className="flex h-10 w-7 items-center justify-center border-2 border-edge font-pixel-sm text-base"
             style={{ background: CARD[k].color, color: textOn(CARD[k].color), borderRadius: 2 }}
             title={CARD[k].label}
           >
@@ -64,8 +66,8 @@ function DeckPreview({ deck }: { deck: DeckCounts }) {
 function BossCard({ b, data, onChange, onRemove }: { b: BossDef; data: GameData; onChange: (b: BossDef) => void; onRemove: () => void }) {
   const byTeam = b.teamAvgThreshold != null
   return (
-    <div className="flex flex-wrap items-center gap-3 border-2 border-ink bg-parchment p-2">
-      <SpriteImg dex={b.dex} size={56} shiny={b.shiny} className="border-2 border-ink bg-panel" />
+    <div className="flex flex-wrap items-center gap-3 border-2 border-edge bg-parchment p-2">
+      <SpriteImg dex={b.dex} size={56} shiny={b.shiny} className="border-2 border-edge bg-panel" />
       <div className="flex min-w-[260px] flex-1 flex-col gap-1.5">
         <PokemonPicker data={data} value={b.dex} onChange={(dex) => onChange({ ...b, dex })} />
         <div className="flex flex-wrap items-center gap-2 text-lg">
@@ -150,11 +152,19 @@ function AreaEditor({ area }: { area: Row }) {
   const setBosses = (next: BossDef[]) => patch({ legendary_boss: next.length ? next : null })
   const lootLabel = (k: string) => (k === 'money' ? '₽ Pokédollars' : (data.items[k]?.name ?? `${k} (unknown item)`))
   const pct = (x: number) => `${(x * 100).toFixed(1)} %`
+  // Once-only finds share the pity's boost (game_config.uniquePity) by their copies: their odds once it is full.
+  const pity = data.config.uniquePity
+  const uniqueCopies = lootHere.reduce((sum, l) => sum + (l.unique_find ? copiesOf(l) : 0), 0)
+  const fullPity = uniqueCopies ? uniqueFindChance(uniqueCopies / lootTotal, pity.fullRounds, pity) / uniqueCopies : 0
+  const perFind = (l: Row) =>
+    l.unique_find && pity.maxMultiplier > 1 && copiesOf(l)
+      ? `${pct(copiesOf(l) / lootTotal)} → ${pct(copiesOf(l) * fullPity)}`
+      : pct(copiesOf(l) / lootTotal)
 
   return (
     <div className="flex flex-col gap-4">
       <div className="grid gap-4 2xl:grid-cols-2">
-        <Box title="Area">
+        <Box title="Area" icon="map">
           <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
             <Field label="Name" className="col-span-2">
               <TextInput value={s(area.name)} onChange={(v) => patch({ name: v })} />
@@ -230,19 +240,19 @@ function AreaEditor({ area }: { area: Row }) {
             </div>
           )}
           {!!area.banner_url && (
-            <AreaBanner url={s(area.banner_url)} className="h-20 border-2 border-ink" />
+            <AreaBanner url={s(area.banner_url)} className="h-20 border-2 border-edge" />
           )}
         </Box>
 
         <Box
-          title="Encounter deck"
+          title="Encounter deck" icon="dice"
           hint="Each number is how many copies of that card go in the area's deck. Going through the deck is a round; a new round deals it again, shuffled, and opens with a Pokémon Center when one would help (on top of the Center cards here). Gym battles and legendaries are challenges the player picks, on top of the deck."
         >
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
             {KINDS.map((k) => (
               <div key={k} className="flex flex-col gap-1">
                 <span className="flex items-center gap-1.5 text-lg leading-none">
-                  <span className="inline-block h-4 w-3 border-2 border-ink" style={{ background: CARD[k].color }} aria-hidden />
+                  <span className="inline-block h-4 w-3 border-2 border-edge" style={{ background: CARD[k].color }} aria-hidden />
                   {CARD[k].label}
                 </span>
                 <Stepper label={`${CARD[k].label} copies`} value={n(weights[k])} max={50} onChange={(v) => patch({ encounter_weights: { ...weights, [k]: v } })} />
@@ -266,7 +276,7 @@ function AreaEditor({ area }: { area: Row }) {
 
       <div className="grid gap-4 2xl:grid-cols-2">
         <Box
-          title="Legendary bosses"
+          title="Legendary bosses" icon="star"
           hint="Fought once, can't be fled. One that flees the catch throw comes back through a 'legend' card in later decks."
           actions={
             <PixelButton size="sm" onClick={() => setBosses([...bosses, { dex: 144, level: Math.max(1, n(area.max_level, 30)) }])}>
@@ -287,7 +297,7 @@ function AreaEditor({ area }: { area: Row }) {
         </Box>
 
         <Box
-          title="Gym / Elite battles"
+          title="Gym / Elite battles" icon="badge"
           hint="Fought in this order once every round is done; the area clears when all are beaten."
           actions={
             <PixelButton
@@ -306,7 +316,7 @@ function AreaEditor({ area }: { area: Row }) {
             const t = data.trainers[gid]
             const type = t ? trainerSpecialty(t, data) : null
             return (
-              <div key={`${gid}-${i}`} className="flex flex-wrap items-center gap-2 border-2 border-ink bg-parchment p-2">
+              <div key={`${gid}-${i}`} className="flex flex-wrap items-center gap-2 border-2 border-edge bg-parchment p-2">
                 <span className="w-6 text-xl">{i + 1}.</span>
                 {t?.spriteUrl && <TrainerSprite src={t.spriteUrl} size={40} />}
                 <SearchSelect
@@ -354,7 +364,7 @@ function AreaEditor({ area }: { area: Row }) {
 
       {!!area.hidden && (
         <Box
-          title="Unlock conditions"
+          title="Unlock conditions" icon="lock"
           hint="All of them must hold for the secret area to appear on the Map."
           actions={
             <PixelButton size="sm" onClick={() => patch({ unlock_conditions: [...conditions, { kind: 'maxLevel', level: 50 }] })}>
@@ -398,7 +408,7 @@ function AreaEditor({ area }: { area: Row }) {
         </Box>
       )}
 
-      <Box title="Wild pool" hint={`When a Wild card is drawn, one of these is picked by weight. ${deck.wild} Wild card(s) per deck.`}>
+      <Box title="Wild pool" icon="ball" hint={`When a Wild card is drawn, one of these is picked by weight. ${deck.wild} Wild card(s) per deck.`}>
         <DataTable
           table="area_wild_pool"
           pageSize={50}
@@ -436,7 +446,7 @@ function AreaEditor({ area }: { area: Row }) {
         />
       </Box>
 
-      <Box title="Trainer pool" hint={`When a Trainer card is drawn, one of these is picked by weight. ${deck.trainer} Trainer card(s) per deck.`}>
+      <Box title="Trainer pool" icon="user" hint={`When a Trainer card is drawn, one of these is picked by weight. ${deck.trainer} Trainer card(s) per deck.`}>
         <DataTable
           table="area_trainer_pool"
           where={(r) => r.area_id === id}
@@ -464,7 +474,7 @@ function AreaEditor({ area }: { area: Row }) {
       </Box>
 
       <Box
-        title="Loot (item finds)"
+        title="Loot (item finds)" icon="box"
         hint={`Copies = how many cards of that find go in the loot deck (a once-only find counts as one). Loot deck: ${lootHere.length ? lootTotal : 0} cards.`}
       >
         <DataTable
@@ -493,12 +503,13 @@ function AreaEditor({ area }: { area: Row }) {
             { key: 'min_qty', label: 'Min qty', kind: 'number', width: 80 },
             { key: 'max_qty', label: 'Max qty', kind: 'number', width: 80 },
             { key: 'unique_find', label: 'Once only', kind: 'bool' },
-            { key: 'chance', label: 'Per find', readOnly: true, render: (r) => pct(copiesOf(r) / lootTotal) },
+            { key: 'chance', label: 'Per find', readOnly: true, render: perFind },
           ]}
         />
         <p className="text-base text-muted">
           Min–Max qty is the quantity found (for Pokédollars, the ₽ amount). “Once only” finds leave this area's table after the
-          first time.
+          first time. Their odds rise with the rounds a player has done here (Config → pity): Per find shows their usual odds →
+          their odds from {pity.fullRounds} rounds on.
         </p>
       </Box>
     </div>
@@ -547,7 +558,10 @@ export function AreasSection() {
   return (
     <div className="grid gap-4 xl:grid-cols-[300px_1fr]">
       <aside className="flex flex-col gap-2 xl:sticky xl:top-16 xl:max-h-[calc(100vh-9rem)]">
-        <h2 className="text-3xl">Areas</h2>
+        <h2 className="flex items-center gap-2 text-3xl">
+          <PixelIcon name="map" size={26} />
+          Areas
+        </h2>
         <input className={inputCls} placeholder="Filter areas…" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Filter areas" />
         <p className="text-sm text-muted">The order is the Map order: drag, or use ▲▼.</p>
         <ol className="pixel-scroll flex min-h-0 flex-col gap-1 overflow-y-auto pr-1">
@@ -562,13 +576,13 @@ export function AreasSection() {
                 onDragStart={() => setDrag(aid)}
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={() => drag && reorder(drag, aid)}
-                className={cx('flex cursor-grab items-center gap-1 border-2 border-ink p-1', isCurrent ? 'bg-gold' : 'bg-panel hover:bg-white')}
+                className={cx('flex cursor-grab items-center gap-1 border-2 border-edge p-1', isCurrent ? 'bg-gold' : 'bg-panel hover:bg-paper')}
               >
                 <button type="button" className="flex min-w-0 flex-1 items-center gap-2 text-left" onClick={() => setSelected(aid)} aria-current={isCurrent || undefined}>
                   {a.banner_url ? (
-                    <AreaBanner url={s(a.banner_url)} className="h-8 !w-14 shrink-0 border border-ink" />
+                    <AreaBanner url={s(a.banner_url)} className="h-8 !w-14 shrink-0 border border-edge" />
                   ) : (
-                    <span className="h-8 w-14 shrink-0 border border-ink bg-parchment" />
+                    <span className="h-8 w-14 shrink-0 border border-edge bg-parchment" />
                   )}
                   <span className="min-w-0">
                     <span className="block truncate text-lg leading-tight">

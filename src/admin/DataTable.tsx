@@ -39,7 +39,7 @@ function display(v: unknown, kind?: ColumnDef['kind']): ReactNode {
   if (kind === 'color' && typeof v === 'string')
     return (
       <span className="flex items-center gap-1">
-        <span className="inline-block h-4 w-4 border-2 border-ink" style={{ background: v }} /> {v}
+        <span className="inline-block h-4 w-4 border-2 border-edge" style={{ background: v }} /> {v}
       </span>
     )
   if (typeof v === 'object') return <span className="font-mono text-xs">{JSON.stringify(v).slice(0, 80)}</span>
@@ -236,7 +236,7 @@ export function DataTable({ table, columns, where, newRow, duplicate, onOpen, pa
       </div>
 
       {selected.size > 0 && (
-        <div className="flex flex-wrap items-center gap-2 border-2 border-ink bg-gold/30 p-2">
+        <div className="flex flex-wrap items-center gap-2 border-2 border-edge bg-gold/30 p-2">
           <span className="text-lg">Bulk edit {selected.size} row(s):</span>
           <select className={cx(inputCls, 'w-auto')} value={bulk.col} onChange={(e) => setBulk((b) => ({ ...b, col: e.target.value }))}>
             {columns
@@ -260,7 +260,7 @@ export function DataTable({ table, columns, where, newRow, duplicate, onOpen, pa
         </div>
       )}
 
-      <div className="pixel-scroll max-h-[65vh] overflow-auto border-[3px] border-ink bg-panel">
+      <div className="pixel-scroll max-h-[65vh] overflow-auto border-[3px] border-edge bg-panel">
         <table className="w-full border-collapse text-base">
           <thead className="sticky top-0 z-10 bg-ink text-panel">
             <tr>
@@ -329,7 +329,7 @@ export function DataTable({ table, columns, where, newRow, duplicate, onOpen, pa
                           'max-w-[320px] px-2 py-1 align-top',
                           dirty && 'bg-gold/40',
                           err && 'outline outline-2 -outline-offset-2 outline-danger',
-                          !c.readOnly && c.kind !== 'bool' && !isEditing && 'cursor-text hover:bg-white',
+                          !c.readOnly && c.kind !== 'bool' && !isEditing && 'cursor-text hover:bg-paper',
                         )}
                         title={err}
                         onClick={() => !c.readOnly && c.kind !== 'bool' && !isEditing && setEditing(cellKey)}

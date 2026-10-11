@@ -106,7 +106,7 @@ export function applyCatch(
     }
     caughtId = inst.id
     needsTeamChoice = !joined
-    events.push({ kind: 'caught', uid: inst.id, dex: inst.dex, level: inst.level, joinedTeam: joined })
+    events.push({ kind: 'caught', uid: inst.id, dex: inst.dex, level: inst.level, joinedTeam: joined, isNew: !save.pokedex.includes(caught.dex) })
   }
   // Secret areas whose Pokédex condition this catch just met.
   for (const id of unlockedHiddenAreas(next, data)) if (!hiddenBefore.has(id)) events.push({ kind: 'secret_unlocked', areaId: id })

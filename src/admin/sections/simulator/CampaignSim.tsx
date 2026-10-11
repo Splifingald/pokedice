@@ -127,7 +127,7 @@ function RunBar({ runner, onRun, label }: { runner: CampaignRunner; onRun: () =>
       </PixelButton>
       {running && (
         <>
-          <div className="h-3 w-48 border-2 border-ink bg-panel" role="progressbar" aria-label="Simulation progress" aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct}>
+          <div className="h-3 w-48 border-2 border-edge bg-panel" role="progressbar" aria-label="Simulation progress" aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct}>
             <div className="h-full bg-gold" style={{ width: `${pct}%` }} />
           </div>
           <PixelButton onClick={runner.cancel}>Cancel</PixelButton>
@@ -333,7 +333,7 @@ export function CampaignReport({
                   <td className={td}>{Math.round(r.gold).toLocaleString('en')}</td>
                   <td className="whitespace-nowrap px-2 py-1">
                     {r.flags.map((f) => (
-                      <span key={f} className={cx('mr-1 border-2 border-ink px-1 text-base', f === 'hard' ? 'bg-danger text-panel' : 'bg-gold text-ink')}>
+                      <span key={f} className={cx('mr-1 border-2 border-edge px-1 text-base', f === 'hard' ? 'bg-crimson text-white' : 'bg-gold text-ink')}>
                         {f}
                       </span>
                     ))}

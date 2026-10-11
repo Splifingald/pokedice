@@ -7,7 +7,7 @@ import { cx } from '@/theme/util'
 const TONE = {
   info: 'bg-panel text-ink',
   good: 'bg-hp-green text-ink',
-  bad: 'bg-danger text-panel',
+  bad: 'bg-crimson text-white',
 }
 
 /**

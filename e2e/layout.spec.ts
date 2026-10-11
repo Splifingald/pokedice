@@ -5,7 +5,7 @@ import { expect, test, type Page } from '@playwright/test'
 import { createInstance, linearAreas, progressOf, type SaveData } from '../src/engine'
 import { cjkFamily } from '../src/i18n/cjk'
 import { CJK_LANGS, LANGS, type Lang } from '../src/i18n/langs'
-import { FAST, gameData, makeSave, mockSupabase } from './helpers'
+import { FAST, gameData, makeSave, mockSupabase, nonJerseyText, smallControls } from './helpers'
 
 const data = gameData()
 
@@ -31,10 +31,17 @@ function midGameSave(): SaveData {
     ...base,
     box: [...base.box, ...extra],
     team: [base.team[0]!, extra[0]!.id, extra[1]!.id],
-    pokedex: [...new Set([...base.pokedex, ...extra.map((p) => p.dex)])],
+    // Twenty species open the Day Care, which holds one of yours and a friend's Ditto.
+    pokedex: [...new Set([...base.pokedex, ...extra.map((p) => p.dex), ...Array.from({ length: 20 }, (_, i) => i + 1)])],
     inventory: { potion: 4, 'poke-ball': 8, 'great-ball': 2 },
     areaProgress,
     currentAreaId: chain[6]!.id,
+    dayCare: {
+      residents: [{ inst: mk(133, 24), since: Date.now() - 3_600_000, region: 'kanto' }],
+      guests: [{ owner: 'u-lea', ownerName: 'Lea', ownerAvatar: 'red', inst: 'g-1', dex: 132, level: 30, addedAt: 0 }],
+      eggClaimed: true,
+      visited: true,
+    },
   }
 }
 
@@ -52,29 +59,7 @@ async function boot(page: Page, lang?: Lang) {
   )
 }
 
-/** Visible controls under 44px. Links inside a sentence are exempt (WCAG 2.5.8 "inline"). */
-function smallControls(page: Page) {
-  return page.evaluate(() =>
-    Array.from(document.querySelectorAll<HTMLElement>('a,button,input,select,summary,[role=button],[role=tab]'))
-      .filter((el) => !(el.tagName === 'A' && el.closest('p')))
-      .map((el) => ({ el, r: el.getBoundingClientRect() }))
-      .filter(({ el, r }) => r.width > 0 && r.height > 0 && getComputedStyle(el).visibility !== 'hidden' && (r.width < 44 || r.height < 44))
-      .map(({ el, r }) => `${(el.getAttribute('aria-label') || el.textContent || el.tagName).trim().slice(0, 30)} ${Math.round(r.width)}×${Math.round(r.height)}`),
-  )
-}
-
-/** Visible text rendered in any face other than the Jersey fonts (the only fonts the app ships). */
-function nonJerseyText(page: Page) {
-  return page.evaluate(() =>
-    Array.from(document.querySelectorAll<HTMLElement>('body *'))
-      .filter((el) => Array.from(el.childNodes).some((n) => n.nodeType === Node.TEXT_NODE && n.textContent!.trim()) || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName))
-      .filter((el) => el.getClientRects().length > 0 && !/^"?Jersey (15|25)"?(,|$)/.test(getComputedStyle(el).fontFamily))
-      .map((el) => `${el.tagName} "${(el.textContent || '').trim().slice(0, 20)}": ${getComputedStyle(el).fontFamily}`)
-      .slice(0, 10),
-  )
-}
-
-const ROUTES = ['/map', '/area', '/team', '/shop', '/upgrades', '/pokedex', '/leaderboard', '/settings']
+const ROUTES = ['/home', '/team', '/shop', '/upgrades', '/pokedex', '/leaderboard', '/friends', '/settings', '/daycare']
 const SIZES = [
   { width: 360, height: 640, phone: true },
   { width: 375, height: 812, phone: true },
@@ -151,7 +136,7 @@ test('the avatar drawer and the profile hold up at every size', async ({ page })
   for (const size of SIZES) {
     await page.setViewportSize(size)
     await boot(page)
-    await page.goto('/map')
+    await page.goto('/home')
     await page.getByRole('button', { name: 'Your trainer menu' }).click()
     await expect(page.getByRole('dialog')).toBeVisible()
     await settled(page)
@@ -161,9 +146,8 @@ test('the avatar drawer and the profile hold up at every size', async ({ page })
     expect(await nonJerseyText(page), `drawer at ${size.width}: fonts`).toEqual([])
     if (size.phone) expect(await smallControls(page), `drawer at ${size.width}: controls under 44px`).toEqual([])
 
-    // The profile on top of it: the badge case is the densest thing either one draws.
-    await page.getByRole('button', { name: 'Trainer card' }).click()
-    await expect(page.getByRole('heading', { name: 'Badge case' })).toBeVisible()
+    // The trainer card is the drawer itself.
+    await expect(page.getByRole('dialog', { name: 'Trainer card' })).toBeVisible()
     await settled(page)
     expect(await nonJerseyText(page), `profile at ${size.width}: fonts`).toEqual([])
     if (size.phone) expect(await smallControls(page), `profile at ${size.width}: controls under 44px`).toEqual([])
@@ -188,13 +172,20 @@ test('the title, help, setup and admin pages use only the Jersey fonts', async (
 test('a battle fits a 360×640 phone', async ({ page }) => {
   await page.setViewportSize({ width: 360, height: 640 })
   await boot(page)
-  await page.goto('/area')
+  // Home's CONTINUE starts the area; the encounter plays on /area.
+  await page.goto('/home')
   const attack = page.getByRole('button', { name: 'ATTACK', exact: true })
-  for (let i = 0; i < 60 && !(await attack.isVisible().catch(() => false)); i++) {
-    // Random fights: the lead may faint before the controls show — send in the next one.
-    const next = page.getByRole('dialog', { name: 'Choose your next Pokémon' }).getByRole('button').first()
-    if (await next.isVisible().catch(() => false)) await next.click()
-    for (const name of ['FIGHT', 'EXPLORE', 'NEXT ENCOUNTER', 'ENTER', 'PICK IT UP', 'CONTINUE']) {
+  const healing = page.getByRole('dialog', { name: 'Healing…' })
+  for (let i = 0; i < 150 && !(await attack.isVisible().catch(() => false)); i++) {
+    // The deck may open on a Pokémon Center: its healing plays full screen over the buttons until SKIP.
+    if (await healing.isVisible().catch(() => false)) {
+      await healing.getByRole('button', { name: 'SKIP ▸▸' }).click()
+      continue
+    }
+    // Random fights: the lead may faint before the controls show — send in the next one (its pip pulses).
+    if (await page.getByText('Choose your next Pokémon').isVisible().catch(() => false))
+      await page.getByRole('group', { name: 'Switch Pokémon' }).getByRole('button', { name: /Switch in$/ }).first().click()
+    for (const name of ['FIGHT', 'EXPLORE', 'NEXT ENCOUNTER', 'ENTER', 'PICK IT UP', 'CONTINUE', 'SKIP TURN']) {
       const b = page.getByRole('button', { name, exact: true }).first()
       if ((await b.isVisible().catch(() => false)) && (await b.isEnabled().catch(() => false))) {
         await b.click()
@@ -205,16 +196,22 @@ test('a battle fits a 360×640 phone', async ({ page }) => {
   }
   await expect(attack).toBeEnabled()
   await page.waitForTimeout(1200) // let the thrown dice settle before measuring them
+  // Prof. Oak's one-time tip shows the first time a status face is rolled (so only on some dice): read once and
+  // dismissed, like a player would. The fit being checked is the battle's own.
+  const gotIt = page.getByRole('button', { name: 'GOT IT' })
+  if (await gotIt.isVisible().catch(() => false)) await gotIt.click()
   expect(await nonJerseyText(page), 'battle: fonts').toEqual([])
   const box = await attack.boundingBox()
   expect(box!.y + box!.height, 'ATTACK is on screen').toBeLessThanOrEqual(640)
   const dims = await page.evaluate(() => {
     const h = (sel: string) => Math.round(document.querySelector(sel)?.getBoundingClientRect().height ?? -1)
-    return { page: document.documentElement.scrollHeight, view: window.innerHeight, header: h('header'), scene: h('.scanlines'), dialogue: h('.pixel-dialogue') }
+    return { page: document.documentElement.scrollHeight, view: window.innerHeight, header: h('header'), dialogue: h('.pixel-dialogue') }
   })
-  // Everything up to the controls fits; only the separate "Battle history" row may sit just below the fold.
+  // Full screen: no top bar, no tab bar, and the whole battle — down to the team and the history — fits.
+  expect(dims.header, 'no top bar in battle').toBe(-1)
   const history = await page.getByRole('button', { name: 'Battle history' }).boundingBox()
   expect(history, 'the history button is there').not.toBeNull()
-  expect(dims.page - dims.view, `the battle scrolls: ${JSON.stringify(dims)}`).toBeLessThanOrEqual(history!.height + 8)
+  expect(history!.y + history!.height, 'the history button is on screen').toBeLessThanOrEqual(640)
+  expect(dims.page - dims.view, `the battle scrolls: ${JSON.stringify(dims)}`).toBeLessThanOrEqual(0)
   expect(await smallControls(page), 'battle controls under 44px').toEqual([])
 })

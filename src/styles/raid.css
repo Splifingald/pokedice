@@ -1,0 +1,344 @@
+/* Raid Battles: the opening (RaidIntro), the boss plate's bar breaking, the shards (RaidView). From the Visual Lab's
+   events mockups. Fonts: Jersey only. */
+
+.rd-intro {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  overflow: hidden;
+  background: #05060d;
+  transition: opacity 420ms, transform 420ms;
+}
+.rd-intro.out {
+  opacity: 0;
+  transform: scale(1.08);
+}
+.rd-i-cv {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  image-rendering: pixelated;
+}
+.rd-intro::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(circle, transparent 45%, rgba(242, 85, 63, 0.55));
+  opacity: 0;
+}
+.rd-intro.alert::after {
+  animation: rd-alarm 450ms steps(2) 2;
+}
+@keyframes rd-alarm {
+  50% {
+    opacity: 1;
+  }
+}
+.rd-i-tape {
+  position: absolute;
+  left: -15%;
+  width: 130%;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  background: repeating-linear-gradient(-45deg, #ffbe2e 0 16px, #24304f 16px 32px);
+  background-size: 45px 45px;
+  box-shadow: 0 0 0 3px #24304f, 0 6px 0 #00000060;
+  transform: translateX(-120%) rotate(-7deg);
+  transition: transform 360ms cubic-bezier(0.2, 0.9, 0.3, 1);
+  animation: rd-tape 600ms linear infinite;
+}
+.rd-i-tape.top {
+  top: 24%;
+}
+.rd-i-tape.bottom {
+  top: 64%;
+  transform: translateX(120%) rotate(-7deg);
+  animation-direction: reverse;
+}
+.rd-i-tape b {
+  font-weight: 400;
+  font-size: 24px;
+  letter-spacing: 0.08em;
+  padding: 3px 14px 5px;
+  background: #24304f;
+  color: #ffe7a8;
+  box-shadow: inset 0 0 0 2px #ffbe2e;
+  white-space: nowrap;
+}
+@keyframes rd-tape {
+  to {
+    background-position: 45px 0;
+  }
+}
+.rd-intro.alert .rd-i-tape {
+  transform: translateX(0) rotate(-7deg);
+}
+.rd-intro.alert-out .rd-i-tape.top {
+  transform: translateX(120%) rotate(-7deg);
+}
+.rd-intro.alert-out .rd-i-tape.bottom {
+  transform: translateX(-120%) rotate(-7deg);
+}
+.rd-intro.boom .rd-i-cv {
+  animation: rd-boom 480ms steps(8);
+}
+@keyframes rd-boom {
+  15% {
+    transform: translate(-6px, 4px) scale(1.04);
+  }
+  35% {
+    transform: translate(6px, -4px) scale(1.03);
+  }
+  60% {
+    transform: translate(-3px, 2px) scale(1.01);
+  }
+}
+.rd-i-name {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 6%;
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  padding: 0 12px;
+  text-align: center;
+  opacity: 0;
+  transform: scale(3);
+  pointer-events: none;
+}
+.rd-intro.name .rd-i-name {
+  opacity: 1;
+  transform: none;
+  transition: transform 260ms cubic-bezier(0.3, 1.6, 0.5, 1), opacity 100ms;
+}
+.rd-intro.name {
+  animation: rd-slam 260ms steps(4) 240ms;
+}
+@keyframes rd-slam {
+  30% {
+    transform: translateY(6px);
+  }
+  70% {
+    transform: translateY(-2px);
+  }
+}
+.rd-i-name small {
+  font-family: 'Jersey 15', var(--font-cjk);
+  font-size: 18px;
+  letter-spacing: 0.3em;
+  color: #ffbe2e;
+  text-shadow: 0 2px 0 #24304f;
+}
+.rd-i-name b {
+  font-weight: 400;
+  font-size: clamp(44px, 16vw, 72px);
+  line-height: 0.9;
+  letter-spacing: 0.04em;
+  color: #fbfdff;
+  overflow-wrap: anywhere;
+  text-shadow: 0 4px 0 #c4382a, 4px 0 0 #24304f, -4px 0 0 #24304f, 0 -4px 0 #24304f, 0 8px 0 #24304f, 0 0 24px #ffbe2e;
+}
+.rd-i-name em {
+  font-style: normal;
+  font-size: 16px;
+  padding: 1px 8px 2px;
+  background: #fff6a8;
+  color: #24304f;
+  box-shadow: inset 0 0 0 2px #24304f;
+}
+.rd-i-sub {
+  font-family: 'Jersey 15', var(--font-cjk);
+  font-size: 18px;
+  color: #ffe7a8;
+  text-shadow: 0 2px 0 #24304f;
+}
+.rd-i-bars {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 2px;
+}
+.rd-i-bars i {
+  position: relative;
+  width: 54px;
+  height: 12px;
+  background: #24304f;
+  box-shadow: 0 0 0 2px #fbfdff;
+  overflow: hidden;
+}
+.rd-i-bars i::after {
+  content: '';
+  position: absolute;
+  inset: 2px;
+  background: linear-gradient(#ffffff80 0 3px, transparent 3px), var(--c);
+  transform: scaleX(0);
+  transform-origin: left;
+}
+.rd-intro.bars .rd-i-bars i::after {
+  transform: none;
+  transition: transform 240ms cubic-bezier(0.2, 0.9, 0.3, 1) var(--d);
+}
+.rd-i-cuts {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(3% + env(safe-area-inset-bottom));
+  display: grid;
+  gap: 8px;
+  pointer-events: none;
+}
+.rd-i-cut {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 104%;
+  margin-left: -8%;
+  padding: 4px 18px 4px 13%;
+  background: var(--bg);
+  box-shadow: inset 0 0 0 3px #24304f, 0 5px 0 #00000070;
+  transform: translateX(-120%) skewX(-14deg);
+  color: #fbfdff;
+}
+.rd-intro.cuts .rd-i-cut {
+  transform: translateX(0) skewX(-14deg);
+  transition: transform 300ms cubic-bezier(0.2, 1.3, 0.4, 1) var(--d);
+}
+.rd-i-cut > * {
+  transform: skewX(14deg);
+}
+.rd-i-who {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  background: #fbfdff;
+  box-shadow: inset 0 0 0 2px #24304f;
+  overflow: hidden;
+  flex: none;
+}
+.rd-i-t {
+  display: grid;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+  line-height: 1;
+  text-shadow: 0 2px 0 #24304f;
+}
+.rd-i-t b {
+  font-weight: 400;
+  font-size: 26px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rd-i-t small {
+  font-family: 'Jersey 15', var(--font-cjk);
+  font-size: 15px;
+  color: #fff3d6;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rd-i-lead {
+  flex: none;
+  filter: drop-shadow(0 2px 0 #24304f);
+}
+.rd-i-go {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: clamp(88px, 30vw, 132px);
+  line-height: 1;
+  color: #ffbe2e;
+  text-shadow: 0 6px 0 #c4382a, 6px 0 0 #24304f, -6px 0 0 #24304f, 0 -6px 0 #24304f, 0 12px 0 #24304f;
+  opacity: 0;
+  transform: scale(4) rotate(-8deg);
+  pointer-events: none;
+}
+.rd-intro.go .rd-i-go {
+  opacity: 1;
+  transform: rotate(-8deg);
+  transition: transform 280ms cubic-bezier(0.3, 1.7, 0.5, 1), opacity 90ms;
+}
+.rd-i-skip {
+  position: absolute;
+  right: 10px;
+  top: calc(10px + env(safe-area-inset-top));
+  z-index: 5;
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0 14px;
+  border: 0;
+  background: #24304fcc;
+  color: #fbfdff;
+  font-size: 18px;
+  box-shadow: inset 0 0 0 2px #fbfdff55;
+}
+.rd-i-skip:focus-visible {
+  outline: 3px solid #ffbe2e;
+  outline-offset: 2px;
+}
+
+/* The boss plate's bar: a broken bar shakes and flashes. */
+.rd-bar {
+  box-shadow: inset 0 0 0 2px #24304f;
+}
+.rd-bar-broke {
+  animation: rd-break 520ms steps(6);
+}
+@keyframes rd-break {
+  15% {
+    transform: translate(-4px, 2px);
+    filter: brightness(2.2);
+  }
+  45% {
+    transform: translate(4px, -2px);
+  }
+  75% {
+    transform: translate(-2px, 1px);
+  }
+}
+.rd-shard {
+  box-shadow: 0 0 0 1px #24304f;
+  animation: rd-shard 850ms cubic-bezier(0.2, 0.7, 0.4, 1) forwards;
+}
+@keyframes rd-shard {
+  to {
+    transform: translate(var(--dx), var(--dy)) rotate(var(--r));
+    opacity: 0;
+  }
+}
+
+/* A summon pops into the queue in a flash of light. */
+.rd-arrive {
+  animation: rd-arrive 520ms cubic-bezier(0.3, 1.6, 0.5, 1);
+}
+@keyframes rd-arrive {
+  0% {
+    transform: scale(0.2);
+    filter: brightness(3);
+    opacity: 0;
+  }
+  60% {
+    filter: brightness(1.8);
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rd-bar-broke,
+  .rd-shard,
+  .rd-arrive,
+  .rd-intro.boom .rd-i-cv,
+  .rd-intro.name,
+  .rd-i-tape {
+    animation: none;
+  }
+}

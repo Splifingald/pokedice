@@ -33,6 +33,8 @@ export type BattlePhase =
   | 'won'
   | 'lost'
   | 'fled'
+  /** A raid step is over (`single`): the raid takes it from here. */
+  | 'done'
 
 export interface Battler {
   uid: string
@@ -93,6 +95,8 @@ export interface BattleState {
   /** Player instance ids that were sent out in this battle. */
   participants: string[]
   canRun: boolean
+  /** Extreme mode with the admin's items switch off: no Potion or Revive works. */
+  noHealItems?: boolean
   lastDamage: DamageResult | null
   /** One item per turn — it doesn't end the turn. */
   itemUsedThisTurn: boolean
@@ -102,12 +106,17 @@ export interface BattleState {
   gmaxAllowed?: boolean
   /** Mega Evolutions and Gigantamax the player's side has used this battle (they share one limit). */
   megaUsed?: number
-  /** An auto battle: no Mega Evolution, Gigantamax or type change, on either side. */
+  /** An auto battle: no Mega Evolution or Gigantamax on either side; type changers on both pick their type themselves. */
   auto?: boolean
   /** What the foe does on its first turn — a trainer's ace Mega Evolving or Gigantamaxing — and whether it changes type. */
   enemyPlan?: EnemyPlan
   /** The plan's Mega / Gigantamax has been used. */
   enemyPlanDone?: boolean
+  /**
+   * A raid step (engine/raidBattle.ts): one actor's one action, then phase 'done'. No next turn, no K.O. handling, no
+   * end of battle and no statuses cleared: the raid decides what a K.O. means and who acts next.
+   */
+  single?: boolean
 }
 
 export interface EnemyPlan {
@@ -222,7 +231,7 @@ export function makeBattler(seed: BattlerSeed, data: GameData): Battler {
  * Ditto copies whoever it faces: the dice of the opponent now in front of it (a copying opponent lends its own set).
  * Called when a battle starts and whenever either side's active Pokémon changes.
  */
-function copyFoeDice(s: BattleState, log: LogEntry[]) {
+export function copyFoeDice(s: BattleState, log: LogEntry[]) {
   const mine = activeBattler(s)
   for (const [side, b, foe] of [
     ['player', mine, s.enemy],
@@ -248,8 +257,10 @@ export interface CreateBattleOptions {
   gmaxAllowed?: boolean
   /** The foe's Mega / Gigantamax / type change (see `enemyPlanFor`). */
   enemyPlan?: EnemyPlan | null
-  /** An auto battle: none of the above, for either side. */
+  /** An auto battle: no Mega Evolution or Gigantamax, for either side — only the foe's type change is kept. */
   auto?: boolean
+  /** No Potion or Revive works (Extreme mode, items switched off). */
+  noHealItems?: boolean
 }
 
 /** Takes on a form's look and types (the dice are the caller's business). */
@@ -340,22 +351,34 @@ function typeForms(b: Battler, data: GameData): Species[] {
 }
 
 /**
- * The foe's pick: the type form whose type hits your Pokémon hardest, if it beats every type it rolls now (an Arceus
- * facing a Pokémon its Normal dice can't touch turns Fighting, or whatever is best).
+ * The type forms whose type hits `target` hardest, when that beats every type `b` rolls now (an Arceus facing a
+ * Pokémon its Normal dice can't touch turns Fighting, or whatever is best). Empty when none does better.
  */
-function bestTypeForm(b: Battler, target: Battler, data: GameData): Species | null {
+function bestTypeForms(b: Battler, target: Battler, forms: Species[], data: GameData): Species[] {
   const score = (t: PokeType) => attackMultiplier(t, target.types, data)
-  const now = Math.max(0, ...b.dice.filter((d): d is PokeType => d !== 'base').map(score))
-  let best: Species | null = null
-  let bestScore = now
-  for (const f of typeForms(b, data)) {
+  let bestScore = Math.max(0, ...b.dice.filter((d): d is PokeType => d !== 'base').map(score))
+  let best: Species[] = []
+  for (const f of forms) {
     const sc = score(choiceFormDie(f))
     if (sc > bestScore) {
-      best = f
+      best = [f]
       bestScore = sc
-    }
+    } else if (sc === bestScore && best.length) best.push(f)
   }
   return best
+}
+
+/** The foe's pick: a type form best against your Pokémon — the first of them, or in an auto battle one at random. */
+function foeTypeForm(s: BattleState, b: Battler, target: Battler, data: GameData, rng: Rng): Species | null {
+  const best = bestTypeForms(b, target, typeForms(b, data), data)
+  if (!best.length) return null
+  return s.auto ? rng.pick(best) : best[0]!
+}
+
+/** Auto-mode's pick for the Pokémon in battle: a type form best against the foe, at random among equals. */
+export function autoTypeForm(s: BattleState, data: GameData, rng: Rng): Species | null {
+  const best = bestTypeForms(activeBattler(s), s.enemy, formChoices(s, data), data)
+  return best.length ? rng.pick(best) : null
 }
 
 /**
@@ -405,7 +428,6 @@ export function gmaxChoices(s: BattleState, data: GameData): Species[] {
 
 /** The types the Pokémon in battle could take right now (empty when it has none, or the change is spent). */
 export function formChoices(s: BattleState, data: GameData): Species[] {
-  if (s.auto) return []
   if (s.phase !== 'player_roll' && s.phase !== 'player_reroll') return []
   const a = activeBattler(s)
   // Each Pokémon has its own changes for the battle.
@@ -443,10 +465,11 @@ export function createBattle(opts: CreateBattleOptions, data: GameData): { state
     enemyLevels: opts.enemyLevels,
     participants: [lead.uid],
     canRun: opts.kind === 'wild' && !data.config.noEscape,
+    ...(opts.noHealItems && { noHealItems: true }),
     lastDamage: null,
     itemUsedThisTurn: false,
     ...(opts.auto
-      ? { auto: true }
+      ? { auto: true, ...(opts.enemyPlan?.formChanges && { enemyPlan: { formChanges: true } }) }
       : {
           ...(opts.megaAllowed && { megaAllowed: true }),
           ...(opts.gmaxAllowed && { gmaxAllowed: true }),
@@ -512,11 +535,29 @@ function deadlocked(s: BattleState, data: GameData): boolean {
   return !s.player.some((p) => p.hp > 0 && canHurt(p, foe, data))
 }
 
+/** A raid step has had its action (or lost it to a stun or a K.O. at its start). */
+function endStep(s: BattleState) {
+  s.phase = 'done'
+  s.dice = []
+  s.selected = []
+}
+
+/**
+ * A raid step: `side` takes one turn in this one-on-one duel. It starts like any turn (the DoT ticks, then the stun
+ * check: the player may still cure it) and ends with phase 'done' after its one action.
+ */
+export function startDuelStep(s: BattleState, side: Side, data: GameData, log: LogEntry[]) {
+  s.single = true
+  copyFoeDice(s, log)
+  beginTurn(s, side, data, log)
+}
+
 /** Turn start: DoT tick (can K.O.), then the stun check (skips the turn), then the actor may act. */
 function beginTurn(s: BattleState, side: Side, data: GameData, log: LogEntry[]) {
   const rules = data.config.status
   for (let guard = 0; guard < 50; guard++) {
-    if (s.turn >= data.config.maxBattleTurns || deadlocked(s, data)) {
+    // A raid keeps its own count of turns.
+    if (!s.single && (s.turn >= data.config.maxBattleTurns || deadlocked(s, data))) {
       // No rewards, no wipe; HP damage is kept like a RUN.
       finish(s, 'fled', log, 'stalemate')
       return
@@ -536,6 +577,7 @@ function beginTurn(s: BattleState, side: Side, data: GameData, log: LogEntry[]) 
       log.push({ kind: 'status_tick', target: side, targetUid: b.uid, status: t.status, amount: t.amount, hpAfter: b.hp })
     }
     if (ticks.length) checkHpForms(s, data, log)
+    if (b.hp <= 0 && s.single) return endStep(s)
     if (b.hp <= 0) {
       // A K.O. here ends the turn.
       if (checkKnockouts(s, log) && s.phase === 'player_switch') s.nextActor = other(side)
@@ -552,6 +594,7 @@ function beginTurn(s: BattleState, side: Side, data: GameData, log: LogEntry[]) 
     if (stun) {
       b.status = consumeStun(b.status)
       log.push({ kind: 'stunned', side, uid: b.uid, status: stun })
+      if (s.single) return endStep(s)
       side = other(side)
       continue
     }
@@ -562,6 +605,7 @@ function beginTurn(s: BattleState, side: Side, data: GameData, log: LogEntry[]) 
 
 function afterAction(s: BattleState, side: Side, data: GameData, log: LogEntry[]) {
   tickGmax(s, side, data, log)
+  if (s.single) return endStep(s)
   if (checkKnockouts(s, log)) {
     if (s.phase === 'player_switch') s.nextActor = other(side)
     return
@@ -629,7 +673,7 @@ export function reduce(
   data: GameData,
   rng: Rng,
 ): { state: BattleState; log: LogEntry[] } {
-  const terminal = state.phase === 'won' || state.phase === 'lost' || state.phase === 'fled'
+  const terminal = state.phase === 'won' || state.phase === 'lost' || state.phase === 'fled' || state.phase === 'done'
   if (terminal) return NOOP(state)
   const s = structuredClone(state)
   const log: LogEntry[] = []
@@ -673,6 +717,7 @@ export function reduce(
       const target = s.player.find((b) => b.uid === (e.targetUid ?? activeBattler(s).uid))
       if (!item || !target) return NOOP(state)
       const fx = item.effect
+      if (s.noHealItems && (fx.kind === 'heal' || fx.kind === 'revive')) return NOOP(state)
       // Only a revive works on a K.O.'d Pokémon (a benched one: the active can't be K.O. on your turn), and only on one.
       if ((fx.kind === 'revive') !== target.hp <= 0) return NOOP(state)
       if (fx.kind === 'revive') {
@@ -730,7 +775,8 @@ export function reduce(
       const a = activeBattler(s)
       a.status = consumeStun(a.status)
       tickGmax(s, 'player', data, log)
-      beginTurn(s, 'enemy', data, log)
+      if (s.single) endStep(s)
+      else beginTurn(s, 'enemy', data, log)
       break
     }
     case 'SWITCH': {
@@ -781,7 +827,7 @@ export function reduce(
         s.enemyPlanDone = true
       }
       if (plan?.formChanges && (en.formChanges ?? 0) < data.config.formChangesPerBattle) {
-        const form = bestTypeForm(en, target, data)
+        const form = foeTypeForm(s, en, target, data, rng)
         if (form) {
           changeForm(s, 'enemy', en, form, log)
           en.formChanges = (en.formChanges ?? 0) + 1

@@ -29,7 +29,7 @@ export function PlayerAvatar({ size = 36, className }: { size?: number; classNam
         height={size}
         referrerPolicy="no-referrer"
         onError={() => setBroken(true)}
-        className={cx('shrink-0 rounded-full border-2 border-ink object-cover', className)}
+        className={cx('shrink-0 rounded-full border-2 border-edge object-cover', className)}
         style={{ width: size, height: size }}
       />
     )
@@ -37,7 +37,7 @@ export function PlayerAvatar({ size = 36, className }: { size?: number; classNam
   return (
     <span
       aria-hidden
-      className={cx('flex shrink-0 items-center justify-center rounded-full border-2 border-ink bg-[#547acc] leading-none text-white', className)}
+      className={cx('flex shrink-0 items-center justify-center rounded-full border-2 border-edge bg-[#547acc] leading-none text-white', className)}
       style={{ width: size, height: size, fontSize: Math.round(size * 0.62) }}
     >
       {initialOf(name)}

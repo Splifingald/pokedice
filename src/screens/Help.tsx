@@ -14,7 +14,7 @@ import { useGame } from '@/store/game'
 function Section({ id, title, children }: { id: string; title: string; children: ReactNode }) {
   return (
     <section id={id} aria-labelledby={`${id}-h`} className="flex flex-col gap-2">
-      <h2 id={`${id}-h`} className="border-b-[3px] border-ink text-3xl leading-tight">
+      <h2 id={`${id}-h`} className="border-b-[3px] border-edge text-3xl leading-tight">
         {title}
       </h2>
       <div className="copy flex flex-col gap-2">{children}</div>
@@ -174,7 +174,7 @@ export function HelpPage() {
   return (
     <main className="mx-auto flex max-w-3xl flex-col gap-4 px-3 py-6">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-5xl">{t('ui.help.title')}</h1>
+        <h1 className="text-[32px] leading-none">{t('ui.help.title')}</h1>
         <PixelButton onClick={() => (window.history.length > 1 ? navigate(-1) : navigate('/'))}>{t('ui.help.back')}</PixelButton>
       </div>
       <div className="pixel-panel p-4">

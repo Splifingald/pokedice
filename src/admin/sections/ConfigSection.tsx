@@ -2,27 +2,32 @@ import { useMemo, useState } from 'react'
 import {
   DEFAULT_CONFIG,
   eggSpecies,
+  eggsPerWeek,
+  extremeRules,
   isDonationUrl,
   enabledRegions,
   slotOdds,
   slotReturnPerSpin,
+  uniquePityMultiplier,
   xpToNext,
   type DayCareConfig,
   type DonationConfig,
   type EnergyConfig,
+  type ExtremeConfig,
   type GameConfig,
   type SlotMachineConfig,
   type SlotOutcomeKey,
   type StatusRules,
+  type UniquePityConfig,
 } from '@/engine'
 import { PixelIcon } from '@/components/icons'
 import { SpriteImg } from '@/components/SpriteImg'
 import { cx } from '@/theme/util'
 import { DataTable } from '../DataTable'
 import { addRows, rowKey, updateRow, useAdmin, useAdminData } from '../store'
-import { Box, Field, NumInput, PokemonPicker, inputCls } from '../widgets'
+import { AccessSwitch, Box, Field, NumInput, PokemonPicker, inputCls } from '../widgets'
 
-function useConfigRow<K extends keyof GameConfig>(key: K): [GameConfig[K], (v: GameConfig[K]) => void] {
+export function useConfigRow<K extends keyof GameConfig>(key: K): [GameConfig[K], (v: GameConfig[K]) => void] {
   const rows = useAdmin((st) => st.rows.game_config)
   const row = rows.find((r) => r.key === key)
   const value = (row ? row.value : DEFAULT_CONFIG[key]) as GameConfig[K]
@@ -53,7 +58,7 @@ function SlotMachineBox() {
   const pct = (x: number) => `${Math.round(x * 1000) / 10} %`
   return (
     <Box
-      title="Game Corner — slot machine"
+      title="Game Corner — slot machine" icon="coin"
       hint="Played on the Game Corner cards (Areas → Encounter deck). The result is drawn from these weights, then the reels are laid out to show it."
     >
       <div className="grid gap-3 sm:grid-cols-3">
@@ -120,7 +125,7 @@ function EnergyBox() {
   const perDay = cfg.minutesPerEnergy > 0 ? (24 * 60) / cfg.minutesPerEnergy : 0
   return (
     <Box
-      title="Energy"
+      title="Energy" icon="energy"
       hint="Each encounter discovered costs 1 (not gym / Elite / Champion battles, legendaries or Pokémon Centers). Refills in real time, offline too."
     >
       <div className="grid gap-3 sm:grid-cols-3">
@@ -141,6 +146,37 @@ function EnergyBox() {
   )
 }
 
+/** Pity for once-only finds: their odds climb with the rounds a player has done in the area. */
+function UniquePityBox() {
+  const [raw, setRaw] = useConfigRow('uniquePity')
+  const cfg: UniquePityConfig = { ...DEFAULT_CONFIG.uniquePity, ...raw }
+  const set = (patch: Partial<UniquePityConfig>) => setRaw({ ...cfg, ...patch })
+  const mid = Math.round((cfg.startRounds + cfg.fullRounds) / 2)
+  return (
+    <Box
+      title="Once-only finds — pity" icon="crown"
+      hint="The more rounds a player has done in an area, the likelier its once-only finds (Areas → Loot): × their odds per item find, never past 100 %."
+    >
+      <div className="grid gap-3 sm:grid-cols-3">
+        <Field label="Starts after (rounds)" hint="×1 up to here">
+          <NumInput min={0} value={cfg.startRounds} onChange={(v) => set({ startRounds: Math.max(0, v ?? 5) })} />
+        </Field>
+        <Field label="Full at (rounds)" hint="rises linearly until here">
+          <NumInput min={0} value={cfg.fullRounds} onChange={(v) => set({ fullRounds: Math.max(0, v ?? 50) })} />
+        </Field>
+        <Field label="Max ×" hint="1 = no pity">
+          <NumInput min={1} step={0.5} value={cfg.maxMultiplier} onChange={(v) => set({ maxMultiplier: Math.max(1, v ?? 10) })} />
+        </Field>
+      </div>
+      <p className="text-lg">
+        {[cfg.startRounds, mid, cfg.fullRounds]
+          .map((r) => `${r} rounds ×${uniquePityMultiplier(r, cfg).toFixed(1)}`)
+          .join(' · ')}
+      </p>
+    </Box>
+  )
+}
+
 /**
  * "Keep the game alive": Prof. Oak's donation pop-up. Each player sees it once per region, when its 5th badge is won.
  * Ticking the reset bumps the round, so on the next Save + Publish everyone who has seen it gets it once more; the
@@ -156,7 +192,7 @@ function DonationBox() {
   const urlOk = isDonationUrl(url)
   return (
     <Box
-      title="Keep the game alive (donations)"
+      title="Keep the game alive (donations)" icon="heart"
       hint="Prof. Oak asks players to help with the hosting costs, with a PayPal button. Once per region, when its 5th badge is won, between fights. Save, then Publish, for players to get the change."
     >
       <div className="grid gap-3 sm:grid-cols-3">
@@ -205,7 +241,7 @@ function DiscordBox() {
   const urlOk = isDonationUrl(url)
   return (
     <Box
-      title="Discord"
+      title="Discord" icon="discord"
       hint="A Discord button in the player menu (click the avatar, top right). Save, then Publish, for players to get the change."
     >
       <Field
@@ -224,33 +260,141 @@ function DiscordBox() {
   )
 }
 
-/** Pokémon Day Care: when it opens, how fast residents train, and what Eggs cost and hatch into. */
+/**
+ * Pokémon Day Care, one for every region: when it opens, how fast residents train, the friend slots, the two Egg
+ * checks, Egg now and what Eggs hatch into.
+ */
+/**
+ * Extreme mode (docs/22): the second save that a league opens, with no Pokémon Centers, K.O.s that rest for hours and
+ * healing only while the player is away. Every number here is read by the game's engine (engine/extreme).
+ */
+function ExtremeBox() {
+  const data = useAdminData()
+  const [raw, setRaw] = useConfigRow('extreme')
+  // An early draft had an on/off `enabled`: the three-way switch (`access`) replaced it, so it goes on the next edit.
+  const { enabled: _enabled, ...kept } = (raw ?? {}) as ExtremeConfig & { enabled?: boolean }
+  const cfg: ExtremeConfig = { ...DEFAULT_CONFIG.extreme, ...kept }
+  const set = (patch: Partial<ExtremeConfig>) => setRaw({ ...cfg, ...patch })
+  const num = (k: 'koHours' | 'koReviveHp' | 'awayHealPctPerHour' | 'awayMinMinutes', min = 0, max?: number) => (
+    <NumInput min={min} max={max} value={cfg[k]} onChange={(v) => set({ [k]: Math.max(min, Math.min(max ?? Infinity, v ?? min)) })} />
+  )
+  const check = (k: 'centers' | 'wipeHeals' | 'items', label: string) => (
+    <label className="flex items-center gap-2 text-lg">
+      <input type="checkbox" checked={!!cfg[k]} onChange={(e) => set({ [k]: e.target.checked })} /> {label}
+    </label>
+  )
+  const r = data ? extremeRules({ ...data, config: { ...data.config, extreme: cfg } }) : null
+  return (
+    <Box
+      title="Extreme mode" icon="skull"
+      hint="A second save, opened by a league of the main one: a world of its own (its own board, Versus and events; the same friends), with no Pokémon Centers."
+    >
+      <div className="flex flex-wrap items-center gap-3">
+        <span className="text-lg">Who can play it</span>
+        <AccessSwitch value={cfg.access ?? 'off'} onChange={(access) => set({ access })} label="Extreme mode: who can play it" />
+        <span className="text-base text-muted">
+          {cfg.access === 'all'
+            ? 'Open to every player who has beaten the league.'
+            : cfg.access === 'admin'
+              ? 'Only you see it (to try it first). Players see nothing yet.'
+              : 'Off: no way in anywhere in the game. Extreme saves already made are kept.'}
+        </span>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-3">
+        {check('centers', 'Pokémon Centers')}
+        {check('wipeHeals', 'a lost round heals')}
+        {check('items', 'Potions and Revives')}
+      </div>
+      <div className="grid gap-3 sm:grid-cols-5">
+        <Field label="Opens after the league of" hint="in the main save">
+          <select className={inputCls} value={cfg.unlockRegion} onChange={(e) => set({ unlockRegion: e.target.value })}>
+            {(data?.regions ?? []).map((reg) => (
+              <option key={reg.id} value={reg.id}>
+                {reg.name}
+              </option>
+            ))}
+          </select>
+        </Field>
+        <Field label="A K.O. lasts (hours)" hint="real time, on the server's clock">
+          {num('koHours', 0)}
+        </Field>
+        <Field label="Comes back with (HP)">{num('koReviveHp', 1)}</Field>
+        <Field label="Heals while away (% / hour)" hint="of max HP, to the minute; 0 = never">
+          {num('awayHealPctPerHour', 0, 100)}
+        </Field>
+        <Field label="Shortest absence (minutes)" hint="shorter ones don't heal">
+          {num('awayMinMinutes', 0)}
+        </Field>
+      </div>
+      {r && (
+        <p className="text-lg">
+          A K.O. Pokémon is back at {r.koHp} HP after {r.koHours} h.{' '}
+          {r.fullHours != null ? `From ${r.koHp} HP to full while away: about ${r.fullHours} h.` : 'Nothing heals with time.'} While
+          playing: never.{!cfg.centers && ' No Pokémon Center is ever dealt.'}
+        </p>
+      )}
+    </Box>
+  )
+}
+
 function DayCareBox() {
   const data = useAdminData()
   const [raw, setRaw] = useConfigRow('dayCare')
-  const cfg: DayCareConfig = { ...DEFAULT_CONFIG.dayCare, ...raw }
+  // The live row may still carry the keys v2 retired (the stay's XP cap, the bought Egg): drop them on the next edit.
+  const { maxXp: _maxXp, eggPrice: _eggPrice, ...kept } = (raw ?? {}) as DayCareConfig & { maxXp?: number; eggPrice?: number }
+  const cfg: DayCareConfig = { ...DEFAULT_CONFIG.dayCare, ...kept }
   const set = (patch: Partial<DayCareConfig>) => setRaw({ ...cfg, ...patch })
   const num = (k: keyof DayCareConfig, min = 0) => (
     <NumInput min={min} value={cfg[k]} onChange={(v) => set({ [k]: Math.max(min, v ?? min) })} />
   )
   const perDay = cfg.tickMinutes > 0 ? (cfg.xpPerTick * 24 * 60) / cfg.tickMinutes : 0
+  const week = (clock: 'breed' | 'ditto') => (data ? eggsPerWeek({ ...data, config: { ...data.config, dayCare: cfg } }, clock) : 0)
   // An Egg belongs to the region it is hatched in, so the pool is shown region by region.
   const pools = data ? enabledRegions(data).map((r) => ({ region: r, pool: eggSpecies(data, r.id) })) : []
   return (
-    <Box title="Pokémon Day Care" hint="A secret place on the Map (not an area): Pokémon train in real time, and Eggs hatch on the spot.">
+    <Box
+      title="Pokémon Day Care" icon="heal"
+      hint="One for every region: your Pokémon train in real time, friends' Pokémon visit, and compatible pairs leave Eggs."
+    >
       <div className="grid gap-3 sm:grid-cols-3">
-        <Field label="Opens at (Pokédex)" hint="species caught; a free Egg waits on the first visit">
+        <Field label="Opens at (species, all regions)" hint="distinct species across every region's Pokédex; a free Egg waits">
           {num('unlockPokedex', 0)}
         </Field>
-        <Field label="Slots">{num('slots', 1)}</Field>
-        <Field label="Max XP per stay">{num('maxXp', 0)}</Field>
+        <Field label="Slots" hint="your Pokémon">
+          {num('slots', 1)}
+        </Field>
+        <Field label="Friend slots" hint="Pokémon from friends' Day Cares">
+          {num('friendSlots', 0)}
+        </Field>
         <Field label="XP per tick">{num('xpPerTick', 0)}</Field>
         <Field label="Tick (minutes)">{num('tickMinutes', 1)}</Field>
-        <Field label="Egg price (₽)">{num('eggPrice', 0)}</Field>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-4">
+        <Field label="Egg check (hours)" hint="pairs sharing an Egg group">
+          {num('breedHours', 1)}
+        </Field>
+        <Field label="Ditto check (hours)" hint="pairs with a Ditto">
+          {num('breedDittoHours', 1)}
+        </Field>
+        <Field label="Egg now (₽)" hint="skip the wait: the next check runs and its Egg hatches">
+          {num('rushPrice', 0)}
+        </Field>
+        <Field label="Not kept (₽)" hint="from the Day Care couple when a hatchling isn't kept">
+          {num('notKeptGold', 0)}
+        </Field>
+        <Field label="Shiny chance (%)" hint="Day Care Eggs only; the wild shiny chance is separate">
+          <NumInput
+            min={0}
+            max={100}
+            step={0.1}
+            value={Math.round(cfg.shinyChance * 10_000) / 100}
+            onChange={(v) => set({ shinyChance: Math.min(1, Math.max(0, (v ?? 0) / 100)) })}
+          />
+        </Field>
       </div>
       <p className="text-lg">
-        {perDay.toFixed(1)} XP per day · the {cfg.maxXp} XP cap is reached after{' '}
-        {perDay > 0 ? `${(cfg.maxXp / perDay).toFixed(1)} days` : 'never'}. Residents level up but never evolve here.
+        {perDay.toFixed(1)} XP a day. Residents level up to Lv.100 and never evolve here. With a compatible pair, about{' '}
+        {week('breed').toFixed(1)} Eggs a week (Ditto pairs: {week('ditto').toFixed(1)}).
       </p>
       <div className="grid gap-3 sm:grid-cols-4">
         <Field label="Unowned weight" hint="× odds of a species not in the Pokédex (owned = 1)">
@@ -294,9 +438,9 @@ function XpPlot({ A, B, C, fightsPerHour, mult }: { A: number; B: number; C: num
   const perHour = (L: number) => (fightsPerHour * L * mult) / xpToNext(L, cfg)
   return (
     <div className="flex flex-wrap items-start gap-4">
-      <svg viewBox={`0 0 ${W} ${H}`} className="w-full max-w-sm border-2 border-ink bg-panel" role="img" aria-label="XP to next level by level">
+      <svg viewBox={`0 0 ${W} ${H}`} className="w-full max-w-sm border-2 border-edge bg-panel" role="img" aria-label="XP to next level by level">
         <polyline points={path} fill="none" stroke="#547acc" strokeWidth={2} />
-        <text x={4} y={12} fontSize={10} fill="#2a2438">
+        <text x={4} y={12} fontSize={10} fill="#24304f">
           xpToNext(L), L = 1…100 (max {max})
         </text>
       </svg>
@@ -370,36 +514,36 @@ function StatusRulesBox() {
   const num = (v: number | null | undefined, fallback: number, min = 0) => Math.max(min, v ?? fallback)
   const faces = 'faces needed in one roll'
   return (
-    <Box title="Status effects" hint="The dice faces that trigger each effect, and what it does. The help screen and the Upgrades screen quote these numbers.">
+    <Box title="Status effects" icon="burn" hint="The dice faces that trigger each effect, and what it does. The help screen and the Upgrades screen quote these numbers.">
       <div className="grid gap-3 sm:grid-cols-2">
-        <fieldset className="flex flex-col gap-1 border-2 border-ink p-2">
+        <fieldset className="flex flex-col gap-1 border-2 border-edge p-2">
           <legend className="px-1 text-lg">Burn (Fire)</legend>
           <Field label="threshold" hint={faces}><NumInput value={r.burn.threshold} min={1} onChange={(v) => patch('burn', { threshold: num(v, 1, 1) })} /></Field>
           <Field label="percentPerStack" hint="% of the victim's max HP per stack, each of its turns (min 1)"><NumInput value={r.burn.percentPerStack} min={0} onChange={(v) => patch('burn', { percentPerStack: num(v, 4) })} /></Field>
           <Field label="duration" hint="turns (refreshed by a new burn)"><NumInput value={r.burn.duration} min={1} onChange={(v) => patch('burn', { duration: num(v, 3, 1) })} /></Field>
         </fieldset>
-        <fieldset className="flex flex-col gap-1 border-2 border-ink p-2">
+        <fieldset className="flex flex-col gap-1 border-2 border-edge p-2">
           <legend className="px-1 text-lg">Poison (Poison)</legend>
           <Field label="threshold" hint={faces}><NumInput value={r.poison.threshold} min={1} onChange={(v) => patch('poison', { threshold: num(v, 2, 1) })} /></Field>
           <Field label="percent" hint="% of the victim's max HP, each of its turns (min 1)"><NumInput value={r.poison.percent} min={0} onChange={(v) => patch('poison', { percent: num(v, 10) })} /></Field>
           <Field label="duration" hint="turns"><NumInput value={r.poison.duration} min={1} onChange={(v) => patch('poison', { duration: num(v, 3, 1) })} /></Field>
         </fieldset>
-        <fieldset className="flex flex-col gap-1 border-2 border-ink p-2">
+        <fieldset className="flex flex-col gap-1 border-2 border-edge p-2">
           <legend className="px-1 text-lg">Frozen (Ice)</legend>
           <Field label="threshold" hint={faces}><NumInput value={r.frozen.threshold} min={1} onChange={(v) => patch('frozen', { threshold: num(v, 3, 1) })} /></Field>
           <Field label="stunTurns" hint="turns the foe skips"><NumInput value={r.frozen.stunTurns} min={1} onChange={(v) => patch('frozen', { stunTurns: num(v, 2, 1) })} /></Field>
         </fieldset>
-        <fieldset className="flex flex-col gap-1 border-2 border-ink p-2">
+        <fieldset className="flex flex-col gap-1 border-2 border-edge p-2">
           <legend className="px-1 text-lg">Paralyze (Electric)</legend>
           <Field label="threshold" hint={faces}><NumInput value={r.paralyze.threshold} min={1} onChange={(v) => patch('paralyze', { threshold: num(v, 2, 1) })} /></Field>
           <Field label="stunTurns" hint="turns the foe skips"><NumInput value={r.paralyze.stunTurns} min={1} onChange={(v) => patch('paralyze', { stunTurns: num(v, 1, 1) })} /></Field>
         </fieldset>
-        <fieldset className="flex flex-col gap-1 border-2 border-ink p-2">
+        <fieldset className="flex flex-col gap-1 border-2 border-edge p-2">
           <legend className="px-1 text-lg">Confuse (Psychic)</legend>
           <Field label="threshold" hint={`${faces}; the foe's next attack takes recoil`}><NumInput value={r.confuse.threshold} min={1} onChange={(v) => patch('confuse', { threshold: num(v, 2, 1) })} /></Field>
           <Field label="recoilPercent" hint="% of the confused attacker's max HP it loses after its attack (min 1)"><NumInput value={r.confuse.recoilPercent} min={0} onChange={(v) => patch('confuse', { recoilPercent: num(v, 10, 0) })} /></Field>
         </fieldset>
-        <fieldset className="flex flex-col gap-1 border-2 border-ink p-2">
+        <fieldset className="flex flex-col gap-1 border-2 border-edge p-2">
           <legend className="px-1 text-lg">Heal (Grass)</legend>
           <Field label="threshold" hint={faces}><NumInput value={r.heal.threshold} min={1} onChange={(v) => patch('heal', { threshold: num(v, 2, 1) })} /></Field>
           <Field label="amount" hint="rollTotal: the total of the dice rolled · healFaces: the Heal faces' values">
@@ -438,18 +582,22 @@ export function ConfigSection() {
   const [showAhead, setShowAhead] = useConfigRow('showRoundPreview')
   const [shiny, setShiny] = useConfigRow('shinyChance')
   const [cloudSync, setCloudSync] = useConfigRow('cloudSyncMinutes')
+  const [maxFriends, setMaxFriends] = useConfigRow('maxFriends')
   const [fph, setFph] = useState(80)
   const curve = useMemo(() => ({ ...DEFAULT_CONFIG.xpCurve, ...xpCurve }), [xpCurve])
 
   return (
     <div className="flex flex-col gap-5">
       <div className="flex items-baseline justify-between">
-        <h2 className="text-3xl">Config</h2>
+        <h2 className="flex items-center gap-2 text-3xl">
+          <PixelIcon name="gear" size={26} />
+          Config
+        </h2>
         <span className="text-lg">content version {String(version)} (bumped by Publish)</span>
       </div>
 
       <div className="grid gap-4 xl:grid-cols-2">
-        <Box title="Pacing & rewards" hint="Fight length, levelling speed and money. Damage always equals the dice.">
+        <Box title="Pacing & rewards" icon="trophy" hint="Fight length, levelling speed and money. Damage always equals the dice.">
           <div className="grid gap-3 sm:grid-cols-2">
             <Field label="hpMultiplier" hint="× every Pokémon's HP, yours and foes' — the fight-length knob">
               <NumInput step={0.05} value={hpMultiplier} min={0.1} onChange={(v) => setHpMultiplier(Math.max(0.1, v ?? 1))} />
@@ -463,7 +611,7 @@ export function ConfigSection() {
           </div>
         </Box>
 
-        <Box title="Encounters" hint="How much each card counts is set per area (Areas → Encounter deck).">
+        <Box title="Encounters" icon="ball" hint="How much each card counts is set per area (Areas → Encounter deck).">
           <div className="grid gap-3 sm:grid-cols-2">
             <Field label="encounterMode" hint="deck: each area deals a shuffled deck (exact mix, no long droughts) · random: independent rolls">
               <Select value={encounterMode} options={['deck', 'random'] as const} onChange={setEncounterMode} />
@@ -486,7 +634,7 @@ export function ConfigSection() {
           </div>
         </Box>
 
-        <Box title="XP sharing">
+        <Box title="XP sharing" icon="up">
           <div className="grid gap-3 sm:grid-cols-2">
             <Field label="xpShareMode" hint="fighter: the Pokémon that fought · team: all three">
               <Select value={share} options={['fighter', 'team'] as const} onChange={setShare} />
@@ -506,7 +654,7 @@ export function ConfigSection() {
           </div>
         </Box>
 
-        <Box title="Battle">
+        <Box title="Battle" icon="sword">
           <div className="grid gap-3 sm:grid-cols-2">
             <Field label="comboPayoutMode">
               <Select value={payout} options={['highestDamage', 'highestRank'] as const} onChange={setPayout} />
@@ -526,7 +674,7 @@ export function ConfigSection() {
           </div>
         </Box>
 
-        <Box title="Cloud save" hint="How often signed-in players' saves go to Supabase. Fewer pushes = less database load.">
+        <Box title="Cloud save" icon="cloud" hint="How often signed-in players' saves go to Supabase. Fewer pushes = less database load.">
           <Field
             label="cloudSyncMinutes"
             hint="a signed-in player's save is pushed at most once every this many minutes while they play (and when the page closes) · players can still press SYNC ONLINE, once per 5 min"
@@ -535,7 +683,13 @@ export function ConfigSection() {
           </Field>
         </Box>
 
-        <Box title="Player help" hint="What the game shows players while they plan.">
+        <Box title="Friends" icon="friends" hint="The friend list (docs/16). The database reads this key too: friend_add() refuses past it, on both sides.">
+          <Field label="maxFriends" hint="friends per player; lowering it removes nobody, it only stops new friends past the cap">
+            <NumInput value={maxFriends} min={1} max={500} onChange={(v) => setMaxFriends(Math.max(1, Math.min(500, v ?? 100)))} />
+          </Field>
+        </Box>
+
+        <Box title="Player help" icon="book" hint="What the game shows players while they plan.">
           <label className="flex items-start gap-2 text-lg">
             <input type="checkbox" className="mt-1.5" checked={!!showRound} onChange={(e) => setShowRound(e.target.checked)} />
             <span>
@@ -592,6 +746,8 @@ export function ConfigSection() {
 
       <EnergyBox />
 
+      <UniquePityBox />
+
       <DonationBox />
 
       <DiscordBox />
@@ -599,6 +755,8 @@ export function ConfigSection() {
       <SlotMachineBox />
 
       <DayCareBox />
+
+      <ExtremeBox />
 
       <StatusRulesBox />
 

@@ -220,7 +220,7 @@ describe('never two Pokémon Centers in a row', () => {
 })
 
 describe('closed areas', () => {
-  const LAIR = data.areas.find((a) => a.name === 'Faraway Island')! // Mew, nothing but Centers
+  const LAIR = data.areas.find((a) => a.name === 'Fullmoon Island')! // Cresselia, nothing else
   const LAKES = data.areas.find((a) => a.name === 'The Lakes of Sinnoh')! // three legendaries, Centers and items
   const withProgress = (save: SaveData, area: Area, p: Partial<ReturnType<typeof progressOf>>): SaveData => ({
     ...save,
@@ -229,11 +229,11 @@ describe('closed areas', () => {
 
   it('a deckless area closes once its legendaries are beaten and caught', () => {
     const save = newSave(4, data, 0, newId)
-    const mew = LAIR.legendaryBoss![0]!.dex
+    const cresselia = LAIR.legendaryBoss![0]!.dex
     expect(isAreaClosed(save, LAIR.id, data)).toBe(false)
-    const beaten = withProgress(save, LAIR, { bossesDefeated: [mew] })
+    const beaten = withProgress(save, LAIR, { bossesDefeated: [cresselia] })
     expect(isAreaClosed(beaten, LAIR.id, data)).toBe(false) // it fled the catch: it comes back
-    expect(isAreaClosed({ ...beaten, pokedex: [...beaten.pokedex, mew] }, LAIR.id, data)).toBe(true)
+    expect(isAreaClosed({ ...beaten, pokedex: [...beaten.pokedex, cresselia] }, LAIR.id, data)).toBe(true)
 
     const dexes = LAKES.legendaryBoss!.map((b) => b.dex)
     const lakes = { ...withProgress(save, LAKES, { bossesDefeated: dexes.slice(1) }), pokedex: [...save.pokedex, ...dexes] }

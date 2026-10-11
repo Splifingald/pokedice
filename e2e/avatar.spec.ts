@@ -15,16 +15,18 @@ async function signedIn(page: Page, save: object) {
 test('the trainer card picks the look shown on the leaderboard, and keeps the character', async ({ page }) => {
   await mockSupabase(page)
   await signedIn(page, makeSave(4, { player: { name: 'Sam', character: 'green' } }))
-  await page.goto('/map')
+  await page.goto('/home')
   await page.getByRole('button', { name: 'Your trainer menu' }).click()
-  await page.getByRole('dialog').getByRole('button', { name: 'Trainer card' }).click()
 
   const card = page.getByRole('dialog', { name: 'Trainer card' })
   // No pick yet: the look is the character, Leaf.
   await expect(card.getByRole('img', { name: 'Leaf' })).toBeVisible()
   await card.getByRole('button', { name: 'Choose your look' }).click()
   await expect(card.getByRole('radio', { name: 'Leaf' })).toHaveAttribute('aria-checked', 'true')
-  await card.getByRole('radiogroup', { name: 'Johto' }).getByRole('radio', { name: 'Kimono Girl' }).click()
+  // One grid, every region's looks together; picking closes it.
+  await expect(card.getByRole('heading', { name: 'Johto' })).toHaveCount(0)
+  await card.getByRole('radiogroup', { name: 'Choose your look' }).getByRole('radio', { name: 'Kimono Girl' }).click()
+  await expect(card.getByRole('radiogroup', { name: 'Choose your look' })).toHaveCount(0)
   await expect(card.getByRole('img', { name: 'Kimono Girl' })).toBeVisible()
 
   await expect

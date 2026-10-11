@@ -36,7 +36,7 @@ export function GoldPill({ amount, className }: { amount: number; className?: st
   const shown = useCountUp(amount)
   return (
     <span
-      className={cx('inline-flex items-center gap-1.5 border-2 border-ink bg-ink px-2 py-0.5 text-gold', className)}
+      className={cx('inline-flex items-center gap-1.5 border-2 border-edge bg-night px-2 py-0.5 text-gold', className)}
       style={{ borderRadius: 2 }}
       role="img"
       aria-label={t('ui.mon.pokedollars', { amount })}
@@ -47,4 +47,30 @@ export function GoldPill({ amount, className }: { amount: number; className?: st
       <span className="font-mono text-sm tabular-nums leading-none">{shown.toLocaleString(getLang())}</span>
     </span>
   )
+}
+
+let pendingBump = false
+const bumpers = new Set<() => void>()
+
+/**
+ * The gold just went up somewhere the top bar couldn't show it (a hatching, full screen): the pill bumps now if it is
+ * on screen, else as soon as it is back.
+ */
+export function bumpGold() {
+  if (bumpers.size) bumpers.forEach((f) => f())
+  else pendingBump = true
+}
+
+/** A key that changes on every bump: put it on the element that plays `.gold-bump`. */
+export function useGoldBump(): number {
+  const [n, setN] = useState(() => (pendingBump ? 1 : 0))
+  useEffect(() => {
+    pendingBump = false
+    const f = () => setN((x) => x + 1)
+    bumpers.add(f)
+    return () => {
+      bumpers.delete(f)
+    }
+  }, [])
+  return n
 }

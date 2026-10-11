@@ -1,4 +1,5 @@
 // /admin — route-guarded here (cosmetic) and on every write by Postgres RLS (the real gate).
+import { PixelIcon, type IconName } from '@/components/icons'
 import { useEffect, type ComponentType } from 'react'
 import { Link, NavLink, useParams } from 'react-router-dom'
 import type { TableName } from '@/config/mapping'
@@ -12,6 +13,7 @@ import { AnalyticsSection } from './sections/AnalyticsSection'
 import { AreasSection } from './sections/AreasSection'
 import { ConfigSection } from './sections/ConfigSection'
 import { DevToolsSection } from './sections/DevToolsSection'
+import { EventsSection } from './sections/EventsSection'
 import { MessagesSection } from './sections/MessagesSection'
 import { PullRemoteButton } from './PullRemoteButton'
 import { PokemonSection } from './sections/PokemonSection'
@@ -19,19 +21,21 @@ import { SimulatorSection } from './sections/SimulatorSection'
 import { DiceSection, ItemsSection, TrainersSection, TypeChartSection, UpgradesSection } from './sections/TableSections'
 import { discard, exportBundle, loadAdmin, publish, reloadAllPlayers, saveAll, undoLastSave, useAdmin, useDirtyTables } from './store'
 
-const SECTIONS: { id: string; label: string; C: ComponentType }[] = [
-  { id: 'pokemon', label: 'Pokémon', C: PokemonSection },
-  { id: 'areas', label: 'Areas', C: AreasSection },
-  { id: 'trainers', label: 'Trainers', C: TrainersSection },
-  { id: 'dice', label: 'Dice Types', C: DiceSection },
-  { id: 'upgrades', label: 'Upgrades', C: UpgradesSection },
-  { id: 'items', label: 'Items', C: ItemsSection },
-  { id: 'typechart', label: 'Type Chart', C: TypeChartSection },
-  { id: 'config', label: 'Config', C: ConfigSection },
-  { id: 'simulator', label: 'Simulator', C: SimulatorSection },
-  { id: 'analytics', label: 'Analytics', C: AnalyticsSection },
-  { id: 'messages', label: 'Messages', C: MessagesSection },
-  { id: 'devtools', label: 'Dev Tools', C: DevToolsSection },
+// Each section with its icon: in the nav, and before the section's own title.
+const SECTIONS: { id: string; label: string; icon: IconName; C: ComponentType }[] = [
+  { id: 'pokemon', label: 'Pokémon', icon: 'ball', C: PokemonSection },
+  { id: 'areas', label: 'Areas', icon: 'map', C: AreasSection },
+  { id: 'trainers', label: 'Trainers', icon: 'user', C: TrainersSection },
+  { id: 'dice', label: 'Dice Types', icon: 'dice', C: DiceSection },
+  { id: 'upgrades', label: 'Upgrades', icon: 'navUpgrades', C: UpgradesSection },
+  { id: 'items', label: 'Items', icon: 'potion', C: ItemsSection },
+  { id: 'typechart', label: 'Type Chart', icon: 'vs', C: TypeChartSection },
+  { id: 'config', label: 'Config', icon: 'gear', C: ConfigSection },
+  { id: 'events', label: 'Events', icon: 'star', C: EventsSection },
+  { id: 'simulator', label: 'Simulator', icon: 'play', C: SimulatorSection },
+  { id: 'analytics', label: 'Analytics', icon: 'history', C: AnalyticsSection },
+  { id: 'messages', label: 'Messages', icon: 'mail', C: MessagesSection },
+  { id: 'devtools', label: 'Dev Tools', icon: 'wrench', C: DevToolsSection },
 ]
 
 /** The tables each section edits — for the "unsaved" dot in the menu. */
@@ -44,6 +48,7 @@ const SECTION_TABLES: Partial<Record<string, TableName[]>> = {
   items: ['items'],
   typechart: ['type_chart'],
   config: ['game_config', 'regions'],
+  events: ['game_config'],
 }
 
 function Gate() {
@@ -87,7 +92,7 @@ function SaveBar() {
   const undo = useAdmin((s) => s.undo)
   const mode = useAdmin((s) => s.mode)
   return (
-    <section aria-label="Save changes" className="fixed inset-x-0 bottom-0 z-40 border-t-[3px] border-ink bg-panel px-3 py-2 shadow-[0_-3px_0_#6b6480]">
+    <section aria-label="Save changes" className="fixed inset-x-0 bottom-0 z-40 border-t-[3px] border-edge bg-panel px-3 py-2 shadow-[0_-2px_0_rgb(var(--c-edge)),0_-4px_0_rgb(var(--c-edge)/0.09)]">
       <div className="mx-auto flex max-w-[1400px] flex-wrap items-center gap-2">
         <span className={cx('text-lg', dirty.length ? 'text-danger' : 'text-muted')}>
           {dirty.length ? `Unsaved: ${dirty.join(', ')}` : 'All changes saved'}
@@ -170,7 +175,7 @@ export default function AdminApp() {
 
   return (
     <div className="min-h-screen">
-      <header className="sticky top-0 z-30 border-b-[3px] border-ink bg-ink text-panel">
+      <header className="sticky top-0 z-30 border-b-[3px] border-edge bg-ink text-panel">
         <div className="mx-auto flex max-w-[1400px] flex-wrap items-center gap-3 px-3 py-2">
           <h1 className="text-2xl leading-none">
             POKÉ<span className="text-danger-light">DICE</span> Admin
@@ -179,7 +184,7 @@ export default function AdminApp() {
             {mode === 'remote' ? 'LIVE · Supabase' : 'OFFLINE · this session only'}
           </span>
           <span className="flex-1" />
-          <Link to="/map" className="underline">
+          <Link to="/home" className="underline">
             Back to game
           </Link>
         </div>
@@ -194,7 +199,10 @@ export default function AdminApp() {
                 cx('pixel-btn shrink-0 px-2 py-1 text-lg', isActive || (s.id === 'pokemon' && section === 'pokemon') ? 'bg-gold' : 'bg-panel')
               }
             >
-              {s.label}
+              <span className="inline-flex items-center gap-1.5">
+                <PixelIcon name={s.icon} size={18} />
+                {s.label}
+              </span>
               {SECTION_TABLES[s.id]?.some((t) => dirty.includes(t)) && (
                 <span className="ml-1 text-danger" title="Unsaved changes">
                   ●<span className="sr-only"> (unsaved changes)</span>

@@ -4,8 +4,14 @@ import {
   badgeCase,
   isAreaClosed,
   isAreaUnlocked,
-  nationalDex,
   progressOf,
+  eventUnlocked,
+  nextRaidsOf,
+  eventOn,
+  raidHomeArea,
+  raidLocked,
+  raidRegion,
+  utcDay,
   regionOf,
   regionOfArea,
   shopSells,
@@ -15,18 +21,19 @@ import {
   type ItemDef,
   type RegionId,
 } from '@/engine'
-import { dexNo } from '@/lib/format'
 import { t } from '@/i18n'
 import { useT } from '@/i18n/react'
 import { useGame } from '@/store/game'
-import { enterArea } from '@/store/run'
+import { useServerNow } from '@/store/serverTime'
+import { raidDate } from '@/screens/events/shared'
 import { cx } from '@/theme/util'
 import { PixelIcon } from './icons'
-import { PixelButton } from './PixelButton'
 import { ItemSprite } from './ItemSprite'
 import { evolutionHow, PokemonSheet, useVisibleEvolutions } from './PokemonSheet'
-import { SpriteImg } from './SpriteImg'
-import { AreaBanner } from '@/components/AreaBanner'
+import { MiniSprite } from './SpriteImg'
+import { areaStatus, lockReason } from '@/screens/home/areas'
+import { AreaStrip } from './AreaStrip'
+import { travelTo } from '@/store/travel'
 
 interface Spot {
   area: Area
@@ -115,64 +122,145 @@ export function whereToFindItem(itemKey: string, data: GameData, region: RegionI
 
 export const rarity = (share: number) => t(share >= 0.15 ? 'ui.dex.common' : share >= 0.06 ? 'ui.dex.uncommon' : 'ui.dex.rare')
 
+/**
+ * One place a species (or an item) turns up: the area's strip, its name, how it shows there, and the same GO as the
+ * Areas list (travel there; Home's CONTINUE then plays it). A locked area says why; a secret one keeps its name.
+ */
 function SpotCard({ spot, onTravel }: { spot: Spot; onTravel?: () => void }) {
   const { t } = useT()
   const save = useGame((s) => s.save)
   const data = useGame((s) => s.data)
-  const runArea = useGame((s) => s.run.areaId)
   const navigate = useNavigate()
   if (!save) return null
   const { area } = spot
-  const unlocked = isAreaUnlocked(save, area.id, data)
-  const secret = area.hidden && !unlocked
-  const closed = unlocked && isAreaClosed(save, area.id, data)
+  const st = areaStatus(save, data, area)
+  const locked = st === 'locked'
+  const secret = area.hidden && locked
+  const closed = !locked && isAreaClosed(save, area.id, data)
   const levels = area.scalesToTeam && !spot.fossil
     ? t('ui.dex.scaling')
     : spot.minLevel === spot.maxLevel
       ? t('ui.common.level.short', { n: spot.minLevel })
       : t('ui.map.levelRange', { min: spot.minLevel, max: spot.maxLevel })
+  const name = secret ? t('ui.dex.aSecretArea') : area.name
+  const go = () => {
+    if (st !== 'here' && !travelTo(area)) return
+    onTravel?.()
+    navigate('/home')
+  }
   return (
-    <li className="pixel-panel overflow-hidden p-0">
-      {area.bannerUrl && (
-        <AreaBanner url={area.bannerUrl} className={cx('h-16', !unlocked && 'opacity-70 grayscale', secret && 'blur-[1px]')} />
+    <li
+      className={cx(
+        'relative flex min-h-[62px] items-center gap-2 py-1.5 pl-1.5 pr-[78px]',
+        locked
+          ? 'bg-well text-muted shadow-ring-line'
+          : st === 'here'
+            ? 'bg-paper shadow-[inset_0_0_0_3px_#ff8a3d]'
+            : st === 'cleared'
+              ? 'bg-paper shadow-[inset_0_0_0_3px_#34c97a]'
+              : 'bg-paper shadow-ring',
       )}
-      <div className="flex flex-wrap items-center gap-2 p-2">
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-1.5 text-2xl leading-none">
-            {!unlocked && <PixelIcon name="lock" size={16} title={t('ui.dex.locked')} />}
-            <span className="truncate">{secret ? t('ui.dex.aSecretArea') : area.name}</span>
-          </div>
-          <div className="text-lg text-muted">
-            {spot.loot
-              ? spot.loot.unique
-                ? t('ui.dex.lootOnce') + (progressOf(save, area.id).uniqueFound?.includes(spot.loot.entryId) ? t('ui.dex.alreadyFoundSuffix') : '')
-                : t('ui.dex.lootSpot', { rarity: rarity(spot.share) })
-              : spot.fossil
+    >
+      <AreaStrip
+        area={area}
+        h={48}
+        className={cx('h-12 w-[72px] shrink-0 shadow-halo', locked && 'grayscale-[0.7]', secret && 'blur-[1px]')}
+      />
+      <span className="grid min-w-0 gap-[3px]">
+        <b className="truncate text-[18px] font-normal leading-none">{name}</b>
+        <small className="font-pixel-sm text-[14px] leading-tight text-muted">
+          {spot.loot
+            ? spot.loot.unique
+              ? t('ui.dex.lootOnce') + (progressOf(save, area.id).uniqueFound?.includes(spot.loot.entryId) ? t('ui.dex.alreadyFoundSuffix') : '')
+              : t('ui.dex.lootSpot', { rarity: rarity(spot.share) })
+            : spot.fossil
               ? t('ui.dex.fossilSpot', { item: spot.fossil.name, levels, rarity: rarity(spot.share) })
               : spot.legendary
                 ? t('ui.dex.legendarySpot', { levels })
                 : t('ui.dex.wildSpot', { levels, rarity: rarity(spot.share) })}
-            {!unlocked && t('ui.dex.lockedSuffix')}
-            {closed && t('ui.dex.closedSuffix')}
-          </div>
-        </div>
-        {unlocked && runArea === area.id && (
-          <span className="border-2 border-ink bg-gold px-1.5 text-base leading-tight text-ink">{t('ui.dex.youAreHere')}</span>
-        )}
-        {unlocked && !closed && !runArea && (
-          <PixelButton
-            size="sm"
-            variant="primary"
-            onClick={() => {
-              if (!enterArea(area.id)) return
-              onTravel?.()
-              navigate('/area')
-            }}
-          >
-            {t('ui.dex.goThere')}
-          </PixelButton>
-        )}
-      </div>
+          {locked && ` · ${lockReason(save, data, area) || t('ui.dex.locked')}`}
+          {closed && t('ui.dex.closedSuffix')}
+        </small>
+      </span>
+      {locked || closed ? (
+        <span className="absolute right-2.5 top-1/2 grid h-11 w-[60px] -translate-y-1/2 place-items-center bg-well-deep shadow-ring-line" aria-hidden>
+          <PixelIcon name="lock" size={16} />
+        </span>
+      ) : (
+        <button
+          type="button"
+          onClick={go}
+          aria-label={st === 'here' ? t('ui.home.playHere', { area: area.name }) : t('ui.home.goTo', { area: area.name })}
+          className="pixel-btn frame-primary absolute right-2.5 top-1/2 h-11 w-[60px] -translate-y-1/2 text-[24px] uppercase leading-none tracking-[0.06em]"
+        >
+          {t('ui.home.go')}
+        </button>
+      )}
+    </li>
+  )
+}
+
+/** The next days the species is the raid (the shared calendar), normal or shiny; none when raids are off. */
+function useRaidRole(dex: number): { day: string; shiny: boolean }[] | null {
+  const data = useGame((s) => s.data)
+  const now = useServerNow(60_000)
+  const today = utcDay(now ?? Date.now())
+  const dates = useMemo(() => (eventOn(data, 'raid') ? nextRaidsOf(data, dex, today, 2) : []), [data, dex, today])
+  return dates.length ? dates : null
+}
+
+/**
+ * Where to find it, for Raid Battles: its next raid days, and whether a catch would wait for its area (grey, with the
+ * area to complete). GO when it's today's raid and the raids are open.
+ */
+function RaidSpot({ dex, onTravel }: { dex: number; onTravel?: () => void }) {
+  const { t } = useT()
+  const save = useGame((s) => s.save)
+  const data = useGame((s) => s.data)
+  const navigate = useNavigate()
+  const dates = useRaidRole(dex)
+  const now = useServerNow(60_000)
+  if (!save || !dates) return null
+  const today = utcDay(now ?? Date.now())
+  const area = raidHomeArea(data, dex)
+  const locked = !!area && raidLocked(save, data, area.id)
+  const live = dates[0]!.day === today && eventUnlocked('raid', save, data)
+  const when = dates.map((d) => (d.shiny ? t('ui.raid.dexShinyOn', { date: raidDate(d.day) }) : raidDate(d.day))).join(' · ')
+  const region = area ? (data.regions.find((r) => r.id === raidRegion(data, area.id))?.name ?? '') : ''
+  return (
+    <li className={cx('relative flex min-h-[62px] items-center gap-2 py-1.5 pl-1.5', live ? 'bg-paper pr-[78px] shadow-ring' : 'bg-well pr-2 shadow-ring-line')}>
+      {area ? (
+        <span className="relative h-12 w-[72px] shrink-0" aria-hidden>
+          <AreaStrip area={area} h={48} className={cx('h-12 w-[72px] shadow-halo', locked && 'grayscale-[0.7]')} />
+          <span className="absolute bottom-0.5 left-0.5 grid h-5 w-5 place-items-center bg-night">
+            <PixelIcon name={locked ? 'lock' : 'star'} size={12} />
+          </span>
+        </span>
+      ) : (
+        <span className="grid h-12 w-[72px] shrink-0 place-items-center bg-night shadow-halo" aria-hidden>
+          <PixelIcon name="star" size={24} />
+        </span>
+      )}
+      <span className="grid min-w-0 gap-[3px]">
+        <b className="truncate text-[18px] font-normal leading-none">{t('ui.events.raid.name')}</b>
+        <small className="font-pixel-sm text-[14px] leading-tight text-muted">
+          {live ? t('ui.raid.dexToday') : t('ui.raid.dexNext', { dates: when })}
+          {locked && area && ` ${t('ui.raid.dexLocked', { area: area.name, region })}`}
+        </small>
+      </span>
+      {live && (
+        <button
+          type="button"
+          onClick={() => {
+            onTravel?.()
+            navigate('/events/raid')
+          }}
+          aria-label={t('ui.events.open', { name: t('ui.events.raid.name') })}
+          className="pixel-btn frame-primary absolute right-2.5 top-1/2 h-11 w-[60px] -translate-y-1/2 text-[24px] uppercase leading-none tracking-[0.06em]"
+        >
+          {t('ui.home.go')}
+        </button>
+      )}
     </li>
   )
 }
@@ -182,16 +270,16 @@ function useSpots(dex: number) {
   const data = useGame((s) => s.data)
   const save = useGame((s) => s.save)
   const region = save ? regionOf(save) : null
-  const runArea = useGame((s) => s.run.areaId)
+  // Travel waits while an encounter is under way; between encounters every GO works.
+  const busy = useGame((s) => s.run.phase !== 'idle')
+  const here = save?.currentAreaId
   const spots = useMemo(() => (region ? whereToFind(dex, data, region) : []), [dex, data, region])
-  const runName = runArea ? data.areas.find((a) => a.id === runArea)?.name : null
-  const canTravelSomewhere = spots.some((s) => s.area.id !== runArea)
-  return { spots, travelHint: runName && canTravelSomewhere ? runName : null }
+  return { spots, travelHint: busy && spots.some((s) => s.area.id !== here) }
 }
 
 function SpotList({ spots, onTravel }: { spots: Spot[]; onTravel?: () => void }) {
   return (
-    <ul className="flex flex-col gap-2">
+    <ul className="grid gap-1.5">
       {spots.map((s) => (
         <SpotCard key={`${s.area.id}-${s.legendary}-${s.fossil?.key ?? ''}-${s.loot?.entryId ?? ''}`} spot={s} onTravel={onTravel} />
       ))}
@@ -219,7 +307,7 @@ function ItemSources({ itemKey, onTravel }: { itemKey: string; onTravel?: () => 
         ? t('ui.shop.needsArea', { area: data.areas.find((a) => a.id === item.shopArea)?.name ?? t('ui.shop.someNewArea') })
         : null
   return (
-    <div className="flex flex-col gap-2 border-l-[3px] border-ink/30 pl-2">
+    <div className="flex flex-col gap-2 border-l-[3px] border-edge/30 pl-2">
       <h4 className="flex items-center gap-1.5 text-xl leading-none">
         <ItemSprite item={item} size={24} />
         {t('ui.dex.whereToFindItem', { item: item.name })}
@@ -265,10 +353,10 @@ function EvolutionStep({
     <button
       type="button"
       onClick={() => onOpenDex?.(dex)}
-      className="pixel-panel flex w-full items-center gap-2 p-2 text-left hover:bg-white"
+      className="flex min-h-[52px] w-full items-center gap-2 bg-paper px-2 py-1.5 text-left shadow-ring hover:bg-paper"
     >
-      <SpriteImg dex={dex} size={48} silhouette={!known} />
-      <span className="text-xl leading-tight">
+      <MiniSprite dex={dex} size={40} silhouette={!known} />
+      <span className="text-[18px] leading-tight">
         {t(EVOLVES_TEXT[direction][evo.item ? 'item' : 'level'], {
           name: known ? (data.species[dex]?.name ?? '') : t('ui.common.unknown'),
           how: evolutionHow(evo, data),
@@ -296,7 +384,7 @@ function EvolvesInto({ dex, onOpenDex, onTravel }: { dex: number; onOpenDex?: (d
   if (evolutions.length === 0) return null
   return (
     <section className="flex flex-col gap-2">
-      <h3 className="text-xl">{t('ui.sheet.evolvesInto')}</h3>
+      <h3 className="text-[22px] leading-none">{t('ui.sheet.evolvesInto')}</h3>
       {evolutions.map((e) => (
         <EvolutionStep
           key={`${e.toDex}-${e.item ?? e.level}`}
@@ -316,6 +404,7 @@ function MissingEntry({ dex, onOpenDex, onTravel }: { dex: number; onOpenDex?: (
   const { t } = useT()
   const data = useGame((s) => s.data)
   const { spots, travelHint } = useSpots(dex)
+  const raid = useRaidRole(dex)
   const from = data.speciesList.flatMap((s) => {
     const evo = s.evolutions.find((e) => e.toDex === dex)
     return evo ? [{ species: s, evo }] : []
@@ -324,21 +413,24 @@ function MissingEntry({ dex, onOpenDex, onTravel }: { dex: number; onOpenDex?: (
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center gap-3">
-        <SpriteImg dex={dex} size={112} silhouette className="border-[3px] border-ink bg-parchment" />
-        <div className="min-w-0">
-          <div className="font-mono text-sm text-muted">{dexNo(nationalDex(data, dex))}</div>
-          <div className="text-4xl leading-none">{t('ui.common.unknown')}</div>
-          <p className="copy text-muted">{t('ui.dex.notCaught')}</p>
+        <div className="grid h-[104px] w-[112px] shrink-0 place-items-center bg-sky shadow-ring">
+          <MiniSprite dex={dex} size={80} silhouette />
         </div>
+        <p className="font-pixel-sm text-[16px] leading-tight text-muted">{t('ui.dex.catchToLearn')}</p>
       </div>
       <section className="flex flex-col gap-2">
-        <h3 className="text-2xl">{t('ui.dex.whereToFindHeading')}</h3>
+        <h3 className="text-[22px] leading-none">{t('ui.dex.whereToFindHeading')}</h3>
         {spots.length > 0 && <SpotList spots={spots} onTravel={onTravel} />}
+        {raid && (
+          <ul className="grid gap-1.5">
+            <RaidSpot dex={dex} onTravel={onTravel} />
+          </ul>
+        )}
         {from.map(({ species, evo }) => (
           <EvolutionStep key={species.dex} dex={species.dex} evo={evo} direction="from" onOpenDex={onOpenDex} onTravel={onTravel} />
         ))}
-        {spots.length === 0 && from.length === 0 && <p className="copy text-muted">{t('ui.dex.notSpotted')}</p>}
-        {travelHint && <p className="copy text-muted">{t('ui.dex.exploringHint', { area: travelHint })}</p>}
+        {spots.length === 0 && from.length === 0 && !raid && <p className="copy text-muted">{t('ui.dex.notSpotted')}</p>}
+        {travelHint && <p className="font-pixel-sm text-[15px] text-muted">{t('ui.home.finishFirst')}</p>}
       </section>
       <EvolvesInto dex={dex} onOpenDex={onOpenDex} onTravel={onTravel} />
     </div>
@@ -349,13 +441,19 @@ function MissingEntry({ dex, onOpenDex, onTravel }: { dex: number; onOpenDex?: (
 function CaughtSpots({ dex, onTravel }: { dex: number; onTravel?: () => void }) {
   const { t } = useT()
   const { spots, travelHint } = useSpots(dex)
+  const raid = useRaidRole(dex)
   // Evolved-only species: the sheet's evolution track already says where they come from.
-  if (spots.length === 0) return null
+  if (spots.length === 0 && !raid) return null
   return (
     <section className="flex flex-col gap-2">
-      <h3 className="text-xl">{t('ui.dex.whereToFindHeading')}</h3>
-      <SpotList spots={spots} onTravel={onTravel} />
-      {travelHint && <p className="copy text-muted">{t('ui.dex.exploringHint', { area: travelHint })}</p>}
+      <h3 className="text-[22px] leading-none">{t('ui.dex.whereToFindHeading')}</h3>
+      {spots.length > 0 && <SpotList spots={spots} onTravel={onTravel} />}
+      {raid && (
+        <ul className="grid gap-1.5">
+          <RaidSpot dex={dex} onTravel={onTravel} />
+        </ul>
+      )}
+      {travelHint && <p className="font-pixel-sm text-[15px] text-muted">{t('ui.home.finishFirst')}</p>}
     </section>
   )
 }

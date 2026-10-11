@@ -42,14 +42,17 @@ async function signedIn(page: Page, save: object, settings = FAST) {
   )
 }
 
-test('Versus is in the trainer menu, locked until three Pokémon reach Lv.50', async ({ page }) => {
+test('Versus is on Home, locked until three Pokémon reach Lv.50', async ({ page }) => {
   await mockSupabase(page)
   await signedIn(page, makeSave(4, { player: { name: 'Sam', character: 'red' } }))
-  await page.goto('/map')
+  await page.goto('/home')
+  // Its widget, not the trainer menu: the menu no longer lists it.
   await page.getByRole('button', { name: 'Your trainer menu' }).click()
-  const row = page.getByRole('dialog').getByRole('button', { name: /Versus/ })
-  await expect(row).toContainText('0/3 at Lv.50')
-  await row.click()
+  await expect(page.getByRole('dialog').getByRole('button', { name: /Versus/ })).toHaveCount(0)
+  await page.keyboard.press('Escape')
+  const widget = page.getByRole('button', { name: /0\/3 at Lv\.50/ })
+  await expect(widget).toContainText('0/3 at Lv.50')
+  await widget.click()
   await expect(page.getByText('Versus opens when 3 of your Pokémon reach Lv.50.')).toBeVisible()
 })
 
@@ -84,8 +87,11 @@ test('fight a team: the result is recorded before the fight plays', async ({ pag
   // Then it plays on auto — no controls to take over — and ends on the result.
   await expect(page.getByText('AUTO-MODE')).toBeVisible()
   await expect(page.getByRole('button', { name: 'STOP' })).toHaveCount(0)
+  // It plays to its end: no SKIP, and once it's done there's no rematch.
+  await expect(page.getByRole('button', { name: 'Skip ▸▸' })).toHaveCount(0)
   await expect(page.getByText('VICTORY!')).toBeVisible({ timeout: 90_000 })
   await expect(page.getByText("You beat Blue's team!")).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Rematch' })).toHaveCount(0)
   await page.getByRole('button', { name: 'BACK TO VERSUS' }).click()
   await expect(page.getByRole('heading', { name: 'Versus' })).toBeVisible()
 
@@ -131,12 +137,13 @@ test('set your team: three picks in fight order, saved from the cloud save, and 
   // Every region's Box can send a Pokémon: each says where it comes from.
   await expect(page.getByRole('button', { name: /Charizard/ })).toContainText('Lv.50 (72) · Kanto')
   await expect(page.getByRole('button', { name: /Blastoise/ })).toContainText('Johto')
-  const pushesBefore = calls.filter((c) => c.startsWith('POST /rest/v1/saves')).length
   await page.getByRole('button', { name: 'SAVE TEAM' }).click()
 
   await expect(page.getByText('Team saved!')).toBeVisible()
   expect(teams).toEqual([{ ids: ['vn', 'cz', 'bl'] }])
-  expect(calls.filter((c) => c.startsWith('POST /rest/v1/saves')).length).toBeGreaterThan(pushesBefore)
+  // The team is built from the cloud save, so it must be there: pushed by the first sync. An unchanged save isn't
+  // pushed a second time (only its timestamps would differ).
+  expect(calls.filter((c) => c.startsWith('POST /rest/v1/saves')).length).toBeGreaterThan(0)
   // The picks stay, the button says the team is saved, and the team shows at the top.
   await expect(page.getByRole('button', { name: 'TEAM SAVED', exact: true })).toBeDisabled()
   await expect(page.getByRole('button', { name: /Venusaur/ })).toHaveAttribute('aria-pressed', 'true')
@@ -165,4 +172,35 @@ test("a team the server doesn't show back is not called saved", async ({ page })
   await page.getByRole('button', { name: 'SAVE TEAM' }).click()
   await expect(page.getByText(/the server doesn't show it back/)).toBeVisible()
   await expect(page.getByText('Team saved!')).toHaveCount(0)
+})
+
+test('Versus opening: its rules pop up once, then live behind the INFO button', async ({ page }) => {
+  await mockSupabase(page)
+  await page.route('**/rest/v1/rpc/versus_board', (route) =>
+    route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(BOARD) }),
+  )
+  await signedIn(page, { ...readySave(), versusRulesSeen: false })
+  await page.goto('/home')
+  const pop = page.getByRole('dialog', { name: 'Versus' })
+  await expect(pop.getByText('Now open')).toBeVisible()
+  await expect(pop.getByText('Same for everyone')).toBeVisible()
+  await pop.getByRole('button', { name: "Let's go!" }).click()
+  await expect(page).toHaveURL(/\/versus$/)
+
+  // The same rules from the page's INFO button, without the "now open" tag.
+  await page.getByRole('button', { name: 'Info: how Versus works' }).click()
+  const info = page.getByRole('dialog', { name: 'Versus' })
+  await expect(info.getByText('Auto battles')).toBeVisible()
+  await expect(info.getByText('Now open')).toHaveCount(0)
+  await info.getByRole('button', { name: 'OK', exact: true }).click()
+  await expect(info).toHaveCount(0)
+
+  // Seen, and saved: it doesn't open by itself again.
+  await expect
+    .poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('pokedice.save') ?? '{}').versusRulesSeen))
+    .toBe(true)
+  await page.getByRole('button', { name: 'Back to Home' }).click()
+  await expect(page).toHaveURL(/\/home$/)
+  await page.waitForTimeout(600)
+  await expect(page.getByRole('dialog', { name: 'Versus' })).toHaveCount(0)
 })

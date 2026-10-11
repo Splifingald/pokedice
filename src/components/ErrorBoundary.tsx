@@ -1,6 +1,6 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react'
 import { t } from '@/i18n'
-import { SAVE_KEY } from '@/save/storage'
+import { saveKeyOf } from '@/save/storage'
 import { useGame } from '@/store/game'
 
 interface State {
@@ -10,7 +10,8 @@ interface State {
 
 function saveText(): string {
   try {
-    return localStorage.getItem(SAVE_KEY) ?? JSON.stringify(useGame.getState().save)
+    // The save this page plays: the main one, or the Extreme one (docs/22).
+    return localStorage.getItem(saveKeyOf()) ?? JSON.stringify(useGame.getState().save)
   } catch {
     return JSON.stringify(useGame.getState().save)
   }
@@ -34,9 +35,9 @@ export class ErrorBoundary extends Component<{ children: ReactNode }, State> {
     return (
       <div className="flex min-h-screen items-center justify-center p-4">
         <div className="pixel-panel flex max-w-lg flex-col gap-3 p-5">
-          <h1 className="text-4xl">{t('ui.error.title')}</h1>
+          <h1 className="text-[32px] leading-none">{t('ui.error.title')}</h1>
           <p className="text-xl">{t('ui.error.body')}</p>
-          <pre className="max-h-24 overflow-auto border-2 border-ink bg-ink p-2 font-mono text-xs text-panel">{String(error.message || error)}</pre>
+          <pre className="max-h-24 overflow-auto border-2 border-edge bg-ink p-2 font-mono text-xs text-panel">{String(error.message || error)}</pre>
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
@@ -58,7 +59,7 @@ export class ErrorBoundary extends Component<{ children: ReactNode }, State> {
             </button>
           </div>
           {copied === 'ok' && <p className="text-lg text-good">{t('ui.error.copied')}</p>}
-          {copied === 'failed' && <textarea readOnly className="h-24 w-full border-2 border-ink font-mono text-xs" value={saveText()} />}
+          {copied === 'failed' && <textarea readOnly className="h-24 w-full border-2 border-edge font-mono text-xs" value={saveText()} />}
         </div>
       </div>
     )

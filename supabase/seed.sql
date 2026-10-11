@@ -38,84 +38,97 @@ create policy regions_write on regions for all using (is_admin()) with check (is
 alter table areas add column if not exists region_id text not null default 'kanto';
 create index if not exists areas_region_idx on areas (region_id, order_index);
 
--- ---------------------------------------------------------------- leaderboard, one row per region played
+-- ---------------------------------------------------------------- leaderboard
 --
--- Replaces 0011's leaderboard(): a save now holds the live region at its top level and the others under `parked`,
--- so a player who has played several regions appears once per region, and each board ranks only its own.
--- Later rules are kept here too, so re-running this file never brings an older board back: inactive players drop off
--- (0023), a region's row needs a badge (0024), the board is cached and rebuilt on a schedule (0026, 0031), and each
--- row counts its shinies (0032).
-drop function if exists leaderboard();
--- Its columns grew (0032); a function's return type can't change in place.
-drop function if exists leaderboard_rows(timestamptz, uuid);
+-- The per-region leaderboard used to live here (0016, then 0023, 0024, 0026, 0031, 0032). It now reads player cards
+-- and lives in 0033_friends.sql, which seed.sql inlines right after this file. The cards' one Day Care (each resident
+-- counted for its own region, the residents for the friend picker, friend_day_cares()) is 0034_day_care.sql, inlined
+-- after 0033.
 
-create index if not exists saves_updated_at on saves (updated_at desc);
+-- ↓ supabase/migrations/0033_friends.sql, inlined so this file stands alone.
+-- Friends, and the leaderboard on player cards (docs/16-FRIENDS-PLAN.md).
+--
+-- 1. Player cards: what other players may see of you — one row per player (name, look, where they are, when they last
+--    played) and one per region played (team, Pokédex, best level, shinies, progress, the badges won, the crown). A
+--    trigger on `saves` keeps them up to date, once per cloud push, and the end of this file fills them from every save.
+-- 2. The leaderboard reads the cards. The cache, its rebuild and the 5-minute pg_cron job of 0026–0032 are retired:
+--    that rebuild re-read every active save 12 times an hour and was 65% of the database's time (measured 10 Oct 2026).
+--    Same rules as before: played in the last 72 hours, a badge in the region, not banned, plus the caller's own rows.
+--    Each row also says whether its player is the caller's friend (`is_friend`), and for friends only, who they are
+--    (`friend_id`, so a friend's row can open their card; nobody else's id is ever returned).
+-- 3. Friends: a friend ID per player (8 characters of Crockford base32), friendships (mutual, at most game_config
+--    `maxFriends` each, 100 by default), and the functions the game calls. Players never touch these tables: only the
+--    security definer functions below do.
+-- 4. versus_board() takes each owner's name and look from their card instead of reading their whole save.
+--
+-- seed.sql inlines this file after 0016, so a database that only re-runs seed.sql gets it too. Safe to run again: a
+-- re-run only writes the cards that are older than their save.
 
--- The board as of the last rebuild: one row per player and region played.
-create table if not exists leaderboard_cache (
-  user_id uuid not null,
-  region text not null,
+-- ---------------------------------------------------------------- player cards
+
+create table if not exists player_cards (
+  user_id uuid primary key references auth.users(id) on delete cascade,
   name text not null,
-  "character" text not null,
-  team jsonb not null,
-  pokedex int not null,
-  max_level int not null,
-  shinies int not null default 0,
-  progress jsonb not null,
-  updated_at timestamptz not null,
-  primary key (user_id, region)
+  avatar text not null,               -- the look (0022): an id from src/lib/avatars, checked by the game
+  region text not null,               -- the region being played
+  area_id text,                       -- the area they are on
+  updated_at timestamptz not null     -- the save's: "played 2 h ago", and the board's 72-hour rule
 );
--- A cache made before 0032.
-alter table leaderboard_cache add column if not exists shinies int not null default 0;
-create table if not exists leaderboard_cache_state (
-  id boolean primary key default true check (id),
-  refreshed_at timestamptz not null
-);
--- Only the security definer functions below touch them.
-alter table leaderboard_cache enable row level security;
-alter table leaderboard_cache_state enable row level security;
-revoke all on leaderboard_cache, leaderboard_cache_state from anon, authenticated;
+create index if not exists player_cards_updated_at on player_cards (updated_at desc);
 
--- The rows of every save played since `p_since`, plus `p_user`'s (either may be null). The trainers holding a badge are
--- listed once rather than looked up again for every save.
-create or replace function leaderboard_rows(p_since timestamptz, p_user uuid)
-returns table (
-  user_id uuid,
-  region text,
-  name text,
-  "character" text,
-  team jsonb,
-  pokedex int,
-  max_level int,
-  shinies int,       -- shiny Pokémon owned in this region (Box, team and Day Care); a shiny is never released
-  progress jsonb,
-  updated_at timestamptz
-)
-language sql stable security definer set search_path = public as $$
-  with badge_gyms as materialized (
-    select coalesce(array_agg(t.id::text), '{}') as ids from trainers t where coalesce(t.badge, '') <> ''
-  ),
-  picked as materialized (
-    select s.user_id, s.data, s.updated_at
-    from saves s
-    where (s.updated_at > p_since or s.user_id = p_user)
-      and not exists (select 1 from leaderboard_bans x where x.user_id = s.user_id)
-  ),
-  blocks as (
-    -- The live region…
-    select p.user_id, coalesce(p.data ->> 'region', 'kanto') as region, p.data as block, p.data as root, p.updated_at
-    from picked p
-    union all
-    -- …and every parked one, which carries the same fields.
-    select p.user_id, k.key, k.value, p.data, p.updated_at
-    from picked p, jsonb_each(coalesce(p.data -> 'parked', '{}')) k(key, value)
+create table if not exists player_card_regions (
+  user_id uuid not null references player_cards(user_id) on delete cascade,
+  region text not null,
+  team jsonb not null,                -- [{dex, level, shiny}], that region's team in order
+  pokedex int not null,
+  max_level int not null,             -- Box and Day Care
+  shinies int not null,               -- shiny Pokémon owned there (Box and Day Care): a shiny is never released
+  progress jsonb not null,            -- {areaId: {cleared, gyms}}, as leaderboard() has always returned it
+  badges text[] not null,             -- the gym leaders beaten there whose `badge` is set
+  endgame boolean not null,           -- the region's league area cleared: the crown
+  primary key (user_id, region),
+  constraint player_card_regions_small check (pg_column_size(progress) < 16000)
+);
+
+alter table player_cards enable row level security;
+alter table player_card_regions enable row level security;
+revoke all on player_cards, player_card_regions from anon, authenticated;
+drop policy if exists player_cards_admin on player_cards;
+create policy player_cards_admin on player_cards for all using ((select is_admin())) with check ((select is_admin()));
+drop policy if exists player_card_regions_admin on player_card_regions;
+create policy player_card_regions_admin on player_card_regions for all using ((select is_admin())) with check ((select is_admin()));
+
+-- Writes a player's card from their save: the live region at the top level of the save, the others under `parked`.
+create or replace function player_card_write(p_user uuid, p_data jsonb, p_at timestamptz)
+returns void
+language plpgsql security definer set search_path = public as $$
+declare
+  live text := coalesce(nullif(p_data ->> 'region', ''), 'kanto');
+  badge_ids text[];
+begin
+  select coalesce(array_agg(t.id::text), '{}') into badge_ids from trainers t where coalesce(t.badge, '') <> '';
+
+  insert into player_cards as c (user_id, name, avatar, region, area_id, updated_at)
+  values (
+    p_user,
+    left(coalesce(nullif(trim(p_data -> 'player' ->> 'name'), ''), 'Trainer'), 12),
+    left(coalesce(p_data -> 'player' ->> 'avatar', p_data -> 'player' ->> 'character', 'red'), 40),
+    live,
+    p_data ->> 'currentAreaId',
+    p_at
   )
+  on conflict (user_id) do update set
+    name = excluded.name,
+    avatar = excluded.avatar,
+    region = excluded.region,
+    area_id = excluded.area_id,
+    updated_at = excluded.updated_at;
+
+  delete from player_card_regions where user_id = p_user;
+  insert into player_card_regions (user_id, region, team, pokedex, max_level, shinies, progress, badges, endgame)
   select
-    b.user_id,
+    p_user,
     b.region,
-    left(coalesce(nullif(trim(b.root -> 'player' ->> 'name'), ''), 'Trainer'), 12),
-    -- The look (0022): the player's pick, else their character.
-    coalesce(b.root -> 'player' ->> 'avatar', b.root -> 'player' ->> 'character', 'red'),
     coalesce((
       select jsonb_agg(jsonb_build_object(
         'dex', (m ->> 'dex')::int, 'level', (m ->> 'level')::int, 'shiny', coalesce((m ->> 'shiny')::boolean, false)
@@ -142,46 +155,399 @@ language sql stable security definer set search_path = public as $$
       ))
       from jsonb_each(coalesce(b.block -> 'areaProgress', '{}')) e(k, v)
     ), '{}'),
-    b.updated_at
-  from blocks b, badge_gyms bg
-  -- At least one gym badge won in this region (0024): a trainer whose `badge` is set, among the block's gyms beaten.
-  where exists (
-    select 1
-    from jsonb_each(coalesce(b.block -> 'areaProgress', '{}')) e(k, v),
-      jsonb_array_elements_text(coalesce(v -> 'gymsDefeated', '[]')) g(id)
-    where g.id = any(bg.ids)
-  )
-$$;
-
--- The whole board, from scratch (0031: pg_cron runs it every 5 minutes). One rebuild at a time: a second caller skips
--- and the board stays as it was.
-create or replace function leaderboard_rebuild() returns void
-language plpgsql security definer set search_path = public as $$
-begin
-  if not pg_try_advisory_xact_lock(hashtext('pokedice.leaderboard_refresh')) then
-    return;
-  end if;
-  delete from leaderboard_cache where true;  -- a bare DELETE is refused through the API (pg-safeupdate)
-  insert into leaderboard_cache (user_id, region, name, "character", team, pokedex, max_level, shinies, progress, updated_at)
-  select r.user_id, r.region, r.name, r."character", r.team, r.pokedex, r.max_level, r.shinies, r.progress, r.updated_at
-  from leaderboard_rows(now() - interval '72 hours', null) r;
-  insert into leaderboard_cache_state (id, refreshed_at) values (true, now())
-  on conflict (id) do update set refreshed_at = excluded.refreshed_at;
+    coalesce((
+      select array_agg(distinct g.id order by g.id)
+      from jsonb_each(coalesce(b.block -> 'areaProgress', '{}')) e(k, v),
+        jsonb_array_elements_text(coalesce(v -> 'gymsDefeated', '[]')) g(id)
+      where g.id = any(badge_ids)
+    ), '{}'),
+    coalesce((
+      select (b.block -> 'areaProgress' -> rg.league_area_id::text ->> 'cleared')::boolean
+      from regions rg where rg.id = b.region
+    ), false)
+  from (
+    select live as region, p_data as block
+    union all
+    select k.key, k.value from jsonb_each(coalesce(p_data -> 'parked', '{}')) k(key, value) where k.key <> live
+  ) b;
 end
 $$;
 
--- The fallback for when the scheduled rebuild isn't running: rebuild only a cache over 15 minutes old.
-create or replace function leaderboard_refresh() returns void
+-- Once per cloud push. A save that can't be read as a card is still saved: the card just keeps its last version.
+create or replace function saves_card()
+returns trigger
 language plpgsql security definer set search_path = public as $$
 begin
-  if exists (select 1 from leaderboard_cache_state where refreshed_at > now() - interval '15 minutes') then
-    return;
-  end if;
-  perform leaderboard_rebuild();
+  begin
+    perform player_card_write(new.user_id, new.data, new.updated_at);
+  exception when others then
+    raise warning 'player card for %: %', new.user_id, sqlerrm;
+  end;
+  return null;
+end
+$$;
+drop trigger if exists saves_card on saves;
+create trigger saves_card after insert or update of data, updated_at on saves
+  for each row execute function saves_card();
+
+revoke all on function player_card_write(uuid, jsonb, timestamptz) from public, anon, authenticated;
+revoke all on function saves_card() from public, anon, authenticated;
+
+-- ---------------------------------------------------------------- friends
+
+create table if not exists friend_codes (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  code text not null unique check (code ~ '^[0-9A-HJKMNP-TV-Z]{8}$'),
+  created_at timestamptz not null default now()
+);
+
+-- One row per pair, the smaller id first. A friendship is mutual: removing it removes it for both.
+create table if not exists friendships (
+  user_a uuid not null references auth.users(id) on delete cascade,
+  user_b uuid not null references auth.users(id) on delete cascade,
+  added_by uuid not null,
+  created_at timestamptz not null default now(),
+  a_seen boolean not null default false,   -- user_a has opened their friend list since (the adder's is set at once)
+  b_seen boolean not null default false,
+  primary key (user_a, user_b),
+  check (user_a < user_b)
+);
+create index if not exists friendships_b on friendships (user_b);
+
+-- Lookups and adds, for the rate limit. Pruned to the last hour as it goes.
+create table if not exists friend_attempts (
+  actor text not null,                     -- user id, or 'device:<id>' for a signed-out lookup
+  at timestamptz not null default now()
+);
+create index if not exists friend_attempts_actor on friend_attempts (actor, at desc);
+
+alter table friend_codes enable row level security;
+alter table friendships enable row level security;
+alter table friend_attempts enable row level security;
+revoke all on friend_codes, friendships, friend_attempts from anon, authenticated;
+drop policy if exists friend_codes_admin on friend_codes;
+create policy friend_codes_admin on friend_codes for all using ((select is_admin())) with check ((select is_admin()));
+drop policy if exists friendships_admin on friendships;
+create policy friendships_admin on friendships for all using ((select is_admin())) with check ((select is_admin()));
+drop policy if exists friend_attempts_admin on friend_attempts;
+create policy friend_attempts_admin on friend_attempts for all using ((select is_admin())) with check ((select is_admin()));
+
+-- A typed code, read the forgiving way: any case, spaces and dashes ignored, O read as 0, I and L as 1.
+create or replace function friend_norm(p_code text)
+returns text
+language sql immutable as $$
+  select translate(regexp_replace(upper(coalesce(p_code, '')), '[^0-9A-Z]', '', 'g'), 'OIL', '011')
+$$;
+
+-- 8 random characters of Crockford base32: 40 bits, from the random part of a v4 UUID (no extension needed).
+create or replace function friend_new_code()
+returns text
+language plpgsql volatile as $$
+declare
+  alphabet constant text := '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
+  b bytea := decode(substr(replace(gen_random_uuid()::text, '-', ''), 1, 10), 'hex');
+  n bigint := 0;
+  s text := '';
+begin
+  for i in 0..4 loop
+    n := (n << 8) | get_byte(b, i);
+  end loop;
+  for i in 1..8 loop
+    s := substr(alphabet, (n & 31)::int + 1, 1) || s;
+    n := n >> 5;
+  end loop;
+  return s;
 end
 $$;
 
--- Volatile now (it may rebuild the cache), so PostgREST runs it in a read-write transaction; the output is unchanged.
+-- At most 20 lookups and adds per 10 minutes per player (per browser for a signed-out lookup).
+create or replace function friend_attempt(p_actor text)
+returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  delete from friend_attempts where at < now() - interval '1 hour';
+  if (select count(*) from friend_attempts where actor = p_actor and at > now() - interval '10 minutes') >= 20 then
+    raise exception 'friends_rate_limited' using errcode = 'P0001';
+  end if;
+  insert into friend_attempts (actor) values (p_actor);
+end
+$$;
+
+-- The caller's friends, with whether the caller has seen each one yet.
+create or replace function friend_ids_of(p_user uuid)
+returns table (id uuid, seen boolean, since timestamptz)
+language sql stable security definer set search_path = public as $$
+  select case when f.user_a = p_user then f.user_b else f.user_a end,
+         case when f.user_a = p_user then f.a_seen else f.b_seen end,
+         f.created_at
+  from friendships f
+  where p_user is not null and (f.user_a = p_user or f.user_b = p_user)
+$$;
+
+-- The caller's friend ID, made the first time it is asked for.
+create or replace function friend_code()
+returns text
+language plpgsql security definer set search_path = public as $$
+declare
+  uid uuid := auth.uid();
+  c text;
+begin
+  if uid is null then
+    raise exception 'friends_signed_out' using errcode = '42501';
+  end if;
+  loop
+    select code into c from friend_codes where user_id = uid;
+    if c is not null then
+      return c;
+    end if;
+    begin
+      insert into friend_codes (user_id, code) values (uid, friend_new_code()) returning code into c;
+      return c;
+    exception when unique_violation then
+      -- Another tab made it at the same moment, or the code was taken: read again, or draw again.
+    end;
+  end loop;
+end
+$$;
+
+-- A new friend ID; links and the old ID stop working. Friends stay. At most once an hour.
+create or replace function friend_code_reset()
+returns text
+language plpgsql security definer set search_path = public as $$
+declare
+  uid uuid := auth.uid();
+  c text;
+begin
+  if uid is null then
+    raise exception 'friends_signed_out' using errcode = '42501';
+  end if;
+  if exists (select 1 from friend_codes where user_id = uid and created_at > now() - interval '1 hour') then
+    raise exception 'friends_reset_too_soon' using errcode = 'P0001';
+  end if;
+  loop
+    begin
+      insert into friend_codes as f (user_id, code, created_at) values (uid, friend_new_code(), now())
+      on conflict (user_id) do update set code = excluded.code, created_at = excluded.created_at
+      returning f.code into c;
+      return c;
+    exception when unique_violation then
+      -- The new code was taken: draw again.
+    end;
+  end loop;
+end
+$$;
+
+-- Who a code belongs to, for the invite pop-up and the ADD preview: name, look, region and best level only.
+create or replace function friend_lookup(p_code text, p_device_id text default null)
+returns table (name text, avatar text, region text, max_level int)
+language plpgsql volatile security definer set search_path = public as $$
+begin
+  perform friend_attempt(coalesce(auth.uid()::text, 'device:' || left(coalesce(p_device_id, '?'), 64)));
+  return query
+    select coalesce(c.name, 'Trainer'), coalesce(c.avatar, 'red'), c.region, coalesce(r.max_level, 0)
+    from friend_codes f
+    left join player_cards c on c.user_id = f.user_id
+    left join player_card_regions r on r.user_id = f.user_id and r.region = c.region
+    where f.code = friend_norm(p_code);
+end
+$$;
+
+-- Adds the owner of a code as a friend, at once: having someone's code means they gave it out. Statuses: added,
+-- already, self, not_found, full (the caller has maxFriends), friend_full (they do).
+create or replace function friend_add(p_code text)
+returns table (status text, user_id uuid, name text, avatar text)
+language plpgsql volatile security definer set search_path = public as $$
+declare
+  uid uuid := auth.uid();
+  other uuid;
+  cap int;
+begin
+  if uid is null then
+    raise exception 'friends_signed_out' using errcode = '42501';
+  end if;
+  perform friend_attempt(uid::text);
+  select f.user_id into other from friend_codes f where f.code = friend_norm(p_code);
+  if other is null then
+    return query select 'not_found'::text, null::uuid, null::text, null::text;
+    return;
+  end if;
+  if other = uid then
+    return query select 'self'::text, null::uuid, null::text, null::text;
+    return;
+  end if;
+  -- Both players locked, always in the same order, so two adds at once can't both get past the cap.
+  perform pg_advisory_xact_lock(hashtext('pokedice.friends:' || least(uid, other)::text));
+  perform pg_advisory_xact_lock(hashtext('pokedice.friends:' || greatest(uid, other)::text));
+  if exists (select 1 from friendships f where f.user_a = least(uid, other) and f.user_b = greatest(uid, other)) then
+    status := 'already';
+  else
+    cap := coalesce((select (g.value #>> '{}')::int from game_config g where g.key = 'maxFriends'), 100);
+    if (select count(*) from friendships f where f.user_a = uid or f.user_b = uid) >= cap then
+      status := 'full';
+    elsif (select count(*) from friendships f where f.user_a = other or f.user_b = other) >= cap then
+      status := 'friend_full';
+    else
+      insert into friendships (user_a, user_b, added_by, a_seen, b_seen)
+      values (least(uid, other), greatest(uid, other), uid, least(uid, other) = uid, greatest(uid, other) = uid);
+      status := 'added';
+    end if;
+  end if;
+  return query
+    select status, other, coalesce(c.name, 'Trainer'), coalesce(c.avatar, 'red')
+    from (select 1) one left join player_cards c on c.user_id = other;
+end
+$$;
+
+-- Ends a friendship, from either side: gone for both. The other player isn't told.
+create or replace function friend_remove(p_friend uuid)
+returns void
+language plpgsql volatile security definer set search_path = public as $$
+declare
+  uid uuid := auth.uid();
+begin
+  if uid is null then
+    raise exception 'friends_signed_out' using errcode = '42501';
+  end if;
+  delete from friendships f where f.user_a = least(uid, p_friend) and f.user_b = greatest(uid, p_friend);
+end
+$$;
+
+-- The one friends call when the game loads and when the player comes back to its tab: every friend's id (for the
+-- Versus highlight) and the friends not seen yet (for the toast and the dots). A few hundred bytes.
+create or replace function friend_status()
+returns table (ids uuid[], unseen jsonb)
+language sql stable security definer set search_path = public as $$
+  select
+    coalesce(array_agg(m.id), '{}'),
+    coalesce(
+      jsonb_agg(jsonb_build_object('id', m.id, 'name', coalesce(c.name, 'Trainer'), 'avatar', coalesce(c.avatar, 'red'))
+        order by m.since desc) filter (where not m.seen),
+      '[]'
+    )
+  from friend_ids_of(auth.uid()) m
+  left join player_cards c on c.user_id = m.id
+$$;
+
+-- The Friends page: one row per friend, from the cards. New friends first, then the last played.
+create or replace function friend_list()
+returns table (
+  user_id uuid,
+  name text,
+  avatar text,
+  region text,
+  area_id text,
+  max_level int,
+  team jsonb,
+  since timestamptz,
+  updated_at timestamptz,
+  is_new boolean
+)
+language sql stable security definer set search_path = public as $$
+  select m.id, coalesce(c.name, 'Trainer'), coalesce(c.avatar, 'red'), c.region, c.area_id,
+         coalesce(r.max_level, 0), coalesce(r.team, '[]'), m.since, c.updated_at, not m.seen
+  from friend_ids_of(auth.uid()) m
+  left join player_cards c on c.user_id = m.id
+  left join player_card_regions r on r.user_id = m.id and r.region = c.region
+  order by (not m.seen) desc, c.updated_at desc nulls last
+$$;
+
+-- The caller has looked at their friend list: every friend stops being new.
+create or replace function friend_seen()
+returns void
+language plpgsql volatile security definer set search_path = public as $$
+declare
+  uid uuid := auth.uid();
+begin
+  if uid is null then
+    return;
+  end if;
+  update friendships set a_seen = true where user_a = uid and not a_seen;
+  update friendships set b_seen = true where user_b = uid and not b_seen;
+end
+$$;
+
+-- A friend's trainer card: their card, every region's row, and their Versus team and record. Friends only: for
+-- anyone else it returns nothing.
+create or replace function friend_profile(p_friend uuid)
+returns table (
+  user_id uuid,
+  name text,
+  avatar text,
+  region text,
+  area_id text,
+  updated_at timestamptz,
+  since timestamptz,
+  regions jsonb,
+  versus jsonb
+)
+language plpgsql stable security definer set search_path = public as $$
+declare
+  uid uuid := auth.uid();
+  friends_since timestamptz;
+  vs jsonb;
+begin
+  select f.created_at into friends_since
+  from friendships f where f.user_a = least(uid, p_friend) and f.user_b = greatest(uid, p_friend);
+  if friends_since is null then
+    return;
+  end if;
+  -- Versus (0018) is optional on a database.
+  if to_regclass('public.versus_teams') is not null then
+    select jsonb_build_object(
+      'team', v.team,
+      'attackWins', (select count(*) from versus_battles b where b.attacker_id = v.user_id and b.won),
+      'defenseWins', (
+        select count(*) from (
+          select distinct b.attacker_id, b.defender_version from versus_battles b
+          where b.defender_id = v.user_id and not b.won
+        ) held
+      )
+    ) into vs
+    from versus_teams v where v.user_id = p_friend;
+  end if;
+  return query
+    select p_friend, coalesce(c.name, 'Trainer'), coalesce(c.avatar, 'red'), c.region, c.area_id, c.updated_at,
+      friends_since,
+      coalesce((
+        select jsonb_agg(jsonb_build_object(
+          'region', r.region, 'team', r.team, 'pokedex', r.pokedex, 'maxLevel', r.max_level, 'shinies', r.shinies,
+          'progress', r.progress, 'badges', to_jsonb(r.badges), 'endgame', r.endgame
+        ))
+        from player_card_regions r where r.user_id = p_friend
+      ), '[]'),
+      vs
+    from (select 1) one left join player_cards c on c.user_id = p_friend;
+end
+$$;
+
+revoke all on function friend_norm(text) from public, anon, authenticated;
+revoke all on function friend_new_code() from public, anon, authenticated;
+revoke all on function friend_attempt(text) from public, anon, authenticated;
+revoke all on function friend_ids_of(uuid) from public, anon, authenticated;
+revoke all on function friend_code() from public, anon;
+revoke all on function friend_code_reset() from public, anon;
+revoke all on function friend_lookup(text, text) from public;
+revoke all on function friend_add(text) from public, anon;
+revoke all on function friend_remove(uuid) from public, anon;
+revoke all on function friend_status() from public, anon;
+revoke all on function friend_list() from public, anon;
+revoke all on function friend_seen() from public, anon;
+revoke all on function friend_profile(uuid) from public, anon;
+grant execute on function friend_lookup(text, text) to anon, authenticated;
+grant execute on function friend_code(), friend_code_reset(), friend_add(text), friend_remove(uuid), friend_status(),
+  friend_list(), friend_seen(), friend_profile(uuid) to authenticated;
+
+-- ---------------------------------------------------------------- the leaderboard, from the cards
+
+-- 0011's ban list, here too so that this file stands alone in seed.sql.
+create table if not exists leaderboard_bans (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  banned_at timestamptz not null default now()
+);
+alter table leaderboard_bans enable row level security;
+
+-- Its columns grew (is_friend, friend_id); a function's return type can't change in place.
+drop function if exists leaderboard();
 create or replace function leaderboard()
 returns table (
   region text,
@@ -192,31 +558,1457 @@ returns table (
   pokedex int,
   max_level int,
   shinies int,
-  progress jsonb
+  progress jsonb,
+  is_friend boolean,
+  friend_id uuid
 )
-language sql volatile security definer set search_path = public as $$
-  select leaderboard_refresh();
-  select r.region, r.user_id = auth.uid(), r.name, r."character", r.team, r.pokedex, r.max_level, r.shinies, r.progress
-  from (
-    -- Everyone else, from the cache (a ban takes effect at once, not at the next rebuild)…
-    select c.user_id, c.region, c.name, c."character", c.team, c.pokedex, c.max_level, c.shinies, c.progress, c.updated_at
-    from leaderboard_cache c
-    where c.user_id is distinct from auth.uid()
-      and not exists (select 1 from leaderboard_bans x where x.user_id = c.user_id)
+language sql stable security definer set search_path = public as $$
+  select r.region, r.user_id = auth.uid(), c.name, c.avatar, r.team, r.pokedex, r.max_level, r.shinies, r.progress,
+         m.id is not null, m.id
+  from player_card_regions r
+  join player_cards c on c.user_id = r.user_id
+  left join friend_ids_of(auth.uid()) m on m.id = r.user_id
+  -- At least one badge in the region (0024); played in the last 72 hours (0023), except the caller, who always sees
+  -- their own rows; banned players left out (0011).
+  where cardinality(r.badges) > 0
+    and (c.updated_at > now() - interval '72 hours' or r.user_id = auth.uid())
+    and not exists (select 1 from leaderboard_bans x where x.user_id = r.user_id)
+  order by c.updated_at desc
+  limit 3000
+$$;
+revoke all on function leaderboard() from public;
+grant execute on function leaderboard() to anon, authenticated;
+
+-- The cache, its rebuild and its schedule (0026, 0031, 0032) are no longer needed.
+do $$
+begin
+  if exists (select 1 from pg_extension where extname = 'pg_cron') then
+    perform cron.unschedule(jobid) from cron.job where jobname = 'leaderboard-rebuild';
+  end if;
+end
+$$;
+drop function if exists leaderboard_refresh();
+drop function if exists leaderboard_rebuild();
+drop function if exists leaderboard_rows(timestamptz, uuid);
+drop table if exists leaderboard_cache_state;
+drop table if exists leaderboard_cache;
+
+-- ---------------------------------------------------------------- Versus names from the cards
+
+-- Same columns and rules as 0022's; only the owner's name and look now come from their card.
+do $do$
+begin
+  if to_regclass('public.versus_teams') is null then
+    return;
+  end if;
+  execute $ddl$
+    create or replace function versus_board()
+    returns table (
+      user_id uuid,
+      is_me boolean,
+      name text,
+      "character" text,
+      team jsonb,
+      ids jsonb,
+      version int,
+      attack_wins int,
+      defense_wins int,
+      beaten boolean
+    )
+    language sql stable security definer set search_path = public as $body$
+      select
+        v.user_id,
+        v.user_id = auth.uid(),
+        coalesce(c.name, 'Trainer'),
+        coalesce(c.avatar, 'red'),
+        v.team,
+        case when v.user_id = auth.uid() then v.ids end,
+        v.version,
+        (select count(*)::int from versus_battles b where b.attacker_id = v.user_id and b.won),
+        (
+          select count(*)::int from (
+            select distinct b.attacker_id, b.defender_version from versus_battles b
+            where b.defender_id = v.user_id and not b.won
+          ) held
+        ),
+        exists (
+          select 1 from versus_battles b
+          where b.attacker_id = auth.uid() and b.defender_id = v.user_id and b.defender_version = v.version and b.won
+        )
+      from versus_teams v
+      left join player_cards c on c.user_id = v.user_id
+      order by v.updated_at desc
+      limit 1000
+    $body$
+  $ddl$;
+end
+$do$;
+
+-- ---------------------------------------------------------------- the cards, from every save
+
+-- Only the cards older than their save (or missing): a re-run of this file costs one quick pass.
+do $$
+declare
+  s record;
+begin
+  for s in
+    select x.user_id, x.data, x.updated_at from saves x
+    where not exists (select 1 from player_cards c where c.user_id = x.user_id and c.updated_at >= x.updated_at)
+  loop
+    begin
+      perform player_card_write(s.user_id, s.data, s.updated_at);
+    exception when others then
+      raise warning 'player card for %: %', s.user_id, sqlerrm;
+    end;
+  end loop;
+end
+$$;
+
+-- ↓ supabase/migrations/0034_day_care.sql, inlined so this file stands alone.
+-- Day Care v2 (docs/15-DAYCARE-BREEDING.md, phase 4): one Day Care for every region, and friends' Pokémon visiting.
+--
+-- 1. Cards per region, fixed for the shared Day Care. Since v2 the Day Care sits at the top level of the save whichever
+--    region is live, each resident tagged with the region it came from. 0033's player_card_write read each region
+--    block's own `dayCare`, so every resident would have counted for the live region: now the residents are read once
+--    and each counts for its own region (`coalesce(region, live)`) in the best level and the shinies. A parked block
+--    that still holds its own Day Care (a save last pushed by an older client) counts for that region, as before.
+-- 2. What the friend picker needs: `player_cards.day_care`, the residents as `[{inst, dex, level, xp, since, shiny}]`,
+--    the oldest first, at most the game_config `dayCare.slots` (2). The client works out their level now from level,
+--    xp and since with the engine's own rule: the SQL does no game maths.
+-- 3. friend_day_cares(): the caller's friends that have a Pokémon at their Day Care, from their cards (no save read).
+--
+-- seed.sql inlines this file after 0033, so a database that only re-runs seed.sql gets it too. Run once on the live
+-- database after 0033; safe to run again.
+
+-- ---------------------------------------------------------------- the card's Day Care
+
+alter table player_cards add column if not exists day_care jsonb not null default '[]';
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'player_cards_day_care_small') then
+    alter table player_cards add constraint player_cards_day_care_small check (pg_column_size(day_care) < 4000);
+  end if;
+end
+$$;
+
+-- Writes a player's card from their save: the live region at the top level of the save, the others under `parked`,
+-- and the one Day Care at the top level.
+create or replace function player_card_write(p_user uuid, p_data jsonb, p_at timestamptz)
+returns void
+language plpgsql security definer set search_path = public as $$
+declare
+  live text := coalesce(nullif(p_data ->> 'region', ''), 'kanto');
+  badge_ids text[];
+  slots int;
+begin
+  select coalesce(array_agg(t.id::text), '{}') into badge_ids from trainers t where coalesce(t.badge, '') <> '';
+  select coalesce((select greatest(0, (value ->> 'slots')::int) from game_config where key = 'dayCare'), 2) into slots;
+
+  insert into player_cards as c (user_id, name, avatar, region, area_id, updated_at, day_care)
+  values (
+    p_user,
+    left(coalesce(nullif(trim(p_data -> 'player' ->> 'name'), ''), 'Trainer'), 12),
+    left(coalesce(p_data -> 'player' ->> 'avatar', p_data -> 'player' ->> 'character', 'red'), 40),
+    live,
+    p_data ->> 'currentAreaId',
+    p_at,
+    coalesce((
+      select jsonb_agg(jsonb_build_object(
+        'inst', left(r -> 'inst' ->> 'id', 64),
+        'dex', (r -> 'inst' ->> 'dex')::int,
+        'level', (r -> 'inst' ->> 'level')::int,
+        'xp', coalesce((r -> 'inst' ->> 'xp')::numeric, 0),
+        'since', coalesce((r ->> 'since')::numeric, 0),
+        'shiny', coalesce((r -> 'inst' ->> 'shiny')::boolean, false)
+      ) order by ord)
+      from (
+        select r, ord
+        from jsonb_array_elements(coalesce(p_data -> 'dayCare' -> 'residents', '[]')) with ordinality d(r, ord)
+        order by coalesce((r ->> 'since')::numeric, 0), ord
+        limit slots
+      ) oldest
+    ), '[]')
+  )
+  on conflict (user_id) do update set
+    name = excluded.name,
+    avatar = excluded.avatar,
+    region = excluded.region,
+    area_id = excluded.area_id,
+    updated_at = excluded.updated_at,
+    day_care = excluded.day_care;
+
+  delete from player_card_regions where user_id = p_user;
+  with dc as (
+    -- The one Day Care: each resident for the region it came from (untagged ones, from before v2, for the live one).
+    select coalesce(nullif(r ->> 'region', ''), live) as region, r
+    from jsonb_array_elements(coalesce(p_data -> 'dayCare' -> 'residents', '[]')) r
     union all
-    -- …and the caller, live, active or not (0023: the board can always open on them).
-    select m.user_id, m.region, m.name, m."character", m.team, m.pokedex, m.max_level, m.shinies, m.progress, m.updated_at
-    from leaderboard_rows(null, auth.uid()) m
-  ) r
-  order by r.updated_at desc
+    -- A parked region's own Day Care, as saves pushed by an older client still have.
+    select k.key, r
+    from jsonb_each(coalesce(p_data -> 'parked', '{}')) k(key, value),
+      jsonb_array_elements(coalesce(k.value -> 'dayCare' -> 'residents', '[]')) r
+    where k.key <> live
+  )
+  insert into player_card_regions (user_id, region, team, pokedex, max_level, shinies, progress, badges, endgame)
+  select
+    p_user,
+    b.region,
+    coalesce((
+      select jsonb_agg(jsonb_build_object(
+        'dex', (m ->> 'dex')::int, 'level', (m ->> 'level')::int, 'shiny', coalesce((m ->> 'shiny')::boolean, false)
+      ) order by t.ord)
+      from jsonb_array_elements_text(coalesce(b.block -> 'team', '[]')) with ordinality t(id, ord)
+      join jsonb_array_elements(coalesce(b.block -> 'box', '[]')) m on m ->> 'id' = t.id
+    ), '[]'),
+    (select count(distinct x)::int from jsonb_array_elements(coalesce(b.block -> 'pokedex', '[]')) x),
+    greatest(
+      coalesce((select max((m ->> 'level')::int) from jsonb_array_elements(coalesce(b.block -> 'box', '[]')) m), 0),
+      coalesce((select max((d.r -> 'inst' ->> 'level')::int) from dc d where d.region = b.region), 0)
+    ),
+    (select count(*)::int from jsonb_array_elements(coalesce(b.block -> 'box', '[]')) m
+      where coalesce((m ->> 'shiny')::boolean, false))
+    + (select count(*)::int from dc d where d.region = b.region and coalesce((d.r -> 'inst' ->> 'shiny')::boolean, false)),
+    coalesce((
+      select jsonb_object_agg(k, jsonb_build_object(
+        'cleared', coalesce((v ->> 'cleared')::boolean, false),
+        'gyms', jsonb_array_length(coalesce(v -> 'gymsDefeated', '[]'))
+      ))
+      from jsonb_each(coalesce(b.block -> 'areaProgress', '{}')) e(k, v)
+    ), '{}'),
+    coalesce((
+      select array_agg(distinct g.id order by g.id)
+      from jsonb_each(coalesce(b.block -> 'areaProgress', '{}')) e(k, v),
+        jsonb_array_elements_text(coalesce(v -> 'gymsDefeated', '[]')) g(id)
+      where g.id = any(badge_ids)
+    ), '{}'),
+    coalesce((
+      select (b.block -> 'areaProgress' -> rg.league_area_id::text ->> 'cleared')::boolean
+      from regions rg where rg.id = b.region
+    ), false)
+  from (
+    select live as region, p_data as block
+    union all
+    select k.key, k.value from jsonb_each(coalesce(p_data -> 'parked', '{}')) k(key, value) where k.key <> live
+  ) b;
+end
+$$;
+
+revoke all on function player_card_write(uuid, jsonb, timestamptz) from public, anon, authenticated;
+
+-- ---------------------------------------------------------------- the read
+
+-- My friends' Day Cares: friends only, from their cards (no save is read).
+create or replace function friend_day_cares()
+returns table (owner uuid, name text, avatar text, day_care jsonb)
+language sql stable security definer set search_path = public as $$
+  select c.user_id, c.name, c.avatar, c.day_care
+  from friend_ids_of(auth.uid()) f
+  join player_cards c on c.user_id = f.id
+  where jsonb_array_length(c.day_care) > 0
+$$;
+revoke all on function friend_day_cares() from public, anon;
+grant execute on function friend_day_cares() to authenticated;
+
+-- ---------------------------------------------------------------- the cards that change
+
+-- The cards of the players who have a Day Care (anywhere in their save): their Day Care column and their regions'
+-- counts change. Nobody else's card moves.
+do $$
+declare
+  s record;
+begin
+  for s in
+    select x.user_id, x.data, x.updated_at from saves x
+    where jsonb_array_length(coalesce(x.data -> 'dayCare' -> 'residents', '[]')) > 0
+      or exists (
+        select 1 from jsonb_each(coalesce(x.data -> 'parked', '{}')) k(key, value)
+        where jsonb_array_length(coalesce(k.value -> 'dayCare' -> 'residents', '[]')) > 0
+      )
+  loop
+    begin
+      perform player_card_write(s.user_id, s.data, s.updated_at);
+    exception when others then
+      raise warning 'player card for %: %', s.user_id, sqlerrm;
+    end;
+  end loop;
+end
+$$;
+
+-- ↓ supabase/migrations/0035_events.sql, inlined so this file stands alone.
+-- Special events (docs/18-SPECIAL-EVENTS-PLAN.md, docs/19-SPECIAL-EVENTS-BUILD.md): the Fortune Wheel, Raid Battles and
+-- the Elite Rebattle. Built in phases; this file grows with them and stays safe to run again.
+--
+-- Phase 1, the framework:
+-- 1. event_time(): the server's clock. The daily spin and the day's raid turn over at midnight UTC as the server sees
+--    it, never the device's: anyone can call it, guests included (it reveals nothing but the time).
+-- 2. event_state: one row per signed-in player, what the events have recorded about them (the later phases fill it).
+--
+-- Phase 2, the Fortune Wheel:
+-- 3. wheel_spin(): one spin per UTC day. The server draws the prize from game_config `events` → wheel.prizes (each
+--    prize's slices × their odds; the defaults below when the admin hasn't saved the row), so reloading can't re-roll
+--    it. A second call the same day gives the same prize back, `fresh` false: a spin whose answer got lost isn't lost.
+--
+-- Phase 4, the day's raid:
+-- 4. raid_today(p_candidates): one raid per player and UTC day, the same on every device. The first call of the day
+--    picks one of the candidates the game sends (its rules: the raid pool, then shinies, then the fallback species,
+--    without the last days' raids) and keeps it; every later call that day returns it.
+
+-- Phase 5, the raid fight:
+-- 5. raid_close(p_helpers): today's raid Pokémon is caught. The raid closes for the day and raids_won (the Raids
+--    leaderboard) goes up by one, once: a second call the same day changes nothing and returns the same count.
+--
+-- Phase 6, raiding with friends:
+-- 6. raid_teams + raid_set_team(p_ids): your raid team, built here from your cloud save (any region's Box, cloned at
+--    the raid team cap), for friends to bring beside them.
+-- 7. raid_friend_teams(): your friends' raid teams, and how many times each has helped you.
+-- 8. raid_gifts: the friends who fought beside you get a gift when you catch the raid Pokémon (raid_close), at most
+--    `helperDailyCap` a UTC day each; raid_gifts_claim() hands a helper theirs on their next visit.
+-- 9. leaderboard() gains raids_won (the Raids tab): one count per player, the same on every region's board.
+--
+-- seed.sql inlines this file after 0034, so a database that only re-runs seed.sql gets it too.
+
+-- ---------------------------------------------------------------- the clock
+
+create or replace function event_time()
+returns jsonb
+language sql stable security definer set search_path = public as $$
+  select jsonb_build_object(
+    'now', to_char(now() at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'),
+    'day', to_char(now() at time zone 'UTC', 'YYYY-MM-DD')
+  )
+$$;
+revoke all on function event_time() from public;
+grant execute on function event_time() to anon, authenticated;
+
+-- ---------------------------------------------------------------- each player's events
+
+create table if not exists event_state (
+  user_id uuid primary key references auth.users (id) on delete cascade,
+  updated_at timestamptz not null default now()
+);
+
+alter table event_state enable row level security;
+revoke all on event_state from anon, authenticated;
+drop policy if exists event_state_admin on event_state;
+create policy event_state_admin on event_state for all using ((select is_admin())) with check ((select is_admin()));
+
+-- ---------------------------------------------------------------- the Fortune Wheel
+
+alter table event_state add column if not exists wheel_day date;
+alter table event_state add column if not exists wheel_prize int;
+
+-- The wheel's prizes: the admin's, or the game's defaults (engine/defaults.ts; tests/events-sql.test.ts keeps the two
+-- the same).
+create or replace function wheel_prizes()
+returns jsonb
+language sql stable security definer set search_path = public as $$
+  select coalesce(
+    (select value #> '{wheel,prizes}' from game_config
+      where key = 'events' and jsonb_typeof(value #> '{wheel,prizes}') = 'array' and jsonb_array_length(value #> '{wheel,prizes}') > 0),
+    '[
+      {"reward": {"kind": "gold", "amount": 10}, "count": 4, "odds": 12.5},
+      {"reward": {"kind": "item", "key": "poke-ball", "qty": 1}, "count": 2, "odds": 12.5},
+      {"reward": {"kind": "item", "key": "great-ball", "qty": 1}, "count": 1, "odds": 12.5},
+      {"reward": {"kind": "item", "key": "ultra-ball", "qty": 1}, "count": 1, "odds": 10},
+      {"reward": {"kind": "item", "key": "master-ball", "qty": 1}, "count": 1, "odds": 2.5}
+    ]'::jsonb)
+$$;
+revoke all on function wheel_prizes() from public;
+
+create or replace function wheel_spin()
+returns jsonb
+language plpgsql volatile security definer set search_path = public as $$
+declare
+  me uuid := auth.uid();
+  today date := (now() at time zone 'UTC')::date;
+  prizes jsonb := wheel_prizes();
+  st event_state;
+  n int := jsonb_array_length(prizes);
+  weights numeric[] := '{}';
+  total numeric := 0;
+  w numeric;
+  x numeric;
+  pick int;
+  -- The admin's switch: off (the default), on for the admin only (to try it in production), on for everyone.
+  access text := coalesce((select value #>> '{wheel,access}' from game_config where key = 'events'), 'off');
+begin
+  if me is null then raise exception 'events_signed_out'; end if;
+  if not (access = 'all' or (access = 'admin' and is_admin())) then
+    raise exception 'events_wheel_off';
+  end if;
+  insert into event_state (user_id) values (me) on conflict (user_id) do nothing;
+  select * into st from event_state where user_id = me for update;
+  if st.wheel_day = today and st.wheel_prize is not null then
+    return jsonb_build_object('day', to_char(today, 'YYYY-MM-DD'), 'prize', st.wheel_prize,
+      'reward', prizes -> st.wheel_prize -> 'reward', 'fresh', false);
+  end if;
+  for i in 0 .. n - 1 loop
+    w := greatest(0, coalesce((prizes -> i ->> 'count')::numeric, 0)) * greatest(0, coalesce((prizes -> i ->> 'odds')::numeric, 0));
+    weights := weights || w;
+    total := total + w;
+  end loop;
+  if total <= 0 then raise exception 'events_wheel_empty'; end if;
+  x := random() * total;
+  for i in 0 .. n - 1 loop
+    if weights[i + 1] > 0 then
+      pick := i;
+      x := x - weights[i + 1];
+      exit when x < 0;
+    end if;
+  end loop;
+  update event_state set wheel_day = today, wheel_prize = pick, updated_at = now() where user_id = me;
+  return jsonb_build_object('day', to_char(today, 'YYYY-MM-DD'), 'prize', pick, 'reward', prizes -> pick -> 'reward', 'fresh', true);
+end $$;
+revoke all on function wheel_spin() from public;
+grant execute on function wheel_spin() to authenticated;
+
+-- ---------------------------------------------------------------- the day's raid
+
+alter table event_state add column if not exists raid jsonb;
+
+create or replace function raid_today(p_candidates jsonb)
+returns jsonb
+language plpgsql volatile security definer set search_path = public as $$
+declare
+  me uuid := auth.uid();
+  today text := to_char((now() at time zone 'UTC')::date, 'YYYY-MM-DD');
+  st event_state;
+  n int;
+  c jsonb;
+  shiny boolean;
+  pick jsonb;
+begin
+  if me is null then raise exception 'events_signed_out'; end if;
+  insert into event_state (user_id) values (me) on conflict (user_id) do nothing;
+  select * into st from event_state where user_id = me for update;
+  if st.raid is not null and st.raid ->> 'day' = today then return st.raid; end if;
+  n := coalesce(jsonb_array_length(p_candidates -> 'list'), 0);
+  if n = 0 then raise exception 'events_no_raid'; end if;
+  c := p_candidates -> 'list' -> floor(random() * n)::int;
+  shiny := coalesce((c ->> 'shiny')::boolean, false)
+    or (p_candidates ->> 'kind' = 'fallback' and random() < coalesce((p_candidates ->> 'fallbackShiny')::numeric, 0));
+  pick := jsonb_build_object('day', today, 'dex', (c ->> 'dex')::int, 'shiny', shiny, 'areaId', c ->> 'areaId', 'caught', false);
+  update event_state set raid = pick, updated_at = now() where user_id = me;
+  return pick;
+end $$;
+revoke all on function raid_today(jsonb) from public;
+grant execute on function raid_today(jsonb) to authenticated;
+
+-- ---------------------------------------------------------------- the raid fight
+
+alter table event_state add column if not exists raids_won int not null default 0;
+
+-- raid_close() is defined with the helpers below (phase 6).
+
+-- ---------------------------------------------------------------- raid teams (phase 6)
+--
+-- Each player's raid team: up to three Pokémon from any region's Box, cloned at the raid team cap (game_config
+-- `events` → raid.teamCap, 50 by default). Built here from the cloud save, never from what the page sends, like a
+-- Versus team; friends fight beside you with it.
+create table if not exists raid_teams (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  team jsonb not null,               -- [{dex, level, shiny}] × 1–3, in order, level ≤ the cap
+  ids jsonb,                         -- the Box ids it was cloned from (only their owner sees them)
+  updated_at timestamptz not null default now()
+);
+alter table raid_teams enable row level security;
+drop policy if exists raid_teams_admin on raid_teams;
+create policy raid_teams_admin on raid_teams for all using (is_admin()) with check (is_admin());
+revoke all on raid_teams from anon, authenticated;
+
+-- The raid team cap: the admin's, or the game's default.
+create or replace function raid_team_cap()
+returns int
+language sql stable security definer set search_path = public as $$
+  select coalesce(
+    (select (value -> 'raid' ->> 'teamCap')::int from game_config where key = 'events'),
+    50
+  )
+$$;
+
+create or replace function raid_set_team(p_ids text[])
+returns jsonb
+language plpgsql volatile security definer set search_path = public as $$
+declare
+  me uuid := auth.uid();
+  save jsonb;
+  cap int := raid_team_cap();
+  new_team jsonb;
+begin
+  if me is null then raise exception 'events_signed_out'; end if;
+  if p_ids is null or coalesce(array_length(p_ids, 1), 0) not between 1 and 3
+     or (select count(distinct x) from unnest(p_ids) x) <> array_length(p_ids, 1) then
+    raise exception 'events_team_size';
+  end if;
+  select s.data into save from saves s where s.user_id = me;
+  if save is null then raise exception 'events_no_save'; end if;
+  select jsonb_agg(jsonb_build_object(
+    'dex', (m ->> 'dex')::int,
+    'level', least((m ->> 'level')::int, cap),
+    'shiny', coalesce((m ->> 'shiny')::boolean, false)
+  ) order by t.ord)
+  into new_team
+  from unnest(p_ids) with ordinality t(id, ord)
+  join (
+    select b from jsonb_array_elements(coalesce(save -> 'box', '[]')) b
+    union all
+    select b from jsonb_each(coalesce(save -> 'parked', '{}')) p(k, v), jsonb_array_elements(coalesce(p.v -> 'box', '[]')) b
+  ) boxes(m) on m ->> 'id' = t.id
+  where m ->> 'revivesAt' is null;
+  if new_team is null or jsonb_array_length(new_team) <> array_length(p_ids, 1) then raise exception 'events_not_eligible'; end if;
+  insert into raid_teams (user_id, team, ids, updated_at) values (me, new_team, to_jsonb(p_ids), now())
+  on conflict (user_id) do update set team = excluded.team, ids = excluded.ids, updated_at = now();
+  return new_team;
+end $$;
+
+-- ---------------------------------------------------------------- helpers' gifts (phase 6)
+--
+-- A friend whose raid team fought beside you gets a gift when you catch the raid Pokémon: one row here, claimed on
+-- their next visit. A helper gets `helperDailyCap` gifts a UTC day at most, however many friends they help.
+create table if not exists raid_gifts (
+  id bigint generated always as identity primary key,
+  helper_id uuid not null references auth.users(id) on delete cascade,
+  raider_id uuid not null references auth.users(id) on delete cascade,
+  raider_name text not null,
+  dex int not null,
+  item_key text not null,
+  created_at timestamptz not null default now(),
+  claimed_at timestamptz
+);
+create index if not exists raid_gifts_helper_idx on raid_gifts (helper_id, created_at);
+alter table raid_gifts enable row level security;
+drop policy if exists raid_gifts_admin on raid_gifts;
+create policy raid_gifts_admin on raid_gifts for all using (is_admin()) with check (is_admin());
+revoke all on raid_gifts from anon, authenticated;
+
+-- Your friends' raid teams, with how many times each has helped you catch a raid Pokémon.
+create or replace function raid_friend_teams()
+returns table (user_id uuid, name text, avatar text, team jsonb, helped int)
+language sql stable security definer set search_path = public as $$
+  select t.user_id,
+         left(coalesce(nullif(trim(s.data -> 'player' ->> 'name'), ''), 'Trainer'), 12),
+         coalesce(s.data -> 'player' ->> 'avatar', s.data -> 'player' ->> 'character', 'red'),
+         t.team,
+         (select count(*)::int from raid_gifts g where g.helper_id = t.user_id and g.raider_id = auth.uid())
+  from friend_ids_of(auth.uid()) f
+  join raid_teams t on t.user_id = f.id
+  left join saves s on s.user_id = t.user_id
+  order by t.updated_at desc
+$$;
+
+-- Your unclaimed gifts, claimed now: the game puts each item in the bag.
+create or replace function raid_gifts_claim()
+returns table (id bigint, raider_name text, dex int, item_key text)
+language plpgsql volatile security definer set search_path = public as $$
+declare
+  me uuid := auth.uid();
+begin
+  if me is null then raise exception 'events_signed_out'; end if;
+  return query
+    update raid_gifts g set claimed_at = now()
+    where g.helper_id = me and g.claimed_at is null
+    returning g.id, g.raider_name, g.dex, g.item_key;
+end $$;
+
+-- Today's raid Pokémon is caught: the raid closes, raids_won + 1, and each friend whose raid team fought beside you
+-- (`p_helpers`) gets a gift, drawn from game_config `events` → raid.gifts, while they have had fewer than
+-- raid.helperDailyCap today. Only once a day: a second call changes nothing.
+drop function if exists raid_close();
+create or replace function raid_close(p_helpers uuid[] default '{}')
+returns jsonb
+language plpgsql volatile security definer set search_path = public as $$
+declare
+  me uuid := auth.uid();
+  today text := to_char((now() at time zone 'UTC')::date, 'YYYY-MM-DD');
+  midnight timestamptz := (now() at time zone 'UTC')::date at time zone 'UTC';
+  st event_state;
+  cfg jsonb := (select value -> 'raid' from game_config where key = 'events');
+  cap int;
+  gifts jsonb;
+  total numeric;
+  roll numeric;
+  pick text;
+  g jsonb;
+  helper uuid;
+  raider text;
+  given int := 0;
+begin
+  if me is null then raise exception 'events_signed_out'; end if;
+  select * into st from event_state where user_id = me for update;
+  if st.raid is null or st.raid ->> 'day' <> today then raise exception 'events_no_raid'; end if;
+  if coalesce((st.raid ->> 'caught')::boolean, false) then
+    return jsonb_build_object('raidsWon', st.raids_won, 'gifts', 0);
+  end if;
+  update event_state
+    set raid = jsonb_set(st.raid, '{caught}', 'true'), raids_won = st.raids_won + 1, updated_at = now()
+    where user_id = me
+    returning * into st;
+
+  cap := coalesce((cfg ->> 'helperDailyCap')::int, 5);
+  gifts := coalesce(cfg -> 'gifts', '[{"key":"ultra-ball","weight":40},{"key":"hyper-potion","weight":25},{"key":"revive","weight":20},{"key":"rare-candy","weight":15}]');
+  select sum(greatest(0, coalesce((x ->> 'weight')::numeric, 0))) into total from jsonb_array_elements(gifts) x;
+  raider := left(coalesce(nullif(trim((select s.data -> 'player' ->> 'name' from saves s where s.user_id = me)), ''), 'Trainer'), 12);
+  for helper in select distinct h from unnest(coalesce(p_helpers, '{}')) h loop
+    -- A friend, with a raid team, under today's cap.
+    continue when helper is null or helper = me or coalesce(total, 0) <= 0;
+    continue when not exists (select 1 from friend_ids_of(me) f where f.id = helper);
+    continue when not exists (select 1 from raid_teams t where t.user_id = helper);
+    continue when (select count(*) from raid_gifts x where x.helper_id = helper and x.created_at >= midnight) >= cap;
+    roll := random() * total;
+    pick := null;
+    for g in select * from jsonb_array_elements(gifts) loop
+      roll := roll - greatest(0, coalesce((g ->> 'weight')::numeric, 0));
+      if roll < 0 then
+        pick := g ->> 'key';
+        exit;
+      end if;
+    end loop;
+    continue when pick is null;
+    insert into raid_gifts (helper_id, raider_id, raider_name, dex, item_key)
+    values (helper, me, raider, (st.raid ->> 'dex')::int, pick);
+    given := given + 1;
+  end loop;
+  return jsonb_build_object('raidsWon', st.raids_won, 'gifts', given);
+end $$;
+
+revoke all on function raid_team_cap() from public, anon, authenticated;
+revoke all on function raid_set_team(text[]) from public;
+revoke all on function raid_friend_teams() from public;
+revoke all on function raid_gifts_claim() from public;
+revoke all on function raid_close(uuid[]) from public;
+grant execute on function raid_set_team(text[]), raid_friend_teams(), raid_gifts_claim(), raid_close(uuid[]) to authenticated;
+
+-- ---------------------------------------------------------------- the Raids tab
+--
+-- leaderboard() as 0033 made it, plus raids_won: the player's raids won (their raid Pokémon caught), the same on every
+-- region's board (D4). A player who has never raided has 0.
+drop function if exists leaderboard();
+create or replace function leaderboard()
+returns table (
+  region text,
+  is_me boolean,
+  name text,
+  "character" text,
+  team jsonb,
+  pokedex int,
+  max_level int,
+  shinies int,
+  progress jsonb,
+  is_friend boolean,
+  friend_id uuid,
+  raids_won int
+)
+language sql stable security definer set search_path = public as $$
+  select r.region, r.user_id = auth.uid(), c.name, c.avatar, r.team, r.pokedex, r.max_level, r.shinies, r.progress,
+         m.id is not null, m.id, coalesce(e.raids_won, 0)
+  from player_card_regions r
+  join player_cards c on c.user_id = r.user_id
+  left join friend_ids_of(auth.uid()) m on m.id = r.user_id
+  left join event_state e on e.user_id = r.user_id
+  -- At least one badge in the region (0024); played in the last 72 hours (0023), except the caller, who always sees
+  -- their own rows; banned players left out (0011).
+  where cardinality(r.badges) > 0
+    and (c.updated_at > now() - interval '72 hours' or r.user_id = auth.uid())
+    and not exists (select 1 from leaderboard_bans x where x.user_id = r.user_id)
+  order by c.updated_at desc
+  limit 3000
+$$;
+revoke all on function leaderboard() from public;
+grant execute on function leaderboard() to anon, authenticated;
+
+-- ↓ supabase/migrations/0039_extreme_realm.sql, inlined so this file stands alone.
+-- Extreme mode (docs/22-EXTREME-MODE-PLAN.md): every player can have a second save, the Extreme one, in a world of its
+-- own. Each player-facing table gets a `realm` ('main' or 'extreme'), and every function that reads or writes them
+-- takes `p_realm` (default 'main'), so an Extreme save only ever meets Extreme saves: its own trainer card, its own
+-- leaderboard, Versus, Day Care visitors, Fortune Wheel spin, raids and raid gifts.
+--
+-- Friends are the same in both worlds (the user's choice, 2026-10-11): friend_codes, friendships and friend_attempts
+-- have no realm. Whatever is shown of a friend comes from their save in the realm asked for; a friend without one there
+-- shows with `in_realm` false (their name and look from their main card, nothing else).
+--
+-- Existing rows are 'main', and every `p_realm` defaults to 'main', so a tab still on an older build keeps working on
+-- the main world until it reloads. Run once, after 0038; safe to run again. Until it runs, the game keeps the Extreme
+-- save on the device only and syncs the main one as before.
+
+-- ---------------------------------------------------------------- the realm column
+
+do $$
+declare
+  t text;
+begin
+  foreach t in array array['saves', 'player_cards', 'player_card_regions', 'versus_teams', 'versus_battles', 'event_state', 'raid_teams', 'raid_gifts'] loop
+    if to_regclass('public.' || t) is null then
+      continue;
+    end if;
+    execute format('alter table %I add column if not exists realm text not null default %L', t, 'main');
+    if not exists (select 1 from pg_constraint where conname = t || '_realm_check') then
+      execute format('alter table %I add constraint %I check (realm in (%L, %L))', t, t || '_realm_check', 'main', 'extreme');
+    end if;
+  end loop;
+end
+$$;
+
+-- Keys that were one per player become one per player and realm.
+do $$
+declare
+  k record;
+begin
+  -- The cards' regions point at the cards: their link goes first, and comes back on (user_id, realm).
+  alter table player_card_regions drop constraint if exists player_card_regions_user_id_fkey;
+  for k in
+    select * from (values
+      ('saves', 'saves_pkey', 'user_id, realm'),
+      ('player_cards', 'player_cards_pkey', 'user_id, realm'),
+      ('player_card_regions', 'player_card_regions_pkey', 'user_id, realm, region'),
+      ('versus_teams', 'versus_teams_pkey', 'user_id, realm'),
+      ('event_state', 'event_state_pkey', 'user_id, realm'),
+      ('raid_teams', 'raid_teams_pkey', 'user_id, realm')
+    ) v(tbl, con, cols)
+  loop
+    continue when to_regclass('public.' || k.tbl) is null;
+    -- Already keyed on the realm: nothing to do.
+    continue when exists (
+      select 1 from pg_constraint c join pg_attribute a on a.attrelid = c.conrelid and a.attnum = any (c.conkey)
+      where c.conname = k.con and a.attname = 'realm'
+    );
+    execute format('alter table %I drop constraint if exists %I', k.tbl, k.con);
+    execute format('alter table %I add constraint %I primary key (%s)', k.tbl, k.con, k.cols);
+  end loop;
+  if not exists (select 1 from pg_constraint where conname = 'player_card_regions_card_fkey') then
+    alter table player_card_regions add constraint player_card_regions_card_fkey
+      foreign key (user_id, realm) references player_cards (user_id, realm) on delete cascade;
+  end if;
+end
+$$;
+
+-- A Versus team is beaten once per attacker and version, in its own world.
+do $$
+begin
+  if to_regclass('public.versus_battles') is not null then
+    drop index if exists versus_battles_one_win;
+    create unique index if not exists versus_battles_one_win_realm
+      on versus_battles (realm, attacker_id, defender_id, defender_version) where won;
+  end if;
+end
+$$;
+
+-- ---------------------------------------------------------------- the cards
+
+-- 0034's card, written for the save's own realm.
+drop function if exists player_card_write(uuid, jsonb, timestamptz);
+create or replace function player_card_write(p_user uuid, p_data jsonb, p_at timestamptz, p_realm text default 'main')
+returns void
+language plpgsql security definer set search_path = public as $$
+declare
+  live text := coalesce(nullif(p_data ->> 'region', ''), 'kanto');
+  badge_ids text[];
+  slots int;
+begin
+  select coalesce(array_agg(t.id::text), '{}') into badge_ids from trainers t where coalesce(t.badge, '') <> '';
+  select coalesce((select greatest(0, (value ->> 'slots')::int) from game_config where key = 'dayCare'), 2) into slots;
+
+  insert into player_cards as c (user_id, realm, name, avatar, region, area_id, updated_at, day_care)
+  values (
+    p_user,
+    p_realm,
+    left(coalesce(nullif(trim(p_data -> 'player' ->> 'name'), ''), 'Trainer'), 12),
+    left(coalesce(p_data -> 'player' ->> 'avatar', p_data -> 'player' ->> 'character', 'red'), 40),
+    live,
+    p_data ->> 'currentAreaId',
+    p_at,
+    coalesce((
+      select jsonb_agg(jsonb_build_object(
+        'inst', left(r -> 'inst' ->> 'id', 64),
+        'dex', (r -> 'inst' ->> 'dex')::int,
+        'level', (r -> 'inst' ->> 'level')::int,
+        'xp', coalesce((r -> 'inst' ->> 'xp')::numeric, 0),
+        'since', coalesce((r ->> 'since')::numeric, 0),
+        'shiny', coalesce((r -> 'inst' ->> 'shiny')::boolean, false)
+      ) order by ord)
+      from (
+        select r, ord
+        from jsonb_array_elements(coalesce(p_data -> 'dayCare' -> 'residents', '[]')) with ordinality d(r, ord)
+        order by coalesce((r ->> 'since')::numeric, 0), ord
+        limit slots
+      ) oldest
+    ), '[]')
+  )
+  on conflict (user_id, realm) do update set
+    name = excluded.name,
+    avatar = excluded.avatar,
+    region = excluded.region,
+    area_id = excluded.area_id,
+    updated_at = excluded.updated_at,
+    day_care = excluded.day_care;
+
+  delete from player_card_regions where user_id = p_user and realm = p_realm;
+  with dc as (
+    select coalesce(nullif(r ->> 'region', ''), live) as region, r
+    from jsonb_array_elements(coalesce(p_data -> 'dayCare' -> 'residents', '[]')) r
+    union all
+    select k.key, r
+    from jsonb_each(coalesce(p_data -> 'parked', '{}')) k(key, value),
+      jsonb_array_elements(coalesce(k.value -> 'dayCare' -> 'residents', '[]')) r
+    where k.key <> live
+  )
+  insert into player_card_regions (user_id, realm, region, team, pokedex, max_level, shinies, progress, badges, endgame)
+  select
+    p_user,
+    p_realm,
+    b.region,
+    coalesce((
+      select jsonb_agg(jsonb_build_object(
+        'dex', (m ->> 'dex')::int, 'level', (m ->> 'level')::int, 'shiny', coalesce((m ->> 'shiny')::boolean, false)
+      ) order by t.ord)
+      from jsonb_array_elements_text(coalesce(b.block -> 'team', '[]')) with ordinality t(id, ord)
+      join jsonb_array_elements(coalesce(b.block -> 'box', '[]')) m on m ->> 'id' = t.id
+    ), '[]'),
+    (select count(distinct x)::int from jsonb_array_elements(coalesce(b.block -> 'pokedex', '[]')) x),
+    greatest(
+      coalesce((select max((m ->> 'level')::int) from jsonb_array_elements(coalesce(b.block -> 'box', '[]')) m), 0),
+      coalesce((select max((d.r -> 'inst' ->> 'level')::int) from dc d where d.region = b.region), 0)
+    ),
+    (select count(*)::int from jsonb_array_elements(coalesce(b.block -> 'box', '[]')) m
+      where coalesce((m ->> 'shiny')::boolean, false))
+    + (select count(*)::int from dc d where d.region = b.region and coalesce((d.r -> 'inst' ->> 'shiny')::boolean, false)),
+    coalesce((
+      select jsonb_object_agg(k, jsonb_build_object(
+        'cleared', coalesce((v ->> 'cleared')::boolean, false),
+        'gyms', jsonb_array_length(coalesce(v -> 'gymsDefeated', '[]'))
+      ))
+      from jsonb_each(coalesce(b.block -> 'areaProgress', '{}')) e(k, v)
+    ), '{}'),
+    coalesce((
+      select array_agg(distinct g.id order by g.id)
+      from jsonb_each(coalesce(b.block -> 'areaProgress', '{}')) e(k, v),
+        jsonb_array_elements_text(coalesce(v -> 'gymsDefeated', '[]')) g(id)
+      where g.id = any(badge_ids)
+    ), '{}'),
+    coalesce((
+      select (b.block -> 'areaProgress' -> rg.league_area_id::text ->> 'cleared')::boolean
+      from regions rg where rg.id = b.region
+    ), false)
+  from (
+    select live as region, p_data as block
+    union all
+    select k.key, k.value from jsonb_each(coalesce(p_data -> 'parked', '{}')) k(key, value) where k.key <> live
+  ) b;
+end
+$$;
+revoke all on function player_card_write(uuid, jsonb, timestamptz, text) from public, anon, authenticated;
+
+create or replace function saves_card()
+returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  begin
+    perform player_card_write(new.user_id, new.data, new.updated_at, new.realm);
+  exception when others then
+    raise warning 'player card for %: %', new.user_id, sqlerrm;
+  end;
+  return null;
+end
+$$;
+
+-- ---------------------------------------------------------------- friends: the same people, seen in a realm
+
+-- The card a friend shows in a realm: theirs there, else their main one for the name and look only.
+drop function if exists friend_lookup(text, text);
+create or replace function friend_lookup(p_code text, p_device_id text default null, p_realm text default 'main')
+returns table (name text, avatar text, region text, max_level int)
+language plpgsql volatile security definer set search_path = public as $$
+begin
+  perform friend_attempt(coalesce(auth.uid()::text, 'device:' || left(coalesce(p_device_id, '?'), 64)));
+  return query
+    select coalesce(c.name, cm.name, 'Trainer'), coalesce(c.avatar, cm.avatar, 'red'), c.region, coalesce(r.max_level, 0)
+    from friend_codes f
+    left join player_cards c on c.user_id = f.user_id and c.realm = p_realm
+    left join player_cards cm on cm.user_id = f.user_id and cm.realm = 'main'
+    left join player_card_regions r on r.user_id = f.user_id and r.realm = p_realm and r.region = c.region
+    where f.code = friend_norm(p_code);
+end
+$$;
+
+drop function if exists friend_add(text);
+create or replace function friend_add(p_code text, p_realm text default 'main')
+returns table (status text, user_id uuid, name text, avatar text)
+language plpgsql volatile security definer set search_path = public as $$
+declare
+  uid uuid := auth.uid();
+  other uuid;
+  cap int;
+begin
+  if uid is null then
+    raise exception 'friends_signed_out' using errcode = '42501';
+  end if;
+  perform friend_attempt(uid::text);
+  select f.user_id into other from friend_codes f where f.code = friend_norm(p_code);
+  if other is null then
+    return query select 'not_found'::text, null::uuid, null::text, null::text;
+    return;
+  end if;
+  if other = uid then
+    return query select 'self'::text, null::uuid, null::text, null::text;
+    return;
+  end if;
+  perform pg_advisory_xact_lock(hashtext('pokedice.friends:' || least(uid, other)::text));
+  perform pg_advisory_xact_lock(hashtext('pokedice.friends:' || greatest(uid, other)::text));
+  if exists (select 1 from friendships f where f.user_a = least(uid, other) and f.user_b = greatest(uid, other)) then
+    status := 'already';
+  else
+    cap := coalesce((select (g.value #>> '{}')::int from game_config g where g.key = 'maxFriends'), 100);
+    if (select count(*) from friendships f where f.user_a = uid or f.user_b = uid) >= cap then
+      status := 'full';
+    elsif (select count(*) from friendships f where f.user_a = other or f.user_b = other) >= cap then
+      status := 'friend_full';
+    else
+      insert into friendships (user_a, user_b, added_by, a_seen, b_seen)
+      values (least(uid, other), greatest(uid, other), uid, least(uid, other) = uid, greatest(uid, other) = uid);
+      status := 'added';
+    end if;
+  end if;
+  return query
+    select status, other, coalesce(c.name, cm.name, 'Trainer'), coalesce(c.avatar, cm.avatar, 'red')
+    from (select 1) one
+    left join player_cards c on c.user_id = other and c.realm = p_realm
+    left join player_cards cm on cm.user_id = other and cm.realm = 'main';
+end
+$$;
+
+drop function if exists friend_status();
+create or replace function friend_status(p_realm text default 'main')
+returns table (ids uuid[], unseen jsonb)
+language sql stable security definer set search_path = public as $$
+  select
+    coalesce(array_agg(m.id), '{}'),
+    coalesce(
+      jsonb_agg(jsonb_build_object('id', m.id, 'name', coalesce(c.name, cm.name, 'Trainer'), 'avatar', coalesce(c.avatar, cm.avatar, 'red')))
+        filter (where not m.seen),
+      '[]'
+    )
+  from friend_ids_of(auth.uid()) m
+  left join player_cards c on c.user_id = m.id and c.realm = p_realm
+  left join player_cards cm on cm.user_id = m.id and cm.realm = 'main'
+$$;
+
+-- The Friends page, in a realm. `in_realm`: the friend has a save there (else only their name and look, from main).
+drop function if exists friend_list();
+create or replace function friend_list(p_realm text default 'main')
+returns table (
+  user_id uuid,
+  name text,
+  avatar text,
+  region text,
+  area_id text,
+  max_level int,
+  team jsonb,
+  since timestamptz,
+  updated_at timestamptz,
+  is_new boolean,
+  in_realm boolean
+)
+language sql stable security definer set search_path = public as $$
+  select m.id, coalesce(c.name, cm.name, 'Trainer'), coalesce(c.avatar, cm.avatar, 'red'), c.region, c.area_id,
+         coalesce(r.max_level, 0), coalesce(r.team, '[]'), m.since, c.updated_at, not m.seen, c.user_id is not null
+  from friend_ids_of(auth.uid()) m
+  left join player_cards c on c.user_id = m.id and c.realm = p_realm
+  left join player_cards cm on cm.user_id = m.id and cm.realm = 'main'
+  left join player_card_regions r on r.user_id = m.id and r.realm = p_realm and r.region = c.region
+  order by (not m.seen) desc, (c.user_id is not null) desc, c.updated_at desc nulls last
+$$;
+
+drop function if exists friend_profile(uuid);
+create or replace function friend_profile(p_friend uuid, p_realm text default 'main')
+returns table (
+  user_id uuid,
+  name text,
+  avatar text,
+  region text,
+  area_id text,
+  updated_at timestamptz,
+  since timestamptz,
+  regions jsonb,
+  versus jsonb,
+  in_realm boolean
+)
+language plpgsql stable security definer set search_path = public as $$
+declare
+  uid uuid := auth.uid();
+  friends_since timestamptz;
+  vs jsonb;
+begin
+  select f.created_at into friends_since
+  from friendships f where f.user_a = least(uid, p_friend) and f.user_b = greatest(uid, p_friend);
+  if friends_since is null then
+    return;
+  end if;
+  if to_regclass('public.versus_teams') is not null then
+    select jsonb_build_object(
+      'team', v.team,
+      'attackWins', (select count(*) from versus_battles b where b.realm = p_realm and b.attacker_id = v.user_id and b.won),
+      'defenseWins', (
+        select count(*) from (
+          select distinct b.attacker_id, b.defender_version from versus_battles b
+          where b.realm = p_realm and b.defender_id = v.user_id and not b.won
+        ) held
+      )
+    ) into vs
+    from versus_teams v where v.user_id = p_friend and v.realm = p_realm;
+  end if;
+  return query
+    select p_friend, coalesce(c.name, cm.name, 'Trainer'), coalesce(c.avatar, cm.avatar, 'red'), c.region, c.area_id,
+      c.updated_at, friends_since,
+      coalesce((
+        select jsonb_agg(jsonb_build_object(
+          'region', r.region, 'team', r.team, 'pokedex', r.pokedex, 'maxLevel', r.max_level, 'shinies', r.shinies,
+          'progress', r.progress, 'badges', to_jsonb(r.badges), 'endgame', r.endgame
+        ))
+        from player_card_regions r where r.user_id = p_friend and r.realm = p_realm
+      ), '[]'),
+      vs,
+      c.user_id is not null
+    from (select 1) one
+    left join player_cards c on c.user_id = p_friend and c.realm = p_realm
+    left join player_cards cm on cm.user_id = p_friend and cm.realm = 'main';
+end
+$$;
+
+drop function if exists friend_day_cares();
+create or replace function friend_day_cares(p_realm text default 'main')
+returns table (owner uuid, name text, avatar text, day_care jsonb)
+language sql stable security definer set search_path = public as $$
+  select c.user_id, c.name, c.avatar, c.day_care
+  from friend_ids_of(auth.uid()) f
+  join player_cards c on c.user_id = f.id and c.realm = p_realm
+  where jsonb_array_length(c.day_care) > 0
+$$;
+
+-- ---------------------------------------------------------------- the leaderboard
+
+drop function if exists leaderboard();
+create or replace function leaderboard(p_realm text default 'main')
+returns table (
+  region text,
+  is_me boolean,
+  name text,
+  "character" text,
+  team jsonb,
+  pokedex int,
+  max_level int,
+  shinies int,
+  progress jsonb,
+  is_friend boolean,
+  friend_id uuid,
+  raids_won int
+)
+language sql stable security definer set search_path = public as $$
+  select r.region, r.user_id = auth.uid(), c.name, c.avatar, r.team, r.pokedex, r.max_level, r.shinies, r.progress,
+         m.id is not null, m.id, coalesce(e.raids_won, 0)
+  from player_card_regions r
+  join player_cards c on c.user_id = r.user_id and c.realm = r.realm
+  left join friend_ids_of(auth.uid()) m on m.id = r.user_id
+  left join event_state e on e.user_id = r.user_id and e.realm = r.realm
+  where r.realm = p_realm
+    and cardinality(r.badges) > 0
+    and (c.updated_at > now() - interval '72 hours' or r.user_id = auth.uid())
+    and not exists (select 1 from leaderboard_bans x where x.user_id = r.user_id)
+  order by c.updated_at desc
   limit 3000
 $$;
 
-revoke all on function leaderboard_rows(timestamptz, uuid) from public, anon, authenticated;
-revoke all on function leaderboard_rebuild() from public, anon, authenticated;
-revoke all on function leaderboard_refresh() from public, anon, authenticated;
-revoke all on function leaderboard() from public;
-grant execute on function leaderboard() to anon, authenticated;
+-- ---------------------------------------------------------------- Versus
+
+drop function if exists versus_set_team(text[]);
+create or replace function versus_set_team(ids text[], p_realm text default 'main')
+returns int
+language plpgsql security definer set search_path = public as $$
+declare
+  me uuid := auth.uid();
+  save jsonb;
+  new_team jsonb;
+  new_ids jsonb := to_jsonb(versus_set_team.ids);
+  cur versus_teams%rowtype;
+  v int;
+begin
+  if me is null then raise exception 'versus_signed_out'; end if;
+  if versus_set_team.ids is null or coalesce(array_length(versus_set_team.ids, 1), 0) <> 3
+     or (select count(distinct x) from unnest(versus_set_team.ids) x) <> 3 then
+    raise exception 'versus_team_size';
+  end if;
+  select s.data into save from saves s where s.user_id = me and s.realm = p_realm;
+  if save is null then raise exception 'versus_no_save'; end if;
+
+  select jsonb_agg(jsonb_build_object(
+    'dex', (m ->> 'dex')::int,
+    'level', least((m ->> 'level')::int, 50),
+    'shiny', coalesce((m ->> 'shiny')::boolean, false)
+  ) order by t.ord)
+  into new_team
+  from unnest(versus_set_team.ids) with ordinality t(id, ord)
+  join (
+    select b from jsonb_array_elements(coalesce(save -> 'box', '[]')) b
+    union all
+    select b from jsonb_each(coalesce(save -> 'parked', '{}')) p(k, v), jsonb_array_elements(coalesce(p.v -> 'box', '[]')) b
+  ) boxes(m) on m ->> 'id' = t.id
+  where (m ->> 'level')::int >= 50 and m ->> 'revivesAt' is null;
+  if new_team is null or jsonb_array_length(new_team) <> 3 then raise exception 'versus_not_eligible'; end if;
+
+  select * into cur from versus_teams vt where vt.user_id = me and vt.realm = p_realm;
+  if not found then
+    insert into versus_teams (user_id, realm, version, team, ids) values (me, p_realm, 1, new_team, new_ids);
+    return 1;
+  end if;
+  if cur.team = new_team then
+    update versus_teams vt set ids = new_ids where vt.user_id = me and vt.realm = p_realm;
+    return cur.version;
+  end if;
+  update versus_teams vt
+     set team = new_team, ids = new_ids, version = cur.version + 1, updated_at = now()
+   where vt.user_id = me and vt.realm = p_realm
+  returning vt.version into v;
+  return v;
+end
+$$;
+
+-- Versus (0018) is optional on a database that only ran seed.sql: like 0033, this one is made only when its tables are
+-- there (a SQL function's tables are checked when it is created).
+drop function if exists versus_board();
+do $do$
+begin
+  if to_regclass('public.versus_teams') is null then
+    return;
+  end if;
+  execute $ddl$
+    create or replace function versus_board(p_realm text default 'main')
+    returns table (
+      user_id uuid,
+      is_me boolean,
+      name text,
+      "character" text,
+      team jsonb,
+      ids jsonb,
+      version int,
+      attack_wins int,
+      defense_wins int,
+      beaten boolean
+    )
+    language sql stable security definer set search_path = public as $body$
+      select
+        v.user_id,
+        v.user_id = auth.uid(),
+        coalesce(c.name, 'Trainer'),
+        coalesce(c.avatar, 'red'),
+        v.team,
+        case when v.user_id = auth.uid() then v.ids end,
+        v.version,
+        (select count(*)::int from versus_battles b where b.realm = v.realm and b.attacker_id = v.user_id and b.won),
+        (
+          select count(*)::int from (
+            select distinct b.attacker_id, b.defender_version from versus_battles b
+            where b.realm = v.realm and b.defender_id = v.user_id and not b.won
+          ) held
+        ),
+        exists (
+          select 1 from versus_battles b
+          where b.realm = v.realm and b.attacker_id = auth.uid() and b.defender_id = v.user_id
+            and b.defender_version = v.version and b.won
+        )
+      from versus_teams v
+      left join player_cards c on c.user_id = v.user_id and c.realm = v.realm
+      where v.realm = p_realm
+      order by v.updated_at desc
+      limit 1000
+    $body$
+  $ddl$;
+end
+$do$;
+
+drop function if exists versus_record(uuid, int, bigint, boolean);
+create or replace function versus_record(defender uuid, defender_version int, seed bigint, won boolean, p_realm text default 'main')
+returns void
+language plpgsql security definer set search_path = public as $$
+declare
+  me uuid := auth.uid();
+  v int;
+begin
+  if me is null then raise exception 'versus_signed_out'; end if;
+  if defender = me then raise exception 'versus_self'; end if;
+  if not exists (select 1 from versus_teams t where t.user_id = me and t.realm = p_realm) then raise exception 'versus_no_team'; end if;
+  select t.version into v from versus_teams t where t.user_id = defender and t.realm = p_realm;
+  if v is null then raise exception 'versus_gone'; end if;
+  if v <> versus_record.defender_version then raise exception 'versus_team_changed'; end if;
+  if exists (
+    select 1 from versus_battles b
+    where b.realm = p_realm and b.attacker_id = me and b.defender_id = defender and b.defender_version = v and b.won
+  ) then
+    raise exception 'versus_already_won';
+  end if;
+  insert into versus_battles (realm, attacker_id, defender_id, defender_version, seed, won)
+  values (p_realm, me, defender, v, versus_record.seed, versus_record.won);
+end
+$$;
+
+-- ---------------------------------------------------------------- the special events
+
+drop function if exists wheel_spin();
+create or replace function wheel_spin(p_realm text default 'main')
+returns jsonb
+language plpgsql volatile security definer set search_path = public as $$
+declare
+  me uuid := auth.uid();
+  today date := (now() at time zone 'UTC')::date;
+  prizes jsonb := wheel_prizes();
+  st event_state;
+  n int := jsonb_array_length(prizes);
+  weights numeric[] := '{}';
+  total numeric := 0;
+  w numeric;
+  x numeric;
+  pick int;
+  -- The admin's switch (0035): off (the default), on for the admin only (to try it in production), on for everyone.
+  access text := coalesce((select value #>> '{wheel,access}' from game_config where key = 'events'), 'off');
+begin
+  if me is null then raise exception 'events_signed_out'; end if;
+  if not (access = 'all' or (access = 'admin' and is_admin())) then
+    raise exception 'events_wheel_off';
+  end if;
+  insert into event_state (user_id, realm) values (me, p_realm) on conflict (user_id, realm) do nothing;
+  select * into st from event_state es where es.user_id = me and es.realm = p_realm for update;
+  if st.wheel_day = today and st.wheel_prize is not null then
+    return jsonb_build_object('day', to_char(today, 'YYYY-MM-DD'), 'prize', st.wheel_prize,
+      'reward', prizes -> st.wheel_prize -> 'reward', 'fresh', false);
+  end if;
+  for i in 0 .. n - 1 loop
+    w := greatest(0, coalesce((prizes -> i ->> 'count')::numeric, 0)) * greatest(0, coalesce((prizes -> i ->> 'odds')::numeric, 0));
+    weights := weights || w;
+    total := total + w;
+  end loop;
+  if total <= 0 then raise exception 'events_wheel_empty'; end if;
+  x := random() * total;
+  for i in 0 .. n - 1 loop
+    if weights[i + 1] > 0 then
+      pick := i;
+      x := x - weights[i + 1];
+      exit when x < 0;
+    end if;
+  end loop;
+  update event_state es set wheel_day = today, wheel_prize = pick, updated_at = now() where es.user_id = me and es.realm = p_realm;
+  return jsonb_build_object('day', to_char(today, 'YYYY-MM-DD'), 'prize', pick, 'reward', prizes -> pick -> 'reward', 'fresh', true);
+end $$;
+
+drop function if exists raid_today(jsonb);
+create or replace function raid_today(p_candidates jsonb, p_realm text default 'main')
+returns jsonb
+language plpgsql volatile security definer set search_path = public as $$
+declare
+  me uuid := auth.uid();
+  today text := to_char((now() at time zone 'UTC')::date, 'YYYY-MM-DD');
+  st event_state;
+  n int;
+  c jsonb;
+  shiny boolean;
+  pick jsonb;
+begin
+  if me is null then raise exception 'events_signed_out'; end if;
+  insert into event_state (user_id, realm) values (me, p_realm) on conflict (user_id, realm) do nothing;
+  select * into st from event_state es where es.user_id = me and es.realm = p_realm for update;
+  if st.raid is not null and st.raid ->> 'day' = today then return st.raid; end if;
+  n := coalesce(jsonb_array_length(p_candidates -> 'list'), 0);
+  if n = 0 then raise exception 'events_no_raid'; end if;
+  c := p_candidates -> 'list' -> floor(random() * n)::int;
+  shiny := coalesce((c ->> 'shiny')::boolean, false)
+    or (p_candidates ->> 'kind' = 'fallback' and random() < coalesce((p_candidates ->> 'fallbackShiny')::numeric, 0));
+  pick := jsonb_build_object('day', today, 'dex', (c ->> 'dex')::int, 'shiny', shiny, 'areaId', c ->> 'areaId', 'caught', false);
+  update event_state es set raid = pick, updated_at = now() where es.user_id = me and es.realm = p_realm;
+  return pick;
+end $$;
+
+drop function if exists raid_set_team(text[]);
+create or replace function raid_set_team(p_ids text[], p_realm text default 'main')
+returns jsonb
+language plpgsql volatile security definer set search_path = public as $$
+declare
+  me uuid := auth.uid();
+  save jsonb;
+  cap int := raid_team_cap();
+  new_team jsonb;
+begin
+  if me is null then raise exception 'events_signed_out'; end if;
+  if p_ids is null or coalesce(array_length(p_ids, 1), 0) not between 1 and 3
+     or (select count(distinct x) from unnest(p_ids) x) <> array_length(p_ids, 1) then
+    raise exception 'events_team_size';
+  end if;
+  select s.data into save from saves s where s.user_id = me and s.realm = p_realm;
+  if save is null then raise exception 'events_no_save'; end if;
+  select jsonb_agg(jsonb_build_object(
+    'dex', (m ->> 'dex')::int,
+    'level', least((m ->> 'level')::int, cap),
+    'shiny', coalesce((m ->> 'shiny')::boolean, false)
+  ) order by t.ord)
+  into new_team
+  from unnest(p_ids) with ordinality t(id, ord)
+  join (
+    select b from jsonb_array_elements(coalesce(save -> 'box', '[]')) b
+    union all
+    select b from jsonb_each(coalesce(save -> 'parked', '{}')) p(k, v), jsonb_array_elements(coalesce(p.v -> 'box', '[]')) b
+  ) boxes(m) on m ->> 'id' = t.id
+  where m ->> 'revivesAt' is null;
+  if new_team is null or jsonb_array_length(new_team) <> array_length(p_ids, 1) then raise exception 'events_not_eligible'; end if;
+  insert into raid_teams (user_id, realm, team, ids, updated_at) values (me, p_realm, new_team, to_jsonb(p_ids), now())
+  on conflict (user_id, realm) do update set team = excluded.team, ids = excluded.ids, updated_at = now();
+  return new_team;
+end $$;
+
+drop function if exists raid_friend_teams();
+create or replace function raid_friend_teams(p_realm text default 'main')
+returns table (user_id uuid, name text, avatar text, team jsonb, helped int)
+language sql stable security definer set search_path = public as $$
+  select t.user_id,
+         left(coalesce(nullif(trim(s.data -> 'player' ->> 'name'), ''), 'Trainer'), 12),
+         coalesce(s.data -> 'player' ->> 'avatar', s.data -> 'player' ->> 'character', 'red'),
+         t.team,
+         (select count(*)::int from raid_gifts g
+           where g.realm = p_realm and g.helper_id = t.user_id and g.raider_id = auth.uid())
+  from friend_ids_of(auth.uid()) f
+  join raid_teams t on t.user_id = f.id and t.realm = p_realm
+  left join saves s on s.user_id = t.user_id and s.realm = p_realm
+  order by t.updated_at desc
+$$;
+
+drop function if exists raid_gifts_claim();
+create or replace function raid_gifts_claim(p_realm text default 'main')
+returns table (id bigint, raider_name text, dex int, item_key text)
+language plpgsql volatile security definer set search_path = public as $$
+declare
+  me uuid := auth.uid();
+begin
+  if me is null then raise exception 'events_signed_out'; end if;
+  return query
+    update raid_gifts g set claimed_at = now()
+    where g.helper_id = me and g.realm = p_realm and g.claimed_at is null
+    returning g.id, g.raider_name, g.dex, g.item_key;
+end $$;
+
+drop function if exists raid_close(uuid[]);
+create or replace function raid_close(p_helpers uuid[] default '{}', p_realm text default 'main')
+returns jsonb
+language plpgsql volatile security definer set search_path = public as $$
+declare
+  me uuid := auth.uid();
+  today text := to_char((now() at time zone 'UTC')::date, 'YYYY-MM-DD');
+  midnight timestamptz := (now() at time zone 'UTC')::date at time zone 'UTC';
+  st event_state;
+  cfg jsonb := (select value -> 'raid' from game_config where key = 'events');
+  cap int;
+  gifts jsonb;
+  total numeric;
+  roll numeric;
+  pick text;
+  g jsonb;
+  helper uuid;
+  raider text;
+  given int := 0;
+begin
+  if me is null then raise exception 'events_signed_out'; end if;
+  select * into st from event_state es where es.user_id = me and es.realm = p_realm for update;
+  if st.raid is null or st.raid ->> 'day' <> today then raise exception 'events_no_raid'; end if;
+  if coalesce((st.raid ->> 'caught')::boolean, false) then
+    return jsonb_build_object('raidsWon', st.raids_won, 'gifts', 0);
+  end if;
+  update event_state es
+    set raid = jsonb_set(st.raid, '{caught}', 'true'), raids_won = st.raids_won + 1, updated_at = now()
+    where es.user_id = me and es.realm = p_realm
+    returning * into st;
+
+  cap := coalesce((cfg ->> 'helperDailyCap')::int, 5);
+  gifts := coalesce(cfg -> 'gifts', '[{"key":"ultra-ball","weight":40},{"key":"hyper-potion","weight":25},{"key":"revive","weight":20},{"key":"rare-candy","weight":15}]');
+  select sum(greatest(0, coalesce((x ->> 'weight')::numeric, 0))) into total from jsonb_array_elements(gifts) x;
+  raider := left(coalesce(nullif(trim((select s.data -> 'player' ->> 'name' from saves s where s.user_id = me and s.realm = p_realm)), ''), 'Trainer'), 12);
+  for helper in select distinct h from unnest(coalesce(p_helpers, '{}')) h loop
+    continue when helper is null or helper = me or coalesce(total, 0) <= 0;
+    continue when not exists (select 1 from friend_ids_of(me) f where f.id = helper);
+    continue when not exists (select 1 from raid_teams t where t.user_id = helper and t.realm = p_realm);
+    continue when (select count(*) from raid_gifts x where x.realm = p_realm and x.helper_id = helper and x.created_at >= midnight) >= cap;
+    roll := random() * total;
+    pick := null;
+    for g in select * from jsonb_array_elements(gifts) loop
+      roll := roll - greatest(0, coalesce((g ->> 'weight')::numeric, 0));
+      if roll < 0 then
+        pick := g ->> 'key';
+        exit;
+      end if;
+    end loop;
+    continue when pick is null;
+    insert into raid_gifts (realm, helper_id, raider_id, raider_name, dex, item_key)
+    values (p_realm, helper, me, raider, (st.raid ->> 'dex')::int, pick);
+    given := given + 1;
+  end loop;
+  return jsonb_build_object('raidsWon', st.raids_won, 'gifts', given);
+end $$;
+
+-- ---------------------------------------------------------------- deleting
+
+-- 0038's Delete all my data (p_realm null: everything, both saves), and Delete my Extreme save (p_realm 'extreme':
+-- that world's rows only; friends, the friend ID and the main save stay).
+drop function if exists delete_my_data();
+create or replace function delete_my_data(p_realm text default null)
+returns void
+language plpgsql security definer set search_path = public as $$
+declare
+  me uuid := auth.uid();
+begin
+  if me is null then
+    raise exception 'signed_out' using errcode = '42501';
+  end if;
+  if p_realm is not null and p_realm not in ('main', 'extreme') then
+    raise exception 'bad_realm' using errcode = '22023';
+  end if;
+  delete from saves where user_id = me and (p_realm is null or realm = p_realm);
+  delete from player_cards where user_id = me and (p_realm is null or realm = p_realm); -- and their regions
+  delete from versus_teams where user_id = me and (p_realm is null or realm = p_realm);
+  delete from versus_battles where (attacker_id = me or defender_id = me) and (p_realm is null or realm = p_realm);
+  delete from event_state where user_id = me and (p_realm is null or realm = p_realm);
+  delete from raid_teams where user_id = me and (p_realm is null or realm = p_realm);
+  delete from raid_gifts where (helper_id = me or raider_id = me) and (p_realm is null or realm = p_realm);
+  if p_realm is null then
+    delete from friend_codes where user_id = me;
+    delete from friendships where user_a = me or user_b = me;
+    delete from friend_attempts where actor = me::text;
+  end if;
+end
+$$;
+
+-- ---------------------------------------------------------------- who may call what
+
+revoke all on function friend_lookup(text, text, text) from public;
+revoke all on function friend_add(text, text) from public, anon;
+revoke all on function friend_status(text) from public, anon;
+revoke all on function friend_list(text) from public, anon;
+revoke all on function friend_profile(uuid, text) from public, anon;
+revoke all on function friend_day_cares(text) from public, anon;
+revoke all on function leaderboard(text) from public;
+revoke all on function versus_set_team(text[], text) from public;
+revoke all on function versus_record(uuid, int, bigint, boolean, text) from public;
+revoke all on function wheel_spin(text) from public;
+revoke all on function raid_today(jsonb, text) from public;
+revoke all on function raid_set_team(text[], text) from public;
+revoke all on function raid_friend_teams(text) from public;
+revoke all on function raid_gifts_claim(text) from public;
+revoke all on function raid_close(uuid[], text) from public;
+revoke all on function delete_my_data(text) from public, anon;
+grant execute on function friend_lookup(text, text, text), leaderboard(text) to anon, authenticated;
+do $$
+begin
+  if to_regprocedure('public.versus_board(text)') is not null then
+    revoke all on function versus_board(text) from public;
+    grant execute on function versus_board(text) to anon, authenticated;
+  end if;
+end
+$$;
+grant execute on function friend_add(text, text), friend_status(text), friend_list(text), friend_profile(uuid, text),
+  friend_day_cares(text), versus_set_team(text[], text), versus_record(uuid, int, bigint, boolean, text),
+  wheel_spin(text), raid_today(jsonb, text), raid_set_team(text[], text), raid_friend_teams(text),
+  raid_gifts_claim(text), raid_close(uuid[], text), delete_my_data(text) to authenticated;
 
 insert into type_chart (attacking, defending, multiplier) values
   ('bug', 'dark', 2),
@@ -1647,7 +3439,7 @@ on conflict (id) do update set name = excluded.name, order_index = excluded.orde
 
 insert into areas (id, order_index, region_id, name, banner_url, rounds_to_clear, min_level, max_level, encounter_weights, backtrack_multiplier, legendary_boss, scales_to_team, scale_offsets, easy_mode, enemy_upgrade_level, battle_background, hidden, unlock_conditions, gyms) values
   ('1bef9b55-6556-5a47-b728-8dc5dba851c7', 126, 'sinnoh', 'Fullmoon Island', '/banners/beach.png#flip', null, 50, 62, '{"item":0,"wild":0,"casino":0,"center":0,"trainer":0}'::jsonb, 0.5, '[{"dex":488,"level":55,"teamAvgThreshold":0}]'::jsonb, false, null, false, 9, 'grass', true, '[{"kind":"area","areaId":"5dc66787-c27b-5d67-8d66-4df0f1aa1041"},{"kind":"pokedex","count":100}]'::jsonb, '[]'::jsonb),
-  ('5e2e78f9-5ad7-5e3c-a9f2-518a4c11799c', 127, 'sinnoh', 'Newmoon Island', '/banners/haunted.png#flip', null, 55, 66, '{"item":0,"wild":0,"casino":0,"center":0,"trainer":0}'::jsonb, 0.5, '[{"dex":491,"level":60,"teamAvgThreshold":0}]'::jsonb, false, null, false, 9, 'default', true, '[{"kind":"area","areaId":"1bef9b55-6556-5a47-b728-8dc5dba851c7"}]'::jsonb, '[]'::jsonb),
+  ('5e2e78f9-5ad7-5e3c-a9f2-518a4c11799c', 127, 'sinnoh', 'Newmoon Island', '/banners/haunted.png#flip', 1, 55, 66, '{"item":0,"wild":8,"casino":0,"center":0,"trainer":0}'::jsonb, 0.5, null, false, null, false, 9, 'default', true, '[{"kind":"area","areaId":"1bef9b55-6556-5a47-b728-8dc5dba851c7"}]'::jsonb, '[]'::jsonb),
   ('43ad7294-47a6-5c1c-b068-5743d4eb5562', 120, 'sinnoh', 'The Battle Frontier', '/banners/sunset.png', 1, 60, 76, '{"item":1,"wild":6,"casino":0,"center":1,"trainer":2}'::jsonb, 0.5, null, true, null, false, 9, 'grass', true, '[{"kind":"area","areaId":"5dc66787-c27b-5d67-8d66-4df0f1aa1041"}]'::jsonb, '["13e13404-d69c-57c6-a95a-912ec26f6784","a0cd1494-e5ca-5a08-9aac-9a82fec8e1a7","a150df22-a319-5e51-a61c-0f57fd2077b0","b0997b41-e59b-566f-961b-4a9ccf6fb572"]'::jsonb),
   ('2c96595d-9064-52e8-be08-f39fe15acac3', 122, 'sinnoh', 'The Lakes of Sinnoh', '/banners/crystal_cave.png#flip', 1, 40, 50, '{"item":2,"wild":0,"casino":0,"center":6,"trainer":0}'::jsonb, 0.5, '[{"dex":480,"level":45,"teamAvgThreshold":0},{"dex":481,"level":45,"teamAvgThreshold":0},{"dex":482,"level":45,"teamAvgThreshold":0}]'::jsonb, false, null, false, 8, 'water', true, '[{"kind":"area","areaId":"ffd172b1-9ee2-54a8-bc39-a66661a7e0b8"},{"kind":"maxLevel","level":50}]'::jsonb, '[]'::jsonb),
   ('9e01bf6d-a07a-5d1c-85c2-6f93074b9dbb', 123, 'sinnoh', 'Turnback Cave', '/banners/cave_dark.png', 1, 45, 56, '{"item":1,"wild":8,"casino":0,"center":1,"trainer":0}'::jsonb, 0.5, '[{"dex":487,"level":70}]'::jsonb, false, null, false, 9, 'rock', true, '[{"kind":"area","areaId":"8e755a0e-8270-5685-857c-629ea1b7d9c5"},{"kind":"maxLevel","level":75}]'::jsonb, '[]'::jsonb),
@@ -1667,23 +3459,20 @@ insert into areas (id, order_index, region_id, name, banner_url, rounds_to_clear
   ('37bf35aa-eb76-5a07-944f-353d0d0cd32e', 601, 'kalos', 'Routes 1 & 2 and Aquacorde Town', '/banners/plains.png', 2, 2, 5, '{"item":1,"wild":4,"casino":0,"center":0,"trainer":0}'::jsonb, 0.5, null, false, null, true, 1, 'grass', false, null, '[]'::jsonb),
   ('ae77e7e6-96fd-5e67-adc9-01bcbef2f943', 602, 'kalos', 'Santalune Forest', '/banners/forest.png', 2, 3, 7, '{"item":1,"wild":3,"casino":0,"center":0,"trainer":1}'::jsonb, 0.5, null, false, null, true, 1, 'grass', false, null, '[]'::jsonb),
   ('24403e0e-ced3-55a1-9d15-b2f1b46b486b', 603, 'kalos', 'Route 3 & Santalune City', '/banners/plains.png#flip', 1, 4, 12, '{"item":1,"wild":3,"casino":0,"center":1,"trainer":2}'::jsonb, 0.5, null, false, null, false, 1, 'grass', false, null, '["3b10800a-5b6c-5965-9059-367e799ed821"]'::jsonb),
-  ('100e6644-3f5b-553a-ad22-e26551b04edc', 58, 'johto', 'Ilex Shrine', '/banners/forest.png', 1, 45, 55, '{"item":1,"wild":8,"casino":0,"center":0,"trainer":0}'::jsonb, 0.5, '[{"dex":251,"level":50}]'::jsonb, false, null, false, 9, 'grass', true, '[{"kind":"area","areaId":"5fba87f3-6e88-5d47-8f6c-549021a0c04e"},{"kind":"pokedex","count":133}]'::jsonb, '[]'::jsonb),
+  ('100e6644-3f5b-553a-ad22-e26551b04edc', 58, 'johto', 'Ilex Shrine', '/banners/forest.png', 1, 45, 55, '{"item":1,"wild":8,"casino":0,"center":0,"trainer":0}'::jsonb, 0.5, null, false, null, false, 9, 'grass', true, '[{"kind":"area","areaId":"5fba87f3-6e88-5d47-8f6c-549021a0c04e"},{"kind":"pokedex","count":133}]'::jsonb, '[]'::jsonb),
   ('523fcbeb-9bdf-593a-ae8d-be7afecb0b5e', 55, 'johto', 'Ruins of Alph', '/banners/crystal_cave.png', null, 12, 28, '{"item":1,"wild":8,"casino":0,"center":1,"trainer":0}'::jsonb, 0.5, null, false, null, false, 3, 'rock', true, '[{"kind":"area","areaId":"1a6ff054-0850-54a9-8471-e828a46154b4"},{"kind":"pokedex","count":12}]'::jsonb, '[]'::jsonb),
   ('b98a27bb-00b4-5fbc-9ef2-63d1f22b024e', 103, 'sinnoh', 'Hearthome City', '/banners/city.png', 1, 22, 30, '{"item":1,"wild":2,"casino":2,"center":1,"trainer":3}'::jsonb, 0.5, null, false, null, false, 3, 'default', false, null, '["8da584a7-851f-50d4-b223-86b0398dc189"]'::jsonb),
   ('6c54a30a-d5cc-5311-ae07-d9b0dfac5db2', 104, 'sinnoh', 'Route 209 & the Solaceon Ruins', '/banners/crystal_cave.png', 1, 25, 32, '{"item":1,"wild":3,"casino":0,"center":1,"trainer":2}'::jsonb, 0.5, null, false, null, false, 4, 'rock', false, null, '[]'::jsonb),
   ('ec3bf8b4-c54c-5891-8c31-d22a029fa3b2', 105, 'sinnoh', 'Veilstone City & the Galactic HQ', '/banners/city.png#flip', 1, 27, 35, '{"item":1,"wild":2,"casino":2,"center":1,"trainer":3}'::jsonb, 0.5, null, false, null, false, 4, 'default', false, null, '["8afb1b22-4777-5381-9ec8-9f914c6063df"]'::jsonb),
   ('67b3b539-dd5b-5c9a-96d4-60e4d8b8d188', 106, 'sinnoh', 'Route 212 & Pastoria City', '/banners/swamp.png', 1, 29, 37, '{"item":1,"wild":2,"casino":0,"center":1,"trainer":3}'::jsonb, 0.5, null, false, null, false, 5, 'water', false, null, '["e50c0ff9-ac84-51bf-99ec-bb16e2771f9f"]'::jsonb),
   ('f4125979-a6a1-5086-9a5a-5314568b77a9', 67, 'hoenn', 'Mauville City', '/banners/city.png#flip', 1, 17, 26, '{"item":1,"wild":2,"casino":2,"center":1,"trainer":3}'::jsonb, 0.5, null, false, null, false, 3, 'default', false, null, '["11a531f6-ad65-5121-9262-87dd169d9b77"]'::jsonb),
-  ('5b386fa9-4a0a-4291-bddb-19e899fd366a', 52, 'johto', 'Victory Road II', '/banners/mountains.png', 1, 60, 69, '{"item":1,"wild":3,"casino":0,"center":0,"trainer":2}'::jsonb, 0.5, null, false, null, false, 9, 'rock', false, null, '[]'::jsonb),
   ('bec52d1b-4c7c-5503-810a-5d4b8e5336ec', 7, 'kanto', 'Routes 5 & 6', '/banners/plains.png#flip', 1, 12, 18, '{"item":1,"wild":2,"center":1,"trainer":2}'::jsonb, 0.5, null, false, null, false, 3, 'grass', false, null, '["7bd398fa-190e-5ea3-acc8-8d7b58b5237e"]'::jsonb),
   ('ff3f0086-1b99-559e-a646-e88006eec749', 13, 'kanto', 'Routes 12–15', '/banners/flowers.png#flip', 1, 22, 30, '{"item":1,"wild":3,"center":1,"trainer":2}'::jsonb, 0.5, null, false, null, false, 5, 'grass', false, null, '[]'::jsonb),
-  ('82775277-caba-462e-8209-c08d46b403e6', 53, 'johto', 'Indigo Plateau II', '/banners/default.png', 1, 49, 59, '{"item":0,"wild":0,"casino":0,"center":1,"trainer":0}'::jsonb, 0.5, null, false, null, false, 9, 'default', false, null, '["c0a6eb4d-9adf-4063-9ce2-fc4cc669e7e8","45cdb614-48c6-4166-a250-b41d554e250b","e6f08fae-fb9d-4b38-870c-6539a695ebe1","c1b114c8-c834-4a4e-9dca-49965b044a52","eeddd758-6420-4f33-ba2c-56a098f3fd6c"]'::jsonb),
   ('bbe7e459-a138-5106-bd01-fce7ff422e7f', 22, 'kanto', 'Indigo Plateau', '/banners/sky.png', 1, 45, 55, '{"item":1,"wild":0,"center":1,"trainer":2}'::jsonb, 0.5, null, false, null, false, 9, 'default', false, null, '["8f2e2f31-b802-5fa0-a53a-6972a066c2ca","5be0ce71-8b9a-5d00-9fc7-55c868dcaae9","9c8e8be2-905e-565f-8845-8643678a03fb","eb27f123-dbfb-5520-85bb-06f54a8dfb09","2330f93e-5d26-56bd-b875-59351aac91bb"]'::jsonb),
   ('2238f26a-2629-5f28-af07-e74cb41d5f7a', 15, 'kanto', 'Safari Zone', '/banners/swamp.png', 2, 24, 33, '{"item":2,"wild":5,"center":1,"trainer":0}'::jsonb, 0.5, null, false, null, false, 5, 'grass', false, null, '["105640d0-b406-554f-be2c-2cf40b5d2522"]'::jsonb),
-  ('050ff505-ff8e-5251-8499-842a2cfc2986', 27, 'kanto', 'Faraway Island', '/banners/beach.png#flip', null, 60, 70, '{"item":0,"wild":0,"center":10,"trainer":0}'::jsonb, 0.5, '[{"dex":151,"level":65,"teamAvgThreshold":0}]'::jsonb, false, null, false, 9, 'grass', true, '[{"kind":"pokedex","count":150}]'::jsonb, '[]'::jsonb),
+  ('050ff505-ff8e-5251-8499-842a2cfc2986', 27, 'kanto', 'Faraway Island', '/banners/beach.png#flip', 1, 60, 70, '{"item":0,"wild":8,"center":1,"trainer":0}'::jsonb, 0.5, null, false, null, false, 9, 'grass', true, '[{"kind":"pokedex","count":150}]'::jsonb, '[]'::jsonb),
   ('51bb91b2-9c10-508c-bd4d-0f9e39e3f30d', 18, 'kanto', 'Seafoam Islands', '/banners/snow_mountains.png', 1, 30, 40, '{"item":1,"wild":8,"center":1,"trainer":0}'::jsonb, 0.5, '[{"dex":144,"level":50,"teamAvgThreshold":50}]'::jsonb, false, null, false, 7, 'water', false, null, '[]'::jsonb),
   ('6ce5603a-9b36-52df-b8bc-3e9efb0686c3', 21, 'kanto', 'Victory Road', '/banners/cave_dark.png#flip', 1, 38, 47, '{"item":1,"wild":3,"center":0,"trainer":2}'::jsonb, 0.5, '[{"dex":146,"level":50,"teamAvgThreshold":50}]'::jsonb, false, null, false, 9, 'rock', false, null, '[]'::jsonb),
-  ('35c40458-61da-5321-adda-6df33b930671', 23, 'kanto', 'Victory Road II', '/banners/cave_dark.png', 1, 55, 66, '{"item":1,"wild":5,"casino":0,"center":1,"trainer":4}'::jsonb, 0.5, null, false, null, false, 9, 'rock', false, null, '[]'::jsonb),
   ('2be87c2d-54b0-5ab8-888a-43f7bfc5da5e', 604, 'kalos', 'Routes 4 & 22 and Lumiose City South', '/banners/flowers.png', 1, 6, 11, '{"item":1,"wild":3,"casino":0,"center":1,"trainer":2}'::jsonb, 0.5, null, false, null, false, 2, 'grass', false, null, '[]'::jsonb),
   ('45a1953c-7b1e-5408-9205-00d75f9dc980', 605, 'kalos', 'Route 5 & Camphrier Town', '/banners/plains.png', 1, 8, 13, '{"item":1,"wild":3,"casino":0,"center":1,"trainer":2}'::jsonb, 0.5, null, false, null, false, 2, 'grass', false, null, '[]'::jsonb),
   ('bdfbef78-d8fc-5fca-a7c6-1d1a60ab2653', 606, 'kalos', 'Route 6 & Parfum Palace', '/banners/flowers.png#flip', 1, 10, 15, '{"item":1,"wild":3,"casino":0,"center":1,"trainer":2}'::jsonb, 0.5, null, false, null, false, 2, 'grass', false, null, '[]'::jsonb),
@@ -1695,8 +3484,8 @@ insert into areas (id, order_index, region_id, name, banner_url, rounds_to_clear
   ('539298c8-926d-56a3-bf8e-e8635db096da', 610, 'kalos', 'Route 10 & Geosenge Town', '/banners/mountains.png', 1, 19, 24, '{"item":1,"wild":3,"casino":0,"center":1,"trainer":2}'::jsonb, 0.5, null, false, null, false, 3, 'rock', false, null, '[]'::jsonb),
   ('56e3832c-f06c-5d1d-821d-ec94d7b75286', 611, 'kalos', 'Route 11, Reflection Cave & Shalour City', '/banners/crystal_cave.png', 1, 21, 32, '{"item":1,"wild":3,"casino":0,"center":1,"trainer":2}'::jsonb, 0.5, null, false, null, false, 3, 'rock', false, null, '["8c0cdf42-06c9-5e80-af3a-89ccc1a08633"]'::jsonb),
   ('070ee8ad-f4e1-5b18-b2a6-a1ff5fdcb226', 612, 'kalos', 'Route 12, Azure Bay & Coumarine City', '/banners/ocean.png', 1, 23, 34, '{"item":1,"wild":3,"casino":0,"center":1,"trainer":2}'::jsonb, 0.5, null, false, null, false, 4, 'sea', false, null, '["399d905e-5210-51ef-82f6-04270dfa3f55"]'::jsonb),
-  ('75d4e417-4ae4-523a-bc44-d1efa9e5ed5e', 128, 'sinnoh', 'The Seabreak Path', '/banners/ocean.png', null, 50, 62, '{"item":0,"wild":0,"casino":0,"center":0,"trainer":0}'::jsonb, 0.5, '[{"dex":489,"level":50,"teamAvgThreshold":0},{"dex":490,"level":55,"teamAvgThreshold":0}]'::jsonb, false, null, false, 9, 'sea', true, '[{"kind":"area","areaId":"43ad7294-47a6-5c1c-b068-5743d4eb5562"},{"kind":"pokedex","count":80}]'::jsonb, '[]'::jsonb),
-  ('fc27382b-919d-50d0-9f21-23dd16cf99d0', 129, 'sinnoh', 'Flower Paradise', '/banners/flowers.png', null, 55, 68, '{"item":0,"wild":0,"casino":0,"center":0,"trainer":0}'::jsonb, 0.5, '[{"dex":492,"level":60,"teamAvgThreshold":0}]'::jsonb, false, null, false, 9, 'grass', true, '[{"kind":"pokedex","count":70},{"kind":"maxLevel","level":65}]'::jsonb, '[]'::jsonb),
+  ('75d4e417-4ae4-523a-bc44-d1efa9e5ed5e', 128, 'sinnoh', 'The Seabreak Path', '/banners/ocean.png', 1, 50, 62, '{"item":0,"wild":8,"casino":0,"center":0,"trainer":0}'::jsonb, 0.5, null, false, null, false, 9, 'sea', true, '[{"kind":"area","areaId":"43ad7294-47a6-5c1c-b068-5743d4eb5562"},{"kind":"pokedex","count":80}]'::jsonb, '[]'::jsonb),
+  ('fc27382b-919d-50d0-9f21-23dd16cf99d0', 129, 'sinnoh', 'Flower Paradise', '/banners/flowers.png', 1, 55, 68, '{"item":0,"wild":8,"casino":0,"center":0,"trainer":0}'::jsonb, 0.5, null, false, null, false, 9, 'grass', true, '[{"kind":"pokedex","count":70},{"kind":"maxLevel","level":65}]'::jsonb, '[]'::jsonb),
   ('0f04ef44-9fa0-57a3-b121-3b883b80e4b3', 613, 'kalos', 'Route 13 & the Kalos Power Plant', '/banners/dunes.png', 1, 26, 32, '{"item":1,"wild":2,"casino":0,"center":1,"trainer":3}'::jsonb, 0.5, null, false, null, false, 5, 'rock', false, null, '[]'::jsonb),
   ('6e410147-d926-5e1e-b132-47d7a9470438', 614, 'kalos', 'Lumiose City', '/banners/city.png', 1, 30, 37, '{"item":1,"wild":2,"casino":2,"center":1,"trainer":3}'::jsonb, 0.5, null, false, null, false, 5, 'default', false, null, '["916a7913-23e2-5aac-abb0-7bfdf6909ead"]'::jsonb),
   ('a70959b8-95b3-5534-9d93-01262a0e1179', 615, 'kalos', 'Route 14 & Laverre City', '/banners/swamp.png', 1, 30, 42, '{"item":1,"wild":3,"casino":0,"center":1,"trainer":2}'::jsonb, 0.5, null, false, null, false, 6, 'water', false, null, '["bc154365-2715-55f1-a358-375185b53e12"]'::jsonb),
@@ -1706,12 +3495,9 @@ insert into areas (id, order_index, region_id, name, banner_url, rounds_to_clear
   ('87839b2d-8083-5d78-b526-40049ff2e2c2', 64, 'hoenn', 'Dewford Town & Granite Cave', '/banners/cave_dark.png', 1, 11, 19, '{"item":1,"wild":3,"casino":0,"center":1,"trainer":2}'::jsonb, 0.5, null, false, null, false, 2, 'rock', false, null, '["eb1c6cef-21db-5a36-a9d1-daeae059b35f"]'::jsonb),
   ('29ab296e-d543-5dbd-b987-937db9ec59c0', 619, 'kalos', 'Lysandre Labs & the Team Flare Secret HQ', '/banners/factory.png', 1, 44, 53, '{"item":1,"wild":0,"casino":0,"center":1,"trainer":2}'::jsonb, 0.5, null, false, null, false, 8, 'default', false, null, '["7210c66a-4c81-575c-a75d-7870517a9c0f","10d480fd-cf5e-594a-966f-042d992fab57"]'::jsonb),
   ('ae5875f0-198e-58a6-bd22-7418d51270e3', 65, 'hoenn', 'Routes 105–107', '/banners/ocean.png', 1, 13, 22, '{"item":1,"wild":3,"casino":0,"center":1,"trainer":2}'::jsonb, 0.5, null, false, null, false, 3, 'sea', false, null, '[]'::jsonb),
-  ('f3ff4c29-01d6-4036-80c1-1ef6263d3eaf', 118, 'sinnoh', 'The Pokémon League II', '/banners/default.png', 1, 65, 75, '{"item":1,"wild":0,"casino":0,"center":1,"trainer":2}'::jsonb, 0.5, null, false, null, false, 9, 'default', false, null, '["4457770f-a969-4efa-bee2-7102bd718fc4","505a38a7-1fce-4bff-9dd1-c1ca9d0e2ec5","b8f5fd50-207f-4e18-b8f4-4e6b9427b6e8","ff1fa9eb-e2a9-4ec8-ae06-0c399a6b6d32","43e442fb-cf4e-47f6-b0cd-1252eb421c93"]'::jsonb),
-  ('aa2f848e-f405-4eff-ab71-02e3a5120b9f', 117, 'sinnoh', 'Victory Road II', '/banners/cave_dark.png#flip', 1, 59, 69, '{"item":1,"wild":4,"casino":0,"center":1,"trainer":3}'::jsonb, 0.5, null, false, null, false, 9, 'rock', false, null, '[]'::jsonb),
   ('57a87398-8ee0-5924-b794-bb1ca29ed358', 73, 'hoenn', 'Routes 118 & 119', '/banners/swamp.png', 1, 29, 38, '{"item":1,"wild":3,"casino":0,"center":1,"trainer":2}'::jsonb, 0.5, null, false, null, false, 6, 'grass', false, null, '[]'::jsonb),
   ('cff05c73-329a-55d0-a476-ba7c5683e6ae', 19, 'kanto', 'Pokémon Mansion', '/banners/volcano.png', 1, 32, 42, '{"item":1,"wild":3,"center":1,"trainer":3}'::jsonb, 0.5, null, false, null, false, 7, 'default', false, null, '["7f8c6bce-6401-50a6-9443-8b584cc99b4d"]'::jsonb),
   ('6d47ad48-bf44-5cb5-83fd-8db581b4a715', 20, 'kanto', 'Route 21', '/banners/beach.png', 1, 30, 40, '{"item":1,"wild":3,"center":1,"trainer":3}'::jsonb, 0.5, null, false, null, false, 8, 'sea', false, null, '["1c772786-a75c-59cb-a34d-c7d2bf345250"]'::jsonb),
-  ('2737f8c1-713a-54d8-986e-30b92f7c4a8f', 24, 'kanto', 'Indigo Plateau II', '/banners/sky.png#flip', 1, 65, 72, '{"item":1,"wild":0,"casino":0,"center":1,"trainer":2}'::jsonb, 0.5, null, false, null, false, 9, 'default', false, null, '["cfb99aaf-c791-57e2-ba5a-fe18ea911818","c0e5fab6-1e0f-5c87-99f4-cd1dcbeaadc9","d6693b0f-dd30-5e46-b58b-34801c8e89e4","2fda80de-eba9-579b-a75d-a86af7c69ad3","a568ca36-fc30-599e-9e78-b4fb211fb606","2a51f07a-53f5-5fe6-a875-8e8428d78db6","599bb09c-3765-5356-b5e1-27a6cf741358"]'::jsonb),
   ('8ced3bb7-e9ea-59b5-9515-aed7d2ced0d7', 68, 'hoenn', 'Route 111 Desert & Mirage Tower', '/banners/dunes.png', 1, 19, 28, '{"item":1,"wild":3,"casino":0,"center":1,"trainer":2}'::jsonb, 0.5, null, false, null, false, 4, 'rock', false, null, '[]'::jsonb),
   ('35ba43d5-ed6e-5add-a1ce-4f1d20e34cf4', 69, 'hoenn', 'Route 112, Fiery Path & Mt. Chimney', '/banners/volcano.png', 1, 21, 30, '{"item":1,"wild":2,"casino":0,"center":1,"trainer":3}'::jsonb, 0.5, null, false, null, false, 4, 'rock', false, null, '[]'::jsonb),
   ('5d36bbd8-0ebe-56b8-9af3-df45a293a3e1', 70, 'hoenn', 'Lavaridge Town', '/banners/volcano.png#flip', 1, 23, 32, '{"item":1,"wild":3,"casino":0,"center":1,"trainer":2}'::jsonb, 0.5, null, false, null, false, 4, 'rock', false, null, '["92ad6325-68ac-5174-adc8-c1716d23899a"]'::jsonb),
@@ -1732,8 +3518,6 @@ insert into areas (id, order_index, region_id, name, banner_url, rounds_to_clear
   ('5fba87f3-6e88-5d47-8f6c-549021a0c04e', 36, 'johto', 'Ilex Forest', '/banners/forest.png#flip', 1, 12, 20, '{"item":1,"wild":3,"casino":0,"center":0,"trainer":1}'::jsonb, 0.5, null, false, null, false, 3, 'grass', false, null, '[]'::jsonb),
   ('30af3925-076e-5c88-a6c7-fba28a4ed035', 37, 'johto', 'Route 34 & the Day Care', '/banners/plains.png', 1, 14, 22, '{"item":1,"wild":3,"casino":0,"center":1,"trainer":2}'::jsonb, 0.5, null, false, null, false, 3, 'grass', false, null, '[]'::jsonb),
   ('d3464556-7bcd-5708-9a13-415e0326fb75', 623, 'kalos', 'The Pokémon League', '/banners/default.png', 1, 60, 70, '{"item":1,"wild":0,"casino":0,"center":1,"trainer":2}'::jsonb, 0.5, null, false, null, false, 9, 'default', false, null, '["68e7ac20-52ed-57e9-8ba7-4c58df284d5c","734b4e85-66b2-5512-a4bb-c0e34f6952a7","4c0a9e79-6211-5fea-bbb8-188080d9a8cb","9a852abf-1f4c-5d91-8201-15e95d9314ec","6044b4d2-33fd-5b56-bd0c-86d9dac85c45"]'::jsonb),
-  ('13fcad9d-8c4b-56d3-bced-9ef61c93745f', 624, 'kalos', 'Victory Road II', '/banners/cave_dark.png#flip', 1, 63, 72, '{"item":1,"wild":4,"casino":0,"center":1,"trainer":3}'::jsonb, 0.5, null, false, null, false, 9, 'rock', false, null, '[]'::jsonb),
-  ('7213c40c-c1d8-5cbc-89f9-5b65c3e52fa2', 625, 'kalos', 'The Pokémon League II', '/banners/default.png', 1, 68, 78, '{"item":1,"wild":0,"casino":0,"center":1,"trainer":2}'::jsonb, 0.5, null, false, null, false, 9, 'default', false, null, '["c01cea5c-5042-5fad-a1ea-9b12c21f193e","d840212f-3724-599a-bb91-0e8a38a900ec","0a3ea046-6726-5aaf-a072-1463c29ec786","7ad18f73-8f24-527e-a9e0-9dd285a3607a","da41fca3-d4f8-5e32-922e-24224bf2f74a"]'::jsonb),
   ('058038e0-b19e-5156-9e27-c57aa3b653fc', 38, 'johto', 'Goldenrod City', '/banners/city.png', 1, 15, 24, '{"item":1,"wild":2,"casino":2,"center":1,"trainer":3}'::jsonb, 0.5, null, false, null, false, 3, 'default', false, null, '["bcfc908a-9ef7-5831-a478-982f10f40720"]'::jsonb),
   ('61bfb445-9bdc-5e47-9c3a-f379bd33a06b', 39, 'johto', 'Routes 35–37', '/banners/flowers.png', 1, 17, 26, '{"item":1,"wild":3,"casino":0,"center":1,"trainer":2}'::jsonb, 0.5, null, false, null, false, 4, 'grass', false, null, '[]'::jsonb),
   ('3aa36df1-1d3e-533b-8f85-32ca0b970b16', 40, 'johto', 'National Park', '/banners/flowers.png#flip', 1, 18, 27, '{"item":1,"wild":3,"casino":0,"center":0,"trainer":1}'::jsonb, 0.5, null, false, null, false, 4, 'grass', false, null, '[]'::jsonb),
@@ -1747,7 +3531,7 @@ insert into areas (id, order_index, region_id, name, banner_url, rounds_to_clear
   ('665e8d04-8cda-5960-9a8a-0e843c5a095e', 5, 'kanto', 'Mt. Moon', '/banners/cave.png', 1, 7, 12, '{"item":1,"wild":3,"center":0,"trainer":1}'::jsonb, 0.5, null, false, null, false, 2, 'rock', false, null, '[]'::jsonb),
   ('829a4b14-5248-5410-8b66-60d96d873160', 4, 'kanto', 'Route 3', '/banners/mountains.png', 1, 5, 10, '{"item":1,"wild":3,"center":1,"trainer":2}'::jsonb, 0.5, null, false, null, false, 2, 'grass', false, null, '[]'::jsonb),
   ('e378fb03-6702-51fd-89ba-18ffc912a300', 6, 'kanto', 'Route 4 & Nugget Bridge', '/banners/bridge.png', 1, 9, 15, '{"item":0,"wild":2,"center":0,"trainer":2}'::jsonb, 0.5, null, false, null, false, 2, 'grass', false, null, '["593d167e-205b-5610-8f8c-3f198a2c2895"]'::jsonb),
-  ('b64f2ae7-b9ae-5707-b904-f1e31aa66253', 28, 'kanto', 'Rocket Hideout', '/banners/city.png#flip', null, 19, 24, '{"item":1,"wild":0,"casino":3,"center":1,"trainer":5}'::jsonb, 0.5, null, false, null, false, 5, 'default', true, '[{"kind":"area","areaId":"8cf87ee3-f7a5-568e-bc22-54f643572535"}]'::jsonb, '[]'::jsonb),
+  ('b64f2ae7-b9ae-5707-b904-f1e31aa66253', 28, 'kanto', 'Rocket Hideout', '/banners/city.png#flip', null, 19, 24, '{"item":1,"wild":0,"casino":1,"center":1,"trainer":5}'::jsonb, 0.5, null, false, null, false, 5, 'default', true, '[{"kind":"area","areaId":"8cf87ee3-f7a5-568e-bc22-54f643572535"}]'::jsonb, '[]'::jsonb),
   ('522e114b-852b-543a-8d79-8cc34d598b13', 29, 'johto', 'Route 29', '/banners/plains.png', 2, 2, 5, '{"item":1,"wild":4,"casino":0,"center":0,"trainer":0}'::jsonb, 0.5, null, false, null, true, 1, 'grass', false, null, '[]'::jsonb),
   ('a0e6d0b2-4cfe-5607-9ed0-2b716d31b88c', 30, 'johto', 'Routes 30 & 31', '/banners/forest.png', 2, 3, 8, '{"item":1,"wild":3,"casino":0,"center":0,"trainer":1}'::jsonb, 0.5, null, false, null, true, 1, 'grass', false, null, '[]'::jsonb),
   ('557feec9-d7ee-5e34-91fd-8eaa4e805e85', 31, 'johto', 'Violet City & Sprout Tower', '/banners/city.png', 1, 4, 10, '{"item":1,"wild":3,"casino":0,"center":1,"trainer":2}'::jsonb, 0.5, null, false, null, false, 1, 'default', false, null, '["f33b6b67-7d16-5a9b-b699-038921d19759"]'::jsonb),
@@ -1763,9 +3547,9 @@ insert into areas (id, order_index, region_id, name, banner_url, rounds_to_clear
   ('cb642e3e-986b-5430-b507-7baf6cc0567b', 627, 'kalos', 'The Friend Safari', '/banners/plains.png#flip', 1, 60, 76, '{"item":1,"wild":6,"casino":0,"center":1,"trainer":2}'::jsonb, 0.5, null, true, null, false, 9, 'grass', true, '[{"kind":"area","areaId":"d3464556-7bcd-5708-9a13-415e0326fb75"}]'::jsonb, '[]'::jsonb),
   ('3a1aeecf-7492-5b10-a8ca-909a574d61f5', 651, 'kalos', 'The Team Flare Secret HQ Depths', '/banners/cave_dark.png', 1, 60, 70, '{"item":2,"wild":0,"casino":0,"center":6,"trainer":0}'::jsonb, 0.5, '[{"dex":716,"level":65},{"dex":717,"level":65}]'::jsonb, false, null, false, 9, 'default', true, '[{"kind":"area","areaId":"d3464556-7bcd-5708-9a13-415e0326fb75"},{"kind":"pokedex","count":255},{"kind":"maxLevel","level":65}]'::jsonb, '[]'::jsonb),
   ('f8ebca1d-a9ef-50a3-bfc7-88349041117d', 652, 'kalos', 'Terminus Cave', '/banners/cave.png', 1, 62, 72, '{"item":1,"wild":8,"casino":0,"center":1,"trainer":0}'::jsonb, 0.5, '[{"dex":718,"level":70}]'::jsonb, false, null, false, 9, 'rock', true, '[{"kind":"area","areaId":"d3464556-7bcd-5708-9a13-415e0326fb75"},{"kind":"pokedex","count":255},{"kind":"maxLevel","level":70}]'::jsonb, '[]'::jsonb),
-  ('64740605-3951-57d0-9217-1d9ad7752eff', 653, 'kalos', 'The Diamond Domain', '/banners/crystal_cave.png#flip', 1, 60, 68, '{"item":2,"wild":0,"casino":0,"center":6,"trainer":0}'::jsonb, 0.5, '[{"dex":719,"level":65,"teamAvgThreshold":0}]'::jsonb, false, null, false, 9, 'rock', true, '[{"kind":"area","areaId":"d3464556-7bcd-5708-9a13-415e0326fb75"},{"kind":"pokedex","count":309},{"kind":"maxLevel","level":65}]'::jsonb, '[]'::jsonb),
-  ('532b27a7-bfb1-5b03-ae0f-a611995dffa2', 654, 'kalos', 'Hoopa''s Ring', '/banners/sky.png', 1, 62, 70, '{"item":2,"wild":0,"casino":0,"center":6,"trainer":0}'::jsonb, 0.5, '[{"dex":720,"level":68,"teamAvgThreshold":0}]'::jsonb, false, null, false, 9, 'default', true, '[{"kind":"area","areaId":"64740605-3951-57d0-9217-1d9ad7752eff"},{"kind":"pokedex","count":309},{"kind":"maxLevel","level":68}]'::jsonb, '[]'::jsonb),
-  ('9394fdfc-182a-5c7d-92a2-3fb38c339f28', 655, 'kalos', 'The Nebel Plateau', '/banners/volcano.png', 1, 64, 72, '{"item":2,"wild":0,"casino":0,"center":6,"trainer":0}'::jsonb, 0.5, '[{"dex":721,"level":70,"teamAvgThreshold":0}]'::jsonb, false, null, false, 9, 'rock', true, '[{"kind":"area","areaId":"532b27a7-bfb1-5b03-ae0f-a611995dffa2"},{"kind":"pokedex","count":309},{"kind":"maxLevel","level":70}]'::jsonb, '[]'::jsonb),
+  ('64740605-3951-57d0-9217-1d9ad7752eff', 653, 'kalos', 'The Diamond Domain', '/banners/crystal_cave.png#flip', 1, 60, 68, '{"item":2,"wild":8,"casino":0,"center":1,"trainer":0}'::jsonb, 0.5, null, false, null, false, 9, 'rock', true, '[{"kind":"area","areaId":"d3464556-7bcd-5708-9a13-415e0326fb75"},{"kind":"pokedex","count":309},{"kind":"maxLevel","level":65}]'::jsonb, '[]'::jsonb),
+  ('532b27a7-bfb1-5b03-ae0f-a611995dffa2', 654, 'kalos', 'Hoopa''s Ring', '/banners/sky.png', 1, 62, 70, '{"item":2,"wild":8,"casino":0,"center":1,"trainer":0}'::jsonb, 0.5, null, false, null, false, 9, 'default', true, '[{"kind":"area","areaId":"64740605-3951-57d0-9217-1d9ad7752eff"},{"kind":"pokedex","count":309},{"kind":"maxLevel","level":68}]'::jsonb, '[]'::jsonb),
+  ('9394fdfc-182a-5c7d-92a2-3fb38c339f28', 655, 'kalos', 'The Nebel Plateau', '/banners/volcano.png', 1, 64, 72, '{"item":2,"wild":8,"casino":0,"center":1,"trainer":0}'::jsonb, 0.5, null, false, null, false, 9, 'rock', true, '[{"kind":"area","areaId":"532b27a7-bfb1-5b03-ae0f-a611995dffa2"},{"kind":"pokedex","count":309},{"kind":"maxLevel","level":70}]'::jsonb, '[]'::jsonb),
   ('19484a4c-fd2d-539b-a375-e0683e90424b', 701, 'alola', 'Route 1 & Hau''oli Outskirts', '/banners/beach.png', 2, 2, 5, '{"item":1,"wild":4,"casino":0,"center":0,"trainer":0}'::jsonb, 0.5, null, false, null, true, 1, 'grass', false, null, '[]'::jsonb),
   ('1ef28784-b335-528e-afea-f89700680d7e', 9, 'kanto', 'Routes 9 & 10', '/banners/mountains.png#flip', 1, 14, 22, '{"item":1,"wild":3,"center":1,"trainer":2}'::jsonb, 0.5, null, false, null, false, 4, 'grass', false, null, '[]'::jsonb),
   ('8cf87ee3-f7a5-568e-bc22-54f643572535', 11, 'kanto', 'Routes 7 & 8', '/banners/sunset.png', 1, 17, 26, '{"item":1,"wild":2,"center":1,"trainer":2}'::jsonb, 0.5, null, false, null, false, 4, 'grass', false, null, '["b284d8d7-c6ed-555b-b22b-c3c8300b0e87"]'::jsonb),
@@ -1778,7 +3562,7 @@ insert into areas (id, order_index, region_id, name, banner_url, rounds_to_clear
   ('1b43a2bf-9d92-581b-b8f1-4885d6795888', 95, 'sinnoh', 'Route 202 & Jubilife City', '/banners/city.png', 2, 3, 8, '{"item":1,"wild":3,"casino":0,"center":0,"trainer":1}'::jsonb, 0.5, null, false, null, true, 1, 'default', false, null, '[]'::jsonb),
   ('fab6629b-411f-55b4-8900-9372ffcdbb3e', 96, 'sinnoh', 'Route 203 & Oreburgh Gate', '/banners/cave.png', 1, 5, 11, '{"item":1,"wild":3,"casino":0,"center":0,"trainer":1}'::jsonb, 0.5, null, false, null, false, 1, 'rock', false, null, '[]'::jsonb),
   ('cf8b7fa9-6488-5afe-956e-8c5dfcb4c7d4', 97, 'sinnoh', 'Oreburgh City & the Mine', '/banners/mountains.png', 1, 8, 14, '{"item":1,"wild":3,"casino":0,"center":1,"trainer":2}'::jsonb, 0.5, null, false, null, false, 1, 'rock', false, null, '["9ca924c8-c361-52e5-8132-9fd669a259c4"]'::jsonb),
-  ('57008453-b26b-5c52-a88e-e777d39ab364', 93, 'hoenn', 'Birth Island', '/banners/sunset.png#flip', null, 60, 70, '{"item":0,"wild":6,"casino":0,"center":0,"trainer":0}'::jsonb, 0.5, '[{"dex":385,"level":60,"teamAvgThreshold":0},{"dex":386,"level":65,"teamAvgThreshold":0}]'::jsonb, false, null, false, 9, 'water', true, '[{"kind":"pokedex","count":150}]'::jsonb, '[]'::jsonb),
+  ('57008453-b26b-5c52-a88e-e777d39ab364', 93, 'hoenn', 'Birth Island', '/banners/sunset.png#flip', 1, 60, 70, '{"item":0,"wild":8,"casino":0,"center":0,"trainer":0}'::jsonb, 0.5, null, false, null, false, 9, 'water', true, '[{"kind":"pokedex","count":150}]'::jsonb, '[]'::jsonb),
   ('1ab44ea6-29c0-51c0-9a1f-e1a4b77cfc74', 51, 'johto', 'Indigo Plateau', '/banners/default.png', 1, 49, 59, '{"item":1,"wild":0,"casino":0,"center":1,"trainer":2}'::jsonb, 0.5, null, false, null, false, 9, 'default', false, null, '["979f0d14-caea-5048-a217-4cc9fc2ddc5c","77f2e272-c680-5a70-b831-bf1e9f8b6c52","a18db6c8-6c5e-5736-875b-6f761640b87e","aa050486-189f-5ff4-a0e2-c75899f31bd4","accb672b-6982-5485-b370-c30ae9ec2da4"]'::jsonb),
   ('f4f5da0f-eca7-5aa5-a902-aa3f27d8910a', 79, 'hoenn', 'Mossdeep City & the Space Center', '/banners/beach.png#flip', 1, 40, 49, '{"item":1,"wild":2,"casino":0,"center":1,"trainer":3}'::jsonb, 0.5, null, false, null, false, 7, 'sea', false, null, '["582c1122-ca81-5b64-a4c8-d455554f2570"]'::jsonb),
   ('b0476bf1-2815-53f6-9483-6d984dfa938a', 702, 'alola', 'Hau''oli City & the Cemetery', '/banners/city.png', 2, 4, 9, '{"item":1,"wild":3,"casino":0,"center":0,"trainer":1}'::jsonb, 0.5, null, false, null, true, 1, 'default', false, null, '[]'::jsonb),
@@ -1838,12 +3622,10 @@ insert into areas (id, order_index, region_id, name, banner_url, rounds_to_clear
   ('5ffc3386-33f5-58fd-b471-f27ebfa6cbcb', 508, 'unova', 'Nimbasa City & Route 5', '/banners/city.png#flip', 1, 22, 29, '{"item":1,"wild":2,"casino":2,"center":1,"trainer":3}'::jsonb, 0.5, null, false, null, false, 4, 'default', false, null, '["46b3dd5f-ce56-5cf8-a77b-749899f75b1e"]'::jsonb),
   ('8b1e0609-a1b6-5392-ba40-54c23b592aac', 509, 'unova', 'Driftveil City & Route 6', '/banners/bridge.png#flip', 1, 25, 32, '{"item":1,"wild":3,"casino":0,"center":1,"trainer":2}'::jsonb, 0.5, null, false, null, false, 5, 'grass', false, null, '["6f9251a7-08b4-52df-8997-a2a9ddc84f1a"]'::jsonb),
   ('af565afe-bfc6-516a-8a4c-bba17bb1ff48', 723, 'alola', 'The Pokémon League', '/banners/default.png', 1, 54, 62, '{"item":1,"wild":0,"casino":0,"center":1,"trainer":2}'::jsonb, 0.5, null, false, null, false, 9, 'default', false, null, '["e047e618-23e4-5e5c-a8bb-21ac07b0cb2d","c890fdd8-3ff9-5f09-b1cb-913a3e659688","8c836c01-4755-59dc-88f3-aceffc2666bf","1a3ca20b-e218-5ebc-845b-af0dbaf41b2e","f058140b-aac1-586e-b798-9ec8ca8dd04d"]'::jsonb),
-  ('5d2b50d3-a648-5479-a687-067ca5f833f4', 724, 'alola', 'Mount Lanakila II', '/banners/snow_mountains.png#flip', 1, 60, 70, '{"item":1,"wild":4,"casino":0,"center":1,"trainer":3}'::jsonb, 0.5, null, false, null, false, 9, 'rock', false, null, '[]'::jsonb),
-  ('62903307-8361-5503-9f7c-216d94b03a27', 725, 'alola', 'The Pokémon League II', '/banners/default.png', 1, 66, 76, '{"item":1,"wild":0,"casino":0,"center":1,"trainer":2}'::jsonb, 0.5, null, false, null, false, 9, 'default', false, null, '["3551cda5-c63e-516e-a105-1e4ae24a0241","7c584e7f-62bc-573b-bbe2-e2d7f2f62f86","cb5f58b1-b32e-5727-880e-ebb60adc85ac","225d7071-308e-5e2e-b4dd-0af4068aa88e","d540c5be-def8-5f96-8ac2-be5663b754e9"]'::jsonb),
   ('30233749-91cd-5ba0-8e62-f4ea0042de40', 726, 'alola', 'Poni Gauntlet & the Battle Tree', '/banners/forest.png#flip', 1, 60, 72, '{"item":1,"wild":2,"casino":0,"center":1,"trainer":3}'::jsonb, 0.5, null, false, null, false, 9, 'grass', true, '[{"kind":"area","areaId":"af565afe-bfc6-516a-8a4c-bba17bb1ff48"}]'::jsonb, '["339a9554-6ff0-5b40-85bb-ea76a6220ca4","0c197ab9-0b6a-5d0c-8541-42ca1249c049"]'::jsonb),
   ('e22d5bee-8d04-5f99-ab7f-157785f0a30b', 727, 'alola', 'The Poké Pelago', '/banners/beach.png', 1, 60, 76, '{"item":1,"wild":6,"casino":0,"center":1,"trainer":2}'::jsonb, 0.5, null, true, null, false, 9, 'sea', true, '[{"kind":"area","areaId":"af565afe-bfc6-516a-8a4c-bba17bb1ff48"}]'::jsonb, '[]'::jsonb),
   ('a33bf12e-2ad9-5a79-bfe7-6224579f9a32', 751, 'alola', 'The Lakes of the Sunne and Moone', '/banners/sky.png#flip', 1, 40, 48, '{"item":2,"wild":0,"casino":0,"center":6,"trainer":0}'::jsonb, 0.5, '[{"dex":789,"level":40,"teamAvgThreshold":0}]'::jsonb, false, null, false, 7, 'water', true, '[{"kind":"area","areaId":"a13dcc18-e146-5423-b54d-c0a5869ddad2"},{"kind":"pokedex","count":126},{"kind":"maxLevel","level":40}]'::jsonb, '[]'::jsonb),
-  ('df1bb846-fc11-590f-afec-45ef39b63deb', 130, 'sinnoh', 'The Hall of Origin', '/banners/sky.png#flip', null, 60, 75, '{"item":0,"wild":0,"casino":0,"center":0,"trainer":0}'::jsonb, 0.5, '[{"dex":493,"level":70,"teamAvgThreshold":0}]'::jsonb, false, null, false, 9, 'default', true, '[{"kind":"pokedex","count":150},{"kind":"maxLevel","level":75}]'::jsonb, '[]'::jsonb),
+  ('df1bb846-fc11-590f-afec-45ef39b63deb', 130, 'sinnoh', 'The Hall of Origin', '/banners/sky.png#flip', 1, 60, 75, '{"item":0,"wild":8,"casino":0,"center":0,"trainer":0}'::jsonb, 0.5, null, false, null, false, 9, 'default', true, '[{"kind":"pokedex","count":150},{"kind":"maxLevel","level":75}]'::jsonb, '[]'::jsonb),
   ('8e755a0e-8270-5685-857c-629ea1b7d9c5', 113, 'sinnoh', 'Mt. Coronet North & Spear Pillar', '/banners/sky.png', 2, 40, 48, '{"item":1,"wild":3,"casino":0,"center":1,"trainer":2}'::jsonb, 0.5, '[{"dex":483,"level":47},{"dex":484,"level":47}]'::jsonb, false, null, false, 8, 'rock', false, null, '[]'::jsonb),
   ('16780c62-8411-5637-abec-7257a04e2e3c', 752, 'alola', 'The Altar of the Sunne and Moone', '/banners/sunset.png#flip', 1, 60, 70, '{"item":2,"wild":0,"casino":0,"center":6,"trainer":0}'::jsonb, 0.5, '[{"dex":791,"level":65},{"dex":792,"level":65}]'::jsonb, false, null, false, 9, 'default', true, '[{"kind":"area","areaId":"af565afe-bfc6-516a-8a4c-bba17bb1ff48"},{"kind":"pokedex","count":251},{"kind":"maxLevel","level":65}]'::jsonb, '[]'::jsonb),
   ('fa01d16e-8669-5542-be05-f5d8d16395d1', 753, 'alola', 'Ultra Megalopolis', '/banners/city.png', 1, 64, 74, '{"item":2,"wild":0,"casino":0,"center":6,"trainer":0}'::jsonb, 0.5, '[{"dex":800,"level":70}]'::jsonb, false, null, false, 9, 'default', true, '[{"kind":"area","areaId":"16780c62-8411-5637-abec-7257a04e2e3c"},{"kind":"pokedex","count":251},{"kind":"maxLevel","level":70}]'::jsonb, '[]'::jsonb),
@@ -1854,10 +3636,10 @@ insert into areas (id, order_index, region_id, name, banner_url, rounds_to_clear
   ('4c3e26b2-3163-556e-b4d4-d628e1ff4120', 758, 'alola', 'Ultra Space: the Ruin', '/banners/cave_dark.png#flip', 1, 64, 72, '{"item":2,"wild":0,"casino":0,"center":6,"trainer":0}'::jsonb, 0.5, '[{"dex":799,"level":70,"teamAvgThreshold":0}]'::jsonb, false, null, false, 9, 'rock', true, '[{"kind":"area","areaId":"85752149-2f14-5e91-a6c1-226e6db35f80"},{"kind":"pokedex","count":197},{"kind":"maxLevel","level":70}]'::jsonb, '[]'::jsonb),
   ('63160939-79ac-5244-ae50-7f7fc8c37c5f', 759, 'alola', 'Poni Grove', '/banners/forest.png', 1, 60, 68, '{"item":1,"wild":8,"casino":0,"center":1,"trainer":0}'::jsonb, 0.5, '[{"dex":805,"level":63,"teamAvgThreshold":0},{"dex":806,"level":63,"teamAvgThreshold":0}]'::jsonb, false, null, false, 9, 'grass', true, '[{"kind":"area","areaId":"af565afe-bfc6-516a-8a4c-bba17bb1ff48"},{"kind":"pokedex","count":197},{"kind":"maxLevel","level":63}]'::jsonb, '[]'::jsonb),
   ('ad40171a-6414-5510-bafe-44d13217d218', 760, 'alola', 'The Ultra Recon Squad', '/banners/sky.png#flip', 1, 50, 60, '{"item":2,"wild":0,"casino":0,"center":6,"trainer":0}'::jsonb, 0.5, '[{"dex":803,"level":55,"teamAvgThreshold":0}]'::jsonb, false, null, false, 9, 'default', true, '[{"kind":"area","areaId":"fa01d16e-8669-5542-be05-f5d8d16395d1"},{"kind":"pokedex","count":197},{"kind":"maxLevel","level":55}]'::jsonb, '[]'::jsonb),
-  ('28487bdf-d4f4-5fc9-860e-accef6b9677f', 761, 'alola', 'Magearna''s Workshop', '/banners/factory.png#flip', 1, 60, 68, '{"item":2,"wild":0,"casino":0,"center":6,"trainer":0}'::jsonb, 0.5, '[{"dex":801,"level":65,"teamAvgThreshold":0}]'::jsonb, false, null, false, 9, 'default', true, '[{"kind":"area","areaId":"af565afe-bfc6-516a-8a4c-bba17bb1ff48"},{"kind":"pokedex","count":305},{"kind":"maxLevel","level":65}]'::jsonb, '[]'::jsonb),
-  ('e8c9b515-3421-5bdb-ade2-b101f1e6885d', 762, 'alola', 'Ten Carat Hill''s Farthest Hollow', '/banners/cave_dark.png', 1, 62, 70, '{"item":2,"wild":0,"casino":0,"center":6,"trainer":0}'::jsonb, 0.5, '[{"dex":802,"level":67,"teamAvgThreshold":0}]'::jsonb, false, null, false, 9, 'rock', true, '[{"kind":"area","areaId":"28487bdf-d4f4-5fc9-860e-accef6b9677f"},{"kind":"pokedex","count":305},{"kind":"maxLevel","level":67}]'::jsonb, '[]'::jsonb),
-  ('4a29a297-7cb0-5f5d-b6f0-f36210ff02e4', 763, 'alola', 'The Blush Mountain Storm', '/banners/mountains.png', 1, 64, 72, '{"item":2,"wild":0,"casino":0,"center":6,"trainer":0}'::jsonb, 0.5, '[{"dex":807,"level":70,"teamAvgThreshold":0}]'::jsonb, false, null, false, 9, 'rock', true, '[{"kind":"area","areaId":"e8c9b515-3421-5bdb-ade2-b101f1e6885d"},{"kind":"pokedex","count":305},{"kind":"maxLevel","level":70}]'::jsonb, '[]'::jsonb),
-  ('bf277850-73f7-569e-8657-fa5298161229', 764, 'alola', 'The Mystery Box', '/banners/factory.png', 1, 40, 50, '{"item":2,"wild":0,"casino":0,"center":6,"trainer":0}'::jsonb, 0.5, '[{"dex":808,"level":40,"teamAvgThreshold":0}]'::jsonb, false, null, false, 7, 'default', true, '[{"kind":"area","areaId":"4a29a297-7cb0-5f5d-b6f0-f36210ff02e4"},{"kind":"pokedex","count":305},{"kind":"maxLevel","level":70}]'::jsonb, '[]'::jsonb),
+  ('28487bdf-d4f4-5fc9-860e-accef6b9677f', 761, 'alola', 'Magearna''s Workshop', '/banners/factory.png#flip', 1, 60, 68, '{"item":2,"wild":8,"casino":0,"center":1,"trainer":0}'::jsonb, 0.5, null, false, null, false, 9, 'default', true, '[{"kind":"area","areaId":"af565afe-bfc6-516a-8a4c-bba17bb1ff48"},{"kind":"pokedex","count":305},{"kind":"maxLevel","level":65}]'::jsonb, '[]'::jsonb),
+  ('e8c9b515-3421-5bdb-ade2-b101f1e6885d', 762, 'alola', 'Ten Carat Hill''s Farthest Hollow', '/banners/cave_dark.png', 1, 62, 70, '{"item":2,"wild":8,"casino":0,"center":1,"trainer":0}'::jsonb, 0.5, null, false, null, false, 9, 'rock', true, '[{"kind":"area","areaId":"28487bdf-d4f4-5fc9-860e-accef6b9677f"},{"kind":"pokedex","count":305},{"kind":"maxLevel","level":67}]'::jsonb, '[]'::jsonb),
+  ('4a29a297-7cb0-5f5d-b6f0-f36210ff02e4', 763, 'alola', 'The Blush Mountain Storm', '/banners/mountains.png', 1, 64, 72, '{"item":2,"wild":8,"casino":0,"center":1,"trainer":0}'::jsonb, 0.5, null, false, null, false, 9, 'rock', true, '[{"kind":"area","areaId":"e8c9b515-3421-5bdb-ade2-b101f1e6885d"},{"kind":"pokedex","count":305},{"kind":"maxLevel","level":70}]'::jsonb, '[]'::jsonb),
+  ('bf277850-73f7-569e-8657-fa5298161229', 764, 'alola', 'The Mystery Box', '/banners/factory.png', 1, 40, 50, '{"item":2,"wild":8,"casino":0,"center":1,"trainer":0}'::jsonb, 0.5, null, false, null, false, 7, 'default', true, '[{"kind":"area","areaId":"4a29a297-7cb0-5f5d-b6f0-f36210ff02e4"},{"kind":"pokedex","count":305},{"kind":"maxLevel","level":70}]'::jsonb, '[]'::jsonb),
   ('1db6ed36-e9f3-5b41-bc01-056f64328d72', 801, 'galar', 'Postwick, Route 1 & the Slumbering Weald', '/banners/plains.png', 2, 2, 6, '{"item":1,"wild":4,"casino":0,"center":0,"trainer":0}'::jsonb, 0.5, null, false, null, true, 1, 'grass', false, null, '[]'::jsonb),
   ('2774ec8e-d49b-5a76-9937-a9dc9035f877', 802, 'galar', 'Wedgehurst & Route 2', '/banners/plains.png#flip', 2, 4, 9, '{"item":1,"wild":3,"casino":0,"center":0,"trainer":1}'::jsonb, 0.5, null, false, null, true, 1, 'grass', false, null, '[]'::jsonb),
   ('98ab6c0a-a752-5157-8ce5-94208fcbbfdf', 803, 'galar', 'The Wild Area: Rolling Fields & Dappled Grove', '/banners/plains.png', 1, 7, 13, '{"item":1,"wild":3,"casino":0,"center":1,"trainer":2}'::jsonb, 0.5, null, false, null, false, 1, 'grass', false, null, '[]'::jsonb),
@@ -1876,11 +3658,9 @@ insert into areas (id, order_index, region_id, name, banner_url, rounds_to_clear
   ('e8a36a96-5c86-5e7d-a5f5-0c845ab2dbe8', 816, 'galar', 'Route 10 & Wyndon', '/banners/snow_mountains.png#flip', 2, 44, 52, '{"item":1,"wild":2,"casino":0,"center":1,"trainer":3}'::jsonb, 0.5, null, false, null, false, 9, 'rock', false, null, '[]'::jsonb),
   ('272fe5aa-fa73-5178-a416-4998e8b4a478', 817, 'galar', 'Rose Tower & the Energy Plant', '/banners/factory.png', 1, 50, 63, '{"item":1,"wild":0,"casino":0,"center":1,"trainer":2}'::jsonb, 0.5, null, false, null, false, 9, 'default', false, null, '["f72d75a3-2548-5157-a52c-f6e119aee234","e92a0830-24c2-5628-a1f4-053874059324"]'::jsonb),
   ('3610c6e0-5fc7-5aab-8b2c-a59be219db55', 818, 'galar', 'Wyndon Stadium & the Champion Cup', '/banners/default.png', 1, 56, 66, '{"item":1,"wild":0,"casino":0,"center":1,"trainer":2}'::jsonb, 0.5, null, false, null, false, 9, 'default', false, null, '["44ce7777-4cf5-5901-813f-6a2c3b6cc674","d441cafb-3f08-5574-ab4e-5bb865205339","034cdfb7-6dd9-5804-8fca-8951ee6682dd","6887f24f-ca71-5e77-abb9-a8be436c7a42","b4a12a66-7cf9-565d-88ee-fe2dde356b01"]'::jsonb),
-  ('eb428b97-a163-5cfd-995d-706c0ff73f0b', 819, 'galar', 'The Wild Area II', '/banners/plains.png#flip', 1, 60, 70, '{"item":1,"wild":4,"casino":0,"center":1,"trainer":3}'::jsonb, 0.5, null, false, null, false, 9, 'grass', false, null, '[]'::jsonb),
   ('a5d11263-453f-5181-9a73-2c30df79d3fc', 26, 'kanto', 'Cerulean Cave', '/banners/crystal_cave.png', null, 50, 70, '{"item":1,"wild":6,"center":1,"trainer":2}'::jsonb, 0.5, '[{"dex":150,"level":70,"battleBackground":"default","teamAvgThreshold":65}]'::jsonb, true, null, false, 9, 'rock', true, '[{"kind":"maxLevel","level":70}]'::jsonb, '[]'::jsonb),
   ('3585c2a5-43bc-50c9-9818-e148404cabf8', 1, 'kanto', 'Route 1', '/banners/plains.png', 2, 2, 5, '{"item":1,"wild":4,"center":0,"trainer":0}'::jsonb, 0.5, null, false, null, true, 1, 'grass', false, null, '[]'::jsonb),
   ('9cd5143b-e280-5a1f-85d4-d7f9933616b1', 2, 'kanto', 'Routes 22 & 2', '/banners/flowers.png', 2, 3, 7, '{"item":1,"wild":4,"center":0,"trainer":0}'::jsonb, 0.5, null, false, null, true, 1, 'grass', false, null, '[]'::jsonb),
-  ('c7cc6447-9d47-544e-bc63-ac241b69d06c', 820, 'galar', 'The Champion Cup II', '/banners/default.png', 1, 66, 76, '{"item":1,"wild":0,"casino":0,"center":1,"trainer":2}'::jsonb, 0.5, null, false, null, false, 9, 'default', false, null, '["166e6f09-e8f0-531a-9406-4ff8fb3b1356","42d88a23-6c45-5021-8f29-29a60636ede8","6298d31c-7a96-5baf-8dc3-4a94f9e24976","116b423f-ed7c-5a30-8c90-f77e13c11e5e","396e5069-b490-5300-b934-72a13ed2ddb0"]'::jsonb),
   ('890cb77d-0fe5-5576-9b92-2ab68f0be295', 821, 'galar', 'The Isle of Armor', '/banners/beach.png#flip', 1, 60, 70, '{"item":1,"wild":2,"casino":0,"center":1,"trainer":3}'::jsonb, 0.5, null, false, null, false, 9, 'sea', true, '[{"kind":"area","areaId":"3610c6e0-5fc7-5aab-8b2c-a59be219db55"}]'::jsonb, '[]'::jsonb),
   ('0c17194f-f7be-5221-91d0-68fcee8da9d9', 822, 'galar', 'The Crown Tundra', '/banners/snow_mountains.png', 1, 62, 72, '{"item":1,"wild":2,"casino":0,"center":1,"trainer":3}'::jsonb, 0.5, null, false, null, false, 9, 'rock', true, '[{"kind":"area","areaId":"3610c6e0-5fc7-5aab-8b2c-a59be219db55"}]'::jsonb, '[]'::jsonb),
   ('d8f06e4c-6ffd-5b94-9149-43231e89927f', 823, 'galar', 'The Max Lair', '/banners/cave_dark.png', 1, 60, 76, '{"item":1,"wild":6,"casino":0,"center":1,"trainer":2}'::jsonb, 0.5, null, true, null, false, 9, 'rock', true, '[{"kind":"area","areaId":"3610c6e0-5fc7-5aab-8b2c-a59be219db55"}]'::jsonb, '[]'::jsonb),
@@ -1890,15 +3670,12 @@ insert into areas (id, order_index, region_id, name, banner_url, rounds_to_clear
   ('ee242291-8416-583c-a0b0-6ed4d7b16b60', 853, 'galar', 'The Master Dojo', '/banners/default.png', 1, 50, 60, '{"item":2,"wild":0,"casino":0,"center":6,"trainer":0}'::jsonb, 0.5, '[{"dex":891,"level":55,"teamAvgThreshold":0}]'::jsonb, false, null, false, 9, 'default', true, '[{"kind":"area","areaId":"890cb77d-0fe5-5576-9b92-2ab68f0be295"},{"kind":"pokedex","count":173},{"kind":"maxLevel","level":55}]'::jsonb, '[]'::jsonb),
   ('8312c104-010a-5c23-8520-4c355292b850', 854, 'galar', 'The Split-Decision Ruins', '/banners/mountains.png#flip', 1, 62, 70, '{"item":2,"wild":0,"casino":0,"center":6,"trainer":0}'::jsonb, 0.5, '[{"dex":894,"level":65,"teamAvgThreshold":0},{"dex":895,"level":65,"teamAvgThreshold":0}]'::jsonb, false, null, false, 9, 'rock', true, '[{"kind":"area","areaId":"0c17194f-f7be-5221-91d0-68fcee8da9d9"},{"kind":"pokedex","count":173},{"kind":"maxLevel","level":65}]'::jsonb, '[]'::jsonb),
   ('94ab9674-c4da-5094-9f7c-f9dcfec326b9', 855, 'galar', 'The Crown Shrine', '/banners/snow_mountains.png#flip', 1, 66, 76, '{"item":2,"wild":0,"casino":0,"center":6,"trainer":0}'::jsonb, 0.5, '[{"dex":896,"level":75,"teamAvgThreshold":0},{"dex":897,"level":75,"teamAvgThreshold":0},{"dex":898,"level":80,"teamAvgThreshold":0}]'::jsonb, false, null, false, 9, 'rock', true, '[{"kind":"area","areaId":"8312c104-010a-5c23-8520-4c355292b850"},{"kind":"pokedex","count":220},{"kind":"maxLevel","level":75}]'::jsonb, '[]'::jsonb),
-  ('4aed8f3a-c216-5713-ac05-5a66d5c6998e', 856, 'galar', 'The Forest of Focus', '/banners/forest.png', 1, 62, 70, '{"item":1,"wild":8,"casino":0,"center":1,"trainer":0}'::jsonb, 0.5, '[{"dex":893,"level":70,"teamAvgThreshold":0}]'::jsonb, false, null, false, 9, 'grass', true, '[{"kind":"area","areaId":"890cb77d-0fe5-5576-9b92-2ab68f0be295"},{"kind":"pokedex","count":267},{"kind":"maxLevel","level":70}]'::jsonb, '[]'::jsonb),
+  ('4aed8f3a-c216-5713-ac05-5a66d5c6998e', 856, 'galar', 'The Forest of Focus', '/banners/forest.png', 1, 62, 70, '{"item":1,"wild":8,"casino":0,"center":1,"trainer":0}'::jsonb, 0.5, null, false, null, false, 9, 'grass', true, '[{"kind":"area","areaId":"890cb77d-0fe5-5576-9b92-2ab68f0be295"},{"kind":"pokedex","count":267},{"kind":"maxLevel","level":70}]'::jsonb, '[]'::jsonb),
   ('79ae0fff-8541-541b-9370-4a50b19cec73', 857, 'galar', 'The Crimson Mirelands', '/banners/swamp.png', 1, 66, 74, '{"item":2,"wild":0,"casino":0,"center":6,"trainer":0}'::jsonb, 0.5, '[{"dex":905,"level":70,"teamAvgThreshold":0}]'::jsonb, false, null, false, 9, 'water', true, '[{"kind":"area","areaId":"7d1a416a-9b25-5028-b602-c59fee3c07f9"},{"kind":"pokedex","count":173},{"kind":"maxLevel","level":70}]'::jsonb, '[]'::jsonb),
   ('9736bc36-2a22-5136-a6c3-0968cbffb987', 901, 'paldea', 'Cabo Poco, the Poco Path & the Inlet Grotto', '/banners/beach.png', 2, 2, 6, '{"item":1,"wild":4,"casino":0,"center":0,"trainer":0}'::jsonb, 0.5, null, false, null, true, 1, 'sea', false, null, '[]'::jsonb),
   ('c3e62acf-0be6-50e4-9276-deee4b898a92', 902, 'paldea', 'Los Platos & South Province (Area One)', '/banners/plains.png', 2, 3, 9, '{"item":1,"wild":3,"casino":0,"center":0,"trainer":1}'::jsonb, 0.5, null, false, null, true, 1, 'grass', false, null, '[]'::jsonb),
   ('5b5c0485-3a57-5a7f-8710-0d2d270a1f8b', 903, 'paldea', 'Mesagoza & South Province (Area Two)', '/banners/city.png', 1, 6, 13, '{"item":1,"wild":2,"casino":2,"center":1,"trainer":3}'::jsonb, 0.5, null, false, null, false, 1, 'default', false, null, '[]'::jsonb),
-  ('6a5018d6-00f7-5b1d-9f19-941dd6158856', 904, 'paldea', 'South Province (Area Three) & Cortondo', '/banners/plains.png#flip', 1, 10, 17, '{"item":1,"wild":3,"casino":0,"center":1,"trainer":2}'::jsonb, 0.5, null, false, null, false, 1, 'grass', false, null, '["d9797373-2e73-5565-bbe7-3e7ce2ddf0b3"]'::jsonb)
-on conflict (id) do update set order_index = excluded.order_index, region_id = excluded.region_id, name = excluded.name, banner_url = excluded.banner_url, rounds_to_clear = excluded.rounds_to_clear, min_level = excluded.min_level, max_level = excluded.max_level, encounter_weights = excluded.encounter_weights, backtrack_multiplier = excluded.backtrack_multiplier, legendary_boss = excluded.legendary_boss, scales_to_team = excluded.scales_to_team, scale_offsets = excluded.scale_offsets, easy_mode = excluded.easy_mode, enemy_upgrade_level = excluded.enemy_upgrade_level, battle_background = excluded.battle_background, hidden = excluded.hidden, unlock_conditions = excluded.unlock_conditions, gyms = excluded.gyms;
-
-insert into areas (id, order_index, region_id, name, banner_url, rounds_to_clear, min_level, max_level, encounter_weights, backtrack_multiplier, legendary_boss, scales_to_team, scale_offsets, easy_mode, enemy_upgrade_level, battle_background, hidden, unlock_conditions, gyms) values
+  ('6a5018d6-00f7-5b1d-9f19-941dd6158856', 904, 'paldea', 'South Province (Area Three) & Cortondo', '/banners/plains.png#flip', 1, 10, 17, '{"item":1,"wild":3,"casino":0,"center":1,"trainer":2}'::jsonb, 0.5, null, false, null, false, 1, 'grass', false, null, '["d9797373-2e73-5565-bbe7-3e7ce2ddf0b3"]'::jsonb),
   ('5ac63cdb-d119-59e2-a364-509db7798bc2', 905, 'paldea', 'South Province (Area Six) & Artazon', '/banners/flowers.png', 1, 13, 19, '{"item":1,"wild":3,"casino":0,"center":1,"trainer":2}'::jsonb, 0.5, null, false, null, false, 2, 'grass', false, null, '["a8f6d725-1965-56d2-9b29-07b168de0c07"]'::jsonb),
   ('39632d00-434b-5ba5-ada5-38b1a69af1d4', 906, 'paldea', 'West Province (Area One) & the Segin Squad''s Base', '/banners/mountains.png', 1, 16, 22, '{"item":1,"wild":3,"casino":0,"center":1,"trainer":2}'::jsonb, 0.5, null, false, null, false, 3, 'rock', false, null, '["e4c66a54-cfb7-5836-a8e7-ef24fe03ad5b"]'::jsonb),
   ('dd5fe776-47af-5400-9bd9-ab1c71958d2f', 907, 'paldea', 'East Province (Areas One & Two) & Levincia', '/banners/city.png#flip', 1, 18, 25, '{"item":1,"wild":3,"casino":0,"center":1,"trainer":2}'::jsonb, 0.5, null, false, null, false, 3, 'default', false, null, '["62c917a3-a796-588e-a666-2bd117535fd1"]'::jsonb),
@@ -1910,7 +3687,10 @@ insert into areas (id, order_index, region_id, name, banner_url, rounds_to_clear
   ('18ca0857-2794-5c43-bcf6-830d95db6f96', 913, 'paldea', 'The Alfornada Cavern & Alfornada', '/banners/crystal_cave.png', 1, 38, 46, '{"item":1,"wild":3,"casino":0,"center":1,"trainer":2}'::jsonb, 0.5, null, false, null, false, 7, 'rock', false, null, '["4766b0da-7d97-506f-be50-267ff5e3e085"]'::jsonb),
   ('329c3ea6-7942-5784-b1bf-adc6f7ced8dd', 914, 'paldea', 'Glaseado Mountain', '/banners/snow_mountains.png', 1, 42, 49, '{"item":1,"wild":3,"casino":0,"center":1,"trainer":2}'::jsonb, 0.5, null, false, null, false, 8, 'rock', false, null, '["09f14d4e-b04c-592b-ba0e-d664444d8a3d"]'::jsonb),
   ('8809e938-32cd-5da7-89b1-4ef9331712d7', 915, 'paldea', 'North Province (Area Three) & the Ruchbah Squad''s Base', '/banners/mountains.png#flip', 1, 44, 52, '{"item":1,"wild":3,"casino":0,"center":1,"trainer":2}'::jsonb, 0.5, null, false, null, false, 9, 'rock', false, null, '["8d424236-5353-5510-95e2-1be004eef81c"]'::jsonb),
-  ('6cd30361-f010-5325-a309-28a7ffed28f7', 916, 'paldea', 'North Province (Area Two) & the Caph Squad''s Base', '/banners/cave.png', 1, 48, 57, '{"item":1,"wild":2,"casino":0,"center":1,"trainer":3}'::jsonb, 0.5, null, false, null, false, 9, 'rock', false, null, '["3a3037da-f31f-587d-9886-3385ede6861e"]'::jsonb),
+  ('6cd30361-f010-5325-a309-28a7ffed28f7', 916, 'paldea', 'North Province (Area Two) & the Caph Squad''s Base', '/banners/cave.png', 1, 48, 57, '{"item":1,"wild":2,"casino":0,"center":1,"trainer":3}'::jsonb, 0.5, null, false, null, false, 9, 'rock', false, null, '["3a3037da-f31f-587d-9886-3385ede6861e"]'::jsonb)
+on conflict (id) do update set order_index = excluded.order_index, region_id = excluded.region_id, name = excluded.name, banner_url = excluded.banner_url, rounds_to_clear = excluded.rounds_to_clear, min_level = excluded.min_level, max_level = excluded.max_level, encounter_weights = excluded.encounter_weights, backtrack_multiplier = excluded.backtrack_multiplier, legendary_boss = excluded.legendary_boss, scales_to_team = excluded.scales_to_team, scale_offsets = excluded.scale_offsets, easy_mode = excluded.easy_mode, enemy_upgrade_level = excluded.enemy_upgrade_level, battle_background = excluded.battle_background, hidden = excluded.hidden, unlock_conditions = excluded.unlock_conditions, gyms = excluded.gyms;
+
+insert into areas (id, order_index, region_id, name, banner_url, rounds_to_clear, min_level, max_level, encounter_weights, backtrack_multiplier, legendary_boss, scales_to_team, scale_offsets, easy_mode, enemy_upgrade_level, battle_background, hidden, unlock_conditions, gyms) values
   ('2157b46b-a121-543b-9cca-b18fdc85d65e', 917, 'paldea', 'Casseroya Lake', '/banners/ocean.png', 2, 50, 58, '{"item":1,"wild":3,"casino":0,"center":1,"trainer":2}'::jsonb, 0.5, null, false, null, false, 9, 'water', false, null, '[]'::jsonb),
   ('825f26fc-0e43-5fda-8a4b-07c0a044507d', 918, 'paldea', 'The Pokémon League', '/banners/default.png', 1, 55, 66, '{"item":1,"wild":0,"casino":0,"center":1,"trainer":2}'::jsonb, 0.5, null, false, null, false, 9, 'default', false, null, '["263a3116-e921-5822-8457-b24618687549","707f519a-f21a-587a-8059-70a3ea1e3367","1c93c5cc-0347-545e-bd24-32c8b0e1e1ec","a0f09dee-51de-57c0-ad5e-44316280bebc","2ebb05c1-2c2f-5191-b0c6-5527c646a83e","ba05ea28-8c3b-5e62-9519-dbaad29372d5"]'::jsonb),
   ('c9bca81d-c26f-5579-9b74-9123bea95976', 919, 'paldea', 'The Way Home', '/banners/beach.png#flip', 1, 58, 66, '{"item":1,"wild":2,"casino":0,"center":1,"trainer":3}'::jsonb, 0.5, null, false, null, false, 9, 'sea', false, null, '["d38579aa-78ec-5bf2-aab1-f6ac7aa00dc7","232d92ae-254a-50c4-8aa2-dfbe1364fe3b"]'::jsonb),
@@ -1924,24 +3704,22 @@ insert into areas (id, order_index, region_id, name, banner_url, rounds_to_clear
   ('c565e910-b4c6-5271-9bee-9ff2795d0615', 954, 'paldea', 'Oni Mountain & the Crystal Pool', '/banners/mountains.png', 1, 66, 74, '{"item":2,"wild":0,"casino":0,"center":6,"trainer":0}'::jsonb, 0.5, '[{"dex":1017,"level":70,"teamAvgThreshold":0}]'::jsonb, false, null, false, 9, 'rock', true, '[{"kind":"area","areaId":"81a9b321-6fb5-5285-b71f-327d8b52b391"},{"kind":"pokedex","count":194},{"kind":"maxLevel","level":70}]'::jsonb, '[]'::jsonb),
   ('a9d3ca76-7fd7-5428-9cd4-78123a2c0e5b', 955, 'paldea', 'The Paradox Sightings', '/banners/crystal_cave.png', 1, 70, 80, '{"item":2,"wild":0,"casino":0,"center":6,"trainer":0}'::jsonb, 0.5, '[{"dex":1009,"level":75,"teamAvgThreshold":0},{"dex":1010,"level":75,"teamAvgThreshold":0},{"dex":1020,"level":75,"teamAvgThreshold":0},{"dex":1021,"level":75,"teamAvgThreshold":0},{"dex":1022,"level":75,"teamAvgThreshold":0},{"dex":1023,"level":75,"teamAvgThreshold":0}]'::jsonb, false, null, false, 9, 'rock', true, '[{"kind":"area","areaId":"699f35ef-aeef-503a-ad2a-4eeacf00845e"},{"kind":"pokedex","count":194},{"kind":"maxLevel","level":75}]'::jsonb, '[]'::jsonb),
   ('679952cf-16ca-5cf8-82f9-e57b382d4c71', 956, 'paldea', 'The Area Zero Underdepths', '/banners/cave_dark.png', 1, 78, 88, '{"item":2,"wild":0,"casino":0,"center":6,"trainer":0}'::jsonb, 0.5, '[{"dex":1024,"level":85}]'::jsonb, false, null, false, 9, 'rock', true, '[{"kind":"area","areaId":"699f35ef-aeef-503a-ad2a-4eeacf00845e"},{"kind":"pokedex","count":246},{"kind":"maxLevel","level":85}]'::jsonb, '[]'::jsonb),
-  ('168b74c9-3359-5581-a214-1f5be8da9b3e', 957, 'paldea', 'Kitakami Hall', '/banners/haunted.png', 1, 80, 90, '{"item":2,"wild":0,"casino":0,"center":6,"trainer":0}'::jsonb, 0.5, '[{"dex":1025,"level":88,"teamAvgThreshold":0}]'::jsonb, false, null, false, 9, 'default', true, '[{"kind":"area","areaId":"679952cf-16ca-5cf8-82f9-e57b382d4c71"},{"kind":"pokedex","count":299},{"kind":"maxLevel","level":88}]'::jsonb, '[]'::jsonb),
+  ('168b74c9-3359-5581-a214-1f5be8da9b3e', 957, 'paldea', 'Kitakami Hall', '/banners/haunted.png', 1, 80, 90, '{"item":2,"wild":8,"casino":0,"center":1,"trainer":0}'::jsonb, 0.5, null, false, null, false, 9, 'default', true, '[{"kind":"area","areaId":"679952cf-16ca-5cf8-82f9-e57b382d4c71"},{"kind":"pokedex","count":299},{"kind":"maxLevel","level":88}]'::jsonb, '[]'::jsonb),
   ('db0475ed-7547-5350-a42a-7d25d3ea324b', 510, 'unova', 'Chargestone Cave', '/banners/crystal_cave.png', 1, 27, 34, '{"item":1,"wild":3,"casino":0,"center":1,"trainer":2}'::jsonb, 0.5, null, false, null, false, 6, 'rock', false, null, '[]'::jsonb),
   ('a703817b-8a2f-5bdb-8e08-898f6db6e1b5', 511, 'unova', 'Mistralton City & Route 7', '/banners/sky.png', 1, 29, 36, '{"item":1,"wild":2,"casino":0,"center":1,"trainer":3}'::jsonb, 0.5, null, false, null, false, 6, 'grass', false, null, '["85b32112-9d31-5efd-854f-02ad957ab1eb"]'::jsonb),
   ('c442130a-bc84-533f-88c9-05d2bfd35e1c', 512, 'unova', 'Celestial Tower', '/banners/haunted.png', 1, 30, 37, '{"item":1,"wild":3,"casino":0,"center":1,"trainer":2}'::jsonb, 0.5, null, false, null, false, 7, 'default', false, null, '[]'::jsonb),
   ('ddf0658d-99fb-5fef-ab31-90dab5f39fb6', 513, 'unova', 'Twist Mountain', '/banners/mountains.png', 1, 32, 39, '{"item":1,"wild":3,"casino":0,"center":1,"trainer":2}'::jsonb, 0.5, null, false, null, false, 7, 'rock', false, null, '[]'::jsonb),
   ('e22227a1-ae4f-5c8f-aa5a-141aeef63db6', 514, 'unova', 'Icirrus City & the Moor of Icirrus', '/banners/swamp.png', 2, 34, 41, '{"item":1,"wild":2,"casino":0,"center":1,"trainer":3}'::jsonb, 0.5, null, false, null, false, 7, 'water', false, null, '["c9eb95f3-b1be-5ab1-9918-a5080fd894c3"]'::jsonb),
   ('091a1797-95f5-58f3-b34a-065f86b07d54', 554, 'unova', 'The Swords of Justice', '/banners/cave.png', 1, 45, 54, '{"item":1,"wild":8,"casino":0,"center":1,"trainer":0}'::jsonb, 0.5, '[{"dex":638,"level":50,"teamAvgThreshold":0},{"dex":640,"level":50,"teamAvgThreshold":0},{"dex":639,"level":50,"teamAvgThreshold":0}]'::jsonb, false, null, false, 9, 'rock', true, '[{"kind":"area","areaId":"8c87ed3a-c021-57b6-b866-cc6e71877c0e"},{"kind":"maxLevel","level":45}]'::jsonb, '[]'::jsonb),
-  ('e3ab5fdf-99ee-5feb-b6fd-1d47352b267e', 557, 'unova', 'The P2 Laboratory', '/banners/factory.png', 1, 55, 64, '{"item":1,"wild":8,"casino":0,"center":1,"trainer":0}'::jsonb, 0.5, '[{"dex":649,"level":60}]'::jsonb, false, null, false, 9, 'default', true, '[{"kind":"area","areaId":"03b22d5c-9bdd-5024-80bb-7dfcaa848dc7"},{"kind":"maxLevel","level":55}]'::jsonb, '[]'::jsonb),
+  ('e3ab5fdf-99ee-5feb-b6fd-1d47352b267e', 557, 'unova', 'The P2 Laboratory', '/banners/factory.png', 1, 55, 64, '{"item":1,"wild":8,"casino":0,"center":1,"trainer":0}'::jsonb, 0.5, null, false, null, false, 9, 'default', true, '[{"kind":"area","areaId":"03b22d5c-9bdd-5024-80bb-7dfcaa848dc7"},{"kind":"maxLevel","level":55}]'::jsonb, '[]'::jsonb),
   ('1f3afed9-f2be-5b47-82c5-e281ba2584ae', 558, 'unova', 'The Giant Chasm', '/banners/cave_dark.png#flip', 1, 60, 70, '{"item":1,"wild":8,"casino":0,"center":1,"trainer":0}'::jsonb, 0.5, '[{"dex":646,"level":70}]'::jsonb, false, null, false, 9, 'rock', true, '[{"kind":"area","areaId":"2064be7d-daf4-56ee-a5c2-8a805ccac0d5"},{"kind":"maxLevel","level":60}]'::jsonb, '[]'::jsonb),
-  ('285d4dfb-dd01-59eb-a632-0602a135a88e', 551, 'unova', 'Liberty Garden', '/banners/flowers.png', 1, 25, 33, '{"item":0,"wild":0,"casino":0,"center":0,"trainer":0}'::jsonb, 0.5, '[{"dex":494,"level":30,"teamAvgThreshold":0}]'::jsonb, false, null, false, 5, 'grass', true, '[{"kind":"area","areaId":"ffe54f64-88c9-5ead-aa12-389b4742ce69"},{"kind":"maxLevel","level":25}]'::jsonb, '[]'::jsonb),
-  ('f014aa64-1215-5a78-be22-b1ee72f0d1e7', 552, 'unova', 'The Castelia Café', '/banners/city.png', 1, 45, 55, '{"item":0,"wild":0,"casino":0,"center":0,"trainer":0}'::jsonb, 0.5, '[{"dex":648,"level":50,"teamAvgThreshold":0}]'::jsonb, false, null, false, 9, 'default', true, '[{"kind":"area","areaId":"8c87ed3a-c021-57b6-b866-cc6e71877c0e"},{"kind":"maxLevel","level":45}]'::jsonb, '[]'::jsonb),
+  ('285d4dfb-dd01-59eb-a632-0602a135a88e', 551, 'unova', 'Liberty Garden', '/banners/flowers.png', 1, 25, 33, '{"item":0,"wild":8,"casino":0,"center":0,"trainer":0}'::jsonb, 0.5, null, false, null, false, 5, 'grass', true, '[{"kind":"area","areaId":"ffe54f64-88c9-5ead-aa12-389b4742ce69"},{"kind":"maxLevel","level":25}]'::jsonb, '[]'::jsonb),
+  ('f014aa64-1215-5a78-be22-b1ee72f0d1e7', 552, 'unova', 'The Castelia Café', '/banners/city.png', 1, 45, 55, '{"item":0,"wild":8,"casino":0,"center":0,"trainer":0}'::jsonb, 0.5, null, false, null, false, 9, 'default', true, '[{"kind":"area","areaId":"8c87ed3a-c021-57b6-b866-cc6e71877c0e"},{"kind":"maxLevel","level":45}]'::jsonb, '[]'::jsonb),
   ('8c87ed3a-c021-57b6-b866-cc6e71877c0e', 518, 'unova', 'The Pokémon League', '/banners/default.png', 1, 46, 56, '{"item":1,"wild":0,"casino":0,"center":1,"trainer":2}'::jsonb, 0.5, null, false, null, false, 9, 'default', false, null, '["211f78db-e371-5228-8bcd-8099355393d7","fd9257c6-2f03-5576-bbcc-746b8ef34c40","b4ee87be-97f7-5a78-a11e-79287117f850","91925022-9ad3-5206-ae61-5ed1e14e975f","96f94208-c601-51e4-924f-b492fc6f445c","d49fa8dd-28c5-55f3-ab4e-bd67a610dd9e"]'::jsonb),
-  ('888beadb-3aa2-57cc-82bc-cca9bd51f42a', 519, 'unova', 'Victory Road II', '/banners/cave_dark.png#flip', 1, 59, 69, '{"item":1,"wild":4,"casino":0,"center":1,"trainer":3}'::jsonb, 0.5, null, false, null, false, 9, 'rock', false, null, '[]'::jsonb),
-  ('414d148c-76c2-5c1a-9e8d-aa1a0b60a154', 520, 'unova', 'The Pokémon League II', '/banners/default.png', 1, 65, 75, '{"item":1,"wild":0,"casino":0,"center":1,"trainer":2}'::jsonb, 0.5, null, false, null, false, 9, 'default', false, null, '["b37e3997-54de-5b46-953c-8be828c84b79","09b641be-1bbc-5743-be34-921b6a04201e","99eca4fd-c5eb-57c0-a169-7056d6fac493","14f3f2ff-374f-5c3e-9115-10a3a800fd13","a1bbf675-a45a-58d4-ab8b-47e7d219496c"]'::jsonb),
   ('03b22d5c-9bdd-5024-80bb-7dfcaa848dc7', 521, 'unova', 'Routes 11–14 & Undella Town', '/banners/beach.png', 1, 55, 66, '{"item":1,"wild":2,"casino":0,"center":1,"trainer":3}'::jsonb, 0.5, null, false, null, false, 9, 'sea', true, '[{"kind":"area","areaId":"8c87ed3a-c021-57b6-b866-cc6e71877c0e"}]'::jsonb, '["32ba99c6-191d-5c3b-9ad4-7c4a6669b197"]'::jsonb),
   ('a79ba3e6-ec33-5480-8a4e-d7175eb8fb9a', 522, 'unova', 'Black City & White Forest', '/banners/sunset.png', 1, 60, 76, '{"item":1,"wild":6,"casino":0,"center":1,"trainer":2}'::jsonb, 0.5, null, true, null, false, 9, 'grass', true, '[{"kind":"area","areaId":"8c87ed3a-c021-57b6-b866-cc6e71877c0e"}]'::jsonb, '[]'::jsonb),
   ('2064be7d-daf4-56ee-a5c2-8a805ccac0d5', 553, 'unova', 'Dragonspiral Tower''s Summit', '/banners/snow_mountains.png#flip', 1, 48, 56, '{"item":0,"wild":0,"casino":0,"center":0,"trainer":0}'::jsonb, 0.5, '[{"dex":643,"level":52},{"dex":644,"level":52}]'::jsonb, false, null, false, 9, 'default', true, '[{"kind":"area","areaId":"8c87ed3a-c021-57b6-b866-cc6e71877c0e"},{"kind":"maxLevel","level":48}]'::jsonb, '[]'::jsonb),
-  ('a536039f-e897-5697-a75e-15d8060e96e3', 555, 'unova', 'The Moor of Icirrus Spring', '/banners/swamp.png#flip', 1, 50, 58, '{"item":0,"wild":0,"casino":0,"center":0,"trainer":0}'::jsonb, 0.5, '[{"dex":647,"level":55,"teamAvgThreshold":0}]'::jsonb, false, null, false, 9, 'water', true, '[{"kind":"area","areaId":"091a1797-95f5-58f3-b34a-065f86b07d54"},{"kind":"maxLevel","level":50}]'::jsonb, '[]'::jsonb),
+  ('a536039f-e897-5697-a75e-15d8060e96e3', 555, 'unova', 'The Moor of Icirrus Spring', '/banners/swamp.png#flip', 1, 50, 58, '{"item":0,"wild":8,"casino":0,"center":0,"trainer":0}'::jsonb, 0.5, null, false, null, false, 9, 'water', true, '[{"kind":"area","areaId":"091a1797-95f5-58f3-b34a-065f86b07d54"},{"kind":"maxLevel","level":50}]'::jsonb, '[]'::jsonb),
   ('3a951f35-e83d-5ac1-b2a3-2cfe91620fb4', 556, 'unova', 'The Abundant Shrine', '/banners/flowers.png#flip', 1, 52, 62, '{"item":0,"wild":0,"casino":0,"center":0,"trainer":0}'::jsonb, 0.5, '[{"dex":641,"level":56,"teamAvgThreshold":0},{"dex":642,"level":56,"teamAvgThreshold":0},{"dex":645,"level":60,"teamAvgThreshold":0}]'::jsonb, false, null, false, 9, 'grass', true, '[{"kind":"area","areaId":"03b22d5c-9bdd-5024-80bb-7dfcaa848dc7"},{"kind":"maxLevel","level":52}]'::jsonb, '[]'::jsonb),
   ('e8936c27-eded-53f7-ad42-8c6eea16f5f6', 858, 'galar', 'Dyna Tree Hill', '/banners/snow_mountains.png', 1, 66, 74, '{"item":2,"wild":0,"casino":0,"center":6,"trainer":0}'::jsonb, 0.5, '[{"dex":10169,"level":70,"teamAvgThreshold":0},{"dex":10170,"level":70,"teamAvgThreshold":0},{"dex":10171,"level":70,"teamAvgThreshold":0}]'::jsonb, false, null, false, 9, 'grass', true, '[{"kind":"area","areaId":"0c17194f-f7be-5221-91d0-68fcee8da9d9"},{"kind":"pokedex","count":173},{"kind":"maxLevel","level":70}]'::jsonb, '[]'::jsonb)
 on conflict (id) do update set order_index = excluded.order_index, region_id = excluded.region_id, name = excluded.name, banner_url = excluded.banner_url, rounds_to_clear = excluded.rounds_to_clear, min_level = excluded.min_level, max_level = excluded.max_level, encounter_weights = excluded.encounter_weights, backtrack_multiplier = excluded.backtrack_multiplier, legendary_boss = excluded.legendary_boss, scales_to_team = excluded.scales_to_team, scale_offsets = excluded.scale_offsets, easy_mode = excluded.easy_mode, enemy_upgrade_level = excluded.enemy_upgrade_level, battle_background = excluded.battle_background, hidden = excluded.hidden, unlock_conditions = excluded.unlock_conditions, gyms = excluded.gyms;
@@ -1969,14 +3747,6 @@ insert into trainers (id, name, sprite_url, team, role, badge, upgrade_level, ba
   ('9ec73730-2fb3-5d9c-8a4a-4c35ac14b0df', 'Pokémon Ranger Brandon', '/trainers/classes/kalos/ranger-m.png', '[{"dex":679,"level":14},{"dex":290,"level":14}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
   ('a6b0b5fb-6fc5-5dd6-8160-d241eb2af720', 'Pokémon Breeder Lucia', '/trainers/classes/kalos/breeder-f.png', '[{"dex":682,"level":15},{"dex":684,"level":15}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
   ('ff0ad17b-2648-57cb-8571-333d0102c364', 'Twins Mia & Pia', '/trainers/classes/kalos/twins.png', '[{"dex":669,"level":15},{"dex":315,"level":15}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
-  ('4457770f-a969-4efa-bee2-7102bd718fc4', 'Elite Four Aaron II', '/trainers/classes/sinnoh/elite-aaron.png', '[{"dex":452,"level":70},{"dex":416,"level":69},{"dex":469,"level":68}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
-  ('505a38a7-1fce-4bff-9dd1-c1ca9d0e2ec5', 'Elite Four Bertha II', '/trainers/classes/sinnoh/elite-bertha.png', '[{"dex":340,"level":71},{"dex":473,"level":71},{"dex":464,"level":72}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
-  ('b8f5fd50-207f-4e18-b8f4-4e6b9427b6e8', 'Elite Four Flint II', '/trainers/classes/sinnoh/elite-flint.png', '[{"dex":229,"level":72,"shiny":true},{"dex":392,"level":74},{"dex":467,"level":75}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
-  ('ff1fa9eb-e2a9-4ec8-ae06-0c399a6b6d32', 'Elite Four Lucian II', '/trainers/classes/sinnoh/elite-lucian.png', '[{"dex":437,"level":72},{"dex":65,"level":74},{"dex":475,"level":75}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
-  ('43e442fb-cf4e-47f6-b0cd-1252eb421c93', 'Champion Cynthia II', '/trainers/classes/sinnoh/champion-cynthia.png', '[{"dex":442,"level":74},{"dex":448,"level":77,"shiny":true},{"dex":445,"level":80}]'::jsonb, 'champion', null, null, 'default', null, '["hyper-potion"]'::jsonb),
-  ('c7409849-6c4b-4cf8-8fe3-a4e24974952c', 'Ace Trainer Alyssa II', '/trainers/classes/sinnoh/ace-trainer-m.png', '[{"dex":395,"level":65},{"dex":462,"level":65}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
-  ('4e564ded-152d-434a-9fc8-9cf5186e2917', 'Veteran Lamar II', '/trainers/classes/sinnoh/veteran-m.png', '[{"dex":389,"level":65},{"dex":419,"level":66}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
-  ('29a39fad-d23a-42ce-9295-505608fca780', 'Ace Trainer Maya II', '/trainers/classes/sinnoh/ace-trainer-m.png', '[{"dex":468,"level":66},{"dex":465,"level":65}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
   ('d3301214-ac28-55b9-833a-65f5f0ce0999', 'Lass Reli', '/trainers/classes/lass.png', '[{"dex":32,"level":16},{"dex":29,"level":16}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
   ('de5817c3-4e7f-599a-a5c0-35124fab156e', 'Hiker Ryan', '/trainers/classes/kalos/hiker.png', '[{"dex":41,"level":15},{"dex":293,"level":16}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
   ('892ee4b3-b090-5881-94b6-e18f075b415a', 'Trevor', '/trainers/classes/kalos/trevor.png', '[{"dex":25,"level":16},{"dex":670,"level":16}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
@@ -2056,16 +3826,6 @@ insert into trainers (id, name, sprite_url, team, role, badge, upgrade_level, ba
   ('4c0a9e79-6211-5fea-bbb8-188080d9a8cb', 'Elite Four Wikstrom', '/trainers/classes/kalos/elite-wikstrom.png', '[{"dex":707,"level":63},{"dex":212,"level":63},{"dex":681,"level":65}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
   ('9a852abf-1f4c-5d91-8201-15e95d9314ec', 'Elite Four Drasna', '/trainers/classes/kalos/elite-drasna.png', '[{"dex":691,"level":63},{"dex":621,"level":63},{"dex":715,"level":65}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
   ('6044b4d2-33fd-5b56-bd0c-86d9dac85c45', 'Champion Diantha', '/trainers/classes/kalos/champion-diantha.png', '[{"dex":697,"level":65},{"dex":699,"level":65},{"dex":706,"level":66}]'::jsonb, 'champion', null, null, 'default', null, '["hyper-potion"]'::jsonb),
-  ('76af3160-a53e-5fac-ae49-958bc3e818a3', 'Ace Trainer Robbie II', '/trainers/classes/kalos/ace-trainer-m.png', '[{"dex":706,"level":68},{"dex":635,"level":68}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
-  ('cde93152-2e1e-5803-8090-a3e4ce613f9e', 'Ace Trainer Corinne II', '/trainers/classes/kalos/ace-trainer-f.png', '[{"dex":715,"level":68},{"dex":697,"level":68}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
-  ('bbf8133b-dc21-53de-90ce-00e2138f12ad', 'Veteran Sabine II', '/trainers/classes/kalos/veteran-f.png', '[{"dex":699,"level":69},{"dex":691,"level":69}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
-  ('bd1da7ae-fb47-5ad6-801d-38e9703fa392', 'Ace Trainer Robbie II', '/trainers/classes/kalos/ace-trainer-m.png', '[{"dex":706,"level":68},{"dex":635,"level":68}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
-  ('fb8d061c-9840-5b71-82ae-117fe9795469', 'Veteran Sabine II', '/trainers/classes/kalos/veteran-f.png', '[{"dex":699,"level":69},{"dex":691,"level":69}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
-  ('c01cea5c-5042-5fad-a1ea-9b12c21f193e', 'Elite Four Malva II', '/trainers/classes/kalos/elite-malva.png', '[{"dex":668,"level":71},{"dex":609,"level":71},{"dex":663,"level":73}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
-  ('d840212f-3724-599a-bb91-0e8a38a900ec', 'Elite Four Siebold II', '/trainers/classes/kalos/elite-siebold.png', '[{"dex":693,"level":71},{"dex":130,"level":71},{"dex":689,"level":73}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
-  ('0a3ea046-6726-5aaf-a072-1463c29ec786', 'Elite Four Wikstrom II', '/trainers/classes/kalos/elite-wikstrom.png', '[{"dex":707,"level":71},{"dex":212,"level":71},{"dex":681,"level":73}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
-  ('7ad18f73-8f24-527e-a9e0-9dd285a3607a', 'Elite Four Drasna II', '/trainers/classes/kalos/elite-drasna.png', '[{"dex":691,"level":71},{"dex":621,"level":71},{"dex":715,"level":73}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
-  ('da41fca3-d4f8-5e32-922e-24224bf2f74a', 'Champion Diantha II', '/trainers/classes/kalos/champion-diantha.png', '[{"dex":697,"level":73},{"dex":699,"level":73},{"dex":706,"level":74}]'::jsonb, 'champion', null, null, 'default', null, '["hyper-potion"]'::jsonb),
   ('b076750d-a6e3-5784-872f-17eaf90ef57f', 'Ace Trainer Bernard', '/trainers/classes/kalos/ace-trainer-m.png', '[{"dex":675,"level":64},{"dex":687,"level":64}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
   ('c1f3574f-807f-55a7-b8bc-8402bd490132', 'Veteran Abigail', '/trainers/classes/kalos/veteran-f.png', '[{"dex":700,"level":65},{"dex":673,"level":65}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
   ('f2b225e4-8fb9-563a-b7aa-dcb7828a17c9', 'Rising Star Isaiah', '/trainers/classes/kalos/rising-star-m.png', '[{"dex":663,"level":64},{"dex":695,"level":64}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
@@ -2132,9 +3892,6 @@ insert into trainers (id, name, sprite_url, team, role, badge, upgrade_level, ba
   ('2c614121-f667-5065-8f60-d7937e67fd58', 'Bug Catcher Colton', '/trainers/classes/bug-catcher.png', '[{"dex":10,"level":10},{"dex":13,"level":10},{"dex":10,"level":10}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
   ('0d076d9f-7c4f-5aa1-8974-7b494de9f6e3', 'Youngster Ben', '/trainers/classes/youngster.png', '[{"dex":19,"level":11},{"dex":23,"level":11}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
   ('ae7cc0ef-b8ef-52b6-b1de-84fb9e0efed6', 'Bug Catcher Greg', '/trainers/classes/bug-catcher.png', '[{"dex":13,"level":9},{"dex":14,"level":9},{"dex":10,"level":9}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
-  ('a568ca36-fc30-599e-9e78-b4fb211fb606', 'Champion Rival', '/characters/green.png', '[{"dex":26,"level":75},{"dex":130,"level":76},{"dex":6,"level":80}]'::jsonb, 'champion', null, null, 'default', 1, '["hyper-potion"]'::jsonb),
-  ('2a51f07a-53f5-5fe6-a875-8e8428d78db6', 'Champion Rival', '/characters/green.png', '[{"dex":26,"level":75},{"dex":59,"level":76},{"dex":9,"level":80}]'::jsonb, 'champion', null, null, 'default', 4, '["hyper-potion"]'::jsonb),
-  ('599bb09c-3765-5356-b5e1-27a6cf741358', 'Champion Rival', '/characters/green.png', '[{"dex":26,"level":75},{"dex":59,"level":76},{"dex":3,"level":80}]'::jsonb, 'champion', null, null, 'default', 7, '["hyper-potion"]'::jsonb),
   ('654cb1e2-cc05-5148-824e-8378e33b8694', 'Youngster Joey', '/trainers/classes/johto/youngster.png', '[{"dex":19,"level":5}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
   ('a2cea4fc-c09f-5a8f-b178-787ba9fed415', 'Bug Catcher Don', '/trainers/classes/johto/bug-catcher.png', '[{"dex":167,"level":6},{"dex":165,"level":6}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
   ('40499b39-e1ed-5aae-a6a6-88ad227e4ac3', 'Lass Abigail', '/trainers/classes/johto/lass.png', '[{"dex":161,"level":7},{"dex":163,"level":7}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
@@ -2142,12 +3899,6 @@ insert into trainers (id, name, sprite_url, team, role, badge, upgrade_level, ba
   ('e10acb82-610c-5dd2-a1b7-718ca4a2bae5', 'Sage Nico', '/trainers/classes/johto/sage.png', '[{"dex":69,"level":8},{"dex":69,"level":8}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
   ('0dd54e5a-4887-58b2-a6f6-cb25433e0de7', 'Sage Chow', '/trainers/classes/johto/sage.png', '[{"dex":69,"level":9},{"dex":69,"level":9},{"dex":69,"level":9}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
   ('886a3d08-fecc-56a4-89fc-9b6ccf66631b', 'Sage Edmond', '/trainers/classes/johto/sage.png', '[{"dex":69,"level":9},{"dex":92,"level":8}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
-  ('1ea3126a-c054-5e04-a1e4-e043bb66000d', 'Cooltrainer Ivy', '/trainers/classes/cooltrainer-f.png', '[{"dex":87,"level":60},{"dex":91,"level":60},{"dex":131,"level":62}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
-  ('43e5423e-66fa-5907-bded-9fab062d4c5d', 'Pokémaniac Hugo', '/trainers/classes/pokemaniac.png', '[{"dex":80,"level":60},{"dex":108,"level":61},{"dex":112,"level":62}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
-  ('2510d308-bcd5-5b2b-a1fc-df9a07cfea2e', 'Ace Trainer Blake', '/trainers/classes/cooltrainer-m.png', '[{"dex":135,"level":67},{"dex":59,"level":67},{"dex":130,"level":68}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
-  ('9e65b296-17f3-566c-8148-add7ac5956d0', 'Ace Trainer Claire', '/trainers/classes/cooltrainer-f.png', '[{"dex":36,"level":67},{"dex":134,"level":67},{"dex":121,"level":68}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
-  ('32aac824-7f02-58b9-8a83-3847371a4700', 'Ace Trainer Marcus', '/trainers/classes/cooltrainer-m.png', '[{"dex":99,"level":67},{"dex":68,"level":67},{"dex":112,"level":68}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
-  ('5fc3b44e-3023-5a8e-94c1-71eb245785dc', 'Ace Trainer Rosa', '/trainers/classes/cooltrainer-f.png', '[{"dex":136,"level":67},{"dex":26,"level":67},{"dex":3,"level":68}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
   ('a74915b8-d2a4-5196-88d0-1175519d200b', 'Beauty Nicole', '/trainers/classes/alola/beauty.png', '[{"dex":222,"level":24},{"dex":370,"level":24}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
   ('83a4bf1d-ca8a-5a5b-8018-617c4078dcdd', 'Plumeria', '/trainers/classes/alola/plumeria.png', '[{"dex":42,"level":25},{"dex":758,"level":26}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
   ('8ccda063-9222-5190-a949-145815db7a6f', 'Kahuna Olivia', '/trainers/classes/alola/olivia.png', '[{"dex":299,"level":26},{"dex":525,"level":26},{"dex":745,"level":27}]'::jsonb, 'leader', 'Rockium Z', null, 'default', null, '[]'::jsonb),
@@ -2157,8 +3908,6 @@ insert into trainers (id, name, sprite_url, team, role, badge, upgrade_level, ba
   ('a291f26a-d650-51f8-b6fa-d31e21e30e59', 'Hau', '/trainers/classes/alola/hau.png', '[{"dex":25,"level":26},{"dex":134,"level":26},{"dex":714,"level":25}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
   ('618a3856-008e-5a72-8745-c08d86f11be5', 'Office Worker Rob', '/trainers/classes/alola/office-worker-m.png', '[{"dex":81,"level":27},{"dex":10107,"level":27}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
   ('678dff2c-99b1-5e3f-8962-110b5bb79f08', 'Golfer Nathaniel', '/trainers/classes/alola/golfer.png', '[{"dex":284,"level":27},{"dex":752,"level":27}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
-  ('2d4a65c8-9b0c-5479-9658-ab6a8b709be5', 'Ace Trainer Dante', '/trainers/classes/cooltrainer-m.png', '[{"dex":123,"level":67},{"dex":142,"level":69},{"dex":149,"level":68}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
-  ('7ad13d36-f10e-596a-9f38-b7fe419b3e04', 'Ace Trainer Yuki', '/trainers/classes/cooltrainer-f.png', '[{"dex":87,"level":68},{"dex":124,"level":68},{"dex":131,"level":69}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
   ('56935caa-5152-50ab-8478-3610abbac5f9', 'Bug Catcher Keigo', '/trainers/classes/bug-catcher.png', '[{"dex":13,"level":16},{"dex":10,"level":16},{"dex":13,"level":16}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
   ('9a21fb32-26c6-59f4-b1b2-5c2a3a242af3', 'Picnicker Nancy', '/trainers/classes/picnicker.png', '[{"dex":19,"level":16},{"dex":25,"level":16}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
   ('0cbe95ab-f480-5352-910f-0706645b2265', 'Camper Jeff', '/trainers/classes/camper.png', '[{"dex":21,"level":16},{"dex":20,"level":16}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
@@ -2182,7 +3931,6 @@ insert into trainers (id, name, sprite_url, team, role, badge, upgrade_level, ba
   ('172a7746-6137-5ef6-90c0-0b3863938fb7', 'Engineer Braxton', '/trainers/classes/engineer.png', '[{"dex":81,"level":22}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
   ('1c4d82f8-5862-507c-a19a-bb9d1dd09f3b', 'Youngster Dillon', '/trainers/classes/youngster.png', '[{"dex":27,"level":19},{"dex":41,"level":19}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
   ('5697cbad-6a89-59e6-91de-f69df5161237', 'Gambler Dirk', '/trainers/classes/gentleman.png', '[{"dex":100,"level":18},{"dex":81,"level":18}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
-  ('5aeec583-b9a0-464d-aa70-6abb72718786', 'Ace Trainer Irene II', '/trainers/classes/johto/schoolboy.png', '[{"dex":112,"level":59},{"dex":248,"level":61}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
   ('c359c22b-b30c-5d00-a2b1-6681c6031012', 'Ace Trainer Emma', '/trainers/classes/alola/ace-trainer-f.png', '[{"dex":774,"level":28},{"dex":605,"level":28}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
   ('2bc4b132-716b-57ec-9b20-ee3709813817', 'Youngster Yasu', '/trainers/classes/youngster.png', '[{"dex":19,"level":17},{"dex":19,"level":17},{"dex":20,"level":17}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
   ('f6693b54-53fd-566b-a00e-5063add4daf1', 'Camper Chris', '/trainers/classes/camper.png', '[{"dex":58,"level":21},{"dex":37,"level":21}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
@@ -2196,10 +3944,7 @@ insert into trainers (id, name, sprite_url, team, role, badge, upgrade_level, ba
   ('70ffa587-b53e-5280-9e54-e0bae998f745', 'Hiker Lenny', '/trainers/classes/hiker.png', '[{"dex":74,"level":19},{"dex":66,"level":19},{"dex":74,"level":19}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
   ('b280a998-7bae-5acf-b1aa-8682873b2f68', 'Pokémaniac Ashton', '/trainers/classes/pokemaniac.png', '[{"dex":104,"level":23},{"dex":79,"level":23}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
   ('67dee691-d012-5fa3-b6ef-d59049f1579d', 'Rocket Grunt', '/trainers/classes/team-rocket-m.png', '[{"dex":23,"level":15},{"dex":41,"level":15}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
-  ('24f8a88c-9c4d-592c-933c-6b67ea0fe9f4', 'Hiker Oliver', '/trainers/classes/hiker.png', '[{"dex":95,"level":20},{"dex":95,"level":20},{"dex":74,"level":20}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb)
-on conflict (id) do update set name = excluded.name, sprite_url = excluded.sprite_url, team = excluded.team, role = excluded.role, badge = excluded.badge, upgrade_level = excluded.upgrade_level, battle_background = excluded.battle_background, rival_of = excluded.rival_of, items = excluded.items;
-
-insert into trainers (id, name, sprite_url, team, role, badge, upgrade_level, battle_background, rival_of, items) values
+  ('24f8a88c-9c4d-592c-933c-6b67ea0fe9f4', 'Hiker Oliver', '/trainers/classes/hiker.png', '[{"dex":95,"level":20},{"dex":95,"level":20},{"dex":74,"level":20}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
   ('9d5af3c0-c4dc-5f3a-8736-92e2063e9959', 'Picnicker Dana', '/trainers/classes/picnicker.png', '[{"dex":52,"level":20},{"dex":43,"level":20},{"dex":16,"level":20}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
   ('c139639a-754c-5b60-aee9-5a00cba09015', 'Pokémaniac Winston', '/trainers/classes/pokemaniac.png', '[{"dex":79,"level":25}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
   ('c5a95f06-9cae-59ef-8e61-f172703159fd', 'Hiker Dudley', '/trainers/classes/hiker.png', '[{"dex":74,"level":21},{"dex":74,"level":21},{"dex":75,"level":21}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
@@ -2229,7 +3974,10 @@ insert into trainers (id, name, sprite_url, team, role, badge, upgrade_level, ba
   ('702edd35-6004-573c-b1c0-da21f9ff125b', 'Rocket Grunt', '/trainers/classes/team-rocket-m.png', '[{"dex":109,"level":26},{"dex":96,"level":26}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
   ('8ac18ebf-ef70-5887-9076-1714e5870d7b', 'Rival Blue', '/trainers/classes/blue-1.png', '[{"dex":17,"level":25},{"dex":8,"level":25},{"dex":58,"level":23}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
   ('c06d63ae-a37c-5d43-bad0-31741b065e1c', 'Fisherman Ned', '/trainers/classes/fisherman.png', '[{"dex":118,"level":22},{"dex":60,"level":22},{"dex":118,"level":22}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
-  ('6fee0388-8118-5e9e-9549-ff1cb71cab1f', 'Rocker Luca', '/trainers/classes/rocker.png', '[{"dex":100,"level":29},{"dex":101,"level":29}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
+  ('6fee0388-8118-5e9e-9549-ff1cb71cab1f', 'Rocker Luca', '/trainers/classes/rocker.png', '[{"dex":100,"level":29},{"dex":101,"level":29}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb)
+on conflict (id) do update set name = excluded.name, sprite_url = excluded.sprite_url, team = excluded.team, role = excluded.role, badge = excluded.badge, upgrade_level = excluded.upgrade_level, battle_background = excluded.battle_background, rival_of = excluded.rival_of, items = excluded.items;
+
+insert into trainers (id, name, sprite_url, team, role, badge, upgrade_level, battle_background, rival_of, items) values
   ('afe51391-e667-5b36-85bd-229a85eadbf8', 'Elite Four Sidney', '/trainers/classes/hoenn/elite-sidney.png', '[{"dex":262,"level":50},{"dex":275,"level":52},{"dex":359,"level":53}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
   ('16eac30d-6214-5b86-a3a9-fd6a72e5863c', 'Bird Keeper Sebastian', '/trainers/classes/bird-keeper.png', '[{"dex":16,"level":29},{"dex":17,"level":29}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
   ('61f7a471-4793-55dc-b9b7-2162d9ddf050', 'Cue Ball Koji', '/trainers/classes/biker.png', '[{"dex":66,"level":29},{"dex":56,"level":29},{"dex":66,"level":29}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
@@ -2280,9 +4028,6 @@ insert into trainers (id, name, sprite_url, team, role, badge, upgrade_level, ba
   ('aa050486-189f-5ff4-a0e2-c75899f31bd4', 'Elite Four Karen', '/trainers/classes/johto/elite-karen.png', '[{"dex":198,"level":56},{"dex":229,"level":58},{"dex":197,"level":60}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
   ('accb672b-6982-5485-b370-c30ae9ec2da4', 'Champion Lance', '/trainers/classes/johto/champion-lance.png', '[{"dex":130,"level":59},{"dex":149,"level":61},{"dex":149,"level":64}]'::jsonb, 'champion', null, null, 'default', null, '["hyper-potion"]'::jsonb),
   ('3d3164b4-144f-5082-b99c-db637c022d00', 'Picnicker Diana', '/trainers/classes/picnicker.png', '[{"dex":118,"level":19}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
-  ('e52d35a5-bcba-4cff-a51a-14cf9400ef62', 'Ace Trainer Blake II', '/trainers/classes/johto/schoolboy.png', '[{"dex":232,"level":59},{"dex":208,"level":60,"shiny":true}]'::jsonb, 'trainer', null, null, null, null, '["super-potion"]'::jsonb),
-  ('50a71ec5-d033-4e21-96e0-ea3ac26c844f', 'Ace Trainer Cody II', '/trainers/classes/johto/schoolboy.png', '[{"dex":149,"level":61},{"dex":148,"level":60}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
-  ('ffbca5d2-d659-4f46-b9af-f7c263b5a239', 'Black Belt Lao II', '/trainers/classes/johto/black-belt.png', '[{"dex":68,"level":60},{"dex":237,"level":60}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
   ('964d2568-d4ba-5e1f-945f-d7870eb8a53f', 'Cue Ball Luke', '/trainers/classes/biker.png', '[{"dex":56,"level":28},{"dex":57,"level":28}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
   ('3acff8d3-ed25-54ff-a1ac-4aa31c258b7b', 'Team Skull Grunt', '/trainers/classes/alola/skull-grunt-m.png', '[{"dex":552,"level":32},{"dex":42,"level":32}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
   ('caa7bc26-5304-5b34-9755-17704a46228c', 'Janitor Ralph', '/trainers/classes/alola/janitor.png', '[{"dex":93,"level":33},{"dex":353,"level":33}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
@@ -2301,14 +4046,9 @@ insert into trainers (id, name, sprite_url, team, role, badge, upgrade_level, ba
   ('e89c01d9-ad5d-596d-a647-d80cc3b9fcb9', 'Gladion', '/trainers/classes/alola/gladion.png', '[{"dex":42,"level":43},{"dex":745,"level":43},{"dex":772,"level":44}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
   ('d1e8b794-d27f-52e1-9f23-be3de2d7665d', 'Faba', '/trainers/classes/alola/faba.png', '[{"dex":97,"level":42},{"dex":779,"level":43}]'::jsonb, 'leader', null, null, 'default', null, '[]'::jsonb),
   ('2ebf133c-a700-5d2b-ba5b-a91cb8fc51eb', 'Guzma', '/trainers/classes/alola/guzma.png', '[{"dex":168,"level":46},{"dex":284,"level":46},{"dex":768,"level":47}]'::jsonb, 'leader', null, null, 'default', null, '[]'::jsonb),
-  ('c0a6eb4d-9adf-4063-9ce2-fc4cc669e7e8', 'Elite Four Will II', '/trainers/classes/johto/elite-will.png', '[{"dex":178,"level":71},{"dex":124,"level":73},{"dex":103,"level":75}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
   ('92a6ae77-e6df-5d66-9ecb-9e631f34dccc', 'Lusamine', '/trainers/classes/alola/lusamine.png', '[{"dex":36,"level":47},{"dex":350,"level":47},{"dex":760,"level":48}]'::jsonb, 'leader', null, null, 'default', null, '[]'::jsonb),
   ('cb25e5f9-94ba-511b-9cf1-5eb44ccf9680', 'Fisherman Kaimana', '/trainers/classes/alola/fisherman.png', '[{"dex":320,"level":43},{"dex":369,"level":43}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
   ('a9da3a5a-7f5b-5e64-b4d2-bd682ea2d008', 'Veteran Kanoa', '/trainers/classes/alola/veteran-m.png', '[{"dex":423,"level":44},{"dex":210,"level":44}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
-  ('45cdb614-48c6-4166-a250-b41d554e250b', 'Elite Four Koga II', '/trainers/classes/johto/elite-koga.png', '[{"dex":168,"level":73},{"dex":49,"level":74},{"dex":205,"level":75}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
-  ('e6f08fae-fb9d-4b38-870c-6539a695ebe1', 'Elite Four Bruno II', '/trainers/classes/johto/elite-bruno.png', '[{"dex":237,"level":75},{"dex":107,"level":77},{"dex":106,"level":79}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
-  ('c1b114c8-c834-4a4e-9dca-49965b044a52', 'Elite Four Karen II', '/trainers/classes/johto/elite-karen.png', '[{"dex":198,"level":75},{"dex":229,"level":77},{"dex":197,"level":80}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
-  ('eeddd758-6420-4f33-ba2c-56a098f3fd6c', 'Champion Lance II', '/trainers/classes/johto/champion-lance.png', '[{"dex":130,"level":79},{"dex":149,"level":81},{"dex":149,"level":84,"shiny":true}]'::jsonb, 'champion', null, null, 'default', null, '["hyper-potion"]'::jsonb),
   ('fbccb182-9d19-5837-9c84-970936e1b7b0', 'Hiker Jeremy', '/trainers/classes/hiker.png', '[{"dex":66,"level":20},{"dex":95,"level":20}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
   ('593d167e-205b-5610-8f8c-3f198a2c2895', 'Misty', '/trainers/classes/champion-misty.png', '[{"dex":120,"level":18},{"dex":121,"level":21}]'::jsonb, 'leader', 'Cascade Badge', null, 'default', null, '[]'::jsonb),
   ('7e1c4cd7-c741-5a1f-a17b-74d4c7d426e2', 'Hiker Nob', '/trainers/classes/hiker.png', '[{"dex":66,"level":25}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
@@ -2333,9 +4073,6 @@ insert into trainers (id, name, sprite_url, team, role, badge, upgrade_level, ba
   ('8c836c01-4755-59dc-88f3-aceffc2666bf', 'Elite Four Acerola', '/trainers/classes/alola/acerola.png', '[{"dex":478,"level":54},{"dex":781,"level":54},{"dex":770,"level":55}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
   ('1a3ca20b-e218-5ebc-845b-af0dbaf41b2e', 'Elite Four Kahili', '/trainers/classes/alola/elite-kahili.png', '[{"dex":227,"level":54},{"dex":741,"level":54},{"dex":733,"level":55}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
   ('f058140b-aac1-586e-b798-9ec8ca8dd04d', 'Professor Kukui', '/trainers/classes/alola/champion-kukui.png', '[{"dex":10104,"level":56},{"dex":143,"level":56},{"dex":745,"level":57}]'::jsonb, 'champion', null, null, 'default', null, '["hyper-potion"]'::jsonb),
-  ('aa7855fb-96b3-5c0c-9967-b5b668dfd86f', 'Ace Trainer Ollie II', '/trainers/classes/alola/ace-trainer-m.png', '[{"dex":740,"level":65},{"dex":780,"level":65}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
-  ('1bd541c2-e4cf-50c7-a1cb-e756caf000cb', 'Ace Trainer Rosie II', '/trainers/classes/alola/ace-trainer-f.png', '[{"dex":743,"level":65},{"dex":748,"level":66}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
-  ('26b1ab7d-3809-5613-bf4d-ae2acf8be436', 'Veteran Stuart II', '/trainers/classes/alola/veteran-m.png', '[{"dex":784,"level":66},{"dex":768,"level":66}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
   ('b5f63720-a1de-59e8-8e4f-84af13535851', 'Picnicker Alma', '/trainers/classes/picnicker.png', '[{"dex":118,"level":28},{"dex":60,"level":28},{"dex":116,"level":28}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
   ('4126a338-9722-504a-8eee-a2943c52e6b7', 'Beauty Olivia', '/trainers/classes/beauty.png', '[{"dex":35,"level":24},{"dex":69,"level":24},{"dex":43,"level":24}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
   ('856173ec-550e-5af4-8aaf-47992e8e971e', 'Biker Jared', '/trainers/classes/biker.png', '[{"dex":110,"level":28},{"dex":109,"level":28},{"dex":110,"level":28}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
@@ -2347,13 +4084,6 @@ insert into trainers (id, name, sprite_url, team, role, badge, upgrade_level, ba
   ('ae645931-c18a-555b-8a0f-a2e8a2828a4d', 'Psychic Cameron', '/trainers/classes/psychic-m.png', '[{"dex":64,"level":31},{"dex":79,"level":31},{"dex":122,"level":31}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
   ('e74611eb-6150-5a8c-8d17-ae889a6ce3ca', 'Channeler Tasha', '/trainers/classes/channeler.png', '[{"dex":92,"level":34},{"dex":93,"level":34},{"dex":92,"level":34}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
   ('dff1e3b1-8f19-5077-908b-5516f69be379', 'Psychic Preston', '/trainers/classes/psychic-m.png', '[{"dex":79,"level":34},{"dex":79,"level":34},{"dex":80,"level":34}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
-  ('1637180b-5024-5f48-a947-92030f53c4a6', 'Ace Trainer Ollie II', '/trainers/classes/alola/ace-trainer-m.png', '[{"dex":740,"level":65},{"dex":780,"level":65}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
-  ('21258d99-a592-503a-bdbb-6801fed426ef', 'Veteran Stuart II', '/trainers/classes/alola/veteran-m.png', '[{"dex":784,"level":66},{"dex":768,"level":66}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
-  ('3551cda5-c63e-516e-a105-1e4ae24a0241', 'Elite Four Hala II', '/trainers/classes/alola/hala.png', '[{"dex":297,"level":69},{"dex":760,"level":69},{"dex":740,"level":71}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
-  ('7c584e7f-62bc-573b-bbe2-e2d7f2f62f86', 'Elite Four Olivia II', '/trainers/classes/alola/olivia.png', '[{"dex":476,"level":69},{"dex":10111,"level":69},{"dex":745,"level":71}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
-  ('cb5f58b1-b32e-5727-880e-ebb60adc85ac', 'Elite Four Acerola II', '/trainers/classes/alola/acerola.png', '[{"dex":478,"level":69},{"dex":781,"level":69},{"dex":770,"level":71}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
-  ('225d7071-308e-5e2e-b4dd-0af4068aa88e', 'Elite Four Kahili II', '/trainers/classes/alola/elite-kahili.png', '[{"dex":227,"level":69},{"dex":741,"level":69},{"dex":733,"level":71}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
-  ('d540c5be-def8-5f96-8ac2-be5663b754e9', 'Professor Kukui II', '/trainers/classes/alola/champion-kukui.png', '[{"dex":10104,"level":72},{"dex":143,"level":72},{"dex":745,"level":74}]'::jsonb, 'champion', null, null, 'default', null, '["hyper-potion"]'::jsonb),
   ('47f70a31-496e-589c-b1d1-f4e3024e3817', 'Ace Trainer Keala', '/trainers/classes/alola/ace-trainer-f.png', '[{"dex":733,"level":65},{"dex":760,"level":65}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
   ('6f4d9893-93c7-5a7b-ba75-e79e0f36f8be', 'Veteran Makana', '/trainers/classes/alola/veteran-m.png', '[{"dex":784,"level":66},{"dex":778,"level":66}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
   ('0fef3bec-a69f-5f01-91b3-7ec991835934', 'Young Athlete Kira', '/trainers/classes/alola/young-athlete-f.png', '[{"dex":768,"level":65},{"dex":776,"level":65}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
@@ -2449,10 +4179,7 @@ insert into trainers (id, name, sprite_url, team, role, badge, upgrade_level, ba
   ('6887f24f-ca71-5e77-abb9-a8be436c7a42', 'Raihan', '/trainers/classes/galar/raihan.png', '[{"dex":330,"level":61},{"dex":844,"level":61},{"dex":884,"level":62}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
   ('2f444eb0-d61d-5437-b740-7604da4ad736', 'Beauty Anya', '/trainers/classes/beauty.png', '[{"dex":118,"level":30},{"dex":119,"level":30}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
   ('17d36b24-b850-5b11-87b2-984bb62387c9', 'Beauty Alice', '/trainers/classes/beauty.png', '[{"dex":60,"level":28},{"dex":118,"level":28},{"dex":119,"level":28}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
-  ('bcb10076-61de-59b3-973e-c475c0a0beaf', 'Swimmer Barry', '/trainers/classes/swimmer-m.png', '[{"dex":90,"level":31},{"dex":91,"level":31}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb)
-on conflict (id) do update set name = excluded.name, sprite_url = excluded.sprite_url, team = excluded.team, role = excluded.role, badge = excluded.badge, upgrade_level = excluded.upgrade_level, battle_background = excluded.battle_background, rival_of = excluded.rival_of, items = excluded.items;
-
-insert into trainers (id, name, sprite_url, team, role, badge, upgrade_level, battle_background, rival_of, items) values
+  ('bcb10076-61de-59b3-973e-c475c0a0beaf', 'Swimmer Barry', '/trainers/classes/swimmer-m.png', '[{"dex":90,"level":31},{"dex":91,"level":31}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
   ('e9bfa05c-2920-58b2-8a88-c65b282d42a2', 'Beauty Tamara', '/trainers/classes/beauty.png', '[{"dex":121,"level":33}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
   ('94cf8361-1315-514c-a9fc-c21e4f1e4d59', 'Burglar Simon', '/trainers/classes/burglar.png', '[{"dex":58,"level":36},{"dex":37,"level":36},{"dex":77,"level":36}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
   ('95e59c6e-db14-53b8-836a-45a58a953c4b', 'Scientist Ivan', '/trainers/classes/scientist.png', '[{"dex":101,"level":33},{"dex":110,"level":33}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
@@ -2466,18 +4193,7 @@ insert into trainers (id, name, sprite_url, team, role, badge, upgrade_level, ba
   ('fc40bfca-7027-5bb9-9dcb-e52768966f5e', 'Channeler Laurel', '/trainers/classes/channeler.png', '[{"dex":92,"level":24}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
   ('052e9fcc-9e38-545d-ad20-2a61de178abb', 'Swimmer Axle', '/trainers/classes/swimmer-m.png', '[{"dex":98,"level":33},{"dex":99,"level":33}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
   ('6dc10021-5a83-5dfe-85b8-02ddb794da1c', 'Ace Trainer Nina', '/trainers/classes/cooltrainer-f.png', '[{"dex":3,"level":48},{"dex":26,"level":48},{"dex":131,"level":48}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
-  ('7784ea47-f71c-5d29-9c1f-20e33e278d51', 'Bird Keeper Ross', '/trainers/classes/bird-keeper.png', '[{"dex":22,"level":60},{"dex":85,"level":61},{"dex":18,"level":60}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
   ('b4a12a66-7cf9-565d-88ee-fe2dde356b01', 'Champion Leon', '/trainers/classes/galar/champion-leon.png', '[{"dex":887,"level":62},{"dex":866,"level":64},{"dex":6,"level":65}]'::jsonb, 'champion', null, null, 'default', null, '["hyper-potion"]'::jsonb),
-  ('767d9500-3edd-5c8b-9605-db055d552814', 'Clerk Bryce II', '/trainers/classes/galar/clerk-m.png', '[{"dex":884,"level":66},{"dex":879,"level":66}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
-  ('eebec2ff-520a-5e3a-9bea-707eb66e5681', 'Model Eliza II', '/trainers/classes/galar/model.png', '[{"dex":873,"level":66},{"dex":866,"level":66}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
-  ('d7af6fc8-b4d0-5350-ad23-56d5f687c8e0', 'Hiker Malcolm II', '/trainers/classes/galar/hiker.png', '[{"dex":208,"level":67},{"dex":879,"level":67}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
-  ('d91c91bd-fc24-5d10-9ee7-412ec2d0c99b', 'Clerk Bryce II', '/trainers/classes/galar/clerk-m.png', '[{"dex":884,"level":66},{"dex":879,"level":66}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
-  ('7bdf35df-408f-59c4-9731-bc17d285c6cb', 'Hiker Malcolm II', '/trainers/classes/galar/hiker.png', '[{"dex":208,"level":67},{"dex":879,"level":67}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
-  ('166e6f09-e8f0-531a-9406-4ff8fb3b1356', 'Marnie II', '/trainers/classes/galar/marnie.png', '[{"dex":454,"level":70},{"dex":860,"level":70},{"dex":861,"level":72}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
-  ('42d88a23-6c45-5021-8f29-29a60636ede8', 'Nessa II', '/trainers/classes/galar/nessa.png', '[{"dex":768,"level":70},{"dex":847,"level":71},{"dex":834,"level":72}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
-  ('6298d31c-7a96-5baf-8dc3-4a94f9e24976', 'Bea II', '/trainers/classes/galar/bea.png', '[{"dex":853,"level":71},{"dex":865,"level":71},{"dex":870,"level":72}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
-  ('116b423f-ed7c-5a30-8c90-f77e13c11e5e', 'Raihan II', '/trainers/classes/galar/raihan.png', '[{"dex":330,"level":72},{"dex":844,"level":72},{"dex":884,"level":73}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
-  ('396e5069-b490-5300-b934-72a13ed2ddb0', 'Champion Leon II', '/trainers/classes/galar/champion-leon.png', '[{"dex":887,"level":73},{"dex":866,"level":74},{"dex":6,"level":76}]'::jsonb, 'champion', null, null, 'default', null, '["hyper-potion"]'::jsonb),
   ('5843e53a-cbad-5a93-ad0d-ab5048ad3c5a', 'Klara', '/trainers/classes/galar/klara.png', '[{"dex":748,"level":64},{"dex":10165,"level":65}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
   ('50f7d13b-5fbd-569f-bb4a-cdf6af943acf', 'Avery', '/trainers/classes/galar/avery.png', '[{"dex":64,"level":64},{"dex":10172,"level":65}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
   ('6db13215-1b94-5d3e-8b8c-48513d75137c', 'Black Belt Kenji II', '/trainers/classes/galar/black-belt.png', '[{"dex":870,"level":65},{"dex":534,"level":65}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
@@ -2494,8 +4210,6 @@ insert into trainers (id, name, sprite_url, team, role, badge, upgrade_level, ba
   ('8a00a08b-76fe-57f8-8b0b-a520080ba8bc', 'Backpacker Tomás', '/trainers/classes/paldea/backpacker.png', '[{"dex":917,"level":7},{"dex":928,"level":8}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
   ('92b22529-ff39-5e05-aee6-4d2b591c182d', 'Team Star Grunt', '/trainers/classes/paldea/star-grunt-m.png', '[{"dex":944,"level":11},{"dex":942,"level":11}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
   ('2949c857-50dc-529d-8a46-331a25183c0b', 'Cook Sofia', '/trainers/classes/paldea/cook.png', '[{"dex":926,"level":11},{"dex":924,"level":11}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
-  ('24917f8f-c4b1-58a7-a500-149c41f512e5', 'Psychic Tyron', '/trainers/classes/psychic-m.png', '[{"dex":64,"level":60},{"dex":97,"level":60},{"dex":65,"level":62}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
-  ('3b4cae6d-7299-56f9-8aae-4d781515805f', 'Tamer Rex', '/trainers/classes/tamer.png', '[{"dex":128,"level":61},{"dex":115,"level":61},{"dex":143,"level":63}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
   ('29ce0f12-4a23-5c08-be0e-c5668d1f95c6', 'Scientist Ted', '/trainers/classes/scientist.png', '[{"dex":101,"level":29},{"dex":101,"level":29},{"dex":110,"level":29}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
   ('cebabf84-c737-5b68-a9c7-cf55a48f6bc6', 'Super Nerd Erik', '/trainers/classes/super-nerd.png', '[{"dex":37,"level":36},{"dex":37,"level":36},{"dex":38,"level":36}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
   ('0840a8fb-7b00-5345-ab8c-e5fcf9347ad9', 'Burglar Quinn', '/trainers/classes/burglar.png', '[{"dex":77,"level":34},{"dex":58,"level":34},{"dex":78,"level":34}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
@@ -2513,7 +4227,10 @@ insert into trainers (id, name, sprite_url, team, role, badge, upgrade_level, ba
   ('112342fa-ed70-5e7e-be61-c5537d9c72ae', 'Office Worker Sergio', '/trainers/classes/paldea/office-worker-m.png', '[{"dex":81,"level":22},{"dex":922,"level":22}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
   ('0d006135-b5e4-506a-be1e-019e69b49145', 'Office Worker Lucia', '/trainers/classes/paldea/office-worker-f.png', '[{"dex":417,"level":22},{"dex":702,"level":22}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
   ('a752a468-7dbd-5f02-b15c-d369c34a2242', 'Cabbie Diego', '/trainers/classes/paldea/cabbie.png', '[{"dex":965,"level":22},{"dex":100,"level":22}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
-  ('62c917a3-a796-588e-a666-2bd117535fd1', 'Iono', '/trainers/classes/paldea/iono.png', '[{"dex":940,"level":23},{"dex":939,"level":23},{"dex":429,"level":24}]'::jsonb, 'leader', 'Electric Badge', null, 'default', null, '[]'::jsonb),
+  ('62c917a3-a796-588e-a666-2bd117535fd1', 'Iono', '/trainers/classes/paldea/iono.png', '[{"dex":940,"level":23},{"dex":939,"level":23},{"dex":429,"level":24}]'::jsonb, 'leader', 'Electric Badge', null, 'default', null, '[]'::jsonb)
+on conflict (id) do update set name = excluded.name, sprite_url = excluded.sprite_url, team = excluded.team, role = excluded.role, badge = excluded.badge, upgrade_level = excluded.upgrade_level, battle_background = excluded.battle_background, rival_of = excluded.rival_of, items = excluded.items;
+
+insert into trainers (id, name, sprite_url, team, role, badge, upgrade_level, battle_background, rival_of, items) values
   ('4a8814b6-2b1a-535c-b296-44f981b9774c', 'Team Star Grunt', '/trainers/classes/paldea/star-grunt-m.png', '[{"dex":228,"level":26},{"dex":58,"level":26}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
   ('afd4ad01-de05-5d70-bba9-1aa599b785c8', 'Team Star Grunt', '/trainers/classes/paldea/star-grunt-m.png', '[{"dex":218,"level":26},{"dex":667,"level":26}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
   ('48891afb-74d7-5426-8396-e5a87f996544', 'Mela', '/trainers/classes/paldea/mela.png', '[{"dex":324,"level":27},{"dex":966,"level":27}]'::jsonb, 'leader', null, null, 'default', null, '[]'::jsonb),
@@ -2580,18 +4297,12 @@ insert into trainers (id, name, sprite_url, team, role, badge, upgrade_level, ba
   ('6f7868fd-ec4a-5e75-8d83-06b82ae39cba', 'Rocket Grunt', '/trainers/classes/team-rocket-m.png', '[{"dex":19,"level":19},{"dex":20,"level":20}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
   ('f877f621-cb6d-5d5c-baa0-d78cf97fb170', 'Lass Sally', '/trainers/classes/lass.png', '[{"dex":19,"level":10},{"dex":29,"level":10}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
   ('6a85b6e2-8511-5d75-8fea-a32168f1c74d', 'Bug Catcher James', '/trainers/classes/bug-catcher.png', '[{"dex":10,"level":11},{"dex":11,"level":11}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
-  ('c0e5fab6-1e0f-5c87-99f4-cd1dcbeaadc9', 'Elite Four Bruno', '/trainers/classes/elite-bruno.png', '[{"dex":95,"level":69},{"dex":107,"level":69},{"dex":68,"level":71}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
-  ('d6693b0f-dd30-5e46-b58b-34801c8e89e4', 'Elite Four Agatha', '/trainers/classes/elite-agatha.png', '[{"dex":42,"level":70},{"dex":24,"level":70},{"dex":94,"level":72}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
-  ('2fda80de-eba9-579b-a75d-a86af7c69ad3', 'Elite Four Lance', '/trainers/classes/elite-lance.png', '[{"dex":130,"level":71},{"dex":142,"level":71},{"dex":149,"level":73}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
   ('8d3fb724-1e34-53c4-ba95-d0067611a69d', 'Ace Trainer Kyle', '/trainers/classes/cooltrainer-m.png', '[{"dex":148,"level":50},{"dex":18,"level":48},{"dex":103,"level":48}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
   ('8f2e2f31-b802-5fa0-a53a-6972a066c2ca', 'Elite Four Lorelei', '/trainers/classes/elite-lorelei.png', '[{"dex":131,"level":54},{"dex":124,"level":54},{"dex":87,"level":52}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
   ('ec9ab1d3-f8e8-5d53-95f1-730e77d5f158', 'Camper Ethan', '/trainers/classes/camper.png', '[{"dex":56,"level":18}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
   ('5be0ce71-8b9a-5d00-9fc7-55c868dcaae9', 'Elite Four Bruno', '/trainers/classes/elite-bruno.png', '[{"dex":68,"level":56},{"dex":95,"level":54},{"dex":106,"level":53}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
   ('9c8e8be2-905e-565f-8845-8643678a03fb', 'Elite Four Agatha', '/trainers/classes/elite-agatha.png', '[{"dex":94,"level":58},{"dex":24,"level":56},{"dex":42,"level":54}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
   ('68c66414-3244-5821-b8a1-2ca72dcf17a6', 'Camper Liam', '/trainers/classes/camper.png', '[{"dex":74,"level":10},{"dex":27,"level":11}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
-  ('232ef32b-595b-5ae7-b8d2-4e2c52ef7c58', 'Ace Trainer Leon', '/trainers/classes/cooltrainer-m.png', '[{"dex":128,"level":68},{"dex":65,"level":68},{"dex":143,"level":70}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
-  ('8b9007d7-a5f0-549c-b437-a445bf0b970c', 'Ace Trainer Mira', '/trainers/classes/cooltrainer-f.png', '[{"dex":97,"level":68},{"dex":65,"level":69},{"dex":94,"level":69}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
-  ('cfb99aaf-c791-57e2-ba5a-fe18ea911818', 'Elite Four Lorelei', '/trainers/classes/elite-lorelei.png', '[{"dex":91,"level":68},{"dex":124,"level":69},{"dex":131,"level":70}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
   ('99d009b9-499a-5cf7-8841-bca04a9d2124', 'Bird Keeper Rod', '/trainers/classes/johto/bird-keeper.png', '[{"dex":16,"level":9},{"dex":16,"level":9}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
   ('c01532f9-cf7a-5338-adec-757e0bce8a92', 'Youngster Albert', '/trainers/classes/johto/youngster.png', '[{"dex":19,"level":10},{"dex":41,"level":9}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
   ('f33b6b67-7d16-5a9b-b699-038921d19759', 'Falkner', '/trainers/classes/johto/falkner.png', '[{"dex":16,"level":9},{"dex":17,"level":13}]'::jsonb, 'leader', 'Zephyr Badge', null, 'default', null, '[]'::jsonb),
@@ -2659,10 +4370,6 @@ insert into trainers (id, name, sprite_url, team, role, badge, upgrade_level, ba
   ('594ac670-156f-58bc-9f30-982d42e95c0c', 'Lass Miriam', '/trainers/classes/lass.png', '[{"dex":43,"level":11},{"dex":69,"level":11}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
   ('874be229-78de-5e0d-b6a8-b5a457edf142', 'Hiker Franklin', '/trainers/classes/hiker.png', '[{"dex":66,"level":15},{"dex":74,"level":15}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
   ('7025317e-e67c-529d-9b48-7b0b16fe8347', 'Swimmer Luis', '/trainers/classes/swimmer-m.png', '[{"dex":116,"level":16},{"dex":90,"level":16}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
-  ('9697fac8-b43a-58a4-a236-df4de262bc1c', 'Cooltrainer Aiden', '/trainers/classes/cooltrainer-m.png', '[{"dex":59,"level":60},{"dex":121,"level":60},{"dex":103,"level":60}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
-  ('d8e2e6a7-71ad-547e-83de-8b7cd3cb4787', 'Cooltrainer Lena', '/trainers/classes/cooltrainer-f.png', '[{"dex":36,"level":60},{"dex":124,"level":60},{"dex":65,"level":61}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
-  ('ecc0aa97-c40e-5259-8f19-55e684884f91', 'Black Belt Kenji', '/trainers/classes/black-belt.png', '[{"dex":106,"level":60},{"dex":107,"level":60},{"dex":68,"level":62}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
-  ('2d341389-ef51-5e36-a66f-f56ef5b469e3', 'Hiker Dwayne', '/trainers/classes/hiker.png', '[{"dex":95,"level":60},{"dex":112,"level":61},{"dex":76,"level":62}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
   ('2dabf37f-8b99-581a-9396-3b98a895cc1e', 'Elite Four Phoebe', '/trainers/classes/hoenn/elite-phoebe.png', '[{"dex":302,"level":52},{"dex":354,"level":53},{"dex":356,"level":55}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
   ('3ef90712-40e1-5de2-9ac5-b430767f7274', 'Elite Four Glacia', '/trainers/classes/hoenn/elite-glacia.png', '[{"dex":364,"level":54},{"dex":362,"level":54},{"dex":365,"level":57}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
   ('f295c636-11af-5a81-89c6-94d05ba66f0c', 'Elite Four Drake', '/trainers/classes/hoenn/elite-drake.png', '[{"dex":334,"level":56},{"dex":330,"level":57},{"dex":373,"level":59}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
@@ -2702,10 +4409,7 @@ insert into trainers (id, name, sprite_url, team, role, badge, upgrade_level, ba
   ('21ccb47b-82dd-5ab3-bdc8-767cb3f6755b', 'Cooltrainer Alexa', '/trainers/classes/cooltrainer-f.png', '[{"dex":36,"level":42},{"dex":87,"level":42},{"dex":113,"level":42}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
   ('1f25a3bf-369e-5f80-a7e1-c890232399d6', 'Pokémaniac Dawson', '/trainers/classes/pokemaniac.png', '[{"dex":5,"level":40},{"dex":131,"level":40},{"dex":108,"level":40}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
   ('a6d3946e-e942-58a2-bfca-0efc0f3a7a6a', 'Juggler Gregory', '/trainers/classes/juggler.png', '[{"dex":122,"level":48}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
-  ('ba6fe0af-4442-5766-9c65-33f123af0476', 'Ace Trainer Jake', '/trainers/classes/cooltrainer-m.png', '[{"dex":59,"level":48},{"dex":65,"level":48},{"dex":130,"level":48}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb)
-on conflict (id) do update set name = excluded.name, sprite_url = excluded.sprite_url, team = excluded.team, role = excluded.role, badge = excluded.badge, upgrade_level = excluded.upgrade_level, battle_background = excluded.battle_background, rival_of = excluded.rival_of, items = excluded.items;
-
-insert into trainers (id, name, sprite_url, team, role, badge, upgrade_level, battle_background, rival_of, items) values
+  ('ba6fe0af-4442-5766-9c65-33f123af0476', 'Ace Trainer Jake', '/trainers/classes/cooltrainer-m.png', '[{"dex":59,"level":48},{"dex":65,"level":48},{"dex":130,"level":48}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
   ('8822fdd1-cf54-573b-ac5c-ceb7b95035a4', 'Ace Trainer Sara', '/trainers/classes/cooltrainer-f.png', '[{"dex":121,"level":47},{"dex":124,"level":47},{"dex":36,"level":47}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
   ('f2ec2fc9-17ec-5429-84a3-f8b03edb6e71', 'Ace Trainer Bruce', '/trainers/classes/cooltrainer-m.png', '[{"dex":68,"level":49},{"dex":76,"level":49},{"dex":112,"level":49}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
   ('2646ab7f-de21-5384-88b6-744acfa942d3', 'Ace Trainer Mary', '/trainers/classes/cooltrainer-f.png', '[{"dex":73,"level":58},{"dex":117,"level":59},{"dex":91,"level":58}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
@@ -2776,7 +4480,10 @@ insert into trainers (id, name, sprite_url, team, role, badge, upgrade_level, ba
   ('21e21757-b0c5-56a1-ad98-6da105e5f7ec', 'Psychic Blake', '/trainers/classes/hoenn/psychic-m.png', '[{"dex":282,"level":48},{"dex":326,"level":48}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
   ('52b087f8-7477-58a9-a9e8-da517d50e866', 'Psychic Samantha', '/trainers/classes/hoenn/psychic-m.png', '[{"dex":344,"level":48},{"dex":337,"level":48}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
   ('1ff5e2c5-0182-5339-b3ed-ccaa3bd44729', 'Battle Girl Danielle', '/trainers/classes/hoenn/battle-girl.png', '[{"dex":297,"level":32},{"dex":307,"level":32}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
-  ('8107b864-bab0-576d-9f5a-fd20e149b8f2', 'Picnicker Irene', '/trainers/classes/hoenn/picnicker.png', '[{"dex":37,"level":32},{"dex":77,"level":32}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
+  ('8107b864-bab0-576d-9f5a-fd20e149b8f2', 'Picnicker Irene', '/trainers/classes/hoenn/picnicker.png', '[{"dex":37,"level":32},{"dex":77,"level":32}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb)
+on conflict (id) do update set name = excluded.name, sprite_url = excluded.sprite_url, team = excluded.team, role = excluded.role, badge = excluded.badge, upgrade_level = excluded.upgrade_level, battle_background = excluded.battle_background, rival_of = excluded.rival_of, items = excluded.items;
+
+insert into trainers (id, name, sprite_url, team, role, badge, upgrade_level, battle_background, rival_of, items) values
   ('92ad6325-68ac-5174-adc8-c1716d23899a', 'Flannery', '/trainers/classes/hoenn/flannery.png', '[{"dex":218,"level":24},{"dex":322,"level":24},{"dex":324,"level":29}]'::jsonb, 'leader', 'Heat Badge', null, 'default', null, '[]'::jsonb),
   ('be9431af-f9e9-56ea-94d5-1eb7688ae034', 'Ace Trainer Quinn', '/trainers/classes/hoenn/collector.png', '[{"dex":338,"level":33},{"dex":337,"level":33}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
   ('f1c98447-7e7c-5a80-ab0e-7b40b6db1088', 'Dragon Tamer Nicolas', '/trainers/classes/hoenn/dragon-tamer.png', '[{"dex":371,"level":34},{"dex":333,"level":34}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
@@ -2955,10 +4662,7 @@ insert into trainers (id, name, sprite_url, team, role, badge, upgrade_level, ba
   ('8c22dad6-02fc-5413-8395-ae4297541156', 'Dancer Edwardo', '/trainers/classes/unova/dancer.png', '[{"dex":577,"level":26},{"dex":520,"level":26}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
   ('ac5982c1-6a04-5c48-93b1-aa6dba57bea0', 'N', '/trainers/classes/unova/n.png', '[{"dex":551,"level":26},{"dex":554,"level":26},{"dex":559,"level":26}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
   ('46b3dd5f-ce56-5cf8-a77b-749899f75b1e', 'Elesa', '/trainers/classes/unova/elesa.png', '[{"dex":587,"level":25},{"dex":587,"level":25},{"dex":523,"level":27}]'::jsonb, 'leader', 'Bolt Badge', null, 'default', null, '[]'::jsonb),
-  ('6093c58a-d103-5a68-8902-5c9d998c4002', 'Pokémon Ranger Shanti', '/trainers/classes/unova/ranger-f.png', '[{"dex":585,"level":28},{"dex":590,"level":28}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb)
-on conflict (id) do update set name = excluded.name, sprite_url = excluded.sprite_url, team = excluded.team, role = excluded.role, badge = excluded.badge, upgrade_level = excluded.upgrade_level, battle_background = excluded.battle_background, rival_of = excluded.rival_of, items = excluded.items;
-
-insert into trainers (id, name, sprite_url, team, role, badge, upgrade_level, battle_background, rival_of, items) values
+  ('6093c58a-d103-5a68-8902-5c9d998c4002', 'Pokémon Ranger Shanti', '/trainers/classes/unova/ranger-f.png', '[{"dex":585,"level":28},{"dex":590,"level":28}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
   ('2d095a42-ebeb-5445-9106-5ccbea44922b', 'Worker Jeremy', '/trainers/classes/unova/worker.png', '[{"dex":525,"level":28},{"dex":532,"level":29}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
   ('6f357c39-a9fe-5aae-b89c-4bb97a17dbdd', 'Fisherman Andrew', '/trainers/classes/unova/fisherman.png', '[{"dex":580,"level":28},{"dex":536,"level":29}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
   ('792e3a6f-e8f9-5f37-a388-4daa2fba90f1', 'Team Plasma Grunt', '/trainers/classes/unova/plasma-grunt-m.png', '[{"dex":510,"level":29},{"dex":568,"level":29}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
@@ -3003,27 +4707,170 @@ insert into trainers (id, name, sprite_url, team, role, badge, upgrade_level, ba
   ('91925022-9ad3-5206-ae61-5ed1e14e975f', 'Elite Four Marshal', '/trainers/classes/unova/elite-marshal.png', '[{"dex":538,"level":48},{"dex":539,"level":48},{"dex":534,"level":50}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
   ('96f94208-c601-51e4-924f-b492fc6f445c', 'N', '/trainers/classes/unova/n.png', '[{"dex":571,"level":50},{"dex":601,"level":50},{"dex":565,"level":51}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
   ('d49fa8dd-28c5-55f3-ab4e-bd67a610dd9e', 'Ghetsis', '/trainers/classes/unova/ghetsis.png', '[{"dex":625,"level":52},{"dex":537,"level":52},{"dex":635,"level":54}]'::jsonb, 'champion', null, null, 'default', null, '["hyper-potion"]'::jsonb),
-  ('e0a4cd3b-7ab4-59bf-a195-144a59b92384', 'Ace Trainer Chandra II', '/trainers/classes/unova/ace-trainer-f.png', '[{"dex":612,"level":65},{"dex":591,"level":65}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
-  ('d89d231f-919d-5bfd-b0b2-c4b54a1ac65f', 'Veteran Lance II', '/trainers/classes/unova/veteran.png', '[{"dex":534,"level":65},{"dex":589,"level":66}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
-  ('7a6d3aac-ff9f-5931-8a7b-d292694e14d8', 'Ace Trainer Carol II', '/trainers/classes/unova/ace-trainer-f.png', '[{"dex":586,"level":66},{"dex":579,"level":65}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
-  ('fa1f4455-2ca4-5576-ab32-c4015e342a1c', 'Ace Trainer Chandra II', '/trainers/classes/unova/ace-trainer-f.png', '[{"dex":612,"level":65},{"dex":591,"level":65}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
-  ('b6b05bd2-451a-5100-9b52-e44fe822dc8a', 'Veteran Lance II', '/trainers/classes/unova/veteran.png', '[{"dex":534,"level":65},{"dex":589,"level":66}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
-  ('a7ed9d29-e0d8-575c-afd4-70ad1f16c9fa', 'Ace Trainer Carol II', '/trainers/classes/unova/ace-trainer-f.png', '[{"dex":586,"level":66},{"dex":579,"level":65}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
-  ('b37e3997-54de-5b46-953c-8be828c84b79', 'Elite Four Shauntal II', '/trainers/classes/unova/elite-shauntal.png', '[{"dex":563,"level":70},{"dex":593,"level":69},{"dex":609,"level":72}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
-  ('09b641be-1bbc-5743-be34-921b6a04201e', 'Elite Four Grimsley II', '/trainers/classes/unova/elite-grimsley.png', '[{"dex":510,"level":71},{"dex":553,"level":71},{"dex":625,"level":73}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
-  ('99eca4fd-c5eb-57c0-a169-7056d6fac493', 'Elite Four Caitlin II', '/trainers/classes/unova/elite-caitlin.png', '[{"dex":518,"level":72},{"dex":561,"level":72},{"dex":576,"level":74}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
-  ('14f3f2ff-374f-5c3e-9115-10a3a800fd13', 'Elite Four Marshal II', '/trainers/classes/unova/elite-marshal.png', '[{"dex":538,"level":72},{"dex":539,"level":73},{"dex":534,"level":75}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
-  ('a1bbf675-a45a-58d4-ab8b-47e7d219496c', 'Champion Alder', '/trainers/classes/unova/alder.png', '[{"dex":589,"level":74},{"dex":621,"level":77},{"dex":637,"level":80}]'::jsonb, 'champion', null, null, 'default', null, '["hyper-potion"]'::jsonb),
   ('6170c304-a91c-5f03-a8a1-a97007794a23', 'Ace Trainer Jacob', '/trainers/classes/unova/ace-trainer-m.png', '[{"dex":628,"level":60},{"dex":612,"level":60}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
   ('39c014dd-37b9-59e9-a67c-0e2473b8fc0f', 'Veteran Chaz', '/trainers/classes/unova/veteran.png', '[{"dex":635,"level":61},{"dex":623,"level":61}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
   ('bce11553-bb1b-5c8e-bd2e-34a80c1aa6e6', 'Socialite Grier', '/trainers/classes/unova/socialite.png', '[{"dex":593,"level":60},{"dex":584,"level":60}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
   ('32ba99c6-191d-5c3b-9ad4-7c4a6669b197', 'Cynthia', '/trainers/classes/unova/cynthia.png', '[{"dex":442,"level":64},{"dex":448,"level":64},{"dex":445,"level":66}]'::jsonb, 'champion', null, null, 'default', null, '["hyper-potion"]'::jsonb),
   ('84604aff-ee94-5464-9025-f45cc4cc6d29', 'Ace Trainer Kelvin', '/trainers/classes/unova/ace-trainer-m.png', '[{"dex":621,"level":60},{"dex":633,"level":62},{"dex":611,"level":62}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
   ('adda1181-0a8b-5ec7-9073-6d5905d1a922', 'Veteran Naomi', '/trainers/classes/unova/veteran.png', '[{"dex":625,"level":68},{"dex":598,"level":68},{"dex":589,"level":69}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
-  ('a4046653-8281-52eb-87b7-7f4cc87981c9', 'Pokémon Ranger Brent', '/trainers/classes/unova/ranger-m.png', '[{"dex":541,"level":75},{"dex":585,"level":76},{"dex":548,"level":75}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb)
+  ('a4046653-8281-52eb-87b7-7f4cc87981c9', 'Pokémon Ranger Brent', '/trainers/classes/unova/ranger-m.png', '[{"dex":541,"level":75},{"dex":585,"level":76},{"dex":548,"level":75}]'::jsonb, 'trainer', null, null, null, null, '[]'::jsonb),
+  ('b688f70f-67b7-5c2d-8e7a-123a81911528', 'Elite Four Lorelei', '/trainers/classes/elite-lorelei.png', '[{"dex":91,"level":62},{"dex":131,"level":64},{"dex":124,"level":64}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('54f921f0-53f3-52eb-9558-49492cec021e', 'Elite Four Bruno', '/trainers/classes/elite-bruno.png', '[{"dex":62,"level":63},{"dex":95,"level":64},{"dex":68,"level":66}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('4acbaff9-058a-5e9a-be10-e4fcff7a29f0', 'Elite Four Agatha', '/trainers/classes/elite-agatha.png', '[{"dex":45,"level":64},{"dex":24,"level":66},{"dex":94,"level":68}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('4494d340-98a5-50e8-a6c7-8995c35189da', 'Elite Four Lance', '/trainers/classes/elite-lance.png', '[{"dex":148,"level":64},{"dex":142,"level":68},{"dex":149,"level":70}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('d27f3cca-3fd7-56c2-90c9-9a885dab811f', 'Champion Rival', '/characters/green.png', '[{"dex":26,"level":69},{"dex":130,"level":71},{"dex":6,"level":73}]'::jsonb, 'champion', null, null, 'default', 1, '["hyper-potion"]'::jsonb),
+  ('968c87e8-d4a1-5391-b579-144d3ffd5da1', 'Champion Rival', '/characters/green.png', '[{"dex":26,"level":69},{"dex":59,"level":71},{"dex":9,"level":73}]'::jsonb, 'champion', null, null, 'default', 4, '["hyper-potion"]'::jsonb),
+  ('94ee51c4-ca3f-571b-8504-d06e61326e2b', 'Champion Rival', '/characters/green.png', '[{"dex":26,"level":69},{"dex":59,"level":71},{"dex":3,"level":73}]'::jsonb, 'champion', null, null, 'default', 7, '["hyper-potion"]'::jsonb),
+  ('b38dae2f-713e-5386-a2fb-d80be95af0c3', 'Elite Four Lorelei', '/trainers/classes/elite-lorelei.png', '[{"dex":91,"level":77},{"dex":131,"level":79},{"dex":124,"level":79}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('646e6f0c-2215-50af-9f10-17dc29eac8fb', 'Elite Four Bruno', '/trainers/classes/elite-bruno.png', '[{"dex":62,"level":78},{"dex":107,"level":79},{"dex":68,"level":81}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('c73160b1-1073-5a02-a6b7-d8f70c717a2b', 'Elite Four Agatha', '/trainers/classes/elite-agatha.png', '[{"dex":45,"level":79},{"dex":73,"level":81},{"dex":94,"level":83}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('bb0444d5-6eb0-5156-a9ed-e6cbaeec0065', 'Elite Four Lance', '/trainers/classes/elite-lance.png', '[{"dex":148,"level":79},{"dex":142,"level":83},{"dex":149,"level":85}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('4468db74-9fb5-577b-bb52-aa9c16cd3b15', 'Champion Rival', '/characters/green.png', '[{"dex":26,"level":84},{"dex":130,"level":86},{"dex":6,"level":88}]'::jsonb, 'champion', null, null, 'default', 1, '["hyper-potion"]'::jsonb),
+  ('fbf3bd5a-9a20-57b7-bded-d3d05abb9f0c', 'Champion Rival', '/characters/green.png', '[{"dex":26,"level":84},{"dex":59,"level":86},{"dex":9,"level":88}]'::jsonb, 'champion', null, null, 'default', 4, '["hyper-potion"]'::jsonb),
+  ('eb3663b3-93e8-5c02-836f-9635ee6dfe64', 'Champion Rival', '/characters/green.png', '[{"dex":26,"level":84},{"dex":59,"level":86},{"dex":3,"level":88}]'::jsonb, 'champion', null, null, 'default', 7, '["hyper-potion"]'::jsonb),
+  ('44dcabe5-c9b8-551e-92c9-7b8687ca447b', 'Elite Four Lorelei', '/trainers/classes/elite-lorelei.png', '[{"dex":91,"level":100},{"dex":131,"level":100},{"dex":124,"level":100}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('1e7705e9-5322-5017-acf5-5d5160779554', 'Elite Four Bruno', '/trainers/classes/elite-bruno.png', '[{"dex":62,"level":100},{"dex":107,"level":100},{"dex":68,"level":100}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('be14b8d9-5b20-5aa2-9c79-3d6435b54423', 'Elite Four Agatha', '/trainers/classes/elite-agatha.png', '[{"dex":45,"level":100},{"dex":73,"level":100},{"dex":94,"level":100}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('562057d5-01da-5ea1-8171-acb91d3ac899', 'Elite Four Lance', '/trainers/classes/elite-lance.png', '[{"dex":148,"level":100},{"dex":142,"level":100},{"dex":149,"level":100}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('d8dbd2da-79c2-594f-9106-097c8c3e8fb1', 'Champion Rival', '/characters/green.png', '[{"dex":26,"level":100},{"dex":130,"level":100},{"dex":6,"level":100}]'::jsonb, 'champion', null, null, 'default', 1, '["hyper-potion"]'::jsonb),
+  ('e8eed7e6-97e3-594c-941f-0dac877f1d6a', 'Champion Rival', '/characters/green.png', '[{"dex":26,"level":100},{"dex":59,"level":100},{"dex":9,"level":100}]'::jsonb, 'champion', null, null, 'default', 4, '["hyper-potion"]'::jsonb)
+on conflict (id) do update set name = excluded.name, sprite_url = excluded.sprite_url, team = excluded.team, role = excluded.role, badge = excluded.badge, upgrade_level = excluded.upgrade_level, battle_background = excluded.battle_background, rival_of = excluded.rival_of, items = excluded.items;
+
+insert into trainers (id, name, sprite_url, team, role, badge, upgrade_level, battle_background, rival_of, items) values
+  ('39b7635c-efbd-5ca1-a7b8-f1e6cf4bf71c', 'Champion Rival', '/characters/green.png', '[{"dex":26,"level":100},{"dex":59,"level":100},{"dex":3,"level":100}]'::jsonb, 'champion', null, null, 'default', 7, '["hyper-potion"]'::jsonb),
+  ('ec452cca-6b69-5f89-8e96-cb76eac2af8e', 'Elite Four Will', '/trainers/classes/johto/elite-will.png', '[{"dex":196,"level":61},{"dex":124,"level":63},{"dex":103,"level":65}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('58588a5c-3be1-5b1e-8897-eab4c202ac1c', 'Elite Four Koga', '/trainers/classes/johto/elite-koga.png', '[{"dex":213,"level":63},{"dex":49,"level":65},{"dex":205,"level":67}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('a07a8af1-ba65-57c6-8696-c1de09dbff80', 'Elite Four Bruno', '/trainers/classes/johto/elite-bruno.png', '[{"dex":214,"level":65},{"dex":107,"level":67},{"dex":106,"level":69}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('080c3e8f-33e7-5eea-a38d-194bc623ac3d', 'Elite Four Karen', '/trainers/classes/johto/elite-karen.png', '[{"dex":248,"level":66},{"dex":229,"level":68},{"dex":197,"level":70}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('13cd2b7e-d24f-5cb7-a23f-a2fa44fd7b02', 'Champion Lance', '/trainers/classes/johto/champion-lance.png', '[{"dex":130,"level":69},{"dex":149,"level":71},{"dex":149,"level":74}]'::jsonb, 'champion', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('ec7611ef-7b6d-52e1-88ca-fdd4d655f67c', 'Elite Four Will', '/trainers/classes/johto/elite-will.png', '[{"dex":196,"level":76},{"dex":202,"level":78},{"dex":103,"level":80}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('6d13a024-fc3e-5ea3-bd64-e5ac0c005d07', 'Elite Four Koga', '/trainers/classes/johto/elite-koga.png', '[{"dex":213,"level":78},{"dex":214,"level":80},{"dex":205,"level":82}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('a7a23b70-bee7-5e01-8e19-a36d48fe28c4', 'Elite Four Bruno', '/trainers/classes/johto/elite-bruno.png', '[{"dex":214,"level":80},{"dex":68,"level":82},{"dex":106,"level":84}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('27fc3814-f24c-53d6-ae84-15a3e37ad8f6', 'Elite Four Karen', '/trainers/classes/johto/elite-karen.png', '[{"dex":248,"level":81},{"dex":229,"level":83},{"dex":197,"level":85}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('464e24e3-44fe-5c70-a561-bb8ef777086b', 'Champion Lance', '/trainers/classes/johto/champion-lance.png', '[{"dex":130,"level":84},{"dex":149,"level":86},{"dex":149,"level":89}]'::jsonb, 'champion', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('3f7f8e17-e5a9-5ea3-bc6f-94a2ae7b46fd', 'Elite Four Will', '/trainers/classes/johto/elite-will.png', '[{"dex":196,"level":100},{"dex":202,"level":100},{"dex":103,"level":100}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('f45643d2-d0ff-5673-aca1-31baafd0830b', 'Elite Four Koga', '/trainers/classes/johto/elite-koga.png', '[{"dex":213,"level":100},{"dex":214,"level":100},{"dex":205,"level":100}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('a9deafe9-f3b4-5f3d-8503-05df4013e706', 'Elite Four Bruno', '/trainers/classes/johto/elite-bruno.png', '[{"dex":214,"level":100},{"dex":68,"level":100},{"dex":106,"level":100}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('7287d4f5-c0c0-5f80-bfca-181a135addca', 'Elite Four Karen', '/trainers/classes/johto/elite-karen.png', '[{"dex":248,"level":100},{"dex":229,"level":100},{"dex":197,"level":100}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('7bfe7eaa-3f65-5858-b37c-c4860d7455dc', 'Champion Lance', '/trainers/classes/johto/champion-lance.png', '[{"dex":130,"level":100},{"dex":149,"level":100},{"dex":149,"level":100}]'::jsonb, 'champion', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('cd035191-e067-5319-b2e5-26eb65f4874c', 'Elite Four Sidney', '/trainers/classes/hoenn/elite-sidney.png', '[{"dex":342,"level":60},{"dex":275,"level":62},{"dex":359,"level":63}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('73e99bf2-b781-52fb-8208-630bfd39059c', 'Elite Four Phoebe', '/trainers/classes/hoenn/elite-phoebe.png', '[{"dex":292,"level":62},{"dex":354,"level":63},{"dex":356,"level":65}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('645ad15f-0644-5ce3-b16a-230e68b6bdb5', 'Elite Four Glacia', '/trainers/classes/hoenn/elite-glacia.png', '[{"dex":225,"level":64},{"dex":362,"level":64},{"dex":365,"level":67}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('2270302c-7c43-57f8-91f0-67613334a8f5', 'Elite Four Drake', '/trainers/classes/hoenn/elite-drake.png', '[{"dex":230,"level":66},{"dex":330,"level":67},{"dex":373,"level":69}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('4c35f9ee-9498-59c8-8041-941a7f57d3fb', 'Champion Wallace', '/trainers/classes/hoenn/champion-wallace.png', '[{"dex":340,"level":69},{"dex":272,"level":70},{"dex":350,"level":72}]'::jsonb, 'champion', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('502bf701-91f8-571c-901c-bfc6304eb1f9', 'Elite Four Sidney', '/trainers/classes/hoenn/elite-sidney.png', '[{"dex":342,"level":75},{"dex":332,"level":77},{"dex":359,"level":78}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('7ca70319-aab4-587f-9d79-a49a8938b395', 'Elite Four Phoebe', '/trainers/classes/hoenn/elite-phoebe.png', '[{"dex":292,"level":77},{"dex":94,"level":78},{"dex":356,"level":80}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('f5627ec1-d37e-5cde-8144-077b750d2849', 'Elite Four Glacia', '/trainers/classes/hoenn/elite-glacia.png', '[{"dex":225,"level":79},{"dex":87,"level":79},{"dex":365,"level":82}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('32b86b89-b866-5253-abd8-e8e4f8c6ab3f', 'Elite Four Drake', '/trainers/classes/hoenn/elite-drake.png', '[{"dex":230,"level":81},{"dex":149,"level":82},{"dex":373,"level":84}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('338f12d3-901c-5714-81ae-7b85948f7810', 'Champion Wallace', '/trainers/classes/hoenn/champion-wallace.png', '[{"dex":340,"level":84},{"dex":272,"level":85},{"dex":350,"level":87}]'::jsonb, 'champion', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('bf8af9e6-2ca1-5c4e-b359-59b294529855', 'Elite Four Sidney', '/trainers/classes/hoenn/elite-sidney.png', '[{"dex":342,"level":100},{"dex":332,"level":100},{"dex":359,"level":100}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('c380599c-c75d-54c1-9dcd-baaea4d4c789', 'Elite Four Phoebe', '/trainers/classes/hoenn/elite-phoebe.png', '[{"dex":292,"level":100},{"dex":94,"level":100},{"dex":356,"level":100}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('17a766b5-d9af-5f59-905f-d42f2a9093e7', 'Elite Four Glacia', '/trainers/classes/hoenn/elite-glacia.png', '[{"dex":225,"level":100},{"dex":87,"level":100},{"dex":365,"level":100}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('14605bd9-9ba6-59a6-aa22-511e32b39dbf', 'Elite Four Drake', '/trainers/classes/hoenn/elite-drake.png', '[{"dex":230,"level":100},{"dex":149,"level":100},{"dex":373,"level":100}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('68f3eb34-ef19-5961-9553-979429f08497', 'Champion Wallace', '/trainers/classes/hoenn/champion-wallace.png', '[{"dex":340,"level":100},{"dex":272,"level":100},{"dex":350,"level":100}]'::jsonb, 'champion', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('44c93a5f-d9f4-5df0-b7bc-ebc96322b165', 'Elite Four Aaron', '/trainers/classes/sinnoh/elite-aaron.png', '[{"dex":414,"level":63},{"dex":416,"level":64},{"dex":469,"level":65}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('8a521b6b-98e9-5132-9ea0-cb3a393ec684', 'Elite Four Bertha', '/trainers/classes/sinnoh/elite-bertha.png', '[{"dex":423,"level":65},{"dex":473,"level":65},{"dex":464,"level":67}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('0f282df4-0d5c-5b8f-882a-8008d657ed1d', 'Elite Four Flint', '/trainers/classes/sinnoh/elite-flint.png', '[{"dex":38,"level":67},{"dex":78,"level":67},{"dex":467,"level":69}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('333d3aac-1b57-5307-935f-129c4b5b0037', 'Elite Four Lucian', '/trainers/classes/sinnoh/elite-lucian.png', '[{"dex":344,"level":67},{"dex":122,"level":68},{"dex":475,"level":70}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('2a206ecf-35d8-5b15-9ad8-b2f10758faa2', 'Champion Cynthia', '/trainers/classes/sinnoh/champion-cynthia.png', '[{"dex":442,"level":68},{"dex":468,"level":70},{"dex":445,"level":72}]'::jsonb, 'champion', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('b65ff872-d846-5810-9ca5-6e8782f52794', 'Elite Four Aaron', '/trainers/classes/sinnoh/elite-aaron.png', '[{"dex":414,"level":78},{"dex":402,"level":79},{"dex":469,"level":80}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('cc94c61b-6c26-536c-9771-82f747899d23', 'Elite Four Bertha', '/trainers/classes/sinnoh/elite-bertha.png', '[{"dex":423,"level":80},{"dex":472,"level":80},{"dex":464,"level":82}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('76ba0b85-a3e4-539b-b714-093a6f19a192', 'Elite Four Flint', '/trainers/classes/sinnoh/elite-flint.png', '[{"dex":38,"level":82},{"dex":324,"level":82},{"dex":467,"level":84}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('c278fb0b-5905-5645-a86a-c680eb9ee32f', 'Elite Four Lucian', '/trainers/classes/sinnoh/elite-lucian.png', '[{"dex":344,"level":82},{"dex":202,"level":83},{"dex":475,"level":85}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('5b4d5778-da23-5bff-ad14-69370285dbfe', 'Champion Cynthia', '/trainers/classes/sinnoh/champion-cynthia.png', '[{"dex":442,"level":83},{"dex":468,"level":85},{"dex":445,"level":87}]'::jsonb, 'champion', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('95ec8afc-4fb4-5e2b-a871-bf39f53c3054', 'Elite Four Aaron', '/trainers/classes/sinnoh/elite-aaron.png', '[{"dex":414,"level":100},{"dex":402,"level":100},{"dex":469,"level":100}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('3fdc8b1b-ae3f-590c-a490-f949cf4211f5', 'Elite Four Bertha', '/trainers/classes/sinnoh/elite-bertha.png', '[{"dex":423,"level":100},{"dex":472,"level":100},{"dex":464,"level":100}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('98a72873-937d-570c-9860-69d6940591c8', 'Elite Four Flint', '/trainers/classes/sinnoh/elite-flint.png', '[{"dex":38,"level":100},{"dex":324,"level":100},{"dex":467,"level":100}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('45d0a6d6-f9ee-5009-a308-0d93b875e79e', 'Elite Four Lucian', '/trainers/classes/sinnoh/elite-lucian.png', '[{"dex":344,"level":100},{"dex":202,"level":100},{"dex":475,"level":100}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('f354e571-253e-5c17-9817-5ca8edd12134', 'Champion Cynthia', '/trainers/classes/sinnoh/champion-cynthia.png', '[{"dex":442,"level":100},{"dex":468,"level":100},{"dex":445,"level":100}]'::jsonb, 'champion', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('5517f310-236f-5701-af72-d28b64ac003c', 'Elite Four Shauntal', '/trainers/classes/unova/elite-shauntal.png', '[{"dex":593,"level":58},{"dex":623,"level":58},{"dex":609,"level":60}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('fe2be174-3a1f-5e1c-bfcd-e43ba61a2558', 'Elite Four Grimsley', '/trainers/classes/unova/elite-grimsley.png', '[{"dex":630,"level":58},{"dex":553,"level":58},{"dex":625,"level":60}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('5f3f17f1-dc44-5b19-8f2c-652841e5f6b5', 'Elite Four Caitlin', '/trainers/classes/unova/elite-caitlin.png', '[{"dex":518,"level":58},{"dex":561,"level":58},{"dex":576,"level":60}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('001170e1-c16d-5f49-813e-3c2e6037c5c2', 'Elite Four Marshal', '/trainers/classes/unova/elite-marshal.png', '[{"dex":560,"level":58},{"dex":539,"level":58},{"dex":534,"level":60}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('d89d2b06-1746-584c-8fcf-3bde60125abf', 'N', '/trainers/classes/unova/n.png', '[{"dex":571,"level":60},{"dex":601,"level":60},{"dex":565,"level":61}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('f2d7f77b-7432-5271-8344-62648afa60ae', 'Ghetsis', '/trainers/classes/unova/ghetsis.png', '[{"dex":625,"level":62},{"dex":537,"level":62},{"dex":635,"level":64}]'::jsonb, 'champion', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('01fda961-7819-589b-a220-4bf067d21ea8', 'Elite Four Shauntal', '/trainers/classes/unova/elite-shauntal.png', '[{"dex":593,"level":73},{"dex":302,"level":73},{"dex":609,"level":75}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('d7b5479e-876e-5e48-8bb7-e99a39fee8d1', 'Elite Four Grimsley', '/trainers/classes/unova/elite-grimsley.png', '[{"dex":630,"level":73},{"dex":635,"level":73},{"dex":625,"level":75}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('a9f4e8ff-23cd-58ee-9f30-e1bcc39daf63', 'Elite Four Caitlin', '/trainers/classes/unova/elite-caitlin.png', '[{"dex":518,"level":73},{"dex":528,"level":73},{"dex":576,"level":75}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('6ee2c30c-149a-5ace-834f-8e88734c7aaf', 'Elite Four Marshal', '/trainers/classes/unova/elite-marshal.png', '[{"dex":560,"level":73},{"dex":620,"level":73},{"dex":534,"level":75}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('0894b753-26c1-5f4b-91f0-7d7f6046ade9', 'N', '/trainers/classes/unova/n.png', '[{"dex":571,"level":75},{"dex":601,"level":75},{"dex":565,"level":76}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('01bc6612-c5a2-5f7e-8d9d-863e38486401', 'Ghetsis', '/trainers/classes/unova/ghetsis.png', '[{"dex":625,"level":77},{"dex":537,"level":77},{"dex":635,"level":79}]'::jsonb, 'champion', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('6ef76ec3-d004-57ad-bf66-3f0aacae9b61', 'Elite Four Shauntal', '/trainers/classes/unova/elite-shauntal.png', '[{"dex":593,"level":100},{"dex":302,"level":100},{"dex":609,"level":100}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('cd044ab6-0003-5bc2-9611-3a525602d117', 'Elite Four Grimsley', '/trainers/classes/unova/elite-grimsley.png', '[{"dex":630,"level":100},{"dex":635,"level":100},{"dex":625,"level":100}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('dd7fcb30-ea75-52ca-bf95-5c5143138cf3', 'Elite Four Caitlin', '/trainers/classes/unova/elite-caitlin.png', '[{"dex":518,"level":100},{"dex":528,"level":100},{"dex":576,"level":100}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('d8a13126-451b-5028-8525-3216ec336182', 'Elite Four Marshal', '/trainers/classes/unova/elite-marshal.png', '[{"dex":560,"level":100},{"dex":620,"level":100},{"dex":534,"level":100}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('61b7966d-503c-547e-9379-551971f1f0f6', 'N', '/trainers/classes/unova/n.png', '[{"dex":571,"level":100},{"dex":601,"level":100},{"dex":565,"level":100}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('c24fc25d-99e0-504d-8fc4-2a3a4db320b3', 'Ghetsis', '/trainers/classes/unova/ghetsis.png', '[{"dex":625,"level":100},{"dex":537,"level":100},{"dex":635,"level":100}]'::jsonb, 'champion', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('ab898418-6798-5ee7-9ec2-361df4931bc5', 'Elite Four Malva', '/trainers/classes/kalos/elite-malva.png', '[{"dex":136,"level":73},{"dex":609,"level":73},{"dex":663,"level":75}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('2fe851a0-e3ea-5ec9-b231-d8d66c8fbf30', 'Elite Four Siebold', '/trainers/classes/kalos/elite-siebold.png', '[{"dex":279,"level":73},{"dex":130,"level":73},{"dex":689,"level":75}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('e54964db-d027-5b33-8ae5-1168036c1666', 'Elite Four Wikstrom', '/trainers/classes/kalos/elite-wikstrom.png', '[{"dex":589,"level":73},{"dex":212,"level":73},{"dex":681,"level":75}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('caa9399c-2379-5c81-b4de-07d6abcea425', 'Elite Four Drasna', '/trainers/classes/kalos/elite-drasna.png', '[{"dex":706,"level":73},{"dex":621,"level":73},{"dex":715,"level":75}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('122352d2-d4b4-5d28-904e-60e3e48dfb29', 'Champion Diantha', '/trainers/classes/kalos/champion-diantha.png', '[{"dex":697,"level":75},{"dex":699,"level":75},{"dex":706,"level":76}]'::jsonb, 'champion', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('f1035b21-df43-5786-835e-5167b4f793da', 'Elite Four Malva', '/trainers/classes/kalos/elite-malva.png', '[{"dex":136,"level":88},{"dex":324,"level":88},{"dex":663,"level":90}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('8b854b1c-88b6-5a79-be4e-111c5dac2e47', 'Elite Four Siebold', '/trainers/classes/kalos/elite-siebold.png', '[{"dex":279,"level":88},{"dex":91,"level":88},{"dex":689,"level":90}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('05e38b04-883b-5c6e-a4dc-fe663b7a6503', 'Elite Four Wikstrom', '/trainers/classes/kalos/elite-wikstrom.png', '[{"dex":589,"level":88},{"dex":303,"level":88},{"dex":681,"level":90}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('55580c8f-b37a-53a8-8068-b3d2172ee927', 'Elite Four Drasna', '/trainers/classes/kalos/elite-drasna.png', '[{"dex":706,"level":88},{"dex":697,"level":88},{"dex":715,"level":90}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('19b3f684-e643-5aa1-bf2f-ad62dfec5dd4', 'Champion Diantha', '/trainers/classes/kalos/champion-diantha.png', '[{"dex":697,"level":90},{"dex":699,"level":90},{"dex":706,"level":91}]'::jsonb, 'champion', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('317bce5f-ff01-588a-97fa-975643b524da', 'Elite Four Malva', '/trainers/classes/kalos/elite-malva.png', '[{"dex":136,"level":100},{"dex":324,"level":100},{"dex":663,"level":100}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('1444e460-c0f9-5521-b902-ecdd63adeec6', 'Elite Four Siebold', '/trainers/classes/kalos/elite-siebold.png', '[{"dex":279,"level":100},{"dex":91,"level":100},{"dex":689,"level":100}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('72ccbee0-89f5-5417-9034-11740321eeac', 'Elite Four Wikstrom', '/trainers/classes/kalos/elite-wikstrom.png', '[{"dex":589,"level":100},{"dex":303,"level":100},{"dex":681,"level":100}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('7b2cc57d-94da-5950-bc17-853092f3f98e', 'Elite Four Drasna', '/trainers/classes/kalos/elite-drasna.png', '[{"dex":706,"level":100},{"dex":697,"level":100},{"dex":715,"level":100}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('ac82ac88-8c95-5bb5-bb0b-0c3ef82de723', 'Champion Diantha', '/trainers/classes/kalos/champion-diantha.png', '[{"dex":697,"level":100},{"dex":699,"level":100},{"dex":706,"level":100}]'::jsonb, 'champion', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('a93321ba-edff-50c5-bf49-6c7250738f3c', 'Elite Four Hala', '/trainers/classes/alola/hala.png', '[{"dex":766,"level":64},{"dex":760,"level":64},{"dex":740,"level":65}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('046f07e9-345c-5c87-880b-e223ecd13f57', 'Elite Four Olivia', '/trainers/classes/alola/olivia.png', '[{"dex":774,"level":64},{"dex":10111,"level":64},{"dex":745,"level":65}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('16dc1bd6-9ff8-5138-883d-537f147dba4b', 'Elite Four Acerola', '/trainers/classes/alola/acerola.png', '[{"dex":778,"level":64},{"dex":781,"level":64},{"dex":770,"level":65}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('b354713b-4618-5499-8157-c21b8a604193', 'Elite Four Kahili', '/trainers/classes/alola/elite-kahili.png', '[{"dex":774,"level":64},{"dex":741,"level":64},{"dex":733,"level":65}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('d21d0e0e-0055-5cfa-941d-6805de532af6', 'Professor Kukui', '/trainers/classes/alola/champion-kukui.png', '[{"dex":10104,"level":66},{"dex":143,"level":66},{"dex":745,"level":67}]'::jsonb, 'champion', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('762703a3-5c9f-51d2-9cb0-2592db67b6d1', 'Elite Four Hala', '/trainers/classes/alola/hala.png', '[{"dex":766,"level":79},{"dex":784,"level":79},{"dex":740,"level":80}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('f5cc2f1c-381d-5425-af1f-ee8115d2dacd', 'Elite Four Olivia', '/trainers/classes/alola/olivia.png', '[{"dex":774,"level":79},{"dex":699,"level":79},{"dex":745,"level":80}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('a9880cb7-b84a-5045-bb48-86509e806ec2', 'Elite Four Acerola', '/trainers/classes/alola/acerola.png', '[{"dex":778,"level":79},{"dex":609,"level":79},{"dex":770,"level":80}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('12dd8f50-2e9d-5605-be91-e42cb15bf717', 'Elite Four Kahili', '/trainers/classes/alola/elite-kahili.png', '[{"dex":774,"level":79},{"dex":416,"level":79},{"dex":733,"level":80}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('b070af03-5ea1-5fa3-ac76-8a7ddda1febd', 'Professor Kukui', '/trainers/classes/alola/champion-kukui.png', '[{"dex":10104,"level":81},{"dex":143,"level":81},{"dex":745,"level":82}]'::jsonb, 'champion', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('7565fa6e-f439-5efb-bb60-5aaf7c32651b', 'Elite Four Hala', '/trainers/classes/alola/hala.png', '[{"dex":766,"level":100},{"dex":784,"level":100},{"dex":740,"level":100}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('ce61cf16-bb8a-5941-8064-ae649ff9e79d', 'Elite Four Olivia', '/trainers/classes/alola/olivia.png', '[{"dex":774,"level":100},{"dex":699,"level":100},{"dex":745,"level":100}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('07ddb1d5-0a1d-56fd-a6d6-77bc72cb886a', 'Elite Four Acerola', '/trainers/classes/alola/acerola.png', '[{"dex":778,"level":100},{"dex":609,"level":100},{"dex":770,"level":100}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('83c64cdc-80ea-53ea-ae73-c8518502e4bb', 'Elite Four Kahili', '/trainers/classes/alola/elite-kahili.png', '[{"dex":774,"level":100},{"dex":416,"level":100},{"dex":733,"level":100}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('3ea8ff08-1e15-520b-acf4-cd8bd9518149', 'Professor Kukui', '/trainers/classes/alola/champion-kukui.png', '[{"dex":10104,"level":100},{"dex":143,"level":100},{"dex":745,"level":100}]'::jsonb, 'champion', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('210b0509-7019-578e-a116-f96e1bd293c8', 'Marnie', '/trainers/classes/galar/marnie.png', '[{"dex":862,"level":67},{"dex":860,"level":68},{"dex":861,"level":69}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('569b5e84-781e-54c1-897c-870d045858a5', 'Nessa', '/trainers/classes/galar/nessa.png', '[{"dex":902,"level":69},{"dex":847,"level":70},{"dex":834,"level":71}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('8b71b171-0025-54c7-8f4f-817d90095767', 'Bea', '/trainers/classes/galar/bea.png', '[{"dex":903,"level":70},{"dex":865,"level":70},{"dex":870,"level":71}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('b050d29d-f895-5bdd-9ad7-9d22788d2c54', 'Raihan', '/trainers/classes/galar/raihan.png', '[{"dex":887,"level":71},{"dex":844,"level":71},{"dex":884,"level":72}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('d109dc8a-eb95-535b-9614-5cb21582d90f', 'Champion Leon', '/trainers/classes/galar/champion-leon.png', '[{"dex":887,"level":72},{"dex":866,"level":74},{"dex":6,"level":75}]'::jsonb, 'champion', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('187481fd-1c52-5d91-8573-79b625dde8e0', 'Marnie', '/trainers/classes/galar/marnie.png', '[{"dex":862,"level":82},{"dex":904,"level":83},{"dex":861,"level":84}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('e518cf32-ade6-522d-bff3-01ed9e070724', 'Nessa', '/trainers/classes/galar/nessa.png', '[{"dex":902,"level":84},{"dex":882,"level":85},{"dex":834,"level":86}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('1c4204d6-15ec-52cc-a2c3-2d03f6cd4ed6', 'Bea', '/trainers/classes/galar/bea.png', '[{"dex":903,"level":85},{"dex":760,"level":85},{"dex":870,"level":86}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('8f3fe06f-31bf-51b4-bc39-d68d10890212', 'Raihan', '/trainers/classes/galar/raihan.png', '[{"dex":887,"level":86},{"dex":841,"level":86},{"dex":884,"level":87}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('7d815839-36bd-5d1e-b104-c528c9c751fe', 'Champion Leon', '/trainers/classes/galar/champion-leon.png', '[{"dex":887,"level":87},{"dex":866,"level":89},{"dex":6,"level":90}]'::jsonb, 'champion', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('faf09658-47e0-5dfa-9437-14114410c2f4', 'Marnie', '/trainers/classes/galar/marnie.png', '[{"dex":862,"level":100},{"dex":904,"level":100},{"dex":861,"level":100}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('a9c420b0-cb96-5dca-b472-1ebeefd5baee', 'Nessa', '/trainers/classes/galar/nessa.png', '[{"dex":902,"level":100},{"dex":882,"level":100},{"dex":834,"level":100}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('8266e1df-d60a-515a-b687-bde5bb5046ca', 'Bea', '/trainers/classes/galar/bea.png', '[{"dex":903,"level":100},{"dex":760,"level":100},{"dex":870,"level":100}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('fcdc888f-c2ed-56c9-b18c-c9b6dd003e29', 'Raihan', '/trainers/classes/galar/raihan.png', '[{"dex":887,"level":100},{"dex":841,"level":100},{"dex":884,"level":100}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('f0514643-0b7d-5e9f-9971-62bca8c68368', 'Champion Leon', '/trainers/classes/galar/champion-leon.png', '[{"dex":887,"level":100},{"dex":866,"level":100},{"dex":6,"level":100}]'::jsonb, 'champion', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('a7076079-966d-59d8-a335-4d6f869a516b', 'Elite Four Rika', '/trainers/classes/paldea/elite-rika.png', '[{"dex":949,"level":67},{"dex":323,"level":67},{"dex":980,"level":68}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('ab4c6b91-828a-5a71-87e0-39e44bb59a31', 'Elite Four Poppy', '/trainers/classes/paldea/elite-poppy.png', '[{"dex":1018,"level":68},{"dex":823,"level":68},{"dex":959,"level":69}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('ef14c7ea-8cfe-54fb-abb6-c601ec19d56a', 'Elite Four Larry', '/trainers/classes/paldea/larry.png', '[{"dex":931,"level":69},{"dex":398,"level":69},{"dex":973,"level":70}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('43232b00-218b-5b90-846a-7285f316ec98', 'Elite Four Hassel', '/trainers/classes/paldea/elite-hassel.png', '[{"dex":1019,"level":70},{"dex":841,"level":70},{"dex":998,"level":71}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('2b84c56d-72c2-50d3-b58a-2db2e8834960', 'Champion Geeta', '/trainers/classes/paldea/champion-geeta.png', '[{"dex":956,"level":71},{"dex":983,"level":71},{"dex":970,"level":72}]'::jsonb, 'champion', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('9f8548e8-3808-5f68-9e6a-51aa7bb53048', 'Champion Nemona', '/trainers/classes/paldea/nemona.png', '[{"dex":982,"level":75},{"dex":968,"level":75},{"dex":923,"level":75}]'::jsonb, 'champion', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('572dc4c2-03d2-5516-b4e2-83b5c4cb08d0', 'Elite Four Rika', '/trainers/classes/paldea/elite-rika.png', '[{"dex":949,"level":82},{"dex":450,"level":82},{"dex":980,"level":83}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('cb64b3b7-be82-5a33-b487-5b93bab755a6', 'Elite Four Poppy', '/trainers/classes/paldea/elite-poppy.png', '[{"dex":1018,"level":83},{"dex":983,"level":83},{"dex":959,"level":84}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('d02a5e47-34c1-5309-8e74-a0c211d9be09', 'Elite Four Larry', '/trainers/classes/paldea/larry.png', '[{"dex":931,"level":84},{"dex":941,"level":84},{"dex":973,"level":85}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('f945c149-b2ce-54dc-b9b1-0e1c4c232043', 'Elite Four Hassel', '/trainers/classes/paldea/elite-hassel.png', '[{"dex":1019,"level":85},{"dex":1018,"level":85},{"dex":998,"level":86}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('3a2feb28-7c72-5c40-b4b7-edbd09b38818', 'Champion Geeta', '/trainers/classes/paldea/champion-geeta.png', '[{"dex":956,"level":86},{"dex":983,"level":86},{"dex":970,"level":87}]'::jsonb, 'champion', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('3c9cef25-f994-549d-8733-e288ac5be57b', 'Champion Nemona', '/trainers/classes/paldea/nemona.png', '[{"dex":982,"level":90},{"dex":968,"level":90},{"dex":923,"level":90}]'::jsonb, 'champion', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('4cf384f3-8cbd-5646-97ba-e676c54decf4', 'Elite Four Rika', '/trainers/classes/paldea/elite-rika.png', '[{"dex":949,"level":100},{"dex":450,"level":100},{"dex":980,"level":100}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('dcc6bd13-af30-567a-8eeb-c17e4d0d5262', 'Elite Four Poppy', '/trainers/classes/paldea/elite-poppy.png', '[{"dex":1018,"level":100},{"dex":983,"level":100},{"dex":959,"level":100}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('5b99a243-8ece-57dc-81ea-d08d4e9e9b78', 'Elite Four Larry', '/trainers/classes/paldea/larry.png', '[{"dex":931,"level":100},{"dex":941,"level":100},{"dex":973,"level":100}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('96030b3d-8bd5-5ea9-8eda-ce3786518b3d', 'Elite Four Hassel', '/trainers/classes/paldea/elite-hassel.png', '[{"dex":1019,"level":100},{"dex":1018,"level":100},{"dex":998,"level":100}]'::jsonb, 'elite', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('11fe02b9-85d2-534d-86a4-659abf4e4d71', 'Champion Geeta', '/trainers/classes/paldea/champion-geeta.png', '[{"dex":956,"level":100},{"dex":983,"level":100},{"dex":970,"level":100}]'::jsonb, 'champion', null, null, 'default', null, '["hyper-potion"]'::jsonb),
+  ('a303311d-2a93-58b4-8b81-a5d1e43b0f0f', 'Champion Nemona', '/trainers/classes/paldea/nemona.png', '[{"dex":982,"level":100},{"dex":968,"level":100},{"dex":923,"level":100}]'::jsonb, 'champion', null, null, 'default', null, '["hyper-potion"]'::jsonb)
 on conflict (id) do update set name = excluded.name, sprite_url = excluded.sprite_url, team = excluded.team, role = excluded.role, badge = excluded.badge, upgrade_level = excluded.upgrade_level, battle_background = excluded.battle_background, rival_of = excluded.rival_of, items = excluded.items;
 
 insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level) values
+  ('d27b29a4-307e-5e1a-9569-0bacedbcacf6', '5e2e78f9-5ad7-5e3c-a9f2-518a4c11799c', 219, 10, 55, 66),
+  ('4c43bc34-ce81-5b66-9bed-0b92b7843a88', '5e2e78f9-5ad7-5e3c-a9f2-518a4c11799c', 324, 8, 55, 66),
+  ('8158fa80-f735-5e06-8ea2-72fce712dcba', '5e2e78f9-5ad7-5e3c-a9f2-518a4c11799c', 460, 6, 55, 66),
+  ('a917ee3a-881c-5338-8a50-6ca22a9a5c6e', '5e2e78f9-5ad7-5e3c-a9f2-518a4c11799c', 461, 4, 55, 66),
   ('e99affd2-7566-58c5-9580-ea93833e9cae', '43ad7294-47a6-5c1c-b068-5743d4eb5562', 19, 10, 60, 76),
   ('445d17f9-b5f7-5832-9696-8b801030081a', '43ad7294-47a6-5c1c-b068-5743d4eb5562', 35, 10, 60, 76),
   ('14b01323-15bb-5676-bc60-cca778f99ec6', '43ad7294-47a6-5c1c-b068-5743d4eb5562', 41, 10, 60, 76),
@@ -3269,14 +5116,14 @@ insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level) valu
   ('80619501-e7c8-5f0f-a41e-6a83a22ab31c', '37bf35aa-eb76-5a07-944f-353d0d0cd32e', 661, 22, 2, 4),
   ('474fa516-d788-5970-a3ed-fe5285fd688c', '37bf35aa-eb76-5a07-944f-353d0d0cd32e', 664, 22, 2, 4),
   ('bb18e793-aab7-5c3f-8047-5819c5bbbc74', '37bf35aa-eb76-5a07-944f-353d0d0cd32e', 263, 14, 3, 5),
-  ('26c92798-3f1b-5d66-92fc-2378cd98bd6b', '37bf35aa-eb76-5a07-944f-353d0d0cd32e', 16, 12, 3, 5),
-  ('b387334e-6d0d-57c2-a931-c0b0c8d2247d', '37bf35aa-eb76-5a07-944f-353d0d0cd32e', 13, 4, 3, 4),
-  ('ffb65e6e-3e7b-57e9-81a8-a4b295c10c23', '37bf35aa-eb76-5a07-944f-353d0d0cd32e', 10, 4, 3, 4),
-  ('201c9f94-e602-5929-a645-0d8399a8d6a9', 'ae77e7e6-96fd-5e67-adc9-01bcbef2f943', 664, 20, 3, 6),
-  ('0584e86a-d59e-517d-88f2-82ff2b60b2d7', 'ae77e7e6-96fd-5e67-adc9-01bcbef2f943', 13, 14, 3, 6)
+  ('26c92798-3f1b-5d66-92fc-2378cd98bd6b', '37bf35aa-eb76-5a07-944f-353d0d0cd32e', 16, 12, 3, 5)
 on conflict (id) do update set area_id = excluded.area_id, dex = excluded.dex, weight = excluded.weight, min_level = excluded.min_level, max_level = excluded.max_level;
 
 insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level) values
+  ('b387334e-6d0d-57c2-a931-c0b0c8d2247d', '37bf35aa-eb76-5a07-944f-353d0d0cd32e', 13, 4, 3, 4),
+  ('ffb65e6e-3e7b-57e9-81a8-a4b295c10c23', '37bf35aa-eb76-5a07-944f-353d0d0cd32e', 10, 4, 3, 4),
+  ('201c9f94-e602-5929-a645-0d8399a8d6a9', 'ae77e7e6-96fd-5e67-adc9-01bcbef2f943', 664, 20, 3, 6),
+  ('0584e86a-d59e-517d-88f2-82ff2b60b2d7', 'ae77e7e6-96fd-5e67-adc9-01bcbef2f943', 13, 14, 3, 6),
   ('3c2f3cc4-ad4c-52ab-bd08-d4eb3f333e96', 'ae77e7e6-96fd-5e67-adc9-01bcbef2f943', 10, 14, 3, 6),
   ('a6bb474b-ae39-5e5f-9179-109a04cbb1ac', 'ae77e7e6-96fd-5e67-adc9-01bcbef2f943', 661, 12, 4, 6),
   ('22795656-a370-5a24-bfbe-3ff794f594dc', 'ae77e7e6-96fd-5e67-adc9-01bcbef2f943', 511, 10, 4, 6),
@@ -3341,15 +5188,6 @@ insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level) valu
   ('a5a7b477-0047-501b-b744-2f83e4419323', 'f4125979-a6a1-5086-9a5a-5314568b77a9', 81, 14, 18, 24),
   ('92682394-a6c1-5a3e-8ef3-19fdab673bde', 'f4125979-a6a1-5086-9a5a-5314568b77a9', 313, 6, 18, 23),
   ('63429324-9a21-5ffe-9119-40784bd0d830', 'f4125979-a6a1-5086-9a5a-5314568b77a9', 314, 6, 18, 23),
-  ('e4f72995-e52d-48a0-a565-3239c27b0dbc', '5b386fa9-4a0a-4291-bddb-19e899fd366a', 169, 16, 55, 64),
-  ('c3a91fb9-17f6-41f9-9f76-0d11b3cbeeec', '5b386fa9-4a0a-4291-bddb-19e899fd366a', 76, 14, 55, 64),
-  ('1c41afec-34f6-40a6-97a8-9613a978df37', '5b386fa9-4a0a-4291-bddb-19e899fd366a', 208, 12, 55, 64),
-  ('05615acd-fac4-469f-8154-952898687505', '5b386fa9-4a0a-4291-bddb-19e899fd366a', 232, 10, 55, 64),
-  ('c80600f4-9a7f-438a-9012-aab165c40728', '5b386fa9-4a0a-4291-bddb-19e899fd366a', 217, 10, 53, 64),
-  ('f7b6ad27-7bfe-4b8d-9813-491ea2348038', '5b386fa9-4a0a-4291-bddb-19e899fd366a', 112, 12, 55, 64),
-  ('cdb23edd-3840-4687-a4bf-f46b00f6cbf1', '5b386fa9-4a0a-4291-bddb-19e899fd366a', 28, 12, 55, 64),
-  ('978d5326-e9c1-4c4b-9e45-ab868feef869', '5b386fa9-4a0a-4291-bddb-19e899fd366a', 105, 12, 55, 64),
-  ('e9d1c3c5-9952-4468-a7a7-334726f0f21c', '5b386fa9-4a0a-4291-bddb-19e899fd366a', 247, 6, 55, 64),
   ('9b635ce4-8f2c-5f1b-a800-309399008eef', 'bec52d1b-4c7c-5503-810a-5d4b8e5336ec', 16, 18, 13, 17),
   ('b3ce4e11-22bb-5b94-a396-52c92d20740a', 'bec52d1b-4c7c-5503-810a-5d4b8e5336ec', 43, 12, 13, 16),
   ('4b30cbb3-8ba2-58dc-8d00-f455e5e78f1d', 'bec52d1b-4c7c-5503-810a-5d4b8e5336ec', 69, 12, 13, 16),
@@ -3360,8 +5198,8 @@ insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level) valu
   ('ee2380d4-8029-5f4e-94e7-5fa37decf94c', 'bec52d1b-4c7c-5503-810a-5d4b8e5336ec', 60, 6, 15, 20),
   ('6aac66f4-a0a5-5517-90f0-1aaa35a08e6e', 'bec52d1b-4c7c-5503-810a-5d4b8e5336ec', 118, 5, 15, 20),
   ('73934a06-462b-57c6-95b7-5d1abbeeca52', 'bec52d1b-4c7c-5503-810a-5d4b8e5336ec', 129, 8, 5, 15),
-  ('2be7db26-cfb2-55bf-bd2a-1dba22de280c', 'bec52d1b-4c7c-5503-810a-5d4b8e5336ec', 7, 1, 12, 15),
   ('262ef8cc-ff7f-5f8d-a080-9aebd756eb82', 'bec52d1b-4c7c-5503-810a-5d4b8e5336ec', 122, 2, 13, 17),
+  ('2be7db26-cfb2-55bf-bd2a-1dba22de280c', 'bec52d1b-4c7c-5503-810a-5d4b8e5336ec', 7, 3, 12, 15),
   ('79bec00a-1093-54bc-b680-f31f7e19fef7', 'ff3f0086-1b99-559e-a646-e88006eec749', 129, 7, 15, 25),
   ('4eeea5a6-127c-524a-afe3-365b3e36cda8', 'ff3f0086-1b99-559e-a646-e88006eec749', 72, 6, 20, 25),
   ('251e8d66-5dcf-5b76-8775-74c1f092119f', 'ff3f0086-1b99-559e-a646-e88006eec749', 116, 5, 20, 25),
@@ -3401,6 +5239,10 @@ insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level) valu
   ('c510dc0e-8b27-58bc-818f-ab4603c87c9d', '2238f26a-2629-5f28-af07-e74cb41d5f7a', 119, 3, 25, 30),
   ('00601b9e-944a-5b1e-888b-06a322043e8d', '2238f26a-2629-5f28-af07-e74cb41d5f7a', 60, 5, 20, 25),
   ('cf3dbb9e-4510-5f10-8eb4-79929418732b', '2238f26a-2629-5f28-af07-e74cb41d5f7a', 129, 5, 5, 15),
+  ('f1b47233-ec3e-55c0-bdbe-a572551cd3f2', '050ff505-ff8e-5251-8499-842a2cfc2986', 20, 10, 60, 70),
+  ('428fac49-0d4d-5967-85ad-86ad47666cd3', '050ff505-ff8e-5251-8499-842a2cfc2986', 49, 8, 60, 70),
+  ('574ea22a-38a6-5886-8cc6-ee260a2e088c', '050ff505-ff8e-5251-8499-842a2cfc2986', 105, 6, 60, 70),
+  ('01ad9614-55c9-59e4-8d1b-f3452c0da103', '050ff505-ff8e-5251-8499-842a2cfc2986', 22, 4, 60, 70),
   ('d29088cd-ef5c-5da9-a5f9-3ab185ad7240', '51bb91b2-9c10-508c-bd4d-0f9e39e3f30d', 86, 15, 30, 32),
   ('404af12f-c397-5460-9c12-9fb538bc0c5b', '51bb91b2-9c10-508c-bd4d-0f9e39e3f30d', 87, 5, 34, 36),
   ('2c3b13c9-16b0-54b7-a897-f7d1b3025b2a', '51bb91b2-9c10-508c-bd4d-0f9e39e3f30d', 79, 10, 28, 32),
@@ -3429,25 +5271,8 @@ insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level) valu
   ('4698b745-8d51-5625-b94f-5b0b077c32a3', '6ce5603a-9b36-52df-b8bc-3e9efb0686c3', 57, 5, 40, 44),
   ('760da985-13a0-554b-8e8c-48982309441f', '6ce5603a-9b36-52df-b8bc-3e9efb0686c3', 22, 4, 40, 44),
   ('66d0cd3a-d029-59e9-a455-94bf0f360452', '6ce5603a-9b36-52df-b8bc-3e9efb0686c3', 132, 3, 38, 42),
-  ('01b793e0-cd5b-5611-b53a-48baf0582050', '35c40458-61da-5321-adda-6df33b930671', 68, 8, 58, 62),
-  ('1d6030cf-4fae-5efd-b8d0-8a2e277f5587', '35c40458-61da-5321-adda-6df33b930671', 75, 8, 55, 58),
-  ('db818092-b915-51c2-a8b4-c7ee6d452dce', '35c40458-61da-5321-adda-6df33b930671', 76, 6, 58, 62),
-  ('e0f86dcc-3114-57e6-a56b-7db377def482', '35c40458-61da-5321-adda-6df33b930671', 95, 6, 55, 60),
-  ('25867c6e-882a-5b8c-8d06-0fec1291d20f', '35c40458-61da-5321-adda-6df33b930671', 111, 6, 55, 58),
-  ('25c2f057-165a-53a3-8093-3a83e9efd719', '35c40458-61da-5321-adda-6df33b930671', 112, 5, 60, 64),
-  ('49a7e572-3d52-5253-b3fe-e8742ed6b304', '35c40458-61da-5321-adda-6df33b930671', 105, 6, 58, 62),
-  ('68551cf2-f7f2-5674-be3b-848e0367b68b', '35c40458-61da-5321-adda-6df33b930671', 42, 8, 55, 60),
-  ('9004d6f9-f640-5746-b7ef-7337dff226ed', '35c40458-61da-5321-adda-6df33b930671', 57, 6, 58, 62),
-  ('4aa8f96a-62de-531f-a6b5-8bccdbcf25f3', '35c40458-61da-5321-adda-6df33b930671', 28, 6, 56, 60),
-  ('1c29ab28-145a-5417-b2c4-fe1f6302ffd3', '35c40458-61da-5321-adda-6df33b930671', 34, 4, 60, 64),
-  ('7e14f80a-7676-52f2-801e-895d4ba4688f', '35c40458-61da-5321-adda-6df33b930671', 31, 4, 60, 64),
-  ('e515c255-025b-5d48-9819-5e971c56147d', '35c40458-61da-5321-adda-6df33b930671', 106, 2, 60, 64),
-  ('0621f5ef-37cf-5d87-af3c-14d6953484a5', '35c40458-61da-5321-adda-6df33b930671', 107, 2, 60, 64),
-  ('54983a10-049b-5cf7-bc86-01799989f4a9', '35c40458-61da-5321-adda-6df33b930671', 126, 3, 60, 64),
-  ('290fc22e-60a1-5ae0-a976-763a44f7c793', '35c40458-61da-5321-adda-6df33b930671', 125, 3, 60, 64),
-  ('37c95dd7-74ed-5c89-bdbf-b0274e80576a', '35c40458-61da-5321-adda-6df33b930671', 148, 2, 60, 64),
-  ('a4dff521-2feb-51ff-b341-bbc1644e8f3c', '35c40458-61da-5321-adda-6df33b930671', 142, 0, 62, 66),
-  ('94b1c89d-36d6-5fa7-8313-9da751ca066c', '35c40458-61da-5321-adda-6df33b930671', 132, 2, 58, 62),
+  ('8f447461-46e2-5b36-811a-6941109d2b18', '6ce5603a-9b36-52df-b8bc-3e9efb0686c3', 106, 2, 43, 47),
+  ('e5ed4596-3550-51b5-a93a-37ad0ace330f', '6ce5603a-9b36-52df-b8bc-3e9efb0686c3', 107, 2, 43, 47),
   ('cabd6afc-2ea3-5bcd-b95a-cdc129ef4454', '2be87c2d-54b0-5ab8-888a-43f7bfc5da5e', 669, 18, 6, 9),
   ('3b813733-f12d-5307-ae08-d931ee6cd670', '2be87c2d-54b0-5ab8-888a-43f7bfc5da5e', 667, 12, 6, 10),
   ('f8601319-3ba3-5008-b29e-d7f3befd1a5d', '2be87c2d-54b0-5ab8-888a-43f7bfc5da5e', 415, 10, 6, 9),
@@ -3526,10 +5351,7 @@ insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level) valu
   ('b96b2dca-b66b-575c-b36c-11b2cd4656ca', '6be7fc24-0db6-59e6-b9f0-81cbefc90ab4', 99, 3, 30, 35),
   ('fbe5d54e-54b0-58b1-ac2e-05cbfce85518', '6be7fc24-0db6-59e6-b9f0-81cbefc90ab4', 129, 8, 15, 25),
   ('4f20dc4c-4df5-533c-bd6c-d699170e1f10', '6be7fc24-0db6-59e6-b9f0-81cbefc90ab4', 130, 2, 30, 35),
-  ('ca6d8f1d-c46b-5402-96ae-716558dd4582', '539298c8-926d-56a3-bf8e-e8635db096da', 701, 10, 19, 23)
-on conflict (id) do update set area_id = excluded.area_id, dex = excluded.dex, weight = excluded.weight, min_level = excluded.min_level, max_level = excluded.max_level;
-
-insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level) values
+  ('ca6d8f1d-c46b-5402-96ae-716558dd4582', '539298c8-926d-56a3-bf8e-e8635db096da', 701, 10, 19, 23),
   ('2e8a4df8-56b4-56d8-867a-283db81d45c6', '539298c8-926d-56a3-bf8e-e8635db096da', 622, 12, 19, 23),
   ('a537cd04-7294-531a-bb90-c41e934ead0c', '539298c8-926d-56a3-bf8e-e8635db096da', 209, 12, 19, 22),
   ('d9d5133c-9618-5eec-8a95-21050a6397a5', '539298c8-926d-56a3-bf8e-e8635db096da', 299, 10, 19, 23),
@@ -3547,7 +5369,10 @@ insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level) valu
   ('9090a35d-5cd0-5ee4-bb0d-1f062d7d4f6c', '56e3832c-f06c-5d1d-821d-ec94d7b75286', 524, 10, 21, 24),
   ('c1f8d9fa-6c18-59cd-ba67-bef87017eb6e', '56e3832c-f06c-5d1d-821d-ec94d7b75286', 439, 6, 21, 25),
   ('73d25a89-88f8-5b97-a820-b32e3046c76a', '56e3832c-f06c-5d1d-821d-ec94d7b75286', 577, 6, 22, 26),
-  ('c911e220-408b-53af-bdf1-2e4d429c1df7', '56e3832c-f06c-5d1d-821d-ec94d7b75286', 302, 4, 22, 26),
+  ('c911e220-408b-53af-bdf1-2e4d429c1df7', '56e3832c-f06c-5d1d-821d-ec94d7b75286', 302, 4, 22, 26)
+on conflict (id) do update set area_id = excluded.area_id, dex = excluded.dex, weight = excluded.weight, min_level = excluded.min_level, max_level = excluded.max_level;
+
+insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level) values
   ('b5f18a4a-aa89-5ab3-87f9-e9af8818d580', '56e3832c-f06c-5d1d-821d-ec94d7b75286', 297, 6, 23, 26),
   ('ceb9aded-476b-5bb7-9dfc-33a0de34f97f', '56e3832c-f06c-5d1d-821d-ec94d7b75286', 538, 4, 23, 26),
   ('8f5672f2-3458-5981-a7a2-11795ce4f49f', '56e3832c-f06c-5d1d-821d-ec94d7b75286', 539, 4, 23, 26),
@@ -3565,6 +5390,14 @@ insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level) valu
   ('f27bfe8a-b1de-5eb8-aeee-59a91a692bc7', '070ee8ad-f4e1-5b18-b2a6-a1ff5fdcb226', 594, 6, 26, 29),
   ('44aac1d7-6474-5a00-a225-358477b43274', '070ee8ad-f4e1-5b18-b2a6-a1ff5fdcb226', 131, 2, 27, 30),
   ('f2c30487-4262-599b-aad8-68cf021a05d8', '070ee8ad-f4e1-5b18-b2a6-a1ff5fdcb226', 672, 6, 24, 27),
+  ('1a51620b-6b7b-5189-badf-524f80dbe97e', '75d4e417-4ae4-523a-bc44-d1efa9e5ed5e', 219, 10, 50, 62),
+  ('addd2bbe-377a-5628-808c-ae70cdbeb01d', '75d4e417-4ae4-523a-bc44-d1efa9e5ed5e', 324, 8, 50, 62),
+  ('2fb394fa-c57d-53cb-8ca4-10c3354b240f', '75d4e417-4ae4-523a-bc44-d1efa9e5ed5e', 460, 6, 50, 62),
+  ('84d07b2a-7e70-588b-a658-f7f71502da74', '75d4e417-4ae4-523a-bc44-d1efa9e5ed5e', 461, 4, 50, 62),
+  ('417e8351-4c13-55b8-a828-3f5c36633779', 'fc27382b-919d-50d0-9f21-23dd16cf99d0', 219, 10, 55, 68),
+  ('7f3a5734-b408-549b-b80f-ac2bcd19cd53', 'fc27382b-919d-50d0-9f21-23dd16cf99d0', 324, 8, 55, 68),
+  ('80cecbb3-8cb8-53e0-a02d-2ca8c083ccfc', 'fc27382b-919d-50d0-9f21-23dd16cf99d0', 460, 6, 55, 68),
+  ('b3e6dae8-a5e1-5e66-98e8-a1c4fd6f72fa', 'fc27382b-919d-50d0-9f21-23dd16cf99d0', 461, 4, 55, 68),
   ('d5479357-f402-5905-8b10-19ce6567e5ea', '0f04ef44-9fa0-57a3-b121-3b883b80e4b3', 51, 16, 26, 29),
   ('1682cf89-6cf4-5085-9e95-5a30b1f6aa04', '0f04ef44-9fa0-57a3-b121-3b883b80e4b3', 328, 16, 26, 29),
   ('86abd2d9-00bc-5d70-9211-8ffab58dcc43', '0f04ef44-9fa0-57a3-b121-3b883b80e4b3', 75, 14, 26, 29),
@@ -3637,15 +5470,6 @@ insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level) valu
   ('87d60940-e8e5-58d5-99ca-88e1b8607b19', 'ae5875f0-198e-58a6-bd22-7418d51270e3', 116, 12, 14, 20),
   ('b7caa2fe-4de4-5158-8ed0-4220a18f1aab', 'ae5875f0-198e-58a6-bd22-7418d51270e3', 279, 10, 15, 21),
   ('2cfe1190-b018-5c39-80ca-0af9ca5fc41e', 'ae5875f0-198e-58a6-bd22-7418d51270e3', 370, 8, 16, 22),
-  ('e6213ff9-8e83-426a-8df4-f553766e0a73', 'aa2f848e-f405-4eff-ab71-02e3a5120b9f', 42, 16, 59, 65),
-  ('92d54275-d0b7-4ebe-8836-5e92eedfaf3d', 'aa2f848e-f405-4eff-ab71-02e3a5120b9f', 75, 14, 59, 65),
-  ('63ac7279-4257-4cbc-a5fa-c349d6c7a4af', 'aa2f848e-f405-4eff-ab71-02e3a5120b9f', 437, 14, 59, 65),
-  ('d56e0631-969e-42b4-b4a6-f460e463221b', 'aa2f848e-f405-4eff-ab71-02e3a5120b9f', 308, 12, 59, 65),
-  ('8499c4c3-fbf4-448d-ae20-80e5706f5517', 'aa2f848e-f405-4eff-ab71-02e3a5120b9f', 444, 12, 59, 65),
-  ('341920e2-58f7-4e8c-b606-32ae6b03c708', 'aa2f848e-f405-4eff-ab71-02e3a5120b9f', 452, 12, 59, 65),
-  ('69ad12dd-47d5-43e4-937d-4ebd13ea6a83', 'aa2f848e-f405-4eff-ab71-02e3a5120b9f', 332, 10, 59, 65),
-  ('01c85b38-7187-4ec5-8166-068a0845639c', 'aa2f848e-f405-4eff-ab71-02e3a5120b9f', 297, 10, 59, 65),
-  ('63cbde53-3320-4645-b481-29a531382041', 'aa2f848e-f405-4eff-ab71-02e3a5120b9f', 232, 10, 59, 65),
   ('3ab1f490-5db6-5c12-a5aa-4405f36dd554', '57a87398-8ee0-5924-b794-bb1ca29ed358', 263, 16, 29, 35),
   ('18fcf057-bd5d-52da-8035-b1b80feff17f', '57a87398-8ee0-5924-b794-bb1ca29ed358', 352, 12, 30, 36),
   ('4b51327f-7f13-5f66-acf0-9ef0d4837bdb', '57a87398-8ee0-5924-b794-bb1ca29ed358', 357, 10, 31, 37),
@@ -3779,10 +5603,7 @@ insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level) valu
   ('35f82083-83b4-5bfb-8782-48dd1fc377e3', '1a6ff054-0850-54a9-8471-e828a46154b4', 187, 16, 6, 10),
   ('a3070eec-b7e1-5520-a056-77fc79549804', '1a6ff054-0850-54a9-8471-e828a46154b4', 194, 14, 7, 11),
   ('2ee7528f-fda1-5e0e-ab45-9b84ff4ee099', '1a6ff054-0850-54a9-8471-e828a46154b4', 69, 12, 7, 11),
-  ('ac2d5e46-ebf8-5de9-9aea-3e667e16f3ad', '1a6ff054-0850-54a9-8471-e828a46154b4', 41, 12, 7, 12)
-on conflict (id) do update set area_id = excluded.area_id, dex = excluded.dex, weight = excluded.weight, min_level = excluded.min_level, max_level = excluded.max_level;
-
-insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level) values
+  ('ac2d5e46-ebf8-5de9-9aea-3e667e16f3ad', '1a6ff054-0850-54a9-8471-e828a46154b4', 41, 12, 7, 12),
   ('a7dc4b53-e7d3-50a7-a99a-dbcd7432c12e', '1a6ff054-0850-54a9-8471-e828a46154b4', 129, 14, 6, 10),
   ('ff75c7e4-b8d6-5f29-bc8f-a93e94d517a8', '1a6ff054-0850-54a9-8471-e828a46154b4', 72, 10, 8, 12),
   ('83bb2ed8-4c39-542a-a48c-0c70dacdb363', '1a6ff054-0850-54a9-8471-e828a46154b4', 158, 1, 6, 10),
@@ -3801,7 +5622,10 @@ insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level) valu
   ('57fc0eba-0d0f-58db-b222-164fe02647f3', 'bcb0a995-0b15-59b4-baad-07e16f5d19b6', 179, 14, 30, 36),
   ('66fec745-195f-50ce-8d53-2925c1185ea4', 'bcb0a995-0b15-59b4-baad-07e16f5d19b6', 180, 10, 33, 39),
   ('9bd6c869-5e1e-57f9-92de-bb2f51268305', 'bcb0a995-0b15-59b4-baad-07e16f5d19b6', 183, 14, 30, 36),
-  ('70c95a98-5c28-5ae0-8bf3-b21d56398849', 'bcb0a995-0b15-59b4-baad-07e16f5d19b6', 203, 12, 31, 37),
+  ('70c95a98-5c28-5ae0-8bf3-b21d56398849', 'bcb0a995-0b15-59b4-baad-07e16f5d19b6', 203, 12, 31, 37)
+on conflict (id) do update set area_id = excluded.area_id, dex = excluded.dex, weight = excluded.weight, min_level = excluded.min_level, max_level = excluded.max_level;
+
+insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level) values
   ('b403fd05-99f9-58e1-b096-126378416e8c', 'bcb0a995-0b15-59b4-baad-07e16f5d19b6', 56, 12, 30, 36),
   ('eed872f1-2888-538a-95f4-51a69b14756d', 'bcb0a995-0b15-59b4-baad-07e16f5d19b6', 194, 12, 30, 36),
   ('f41fb7f2-57be-5975-8d88-5b67bdfc2e4c', 'bcb0a995-0b15-59b4-baad-07e16f5d19b6', 195, 10, 33, 39),
@@ -3838,15 +5662,6 @@ insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level) valu
   ('a05110e0-3fe8-5ebe-82e8-e485b3b1d92f', '30af3925-076e-5c88-a6c7-fba28a4ed035', 16, 16, 14, 20),
   ('c62a111f-96c1-5b8b-930e-6a712fdeefff', '30af3925-076e-5c88-a6c7-fba28a4ed035', 161, 14, 14, 20),
   ('0b68539d-6e87-5058-802e-bfdcc30c18b4', '30af3925-076e-5c88-a6c7-fba28a4ed035', 172, 4, 14, 18),
-  ('77e956ae-42fc-57d5-bba5-bc2eb944751c', '13fcad9d-8c4b-56d3-bced-9ef61c93745f', 715, 10, 63, 68),
-  ('ca2c73bc-97d1-5e49-b049-68bfe4cc0e60', '13fcad9d-8c4b-56d3-bced-9ef61c93745f', 706, 6, 63, 68),
-  ('e0798dd1-346f-5996-8f0c-a272867716e4', '13fcad9d-8c4b-56d3-bced-9ef61c93745f', 76, 12, 63, 68),
-  ('f5a9b645-3581-54ce-b116-be089d25f433', '13fcad9d-8c4b-56d3-bced-9ef61c93745f', 168, 10, 63, 68),
-  ('5cae22f2-c013-54c9-a3ef-979f0b37c2df', '13fcad9d-8c4b-56d3-bced-9ef61c93745f', 534, 10, 63, 68),
-  ('c992ef50-e253-59d7-939f-113328c0c03f', '13fcad9d-8c4b-56d3-bced-9ef61c93745f', 621, 10, 63, 68),
-  ('1f2ee629-4c9e-5ec0-8785-5c37ac85e764', '13fcad9d-8c4b-56d3-bced-9ef61c93745f', 227, 10, 63, 68),
-  ('243e47a0-d547-5aa5-bf3b-36015a2b9e1c', '13fcad9d-8c4b-56d3-bced-9ef61c93745f', 635, 4, 66, 70),
-  ('9fd59cd6-a3f0-5b84-8331-671039180a71', '13fcad9d-8c4b-56d3-bced-9ef61c93745f', 149, 2, 66, 70),
   ('03aca6e5-20ad-5616-a72e-558dda54afcb', '058038e0-b19e-5156-9e27-c57aa3b653fc', 19, 30, 15, 20),
   ('ff8f886d-3df0-59e2-b113-8b67d16b0482', '058038e0-b19e-5156-9e27-c57aa3b653fc', 16, 30, 15, 20),
   ('ee8e63f8-7226-5ddf-a99a-892896e17472', '058038e0-b19e-5156-9e27-c57aa3b653fc', 35, 20, 16, 22),
@@ -4032,10 +5847,7 @@ insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level) valu
   ('11134853-51a5-56d6-95ed-40381a096b5d', '9f511e0a-42ac-51b1-90ca-8c1458531603', 117, 10, 55, 70),
   ('4e91be9a-82a3-5e54-9e21-ed26bf40d8cc', '9f511e0a-42ac-51b1-90ca-8c1458531603', 120, 10, 55, 70),
   ('225d79d0-516d-5c6d-a271-823ac03aae0f', '9f511e0a-42ac-51b1-90ca-8c1458531603', 123, 3, 55, 70),
-  ('dc8a437a-fa2c-542d-8ec5-62f83395a7c0', '9f511e0a-42ac-51b1-90ca-8c1458531603', 124, 10, 55, 70)
-on conflict (id) do update set area_id = excluded.area_id, dex = excluded.dex, weight = excluded.weight, min_level = excluded.min_level, max_level = excluded.max_level;
-
-insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level) values
+  ('dc8a437a-fa2c-542d-8ec5-62f83395a7c0', '9f511e0a-42ac-51b1-90ca-8c1458531603', 124, 10, 55, 70),
   ('8c1e1476-4c76-58e6-a82c-38fb3f630165', '9f511e0a-42ac-51b1-90ca-8c1458531603', 126, 10, 55, 70),
   ('e802b380-13f3-5df6-abad-d5e0a5e3921d', '9f511e0a-42ac-51b1-90ca-8c1458531603', 127, 3, 55, 70),
   ('4c4a04e3-f007-579d-8990-680d3342c200', '9f511e0a-42ac-51b1-90ca-8c1458531603', 128, 3, 55, 70),
@@ -4063,7 +5875,10 @@ insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level) valu
   ('0085dc80-5dea-5776-af4d-49ddae68d028', '9f511e0a-42ac-51b1-90ca-8c1458531603', 168, 10, 55, 70),
   ('79cd5be8-8583-5b10-bd8a-937e469eda7e', '9f511e0a-42ac-51b1-90ca-8c1458531603', 169, 10, 55, 70),
   ('243b9655-22fa-5af7-82ac-effe29af19ab', '9f511e0a-42ac-51b1-90ca-8c1458531603', 170, 10, 55, 70),
-  ('6afbdd1e-7009-578f-8732-f0d87b3d9e4b', '9f511e0a-42ac-51b1-90ca-8c1458531603', 171, 10, 55, 70),
+  ('6afbdd1e-7009-578f-8732-f0d87b3d9e4b', '9f511e0a-42ac-51b1-90ca-8c1458531603', 171, 10, 55, 70)
+on conflict (id) do update set area_id = excluded.area_id, dex = excluded.dex, weight = excluded.weight, min_level = excluded.min_level, max_level = excluded.max_level;
+
+insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level) values
   ('65a4a846-eb88-5716-92cf-75f172e40de3', '9f511e0a-42ac-51b1-90ca-8c1458531603', 172, 10, 55, 70),
   ('c7d1e3ed-47dd-5d21-bd08-ed356e2b5995', '9f511e0a-42ac-51b1-90ca-8c1458531603', 173, 10, 55, 70),
   ('efe90c55-99f0-5c33-afbd-1c705862d069', '9f511e0a-42ac-51b1-90ca-8c1458531603', 174, 10, 55, 70),
@@ -4285,10 +6100,7 @@ insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level) valu
   ('befa14e7-0202-5de5-883c-dca50115bdbc', 'cb642e3e-986b-5430-b507-7baf6cc0567b', 290, 10, 60, 76),
   ('c81a3667-31c6-58bf-b986-69bb8dff54e8', 'cb642e3e-986b-5430-b507-7baf6cc0567b', 293, 10, 60, 76),
   ('fccd88cf-338f-5d32-864c-d177273b98a2', 'cb642e3e-986b-5430-b507-7baf6cc0567b', 297, 10, 60, 76),
-  ('978acc12-0add-52ab-a48e-6ea8b23282d6', 'cb642e3e-986b-5430-b507-7baf6cc0567b', 298, 10, 60, 76)
-on conflict (id) do update set area_id = excluded.area_id, dex = excluded.dex, weight = excluded.weight, min_level = excluded.min_level, max_level = excluded.max_level;
-
-insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level) values
+  ('978acc12-0add-52ab-a48e-6ea8b23282d6', 'cb642e3e-986b-5430-b507-7baf6cc0567b', 298, 10, 60, 76),
   ('89fd89e1-df0c-5715-97b8-7e6c4abde23b', 'cb642e3e-986b-5430-b507-7baf6cc0567b', 299, 10, 60, 76),
   ('67286f0c-005f-53c1-b66a-7db45538ae33', 'cb642e3e-986b-5430-b507-7baf6cc0567b', 300, 10, 60, 76),
   ('703286f2-0d77-5084-9ce5-4bcc15b95613', 'cb642e3e-986b-5430-b507-7baf6cc0567b', 302, 10, 60, 76),
@@ -4316,7 +6128,10 @@ insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level) valu
   ('1ebb6a86-2d8d-5f60-9761-8e96f6bdba93', 'cb642e3e-986b-5430-b507-7baf6cc0567b', 371, 10, 60, 76),
   ('266a7d91-f0cf-5f06-80ee-f199494ede5a', 'cb642e3e-986b-5430-b507-7baf6cc0567b', 399, 10, 60, 76),
   ('aa9fad0b-74f8-5a1d-91f1-edbdbb0b9a3d', 'cb642e3e-986b-5430-b507-7baf6cc0567b', 406, 10, 60, 76),
-  ('d7dca950-1008-577a-88dd-3434b6c18b39', 'cb642e3e-986b-5430-b507-7baf6cc0567b', 412, 10, 60, 76),
+  ('d7dca950-1008-577a-88dd-3434b6c18b39', 'cb642e3e-986b-5430-b507-7baf6cc0567b', 412, 10, 60, 76)
+on conflict (id) do update set area_id = excluded.area_id, dex = excluded.dex, weight = excluded.weight, min_level = excluded.min_level, max_level = excluded.max_level;
+
+insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level) values
   ('4847d793-5903-5f78-9e1b-6ae0b86d9895', 'cb642e3e-986b-5430-b507-7baf6cc0567b', 415, 10, 60, 76),
   ('77629945-cf63-50c8-b4bc-e66c49bd988d', 'cb642e3e-986b-5430-b507-7baf6cc0567b', 417, 10, 60, 76),
   ('d9887bfd-1014-52fc-b381-3a978cbcc537', 'cb642e3e-986b-5430-b507-7baf6cc0567b', 419, 10, 60, 76),
@@ -4447,15 +6262,27 @@ insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level) valu
   ('9dca4905-bde6-56aa-a31d-ebf4a6e479ac', 'f8ebca1d-a9ef-50a3-bfc7-88349041117d', 306, 8, 62, 68),
   ('62320312-c62a-5b24-a28f-bb32c26d1542', 'f8ebca1d-a9ef-50a3-bfc7-88349041117d', 248, 4, 64, 70),
   ('2d5edab8-d55a-5f03-a4a4-06f01840acbb', 'f8ebca1d-a9ef-50a3-bfc7-88349041117d', 28, 12, 62, 68),
+  ('10387934-a8b6-5838-ab57-9cd17aabfe99', '64740605-3951-57d0-9217-1d9ad7752eff', 168, 10, 60, 68),
+  ('8c6cf153-cf6f-598f-883c-07d2ff1bee02', '64740605-3951-57d0-9217-1d9ad7752eff', 327, 8, 60, 68),
+  ('efbbc7ba-2cab-584d-9281-7a0acd834596', '64740605-3951-57d0-9217-1d9ad7752eff', 334, 6, 60, 68),
+  ('933a623f-60db-5f18-93b5-15e13e758ac6', '64740605-3951-57d0-9217-1d9ad7752eff', 632, 4, 60, 68),
+  ('d4a31b86-5582-5f6c-af5d-4eec02de81fc', '532b27a7-bfb1-5b03-ae0f-a611995dffa2', 632, 10, 62, 70),
+  ('ae7c08ec-42a7-5fb0-8bb7-e3c1f6509241', '532b27a7-bfb1-5b03-ae0f-a611995dffa2', 76, 8, 62, 70),
+  ('e6f4f99e-c199-591f-b6a5-9ebb0b5edf58', '532b27a7-bfb1-5b03-ae0f-a611995dffa2', 168, 6, 62, 70),
+  ('5542af7d-e359-5bbb-a599-726a830cdf46', '532b27a7-bfb1-5b03-ae0f-a611995dffa2', 28, 4, 62, 70),
+  ('8874ac4d-a10d-50d9-914c-90f4607ef1c9', '9394fdfc-182a-5c7d-92a2-3fb38c339f28', 632, 10, 64, 72),
+  ('482e5b4f-c00f-5883-bf10-d8dd4599b1fa', '9394fdfc-182a-5c7d-92a2-3fb38c339f28', 76, 8, 64, 72),
+  ('72730006-5064-5b20-86eb-af2efbd37477', '9394fdfc-182a-5c7d-92a2-3fb38c339f28', 168, 6, 64, 72),
+  ('9f489404-4470-5362-adf5-5a4273765f85', '9394fdfc-182a-5c7d-92a2-3fb38c339f28', 28, 4, 64, 72),
   ('5d56f430-cd5c-549a-a54e-42fcc2ae9cda', '19484a4c-fd2d-539b-a375-e0683e90424b', 731, 20, 2, 4),
   ('799d2187-e209-55c6-9f8f-67df54b13acb', '19484a4c-fd2d-539b-a375-e0683e90424b', 734, 20, 2, 4),
-  ('477342a1-6271-55ca-981c-b550f7d2401a', '19484a4c-fd2d-539b-a375-e0683e90424b', 10091, 16, 2, 4),
   ('048a7d9a-8afa-5329-95d2-e3a6fcc27959', '19484a4c-fd2d-539b-a375-e0683e90424b', 165, 10, 2, 4),
   ('5a65b1e3-6e55-5285-8042-344a3f129448', '19484a4c-fd2d-539b-a375-e0683e90424b', 167, 10, 2, 4),
   ('02176969-6a79-5908-b077-1f0a18cdbeda', '19484a4c-fd2d-539b-a375-e0683e90424b', 10, 10, 2, 4),
   ('40e082fa-ebf7-5cb0-ad6b-8249bf3f9727', '19484a4c-fd2d-539b-a375-e0683e90424b', 736, 6, 3, 5),
   ('4f370409-e7eb-52f9-81f6-41bd86ad1ea9', '19484a4c-fd2d-539b-a375-e0683e90424b', 427, 4, 3, 5),
   ('1b0f26e5-bee9-5fcb-92f3-06a1dafc9d2d', '19484a4c-fd2d-539b-a375-e0683e90424b', 172, 2, 3, 5),
+  ('477342a1-6271-55ca-981c-b550f7d2401a', '19484a4c-fd2d-539b-a375-e0683e90424b', 10091, 16, 2, 4),
   ('dff75e03-5501-51f3-ae9d-d3fa5eb541b3', '1ef28784-b335-528e-afea-f89700680d7e', 19, 15, 14, 17),
   ('e1c6d08e-82a2-5207-9eee-66051036b0d8', '1ef28784-b335-528e-afea-f89700680d7e', 20, 4, 17, 20),
   ('92340797-e480-52fe-88db-91c6c53fe684', '1ef28784-b335-528e-afea-f89700680d7e', 21, 15, 13, 17),
@@ -4538,10 +6365,7 @@ insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level) valu
   ('61dd956f-99ef-583b-abcb-6d4e0bfc9ac6', 'cf8b7fa9-6488-5afe-956e-8c5dfcb4c7d4', 438, 12, 9, 14),
   ('fe3a54bd-f685-51c7-b00c-f2ff24995c05', 'cf8b7fa9-6488-5afe-956e-8c5dfcb4c7d4', 111, 12, 9, 14),
   ('0973c810-0b9e-4851-99dc-d0a23c666e83', '57008453-b26b-5c52-a88e-e777d39ab364', 308, 10, 60, 70),
-  ('7012cebb-dccd-4ee9-b4d8-d23cd29507c8', '57008453-b26b-5c52-a88e-e777d39ab364', 64, 10, 60, 70)
-on conflict (id) do update set area_id = excluded.area_id, dex = excluded.dex, weight = excluded.weight, min_level = excluded.min_level, max_level = excluded.max_level;
-
-insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level) values
+  ('7012cebb-dccd-4ee9-b4d8-d23cd29507c8', '57008453-b26b-5c52-a88e-e777d39ab364', 64, 10, 60, 70),
   ('d2a13691-4c23-4e95-a779-74662bfcd403', '57008453-b26b-5c52-a88e-e777d39ab364', 281, 10, 60, 70),
   ('a6d5cfe0-fae5-4158-a84c-e9be0a489aaf', '57008453-b26b-5c52-a88e-e777d39ab364', 282, 10, 60, 70),
   ('5a5533f8-e0cc-4925-ab43-96aefa4f7998', '57008453-b26b-5c52-a88e-e777d39ab364', 326, 10, 60, 70),
@@ -4556,16 +6380,19 @@ insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level) valu
   ('099af139-4034-58ac-9a2b-e1d49f209dd2', 'f4f5da0f-eca7-5aa5-a902-aa3f27d8910a', 374, 1, 15, 19),
   ('2f26e3fe-e4c0-52aa-9920-f947fc658deb', 'b0476bf1-2815-53f6-9483-6d984dfa938a', 278, 14, 4, 8),
   ('86ef2b7c-ce0b-5f09-823d-76cafe0fcaa1', 'b0476bf1-2815-53f6-9483-6d984dfa938a', 81, 10, 5, 8),
-  ('21d205f8-37df-596b-acc6-3e22ca5ad8b4', 'b0476bf1-2815-53f6-9483-6d984dfa938a', 10107, 10, 5, 8),
   ('9e69e4cc-ff33-551c-93de-6a98a6988e97', 'b0476bf1-2815-53f6-9483-6d984dfa938a', 79, 8, 4, 7),
-  ('942e59f5-031c-549e-96db-c59ff4f45190', 'b0476bf1-2815-53f6-9483-6d984dfa938a', 10112, 8, 5, 8),
-  ('98249806-12d5-5923-a77f-cabc3d596a7f', 'b0476bf1-2815-53f6-9483-6d984dfa938a', 686, 8, 4, 7),
+  ('98249806-12d5-5923-a77f-cabc3d596a7f', 'b0476bf1-2815-53f6-9483-6d984dfa938a', 686, 8, 4, 7)
+on conflict (id) do update set area_id = excluded.area_id, dex = excluded.dex, weight = excluded.weight, min_level = excluded.min_level, max_level = excluded.max_level;
+
+insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level) values
   ('3458d7fc-03db-5064-83f1-76a530b9c9bf', 'b0476bf1-2815-53f6-9483-6d984dfa938a', 63, 6, 5, 8),
   ('37194903-4a93-5bb4-a35b-ff18fd5a5c25', 'b0476bf1-2815-53f6-9483-6d984dfa938a', 607, 10, 6, 9),
   ('9f327db7-4408-551f-85ea-c662353ac741', 'b0476bf1-2815-53f6-9483-6d984dfa938a', 92, 8, 6, 9),
   ('ab44e8dd-0038-53d8-990c-349e840ee849', 'b0476bf1-2815-53f6-9483-6d984dfa938a', 425, 6, 6, 9),
   ('96e91ec0-366b-5bd5-9728-72067fceeb11', 'b0476bf1-2815-53f6-9483-6d984dfa938a', 570, 4, 5, 8),
   ('29eb0be9-6eaa-57fc-81f7-625de2dc0556', 'b0476bf1-2815-53f6-9483-6d984dfa938a', 439, 4, 6, 9),
+  ('21d205f8-37df-596b-acc6-3e22ca5ad8b4', 'b0476bf1-2815-53f6-9483-6d984dfa938a', 10107, 10, 5, 8),
+  ('942e59f5-031c-549e-96db-c59ff4f45190', 'b0476bf1-2815-53f6-9483-6d984dfa938a', 10112, 8, 5, 8),
   ('6fb7d0cb-289d-5e25-b79e-671a5cdbba5e', '707bb825-6657-5025-b3b2-422458b071d9', 72, 16, 42, 48),
   ('0ae1f771-3638-53fd-97e4-33e0ef0e3630', '707bb825-6657-5025-b3b2-422458b071d9', 73, 10, 46, 51),
   ('fe62a041-a713-5385-9a14-6323c7bf74e5', '707bb825-6657-5025-b3b2-422458b071d9', 320, 14, 42, 48),
@@ -4596,8 +6423,8 @@ insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level) valu
   ('2f70eff0-6860-54de-9b8f-ea6666adcb2b', 'd7bfc7c0-ab59-5608-88c7-5d395cdbe217', 235, 4, 7, 10),
   ('ad53e9e5-4aea-5fc1-896a-5b3aaaa2c7c4', 'd7bfc7c0-ab59-5608-88c7-5d395cdbe217', 206, 4, 8, 11),
   ('285426d1-3841-5617-bc6d-163572f939f1', 'd7bfc7c0-ab59-5608-88c7-5d395cdbe217', 41, 10, 8, 11),
-  ('5f13bd85-ac13-50fb-bcb3-4feceee64eef', 'd7bfc7c0-ab59-5608-88c7-5d395cdbe217', 10105, 8, 8, 11),
   ('c74ba0e3-cfa0-544a-aa7b-c236f52a1a7f', 'd7bfc7c0-ab59-5608-88c7-5d395cdbe217', 714, 4, 8, 11),
+  ('5f13bd85-ac13-50fb-bcb3-4feceee64eef', 'd7bfc7c0-ab59-5608-88c7-5d395cdbe217', 10105, 8, 8, 11),
   ('0836f60f-f2b7-5b0c-88db-96b8da5ce132', 'ef57b168-56a6-55c7-ad15-a09d319e487b', 741, 12, 9, 12),
   ('8e935aa5-4fe4-5c74-b6b6-9ab1ce2ddc81', 'ef57b168-56a6-55c7-ad15-a09d319e487b', 742, 12, 9, 12),
   ('60e1ea83-6e44-59f4-a673-0d3761b42281', 'ef57b168-56a6-55c7-ad15-a09d319e487b', 21, 12, 9, 13),
@@ -4684,12 +6511,12 @@ insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level) valu
   ('8d8c8352-c691-5aa7-bc1d-9ba2b59bdcb7', '40914a04-5443-58e5-bcdf-051cc9de5dd7', 92, 10, 20, 24),
   ('6013cf6b-0f39-5728-8808-06e9eaa270d4', '40914a04-5443-58e5-bcdf-051cc9de5dd7', 708, 8, 20, 24),
   ('17e1fd09-d2c9-569e-acc7-8ab4861f133e', '40914a04-5443-58e5-bcdf-051cc9de5dd7', 41, 8, 19, 21),
-  ('7e78c1c7-2480-5a1d-865c-6eecd3462739', '40914a04-5443-58e5-bcdf-051cc9de5dd7', 10105, 8, 19, 23),
   ('1b7a0539-2896-5c21-bdd4-ce68b812a16b', '40914a04-5443-58e5-bcdf-051cc9de5dd7', 299, 6, 20, 24),
   ('0bdd5182-79a7-5881-ac29-438529d4590a', '40914a04-5443-58e5-bcdf-051cc9de5dd7', 177, 6, 21, 24),
   ('9af3794e-6d51-5dd9-bde8-072553af69c6', '40914a04-5443-58e5-bcdf-051cc9de5dd7', 222, 6, 20, 23),
   ('e2adac79-d662-5bf1-abac-49303ec56358', '40914a04-5443-58e5-bcdf-051cc9de5dd7', 370, 6, 20, 23),
   ('3efc893b-f62c-5c00-967f-a740f716d4a3', '40914a04-5443-58e5-bcdf-051cc9de5dd7', 246, 2, 20, 23),
+  ('7e78c1c7-2480-5a1d-865c-6eecd3462739', '40914a04-5443-58e5-bcdf-051cc9de5dd7', 10105, 8, 19, 23),
   ('65049284-b757-5d69-bd17-63e970fff086', '0e1ccc24-1c60-56e1-9f03-4b3deda34951', 769, 12, 21, 25),
   ('38b4d44a-d148-5a01-a871-35606ee1593d', '0e1ccc24-1c60-56e1-9f03-4b3deda34951', 771, 10, 21, 25),
   ('5d4da95f-03a8-5117-8eee-4a8e70749ee9', '0e1ccc24-1c60-56e1-9f03-4b3deda34951', 72, 12, 21, 25),
@@ -4791,10 +6618,7 @@ insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level) valu
   ('ee45cc50-2c7f-5e4f-8805-09ac01a18b9e', 'aa7c054d-8c55-5640-b3d5-2731ca24a00c', 41, 18, 25, 31),
   ('f09798d9-8ef2-5223-9c59-1b8d6a77c359', 'aa7c054d-8c55-5640-b3d5-2731ca24a00c', 327, 8, 25, 31),
   ('ee1a2e81-9639-592a-b026-cbd2154d3ebf', 'aa7c054d-8c55-5640-b3d5-2731ca24a00c', 335, 5, 26, 32),
-  ('20fdd313-85d2-5bb7-a4ae-d9f83025a838', 'aa7c054d-8c55-5640-b3d5-2731ca24a00c', 336, 5, 26, 32)
-on conflict (id) do update set area_id = excluded.area_id, dex = excluded.dex, weight = excluded.weight, min_level = excluded.min_level, max_level = excluded.max_level;
-
-insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level) values
+  ('20fdd313-85d2-5bb7-a4ae-d9f83025a838', 'aa7c054d-8c55-5640-b3d5-2731ca24a00c', 336, 5, 26, 32),
   ('30b7c30a-f8c3-52b7-b81e-101219360acb', 'aa7c054d-8c55-5640-b3d5-2731ca24a00c', 339, 8, 25, 29),
   ('034f4b9d-3ac1-586e-b59b-a91d6f10a293', '8e822a9a-e17c-56d4-9413-f55f279f136b', 41, 18, 44, 50),
   ('29f71b36-b00e-55f1-b26e-c80ba9a85d0e', '8e822a9a-e17c-56d4-9413-f55f279f136b', 42, 12, 48, 53),
@@ -4810,7 +6634,10 @@ insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level) valu
   ('5c4e3353-130f-5fe1-802a-fdafce113670', 'c3397515-cd10-59d4-b70a-949ef766c59d', 326, 12, 47, 53),
   ('20bc7fec-1535-53c6-9182-00279b249356', 'c3397515-cd10-59d4-b70a-949ef766c59d', 344, 10, 47, 53),
   ('39159aff-5e20-52f7-a1f7-a7525de2ef11', 'c3397515-cd10-59d4-b70a-949ef766c59d', 372, 10, 48, 54),
-  ('d75b2ece-b2c4-51b4-926d-92810578602f', 'c3397515-cd10-59d4-b70a-949ef766c59d', 294, 10, 46, 52),
+  ('d75b2ece-b2c4-51b4-926d-92810578602f', 'c3397515-cd10-59d4-b70a-949ef766c59d', 294, 10, 46, 52)
+on conflict (id) do update set area_id = excluded.area_id, dex = excluded.dex, weight = excluded.weight, min_level = excluded.min_level, max_level = excluded.max_level;
+
+insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level) values
   ('7b3ced2f-ec00-5228-b780-f87835be1e68', 'c3397515-cd10-59d4-b70a-949ef766c59d', 359, 8, 48, 54),
   ('e99e6abb-0fcd-56fc-b329-0314ac23ce0d', '8a262e15-6f51-5cad-a9aa-5408de0c5ea0', 417, 18, 42, 49),
   ('1653ae2e-e8b7-59ad-8721-0240c1a571e3', '8a262e15-6f51-5cad-a9aa-5408de0c5ea0', 404, 16, 42, 49),
@@ -4837,16 +6664,16 @@ insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level) valu
   ('49cbd7e1-700c-5fa0-8eee-6d1cf50200fe', 'bb60e243-3c86-5c3a-ad23-572ba44840f8', 573, 10, 40, 45),
   ('57956792-0599-554b-9299-285eed70a805', 'bb60e243-3c86-5c3a-ad23-572ba44840f8', 611, 8, 41, 46),
   ('da05e9f0-83e3-5fc5-8cff-b34e537094db', '7d3ee2f7-3442-5738-b2c6-d3037e514fec', 568, 10, 24, 28),
-  ('a2a3f824-a8f5-5b7a-b8d3-1d5b97ee5f53', '7d3ee2f7-3442-5738-b2c6-d3037e514fec', 10112, 10, 24, 28),
   ('7e6fdc29-1468-524a-a28c-606d8c3f28b1', '7d3ee2f7-3442-5738-b2c6-d3037e514fec', 81, 8, 24, 28),
   ('fa049232-150c-5c56-8171-39bff6f625a6', '7d3ee2f7-3442-5738-b2c6-d3037e514fec', 572, 6, 25, 28),
-  ('25f117d9-a6e8-5a99-b7f8-14ebf16cf9f5', '7d3ee2f7-3442-5738-b2c6-d3037e514fec', 10107, 8, 24, 27),
   ('243fb2d3-54a2-5a1f-89a0-c8ce08d447a0', '7d3ee2f7-3442-5738-b2c6-d3037e514fec', 60, 6, 24, 24),
   ('3f89ad10-7275-5fa0-ba00-b3d8b926668f', '7d3ee2f7-3442-5738-b2c6-d3037e514fec', 54, 6, 24, 28),
   ('8f72967e-cbf8-59cb-bab9-dfe41ec33507', '7d3ee2f7-3442-5738-b2c6-d3037e514fec', 284, 6, 24, 28),
   ('2133d3cb-42b4-5105-b5d0-cfbb8c3e3455', '7d3ee2f7-3442-5738-b2c6-d3037e514fec', 752, 6, 24, 28),
   ('f8e55262-3b8e-51a2-8983-5bd450a48345', '7d3ee2f7-3442-5738-b2c6-d3037e514fec', 166, 6, 24, 28),
   ('139efe97-54b4-5265-9d53-3688f6343155', '7d3ee2f7-3442-5738-b2c6-d3037e514fec', 168, 6, 24, 28),
+  ('a2a3f824-a8f5-5b7a-b8d3-1d5b97ee5f53', '7d3ee2f7-3442-5738-b2c6-d3037e514fec', 10112, 10, 24, 28),
+  ('25f117d9-a6e8-5a99-b7f8-14ebf16cf9f5', '7d3ee2f7-3442-5738-b2c6-d3037e514fec', 10107, 8, 24, 27),
   ('c0262623-f0ca-5239-a312-832ee0fd72de', '5fb9f3eb-bdbe-5c45-8345-3f4a20d75f1d', 774, 12, 25, 30),
   ('8a67700c-0088-5c13-aa90-f1956a57f8a3', '5fb9f3eb-bdbe-5c45-8345-3f4a20d75f1d', 739, 10, 24, 29),
   ('43e97d55-cfbd-5918-a924-d1260bf92bd8', '5fb9f3eb-bdbe-5c45-8345-3f4a20d75f1d', 22, 10, 24, 29),
@@ -4863,23 +6690,23 @@ insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level) valu
   ('e401c5ab-eea4-5b96-9c18-194e4d51c18c', 'd6ba26d1-3dd2-51fc-b559-74c01d2ddba2', 777, 8, 26, 32),
   ('7e56cc73-0a7a-5f59-a14c-849c52fbeafa', 'd6ba26d1-3dd2-51fc-b559-74c01d2ddba2', 749, 8, 26, 29),
   ('75d7311e-44fb-5a01-b266-f988b52e0ccc', 'd6ba26d1-3dd2-51fc-b559-74c01d2ddba2', 324, 8, 26, 32),
-  ('87b9c0d0-3ed8-52b0-880c-5c240cbbb70d', 'd6ba26d1-3dd2-51fc-b559-74c01d2ddba2', 10109, 8, 23, 24),
   ('4886e088-9e95-5ff3-b96a-a254166a60fb', 'd6ba26d1-3dd2-51fc-b559-74c01d2ddba2', 737, 6, 26, 32),
   ('54f5bb38-d49e-5a4d-83ae-7528afb50304', 'd6ba26d1-3dd2-51fc-b559-74c01d2ddba2', 702, 6, 29, 32),
   ('cbb45093-f890-50ff-9141-4603a814acd4', 'd6ba26d1-3dd2-51fc-b559-74c01d2ddba2', 239, 6, 26, 29),
   ('a93dbd69-89b7-54df-8b9f-97c35c94ce01', 'd6ba26d1-3dd2-51fc-b559-74c01d2ddba2', 288, 6, 27, 29),
   ('7cde7ba8-a2f5-5cfe-aa3a-841e41509cc8', 'd6ba26d1-3dd2-51fc-b559-74c01d2ddba2', 111, 6, 30, 32),
+  ('87b9c0d0-3ed8-52b0-880c-5c240cbbb70d', 'd6ba26d1-3dd2-51fc-b559-74c01d2ddba2', 10109, 8, 23, 24),
   ('4880af9b-5941-5be4-934b-9ae1568a0da1', '3463beea-946a-5c99-89d1-19dc707896e8', 779, 8, 28, 33),
   ('66934357-2ca5-5e0a-b6fb-7a264c4a3ad2', '3463beea-946a-5c99-89d1-19dc707896e8', 746, 8, 28, 33),
   ('a917ff38-df00-5772-a544-77fb93ed7f43', '3463beea-946a-5c99-89d1-19dc707896e8', 551, 10, 28, 28),
   ('4e486659-9c2b-5c35-8aed-c4317953c916', '3463beea-946a-5c99-89d1-19dc707896e8', 552, 6, 32, 35),
-  ('d551aeb6-5bf2-5b2d-92c0-d8808df05c15', '3463beea-946a-5c99-89d1-19dc707896e8', 10106, 8, 28, 33),
   ('65780d76-479c-5ed9-910c-1eb6aed464e1', '3463beea-946a-5c99-89d1-19dc707896e8', 343, 6, 32, 35),
   ('ca9a73be-83f8-5b68-9425-abddaa2a793e', '3463beea-946a-5c99-89d1-19dc707896e8', 622, 6, 32, 35),
   ('f581a2f1-39d5-54d0-8bb2-fa8b636866a8', '3463beea-946a-5c99-89d1-19dc707896e8', 328, 6, 28, 33),
   ('bc86c671-5b9e-5a24-ae02-5cf5455e09f6', '3463beea-946a-5c99-89d1-19dc707896e8', 444, 4, 28, 33),
   ('b0bd773e-24a3-5b9a-92cf-50e651738b3e', '3463beea-946a-5c99-89d1-19dc707896e8', 361, 8, 28, 33),
   ('602b00f9-28ca-5ae0-a011-625f271fcc5a', '3463beea-946a-5c99-89d1-19dc707896e8', 359, 4, 28, 33),
+  ('d551aeb6-5bf2-5b2d-92c0-d8808df05c15', '3463beea-946a-5c99-89d1-19dc707896e8', 10106, 8, 28, 33),
   ('052e6eeb-f98e-5dc0-8dff-addcf43be070', '3463beea-946a-5c99-89d1-19dc707896e8', 10103, 6, 28, 33),
   ('8323d8ae-29dd-54ca-bcf6-4f4efd86e236', '3463beea-946a-5c99-89d1-19dc707896e8', 10101, 6, 20, 21),
   ('a4f0d017-9c3d-58b3-a038-d354bc20a3e0', '8b0339d9-7358-5cff-a342-49b1ae6dda36', 778, 6, 30, 34),
@@ -4894,12 +6721,12 @@ insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level) valu
   ('77dfa5eb-89d1-59b8-ac62-9f01dfaa35d0', '8b0339d9-7358-5cff-a342-49b1ae6dda36', 739, 8, 30, 33),
   ('fe574c84-9c3e-586c-8956-ac766303ac1f', '15d60999-b4a3-5a6e-bee2-7a1ff9e278e6', 351, 8, 31, 36),
   ('f35db878-6369-5347-997e-7732e85c00b7', '15d60999-b4a3-5a6e-bee2-7a1ff9e278e6', 22, 10, 31, 36),
-  ('59933c3b-9ce5-588f-bc4d-af7ebfe277ea', '15d60999-b4a3-5a6e-bee2-7a1ff9e278e6', 10110, 8, 31, 36),
   ('0eb2de92-e2bf-5223-81bb-fb813fdc0294', '15d60999-b4a3-5a6e-bee2-7a1ff9e278e6', 227, 6, 31, 36),
   ('88f2aeb8-2847-5c41-b1ce-8a2e2b3d0107', '15d60999-b4a3-5a6e-bee2-7a1ff9e278e6', 559, 8, 33, 36),
   ('094c29f0-21ac-5cd4-81be-fc7e8e514a7b', '15d60999-b4a3-5a6e-bee2-7a1ff9e278e6', 624, 6, 33, 36),
   ('f9d71442-bc88-50fd-ad3f-fb3834a73367', '15d60999-b4a3-5a6e-bee2-7a1ff9e278e6', 675, 6, 32, 36),
   ('cce5a868-a927-5685-bba3-b57979344d74', '15d60999-b4a3-5a6e-bee2-7a1ff9e278e6', 704, 4, 31, 36),
+  ('59933c3b-9ce5-588f-bc4d-af7ebfe277ea', '15d60999-b4a3-5a6e-bee2-7a1ff9e278e6', 10110, 8, 31, 36),
   ('b164428e-a416-567c-a3bb-1b3cad4baee1', 'b629fa00-cb91-5390-9500-2240f2dc5ceb', 781, 6, 40, 45),
   ('7bba3bc1-46b8-580e-b89c-33d6aa6ee0e3', 'b629fa00-cb91-5390-9500-2240f2dc5ceb', 320, 10, 38, 39),
   ('217824ad-1864-54a6-8b96-6fb13f56f7cf', 'b629fa00-cb91-5390-9500-2240f2dc5ceb', 279, 10, 40, 44),
@@ -4915,8 +6742,6 @@ insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level) valu
   ('4bc8c697-55fd-57bc-b24f-649dab1efb00', 'e7ae24d0-80a4-51d7-a9cb-c0df82d25286', 782, 6, 33, 34),
   ('f4870ea1-a53f-511b-8f46-7666f31c9f26', 'e7ae24d0-80a4-51d7-a9cb-c0df82d25286', 783, 4, 41, 44),
   ('bdc3dbaf-dfb3-5a69-8556-e4efdcee376f', 'e7ae24d0-80a4-51d7-a9cb-c0df82d25286', 745, 8, 41, 46),
-  ('3dc817bf-5434-5dd7-99f9-22bb47c964f8', 'e7ae24d0-80a4-51d7-a9cb-c0df82d25286', 10114, 8, 40, 45),
-  ('f5aab237-a122-511e-ab4f-b50694567017', 'e7ae24d0-80a4-51d7-a9cb-c0df82d25286', 10106, 10, 41, 45),
   ('ca01a1ab-74fa-55e1-8763-59f8298d30c6', 'e7ae24d0-80a4-51d7-a9cb-c0df82d25286', 42, 10, 41, 45),
   ('d373a98d-2098-5ce0-bfab-8e5dcf7aed2d', 'e7ae24d0-80a4-51d7-a9cb-c0df82d25286', 525, 8, 41, 45),
   ('59416dee-7288-5621-b7d8-9591bfe7b236', 'e7ae24d0-80a4-51d7-a9cb-c0df82d25286', 703, 6, 41, 45),
@@ -4924,17 +6749,19 @@ insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level) valu
   ('dc0be3c7-dd06-5c31-83f5-ddcd745c678e', 'e7ae24d0-80a4-51d7-a9cb-c0df82d25286', 619, 6, 43, 46),
   ('b7e6a299-b8d3-5801-ad3c-7ae6d5ace4e1', 'e7ae24d0-80a4-51d7-a9cb-c0df82d25286', 357, 4, 42, 45),
   ('52e84b54-7897-5808-a419-bb158a7fc439', 'e7ae24d0-80a4-51d7-a9cb-c0df82d25286', 148, 2, 41, 44),
+  ('3dc817bf-5434-5dd7-99f9-22bb47c964f8', 'e7ae24d0-80a4-51d7-a9cb-c0df82d25286', 10114, 8, 40, 45),
+  ('f5aab237-a122-511e-ab4f-b50694567017', 'e7ae24d0-80a4-51d7-a9cb-c0df82d25286', 10106, 10, 41, 45),
   ('4bab38e2-91db-520f-b4cc-d45b7bee9a6a', 'db4e5701-dfdf-54dd-bfee-002c1fdcc391', 780, 6, 46, 51),
   ('410dbbf9-1cf8-5391-b4df-09840ac85e16', 'db4e5701-dfdf-54dd-bfee-002c1fdcc391', 362, 8, 46, 51),
   ('36947fdb-021f-511c-bcce-9d6bf58ebed2', 'db4e5701-dfdf-54dd-bfee-002c1fdcc391', 215, 8, 46, 51),
   ('a8256cc7-9fca-5661-94a1-6d221449f9d1', 'db4e5701-dfdf-54dd-bfee-002c1fdcc391', 359, 8, 46, 51),
   ('ce1cd2b5-94ca-52d6-948f-048f67ceb474', 'db4e5701-dfdf-54dd-bfee-002c1fdcc391', 361, 8, 40, 41),
-  ('1291abbc-4f06-5b43-822f-2d164967e0ee', 'db4e5701-dfdf-54dd-bfee-002c1fdcc391', 10101, 6, 46, 51),
-  ('96d66dbd-1d65-5d31-a676-19a0a3ef2cf7', 'db4e5701-dfdf-54dd-bfee-002c1fdcc391', 10103, 6, 46, 51),
   ('eba51e05-245b-500b-98b9-a050fc21f48d', 'db4e5701-dfdf-54dd-bfee-002c1fdcc391', 583, 6, 42, 46),
   ('47fc05cc-1a30-5cb1-81f4-696fe3ae6e1d', 'db4e5701-dfdf-54dd-bfee-002c1fdcc391', 351, 6, 46, 51),
   ('fb581c43-8138-510d-b84d-ce09289c56aa', 'db4e5701-dfdf-54dd-bfee-002c1fdcc391', 42, 8, 46, 51),
   ('f449123b-848f-5e9f-a7ef-8e528b28dbf9', 'db4e5701-dfdf-54dd-bfee-002c1fdcc391', 739, 8, 46, 51),
+  ('1291abbc-4f06-5b43-822f-2d164967e0ee', 'db4e5701-dfdf-54dd-bfee-002c1fdcc391', 10101, 6, 46, 51),
+  ('96d66dbd-1d65-5d31-a676-19a0a3ef2cf7', 'db4e5701-dfdf-54dd-bfee-002c1fdcc391', 10103, 6, 46, 51),
   ('c33794f5-db20-5c80-9965-9e553311a1c9', '85a77bc1-218c-5ffe-bff2-9a4504072faf', 25, 10, 60, 75),
   ('c6107349-a4f9-5e11-85b2-fae78792b03b', '85a77bc1-218c-5ffe-bff2-9a4504072faf', 27, 10, 60, 75),
   ('e97a6aa4-84a0-5018-9c81-727df2bc3875', '85a77bc1-218c-5ffe-bff2-9a4504072faf', 37, 10, 60, 75),
@@ -5044,10 +6871,7 @@ insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level) valu
   ('c6ff3b60-e1a9-5f83-967c-85fe2ec5b64d', '85a77bc1-218c-5ffe-bff2-9a4504072faf', 323, 10, 60, 75),
   ('38fa19b6-a265-5190-a822-06ea92a5d56f', '85a77bc1-218c-5ffe-bff2-9a4504072faf', 324, 10, 60, 75),
   ('fd1b5080-6a06-54a1-ac55-d42d1a218758', '85a77bc1-218c-5ffe-bff2-9a4504072faf', 325, 10, 60, 75),
-  ('0dbf4bdf-4ac5-597d-b89c-a3465962b583', '85a77bc1-218c-5ffe-bff2-9a4504072faf', 326, 10, 60, 75)
-on conflict (id) do update set area_id = excluded.area_id, dex = excluded.dex, weight = excluded.weight, min_level = excluded.min_level, max_level = excluded.max_level;
-
-insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level) values
+  ('0dbf4bdf-4ac5-597d-b89c-a3465962b583', '85a77bc1-218c-5ffe-bff2-9a4504072faf', 326, 10, 60, 75),
   ('287e729a-b394-56f9-af03-639bbb71daad', '85a77bc1-218c-5ffe-bff2-9a4504072faf', 327, 10, 60, 75),
   ('eb9dafe9-6ab2-500e-8a2e-2dca7e2dd87c', '85a77bc1-218c-5ffe-bff2-9a4504072faf', 328, 10, 60, 75),
   ('18cbce8d-a160-5bac-8074-b1bb1070acbe', '85a77bc1-218c-5ffe-bff2-9a4504072faf', 329, 10, 60, 75),
@@ -5063,7 +6887,10 @@ insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level) valu
   ('f6b40cc6-8d3f-5169-aa59-aa87214759bc', '85a77bc1-218c-5ffe-bff2-9a4504072faf', 339, 10, 60, 75),
   ('d06091a0-dafc-5e3c-94e7-f2edfd456e0a', '85a77bc1-218c-5ffe-bff2-9a4504072faf', 340, 10, 60, 75),
   ('380262d5-623f-5a94-b67b-168d81ab6b83', '85a77bc1-218c-5ffe-bff2-9a4504072faf', 341, 10, 60, 75),
-  ('3ec67062-9c78-5c71-a728-08ce0c1675e4', '85a77bc1-218c-5ffe-bff2-9a4504072faf', 342, 10, 60, 75),
+  ('3ec67062-9c78-5c71-a728-08ce0c1675e4', '85a77bc1-218c-5ffe-bff2-9a4504072faf', 342, 10, 60, 75)
+on conflict (id) do update set area_id = excluded.area_id, dex = excluded.dex, weight = excluded.weight, min_level = excluded.min_level, max_level = excluded.max_level;
+
+insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level) values
   ('55a827ce-7e1e-5fb8-8ab7-4844a2cd3d32', '85a77bc1-218c-5ffe-bff2-9a4504072faf', 343, 10, 60, 75),
   ('52dc75af-c521-5676-a4cf-16a82102ce5e', '85a77bc1-218c-5ffe-bff2-9a4504072faf', 344, 10, 60, 75),
   ('cb8a4922-e042-5998-a3a6-5a1f23273d14', '85a77bc1-218c-5ffe-bff2-9a4504072faf', 349, 10, 60, 75),
@@ -5183,14 +7010,6 @@ insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level) valu
   ('1531ee5c-a742-50e2-99ef-77ac1088f0f1', '8b1e0609-a1b6-5392-ba40-54c23b592aac', 536, 12, 26, 31),
   ('0eef538c-0be1-5948-8bde-390ed93255c9', '8b1e0609-a1b6-5392-ba40-54c23b592aac', 525, 10, 26, 31),
   ('6110c9ab-954c-57c6-ac87-465b745e4ffc', '8b1e0609-a1b6-5392-ba40-54c23b592aac', 610, 6, 26, 30),
-  ('fb0577e2-a6d5-5bb4-8ed1-f09759c180b7', '5d2b50d3-a648-5479-a687-067ca5f833f4', 784, 6, 60, 66),
-  ('55afa892-8f92-5b89-9de7-0e4c34c1171d', '5d2b50d3-a648-5479-a687-067ca5f833f4', 780, 8, 60, 66),
-  ('a8379a48-b601-547e-a7ac-90c66b11bdce', '5d2b50d3-a648-5479-a687-067ca5f833f4', 740, 10, 60, 66),
-  ('4d473f84-8435-59e7-b965-7120dfd961fe', '5d2b50d3-a648-5479-a687-067ca5f833f4', 362, 10, 60, 66),
-  ('94f81d1d-1a75-5135-ac23-aa351a589b1d', '5d2b50d3-a648-5479-a687-067ca5f833f4', 461, 8, 60, 66),
-  ('6ecdab22-2076-5396-8515-dd143e5b4560', '5d2b50d3-a648-5479-a687-067ca5f833f4', 359, 8, 60, 66),
-  ('2e981450-010b-5115-afe9-0517aa8cb3e6', '5d2b50d3-a648-5479-a687-067ca5f833f4', 584, 6, 60, 66),
-  ('c9a37283-5502-5842-8b84-31456fdc3eb7', '5d2b50d3-a648-5479-a687-067ca5f833f4', 169, 8, 60, 66),
   ('4e1123a9-3dca-5d8f-95f5-f03b636a1752', '30233749-91cd-5ba0-8e62-f4ea0042de40', 147, 4, 28, 30),
   ('c55bbe4b-e95b-5cfd-a70b-48456848e4df', '30233749-91cd-5ba0-8e62-f4ea0042de40', 149, 2, 62, 66),
   ('1f96d710-447c-5c6a-ae51-006bc77a43ed', '30233749-91cd-5ba0-8e62-f4ea0042de40', 468, 4, 60, 66),
@@ -5297,10 +7116,7 @@ insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level) valu
   ('58667c9d-2b47-568c-8153-730ee7fffc8d', 'e22d5bee-8d04-5f99-ab7f-157785f0a30b', 349, 10, 60, 76),
   ('a6ea47d0-f262-503d-beef-74342846b8f0', 'e22d5bee-8d04-5f99-ab7f-157785f0a30b', 351, 10, 60, 76),
   ('3e1f6eb3-85b9-56fc-ae83-c330083e3d37', 'e22d5bee-8d04-5f99-ab7f-157785f0a30b', 353, 10, 60, 76),
-  ('05f6634d-2724-5e54-844e-cee339863a9f', 'e22d5bee-8d04-5f99-ab7f-157785f0a30b', 357, 10, 60, 76)
-on conflict (id) do update set area_id = excluded.area_id, dex = excluded.dex, weight = excluded.weight, min_level = excluded.min_level, max_level = excluded.max_level;
-
-insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level) values
+  ('05f6634d-2724-5e54-844e-cee339863a9f', 'e22d5bee-8d04-5f99-ab7f-157785f0a30b', 357, 10, 60, 76),
   ('84c6c783-7751-5dcc-9bcb-14b210ea0ceb', 'e22d5bee-8d04-5f99-ab7f-157785f0a30b', 359, 10, 60, 76),
   ('14108c44-75a2-581e-b0fd-1e62fef5e837', 'e22d5bee-8d04-5f99-ab7f-157785f0a30b', 361, 10, 60, 76),
   ('1f1684c9-7736-598a-9107-6fad727e4b92', 'e22d5bee-8d04-5f99-ab7f-157785f0a30b', 362, 10, 60, 76),
@@ -5324,7 +7140,10 @@ insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level) valu
   ('10cd86e1-3de0-5dcd-ae0b-30976c96471c', 'e22d5bee-8d04-5f99-ab7f-157785f0a30b', 462, 10, 60, 76),
   ('b6c40ada-7393-531d-9892-3a71cd093152', 'e22d5bee-8d04-5f99-ab7f-157785f0a30b', 468, 10, 60, 76),
   ('255a1b85-7711-5f88-8f0b-5c35227f477e', 'e22d5bee-8d04-5f99-ab7f-157785f0a30b', 506, 10, 60, 76),
-  ('525e2295-8945-5489-aa04-849f110a37d6', 'e22d5bee-8d04-5f99-ab7f-157785f0a30b', 524, 10, 60, 76),
+  ('525e2295-8945-5489-aa04-849f110a37d6', 'e22d5bee-8d04-5f99-ab7f-157785f0a30b', 524, 10, 60, 76)
+on conflict (id) do update set area_id = excluded.area_id, dex = excluded.dex, weight = excluded.weight, min_level = excluded.min_level, max_level = excluded.max_level;
+
+insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level) values
   ('b6350978-05d3-5b3b-a2b0-95a3fd5ea9e5', 'e22d5bee-8d04-5f99-ab7f-157785f0a30b', 525, 10, 60, 76),
   ('5cc43e02-9cbb-5b99-9580-27445fa22fbd', 'e22d5bee-8d04-5f99-ab7f-157785f0a30b', 546, 10, 60, 76),
   ('c12e297a-50ab-5d3f-8401-50d642799afb', 'e22d5bee-8d04-5f99-ab7f-157785f0a30b', 548, 10, 60, 76),
@@ -5437,6 +7256,10 @@ insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level) valu
   ('2c18240c-ba64-558c-aca5-0f30762e4d94', 'e22d5bee-8d04-5f99-ab7f-157785f0a30b', 10110, 10, 60, 76),
   ('6b6f51b0-1f87-5a98-a9c7-29e5567c6238', 'e22d5bee-8d04-5f99-ab7f-157785f0a30b', 10112, 10, 60, 76),
   ('a845e835-60e9-5ce2-998e-b8f9350c1951', 'e22d5bee-8d04-5f99-ab7f-157785f0a30b', 10114, 10, 60, 76),
+  ('ee8dc549-1d5b-5f76-a9b1-cd9c5f961a98', 'df1bb846-fc11-590f-afec-45ef39b63deb', 219, 10, 60, 75),
+  ('ff16df05-eb74-528b-b689-da3d05cf9741', 'df1bb846-fc11-590f-afec-45ef39b63deb', 324, 8, 60, 75),
+  ('8773283e-36f2-5007-b25f-e9388cfc01f3', 'df1bb846-fc11-590f-afec-45ef39b63deb', 232, 6, 60, 75),
+  ('dfff2c36-7ffb-5810-9eb9-381214d43f0c', 'df1bb846-fc11-590f-afec-45ef39b63deb', 430, 4, 60, 75),
   ('d380f883-572f-5a09-a274-4e8c157d8b27', '8e755a0e-8270-5685-857c-629ea1b7d9c5', 42, 18, 40, 47),
   ('d21d33cb-4122-5ec4-b7f8-e6ce57bc53eb', '8e755a0e-8270-5685-857c-629ea1b7d9c5', 437, 14, 41, 48),
   ('2612ebb4-cfa7-5298-8b6e-e7be1eee32b3', '8e755a0e-8270-5685-857c-629ea1b7d9c5', 75, 14, 40, 47),
@@ -5467,6 +7290,22 @@ insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level) valu
   ('c2d86edc-11ce-547e-8c2e-89d53e8cc9b5', '63160939-79ac-5244-ae50-7f7fc8c37c5f', 571, 10, 60, 66),
   ('6ca73511-5062-5404-9ad0-11dd47131661', '63160939-79ac-5244-ae50-7f7fc8c37c5f', 214, 10, 60, 66),
   ('6e63cc8b-a88e-5180-a5c9-b99e207c433d', '63160939-79ac-5244-ae50-7f7fc8c37c5f', 733, 12, 60, 66),
+  ('6a0970e2-c094-57d2-a46f-1b0a9c5d6948', '28487bdf-d4f4-5fc9-860e-accef6b9677f', 604, 10, 60, 68),
+  ('53fe1f25-1a08-55b3-af0d-db5d0f1633a5', '28487bdf-d4f4-5fc9-860e-accef6b9677f', 748, 8, 60, 68),
+  ('490fa33f-38eb-57e9-abbe-7baaf6d68bc1', '28487bdf-d4f4-5fc9-860e-accef6b9677f', 770, 6, 60, 68),
+  ('94b9f2d2-14fb-59b9-bd59-869fa7f58111', '28487bdf-d4f4-5fc9-860e-accef6b9677f', 428, 4, 60, 68),
+  ('ada473c1-1aac-5e29-80d8-d42983f83d6c', 'e8c9b515-3421-5bdb-ade2-b101f1e6885d', 770, 10, 62, 70),
+  ('b1370f0c-334a-59c9-a734-b78c077ed003', 'e8c9b515-3421-5bdb-ade2-b101f1e6885d', 776, 8, 62, 70),
+  ('3a220ad7-45d9-5620-99c4-7ce690f3e5a5', 'e8c9b515-3421-5bdb-ade2-b101f1e6885d', 553, 6, 62, 70),
+  ('67034e59-ff3c-5271-a22b-0dd05365c1ef', 'e8c9b515-3421-5bdb-ade2-b101f1e6885d', 738, 4, 62, 70),
+  ('4500c8ce-0548-5520-b093-1701718c1782', '4a29a297-7cb0-5f5d-b6f0-f36210ff02e4', 776, 10, 64, 72),
+  ('0aef6d03-52e7-5c6e-bf09-452381ca068c', '4a29a297-7cb0-5f5d-b6f0-f36210ff02e4', 754, 8, 64, 72),
+  ('8d98ef6a-7782-514e-b5ea-60fcb9db1e12', '4a29a297-7cb0-5f5d-b6f0-f36210ff02e4', 756, 6, 64, 72),
+  ('db2d1057-fb6b-5f75-9fb8-599817f5242a', '4a29a297-7cb0-5f5d-b6f0-f36210ff02e4', 763, 4, 64, 72),
+  ('7edd951d-7782-5132-8237-b02b8d68152a', 'bf277850-73f7-569e-8657-fa5298161229', 279, 10, 40, 50),
+  ('02774e4b-d415-5a6c-a436-8181434e17d4', 'bf277850-73f7-569e-8657-fa5298161229', 10106, 8, 40, 50),
+  ('e0133b1d-1d48-5c5e-918f-e4b502ae35d6', 'bf277850-73f7-569e-8657-fa5298161229', 210, 6, 40, 50),
+  ('18aba2b6-72dc-5ee5-b766-88b7f4387bb4', 'bf277850-73f7-569e-8657-fa5298161229', 359, 4, 40, 50),
   ('be772034-e67c-5f14-a76e-4568b47fa52b', '1db6ed36-e9f3-5b41-bc01-056f64328d72', 819, 24, 2, 6),
   ('48f65f61-59c9-5b46-a961-560c5039acf3', '1db6ed36-e9f3-5b41-bc01-056f64328d72', 821, 16, 3, 6),
   ('96b5d1ab-ba03-5b46-a111-35b55357e735', '1db6ed36-e9f3-5b41-bc01-056f64328d72', 824, 14, 2, 5),
@@ -5485,8 +7324,8 @@ insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level) valu
   ('5abd7017-e39e-59a0-9873-774ef6dd28e0', '2774ec8e-d49b-5a76-9937-a9dc9035f877', 509, 6, 4, 6),
   ('47014827-5ede-5862-a76a-79c2232ac920', '2774ec8e-d49b-5a76-9937-a9dc9035f877', 270, 6, 4, 6),
   ('ffd1f418-b7b4-5d2d-af35-5512087e0843', '2774ec8e-d49b-5a76-9937-a9dc9035f877', 846, 4, 4, 6),
-  ('5227b392-5df1-5c32-923f-a1622ade346d', '2774ec8e-d49b-5a76-9937-a9dc9035f877', 10174, 4, 5, 7),
   ('0b225fbd-36ef-557c-9be0-63aa13b8a090', '2774ec8e-d49b-5a76-9937-a9dc9035f877', 129, 8, 4, 6),
+  ('5227b392-5df1-5c32-923f-a1622ade346d', '2774ec8e-d49b-5a76-9937-a9dc9035f877', 10174, 4, 5, 7),
   ('3c3bda01-33d6-537d-ac91-a9d3b74fbc41', '98ab6c0a-a752-5157-8ce5-94208fcbbfdf', 659, 10, 7, 12),
   ('87d2f7d0-84db-56a5-a00f-bbd3ca9b43fb', '98ab6c0a-a752-5157-8ce5-94208fcbbfdf', 519, 10, 7, 12),
   ('9908682e-247b-532d-9a80-5b0bafa12d9a', '98ab6c0a-a752-5157-8ce5-94208fcbbfdf', 50, 8, 8, 12),
@@ -5514,7 +7353,6 @@ insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level) valu
   ('9b3c6f58-64c0-54d6-b3ce-916895f1c6b5', '832605a6-8fd7-5d03-9507-1f3da93819d2', 599, 4, 8, 13),
   ('24cea79b-0ca4-52f3-8329-80c812753c25', '832605a6-8fd7-5d03-9507-1f3da93819d2', 568, 4, 10, 14),
   ('81f55d51-69ed-50c2-9877-c61c43c024ae', '832605a6-8fd7-5d03-9507-1f3da93819d2', 850, 2, 8, 13),
-  ('a260758f-4f4a-5e1e-978f-70b73a8a0f52', '1a1d8cd3-309b-5135-a5bf-cce7726d9285', 10161, 12, 13, 16),
   ('012ff627-8920-56b1-9c5d-83b1c244b8b1', '1a1d8cd3-309b-5135-a5bf-cce7726d9285', 868, 8, 13, 15),
   ('893c2d11-506a-534a-b31f-8bb57edaaad5', '1a1d8cd3-309b-5135-a5bf-cce7726d9285', 831, 8, 13, 15),
   ('824e8e1b-742e-5fa9-9a81-9ea2471dbe67', '1a1d8cd3-309b-5135-a5bf-cce7726d9285', 835, 8, 14, 16),
@@ -5526,6 +7364,7 @@ insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level) valu
   ('65ffe688-8e4b-55b0-a9f0-e99471b207e8', '1a1d8cd3-309b-5135-a5bf-cce7726d9285', 406, 4, 13, 15),
   ('3e2400d6-8db4-5eb6-90e8-a7aaaf48fb46', '1a1d8cd3-309b-5135-a5bf-cce7726d9285', 25, 2, 14, 16),
   ('a8f1460e-7757-54de-8688-917ce0f6d4c2', '1a1d8cd3-309b-5135-a5bf-cce7726d9285', 133, 2, 14, 16),
+  ('a260758f-4f4a-5e1e-978f-70b73a8a0f52', '1a1d8cd3-309b-5135-a5bf-cce7726d9285', 10161, 12, 13, 16),
   ('bb5cc3dd-6031-5843-b57f-10a989bf8d0c', '37cbfa7a-7d0a-5bf2-90b0-18bfd311fb20', 840, 6, 16, 18),
   ('9488ede1-8d02-547c-abc3-87f5c7fe79ef', '37cbfa7a-7d0a-5bf2-90b0-18bfd311fb20', 825, 8, 16, 18),
   ('a13dcf1b-a817-50c3-8b06-6c0e2bde9a3c', '37cbfa7a-7d0a-5bf2-90b0-18bfd311fb20', 848, 4, 16, 18),
@@ -5536,10 +7375,10 @@ insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level) valu
   ('b20bcf36-6c41-5c0f-9361-db500e8e5f81', '37cbfa7a-7d0a-5bf2-90b0-18bfd311fb20', 572, 6, 19, 21),
   ('cdc07d78-fe05-5218-8b76-54df5fb0c898', '37cbfa7a-7d0a-5bf2-90b0-18bfd311fb20', 274, 4, 16, 18),
   ('38d3be8d-ff8a-5769-9bb3-2e6ad5df9507', '37cbfa7a-7d0a-5bf2-90b0-18bfd311fb20', 271, 4, 16, 18),
-  ('4234dd2f-9414-5f02-a140-ef6d98df2acb', '37cbfa7a-7d0a-5bf2-90b0-18bfd311fb20', 10166, 4, 19, 21),
   ('68ddd333-5169-547c-8409-8dab951b8346', '37cbfa7a-7d0a-5bf2-90b0-18bfd311fb20', 846, 10, 20, 24),
   ('cec40718-3f4d-5aab-a3de-8add04ebaac2', '37cbfa7a-7d0a-5bf2-90b0-18bfd311fb20', 170, 6, 20, 24),
   ('142da2c8-f26a-5fcb-bebb-01dc33295f1a', '37cbfa7a-7d0a-5bf2-90b0-18bfd311fb20', 550, 4, 20, 24),
+  ('4234dd2f-9414-5f02-a140-ef6d98df2acb', '37cbfa7a-7d0a-5bf2-90b0-18bfd311fb20', 10166, 4, 19, 21),
   ('7f043cc6-afbe-527a-81c7-a13579379803', '902e5ba8-0792-587d-ace6-eef95a49b627', 339, 10, 20, 24),
   ('54a13b8b-fedb-5457-b8ae-9816173b87f6', '902e5ba8-0792-587d-ace6-eef95a49b627', 833, 10, 20, 21),
   ('dedced00-f048-5c14-ae95-609bc55c861b', '902e5ba8-0792-587d-ace6-eef95a49b627', 422, 8, 20, 24),
@@ -5549,15 +7388,15 @@ insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level) valu
   ('6ee72446-09c0-56fe-88eb-787c4115fede', '902e5ba8-0792-587d-ace6-eef95a49b627', 688, 6, 20, 24),
   ('312c70fa-966f-52b0-8382-bba36d70abb3', '902e5ba8-0792-587d-ace6-eef95a49b627', 559, 6, 20, 24),
   ('0a1a3812-63ec-599f-99ae-33058466a343', '902e5ba8-0792-587d-ace6-eef95a49b627', 453, 6, 20, 24),
+  ('7cad5f16-6879-5481-8521-8e7047bfa98b', '902e5ba8-0792-587d-ace6-eef95a49b627', 213, 2, 20, 24),
+  ('e613b4a0-cd6b-5dd7-9dd1-c2532a4df235', '902e5ba8-0792-587d-ace6-eef95a49b627', 850, 6, 20, 24),
   ('74fd3a38-6a6e-5425-8273-4d267e9252ea', '902e5ba8-0792-587d-ace6-eef95a49b627', 10180, 4, 20, 24),
-  ('7cad5f16-6879-5481-8521-8e7047bfa98b', '902e5ba8-0792-587d-ace6-eef95a49b627', 213, 2, 20, 24)
+  ('b46fdf8b-8b64-5ce8-80c9-a83f5a709785', 'e7f76d12-ae38-5958-a173-c17897d81a5e', 856, 8, 22, 26),
+  ('f1cbedfa-1845-578b-936d-86f5dd4a2a1c', 'e7f76d12-ae38-5958-a173-c17897d81a5e', 859, 6, 21, 24),
+  ('14592e1c-5874-5f25-b0e3-5efd9037c3ff', 'e7f76d12-ae38-5958-a173-c17897d81a5e', 164, 8, 22, 26)
 on conflict (id) do update set area_id = excluded.area_id, dex = excluded.dex, weight = excluded.weight, min_level = excluded.min_level, max_level = excluded.max_level;
 
 insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level) values
-  ('e613b4a0-cd6b-5dd7-9dd1-c2532a4df235', '902e5ba8-0792-587d-ace6-eef95a49b627', 850, 6, 20, 24),
-  ('b46fdf8b-8b64-5ce8-80c9-a83f5a709785', 'e7f76d12-ae38-5958-a173-c17897d81a5e', 856, 8, 22, 26),
-  ('f1cbedfa-1845-578b-936d-86f5dd4a2a1c', 'e7f76d12-ae38-5958-a173-c17897d81a5e', 859, 6, 21, 24),
-  ('14592e1c-5874-5f25-b0e3-5efd9037c3ff', 'e7f76d12-ae38-5958-a173-c17897d81a5e', 164, 8, 22, 26),
   ('0d48c57f-b284-54f8-9b7d-e2142e4110c2', 'e7f76d12-ae38-5958-a173-c17897d81a5e', 185, 6, 22, 26),
   ('b7674113-99c8-5384-95d9-3d0682ca4efa', 'e7f76d12-ae38-5958-a173-c17897d81a5e', 624, 6, 21, 24),
   ('94a4a921-b33d-5896-9741-1223a1c288ac', 'e7f76d12-ae38-5958-a173-c17897d81a5e', 109, 6, 22, 26),
@@ -5568,7 +7407,6 @@ insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level) valu
   ('b0a1e706-7e62-5d1f-a1fd-ba814bf70645', 'e7f76d12-ae38-5958-a173-c17897d81a5e', 451, 6, 26, 29),
   ('b3e7e375-d52f-59bb-a984-db1af179716d', 'e7f76d12-ae38-5958-a173-c17897d81a5e', 586, 4, 26, 29),
   ('7a8250a9-3f04-5012-827a-cd1e141aaf9e', '3b798c52-789e-5e63-a333-102f529ad855', 843, 10, 28, 30),
-  ('b236491b-473e-5ca9-8964-f860283268f2', '3b798c52-789e-5e63-a333-102f529ad855', 10179, 10, 29, 33),
   ('3d517945-c16d-5913-a0a2-1330115e838d', '3b798c52-789e-5e63-a333-102f529ad855', 694, 8, 29, 33),
   ('e7234e36-c704-52d2-a5da-0a296e027c2c', '3b798c52-789e-5e63-a333-102f529ad855', 51, 8, 29, 33),
   ('055dfc66-a0f8-59c5-87d2-ad3112b2577a', '3b798c52-789e-5e63-a333-102f529ad855', 355, 6, 28, 30),
@@ -5579,14 +7417,15 @@ insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level) valu
   ('c5a925e5-70ea-59ab-aa23-04e3acc35db6', '3b798c52-789e-5e63-a333-102f529ad855', 610, 2, 29, 33),
   ('e7f25951-bda3-5f8a-b922-347d494ad2f4', '3b798c52-789e-5e63-a333-102f529ad855', 328, 2, 29, 33),
   ('21987948-afee-519a-9716-59df37490ad4', '3b798c52-789e-5e63-a333-102f529ad855', 701, 2, 28, 30),
+  ('b236491b-473e-5ca9-8964-f860283268f2', '3b798c52-789e-5e63-a333-102f529ad855', 10179, 10, 29, 33),
   ('0b3b1b50-a4f5-577a-81b5-1d51dfbf100d', '765886e8-1c97-5169-b8ff-dde63b64dd57', 856, 10, 30, 31),
   ('fb98b1cc-40b7-5e35-9ca7-fa90a9ae6606', '765886e8-1c97-5169-b8ff-dde63b64dd57', 859, 10, 30, 31),
   ('40241dfe-ee2d-5087-8a02-cdb7434eb127', '765886e8-1c97-5169-b8ff-dde63b64dd57', 843, 8, 30, 33),
   ('8452864d-18f8-568e-ae2e-d16105ede454', '765886e8-1c97-5169-b8ff-dde63b64dd57', 624, 8, 30, 34),
-  ('acd5b800-4cee-5af4-a710-70cfe541e36d', '765886e8-1c97-5169-b8ff-dde63b64dd57', 10179, 6, 30, 33),
   ('eea6e102-b820-5b1c-8f66-5a8e7493c1d5', '765886e8-1c97-5169-b8ff-dde63b64dd57', 538, 6, 30, 34),
   ('a23a3a8f-ca7c-58de-a749-6e39bcc44f97', '765886e8-1c97-5169-b8ff-dde63b64dd57', 539, 6, 30, 34),
   ('69af236a-6377-57f4-b895-5ea0aa96d12f', '765886e8-1c97-5169-b8ff-dde63b64dd57', 302, 4, 30, 34),
+  ('acd5b800-4cee-5af4-a710-70cfe541e36d', '765886e8-1c97-5169-b8ff-dde63b64dd57', 10179, 6, 30, 33),
   ('030d8171-76b3-59d9-a9f0-e90b537960f4', '716b4c9b-cb31-5a1e-97a1-d8c3be45b074', 860, 10, 34, 38),
   ('ec21128e-4161-591a-a44f-40000d2d6c43', '716b4c9b-cb31-5a1e-97a1-d8c3be45b074', 857, 6, 34, 36),
   ('7621c7ce-2864-5fe3-ab82-8ed5114f03cb', '716b4c9b-cb31-5a1e-97a1-d8c3be45b074', 854, 6, 34, 36),
@@ -5595,9 +7434,9 @@ insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level) valu
   ('4f219271-d29d-5571-aac9-14d98f006bc5', '716b4c9b-cb31-5a1e-97a1-d8c3be45b074', 708, 6, 34, 36),
   ('cdc4c91a-ee07-58d3-b23f-a5180364c239', '716b4c9b-cb31-5a1e-97a1-d8c3be45b074', 684, 4, 34, 36),
   ('8f9d886c-0eeb-5ad2-824c-3d50f169f6fa', '716b4c9b-cb31-5a1e-97a1-d8c3be45b074', 682, 4, 34, 36),
-  ('1441a38f-bb5c-5f7b-b6ad-7186c6278b74', '716b4c9b-cb31-5a1e-97a1-d8c3be45b074', 10162, 4, 34, 36),
   ('2ad04d8a-1746-577c-8ced-c0efb4fb5b89', '716b4c9b-cb31-5a1e-97a1-d8c3be45b074', 766, 4, 34, 36),
   ('c0f92d60-c07a-5f69-9bc6-5ccfb8be3eaf', '716b4c9b-cb31-5a1e-97a1-d8c3be45b074', 765, 4, 34, 36),
+  ('1441a38f-bb5c-5f7b-b6ad-7186c6278b74', '716b4c9b-cb31-5a1e-97a1-d8c3be45b074', 10162, 4, 34, 36),
   ('2fc483c8-50ab-5c36-8a90-e9b882b32e6b', '754c266f-20b0-5367-a889-82c082de70f3', 870, 8, 38, 40),
   ('32ed21f8-b624-5601-9eb3-f7f6c1c0715c', '754c266f-20b0-5367-a889-82c082de70f3', 877, 6, 37, 41),
   ('2ac2e20a-2347-5c12-85c9-1ad3204821ab', '754c266f-20b0-5367-a889-82c082de70f3', 863, 6, 37, 41),
@@ -5618,9 +7457,9 @@ insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level) valu
   ('2d40f08f-0c3d-52a0-b033-2c78e08cdf8e', '74411831-f7a6-5a6f-9252-63b5e0f1874e', 459, 6, 38, 39),
   ('530754cf-bb46-50ee-abfa-18a528c18cc0', '74411831-f7a6-5a6f-9252-63b5e0f1874e', 225, 6, 38, 41),
   ('f2d788b4-0dd2-5668-af7a-4d1ba3c452d0', '74411831-f7a6-5a6f-9252-63b5e0f1874e', 583, 6, 39, 43),
-  ('f871aba8-5467-5c5f-8238-f20a6ab622de', '74411831-f7a6-5a6f-9252-63b5e0f1874e', 10176, 2, 33, 34),
   ('692081d0-f679-569f-899a-72a2611b1e1a', '74411831-f7a6-5a6f-9252-63b5e0f1874e', 538, 2, 39, 43),
   ('e288f31a-e3df-53b2-9a03-cd44cadce27c', '74411831-f7a6-5a6f-9252-63b5e0f1874e', 539, 2, 39, 43),
+  ('f871aba8-5467-5c5f-8238-f20a6ab622de', '74411831-f7a6-5a6f-9252-63b5e0f1874e', 10176, 2, 33, 34),
   ('af1bed49-9dce-5d0c-ab46-cde027885732', 'cab2b223-9f4a-59bb-bc3d-b4ff4a58cf07', 845, 8, 38, 42),
   ('2a4fec2e-e16f-5a39-9260-fea64818e0b8', 'cab2b223-9f4a-59bb-bc3d-b4ff4a58cf07', 852, 8, 32, 34),
   ('febbfe88-ab2e-56c9-9300-0adde7de5c1c', 'cab2b223-9f4a-59bb-bc3d-b4ff4a58cf07', 871, 6, 38, 42),
@@ -5631,8 +7470,8 @@ insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level) valu
   ('87cfbb11-95ee-543c-9fc8-a6e942a1cc39', 'cab2b223-9f4a-59bb-bc3d-b4ff4a58cf07', 99, 6, 38, 42),
   ('62a97440-9f15-5c56-89f1-5e3f41daee81', 'cab2b223-9f4a-59bb-bc3d-b4ff4a58cf07', 458, 6, 39, 43),
   ('ade2dbb0-7964-5afc-b915-628164a06d6e', 'cab2b223-9f4a-59bb-bc3d-b4ff4a58cf07', 747, 6, 35, 37),
-  ('248bc243-2981-5c51-85c2-339d823c3d40', 'cab2b223-9f4a-59bb-bc3d-b4ff4a58cf07', 10173, 4, 36, 37),
   ('1640b4a7-8c89-547b-abf3-e8135fb0cfda', 'cab2b223-9f4a-59bb-bc3d-b4ff4a58cf07', 712, 6, 36, 36),
+  ('248bc243-2981-5c51-85c2-339d823c3d40', 'cab2b223-9f4a-59bb-bc3d-b4ff4a58cf07', 10173, 4, 36, 37),
   ('74ff6b16-0949-569f-a1ce-a5b587ab315c', 'c65845c5-b723-5a1b-922e-8aa6930e6aeb', 878, 10, 31, 33),
   ('5db56992-eb90-523d-8211-1cb81391e23e', 'c65845c5-b723-5a1b-922e-8aa6930e6aeb', 884, 4, 42, 46),
   ('1db37af7-2d06-59bd-92c3-ac896ee6e208', 'c65845c5-b723-5a1b-922e-8aa6930e6aeb', 885, 2, 42, 46),
@@ -5645,7 +7484,6 @@ insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level) valu
   ('905fa092-a3d4-5ed3-85f7-bf5eec8d22d6', 'c65845c5-b723-5a1b-922e-8aa6930e6aeb', 612, 2, 44, 46),
   ('0eccb97c-3b6a-5186-a956-38d1d7bdc38f', 'e8a36a96-5c86-5e7d-a5f5-0c845ab2dbe8', 460, 12, 44, 50),
   ('838ba211-c4ae-5240-8f1c-acf68afdaf09', 'e8a36a96-5c86-5e7d-a5f5-0c845ab2dbe8', 614, 12, 44, 50),
-  ('6caab479-8a07-5cb5-902d-dd45022de22f', 'e8a36a96-5c86-5e7d-a5f5-0c845ab2dbe8', 10168, 6, 40, 41),
   ('2cd685ea-79fd-5e31-b3ef-3f08a18e8dfc', 'e8a36a96-5c86-5e7d-a5f5-0c845ab2dbe8', 583, 6, 44, 46),
   ('cafbde8b-fba3-5471-b0d0-8fae0803bc24', 'e8a36a96-5c86-5e7d-a5f5-0c845ab2dbe8', 613, 6, 36, 36),
   ('41ff199b-d2a3-577e-adbe-ab325d3d3902', 'e8a36a96-5c86-5e7d-a5f5-0c845ab2dbe8', 215, 6, 37, 39),
@@ -5654,16 +7492,7 @@ insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level) valu
   ('de01ab9f-7488-5061-9a15-e6ae84ef36e8', 'e8a36a96-5c86-5e7d-a5f5-0c845ab2dbe8', 112, 6, 44, 49),
   ('97adef7a-ba12-56e9-8669-00119d000af7', 'e8a36a96-5c86-5e7d-a5f5-0c845ab2dbe8', 874, 2, 44, 46),
   ('ca90ba1a-e687-5050-99a6-3ed6fd402460', 'e8a36a96-5c86-5e7d-a5f5-0c845ab2dbe8', 875, 2, 44, 46),
-  ('03e954b2-cc7c-5bdc-88a8-319267aa3ad4', 'eb428b97-a163-5cfd-995d-706c0ff73f0b', 887, 2, 62, 66),
-  ('93fd4a87-1dac-5e72-a036-4c9a37a8c0b9', 'eb428b97-a163-5cfd-995d-706c0ff73f0b', 886, 4, 57, 59),
-  ('f1b367fe-ff4a-5bb2-92a9-8b72dcaa9fbe', 'eb428b97-a163-5cfd-995d-706c0ff73f0b', 879, 8, 60, 66),
-  ('7115fcd8-6e87-5af6-8630-2b22d330d3ef', 'eb428b97-a163-5cfd-995d-706c0ff73f0b', 823, 10, 60, 66),
-  ('e129416f-6e29-53f5-9756-f9cfed601967', 'eb428b97-a163-5cfd-995d-706c0ff73f0b', 861, 8, 60, 66),
-  ('e730c467-797c-5d93-a8fe-c6afc78ad3ea', 'eb428b97-a163-5cfd-995d-706c0ff73f0b', 612, 6, 60, 66),
-  ('57af0daf-4252-5253-974c-76a0c9554303', 'eb428b97-a163-5cfd-995d-706c0ff73f0b', 625, 8, 60, 66),
-  ('fcf1d83d-debe-507a-a07b-d43a4128f302', 'eb428b97-a163-5cfd-995d-706c0ff73f0b', 143, 6, 60, 66),
-  ('262b1f9d-3138-5061-ae3f-76de8b8da466', 'eb428b97-a163-5cfd-995d-706c0ff73f0b', 131, 6, 60, 66),
-  ('f3c88b08-de21-50ff-925f-869a708c57ff', 'eb428b97-a163-5cfd-995d-706c0ff73f0b', 130, 8, 60, 66),
+  ('6caab479-8a07-5cb5-902d-dd45022de22f', 'e8a36a96-5c86-5e7d-a5f5-0c845ab2dbe8', 10168, 6, 40, 41),
   ('c8af9eb2-d23c-50a1-9378-95d8c913223e', 'a5d11263-453f-5181-9a73-2c30df79d3fc', 83, 3, 50, 70),
   ('21f77136-8507-5dc0-add5-f09691415934', 'a5d11263-453f-5181-9a73-2c30df79d3fc', 84, 10, 50, 70),
   ('aa9d7860-f354-5c33-a67d-1175d59cfcf9', 'a5d11263-453f-5181-9a73-2c30df79d3fc', 85, 10, 50, 70),
@@ -5803,10 +7632,7 @@ insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level) valu
   ('c573548d-4da3-5d49-8eb8-cb8a67971f62', 'a5d11263-453f-5181-9a73-2c30df79d3fc', 149, 3, 50, 70),
   ('4ff1af48-0b3d-528a-9618-148d7fd1c042', 'a5d11263-453f-5181-9a73-2c30df79d3fc', 52, 10, 50, 70),
   ('eb1712fe-e56e-538e-9740-d3b042ca9f8e', 'a5d11263-453f-5181-9a73-2c30df79d3fc', 53, 10, 50, 70),
-  ('b9866510-dd65-58ff-8f70-2445e165a4be', 'a5d11263-453f-5181-9a73-2c30df79d3fc', 77, 10, 50, 70)
-on conflict (id) do update set area_id = excluded.area_id, dex = excluded.dex, weight = excluded.weight, min_level = excluded.min_level, max_level = excluded.max_level;
-
-insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level) values
+  ('b9866510-dd65-58ff-8f70-2445e165a4be', 'a5d11263-453f-5181-9a73-2c30df79d3fc', 77, 10, 50, 70),
   ('37a0e356-6ef9-5e96-a098-8c15147b7e7d', 'a5d11263-453f-5181-9a73-2c30df79d3fc', 78, 10, 50, 70),
   ('48e6f0d9-8dd5-507d-8bd8-5bd4fd03eee7', 'a5d11263-453f-5181-9a73-2c30df79d3fc', 79, 10, 50, 70),
   ('83a6b86a-f77c-5a06-aaba-a0941b6cb02b', 'a5d11263-453f-5181-9a73-2c30df79d3fc', 80, 10, 50, 70),
@@ -5820,11 +7646,12 @@ insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level) valu
   ('04912506-2360-5ac6-8802-b0203c197d71', '9cd5143b-e280-5a1f-85d4-d7f9933616b1', 29, 12, 3, 6),
   ('96665876-37d9-52fd-8f27-c0e3d0217b24', '9cd5143b-e280-5a1f-85d4-d7f9933616b1', 32, 12, 3, 6),
   ('91732650-462e-578f-a549-f5d47172f180', '9cd5143b-e280-5a1f-85d4-d7f9933616b1', 16, 14, 3, 6),
-  ('c84c764c-f625-5a16-883b-d4de202952f3', '9cd5143b-e280-5a1f-85d4-d7f9933616b1', 10, 10, 3, 5),
+  ('c84c764c-f625-5a16-883b-d4de202952f3', '9cd5143b-e280-5a1f-85d4-d7f9933616b1', 10, 10, 3, 5)
+on conflict (id) do update set area_id = excluded.area_id, dex = excluded.dex, weight = excluded.weight, min_level = excluded.min_level, max_level = excluded.max_level;
+
+insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level) values
   ('ea19744d-39df-523e-a5f2-b8848a283fdb', '9cd5143b-e280-5a1f-85d4-d7f9933616b1', 13, 10, 3, 5),
   ('235daff4-001b-5ba1-9725-6c33af0f9a71', '890cb77d-0fe5-5576-9b92-2ab68f0be295', 123, 6, 60, 66),
-  ('5181ab2b-867d-58ac-adf1-5f2174ee44f8', '890cb77d-0fe5-5576-9b92-2ab68f0be295', 10166, 6, 27, 29),
-  ('00db66ff-14c9-534f-8eea-bc03ebb52463', '890cb77d-0fe5-5576-9b92-2ab68f0be295', 10176, 6, 33, 34),
   ('79acd5be-4a89-557e-9ffb-fa554cdf7d53', '890cb77d-0fe5-5576-9b92-2ab68f0be295', 622, 6, 40, 42),
   ('ea905c1b-81cd-5fff-a940-db655e4de20d', '890cb77d-0fe5-5576-9b92-2ab68f0be295', 748, 8, 60, 66),
   ('ca0585ac-d578-5ed9-990b-d092d84e1531', '890cb77d-0fe5-5576-9b92-2ab68f0be295', 845, 8, 60, 66),
@@ -5833,6 +7660,8 @@ insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level) valu
   ('d612e44c-ae35-57da-844b-aed8b9111430', '890cb77d-0fe5-5576-9b92-2ab68f0be295', 870, 6, 60, 66),
   ('f77fcc98-87c9-54ba-8845-9822b8970b1a', '890cb77d-0fe5-5576-9b92-2ab68f0be295', 534, 8, 60, 66),
   ('6183a7f7-1895-55cf-84b5-8d85d90265a1', '890cb77d-0fe5-5576-9b92-2ab68f0be295', 784, 2, 62, 66),
+  ('5181ab2b-867d-58ac-adf1-5f2174ee44f8', '890cb77d-0fe5-5576-9b92-2ab68f0be295', 10166, 6, 27, 29),
+  ('00db66ff-14c9-534f-8eea-bc03ebb52463', '890cb77d-0fe5-5576-9b92-2ab68f0be295', 10176, 6, 33, 34),
   ('ef2e395c-15e5-58b6-8be0-551ee56b6d19', '890cb77d-0fe5-5576-9b92-2ab68f0be295', 10164, 8, 27, 29),
   ('a0a4a534-169a-59f0-867d-886be6d7f2eb', '0c17194f-f7be-5221-91d0-68fcee8da9d9', 875, 8, 62, 68),
   ('bc94400b-4dc3-5688-b1bf-3232ba9605ac', '0c17194f-f7be-5221-91d0-68fcee8da9d9', 874, 8, 62, 68),
@@ -6056,10 +7885,7 @@ insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level) valu
   ('8c4de5e8-7cda-5923-a487-87e7b6b483bf', 'd8f06e4c-6ffd-5b94-9149-43231e89927f', 903, 10, 60, 76),
   ('e1311701-ee9a-5cdf-b610-78903d56a07e', 'd8f06e4c-6ffd-5b94-9149-43231e89927f', 904, 10, 60, 76),
   ('f97cb3ce-6690-57e9-b5b2-dbb0d8e359f6', 'd8f06e4c-6ffd-5b94-9149-43231e89927f', 10161, 10, 60, 76),
-  ('b98f22f3-b67a-5266-89ba-be9e4f2c36b3', 'd8f06e4c-6ffd-5b94-9149-43231e89927f', 10162, 10, 60, 76)
-on conflict (id) do update set area_id = excluded.area_id, dex = excluded.dex, weight = excluded.weight, min_level = excluded.min_level, max_level = excluded.max_level;
-
-insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level) values
+  ('b98f22f3-b67a-5266-89ba-be9e4f2c36b3', 'd8f06e4c-6ffd-5b94-9149-43231e89927f', 10162, 10, 60, 76),
   ('555372b4-f4a2-589e-85d0-4f00fedaaf63', 'd8f06e4c-6ffd-5b94-9149-43231e89927f', 10166, 10, 60, 76),
   ('af13858d-b763-5a23-8910-6f986059a18e', 'd8f06e4c-6ffd-5b94-9149-43231e89927f', 10168, 10, 60, 76),
   ('928ca269-4c60-57f7-a117-1997d065cefd', 'd8f06e4c-6ffd-5b94-9149-43231e89927f', 10173, 10, 60, 76),
@@ -6072,12 +7898,15 @@ insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level) valu
   ('4993c5d4-8968-571a-8371-9356b92f8682', '7d1a416a-9b25-5028-b602-c59fee3c07f9', 216, 8, 27, 29),
   ('388f65f5-dadf-5e16-8107-81f13c6f0b18', '7d1a416a-9b25-5028-b602-c59fee3c07f9', 217, 6, 58, 64),
   ('177433f5-e456-5ee7-9229-c83a731dd6df', '7d1a416a-9b25-5028-b602-c59fee3c07f9', 123, 8, 58, 64),
-  ('fe9c7756-5c36-5404-8a7d-493c1b10f6ce', '7d1a416a-9b25-5028-b602-c59fee3c07f9', 10234, 8, 27, 29),
-  ('d8d7a829-7173-58d7-ba47-f22c36b17052', '7d1a416a-9b25-5028-b602-c59fee3c07f9', 10235, 8, 37, 39),
   ('072c0103-48e2-54f2-b63a-fc88bf62412d', '7d1a416a-9b25-5028-b602-c59fee3c07f9', 550, 8, 27, 29),
-  ('4f7ad263-1d05-5b90-83f1-2c8a1ec8752a', '7d1a416a-9b25-5028-b602-c59fee3c07f9', 399, 8, 12, 14),
+  ('4f7ad263-1d05-5b90-83f1-2c8a1ec8752a', '7d1a416a-9b25-5028-b602-c59fee3c07f9', 399, 8, 12, 14)
+on conflict (id) do update set area_id = excluded.area_id, dex = excluded.dex, weight = excluded.weight, min_level = excluded.min_level, max_level = excluded.max_level;
+
+insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level) values
   ('f810b2fe-d356-5833-9fd7-09b84820dbc9', '7d1a416a-9b25-5028-b602-c59fee3c07f9', 403, 6, 12, 14),
   ('13d8178b-e47c-58a3-b98c-1ec3e7088512', '7d1a416a-9b25-5028-b602-c59fee3c07f9', 77, 6, 37, 39),
+  ('fe9c7756-5c36-5404-8a7d-493c1b10f6ce', '7d1a416a-9b25-5028-b602-c59fee3c07f9', 10234, 8, 27, 29),
+  ('d8d7a829-7173-58d7-ba47-f22c36b17052', '7d1a416a-9b25-5028-b602-c59fee3c07f9', 10235, 8, 37, 39),
   ('db7ca2db-3582-5f9e-a974-13c4cac4f49f', '7d1a416a-9b25-5028-b602-c59fee3c07f9', 10229, 8, 27, 29),
   ('f6b8ffad-933e-5cab-bd53-9b65818b3acb', '7d1a416a-9b25-5028-b602-c59fee3c07f9', 10231, 8, 27, 29),
   ('d01c6576-b2ab-5dcf-9930-c9d1826086ab', '7d1a416a-9b25-5028-b602-c59fee3c07f9', 10238, 6, 27, 29),
@@ -6107,7 +7936,6 @@ insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level) valu
   ('e1ffb86e-718c-5987-9389-b2a4318ebf2a', 'c3e62acf-0be6-50e4-9276-deee4b898a92', 928, 10, 4, 8),
   ('0b32479c-455e-5e0d-927c-20564aa27c6e', 'c3e62acf-0be6-50e4-9276-deee4b898a92', 919, 10, 4, 8),
   ('f71b1e81-8137-5190-9c9c-bd009ec9415c', 'c3e62acf-0be6-50e4-9276-deee4b898a92', 427, 6, 4, 8),
-  ('0e272441-e1e2-5e73-9b77-7a0c0c2479f0', 'c3e62acf-0be6-50e4-9276-deee4b898a92', 10253, 6, 4, 8),
   ('f134d558-f8cc-559e-a7fc-314cce01006f', 'c3e62acf-0be6-50e4-9276-deee4b898a92', 664, 6, 3, 7),
   ('0d9b7adb-c96b-53bc-92a0-b054053e8f08', 'c3e62acf-0be6-50e4-9276-deee4b898a92', 401, 6, 3, 7),
   ('96696370-18f5-5dc5-b99a-f916d84ff309', 'c3e62acf-0be6-50e4-9276-deee4b898a92', 183, 6, 4, 8),
@@ -6116,6 +7944,7 @@ insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level) valu
   ('c1e8c6a3-de44-52f7-85ca-6f902a45e6ea', 'c3e62acf-0be6-50e4-9276-deee4b898a92', 403, 4, 4, 8),
   ('fa59ba13-1810-5199-8b78-00adf605c669', 'c3e62acf-0be6-50e4-9276-deee4b898a92', 187, 6, 4, 8),
   ('a4bc5f00-e548-52c8-96cb-8eb873ec9351', 'c3e62acf-0be6-50e4-9276-deee4b898a92', 661, 6, 4, 8),
+  ('0e272441-e1e2-5e73-9b77-7a0c0c2479f0', 'c3e62acf-0be6-50e4-9276-deee4b898a92', 10253, 6, 4, 8),
   ('2b137d3a-d6c8-53f7-a0eb-7b2851bff139', '5b5c0485-3a57-5a7f-8710-0d2d270a1f8b', 926, 12, 6, 11),
   ('38316aa7-bf49-5822-8f0c-42521f66e806', '5b5c0485-3a57-5a7f-8710-0d2d270a1f8b', 924, 12, 6, 11),
   ('ddcf540a-8f83-5329-87cf-b203bb45ddbd', '5b5c0485-3a57-5a7f-8710-0d2d270a1f8b', 942, 8, 6, 11),
@@ -6225,10 +8054,10 @@ insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level) valu
   ('13616c56-adbe-56d8-b3e1-40478e01c111', 'd8f76401-f8d1-576d-8219-9c19b5de5053', 920, 6, 30, 35),
   ('df7b340a-a05f-555c-9e93-de43ed4cf657', 'd8f76401-f8d1-576d-8219-9c19b5de5053', 918, 4, 30, 35),
   ('3c1ecabb-addc-5ce5-b9d0-327977198aff', 'd8f76401-f8d1-576d-8219-9c19b5de5053', 397, 6, 30, 33),
-  ('c82a5f4d-097a-5c8f-8751-007cc8ed9010', 'd8f76401-f8d1-576d-8219-9c19b5de5053', 128, 0, 30, 35),
   ('6ef89764-b428-59d1-85da-f9ca22b11c5f', 'd8f76401-f8d1-576d-8219-9c19b5de5053', 775, 4, 30, 35),
   ('718c45c9-2117-540d-b4d0-d2b51d7a8474', 'd8f76401-f8d1-576d-8219-9c19b5de5053', 876, 4, 30, 35),
   ('61c747e2-3bd1-5ba1-8b62-ac472710bb27', 'd8f76401-f8d1-576d-8219-9c19b5de5053', 941, 4, 30, 35),
+  ('c82a5f4d-097a-5c8f-8751-007cc8ed9010', 'd8f76401-f8d1-576d-8219-9c19b5de5053', 128, 0, 30, 35),
   ('9457d985-f88d-5941-ace9-bc30e3c8ea20', 'd8f76401-f8d1-576d-8219-9c19b5de5053', 10250, 2, 30, 35),
   ('606ec65e-c20e-5738-b831-1681aff0475c', 'd8f76401-f8d1-576d-8219-9c19b5de5053', 10251, 2, 30, 35),
   ('b1f2277c-ee42-543c-8339-9b9f071273b9', 'd8f76401-f8d1-576d-8219-9c19b5de5053', 10252, 2, 30, 35),
@@ -6309,10 +8138,7 @@ insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level) valu
   ('d60e28cc-bbf1-5bd7-9a28-1ae8417bfaaf', '2157b46b-a121-543b-9cca-b18fdc85d65e', 55, 4, 50, 56),
   ('10c0f4e3-7be9-5931-bc30-64f14ec5aecc', '2157b46b-a121-543b-9cca-b18fdc85d65e', 419, 4, 50, 56),
   ('9c3a89e8-8072-59ee-bdcf-e83e2ee1bbe7', '2157b46b-a121-543b-9cca-b18fdc85d65e', 964, 2, 50, 56),
-  ('7d1c505d-ba6c-5989-a5fc-3b4b35fca671', '2157b46b-a121-543b-9cca-b18fdc85d65e', 714, 4, 46, 47)
-on conflict (id) do update set area_id = excluded.area_id, dex = excluded.dex, weight = excluded.weight, min_level = excluded.min_level, max_level = excluded.max_level;
-
-insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level) values
+  ('7d1c505d-ba6c-5989-a5fc-3b4b35fca671', '2157b46b-a121-543b-9cca-b18fdc85d65e', 714, 4, 46, 47),
   ('2ce947aa-3c30-5083-a3fb-adc3092c884f', '2157b46b-a121-543b-9cca-b18fdc85d65e', 715, 2, 50, 56),
   ('ec84c59b-d72b-54fb-ae37-3296d57ce14f', 'c9bca81d-c26f-5579-9b74-9123bea95976', 934, 6, 58, 64),
   ('1d64d33f-546e-5f0e-aae5-74c7f2366a54', 'c9bca81d-c26f-5579-9b74-9123bea95976', 943, 6, 58, 64),
@@ -6326,7 +8152,10 @@ insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level) valu
   ('3d0d42b3-b578-57a8-b03e-9331583c0991', 'c9bca81d-c26f-5579-9b74-9123bea95976', 954, 4, 58, 64),
   ('4b8862a4-222c-5eb9-b516-5c5fc5290c5d', 'c9bca81d-c26f-5579-9b74-9123bea95976', 966, 4, 58, 64),
   ('abedaaef-bbab-5ea8-85d7-d414302b9883', '514b38ad-7e5d-5723-be67-fda18c2470e0', 984, 4, 60, 66),
-  ('550c0ad7-e9b0-5bd0-81e3-c69037430844', '514b38ad-7e5d-5723-be67-fda18c2470e0', 985, 4, 60, 66),
+  ('550c0ad7-e9b0-5bd0-81e3-c69037430844', '514b38ad-7e5d-5723-be67-fda18c2470e0', 985, 4, 60, 66)
+on conflict (id) do update set area_id = excluded.area_id, dex = excluded.dex, weight = excluded.weight, min_level = excluded.min_level, max_level = excluded.max_level;
+
+insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level) values
   ('971ac81f-cea8-5d27-a1ce-f1b5b63d664b', '514b38ad-7e5d-5723-be67-fda18c2470e0', 986, 4, 60, 66),
   ('8167a28e-569c-5709-80b1-412f350be0f9', '514b38ad-7e5d-5723-be67-fda18c2470e0', 987, 4, 60, 66),
   ('009b2275-3133-535d-9ea8-6370278ee1d1', '514b38ad-7e5d-5723-be67-fda18c2470e0', 988, 4, 60, 66),
@@ -6562,10 +8391,7 @@ insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level) valu
   ('90017759-84a6-59d4-82f6-73897af1a3c6', 'bda155ba-8676-5610-a304-3aa1a309a8f5', 954, 10, 60, 80),
   ('45f44184-ed41-5c10-aa23-e5c9caf2ebfd', 'bda155ba-8676-5610-a304-3aa1a309a8f5', 955, 10, 60, 80),
   ('ba98227c-2e93-5eed-a080-e01c602be708', 'bda155ba-8676-5610-a304-3aa1a309a8f5', 956, 10, 60, 80),
-  ('190b85d4-c6ef-5cd6-ae52-916fff264236', 'bda155ba-8676-5610-a304-3aa1a309a8f5', 957, 10, 60, 80)
-on conflict (id) do update set area_id = excluded.area_id, dex = excluded.dex, weight = excluded.weight, min_level = excluded.min_level, max_level = excluded.max_level;
-
-insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level) values
+  ('190b85d4-c6ef-5cd6-ae52-916fff264236', 'bda155ba-8676-5610-a304-3aa1a309a8f5', 957, 10, 60, 80),
   ('635261fe-2a41-56b1-b2ad-d02156f780fe', 'bda155ba-8676-5610-a304-3aa1a309a8f5', 958, 10, 60, 80),
   ('80927093-0d73-5664-91c7-62d836eb6975', 'bda155ba-8676-5610-a304-3aa1a309a8f5', 959, 10, 60, 80),
   ('74c82483-6f09-5036-bee1-c4a643f1de42', 'bda155ba-8676-5610-a304-3aa1a309a8f5', 960, 10, 60, 80),
@@ -6579,7 +8405,10 @@ insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level) valu
   ('676a42f2-aa7e-57f9-a5ab-0c888f16f120', 'bda155ba-8676-5610-a304-3aa1a309a8f5', 968, 10, 60, 80),
   ('1a1caad9-8985-52aa-8951-60906d25e077', 'bda155ba-8676-5610-a304-3aa1a309a8f5', 969, 10, 60, 80),
   ('05707c86-5500-5590-b471-71ab866c9913', 'bda155ba-8676-5610-a304-3aa1a309a8f5', 970, 10, 60, 80),
-  ('7ac9c664-e31e-57f4-b75d-598859f5aab0', 'bda155ba-8676-5610-a304-3aa1a309a8f5', 971, 10, 60, 80),
+  ('7ac9c664-e31e-57f4-b75d-598859f5aab0', 'bda155ba-8676-5610-a304-3aa1a309a8f5', 971, 10, 60, 80)
+on conflict (id) do update set area_id = excluded.area_id, dex = excluded.dex, weight = excluded.weight, min_level = excluded.min_level, max_level = excluded.max_level;
+
+insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level) values
   ('e9ed6092-f96b-5510-868c-cb31028e1c7b', 'bda155ba-8676-5610-a304-3aa1a309a8f5', 972, 10, 60, 80),
   ('4d0a9a72-33df-56f8-a3ae-7a68fcc48867', 'bda155ba-8676-5610-a304-3aa1a309a8f5', 973, 10, 60, 80),
   ('424f9ad0-7edc-5f5f-bcca-2e955c420c88', 'bda155ba-8676-5610-a304-3aa1a309a8f5', 974, 10, 60, 80),
@@ -6621,6 +8450,10 @@ insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level) valu
   ('d9685ae0-4cc5-5f47-8f88-a94e46df333d', 'bda155ba-8676-5610-a304-3aa1a309a8f5', 10251, 1, 60, 80),
   ('978f75c3-816c-5cd1-b153-e9750a584c2b', 'bda155ba-8676-5610-a304-3aa1a309a8f5', 10252, 1, 60, 80),
   ('3abe22f4-2909-599a-873e-2be3be3dff4c', 'bda155ba-8676-5610-a304-3aa1a309a8f5', 10235, 4, 60, 80),
+  ('4d8eb358-e4d6-5de6-8782-57ee0fe21b6f', '168b74c9-3359-5581-a214-1f5be8da9b3e', 164, 10, 80, 90),
+  ('2e9c06e8-4f4b-51e6-a35c-e78c2ba30f39', '168b74c9-3359-5581-a214-1f5be8da9b3e', 227, 8, 80, 90),
+  ('810f9996-f4a8-5064-baa1-9329019c409a', '168b74c9-3359-5581-a214-1f5be8da9b3e', 323, 6, 80, 90),
+  ('43a9f276-f63a-5637-a456-e7b77d4f4c7d', '168b74c9-3359-5581-a214-1f5be8da9b3e', 469, 4, 80, 90),
   ('7b381e5f-0cad-560b-bd8c-eb0a178c410d', 'db0475ed-7547-5350-a42a-7d25d3ea324b', 595, 18, 27, 32),
   ('aab97f34-6c9c-546a-8b2c-43401e6396a5', 'db0475ed-7547-5350-a42a-7d25d3ea324b', 597, 16, 27, 32),
   ('f2979f36-9945-5b31-8723-14a78f1ae08b', 'db0475ed-7547-5350-a42a-7d25d3ea324b', 599, 16, 27, 32),
@@ -6671,15 +8504,14 @@ insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level) valu
   ('96260e5d-a5a8-5fbb-afe1-39065fc6ddc2', '1f3afed9-f2be-5b47-82c5-e281ba2584ae', 591, 14, 60, 68),
   ('2282a31a-1a7c-569c-baed-891a4ddbe3dc', '1f3afed9-f2be-5b47-82c5-e281ba2584ae', 528, 14, 60, 68),
   ('8c6ba706-2d54-5387-a065-f9305cafa8ba', '1f3afed9-f2be-5b47-82c5-e281ba2584ae', 635, 4, 64, 70),
-  ('8ad863a5-7a69-52c7-bf52-29b5fc92a2e2', '888beadb-3aa2-57cc-82bc-cca9bd51f42a', 526, 16, 59, 65),
-  ('849438ce-1ce7-505d-a2af-b90a37053d22', '888beadb-3aa2-57cc-82bc-cca9bd51f42a', 534, 14, 59, 65),
-  ('2e72bddd-5ee4-50ae-a429-b2694f1727f5', '888beadb-3aa2-57cc-82bc-cca9bd51f42a', 530, 14, 59, 65),
-  ('2cc915a5-8733-5836-b504-1d97bac7feac', '888beadb-3aa2-57cc-82bc-cca9bd51f42a', 620, 12, 59, 65),
-  ('db7b6640-561c-5fd8-997a-4178e7ece39d', '888beadb-3aa2-57cc-82bc-cca9bd51f42a', 628, 12, 59, 65),
-  ('a1927205-71ca-570b-80eb-b01c5924442e', '888beadb-3aa2-57cc-82bc-cca9bd51f42a', 630, 12, 59, 65),
-  ('af8c7d17-356c-5085-9cad-deb695c32425', '888beadb-3aa2-57cc-82bc-cca9bd51f42a', 631, 10, 59, 65),
-  ('9a652af2-ece0-55e2-babc-5a92976cfa96', '888beadb-3aa2-57cc-82bc-cca9bd51f42a', 632, 10, 59, 65),
-  ('a6929836-deea-5ee3-8864-abf85e00469a', '888beadb-3aa2-57cc-82bc-cca9bd51f42a', 634, 8, 60, 66),
+  ('005c7b23-b06a-57c1-9757-da1dec631280', '285d4dfb-dd01-59eb-a632-0602a135a88e', 523, 10, 25, 33),
+  ('ee5b1caa-bbcb-5078-b5cd-c12df0662b99', '285d4dfb-dd01-59eb-a632-0602a135a88e', 505, 8, 25, 33),
+  ('6b128296-e8ed-5c0e-9891-f118038dc952', '285d4dfb-dd01-59eb-a632-0602a135a88e', 587, 6, 25, 33),
+  ('b49d79ab-10e1-5ed1-bfe2-f53437386b30', '285d4dfb-dd01-59eb-a632-0602a135a88e', 585, 4, 25, 33),
+  ('a5024591-7706-5cc9-be49-487e27810ea8', 'f014aa64-1215-5a78-be22-b1ee72f0d1e7', 530, 10, 45, 55),
+  ('85aac1c7-b9ad-5c0d-a5c5-33a869b2d25f', 'f014aa64-1215-5a78-be22-b1ee72f0d1e7', 626, 8, 45, 55),
+  ('0971fb74-369b-5703-826e-a86551621e4b', 'f014aa64-1215-5a78-be22-b1ee72f0d1e7', 526, 6, 45, 55),
+  ('c2699923-3642-57eb-ac59-433a4a0662e4', 'f014aa64-1215-5a78-be22-b1ee72f0d1e7', 542, 4, 45, 55),
   ('12b36b00-0865-5f3b-bb2e-9fc48f05379e', '03b22d5c-9bdd-5024-80bb-7dfcaa848dc7', 592, 14, 55, 62),
   ('c98b6d02-d275-5560-b587-03b4c9bc6cf5', '03b22d5c-9bdd-5024-80bb-7dfcaa848dc7', 594, 10, 55, 63),
   ('dce7bb97-0872-5289-920c-2898de50a014', '03b22d5c-9bdd-5024-80bb-7dfcaa848dc7', 550, 12, 55, 62),
@@ -6815,10 +8647,7 @@ insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level) valu
   ('9ec22f24-07c0-53ae-b40a-314b55bb6c8d', 'a79ba3e6-ec33-5480-8a4e-d7175eb8fb9a', 621, 10, 60, 76),
   ('228d105f-9720-5aa3-aff5-a1dee3d033de', 'a79ba3e6-ec33-5480-8a4e-d7175eb8fb9a', 622, 10, 60, 76),
   ('d76ce9b4-238a-53fb-affd-5214a87b78bc', 'a79ba3e6-ec33-5480-8a4e-d7175eb8fb9a', 623, 10, 60, 76),
-  ('6f2d1ded-0acc-53fd-9ac6-ee80d465c90d', 'a79ba3e6-ec33-5480-8a4e-d7175eb8fb9a', 624, 10, 60, 76)
-on conflict (id) do update set area_id = excluded.area_id, dex = excluded.dex, weight = excluded.weight, min_level = excluded.min_level, max_level = excluded.max_level;
-
-insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level) values
+  ('6f2d1ded-0acc-53fd-9ac6-ee80d465c90d', 'a79ba3e6-ec33-5480-8a4e-d7175eb8fb9a', 624, 10, 60, 76),
   ('7ee0ced7-5ebf-5aab-bb9b-dc79d0ba63a4', 'a79ba3e6-ec33-5480-8a4e-d7175eb8fb9a', 625, 10, 60, 76),
   ('9cbbc08a-caa9-5292-8558-156a050cff0f', 'a79ba3e6-ec33-5480-8a4e-d7175eb8fb9a', 626, 10, 60, 76),
   ('f5dd8102-52d5-5cb0-8a79-b26355dc2948', 'a79ba3e6-ec33-5480-8a4e-d7175eb8fb9a', 627, 10, 60, 76),
@@ -6829,9 +8658,16 @@ insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level) valu
   ('04440d63-7af8-544f-a26f-67604354eb96', 'a79ba3e6-ec33-5480-8a4e-d7175eb8fb9a', 632, 10, 60, 76),
   ('ed07fc68-9f57-5ec8-af3c-80ac6efa5e84', 'a79ba3e6-ec33-5480-8a4e-d7175eb8fb9a', 633, 10, 60, 76),
   ('ae5d0429-aa88-5801-80d5-5e01abd11748', 'a79ba3e6-ec33-5480-8a4e-d7175eb8fb9a', 634, 10, 60, 76),
-  ('546fa084-b78a-5685-82f8-d52752c0d4e6', 'a79ba3e6-ec33-5480-8a4e-d7175eb8fb9a', 635, 10, 60, 76),
+  ('546fa084-b78a-5685-82f8-d52752c0d4e6', 'a79ba3e6-ec33-5480-8a4e-d7175eb8fb9a', 635, 10, 60, 76)
+on conflict (id) do update set area_id = excluded.area_id, dex = excluded.dex, weight = excluded.weight, min_level = excluded.min_level, max_level = excluded.max_level;
+
+insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level) values
   ('52ccd101-5e2c-536d-8318-24458f2357c9', 'a79ba3e6-ec33-5480-8a4e-d7175eb8fb9a', 636, 10, 60, 76),
-  ('71dfdd02-1515-54fe-ac72-b276855b7eae', 'a79ba3e6-ec33-5480-8a4e-d7175eb8fb9a', 637, 10, 60, 76)
+  ('71dfdd02-1515-54fe-ac72-b276855b7eae', 'a79ba3e6-ec33-5480-8a4e-d7175eb8fb9a', 637, 10, 60, 76),
+  ('e9df1e48-5aaf-5ef9-99e7-977eba574b51', 'a536039f-e897-5697-a75e-15d8060e96e3', 632, 10, 50, 58),
+  ('874a1246-9b0d-50ea-8ce9-4bb7144afa10', 'a536039f-e897-5697-a75e-15d8060e96e3', 530, 8, 50, 58),
+  ('f423c996-810e-55ab-8f09-f911fcfcb98f', 'a536039f-e897-5697-a75e-15d8060e96e3', 526, 6, 50, 58),
+  ('560abfd7-ab8b-5ac4-8ae4-f69cbc197057', 'a536039f-e897-5697-a75e-15d8060e96e3', 542, 4, 50, 58)
 on conflict (id) do update set area_id = excluded.area_id, dex = excluded.dex, weight = excluded.weight, min_level = excluded.min_level, max_level = excluded.max_level;
 
 insert into area_trainer_pool (id, area_id, trainer_id, weight) values
@@ -6895,10 +8731,6 @@ insert into area_trainer_pool (id, area_id, trainer_id, weight) values
   ('4240cec0-b215-500f-ba08-3b3c57e4323e', 'f4125979-a6a1-5086-9a5a-5314568b77a9', '86b9db86-4726-5d74-8834-5dde61c2bb8f', 10),
   ('20461709-fb0f-58c1-99ff-661cd9732f9f', 'f4125979-a6a1-5086-9a5a-5314568b77a9', '4ff6b15c-664f-5679-914a-ac18c24ce4b3', 10),
   ('2f2d8fbd-9200-5306-b917-6d11432775e1', 'f4125979-a6a1-5086-9a5a-5314568b77a9', '02b370f5-adac-59dd-ac1f-8f170d3f16cd', 10),
-  ('9b85d773-aa37-46eb-a7db-7095a4249712', '5b386fa9-4a0a-4291-bddb-19e899fd366a', 'e52d35a5-bcba-4cff-a51a-14cf9400ef62', 10),
-  ('778ed200-aff6-4575-8666-2693bb6c491d', '5b386fa9-4a0a-4291-bddb-19e899fd366a', '5aeec583-b9a0-464d-aa70-6abb72718786', 10),
-  ('a121a824-fa7d-42ff-8f99-dbc8cf58448a', '5b386fa9-4a0a-4291-bddb-19e899fd366a', '50a71ec5-d033-4e21-96e0-ea3ac26c844f', 10),
-  ('deaa76cc-9a6d-420a-baaf-6d607fce621f', '5b386fa9-4a0a-4291-bddb-19e899fd366a', 'ffbca5d2-d659-4f46-b9af-f7c263b5a239', 10),
   ('30565e45-bae2-55d2-9e01-24238018487c', 'bec52d1b-4c7c-5503-810a-5d4b8e5336ec', '56935caa-5152-50ab-8478-3610abbac5f9', 10),
   ('0b612566-c24b-5d80-ab89-c7428ad3833f', 'bec52d1b-4c7c-5503-810a-5d4b8e5336ec', '9a21fb32-26c6-59f4-b1b2-5c2a3a242af3', 10),
   ('de0d3dcc-88bc-57a6-8426-51d040723fa1', 'bec52d1b-4c7c-5503-810a-5d4b8e5336ec', '0cbe95ab-f480-5352-910f-0706645b2265', 10),
@@ -6942,15 +8774,6 @@ insert into area_trainer_pool (id, area_id, trainer_id, weight) values
   ('89063cd6-6840-5786-b317-d2ef82676ed2', '6ce5603a-9b36-52df-b8bc-3e9efb0686c3', '21ccb47b-82dd-5ab3-bdc8-767cb3f6755b', 10),
   ('3ca7ae45-4dbf-578b-841b-419e583cf646', '6ce5603a-9b36-52df-b8bc-3e9efb0686c3', '1f25a3bf-369e-5f80-a7e1-c890232399d6', 10),
   ('e124f1b1-7c2b-59ff-bf8a-60d6844e40b1', '6ce5603a-9b36-52df-b8bc-3e9efb0686c3', 'a6d3946e-e942-58a2-bfca-0efc0f3a7a6a', 10),
-  ('57b277af-9fd4-56fb-9529-7dfd1dd34dc1', '35c40458-61da-5321-adda-6df33b930671', '9697fac8-b43a-58a4-a236-df4de262bc1c', 10),
-  ('a5a70397-c52e-5374-af3c-09e300b1abff', '35c40458-61da-5321-adda-6df33b930671', 'd8e2e6a7-71ad-547e-83de-8b7cd3cb4787', 10),
-  ('62b412b6-0f2d-533d-a62c-3652a4995ab4', '35c40458-61da-5321-adda-6df33b930671', 'ecc0aa97-c40e-5259-8f19-55e684884f91', 10),
-  ('73614b00-65bb-508e-a624-562a0112dfb0', '35c40458-61da-5321-adda-6df33b930671', '2d341389-ef51-5e36-a66f-f56ef5b469e3', 10),
-  ('186c674c-cbd0-5635-88ba-6e1e1b131586', '35c40458-61da-5321-adda-6df33b930671', '7784ea47-f71c-5d29-9c1f-20e33e278d51', 10),
-  ('91d0f087-2006-5d47-aa13-de4037334dba', '35c40458-61da-5321-adda-6df33b930671', '24917f8f-c4b1-58a7-a500-149c41f512e5', 10),
-  ('65449b10-05a5-5540-b5c1-4f9ae0c6e097', '35c40458-61da-5321-adda-6df33b930671', '3b4cae6d-7299-56f9-8aae-4d781515805f', 10),
-  ('e0026518-b8e6-5bc3-ad67-51de964cc211', '35c40458-61da-5321-adda-6df33b930671', '1ea3126a-c054-5e04-a1e4-e043bb66000d', 10),
-  ('f8e1ee6a-a218-540d-aca4-1b2c22c428cc', '35c40458-61da-5321-adda-6df33b930671', '43e5423e-66fa-5907-bded-9fab062d4c5d', 10),
   ('7d0250f4-7fa9-51d4-bef8-c1709f91d0ee', '2be87c2d-54b0-5ab8-888a-43f7bfc5da5e', '2e3ae868-85f9-56e6-bac8-733f3b216659', 10),
   ('304c0b47-26bc-54e6-8a84-c557dedc5d81', '2be87c2d-54b0-5ab8-888a-43f7bfc5da5e', '020d0bc2-1362-5fbf-9ef2-525169faf87d', 10),
   ('9b439991-d5f0-5b1d-bf4b-fd311285eecc', '2be87c2d-54b0-5ab8-888a-43f7bfc5da5e', '8845d827-dbab-55b3-be4a-fc9615ce6c7d', 10),
@@ -7043,12 +8866,6 @@ insert into area_trainer_pool (id, area_id, trainer_id, weight) values
   ('b7dbc696-ab3c-50c8-81f6-f7614a044689', 'ae5875f0-198e-58a6-bd22-7418d51270e3', 'bc4cc2da-b568-57bf-93dc-ff4a066925a5', 10),
   ('47b94c9f-34b0-5b2b-8756-dcbdeacb12c2', 'ae5875f0-198e-58a6-bd22-7418d51270e3', '451d4ef0-ac8d-51d7-8432-f16bad20ffdc', 10),
   ('cab7373e-42bd-5d99-a613-7d0caf8a178d', 'ae5875f0-198e-58a6-bd22-7418d51270e3', '548698ba-6d96-5099-8d3a-da7bb4c367d5', 10),
-  ('7837a0eb-4308-4053-b409-d9a23ca6d9e5', 'f3ff4c29-01d6-4036-80c1-1ef6263d3eaf', 'c7409849-6c4b-4cf8-8fe3-a4e24974952c', 10),
-  ('150e7cd4-9029-440a-9499-f8a42891a8af', 'f3ff4c29-01d6-4036-80c1-1ef6263d3eaf', '4e564ded-152d-434a-9fc8-9cf5186e2917', 10),
-  ('553a26ef-7f45-445b-acea-763cb7146445', 'f3ff4c29-01d6-4036-80c1-1ef6263d3eaf', '29a39fad-d23a-42ce-9295-505608fca780', 10),
-  ('18ffb727-8b88-4de5-b0a7-d1504f26d7c9', 'aa2f848e-f405-4eff-ab71-02e3a5120b9f', 'c7409849-6c4b-4cf8-8fe3-a4e24974952c', 10),
-  ('b237b5b4-be2a-42fd-b13a-2451295c1ec0', 'aa2f848e-f405-4eff-ab71-02e3a5120b9f', '4e564ded-152d-434a-9fc8-9cf5186e2917', 10),
-  ('80cc8e4a-81d4-4be0-b74b-47be4b973592', 'aa2f848e-f405-4eff-ab71-02e3a5120b9f', '29a39fad-d23a-42ce-9295-505608fca780', 10),
   ('eb8ff1f1-a017-5a78-b747-8e3bb471b799', '57a87398-8ee0-5924-b794-bb1ca29ed358', '20671b24-fa9e-57e3-8ff3-f1cacf390294', 10),
   ('7ee14c86-9b1d-561e-8226-d4e95872bc4a', '57a87398-8ee0-5924-b794-bb1ca29ed358', '8916872c-a1a8-5b05-925c-23fdf4ffecdf', 10),
   ('357de5f6-4667-5403-8dbc-e045c7d885a8', '57a87398-8ee0-5924-b794-bb1ca29ed358', '6d52a368-2d8c-5e8c-9e46-cc860dc76b3e', 10),
@@ -7073,21 +8890,10 @@ insert into area_trainer_pool (id, area_id, trainer_id, weight) values
   ('bd9b3126-df01-518b-9466-a55768725304', '6d47ad48-bf44-5cb5-83fd-8db581b4a715', '9e3b504c-fb0f-5f43-a0fa-d664ed739d46', 10),
   ('3096dd4e-bfae-537e-9147-e9bf441b1f82', '6d47ad48-bf44-5cb5-83fd-8db581b4a715', '794320b1-6fab-5ee5-9d8b-cced405aa0b6', 10),
   ('a911432a-8081-539e-ac5e-5d18422cff2b', '6d47ad48-bf44-5cb5-83fd-8db581b4a715', '6ac38397-5c00-59e9-8f21-94cc37a63be0', 10),
-  ('3712713c-d0aa-58ff-a294-e8143399746f', '2737f8c1-713a-54d8-986e-30b92f7c4a8f', '2510d308-bcd5-5b2b-a1fc-df9a07cfea2e', 10),
-  ('88886440-c654-572d-9997-02c2d0fd0aa6', '2737f8c1-713a-54d8-986e-30b92f7c4a8f', '9e65b296-17f3-566c-8148-add7ac5956d0', 10),
-  ('99cf2c92-7dc9-5ec7-8ea3-0a87779fdad2', '2737f8c1-713a-54d8-986e-30b92f7c4a8f', '32aac824-7f02-58b9-8a83-3847371a4700', 10),
-  ('9bf0df90-d94d-5c2b-af1e-962e2c89436b', '2737f8c1-713a-54d8-986e-30b92f7c4a8f', '5fc3b44e-3023-5a8e-94c1-71eb245785dc', 10),
-  ('58eb4c74-99ef-5d6d-aba9-ebbbd7edd7e2', '2737f8c1-713a-54d8-986e-30b92f7c4a8f', '2d4a65c8-9b0c-5479-9658-ab6a8b709be5', 10),
-  ('128fbe08-8863-599a-8b87-43dc74fac469', '2737f8c1-713a-54d8-986e-30b92f7c4a8f', '7ad13d36-f10e-596a-9f38-b7fe419b3e04', 10),
-  ('16aae6aa-7867-54d6-8cdc-7c99cf988fa9', '2737f8c1-713a-54d8-986e-30b92f7c4a8f', '232ef32b-595b-5ae7-b8d2-4e2c52ef7c58', 10),
-  ('5c81ea3c-534e-59f1-baba-415805c478c0', '2737f8c1-713a-54d8-986e-30b92f7c4a8f', '8b9007d7-a5f0-549c-b437-a445bf0b970c', 10),
   ('86ae7e8c-9994-54ef-9867-d18eb37c460c', '8ced3bb7-e9ea-59b5-9515-aed7d2ced0d7', '7a1504a2-4c55-517a-8052-6e8420c891e6', 10),
   ('b2900628-f709-51dc-a96f-5e14649f200d', '8ced3bb7-e9ea-59b5-9515-aed7d2ced0d7', '789360a1-b8af-5c37-9220-b52651f68916', 10),
   ('8fe3cb71-4872-53ef-82d0-d5b8ecef5a8c', '8ced3bb7-e9ea-59b5-9515-aed7d2ced0d7', 'cfdb42a3-b85d-5d3d-8fd9-a5fbb5cf959f', 10),
-  ('072cb9ee-fa0b-5be6-970a-4f4d2b7f0050', '8ced3bb7-e9ea-59b5-9515-aed7d2ced0d7', 'f87b3275-f8a6-51d7-9eb5-156f943d535c', 10)
-on conflict (id) do update set area_id = excluded.area_id, trainer_id = excluded.trainer_id, weight = excluded.weight;
-
-insert into area_trainer_pool (id, area_id, trainer_id, weight) values
+  ('072cb9ee-fa0b-5be6-970a-4f4d2b7f0050', '8ced3bb7-e9ea-59b5-9515-aed7d2ced0d7', 'f87b3275-f8a6-51d7-9eb5-156f943d535c', 10),
   ('e16c8fcd-18a9-547a-a889-98b01fbfb5de', '35ba43d5-ed6e-5add-a1ce-4f1d20e34cf4', '5a2e7873-b199-516c-bce3-6374a23bc3a9', 10),
   ('3ac9a74c-14b5-5409-837b-24e8562a9d82', '35ba43d5-ed6e-5add-a1ce-4f1d20e34cf4', '752ada16-b663-5d8b-9755-7cbb91aa5bc9', 10),
   ('62fb291b-7492-5a80-a266-e82e6c7bc9cc', '35ba43d5-ed6e-5add-a1ce-4f1d20e34cf4', '62e2ee07-5cae-5291-8f8e-5fb740b48078', 10),
@@ -7114,7 +8920,10 @@ insert into area_trainer_pool (id, area_id, trainer_id, weight) values
   ('0d2d98a9-08e0-54a8-b5c9-025a02e11dd4', 'b4cfbd96-a745-5dbb-9187-d225cf3b6059', 'be7cfa9c-24f3-5e50-9ce0-9e9bc4e57151', 10),
   ('5c84f399-4626-57f6-b0ea-1426a31f289e', 'b4cfbd96-a745-5dbb-9187-d225cf3b6059', 'd325b8e1-69cc-56ed-a3cf-19e70e4275b7', 10),
   ('a7054a15-db22-5b08-8c4f-176dcdb4eb9e', '1a6ff054-0850-54a9-8471-e828a46154b4', '98f4b7a1-b170-5065-bb66-f99248e0537f', 10),
-  ('5d7d4ea5-c934-5612-9f66-7d8a08abe518', '1a6ff054-0850-54a9-8471-e828a46154b4', 'afb876df-bc44-58b3-b107-5167fcdac28d', 10),
+  ('5d7d4ea5-c934-5612-9f66-7d8a08abe518', '1a6ff054-0850-54a9-8471-e828a46154b4', 'afb876df-bc44-58b3-b107-5167fcdac28d', 10)
+on conflict (id) do update set area_id = excluded.area_id, trainer_id = excluded.trainer_id, weight = excluded.weight;
+
+insert into area_trainer_pool (id, area_id, trainer_id, weight) values
   ('4b1497f7-1665-5a1e-b4fa-90d6d597f985', '1a6ff054-0850-54a9-8471-e828a46154b4', '2874201c-a4d9-51c8-968f-3a81144367c3', 10),
   ('9d88093c-6f24-5c28-8b94-6421e8ff3dc9', '1a6ff054-0850-54a9-8471-e828a46154b4', 'e287f96e-51a0-5287-8798-4b9cd0bee0d7', 10),
   ('1cb82f95-b3e8-51ed-ae24-811c5a35ea09', '1a6ff054-0850-54a9-8471-e828a46154b4', 'fccd456f-d49b-5637-a878-50df9b2aa506', 10),
@@ -7144,11 +8953,6 @@ insert into area_trainer_pool (id, area_id, trainer_id, weight) values
   ('11eb6ab0-648d-546a-9842-4126a3c1ce39', '30af3925-076e-5c88-a6c7-fba28a4ed035', '9e4e0759-5584-55cb-a050-8fea3d007abf', 10),
   ('21c1d816-0fa3-56b5-810c-33c0d74268f3', 'd3464556-7bcd-5708-9a13-415e0326fb75', 'bd713739-60ce-5fd8-b6b2-ad51c620e096', 10),
   ('b98228f9-0096-51bd-b0c6-c29fa7c9d8c9', 'd3464556-7bcd-5708-9a13-415e0326fb75', 'dc2c3657-3ded-51b0-ba22-2be259d9470f', 10),
-  ('15d018a5-15f4-50e0-a49f-d5cace48dcc7', '13fcad9d-8c4b-56d3-bced-9ef61c93745f', '76af3160-a53e-5fac-ae49-958bc3e818a3', 10),
-  ('4807f5e6-a410-56f7-8b37-3c20873cb518', '13fcad9d-8c4b-56d3-bced-9ef61c93745f', 'cde93152-2e1e-5803-8090-a3e4ce613f9e', 10),
-  ('80e7275f-d85c-596d-9346-b4e3279ea744', '13fcad9d-8c4b-56d3-bced-9ef61c93745f', 'bbf8133b-dc21-53de-90ce-00e2138f12ad', 10),
-  ('d72c5c82-6a94-5a31-94d8-ed3fd2349113', '7213c40c-c1d8-5cbc-89f9-5b65c3e52fa2', 'bd1da7ae-fb47-5ad6-801d-38e9703fa392', 10),
-  ('57ef0629-af1e-5b90-a658-ab15855a11f9', '7213c40c-c1d8-5cbc-89f9-5b65c3e52fa2', 'fb8d061c-9840-5b71-82ae-117fe9795469', 10),
   ('bb181db5-84f5-5e83-96d7-b592e8cfbf89', '058038e0-b19e-5156-9e27-c57aa3b653fc', '3cba35d2-7e88-55a1-8150-c5da361af4b1', 10),
   ('ddf268cb-a976-5321-87bf-a38a94825f4f', '058038e0-b19e-5156-9e27-c57aa3b653fc', '511bfffb-b2cb-5ab4-8945-f2ee1e2c04e3', 10),
   ('42563789-99e6-5459-bf3d-1bb93ebc82cd', '058038e0-b19e-5156-9e27-c57aa3b653fc', 'ab4cc941-190e-50bc-90df-742d3a72b610', 10),
@@ -7337,10 +9141,7 @@ insert into area_trainer_pool (id, area_id, trainer_id, weight) values
   ('01dc1672-8fe6-567f-9936-3752b507c557', '1b43a2bf-9d92-581b-b8f1-4885d6795888', '46907a6b-4b5f-5d85-b2eb-b602184dd156', 10),
   ('a10383b7-c336-5f38-b6f2-64f00802f69d', 'fab6629b-411f-55b4-8900-9372ffcdbb3e', 'f7e832e2-71b1-56e2-9d05-27ed0ae76dbb', 10),
   ('a61c1ab2-b374-5bd3-981b-a6c239b64928', 'fab6629b-411f-55b4-8900-9372ffcdbb3e', '1e3c5856-dd17-5293-a7c2-bb0968aa35c4', 10),
-  ('77a95ae7-d42b-5592-9226-df3984b4a6a4', 'fab6629b-411f-55b4-8900-9372ffcdbb3e', '4882e017-2743-5bad-98e5-8618f2188bc4', 10)
-on conflict (id) do update set area_id = excluded.area_id, trainer_id = excluded.trainer_id, weight = excluded.weight;
-
-insert into area_trainer_pool (id, area_id, trainer_id, weight) values
+  ('77a95ae7-d42b-5592-9226-df3984b4a6a4', 'fab6629b-411f-55b4-8900-9372ffcdbb3e', '4882e017-2743-5bad-98e5-8618f2188bc4', 10),
   ('46e6d8a6-0929-5351-b7ed-b3d6b5694471', 'cf8b7fa9-6488-5afe-956e-8c5dfcb4c7d4', '70f1335c-6e1d-580e-b5e1-a79e2a79d06f', 10),
   ('a5969baa-1a79-523f-8fd1-7f863a3f43de', 'cf8b7fa9-6488-5afe-956e-8c5dfcb4c7d4', 'ecbc391f-fc22-5a04-bbc3-d55e4f14c30b', 10),
   ('fbb25f6d-813d-5afb-861e-775020fb0fab', '1ab44ea6-29c0-51c0-9a1f-e1a4b77cfc74', 'e0f96830-560e-5196-955f-317951fa755d', 10),
@@ -7372,7 +9173,10 @@ insert into area_trainer_pool (id, area_id, trainer_id, weight) values
   ('91f0d845-0573-5f83-931f-7705639c3b3b', 'ef57b168-56a6-55c7-ad15-a09d319e487b', '2c0ff913-af99-5b84-a65e-ee4144818874', 10),
   ('8ef8cde7-1053-5b09-bcf2-88a88a7d0d67', 'a3fa05ff-904e-5994-98aa-134ee66e5f80', '59ad37c4-cfdf-5014-b5b7-010974af81b2', 10),
   ('d753a7e9-5089-5339-8429-035dbaedfef6', 'a3fa05ff-904e-5994-98aa-134ee66e5f80', '2388acbf-0822-592a-a9d5-d2bea5482a11', 10),
-  ('7e33a27a-0d2d-557c-9690-d033db81e9a6', 'a3fa05ff-904e-5994-98aa-134ee66e5f80', 'e642dfa7-4a30-5d9c-91d0-73f0c80688c2', 10),
+  ('7e33a27a-0d2d-557c-9690-d033db81e9a6', 'a3fa05ff-904e-5994-98aa-134ee66e5f80', 'e642dfa7-4a30-5d9c-91d0-73f0c80688c2', 10)
+on conflict (id) do update set area_id = excluded.area_id, trainer_id = excluded.trainer_id, weight = excluded.weight;
+
+insert into area_trainer_pool (id, area_id, trainer_id, weight) values
   ('95e9377a-2f4b-5fad-87fc-59b4701743a0', '55e5bb0d-c6b3-5177-9533-a04e905f005b', '465f30f0-0236-5dc6-b10a-5cae56a9b1de', 10),
   ('c837e1a3-df17-5e6a-aa57-0b8c0cd4b45d', '55e5bb0d-c6b3-5177-9533-a04e905f005b', 'd5104e99-1d30-5d94-9bdf-5a81489753f9', 10),
   ('9dbff0b3-78f7-53e6-8187-5500391f41db', '55e5bb0d-c6b3-5177-9533-a04e905f005b', '17a95eb7-00cb-5c1a-aff5-119290c1b907', 10),
@@ -7539,11 +9343,6 @@ insert into area_trainer_pool (id, area_id, trainer_id, weight) values
   ('900affbf-5746-53a2-be0b-420125eb68cd', '8b1e0609-a1b6-5392-ba40-54c23b592aac', '221dcd60-4fb7-57d5-af93-c41c6194ce9e', 10),
   ('b0dbbb5f-f48b-5ddf-b407-b80e03f09b1e', 'af565afe-bfc6-516a-8a4c-bba17bb1ff48', '29850881-49a5-574e-90c8-6bd60abe0f11', 10),
   ('b0d58875-f514-58ea-aafc-09795ba3d1cc', 'af565afe-bfc6-516a-8a4c-bba17bb1ff48', '40051e3e-c5d9-56dd-a4f7-d9c0e31d5b71', 10),
-  ('59d52306-5c5d-5cf9-9804-d291fb8db2d2', '5d2b50d3-a648-5479-a687-067ca5f833f4', 'aa7855fb-96b3-5c0c-9967-b5b668dfd86f', 10),
-  ('5e068c98-2434-58a5-a83a-34b0d1a64b8e', '5d2b50d3-a648-5479-a687-067ca5f833f4', '1bd541c2-e4cf-50c7-a1cb-e756caf000cb', 10),
-  ('217cb4f4-8fdb-5e68-b891-a9c64281833a', '5d2b50d3-a648-5479-a687-067ca5f833f4', '26b1ab7d-3809-5613-bf4d-ae2acf8be436', 10),
-  ('b54e435e-5ca0-5fac-8c33-455208562b6d', '62903307-8361-5503-9f7c-216d94b03a27', '1637180b-5024-5f48-a947-92030f53c4a6', 10),
-  ('f19b64aa-3c31-597b-bbfb-6d1b7ea2ba5b', '62903307-8361-5503-9f7c-216d94b03a27', '21258d99-a592-503a-bdbb-6801fed426ef', 10),
   ('f8ef28dc-1922-575c-a86b-fc5e5f47f79d', '30233749-91cd-5ba0-8e62-f4ea0042de40', '47f70a31-496e-589c-b1d1-f4e3024e3817', 10),
   ('6008922e-a8a2-5f7b-ab8e-1f45d328cba4', '30233749-91cd-5ba0-8e62-f4ea0042de40', '6f4d9893-93c7-5a7b-ba75-e79e0f36f8be', 10),
   ('09fccf76-99c9-545b-8dbe-74c78dce7891', '30233749-91cd-5ba0-8e62-f4ea0042de40', '0fef3bec-a69f-5f01-91b3-7ec991835934', 10),
@@ -7590,10 +9389,7 @@ insert into area_trainer_pool (id, area_id, trainer_id, weight) values
   ('85af213c-65b3-513e-bc5b-34125a8bd335', '754c266f-20b0-5367-a889-82c082de70f3', 'b6bbcaea-6bca-58a9-a27c-2f190cba0c14', 10),
   ('af5e26c0-b87e-53a8-81e7-61026d456f0b', '754c266f-20b0-5367-a889-82c082de70f3', '5910570c-35b1-5c41-87e4-8b6aeab41070', 10),
   ('4111b0f8-5e69-536f-9ea9-9e9c0442297b', '74411831-f7a6-5a6f-9252-63b5e0f1874e', '2e5a78b5-f2e8-584e-a3d2-36192dd9ebf1', 10),
-  ('0b5cabd7-aa15-5531-b860-f12152b6df07', '74411831-f7a6-5a6f-9252-63b5e0f1874e', '20b2c2d3-b222-53f5-9318-326b1981db6f', 10)
-on conflict (id) do update set area_id = excluded.area_id, trainer_id = excluded.trainer_id, weight = excluded.weight;
-
-insert into area_trainer_pool (id, area_id, trainer_id, weight) values
+  ('0b5cabd7-aa15-5531-b860-f12152b6df07', '74411831-f7a6-5a6f-9252-63b5e0f1874e', '20b2c2d3-b222-53f5-9318-326b1981db6f', 10),
   ('2a3b6bc6-352e-599e-80d1-7d4ef80956e2', '74411831-f7a6-5a6f-9252-63b5e0f1874e', 'dfca275e-9409-56be-b714-fbc476f0aace', 10),
   ('0b3cf932-831b-5401-a030-2452fd14039f', 'cab2b223-9f4a-59bb-bc3d-b4ff4a58cf07', '584ab2cd-83c5-510c-87ef-dabb78e7dbe5', 10),
   ('4b8c805e-fe4d-5214-83b0-1a719f9a8f38', 'cab2b223-9f4a-59bb-bc3d-b4ff4a58cf07', 'a73d66dd-c249-50e7-b084-a66f5f488ca6', 10),
@@ -7611,17 +9407,12 @@ insert into area_trainer_pool (id, area_id, trainer_id, weight) values
   ('68f8e8c5-4da7-52c3-aa25-5dfcd5739d78', '272fe5aa-fa73-5178-a416-4998e8b4a478', 'ad384b19-0567-5b6f-907f-b70d80fc4f85', 10),
   ('918e6a7c-7e6a-5a5c-ba66-67fe8d7290fe', '3610c6e0-5fc7-5aab-8b2c-a59be219db55', 'ec664a57-603c-5efd-922f-ccf2e1d752be', 10),
   ('23c290f8-f5bf-5569-9c9c-675f44bfb372', '3610c6e0-5fc7-5aab-8b2c-a59be219db55', '1280cf8b-50ed-5b4a-b618-2f2e90dd176c', 10),
-  ('4a35021f-6339-5fbd-8e37-5a5dbcf0c5dd', 'eb428b97-a163-5cfd-995d-706c0ff73f0b', '767d9500-3edd-5c8b-9605-db055d552814', 10),
-  ('53a2c133-894d-5860-8ed3-421ec5e2953e', 'eb428b97-a163-5cfd-995d-706c0ff73f0b', 'eebec2ff-520a-5e3a-9bea-707eb66e5681', 10),
-  ('2de2c78a-e41c-55bf-b071-21620dc73694', 'eb428b97-a163-5cfd-995d-706c0ff73f0b', 'd7af6fc8-b4d0-5350-ad23-56d5f687c8e0', 10),
   ('4ce31b3f-6b18-59e5-b422-1d6fa8474a7a', 'a5d11263-453f-5181-9a73-2c30df79d3fc', '10a639ea-ad88-5fc1-bda0-b937ee800c35', 10),
   ('3f25dfe0-f3db-5b3e-9fc8-692a40040132', 'a5d11263-453f-5181-9a73-2c30df79d3fc', 'cd5e83a9-3e04-5822-a0cb-906b5b997d45', 10),
   ('22196f73-75b6-525a-9209-02870a2e10c2', 'a5d11263-453f-5181-9a73-2c30df79d3fc', '2646ab7f-de21-5384-88b6-744acfa942d3', 10),
   ('8fe26f4d-7ff2-5cd8-9fd8-6997f5b2e599', 'a5d11263-453f-5181-9a73-2c30df79d3fc', '57df42f7-e493-5965-84ac-6382a8db9697', 10),
   ('71811030-234a-5aed-bcba-7526fffc4e06', 'a5d11263-453f-5181-9a73-2c30df79d3fc', 'a439e700-0d77-5f58-95af-7d219af42ce1', 10),
   ('8d8f1979-9cc1-553f-a570-a6477cc17480', 'a5d11263-453f-5181-9a73-2c30df79d3fc', 'd9ee5a4f-99ae-5938-83af-9f4afe4f48e2', 10),
-  ('cdd54336-ce9d-5739-b111-f10cc8b791ad', 'c7cc6447-9d47-544e-bc63-ac241b69d06c', 'd91c91bd-fc24-5d10-9ee7-412ec2d0c99b', 10),
-  ('497f3d5a-40bf-5c3f-9d5c-7b5be70cfdca', 'c7cc6447-9d47-544e-bc63-ac241b69d06c', '7bdf35df-408f-59c4-9731-bc17d285c6cb', 10),
   ('370757c2-27df-5ab7-ba14-956d85ce4d3a', '890cb77d-0fe5-5576-9b92-2ab68f0be295', '5843e53a-cbad-5a93-ad0d-ab5048ad3c5a', 10),
   ('1d0cd2c7-0fb1-534c-b9bc-85b572edac68', '890cb77d-0fe5-5576-9b92-2ab68f0be295', '50f7d13b-5fbd-569f-bb4a-cdf6af943acf', 10),
   ('c961d435-9e15-555b-ab8a-91b0bb2402e9', '890cb77d-0fe5-5576-9b92-2ab68f0be295', '6db13215-1b94-5d3e-8b8c-48513d75137c', 10),
@@ -7635,7 +9426,10 @@ insert into area_trainer_pool (id, area_id, trainer_id, weight) values
   ('03c53e36-c057-57ae-a276-48495d430277', '7d1a416a-9b25-5028-b602-c59fee3c07f9', 'e5ca9269-8108-550a-b00e-c92d2b74ba77', 10),
   ('cbb08d0b-2443-55ba-84a8-142356b400e5', '7d1a416a-9b25-5028-b602-c59fee3c07f9', '4248f70d-15a2-5325-b6dd-d9dce841db52', 10),
   ('39816d57-8fc4-5992-add7-a1106dfa0146', 'c3e62acf-0be6-50e4-9276-deee4b898a92', '9d88e1ec-de50-5b40-8d3a-0e1fd6907318', 10),
-  ('27cd3e85-4549-54ce-be07-947d8ebca26f', 'c3e62acf-0be6-50e4-9276-deee4b898a92', '8a00a08b-76fe-57f8-8b0b-a520080ba8bc', 10),
+  ('27cd3e85-4549-54ce-be07-947d8ebca26f', 'c3e62acf-0be6-50e4-9276-deee4b898a92', '8a00a08b-76fe-57f8-8b0b-a520080ba8bc', 10)
+on conflict (id) do update set area_id = excluded.area_id, trainer_id = excluded.trainer_id, weight = excluded.weight;
+
+insert into area_trainer_pool (id, area_id, trainer_id, weight) values
   ('aa37d01f-0101-5602-aa1b-998dbe5ca964', '5b5c0485-3a57-5a7f-8710-0d2d270a1f8b', '92b22529-ff39-5e05-aee6-4d2b591c182d', 10),
   ('9272c83f-a2e0-59a3-a1cf-4b0c9a3ddf88', '5b5c0485-3a57-5a7f-8710-0d2d270a1f8b', '2949c857-50dc-529d-8a46-331a25183c0b', 10),
   ('7eebae9a-a00e-57a2-ac9e-1b3c88be622c', '5b5c0485-3a57-5a7f-8710-0d2d270a1f8b', 'b4f8e68f-1d8f-5855-9ba7-db578d8786a4', 10),
@@ -7699,12 +9493,6 @@ insert into area_trainer_pool (id, area_id, trainer_id, weight) values
   ('6585c0a4-9d02-5d2f-a327-915ddd016328', '8c87ed3a-c021-57b6-b866-cc6e71877c0e', '4fb20a5b-5a17-5c38-bbc9-acd7530c7ac2', 10),
   ('3e4f2399-92b0-5065-b239-96acf010eb91', '8c87ed3a-c021-57b6-b866-cc6e71877c0e', '004c097c-72e6-513e-9892-6338e91fe281', 10),
   ('bddd1e63-bfe4-59b1-980e-b97eeaf8d717', '8c87ed3a-c021-57b6-b866-cc6e71877c0e', '70ae1c45-5c01-51f0-a78d-cd33264d00d8', 10),
-  ('05e85d77-18c3-599b-8f5c-d192063e21b8', '888beadb-3aa2-57cc-82bc-cca9bd51f42a', 'e0a4cd3b-7ab4-59bf-a195-144a59b92384', 10),
-  ('2fe1e718-61e8-5b8c-9c02-341904b9b9fb', '888beadb-3aa2-57cc-82bc-cca9bd51f42a', 'd89d231f-919d-5bfd-b0b2-c4b54a1ac65f', 10),
-  ('f41f0f70-e3f2-59b7-85ce-b2d003ee88de', '888beadb-3aa2-57cc-82bc-cca9bd51f42a', '7a6d3aac-ff9f-5931-8a7b-d292694e14d8', 10),
-  ('4b36980e-0f17-5718-ae03-a34ee0e872a2', '414d148c-76c2-5c1a-9e8d-aa1a0b60a154', 'fa1f4455-2ca4-5576-ab32-c4015e342a1c', 10),
-  ('1f587a0a-08d3-5039-9dda-10d3e646a4c3', '414d148c-76c2-5c1a-9e8d-aa1a0b60a154', 'b6b05bd2-451a-5100-9b52-e44fe822dc8a', 10),
-  ('0aed5c05-2c8d-5054-8c48-06f548cece2d', '414d148c-76c2-5c1a-9e8d-aa1a0b60a154', 'a7ed9d29-e0d8-575c-afd4-70ad1f16c9fa', 10),
   ('c7ee9c8f-7d85-5c4d-b3d1-53d57ccf9b4a', '03b22d5c-9bdd-5024-80bb-7dfcaa848dc7', '6170c304-a91c-5f03-a8a1-a97007794a23', 10),
   ('cb8457d7-d1d1-5607-99fd-9801564d2263', '03b22d5c-9bdd-5024-80bb-7dfcaa848dc7', '39c014dd-37b9-59e9-a67c-0e2473b8fc0f', 10),
   ('68848cb3-1735-55ed-9f9a-a153599dda28', '03b22d5c-9bdd-5024-80bb-7dfcaa848dc7', 'bce11553-bb1b-5c8e-bd2e-34a80c1aa6e6', 10),
@@ -7916,7 +9704,7 @@ insert into area_loot_pool (id, area_id, item_key, weight, unique_find, min_qty,
   ('94e67dc1-5dd9-5d21-bf3b-244f13d2308d', '6c54a30a-d5cc-5311-ae07-d9b0dfac5db2', 'money', 16, false, 50, 100),
   ('1f1df807-af44-5f4c-ae4c-e72d0c52699f', '6c54a30a-d5cc-5311-ae07-d9b0dfac5db2', 'thunder-stone', 8, true, 1, 1),
   ('cdf52d3a-b615-5db7-8efa-dfbf54ddd252', '6c54a30a-d5cc-5311-ae07-d9b0dfac5db2', 'shiny-stone', 8, true, 1, 1),
-  ('f81bb425-66b7-51d5-8de4-f8ec2ea74ad0', '6c54a30a-d5cc-5311-ae07-d9b0dfac5db2', 'oval-stone', 8, true, 1, 1),
+  ('f81bb425-66b7-51d5-8de4-f8ec2ea74ad0', '6c54a30a-d5cc-5311-ae07-d9b0dfac5db2', 'oval-stone', 80, true, 1, 1),
   ('744158fa-c55c-569b-91e4-9605de44830a', 'ec3bf8b4-c54c-5891-8c31-d22a029fa3b2', 'super-potion', 20, false, 1, 2),
   ('07830c33-8d1f-57c9-86fd-e32f8f6f50dc', 'ec3bf8b4-c54c-5891-8c31-d22a029fa3b2', 'poke-ball', 10, false, 2, 3),
   ('d58693e0-b6cd-5658-b9ee-1b185d5b39e4', 'ec3bf8b4-c54c-5891-8c31-d22a029fa3b2', 'great-ball', 16, false, 1, 2),
@@ -7954,25 +9742,19 @@ insert into area_loot_pool (id, area_id, item_key, weight, unique_find, min_qty,
   ('ca5c722f-0cbe-5e5c-9769-f15c90cb7b03', 'f4125979-a6a1-5086-9a5a-5314568b77a9', 'max-ether', 3, false, 1, 1),
   ('474a303e-4ed9-5c93-a2bb-89982ab93857', 'f4125979-a6a1-5086-9a5a-5314568b77a9', 'money', 16, false, 50, 100),
   ('b9723819-075a-50f7-a407-01514864c0c3', 'f4125979-a6a1-5086-9a5a-5314568b77a9', 'thunder-stone', 1, true, 1, 1),
-  ('4aa8f64b-5052-437f-a66d-fc19b4808662', '5b386fa9-4a0a-4291-bddb-19e899fd366a', 'hyper-potion', 20, false, 1, 2),
-  ('5de80b28-4cfe-4711-add9-bd03886e5a86', '5b386fa9-4a0a-4291-bddb-19e899fd366a', 'ultra-ball', 20, false, 1, 2),
-  ('b7ab6eb3-0ddb-4ca3-aed6-9864f278fd7a', '5b386fa9-4a0a-4291-bddb-19e899fd366a', 'max-ether', 12, false, 1, 1),
-  ('835915f7-8329-42e4-bf83-34176e0bc6c2', '5b386fa9-4a0a-4291-bddb-19e899fd366a', 'ether', 8, false, 1, 2),
-  ('18861891-b95f-48d3-b727-a5d4f5801e6d', '5b386fa9-4a0a-4291-bddb-19e899fd366a', 'rare-candy', 8, false, 1, 1),
-  ('afae327b-e1a2-4922-bc53-aa445c02f7c7', '5b386fa9-4a0a-4291-bddb-19e899fd366a', 'money', 20, false, 200, 400),
   ('762ca64b-3634-5642-aafa-de25ca892da8', 'bec52d1b-4c7c-5503-810a-5d4b8e5336ec', 'potion', 2, false, 1, 2),
   ('33f19d2e-55ce-56ea-af1a-b5377652365f', 'bec52d1b-4c7c-5503-810a-5d4b8e5336ec', 'super-potion', 1, false, 1, 1),
   ('d9b1ba89-b4cf-5691-8285-51222e256c18', 'bec52d1b-4c7c-5503-810a-5d4b8e5336ec', 'poke-ball', 1, false, 1, 2),
-  ('2863358e-13ea-52e6-99ad-1497fc019bda', 'bec52d1b-4c7c-5503-810a-5d4b8e5336ec', 'great-ball', 1, false, 1, 1)
-on conflict (id) do update set area_id = excluded.area_id, item_key = excluded.item_key, weight = excluded.weight, unique_find = excluded.unique_find, min_qty = excluded.min_qty, max_qty = excluded.max_qty;
-
-insert into area_loot_pool (id, area_id, item_key, weight, unique_find, min_qty, max_qty) values
+  ('2863358e-13ea-52e6-99ad-1497fc019bda', 'bec52d1b-4c7c-5503-810a-5d4b8e5336ec', 'great-ball', 1, false, 1, 1),
   ('9e1d154a-ed07-5028-b7e5-0e6e7a4a5651', 'bec52d1b-4c7c-5503-810a-5d4b8e5336ec', 'antidote', 1, false, 1, 1),
   ('a1f67ea7-a983-5930-ac50-bbe62e42b1e3', 'bec52d1b-4c7c-5503-810a-5d4b8e5336ec', 'paralyze-heal', 1, false, 1, 1),
   ('0321a2d6-9f26-521f-bb1e-18aa5511c941', 'bec52d1b-4c7c-5503-810a-5d4b8e5336ec', 'burn-heal', 1, false, 1, 1),
   ('a1bd140f-1e56-5274-bb5f-475790d9f68d', 'bec52d1b-4c7c-5503-810a-5d4b8e5336ec', 'ether', 1, false, 1, 1),
   ('db46dba1-24bd-5e4c-bae7-1f2793a1a9be', 'bec52d1b-4c7c-5503-810a-5d4b8e5336ec', 'money', 1, false, 25, 50),
-  ('e90c1bea-ea5f-5900-98fc-1a80bbd5d905', 'ff3f0086-1b99-559e-a646-e88006eec749', 'super-potion', 1, false, 1, 2),
+  ('e90c1bea-ea5f-5900-98fc-1a80bbd5d905', 'ff3f0086-1b99-559e-a646-e88006eec749', 'super-potion', 1, false, 1, 2)
+on conflict (id) do update set area_id = excluded.area_id, item_key = excluded.item_key, weight = excluded.weight, unique_find = excluded.unique_find, min_qty = excluded.min_qty, max_qty = excluded.max_qty;
+
+insert into area_loot_pool (id, area_id, item_key, weight, unique_find, min_qty, max_qty) values
   ('6b890ff9-a43f-5a29-97b6-da504ad961c7', 'ff3f0086-1b99-559e-a646-e88006eec749', 'poke-ball', 1, false, 2, 3),
   ('98ec8d89-3b36-50c3-9f7d-1af29ba010fd', 'ff3f0086-1b99-559e-a646-e88006eec749', 'great-ball', 1, false, 1, 2),
   ('19fda025-2285-57dc-af8f-f8af54468429', 'ff3f0086-1b99-559e-a646-e88006eec749', 'ultra-ball', 1, false, 1, 1),
@@ -7983,12 +9765,6 @@ insert into area_loot_pool (id, area_id, item_key, weight, unique_find, min_qty,
   ('591f65f9-66d2-5548-8b0d-71d945ef904e', 'ff3f0086-1b99-559e-a646-e88006eec749', 'ether', 1, false, 1, 1),
   ('ae8a09b2-4b5c-5ba6-8003-9a30565ba3e8', 'ff3f0086-1b99-559e-a646-e88006eec749', 'max-ether', 1, false, 1, 1),
   ('9b541d61-30bf-5237-9b63-4a69f8837795', 'ff3f0086-1b99-559e-a646-e88006eec749', 'money', 1, false, 50, 100),
-  ('b68a7279-6d77-4cd4-a5b0-a7c7907f9724', '82775277-caba-462e-8209-c08d46b403e6', 'hyper-potion', 20, false, 1, 2),
-  ('2a1de52e-9692-43be-904f-8b408730c84e', '82775277-caba-462e-8209-c08d46b403e6', 'ultra-ball', 20, false, 1, 2),
-  ('c31e36ba-e152-4309-8b0b-08bf4922715e', '82775277-caba-462e-8209-c08d46b403e6', 'max-ether', 12, false, 1, 1),
-  ('22186473-e939-4b89-914b-59c6c675a6f0', '82775277-caba-462e-8209-c08d46b403e6', 'ether', 8, false, 1, 2),
-  ('c8f476c1-17f3-4f8f-b8ec-c1dc307304be', '82775277-caba-462e-8209-c08d46b403e6', 'rare-candy', 8, false, 1, 1),
-  ('2af77457-ecbd-4429-8099-edd4791c4e0c', '82775277-caba-462e-8209-c08d46b403e6', 'money', 20, false, 200, 400),
   ('200f394c-5d9f-522f-a0a4-39b7e85189c7', 'bbe7e459-a138-5106-bd01-fce7ff422e7f', 'super-potion', 1, false, 1, 2),
   ('d6efa6f2-4e49-5c19-afac-5793751d79ba', 'bbe7e459-a138-5106-bd01-fce7ff422e7f', 'hyper-potion', 1, false, 1, 1),
   ('b8245fe7-97fa-50b0-841b-7197b8babe6a', 'bbe7e459-a138-5106-bd01-fce7ff422e7f', 'great-ball', 1, false, 1, 2),
@@ -8039,13 +9815,6 @@ insert into area_loot_pool (id, area_id, item_key, weight, unique_find, min_qty,
   ('ae688fb7-64b5-565c-a789-ed1e00ba2972', '6ce5603a-9b36-52df-b8bc-3e9efb0686c3', 'paralyze-heal', 1, false, 1, 1),
   ('50078ba3-4cb6-589a-8b05-73a51a6c864e', '6ce5603a-9b36-52df-b8bc-3e9efb0686c3', 'burn-heal', 1, false, 1, 1),
   ('4fae2714-f9d0-5fc9-99d4-9f71db8ddd5c', '6ce5603a-9b36-52df-b8bc-3e9efb0686c3', 'ice-heal', 1, false, 1, 1),
-  ('db803985-4a37-560f-99df-4dc5f44149fa', '35c40458-61da-5321-adda-6df33b930671', 'hyper-potion', 2, false, 1, 2),
-  ('b5d6ec55-3ea2-5ed7-b5a6-d25bc5bfd09e', '35c40458-61da-5321-adda-6df33b930671', 'ultra-ball', 2, false, 1, 2),
-  ('c4767d4e-355f-5d4f-b2d8-b2f0306c6e44', '35c40458-61da-5321-adda-6df33b930671', 'max-ether', 1, false, 1, 1),
-  ('2c9de8f3-a7d7-5655-a2b3-0fcf6c4df885', '35c40458-61da-5321-adda-6df33b930671', 'ether', 1, false, 1, 2),
-  ('5a22edb2-4331-5e58-93a4-50aad7a933e2', '35c40458-61da-5321-adda-6df33b930671', 'rare-candy', 1, false, 1, 1),
-  ('b5c3f32c-414d-532d-bc61-56bd242d8457', '35c40458-61da-5321-adda-6df33b930671', 'money', 2, false, 200, 400),
-  ('51ca9dd4-7542-527b-8b61-3fe070d96245', '35c40458-61da-5321-adda-6df33b930671', 'rare-candy', 1, true, 2, 2),
   ('eef3f31b-aba2-5dbf-8673-fb45ad5cfa99', '2be87c2d-54b0-5ab8-888a-43f7bfc5da5e', 'potion', 30, false, 1, 1),
   ('3d46bcd3-e252-53b2-b4c5-b8dd8f6c7c6b', '2be87c2d-54b0-5ab8-888a-43f7bfc5da5e', 'poke-ball', 26, false, 1, 2),
   ('55d7d474-4bb7-5d89-99ba-e68e749c60ee', '2be87c2d-54b0-5ab8-888a-43f7bfc5da5e', 'antidote', 12, false, 1, 1),
@@ -8216,10 +9985,7 @@ insert into area_loot_pool (id, area_id, item_key, weight, unique_find, min_qty,
   ('61b480ea-27fa-50ad-9f3b-03955feb8804', '05803fd7-2ba3-5891-81b7-368dc894de79', 'rare-candy', 3, false, 1, 1),
   ('3ea18f7a-0661-5efa-a585-10d08d7165e2', '05803fd7-2ba3-5891-81b7-368dc894de79', 'money', 18, false, 100, 200),
   ('5b308945-e5a2-58e8-8919-f0ca8cdf7a9f', '05803fd7-2ba3-5891-81b7-368dc894de79', 'dusk-stone', 8, true, 1, 1),
-  ('5b7ccb5c-4015-52df-9c49-19c6f98a87df', 'b882b6d6-bf43-51e2-9320-acd5a9852333', 'super-potion', 12, false, 1, 2)
-on conflict (id) do update set area_id = excluded.area_id, item_key = excluded.item_key, weight = excluded.weight, unique_find = excluded.unique_find, min_qty = excluded.min_qty, max_qty = excluded.max_qty;
-
-insert into area_loot_pool (id, area_id, item_key, weight, unique_find, min_qty, max_qty) values
+  ('5b7ccb5c-4015-52df-9c49-19c6f98a87df', 'b882b6d6-bf43-51e2-9320-acd5a9852333', 'super-potion', 12, false, 1, 2),
   ('ffc2d0a8-c08b-5559-873b-93a9b7656d9b', 'b882b6d6-bf43-51e2-9320-acd5a9852333', 'hyper-potion', 14, false, 1, 1),
   ('ce352edc-1e1f-5821-b3bb-58865fceb801', 'b882b6d6-bf43-51e2-9320-acd5a9852333', 'great-ball', 12, false, 1, 2),
   ('1eb4c1e5-27af-552c-8a78-702b734ef2d3', 'b882b6d6-bf43-51e2-9320-acd5a9852333', 'ultra-ball', 12, false, 1, 1),
@@ -8238,7 +10004,10 @@ insert into area_loot_pool (id, area_id, item_key, weight, unique_find, min_qty,
   ('9c4d3abd-cd03-58d1-b7d3-f6efe7730053', '3ae2af61-1847-5729-b5e9-a6773211e792', 'burn-heal', 4, false, 1, 1),
   ('a631e3b1-b8ea-5a09-abad-95568a688a4d', '3ae2af61-1847-5729-b5e9-a6773211e792', 'ice-heal', 4, false, 1, 1),
   ('cdceeaa0-0244-56f3-9675-c6d415eb6568', '3ae2af61-1847-5729-b5e9-a6773211e792', 'ether', 8, false, 1, 2),
-  ('f5bf463a-642a-5ffd-8fcf-355851fb50d6', '3ae2af61-1847-5729-b5e9-a6773211e792', 'max-ether', 6, false, 1, 1),
+  ('f5bf463a-642a-5ffd-8fcf-355851fb50d6', '3ae2af61-1847-5729-b5e9-a6773211e792', 'max-ether', 6, false, 1, 1)
+on conflict (id) do update set area_id = excluded.area_id, item_key = excluded.item_key, weight = excluded.weight, unique_find = excluded.unique_find, min_qty = excluded.min_qty, max_qty = excluded.max_qty;
+
+insert into area_loot_pool (id, area_id, item_key, weight, unique_find, min_qty, max_qty) values
   ('10756f41-2145-5b61-9f00-250a05385774', '3ae2af61-1847-5729-b5e9-a6773211e792', 'rare-candy', 3, false, 1, 1),
   ('058c2433-1142-55cf-ad37-5dd59f68095a', '3ae2af61-1847-5729-b5e9-a6773211e792', 'money', 18, false, 100, 200),
   ('aa5e5b14-ad91-5533-85fd-226d7359b37c', '87839b2d-8083-5d78-b526-40049ff2e2c2', 'potion', 22, false, 1, 2),
@@ -8273,20 +10042,6 @@ insert into area_loot_pool (id, area_id, item_key, weight, unique_find, min_qty,
   ('c94a35c8-8e9a-58dd-950e-dbd8e72c55ac', 'ae5875f0-198e-58a6-bd22-7418d51270e3', 'poke-ball', 10, false, 2, 3),
   ('7203f4d5-339c-5e34-b05b-e63ea7580715', 'ae5875f0-198e-58a6-bd22-7418d51270e3', 'great-ball', 16, false, 1, 2),
   ('9191efe9-2c4c-5df1-8a78-0b354c078b43', 'ae5875f0-198e-58a6-bd22-7418d51270e3', 'ultra-ball', 4, false, 1, 1),
-  ('19404c8b-9d36-4759-b0c3-1068757942ca', 'f3ff4c29-01d6-4036-80c1-1ef6263d3eaf', 'hyper-potion', 20, false, 1, 2),
-  ('d2a78d0a-718c-4562-a04a-504f708c3d83', 'f3ff4c29-01d6-4036-80c1-1ef6263d3eaf', 'ultra-ball', 20, false, 1, 2),
-  ('f3777cf6-038f-467c-bed1-85c002d6f7ac', 'f3ff4c29-01d6-4036-80c1-1ef6263d3eaf', 'max-ether', 12, false, 1, 1),
-  ('9a573c05-d961-4323-8417-0a7eced77849', 'f3ff4c29-01d6-4036-80c1-1ef6263d3eaf', 'ether', 8, false, 1, 2),
-  ('6a084abb-4f99-4fac-b1e5-49b78576bf3d', 'f3ff4c29-01d6-4036-80c1-1ef6263d3eaf', 'rare-candy', 8, false, 1, 1),
-  ('b13f7df1-5e8f-4b93-b32f-309fa93d3463', 'f3ff4c29-01d6-4036-80c1-1ef6263d3eaf', 'money', 20, false, 200, 400),
-  ('e417298a-2b2b-4d41-a9fe-6e74881f527b', 'aa2f848e-f405-4eff-ab71-02e3a5120b9f', 'hyper-potion', 20, false, 1, 2),
-  ('b72ec1eb-a49a-48b0-898d-4ae83ffc9059', 'aa2f848e-f405-4eff-ab71-02e3a5120b9f', 'ultra-ball', 20, false, 1, 2),
-  ('8afa4b96-9cd6-4912-95a0-d45c66ff9c22', 'aa2f848e-f405-4eff-ab71-02e3a5120b9f', 'max-ether', 12, false, 1, 1),
-  ('745707f5-8f5c-4577-8337-5e89f996130b', 'aa2f848e-f405-4eff-ab71-02e3a5120b9f', 'ether', 8, false, 1, 2),
-  ('84636fc8-35fa-4c19-9db6-ce4b1f2dee0a', 'aa2f848e-f405-4eff-ab71-02e3a5120b9f', 'rare-candy', 8, false, 1, 1),
-  ('58470871-5840-4dc4-bea7-6487fd3543f0', 'aa2f848e-f405-4eff-ab71-02e3a5120b9f', 'reaper-cloth', 8, true, 1, 1),
-  ('610862e8-817a-4ba3-bab9-29f92452b3e4', 'aa2f848e-f405-4eff-ab71-02e3a5120b9f', 'money', 20, false, 200, 400),
-  ('4f0e4473-0f43-404a-a831-314e08bc7a1c', 'aa2f848e-f405-4eff-ab71-02e3a5120b9f', 'razor-claw', 8, true, 1, 1),
   ('bfe14c81-1c92-5d85-bc7e-2b0b61ec3b23', '57a87398-8ee0-5924-b794-bb1ca29ed358', 'super-potion', 12, false, 1, 2),
   ('9349e1a4-fc0e-5284-9763-dd4ed07c6216', '57a87398-8ee0-5924-b794-bb1ca29ed358', 'hyper-potion', 14, false, 1, 1),
   ('d876838b-d119-5242-8615-f4d3d01a9d87', '57a87398-8ee0-5924-b794-bb1ca29ed358', 'great-ball', 12, false, 1, 2),
@@ -8322,12 +10077,6 @@ insert into area_loot_pool (id, area_id, item_key, weight, unique_find, min_qty,
   ('cb436e56-cd5d-5a78-bead-5a6945275f12', '6d47ad48-bf44-5cb5-83fd-8db581b4a715', 'max-ether', 1, false, 1, 1),
   ('0484bce0-f514-52a5-9778-d4c33b0ec587', '6d47ad48-bf44-5cb5-83fd-8db581b4a715', 'rare-candy', 1, false, 1, 1),
   ('c6722e5a-6f98-5d02-8024-e77b6175d4fd', '6d47ad48-bf44-5cb5-83fd-8db581b4a715', 'money', 1, false, 100, 200),
-  ('b028bcbf-ae48-57a2-a5ff-94da4a93dce6', '2737f8c1-713a-54d8-986e-30b92f7c4a8f', 'hyper-potion', 2, false, 1, 2),
-  ('667873fb-da90-5634-ba35-ba7b6bc2fb5b', '2737f8c1-713a-54d8-986e-30b92f7c4a8f', 'ultra-ball', 1, false, 1, 2),
-  ('d7c12988-7bf3-5292-b4b8-0e9b11baf47f', '2737f8c1-713a-54d8-986e-30b92f7c4a8f', 'max-ether', 1, false, 1, 1),
-  ('86d88c83-717c-5776-9449-cf6fbe29e8eb', '2737f8c1-713a-54d8-986e-30b92f7c4a8f', 'rare-candy', 1, false, 1, 1),
-  ('c4ee25bd-bf7e-5119-8c1c-c9d4df6c2a61', '2737f8c1-713a-54d8-986e-30b92f7c4a8f', 'money', 2, false, 300, 500),
-  ('3dfefa1c-e794-5e7f-9c8a-2913919814eb', '2737f8c1-713a-54d8-986e-30b92f7c4a8f', 'rare-candy', 1, true, 3, 3),
   ('758790e6-7094-5658-a3f2-f1e25c14de38', '8ced3bb7-e9ea-59b5-9515-aed7d2ced0d7', 'super-potion', 20, false, 1, 2),
   ('a8353a54-9da5-53cc-82eb-d868befa93c0', '8ced3bb7-e9ea-59b5-9515-aed7d2ced0d7', 'poke-ball', 10, false, 2, 3),
   ('a89f3c28-ee7e-5493-9907-377c6dd66b7c', '8ced3bb7-e9ea-59b5-9515-aed7d2ced0d7', 'great-ball', 16, false, 1, 2),
@@ -8469,10 +10218,7 @@ insert into area_loot_pool (id, area_id, item_key, weight, unique_find, min_qty,
   ('ce2f56d4-76e1-53e3-a441-efbca42b8710', 'bcb0a995-0b15-59b4-baad-07e16f5d19b6', 'ice-heal', 4, false, 1, 1),
   ('9ecfaba2-c9bc-52e9-9fc0-cacf3a36669a', 'bcb0a995-0b15-59b4-baad-07e16f5d19b6', 'ether', 8, false, 1, 2),
   ('821021a3-cb59-59cc-91e9-9d4502ead418', 'bcb0a995-0b15-59b4-baad-07e16f5d19b6', 'max-ether', 6, false, 1, 1),
-  ('d17378e2-abc5-5d59-abd1-60ac378fb950', 'bcb0a995-0b15-59b4-baad-07e16f5d19b6', 'rare-candy', 3, false, 1, 1)
-on conflict (id) do update set area_id = excluded.area_id, item_key = excluded.item_key, weight = excluded.weight, unique_find = excluded.unique_find, min_qty = excluded.min_qty, max_qty = excluded.max_qty;
-
-insert into area_loot_pool (id, area_id, item_key, weight, unique_find, min_qty, max_qty) values
+  ('d17378e2-abc5-5d59-abd1-60ac378fb950', 'bcb0a995-0b15-59b4-baad-07e16f5d19b6', 'rare-candy', 3, false, 1, 1),
   ('75fa7f54-3d8a-5a0a-a672-ca0a0e520103', 'bcb0a995-0b15-59b4-baad-07e16f5d19b6', 'money', 18, false, 100, 200),
   ('7514a532-bc66-5703-8fcc-d294fb4decc4', '6f00f916-60e4-5daa-9906-c2204de369a1', 'potion', 22, false, 1, 2),
   ('fa7416fb-1e2f-5db8-b862-c3b5e22ea2dc', '6f00f916-60e4-5daa-9906-c2204de369a1', 'super-potion', 10, false, 1, 1),
@@ -8511,7 +10257,10 @@ insert into area_loot_pool (id, area_id, item_key, weight, unique_find, min_qty,
   ('c2cc9f9d-9553-5cb4-9e00-07b90123c85b', '30af3925-076e-5c88-a6c7-fba28a4ed035', 'paralyze-heal', 5, false, 1, 1),
   ('16ba5a50-5917-5884-8a52-245e5dba1cb3', '30af3925-076e-5c88-a6c7-fba28a4ed035', 'burn-heal', 5, false, 1, 1),
   ('16e98cd1-9491-517c-9620-b5aad80f88d1', '30af3925-076e-5c88-a6c7-fba28a4ed035', 'ice-heal', 5, false, 1, 1),
-  ('73c91bb8-bb0a-5dcf-b7ea-eee8644a4371', '30af3925-076e-5c88-a6c7-fba28a4ed035', 'ether', 8, false, 1, 1),
+  ('73c91bb8-bb0a-5dcf-b7ea-eee8644a4371', '30af3925-076e-5c88-a6c7-fba28a4ed035', 'ether', 8, false, 1, 1)
+on conflict (id) do update set area_id = excluded.area_id, item_key = excluded.item_key, weight = excluded.weight, unique_find = excluded.unique_find, min_qty = excluded.min_qty, max_qty = excluded.max_qty;
+
+insert into area_loot_pool (id, area_id, item_key, weight, unique_find, min_qty, max_qty) values
   ('caed138f-58aa-551e-846a-34458bbdcb02', '30af3925-076e-5c88-a6c7-fba28a4ed035', 'max-ether', 3, false, 1, 1),
   ('ef513fc9-28e4-50e5-a84e-a3de5719a64b', '30af3925-076e-5c88-a6c7-fba28a4ed035', 'money', 16, false, 50, 100),
   ('c69e69b3-d2ba-5809-bbd6-606897a39930', 'd3464556-7bcd-5708-9a13-415e0326fb75', 'hyper-potion', 20, false, 1, 2),
@@ -8520,18 +10269,6 @@ insert into area_loot_pool (id, area_id, item_key, weight, unique_find, min_qty,
   ('d6e59a83-38db-5857-aa47-1fa5499374e7', 'd3464556-7bcd-5708-9a13-415e0326fb75', 'ether', 8, false, 1, 2),
   ('971a79e4-17a6-5764-ae0c-4d65f0e5fbac', 'd3464556-7bcd-5708-9a13-415e0326fb75', 'rare-candy', 8, false, 1, 1),
   ('0eed6fa4-f75a-51cc-a045-c506f8872fcb', 'd3464556-7bcd-5708-9a13-415e0326fb75', 'money', 20, false, 200, 400),
-  ('e9da6848-7726-5602-b67a-ce07e265cc35', '13fcad9d-8c4b-56d3-bced-9ef61c93745f', 'hyper-potion', 20, false, 1, 2),
-  ('5bdf993a-f3c4-5b98-9fa4-9a0350f60344', '13fcad9d-8c4b-56d3-bced-9ef61c93745f', 'ultra-ball', 20, false, 1, 2),
-  ('0c86ff25-5b01-537e-adf0-77a6a9eba23a', '13fcad9d-8c4b-56d3-bced-9ef61c93745f', 'max-ether', 12, false, 1, 1),
-  ('f10c90b8-d0d8-550e-a9aa-a4c4590c92ee', '13fcad9d-8c4b-56d3-bced-9ef61c93745f', 'ether', 8, false, 1, 2),
-  ('8bf3a31a-9b36-573e-8448-442589310bc6', '13fcad9d-8c4b-56d3-bced-9ef61c93745f', 'rare-candy', 8, false, 1, 1),
-  ('cd61c470-5383-5ccc-9d86-99e62fdefd32', '13fcad9d-8c4b-56d3-bced-9ef61c93745f', 'money', 20, false, 200, 400),
-  ('01310bee-b19b-5025-bf6f-23cad22f2a41', '7213c40c-c1d8-5cbc-89f9-5b65c3e52fa2', 'hyper-potion', 20, false, 1, 2),
-  ('eabef4e4-2ca4-5f3a-9d70-2bf9bdc07aa9', '7213c40c-c1d8-5cbc-89f9-5b65c3e52fa2', 'ultra-ball', 20, false, 1, 2),
-  ('187c2a5c-b758-50a6-a528-bba21c93462f', '7213c40c-c1d8-5cbc-89f9-5b65c3e52fa2', 'max-ether', 12, false, 1, 1),
-  ('f0992ace-20b8-5a32-8d6f-8d389035ecc0', '7213c40c-c1d8-5cbc-89f9-5b65c3e52fa2', 'ether', 8, false, 1, 2),
-  ('fe40f27d-072d-559a-af5b-f2127974ec5e', '7213c40c-c1d8-5cbc-89f9-5b65c3e52fa2', 'rare-candy', 8, false, 1, 1),
-  ('4daeb885-b6e9-53a7-a225-301326f7dbbc', '7213c40c-c1d8-5cbc-89f9-5b65c3e52fa2', 'money', 20, false, 200, 400),
   ('f6789f2c-6389-5ea8-8e87-63006b255be5', '058038e0-b19e-5156-9e27-c57aa3b653fc', 'super-potion', 20, false, 1, 2),
   ('b2dc3cf0-ccc9-5148-ba69-bd3301a41532', '058038e0-b19e-5156-9e27-c57aa3b653fc', 'poke-ball', 10, false, 2, 3),
   ('c2f7cea6-9361-507f-a894-7ac86f71af82', '058038e0-b19e-5156-9e27-c57aa3b653fc', 'great-ball', 16, false, 1, 2),
@@ -8722,10 +10459,7 @@ insert into area_loot_pool (id, area_id, item_key, weight, unique_find, min_qty,
   ('db37acb0-072f-5f3a-bded-836e7c5143c4', 'f319e2ef-f0d1-5f2d-a7cb-cf92aeb8bca7', 'ice-heal', 1, false, 1, 1),
   ('d2d8ce12-a003-58bc-b56b-f6cc70097509', 'f319e2ef-f0d1-5f2d-a7cb-cf92aeb8bca7', 'ether', 1, false, 1, 1),
   ('4c4b5552-5bc5-5078-80b7-03f223b91ba9', 'f319e2ef-f0d1-5f2d-a7cb-cf92aeb8bca7', 'max-ether', 1, false, 1, 1),
-  ('0f118ad9-1ea1-5fa9-8f4d-987b453a1f73', 'f319e2ef-f0d1-5f2d-a7cb-cf92aeb8bca7', 'money', 1, false, 50, 100)
-on conflict (id) do update set area_id = excluded.area_id, item_key = excluded.item_key, weight = excluded.weight, unique_find = excluded.unique_find, min_qty = excluded.min_qty, max_qty = excluded.max_qty;
-
-insert into area_loot_pool (id, area_id, item_key, weight, unique_find, min_qty, max_qty) values
+  ('0f118ad9-1ea1-5fa9-8f4d-987b453a1f73', 'f319e2ef-f0d1-5f2d-a7cb-cf92aeb8bca7', 'money', 1, false, 50, 100),
   ('0b252a68-ded0-52bc-a8d7-21a534c28b21', 'f319e2ef-f0d1-5f2d-a7cb-cf92aeb8bca7', 'rare-candy', 1, true, 1, 1),
   ('fb4557dd-ae6a-54ec-b37f-71a0aae65032', 'f319e2ef-f0d1-5f2d-a7cb-cf92aeb8bca7', 'burn-heal', 1, false, 1, 1),
   ('e1099107-99d2-5132-8b9e-94e77299a52f', '29ae1e5e-9afc-5ba5-a5b3-90dac51b1e48', 'potion', 30, false, 1, 1),
@@ -8776,7 +10510,10 @@ insert into area_loot_pool (id, area_id, item_key, weight, unique_find, min_qty,
   ('64decf63-3a05-5c91-8f8e-117d5062a128', 'ea9344ea-61b4-5aca-9ddd-e52557730ec5', 'dragon-scale', 1, true, 1, 1),
   ('36d7428a-85ff-5c6c-a636-d54cc841fc5d', 'a3a909e6-bd11-52cd-8d21-bc6a6aa8992d', 'hyper-potion', 20, false, 1, 2),
   ('06bc4d7c-27e1-5ee9-b155-bd38aea41ad2', 'a3a909e6-bd11-52cd-8d21-bc6a6aa8992d', 'ultra-ball', 20, false, 1, 2),
-  ('47fbe3a2-e6f5-5d48-a1e5-7b11a4dd1675', 'a3a909e6-bd11-52cd-8d21-bc6a6aa8992d', 'max-ether', 12, false, 1, 1),
+  ('47fbe3a2-e6f5-5d48-a1e5-7b11a4dd1675', 'a3a909e6-bd11-52cd-8d21-bc6a6aa8992d', 'max-ether', 12, false, 1, 1)
+on conflict (id) do update set area_id = excluded.area_id, item_key = excluded.item_key, weight = excluded.weight, unique_find = excluded.unique_find, min_qty = excluded.min_qty, max_qty = excluded.max_qty;
+
+insert into area_loot_pool (id, area_id, item_key, weight, unique_find, min_qty, max_qty) values
   ('79d3178e-6384-54c2-b8ae-3f26714680b0', 'a3a909e6-bd11-52cd-8d21-bc6a6aa8992d', 'ether', 8, false, 1, 2),
   ('2b2aad87-b61c-5144-a978-1bf43e164e01', 'a3a909e6-bd11-52cd-8d21-bc6a6aa8992d', 'rare-candy', 8, false, 1, 1),
   ('27367208-d0f0-5d87-8549-61d1063a73c9', 'a3a909e6-bd11-52cd-8d21-bc6a6aa8992d', 'money', 20, false, 200, 400),
@@ -8975,10 +10712,7 @@ insert into area_loot_pool (id, area_id, item_key, weight, unique_find, min_qty,
   ('358d1577-5fe0-5c07-82bb-fc97fa64c82c', 'a3fa05ff-904e-5994-98aa-134ee66e5f80', 'money', 18, false, 10, 25),
   ('42ea1547-b079-5604-982d-3a76327b4b52', '55e5bb0d-c6b3-5177-9533-a04e905f005b', 'potion', 22, false, 1, 2),
   ('eac1a5ae-0ea8-5cb0-9e23-b03acd91fb8d', '55e5bb0d-c6b3-5177-9533-a04e905f005b', 'super-potion', 10, false, 1, 1),
-  ('ce790ea5-e3f4-567c-9cec-fbbd0da63f9e', '55e5bb0d-c6b3-5177-9533-a04e905f005b', 'poke-ball', 20, false, 1, 2)
-on conflict (id) do update set area_id = excluded.area_id, item_key = excluded.item_key, weight = excluded.weight, unique_find = excluded.unique_find, min_qty = excluded.min_qty, max_qty = excluded.max_qty;
-
-insert into area_loot_pool (id, area_id, item_key, weight, unique_find, min_qty, max_qty) values
+  ('ce790ea5-e3f4-567c-9cec-fbbd0da63f9e', '55e5bb0d-c6b3-5177-9533-a04e905f005b', 'poke-ball', 20, false, 1, 2),
   ('b841a10d-4d88-5d58-9aa9-a45fddb7dad1', '55e5bb0d-c6b3-5177-9533-a04e905f005b', 'great-ball', 6, false, 1, 1),
   ('bef66225-1b41-5903-8b5c-bcefcde617b0', '55e5bb0d-c6b3-5177-9533-a04e905f005b', 'antidote', 8, false, 1, 1),
   ('17ea9a94-8c02-5819-bc2c-eab646ed30ef', '55e5bb0d-c6b3-5177-9533-a04e905f005b', 'paralyze-heal', 8, false, 1, 1),
@@ -9029,7 +10763,10 @@ insert into area_loot_pool (id, area_id, item_key, weight, unique_find, min_qty,
   ('5bcca9c0-b769-5a6c-944d-9c63d48bc902', '40914a04-5443-58e5-bcdf-051cc9de5dd7', 'paralyze-heal', 5, false, 1, 1),
   ('e85f70ae-6560-5763-87ef-d8b9fee43865', '40914a04-5443-58e5-bcdf-051cc9de5dd7', 'burn-heal', 5, false, 1, 1),
   ('c1d7f859-ed20-5ba1-91a6-2b40e6429903', '40914a04-5443-58e5-bcdf-051cc9de5dd7', 'ice-heal', 5, false, 1, 1),
-  ('0fcd15ca-c8b9-56e0-9770-0487924df43b', '40914a04-5443-58e5-bcdf-051cc9de5dd7', 'ether', 8, false, 1, 1),
+  ('0fcd15ca-c8b9-56e0-9770-0487924df43b', '40914a04-5443-58e5-bcdf-051cc9de5dd7', 'ether', 8, false, 1, 1)
+on conflict (id) do update set area_id = excluded.area_id, item_key = excluded.item_key, weight = excluded.weight, unique_find = excluded.unique_find, min_qty = excluded.min_qty, max_qty = excluded.max_qty;
+
+insert into area_loot_pool (id, area_id, item_key, weight, unique_find, min_qty, max_qty) values
   ('98b27d08-e586-5a23-8179-cdd54cc004e2', '40914a04-5443-58e5-bcdf-051cc9de5dd7', 'max-ether', 3, false, 1, 1),
   ('6a42acba-0745-5469-8c37-a94e2ab103e5', '40914a04-5443-58e5-bcdf-051cc9de5dd7', 'money', 16, false, 50, 100),
   ('0d021425-a7e3-52a6-b7d2-2bde26b79f20', '0e1ccc24-1c60-56e1-9f03-4b3deda34951', 'super-potion', 20, false, 1, 2),
@@ -9228,10 +10965,7 @@ insert into area_loot_pool (id, area_id, item_key, weight, unique_find, min_qty,
   ('d63c971d-1cd5-5eac-8269-43e4a1dc3005', '5fb9f3eb-bdbe-5c45-8345-3f4a20d75f1d', 'paralyze-heal', 5, false, 1, 1),
   ('afce86cf-84d4-5781-b01f-082a81cb2ffb', '5fb9f3eb-bdbe-5c45-8345-3f4a20d75f1d', 'burn-heal', 5, false, 1, 1),
   ('2201b748-b0b4-56dd-b83b-3ab336fe3af8', '5fb9f3eb-bdbe-5c45-8345-3f4a20d75f1d', 'ice-heal', 5, false, 1, 1),
-  ('5ad5909b-8f21-5fb8-9eab-cca4daf5288e', '5fb9f3eb-bdbe-5c45-8345-3f4a20d75f1d', 'ether', 8, false, 1, 1)
-on conflict (id) do update set area_id = excluded.area_id, item_key = excluded.item_key, weight = excluded.weight, unique_find = excluded.unique_find, min_qty = excluded.min_qty, max_qty = excluded.max_qty;
-
-insert into area_loot_pool (id, area_id, item_key, weight, unique_find, min_qty, max_qty) values
+  ('5ad5909b-8f21-5fb8-9eab-cca4daf5288e', '5fb9f3eb-bdbe-5c45-8345-3f4a20d75f1d', 'ether', 8, false, 1, 1),
   ('406c7d64-a74b-5aaf-9946-4cc72896bc27', '5fb9f3eb-bdbe-5c45-8345-3f4a20d75f1d', 'max-ether', 3, false, 1, 1),
   ('f9bbbaa6-3066-595e-aa2f-6ebaad4bd9ca', '5fb9f3eb-bdbe-5c45-8345-3f4a20d75f1d', 'money', 16, false, 50, 100),
   ('5abdb3e0-24ab-56ff-a9f0-d83f163da2f4', 'd6ba26d1-3dd2-51fc-b559-74c01d2ddba2', 'super-potion', 20, false, 1, 2),
@@ -9282,7 +11016,10 @@ insert into area_loot_pool (id, area_id, item_key, weight, unique_find, min_qty,
   ('d131a793-2b94-56a3-a46e-466fa51a10da', 'a13dcc18-e146-5423-b54d-c0a5869ddad2', 'hyper-potion', 14, false, 1, 1),
   ('8fb4746a-5d3d-5e57-afce-f8807246bf92', 'a13dcc18-e146-5423-b54d-c0a5869ddad2', 'great-ball', 12, false, 1, 2),
   ('bf2bee38-1897-5773-b431-bb9d975731aa', 'a13dcc18-e146-5423-b54d-c0a5869ddad2', 'ultra-ball', 12, false, 1, 1),
-  ('1f3c7b41-53c9-5101-bea3-ddaa760fd565', 'a13dcc18-e146-5423-b54d-c0a5869ddad2', 'paralyze-heal', 4, false, 1, 1),
+  ('1f3c7b41-53c9-5101-bea3-ddaa760fd565', 'a13dcc18-e146-5423-b54d-c0a5869ddad2', 'paralyze-heal', 4, false, 1, 1)
+on conflict (id) do update set area_id = excluded.area_id, item_key = excluded.item_key, weight = excluded.weight, unique_find = excluded.unique_find, min_qty = excluded.min_qty, max_qty = excluded.max_qty;
+
+insert into area_loot_pool (id, area_id, item_key, weight, unique_find, min_qty, max_qty) values
   ('8090afc5-9d64-5a51-bea2-8029c8467377', 'a13dcc18-e146-5423-b54d-c0a5869ddad2', 'burn-heal', 4, false, 1, 1),
   ('1c10638d-a488-5b31-b732-5f203198f304', 'a13dcc18-e146-5423-b54d-c0a5869ddad2', 'ice-heal', 4, false, 1, 1),
   ('232037c2-4a52-5897-bc36-f37506bc4d79', 'a13dcc18-e146-5423-b54d-c0a5869ddad2', 'ether', 8, false, 1, 2),
@@ -9450,18 +11187,6 @@ insert into area_loot_pool (id, area_id, item_key, weight, unique_find, min_qty,
   ('1fd720b9-6a66-5bfe-bdc6-0097cc3b9597', 'af565afe-bfc6-516a-8a4c-bba17bb1ff48', 'ether', 8, false, 1, 2),
   ('790ddfa0-3451-5842-a1a1-fe609c01efe1', 'af565afe-bfc6-516a-8a4c-bba17bb1ff48', 'rare-candy', 8, false, 1, 1),
   ('aa1360e8-4f1a-50c4-b419-5cfaff38ee8d', 'af565afe-bfc6-516a-8a4c-bba17bb1ff48', 'money', 20, false, 200, 400),
-  ('83bfdd91-5f47-5ba5-8dd3-af88f4f4b6e9', '5d2b50d3-a648-5479-a687-067ca5f833f4', 'hyper-potion', 20, false, 1, 2),
-  ('ddea688d-68a8-5055-91e5-9dc082460e39', '5d2b50d3-a648-5479-a687-067ca5f833f4', 'ultra-ball', 20, false, 1, 2),
-  ('b952d625-2de6-57ca-919d-deba7f5b8c7b', '5d2b50d3-a648-5479-a687-067ca5f833f4', 'max-ether', 12, false, 1, 1),
-  ('42dcf60f-19b3-545e-aa6c-d64e565a23db', '5d2b50d3-a648-5479-a687-067ca5f833f4', 'ether', 8, false, 1, 2),
-  ('696bf919-86de-5df3-94f1-1dceac9af545', '5d2b50d3-a648-5479-a687-067ca5f833f4', 'rare-candy', 8, false, 1, 1),
-  ('2dcfeef4-de1c-5301-b00d-c55ed1623c55', '5d2b50d3-a648-5479-a687-067ca5f833f4', 'money', 20, false, 200, 400),
-  ('a018f58a-45ad-5251-adca-2636d3bacadb', '62903307-8361-5503-9f7c-216d94b03a27', 'hyper-potion', 20, false, 1, 2),
-  ('0025a2fb-a8c1-5b78-a7b2-ff4aca24737a', '62903307-8361-5503-9f7c-216d94b03a27', 'ultra-ball', 20, false, 1, 2),
-  ('93ac949f-14ff-5ab5-8a5c-660de630950f', '62903307-8361-5503-9f7c-216d94b03a27', 'max-ether', 12, false, 1, 1),
-  ('15ee8381-a0aa-504b-95b8-41c361a1a318', '62903307-8361-5503-9f7c-216d94b03a27', 'ether', 8, false, 1, 2),
-  ('0339d9ad-ddb5-5144-8d79-9bc5e4c034a0', '62903307-8361-5503-9f7c-216d94b03a27', 'rare-candy', 8, false, 1, 1),
-  ('957d99a9-8a30-5fb2-affe-34d47f323277', '62903307-8361-5503-9f7c-216d94b03a27', 'money', 20, false, 200, 400),
   ('510adcb9-0901-5e0a-a41e-fa5e62c03842', '30233749-91cd-5ba0-8e62-f4ea0042de40', 'hyper-potion', 20, false, 1, 2),
   ('48c33e2e-73f7-55d9-93db-a151bfaad9af', '30233749-91cd-5ba0-8e62-f4ea0042de40', 'ultra-ball', 20, false, 1, 2),
   ('4fa295ff-27a8-5bba-917a-bcaa8b52fc37', '30233749-91cd-5ba0-8e62-f4ea0042de40', 'max-ether', 12, false, 1, 1),
@@ -9481,10 +11206,7 @@ insert into area_loot_pool (id, area_id, item_key, weight, unique_find, min_qty,
   ('4bc32088-3fa5-5b5f-b92f-b89b20fede4a', 'a33bf12e-2ad9-5a79-bfe7-6224579f9a32', 'paralyze-heal', 4, false, 1, 1),
   ('c7ab8aad-4355-5627-ab12-243f3910c88e', 'a33bf12e-2ad9-5a79-bfe7-6224579f9a32', 'burn-heal', 4, false, 1, 1),
   ('a6bb58da-822f-5ec7-a72e-6032b51366c2', 'a33bf12e-2ad9-5a79-bfe7-6224579f9a32', 'ice-heal', 4, false, 1, 1),
-  ('a98e1638-62a7-592d-92b1-f76bccc7ef84', 'a33bf12e-2ad9-5a79-bfe7-6224579f9a32', 'ether', 8, false, 1, 2)
-on conflict (id) do update set area_id = excluded.area_id, item_key = excluded.item_key, weight = excluded.weight, unique_find = excluded.unique_find, min_qty = excluded.min_qty, max_qty = excluded.max_qty;
-
-insert into area_loot_pool (id, area_id, item_key, weight, unique_find, min_qty, max_qty) values
+  ('a98e1638-62a7-592d-92b1-f76bccc7ef84', 'a33bf12e-2ad9-5a79-bfe7-6224579f9a32', 'ether', 8, false, 1, 2),
   ('382ee120-146d-5b43-9582-3e40fc8f1a34', 'a33bf12e-2ad9-5a79-bfe7-6224579f9a32', 'max-ether', 6, false, 1, 1),
   ('04e5a9ae-43cf-533c-b9ad-98c6c354582a', 'a33bf12e-2ad9-5a79-bfe7-6224579f9a32', 'rare-candy', 3, false, 1, 1),
   ('a673eb68-82fe-5157-a8cc-a699ba617091', 'a33bf12e-2ad9-5a79-bfe7-6224579f9a32', 'money', 18, false, 100, 200),
@@ -9547,7 +11269,10 @@ insert into area_loot_pool (id, area_id, item_key, weight, unique_find, min_qty,
   ('41d816cd-57f4-5c9f-8e17-06ccd2a410d2', '63160939-79ac-5244-ae50-7f7fc8c37c5f', 'max-ether', 12, false, 1, 1),
   ('1ffd1e58-ec42-55ba-9e78-6c27061ac105', '63160939-79ac-5244-ae50-7f7fc8c37c5f', 'ether', 8, false, 1, 2),
   ('717dbf55-ce3e-57d8-aa2f-44b03ef158c1', '63160939-79ac-5244-ae50-7f7fc8c37c5f', 'rare-candy', 8, false, 1, 1),
-  ('6532d10a-0f5e-5453-8e9c-e8228039423b', '63160939-79ac-5244-ae50-7f7fc8c37c5f', 'money', 20, false, 200, 400),
+  ('6532d10a-0f5e-5453-8e9c-e8228039423b', '63160939-79ac-5244-ae50-7f7fc8c37c5f', 'money', 20, false, 200, 400)
+on conflict (id) do update set area_id = excluded.area_id, item_key = excluded.item_key, weight = excluded.weight, unique_find = excluded.unique_find, min_qty = excluded.min_qty, max_qty = excluded.max_qty;
+
+insert into area_loot_pool (id, area_id, item_key, weight, unique_find, min_qty, max_qty) values
   ('ff0f5f14-ad4c-5dfe-a0b6-56b05cf340fe', 'ad40171a-6414-5510-bafe-44d13217d218', 'hyper-potion', 20, false, 1, 2),
   ('23936e20-6113-5b72-8b47-72b00db34e51', 'ad40171a-6414-5510-bafe-44d13217d218', 'ultra-ball', 20, false, 1, 2),
   ('ebae9c36-03ab-5cf3-8d10-ee70efef897d', 'ad40171a-6414-5510-bafe-44d13217d218', 'max-ether', 12, false, 1, 1),
@@ -9734,10 +11459,7 @@ insert into area_loot_pool (id, area_id, item_key, weight, unique_find, min_qty,
   ('868f05be-500b-527d-89ad-e68788f0499c', '272fe5aa-fa73-5178-a416-4998e8b4a478', 'hyper-potion', 20, false, 1, 2),
   ('c8189d61-4e6a-59c4-a094-5cdc79780715', '272fe5aa-fa73-5178-a416-4998e8b4a478', 'ultra-ball', 20, false, 1, 2),
   ('61d4192b-f2ed-5b00-9b7e-34f10c865702', '272fe5aa-fa73-5178-a416-4998e8b4a478', 'max-ether', 12, false, 1, 1),
-  ('cb78e758-290a-5c17-bea3-142a5b614791', '272fe5aa-fa73-5178-a416-4998e8b4a478', 'ether', 8, false, 1, 2)
-on conflict (id) do update set area_id = excluded.area_id, item_key = excluded.item_key, weight = excluded.weight, unique_find = excluded.unique_find, min_qty = excluded.min_qty, max_qty = excluded.max_qty;
-
-insert into area_loot_pool (id, area_id, item_key, weight, unique_find, min_qty, max_qty) values
+  ('cb78e758-290a-5c17-bea3-142a5b614791', '272fe5aa-fa73-5178-a416-4998e8b4a478', 'ether', 8, false, 1, 2),
   ('2042b00b-672d-5285-aa40-6a1b7ba6cdcc', '272fe5aa-fa73-5178-a416-4998e8b4a478', 'rare-candy', 8, false, 1, 1),
   ('07a9211c-b488-58dc-8468-55cbfc824587', '272fe5aa-fa73-5178-a416-4998e8b4a478', 'money', 20, false, 200, 400),
   ('5ae58755-b47c-59c2-98c0-6beff80c101b', '272fe5aa-fa73-5178-a416-4998e8b4a478', 'master-ball', 2, true, 1, 1),
@@ -9747,12 +11469,6 @@ insert into area_loot_pool (id, area_id, item_key, weight, unique_find, min_qty,
   ('5825d0ee-7a10-5abd-a4ca-e58cee453acb', '3610c6e0-5fc7-5aab-8b2c-a59be219db55', 'ether', 8, false, 1, 2),
   ('71670657-4267-5b81-944e-04ba8a4da5b6', '3610c6e0-5fc7-5aab-8b2c-a59be219db55', 'rare-candy', 8, false, 1, 1),
   ('5d098e78-bd27-5db4-9808-58cf480da0ae', '3610c6e0-5fc7-5aab-8b2c-a59be219db55', 'money', 20, false, 200, 400),
-  ('dd749952-e283-535b-a68a-cf9bbef9ddba', 'eb428b97-a163-5cfd-995d-706c0ff73f0b', 'hyper-potion', 20, false, 1, 2),
-  ('46909edb-b7e1-591f-b1db-95577acd5d80', 'eb428b97-a163-5cfd-995d-706c0ff73f0b', 'ultra-ball', 20, false, 1, 2),
-  ('a27b89d5-7499-5d59-a9f2-c4cd36be1141', 'eb428b97-a163-5cfd-995d-706c0ff73f0b', 'max-ether', 12, false, 1, 1),
-  ('9b3a1ca4-d791-5fe9-b79a-e3668e278558', 'eb428b97-a163-5cfd-995d-706c0ff73f0b', 'ether', 8, false, 1, 2),
-  ('721fb205-b474-5e63-aaf7-c760073d49dd', 'eb428b97-a163-5cfd-995d-706c0ff73f0b', 'rare-candy', 8, false, 1, 1),
-  ('55c02432-eeee-56f5-a7a4-fb099acde754', 'eb428b97-a163-5cfd-995d-706c0ff73f0b', 'money', 20, false, 200, 400),
   ('f3a53286-c347-5271-892f-e90a72ba874d', 'a5d11263-453f-5181-9a73-2c30df79d3fc', 'hyper-potion', 2, false, 1, 2),
   ('0030128b-ce8f-5062-bda0-64d47876e8e7', 'a5d11263-453f-5181-9a73-2c30df79d3fc', 'ultra-ball', 2, false, 1, 2),
   ('d4825ce3-da90-5192-9911-d9931b208176', 'a5d11263-453f-5181-9a73-2c30df79d3fc', 'max-ether', 1, false, 1, 1),
@@ -9772,12 +11488,6 @@ insert into area_loot_pool (id, area_id, item_key, weight, unique_find, min_qty,
   ('7c15770c-6f0e-517d-a5b0-f14397fd07d7', '9cd5143b-e280-5a1f-85d4-d7f9933616b1', 'paralyze-heal', 1, false, 1, 1),
   ('86f0ac05-dcde-57ae-8aa6-94f6feeac038', '9cd5143b-e280-5a1f-85d4-d7f9933616b1', 'ether', 1, false, 1, 1),
   ('e8b23549-4ce7-5a44-9922-1cbde1d448c7', '9cd5143b-e280-5a1f-85d4-d7f9933616b1', 'money', 2, false, 10, 25),
-  ('6f7aebb8-e038-579e-94a7-5daabc80beec', 'c7cc6447-9d47-544e-bc63-ac241b69d06c', 'hyper-potion', 20, false, 1, 2),
-  ('c4e1e422-91a6-5020-8c0c-f485103846f8', 'c7cc6447-9d47-544e-bc63-ac241b69d06c', 'ultra-ball', 20, false, 1, 2),
-  ('bb9cd98c-427f-5b1d-b9b1-3becc4908f52', 'c7cc6447-9d47-544e-bc63-ac241b69d06c', 'max-ether', 12, false, 1, 1),
-  ('16581ebb-5d97-55c5-aa5d-8bc89bdd67e5', 'c7cc6447-9d47-544e-bc63-ac241b69d06c', 'ether', 8, false, 1, 2),
-  ('2f951f18-3bf6-59bc-b289-a8f920faa53c', 'c7cc6447-9d47-544e-bc63-ac241b69d06c', 'rare-candy', 8, false, 1, 1),
-  ('cbe774e8-b90e-505e-934c-bc8780006c76', 'c7cc6447-9d47-544e-bc63-ac241b69d06c', 'money', 20, false, 200, 400),
   ('57fe437b-f871-57d5-ab72-ab9e9168e5ab', '890cb77d-0fe5-5576-9b92-2ab68f0be295', 'hyper-potion', 20, false, 1, 2),
   ('7d9404cf-513c-5e8c-83e0-d59b7e8ffa2d', '890cb77d-0fe5-5576-9b92-2ab68f0be295', 'ultra-ball', 20, false, 1, 2),
   ('0a04e5ac-a9ab-52d7-9c70-03a97ffb8ce0', '890cb77d-0fe5-5576-9b92-2ab68f0be295', 'max-ether', 12, false, 1, 1),
@@ -9812,7 +11522,10 @@ insert into area_loot_pool (id, area_id, item_key, weight, unique_find, min_qty,
   ('16847366-f729-52ee-baaa-2db1c111838d', '96249330-8b71-592c-9f49-55e62a34c1a3', 'ultra-ball', 20, false, 1, 2),
   ('c9a89467-28c1-5b49-b977-616adefbca5c', '96249330-8b71-592c-9f49-55e62a34c1a3', 'max-ether', 12, false, 1, 1),
   ('d6f00ff3-4640-52e8-940e-dbd7689d37b3', '96249330-8b71-592c-9f49-55e62a34c1a3', 'ether', 8, false, 1, 2),
-  ('b3a29ca6-aa5f-56cc-b1ae-57ea80241afb', '96249330-8b71-592c-9f49-55e62a34c1a3', 'rare-candy', 8, false, 1, 1),
+  ('b3a29ca6-aa5f-56cc-b1ae-57ea80241afb', '96249330-8b71-592c-9f49-55e62a34c1a3', 'rare-candy', 8, false, 1, 1)
+on conflict (id) do update set area_id = excluded.area_id, item_key = excluded.item_key, weight = excluded.weight, unique_find = excluded.unique_find, min_qty = excluded.min_qty, max_qty = excluded.max_qty;
+
+insert into area_loot_pool (id, area_id, item_key, weight, unique_find, min_qty, max_qty) values
   ('136ea348-b40b-5520-9ecb-0c37bca03272', '96249330-8b71-592c-9f49-55e62a34c1a3', 'money', 20, false, 200, 400),
   ('1dab3a60-f163-575a-95b1-238aa88a987e', '684730bd-a885-5020-bb88-197e9d5d60d7', 'hyper-potion', 20, false, 1, 2),
   ('e663c283-8e63-57ba-bd32-45bec3663c44', '684730bd-a885-5020-bb88-197e9d5d60d7', 'ultra-ball', 20, false, 1, 2),
@@ -9987,10 +11700,7 @@ insert into area_loot_pool (id, area_id, item_key, weight, unique_find, min_qty,
   ('17143d17-3324-54a1-8564-c3839587b146', '8809e938-32cd-5da7-89b1-4ef9331712d7', 'hyper-potion', 20, false, 1, 2),
   ('e8a32ad2-38d6-55e4-9b3b-d7cf68252bd3', '8809e938-32cd-5da7-89b1-4ef9331712d7', 'ultra-ball', 20, false, 1, 2),
   ('cf50ddad-262c-5b10-8178-cdab2ad332c8', '8809e938-32cd-5da7-89b1-4ef9331712d7', 'max-ether', 12, false, 1, 1),
-  ('a684b7c8-ad39-5ae5-a0bb-8c2bf418377b', '8809e938-32cd-5da7-89b1-4ef9331712d7', 'ether', 8, false, 1, 2)
-on conflict (id) do update set area_id = excluded.area_id, item_key = excluded.item_key, weight = excluded.weight, unique_find = excluded.unique_find, min_qty = excluded.min_qty, max_qty = excluded.max_qty;
-
-insert into area_loot_pool (id, area_id, item_key, weight, unique_find, min_qty, max_qty) values
+  ('a684b7c8-ad39-5ae5-a0bb-8c2bf418377b', '8809e938-32cd-5da7-89b1-4ef9331712d7', 'ether', 8, false, 1, 2),
   ('3ef7643f-3562-5164-b0ba-44f8f45f7ccd', '8809e938-32cd-5da7-89b1-4ef9331712d7', 'rare-candy', 8, false, 1, 1),
   ('7d8135fe-c20d-5065-8978-47cc8a27c3d0', '8809e938-32cd-5da7-89b1-4ef9331712d7', 'money', 20, false, 200, 400),
   ('875e98d4-c2fc-5cd4-82de-d521c78d8293', '6cd30361-f010-5325-a309-28a7ffed28f7', 'hyper-potion', 20, false, 1, 2),
@@ -10065,7 +11775,10 @@ insert into area_loot_pool (id, area_id, item_key, weight, unique_find, min_qty,
   ('9e05c95f-68ba-585b-8183-77d8926b36cb', '81a9b321-6fb5-5285-b71f-327d8b52b391', 'money', 20, false, 200, 400),
   ('00ae5a02-1dac-5de8-b9a8-b177c039e0d5', 'c565e910-b4c6-5271-9bee-9ff2795d0615', 'hyper-potion', 20, false, 1, 2),
   ('0d848c3a-f811-5fcc-b0ef-eb7578c67966', 'c565e910-b4c6-5271-9bee-9ff2795d0615', 'ultra-ball', 20, false, 1, 2),
-  ('e9d17edd-1721-569d-b345-70afb13cb58e', 'c565e910-b4c6-5271-9bee-9ff2795d0615', 'max-ether', 12, false, 1, 1),
+  ('e9d17edd-1721-569d-b345-70afb13cb58e', 'c565e910-b4c6-5271-9bee-9ff2795d0615', 'max-ether', 12, false, 1, 1)
+on conflict (id) do update set area_id = excluded.area_id, item_key = excluded.item_key, weight = excluded.weight, unique_find = excluded.unique_find, min_qty = excluded.min_qty, max_qty = excluded.max_qty;
+
+insert into area_loot_pool (id, area_id, item_key, weight, unique_find, min_qty, max_qty) values
   ('b5de0812-9fd0-53de-8cb8-e0702c9fed96', 'c565e910-b4c6-5271-9bee-9ff2795d0615', 'ether', 8, false, 1, 2),
   ('3fe8cae4-3329-5dcb-95bb-786401bcfacc', 'c565e910-b4c6-5271-9bee-9ff2795d0615', 'rare-candy', 8, false, 1, 1),
   ('c0f9d24b-dd8a-534e-8e93-b0970e3672f0', 'c565e910-b4c6-5271-9bee-9ff2795d0615', 'money', 20, false, 200, 400),
@@ -10184,18 +11897,6 @@ insert into area_loot_pool (id, area_id, item_key, weight, unique_find, min_qty,
   ('578a0308-6b3e-52e1-a7e8-eda4a47b7859', '8c87ed3a-c021-57b6-b866-cc6e71877c0e', 'ether', 8, false, 1, 2),
   ('7079a7f5-00ee-58ea-a37b-c47fb1d724b5', '8c87ed3a-c021-57b6-b866-cc6e71877c0e', 'rare-candy', 8, false, 1, 1),
   ('d7bdf30f-6214-55f0-b23a-cc260ba0146d', '8c87ed3a-c021-57b6-b866-cc6e71877c0e', 'money', 20, false, 200, 400),
-  ('dc22c3c9-0a5c-51d9-a334-6ab527682bac', '888beadb-3aa2-57cc-82bc-cca9bd51f42a', 'hyper-potion', 20, false, 1, 2),
-  ('9e53b686-97d8-5b5d-8880-4c2e219ad35f', '888beadb-3aa2-57cc-82bc-cca9bd51f42a', 'ultra-ball', 20, false, 1, 2),
-  ('10b5c322-8984-52f7-89e1-fcf44c79bb1f', '888beadb-3aa2-57cc-82bc-cca9bd51f42a', 'max-ether', 12, false, 1, 1),
-  ('2aaccee4-727e-5007-8bd3-ad3fe94ce095', '888beadb-3aa2-57cc-82bc-cca9bd51f42a', 'ether', 8, false, 1, 2),
-  ('e640e9c1-dbb8-5cab-9d98-81ab9e7d5150', '888beadb-3aa2-57cc-82bc-cca9bd51f42a', 'rare-candy', 8, false, 1, 1),
-  ('ee7ba40d-b441-5a93-83a4-711aac8d2b60', '888beadb-3aa2-57cc-82bc-cca9bd51f42a', 'money', 20, false, 200, 400),
-  ('38920dab-92de-528e-84b6-5ed9535ec602', '414d148c-76c2-5c1a-9e8d-aa1a0b60a154', 'hyper-potion', 20, false, 1, 2),
-  ('aef81614-c354-5c6b-b96d-e90321f85215', '414d148c-76c2-5c1a-9e8d-aa1a0b60a154', 'ultra-ball', 20, false, 1, 2),
-  ('6a7db26f-37f5-5f52-812e-007a70012ea9', '414d148c-76c2-5c1a-9e8d-aa1a0b60a154', 'max-ether', 12, false, 1, 1),
-  ('5367ab78-49b2-5e2a-b0ba-1c0a47be8e2b', '414d148c-76c2-5c1a-9e8d-aa1a0b60a154', 'ether', 8, false, 1, 2),
-  ('cbe2c363-6e54-575c-a3ab-557172895789', '414d148c-76c2-5c1a-9e8d-aa1a0b60a154', 'rare-candy', 8, false, 1, 1),
-  ('485af46a-02bf-51b4-a02b-3e17db7a3347', '414d148c-76c2-5c1a-9e8d-aa1a0b60a154', 'money', 20, false, 200, 400),
   ('4eb2a95c-2366-5dd5-8a05-f76228eabd31', '03b22d5c-9bdd-5024-80bb-7dfcaa848dc7', 'hyper-potion', 20, false, 1, 2),
   ('6c47b54c-d52d-59e4-9ac3-0db2f93360cb', '03b22d5c-9bdd-5024-80bb-7dfcaa848dc7', 'ultra-ball', 20, false, 1, 2),
   ('d288ef72-7e05-52cd-a768-963cac22d900', '03b22d5c-9bdd-5024-80bb-7dfcaa848dc7', 'max-ether', 12, false, 1, 1),
@@ -10585,7 +12286,7 @@ insert into game_config (key, value) values
   ('hpMultiplier', '1'::jsonb),
   ('goldMultiplier', '0.5'::jsonb),
   ('status', '{"burn":{"duration":3,"threshold":1,"percentPerStack":4},"heal":{"amount":"rollTotal","threshold":2},"frozen":{"stunTurns":2,"threshold":3},"poison":{"percent":10,"duration":3,"threshold":2},"confuse":{"threshold":2,"recoilPercent":20},"paralyze":{"stunTurns":1,"threshold":2}}'::jsonb),
-  ('dayCare', '{"maxXp":200,"slots":2,"eggPrice":50,"hatchRank":3,"xpPerTick":1,"hatchOffset":5,"tickMinutes":10,"hatchMinLevel":5,"unlockPokedex":20,"unownedWeight":4}'::jsonb),
+  ('dayCare', '{"unlockPokedex":20,"slots":2,"friendSlots":4,"xpPerTick":1,"tickMinutes":2,"breedHours":12,"breedDittoHours":24,"rushPrice":200,"notKeptGold":50,"shinyChance":0.01,"unownedWeight":4,"hatchRank":3,"hatchOffset":5,"hatchMinLevel":5}'::jsonb),
   ('xpCurve', '{"A":0.8,"B":1.25,"C":1}'::jsonb),
   ('gymGoldMultiplier', '2'::jsonb),
   ('forcedCenterWhenHurt', 'true'::jsonb),
@@ -10595,17 +12296,24 @@ insert into game_config (key, value) values
   ('showRecommendedTypes', 'true'::jsonb),
   ('enemyUpgradeLevel', '1'::jsonb),
   ('allowVoluntarySwitch', 'true'::jsonb),
-  ('maxBattleTurns', '150'::jsonb),
-  ('multiExpShare', '0.3'::jsonb),
+  ('maxBattleTurns', '50'::jsonb),
+  ('multiExpShare', '0.5'::jsonb),
   ('xpMultiplier', '1'::jsonb),
   ('showRoundGauge', 'true'::jsonb),
   ('ai', '{"samples":200,"rerollGainThreshold":0.08}'::jsonb),
   ('slotMachine', '{"cost":10,"jackpot":{"gold":10,"weight":10},"oneBall":{"gold":1,"weight":50},"prizeDex":137,"twoBalls":{"gold":10,"weight":30},"prizeLevel":30,"threeBalls":{"gold":50,"weight":10}}'::jsonb),
-  ('shinyChance', '0.01'::jsonb),
-  ('configVersion', '63'::jsonb),
+  ('shinyChance', '0.00375'::jsonb),
+  ('configVersion', '77'::jsonb),
   ('energy', '{"max":50,"enabled":false,"minutesPerEnergy":30}'::jsonb),
   ('roamers', '{"dex":[243,244,245],"level":40,"chance":0.02,"regionId":"johto","requires":[249,250]}'::jsonb),
-  ('showRoundPreview', 'false'::jsonb)
+  ('showRoundPreview', 'false'::jsonb),
+  ('rebattleLineups', '{"kanto":{"bronze":["b688f70f-67b7-5c2d-8e7a-123a81911528","54f921f0-53f3-52eb-9558-49492cec021e","4acbaff9-058a-5e9a-be10-e4fcff7a29f0","4494d340-98a5-50e8-a6c7-8995c35189da","d27f3cca-3fd7-56c2-90c9-9a885dab811f","968c87e8-d4a1-5391-b579-144d3ffd5da1","94ee51c4-ca3f-571b-8504-d06e61326e2b"],"silver":["b38dae2f-713e-5386-a2fb-d80be95af0c3","646e6f0c-2215-50af-9f10-17dc29eac8fb","c73160b1-1073-5a02-a6b7-d8f70c717a2b","bb0444d5-6eb0-5156-a9ed-e6cbaeec0065","4468db74-9fb5-577b-bb52-aa9c16cd3b15","fbf3bd5a-9a20-57b7-bded-d3d05abb9f0c","eb3663b3-93e8-5c02-836f-9635ee6dfe64"],"gold":["44dcabe5-c9b8-551e-92c9-7b8687ca447b","1e7705e9-5322-5017-acf5-5d5160779554","be14b8d9-5b20-5aa2-9c79-3d6435b54423","562057d5-01da-5ea1-8171-acb91d3ac899","d8dbd2da-79c2-594f-9106-097c8c3e8fb1","e8eed7e6-97e3-594c-941f-0dac877f1d6a","39b7635c-efbd-5ca1-a7b8-f1e6cf4bf71c"]},"johto":{"bronze":["ec452cca-6b69-5f89-8e96-cb76eac2af8e","58588a5c-3be1-5b1e-8897-eab4c202ac1c","a07a8af1-ba65-57c6-8696-c1de09dbff80","080c3e8f-33e7-5eea-a38d-194bc623ac3d","13cd2b7e-d24f-5cb7-a23f-a2fa44fd7b02"],"silver":["ec7611ef-7b6d-52e1-88ca-fdd4d655f67c","6d13a024-fc3e-5ea3-bd64-e5ac0c005d07","a7a23b70-bee7-5e01-8e19-a36d48fe28c4","27fc3814-f24c-53d6-ae84-15a3e37ad8f6","464e24e3-44fe-5c70-a561-bb8ef777086b"],"gold":["3f7f8e17-e5a9-5ea3-bc6f-94a2ae7b46fd","f45643d2-d0ff-5673-aca1-31baafd0830b","a9deafe9-f3b4-5f3d-8503-05df4013e706","7287d4f5-c0c0-5f80-bfca-181a135addca","7bfe7eaa-3f65-5858-b37c-c4860d7455dc"]},"hoenn":{"bronze":["cd035191-e067-5319-b2e5-26eb65f4874c","73e99bf2-b781-52fb-8208-630bfd39059c","645ad15f-0644-5ce3-b16a-230e68b6bdb5","2270302c-7c43-57f8-91f0-67613334a8f5","4c35f9ee-9498-59c8-8041-941a7f57d3fb"],"silver":["502bf701-91f8-571c-901c-bfc6304eb1f9","7ca70319-aab4-587f-9d79-a49a8938b395","f5627ec1-d37e-5cde-8144-077b750d2849","32b86b89-b866-5253-abd8-e8e4f8c6ab3f","338f12d3-901c-5714-81ae-7b85948f7810"],"gold":["bf8af9e6-2ca1-5c4e-b359-59b294529855","c380599c-c75d-54c1-9dcd-baaea4d4c789","17a766b5-d9af-5f59-905f-d42f2a9093e7","14605bd9-9ba6-59a6-aa22-511e32b39dbf","68f3eb34-ef19-5961-9553-979429f08497"]},"sinnoh":{"bronze":["44c93a5f-d9f4-5df0-b7bc-ebc96322b165","8a521b6b-98e9-5132-9ea0-cb3a393ec684","0f282df4-0d5c-5b8f-882a-8008d657ed1d","333d3aac-1b57-5307-935f-129c4b5b0037","2a206ecf-35d8-5b15-9ad8-b2f10758faa2"],"silver":["b65ff872-d846-5810-9ca5-6e8782f52794","cc94c61b-6c26-536c-9771-82f747899d23","76ba0b85-a3e4-539b-b714-093a6f19a192","c278fb0b-5905-5645-a86a-c680eb9ee32f","5b4d5778-da23-5bff-ad14-69370285dbfe"],"gold":["95ec8afc-4fb4-5e2b-a871-bf39f53c3054","3fdc8b1b-ae3f-590c-a490-f949cf4211f5","98a72873-937d-570c-9860-69d6940591c8","45d0a6d6-f9ee-5009-a308-0d93b875e79e","f354e571-253e-5c17-9817-5ca8edd12134"]},"unova":{"bronze":["5517f310-236f-5701-af72-d28b64ac003c","fe2be174-3a1f-5e1c-bfcd-e43ba61a2558","5f3f17f1-dc44-5b19-8f2c-652841e5f6b5","001170e1-c16d-5f49-813e-3c2e6037c5c2","d89d2b06-1746-584c-8fcf-3bde60125abf","f2d7f77b-7432-5271-8344-62648afa60ae"],"silver":["01fda961-7819-589b-a220-4bf067d21ea8","d7b5479e-876e-5e48-8bb7-e99a39fee8d1","a9f4e8ff-23cd-58ee-9f30-e1bcc39daf63","6ee2c30c-149a-5ace-834f-8e88734c7aaf","0894b753-26c1-5f4b-91f0-7d7f6046ade9","01bc6612-c5a2-5f7e-8d9d-863e38486401"],"gold":["6ef76ec3-d004-57ad-bf66-3f0aacae9b61","cd044ab6-0003-5bc2-9611-3a525602d117","dd7fcb30-ea75-52ca-bf95-5c5143138cf3","d8a13126-451b-5028-8525-3216ec336182","61b7966d-503c-547e-9379-551971f1f0f6","c24fc25d-99e0-504d-8fc4-2a3a4db320b3"]},"kalos":{"bronze":["ab898418-6798-5ee7-9ec2-361df4931bc5","2fe851a0-e3ea-5ec9-b231-d8d66c8fbf30","e54964db-d027-5b33-8ae5-1168036c1666","caa9399c-2379-5c81-b4de-07d6abcea425","122352d2-d4b4-5d28-904e-60e3e48dfb29"],"silver":["f1035b21-df43-5786-835e-5167b4f793da","8b854b1c-88b6-5a79-be4e-111c5dac2e47","05e38b04-883b-5c6e-a4dc-fe663b7a6503","55580c8f-b37a-53a8-8068-b3d2172ee927","19b3f684-e643-5aa1-bf2f-ad62dfec5dd4"],"gold":["317bce5f-ff01-588a-97fa-975643b524da","1444e460-c0f9-5521-b902-ecdd63adeec6","72ccbee0-89f5-5417-9034-11740321eeac","7b2cc57d-94da-5950-bc17-853092f3f98e","ac82ac88-8c95-5bb5-bb0b-0c3ef82de723"]},"alola":{"bronze":["a93321ba-edff-50c5-bf49-6c7250738f3c","046f07e9-345c-5c87-880b-e223ecd13f57","16dc1bd6-9ff8-5138-883d-537f147dba4b","b354713b-4618-5499-8157-c21b8a604193","d21d0e0e-0055-5cfa-941d-6805de532af6"],"silver":["762703a3-5c9f-51d2-9cb0-2592db67b6d1","f5cc2f1c-381d-5425-af1f-ee8115d2dacd","a9880cb7-b84a-5045-bb48-86509e806ec2","12dd8f50-2e9d-5605-be91-e42cb15bf717","b070af03-5ea1-5fa3-ac76-8a7ddda1febd"],"gold":["7565fa6e-f439-5efb-bb60-5aaf7c32651b","ce61cf16-bb8a-5941-8064-ae649ff9e79d","07ddb1d5-0a1d-56fd-a6d6-77bc72cb886a","83c64cdc-80ea-53ea-ae73-c8518502e4bb","3ea8ff08-1e15-520b-acf4-cd8bd9518149"]},"galar":{"bronze":["210b0509-7019-578e-a116-f96e1bd293c8","569b5e84-781e-54c1-897c-870d045858a5","8b71b171-0025-54c7-8f4f-817d90095767","b050d29d-f895-5bdd-9ad7-9d22788d2c54","d109dc8a-eb95-535b-9614-5cb21582d90f"],"silver":["187481fd-1c52-5d91-8573-79b625dde8e0","e518cf32-ade6-522d-bff3-01ed9e070724","1c4204d6-15ec-52cc-a2c3-2d03f6cd4ed6","8f3fe06f-31bf-51b4-bc39-d68d10890212","7d815839-36bd-5d1e-b104-c528c9c751fe"],"gold":["faf09658-47e0-5dfa-9437-14114410c2f4","a9c420b0-cb96-5dca-b472-1ebeefd5baee","8266e1df-d60a-515a-b687-bde5bb5046ca","fcdc888f-c2ed-56c9-b18c-c9b6dd003e29","f0514643-0b7d-5e9f-9971-62bca8c68368"]},"paldea":{"bronze":["a7076079-966d-59d8-a335-4d6f869a516b","ab4c6b91-828a-5a71-87e0-39e44bb59a31","ef14c7ea-8cfe-54fb-abb6-c601ec19d56a","43232b00-218b-5b90-846a-7285f316ec98","2b84c56d-72c2-50d3-b58a-2db2e8834960","9f8548e8-3808-5f68-9e6a-51aa7bb53048"],"silver":["572dc4c2-03d2-5516-b4e2-83b5c4cb08d0","cb64b3b7-be82-5a33-b487-5b93bab755a6","d02a5e47-34c1-5309-8e74-a0c211d9be09","f945c149-b2ce-54dc-b9b1-0e1c4c232043","3a2feb28-7c72-5c40-b4b7-edbd09b38818","3c9cef25-f994-549d-8733-e288ac5be57b"],"gold":["4cf384f3-8cbd-5646-97ba-e676c54decf4","dcc6bd13-af30-567a-8eeb-c17e4d0d5262","5b99a243-8ece-57dc-81ea-d08d4e9e9b78","96030b3d-8bd5-5ea9-8eda-ce3786518b3d","11fe02b9-85d2-534d-86a4-659abf4e4d71","a303311d-2a93-58b4-8b81-a5d1e43b0f0f"]}}'::jsonb),
+  ('maxDice', '5'::jsonb),
+  ('donation', '{"round":1,"enabled":true,"paypalUrl":"https://paypal.me/GregoireFontaine"}'::jsonb),
+  ('discordUrl', '"https://discord.gg/XKJQYw3p9"'::jsonb),
+  ('maxFriends', '30'::jsonb),
+  ('uniquePity', '{"startRounds":5,"fullRounds":20,"maxMultiplier":10}'::jsonb),
+  ('events', '{"teaserBadges":3,"wheel":{"enabled":true,"priority":5,"unlockAreaId":"8cf87ee3-f7a5-568e-bc22-54f643572535","banner":"/backgrounds/fortune-wheel.png","rules":["wheel.daily","wheel.prizes","wheel.odds"],"prizes":[{"reward":{"kind":"gold","amount":10},"count":4,"odds":12.5},{"reward":{"kind":"item","key":"poke-ball","qty":1},"count":2,"odds":12.5},{"reward":{"kind":"item","key":"great-ball","qty":1},"count":1,"odds":12.5},{"reward":{"kind":"item","key":"ultra-ball","qty":1},"count":1,"odds":10},{"reward":{"kind":"item","key":"master-ball","qty":1},"count":1,"odds":2.5}]},"raid":{"enabled":true,"priority":3,"unlockAreaId":"2238f26a-2629-5f28-af07-e74cb41d5f7a","banner":"lair-ruins","rules":["raid.daily","raid.sides","raid.bars","raid.catch"],"bars":3,"barHp":2,"barColors":["#34c97a","#ffbe2e","#f2553f"],"startAllies":2,"summonPerBreak":2,"maxField":2,"level":50,"upgradeLevel":8,"teamCap":50,"sideUpgradeLevel":5,"maxFriends":2,"helperDailyCap":5,"gifts":[{"key":"ultra-ball","weight":40},{"key":"hyper-potion","weight":25},{"key":"revive","weight":20},{"key":"rare-candy","weight":15}],"pool":[{"dex":151,"areaId":"050ff505-ff8e-5251-8499-842a2cfc2986"},{"dex":251,"areaId":"100e6644-3f5b-553a-ad22-e26551b04edc"},{"dex":385,"areaId":"57008453-b26b-5c52-a88e-e777d39ab364"},{"dex":386,"areaId":"57008453-b26b-5c52-a88e-e777d39ab364"},{"dex":489,"areaId":"75d4e417-4ae4-523a-bc44-d1efa9e5ed5e"},{"dex":490,"areaId":"75d4e417-4ae4-523a-bc44-d1efa9e5ed5e"},{"dex":491,"areaId":"5e2e78f9-5ad7-5e3c-a9f2-518a4c11799c"},{"dex":492,"areaId":"fc27382b-919d-50d0-9f21-23dd16cf99d0"},{"dex":493,"areaId":"df1bb846-fc11-590f-afec-45ef39b63deb"},{"dex":494,"areaId":"285d4dfb-dd01-59eb-a632-0602a135a88e"},{"dex":647,"areaId":"a536039f-e897-5697-a75e-15d8060e96e3"},{"dex":648,"areaId":"f014aa64-1215-5a78-be22-b1ee72f0d1e7"},{"dex":649,"areaId":"e3ab5fdf-99ee-5feb-b6fd-1d47352b267e"},{"dex":719,"areaId":"64740605-3951-57d0-9217-1d9ad7752eff"},{"dex":720,"areaId":"532b27a7-bfb1-5b03-ae0f-a611995dffa2"},{"dex":721,"areaId":"9394fdfc-182a-5c7d-92a2-3fb38c339f28"},{"dex":808,"areaId":"bf277850-73f7-569e-8657-fa5298161229"},{"dex":809,"areaId":"bf277850-73f7-569e-8657-fa5298161229"},{"dex":801,"areaId":"28487bdf-d4f4-5fc9-860e-accef6b9677f"},{"dex":802,"areaId":"e8c9b515-3421-5bdb-ade2-b101f1e6885d"},{"dex":807,"areaId":"4a29a297-7cb0-5f5d-b6f0-f36210ff02e4"},{"dex":893,"areaId":"4aed8f3a-c216-5713-ac05-5a66d5c6998e"},{"dex":1025,"areaId":"168b74c9-3359-5581-a214-1f5be8da9b3e"}],"calendar":{"anchors":[{"date":"01-01","dex":493,"shiny":false},{"date":"02-14","dex":905,"shiny":true},{"date":"02-27","dex":25,"shiny":true},{"date":"03-20","dex":492,"shiny":false},{"date":"03-22","dex":382,"shiny":true},{"date":"04-01","dex":720,"shiny":false},{"date":"04-22","dex":251,"shiny":false},{"date":"06-08","dex":490,"shiny":false},{"date":"06-20","dex":791,"shiny":true},{"date":"06-21","dex":648,"shiny":false},{"date":"07-07","dex":385,"shiny":false},{"date":"07-14","dex":494,"shiny":false},{"date":"08-12","dex":386,"shiny":false},{"date":"10-30","dex":487,"shiny":true},{"date":"10-31","dex":491,"shiny":false},{"date":"11-01","dex":802,"shiny":false},{"date":"12-21","dex":792,"shiny":true},{"date":"12-24","dex":225,"shiny":true},{"date":"12-25","dex":801,"shiny":false},{"date":"12-31","dex":483,"shiny":true}],"fillerMinLevel":40},"exclude":{"pseudo":[147,148,149,246,247,248,371,372,373,374,375,376,443,444,445,633,634,635,704,705,706,782,783,784,885,886,887,996,997,998],"extra":[793,794,795,796,797,798,799,803,804,805,806,984,985,986,987,988,989,990,991,992,993,994,995,1005,1006,1007,1008,1009,1010,1020,1021,1022,1023]}},"rebattle":{"enabled":true,"priority":4,"unlockAreaId":null,"banner":"champion","rules":["rebattle.tiers","rebattle.gauntlet","rebattle.gold"],"tiers":[{"id":"bronze","gold":1.5,"upgradeDelta":1},{"id":"silver","gold":2,"upgradeDelta":2},{"id":"gold","gold":3,"upgradeDelta":"max"}]}}'::jsonb)
 on conflict (key) do update set value = excluded.value;
 
 delete from game_config where key in ('regenPercentPerHour');

@@ -15,14 +15,14 @@ export function Histogram({ h, label = 'Histogram of player turns per battle' }:
   const H = 150
   const bw = W / buckets.length
   return (
-    <svg viewBox={`0 0 ${W} ${H + 16}`} className="w-full max-w-xl border-2 border-ink bg-panel" role="img" aria-label={label}>
+    <svg viewBox={`0 0 ${W} ${H + 16}`} className="w-full max-w-xl border-2 border-edge bg-panel" role="img" aria-label={label}>
       {buckets.map((c, i) => (
         <g key={i}>
-          <rect x={i * bw + 1} y={H - (c / max) * (H - 8)} width={Math.max(1, bw - 2)} height={(c / max) * (H - 8)} fill={BAR} stroke={PALETTE.ink} strokeWidth={0.5}>
+          <rect x={i * bw + 1} y={H - (c / max) * (H - 8)} width={Math.max(1, bw - 2)} height={(c / max) * (H - 8)} fill={BAR} stroke="currentColor" strokeWidth={0.5}>
             <title>{`${i < maxTurn ? i + 1 : `>${maxTurn}`} turns: ${c}`}</title>
           </rect>
           {(i % 5 === 4 || i === 0) && (
-            <text x={i * bw + bw / 2} y={H + 12} fontSize={10} textAnchor="middle" fill={PALETTE.ink}>
+            <text x={i * bw + bw / 2} y={H + 12} fontSize={10} textAnchor="middle" fill="currentColor">
               {i < maxTurn ? i + 1 : `>${maxTurn}`}
             </text>
           )}
@@ -46,14 +46,14 @@ export function TurnsBars({ rows }: { rows: { name: string; avg: number; median:
   const ticks = Array.from({ length: max + 1 }, (_, i) => i)
   return (
     <div className="overflow-x-auto">
-      <svg viewBox={`0 0 ${W} ${H}`} className="w-full min-w-[520px] border-2 border-ink bg-panel" role="img" aria-label="Average player turns per fight, by area">
+      <svg viewBox={`0 0 ${W} ${H}`} className="w-full min-w-[520px] border-2 border-edge bg-panel" role="img" aria-label="Average player turns per fight, by area">
         <rect x={x(2)} y={0} width={x(4) - x(2)} height={plotH} fill={PALETTE.hpGreen} opacity={0.2}>
           <title>Target band: 2–4 turns</title>
         </rect>
         {ticks.map((t) => (
           <g key={t}>
             <line x1={x(t)} x2={x(t)} y1={0} y2={plotH} stroke={PALETTE.shadow} strokeOpacity={0.25} />
-            <text x={x(t)} y={H - 6} fontSize={11} textAnchor="middle" fill={PALETTE.ink}>
+            <text x={x(t)} y={H - 6} fontSize={11} textAnchor="middle" fill="currentColor">
               {t}
             </text>
           </g>
@@ -63,13 +63,13 @@ export function TurnsBars({ rows }: { rows: { name: string; avg: number; median:
           const off = r.avg < 2 || r.avg > 5
           return (
             <g key={r.name}>
-              <text x={labelW - 6} y={y + barH * 0.75} fontSize={12} textAnchor="end" fill={PALETTE.ink}>
+              <text x={labelW - 6} y={y + barH * 0.75} fontSize={12} textAnchor="end" fill="currentColor">
                 {r.name}
               </text>
-              <rect x={labelW} y={y} width={Math.max(1, x(r.avg) - labelW)} height={barH} fill={off ? PALETTE.gold : BAR} stroke={PALETTE.ink} strokeWidth={1}>
+              <rect x={labelW} y={y} width={Math.max(1, x(r.avg) - labelW)} height={barH} fill={off ? PALETTE.gold : BAR} stroke="currentColor" strokeWidth={1}>
                 <title>{`${r.name}: ${r.avg.toFixed(2)} turns on average, median ${r.median}`}</title>
               </rect>
-              <text x={x(r.avg) + 4} y={y + barH * 0.75} fontSize={12} fill={PALETTE.ink}>
+              <text x={x(r.avg) + 4} y={y + barH * 0.75} fontSize={12} fill="currentColor">
                 {r.avg.toFixed(2)}
               </text>
             </g>
@@ -102,14 +102,14 @@ export function LevelChart({ runs, areaNames }: { runs: { i: number; level: numb
     <div className="overflow-x-auto">
       <svg
         viewBox={`0 0 ${W} ${H}`}
-        className="w-full min-w-[520px] border-2 border-ink bg-panel"
+        className="w-full min-w-[520px] border-2 border-edge bg-panel"
         role="img"
         aria-label={`Team average level over ${n} encounters${runs.length > 1 ? `, ${runs.length} runs` : ''}`}
       >
         {[1, 25, 50, 75, 100].map((lv) => (
           <g key={lv}>
             <line x1={left} x2={W - 12} y1={y(lv)} y2={y(lv)} stroke={PALETTE.shadow} strokeOpacity={0.25} />
-            <text x={left - 5} y={y(lv) + 4} fontSize={11} textAnchor="end" fill={PALETTE.ink}>
+            <text x={left - 5} y={y(lv) + 4} fontSize={11} textAnchor="end" fill="currentColor">
               {lv}
             </text>
           </g>
@@ -123,7 +123,7 @@ export function LevelChart({ runs, areaNames }: { runs: { i: number; level: numb
           <polyline key={k} points={line(r)} fill="none" stroke={BAR} strokeWidth={k === 0 ? 2.5 : 1.5} strokeOpacity={k === 0 ? 1 : 0.35} />
         ))}
         {[0, Math.floor(n / 2), n].map((t) => (
-          <text key={t} x={x(Math.min(t, n - 1))} y={H - 6} fontSize={11} textAnchor="middle" fill={PALETTE.ink}>
+          <text key={t} x={x(Math.min(t, n - 1))} y={H - 6} fontSize={11} textAnchor="middle" fill="currentColor">
             {t}
           </text>
         ))}

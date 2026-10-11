@@ -1,7 +1,7 @@
 // Items: where each one can be used, what the Poké Mart sells, and the per-area loot decks behind item finds.
 import { shuffle } from './deal'
 import type { Rng } from './rng'
-import type { Area, AreaProgress, GameData, ItemDef, LootEntry, RegionId, SaveData } from './types'
+import type { Area, AreaProgress, GameData, ItemDef, LootEntry, RegionId, SaveData, UniquePityConfig } from './types'
 
 /** Loot key for Pokédollars lying on the ground (not an inventory item). */
 export const MONEY = 'money'
@@ -86,7 +86,41 @@ export function buildLootDeck(pool: readonly LootEntry[], rng: Rng): string[] {
   )
 }
 
-/** Draw the next find from the area's loot deck (dealt afresh when empty). Null when the area has nothing to find. */
+/**
+ * The pity multiplier on an area's once-only finds after `roundsDone` rounds there: ×1 up to `startRounds`, rising
+ * linearly to `maxMultiplier` at `fullRounds`, and flat from there.
+ */
+export function uniquePityMultiplier(roundsDone: number, pity: UniquePityConfig): number {
+  const { startRounds: start, fullRounds: full, maxMultiplier: max } = pity
+  if (!(max > 1)) return 1
+  const t = full > start ? (roundsDone - start) / (full - start) : roundsDone >= start ? 1 : 0
+  return 1 + (max - 1) * Math.min(1, Math.max(0, t))
+}
+
+/** Chance (0–1) that a find is once-only, when those finds are `share` of the loot deck's cards: × the pity, at most 1. */
+export const uniqueFindChance = (share: number, roundsDone: number, pity: UniquePityConfig): number =>
+  Math.min(1, share * uniquePityMultiplier(roundsDone, pity))
+
+/**
+ * The loot deck alone makes a find once-only `share` of the time on average. Once the pity kicks in, a roll before the
+ * draw tops that up to `uniqueFindChance` with one of the once-only finds left; its card stays in the deck and is
+ * skipped when it comes up. No roll (and no change to the draw) while the pity is ×1.
+ */
+function pityFind(pool: readonly LootEntry[], size: number, progress: AreaProgress, data: GameData, rng: Rng): LootEntry | null {
+  const uniques = pool.filter((e) => e.unique)
+  if (!uniques.length) return null
+  const share = uniques.reduce((sum, e) => sum + lootCopies(e), 0) / size
+  const chance = uniqueFindChance(share, progress.roundsDone ?? 0, data.config.uniquePity)
+  if (chance <= share) return null
+  // chance = extra + (1 − extra) × share: the roll, else the deck as usual.
+  const extra = (chance - share) / (1 - share)
+  return rng.next() < extra ? rng.pick(uniques) : null
+}
+
+/**
+ * Draw the next find from the area's loot deck (dealt afresh when empty), after the pity roll for once-only finds.
+ * Null when the area has nothing to find.
+ */
 export function drawLoot(
   area: Area,
   progress: AreaProgress,
@@ -95,17 +129,22 @@ export function drawLoot(
 ): { entry: LootEntry; qty: number; lootDeck: string[] } | null {
   const pool = lootPoolFor(area, progress, data)
   if (!pool.length) return null
+  const qtyOf = (entry: LootEntry) => {
+    const lo = Math.max(1, Math.min(entry.minQty, entry.maxQty))
+    const hi = Math.max(lo, entry.maxQty, entry.minQty)
+    return rng.int(lo, hi)
+  }
   const byId = new Map(pool.map((e) => [e.id, e]))
   const size = pool.reduce((sum, e) => sum + lootCopies(e), 0)
+  const pity = pityFind(pool, size, progress, data, rng)
+  if (pity) return { entry: pity, qty: qtyOf(pity), lootDeck: [...(progress.lootDeck ?? [])] }
   let deck = progress.lootDeck?.length ? [...progress.lootDeck] : buildLootDeck(pool, rng)
   const tries = 2 * (deck.length + Math.max(1, size))
   for (let i = 0; i < tries; i++) {
     if (!deck.length) deck = buildLootDeck(pool, rng)
     const entry = byId.get(deck.pop()!)
     if (!entry) continue // a card for loot that's gone: a unique find already made, or content edited since the deal
-    const lo = Math.max(1, Math.min(entry.minQty, entry.maxQty))
-    const hi = Math.max(lo, entry.maxQty, entry.minQty)
-    return { entry, qty: rng.int(lo, hi), lootDeck: deck }
+    return { entry, qty: qtyOf(entry), lootDeck: deck }
   }
   return null
 }

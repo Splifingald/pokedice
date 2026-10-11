@@ -1,7 +1,9 @@
 // Admin-only tools operating on YOUR OWN save. Balancing a 100-level game without these is not realistic.
+import { PixelIcon } from '@/components/icons'
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import {
+  addAwayWindow,
   centerHeal,
   COMBO_KEYS,
   createInstance,
@@ -11,6 +13,7 @@ import {
   maxComboLevel,
   maxDieLevel,
   POKE_TYPES,
+  isExtreme,
   type AreaProgress,
   type ComboKey,
   type ForceKind,
@@ -23,6 +26,9 @@ import { PixelButton } from '@/components/PixelButton'
 import { parseSave } from '@/save/schema'
 import { mutateSave, pushToast, useGame } from '@/store/game'
 import { deleteSave, newId, replaceSave, setForceNext } from '@/store/run'
+import { healPending, settleExtreme } from '@/store/extreme'
+import { trustedNow } from '@/store/clock'
+import { switchSave } from '@/store/sync'
 import { Field, NumInput, PokemonPicker, inputCls } from '../widgets'
 
 const emptyProgress = (): AreaProgress => ({
@@ -151,11 +157,14 @@ export function DevToolsSection() {
 
   return (
     <div className="flex flex-col gap-4">
-      <h2 className="text-3xl">Dev Tools</h2>
+      <h2 className="flex items-center gap-2 text-3xl">
+          <PixelIcon name="wrench" size={26} />
+          Dev Tools
+        </h2>
       <p className="text-base text-muted">These act on your own save only.</p>
 
       <div className="grid gap-3 lg:grid-cols-2">
-        <Panel title="Economy">
+        <Panel title="Economy" icon="coin">
           <div className="flex flex-wrap items-end gap-2">
             <Field label="Gold">
               <NumInput className="w-32" value={gold} onChange={(v) => setGold(v ?? 0)} />
@@ -172,7 +181,7 @@ export function DevToolsSection() {
           </div>
         </Panel>
 
-        <Panel title="Regions">
+        <Panel title="Regions" icon="map">
           <p className="mb-2 text-base text-muted">
             How a region gets tested without playing to it. Everything here edits your own save.
           </p>
@@ -236,7 +245,7 @@ export function DevToolsSection() {
           </div>
         </Panel>
 
-        <Panel title="Progress">
+        <Panel title="Progress" icon="flag">
           <div className="flex flex-wrap gap-2">
             <PixelButton size="sm" onClick={unlockAll}>
               Unlock all areas
@@ -244,7 +253,17 @@ export function DevToolsSection() {
             <PixelButton size="sm" disabled={!area} onClick={fillGauge}>
               Finish {area?.name ?? 'current'} rounds
             </PixelButton>
-            <PixelButton size="sm" onClick={() => mutateSave((s) => centerHeal(s, data))}>
+            {/* A Center heals nobody in Extreme mode: the dev heal is the admin's, every rest ended too. */}
+            <PixelButton
+              size="sm"
+              onClick={() =>
+                mutateSave((s) =>
+                  isExtreme(s)
+                    ? { ...s, box: s.box.map(({ koAt: _k, ...p }) => ({ ...p, currentHp: instanceMaxHp(p, data) })) }
+                    : centerHeal(s, data),
+                )
+              }
+            >
               Heal everything
             </PixelButton>
             <PixelButton size="sm" onClick={hurtAll}>
@@ -270,7 +289,7 @@ export function DevToolsSection() {
           </div>
         </Panel>
 
-        <Panel title="Catch any Pokémon">
+        <Panel title="Catch any Pokémon" icon="ball">
           <div className="flex flex-wrap items-end gap-2">
             <PokemonPicker
               className="min-w-[240px] flex-1"
@@ -291,7 +310,7 @@ export function DevToolsSection() {
           </div>
         </Panel>
 
-        <Panel title="Set a Pokémon's level">
+        <Panel title="Set a Pokémon's level" icon="up">
           <div className="flex flex-wrap items-end gap-2">
             <select
               className={`${inputCls} flex-1`}
@@ -318,7 +337,53 @@ export function DevToolsSection() {
           </div>
         </Panel>
 
-        <Panel title="Save file" className="lg:col-span-2">
+        <Panel title="Extreme mode" icon="skull" className="lg:col-span-2">
+          <p className="mb-2 text-base text-muted">
+            {isExtreme(save) ? 'Playing the Extreme save.' : 'Playing the main save.'} Rests:{' '}
+            {save.box.filter((p) => p.koAt != null).length} · absences waiting: {save.extreme?.pending?.length ?? 0}
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {!isExtreme(save) && (
+              <PixelButton
+                size="sm"
+                disabled={save.extremeUnlockedAt != null}
+                onClick={() => mutateSave((s) => ({ ...s, extremeUnlockedAt: Date.now(), extremeRulesSeen: false }))}
+              >
+                Unlock Extreme
+              </PixelButton>
+            )}
+            <PixelButton size="sm" onClick={() => void switchSave(isExtreme(save) ? 'main' : 'extreme')}>
+              Switch to {isExtreme(save) ? 'main' : 'Extreme'} save
+            </PixelButton>
+            {isExtreme(save) && (
+              <>
+                <PixelButton
+                  size="sm"
+                  onClick={() => {
+                    // An hour ago to now, as if the page had been closed for it.
+                    const now = trustedNow() ?? Date.now()
+                    mutateSave((s) => addAwayWindow(s, now - 3_600_000, now))
+                    healPending()
+                  }}
+                >
+                  Skip 1 h away
+                </PixelButton>
+                <PixelButton
+                  size="sm"
+                  onClick={() => {
+                    const done = (trustedNow() ?? Date.now()) - data.config.extreme.koHours * 3_600_000 - 1000
+                    mutateSave((s) => ({ ...s, box: s.box.map((p) => (p.koAt != null ? { ...p, koAt: done } : p)) }))
+                    settleExtreme()
+                  }}
+                >
+                  End K.O. rests
+                </PixelButton>
+              </>
+            )}
+          </div>
+        </Panel>
+
+        <Panel title="Save file" icon="box" className="lg:col-span-2">
           <div className="flex flex-wrap gap-2">
             <PixelButton
               size="sm"

@@ -37,6 +37,8 @@ import { PALDEA_AREAS, PALDEA_STARTERS } from './content-paldea'
 import { liveDicePlan, type LegendKind } from './dice-live'
 import type { AreaPlan } from './content'
 import type { Area, BattleBackground, Evolution, ItemDef, PokeType, Region, Species, Trainer } from '../src/engine/types'
+import { LEAGUE_II } from '../src/engine/rebattle'
+import { raidAreas } from './raid-areas'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const CACHE_DIR = path.join(ROOT, 'scripts', '.cache')
@@ -1182,9 +1184,23 @@ async function main() {
   const allTrainers = await readJson<Trainer[]>('trainers.json')
   const rebuiltIds = new Set(REBUILT.map((r) => r.id))
   const keptAreas = allAreas.filter((a) => !rebuiltIds.has(a.regionId ?? 'kanto'))
-  const keptTrainerIds = new Set(keptAreas.flatMap((a) => [...a.gyms, ...a.trainerPool.map((t) => t.trainerId)]))
+  // The Elite Rebattle's tier trainers belong to no area: its lineups (config.json rebattleLineups) keep them.
+  const config = await readJson<{ rebattleLineups?: Record<string, Record<string, string[]>> }>('config.json')
+  const lineupIds = Object.values(config.rebattleLineups ?? {}).flatMap((l) => Object.values(l).flat())
+  const keptTrainerIds = new Set([...keptAreas.flatMap((a) => [...a.gyms, ...a.trainerPool.map((t) => t.trainerId)]), ...lineupIds])
   const keptTrainers = allTrainers.filter((t) => keptTrainerIds.has(t.id))
-  const built = buildRegions(out, keptAreas, keptTrainers, new Set(items.map((i) => i.key)))
+  const rebuilt = buildRegions(out, keptAreas, keptTrainers, new Set(items.map((i) => i.key)))
+  // Victory Road II and League II left the game (the Elite Rebattle replaces them, docs/19 §5.4): the content files
+  // still describe them, so they're dropped here, with the trainers only they used.
+  // The raid pool's mythicals left their lairs for the raids (scripts/raid-areas.ts).
+  const eggs = await readJson<Record<string, { l?: number }>>('egg-groups.json')
+  const builtAreas = raidAreas(
+    rebuilt.areas.filter((a) => !(a.id in LEAGUE_II)),
+    (dex) => !!eggs[String(dex)]?.l,
+    (dex) => !out.find((s) => s.dex === dex)?.evolutions.length,
+  )
+  const usedIds = new Set([...builtAreas.flatMap((a) => [...a.gyms, ...a.trainerPool.map((t) => t.trainerId)]), ...lineupIds])
+  const built = { ...rebuilt, areas: builtAreas, trainers: rebuilt.trainers.filter((t) => usedIds.has(t.id)) }
 
   const existingRegions = await readJson<Region[]>('regions.json').catch(() => [] as Region[])
   const keptRegions = existingRegions.filter((r) => !rebuiltIds.has(r.id))
