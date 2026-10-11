@@ -1,7 +1,18 @@
 // Dev route: every design-system component in every state (docs/15-UI-GUIDELINES.md). Check at 360 px and 1440 px.
 import { useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
-import { DIE_TYPES, POKE_TYPES, STATUS_KINDS, emptyStatus, type PokeType, type Species } from '@/engine'
+import {
+  DIE_TYPES,
+  POKE_TYPES,
+  STATUS_KINDS,
+  deckSize,
+  emptyProgress,
+  emptyStatus,
+  type AreaProgress,
+  type DeckCard,
+  type PokeType,
+  type Species,
+} from '@/engine'
 import { Chip, LevelTag, NewTag, StatusChip } from '@/components/Chip'
 import { CryButton } from '@/components/CryButton'
 import { Dialogue } from '@/components/Dialogue'
@@ -21,6 +32,7 @@ import { SearchSelect } from '@/components/SearchSelect'
 import { FilterChips, SearchField, Seg } from '@/components/Segmented'
 import { TypeSelect } from '@/components/TypeSelect'
 import { Medal } from '@/screens/events/RebattlePage'
+import { RoundGauge } from '@/screens/area/RoundGauge'
 import { Sheet } from '@/components/Sheet'
 import { SpriteImg } from '@/components/SpriteImg'
 import { StatusIcons } from '@/components/StatusIcons'
@@ -51,6 +63,34 @@ function SoundToggle() {
   const on = useGame((s) => soundOn(s.settings))
   return (
     <Toggle label="Sound" on={on} onChange={(v) => setSettings({ sound: v, sfx: v })} className="w-full max-w-md" />
+  )
+}
+
+/** The round gauge in each state, on an area with a round of six or more cards. */
+function RoundGaugeStates() {
+  const data = useGame((s) => s.data)
+  const area = data.areas.find((a) => deckSize(a) >= 6)
+  if (!area) return null
+  const n = deckSize(area)
+  const mid: AreaProgress = { ...emptyProgress(), drawn: ['wild', 'center'], deck: Array<DeckCard>(n - 2).fill('wild') }
+  const done: AreaProgress = { ...emptyProgress(), drawn: Array.from({ length: n }, (_, i) => (i % 3 ? 'wild' : 'trainer')) }
+  return (
+    <div className="flex w-full max-w-md flex-col gap-3">
+      <RoundGauge area={area} progress={mid} />
+      <RoundGauge area={area} progress={emptyProgress()} />
+      <RoundGauge area={area} progress={done} />
+      <div className="flex flex-col gap-1.5 border-t-[3px] border-edge bg-parchment px-3 py-2">
+        <RoundGauge area={area} progress={mid} compact />
+        <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] gap-2.5">
+          <PixelButton size="lg" className="px-2">
+            Home
+          </PixelButton>
+          <PixelButton variant="primary" size="lg" className="px-2">
+            Continue
+          </PixelButton>
+        </div>
+      </div>
+    </div>
   )
 }
 
@@ -378,6 +418,10 @@ export function KitchenSink() {
             +7
           </PixelButton>
         </div>
+      </Section>
+
+      <Section title="RoundGauge — a round under way, its start, just done; compact over an action bar">
+        <RoundGaugeStates />
       </Section>
 
       <Section title="GoldPill · Toast · Modal · Sheet">

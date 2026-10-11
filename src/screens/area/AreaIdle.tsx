@@ -7,6 +7,7 @@ import { PixelIcon } from '@/components/icons'
 import { MonCard } from '@/components/MonCard'
 import { PixelButton } from '@/components/PixelButton'
 import { SheetModal, type SheetView } from '@/components/SheetModal'
+import { RunRoundGauge } from '@/screens/area/RoundGauge'
 import { useContinue } from '@/screens/home/ContinueBar'
 import { useGame } from '@/store/game'
 
@@ -26,7 +27,7 @@ export function AreaIdle({ area }: { area: Area }) {
 
   return (
     // Phones: room at the bottom for the action bar, which is pinned over the tab bar.
-    <div className="flex flex-col gap-4 pb-[96px] md:pb-0">
+    <div className="flex flex-col gap-4 pb-[128px] md:pb-0">
       <p className="pixel-dialogue m-0 flex items-center gap-3 px-3 py-2.5 text-[20px] leading-[1.15]" aria-live="polite">
         <PixelIcon name="map" size={24} className="shrink-0" />
         <span>{t('ui.area.between')}</span>
@@ -63,6 +64,8 @@ export function AreaIdle({ area }: { area: Area }) {
         style={{ bottom: 'var(--bottom-nav)' }}
       >
         <div className="flex flex-col gap-1.5 md:mx-auto md:max-w-md">
+          {/* Where the round stands, over the buttons that carry it on. */}
+          <RunRoundGauge />
           {/* Why the next encounter can't start (no energy, the area closed, everyone resting): said next to it. */}
           {off && <p className="m-0 truncate text-center font-pixel-sm text-[15px] leading-none text-muted">{sub}</p>}
           <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] gap-2.5">

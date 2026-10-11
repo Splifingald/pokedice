@@ -168,6 +168,10 @@ Dialog behaviour (`src/lib/useDialog.ts`, used by `Modal`, `Sheet`, `SidePanel`)
 - **Action bars** (the Pokémon Center's and the area's HOME / CONTINUE, the Game Corner's LEAVE) are pinned
   right above the tab bar on phones (`fixed`, `bottom: var(--bottom-nav)`, and room under the page for them), even
   when the page is short; from 768 px they stick to the bottom of the content column.
+- **Every area step ends on the round gauge**: the result card's HOME / CONTINUE (and the stalemate's CONTINUE), the
+  Center's, the between-encounters bar and the Game Corner's LEAVE carry the area's round gauge right over their
+  buttons (`RunRoundGauge`, the gauge alone without the preview row), so where the round stands is in view without
+  scrolling back up. Nothing in an Elite Rebattle, which has no rounds.
 - Page gutter 12 px; gaps 8–12 px between cards; a panel's padding 12 px.
 - **Tap targets ≥ 44 px on phones** (inline links in a sentence excepted). From 768 px, tighter sizes are allowed.
 - One `<h1>` per route; headings in order; landmarks (`main`, `nav`).

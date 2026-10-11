@@ -75,7 +75,15 @@ test('after an encounter the player stays in the area; HOME is the way back', as
   // Still in the area: the team, and what comes next.
   await expect(page).toHaveURL(/\/area$/)
   await expect(page.getByText('Back on the trail')).toBeVisible()
-  await expect(page.getByRole('button', { name: 'CONTINUE', exact: true })).toBeEnabled()
+  const next = page.getByRole('button', { name: 'CONTINUE', exact: true })
+  await expect(next).toBeEnabled()
+  // The round's gauge is on the pinned bar too, right over its buttons.
+  const gauges = page.getByRole('img', { name: 'This round: 1 of 2 encounters done' })
+  await expect(gauges).toHaveCount(2)
+  const barGauge = await gauges.last().boundingBox()
+  const nextBox = await next.boundingBox()
+  expect(barGauge!.y + barGauge!.height).toBeLessThanOrEqual(nextBox!.y)
+  expect(nextBox!.y - (barGauge!.y + barGauge!.height)).toBeLessThan(16)
   expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(0)
 
   await page.getByRole('button', { name: 'Home', exact: true }).click()

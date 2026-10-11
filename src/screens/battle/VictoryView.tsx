@@ -46,6 +46,7 @@ import {
 } from '@/store/run'
 import { leaveRebattle, startRebattle } from '@/store/rebattle'
 import { Medal, tierName } from '@/screens/events/RebattlePage'
+import { RunRoundGauge } from '@/screens/area/RoundGauge'
 import { cx, shade, typeColor } from '@/theme/util'
 
 /**
@@ -534,6 +535,8 @@ export function VictoryView() {
     <RebattleNext go={go} />
   ) : (
     <div className="flex flex-col gap-2">
+      {/* Where the area's round stands, right over the way on. */}
+      <RunRoundGauge className="px-1" />
       {nextArea && (
         // A new area just opened: travelling there is the green offer, above Home / Continue.
         <PixelButton
@@ -757,9 +760,12 @@ export function StalemateView() {
     <Overlay
       label={t('ui.stalemate.title')}
       footer={
-        <PixelButton variant="primary" size="lg" className="w-full" onClick={afterStalemate}>
-          {t('ui.common.continue')}
-        </PixelButton>
+        <div className="flex flex-col gap-2">
+          <RunRoundGauge className="px-1" />
+          <PixelButton variant="primary" size="lg" className="w-full" onClick={afterStalemate}>
+            {t('ui.common.continue')}
+          </PixelButton>
+        </div>
       }
     >
       <h2 className="mb-2 text-center text-[32px] font-normal leading-none">{t('ui.stalemate.title')}</h2>
