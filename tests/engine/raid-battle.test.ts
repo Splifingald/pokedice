@@ -212,6 +212,29 @@ describe('your turn', () => {
     expect(['player', 'won', 'lost']).toContain(r.state.phase)
   })
 
+  it('SWITCH sends in another of your raid team: it is your action, and your side fights on with it', () => {
+    const seeds = sides(11)
+    seeds[0]!.team = [
+      { uid: 's0-0', dex: 145, level: 50, hp: 999 },
+      { uid: 's0-1', dex: 143, level: 50, hp: 999 },
+    ]
+    const fast = makeData({ events: { ...data.config.events, raid: { ...cfg, startAllies: 2 } } })
+    const { state } = createRaid(
+      { boss: { dex: 143, shiny: false }, sides: seeds, regionId: 'kanto' },
+      fast,
+      createRng(2),
+    )
+    expect(state.phase).toBe('player')
+    const r = raidDispatch(state, { t: 'SWITCH', instanceId: 's0-1' }, fast, createRng(3))
+    expect(r.log[0]).toEqual({ kind: 'switch', uid: 's0-1', free: false })
+    // The switch was the action: no hit of yours before the next one steps up.
+    const next = r.log.findIndex((e) => e.kind === 'raid_front')
+    expect(next).toBeGreaterThan(0)
+    expect(r.log.slice(0, next).some((e) => e.kind === 'damage')).toBe(false)
+    // The next time your side is in front, it's with the Pokémon you sent in.
+    expect(r.log.find((e) => e.kind === 'raid_front' && sideOf(e.ally) === 0)).toMatchObject({ ally: 's0-1' })
+  })
+
   it('a forfeit ends the raid as a loss', () => {
     const { state } = mine()
     const r = raidDispatch(state, { t: 'FORFEIT' }, data, createRng(1))

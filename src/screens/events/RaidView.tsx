@@ -1,8 +1,9 @@
 // The raid fight, full screen (docs/18 §3 "The battle", docs/19 §6.4): the classic battle layout — the foe in front at
 // the top right, the ally in front at the bottom left, with their plates — and whoever acts steps to the front. The
 // foes still on the field wait at the top right (tap one on your turn to aim at it), the other sides' Pokémon at the
-// bottom left with their trainer's name. Under the stage: the message, the dice, your target, your actions; then the
-// catch, and the result. The fight is the engine's (engine/raidBattle.ts); this screen only plays its log.
+// bottom left with their trainer's name. Under the stage: the message, the dice, your target, your actions, then the
+// Bag, your raid team (tap one on your turn to switch), the speed button and Give up; then the catch, and the result.
+// The fight is the engine's (engine/raidBattle.ts); this screen only plays its log.
 import { AnimatePresence, motion } from 'framer-motion'
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import {
@@ -30,12 +31,13 @@ import { pictureOf } from '@/fx/areaArt'
 import { ballOfItem } from '@/fx/scenes'
 import { loadSprite, spriteKey } from '@/fx/sprites'
 import { catchTimeline } from '@/fx/timelines/catch'
+import { getLang } from '@/i18n'
 import { useT } from '@/i18n/react'
 import { effectText } from '@/i18n/text'
 import { useHoldFullscreen } from '@/lib/fullscreen'
 import { useMotion } from '@/lib/motion'
-import { PaceContext } from '@/lib/pace'
-import { useGame } from '@/store/game'
+import { PaceContext, RAID_FAST_SPEED } from '@/lib/pace'
+import { setSettings, useGame } from '@/store/game'
 import {
   leaveRaid,
   raidAct,
@@ -49,7 +51,15 @@ import {
 } from '@/store/raidBattle'
 import { holdReload } from '@/store/sync'
 import { cx } from '@/theme/util'
-import { BagButton, DiceTray, Readout, type Preview, type TrayDice } from '../battle/BattlePanel'
+import {
+  BagButton,
+  DiceTray,
+  Readout,
+  SwitchRow,
+  TeamPips,
+  type Preview,
+  type TrayDice,
+} from '../battle/BattlePanel'
 import { BattleStage, type StageOverlay } from '../battle/BattleStage'
 import { CatchPanel, catchMessage } from '../battle/CatchPanel'
 import { FoePlate } from '../battle/Plates'
@@ -197,6 +207,33 @@ function QueueMon({
   )
 }
 
+/**
+ * The speed button: the ally sides' and the summons' turns at ×1 or ×1.5 (the raid Pokémon's and yours never change).
+ * It shows the speed they play at, so the state is a word as well as a colour.
+ */
+export function RaidSpeedButton({ on, onChange }: { on: boolean; onChange: (on: boolean) => void }) {
+  const { t } = useT()
+  const label = t('ui.raid.speed')
+  return (
+    <button
+      type="button"
+      aria-pressed={on}
+      aria-label={label}
+      title={label}
+      onClick={() => onChange(!on)}
+      className={cx(
+        'grid min-h-[48px] min-w-[44px] place-items-center content-center gap-0.5 px-1 leading-none',
+        on ? 'bg-gold-pale shadow-card-gold' : 'bg-paper shadow-ring',
+      )}
+    >
+      <PixelIcon name="speed" size={16} />
+      <span className="font-pixel-sm text-[14px] tabular-nums">
+        {t('ui.raid.speedTag', { n: (on ? RAID_FAST_SPEED : 1).toLocaleString(getLang()) })}
+      </span>
+    </button>
+  )
+}
+
 export function RaidView({ run }: { run: RaidRun }) {
   const { t } = useT()
   useHoldFullscreen()
@@ -210,10 +247,10 @@ export function RaidView({ run }: { run: RaidRun }) {
   const cfg = data.config.events.raid
   const { level, calm } = useMotion()
   const quick = level === 'off'
-  const pace = 1
+  const fastOn = useGame((s) => !!s.settings.raidFast)
   const st = run.state
   const intro = run.stage === 'intro'
-  const [menu, setMenu] = useState<null | 'item' | 'giveUp'>(null)
+  const [menu, setMenu] = useState<null | 'item' | 'giveUp' | 'switch'>(null)
   const [itemKey, setItemKey] = useState<string | null>(null)
   const [showBreakdown, setShowBreakdown] = useState(false)
   const stageBox = useRef<HTMLDivElement>(null)
@@ -230,9 +267,12 @@ export function RaidView({ run }: { run: RaidRun }) {
       megaMechanic: (dex) => data.species[dex]?.form?.mechanic ?? null,
       gmaxTurns: data.config.gigantamax.turns,
     },
-    pace,
+    1,
     intro,
+    fastOn ? RAID_FAST_SPEED : 1,
   )
+  // The sped-up turns' HP bars, dice and sprites move as fast as their log.
+  const pace = fastOn && fx.fast ? 1 / RAID_FAST_SPEED : 1
 
   // The stage shakes on a hit without a scene of its own (a bar breaking, a status tick).
   useEffect(() => {
@@ -320,6 +360,9 @@ export function RaidView({ run }: { run: RaidRun }) {
     return false
   }
   const usefulItems = ownedItems.filter(([k]) => team.some((p) => itemHelps(k, p)))
+  // Your raid team at the bottom, as the log has played: tap one on your turn to switch (it costs the turn).
+  const showSwitch = data.config.allowVoluntarySwitch
+  const switchTargets = duel ? duel.player.filter((p, i) => p.hp > 0 && i !== duel.activeIndex) : []
   // Stunned with nothing to cure it: the turn goes.
   useEffect(() => {
     if (!stunned || menu || (canItem && usefulItems.length > 0)) return
@@ -441,7 +484,7 @@ export function RaidView({ run }: { run: RaidRun }) {
               className="pointer-events-none absolute inset-x-0 top-[38%] z-[4] flex justify-center"
               initial={{ scale: 0.3, opacity: 0 }}
               animate={{ scale: [0.3, 1.2, 1], opacity: [0, 1, 1, 0] }}
-              transition={{ duration: quick ? 0.6 : 1.2, times: [0, 0.2, 0.8, 1] }}
+              transition={{ duration: (quick ? 0.6 : 1.2) * pace, times: [0, 0.2, 0.8, 1] }}
             >
               <span className={cx('px-3 pb-1 pt-0.5 text-[22px] leading-none shadow-ring', BANNER_TONE[fx.banner.tone])}>{fx.banner.text}</span>
             </motion.div>
@@ -545,13 +588,25 @@ export function RaidView({ run }: { run: RaidRun }) {
                     onClick={() => setMenu('item')}
                   />
                 )}
+                <TeamPips
+                  compact
+                  team={st.sides[0]!.mons}
+                  activeUid={fx.sideActive[0] ?? st.sides[0]!.mons[0]!.uid}
+                  hpOf={(b) => fx.hp[b.uid] ?? b.hp}
+                  canSwitch={canAct && showSwitch}
+                  calling={false}
+                  onPick={() => setMenu('switch')}
+                />
                 <div className="ml-auto flex items-center gap-1.5">
+                  <RaidSpeedButton on={fastOn} onChange={(on) => setSettings({ raidFast: on })} />
                   <button
                     type="button"
                     onClick={() => setMenu('giveUp')}
-                    className="min-h-[48px] bg-paper px-3 text-[18px] shadow-ring"
+                    aria-label={t('ui.raid.giveUp')}
+                    title={t('ui.raid.giveUp')}
+                    className="grid min-h-[48px] min-w-[44px] place-items-center bg-paper shadow-ring"
                   >
-                    {t('ui.raid.giveUp')}
+                    <PixelIcon name="flag" size={20} />
                   </button>
                 </div>
               </div>
@@ -581,6 +636,24 @@ export function RaidView({ run }: { run: RaidRun }) {
               {t('ui.raid.giveUp')}
             </PixelButton>
           </div>
+        </div>
+      </Modal>
+
+      {/* Switching in: it costs your turn, as in a battle. */}
+      <Modal open={menu === 'switch'} onClose={() => setMenu(null)} title={t('ui.battle.switchCosts')}>
+        <div className="flex flex-col gap-2">
+          {switchTargets.length === 0 && <p className="copy text-lg text-muted">{t('ui.battle.noSwitch')}</p>}
+          {switchTargets.map((p) => (
+            <SwitchRow
+              key={p.uid}
+              b={p}
+              disabled={!canAct}
+              onPick={() => {
+                setMenu(null)
+                act({ t: 'SWITCH', instanceId: p.uid })
+              }}
+            />
+          ))}
         </div>
       </Modal>
 

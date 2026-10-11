@@ -1,12 +1,14 @@
 // The battle panel under the stage: the dice tray, the readout under it (combo, damage math, effectiveness, statuses),
-// the team pips and the Bag. Every number comes from the engine (computeDamage, statusesFromRoll, comboDice).
+// the team pips, the switch rows and the Bag. Every number comes from the engine (computeDamage, statusesFromRoll, comboDice).
 import type { ReactNode } from 'react'
 import { faceOf, type Battler, type DamageResult, type RolledDie, type Side, type StatusKind } from '@/engine'
 import { Chip, StatusChip } from '@/components/Chip'
+import { DiceSet } from '@/components/DiceSet'
 import { Die } from '@/components/Die'
 import { PixelIcon } from '@/components/icons'
 import { HpBar } from '@/components/HpBar'
 import { MiniSprite, SpriteImg } from '@/components/SpriteImg'
+import { TypeBadge } from '@/components/TypeBadge'
 import { useT } from '@/i18n/react'
 import { comboName, statusName } from '@/lib/format'
 import { useGame } from '@/store/game'
@@ -170,6 +172,7 @@ export function TeamPips({
   canSwitch,
   calling,
   onPick,
+  compact,
 }: {
   team: Battler[]
   activeUid: string
@@ -179,6 +182,8 @@ export function TeamPips({
   /** "Who goes out next?": the ones that can, pulse. */
   calling: boolean
   onPick: (b: Battler) => void
+  /** Narrower pips (44 px), for a row that holds more buttons beside them: the raid's. */
+  compact?: boolean
 }) {
   const { t } = useT()
   const reduced = useGame((s) => s.settings.reducedMotion)
@@ -206,15 +211,20 @@ export function TeamPips({
                   })
             }
             className={cx(
-              'grid min-h-[48px] w-[52px] justify-items-center gap-px bg-paper px-1 pb-[5px] pt-0.5 shadow-ring',
-              active && 'bg-gold-pale shadow-card-gold',
+              'grid min-h-[48px] justify-items-center gap-px px-1 pb-[5px] pt-0.5',
+              compact ? 'w-[44px]' : 'w-[52px]',
+              // One or the other: side by side, the stylesheet's order picked plain paper over the gold.
+              active ? 'bg-gold-pale shadow-card-gold' : 'bg-paper shadow-ring',
               out && 'opacity-55 grayscale',
               !open && 'cursor-default',
               calling && open && !reduced && 'bt-call',
             )}
           >
             <MiniSprite dex={b.dex} size={32} className="-mb-1 -mt-0.5" />
-            <span className="relative h-1.5 w-10 bg-line shadow-ring-thin" aria-hidden>
+            <span
+              className={cx('relative h-1.5 bg-line shadow-ring-thin', compact ? 'w-9' : 'w-10')}
+              aria-hidden
+            >
               <i
                 className="absolute inset-y-px left-px block"
                 style={{
@@ -270,8 +280,8 @@ export function TeamColumn({
                 : t(active ? 'ui.battle.pipActive' : 'ui.battle.pipSwitch', { name: b.name, hp, max: b.maxHp })
             }
             className={cx(
-              'flex w-full items-center gap-2 bg-paper p-1.5 text-left shadow-ring',
-              active && 'bg-gold-pale shadow-card-gold',
+              'flex w-full items-center gap-2 p-1.5 text-left',
+              active ? 'bg-gold-pale shadow-card-gold' : 'bg-paper shadow-ring',
               out && 'opacity-55 grayscale',
               !open && 'cursor-default',
               calling && open && !reduced && 'bt-call',
@@ -315,6 +325,54 @@ export function BagButton({
     >
       <PixelIcon name="potion" size={20} />
       {t('ui.battle.bag')}
+    </button>
+  )
+}
+
+/** A Pokémon to send in: sprite, name, level, HP; `detailed` adds its types and dice (the pick after a K.O.). */
+export function SwitchRow({
+  b,
+  onPick,
+  disabled,
+  detailed,
+}: {
+  b: Battler
+  onPick: () => void
+  disabled?: boolean
+  /** Its types, dice and rerolls too: the pick after a K.O. */
+  detailed?: boolean
+}) {
+  const { t } = useT()
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={onPick}
+      className="pixel-panel flex w-full items-center gap-2 p-2 text-left enabled:hover:bg-paper disabled:opacity-50"
+    >
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center justify-between text-xl leading-none">
+          <span className="flex items-center gap-1">
+            <MiniSprite dex={b.dex} size={40} className="-my-2" />
+            {b.name}
+          </span>
+          <span>{t('ui.common.level.short', { n: b.level })}</span>
+        </div>
+        <HpBar hp={b.hp} max={b.maxHp} height={8} className="mt-1" />
+        {detailed && (
+          <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1">
+            <span className="flex gap-1">
+              {b.types.map((x) => (
+                <TypeBadge key={x} type={x} size="sm" />
+              ))}
+            </span>
+            <DiceSet dice={b.dice} size={20} />
+            <span className="ml-auto font-pixel-sm text-[15px] leading-none tabular-nums text-muted">
+              {b.hp}/{b.maxHp}
+            </span>
+          </div>
+        )}
+      </div>
     </button>
   )
 }
