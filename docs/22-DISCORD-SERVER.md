@@ -59,8 +59,12 @@ blocks spam, mass mentions (with a 10-minute timeout) and slurs or sexual conten
    https://discord.com/oauth2/authorize?client_id=APP_ID&scope=bot&permissions=8
    ```
 
+   `APP_ID` must be the **Application ID**, digits only: not the Public Key just below it. Simpler: do step 4 first
+   and run `pnpm discord`. While the bot isn't in the server, it prints this link with the right id and your server
+   already picked.
 2. Pick the Pokédice server → **Continue** → **Authorize**. Permission `8` is **Administrator**: the bot needs it to
    set channel permissions. It only acts while you run `pnpm discord`; the rest of the time it sits offline.
+   Discord says **Invalid Form Body** ("Corps de formulaire non valide")? See [Troubleshooting](#troubleshooting).
 3. Discord app → the server → **Server Settings** → **Roles** → drag the bot's role (**Pokédice**) to the **top** of
    the list → **Save**. A bot can only change the roles below its own.
 
@@ -204,6 +208,7 @@ What the setup matches and never touches:
 
 | What you see | Why, and the fix |
 | --- | --- |
+| Inviting the bot: **Invalid Form Body** ("Corps de formulaire non valide") | 1. The link's `client_id` isn't the Application ID (still `APP_ID`, the Public Key, a space): let `pnpm discord` print the link (step 2.1). 2. Developer Portal → **Installation** → **Installation Contexts**: **Guild Install** must be ticked. 3. The server requires 2FA for moderation (Server Settings → Safety Setup) and your account has no 2FA: switch it on in User Settings → My Account, or lift the requirement while you invite. |
 | `Discord refused the token` | It was reset, or copied wrong. Developer Portal → Bot → **Reset Token** → paste it in `.env.discord`. |
 | `The bot isn't in server …` | The invite wasn't completed, or `DISCORD_GUILD_ID` is another server's. It prints the invite link to use. |
 | `✗ Community is off` | Step 3. |
