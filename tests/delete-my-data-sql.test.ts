@@ -1,4 +1,4 @@
-// Migration 0037 against a real Postgres (PGlite, in process): Settings → Delete all my data deletes every row the game
+// Migration 0038 against a real Postgres (PGlite, in process): Settings → Delete all my data deletes every row the game
 // keeps about the caller, and nobody else's. Supabase's own pieces (the auth schema, the anon / authenticated roles)
 // are stood in for at the top, as in friends-sql.test.ts.
 import { readFileSync } from 'node:fs'
@@ -80,11 +80,11 @@ beforeAll(async () => {
     '0033_friends.sql',
     '0034_day_care.sql',
     '0035_events.sql',
-    '0037_delete_my_data.sql',
+    '0038_delete_my_data.sql',
   ])
     await db.exec(sql(f))
   // Run twice: the migration must stay safe to run again.
-  await db.exec(sql('0037_delete_my_data.sql'))
+  await db.exec(sql('0038_delete_my_data.sql'))
   await db.exec(`insert into auth.users (id) values ('${U.ash}'), ('${U.misty}')`)
   await fill(U.ash, U.misty, 'AAAAAAAA')
   await fill(U.misty, U.ash, 'BBBBBBBB')
@@ -92,7 +92,7 @@ beforeAll(async () => {
   await db.query('insert into leaderboard_bans (user_id) values ($1)', [U.ash])
 }, 60_000)
 
-describe('0037: delete_my_data', () => {
+describe('0038: delete_my_data', () => {
   it('needs a signed-in player', async () => {
     await expect(as(null, 'select delete_my_data()')).rejects.toThrow(/signed_out/)
   })

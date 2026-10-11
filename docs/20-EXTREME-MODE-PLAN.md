@@ -131,7 +131,7 @@ Dev tools (admins, DevToolsSection): **Unlock Extreme**, **Switch save**, **Skip
 
 `readSave` / `writeSave` take the slot. Settings (language, theme, sound) are the device's, shared.
 
-### 3.3 Online (migration `0038_extreme_realm.sql`)
+### 3.3 Online (migration `0039_extreme_realm.sql`)
 
 - `realm text not null default 'main' check (realm in ('main','extreme'))` on `saves`, `player_cards`,
   `player_card_regions`, `versus_teams`, `versus_battles`, `event_state`, `raid_teams`, `raid_gifts`. Primary keys
@@ -142,9 +142,9 @@ Dev tools (admins, DevToolsSection): **Unlock Extreme**, **Switch save**, **Skip
   `leaderboard()`, `versus_*`, `wheel_spin`, `raid_*`; the `saves_card` trigger writes the card of the save's own
   realm. `friend_code`, `friend_add`, `friend_remove` don't need it. The default keeps clients that haven't updated
   working on the main world.
-- `delete_my_data()` (0037) deletes both realms; a new `delete_my_data(p_realm)` deletes one (§5).
+- `delete_my_data()` (0038) deletes both realms; a new `delete_my_data(p_realm)` deletes one (§5).
 - Analytics: the daily ping carries the realm in its snapshot; the admin's player view shows both saves.
-- Tested on PGlite like 0033–0037: two friends, one with only a main save, the other with both, see each other only in
+- Tested on PGlite like 0033–0038: two friends, one with only a main save, the other with both, see each other only in
   the world they share; no board, Versus list or raid ever mixes the two.
 
 ## 4. The rules pop-up
@@ -186,7 +186,7 @@ welcome-back card and the admin panel: https://claude.ai/artifact/Vq8m9ru7sxYC3H
 2. **Two saves on the device** — slots in `storage.ts` and the store, switching with a reload, the title card, the new
    game into Extreme, the unlock and the rules pop-up.
 3. **The screens** — top bar chip, countdowns, the resting team, the welcome-back card, Settings.
-4. **Online realm** — migration 0038 with its PGlite tests; every RPC passes the realm; sync per slot.
+4. **Online realm** — migration 0039 with its PGlite tests; every RPC passes the realm; sync per slot.
 5. **Admin** — Config panel and dev tools; `docs/15-UI-GUIDELINES.md` gets an Extreme section; every new component on
    `/kitchen-sink`; e2e: unlock → rules → new Extreme game, no Center in a whole round, K.O. timer, away heal with a
    mocked server clock, the two worlds' leaderboards apart.

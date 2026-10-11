@@ -337,7 +337,7 @@ function sayReturnedAuthError() {
 
 /**
  * Settings → Delete all my data: signed in, every row the online database keeps about the player
- * (`delete_my_data()`, migration 0037), then everything the game keeps on this device but its settings. Online first:
+ * (`delete_my_data()`, migration 0038), then everything the game keeps on this device but its settings. Online first:
  * a local delete alone would get the save back from the cloud at the next sync, so if the online one fails nothing is
  * deleted and this returns false. The caller reloads the page, which clears what the stores still hold in memory.
  */

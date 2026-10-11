@@ -1,5 +1,5 @@
 // Settings → Delete all my data: the red button at the foot of the page, two pop-ups in a row, then the title screen
-// with nothing left but the settings. Signed in, the online data goes first (delete_my_data, migration 0037); if it
+// with nothing left but the settings. Signed in, the online data goes first (delete_my_data, migration 0038); if it
 // can't, nothing is deleted.
 import { expect, test, type Page } from '@playwright/test'
 import { FAST, fakeSession, makeSave, mockSupabase, STORAGE_KEY, SUPABASE } from './helpers'
@@ -85,7 +85,7 @@ test('signed in: the online data is deleted first, then this device', async ({ p
 
 test("signed in: when the online data can't be deleted, nothing is", async ({ page }) => {
   await mockSupabase(page)
-  // The database without migration 0037.
+  // The database without migration 0038.
   await page.route(`${SUPABASE}/rest/v1/rpc/delete_my_data`, (route) =>
     route.fulfill({
       status: 404,
