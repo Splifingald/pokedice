@@ -1,6 +1,6 @@
 // Pure state transitions on the save: new game, rewards, catches, wipes, center, team, shop, upgrades.
 import { getSpecies, linearAreas } from './data'
-import { KANTO, evolutionGate, regionOf, regionOfArea } from './regions'
+import { KANTO, evolutionGate, inWorldRegion, regionOf, regionOfArea } from './regions'
 import { asSeenBy, gymsFor, playerSideOf } from './rival'
 import { nextComboCost, nextDieCost, pokemonXp, trainerGoldFor, healAmount, multiExpShareFor } from './economy'
 import { deckAbilities, deckCounts, roundsComplete } from './encounters'
@@ -344,6 +344,11 @@ export type RunEvent =
   | { kind: 'secret_unlocked'; areaId: string }
   /** An Elite Rebattle tier won: every trainer of its gauntlet beaten in a row. */
   | { kind: 'rebattle_cleared'; regionId: string; tier: number }
+  /**
+   * A small world's shiny mythical caught (docs/21): it left the world for its home region's Box (`region`), or waits
+   * for that region to be started (`waiting`).
+   */
+  | { kind: 'world_mythical'; dex: number; level: number; region: string; waiting: boolean }
 
 export interface VictoryInput {
   areaId: string
@@ -583,7 +588,8 @@ export function buyItem(
   newId: () => string = () => `fossil-${now}`,
 ): SaveData | null {
   const item = data.items[key]
-  if (!item || qty <= 0) return null
+  // A small world's Mart sells its own list only (engine/worlds.ts buyWorldItem).
+  if (!item || qty <= 0 || inWorldRegion(save, data)) return null
   if (!shopSells(item, save, regionOf(save))) return null
   // One is all there is: asking for more is a mistake, not a smaller order.
   if (item.unique && qty !== 1) return null
@@ -687,7 +693,9 @@ export function applyLevelEvolution(
   return { save: next, events: [{ kind: 'evolve', uid: inst.id, fromDex: inst.dex, toDex: target.toDex, level: inst.level }] }
 }
 
+/** No upgrades in a small world: dice and combos follow each Pokémon's level there (docs/21). */
 export function buyComboUpgrade(save: SaveData, key: ComboKey, data: GameData): SaveData | null {
+  if (inWorldRegion(save, data)) return null
   const lv = save.comboLevels[key] ?? 1
   const cost = nextComboCost(key, lv, data)
   if (cost == null || save.gold < cost) return null
@@ -695,6 +703,7 @@ export function buyComboUpgrade(save: SaveData, key: ComboKey, data: GameData): 
 }
 
 export function buyDieUpgrade(save: SaveData, type: PokeType, data: GameData): SaveData | null {
+  if (inWorldRegion(save, data)) return null
   const lv = save.dieLevels[type] ?? 1
   const cost = nextDieCost(type, lv, data)
   if (cost == null || save.gold < cost) return null

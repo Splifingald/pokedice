@@ -10,6 +10,7 @@ import {
   reviveFossils,
   releaseDuplicates,
   releaseRaidLocks,
+  releaseWorldPending,
   settleKo,
   stampExtremeUnlock,
   syncHpScale,
@@ -101,6 +102,11 @@ export interface GameStore {
   /** The English content `data` was localized from — kept so a language switch can redo it. */
   rawData: GameData
   contentSource: 'bundle' | 'remote'
+  /**
+   * The content in play is known to be the latest (the database answered the version check, or an admin applied
+   * theirs): only then may the game act on what it doesn't hold — a small world gone from the admin's list (docs/21).
+   */
+  contentChecked: boolean
   save: SaveData | null
   corruptSaveArchived: boolean
   settings: Settings
@@ -149,11 +155,13 @@ function settle(save: SaveData, data: GameData) {
   const fitted = fitDayCare(fossils.save, data, Date.now())
   // Raid catches locked until their area was completed: one completed since joins its region's Box.
   const raids = releaseRaidLocks(fitted, data, Date.now(), raidId)
-  const dup = releaseDuplicates(syncXpCurve(syncHpScale(raids.save, data), data))
+  // A small world's shiny mythical waiting for its home region (docs/21): that region started since, it joins its Box.
+  const worlds = releaseWorldPending(raids.save, data, Date.now(), raidId)
+  const dup = releaseDuplicates(syncXpCurve(syncHpScale(worlds.save, data), data))
   // Extreme mode (docs/22): the main save beat the league that opens it (noted once, so it stays open); an Extreme
   // save's K.O. clocks, on the real time.
   const ko = settleKo(stampExtremeUnlock(dup.save, data, Date.now()), data, trustedNow())
-  return { ...dup, save: ko.save, revived: fossils.revived, raidsReleased: raids.released, back: ko.back }
+  return { ...dup, save: ko.save, revived: fossils.revived, raidsReleased: raids.released, worldsReleased: worlds.released, back: ko.back }
 }
 
 /**
@@ -184,6 +192,7 @@ function boot(): Pick<GameStore, 'data' | 'rawData' | 'save' | 'corruptSaveArchi
 export const useGame = create<GameStore>()(() => ({
   ...boot(),
   contentSource: 'bundle',
+  contentChecked: false,
   run: initialRun(),
   battle: null,
   auth: { status: 'unknown', userId: null, email: null },
@@ -244,6 +253,15 @@ export function commitSave(next: SaveData | null, opts: { silent?: boolean; keep
   }
   for (const p of settled?.released ?? [])
     pushToast(t('ui.toast.releasedWeaker', { name: data.species[p.dex]?.name ?? `#${p.dex}`, level: p.level }), 'info', 4000)
+  for (const p of settled?.worldsReleased ?? [])
+    pushToast(
+      t('ui.world.toastHome', {
+        name: data.species[p.dex]?.name ?? `#${p.dex}`,
+        region: data.regions.find((r) => r.id === p.region)?.name ?? p.region,
+      }),
+      'good',
+      5000,
+    )
   for (const p of settled?.raidsReleased ?? [])
     pushToast(
       t('ui.raid.toastUnlocked', {
@@ -297,6 +315,8 @@ export function setContent(raw: BundleRaw, source: 'bundle' | 'remote') {
       data,
       rawData,
       contentSource: source,
+      // The database's content (or the admin's, applied from Admin) is the latest there is.
+      contentChecked: s.contentChecked || source === 'remote',
       save: areaOk || !save ? save : { ...save, currentAreaId: data.areas[0]?.id ?? '' },
       run: s.run.areaId && !data.areas.some((a) => a.id === s.run.areaId) ? initialRun() : s.run,
     }

@@ -2,6 +2,7 @@
 // prize taking `count` of them, each slice won `odds` % of the time (the admin's numbers; they're scaled to 100 % if
 // they don't add up). Signed-in players' prize is drawn by the server (wheel_spin(), migration 0035) and only shown
 // here; guests draw it here, on the server's day.
+import { inWorldRegion } from './regions'
 import type { Rng } from './rng'
 import type { GameData, SaveData, WheelPrize, WheelReward } from './types'
 
@@ -77,7 +78,8 @@ export function spinSpent(save: SaveData, day: string): SaveData {
 /** Pays the waiting prize into the live region (₽ or the bag) and clears it. Unchanged when nothing waits. */
 export function payWheelPrize(save: SaveData, data: GameData): SaveData {
   const r = save.events?.wheelPending
-  if (!r) return save
+  // Inside a small world it waits: nothing from outside reaches its bag or purse (docs/21).
+  if (!r || inWorldRegion(save, data)) return save
   const { wheelPending: _paid, ...events } = save.events!
   if (r.kind === 'gold') return { ...save, gold: save.gold + Math.max(0, Math.round(r.amount)), events }
   if (!data.items[r.key]) return { ...save, events }

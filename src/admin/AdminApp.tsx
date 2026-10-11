@@ -48,7 +48,8 @@ const SECTION_TABLES: Partial<Record<string, TableName[]>> = {
   items: ['items'],
   typechart: ['type_chart'],
   config: ['game_config', 'regions'],
-  events: ['game_config'],
+  // Small worlds make their region and areas from the Events section.
+  events: ['game_config', 'regions', 'areas', 'area_wild_pool', 'area_trainer_pool', 'area_loot_pool'],
 }
 
 function Gate() {
