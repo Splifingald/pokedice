@@ -109,7 +109,7 @@ Guests: no row; their state lives in `SaveData.events`, and they only need `even
    - `teaserDue`: `badges ≥ teaserBadges` in Kanto and no event yet.
    - `ruleParams(id, config)`: the numbers the rule strings interpolate.
 3. **Home** (`home/EventWidgets.tsx`, wired in `home/Widgets.tsx` after Versus)
-   - One square per active event, same `Widget` frame and grid: `RaidWidget` (sprite, time left, tries, LIVE/CAUGHT tag), `RebattleWidget` (next opponent's portrait, tier medal, fight n of 5), `WheelWidget` (prize carousel, icons only, CSS marquee; reduced motion = static row), `EventsTeaser` (dashed, locked).
+   - One square per active event, same `Widget` frame and grid: `RaidWidget` (the Pokémon's small menu icon, a star beside it when shiny since the icons have no shiny colours; time left, tries, LIVE/CAUGHT tag), `RebattleWidget` (next opponent's portrait, tier medal, fight n of 5), `WheelWidget` (prize carousel, icons only, CSS marquee; reduced motion = static row), `EventsTeaser` (dashed, locked).
    - Ticking text via `useNow(30_000)`; the carousel never re-mounts on a tick.
 4. **Events screen** (`/events/:id`, inside `GameLayout`)
    - Banner header (`EventBanner`: picture + title + live status + back button to `/home`), then the event's page. No tabs between events.
