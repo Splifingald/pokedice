@@ -1,6 +1,17 @@
 import { lazy, Suspense, useId, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { badgeCase, discordUrl, extremeOn, extremeOpen, isExtreme, leaderboardUnlocked } from '@/engine'
+import {
+  badgeCase,
+  discordUrl,
+  extremeOn,
+  extremeOpen,
+  isExtreme,
+  leaderboardUnlocked,
+  tradeCfg,
+  tradeClosed,
+  tradesOf,
+  tradesOn,
+} from '@/engine'
 import { otherSave } from '@/store/extreme'
 import { useT } from '@/i18n/react'
 import { useFriends } from '@/lib/friends'
@@ -106,6 +117,12 @@ export function PlayerMenu() {
   const { connect, chooser } = useConnect()
   const newFriends = useFriends((s) => (s.userId && s.userId === auth.userId ? s.unseen.length : 0))
   const friendCount = useFriends((s) => s.ids.size)
+  // Trades (docs/23): a trade of yours went through while you were away, and you haven't looked yet.
+  const tradesUnseen = save && !isExtreme(save) ? (tradesOf(save).unseen?.length ?? 0) : 0
+  const tradesOut = save ? tradesOf(save).out.length : 0
+  // The row is there once the admin's switch is on for this player (and while something is listed, so it can come back).
+  const tradesRow = isSupabaseConfigured && !!save && !isExtreme(save) && (tradesOn(data) || tradesOut > 0)
+  const news = newFriends + tradesUnseen
 
   const name = playerOf(save).name
   const badges = save ? badgeCase(save, data) : []
@@ -130,7 +147,7 @@ export function PlayerMenu() {
         aria-disabled={inFight || undefined}
         aria-haspopup="dialog"
         aria-expanded={open}
-        aria-label={newFriends ? t('ui.profile.menuLabelNew', { n: newFriends }) : t('ui.profile.menuLabel')}
+        aria-label={news ? t('ui.profile.menuLabelNew', { n: news }) : t('ui.profile.menuLabel')}
         title={t(inFight ? 'ui.nav.finishFight' : 'ui.profile.menuLabel')}
         className={cx('flex min-h-[44px] min-w-0 shrink flex-row-reverse items-center gap-2 text-right', inFight && 'pointer-events-none opacity-60')}
       >
@@ -139,12 +156,12 @@ export function PlayerMenu() {
             <TrainerLook src={avatarOf(playerAvatarId(save?.player)).src} w={30} h={30} />
           </span>
           {extreme && <ExtremeMark className="absolute -bottom-1 -left-1" />}
-          {newFriends > 0 && (
+          {news > 0 && (
             <span
               aria-hidden
               className="absolute -right-1 -top-1 grid h-[18px] min-w-[18px] place-items-center bg-gold px-0.5 font-pixel-sm text-[13px] leading-none text-ink shadow-ring"
             >
-              {newFriends > 9 ? '9+' : newFriends}
+              {news > 9 ? '9+' : news}
             </span>
           )}
         </span>
@@ -197,6 +214,22 @@ export function PlayerMenu() {
               dot={newFriends}
               hint={!newFriends && friendCount ? String(friendCount) : undefined}
               onClick={go('/friends')}
+            />
+          )}
+          {tradesRow && (
+            <MenuRow
+              icon="trade"
+              label={t('ui.trades.title')}
+              desc={
+                auth.status !== 'signed_in'
+                  ? t('ui.menu.tradesConnect')
+                  : save && tradeClosed(save, data) === 'badges'
+                    ? t('ui.trades.locked', { n: tradeCfg(data).minBadges })
+                    : t('ui.menu.trades')
+              }
+              dot={tradesUnseen}
+              hint={!tradesUnseen && tradesOut ? `${tradesOut}/${tradeCfg(data).maxListings}` : undefined}
+              onClick={go('/trades')}
             />
           )}
           {canSwitch && (

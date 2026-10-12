@@ -3,7 +3,7 @@
 // friend ID, so it shares the game's own link. The native share sheet on phones, or a copied link where there is none
 // (desktop). Remembered in localStorage. The donation pop-up and a special event's unlock pop-up go first when they're
 // waiting too.
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useSyncExternalStore } from 'react'
 import { badgeCase, dayCareTutorialDue, donationDue, eventUnlockDue, leaderboardTutorialDue, regionOf, versusRulesDue } from '@/engine'
 import { useT } from '@/i18n/react'
 import { formatCode, inviteUrl, loadMyCode, useFriends } from '@/lib/friends'
@@ -20,6 +20,26 @@ const seen = (region: string) => {
   } catch {
     return true
   }
+}
+
+const seenListeners = new Set<() => void>()
+
+/**
+ * The prompt is waiting in this region (its 2nd badge, not seen yet): the one-time pop-ups that come later (Trades'
+ * rules) queue behind it, one pop-up at a time.
+ */
+export function useSharePromptWaiting(): boolean {
+  const region = useGame((s) => (s.save ? regionOf(s.save) : null))
+  const twoBadges = useGame((s) => !!s.save && badgeCase(s.save, s.data).filter((b) => b.earned).length >= 2)
+  const done = useSyncExternalStore(
+    (l) => {
+      seenListeners.add(l)
+      return () => seenListeners.delete(l)
+    },
+    () => !region || seen(region),
+    () => true,
+  )
+  return twoBadges && !done
 }
 
 export function ShareTutorial() {
@@ -54,6 +74,7 @@ export function ShareTutorial() {
       /* private mode: may show again next visit */
     }
     setClosed((c) => [...c, region])
+    seenListeners.forEach((l) => l())
   }
 
   const share = async () => {

@@ -270,6 +270,12 @@ describe('the board and a link', () => {
     expect(erika.map((r) => r.trade_board.dex).sort((a, b) => a - b)).toEqual([4, 19])
     const mine = await as<{ trade_board: { is_me: boolean } }>(U.ash, `select * from trade_board()`)
     expect(mine.every((r) => r.trade_board.is_me)).toBe(true)
+    // One trainer's, for a friend's card: Erika sees Ash's public and friends-only listings, Misty only the public.
+    const card = (who: string | null) =>
+      as<{ trade_board: { dex: number } }>(who, `select * from trade_board(p_owner => '${U.ash}')`)
+    expect((await card(U.erika)).map((r) => r.trade_board.dex).sort((a, b) => a - b)).toEqual([4, 19])
+    expect((await card(U.misty)).map((r) => r.trade_board.dex)).toEqual([4])
+    expect(await as(U.erika, `select * from trade_board(p_owner => '${U.misty}')`)).toEqual([])
   })
   it('gives guests the four newest public listings', async () => {
     const guest = await as<{ trade_board: { dex: number; visibility: string } }>(

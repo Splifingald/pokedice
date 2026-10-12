@@ -14,6 +14,7 @@ import { PixelButton } from '../PixelButton'
 import { Sheet } from '../Sheet'
 import { CardFrame, CardTeam, Stat } from '../TrainerCard'
 import { TrainerLook } from '../TrainerLook'
+import { TheirTrades } from '../trades/TheirTrades'
 import { useAddText } from './AddFriendModal'
 
 type Load = { state: 'loading' } | { state: 'ready'; profile: FriendProfile } | { state: 'gone' } | { state: 'error'; why: string }
@@ -154,6 +155,7 @@ export function FriendProfileSheet({
                 </div>
               </section>
             )}
+            {userId && <TheirTrades userId={userId} />}
           </div>
         )}
       </Sheet>

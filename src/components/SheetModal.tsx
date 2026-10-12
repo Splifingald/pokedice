@@ -23,6 +23,7 @@ import { ItemPanel, useHasFieldItems } from './ItemPanel'
 import { PixelButton } from './PixelButton'
 import { PokemonSheet } from './PokemonSheet'
 import { Sheet } from './Sheet'
+import { useTradeThis } from './trades/TradeThis'
 
 /** What the details sheet opens on: one of your Pokémon, a Pokédex entry, or an area's Pokémon. */
 export type SheetView = { kind: 'inst'; id: string } | { kind: 'dex'; dex: number } | { kind: 'area'; areaId: string }
@@ -191,12 +192,13 @@ function SendOnPanel({ inst, onSent }: { inst: PokemonInstance; onSent: () => vo
   const save = useGame((s) => s.save)
   const data = useGame((s) => s.data)
   const [asked, setAsked] = useState<RegionId | null>(null)
-  if (!save) return null
   // Not one of a region's own Pokémon: it has no business there, and offering it would only be noise.
-  const targets = sendTargets(save, data).filter((r) => regionSpecies(data, r.id).has(inst.dex))
-  if (!targets.length) return null
+  const targets = save ? sendTargets(save, data).filter((r) => regionSpecies(data, r.id).has(inst.dex)) : []
+  // TRADE (docs/23) sits beside the Send buttons: the main button when there's nowhere to send it.
+  const trade = useTradeThis(inst, !targets.length, onSent)
+  if (!save || (!targets.length && !trade)) return null
   // With the species settled, what is left ('last', 'reviving') is about this Pokémon, the same for every region.
-  const why = sendOnBlocked(save, data, inst, targets[0]!)
+  const why = targets.length ? sendOnBlocked(save, data, inst, targets[0]!) : null
   const hinted = targets.find((r) => r.id === asked) ?? (targets.length === 1 ? targets[0] : undefined)
 
   const name = data.species[inst.dex]?.name ?? t('ui.common.pokemon')
@@ -213,16 +215,20 @@ function SendOnPanel({ inst, onSent }: { inst: PokemonInstance; onSent: () => vo
             {asked === r.id ? t('ui.sheet.sendOnConfirm') : t('ui.sheet.sendOn', { region: r.name })}
           </PixelButton>
         ))}
+        {trade?.button}
       </div>
-      <p className="copy text-base text-muted">
-        {why === 'last'
-          ? t('ui.sheet.sendOnLast')
-          : why === 'reviving'
-            ? t('ui.sheet.sendOnReviving')
-            : hinted
-              ? t('ui.sheet.sendOnHint', { name, region: hinted.name })
-              : t('ui.sheet.sendOnPick', { name })}
-      </p>
+      {targets.length > 0 && (
+        <p className="copy text-base text-muted">
+          {why === 'last'
+            ? t('ui.sheet.sendOnLast')
+            : why === 'reviving'
+              ? t('ui.sheet.sendOnReviving')
+              : hinted
+                ? t('ui.sheet.sendOnHint', { name, region: hinted.name })
+                : t('ui.sheet.sendOnPick', { name })}
+        </p>
+      )}
+      {trade && <p className="copy text-base text-muted">{trade.note}</p>}
     </section>
   )
 }

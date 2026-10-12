@@ -207,6 +207,7 @@ const CENTER_MELODY = [988, 831, 988, 831, 988, 831, 1319]
 const CENTER_HARMONY = [659, 415, 659, 415, 659, 415, 330]
 const EVOLVE_FANFARE = [523, 659, 784, 1047, 784, 1047]
 const HATCH_FANFARE = [784, 988, 1175, 1568]
+const TRADE_JINGLE = [659, 784, 988, 1319]
 
 /** The timelines' sounds, by cue. `n` varies a sound inside a series (each Razor Leaf chip a step higher). */
 const FX_SOUNDS = {
@@ -272,6 +273,21 @@ const FX_SOUNDS = {
   'hatch.fanfare': (n = 0) => tone(HATCH_FANFARE[n]!, n === 3 ? 0.5 : 0.12, { type: 'square', vol: 0.045 }),
   // A shiny hatchling: the two-tone chime (B6, then E7), as the stars ring out.
   'hatch.shiny': (n = 0) => tone(n ? 2637 : 1976, n ? 0.2 : 0.12, { type: 'square', vol: n ? 0.03 : 0.035 }),
+  // A trade (docs/23): drawn into the ball, up the link, the other ball down it, open, and a short jingle.
+  'trade.recall': () => tone(880, 0.25, { type: 'triangle', vol: 0.04, slide: -500 }),
+  'trade.shut': () => hiss(0.06, { freq: 900, vol: 0.06 }),
+  'trade.up': () => {
+    hiss(0.45, { freq: 700, slide: 2600, vol: 0.05 })
+    tone(392, 0.4, { type: 'square', vol: 0.03, slide: 600 })
+  },
+  'trade.down': () => tone(1047, 0.45, { type: 'square', vol: 0.03, slide: -650 }),
+  'trade.land': () => hiss(0.08, { freq: 500, vol: 0.06 }),
+  'trade.open': () => {
+    hiss(0.3, { vol: 0.06, freq: 2200 })
+    tone(1319, 0.25, { type: 'square', vol: 0.035 })
+  },
+  'trade.shiny': (n = 0) => tone(n ? 2093 : 1568, 0.18, { type: 'triangle', vol: 0.04 }),
+  'trade.jingle': (n = 0) => tone(TRADE_JINGLE[n]!, n === 3 ? 0.4 : 0.1, { type: 'square', vol: 0.04 }),
   // Mega Evolution and Gigantamax are the biggest moments of a fight: layered chords, a sub boom and a rising charge,
   // not single beeps.
   'mega.key': () => {

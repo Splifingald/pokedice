@@ -250,6 +250,8 @@ export interface BoardQuery {
   dex?: number[] | null
   query?: string
   offset?: number
+  /** One trainer's listings (a friend's card). */
+  owner?: string
 }
 
 export async function fetchBoard(q: BoardQuery = {}): Promise<TradeListing[]> {
@@ -259,6 +261,7 @@ export async function fetchBoard(q: BoardQuery = {}): Promise<TradeListing[]> {
     p_dex: q.dex?.length ? q.dex : null,
     p_query: q.query?.trim() || null,
     p_offset: q.offset ?? 0,
+    p_owner: q.owner ?? null,
   })
   return (Array.isArray(rows) ? rows : []).map(parseListing).filter((l): l is TradeListing => !!l)
 }

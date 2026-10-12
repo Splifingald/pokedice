@@ -30,6 +30,12 @@ import {
   wantable,
   wantMatches,
   createRng,
+  encodeDexSet,
+  newForTrade,
+  previewTake,
+  takeBlock,
+  takeChoices,
+  tradesTakenToday,
   type PokemonInstance,
   type SaveData,
   type TradeConfig,
@@ -365,5 +371,64 @@ describe('who can trade', () => {
     expect(tradeClosed(s, data)).toBeNull()
     expect(tradeClosed({ ...s, mode: 'extreme' }, data)).toBe('extreme')
     expect(tradeClosed(s, makeData({ trade: { ...TRADE, minBadges: 2 } }))).toBe('badges')
+  })
+})
+
+describe('taking a listing, as the screens show it', () => {
+  const poster = (has: number[] = [], regions = ['kanto']) => ({ ...encodeDexSet(has), shiny: [], regions })
+
+  it('offers the Pokémon that answer the want, the ones that can’t go last with why', () => {
+    const pidgey = mon(16, 22)
+    const s = kanto(pidgey)
+    const choices = takeChoices(s, data, { kind: 'species', dex: 16 }, poster())
+    expect(choices.map((c) => [c.at.inst.id, c.why])).toEqual([[pidgey.id, null]])
+    // A poster who hasn't started Johto can't receive a Totodile.
+    const j = withJohto(kanto())
+    const johto = j.parked!.johto!
+    const t = { ...j, parked: { ...j.parked, johto: { ...johto, box: [...johto.box, mon(161, 5)] } } }
+    const toto = takeChoices(t, data, { kind: 'species', dex: 158 }, poster())
+    expect(toto[0]!.why).toBe('region')
+    // Any I don't own: not one the poster has.
+    expect(takeChoices(s, data, { kind: 'notOwned' }, poster([16, 4])).map((c) => c.at.inst.dex)).toEqual([])
+  })
+
+  it('says why a listing can’t be taken: its region, the day’s cap, nothing matching', () => {
+    const s = kanto(mon(16, 22))
+    const l = { dex: 4, want: { kind: 'species' as const, dex: 16 }, poster: poster() }
+    expect(takeBlock(s, data, l, NOW)).toBeNull()
+    expect(takeBlock(s, data, { ...l, dex: 158 }, NOW)).toBe('region')
+    expect(takeBlock(s, data, { ...l, want: { kind: 'species', dex: 7 } }, NOW)).toBe('no_match')
+    const log = Array.from({ length: TRADE.tradesPerDay }, (_, i) => ({
+      id: `x${i}`,
+      at: NOW,
+      role: 'taker' as const,
+      with: 'Misty',
+      gave: { dex: 1, level: 5 },
+      got: { dex: 4, level: 5 },
+      outcome: 'new' as const,
+    }))
+    const capped = { ...s, trades: { out: [], done: [], log } }
+    expect(tradesTakenToday(capped, NOW)).toBe(TRADE.tradesPerDay)
+    expect(takeBlock(capped, data, l, NOW)).toBe('daily_cap')
+    // A new UTC day.
+    expect(takeBlock(capped, data, l, NOW + 86_400_000)).toBeNull()
+  })
+
+  it('previews what a trade brings without doing it', () => {
+    const given = mon(16, 22)
+    const s = kanto(given, mon(64, 10))
+    const p = previewTake(s, data, { dex: 64 }, given)
+    expect(p.received.evolvedTo).toBe(65)
+    expect(p.received.arrival.level).toBe(22)
+    expect(p.mine).toBeNull() // no Alakazam yet
+    expect(s.box.some((m) => m.id === given.id)).toBe(true)
+    const weak = previewTake(kanto(given, mon(19, 30)), data, { dex: 19 }, given)
+    expect(weak).toMatchObject({ received: { outcome: 'merged' }, mine: 30 })
+  })
+
+  it('calls a species NEW when the Pokédex it lands in lacks it', () => {
+    const s = kanto()
+    expect(newForTrade(s, data, 4)).toBe(false)
+    expect(newForTrade(s, data, 25)).toBe(true)
   })
 })

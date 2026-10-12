@@ -443,6 +443,8 @@ export interface Received {
   /** A trade evolution (§1.5): the species it became on arrival. */
   evolvedTo: number | null
   region: RegionId
+  /** The instance it is now (a new one, or the copy it replaced); null when it merged into yours. */
+  instId: string | null
   /** It (or what it evolved into) wasn't in that region's Pokédex. */
   isNew: boolean
 }
@@ -487,6 +489,7 @@ export function receiveTrade(
     arrival,
     evolvedTo,
     region: placed.region,
+    instId: placed.instId,
     isNew,
   }
 }
@@ -661,10 +664,92 @@ export function reconcileListings(
   return next
 }
 
-/** The trades you've looked at: the gold dot goes. */
-export function markTradesSeen(save: SaveData): SaveData {
+// ---------------------------------------------------------------- taking a listing, as the screens show it
+
+/** Not in the Pokédex of the region it would land in: the NEW tag on the board and in the grids. */
+export function newForTrade(save: SaveData, data: GameData, dex: number): boolean {
+  const home = homeRegionOf(data, dex)
+  return !(home ? pokedexOf(save, home) : save.pokedex).includes(dex)
+}
+
+const DAY_MS = 86_400_000
+
+/** Trades taken since midnight UTC, as the save remembers them (the server counts too, and has the last word). */
+export function tradesTakenToday(save: SaveData, now: number): number {
+  const midnight = Math.floor(now / DAY_MS) * DAY_MS
+  return (tradesOf(save).log ?? []).filter((l) => l.role === 'taker' && l.at >= midnight).length
+}
+
+export interface TakeChoice {
+  at: BoxedMon
+  why: ListBlock | null
+}
+
+/**
+ * Your Pokémon that answer a listing's want, from every region's Box, the ones that can't go carrying why (the poster
+ * hasn't started its region, it's your last one…): those that can go first, then the strongest.
+ */
+export function takeChoices(
+  save: SaveData,
+  data: GameData,
+  want: TradeWant,
+  poster: TradeSnapshot,
+): TakeChoice[] {
+  return tradeChoices(save, data)
+    .filter((m) => wantMatches(want, m.inst, poster))
+    .map((at) => ({ at, why: tradeBlocked(save, data, at, poster.regions) }))
+    .sort(
+      (a, b) =>
+        Number(!!a.why) - Number(!!b.why) ||
+        b.at.inst.level - a.at.inst.level ||
+        a.at.inst.dex - b.at.inst.dex,
+    )
+}
+
+/** Why this listing can't be taken from this save (beyond signing in, friendship and your own): null when it can. */
+export type TakeBlock = 'region' | 'daily_cap' | 'no_match'
+
+export function takeBlock(
+  save: SaveData,
+  data: GameData,
+  l: { dex: number; want: TradeWant; poster: TradeSnapshot },
+  now: number,
+): TakeBlock | null {
+  const home = homeRegionOf(data, l.dex)
+  if (!home || !tradeRegions(save, data).includes(home)) return 'region'
+  if (tradesTakenToday(save, now) >= tradeCfg(data).tradesPerDay) return 'daily_cap'
+  if (!takeChoices(save, data, l.want, l.poster).some((c) => !c.why)) return 'no_match'
+  return null
+}
+
+export interface TakePreview {
+  /** What would arrive, where, and how it would be kept. */
+  received: Received
+  /** The level of your copy it would replace or merge into, if you have one there. */
+  mine: number | null
+}
+
+/** What giving this Pokémon for that listed one would bring, without doing it: the picker's lines and the confirm. */
+export function previewTake(
+  save: SaveData,
+  data: GameData,
+  listed: { dex: number; shiny?: boolean },
+  given: PokemonInstance,
+): TakePreview {
+  const gone = takeOutOfBox(save, data, given.id) ?? save
+  const received = receiveTrade(gone, data, listed, given.level, 0, () => 'preview')
+  const final = received.evolvedTo ?? listed.dex
+  const block = received.region === regionOf(gone) ? gone : gone.parked?.[received.region]
+  const plain = (block?.box ?? []).filter((p) => p.dex === final && !p.shiny && !isReviving(p))
+  return { received, mine: plain.length ? Math.min(...plain.map((p) => p.level)) : null }
+}
+
+/** The trades you've looked at (all of them, or these): the gold dot goes. */
+export function markTradesSeen(save: SaveData, ids?: string[]): SaveData {
   const t = tradesOf(save)
-  return t.unseen?.length ? { ...save, trades: { ...t, unseen: [] } } : save
+  if (!t.unseen?.length) return save
+  const unseen = ids ? t.unseen.filter((u) => !ids.includes(u)) : []
+  return unseen.length === t.unseen.length ? save : { ...save, trades: { ...t, unseen } }
 }
 
 export function markTradeRulesSeen(save: SaveData): SaveData {

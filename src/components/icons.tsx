@@ -33,6 +33,17 @@ const NAV_PAL: Record<string, string> = {
   S: '#8592ad',
 }
 
+/** The Trades arrows: the tab bar's gold, and a lighter blue than its own. */
+const TRADE_PAL: Record<string, string> = {
+  k: '#24304f',
+  y: '#ffbe2e',
+  Y: '#ffe7a8',
+  o: '#e08e00',
+  b: '#5b8def',
+  c: '#a9dcff',
+  d: '#3a5fc0',
+}
+
 export const ICONS = {
   burn: ['....k...', '...kok..', '..koYok.', '.kooYyok', '.koyYyok', '.kooyyok', '..koook.', '...kkk..'],
   frozen: ['...kk...', '..kCck..', '.kCccck.', 'kCcCccck', 'kcccCcck', '.kcccck.', '..kcck..', '...kk...'],
@@ -225,6 +236,25 @@ export const ICONS = {
     'kk....kk...',
     'k.....k....',
   ],
+  // Trades (docs/23): two arrows crossing, gold over blue, drawn like the tab bar's.
+  trade: [
+    '.........k......',
+    '........kYk.....',
+    '.kkkkkkkkYYk....',
+    'kYYYYYYYYYYYk...',
+    'kyyyyyyyyyyyyk..',
+    'koooooooooook...',
+    '.kkkkkkkkook....',
+    '......k.kok.....',
+    '.....kck.k......',
+    '....kcckkkkkkkk.',
+    '...kccccccccccck',
+    '..kbbbbbbbbbbbbk',
+    '...kdddddddddddk',
+    '....kddkkkkkkkk.',
+    '.....kdk........',
+    '......k.........',
+  ],
   ...PACK_ICONS,
 } as const
 
@@ -238,6 +268,7 @@ const OWN_PALETTE: Partial<Record<IconName, Record<string, string>>> = {
   navDex: NAV_PAL,
   navRanks: NAV_PAL,
   navFriends: NAV_PAL,
+  trade: TRADE_PAL,
 }
 
 export function PixelIcon({

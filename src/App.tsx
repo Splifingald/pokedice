@@ -12,6 +12,7 @@ import { AreaScreen } from '@/screens/Area'
 import { DayCareScreen } from '@/screens/DayCareScreen'
 import { FriendInvite } from '@/screens/FriendInvite'
 import { TradeLink } from '@/screens/TradeLink'
+import { TradesScreen } from '@/screens/Trades'
 import { FriendsScreen } from '@/screens/Friends'
 import { HomeScreen } from '@/screens/Home'
 import { LeaderboardScreen } from '@/screens/Leaderboard'
@@ -79,6 +80,7 @@ export function App() {
               <Route path="/leaderboard" element={<LeaderboardScreen />} />
               <Route path="/friends" element={<FriendsScreen />} />
               <Route path="/versus" element={<VersusScreen />} />
+              <Route path="/trades" element={<TradesScreen />} />
               <Route path="/events/:id" element={<EventsScreen />} />
               <Route path="/settings" element={<SettingsScreen />} />
             </Route>

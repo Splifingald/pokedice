@@ -9,12 +9,15 @@ import {
   applyTaken,
   isExtreme,
   listOut,
+  markTradeRulesSeen,
+  markTradesSeen,
   reconcileListings,
   tradeSnapshot,
   tradesOf,
   tradesOn,
+  previewTake,
   type OpenListing,
-  type Received,
+  type TradeLogEntry,
   type TradeVisibility,
   type TradeWant,
 } from '@/engine'
@@ -32,6 +35,17 @@ import { commitSave, useGame } from './game'
 import { newId } from './run'
 import { pushSaveNow, syncSettled } from './sync'
 
+/** A trade to show in the scene: as the save's log has it, and what only the moment knows. */
+export interface TradeShow {
+  entry: TradeLogEntry
+  /** It (or what it evolved into) wasn't in that region's Pokédex. */
+  isNew?: boolean
+  /** The level of your copy it replaced or merged into. */
+  mine?: number | null
+  /** The instance it is now, for the evolution scene's numbers. */
+  instId?: string | null
+}
+
 interface TradesState {
   /** Whose these are; everything clears when the signed-in account changes. */
   userId: string | null
@@ -45,6 +59,8 @@ interface TradesState {
   returned: number[]
   /** Trades you took that a check applied (a tab closed mid-trade): a toast each. */
   settled: string[]
+  /** The trade scene playing (the game shell shows it, over any page). */
+  scene: TradeShow | null
 }
 
 const EMPTY: TradesState = {
@@ -56,6 +72,7 @@ const EMPTY: TradesState = {
   popups: [],
   returned: [],
   settled: [],
+  scene: null,
 }
 
 export const useTrades = create<TradesState>(() => ({ ...EMPTY }))
@@ -172,6 +189,27 @@ export async function checkTrades(force = false, now = Date.now()): Promise<void
   }
 }
 
+/** The trades looked at (all, or these): the gold dot on the avatar and the Trades row goes. */
+export function seeTrades(ids?: string[]) {
+  const { save } = useGame.getState()
+  const next = save && markTradesSeen(save, ids)
+  if (next && next !== save) commitSave(next)
+}
+
+/** The rules pop-up was shown (or the page opened): it won't open by itself again. */
+export function seeTradeRules() {
+  const { save } = useGame.getState()
+  const next = save && markTradeRulesSeen(save)
+  if (next && next !== save) commitSave(next)
+}
+
+/** Plays the trade scene over whatever is on screen; it marks that trade seen. */
+export function playTrade(show: TradeShow) {
+  useTrades.setState({ scene: show })
+  seeTrades([show.entry.id])
+}
+export const endTrade = () => useTrades.setState({ scene: null })
+
 /** The pop-up for a trade was seen, or the toasts said. */
 export const shiftPopup = () => useTrades.setState((s) => ({ popups: s.popups.slice(1) }))
 export const clearReturned = () => useTrades.setState({ returned: [], settled: [] })
@@ -227,33 +265,21 @@ export async function post(
   return listing
 }
 
-export interface Taken {
-  id: string
-  received: Received
-  givenDex: number
-  givenLevel: number
-  givenShiny: boolean
-  with: string
-}
-
-/** TRADE: the server takes the listing (first come), then this save applies its half at once. */
-export async function take(listing: TradeListing, instId: string): Promise<Taken> {
+/** TRADE: the server takes the listing (first come), then this save applies its half at once; the scene follows. */
+export async function take(listing: TradeListing, instId: string): Promise<TradeShow> {
   await pushed()
   const r = await takeListing(listing.code, instId)
   const cur = useGame.getState()
   if (!cur.save) throw new Error('trades_no_save')
+  // Your copy it will meet, as it is before the trade.
+  const { mine } = previewTake(cur.save, cur.data, r.listed, r.given)
   const res = applyTake(cur.save, cur.data, r, Date.now(), newId)
   commitSave(res.save)
   forgetBoard(listing.id)
   void settle([r.id])
-  return {
-    id: r.id,
-    received: res.received!,
-    givenDex: r.given.dex,
-    givenLevel: r.given.level,
-    givenShiny: !!r.given.shiny,
-    with: r.with,
-  }
+  const entry = tradesOf(res.save).log?.find((l) => l.id === r.id)
+  if (!entry) throw new Error('trades_failed')
+  return { entry, isNew: res.received?.isNew, mine, instId: res.received?.instId }
 }
 
 /** CANCEL: back to the Box; too late (taken a moment before), the check applies the trade instead. */

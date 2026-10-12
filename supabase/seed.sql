@@ -2571,7 +2571,7 @@ $$;
 -- `p_query` for a trainer's name. Guests get the four newest public listings. Listing rows only, never a save.
 create or replace function trade_board(
   p_friends boolean default false, p_sort text default 'soon', p_dex int[] default null, p_query text default null,
-  p_offset int default 0, p_realm text default 'main')
+  p_offset int default 0, p_realm text default 'main', p_owner uuid default null)
 returns setof jsonb
 language plpgsql stable security definer set search_path = public as $$
 declare
@@ -2586,6 +2586,8 @@ begin
                and (t.owner = me or exists (select 1 from friend_ids_of(me) f where f.id = t.owner))))
       and (me is not null or t.visibility = 'public')
       and (not coalesce(p_friends, false) or exists (select 1 from friend_ids_of(me) f where f.id = t.owner))
+      -- One trainer's (a friend's card).
+      and (p_owner is null or t.owner = p_owner)
       and (p_dex is null and coalesce(p_query, '') = ''
            or t.dex = any (coalesce(p_dex, '{}'))
            or (t.want ->> 'dex')::int = any (coalesce(p_dex, '{}'))
@@ -2712,9 +2714,9 @@ revoke all on function trade_cfg(), trade_open(), trade_untradable(int), trade_h
   trade_started(jsonb), trade_find(jsonb, text), trade_has(jsonb, int), trade_name(uuid), trade_row(trade_listings, uuid)
   from public, anon, authenticated;
 revoke all on function trade_post(text, jsonb, text, jsonb, text), trade_take(text, text, text), trade_cancel(uuid),
-  trade_board(boolean, text, int[], text, int, text), trade_view(text, text, text), trade_mine(text),
+  trade_board(boolean, text, int[], text, int, text, uuid), trade_view(text, text, text), trade_mine(text),
   trade_applied(uuid[]), trade_remove(uuid), delete_my_data(text) from public, anon;
-grant execute on function trade_board(boolean, text, int[], text, int, text), trade_view(text, text, text) to anon, authenticated;
+grant execute on function trade_board(boolean, text, int[], text, int, text, uuid), trade_view(text, text, text) to anon, authenticated;
 grant execute on function trade_post(text, jsonb, text, jsonb, text), trade_take(text, text, text), trade_cancel(uuid),
   trade_mine(text), trade_applied(uuid[]), trade_remove(uuid), delete_my_data(text) to authenticated;
 

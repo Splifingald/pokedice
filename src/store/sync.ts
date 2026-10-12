@@ -45,16 +45,25 @@ let syncedUser: string | null = null
 let pushAllowed = false
 /** The signed-in player's save and the cloud copy are settled: what changes now goes up (trades wait for this). */
 export const syncSettled = () => pushAllowed
+/** Settled or not, as the sign-in's sync decides it; published (useCloudSync `settled`) for what waits for it. */
+function settleSync(on: boolean) {
+  pushAllowed = on
+  if (useCloudSync.getState().settled !== on) useCloudSync.setState({ settled: on })
+}
 /** pushKey of the save the cloud holds, as far as this device knows; null when it doesn't. A push of the same is skipped. */
 let cloudKey: string | null = null
 
 /** After a successful sync, SYNC ONLINE can't be pressed again for this long. */
 export const SYNC_COOLDOWN_MS = 5 * 60_000
 
-/** What SYNC ONLINE shows: when this device and the cloud last matched, and whether a sync is running. */
-export const useCloudSync = create<{ lastAt: number | null; busy: boolean }>(() => ({
+/**
+ * What SYNC ONLINE shows: when this device and the cloud last matched, and whether a sync is running; `settled`: the
+ * sign-in's sync is over and pushes go up (the trades check waits for it).
+ */
+export const useCloudSync = create<{ lastAt: number | null; busy: boolean; settled: boolean }>(() => ({
   lastAt: null,
   busy: false,
+  settled: false,
 }))
 const markSynced = () => useCloudSync.setState({ lastAt: Date.now() })
 /** The last push or sync attempt, failed or not: the next automatic push counts from here. */
@@ -120,7 +129,7 @@ async function pushOrWait(client: SupabaseClient, userId: string, save: SaveData
  * reloaded every few seconds used to download the whole save and upload it again on every load.
  */
 export async function reconcile(client: SupabaseClient, id: string, manual = false): Promise<'loaded' | 'pushed' | 'same' | 'ask'> {
-  pushAllowed = false
+  settleSync(false)
   cloudKey = null
   cancelPush() // whatever was waiting goes out below, if this device wins
   lastTry = Date.now()
@@ -136,7 +145,7 @@ export async function reconcile(client: SupabaseClient, id: string, manual = fal
       else await pushOrWait(client, id, local)
     }
     markSynced()
-    pushAllowed = true
+    settleSync(true)
     return 'same'
   }
   const { save: cloud, at } = await pullCloudSave(client, id, realm)
@@ -164,14 +173,14 @@ export async function reconcile(client: SupabaseClient, id: string, manual = fal
     rememberCloud(id, realm, at, cloudKey)
   }
   markSynced()
-  pushAllowed = true
+  settleSync(true)
   return outcome
 }
 
 async function handleSession(client: SupabaseClient, session: Session | null) {
   if (!session) {
     syncedUser = null
-    pushAllowed = false
+    settleSync(false)
     cloudKey = null
     cancelPush()
     useCloudSync.setState({ lastAt: null })
@@ -231,7 +240,7 @@ export async function syncNow() {
     if ((await reconcile(client, userId, true)) === 'same') pushToast(t('ui.toast.synced'), 'good')
   } catch (err) {
     console.warn('[cloud] sync failed', err)
-    pushAllowed = was.pushAllowed
+    settleSync(was.pushAllowed)
     syncedUser = was.syncedUser
     pushToast(t('ui.toast.syncFailed'), 'bad')
   } finally {
@@ -267,7 +276,7 @@ export async function resolveSyncConflict(keep: 'local' | 'cloud') {
     }
   }
   useGame.setState({ syncConflict: null })
-  pushAllowed = true
+  settleSync(true)
   pushToast(t(keep === 'cloud' ? 'ui.toast.cloudLoaded' : 'ui.toast.localKept'), 'good')
 }
 
