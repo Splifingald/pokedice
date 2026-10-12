@@ -359,7 +359,8 @@ Players shouldn't have to make many requests:
   search finds a nickname or a species), the Center, Home's scene, battle plates and messages (through a Mega
   Evolution), the XP recap, its evolution ("Blaze evolved into Charmeleon!"), the trade scene and the Done list. It
   goes with it in a trade (§21), and the new trainer can change it. Other players' Pokémon on boards and cards show
-  their species.
+  their species. **No switch and no rules pop-up** (§20 doesn't apply, the user's call, 2026-10-12): it is a name on a
+  sheet, not something with a page of its own.
 - **Explain, don't hide**: something that can't be used right now stays listed, greyed, with the reason in words
   ("Already full", "Fainted: needs a Revive", "Needs a Pokémon with 4+ dice", "6 badges"). Buttons you can't afford
   stay focusable (`aria-disabled`) and say what's missing ("need ₽14"); a tap explains in a toast.
