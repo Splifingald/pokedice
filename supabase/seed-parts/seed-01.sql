@@ -2200,7 +2200,8 @@ create trigger saves_throttle before update on saves
 --
 -- 1. game_config `trade`: the switch (Off / On for admin / On for everyone, off by default: docs/15 §20) and the
 --    numbers, inserted only if missing so seeding never clobbers the admin's.
--- 2. trade_listings: one row per listing, from posted to applied on both sides. No direct access; the functions below.
+-- 2. trade_listings: one row per listing, from posted to applied on both sides. Players reach it only through the
+--    functions below; the admin reads it (0047).
 -- 3. trade_post / trade_take read the Pokémon from the player's own cloud save (pushed just before, as Versus does:
 --    what the page sends isn't trusted), check every rule, and write the listing. trade_take takes it with one locked
 --    update, so two takers can't both win.
@@ -3398,6 +3399,15 @@ $$;
 
 revoke all on function delete_my_data(text) from public, anon;
 grant execute on function delete_my_data(text) to authenticated;
+
+-- ↓ supabase/migrations/0047_trades_admin_read.sql, inlined so this file stands alone.
+-- Admin → Trades reads the open listings straight from trade_listings (src/admin/sections/TradesSection.tsx), but 0044
+-- revoked every privilege on the table from `authenticated` and granted none back, so the read stopped at "permission
+-- denied for table trade_listings" before 0044's admin policy was ever asked. Players still read and write listings
+-- only through the trade_* functions: SELECT alone comes back, and the policy shows rows to the admin and nobody else
+-- (as players: 0028). Removing a listing stays trade_remove. Run after 0044; safe to run again.
+
+grant select on trade_listings to authenticated;
 
 insert into type_chart (attacking, defending, multiplier) values
   ('bug', 'dark', 2),

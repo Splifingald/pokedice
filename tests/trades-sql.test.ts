@@ -104,7 +104,9 @@ beforeAll(async () => {
     create table auth.users (id uuid primary key);
     create function auth.uid() returns uuid language sql stable as $$
       select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $$;
-    create function auth.jwt() returns jsonb language sql stable as $$ select '{}'::jsonb $$;
+    create function auth.jwt() returns jsonb language sql stable as $$
+      select jsonb_strip_nulls(jsonb_build_object('email', nullif(current_setting('request.jwt.claim.email', true), ''))) $$;
+    grant usage on schema auth to anon, authenticated;
   `)
   await db.exec(sql('0001_init.sql').replace('create extension if not exists pgcrypto;', ''))
   for (const f of [
@@ -121,10 +123,12 @@ beforeAll(async () => {
     '0039_extreme_realm.sql',
     '0040_lighter_save_writes.sql',
     '0044_trades.sql',
+    '0047_trades_admin_read.sql',
   ])
     await db.exec(sql(f))
   // Safe to run again.
   await db.exec(sql('0044_trades.sql'))
+  await db.exec(sql('0047_trades_admin_read.sql'))
   const species = (dex: number, form: unknown = null) =>
     `(${dex}, 'P${dex}', 'normal', 10, 100, 5, '', '[]', 1, '[]', '[]', ${form ? `'${JSON.stringify(form)}'` : 'null'})`
   await db.exec(`
@@ -398,6 +402,33 @@ describe('the check on load, applying once', () => {
       `select id from trade_listings where status = 'open' limit 1`,
     )
     expect(await fails(U.ash, `trade_remove($1)`, [open!.id])).toContain('trades_admin_only')
+  })
+  // As the API's roles, not the test's superuser: Admin → Trades reads the table itself (0047).
+  it('only the admin reads the listings', async () => {
+    const open = `select id from trade_listings where status = 'open'`
+    const asRole = async (role: string, user: string | null, email = '') => {
+      await db.query(`select set_config('request.jwt.claim.email', $1, false)`, [email])
+      await db.exec(`set role ${role}`)
+      try {
+        return await as(user, open)
+      } finally {
+        await db.exec('reset role')
+        await db.query(`select set_config('request.jwt.claim.email', '', false)`)
+      }
+    }
+    const all = await as(null, open)
+    expect(all.length).toBeGreaterThan(0)
+    expect(await asRole('authenticated', U.ash, 'gregoire.ftn@gmail.com')).toEqual(all)
+    expect(await asRole('authenticated', U.ash, 'ash@example.com')).toEqual([])
+    await expect(asRole('anon', null)).rejects.toThrow(/permission denied/)
+    await db.exec('set role authenticated')
+    try {
+      await expect(db.query(`update trade_listings set status = 'removed'`)).rejects.toThrow(
+        /permission denied/,
+      )
+    } finally {
+      await db.exec('reset role')
+    }
   })
 })
 
