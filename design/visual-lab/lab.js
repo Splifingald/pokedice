@@ -987,6 +987,7 @@
     ['mega', 'Mega Evolution', '#c26bf0'],
     ['gmax', 'Gigantamax', '#e0245e'],
     ['starter', 'Starter pick', '#7ac74c'],
+    ['trade', 'Trade', '#5fa8e8'],
   ]
   const OPT = {
     anim: 'attack',
@@ -1001,6 +1002,7 @@
     gmax: 'pikachu',
     starterSet: 'johto',
     starterPick: '1',
+    tradeSet: 'cross',
   }
   let player = null
 
@@ -1282,6 +1284,7 @@
     if (OPT.anim === 'mega') return M.mega({ mega: OPT.mega })
     if (OPT.anim === 'gmax') return M.gmax({ gmax: OPT.gmax })
     if (OPT.anim === 'starter') return M.starter({ set: OPT.starterSet, pick: Number(OPT.starterPick) })
+    if (OPT.anim === 'trade') return M.trade({ set: OPT.tradeSet })
     return M.center()
   }
 
@@ -1320,6 +1323,7 @@
       opts.innerHTML = seg('evo', 'EVOLUTION', [
         ['charmeleon', 'Charmeleon → Charizard · Lv.36', '#ff8a3d'],
         ['eevee', 'Eevee → Jolteon · Thunder Stone', '#ffd23a'],
+        ['kadabra', 'Kadabra → Alakazam · traded', '#ffc23a'],
       ])
     else if (OPT.anim === 'hatch')
       opts.innerHTML =
@@ -1347,6 +1351,12 @@
           'PICKS',
           ANIM.STARTER_SETS[OPT.starterSet].mons.map((m, i) => [String(i), m.name, TYPE_MOD[m.types[0]]]),
         )
+    else if (OPT.anim === 'trade')
+      opts.innerHTML = seg('tradeSet', 'TRADE', [
+        ['cross', 'Pikachu (Kanto) for Totodile (Johto)', '#5fa8e8'],
+        ['shiny', 'Pidgey for a shiny Eevee', '#ffe14d'],
+        ['evolves', 'Magikarp for Kadabra · then it evolves', '#ffc23a'],
+      ])
     else if (OPT.anim === 'gmax')
       opts.innerHTML = seg('gmax', 'GIGANTAMAX', [
         ['pikachu', 'Pikachu · +1 Electric die', '#ffd23a'],
@@ -1405,7 +1415,9 @@
                     ? `Gigantamax: ${ANIM.GMAXES[OPT.gmax].name}`
                     : OPT.anim === 'starter'
                       ? `Starter pick: ${ANIM.STARTER_SETS[OPT.starterSet].region}, ${ANIM.STARTER_SETS[OPT.starterSet].mons[Number(OPT.starterPick)].name}`
-                      : 'Pokémon Center'
+                      : OPT.anim === 'trade'
+                        ? `Trade: ${ANIM.TRADE_SETS[OPT.tradeSet].give.name} for ${ANIM.TRADE_SETS[OPT.tradeSet].get.shiny ? 'a shiny ' : ''}${ANIM.TRADE_SETS[OPT.tradeSet].get.name}`
+                        : 'Pokémon Center'
     $('#beats').innerHTML =
       `<h3>${esc(name)}</h3><p class="sub">${d.dur.toFixed(1)} s · ${Math.round(d.dur * 60)} frames. Click a beat to jump to it.</p><ol>${d.beats.map(([t, l, txt], i) => `<li data-i="${i}" data-t="${t}" tabindex="0"><span class="ts">${t.toFixed(2)}s</span><span><b>${esc(l)}</b><span>${esc(txt)}</span></span></li>`).join('')}</ol>${RULES_ANIM}`
     $$('#beats li').forEach((li) => {

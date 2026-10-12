@@ -1,8 +1,10 @@
 import { z } from 'zod'
+import { cleanNickname } from '@/engine/nickname'
 import {
   COMBO_KEYS,
   EVENT_IDS,
   POKE_TYPES,
+  TRADE_VISIBILITY,
   type ComboKey,
   type DayCareResident,
   type DayCareState,
@@ -25,6 +27,21 @@ const instanceSchema = z.object({
   revivesAt: z.number().optional(),
   fossil: z.string().optional(),
   koAt: z.number().optional(),
+  // Kept as renaming keeps it: a bad one (an edited save) is dropped, never the save.
+  nickname: z.unknown().transform(cleanNickname),
+})
+
+// Trades (docs/23): a listing's want, and a Pokémon as the Done list remembers it.
+const tradeWantSchema = z.discriminatedUnion('kind', [
+  z.object({ kind: z.literal('species'), dex: z.number().int().min(1) }),
+  z.object({ kind: z.literal('notOwned') }),
+  z.object({ kind: z.literal('any') }),
+])
+const tradeMonSchema = z.object({
+  dex: z.number().int().min(1),
+  level: z.number().int().min(1).max(100),
+  shiny: z.boolean().optional(),
+  nickname: z.unknown().transform(cleanNickname),
 })
 
 const progressSchema = z.object({
@@ -118,6 +135,7 @@ export const saveSchema = z.object({
     multiExp: z.boolean().default(true),
     autoMode: z.boolean().optional(),
     typeHints: z.boolean().optional(),
+    raidFast: z.boolean().optional(),
     lang: z.enum(LANGS).optional(),
     theme: z.enum(['light', 'dark', 'auto']).optional(),
   }),
@@ -157,8 +175,29 @@ export const saveSchema = z.object({
         .max(500)
         .optional(),
       raidsWon: z.number().int().min(0).optional(),
+      raidsDone: z.array(z.string().max(120)).max(400).optional(),
+      raidTeams: z.record(z.array(z.string().max(80)).max(3)).optional(),
+      raidNpc: z.object({ key: z.string().max(140), seed: z.number().int() }).optional(),
       liveSeen: z.array(z.string().max(80)).max(50).optional(),
       liveBought: z.record(z.record(z.number().int().min(0))).optional(),
+      // Small worlds (docs/21): the one held, the pop-ups shown, the mythicals waiting for their home region.
+      world: z
+        .object({
+          id: z.string().min(1).max(80),
+          regionId: z.string().min(1).max(80),
+          from: z.string().min(1).max(80),
+          partner: z.number().int().min(1),
+          caught: z.boolean().optional(),
+          bought: z.record(z.number().int().min(0)).optional(),
+          closed: z.boolean().optional(),
+        })
+        .optional(),
+      worldSeen: z.array(z.string().max(80)).max(20).optional(),
+      worldBye: z.array(z.string().max(80)).max(20).optional(),
+      worldPending: z
+        .array(z.object({ dex: z.number().int().min(1), level: z.number().int().min(1), shiny: z.boolean(), worldId: z.string().max(80) }))
+        .max(50)
+        .optional(),
       rebattle: z
         .record(
           z.object({
@@ -187,6 +226,43 @@ export const saveSchema = z.object({
     .optional(),
   extremeUnlockedAt: z.number().optional(),
   extremeRulesSeen: z.boolean().optional(),
+  trades: z
+    .object({
+      out: z
+        .array(
+          z.object({
+            listing: z.string().min(1).max(80),
+            code: z.string().max(20),
+            region: z.string().max(40),
+            mon: instanceSchema,
+            at: z.number(),
+            endsAt: z.number(),
+            want: tradeWantSchema,
+            visibility: z.enum(TRADE_VISIBILITY),
+          }),
+        )
+        .max(20)
+        .default([]),
+      done: z.array(z.string().max(80)).max(100).default([]),
+      log: z
+        .array(
+          z.object({
+            id: z.string().max(80),
+            at: z.number(),
+            role: z.enum(['poster', 'taker']),
+            with: z.string().max(40),
+            gave: tradeMonSchema,
+            got: tradeMonSchema,
+            evolvedTo: z.number().int().min(1).optional(),
+            outcome: z.enum(['new', 'replaced', 'merged', 'shiny']),
+          }),
+        )
+        .max(40)
+        .optional(),
+      unseen: z.array(z.string().max(80)).max(40).optional(),
+      rulesSeen: z.boolean().optional(),
+    })
+    .optional(),
 })
 
 /**

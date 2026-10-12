@@ -2,7 +2,7 @@
 // No tabs between events. The page opens on the event's banner: its picture, the back arrow, the title, the live status.
 import type { ReactNode } from 'react'
 import { Navigate, useNavigate, useParams } from 'react-router-dom'
-import { EVENT_IDS, eventUnlocked, type EventId } from '@/engine'
+import { EVENT_IDS, eventOn, eventUnlocked, inWorld, type EventId } from '@/engine'
 import { BackButton } from '@/components/PageHead'
 import { useT } from '@/i18n/react'
 import { countdown } from '@/lib/format'
@@ -15,6 +15,7 @@ import { RaidView } from './RaidView'
 import { RebattlePage, tierName } from './RebattlePage'
 import { EventPicture, useWheelDay } from './shared'
 import { WheelPage } from './WheelPage'
+import { WorldAwayPage } from './world'
 
 const isEventId = (id: string | undefined): id is EventId => !!id && (EVENT_IDS as readonly string[]).includes(id)
 
@@ -71,10 +72,14 @@ export function EventsScreen() {
   const save = useGame((s) => s.save)
   const data = useGame((s) => s.data)
   const raidRun = useRaidRun((s) => s.run)
+  const { t } = useT()
+  // Inside a small world no event reaches (docs/21): the page says to leave first.
+  if (isEventId(id) && save && inWorld(save, data) && eventOn(data, id))
+    return <WorldAwayPage title={t(`ui.events.${id}.name`)} kind="events" />
   // A closed or unknown event goes back Home (a stale link, an event switched off in Admin).
   if (!isEventId(id) || !save || !eventUnlocked(id, save, data)) return <Navigate to="/home" replace />
   // A raid being fought takes the whole screen.
-  if (id === 'raid' && raidRun) return <RaidView key={raidRun.id} run={raidRun} />
+  if (id === 'raid' && raidRun?.source.kind === 'daily') return <RaidView key={raidRun.id} run={raidRun} />
   return <EventPage id={id} />
 }
 

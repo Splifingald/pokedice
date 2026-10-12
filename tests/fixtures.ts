@@ -2,9 +2,11 @@ import { BUNDLE } from '@/config/bundle'
 import {
   compileGameData,
   DEFAULT_CONFIG,
+  type Area,
   type DieType,
   type GameConfig,
   type GameData,
+  type Region,
   type RolledDie,
   type StatusKind,
 } from '@/engine'
@@ -45,6 +47,24 @@ export function makeData(config: Partial<GameConfig> = {}): GameData {
 }
 
 export const data = makeData()
+
+/** The same, over extra content: areas and regions added to the bundle's (a small world's, docs/21). */
+export function makeDataWith(extra: { areas?: Area[]; regions?: Region[] }, config: Partial<GameConfig> = {}): GameData {
+  const base = makeData(config)
+  return compileGameData({
+    ...BUNDLE,
+    areas: [...BUNDLE.areas, ...(extra.areas ?? [])],
+    regions: [...(BUNDLE.regions ?? []), ...(extra.regions ?? [])],
+    config: base.config as unknown as Record<string, unknown>,
+  })
+}
+
+/**
+ * Raid Battles off: every area boss is fought in its area as before docs/24 (the progression raids switch with the
+ * daily raid). Boss tests read this, so they check the fight a legendary still gets wherever raids are closed.
+ */
+export const RAIDS_OFF = { ...EVENTS_ON, raid: { ...EVENTS_ON.raid, access: 'off' as const } }
+export const bossData = makeData({ events: RAIDS_OFF })
 
 /** Starters the admin made less rare in an area (`areaId/dex` → weight), kept by the live bundle of 2026-10-11. */
 export const TUNED_STARTERS: Record<string, number> = {

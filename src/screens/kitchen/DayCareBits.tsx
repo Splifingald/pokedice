@@ -70,7 +70,7 @@ export function DayCareBits() {
       <div className="grid max-w-md gap-2">
         <RushBarView wait="7 h 14" pairs={3} price={200} short={0} onRush={noop} onShort={noop} />
         <RushBarView wait="7 h 14" pairs={2} price={200} short={80} onRush={noop} onShort={noop} />
-        <RushBarView wait="12 h 00" pairs={0} price={200} short={0} onRush={noop} onShort={noop} />
+        <RushBarView wait={null} pairs={0} price={200} short={0} onRush={noop} onShort={noop} />
         <EggCardView from="Eevee and Ditto (Noor) left it." onHatch={noop} />
         <EggCardView from="A gift for your first visit." onHatch={noop} />
       </div>

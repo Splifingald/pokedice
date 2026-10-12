@@ -12,6 +12,9 @@ import {
   linearAreas,
   newSave,
   progressOf,
+  progressRaidKey,
+  progressRaidOf,
+  progressRaidShiny,
   releaseDuplicates,
   rollEncounter,
   rollWild,
@@ -21,7 +24,7 @@ import {
   type EncounterContext,
   type GameData,
 } from '@/engine'
-import { data, makeData, newId } from '../fixtures'
+import { bossData, data, makeData, newId, RAIDS_OFF } from '../fixtures'
 
 const ROUTE1 = linearAreas(data)[0]!
 const ctx = (d: GameData): EncounterContext => {
@@ -109,23 +112,30 @@ describe('shiny Pokémon', () => {
 })
 
 describe('an always-shiny legendary', () => {
-  // The Red Gyarados of the Lake of Rage: a boss marked shiny in the area's data is shiny everywhere it shows up.
+  // The Red Gyarados of the Lake of Rage: a boss marked shiny in the area's data is shiny everywhere it shows up. Its
+  // fight is the one it gets with Raid Battles off; with them on, its progression raid is shiny too.
   const LAKE = data.areas.find((a) => (a.legendaryBoss ?? []).some((b) => b.dex === 130))!
   const area = (boss: Partial<BossDef> = {}) => ({ ...LAKE, legendaryBoss: [{ ...(LAKE.legendaryBoss ?? [])[0]!, ...boss }] })
   const ready = () => ({ ...emptyProgress(), roundsDone: LAKE.roundsToClear ?? 0 })
 
   it('ships on the Red Gyarados, and its challenge card carries the colours', () => {
     expect((LAKE.legendaryBoss ?? [])[0]).toMatchObject({ dex: 130, shiny: true })
-    const enc = challengeEncounter(area(), ready(), data, 40, null)!
+    const enc = challengeEncounter(area(), ready(), bossData, 40, null)!
     expect(enc).toMatchObject({ kind: 'boss', dex: 130, shiny: true })
     // A boss with no flag stays plain — every other legendary is untouched.
-    expect(challengeEncounter(area({ shiny: false }), ready(), data, 40, null)).not.toHaveProperty('shiny')
+    expect(challengeEncounter(area({ shiny: false }), ready(), bossData, 40, null)).not.toHaveProperty('shiny')
+    const raid = progressRaidOf(data, progressRaidKey(LAKE.id, 130))!
+    expect(progressRaidShiny(data, raid)).toBe(true)
+    // A legendary's raid stays plain whatever its flag.
+    const islands = data.areas.find((a) => (a.legendaryBoss ?? []).some((b) => b.dex === 144))!
+    const articuno = progressRaidOf(data, progressRaidKey(islands.id, 144))!
+    expect(progressRaidShiny(data, { ...articuno, boss: { ...articuno.boss, shiny: true } })).toBe(false)
   })
 
   it('comes back shiny after it flees the throw, and reaches the battle and the Box that way', () => {
     const beaten = { ...ready(), bossesDefeated: [130] }
     // Knocked out, missed the throw: the legendary keeps coming back — still red.
-    const back = rollEncounter({ ...ctx(data), area: area(), progress: beaten, pokedex: [], forceKind: 'boss' }, createRng(3))
+    const back = rollEncounter({ ...ctx(bossData), area: area(), progress: beaten, pokedex: [], forceKind: 'boss' }, createRng(3))
     expect(back).toMatchObject({ kind: 'boss', dex: 130, returning: true, shiny: true })
 
     const s = newSave(4, data, 0, newId)
@@ -152,8 +162,8 @@ describe('any other legendary', () => {
   const ISLANDS = data.areas.find((a) => (a.legendaryBoss ?? []).some((b) => b.dex === 144 && !b.shiny))!
   const area = { ...ISLANDS, legendaryBoss: [(ISLANDS.legendaryBoss ?? []).find((b) => b.dex === 144)!] }
   const ready = () => ({ ...emptyProgress(), roundsDone: area.roundsToClear ?? 0 })
-  const always = makeData({ shinyChance: 1 })
-  // Articuno waits for a team average of 50.
+  const always = makeData({ shinyChance: 1, events: RAIDS_OFF })
+  // Articuno (its boss fight, with Raid Battles off) waits for a team average of 50.
   const challenge = (d: GameData, a = area) => challengeEncounter(a, ready(), d, 60, null, createRng(1))
 
   it('is never shiny, on the challenge card or when it comes back, whatever the odds', () => {
@@ -167,7 +177,7 @@ describe('any other legendary', () => {
 
   it('even flagged shiny in the content', () => {
     const flagged = { ...area, legendaryBoss: [{ ...area.legendaryBoss[0]!, shiny: true }] }
-    expect(challenge(data, flagged)).not.toHaveProperty('shiny')
+    expect(challenge(bossData, flagged)).not.toHaveProperty('shiny')
   })
 })
 

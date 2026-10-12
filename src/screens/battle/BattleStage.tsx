@@ -11,7 +11,7 @@ import { TrainerSprite } from '@/components/TrainerArt'
 import { artPlacement, battleWindow, type AreaPicture } from '@/fx/areaArt'
 import { background, setArtUnderStage, zones } from '@/fx/scenes'
 import { loadSprite, placeSprite, spriteKey, stageSprite } from '@/fx/sprites'
-import { H, W, type Hud, type Timeline } from '@/fx/timeline'
+import { H, quicken, W, type Hud, type Timeline } from '@/fx/timeline'
 import { attackTimeline } from '@/fx/timelines/attacks'
 import { gmaxEndTimeline, gmaxFor, megaFor } from '@/fx/timelines/forms'
 import { usePace } from '@/lib/pace'
@@ -322,6 +322,7 @@ function useSceneTimeline(scene: Scene | null, own: Battler, foe: Battler, short
       }
       timeline = scene.kind === 'mega' ? megaFor(p) : scene.kind === 'gmax' ? gmaxFor(p) : gmaxEndTimeline(p)
     }
+    if (scene.speed && scene.speed !== 1) timeline = quicken(timeline, scene.speed)
     return { timeline, ready: Promise.all(sprites) }
     // One timeline per scene: later state changes don't restart it.
     // eslint-disable-next-line react-hooks/exhaustive-deps

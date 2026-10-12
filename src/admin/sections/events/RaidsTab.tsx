@@ -15,6 +15,8 @@ import {
   raidRules,
   raidSeedOn,
   nextRaidsOf,
+  progressRaids,
+  raidTeamCap,
   regionOfArea,
   simulateRaid,
   utcDay,
@@ -94,6 +96,7 @@ export function RaidsTab({ raid, set }: { raid: RaidConfig; set: (patch: Partial
       <MonsBox data={data} raid={raid} set={set} today={today} onShow={setPicked} />
       <NumbersBox raid={raid} set={set} />
       <AnchorsBox data={data} raid={raid} setCal={setCal} />
+      <ProgressBox data={data} raid={raid} set={set} />
       <LairsBox data={data} raid={raid} setPlan={setPlan} />
       <MoreBox data={data} raid={raid} set={set} setPlan={setPlan} />
     </div>
@@ -548,12 +551,110 @@ function AnchorsBox({ data, raid, setCal }: { data: GameData; raid: RaidConfig; 
   )
 }
 
-/** The mythicals of the raids (never shiny there) and their lairs. */
+type ProgressRules = NonNullable<RaidConfig['progress']['perMon']>[string]
+const PROGRESS_KEYS = [...RAID_MON_KEYS, 'teamCap'] as const
+
+/**
+ * The progression raids (docs/24): every area boss flagged Raid, by region, with its area. Their team cap, and each
+ * raid Pokémon's own numbers over the raid defaults; the day's raid's own numbers never apply here.
+ */
+function ProgressBox({ data, raid, set }: { data: GameData; raid: RaidConfig; set: (p: Partial<RaidConfig>) => void }) {
+  const progress = raid.progress ?? { teamCap: raid.teamCap, perMon: {} }
+  const all = useMemo(() => progressRaids(data), [data])
+  const regions = [...new Set(all.map((r) => r.region))]
+  const [region, setRegion] = useState<string>(regions[0] ?? 'kanto')
+  const shown = all.filter((r) => r.region === region)
+  const setProgress = (patch: Partial<RaidConfig['progress']>) => set({ progress: { ...progress, ...patch } })
+  const put = (dex: number, key: keyof ProgressRules, v: number | null) => {
+    const next: ProgressRules = { ...progress.perMon?.[dex] }
+    if (v == null) delete next[key]
+    else next[key] = v
+    const perMon = { ...progress.perMon }
+    if (Object.keys(next).length) perMon[dex] = next
+    else delete perMon[dex]
+    setProgress({ perMon })
+  }
+  const label = (k: keyof ProgressRules) => (k === 'teamCap' ? 'Team cap' : RULE_LABEL[k])
+  return (
+    <Box
+      title={`Progression raids · ${all.length}`}
+      icon="badge"
+      hint="An area boss with Raid ticked (Areas → bosses): a raid on its own page once its area is completed, teams from that region's Box. Empty = the raid numbers above, shown greyed."
+    >
+      <Field label="Team level cap" hint="The sides' level cap in every progression raid, unless the Pokémon has its own.">
+        <NumInput className="!w-24" min={1} max={100} value={progress.teamCap} onChange={(v) => setProgress({ teamCap: Math.max(1, v ?? 50) })} />
+      </Field>
+      <div className="flex flex-wrap gap-1">
+        {regions.map((r) => (
+          <button
+            key={r}
+            type="button"
+            aria-pressed={region === r}
+            onClick={() => setRegion(r)}
+            className={cx('min-h-[34px] px-2 text-lg shadow-ring', region === r ? 'bg-gold text-ink' : 'bg-panel')}
+          >
+            {data.regions.find((x) => x.id === r)?.name ?? r} ({all.filter((x) => x.region === r).length})
+          </button>
+        ))}
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[960px] border-collapse text-lg">
+          <thead>
+            <tr className="text-left text-sm text-muted">
+              <th className="font-normal">Pokémon</th>
+              {PROGRESS_KEYS.map((k) => (
+                <th key={k} className="font-normal">
+                  {label(k)}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {shown.map((r) => {
+              const own = progress.perMon?.[r.dex] ?? {}
+              const eff = { ...raidRules(data, r.dex, 'progress'), teamCap: raidTeamCap(data, r.dex, 'progress') }
+              return (
+                <tr key={r.key} className="border-t border-shadow/40 align-middle">
+                  <td className="py-1 pr-2">
+                    <span className="flex items-center gap-2">
+                      <SpriteImg dex={r.dex} size={40} />
+                      <span className="grid gap-0.5">
+                        <span>{data.species[r.dex]?.name ?? `#${r.dex}`}</span>
+                        <span className="text-sm text-muted">{data.areas.find((a) => a.id === r.areaId)?.name}</span>
+                      </span>
+                    </span>
+                  </td>
+                  {PROGRESS_KEYS.map((k) => (
+                    <td key={k} className="pr-1">
+                      <input
+                        type="number"
+                        className={cx(inputCls, 'font-mono text-base', own[k] != null && 'bg-gold-pale')}
+                        value={own[k] ?? ''}
+                        placeholder={String(eff[k])}
+                        step={k === 'teamCap' ? 1 : (RULE_STEP[k] ?? 1)}
+                        min={0}
+                        aria-label={`${data.species[r.dex]?.name ?? r.dex}: ${label(k)}`}
+                        onChange={(e) => put(r.dex, k, e.target.value === '' ? null : Math.max(0, Number(e.target.value)))}
+                      />
+                    </td>
+                  ))}
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      </div>
+      {!all.length && <p className="m-0 text-base text-muted">No area boss is a raid: tick Raid on one in Areas.</p>}
+    </Box>
+  )
+}
+
+/** The mythicals of the raids (shiny there) and their lairs, where each is also the boss. */
 function LairsBox({ data, raid, setPlan }: { data: GameData; raid: RaidConfig; setPlan: (p: Partial<RaidConfig>) => void }) {
   const areas = data.areas.slice().sort((a, b) => (a.regionId ?? '').localeCompare(b.regionId ?? '') || a.orderIndex - b.orderIndex)
   const put = (i: number, patch: Partial<RaidConfig['pool'][number]>) => setPlan({ pool: raid.pool.map((x, j) => (j === i ? { ...x, ...patch } : x)) })
   return (
-    <Box title={`Mythicals · ${raid.pool.length}`} icon="masterball" hint="Each a raid of the calendar (never shiny there), fought in front of its lair; a catch waits until the lair is completed.">
+    <Box title={`Mythicals · ${raid.pool.length}`} icon="masterball" hint="Each a shiny raid of the calendar, fought in front of its lair; a catch waits until the lair is completed. In its lair it's the boss, never shiny there.">
       <div className="grid gap-2 lg:grid-cols-2">
         {raid.pool.map((p, i) => (
           <div key={i} className="grid grid-cols-[48px_minmax(0,1fr)_minmax(0,1fr)_auto] items-center gap-2 bg-paper p-2 shadow-card">

@@ -4,7 +4,7 @@
 // breeding.ts.
 import { earnedGold } from './liveEvents'
 import { createInstance, gainXp, instanceMaxHp, xpToNext } from './progression'
-import { regionCases, regionOf, regionOfSpecies, unlockedRegions } from './regions'
+import { inWorldRegion, regionCases, regionOf, regionOfSpecies, unlockedRegions, worldRegionOf } from './regions'
 import { createRng, type Rng } from './rng'
 import { badgeCase, ownedPokemon } from './run'
 import type {
@@ -30,10 +30,11 @@ export const dayCareOf = (save: SaveData): DayCareState => {
   return dc.guests ? dc : { ...dc, guests: [] }
 }
 
-/** Distinct species caught across every region's Pokédex: what opens the Day Care. */
+/** Distinct species caught across every region's Pokédex (a small world's left out): what opens the Day Care. */
 export function speciesCaughtEverywhere(save: SaveData): number {
-  const all = new Set(save.pokedex)
-  for (const block of Object.values(save.parked ?? {})) for (const dex of block?.pokedex ?? []) all.add(dex)
+  const world = worldRegionOf(save)
+  const all = new Set(regionOf(save) === world ? [] : save.pokedex)
+  for (const [id, block] of Object.entries(save.parked ?? {})) if (id !== world) for (const dex of block?.pokedex ?? []) all.add(dex)
   return all.size
 }
 
@@ -168,9 +169,12 @@ export function boxedDepositError(save: SaveData, at: BoxedMon, data: GameData):
   return null
 }
 
-/** Leave a Pokémon from any region's team or Box: it remembers its region, to go back to that Box. */
+/**
+ * Leave a Pokémon from any region's team or Box: it remembers its region, to go back to that Box. The Day Care is the
+ * main game's: closed while a small world is played (docs/21), so nothing goes in or out of one through it.
+ */
 export function depositPokemon(save: SaveData, uid: string, data: GameData, now: number): SaveData | null {
-  if (depositError(save, uid, data)) return null
+  if (inWorldRegion(save, data) || depositError(save, uid, data)) return null
   const at = everyRegionBox(save, data).find((m) => m.inst.id === uid)!
   const dc = dayCareOf(save)
   const dayCare = { ...dc, residents: [...dc.residents, { inst: at.inst, since: now, region: at.region }] }
@@ -238,6 +242,7 @@ function sendHome(save: SaveData, res: DayCareResident, data: GameData, now: num
 
 /** Take a resident back: into its region's Box, and the team when that region is live and the team has room. */
 export function withdrawPokemon(save: SaveData, uid: string, data: GameData, now: number): Pickup | null {
+  if (inWorldRegion(save, data)) return null
   const res = dayCareOf(save).residents.find((r) => r.inst.id === uid)
   return res ? sendHome(save, res, data, now, true) : null
 }
@@ -404,7 +409,8 @@ export function hatchEgg(
   live: LiveEvent | null = null,
 ): Hatch | null {
   const dc = dayCareOf(save)
-  if (!dc.egg) return null
+  // A hatchling joins the region being played: never a small world's (its Egg waits outside).
+  if (!dc.egg || inWorldRegion(save, data)) return null
   const cfg = data.config.dayCare
   const pick = rng.weighted(eggOdds(save, data), (o) => o.weight)
   if (!pick) return null

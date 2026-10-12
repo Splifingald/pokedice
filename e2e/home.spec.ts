@@ -2,7 +2,15 @@
 // search that finds Pokémon too), CONTINUE plays the area, and every sheet is a proper dialog.
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test, type Page } from '@playwright/test'
-import type { SaveData } from '../src/engine'
+import { readFileSync } from 'node:fs'
+import {
+  createInstance,
+  newRegionBlock,
+  regionAreas,
+  startRegion,
+  type Region,
+  type SaveData,
+} from '../src/engine'
 import { FAST, gameData, makeSave, mockSupabase } from './helpers'
 
 const data = gameData()
@@ -65,6 +73,54 @@ test('AREAS lists the region, and its search finds areas by Pokémon', async ({ 
   await expect(page.getByRole('dialog', { name: 'Regions' })).toBeVisible()
   await page.keyboard.press('Escape')
   await expect(page.getByRole('dialog')).toHaveCount(0)
+})
+
+test("a region's GO opens that region's areas, in the same sheet", async ({ page }) => {
+  // Kanto's league is won and Johto begun: Kanto waits, parked, in the Regions view.
+  const league = 'bbe7e459-a138-5106-bd01-fce7ff422e7f'
+  const kanto = makeSave(4)
+  const won = { roundsDone: 1, cleared: true, bossDefeated: true, bossesDefeated: [], gymsDefeated: [] }
+  // The helpers' data has Kanto alone (no regions.json), so Johto's row comes from the file the game reads.
+  const rows: Region[] = JSON.parse(
+    readFileSync(new URL('../src/data/regions.json', import.meta.url), 'utf8'),
+  )
+  const johto = rows.find((r) => r.id === 'johto')!
+  let c = 0
+  const block = newRegionBlock(
+    johto,
+    johto.starters[1]!,
+    data,
+    Date.now(),
+    () => `e2e-j-${++c}`,
+    createInstance,
+  )
+  // Elite Rebattle's pop-up, which a won league opens, already seen.
+  const done: SaveData = {
+    ...kanto,
+    areaProgress: { ...kanto.areaProgress, [league]: won },
+    events: { seen: ['rebattle'] },
+  }
+  await boot(page, startRegion(done, johto, block))
+  await page.goto('/home')
+  await page.getByRole('button', { name: 'Areas: change where you explore' }).click()
+  await page.getByRole('dialog', { name: 'Johto' }).getByRole('button', { name: 'Regions' }).click()
+
+  const regions = page.getByRole('dialog', { name: 'Regions' })
+  await regions.getByRole('button', { name: 'Kanto: switch to this region and see its areas' }).click()
+  // The sheet stays open on Kanto's areas, focus on the Regions switch.
+  const sheet = page.getByRole('dialog', { name: 'Kanto' })
+  await expect(sheet).toBeVisible()
+  await expect(page.getByText('Welcome back to Kanto')).toBeVisible()
+  await expect(
+    sheet.getByRole('button', { name: new RegExp(`^${escape(regionAreas(data, 'kanto')[0]!.name)}`) }),
+  ).toBeVisible()
+  await expect(sheet.getByRole('button', { name: 'Regions' })).toBeFocused()
+
+  // The region you're in goes back to its areas too.
+  await sheet.getByRole('button', { name: 'Regions' }).click()
+  await regions.getByRole('button', { name: 'Kanto, you are here. Back to its areas' }).click()
+  await expect(sheet).toBeVisible()
+  expect(await seriousAxe(page)).toEqual([])
 })
 
 test('CONTINUE plays the area on /area, and an idle /area goes back Home', async ({ page }) => {

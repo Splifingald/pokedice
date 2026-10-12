@@ -1,14 +1,15 @@
 // Pure state transitions on the save: new game, rewards, catches, wipes, center, team, shop, upgrades.
 import { getSpecies, linearAreas } from './data'
-import { KANTO, evolutionGate, regionOf, regionOfArea } from './regions'
+import { KANTO, evolutionGate, inWorldRegion, regionOf, regionOfArea } from './regions'
 import { asSeenBy, gymsFor, playerSideOf } from './rival'
 import { nextComboCost, nextDieCost, pokemonXp, trainerGoldFor, healAmount, multiExpShareFor } from './economy'
-import { deckAbilities, deckCounts, roundsComplete } from './encounters'
+import { deckAbilities, deckCounts, fightBosses, roundsComplete } from './encounters'
 import { centersOn, healItemsOn, wipeHeals } from './extreme'
 import { addFossil, isReviving } from './fossils'
 import { LEGACY_GAUGE } from './legacyGauge'
 import { MONEY, sellPrice, shopSells, usableIn } from './items'
 import { earnedGold } from './liveEvents'
+import { areaOpenAt } from './worldList'
 import {
   averageLevel,
   createInstance,
@@ -248,12 +249,15 @@ export function isAreaUnlocked(save: SaveData, areaId: string, data: GameData, d
 
 /**
  * The furthest area of the region's main chain the player can play (secret areas don't count), when they stand
- * somewhere else: Home offers to go there. Null once the whole chain is cleared, or when they are already there.
+ * somewhere else: Home offers to go there. Null once the whole chain is cleared, or when they are already there. With
+ * the server's time (`now`), a small world's area still waiting for its date doesn't count.
  */
-export function latestOpenArea(save: SaveData, data: GameData): Area | null {
+export function latestOpenArea(save: SaveData, data: GameData, now?: number | null): Area | null {
   const chain = linearAreas(data, regionOf(save))
   if (!chain.length || chain.every((a) => progressOf(save, a.id).cleared)) return null
-  const latest = [...chain].reverse().find((a) => isAreaUnlocked(save, a.id, data) && !isAreaClosed(save, a.id, data))
+  const latest = [...chain]
+    .reverse()
+    .find((a) => isAreaUnlocked(save, a.id, data) && !isAreaClosed(save, a.id, data) && (now === undefined || areaOpenAt(data, a.id, now)))
   return latest && latest.id !== save.currentAreaId ? latest : null
 }
 
@@ -267,7 +271,7 @@ export function isAreaClosed(save: SaveData, areaId: string, data: GameData): bo
   if (!area) return false
   const c = deckCounts(area.encounterWeights, deckAbilities(area))
   if (c.wild + c.trainer + c.casino > 0) return false
-  const bosses = area.legendaryBoss ?? []
+  const bosses = fightBosses(area, data)
   const gyms = gymsFor(area, data, playerSideOf(save)).filter((id) => data.trainers[id]?.team.length)
   if (!bosses.length && !gyms.length) return false
   const p = progressOf(save, areaId)
@@ -344,6 +348,11 @@ export type RunEvent =
   | { kind: 'secret_unlocked'; areaId: string }
   /** An Elite Rebattle tier won: every trainer of its gauntlet beaten in a row. */
   | { kind: 'rebattle_cleared'; regionId: string; tier: number }
+  /**
+   * A small world's shiny mythical caught (docs/21): it left the world for its home region's Box (`region`), or waits
+   * for that region to be started (`waiting`).
+   */
+  | { kind: 'world_mythical'; dex: number; level: number; region: string; waiting: boolean }
 
 export interface VictoryInput {
   areaId: string
@@ -439,7 +448,7 @@ export function applyVictory(
   if (input.kind === 'boss') {
     if (!progress.bossesDefeated.includes(input.enemyDex))
       progress = { ...progress, bossesDefeated: [...progress.bossesDefeated, input.enemyDex] }
-    const all = (area.legendaryBoss ?? []).every((b) => progress.bossesDefeated.includes(b.dex))
+    const all = fightBosses(area, data).every((b) => progress.bossesDefeated.includes(b.dex))
     progress = { ...progress, bossDefeated: all }
     events.push({ kind: 'boss_defeated', dex: input.enemyDex })
   }
@@ -490,7 +499,8 @@ export function migrateRounds(save: SaveData, data: GameData): SaveData {
 }
 
 /**
- * Clear: every round done + every gym beaten + every round legendary beaten → the next linear area opens.
+ * Clear: every round done + every gym beaten + every round legendary beaten → the next linear area opens. A raid isn't
+ * waited for: it opens once the area is cleared (docs/24).
  */
 function clearIfDone(
   area: Area,
@@ -499,7 +509,7 @@ function clearIfDone(
   data: GameData,
 ): { progress: AreaProgress; event: Extract<RunEvent, { kind: 'area_cleared' }> | null } {
   if (progress.cleared || !roundsComplete(area, progress)) return { progress, event: null }
-  const roundBosses = (area.legendaryBoss ?? []).filter((b) => b.teamAvgThreshold == null)
+  const roundBosses = fightBosses(area, data).filter((b) => b.teamAvgThreshold == null)
   const gymsDone = gymsFor(area, data, playerSideOf(save)).every((id) => progress.gymsDefeated.includes(id) || !data.trainers[id])
   if (!gymsDone || !roundBosses.every((b) => progress.bossesDefeated.includes(b.dex))) return { progress, event: null }
   const chain = linearAreas(data, regionOfArea(area))
@@ -508,6 +518,32 @@ function clearIfDone(
     progress: { ...progress, cleared: true },
     event: { kind: 'area_cleared', areaId: area.id, nextAreaId: idx >= 0 ? (chain[idx + 1]?.id ?? null) : null },
   }
+}
+
+/**
+ * Areas whose rounds and gyms were done, waiting only on a boss that is now a raid (docs/24), are cleared: the live
+ * region's and the parked ones'. Nothing to do on most saves.
+ */
+export function settleClears(save: SaveData, data: GameData): SaveData {
+  const settle = (block: Record<string, AreaProgress>, regionSave: SaveData): Record<string, AreaProgress> | null => {
+    let out: Record<string, AreaProgress> | null = null
+    for (const [id, p] of Object.entries(block)) {
+      const area = data.areas.find((a) => a.id === id)
+      if (!area || p.cleared || !(area.legendaryBoss ?? []).some((b) => b.raid)) continue
+      const { progress } = clearIfDone(area, p, regionSave, data)
+      if (progress.cleared) (out ??= { ...block })[id] = progress
+    }
+    return out
+  }
+  let next = save
+  const live = settle(save.areaProgress, save)
+  if (live) next = { ...next, areaProgress: live }
+  for (const [region, block] of Object.entries(save.parked ?? {})) {
+    if (!block) continue
+    const parked = settle(block.areaProgress, { ...save, ...block } as SaveData)
+    if (parked) next = { ...next, parked: { ...next.parked, [region]: { ...block, areaProgress: parked } } }
+  }
+  return next
 }
 
 /**
@@ -590,7 +626,8 @@ export function buyItem(
   newId: () => string = () => `fossil-${now}`,
 ): SaveData | null {
   const item = data.items[key]
-  if (!item || qty <= 0) return null
+  // A small world's Mart sells its own list only (engine/worlds.ts buyWorldItem).
+  if (!item || qty <= 0 || inWorldRegion(save, data)) return null
   if (!shopSells(item, save, regionOf(save))) return null
   // One is all there is: asking for more is a mistake, not a smaller order.
   if (item.unique && qty !== 1) return null
@@ -694,7 +731,9 @@ export function applyLevelEvolution(
   return { save: next, events: [{ kind: 'evolve', uid: inst.id, fromDex: inst.dex, toDex: target.toDex, level: inst.level }] }
 }
 
+/** No upgrades in a small world: dice and combos follow each Pokémon's level there (docs/21). */
 export function buyComboUpgrade(save: SaveData, key: ComboKey, data: GameData): SaveData | null {
+  if (inWorldRegion(save, data)) return null
   const lv = save.comboLevels[key] ?? 1
   const cost = nextComboCost(key, lv, data)
   if (cost == null || save.gold < cost) return null
@@ -702,6 +741,7 @@ export function buyComboUpgrade(save: SaveData, key: ComboKey, data: GameData): 
 }
 
 export function buyDieUpgrade(save: SaveData, type: PokeType, data: GameData): SaveData | null {
+  if (inWorldRegion(save, data)) return null
   const lv = save.dieLevels[type] ?? 1
   const cost = nextDieCost(type, lv, data)
   if (cost == null || save.gold < cost) return null

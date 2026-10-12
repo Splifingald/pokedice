@@ -42,9 +42,13 @@ import { soundOn } from '@/save/storage'
 import { pushToast, setSettings, useGame } from '@/store/game'
 import { BattleBits } from './kitchen/BattleBits'
 import { DayCareBits } from './kitchen/DayCareBits'
+import { NicknameBits } from './kitchen/NicknameBits'
+import { TradeKitBits } from './kitchen/TradeBits'
 import { RulesBits } from './kitchen/RulesBits'
 import { ExtremeBits } from './kitchen/ExtremeBits'
 import { PartnerBits } from './kitchen/PartnerBits'
+import { RaidBits } from './kitchen/RaidBits'
+import { WorldBits } from './kitchen/WorldBits'
 import { BadgeIcon, CrownIcon } from '@/components/BadgeIcon'
 import { BoardRow } from '@/components/BoardRow'
 
@@ -550,7 +554,7 @@ export function KitchenSink() {
         </ol>
       </Section>
 
-      <Section title="Battle: stage, plates, tray, readout, team pips, Bag, catch">
+      <Section title="Battle: stage, plates, tray, readout, team pips (and the raid's compact ones, speed button), Bag, catch">
         <BattleBits />
       </Section>
 
@@ -562,12 +566,28 @@ export function KitchenSink() {
         <DayCareBits />
       </Section>
 
+      <Section title="Nicknames: the name on a Pokémon's sheet (tap to rename), the dialog without and with a nickname">
+        <NicknameBits />
+      </Section>
+
       <Section title="RulesModal · InfoButton: a feature's rules (the unlock pop-up, the INFO copy)">
         <RulesBits />
       </Section>
 
+      <Section title="Trades: visibility, wants, time left, board rows (every state), listing sheet, share, rules, the trade scene, results">
+        <TradeKitBits />
+      </Section>
+
       <Section title="Extreme mode: rules, band, title card, K.O. rest, resting team, while you were away, switch">
         <ExtremeBits />
+      </Section>
+
+      <Section title="Raids: the NPC partners pop-up (each state), a legendary raid's card open and caught">
+        <RaidBits />
+      </Section>
+
+      <Section title="Small worlds: square, pop-up, partner pick, strip, squares inside, boosters, dice level, mythical card, closing, away page">
+        <WorldBits />
       </Section>
 
       <Section title="StatusIcons · PixelIcon">

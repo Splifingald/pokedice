@@ -12,6 +12,7 @@ import {
   megaUnlocked,
   gmaxFormsOf,
   gmaxUnlocked,
+  isTradeEvolution,
   type DieType,
   type Evolution,
   type GameData,
@@ -50,8 +51,13 @@ function StatTile({ stat, value }: { stat: StatKind; value: ReactNode }) {
   )
 }
 
-/** "Lv.28", or the stone that does it ("Thunder Stone"). */
-export function evolutionHow(e: { level: number | null; item?: string | null }, data: GameData): string {
+/** "Lv.28", the stone that does it ("Thunder Stone"), or "a trade" (docs/23: from `from`, it evolves only when traded). */
+export function evolutionHow(
+  e: { level: number | null; item?: string | null; toDex?: number },
+  data: GameData,
+  from?: number,
+): string {
+  if (from != null && e.toDex != null && isTradeEvolution(data, from, e.toDex)) return t('ui.sheet.byTrade')
   if (e.item) return data.items[e.item]?.name ?? e.item
   return t('ui.common.level.short', { n: e.level ?? '?' })
 }
@@ -198,14 +204,22 @@ function MilestoneTrack({ species, level, onOpenDex }: { species: Species; level
   const gmax = save && gmaxUnlocked(save, data) ? gmaxFormsOf(data, species.dex)[0] : undefined
   const megaLevel = data.config.megaEvolution.level
   type Row = { level: number; m: Milestone } | { level: number; mega: true }
+  // Its EVOLVE milestone stays off the curve when only a trade evolves it.
+  const tradeOnly =
+    evolutions.length > 0 && evolutions.every((e) => isTradeEvolution(data, species.dex, e.toDex))
   const ms: Row[] = [
-    ...[...species.milestones].sort((a, b) => a.level - b.level).map((m) => ({ level: m.level, m })),
+    ...[...species.milestones]
+      .filter((m) => !(tradeOnly && m.effect === 'EVOLVE'))
+      .sort((a, b) => a.level - b.level)
+      .map((m) => ({ level: m.level, m })),
     ...(megas.length ? [{ level: megaLevel, mega: true as const }] : []),
   ].sort((a, b) => a.level - b.level)
   const ahead = level == null ? ms : ms.filter((r) => r.level > level)
   const done = level == null ? [] : ms.filter((r) => r.level <= level)
-  const byLevel = evolutions.filter((e) => e.level != null)
-  const byStone = evolutions.filter((e) => e.level == null)
+  // Trade evolutions (docs/23) happen only in a trade, never at their level: a row of their own, under the curve.
+  const byTrade = evolutions.filter((e) => isTradeEvolution(data, species.dex, e.toDex))
+  const byLevel = evolutions.filter((e) => e.level != null && !byTrade.includes(e))
+  const byStone = evolutions.filter((e) => e.level == null && !byTrade.includes(e))
   const evoNames = (evos: Evolution[]) =>
     evos.map((e, i) => (
       <span key={e.toDex}>
@@ -279,7 +293,7 @@ function MilestoneTrack({ species, level, onOpenDex }: { species: Species; level
   ))
 
   // Every milestone reached (and no stone left to use): one MAXED OUT button, which still opens the list.
-  if (ahead.length === 0 && !byStone.length)
+  if (ahead.length === 0 && !byStone.length && !byTrade.length)
     return (
       <details className="group">
         <summary className="pixel-btn frame-gold flex min-h-[44px] w-full cursor-pointer list-none items-center justify-center gap-2 px-3 text-[22px] uppercase leading-none tracking-[0.04em] [&::-webkit-details-marker]:hidden">
@@ -316,6 +330,21 @@ function MilestoneTrack({ species, level, onOpenDex }: { species: Species; level
             <span>
               {evolutionHow(e, data)}: {t('ui.sheet.evolvesInto')}{' '}
               <EvoLink toDex={e.toDex} how={evolutionHow(e, data)} onOpenDex={onOpenDex} />
+            </span>
+          </MilestoneRow>
+        ))}
+        {byTrade.map((e) => (
+          <MilestoneRow
+            key={`trade-${e.toDex}`}
+            chip={
+              <span className="grid place-items-center">
+                <PixelIcon name="trade" size={24} title={t('ui.sheet.byTrade')} />
+              </span>
+            }
+          >
+            <span>
+              {t('ui.sheet.whenTraded')}{' '}
+              <EvoLink toDex={e.toDex} how={t('ui.sheet.byTrade')} onOpenDex={onOpenDex} />
             </span>
           </MilestoneRow>
         ))}

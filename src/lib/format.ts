@@ -62,6 +62,15 @@ export function countdown(ms: number): string {
   return `${m}:${String(s % 60).padStart(2, '0')}`
 }
 
+/** Time left on something that lasts days (a trade listing): "45 min", "5h 05m", "2d 4h". */
+export function timeLeft(ms: number): string {
+  const mins = Math.max(1, Math.ceil(ms / 60_000))
+  if (mins < 60) return t('ui.time.minutes', { m: mins })
+  const h = Math.floor(mins / 60)
+  if (h < 24) return t('ui.time.hoursMinutes', { h, m: String(mins % 60).padStart(2, '0') })
+  return t('ui.time.daysHours', { d: Math.floor(h / 24), h: h % 24 })
+}
+
 /** Pokédollars: ₽1,250 — grouped the way the player's language groups numbers. */
 export const money = (n: number) => `₽${Math.round(n).toLocaleString(getLang())}`
 
@@ -131,3 +140,7 @@ export function statusEffects(r: StatusRules): { status: StatusKind; icon: IconN
 
 /** A status by name, title case: "Burn", "Brûlure". */
 export const statusName = (status: StatusKind) => t(`ui.status.${status}.name`)
+
+/** A moment in the player's language and time: "Sat 18 Oct, 18:00" (a small world's end, an area's opening). */
+export const dayTime = (ms: number) =>
+  new Date(ms).toLocaleString(getLang(), { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })

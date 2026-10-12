@@ -137,6 +137,7 @@ export const ROW_SCHEMAS: Record<TableName, z.ZodTypeAny> = {
           upgradeLevel: int(1, 10).nullable().optional(),
           battleBackground: background.nullable().optional(),
           shiny: z.boolean().optional(),
+          raid: z.boolean().optional(),
         }),
       )
       .nullable(),

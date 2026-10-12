@@ -628,7 +628,7 @@
      {
       "date": "01-01",
       "dex": 493,
-      "shiny": false
+      "shiny": true
      },
      {
       "date": "02-14",
@@ -643,7 +643,7 @@
      {
       "date": "03-20",
       "dex": 492,
-      "shiny": false
+      "shiny": true
      },
      {
       "date": "03-22",
@@ -653,17 +653,17 @@
      {
       "date": "04-01",
       "dex": 720,
-      "shiny": false
+      "shiny": true
      },
      {
       "date": "04-22",
       "dex": 251,
-      "shiny": false
+      "shiny": true
      },
      {
       "date": "06-08",
       "dex": 490,
-      "shiny": false
+      "shiny": true
      },
      {
       "date": "06-20",
@@ -673,22 +673,22 @@
      {
       "date": "06-21",
       "dex": 648,
-      "shiny": false
+      "shiny": true
      },
      {
       "date": "07-07",
       "dex": 385,
-      "shiny": false
+      "shiny": true
      },
      {
       "date": "07-14",
       "dex": 494,
-      "shiny": false
+      "shiny": true
      },
      {
       "date": "08-12",
       "dex": 386,
-      "shiny": false
+      "shiny": true
      },
      {
       "date": "10-30",
@@ -698,12 +698,12 @@
      {
       "date": "10-31",
       "dex": 491,
-      "shiny": false
+      "shiny": true
      },
      {
       "date": "11-01",
       "dex": 802,
-      "shiny": false
+      "shiny": true
      },
      {
       "date": "12-21",
@@ -718,7 +718,7 @@
      {
       "date": "12-25",
       "dex": 801,
-      "shiny": false
+      "shiny": true
      },
      {
       "date": "12-31",
@@ -796,6 +796,10 @@
      1022,
      1023
     ]
+   },
+   "progress": {
+    "teamCap": 50,
+    "perMon": {}
    }
   },
   "rebattle": {

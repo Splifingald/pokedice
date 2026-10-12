@@ -58,6 +58,7 @@ import { pushToast, useGame, type BattleSlice } from '@/store/game'
 import { holdReload, pushSaveNow } from '@/store/sync'
 import { cx } from '@/theme/util'
 import { BattleView, type VersusReplay } from './battle/BattleView'
+import { useInWorld, WorldAwayPage } from '@/screens/events/world'
 
 type Tab = 'fight' | 'team' | 'board'
 type Load =
@@ -69,7 +70,7 @@ type Load =
 /** A refusal of the database, said in the player's language. */
 const errorText = (t: (k: string) => string, err: unknown) => t(`ui.versus.err.${versusErrorCode(err)}`)
 
-export function VersusScreen() {
+function VersusScreenMain() {
   const { t } = useT()
   const navigate = useNavigate()
   const data = useGame((s) => s.data)
@@ -762,4 +763,11 @@ function VersusFightView({
   }
 
   return <BattleView key={slice.id} battle={slice} versus={replay} />
+}
+
+/** The main game's: inside a small world it waits outside (docs/21), and the page says so. */
+export function VersusScreen() {
+  const { t } = useT()
+  const inside = useInWorld().inside
+  return inside ? <WorldAwayPage title={t('ui.versus.title')} kind="main" /> : <VersusScreenMain />
 }

@@ -3,7 +3,13 @@ import { useNavigate } from 'react-router-dom'
 import {
   badgeCase,
   isAreaClosed,
+  isTradeEvolution,
   isAreaUnlocked,
+  isRaidBoss,
+  progressRaidKey,
+  progressRaidOf,
+  progressRaidState,
+  raidRules,
   progressOf,
   eventUnlocked,
   nextRaidsOf,
@@ -19,12 +25,14 @@ import {
   type Evolution,
   type GameData,
   type ItemDef,
+  type ProgressRaid,
   type RegionId,
 } from '@/engine'
 import { t } from '@/i18n'
 import { useT } from '@/i18n/react'
 import { useGame } from '@/store/game'
 import { useServerNow } from '@/store/serverTime'
+import { progressRaidPath } from '@/screens/events/progressRaids'
 import { raidDate } from '@/screens/events/shared'
 import { cx } from '@/theme/util'
 import { PixelIcon } from './icons'
@@ -46,6 +54,8 @@ interface Spot {
   fossil?: ItemDef
   /** Set when this is where an item (an evolution stone…) turns up in the loot, not a Pokémon. */
   loot?: { item: ItemDef; entryId: string; unique: boolean }
+  /** Set when the area's legendary is a progression raid (docs/24): GO opens the raid's page. */
+  raid?: ProgressRaid
 }
 
 const byRoute = (a: Spot, b: Spot) => Number(a.area.hidden) - Number(b.area.hidden) || a.area.orderIndex - b.area.orderIndex
@@ -74,7 +84,11 @@ export function whereToFind(dex: number, data: GameData, region: RegionId): Spot
       })
     }
     const boss = area.legendaryBoss?.find((b) => b.dex === dex)
-    if (boss) out.push({ area, minLevel: boss.level, maxLevel: boss.level, share: 0, legendary: true })
+    const raid = boss && isRaidBoss(data, boss) ? progressRaidOf(data, progressRaidKey(area.id, dex)) : null
+    if (raid) {
+      const level = raidRules(data, dex, 'progress').level
+      out.push({ area, minLevel: level, maxLevel: level, share: 0, legendary: true, raid })
+    } else if (boss) out.push({ area, minLevel: boss.level, maxLevel: boss.level, share: 0, legendary: true })
 
     // Omanyte, Kabuto and Aerodactyl are wild nowhere: they are dug out of an area's loot table as a fossil, and
     // without this the only Pokémon in the game you have to go looking for had no entry telling you where.
@@ -136,7 +150,9 @@ function SpotCard({ spot, onTravel }: { spot: Spot; onTravel?: () => void }) {
   const st = areaStatus(save, data, area)
   const locked = st === 'locked'
   const secret = area.hidden && locked
-  const closed = !locked && isAreaClosed(save, area.id, data)
+  // A raid's page stays open after its area closes: the raid is fought there, not in the area.
+  const closed = !locked && !spot.raid && isAreaClosed(save, area.id, data)
+  const raidState = spot.raid ? progressRaidState(save, data, spot.raid) : null
   const levels = area.scalesToTeam && !spot.fossil
     ? t('ui.dex.scaling')
     : spot.minLevel === spot.maxLevel
@@ -144,6 +160,10 @@ function SpotCard({ spot, onTravel }: { spot: Spot; onTravel?: () => void }) {
       : t('ui.map.levelRange', { min: spot.minLevel, max: spot.maxLevel })
   const name = secret ? t('ui.dex.aSecretArea') : area.name
   const go = () => {
+    if (spot.raid) {
+      onTravel?.()
+      return navigate(progressRaidPath(spot.raid))
+    }
     if (st !== 'here' && !travelTo(area)) return
     onTravel?.()
     navigate('/home')
@@ -175,6 +195,9 @@ function SpotCard({ spot, onTravel }: { spot: Spot; onTravel?: () => void }) {
               : t('ui.dex.lootSpot', { rarity: rarity(spot.share) })
             : spot.fossil
               ? t('ui.dex.fossilSpot', { item: spot.fossil.name, levels, rarity: rarity(spot.share) })
+              : spot.raid
+                ? t('ui.dex.raidSpot', { levels }) +
+                  (raidState === 'done' ? t('ui.dex.raidDoneSuffix') : raidState === 'locked' && !locked ? t('ui.dex.raidLockedSuffix') : '')
               : spot.legendary
                 ? t('ui.dex.legendarySpot', { levels })
                 : t('ui.dex.wildSpot', { levels, rarity: rarity(spot.share) })}
@@ -190,7 +213,13 @@ function SpotCard({ spot, onTravel }: { spot: Spot; onTravel?: () => void }) {
         <button
           type="button"
           onClick={go}
-          aria-label={st === 'here' ? t('ui.home.playHere', { area: area.name }) : t('ui.home.goTo', { area: area.name })}
+          aria-label={
+            spot.raid
+              ? t('ui.raid.progress.openLabel', { name: data.species[spot.raid.dex]?.name ?? '' })
+              : st === 'here'
+                ? t('ui.home.playHere', { area: area.name })
+                : t('ui.home.goTo', { area: area.name })
+          }
           className="pixel-btn frame-primary absolute right-2.5 top-1/2 h-11 w-[60px] -translate-y-1/2 text-[24px] uppercase leading-none tracking-[0.06em]"
         >
           {t('ui.home.go')}
@@ -325,8 +354,8 @@ function ItemSources({ itemKey, onTravel }: { itemKey: string; onTravel?: () => 
 }
 
 const EVOLVES_TEXT = {
-  from: { item: 'ui.dex.evolvesFromItem', level: 'ui.dex.evolvesFromLevel' },
-  into: { item: 'ui.dex.evolvesIntoItem', level: 'ui.dex.evolvesIntoLevel' },
+  from: { item: 'ui.dex.evolvesFromItem', level: 'ui.dex.evolvesFromLevel', trade: 'ui.dex.evolvesFromTrade' },
+  into: { item: 'ui.dex.evolvesIntoItem', level: 'ui.dex.evolvesIntoLevel', trade: 'ui.dex.evolvesIntoTrade' },
 } as const
 
 /**
@@ -337,18 +366,22 @@ function EvolutionStep({
   dex,
   evo,
   direction,
+  from,
   onOpenDex,
   onTravel,
 }: {
   dex: number
   evo: Evolution
   direction: 'from' | 'into'
+  /** The species that evolves (for "into", the entry's own): a trade evolution says so (docs/23). */
+  from: number
   onOpenDex?: (dex: number) => void
   onTravel?: () => void
 }) {
   const { t } = useT()
   const data = useGame((s) => s.data)
   const known = useGame((s) => !!s.save?.pokedex.includes(dex))
+  const how = isTradeEvolution(data, from, evo.toDex) ? 'trade' : evo.item ? 'item' : 'level'
   const button = (
     <button
       type="button"
@@ -357,14 +390,14 @@ function EvolutionStep({
     >
       <MiniSprite dex={dex} size={40} silhouette={!known} />
       <span className="text-[18px] leading-tight">
-        {t(EVOLVES_TEXT[direction][evo.item ? 'item' : 'level'], {
+        {t(EVOLVES_TEXT[direction][how], {
           name: known ? (data.species[dex]?.name ?? '') : t('ui.common.unknown'),
-          how: evolutionHow(evo, data),
+          how: evolutionHow(evo, data, from),
         })}
       </span>
     </button>
   )
-  if (!evo.item) return button
+  if (!evo.item || how === 'trade') return button
   return (
     <div className="flex flex-col gap-2">
       {button}
@@ -391,6 +424,7 @@ function EvolvesInto({ dex, onOpenDex, onTravel }: { dex: number; onOpenDex?: (d
           dex={e.toDex}
           evo={e}
           direction="into"
+          from={dex}
           onOpenDex={onOpenDex}
           onTravel={onTravel}
         />
@@ -427,7 +461,7 @@ function MissingEntry({ dex, onOpenDex, onTravel }: { dex: number; onOpenDex?: (
           </ul>
         )}
         {from.map(({ species, evo }) => (
-          <EvolutionStep key={species.dex} dex={species.dex} evo={evo} direction="from" onOpenDex={onOpenDex} onTravel={onTravel} />
+          <EvolutionStep key={species.dex} dex={species.dex} evo={evo} direction="from" from={species.dex} onOpenDex={onOpenDex} onTravel={onTravel} />
         ))}
         {spots.length === 0 && from.length === 0 && !raid && <p className="copy text-muted">{t('ui.dex.notSpotted')}</p>}
         {travelHint && <p className="font-pixel-sm text-[15px] text-muted">{t('ui.home.finishFirst')}</p>}

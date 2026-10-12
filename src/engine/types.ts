@@ -212,6 +212,11 @@ export interface BossDef {
    * appearance rolls the wild odds (`shinyChance`).
    */
   shiny?: boolean
+  /**
+   * A progression raid (docs/24): fought as a raid in this area once the area is completed, never as a boss, and
+   * caught nowhere else here. Only while Raid Battles are switched on for the player; otherwise a boss as before.
+   */
+  raid?: boolean
 }
 
 /** Levels relative to the team average, both ends included: { min: -15, max: -10 } = 15 to 10 levels below. */
@@ -490,7 +495,7 @@ export interface RebattleTier {
   upgradeDelta: number | 'max'
 }
 
-/** A mythical and its lair: the area its raid is fought in front of, and the one to complete to get it. */
+/** A mythical and its lair: its boss area, where its shiny raid of the calendar is fought too. */
 export interface RaidPoolEntry {
   dex: number
   areaId: string
@@ -542,8 +547,13 @@ export interface RaidConfig {
   /** Gifts a helper can get a day, and what they are. */
   helperDailyCap: number
   gifts: { key: string; weight: number }[]
-  /** The mythicals (each a raid of the calendar, never shiny there) and their lairs. */
+  /** The mythicals (each a shiny raid of the calendar, a boss never shiny in its lair) and their lairs. */
   pool: RaidPoolEntry[]
+  /**
+   * Progression raids (docs/24): an area's raid boss, fought there once the area is completed. Its numbers are the
+   * raid's over these: the sides' level cap, and each raid Pokémon's own (level, bars… and its own team cap).
+   */
+  progress: { teamCap: number; perMon?: Record<string, RaidMonRules & { teamCap?: number }> }
   /**
    * The calendar: its fixed dates, the lowest level a shiny filler's area may start at, the seed (by the day it applies
    * from: a new one re-plans only the days after it) and the days set by hand.
@@ -690,6 +700,77 @@ export interface GameConfig {
   extreme: ExtremeConfig
   /** Live events (docs/20): their switch, and the admin's list, past, running and to come; one runs at a time. */
   liveEvents: { access: EventAccess; list: LiveEvent[] }
+  /** Trades (docs/23): their switch and numbers, a game_config row of its own that seeding never writes. */
+  trade: TradeConfig
+  /** Small worlds (docs/21): their switch, and the admin's list, past, running and to come; one runs at a time. */
+  smallWorlds: { access: EventAccess; list: SmallWorld[] }
+}
+
+/** Trades (docs/23-TRADING-PLAN.md): listings, like the games' GTS. The server reads the same row. */
+export interface TradeConfig {
+  /** The switch (docs/15 §20): off (nowhere in the game), on for the admin only, on for everyone. Off by default. */
+  access: EventAccess
+  /** Open listings a player can have at once. */
+  maxListings: number
+  /** A listing nobody takes ends after this many days, and its Pokémon comes back. */
+  listingDays: number
+  /** Listings a player can take per UTC day. */
+  tradesPerDay: number
+  /** A traded Pokémon arrives at the level of the one given, at most this (unless its species only exists higher). */
+  levelCap: number
+  /** Badges needed to post or take, every region's counted together. */
+  minBadges: number
+  /** Trade evolutions, [from, to]: they evolve the moment they arrive in a trade, and never by level. */
+  evolveOnTrade: [number, number][]
+  /** Never tradable, on top of legendaries and mythicals (the Ultra Beasts by default). */
+  exclude: number[]
+}
+
+/** One booster of a small world: every hit of this type, both sides', × `multiplier`. */
+export interface WorldBooster {
+  type: PokeType
+  multiplier: number
+}
+
+/** One row of a small world's Mart: its price in the world's ₽, how many each player may buy (null = no limit). */
+export interface WorldShopItem {
+  key: string
+  price: number
+  limit: number | null
+}
+
+/**
+ * A small world (docs/21): a time-limited, themed region of its own, built in the admin, where a shiny mythical is won.
+ * Its region row (Config → Regions) holds its areas and trainers, which point at it like any region's; the rest of what
+ * makes it a world is here. Between `start` and `end` (ISO, UTC, server time) it can be entered; when it ends, all of it
+ * is gone but the mythical.
+ */
+export interface SmallWorld {
+  /** Stable: a save keeps the world it holds by it. */
+  id: string
+  /** Its region: a region row whose dexRange overlaps no real region. */
+  regionId: RegionId
+  start: string
+  end: string
+  /** A custom title per language (others fall back to English); empty = the region's name. */
+  title: Partial<Record<string, string>>
+  /** Its picture on Home, in the pop-ups and over its Mart: an area picture's key or a path. */
+  banner: string
+  /** The colours Home wears inside it: the main colour, an accent, the ground's tint (CSS colours). */
+  theme: { main: string; accent: string; ground: string }
+  /** Shown (and open) from this many badges, every region's counted. */
+  minBadges: number
+  /** The three partners offered for the fresh start (at the region's starter level). */
+  starters: number[]
+  /** × every XP earned in the world. */
+  xpMultiplier: number
+  boosters: WorldBooster[]
+  /** What its Mart sells, and nothing else. */
+  shop: WorldShopItem[]
+  /** The shiny mythical: the boss of `areaId` (an area of the world), at `level`. */
+  mythical: { dex: number; level: number; areaId: string }
+  /** Areas that open at a date-time (ISO, UTC) as well as when the one before is cleared. */
+  opens: Record<string, string>
 }
 
 /**
@@ -774,6 +855,8 @@ export interface PokemonInstance {
   fossil?: string
   /** Extreme mode: when it was K.O. (ms, server time). It rests until `koHours` later. Absent = not on the clock. */
   koAt?: number
+  /** The name its trainer gave it (`engine/nickname.ts`). It goes with it in a trade; absent = its species' name. */
+  nickname?: string
 }
 
 export interface AreaProgress {
@@ -823,6 +906,8 @@ export interface SaveData {
     animations?: 'full' | 'short'
     multiExp: boolean
     autoMode?: boolean
+    /** Raids: the ally sides' and the summons' turns at 1.5× speed. */
+    raidFast?: boolean
     lang?: Lang
     theme?: 'light' | 'dark' | 'auto'
   }
@@ -867,6 +952,60 @@ export interface SaveData {
   extremeUnlockedAt?: number
   /** Main save: Extreme mode's rules pop-up has been shown (once, when it opens; INFO shows it again). */
   extremeRulesSeen?: boolean
+  /** Trades (docs/23): listed Pokémon, the trades already applied, the last ones done. Absent = never traded. */
+  trades?: TradesSave
+}
+
+/** What a listing asks for (docs/23 §1.1): one species, any the poster doesn't own, or anything. */
+export type TradeWant = { kind: 'species'; dex: number } | { kind: 'notOwned' } | { kind: 'any' }
+
+export const TRADE_VISIBILITY = ['public', 'friends', 'private'] as const
+/** Who sees a listing: the trade board (every signed-in player), friends only, or only people with its link. */
+export type TradeVisibility = (typeof TRADE_VISIBILITY)[number]
+
+/** A Pokémon on the trade board: out of its Box, frozen, still yours until the trade is done. */
+export interface TradeOut {
+  /** The server's listing id. */
+  listing: string
+  /** Its link's code. */
+  code: string
+  /** The region whose Box it left: it goes back there. */
+  region: RegionId
+  mon: PokemonInstance
+  at: number
+  endsAt: number
+  want: TradeWant
+  visibility: TradeVisibility
+}
+
+/** How a Pokémon that arrived was kept (the catch rule, docs/23 §1.4). */
+export type TradeOutcome = 'new' | 'replaced' | 'merged' | 'shiny'
+
+/** One trade done, for the Done list: who with, what went and what came. */
+export interface TradeLogEntry {
+  id: string
+  at: number
+  /** 'poster': your listing was taken; 'taker': you took theirs. */
+  role: 'poster' | 'taker'
+  /** The other trainer's name as it was then. */
+  with: string
+  gave: { dex: number; level: number; shiny?: boolean; nickname?: string }
+  /** The species that arrived, at the level it arrived at (before a trade evolution), and the name it came with. */
+  got: { dex: number; level: number; shiny?: boolean; nickname?: string }
+  evolvedTo?: number
+  outcome: TradeOutcome
+}
+
+export interface TradesSave {
+  out: TradeOut[]
+  /** Trade ids already applied to this save (the last 50): a trade is applied exactly once. */
+  done: string[]
+  /** The last trades done, newest first. */
+  log?: TradeLogEntry[]
+  /** Your listings taken while you were away, not looked at yet: the gold dot. */
+  unseen?: string[]
+  /** The rules pop-up has been shown (once; INFO shows it again). */
+  rulesSeen?: boolean
 }
 
 export type SaveMode = 'main' | 'extreme'
@@ -900,10 +1039,54 @@ export interface EventsSave {
   raidTeam?: string[]
   /** Raids won, a raid being won when its Pokémon is caught (the server keeps the count the leaderboard shows). */
   raidsWon?: number
+  /** Progression raids caught (docs/24), by key (`areaId:dex`): each closes for good. */
+  raidsDone?: string[]
+  /** The team left on each progression raid, by key: three instance ids from that raid's region's Box. */
+  raidTeams?: Record<string, string[]>
+  /**
+   * The NPC trainers offered on START with empty slots: drawn from this seed for this raid (`daily:YYYY-MM-DD` or a
+   * progression raid's key), so a reload offers the same four; each try draws a new seed.
+   */
+  raidNpc?: { key: string; seed: number }
   /** Live events whose pop-up has been shown (ids). */
   liveSeen?: string[]
   /** Special Shop purchases, per live event id then item key: what counts against each item's limit. */
   liveBought?: Record<string, Record<string, number>>
+  /** The small world this save holds (its block is the live region or a parked one), or the one that just closed. */
+  world?: WorldSave
+  /** Small worlds whose opening pop-up has been shown (ids). */
+  worldSeen?: string[]
+  /** Small worlds whose closing pop-up has been shown (ids). */
+  worldBye?: string[]
+  /** Shiny mythicals won in a small world, waiting for their home region to be started. */
+  worldPending?: WorldCatch[]
+}
+
+/** The small world a save holds: which, where it was entered from, and what happened there. */
+export interface WorldSave {
+  /** The world (SmallWorld.id). */
+  id: string
+  /** Its region: the block of that id is the world's Box, bag, ₽ and areas. */
+  regionId: RegionId
+  /** The region to go back to. */
+  from: RegionId
+  /** The partner picked for the fresh start. */
+  partner: number
+  /** Its shiny mythical has been caught (it left the world at once). */
+  caught?: boolean
+  /** Its Mart's purchases, item key → how many (each row's limit counts them). */
+  bought?: Record<string, number>
+  /** The world has closed: its block is gone; this stays until its closing pop-up has been shown. */
+  closed?: boolean
+}
+
+/** A shiny mythical won in a small world, waiting for its home region to be started. */
+export interface WorldCatch {
+  dex: number
+  level: number
+  shiny: boolean
+  /** The world it was won in. */
+  worldId: string
 }
 
 /** A raid catch waiting for its area: it joins that area's region's Box once the area is completed. */

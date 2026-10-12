@@ -37,9 +37,37 @@ export function getRegion(data: GameData, id: RegionId): Region | undefined {
   return data.regions.find((r) => r.id === id)
 }
 
-/** Regions in order, minus any switched off in Admin. Kanto is never switched off. */
+/**
+ * A small world's region (docs/21): a region row a world in `smallWorlds` names. It is played like a region — its own
+ * Box, bag, ₽ and areas, parked while elsewhere — but it is part of nothing a real region is: no chain, no league, no
+ * badges, no switcher chip, no Pokédex total. Its `enabled` flag means nothing: the world decides when it is open.
+ */
+export const isWorldRegion = (data: GameData, id: RegionId): boolean =>
+  (data.config.smallWorlds?.list ?? []).some((w) => w.regionId === id)
+
+/**
+ * The region of the small world this save holds, if any — read from the save alone, for what counts a save's progress
+ * without the game data (a world's Box and Pokédex are no progress: they close with it).
+ */
+export const worldRegionOf = (save: Pick<SaveData, 'events'>): RegionId | null => {
+  const w = save.events?.world
+  return w && !w.closed ? w.regionId : null
+}
+
+/** The region being played is a small world's (the save's own record, or the content, says so). */
+export const inWorldRegion = (save: SaveData, data: GameData): boolean => {
+  const live = regionOf(save)
+  return worldRegionOf(save) === live || isWorldRegion(data, live)
+}
+
+/** The real regions (every small world's left out), in order. */
+export const realRegions = (data: GameData): Region[] => data.regions.filter((r) => !isWorldRegion(data, r.id))
+
+/** Regions in order, minus any switched off in Admin and the small worlds. Kanto is never switched off. */
 export function enabledRegions(data: GameData): Region[] {
-  return data.regions.filter((r) => r.enabled || r.id === KANTO).sort((a, b) => a.orderIndex - b.orderIndex)
+  return realRegions(data)
+    .filter((r) => r.enabled || r.id === KANTO)
+    .sort((a, b) => a.orderIndex - b.orderIndex)
 }
 
 /**
@@ -60,7 +88,8 @@ export function regionOfSpecies(data: GameData, dex: number): RegionId | null {
   // A form belongs to its own region (an Alolan form to Alola), or else to its species' generation.
   const form = data.species[dex]?.form
   if (form) return form.region ?? (form.of !== dex ? regionOfSpecies(data, form.of) : null)
-  return data.regions.find((r) => dex >= r.dexRange[0] && dex <= r.dexRange[1])?.id ?? null
+  // A small world has no generation of its own, whatever range its row says.
+  return realRegions(data).find((r) => dex >= r.dexRange[0] && dex <= r.dexRange[1])?.id ?? null
 }
 
 /**
@@ -90,8 +119,9 @@ export function evolutionGate(save: SaveData, data: GameData): EvolutionGate {
 
 /** The same rule, for a region rather than a save — what `regionSpecies` counts and what `evolutionGate` allows. */
 export function speciesAllowedIn(data: GameData, regionId: RegionId): EvolutionGate {
-  const here = getRegion(data, regionId)
-  // Standing in a region the table does not know: gate nothing rather than lock everything away.
+  // Standing in a region the table does not know, or in a small world (where every generation may evolve): gate
+  // nothing rather than lock anything away.
+  const here = isWorldRegion(data, regionId) ? undefined : getRegion(data, regionId)
   const open = new Set(data.regions.filter((r) => !here || r.orderIndex <= here.orderIndex).map((r) => r.id))
   const gate = (dex: number) => {
     const from = regionOfSpecies(data, dex)
@@ -172,7 +202,7 @@ export function offeredRegion(save: SaveData, data: GameData): Region | null {
     if (!region.nextRegion || started.has(region.nextRegion)) continue
     if (!leagueDone(save, data, region.id)) continue
     const next = getRegion(data, region.nextRegion)
-    if (next && (next.enabled || next.id === KANTO)) return next
+    if (next && !isWorldRegion(data, next.id) && (next.enabled || next.id === KANTO)) return next
   }
   return null
 }
@@ -289,6 +319,8 @@ export function startRegion(save: SaveData, region: Region, block: RegionSave): 
  */
 export function sendTargets(save: SaveData, data: GameData): Region[] {
   const here = regionOf(save)
+  // Nothing leaves a small world but its mythical (and nothing goes into one).
+  if (isWorldRegion(data, here)) return []
   // It has to be a region being played: its parked block is the Box the Pokémon arrives in.
   return enabledRegions(data).filter((r) => r.id !== here && !!save.parked?.[r.id] && leagueDone(save, data, r.id))
 }
@@ -354,7 +386,8 @@ export function sendPokemonOn(save: SaveData, data: GameData, instId: string, ta
 export function rescueFromDisabledRegion(save: SaveData, data: GameData): { save: SaveData; from: Region } | null {
   const live = regionOf(save)
   const region = getRegion(data, live)
-  if (!region || region.enabled || live === KANTO) return null
+  // A small world's flag means nothing: the world decides when it is open (engine/worlds.ts).
+  if (!region || region.enabled || live === KANTO || isWorldRegion(data, live)) return null
   const open = unlockedRegions(save, data)
   const target = [...open].reverse().find((r) => r.id !== live) ?? getRegion(data, KANTO)
   if (!target || !save.parked?.[target.id]) return null

@@ -71,6 +71,7 @@ import {
   slotColor,
 } from './daycare/parts'
 import { YardStage, type YardMember } from './daycare/YardStage'
+import { useInWorld, WorldAwayPage } from '@/screens/events/world'
 
 /** Re-render every 20 s so levels and countdowns stay current. */
 function useNow(ms = 20_000) {
@@ -86,11 +87,15 @@ const CARD = 'bg-paper shadow-card'
 /** A friend's card wears a grey band: it isn't one of your slots. */
 const GUEST_BAND = 'rgb(var(--c-shadow))'
 
-/** A member's name: the species, the same for yours and a friend's (the card says whose). */
+/**
+ * A member's name: the nickname you gave one of yours (an instance, or a member holding your resident), else the
+ * species, a friend's included (the card says whose).
+ */
 function useNameOf() {
   const { t } = useT()
   const data = useGame((s) => s.data)
-  return (m: { dex: number }) => data.species[m.dex]?.name ?? t('ui.common.pokemon')
+  return (m: { dex: number; nickname?: string; resident?: { inst: { nickname?: string } } }) =>
+    m.nickname || m.resident?.inst.nickname || (data.species[m.dex]?.name ?? t('ui.common.pokemon'))
 }
 
 /** One of yours: its slot's colour, the levels gained here, the bar to the next level, who it pairs with. */
@@ -189,7 +194,11 @@ function ChecksSection({ now }: { now: number }) {
   const cfg = data.config.dayCare
   const ditto = data.species[132]?.name ?? 'Ditto'
   const ps = pairs(save, data)
-  const next = (clock: 'breed' | 'ditto') => waitText(clockDueAt(save, data, clock, now) - now)
+  // A clock without a pair isn't running: it waits for one instead of counting down.
+  const line = (clock: 'breed' | 'ditto', h: number) => {
+    const at = clockDueAt(save, data, clock, now)
+    return at == null ? t('ui.dayCare.clockIdle', { h }) : t('ui.dayCare.clockLine', { h, time: waitText(at - now) })
+  }
   return (
     <section aria-labelledby="dc-checks" className="grid gap-2 bg-paper px-3 pb-3 pt-2.5 shadow-ring-line">
       <h2 id="dc-checks" className="m-0 text-[21px] font-normal leading-none">
@@ -197,9 +206,9 @@ function ChecksSection({ now }: { now: number }) {
       </h2>
       <dl className="m-0 grid grid-cols-[auto_minmax(0,1fr)] gap-x-2.5 gap-y-0.5 font-pixel-sm text-[15px] text-ink">
         <dt className="text-muted">{t('ui.dayCare.clockGroups')}</dt>
-        <dd className="m-0">{t('ui.dayCare.clockLine', { h: cfg.breedHours, time: next('breed') })}</dd>
+        <dd className="m-0">{line('breed', cfg.breedHours)}</dd>
         <dt className="text-muted">{ditto}</dt>
-        <dd className="m-0">{t('ui.dayCare.clockLine', { h: cfg.breedDittoHours, time: next('ditto') })}</dd>
+        <dd className="m-0">{line('ditto', cfg.breedDittoHours)}</dd>
       </dl>
       {ps.length ? (
         <ul className="m-0 grid list-none gap-1 p-0">
@@ -642,7 +651,7 @@ function YardPlate({ count, onBack }: { count: number; onBack: () => void }) {
   )
 }
 
-export function DayCareScreen() {
+function DayCareScreenMain() {
   const { t } = useT()
   const save = useGame((s) => s.save)
   const data = useGame((s) => s.data)
@@ -734,6 +743,8 @@ export function DayCareScreen() {
   }
   const price = cfg.rushPrice
   const short = Math.max(0, price - save.gold)
+  // Null while no pair is here: no clock runs, the bar says so instead of counting down.
+  const nextCheck = nextCheckAt(save, data, now)
   const freeMine = Math.max(0, cfg.slots - dc.residents.length)
   const freeFriends = Math.max(0, cfg.friendSlots - dc.guests.length)
   // Why the friend slots wait, if they do: no online service, the sign-in still being checked, or a database without
@@ -769,7 +780,7 @@ export function DayCareScreen() {
           />
         ) : (
           <RushBarView
-            wait={waitText(nextCheckAt(save, data, now) - now)}
+            wait={nextCheck == null ? null : waitText(nextCheck - now)}
             pairs={pairs(save, data).length}
             price={price}
             short={short}
@@ -852,4 +863,11 @@ export function DayCareScreen() {
       )}
     </div>
   )
+}
+
+/** The main game's: inside a small world it waits outside (docs/21), and the page says so. */
+export function DayCareScreen() {
+  const { t } = useT()
+  const inside = useInWorld().inside
+  return inside ? <WorldAwayPage title={t('ui.home.dayCare')} kind="main" /> : <DayCareScreenMain />
 }

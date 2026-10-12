@@ -1,6 +1,7 @@
 import {
   asSeenBy,
   deckSize,
+  fightBosses,
   gymsFor,
   playerSideOf,
   progressOf,
@@ -71,7 +72,7 @@ export function RoundGauge({
   const gym = gymId ? asSeenBy(data.trainers[gymId]!, side) : undefined
   const boss =
     cfg.showRoundPreview && !gym
-      ? (area.legendaryBoss ?? []).find((b) => !progress.bossesDefeated.includes(b.dex))
+      ? fightBosses(area, data).find((b) => !progress.bossesDefeated.includes(b.dex))
       : undefined
   const finale = gym
     ? gym.badge

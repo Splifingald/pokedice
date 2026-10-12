@@ -103,7 +103,7 @@ export function MonCard({
           )}
           <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1">
             <span className="flex min-w-0 items-center gap-1">
-              <span className="truncate text-xl leading-none">{species.name}</span>
+              <span className="truncate text-xl leading-none">{inst.nickname || species.name}</span>
               {inst.shiny && <PixelIcon name="star" size={12} title={t('ui.mon.shiny')} className="shrink-0" />}
             </span>
             <span className="flex flex-wrap items-center gap-1">

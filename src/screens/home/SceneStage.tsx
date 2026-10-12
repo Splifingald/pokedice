@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react'
-import { instanceMaxHp, type Area, type PokemonInstance } from '@/engine'
+import { instanceMaxHp, monName, type Area, type PokemonInstance } from '@/engine'
 import { useT } from '@/i18n/react'
 import { HpBar } from '@/components/HpBar'
 import { LevelTag } from '@/components/Chip'
@@ -53,11 +53,11 @@ export function SceneStage({
     () =>
       team.map((inst) => ({
         inst,
-        name: data.species[inst.dex]?.name ?? t('ui.common.pokemon'),
+        name: monName(inst, data),
         maxHp: instanceMaxHp(inst, data),
         sprite: stageSprite(inst.dex, false, !!inst.shiny),
       })),
-    [team, data, t],
+    [team, data],
   )
   // A new herd for a new area or a new team; HP changes keep the herd (they only change who is tired).
   const teamKey = team

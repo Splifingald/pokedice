@@ -8,8 +8,10 @@ import {
   hasAbleTeam,
   isAreaClosed,
   latestOpenArea,
+  openRaidIn,
   playerSideOf,
   progressOf,
+  raidRules,
   teamAverageLevel,
   type Area,
 } from '@/engine'
@@ -20,9 +22,11 @@ import { PixelButton } from '@/components/PixelButton'
 import { countdown, trainerTitle } from '@/lib/format'
 import { useGame } from '@/store/game'
 import { useEnergy } from '@/store/hooks'
+import { serverNow } from '@/store/serverTime'
 import { challenge, enterArea, outOfEnergy, rollNext } from '@/store/run'
 import { travelTo } from '@/store/travel'
 import { cx } from '@/theme/util'
+import { progressRaidPath } from '../events/progressRaids'
 
 /** The run must be in this area before anything is rolled: arriving from another one starts it afresh. */
 function ensureRun(area: Area) {
@@ -32,8 +36,8 @@ function ensureRun(area: Area) {
 
 /**
  * What CONTINUE does and says in an area: the next encounter (rollNext → its preview on /area), or the gym or legendary
- * waiting at the end of the rounds; back to the encounter when one is under way; nothing when the area is closed or the
- * energy is out.
+ * waiting at the end of the rounds, or the area's progression raid once it's completed (docs/24: its page, like a gym
+ * leader's challenge); back to the encounter when one is under way; nothing when the area is closed or the energy is out.
  */
 export function useContinue(area: Area) {
   const { t } = useT()
@@ -47,9 +51,11 @@ export function useContinue(area: Area) {
   const progress = progressOf(save, area.id)
   const side = playerSideOf(save)
   const gym = dueGym(area, progress, data, side)
-  const boss = gym ? null : dueBoss(area, progress, teamAverageLevel(save))
+  const boss = gym ? null : dueBoss(area, progress, teamAverageLevel(save), data)
   const closed = isAreaClosed(save, area.id, data)
   const busy = (run.areaId === area.id && run.phase !== 'idle') || battle
+  const raid = gym || boss || busy ? null : openRaidIn(save, data, area)
+  const raidName = raid ? (data.species[raid.dex]?.name ?? '') : ''
   // Re-checked every second (useEnergy ticks): a Center the game sends next is free even at 0.
   const empty = !!energy && energy.value < 1 && run.areaId === area.id && outOfEnergy()
   const need = area.roundsToClear
@@ -71,6 +77,8 @@ export function useContinue(area: Area) {
       ? t('ui.home.gymReady', { name: trainerTitle(gym) })
       : boss
         ? t('ui.home.legendReady')
+        : raid
+          ? t('ui.raid.progress.continueSub', { level: raidRules(data, raid.dex, 'progress').level })
         : closed
           ? t('ui.home.closed')
           : empty && energy?.nextAt != null
@@ -88,6 +96,7 @@ export function useContinue(area: Area) {
   }
   const go = () => {
     if (busy) return navigate('/area')
+    if (raid) return navigate(progressRaidPath(raid))
     if (gym || boss) {
       ensureRun(area)
       challenge()
@@ -96,17 +105,19 @@ export function useContinue(area: Area) {
     }
     explore()
   }
-  const off = !busy && (resting || (!gym && !boss && (closed || empty)))
+  const off = !busy && !raid && (resting || (!gym && !boss && (closed || empty)))
   // Under CONTINUE: the green GO TO when behind in the region's main chain (not mid-encounter), and "keep exploring"
   // when a gym or a legendary waits. Home sizes its scene around them.
-  const latest = useGame((s) => (busy || !s.save ? null : latestOpenArea(s.save, s.data)))
-  const keepExploring = !!(gym || boss) && !closed && !busy && !resting
+  const latest = useGame((s) => (busy || !s.save ? null : latestOpenArea(s.save, s.data, serverNow())))
+  const keepExploring = !!(gym || boss || raid) && !closed && !busy && !resting
   const label = gym
     ? t('ui.area.challenge', { name: gym.name.toUpperCase() })
     : boss
       ? t('ui.area.faceIt')
-      : t('ui.common.continue')
-  return { label, sub, go, explore, off, gym, boss, closed, empty, busy, resting, cleared: progress.cleared, latest, keepExploring }
+      : raid
+        ? t('ui.raid.progress.continue', { name: raidName.toUpperCase() })
+        : t('ui.common.continue')
+  return { label, sub, go, explore, off, gym, boss, raid, closed, empty, busy, resting, cleared: progress.cleared, latest, keepExploring }
 }
 
 /**
@@ -124,7 +135,7 @@ export function ContinueBar({
   onAreas: () => void
 }) {
   const { t } = useT()
-  const { label, sub, go, explore, off, gym, boss, empty, resting, latest, keepExploring } = useContinue(area)
+  const { label, sub, go, explore, off, gym, boss, raid, empty, resting, latest, keepExploring } = useContinue(area)
   const subId = useId()
 
   return (
@@ -167,9 +178,9 @@ export function ContinueBar({
         >
           <span className="flex min-w-0 items-center gap-3">
             <PixelIcon
-              name={gym || boss ? 'sword' : 'play'}
+              name={gym || boss || raid ? 'sword' : 'play'}
               size={24}
-              color={gym || boss || off ? undefined : '#ffffff'}
+              color={gym || boss || raid || off ? undefined : '#ffffff'}
             />
             <span className="grid min-w-0 gap-[3px] text-left">
               <span className="truncate leading-none">{label}</span>

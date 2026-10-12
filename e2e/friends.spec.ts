@@ -79,7 +79,7 @@ test('the Friends page: a new friend is announced, your ID, your friends, a frie
   await expect(page.getByText('Misty is now your friend!')).toBeVisible()
 
   // The avatar carries the news; the menu's Friends row too.
-  await page.getByRole('button', { name: /new friends: 1/ }).click()
+  await page.getByRole('button', { name: /something new: 1/ }).click()
   await page.getByRole('button', { name: 'Friends (1)' }).click()
   await expect(page).toHaveURL(/\/friends$/)
   await expect(page.getByRole('heading', { level: 1, name: 'Friends' })).toBeVisible()

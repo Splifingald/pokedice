@@ -146,6 +146,7 @@ All live in `src/components/`. Every component, in every state, is on `/kitchen-
 | `Die` | A die face | Square corners; pips on whole pixels (`pipLayout`: one even pip size, three fixed columns) at any size; ink pips on light dice, white on dark; status face = white + status ring and a round badge with its icon; `selected` = lifted 6 px with a red outline; `combo` = a gold ring; values without a pip layout (0, 7, 8…) show their number, centred on the face |
 | `PageHead` / `Wallet` | A tab's title row | Tab icon, the one `<h1>` (`as="h2"` where the page has its own), a count ("3/3", "81/151") or the gold as a navy plate |
 | `SheetSection` | A titled block inside a sheet | 22 px heading, a muted hint on the same row, extra controls |
+| `NicknameButton` / `NicknameModal` | Giving one of your Pokémon a nickname (its sheet's title) | The name and a pencil, 44 px tall on phones; the dialog with the field (empty: the species as placeholder; named: selected), the 0/12 counter, the trade line only where trades exist, Cancel / SAVE (§13) |
 | `MonTile` / `TileTag` | A grid of Pokémon (Box, Pokédex) | Menu icon from the atlas, number, name, a line under it; `missing` = grey tile + silhouette; corner tags NEW (gold) and Nearby (green). `TILE_GRID` = ~84 px columns |
 | `FaceDice` / `StatusLines` | What a die does | Its six faces as real dice, value under each; a status face keeps its ring and badge and gets its short name in a chip. One tinted line per status: when it triggers and what it does, with the live numbers (`statusEffects`) |
 | `ItemSprite` | An item's picture | From the item atlas (one request); falls back to the item's own URL for items added since the atlas was built |
@@ -306,8 +307,8 @@ Players shouldn't have to make many requests:
   Pokédex. The side nav (desktop) has the same entries with Home first. A tab's hit area is the whole column, at
   least 60 px tall, even where the drawing is smaller.
 - **Region cards** (Areas sheet → regions): each region's own picture (`public/region-art/<id>.png`, from the Visual
-  Lab's region prompts; its first area's strip until it has one), name, counts and GO. A tap moves there and closes
-  the sheet.
+  Lab's region prompts; its first area's strip until it has one), name, counts and GO. A tap moves there and shows
+  its areas in the same sheet, from the top (the region you're in just goes back to its areas).
 - **Area screen**: its title opens the area's details (the same sheet as Home's plate, without the travel footer).
   Under the details' name: the levels, the rounds done over the rounds that clear the area ("3/5 rounds"; more can be
   played once it's cleared, "7/5") or "Secret area", and where it stands.
@@ -349,6 +350,16 @@ Players shouldn't have to make many requests:
   Back. The body leads with what matters now: HP and XP, Speed / Rerolls / Catch value, every die as real dice, then
   **What's next** (milestones still ahead, the next one tagged NEXT, each with how close it is); milestones already
   reached fold away under a summary.
+- **Nicknames**: on one of your own Pokémon's sheets (not a Pokédex entry, not a fossil still reviving) the title is a
+  button, the name and a pencil (`NicknameButton`; "Give it a nickname" is its description, so the sheet keeps the
+  name as its label). It opens a small `Modal` over the sheet (`NicknameModal`): the field, focused, with the species
+  as its placeholder and a counter to 12 characters; Cancel and SAVE; a toast says what changed. Empty, or the
+  species' own name, takes the nickname away. Nicknamed, the line under the title starts with the species
+  ("Charmander · #004 · Lv.12 · Lead"). The Pokémon then goes by it wherever it is yours: team cards, the Box (its
+  search finds a nickname or a species), the Center, Home's scene, battle plates and messages (through a Mega
+  Evolution), the XP recap, its evolution ("Blaze evolved into Charmeleon!"), the trade scene and the Done list. It
+  goes with it in a trade (§21), and the new trainer can change it. Other players' Pokémon on boards and cards show
+  their species.
 - **Explain, don't hide**: something that can't be used right now stays listed, greyed, with the reason in words
   ("Already full", "Fainted: needs a Revive", "Needs a Pokémon with 4+ dice", "6 badges"). Buttons you can't afford
   stay focusable (`aria-disabled`) and say what's missing ("need ₽14"); a tap explains in a toast.
@@ -395,6 +406,12 @@ in view) and the battle history sits beside it from 1024 px.
   become a list right under the stage: each Pokémon that can go out with its level, HP, types and dice, then Forfeit.
 - **The Bag** is a `Sheet`: every item usable in battle with what it does and how many you have; one that can't help
   anyone is greyed. One item a turn, and it doesn't end the turn.
+- **Raids** (`src/screens/events/RaidView.tsx`) keep the battle's layout and its 360×640 fit. Their bottom row: the
+  Bag, **your raid team** as compact pips (`TeamPips compact`, 44 px) — tap one on your turn to switch, which costs the
+  turn as in a battle (the dialog lists who can go in) — then the **speed button** and **Give up** (a flag, its name in
+  its label). The speed button plays the ally sides' and the summons' turns at ×1.5 (`RAID_FAST_SPEED`): their
+  delays, scenes (`Scene.speed`), HP bars and dice; the raid Pokémon's turns and yours never change. It shows the
+  speed those turns play at (×1 / ×1.5), so its state is a word too, and the setting is kept (`settings.raidFast`).
 - **The catch happens on the stage**: the worn-out foe stays on its platform, greyed; the panel shows a radio group
   of balls (each with its chance from `catchChance`, how many you have, "not needed" when a weaker one is already
   certain), the catch math (`d6 + bonus ≥ need`), and one throw. The catch timeline plays; the die and the
@@ -425,8 +442,9 @@ One Day Care for every region (docs/15-DAYCARE-BREEDING.md). The page (`src/scre
 - **Under the yard, one of two:** the gold **Egg card** while one waits (the Egg shaking, who left it or "A gift for
   your first visit", Hatch it), or the **Egg-now bar**: "Next Egg check", the time left in large type, how many pairs
   could leave one, and the gold EGG NOW with the coin and its price under it (at most 55 % of the row: the countdown
-  stays on one line and the button's label shrinks first). Disabled without a pair; short of ₽ it stays
-  focusable, the price turns red and a tap says what's missing.
+  stays on one line and the button's label shrinks first). Without a pair no clock runs: "On hold" takes the
+  countdown's place and the button is disabled. Short of ₽ it stays focusable, the price turns red and a tap says
+  what's missing.
 - **Slots are cards in two columns** (`SlotCard`): a 4 px band in the slot's colour (pink `#ff5a7a` for your first,
   blue `#5b8def` for your second, grey for a friend's), the head (that colour's heart and "Yours", or the friend's
   trainer head and "Lea's"; a green tag with the levels gained here or New), the animated sprite on a pale tile, the
@@ -437,8 +455,9 @@ One Day Care for every region (docs/15-DAYCARE-BREEDING.md). The page (`src/scre
   minute). Signed out, the friend list's connect prompt takes their place; without the online service, or on a
   database without migration 0034, they are greyed and say why.
 - **Hearts mean "can make an Egg with it"**, always next to a name: a heart is never the only sign.
-- **Egg checks** list the rule, the two clocks (Egg groups, Ditto) with their next time, and every pair with a tag:
-  the shared group and its pace ("Field · every 12 h"), or Ditto's slower pace in purple.
+- **Egg checks** list the rule, the two clocks (Egg groups, Ditto) with their next time ("waiting for a pair" for a
+  clock with none), and every pair with a tag: the shared group and its pace ("Field · every 12 h"), or Ditto's slower
+  pace in purple.
 - **Pickers** (the shared `Sheet`): Leave which Pokémon? lists every region's Box (the region after the level once
   several are played) by level, lowest or highest first, with a search and, once someone is here, Compatible only;
   the team has the TEAM tag (the last of a region's team greyed with the reason), each row its Egg groups and a pink
@@ -446,7 +465,8 @@ One Day Care for every region (docs/15-DAYCARE-BREEDING.md). The page (`src/scre
   Pokémon) and a Compatible only toggle, grouped by friend, the best matches first.
 - **The Home widget** is the same size in every state: the Day Care's banner (a fixed-shape strip of its yard's
   picture), your two standing on it as icons as tall as the banner (no names), the levels they gained there under each
-  (+3 Lv, MAX at the level cap), the gauge to the next Egg check and its time. With an Egg waiting it turns gold (`panel-gold`) with an Egg! tag and the Egg shaking on the banner, and a tap
+  (+3 Lv, MAX at the level cap), the gauge to the next Egg check and its time (no gauge and "Waiting for a pair" while
+  nobody here can pair). With an Egg waiting it turns gold (`panel-gold`) with an Egg! tag and the Egg shaking on the banner, and a tap
   opens the page straight into the hatching. Locked, the banner is greyed with a lock, and it says how many species are
   caught across every region.
 - **Hatching** is full screen (`useHoldFullscreen`): the hatching timeline (with `shiny`, two rings of stars and a
@@ -540,3 +560,108 @@ switched it on (Off by default; Off / On for admin / On for everyone, like the e
   resting and until when.
 - **Friends** are the same in both worlds; in Extreme, a friend without an Extreme save is listed greyed with "Not in
   Extreme mode" and the skull, and doesn't open.
+
+## 20. Every new feature: its switch and its rules
+
+Two rules for every feature that adds something players can do (an event, a mode, Trades…), not only the events
+(the user's rule, 2026-10-12).
+
+- **A switch in the admin: Off / On for admin / On for everyone** (`EventAccess`, the `AccessSwitch` widget), **Off by
+  default**. Off: the feature is nowhere in the game (no row, no square, no pop-up, no link that works); On for admin:
+  only the admin sees it, signed in, to try it in production first; On for everyone: open. The game reads it through
+  one helper (`eventOpenTo(access, data)`); **the server checks it too** in every function that acts for a player
+  (as `wheel_spin` does), so an old build or a hand-made call can't use a feature that's off. Turning it off keeps
+  every player's data as it is.
+- **Its rules, once and on demand**: a rules pop-up (`RulesModal`: its picture as a banner, 2–4 `RuleList` rows with
+  the config's numbers, Later / Let's go!) the first time the feature opens for the player (a "seen" flag in the save,
+  queued behind the other one-time pop-ups), and an **INFO** button at the bottom of its page that shows the same rules
+  again. The Day Care, Versus, the events, Extreme mode and Trades follow it.
+
+## 21. Trades
+
+Players trade through listings, like the games' GTS (docs/23-TRADING-PLAN.md). The pieces are in
+`src/components/trades/`, every state of them on `/kitchen-sink` (`TradeKitBits`); the engine (`engine/trade.ts`)
+decides every level, landing Box and outcome, and the screens only say them.
+
+- **Where it lives**: the trainer menu's Trades row under Friends (`/trades`), with the gold dot (and on the avatar)
+  while a trade that went through is unseen, or "2/4" for listings out. No Home square. A friend's card has a "Their
+  trades" list; a Pokémon's sheet has TRADE beside Send on (the main button when there's nowhere to send it), which
+  opens New listing with it picked. The trade icon (`trade`, two arrows crossing, gold over blue) marks all of it.
+- **The switch and the rules** follow §20: off, the row, the page, the pop-ups and links are gone (the page goes
+  Home), except for a player who still has something listed, who sees Mine with a note so it can come back.
+  **Inside a small world there are no trades at all** (§22): no row, no page, no TRADE button, and the check, the
+  "Trade done!" pop-up and opened links wait until the player is back; nothing in a world's Box is ever offered. The rules
+  pop-up (`TradesRulesModal`, the Pokémon Center as its banner) opens once for a signed-in player who can trade.
+- **A listing on a board** (`ListingRow`): the listed Pokémon on the left (menu icon, name, ✦, NEW when its landing
+  Pokédex lacks it, its region's chip when it isn't the first region, who), "for" and what they want on the right
+  (`WantTile`: the species' icon and name, or one tag: gold "Any New" for one they don't own, plain "Any" for
+  anything; the listing's sheet says what "Any New" means under it),
+  and a line under it: green "You can trade", or why not in plain words (`useTakeWhy`: sign in, friends only, start
+  Johto first, no trades left today, you have no Haunter…), the row greyed, and the time left at its far end (so the
+  trainer's name keeps its room on a phone). Friends' rows are sky blue with
+  the FRIEND tag, yours gold with YOURS, sorted last. A guest's rows have no line.
+- **Who can see it** (`VisChip`): Public blue, Friends green, Private (link) navy. **Time left** (`TimeLeft`): "2d 4h"
+  and a thin bar of the listing's life, red in its last 6 hours.
+- **The listing's sheet** (`ListingSheet`): the sprite large, types, whose, its chips and level, a box with what they
+  want (and "You have 2 Pidgey" / "You have no Pidgey"), the time left, then the facts (the level you'd get it at and
+  the species' lowest, a trade evolution, the Box it lands in) and one footer: TRADE (or the reason, as a button that
+  says it), Connect for a guest, CANCEL / SHARE for yours. TRADE turns the sheet into the **picker** (your Pokémon that
+  answer the want, from every region's Box: "You get Charmander Lv.22 (its lowest level)", NEW, STRONGER, ✦ SHINY,
+  → Alakazam; blocked ones greyed with why; one that would merge is dimmed with "nothing gained"), then the
+  **confirm** (the two Pokémon facing each other ⇄, one plain sentence, the facts as bullets), then the scene.
+- **New listing** (`NewListingSheet`): three numbered steps on one sheet. A step folds into its pick (gold, with
+  Change) once chosen. The species grid shows 3 tiles a row on a phone (112 px tiles on wider screens), a Not owned /
+  Owned / All switch with counts and region chips past one region, and 90 tiles at first with "Show more". The
+  summary sits gold above the footer's POST, which says what's missing while it can't post.
+- **The scene** (`TradeScene`, `tradeTimeline`): full screen, held with `useHoldFullscreen` so pop-ups wait; the line
+  under the stage is the host's (beats `sending`, `incoming`, `care`), each Pokémon called by the nickname it carries
+  ("Misty sent Bubbles over!"); a trade evolution follows with the evolution scene; then what arrived (`TradeResult`:
+  sprite, its nickname with the species beside it unless it merged into yours, level, SHINY / NEW / STRONGER, where it
+  went, the level note, "its Pokédex entry stays") and DONE. SKIP and Esc jump to the result. Motion off jumps there at once.
+- **Coming back**: "Trade done!" (both Pokémon, who took it, Later / See it → the scene) once the run is idle and no
+  full-screen moment is up; a toast for a listing that came back and for a trade a closed tab left half done.
+- **Sharing** (`ShareListingModal`): the link `<site>/t/<code>` with COPY, a line on who can use it, and SHARE (the
+  share sheet on phones). A private listing opens it right after POST. A link opens the listing in its sheet when the
+  moment is calm; signed out it asks to connect and keeps the link through the sign-in.
+
+## 22. Small worlds
+
+A time-limited region of its own, built in the admin (docs/21-SMALL-WORLDS-PLAN.md), where a shiny mythical is won. Its
+pieces are in `src/screens/events/world.tsx` (the lab in `worldPick.tsx`, styles in `src/styles/world.css`), every state
+on `/kitchen-sink` (`WorldBits`). Every rule and number comes from `engine/worlds.ts`; the clocks read the server's time.
+
+- **Its colours**: the admin's three (main, accent, ground) as `--w-main`, `--w-accent`, `--w-ground` (`worldVars`), with
+  the ink that reads on each (`textOn`: navy on a light one, white on a dark one). A bad value falls back to Mirage
+  Island's purple, pink and lilac. They tint the world's pieces only: the CTA stays red, the money gold, the HP green.
+- **WORLD** (`WorldTag`, in the main colour) marks everything of a world; **SHINY MEW** (gold, with the sparkle) is what
+  it's for. The mythical is a silhouette glowing in the accent until it's caught, then its shiny colours (`MythicalArt`).
+- **Outside, Home's square** (`WorldSquare`) is first among the event squares, on the Live square's frame: the world's
+  picture, WORLD and SHINY MEW, the silhouette, the name, the gauge draining and "Areas 3/8 · Ends in 2d 4h" (red in
+  the last day). The second line says the partner once the player has been in. A tap goes in (the lab first).
+- **The pop-up** (`WorldPopup`): once, between fights, after Prof. Oak's tutorials and the other one-time pop-ups and
+  before the live event's (never on the Poké Mart). The banner with the silhouette, the time left and until when, the
+  rules (`WorldRules`: XP ×, dice by level, each booster, the shiny mythical at the end), Later and Enter.
+- **The partner pick** is the lab (§18) in the world's colours (`PartnerMoment` `theme`): the drawn lab in them, the
+  picture under a veil of the main colour, the world's name on the ribbon.
+- **Inside**, the page wears the world's ground (`.in-world`, faint in dark mode) and a **strip** sits under the top bar
+  (`WorldStrip`): its picture, WORLD, its name, the time left (red in the last day) and **Back to Kanto** (the region the
+  player came from). It is Home's only way out, and the one way back while the world's content is still on its way
+  (`WorldWaiting`). Home shows no region offer and no region switcher; the Areas sheet has no Regions view.
+- **Home's squares inside** (`WorldWidgets`), and nothing else: the mythical (its silhouette on the world's ground,
+  Lv. · name, where it is: "In Dream Peak", "Waiting: fight it!", "In your Kanto Box", "Waits for Johto"; a tap travels
+  to its area once open) and the world's Mart (three of its items, the world's own ₽).
+- **An area waiting for its date** is locked like any other, with "Opens {date}" (the local date and time, `dayTime`).
+- **The Poké Mart inside is the World Mart** (`WorldShop`): the world's picture and time left over the admin's list,
+  each row with its limit ("8 of 10 left", Sold out); buying only, no Sell tab.
+- **Upgrades inside** explain the dice instead of selling them (`WorldUpgrades`): "Dice follow the level here", the
+  table of levels to dice levels, the team's own lines ("Lv.24 → dice level 2").
+- **In battle**, each plate carries its Pokémon's **dice level** (`DiceLevelTag`, "Dice level 2: Lv.24 ÷ 10" for screen
+  readers), and a **booster** shows as its own chip, the type's badge and "×1.5" (`BoosterChip`), beside the damage in
+  the readout and as its own factor in the damage recap: never hidden in the type's multiplier, never in
+  "super effective".
+- **The mythical caught**: its own line on the result card (`WorldMythicalCard`, gold with rays): "The shiny Mew is
+  yours!" and where it went ("in your Kanto Box now, to keep", or that it waits for its region).
+- **The main game's pages inside** (the events, the Day Care, Versus, by a link or a reload) keep their title and show
+  why they wait (`WorldAwayPage`), with Back to Kanto.
+- **Closing**: the world gone grey (`WorldByePopup`), once, to whoever played it or saw it open: the mythical kept (or
+  "got away"), and that the partner, the world's Pokémon, items and ₽ closed with it.

@@ -597,6 +597,7 @@
       ${shown ? `<div class="tc-looks" role="radiogroup" aria-label="Choose your look">${A.LOOKS.map((k) => `<button type="button" role="radio" class="tc-lk" data-look="${k}" aria-checked="${k === m.look}" aria-label="${esc(LOOK_NAME(k))}">${lookOf(k)}</button>`).join('')}</div>` : ''}
       <ul class="tc-menu">
         <li><button type="button" data-goto="ranks"><img class="px" alt="" src="${A.icons.NAV.ranks}" /><span><b>Leaderboard</b><small>Max level, progression, Pokédex, shinies</small></span></button></li>
+        ${A.tradeMenuRows ? A.tradeMenuRows() : ''}
         <li><button type="button" data-soonrow="How to play"><span class="tc-mi">?</span><span><b>How to play</b><small>The rules, with the game’s numbers</small></span></button></li>
         <li><button type="button" data-soonrow="Settings"><span class="tc-mi">⚙</span><span><b>Settings</b><small>Sound, Multi EXP, reduced motion, language</small></span></button></li>
         <li><button type="button" data-soonrow="Cloud backup"><span class="tc-mi">☁</span><span><b>Cloud backup</b><small>Your save lives in this browser. Connect to play on any device.</small></span><em>Connect</em></button></li>
@@ -624,6 +625,8 @@
     ST.vsTab = S.versus === 'new' ? 'team' : 'fight'
     ST.lookOpen = ST.naming = false
   }
+  // Trades (trades.js) change the menu's rows.
+  A.rerenderTrainer = () => rerender('trainer')
   // A Versus win (battle.js): the team counts once on the board.
   A.onVersus = (name) => {
     VSS.beaten.add(name)

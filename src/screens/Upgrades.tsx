@@ -3,12 +3,14 @@ import {
   COMBO_KEYS,
   COMBO_MIN_DICE,
   comboBonusAt,
+  diceLevelOf,
   dieBonusAt,
   maxComboLevel,
   maxDieLevel,
   nextComboCost,
   nextDieCost,
   POKE_TYPES,
+  teamOf,
   type ComboKey,
   type PokeType,
 } from '@/engine'
@@ -23,6 +25,9 @@ import { dieCarriers, maxDiceOwned } from '@/lib/upgrades'
 import { useT } from '@/i18n/react'
 import { upgradeCombo, upgradeDie } from '@/store/actions'
 import { pushToast, useGame } from '@/store/game'
+import { MiniSprite } from '@/components/SpriteImg'
+import { useInWorld, worldVars, WorldTag } from '@/screens/events/world'
+import { worldName } from '@/store/worlds'
 import { cx } from '@/theme/util'
 
 /** One upgrade, whatever its kind: the card reads only this. */
@@ -168,13 +173,83 @@ function UpCard({ u, gold }: { u: Up; gold: number }) {
   )
 }
 
+/** The levels the world's table shows, and the dice level each gives (the engine's diceLevelOf). */
+const LEVEL_STEPS = [1, 10, 20, 30, 50, 70, 100]
+
+/**
+ * Inside a small world (docs/21): no upgrades to buy. Dice and combos follow each Pokémon's level, yours and the foes';
+ * the table says how, and each team member's line says where it stands.
+ */
+function WorldUpgrades() {
+  const { t } = useT()
+  const save = useGame((s) => s.save)
+  const data = useGame((s) => s.data)
+  const { world } = useInWorld()
+  if (!save) return null
+  return (
+    <div className="mx-auto flex w-full max-w-3xl flex-col gap-3">
+      <PageHead icon="navUpgrades" title={t('ui.upgrades.title')}>
+        <Wallet />
+      </PageHead>
+      <section className="pixel-panel flex flex-col gap-3 p-3" style={worldVars(world)} aria-labelledby="world-up">
+        <span className="flex items-center gap-2">
+          <WorldTag />
+          <h2 id="world-up" className="m-0 text-[24px] leading-none">
+            {t('ui.world.up.title')}
+          </h2>
+        </span>
+        <p className="copy m-0 text-muted">{t('ui.world.up.text', { world: worldName(world, data) })}</p>
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse text-center font-pixel-sm text-[16px] tabular-nums">
+            <tbody>
+              <tr>
+                <th scope="row" className="bg-ink px-2 py-1 text-left font-normal text-panel">
+                  {t('ui.world.up.level')}
+                </th>
+                {LEVEL_STEPS.map((l) => (
+                  <td key={l} className="px-1.5 py-1 shadow-ring-line">
+                    {l}
+                  </td>
+                ))}
+              </tr>
+              <tr>
+                <th scope="row" className="bg-ink px-2 py-1 text-left font-normal text-panel">
+                  {t('ui.world.up.dice')}
+                </th>
+                {LEVEL_STEPS.map((l) => (
+                  <td key={l} className="px-1.5 py-1 shadow-ring-line">
+                    {diceLevelOf(l)}
+                  </td>
+                ))}
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <ul className="m-0 grid list-none gap-1.5 p-0">
+          {teamOf(save).map((p) => (
+            <li key={p.id} className="flex items-center gap-2 bg-paper px-2 py-1 shadow-card">
+              <MiniSprite dex={p.dex} size={32} />
+              <b className="min-w-0 flex-1 truncate text-[20px] font-normal leading-none">{data.species[p.dex]?.name}</b>
+              <span className="font-pixel-sm text-[16px] leading-none text-muted">
+                {t('ui.world.up.yours', { level: p.level, n: diceLevelOf(p.level) })}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </section>
+    </div>
+  )
+}
+
 export function UpgradesScreen() {
   const { t } = useT()
   const save = useGame((s) => s.save)
   const data = useGame((s) => s.data)
   const [tab, setTab] = useState<'combos' | 'dice'>('combos')
   const [affordOnly, setAffordOnly] = useState(false)
+  const inside = useInWorld().inside
   if (!save) return null
+  if (inside) return <WorldUpgrades />
 
   const maxDice = maxDiceOwned(save, data)
   const carriers = dieCarriers(save, data)

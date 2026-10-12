@@ -1435,6 +1435,17 @@
   function renderGo() {
     const a = areaBy(SAVE.current)
     const sub = clearedArea(a) ? 'Cleared · free play' : `Round ${roundOf(a)} of ${roundsOf(a)}`
+    // A cleared area with an open legendary raid (events.js): RAID takes CONTINUE's place, like a gym leader's
+    // challenge, with Keep exploring under it.
+    const raid = API.raidHere ? API.raidHere(a) : null
+    const keep = $('#hm-keep')
+    if (keep) keep.hidden = !raid
+    if (raid) {
+      $('#hm-go').innerHTML =
+        `<span class="hm-go-in"><img class="px" alt="" src="${API.raidIcon || PLAY}" /><span><b>Raid: ${esc(raid.name)}</b><small>Legendary raid · Lv.${raid.level}</small></span></span>`
+      $('#hm-go').setAttribute('aria-label', `Raid: ${raid.name}, the legendary raid of ${a.name}. Open it`)
+      return
+    }
     $('#hm-go').innerHTML =
       `<span class="hm-go-in"><img class="px" alt="" src="${PLAY}" /><span><b>Continue</b><small>${esc(sub)}</small></span></span>`
     $('#hm-go').setAttribute('aria-label', `Continue in ${a.name}, ${sub}`)
@@ -1712,7 +1723,7 @@
         }[st]
         const label = `${a.name}, levels ${a.lv[0]} to ${a.lv[1]}, ${words}. See the details`
         return `<li class="hm-ca-li"><button type="button" class="hm-card-area st-${st}" data-order="${a.order}" aria-label="${esc(label)}">
-          <span class="hm-ban${locked ? ' dim' : ''}"><img class="px" alt="" src="${stripOf(a)}" /><span class="hm-tags">${st === 'new' ? '<span class="hm-gym new">NEW</span>' : ''}${a.gym ? '<span class="hm-gym">GYM</span>' : ''}${a.legend ? '<span class="hm-gym leg">★ LEGEND</span>' : ''}${API.liveTag ? API.liveTag(a) : ''}</span></span>
+          <span class="hm-ban${locked ? ' dim' : ''}"><img class="px" alt="" src="${stripOf(a)}" /><span class="hm-tags">${st === 'new' ? '<span class="hm-gym new">NEW</span>' : ''}${a.gym ? '<span class="hm-gym">GYM</span>' : ''}${a.legend ? (API.raidTag ? API.raidTag(a) : '<span class="hm-gym leg">★ LEGEND</span>') : ''}${API.liveTag ? API.liveTag(a) : ''}</span></span>
           <span class="hm-ca-row"><b>${esc(a.name)}</b></span>
           <span class="hm-ca-row"><span class="hm-lv">Lv.${a.lv[0]}–${a.lv[1]}</span>${catchLine}</span>${hitIcons}</button>
           ${locked ? `<span class="hm-gobtn off" aria-hidden="true"><img class="px" alt="" src="${LOCK}" /></span>` : `<button type="button" class="hm-gobtn" data-go="${a.order}" aria-label="${st === 'here' ? `Play ${esc(a.name)}` : `Go to ${esc(a.name)}`}">GO</button>`}</li>`
@@ -1799,7 +1810,10 @@
         `<div class="hm-fact"><img class="px" alt="" src="${league ? TROPHY : BADGE3}" /><span class="hm-fact-t"><small>${league ? 'Pokémon League' : 'Gym'}</small><b>${esc(league ? 'Elite Four · Champion' : a.gyms[0].leader)}</b><em>${league ? `${a.gyms.length} battles in a row` : esc(a.gyms[0].badge || '')}</em></span>${cleared ? '<span class="hm-ok">Beaten</span>' : ''}</div>`,
       )
     }
-    if (a.legend) {
+    // A legendary raid or a mythical's boss fight (events.js), else the legendary as before.
+    const raidFact = API.raidFact ? API.raidFact(a) : null
+    if (raidFact) facts.push(raidFact)
+    else if (a.legend) {
       const L = a.legend,
         avg = teamAvg(),
         ready = avg >= L.avg
@@ -2160,7 +2174,11 @@
       if (b) poke(mons[Number(b.dataset.i)])
     })
     $('#hm-area').addEventListener('click', () => openDetail(SAVE.current))
-    $('#hm-go').addEventListener('click', () => play())
+    $('#hm-go').addEventListener('click', () => {
+      const raid = API.raidHere ? API.raidHere(areaBy(SAVE.current)) : null
+      return raid ? API.openRaid(raid.key, 'home') : play()
+    })
+    $('#hm-keep') && $('#hm-keep').addEventListener('click', () => play())
     $('#hm-areas').addEventListener('click', () =>
       openSheet({ view: SAVE.offer && !SAVE.offerSeen ? 'regions' : 'areas' }),
     )
@@ -2395,6 +2413,7 @@
     renderWidgets,
     renderArea,
     renderAreasBtn,
+    renderGo,
     openRegions: () => openSheet({ view: 'regions' }),
     showPage,
     /** The team changed outside Home (the Day Care): rebuild the scene and the widgets. */

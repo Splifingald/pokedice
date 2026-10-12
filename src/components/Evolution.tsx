@@ -20,14 +20,23 @@ export interface EvolutionShow {
   toDex: number
   /** The stone that did it (an item key): it floats down and touches the Pokémon first. */
   item?: string | null
+  /** Shiny or not, for one the live Box doesn't hold (a trade landing in another region's Box). */
+  shiny?: boolean
 }
 
 /** One evolution, played once. `onDone` fires when the new form is revealed. */
-export function EvolutionSequence({ uid, fromDex, toDex, item, onDone }: EvolutionShow & { onDone?: () => void }) {
+export function EvolutionSequence({
+  uid,
+  fromDex,
+  toDex,
+  item,
+  shiny: asShiny,
+  onDone,
+}: EvolutionShow & { onDone?: () => void }) {
   const { t } = useT()
   const data = useGame((s) => s.data)
   const inst = useGame((s) => (s.save ? getInstance(s.save, uid) : undefined))
-  const shiny = !!inst?.shiny
+  const shiny = asShiny ?? !!inst?.shiny
   const [done, setDone] = useState(false)
   const stoneUrl = item ? (data.items[item]?.spriteUrl ?? null) : null
   const { timeline, ready } = useMemo(
@@ -48,7 +57,8 @@ export function EvolutionSequence({ uid, fromDex, toDex, item, onDone }: Evoluti
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [uid, fromDex, toDex],
   )
-  const from = data.species[fromDex]?.name ?? t('ui.common.unknown')
+  // Your own Pokémon evolves under the name you gave it: "Sparky evolved into Raichu!"
+  const from = inst?.nickname || (data.species[fromDex]?.name ?? t('ui.common.unknown'))
   const to = data.species[toDex]?.name ?? t('ui.common.unknown')
   const stats = inst ? instanceStats(inst, data) : null
   const reveal = () => {

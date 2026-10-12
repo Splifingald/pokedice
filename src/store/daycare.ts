@@ -43,16 +43,19 @@ export function tickDayCare(now = Date.now()): boolean {
 }
 
 /**
- * One timer, to the next check that could leave an Egg. None while an Egg waits (no check can leave another) or the
- * Day Care is closed: hatching and opening call `tickDayCare`, which sets it again.
+ * One timer, to the next check that could leave an Egg. None while an Egg waits (no check can leave another), while no
+ * pair is here (no clock runs) or the Day Care is closed: hatching and opening call `tickDayCare`, and any change to
+ * the Day Care re-arms it (startBackgroundServices).
  */
 export function armDayCareTimer() {
   clearTimeout(timer)
   const { save, data } = useGame.getState()
   if (!save || !isDayCareOpen(save, data) || dayCareOf(save).egg) return
   const now = Date.now()
+  const at = nextCheckAt(save, data, now)
+  if (at == null) return
   // setTimeout keeps 32 bits: a far check is re-armed on the way (the visibility and minute checks run it too).
-  const ms = Math.min(2 ** 31 - 1, Math.max(1000, nextCheckAt(save, data, now) - now + 500))
+  const ms = Math.min(2 ** 31 - 1, Math.max(1000, at - now + 500))
   timer = setTimeout(() => tickDayCare(), ms)
 }
 
@@ -107,7 +110,7 @@ export function inviteFriendMon(friend: FriendDayCareRow, mon: FriendCareMonRow)
   const name = data.species[mon.dex]?.name ?? t('ui.common.pokemon')
   const mates = matesOf(res.save, data, guestKey(guest))
     .filter((m) => m.mine != null)
-    .map((m) => data.species[m.dex]?.name ?? '')
+    .map((m) => m.resident?.inst.nickname || (data.species[m.dex]?.name ?? ''))
   pushToast(
     mates.length
       ? t('ui.dayCare.visitingPairs', { name, owner: friend.name, names: joinList(mates) })

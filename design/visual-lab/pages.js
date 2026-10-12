@@ -314,7 +314,7 @@
       <div class="pg-stats"><span><b>${k.sp}</b><small>Speed</small></span><span><b>${k.rr}</b><small>Rerolls</small></span><span><b>${k.cv}</b><small>Catch value</small></span></div>
       <section class="hm-d-sec"><div class="hm-d-h"><h3>Dice</h3><span class="hm-d-hint">${plural(k.dice.length, 'die', 'dice')} a roll</span></div><ul class="pg-dice">${dieRows}</ul></section>
       <section class="hm-d-sec"><div class="hm-d-h"><h3>What’s next</h3></div>${ahead}</section>
-      ${m.where === 'dex' ? whereToFind(d) : ''}`
+      ${m.where === 'dex' ? whereToFind(d) : ''}${A.sheetActions ? A.sheetActions(m) : ''}`
     let foot = ''
     if (m.where === 'team')
       foot = `<div class="pg-foot2">${m.i > 0 ? '<button type="button" class="ui-btn" data-act="lead"><span>Make lead</span></button>' : '<span class="pg-lead-note">Leads the team</span>'}<button type="button" class="ui-btn primary" data-act="item"><span>Use an item</span></button></div>`

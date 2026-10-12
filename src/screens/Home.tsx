@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
+import { cx } from '@/theme/util'
 import { Navigate } from 'react-router-dom'
-import { linearAreas, regionOf, teamOf, type Area } from '@/engine'
+import { heldWorld, linearAreas, regionOf, teamOf, type Area } from '@/engine'
 import { useT } from '@/i18n/react'
 import { RegionBar } from '@/components/RegionBar'
 import { SheetModal, type SheetView } from '@/components/SheetModal'
@@ -15,6 +16,7 @@ import { hasNewSecret, playable } from './home/areas'
 import { SceneStage } from './home/SceneStage'
 import { travelTo } from '@/store/travel'
 import { Widgets } from './home/Widgets'
+import { useInWorld, WorldStrip, WorldWaiting } from '@/screens/events/world'
 
 /**
  * Home: the area hub and the landing screen. The current area's scenery with the team roaming it, the area plate (its
@@ -26,6 +28,9 @@ export function HomeScreen() {
   const area =
     (save && data.areas.find((a) => a.id === save.currentAreaId)) ||
     (save ? linearAreas(data, regionOf(save))[0] : undefined)
+  // Inside a small world whose content hasn't come in yet (the game boots on its own bundle, which never has the
+  // admin's worlds): its strip and the way back, until it does.
+  if (save && !area && heldWorld(save)?.regionId === regionOf(save)) return <WorldWaiting />
   if (!save || !area) return <Navigate to="/" replace />
   return <HomeView area={area} />
 }
@@ -43,14 +48,18 @@ function HomeView({ area }: { area: Area }) {
   const { go, latest, keepExploring } = useContinue(area)
   // What sits under CONTINUE takes its height off the scene on wide screens, so the whole bar stays on screen: the
   // green GO TO (a 56px button and its gap) and "keep exploring" (36px and its gap).
-  const below = (latest ? 64 : 0) + (keepExploring ? 44 : 0)
+  // Inside a small world only its own things show (docs/21): its strip (about 60px and the gap) above the scene, no
+  // other region on offer, no region switcher.
+  const inside = useInWorld().inside
+  const strip = inside ? 72 : 0
+  const below = (latest ? 64 : 0) + (keepExploring ? 44 : 0) + strip
 
   // Arriving with no run (a reload, the first visit): start the save's current area, so CONTINUE plays right there.
   useEffect(() => {
     if (!runArea && playable(save, data, area)) enterArea(area.id)
   }, [save, data, area, runArea])
 
-  const offer = regionOnOffer()
+  const offer = inside ? null : regionOnOffer()
   const areasState = offer ? 'region' : hasNewSecret(save, data) ? 'new' : 'plain'
 
   // GO / CONTINUE HERE: close the sheets and play the area you're in.
@@ -76,8 +85,13 @@ function HomeView({ area }: { area: Area }) {
       style={{ ['--below' as string]: `${below}px` }}
     >
       <h1 className="sr-only">{t('ui.home.heading', { area: area.name })}</h1>
+      {inside && (
+        <div className="-mx-3 -mt-4 md:m-0 lg:col-span-2">
+          <WorldStrip />
+        </div>
+      )}
       <section className="flex flex-col gap-3" aria-label={area.name}>
-        <div className="-mx-3 -mt-4 overflow-hidden shadow-ledge md:pixel-panel md:m-0 md:p-0 md:shadow-none">
+        <div className={cx('-mx-3 overflow-hidden shadow-ledge md:pixel-panel md:m-0 md:p-0 md:shadow-none', !inside && '-mt-4')}>
           <SceneStage area={area} team={teamOf(save)} onOpen={(id) => setMon({ kind: 'inst', id })}>
             <AreaPlate area={area} onOpen={() => setDetails(area.id)} />
           </SceneStage>
@@ -107,7 +121,7 @@ function HomeView({ area }: { area: Area }) {
       <AreaDetails area={detailArea} onClose={() => setDetails(null)} onPlay={play} onTravel={travel} />
       <SheetModal view={mon} onClose={() => setMon(null)} manage />
       {/* The next region's offer opens by itself once, when a league is won. */}
-      <RegionBar modalOnly />
+      {!inside && <RegionBar modalOnly />}
     </div>
   )
 }

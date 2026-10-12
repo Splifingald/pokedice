@@ -22,7 +22,7 @@ import {
   type GameData,
   type SaveData,
 } from '@/engine'
-import { data, makeData, newId } from '../fixtures'
+import { bossData, data, makeData, newId } from '../fixtures'
 
 const ROUTE1 = linearAreas(data)[0]! // wild + Center, no trainers
 const FOREST = data.areas.find((a) => a.name === 'Viridian Forest')!
@@ -222,25 +222,28 @@ describe('never two Pokémon Centers in a row', () => {
 })
 
 describe('closed areas', () => {
-  const LAIR = data.areas.find((a) => a.name === 'Fullmoon Island')! // Cresselia, nothing else
-  const LAKES = data.areas.find((a) => a.name === 'The Lakes of Sinnoh')! // three legendaries, Centers and items
+  const LAIR = data.areas.find((a) => a.name === 'Fullmoon Island')! // Cresselia, and a round of wild Pokémon
+  const LAKES = data.areas.find((a) => a.name === 'The Lakes of Sinnoh')! // three legendaries, wild ones, Centers and items
   const withProgress = (save: SaveData, area: Area, p: Partial<ReturnType<typeof progressOf>>): SaveData => ({
     ...save,
     areaProgress: { ...save.areaProgress, [area.id]: { ...progressOf(save, area.id), ...p } },
   })
 
   it('a deckless area closes once its legendaries are beaten and caught', () => {
-    const save = newSave(4, data, 0, newId)
+    // As the lairs were before docs/24 gave them a round of wild Pokémon, with Raid Battles off so they fight.
+    const deckless = (a: Area): Area => ({ ...a, wildPool: [], encounterWeights: { ...a.encounterWeights, wild: 0 } })
+    const d = { ...bossData, areas: bossData.areas.map((a) => (a.id === LAIR.id || a.id === LAKES.id ? deckless(a) : a)) }
+    const save = newSave(4, d, 0, newId)
     const cresselia = LAIR.legendaryBoss![0]!.dex
-    expect(isAreaClosed(save, LAIR.id, data)).toBe(false)
+    expect(isAreaClosed(save, LAIR.id, d)).toBe(false)
     const beaten = withProgress(save, LAIR, { bossesDefeated: [cresselia] })
-    expect(isAreaClosed(beaten, LAIR.id, data)).toBe(false) // it fled the catch: it comes back
-    expect(isAreaClosed({ ...beaten, pokedex: [...beaten.pokedex, cresselia] }, LAIR.id, data)).toBe(true)
+    expect(isAreaClosed(beaten, LAIR.id, d)).toBe(false) // it fled the catch: it comes back
+    expect(isAreaClosed({ ...beaten, pokedex: [...beaten.pokedex, cresselia] }, LAIR.id, d)).toBe(true)
 
     const dexes = LAKES.legendaryBoss!.map((b) => b.dex)
     const lakes = { ...withProgress(save, LAKES, { bossesDefeated: dexes.slice(1) }), pokedex: [...save.pokedex, ...dexes] }
-    expect(isAreaClosed(lakes, LAKES.id, data)).toBe(false)
-    expect(isAreaClosed(withProgress(lakes, LAKES, { bossesDefeated: dexes }), LAKES.id, data)).toBe(true)
+    expect(isAreaClosed(lakes, LAKES.id, d)).toBe(false)
+    expect(isAreaClosed(withProgress(lakes, LAKES, { bossesDefeated: dexes }), LAKES.id, d)).toBe(true)
   })
 
   it('an area with wild Pokémon or trainers never closes', () => {

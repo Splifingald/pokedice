@@ -8,6 +8,7 @@ import {
   sellItem,
   createRng,
   randomSeed,
+  renamePokemon,
   setTeam,
   swapIntoTeam,
   dayCareOf,
@@ -96,6 +97,11 @@ export function putInTeam(inId: string, outId: string | null) {
 
 export function removeFromTeam(id: string) {
   mutateSave((s) => (s.team.length > 1 ? setTeam(s, s.team.filter((x) => x !== id), useGame.getState().data) : null))
+}
+
+/** Gives one of your Pokémon a nickname; an empty one (or its species' name) takes it away. */
+export function nicknamePokemon(id: string, name: string): boolean {
+  return mutateSave((s) => renamePokemon(s, useGame.getState().data, id, name))
 }
 
 // ---------------------------------------------------------------- Day Care
