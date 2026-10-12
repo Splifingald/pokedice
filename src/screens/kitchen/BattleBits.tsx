@@ -17,11 +17,13 @@ import { BattleStage } from '../battle/BattleStage'
 import { CatchPanel } from '../battle/CatchPanel'
 import { FoePlate, OwnPlate } from '../battle/Plates'
 import type { Fx } from '../battle/useBattleAnimator'
+import { RaidSpeedButton } from '../events/RaidView'
 
 export function BattleBits() {
   const data = useGame((s) => s.data)
   const [calling, setCalling] = useState(false)
   const [open, setOpen] = useState(false)
+  const [fast, setFast] = useState(false)
   const [selected, setSelected] = useState<boolean[]>([false, false, true])
   const { own, foe, team, dice } = useMemo(() => {
     const own = makeBattler({ uid: 'k-own', dex: 6, level: 36, hp: 80 }, data)
@@ -126,6 +128,22 @@ export function BattleBits() {
               calling={calling}
               onPick={() => {}}
             />
+          </div>
+        </div>
+        {/* A raid's bottom row: your raid team as compact pips, the speed button off (×1) and on (×1.5). */}
+        <div className="flex items-center gap-2">
+          <TeamPips
+            compact
+            team={team}
+            activeUid={own.uid}
+            hpOf={(b) => b.hp}
+            canSwitch
+            calling={calling}
+            onPick={() => {}}
+          />
+          <div className="ml-auto flex items-center gap-1.5">
+            <RaidSpeedButton on={fast} onChange={setFast} />
+            <RaidSpeedButton on onChange={() => {}} />
           </div>
         </div>
         {/* Wide screens: the same team as a column of cards, left of the stage. */}

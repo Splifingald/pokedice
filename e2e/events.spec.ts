@@ -303,6 +303,52 @@ test('a raid: the day’s raid, its lock, NPC trainers in the group, the fight t
   }
 })
 
+test('the raid team fights, not the party: a switch on your turn, the speed button', async ({ page }) => {
+  test.setTimeout(120_000)
+  await mockSupabase(page, { rpc: { event_time: raidTime } })
+  const base = raidSave()
+  const mon = (id: string, dex: number) => ({ id, dex, level: 45, xp: 0, currentHp: 999, caughtAt: 0 })
+  // The party is the Dark trio; the raid team, picked on the Raids page, is three others from the Box.
+  await boot(page, {
+    ...base,
+    box: [...base.box, mon('d', 130), mon('e', 143), mon('f', 65)],
+    pokedex: [...base.pokedex, 130, 143, 65],
+    events: { ...base.events, raidTeam: ['d', 'e', 'f'] },
+  })
+  await page.goto('/events/raid')
+  await page.getByRole('button', { name: 'Start the raid' }).click()
+  await page
+    .getByRole('dialog', { name: 'Empty slots' })
+    .getByRole('button', { name: 'Start', exact: true })
+    .click()
+  await expect(page.getByRole('heading', { name: 'Raid battle: Celebi' })).toBeAttached()
+
+  const team = page.getByRole('group', { name: 'Switch Pokémon' })
+  await expect(team.getByRole('button')).toHaveCount(3)
+  for (const name of ['Gyarados', 'Snorlax', 'Alakazam'])
+    await expect(team.getByRole('button', { name: new RegExp(`^${name},`) })).toBeAttached()
+  await expect(team.getByRole('button', { name: /^(Tyranitar|Absol|Umbreon),/ })).toHaveCount(0)
+
+  // Your turn: Snorlax goes in for Gyarados, and that was the turn.
+  await expect(page.getByRole('button', { name: 'ATTACK', exact: true })).toBeEnabled({ timeout: 20_000 })
+  await team.getByRole('button', { name: /^Snorlax,.*Switch in$/ }).click()
+  const pick = page.getByRole('dialog', { name: 'Switch (costs your turn)' })
+  await expect(pick.getByRole('button', { name: /Gyarados/ })).toHaveCount(0)
+  await pick.getByRole('button', { name: /Snorlax/ }).click()
+  await expect(pick).toHaveCount(0)
+  await expect(team.getByRole('button', { name: /^Snorlax,.*in battle$/ })).toBeAttached()
+
+  // The speed button: the allies' and the summons' turns at ×1.5, kept in the settings.
+  const speed = page.getByRole('button', { name: "Speed up your allies' and the summons' turns" })
+  await expect(speed).toHaveAttribute('aria-pressed', 'false')
+  await expect(speed).toHaveText('×1')
+  await speed.click()
+  await expect(speed).toHaveAttribute('aria-pressed', 'true')
+  await expect(speed).toHaveText('×1.5')
+  await expect.poll(async () => (await stored(page)).settings.raidFast).toBe(true)
+  await expect(page.getByRole('button', { name: 'Give up' })).toBeVisible()
+})
+
 const raidToday = () => ({ day: RAID_DAY, dex: 251, shiny: false, areaId: 'ilex', caught: false })
 const friend = (id: string, name: string, avatar: string, dex: number[], helped = 0) => ({
   user_id: id,

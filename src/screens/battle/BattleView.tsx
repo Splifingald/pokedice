@@ -32,14 +32,13 @@ import { playCry } from '@/audio/cries'
 import { Chip } from '@/components/Chip'
 import { DiceSet } from '@/components/DiceSet'
 import { ForfeitButton } from '@/components/ForfeitButton'
-import { HpBar } from '@/components/HpBar'
 import { PixelIcon } from '@/components/icons'
 import { ItemSprite } from '@/components/ItemSprite'
 import { Modal } from '@/components/Modal'
 import { OakTip, useOneTimeTip } from '@/components/OakTip'
 import { PixelButton } from '@/components/PixelButton'
 import { Sheet } from '@/components/Sheet'
-import { MiniSprite, SpriteImg } from '@/components/SpriteImg'
+import { SpriteImg } from '@/components/SpriteImg'
 import { TypeBadge } from '@/components/TypeBadge'
 import { TypeMatchups } from '@/components/TypeMatchups'
 import { pictureOf } from '@/fx/areaArt'
@@ -58,7 +57,7 @@ import { setSettings, useGame, type BattleSlice } from '@/store/game'
 import { dispatchBattle, throwBall } from '@/store/run'
 import { cx } from '@/theme/util'
 import { BattleHistory, BattleHistoryList, DamageRecap } from './BattleHistory'
-import { BagButton, DiceTray, Readout, TeamColumn, TeamPips, type Preview, type TrayDice } from './BattlePanel'
+import { BagButton, DiceTray, Readout, SwitchRow, TeamColumn, TeamPips, type Preview, type TrayDice } from './BattlePanel'
 import { BattleStage, type StageOverlay } from './BattleStage'
 import { CatchPanel, catchMessage } from './CatchPanel'
 import { FoePlate, OwnPlate } from './Plates'
@@ -1061,52 +1060,5 @@ function BattleContexts({ pace, motionCap, children }: { pace: number; motionCap
     <PaceContext.Provider value={pace}>
       <MotionCap.Provider value={motionCap}>{children}</MotionCap.Provider>
     </PaceContext.Provider>
-  )
-}
-
-function SwitchRow({
-  b,
-  onPick,
-  disabled,
-  detailed,
-}: {
-  b: Battler
-  onPick: () => void
-  disabled?: boolean
-  /** Its types, dice and rerolls too: the pick after a K.O. */
-  detailed?: boolean
-}) {
-  const { t } = useT()
-  return (
-    <button
-      type="button"
-      disabled={disabled}
-      onClick={onPick}
-      className="pixel-panel flex w-full items-center gap-2 p-2 text-left enabled:hover:bg-paper disabled:opacity-50"
-    >
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center justify-between text-xl leading-none">
-          <span className="flex items-center gap-1">
-            <MiniSprite dex={b.dex} size={40} className="-my-2" />
-            {b.name}
-          </span>
-          <span>{t('ui.common.level.short', { n: b.level })}</span>
-        </div>
-        <HpBar hp={b.hp} max={b.maxHp} height={8} className="mt-1" />
-        {detailed && (
-          <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1">
-            <span className="flex gap-1">
-              {b.types.map((x) => (
-                <TypeBadge key={x} type={x} size="sm" />
-              ))}
-            </span>
-            <DiceSet dice={b.dice} size={20} />
-            <span className="ml-auto font-pixel-sm text-[15px] leading-none tabular-nums text-muted">
-              {b.hp}/{b.maxHp}
-            </span>
-          </div>
-        )}
-      </div>
-    </button>
   )
 }

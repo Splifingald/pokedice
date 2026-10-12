@@ -823,6 +823,8 @@ export interface SaveData {
     animations?: 'full' | 'short'
     multiExp: boolean
     autoMode?: boolean
+    /** Raids: the ally sides' and the summons' turns at 1.5× speed. */
+    raidFast?: boolean
     lang?: Lang
     theme?: 'light' | 'dark' | 'auto'
   }
