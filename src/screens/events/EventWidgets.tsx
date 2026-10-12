@@ -8,7 +8,7 @@ import { activeEvents, currentTier, eventsTeaser, rebattleEncounter, rebattleOnH
 import { AreaStrip } from '@/components/AreaStrip'
 import { Chip } from '@/components/Chip'
 import { PixelIcon } from '@/components/icons'
-import { SpriteImg } from '@/components/SpriteImg'
+import { MiniSprite } from '@/components/SpriteImg'
 import { TrainerSprite } from '@/components/TrainerArt'
 import { useT } from '@/i18n/react'
 import { countdown } from '@/lib/format'
@@ -99,8 +99,11 @@ function RaidSquare() {
         {raid && (
           <>
             <AreaStrip area={{ id: raid.areaId }} h={WIDGET_BANNER_H} className="absolute inset-0 h-full w-full" />
-            <span className="absolute inset-0 grid place-items-center">
-              <SpriteImg dex={raid.dex} size={56} shiny={raid.shiny} className={raid.caught ? 'grayscale-[0.5]' : 'ev-bob'} />
+            {/* The menu icon, as everywhere a Pokémon is named in a list; it has no shiny colours, so a shiny raid
+                gets the star beside it. */}
+            <span className="absolute inset-0 flex items-center justify-center">
+              <MiniSprite dex={raid.dex} size={40} className={raid.caught ? 'grayscale-[0.5]' : undefined} />
+              {raid.shiny && <PixelIcon name="star" size={18} title={t('ui.mon.shiny')} className="-ml-1 mb-6 shrink-0" />}
             </span>
             <Chip tone={raid.caught ? 'done' : 'gold'} className="absolute right-1 top-1 tracking-[0.04em]">
               {t(raid.caught ? 'ui.events.raid.caught' : 'ui.events.raid.live')}

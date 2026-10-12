@@ -13,6 +13,7 @@ import { loadSprite, spriteKey } from '@/fx/sprites'
 import { loadCenterArt } from '@/fx/scenes'
 import { centerTimeline } from '@/fx/timelines/center'
 import { useMotion } from '@/lib/motion'
+import { RunRoundGauge } from '@/screens/area/RoundGauge'
 import { putInTeam, removeFromTeam, reorderTeam } from '@/store/actions'
 import { useGame } from '@/store/game'
 import { continueExploring, finishCenter, markHealShown } from '@/store/run'
@@ -113,7 +114,7 @@ export function CenterView() {
 
   return (
     // Phones: room at the bottom for the action bar, which is pinned over the tab bar.
-    <div className="flex flex-col gap-4 pb-[76px] md:pb-0">
+    <div className="flex flex-col gap-4 pb-[108px] md:pb-0">
       {/* The healing plays over everything (on <body>, so nothing on the page can sit over it), as big as the screen
           allows; it closes itself once done. SKIP just closes it: the team is already healed, and jumping the timeline
           to its end would play every note left of the jingle at once. */}
@@ -192,29 +193,32 @@ export function CenterView() {
         className="fixed inset-x-0 z-30 border-t-[3px] border-edge bg-parchment px-3 py-2 md:sticky md:inset-x-auto md:-mx-3"
         style={{ bottom: 'var(--bottom-nav)' }}
       >
-        {/* Healed: back Home, or straight on to this area's next encounter. */}
-        <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] gap-2.5 md:mx-auto md:max-w-md">
-          <PixelButton
-            size="lg"
-            className="whitespace-nowrap px-2"
-            onClick={() => {
-              finishCenter()
-              navigate('/home')
-            }}
-          >
-            {t('ui.nav.home')}
-          </PixelButton>
-          <PixelButton
-            variant="primary"
-            size="lg"
-            className="whitespace-nowrap px-2"
-            onClick={() => {
-              finishCenter()
-              continueExploring()
-            }}
-          >
-            {t('ui.common.continue')}
-          </PixelButton>
+        <div className="flex flex-col gap-1.5 md:mx-auto md:max-w-md">
+          <RunRoundGauge />
+          {/* Healed: back Home, or straight on to this area's next encounter. */}
+          <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] gap-2.5">
+            <PixelButton
+              size="lg"
+              className="whitespace-nowrap px-2"
+              onClick={() => {
+                finishCenter()
+                navigate('/home')
+              }}
+            >
+              {t('ui.nav.home')}
+            </PixelButton>
+            <PixelButton
+              variant="primary"
+              size="lg"
+              className="whitespace-nowrap px-2"
+              onClick={() => {
+                finishCenter()
+                continueExploring()
+              }}
+            >
+              {t('ui.common.continue')}
+            </PixelButton>
+          </div>
         </div>
       </div>
 

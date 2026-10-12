@@ -12,7 +12,8 @@ import type { Trainer } from '../src/engine'
 import { upsert } from './seed'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
-const OUT = process.argv[2] ?? path.join('supabase', 'migrations', '0041_rebattle_diamond.sql')
+// The latest patch (0041 brought Diamond; 0043 each member's teams from their roster). A path argument writes elsewhere.
+const OUT = process.argv[2] ?? path.join('supabase', 'migrations', '0043_rebattle_rosters.sql')
 
 const config = BUNDLE.config as unknown as {
   rebattleLineups: Record<string, Record<string, string[]>>
@@ -25,21 +26,20 @@ if (missing.length) throw new Error(`lineups name trainers the bundle doesn't ha
 const json = (v: unknown) => JSON.stringify(v).replace(/'/g, "''")
 
 const sql = [
-  '-- The Elite Rebattle in four tiers (docs/19 §5): Bronze League +10 levels ₽×1, Silver +20 ₽×1.5, Gold +30 ₽×2,',
-  '-- Diamond Lv.100 ₽×3. Written by `pnpm rebattle-sql` from src/data (scripts/rebattle-teams.ts). Run it once the',
-  '-- client that knows Diamond is deployed (an older one shows the tier without its name); safe to run again.',
-  '-- Saves keep their place: tier progress counts tiers cleared, so a player past the old Gold (Lv.100) now faces',
-  '-- Diamond, and K.O.s already paid in a tier stay paid.',
+  '-- The Elite Rebattle (docs/19 §5): every rebattle trainer, each region’s lineups and the tiers (Bronze League',
+  '-- +10 levels ₽×1, Silver +20 ₽×1.5, Gold +30 ₽×2, Diamond Lv.100 ₽×3). A member’s three per tier: their ace, and',
+  '-- two from their roster in the games, a different pair per tier. Written by `pnpm rebattle-sql` from src/data',
+  '-- (scripts/rebattle-teams.ts); safe to run again. Saves keep their place, and K.O.s already paid stay paid.',
   'begin;',
   '',
-  `-- ${trainers.length} rebattle trainers: the Silver and Gold teams' new levels, Diamond's new trainers.`,
+  `-- ${trainers.length} rebattle trainers, upserted under their stable ids.`,
   upsert(
     'trainers',
     ['id', 'name', 'sprite_url', 'team', 'role', 'badge', 'upgrade_level', 'battle_background', 'rival_of', 'items'],
     trainers.map((t) => [t.id, t.name, t.spriteUrl, t.team, t.role, t.badge, t.upgradeLevel, t.battleBackground, t.rivalOf ?? null, t.items ?? []]),
     ['id'],
   ),
-  "-- Each region's lineup per tier (Diamond's added).",
+  "-- Each region's lineup per tier.",
   `insert into game_config (key, value) values ('rebattleLineups', '${json(config.rebattleLineups)}'::jsonb)`,
   'on conflict (key) do update set value = excluded.value;',
   '',

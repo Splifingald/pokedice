@@ -159,7 +159,8 @@ const OnBanner = ({ children }: { children: ReactNode }) => <span className="gri
 
 /**
  * The Day Care, one for every region: its banner, with your two standing on it and the levels they gained there under
- * them (MAX at the level cap), the gauge to the next Egg check and its time; locked (how close, all regions counted);
+ * them (MAX at the level cap), the gauge to the next Egg check and its time (no gauge while no pair is there: nothing
+ * is checked); locked (how close, all regions counted);
  * or, with an Egg waiting, gold with the Egg shaking on the banner. The same size in every state. It only ever opens
  * the Day Care page (with an Egg, straight into the hatching).
  */
@@ -229,8 +230,9 @@ function DayCareWidget() {
   }))
   const free = Math.max(0, cfg.slots - rows.length)
   const friends = dc.guests.length
+  // No pair, no clock: the gauge stays away until two here can make an Egg.
   const check = nextCheckProgress(save, data, now)
-  const next = t('ui.home.dcNextCheck', { time: waitText(check.at - now) })
+  const next = check ? t('ui.home.dcNextCheck', { time: waitText(check.at - now) }) : t('ui.home.dcNoPair')
   const words = [
     ...rows.map((x) => t('ui.home.dcMon', { name: x.name, level: t('ui.common.level.short', { n: x.p.level }) })),
     ...Array.from({ length: free }, () => t('ui.home.dcFree')),
@@ -290,7 +292,7 @@ function DayCareWidget() {
             })}
           </span>
         }
-        meter={<Meter value={check.done} max={1} />}
+        meter={check && <Meter value={check.done} max={1} />}
         bottom={next}
       />
     </Widget>

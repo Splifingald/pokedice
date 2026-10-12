@@ -6,6 +6,7 @@ import { joinList, t } from '@/i18n'
 import { useT } from '@/i18n/react'
 import { GoldPill } from '@/components/GoldPill'
 import { CashChip } from '@/screens/events/live'
+import { RunRoundGauge } from '@/screens/area/RoundGauge'
 import { PixelIcon } from '@/components/icons'
 import { PixelButton } from '@/components/PixelButton'
 import { SpriteImg } from '@/components/SpriteImg'
@@ -127,7 +128,7 @@ export function CasinoView() {
 
   return (
     // Phones: room at the bottom for the action bar, which is pinned over the tab bar.
-    <div className="flex flex-col gap-4 pb-[76px] md:pb-0">
+    <div className="flex flex-col gap-4 pb-[108px] md:pb-0">
       <section
         className="pixel-panel-dark mx-auto flex w-full max-w-lg flex-col items-center gap-4 p-4"
         aria-label={t('ui.casino.machine')}
@@ -218,14 +219,12 @@ export function CasinoView() {
         className="fixed inset-x-0 z-30 border-t-[3px] border-edge bg-parchment px-3 py-2 md:sticky md:inset-x-auto md:-mx-3"
         style={{ bottom: 'var(--bottom-nav)' }}
       >
-        <PixelButton
-          size="lg"
-          className="w-full md:mx-auto md:flex md:w-80"
-          disabled={spinning}
-          onClick={leaveCasino}
-        >
-          {t('ui.casino.leave')}
-        </PixelButton>
+        <div className="flex flex-col gap-1.5 md:mx-auto md:w-80">
+          <RunRoundGauge />
+          <PixelButton size="lg" className="w-full" disabled={spinning} onClick={leaveCasino}>
+            {t('ui.casino.leave')}
+          </PixelButton>
+        </div>
       </div>
     </div>
   )

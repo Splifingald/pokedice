@@ -19825,7 +19825,7 @@
     "level": 62
    },
    {
-    "dex": 131,
+    "dex": 87,
     "level": 64
    },
    {
@@ -19847,7 +19847,7 @@
   "spriteUrl": "/trainers/classes/elite-bruno.png",
   "team": [
    {
-    "dex": 62,
+    "dex": 106,
     "level": 63
    },
    {
@@ -19873,11 +19873,11 @@
   "spriteUrl": "/trainers/classes/elite-agatha.png",
   "team": [
    {
-    "dex": 45,
+    "dex": 42,
     "level": 64
    },
    {
-    "dex": 24,
+    "dex": 93,
     "level": 66
    },
    {
@@ -19899,11 +19899,11 @@
   "spriteUrl": "/trainers/classes/elite-lance.png",
   "team": [
    {
-    "dex": 148,
+    "dex": 142,
     "level": 64
    },
    {
-    "dex": 142,
+    "dex": 130,
     "level": 68
    },
    {
@@ -19929,7 +19929,7 @@
     "level": 69
    },
    {
-    "dex": 130,
+    "dex": 112,
     "level": 71
    },
    {
@@ -19952,11 +19952,11 @@
   "spriteUrl": "/characters/green.png",
   "team": [
    {
-    "dex": 26,
+    "dex": 112,
     "level": 69
    },
    {
-    "dex": 59,
+    "dex": 26,
     "level": 71
    },
    {
@@ -19979,11 +19979,11 @@
   "spriteUrl": "/characters/green.png",
   "team": [
    {
-    "dex": 26,
+    "dex": 59,
     "level": 69
    },
    {
-    "dex": 59,
+    "dex": 130,
     "level": 71
    },
    {
@@ -20006,11 +20006,11 @@
   "spriteUrl": "/trainers/classes/elite-lorelei.png",
   "team": [
    {
-    "dex": 91,
+    "dex": 131,
     "level": 72
    },
    {
-    "dex": 131,
+    "dex": 80,
     "level": 74
    },
    {
@@ -20032,7 +20032,7 @@
   "spriteUrl": "/trainers/classes/elite-bruno.png",
   "team": [
    {
-    "dex": 62,
+    "dex": 106,
     "level": 73
    },
    {
@@ -20058,11 +20058,11 @@
   "spriteUrl": "/trainers/classes/elite-agatha.png",
   "team": [
    {
-    "dex": 45,
+    "dex": 42,
     "level": 74
    },
    {
-    "dex": 73,
+    "dex": 24,
     "level": 76
    },
    {
@@ -20084,11 +20084,11 @@
   "spriteUrl": "/trainers/classes/elite-lance.png",
   "team": [
    {
-    "dex": 148,
+    "dex": 142,
     "level": 74
    },
    {
-    "dex": 142,
+    "dex": 148,
     "level": 78
    },
    {
@@ -20110,11 +20110,11 @@
   "spriteUrl": "/characters/green.png",
   "team": [
    {
-    "dex": 26,
+    "dex": 65,
     "level": 79
    },
    {
-    "dex": 130,
+    "dex": 18,
     "level": 81
    },
    {
@@ -20137,11 +20137,11 @@
   "spriteUrl": "/characters/green.png",
   "team": [
    {
-    "dex": 26,
+    "dex": 18,
     "level": 79
    },
    {
-    "dex": 59,
+    "dex": 65,
     "level": 81
    },
    {
@@ -20164,11 +20164,11 @@
   "spriteUrl": "/characters/green.png",
   "team": [
    {
-    "dex": 26,
+    "dex": 65,
     "level": 79
    },
    {
-    "dex": 59,
+    "dex": 18,
     "level": 81
    },
    {
@@ -20217,7 +20217,7 @@
   "spriteUrl": "/trainers/classes/elite-bruno.png",
   "team": [
    {
-    "dex": 62,
+    "dex": 95,
     "level": 83
    },
    {
@@ -20243,11 +20243,11 @@
   "spriteUrl": "/trainers/classes/elite-agatha.png",
   "team": [
    {
-    "dex": 45,
+    "dex": 93,
     "level": 84
    },
    {
-    "dex": 73,
+    "dex": 24,
     "level": 86
    },
    {
@@ -20269,11 +20269,11 @@
   "spriteUrl": "/trainers/classes/elite-lance.png",
   "team": [
    {
-    "dex": 148,
+    "dex": 130,
     "level": 84
    },
    {
-    "dex": 142,
+    "dex": 148,
     "level": 88
    },
    {
@@ -20295,11 +20295,11 @@
   "spriteUrl": "/characters/green.png",
   "team": [
    {
-    "dex": 26,
+    "dex": 130,
     "level": 89
    },
    {
-    "dex": 130,
+    "dex": 103,
     "level": 91
    },
    {
@@ -20322,7 +20322,7 @@
   "spriteUrl": "/characters/green.png",
   "team": [
    {
-    "dex": 26,
+    "dex": 103,
     "level": 89
    },
    {
@@ -20353,7 +20353,7 @@
     "level": 89
    },
    {
-    "dex": 59,
+    "dex": 112,
     "level": 91
    },
    {
@@ -20376,11 +20376,11 @@
   "spriteUrl": "/trainers/classes/elite-lorelei.png",
   "team": [
    {
-    "dex": 91,
+    "dex": 87,
     "level": 100
    },
    {
-    "dex": 131,
+    "dex": 80,
     "level": 100
    },
    {
@@ -20402,11 +20402,11 @@
   "spriteUrl": "/trainers/classes/elite-bruno.png",
   "team": [
    {
-    "dex": 62,
+    "dex": 106,
     "level": 100
    },
    {
-    "dex": 107,
+    "dex": 95,
     "level": 100
    },
    {
@@ -20428,11 +20428,11 @@
   "spriteUrl": "/trainers/classes/elite-agatha.png",
   "team": [
    {
-    "dex": 45,
+    "dex": 42,
     "level": 100
    },
    {
-    "dex": 73,
+    "dex": 93,
     "level": 100
    },
    {
@@ -20454,11 +20454,11 @@
   "spriteUrl": "/trainers/classes/elite-lance.png",
   "team": [
    {
-    "dex": 148,
+    "dex": 142,
     "level": 100
    },
    {
-    "dex": 142,
+    "dex": 130,
     "level": 100
    },
    {
@@ -20484,7 +20484,7 @@
     "level": 100
    },
    {
-    "dex": 130,
+    "dex": 65,
     "level": 100
    },
    {
@@ -20507,11 +20507,11 @@
   "spriteUrl": "/characters/green.png",
   "team": [
    {
-    "dex": 26,
+    "dex": 112,
     "level": 100
    },
    {
-    "dex": 59,
+    "dex": 18,
     "level": 100
    },
    {
@@ -20534,11 +20534,11 @@
   "spriteUrl": "/characters/green.png",
   "team": [
    {
-    "dex": 26,
+    "dex": 59,
     "level": 100
    },
    {
-    "dex": 59,
+    "dex": 65,
     "level": 100
    },
    {
@@ -20561,7 +20561,7 @@
   "spriteUrl": "/trainers/classes/johto/elite-will.png",
   "team": [
    {
-    "dex": 196,
+    "dex": 178,
     "level": 61
    },
    {
@@ -20587,11 +20587,11 @@
   "spriteUrl": "/trainers/classes/johto/elite-koga.png",
   "team": [
    {
-    "dex": 213,
+    "dex": 89,
     "level": 63
    },
    {
-    "dex": 49,
+    "dex": 169,
     "level": 65
    },
    {
@@ -20613,7 +20613,7 @@
   "spriteUrl": "/trainers/classes/johto/elite-bruno.png",
   "team": [
    {
-    "dex": 214,
+    "dex": 237,
     "level": 65
    },
    {
@@ -20639,7 +20639,7 @@
   "spriteUrl": "/trainers/classes/johto/elite-karen.png",
   "team": [
    {
-    "dex": 248,
+    "dex": 198,
     "level": 66
    },
    {
@@ -20669,7 +20669,7 @@
     "level": 69
    },
    {
-    "dex": 149,
+    "dex": 142,
     "level": 71
    },
    {
@@ -20691,11 +20691,11 @@
   "spriteUrl": "/trainers/classes/johto/elite-will.png",
   "team": [
    {
-    "dex": 196,
+    "dex": 178,
     "level": 71
    },
    {
-    "dex": 202,
+    "dex": 80,
     "level": 73
    },
    {
@@ -20717,11 +20717,11 @@
   "spriteUrl": "/trainers/classes/johto/elite-koga.png",
   "team": [
    {
-    "dex": 213,
+    "dex": 168,
     "level": 73
    },
    {
-    "dex": 214,
+    "dex": 49,
     "level": 75
    },
    {
@@ -20743,7 +20743,7 @@
   "spriteUrl": "/trainers/classes/johto/elite-bruno.png",
   "team": [
    {
-    "dex": 214,
+    "dex": 95,
     "level": 75
    },
    {
@@ -20769,11 +20769,11 @@
   "spriteUrl": "/trainers/classes/johto/elite-karen.png",
   "team": [
    {
-    "dex": 248,
+    "dex": 45,
     "level": 76
    },
    {
-    "dex": 229,
+    "dex": 94,
     "level": 78
    },
    {
@@ -20799,7 +20799,7 @@
     "level": 79
    },
    {
-    "dex": 149,
+    "dex": 6,
     "level": 81
    },
    {
@@ -20821,11 +20821,11 @@
   "spriteUrl": "/trainers/classes/johto/elite-will.png",
   "team": [
    {
-    "dex": 196,
+    "dex": 124,
     "level": 81
    },
    {
-    "dex": 202,
+    "dex": 80,
     "level": 83
    },
    {
@@ -20847,11 +20847,11 @@
   "spriteUrl": "/trainers/classes/johto/elite-koga.png",
   "team": [
    {
-    "dex": 213,
+    "dex": 89,
     "level": 83
    },
    {
-    "dex": 214,
+    "dex": 168,
     "level": 85
    },
    {
@@ -20873,11 +20873,11 @@
   "spriteUrl": "/trainers/classes/johto/elite-bruno.png",
   "team": [
    {
-    "dex": 214,
+    "dex": 237,
     "level": 85
    },
    {
-    "dex": 68,
+    "dex": 95,
     "level": 87
    },
    {
@@ -20899,11 +20899,11 @@
   "spriteUrl": "/trainers/classes/johto/elite-karen.png",
   "team": [
    {
-    "dex": 248,
+    "dex": 198,
     "level": 86
    },
    {
-    "dex": 229,
+    "dex": 45,
     "level": 88
    },
    {
@@ -20925,11 +20925,11 @@
   "spriteUrl": "/trainers/classes/johto/champion-lance.png",
   "team": [
    {
-    "dex": 130,
+    "dex": 142,
     "level": 89
    },
    {
-    "dex": 149,
+    "dex": 6,
     "level": 91
    },
    {
@@ -20951,11 +20951,11 @@
   "spriteUrl": "/trainers/classes/johto/elite-will.png",
   "team": [
    {
-    "dex": 196,
+    "dex": 178,
     "level": 100
    },
    {
-    "dex": 202,
+    "dex": 124,
     "level": 100
    },
    {
@@ -20977,11 +20977,11 @@
   "spriteUrl": "/trainers/classes/johto/elite-koga.png",
   "team": [
    {
-    "dex": 213,
+    "dex": 169,
     "level": 100
    },
    {
-    "dex": 214,
+    "dex": 49,
     "level": 100
    },
    {
@@ -21003,7 +21003,7 @@
   "spriteUrl": "/trainers/classes/johto/elite-bruno.png",
   "team": [
    {
-    "dex": 214,
+    "dex": 107,
     "level": 100
    },
    {
@@ -21029,11 +21029,11 @@
   "spriteUrl": "/trainers/classes/johto/elite-karen.png",
   "team": [
    {
-    "dex": 248,
+    "dex": 229,
     "level": 100
    },
    {
-    "dex": 229,
+    "dex": 94,
     "level": 100
    },
    {
@@ -21059,7 +21059,7 @@
     "level": 100
    },
    {
-    "dex": 149,
+    "dex": 142,
     "level": 100
    },
    {
@@ -21081,7 +21081,7 @@
   "spriteUrl": "/trainers/classes/hoenn/elite-sidney.png",
   "team": [
    {
-    "dex": 342,
+    "dex": 262,
     "level": 60
    },
    {
@@ -21107,7 +21107,7 @@
   "spriteUrl": "/trainers/classes/hoenn/elite-phoebe.png",
   "team": [
    {
-    "dex": 292,
+    "dex": 302,
     "level": 62
    },
    {
@@ -21133,11 +21133,11 @@
   "spriteUrl": "/trainers/classes/hoenn/elite-glacia.png",
   "team": [
    {
-    "dex": 225,
+    "dex": 362,
     "level": 64
    },
    {
-    "dex": 362,
+    "dex": 364,
     "level": 64
    },
    {
@@ -21159,11 +21159,11 @@
   "spriteUrl": "/trainers/classes/hoenn/elite-drake.png",
   "team": [
    {
-    "dex": 230,
+    "dex": 334,
     "level": 66
    },
    {
-    "dex": 330,
+    "dex": 372,
     "level": 67
    },
    {
@@ -21185,11 +21185,11 @@
   "spriteUrl": "/trainers/classes/hoenn/champion-wallace.png",
   "team": [
    {
-    "dex": 340,
+    "dex": 130,
     "level": 69
    },
    {
-    "dex": 272,
+    "dex": 321,
     "level": 70
    },
    {
@@ -21211,11 +21211,11 @@
   "spriteUrl": "/trainers/classes/hoenn/elite-sidney.png",
   "team": [
    {
-    "dex": 342,
+    "dex": 332,
     "level": 70
    },
    {
-    "dex": 332,
+    "dex": 342,
     "level": 72
    },
    {
@@ -21237,11 +21237,11 @@
   "spriteUrl": "/trainers/classes/hoenn/elite-phoebe.png",
   "team": [
    {
-    "dex": 292,
+    "dex": 302,
     "level": 72
    },
    {
-    "dex": 94,
+    "dex": 292,
     "level": 73
    },
    {
@@ -21263,11 +21263,11 @@
   "spriteUrl": "/trainers/classes/hoenn/elite-glacia.png",
   "team": [
    {
-    "dex": 225,
+    "dex": 362,
     "level": 74
    },
    {
-    "dex": 87,
+    "dex": 225,
     "level": 74
    },
    {
@@ -21289,11 +21289,11 @@
   "spriteUrl": "/trainers/classes/hoenn/elite-drake.png",
   "team": [
    {
-    "dex": 230,
+    "dex": 330,
     "level": 76
    },
    {
-    "dex": 149,
+    "dex": 230,
     "level": 77
    },
    {
@@ -21315,7 +21315,7 @@
   "spriteUrl": "/trainers/classes/hoenn/champion-wallace.png",
   "team": [
    {
-    "dex": 340,
+    "dex": 73,
     "level": 79
    },
    {
@@ -21341,7 +21341,7 @@
   "spriteUrl": "/trainers/classes/hoenn/elite-sidney.png",
   "team": [
    {
-    "dex": 342,
+    "dex": 262,
     "level": 80
    },
    {
@@ -21367,11 +21367,11 @@
   "spriteUrl": "/trainers/classes/hoenn/elite-phoebe.png",
   "team": [
    {
-    "dex": 292,
+    "dex": 354,
     "level": 82
    },
    {
-    "dex": 94,
+    "dex": 292,
     "level": 83
    },
    {
@@ -21393,11 +21393,11 @@
   "spriteUrl": "/trainers/classes/hoenn/elite-glacia.png",
   "team": [
    {
-    "dex": 225,
+    "dex": 364,
     "level": 84
    },
    {
-    "dex": 87,
+    "dex": 225,
     "level": 84
    },
    {
@@ -21419,11 +21419,11 @@
   "spriteUrl": "/trainers/classes/hoenn/elite-drake.png",
   "team": [
    {
-    "dex": 230,
+    "dex": 334,
     "level": 86
    },
    {
-    "dex": 149,
+    "dex": 330,
     "level": 87
    },
    {
@@ -21445,11 +21445,11 @@
   "spriteUrl": "/trainers/classes/hoenn/champion-wallace.png",
   "team": [
    {
-    "dex": 340,
+    "dex": 130,
     "level": 89
    },
    {
-    "dex": 272,
+    "dex": 340,
     "level": 90
    },
    {
@@ -21471,11 +21471,11 @@
   "spriteUrl": "/trainers/classes/hoenn/elite-sidney.png",
   "team": [
    {
-    "dex": 342,
+    "dex": 275,
     "level": 100
    },
    {
-    "dex": 332,
+    "dex": 342,
     "level": 100
    },
    {
@@ -21497,11 +21497,11 @@
   "spriteUrl": "/trainers/classes/hoenn/elite-phoebe.png",
   "team": [
    {
-    "dex": 292,
+    "dex": 302,
     "level": 100
    },
    {
-    "dex": 94,
+    "dex": 354,
     "level": 100
    },
    {
@@ -21523,11 +21523,11 @@
   "spriteUrl": "/trainers/classes/hoenn/elite-glacia.png",
   "team": [
    {
-    "dex": 225,
+    "dex": 362,
     "level": 100
    },
    {
-    "dex": 87,
+    "dex": 364,
     "level": 100
    },
    {
@@ -21549,11 +21549,11 @@
   "spriteUrl": "/trainers/classes/hoenn/elite-drake.png",
   "team": [
    {
-    "dex": 230,
+    "dex": 372,
     "level": 100
    },
    {
-    "dex": 149,
+    "dex": 230,
     "level": 100
    },
    {
@@ -21575,11 +21575,11 @@
   "spriteUrl": "/trainers/classes/hoenn/champion-wallace.png",
   "team": [
    {
-    "dex": 340,
+    "dex": 321,
     "level": 100
    },
    {
-    "dex": 272,
+    "dex": 73,
     "level": 100
    },
    {
@@ -21601,11 +21601,11 @@
   "spriteUrl": "/trainers/classes/sinnoh/elite-aaron.png",
   "team": [
    {
-    "dex": 414,
+    "dex": 416,
     "level": 63
    },
    {
-    "dex": 416,
+    "dex": 212,
     "level": 64
    },
    {
@@ -21627,11 +21627,11 @@
   "spriteUrl": "/trainers/classes/sinnoh/elite-bertha.png",
   "team": [
    {
-    "dex": 423,
+    "dex": 450,
     "level": 65
    },
    {
-    "dex": 473,
+    "dex": 76,
     "level": 65
    },
    {
@@ -21653,7 +21653,7 @@
   "spriteUrl": "/trainers/classes/sinnoh/elite-flint.png",
   "team": [
    {
-    "dex": 38,
+    "dex": 392,
     "level": 67
    },
    {
@@ -21679,11 +21679,11 @@
   "spriteUrl": "/trainers/classes/sinnoh/elite-lucian.png",
   "team": [
    {
-    "dex": 344,
+    "dex": 122,
     "level": 67
    },
    {
-    "dex": 122,
+    "dex": 196,
     "level": 68
    },
    {
@@ -21709,7 +21709,7 @@
     "level": 68
    },
    {
-    "dex": 468,
+    "dex": 407,
     "level": 70
    },
    {
@@ -21731,11 +21731,11 @@
   "spriteUrl": "/trainers/classes/sinnoh/elite-aaron.png",
   "team": [
    {
-    "dex": 414,
+    "dex": 452,
     "level": 73
    },
    {
-    "dex": 402,
+    "dex": 214,
     "level": 74
    },
    {
@@ -21757,7 +21757,7 @@
   "spriteUrl": "/trainers/classes/sinnoh/elite-bertha.png",
   "team": [
    {
-    "dex": 423,
+    "dex": 340,
     "level": 75
    },
    {
@@ -21783,11 +21783,11 @@
   "spriteUrl": "/trainers/classes/sinnoh/elite-flint.png",
   "team": [
    {
-    "dex": 38,
+    "dex": 136,
     "level": 77
    },
    {
-    "dex": 324,
+    "dex": 229,
     "level": 77
    },
    {
@@ -21809,11 +21809,11 @@
   "spriteUrl": "/trainers/classes/sinnoh/elite-lucian.png",
   "team": [
    {
-    "dex": 344,
+    "dex": 437,
     "level": 77
    },
    {
-    "dex": 202,
+    "dex": 65,
     "level": 78
    },
    {
@@ -21835,7 +21835,7 @@
   "spriteUrl": "/trainers/classes/sinnoh/champion-cynthia.png",
   "team": [
    {
-    "dex": 442,
+    "dex": 423,
     "level": 78
    },
    {
@@ -21861,11 +21861,11 @@
   "spriteUrl": "/trainers/classes/sinnoh/elite-aaron.png",
   "team": [
    {
-    "dex": 414,
+    "dex": 416,
     "level": 83
    },
    {
-    "dex": 402,
+    "dex": 452,
     "level": 84
    },
    {
@@ -21887,11 +21887,11 @@
   "spriteUrl": "/trainers/classes/sinnoh/elite-bertha.png",
   "team": [
    {
-    "dex": 423,
+    "dex": 450,
     "level": 85
    },
    {
-    "dex": 472,
+    "dex": 473,
     "level": 85
    },
    {
@@ -21913,11 +21913,11 @@
   "spriteUrl": "/trainers/classes/sinnoh/elite-flint.png",
   "team": [
    {
-    "dex": 38,
+    "dex": 392,
     "level": 87
    },
    {
-    "dex": 324,
+    "dex": 136,
     "level": 87
    },
    {
@@ -21939,11 +21939,11 @@
   "spriteUrl": "/trainers/classes/sinnoh/elite-lucian.png",
   "team": [
    {
-    "dex": 344,
+    "dex": 122,
     "level": 87
    },
    {
-    "dex": 202,
+    "dex": 437,
     "level": 88
    },
    {
@@ -21965,11 +21965,11 @@
   "spriteUrl": "/trainers/classes/sinnoh/champion-cynthia.png",
   "team": [
    {
-    "dex": 442,
+    "dex": 448,
     "level": 88
    },
    {
-    "dex": 468,
+    "dex": 350,
     "level": 90
    },
    {
@@ -21991,11 +21991,11 @@
   "spriteUrl": "/trainers/classes/sinnoh/elite-aaron.png",
   "team": [
    {
-    "dex": 414,
+    "dex": 212,
     "level": 100
    },
    {
-    "dex": 402,
+    "dex": 214,
     "level": 100
    },
    {
@@ -22017,11 +22017,11 @@
   "spriteUrl": "/trainers/classes/sinnoh/elite-bertha.png",
   "team": [
    {
-    "dex": 423,
+    "dex": 76,
     "level": 100
    },
    {
-    "dex": 472,
+    "dex": 340,
     "level": 100
    },
    {
@@ -22043,11 +22043,11 @@
   "spriteUrl": "/trainers/classes/sinnoh/elite-flint.png",
   "team": [
    {
-    "dex": 38,
+    "dex": 78,
     "level": 100
    },
    {
-    "dex": 324,
+    "dex": 229,
     "level": 100
    },
    {
@@ -22069,11 +22069,11 @@
   "spriteUrl": "/trainers/classes/sinnoh/elite-lucian.png",
   "team": [
    {
-    "dex": 344,
+    "dex": 196,
     "level": 100
    },
    {
-    "dex": 202,
+    "dex": 65,
     "level": 100
    },
    {
@@ -22099,7 +22099,7 @@
     "level": 100
    },
    {
-    "dex": 468,
+    "dex": 423,
     "level": 100
    },
    {
@@ -22121,11 +22121,11 @@
   "spriteUrl": "/trainers/classes/unova/elite-shauntal.png",
   "team": [
    {
-    "dex": 593,
+    "dex": 563,
     "level": 58
    },
    {
-    "dex": 623,
+    "dex": 593,
     "level": 58
    },
    {
@@ -22147,11 +22147,11 @@
   "spriteUrl": "/trainers/classes/unova/elite-grimsley.png",
   "team": [
    {
-    "dex": 630,
+    "dex": 553,
     "level": 58
    },
    {
-    "dex": 553,
+    "dex": 560,
     "level": 58
    },
    {
@@ -22173,11 +22173,11 @@
   "spriteUrl": "/trainers/classes/unova/elite-caitlin.png",
   "team": [
    {
-    "dex": 518,
+    "dex": 561,
     "level": 58
    },
    {
-    "dex": 561,
+    "dex": 518,
     "level": 58
    },
    {
@@ -22199,7 +22199,7 @@
   "spriteUrl": "/trainers/classes/unova/elite-marshal.png",
   "team": [
    {
-    "dex": 560,
+    "dex": 538,
     "level": 58
    },
    {
@@ -22251,11 +22251,11 @@
   "spriteUrl": "/trainers/classes/unova/ghetsis.png",
   "team": [
    {
-    "dex": 625,
+    "dex": 537,
     "level": 62
    },
    {
-    "dex": 537,
+    "dex": 625,
     "level": 62
    },
    {
@@ -22277,11 +22277,11 @@
   "spriteUrl": "/trainers/classes/unova/elite-shauntal.png",
   "team": [
    {
-    "dex": 593,
+    "dex": 563,
     "level": 68
    },
    {
-    "dex": 302,
+    "dex": 623,
     "level": 68
    },
    {
@@ -22303,11 +22303,11 @@
   "spriteUrl": "/trainers/classes/unova/elite-grimsley.png",
   "team": [
    {
-    "dex": 630,
+    "dex": 553,
     "level": 68
    },
    {
-    "dex": 635,
+    "dex": 510,
     "level": 68
    },
    {
@@ -22329,11 +22329,11 @@
   "spriteUrl": "/trainers/classes/unova/elite-caitlin.png",
   "team": [
    {
-    "dex": 518,
+    "dex": 561,
     "level": 68
    },
    {
-    "dex": 528,
+    "dex": 579,
     "level": 68
    },
    {
@@ -22355,7 +22355,7 @@
   "spriteUrl": "/trainers/classes/unova/elite-marshal.png",
   "team": [
    {
-    "dex": 560,
+    "dex": 538,
     "level": 68
    },
    {
@@ -22381,11 +22381,11 @@
   "spriteUrl": "/trainers/classes/unova/n.png",
   "team": [
    {
-    "dex": 571,
+    "dex": 584,
     "level": 70
    },
    {
-    "dex": 601,
+    "dex": 567,
     "level": 70
    },
    {
@@ -22407,11 +22407,11 @@
   "spriteUrl": "/trainers/classes/unova/ghetsis.png",
   "team": [
    {
-    "dex": 625,
+    "dex": 563,
     "level": 72
    },
    {
-    "dex": 537,
+    "dex": 626,
     "level": 72
    },
    {
@@ -22437,7 +22437,7 @@
     "level": 78
    },
    {
-    "dex": 302,
+    "dex": 623,
     "level": 78
    },
    {
@@ -22459,11 +22459,11 @@
   "spriteUrl": "/trainers/classes/unova/elite-grimsley.png",
   "team": [
    {
-    "dex": 630,
+    "dex": 560,
     "level": 78
    },
    {
-    "dex": 635,
+    "dex": 510,
     "level": 78
    },
    {
@@ -22489,7 +22489,7 @@
     "level": 78
    },
    {
-    "dex": 528,
+    "dex": 579,
     "level": 78
    },
    {
@@ -22511,7 +22511,7 @@
   "spriteUrl": "/trainers/classes/unova/elite-marshal.png",
   "team": [
    {
-    "dex": 560,
+    "dex": 539,
     "level": 78
    },
    {
@@ -22541,7 +22541,7 @@
     "level": 80
    },
    {
-    "dex": 601,
+    "dex": 584,
     "level": 80
    },
    {
@@ -22563,11 +22563,11 @@
   "spriteUrl": "/trainers/classes/unova/ghetsis.png",
   "team": [
    {
-    "dex": 625,
+    "dex": 537,
     "level": 82
    },
    {
-    "dex": 537,
+    "dex": 604,
     "level": 82
    },
    {
@@ -22589,11 +22589,11 @@
   "spriteUrl": "/trainers/classes/unova/elite-shauntal.png",
   "team": [
    {
-    "dex": 593,
+    "dex": 563,
     "level": 100
    },
    {
-    "dex": 302,
+    "dex": 593,
     "level": 100
    },
    {
@@ -22615,11 +22615,11 @@
   "spriteUrl": "/trainers/classes/unova/elite-grimsley.png",
   "team": [
    {
-    "dex": 630,
+    "dex": 553,
     "level": 100
    },
    {
-    "dex": 635,
+    "dex": 560,
     "level": 100
    },
    {
@@ -22641,11 +22641,11 @@
   "spriteUrl": "/trainers/classes/unova/elite-caitlin.png",
   "team": [
    {
-    "dex": 518,
+    "dex": 561,
     "level": 100
    },
    {
-    "dex": 528,
+    "dex": 518,
     "level": 100
    },
    {
@@ -22667,11 +22667,11 @@
   "spriteUrl": "/trainers/classes/unova/elite-marshal.png",
   "team": [
    {
-    "dex": 560,
+    "dex": 538,
     "level": 100
    },
    {
-    "dex": 620,
+    "dex": 539,
     "level": 100
    },
    {
@@ -22693,11 +22693,11 @@
   "spriteUrl": "/trainers/classes/unova/n.png",
   "team": [
    {
-    "dex": 571,
+    "dex": 601,
     "level": 100
    },
    {
-    "dex": 601,
+    "dex": 567,
     "level": 100
    },
    {
@@ -22723,7 +22723,7 @@
     "level": 100
    },
    {
-    "dex": 537,
+    "dex": 563,
     "level": 100
    },
    {
@@ -22745,11 +22745,11 @@
   "spriteUrl": "/trainers/classes/kalos/elite-malva.png",
   "team": [
    {
-    "dex": 136,
+    "dex": 609,
     "level": 73
    },
    {
-    "dex": 609,
+    "dex": 324,
     "level": 73
    },
    {
@@ -22771,11 +22771,11 @@
   "spriteUrl": "/trainers/classes/kalos/elite-siebold.png",
   "team": [
    {
-    "dex": 279,
+    "dex": 130,
     "level": 73
    },
    {
-    "dex": 130,
+    "dex": 693,
     "level": 73
    },
    {
@@ -22797,11 +22797,11 @@
   "spriteUrl": "/trainers/classes/kalos/elite-wikstrom.png",
   "team": [
    {
-    "dex": 589,
+    "dex": 707,
     "level": 73
    },
    {
-    "dex": 212,
+    "dex": 476,
     "level": 73
    },
    {
@@ -22823,7 +22823,7 @@
   "spriteUrl": "/trainers/classes/kalos/elite-drasna.png",
   "team": [
    {
-    "dex": 706,
+    "dex": 334,
     "level": 73
    },
    {
@@ -22849,11 +22849,11 @@
   "spriteUrl": "/trainers/classes/kalos/champion-diantha.png",
   "team": [
    {
-    "dex": 697,
+    "dex": 699,
     "level": 75
    },
    {
-    "dex": 699,
+    "dex": 711,
     "level": 75
    },
    {
@@ -22875,11 +22875,11 @@
   "spriteUrl": "/trainers/classes/kalos/elite-malva.png",
   "team": [
    {
-    "dex": 136,
+    "dex": 609,
     "level": 83
    },
    {
-    "dex": 324,
+    "dex": 668,
     "level": 83
    },
    {
@@ -22901,11 +22901,11 @@
   "spriteUrl": "/trainers/classes/kalos/elite-siebold.png",
   "team": [
    {
-    "dex": 279,
+    "dex": 130,
     "level": 83
    },
    {
-    "dex": 91,
+    "dex": 121,
     "level": 83
    },
    {
@@ -22927,11 +22927,11 @@
   "spriteUrl": "/trainers/classes/kalos/elite-wikstrom.png",
   "team": [
    {
-    "dex": 589,
+    "dex": 707,
     "level": 83
    },
    {
-    "dex": 303,
+    "dex": 212,
     "level": 83
    },
    {
@@ -22953,11 +22953,11 @@
   "spriteUrl": "/trainers/classes/kalos/elite-drasna.png",
   "team": [
    {
-    "dex": 706,
+    "dex": 334,
     "level": 83
    },
    {
-    "dex": 697,
+    "dex": 691,
     "level": 83
    },
    {
@@ -22979,11 +22979,11 @@
   "spriteUrl": "/trainers/classes/kalos/champion-diantha.png",
   "team": [
    {
-    "dex": 697,
+    "dex": 701,
     "level": 85
    },
    {
-    "dex": 699,
+    "dex": 697,
     "level": 85
    },
    {
@@ -23005,11 +23005,11 @@
   "spriteUrl": "/trainers/classes/kalos/elite-malva.png",
   "team": [
    {
-    "dex": 136,
+    "dex": 324,
     "level": 93
    },
    {
-    "dex": 324,
+    "dex": 668,
     "level": 93
    },
    {
@@ -23031,11 +23031,11 @@
   "spriteUrl": "/trainers/classes/kalos/elite-siebold.png",
   "team": [
    {
-    "dex": 279,
+    "dex": 693,
     "level": 93
    },
    {
-    "dex": 91,
+    "dex": 121,
     "level": 93
    },
    {
@@ -23057,11 +23057,11 @@
   "spriteUrl": "/trainers/classes/kalos/elite-wikstrom.png",
   "team": [
    {
-    "dex": 589,
+    "dex": 476,
     "level": 93
    },
    {
-    "dex": 303,
+    "dex": 212,
     "level": 93
    },
    {
@@ -23083,11 +23083,11 @@
   "spriteUrl": "/trainers/classes/kalos/elite-drasna.png",
   "team": [
    {
-    "dex": 706,
+    "dex": 621,
     "level": 93
    },
    {
-    "dex": 697,
+    "dex": 691,
     "level": 93
    },
    {
@@ -23109,11 +23109,11 @@
   "spriteUrl": "/trainers/classes/kalos/champion-diantha.png",
   "team": [
    {
-    "dex": 697,
+    "dex": 699,
     "level": 95
    },
    {
-    "dex": 699,
+    "dex": 282,
     "level": 95
    },
    {
@@ -23135,7 +23135,7 @@
   "spriteUrl": "/trainers/classes/kalos/elite-malva.png",
   "team": [
    {
-    "dex": 136,
+    "dex": 609,
     "level": 100
    },
    {
@@ -23161,11 +23161,11 @@
   "spriteUrl": "/trainers/classes/kalos/elite-siebold.png",
   "team": [
    {
-    "dex": 279,
+    "dex": 130,
     "level": 100
    },
    {
-    "dex": 91,
+    "dex": 693,
     "level": 100
    },
    {
@@ -23187,11 +23187,11 @@
   "spriteUrl": "/trainers/classes/kalos/elite-wikstrom.png",
   "team": [
    {
-    "dex": 589,
+    "dex": 707,
     "level": 100
    },
    {
-    "dex": 303,
+    "dex": 476,
     "level": 100
    },
    {
@@ -23213,11 +23213,11 @@
   "spriteUrl": "/trainers/classes/kalos/elite-drasna.png",
   "team": [
    {
-    "dex": 706,
+    "dex": 334,
     "level": 100
    },
    {
-    "dex": 697,
+    "dex": 621,
     "level": 100
    },
    {
@@ -23239,11 +23239,11 @@
   "spriteUrl": "/trainers/classes/kalos/champion-diantha.png",
   "team": [
    {
-    "dex": 697,
+    "dex": 711,
     "level": 100
    },
    {
-    "dex": 699,
+    "dex": 701,
     "level": 100
    },
    {
@@ -23265,11 +23265,11 @@
   "spriteUrl": "/trainers/classes/alola/hala.png",
   "team": [
    {
-    "dex": 766,
+    "dex": 760,
     "level": 64
    },
    {
-    "dex": 760,
+    "dex": 62,
     "level": 64
    },
    {
@@ -23291,11 +23291,11 @@
   "spriteUrl": "/trainers/classes/alola/olivia.png",
   "team": [
    {
-    "dex": 774,
+    "dex": 10111,
     "level": 64
    },
    {
-    "dex": 10111,
+    "dex": 476,
     "level": 64
    },
    {
@@ -23317,7 +23317,7 @@
   "spriteUrl": "/trainers/classes/alola/acerola.png",
   "team": [
    {
-    "dex": 778,
+    "dex": 478,
     "level": 64
    },
    {
@@ -23343,11 +23343,11 @@
   "spriteUrl": "/trainers/classes/alola/elite-kahili.png",
   "team": [
    {
-    "dex": 774,
+    "dex": 169,
     "level": 64
    },
    {
-    "dex": 741,
+    "dex": 227,
     "level": 64
    },
    {
@@ -23369,11 +23369,11 @@
   "spriteUrl": "/trainers/classes/alola/champion-kukui.png",
   "team": [
    {
-    "dex": 10104,
+    "dex": 628,
     "level": 66
    },
    {
-    "dex": 143,
+    "dex": 10104,
     "level": 66
    },
    {
@@ -23395,11 +23395,11 @@
   "spriteUrl": "/trainers/classes/alola/hala.png",
   "team": [
    {
-    "dex": 766,
+    "dex": 297,
     "level": 74
    },
    {
-    "dex": 784,
+    "dex": 57,
     "level": 74
    },
    {
@@ -23421,11 +23421,11 @@
   "spriteUrl": "/trainers/classes/alola/olivia.png",
   "team": [
    {
-    "dex": 774,
+    "dex": 369,
     "level": 74
    },
    {
-    "dex": 699,
+    "dex": 703,
     "level": 74
    },
    {
@@ -23447,11 +23447,11 @@
   "spriteUrl": "/trainers/classes/alola/acerola.png",
   "team": [
    {
-    "dex": 778,
+    "dex": 426,
     "level": 74
    },
    {
-    "dex": 609,
+    "dex": 302,
     "level": 74
    },
    {
@@ -23473,11 +23473,11 @@
   "spriteUrl": "/trainers/classes/alola/elite-kahili.png",
   "team": [
    {
-    "dex": 774,
+    "dex": 630,
     "level": 74
    },
    {
-    "dex": 416,
+    "dex": 741,
     "level": 74
    },
    {
@@ -23499,11 +23499,11 @@
   "spriteUrl": "/trainers/classes/alola/champion-kukui.png",
   "team": [
    {
-    "dex": 10104,
+    "dex": 143,
     "level": 76
    },
    {
-    "dex": 143,
+    "dex": 462,
     "level": 76
    },
    {
@@ -23525,11 +23525,11 @@
   "spriteUrl": "/trainers/classes/alola/hala.png",
   "team": [
    {
-    "dex": 766,
+    "dex": 760,
     "level": 84
    },
    {
-    "dex": 784,
+    "dex": 297,
     "level": 84
    },
    {
@@ -23551,11 +23551,11 @@
   "spriteUrl": "/trainers/classes/alola/olivia.png",
   "team": [
    {
-    "dex": 774,
+    "dex": 10111,
     "level": 84
    },
    {
-    "dex": 699,
+    "dex": 369,
     "level": 84
    },
    {
@@ -23577,11 +23577,11 @@
   "spriteUrl": "/trainers/classes/alola/acerola.png",
   "team": [
    {
-    "dex": 778,
+    "dex": 478,
     "level": 84
    },
    {
-    "dex": 609,
+    "dex": 426,
     "level": 84
    },
    {
@@ -23603,11 +23603,11 @@
   "spriteUrl": "/trainers/classes/alola/elite-kahili.png",
   "team": [
    {
-    "dex": 774,
+    "dex": 169,
     "level": 84
    },
    {
-    "dex": 416,
+    "dex": 630,
     "level": 84
    },
    {
@@ -23629,7 +23629,7 @@
   "spriteUrl": "/trainers/classes/alola/champion-kukui.png",
   "team": [
    {
-    "dex": 10104,
+    "dex": 628,
     "level": 86
    },
    {
@@ -23655,11 +23655,11 @@
   "spriteUrl": "/trainers/classes/alola/hala.png",
   "team": [
    {
-    "dex": 766,
+    "dex": 62,
     "level": 100
    },
    {
-    "dex": 784,
+    "dex": 57,
     "level": 100
    },
    {
@@ -23681,11 +23681,11 @@
   "spriteUrl": "/trainers/classes/alola/olivia.png",
   "team": [
    {
-    "dex": 774,
+    "dex": 476,
     "level": 100
    },
    {
-    "dex": 699,
+    "dex": 703,
     "level": 100
    },
    {
@@ -23707,11 +23707,11 @@
   "spriteUrl": "/trainers/classes/alola/acerola.png",
   "team": [
    {
-    "dex": 778,
+    "dex": 781,
     "level": 100
    },
    {
-    "dex": 609,
+    "dex": 302,
     "level": 100
    },
    {
@@ -23733,11 +23733,11 @@
   "spriteUrl": "/trainers/classes/alola/elite-kahili.png",
   "team": [
    {
-    "dex": 774,
+    "dex": 227,
     "level": 100
    },
    {
-    "dex": 416,
+    "dex": 741,
     "level": 100
    },
    {
@@ -23763,7 +23763,7 @@
     "level": 100
    },
    {
-    "dex": 143,
+    "dex": 462,
     "level": 100
    },
    {
@@ -23785,11 +23785,11 @@
   "spriteUrl": "/trainers/classes/galar/marnie.png",
   "team": [
    {
-    "dex": 862,
+    "dex": 877,
     "level": 67
    },
    {
-    "dex": 860,
+    "dex": 560,
     "level": 68
    },
    {
@@ -23811,11 +23811,11 @@
   "spriteUrl": "/trainers/classes/galar/nessa.png",
   "team": [
    {
-    "dex": 902,
+    "dex": 768,
     "level": 69
    },
    {
-    "dex": 847,
+    "dex": 279,
     "level": 70
    },
    {
@@ -23837,11 +23837,11 @@
   "spriteUrl": "/trainers/classes/galar/bea.png",
   "team": [
    {
-    "dex": 903,
+    "dex": 237,
     "level": 70
    },
    {
-    "dex": 865,
+    "dex": 675,
     "level": 70
    },
    {
@@ -23863,11 +23863,11 @@
   "spriteUrl": "/trainers/classes/galar/raihan.png",
   "team": [
    {
-    "dex": 887,
+    "dex": 330,
     "level": 71
    },
    {
-    "dex": 844,
+    "dex": 526,
     "level": 71
    },
    {
@@ -23893,7 +23893,7 @@
     "level": 72
    },
    {
-    "dex": 866,
+    "dex": 681,
     "level": 74
    },
    {
@@ -23915,11 +23915,11 @@
   "spriteUrl": "/trainers/classes/galar/marnie.png",
   "team": [
    {
-    "dex": 862,
+    "dex": 454,
     "level": 77
    },
    {
-    "dex": 904,
+    "dex": 510,
     "level": 78
    },
    {
@@ -23941,11 +23941,11 @@
   "spriteUrl": "/trainers/classes/galar/nessa.png",
   "team": [
    {
-    "dex": 902,
+    "dex": 768,
     "level": 79
    },
    {
-    "dex": 882,
+    "dex": 847,
     "level": 80
    },
    {
@@ -23967,11 +23967,11 @@
   "spriteUrl": "/trainers/classes/galar/bea.png",
   "team": [
    {
-    "dex": 903,
+    "dex": 865,
     "level": 80
    },
    {
-    "dex": 760,
+    "dex": 68,
     "level": 80
    },
    {
@@ -23993,11 +23993,11 @@
   "spriteUrl": "/trainers/classes/galar/raihan.png",
   "team": [
    {
-    "dex": 887,
+    "dex": 330,
     "level": 81
    },
    {
-    "dex": 841,
+    "dex": 844,
     "level": 81
    },
    {
@@ -24019,11 +24019,11 @@
   "spriteUrl": "/trainers/classes/galar/champion-leon.png",
   "team": [
    {
-    "dex": 887,
+    "dex": 537,
     "level": 82
    },
    {
-    "dex": 866,
+    "dex": 612,
     "level": 84
    },
    {
@@ -24045,11 +24045,11 @@
   "spriteUrl": "/trainers/classes/galar/marnie.png",
   "team": [
    {
-    "dex": 862,
+    "dex": 877,
     "level": 87
    },
    {
-    "dex": 904,
+    "dex": 860,
     "level": 88
    },
    {
@@ -24071,11 +24071,11 @@
   "spriteUrl": "/trainers/classes/galar/nessa.png",
   "team": [
    {
-    "dex": 902,
+    "dex": 279,
     "level": 89
    },
    {
-    "dex": 882,
+    "dex": 847,
     "level": 90
    },
    {
@@ -24097,11 +24097,11 @@
   "spriteUrl": "/trainers/classes/galar/bea.png",
   "team": [
    {
-    "dex": 903,
+    "dex": 237,
     "level": 90
    },
    {
-    "dex": 760,
+    "dex": 853,
     "level": 90
    },
    {
@@ -24123,11 +24123,11 @@
   "spriteUrl": "/trainers/classes/galar/raihan.png",
   "team": [
    {
-    "dex": 887,
+    "dex": 526,
     "level": 91
    },
    {
-    "dex": 841,
+    "dex": 844,
     "level": 91
    },
    {
@@ -24149,7 +24149,7 @@
   "spriteUrl": "/trainers/classes/galar/champion-leon.png",
   "team": [
    {
-    "dex": 887,
+    "dex": 464,
     "level": 92
    },
    {
@@ -24175,11 +24175,11 @@
   "spriteUrl": "/trainers/classes/galar/marnie.png",
   "team": [
    {
-    "dex": 862,
+    "dex": 560,
     "level": 100
    },
    {
-    "dex": 904,
+    "dex": 454,
     "level": 100
    },
    {
@@ -24201,11 +24201,11 @@
   "spriteUrl": "/trainers/classes/galar/nessa.png",
   "team": [
    {
-    "dex": 902,
+    "dex": 768,
     "level": 100
    },
    {
-    "dex": 882,
+    "dex": 279,
     "level": 100
    },
    {
@@ -24227,11 +24227,11 @@
   "spriteUrl": "/trainers/classes/galar/bea.png",
   "team": [
    {
-    "dex": 903,
+    "dex": 675,
     "level": 100
    },
    {
-    "dex": 760,
+    "dex": 865,
     "level": 100
    },
    {
@@ -24253,11 +24253,11 @@
   "spriteUrl": "/trainers/classes/galar/raihan.png",
   "team": [
    {
-    "dex": 887,
+    "dex": 330,
     "level": 100
    },
    {
-    "dex": 841,
+    "dex": 526,
     "level": 100
    },
    {
@@ -24283,7 +24283,7 @@
     "level": 100
    },
    {
-    "dex": 866,
+    "dex": 537,
     "level": 100
    },
    {
@@ -24305,11 +24305,11 @@
   "spriteUrl": "/trainers/classes/paldea/elite-rika.png",
   "team": [
    {
-    "dex": 949,
+    "dex": 51,
     "level": 67
    },
    {
-    "dex": 323,
+    "dex": 232,
     "level": 67
    },
    {
@@ -24331,11 +24331,11 @@
   "spriteUrl": "/trainers/classes/paldea/elite-poppy.png",
   "team": [
    {
-    "dex": 1018,
+    "dex": 823,
     "level": 68
    },
    {
-    "dex": 823,
+    "dex": 437,
     "level": 68
    },
    {
@@ -24357,11 +24357,11 @@
   "spriteUrl": "/trainers/classes/paldea/larry.png",
   "team": [
    {
-    "dex": 931,
+    "dex": 398,
     "level": 69
    },
    {
-    "dex": 398,
+    "dex": 334,
     "level": 69
    },
    {
@@ -24383,11 +24383,11 @@
   "spriteUrl": "/trainers/classes/paldea/elite-hassel.png",
   "team": [
    {
-    "dex": 1019,
+    "dex": 612,
     "level": 70
    },
    {
-    "dex": 841,
+    "dex": 715,
     "level": 70
    },
    {
@@ -24409,11 +24409,11 @@
   "spriteUrl": "/trainers/classes/paldea/champion-geeta.png",
   "team": [
    {
-    "dex": 956,
+    "dex": 713,
     "level": 71
    },
    {
-    "dex": 983,
+    "dex": 976,
     "level": 71
    },
    {
@@ -24435,11 +24435,11 @@
   "spriteUrl": "/trainers/classes/paldea/nemona.png",
   "team": [
    {
-    "dex": 982,
+    "dex": 745,
     "level": 75
    },
    {
-    "dex": 968,
+    "dex": 706,
     "level": 75
    },
    {
@@ -24461,11 +24461,11 @@
   "spriteUrl": "/trainers/classes/paldea/elite-rika.png",
   "team": [
    {
-    "dex": 949,
+    "dex": 323,
     "level": 77
    },
    {
-    "dex": 450,
+    "dex": 340,
     "level": 77
    },
    {
@@ -24487,11 +24487,11 @@
   "spriteUrl": "/trainers/classes/paldea/elite-poppy.png",
   "team": [
    {
-    "dex": 1018,
+    "dex": 462,
     "level": 78
    },
    {
-    "dex": 983,
+    "dex": 879,
     "level": 78
    },
    {
@@ -24513,11 +24513,11 @@
   "spriteUrl": "/trainers/classes/paldea/larry.png",
   "team": [
    {
-    "dex": 931,
+    "dex": 741,
     "level": 79
    },
    {
-    "dex": 941,
+    "dex": 357,
     "level": 79
    },
    {
@@ -24539,11 +24539,11 @@
   "spriteUrl": "/trainers/classes/paldea/elite-hassel.png",
   "team": [
    {
-    "dex": 1019,
+    "dex": 841,
     "level": 80
    },
    {
-    "dex": 1018,
+    "dex": 691,
     "level": 80
    },
    {
@@ -24565,11 +24565,11 @@
   "spriteUrl": "/trainers/classes/paldea/champion-geeta.png",
   "team": [
    {
-    "dex": 956,
+    "dex": 673,
     "level": 81
    },
    {
-    "dex": 983,
+    "dex": 956,
     "level": 81
    },
    {
@@ -24617,11 +24617,11 @@
   "spriteUrl": "/trainers/classes/paldea/elite-rika.png",
   "team": [
    {
-    "dex": 949,
+    "dex": 51,
     "level": 87
    },
    {
-    "dex": 450,
+    "dex": 323,
     "level": 87
    },
    {
@@ -24643,11 +24643,11 @@
   "spriteUrl": "/trainers/classes/paldea/elite-poppy.png",
   "team": [
    {
-    "dex": 1018,
+    "dex": 823,
     "level": 88
    },
    {
-    "dex": 983,
+    "dex": 462,
     "level": 88
    },
    {
@@ -24669,11 +24669,11 @@
   "spriteUrl": "/trainers/classes/paldea/larry.png",
   "team": [
    {
-    "dex": 931,
+    "dex": 398,
     "level": 89
    },
    {
-    "dex": 941,
+    "dex": 741,
     "level": 89
    },
    {
@@ -24695,11 +24695,11 @@
   "spriteUrl": "/trainers/classes/paldea/elite-hassel.png",
   "team": [
    {
-    "dex": 1019,
+    "dex": 612,
     "level": 90
    },
    {
-    "dex": 1018,
+    "dex": 841,
     "level": 90
    },
    {
@@ -24721,7 +24721,7 @@
   "spriteUrl": "/trainers/classes/paldea/champion-geeta.png",
   "team": [
    {
-    "dex": 956,
+    "dex": 713,
     "level": 91
    },
    {
@@ -24747,11 +24747,11 @@
   "spriteUrl": "/trainers/classes/paldea/nemona.png",
   "team": [
    {
-    "dex": 982,
+    "dex": 745,
     "level": 95
    },
    {
-    "dex": 968,
+    "dex": 982,
     "level": 95
    },
    {
@@ -24773,11 +24773,11 @@
   "spriteUrl": "/trainers/classes/paldea/elite-rika.png",
   "team": [
    {
-    "dex": 949,
+    "dex": 232,
     "level": 100
    },
    {
-    "dex": 450,
+    "dex": 340,
     "level": 100
    },
    {
@@ -24799,11 +24799,11 @@
   "spriteUrl": "/trainers/classes/paldea/elite-poppy.png",
   "team": [
    {
-    "dex": 1018,
+    "dex": 437,
     "level": 100
    },
    {
-    "dex": 983,
+    "dex": 879,
     "level": 100
    },
    {
@@ -24825,11 +24825,11 @@
   "spriteUrl": "/trainers/classes/paldea/larry.png",
   "team": [
    {
-    "dex": 931,
+    "dex": 334,
     "level": 100
    },
    {
-    "dex": 941,
+    "dex": 357,
     "level": 100
    },
    {
@@ -24851,11 +24851,11 @@
   "spriteUrl": "/trainers/classes/paldea/elite-hassel.png",
   "team": [
    {
-    "dex": 1019,
+    "dex": 715,
     "level": 100
    },
    {
-    "dex": 1018,
+    "dex": 691,
     "level": 100
    },
    {
@@ -24877,11 +24877,11 @@
   "spriteUrl": "/trainers/classes/paldea/champion-geeta.png",
   "team": [
    {
-    "dex": 956,
+    "dex": 976,
     "level": 100
    },
    {
-    "dex": 983,
+    "dex": 673,
     "level": 100
    },
    {
@@ -24903,7 +24903,7 @@
   "spriteUrl": "/trainers/classes/paldea/nemona.png",
   "team": [
    {
-    "dex": 982,
+    "dex": 706,
     "level": 100
    },
    {
