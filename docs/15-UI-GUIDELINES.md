@@ -549,3 +549,19 @@ switched it on (Off by default; Off / On for admin / On for everyone, like the e
   resting and until when.
 - **Friends** are the same in both worlds; in Extreme, a friend without an Extreme save is listed greyed with "Not in
   Extreme mode" and the skull, and doesn't open.
+
+## 20. Every new feature: its switch and its rules
+
+Two rules for every feature that adds something players can do (an event, a mode, Trades…), not only the events
+(the user's rule, 2026-10-12).
+
+- **A switch in the admin: Off / On for admin / On for everyone** (`EventAccess`, the `AccessSwitch` widget), **Off by
+  default**. Off: the feature is nowhere in the game (no row, no square, no pop-up, no link that works); On for admin:
+  only the admin sees it, signed in, to try it in production first; On for everyone: open. The game reads it through
+  one helper (`eventOpenTo(access, data)`); **the server checks it too** in every function that acts for a player
+  (as `wheel_spin` does), so an old build or a hand-made call can't use a feature that's off. Turning it off keeps
+  every player's data as it is.
+- **Its rules, once and on demand**: a rules pop-up (`RulesModal`: its picture as a banner, 2–4 `RuleList` rows with
+  the config's numbers, Later / Let's go!) the first time the feature opens for the player (a "seen" flag in the save,
+  queued behind the other one-time pop-ups), and an **INFO** button at the bottom of its page that shows the same rules
+  again. The Day Care, Versus, the events, Extreme mode and Trades follow it.

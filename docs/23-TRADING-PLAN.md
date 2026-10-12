@@ -1,7 +1,8 @@
-# Trading: plan (for validation)
+# Trading: plan
 
-Status: **for validation** (2026-10-11): questions → this plan → Visual Lab mockups (`design/visual-lab/trades.js`, Home
-tab, "Trades" preview bar) → validation (§7) → integration. Branch `feature/trading`, off `feature/version_2`.
+Status: **validated** (2026-10-12): questions → this plan → Visual Lab mockups (`design/visual-lab/trades.js`, Home tab,
+"Trades" preview bar) → validation (§7, answered: §7c overrides the rest of this page where they differ) →
+integration. Built on `feature/version_2`; the migration is **0044** (0040–0043 were taken meanwhile).
 
 Players trade Pokémon through **listings**, like the games' GTS: you put up one of your Pokémon, say what you want for
 it, and anyone allowed to see the listing can take it while you're away. Everything is asynchronous.
@@ -213,7 +214,7 @@ trades: {
 A listed Pokémon stays inside your own save (`out`) until the trade is done: nothing is lost if a call or a tab dies,
 and cancelling never depends on the server keeping a copy.
 
-## 5. Server (migration 0040)
+## 5. Server (migration 0044)
 
 The save is written only by its owner, so a trade is a **server inbox**, like raid gifts. The server holds the listing
 and decides who got there first; each player's game applies its own half.
@@ -312,11 +313,37 @@ running out, a shared link (as a friend, signed out, Friends only), the trade sc
     Safari Zone), under Dratini's evolution level 30; and a species evolved by an item from one with no
     pre-evolution can arrive very low (Scizor, Steelix, Slowking: Lv.1, like Scyther, Onix and Slowpoke).
 
+### 7c. Settled at validation (2026-10-12)
+
+1. **Any I don't own**: not in the Box it would land in right now, or a shiny when you have no shiny of it (as
+   planned).
+2. **Trade evolutions only by trade.** The eleven that evolved at Lv.34 here — Kadabra, Machoke, Graveler (and
+   Alolan Graveler), Haunter, Boldore, Gurdurr, Karrablast, Shelmet, Phantump, Pumpkaboo — **lose their level
+   evolution for good**, whatever the Trades switch: they evolve the moment they arrive in a trade, and never by
+   level. The list is the admin's (`trade.evolveOnTrade`): a pair taken off it evolves by level again. Their minimum
+   (§1.3) follows the pre-evolution's, as for an item evolution, so a Lv.22 Alakazam is possible.
+   The games' **trade-with-a-held-item** evolutions (Politoed, Slowking, Steelix, Scizor, Kingdra, Porygon2,
+   Porygon-Z, Huntail, Gorebyss, Rhyperior, Electivire, Magmortar, Dusknoir, Aromatisse, Slurpuff) **keep using
+   their item** here, like a stone. Feebas → Milotic stays at Lv.30.
+3. **Badges**: from the **2nd badge** (admin number `minBadges`, default 2), every region's badges counted together.
+4. **Daily cap**: 5 trades taken a UTC day (admin).
+5. **No Home square**: the trainer menu's Trades row, the friend cards and the gold dot.
+6. **Rules pop-up** once, the first time the page opens, and an **INFO** button at its bottom. Made a general rule
+   for every feature (docs/15 §20).
+7. **The switch** Off / On for admin / On for everyone, Off by default, checked by the server too. Made a general rule
+   for every feature (docs/15 §20).
+8. **Your own listings** show on the board too, tagged YOURS, sorted last.
+9. **Guests** see the connect prompt and, under it, the four newest public listings (`trade_board` answers guests
+   with public listings only).
+10. **Ultra Beasts can't be traded**, like legendaries and mythicals: an admin list (`trade.exclude`), the Ultra Beasts
+    by default.
+11. **No other wants**: no level floor, no shiny-only want.
+
 ## 8. Integration phases (after validation)
 
 1. **Engine, config, save**: `trade.ts`, the schema, defaults, unit tests (levels, minimums, the one-copy outcomes,
    trade evolutions, listing out and back).
-2. **Server**: `0040_trades.sql` (table, functions, realm, switch, delete-my-data, cleanup), inlined into `seed.sql`,
+2. **Server**: `0044_trades.sql` (table, functions, realm, switch, delete-my-data, cleanup), inlined into `seed.sql`,
    PGlite tests like `friends-sql`.
 3. **Client**: `src/lib/trades.ts`, the store (post, take, cancel, the check on load / return, applying once), the
    `/t/:code` route.
@@ -325,5 +352,5 @@ running out, a shared link (as a friend, signed out, Friends only), the trade sc
 5. **Admin, e2e, docs**: Config → Trades, Admin → Trades, `e2e/trades.spec.ts` (two players through a mocked server,
    phone layout), docs/15 rules where the new components are general.
 
-**Hand-over for live** (when it ships): run 0040 (GitHub links then), deploy, switch Trades to On for admin to try it on
+**Hand-over for live** (when it ships): run 0044 (GitHub links then), deploy, switch Trades to On for admin to try it on
 live, then On for everyone.
