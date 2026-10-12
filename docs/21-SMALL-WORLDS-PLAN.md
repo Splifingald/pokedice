@@ -3,7 +3,7 @@
 Status: **integrated** (2026-10-11): questions → plan → Visual Lab mockups (`design/visual-lab/worlds.js`, Home tab,
 "Small world" preview bar) → validation (§5, answered) → integration (§8). Branch `feature/small-worlds` (from
 `feature/version_2`). Phase 1 (engine, store, save, admin, tests) and phase 2 (what players see) are built; the UI's
-rules are in docs/15 §20.
+rules are in docs/15 §22.
 
 Event type 5 in the special events framework (docs/18): **Small worlds**, priority 1 (first on Home). A small world is a
 time-limited, themed region you build in the admin, where the **shiny mythicals** are won: a fresh start on one of its

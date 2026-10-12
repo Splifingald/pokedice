@@ -2342,6 +2342,14 @@
       stone: 'Thunder Stone',
       glow: ['#ffffff', '#fff6a8', '#ffd23a', '#f0b000'],
     },
+    // A trade evolution (docs/23): it plays right after the trade scene, at the level the Pokémon arrived at.
+    kadabra: {
+      from: 'front-kadabra',
+      to: 'front-alakazam',
+      fromName: 'Kadabra',
+      toName: 'Alakazam',
+      glow: ['#ffffff', '#ffe9b0', '#ffc23a', '#c88a1a'],
+    },
   }
   const BABIES = {
     dratini: { key: 'front-dratini', name: 'Dratini' },
@@ -2381,7 +2389,10 @@
   ]
 
   function evolveAnim(opts = {}) {
-    const E = EVOS[opts.evo || 'charmeleon']
+    // A named evolution, or any two sprites (the trade mock passes the species it received).
+    const E = opts.from
+      ? { glow: ['#ffffff', '#e8f0ff', '#9cc8ff', '#5b8def'], ...opts }
+      : EVOS[opts.evo || 'charmeleon']
     const C = { x: 120, y: 112 }
     const T_STONE = E.stone ? 0.25 : -1,
       T_TOUCH = E.stone ? 1.0 : -1,
@@ -4116,6 +4127,339 @@
     }
   }
 
+  // ---------------------------------------------------------------- a trade (docs/23-TRADING-PLAN.md)
+  // Your Pokémon goes into its ball, the ball flies up and away along a link of light, the other ball comes down the
+  // same way and opens on the new Pokémon. The trade mock passes the two Pokémon; these are the Animations tab's.
+  const TRADE_SETS = {
+    cross: {
+      give: { key: 'front-pikachu', name: 'Pikachu', ball: 'poke' },
+      get: { key: 'front-totodile', name: 'Totodile', ball: 'great' },
+      who: 'Sora',
+    },
+    shiny: {
+      give: { key: 'front-pidgey', name: 'Pidgey', ball: 'poke' },
+      get: { key: 'front-eevee-shiny', name: 'Eevee', ball: 'ultra', shiny: true },
+      who: 'Mio',
+    },
+    evolves: {
+      give: { key: 'front-magikarp', name: 'Magikarp', ball: 'poke' },
+      get: { key: 'front-kadabra', name: 'Kadabra', ball: 'great' },
+      who: 'Noor',
+    },
+  }
+  const LINK = ['#ffffff', '#c8f0ff', '#7cc8f0', '#3a7be0']
+  /** The link of light: a dithered column with a white core, and the pulses running along it. */
+  function linkBeam(g, x, top, bottom, k, pulses) {
+    if (k <= 0 || bottom <= top) return
+    const h = bottom - top
+    ditherFill(g, x - 10, top, 20, h, LINK[3], 0.3 * k)
+    ditherFill(g, x - 6, top, 12, h, LINK[2], 0.55 * k)
+    rect(g, x - 2, top, 4, h, k > 0.5 ? LINK[1] : LINK[2])
+    if (k > 0.35) rect(g, x - 1, top, 2, h, LINK[0])
+    for (const py of pulses)
+      if (py > top - 8 && py < bottom + 8) {
+        rect(g, x - 4, Math.max(top, py - 5), 8, 10, LINK[1])
+        rect(g, x - 2, Math.max(top, py - 8), 4, 16, LINK[0])
+      }
+  }
+  function tradeAnim(opts = {}) {
+    const S0 = TRADE_SETS[opts.set || 'cross']
+    const give = opts.give || S0.give,
+      get = opts.get || S0.get,
+      who = opts.who || S0.who
+    const shiny = !!get.shiny
+    const C = { x: 120, y: 122 }
+    const R = 7
+    const REST = C.y - R - 1
+    const T_RECALL = 0.55,
+      T_IN = 1.1,
+      T_LINK = 1.12,
+      T_UP = 1.32,
+      T_GONE = 1.82,
+      T_DOWN = 2.38,
+      T_LAND = 2.86,
+      T_OPEN = 3.14,
+      T_SHINY = 3.42,
+      T_CARE = 3.6,
+      dur = 4.4
+    // The recall ball hovers just over the Pokémon's head, whatever its size.
+    const BALL_Y = Math.max(28, C.y - Math.min(76, size(give.key).h) - 8)
+    return {
+      id: 'trade',
+      dur,
+      hud: () => ({ bare: true, msg: '' }),
+      beats: [
+        [0, 'Yours', `${give.name} stands in a pool of light and hops once.`],
+        [
+          T_RECALL,
+          'Into its ball',
+          `The ball opens over it; ${give.name} turns red and is drawn in, the lid snaps shut.`,
+        ],
+        [T_LINK, 'The link', 'A column of light rises from the floor to the top of the screen.'],
+        [
+          T_UP,
+          'Away',
+          'A small dip, then the ball shoots up the link and out of sight, a pulse running after it.',
+        ],
+        [T_GONE, 'Across', `Pulses run up, then one comes back down: ${who}’s Pokémon is on its way.`],
+        [
+          T_DOWN,
+          'Incoming',
+          'The other ball slides down the link and lands with a bounce and a puff of dust.',
+        ],
+        [
+          T_OPEN,
+          'Opens',
+          `A wobble, then the ball opens with two white frames and a ring; ${get.name} appears from white and hops.`,
+        ],
+        ...(shiny ? [[T_SHINY, 'Shiny', 'Two rings of stars and the shiny chime.']] : []),
+        [T_CARE, 'Take care', `“Take good care of ${get.name}!” and a short jingle; the link fades.`],
+      ],
+      setup() {
+        const s = { r: rng(53), fx: new Particles(), under: new Particles(), shakes: [] }
+        s.bg = momentBg('#132044', '#2b4a86', '#1c2f5c', '#5fa8e8', 11)
+        return s
+      },
+      /** Where the ball is, which one, its lid and its spin; null while it is off screen. */
+      ball(t) {
+        if (t < T_RECALL - 0.15) return null
+        if (t < T_IN) {
+          const open = t < T_IN - 0.1 ? 1 : 1 - span(t, T_IN - 0.1, T_IN)
+          return { x: C.x, y: BALL_Y + Math.round(Math.sin(t * 9)), kind: give.ball, open, a: 0 }
+        }
+        if (t < T_UP) {
+          const dip = within(t, T_UP - 0.14, T_UP)
+            ? Math.round(3 * Math.sin(Math.PI * span(t, T_UP - 0.14, T_UP)))
+            : 0
+          return { x: C.x, y: BALL_Y + dip, kind: give.ball, open: 0, a: 0 }
+        }
+        if (t < T_GONE) {
+          const p = ease.inQ(span(t, T_UP, T_GONE))
+          return { x: C.x, y: lerp(BALL_Y, -14, p), kind: give.ball, open: 0, a: p * 9, fast: p > 0.15 }
+        }
+        if (t < T_DOWN) return null
+        if (t < T_LAND) {
+          const p = ease.outQ(span(t, T_DOWN, T_LAND))
+          return { x: C.x, y: lerp(-14, REST, p), kind: get.ball, open: 0, a: (1 - p) * 7, fast: p < 0.8 }
+        }
+        const b = t - T_LAND
+        const y = b < 0.14 ? REST - Math.round(4 * Math.sin(Math.PI * (b / 0.14))) : REST
+        const wob = within(t, T_LAND + 0.14, T_OPEN)
+          ? 0.45 * Math.sin(span(t, T_LAND + 0.14, T_OPEN) * Math.PI * 2)
+          : 0
+        if (t < T_OPEN) return { x: C.x, y, kind: get.ball, open: 0, a: wob }
+        if (t < T_OPEN + 0.16)
+          return { x: C.x, y, kind: get.ball, open: span(t, T_OPEN, T_OPEN + 0.12), a: 0 }
+        return null
+      },
+      step(s, t, dt) {
+        s.fx.update(dt)
+        s.under.update(dt)
+        const r = s.r
+        const b = this.ball(t)
+        // Drawn into the ball: red streaks from the Pokémon's outline.
+        if (within(t, T_RECALL + 0.1, T_IN - 0.08) && b) {
+          const m = size(give.key)
+          for (let i = 0; i < 3; i++)
+            s.fx.add({
+              x: C.x + r.range(-m.w / 2, m.w / 2) * 0.7,
+              y: C.y - r.range(0, m.h * 0.8),
+              home: { x: b.x, y: b.y, k: 1500 },
+              life: 0.35,
+              size: 1,
+              shape: 'streak',
+              trail: 0.02,
+              colors: ['#ffffff', '#ff9aa8', '#ff3b5c'],
+            })
+        }
+        // A light trail behind a ball on the move.
+        if (b && b.fast && r() < 0.9)
+          s.fx.add({
+            x: b.x + r.range(-2, 2),
+            y: b.y + (t < T_DOWN ? R : -R),
+            vy: t < T_DOWN ? 30 : -30,
+            life: 0.35,
+            size: 2,
+            size1: 0,
+            shape: 'sq',
+            colors: LINK,
+          })
+        // Sparkles drifting around the link while it holds.
+        if (within(t, T_LINK + 0.2, T_OPEN) && r() < 0.35)
+          s.under.add({
+            x: C.x + r.range(-26, 26),
+            y: r.range(10, C.y - 10),
+            vy: r.range(-10, -3),
+            life: 0.8,
+            size: 1,
+            shape: r() < 0.4 ? 'star' : 'px',
+            colors: [LINK[0], LINK[1], LINK[2]],
+          })
+        if (t >= T_LAND && t < T_LAND + STEP * 1.5)
+          for (const d of [-1, 1])
+            for (let i = 0; i < 3; i++)
+              s.under.add({
+                x: C.x + d * r.range(3, 6),
+                y: C.y,
+                vx: d * r.range(15, 35),
+                vy: -r.range(5, 16),
+                drag: 3,
+                life: 0.45,
+                size: 1,
+                size1: 3,
+                shape: 'smoke',
+                colors: ['#9fb8de', '#6f8cc0'],
+                density: 1,
+              })
+        if (t >= T_OPEN && t < T_OPEN + STEP * 1.5)
+          for (let k = 0; k < 28; k++) {
+            const a = r() * Math.PI * 2,
+              sp = r.range(40, 110)
+            s.fx.add({
+              x: C.x,
+              y: REST - 6,
+              vx: Math.cos(a) * sp,
+              vy: Math.sin(a) * sp * 0.8,
+              drag: 2.6,
+              life: r.range(0.5, 0.9),
+              size: r.int(1, 2),
+              shape: k % 3 ? 'star' : 'sq',
+              colors: shiny ? ['#ffffff', '#fff6a8', '#ffd23a', '#f0a000'] : LINK,
+            })
+          }
+        if (shiny && (Math.abs(t - T_SHINY) < STEP * 0.75 || Math.abs(t - T_SHINY - 0.22) < STEP * 0.75)) {
+          const big = t > T_SHINY + 0.1
+          for (let k = 0; k < 12; k++) {
+            const a = (k / 12) * Math.PI * 2
+            s.fx.add({
+              x: C.x + Math.cos(a) * 6,
+              y: C.y - 30 + Math.sin(a) * 6,
+              vx: Math.cos(a) * (big ? 70 : 45),
+              vy: Math.sin(a) * (big ? 55 : 35),
+              drag: 2.2,
+              life: 0.7,
+              size: big ? 2 : 1,
+              shape: 'star',
+              colors: ['#ffffff', '#fff6a8', '#ffd23a'],
+            })
+          }
+        }
+        // Afterwards, a few sparkles keep twinkling around the newcomer.
+        if (t > T_OPEN + 0.5 && r() < 0.1) {
+          const a = r() * Math.PI * 2
+          s.fx.add({
+            x: C.x + Math.cos(a) * r.range(26, 50),
+            y: C.y - 34 + Math.sin(a) * r.range(16, 34),
+            life: 0.6,
+            shape: 'star',
+            size: 1,
+            colors: shiny ? ['#ffffff', '#ffe14d'] : [LINK[0], LINK[1]],
+          })
+        }
+      },
+      draw(g, s, t) {
+        g.drawImage(s.bg, 0, 0)
+        // The link: rises from the floor, runs while the balls travel, fades once the newcomer is out.
+        const top = lerp(C.y, -4, ease.outC(span(t, T_LINK, T_LINK + 0.24)))
+        const k = t < T_LINK ? 0 : t < T_OPEN + 0.1 ? 1 : 1 - span(t, T_OPEN + 0.1, T_CARE + 0.3)
+        const pulses = []
+        if (within(t, T_UP + 0.1, T_DOWN))
+          for (let i = 0; i < 3; i++) pulses.push(C.y - (((t - T_UP) * 260 + i * 46) % (C.y + 40)))
+        if (within(t, T_DOWN - 0.2, T_LAND)) pulses.push(lerp(-10, C.y, span(t, T_DOWN - 0.2, T_LAND - 0.1)))
+        if (k > 0) g.drawImage(glow(26, LINK[2], 1.4, 0.55 * k), C.x - 26, C.y - 26)
+        linkBeam(g, C.x, Math.round(top), C.y, k, pulses)
+        s.under.draw(g)
+        const ms = t * 1000
+        // Yours: a hop, then red and drawn up into the ball.
+        if (t < T_IN) {
+          const p = span(t, T_RECALL + 0.15, T_IN - 0.05)
+          const hop = within(t, 0.18, 0.46) ? Math.round(Math.sin(Math.PI * span(t, 0.18, 0.46)) * 6) : 0
+          const sc = 1 - ease.inQ(p)
+          if (sc > 0.02)
+            sprite(g, give.key, C.x, Math.round(lerp(C.y, BALL_Y + 4, ease.inQ(p))) - hop, ms, {
+              sx: sc,
+              sy: sc,
+              tint: { color: '#ff3b5c', a: 0.85 * span(t, T_RECALL, T_RECALL + 0.25) },
+            })
+        }
+        // Theirs: out of the ball from white, a quick grow, then a hop.
+        if (t >= T_OPEN) {
+          const grow = ease.outC(span(t, T_OPEN, T_OPEN + 0.18))
+          const hop = within(t, T_OPEN + 0.5, T_OPEN + 0.8)
+            ? Math.round(Math.sin(Math.PI * span(t, T_OPEN + 0.5, T_OPEN + 0.8)) * 7)
+            : 0
+          // Two white frames, then the colours.
+          const white = t < T_OPEN + 2 * STEP ? 1 : 1 - span(t, T_OPEN + 0.1, T_OPEN + 0.42)
+          sprite(g, get.key, C.x, C.y - hop, ms, { sx: 0.3 + 0.7 * grow, sy: 0.3 + 0.7 * grow, flash: white })
+          const p = span(t, T_OPEN, T_OPEN + 0.5)
+          if (p > 0 && p < 1) {
+            const Rr = Math.round(8 + 46 * ease.outC(p))
+            g.drawImage(ring(Rr, 3, shiny ? '#ffe14d' : LINK[1], 1 - p), C.x - Rr - 1, C.y - 24 - Rr - 1)
+          }
+        }
+        const b = this.ball(t)
+        if (b) {
+          const im = SCN.ball(b.kind, b.a, { R, open: b.open })
+          // A ball on the move leaves two ghosts behind (the catch throw's trail).
+          if (b.fast) {
+            const back = t < T_DOWN ? 7 : -7
+            g.globalAlpha = 0.3
+            g.drawImage(im, Math.round(b.x - im.width / 2), Math.round(b.y + back * 2 - im.height / 2))
+            g.globalAlpha = 0.55
+            g.drawImage(im, Math.round(b.x - im.width / 2), Math.round(b.y + back - im.height / 2))
+            g.globalAlpha = 1
+          }
+          if (b.open > 0)
+            g.drawImage(glow(14, t < T_DOWN ? '#ff9aa8' : '#ffffff', 1.5, 0.7 * b.open), b.x - 14, b.y - 14)
+          g.drawImage(im, Math.round(b.x - im.width / 2), Math.round(b.y - im.height / 2))
+        }
+        s.fx.draw(g)
+        if (t < 0.4) wash(g, '#0b1430', 1 - span(t, 0, 0.4))
+      },
+      init() {
+        const FAN = [659, 784, 988, 1319]
+        const c = [
+          [0.12, say(`Sending ${give.name} to ${who}…`)],
+          [T_RECALL, () => Sound.tone(880, 0.25, { type: 'triangle', vol: 0.04, slide: -500 })],
+          [T_IN, () => Sound.noise(0.06, { freq: 900, vol: 0.06 })],
+          [
+            T_UP,
+            () => (
+              Sound.noise(0.45, { freq: 700, slide: 2600, vol: 0.05 }),
+              Sound.tone(392, 0.4, { type: 'square', vol: 0.03, slide: 600 })
+            ),
+          ],
+          [T_GONE + 0.05, say(`${who} sent ${get.name} over!`)],
+          [T_DOWN, () => Sound.tone(1047, 0.45, { type: 'square', vol: 0.03, slide: -650 })],
+          [T_LAND, () => Sound.noise(0.08, { freq: 500, vol: 0.06 })],
+          [
+            T_OPEN,
+            () => (
+              Sound.noise(0.3, { vol: 0.06, freq: 2200 }),
+              Sound.tone(1319, 0.25, { type: 'square', vol: 0.035 })
+            ),
+          ],
+          [T_CARE, say(`Take good care of ${get.name}!`)],
+        ]
+        if (shiny)
+          c.push([
+            T_SHINY,
+            () =>
+              [1568, 2093].forEach((f, i) =>
+                Sound.tone(f, 0.18, { type: 'triangle', vol: 0.04, at: i * 0.09 }),
+              ),
+          ])
+        FAN.forEach((f, i) =>
+          c.push([
+            T_CARE + 0.05 + i * 0.12,
+            () => Sound.tone(f, i === 3 ? 0.4 : 0.1, { type: 'square', vol: 0.04 }),
+          ]),
+        )
+        this.cues = c.sort((a, b) => a[0] - b[0])
+      },
+    }
+  }
+
   const MAKE = {
     center: centerAnim,
     catch: catchAnim,
@@ -4130,6 +4474,7 @@
     mega: megaAnim,
     gmax: gmaxAnim,
     starter: starterAnim,
+    trade: tradeAnim,
   }
   // The moves without the lab's roll prefix: the battle screen rolls its own dice first.
   const RAW = {
@@ -4152,6 +4497,7 @@
     MEGAS,
     GMAXES,
     STARTER_SETS,
+    TRADE_SETS,
     StarterScene,
     labBackground: (id) => labBg(STARTER_SETS[id] || STARTER_SETS.johto),
     Stage,

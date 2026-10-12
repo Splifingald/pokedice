@@ -550,7 +550,69 @@ switched it on (Off by default; Off / On for admin / On for everyone, like the e
 - **Friends** are the same in both worlds; in Extreme, a friend without an Extreme save is listed greyed with "Not in
   Extreme mode" and the skull, and doesn't open.
 
-## 20. Small worlds
+## 20. Every new feature: its switch and its rules
+
+Two rules for every feature that adds something players can do (an event, a mode, Trades…), not only the events
+(the user's rule, 2026-10-12).
+
+- **A switch in the admin: Off / On for admin / On for everyone** (`EventAccess`, the `AccessSwitch` widget), **Off by
+  default**. Off: the feature is nowhere in the game (no row, no square, no pop-up, no link that works); On for admin:
+  only the admin sees it, signed in, to try it in production first; On for everyone: open. The game reads it through
+  one helper (`eventOpenTo(access, data)`); **the server checks it too** in every function that acts for a player
+  (as `wheel_spin` does), so an old build or a hand-made call can't use a feature that's off. Turning it off keeps
+  every player's data as it is.
+- **Its rules, once and on demand**: a rules pop-up (`RulesModal`: its picture as a banner, 2–4 `RuleList` rows with
+  the config's numbers, Later / Let's go!) the first time the feature opens for the player (a "seen" flag in the save,
+  queued behind the other one-time pop-ups), and an **INFO** button at the bottom of its page that shows the same rules
+  again. The Day Care, Versus, the events, Extreme mode and Trades follow it.
+
+## 21. Trades
+
+Players trade through listings, like the games' GTS (docs/23-TRADING-PLAN.md). The pieces are in
+`src/components/trades/`, every state of them on `/kitchen-sink` (`TradeKitBits`); the engine (`engine/trade.ts`)
+decides every level, landing Box and outcome, and the screens only say them.
+
+- **Where it lives**: the trainer menu's Trades row under Friends (`/trades`), with the gold dot (and on the avatar)
+  while a trade that went through is unseen, or "2/4" for listings out. No Home square. A friend's card has a "Their
+  trades" list; a Pokémon's sheet has TRADE beside Send on (the main button when there's nowhere to send it), which
+  opens New listing with it picked. The trade icon (`trade`, two arrows crossing, gold over blue) marks all of it.
+- **The switch and the rules** follow §20: off, the row, the page, the pop-ups and links are gone (the page goes
+  Home), except for a player who still has something listed, who sees Mine with a note so it can come back.
+  **Inside a small world there are no trades at all** (§22): no row, no page, no TRADE button, and the check, the
+  "Trade done!" pop-up and opened links wait until the player is back; nothing in a world's Box is ever offered. The rules
+  pop-up (`TradesRulesModal`, the Pokémon Center as its banner) opens once for a signed-in player who can trade.
+- **A listing on a board** (`ListingRow`): the listed Pokémon on the left (menu icon, name, ✦, NEW when its landing
+  Pokédex lacks it, its region's chip when it isn't the first region, who), "for" and what they want on the right
+  (`WantTile`: the species' icon and name, or one tag: gold "Any New" for one they don't own, plain "Any" for
+  anything; the listing's sheet says what "Any New" means under it),
+  and a line under it: green "You can trade", or why not in plain words (`useTakeWhy`: sign in, friends only, start
+  Johto first, no trades left today, you have no Haunter…), the row greyed, and the time left at its far end (so the
+  trainer's name keeps its room on a phone). Friends' rows are sky blue with
+  the FRIEND tag, yours gold with YOURS, sorted last. A guest's rows have no line.
+- **Who can see it** (`VisChip`): Public blue, Friends green, Private (link) navy. **Time left** (`TimeLeft`): "2d 4h"
+  and a thin bar of the listing's life, red in its last 6 hours.
+- **The listing's sheet** (`ListingSheet`): the sprite large, types, whose, its chips and level, a box with what they
+  want (and "You have 2 Pidgey" / "You have no Pidgey"), the time left, then the facts (the level you'd get it at and
+  the species' lowest, a trade evolution, the Box it lands in) and one footer: TRADE (or the reason, as a button that
+  says it), Connect for a guest, CANCEL / SHARE for yours. TRADE turns the sheet into the **picker** (your Pokémon that
+  answer the want, from every region's Box: "You get Charmander Lv.22 (its lowest level)", NEW, STRONGER, ✦ SHINY,
+  → Alakazam; blocked ones greyed with why; one that would merge is dimmed with "nothing gained"), then the
+  **confirm** (the two Pokémon facing each other ⇄, one plain sentence, the facts as bullets), then the scene.
+- **New listing** (`NewListingSheet`): three numbered steps on one sheet. A step folds into its pick (gold, with
+  Change) once chosen. The species grid shows 3 tiles a row on a phone (112 px tiles on wider screens), a Not owned /
+  Owned / All switch with counts and region chips past one region, and 90 tiles at first with "Show more". The
+  summary sits gold above the footer's POST, which says what's missing while it can't post.
+- **The scene** (`TradeScene`, `tradeTimeline`): full screen, held with `useHoldFullscreen` so pop-ups wait; the line
+  under the stage is the host's (beats `sending`, `incoming`, `care`); a trade evolution follows with the evolution
+  scene; then what arrived (`TradeResult`: sprite, level, SHINY / NEW / STRONGER, where it went, the level note, "its
+  Pokédex entry stays") and DONE. SKIP and Esc jump to the result. Motion off jumps there at once.
+- **Coming back**: "Trade done!" (both Pokémon, who took it, Later / See it → the scene) once the run is idle and no
+  full-screen moment is up; a toast for a listing that came back and for a trade a closed tab left half done.
+- **Sharing** (`ShareListingModal`): the link `<site>/t/<code>` with COPY, a line on who can use it, and SHARE (the
+  share sheet on phones). A private listing opens it right after POST. A link opens the listing in its sheet when the
+  moment is calm; signed out it asks to connect and keeps the link through the sign-in.
+
+## 22. Small worlds
 
 A time-limited region of its own, built in the admin (docs/21-SMALL-WORLDS-PLAN.md), where a shiny mythical is won. Its
 pieces are in `src/screens/events/world.tsx` (the lab in `worldPick.tsx`, styles in `src/styles/world.css`), every state

@@ -11,6 +11,8 @@ import { ToastStack } from '@/components/Toast'
 import { AreaScreen } from '@/screens/Area'
 import { DayCareScreen } from '@/screens/DayCareScreen'
 import { FriendInvite } from '@/screens/FriendInvite'
+import { TradeLink } from '@/screens/TradeLink'
+import { TradesScreen } from '@/screens/Trades'
 import { FriendsScreen } from '@/screens/Friends'
 import { HomeScreen } from '@/screens/Home'
 import { LeaderboardScreen } from '@/screens/Leaderboard'
@@ -59,6 +61,7 @@ export function App() {
             <Route path="/" element={<Title />} />
             <Route path="/new" element={<NewGame />} />
             <Route path="/f/:code" element={<FriendInvite />} />
+            <Route path="/t/:code" element={<TradeLink />} />
             <Route path="/help" element={<Lazy><HelpPage /></Lazy>} />
             <Route path="/setup" element={<Lazy><SetupPage /></Lazy>} />
             <Route path="/admin" element={<Lazy><AdminApp /></Lazy>} />
@@ -78,6 +81,7 @@ export function App() {
               <Route path="/leaderboard" element={<LeaderboardScreen />} />
               <Route path="/friends" element={<FriendsScreen />} />
               <Route path="/versus" element={<VersusScreen />} />
+              <Route path="/trades" element={<TradesScreen />} />
               <Route path="/events/:id" element={<EventsScreen />} />
               <Route path="/raid/:areaId/:dex" element={<ProgressRaidScreen />} />
               <Route path="/settings" element={<SettingsScreen />} />

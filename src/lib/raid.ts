@@ -67,8 +67,8 @@ export async function claimRaidGifts(): Promise<RaidGift[]> {
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
-// Progression raids (docs/24, migration 0044): the team you leave on each raid, your friends' teams left on it, the
-// close of one you caught.
+// Progression raids (docs/24, migrations 0045 and 0046): the team you leave on each raid, your friends' teams left on
+// it, the close of one you caught.
 
 /** Leaves your team on a progression raid (1–3 ids from that raid's region's Box), built from your cloud save. */
 export async function setProgressRaidTeam(key: string, region: string, ids: string[]): Promise<void> {

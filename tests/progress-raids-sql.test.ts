@@ -1,4 +1,4 @@
-// Migrations 0044 and 0045 against a real Postgres (PGlite, in process), on top of 0039: the progression raids (docs/24,
+// Migrations 0045 and 0046 against a real Postgres (PGlite, in process), on top of 0039: the progression raids (docs/24,
 // a small world's too). The areas' raid content and the events row as the bundle has them, the admin's other settings
 // kept, and a second run changing nothing; then the team left on a raid (from that raid's region's Box only), the
 // friends who left one, the close counted once with the helpers' gifts, and Delete my data. Supabase's own pieces are
@@ -92,6 +92,7 @@ beforeAll(async () => {
     '0034_day_care.sql',
     '0035_events.sql',
     '0037_skip_unchanged_saves.sql',
+    '0030_pokemon_forms.sql',
     '0038_delete_my_data.sql',
     '0039_extreme_realm.sql',
   ])
@@ -208,13 +209,13 @@ beforeAll(async () => {
       ('${U.ash}', '${U.misty}', '${U.ash}'), ('${U.ash}', '${U.brock}', '${U.ash}');
   `)
 
-  await db.exec(sql('0044_progress_raids.sql'))
-  // 0045 after it, twice: it must stay safe to run again.
-  await db.exec(sql('0045_progress_raids_worlds.sql'))
-  await db.exec(sql('0045_progress_raids_worlds.sql'))
+  await db.exec(sql('0045_progress_raids.sql'))
+  // 0046 after it, twice: it must stay safe to run again.
+  await db.exec(sql('0046_progress_raids_worlds.sql'))
+  await db.exec(sql('0046_progress_raids_worlds.sql'))
 }, 60_000)
 
-describe('0044: the content', () => {
+describe('0045: the content', () => {
   it('makes every boss but the mythicals a raid, keeping its numbers', async () => {
     expect(await bossesOf(SEAFOAM.id)).toEqual([{ dex: 144, level: 50, teamAvgThreshold: 50, raid: true }])
     expect(await bossesOf(FULLMOON.id)).toEqual([{ dex: 488, level: 55, teamAvgThreshold: 0, raid: true }])
@@ -263,8 +264,8 @@ describe('0044: the content', () => {
       `update game_config set value = jsonb_set(value, '{raid,progress,teamCap}', '40') where key = 'events'`,
     )
     const before = await snapshot()
-    await db.exec(sql('0044_progress_raids.sql'))
-    await db.exec(sql('0045_progress_raids_worlds.sql'))
+    await db.exec(sql('0045_progress_raids.sql'))
+    await db.exec(sql('0046_progress_raids_worlds.sql'))
     expect(await snapshot()).toEqual(before)
     await db.query(
       `update game_config set value = jsonb_set(value, '{raid,progress,teamCap}', '50') where key = 'events'`,
@@ -272,7 +273,7 @@ describe('0044: the content', () => {
   })
 })
 
-describe('0044: the team left on a raid', () => {
+describe('0045: the team left on a raid', () => {
   it('needs a signed-in player and a raid that exists', async () => {
     await expect(setTeam(null as never, ARTICUNO, 'kanto', ['a'])).rejects.toThrow(/events_signed_out/)
     await expect(setTeam(U.ash, `${FARAWAY.id}:151`, 'kanto', ['a'])).rejects.toThrow(/events_bad_raid/)
@@ -328,7 +329,7 @@ describe('0044: the team left on a raid', () => {
   })
 })
 
-describe('0045: a small world’s raids', () => {
+describe('0046: a small world’s raids', () => {
   // A world whose region the admin named with a dash, and an area of it with a raid; Brock is playing it.
   const WORLD_AREA = '30000000-0000-4000-8000-000000000001'
   const KEY = `${WORLD_AREA}:144`
@@ -373,7 +374,7 @@ describe('0045: a small world’s raids', () => {
   })
 })
 
-describe('0044: a raid caught', () => {
+describe('0045: a raid caught', () => {
   it('counts once, one more raid won, a gift for each friend who left a team on it', async () => {
     const first = await close(U.ash, ARTICUNO, [U.misty, U.brock, U.ash, U.gary])
     // Brock left no team on it, Gary isn't a friend, Ash is the raider.
@@ -423,7 +424,7 @@ describe('0044: a raid caught', () => {
   })
 })
 
-describe('0044: Delete my data', () => {
+describe('0045: Delete my data', () => {
   it('takes the teams left and the raids caught, in the world asked for', async () => {
     const rows = async (table: string) =>
       (
@@ -442,5 +443,32 @@ describe('0044: Delete my data', () => {
     expect(
       (await db.query('select 1 from raid_progress_teams where user_id = $1', [U.misty])).rows,
     ).toHaveLength(1)
+  })
+})
+
+describe('0044 and 0046 in either order', () => {
+  it('leave a Delete my data that clears both Trades’ rows and the raids’', async () => {
+    for (const order of [
+      ['0044_trades.sql', '0046_progress_raids_worlds.sql'],
+      ['0046_progress_raids_worlds.sql', '0044_trades.sql'],
+    ]) {
+      for (const f of order) await db.exec(sql(f))
+      await db.query(
+        `insert into raid_progress_done (user_id, realm, raid_key, dex) values ($1, 'main', $2, 144) on conflict do nothing`,
+        [U.misty, ARTICUNO],
+      )
+      await as(U.misty, 'select delete_my_data()')
+      for (const table of ['raid_progress_done', 'raid_progress_teams'])
+        expect(
+          (await db.query(`select 1 from ${table} where user_id = $1`, [U.misty])).rows,
+          `${order}: ${table}`,
+        ).toEqual([])
+      const src = (
+        await db.query<{ src: string }>(`select prosrc src from pg_proc where proname = 'delete_my_data'`)
+      ).rows
+      expect(src).toHaveLength(1)
+      expect(src[0]!.src).toContain('trade_listings')
+      expect(src[0]!.src).toContain('raid_progress_done')
+    }
   })
 })

@@ -700,8 +700,30 @@ export interface GameConfig {
   extreme: ExtremeConfig
   /** Live events (docs/20): their switch, and the admin's list, past, running and to come; one runs at a time. */
   liveEvents: { access: EventAccess; list: LiveEvent[] }
+  /** Trades (docs/23): their switch and numbers, a game_config row of its own that seeding never writes. */
+  trade: TradeConfig
   /** Small worlds (docs/21): their switch, and the admin's list, past, running and to come; one runs at a time. */
   smallWorlds: { access: EventAccess; list: SmallWorld[] }
+}
+
+/** Trades (docs/23-TRADING-PLAN.md): listings, like the games' GTS. The server reads the same row. */
+export interface TradeConfig {
+  /** The switch (docs/15 §20): off (nowhere in the game), on for the admin only, on for everyone. Off by default. */
+  access: EventAccess
+  /** Open listings a player can have at once. */
+  maxListings: number
+  /** A listing nobody takes ends after this many days, and its Pokémon comes back. */
+  listingDays: number
+  /** Listings a player can take per UTC day. */
+  tradesPerDay: number
+  /** A traded Pokémon arrives at the level of the one given, at most this (unless its species only exists higher). */
+  levelCap: number
+  /** Badges needed to post or take, every region's counted together. */
+  minBadges: number
+  /** Trade evolutions, [from, to]: they evolve the moment they arrive in a trade, and never by level. */
+  evolveOnTrade: [number, number][]
+  /** Never tradable, on top of legendaries and mythicals (the Ultra Beasts by default). */
+  exclude: number[]
 }
 
 /** One booster of a small world: every hit of this type, both sides', × `multiplier`. */
@@ -928,6 +950,60 @@ export interface SaveData {
   extremeUnlockedAt?: number
   /** Main save: Extreme mode's rules pop-up has been shown (once, when it opens; INFO shows it again). */
   extremeRulesSeen?: boolean
+  /** Trades (docs/23): listed Pokémon, the trades already applied, the last ones done. Absent = never traded. */
+  trades?: TradesSave
+}
+
+/** What a listing asks for (docs/23 §1.1): one species, any the poster doesn't own, or anything. */
+export type TradeWant = { kind: 'species'; dex: number } | { kind: 'notOwned' } | { kind: 'any' }
+
+export const TRADE_VISIBILITY = ['public', 'friends', 'private'] as const
+/** Who sees a listing: the trade board (every signed-in player), friends only, or only people with its link. */
+export type TradeVisibility = (typeof TRADE_VISIBILITY)[number]
+
+/** A Pokémon on the trade board: out of its Box, frozen, still yours until the trade is done. */
+export interface TradeOut {
+  /** The server's listing id. */
+  listing: string
+  /** Its link's code. */
+  code: string
+  /** The region whose Box it left: it goes back there. */
+  region: RegionId
+  mon: PokemonInstance
+  at: number
+  endsAt: number
+  want: TradeWant
+  visibility: TradeVisibility
+}
+
+/** How a Pokémon that arrived was kept (the catch rule, docs/23 §1.4). */
+export type TradeOutcome = 'new' | 'replaced' | 'merged' | 'shiny'
+
+/** One trade done, for the Done list: who with, what went and what came. */
+export interface TradeLogEntry {
+  id: string
+  at: number
+  /** 'poster': your listing was taken; 'taker': you took theirs. */
+  role: 'poster' | 'taker'
+  /** The other trainer's name as it was then. */
+  with: string
+  gave: { dex: number; level: number; shiny?: boolean }
+  /** The species that arrived, at the level it arrived at (before a trade evolution). */
+  got: { dex: number; level: number; shiny?: boolean }
+  evolvedTo?: number
+  outcome: TradeOutcome
+}
+
+export interface TradesSave {
+  out: TradeOut[]
+  /** Trade ids already applied to this save (the last 50): a trade is applied exactly once. */
+  done: string[]
+  /** The last trades done, newest first. */
+  log?: TradeLogEntry[]
+  /** Your listings taken while you were away, not looked at yet: the gold dot. */
+  unseen?: string[]
+  /** The rules pop-up has been shown (once; INFO shows it again). */
+  rulesSeen?: boolean
 }
 
 export type SaveMode = 'main' | 'extreme'

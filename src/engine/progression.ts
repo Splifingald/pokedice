@@ -141,10 +141,31 @@ export function preferUnowned(ready: Evolution[], owned?: readonly number[]): Ev
   return fresh.length ? fresh : ready
 }
 
-/** The evolutions by level this Pokémon has reached (several for a branching one), gated like `stoneEvolution`. */
+/**
+ * A trade evolution (docs/23 §1.5): the pair is on the admin's list (game_config `trade.evolveOnTrade`). It happens the
+ * moment the Pokémon arrives in a trade, and never by level, whatever its evolution's level says.
+ */
+export const isTradeEvolution = (data: GameData, fromDex: number, toDex: number): boolean =>
+  !!data.config.trade?.evolveOnTrade?.some(([a, b]) => a === fromDex && b === toDex)
+
+/** What this species evolves into when traded, or null. */
+export function tradeEvolutionOf(data: GameData, dex: number): number | null {
+  const pair = data.config.trade?.evolveOnTrade?.find(([a, b]) => a === dex && data.species[b])
+  return pair ? pair[1] : null
+}
+
+/**
+ * The evolutions by level this Pokémon has reached (several for a branching one), gated like `stoneEvolution`. Trade
+ * evolutions never come this way (see isTradeEvolution).
+ */
 export function levelEvolutions(inst: PokemonInstance, data: GameData, allowDex?: EvolutionGateLike): Evolution[] {
   return evolutionsIn(getSpecies(data, inst.dex).evolutions, allowDex?.region).filter(
-    (e) => e.level != null && e.level <= inst.level && data.species[e.toDex] && (allowDex?.(e.toDex) ?? true),
+    (e) =>
+      e.level != null &&
+      e.level <= inst.level &&
+      data.species[e.toDex] &&
+      (allowDex?.(e.toDex) ?? true) &&
+      !isTradeEvolution(data, inst.dex, e.toDex),
   )
 }
 

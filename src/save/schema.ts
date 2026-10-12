@@ -3,6 +3,7 @@ import {
   COMBO_KEYS,
   EVENT_IDS,
   POKE_TYPES,
+  TRADE_VISIBILITY,
   type ComboKey,
   type DayCareResident,
   type DayCareState,
@@ -26,6 +27,14 @@ const instanceSchema = z.object({
   fossil: z.string().optional(),
   koAt: z.number().optional(),
 })
+
+// Trades (docs/23): a listing's want, and a Pokémon as the Done list remembers it.
+const tradeWantSchema = z.discriminatedUnion('kind', [
+  z.object({ kind: z.literal('species'), dex: z.number().int().min(1) }),
+  z.object({ kind: z.literal('notOwned') }),
+  z.object({ kind: z.literal('any') }),
+])
+const tradeMonSchema = z.object({ dex: z.number().int().min(1), level: z.number().int().min(1).max(100), shiny: z.boolean().optional() })
 
 const progressSchema = z.object({
   roundsDone: z.number().int().min(0).optional(),
@@ -209,6 +218,43 @@ export const saveSchema = z.object({
     .optional(),
   extremeUnlockedAt: z.number().optional(),
   extremeRulesSeen: z.boolean().optional(),
+  trades: z
+    .object({
+      out: z
+        .array(
+          z.object({
+            listing: z.string().min(1).max(80),
+            code: z.string().max(20),
+            region: z.string().max(40),
+            mon: instanceSchema,
+            at: z.number(),
+            endsAt: z.number(),
+            want: tradeWantSchema,
+            visibility: z.enum(TRADE_VISIBILITY),
+          }),
+        )
+        .max(20)
+        .default([]),
+      done: z.array(z.string().max(80)).max(100).default([]),
+      log: z
+        .array(
+          z.object({
+            id: z.string().max(80),
+            at: z.number(),
+            role: z.enum(['poster', 'taker']),
+            with: z.string().max(40),
+            gave: tradeMonSchema,
+            got: tradeMonSchema,
+            evolvedTo: z.number().int().min(1).optional(),
+            outcome: z.enum(['new', 'replaced', 'merged', 'shiny']),
+          }),
+        )
+        .max(40)
+        .optional(),
+      unseen: z.array(z.string().max(80)).max(40).optional(),
+      rulesSeen: z.boolean().optional(),
+    })
+    .optional(),
 })
 
 /**

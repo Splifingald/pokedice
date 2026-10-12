@@ -1,8 +1,9 @@
 -- Progression raids (docs/24, the user's design of 2026-10-12). Every area boss but the mythicals is a raid of its
 -- own area, open once the area is completed, fought until caught; your team for it comes from that region's Box and
 -- stays on it, so friends can bring it to their own. The mythicals are their lairs' bosses again (never shiny there),
--- and their days of the raid calendar are shiny. Written by `pnpm progress-raids-sql` from src/data. Run after 0043;
--- safe to run again. Deploy the client first: an older one would show a raid boss as a plain boss.
+-- and their days of the raid calendar are shiny. Written by `pnpm progress-raids-sql` from src/data. Safe to run
+-- again. Deploy the client first: an older one would show a raid boss as a plain boss. (Live ran it on 2026-10-12 as
+-- 0044_progress_raids.sql, before Trades took 0044: same statements.)
 begin;
 
 -- ---------------------------------------------------------------- the areas

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import {
   badgeCase,
   isAreaClosed,
+  isTradeEvolution,
   isAreaUnlocked,
   isRaidBoss,
   progressRaidKey,
@@ -353,8 +354,8 @@ function ItemSources({ itemKey, onTravel }: { itemKey: string; onTravel?: () => 
 }
 
 const EVOLVES_TEXT = {
-  from: { item: 'ui.dex.evolvesFromItem', level: 'ui.dex.evolvesFromLevel' },
-  into: { item: 'ui.dex.evolvesIntoItem', level: 'ui.dex.evolvesIntoLevel' },
+  from: { item: 'ui.dex.evolvesFromItem', level: 'ui.dex.evolvesFromLevel', trade: 'ui.dex.evolvesFromTrade' },
+  into: { item: 'ui.dex.evolvesIntoItem', level: 'ui.dex.evolvesIntoLevel', trade: 'ui.dex.evolvesIntoTrade' },
 } as const
 
 /**
@@ -365,18 +366,22 @@ function EvolutionStep({
   dex,
   evo,
   direction,
+  from,
   onOpenDex,
   onTravel,
 }: {
   dex: number
   evo: Evolution
   direction: 'from' | 'into'
+  /** The species that evolves (for "into", the entry's own): a trade evolution says so (docs/23). */
+  from: number
   onOpenDex?: (dex: number) => void
   onTravel?: () => void
 }) {
   const { t } = useT()
   const data = useGame((s) => s.data)
   const known = useGame((s) => !!s.save?.pokedex.includes(dex))
+  const how = isTradeEvolution(data, from, evo.toDex) ? 'trade' : evo.item ? 'item' : 'level'
   const button = (
     <button
       type="button"
@@ -385,14 +390,14 @@ function EvolutionStep({
     >
       <MiniSprite dex={dex} size={40} silhouette={!known} />
       <span className="text-[18px] leading-tight">
-        {t(EVOLVES_TEXT[direction][evo.item ? 'item' : 'level'], {
+        {t(EVOLVES_TEXT[direction][how], {
           name: known ? (data.species[dex]?.name ?? '') : t('ui.common.unknown'),
-          how: evolutionHow(evo, data),
+          how: evolutionHow(evo, data, from),
         })}
       </span>
     </button>
   )
-  if (!evo.item) return button
+  if (!evo.item || how === 'trade') return button
   return (
     <div className="flex flex-col gap-2">
       {button}
@@ -419,6 +424,7 @@ function EvolvesInto({ dex, onOpenDex, onTravel }: { dex: number; onOpenDex?: (d
           dex={e.toDex}
           evo={e}
           direction="into"
+          from={dex}
           onOpenDex={onOpenDex}
           onTravel={onTravel}
         />
@@ -455,7 +461,7 @@ function MissingEntry({ dex, onOpenDex, onTravel }: { dex: number; onOpenDex?: (
           </ul>
         )}
         {from.map(({ species, evo }) => (
-          <EvolutionStep key={species.dex} dex={species.dex} evo={evo} direction="from" onOpenDex={onOpenDex} onTravel={onTravel} />
+          <EvolutionStep key={species.dex} dex={species.dex} evo={evo} direction="from" from={species.dex} onOpenDex={onOpenDex} onTravel={onTravel} />
         ))}
         {spots.length === 0 && from.length === 0 && !raid && <p className="copy text-muted">{t('ui.dex.notSpotted')}</p>}
         {travelHint && <p className="font-pixel-sm text-[15px] text-muted">{t('ui.home.finishFirst')}</p>}

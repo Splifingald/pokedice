@@ -14,6 +14,7 @@ import { AreasSection } from './sections/AreasSection'
 import { ConfigSection } from './sections/ConfigSection'
 import { DevToolsSection } from './sections/DevToolsSection'
 import { EventsSection } from './sections/EventsSection'
+import { TradesSection } from './sections/TradesSection'
 import { MessagesSection } from './sections/MessagesSection'
 import { PullRemoteButton } from './PullRemoteButton'
 import { PokemonSection } from './sections/PokemonSection'
@@ -35,6 +36,7 @@ const SECTIONS: { id: string; label: string; icon: IconName; C: ComponentType }[
   { id: 'simulator', label: 'Simulator', icon: 'play', C: SimulatorSection },
   { id: 'analytics', label: 'Analytics', icon: 'history', C: AnalyticsSection },
   { id: 'messages', label: 'Messages', icon: 'mail', C: MessagesSection },
+  { id: 'trades', label: 'Trades', icon: 'trade', C: TradesSection },
   { id: 'devtools', label: 'Dev Tools', icon: 'wrench', C: DevToolsSection },
 ]
 

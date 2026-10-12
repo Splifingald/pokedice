@@ -149,7 +149,7 @@ function daysOf(year: number): { day: string; md: string; weekday: number }[] {
 const same = (a: Pick<RaidDay, 'dex' | 'shiny'>, b: Pick<RaidDay, 'dex' | 'shiny'>) => a.dex === b.dex && a.shiny === b.shiny
 /**
  * A day that takes an entry's place: the same raid, or, for a mythical (one day a year), any day of it, shiny or not.
- * So a fixed date still non-shiny from before docs/24 (a database 0044 hasn't reached) lays the year out exactly as a
+ * So a fixed date still non-shiny from before docs/24 (a database 0045 hasn't reached) lays the year out exactly as a
  * shiny one: only that day's colours differ.
  */
 const claims = (e: RaidDay, x: Pick<RaidDay, 'dex' | 'shiny'>) => same(e, x) || (e.kind === 'mythical' && e.dex === x.dex)
