@@ -1,8 +1,8 @@
-// Migration 0044 against a real Postgres (PGlite, in process), on top of 0039: the progression raids (docs/24). The
-// areas' raid content and the events row as the bundle has them, the admin's other settings kept, and a second run
-// changing nothing; then the team left on a raid (from that region's Box only), the friends who left one, the close
-// counted once with the helpers' gifts, and Delete my data. Supabase's own pieces are stood in for at the top, as in
-// friends-sql.test.ts.
+// Migrations 0044 and 0045 against a real Postgres (PGlite, in process), on top of 0039: the progression raids (docs/24,
+// a small world's too). The areas' raid content and the events row as the bundle has them, the admin's other settings
+// kept, and a second run changing nothing; then the team left on a raid (from that raid's region's Box only), the
+// friends who left one, the close counted once with the helpers' gifts, and Delete my data. Supabase's own pieces are
+// stood in for at the top, as in friends-sql.test.ts.
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { PGlite } from '@electric-sql/pglite'
@@ -209,6 +209,9 @@ beforeAll(async () => {
   `)
 
   await db.exec(sql('0044_progress_raids.sql'))
+  // 0045 after it, twice: it must stay safe to run again.
+  await db.exec(sql('0045_progress_raids_worlds.sql'))
+  await db.exec(sql('0045_progress_raids_worlds.sql'))
 }, 60_000)
 
 describe('0044: the content', () => {
@@ -261,6 +264,7 @@ describe('0044: the content', () => {
     )
     const before = await snapshot()
     await db.exec(sql('0044_progress_raids.sql'))
+    await db.exec(sql('0045_progress_raids_worlds.sql'))
     expect(await snapshot()).toEqual(before)
     await db.query(
       `update game_config set value = jsonb_set(value, '{raid,progress,teamCap}', '50') where key = 'events'`,
@@ -321,6 +325,51 @@ describe('0044: the team left on a raid', () => {
     expect(await as(U.ash, `select * from raid_progress_friend_teams($1, 'extreme')`, [ARTICUNO])).toEqual([])
     // Gary isn't Ash's friend: Ash's team is nothing to him.
     expect(await as(U.gary, 'select * from raid_progress_friend_teams($1)', [ARTICUNO])).toEqual([])
+  })
+})
+
+describe('0045: a small world’s raids', () => {
+  // A world whose region the admin named with a dash, and an area of it with a raid; Brock is playing it.
+  const WORLD_AREA = '30000000-0000-4000-8000-000000000001'
+  const KEY = `${WORLD_AREA}:144`
+
+  it('take the team from the Box of the raid’s own region, whatever the caller says', async () => {
+    await db.query(
+      `insert into areas (id, order_index, region_id, name, rounds_to_clear, min_level, max_level, encounter_weights, legendary_boss)
+       values ($1, 99999, 'halloween-26', 'Haunted Hollow', 1, 40, 50, '{"wild": 8}', '[{"dex": 144, "level": 50, "raid": true}]')`,
+      [WORLD_AREA],
+    )
+    await db.query(`update saves set data = $2 where user_id = $1 and realm = 'main'`, [
+      U.brock,
+      JSON.stringify({
+        player: { name: 'BROCK', character: 'red' },
+        region: 'halloween-26',
+        box: [{ id: 'w', dex: 9, level: 70 }],
+        team: ['w'],
+        pokedex: [9],
+        areaProgress: {},
+        parked: {
+          kanto: { box: [{ id: 'o', dex: 95, level: 50 }], team: [], pokedex: [], areaProgress: {} },
+        },
+      }),
+    ])
+    expect((await setTeam(U.brock, KEY, 'kanto', ['w']))[0]!.t).toEqual([{ dex: 9, level: 50, shiny: false }])
+    const row = await db.query<{ region: string }>(
+      'select region from raid_progress_teams where user_id = $1 and raid_key = $2',
+      [U.brock, KEY],
+    )
+    expect(row.rows).toEqual([{ region: 'halloween-26' }])
+    // Kanto's Box, parked while Brock plays the world, is not this raid's.
+    await expect(setTeam(U.brock, KEY, 'halloween-26', ['o'])).rejects.toThrow(/events_not_eligible/)
+    // And a Kanto raid takes Kanto's, parked or not.
+    expect((await setTeam(U.brock, ARTICUNO, 'halloween-26', ['o']))[0]!.t).toEqual([
+      { dex: 95, level: 50, shiny: false },
+    ])
+    // Brock leaves no team on Articuno for the tests below: only Misty helps there.
+    await db.query('delete from raid_progress_teams where user_id = $1 and raid_key = $2', [
+      U.brock,
+      ARTICUNO,
+    ])
   })
 })
 

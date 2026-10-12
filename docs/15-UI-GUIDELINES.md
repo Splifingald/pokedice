@@ -306,8 +306,8 @@ Players shouldn't have to make many requests:
   Pokédex. The side nav (desktop) has the same entries with Home first. A tab's hit area is the whole column, at
   least 60 px tall, even where the drawing is smaller.
 - **Region cards** (Areas sheet → regions): each region's own picture (`public/region-art/<id>.png`, from the Visual
-  Lab's region prompts; its first area's strip until it has one), name, counts and GO. A tap moves there and closes
-  the sheet.
+  Lab's region prompts; its first area's strip until it has one), name, counts and GO. A tap moves there and shows
+  its areas in the same sheet, from the top (the region you're in just goes back to its areas).
 - **Area screen**: its title opens the area's details (the same sheet as Home's plate, without the travel footer).
   Under the details' name: the levels, the rounds done over the rounds that clear the area ("3/5 rounds"; more can be
   played once it's cleared, "7/5") or "Secret area", and where it stands.
@@ -395,6 +395,12 @@ in view) and the battle history sits beside it from 1024 px.
   become a list right under the stage: each Pokémon that can go out with its level, HP, types and dice, then Forfeit.
 - **The Bag** is a `Sheet`: every item usable in battle with what it does and how many you have; one that can't help
   anyone is greyed. One item a turn, and it doesn't end the turn.
+- **Raids** (`src/screens/events/RaidView.tsx`) keep the battle's layout and its 360×640 fit. Their bottom row: the
+  Bag, **your raid team** as compact pips (`TeamPips compact`, 44 px) — tap one on your turn to switch, which costs the
+  turn as in a battle (the dialog lists who can go in) — then the **speed button** and **Give up** (a flag, its name in
+  its label). The speed button plays the ally sides' and the summons' turns at ×1.5 (`RAID_FAST_SPEED`): their
+  delays, scenes (`Scene.speed`), HP bars and dice; the raid Pokémon's turns and yours never change. It shows the
+  speed those turns play at (×1 / ×1.5), so its state is a word too, and the setting is kept (`settings.raidFast`).
 - **The catch happens on the stage**: the worn-out foe stays on its platform, greyed; the panel shows a radio group
   of balls (each with its chance from `catchChance`, how many you have, "not needed" when a weaker one is already
   certain), the catch math (`d6 + bonus ≥ need`), and one throw. The catch timeline plays; the die and the
@@ -425,8 +431,9 @@ One Day Care for every region (docs/15-DAYCARE-BREEDING.md). The page (`src/scre
 - **Under the yard, one of two:** the gold **Egg card** while one waits (the Egg shaking, who left it or "A gift for
   your first visit", Hatch it), or the **Egg-now bar**: "Next Egg check", the time left in large type, how many pairs
   could leave one, and the gold EGG NOW with the coin and its price under it (at most 55 % of the row: the countdown
-  stays on one line and the button's label shrinks first). Disabled without a pair; short of ₽ it stays
-  focusable, the price turns red and a tap says what's missing.
+  stays on one line and the button's label shrinks first). Without a pair no clock runs: "On hold" takes the
+  countdown's place and the button is disabled. Short of ₽ it stays focusable, the price turns red and a tap says
+  what's missing.
 - **Slots are cards in two columns** (`SlotCard`): a 4 px band in the slot's colour (pink `#ff5a7a` for your first,
   blue `#5b8def` for your second, grey for a friend's), the head (that colour's heart and "Yours", or the friend's
   trainer head and "Lea's"; a green tag with the levels gained here or New), the animated sprite on a pale tile, the
@@ -437,8 +444,9 @@ One Day Care for every region (docs/15-DAYCARE-BREEDING.md). The page (`src/scre
   minute). Signed out, the friend list's connect prompt takes their place; without the online service, or on a
   database without migration 0034, they are greyed and say why.
 - **Hearts mean "can make an Egg with it"**, always next to a name: a heart is never the only sign.
-- **Egg checks** list the rule, the two clocks (Egg groups, Ditto) with their next time, and every pair with a tag:
-  the shared group and its pace ("Field · every 12 h"), or Ditto's slower pace in purple.
+- **Egg checks** list the rule, the two clocks (Egg groups, Ditto) with their next time ("waiting for a pair" for a
+  clock with none), and every pair with a tag: the shared group and its pace ("Field · every 12 h"), or Ditto's slower
+  pace in purple.
 - **Pickers** (the shared `Sheet`): Leave which Pokémon? lists every region's Box (the region after the level once
   several are played) by level, lowest or highest first, with a search and, once someone is here, Compatible only;
   the team has the TEAM tag (the last of a region's team greyed with the reason), each row its Egg groups and a pink
@@ -446,7 +454,8 @@ One Day Care for every region (docs/15-DAYCARE-BREEDING.md). The page (`src/scre
   Pokémon) and a Compatible only toggle, grouped by friend, the best matches first.
 - **The Home widget** is the same size in every state: the Day Care's banner (a fixed-shape strip of its yard's
   picture), your two standing on it as icons as tall as the banner (no names), the levels they gained there under each
-  (+3 Lv, MAX at the level cap), the gauge to the next Egg check and its time. With an Egg waiting it turns gold (`panel-gold`) with an Egg! tag and the Egg shaking on the banner, and a tap
+  (+3 Lv, MAX at the level cap), the gauge to the next Egg check and its time (no gauge and "Waiting for a pair" while
+  nobody here can pair). With an Egg waiting it turns gold (`panel-gold`) with an Egg! tag and the Egg shaking on the banner, and a tap
   opens the page straight into the hatching. Locked, the banner is greyed with a lock, and it says how many species are
   caught across every region.
 - **Hatching** is full screen (`useHoldFullscreen`): the hatching timeline (with `shiny`, two rings of stars and a
@@ -540,3 +549,45 @@ switched it on (Off by default; Off / On for admin / On for everyone, like the e
   resting and until when.
 - **Friends** are the same in both worlds; in Extreme, a friend without an Extreme save is listed greyed with "Not in
   Extreme mode" and the skull, and doesn't open.
+
+## 20. Small worlds
+
+A time-limited region of its own, built in the admin (docs/21-SMALL-WORLDS-PLAN.md), where a shiny mythical is won. Its
+pieces are in `src/screens/events/world.tsx` (the lab in `worldPick.tsx`, styles in `src/styles/world.css`), every state
+on `/kitchen-sink` (`WorldBits`). Every rule and number comes from `engine/worlds.ts`; the clocks read the server's time.
+
+- **Its colours**: the admin's three (main, accent, ground) as `--w-main`, `--w-accent`, `--w-ground` (`worldVars`), with
+  the ink that reads on each (`textOn`: navy on a light one, white on a dark one). A bad value falls back to Mirage
+  Island's purple, pink and lilac. They tint the world's pieces only: the CTA stays red, the money gold, the HP green.
+- **WORLD** (`WorldTag`, in the main colour) marks everything of a world; **SHINY MEW** (gold, with the sparkle) is what
+  it's for. The mythical is a silhouette glowing in the accent until it's caught, then its shiny colours (`MythicalArt`).
+- **Outside, Home's square** (`WorldSquare`) is first among the event squares, on the Live square's frame: the world's
+  picture, WORLD and SHINY MEW, the silhouette, the name, the gauge draining and "Areas 3/8 · Ends in 2d 4h" (red in
+  the last day). The second line says the partner once the player has been in. A tap goes in (the lab first).
+- **The pop-up** (`WorldPopup`): once, between fights, after Prof. Oak's tutorials and the other one-time pop-ups and
+  before the live event's (never on the Poké Mart). The banner with the silhouette, the time left and until when, the
+  rules (`WorldRules`: XP ×, dice by level, each booster, the shiny mythical at the end), Later and Enter.
+- **The partner pick** is the lab (§18) in the world's colours (`PartnerMoment` `theme`): the drawn lab in them, the
+  picture under a veil of the main colour, the world's name on the ribbon.
+- **Inside**, the page wears the world's ground (`.in-world`, faint in dark mode) and a **strip** sits under the top bar
+  (`WorldStrip`): its picture, WORLD, its name, the time left (red in the last day) and **Back to Kanto** (the region the
+  player came from). It is Home's only way out, and the one way back while the world's content is still on its way
+  (`WorldWaiting`). Home shows no region offer and no region switcher; the Areas sheet has no Regions view.
+- **Home's squares inside** (`WorldWidgets`), and nothing else: the mythical (its silhouette on the world's ground,
+  Lv. · name, where it is: "In Dream Peak", "Waiting: fight it!", "In your Kanto Box", "Waits for Johto"; a tap travels
+  to its area once open) and the world's Mart (three of its items, the world's own ₽).
+- **An area waiting for its date** is locked like any other, with "Opens {date}" (the local date and time, `dayTime`).
+- **The Poké Mart inside is the World Mart** (`WorldShop`): the world's picture and time left over the admin's list,
+  each row with its limit ("8 of 10 left", Sold out); buying only, no Sell tab.
+- **Upgrades inside** explain the dice instead of selling them (`WorldUpgrades`): "Dice follow the level here", the
+  table of levels to dice levels, the team's own lines ("Lv.24 → dice level 2").
+- **In battle**, each plate carries its Pokémon's **dice level** (`DiceLevelTag`, "Dice level 2: Lv.24 ÷ 10" for screen
+  readers), and a **booster** shows as its own chip, the type's badge and "×1.5" (`BoosterChip`), beside the damage in
+  the readout and as its own factor in the damage recap: never hidden in the type's multiplier, never in
+  "super effective".
+- **The mythical caught**: its own line on the result card (`WorldMythicalCard`, gold with rays): "The shiny Mew is
+  yours!" and where it went ("in your Kanto Box now, to keep", or that it waits for its region).
+- **The main game's pages inside** (the events, the Day Care, Versus, by a link or a reload) keep their title and show
+  why they wait (`WorldAwayPage`), with Back to Kanto.
+- **Closing**: the world gone grey (`WorldByePopup`), once, to whoever played it or saw it open: the mythical kept (or
+  "got away"), and that the partner, the world's Pokémon, items and ₽ closed with it.

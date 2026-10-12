@@ -700,6 +700,55 @@ export interface GameConfig {
   extreme: ExtremeConfig
   /** Live events (docs/20): their switch, and the admin's list, past, running and to come; one runs at a time. */
   liveEvents: { access: EventAccess; list: LiveEvent[] }
+  /** Small worlds (docs/21): their switch, and the admin's list, past, running and to come; one runs at a time. */
+  smallWorlds: { access: EventAccess; list: SmallWorld[] }
+}
+
+/** One booster of a small world: every hit of this type, both sides', × `multiplier`. */
+export interface WorldBooster {
+  type: PokeType
+  multiplier: number
+}
+
+/** One row of a small world's Mart: its price in the world's ₽, how many each player may buy (null = no limit). */
+export interface WorldShopItem {
+  key: string
+  price: number
+  limit: number | null
+}
+
+/**
+ * A small world (docs/21): a time-limited, themed region of its own, built in the admin, where a shiny mythical is won.
+ * Its region row (Config → Regions) holds its areas and trainers, which point at it like any region's; the rest of what
+ * makes it a world is here. Between `start` and `end` (ISO, UTC, server time) it can be entered; when it ends, all of it
+ * is gone but the mythical.
+ */
+export interface SmallWorld {
+  /** Stable: a save keeps the world it holds by it. */
+  id: string
+  /** Its region: a region row whose dexRange overlaps no real region. */
+  regionId: RegionId
+  start: string
+  end: string
+  /** A custom title per language (others fall back to English); empty = the region's name. */
+  title: Partial<Record<string, string>>
+  /** Its picture on Home, in the pop-ups and over its Mart: an area picture's key or a path. */
+  banner: string
+  /** The colours Home wears inside it: the main colour, an accent, the ground's tint (CSS colours). */
+  theme: { main: string; accent: string; ground: string }
+  /** Shown (and open) from this many badges, every region's counted. */
+  minBadges: number
+  /** The three partners offered for the fresh start (at the region's starter level). */
+  starters: number[]
+  /** × every XP earned in the world. */
+  xpMultiplier: number
+  boosters: WorldBooster[]
+  /** What its Mart sells, and nothing else. */
+  shop: WorldShopItem[]
+  /** The shiny mythical: the boss of `areaId` (an area of the world), at `level`. */
+  mythical: { dex: number; level: number; areaId: string }
+  /** Areas that open at a date-time (ISO, UTC) as well as when the one before is cleared. */
+  opens: Record<string, string>
 }
 
 /**
@@ -833,6 +882,8 @@ export interface SaveData {
     animations?: 'full' | 'short'
     multiExp: boolean
     autoMode?: boolean
+    /** Raids: the ally sides' and the summons' turns at 1.5× speed. */
+    raidFast?: boolean
     lang?: Lang
     theme?: 'light' | 'dark' | 'auto'
   }
@@ -923,6 +974,41 @@ export interface EventsSave {
   liveSeen?: string[]
   /** Special Shop purchases, per live event id then item key: what counts against each item's limit. */
   liveBought?: Record<string, Record<string, number>>
+  /** The small world this save holds (its block is the live region or a parked one), or the one that just closed. */
+  world?: WorldSave
+  /** Small worlds whose opening pop-up has been shown (ids). */
+  worldSeen?: string[]
+  /** Small worlds whose closing pop-up has been shown (ids). */
+  worldBye?: string[]
+  /** Shiny mythicals won in a small world, waiting for their home region to be started. */
+  worldPending?: WorldCatch[]
+}
+
+/** The small world a save holds: which, where it was entered from, and what happened there. */
+export interface WorldSave {
+  /** The world (SmallWorld.id). */
+  id: string
+  /** Its region: the block of that id is the world's Box, bag, ₽ and areas. */
+  regionId: RegionId
+  /** The region to go back to. */
+  from: RegionId
+  /** The partner picked for the fresh start. */
+  partner: number
+  /** Its shiny mythical has been caught (it left the world at once). */
+  caught?: boolean
+  /** Its Mart's purchases, item key → how many (each row's limit counts them). */
+  bought?: Record<string, number>
+  /** The world has closed: its block is gone; this stays until its closing pop-up has been shown. */
+  closed?: boolean
+}
+
+/** A shiny mythical won in a small world, waiting for its home region to be started. */
+export interface WorldCatch {
+  dex: number
+  level: number
+  shiny: boolean
+  /** The world it was won in. */
+  worldId: string
 }
 
 /** A raid catch waiting for its area: it joins that area's region's Box once the area is completed. */

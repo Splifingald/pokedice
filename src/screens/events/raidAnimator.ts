@@ -1,7 +1,7 @@
 // Plays a raid's log one entry at a time, like the battle animator: every duel entry is told exactly as in a battle
 // (describe), with the pair in front standing in for the battle's two Pokémon, and the raid's own moments added — the
 // pair stepping up, a bar breaking, a summon arriving, a side sending its next Pokémon or running out, the summons
-// fleeing. The UI never recomputes a rule.
+// fleeing. The ally sides' and the summons' turns can play faster (the speed button). The UI never recomputes a rule.
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { BOSS_UID, type BattleState, type Battler, type LogEntry, type RaidLogEntry, type RaidSide } from '@/engine'
 import { sfx } from '@/audio/sfx'
@@ -25,6 +25,8 @@ export interface RaidFx extends Fx {
   fled: { id: number; uids: string[] } | null
   /** Every Pokémon the log has met, summons gone from the field included. */
   known: Record<string, Battler>
+  /** The entry playing belongs to an ally side's or a summon's turn: the ones the speed button plays faster. */
+  fast: boolean
 }
 
 let seq = 0
@@ -71,6 +73,7 @@ function initFx(run: RaidRun): RaidFx {
     arrived: null,
     fled: null,
     known,
+    fast: false,
   }
 }
 
@@ -93,10 +96,23 @@ const foeOf = (run: RaidRun, f: RaidFx, uid: string) => battlerOf(run, f, uid) ?
 /** The side a Pokémon fights for. */
 export const sideOfUid = (sides: readonly RaidSide[], uid: string) => sides.findIndex((s) => s.mons.some((m) => m.uid === uid))
 
+/**
+ * Whether an entry belongs to a turn the speed button plays faster: an ally side's or a summon's, from the pair that
+ * steps to the front until the next one. Never the raid Pokémon's own (its summoning comes before it steps up) or
+ * yours, nor the opening and the end.
+ */
+export function fastTurn(e: RaidLogEntry, sides: readonly RaidSide[], was: boolean): boolean {
+  if (e.kind === 'raid_front') return e.actor === 'ally' ? sideOfUid(sides, e.ally) > 0 : e.foe !== BOSS_UID
+  if (e.kind === 'raid_start' || e.kind === 'raid_summon' || e.kind === 'raid_flee' || e.kind === 'raid_end')
+    return false
+  return was
+}
+
 function describeRaid(e: RaidLogEntry, run: RaidRun, f: RaidFx, ctx: AnimatorContext): Step {
   const sides = run.state.sides
   const nameOf = (uid: string) => battlerOf(run, f, uid)?.name ?? t('ui.common.unknown')
   const boss = run.state.boss.name
+  const raid = (apply: (x: RaidFx) => RaidFx) => apply as unknown as Step['apply']
   if (!isRaidEntry(e)) {
     // A side other than yours plays: "Ace Trainer Kai's Snorlax attacks!"
     if (e.kind === 'turn' && e.side === 'player' && sideOfUid(sides, e.uid) > 0) {
@@ -116,9 +132,22 @@ function describeRaid(e: RaidLogEntry, run: RaidRun, f: RaidFx, ctx: AnimatorCon
           tray: null,
         }),
       }
+    // A side swaps its Pokémon on its turn (you, or an ally whose Pokémon can't touch its foe): that side's Pokémon
+    // out changes, and an ally's trainer is named.
+    if (e.kind === 'switch') {
+      const i = sideOfUid(sides, e.uid)
+      const step = describe(e, frontState(run, f), ctx)
+      return {
+        ...step,
+        apply: raid((x) => ({
+          ...(step.apply(x) as RaidFx),
+          ...(i > 0 && { message: t('ui.raid.log.next', { owner: sides[i]!.owner, name: nameOf(e.uid) }) }),
+          sideActive: x.sideActive.map((u, k) => (k === i ? e.uid : u)),
+        })),
+      }
+    }
     return describe(e, frontState(run, f), ctx)
   }
-  const raid = (apply: (x: RaidFx) => RaidFx) => apply as unknown as Step['apply']
   switch (e.kind) {
     case 'raid_start':
       return {
@@ -221,6 +250,8 @@ export function useRaidAnimator(
   pace = 1,
   /** The opening is playing: nothing moves until it's done. */
   hold = false,
+  /** The ally sides' and the summons' turns play this many times faster (the speed button); read as each entry starts. */
+  speedUp = 1,
 ): { fx: RaidFx; ready: boolean; sceneContact: () => void; sceneDone: () => void } {
   const [fx, setFx] = useState(() => initFx(run))
   const ctxRef = useRef(ctx)
@@ -229,6 +260,8 @@ export function useRaidAnimator(
   fxRef.current = fx
   const runRef = useRef(run)
   runRef.current = run
+  const speedRef = useRef(speedUp)
+  speedRef.current = speedUp
   const landing = useRef<((f: Fx, staged: boolean) => Fx) | null>(null)
   const pending = fx.cursor < run.log.length
 
@@ -237,10 +270,14 @@ export function useRaidAnimator(
     const cursor = fx.cursor
     const entry = runRef.current.log[cursor]!
     const step = describeRaid(entry, runRef.current, fxRef.current, ctxRef.current)
+    const fast = fastTurn(entry, runRef.current.state.sides, fxRef.current.fast)
+    const k = fast ? speedRef.current : 1
     const asRaid = (f: Fx) => f as RaidFx
     if (step.scene && !instant) {
       landing.current = step.land ?? null
-      setFx((f) => asRaid({ ...step.apply(f), scene: { ...step.scene!, id: nextId(), cursor } }))
+      setFx((f) =>
+        asRaid({ ...step.apply(f), fast, scene: { ...step.scene!, id: nextId(), cursor, speed: k } } as Fx),
+      )
       step.effect?.()
       const timer = setTimeout(
         () =>
@@ -256,13 +293,13 @@ export function useRaidAnimator(
     }
     setFx((f) => {
       const applied = step.apply(f)
-      return asRaid(step.land ? step.land(applied, false) : applied)
+      return { ...asRaid(step.land ? step.land(applied, false) : applied), fast }
     })
     if (step.sound) sfx(step.sound)
     step.effect?.()
     const timer = setTimeout(
       () => setFx((f) => (f.cursor === cursor ? { ...f, cursor: cursor + 1 } : f)),
-      instant ? 0 : step.delay * pace,
+      instant ? 0 : (step.delay * pace) / k,
     )
     return () => clearTimeout(timer)
     // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -33,20 +33,30 @@ export async function fetchAllRows(client: SupabaseClient): Promise<TableRows> {
  * and it looks playable; any failure (offline, tables missing, RLS) quietly returns null.
  */
 export async function fetchContentUpdate(currentVersion: number): Promise<BundleRaw | null> {
+  return (await checkContentVersion(currentVersion))?.bundle ?? null
+}
+
+/**
+ * The same check, saying whether it got an answer: `{ bundle: null }` when the content in memory is the latest,
+ * `{ bundle }` when a newer one was fetched, null when it couldn't tell (offline, an error, an unplayable bundle). Only
+ * an answer lets the game act on what the content *doesn't* hold (a small world the admin deleted, docs/21).
+ */
+export async function checkContentVersion(currentVersion: number): Promise<{ bundle: BundleRaw | null } | null> {
   try {
     const client = await getSupabase()
     if (!client) return null
     const { data, error } = await client.from('game_config').select('value').eq('key', 'configVersion').maybeSingle()
     if (error || !data) return null
     const remoteVersion = Number((data as { value: unknown }).value)
-    if (!Number.isFinite(remoteVersion) || remoteVersion === currentVersion) return null
+    if (!Number.isFinite(remoteVersion)) return null
+    if (remoteVersion === currentVersion) return { bundle: null }
     // Downloaded on an earlier visit: no need to read every table again.
     const cached = await readCachedContent(remoteVersion)
-    if (cached && isPlayableBundle(cached)) return cached
+    if (cached && isPlayableBundle(cached)) return { bundle: cached }
     const bundle = rowsToBundle(await fetchAllRows(client))
     if (!isPlayableBundle(bundle)) return null
     void writeCachedContent(remoteVersion, bundle)
-    return bundle
+    return { bundle }
   } catch (err) {
     console.info('[content] staying on the bundled content:', err)
     return null

@@ -35,7 +35,8 @@ test('Players per hour: counted on demand, one bar per hour', async ({ page }) =
   expect(calls.filter((c) => c.includes('/rpc/analytics_hourly'))).toHaveLength(0)
 
   await panel.getByRole('button', { name: 'Check' }).click()
-  await expect(panel.getByText('412')).toBeVisible()
+  // Exactly: at some hours the table's labels and counts run together into "…412…" too.
+  await expect(panel.getByText('412', { exact: true })).toBeVisible()
   expect(calls.filter((c) => c.includes('/rpc/analytics_hourly'))).toHaveLength(1)
   await expect(panel.getByText(/^Peak/)).toContainText('121')
   await expect(panel.getByText(/^This hour so far/)).toContainText('48')

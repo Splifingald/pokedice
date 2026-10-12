@@ -46,6 +46,7 @@ import { RulesBits } from './kitchen/RulesBits'
 import { ExtremeBits } from './kitchen/ExtremeBits'
 import { PartnerBits } from './kitchen/PartnerBits'
 import { RaidBits } from './kitchen/RaidBits'
+import { WorldBits } from './kitchen/WorldBits'
 import { BadgeIcon, CrownIcon } from '@/components/BadgeIcon'
 import { BoardRow } from '@/components/BoardRow'
 
@@ -551,7 +552,7 @@ export function KitchenSink() {
         </ol>
       </Section>
 
-      <Section title="Battle: stage, plates, tray, readout, team pips, Bag, catch">
+      <Section title="Battle: stage, plates, tray, readout, team pips (and the raid's compact ones, speed button), Bag, catch">
         <BattleBits />
       </Section>
 
@@ -573,6 +574,10 @@ export function KitchenSink() {
 
       <Section title="Raids: the NPC partners pop-up (each state), a legendary raid's card open and caught">
         <RaidBits />
+      </Section>
+
+      <Section title="Small worlds: square, pop-up, partner pick, strip, squares inside, boosters, dice level, mythical card, closing, away page">
+        <WorldBits />
       </Section>
 
       <Section title="StatusIcons · PixelIcon">

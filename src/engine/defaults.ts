@@ -262,4 +262,6 @@ export const DEFAULT_CONFIG: GameConfig = {
   rebattleLineups: {},
   // Off until the admin switches it on (for the admin alone, or everyone).
   liveEvents: { access: 'off', list: [] },
+  // Off until the admin switches it on (for the admin alone, or everyone).
+  smallWorlds: { access: 'off', list: [] },
 }

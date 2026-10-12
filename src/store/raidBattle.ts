@@ -12,9 +12,11 @@ import {
   countRaidTry,
   createRaid,
   createRng,
+  inWorldRegion,
   npcSideSeed,
   npcTeam,
   progressRaidOf,
+  progressRaidReachable,
   progressRaidShiny,
   progressRaidState,
   progressRaidTeam,
@@ -259,7 +261,8 @@ function startFight(source: RaidSource, raid: TodayRaid, team: RaidMon[], friend
 export function startRaid(npcs: RaidNpcOption[] = [], friends: RaidFriend[] = groupOf('daily', useRaidGroup.getState())): boolean {
   const { save, data } = useGame.getState()
   const raid = liveRaid()
-  if (!save || !raid) return false
+  // Inside a small world no event reaches (docs/21).
+  if (!save || !raid || inWorldRegion(save, data)) return false
   const team = raidTeam(save, data)
   if (!team.length) return false
   mutateSave((s) => countRaidTry(s, raid.day))
@@ -275,7 +278,7 @@ export function startRaid(npcs: RaidNpcOption[] = [], friends: RaidFriend[] = gr
 export function startProgressRaid(key: string, npcs: RaidNpcOption[] = [], friends: RaidFriend[] = groupOf(key, useRaidGroup.getState())): boolean {
   const { save, data } = useGame.getState()
   const raid = progressRaidOf(data, key)
-  if (!save || !raid || progressRaidState(save, data, raid) !== 'open') return false
+  if (!save || !raid || !progressRaidReachable(save, data, raid) || progressRaidState(save, data, raid) !== 'open') return false
   const team = progressRaidTeam(save, data, raid)
   if (!team.length) return false
   const ref: TodayRaid = { day: '', dex: raid.dex, shiny: progressRaidShiny(data, raid), areaId: raid.areaId, caught: false, tries: 0 }

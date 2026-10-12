@@ -1,7 +1,7 @@
 // Breeding at the Day Care (docs/15): who can make an Egg with whom (the real Egg groups, src/data/egg-groups.json),
 // the pairs the checks look at, and the two clocks that lay the Eggs: every `breedHours` for pairs that share an Egg
-// group, every `breedDittoHours` for pairs with a Ditto. One Egg waits at a time; Egg now buys the next check early.
-// The hatching itself is `hatchEgg` in daycare.ts.
+// group, every `breedDittoHours` for pairs with a Ditto. A clock only runs while it has a pair. One Egg waits at a
+// time; Egg now buys the next check early. The hatching itself is `hatchEgg` in daycare.ts.
 import { dayCareOf, isDayCareOpen } from './daycare'
 import type { Rng } from './rng'
 import type { DayCareGuest, DayCareResident, DayCareState, EggParent, GameData, SaveData } from './types'
@@ -105,68 +105,99 @@ export function clockMs(data: GameData, clock: Clock): number {
 
 const lastOf = (dc: DayCareState, clock: Clock) => dc[FIELD[clock]]
 
-/** When a clock checks next: a clock that never ran starts from now. */
-export const clockDueAt = (save: SaveData, data: GameData, clock: Clock, now: number) =>
-  (lastOf(dayCareOf(save), clock) ?? now) + clockMs(data, clock)
-
 const onClock = (p: CarePair, clock: Clock) => p.slow === (clock === 'ditto')
 
-/** The clock the next Egg can come from: the sooner of those with pairs; with no pairs, the Egg-group clock. */
-export function nextClock(save: SaveData, data: GameData, now: number): { clock: Clock; at: number } {
+/** The clocks that have a pair: the only ones that run. */
+const runningClocks = (save: SaveData, data: GameData): Clock[] => {
   const ps = pairs(save, data)
-  const live = CLOCKS.filter((c) => ps.some((p) => onClock(p, c)))
-  return (live.length ? live : (['breed'] as const))
-    .map((clock) => ({ clock, at: clockDueAt(save, data, clock, now) }))
-    .sort((x, y) => x.at - y.at)[0]!
-}
-
-/** When the next check that could leave an Egg runs (the widget and the Egg-now bar count down to it). */
-export const nextCheckAt = (save: SaveData, data: GameData, now: number) => nextClock(save, data, now).at
-
-/** How far that clock has run since its last check, 0 to 1: Home's gauge to the next Egg check. */
-export function nextCheckProgress(save: SaveData, data: GameData, now: number): { at: number; done: number } {
-  const { clock, at } = nextClock(save, data, now)
-  const step = clockMs(data, clock)
-  return { at, done: Math.min(1, Math.max(0, (now - (at - step)) / step)) }
+  return CLOCKS.filter((c) => ps.some((p) => onClock(p, c)))
 }
 
 /**
- * Runs both clocks up to `now`. Missed checks collapse into one (one Egg waits at a time anyway): a clock that is due
- * moves on by whole intervals, and if no Egg waits and it has pairs, a random pair of its own leaves one. The gift
- * (the free first Egg) waits as soon as the Day Care is open. Idempotent: twice at the same `now` changes nothing,
- * and the save comes back as the same object when nothing happened.
+ * A clock runs only while it has a pair: it starts the moment two Pokémon here can make an Egg on it, and when the
+ * last of its pairs leaves it stops and forgets how far it had got, so the next pair waits a whole interval again.
+ * Nothing is checked while nobody here can pair. The store runs this on every save it takes in (a Pokémon left or
+ * taken back, a friend's invited or gone, an Egg hatched), so a clock starts and stops at the change itself.
+ * The same object when nothing changes.
+ */
+export function syncEggClocks(save: SaveData, data: GameData, now: number): SaveData {
+  const dc = dayCareOf(save)
+  const running = runningClocks(save, data)
+  let next = dc
+  for (const clock of CLOCKS) {
+    const on = running.includes(clock)
+    const last = lastOf(dc, clock)
+    if (on && last == null) next = { ...next, [FIELD[clock]]: now }
+    if (!on && last != null) {
+      const { [FIELD[clock]]: _stopped, ...rest } = next
+      next = rest
+    }
+  }
+  return next === dc ? save : { ...save, dayCare: next }
+}
+
+/** When a clock checks next; null while it has no pair (it isn't running). One with a pair that never ran starts now. */
+export function clockDueAt(save: SaveData, data: GameData, clock: Clock, now: number): number | null {
+  if (!runningClocks(save, data).includes(clock)) return null
+  return (lastOf(dayCareOf(save), clock) ?? now) + clockMs(data, clock)
+}
+
+/** The clock the next Egg can come from: the sooner of those with pairs. Null with no pair: nothing is checked. */
+export function nextClock(save: SaveData, data: GameData, now: number): { clock: Clock; at: number } | null {
+  return (
+    runningClocks(save, data)
+      .map((clock) => ({ clock, at: (lastOf(dayCareOf(save), clock) ?? now) + clockMs(data, clock) }))
+      .sort((x, y) => x.at - y.at)[0] ?? null
+  )
+}
+
+/** When the next check that could leave an Egg runs (the widget and the Egg-now bar count down to it); null with no pair. */
+export const nextCheckAt = (save: SaveData, data: GameData, now: number) => nextClock(save, data, now)?.at ?? null
+
+/** How far that clock has run since its last check, 0 to 1: Home's gauge to the next Egg check. Null with no pair. */
+export function nextCheckProgress(save: SaveData, data: GameData, now: number): { at: number; done: number } | null {
+  const next = nextClock(save, data, now)
+  if (!next) return null
+  const step = clockMs(data, next.clock)
+  return { at: next.at, done: Math.min(1, Math.max(0, (now - (next.at - step)) / step)) }
+}
+
+/**
+ * Runs the clocks that have pairs up to `now` (the others stop: `syncEggClocks`). Missed checks collapse into one (one
+ * Egg waits at a time anyway): a clock that is due moves on by whole intervals, and if no Egg waits, a random pair of
+ * its own leaves one. The gift (the free first Egg) waits as soon as the Day Care is open. Idempotent: twice at the
+ * same `now` changes nothing, and the save comes back as the same object when nothing happened.
  */
 export function processDayCare(save: SaveData, data: GameData, now: number, rng: Rng): { save: SaveData; laid?: true } {
   if (!isDayCareOpen(save, data)) return { save }
-  let dc = dayCareOf(save)
-  let changed = false
+  const synced = syncEggClocks(save, data, now)
+  let dc = dayCareOf(synced)
+  let changed = synced !== save
   let laid = false
   if (!dc.eggClaimed && !dc.egg) {
     dc = { ...dc, egg: { at: now, gift: true } }
     changed = true
   }
   const ps = pairs(save, data)
-  // The clock that was due first runs first: it is the one that would have found the pair.
-  const clocks = CLOCKS.map((clock) => ({ clock, last: lastOf(dc, clock) ?? now, step: clockMs(data, clock) })).sort(
-    (x, y) => x.last + x.step - (y.last + y.step),
-  )
+  // Only the running clocks (a stopped one has no last check), and the one that was due first runs first: it is the
+  // one that would have found the pair.
+  const clocks = CLOCKS.flatMap((clock) => {
+    const last = lastOf(dc, clock)
+    return last == null ? [] : [{ clock, last, step: clockMs(data, clock) }]
+  }).sort((x, y) => x.last + x.step - (y.last + y.step))
   for (const { clock, last, step } of clocks) {
     const due = Math.floor((now - last) / step)
-    const at = due >= 1 ? last + due * step : last
-    if (due >= 1 && !dc.egg) {
-      const mine = ps.filter((p) => onClock(p, clock))
-      if (mine.length) {
-        const p = rng.pick(mine)
-        dc = { ...dc, egg: { at, parents: [parentOf(p.a), parentOf(p.b)] } }
-        laid = true
-      }
+    if (due < 1) continue
+    const at = last + due * step
+    if (!dc.egg) {
+      const p = rng.pick(ps.filter((x) => onClock(x, clock)))
+      dc = { ...dc, egg: { at, parents: [parentOf(p.a), parentOf(p.b)] } }
+      laid = true
     }
-    if (lastOf(dc, clock) !== at) {
-      dc = { ...dc, [FIELD[clock]]: at }
-      changed = true
-    }
+    dc = { ...dc, [FIELD[clock]]: at }
+    changed = true
   }
-  if (!changed && !laid) return { save }
+  if (!changed) return { save }
   return laid ? { save: { ...save, dayCare: dc }, laid: true } : { save: { ...save, dayCare: dc } }
 }
 
@@ -190,7 +221,8 @@ export function rushEgg(
   if (!ps.length) return { refused: 'pair' }
   const price = Math.max(0, Math.round(data.config.dayCare.rushPrice))
   if (save.gold < price) return { refused: 'gold' }
-  const { clock } = nextClock(save, data, now)
+  // There is a pair, so a clock runs.
+  const { clock } = nextClock(save, data, now)!
   const p = rng.pick(ps.filter((x) => onClock(x, clock)))
   return {
     save: {

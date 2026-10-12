@@ -388,5 +388,8 @@ The day's raid is no longer picked per player: **one raid a UTC day, the same fo
   caught in its boss fight counts as its raid done, and a team can still be left on it for friends.
 - **Admin**: the Raid tick on an area's boss; Events → Raids → **Progression raids** (the team cap, each raid
   Pokémon's own numbers, by region).
-- Server: `supabase/migrations/0044_progress_raids.sql` (`pnpm progress-raids-sql`), tested in
-  `tests/progress-raids-sql.test.ts`; engine in `tests/engine/progress-raid.test.ts`.
+- **Small worlds**: a world's area bosses can be raids too, fought from inside that world only, with its Box; a real
+  region's raid isn't reachable from inside a world.
+- Server: `supabase/migrations/0044_progress_raids.sql` (`pnpm progress-raids-sql`) and `0045_progress_raids_worlds.sql`
+  (a raid's team from its area's region), tested in `tests/progress-raids-sql.test.ts`; engine in
+  `tests/engine/progress-raid.test.ts` and `tests/engine/small-worlds.test.ts`.

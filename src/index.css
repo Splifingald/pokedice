@@ -3,6 +3,7 @@
 @import './styles/rebattle.css';
 @import './styles/raid.css';
 @import './styles/live.css';
+@import './styles/world.css';
 
 /* Jersey 25: Daybreak's face for titles, names, buttons and most text. */
 @font-face {

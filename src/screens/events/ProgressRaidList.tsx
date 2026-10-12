@@ -5,6 +5,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   enabledRegions,
+  isWorldRegion,
   progressRaids,
   progressRaidState,
   progressRaidTeam,
@@ -31,7 +32,10 @@ export function ProgressRaidList() {
   const [region, setRegion] = useState<string>(live)
   if (!save) return null
   const regions = enabledRegions(data)
-    .filter((r) => regionStarted(save, r.id) && progressRaids(data, r.id).length > 0)
+    // A small world's raids are fought from inside it, not listed here.
+    .filter(
+      (r) => !isWorldRegion(data, r.id) && regionStarted(save, r.id) && progressRaids(data, r.id).length > 0,
+    )
     .sort((a, b) => (a.id === live ? -1 : b.id === live ? 1 : 0))
   if (!regions.length) return null
   const shown = regions.some((r) => r.id === region) ? region : regions[0]!.id

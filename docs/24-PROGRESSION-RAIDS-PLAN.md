@@ -23,6 +23,11 @@ new four comes after each try.
   pumped with made-up keys: at most one count per raid and world.
 - 0044 is also folded into `seed.sql`'s prelude (its transaction lines dropped), like 0039 and 0040.
 - The progression raid's result card has its own lines (no "midnight UTC"): `ui.raid.progress.result.*`.
+- **Small worlds** (docs/21, merged from `feature/version_2`; the user's rule): a world's area bosses can be raids too,
+  tied to that world. One is reachable only from inside it (`progressRaidReachable`), its team comes from the world's
+  Box and its catch stays in the world; a real region's raid isn't reachable from inside a world, and the Raids page's
+  list leaves worlds out. 0045 makes the server take a raid's Box from its area's region (a world's region id is the
+  admin's choice, which 0044's check refused).
 
 ## 1. Decisions (asked 2026-10-12)
 
@@ -220,4 +225,9 @@ Run `pnpm i18n:fonts` after editing the CJK columns.
 2. Run `supabase/migrations/0044_progress_raids.sql` (safe to run again). Raid Battles are on for everyone on live, so
    the progression raids open at once. Best not on a mythical's fixed date (01-01, 03-20, 04-01, 04-22, 06-08, 06-21,
    07-07, 07-14, 08-12, 10-31, 11-01, 12-25): that day's raid would turn shiny mid-day for whoever hasn't loaded it.
-3. Admin → Publish, so every client reloads the config.
+3. Run `supabase/migrations/0045_progress_raids_worlds.sql` (safe to run again).
+4. Admin → Publish, so every client reloads the config.
+
+0044 went live on 2026-10-12 before the client: until the client is deployed, the one out reads the mythicals' fixed
+dates as new raids and lays the calendar out differently from 2026-10-14 (10-12 and 10-13 are set by hand). Deploy
+before 2026-10-14 00:00 UTC; the new client lays it out as before.

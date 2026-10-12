@@ -1,5 +1,6 @@
-// Admin → Events (docs/18, docs/19, docs/20): sub-tabs. General: the special events' switches, Home order, unlock areas,
-// banner pictures and the rules their unlock pop-up lists (one game_config row, `events`); then one tab per event.
+// Admin → Events (docs/18, docs/19, docs/20, docs/21): sub-tabs. General: the special events' switches, Home order,
+// unlock areas, banner pictures and the rules their unlock pop-up lists (one game_config row, `events`); then one tab
+// per event.
 import { useEffect, useMemo, useRef } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import {
@@ -30,6 +31,7 @@ import { useAdminData } from '../store'
 import { AccessSwitch, Box, Field, NumInput, inputCls } from '../widgets'
 import { useConfigRow } from './ConfigSection'
 import { RaidsTab } from './events/RaidsTab'
+import { SmallWorldsTab } from './events/SmallWorldsTab'
 import { LiveEventsSection } from './LiveEventsSection'
 
 /** Pictures made for the events (public/backgrounds). */
@@ -361,6 +363,7 @@ const TABS = [
   { id: 'raids', label: 'Raids', icon: 'star' },
   { id: 'rebattle', label: 'Elite Rebattle', icon: 'trophy' },
   { id: 'live', label: 'Live events', icon: 'sparkle' },
+  { id: 'worlds', label: 'Small worlds', icon: 'map' },
 ] as const satisfies readonly { id: string; label: string; icon: IconName }[]
 type TabId = (typeof TABS)[number]['id']
 const ACCESS_SHORT: Record<EventAccess, string> = { off: 'Off', admin: 'Admin', all: 'On' }
@@ -372,10 +375,21 @@ const ACCESS_SHORT: Record<EventAccess, string> = { off: 'Off', admin: 'Admin', 
 export function EventsSection() {
   const [cfg, set] = useEventsConfig()
   const [live] = useConfigRow('liveEvents')
+  const [worlds] = useConfigRow('smallWorlds')
   const [params, setParams] = useSearchParams()
   const tab: TabId = TABS.some((t) => t.id === params.get('tab')) ? (params.get('tab') as TabId) : 'general'
   const access = (id: TabId): EventAccess | null =>
-    id === 'wheel' ? cfg.wheel.access : id === 'raids' ? cfg.raid.access : id === 'rebattle' ? cfg.rebattle.access : id === 'live' ? (live?.access ?? 'off') : null
+    id === 'wheel'
+      ? cfg.wheel.access
+      : id === 'raids'
+        ? cfg.raid.access
+        : id === 'rebattle'
+          ? cfg.rebattle.access
+          : id === 'live'
+            ? (live?.access ?? 'off')
+            : id === 'worlds'
+              ? (worlds?.access ?? 'off')
+              : null
   return (
     <div className="flex flex-col gap-4">
       <nav aria-label="Events" className="flex flex-wrap gap-1.5">
@@ -415,12 +429,14 @@ export function EventsSection() {
             <EventRow key={id} id={id} def={cfg[id]} set={(patch) => set({ [id]: { ...cfg[id], ...patch } })} />
           ))}
           <LiveSwitchRow />
+          <WorldsSwitchRow />
         </Box>
       )}
       {tab === 'wheel' && <WheelBox prizes={cfg.wheel.prizes} set={(prizes) => set({ wheel: { ...cfg.wheel, prizes } })} />}
       {tab === 'raids' && <RaidsTab raid={cfg.raid} set={(patch) => set({ raid: { ...cfg.raid, ...patch } })} />}
       {tab === 'rebattle' && <RebattleBox tiers={cfg.rebattle.tiers} set={(tiers) => set({ rebattle: { ...cfg.rebattle, tiers } })} />}
       {tab === 'live' && <LiveEventsSection />}
+      {tab === 'worlds' && <SmallWorldsTab />}
     </div>
   )
 }
@@ -433,6 +449,18 @@ function LiveSwitchRow() {
       <span className="text-xl">Live events</span>
       <AccessSwitch value={raw?.access ?? 'off'} onChange={(access) => setRaw({ list: raw?.list ?? [], access })} label="Live events: who sees them" />
       <span className="text-base text-muted">Shiny Parade, Special Shop, Cash Flow: scheduled on their tab.</span>
+    </div>
+  )
+}
+
+/** Small worlds' switch, beside the other events' (their list and editor are on their tab). */
+function WorldsSwitchRow() {
+  const [raw, setRaw] = useConfigRow('smallWorlds')
+  return (
+    <div className="flex flex-wrap items-center gap-2 border-t-2 border-line pt-3">
+      <span className="text-xl">Small worlds</span>
+      <AccessSwitch value={raw?.access ?? 'off'} onChange={(access) => setRaw({ list: raw?.list ?? [], access })} label="Small worlds: who sees them" />
+      <span className="text-base text-muted">A region of its own for a while, a shiny mythical at its end: scheduled on their tab. First on Home.</span>
     </div>
   )
 }

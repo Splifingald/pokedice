@@ -4,9 +4,9 @@
 // on it: friends bring it to their own raid of that Pokémon. The fight itself is the day's raid's (engine/raidBattle.ts).
 import { raidBosses, shinyLocked } from './encounters'
 import { areaProgressAnywhere } from './events'
-import { addToRegion, type RaidMon } from './raid'
+import { addRaidMon, type RaidMon } from './raid'
 import { raidRules, raidTeamCap } from './raidCalendar'
-import { regionOf, regionOfArea } from './regions'
+import { inWorldRegion, isWorldRegion, regionOf, regionOfArea } from './regions'
 import type { Area, BossDef, GameData, PokemonInstance, RegionId, SaveData } from './types'
 
 /** One progression raid: an area's raid boss. */
@@ -52,6 +52,14 @@ export function progressRaidOf(data: GameData, key: string): ProgressRaid | null
   const dex = Number(key.slice(at + 1))
   if (!area || !Number.isInteger(dex)) return null
   return progressRaidsIn(data, area).find((r) => r.dex === dex) ?? null
+}
+
+/**
+ * A raid is fought where it belongs: a small world's (docs/21) from inside that world only, tied to it like the rest of
+ * the world (its Box, its catch); a real region's from outside any world.
+ */
+export function progressRaidReachable(save: SaveData, data: GameData, raid: ProgressRaid): boolean {
+  return inWorldRegion(save, data) ? raid.region === regionOf(save) : !isWorldRegion(data, raid.region)
 }
 
 /** A region's Pokédex: the live one when it's the region being played, else its parked one. */
@@ -125,7 +133,7 @@ export function applyProgressRaidCatch(
 ): { save: SaveData; region: string; instId: string; live: boolean } {
   const done = [...new Set([...(save.events?.raidsDone ?? []), raid.key])]
   const events = { ...save.events, raidsDone: done, raidsWon: (save.events?.raidsWon ?? 0) + 1 }
-  const res = addToRegion(
+  const res = addRaidMon(
     { ...save, events },
     data,
     { dex: raid.dex, shiny: progressRaidShiny(data, raid), areaId: raid.areaId },

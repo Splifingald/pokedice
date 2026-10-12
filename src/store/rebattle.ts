@@ -6,6 +6,7 @@ import {
   applyRebattleLoss,
   currentTier,
   hasAbleTeam,
+  inWorldRegion,
   leagueArea,
   rebattleEncounter,
   regionOf,
@@ -23,7 +24,8 @@ export const useRebattleMedal = create<{ medal: { regionId: string; tier: number
 export function startRebattle(): boolean {
   const { data } = useGame.getState()
   let save = useGame.getState().save
-  if (!save) return false
+  // Inside a small world no event reaches (docs/21).
+  if (!save || inWorldRegion(save, data)) return false
   const regionId = regionOf(save)
   if (!hasAbleTeam(save)) {
     save = applyRebattleLoss(save, data, regionId)

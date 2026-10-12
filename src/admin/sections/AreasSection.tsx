@@ -1,8 +1,10 @@
 import { PixelIcon } from '@/components/icons'
 import { useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import type { Row } from '@/config/mapping'
 import {
   deckCounts,
+  isWorldRegion,
   lootCopies,
   trainerSpecialty,
   uniqueFindChance,
@@ -185,6 +187,16 @@ function AreaEditor({ area }: { area: Row }) {
           <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
             <Field label="Name" className="col-span-2">
               <TextInput value={s(area.name)} onChange={(v) => patch({ name: v })} />
+            </Field>
+            <Field label="Region" hint="Its chain; a small world's areas are its region's" className="col-span-2">
+              <select className={inputCls} value={s(area.region_id) || 'kanto'} onChange={(e) => patch({ region_id: e.target.value })}>
+                {data.regions.map((r) => (
+                  <option key={r.id} value={r.id}>
+                    {r.name}
+                    {isWorldRegion(data, r.id) ? ' (small world)' : ''}
+                  </option>
+                ))}
+              </select>
             </Field>
             <Field label="Rounds to clear" hint="full decks; empty = never clears">
               <NumInput nullable min={1} max={20} value={area.rounds_to_clear as number | null} onChange={(v) => patch({ rounds_to_clear: v })} />
@@ -535,12 +547,17 @@ function AreaEditor({ area }: { area: Row }) {
 
 export function AreasSection() {
   const areas = useAdmin((st) => st.rows.areas)
+  const regions = useAdmin((st) => st.rows.regions)
   const sorted = useMemo(() => [...areas].sort((a, b) => n(a.order_index) - n(b.order_index)), [areas])
-  const [selected, setSelected] = useState<string | null>(null)
+  // `?area=` opens that area (the Small worlds tab links to its areas this way).
+  const [params] = useSearchParams()
+  const [selected, setSelected] = useState<string | null>(params.get('area'))
   const [drag, setDrag] = useState<string | null>(null)
   const [q, setQ] = useState('')
+  const [region, setRegion] = useState(() => s(areas.find((a) => a.id === params.get('area'))?.region_id))
   const current = sorted.find((a) => a.id === selected) ?? sorted[0]
-  const shown = q.trim() ? sorted.filter((a) => s(a.name).toLowerCase().includes(q.trim().toLowerCase())) : sorted
+  const inRegion = region ? sorted.filter((a) => (s(a.region_id) || 'kanto') === region) : sorted
+  const shown = q.trim() ? inRegion.filter((a) => s(a.name).toLowerCase().includes(q.trim().toLowerCase())) : inRegion
 
   const reorder = (fromId: string, toId: string) => {
     const ids = sorted.map((a) => s(a.id))
@@ -580,6 +597,16 @@ export function AreasSection() {
           Areas
         </h2>
         <input className={inputCls} placeholder="Filter areas…" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Filter areas" />
+        <select className={inputCls} value={region} onChange={(e) => setRegion(e.target.value)} aria-label="Areas of one region">
+          <option value="">Every region</option>
+          {[...regions]
+            .sort((a, b) => n(a.order_index) - n(b.order_index))
+            .map((r) => (
+              <option key={s(r.id)} value={s(r.id)}>
+                {s(r.name)}
+              </option>
+            ))}
+        </select>
         <p className="text-sm text-muted">The order is the Map order: drag, or use ▲▼.</p>
         <ol className="pixel-scroll flex min-h-0 flex-col gap-1 overflow-y-auto pr-1">
           {shown.map((a) => {
@@ -634,6 +661,7 @@ export function AreasSection() {
                 {
                   id,
                   order_index: sorted.length + 1,
+                  region_id: region || 'kanto',
                   name: 'New Area',
                   banner_url: null,
                   rounds_to_clear: 1,

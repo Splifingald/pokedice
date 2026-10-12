@@ -4,14 +4,15 @@
 import { areaProgressAnywhere } from './events'
 import { createInstance } from './progression'
 import { raidOfDay, raidRegion, raidRules, type RaidKindOf } from './raidCalendar'
-import { regionOf } from './regions'
+import { regionOf, worldRegionOf } from './regions'
 import type { GameData, PokemonInstance, RaidLock, SaveData, TodayRaid } from './types'
 
-/** Every Pokémon the player has, in any region (Box, team) or at the Day Care. */
-export function everyInstance(save: SaveData): PokemonInstance[] {
+/** Every Pokémon the player has, in any region (Box, team) or at the Day Care. A small world's stay in it. */
+function everyInstance(save: SaveData): PokemonInstance[] {
+  const world = worldRegionOf(save)
   return [
-    ...save.box,
-    ...Object.values(save.parked ?? {}).flatMap((b) => b?.box ?? []),
+    ...(regionOf(save) === world ? [] : save.box),
+    ...Object.entries(save.parked ?? {}).flatMap(([id, b]) => (id === world ? [] : (b?.box ?? []))),
     ...(save.dayCare?.residents.map((r) => r.inst) ?? []),
   ]
 }
@@ -71,11 +72,42 @@ export function countRaidTry(save: SaveData, day: string): SaveData {
 export const raidHomeRegion = (data: GameData, raid: Pick<TodayRaid, 'areaId'>): string => raidRegion(data, raid.areaId)
 
 /**
- * A raid Pokémon joins a region's Box as a new Pokémon, whatever copies you have: the live save's when it's the region
- * being played (the team takes it if there's room), else that region's parked Box and Pokédex. At the level it was
- * fought at (its own, Admin → Raids, or the default: the day's raid's or a progression raid's numbers).
+ * A Pokémon joins a region's Box as a new Pokémon, whatever copies you have: the live save's when it's the region
+ * being played (the team takes it if there's room), else that region's parked Box and Pokédex. Null when that region
+ * isn't started (neither live nor parked). A raid's catch and a small world's mythical both go home this way.
  */
-export function addToRegion(
+export function addToRegion(save: SaveData, data: GameData, region: string, inst: PokemonInstance): { save: SaveData; live: boolean } | null {
+  if (region === regionOf(save)) {
+    const joined = save.team.length < data.config.maxTeamSize
+    return {
+      save: {
+        ...save,
+        box: [...save.box, inst],
+        pokedex: save.pokedex.includes(inst.dex) ? save.pokedex : [...save.pokedex, inst.dex],
+        team: joined ? [...save.team, inst.id] : save.team,
+      },
+      live: true,
+    }
+  }
+  const block = save.parked?.[region]
+  if (!block) return null
+  return {
+    save: {
+      ...save,
+      parked: {
+        ...save.parked,
+        [region]: { ...block, box: [...block.box, inst], pokedex: block.pokedex.includes(inst.dex) ? block.pokedex : [...block.pokedex, inst.dex] },
+      },
+    },
+    live: false,
+  }
+}
+
+/**
+ * A raid Pokémon joins its region's Box (or, that region not started, the one being played), the day's raid's and a
+ * progression raid's (docs/24) alike.
+ */
+export function addRaidMon(
   save: SaveData,
   data: GameData,
   lock: Omit<RaidLock, 'day'>,
@@ -83,36 +115,12 @@ export function addToRegion(
   newId: () => string,
   kind: RaidKindOf = 'daily',
 ) {
+  // At the level it was fought at (its own, Admin → Raids, or the default: the day's raid's or a progression raid's).
   const inst = createInstance(lock.dex, raidRules(data, lock.dex, kind).level, data, newId(), now)
   if (lock.shiny) inst.shiny = true
   const home = raidRegion(data, lock.areaId)
-  const block = home === regionOf(save) ? null : save.parked?.[home]
-  if (!block) {
-    const joined = save.team.length < data.config.maxTeamSize
-    return {
-      save: {
-        ...save,
-        box: [...save.box, inst],
-        pokedex: save.pokedex.includes(lock.dex) ? save.pokedex : [...save.pokedex, lock.dex],
-        team: joined ? [...save.team, inst.id] : save.team,
-      },
-      region: regionOf(save),
-      instId: inst.id,
-      live: true,
-    }
-  }
-  return {
-    save: {
-      ...save,
-      parked: {
-        ...save.parked,
-        [home]: { ...block, box: [...block.box, inst], pokedex: block.pokedex.includes(lock.dex) ? block.pokedex : [...block.pokedex, lock.dex] },
-      },
-    },
-    region: home,
-    instId: inst.id,
-    live: false,
-  }
+  const res = addToRegion(save, data, home, inst) ?? addToRegion(save, data, regionOf(save), inst)!
+  return { save: res.save, region: res.live ? regionOf(save) : home, instId: inst.id, live: res.live }
 }
 
 /**
@@ -138,7 +146,7 @@ export function applyRaidCatch(
       locked: true,
     }
   }
-  const res = addToRegion({ ...save, events }, data, raid, now, newId)
+  const res = addRaidMon({ ...save, events }, data, raid, now, newId)
   return { ...res, locked: false }
 }
 
@@ -159,7 +167,7 @@ export function releaseRaidLocks(
       still.push(lock)
       continue
     }
-    const res = addToRegion(next, data, lock, now, newId)
+    const res = addRaidMon(next, data, lock, now, newId)
     next = res.save
     released.push({ ...lock, region: res.region })
   }

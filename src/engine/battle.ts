@@ -1,7 +1,7 @@
 // The battle reducer. The UI dispatches events and renders the returned log — it never recomputes rules.
 import { aiRerollMask } from './ai'
 import { getSpecies } from './data'
-import { attackMultiplier, attackType, computeDamage, type DamageResult, type UpgradeLevels } from './damage'
+import { attackerLevels, attackMultiplier, attackType, computeDamage, type DamageResult, type UpgradeLevels } from './damage'
 import { rerollMasked, rollAll, type RolledDie } from './dice'
 import { reviveHp } from './economy'
 import { choiceFormDie, choiceFormsOf, gmaxFormsOf, lowHpFormOf, megaDie, megaOptions, swapOneDie } from './forms'
@@ -621,7 +621,8 @@ export function confusionRecoil(maxHp: number, data: GameData): number {
 function resolveAttack(s: BattleState, side: Side, data: GameData, log: LogEntry[]) {
   const atk = side === 'player' ? activeBattler(s) : s.enemy
   const def = side === 'player' ? s.enemy : activeBattler(s)
-  const levels = side === 'player' ? s.playerLevels : s.enemyLevels
+  // In a small world each Pokémon hits at its own level's tracks (attackerLevels); elsewhere at its side's.
+  const levels = attackerLevels(side === 'player' ? s.playerLevels : s.enemyLevels, atk.level)
   const dice = s.dice
 
   const result = computeDamage(dice, atk.types, def.types, levels, data)
@@ -844,7 +845,7 @@ export function reduce(
             attackerDice: target.dice,
             attackerTypes: target.types,
             defenderTypes: en.types,
-            attackerLevels: s.playerLevels,
+            attackerLevels: attackerLevels(s.playerLevels, target.level),
           },
           data,
           rng,
@@ -863,7 +864,7 @@ export function reduce(
           dice: s.dice,
           attackerTypes: en.types,
           defenderTypes: target.types,
-          levels: s.enemyLevels,
+          levels: attackerLevels(s.enemyLevels, en.level),
           data,
           rng,
           targetHp: target.hp,

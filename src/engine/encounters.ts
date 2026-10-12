@@ -6,6 +6,7 @@ import { drawLoot } from './items'
 import { asSeenBy, gymsFor, type PlayerSide } from './rival'
 import type { Rng } from './rng'
 import { dealTrainerItems } from './trainerItems'
+import { isWorldMythical } from './worldList'
 import type {
   Area,
   AreaProgress,
@@ -113,7 +114,10 @@ function gymEncounter(area: Area, t: Trainer, data: GameData, side?: PlayerSide 
  */
 export const progressRaidsOn = (data: GameData): boolean => eventOn(data, 'raid')
 
-/** This boss is fought as a raid in its area once the area is completed, never as a boss. */
+/**
+ * This boss is fought as a raid in its area once the area is completed, never as a boss. A small world's too (docs/21):
+ * its raids are that world's, fought from inside it (`progressRaidReachable`).
+ */
 export const isRaidBoss = (data: GameData, b: BossDef): boolean => !!b.raid && progressRaidsOn(data)
 
 /** The bosses an area fights as bosses (its raids left out). */
@@ -150,10 +154,10 @@ export const shinyLocked = (data: GameData, dex: number): boolean => isLegendary
 /**
  * A boss's colours each time it shows up: always shiny when its data says so, else a fresh roll of the wild odds — so
  * declining the challenge, losing, or seeing it come back after the throw missed all roll again. Never for a
- * legendary or mythical (shinyLocked).
+ * legendary or mythical (shinyLocked), but for a small world's mythical in its own area: that one is always shiny.
  */
-const legendShiny = (b: BossDef, data: GameData, rng?: Rng): boolean =>
-  !shinyLocked(data, b.dex) && (!!b.shiny || (!!rng && rollShiny(data, rng)))
+const legendShiny = (b: BossDef, area: Area, data: GameData, rng?: Rng): boolean =>
+  shinyLocked(data, b.dex) ? !!b.shiny && isWorldMythical(data, area.id, b.dex) : !!b.shiny || (!!rng && rollShiny(data, rng))
 
 /**
  * A legendary beaten earlier that fled the catch. It keeps coming back — one card per encounter deck — until caught. A
@@ -391,7 +395,7 @@ export function challengeEncounter(
   const gym = dueGym(area, progress, data, side)
   if (gym) return gymEncounter(area, gym, data, side)
   const boss = dueBoss(area, progress, teamAvgLevel, data)
-  return boss ? { kind: 'boss', dex: boss.dex, level: boss.level, ...(legendShiny(boss, data, rng) && { shiny: true }) } : null
+  return boss ? { kind: 'boss', dex: boss.dex, level: boss.level, ...(legendShiny(boss, area, data, rng) && { shiny: true }) } : null
 }
 
 /** The next encounter alone, for callers that don't keep decks (each call deals from fresh ones). */
@@ -408,7 +412,7 @@ function findItem(ctx: EncounterContext, rng: Rng): { encounter: Encounter; loot
 
 function returningLegend(ctx: EncounterContext, rng: Rng): Encounter | null {
   const b = fledLegendary(ctx.area, ctx.progress, ctx.pokedex, ctx.data)
-  return b ? { kind: 'boss', dex: b.dex, level: b.level, returning: true, ...(legendShiny(b, ctx.data, rng) && { shiny: true }) } : null
+  return b ? { kind: 'boss', dex: b.dex, level: b.level, returning: true, ...(legendShiny(b, ctx.area, ctx.data, rng) && { shiny: true }) } : null
 }
 
 const cardEncounter = (card: 'wild' | 'trainer' | 'center' | 'casino', ctx: EncounterContext, rng: Rng): Encounter | null =>
@@ -509,7 +513,7 @@ function forcedEncounter(ctx: EncounterContext, kind: ForceKind, rng: Rng): Enco
       return { kind: 'casino' }
     case 'boss': {
       const b = fightBosses(ctx.area, ctx.data).find((x) => !ctx.progress.bossesDefeated.includes(x.dex))
-      return b ? { kind: 'boss', dex: b.dex, level: b.level, ...(legendShiny(b, ctx.data, rng) && { shiny: true }) } : returningLegend(ctx, rng)
+      return b ? { kind: 'boss', dex: b.dex, level: b.level, ...(legendShiny(b, ctx.area, ctx.data, rng) && { shiny: true }) } : returningLegend(ctx, rng)
     }
     default:
       return null

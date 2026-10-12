@@ -169,6 +169,26 @@ test('set your team: three picks in fight order, saved from the cloud save, and 
   await expect(page.getByRole('button', { name: 'SAVE TEAM' })).toBeDisabled()
 })
 
+test("Home's widget keeps your Versus team while the board can't be reached", async ({ page }) => {
+  await mockSupabase(page)
+  // Your row as the server gives it: auth.uid() is the signed-in user's id.
+  const board = [{ ...BOARD[0], user_id: '11111111-2222-4333-8444-555555555555' }, ...BOARD.slice(1)]
+  let down = false
+  await page.route('**/rest/v1/rpc/versus_board', (route) =>
+    down
+      ? route.fulfill({ status: 500, contentType: 'application/json', body: '{"message":"down"}' })
+      : route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(board) }),
+  )
+  await signedIn(page, readySave())
+  await page.goto('/home')
+  const mine = page.getByRole('button', { name: 'Versus: 1 attack wins, 4 defense wins. Fight' })
+  await expect(mine).toBeVisible()
+  down = true
+  await page.reload()
+  await expect(mine).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Versus is open: set your team' })).toHaveCount(0)
+})
+
 test("a team the server doesn't show back is not called saved", async ({ page }) => {
   await mockSupabase(page)
   await versusServer(page, { forgets: true })

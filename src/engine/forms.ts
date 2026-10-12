@@ -7,7 +7,7 @@
  * looks a Pokémon takes in a fight and loses when it ends: nothing about them is ever saved.
  */
 import type { EnemyPlan } from './battle'
-import { getRegion, regionOf } from './regions'
+import { getRegion, realRegions, regionOf } from './regions'
 import type { DieType, Evolution, GameData, PokeType, RegionId, SaveData, Species, TrainerRole } from './types'
 
 /** A form that only exists inside a battle (a Mega Evolution, a Gigantamax, Giratina's Origin Forme, Arceus's types). */
@@ -85,7 +85,8 @@ function reached(save: SaveData, data: GameData, regionId: RegionId): boolean {
   const gate = getRegion(data, regionId)
   if (!gate) return false
   const started = new Set<RegionId>([regionOf(save), ...Object.keys(save.parked ?? {})])
-  return data.regions.some((r) => started.has(r.id) && r.orderIndex >= gate.orderIndex)
+  // A small world is no step of the journey, wherever its row sits in the order.
+  return realRegions(data).some((r) => started.has(r.id) && r.orderIndex >= gate.orderIndex)
 }
 
 /**

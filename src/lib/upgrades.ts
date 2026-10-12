@@ -2,6 +2,7 @@
 import {
   COMBO_KEYS,
   COMBO_MIN_DICE,
+  inWorldRegion,
   instanceStats,
   nextComboCost,
   nextDieCost,
@@ -24,8 +25,9 @@ export function dieCarriers(save: SaveData, data: GameData): Record<PokeType, nu
 export const maxDiceOwned = (save: SaveData, data: GameData) =>
   Math.max(0, ...save.box.map((p) => instanceStats(p, data).dice.length))
 
-/** Upgrades open, not maxed and within your gold. */
+/** Upgrades open, not maxed and within your gold. None inside a small world: dice follow the level there. */
 export function affordableUpgrades(save: SaveData, data: GameData): number {
+  if (inWorldRegion(save, data)) return 0
   const maxDice = maxDiceOwned(save, data)
   const carriers = dieCarriers(save, data)
   let n = 0

@@ -8,6 +8,7 @@ import {
   getRegion,
   progressRaidKey,
   progressRaidOf,
+  progressRaidReachable,
   progressRaidShiny,
   progressRaidState,
   progressRaidTeam,
@@ -41,8 +42,9 @@ export function ProgressRaidScreen() {
   const run = useRaidRun((s) => s.run)
   const key = progressRaidKey(areaId, Number(dex))
   const raid = progressRaidOf(data, key)
-  // A stale link, or raids switched off for this player: back Home.
-  if (!save || !raid) return <Navigate to="/home" replace />
+  // A stale link, raids switched off for this player, or a raid of somewhere else than where they play (a small
+  // world's from outside it, a region's from inside a world).
+  if (!save || !raid || !progressRaidReachable(save, data, raid)) return <Navigate to="/home" replace />
   // The raid being fought takes the whole screen.
   if (run?.source.kind === 'progress' && run.source.key === key) return <RaidView key={run.id} run={run} />
   return <ProgressRaidPage raidKey={key} />

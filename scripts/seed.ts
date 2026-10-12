@@ -845,9 +845,10 @@ const RETIRED_CONFIG_KEYS = ['regenPercentPerHour']
  * redefines 0033's card writer, so it comes after it), the events (0035), Extreme mode's realms (0039: it redefines the
  * cards', the friends' and the events' functions) and the lighter save writes (0040, last: it redefines 0039's card
  * writer, so a re-run never leaves an older one behind), then the progression raids' tables and functions (0044: its
- * own transaction lines dropped, as this file is one; its content steps are no-ops before the data below). Folded into
- * seed.sql so there is one file to run rather than several in a particular order. The migrations stay the single source
- * of that SQL — they are written to be idempotent, so re-running them costs little.
+ * own transaction lines dropped, as this file is one; its content steps are no-ops before the data below) and 0045's
+ * team function for small worlds. Folded into seed.sql so there is one file to run rather than several in a particular
+ * order. The migrations stay the single source of that SQL — they are written to be idempotent, so re-running them
+ * costs little.
  */
 export async function regionsPrelude(): Promise<string> {
   const parts = await Promise.all(
@@ -859,6 +860,7 @@ export async function regionsPrelude(): Promise<string> {
       '0039_extreme_realm.sql',
       '0040_lighter_save_writes.sql',
       '0044_progress_raids.sql',
+      '0045_progress_raids_worlds.sql',
     ].map(async (name) => {
       const sql = (await readFile(path.join(ROOT, 'supabase', 'migrations', name), 'utf8')).replace(/^(begin|commit);\n/gm, '')
       return `-- ↓ supabase/migrations/${name}, inlined so this file stands alone.\n${sql}`

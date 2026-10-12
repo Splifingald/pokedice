@@ -55,6 +55,8 @@ export interface Scene {
   damage?: number
   fromDex?: number
   toDex?: number
+  /** Played this many times faster: a raid's sped-up turns (absent = as drawn). */
+  speed?: number
 }
 
 export interface AnimatorContext {

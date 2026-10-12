@@ -6,6 +6,13 @@ import { COMBO_KEYS, POKE_TYPES, type ComboKey, type DieType, type GameData, typ
 export interface UpgradeLevels {
   comboLevels: Partial<Record<ComboKey, number>>
   dieLevels: Partial<Record<PokeType, number>>
+  /**
+   * A small world (docs/21): no upgrades — each Pokémon's dice and combos are at its own level ÷ 10 (`diceLevelOf`), so
+   * the tracks above are ignored and `attackerLevels` works them out from the attacker's level.
+   */
+  byLevel?: true
+  /** A small world's boosters: × the damage of every hit of these types (shown in the damage recap). */
+  typeBoost?: Partial<Record<PokeType, number>>
 }
 
 /** Every combo and die track at the same level — used for wild/trainer Pokémon and the simulator. */
@@ -14,6 +21,24 @@ export function uniformLevels(level: number): UpgradeLevels {
     comboLevels: Object.fromEntries(COMBO_KEYS.map((k) => [k, level])),
     dieLevels: Object.fromEntries(POKE_TYPES.map((t) => [t, level])),
   }
+}
+
+/**
+ * A Pokémon's dice and combo level in a small world: its level ÷ 10, rounded down (Lv.1–9 = 0, Lv.55 = 5, Lv.100 =
+ * 10), on the upgrades' own scale — 0 and 1 are both the base track, 10 the last.
+ */
+export const diceLevelOf = (level: number): number => Math.max(0, Math.min(10, Math.floor(level / 10)))
+
+/** The tracks an attacker hits with: its side's, or in a small world its own level's (the boosters kept). */
+export function attackerLevels(levels: UpgradeLevels, attackerLevel: number): UpgradeLevels {
+  if (!levels.byLevel) return levels
+  return { ...uniformLevels(diceLevelOf(attackerLevel)), byLevel: true, ...(levels.typeBoost && { typeBoost: levels.typeBoost }) }
+}
+
+/** × an attack of this type gets from a small world's boosters (1 without one). */
+export const typeBoostOf = (levels: UpgradeLevels, type: PokeType | null): number => {
+  const m = type ? Number(levels.typeBoost?.[type]) : NaN
+  return Number.isFinite(m) && m > 0 ? m : 1
 }
 
 /** Account-wide die track bonus. Base dice (and anything not upgradeable) always give +0. */
@@ -76,13 +101,16 @@ export interface DamageResult {
   final: number
   /** The attack type's multiplier was 0 — "It doesn't affect…" */
   immune: boolean
-  /** raw ÷ neutral raw: > 1 super effective, < 1 resisted, 0 immune. */
+  /** raw ÷ neutral raw: > 1 super effective, < 1 resisted, 0 immune. A small world's booster isn't part of it. */
   effectiveness: number
+  /** A small world's booster on this attack's type: × `multiplier` after the type's, on top of everything. */
+  boost?: { type: PokeType; multiplier: number } | null
 }
 
 /**
  * 01-GAME-SPEC §2.3 — (Σ (face + upgrade) + best combo) × the attack type's multiplier (the dice type that hits the
  * defender hardest); rounded, floored at 1 unless immune. No global multiplier and no level term: what the dice show is what hits.
+ * In a small world, a booster of the attack's type multiplies that too (`boost`, shown in the recap: never hidden).
  */
 export function computeDamage(
   dice: readonly RolledDie[],
@@ -101,9 +129,12 @@ export function computeDamage(
   const values = perDie.map((p) => p.value)
   const combo = selectCombo(detectCombos(values), levels.comboLevels, multiplier, data)
 
-  const raw = perDie.reduce((s, p) => s + p.damage, 0) + (combo?.damage ?? 0)
+  const typed = perDie.reduce((s, p) => s + p.damage, 0) + (combo?.damage ?? 0)
   const neutral = perDie.reduce((s, p) => s + p.value + p.bonus, 0) + (combo?.bonus ?? 0)
   const immune = perDie.length > 0 && multiplier === 0
+  // The booster comes after the type's multiplier, and stays out of the effectiveness ("super effective" is the type's).
+  const boost = typeBoostOf(levels, type)
+  const raw = typed * boost
   const final = immune ? 0 : Math.max(1, Math.round(raw))
   return {
     perDie,
@@ -112,6 +143,7 @@ export function computeDamage(
     raw,
     final,
     immune,
-    effectiveness: immune ? 0 : neutral > 0 ? raw / neutral : 1,
+    effectiveness: immune ? 0 : neutral > 0 ? typed / neutral : 1,
+    ...(boost !== 1 && type && { boost: { type, multiplier: boost } }),
   }
 }
