@@ -18,7 +18,7 @@ import { EggSprite } from '@/components/EggSprite'
 import { PixelIcon } from '@/components/icons'
 import { MINI_SCALE, MiniSprite } from '@/components/SpriteImg'
 import { isSupabaseConfigured } from '@/lib/supabase'
-import { versusBoardCached, type VersusEntry } from '@/lib/versus'
+import { rememberedVersus, versusBoardCached, type VersusEntry } from '@/lib/versus'
 import { pushToast, useGame } from '@/store/game'
 import { useNow } from '@/store/hooks'
 import { cx } from '@/theme/util'
@@ -356,6 +356,7 @@ function VersusWidget() {
   const save = useGame((s) => s.save)!
   const data = useGame((s) => s.data)
   const signedIn = useGame((s) => s.auth.status === 'signed_in')
+  const userId = useGame((s) => s.auth.userId)
   const open = versusUnlocked(save, data)
   const [board, setBoard] = useState<VersusEntry[] | null>(null)
   useEffect(() => {
@@ -406,7 +407,9 @@ function VersusWidget() {
       </Widget>
     )
   }
-  const me = board?.find((r) => r.isMe)
+  // The board decides once it has answered; until then (or when it can't be reached) your row as it last gave it, so
+  // the widget never shows the party in place of a Versus team that is set.
+  const me = board ? board.find((r) => r.isMe) : rememberedVersus(userId)
   const set = !!me?.team.length
   // The team on the board (the three chosen for Versus), or the party until one is set.
   const shown = set ? me!.team : teamOf(save).map((p) => ({ dex: p.dex, level: p.level, shiny: p.shiny }))
