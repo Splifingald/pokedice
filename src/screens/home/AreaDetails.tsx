@@ -1,13 +1,20 @@
 import { useState, type ReactNode } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   asSeenBy,
   dueBoss,
   gymsFor,
+  isRaidBoss,
   MONEY,
   playerSideOf,
   progressOf,
+  progressRaidOf,
+  progressRaidKey,
+  progressRaidState,
+  raidRules,
   teamAverageLevel,
   type Area,
+  type BossDef,
   type EncounterKind,
 } from '@/engine'
 import { useT } from '@/i18n/react'
@@ -30,6 +37,7 @@ import { RoundGauge } from '../area/RoundGauge'
 import { levelText, useLevelSpan } from './AreaPlate'
 import { areaStatus, lockReason, playable } from './areas'
 import { AreaStrip } from '@/components/AreaStrip'
+import { progressRaidPath } from '../events/progressRaids'
 
 /** Encounter kinds in the round mix: a colour each (the legend carries the words). */
 const MIX: Record<EncounterKind, string> = {
@@ -70,6 +78,46 @@ function Fact({
       </span>
       {tag}
     </div>
+  )
+}
+
+/**
+ * A progression raid in the area's facts (docs/24): its name once known, its state (opens when the area is completed,
+ * open, caught) and RAID, which opens its page — even locked, to leave a team on it for friends.
+ */
+function RaidFact({ area, boss }: { area: Area; boss: BossDef }) {
+  const { t } = useT()
+  const navigate = useNavigate()
+  const save = useGame((s) => s.save)!
+  const data = useGame((s) => s.data)
+  const raid = progressRaidOf(data, progressRaidKey(area.id, boss.dex))
+  if (!raid) return null
+  const state = progressRaidState(save, data, raid)
+  const known = state !== 'locked' || save.pokedex.includes(boss.dex)
+  const name = known ? (data.species[boss.dex]?.name ?? '???') : t('ui.common.unknown')
+  return (
+    <Fact
+      gold
+      icon={<MiniSprite dex={boss.dex} size={40} silhouette={!known} />}
+      small={t('ui.raid.progress.kicker')}
+      title={`${name} · ${t('ui.common.level.short', { n: raidRules(data, boss.dex, 'progress').level })}`}
+      note={t(state === 'locked' ? 'ui.raid.progress.factLocked' : state === 'done' ? 'ui.raid.progress.factDone' : 'ui.raid.progress.factOpen')}
+      tag={
+        state === 'done' ? (
+          <Chip tone="done">{t('ui.raid.progress.stDone')}</Chip>
+        ) : (
+          <PixelButton
+            size="sm"
+            className="shrink-0"
+            onClick={() => navigate(progressRaidPath(raid))}
+            aria-label={t('ui.raid.progress.openLabel', { name })}
+          >
+            {state === 'locked' && <PixelIcon name="lock" size={14} />}
+            {t('ui.raid.progress.go')}
+          </PixelButton>
+        )
+      }
+    />
   )
 }
 
@@ -188,7 +236,7 @@ function DetailsBody({ area }: { area: Area }) {
     .map((id) => data.trainers[id] && asSeenBy(data.trainers[id]!, side))
     .filter((g): g is NonNullable<typeof g> => !!g)
   const league = gyms.length > 1
-  const due = dueBoss(area, p, avg)
+  const due = dueBoss(area, p, avg, data)
 
   // Wild Pokémon, merged by species: their share of the pool and their levels.
   const total = area.wildPool.reduce((n, w) => n + Math.max(0, w.weight), 0)
@@ -265,6 +313,7 @@ function DetailsBody({ area }: { area: Area }) {
               />
             ))}
           {(area.legendaryBoss ?? []).map((b) => {
+            if (isRaidBoss(data, b)) return <RaidFact key={b.dex} area={area} boss={b} />
             const caught = save.pokedex.includes(b.dex)
             const beaten = p.bossesDefeated.includes(b.dex)
             const ready = due?.dex === b.dex

@@ -45,6 +45,11 @@ import {
   newSmallWorld,
   offeredRegion,
   pokemonXp,
+  applyProgressRaidCatch,
+  progressRaidKey,
+  progressRaidOf,
+  progressRaidReachable,
+  progressRaidTeam,
   reduce,
   regionCases,
   regionOf,
@@ -361,8 +366,8 @@ describe('its shiny mythical', () => {
     expect(res.save.pokedex).toContain(151)
     expect(heldWorld(res.save)?.caught).toBe(true)
     const beaten = { ...emptyProgress(), bossesDefeated: [151] }
-    expect(fledLegendary(lair(), beaten, s.pokedex)).not.toBeNull()
-    expect(fledLegendary(lair(), beaten, res.save.pokedex)).toBeNull()
+    expect(fledLegendary(lair(), beaten, s.pokedex, data)).not.toBeNull()
+    expect(fledLegendary(lair(), beaten, res.save.pokedex, data)).toBeNull()
   })
 
   it('is any other catch’s business when it isn’t the mythical in its area', () => {
@@ -481,5 +486,36 @@ describe('the save', () => {
       expect(back.save.events?.worldPending).toEqual(withAll.events?.worldPending)
       expect(back.save.parked?.kanto).toBeTruthy()
     }
+  })
+})
+
+describe('a small world’s progression raid (docs/24)', () => {
+  // The admin ticks Raid on a boss of the world's second area: it's that world's raid, fought from inside it.
+  const RAIDED = { ...PATH, legendaryBoss: [{ dex: 144, level: 50, raid: true }] }
+  const d = makeDataWith(
+    { regions: [REGION], areas: [MARSH, RAIDED, LAIR] },
+    { smallWorlds: { access: 'all', list: [WORLD] } },
+  )
+  const worldRaid = progressRaidOf(d, progressRaidKey(RAIDED.id, 144))!
+  const seafoam = d.areas.find((a) => a.name === 'Seafoam Islands')!
+  const kantoRaid = progressRaidOf(d, progressRaidKey(seafoam.id, 144))!
+
+  it('is the world’s: reachable from inside it only, and a region’s raid isn’t from there', () => {
+    expect(worldRaid).toMatchObject({ region: REGION.id, areaId: RAIDED.id })
+    const home = newSave(4, d, 0, newId)
+    const there = enterWorld(home, d, WORLD, 63, NOW, newId)!
+    expect(progressRaidReachable(there, d, worldRaid)).toBe(true)
+    expect(progressRaidReachable(there, d, kantoRaid)).toBe(false)
+    expect(progressRaidReachable(home, d, worldRaid)).toBe(false)
+    expect(progressRaidReachable(home, d, kantoRaid)).toBe(true)
+  })
+
+  it('takes its team from the world’s Box, and its catch stays in the world', () => {
+    const there = enterWorld(newSave(4, d, 0, newId), d, WORLD, 63, NOW, newId)!
+    expect(progressRaidTeam(there, d, worldRaid).map((m) => m.dex)).toEqual([63])
+    const res = applyProgressRaidCatch(there, d, worldRaid, NOW, newId)
+    expect(res).toMatchObject({ region: REGION.id, live: true })
+    expect(res.save.box.some((p) => p.dex === 144)).toBe(true)
+    expect(res.save.parked?.kanto?.box.some((p) => p.dex === 144)).toBe(false)
   })
 })

@@ -49,7 +49,7 @@ import {
   type SaveData,
 } from '@/engine'
 import { BUNDLE } from '@/config/bundle'
-import { data, makeData, newId } from '../fixtures'
+import { bossData, data, makeData, newId } from '../fixtures'
 
 const byName = (name: string): Area => {
   const a = data.areas.find((x) => x.name === name)
@@ -130,10 +130,10 @@ describe('encounters', () => {
   it('offers the round legendary as a challenge once every round is done, once', () => {
     const SEAFOAM = SEAFOAM_GAUGE
     const p = { ...emptyProgress(), roundsDone: SEAFOAM.roundsToClear! }
-    expect(dueBoss(SEAFOAM, p, 10)).toMatchObject({ dex: 144, level: 50 })
-    expect(dueBoss(SEAFOAM, { ...p, roundsDone: p.roundsDone - 1 }, 10)).toBeNull()
-    expect(dueBoss(SEAFOAM, { ...p, bossesDefeated: [144] }, 10)).toBeNull()
-    expect(dueBoss(A1, p, 10)).toBeNull()
+    expect(dueBoss(SEAFOAM, p, 10, data)).toMatchObject({ dex: 144, level: 50 })
+    expect(dueBoss(SEAFOAM, { ...p, roundsDone: p.roundsDone - 1 }, 10, data)).toBeNull()
+    expect(dueBoss(SEAFOAM, { ...p, bossesDefeated: [144] }, 10, data)).toBeNull()
+    expect(dueBoss(A1, p, 10, data)).toBeNull()
     expect(rollEncounter(ctx(fresh(), { area: SEAFOAM, progress: p }), createRng(1)).kind).not.toBe('boss') // offered, not dealt
     expect(challengeEncounter(SEAFOAM, p, data, 10)).toEqual({ kind: 'boss', dex: 144, level: 50 })
   })
@@ -141,10 +141,13 @@ describe('encounters', () => {
   it('team-average bosses (Cerulean Cave) and arrival bosses (Fullmoon Island)', () => {
     const p = emptyProgress()
     const at = CAVE.legendaryBoss![0]!.teamAvgThreshold!
-    expect(dueBoss(CAVE, p, at - 1)).toBeNull()
-    expect(dueBoss(CAVE, p, at)?.dex).toBe(150)
-    expect(dueBoss(CAVE, { ...p, bossesDefeated: [150] }, 90)).toBeNull()
-    expect(dueBoss(FULLMOON, p, 1)?.dex).toBe(488)
+    expect(dueBoss(CAVE, p, at - 1, bossData)).toBeNull()
+    expect(dueBoss(CAVE, p, at, bossData)?.dex).toBe(150)
+    expect(dueBoss(CAVE, { ...p, bossesDefeated: [150] }, 90, bossData)).toBeNull()
+    expect(dueBoss(FULLMOON, p, 1, bossData)?.dex).toBe(488)
+    // With Raid Battles on, both are progression raids (docs/24): never due in the area.
+    expect(dueBoss(CAVE, p, 100, data)).toBeNull()
+    expect(dueBoss(FULLMOON, p, 1, data)).toBeNull()
   })
 
   it('scaling areas draw enemy levels from the team average ± 3', () => {
@@ -184,7 +187,7 @@ describe('encounters', () => {
     expect(rollEncounter(ctx(fresh(), { area: FOREST, forceKind: 'trainer' }), rng).kind).toBe('trainer')
     expect(rollEncounter(ctx(fresh(), { forceKind: 'center' }), rng).kind).toBe('center')
     expect(rollEncounter(ctx(fresh(), { forceKind: 'wild' }), rng).kind).toBe('wild')
-    expect(rollEncounter(ctx(fresh(), { area: SEAFOAM, forceKind: 'boss' }), rng)).toMatchObject({ kind: 'boss', dex: 144 })
+    expect(rollEncounter(ctx(fresh(), { area: SEAFOAM, data: bossData, forceKind: 'boss' }), rng)).toMatchObject({ kind: 'boss', dex: 144 })
     expect(rollEncounter(ctx(fresh(), { area: FOREST, forceKind: 'gym' }), rng)).toMatchObject({ kind: 'gym', name: 'Brock' })
     expect(rollEncounter(ctx(fresh(), { forceKind: 'item' }), rng).kind).toBe('item') // Route 1 has loot
   })

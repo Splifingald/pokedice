@@ -3,7 +3,7 @@
 // Pokémon joins its home region's Box once its area there is completed, and waits locked until then.
 import { areaProgressAnywhere } from './events'
 import { createInstance } from './progression'
-import { raidOfDay, raidRegion, raidRules } from './raidCalendar'
+import { raidOfDay, raidRegion, raidRules, type RaidKindOf } from './raidCalendar'
 import { regionOf, worldRegionOf } from './regions'
 import type { GameData, PokemonInstance, RaidLock, SaveData, TodayRaid } from './types'
 
@@ -110,10 +110,20 @@ export function addToRegion(save: SaveData, data: GameData, region: string, inst
   }
 }
 
-/** A raid Pokémon joins its region's Box (or, that region not started, the one being played). */
-function addRaidMon(save: SaveData, data: GameData, lock: Omit<RaidLock, 'day'>, now: number, newId: () => string) {
-  // At the level it was fought at (its own, Admin → Raids, or the default).
-  const inst = createInstance(lock.dex, raidRules(data, lock.dex).level, data, newId(), now)
+/**
+ * A raid Pokémon joins its region's Box (or, that region not started, the one being played), the day's raid's and a
+ * progression raid's (docs/24) alike.
+ */
+export function addRaidMon(
+  save: SaveData,
+  data: GameData,
+  lock: Omit<RaidLock, 'day'>,
+  now: number,
+  newId: () => string,
+  kind: RaidKindOf = 'daily',
+) {
+  // At the level it was fought at (its own, Admin → Raids, or the default: the day's raid's or a progression raid's).
+  const inst = createInstance(lock.dex, raidRules(data, lock.dex, kind).level, data, newId(), now)
   if (lock.shiny) inst.shiny = true
   const home = raidRegion(data, lock.areaId)
   const res = addToRegion(save, data, home, inst) ?? addToRegion(save, data, regionOf(save), inst)!

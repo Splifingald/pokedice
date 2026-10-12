@@ -20,7 +20,7 @@ export function AreaIdle({ area }: { area: Area }) {
   const navigate = useNavigate()
   const save = useGame((s) => s.save)
   const max = useGame((s) => s.data.config.maxTeamSize)
-  const { label, sub, go, explore, off, gym, boss, closed, empty, resting } = useContinue(area)
+  const { label, sub, go, explore, off, gym, boss, raid, closed, empty, resting } = useContinue(area)
   const [view, setView] = useState<SheetView | null>(null)
   if (!save) return null
   const team = teamOf(save)
@@ -34,8 +34,8 @@ export function AreaIdle({ area }: { area: Area }) {
       </p>
 
       {resting && <RestingPanel />}
-      {/* A gym or legendary waits: the bar challenges it; this explores on instead, as on Home. */}
-      {(gym || boss) && !closed && !resting && (
+      {/* A gym, a legendary or a raid waits: the bar challenges it; this explores on instead, as on Home. */}
+      {(gym || boss || raid) && !closed && !resting && (
         <div className="flex justify-end">
           <PixelButton size="sm" onClick={explore} disabled={empty}>
             {t('ui.home.keepExploring')}
@@ -73,8 +73,8 @@ export function AreaIdle({ area }: { area: Area }) {
               {t('ui.nav.home')}
             </PixelButton>
             <PixelButton variant="primary" size="lg" className="px-2" disabled={off} onClick={go}>
-              {(gym || boss) && <PixelIcon name="sword" size={22} />}
-              {gym || boss ? label : t('ui.common.continue')}
+              {(gym || boss || raid) && <PixelIcon name="sword" size={22} />}
+              {gym || boss || raid ? label : t('ui.common.continue')}
             </PixelButton>
           </div>
         </div>

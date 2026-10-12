@@ -526,6 +526,11 @@ begin
   delete from event_state where user_id = me and (p_realm is null or realm = p_realm);
   delete from raid_teams where user_id = me and (p_realm is null or realm = p_realm);
   delete from raid_gifts where (helper_id = me or raider_id = me) and (p_realm is null or realm = p_realm);
+  -- The progression raids' rows (0045/0046), when they are there: the two migrations run in either order on live.
+  if to_regclass('public.raid_progress_teams') is not null then
+    delete from raid_progress_teams where user_id = me and (p_realm is null or realm = p_realm);
+    delete from raid_progress_done where user_id = me and (p_realm is null or realm = p_realm);
+  end if;
   if p_realm is null or p_realm = 'main' then
     delete from trade_listings where owner = me and (status = 'open' or taker is null or taker_applied);
     delete from trade_listings where taker = me and owner_applied;

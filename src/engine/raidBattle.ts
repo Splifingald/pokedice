@@ -16,9 +16,9 @@ import {
 } from './battle'
 import { isLegendary } from './breeding'
 import { uniformLevels, type UpgradeLevels } from './damage'
-import { raidRules, type RaidRules } from './raidCalendar'
+import { raidRules, type RaidKindOf, type RaidRules } from './raidCalendar'
 import { regionSpecies } from './regions'
-import type { Rng } from './rng'
+import { createRng, type Rng } from './rng'
 import { autoEvents } from './sim'
 import { emptyStatus } from './status'
 import type { GameData, RaidConfig, RegionId } from './types'
@@ -141,17 +141,62 @@ export function summonPool(data: GameData, bossDex: number, regionId: RegionId):
   return pool.sort((a, b) => a - b)
 }
 
-/** An NPC trainer's three Pokémon: allowed species of the given regions, at the raid's level. */
-export function npcTeam(data: GameData, regionIds: RegionId[], rng: Rng, prefix: string): BattlerSeed[] {
+/** Three different allowed species of the given regions (fewer only when the regions have fewer). */
+function npcPicks(data: GameData, regionIds: RegionId[], rng: Rng): number[] {
   const allowed = raidAllyAllowed(data)
   const pool = [...new Set(regionIds.flatMap((r) => [...regionSpecies(data, r)]))].filter(allowed).sort((a, b) => a - b)
-  const level = data.config.events.raid.teamCap
   const picks: number[] = []
   for (let i = 0; i < 3 && pool.length; i++) {
     const left = pool.filter((d) => !picks.includes(d))
     picks.push(rng.pick(left.length ? left : pool))
   }
-  return picks.map((dex, i) => ({ uid: `${prefix}-${i}`, dex, level, hp: Number.MAX_SAFE_INTEGER }))
+  return picks
+}
+
+/** An NPC trainer's three Pokémon: allowed species of the given regions, at the raid's team cap (or `level`). */
+export function npcTeam(data: GameData, regionIds: RegionId[], rng: Rng, prefix: string, level = data.config.events.raid.teamCap): BattlerSeed[] {
+  return npcPicks(data, regionIds, rng).map((dex, i) => ({ uid: `${prefix}-${i}`, dex, level, hp: Number.MAX_SAFE_INTEGER }))
+}
+
+/** One NPC trainer on offer when a raid starts with empty slots: a class trainer's name and look, three Pokémon. */
+export interface RaidNpcOption {
+  /** The trainer's name ("Ace Trainer Kai"); null when the content has no class trainer (the screen names it). */
+  owner: string | null
+  look: string | null
+  team: number[]
+}
+
+/**
+ * The NPC trainers offered on START with empty slots (docs/24): `count` class trainers — never a gym leader, a rival or
+ * a named character, each a different look — with three allowed Pokémon of the given regions each. The same for a given
+ * seed, so a reload offers the same four; the store draws a new seed for every try.
+ */
+export function raidNpcOffer(data: GameData, regionIds: RegionId[], seed: number, count = 4): RaidNpcOption[] {
+  const rng = createRng(seed)
+  // In id order, so the draw doesn't depend on the order the content was loaded in.
+  const classes = Object.values(data.trainers)
+    .filter((tr) => tr.role === 'trainer' && tr.spriteUrl?.includes('/classes/') && tr.name.includes(' '))
+    .sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))
+  const used = new Set<string>()
+  return Array.from({ length: count }, () => {
+    const pool = classes.filter((tr) => !used.has(tr.spriteUrl ?? '') && !used.has(tr.name))
+    const tr = pool.length ? rng.pick(pool) : null
+    if (tr) {
+      used.add(tr.spriteUrl ?? '')
+      used.add(tr.name)
+    }
+    return { owner: tr?.name ?? null, look: tr?.spriteUrl ?? null, team: npcPicks(data, regionIds, rng) }
+  })
+}
+
+/** An NPC on offer as the raid's side `k`: its Pokémon at `level`, uids unique in the raid. */
+export function npcSideSeed(o: RaidNpcOption, k: number, level: number, name: string): RaidSideSeed {
+  return {
+    owner: o.owner ?? name,
+    look: o.look,
+    kind: 'npc',
+    team: o.team.map((dex, i) => ({ uid: `s${k}-${i}`, dex, level, hp: Number.MAX_SAFE_INTEGER })),
+  }
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -162,6 +207,8 @@ export interface CreateRaidOptions {
   sides: RaidSideSeed[]
   /** The region whose Pokémon the boss summons (its lair's, or a fallback raid's). */
   regionId: RegionId
+  /** The day's raid's numbers, or a progression raid's (docs/24). */
+  kind?: RaidKindOf
   auto?: boolean
 }
 
@@ -181,7 +228,7 @@ function putFoe(s: RaidState, b: Battler) {
 export function createRaid(opts: CreateRaidOptions, data: GameData, rng: Rng): { state: RaidState; log: RaidLogEntry[] } {
   const cfg = data.config.events.raid
   // This raid Pokémon's own numbers (Admin → Raids), over the defaults.
-  const rules = raidRules(data, opts.boss.dex)
+  const rules = raidRules(data, opts.boss.dex, opts.kind)
   const boss = makeBattler({ uid: BOSS_UID, dex: opts.boss.dex, level: rules.level, hp: Number.MAX_SAFE_INTEGER, shiny: opts.boss.shiny }, data)
   // A bar holds `barHp` times its own HP.
   boss.maxHp = Math.max(1, Math.round(boss.maxHp * rules.barHp))

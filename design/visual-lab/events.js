@@ -6,6 +6,9 @@
  *  - Raid Battles (24 h, priority 3): your three plus up to two friends' teams (NPC trainers fill in), one Pokémon out
  *    per side, against a Lv.50 raid Pokémon with HP bars that calls up to two allies; catch it to close the raid.
  *  - Elite Rebattle (priority 4): the League in three tiers (+10, +25, Lv.100), each a gauntlet with no Center.
+ * Legendary raids (docs/24, 2026-10-12): every area boss but the mythicals is a raid in its own area once the area is
+ * cleared; your team for it comes from that region's Box, friends bring the team they left on it. START with empty
+ * slots offers four NPC trainers to pick from, the same four until the try starts.
  * Each event opens with a pop-up the first time: a banner, 2–4 rule sections, a button straight to it.
  * The admin mock beside the phone edits the same numbers the phone uses (CFG).
  */
@@ -56,6 +59,8 @@
         { key: 'rare-candy', odds: 15 },
       ],
     },
+    // Legendary raids: like the daily raid by default (Lv.50, teams capped at 50); each raid Pokémon can have its own.
+    pr: { level: 50, bars: 3, teamCap: 50, per: {} },
     rebattle: [
       // Each tier has its medal: a bronze diamond, a silver pentagon, a gold hexagon.
       { tier: 'Bronze', lv: '+10', gold: 1.5, up: '+1' },
@@ -186,7 +191,7 @@
     queue: [],
     spun: false,
     spinning: false,
-    raidKind: 'mew', // mew · shiny · fallback
+    raidKind: 'mew', // mew (a mythical day) · zapdos (a legendary day) · fallback (a filler)
     raid: null,
     raidTeam: [6, 25, 131],
     allies: ['Lea', 'Noor'],
@@ -202,6 +207,7 @@
   // uses the area where the species lives.
   const RAID_ART = {
     151: { area: 'Faraway Island', art: 'lair-island', horizon: 140 },
+    145: { area: 'Power Plant', art: 'a25', horizon: 166 },
     149: { area: 'Safari Zone', art: 'marsh', horizon: 103 },
   }
   const raidArt = (dex) => RAID_ART[dex] || RAID_ART[151]
@@ -214,12 +220,14 @@
       h = 160 * K
     return `left:${(-(24 * K) / w) * 100}%;top:${(-(CROP + y * K) / h) * 100}%;width:${(400 / w) * 100}%;height:${(400 / h) * 100}%`
   }
+  // The day's raid, from the shared calendar: always shiny now. A mythical's normal form is its lair's boss; a
+  // legendary's is its area's raid.
   const raidSpecies = () =>
     EVS.raidKind === 'fallback'
-      ? { dex: 149, name: 'Dragonite', shiny: true, why: 'Every legendary in your pool is caught or still locked: a powerful Pokémon instead, shiny 30 % of the time.' }
-      : EVS.raidKind === 'shiny'
-        ? { dex: 151, name: 'Mew', shiny: true, why: 'You own every legendary of your pool: they come back as shinies.' }
-        : { dex: 151, name: 'Mew', shiny: false, why: 'From your raid pool: you cleared Faraway Island and don’t own Mew yet.' }
+      ? { dex: 149, name: 'Dragonite', shiny: true, why: 'A filler day: a shiny fully evolved Pokémon of a late area.' }
+      : EVS.raidKind === 'zapdos'
+        ? { dex: 145, name: 'Zapdos', shiny: true, why: 'A legendary day: shiny. The normal Zapdos is the Power Plant’s own raid.' }
+        : { dex: 151, name: 'Mew', shiny: true, why: 'A mythical day: shiny. Mew itself is Faraway Island’s boss, never shiny there.' }
 
   function unlocked(id) {
     const m = EVS.mode
@@ -255,7 +263,8 @@
     }
     return IMG[src]
   }
-  const front = (d, shiny) => `assets/ev/${pad(d)}_front${shiny ? '_shiny' : ''}.png`
+  const SHINY_FRONT = new Set([145, 149, 151])
+  const front = (d, shiny) => `assets/ev/${pad(d)}_front${shiny && SHINY_FRONT.has(d) ? '_shiny' : ''}.png`
   const back = (d) => `assets/ev/${pad(d)}_back.png`
   const ITEMS = img('assets/items.png')
   const DEXICO = img('assets/dex-icons.png')
@@ -314,7 +323,7 @@
       const r = raidSpecies()
       const label = `Raid: ${r.shiny ? 'shiny ' : ''}${r.name}. ${EVS.caught ? 'Caught' : 'Not caught yet'}. ${subText(id)}. Open`
       return `<button type="button" class="ui-panel hm-w ev-w raid${EVS.caught ? ' done' : ''}" data-ev="raid" aria-label="${esc(label)}">${head('Raid', EVS.caught ? '<span class="ev-tag ok">CAUGHT</span>' : '<span class="hm-new">LIVE</span>')}
-        <span class="ev-w-mon"><img class="px" alt="" src="${front(r.dex, r.shiny && r.dex === 151)}" />${r.shiny ? '<span class="ev-rc-sparkle" aria-hidden="true"><i></i><i></i><i></i></span>' : ''}</span>
+        <span class="ev-w-mon"><img class="px" alt="" src="${front(r.dex, r.shiny)}" />${r.shiny ? '<span class="ev-rc-sparkle" aria-hidden="true"><i></i><i></i><i></i></span>' : ''}</span>
         <span class="hm-w-title">${r.shiny ? '<i class="ev-sh" aria-hidden="true"></i>' : ''}${esc(r.name)}</span>${sub}</button>`
     }
     if (id === 'rebattle') {
@@ -881,9 +890,14 @@
 
   // ------------------------------------------------------------------ the raid tab
   const friendBy = (n) => FRIENDS.find((f) => f.name === n)
-  function sidesFor() {
-    const sides = [{ name: 'You', look: A.SAVE.look || 'red', team: EVS.raidTeam, me: true }]
-    for (const n of EVS.allies.slice(0, CFG.raid.maxFriends)) sides.push({ ...friendBy(n), friend: true })
+  function sidesFor(kind, npcs = []) {
+    const prog = kind.type === 'prog' ? prBy(kind.key) : null
+    const sides = [{ name: 'You', look: A.SAVE.look || 'red', team: prog ? prTeam(prog) : EVS.raidTeam, me: true }]
+    const friends = prog
+      ? prAllies(prog).map((n) => ({ ...friendBy(n), team: FRIEND_PR[n][prog.dex] }))
+      : EVS.allies.map((n) => friendBy(n))
+    for (const f of friends.slice(0, CFG.raid.maxFriends)) sides.push({ ...f, friend: true })
+    for (const n of npcs) if (sides.length < 3) sides.push({ ...n, npc: true })
     let k = 0
     while (sides.length < 3) sides.push({ ...NPCS[k++ % NPCS.length], npc: true })
     return sides
@@ -895,7 +909,7 @@
     const ra = raidArt(r.dex)
     return `<div class="ev-raidcard${EVS.caught ? ' done' : ''}"><img class="rd-art" alt="" src="assets/ev/art/${ra.art}.png" style="${artWindow(ra.horizon)}" /><span class="ev-rc-where">${esc(ra.area)}</span>
         <span class="ev-rc-time">${EVS.caught ? 'New raid in' : 'Ends in'} ${hm(untilMidnight())}</span>
-        <img class="px ev-rc-mon${r.shiny ? ' shiny' : ''}" alt="" src="${front(r.dex, r.shiny && r.dex === 151)}" />
+        <img class="px ev-rc-mon${r.shiny ? ' shiny' : ''}" alt="" src="${front(r.dex, r.shiny)}" />
         ${r.shiny ? '<span class="ev-rc-sparkle" aria-hidden="true"><i></i><i></i><i></i></span>' : ''}
         <span class="ev-rc-name"><b>${r.shiny ? 'Shiny ' : ''}${esc(r.name)}</b><small>Raid · Lv.${R.level} · ${R.bars} HP bars</small></span>
         <span class="ev-rc-bars" aria-hidden="true">${Array.from({ length: R.bars }, (_, i) => `<i style="--c:${R.colors[i % R.colors.length]}"></i>`).join('')}</span>
@@ -922,12 +936,15 @@
           const on = EVS.allies.includes(f.name)
           return `<li><button type="button" class="pg-useit" data-ally="${esc(f.name)}" aria-pressed="${on}">${A.lookOf(f.look)}<span><b>${esc(f.name)}</b>${teamIcons(f.team)}</span>${on ? '<em class="ev-check" aria-label="Picked"></em>' : ''}</button></li>`
         }).join('')}</ul></details>`
-      }`
+      }
+      ${prListHTML()}`
   }
   /** Starting with empty slots: say once that trainers fill them, then start. */
   function raidGo() {
     const empty = Math.max(0, CFG.raid.maxFriends - EVS.allies.length)
-    if (!empty) return startRaid()
+    const kind = { type: 'daily' }
+    if (!empty) return startRaid(kind, [])
+    return npcPicker(dailyKey(), empty, sidesFor(kind).slice(0, 1 + EVS.allies.length), (npcs) => startRaid(kind, npcs))
     const ov = overlay()
     ov.innerHTML = `<div class="ev-reward ev-confirm" role="dialog" aria-modal="true" aria-labelledby="ev-cf-t">
       <span class="ev-cf-slots" aria-hidden="true">${Array.from({ length: CFG.raid.maxFriends }, (_, i) => (i < EVS.allies.length ? A.lookOf(friendBy(EVS.allies[i]).look) : A.lookOf(NPCS[(i - EVS.allies.length) % NPCS.length].look, 'npc'))).join('')}</span>
@@ -1025,10 +1042,16 @@
   }
   const rollDice = (dice) => dice.map((t) => ({ t, v: 1 + Math.floor(Math.random() * 6) }))
 
-  function startRaid() {
-    const r = raidSpecies()
-    const R = CFG.raid
-    EVS.tries++
+  // Which raid is being fought: the day's ({ type: 'daily' }) or a legendary raid ({ type: 'prog', key }).
+  let CUR = { type: 'daily' }
+  function startRaid(kind = CUR, npcs = []) {
+    CUR = kind
+    const prog = kind.type === 'prog' ? prBy(kind.key) : null
+    const r = prog ? { dex: prog.dex, name: prog.name, shiny: false } : raidSpecies()
+    const art = prog ? { art: prog.art, horizon: prog.horizon } : raidArt(r.dex)
+    const R = prog ? { ...CFG.raid, ...prRules(prog) } : CFG.raid
+    if (prog) PRS.tries[prog.key] = (PRS.tries[prog.key] || 0) + 1
+    else EVS.tries++
     if (RB) RB.over = true
     const boss = mon(r.dex, 'boss')
     boss.shiny = r.shiny
@@ -1038,7 +1061,8 @@
       boss,
       summons: Array(Math.min(2, R.maxField)).fill(null),
       points: 0,
-      sides: sidesFor().map((s, i) => ({ ...s, i, k: 0, mons: s.team.map((d) => mon(d, i)), out: false })),
+      art,
+      sides: sidesFor(kind, npcs).map((s, i) => ({ ...s, i, k: 0, mons: s.team.map((d) => mon(d, i)), out: false })),
       fx: { shake: 0, flash: 0, ring: [] },
       // Who stands in front: the foe at the top right, the ally at the bottom left. Everyone else waits in the queues.
       front: { foe: 'boss', own: 0 },
@@ -1059,7 +1083,7 @@
   const hpVar = (p) => (p > 0.5 ? 'var(--hp-hi)' : p > 0.2 ? 'var(--hp-mid)' : 'var(--hp-low)')
   function raidRender(p) {
     p.innerHTML = `
-      <div class="bt-stage stage rd-stage" id="rd-stage"><img class="rd-art" alt="" src="assets/ev/art/${raidArt(RB.boss.dex).art}.png" style="${artWindow(raidArt(RB.boss.dex).horizon)}" />
+      <div class="bt-stage stage rd-stage" id="rd-stage"><img class="rd-art" alt="" src="assets/ev/art/${RB.art.art}.png" style="${artWindow(RB.art.horizon)}" />
         <canvas id="rd-cv" width="240" height="160" role="img" aria-label="The raid: the Pokémon in front on each side"></canvas>
         <div class="ui-plate foe" id="rd-foe"></div>
         <div class="ui-plate own" id="rd-own"></div>
@@ -1143,7 +1167,7 @@
         PX.disc(g, fx + (f.dx || 0), fy - 30, R, 'rgba(255, 190, 46, 0.22)')
         PX.disc(g, fx + (f.dx || 0), fy - 30, R - 8, 'rgba(255, 230, 160, 0.2)')
       }
-      drawSprite(g, front(fm.dex, fm.shiny && fm.dex === 151), fm.dex, fx + (f.dx || 0), fy + (f.dy || 0), { s: f.s ?? 1, a: f.a ?? 1, flash: f.flash })
+      drawSprite(g, front(fm.dex, fm.shiny), fm.dex, fx + (f.dx || 0), fy + (f.dy || 0), { s: f.s ?? 1, a: f.a ?? 1, flash: f.flash })
     }
     // The ball after a throw: it sits where the raid Pokémon was, and sparkles once it's caught.
     if (RB.ball) {
@@ -1403,7 +1427,7 @@
     const cv = $('.rd-i-cv', el)
     const g = cv.getContext('2d')
     g.imageSmoothingEnabled = false
-    const spr = img(front(B.dex, B.shiny && B.dex === 151))
+    const spr = img(front(B.dex, B.shiny))
     let full = null,
       sil = null,
       glow = null
@@ -1921,15 +1945,21 @@
       SND().tone(784, 0.1, { vol: 0.05 })
       SND().tone(988, 0.1, { vol: 0.05, at: 0.1 })
       SND().tone(1319, 0.3, { vol: 0.05, at: 0.2 })
-      EVS.caught = true
+      if (CUR.type === 'prog') PRS.caught.add(CUR.key)
+      else EVS.caught = true
       // The leaderboard's Raids board counts only raids won this way: the raid Pokémon caught.
       A.raidsWon = (A.raidsWon || 0) + 1
       A.onCatch && A.onCatch(B.dex, CFG.raid.level)
       const helpers = RB.sides.filter((s) => s.friend).map((s) => s.name)
       say(`Gotcha! ${B.name} was caught!`)
       $('.rd-panel').classList.add('over')
-      $('#rd-acts').innerHTML = `<div class="rd-end"><p><b>${esc(B.name)} joins your Box at Lv.${CFG.raid.level}.</b>${helpers.length ? ` ${esc(helpers.join(' and '))} ${helpers.length > 1 ? 'each get' : 'gets'} a gift for helping.` : ''} The raid is closed until the next one.</p><button type="button" class="ui-btn primary wide" data-rdleave><span>Back to events</span></button></div>`
+      const gift = helpers.length ? ` ${esc(helpers.join(' and '))} ${helpers.length > 1 ? 'each get' : 'gets'} a gift for helping.` : ''
+      $('#rd-acts').innerHTML =
+        CUR.type === 'prog'
+          ? `<div class="rd-end"><p><b>${esc(B.name)} joins your Kanto Box at Lv.${CFG.raid.level}.</b>${gift} This raid is done. Your team stays on it for your friends.</p><button type="button" class="ui-btn primary wide" data-rdleave><span>Back to the raid</span></button></div>`
+          : `<div class="rd-end"><p><b>${esc(B.name)} joins your Box at Lv.${CFG.raid.level}.</b>${gift} The raid is closed until the next one.</p><button type="button" class="ui-btn primary wide" data-rdleave><span>Back to events</span></button></div>`
       renderWidget()
+      A.renderGo && A.renderGo()
     } else {
       SND().noise(0.3, { vol: 0.07, freq: 1500 })
       RB.ball = null
@@ -1937,14 +1967,14 @@
       B.fx = { dy: 4 }
       say(`${B.name} broke free!`)
       $('.rd-panel').classList.add('over')
-      $('#rd-acts').innerHTML = `<div class="rd-end"><p><b>${esc(B.name)} broke free.</b> The raid stays open: fight it again from full whenever you like.</p><div class="rd-end-btns"><button type="button" class="ui-btn" data-rdleave><span>Later</span></button><button type="button" class="ui-btn primary" data-rdagain><span>Fight again</span></button></div></div>`
+      $('#rd-acts').innerHTML = `<div class="rd-end"><p><b>${esc(B.name)} broke free.</b> ${CUR.type === 'prog' ? 'The raid stays open: fight it again from full, as often as you like.' : 'The raid stays open: fight it again from full whenever you like.'}</p><div class="rd-end-btns"><button type="button" class="ui-btn" data-rdleave><span>Later</span></button><button type="button" class="ui-btn primary" data-rdagain><span>Fight again</span></button></div></div>`
     }
   }
   async function lose() {
     RB.over = true
     say(`${RB.boss.name} beat every side!`)
     $('.rd-panel').classList.add('over')
-    $('#rd-acts').innerHTML = `<div class="rd-end"><p><b>Your raid team was defeated.</b> ${esc(RB.boss.name)} is still here until midnight UTC. Your team is healed for the next try.</p><div class="rd-end-btns"><button type="button" class="ui-btn" data-rdleave><span>Later</span></button><button type="button" class="ui-btn primary" data-rdagain><span>Try again</span></button></div></div>`
+    $('#rd-acts').innerHTML = `<div class="rd-end"><p><b>Your raid team was defeated.</b> ${esc(RB.boss.name)} ${CUR.type === 'prog' ? 'stays in its area: try again whenever you like.' : 'is still here until midnight UTC.'} Your team is healed for the next try.</p><div class="rd-end-btns"><button type="button" class="ui-btn" data-rdleave><span>Later</span></button><button type="button" class="ui-btn primary" data-rdagain><span>Try again</span></button></div></div>`
   }
 
   // ------------------------------------------------------------------ the rebattle tab
@@ -2232,10 +2262,11 @@
     const t = e.target
     if (t.closest('[data-rdleave]')) {
       if (RB) RB.over = true
+      if (CUR.type === 'prog') return A.showPage('praid')
       EVS.tab = 'raid'
       return A.showPage('events')
     }
-    if (t.closest('[data-rdagain]')) return startRaid()
+    if (t.closest('[data-rdagain]')) return CUR.type === 'prog' ? prGo(CUR.key) : raidGo()
     if (t.closest('[data-rdfast]')) {
       EVS.fast = !EVS.fast
       const b = t.closest('[data-rdfast]')
@@ -2276,6 +2307,27 @@
         EVS.caught = false
         $$('[data-evraid]', box).forEach((x) => x.setAttribute('aria-checked', String(x === b)))
         return rerender()
+      }
+      if ((b = e.target.closest('[data-prmode]'))) {
+        PRS.mode = b.dataset.prmode
+        $$('[data-prmode]', box).forEach((x) => x.setAttribute('aria-checked', String(x === b)))
+        return prRefresh()
+      }
+      if (e.target.closest('[data-prgo]')) {
+        const sea = prList().find((p) => p.dex === 144)
+        if (prState(sea) === 'locked') {
+          PRS.mode = 'open'
+          $$('[data-prmode]', box).forEach((x) => x.setAttribute('aria-checked', String(x.dataset.prmode === 'open')))
+        }
+        A.goToArea(sea.order)
+        return prRefresh()
+      }
+      if (e.target.closest('[data-prreset]')) {
+        try {
+          localStorage.removeItem(OFFER_KEY)
+        } catch {}
+        OFFER_MEM.clear()
+        return A.toast('Every raid will offer four new NPC trainers')
       }
       if (e.target.closest('[data-evsound]')) {
         PX.Sound.on = !PX.Sound.on
@@ -2324,6 +2376,7 @@
       </div>
       <table class="ad-t"><thead><tr><th>Helper gift</th><th>Odds</th></tr></thead><tbody>${R.gifts.map((g) => `<tr><td>${esc(ITEM(g.key).name)}</td><td>${g.odds} %</td></tr>`).join('')}</tbody></table>
       <p class="ad-note">Pool: ${POOL.length} legendaries (each tied to its area) · fallback: ${FALLBACK.length} species by region · NPC allies and summons: fully evolved, no legendary, mythical, starter line or pseudo-legendary.</p></div>
+      ${prAdmin()}
       <div class="ad-sec"><h3>Elite Rebattle</h3><table class="ad-t"><thead><tr><th>Tier</th><th>Levels</th><th>Gold</th><th>Foe upgrades</th></tr></thead><tbody>${CFG.rebattle.map((t) => `<tr><td>${t.tier}</td><td>${t.lv === '100' ? 'all Lv.100' : `League I ${t.lv}`}</td><td>×${t.gold}</td><td>League ${t.up}</td></tr>`).join('')}</tbody></table>
       <p class="ad-note">Teams per tier are generated, then editable in the trainer team editor. The Champion slot is the rival (per starter).</p></div>
       <div class="ad-sec"><h3>Dev tools</h3><div class="ad-dev"><button type="button" class="btn small" data-addev="spin">Reset my spin</button><button type="button" class="btn small" data-addev="raid">Rotate my raid</button><button type="button" class="btn small" data-addev="reb">Reset rebattle</button><button type="button" class="btn small" data-addev="gift">Grant a helper gift</button></div></div>`
@@ -2338,7 +2391,14 @@
       else if (t.dataset.prio) CFG.priority[t.dataset.prio] = Number(t.value) || 1
       else if (t.dataset.banner) CFG.banner[t.dataset.banner] = t.value
       else if (t.dataset.col) CFG.raid.colors[+t.dataset.col] = t.value
-      else return
+      else if (t.dataset.pr) CFG.pr[t.dataset.pr] = Math.max(1, Number(t.value) || 1)
+      else if (t.dataset.prper) {
+        const v = t.value === '' ? null : Math.max(1, Number(t.value) || 1)
+        const own = { ...(CFG.pr.per[t.dataset.prper] || {}) }
+        if (v == null) delete own[t.dataset.f]
+        else own[t.dataset.f] = v
+        CFG.pr.per[t.dataset.prper] = own
+      } else return
       ICONS = null
       admin()
       rerender()
@@ -2349,7 +2409,7 @@
       const k = b.dataset.addev
       if (k === 'spin') EVS.spun = false
       if (k === 'raid') {
-        EVS.raidKind = EVS.raidKind === 'mew' ? 'shiny' : EVS.raidKind === 'shiny' ? 'fallback' : 'mew'
+        EVS.raidKind = EVS.raidKind === 'mew' ? 'zapdos' : EVS.raidKind === 'zapdos' ? 'fallback' : 'mew'
         EVS.caught = false
         $$('[data-evraid]').forEach((x) => x.setAttribute('aria-checked', String(x.dataset.evraid === EVS.raidKind)))
       }
@@ -2368,6 +2428,14 @@
   // Pokémon of the fallback pool says it can show up when the pool runs dry. In the lab, Mew joins your pool as
   // soon as raids are open.
   A.raidWhere = (d) => {
+    const pr = prList().find((x) => x.dex === d)
+    if (pr) {
+      const st = prState(pr)
+      const sub = st === 'locked' ? `Opens when ${pr.area} is cleared` : st === 'done' ? `${pr.area} · caught` : `${pr.area} · open`
+      return `<li class="pg-where ev-where${st === 'locked' ? ' st-locked' : ''}"><span class="pg-where-ban ev-where-ban" aria-hidden="true"><img class="px" alt="" src="${icons().raid}" /></span><span class="pg-where-t"><b>Legendary raid</b><small>${esc(sub)}</small></span><button type="button" class="hm-gobtn" data-praid="${pr.key}" data-from="dex" aria-label="Open the ${esc(pr.name)} raid">GO</button></li>`
+    }
+    if (d === 151)
+      return `<li class="pg-where ev-where"><span class="pg-where-ban ev-where-ban" aria-hidden="true"><img class="px" alt="" src="${icons().raid}" /></span><span class="pg-where-t"><b>Raid of the day</b><small>Shiny, on its days of the calendar · its boss fight is never shiny</small></span></li>`
     const p = POOL.find((x) => x[0] === d)
     const f = FALLBACK.find((x) => x[0] === d)
     if (!p && !f) return ''
@@ -2386,6 +2454,392 @@
     A.showPage('events')
   })
 
+  // ------------------------------------------------------------------ legendary raids (docs/24, 2026-10-12)
+  // Every area boss but the mythicals is a raid now, fought in its own area once the area is cleared, like a gym
+  // leader's challenge: the only way to catch it. Unlimited tries; it closes on the catch. Your team for each raid
+  // comes from that region's Box and stays on it, and friends bring the team they left on it. Mew stays Faraway
+  // Island's boss, never shiny there: its shiny comes on the daily calendar's raid days.
+  const MYTHICAL = new Set([151])
+  // Each raid is fought in front of its area's picture (src/fx/areaArtMap.ts).
+  const PR_ART = {
+    18: { art: 'icecave', horizon: 143 },
+    21: { art: 'deepcave', horizon: 98 },
+    25: { art: 'a25', horizon: 166 },
+    26: { art: 'a26', horizon: 130 },
+  }
+  // Johto's, for the list only: the lab plays Kanto.
+  const PR_OTHER = [
+    { dex: 249, name: 'Lugia', area: 'Whirl Islands' },
+    { dex: 250, name: 'Ho-Oh', area: 'Bell Tower' },
+  ]
+  // The teams friends left on each raid, from their Kanto Box. Kai hasn't left one anywhere yet.
+  const FRIEND_PR = {
+    Lea: { 144: [130, 131, 94], 145: [76, 112, 34], 146: [131, 130, 65], 150: [149, 94, 143] },
+    Noor: { 145: [65, 143, 68], 150: [65, 68, 121] },
+  }
+  // mode: save (each raid's area as the save has it) · open (every area cleared) · old (a save from before, Articuno
+  // caught in its boss fight: that raid counts as done).
+  const PRS = { mode: 'save', key: null, from: 'home', region: 'kanto', caught: new Set(), teams: {}, allies: {}, tries: {} }
+  function prList() {
+    return A.K.areas
+      .filter((a) => a.legend && !MYTHICAL.has(a.legend.d))
+      .map((a) => ({
+        key: `${a.order}:${a.legend.d}`,
+        dex: a.legend.d,
+        name: A.K.names[a.legend.d],
+        order: a.order,
+        area: a.name,
+        ...(PR_ART[a.order] || { art: 'lair-summit', horizon: null }),
+      }))
+  }
+  const prBy = (key) => prList().find((p) => p.key === key) || null
+  /** locked (its area isn't cleared) · open · done (caught: in the raid, or in its boss fight before raids). */
+  function prState(p) {
+    if (PRS.caught.has(p.key) || (PRS.mode === 'old' && p.dex === 144)) return 'done'
+    if (PRS.mode === 'open') return 'open'
+    return A.clearedArea(A.areaBy(p.order)) ? 'open' : 'locked'
+  }
+  const prRules = (p) => ({ level: CFG.pr.level, bars: CFG.pr.bars, teamCap: CFG.pr.teamCap, ...(CFG.pr.per[p.dex] || {}) })
+  /** The region's Box (the lab's Kanto), strongest first, one of each species. */
+  const regionBox = () =>
+    [...(A.owned ? A.owned() : A.TEAM)].sort((a, b) => b.lv - a.lv).filter((m, i, a) => a.findIndex((x) => x.dex === m.dex) === i)
+  /** The team left on a raid; until one is, the region's three strongest. */
+  const prTeam = (p) => PRS.teams[p.key] || regionBox().slice(0, 3).map((m) => m.dex)
+  const prAllies = (p) => (PRS.allies[p.key] || []).filter((n) => FRIEND_PR[n] && FRIEND_PR[n][p.dex])
+  function prRefresh() {
+    rerender()
+    if (!page('praid').hidden) prRender(page('praid'))
+    A.renderGo && A.renderGo()
+  }
+  function openRaid(key, from) {
+    PRS.key = key
+    PRS.from = from || 'home'
+    A.showPage('praid')
+  }
+  A.openRaid = openRaid
+  // CONTINUE's icon when it says RAID: the raid diamond, white on the red button.
+  A.raidIcon = PX.icon(RAID_ICO, { k: '#ffffff', w: '#ffffff', R: '#ffe2db', d: '#ffffff' }, 3).toDataURL()
+  /** CONTINUE in a cleared area with an open raid: RAID, like a gym leader's challenge (Keep exploring under it). */
+  A.raidHere = (a) => {
+    const p = prList().find((x) => x.order === a.order && prState(x) === 'open')
+    return p ? { key: p.key, name: p.name, level: prRules(p).level } : null
+  }
+  /** The areas list's tag: ★ RAID for a raid's area, ★ MYTHICAL for a mythical's lair. */
+  A.raidTag = (a) => (MYTHICAL.has(a.legend.d) ? '<span class="hm-gym leg">★ MYTHICAL</span>' : '<span class="hm-gym leg">★ RAID</span>')
+  /** The area details: the raid with its state, or the mythical's boss fight. */
+  A.raidFact = (a) => {
+    if (!a.legend) return null
+    const d = a.legend.d
+    if (MYTHICAL.has(d))
+      return `<div class="hm-fact legend">${dexIco(d)}<span class="hm-fact-t"><small>Mythical</small><b>${esc(A.K.names[d])} · Lv.${a.legend.lv}</b><em>A boss fight here, never shiny</em></span>${A.caught.has(d) ? '<span class="hm-ok">Caught</span>' : ''}</div>`
+    const p = prList().find((x) => x.order === a.order)
+    const st = prState(p)
+    const em = st === 'locked' ? 'Opens when this area is cleared' : st === 'done' ? 'Caught · your team stays for friends' : 'Open · bring two friends’ teams'
+    const side =
+      st === 'done'
+        ? '<span class="hm-ok">Caught</span>'
+        : `<button type="button" class="pr-go${st === 'locked' ? ' off' : ''}" data-praid="${p.key}" data-from="home" aria-label="${st === 'locked' ? `${esc(p.name)} raid, locked: see it` : `Open the ${esc(p.name)} raid`}">${st === 'locked' ? `<img class="px" alt="" src="${A.icons.LOCK}" />` : 'RAID'}</button>`
+    return `<div class="hm-fact legend raid">${dexIco(d)}<span class="hm-fact-t"><small>Legendary raid</small><b>${esc(p.name)} · Lv.${prRules(p).level}</b><em>${em}</em></span>${side}</div>`
+  }
+  // A raid opens from the area details, the Raids page's list or the Pokédex.
+  document.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-praid]')
+    if (b) openRaid(b.dataset.praid, b.dataset.from)
+  })
+
+  /** The Raids page, under the day's raid: every legendary raid of the region, with its state and the team left on it. */
+  function prListHTML() {
+    const list = prList()
+    const open = list.filter((p) => prState(p) === 'open').length
+    const done = list.filter((p) => prState(p) === 'done').length
+    const kanto = PRS.region === 'kanto'
+    const rows = kanto
+      ? list
+          .map((p) => {
+            const st = prState(p)
+            const team = PRS.teams[p.key]
+            const chip =
+              st === 'done' ? '<span class="hm-ok">Caught</span>' : st === 'open' ? '<span class="hm-st open">Open</span>' : `<span class="hm-st lock"><img class="px" alt="" src="${A.icons.LOCK}" />Locked</span>`
+            const line = st === 'locked' ? `Clear ${p.area}` : p.area
+            const left = team ? `Team left: ${team.map((d) => A.K.names[d]).join(', ')}` : 'No team left here yet'
+            return `<li><button type="button" class="pr-row st-${st}" data-praid="${p.key}" data-from="events">${dexIco(p.dex)}<span class="pr-row-t"><b>${esc(p.name)}</b><small>${esc(line)}</small><small class="${team ? 'pr-left' : 'pr-none'}">${esc(left)}</small></span>${chip}</button></li>`
+          })
+          .join('')
+      : PR_OTHER.map(
+          (p) =>
+            `<li><span class="pr-row st-locked">${dexIco(p.dex)}<span class="pr-row-t"><b>${esc(p.name)}</b><small>Clear ${esc(p.area)}</small><small class="pr-none">No team left here yet</small></span><span class="hm-st lock"><img class="px" alt="" src="${A.icons.LOCK}" />Locked</span></span></li>`,
+        ).join('')
+    return `<div class="pg-sec-h"><h3>Legendary raids</h3><span class="pg-count">${open} open · ${done} caught</span></div>
+      <p class="pg-note pr-note">An area’s legendary is a raid once the area is cleared. Your team for it comes from that region’s Box, and friends bring the team they left on it.</p>
+      <div class="hm-seg pr-regions" role="radiogroup" aria-label="Region">${[
+        ['kanto', 'Kanto', list.length],
+        ['johto', 'Johto', PR_OTHER.length],
+      ]
+        .map(([id, n, c]) => `<button type="button" role="radio" data-prregion="${id}" aria-checked="${PRS.region === id}">${n} <i>${c}</i></button>`)
+        .join('')}</div>
+      <ul class="pr-list">${rows}</ul>`
+  }
+  document.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-prregion]')
+    if (!b) return
+    PRS.region = b.dataset.prregion
+    rerender()
+    $(`[data-prregion="${PRS.region}"]`) && $(`[data-prregion="${PRS.region}"]`).focus({ preventScroll: true })
+  })
+
+  /** A legendary raid's page: its card, START (or the lock), your team for it, your group, the friends with a team here. */
+  function prRender(p) {
+    const r = prBy(PRS.key)
+    if (!r) return A.showPage('home')
+    const st = prState(r)
+    const R = prRules(r)
+    const team = prTeam(r)
+    const allies = prAllies(r)
+    const tries = PRS.tries[r.key] || 0
+    const empty = Math.max(0, CFG.raid.maxFriends - allies.length)
+    const fr = FRIENDS.map((f) => ({ ...f, here: FRIEND_PR[f.name] && FRIEND_PR[f.name][r.dex] }))
+    const withTeam = fr.filter((f) => f.here)
+    const old = PRS.mode === 'old' && r.dex === 144 && !PRS.caught.has(r.key)
+    p.innerHTML = `<header class="ev-head" style="--art:url(assets/ev/art/${r.art}.png);--pos:${r.horizon ? Math.round((r.horizon / 400) * 100) : 55}%">
+        <button type="button" class="pg-back ev-back" data-prback aria-label="Back"></button>
+        <div class="ev-head-t"><h2>Legendary raid</h2><small>${esc(r.area)} · Kanto</small></div>
+      </header>
+      <div class="ev-body">
+        <div class="ev-raidcard${st === 'done' ? ' done' : ''}"><img class="rd-art" alt="" src="assets/ev/art/${r.art}.png" style="${artWindow(r.horizon)}" /><span class="ev-rc-where">${esc(r.area)}</span>
+          <span class="ev-rc-time">No time limit</span>
+          <img class="px ev-rc-mon" alt="" src="${front(r.dex)}" />
+          <span class="ev-rc-name"><b>${esc(r.name)}</b><small>Raid · Lv.${R.level} · ${R.bars} HP bars</small></span>
+          <span class="ev-rc-bars" aria-hidden="true">${Array.from({ length: R.bars }, (_, i) => `<i style="--c:${CFG.raid.colors[i % CFG.raid.colors.length]}"></i>`).join('')}</span>
+          ${st === 'done' ? '<span class="ev-stamp">CAUGHT</span>' : ''}
+        </div>
+        ${
+          st === 'locked'
+            ? `<div class="pr-lock" role="note"><img class="px" alt="" src="${A.icons.LOCK}" /><span><b>Clear ${esc(r.area)} to open this raid</b><small>Like a gym leader, it waits until the area is cleared. You can leave a team here for your friends already.</small></span></div>`
+            : st === 'done'
+              ? `<p class="ev-closed">${old ? `You caught ${esc(r.name)} in its boss fight, before raids. ` : `You caught ${esc(r.name)}. `}This raid is done. ${PRS.teams[r.key] ? 'Your team stays on it, so friends can bring it to theirs.' : `Leave a team on it so friends can bring it to their ${esc(r.name)} raid.`}</p>`
+              : `<button type="button" class="ui-btn primary wide ev-go" data-prgo-start><span>Start the raid</span></button>
+                 <p class="pg-tip">${tries ? `${plural(tries, 'try', 'tries')} · ` : ''}Unlimited tries until it’s caught. Friends who help you catch it get a gift.</p>`
+        }
+        <div class="pg-sec-h"><h3>Your Kanto team</h3><span class="pg-count">Lv.${R.teamCap} max</span><button type="button" class="pg-hint" data-prteam>Change</button></div>
+        <ol class="ev-myteam">${team.map((d, i) => `<li><span class="so-n">${i + 1}</span>${dexIco(d)}<b>${esc(A.K.names[d])}</b></li>`).join('')}</ol>
+        <p class="pg-note pr-note">${PRS.teams[r.key] ? 'Left on this raid: friends can bring it to theirs.' : 'Only Pokémon from your Kanto Box. Change it to leave it on this raid for your friends.'}</p>
+        ${
+          st === 'open'
+            ? `<div class="pg-sec-h"><h3>Your group</h3><span class="pg-count">${allies.length}/${CFG.raid.maxFriends} friends</span></div>
+        <ul class="ev-sides">${allies
+          .map((n) => ({ ...friendBy(n), team: FRIEND_PR[n][r.dex] }))
+          .map(
+            (s) =>
+              `<li>${A.lookOf(s.look)}<span class="so-who"><b>${esc(s.name)}</b>${teamIcons(s.team)}<small>The team they left here</small></span><button type="button" class="pg-hint" data-prunally="${esc(s.name)}" aria-label="Remove ${esc(s.name)}">✕</button></li>`,
+          )
+          .join('')}${Array.from({ length: empty }, () => '<li class="empty"><span class="ev-slot-plus" aria-hidden="true">+</span><span class="so-who"><b>Empty slot</b><small>An NPC trainer of your choice, or a friend below</small></span></li>').join('')}</ul>
+        <details class="ev-friends"${empty ? ' open' : ''}><summary>Friends with a team on this raid <i>${withTeam.length}</i></summary>
+          <ul>${fr
+            .map((f) => {
+              if (!f.here)
+                return `<li><span class="pg-useit pr-nofriend">${A.lookOf(f.look)}<span><b>${esc(f.name)}</b><small>No team left on this raid</small></span></span></li>`
+              const on = allies.includes(f.name)
+              return `<li><button type="button" class="pg-useit" data-prally="${esc(f.name)}" aria-pressed="${on}">${A.lookOf(f.look)}<span><b>${esc(f.name)}</b>${teamIcons(f.here)}</span>${on ? '<em class="ev-check" aria-label="Picked"></em>' : ''}</button></li>`
+            })
+            .join('')}</ul></details>`
+            : ''
+        }
+      </div>`
+  }
+  function prGo(key) {
+    const r = prBy(key)
+    const allies = prAllies(r)
+    const kind = { type: 'prog', key }
+    const empty = Math.max(0, CFG.raid.maxFriends - allies.length)
+    if (!empty) return startRaid(kind, [])
+    return npcPicker(`raid:${key}`, empty, sidesFor(kind).slice(0, 1 + allies.length), (npcs) => startRaid(kind, npcs))
+  }
+  function prTeamSheet(r) {
+    const cap = prRules(r).teamCap
+    const pick = [...prTeam(r)]
+    const draw = () => {
+      $('#hm-s2-body').innerHTML = `<p class="pg-note">Three from your Kanto Box, in the order they go out, Lv.${cap} at most. They stay on this raid: friends can bring them to their ${esc(r.name)} raid.</p>
+        <ul class="so-pick">${regionBox()
+          .slice(0, 24)
+          .map((m) => {
+            const at = pick.indexOf(m.dex)
+            return `<li><button type="button" class="pg-useit" data-rpick="${m.dex}" aria-pressed="${at >= 0}">${dexIco(m.dex)}<span><b>${esc(m.name || A.K.names[m.dex])}</b><small>Lv.${m.lv}${m.lv > cap ? ` → ${cap}` : ''} · Kanto</small></span>${at >= 0 ? `<em class="so-order">${at + 1}</em>` : ''}</button></li>`
+          })
+          .join('')}</ul>`
+      const foot = $('#hm-s2-foot')
+      foot.hidden = false
+      foot.innerHTML = `<button type="button" class="ui-btn primary wide" data-rsave${pick.length === 3 ? '' : ' disabled'}><span>${pick.length === 3 ? 'Leave this team here' : `Pick ${3 - pick.length} more`}</span></button>`
+    }
+    $('#hm-s2-title').textContent = `Team for ${r.name}`
+    $('#hm-s2-sub').textContent = `Kanto Box only · Lv.${cap} max`
+    draw()
+    const sh = $('#hm-sheet2')
+    sh.onclick = (e) => {
+      const b = e.target.closest('[data-rpick]')
+      if (b) {
+        const d = Number(b.dataset.rpick),
+          at = pick.indexOf(d)
+        if (at >= 0) pick.splice(at, 1)
+        else if (pick.length < 3) pick.push(d)
+        else return A.toast('Three at most: tap one to take it out first')
+        draw()
+        return $(`[data-rpick="${d}"]`).focus({ preventScroll: true })
+      }
+      if (e.target.closest('[data-rsave]')) {
+        PRS.teams[r.key] = pick
+        sh.onclick = null
+        A.closeDialog(sh)
+        prRefresh()
+        A.toast(`Team left on the ${r.name} raid: friends can bring it`)
+      }
+    }
+    A.openDialog(sh)
+  }
+  function prClick(e) {
+    const t = e.target
+    let b
+    if (t.closest('[data-prback]')) {
+      if (PRS.from === 'events') {
+        EVS.tab = 'raid'
+        return A.showPage('events')
+      }
+      return A.showPage(PRS.from === 'dex' ? 'dex' : 'home')
+    }
+    if (t.closest('[data-prgo-start]')) return prGo(PRS.key)
+    if (t.closest('[data-prteam]')) return prTeamSheet(prBy(PRS.key))
+    if ((b = t.closest('[data-prally]'))) {
+      const n = b.dataset.prally
+      const cur = PRS.allies[PRS.key] || []
+      if (cur.includes(n)) PRS.allies[PRS.key] = cur.filter((x) => x !== n)
+      else if (cur.length < CFG.raid.maxFriends) PRS.allies[PRS.key] = [...cur, n]
+      else return A.toast(`${CFG.raid.maxFriends} friends at most: take one out first`)
+      prRender(page('praid'))
+      return $(`[data-prally="${n}"]`) && $(`[data-prally="${n}"]`).focus({ preventScroll: true })
+    }
+    if ((b = t.closest('[data-prunally]'))) {
+      PRS.allies[PRS.key] = (PRS.allies[PRS.key] || []).filter((x) => x !== b.dataset.prunally)
+      return prRender(page('praid'))
+    }
+  }
+  function prAdmin() {
+    const num = (k, label, max) =>
+      `<label><span>${label}</span><input type="number" data-pr="${k}" value="${CFG.pr[k]}" min="1" max="${max}" /></label>`
+    const cell = (p, f) => {
+      const own = (CFG.pr.per[p.dex] || {})[f]
+      return `<td><input type="number" data-prper="${p.dex}" data-f="${f}" value="${own ?? ''}" placeholder="${CFG.pr[f]}" min="1" max="100" aria-label="${esc(p.name)}: ${f}" /></td>`
+    }
+    return `<div class="ad-sec"><h3>Legendary raids</h3><div class="ad-grid">${num('level', 'Raid level', 100)}${num('bars', 'HP bars', 5)}${num('teamCap', 'Team level cap', 100)}</div>
+      <table class="ad-t"><thead><tr><th>Raid</th><th>Area</th><th>Level</th><th>Bars</th><th>Team cap</th></tr></thead><tbody>${prList()
+        .map((p) => `<tr><td>${esc(p.name)}</td><td>${esc(p.area)}</td>${cell(p, 'level')}${cell(p, 'bars')}${cell(p, 'teamCap')}</tr>`)
+        .join('')}</tbody></table>
+      <p class="ad-note">Every area boss but the mythicals is a raid: 85 in the game, Kanto’s ${prList().length} here (Areas → bosses → Raid). Empty = the defaults above. They follow the Raid Battles switch: off, they are plain boss fights again. Mythicals (Mew) stay boss fights, never shiny there; their shiny raids are on the daily calendar.</p></div>`
+  }
+
+  // ------------------------------------------------------------------ NPC partners: four to pick from
+  // START with empty slots: four NPC trainers, three Pokémon each, and you pick as many as there are empty slots. The
+  // four come from a seed kept per raid (localStorage here, the save in the game), so a refresh shows the same four;
+  // starting the try draws a new seed, so the next try offers four new ones.
+  const NPC_POOL = [
+    ['Ace Trainer', 'Cal', 'cooltrainer-m'],
+    ['Ace Trainer', 'Ria', 'cooltrainer-f'],
+    ['Hiker', 'Bruce', 'hiker'],
+    ['Psychic', 'Tyron', 'psychic-m'],
+    ['Black Belt', 'Koji', 'black-belt'],
+    ['Bird Keeper', 'Perry', 'bird-keeper'],
+    ['Swimmer', 'Lisa', 'swimmer-f'],
+    ['Beauty', 'Olivia', 'beauty'],
+    ['Gentleman', 'Arthur', 'gentleman'],
+    ['Scientist', 'Ted', 'scientist'],
+    ['Channeler', 'Hope', 'channeler'],
+    ['Fisherman', 'Ned', 'fisherman'],
+    ['Ranger', 'Elle', 'ranger-f'],
+    ['Juggler', 'Kirk', 'juggler'],
+  ]
+  // Fully evolved Kanto Pokémon: never legendary, mythical, a starter line or a pseudo-legendary.
+  const NPC_MONS = [34, 59, 65, 68, 71, 76, 94, 112, 115, 121, 128, 130, 131, 134, 143]
+  const OFFER_KEY = 'pdlab.npcOffer'
+  const OFFER_MEM = new Map()
+  function offerSeed(key, fresh) {
+    let all = {}
+    try {
+      all = JSON.parse(localStorage.getItem(OFFER_KEY) || '{}') || {}
+    } catch {
+      all = Object.fromEntries(OFFER_MEM)
+    }
+    if (fresh || !Number.isFinite(all[key])) {
+      all[key] = Math.floor(Math.random() * 2 ** 31)
+      OFFER_MEM.set(key, all[key])
+      try {
+        localStorage.setItem(OFFER_KEY, JSON.stringify(all))
+      } catch {}
+    }
+    return all[key]
+  }
+  const dailyKey = () => `daily:${new Date().toISOString().slice(0, 10)}:${EVS.raidKind}`
+  /** The four on offer for this raid: the same for a given seed. */
+  function npcOffer(key) {
+    const rnd = PX.rng(offerSeed(key))
+    const pick = (xs) => xs[Math.floor(rnd() * xs.length)]
+    const trainers = [...NPC_POOL]
+    return Array.from({ length: 4 }, (_, i) => {
+      const [cls, name, look] = trainers.splice(Math.floor(rnd() * trainers.length), 1)[0]
+      const left = [...NPC_MONS]
+      const team = Array.from({ length: 3 }, () => left.splice(left.indexOf(pick(left)), 1)[0])
+      return { id: i, name: `${cls} ${name}`, cls, short: name, look, team }
+    })
+  }
+  /**
+   * The pop-up: your group so far, the four trainers (look, name, three Pokémon with their types), and START once
+   * enough are picked. Back keeps the same four.
+   */
+  function npcPicker(key, need, group, onStart) {
+    const offer = npcOffer(key)
+    const picked = []
+    const ov = overlay()
+    const draw = (focus) => {
+      const slots = Array.from({ length: need }, (_, i) => (picked[i] != null ? A.lookOf(offer[picked[i]].look, 'npc') : '<span class="npc-slot"></span>')).join('')
+      const left = need - picked.length
+      ov.innerHTML = `<div class="ev-reward ev-confirm npc-pick" role="dialog" aria-modal="true" aria-labelledby="npc-t" aria-describedby="npc-d">
+        <span class="ev-cf-slots" aria-hidden="true">${group.map((s) => A.lookOf(s.look)).join('')}${slots}</span>
+        <h3 id="npc-t">${need > 1 ? `Pick ${need} trainers` : 'Pick a trainer'}</h3>
+        <p class="ev-rw-sub" id="npc-d">${need > 1 ? `${need} slots in your group are empty` : 'One slot in your group is empty'}: these trainers can fight beside you. Invite friends next time!</p>
+        <ul class="npc-grid">${offer
+          .map((n) => {
+            const at = picked.indexOf(n.id)
+            const names = n.team.map((d) => A.K.names[d]).join(', ')
+            return `<li><button type="button" class="npc-card" data-npc="${n.id}" aria-pressed="${at >= 0}" aria-label="${esc(n.name)}: ${esc(names)}, Lv.${CFG.raid.teamCap}">
+              <span class="npc-head">${A.lookOf(n.look)}<span class="npc-who"><small>${esc(n.cls)}</small><b>${esc(n.short)}</b></span>${at >= 0 ? `<em class="so-order">${at + 1}</em>` : ''}</span>
+              <span class="npc-team">${n.team.map((d) => `<span class="npc-mon">${dexIco(d)}<small>${cap((A.K.types[d] || ['normal'])[0])}</small></span>`).join('')}</span></button></li>`
+          })
+          .join('')}</ul>
+        <p class="npc-note">They fight at Lv.${CFG.raid.teamCap}, on their own. The same four until you start; the next try brings four new ones.</p>
+        <div class="ev-pop-foot"><button type="button" class="ui-btn" data-ov-close><span>Back</span></button><button type="button" class="ui-btn primary" data-npcgo${left ? ' disabled' : ''}><span>${left ? (left === need ? (need > 1 ? `Pick ${need}` : 'Pick one') : `Pick ${left} more`) : 'Start the raid'}</span></button></div></div>`
+      const f = focus != null ? $(`[data-npc="${focus}"]`, ov) : $('[data-npc]', ov)
+      f && f.focus({ preventScroll: true })
+    }
+    ov.onclick = (e) => {
+      const b = e.target.closest('[data-npc]')
+      if (b) {
+        const id = Number(b.dataset.npc)
+        const at = picked.indexOf(id)
+        if (at >= 0) picked.splice(at, 1)
+        else if (picked.length < need) picked.push(id)
+        else return A.toast(need > 1 ? `${need} at most: tap one to take it out first` : 'One only: tap it again to take it out first')
+        return draw(id)
+      }
+      if (e.target.closest('[data-npcgo]') && picked.length === need) {
+        ov.hidden = true
+        ov.onclick = null
+        // This try uses these four; the next one gets a new four.
+        offerSeed(key, true)
+        return onStart(picked.map((i) => offer[i]))
+      }
+      if (e.target.closest('[data-ov-close]') || e.target === ov) ov.onclick = null
+    }
+    ov.hidden = false
+    draw()
+  }
+
   // ------------------------------------------------------------------ wiring
   function reset() {
     // The plan deletes Victory Road II and League II: the lab's Kanto drops them too.
@@ -2396,6 +2850,10 @@
     EVS.tries = 0
     EVS.reb = { tier: 0, step: 0, done: 0, paid: new Set() }
     EVS.tab = null
+    PRS.caught.clear()
+    PRS.teams = {}
+    PRS.allies = {}
+    PRS.tries = {}
     // Raids won so far in each preview save (raids open with the Safari Zone).
     A.raidsWon = { mid: 0, versus: 3, league: 7 }[A.SAVE.id] || 0
     controls()
@@ -2427,6 +2885,16 @@
       eventsRender(p)
     },
     reset,
+    dot: null,
+  })
+  HOME.page('praid', {
+    render(p) {
+      if (!p.dataset.bound) {
+        p.dataset.bound = '1'
+        p.addEventListener('click', prClick)
+      }
+      prRender(p)
+    },
     dot: null,
   })
   HOME.page('raid', {

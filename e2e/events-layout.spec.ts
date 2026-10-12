@@ -9,6 +9,7 @@ import { FAST, makeSave, mockSupabase, nonJerseyText, smallControls } from './he
 const cleared = { roundsDone: 1, cleared: true, bossDefeated: true, bossesDefeated: [], gymsDefeated: [] }
 const LEAGUE = 'bbe7e459-a138-5106-bd01-fce7ff422e7f'
 const FARAWAY = '050ff505-ff8e-5251-8499-842a2cfc2986'
+const SEAFOAM = '51bb91b2-9c10-508c-bd4d-0f9e39e3f30d'
 
 /** Every event open: Routes 7 & 8, the Safari Zone, Faraway Island and the Kanto League cleared; a team of three. */
 function eventsSave(): SaveData {
@@ -25,6 +26,7 @@ function eventsSave(): SaveData {
       [DEFAULT_CONFIG.events.wheel.unlockAreaId!]: cleared,
       [DEFAULT_CONFIG.events.raid.unlockAreaId!]: cleared,
       [FARAWAY]: cleared,
+      [SEAFOAM]: cleared,
       [LEAGUE]: cleared,
     },
     events: { seen: ['wheel', 'raid', 'rebattle'] },
@@ -45,7 +47,8 @@ async function boot(page: Page) {
   )
 }
 
-const ROUTES = ['/events/wheel', '/events/raid', '/events/rebattle']
+// The last one: Articuno's progression raid (docs/24), open with the Seafoam Islands completed.
+const ROUTES = ['/events/wheel', '/events/raid', '/events/rebattle', `/raid/${SEAFOAM}/144`]
 
 /** What sticks out past the right edge, to say which element makes a page scroll sideways. */
 const wide = (page: Page) =>
@@ -68,7 +71,7 @@ for (const size of [
       await page.goto(route)
       await expect(page.getByRole('heading', { level: 1 }).first()).toBeVisible()
       // The raid page's buttons wait for the day's raid.
-      if (route === '/events/raid') await expect(page.getByRole('button', { name: 'Start the raid' })).toBeVisible()
+      if (route === '/events/raid' || route.startsWith('/raid/')) await expect(page.getByRole('button', { name: 'Start the raid' })).toBeVisible()
       const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)
       expect(overflow, `${route} scrolls sideways: ${(await wide(page)).join(' | ')}`).toBeLessThanOrEqual(0)
       expect(await nonJerseyText(page), `${route}: fonts`).toEqual([])
@@ -109,7 +112,19 @@ test('a raid fight fits a 360×640 phone', async ({ page }) => {
   await boot(page)
   await page.goto('/events/raid')
   await page.getByRole('button', { name: 'Start the raid' }).click()
-  await page.getByRole('dialog', { name: 'Empty slots' }).getByRole('button', { name: 'Start', exact: true }).click()
+  const pop = page.getByRole('dialog', { name: 'Pick 2 trainers' })
+  // The NPC partners pop-up fits the phone too.
+  await expect(pop.getByRole('button', { name: /, Lv\.\d+$/ })).toHaveCount(4)
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)
+  expect(overflow, `the picker scrolls sideways: ${(await wide(page)).join(' | ')}`).toBeLessThanOrEqual(0)
+  expect(await nonJerseyText(page), 'picker: fonts').toEqual([])
+  expect(await smallControls(page), 'picker: controls under 44px').toEqual([])
+  const picker = await new AxeBuilder({ page }).include('[role="dialog"]').withTags(['wcag2a', 'wcag2aa']).analyze()
+  const serious = picker.violations.filter((v) => v.impact === 'serious' || v.impact === 'critical')
+  expect(serious.map((v) => `${v.id}: ${v.nodes.length} node(s) — ${v.nodes[0]?.target.join(' ')}`), 'picker: axe').toEqual([])
+  await pop.getByRole('button', { name: /, Lv\.\d+$/ }).nth(0).click()
+  await pop.getByRole('button', { name: /, Lv\.\d+$/ }).nth(1).click()
+  await pop.getByRole('button', { name: 'Start', exact: true }).click()
   const attack = page.getByRole('button', { name: 'ATTACK', exact: true })
   await expect(attack).toBeEnabled({ timeout: 20_000 })
   await page.waitForTimeout(800) // the thrown dice settle

@@ -151,13 +151,17 @@ describe('areas & trainers', () => {
   it('keeps legendaries out of every wild pool, in every region', () => {
     const wild = new Set(everyArea.flatMap((a) => a.wildPool.filter((w) => w.weight > 0).map((w) => w.dex)))
     for (const l of ALL_LEGENDARIES) expect(wild.has(l), `#${l}`).toBe(false)
-    // Each is attached to an area as a boss — except the three roamers, which have no area at all, and the raid
-    // pool's mythicals, met in Raid Battles once their lair is cleared.
-    const bosses = new Set(everyArea.flatMap((a) => a.legendaryBoss ?? []).map((b) => b.dex))
+    // Each is attached to an area as a boss, except the three roamers, which have no area at all. The raid pool's
+    // mythicals are their lairs' bosses (docs/24: shiny only in Raid Battles); every other boss is a progression raid.
+    const bossList = everyArea.flatMap((a) => a.legendaryBoss ?? [])
+    const bosses = new Set(bossList.map((b) => b.dex))
     const roamers = new Set(BUNDLE.config.roamers ? (BUNDLE.config.roamers as { dex: number[] }).dex : [])
-    const raids = new Set(DEFAULT_CONFIG.events.raid.pool.map((p) => p.dex))
-    for (const l of ALL_LEGENDARIES) expect(bosses.has(l) || roamers.has(l) || raids.has(l), `#${l}`).toBe(true)
-    for (const r of raids) expect(bosses.has(r), `#${r} is a raid, not a boss`).toBe(false)
+    const mythicals = new Set(DEFAULT_CONFIG.events.raid.pool.map((p) => p.dex))
+    // Melmetal is no one's boss: Meltan, The Mystery Box's, evolves into it.
+    const evolved = new Set([809])
+    for (const l of ALL_LEGENDARIES) expect(bosses.has(l) || roamers.has(l) || evolved.has(l), `#${l}`).toBe(true)
+    for (const m of mythicals) expect(bosses.has(m) || evolved.has(m), `#${m} is its lair's boss`).toBe(true)
+    for (const b of bossList) expect(!!b.raid, `#${b.dex}`).toBe(!mythicals.has(b.dex))
   })
 
   it('keeps the starters rare in the wild (weight 3 in the catch-all, 1 elsewhere), never in trainer teams', () => {
@@ -295,8 +299,11 @@ describe('Kanto structure', () => {
     expect(bossOf('Power Plant')).toEqual([145])
     expect(bossOf('Victory Road')).toEqual([146])
     expect(bossOf('Cerulean Cave')).toEqual([150])
-    // Mew is a raid: Faraway Island, its lair, unlocks it.
-    expect(allAreas.find((a) => a.name === 'Faraway Island')!.legendaryBoss).toBeNull()
+    // The legendaries are progression raids (docs/24); Mew is Faraway Island's boss, its shiny one a raid of the day.
+    const raid = (name: string) => allAreas.find((a) => a.name === name)!.legendaryBoss!.map((b) => !!b.raid)
+    for (const name of ['Seafoam Islands', 'Power Plant', 'Victory Road', 'Cerulean Cave']) expect(raid(name), name).toEqual([true])
+    expect(bossOf('Faraway Island')).toEqual([151])
+    expect(raid('Faraway Island')).toEqual([false])
   })
 })
 

@@ -1,8 +1,8 @@
 // The special events (docs/18): the unlock pop-up, then the Fortune Wheel from Home's square to its prize, as a guest
 // (the prize drawn on the device, on the server's day) and signed in (the prize drawn by wheel_spin()).
 import { expect, test, type Page } from '@playwright/test'
-import { DEFAULT_CONFIG, type SaveData } from '../src/engine'
-import { FAST, fakeSession, makeSave, mockSupabase, STORAGE_KEY } from './helpers'
+import { DEFAULT_CONFIG, linearAreas, type SaveData } from '../src/engine'
+import { FAST, fakeSession, gameData, makeSave, mockSupabase, STORAGE_KEY } from './helpers'
 
 const ROUTES_7_8 = DEFAULT_CONFIG.events.wheel.unlockAreaId!
 const cleared = { roundsDone: 1, cleared: true, bossDefeated: true, bossesDefeated: [], gymsDefeated: [] }
@@ -242,7 +242,8 @@ test('a raid: the day’s raid, its lock, NPC trainers in the group, the fight t
   await mockSupabase(page, { rpc: { event_time: raidTime } })
   await boot(page, raidSave())
   await page.goto('/home')
-  await page.getByRole('button', { name: /^Raid Battles: Celebi/ }).click()
+  // Earth Day's Celebi is shiny: the mythicals' days of the calendar are (docs/24).
+  await page.getByRole('button', { name: /^Raid Battles: Shiny Celebi/ }).click()
   await expect(page).toHaveURL(/\/events\/raid$/)
   await expect(page.getByRole('heading', { name: 'Your raid team' })).toBeVisible()
   // Celebi's lair is in Johto, not started: it'll wait for the player, who can still fight and catch it.
@@ -256,9 +257,28 @@ test('a raid: the day’s raid, its lock, NPC trainers in the group, the fight t
   await expect(rules.getByText(/^One raid a day, the same for everyone/)).toBeVisible()
   await rules.getByRole('button', { name: 'OK', exact: true }).click()
   await page.getByRole('button', { name: 'Start the raid' }).click()
-  const pop = page.getByRole('dialog', { name: 'Empty slots' })
-  await expect(pop.getByText('The empty slots in your group will be filled with NPC, invite friends next time!')).toBeVisible()
+  // No friend in the group: four NPC trainers to pick two from, the same four after a reload.
+  const pop = page.getByRole('dialog', { name: 'Pick 2 trainers' })
+  await expect(pop.getByText(/^2 slots in your group are empty: these trainers can fight beside you/)).toBeVisible()
+  const cards = pop.getByRole('button', { name: /, Lv\.\d+$/ })
+  await expect(cards).toHaveCount(4)
+  const offered = await cards.evaluateAll((els) => els.map((e) => e.getAttribute('aria-label')))
+  await pop.getByRole('button', { name: 'Back', exact: true }).click()
+  await expect.poll(async () => (await stored(page)).events?.raidNpc?.key).toBe(`daily:${RAID_DAY}`)
+  const seed = (await stored(page)).events!.raidNpc!.seed
+  await page.addInitScript((s) => localStorage.setItem('pokedice.save', s), JSON.stringify(await stored(page)))
+  await page.reload()
+  await page.getByRole('button', { name: 'Start the raid' }).click()
+  await expect(cards).toHaveCount(4)
+  expect(await cards.evaluateAll((els) => els.map((e) => e.getAttribute('aria-label')))).toEqual(offered)
+  await expect(pop.getByRole('button', { name: 'Pick 2 more' })).toBeDisabled()
+  await cards.nth(0).click()
+  await expect(cards.nth(0)).toHaveAttribute('aria-pressed', 'true')
+  await expect(pop.getByRole('button', { name: 'Pick 1 more' })).toBeDisabled()
+  await cards.nth(2).click()
   await pop.getByRole('button', { name: 'Start', exact: true }).click()
+  // The try started: the next one brings four new trainers.
+  await expect.poll(async () => (await stored(page)).events?.raidNpc?.seed).not.toBe(seed)
 
   // The fight (animations off): the target is yours to pick, the attack too, until the raid is won or lost.
   await expect(page.getByRole('heading', { name: 'Raid battle: Celebi' })).toBeAttached()
@@ -291,7 +311,7 @@ test('a raid: the day’s raid, its lock, NPC trainers in the group, the fight t
     const after = await stored(page)
     expect(after.events?.raid?.caught).toBe(true)
     expect(after.box.some((p) => p.dex === 251)).toBe(false)
-    expect(after.events?.raidLocked).toMatchObject([{ dex: 251, shiny: false, day: RAID_DAY }])
+    expect(after.events?.raidLocked).toMatchObject([{ dex: 251, shiny: true, day: RAID_DAY }])
     await page.getByRole('button', { name: 'Back to the raids' }).click()
     await expect(page.getByText('CAUGHT', { exact: true })).toBeVisible()
     await expect(page.getByRole('button', { name: 'Start the raid' })).toHaveCount(0)
@@ -317,10 +337,11 @@ test('the raid team fights, not the party: a switch on your turn, the speed butt
   })
   await page.goto('/events/raid')
   await page.getByRole('button', { name: 'Start the raid' }).click()
-  await page
-    .getByRole('dialog', { name: 'Empty slots' })
-    .getByRole('button', { name: 'Start', exact: true })
-    .click()
+  // No friend in the group: two of the four NPC trainers on offer (docs/24).
+  const pop = page.getByRole('dialog', { name: 'Pick 2 trainers' })
+  await pop.getByRole('button', { name: /, Lv\.\d+$/ }).nth(0).click()
+  await pop.getByRole('button', { name: /, Lv\.\d+$/ }).nth(1).click()
+  await pop.getByRole('button', { name: 'Start', exact: true }).click()
   await expect(page.getByRole('heading', { name: 'Raid battle: Celebi' })).toBeAttached()
 
   const team = page.getByRole('group', { name: 'Switch Pokémon' })
@@ -404,9 +425,56 @@ test('signed in: two friends in the group, and the raid starts with their teams,
 
   // A full group: no NPC pop-up, straight into the raid, the friends' trainers beside you.
   await page.getByRole('button', { name: 'Start the raid' }).click()
-  await expect(page.getByRole('dialog', { name: 'Empty slots' })).toHaveCount(0)
+  await expect(page.getByRole('dialog', { name: /^Pick \d trainers?$/ })).toHaveCount(0)
   await expect(page.getByRole('heading', { name: 'Raid battle: Celebi' })).toBeAttached()
   await expect(page.getByRole('list', { name: 'Your group' }).getByLabel(/^(Gary|Erika)'s /).first()).toBeAttached()
   // Your raid team is registered for your friends on the way.
   await expect.poll(() => calls.some((c) => c.includes('/rpc/raid_set_team'))).toBe(true)
+})
+
+/** Kanto played up to the Seafoam Islands, all of it completed: Articuno's raid is open there. */
+function seafoamSave(): SaveData {
+  const data = gameData()
+  const chain = linearAreas(data, 'kanto')
+  const seafoam = chain.find((a) => a.name === 'Seafoam Islands')!
+  const base = raidSave()
+  const done = Object.fromEntries(chain.filter((a) => a.orderIndex <= seafoam.orderIndex).map((a) => [a.id, cleared]))
+  return { ...base, currentAreaId: seafoam.id, areaProgress: { ...base.areaProgress, ...done } }
+}
+
+test('a progression raid: RAID on CONTINUE once its area is completed, its page, NPC partners, the fight', async ({ page }) => {
+  await mockSupabase(page, { rpc: { event_time: raidTime } })
+  const save = seafoamSave()
+  await boot(page, save)
+  await page.goto('/home')
+  await page.getByRole('button', { name: 'RAID: ARTICUNO', exact: true }).click()
+  const seafoam = save.currentAreaId
+  await expect(page).toHaveURL(new RegExp(`/raid/${seafoam}/144$`))
+  await expect(page.getByRole('heading', { level: 1, name: 'Legendary raid' })).toBeVisible()
+  await expect(page.getByText("Unlimited tries until it's caught. Friends who help you catch it get a gift.")).toBeVisible()
+  // The team for it: Kanto's Box, capped at the progression raids' Lv.50.
+  await expect(page.getByRole('heading', { name: 'Your Kanto team' })).toBeVisible()
+  await page.getByRole('button', { name: 'Start the raid' }).click()
+  const pop = page.getByRole('dialog', { name: 'Pick 2 trainers' })
+  const cards = pop.getByRole('button', { name: /, Lv\.50$/ })
+  await expect(cards).toHaveCount(4)
+  await cards.nth(1).click()
+  await cards.nth(3).click()
+  await pop.getByRole('button', { name: 'Start', exact: true }).click()
+  await expect(page.getByRole('heading', { name: 'Raid battle: Articuno' })).toBeAttached()
+  await expect.poll(async () => (await stored(page)).events?.raidNpc?.key).toBe(`${seafoam}:144`)
+})
+
+test('the Raids page lists the legendary raids of the region, each opening its page', async ({ page }) => {
+  await mockSupabase(page, { rpc: { event_time: raidTime } })
+  await boot(page, seafoamSave())
+  await page.goto('/events/raid')
+  await expect(page.getByRole('heading', { name: 'Legendary raids' })).toBeVisible()
+  const row = page.getByRole('button', { name: /^Articuno Seafoam Islands/ })
+  await expect(row).toContainText('Open')
+  await expect(page.getByRole('button', { name: /Complete Cerulean Cave to open it/ })).toBeVisible()
+  await row.click()
+  await expect(page).toHaveURL(/\/raid\/[0-9a-f-]+\/144$/)
+  await page.getByRole('button', { name: 'Back', exact: true }).click()
+  await expect(page).toHaveURL(/\/events\/raid$/)
 })

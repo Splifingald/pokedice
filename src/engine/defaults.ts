@@ -195,8 +195,9 @@ export const DEFAULT_CONFIG: GameConfig = {
         { key: 'revive', weight: 20 },
         { key: 'rare-candy', weight: 15 },
       ],
-      // The mythicals, each a raid (never a shiny one: those are for other events); their lair is the area a catch waits for (scripts/raid-areas.ts
-      // took them out of those areas' bosses). The legendaries are shiny raids and stay their areas' bosses.
+      // The mythicals: each its lair's boss (never shiny there) and a shiny raid of the calendar, fought in front of its
+      // lair, a catch waiting until the lair is completed. Every other area boss is a progression raid (docs/24,
+      // scripts/raid-areas.ts), and a shiny raid of the calendar too.
       pool: [
         { dex: 151, areaId: '050ff505-ff8e-5251-8499-842a2cfc2986' }, // Mew, Faraway Island
         { dex: 251, areaId: '100e6644-3f5b-553a-ad22-e26551b04edc' }, // Celebi, Ilex Shrine
@@ -223,30 +224,32 @@ export const DEFAULT_CONFIG: GameConfig = {
         { dex: 1025, areaId: '168b74c9-3359-5581-a214-1f5be8da9b3e' }, // Pecharunt, Kitakami Hall
       ],
       perMon: {},
+      // Progression raids: like the day's raid by default (Lv.50, teams capped at 50); Admin → Raids changes them.
+      progress: { teamCap: 50, perMon: {} },
       calendar: {
         seeds: [],
         overrides: {},
         // Days that mean something (engine/raidCalendar.ts lays out the rest, legendaries on the weekends).
         anchors: [
-          { date: '01-01', dex: 493, shiny: false }, // New Year: Arceus, who shaped the world
+          { date: '01-01', dex: 493, shiny: true }, // New Year: Arceus, who shaped the world
           { date: '02-14', dex: 905, shiny: true }, // Valentine's Day: Enamorus, the love-hate Pokémon
           { date: '02-27', dex: 25, shiny: true }, // Pokémon Day: a shiny Pikachu
-          { date: '03-20', dex: 492, shiny: false }, // spring equinox: Shaymin, when the Gracidea blooms
+          { date: '03-20', dex: 492, shiny: true }, // spring equinox: Shaymin, when the Gracidea blooms
           { date: '03-22', dex: 382, shiny: true }, // World Water Day: Kyogre
-          { date: '04-01', dex: 720, shiny: false }, // April Fools' Day: Hoopa, the mischief Pokémon
-          { date: '04-22', dex: 251, shiny: false }, // Earth Day: Celebi, the voice of the forest
-          { date: '06-08', dex: 490, shiny: false }, // World Oceans Day: Manaphy, the prince of the sea
+          { date: '04-01', dex: 720, shiny: true }, // April Fools' Day: Hoopa, the mischief Pokémon
+          { date: '04-22', dex: 251, shiny: true }, // Earth Day: Celebi, the voice of the forest
+          { date: '06-08', dex: 490, shiny: true }, // World Oceans Day: Manaphy, the prince of the sea
           { date: '06-20', dex: 791, shiny: true }, // summer solstice: Solgaleo, the sun
-          { date: '06-21', dex: 648, shiny: false }, // Fête de la Musique: Meloetta
-          { date: '07-07', dex: 385, shiny: false }, // Tanabata, the star festival: Jirachi grants wishes
-          { date: '07-14', dex: 494, shiny: false }, // Bastille Day's fireworks: Victini, the victory Pokémon
-          { date: '08-12', dex: 386, shiny: false }, // the Perseids: Deoxys came on a meteor
+          { date: '06-21', dex: 648, shiny: true }, // Fête de la Musique: Meloetta
+          { date: '07-07', dex: 385, shiny: true }, // Tanabata, the star festival: Jirachi grants wishes
+          { date: '07-14', dex: 494, shiny: true }, // Bastille Day's fireworks: Victini, the victory Pokémon
+          { date: '08-12', dex: 386, shiny: true }, // the Perseids: Deoxys came on a meteor
           { date: '10-30', dex: 487, shiny: true }, // Halloween eve: Giratina, from the Distortion World
-          { date: '10-31', dex: 491, shiny: false }, // Halloween: Darkrai and its nightmares
-          { date: '11-01', dex: 802, shiny: false }, // All Saints' Day: Marshadow, of the shadows
+          { date: '10-31', dex: 491, shiny: true }, // Halloween: Darkrai and its nightmares
+          { date: '11-01', dex: 802, shiny: true }, // All Saints' Day: Marshadow, of the shadows
           { date: '12-21', dex: 792, shiny: true }, // winter solstice, the longest night: Lunala, the moon
           { date: '12-24', dex: 225, shiny: true }, // Christmas Eve: a shiny Delibird with its presents
-          { date: '12-25', dex: 801, shiny: false }, // Christmas: Magearna, made as a gift
+          { date: '12-25', dex: 801, shiny: true }, // Christmas: Magearna, made as a gift
           { date: '12-31', dex: 483, shiny: true }, // New Year's Eve: Dialga, master of time
         ],
         // Shiny fillers come from areas starting at Lv.40 or more: a Lv.50 catch never lands in an early area.

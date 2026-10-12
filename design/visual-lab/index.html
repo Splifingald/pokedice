@@ -7,6 +7,7 @@
   href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Doto:wght@600;800&family=Handjet:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Jersey+15&family=Jersey+20&family=Jersey+25&family=Pixelify+Sans:wght@400;500;600;700&family=Silkscreen:wght@400;700&display=swap"
 />
 <link rel="stylesheet" href="bgs.css" />
+<link rel="stylesheet" href="raids.css" />
 <style>
   /*
    * Layout: a sticky control deck (sections + the global style switch) over one centred column, 1280 px at most.
@@ -2203,10 +2204,17 @@
         <button type="button" role="radio" data-evmode="all" aria-checked="false">All three</button>
       </div>
       <div class="seg small" role="radiogroup" aria-label="Today’s raid">
-        <button type="button" role="radio" data-evraid="mew" aria-checked="true">Raid: Mew</button>
-        <button type="button" role="radio" data-evraid="shiny" aria-checked="false">Shiny Mew</button>
-        <button type="button" role="radio" data-evraid="fallback" aria-checked="false">Fallback</button>
+        <button type="button" role="radio" data-evraid="mew" aria-checked="true">Mythical day: shiny Mew</button>
+        <button type="button" role="radio" data-evraid="zapdos" aria-checked="false">Legendary day: shiny Zapdos</button>
+        <button type="button" role="radio" data-evraid="fallback" aria-checked="false">Filler: shiny Dragonite</button>
       </div>
+      <div class="seg small" role="radiogroup" aria-label="Legendary raids">
+        <button type="button" role="radio" data-prmode="save" aria-checked="true">Legendary raids: from the save</button>
+        <button type="button" role="radio" data-prmode="open" aria-checked="false">Every area cleared</button>
+        <button type="button" role="radio" data-prmode="old" aria-checked="false">Old save: Articuno caught</button>
+      </div>
+      <button type="button" class="btn small" data-prgo>Stand in Seafoam Islands</button>
+      <button type="button" class="btn small" data-prreset>Four new NPC trainers</button>
       <button type="button" class="btn small" data-evpop>Replay unlock pop-ups</button>
       <button type="button" class="btn small" data-evgift>Helper gift pop-up</button>
       <button type="button" class="btn small" data-evsound aria-pressed="false">Sound off</button>
@@ -2294,6 +2302,7 @@
                 <button type="button" class="ui-btn hm-map" id="hm-areas" aria-haspopup="dialog" aria-label="Areas: change where you explore"></button>
                 <button type="button" class="ui-btn primary hm-go" id="hm-go"></button>
               </div>
+              <button type="button" class="ui-btn hm-keep" id="hm-keep" hidden><span>Keep exploring</span></button>
               <div class="hm-widgets">
                 <button type="button" class="ui-panel hm-w" id="hm-secret"></button>
                 <button type="button" class="ui-panel hm-w" id="hm-daycare"></button>
@@ -2312,6 +2321,7 @@
               <section class="hm-page" data-page="trainer" aria-label="Trainer card" hidden></section>
               <section class="hm-page" data-page="events" aria-label="Events" hidden></section>
               <section class="hm-page" data-page="raid" aria-label="Raid battle" hidden></section>
+              <section class="hm-page" data-page="praid" aria-label="Legendary raid" hidden></section>
               <section class="hm-page" data-page="trades" aria-label="Trades" hidden></section>
               <nav class="hm-nav" id="hm-nav" aria-label="Game menu">
                 <button type="button" data-tab="shop"><img data-nav="shop" class="px" alt="" /><span>Shop</span></button>
@@ -2384,6 +2394,8 @@
           <li><b>Unlock pop-up</b><span>Once per event, when its area is cleared: a <em>banner</em> on an in-game background chosen in admin, 2 to 4 rule sections that read the admin numbers, then LET’S GO straight to it. Only the newest unlock shows, after the game’s other pop-ups.</span></li>
           <li><b>Fortune Wheel</b><span>Opens with Routes 7 &amp; 8 (Celadon). <em>Nine equal slices</em> built from the admin rows (4 × ₽10, 2 Poké Balls, Great, Ultra, Master Ball), the same prize never side by side. The server picks the slice, the wheel lands on it. <em>The show:</em> marquee bulbs chase around the rim (slow when idle, racing while it turns, all blinking on a win); a wind-up creak, a whoosh, motion blur at speed, sparks off the pegs at every tick, a last-slice teeter; on landing a clack and a shake, the winning slice blinks while the rest go dark, the prize pops out of its slice and grows in the middle, coins and stars burst; an Ultra or Master Ball is a jackpot: white flash, purple rays, a coin shower and a fanfare. The blue <em>Info</em> button under it shows the real odds. One spin per UTC day, read from the server (no clock tricks).</span></li>
           <li><b>Raid Battles</b><span>Opens with the Safari Zone. Every raid starts with a six-second <em>opening</em> (Skip at any time): hazard tapes and an alarm, a storm with lightning, the raid Pokémon’s silhouette rising with a glowing edge, a pillar of light, a white-out reveal with shockwaves and debris, its name slamming down while the HP bars fill, the three trainers cutting in with their lead Pokémon, then GO! The 23 mythicals leave their areas: clearing the area adds them to <em>your raid pool</em>, which the Pokédex shows under “Where to find it” (try #151). Every UTC day a new raid: a pool legendary you don’t own; once you own them all, their shinies; otherwise a powerful Pokémon (shiny 30 %). Never twice in 72 h. START sits right under the raid Pokémon. You bring <em>three at Lv.50</em>, up to two friends bring theirs; empty slots stay empty until you start, when a pop-up says NPC trainers will fill them: three sides, one Pokémon out each. You roll; allies play on their own. The raid Pokémon has <em>HP bars</em> (3, coloured): each break gives it 2 summon points, spent when a slot next to it is free, never more than 2 beside it. K.O. → its allies flee → you catch it as usual. Retry freely until it’s caught; friends who helped catch it get a gift on their next login (5 a day). The leaderboard gets a fifth tab, <em>Raids</em>: raids won, counting only those where the raid Pokémon was caught. Try <em>Fast</em> to watch a whole raid quickly.</span></li>
+          <li><b>Legendary raids</b><span>Every area boss but the mythicals is now a <em>raid in its own area</em> (docs/24), open once the area is cleared, like a gym leader: CONTINUE becomes RAID: ARTICUNO with Keep exploring under it, the area details show the raid and its state, and the Raids page lists them by region. It is the only way to catch them; unlimited tries, and it closes on the catch. Your team for each comes from <em>that region’s Box</em> and stays on the raid for friends, who bring the team they left on it. Mew stays Faraway Island’s boss, never shiny there: its shiny is on the daily calendar, which is all shiny now.</span></li>
+          <li><b>NPC partners</b><span>START with empty friend slots, in any raid, opens a pop-up with <em>four NPC trainers</em>, three Pokémon each: pick as many as there are empty slots. The same four after a refresh (a seed kept per raid), four new ones after each try.</span></li>
           <li><b>Elite Rebattle</b><span>Replaces Victory Road II and League II (gone from the Areas list here too). After a region’s League: three tiers, each the <em>full gauntlet</em> (Elite Four + your rival) with no Center and items allowed; a loss sends you back to the first, the ₽ won is kept, but <em>each trainer pays only once</em> (beaten again after a restart, no ₽). Tier I Lv.+10 with new picks, II Lv.+25, III everyone Lv.100; gold ×1.5, ×2, ×3. A medal per tier. The battle itself is the usual one: here a Win / Lose preview stands in for it.</span></li>
         </ol>
         <h2 class="notes-h">Admin · Events (mock)</h2>

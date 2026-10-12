@@ -1,7 +1,20 @@
 // Raid Battles' page (docs/18 §3, the Visual Lab's mockup): today's raid Pokémon on the picture of the area that
 // unlocked it, the time left, the tries, a CAUGHT stamp once it's caught, and START right under it.
 import { useState, type ReactNode } from 'react'
-import { ballBonus, catchChance, catchValueOf, raidLocked, raidRegion, raidRules, regionStarted, upcomingRaids, type TodayRaid } from '@/engine'
+import {
+  ballBonus,
+  catchChance,
+  catchValueOf,
+  raidLocked,
+  raidRegion,
+  raidRules,
+  raidTeam,
+  regionStarted,
+  upcomingRaids,
+  type RaidKindOf,
+  type RaidNpcOption,
+  type TodayRaid,
+} from '@/engine'
 import { PixelIcon } from '@/components/icons'
 import { ItemSprite } from '@/components/ItemSprite'
 import { statHint, statLabel } from '@/components/StatChip'
@@ -13,7 +26,10 @@ import { useT } from '@/i18n/react'
 import { countdown } from '@/lib/format'
 import { pushToast, useGame } from '@/store/game'
 import { useTodayRaid } from '@/store/raid'
-import { startRaid, useRaidGroup } from '@/store/raidBattle'
+import { avatarOf, playerAvatarId } from '@/lib/avatars'
+import { emptySlots, ensureNpcOffer, groupOf, startRaid, useRaidGroup } from '@/store/raidBattle'
+import { ProgressRaidList } from './ProgressRaidList'
+import { RaidNpcPicker } from './RaidNpcPicker'
 import { RaidGroupSection, RaidTeamSection } from './RaidSetup'
 import { EventInfo, raidDate, raidDateParts } from './shared'
 import { cx } from '@/theme/util'
@@ -36,13 +52,16 @@ export function RaidPicture({ areaId, className, children }: { areaId: string; c
   )
 }
 
-/** The raid card: the raid Pokémon on its area, its name, level and bars, the time left; stamped once caught. */
-export function RaidCard({ raid, msLeft }: { raid: TodayRaid; msLeft: number | null }) {
+/**
+ * The raid card: the raid Pokémon on its area, its name, level and bars, the time left (the day's raid); stamped once
+ * caught. A progression raid's (docs/24) has its own numbers and no time limit.
+ */
+export function RaidCard({ raid, msLeft, kind = 'daily' }: { raid: TodayRaid; msLeft: number | null; kind?: RaidKindOf }) {
   const { t } = useT()
   const data = useGame((s) => s.data)
   const cfg = data.config.events.raid
   // This raid Pokémon's own numbers (Admin → Raids), over the defaults.
-  const rules = raidRules(data, raid.dex)
+  const rules = raidRules(data, raid.dex, kind)
   const area = data.areas.find((a) => a.id === raid.areaId)
   const name = data.species[raid.dex]?.name ?? `#${raid.dex}`
   return (
@@ -88,8 +107,8 @@ export function RaidCard({ raid, msLeft }: { raid: TodayRaid; msLeft: number | n
   )
 }
 
-/** Each ball's chance to catch today's raid Pokémon once it's worn out, and how many you have: what to buy first. */
-function BallOdds({ dex }: { dex: number }) {
+/** Each ball's chance to catch the raid Pokémon once it's worn out, and how many you have: what to buy first. */
+export function BallOdds({ dex }: { dex: number }) {
   const { t } = useT()
   const data = useGame((s) => s.data)
   const inventory = useGame((s) => s.save?.inventory)
@@ -251,14 +270,19 @@ function Waiting() {
 export function RaidPage() {
   const { t, tPlural } = useT()
   const { raid, msLeft, day } = useTodayRaid()
-  const [asking, setAsking] = useState(false)
-  const friends = useRaidGroup((s) => s.friends)
-  const slots = useGame((s) => Math.min(2, s.data.config.events.raid.maxFriends))
-  if (!raid) return <p className="m-0 text-center font-pixel-sm text-[16px] text-muted">{t('ui.events.raid.loading')}</p>
-  const go = () => {
-    setAsking(false)
-    if (!startRaid()) pushToast(t('ui.raid.cantStart'), 'bad')
+  const save = useGame((s) => s.save)
+  const data = useGame((s) => s.data)
+  // START with empty slots: the four NPC trainers on offer (kept in the save, the same after a reload).
+  const [offer, setOffer] = useState<RaidNpcOption[] | null>(null)
+  const friends = groupOf('daily', useRaidGroup())
+  if (!raid || !save) return <p className="m-0 text-center font-pixel-sm text-[16px] text-muted">{t('ui.events.raid.loading')}</p>
+  const need = emptySlots(friends)
+  const go = (npcs: RaidNpcOption[] = []) => {
+    setOffer(null)
+    if (!startRaid(npcs, friends)) pushToast(t('ui.raid.cantStart'), 'bad')
   }
+  const me = { name: t('ui.raid.you'), look: avatarOf(playerAvatarId(save.player)).src }
+  const group = [me, ...friends.filter((f) => f.team.length > 0).map((f) => ({ name: f.name, look: avatarOf(f.avatar).src }))]
   return (
     <div className="mx-auto flex w-full max-w-[560px] flex-col gap-3">
       <RaidCard raid={raid} msLeft={msLeft} />
@@ -268,8 +292,8 @@ export function RaidPage() {
           variant="primary"
           size="lg"
           className="w-full"
-          // Empty slots in the group: say NPC trainers will fill them first.
-          onClick={() => (friends.length >= slots ? go() : setAsking(true))}
+          // Empty slots in the group: pick NPC trainers to fill them first.
+          onClick={() => (need ? (raidTeam(save, data).length ? setOffer(ensureNpcOffer({ kind: 'daily' })) : go()) : go())}
         >
           {t('ui.events.raid.start')}
         </PixelButton>
@@ -279,22 +303,20 @@ export function RaidPage() {
       {!raid.caught && <RaidGroupSection />}
       {!raid.caught && <BallOdds dex={raid.dex} />}
       <Waiting />
+      <ProgressRaidList />
       <EventInfo id="raid" />
       {day && <RaidCalendar today={raid} day={day} />}
-      {/* Your group's empty slots: NPC trainers fill them, only once you start. */}
-      <Modal open={asking} onClose={() => setAsking(false)} title={t('ui.raid.npcTitle')}>
-        <div className="grid gap-3">
-          <p className="copy m-0 text-lg">{t('ui.raid.npcBody')}</p>
-          <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] gap-2.5">
-            <PixelButton size="lg" onClick={() => setAsking(false)}>
-              {t('ui.common.back')}
-            </PixelButton>
-            <PixelButton variant="primary" size="lg" onClick={go}>
-              {t('ui.raid.npcStart')}
-            </PixelButton>
-          </div>
-        </div>
-      </Modal>
+      {offer && (
+        <RaidNpcPicker
+          open
+          offer={offer}
+          need={need}
+          group={group}
+          level={data.config.events.raid.teamCap}
+          onBack={() => setOffer(null)}
+          onStart={go}
+        />
+      )}
     </div>
   )
 }

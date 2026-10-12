@@ -34,7 +34,7 @@ import {
   type LootEntry,
   type SaveData,
 } from '@/engine'
-import { data, newId } from '../fixtures'
+import { bossData, data, newId } from '../fixtures'
 import { effectText } from '@/i18n/text'
 
 const ROUTE1 = linearAreas(data)[0]!
@@ -235,20 +235,22 @@ describe('catching', () => {
 
   it('a legendary that fled comes back through the encounter deck until caught', () => {
     const s: SaveData = { ...fresh(), areaProgress: { [SEAFOAM.id]: { ...emptyProgress(), xp: 999, bossesDefeated: [144], bossDefeated: true, cleared: true } } }
-    expect(fledLegendary(SEAFOAM, progressOf(s, SEAFOAM.id), s.pokedex)?.dex).toBe(144)
+    expect(fledLegendary(SEAFOAM, progressOf(s, SEAFOAM.id), s.pokedex, bossData)?.dex).toBe(144)
     let save = s
     const rng = createRng(4)
     let back = false
     for (let i = 0; i < 30 && !back; i++) {
       const roll = nextEncounter(
-        { area: SEAFOAM, progress: progressOf(save, SEAFOAM.id), data, teamAvgLevel: 40, teamHurt: false, isFirstInArea: false, pokedex: save.pokedex },
+        { area: SEAFOAM, progress: progressOf(save, SEAFOAM.id), data: bossData, teamAvgLevel: 40, teamHurt: false, isFirstInArea: false, pokedex: save.pokedex },
         rng,
       )
       back = roll.encounter.kind === 'boss' && !!roll.encounter.returning
       save = recordDraws(save, SEAFOAM.id, roll)
     }
     expect(back).toBe(true)
-    expect(fledLegendary(SEAFOAM, progressOf(s, SEAFOAM.id), [...s.pokedex, 144])).toBeNull()
+    expect(fledLegendary(SEAFOAM, progressOf(s, SEAFOAM.id), [...s.pokedex, 144], bossData)).toBeNull()
+    // With Raid Battles on, Articuno is a progression raid: caught there, never back in the area's deck.
+    expect(fledLegendary(SEAFOAM, progressOf(s, SEAFOAM.id), s.pokedex, data)).toBeNull()
   })
 })
 

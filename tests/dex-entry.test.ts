@@ -1,9 +1,10 @@
 // A Pokédex entry only ever points at the region being played.
 import { describe, expect, it } from 'vitest'
-import { compileGameData, regionOfArea, type Area, type Region } from '@/engine'
+import { compileGameData, raidRules, regionOfArea, type Area, type Region } from '@/engine'
 import { BUNDLE as REAL } from '@/config/bundle'
 import { whereToFind, whereToFindItem } from '@/components/DexEntry'
 import { BUNDLE } from '@/config/bundle'
+import { bossData, data as raidsOn } from './fixtures'
 
 /** Kanto's areas, re-badged into a second region, so both regions hold the same wild pools. */
 function twoRegions() {
@@ -84,6 +85,20 @@ describe('fossils', () => {
     for (const id of elsewhere) {
       expect(whereToFind(f.dex, live, id).some((s) => s.fossil), `#${f.dex} in ${id}`).toBe(false)
     }
+  })
+})
+
+describe('a legendary raid in the Pokédex (docs/24)', () => {
+  it('is its area’s raid, at the raid’s level, opening its page; with Raid Battles off, its boss fight', () => {
+    const [spot] = whereToFind(144, raidsOn, 'kanto')
+    expect(spot).toMatchObject({ legendary: true, minLevel: raidRules(raidsOn, 144, 'progress').level, raid: { dex: 144 } })
+    expect(spot!.area.name).toBe('Seafoam Islands')
+    const [boss] = whereToFind(144, bossData, 'kanto')
+    expect(boss).toMatchObject({ legendary: true, minLevel: 50 })
+    expect(boss!.raid).toBeUndefined()
+    // A mythical is its lair's boss either way.
+    expect(whereToFind(151, raidsOn, 'kanto')[0]).toMatchObject({ legendary: true, minLevel: 65 })
+    expect(whereToFind(151, raidsOn, 'kanto')[0]!.raid).toBeUndefined()
   })
 })
 

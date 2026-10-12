@@ -3,6 +3,7 @@ import {
   enabledRegions,
   getRegion,
   progressOf,
+  raidBosses,
   regionAreas,
   regionCases,
   regionOf,
@@ -84,7 +85,9 @@ function AreaCard({
     open: t('ui.home.st.open'),
     locked: t('ui.home.st.locked', { why }),
   }
-  const legend = (area.legendaryBoss ?? []).length > 0
+  // An area whose legendary is a progression raid (docs/24) says RAID; one with a boss to fight, LEGEND.
+  const raid = raidBosses(area, data).length > 0
+  const legend = !raid && (area.legendaryBoss ?? []).length > 0
   const parade = useParadeLabel(area)
   return (
     <li className="relative">
@@ -100,6 +103,7 @@ function AreaCard({
             {st === 'new' && <Chip tone="gold">{t('ui.common.new')}</Chip>}
             {area.gyms.length > 0 && <Chip tone="dark">{t('ui.home.gymTag')}</Chip>}
             {legend && <Chip tone="gold">{t('ui.home.legendTag')}</Chip>}
+            {raid && <Chip tone="gold">{t('ui.raid.progress.tag')}</Chip>}
             <ShinyParadeChip area={area} />
           </span>
         </span>

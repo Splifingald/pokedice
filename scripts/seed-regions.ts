@@ -1192,7 +1192,7 @@ async function main() {
   const rebuilt = buildRegions(out, keptAreas, keptTrainers, new Set(items.map((i) => i.key)))
   // Victory Road II and League II left the game (the Elite Rebattle replaces them, docs/19 §5.4): the content files
   // still describe them, so they're dropped here, with the trainers only they used.
-  // The raid pool's mythicals left their lairs for the raids (scripts/raid-areas.ts).
+  // The mythicals are their lairs' bosses, every other boss a progression raid in a completable area (scripts/raid-areas.ts).
   const eggs = await readJson<Record<string, { l?: number }>>('egg-groups.json')
   const builtAreas = raidAreas(
     rebuilt.areas.filter((a) => !(a.id in LEAGUE_II)),
