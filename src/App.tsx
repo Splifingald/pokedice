@@ -11,6 +11,7 @@ import { ToastStack } from '@/components/Toast'
 import { AreaScreen } from '@/screens/Area'
 import { DayCareScreen } from '@/screens/DayCareScreen'
 import { FriendInvite } from '@/screens/FriendInvite'
+import { TradeLink } from '@/screens/TradeLink'
 import { FriendsScreen } from '@/screens/Friends'
 import { HomeScreen } from '@/screens/Home'
 import { LeaderboardScreen } from '@/screens/Leaderboard'
@@ -58,6 +59,7 @@ export function App() {
             <Route path="/" element={<Title />} />
             <Route path="/new" element={<NewGame />} />
             <Route path="/f/:code" element={<FriendInvite />} />
+            <Route path="/t/:code" element={<TradeLink />} />
             <Route path="/help" element={<Lazy><HelpPage /></Lazy>} />
             <Route path="/setup" element={<Lazy><SetupPage /></Lazy>} />
             <Route path="/admin" element={<Lazy><AdminApp /></Lazy>} />

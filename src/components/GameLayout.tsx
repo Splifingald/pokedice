@@ -12,6 +12,7 @@ import { LivePopup } from '@/screens/events/live'
 import { VersusUnlockPopup } from './FeatureRules'
 import { RaidGiftPopup } from './RaidGiftPopup'
 import { FriendsService } from './friends/FriendsService'
+import { TradesService } from './trades/TradesService'
 import { BottomNav, Header, SideNav } from './Hud'
 import { LeaderboardTutorial } from './LeaderboardTutorial'
 import { ReplyPopup } from './ReplyPopup'
@@ -58,6 +59,7 @@ export function GameLayout() {
       <RaidGiftPopup />
       <LivePopup />
       <FriendsService />
+      <TradesService />
     </div>
   )
 }

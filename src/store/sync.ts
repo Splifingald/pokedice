@@ -43,6 +43,8 @@ import { comeBack, markAway, settleExtreme, startExtremeClocks } from './extreme
 let syncedUser: string | null = null
 /** Nothing is pushed until the first sync for the signed-in user is settled — no overwrite while we compare. */
 let pushAllowed = false
+/** The signed-in player's save and the cloud copy are settled: what changes now goes up (trades wait for this). */
+export const syncSettled = () => pushAllowed
 /** pushKey of the save the cloud holds, as far as this device knows; null when it doesn't. A push of the same is skipped. */
 let cloudKey: string | null = null
 
