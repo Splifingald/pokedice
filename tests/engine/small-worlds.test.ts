@@ -13,6 +13,7 @@ import {
   buyItem,
   buyWorldItem,
   catchWorldMythical,
+  centerHeal,
   challengeEncounter,
   closeWorld,
   computeDamage,
@@ -32,6 +33,7 @@ import {
   getRegion,
   heldWorld,
   inWorld,
+  instanceMaxHp,
   isAreaUnlocked,
   isWorldRegion,
   leaveWorld,
@@ -445,6 +447,15 @@ describe('no event reaches inside', () => {
     expect(eventsTeaser(s, data)).toBeNull()
     expect(liveFor(s, data, NOW)).toBeNull()
     expect(depositPokemon(s, s.box[0]!.id, data, NOW)).toBeNull()
+  })
+
+  it("a Center there heals the world's Box, not the main game's Day Care", () => {
+    const out = kanto()
+    const hurt = { inst: { ...out.box[0]!, id: 'care-1', currentHp: 1 }, since: 0, region: 'kanto' }
+    const s = enterWorld({ ...out, dayCare: { residents: [hurt], guests: [], eggClaimed: true } }, data, WORLD, 63, NOW, newId)!
+    const healed = centerHeal({ ...s, box: s.box.map((p) => ({ ...p, currentHp: 1 })) }, data)
+    expect(healed.box.every((p) => p.currentHp === instanceMaxHp(p, data))).toBe(true)
+    expect(healed.dayCare!.residents[0]!.inst.currentHp).toBe(1)
   })
 })
 

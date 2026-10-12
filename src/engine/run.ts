@@ -577,15 +577,15 @@ export function applyWipe(save: SaveData, areaId: string, data: GameData): SaveD
 }
 
 /**
- * Pokémon Center: full heal for team and box, and for the Day Care's residents (it heals no one itself). None in
- * Extreme mode (unless the admin turns them back on).
+ * Pokémon Center: full heal for team and box, and for the Day Care's residents (it heals no one itself), except in a
+ * small world, where the main game's Day Care is closed. None in Extreme mode (unless the admin turns them back on).
  */
 export function centerHeal(save: SaveData, data: GameData): SaveData {
   if (!centersOn(save, data)) return save
   const heal = (inst: PokemonInstance): PokemonInstance => ({ ...inst, currentHp: instanceMaxHp(inst, data) })
   const healed = { ...save, box: save.box.map(heal) }
   const dc = save.dayCare
-  if (!dc?.residents.length) return healed
+  if (!dc?.residents.length || inWorldRegion(save, data)) return healed
   return { ...healed, dayCare: { ...dc, residents: dc.residents.map((r) => ({ ...r, inst: heal(r.inst) })) } }
 }
 

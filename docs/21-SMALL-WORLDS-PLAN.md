@@ -141,7 +141,8 @@ interface SmallWorld {
   `events.worldPending` until that region is started.
 - **No events inside**: `eventUnlocked`, `eventsTeaser`, `liveFor` and the raid / wheel / rebattle pages return nothing
   while the live region is a world.
-- **Day Care**: closed inside a world (no deposit from it); a world's ₽, bag and Box never leave it.
+- **Day Care**: closed inside a world (no deposit from it, and its Pokémon Centers don't heal the Day Care's
+  residents); a world's ₽, bag and Box never leave it.
 
 ## 7. Integration phases (after validation)
 1. Data and engine: region kind 'world', `smallWorlds` config and switch, area dates, dice by level, XP ×, boosters,
