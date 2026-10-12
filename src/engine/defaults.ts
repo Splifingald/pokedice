@@ -109,6 +109,31 @@ export const DEFAULT_CONFIG: GameConfig = {
   // Extreme mode (docs/22): off until the admin switches it on, for the admin alone or for everyone. Opened by the
   // Johto League; no Pokémon Centers and no healing after a lost round; a K.O. rests 12 h and comes back at 1 HP; out
   // of the game, every Pokémon heals 10 % an hour (absences under 2 min don't count). Potions and Revives work.
+  // Trades (docs/23): off until the admin switches them on. 4 listings a player, 3 days each, 5 taken a day, arriving
+  // at Lv.50 at most, from the 2nd badge. Kadabra, Machoke, Graveler (and Alola's), Haunter, Boldore, Gurdurr,
+  // Karrablast, Shelmet, Phantump and Pumpkaboo evolve only by trade; the Ultra Beasts are never tradable.
+  trade: {
+    access: 'off',
+    maxListings: 4,
+    listingDays: 3,
+    tradesPerDay: 5,
+    levelCap: 50,
+    minBadges: 2,
+    evolveOnTrade: [
+      [64, 65],
+      [67, 68],
+      [75, 76],
+      [10110, 10111],
+      [93, 94],
+      [525, 526],
+      [533, 534],
+      [588, 589],
+      [616, 617],
+      [708, 709],
+      [710, 711],
+    ],
+    exclude: [793, 794, 795, 796, 797, 798, 799, 803, 804, 805, 806],
+  },
   extreme: {
     access: 'off',
     unlockRegion: 'johto',
