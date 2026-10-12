@@ -263,6 +263,12 @@ export const saveSchema = z.object({
       rulesSeen: z.boolean().optional(),
     })
     .optional(),
+  gifts: z
+    .object({
+      done: z.array(z.number().int()).max(200).default([]),
+      rulesSeen: z.boolean().optional(),
+    })
+    .optional(),
 })
 
 /**

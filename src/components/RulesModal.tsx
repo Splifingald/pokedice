@@ -1,7 +1,7 @@
 // A feature's rules in the special events' pop-up (docs/18): its picture as a banner, two to four rule rows (an icon, a
 // short title, a line or two) and its buttons. Opened once when the feature unlocks (Later / Let's go!), and again
 // from the INFO button at the bottom of its page (just OK). The Day Care and Versus use it (FeatureRules.tsx).
-import type { ReactNode } from 'react'
+import { isValidElement, type ReactElement, type ReactNode } from 'react'
 import { useT } from '@/i18n/react'
 import { cx } from '@/theme/util'
 import { PixelIcon, type IconName } from './icons'
@@ -52,7 +52,8 @@ export function RulesModal({
   open: boolean
   onClose: () => void
   title: string
-  picture: RulesPicture
+  /** Its picture, or a banner drawn in code (the gifts' presents). */
+  picture: RulesPicture | ReactElement
   /** The banner's tag icon; with `onGo` (the unlock), the tag says it's now open. */
   icon: IconName
   rules: RuleRow[]
@@ -64,12 +65,16 @@ export function RulesModal({
     <Modal open={open} onClose={onClose} title={title} className="max-w-md">
       <div className="flex flex-col gap-3">
         <div className="relative -mx-4 h-[124px] overflow-hidden bg-night shadow-[0_3px_0_rgb(var(--c-edge)),0_-2px_0_rgb(var(--c-edge))]">
-          <img
-            src={picture.src}
-            alt=""
-            className="pixelated absolute inset-0 h-full w-full object-cover"
-            style={{ objectPosition: picture.focus ?? '50% 50%' }}
-          />
+          {isValidElement(picture) ? (
+            picture
+          ) : (
+            <img
+              src={(picture as RulesPicture).src}
+              alt=""
+              className="pixelated absolute inset-0 h-full w-full object-cover"
+              style={{ objectPosition: (picture as RulesPicture).focus ?? '50% 50%' }}
+            />
+          )}
           {onGo && (
             <span className="absolute left-2.5 top-2.5 inline-flex items-center gap-1 bg-gold px-1.5 pb-0.5 pt-px font-pixel-sm text-[14px] tracking-[0.08em] text-ink shadow-ring-line">
               <PixelIcon name={icon} size={16} />

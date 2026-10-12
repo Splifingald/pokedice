@@ -52,6 +52,8 @@ const SECTION_TABLES: Partial<Record<string, TableName[]>> = {
   config: ['game_config', 'regions'],
   // Small worlds make their region and areas from the Events section.
   events: ['game_config', 'regions', 'areas', 'area_wild_pool', 'area_trainer_pool', 'area_loot_pool'],
+  // The gifts switch.
+  messages: ['game_config'],
 }
 
 function Gate() {

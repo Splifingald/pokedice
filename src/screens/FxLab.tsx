@@ -16,6 +16,7 @@ import { gmaxEndTimeline, gmaxFor, megaFor } from '@/fx/timelines/forms'
 import { legendLook, legendTimeline } from '@/fx/timelines/legend'
 import { evolveTimeline, hatchTimeline } from '@/fx/timelines/moments'
 import { tradeTimeline } from '@/fx/timelines/trade'
+import { giftTimeline } from '@/fx/timelines/gift'
 import { labColors, starterTimeline } from '@/fx/timelines/starter'
 
 interface Preset {
@@ -36,6 +37,7 @@ interface Opts {
 const own = (dex: number) => spriteKey(dex, true)
 const foe = (dex: number) => spriteKey(dex, false)
 const STONE = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/thunder-stone.png'
+const CANDY = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/rare-candy.png'
 
 const attack = (
   name: string,
@@ -161,6 +163,45 @@ const PRESETS: Preset[] = [
         giveBall: 'ultra',
         getBall: 'poke',
         shiny: true,
+      }),
+  },
+  {
+    name: 'Gift opening (one item)',
+    sprites: [],
+    item: CANDY,
+    make: () => giftTimeline({ contents: [{ kind: 'item', key: `item|${CANDY}` }] }),
+  },
+  {
+    name: 'Gift opening, shiny (Pikachu)',
+    sprites: [[25, false, true]],
+    make: () => giftTimeline({ contents: [{ kind: 'mon', key: spriteKey(25, false, true), shiny: true }] }),
+  },
+  {
+    name: 'Gift opening (four things)',
+    sprites: [
+      [147, false],
+      [133, false, true],
+    ],
+    item: CANDY,
+    make: () =>
+      giftTimeline({
+        contents: [
+          { kind: 'item', key: `item|${CANDY}` },
+          { kind: 'mon', key: foe(147) },
+          { kind: 'mon', key: spriteKey(133, false, true), shiny: true },
+          { kind: 'item', key: `item|${CANDY}` },
+        ],
+      }),
+  },
+  {
+    name: 'Gift opening (nine things: "+4")',
+    sprites: [[1, false]],
+    item: CANDY,
+    make: () =>
+      giftTimeline({
+        contents: Array.from({ length: 9 }, (_, i) =>
+          i % 2 ? { kind: 'mon' as const, key: foe(1) } : { kind: 'item' as const, key: `item|${CANDY}` },
+        ),
       }),
   },
   {

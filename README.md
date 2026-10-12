@@ -163,6 +163,13 @@ supabase/    migrations/0001_init.sql, seed.sql (generated)
   every message they sent and its answer under Contact the developer → *My messages* (their Google account's, plus the
   ones sent as a guest from that browser), and an answer they haven't seen yet pops up the next time they open the
   game. Needs `supabase/migrations/0025_feedback_replies.sql` run once on the live database.
+- **Gifts with messages** — an answer (Admin → Messages → REPLY → Add a gift) or a message you write to a player from
+  their profile (Admin → Analytics → a player → Messages) can carry items (each with a quantity) and Pokémon (each with
+  a level, shiny or not), each sent to a region you pick or to the player's latest one. The player sees the gift under
+  the message; closing it opens it (an animation, then what arrived and where it went), in the main game. The Gifts
+  switch at the top of Admin → Messages is Off by default (Off / On for admin / On for everyone; the database checks it
+  too). Needs `supabase/migrations/0048_message_gifts.sql` run once on the live database, after 0025. See
+  docs/15-UI-GUIDELINES.md §23.
 - **Admin → Analytics** sums up the all-time figures (retention, each player's top level and furthest area) in the
   database, from running totals kept up to date as events come in, so the page stays quick however many events pile
   up. Needs `supabase/migrations/0020_analytics_summaries.sql` then `0021_analytics_rollups.sql` run once on the live

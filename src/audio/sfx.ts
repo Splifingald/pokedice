@@ -208,6 +208,7 @@ const CENTER_HARMONY = [659, 415, 659, 415, 659, 415, 330]
 const EVOLVE_FANFARE = [523, 659, 784, 1047, 784, 1047]
 const HATCH_FANFARE = [784, 988, 1175, 1568]
 const TRADE_JINGLE = [659, 784, 988, 1319]
+const GIFT_FANFARE = [659, 880, 1047, 1319]
 
 /** The timelines' sounds, by cue. `n` varies a sound inside a series (each Razor Leaf chip a step higher). */
 const FX_SOUNDS = {
@@ -273,6 +274,21 @@ const FX_SOUNDS = {
   'hatch.fanfare': (n = 0) => tone(HATCH_FANFARE[n]!, n === 3 ? 0.5 : 0.12, { type: 'square', vol: 0.045 }),
   // A shiny hatchling: the two-tone chime (B6, then E7), as the stars ring out.
   'hatch.shiny': (n = 0) => tone(n ? 2637 : 1976, n ? 0.2 : 0.12, { type: 'square', vol: n ? 0.03 : 0.035 }),
+  // A gift (docs/15 §23): it falls and lands, wobbles, the bow springs, the lid pops, each thing rises out, a fanfare.
+  'gift.drop': () => tone(1100, 0.45, { type: 'triangle', vol: 0.03, slide: -650 }),
+  'gift.land': () => hiss(0.1, { freq: 420, vol: 0.07 }),
+  'gift.wobble': () => hiss(0.04, { vol: 0.05, freq: 700 }),
+  'gift.untie': () => {
+    tone(660, 0.12, { type: 'square', vol: 0.03, slide: 500 })
+    hiss(0.12, { freq: 2600, vol: 0.04 })
+  },
+  'gift.pop': () => {
+    hiss(0.35, { vol: 0.09, freq: 2800 })
+    tone(1319, 0.3, { type: 'square', vol: 0.035, slide: 300 })
+  },
+  'gift.item': (n = 0) => tone(784 * Math.pow(2, (n % 6) / 6), 0.14, { type: 'square', vol: 0.035, slide: 400 }),
+  'gift.shiny': () => tone(2637, 0.2, { type: 'triangle', vol: 0.04 }),
+  'gift.fanfare': (n = 0) => tone(GIFT_FANFARE[n]!, n === 3 ? 0.5 : 0.12, { type: 'square', vol: 0.045 }),
   // A trade (docs/23): drawn into the ball, up the link, the other ball down it, open, and a short jingle.
   'trade.recall': () => tone(880, 0.25, { type: 'triangle', vol: 0.04, slide: -500 }),
   'trade.shut': () => hiss(0.06, { freq: 900, vol: 0.06 }),

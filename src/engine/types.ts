@@ -706,6 +706,33 @@ export interface GameConfig {
   trade: TradeConfig
   /** Small worlds (docs/21): their switch, and the admin's list, past, running and to come; one runs at a time. */
   smallWorlds: { access: EventAccess; list: SmallWorld[] }
+  /** Gifts with the developer's messages (docs/15 §23): their switch. The server reads the same row. */
+  gifts: GiftsConfig
+}
+
+/** Gifts with the developer's messages (docs/15 §23). */
+export interface GiftsConfig {
+  /** The switch (docs/15 §20): off (no gift shows or opens; they wait), on for the admin only, on for everyone. */
+  access: EventAccess
+}
+
+/** A gift's region: a region's id, or `'latest'`, the newest region the player has started (engine/gifts.ts). */
+export type GiftRegion = string
+
+/**
+ * One gift on a message, as the admin set it (Admin → Messages, or a player's profile): an item and how many, or a
+ * Pokémon at a level, shiny or not. Each goes to its region's Bag or Box.
+ */
+export type Gift =
+  | { kind: 'item'; key: string; qty: number; region: GiftRegion }
+  | { kind: 'pokemon'; dex: number; level: number; shiny?: boolean; region: GiftRegion }
+
+/** The gifts a save has opened (docs/15 §23). */
+export interface GiftsSave {
+  /** Messages whose gifts are in this save already (the last 100): a gift is put in once. */
+  done: number[]
+  /** The rules pop-up has been shown (once, before the first gift opens; INFO shows it again). */
+  rulesSeen?: boolean
 }
 
 /** Trades (docs/23-TRADING-PLAN.md): listings, like the games' GTS. The server reads the same row. */
@@ -957,6 +984,8 @@ export interface SaveData {
   extremeRulesSeen?: boolean
   /** Trades (docs/23): listed Pokémon, the trades already applied, the last ones done. Absent = never traded. */
   trades?: TradesSave
+  /** Gifts from the developer (docs/15 §23): the ones opened, and the rules seen. Absent = none yet. */
+  gifts?: GiftsSave
 }
 
 /** What a listing asks for (docs/23 §1.1): one species, any the poster doesn't own, or anything. */

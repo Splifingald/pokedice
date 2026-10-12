@@ -136,6 +136,8 @@ export const DEFAULT_CONFIG: GameConfig = {
     ],
     exclude: [793, 794, 795, 796, 797, 798, 799, 803, 804, 805, 806],
   },
+  // Gifts with the developer's messages (docs/15 §23): off until the admin switches them on.
+  gifts: { access: 'off' },
   extreme: {
     access: 'off',
     unlockRegion: 'johto',

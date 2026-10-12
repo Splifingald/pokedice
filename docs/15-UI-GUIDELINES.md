@@ -151,7 +151,8 @@ All live in `src/components/`. Every component, in every state, is on `/kitchen-
 | `FaceDice` / `StatusLines` | What a die does | Its six faces as real dice, value under each; a status face keeps its ring and badge and gets its short name in a chip. One tinted line per status: when it triggers and what it does, with the live numbers (`statusEffects`) |
 | `ItemSprite` | An item's picture | From the item atlas (one request); falls back to the item's own URL for items added since the atlas was built |
 | `PixelIcon` | Every icon | Pixel maps drawn as SVG rects: the Pokémon ones hand-drawn in `icons.tsx` (balls, Pokédex, badges, status symbols), the generic UI ones (coin, heart, shop, trophy, settings…) from the "1-bit Pixel Icons" pack, recoloured into `packIcons.ts` by `scripts/import-icons.ts` (11–16 px squares; the tab bar's on 16×16). Draw them at 12 px or more. One shared palette (`ICON_PALETTE`); a map may have its own (`OWN_PALETTE`) |
-| `RulesModal` / `InfoButton` | A feature's rules: once when it unlocks, then from the blue INFO button at the bottom of its page | The special events' pop-up: its picture as a banner (a NOW OPEN tag on the unlock), 2–4 `RuleList` rows (an icon, a short title, a line with the config's numbers); Later and Let's go! on the unlock, OK from INFO. The Day Care and Versus use it (`FeatureRules.tsx`); the events have their own copies (`EventUnlockPopup`, `EventInfo`), with the same words |
+| `RulesModal` / `InfoButton` | A feature's rules: once when it unlocks, then from the blue INFO button at the bottom of its page | The special events' pop-up: its picture as a banner, or a banner drawn in code (the gifts'), a NOW OPEN tag on the unlock, 2–4 `RuleList` rows (an icon, a short title, a line with the config's numbers); Later and Let's go! on the unlock, OK from INFO. The Day Care and Versus use it (`FeatureRules.tsx`); the events have their own copies (`EventUnlockPopup`, `EventInfo`), with the same words |
+| `GiftPresent` / `GiftOpened` / `GiftResult` / `GiftMoment` | A gift from the developer (§23) | Under a message: the wrapped gift (wobbling, still when the OS asks for reduced motion), "3 things inside" and what happens next (close the message, OPEN IT in My messages, or why it waits); opened: what it held; the opening, full screen; what arrived and where |
 
 Dialog behaviour (`src/lib/useDialog.ts`, used by `Modal`, `Sheet`, `SidePanel`): focus moves in, **Tab stays inside**,
 **Esc closes the top dialog only**, focus returns to what opened it.
@@ -578,7 +579,7 @@ Two rules for every feature that adds something players can do (an event, a mode
 - **Its rules, once and on demand**: a rules pop-up (`RulesModal`: its picture as a banner, 2–4 `RuleList` rows with
   the config's numbers, Later / Let's go!) the first time the feature opens for the player (a "seen" flag in the save,
   queued behind the other one-time pop-ups), and an **INFO** button at the bottom of its page that shows the same rules
-  again. The Day Care, Versus, the events, Extreme mode and Trades follow it.
+  again. The Day Care, Versus, the events, Extreme mode, Trades and the gifts (§23) follow it.
 
 ## 21. Trades
 
@@ -677,3 +678,43 @@ on `/kitchen-sink` (`WorldBits`). Every rule and number comes from `engine/world
   why they wait (`WorldAwayPage`), with Back to Kanto.
 - **Closing**: the world gone grey (`WorldByePopup`), once, to whoever played it or saw it open: the mythical kept (or
   "got away"), and that the partner, the world's Pokémon, items and ₽ closed with it.
+
+## 23. Messages and gifts
+
+The developer answers a player's message (Admin → Messages) or writes to them first (Admin → Analytics → their profile
+→ Messages), and either can carry **gifts**: items, each with a quantity (1–999), and Pokémon, each with a level and
+shiny or not, at most 20 (migration 0048). Each goes to a region the admin picks or to **the player's latest region**
+(the newest one they've started). The engine (`engine/gifts.ts`) decides where each lands and what it becomes; the
+pieces are in `src/components/Gifts.tsx`, every state on `/kitchen-sink` (`GiftBits`), the opening on `/kitchen-sink/fx`.
+
+- **The switch and the rules** follow §20: the Gifts switch sits at the top of Admin → Messages (Off by default; the
+  server hides gifts and won't open them while it's off, and they wait on their messages). The rules pop-up
+  (`GiftRulesModal`, three gifts drawn in code as its banner) opens before the first gift does: Let's go! opens it,
+  Later leaves it waiting in My messages. INFO sits at the bottom of My messages.
+- **Under the message**: the pop-up of answers (or "A message from the developer!", when the developer wrote first)
+  shows the words, then the wrapped gift (`GiftPresent`: gold, the gift wobbling, "3 things inside" — not what: that's
+  the opening). Its one button says **OPEN THE GIFT**; closing the message any way opens it. A message with a gift not
+  opened yet pops up again until it is (once a page load if it was put off or the server couldn't be reached).
+- **Where gifts open**: the main game, outside a small world (docs/21), and for a signed-in player once the sign-in's
+  sync has settled. Elsewhere the gift under the message says why it waits ("It opens in your main game", "…once
+  you're back in Kanto") and the message closes as usual.
+- **Where each one goes**: an item into that region's Bag; a Pokémon into its Box as a Pokémon of its own (never merged
+  into a copy), at its level within the game's cap and full HP, and into the team when that region is the one being
+  played and the team has room. A region the player hasn't started yet sends it to their latest one, and the result
+  says so.
+- **The opening** (`GiftMoment`, `giftTimeline` in `src/fx/timelines/gift.ts`): full screen, held with
+  `useHoldFullscreen` so pop-ups wait. The wrapped box falls onto a warm stage and lands with a squash, wobbles three
+  times, each bigger (the anticipation), the bow springs loose, the box crouches and holds four frames, and the lid
+  flies off in a burst of light and confetti; then what was inside rises out one by one — items as their pictures, the
+  Pokémon as their sprites, a shiny with its two rings of stars — in an arc over the box (six at most; past that the
+  last says "+n"), and a short fanfare. The lines (beats `wobble`, `untie`, `opened`) are in the message box below,
+  in a polite live region. SKIP and Esc jump to what arrived (`GiftResult`: each thing's picture, name, ×quantity or
+  level, ✦ Shiny, NEW, and where it went: "In your Johto Bag", "Joined your team"), then DONE. Motion off jumps there
+  at once.
+- **My messages** keeps every message with its answer, the developer's own messages, and their gifts: opened ("Opened
+  — it held:" and what), or the wrapped gift with OPEN IT (gold), or why it waits. The tab's count adds the gifts not
+  opened yet.
+- **In the admin**, the same gift editor in both places (`GiftEditor`): an item and a quantity, or a Pokémon, its level
+  and Shiny, each with its region (their latest, or one by name; on a profile, the regions they haven't started say
+  where it would go). A message's card says whether its gifts were opened, and when; an opened gift can't be changed.
+

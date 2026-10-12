@@ -18,6 +18,7 @@ import { TradesService } from './trades/TradesService'
 import { BottomNav, Header, SideNav } from './Hud'
 import { LeaderboardTutorial } from './LeaderboardTutorial'
 import { ReplyPopup } from './ReplyPopup'
+import { GiftService } from './Gifts'
 import { ShareTutorial } from './ShareTutorial'
 
 /** In-game shell: top bar, side bar (desktop) or bottom bar (phones), and the screen. No save → back to the title. */
@@ -58,6 +59,7 @@ export function GameLayout() {
       <LeaderboardTutorial />
       <ShareTutorial />
       <ReplyPopup />
+      <GiftService />
       <DonationPopup />
       <EventUnlockPopup />
       <VersusUnlockPopup />
