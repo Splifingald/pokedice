@@ -226,7 +226,7 @@ export function RaidSpeedButton({ on, onChange }: { on: boolean; onChange: (on: 
         on ? 'bg-gold-pale shadow-card-gold' : 'bg-paper shadow-ring',
       )}
     >
-      <PixelIcon name="speed" size={16} />
+      <PixelIcon name="fastForward" size={16} />
       <span className="font-pixel-sm text-[14px] tabular-nums">
         {t('ui.raid.speedTag', { n: (on ? RAID_FAST_SPEED : 1).toLocaleString(getLang()) })}
       </span>
