@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 import {
   badgesHeld,
+  inWorldRegion,
   isExtreme,
   newForTrade,
   tradeCfg,
@@ -67,8 +68,9 @@ export function TradesScreen() {
     if (!closed && auth.status === 'signed_in') seeTradeRules()
   }, [closed, auth.status])
 
-  // Off for this player, nothing listed: the feature isn't there (docs/15 §20).
-  if (!isSupabaseConfigured || !save || ((!on || isExtreme(save)) && !out))
+  // Off for this player, nothing listed: the feature isn't there (docs/15 §20). Inside a small world there are no
+  // trades at all (docs/21).
+  if (!isSupabaseConfigured || !save || inWorldRegion(save, data) || ((!on || isExtreme(save)) && !out))
     return <Navigate to="/home" replace />
   const cfg = tradeCfg(data)
   const signedIn = auth.status === 'signed_in'

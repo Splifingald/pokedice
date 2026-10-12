@@ -5,7 +5,7 @@
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { PGlite } from '@electric-sql/pglite'
-import { beforeAll, describe, expect, it } from 'vitest'
+import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { DEFAULT_CONFIG, encodeDexSet } from '@/engine'
 import eggGroups from '@/data/egg-groups.json'
 
@@ -434,5 +434,60 @@ describe('the snapshot’s bitset', () => {
     expect(await call(null, `trade_home_region(10091)`)).toBe('alola')
     expect(await call(null, `trade_home_region(158)`)).toBe('johto')
     expect(await call(null, `trade_untradable(10034)`)).toBe(true) // a Mega form
+  })
+})
+
+describe('small worlds (docs/21)', () => {
+  const world = { id: 'isle', regionId: 'w-isle', closed: false }
+  const erika = () =>
+    save({
+      name: 'ERIKA',
+      box: [mon('e0', 43, 10), mon('e1', 8, 25)],
+    })
+  afterAll(() => putSave(U.erika, erika()))
+
+  it('lists nothing from a world’s Box, parked or not', async () => {
+    await putSave(U.erika, {
+      ...erika(),
+      parked: { 'w-isle': { box: [mon('w1', 25, 12), mon('w2', 7, 9)], team: ['w1'], pokedex: [25, 7] } },
+      events: { world },
+    })
+    expect(await fails(U.erika, `trade_post('w1', '{"kind":"any"}', 'public', '{}')`)).toContain(
+      'trades_world',
+    )
+    // Its region isn't one the player has started, for asking or receiving.
+    expect(
+      await call<string[]>(null, `trade_started((select data from saves where user_id = $1))`, [U.erika]),
+    ).toEqual(['kanto'])
+  })
+
+  it('lets nobody trade from inside one, even with a Pokémon from home', async () => {
+    const home = erika()
+    await putSave(U.erika, {
+      ...home,
+      region: 'w-isle',
+      box: [mon('w1', 25, 12), mon('w2', 7, 9)],
+      team: ['w1'],
+      parked: { kanto: { box: home.box, team: home.team, pokedex: home.pokedex } },
+      events: { world },
+    })
+    expect(await fails(U.erika, `trade_post('e1', '{"kind":"any"}', 'public', '{}')`)).toContain(
+      'trades_world',
+    )
+    const [open] = await as<{ code: string }>(
+      null,
+      `select code from trade_listings where status = 'open' limit 1`,
+    )
+    expect(await fails(U.erika, `trade_take($1, 'e1')`, [open!.code])).toContain('trades_world')
+  })
+
+  it('knows a world from the admin’s list too', async () => {
+    await db.query(
+      `insert into game_config (key, value) values ('smallWorlds', $1)
+       on conflict (key) do update set value = excluded.value`,
+      [JSON.stringify({ access: 'all', list: [{ id: 'reef', regionId: 'w-reef' }] })],
+    )
+    expect(await call<boolean>(null, `trade_world('{}'::jsonb, 'w-reef')`)).toBe(true)
+    expect(await call<boolean>(null, `trade_world('{}'::jsonb, 'kanto')`)).toBe(false)
   })
 })

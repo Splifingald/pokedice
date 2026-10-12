@@ -6,7 +6,7 @@
 // - a shared link (/t/<code>): the listing in its sheet once the run is idle, never mid-fight;
 // - the trade scene itself, over any page.
 import { useEffect, useRef, useState } from 'react'
-import { dayCareTutorialDue, leaderboardTutorialDue, tradesOf } from '@/engine'
+import { dayCareTutorialDue, inWorldRegion, leaderboardTutorialDue, tradesOf } from '@/engine'
 import { useT } from '@/i18n/react'
 import { useFullscreen } from '@/lib/fullscreen'
 import { isSupabaseConfigured } from '@/lib/supabase'
@@ -25,13 +25,14 @@ import { TradesUnlockPopup } from './TradeRules'
 export function TradesService() {
   const userId = useGame((s) => (s.auth.status === 'signed_in' ? s.auth.userId : null))
   const mode = useGame((s) => s.save?.mode ?? null)
+  const inWorld = useGame((s) => !!s.save && inWorldRegion(s.save, s.data))
   // The sign-in's sync is over: the save won't give way to the cloud copy now.
   const synced = useCloudSync((s) => s.settled)
   const scene = useTrades((s) => s.scene)
 
   useEffect(() => {
-    if (userId && synced) void checkTrades(true)
-  }, [userId, synced, mode])
+    if (userId && synced && !inWorld) void checkTrades(true)
+  }, [userId, synced, mode, inWorld])
 
   useEffect(() => {
     const onShow = () => document.visibilityState === 'visible' && void checkTrades()
@@ -50,13 +51,17 @@ export function TradesService() {
   )
 }
 
-/** Between fights, after Prof. Oak's tutorials, never over a full-screen moment (a battle, a hatching, a trade). */
+/**
+ * Between fights, after Prof. Oak's tutorials, never over a full-screen moment (a battle, a hatching, a trade), and
+ * never inside a small world (no trade reaches one: they wait until the player is back).
+ */
 function useCalm() {
   const full = useFullscreen()
   const calm = useGame(
     (s) =>
       s.run.phase === 'idle' &&
       !!s.save &&
+      !inWorldRegion(s.save, s.data) &&
       !dayCareTutorialDue(s.save, s.data) &&
       !leaderboardTutorialDue(s.save, s.data),
   )

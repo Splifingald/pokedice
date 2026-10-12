@@ -16,7 +16,9 @@
 -- 5. delete_my_data: open listings go; a taken trade still owed to the other player keeps their Pokémon, without your
 --    name. Rows done on both sides go 30 days later (trade_mine tidies its caller's).
 --
--- The main save only: Extreme mode stays a solo challenge (p_realm must be 'main'). Run after 0043; safe to run again.
+-- The main save only: Extreme mode stays a solo challenge (p_realm must be 'main'). No trades reach a small world
+-- (docs/21): a player inside one can't post or take, and nothing in a world's Box is ever listed or given
+-- (trade_world). Run after 0043; safe to run again.
 -- seed.sql inlines it (scripts/seed.ts), after 0040.
 
 -- ---------------------------------------------------------------- 1. the switch and the numbers
@@ -93,14 +95,36 @@ language sql stable security definer set search_path = public as $$
 $$;
 
 -- The regions a save has started: the one being played and the parked ones.
+-- A small world's region (docs/21): the one this save holds (its own record), or any on the admin's list. No trades
+-- reach a world: nothing in one can be listed or given, and a player inside one can't trade at all.
+create or replace function trade_world(p_save jsonb, p_region text)
+returns boolean
+language sql stable as $$
+  -- coalesce: a save holding no world gives null here, and `not null` would hide every region.
+  select coalesce(p_save -> 'events' -> 'world' ->> 'regionId' = p_region
+                  and coalesce((p_save -> 'events' -> 'world' ->> 'closed')::boolean, false) = false, false)
+      or exists (
+        select 1 from jsonb_array_elements(coalesce((select value -> 'list' from game_config where key = 'smallWorlds'), '[]')) w
+        where w ->> 'regionId' = p_region)
+$$;
+
+-- The player is in a small world now (its region is the one being played).
+create or replace function trade_in_world(p_save jsonb)
+returns boolean
+language sql stable as $$
+  select trade_world(p_save, coalesce(nullif(p_save ->> 'region', ''), 'kanto'))
+$$;
+
+-- The regions a save has started, live or parked, small worlds left out.
 create or replace function trade_started(p_save jsonb)
 returns text[]
-language sql immutable as $$
+language sql stable as $$
   select array_agg(distinct x) from (
     select coalesce(nullif(p_save ->> 'region', ''), 'kanto') x
     union all
     select k from jsonb_each(coalesce(p_save -> 'parked', '{}')) p(k, v) where jsonb_typeof(v) = 'object'
   ) t
+  where not trade_world(p_save, x)
 $$;
 
 -- One Pokémon of a save, from any region's Box: the instance, its region, and how many others can play there.
@@ -238,8 +262,10 @@ begin
 
   select s.data into save from saves s where s.user_id = me and s.realm = 'main';
   if save is null then raise exception 'trades_no_save'; end if;
+  if trade_in_world(save) then raise exception 'trades_world'; end if;
   select * into hit from trade_find(save, p_inst);
   if hit.inst is null then raise exception 'trades_not_found'; end if;
+  if trade_world(save, hit.region) then raise exception 'trades_world'; end if;
   if hit.inst ->> 'revivesAt' is not null then raise exception 'trades_reviving'; end if;
   if hit.others < 1 then raise exception 'trades_last'; end if;
   if trade_untradable((hit.inst ->> 'dex')::int) then raise exception 'trades_untradable'; end if;
@@ -316,9 +342,11 @@ begin
 
   select s.data into save from saves s where s.user_id = me and s.realm = 'main';
   if save is null then raise exception 'trades_no_save'; end if;
+  if trade_in_world(save) then raise exception 'trades_world'; end if;
   if not (l.home_region = any (trade_started(save))) then raise exception 'trades_region'; end if;
   select * into hit from trade_find(save, p_inst);
   if hit.inst is null then raise exception 'trades_not_found'; end if;
+  if trade_world(save, hit.region) then raise exception 'trades_world'; end if;
   if hit.inst ->> 'revivesAt' is not null then raise exception 'trades_reviving'; end if;
   if hit.others < 1 then raise exception 'trades_last'; end if;
   gdex := (hit.inst ->> 'dex')::int;
@@ -515,7 +543,7 @@ $$;
 -- ---------------------------------------------------------------- who may call what
 
 revoke all on function trade_cfg(), trade_open(), trade_untradable(int), trade_home_region(int, int), trade_badges(uuid),
-  trade_started(jsonb), trade_find(jsonb, text), trade_has(jsonb, int), trade_name(uuid), trade_row(trade_listings, uuid)
+  trade_world(jsonb, text), trade_in_world(jsonb), trade_started(jsonb), trade_find(jsonb, text), trade_has(jsonb, int), trade_name(uuid), trade_row(trade_listings, uuid)
   from public, anon, authenticated;
 revoke all on function trade_post(text, jsonb, text, jsonb, text), trade_take(text, text, text), trade_cancel(uuid),
   trade_board(boolean, text, int[], text, int, text, uuid), trade_view(text, text, text), trade_mine(text),

@@ -22,7 +22,9 @@ import {
   speciesMinLevel,
   startRegion,
   tradeBlocked,
+  tradeChoices,
   tradeClosed,
+  tradeRegions,
   tradeEvolutionOf,
   tradeSnapshot,
   tradesOf,
@@ -39,6 +41,7 @@ import {
   type PokemonInstance,
   type SaveData,
   type TradeConfig,
+  type WorldSave,
 } from '@/engine'
 import { parseSave } from '@/save/schema'
 import { makeData, newId } from '../fixtures'
@@ -430,5 +433,66 @@ describe('taking a listing, as the screens show it', () => {
     const s = kanto()
     expect(newForTrade(s, data, 4)).toBe(false)
     expect(newForTrade(s, data, 25)).toBe(true)
+  })
+})
+
+describe('small worlds: no trade reaches one (docs/21)', () => {
+  const held: WorldSave = { id: 'isle', regionId: 'w-isle', from: 'kanto', partner: 25 }
+  /** Kanto live, with a small world parked (its own Box). */
+  function parkedWorld(): SaveData {
+    const s = kanto(mon(16, 12))
+    return {
+      ...s,
+      parked: {
+        'w-isle': {
+          gold: 0,
+          pokedex: [25, 7],
+          box: [mon(25, 12), mon(7, 9)],
+          team: [],
+          inventory: {},
+          comboLevels: {},
+          dieLevels: {},
+          currentAreaId: s.currentAreaId,
+          areaProgress: {},
+        },
+      },
+      events: { ...s.events, world: held },
+    } as unknown as SaveData
+  }
+
+  it('never offers a world’s Pokémon, nor counts its region as started', () => {
+    const s = parkedWorld()
+    expect(tradeChoices(s, data).some((m) => m.region === 'w-isle')).toBe(false)
+    expect(tradeRegions(s, data)).not.toContain('w-isle')
+    expect(tradeClosed(s, data)).toBeNull()
+  })
+
+  it('is closed while the player is inside one, and lands nothing there', () => {
+    const s = parkedWorld()
+    const w = s.parked!['w-isle']!
+    // Inside: the world's block is the live one, Kanto's is parked.
+    const inside = {
+      ...s,
+      ...w,
+      region: 'w-isle',
+      parked: {
+        kanto: {
+          gold: s.gold,
+          pokedex: s.pokedex,
+          box: s.box,
+          team: s.team,
+          inventory: s.inventory,
+          comboLevels: s.comboLevels,
+          dieLevels: s.dieLevels,
+          currentAreaId: s.currentAreaId,
+          areaProgress: s.areaProgress,
+        },
+      },
+    } as SaveData
+    expect(tradeClosed(inside, data)).toBe('world')
+    expect(tradeChoices(inside, data).some((m) => m.region === 'w-isle')).toBe(false)
+    // A Pokémon owed meanwhile (a check run before entering) goes to a real region's Box, never the world's.
+    const r = receiveTrade(inside, data, { dex: 4 }, 20, NOW, newId)
+    expect(r.region).not.toBe('w-isle')
   })
 })

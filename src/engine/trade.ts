@@ -9,7 +9,17 @@ import { isExtreme } from './extreme'
 import { isReviving } from './fossils'
 import { badgesHeld } from './liveEvents'
 import { createInstance, evolve, instanceMaxHp, isTradeEvolution, tradeEvolutionOf } from './progression'
-import { getRegion, regionOf, regionOfSpecies, speciesAllowedIn, unlockedRegions } from './regions'
+import {
+  getRegion,
+  inWorldRegion,
+  isWorldRegion,
+  KANTO,
+  regionOf,
+  regionOfSpecies,
+  speciesAllowedIn,
+  unlockedRegions,
+  worldRegionOf,
+} from './regions'
 import type {
   GameData,
   PokemonInstance,
@@ -30,12 +40,16 @@ export const tradeCfg = (data: GameData): TradeConfig => data.config.trade
 /** The admin's switch (docs/15 §20): on for everyone, or for the admin only. */
 export const tradesOn = (data: GameData): boolean => eventOpenTo(data.config.trade?.access, data)
 
-/** Why this save can't trade at all: the switch, an Extreme save (a solo challenge), too few badges. */
-export type TradeClosed = 'off' | 'extreme' | 'badges'
+/**
+ * Why this save can't trade at all: the switch, an Extreme save (a solo challenge), playing in a small world (no trade
+ * reaches one, docs/21), too few badges.
+ */
+export type TradeClosed = 'off' | 'extreme' | 'world' | 'badges'
 
 export function tradeClosed(save: SaveData, data: GameData): TradeClosed | null {
   if (!tradesOn(data)) return 'off'
   if (isExtreme(save)) return 'extreme'
+  if (inWorldRegion(save, data)) return 'world'
   if (badgesHeld(save, data) < tradeCfg(data).minBadges) return 'badges'
   return null
 }
@@ -169,9 +183,18 @@ export function untradable(data: GameData, dex: number): 'legendary' | 'excluded
   return null
 }
 
-/** The regions started (live or parked, still on): the ones whose species can be asked for and received. */
+/** A small world's region (docs/21): nothing in it is ever listed, given or received. */
+const isWorld = (save: SaveData, data: GameData, id: RegionId): boolean =>
+  isWorldRegion(data, id) || worldRegionOf(save) === id
+
+/**
+ * The regions started (live or parked, still on), small worlds left out: the ones whose species can be asked for and
+ * received.
+ */
 export const tradeRegions = (save: SaveData, data: GameData): RegionId[] =>
-  unlockedRegions(save, data).map((r) => r.id)
+  unlockedRegions(save, data)
+    .map((r) => r.id)
+    .filter((id) => !isWorld(save, data, id))
 
 export type ListBlock = 'legendary' | 'excluded' | 'reviving' | 'last' | 'region'
 
@@ -201,8 +224,12 @@ export function tradeBlocked(
   return null
 }
 
-/** Every Pokémon that could go in a trade: every region's Box and team (the Day Care's wait at the Day Care). */
-export const tradeChoices = (save: SaveData, data: GameData): BoxedMon[] => everyRegionBox(save, data)
+/**
+ * Every Pokémon that could go in a trade: every region's Box and team, a small world's left out (the Day Care's wait
+ * at the Day Care).
+ */
+export const tradeChoices = (save: SaveData, data: GameData): BoxedMon[] =>
+  everyRegionBox(save, data).filter((m) => !isWorld(save, data, m.region))
 
 /**
  * Every species that can be asked for: those of the regions started (a regional form with its region), legendaries,
@@ -382,6 +409,20 @@ export function listOut(
   return { ...taken, trades: { ...t, out: [...t.out.filter((o) => o.listing !== listing.id), entry] } }
 }
 
+/**
+ * The Box a Pokémon for `region` lands in: that region's when it's started; else the live one; never a small world's
+ * (it closes with everything in it): then a started region, Kanto first.
+ */
+function landing(save: SaveData, data: GameData, region: RegionId): RegionId {
+  const started = (id: RegionId) => id === regionOf(save) || !!save.parked?.[id]
+  if (started(region) && !isWorld(save, data, region)) return region
+  if (!isWorld(save, data, regionOf(save))) return regionOf(save)
+  const real = [KANTO, ...Object.keys(save.parked ?? {})].find(
+    (id) => started(id) && !isWorld(save, data, id),
+  )
+  return real ?? regionOf(save)
+}
+
 export interface Placed {
   save: SaveData
   outcome: TradeOutcome
@@ -397,7 +438,7 @@ export interface Placed {
  * (switched off since) gives it to the live one.
  */
 export function placeInBox(save: SaveData, data: GameData, region: RegionId, inst: PokemonInstance): Placed {
-  const here = region === regionOf(save) || save.parked?.[region] ? region : regionOf(save)
+  const here = landing(save, data, region)
   const b = here === regionOf(save) ? save : save.parked![here]!
   const withDex = (dex: readonly number[], d: number) => (dex.includes(d) ? [...dex] : [...dex, d])
   const plain = b.box.filter((p) => p.dex === inst.dex && !p.shiny && !isReviving(p))

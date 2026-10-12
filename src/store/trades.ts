@@ -7,6 +7,7 @@ import {
   applyEnded,
   applyTake,
   applyTaken,
+  inWorldRegion,
   isExtreme,
   listOut,
   markTradeRulesSeen,
@@ -116,7 +117,9 @@ const ENDED = new Set(['cancelled', 'expired', 'removed'])
  */
 export async function checkTrades(force = false, now = Date.now()): Promise<void> {
   const { save, data } = useGame.getState()
-  if (checking || !signedInUser() || !save || isExtreme(save) || !syncSettled()) return
+  // Inside a small world no trade reaches the player (docs/21): the check waits until they're back.
+  if (checking || !signedInUser() || !save || isExtreme(save) || inWorldRegion(save, data) || !syncSettled())
+    return
   const mine = tradesOf(save)
   if (!tradesOn(data) && !mine.out.length && !mine.log?.length && !mine.done.length) return
   if (!force && now - lastCheck < CHECK_EVERY_MS) return

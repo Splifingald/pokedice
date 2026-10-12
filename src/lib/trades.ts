@@ -76,6 +76,7 @@ export type TradeError =
   | 'region'
   | 'poster_region'
   | 'no_match'
+  | 'world'
   | 'no_save'
   | 'not_synced'
   | 'signed_out'
@@ -100,6 +101,7 @@ const ERRORS: TradeError[] = [
   'poster_region',
   'region',
   'no_match',
+  'world',
   'no_save',
   'not_synced',
   'signed_out',

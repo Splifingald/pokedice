@@ -5,6 +5,7 @@ import {
   discordUrl,
   extremeOn,
   extremeOpen,
+  inWorldRegion,
   isExtreme,
   leaderboardUnlocked,
   tradeCfg,
@@ -121,7 +122,9 @@ export function PlayerMenu() {
   const tradesUnseen = save && !isExtreme(save) ? (tradesOf(save).unseen?.length ?? 0) : 0
   const tradesOut = save ? tradesOf(save).out.length : 0
   // The row is there once the admin's switch is on for this player (and while something is listed, so it can come back).
-  const tradesRow = isSupabaseConfigured && !!save && !isExtreme(save) && (tradesOn(data) || tradesOut > 0)
+  // Not inside a small world: no trade reaches one (docs/21).
+  const tradesRow =
+    isSupabaseConfigured && !!save && !isExtreme(save) && !inWorldRegion(save, data) && (tradesOn(data) || tradesOut > 0)
   const news = newFriends + tradesUnseen
 
   const name = playerOf(save).name

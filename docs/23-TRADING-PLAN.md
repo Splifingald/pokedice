@@ -382,6 +382,10 @@ What differs from the sections above, or wasn't in them:
 - **The picker and the confirm** come from `previewTake` (the trade worked out on a copy of the save), so what they
   promise is what `applyTake` then does.
 - **Strings**: `ui.trades.*`, `ui.rules.tr.*`, two `ui.time.*` and four evolution lines, in all ten languages.
+- **No trades in a small world** (docs/21, which landed meanwhile): inside one, Trades are closed (`tradeClosed` says
+  `world`; no row, page or button, and the check and its pop-ups wait until the player is back); a world's Box is
+  never offered, its region never counts as started, and nothing received lands there. The server says the same
+  (`trade_world`, `trade_in_world`: `trades_world`), from the save's own world and the admin's list.
 - **A friends-only listing opened by a non-friend** says "Only Sora's friends can take it" with a button to the
   Friends page, not ADD SORA: adding a friend takes their friend ID, which a listing doesn't carry. The listing's
   sheet has no "Their card" button either; a friend's card lists their trades instead.

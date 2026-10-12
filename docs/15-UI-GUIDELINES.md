@@ -577,7 +577,9 @@ decides every level, landing Box and outcome, and the screens only say them.
   trades" list; a Pokémon's sheet has TRADE beside Send on (the main button when there's nowhere to send it), which
   opens New listing with it picked. The trade icon (`trade`, two arrows crossing, gold over blue) marks all of it.
 - **The switch and the rules** follow §20: off, the row, the page, the pop-ups and links are gone (the page goes
-  Home), except for a player who still has something listed, who sees Mine with a note so it can come back. The rules
+  Home), except for a player who still has something listed, who sees Mine with a note so it can come back.
+  **Inside a small world there are no trades at all** (§22): no row, no page, no TRADE button, and the check, the
+  "Trade done!" pop-up and opened links wait until the player is back; nothing in a world's Box is ever offered. The rules
   pop-up (`TradesRulesModal`, the Pokémon Center as its banner) opens once for a signed-in player who can trade.
 - **A listing on a board** (`ListingRow`): the listed Pokémon on the left (menu icon, name, ✦, NEW when its landing
   Pokédex lacks it, its region's chip when it isn't the first region, who), "for" and what they want on the right
