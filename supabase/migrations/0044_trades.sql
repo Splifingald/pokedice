@@ -6,7 +6,8 @@
 --
 -- 1. game_config `trade`: the switch (Off / On for admin / On for everyone, off by default: docs/15 §20) and the
 --    numbers, inserted only if missing so seeding never clobbers the admin's.
--- 2. trade_listings: one row per listing, from posted to applied on both sides. No direct access; the functions below.
+-- 2. trade_listings: one row per listing, from posted to applied on both sides. Players reach it only through the
+--    functions below; the admin reads it (0047).
 -- 3. trade_post / trade_take read the Pokémon from the player's own cloud save (pushed just before, as Versus does:
 --    what the page sends isn't trusted), check every rule, and write the listing. trade_take takes it with one locked
 --    update, so two takers can't both win.
