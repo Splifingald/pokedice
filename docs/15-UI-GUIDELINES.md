@@ -146,6 +146,7 @@ All live in `src/components/`. Every component, in every state, is on `/kitchen-
 | `Die` | A die face | Square corners; pips on whole pixels (`pipLayout`: one even pip size, three fixed columns) at any size; ink pips on light dice, white on dark; status face = white + status ring and a round badge with its icon; `selected` = lifted 6 px with a red outline; `combo` = a gold ring; values without a pip layout (0, 7, 8…) show their number, centred on the face |
 | `PageHead` / `Wallet` | A tab's title row | Tab icon, the one `<h1>` (`as="h2"` where the page has its own), a count ("3/3", "81/151") or the gold as a navy plate |
 | `SheetSection` | A titled block inside a sheet | 22 px heading, a muted hint on the same row, extra controls |
+| `NicknameButton` / `NicknameModal` | Giving one of your Pokémon a nickname (its sheet's title) | The name and a pencil, 44 px tall on phones; the dialog with the field (empty: the species as placeholder; named: selected), the 0/12 counter, the trade line only where trades exist, Cancel / SAVE (§13) |
 | `MonTile` / `TileTag` | A grid of Pokémon (Box, Pokédex) | Menu icon from the atlas, number, name, a line under it; `missing` = grey tile + silhouette; corner tags NEW (gold) and Nearby (green). `TILE_GRID` = ~84 px columns |
 | `FaceDice` / `StatusLines` | What a die does | Its six faces as real dice, value under each; a status face keeps its ring and badge and gets its short name in a chip. One tinted line per status: when it triggers and what it does, with the live numbers (`statusEffects`) |
 | `ItemSprite` | An item's picture | From the item atlas (one request); falls back to the item's own URL for items added since the atlas was built |
@@ -349,6 +350,16 @@ Players shouldn't have to make many requests:
   Back. The body leads with what matters now: HP and XP, Speed / Rerolls / Catch value, every die as real dice, then
   **What's next** (milestones still ahead, the next one tagged NEXT, each with how close it is); milestones already
   reached fold away under a summary.
+- **Nicknames**: on one of your own Pokémon's sheets (not a Pokédex entry, not a fossil still reviving) the title is a
+  button, the name and a pencil (`NicknameButton`; "Give it a nickname" is its description, so the sheet keeps the
+  name as its label). It opens a small `Modal` over the sheet (`NicknameModal`): the field, focused, with the species
+  as its placeholder and a counter to 12 characters; Cancel and SAVE; a toast says what changed. Empty, or the
+  species' own name, takes the nickname away. Nicknamed, the line under the title starts with the species
+  ("Charmander · #004 · Lv.12 · Lead"). The Pokémon then goes by it wherever it is yours: team cards, the Box (its
+  search finds a nickname or a species), the Center, Home's scene, battle plates and messages (through a Mega
+  Evolution), the XP recap, its evolution ("Blaze evolved into Charmeleon!"), the trade scene and the Done list. It
+  goes with it in a trade (§21), and the new trainer can change it. Other players' Pokémon on boards and cards show
+  their species.
 - **Explain, don't hide**: something that can't be used right now stays listed, greyed, with the reason in words
   ("Already full", "Fainted: needs a Revive", "Needs a Pokémon with 4+ dice", "6 badges"). Buttons you can't afford
   stay focusable (`aria-disabled`) and say what's missing ("need ₽14"); a tap explains in a toast.
@@ -603,9 +614,10 @@ decides every level, landing Box and outcome, and the screens only say them.
   Owned / All switch with counts and region chips past one region, and 90 tiles at first with "Show more". The
   summary sits gold above the footer's POST, which says what's missing while it can't post.
 - **The scene** (`TradeScene`, `tradeTimeline`): full screen, held with `useHoldFullscreen` so pop-ups wait; the line
-  under the stage is the host's (beats `sending`, `incoming`, `care`); a trade evolution follows with the evolution
-  scene; then what arrived (`TradeResult`: sprite, level, SHINY / NEW / STRONGER, where it went, the level note, "its
-  Pokédex entry stays") and DONE. SKIP and Esc jump to the result. Motion off jumps there at once.
+  under the stage is the host's (beats `sending`, `incoming`, `care`), each Pokémon called by the nickname it carries
+  ("Misty sent Bubbles over!"); a trade evolution follows with the evolution scene; then what arrived (`TradeResult`:
+  sprite, its nickname with the species beside it unless it merged into yours, level, SHINY / NEW / STRONGER, where it
+  went, the level note, "its Pokédex entry stays") and DONE. SKIP and Esc jump to the result. Motion off jumps there at once.
 - **Coming back**: "Trade done!" (both Pokémon, who took it, Later / See it → the scene) once the run is idle and no
   full-screen moment is up; a toast for a listing that came back and for a trade a closed tab left half done.
 - **Sharing** (`ShareListingModal`): the link `<site>/t/<code>` with COPY, a line on who can use it, and SHARE (the

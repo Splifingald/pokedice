@@ -386,6 +386,13 @@ What differs from the sections above, or wasn't in them:
   `world`; no row, page or button, and the check and its pop-ups wait until the player is back); a world's Box is
   never offered, its region never counts as started, and nothing received lands there. The server says the same
   (`trade_world`, `trade_in_world`: `trades_world`), from the save's own world and the admin's list.
+- **Nicknames go with the Pokémon** (added after the build): a nickname lives on the instance (`nickname`,
+  `engine/nickname.ts`), so the listing's copy of it on the server carries it with no change to 0044. The client
+  cleans it on arrival (`parseInstance`: control characters out, 12 characters at most); `receiveTrade` gives it to the
+  Pokémon that arrives (through a trade evolution); a stronger one that replaces your copy brings its nickname, or
+  keeps yours when it has none; one that merges into yours brings nothing. The log keeps both sides' nicknames for
+  the scene and the Done list. The board, a listing's sheet and a friend's card still show the species: a nickname is
+  only seen by whoever ends up with the Pokémon, who can change it from its sheet.
 - **A friends-only listing opened by a non-friend** says "Only Sora's friends can take it" with a button to the
   Friends page, not ADD SORA: adding a friend takes their friend ID, which a listing doesn't carry. The listing's
   sheet has no "Their card" button either; a friend's card lists their trades instead.

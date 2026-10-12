@@ -78,6 +78,8 @@ function Comebacks() {
   const settled = useTrades((s) => s.settled)
   const calm = useCalm()
   const name = (dex: number) => data.species[dex]?.name ?? t('ui.common.pokemon')
+  // A Pokémon traded with its nickname goes by it.
+  const called = (m: { dex: number; nickname?: string }) => m.nickname || name(m.dex)
 
   useEffect(() => {
     if (!calm || (!returned.length && !settled.length)) return
@@ -85,7 +87,12 @@ function Comebacks() {
     const log = save ? (tradesOf(save).log ?? []) : []
     for (const id of settled) {
       const e = log.find((l) => l.id === id)
-      if (e) pushToast(t('ui.trades.settled', { name: name(e.evolvedTo ?? e.got.dex) }), 'good', 4500)
+      if (e)
+        pushToast(
+          t('ui.trades.settled', { name: e.got.nickname || name(e.evolvedTo ?? e.got.dex) }),
+          'good',
+          4500,
+        )
     }
     clearReturned()
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -118,7 +125,7 @@ function Comebacks() {
           <p className="copy m-0 text-center text-[20px]">
             {t('ui.trades.pop.body', {
               name: entry.with || t('ui.friends.someone'),
-              mon: name(entry.gave.dex),
+              mon: called(entry.gave),
             })}
           </p>
           <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)] gap-2.5">

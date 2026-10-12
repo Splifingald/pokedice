@@ -8,6 +8,7 @@ import { eventOpenTo } from './events'
 import { isExtreme } from './extreme'
 import { isReviving } from './fossils'
 import { badgesHeld } from './liveEvents'
+import { cleanNickname } from './nickname'
 import { createInstance, evolve, instanceMaxHp, isTradeEvolution, tradeEvolutionOf } from './progression'
 import {
   getRegion,
@@ -453,7 +454,14 @@ export function placeInBox(save: SaveData, data: GameData, region: RegionId, ins
   }
   const weakest = [...plain].sort((a, c) => a.level - c.level)[0]!
   if (weakest.level >= inst.level) return { save, outcome: 'merged', instId: null, region: here }
-  const upgraded: PokemonInstance = { ...weakest, level: inst.level, xp: 0, caughtAt: inst.caughtAt }
+  // The one arriving is the one you now have: its nickname comes with it; without one, yours stays.
+  const upgraded: PokemonInstance = {
+    ...weakest,
+    level: inst.level,
+    xp: 0,
+    caughtAt: inst.caughtAt,
+    ...(inst.nickname && { nickname: inst.nickname }),
+  }
   upgraded.currentHp = instanceMaxHp(upgraded, data)
   const next = withBlock(save, here, (x) => ({
     ...x,
@@ -491,14 +499,14 @@ export interface Received {
 }
 
 /**
- * A Pokémon arrives in a trade: a fresh instance at the arrival level (XP 0, full HP), evolved at once when it's a trade
- * evolution its home region allows, then placed in its home region's Box by the catch rule. Both species go in that
- * region's Pokédex.
+ * A Pokémon arrives in a trade: a fresh instance at the arrival level (XP 0, full HP) with the nickname its trainer
+ * gave it, evolved at once when it's a trade evolution its home region allows, then placed in its home region's Box by
+ * the catch rule. Both species go in that region's Pokédex.
  */
 export function receiveTrade(
   save: SaveData,
   data: GameData,
-  mon: { dex: number; shiny?: boolean },
+  mon: { dex: number; shiny?: boolean; nickname?: string },
   givenLevel: number,
   now: number,
   newId: () => string,
@@ -507,6 +515,8 @@ export function receiveTrade(
   const region = homeRegionOf(data, mon.dex) ?? regionOf(save)
   let inst = createInstance(mon.dex, arrival.level, data, newId(), now)
   if (mon.shiny) inst.shiny = true
+  const nickname = cleanNickname(mon.nickname)
+  if (nickname) inst.nickname = nickname
   const to = tradeEvolutionOf(data, mon.dex)
   const evolvedTo = to != null && speciesAllowedIn(data, region)(to) ? to : null
   if (evolvedTo != null) inst = evolve(inst, evolvedTo, data)
@@ -559,6 +569,12 @@ function markDone(save: SaveData, id: string, log?: TradeLogEntry, unseen = fals
 
 export const tradeApplied = (save: SaveData, id: string): boolean => tradesOf(save).done.includes(id)
 
+/** What the Done list and the scene keep of a Pokémon beyond its species and level: shiny, and its nickname. */
+function extras(m: PokemonInstance): { shiny?: true; nickname?: string } {
+  const nickname = cleanNickname(m.nickname)
+  return { ...(m.shiny && { shiny: true }), ...(nickname && { nickname }) }
+}
+
 /** What the server says a taken trade was: the listed Pokémon, the one given for it, who took it. */
 export interface TakenTrade {
   id: string
@@ -593,8 +609,8 @@ export function applyTake(
     at: now,
     role: 'taker',
     with: t.with,
-    gave: { dex: t.given.dex, level: t.given.level, ...(t.given.shiny && { shiny: true }) },
-    got: { dex: received.dex, level: received.arrival.level, ...(t.listed.shiny && { shiny: true }) },
+    gave: { dex: t.given.dex, level: t.given.level, ...extras(t.given) },
+    got: { dex: received.dex, level: received.arrival.level, ...extras(t.listed) },
     ...(received.evolvedTo != null && { evolvedTo: received.evolvedTo }),
     outcome: received.outcome,
   }
@@ -623,8 +639,8 @@ export function applyTaken(
     at: now,
     role: 'poster',
     with: t.with,
-    gave: { dex: t.listed.dex, level: t.listed.level, ...(t.listed.shiny && { shiny: true }) },
-    got: { dex: received.dex, level: received.arrival.level, ...(t.given.shiny && { shiny: true }) },
+    gave: { dex: t.listed.dex, level: t.listed.level, ...extras(t.listed) },
+    got: { dex: received.dex, level: received.arrival.level, ...extras(t.given) },
     ...(received.evolvedTo != null && { evolvedTo: received.evolvedTo }),
     outcome: received.outcome,
   }

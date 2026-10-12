@@ -1,7 +1,7 @@
 // TRADE on a Pokémon's sheet (docs/23 §2), beside Send on: it opens New listing on the Trades page with this one
 // picked. Shown once trades are open to the player; a Pokémon that can't be listed says why instead.
 import { useNavigate } from 'react-router-dom'
-import { tradeBlocked, tradeChoices, tradeClosed, type PokemonInstance } from '@/engine'
+import { monName, tradeBlocked, tradeChoices, tradeClosed, type PokemonInstance } from '@/engine'
 import { useT } from '@/i18n/react'
 import { isSupabaseConfigured } from '@/lib/supabase'
 import { useGame } from '@/store/game'
@@ -20,7 +20,7 @@ export function useTradeThis(inst: PokemonInstance, primary: boolean, onGone: ()
   const at = tradeChoices(save, data).find((m) => m.inst.id === inst.id)
   if (!at) return null
   const why = tradeBlocked(save, data, at)
-  const name = data.species[inst.dex]?.name ?? t('ui.common.pokemon')
+  const name = monName(inst, data)
   return {
     button: (
       <PixelButton

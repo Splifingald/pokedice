@@ -255,6 +255,19 @@ export const ICONS = {
     '.....kdk........',
     '......k.........',
   ],
+  // A pencil: tap to rename (a Pokémon's nickname).
+  pencil: [
+    '........kkk.',
+    '.......kmmmk',
+    '......kmmmk.',
+    '.....ksssk..',
+    '....kYyok...',
+    '...kYyok....',
+    '..kYyok.....',
+    '.kYYYk......',
+    'kYYk........',
+    'kk..........',
+  ],
   ...PACK_ICONS,
 } as const
 

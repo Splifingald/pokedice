@@ -48,6 +48,7 @@ export interface RaidMon {
   dex: number
   level: number
   shiny: boolean
+  nickname?: string
 }
 
 /**
@@ -59,7 +60,13 @@ export function raidTeam(save: SaveData, data: GameData): RaidMon[] {
   const every = everyInstance(save).filter((p) => p.revivesAt == null && !!data.species[p.dex])
   const chosen = (save.events?.raidTeam ?? []).flatMap((id) => every.filter((p) => p.id === id).slice(0, 1))
   const team = chosen.length ? chosen : [...every].sort((a, b) => b.level - a.level).slice(0, 3)
-  return team.slice(0, 3).map((p) => ({ id: p.id, dex: p.dex, level: Math.min(p.level, cap), shiny: !!p.shiny }))
+  return team.slice(0, 3).map((p) => ({
+    id: p.id,
+    dex: p.dex,
+    level: Math.min(p.level, cap),
+    shiny: !!p.shiny,
+    ...(p.nickname && { nickname: p.nickname }),
+  }))
 }
 
 /** Another try at today's raid (counted when it starts). */

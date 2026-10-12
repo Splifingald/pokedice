@@ -318,6 +318,8 @@ function Mine({
     }
   }, [])
   const name = (dex: number) => data.species[dex]?.name ?? t('ui.common.pokemon')
+  // A Pokémon traded with its nickname goes by it; the line under keeps the species.
+  const called = (m: { dex: number; nickname?: string }) => m.nickname || name(m.dex)
   const lv = (n: number) => t('ui.common.level.short', { n })
   const now = Date.now()
   const asListing = (o: TradeOut): TradeListing => ({
@@ -343,7 +345,7 @@ function Mine({
     try {
       const res = await cancel(o.listing)
       pushToast(
-        t(res === 'cancelled' ? 'ui.trades.backInBox' : 'ui.trades.tooLate', { name: name(o.mon.dex) }),
+        t(res === 'cancelled' ? 'ui.trades.backInBox' : 'ui.trades.tooLate', { name: called(o.mon) }),
         'info',
         4000,
       )
@@ -374,7 +376,7 @@ function Mine({
                 <MiniSprite dex={o.mon.dex} size={40} className="-my-1 shrink-0" />
                 <span className="grid min-w-0 flex-1 gap-0.5">
                   <b className="flex min-w-0 items-center gap-1 text-[19px] font-normal leading-none">
-                    <span className="truncate">{name(o.mon.dex)}</span>
+                    <span className="truncate">{called(o.mon)}</span>
                     {o.mon.shiny && <ShinyStar />}
                     <LevelTag level={o.mon.level} />
                   </b>
@@ -437,10 +439,10 @@ function Mine({
             <span className="grid min-w-0 flex-1 gap-0.5">
               <b className="text-[18px] font-normal leading-tight">
                 {e.role === 'taker'
-                  ? t('ui.trades.log.took', { name: e.with || t('ui.friends.someone'), mon: name(e.got.dex) })
+                  ? t('ui.trades.log.took', { name: e.with || t('ui.friends.someone'), mon: called(e.got) })
                   : t('ui.trades.log.taken', {
                       name: e.with || t('ui.friends.someone'),
-                      mon: name(e.gave.dex),
+                      mon: called(e.gave),
                     })}
               </b>
               <small className="font-pixel-sm text-[13px] leading-tight text-muted">

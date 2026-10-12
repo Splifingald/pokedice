@@ -161,7 +161,14 @@ export function startRaid(friends: RaidFriend[] = useRaidGroup.getState().friend
     owner: save.player?.name || t('ui.raid.you'),
     look: avatarOf(playerAvatarId(save.player)).src,
     kind: 'me',
-    team: team.map((m, i) => ({ uid: `s0-${i}`, dex: m.dex, level: m.level, hp: Number.MAX_SAFE_INTEGER, shiny: m.shiny })),
+    team: team.map((m, i) => ({
+      uid: `s0-${i}`,
+      dex: m.dex,
+      level: m.level,
+      hp: Number.MAX_SAFE_INTEGER,
+      shiny: m.shiny,
+      nickname: m.nickname,
+    })),
   }
   const picked = friends.filter((f) => f.team.length > 0).slice(0, 2)
   const sides = [me, ...picked.map((f, i) => friendSide(f, i + 1)), ...npcSides(2 - picked.length)]

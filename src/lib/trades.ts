@@ -1,7 +1,13 @@
 // Trades, the cloud side (docs/23, migration 0044): the calls the game makes, their parsing, what went wrong in a
 // word the screens can phrase, and a shared link (/t/<code>) kept in this browser until the game can open it. The main
 // save only: Extreme mode has no trades, so these calls never carry a realm.
-import type { PokemonInstance, TradeSnapshot, TradeVisibility, TradeWant } from '@/engine'
+import {
+  cleanNickname,
+  type PokemonInstance,
+  type TradeSnapshot,
+  type TradeVisibility,
+  type TradeWant,
+} from '@/engine'
 import { avatarOf } from './avatars'
 import { deviceId } from './device'
 import { isCode, normalizeCode } from './friends'
@@ -135,10 +141,11 @@ export function parseWant(raw: unknown): TradeWant {
   return { kind: 'any' }
 }
 
-/** A Pokémon as a cloud save holds it. */
+/** A Pokémon as a cloud save holds it, with the nickname its trainer gave it (cleaned: it came from another save). */
 export function parseInstance(raw: unknown): PokemonInstance | null {
   const m = (raw ?? {}) as Record<string, unknown>
   if (typeof m.id !== 'string' || !(num(m.dex) > 0)) return null
+  const nickname = cleanNickname(m.nickname)
   return {
     id: m.id,
     dex: num(m.dex),
@@ -147,6 +154,7 @@ export function parseInstance(raw: unknown): PokemonInstance | null {
     currentHp: Math.max(0, num(m.currentHp)),
     caughtAt: num(m.caughtAt),
     ...(m.shiny === true && { shiny: true }),
+    ...(nickname && { nickname }),
   }
 }
 

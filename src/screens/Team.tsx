@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { POKE_TYPES, teamOf, type PokemonInstance, type PokeType } from '@/engine'
+import { monName, POKE_TYPES, teamOf, type PokemonInstance, type PokeType } from '@/engine'
 import { searchFold } from '@/i18n'
 import { useT } from '@/i18n/react'
 import { sortBox, type BoxSort } from '@/components/BoxSort'
@@ -30,7 +30,8 @@ export function TeamScreen() {
   const [q, setQ] = useState('')
   if (!save) return null
   const team = teamOf(save)
-  const name = (p: PokemonInstance) => data.species[p.dex]?.name ?? t('ui.common.unknown')
+  const name = (p: PokemonInstance) => monName(p, data)
+  const speciesName = (p: PokemonInstance) => data.species[p.dex]?.name ?? t('ui.common.unknown')
   const typesOf = (p: PokemonInstance) => {
     const s = data.species[p.dex]
     return s ? [s.type1, ...(s.type2 ? [s.type2] : [])] : []
@@ -41,7 +42,8 @@ export function TeamScreen() {
   const box = sortBox(
     boxAll.filter(
       (p) =>
-        (!needle || searchFold(name(p)).includes(needle)) && (type === 'all' || typesOf(p).includes(type)),
+        (!needle || [name(p), speciesName(p)].some((n) => searchFold(n).includes(needle))) &&
+        (type === 'all' || typesOf(p).includes(type)),
     ),
     sort,
     data,
@@ -127,6 +129,7 @@ export function TeamScreen() {
                   icon={reviving ? <ItemSprite item={fossil} size={40} /> : undefined}
                   label={[
                     name(p),
+                    p.nickname ? speciesName(p) : null,
                     p.shiny ? t('ui.mon.shiny') : null,
                     reviving
                       ? t('ui.mon.revivesIn', { time: sub })

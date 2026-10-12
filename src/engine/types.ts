@@ -845,6 +845,8 @@ export interface PokemonInstance {
   fossil?: string
   /** Extreme mode: when it was K.O. (ms, server time). It rests until `koHours` later. Absent = not on the clock. */
   koAt?: number
+  /** The name its trainer gave it (`engine/nickname.ts`). It goes with it in a trade; absent = its species' name. */
+  nickname?: string
 }
 
 export interface AreaProgress {
@@ -977,9 +979,9 @@ export interface TradeLogEntry {
   role: 'poster' | 'taker'
   /** The other trainer's name as it was then. */
   with: string
-  gave: { dex: number; level: number; shiny?: boolean }
-  /** The species that arrived, at the level it arrived at (before a trade evolution). */
-  got: { dex: number; level: number; shiny?: boolean }
+  gave: { dex: number; level: number; shiny?: boolean; nickname?: string }
+  /** The species that arrived, at the level it arrived at (before a trade evolution), and the name it came with. */
+  got: { dex: number; level: number; shiny?: boolean; nickname?: string }
   evolvedTo?: number
   outcome: TradeOutcome
 }

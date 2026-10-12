@@ -42,6 +42,7 @@ import { soundOn } from '@/save/storage'
 import { pushToast, setSettings, useGame } from '@/store/game'
 import { BattleBits } from './kitchen/BattleBits'
 import { DayCareBits } from './kitchen/DayCareBits'
+import { NicknameBits } from './kitchen/NicknameBits'
 import { TradeKitBits } from './kitchen/TradeBits'
 import { RulesBits } from './kitchen/RulesBits'
 import { ExtremeBits } from './kitchen/ExtremeBits'
@@ -562,6 +563,10 @@ export function KitchenSink() {
 
       <Section title="Day Care: Egg, hearts, tags, slot cards, empty slots, Egg now, the Egg card">
         <DayCareBits />
+      </Section>
+
+      <Section title="Nicknames: the name on a Pokémon's sheet (tap to rename), the dialog without and with a nickname">
+        <NicknameBits />
       </Section>
 
       <Section title="RulesModal · InfoButton: a feature's rules (the unlock pop-up, the INFO copy)">

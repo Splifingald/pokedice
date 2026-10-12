@@ -38,8 +38,9 @@ function SceneBody({ show, onDone }: { show: TradeShow; onDone: () => void }) {
   const [evolved, setEvolved] = useState(false)
   const end = useRef<HTMLButtonElement>(null)
   const name = (dex: number) => data.species[dex]?.name ?? t('ui.common.pokemon')
-  const give = name(e.gave.dex)
-  const get = name(e.got.dex)
+  // Each goes by the nickname it carries: "Misty sent Bolt over!"
+  const give = e.gave.nickname || name(e.gave.dex)
+  const get = e.got.nickname || name(e.got.dex)
   const { timeline, ready } = useMemo(
     () => ({
       ready: Promise.all([
@@ -145,6 +146,8 @@ export function TradeResult({ show }: { show: TradeShow }) {
   const { entry: e } = show
   const final = e.evolvedTo ?? e.got.dex
   const fin = data.species[final]?.name ?? t('ui.common.pokemon')
+  // Its nickname came with it, unless it merged into yours.
+  const nick = e.outcome !== 'merged' ? e.got.nickname : undefined
   const home = homeRegionOf(data, e.got.dex)
   const region = home ? regionName(data, home) : ''
   const arrival = arrivalLevel(data, e.got.dex, e.gave.level)
@@ -174,7 +177,8 @@ export function TradeResult({ show }: { show: TradeShow }) {
     <div className="grid justify-items-center gap-2 text-center">
       <SpriteImg dex={final} size={96} shiny={!!e.got.shiny} />
       <p className="m-0 flex flex-wrap items-center justify-center gap-1.5">
-        <b className="text-[26px] font-normal leading-none">{fin}</b>
+        <b className="text-[26px] font-normal leading-none">{nick || fin}</b>
+        {nick && <span className="font-pixel-sm text-[17px] leading-none text-muted">{fin}</span>}
         <LevelTag level={e.got.level} />
         {e.got.shiny && <Chip tone="gold">{t('ui.trades.shinyTag')}</Chip>}
         {show.isNew && <NewTag />}

@@ -110,7 +110,7 @@ export function inviteFriendMon(friend: FriendDayCareRow, mon: FriendCareMonRow)
   const name = data.species[mon.dex]?.name ?? t('ui.common.pokemon')
   const mates = matesOf(res.save, data, guestKey(guest))
     .filter((m) => m.mine != null)
-    .map((m) => data.species[m.dex]?.name ?? '')
+    .map((m) => m.resident?.inst.nickname || (data.species[m.dex]?.name ?? ''))
   pushToast(
     mates.length
       ? t('ui.dayCare.visitingPairs', { name, owner: friend.name, names: joinList(mates) })

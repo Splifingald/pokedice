@@ -457,7 +457,7 @@ function MonRow({ m }: { m: MonRecap }) {
           <MiniSprite dex={m.dex} size={40} className="-my-2" />
           {leveled && <Confetti />}
         </motion.span>
-        <span className="min-w-0 truncate text-xl leading-none">{species.name}</span>
+        <span className="min-w-0 truncate text-xl leading-none">{inst?.nickname || species.name}</span>
         <span className="shrink-0 text-lg leading-none">{t('ui.common.level.short', { n: level })}</span>
         <span className="ml-auto shrink-0 text-lg leading-none">
           {t('ui.victory.xpGain', { amount: m.xp })}

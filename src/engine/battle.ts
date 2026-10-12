@@ -39,7 +39,10 @@ export type BattlePhase =
 export interface Battler {
   uid: string
   dex: number
+  /** What the battle calls it: its nickname, or the species (the form) it shows now. */
   name: string
+  /** One of your own with a nickname: it keeps it through a Mega Evolution or any other form. */
+  nickname?: string
   level: number
   types: PokeType[]
   maxHp: number
@@ -201,6 +204,7 @@ export interface BattlerSeed {
   hp: number
   shiny?: boolean
   item?: string
+  nickname?: string
 }
 
 export function makeBattler(seed: BattlerSeed, data: GameData): Battler {
@@ -209,7 +213,8 @@ export function makeBattler(seed: BattlerSeed, data: GameData): Battler {
   return {
     uid: seed.uid,
     dex: seed.dex,
-    name: species.name,
+    name: seed.nickname || species.name,
+    ...(seed.nickname && { nickname: seed.nickname }),
     level: seed.level,
     types: stats.types,
     maxHp: stats.maxHp,
@@ -266,7 +271,7 @@ export interface CreateBattleOptions {
 /** Takes on a form's look and types (the dice are the caller's business). */
 function wearForm(b: Battler, form: Species) {
   b.dex = form.dex
-  b.name = form.name
+  b.name = b.nickname || form.name
   b.types = form.type2 ? [form.type1, form.type2] : [form.type1]
   b.spriteUrl = form.spriteUrl
 }

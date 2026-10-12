@@ -87,11 +87,15 @@ const CARD = 'bg-paper shadow-card'
 /** A friend's card wears a grey band: it isn't one of your slots. */
 const GUEST_BAND = 'rgb(var(--c-shadow))'
 
-/** A member's name: the species, the same for yours and a friend's (the card says whose). */
+/**
+ * A member's name: the nickname you gave one of yours (an instance, or a member holding your resident), else the
+ * species, a friend's included (the card says whose).
+ */
 function useNameOf() {
   const { t } = useT()
   const data = useGame((s) => s.data)
-  return (m: { dex: number }) => data.species[m.dex]?.name ?? t('ui.common.pokemon')
+  return (m: { dex: number; nickname?: string; resident?: { inst: { nickname?: string } } }) =>
+    m.nickname || m.resident?.inst.nickname || (data.species[m.dex]?.name ?? t('ui.common.pokemon'))
 }
 
 /** One of yours: its slot's colour, the levels gained here, the bar to the next level, who it pairs with. */

@@ -270,7 +270,14 @@ function startBattle(kind: BattleKind, enemy: { dex: number; level: number; shin
   if (!save) return
   const area = data.areas.find((a) => a.id === run.areaId)
   const upgradeLevel = run.encounter ? enemyUpgradeLevelFor(run.encounter, area, data) : (area?.enemyUpgradeLevel ?? data.config.enemyUpgradeLevel)
-  const team = teamOf(save).map((p) => ({ uid: p.id, dex: p.dex, level: p.level, hp: p.currentHp, shiny: p.shiny }))
+  const team = teamOf(save).map((p) => ({
+    uid: p.id,
+    dex: p.dex,
+    level: p.level,
+    hp: p.currentHp,
+    shiny: p.shiny,
+    nickname: p.nickname,
+  }))
   // Auto-mode (a cleared area) fights without Mega Evolution or Gigantamax, on both sides; type changers (Arceus…) on
   // both sides take a better type by themselves.
   const auto = !!useGame.getState().settings.autoMode && !!run.areaId && progressOf(save, run.areaId).cleared

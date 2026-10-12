@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
-import { teamOf, type PokemonInstance } from '@/engine'
+import { monName, teamOf, type PokemonInstance } from '@/engine'
 import { useT } from '@/i18n/react'
 import { BoxSortPicker, sortBox, type BoxSort } from '@/components/BoxSort'
 import { PixelIcon } from '@/components/icons'
@@ -50,7 +50,7 @@ export function CenterView() {
   const team = teamOf(save)
   const box = sortBox(save.box.filter((p) => !save.team.includes(p.id)), sort, data)
   const full = team.length >= data.config.maxTeamSize
-  const name = (p: PokemonInstance) => data.species[p.dex]?.name ?? t('ui.common.unknown')
+  const name = (p: PokemonInstance) => monName(p, data)
   const open = (p: PokemonInstance) => setView({ kind: 'inst', id: p.id })
   const done = () => setView(null)
 

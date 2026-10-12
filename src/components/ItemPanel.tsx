@@ -1,5 +1,13 @@
 import { useState } from 'react'
-import { evolutionGate, healItemsOn, instanceMaxHp, stoneEvolution, usableIn, type PokemonInstance } from '@/engine'
+import {
+  evolutionGate,
+  healItemsOn,
+  instanceMaxHp,
+  monName,
+  stoneEvolution,
+  usableIn,
+  type PokemonInstance,
+} from '@/engine'
 import { effectText } from '@/i18n/text'
 import { useT } from '@/i18n/react'
 import { applyBagItem } from '@/store/actions'
@@ -30,7 +38,7 @@ export function ItemPanel({ inst, onUsed }: { inst: PokemonInstance; onUsed?: ()
     />
   )
   const bag = Object.entries(inventory ?? {}).filter(([k, n]) => n > 0 && usableIn(data.items[k], 'field'))
-  const name = data.species[inst.dex]?.name ?? t('ui.common.pokemon')
+  const name = monName(inst, data)
   const max = instanceMaxHp(inst, data)
 
   /** Null when the item would work; otherwise why not, in words. */

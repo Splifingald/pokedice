@@ -57,7 +57,8 @@ export function EvolutionSequence({
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [uid, fromDex, toDex],
   )
-  const from = data.species[fromDex]?.name ?? t('ui.common.unknown')
+  // Your own Pokémon evolves under the name you gave it: "Sparky evolved into Raichu!"
+  const from = inst?.nickname || (data.species[fromDex]?.name ?? t('ui.common.unknown'))
   const to = data.species[toDex]?.name ?? t('ui.common.unknown')
   const stats = inst ? instanceStats(inst, data) : null
   const reveal = () => {

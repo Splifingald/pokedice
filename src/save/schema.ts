@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { cleanNickname } from '@/engine/nickname'
 import {
   COMBO_KEYS,
   EVENT_IDS,
@@ -26,6 +27,8 @@ const instanceSchema = z.object({
   revivesAt: z.number().optional(),
   fossil: z.string().optional(),
   koAt: z.number().optional(),
+  // Kept as renaming keeps it: a bad one (an edited save) is dropped, never the save.
+  nickname: z.unknown().transform(cleanNickname),
 })
 
 // Trades (docs/23): a listing's want, and a Pokémon as the Done list remembers it.
@@ -34,7 +37,12 @@ const tradeWantSchema = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('notOwned') }),
   z.object({ kind: z.literal('any') }),
 ])
-const tradeMonSchema = z.object({ dex: z.number().int().min(1), level: z.number().int().min(1).max(100), shiny: z.boolean().optional() })
+const tradeMonSchema = z.object({
+  dex: z.number().int().min(1),
+  level: z.number().int().min(1).max(100),
+  shiny: z.boolean().optional(),
+  nickname: z.unknown().transform(cleanNickname),
+})
 
 const progressSchema = z.object({
   roundsDone: z.number().int().min(0).optional(),

@@ -89,6 +89,17 @@ const SCENES: { label: string; show: TradeShow }[] = [
       isNew: true,
     },
   },
+  {
+    label: 'Nicknames both ways',
+    show: {
+      entry: entry({
+        id: 'nn',
+        gave: { dex: 25, level: 24, nickname: 'Sparky' },
+        got: { dex: 7, level: 24, nickname: 'Bubbles' },
+      }),
+      isNew: true,
+    },
+  },
 ]
 
 const RESULTS: { label: string; show: TradeShow }[] = [
@@ -110,6 +121,10 @@ const RESULTS: { label: string; show: TradeShow }[] = [
       }),
       mine: 31,
     },
+  },
+  {
+    label: 'Came with its nickname',
+    show: { entry: entry({ id: 'r4', got: { dex: 7, level: 24, nickname: 'Bubbles' } }), isNew: true },
   },
   {
     label: 'Merged: nothing gained',

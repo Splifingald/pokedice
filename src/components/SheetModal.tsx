@@ -3,6 +3,7 @@ import {
   evolutionGate,
   instanceMaxHp,
   levelEvolutions,
+  monName,
   nationalDex,
   regionSpecies,
   sendOnBlocked,
@@ -20,6 +21,7 @@ import { DexEntry } from './DexEntry'
 import { EvolutionQueue, type EvolutionShow } from './Evolution'
 import { PixelIcon } from './icons'
 import { ItemPanel, useHasFieldItems } from './ItemPanel'
+import { NicknameButton, NicknameModal } from './Nickname'
 import { PixelButton } from './PixelButton'
 import { PokemonSheet } from './PokemonSheet'
 import { Sheet } from './Sheet'
@@ -83,6 +85,8 @@ function SheetStack({
   const data = useGame((s) => s.data)
   const hasItems = useHasFieldItems()
   const [stack, setStack] = useState<StackView[]>([initial])
+  // The nickname dialog, over the sheet: it opens from the Pokémon's name (docs/15 §13).
+  const [naming, setNaming] = useState(false)
   const top = stack[stack.length - 1]!
   const push = (v: StackView) => setStack((s) => [...s, v])
   const back = () => setStack((s) => s.slice(0, -1))
@@ -91,7 +95,7 @@ function SheetStack({
   const species = (dex: number) => data.species[dex]?.name ?? t('ui.common.unknown')
   const no = (dex: number) => dexNo(nationalDex(data, dex))
 
-  let title = ''
+  let title: ReactNode = ''
   let sub: string | undefined
   if (top.kind === 'area') title = data.areas.find((a) => a.id === top.areaId)?.name ?? ''
   else if (top.kind === 'dex') {
@@ -100,11 +104,19 @@ function SheetStack({
     sub = caught ? no(top.dex) : `${no(top.dex)} · ${t('ui.sheet.notCaughtYet')}`
   } else if (inst && top.kind === 'items') {
     title = t('ui.itemPanel.title')
-    sub = t('ui.sheet.itemsOn', { name: species(inst.dex), hp: inst.currentHp, max: instanceMaxHp(inst, data) })
+    sub = t('ui.sheet.itemsOn', { name: monName(inst, data), hp: inst.currentHp, max: instanceMaxHp(inst, data) })
   } else if (inst) {
     const at = save?.team.indexOf(inst.id) ?? -1
-    title = species(inst.dex)
+    // Its name is the button that gives it a nickname; a fossil still reviving isn't a Pokémon yet.
+    title =
+      inst.revivesAt == null ? (
+        <NicknameButton name={monName(inst, data)} onClick={() => setNaming(true)} />
+      ) : (
+        species(inst.dex)
+      )
     sub = [
+      // Nicknamed: its species leads the line under the name.
+      ...(inst.nickname ? [species(inst.dex)] : []),
       no(inst.dex),
       t('ui.common.level.short', { n: inst.level }),
       at === 0 ? t('ui.sheet.subLead') : at > 0 ? t('ui.sheet.subOut', { n: at + 1 }) : t('ui.sheet.subBox'),
@@ -134,7 +146,7 @@ function SheetStack({
               className="flex-1"
               onClick={() => {
                 reorderTeam([inst.id, ...save.team.filter((x) => x !== inst.id)])
-                pushToast(t('ui.team.leadsNow', { name: species(inst.dex) }), 'good')
+                pushToast(t('ui.team.leadsNow', { name: monName(inst, data) }), 'good')
                 onClose()
               }}
             >
@@ -149,7 +161,7 @@ function SheetStack({
         <div className="flex flex-col gap-2">
           <p className="flex items-center gap-1.5 font-pixel-sm text-[15px] leading-tight text-muted">
             <PixelIcon name="lock" size={16} className="shrink-0" />
-            {t('ui.team.boxAtCenter', { name: species(inst.dex) })}
+            {t('ui.team.boxAtCenter', { name: monName(inst, data) })}
           </p>
           {useItem && <div className="flex">{useItem}</div>}
         </div>
@@ -157,28 +169,34 @@ function SheetStack({
   }
 
   return (
-    <Sheet open={open} onClose={onClose} title={title} sub={sub} footer={footer}>
-      <div className="flex flex-col gap-3">
-        {stack.length > 1 && top.kind !== 'items' && (
-          <button type="button" className="min-h-[44px] self-start text-[20px] underline" onClick={back}>
-            {t('ui.sheet.backStack')}
-          </button>
-        )}
-        {top.kind === 'area' ? (
-          <AreaDex areaId={top.areaId} onOpenDex={openDex} />
-        ) : top.kind === 'dex' ? (
-          <DexEntry key={top.dex} dex={top.dex} onOpenDex={openDex} onTravel={onClose} />
-        ) : top.kind === 'items' && inst ? (
-          <ItemPanel inst={inst} onUsed={back} />
-        ) : inst ? (
-          <PokemonSheet dex={inst.dex} inst={inst} onOpenDex={openDex}>
-            <SendOnPanel inst={inst} onSent={onClose} />
-            {instExtra?.(inst)}
-            <LevelCapEvolvePanel inst={inst} />
-          </PokemonSheet>
-        ) : null}
-      </div>
-    </Sheet>
+    <>
+      <Sheet open={open} onClose={onClose} title={title} sub={sub} footer={footer}>
+        <div className="flex flex-col gap-3">
+          {stack.length > 1 && top.kind !== 'items' && (
+            <button type="button" className="min-h-[44px] self-start text-[20px] underline" onClick={back}>
+              {t('ui.sheet.backStack')}
+            </button>
+          )}
+          {top.kind === 'area' ? (
+            <AreaDex areaId={top.areaId} onOpenDex={openDex} />
+          ) : top.kind === 'dex' ? (
+            <DexEntry key={top.dex} dex={top.dex} onOpenDex={openDex} onTravel={onClose} />
+          ) : top.kind === 'items' && inst ? (
+            <ItemPanel inst={inst} onUsed={back} />
+          ) : inst ? (
+            <PokemonSheet dex={inst.dex} inst={inst} onOpenDex={openDex}>
+              <SendOnPanel inst={inst} onSent={onClose} />
+              {instExtra?.(inst)}
+              <LevelCapEvolvePanel inst={inst} />
+            </PokemonSheet>
+          ) : null}
+        </div>
+      </Sheet>
+      <NicknameModal
+        inst={open && naming && top.kind === 'inst' && inst ? inst : null}
+        onClose={() => setNaming(false)}
+      />
+    </>
   )
 }
 
@@ -201,7 +219,7 @@ function SendOnPanel({ inst, onSent }: { inst: PokemonInstance; onSent: () => vo
   const why = targets.length ? sendOnBlocked(save, data, inst, targets[0]!) : null
   const hinted = targets.find((r) => r.id === asked) ?? (targets.length === 1 ? targets[0] : undefined)
 
-  const name = data.species[inst.dex]?.name ?? t('ui.common.pokemon')
+  const name = monName(inst, data)
   return (
     <section className="flex flex-col items-start gap-1 border-t-[3px] border-dashed border-shadow/40 pt-2">
       <div className="flex flex-wrap gap-2">
@@ -249,7 +267,7 @@ function LevelCapEvolvePanel({ inst }: { inst: PokemonInstance }) {
   const ready = levelEvolutions(inst, data, evolutionGate(save, data))
   if (!ready.length) return scene || null
 
-  const name = data.species[inst.dex]?.name ?? t('ui.common.pokemon')
+  const name = monName(inst, data)
   const names = ready.map((e) => data.species[e.toDex]?.name ?? `#${e.toDex}`).join(' / ')
   return (
     <section className="flex flex-col items-start gap-1 border-t-[3px] border-dashed border-shadow/40 pt-2">

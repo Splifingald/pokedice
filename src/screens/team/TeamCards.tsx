@@ -1,5 +1,5 @@
 import { useRef, useState, type PointerEvent } from 'react'
-import { effectiveStats, getSpecies, xpToNext, type PokemonInstance } from '@/engine'
+import { effectiveStats, getSpecies, monName, xpToNext, type PokemonInstance } from '@/engine'
 import { useT } from '@/i18n/react'
 import { HpBar } from '@/components/HpBar'
 import { KoTag } from '@/components/Extreme'
@@ -41,7 +41,7 @@ export function TeamCards({
   const dragged = useRef(false)
   const [over, setOver] = useState<number | null>(null)
   const [lifted, setLifted] = useState<number | null>(null)
-  const name = (p: PokemonInstance) => data.species[p.dex]?.name ?? t('ui.common.unknown')
+  const name = (p: PokemonInstance) => monName(p, data)
 
   const swap = (i: number, j: number) => {
     const next = [...ids]
