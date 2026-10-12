@@ -1,23 +1,34 @@
 // Trades' background work (docs/23 §1.6, §2), mounted with the game shell:
-// - the check once the sign-in's sync has settled (and when the save switches back from Extreme mode), and on return
-//   to the tab (at most every 5 minutes);
-// - "Trade done!" for a listing of yours taken while you were away, between fights, then the scene; a toast for a
-//   listing that came back, and for a trade you took that a closed tab left half done;
+// - the check once the sign-in's sync has settled (and when the save switches back from Extreme mode), on return to
+//   the tab (at most every 5 minutes), and back Home with a listing out (at most every minute);
+// - "Trade done!" for a listing of yours taken while you were away: its scene, by itself, once you're back Home and
+//   nothing else is up; a toast for a listing that came back, and for a trade you took that a closed tab left half
+//   done;
 // - a shared link (/t/<code>): the listing in its sheet once the run is idle, never mid-fight;
 // - the trade scene itself, over any page.
 import { useEffect, useRef, useState } from 'react'
-import { dayCareTutorialDue, inWorldRegion, leaderboardTutorialDue, tradesOf } from '@/engine'
+import { useLocation } from 'react-router-dom'
+import {
+  dayCareTutorialDue,
+  donationDue,
+  eventUnlockDue,
+  inWorldRegion,
+  isExtreme,
+  leaderboardTutorialDue,
+  regionOfferDue,
+  tradeRulesDue,
+  tradesOf,
+  tradesToWatch,
+  versusRulesDue,
+} from '@/engine'
 import { useT } from '@/i18n/react'
 import { useFullscreen } from '@/lib/fullscreen'
 import { isSupabaseConfigured } from '@/lib/supabase'
 import { clearTradeLink, readTradeLink, TRADE_LINK_EVENT, viewListing, type TradeListing } from '@/lib/trades'
 import { pushToast, useGame } from '@/store/game'
 import { useCloudSync } from '@/store/sync'
-import { checkTrades, clearReturned, endTrade, playTrade, shiftPopup, useTrades } from '@/store/trades'
-import { Modal } from '../Modal'
-import { PixelButton } from '../PixelButton'
-import { MiniSprite } from '../SpriteImg'
-import { PixelIcon } from '../icons'
+import { checkListings, checkTrades, clearReturned, endTrade, playTrade, useTrades } from '@/store/trades'
+import { useSharePromptWaiting } from '../ShareTutorial'
 import { ListingSheet } from './ListingSheet'
 import { TradeScene } from './TradeScene'
 import { TradesUnlockPopup } from './TradeRules'
@@ -29,6 +40,7 @@ export function TradesService() {
   // The sign-in's sync is over: the save won't give way to the cloud copy now.
   const synced = useCloudSync((s) => s.settled)
   const scene = useTrades((s) => s.scene)
+  const home = useLocation().pathname === '/home'
 
   useEffect(() => {
     if (userId && synced && !inWorld) void checkTrades(true)
@@ -39,6 +51,11 @@ export function TradesService() {
     document.addEventListener('visibilitychange', onShow)
     return () => document.removeEventListener('visibilitychange', onShow)
   }, [])
+
+  // Back Home (after a fight, from another page): a listing out may have been taken meanwhile.
+  useEffect(() => {
+    if (home && userId && synced) void checkListings()
+  }, [home, userId, synced])
 
   if (!isSupabaseConfigured) return null
   return (
@@ -68,15 +85,37 @@ function useCalm() {
   return calm && !full
 }
 
-/** What happened while you were away: the pop-up for each listing taken, a toast for the rest. */
+/** Waits while another one-time pop-up is due: those open by themselves, and the scene would cover them. */
+function useNothingElseDue() {
+  const due = useGame(
+    (s) =>
+      !!s.save &&
+      (tradeRulesDue(s.save, s.data) ||
+        donationDue(s.save, s.data) ||
+        regionOfferDue(s.save, s.data) ||
+        eventUnlockDue(s.save, s.data) ||
+        versusRulesDue(s.save, s.data)),
+  )
+  const invite = useSharePromptWaiting()
+  return !due && !invite
+}
+
+/** A beat on Home before the scene, so it reads as coming home to it rather than a cut. */
+const HOME_PAUSE_MS = 700
+
+/** What happened while you were away: the scene for each listing taken (back Home), a toast for the rest. */
 function Comebacks() {
   const { t } = useT()
   const data = useGame((s) => s.data)
   const save = useGame((s) => s.save)
-  const popups = useTrades((s) => s.popups)
   const returned = useTrades((s) => s.returned)
   const settled = useTrades((s) => s.settled)
+  const playing = useTrades((s) => !!s.scene)
   const calm = useCalm()
+  const free = useNothingElseDue()
+  const home = useLocation().pathname === '/home'
+  // The oldest taken listing whose scene hasn't played: kept in the save, so a reload or another device can't lose it.
+  const next = useGame((s) => (s.save && !isExtreme(s.save) ? (tradesToWatch(s.save)[0] ?? null) : null))
   const name = (dex: number) => data.species[dex]?.name ?? t('ui.common.pokemon')
 
   useEffect(() => {
@@ -91,52 +130,13 @@ function Comebacks() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [calm, returned, settled])
 
-  const id = popups[0]
-  const entry = id && save ? (tradesOf(save).log ?? []).find((l) => l.id === id) : undefined
-  // A pop-up for a trade the log no longer holds (an older save loaded since) is dropped.
   useEffect(() => {
-    if (id && save && !entry) shiftPopup()
-  }, [id, save, entry])
+    if (!next || !home || !calm || !free || playing) return
+    const id = setTimeout(() => playTrade({ entry: next, away: true }), HOME_PAUSE_MS)
+    return () => clearTimeout(id)
+  }, [next, home, calm, free, playing])
 
-  return (
-    <Modal open={!!entry && calm} onClose={shiftPopup} title={t('ui.trades.pop.title')}>
-      {entry && (
-        <div className="flex flex-col gap-3">
-          <div className="flex items-center justify-center gap-3" aria-hidden>
-            <span className="grid justify-items-center">
-              <MiniSprite dex={entry.gave.dex} size={56} />
-              <small className="font-pixel-sm text-[14px] text-muted">{t('ui.trades.pop.yours')}</small>
-            </span>
-            <PixelIcon name="trade" size={36} />
-            <span className="grid justify-items-center">
-              <MiniSprite dex={entry.got.dex} size={56} />
-              <small className="font-pixel-sm text-[14px] text-muted">
-                {t('ui.trades.whose', { name: entry.with || t('ui.friends.someone') })}
-              </small>
-            </span>
-          </div>
-          <p className="copy m-0 text-center text-[20px]">
-            {t('ui.trades.pop.body', {
-              name: entry.with || t('ui.friends.someone'),
-              mon: name(entry.gave.dex),
-            })}
-          </p>
-          <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)] gap-2.5">
-            <PixelButton onClick={shiftPopup}>{t('ui.events.later')}</PixelButton>
-            <PixelButton
-              variant="primary"
-              onClick={() => {
-                shiftPopup()
-                playTrade({ entry })
-              }}
-            >
-              {t('ui.trades.pop.see')}
-            </PixelButton>
-          </div>
-        </div>
-      )}
-    </Modal>
-  )
+  return null
 }
 
 /** A shared link (/t/<code>), kept through a sign-in: the listing in its sheet when the moment is calm. */

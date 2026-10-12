@@ -27,6 +27,9 @@ export function GameLayout() {
   // The battle takes the whole screen: no top bar, no side bar, no tab bar.
   const full = useFullscreen()
   const home = useLocation().pathname === '/home'
+  // Over Home a full-screen moment is an overlay (a trade, the partner): the page keeps its padding, which Home's
+  // scene bleeds into, rather than jumping and running off the side of a phone behind it.
+  const bare = full && !home
   // Inside a small world (docs/21) the page wears its colours.
   const { inside, world } = useInWorld()
   // The special events read the real time (docs/18): kept fresh while the game is open.
@@ -42,8 +45,8 @@ export function GameLayout() {
             // Home and the battle spread over wide screens (the scene and the stage grow with them); every other screen
             // keeps a reading width.
             'mx-auto w-full min-w-0 flex-1',
-            full ? 'max-w-none' : home ? 'max-w-[1760px]' : 'max-w-6xl',
-            full ? 'p-0' : inFight ? 'px-3 pb-2 pt-2 md:pb-10 md:pt-4' : 'px-3 pb-24 pt-4 md:pb-10 md:pt-4',
+            bare ? 'max-w-none' : home ? 'max-w-[1760px]' : 'max-w-6xl',
+            bare ? 'p-0' : inFight ? 'px-3 pb-2 pt-2 md:pb-10 md:pt-4' : 'px-3 pb-24 pt-4 md:pb-10 md:pt-4',
           )}
         >
           <Outlet />

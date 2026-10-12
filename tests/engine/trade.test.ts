@@ -14,6 +14,7 @@ import {
   levelEvolutions,
   listBack,
   listOut,
+  markTradesSeen,
   newRegionBlock,
   newSave,
   receiveTrade,
@@ -28,6 +29,7 @@ import {
   tradeEvolutionOf,
   tradeSnapshot,
   tradesOf,
+  tradesToWatch,
   untradable,
   wantable,
   wantMatches,
@@ -316,6 +318,57 @@ describe('a trade, applied once on each side', () => {
       applyTaken(r.save, data, { id: 'T2', listed: listedInst, given: mon(8, 34), with: 'Misty' }, NOW, newId)
         .already,
     ).toBe(true)
+  })
+  it('a listing taken while away waits to be watched, oldest first, until its scene has played', () => {
+    const a = mon(4, 12)
+    const b = mon(7, 12)
+    let s = kanto(a, b)
+    for (const [id, inst] of [
+      ['W1', a],
+      ['W2', b],
+    ] as const)
+      s = listOut(
+        s,
+        data,
+        inst.id,
+        { id, code: id, endsAt: NOW + 1, want: { kind: 'any' }, visibility: 'public' },
+        NOW,
+      )!
+    s = applyTaken(s, data, { id: 'W1', listed: a, given: mon(16, 9), with: 'Misty' }, NOW, newId).save
+    s = applyTaken(s, data, { id: 'W2', listed: b, given: mon(19, 9), with: 'Brock' }, NOW + 1, newId).save
+    // A trade you took yourself was watched as it happened.
+    s = applyTake(
+      s,
+      data,
+      { id: 'W3', listed: mon(25, 9), given: mon(16, 9), with: 'Sora' },
+      NOW + 2,
+      newId,
+    ).save
+    expect(tradesToWatch(s).map((e) => e.with)).toEqual(['Misty', 'Brock'])
+    expect(tradesToWatch(markTradesSeen(s, ['W1'])).map((e) => e.id)).toEqual(['W2'])
+  })
+  it('an unseen trade that falls out of the log no longer waits (nor keeps the gold dot)', () => {
+    const p = mon(4, 12)
+    const want = { kind: 'any' } as const
+    let s = listOut(
+      kanto(p),
+      data,
+      p.id,
+      { id: 'OLD', code: 'C', endsAt: NOW + 1, want, visibility: 'public' },
+      NOW,
+    )!
+    s = applyTaken(s, data, { id: 'OLD', listed: p, given: mon(16, 9), with: 'Misty' }, NOW, newId).save
+    expect(tradesOf(s).unseen).toEqual(['OLD'])
+    for (let i = 0; i < 20; i++)
+      s = applyTake(
+        s,
+        data,
+        { id: `N${i}`, listed: mon(19, 5), given: mon(16, 5), with: 'Sora' },
+        NOW + i,
+        newId,
+      ).save
+    expect(tradesOf(s).unseen).toEqual([])
+    expect(tradesToWatch(s)).toEqual([])
   })
   it('an ended listing gives its Pokémon back once', () => {
     const p = mon(25, 12)

@@ -177,7 +177,9 @@ Dialog behaviour (`src/lib/useDialog.ts`, used by `Modal`, `Sheet`, `SidePanel`)
 - One `<h1>` per route; headings in order; landmarks (`main`, `nav`).
 - **One primary (red) action per screen**, in thumb reach on phones. Gold appears at most once, for something new.
 - Lists of things you can open are buttons (whole card), with a keyboard path to every action inside them.
-- Full-screen moments (the battle, a hatching) hide the tab bar and the top bar.
+- Full-screen moments (the battle, a hatching, a trade) hide the tab bar and the top bar. Over Home one is an overlay
+  (a trade, the partner): Home keeps its page padding under it, which its scene bleeds into, so nothing jumps or runs
+  off the side of a phone behind the moment.
 - From 768 px the side nav takes ~210 px, so the content is only ~550 px wide: **side-by-side columns start at
   1024 px** (`lg:`), not at `md:`.
 
@@ -226,7 +228,7 @@ motion `off` the stage jumps to the end and still fires every cue, so the screen
 | Catch | throw, beam, drop, wobbles, result | throw and drop, result at once |
 | Pokémon Center | in its picture (`public/backgrounds/pokemon-center.png`): a ball per team member into the machine's slots, the heal jingle (B G♯ ×3, E) | one flash, healed |
 | Mega Evolution, Gigantamax | the full change | a white flash and the new sprite |
-| Legendary intro, Evolution, Egg hatching, the lab (a partner) | in full | in full |
+| Legendary intro, Evolution, Egg hatching, the lab (a partner), a trade | in full | in full |
 
 `calm` (OS reduce motion, or animations off) also removes screen shakes and full-screen flashes; a hit keeps its two
 white sprite frames. Every timeline is on `/kitchen-sink/fx` (dev): replay, ¼ speed, one-frame steps, the end state,
@@ -602,12 +604,22 @@ decides every level, landing Box and outcome, and the screens only say them.
   Change) once chosen. The species grid shows 3 tiles a row on a phone (112 px tiles on wider screens), a Not owned /
   Owned / All switch with counts and region chips past one region, and 90 tiles at first with "Show more". The
   summary sits gold above the footer's POST, which says what's missing while it can't post.
-- **The scene** (`TradeScene`, `tradeTimeline`): full screen, held with `useHoldFullscreen` so pop-ups wait; the line
-  under the stage is the host's (beats `sending`, `incoming`, `care`); a trade evolution follows with the evolution
-  scene; then what arrived (`TradeResult`: sprite, level, SHINY / NEW / STRONGER, where it went, the level note, "its
-  Pokédex entry stays") and DONE. SKIP and Esc jump to the result. Motion off jumps there at once.
-- **Coming back**: "Trade done!" (both Pokémon, who took it, Later / See it → the scene) once the run is idle and no
-  full-screen moment is up; a toast for a listing that came back and for a trade a closed tab left half done.
+- **The scene** (`TradeScene`, `tradeTimeline` in `src/fx/timelines/trade.ts`): full screen, held with
+  `useHoldFullscreen` so pop-ups wait. The games' trade in three acts joined by their block wipe: your Pokémon says
+  goodbye on the link pad (its cry), is drawn into its ball and shoots up; the two balls come out of the gates at either
+  end of a cable of light (yours rose, theirs gold), braid along it and cross in the middle (a glint, two rings, sparks,
+  a 5-frame hit-stop); theirs comes down a beam onto your pad, bounces, wobbles and opens on the newcomer (its cry,
+  white frames, a ring, the shiny's stars). Over the stage, both Pokémon facing each other (Yours ⇄ Misty's); under it,
+  the lines in a `Dialogue` text box (beats `sending`, `incoming`, `care`; `bye` and `out` are the cries), each line
+  also in a polite live region. A trade evolution follows with the evolution scene; then what arrived (`TradeResult`:
+  sprite, level, SHINY / NEW / STRONGER, where it went, the level note, "its Pokédex entry stays") and DONE. SKIP and
+  Esc jump to the result. Motion off jumps there at once.
+- **Coming back**: a listing taken while you were away waits in the save (`trades.unseen`, `tradesToWatch`) until its
+  scene has played: back on Home, once the run is idle and no other one-time pop-up is due, the scene opens by itself
+  as **"Trade done!"** with "Misty took your Pidgey." under the title (and stays up to the result). Going back Home with
+  a listing out asks the server again (at most once a minute), so a trade made while you play shows up there too. The
+  gold dot and the NEW tag in Mine stay until the scene has played; every trade in Mine's Done list is a button that
+  plays its scene again. A toast for a listing that came back and for a trade a closed tab left half done.
 - **Sharing** (`ShareListingModal`): the link `<site>/t/<code>` with COPY, a line on who can use it, and SHARE (the
   share sheet on phones). A private listing opens it right after POST. A link opens the listing in its sheet when the
   moment is calm; signed out it asks to connect and keeps the link through the sign-in.

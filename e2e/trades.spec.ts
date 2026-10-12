@@ -1,9 +1,18 @@
 // Trades (docs/23) against the mocked Supabase, on a phone: the rules pop-up once; a poster lists a Pokémon, then
-// finds it taken while away ("Trade done!", the scene, what arrived); a taker trades for a listing from the board; a
-// guest sees the connect prompt and the newest listings; a shared link opens the listing, signed out too.
+// finds it taken while away (back Home, "Trade done!" plays by itself, then what arrived; the Done list plays it
+// again); a listing taken while you play shows up when you come back Home; a taker trades for a listing from the
+// board; a guest sees the connect prompt and the newest listings; a shared link opens the listing, signed out too.
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test, type Page } from '@playwright/test'
-import { badgeCase, createInstance, DEFAULT_CONFIG, progressOf, type PokemonInstance, type SaveData } from '../src/engine'
+import {
+  badgeCase,
+  createInstance,
+  DEFAULT_CONFIG,
+  listOut,
+  progressOf,
+  type PokemonInstance,
+  type SaveData,
+} from '../src/engine'
 import { EVENTS_ON, FAST, fakeSession, gameData, makeSave, mockSupabase, STORAGE_KEY, type SupabaseMock } from './helpers'
 
 const data = gameData()
@@ -159,22 +168,79 @@ test('a poster: the rules once, a listing posted, then taken while away', async 
     )
   await expect.poll(inBox).toBe(false)
 
-  // Misty took it while we were away: the pop-up, the scene, what arrived.
+  // Misty took it while we were away: back Home, the scene plays by itself ("Trade done!"), then what arrived.
   phase = 'taken'
-  await page.reload()
-  const pop = page.getByRole('dialog', { name: 'Trade done!' })
-  await expect(pop).toBeVisible()
-  await expect(pop.getByText('Misty took your Pidgey.')).toBeVisible()
-  await pop.getByRole('button', { name: 'See it' }).click()
-  const scene = page.getByRole('dialog', { name: 'Trade with Misty' })
+  await page.goto('/home')
+  const scene = page.getByRole('dialog', { name: 'Trade done!' })
+  await expect(scene).toBeVisible()
+  await expect(scene.getByText('Misty took your Pidgey.')).toBeVisible()
+  await expect(scene.getByRole('img', { name: /Pidgey goes into its ball/ })).toBeVisible()
+  await fitsThePhone(page)
+  expect(await seriousAxe(page)).toEqual([])
+  await scene.getByRole('button', { name: /Skip/i }).click()
   await expect(scene.getByText('Wartortle', { exact: true })).toBeVisible()
   // Lv.12 raised to Wartortle's lowest: Squirtle evolves at 16.
   await expect(scene.getByText(/Squirtle evolves at Lv\.16/)).toBeVisible()
   await scene.getByRole('button', { name: 'Done' }).click()
   await expect(scene).toBeHidden()
   await expect.poll(() => applied.flat()).toContain('L1')
+
+  // Watched: it doesn't play again. The Done list has it, and plays it again on a tap.
+  await page.reload()
+  await page.waitForTimeout(1500)
+  await expect(page.getByRole('dialog', { name: 'Trade done!' })).toBeHidden()
+  await page.goto('/trades')
   await page.getByRole('tab', { name: /Mine/ }).click()
-  await expect(page.getByText('Misty took your Pidgey')).toBeVisible()
+  await page.getByRole('button', { name: /Misty took your Pidgey.*Watch the trade/ }).click()
+  const again = page.getByRole('dialog', { name: 'Trade with Misty' })
+  await again.getByRole('button', { name: /Skip/i }).click()
+  await expect(again.getByText('Wartortle', { exact: true })).toBeVisible()
+  await again.getByRole('button', { name: 'Done' }).click()
+  await expect(again).toBeHidden()
+})
+
+test('a listing taken while you play: back Home, the scene', async ({ page }) => {
+  const listed = mon('e2e-pidgey', 16, 12)
+  const base = trader(4, 12)
+  const save = listOut(
+    { ...base, trades: { out: [], done: [], rulesSeen: true } },
+    data,
+    'e2e-pidgey',
+    { id: 'L2', code: 'EF56GH78', endsAt: NOW + 3 * 86_400_000, want: { kind: 'any' }, visibility: 'public' },
+    NOW,
+  )!
+  let taken = false
+  const mineRow = () => ({
+    id: 'L2',
+    code: 'EF56GH78',
+    role: 'owner',
+    status: taken ? 'taken' : 'open',
+    mon: listed,
+    from_region: 'kanto',
+    want: { kind: 'any' },
+    visibility: 'public',
+    created_at: iso(NOW),
+    ends_at: iso(NOW + 3 * 86_400_000),
+    taker_mon: taken ? mon('brock-onix', 95, 20) : null,
+    with: taken ? 'Brock' : '',
+  })
+  await page.clock.install({ time: NOW })
+  await boot(page, save, { rpc: { trade_board: [], trade_mine: () => [mineRow()], trade_applied: null } })
+  await page.goto('/trades')
+  await page.getByRole('tab', { name: /Mine/ }).click()
+  await expect(page.getByTestId('trade-slots').getByText('Pidgey')).toBeVisible()
+
+  // Brock takes it while we're still in the game; a minute on, we go back Home.
+  taken = true
+  await page.clock.fastForward(61_000)
+  await page.getByRole('link', { name: 'Home', exact: true }).first().click()
+  const scene = page.getByRole('dialog', { name: 'Trade done!' })
+  await expect(scene).toBeVisible()
+  await expect(scene.getByText('Brock took your Pidgey.')).toBeVisible()
+  await scene.getByRole('button', { name: /Skip/i }).click()
+  await expect(scene.getByText('Onix', { exact: true })).toBeVisible()
+  await scene.getByRole('button', { name: 'Done' }).click()
+  await expect(scene).toBeHidden()
 })
 
 test('a taker: from the board to the picker, the confirm, the scene', async ({ page }) => {
@@ -210,7 +276,10 @@ test('a taker: from the board to the picker, the confirm, the scene', async ({ p
   await picker.getByRole('button', { name: /Pidgey/ }).click()
   await expect(page.getByText(/Pidgey Lv\.22 leaves your Box for good/)).toBeVisible()
   await page.getByRole('button', { name: 'Trade', exact: true }).click()
+  // The scene (it plays in full here: these saves keep animations on), skipped.
   const scene = page.getByRole('dialog', { name: 'Trade with Sora' })
+  await expect(scene.getByRole('img', { name: /Pidgey goes into its ball/ })).toBeVisible()
+  await scene.getByRole('button', { name: /Skip/i }).click()
   await expect(scene.getByText(/It joined your Kanto Box/)).toBeVisible()
   await scene.getByRole('button', { name: 'Done' }).click()
   await expect.poll(() => applied.flat()).toContain('L-sora')

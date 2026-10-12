@@ -7,6 +7,7 @@ import {
   listOut,
   newSave,
   tradesOf,
+  tradesToWatch,
   type SaveData,
   type TradeConfig,
 } from '@/engine'
@@ -23,7 +24,7 @@ import {
 } from '@/lib/trades'
 import { initialRun, useGame } from '@/store/game'
 import { pushSaveNow, syncSettled } from '@/store/sync'
-import { checkTrades, useTrades } from '@/store/trades'
+import { checkListings, checkTrades, HOME_EVERY_MS, useTrades } from '@/store/trades'
 import { makeData, newId } from './fixtures'
 
 vi.mock('@/lib/trades', async (actual) => ({
@@ -157,7 +158,7 @@ describe('the check', () => {
       run: initialRun(),
       auth: { status: 'signed_in', userId: 'u1', email: null },
     })
-    useTrades.setState({ userId: 'u1', popups: [], returned: [], settled: [] })
+    useTrades.setState({ userId: 'u1', returned: [], settled: [] })
     return save
   }
   const takenRow = {
@@ -190,7 +191,7 @@ describe('the check', () => {
     expect(mine).not.toHaveBeenCalled()
   })
 
-  it('applies a listing taken while away once, waits for its pop-up, then tells the server', async () => {
+  it('applies a listing taken while away once, keeps its scene waiting in the save, then tells the server', async () => {
     setUp()
     mine.mockResolvedValue([takenRow])
     await checkTrades(true, NOW)
@@ -198,14 +199,32 @@ describe('the check', () => {
     expect(tradesOf(save).out).toHaveLength(0)
     expect(save.box.some((p) => p.dex === 7)).toBe(true)
     expect(tradesOf(save).done).toContain('T1')
-    expect(useTrades.getState().popups).toEqual(['T1'])
+    expect(tradesToWatch(save).map((e) => e.id)).toEqual(['T1'])
     expect(applied).toHaveBeenCalledWith(['T1'])
 
     // The server hadn't heard (a tab closed): the next check finds it in the save, and only says so again.
     await checkTrades(true, NOW + 1)
     expect(useGame.getState().save!.box.filter((p) => p.dex === 7)).toHaveLength(1)
-    expect(useTrades.getState().popups).toEqual(['T1'])
+    expect(tradesToWatch(useGame.getState().save!).map((e) => e.id)).toEqual(['T1'])
     expect(applied).toHaveBeenCalledTimes(2)
+  })
+
+  it('asks again back Home while a listing is out, at most once a minute; never without one', async () => {
+    setUp()
+    mine.mockResolvedValue([{ ...takenRow, status: 'open', takerMon: null, with: '' }])
+    await checkTrades(true, NOW)
+    expect(mine).toHaveBeenCalledTimes(1)
+    await checkListings(NOW + HOME_EVERY_MS - 1)
+    expect(mine).toHaveBeenCalledTimes(1)
+    await checkListings(NOW + HOME_EVERY_MS)
+    expect(mine).toHaveBeenCalledTimes(2)
+    // Taken meanwhile: it lands, and its scene waits in the save.
+    mine.mockResolvedValue([takenRow])
+    await checkListings(NOW + 2 * HOME_EVERY_MS)
+    expect(tradesToWatch(useGame.getState().save!).map((e) => e.id)).toEqual(['T1'])
+    // Nothing listed any more: nothing to ask.
+    await checkListings(NOW + 3 * HOME_EVERY_MS)
+    expect(mine).toHaveBeenCalledTimes(3)
   })
 
   it('keeps it unapplied on the server when the save couldn’t be pushed', async () => {
