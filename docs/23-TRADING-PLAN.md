@@ -122,9 +122,9 @@ Examples (the poster put up the first Pokémon):
 There's no Realtime, as with friends. The game checks your trades when it loads and when you come back to its tab (at
 most every 5 minutes), in the same call as the friends check where possible:
 
-- **A listing was taken**: once the run is idle, a pop-up: "Trade done! Misty took your Charmander", then the trade
-  animation, then "Wartortle Lv.16 joined your Box". The Trades row and your avatar carry a gold dot until you've seen
-  it.
+- **A listing was taken**: back on Home, once the run is idle, the trade animation opens by itself as "Trade done!
+  Misty took your Charmander" (skippable), then "Wartortle Lv.16 joined your Box". The Trades row and your avatar carry
+  a gold dot until it has played (see §9).
 - **A listing ran out**: a toast, "Charmander came back from the trade board."
 - Offline, nothing moves: a listing is only given back once the server says it ended (someone may have taken it a
   minute before).
@@ -171,11 +171,13 @@ invites.
 
 **A Pokémon's sheet**: a **TRADE** button beside Send on, which opens New listing with that Pokémon picked.
 
-**The trade animation** (full screen, SKIP, 3–4 s):
+**The trade animation** (full screen, SKIP, about 7.5 s, like the games' — see §9 for what was built):
 
-1. Your Pokémon goes into its ball.
-2. The ball flies up and away along a link of light.
-3. The other ball comes down the same way, opens, and the new Pokémon appears with a sparkle (shiny: the shiny one).
+1. Your Pokémon says goodbye on the link pad (its cry) and goes into its ball; the ball shoots up.
+2. Through the link: your ball and theirs come out of the gates at either end of a cable of light, braid along it and
+   cross in the middle in a flash.
+3. The other ball comes down a beam onto your pad, opens, and the new Pokémon appears (its cry) with a sparkle (shiny:
+   the shiny one and its stars).
 4. "Take good care of Charmander!"
 5. A trade evolution follows with the usual evolution scene.
 
@@ -365,11 +367,19 @@ live, then On for everyone.
 | Server | `supabase/migrations/0044_trades.sql`, inlined in `seed.sql`; `tests/trades-sql.test.ts` (PGlite) |
 | Client | `src/lib/trades.ts` (calls, parsing, errors, the link kept a week), `src/store/trades.ts` (post, take, cancel, the board's cache, the check, the scene), `tests/trades-client.test.ts` |
 | Screens | `src/screens/Trades.tsx` (`/trades`), `src/screens/TradeLink.tsx` (`/t/:code`), `src/components/trades/*` (docs/15 §21), the menu row, TRADE on a Pokémon's sheet, "Their trades" on a friend's card, trade evolutions on the sheet and in the Pokédex |
-| Scene | `tradeTimeline` in `src/fx/timelines/moments.ts` (ported from the lab's), its sounds `trade.*` in `src/audio/sfx.ts` |
+| Scene | `tradeTimeline` in `src/fx/timelines/trade.ts` (three acts: sending, the link, arriving), its sounds `trade.*` in `src/audio/sfx.ts`, both Pokémon's cries; on `/kitchen-sink/fx` (plain, shiny) and `/kitchen-sink` (every state) |
 | Admin | Config → Trades (the switch, the numbers, the trade-evolution and never-traded lists); Admin → Trades (open listings, Remove) |
 | End to end | `e2e/trades.spec.ts`: the rules once, a poster posting and finding it taken, a taker trading from the board, a guest, a shared link, the switch off; all on a phone |
 
 What differs from the sections above, or wasn't in them:
+
+- **"Trade done!" is the scene itself, on Home** (the user's ask, 2026-10-12, after a trade whose animation was never
+  seen): no Later / See it step. A listing taken while away waits in the save (`trades.unseen`, read by
+  `tradesToWatch`) until its scene has played, so a reload, another device or the cloud copy can't lose it (it used to
+  wait in memory). The scene plays back on Home once the run is idle and no other one-time pop-up is due; going back
+  Home (and opening the Trades page) with a listing out checks again, at most once a minute (`checkListings`), so a
+  trade made while you play shows up between fights rather than only on reload or after 5 minutes away from the tab.
+  The gold dot and Mine's NEW tag stay until the scene has played; each trade in Mine's Done list plays its scene again.
 
 - **The check waits for the sign-in's sync** (`syncSettled`): a trade is never applied to a save that is about to
   give way to the cloud copy. It runs again on return to the tab, at most every 5 minutes; with the switch off it

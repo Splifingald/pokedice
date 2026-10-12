@@ -280,6 +280,19 @@ const FX_SOUNDS = {
     hiss(0.45, { freq: 700, slide: 2600, vol: 0.05 })
     tone(392, 0.4, { type: 'square', vol: 0.03, slide: 600 })
   },
+  'trade.wipe': () => hiss(0.25, { freq: 1800, slide: -1300, vol: 0.035 }),
+  // The balls come out of their gates: a rising hum along the cable.
+  'trade.link': () => {
+    tone(523, 0.9, { type: 'triangle', vol: 0.035, slide: 260 })
+    tone(784, 0.9, { type: 'square', vol: 0.015, slide: 390, at: 0.05 })
+  },
+  // They cross: a bright chord over a soft burst.
+  'trade.cross': () => {
+    hiss(0.35, { freq: 3200, vol: 0.05 })
+    tone(1319, 0.5, { type: 'square', vol: 0.03 })
+    tone(1661, 0.5, { type: 'triangle', vol: 0.04, at: 0.03 })
+    tone(1976, 0.6, { type: 'triangle', vol: 0.035, at: 0.06 })
+  },
   'trade.down': () => tone(1047, 0.45, { type: 'square', vol: 0.03, slide: -650 }),
   'trade.land': () => hiss(0.08, { freq: 500, vol: 0.06 }),
   'trade.open': () => {

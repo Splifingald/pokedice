@@ -1,6 +1,7 @@
 // Kitchen sink: Trades (docs/23) — who can see a listing, what it wants, its time left, board rows in every state
 // (you can trade, a friend's, yours, greyed with why, shiny and NEW, a guest's view), the listing's sheet, the share
-// pop-up, the rules (unlock and INFO), the trade scene (plain, shiny, a trade evolution) and what it ends on.
+// pop-up, the rules (unlock and INFO), the trade scene (plain, shiny, "Trade done!" back Home, a trade evolution) and
+// what it ends on.
 import { useState } from 'react'
 import { encodeDexSet, type TradeLogEntry } from '@/engine'
 import { PixelButton } from '@/components/PixelButton'
@@ -80,6 +81,13 @@ const SCENES: { label: string; show: TradeShow }[] = [
         outcome: 'shiny',
       }),
       isNew: true,
+    },
+  },
+  {
+    label: 'Trade done! (back Home)',
+    show: {
+      entry: entry({ id: 'aw', role: 'poster', gave: { dex: 16, level: 12 }, got: { dex: 8, level: 16 } }),
+      away: true,
     },
   },
   {

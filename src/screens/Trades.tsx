@@ -1,7 +1,8 @@
 // The Trades page (docs/23 §2), from the trainer menu: the board (public and friends' listings, search, chips, sort,
-// rows greyed with why) and Mine (your slots, each with SHARE and CANCEL, + New listing, and the trades done). A guest
-// sees the connect prompt and the four newest listings; before the second badge, the lock. INFO opens the rules.
-import { useEffect, useMemo, useRef, useState } from 'react'
+// rows greyed with why) and Mine (your slots, each with SHARE and CANCEL, + New listing, and the trades done, each
+// playing its scene again). A guest sees the connect prompt and the four newest listings; before the second badge,
+// the lock. INFO opens the rules.
+import { useEffect, useMemo, useState } from 'react'
 import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 import {
   badgesHeld,
@@ -46,7 +47,7 @@ import { playerAvatarId } from '@/lib/avatars'
 import { isSupabaseConfigured } from '@/lib/supabase'
 import type { TradeListing } from '@/lib/trades'
 import { pushToast, useGame } from '@/store/game'
-import { cancel, loadBoard, seeTradeRules, seeTrades, useTrades } from '@/store/trades'
+import { cancel, checkListings, loadBoard, playTrade, seeTradeRules, useTrades } from '@/store/trades'
 import { cx } from '@/theme/util'
 
 type Tab = 'board' | 'mine'
@@ -67,6 +68,10 @@ export function TradesScreen() {
   useEffect(() => {
     if (!closed && auth.status === 'signed_in') seeTradeRules()
   }, [closed, auth.status])
+  // Mine says what the server says: a listing taken since the last check shows up (and its scene waits for Home).
+  useEffect(() => {
+    if (auth.status === 'signed_in') void checkListings()
+  }, [auth.status])
 
   // Off for this player, nothing listed: the feature isn't there (docs/15 §20). Inside a small world there are no
   // trades at all (docs/21).
@@ -308,15 +313,8 @@ function Mine({
   const tr = tradesOf(save)
   const [open, setOpen] = useState<TradeListing | null>(null)
   const [busy, setBusy] = useState<string | null>(null)
-  // The NEW tags stay while the page is open; the gold dot goes at once.
-  const [fresh] = useState(() => new Set(tr.unseen ?? []))
-  const seen = useRef(false)
-  useEffect(() => {
-    if (!seen.current) {
-      seen.current = true
-      seeTrades()
-    }
-  }, [])
+  // A listing taken while away is NEW (and keeps the gold dot) until its scene has played, here or back Home.
+  const fresh = new Set(tr.unseen ?? [])
   const name = (dex: number) => data.species[dex]?.name ?? t('ui.common.pokemon')
   // A Pokémon traded with its nickname goes by it; the line under keeps the species.
   const called = (m: { dex: number; nickname?: string }) => m.nickname || name(m.dex)
@@ -430,33 +428,44 @@ function Mine({
           </li>
         )}
         {(tr.log ?? []).map((e) => (
-          <li key={e.id} className="flex items-center gap-2 bg-paper py-1.5 pl-1.5 pr-2.5 shadow-ring-line">
-            <span className="flex shrink-0 items-center" aria-hidden>
-              <MiniSprite dex={e.gave.dex} size={32} className="-my-1" />
-              <span className="px-0.5 text-[18px] text-muted">→</span>
-              <MiniSprite dex={e.evolvedTo ?? e.got.dex} size={32} className="-my-1" />
-            </span>
-            <span className="grid min-w-0 flex-1 gap-0.5">
-              <b className="text-[18px] font-normal leading-tight">
-                {e.role === 'taker'
-                  ? t('ui.trades.log.took', { name: e.with || t('ui.friends.someone'), mon: called(e.got) })
-                  : t('ui.trades.log.taken', {
-                      name: e.with || t('ui.friends.someone'),
-                      mon: called(e.gave),
-                    })}
-              </b>
-              <small className="font-pixel-sm text-[13px] leading-tight text-muted">
-                {[
-                  t('ui.trades.log.gave', { mon: `${name(e.gave.dex)} ${lv(e.gave.level)}` }),
-                  t('ui.trades.log.got', { mon: `${name(e.got.dex)} ${lv(e.got.level)}` }),
-                  e.evolvedTo != null ? t('ui.trades.log.evolved', { mon: name(e.evolvedTo) }) : '',
-                  agoText(e.at, now),
-                ]
-                  .filter(Boolean)
-                  .join(' · ')}
-              </small>
-            </span>
-            {fresh.has(e.id) && <NewTag className="shrink-0" />}
+          <li key={e.id}>
+            <button
+              type="button"
+              className="flex w-full items-center gap-2 bg-paper py-1.5 pl-1.5 pr-2.5 text-left shadow-ring-line hover:shadow-ring"
+              onClick={() => playTrade({ entry: e, away: e.role === 'poster' && fresh.has(e.id) })}
+            >
+              <span className="flex shrink-0 items-center" aria-hidden>
+                <MiniSprite dex={e.gave.dex} size={32} className="-my-1" />
+                <span className="px-0.5 text-[18px] text-muted">→</span>
+                <MiniSprite dex={e.evolvedTo ?? e.got.dex} size={32} className="-my-1" />
+              </span>
+              <span className="grid min-w-0 flex-1 gap-0.5">
+                <b className="text-[18px] font-normal leading-tight">
+                  {e.role === 'taker'
+                    ? t('ui.trades.log.took', {
+                        name: e.with || t('ui.friends.someone'),
+                        mon: called(e.got),
+                      })
+                    : t('ui.trades.log.taken', {
+                        name: e.with || t('ui.friends.someone'),
+                        mon: called(e.gave),
+                      })}
+                </b>
+                <small className="font-pixel-sm text-[13px] leading-tight text-muted">
+                  {[
+                    t('ui.trades.log.gave', { mon: `${name(e.gave.dex)} ${lv(e.gave.level)}` }),
+                    t('ui.trades.log.got', { mon: `${name(e.got.dex)} ${lv(e.got.level)}` }),
+                    e.evolvedTo != null ? t('ui.trades.log.evolved', { mon: name(e.evolvedTo) }) : '',
+                    agoText(e.at, now),
+                  ]
+                    .filter(Boolean)
+                    .join(' · ')}
+                </small>
+              </span>
+              {fresh.has(e.id) && <NewTag className="shrink-0" />}
+              <PixelIcon name="play" size={16} className="shrink-0 text-muted" />
+              <span className="sr-only">{t('ui.trades.log.watch')}</span>
+            </button>
           </li>
         ))}
       </ul>

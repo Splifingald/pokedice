@@ -15,6 +15,7 @@ import { centerTimeline } from '@/fx/timelines/center'
 import { gmaxEndTimeline, gmaxFor, megaFor } from '@/fx/timelines/forms'
 import { legendLook, legendTimeline } from '@/fx/timelines/legend'
 import { evolveTimeline, hatchTimeline } from '@/fx/timelines/moments'
+import { tradeTimeline } from '@/fx/timelines/trade'
 import { labColors, starterTimeline } from '@/fx/timelines/starter'
 
 interface Preset {
@@ -138,6 +139,29 @@ const PRESETS: Preset[] = [
     name: 'Egg hatching, shiny (Eevee)',
     sprites: [[133, false, true]],
     make: () => hatchTimeline({ baby: spriteKey(133, false, true), shiny: true }),
+  },
+  {
+    name: 'Trade (Pidgey for Wartortle)',
+    sprites: [
+      [16, false],
+      [8, false],
+    ],
+    make: () => tradeTimeline({ give: foe(16), get: foe(8), giveBall: 'poke', getBall: 'great' }),
+  },
+  {
+    name: 'Trade, shiny (Charizard for Gengar)',
+    sprites: [
+      [6, false],
+      [94, false, true],
+    ],
+    make: () =>
+      tradeTimeline({
+        give: foe(6),
+        get: spriteKey(94, false, true),
+        giveBall: 'ultra',
+        getBall: 'poke',
+        shiny: true,
+      }),
   },
   {
     name: 'Starter choice (Johto lab)',

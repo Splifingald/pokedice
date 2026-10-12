@@ -556,13 +556,16 @@ const LOG_KEPT = 20
 
 function markDone(save: SaveData, id: string, log?: TradeLogEntry, unseen = false): SaveData {
   const t = tradesOf(save)
+  const nextLog = log ? [log, ...(t.log ?? []).filter((l) => l.id !== id)].slice(0, LOG_KEPT) : t.log
+  const ids = unseen ? [id, ...(t.unseen ?? []).filter((u) => u !== id)] : t.unseen
   return {
     ...save,
     trades: {
       ...t,
       done: [id, ...t.done.filter((d) => d !== id)].slice(0, DONE_KEPT),
-      ...(log ? { log: [log, ...(t.log ?? []).filter((l) => l.id !== id)].slice(0, LOG_KEPT) } : {}),
-      ...(unseen ? { unseen: [id, ...(t.unseen ?? []).filter((u) => u !== id)] } : {}),
+      ...(log ? { log: nextLog } : {}),
+      // An unseen trade that has left the log has no scene left to play: it would keep the gold dot up for good.
+      ...(ids ? { unseen: ids.filter((u) => nextLog?.some((l) => l.id === u)) } : {}),
     },
   }
 }
@@ -799,6 +802,15 @@ export function previewTake(
   const block = received.region === regionOf(gone) ? gone : gone.parked?.[received.region]
   const plain = (block?.box ?? []).filter((p) => p.dex === final && !p.shiny && !isReviving(p))
   return { received, mine: plain.length ? Math.min(...plain.map((p) => p.level)) : null }
+}
+
+/**
+ * Your listings taken while you were away whose scene hasn't played yet, oldest first: Home plays them in turn, and
+ * the gold dot stays until it has (or until the trade is opened from the Done list).
+ */
+export function tradesToWatch(save: SaveData): TradeLogEntry[] {
+  const unseen = new Set(tradesOf(save).unseen ?? [])
+  return (tradesOf(save).log ?? []).filter((l) => unseen.has(l.id)).reverse()
 }
 
 /** The trades you've looked at (all of them, or these): the gold dot goes. */

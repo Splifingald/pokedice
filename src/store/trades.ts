@@ -1,7 +1,8 @@
-// Trades (docs/23), the game's side: the check on load and on return to the tab (what the server says changed while
-// you were away, applied once), posting, taking and cancelling, the board's small cache, and the "Trade done!" pop-ups
-// waiting for a calm moment. A trade's id is written into the save, the save pushed, then the server told: a tab that
-// dies in between gets the trade again, and the save already says it's done.
+// Trades (docs/23), the game's side: the check on load, on return to the tab and back Home (what the server says
+// changed while you were away, applied once), posting, taking and cancelling, the board's small cache, and the scene.
+// A listing taken while away waits in the save (`trades.unseen`) until its scene has played on Home. A trade's id is
+// written into the save, the save pushed, then the server told: a tab that dies in between gets the trade again, and
+// the save already says it's done.
 import { create } from 'zustand'
 import {
   applyEnded,
@@ -45,6 +46,8 @@ export interface TradeShow {
   mine?: number | null
   /** The instance it is now, for the evolution scene's numbers. */
   instId?: string | null
+  /** One of your listings, taken while you were away: the scene opens as "Trade done!". */
+  away?: boolean
 }
 
 interface TradesState {
@@ -54,8 +57,6 @@ interface TradesState {
   boardKey: string
   boardAt: number
   boardState: 'idle' | 'loading' | 'ready' | 'error'
-  /** Listings of yours taken while you were away, applied by the last check: the "Trade done!" pop-ups, in order. */
-  popups: string[]
   /** Listings that ended without a trade, back in the Box: a toast each (their dex). */
   returned: number[]
   /** Trades you took that a check applied (a tab closed mid-trade): a toast each. */
@@ -70,7 +71,6 @@ const EMPTY: TradesState = {
   boardKey: '',
   boardAt: 0,
   boardState: 'idle',
-  popups: [],
   returned: [],
   settled: [],
   scene: null,
@@ -80,6 +80,8 @@ export const useTrades = create<TradesState>(() => ({ ...EMPTY }))
 
 /** At most this often on return to the tab, as the friends check. */
 export const CHECK_EVERY_MS = 5 * 60_000
+/** Back Home (or on the Trades page) with a listing out: at most once a minute, so a trade shows up between fights. */
+export const HOME_EVERY_MS = 60_000
 /** The board is read at most once a minute for the same filters. */
 export const BOARD_EVERY_MS = 60_000
 
@@ -109,20 +111,21 @@ async function settle(ids: string[]): Promise<void> {
 const ENDED = new Set(['cancelled', 'expired', 'removed'])
 
 /**
- * The check (§1.6): once the sign-in's sync has settled, and on return to the tab (at most every 5 minutes; `force`
- * skips that). Your listings taken while away arrive and wait for their pop-up; ended ones come back; a trade you took
- * whose tab closed before it was applied is applied now; the save is made to agree with the server's open listings.
+ * The check (§1.6): once the sign-in's sync has settled, and on return to the tab (at most every `every` ms; `force`
+ * skips that). Your listings taken while away arrive and wait in the save for their scene; ended ones come back; a
+ * trade you took whose tab closed before it was applied is applied now; the save is made to agree with the server's
+ * open listings.
  * Not before the sync: the save it changes could be about to give way to the cloud copy. With the switch off it still
  * runs for anyone who has traded, so nothing is ever stranded.
  */
-export async function checkTrades(force = false, now = Date.now()): Promise<void> {
+export async function checkTrades(force = false, now = Date.now(), every = CHECK_EVERY_MS): Promise<void> {
   const { save, data } = useGame.getState()
   // Inside a small world no trade reaches the player (docs/21): the check waits until they're back.
   if (checking || !signedInUser() || !save || isExtreme(save) || inWorldRegion(save, data) || !syncSettled())
     return
   const mine = tradesOf(save)
   if (!tradesOn(data) && !mine.out.length && !mine.log?.length && !mine.done.length) return
-  if (!force && now - lastCheck < CHECK_EVERY_MS) return
+  if (!force && now - lastCheck < every) return
   checking = true
   lastCheck = now
   try {
@@ -131,7 +134,6 @@ export async function checkTrades(force = false, now = Date.now()): Promise<void
     if (!st.save || isExtreme(st.save)) return
     let next = st.save
     const ids: string[] = []
-    const popups: string[] = []
     const returned: number[] = []
     const settled: string[] = []
     const open: OpenListing[] = rows
@@ -158,7 +160,6 @@ export async function checkTrades(force = false, now = Date.now()): Promise<void
         )
         next = res.save
         ids.push(r.id)
-        if (!res.already) popups.push(r.id)
       } else if (r.role === 'owner' && ENDED.has(r.status)) {
         const res = applyEnded(next, st.data, r.id)
         next = res.save
@@ -178,9 +179,8 @@ export async function checkTrades(force = false, now = Date.now()): Promise<void
       }
     }
     if (next !== st.save) commitSave(next)
-    if (popups.length || returned.length || settled.length)
+    if (returned.length || settled.length)
       useTrades.setState((s) => ({
-        popups: [...s.popups, ...popups],
         returned: [...s.returned, ...returned],
         settled: [...s.settled, ...settled],
       }))
@@ -190,6 +190,15 @@ export async function checkTrades(force = false, now = Date.now()): Promise<void
   } finally {
     checking = false
   }
+}
+
+/**
+ * Back Home, or the Trades page opened, with a listing out: it may have been taken since the last check. Only a
+ * listing of yours can change while you play, so nobody without one asks the server.
+ */
+export async function checkListings(now = Date.now()): Promise<void> {
+  const { save } = useGame.getState()
+  if (save && !isExtreme(save) && tradesOf(save).out.length) await checkTrades(false, now, HOME_EVERY_MS)
 }
 
 /** The trades looked at (all, or these): the gold dot on the avatar and the Trades row goes. */
@@ -206,15 +215,14 @@ export function seeTradeRules() {
   if (next && next !== save) commitSave(next)
 }
 
-/** Plays the trade scene over whatever is on screen; it marks that trade seen. */
+/** Plays the trade scene over whatever is on screen; it marks that trade seen (watched). */
 export function playTrade(show: TradeShow) {
   useTrades.setState({ scene: show })
   seeTrades([show.entry.id])
 }
 export const endTrade = () => useTrades.setState({ scene: null })
 
-/** The pop-up for a trade was seen, or the toasts said. */
-export const shiftPopup = () => useTrades.setState((s) => ({ popups: s.popups.slice(1) }))
+/** The toasts said. */
 export const clearReturned = () => useTrades.setState({ returned: [], settled: [] })
 
 /** The board for these filters: from the cache when read under a minute ago, unless `force`. */
