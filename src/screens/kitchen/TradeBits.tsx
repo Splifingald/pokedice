@@ -132,7 +132,7 @@ export function TradeKitBits() {
       <div className="flex flex-wrap items-center gap-4">
         <WantTile want={{ kind: 'species', dex: 7 }} />
         <WantTile want={{ kind: 'notOwned' }} />
-        <WantTile want={{ kind: 'notOwned' }} owner="Sora" />
+        <WantTile want={{ kind: 'notOwned' }} big />
         <WantTile want={{ kind: 'any' }} />
         <WantTile want={{ kind: 'species', dex: 150 }} big />
       </div>

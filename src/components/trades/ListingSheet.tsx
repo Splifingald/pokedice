@@ -419,7 +419,7 @@ function ListingFlow({
             <span className="font-pixel-sm text-[14px] uppercase tracking-[0.06em] text-muted">
               {l.isMe ? t('ui.trades.youWant') : t('ui.trades.theyWant')}
             </span>
-            <WantTile want={l.want} owner={l.isMe ? undefined : who} big />
+            <WantTile want={l.want} big />
             {!l.isMe && l.want.kind === 'species' && signedIn && (
               <small className="font-pixel-sm text-[14px] text-muted">
                 {haveCount

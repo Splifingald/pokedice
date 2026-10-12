@@ -3971,9 +3971,9 @@ ui.trades.vis.public,Public,Publique,Pública,Öffentlich,Pubblica,Pública,Púb
 ui.trades.vis.friends,Friends,Amis,Amigos,Freunde,Amici,Amigos,Amigos,フレンド,친구,好友
 ui.trades.vis.private,Private (link),Privée (lien),Privada (enlace),Privat (Link),Privata (link),Privada (link),Privada (link),リンク限定,비공개(링크),私密（链接）
 ui.trades.want.notOwned,Any I don't own,Un que je n'ai pas,Cualquiera que no tenga,"Eins, das ich nicht habe",Uno che non ho,Um que eu não tenha,Um que eu não tenha,持っていないポケモン,내게 없는 포켓몬,我没有的宝可梦
-ui.trades.want.notOwnedBy,Any {name} lacks,Un que {name} n'a pas,Cualquiera que {name} no tenga,"Eins, das {name} nicht hat",Uno che {name} non ha,Um que {name} não tenha,Um que {name} não tenha,{name}が持っていないポケモン,{name}에게 없는 포켓몬,{name}没有的宝可梦
+ui.trades.want.anyNew,Any New,Un nouveau,Uno nuevo,Ein neues,Uno nuovo,Um novo,Um novo,未所持,미보유,未拥有
 ui.trades.want.any,Anything,N'importe lequel,Cualquiera,Egal welches,Qualsiasi,Qualquer um,Qualquer um,何でも,아무거나,任意宝可梦
-ui.trades.want.anyTile,ANY,TOUT,TODO,EGAL,TUTTO,TUDO,TUDO,何でも,무관,任意
+ui.trades.want.anyShort,Any,Tout,Cualquiera,Egal,Qualsiasi,Qualquer,Qualquer,何でも,무관,任意
 ui.trades.endsIn,Ends in {time},Fin dans {time},Termina en {time},Endet in {time},Termina tra {time},Termina em {time},Termina em {time},残り{time},{time} 후 마감,{time}后结束
 ui.trades.you,You,Toi,Tú,Du,Tu,Tu,Você,あなた,나,你
 ui.trades.yoursTag,YOURS,À TOI,TUYA,DEINS,TUA,TUA,SUA,自分,내 글,我的

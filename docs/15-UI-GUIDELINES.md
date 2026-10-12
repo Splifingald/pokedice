@@ -581,7 +581,8 @@ decides every level, landing Box and outcome, and the screens only say them.
   pop-up (`TradesRulesModal`, the Pokémon Center as its banner) opens once for a signed-in player who can trade.
 - **A listing on a board** (`ListingRow`): the listed Pokémon on the left (menu icon, name, ✦, NEW when its landing
   Pokédex lacks it, its region's chip when it isn't the first region, who), "for" and what they want on the right
-  (`WantTile`: the species' icon and name, or a gold NEW tile for "any I don't own", a grey ANY tile for anything),
+  (`WantTile`: the species' icon and name, or one tag: gold "Any New" for one they don't own, plain "Any" for
+  anything; the listing's sheet says what "Any New" means under it),
   and a line under it: green "You can trade", or why not in plain words (`useTakeWhy`: sign in, friends only, start
   Johto first, no trades left today, you have no Haunter…), the row greyed, and the time left at its far end (so the
   trainer's name keeps its room on a phone). Friends' rows are sky blue with

@@ -45,43 +45,38 @@ export function ShinyStar() {
   return <PixelIcon name="star" size={12} title={t('ui.mon.shiny')} className="shrink-0" />
 }
 
-/** "Charmander", "any I don't own" or "anything", in a sentence. */
+/** "Charmander", "Any New" (one they don't own) or "Any": what a listing wants, as its tag and its label say it. */
 export function useWantWords() {
   const { t } = useT()
   const data = useGame((s) => s.data)
-  return (want: TradeWant, owner?: string) =>
+  return (want: TradeWant) =>
     want.kind === 'species'
       ? (data.species[want.dex]?.name ?? t('ui.common.pokemon'))
       : want.kind === 'notOwned'
-        ? owner
-          ? t('ui.trades.want.notOwnedBy', { name: owner })
-          : t('ui.trades.want.notOwned')
-        : t('ui.trades.want.any')
+        ? t('ui.trades.want.anyNew')
+        : t('ui.trades.want.anyShort')
 }
 
-/** What a listing wants, as a tile: the species' icon and name, or a NEW / ANY tile. `owner`: whose want it is. */
-export function WantTile({ want, owner, big }: { want: TradeWant; owner?: string; big?: boolean }) {
-  const { t } = useT()
+/** What a listing wants: the species' icon and name, or one tag, gold "Any New" or plain "Any". */
+export function WantTile({ want, big }: { want: TradeWant; big?: boolean }) {
   const words = useWantWords()
-  const pic =
-    want.kind === 'species' ? (
-      <MiniSprite dex={want.dex} size={big ? 40 : 32} className={big ? '-my-1' : '-my-1.5'} />
-    ) : (
+  if (want.kind !== 'species')
+    return (
       <span
-        aria-hidden
         className={cx(
-          'grid shrink-0 place-items-center font-pixel-sm leading-none shadow-ring-line',
-          big ? 'h-10 w-12 text-[15px]' : 'h-8 w-10 text-[13px]',
-          want.kind === 'notOwned' ? 'bg-gold text-ink' : 'bg-well text-ink',
+          // Its own width, in a grid cell too (the listing's sheet).
+          'shrink-0 justify-self-start whitespace-nowrap font-normal leading-none shadow-ring-line',
+          big ? 'px-2.5 pb-2 pt-1.5 text-[20px]' : 'px-2 pb-1.5 pt-1 text-[16px]',
+          want.kind === 'notOwned' ? 'bg-gold text-ink' : 'bg-paper text-ink',
         )}
       >
-        {want.kind === 'notOwned' ? t('ui.common.new') : t('ui.trades.want.anyTile')}
+        {words(want)}
       </span>
     )
   return (
     <span className={cx('flex min-w-0 items-center gap-1', big ? 'text-[20px]' : 'text-[16px]')}>
-      {pic}
-      <b className="min-w-0 truncate font-normal leading-none">{words(want, owner)}</b>
+      <MiniSprite dex={want.dex} size={big ? 40 : 32} className={big ? '-my-1' : '-my-1.5'} />
+      <b className="min-w-0 truncate font-normal leading-none">{words(want)}</b>
     </span>
   )
 }
@@ -238,7 +233,7 @@ export function ListingRow({
       mon: `${name}${l.shiny ? `, ${t('ui.mon.shiny')}` : ''}`,
       level: t('ui.common.level.short', { n: l.level }),
       who: owner,
-      want: words(l.want, l.isMe ? undefined : l.name),
+      want: words(l.want),
       time: timeLeft(l.endsAt - now),
     }),
     fresh ? t('ui.trades.newForYou') : '',
@@ -286,7 +281,7 @@ export function ListingRow({
         </span>
         <span className="flex max-w-[42vw] items-center gap-1.5 sm:max-w-[240px]" aria-hidden>
           <span className="font-pixel-sm text-[13px] text-muted">{t('ui.trades.for')}</span>
-          <WantTile want={l.want} owner={l.isMe ? undefined : l.name} />
+          <WantTile want={l.want} />
         </span>
         {/* Why (or "You can trade") on the left, the time left on the right: the trainer's name keeps its room. */}
         <span
