@@ -213,6 +213,18 @@ export const ICONS = {
     'kwkwkwwwwwk',
     'kkkkkkkkkkk',
   ],
+  // The raid's speed button: two arrows side by side, pointing on (fast forward).
+  fastForward: [
+    'k.....k....',
+    'kk....kk...',
+    'kkk...kkk..',
+    'kkkk..kkkk.',
+    'kkkkk.kkkkk',
+    'kkkk..kkkk.',
+    'kkk...kkk..',
+    'kk....kk...',
+    'k.....k....',
+  ],
   ...PACK_ICONS,
 } as const
 

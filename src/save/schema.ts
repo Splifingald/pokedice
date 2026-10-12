@@ -118,6 +118,7 @@ export const saveSchema = z.object({
     multiExp: z.boolean().default(true),
     autoMode: z.boolean().optional(),
     typeHints: z.boolean().optional(),
+    raidFast: z.boolean().optional(),
     lang: z.enum(LANGS).optional(),
     theme: z.enum(['light', 'dark', 'auto']).optional(),
   }),

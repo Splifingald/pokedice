@@ -551,7 +551,7 @@ export function KitchenSink() {
         </ol>
       </Section>
 
-      <Section title="Battle: stage, plates, tray, readout, team pips, Bag, catch">
+      <Section title="Battle: stage, plates, tray, readout, team pips (and the raid's compact ones, speed button), Bag, catch">
         <BattleBits />
       </Section>
 
