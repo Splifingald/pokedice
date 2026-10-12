@@ -21,9 +21,9 @@ export const EVENTS_ON = {
 }
 
 /**
- * Rules tests pin the pacing knobs to neutral (×1), and status effects, the shiny rate, Multi EXP, the once-only pity,
- * the donation pop-up and the Discord link to the defaults, so their arithmetic documents the formulas, not the tuning
- * done in admin. The events are on.
+ * Rules tests pin the pacing knobs to neutral (×1), and status effects, the shiny rate, Multi EXP, both pities (once-only
+ * finds, new Pokémon), the donation pop-up and the Discord link to the defaults, so their arithmetic documents the
+ * formulas, not the tuning done in admin. The events are on.
  */
 export function makeData(config: Partial<GameConfig> = {}): GameData {
   return compileGameData({
@@ -37,6 +37,7 @@ export function makeData(config: Partial<GameConfig> = {}): GameData {
       status: DEFAULT_CONFIG.status,
       multiExpShare: DEFAULT_CONFIG.multiExpShare,
       uniquePity: DEFAULT_CONFIG.uniquePity,
+      newPokemonPity: DEFAULT_CONFIG.newPokemonPity,
       donation: DEFAULT_CONFIG.donation,
       discordUrl: DEFAULT_CONFIG.discordUrl,
       events: EVENTS_ON,

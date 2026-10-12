@@ -19,6 +19,8 @@ import {
   newSave,
   nextEncounter,
   pickUpItem,
+  pityChance,
+  pityMultiplier,
   progressOf,
   recordDraws,
   reduce,
@@ -27,8 +29,6 @@ import {
   teamAverageLevel,
   teamOf,
   uniformLevels,
-  uniqueFindChance,
-  uniquePityMultiplier,
   type Area,
   type GameData,
   type LootEntry,
@@ -122,19 +122,19 @@ describe('loot', () => {
 
     it('×1 up to the 5th round done, then linear to ×10 at the 50th, and no further', () => {
       expect(data.config.uniquePity).toEqual(pity)
-      expect(uniquePityMultiplier(0, pity)).toBe(1)
-      expect(uniquePityMultiplier(5, pity)).toBe(1)
-      expect(uniquePityMultiplier(15, pity)).toBe(3)
-      expect(uniquePityMultiplier(27.5, pity)).toBe(5.5)
-      expect(uniquePityMultiplier(50, pity)).toBe(10)
-      expect(uniquePityMultiplier(500, pity)).toBe(10)
-      expect(uniquePityMultiplier(500, { ...pity, maxMultiplier: 1 })).toBe(1)
+      expect(pityMultiplier(0, pity)).toBe(1)
+      expect(pityMultiplier(5, pity)).toBe(1)
+      expect(pityMultiplier(15, pity)).toBe(3)
+      expect(pityMultiplier(27.5, pity)).toBe(5.5)
+      expect(pityMultiplier(50, pity)).toBe(10)
+      expect(pityMultiplier(500, pity)).toBe(10)
+      expect(pityMultiplier(500, { ...pity, maxMultiplier: 1 })).toBe(1)
     })
 
     it('the odds of a find being once-only are multiplied, never past 100 %', () => {
-      expect(uniqueFindChance(0.01, 50, pity)).toBeCloseTo(0.1)
-      expect(uniqueFindChance(0.2, 50, pity)).toBe(1)
-      expect(uniqueFindChance(0.2, 5, pity)).toBe(0.2)
+      expect(pityChance(0.01, 50, pity)).toBeCloseTo(0.1)
+      expect(pityChance(0.2, 50, pity)).toBe(1)
+      expect(pityChance(0.2, 5, pity)).toBe(0.2)
     })
 
     it('a 1-in-100 find turns up about 10 times as often after 50 rounds', () => {

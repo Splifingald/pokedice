@@ -3,6 +3,7 @@ import { shuffle } from './deal'
 import { eventOn } from './events'
 import { regionOfArea } from './regions'
 import { drawLoot } from './items'
+import { pityChance } from './pity'
 import { asSeenBy, gymsFor, type PlayerSide } from './rival'
 import type { Rng } from './rng'
 import { dealTrainerItems } from './trainerItems'
@@ -20,6 +21,7 @@ import type {
   Trainer,
   TrainerMon,
   TrainerRole,
+  WildPoolEntry,
 } from './types'
 
 export type Encounter =
@@ -232,10 +234,36 @@ export function rollRoamer(ctx: EncounterContext, rng: Rng): Encounter | null {
   return null
 }
 
+/**
+ * Each wild pool entry's weight for the next wild Pokémon. Once the pity (game_config.newPokemonPity) kicks in, the
+ * ones not caught yet are weighted up together so that they come `pityChance` of the time instead of their share of the
+ * pool, keeping their odds among themselves. While it's ×1, or every one is caught (or none is), the pool's own weights.
+ */
+export function wildOdds(
+  ctx: Pick<EncounterContext, 'area' | 'progress' | 'data' | 'pokedex'>,
+): { entry: WildPoolEntry; weight: number; isNew: boolean }[] {
+  const caught = new Set(ctx.pokedex)
+  const odds = ctx.area.wildPool.map((entry) => ({
+    entry,
+    weight: ctx.data.species[entry.dex] ? Math.max(0, entry.weight) : 0,
+    isNew: !caught.has(entry.dex),
+  }))
+  const total = odds.reduce((sum, o) => sum + o.weight, 0)
+  const fresh = odds.reduce((sum, o) => sum + (o.isNew ? o.weight : 0), 0)
+  if (!(fresh > 0 && fresh < total)) return odds
+  const share = fresh / total
+  const chance = pityChance(share, ctx.progress.roundsDone ?? 0, ctx.data.config.newPokemonPity)
+  if (chance <= share) return odds
+  if (chance >= 1) return odds.map((o) => (o.isNew ? o : { ...o, weight: 0 }))
+  // × k on the new ones: k·fresh / (k·fresh + the caught ones) = chance.
+  const k = (chance * (total - fresh)) / ((1 - chance) * fresh)
+  return odds.map((o) => (o.isNew ? { ...o, weight: o.weight * k } : o))
+}
+
 export function rollWild(ctx: EncounterContext, rng: Rng): Encounter | null {
   const roamer = rollRoamer(ctx, rng)
   if (roamer) return roamer
-  const entry = rng.weighted(ctx.area.wildPool, (w) => (ctx.data.species[w.dex] ? w.weight : 0))
+  const entry = rng.weighted(wildOdds(ctx), (o) => o.weight)?.entry
   if (!entry) return null
   const level = enemyLevel(rng.int(entry.minLevel, Math.max(entry.minLevel, entry.maxLevel)), ctx, rng)
   const shiny = !shinyLocked(ctx.data, entry.dex) && rollShiny(ctx.data, rng, ctx.shinyBoost)

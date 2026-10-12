@@ -106,6 +106,8 @@ export const DEFAULT_CONFIG: GameConfig = {
   // A once-only find in a big loot deck can take a hundred rounds to turn up: from the 5th round done in its area, its
   // odds climb to ×10 at the 50th.
   uniquePity: { startRounds: 5, fullRounds: 50, maxMultiplier: 10 },
+  // The same for a wild Pokémon not caught yet: the last rare one of an area comes ×10 as often by the 50th round.
+  newPokemonPity: { startRounds: 5, fullRounds: 50, maxMultiplier: 10 },
   // Extreme mode (docs/22): off until the admin switches it on, for the admin alone or for everyone. Opened by the
   // Johto League; no Pokémon Centers and no healing after a lost round; a K.O. rests 12 h and comes back at 1 HP; out
   // of the game, every Pokémon heals 10 % an hour (absences under 2 min don't count). Potions and Revives work.

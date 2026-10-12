@@ -125,6 +125,9 @@ supabase/    migrations/0001_init.sql, seed.sql (generated)
 - **Once-only find pity** — after 5 rounds done in an area, the odds that an item find there is one of its once-only
   finds rise linearly to ×10 at 50 rounds (never past 100 %). The three numbers are `uniquePity` in Admin → Config;
   see [docs/01](docs/01-GAME-SPEC.md) §5.4.
+- **New Pokémon pity** — the same for wild Pokémon: after 5 rounds done in an area, the odds that a wild Pokémon there
+  is one the player hasn't caught rise linearly to ×10 at 50 rounds (never past 100 %). The three numbers are
+  `newPokemonPity` in Admin → Config; see [docs/01](docs/01-GAME-SPEC.md) §1.1.
 - **Pacing** — `hpMultiplier` 1 (fight length; 1.4 before the v1.8 dice schedule) and `goldMultiplier` 0.5 (economy), tuned with `pnpm balance` on the Kanto content. Damage has no global multiplier: a hit is exactly what the dice show (× type effectiveness, + the combo bonus).
 - `maxBattleTurns` (150) ends fights between two mutually-immune Pokémon in a no-reward stalemate.
 - **Versus** — trainer menu → Versus, open once 3 Pokémon reach Lv.50. A player leaves a team of three (cloned from
