@@ -45,6 +45,7 @@ import { DayCareBits } from './kitchen/DayCareBits'
 import { RulesBits } from './kitchen/RulesBits'
 import { ExtremeBits } from './kitchen/ExtremeBits'
 import { PartnerBits } from './kitchen/PartnerBits'
+import { RaidBits } from './kitchen/RaidBits'
 import { BadgeIcon, CrownIcon } from '@/components/BadgeIcon'
 import { BoardRow } from '@/components/BoardRow'
 
@@ -568,6 +569,10 @@ export function KitchenSink() {
 
       <Section title="Extreme mode: rules, band, title card, K.O. rest, resting team, while you were away, switch">
         <ExtremeBits />
+      </Section>
+
+      <Section title="Raids: the NPC partners pop-up (each state), a legendary raid's card open and caught">
+        <RaidBits />
       </Section>
 
       <Section title="StatusIcons · PixelIcon">

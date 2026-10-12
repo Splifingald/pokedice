@@ -74,7 +74,7 @@ export function EventsScreen() {
   // A closed or unknown event goes back Home (a stale link, an event switched off in Admin).
   if (!isEventId(id) || !save || !eventUnlocked(id, save, data)) return <Navigate to="/home" replace />
   // A raid being fought takes the whole screen.
-  if (id === 'raid' && raidRun) return <RaidView key={raidRun.id} run={raidRun} />
+  if (id === 'raid' && raidRun?.source.kind === 'daily') return <RaidView key={raidRun.id} run={raidRun} />
   return <EventPage id={id} />
 }
 

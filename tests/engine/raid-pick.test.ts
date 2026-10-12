@@ -34,7 +34,7 @@ import {
   type SaveData,
 } from '@/engine'
 import { parseSave } from '@/save/schema'
-import { data, makeData, newId } from '../fixtures'
+import { data, makeData, newId, RAIDS_OFF } from '../fixtures'
 
 const cfg = data.config.events.raid
 const FARAWAY = cfg.pool.find((p) => p.dex === 151)!.areaId
@@ -51,11 +51,14 @@ const shinyOf = (e: unknown) => (e as { shiny?: boolean } | null)?.shiny
 const weekday = (year: number, i: number) => new Date(Date.UTC(year, 0, 1 + i)).getUTCDay()
 
 describe('the raid lairs and the legendaries', () => {
-  it('the mythicals left their areas (one round of wild Pokémon each); the legendaries are their areas’ bosses again', () => {
+  it('the mythicals are their lairs’ bosses again (Melmetal aside); every other boss is its area’s progression raid', () => {
     for (const p of cfg.pool) {
       const a = data.areas.find((x) => x.id === p.areaId)!
       expect(a, `#${p.dex}`).toBeTruthy()
-      expect((a.legendaryBoss ?? []).some((b) => b.dex === p.dex), a.name).toBe(false)
+      // Melmetal shares Meltan's lair, and Meltan evolves into it.
+      const boss = (a.legendaryBoss ?? []).find((b) => b.dex === p.dex)
+      if (p.dex === 809) expect(boss, a.name).toBeUndefined()
+      else expect(boss && !boss.raid, a.name).toBe(true)
       expect(a.roundsToClear, a.name).toBe(1)
       expect(a.wildPool.length, a.name).toBeGreaterThan(0)
     }
@@ -65,7 +68,7 @@ describe('the raid lairs and the legendaries', () => {
       ['Southern Island II', 381],
       ['Fullmoon Island', 488],
     ] as const)
-      expect(area(name).legendaryBoss?.map((b) => b.dex), name).toContain(dex)
+      expect(area(name).legendaryBoss?.find((b) => b.dex === dex)?.raid, name).toBe(true)
   })
 
   it('every raid Pokémon has its area: a lair, a boss area, the roamers’, where it lives, an earlier stage’s', () => {
@@ -82,8 +85,9 @@ describe('the raid lairs and the legendaries', () => {
 describe('the calendar', () => {
   const entries = raidEntries(data)
 
-  it('holds the mythicals (never shiny), every legendary as a shiny, the pseudo-legendaries both ways, shiny fillers', () => {
-    expect(entries.mythical.every((e) => !e.shiny)).toBe(true)
+  it('holds the mythicals and every legendary as shinies, the pseudo-legendaries both ways, shiny fillers', () => {
+    // The mythicals are their lairs' bosses (docs/24), never shiny there: the calendar is where their shiny is.
+    expect(entries.mythical.every((e) => e.shiny)).toBe(true)
     expect(entries.mythical).toHaveLength(new Set(cfg.pool.map((p) => p.dex)).size)
     expect(entries.legendary.length).toBeGreaterThan(50)
     expect(entries.legendary.every((e) => e.shiny && isLegendary(data, e.dex))).toBe(true)
@@ -110,10 +114,33 @@ describe('the calendar', () => {
       const anchored = cfg.calendar.anchors.length
       expect(weekend).toBeGreaterThanOrEqual(big.length - anchored)
       expect(raidOfDay(data, `${year}-02-27`)).toMatchObject({ dex: 25, shiny: true })
-      expect(raidOfDay(data, `${year}-04-22`)).toMatchObject({ dex: 251, shiny: false })
-      expect(raidOfDay(data, `${year}-10-31`)).toMatchObject({ dex: 491, shiny: false })
+      expect(raidOfDay(data, `${year}-04-22`)).toMatchObject({ dex: 251, shiny: true })
+      expect(raidOfDay(data, `${year}-10-31`)).toMatchObject({ dex: 491, shiny: true })
     })
   }
+
+  it('lays the year out the same whether a mythical’s fixed date is shiny yet or not (before or after 0044)', () => {
+    const myth = new Set(cfg.pool.map((p) => p.dex))
+    const before = makeData({
+      events: {
+        ...data.config.events,
+        raid: {
+          ...cfg,
+          calendar: { ...cfg.calendar, anchors: cfg.calendar.anchors.map((a) => (myth.has(a.dex) ? { ...a, shiny: false } : a)) },
+        },
+      },
+    })
+    for (const year of [2026, 2027]) {
+      const now = buildRaidCalendar(data, year)
+      const old = buildRaidCalendar(before, year)
+      expect(old.map((r) => r.dex)).toEqual(now.map((r) => r.dex))
+      // Only the mythicals' fixed dates differ: their colours.
+      const differ = now.flatMap((r, i) => (r.shiny !== old[i]!.shiny ? [r.dex] : []))
+      expect(differ.every((d) => myth.has(d))).toBe(true)
+      expect(differ.length).toBe(cfg.calendar.anchors.filter((a) => myth.has(a.dex)).length)
+    }
+    expect(raidOfDay(before, '2027-04-22')).toMatchObject({ dex: 251, shiny: false, kind: 'mythical' })
+  })
 
   it('is the same for everyone, and different from one year to the next', () => {
     expect(buildRaidCalendar(data, 2026)).toEqual(buildRaidCalendar(makeData(), 2026))
@@ -124,7 +151,7 @@ describe('the calendar', () => {
     const next = upcomingRaids(data, '2026-12-30', 3)
     expect(next.map((n) => n.day)).toEqual(['2026-12-31', '2027-01-01', '2027-01-02'])
     expect(next[1]!.raid).toMatchObject({ dex: 493 })
-    expect(nextRaidsOf(data, 251, '2026-04-23', 1)).toEqual([{ day: '2027-04-22', shiny: false }])
+    expect(nextRaidsOf(data, 251, '2026-04-23', 1)).toEqual([{ day: '2027-04-22', shiny: true }])
     expect(nextRaidsOf(data, 251, '2026-04-22', 1)[0]!.day).toBe('2026-04-22')
   })
 
@@ -142,10 +169,15 @@ describe('the calendar', () => {
 describe('the shiny lock', () => {
   const always = makeData({ shinyChance: 1 })
   it('a legendary met in its area is never shiny; anything else still rolls', () => {
-    const mewtwo = always.areas.find((a) => (a.legendaryBoss ?? []).some((b) => b.dex === 150))!
-    const boss = challengeEncounter(mewtwo, { ...emptyProgress(), roundsDone: 9, cleared: true }, always, 70, null, createRng(1))
+    // Mewtwo's boss fight, where Raid Battles are off (else it's a progression raid), and Mew's, its lair's boss.
+    const off = makeData({ shinyChance: 1, events: RAIDS_OFF })
+    const mewtwo = off.areas.find((a) => (a.legendaryBoss ?? []).some((b) => b.dex === 150))!
+    const boss = challengeEncounter(mewtwo, { ...emptyProgress(), roundsDone: 9, cleared: true }, off, 70, null, createRng(1))
     expect(boss).toMatchObject({ kind: 'boss', dex: 150 })
     expect(shinyOf(boss)).toBeUndefined()
+    const mew = challengeEncounter(area('Faraway Island'), emptyProgress(), always, 70, null, createRng(1))
+    expect(mew).toMatchObject({ kind: 'boss', dex: 151 })
+    expect(shinyOf(mew)).toBeUndefined()
     expect(shinyLocked(always, 150)).toBe(true)
     expect(shinyLocked(always, 149)).toBe(false)
     const route = always.areas.find((a) => a.wildPool.length && a.wildPool.every((w) => !isLegendary(always, w.dex)))!

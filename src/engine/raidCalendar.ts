@@ -1,9 +1,9 @@
 // Raid Battles' calendar (the user's design, 2026-10-11): one raid a UTC day, the same for every player, laid out per
-// year. Fixed dates first (Pokémon Day, Earth Day, Halloween… `raid.calendar.anchors`), then the mythicals and every
-// legendary as a shiny on that year's weekends (shiny mythicals are kept for other events), the pseudo-legendaries (normal and shiny) spread over
-// the year, and shiny fully evolved Pokémon of late areas on the days left. Each raid Pokémon has its area in its home
-// region — a mythical's lair, a legendary's boss area, else where it lives — and a catch stays locked until that area
-// is completed (engine/raid.ts).
+// year. Fixed dates first (Pokémon Day, Earth Day, Halloween… `raid.calendar.anchors`), then every mythical and every
+// legendary as a shiny on that year's weekends (their normal forms are their areas' bosses and progression raids,
+// docs/24), the pseudo-legendaries (normal and shiny) spread over the year, and shiny fully evolved Pokémon of late
+// areas on the days left. Each raid Pokémon has its area in its home region — a mythical's lair, a legendary's boss
+// area, else where it lives — and a catch stays locked until that area is completed (engine/raid.ts).
 import { isLegendary } from './breeding'
 import { raidAllyAllowed } from './raidBattle'
 import { regionOf, regionOfArea, regionOfSpecies } from './regions'
@@ -27,10 +27,16 @@ export interface RaidDay {
 export const RAID_MON_KEYS = ['bars', 'barHp', 'startAllies', 'summonPerBreak', 'maxField', 'level', 'upgradeLevel'] as const
 export type RaidRules = Required<RaidMonRules>
 
-/** A raid Pokémon's numbers: its own (Admin → Raids → Raid Pokémon) over the defaults. */
-export function raidRules(data: GameData, dex: number): RaidRules {
+/** Which raid: the day's (the calendar) or a progression raid in an area (docs/24). */
+export type RaidKindOf = 'daily' | 'progress'
+
+/**
+ * A raid Pokémon's numbers: its own (Admin → Raids → Raid Pokémon) over the defaults. A progression raid reads its own
+ * list (`raid.progress.perMon`), never the day's raid's.
+ */
+export function raidRules(data: GameData, dex: number, kind: RaidKindOf = 'daily'): RaidRules {
   const cfg = data.config.events.raid
-  const own = cfg.perMon?.[dex] ?? {}
+  const own = (kind === 'progress' ? cfg.progress?.perMon?.[dex] : cfg.perMon?.[dex]) ?? {}
   const pick = (k: keyof RaidMonRules) => {
     const v = Number(own[k])
     return own[k] != null && Number.isFinite(v) ? v : (cfg[k] as number)
@@ -44,6 +50,15 @@ export function raidRules(data: GameData, dex: number): RaidRules {
     level: Math.max(1, Math.min(100, Math.round(pick('level')))),
     upgradeLevel: Math.max(1, Math.min(10, Math.round(pick('upgradeLevel')))),
   }
+}
+
+/** The sides' level cap: the day's raid's, or a progression raid's (its own, then the progression default). */
+export function raidTeamCap(data: GameData, dex: number, kind: RaidKindOf = 'daily'): number {
+  const cfg = data.config.events.raid
+  if (kind === 'daily') return cfg.teamCap
+  const own = Number(cfg.progress?.perMon?.[dex]?.teamCap)
+  const cap = Number.isFinite(own) && own > 0 ? own : (cfg.progress?.teamCap ?? cfg.teamCap)
+  return Math.max(1, Math.min(100, Math.round(cap)))
 }
 
 /** A species' earlier stages (Dratini → Dragonair for Dragonite), nearest first. */
@@ -111,8 +126,8 @@ export function raidEntries(data: GameData): Record<Exclude<RaidKind, 'special'>
       return area && wild && area.minLevel >= cfg.calendar.fillerMinLevel ? [{ dex: s.dex, shiny: true, areaId: area.id, kind: 'filler' as const }] : []
     })
   return {
-    // The mythicals normal only: their shinies are for other events (the user, 2026-10-11).
-    mythical: mythicals.flatMap((d) => entry(d, false, 'mythical')),
+    // Shiny: a mythical's normal form is its lair's boss, never shiny there (the user, 2026-10-12).
+    mythical: mythicals.flatMap((d) => entry(d, true, 'mythical')),
     legendary: legendaries.flatMap((d) => entry(d, true, 'legendary')),
     pseudo: pseudos.flatMap((d) => [...entry(d, false, 'pseudo'), ...entry(d, true, 'pseudo')]),
     filler: fillers,
@@ -132,6 +147,12 @@ function daysOf(year: number): { day: string; md: string; weekday: number }[] {
 }
 
 const same = (a: Pick<RaidDay, 'dex' | 'shiny'>, b: Pick<RaidDay, 'dex' | 'shiny'>) => a.dex === b.dex && a.shiny === b.shiny
+/**
+ * A day that takes an entry's place: the same raid, or, for a mythical (one day a year), any day of it, shiny or not.
+ * So a fixed date still non-shiny from before docs/24 (a database 0044 hasn't reached) lays the year out exactly as a
+ * shiny one: only that day's colours differ.
+ */
+const claims = (e: RaidDay, x: Pick<RaidDay, 'dex' | 'shiny'>) => same(e, x) || (e.kind === 'mythical' && e.dex === x.dex)
 
 /** The seed in force on a day ('YYYY-MM-DD'): the last one whose `from` is on or before it, else 0. */
 export function raidSeedOn(data: GameData, day: string): number {
@@ -168,7 +189,7 @@ function layoutYear(data: GameData, year: number, seed: number, kept: (RaidDay |
   const group: ('anchor' | 'big' | 'pseudo' | 'filler' | null)[] = kept.map((k) => (k ? 'anchor' : null))
   const entries = raidEntries(data)
   const all = [...entries.mythical, ...entries.legendary, ...entries.pseudo, ...entries.filler]
-  const used = (e: RaidDay) => kept.some((k) => k && same(k, e))
+  const used = (e: RaidDay) => kept.some((k) => k && claims(e, k))
   let big = [...entries.mythical, ...entries.legendary].filter((e) => !used(e))
   let pseudo = entries.pseudo.filter((e) => !used(e))
   let filler = entries.filler.filter((e) => !used(e))
@@ -176,14 +197,14 @@ function layoutYear(data: GameData, year: number, seed: number, kept: (RaidDay |
   for (const a of cfg.calendar.anchors) {
     const i = days.findIndex((d) => d.md === a.date)
     if (i < 0 || slots[i] || !data.species[a.dex]) continue
-    const known = all.find((e) => same(e, a))
+    const known = all.find((e) => claims(e, a))
     const area = known ? { areaId: known.areaId, kind: known.kind } : { areaId: raidHomeArea(data, a.dex)?.id, kind: 'special' as const }
     if (!area.areaId) continue
     slots[i] = { dex: a.dex, shiny: a.shiny, areaId: area.areaId, kind: area.kind }
     group[i] = 'anchor'
-    big = big.filter((e) => !same(e, a))
-    pseudo = pseudo.filter((e) => !same(e, a))
-    filler = filler.filter((e) => !same(e, a))
+    big = big.filter((e) => !claims(e, a))
+    pseudo = pseudo.filter((e) => !claims(e, a))
+    filler = filler.filter((e) => !claims(e, a))
   }
   // Seed 0 is the calendar as it was first laid out.
   const rng = createRng(year * 7919 + 17 + seed * 104_729)
@@ -258,7 +279,7 @@ function yearOf(data: GameData, year: number): { plan: RaidDay[]; cal: RaidDay[]
     const cal = plan.map((r, i) => {
       const o = overrides[days[i]!.day]
       if (!o || !data.species[o.dex]) return r
-      const known = all.find((e) => same(e, o))
+      const known = all.find((e) => claims(e, { dex: o.dex, shiny: !!o.shiny }))
       const areaId = known?.areaId ?? raidHomeArea(data, o.dex)?.id
       return areaId ? { dex: o.dex, shiny: !!o.shiny, areaId, kind: known?.kind ?? ('special' as const), manual: true as const } : r
     })

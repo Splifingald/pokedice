@@ -1,5 +1,6 @@
 import { isLegendary } from './breeding'
 import { shuffle } from './deal'
+import { eventOn } from './events'
 import { regionOfArea } from './regions'
 import { drawLoot } from './items'
 import { asSeenBy, gymsFor, type PlayerSide } from './rival'
@@ -106,11 +107,27 @@ function gymEncounter(area: Area, t: Trainer, data: GameData, side?: PlayerSide 
 }
 
 /**
- * The legendary that can be challenged next, if any. Round bosses are due once every round is done; Victory Road style bosses
- * at their team-average threshold, strictly in order. A defeated boss is never re-offered this way.
+ * Progression raids (docs/24) follow the Raid Battles switch (Admin → Events: off, on for the admin, on for everyone),
+ * not the area that opens the day's raid: switched off for a player, a raid boss is a boss fight as before, so nothing
+ * is ever left uncatchable.
  */
-export function dueBoss(area: Area, progress: AreaProgress, teamAvgLevel: number): BossDef | null {
-  for (const b of area.legendaryBoss ?? []) {
+export const progressRaidsOn = (data: GameData): boolean => eventOn(data, 'raid')
+
+/** This boss is fought as a raid in its area once the area is completed, never as a boss. */
+export const isRaidBoss = (data: GameData, b: BossDef): boolean => !!b.raid && progressRaidsOn(data)
+
+/** The bosses an area fights as bosses (its raids left out). */
+export const fightBosses = (area: Area, data: GameData): BossDef[] => (area.legendaryBoss ?? []).filter((b) => !isRaidBoss(data, b))
+
+/** An area's progression raids, in order. */
+export const raidBosses = (area: Area, data: GameData): BossDef[] => (area.legendaryBoss ?? []).filter((b) => isRaidBoss(data, b))
+
+/**
+ * The legendary that can be challenged next, if any. Round bosses are due once every round is done; Victory Road style bosses
+ * at their team-average threshold, strictly in order. A defeated boss is never re-offered this way. Raids aren't bosses.
+ */
+export function dueBoss(area: Area, progress: AreaProgress, teamAvgLevel: number, data: GameData): BossDef | null {
+  for (const b of fightBosses(area, data)) {
     if (progress.bossesDefeated.includes(b.dex)) continue
     if (b.teamAvgThreshold != null) return teamAvgLevel >= b.teamAvgThreshold ? b : null
     return roundsComplete(area, progress) ? b : null
@@ -138,9 +155,12 @@ export const shinyLocked = (data: GameData, dex: number): boolean => isLegendary
 const legendShiny = (b: BossDef, data: GameData, rng?: Rng): boolean =>
   !shinyLocked(data, b.dex) && (!!b.shiny || (!!rng && rollShiny(data, rng)))
 
-/** A legendary beaten earlier that fled the catch. It keeps coming back — one card per encounter deck — until caught. */
-export function fledLegendary(area: Area, progress: AreaProgress, pokedex: readonly number[]): BossDef | null {
-  return (area.legendaryBoss ?? []).find((b) => progress.bossesDefeated.includes(b.dex) && !pokedex.includes(b.dex)) ?? null
+/**
+ * A legendary beaten earlier that fled the catch. It keeps coming back — one card per encounter deck — until caught. A
+ * boss that is now a raid doesn't: its raid is where it's caught.
+ */
+export function fledLegendary(area: Area, progress: AreaProgress, pokedex: readonly number[], data: GameData): BossDef | null {
+  return fightBosses(area, data).find((b) => progress.bossesDefeated.includes(b.dex) && !pokedex.includes(b.dex)) ?? null
 }
 
 const clampLevel = (lv: number, data: GameData) => Math.max(1, Math.min(data.config.maxLevel, Math.round(lv)))
@@ -370,7 +390,7 @@ export function challengeEncounter(
 ): Encounter | null {
   const gym = dueGym(area, progress, data, side)
   if (gym) return gymEncounter(area, gym, data, side)
-  const boss = dueBoss(area, progress, teamAvgLevel)
+  const boss = dueBoss(area, progress, teamAvgLevel, data)
   return boss ? { kind: 'boss', dex: boss.dex, level: boss.level, ...(legendShiny(boss, data, rng) && { shiny: true }) } : null
 }
 
@@ -387,7 +407,7 @@ function findItem(ctx: EncounterContext, rng: Rng): { encounter: Encounter; loot
 }
 
 function returningLegend(ctx: EncounterContext, rng: Rng): Encounter | null {
-  const b = fledLegendary(ctx.area, ctx.progress, ctx.pokedex)
+  const b = fledLegendary(ctx.area, ctx.progress, ctx.pokedex, ctx.data)
   return b ? { kind: 'boss', dex: b.dex, level: b.level, returning: true, ...(legendShiny(b, ctx.data, rng) && { shiny: true }) } : null
 }
 
@@ -401,7 +421,7 @@ const cardEncounter = (card: 'wild' | 'trainer' | 'center' | 'casino', ctx: Enco
         : { kind: 'center', forced: false }
 
 /** The extra card a fled legendary adds to every deck dealt until it's caught. */
-const legendCards = (ctx: EncounterContext): DeckCard[] => (fledLegendary(ctx.area, ctx.progress, ctx.pokedex) ? ['legend'] : [])
+const legendCards = (ctx: EncounterContext): DeckCard[] => (fledLegendary(ctx.area, ctx.progress, ctx.pokedex, ctx.data) ? ['legend'] : [])
 
 function drawFromDeck(ctx: EncounterContext, rng: Rng): EncounterRoll {
   const afterCenter = !!ctx.progress.lastCenter
@@ -488,7 +508,7 @@ function forcedEncounter(ctx: EncounterContext, kind: ForceKind, rng: Rng): Enco
     case 'casino':
       return { kind: 'casino' }
     case 'boss': {
-      const b = (ctx.area.legendaryBoss ?? []).find((x) => !ctx.progress.bossesDefeated.includes(x.dex))
+      const b = fightBosses(ctx.area, ctx.data).find((x) => !ctx.progress.bossesDefeated.includes(x.dex))
       return b ? { kind: 'boss', dex: b.dex, level: b.level, ...(legendShiny(b, ctx.data, rng) && { shiny: true }) } : returningLegend(ctx, rng)
     }
     default:

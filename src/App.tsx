@@ -23,6 +23,7 @@ import { Title } from '@/screens/Title'
 import { UpgradesScreen } from '@/screens/Upgrades'
 import { VersusScreen } from '@/screens/Versus'
 import { EventsScreen } from '@/screens/events/EventsScreen'
+import { ProgressRaidScreen } from '@/screens/events/ProgressRaidScreen'
 import { soundOn } from '@/save/storage'
 import { useGame } from '@/store/game'
 import { startBackgroundServices } from '@/store/sync'
@@ -78,6 +79,7 @@ export function App() {
               <Route path="/friends" element={<FriendsScreen />} />
               <Route path="/versus" element={<VersusScreen />} />
               <Route path="/events/:id" element={<EventsScreen />} />
+              <Route path="/raid/:areaId/:dex" element={<ProgressRaidScreen />} />
               <Route path="/settings" element={<SettingsScreen />} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />

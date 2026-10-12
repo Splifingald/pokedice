@@ -212,6 +212,11 @@ export interface BossDef {
    * appearance rolls the wild odds (`shinyChance`).
    */
   shiny?: boolean
+  /**
+   * A progression raid (docs/24): fought as a raid in this area once the area is completed, never as a boss, and
+   * caught nowhere else here. Only while Raid Battles are switched on for the player; otherwise a boss as before.
+   */
+  raid?: boolean
 }
 
 /** Levels relative to the team average, both ends included: { min: -15, max: -10 } = 15 to 10 levels below. */
@@ -490,7 +495,7 @@ export interface RebattleTier {
   upgradeDelta: number | 'max'
 }
 
-/** A mythical and its lair: the area its raid is fought in front of, and the one to complete to get it. */
+/** A mythical and its lair: its boss area, where its shiny raid of the calendar is fought too. */
 export interface RaidPoolEntry {
   dex: number
   areaId: string
@@ -542,8 +547,13 @@ export interface RaidConfig {
   /** Gifts a helper can get a day, and what they are. */
   helperDailyCap: number
   gifts: { key: string; weight: number }[]
-  /** The mythicals (each a raid of the calendar, never shiny there) and their lairs. */
+  /** The mythicals (each a shiny raid of the calendar, a boss never shiny in its lair) and their lairs. */
   pool: RaidPoolEntry[]
+  /**
+   * Progression raids (docs/24): an area's raid boss, fought there once the area is completed. Its numbers are the
+   * raid's over these: the sides' level cap, and each raid Pokémon's own (level, bars… and its own team cap).
+   */
+  progress: { teamCap: number; perMon?: Record<string, RaidMonRules & { teamCap?: number }> }
   /**
    * The calendar: its fixed dates, the lowest level a shiny filler's area may start at, the seed (by the day it applies
    * from: a new one re-plans only the days after it) and the days set by hand.
@@ -900,6 +910,15 @@ export interface EventsSave {
   raidTeam?: string[]
   /** Raids won, a raid being won when its Pokémon is caught (the server keeps the count the leaderboard shows). */
   raidsWon?: number
+  /** Progression raids caught (docs/24), by key (`areaId:dex`): each closes for good. */
+  raidsDone?: string[]
+  /** The team left on each progression raid, by key: three instance ids from that raid's region's Box. */
+  raidTeams?: Record<string, string[]>
+  /**
+   * The NPC trainers offered on START with empty slots: drawn from this seed for this raid (`daily:YYYY-MM-DD` or a
+   * progression raid's key), so a reload offers the same four; each try draws a new seed.
+   */
+  raidNpc?: { key: string; seed: number }
   /** Live events whose pop-up has been shown (ids). */
   liveSeen?: string[]
   /** Special Shop purchases, per live event id then item key: what counts against each item's limit. */

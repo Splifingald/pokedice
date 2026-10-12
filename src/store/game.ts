@@ -6,6 +6,7 @@ import {
   fitDayCare,
   migrateLeagueII,
   migrateRounds,
+  settleClears,
   payWheelPrize,
   reviveFossils,
   releaseDuplicates,
@@ -144,7 +145,8 @@ const raidId = (): string =>
 function settle(save: SaveData, data: GameData) {
   // Fossils due by now revive first, so they count as the species they are. A save standing in Victory Road II or
   // League II (gone, the Elite Rebattle replaced them) goes back to its League first.
-  const fossils = reviveFossils(migrateRounds(migrateLeagueII(inSlot(save)), data), data, Date.now())
+  // An area that waited only on a boss that is now a progression raid (docs/24) is completed.
+  const fossils = reviveFossils(settleClears(migrateRounds(migrateLeagueII(inSlot(save)), data), data), data, Date.now())
   // More Day Care residents than slots (the Day Cares became one): the extra ones go home before duplicates are seen.
   const fitted = fitDayCare(fossils.save, data, Date.now())
   // Raid catches locked until their area was completed: one completed since joins its region's Box.

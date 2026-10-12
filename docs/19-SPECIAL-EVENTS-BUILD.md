@@ -369,3 +369,24 @@ The day's raid is no longer picked per player: **one raid a UTC day, the same fo
   - Fixed dates and mythicals with their icons and a Pokémon picker; exclusions as icon chips; helpers' gifts; the
     win-rate simulator over the next two weeks, each raid with its own numbers.
 - Tests: `tests/engine/raid-admin.test.ts` (own numbers, seeds, days by hand), `e2e/admin-events.spec.ts`.
+
+### Progression raids (2026-10-12, the user's redesign: docs/24)
+- **Every area boss but the mythicals is a raid** (`BossDef.raid`, 85 of them, `pnpm raid-areas`): fought on its own
+  page (`/raid/:areaId/:dex`) once its area is completed, never as a boss in the area; unlimited tries, closed for good
+  by the catch, which joins that region's Box. With Raid Battles off they are bosses again, as before.
+- **The mythicals are their lairs' bosses again** (never shiny there), and their days of the calendar, fixed dates
+  included, are now **shiny**: flipped together, the calendar keeps its order.
+- **Your team for a raid** comes from that region's Box and **stays on it** (`events.raidTeams`, and
+  `raid_progress_teams` on the server): your friends bring the team they left on that same raid. Helpers' gifts and the
+  leaderboard's raids count as for the day's raid.
+- **The NPC partners pop-up**, both kinds of raid: START with empty friend slots offers four class trainers with three
+  Pokémon each; pick as many as the empty slots. The four come from a seed kept in the save (`events.raidNpc`), so a
+  reload shows the same four; a try started draws a new seed.
+- **Where**: RAID on Home's CONTINUE once the area is completed, the area's details, the Raids page's list (by
+  region), the Pokédex's "where to find".
+- **Old saves**: an area waiting only on a boss that is now a raid is completed on load (`settleClears`); a legendary
+  caught in its boss fight counts as its raid done, and a team can still be left on it for friends.
+- **Admin**: the Raid tick on an area's boss; Events → Raids → **Progression raids** (the team cap, each raid
+  Pokémon's own numbers, by region).
+- Server: `supabase/migrations/0044_progress_raids.sql` (`pnpm progress-raids-sql`), tested in
+  `tests/progress-raids-sql.test.ts`; engine in `tests/engine/progress-raid.test.ts`.

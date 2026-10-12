@@ -11,10 +11,13 @@ import {
   computeDamage,
   confusionRecoil,
   hasStatus,
+  progressRaidOf,
+  raidTeamCap,
   statusesFromRoll,
   usableIn,
   type Battler,
   type RaidEvent,
+  type RaidNpcOption,
 } from '@/engine'
 import { playCry } from '@/audio/cries'
 import { HpBar } from '@/components/HpBar'
@@ -35,14 +38,17 @@ import { effectText } from '@/i18n/text'
 import { useHoldFullscreen } from '@/lib/fullscreen'
 import { useMotion } from '@/lib/motion'
 import { PaceContext } from '@/lib/pace'
+import { avatarOf, playerAvatarId } from '@/lib/avatars'
 import { useGame } from '@/store/game'
 import {
+  emptySlots,
+  ensureNpcOffer,
   leaveRaid,
   raidAct,
+  raidAgain,
   raidCatchShown,
   raidFightOver,
   raidIntroDone,
-  startRaid,
   throwRaidBall,
   useRaidRun,
   type RaidRun,
@@ -54,6 +60,7 @@ import { BattleStage, type StageOverlay } from '../battle/BattleStage'
 import { CatchPanel, catchMessage } from '../battle/CatchPanel'
 import { FoePlate } from '../battle/Plates'
 import { RaidIntro } from './RaidIntro'
+import { RaidNpcPicker } from './RaidNpcPicker'
 import { battlerOf, sideOfUid, useRaidAnimator, type RaidFx } from './raidAnimator'
 
 const BANNER_TONE = {
@@ -676,13 +683,24 @@ function Shards({ color }: { color: string }) {
   )
 }
 
-/** The end of a try: caught (and where it went), fled, or lost. */
+/** The end of a try: caught (and where it went), fled, or lost. Another try asks for NPC partners again (a new four). */
 function RaidResult({ run }: { run: RaidRun }) {
   const { t } = useT()
   const data = useGame((s) => s.data)
+  const save = useGame((s) => s.save)
+  const [offer, setOffer] = useState<RaidNpcOption[] | null>(null)
+  const need = emptySlots(run.friends)
+  const cap =
+    run.source.kind === 'progress' ? raidTeamCap(data, progressRaidOf(data, run.source.key)?.dex ?? run.raid.dex, 'progress') : data.config.events.raid.teamCap
+  const again = (npcs: RaidNpcOption[] = []) => {
+    setOffer(null)
+    if (!raidAgain(npcs)) leaveRaid()
+  }
   const name = run.state.boss.name
   const result = run.catch?.result
   const regionName = (id?: string) => data.regions.find((r) => r.id === id)?.name ?? ''
+  // A progression raid has no midnight: it stays open until caught, and its catch closes it for good.
+  const k = run.source.kind === 'progress' ? 'ui.raid.progress.result' : 'ui.raid.result'
   if (result?.caught)
     return (
       <div className="grid gap-2.5 bg-paper p-3 shadow-card" role="status">
@@ -695,8 +713,8 @@ function RaidResult({ run }: { run: RaidRun }) {
                 region: regionName(run.catch?.region),
               })
             : run.catch?.live
-              ? t('ui.raid.result.here', { name })
-              : t('ui.raid.result.sent', { name, region: regionName(run.catch?.region) })}
+              ? t(`${k}.here`, { name })
+              : t(`${k}.sent`, { name, region: regionName(run.catch?.region) })}
         </p>
         <PixelButton variant="primary" size="lg" className="w-full" onClick={leaveRaid}>
           {t('ui.raid.back')}
@@ -707,15 +725,29 @@ function RaidResult({ run }: { run: RaidRun }) {
   return (
     <div className="grid gap-2.5 bg-paper p-3 shadow-card" role="status">
       <h2 className="m-0 text-[28px] font-normal leading-none">{t(fled ? 'ui.raid.result.fledTitle' : 'ui.raid.result.lostTitle', { name })}</h2>
-      <p className="copy m-0 text-lg">{t(fled ? 'ui.raid.result.fled' : 'ui.raid.result.lost', { name })}</p>
+      <p className="copy m-0 text-lg">{t(fled ? `${k}.fled` : `${k}.lost`, { name })}</p>
       <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] gap-2.5">
         <PixelButton size="lg" onClick={leaveRaid}>
           {t('ui.raid.back')}
         </PixelButton>
-        <PixelButton variant="primary" size="lg" onClick={() => startRaid() || leaveRaid()}>
+        <PixelButton variant="primary" size="lg" onClick={() => (need ? setOffer(ensureNpcOffer(run.source)) : again())}>
           {t('ui.raid.again')}
         </PixelButton>
       </div>
+      {offer && save && (
+        <RaidNpcPicker
+          open
+          offer={offer}
+          need={need}
+          group={[
+            { name: t('ui.raid.you'), look: avatarOf(playerAvatarId(save.player)).src },
+            ...run.friends.map((f) => ({ name: f.name, look: avatarOf(f.avatar).src })),
+          ]}
+          level={cap}
+          onBack={() => setOffer(null)}
+          onStart={again}
+        />
+      )}
     </div>
   )
 }

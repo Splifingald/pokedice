@@ -46,6 +46,13 @@ export function makeData(config: Partial<GameConfig> = {}): GameData {
 
 export const data = makeData()
 
+/**
+ * Raid Battles off: every area boss is fought in its area as before docs/24 (the progression raids switch with the
+ * daily raid). Boss tests read this, so they check the fight a legendary still gets wherever raids are closed.
+ */
+export const RAIDS_OFF = { ...EVENTS_ON, raid: { ...EVENTS_ON.raid, access: 'off' as const } }
+export const bossData = makeData({ events: RAIDS_OFF })
+
 /** Starters the admin made less rare in an area (`areaId/dex` → weight), kept by the live bundle of 2026-10-11. */
 export const TUNED_STARTERS: Record<string, number> = {
   'bec52d1b-4c7c-5503-810a-5d4b8e5336ec/7': 3, // Squirtle on Routes 5 & 6

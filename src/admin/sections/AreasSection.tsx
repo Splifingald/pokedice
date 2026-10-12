@@ -111,6 +111,23 @@ function BossCard({ b, data, onChange, onRemove }: { b: BossDef; data: GameData;
           Always shiny
           <span className="text-sm text-muted">colours only</span>
         </label>
+        <label
+          className="flex flex-wrap items-center gap-2 text-lg"
+          title="A progression raid (docs/24): fought as a raid on its own page once the area is completed, instead of a boss fight in the area. Off while Raid Battles are off."
+        >
+          <input
+            type="checkbox"
+            checked={!!b.raid}
+            onChange={(e) => {
+              // The rest of the boss stays: with Raid Battles off it's fought as before, threshold and all.
+              if (e.target.checked) return onChange({ ...b, raid: true })
+              const { raid: _drop, ...rest } = b
+              onChange(rest)
+            }}
+          />
+          Raid
+          <span className="text-sm text-muted">opens when the area is completed; Lv. and bars from Events → Raids</span>
+        </label>
       </div>
       <PixelButton size="sm" variant="danger" onClick={onRemove}>
         Remove
@@ -277,7 +294,7 @@ function AreaEditor({ area }: { area: Row }) {
       <div className="grid gap-4 2xl:grid-cols-2">
         <Box
           title="Legendary bosses" icon="star"
-          hint="Fought once, can't be fled. One that flees the catch throw comes back through a 'legend' card in later decks."
+          hint="Fought once, can't be fled. One that flees the catch throw comes back through a 'legend' card in later decks. A Raid one is fought on its raid page instead, once the area is completed."
           actions={
             <PixelButton size="sm" onClick={() => setBosses([...bosses, { dex: 144, level: Math.max(1, n(area.max_level, 30)) }])}>
               + legendary

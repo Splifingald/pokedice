@@ -157,6 +157,9 @@ export const saveSchema = z.object({
         .max(500)
         .optional(),
       raidsWon: z.number().int().min(0).optional(),
+      raidsDone: z.array(z.string().max(120)).max(400).optional(),
+      raidTeams: z.record(z.array(z.string().max(80)).max(3)).optional(),
+      raidNpc: z.object({ key: z.string().max(140), seed: z.number().int() }).optional(),
       liveSeen: z.array(z.string().max(80)).max(50).optional(),
       liveBought: z.record(z.record(z.number().int().min(0))).optional(),
       rebattle: z

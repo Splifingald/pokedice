@@ -3,12 +3,12 @@
 // Pokémon joins its home region's Box once its area there is completed, and waits locked until then.
 import { areaProgressAnywhere } from './events'
 import { createInstance } from './progression'
-import { raidOfDay, raidRegion, raidRules } from './raidCalendar'
+import { raidOfDay, raidRegion, raidRules, type RaidKindOf } from './raidCalendar'
 import { regionOf } from './regions'
 import type { GameData, PokemonInstance, RaidLock, SaveData, TodayRaid } from './types'
 
 /** Every Pokémon the player has, in any region (Box, team) or at the Day Care. */
-function everyInstance(save: SaveData): PokemonInstance[] {
+export function everyInstance(save: SaveData): PokemonInstance[] {
   return [
     ...save.box,
     ...Object.values(save.parked ?? {}).flatMap((b) => b?.box ?? []),
@@ -72,11 +72,18 @@ export const raidHomeRegion = (data: GameData, raid: Pick<TodayRaid, 'areaId'>):
 
 /**
  * A raid Pokémon joins a region's Box as a new Pokémon, whatever copies you have: the live save's when it's the region
- * being played (the team takes it if there's room), else that region's parked Box and Pokédex.
+ * being played (the team takes it if there's room), else that region's parked Box and Pokédex. At the level it was
+ * fought at (its own, Admin → Raids, or the default: the day's raid's or a progression raid's numbers).
  */
-function addToRegion(save: SaveData, data: GameData, lock: Omit<RaidLock, 'day'>, now: number, newId: () => string) {
-  // At the level it was fought at (its own, Admin → Raids, or the default).
-  const inst = createInstance(lock.dex, raidRules(data, lock.dex).level, data, newId(), now)
+export function addToRegion(
+  save: SaveData,
+  data: GameData,
+  lock: Omit<RaidLock, 'day'>,
+  now: number,
+  newId: () => string,
+  kind: RaidKindOf = 'daily',
+) {
+  const inst = createInstance(lock.dex, raidRules(data, lock.dex, kind).level, data, newId(), now)
   if (lock.shiny) inst.shiny = true
   const home = raidRegion(data, lock.areaId)
   const block = home === regionOf(save) ? null : save.parked?.[home]
