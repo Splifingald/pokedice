@@ -306,8 +306,8 @@ Players shouldn't have to make many requests:
   Pokédex. The side nav (desktop) has the same entries with Home first. A tab's hit area is the whole column, at
   least 60 px tall, even where the drawing is smaller.
 - **Region cards** (Areas sheet → regions): each region's own picture (`public/region-art/<id>.png`, from the Visual
-  Lab's region prompts; its first area's strip until it has one), name, counts and GO. A tap moves there and closes
-  the sheet.
+  Lab's region prompts; its first area's strip until it has one), name, counts and GO. A tap moves there and shows
+  its areas in the same sheet, from the top (the region you're in just goes back to its areas).
 - **Area screen**: its title opens the area's details (the same sheet as Home's plate, without the travel footer).
   Under the details' name: the levels, the rounds done over the rounds that clear the area ("3/5 rounds"; more can be
   played once it's cleared, "7/5") or "Secret area", and where it stands.

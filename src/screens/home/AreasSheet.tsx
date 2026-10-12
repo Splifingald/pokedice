@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import {
   enabledRegions,
   getRegion,
@@ -178,8 +178,8 @@ function AreaCard({
 }
 
 /**
- * A region the player has reached: its picture, areas, catches and badges, and GO. Tapping it moves there and closes
- * the sheet (the region you're in just closes it).
+ * A region the player has reached: its picture, areas, catches and badges, and GO. Tapping it moves there and shows
+ * its areas, in the same sheet (the region you're in just goes back to its areas).
  */
 function RegionCard({ region, onDone }: { region: Region; onDone: () => void }) {
   const { t } = useT()
@@ -346,6 +346,8 @@ export function AreasSheet({
   const [filter, setFilter] = useState<AreasFilter>(initialFilter)
   const [sort, setSort] = useState<Sort>('route')
   const [view, setView] = useState(initialView)
+  const regionsRef = useRef<HTMLButtonElement>(null)
+  const regionsBody = useRef<HTMLDivElement>(null)
   const region = regionOf(save)
   // Inside a small world the sheet is the world's alone: its name, no Regions view, nothing on offer (docs/21).
   const { inside, world } = useInWorld()
@@ -396,8 +398,18 @@ export function AreasSheet({
     { id: 'catch', label: t('ui.home.sCatch') },
   ]
 
+  // A region card lands on that region's areas from the top, a stale search cleared, and focus stays in the sheet
+  // (on the Regions switch) rather than falling to the page with the card that held it.
+  const showAreas = () => {
+    regionsBody.current?.closest('[role="region"]')?.scrollTo({ top: 0 })
+    setQ('')
+    setView('areas')
+    regionsRef.current?.focus()
+  }
+
   const regionsBtn = (
     <button
+      ref={regionsRef}
       type="button"
       aria-pressed={view === 'regions'}
       onClick={() => setView((v) => (v === 'regions' ? 'areas' : 'regions'))}
@@ -468,16 +480,9 @@ export function AreasSheet({
           <p className="py-4 text-[18px] text-muted">{t('ui.home.noMatch', { q })}</p>
         )
       ) : (
-        <div className="flex flex-col gap-3 pt-1">
+        <div ref={regionsBody} className="flex flex-col gap-3 pt-1">
           {regions.map((r) => (
-            <RegionCard
-              key={r.id}
-              region={r}
-              onDone={() => {
-                setView('areas')
-                onClose()
-              }}
-            />
+            <RegionCard key={r.id} region={r} onDone={showAreas} />
           ))}
           {offer ? (
             <OfferCard region={offer} onStarted={onClose} />
