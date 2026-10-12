@@ -123,6 +123,25 @@ describe('themes', () => {
     expect(contrast(T.good, T['good-pale'])).toBeGreaterThanOrEqual(4.5)
   })
 
+  it('keeps a golden name readable on every surface, in both themes (docs/25)', () => {
+    for (const T of [THEMES.light, THEMES.dark]) {
+      const surfaces = [
+        T.parchment,
+        T.panel,
+        T.paper,
+        T.well,
+        T['well-deep'],
+        T.sky,
+        T.cream,
+        T.sand,
+        T['gold-pale'],
+        T.rose,
+      ]
+      for (const bg of surfaces)
+        expect(contrast(T.rich, bg), `${T.rich} on ${bg}`).toBeGreaterThanOrEqual(4.5)
+    }
+  })
+
   it('draws the dusk frames with the slate outline and a night ground', () => {
     const dark = frameSpecs('dark')
     expect(dark.panel.out).toBe(THEMES.dark.edge)

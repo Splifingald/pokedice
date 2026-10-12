@@ -1,5 +1,6 @@
 // Items: where each one can be used, what the Poké Mart sells, and the per-area loot decks behind item finds.
 import { shuffle } from './deal'
+import { eventOpenTo } from './events'
 import { pityChance } from './pity'
 import type { Rng } from './rng'
 import type { Area, AreaProgress, GameData, ItemDef, LootEntry, RegionId, SaveData } from './types'
@@ -11,7 +12,7 @@ export type ItemUse = 'battle' | 'field' | 'catch'
 
 /**
  * Potions work anywhere; status heals and Ethers only mean something mid-battle (statuses and rerolls reset after it);
- * Rare Candy is used from the Team screen; balls at the catch throw.
+ * Rare Candy, stones and the Link Cable are used from the Team screen; balls and the Bait at the catch throw.
  */
 export function itemUses(item: ItemDef): ItemUse[] {
   switch (item.effect.kind) {
@@ -23,12 +24,23 @@ export function itemUses(item: ItemDef): ItemUse[] {
       return ['battle']
     case 'level':
     case 'stone':
+    case 'link':
       return ['field']
     case 'ball':
+    case 'bait':
       return ['catch']
     case 'fossil':
       return []
   }
+}
+
+/**
+ * An item with a switch of its own (game_config `itemSwitches`, docs/15 §20) is only there for whoever it's switched
+ * on for: off, it isn't sold, found or usable (a bag that holds some keeps them). Items without a switch are always on.
+ */
+export function itemOn(data: GameData, key: string): boolean {
+  const access = data.config.itemSwitches?.[key]
+  return access == null || eventOpenTo(access, data)
 }
 
 export const usableIn = (item: ItemDef | undefined, use: ItemUse): boolean => !!item && itemUses(item).includes(use)
@@ -56,7 +68,7 @@ export function shopStock(
 ): { item: ItemDef; unlocked: boolean }[] {
   const bought = new Set(where.bought ?? [])
   return Object.values(data.items)
-    .filter((i) => i.inShop)
+    .filter((i) => i.inShop && itemOn(data, i.key))
     .filter((i) => !where.region || !i.region || i.region === where.region)
     .filter((i) => !(i.unique && bought.has(i.key)))
     .sort((a, b) => a.shopBadges - b.shopBadges || a.price - b.price || a.name.localeCompare(b.name))
@@ -64,8 +76,13 @@ export function shopStock(
 }
 
 /** Whether the Mart here would sell this item at all, ignoring badges and areas. */
-export function shopSells(item: ItemDef | undefined, save: Pick<SaveData, 'boughtUnique'>, region: RegionId): boolean {
-  if (!item?.inShop) return false
+export function shopSells(
+  item: ItemDef | undefined,
+  save: Pick<SaveData, 'boughtUnique'>,
+  region: RegionId,
+  data?: GameData,
+): boolean {
+  if (!item?.inShop || (data && !itemOn(data, item.key))) return false
   if (item.region && item.region !== region) return false
   return !(item.unique && (save.boughtUnique ?? []).includes(item.key))
 }
@@ -73,7 +90,12 @@ export function shopSells(item: ItemDef | undefined, save: Pick<SaveData, 'bough
 /** Loot still to be found in this area: a unique find already made is gone for good. */
 export function lootPoolFor(area: Area, progress: AreaProgress, data: GameData): LootEntry[] {
   const found = new Set(progress.uniqueFound ?? [])
-  return area.lootPool.filter((e) => e.weight > 0 && (e.itemKey === MONEY || !!data.items[e.itemKey]) && !(e.unique && found.has(e.id)))
+  return area.lootPool.filter(
+    (e) =>
+      e.weight > 0 &&
+      (e.itemKey === MONEY || (!!data.items[e.itemKey] && itemOn(data, e.itemKey))) &&
+      !(e.unique && found.has(e.id)),
+  )
 }
 
 /** Copies of a loot entry in the area's loot deck: its weight (v1.6), at least one; a unique find gets one at most. */

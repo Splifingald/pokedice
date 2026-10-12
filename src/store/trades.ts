@@ -154,7 +154,7 @@ export async function checkTrades(force = false, now = Date.now(), every = CHECK
         const res = applyTaken(
           next,
           st.data,
-          { id: r.id, listed: r.mon, given: r.takerMon, with: r.with },
+          { id: r.id, listed: r.mon, given: r.takerMon, with: r.with, withRich: r.withRich },
           now,
           newId,
         )
@@ -169,7 +169,7 @@ export async function checkTrades(force = false, now = Date.now(), every = CHECK
         const res = applyTake(
           next,
           st.data,
-          { id: r.id, listed: r.mon, given: r.takerMon, with: r.with },
+          { id: r.id, listed: r.mon, given: r.takerMon, with: r.with, withRich: r.withRich },
           now,
           newId,
         )

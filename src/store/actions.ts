@@ -4,7 +4,9 @@ import {
   applyLevelEvolution,
   buyComboUpgrade,
   buyDieUpgrade,
+  buyGeneral,
   buyItem,
+  markGeneralRulesSeen as markGeneralRulesSeenIn,
   sellItem,
   createRng,
   randomSeed,
@@ -22,6 +24,7 @@ import {
   withdrawPokemon,
   type ComboKey,
   type DepositError,
+  type GeneralId,
   type Hatch,
   type Pickup,
   type PokeType,
@@ -136,6 +139,18 @@ export function markEventsSeen(): void {
 }
 
 /** Versus's rules pop-up was shown (or its page opened): it doesn't open by itself again. */
+/** One more level of a General upgrade (docs/25), with the live region's ₽. */
+export function upgradeGeneral(id: GeneralId): boolean {
+  const ok = mutateSave((s) => buyGeneral(s, useGame.getState().data, id))
+  if (!ok) pushToast(t('ui.toast.tooPoor'), 'bad')
+  return ok
+}
+
+/** The General tab's rules have been shown (its pop-up, or the tab opened). */
+export function markGeneralRulesSeen(): void {
+  mutateSave((s) => (s.general?.rulesSeen ? null : markGeneralRulesSeenIn(s)))
+}
+
 export function markVersusRulesSeen(): void {
   mutateSave((s) => (s.versusRulesSeen ? null : { ...s, versusRulesSeen: true }))
 }

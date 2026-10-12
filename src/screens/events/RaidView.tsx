@@ -43,6 +43,7 @@ import { PaceContext, RAID_FAST_SPEED } from '@/lib/pace'
 import { avatarOf, playerAvatarId } from '@/lib/avatars'
 import { setSettings, useGame } from '@/store/game'
 import {
+  answerRaidBait,
   emptySlots,
   ensureNpcOffer,
   leaveRaid,
@@ -53,6 +54,7 @@ import {
   raidIntroDone,
   throwRaidBall,
   useRaidRun,
+  type RaidCatch,
   type RaidRun,
 } from '@/store/raidBattle'
 import { holdReload } from '@/store/sync'
@@ -72,6 +74,7 @@ import { FoePlate } from '../battle/Plates'
 import { RaidIntro } from './RaidIntro'
 import { RaidNpcPicker } from './RaidNpcPicker'
 import { battlerOf, sideOfUid, useRaidAnimator, type RaidFx } from './raidAnimator'
+import { TrainerName } from '@/components/TrainerName'
 
 const BANNER_TONE = {
   super: 'bg-gold text-ink',
@@ -133,7 +136,24 @@ function BossPlate({ b, hp, fx, bars, colors, aimed }: { b: Battler; hp: number;
 }
 
 /** The ally in front: its trainer, level, HP with numbers, statuses, and the side's three Poké Balls. */
-function AllyPlate({ b, hp, owner, mine, team, fx }: { b: Battler; hp: number; owner: string; mine: boolean; team: Battler[]; fx: RaidFx }) {
+function AllyPlate({
+  b,
+  hp,
+  owner,
+  rich,
+  mine,
+  team,
+  fx,
+}: {
+  b: Battler
+  hp: number
+  owner: string
+  /** The friend's golden name ("I am just rich", docs/25). */
+  rich?: boolean
+  mine: boolean
+  team: Battler[]
+  fx: RaidFx
+}) {
   const { t } = useT()
   return (
     <div
@@ -146,9 +166,11 @@ function AllyPlate({ b, hp, owner, mine, team, fx }: { b: Battler; hp: number; o
           className={cx(
             'shrink-0 px-[5px] pb-px font-pixel-sm text-[12px] leading-tight',
             mine ? 'bg-crimson text-paper' : 'bg-[#dde5f0] text-ink',
+            // The light chip keeps a golden name's daylight gold at dusk too.
+            !mine && rich && 'light-scope',
           )}
         >
-          {mine ? t('ui.raid.you') : owner}
+          {mine ? t('ui.raid.you') : <TrainerName name={owner} rich={rich} />}
         </span>
         <b className="min-w-0 truncate text-[18px] font-normal leading-none">{b.name}</b>
         <span className="ml-auto shrink-0 font-pixel-sm text-[15px] leading-none">{t('ui.common.level.short', { n: b.level })}</span>
@@ -380,7 +402,8 @@ export function RaidView({ run }: { run: RaidRun }) {
   // ---- The catch.
   const catching = run.stage === 'catch' && !!run.catch
   const [thrown, setThrown] = useState<StageOverlay | null>(null)
-  const [revealed, setRevealed] = useState(false)
+  // Back on a throw already made (the Bait's question): its result shows at once, with its buttons.
+  const [revealed, setRevealed] = useState(() => !!useRaidRun.getState().run?.catch?.result)
   const catchState = run.catch
     ? {
         dex: run.raid.dex,
@@ -391,23 +414,40 @@ export function RaidView({ run }: { run: RaidRun }) {
         result: run.catch!.result ? { ...run.catch!.result, events: [], pendingCatchId: null } : null,
       }
     : null
+  // A throw a Bait could still save stops with the ball on the ground while the panel asks (docs/25); the answer
+  // plays on from that frame. Raids have no Capture Luck.
+  const catchScene = (r: NonNullable<RaidCatch['result']>, from?: 'ground'): StageOverlay => ({
+    timeline: catchTimeline({
+      own: spriteKey(own.dex, true, own.shiny),
+      foe: spriteKey(st.boss.dex, false, st.boss.shiny),
+      ball: ballOfItem(r.ballKey),
+      caught: r.caught,
+      short: level === 'short',
+      hold: !!r.baitOffer,
+      from,
+      bait: r.baited === 'used',
+    }),
+    ready: Promise.all([loadSprite(own.dex, true, own.shiny), loadSprite(st.boss.dex, false, st.boss.shiny)]),
+    label:
+      r.baited === 'used'
+        ? t('ui.catch.baitThrown', { name: st.boss.name })
+        : t('ui.catch.throwing', { ball: data.items[r.ballKey ?? 'poke-ball']?.name ?? t('ui.catch.aBall') }),
+    hud: { catchResult: () => setRevealed(true) },
+    onEnd: () => setRevealed(true),
+  })
   const onThrow = (ballKey: string | null) => {
     throwRaidBall(ballKey)
     const r = useRaidRun.getState().run?.catch?.result
     if (!r) return
-    setThrown({
-      timeline: catchTimeline({
-        own: spriteKey(own.dex, true, own.shiny),
-        foe: spriteKey(st.boss.dex, false, st.boss.shiny),
-        ball: ballOfItem(r.ballKey),
-        caught: r.caught,
-        short: level === 'short',
-      }),
-      ready: Promise.all([loadSprite(own.dex, true, own.shiny), loadSprite(st.boss.dex, false, st.boss.shiny)]),
-      label: t('ui.catch.throwing', { ball: data.items[r.ballKey ?? 'poke-ball']?.name ?? t('ui.catch.aBall') }),
-      hud: { catchResult: () => setRevealed(true) },
-      onEnd: () => setRevealed(true),
-    })
+    setRevealed(false)
+    setThrown(catchScene(r))
+  }
+  const onBait = (use: boolean) => {
+    answerRaidBait(use)
+    const r = useRaidRun.getState().run?.catch?.result
+    if (!r || r.baitOffer) return
+    setRevealed(false)
+    setThrown(catchScene(r, 'ground'))
   }
 
   // ---- What's around the pair in front.
@@ -449,6 +489,7 @@ export function RaidView({ run }: { run: RaidRun }) {
               b={own}
               hp={fx.hp[own.uid] ?? own.hp}
               owner={st.sides[ownSide]?.owner ?? ''}
+              rich={run.friends.some((f) => f.rich && f.userId === st.sides[ownSide]?.userId)}
               mine={ownSide === 0}
               team={st.sides[ownSide]?.mons ?? []}
               fx={fx}
@@ -539,7 +580,7 @@ export function RaidView({ run }: { run: RaidRun }) {
           {run.stage === 'result' ? (
             <RaidResult run={run} />
           ) : catching && catchState ? (
-            <CatchPanel c={catchState} onThrow={onThrow} revealed={revealed} onContinue={raidCatchShown} />
+            <CatchPanel c={catchState} onThrow={onThrow} revealed={revealed} onContinue={raidCatchShown} onBait={onBait} />
           ) : (
             <>
               {targets.length > 1 && (

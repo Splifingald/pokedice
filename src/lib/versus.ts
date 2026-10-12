@@ -24,6 +24,8 @@ export interface VersusEntry {
   defenseWins: number
   /** The signed-in player has already beaten this version of the team. */
   beaten: boolean
+  /** Their name shines gold ("I am just rich", docs/25). */
+  rich: boolean
 }
 
 export interface RankedVersusEntry extends VersusEntry {
@@ -43,6 +45,8 @@ interface RawEntry {
   attack_wins: number | null
   defense_wins: number | null
   beaten: boolean | null
+  /** Missing on a database that hasn't run 0048_general_upgrades.sql. */
+  rich?: boolean | null
 }
 
 export function parseVersusBoard(raw: RawEntry[]): VersusEntry[] {
@@ -58,6 +62,7 @@ export function parseVersusBoard(raw: RawEntry[]): VersusEntry[] {
     attackWins: Number(r.attack_wins) || 0,
     defenseWins: Number(r.defense_wins) || 0,
     beaten: !!r.beaten,
+    rich: !!r.rich,
   }))
 }
 

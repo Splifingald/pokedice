@@ -93,6 +93,73 @@ const PRESETS: Preset[] = [
     make: (o) =>
       catchTimeline({ own: own(25), foe: foe(133), ball: 'great', caught: o.caught, short: o.short }),
   },
+  // The Bait (docs/25): the throw stops on the ground while the player is asked, then plays on from there.
+  {
+    name: 'Catch: short, held for the Bait',
+    sprites: [
+      [25, true],
+      [133, false],
+    ],
+    make: (o) =>
+      catchTimeline({
+        own: own(25),
+        foe: foe(133),
+        ball: 'great',
+        caught: false,
+        short: o.short,
+        hold: true,
+      }),
+  },
+  {
+    name: 'Catch: the Bait thrown, from the ground',
+    sprites: [
+      [25, true],
+      [133, false],
+    ],
+    make: (o) =>
+      catchTimeline({
+        own: own(25),
+        foe: foe(133),
+        ball: 'great',
+        caught: o.caught,
+        short: o.short,
+        from: 'ground',
+        bait: true,
+      }),
+  },
+  {
+    name: 'Catch: the Bait kept, from the ground',
+    sprites: [
+      [25, true],
+      [133, false],
+    ],
+    make: (o) =>
+      catchTimeline({
+        own: own(25),
+        foe: foe(133),
+        ball: 'great',
+        caught: false,
+        short: o.short,
+        from: 'ground',
+      }),
+  },
+  // Capture Luck (docs/25): it breaks free but stays put for one more throw.
+  {
+    name: 'Catch: broke free but stayed (Capture Luck)',
+    sprites: [
+      [25, true],
+      [133, false],
+    ],
+    make: (o) =>
+      catchTimeline({
+        own: own(25),
+        foe: foe(133),
+        ball: 'great',
+        caught: false,
+        short: o.short,
+        stays: true,
+      }),
+  },
   attack('Flamethrower', 6, 123, 'fire', 'burn'),
   attack('Hydro Pump', 9, 59, 'water', null),
   attack('Razor Leaf', 3, 76, 'grass', 'poison'),

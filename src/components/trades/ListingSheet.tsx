@@ -31,6 +31,7 @@ import { TrainerLook } from '../TrainerLook'
 import { TypeBadge } from '../TypeBadge'
 import { speciesTypes } from '../TypeMatchups'
 import { ShareListingModal, type Shared } from './ShareListing'
+import { NameIn } from '../TrainerName'
 import {
   RegionTag,
   ShinyStar,
@@ -404,7 +405,11 @@ function ListingFlow({
               <span className="flex min-w-0 items-center gap-1.5">
                 <TrainerLook src={avatarOf(l.avatar).src} w={28} h={30} />
                 <b className="truncate text-[19px] font-normal leading-none">
-                  {l.isMe ? t('ui.trades.yours') : t('ui.trades.whose', { name: who })}
+                  {l.isMe ? (
+                    t('ui.trades.yours')
+                  ) : (
+                    <NameIn name={who} rich={l.rich} text={(name) => t('ui.trades.whose', { name })} />
+                  )}
                 </b>
               </span>
               <span className="flex flex-wrap items-center gap-1">

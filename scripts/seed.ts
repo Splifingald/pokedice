@@ -847,7 +847,8 @@ const RETIRED_CONFIG_KEYS = ['regenPercentPerHour']
  * writer, so a re-run never leaves an older one behind), then Trades (0044: it redefines 0039's delete_my_data), the
  * progression raids' tables and functions (0045: its own transaction lines dropped, as this file is one; its content
  * steps are no-ops before the data below), 0046 (a raid's team from its area's region; delete_my_data for trades and
- * raids both) and 0047 (the admin reads the trade listings). Folded into seed.sql so there is one file to run rather than several in a particular order. The
+ * raids both), 0047 (the admin reads the trade listings) and 0048 (the General upgrades, last: it redefines the card
+ * writer and the friends', boards' and trades' functions). Folded into seed.sql so there is one file to run rather than several in a particular order. The
  * migrations stay the single source of that SQL — they are written to be idempotent, so re-running them costs little.
  */
 export async function regionsPrelude(): Promise<string> {
@@ -863,6 +864,7 @@ export async function regionsPrelude(): Promise<string> {
       '0045_progress_raids.sql',
       '0046_progress_raids_worlds.sql',
       '0047_trades_admin_read.sql',
+      '0048_general_upgrades.sql',
     ].map(async (name) => {
       const sql = (await readFile(path.join(ROOT, 'supabase', 'migrations', name), 'utf8')).replace(/^(begin|commit);\n/gm, '')
       return `-- ↓ supabase/migrations/${name}, inlined so this file stands alone.\n${sql}`

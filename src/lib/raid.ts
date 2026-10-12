@@ -12,7 +12,21 @@ export interface RaidFriend {
   team: { dex: number; level: number; shiny: boolean }[]
   /** Times they've helped you catch a raid Pokémon. */
   helped: number
+  /** Their name shines gold ("I am just rich", docs/25). */
+  rich: boolean
 }
+
+type RawFriend = { user_id: string; name: string; avatar: string; team: RaidFriend['team'] | null; helped: number; rich?: boolean | null }
+
+const parseFriend = (r: RawFriend): RaidFriend => ({
+  userId: String(r.user_id),
+  name: r.name || 'Trainer',
+  avatar: avatarOf(r.avatar).id,
+  team: (r.team ?? []).map((m) => ({ dex: Number(m.dex), level: Number(m.level), shiny: !!m.shiny })),
+  helped: Number(r.helped) || 0,
+  // A database before 0048 doesn't say: nobody's is.
+  rich: r.rich === true,
+})
 
 export interface RaidGift {
   id: number
@@ -35,13 +49,7 @@ export async function fetchRaidFriends(): Promise<RaidFriend[] | null> {
   if (!client) return null
   const { data, error } = await client.rpc('raid_friend_teams', realmArgs())
   if (error || !Array.isArray(data)) return null
-  return (data as { user_id: string; name: string; avatar: string; team: RaidFriend['team'] | null; helped: number }[]).map((r) => ({
-    userId: String(r.user_id),
-    name: r.name || 'Trainer',
-    avatar: avatarOf(r.avatar).id,
-    team: (r.team ?? []).map((m) => ({ dex: Number(m.dex), level: Number(m.level), shiny: !!m.shiny })),
-    helped: Number(r.helped) || 0,
-  }))
+  return (data as RawFriend[]).map(parseFriend)
 }
 
 /** Today's raid is caught: the server closes it, counts it, and leaves the friends who helped a gift each. */
@@ -84,13 +92,7 @@ export async function fetchProgressRaidFriends(key: string): Promise<RaidFriend[
   if (!client) return null
   const { data, error } = await client.rpc('raid_progress_friend_teams', { p_key: key, ...realmArgs() })
   if (error || !Array.isArray(data)) return null
-  return (data as { user_id: string; name: string; avatar: string; team: RaidFriend['team'] | null; helped: number }[]).map((r) => ({
-    userId: String(r.user_id),
-    name: r.name || 'Trainer',
-    avatar: avatarOf(r.avatar).id,
-    team: (r.team ?? []).map((m) => ({ dex: Number(m.dex), level: Number(m.level), shiny: !!m.shiny })),
-    helped: Number(r.helped) || 0,
-  }))
+  return (data as RawFriend[]).map(parseFriend)
 }
 
 /** A progression raid's Pokémon is caught: the server counts it once, and the friends who helped get a gift each. */

@@ -1,14 +1,16 @@
 // The catch, in the battle scene: the worn-out foe stays on its platform while the panel offers the balls, each with
 // its chance (catchChance), how many you have, and "not needed" once a weaker one already makes it certain. One throw
-// plays the catch timeline on the stage (BattleView); the die and the result show here as it lands.
+// plays the catch timeline on the stage (BattleView); the die and the result show here as it lands. A throw that fell
+// short with a Bait in the bag asks first (docs/25): its die, its odds, Keep it / Throw the Bait. Capture Luck's second
+// chance ends on Throw again instead of Continue.
 import { useState } from 'react'
-import { ballBonus, catchChance, catchValueOf } from '@/engine'
+import { baitChance, baitFaces, ballBonus, catchChance, catchValueOf } from '@/engine'
 import { Die } from '@/components/Die'
 import { ItemSprite } from '@/components/ItemSprite'
 import { OakTip, useOneTimeTip } from '@/components/OakTip'
 import { PixelButton } from '@/components/PixelButton'
 import { PixelIcon } from '@/components/icons'
-import { t as tr } from '@/i18n'
+import { joinList, t as tr } from '@/i18n'
 import { useT } from '@/i18n/react'
 import { useGame, type RunState } from '@/store/game'
 import { finishCatch } from '@/store/run'
@@ -19,19 +21,28 @@ const CATCH_TIP_KEY = 'pokedice.tip.catch'
 
 type Catch = NonNullable<RunState['catch']>
 
+/** The Bait's die on the panel: its berry's colour, as the stage draws it (art, not a theme colour). */
+const BAIT_COLOR = '#e8506a'
+
 /** What the message box says during the catch. */
 export function catchMessage(c: Catch, name: string, thrown: { revealed: boolean }): string {
   const r = c.result
   if (!r)
-    return tr('ui.catch.wornOut', {
-      who: tr(c.kind === 'boss' ? 'ui.catch.theLegendary' : 'ui.catch.theWild'),
-      name,
-    })
-  if (thrown.revealed)
-    return r.caught
-      ? tr('ui.catch.caught', { name })
-      : tr('ui.catch.missed', { need: Math.max(1, r.need - r.bonus) })
+    return c.retried
+      ? tr('ui.catch.again', { name })
+      : tr('ui.catch.wornOut', {
+          who: tr(c.kind === 'boss' ? 'ui.catch.theLegendary' : 'ui.catch.theWild'),
+          name,
+        })
+  if (thrown.revealed) {
+    if (r.baitOffer) return tr('ui.catch.baitAsk', { name })
+    if (r.caught) return tr('ui.catch.caught', { name })
+    if (r.stays) return tr('ui.catch.stayed', { name })
+    return tr('ui.catch.missed', { need: Math.max(1, r.need - r.bonus - (r.bait ?? 0)) })
+  }
   // Nothing about the result until the ball has finished its wobbles: the die would give it away.
+  if (r.baited === 'used') return tr('ui.catch.baitThrown', { name })
+  if (r.baited === 'kept') return tr('ui.catch.baitKept')
   const data = useGame.getState().data
   return tr('ui.catch.throwing', { ball: data.items[r.ballKey ?? 'poke-ball']?.name ?? tr('ui.catch.aBall') })
 }
@@ -42,6 +53,8 @@ export function CatchPanel({
   onThrow,
   revealed,
   onContinue = finishCatch,
+  onBait,
+  onRetry,
 }: {
   c: Catch
   onThrow: (ballKey: string | null) => void
@@ -49,6 +62,10 @@ export function CatchPanel({
   revealed: boolean
   /** CONTINUE after the throw (a raid has its own result card). */
   onContinue?: () => void
+  /** The answer to the Bait offered after a throw that fell short: thrown, or kept. */
+  onBait?: (use: boolean) => void
+  /** THROW AGAIN, once Capture Luck has kept it on the spot. */
+  onRetry?: () => void
 }) {
   const { t } = useT()
   const data = useGame((s) => s.data)
@@ -80,7 +97,9 @@ export function CatchPanel({
   if (result) {
     // A throw that couldn't miss has no die: only the ball is thrown.
     const certain = catchChance(value, result.bonus) >= 1
-    const total = result.die + result.bonus
+    const total = result.die + result.bonus + (result.bait ?? 0)
+    const bait = result.baitOffer ? data.items[result.baitOffer] : undefined
+    const faces = baitFaces(bait)
     return (
       <>
         <div className="flex min-h-[64px] items-center justify-center gap-2.5 font-pixel text-[24px] leading-none text-ink">
@@ -94,17 +113,52 @@ export function CatchPanel({
                 rollKey="catch-throw"
                 label={t('ui.catch.die', { value: result.die })}
               />
+              {result.bait != null && (
+                <Die
+                  type="base"
+                  color={BAIT_COLOR}
+                  face={{ kind: 'number', value: result.bait }}
+                  size={44}
+                  rollKey="bait-throw"
+                  label={t('ui.catch.baitDie', { value: result.bait })}
+                />
+              )}
               <span aria-hidden>
-                +{result.bonus} = {total} {total >= result.need ? '≥' : '<'} {result.need}
+                +{result.bonus}
+                {result.bait != null && ` +${result.bait}`} = {total} {total >= result.need ? '≥' : '<'}{' '}
+                {result.need}
               </span>
             </>
           )}
         </div>
         <div className="min-h-[56px]">
-          {revealed && (
-            <PixelButton variant="primary" size="lg" className="w-full" onClick={onContinue}>
-              {t('ui.common.continue')}
+          {revealed && result.baitOffer ? (
+            <div className="grid gap-1.5">
+              <p className="m-0 text-center font-pixel-sm text-[16px] leading-tight text-ink">
+                {t('ui.catch.baitOdds', {
+                  faces: joinList(faces.map(String)),
+                  pct: Math.round(baitChance(result, faces) * 100),
+                })}
+              </p>
+              <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] gap-2">
+                <PixelButton size="lg" onClick={() => onBait?.(false)}>
+                  {t('ui.catch.baitKeep')}
+                </PixelButton>
+                <PixelButton variant="primary" size="lg" onClick={() => onBait?.(true)}>
+                  {t('ui.catch.baitThrow', { n: inventory?.[result.baitOffer] ?? 0 })}
+                </PixelButton>
+              </div>
+            </div>
+          ) : revealed && result.stays ? (
+            <PixelButton variant="primary" size="lg" className="w-full" onClick={onRetry}>
+              {t('ui.catch.throwAgain')}
             </PixelButton>
+          ) : (
+            revealed && (
+              <PixelButton variant="primary" size="lg" className="w-full" onClick={onContinue}>
+                {t('ui.common.continue')}
+              </PixelButton>
+            )
           )}
         </div>
       </>

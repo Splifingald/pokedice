@@ -47,6 +47,7 @@ light). The pixel frames and the ground texture are redrawn in the theme's colou
 | `rose` | `#fff2ef` | `#3a1e24` | The red tint behind a warning |
 | `danger` / `danger-light` | `#c4382a` / `#ff8a7a` | `#ff8676` / `#b3352a` | Red **as text**; red text on `bg-ink` |
 | `good` / `good-pale` | `#1d6b43` / `#d8f5e4` | `#72dca0` / `#173628` | Positive text and its chip |
+| `rich` | `#8a5a00` | `#ffbe2e` | A golden name ("I am just rich", §23): 4.5:1 on every surface in both themes |
 
 The same in both themes: `gold` `#ffbe2e`, `accent` `#f2553f` (white on it 3.4:1), `night` `#24304f` (navy that stays
 navy), `crimson` `#c4382a` and `forest` `#1d6b43` (red and green **fills** under white text), `hp-*`, `type-*`
@@ -151,6 +152,7 @@ All live in `src/components/`. Every component, in every state, is on `/kitchen-
 | `FaceDice` / `StatusLines` | What a die does | Its six faces as real dice, value under each; a status face keeps its ring and badge and gets its short name in a chip. One tinted line per status: when it triggers and what it does, with the live numbers (`statusEffects`) |
 | `ItemSprite` | An item's picture | From the item atlas (one request); falls back to the item's own URL for items added since the atlas was built |
 | `PixelIcon` | Every icon | Pixel maps drawn as SVG rects: the Pokémon ones hand-drawn in `icons.tsx` (balls, Pokédex, badges, status symbols), the generic UI ones (coin, heart, shop, trophy, settings…) from the "1-bit Pixel Icons" pack, recoloured into `packIcons.ts` by `scripts/import-icons.ts` (11–16 px squares; the tab bar's on 16×16). Draw them at 12 px or more. One shared palette (`ICON_PALETTE`); a map may have its own (`OWN_PALETTE`) |
+| `TrainerName` / `NameIn` | Another trainer's name anywhere social (§23) | Plain; golden (`rich`: the `rich` token, a sparkle that twinkles, a stepped glint, still under reduced motion). Inline, so `truncate` around it still ends in "…". `NameIn` puts it in a translated sentence ("Misty's"), only the name golden |
 | `RulesModal` / `InfoButton` | A feature's rules: once when it unlocks, then from the blue INFO button at the bottom of its page | The special events' pop-up: its picture as a banner (a NOW OPEN tag on the unlock), 2–4 `RuleList` rows (an icon, a short title, a line with the config's numbers); Later and Let's go! on the unlock, OK from INFO. The Day Care and Versus use it (`FeatureRules.tsx`); the events have their own copies (`EventUnlockPopup`, `EventInfo`), with the same words |
 
 Dialog behaviour (`src/lib/useDialog.ts`, used by `Modal`, `Sheet`, `SidePanel`): focus moves in, **Tab stays inside**,
@@ -226,7 +228,7 @@ motion `off` the stage jumps to the end and still fires every cue, so the screen
 | Timeline | full | short |
 |---|---|---|
 | Attacks: one move per type (Flamethrower, Hydro Pump, Razor Leaf, Thunderbolt, Psychic in `attacks.ts`; Tackle, jabs and a fist, gusts and a wing slash, Sludge Bomb, earth spikes, Rock Slide, a swarm and X-Scissor, Shadow Ball, Metal Claw, Ice Beam, Dragon Breath, Dark Pulse and Crunch, Moonblast in `attacks-types.ts`); a generic impact for typeless dice | the typed move | one generic hit |
-| Catch | throw, beam, drop, wobbles, result | throw and drop, result at once |
+| Catch | throw, beam, drop, wobbles, result; with a Bait to offer it holds on the ball lying still (`hold`) and the answer plays on from that frame (`from: 'ground'`: the Bait tossed beside the ball, a heart, a last wobble; or straight to the break-free); Capture Luck's stay (`stays`): out of the ball, a "!" and two hops, no flight | throw and drop, result at once (the Bait still lands) |
 | Pokémon Center | in its picture (`public/backgrounds/pokemon-center.png`): a ball per team member into the machine's slots, the heal jingle (B G♯ ×3, E) | one flash, healed |
 | Mega Evolution, Gigantamax | the full change | a white flash and the new sprite |
 | Legendary intro, Evolution, Egg hatching, the lab (a partner), a trade | in full | in full |
@@ -370,7 +372,9 @@ Players shouldn't have to make many requests:
   still opens the card). Every drag has a button twin for keyboards and screen readers (Make lead).
 - **Shelves** (the Poké Mart): one row open at a time; an open row shows the description, a ×1 / ×5 / ×10 segmented
   picker and one button that names the total ("Buy ₽500") or what's missing ("Need ₽40 more"). Category chips put the
-  most-used group first (Balls). What isn't sold yet waits under "Coming later" with what it waits for.
+  most-used group first (Balls). What isn't sold yet waits under "Coming later" with what it waits for. The Bait sits
+  with the balls ("Poké Balls & Bait"), the Link Cable with the stones ("Evolution items"); an item switched off in the
+  admin (§20) is not on the shelf at all.
 - **Search resets filters**: typing in a search shows everything that matches (the Pokédex's filter goes back to All).
   A Pokédex number finds any entry; a name only finds what has been caught.
 - **Grey plates** (`#e3e8f0`, `#f1f4f9`) take ink text: muted grey on them is under 4.5:1.
@@ -420,6 +424,15 @@ in view) and the battle history sits beside it from 1024 px.
   certain), the catch math (`d6 + bonus ≥ need`), and one throw. The catch timeline plays; the die and the
   result show together on `catchResult`, never before (the die would spoil the wobbles). A throw that can't miss has
   no die.
+- **The Bait** (docs/25): a throw that fell short, with a Bait in the bag that could still make it, stops with the ball
+  lying still after its wobbles; the die shows with the math (`4 + 1 = 5 < 7`), the message asks "So close! Throw a
+  Bait to tempt Snorlax?", and a line gives the Bait's die and the odds ("The Bait's die (1, 1, 1, 2, 2, 3) adds to
+  your throw: 50% to catch it"). Two buttons: Keep it, and the red THROW BAIT ×2. Thrown, its die (berry pink, smaller)
+  sits beside the catch die and joins the math (`4 + 1 + 2 = 7 ≥ 7`). A hopeless Bait is never offered. Raids and
+  legendaries too.
+- **Capture Luck** (docs/25): a wild Pokémon that broke free may stay: the message says it broke free but didn't run
+  away, the stage shows it back on its platform, and the panel's button is THROW AGAIN (back to the ball picker, "Snorlax
+  is still here! Pick a ball and throw again."). Once per encounter; never a legendary or a raid.
 - **Result cards** rise from the bottom over the panel on every screen size, wild and trainer fights alike, the stage
   still in view: XP per Pokémon, the catch (NEW when
   the species is new to the Pokédex), "Wild battles pay no ₽" when that is why no money came; **Home** and **Next
@@ -578,7 +591,10 @@ Two rules for every feature that adds something players can do (an event, a mode
 - **Its rules, once and on demand**: a rules pop-up (`RulesModal`: its picture as a banner, 2–4 `RuleList` rows with
   the config's numbers, Later / Let's go!) the first time the feature opens for the player (a "seen" flag in the save,
   queued behind the other one-time pop-ups), and an **INFO** button at the bottom of its page that shows the same rules
-  again. The Day Care, Versus, the events, Extreme mode and Trades follow it.
+  again. The Day Care, Versus, the events, Extreme mode, Trades and the General upgrades follow it.
+- **Items with a switch** (`game_config.itemSwitches`, `itemOn`): the Link Cable and the Bait (docs/25). Off: not sold,
+  not found, not usable, never offered; bags keep theirs. An item is explained where it's met (its description in the
+  Mart and the bag; the Bait's die and odds on the catch prompt), so items have no rules pop-up of their own.
 
 ## 21. Trades
 
@@ -677,3 +693,22 @@ on `/kitchen-sink` (`WorldBits`). Every rule and number comes from `engine/world
   why they wait (`WorldAwayPage`), with Back to Kanto.
 - **Closing**: the world gone grey (`WorldByePopup`), once, to whoever played it or saw it open: the mythical kept (or
   "got away"), and that the partner, the world's Pokémon, items and ₽ closed with it.
+
+## 23. The General upgrades and golden names
+
+The Upgrades screen's third tab (docs/25), after Combos and Dice Types, there only while the admin has it on (§20).
+
+- **The tab**: one card each, the combos' and dice' `UpCard`: Capture Luck (10 % a level), Offline earnings (₽2 to
+  ₽11 an hour), I am just rich (one level). The card says what it does now → at the next level ("None → 10% chance",
+  "₽6/h → ₽7/h", "Plain name → Golden name"), the pips, the price button or MAX; "I am just rich" shows the player's
+  own name, golden, as its picture. The note under the tabs says they're for every region. INFO at the bottom.
+- **Its rules pop-up** (`GeneralUnlockPopup`, the Battle Frontier's plaza as its banner): once, from the first badge,
+  queued behind the other one-time pop-ups (the world's and the live event's wait for it); opening the tab counts as
+  seen. Four rows: Capture Luck, Offline earnings, I am just rich, For every region.
+- **While you were away** (`OfflineReportModal`): an absence of an hour or more, between fights: the time away, +₽ on a
+  warm card with the coin, the rate and the cap. Less than an hour: a toast. Inside a small world it waits.
+- **Golden names** (`TrainerName`): the leaderboard (and its Hall of Fame), Versus, friends (list, card, preview), raid
+  friends (setup, the ally plate's owner chip, kept light at dusk with `light-scope`), trades (rows, sheet, scene, Done
+  list), the Day Care's visitors and its friend picker, and the player's own trainer card. The server says who is
+  golden, and only while the switch is on for the one looking. It is decoration: the name is the same words, and a
+  screen reader reads just the name.

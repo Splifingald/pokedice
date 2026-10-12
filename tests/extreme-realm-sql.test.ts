@@ -176,9 +176,11 @@ describe('0039: two saves, two worlds', () => {
       await db.exec(sql(f))
     const overloads = await db.query<{ proname: string; n: number }>(
       `select proname, count(*)::int n from pg_proc
-       where proname in ('leaderboard', 'friend_list', 'friend_status', 'wheel_spin', 'raid_close', 'player_card_write', 'versus_board')
+       where proname in ('leaderboard', 'friend_list', 'friend_status', 'wheel_spin', 'raid_close', 'player_card_write', 'versus_board',
+                         'friend_profile', 'friend_day_cares', 'raid_friend_teams')
        group by proname order by proname`,
     )
+    expect(overloads.rows).toHaveLength(10)
     expect(overloads.rows.every((r) => r.n === 1)).toBe(true)
     expect(names(await as(U.ash, `select * from leaderboard('extreme')`))).toEqual(['ASH-X', 'BROCK-X'])
     // The card trigger writes each save's own realm again.

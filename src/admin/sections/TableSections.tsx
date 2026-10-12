@@ -193,6 +193,8 @@ const EFFECT_DEFAULTS: Record<ItemEffect['kind'], ItemEffect> = {
   rerolls: { kind: 'rerolls', amount: 1 },
   level: { kind: 'level', amount: 1 },
   ball: { kind: 'ball', bonus: 1 },
+  link: { kind: 'link' },
+  bait: { kind: 'bait', faces: [1, 1, 1, 2, 2, 3] },
 }
 
 const describeEffect = (effect: unknown) => {
@@ -216,6 +218,8 @@ function EffectEditor({ value, onDone }: { value: ItemEffect | undefined; onDone
         <option value="fossil">fossil: a Pokémon that revives in the Box</option>
         <option value="stone">evolution stone (Team screen; set the item on the Pokémon's evolution)</option>
         <option value="ball">ball: catch-die bonus</option>
+        <option value="link">link cable: evolves a trade evolution (Team screen)</option>
+        <option value="bait">bait: its die adds to a throw that fell short (six faces)</option>
       </select>
       {draft.kind === 'cure' ? (
         <div className="flex flex-wrap gap-2 text-base">
@@ -232,7 +236,19 @@ function EffectEditor({ value, onDone }: { value: ItemEffect | undefined; onDone
         </div>
       ) : draft.kind === 'revive' ? (
         <NumInput value={draft.percent} min={1} max={100} onChange={(v) => setDraft({ kind: 'revive', percent: v ?? 50 })} />
-      ) : draft.kind === 'stone' ? null : draft.kind === 'fossil' ? (
+      ) : draft.kind === 'stone' || draft.kind === 'link' ? null : draft.kind === 'bait' ? (
+        <div className="flex flex-wrap gap-1 text-base">
+          {draft.faces.map((f, i) => (
+            <NumInput
+              key={i}
+              value={f}
+              min={0}
+              max={12}
+              onChange={(v) => setDraft({ kind: 'bait', faces: draft.faces.map((x, j) => (j === i ? (v ?? 0) : x)) })}
+            />
+          ))}
+        </div>
+      ) : draft.kind === 'fossil' ? (
         <div className="flex flex-col gap-1 text-base">
           <label className="flex items-center gap-1">
             dex <NumInput value={draft.dex} min={1} max={1025} onChange={(v) => setDraft({ ...draft, dex: v ?? 138 })} />

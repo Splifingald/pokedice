@@ -53,6 +53,8 @@ export interface FriendRow {
   isNew: boolean
   /** They have a save in the world being played (Extreme mode, docs/22): else only their name and look. */
   inRealm: boolean
+  /** Their name shines gold ("I am just rich", docs/25). */
+  rich: boolean
 }
 
 /** A friend in a toast or a preview: who they are and nothing more. */
@@ -60,6 +62,8 @@ export interface FriendNotice {
   id: string
   name: string
   avatar: string
+  /** A golden name ("I am just rich", docs/25), where the server says. */
+  rich?: boolean
 }
 
 export interface CardRegion {
@@ -85,6 +89,8 @@ export interface FriendProfile {
   since: number | null
   regions: CardRegion[]
   versus: { team: TeamMon[]; attackWins: number; defenseWins: number } | null
+  /** Their name shines gold ("I am just rich", docs/25). */
+  rich: boolean
 }
 
 export type AddStatus = 'added' | 'already' | 'self' | 'not_found' | 'full' | 'friend_full'
@@ -130,6 +136,8 @@ export function parseFriendList(raw: unknown): FriendRow[] {
     isNew: !!r.is_new,
     // A database before 0039 doesn't say: everyone is in the one world there is.
     inRealm: r.in_realm !== false,
+    // Before 0048, nobody's is.
+    rich: r.rich === true,
   }))
 }
 
@@ -138,6 +146,7 @@ export function parseNotices(raw: unknown): FriendNotice[] {
     id: String(n?.id),
     name: text(n?.name, 'Trainer'),
     avatar: avatarOf(n?.avatar).id,
+    ...(n?.rich === true && { rich: true }),
   }))
 }
 
@@ -179,6 +188,7 @@ export function parseProfile(raw: unknown): FriendProfile | null {
     versus: vs
       ? { team: team(vs.team), attackWins: Number(vs.attackWins) || 0, defenseWins: Number(vs.defenseWins) || 0 }
       : null,
+    rich: r.rich === true,
   }
 }
 
@@ -423,6 +433,8 @@ export interface FriendDayCareRow {
   name: string
   avatar: string
   mons: FriendCareMonRow[]
+  /** Their name shines gold ("I am just rich", docs/25). */
+  rich: boolean
 }
 
 export function parseFriendDayCares(raw: unknown): FriendDayCareRow[] {
@@ -431,6 +443,7 @@ export function parseFriendDayCares(raw: unknown): FriendDayCareRow[] {
       owner: String(r?.owner ?? ''),
       name: text(r?.name, 'Trainer'),
       avatar: avatarOf(r?.avatar).id,
+      rich: r?.rich === true,
       mons: (Array.isArray(r?.day_care) ? r.day_care : [])
         .map((m: Record<string, unknown> | null) => ({
           inst: String(m?.inst ?? ''),

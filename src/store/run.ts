@@ -2,6 +2,11 @@
 import {
   applyCatch,
   areaOpenAt,
+  baitFaces,
+  baitFor,
+  captureLuck,
+  rollBait,
+  type CatchRoll,
   catchWorldMythical,
   emptyProgress,
   applyHp,
@@ -479,18 +484,54 @@ function settleBattle(stalemate: boolean) {
   rollNext()
 }
 
-/** Throw the catch die, with one ball from the bag (or none). The result waits in run.catch until finishCatch(). */
+/**
+ * Throw the catch die, with one ball from the bag (or none). The result waits in run.catch until finishCatch(). A throw
+ * that falls short while the bag holds a Bait that could still make it waits for answerBait() (docs/25).
+ */
 export function throwBall(ballKey: string | null) {
   const { run, save, data } = useGame.getState()
   const c = run.catch
   if (!c || c.result || !save) return
   const ball = ballKey ? data.items[ballKey] : undefined
   if (ballKey && (!ball || ball.effect.kind !== 'ball' || (save.inventory[ballKey] ?? 0) <= 0)) return
-  let next = ballKey ? (consumeItem(save, ballKey) ?? save) : save
+  const next = ballKey ? (consumeItem(save, ballKey) ?? save) : save
   const roll = rollCatch(catchValueOf(data, c.dex), ballBonus(ball), runRng)
+  const bait = baitFor(roll, next, data)
+  if (bait) {
+    commitSave(next)
+    setRun({ catch: { ...c, result: { ...roll, ballKey, events: [], pendingCatchId: null, baitOffer: bait } } })
+    return
+  }
+  settleThrow(next, roll, ballKey)
+}
+
+/** The player's answer to the Bait: thrown, its die adds to the throw; or kept, and the throw stands as it fell. */
+export function answerBait(use: boolean) {
+  const { run, save, data } = useGame.getState()
+  const r = run.catch?.result
+  if (!save || !r?.baitOffer) return
+  const spent = use ? consumeItem(save, r.baitOffer) : null
+  const { ballKey, events: _e, pendingCatchId: _p, baitOffer, stays: _s, baited: _b, ...roll } = r
+  const thrown = spent ? rollBait(roll, baitFaces(data.items[baitOffer]), runRng) : roll
+  settleThrow(spent ?? save, thrown, ballKey, spent ? 'used' : 'kept')
+}
+
+/**
+ * The throw's outcome: caught, or it flees — unless Capture Luck keeps a wild one on the spot for one more throw
+ * (docs/25), once per encounter.
+ */
+function settleThrow(save: SaveData, roll: CatchRoll, ballKey: string | null, baited?: 'used' | 'kept') {
+  const { run, data } = useGame.getState()
+  const c = run.catch
+  if (!c) return
+  let next = save
   let events: RunEvent[] = [{ kind: 'fled', dex: c.dex }]
   let pendingCatchId: string | null = null
-  if (roll.caught) {
+  let stays = false
+  if (!roll.caught) {
+    stays = runRng.next() < captureLuck(next, data, c.kind, !!c.retried)
+    if (stays) events = []
+  } else {
     // A small world's shiny mythical leaves the world at once, for its home region's Box (docs/21).
     const mythical = run.areaId ? catchWorldMythical(next, data, run.areaId, { dex: c.dex, level: c.level }, Date.now(), newId) : null
     if (mythical) {
@@ -504,14 +545,21 @@ export function throwBall(ballKey: string | null) {
     }
   }
   commitSave(next)
-  setRun({ catch: { ...c, result: { ...roll, ballKey, events, pendingCatchId } } })
+  setRun({ catch: { ...c, result: { ...roll, ballKey, events, pendingCatchId, ...(baited && { baited }), ...(stays && { stays }) } } })
+}
+
+/** It broke free but stayed (Capture Luck): back to the ball picker for the second throw. */
+export function retryCatch() {
+  const c = useGame.getState().run.catch
+  if (!c?.result?.stays) return
+  setRun({ catch: { ...c, retried: true, result: null } })
 }
 
 /** Leave the throw for the rewards screen, which now lists the catch (or the flight) too. */
 export function finishCatch() {
   const { run } = useGame.getState()
   const r = run.catch?.result
-  if (!r) return
+  if (!r || r.baitOffer || r.stays) return
   setRun({ phase: 'victory', events: [...run.events, ...r.events], pendingCatchId: r.pendingCatchId, catch: null })
 }
 

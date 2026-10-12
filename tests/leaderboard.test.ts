@@ -20,6 +20,7 @@ const row = (name: string, p: Partial<LeaderboardRow>): LeaderboardRow => ({
   raidsWon: 0,
   progress: {},
   friendId: null,
+  rich: false,
   ...p,
 })
 
@@ -113,8 +114,14 @@ describe('parseLeaderboard', () => {
       { region: null, is_me: null, name: null, character: 'purple', team: null, pokedex: null, max_level: 12, progress: { x: { cleared: true } } },
     ])
     // A row from a database that predates regions reads as Kanto.
-    // …and one from a database without 0032 has no shinies, without 0033 no friends, without 0035 no raids.
-    expect(r).toEqual({ region: 'kanto', isMe: false, name: 'Trainer', avatar: 'red', team: [], pokedex: 0, maxLevel: 12, shinies: 0, raidsWon: 0, progress: { x: { cleared: true, gyms: 0 } }, friendId: null })
+    // …and one from a database without 0032 has no shinies, without 0033 no friends, without 0035 no raids, without
+    // 0048 no golden name.
+    expect(r).toEqual({ region: 'kanto', isMe: false, name: 'Trainer', avatar: 'red', team: [], pokedex: 0, maxLevel: 12, shinies: 0, raidsWon: 0, progress: { x: { cleared: true, gyms: 0 } }, friendId: null, rich: false })
+  })
+
+  it('carries the golden name the server sends', () => {
+    const base = { region: 'kanto', is_me: false, name: 'A', character: 'red', team: [], pokedex: 1, max_level: 5, progress: {} }
+    expect(parseLeaderboard([{ ...base, rich: true }, { ...base, rich: null }]).map((r) => r.rich)).toEqual([true, false])
   })
 
   it('keeps a look from the list and nothing else', () => {

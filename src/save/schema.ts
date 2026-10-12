@@ -226,6 +226,17 @@ export const saveSchema = z.object({
     .optional(),
   extremeUnlockedAt: z.number().optional(),
   extremeRulesSeen: z.boolean().optional(),
+  // The General upgrades (docs/25): their levels and the offline earnings' clock.
+  general: z
+    .object({
+      luck: z.number().int().min(0).max(100).optional(),
+      offline: z.number().int().min(0).max(100).optional(),
+      rich: z.boolean().optional(),
+      awayFrom: z.number().optional(),
+      carry: z.number().min(0).max(1).optional(),
+      rulesSeen: z.boolean().optional(),
+    })
+    .optional(),
   trades: z
     .object({
       out: z
@@ -251,6 +262,7 @@ export const saveSchema = z.object({
             at: z.number(),
             role: z.enum(['poster', 'taker']),
             with: z.string().max(40),
+            withRich: z.boolean().optional(),
             gave: tradeMonSchema,
             got: tradeMonSchema,
             evolvedTo: z.number().int().min(1).optional(),
