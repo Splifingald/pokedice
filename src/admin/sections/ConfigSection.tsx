@@ -6,22 +6,22 @@ import {
   extremeRules,
   isDonationUrl,
   enabledRegions,
+  pityMultiplier,
   slotOdds,
   slotReturnPerSpin,
-  uniquePityMultiplier,
   xpToNext,
   type DayCareConfig,
   type DonationConfig,
   type EnergyConfig,
   type ExtremeConfig,
   type GameConfig,
+  type PityConfig,
   type SlotMachineConfig,
   type SlotOutcomeKey,
   type StatusRules,
   type TradeConfig,
-  type UniquePityConfig,
 } from '@/engine'
-import { PixelIcon } from '@/components/icons'
+import { PixelIcon, type IconName } from '@/components/icons'
 import { PixelButton } from '@/components/PixelButton'
 import { SpriteImg } from '@/components/SpriteImg'
 import { cx } from '@/theme/util'
@@ -148,17 +148,24 @@ function EnergyBox() {
   )
 }
 
-/** Pity for once-only finds: their odds climb with the rounds a player has done in the area. */
-function UniquePityBox() {
-  const [raw, setRaw] = useConfigRow('uniquePity')
-  const cfg: UniquePityConfig = { ...DEFAULT_CONFIG.uniquePity, ...raw }
-  const set = (patch: Partial<UniquePityConfig>) => setRaw({ ...cfg, ...patch })
+/** A pity: what a player hasn't got from an area yet climbs in odds with the rounds they have done there. */
+function PityBox({
+  configKey,
+  title,
+  icon,
+  hint,
+}: {
+  configKey: 'uniquePity' | 'newPokemonPity'
+  title: string
+  icon: IconName
+  hint: string
+}) {
+  const [raw, setRaw] = useConfigRow(configKey)
+  const cfg: PityConfig = { ...DEFAULT_CONFIG[configKey], ...raw }
+  const set = (patch: Partial<PityConfig>) => setRaw({ ...cfg, ...patch })
   const mid = Math.round((cfg.startRounds + cfg.fullRounds) / 2)
   return (
-    <Box
-      title="Once-only finds — pity" icon="crown"
-      hint="The more rounds a player has done in an area, the likelier its once-only finds (Areas → Loot): × their odds per item find, never past 100 %."
-    >
+    <Box title={title} icon={icon} hint={hint}>
       <div className="grid gap-3 sm:grid-cols-3">
         <Field label="Starts after (rounds)" hint="×1 up to here">
           <NumInput min={0} value={cfg.startRounds} onChange={(v) => set({ startRounds: Math.max(0, v ?? 5) })} />
@@ -172,7 +179,7 @@ function UniquePityBox() {
       </div>
       <p className="text-lg">
         {[cfg.startRounds, mid, cfg.fullRounds]
-          .map((r) => `${r} rounds ×${uniquePityMultiplier(r, cfg).toFixed(1)}`)
+          .map((r) => `${r} rounds ×${pityMultiplier(r, cfg).toFixed(1)}`)
           .join(' · ')}
       </p>
     </Box>
@@ -864,7 +871,19 @@ export function ConfigSection() {
 
       <EnergyBox />
 
-      <UniquePityBox />
+      <PityBox
+        configKey="uniquePity"
+        title="Once-only finds — pity"
+        icon="crown"
+        hint="The more rounds a player has done in an area, the likelier its once-only finds (Areas → Loot): × their odds per item find, never past 100 %."
+      />
+
+      <PityBox
+        configKey="newPokemonPity"
+        title="New Pokémon — pity"
+        icon="ball"
+        hint="The more rounds a player has done in an area, the likelier its wild Pokémon they haven't caught (Areas → Wild pool): × their odds per wild Pokémon, never past 100 %."
+      />
 
       <DonationBox />
 

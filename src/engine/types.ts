@@ -691,7 +691,9 @@ export interface GameConfig {
   /** Arceus, Silvally and Ogerpon can each change type this many times per battle (the TYPE menu). */
   formChangesPerBattle: number
   /** Once-only finds get likelier the more rounds a player has done in their area. */
-  uniquePity: UniquePityConfig
+  uniquePity: PityConfig
+  /** Wild Pokémon not caught yet get likelier the more rounds a player has done in their area. */
+  newPokemonPity: PityConfig
   /** The special events (docs/18): one game_config row for all of them. */
   events: EventsConfig
   /** The Elite Rebattle's trainers, per region and tier (a row of its own, written by scripts/rebattle-teams.ts). */
@@ -802,10 +804,11 @@ export interface ExtremeConfig {
 }
 
 /**
- * Pity for an area's once-only finds: past `startRounds` rounds done there, the chance that an item find is one of them
+ * Pity for what a player hasn't got from an area yet: past `startRounds` rounds done there, the chance that an item
+ * find is one of its once-only finds (`uniquePity`), or that a wild Pokémon is one not caught yet (`newPokemonPity`),
  * rises linearly to `maxMultiplier` × its usual odds at `fullRounds`, and stays there. It never passes 100 %.
  */
-export interface UniquePityConfig {
+export interface PityConfig {
   /** Rounds done in the area before the odds start to rise (×1 up to here). */
   startRounds: number
   /** Rounds done at which the odds reach `maxMultiplier`. */

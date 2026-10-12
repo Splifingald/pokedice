@@ -6,8 +6,8 @@ import {
   deckCounts,
   isWorldRegion,
   lootCopies,
+  pityChance,
   trainerSpecialty,
-  uniqueFindChance,
   type BattleBackground,
   type BossDef,
   type DeckCounts,
@@ -174,11 +174,21 @@ function AreaEditor({ area }: { area: Row }) {
   // Once-only finds share the pity's boost (game_config.uniquePity) by their copies: their odds once it is full.
   const pity = data.config.uniquePity
   const uniqueCopies = lootHere.reduce((sum, l) => sum + (l.unique_find ? copiesOf(l) : 0), 0)
-  const fullPity = uniqueCopies ? uniqueFindChance(uniqueCopies / lootTotal, pity.fullRounds, pity) / uniqueCopies : 0
+  const fullPity = uniqueCopies ? pityChance(uniqueCopies / lootTotal, pity.fullRounds, pity) / uniqueCopies : 0
   const perFind = (l: Row) =>
     l.unique_find && pity.maxMultiplier > 1 && copiesOf(l)
       ? `${pct(copiesOf(l) / lootTotal)} → ${pct(copiesOf(l) * fullPity)}`
       : pct(copiesOf(l) / lootTotal)
+  // A wild Pokémon's odds depend on what the player has caught: shown for the last one of the area not caught yet, its
+  // species' rows sharing the pity's boost (game_config.newPokemonPity) by weight, once it is full.
+  const newPity = data.config.newPokemonPity
+  const ofWild = (r: Row) => {
+    const share = n(r.weight) / wildWeight
+    const species = wildHere.reduce((sum, w) => sum + (n(w.dex) === n(r.dex) ? n(w.weight) : 0), 0) / wildWeight
+    return newPity.maxMultiplier > 1 && share > 0 && species < 1
+      ? `${pct(share)} → ${pct((pityChance(species, newPity.fullRounds, newPity) * share) / species)}`
+      : pct(share)
+  }
 
   return (
     <div className="flex flex-col gap-4">
@@ -463,7 +473,7 @@ function AreaEditor({ area }: { area: Row }) {
               key: 'share',
               label: 'Of wild cards',
               readOnly: true,
-              render: (r) => pct(n(r.weight) / wildWeight),
+              render: ofWild,
             },
             {
               key: 'chance',
@@ -473,6 +483,13 @@ function AreaEditor({ area }: { area: Row }) {
             },
           ]}
         />
+        {newPity.maxMultiplier > 1 && (
+          <p className="text-base text-muted">
+            The Pokémon a player hasn't caught get likelier with the rounds they have done here (Config →
+            pity): Of wild cards shows the usual odds → the odds from {newPity.fullRounds} rounds on, for the
+            last one not caught.
+          </p>
+        )}
       </Box>
 
       <Box title="Trainer pool" icon="user" hint={`When a Trainer card is drawn, one of these is picked by weight. ${deck.trainer} Trainer card(s) per deck.`}>
