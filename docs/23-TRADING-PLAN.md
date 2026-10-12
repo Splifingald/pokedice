@@ -1,8 +1,9 @@
 # Trading: plan
 
-Status: **validated** (2026-10-12): questions → this plan → Visual Lab mockups (`design/visual-lab/trades.js`, Home tab,
+Status: **built** (2026-10-12): questions → this plan → Visual Lab mockups (`design/visual-lab/trades.js`, Home tab,
 "Trades" preview bar) → validation (§7, answered: §7c overrides the rest of this page where they differ) →
-integration. Built on `feature/version_2`; the migration is **0044** (0040–0043 were taken meanwhile).
+integration (§9 says what was built and where it differs). Built on `feature/version_2`; the migration is **0044**
+(0040–0043 were taken meanwhile). It ships **Off**: see the hand-over at the end of §8.
 
 Players trade Pokémon through **listings**, like the games' GTS: you put up one of your Pokémon, say what you want for
 it, and anyone allowed to see the listing can take it while you're away. Everything is asynchronous.
@@ -354,3 +355,33 @@ running out, a shared link (as a friend, signed out, Friends only), the trade sc
 
 **Hand-over for live** (when it ships): run 0044 (GitHub links then), deploy, switch Trades to On for admin to try it on
 live, then On for everyone.
+
+## 9. As built
+
+| Part | Where |
+|---|---|
+| Rules, levels, landing, outcomes, applying once | `src/engine/trade.ts` (+ `isTradeEvolution` / `tradeEvolutionOf` in `progression.ts`), `tests/engine/trade.test.ts` |
+| Config and save | `trade` in `engine/defaults.ts` and `types.ts`; `trades` in the save schema |
+| Server | `supabase/migrations/0044_trades.sql`, inlined in `seed.sql`; `tests/trades-sql.test.ts` (PGlite) |
+| Client | `src/lib/trades.ts` (calls, parsing, errors, the link kept a week), `src/store/trades.ts` (post, take, cancel, the board's cache, the check, the scene), `tests/trades-client.test.ts` |
+| Screens | `src/screens/Trades.tsx` (`/trades`), `src/screens/TradeLink.tsx` (`/t/:code`), `src/components/trades/*` (docs/15 §21), the menu row, TRADE on a Pokémon's sheet, "Their trades" on a friend's card, trade evolutions on the sheet and in the Pokédex |
+| Scene | `tradeTimeline` in `src/fx/timelines/moments.ts` (ported from the lab's), its sounds `trade.*` in `src/audio/sfx.ts` |
+| Admin | Config → Trades (the switch, the numbers, the trade-evolution and never-traded lists); Admin → Trades (open listings, Remove) |
+| End to end | `e2e/trades.spec.ts`: the rules once, a poster posting and finding it taken, a taker trading from the board, a guest, a shared link, the switch off; all on a phone |
+
+What differs from the sections above, or wasn't in them:
+
+- **The check waits for the sign-in's sync** (`syncSettled`): a trade is never applied to a save that is about to
+  give way to the cloud copy. It runs again on return to the tab, at most every 5 minutes; with the switch off it
+  still runs for a player who has traded, so nothing listed is stranded.
+- **A friend's card** reads `trade_board(p_owner => …)`: the board function has an owner filter, so the card shows
+  every open listing of theirs you may see, not just those among the board's first 50.
+- **"New for me"** and NEW mean the Pokédex of the region it would land in (`newForTrade`).
+- **The day's cap** is shown from the save's log (the trades taken since midnight UTC); the server counts too and
+  has the last word.
+- **The picker and the confirm** come from `previewTake` (the trade worked out on a copy of the save), so what they
+  promise is what `applyTake` then does.
+- **Strings**: `ui.trades.*`, `ui.rules.tr.*`, two `ui.time.*` and four evolution lines, in all ten languages.
+- **A friends-only listing opened by a non-friend** says "Only Sora's friends can take it" with a button to the
+  Friends page, not ADD SORA: adding a friend takes their friend ID, which a listing doesn't carry. The listing's
+  sheet has no "Their card" button either; a friend's card lists their trades instead.

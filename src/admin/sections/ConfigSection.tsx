@@ -18,9 +18,11 @@ import {
   type SlotMachineConfig,
   type SlotOutcomeKey,
   type StatusRules,
+  type TradeConfig,
   type UniquePityConfig,
 } from '@/engine'
 import { PixelIcon } from '@/components/icons'
+import { PixelButton } from '@/components/PixelButton'
 import { SpriteImg } from '@/components/SpriteImg'
 import { cx } from '@/theme/util'
 import { DataTable } from '../DataTable'
@@ -333,6 +335,122 @@ function ExtremeBox() {
           playing: never.{!cfg.centers && ' No Pokémon Center is ever dealt.'}
         </p>
       )}
+    </Box>
+  )
+}
+
+/**
+ * Trades (docs/23): the three-way switch, the numbers, the trade evolutions (a pair taken off evolves by level again)
+ * and the species that can never be traded (the Ultra Beasts; legendaries and mythicals always are out).
+ */
+function TradesBox() {
+  const data = useAdminData()
+  const [raw, setRaw] = useConfigRow('trade')
+  const cfg: TradeConfig = { ...DEFAULT_CONFIG.trade, ...(raw ?? {}) }
+  const set = (patch: Partial<TradeConfig>) => setRaw({ ...cfg, ...patch })
+  const [from, setFrom] = useState<number | null>(null)
+  const [to, setTo] = useState<number | null>(null)
+  const [out, setOut] = useState<number | null>(null)
+  const num = (k: 'maxListings' | 'listingDays' | 'tradesPerDay' | 'levelCap' | 'minBadges', min = 0, max?: number) => (
+    <NumInput min={min} max={max} value={cfg[k]} onChange={(v) => set({ [k]: Math.max(min, Math.min(max ?? Infinity, v ?? min)) })} />
+  )
+  const name = (dex: number) => data?.species[dex]?.name ?? `#${dex}`
+  return (
+    <Box
+      title="Trades" icon="trade"
+      hint="Listings, like the games' GTS: a player puts a Pokémon up and says what they want; anyone allowed takes it while they're away. The server checks the switch too."
+    >
+      <div className="flex flex-wrap items-center gap-3">
+        <span className="text-lg">Who can trade</span>
+        <AccessSwitch value={cfg.access ?? 'off'} onChange={(access) => set({ access })} label="Trades: who can trade" />
+        <span className="text-base text-muted">
+          {cfg.access === 'all'
+            ? 'Open to every signed-in player with enough badges.'
+            : cfg.access === 'admin'
+              ? 'Only you see it (to try it first). Players see nothing yet.'
+              : 'Off: no row, no pop-up, no link that works. Open listings still end and come back.'}
+        </span>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-5">
+        <Field label="Open listings at most" hint="per player">{num('maxListings', 1, 20)}</Field>
+        <Field label="A listing lasts (days)" hint="then its Pokémon comes back">{num('listingDays', 1, 30)}</Field>
+        <Field label="Trades taken a day" hint="per player, UTC days">{num('tradesPerDay', 1, 100)}</Field>
+        <Field label="Level cap" hint="traded Pokémon arrive at most at">{num('levelCap', 1, 100)}</Field>
+        <Field label="Badges needed" hint="every region's counted">{num('minBadges', 0, 100)}</Field>
+      </div>
+      <div className="grid gap-2">
+        <span className="text-lg">Evolve when traded (never by level)</span>
+        <ul className="m-0 flex list-none flex-wrap gap-1.5 p-0">
+          {cfg.evolveOnTrade.map(([a, b], i) => (
+            <li key={`${a}-${b}`} className="flex items-center gap-1 bg-paper py-0.5 pl-2 pr-1 shadow-ring-line">
+              <span className="text-base">
+                {name(a)} → {name(b)}
+              </span>
+              <button
+                type="button"
+                className="grid h-7 w-7 place-items-center text-lg"
+                aria-label={`Remove ${name(a)} → ${name(b)}`}
+                onClick={() => set({ evolveOnTrade: cfg.evolveOnTrade.filter((_, j) => j !== i) })}
+              >
+                ✕
+              </button>
+            </li>
+          ))}
+        </ul>
+        {data && (
+          <div className="flex flex-wrap items-center gap-2">
+            <PokemonPicker data={data} value={from} onChange={setFrom} className="w-56" />
+            <span aria-hidden>→</span>
+            <PokemonPicker data={data} value={to} onChange={setTo} className="w-56" />
+            <PixelButton
+              size="sm"
+              disabled={!from || !to || cfg.evolveOnTrade.some(([a]) => a === from)}
+              onClick={() => {
+                if (!from || !to) return
+                set({ evolveOnTrade: [...cfg.evolveOnTrade, [from, to]] })
+                setFrom(null)
+                setTo(null)
+              }}
+            >
+              Add
+            </PixelButton>
+          </div>
+        )}
+      </div>
+      <div className="grid gap-2">
+        <span className="text-lg">Never traded (besides legendaries and mythicals)</span>
+        <ul className="m-0 flex list-none flex-wrap gap-1.5 p-0">
+          {cfg.exclude.map((d) => (
+            <li key={d} className="flex items-center gap-1 bg-paper py-0.5 pl-2 pr-1 shadow-ring-line">
+              <span className="text-base">{name(d)}</span>
+              <button
+                type="button"
+                className="grid h-7 w-7 place-items-center text-lg"
+                aria-label={`Remove ${name(d)}`}
+                onClick={() => set({ exclude: cfg.exclude.filter((x) => x !== d) })}
+              >
+                ✕
+              </button>
+            </li>
+          ))}
+        </ul>
+        {data && (
+          <div className="flex flex-wrap items-center gap-2">
+            <PokemonPicker data={data} value={out} onChange={setOut} className="w-56" />
+            <PixelButton
+              size="sm"
+              disabled={!out || cfg.exclude.includes(out)}
+              onClick={() => {
+                if (!out) return
+                set({ exclude: [...cfg.exclude, out].sort((a, b) => a - b) })
+                setOut(null)
+              }}
+            >
+              Add
+            </PixelButton>
+          </div>
+        )}
+      </div>
     </Box>
   )
 }
@@ -757,6 +875,8 @@ export function ConfigSection() {
       <DayCareBox />
 
       <ExtremeBox />
+
+      <TradesBox />
 
       <StatusRulesBox />
 
