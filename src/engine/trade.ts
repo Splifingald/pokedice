@@ -251,18 +251,18 @@ export function ownedForTrades(save: SaveData, data: GameData): { has: Set<numbe
 
 export function tradeSnapshot(save: SaveData, data: GameData): TradeSnapshot {
   const { has, shiny } = ownedForTrades(save, data)
+  return { ...encodeDexSet(has), shiny: [...shiny].sort((a, b) => a - b), regions: tradeRegions(save, data) }
+}
+
+/** A set of dex numbers as a snapshot keeps it: the bitset under 2048, the rest listed. */
+export function encodeDexSet(dex: Iterable<number>): Pick<TradeSnapshot, 'has' | 'forms'> {
   const bytes = new Uint8Array(BITSET_MAX / 8)
   const forms: number[] = []
-  for (const d of has) {
+  for (const d of dex) {
     if (d < BITSET_MAX) bytes[d >> 3]! |= 1 << (d & 7)
     else forms.push(d)
   }
-  return {
-    has: toBase64(bytes),
-    forms: forms.sort((a, b) => a - b),
-    shiny: [...shiny].sort((a, b) => a - b),
-    regions: tradeRegions(save, data),
-  }
+  return { has: toBase64(bytes), forms: forms.sort((a, b) => a - b) }
 }
 
 /** Does the snapshot's owner have this species in the Box it would land in? */

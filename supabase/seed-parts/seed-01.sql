@@ -2191,6 +2191,531 @@ drop trigger if exists saves_throttle on saves;
 create trigger saves_throttle before update on saves
   for each row execute function saves_throttle();
 
+-- ↓ supabase/migrations/0044_trades.sql, inlined so this file stands alone.
+-- Trades (docs/23-TRADING-PLAN.md): players trade Pokémon through listings, like the games' GTS. A save is written only
+-- by its owner, so a trade is a server inbox, like raid gifts: the server holds each listing and decides who got there
+-- first, and each player's game applies its own half (src/engine/trade.ts), records the trade's id in its save, pushes
+-- it, then says so here (trade_applied). A tab that dies in between gets the trade again on its next check, and the
+-- save already says it's done: a trade is applied exactly once.
+--
+-- 1. game_config `trade`: the switch (Off / On for admin / On for everyone, off by default: docs/15 §20) and the
+--    numbers, inserted only if missing so seeding never clobbers the admin's.
+-- 2. trade_listings: one row per listing, from posted to applied on both sides. No direct access; the functions below.
+-- 3. trade_post / trade_take read the Pokémon from the player's own cloud save (pushed just before, as Versus does:
+--    what the page sends isn't trusted), check every rule, and write the listing. trade_take takes it with one locked
+--    update, so two takers can't both win.
+-- 4. trade_cancel, trade_board (public + friends' listings, guests: the four newest public ones), trade_view (one
+--    listing by its link, guests too, rate-limited like friend_lookup), trade_mine (the check on load / return: open
+--    listings and trades still to apply), trade_applied, trade_remove (the admin).
+-- 5. delete_my_data: open listings go; a taken trade still owed to the other player keeps their Pokémon, without your
+--    name. Rows done on both sides go 30 days later (trade_mine tidies its caller's).
+--
+-- The main save only: Extreme mode stays a solo challenge (p_realm must be 'main'). Run after 0043; safe to run again.
+-- seed.sql inlines it (scripts/seed.ts), after 0040.
+
+-- ---------------------------------------------------------------- 1. the switch and the numbers
+
+-- The game's defaults (engine/defaults.ts; tests/trades-sql.test.ts keeps the two the same).
+insert into game_config (key, value) values ('trade', '{
+  "access": "off", "maxListings": 4, "listingDays": 3, "tradesPerDay": 5, "levelCap": 50, "minBadges": 2,
+  "evolveOnTrade": [[64,65],[67,68],[75,76],[10110,10111],[93,94],[525,526],[533,534],[588,589],[616,617],[708,709],[710,711]],
+  "exclude": [793,794,795,796,797,798,799,803,804,805,806]
+}'::jsonb)
+on conflict (key) do nothing;
+
+-- The admin's row over the defaults: a key the row lacks keeps its default.
+create or replace function trade_cfg()
+returns jsonb
+language sql stable security definer set search_path = public as $$
+  select '{"access": "off", "maxListings": 4, "listingDays": 3, "tradesPerDay": 5, "levelCap": 50, "minBadges": 2,
+           "exclude": [793,794,795,796,797,798,799,803,804,805,806]}'::jsonb
+         || coalesce((select value from game_config where key = 'trade' and jsonb_typeof(value) = 'object'), '{}'::jsonb)
+$$;
+
+-- The switch, as wheel_spin reads its own: on for everyone, or for the admin only.
+create or replace function trade_open()
+returns boolean
+language sql stable security definer set search_path = public as $$
+  select coalesce(trade_cfg() ->> 'access', 'off') = 'all' or (trade_cfg() ->> 'access' = 'admin' and is_admin())
+$$;
+
+-- Never traded: legendaries and mythicals (src/data/egg-groups.json's `l: 1`; the test keeps the two the same), the
+-- admin's list (the Ultra Beasts), and every form but a regional one.
+create or replace function trade_untradable(p_dex int)
+returns boolean
+language sql stable security definer set search_path = public as $$
+  select p_dex = any ('{
+    144,145,146,150,151,243,244,245,249,250,251,377,378,379,380,381,382,383,384,385,386,480,481,482,483,484,485,
+    486,487,488,489,490,491,492,493,494,638,639,640,641,642,643,644,645,646,647,648,649,716,717,718,719,720,721,
+    772,773,785,786,787,788,789,790,791,792,800,801,802,807,808,809,888,889,890,891,892,893,894,895,896,897,898,
+    905,1001,1002,1003,1004,1007,1008,1014,1015,1016,1017,1024,1025,10007,10043,10044,10062,10063,10075,10077,
+    10078,10079,10120,10157,10169,10170,10171,10208,10226,10273,10274,10275,10311,10312,10317,10319,20001,20002,
+    20003,20004,20005,20006,20007,20008,20009,20010,20011,20012,20013,20014,20015,20016,20017,20101,20102,20103,
+    20104,20105,20106,20107,20108,20109,20110,20111,20112,20113,20114,20115,20116,20117
+  }'::int[])
+  or exists (select 1 from jsonb_array_elements_text(coalesce(trade_cfg() -> 'exclude', '[]')) e where e = p_dex::text)
+  or exists (select 1 from pokemon p where p.dex = p_dex and p.form is not null and coalesce(p.form ->> 'kind', '') <> 'regional')
+$$;
+
+-- The region a species belongs to, where a traded Pokémon lands (engine/regions.ts regionOfSpecies): a form's own
+-- region, else its species'; else the region whose dex range covers it.
+create or replace function trade_home_region(p_dex int, p_depth int default 0)
+returns text
+language plpgsql stable security definer set search_path = public as $$
+declare
+  f jsonb;
+begin
+  select p.form into f from pokemon p where p.dex = p_dex;
+  if f is not null and jsonb_typeof(f) = 'object' then
+    if coalesce(f ->> 'region', '') <> '' then return f ->> 'region'; end if;
+    if (f ->> 'of')::int is distinct from p_dex and p_depth < 3 then
+      return trade_home_region((f ->> 'of')::int, p_depth + 1);
+    end if;
+    return null;
+  end if;
+  return (select r.id from regions r
+          where p_dex between (r.dex_range ->> 0)::int and (r.dex_range ->> 1)::int
+          order by r.order_index limit 1);
+end
+$$;
+
+-- Badges held in the main save, every region's together (the cards keep them: 0033).
+create or replace function trade_badges(p_user uuid)
+returns int
+language sql stable security definer set search_path = public as $$
+  select coalesce(sum(cardinality(r.badges)), 0)::int from player_card_regions r where r.user_id = p_user and r.realm = 'main'
+$$;
+
+-- The regions a save has started: the one being played and the parked ones.
+create or replace function trade_started(p_save jsonb)
+returns text[]
+language sql immutable as $$
+  select array_agg(distinct x) from (
+    select coalesce(nullif(p_save ->> 'region', ''), 'kanto') x
+    union all
+    select k from jsonb_each(coalesce(p_save -> 'parked', '{}')) p(k, v) where jsonb_typeof(v) = 'object'
+  ) t
+$$;
+
+-- One Pokémon of a save, from any region's Box: the instance, its region, and how many others can play there.
+create or replace function trade_find(p_save jsonb, p_inst text)
+returns table (region text, inst jsonb, others int)
+language plpgsql immutable as $$
+declare
+  live text := coalesce(nullif(p_save ->> 'region', ''), 'kanto');
+  b record;
+begin
+  for b in
+    select live as r, coalesce(p_save -> 'box', '[]') as box
+    union all
+    select k, coalesce(v -> 'box', '[]') from jsonb_each(coalesce(p_save -> 'parked', '{}')) p(k, v)
+    where jsonb_typeof(v) = 'object' and k <> live
+  loop
+    select m into inst from jsonb_array_elements(b.box) m where m ->> 'id' = p_inst limit 1;
+    if inst is not null then
+      region := b.r;
+      select count(*)::int into others from jsonb_array_elements(b.box) m
+        where m ->> 'id' <> p_inst and m ->> 'revivesAt' is null;
+      return next;
+      return;
+    end if;
+  end loop;
+end
+$$;
+
+-- Does a poster's snapshot (engine/trade.ts TradeSnapshot) hold this species? `has` is a base64 bitset of the dex
+-- numbers under 2048 (bit n = byte n / 8, bit n % 8 from the lowest: get_bit's order); regional forms are listed.
+create or replace function trade_has(p_snap jsonb, p_dex int)
+returns boolean
+language plpgsql immutable as $$
+declare
+  b bytea;
+begin
+  if p_dex >= 2048 then
+    return coalesce(p_snap -> 'forms', '[]') @> to_jsonb(p_dex);
+  end if;
+  b := decode(coalesce(p_snap ->> 'has', ''), 'base64');
+  if length(b) * 8 <= p_dex then return false; end if;
+  return get_bit(b, p_dex) = 1;
+exception when others then
+  return false;
+end
+$$;
+
+-- The name and look the player has on their card (main save), for the board and the other side of a trade.
+create or replace function trade_name(p_user uuid)
+returns text
+language sql stable security definer set search_path = public as $$
+  select nullif(c.name, '') from player_cards c where c.user_id = p_user and c.realm = 'main'
+$$;
+
+-- ---------------------------------------------------------------- 2. the listings
+
+create table if not exists trade_listings (
+  id uuid primary key default gen_random_uuid(),
+  code text not null unique,                     -- the link's (Crockford base32, like friend IDs)
+  realm text not null default 'main' check (realm = 'main'),
+  owner uuid references auth.users(id) on delete set null,
+  owner_name text,
+  from_region text not null,                     -- the Box it left: it goes back there
+  home_region text not null,                     -- where it lands for the taker
+  mon jsonb not null,                            -- the instance as listed
+  dex int not null,
+  level int not null,
+  shiny boolean not null default false,
+  want jsonb not null,                           -- {kind: 'species', dex} | {kind: 'notOwned'} | {kind: 'any'}
+  poster jsonb not null,                         -- the poster's snapshot: {has, forms, shiny, regions}
+  visibility text not null check (visibility in ('public', 'friends', 'private')),
+  created_at timestamptz not null default now(),
+  ends_at timestamptz not null,
+  status text not null default 'open' check (status in ('open', 'taken', 'cancelled', 'expired', 'removed')),
+  taker uuid references auth.users(id) on delete set null,
+  taker_name text,
+  taker_mon jsonb,                               -- the instance given, as it was in the taker's cloud save
+  taker_from text,
+  taken_at timestamptz,
+  owner_applied boolean not null default false,
+  taker_applied boolean not null default false
+);
+create index if not exists trade_listings_board on trade_listings (realm, status, visibility, ends_at);
+create index if not exists trade_listings_owner on trade_listings (owner);
+create index if not exists trade_listings_taker on trade_listings (taker, taken_at);
+
+alter table trade_listings enable row level security;
+revoke all on trade_listings from anon, authenticated;
+drop policy if exists trade_listings_admin on trade_listings;
+create policy trade_listings_admin on trade_listings for all using ((select is_admin())) with check ((select is_admin()));
+
+-- One listing as the board, a link and the poster's own list read it.
+create or replace function trade_row(l trade_listings, p_me uuid)
+returns jsonb
+language sql stable security definer set search_path = public as $$
+  select jsonb_build_object(
+    'id', l.id, 'code', l.code, 'owner', l.owner,
+    'name', coalesce(trade_name(l.owner), l.owner_name, ''),
+    'avatar', (select c.avatar from player_cards c where c.user_id = l.owner and c.realm = 'main'),
+    'is_me', p_me is not null and l.owner = p_me,
+    'is_friend', p_me is not null and exists (select 1 from friend_ids_of(p_me) f where f.id = l.owner),
+    'dex', l.dex, 'level', l.level, 'shiny', l.shiny, 'home_region', l.home_region,
+    'want', l.want, 'visibility', l.visibility, 'created_at', l.created_at, 'ends_at', l.ends_at, 'status', l.status,
+    -- What "any I don't own" is checked against, and the regions the poster can receive from.
+    'poster', jsonb_build_object(
+      'regions', coalesce(l.poster -> 'regions', '[]'),
+      'has', case when l.want ->> 'kind' = 'notOwned' then l.poster -> 'has' end,
+      'forms', case when l.want ->> 'kind' = 'notOwned' then l.poster -> 'forms' end,
+      'shiny', case when l.want ->> 'kind' = 'notOwned' then l.poster -> 'shiny' end))
+$$;
+
+-- ---------------------------------------------------------------- 3. posting and taking
+
+create or replace function trade_post(p_inst text, p_want jsonb, p_visibility text, p_poster jsonb, p_realm text default 'main')
+returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare
+  me uuid := auth.uid();
+  cfg jsonb := trade_cfg();
+  save jsonb;
+  hit record;
+  wdex int;
+  l trade_listings;
+  started text[];
+begin
+  if me is null then raise exception 'trades_signed_out' using errcode = '42501'; end if;
+  if p_realm is distinct from 'main' then raise exception 'trades_realm'; end if;
+  if not trade_open() then raise exception 'trades_off'; end if;
+  if trade_badges(me) < coalesce((cfg ->> 'minBadges')::int, 0) then raise exception 'trades_badges'; end if;
+  if (select count(*) from trade_listings t where t.owner = me and t.status = 'open' and t.ends_at > now())
+     >= coalesce((cfg ->> 'maxListings')::int, 4) then
+    raise exception 'trades_full';
+  end if;
+  if p_visibility is null or p_visibility not in ('public', 'friends', 'private') then raise exception 'trades_bad_want'; end if;
+
+  select s.data into save from saves s where s.user_id = me and s.realm = 'main';
+  if save is null then raise exception 'trades_no_save'; end if;
+  select * into hit from trade_find(save, p_inst);
+  if hit.inst is null then raise exception 'trades_not_found'; end if;
+  if hit.inst ->> 'revivesAt' is not null then raise exception 'trades_reviving'; end if;
+  if hit.others < 1 then raise exception 'trades_last'; end if;
+  if trade_untradable((hit.inst ->> 'dex')::int) then raise exception 'trades_untradable'; end if;
+  -- Already on the board, or given in a trade not applied yet.
+  if exists (select 1 from trade_listings t where t.owner = me and t.status = 'open' and t.mon ->> 'id' = p_inst)
+     or exists (select 1 from trade_listings t where t.taker = me and not t.taker_applied and t.taker_mon ->> 'id' = p_inst) then
+    raise exception 'trades_listed';
+  end if;
+
+  started := trade_started(save);
+  case coalesce(p_want ->> 'kind', '')
+    when 'species' then
+      wdex := (p_want ->> 'dex')::int;
+      if wdex is null or trade_untradable(wdex) or not (trade_home_region(wdex) = any (started)) then
+        raise exception 'trades_bad_want';
+      end if;
+      p_want := jsonb_build_object('kind', 'species', 'dex', wdex);
+    when 'notOwned' then p_want := '{"kind": "notOwned"}';
+    when 'any' then p_want := '{"kind": "any"}';
+    else raise exception 'trades_bad_want';
+  end case;
+
+  insert into trade_listings (code, owner, owner_name, from_region, home_region, mon, dex, level, shiny, want, poster,
+                              visibility, ends_at)
+  values (
+    friend_new_code(), me, trade_name(me), hit.region,
+    coalesce(trade_home_region((hit.inst ->> 'dex')::int), hit.region),
+    hit.inst, (hit.inst ->> 'dex')::int, (hit.inst ->> 'level')::int, coalesce((hit.inst ->> 'shiny')::boolean, false),
+    p_want,
+    -- The snapshot is the poster's own say: it only decides what they accept. The regions are read from the save.
+    jsonb_build_object(
+      'has', left(coalesce(p_poster ->> 'has', ''), 400),
+      'forms', case when jsonb_typeof(p_poster -> 'forms') = 'array' then p_poster -> 'forms' else '[]' end,
+      'shiny', case when jsonb_typeof(p_poster -> 'shiny') = 'array' then p_poster -> 'shiny' else '[]' end,
+      'regions', to_jsonb(started)),
+    p_visibility,
+    now() + make_interval(days => greatest(1, coalesce((cfg ->> 'listingDays')::int, 3))))
+  returning * into l;
+  return jsonb_build_object('id', l.id, 'code', l.code, 'ends_at', l.ends_at, 'region', l.from_region);
+exception when unique_violation then
+  -- A code drawn twice (one in a trillion): try once more.
+  return trade_post(p_inst, p_want, p_visibility, p_poster, p_realm);
+end
+$$;
+
+create or replace function trade_take(p_code text, p_inst text, p_realm text default 'main')
+returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare
+  me uuid := auth.uid();
+  cfg jsonb := trade_cfg();
+  l trade_listings;
+  save jsonb;
+  hit record;
+  gdex int;
+  gshiny boolean;
+  today timestamptz := date_trunc('day', now() at time zone 'UTC') at time zone 'UTC';
+begin
+  if me is null then raise exception 'trades_signed_out' using errcode = '42501'; end if;
+  if p_realm is distinct from 'main' then raise exception 'trades_realm'; end if;
+  if not trade_open() then raise exception 'trades_off'; end if;
+  if trade_badges(me) < coalesce((cfg ->> 'minBadges')::int, 0) then raise exception 'trades_badges'; end if;
+
+  select * into l from trade_listings t where t.code = friend_norm(p_code) for update;
+  if not found or l.status <> 'open' or l.ends_at <= now() then raise exception 'trades_gone'; end if;
+  if l.owner = me then raise exception 'trades_own'; end if;
+  if l.visibility = 'friends' and not exists (select 1 from friend_ids_of(me) f where f.id = l.owner) then
+    raise exception 'trades_friends_only';
+  end if;
+  if (select count(*) from trade_listings t where t.taker = me and t.taken_at >= today)
+     >= coalesce((cfg ->> 'tradesPerDay')::int, 5) then
+    raise exception 'trades_daily_cap';
+  end if;
+
+  select s.data into save from saves s where s.user_id = me and s.realm = 'main';
+  if save is null then raise exception 'trades_no_save'; end if;
+  if not (l.home_region = any (trade_started(save))) then raise exception 'trades_region'; end if;
+  select * into hit from trade_find(save, p_inst);
+  if hit.inst is null then raise exception 'trades_not_found'; end if;
+  if hit.inst ->> 'revivesAt' is not null then raise exception 'trades_reviving'; end if;
+  if hit.others < 1 then raise exception 'trades_last'; end if;
+  gdex := (hit.inst ->> 'dex')::int;
+  gshiny := coalesce((hit.inst ->> 'shiny')::boolean, false);
+  if trade_untradable(gdex) then raise exception 'trades_untradable'; end if;
+  if exists (select 1 from trade_listings t where t.owner = me and t.status = 'open' and t.mon ->> 'id' = p_inst)
+     or exists (select 1 from trade_listings t where t.taker = me and not t.taker_applied and t.taker_mon ->> 'id' = p_inst) then
+    raise exception 'trades_listed';
+  end if;
+  -- The poster must be able to receive it: its home region started on their side.
+  if not (coalesce(l.poster -> 'regions', '[]') ? coalesce(trade_home_region(gdex), hit.region)) then
+    raise exception 'trades_poster_region';
+  end if;
+  -- In parentheses: an IF's condition ends at its first THEN otherwise.
+  if not (case l.want ->> 'kind'
+    when 'species' then gdex = (l.want ->> 'dex')::int
+    when 'notOwned' then not trade_has(l.poster, gdex)
+                         or (gshiny and not coalesce(l.poster -> 'shiny', '[]') @> to_jsonb(gdex))
+    else true
+  end) then
+    raise exception 'trades_no_match';
+  end if;
+
+  update trade_listings t
+     set status = 'taken', taker = me, taker_name = trade_name(me), taker_mon = hit.inst, taker_from = hit.region,
+         taken_at = now()
+   where t.id = l.id and t.status = 'open'
+  returning * into l;
+  return jsonb_build_object('id', l.id, 'listed', l.mon, 'given', l.taker_mon, 'with', coalesce(trade_name(l.owner), l.owner_name, ''));
+end
+$$;
+
+-- ---------------------------------------------------------------- 4. the rest of a listing's life
+
+-- Cancel an open listing of yours. Too late (someone took it a moment before): 'taken', and the check applies it.
+create or replace function trade_cancel(p_id uuid)
+returns text
+language plpgsql security definer set search_path = public as $$
+declare
+  me uuid := auth.uid();
+  st text;
+begin
+  if me is null then raise exception 'trades_signed_out' using errcode = '42501'; end if;
+  update trade_listings t set status = 'cancelled' where t.id = p_id and t.owner = me and t.status = 'open'
+  returning t.status into st;
+  if st is not null then return st; end if;
+  select t.status into st from trade_listings t where t.id = p_id and t.owner = me;
+  return coalesce(st, 'gone');
+end
+$$;
+
+-- The trade board: open listings, public and your friends' (yours among them, but never a private one), ending soonest
+-- or newest first, 50 at a time. `p_dex`: a search's species (the game reads names in the player's language), with
+-- `p_query` for a trainer's name. Guests get the four newest public listings. Listing rows only, never a save.
+create or replace function trade_board(
+  p_friends boolean default false, p_sort text default 'soon', p_dex int[] default null, p_query text default null,
+  p_offset int default 0, p_realm text default 'main')
+returns setof jsonb
+language plpgsql stable security definer set search_path = public as $$
+declare
+  me uuid := auth.uid();
+begin
+  if p_realm is distinct from 'main' or not trade_open() then return; end if;
+  return query
+    select trade_row(t, me) from trade_listings t
+    where t.realm = 'main' and t.status = 'open' and t.ends_at > now()
+      and (t.visibility = 'public'
+           or (me is not null and t.visibility = 'friends'
+               and (t.owner = me or exists (select 1 from friend_ids_of(me) f where f.id = t.owner))))
+      and (me is not null or t.visibility = 'public')
+      and (not coalesce(p_friends, false) or exists (select 1 from friend_ids_of(me) f where f.id = t.owner))
+      and (p_dex is null and coalesce(p_query, '') = ''
+           or t.dex = any (coalesce(p_dex, '{}'))
+           or (t.want ->> 'dex')::int = any (coalesce(p_dex, '{}'))
+           or (coalesce(p_query, '') <> '' and coalesce(trade_name(t.owner), t.owner_name, '') ilike '%' || p_query || '%'))
+    order by case when me is null or p_sort = 'newest' then extract(epoch from t.created_at) * -1
+                  else extract(epoch from t.ends_at) end, t.id
+    limit case when me is null then 4 else 50 end
+    offset case when me is null then 0 else greatest(0, coalesce(p_offset, 0)) end;
+end
+$$;
+
+-- One listing by its link's code: guests too (the sheet asks them to connect), rate-limited like friend_lookup.
+create or replace function trade_view(p_code text, p_device_id text default null, p_realm text default 'main')
+returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare
+  me uuid := auth.uid();
+  l trade_listings;
+begin
+  if p_realm is distinct from 'main' or not trade_open() then return null; end if;
+  perform friend_attempt(coalesce(me::text, 'trade:' || left(coalesce(p_device_id, 'anon'), 64)));
+  select * into l from trade_listings t where t.code = friend_norm(p_code);
+  if not found then return null; end if;
+  if l.status <> 'open' or l.ends_at <= now() then
+    return jsonb_build_object('code', l.code, 'status', case when l.status = 'open' then 'expired' else l.status end);
+  end if;
+  return trade_row(l, me);
+end
+$$;
+
+-- The check on load and on return to the tab: your listings (open, and ended ones not applied yet) and the trades you
+-- took that your save doesn't hold yet. It works with the switch off too, so nothing listed is ever stranded. Listings
+-- past their end are marked expired here; your rows done on both sides over 30 days ago go.
+create or replace function trade_mine(p_realm text default 'main')
+returns setof jsonb
+language plpgsql security definer set search_path = public as $$
+declare
+  me uuid := auth.uid();
+begin
+  if me is null then raise exception 'trades_signed_out' using errcode = '42501'; end if;
+  if p_realm is distinct from 'main' then return; end if;
+  update trade_listings t set status = 'expired' where t.owner = me and t.status = 'open' and t.ends_at <= now();
+  delete from trade_listings t
+   where (t.owner = me or t.taker = me) and t.status <> 'open' and t.owner_applied
+     and (t.taker is null or t.taker_applied) and coalesce(t.taken_at, t.ends_at) < now() - interval '30 days';
+  return query
+    select jsonb_build_object(
+      'id', t.id, 'code', t.code, 'role', case when t.owner = me then 'owner' else 'taker' end, 'status', t.status,
+      'mon', t.mon, 'from_region', t.from_region, 'want', t.want, 'visibility', t.visibility,
+      'created_at', t.created_at, 'ends_at', t.ends_at, 'taker_mon', t.taker_mon,
+      'with', case when t.owner = me then coalesce(trade_name(t.taker), t.taker_name, '')
+                   else coalesce(trade_name(t.owner), t.owner_name, '') end)
+    from trade_listings t
+    where (t.owner = me and (t.status = 'open' or not t.owner_applied))
+       or (t.taker = me and not t.taker_applied)
+    order by t.created_at;
+end
+$$;
+
+-- Your save holds these trades now (pushed): they won't come back from trade_mine.
+create or replace function trade_applied(p_ids uuid[])
+returns void
+language plpgsql security definer set search_path = public as $$
+declare
+  me uuid := auth.uid();
+begin
+  if me is null then raise exception 'trades_signed_out' using errcode = '42501'; end if;
+  update trade_listings t set owner_applied = true where t.id = any (p_ids) and t.owner = me and t.status <> 'open';
+  update trade_listings t set taker_applied = true where t.id = any (p_ids) and t.taker = me;
+end
+$$;
+
+-- The admin takes a listing off the board: its Pokémon goes back to its owner (their game applies it on its next check).
+create or replace function trade_remove(p_id uuid)
+returns boolean
+language plpgsql security definer set search_path = public as $$
+begin
+  if not is_admin() then raise exception 'trades_admin_only' using errcode = '42501'; end if;
+  update trade_listings t set status = 'removed' where t.id = p_id and t.status = 'open';
+  return found;
+end
+$$;
+
+-- ---------------------------------------------------------------- 5. deleting
+
+-- 0039's delete_my_data, and trades: your open listings go; trades still owed to the other player stay for them,
+-- without your name; your side counts as applied.
+create or replace function delete_my_data(p_realm text default null)
+returns void
+language plpgsql security definer set search_path = public as $$
+declare
+  me uuid := auth.uid();
+begin
+  if me is null then
+    raise exception 'signed_out' using errcode = '42501';
+  end if;
+  if p_realm is not null and p_realm not in ('main', 'extreme') then
+    raise exception 'bad_realm' using errcode = '22023';
+  end if;
+  delete from saves where user_id = me and (p_realm is null or realm = p_realm);
+  delete from player_cards where user_id = me and (p_realm is null or realm = p_realm); -- and their regions
+  delete from versus_teams where user_id = me and (p_realm is null or realm = p_realm);
+  delete from versus_battles where (attacker_id = me or defender_id = me) and (p_realm is null or realm = p_realm);
+  delete from event_state where user_id = me and (p_realm is null or realm = p_realm);
+  delete from raid_teams where user_id = me and (p_realm is null or realm = p_realm);
+  delete from raid_gifts where (helper_id = me or raider_id = me) and (p_realm is null or realm = p_realm);
+  if p_realm is null or p_realm = 'main' then
+    delete from trade_listings where owner = me and (status = 'open' or taker is null or taker_applied);
+    delete from trade_listings where taker = me and owner_applied;
+    update trade_listings set owner = null, owner_name = null, owner_applied = true where owner = me;
+    update trade_listings set taker = null, taker_name = null, taker_applied = true where taker = me;
+  end if;
+  if p_realm is null then
+    delete from friend_codes where user_id = me;
+    delete from friendships where user_a = me or user_b = me;
+    delete from friend_attempts where actor = me::text;
+  end if;
+end
+$$;
+
+-- ---------------------------------------------------------------- who may call what
+
+revoke all on function trade_cfg(), trade_open(), trade_untradable(int), trade_home_region(int, int), trade_badges(uuid),
+  trade_started(jsonb), trade_find(jsonb, text), trade_has(jsonb, int), trade_name(uuid), trade_row(trade_listings, uuid)
+  from public, anon, authenticated;
+revoke all on function trade_post(text, jsonb, text, jsonb, text), trade_take(text, text, text), trade_cancel(uuid),
+  trade_board(boolean, text, int[], text, int, text), trade_view(text, text, text), trade_mine(text),
+  trade_applied(uuid[]), trade_remove(uuid), delete_my_data(text) from public, anon;
+grant execute on function trade_board(boolean, text, int[], text, int, text), trade_view(text, text, text) to anon, authenticated;
+grant execute on function trade_post(text, jsonb, text, jsonb, text), trade_take(text, text, text), trade_cancel(uuid),
+  trade_mine(text), trade_applied(uuid[]), trade_remove(uuid), delete_my_data(text) to authenticated;
+
 insert into type_chart (attacking, defending, multiplier) values
   ('bug', 'dark', 2),
   ('bug', 'fairy', 0.5),
@@ -2335,257 +2860,4 @@ insert into dice_types (type, label, color, faces, description, upgradeable, cou
   ('steel', 'Steel', '#9c9caf', '[{"kind":"number","value":3},{"kind":"number","value":3},{"kind":"number","value":3},{"kind":"number","value":4},{"kind":"number","value":4},{"kind":"number","value":4}]'::jsonb, 'Always 3 or 4', true, true, 17),
   ('fairy', 'Fairy', '#b67193', '[{"kind":"number","value":0},{"kind":"number","value":2},{"kind":"number","value":2},{"kind":"number","value":4},{"kind":"number","value":4},{"kind":"number","value":6}]'::jsonb, 'Even numbers only', true, true, 18)
 on conflict (type) do update set label = excluded.label, color = excluded.color, faces = excluded.faces, description = excluded.description, upgradeable = excluded.upgradeable, counts_for_majority = excluded.counts_for_majority, sort_order = excluded.sort_order;
-
-insert into pokemon (dex, name, type1, type2, base_hp, max_hp, speed, sprite_url, dice, rerolls, catch_value, evolutions, milestones, notes, form) values
-  (389, 'Torterra', 'grass', 'ground', 13, 331, 5, '/pokemon/389_front.png', '[{"type":"grass","count":2},{"type":"ground","count":2}]'::jsonb, 4, 5, '[]'::jsonb, '[{"level":50,"effect":"ADD_DIE","dieType":"grass"},{"level":50,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 525', null),
-  (335, 'Zangoose', 'normal', null, 12, 287, 9, '/pokemon/335_front.png', '[{"type":"normal","count":2}]'::jsonb, 3, 4, '[]'::jsonb, '[{"level":24,"effect":"ADD_DIE","dieType":"normal"},{"level":40,"effect":"ADD_DIE","dieType":"base"},{"level":40,"amount":1,"effect":"ADD_REROLL"},{"level":50,"effect":"ADD_DIE","dieType":"normal"},{"level":50,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 458', null),
-  (336, 'Seviper', 'poison', null, 12, 287, 6, '/pokemon/336_front.png', '[{"type":"poison","count":2}]'::jsonb, 3, 4, '[]'::jsonb, '[{"level":24,"effect":"ADD_DIE","dieType":"poison"},{"level":40,"effect":"ADD_DIE","dieType":"base"},{"level":40,"amount":1,"effect":"ADD_REROLL"},{"level":50,"effect":"ADD_DIE","dieType":"poison"},{"level":50,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 458', null),
-  (337, 'Lunatone', 'rock', 'psychic', 13, 321, 7, '/pokemon/337_front.png', '[{"type":"rock","count":1},{"type":"psychic","count":1}]'::jsonb, 2, 5, '[]'::jsonb, '[{"level":24,"effect":"ADD_DIE","dieType":"psychic"},{"level":24,"amount":1,"effect":"ADD_REROLL"},{"level":40,"effect":"ADD_DIE","dieType":"base"},{"level":50,"effect":"ADD_DIE","dieType":"rock"},{"level":50,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 460', null),
-  (338, 'Solrock', 'rock', 'psychic', 13, 321, 7, '/pokemon/338_front.png', '[{"type":"rock","count":1},{"type":"psychic","count":1}]'::jsonb, 2, 5, '[]'::jsonb, '[{"level":24,"effect":"ADD_DIE","dieType":"psychic"},{"level":24,"amount":1,"effect":"ADD_REROLL"},{"level":40,"effect":"ADD_DIE","dieType":"base"},{"level":50,"effect":"ADD_DIE","dieType":"rock"},{"level":50,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 460', null),
-  (339, 'Barboach', 'water', 'ground', 12, 241, 6, '/pokemon/339_front.png', '[{"type":"water","count":1}]'::jsonb, 1, 2, '[{"level":30,"toDex":340}]'::jsonb, '[{"level":10,"effect":"ADD_DIE","dieType":"base"},{"level":10,"amount":1,"effect":"ADD_REROLL"},{"level":30,"effect":"EVOLVE"},{"level":20,"effect":"REPLACE_DIE","dieType":"water","fromDieType":"base"},{"level":26,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 288', null),
-  (340, 'Whiscash', 'water', 'ground', 13, 361, 6, '/pokemon/340_front.png', '[{"type":"water","count":2},{"type":"ground","count":1}]'::jsonb, 3, 4, '[]'::jsonb, '[{"level":42,"effect":"ADD_DIE","dieType":"ground"},{"level":42,"amount":1,"effect":"ADD_REROLL"},{"level":50,"effect":"ADD_DIE","dieType":"water"},{"level":50,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 468', null),
-  (341, 'Corphish', 'water', null, 12, 227, 3, '/pokemon/341_front.png', '[{"type":"water","count":1}]'::jsonb, 1, 2, '[{"level":30,"toDex":342}]'::jsonb, '[{"level":7,"effect":"ADD_DIE","dieType":"base"},{"level":7,"amount":1,"effect":"ADD_REROLL"},{"level":30,"effect":"EVOLVE"},{"level":16,"effect":"REPLACE_DIE","dieType":"water","fromDieType":"base"},{"level":24,"effect":"ADD_DIE","dieType":"base"},{"level":24,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 308', null),
-  (342, 'Crawdaunt', 'water', 'dark', 12, 267, 5, '/pokemon/342_front.png', '[{"type":"water","count":2},{"type":"dark","count":1}]'::jsonb, 3, 3, '[]'::jsonb, '[{"level":42,"effect":"ADD_DIE","dieType":"dark"},{"level":42,"amount":1,"effect":"ADD_REROLL"},{"level":50,"effect":"ADD_DIE","dieType":"water"},{"level":50,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 468', null),
-  (343, 'Baltoy', 'ground', 'psychic', 12, 221, 5, '/pokemon/343_front.png', '[{"type":"ground","count":1}]'::jsonb, 1, 1, '[{"level":36,"toDex":344}]'::jsonb, '[{"level":5,"effect":"ADD_DIE","dieType":"base"},{"level":5,"amount":1,"effect":"ADD_REROLL"},{"level":36,"effect":"EVOLVE"},{"level":18,"effect":"REPLACE_DIE","dieType":"psychic","fromDieType":"base"},{"level":28,"effect":"ADD_DIE","dieType":"ground"},{"level":28,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 300', null),
-  (444, 'Gabite', 'dragon', 'ground', 12, 277, 8, '/pokemon/444_front.png', '[{"type":"dragon","count":2},{"type":"ground","count":1}]'::jsonb, 3, 5, '[{"level":48,"toDex":445}]'::jsonb, '[{"level":48,"effect":"EVOLVE"},{"level":40,"effect":"ADD_DIE","dieType":"ground"},{"level":40,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 410', null),
-  (351, 'Castform', 'normal', null, 12, 281, 7, '/pokemon/351_front.png', '[{"type":"normal","count":2}]'::jsonb, 2, 5, '[]'::jsonb, '[{"level":20,"effect":"ADD_DIE","dieType":"normal"},{"level":20,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 420', null),
-  (352, 'Kecleon', 'normal', null, 12, 261, 4, '/pokemon/352_front.png', '[{"type":"normal","count":2}]'::jsonb, 2, 2, '[]'::jsonb, '[{"level":20,"effect":"ADD_DIE","dieType":"normal"},{"level":20,"amount":1,"effect":"ADD_REROLL"},{"level":36,"effect":"ADD_DIE","dieType":"base"}]'::jsonb, 'BST 440', null),
-  (353, 'Shuppet', 'ghost', null, 12, 229, 4, '/pokemon/353_front.png', '[{"type":"ghost","count":2}]'::jsonb, 2, 2, '[{"level":37,"toDex":354}]'::jsonb, '[{"level":37,"effect":"EVOLVE"},{"level":24,"effect":"ADD_DIE","dieType":"base"},{"level":24,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 295', null),
-  (647, 'Keldeo', 'water', 'fighting', 13, 323, 10, '/pokemon/647_front.png', '[{"type":"water","count":3},{"type":"fighting","count":2}]'::jsonb, 5, 5, '[]'::jsonb, '[]'::jsonb, 'BST 580', null),
-  (52, 'Meowth', 'normal', null, 12, 221, 9, '/pokemon/052_front.png', '[{"type":"normal","count":1},{"type":"base","count":1}]'::jsonb, 2, 1, '[{"toDex":53,"level":28}]'::jsonb, '[{"level":16,"effect":"REPLACE_DIE","dieType":"normal","fromDieType":"base"},{"level":28,"effect":"EVOLVE"}]'::jsonb, 'BST 290', null),
-  (356, 'Dusclops', 'ghost', null, 12, 221, 2, '/pokemon/356_front.png', '[{"type":"ghost","count":3},{"type":"base","count":1}]'::jsonb, 3, 4, '[{"item":"reaper-cloth","level":null,"toDex":477}]'::jsonb, '[{"level":50,"effect":"ADD_DIE","dieType":"ghost"},{"level":50,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 455', null),
-  (357, 'Tropius', 'grass', 'flying', 13, 339, 5, '/pokemon/357_front.png', '[{"type":"grass","count":1},{"type":"flying","count":1}]'::jsonb, 2, 2, '[]'::jsonb, '[{"level":24,"effect":"ADD_DIE","dieType":"flying"},{"level":24,"amount":1,"effect":"ADD_REROLL"},{"level":40,"effect":"ADD_DIE","dieType":"grass"},{"level":50,"effect":"ADD_DIE","dieType":"flying"},{"level":50,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 460', null),
-  (358, 'Chimecho', 'psychic', null, 12, 291, 6, '/pokemon/358_front.png', '[{"type":"psychic","count":2}]'::jsonb, 2, 5, '[]'::jsonb, '[{"level":27,"effect":"ADD_DIE","dieType":"psychic"},{"level":27,"amount":1,"effect":"ADD_REROLL"},{"level":50,"effect":"ADD_DIE","dieType":"psychic"},{"level":50,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 455', null),
-  (359, 'Absol', 'dark', null, 12, 271, 7, '/pokemon/359_front.png', '[{"type":"dark","count":2}]'::jsonb, 3, 6, '[]'::jsonb, '[{"level":26,"effect":"ADD_DIE","dieType":"dark"},{"level":26,"amount":1,"effect":"ADD_REROLL"},{"level":39,"effect":"ADD_DIE","dieType":"base"},{"level":39,"amount":1,"effect":"ADD_REROLL"},{"level":50,"effect":"ADD_DIE","dieType":"dark"}]'::jsonb, 'BST 465', null),
-  (360, 'Wynaut', 'psychic', null, 13, 331, 2, '/pokemon/360_front.png', '[{"type":"psychic","count":1}]'::jsonb, 1, 3, '[{"level":15,"toDex":202}]'::jsonb, '[{"level":8,"effect":"ADD_DIE","dieType":"base"},{"level":8,"amount":1,"effect":"ADD_REROLL"},{"level":15,"effect":"EVOLVE"}]'::jsonb, 'BST 260', null),
-  (361, 'Snorunt', 'ice', null, 12, 241, 5, '/pokemon/361_front.png', '[{"type":"ice","count":1}]'::jsonb, 1, 2, '[{"level":42,"toDex":362},{"item":"dawn-stone","level":null,"toDex":478}]'::jsonb, '[{"level":5,"effect":"ADD_DIE","dieType":"base"},{"level":5,"amount":1,"effect":"ADD_REROLL"},{"level":42,"effect":"EVOLVE"},{"level":16,"effect":"REPLACE_DIE","dieType":"ice","fromDieType":"base"},{"level":28,"effect":"ADD_DIE","dieType":"ice"},{"level":28,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 300', null),
-  (362, 'Glalie', 'ice', null, 12, 301, 8, '/pokemon/362_front.png', '[{"type":"ice","count":3},{"type":"base","count":1}]'::jsonb, 4, 4, '[]'::jsonb, '[{"level":50,"effect":"ADD_DIE","dieType":"ice"},{"level":50,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 480', null),
-  (363, 'Spheal', 'ice', 'water', 12, 281, 2, '/pokemon/363_front.png', '[{"type":"ice","count":1}]'::jsonb, 1, 1, '[{"level":32,"toDex":364}]'::jsonb, '[{"level":6,"effect":"ADD_DIE","dieType":"base"},{"level":6,"amount":1,"effect":"ADD_REROLL"},{"level":32,"effect":"EVOLVE"},{"level":18,"effect":"REPLACE_DIE","dieType":"water","fromDieType":"base"}]'::jsonb, 'BST 290', null),
-  (364, 'Sealeo', 'ice', 'water', 13, 321, 4, '/pokemon/364_front.png', '[{"type":"ice","count":1},{"type":"water","count":1},{"type":"base","count":1}]'::jsonb, 3, 3, '[{"level":44,"toDex":365}]'::jsonb, '[{"level":44,"effect":"EVOLVE"},{"level":36,"effect":"REPLACE_DIE","dieType":"ice","fromDieType":"base"}]'::jsonb, 'BST 410', null),
-  (365, 'Walrein', 'ice', 'water', 13, 361, 6, '/pokemon/365_front.png', '[{"type":"ice","count":2},{"type":"water","count":1},{"type":"base","count":1}]'::jsonb, 4, 5, '[]'::jsonb, '[{"level":50,"effect":"ADD_DIE","dieType":"ice"},{"level":50,"amount":1,"effect":"ADD_REROLL"},{"level":62,"effect":"REPLACE_DIE","dieType":"water","fromDieType":"base"}]'::jsonb, 'BST 530', null),
-  (402, 'Kricketune', 'bug', null, 12, 295, 6, '/pokemon/402_front.png', '[{"type":"bug","count":2}]'::jsonb, 2, 5, '[]'::jsonb, '[{"level":40,"effect":"ADD_DIE","dieType":"bug"},{"level":40,"amount":1,"effect":"ADD_REROLL"},{"level":20,"effect":"ADD_DIE","dieType":"base"},{"level":20,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 384', null),
-  (21, 'Spearow', 'normal', 'flying', 12, 221, 7, '/pokemon/021_front.png', '[{"type":"normal","count":1}]'::jsonb, 1, 1, '[{"level":20,"toDex":22}]'::jsonb, '[{"level":7,"effect":"ADD_DIE","dieType":"flying"},{"level":7,"amount":1,"effect":"ADD_REROLL"},{"level":20,"effect":"EVOLVE"}]'::jsonb, 'BST 262', null),
-  (22, 'Fearow', 'normal', 'flying', 12, 271, 10, '/pokemon/022_front.png', '[{"type":"normal","count":1},{"type":"flying","count":1},{"type":"base","count":1}]'::jsonb, 3, 4, '[]'::jsonb, '[{"level":35,"effect":"ADD_DIE","dieType":"flying"},{"level":45,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 442', null),
-  (23, 'Ekans', 'poison', null, 12, 211, 5, '/pokemon/023_front.png', '[{"type":"poison","count":1},{"type":"base","count":1}]'::jsonb, 2, 1, '[{"level":22,"toDex":24}]'::jsonb, '[{"level":22,"effect":"EVOLVE"},{"level":16,"effect":"REPLACE_DIE","dieType":"poison","fromDieType":"base"}]'::jsonb, 'BST 288', null),
-  (24, 'Arbok', 'poison', null, 12, 261, 8, '/pokemon/024_front.png', '[{"type":"poison","count":2},{"type":"base","count":1}]'::jsonb, 3, 4, '[]'::jsonb, '[{"level":34,"effect":"ADD_DIE","dieType":"base"},{"level":40,"amount":1,"effect":"ADD_REROLL"},{"level":50,"effect":"REPLACE_DIE","dieType":"poison","fromDieType":"base"}]'::jsonb, 'BST 448', null),
-  (26, 'Raichu', 'electric', null, 12, 261, 11, '/pokemon/026_front.png', '[{"type":"electric","count":2},{"type":"base","count":1}]'::jsonb, 3, 4, '[]'::jsonb, '[{"level":36,"effect":"ADD_DIE","dieType":"base"},{"level":42,"amount":1,"effect":"ADD_REROLL"},{"level":50,"effect":"ADD_DIE","dieType":"electric"},{"level":50,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 485', null),
-  (7, 'Squirtle', 'water', null, 12, 229, 5, '/pokemon/007_front.png', '[{"type":"water","count":1},{"type":"base","count":1}]'::jsonb, 2, 5, '[{"level":16,"toDex":8}]'::jsonb, '[{"level":16,"effect":"EVOLVE"}]'::jsonb, 'BST 314', null),
-  (27, 'Sandshrew', 'ground', null, 12, 241, 4, '/pokemon/027_front.png', '[{"type":"ground","count":1},{"type":"base","count":1}]'::jsonb, 2, 1, '[{"level":22,"toDex":28}]'::jsonb, '[{"level":22,"effect":"EVOLVE"},{"level":16,"effect":"REPLACE_DIE","dieType":"ground","fromDieType":"base"}]'::jsonb, 'BST 300', null),
-  (28, 'Sandslash', 'ground', null, 12, 291, 6, '/pokemon/028_front.png', '[{"type":"ground","count":2},{"type":"base","count":1}]'::jsonb, 3, 4, '[]'::jsonb, '[{"level":38,"effect":"ADD_DIE","dieType":"base"},{"level":30,"amount":1,"effect":"ADD_REROLL"},{"level":50,"effect":"ADD_DIE","dieType":"ground"},{"level":50,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 450', null),
-  (29, 'Nidoran♀', 'poison', null, 12, 251, 4, '/pokemon/029_front.png', '[{"type":"poison","count":1}]'::jsonb, 1, 2, '[{"level":16,"toDex":30}]'::jsonb, '[{"level":7,"effect":"ADD_DIE","dieType":"base"},{"level":7,"amount":1,"effect":"ADD_REROLL"},{"level":16,"effect":"EVOLVE"}]'::jsonb, 'BST 275', null),
-  (30, 'Nidorina', 'poison', null, 12, 281, 5, '/pokemon/030_front.png', '[{"type":"poison","count":2},{"type":"base","count":1}]'::jsonb, 3, 3, '[{"item":"moon-stone","level":null,"toDex":31}]'::jsonb, '[]'::jsonb, 'BST 365 · → #31: moon-stone → assigned Lv.28', null),
-  (31, 'Nidoqueen', 'poison', 'ground', 13, 321, 7, '/pokemon/031_front.png', '[{"type":"poison","count":1},{"type":"ground","count":1},{"type":"base","count":2}]'::jsonb, 4, 5, '[]'::jsonb, '[{"level":50,"effect":"ADD_DIE","dieType":"ground"},{"level":50,"amount":1,"effect":"ADD_REROLL"},{"level":40,"effect":"REPLACE_DIE","dieType":"poison","fromDieType":"base"}]'::jsonb, 'BST 505', null),
-  (44, 'Gloom', 'grass', 'poison', 12, 261, 4, '/pokemon/044_front.png', '[{"type":"grass","count":1},{"type":"poison","count":1},{"type":"base","count":1}]'::jsonb, 3, 3, '[{"item":"leaf-stone","level":null,"toDex":45},{"item":"sun-stone","level":null,"toDex":182}]'::jsonb, '[{"level":24,"effect":"REPLACE_DIE","dieType":"grass","fromDieType":"base"}]'::jsonb, 'BST 395 · → #45: leaf-stone → assigned Lv.28', null),
-  (48, 'Venonat', 'bug', 'poison', 12, 261, 4, '/pokemon/048_front.png', '[{"type":"bug","count":1},{"type":"poison","count":1}]'::jsonb, 2, 2, '[{"level":31,"toDex":49}]'::jsonb, '[{"level":31,"effect":"EVOLVE"}]'::jsonb, 'BST 305', null),
-  (49, 'Venomoth', 'bug', 'poison', 12, 281, 9, '/pokemon/049_front.png', '[{"type":"bug","count":1},{"type":"poison","count":1},{"type":"base","count":1}]'::jsonb, 3, 4, '[]'::jsonb, '[{"level":36,"effect":"ADD_DIE","dieType":"bug"},{"level":36,"amount":1,"effect":"ADD_REROLL"},{"level":50,"effect":"ADD_DIE","dieType":"poison"},{"level":50,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 450', null),
-  (50, 'Diglett', 'ground', null, 11, 161, 9, '/pokemon/050_front.png', '[{"type":"ground","count":1},{"type":"base","count":1}]'::jsonb, 2, 1, '[{"level":26,"toDex":51}]'::jsonb, '[{"level":26,"effect":"EVOLVE"},{"level":18,"effect":"REPLACE_DIE","dieType":"ground","fromDieType":"base"}]'::jsonb, 'BST 265', null),
-  (53, 'Persian', 'normal', null, 12, 271, 11, '/pokemon/053_front.png', '[{"type":"normal","count":2},{"type":"base","count":1}]'::jsonb, 3, 4, '[]'::jsonb, '[{"level":38,"effect":"ADD_DIE","dieType":"normal"},{"level":38,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 440', null),
-  (54, 'Psyduck', 'water', null, 12, 241, 5, '/pokemon/054_front.png', '[{"type":"water","count":1},{"type":"base","count":1}]'::jsonb, 2, 2, '[{"level":33,"toDex":55}]'::jsonb, '[{"level":19,"effect":"REPLACE_DIE","dieType":"water","fromDieType":"base"},{"level":33,"effect":"EVOLVE"}]'::jsonb, 'BST 320', null),
-  (55, 'Golduck', 'water', null, 12, 301, 8, '/pokemon/055_front.png', '[{"type":"water","count":2},{"type":"base","count":1}]'::jsonb, 3, 4, '[]'::jsonb, '[{"level":38,"effect":"ADD_DIE","dieType":"base"},{"level":38,"amount":1,"effect":"ADD_REROLL"},{"level":50,"effect":"ADD_DIE","dieType":"water"},{"level":50,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 500', null),
-  (56, 'Mankey', 'fighting', null, 12, 221, 7, '/pokemon/056_front.png', '[{"type":"fighting","count":1}]'::jsonb, 2, 2, '[{"level":28,"toDex":57}]'::jsonb, '[{"level":6,"effect":"ADD_DIE","dieType":"base"},{"level":28,"effect":"EVOLVE"},{"level":18,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 305', null),
-  (58, 'Growlithe', 'fire', null, 12, 251, 6, '/pokemon/058_front.png', '[{"type":"fire","count":2}]'::jsonb, 2, 2, '[{"item":"fire-stone","level":null,"toDex":59}]'::jsonb, '[]'::jsonb, 'BST 350 · → #59: fire-stone → assigned Lv.28', null),
-  (59, 'Arcanine', 'fire', null, 13, 321, 9, '/pokemon/059_front.png', '[{"type":"fire","count":2},{"type":"base","count":1}]'::jsonb, 3, 4, '[]'::jsonb, '[{"level":38,"effect":"ADD_DIE","dieType":"base"},{"level":38,"amount":1,"effect":"ADD_REROLL"},{"level":50,"effect":"ADD_DIE","dieType":"fire"},{"level":50,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 555', null),
-  (57, 'Primeape', 'fighting', null, 12, 271, 9, '/pokemon/057_front.png', '[{"type":"fighting","count":2},{"type":"base","count":1}]'::jsonb, 3, 4, '[{"level":35,"toDex":979}]'::jsonb, '[{"level":36,"effect":"ADD_DIE","dieType":"base"},{"level":36,"amount":1,"effect":"ADD_REROLL"},{"level":50,"effect":"ADD_DIE","dieType":"fighting"},{"level":50,"amount":1,"effect":"ADD_REROLL"},{"level":35,"effect":"EVOLVE"}]'::jsonb, 'BST 455', null),
-  (5, 'Charmeleon', 'fire', null, 12, 257, 8, '/pokemon/005_front.png', '[{"type":"fire","count":2},{"type":"base","count":1}]'::jsonb, 3, 5, '[{"level":36,"toDex":6}]'::jsonb, '[{"level":36,"effect":"EVOLVE"}]'::jsonb, 'BST 405', null),
-  (83, 'Farfetch’d', 'normal', 'flying', 12, 245, 6, '/pokemon/083_front.png', '[{"type":"normal","count":1}]'::jsonb, 1, 5, '[]'::jsonb, '[{"level":10,"effect":"ADD_DIE","dieType":"base"},{"level":10,"amount":1,"effect":"ADD_REROLL"},{"level":20,"effect":"ADD_DIE","dieType":"flying"},{"level":20,"amount":1,"effect":"ADD_REROLL"},{"level":30,"effect":"ADD_DIE","dieType":"flying"}]'::jsonb, 'BST 377', null),
-  (194, 'Wooper', 'water', 'ground', 12, 251, 1, '/pokemon/194_front.png', '[{"type":"water","count":1}]'::jsonb, 2, 1, '[{"toDex":195,"level":20}]'::jsonb, '[{"level":8,"effect":"ADD_DIE","dieType":"base"},{"level":14,"effect":"REPLACE_DIE","dieType":"ground","fromDieType":"base"},{"level":20,"effect":"EVOLVE"}]'::jsonb, 'BST 210', null),
-  (203, 'Girafarig', 'normal', 'psychic', 12, 281, 8, '/pokemon/203_front.png', '[{"type":"normal","count":1},{"type":"psychic","count":1}]'::jsonb, 2, 5, '[{"level":32,"toDex":981}]'::jsonb, '[{"level":20,"effect":"ADD_DIE","dieType":"psychic"},{"level":20,"amount":1,"effect":"ADD_REROLL"},{"level":36,"effect":"ADD_DIE","dieType":"normal"},{"level":36,"amount":1,"effect":"ADD_REROLL"},{"level":50,"effect":"ADD_DIE","dieType":"psychic"},{"level":50,"amount":1,"effect":"ADD_REROLL"},{"level":32,"effect":"EVOLVE"}]'::jsonb, 'BST 455', null),
-  (206, 'Dunsparce', 'normal', null, 13, 341, 4, '/pokemon/206_front.png', '[{"type":"normal","count":1}]'::jsonb, 1, 2, '[{"level":32,"toDex":982}]'::jsonb, '[{"level":20,"effect":"ADD_DIE","dieType":"normal"},{"level":20,"amount":1,"effect":"ADD_REROLL"},{"level":10,"effect":"ADD_DIE","dieType":"normal"},{"level":32,"effect":"EVOLVE"}]'::jsonb, 'BST 415', null),
-  (211, 'Qwilfish', 'water', 'poison', 12, 271, 8, '/pokemon/211_front.png', '[{"type":"water","count":2}]'::jsonb, 2, 5, '[]'::jsonb, '[{"level":20,"effect":"ADD_DIE","dieType":"poison"},{"level":20,"amount":1,"effect":"ADD_REROLL"},{"level":32,"amount":1,"effect":"ADD_REROLL"},{"level":38,"effect":"ADD_DIE","dieType":"poison"}]'::jsonb, 'BST 440', null),
-  (215, 'Sneasel', 'dark', 'ice', 12, 251, 11, '/pokemon/215_front.png', '[{"type":"dark","count":1},{"type":"ice","count":1}]'::jsonb, 2, 5, '[{"toDex":461,"level":null,"item":"razor-claw"}]'::jsonb, '[{"level":22,"effect":"ADD_DIE","dieType":"ice"},{"level":22,"amount":1,"effect":"ADD_REROLL"},{"level":40,"effect":"ADD_DIE","dieType":"dark"},{"level":40,"amount":1,"effect":"ADD_REROLL"},{"level":50,"effect":"ADD_DIE","dieType":"ice"}]'::jsonb, 'BST 430', null),
-  (217, 'Ursaring', 'normal', null, 13, 321, 5, '/pokemon/217_front.png', '[{"type":"normal","count":3}]'::jsonb, 3, 5, '[{"item":"peat-block","level":null,"toDex":901}]'::jsonb, '[{"level":40,"effect":"ADD_DIE","dieType":"normal"},{"level":40,"amount":1,"effect":"ADD_REROLL"},{"level":50,"effect":"ADD_DIE","dieType":"normal"},{"level":50,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 500', null),
-  (222, 'Corsola', 'water', 'rock', 12, 271, 3, '/pokemon/222_front.png', '[{"type":"water","count":1},{"type":"rock","count":1}]'::jsonb, 2, 5, '[]'::jsonb, '[{"level":20,"effect":"ADD_DIE","dieType":"water"},{"level":20,"amount":1,"effect":"ADD_REROLL"},{"level":39,"effect":"ADD_DIE","dieType":"rock"},{"level":39,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 410', null),
-  (234, 'Stantler', 'normal', null, 12, 287, 8, '/pokemon/234_front.png', '[{"type":"normal","count":2}]'::jsonb, 2, 5, '[{"level":30,"toDex":899}]'::jsonb, '[{"level":27,"effect":"ADD_DIE","dieType":"normal"},{"level":27,"amount":1,"effect":"ADD_REROLL"},{"level":42,"effect":"ADD_DIE","dieType":"normal"},{"level":42,"amount":1,"effect":"ADD_REROLL"},{"level":30,"effect":"EVOLVE"}]'::jsonb, 'BST 465', null),
-  (264, 'Linoone', 'normal', null, 12, 297, 10, '/pokemon/264_front.png', '[{"type":"normal","count":2},{"type":"base","count":1}]'::jsonb, 3, 4, '[]'::jsonb, '[{"level":40,"effect":"ADD_DIE","dieType":"normal"},{"level":40,"amount":1,"effect":"ADD_REROLL"},{"level":50,"effect":"REPLACE_DIE","dieType":"normal","fromDieType":"base"}]'::jsonb, 'BST 420', null),
-  (132, 'Ditto', 'normal', null, 12, 237, 4, '/pokemon/132_front.png', '[{"type":"normal","count":2}]'::jsonb, 2, 6, '[]'::jsonb, '[]'::jsonb, 'BST 288', null),
-  (334, 'Altaria', 'dragon', 'flying', 12, 291, 8, '/pokemon/334_front.png', '[{"type":"dragon","count":1},{"type":"flying","count":2}]'::jsonb, 4, 5, '[]'::jsonb, '[{"level":42,"effect":"ADD_DIE","dieType":"dragon"},{"level":42,"amount":1,"effect":"ADD_REROLL"},{"level":50,"effect":"ADD_DIE","dieType":"flying"},{"level":50,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 490', null),
-  (60, 'Poliwag', 'water', null, 12, 221, 9, '/pokemon/060_front.png', '[{"type":"water","count":1},{"type":"base","count":1}]'::jsonb, 2, 1, '[{"level":25,"toDex":61}]'::jsonb, '[{"level":25,"effect":"EVOLVE"},{"level":18,"effect":"REPLACE_DIE","dieType":"water","fromDieType":"base"}]'::jsonb, 'BST 300', null),
-  (61, 'Poliwhirl', 'water', null, 12, 271, 9, '/pokemon/061_front.png', '[{"type":"water","count":2},{"type":"base","count":1}]'::jsonb, 3, 3, '[{"item":"water-stone","level":null,"toDex":62},{"item":"kings-rock","level":null,"toDex":186}]'::jsonb, '[]'::jsonb, 'BST 385 · → #62: water-stone → assigned Lv.28', null),
-  (62, 'Poliwrath', 'water', 'fighting', 13, 321, 7, '/pokemon/062_front.png', '[{"type":"water","count":1},{"type":"fighting","count":1},{"type":"base","count":2}]'::jsonb, 4, 5, '[]'::jsonb, '[{"level":50,"effect":"ADD_DIE","dieType":"fighting"},{"level":50,"amount":1,"effect":"ADD_REROLL"},{"level":42,"effect":"REPLACE_DIE","dieType":"water","fromDieType":"base"}]'::jsonb, 'BST 510', null),
-  (63, 'Abra', 'psychic', null, 11, 191, 9, '/pokemon/063_front.png', '[{"type":"psychic","count":1},{"type":"base","count":1}]'::jsonb, 2, 2, '[{"level":16,"toDex":64}]'::jsonb, '[{"level":16,"effect":"EVOLVE"},{"level":12,"effect":"REPLACE_DIE","dieType":"psychic","fromDieType":"base"}]'::jsonb, 'BST 310', null),
-  (64, 'Kadabra', 'psychic', null, 12, 221, 10, '/pokemon/064_front.png', '[{"type":"psychic","count":2},{"type":"base","count":1}]'::jsonb, 3, 4, '[{"level":34,"toDex":65}]'::jsonb, '[{"level":34,"effect":"EVOLVE"},{"level":28,"effect":"REPLACE_DIE","dieType":"psychic","fromDieType":"base"}]'::jsonb, 'BST 400 · → #65: trade → assigned Lv.34', null),
-  (65, 'Alakazam', 'psychic', null, 12, 251, 12, '/pokemon/065_front.png', '[{"type":"psychic","count":3},{"type":"base","count":1}]'::jsonb, 4, 5, '[]'::jsonb, '[{"level":50,"effect":"ADD_DIE","dieType":"psychic"},{"level":50,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 500', null),
-  (66, 'Machop', 'fighting', null, 12, 281, 3, '/pokemon/066_front.png', '[{"type":"fighting","count":1},{"type":"base","count":1}]'::jsonb, 2, 3, '[{"level":28,"toDex":67}]'::jsonb, '[{"level":28,"effect":"EVOLVE"},{"level":18,"effect":"REPLACE_DIE","dieType":"fighting","fromDieType":"base"}]'::jsonb, 'BST 305', null),
-  (82, 'Magneton', 'electric', 'steel', 12, 241, 7, '/pokemon/082_front.png', '[{"type":"electric","count":1},{"type":"steel","count":1},{"type":"base","count":1}]'::jsonb, 3, 5, '[{"item":"thunder-stone","level":null,"toDex":462}]'::jsonb, '[{"level":40,"effect":"ADD_DIE","dieType":"electric"},{"level":40,"amount":1,"effect":"ADD_REROLL"},{"level":50,"effect":"ADD_DIE","dieType":"steel"},{"level":50,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 465', null),
-  (84, 'Doduo', 'normal', 'flying', 12, 211, 7, '/pokemon/084_front.png', '[{"type":"normal","count":1}]'::jsonb, 2, 2, '[{"level":31,"toDex":85}]'::jsonb, '[{"level":10,"effect":"ADD_DIE","dieType":"base"},{"level":31,"effect":"EVOLVE"},{"level":20,"effect":"REPLACE_DIE","dieType":"flying","fromDieType":"base"}]'::jsonb, 'BST 310', null),
-  (85, 'Dodrio', 'normal', 'flying', 12, 261, 11, '/pokemon/085_front.png', '[{"type":"normal","count":1},{"type":"flying","count":1},{"type":"base","count":1}]'::jsonb, 3, 5, '[]'::jsonb, '[{"level":40,"effect":"ADD_DIE","dieType":"normal"},{"level":40,"amount":1,"effect":"ADD_REROLL"},{"level":50,"effect":"ADD_DIE","dieType":"flying"},{"level":50,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 470', null),
-  (86, 'Seel', 'water', null, 12, 271, 4, '/pokemon/086_front.png', '[{"type":"water","count":2}]'::jsonb, 2, 2, '[{"level":34,"toDex":87}]'::jsonb, '[{"level":34,"effect":"EVOLVE"},{"level":24,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 325', null),
-  (87, 'Dewgong', 'water', 'ice', 13, 321, 7, '/pokemon/087_front.png', '[{"type":"water","count":2},{"type":"ice","count":1}]'::jsonb, 3, 4, '[]'::jsonb, '[{"level":40,"effect":"ADD_DIE","dieType":"ice"},{"level":40,"amount":1,"effect":"ADD_REROLL"},{"level":50,"effect":"ADD_DIE","dieType":"ice"},{"level":50,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 475', null),
-  (88, 'Grimer', 'poison', null, 12, 301, 2, '/pokemon/088_front.png', '[{"type":"poison","count":2}]'::jsonb, 2, 2, '[{"level":38,"toDex":89}]'::jsonb, '[{"level":38,"effect":"EVOLVE"},{"level":24,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 325', null),
-  (89, 'Muk', 'poison', null, 13, 351, 5, '/pokemon/089_front.png', '[{"type":"poison","count":2},{"type":"base","count":1}]'::jsonb, 3, 4, '[]'::jsonb, '[{"level":36,"effect":"ADD_DIE","dieType":"base"},{"level":36,"amount":1,"effect":"ADD_REROLL"},{"level":50,"effect":"ADD_DIE","dieType":"poison"},{"level":50,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 500', null),
-  (98, 'Krabby', 'water', null, 11, 201, 5, '/pokemon/098_front.png', '[{"type":"water","count":2}]'::jsonb, 2, 2, '[{"level":28,"toDex":99}]'::jsonb, '[{"level":28,"effect":"EVOLVE"}]'::jsonb, 'BST 325', null),
-  (99, 'Kingler', 'water', null, 12, 251, 7, '/pokemon/099_front.png', '[{"type":"water","count":2},{"type":"base","count":1}]'::jsonb, 3, 5, '[]'::jsonb, '[{"level":36,"effect":"ADD_DIE","dieType":"base"},{"level":36,"amount":1,"effect":"ADD_REROLL"},{"level":50,"effect":"ADD_DIE","dieType":"water"},{"level":50,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 475', null),
-  (1, 'Bulbasaur', 'grass', 'poison', 12, 231, 4, '/pokemon/001_front.png', '[{"type":"grass","count":1},{"type":"base","count":1}]'::jsonb, 2, 5, '[{"level":16,"toDex":2}]'::jsonb, '[{"level":16,"effect":"EVOLVE"}]'::jsonb, 'BST 318', null),
-  (344, 'Claydol', 'ground', 'psychic', 12, 261, 7, '/pokemon/344_front.png', '[{"type":"ground","count":2},{"type":"psychic","count":1}]'::jsonb, 3, 4, '[]'::jsonb, '[{"level":42,"effect":"ADD_DIE","dieType":"psychic"},{"level":42,"amount":1,"effect":"ADD_REROLL"},{"level":50,"effect":"ADD_DIE","dieType":"ground"},{"level":50,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 500', null),
-  (345, 'Lileep', 'rock', 'grass', 12, 273, 2, '/pokemon/345_front.png', '[{"type":"rock","count":1},{"type":"grass","count":1}]'::jsonb, 2, 5, '[{"level":40,"toDex":346}]'::jsonb, '[{"level":40,"effect":"EVOLVE"},{"level":25,"effect":"ADD_DIE","dieType":"rock"},{"level":25,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 355', null),
-  (346, 'Cradily', 'rock', 'grass', 13, 313, 4, '/pokemon/346_front.png', '[{"type":"rock","count":2},{"type":"grass","count":2}]'::jsonb, 4, 5, '[]'::jsonb, '[{"level":50,"effect":"ADD_DIE","dieType":"rock"},{"level":50,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 495', null),
-  (347, 'Anorith', 'rock', 'bug', 12, 231, 7, '/pokemon/347_front.png', '[{"type":"rock","count":1},{"type":"bug","count":1}]'::jsonb, 2, 5, '[{"level":40,"toDex":348}]'::jsonb, '[{"level":40,"effect":"EVOLVE"},{"level":25,"effect":"ADD_DIE","dieType":"rock"},{"level":25,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 355', null),
-  (348, 'Armaldo', 'rock', 'bug', 12, 291, 4, '/pokemon/348_front.png', '[{"type":"rock","count":2},{"type":"bug","count":2}]'::jsonb, 4, 5, '[]'::jsonb, '[{"level":50,"effect":"ADD_DIE","dieType":"rock"},{"level":50,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 495', null),
-  (349, 'Feebas', 'water', null, 11, 181, 8, '/pokemon/349_front.png', '[{"type":"water","count":1}]'::jsonb, 1, 1, '[{"level":30,"toDex":350}]'::jsonb, '[{"level":30,"effect":"EVOLVE"}]'::jsonb, 'BST 200 · → #350: level-up → assigned Lv.30', null),
-  (550, 'Basculin', 'water', null, 12, 281, 9, '/pokemon/550_front.png', '[{"type":"water","count":2}]'::jsonb, 2, 7, '[{"level":30,"toDex":902}]'::jsonb, '[{"level":24,"effect":"ADD_DIE","dieType":"water"},{"level":24,"amount":1,"effect":"ADD_REROLL"},{"level":40,"effect":"ADD_DIE","dieType":"base"},{"level":40,"amount":1,"effect":"ADD_REROLL"},{"level":50,"effect":"ADD_DIE","dieType":"water"},{"level":50,"amount":1,"effect":"ADD_REROLL"},{"level":30,"effect":"EVOLVE"}]'::jsonb, 'BST 460', null),
-  (350, 'Milotic', 'water', null, 13, 331, 8, '/pokemon/350_front.png', '[{"type":"water","count":3},{"type":"base","count":1}]'::jsonb, 3, 5, '[]'::jsonb, '[{"level":40,"effect":"REPLACE_DIE","dieType":"water","fromDieType":"base"},{"level":40,"amount":1,"effect":"ADD_REROLL"},{"level":50,"effect":"ADD_DIE","dieType":"water"},{"level":50,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 540', null),
-  (562, 'Yamask', 'ghost', null, 12, 217, 3, '/pokemon/562_front.png', '[{"type":"ghost","count":2}]'::jsonb, 2, 2, '[{"toDex":563,"level":34}]'::jsonb, '[{"level":22,"effect":"ADD_DIE","dieType":"base"},{"level":22,"amount":1,"effect":"ADD_REROLL"},{"level":34,"effect":"EVOLVE"}]'::jsonb, 'BST 303', null),
-  (625, 'Bisharp', 'dark', 'steel', 12, 271, 7, '/pokemon/625_front.png', '[{"type":"dark","count":2},{"type":"steel","count":1},{"type":"base","count":1}]'::jsonb, 4, 5, '[{"level":60,"toDex":983}]'::jsonb, '[{"level":50,"effect":"ADD_DIE","dieType":"steel"},{"level":50,"amount":1,"effect":"ADD_REROLL"},{"level":60,"effect":"EVOLVE"}]'::jsonb, 'BST 490', null),
-  (650, 'Chespin', 'grass', null, 12, 253, 3, '/pokemon/650_front.png', '[{"type":"grass","count":2}]'::jsonb, 2, 5, '[{"level":16,"toDex":651}]'::jsonb, '[{"level":16,"effect":"EVOLVE"}]'::jsonb, 'BST 313', null),
-  (651, 'Quilladin', 'grass', null, 12, 263, 5, '/pokemon/651_front.png', '[{"type":"grass","count":2},{"type":"base","count":1}]'::jsonb, 3, 5, '[{"level":36,"toDex":652}]'::jsonb, '[{"level":24,"effect":"REPLACE_DIE","dieType":"grass","fromDieType":"base"},{"level":36,"effect":"EVOLVE"}]'::jsonb, 'BST 405', null),
-  (652, 'Chesnaught', 'grass', 'fighting', 13, 317, 6, '/pokemon/652_front.png', '[{"type":"grass","count":2},{"type":"fighting","count":2}]'::jsonb, 4, 5, '[]'::jsonb, '[{"level":50,"effect":"ADD_DIE","dieType":"grass"},{"level":50,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 530', null),
-  (653, 'Fennekin', 'fire', null, 12, 221, 6, '/pokemon/653_front.png', '[{"type":"fire","count":2}]'::jsonb, 2, 5, '[{"level":16,"toDex":654}]'::jsonb, '[{"level":16,"effect":"EVOLVE"}]'::jsonb, 'BST 307', null),
-  (654, 'Braixen', 'fire', null, 12, 259, 7, '/pokemon/654_front.png', '[{"type":"fire","count":2},{"type":"base","count":1}]'::jsonb, 3, 5, '[{"level":36,"toDex":655}]'::jsonb, '[{"level":24,"effect":"REPLACE_DIE","dieType":"fire","fromDieType":"base"},{"level":36,"effect":"EVOLVE"}]'::jsonb, 'BST 409', null),
-  (655, 'Delphox', 'fire', 'psychic', 12, 291, 10, '/pokemon/655_front.png', '[{"type":"fire","count":2},{"type":"psychic","count":2}]'::jsonb, 4, 5, '[]'::jsonb, '[{"level":50,"effect":"ADD_DIE","dieType":"fire"},{"level":50,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 534', null),
-  (656, 'Froakie', 'water', null, 12, 223, 7, '/pokemon/656_front.png', '[{"type":"water","count":2}]'::jsonb, 2, 5, '[{"level":16,"toDex":657}]'::jsonb, '[{"level":16,"effect":"EVOLVE"}]'::jsonb, 'BST 314', null),
-  (657, 'Frogadier', 'water', null, 12, 249, 9, '/pokemon/657_front.png', '[{"type":"water","count":2},{"type":"base","count":1}]'::jsonb, 3, 5, '[{"level":36,"toDex":658}]'::jsonb, '[{"level":24,"effect":"REPLACE_DIE","dieType":"water","fromDieType":"base"},{"level":36,"effect":"EVOLVE"}]'::jsonb, 'BST 405', null),
-  (243, 'Raikou', 'electric', null, 13, 321, 11, '/pokemon/243_front.png', '[{"type":"electric","count":4},{"type":"base","count":2}]'::jsonb, 5, 6, '[]'::jsonb, '[]'::jsonb, 'BST 580', null),
-  (354, 'Banette', 'ghost', null, 12, 269, 6, '/pokemon/354_front.png', '[{"type":"ghost","count":3},{"type":"base","count":1}]'::jsonb, 3, 5, '[]'::jsonb, '[{"level":50,"effect":"ADD_DIE","dieType":"ghost"},{"level":50,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 455', null),
-  (355, 'Duskull', 'ghost', null, 11, 181, 2, '/pokemon/355_front.png', '[{"type":"ghost","count":2}]'::jsonb, 2, 2, '[{"level":37,"toDex":356}]'::jsonb, '[{"level":37,"effect":"EVOLVE"},{"level":24,"effect":"ADD_DIE","dieType":"base"},{"level":24,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 295', null),
-  (490, 'Manaphy', 'water', null, 13, 341, 10, '/pokemon/490_front.png', '[{"type":"water","count":3}]'::jsonb, 5, 5, '[]'::jsonb, '[]'::jsonb, 'BST 600', null),
-  (658, 'Greninja', 'water', 'dark', 12, 285, 12, '/pokemon/658_front.png', '[{"type":"water","count":2},{"type":"dark","count":2}]'::jsonb, 4, 5, '[]'::jsonb, '[{"level":50,"effect":"ADD_DIE","dieType":"water"},{"level":50,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 530', null),
-  (659, 'Bunnelby', 'normal', null, 12, 217, 5, '/pokemon/659_front.png', '[{"type":"normal","count":1}]'::jsonb, 1, 1, '[{"level":20,"toDex":660}]'::jsonb, '[{"level":8,"effect":"ADD_DIE","dieType":"base"},{"level":8,"amount":1,"effect":"ADD_REROLL"},{"level":15,"effect":"REPLACE_DIE","dieType":"normal","fromDieType":"base"},{"level":20,"effect":"EVOLVE"}]'::jsonb, 'BST 237', null),
-  (660, 'Diggersby', 'normal', 'ground', 13, 311, 7, '/pokemon/660_front.png', '[{"type":"normal","count":1},{"type":"ground","count":1}]'::jsonb, 2, 3, '[]'::jsonb, '[{"level":26,"effect":"ADD_DIE","dieType":"normal"},{"level":26,"amount":1,"effect":"ADD_REROLL"},{"level":40,"effect":"ADD_DIE","dieType":"ground"},{"level":40,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 423', null),
-  (661, 'Fletchling', 'normal', 'flying', 12, 231, 6, '/pokemon/661_front.png', '[{"type":"normal","count":1}]'::jsonb, 1, 1, '[{"level":17,"toDex":662}]'::jsonb, '[{"level":7,"effect":"ADD_DIE","dieType":"base"},{"level":7,"amount":1,"effect":"ADD_REROLL"},{"level":17,"effect":"EVOLVE"}]'::jsonb, 'BST 278', null),
-  (662, 'Fletchinder', 'fire', 'flying', 12, 265, 8, '/pokemon/662_front.png', '[{"type":"fire","count":1},{"type":"flying","count":1},{"type":"base","count":1}]'::jsonb, 3, 3, '[{"level":35,"toDex":663}]'::jsonb, '[{"level":24,"effect":"REPLACE_DIE","dieType":"flying","fromDieType":"base"},{"level":35,"effect":"EVOLVE"}]'::jsonb, 'BST 382', null),
-  (663, 'Talonflame', 'fire', 'flying', 12, 297, 12, '/pokemon/663_front.png', '[{"type":"fire","count":2},{"type":"flying","count":2}]'::jsonb, 4, 5, '[]'::jsonb, '[{"level":50,"effect":"ADD_DIE","dieType":"fire"},{"level":50,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 499', null),
-  (664, 'Scatterbug', 'bug', null, 12, 217, 3, '/pokemon/664_front.png', '[{"type":"bug","count":1}]'::jsonb, 1, 1, '[{"level":9,"toDex":665}]'::jsonb, '[{"level":9,"effect":"EVOLVE"}]'::jsonb, 'BST 200', null),
-  (665, 'Spewpa', 'bug', null, 12, 231, 2, '/pokemon/665_front.png', '[{"type":"bug","count":2}]'::jsonb, 2, 3, '[{"level":12,"toDex":666}]'::jsonb, '[{"level":12,"effect":"EVOLVE"}]'::jsonb, 'BST 213', null),
-  (666, 'Vivillon', 'bug', 'flying', 12, 301, 8, '/pokemon/666_front.png', '[{"type":"bug","count":2},{"type":"flying","count":1}]'::jsonb, 3, 5, '[]'::jsonb, '[{"level":40,"effect":"ADD_DIE","dieType":"bug"},{"level":40,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 411', null),
-  (667, 'Litleo', 'fire', 'normal', 12, 265, 7, '/pokemon/667_front.png', '[{"type":"fire","count":1},{"type":"normal","count":1}]'::jsonb, 2, 2, '[{"level":35,"toDex":668}]'::jsonb, '[{"level":23,"effect":"ADD_DIE","dieType":"fire"},{"level":23,"amount":1,"effect":"ADD_REROLL"},{"level":35,"effect":"EVOLVE"}]'::jsonb, 'BST 369', null),
-  (668, 'Pyroar', 'fire', 'normal', 13, 313, 10, '/pokemon/668_front.png', '[{"type":"fire","count":2},{"type":"normal","count":1}]'::jsonb, 3, 5, '[]'::jsonb, '[{"level":40,"effect":"ADD_DIE","dieType":"normal"},{"level":40,"amount":1,"effect":"ADD_REROLL"},{"level":50,"effect":"ADD_DIE","dieType":"fire"},{"level":50,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 507', null),
-  (669, 'Flabébé', 'fairy', null, 12, 229, 4, '/pokemon/669_front.png', '[{"type":"fairy","count":2}]'::jsonb, 2, 2, '[{"level":19,"toDex":670}]'::jsonb, '[{"level":19,"effect":"EVOLVE"}]'::jsonb, 'BST 303', null),
-  (670, 'Floette', 'fairy', null, 12, 249, 5, '/pokemon/670_front.png', '[{"type":"fairy","count":2},{"type":"base","count":1}]'::jsonb, 3, 3, '[{"item":"shiny-stone","level":null,"toDex":671}]'::jsonb, '[{"level":24,"effect":"REPLACE_DIE","dieType":"fairy","fromDieType":"base"}]'::jsonb, 'BST 371 · → #671: shiny-stone', null),
-  (671, 'Florges', 'fairy', null, 12, 297, 7, '/pokemon/671_front.png', '[{"type":"fairy","count":4}]'::jsonb, 4, 5, '[]'::jsonb, '[{"level":50,"effect":"ADD_DIE","dieType":"fairy"},{"level":50,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 552', null),
-  (672, 'Skiddo', 'grass', null, 12, 273, 5, '/pokemon/672_front.png', '[{"type":"grass","count":2}]'::jsonb, 2, 2, '[{"level":32,"toDex":673}]'::jsonb, '[{"level":20,"effect":"ADD_DIE","dieType":"base"},{"level":20,"amount":1,"effect":"ADD_REROLL"},{"level":32,"effect":"EVOLVE"}]'::jsonb, 'BST 350', null),
-  (673, 'Gogoat', 'grass', null, 13, 387, 6, '/pokemon/673_front.png', '[{"type":"grass","count":2},{"type":"base","count":1}]'::jsonb, 3, 5, '[]'::jsonb, '[{"level":38,"effect":"ADD_DIE","dieType":"grass"},{"level":38,"amount":1,"effect":"ADD_REROLL"},{"level":50,"effect":"ADD_DIE","dieType":"grass"},{"level":50,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 531', null),
-  (674, 'Pancham', 'fighting', null, 12, 275, 4, '/pokemon/674_front.png', '[{"type":"fighting","count":2}]'::jsonb, 2, 2, '[{"level":32,"toDex":675}]'::jsonb, '[{"level":20,"effect":"ADD_DIE","dieType":"base"},{"level":20,"amount":1,"effect":"ADD_REROLL"},{"level":32,"effect":"EVOLVE"}]'::jsonb, 'BST 348', null),
-  (675, 'Pangoro', 'fighting', 'dark', 13, 331, 5, '/pokemon/675_front.png', '[{"type":"fighting","count":2},{"type":"dark","count":1}]'::jsonb, 3, 5, '[]'::jsonb, '[{"level":38,"effect":"ADD_DIE","dieType":"dark"},{"level":38,"amount":1,"effect":"ADD_REROLL"},{"level":50,"effect":"ADD_DIE","dieType":"fighting"},{"level":50,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 495', null),
-  (676, 'Furfrou', 'normal', null, 12, 291, 10, '/pokemon/676_front.png', '[{"type":"normal","count":2}]'::jsonb, 2, 3, '[]'::jsonb, '[{"level":24,"effect":"ADD_DIE","dieType":"normal"},{"level":24,"amount":1,"effect":"ADD_REROLL"},{"level":40,"effect":"ADD_DIE","dieType":"base"},{"level":40,"amount":1,"effect":"ADD_REROLL"},{"level":50,"effect":"ADD_DIE","dieType":"normal"},{"level":50,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 472', null),
-  (677, 'Espurr', 'psychic', null, 12, 265, 6, '/pokemon/677_front.png', '[{"type":"psychic","count":2}]'::jsonb, 2, 2, '[{"level":25,"toDex":678}]'::jsonb, '[{"level":25,"effect":"EVOLVE"}]'::jsonb, 'BST 355', null),
-  (678, 'Meowstic', 'psychic', null, 12, 289, 10, '/pokemon/678_front.png', '[{"type":"psychic","count":2},{"type":"base","count":1}]'::jsonb, 3, 4, '[]'::jsonb, '[{"level":36,"effect":"ADD_DIE","dieType":"psychic"},{"level":36,"amount":1,"effect":"ADD_REROLL"},{"level":50,"effect":"ADD_DIE","dieType":"psychic"},{"level":50,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 466', null),
-  (679, 'Honedge', 'steel', 'ghost', 12, 231, 2, '/pokemon/679_front.png', '[{"type":"steel","count":1},{"type":"ghost","count":1}]'::jsonb, 2, 3, '[{"level":35,"toDex":680}]'::jsonb, '[{"level":23,"effect":"ADD_DIE","dieType":"steel"},{"level":23,"amount":1,"effect":"ADD_REROLL"},{"level":35,"effect":"EVOLVE"}]'::jsonb, 'BST 325', null),
-  (680, 'Doublade', 'steel', 'ghost', 12, 259, 3, '/pokemon/680_front.png', '[{"type":"steel","count":1},{"type":"ghost","count":1},{"type":"base","count":1}]'::jsonb, 3, 4, '[{"item":"dusk-stone","level":null,"toDex":681}]'::jsonb, '[{"level":39,"effect":"REPLACE_DIE","dieType":"ghost","fromDieType":"base"}]'::jsonb, 'BST 448 · → #681: dusk-stone', null),
-  (681, 'Aegislash', 'steel', 'ghost', 12, 261, 6, '/pokemon/681_front.png', '[{"type":"steel","count":2},{"type":"ghost","count":2}]'::jsonb, 4, 5, '[]'::jsonb, '[{"level":50,"effect":"ADD_DIE","dieType":"steel"},{"level":50,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 500', null),
-  (682, 'Spritzee', 'fairy', null, 12, 297, 2, '/pokemon/682_front.png', '[{"type":"fairy","count":2}]'::jsonb, 2, 2, '[{"item":"sachet","level":null,"toDex":683}]'::jsonb, '[{"level":20,"effect":"ADD_DIE","dieType":"base"},{"level":20,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 341 · → #683: sachet', null),
-  (683, 'Aromatisse', 'fairy', null, 13, 343, 2, '/pokemon/683_front.png', '[{"type":"fairy","count":2},{"type":"base","count":1}]'::jsonb, 3, 3, '[]'::jsonb, '[{"level":40,"effect":"ADD_DIE","dieType":"fairy"},{"level":40,"amount":1,"effect":"ADD_REROLL"},{"level":50,"effect":"ADD_DIE","dieType":"fairy"},{"level":50,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 462', null),
-  (684, 'Swirlix', 'fairy', null, 12, 265, 4, '/pokemon/684_front.png', '[{"type":"fairy","count":2}]'::jsonb, 2, 2, '[{"item":"whipped-dream","level":null,"toDex":685}]'::jsonb, '[{"level":20,"effect":"ADD_DIE","dieType":"base"},{"level":20,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 341 · → #685: whipped-dream', null),
-  (685, 'Slurpuff', 'fairy', null, 12, 305, 7, '/pokemon/685_front.png', '[{"type":"fairy","count":2},{"type":"base","count":1}]'::jsonb, 3, 3, '[]'::jsonb, '[{"level":40,"effect":"ADD_DIE","dieType":"fairy"},{"level":40,"amount":1,"effect":"ADD_REROLL"},{"level":50,"effect":"ADD_DIE","dieType":"fairy"},{"level":50,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 480', null),
-  (686, 'Inkay', 'dark', 'psychic', 12, 247, 4, '/pokemon/686_front.png', '[{"type":"dark","count":1}]'::jsonb, 1, 2, '[{"level":30,"toDex":687}]'::jsonb, '[{"level":6,"effect":"ADD_DIE","dieType":"base"},{"level":6,"amount":1,"effect":"ADD_REROLL"},{"level":20,"effect":"ADD_DIE","dieType":"dark"},{"level":20,"amount":1,"effect":"ADD_REROLL"},{"level":30,"effect":"EVOLVE"}]'::jsonb, 'BST 288', null),
-  (687, 'Malamar', 'dark', 'psychic', 13, 313, 7, '/pokemon/687_front.png', '[{"type":"dark","count":2},{"type":"psychic","count":1}]'::jsonb, 3, 4, '[]'::jsonb, '[{"level":38,"effect":"ADD_DIE","dieType":"psychic"},{"level":38,"amount":1,"effect":"ADD_REROLL"},{"level":50,"effect":"ADD_DIE","dieType":"dark"},{"level":50,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 482', null),
-  (688, 'Binacle', 'rock', 'water', 12, 225, 5, '/pokemon/688_front.png', '[{"type":"rock","count":1},{"type":"water","count":1}]'::jsonb, 2, 3, '[{"level":39,"toDex":689}]'::jsonb, '[{"level":26,"effect":"ADD_DIE","dieType":"rock"},{"level":26,"amount":1,"effect":"ADD_REROLL"},{"level":39,"effect":"EVOLVE"}]'::jsonb, 'BST 306', null),
-  (6, 'Charizard', 'fire', 'flying', 12, 297, 10, '/pokemon/006_front.png', '[{"type":"fire","count":2},{"type":"flying","count":1},{"type":"base","count":1}]'::jsonb, 4, 5, '[]'::jsonb, '[{"level":50,"effect":"ADD_DIE","dieType":"flying"},{"level":50,"amount":1,"effect":"ADD_REROLL"},{"level":42,"effect":"REPLACE_DIE","dieType":"fire","fromDieType":"base"}]'::jsonb, 'BST 534', null),
-  (689, 'Barbaracle', 'rock', 'water', 12, 285, 6, '/pokemon/689_front.png', '[{"type":"rock","count":2},{"type":"water","count":2}]'::jsonb, 4, 5, '[]'::jsonb, '[{"level":50,"effect":"ADD_DIE","dieType":"water"},{"level":50,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 500', null),
-  (690, 'Skrelp', 'poison', 'water', 12, 241, 3, '/pokemon/690_front.png', '[{"type":"poison","count":1},{"type":"water","count":1}]'::jsonb, 2, 2, '[{"level":48,"toDex":691}]'::jsonb, '[{"level":26,"effect":"ADD_DIE","dieType":"poison"},{"level":26,"amount":1,"effect":"ADD_REROLL"},{"level":48,"effect":"EVOLVE"}]'::jsonb, 'BST 320', null),
-  (691, 'Dragalge', 'poison', 'dragon', 12, 271, 4, '/pokemon/691_front.png', '[{"type":"poison","count":2},{"type":"dragon","count":1},{"type":"base","count":1}]'::jsonb, 4, 5, '[]'::jsonb, '[{"level":50,"effect":"ADD_DIE","dieType":"dragon"},{"level":50,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 494', null),
-  (692, 'Clauncher', 'water', null, 12, 241, 4, '/pokemon/692_front.png', '[{"type":"water","count":2}]'::jsonb, 2, 2, '[{"level":37,"toDex":693}]'::jsonb, '[{"level":25,"effect":"ADD_DIE","dieType":"base"},{"level":25,"amount":1,"effect":"ADD_REROLL"},{"level":37,"effect":"EVOLVE"}]'::jsonb, 'BST 330', null),
-  (693, 'Clawitzer', 'water', null, 12, 283, 5, '/pokemon/693_front.png', '[{"type":"water","count":3},{"type":"base","count":1}]'::jsonb, 4, 5, '[]'::jsonb, '[{"level":50,"effect":"ADD_DIE","dieType":"water"},{"level":50,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 500', null),
-  (694, 'Helioptile', 'electric', 'normal', 12, 229, 7, '/pokemon/694_front.png', '[{"type":"electric","count":1}]'::jsonb, 1, 2, '[{"item":"sun-stone","level":null,"toDex":695}]'::jsonb, '[{"level":6,"effect":"ADD_DIE","dieType":"base"},{"level":6,"amount":1,"effect":"ADD_REROLL"},{"level":20,"effect":"ADD_DIE","dieType":"electric"},{"level":20,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 289 · → #695: sun-stone', null),
-  (695, 'Heliolisk', 'electric', 'normal', 12, 265, 10, '/pokemon/695_front.png', '[{"type":"electric","count":2},{"type":"normal","count":1}]'::jsonb, 3, 4, '[]'::jsonb, '[{"level":40,"effect":"ADD_DIE","dieType":"normal"},{"level":40,"amount":1,"effect":"ADD_REROLL"},{"level":50,"effect":"ADD_DIE","dieType":"electric"},{"level":50,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 481', null),
-  (696, 'Tyrunt', 'rock', 'dragon', 12, 257, 4, '/pokemon/696_front.png', '[{"type":"rock","count":1},{"type":"dragon","count":1}]'::jsonb, 2, 5, '[{"level":39,"toDex":697}]'::jsonb, '[{"level":26,"effect":"ADD_DIE","dieType":"rock"},{"level":26,"amount":1,"effect":"ADD_REROLL"},{"level":39,"effect":"EVOLVE"}]'::jsonb, 'BST 362', null),
-  (697, 'Tyrantrum', 'rock', 'dragon', 12, 305, 7, '/pokemon/697_front.png', '[{"type":"rock","count":2},{"type":"dragon","count":2}]'::jsonb, 4, 5, '[]'::jsonb, '[{"level":50,"effect":"ADD_DIE","dieType":"dragon"},{"level":50,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 521', null),
-  (698, 'Amaura', 'rock', 'ice', 12, 295, 4, '/pokemon/698_front.png', '[{"type":"rock","count":1},{"type":"ice","count":1}]'::jsonb, 2, 5, '[{"level":39,"toDex":699}]'::jsonb, '[{"level":26,"effect":"ADD_DIE","dieType":"rock"},{"level":26,"amount":1,"effect":"ADD_REROLL"},{"level":39,"effect":"EVOLVE"}]'::jsonb, 'BST 362', null),
-  (699, 'Aurorus', 'rock', 'ice', 13, 387, 5, '/pokemon/699_front.png', '[{"type":"rock","count":2},{"type":"ice","count":2}]'::jsonb, 4, 5, '[]'::jsonb, '[{"level":50,"effect":"ADD_DIE","dieType":"ice"},{"level":50,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 521', null),
-  (700, 'Sylveon', 'fairy', null, 13, 331, 6, '/pokemon/700_front.png', '[{"type":"fairy","count":2},{"type":"base","count":1}]'::jsonb, 3, 5, '[]'::jsonb, '[{"level":36,"effect":"ADD_DIE","dieType":"fairy"},{"level":36,"amount":1,"effect":"ADD_REROLL"},{"level":50,"effect":"ADD_DIE","dieType":"fairy"},{"level":50,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 525', null),
-  (701, 'Hawlucha', 'fighting', 'flying', 12, 297, 11, '/pokemon/701_front.png', '[{"type":"fighting","count":1},{"type":"flying","count":1}]'::jsonb, 2, 4, '[]'::jsonb, '[{"level":24,"effect":"ADD_DIE","dieType":"flying"},{"level":24,"amount":1,"effect":"ADD_REROLL"},{"level":40,"effect":"ADD_DIE","dieType":"base"},{"level":40,"amount":1,"effect":"ADD_REROLL"},{"level":50,"effect":"ADD_DIE","dieType":"fighting"},{"level":50,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 500', null),
-  (702, 'Dedenne', 'electric', 'fairy', 12, 275, 10, '/pokemon/702_front.png', '[{"type":"electric","count":1},{"type":"fairy","count":1}]'::jsonb, 2, 3, '[]'::jsonb, '[{"level":20,"effect":"ADD_DIE","dieType":"electric"},{"level":20,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 431', null),
-  (703, 'Carbink', 'rock', 'fairy', 12, 241, 5, '/pokemon/703_front.png', '[{"type":"rock","count":1},{"type":"fairy","count":1}]'::jsonb, 2, 5, '[]'::jsonb, '[{"level":24,"effect":"ADD_DIE","dieType":"fairy"},{"level":24,"amount":1,"effect":"ADD_REROLL"},{"level":40,"effect":"ADD_DIE","dieType":"base"},{"level":40,"amount":1,"effect":"ADD_REROLL"},{"level":50,"effect":"ADD_DIE","dieType":"rock"},{"level":50,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 500', null),
-  (704, 'Goomy', 'dragon', null, 12, 231, 4, '/pokemon/704_front.png', '[{"type":"dragon","count":2}]'::jsonb, 2, 5, '[{"toDex":705,"level":40,"notInRegion":"galar"},{"toDex":10241,"level":40,"region":"galar"}]'::jsonb, '[{"level":26,"effect":"ADD_DIE","dieType":"base"},{"level":26,"amount":1,"effect":"ADD_REROLL"},{"level":40,"effect":"EVOLVE"}]'::jsonb, 'BST 300', null),
-  (705, 'Sliggoo', 'dragon', null, 12, 277, 6, '/pokemon/705_front.png', '[{"type":"dragon","count":3}]'::jsonb, 3, 5, '[{"level":50,"toDex":706}]'::jsonb, '[{"level":42,"effect":"ADD_DIE","dieType":"dragon"},{"level":42,"amount":1,"effect":"ADD_REROLL"},{"level":50,"effect":"EVOLVE"}]'::jsonb, 'BST 452', null),
-  (706, 'Goodra', 'dragon', null, 13, 321, 8, '/pokemon/706_front.png', '[{"type":"dragon","count":4}]'::jsonb, 4, 5, '[]'::jsonb, '[{"level":55,"effect":"ADD_DIE","dieType":"dragon"},{"level":55,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 600', null),
-  (707, 'Klefki', 'steel', 'fairy', 12, 255, 7, '/pokemon/707_front.png', '[{"type":"steel","count":1},{"type":"fairy","count":1}]'::jsonb, 2, 4, '[]'::jsonb, '[{"level":24,"effect":"ADD_DIE","dieType":"fairy"},{"level":24,"amount":1,"effect":"ADD_REROLL"},{"level":40,"effect":"ADD_DIE","dieType":"base"},{"level":40,"amount":1,"effect":"ADD_REROLL"},{"level":50,"effect":"ADD_DIE","dieType":"steel"},{"level":50,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 470', null),
-  (708, 'Phantump', 'ghost', 'grass', 12, 227, 3, '/pokemon/708_front.png', '[{"type":"ghost","count":1},{"type":"grass","count":1}]'::jsonb, 2, 3, '[{"level":34,"toDex":709}]'::jsonb, '[{"level":22,"effect":"ADD_DIE","dieType":"ghost"},{"level":22,"amount":1,"effect":"ADD_REROLL"},{"level":34,"effect":"EVOLVE"}]'::jsonb, 'BST 309 · → #709: trade → assigned Lv.34', null),
-  (709, 'Trevenant', 'ghost', 'grass', 13, 311, 5, '/pokemon/709_front.png', '[{"type":"ghost","count":2},{"type":"grass","count":1}]'::jsonb, 3, 5, '[]'::jsonb, '[{"level":38,"effect":"ADD_DIE","dieType":"grass"},{"level":38,"amount":1,"effect":"ADD_REROLL"},{"level":50,"effect":"ADD_DIE","dieType":"ghost"},{"level":50,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 474', null),
-  (710, 'Pumpkaboo', 'ghost', 'grass', 12, 239, 5, '/pokemon/710_front.png', '[{"type":"ghost","count":1},{"type":"grass","count":1}]'::jsonb, 2, 3, '[{"level":34,"toDex":711}]'::jsonb, '[{"level":22,"effect":"ADD_DIE","dieType":"ghost"},{"level":22,"amount":1,"effect":"ADD_REROLL"},{"level":34,"effect":"EVOLVE"}]'::jsonb, 'BST 335 · → #711: trade → assigned Lv.34', null),
-  (711, 'Gourgeist', 'ghost', 'grass', 12, 271, 8, '/pokemon/711_front.png', '[{"type":"ghost","count":2},{"type":"grass","count":1}]'::jsonb, 3, 5, '[]'::jsonb, '[{"level":38,"effect":"ADD_DIE","dieType":"grass"},{"level":38,"amount":1,"effect":"ADD_REROLL"},{"level":50,"effect":"ADD_DIE","dieType":"ghost"},{"level":50,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 494', null),
-  (712, 'Bergmite', 'ice', null, 12, 251, 2, '/pokemon/712_front.png', '[{"type":"ice","count":2}]'::jsonb, 2, 2, '[{"toDex":713,"level":37},{"toDex":10243,"level":37,"region":"galar"}]'::jsonb, '[{"level":25,"effect":"ADD_DIE","dieType":"base"},{"level":25,"amount":1,"effect":"ADD_REROLL"},{"level":37,"effect":"EVOLVE"}]'::jsonb, 'BST 304', null),
-  (713, 'Avalugg', 'ice', null, 13, 331, 2, '/pokemon/713_front.png', '[{"type":"ice","count":3},{"type":"base","count":1}]'::jsonb, 4, 5, '[]'::jsonb, '[{"level":50,"effect":"ADD_DIE","dieType":"ice"},{"level":50,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 514', null),
-  (714, 'Noibat', 'flying', 'dragon', 12, 221, 5, '/pokemon/714_front.png', '[{"type":"flying","count":1}]'::jsonb, 1, 2, '[{"level":48,"toDex":715}]'::jsonb, '[{"level":8,"effect":"ADD_DIE","dieType":"base"},{"level":8,"amount":1,"effect":"ADD_REROLL"},{"level":28,"effect":"ADD_DIE","dieType":"flying"},{"level":28,"amount":1,"effect":"ADD_REROLL"},{"level":48,"effect":"EVOLVE"}]'::jsonb, 'BST 245', null),
-  (715, 'Noivern', 'flying', 'dragon', 13, 311, 12, '/pokemon/715_front.png', '[{"type":"flying","count":2},{"type":"dragon","count":2}]'::jsonb, 4, 5, '[]'::jsonb, '[{"level":50,"effect":"ADD_DIE","dieType":"dragon"},{"level":50,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 535', null),
-  (716, 'Xerneas', 'fairy', null, 13, 393, 9, '/pokemon/716_front.png', '[{"type":"fairy","count":5}]'::jsonb, 5, 7, '[]'::jsonb, '[]'::jsonb, 'BST 680', null),
-  (717, 'Yveltal', 'dark', 'flying', 13, 393, 9, '/pokemon/717_front.png', '[{"type":"dark","count":3},{"type":"flying","count":2}]'::jsonb, 5, 7, '[]'::jsonb, '[]'::jsonb, 'BST 680', null),
-  (718, 'Zygarde', 'dragon', 'ground', 13, 357, 9, '/pokemon/718_front.png', '[{"type":"dragon","count":3},{"type":"ground","count":2}]'::jsonb, 5, 7, '[]'::jsonb, '[]'::jsonb, 'BST 600', null),
-  (719, 'Diancie', 'rock', 'fairy', 12, 241, 5, '/pokemon/719_front.png', '[{"type":"rock","count":3},{"type":"fairy","count":2}]'::jsonb, 5, 5, '[]'::jsonb, '[]'::jsonb, 'BST 600', null),
-  (720, 'Hoopa', 'psychic', 'ghost', 12, 301, 7, '/pokemon/720_front.png', '[{"type":"psychic","count":3},{"type":"ghost","count":2}]'::jsonb, 5, 5, '[]'::jsonb, '[]'::jsonb, 'BST 600', null),
-  (721, 'Volcanion', 'fire', 'water', 12, 301, 7, '/pokemon/721_front.png', '[{"type":"fire","count":3},{"type":"water","count":2}]'::jsonb, 5, 5, '[]'::jsonb, '[]'::jsonb, 'BST 600', null),
-  (722, 'Rowlet', 'grass', 'flying', 12, 277, 4, '/pokemon/722_front.png', '[{"type":"grass","count":2}]'::jsonb, 2, 5, '[{"level":17,"toDex":723}]'::jsonb, '[{"level":17,"effect":"EVOLVE"}]'::jsonb, 'BST 320', null),
-  (723, 'Dartrix', 'grass', 'flying', 12, 297, 5, '/pokemon/723_front.png', '[{"type":"grass","count":2},{"type":"base","count":1}]'::jsonb, 3, 5, '[{"toDex":724,"level":34,"notInRegion":"galar"},{"toDex":10244,"level":34,"region":"galar"}]'::jsonb, '[{"level":24,"effect":"REPLACE_DIE","dieType":"flying","fromDieType":"base"},{"level":34,"effect":"EVOLVE"}]'::jsonb, 'BST 420', null),
-  (724, 'Decidueye', 'grass', 'ghost', 12, 297, 7, '/pokemon/724_front.png', '[{"type":"grass","count":2},{"type":"ghost","count":2}]'::jsonb, 4, 5, '[]'::jsonb, '[{"level":50,"effect":"ADD_DIE","dieType":"grass"},{"level":50,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 530', null),
-  (725, 'Litten', 'fire', null, 12, 231, 7, '/pokemon/725_front.png', '[{"type":"fire","count":2}]'::jsonb, 2, 5, '[{"level":17,"toDex":726}]'::jsonb, '[{"level":17,"effect":"EVOLVE"}]'::jsonb, 'BST 320', null),
-  (726, 'Torracat', 'fire', null, 12, 271, 9, '/pokemon/726_front.png', '[{"type":"fire","count":2},{"type":"base","count":1}]'::jsonb, 3, 5, '[{"level":34,"toDex":727}]'::jsonb, '[{"level":24,"effect":"REPLACE_DIE","dieType":"fire","fromDieType":"base"},{"level":34,"effect":"EVOLVE"}]'::jsonb, 'BST 420', null),
-  (727, 'Incineroar', 'fire', 'dark', 13, 331, 6, '/pokemon/727_front.png', '[{"type":"fire","count":2},{"type":"dark","count":2}]'::jsonb, 4, 5, '[]'::jsonb, '[{"level":50,"effect":"ADD_DIE","dieType":"fire"},{"level":50,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 530', null),
-  (728, 'Popplio', 'water', null, 12, 241, 4, '/pokemon/728_front.png', '[{"type":"water","count":2}]'::jsonb, 2, 5, '[{"level":17,"toDex":729}]'::jsonb, '[{"level":17,"effect":"EVOLVE"}]'::jsonb, 'BST 320', null),
-  (729, 'Brionne', 'water', null, 12, 261, 5, '/pokemon/729_front.png', '[{"type":"water","count":2},{"type":"base","count":1}]'::jsonb, 3, 5, '[{"level":34,"toDex":730}]'::jsonb, '[{"level":24,"effect":"REPLACE_DIE","dieType":"water","fromDieType":"base"},{"level":34,"effect":"EVOLVE"}]'::jsonb, 'BST 420', null),
-  (730, 'Primarina', 'water', 'fairy', 12, 301, 6, '/pokemon/730_front.png', '[{"type":"water","count":2},{"type":"fairy","count":2}]'::jsonb, 4, 5, '[]'::jsonb, '[{"level":50,"effect":"ADD_DIE","dieType":"water"},{"level":50,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 530', null),
-  (731, 'Pikipek', 'normal', 'flying', 12, 211, 6, '/pokemon/731_front.png', '[{"type":"normal","count":1}]'::jsonb, 1, 1, '[{"level":14,"toDex":732}]'::jsonb, '[{"level":7,"effect":"ADD_DIE","dieType":"base"},{"level":7,"amount":1,"effect":"ADD_REROLL"},{"level":14,"effect":"EVOLVE"}]'::jsonb, 'BST 265', null),
-  (732, 'Trumbeak', 'normal', 'flying', 12, 251, 7, '/pokemon/732_front.png', '[{"type":"normal","count":1},{"type":"flying","count":1},{"type":"base","count":1}]'::jsonb, 3, 3, '[{"level":28,"toDex":733}]'::jsonb, '[{"level":24,"effect":"REPLACE_DIE","dieType":"flying","fromDieType":"base"},{"level":28,"effect":"EVOLVE"}]'::jsonb, 'BST 355', null),
-  (733, 'Toucannon', 'normal', 'flying', 12, 301, 6, '/pokemon/733_front.png', '[{"type":"normal","count":2},{"type":"flying","count":2}]'::jsonb, 4, 5, '[]'::jsonb, '[{"level":50,"effect":"ADD_DIE","dieType":"normal"},{"level":50,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 485', null),
-  (734, 'Yungoos', 'normal', null, 12, 237, 4, '/pokemon/734_front.png', '[{"type":"normal","count":1}]'::jsonb, 1, 1, '[{"level":20,"toDex":735}]'::jsonb, '[{"level":8,"effect":"ADD_DIE","dieType":"base"},{"level":8,"amount":1,"effect":"ADD_REROLL"},{"level":15,"effect":"REPLACE_DIE","dieType":"normal","fromDieType":"base"},{"level":20,"effect":"EVOLVE"}]'::jsonb, 'BST 253', null),
-  (100, 'Voltorb', 'electric', null, 12, 221, 10, '/pokemon/100_front.png', '[{"type":"electric","count":2}]'::jsonb, 2, 2, '[{"level":30,"toDex":101}]'::jsonb, '[{"level":30,"effect":"EVOLVE"},{"level":24,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 330', null),
-  (735, 'Gumshoos', 'normal', null, 13, 317, 4, '/pokemon/735_front.png', '[{"type":"normal","count":2}]'::jsonb, 2, 3, '[]'::jsonb, '[{"level":26,"effect":"ADD_DIE","dieType":"normal"},{"level":26,"amount":1,"effect":"ADD_REROLL"},{"level":40,"effect":"ADD_DIE","dieType":"normal"},{"level":40,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 418', null),
-  (736, 'Grubbin', 'bug', null, 12, 235, 4, '/pokemon/736_front.png', '[{"type":"bug","count":2}]'::jsonb, 2, 1, '[{"level":20,"toDex":737}]'::jsonb, '[{"level":20,"effect":"EVOLVE"}]'::jsonb, 'BST 300', null),
-  (737, 'Charjabug', 'bug', 'electric', 12, 255, 3, '/pokemon/737_front.png', '[{"type":"bug","count":1},{"type":"electric","count":1},{"type":"base","count":1}]'::jsonb, 3, 3, '[{"item":"thunder-stone","level":null,"toDex":738}]'::jsonb, '[{"level":24,"effect":"REPLACE_DIE","dieType":"electric","fromDieType":"base"}]'::jsonb, 'BST 400 · → #738: thunder-stone', null),
-  (738, 'Vikavolt', 'bug', 'electric', 12, 295, 4, '/pokemon/738_front.png', '[{"type":"bug","count":2},{"type":"electric","count":2}]'::jsonb, 4, 5, '[]'::jsonb, '[{"level":50,"effect":"ADD_DIE","dieType":"bug"},{"level":50,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 500', null),
-  (739, 'Crabrawler', 'fighting', null, 12, 235, 6, '/pokemon/739_front.png', '[{"type":"fighting","count":2}]'::jsonb, 2, 2, '[{"item":"ice-stone","level":null,"toDex":740}]'::jsonb, '[{"level":20,"effect":"ADD_DIE","dieType":"base"},{"level":20,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 338 · → #740: ice-stone', null),
-  (740, 'Crabominable', 'fighting', 'ice', 13, 335, 4, '/pokemon/740_front.png', '[{"type":"fighting","count":2},{"type":"ice","count":1}]'::jsonb, 3, 5, '[]'::jsonb, '[{"level":40,"effect":"ADD_DIE","dieType":"ice"},{"level":40,"amount":1,"effect":"ADD_REROLL"},{"level":50,"effect":"ADD_DIE","dieType":"fighting"},{"level":50,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 478', null),
-  (741, 'Oricorio', 'fire', 'flying', 12, 291, 9, '/pokemon/741_front.png', '[{"type":"fire","count":1},{"type":"flying","count":1}]'::jsonb, 2, 5, '[]'::jsonb, '[{"level":24,"effect":"ADD_DIE","dieType":"flying"},{"level":24,"amount":1,"effect":"ADD_REROLL"},{"level":40,"effect":"ADD_DIE","dieType":"base"},{"level":40,"amount":1,"effect":"ADD_REROLL"},{"level":50,"effect":"ADD_DIE","dieType":"fire"},{"level":50,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 476', null),
-  (742, 'Cutiefly', 'bug', 'fairy', 12, 221, 8, '/pokemon/742_front.png', '[{"type":"bug","count":1},{"type":"fairy","count":1}]'::jsonb, 2, 2, '[{"level":25,"toDex":743}]'::jsonb, '[{"level":25,"effect":"EVOLVE"}]'::jsonb, 'BST 304', null),
-  (743, 'Ribombee', 'bug', 'fairy', 12, 261, 12, '/pokemon/743_front.png', '[{"type":"bug","count":2},{"type":"fairy","count":1}]'::jsonb, 3, 4, '[]'::jsonb, '[{"level":36,"effect":"ADD_DIE","dieType":"fairy"},{"level":36,"amount":1,"effect":"ADD_REROLL"},{"level":50,"effect":"ADD_DIE","dieType":"bug"},{"level":50,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 464', null),
-  (744, 'Rockruff', 'rock', null, 12, 231, 6, '/pokemon/744_front.png', '[{"type":"rock","count":1}]'::jsonb, 1, 2, '[{"level":25,"toDex":745}]'::jsonb, '[{"level":6,"effect":"ADD_DIE","dieType":"base"},{"level":6,"amount":1,"effect":"ADD_REROLL"},{"level":20,"effect":"REPLACE_DIE","dieType":"rock","fromDieType":"base"},{"level":25,"effect":"EVOLVE"}]'::jsonb, 'BST 280', null),
-  (101, 'Electrode', 'electric', null, 12, 261, 15, '/pokemon/101_front.png', '[{"type":"electric","count":2},{"type":"base","count":1}]'::jsonb, 3, 5, '[]'::jsonb, '[{"level":40,"effect":"ADD_DIE","dieType":"base"},{"level":40,"amount":1,"effect":"ADD_REROLL"},{"level":50,"effect":"ADD_DIE","dieType":"electric"},{"level":50,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 490', null),
-  (745, 'Lycanroc', 'rock', null, 12, 291, 11, '/pokemon/745_front.png', '[{"type":"rock","count":2},{"type":"base","count":1}]'::jsonb, 3, 4, '[]'::jsonb, '[{"level":36,"effect":"ADD_DIE","dieType":"rock"},{"level":36,"amount":1,"effect":"ADD_REROLL"},{"level":50,"effect":"ADD_DIE","dieType":"rock"},{"level":50,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 487', null),
-  (746, 'Wishiwashi', 'water', null, 12, 231, 4, '/pokemon/746_front.png', '[{"type":"water","count":2}]'::jsonb, 2, 5, '[]'::jsonb, '[]'::jsonb, 'BST 175', null),
-  (747, 'Mareanie', 'poison', 'water', 12, 241, 4, '/pokemon/747_front.png', '[{"type":"poison","count":1},{"type":"water","count":1}]'::jsonb, 2, 2, '[{"level":38,"toDex":748}]'::jsonb, '[{"level":26,"effect":"ADD_DIE","dieType":"poison"},{"level":26,"amount":1,"effect":"ADD_REROLL"},{"level":38,"effect":"EVOLVE"}]'::jsonb, 'BST 305', null),
-  (748, 'Toxapex', 'poison', 'water', 12, 241, 3, '/pokemon/748_front.png', '[{"type":"poison","count":2},{"type":"water","count":1},{"type":"base","count":1}]'::jsonb, 4, 4, '[]'::jsonb, '[{"level":50,"effect":"ADD_DIE","dieType":"water"},{"level":50,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 495', null),
-  (749, 'Mudbray', 'ground', null, 12, 281, 4, '/pokemon/749_front.png', '[{"type":"ground","count":2}]'::jsonb, 2, 2, '[{"level":30,"toDex":750}]'::jsonb, '[{"level":18,"effect":"ADD_DIE","dieType":"base"},{"level":18,"amount":1,"effect":"ADD_REROLL"},{"level":30,"effect":"EVOLVE"}]'::jsonb, 'BST 385', null),
-  (750, 'Mudsdale', 'ground', null, 13, 341, 3, '/pokemon/750_front.png', '[{"type":"ground","count":2},{"type":"base","count":1}]'::jsonb, 3, 5, '[]'::jsonb, '[{"level":38,"effect":"ADD_DIE","dieType":"ground"},{"level":38,"amount":1,"effect":"ADD_REROLL"},{"level":50,"effect":"ADD_DIE","dieType":"ground"},{"level":50,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 500', null),
-  (751, 'Dewpider', 'water', 'bug', 12, 217, 2, '/pokemon/751_front.png', '[{"type":"water","count":1}]'::jsonb, 1, 2, '[{"level":22,"toDex":752}]'::jsonb, '[{"level":7,"effect":"ADD_DIE","dieType":"base"},{"level":7,"amount":1,"effect":"ADD_REROLL"},{"level":17,"effect":"REPLACE_DIE","dieType":"bug","fromDieType":"base"},{"level":22,"effect":"EVOLVE"}]'::jsonb, 'BST 269', null),
-  (752, 'Araquanid', 'water', 'bug', 12, 277, 4, '/pokemon/752_front.png', '[{"type":"water","count":2},{"type":"bug","count":1}]'::jsonb, 3, 4, '[]'::jsonb, '[{"level":36,"effect":"ADD_DIE","dieType":"bug"},{"level":36,"amount":1,"effect":"ADD_REROLL"},{"level":50,"effect":"ADD_DIE","dieType":"water"},{"level":50,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 454', null),
-  (753, 'Fomantis', 'grass', null, 12, 221, 3, '/pokemon/753_front.png', '[{"type":"grass","count":1}]'::jsonb, 1, 2, '[{"level":34,"toDex":754}]'::jsonb, '[{"level":8,"effect":"ADD_DIE","dieType":"base"},{"level":8,"amount":1,"effect":"ADD_REROLL"},{"level":24,"effect":"ADD_DIE","dieType":"grass"},{"level":24,"amount":1,"effect":"ADD_REROLL"},{"level":34,"effect":"EVOLVE"}]'::jsonb, 'BST 250', null),
-  (754, 'Lurantis', 'grass', null, 12, 281, 4, '/pokemon/754_front.png', '[{"type":"grass","count":2},{"type":"base","count":1}]'::jsonb, 3, 4, '[]'::jsonb, '[{"level":38,"effect":"ADD_DIE","dieType":"grass"},{"level":38,"amount":1,"effect":"ADD_REROLL"},{"level":50,"effect":"ADD_DIE","dieType":"grass"},{"level":50,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 480', null),
-  (755, 'Morelull', 'grass', 'fairy', 12, 221, 1, '/pokemon/755_front.png', '[{"type":"grass","count":1}]'::jsonb, 1, 2, '[{"level":24,"toDex":756}]'::jsonb, '[{"level":6,"effect":"ADD_DIE","dieType":"base"},{"level":6,"amount":1,"effect":"ADD_REROLL"},{"level":19,"effect":"REPLACE_DIE","dieType":"fairy","fromDieType":"base"},{"level":24,"effect":"EVOLVE"}]'::jsonb, 'BST 285', null),
-  (756, 'Shiinotic', 'grass', 'fairy', 12, 261, 3, '/pokemon/756_front.png', '[{"type":"grass","count":1},{"type":"fairy","count":1}]'::jsonb, 2, 4, '[]'::jsonb, '[{"level":30,"effect":"ADD_DIE","dieType":"grass"},{"level":30,"amount":1,"effect":"ADD_REROLL"},{"level":40,"effect":"ADD_DIE","dieType":"fairy"},{"level":40,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 405', null),
-  (757, 'Salandit', 'poison', 'fire', 12, 237, 7, '/pokemon/757_front.png', '[{"type":"poison","count":1},{"type":"fire","count":1}]'::jsonb, 2, 3, '[{"level":33,"toDex":758}]'::jsonb, '[{"level":21,"effect":"ADD_DIE","dieType":"poison"},{"level":21,"amount":1,"effect":"ADD_REROLL"},{"level":33,"effect":"EVOLVE"}]'::jsonb, 'BST 320', null),
-  (758, 'Salazzle', 'poison', 'fire', 12, 277, 11, '/pokemon/758_front.png', '[{"type":"poison","count":2},{"type":"fire","count":1}]'::jsonb, 3, 5, '[]'::jsonb, '[{"level":38,"effect":"ADD_DIE","dieType":"fire"},{"level":38,"amount":1,"effect":"ADD_REROLL"},{"level":50,"effect":"ADD_DIE","dieType":"poison"},{"level":50,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 480', null),
-  (759, 'Stufful', 'normal', 'fighting', 12, 281, 5, '/pokemon/759_front.png', '[{"type":"normal","count":1},{"type":"fighting","count":1}]'::jsonb, 2, 3, '[{"level":27,"toDex":760}]'::jsonb, '[{"level":18,"effect":"ADD_DIE","dieType":"normal"},{"level":18,"amount":1,"effect":"ADD_REROLL"},{"level":27,"effect":"EVOLVE"}]'::jsonb, 'BST 340', null),
-  (760, 'Bewear', 'normal', 'fighting', 13, 381, 6, '/pokemon/760_front.png', '[{"type":"normal","count":2},{"type":"fighting","count":1}]'::jsonb, 3, 5, '[]'::jsonb, '[{"level":38,"effect":"ADD_DIE","dieType":"fighting"},{"level":38,"amount":1,"effect":"ADD_REROLL"},{"level":50,"effect":"ADD_DIE","dieType":"normal"},{"level":50,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 500', null),
-  (144, 'Articuno', 'ice', 'flying', 13, 321, 8, '/pokemon/144_front.png', '[{"type":"ice","count":3},{"type":"flying","count":2}]'::jsonb, 5, 6, '[]'::jsonb, '[]'::jsonb, 'BST 580', null),
-  (761, 'Bounsweet', 'grass', null, 12, 225, 3, '/pokemon/761_front.png', '[{"type":"grass","count":1}]'::jsonb, 1, 2, '[{"level":18,"toDex":762}]'::jsonb, '[{"level":8,"effect":"ADD_DIE","dieType":"base"},{"level":8,"amount":1,"effect":"ADD_REROLL"},{"level":14,"effect":"REPLACE_DIE","dieType":"grass","fromDieType":"base"},{"level":18,"effect":"EVOLVE"}]'::jsonb, 'BST 210', null),
-  (762, 'Steenee', 'grass', null, 12, 245, 6, '/pokemon/762_front.png', '[{"type":"grass","count":2},{"type":"base","count":1}]'::jsonb, 3, 3, '[{"level":30,"toDex":763}]'::jsonb, '[{"level":24,"effect":"REPLACE_DIE","dieType":"grass","fromDieType":"base"},{"level":30,"effect":"EVOLVE"}]'::jsonb, 'BST 290 · → #763: level-up → assigned Lv.30', null),
-  (763, 'Tsareena', 'grass', null, 12, 285, 7, '/pokemon/763_front.png', '[{"type":"grass","count":3},{"type":"base","count":1}]'::jsonb, 4, 5, '[]'::jsonb, '[{"level":50,"effect":"ADD_DIE","dieType":"grass"},{"level":50,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 510', null),
-  (764, 'Comfey', 'fairy', null, 12, 243, 10, '/pokemon/764_front.png', '[{"type":"fairy","count":2}]'::jsonb, 2, 5, '[]'::jsonb, '[{"level":24,"effect":"ADD_DIE","dieType":"fairy"},{"level":24,"amount":1,"effect":"ADD_REROLL"},{"level":40,"effect":"ADD_DIE","dieType":"base"},{"level":40,"amount":1,"effect":"ADD_REROLL"},{"level":50,"effect":"ADD_DIE","dieType":"fairy"},{"level":50,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 485', null),
-  (765, 'Oranguru', 'normal', 'psychic', 13, 321, 6, '/pokemon/765_front.png', '[{"type":"normal","count":1},{"type":"psychic","count":1}]'::jsonb, 2, 5, '[]'::jsonb, '[{"level":24,"effect":"ADD_DIE","dieType":"psychic"},{"level":24,"amount":1,"effect":"ADD_REROLL"},{"level":40,"effect":"ADD_DIE","dieType":"base"},{"level":40,"amount":1,"effect":"ADD_REROLL"},{"level":50,"effect":"ADD_DIE","dieType":"normal"},{"level":50,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 490', null),
-  (766, 'Passimian', 'fighting', null, 13, 341, 8, '/pokemon/766_front.png', '[{"type":"fighting","count":2}]'::jsonb, 2, 5, '[]'::jsonb, '[{"level":24,"effect":"ADD_DIE","dieType":"fighting"},{"level":24,"amount":1,"effect":"ADD_REROLL"},{"level":40,"effect":"ADD_DIE","dieType":"base"},{"level":40,"amount":1,"effect":"ADD_REROLL"},{"level":50,"effect":"ADD_DIE","dieType":"fighting"},{"level":50,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 490', null),
-  (767, 'Wimpod', 'bug', 'water', 11, 191, 8, '/pokemon/767_front.png', '[{"type":"bug","count":1}]'::jsonb, 1, 4, '[{"level":30,"toDex":768}]'::jsonb, '[{"level":8,"effect":"ADD_DIE","dieType":"base"},{"level":8,"amount":1,"effect":"ADD_REROLL"},{"level":20,"effect":"ADD_DIE","dieType":"bug"},{"level":20,"amount":1,"effect":"ADD_REROLL"},{"level":30,"effect":"EVOLVE"}]'::jsonb, 'BST 230', null),
-  (768, 'Golisopod', 'bug', 'water', 12, 291, 4, '/pokemon/768_front.png', '[{"type":"bug","count":2},{"type":"water","count":1}]'::jsonb, 3, 5, '[]'::jsonb, '[{"level":38,"effect":"ADD_DIE","dieType":"water"},{"level":38,"amount":1,"effect":"ADD_REROLL"},{"level":50,"effect":"ADD_DIE","dieType":"bug"},{"level":50,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 530', null),
-  (769, 'Sandygast', 'ghost', 'ground', 12, 251, 1, '/pokemon/769_front.png', '[{"type":"ghost","count":1},{"type":"ground","count":1}]'::jsonb, 2, 3, '[{"level":42,"toDex":770}]'::jsonb, '[{"level":26,"effect":"ADD_DIE","dieType":"ghost"},{"level":26,"amount":1,"effect":"ADD_REROLL"},{"level":42,"effect":"EVOLVE"}]'::jsonb, 'BST 320', null),
-  (770, 'Palossand', 'ghost', 'ground', 13, 311, 3, '/pokemon/770_front.png', '[{"type":"ghost","count":2},{"type":"ground","count":1},{"type":"base","count":1}]'::jsonb, 4, 5, '[]'::jsonb, '[{"level":50,"effect":"ADD_DIE","dieType":"ground"},{"level":50,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 480', null),
-  (771, 'Pyukumuku', 'water', null, 12, 251, 0, '/pokemon/771_front.png', '[{"type":"water","count":2}]'::jsonb, 2, 5, '[]'::jsonb, '[{"level":20,"effect":"ADD_DIE","dieType":"water"},{"level":20,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 410', null),
-  (772, 'Type: Null', 'normal', null, 13, 331, 5, '/pokemon/772_front.png', '[{"type":"normal","count":2}]'::jsonb, 2, 6, '[{"level":45,"toDex":773}]'::jsonb, '[{"level":26,"effect":"ADD_DIE","dieType":"base"},{"level":26,"amount":1,"effect":"ADD_REROLL"},{"level":45,"effect":"EVOLVE"}]'::jsonb, 'BST 534 · → #773: branches at Lv.45', null),
-  (773, 'Silvally', 'normal', null, 13, 331, 9, '/pokemon/773_front.png', '[{"type":"normal","count":3},{"type":"base","count":1}]'::jsonb, 4, 6, '[]'::jsonb, '[{"level":50,"effect":"ADD_DIE","dieType":"normal"},{"level":50,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 570', null),
-  (774, 'Minior', 'rock', 'flying', 12, 261, 6, '/pokemon/774_front.png', '[{"type":"rock","count":1},{"type":"flying","count":1}]'::jsonb, 2, 6, '[]'::jsonb, '[{"level":20,"effect":"ADD_DIE","dieType":"rock"},{"level":20,"amount":1,"effect":"ADD_REROLL"},{"level":40,"effect":"ADD_DIE","dieType":"flying"},{"level":40,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 440', null),
-  (775, 'Komala', 'normal', null, 12, 271, 6, '/pokemon/775_front.png', '[{"type":"normal","count":2}]'::jsonb, 2, 5, '[]'::jsonb, '[{"level":24,"effect":"ADD_DIE","dieType":"normal"},{"level":24,"amount":1,"effect":"ADD_REROLL"},{"level":40,"effect":"ADD_DIE","dieType":"base"},{"level":40,"amount":1,"effect":"ADD_REROLL"},{"level":50,"effect":"ADD_DIE","dieType":"normal"},{"level":50,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 480', null),
-  (776, 'Turtonator', 'fire', 'dragon', 12, 261, 3, '/pokemon/776_front.png', '[{"type":"fire","count":1},{"type":"dragon","count":1}]'::jsonb, 2, 5, '[]'::jsonb, '[{"level":24,"effect":"ADD_DIE","dieType":"dragon"},{"level":24,"amount":1,"effect":"ADD_REROLL"},{"level":40,"effect":"ADD_DIE","dieType":"base"},{"level":40,"amount":1,"effect":"ADD_REROLL"},{"level":50,"effect":"ADD_DIE","dieType":"fire"},{"level":50,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 485', null),
-  (777, 'Togedemaru', 'electric', 'steel', 12, 271, 9, '/pokemon/777_front.png', '[{"type":"electric","count":1},{"type":"steel","count":1}]'::jsonb, 2, 3, '[]'::jsonb, '[{"level":20,"effect":"ADD_DIE","dieType":"electric"},{"level":20,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 435', null),
-  (778, 'Mimikyu', 'ghost', 'fairy', 12, 251, 9, '/pokemon/778_front.png', '[{"type":"ghost","count":1},{"type":"fairy","count":1}]'::jsonb, 2, 5, '[]'::jsonb, '[{"level":24,"effect":"ADD_DIE","dieType":"fairy"},{"level":24,"amount":1,"effect":"ADD_REROLL"},{"level":40,"effect":"ADD_DIE","dieType":"base"},{"level":40,"amount":1,"effect":"ADD_REROLL"},{"level":50,"effect":"ADD_DIE","dieType":"ghost"},{"level":50,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 476', null),
-  (779, 'Bruxish', 'water', 'psychic', 12, 277, 9, '/pokemon/779_front.png', '[{"type":"water","count":1},{"type":"psychic","count":1}]'::jsonb, 2, 4, '[]'::jsonb, '[{"level":24,"effect":"ADD_DIE","dieType":"psychic"},{"level":24,"amount":1,"effect":"ADD_REROLL"},{"level":40,"effect":"ADD_DIE","dieType":"base"},{"level":40,"amount":1,"effect":"ADD_REROLL"},{"level":50,"effect":"ADD_DIE","dieType":"water"},{"level":50,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 475', null),
-  (780, 'Drampa', 'normal', 'dragon', 12, 297, 3, '/pokemon/780_front.png', '[{"type":"normal","count":1},{"type":"dragon","count":1}]'::jsonb, 2, 5, '[]'::jsonb, '[{"level":24,"effect":"ADD_DIE","dieType":"dragon"},{"level":24,"amount":1,"effect":"ADD_REROLL"},{"level":40,"effect":"ADD_DIE","dieType":"base"},{"level":40,"amount":1,"effect":"ADD_REROLL"},{"level":50,"effect":"ADD_DIE","dieType":"normal"},{"level":50,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 485', null),
-  (781, 'Dhelmise', 'ghost', 'grass', 12, 281, 4, '/pokemon/781_front.png', '[{"type":"ghost","count":1},{"type":"grass","count":1}]'::jsonb, 2, 7, '[]'::jsonb, '[{"level":24,"effect":"ADD_DIE","dieType":"grass"},{"level":24,"amount":1,"effect":"ADD_REROLL"},{"level":40,"effect":"ADD_DIE","dieType":"base"},{"level":40,"amount":1,"effect":"ADD_REROLL"},{"level":50,"effect":"ADD_DIE","dieType":"ghost"},{"level":50,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 517', null),
-  (782, 'Jangmo-o', 'dragon', null, 12, 231, 4, '/pokemon/782_front.png', '[{"type":"dragon","count":2}]'::jsonb, 2, 5, '[{"level":35,"toDex":783}]'::jsonb, '[{"level":23,"effect":"ADD_DIE","dieType":"base"},{"level":23,"amount":1,"effect":"ADD_REROLL"},{"level":35,"effect":"EVOLVE"}]'::jsonb, 'BST 300', null),
-  (783, 'Hakamo-o', 'dragon', 'fighting', 12, 251, 6, '/pokemon/783_front.png', '[{"type":"dragon","count":2},{"type":"fighting","count":1}]'::jsonb, 3, 5, '[{"level":45,"toDex":784}]'::jsonb, '[{"level":40,"effect":"ADD_DIE","dieType":"dragon"},{"level":40,"amount":1,"effect":"ADD_REROLL"},{"level":45,"effect":"EVOLVE"}]'::jsonb, 'BST 420', null),
-  (784, 'Kommo-o', 'dragon', 'fighting', 12, 291, 8, '/pokemon/784_front.png', '[{"type":"dragon","count":2},{"type":"fighting","count":2}]'::jsonb, 4, 5, '[]'::jsonb, '[{"level":55,"effect":"ADD_DIE","dieType":"dragon"},{"level":55,"amount":1,"effect":"ADD_REROLL"}]'::jsonb, 'BST 600', null),
-  (785, 'Tapu Koko', 'electric', 'fairy', 12, 281, 13, '/pokemon/785_front.png', '[{"type":"electric","count":2},{"type":"fairy","count":1},{"type":"base","count":2}]'::jsonb, 5, 6, '[]'::jsonb, '[]'::jsonb, 'BST 570', null),
-  (786, 'Tapu Lele', 'psychic', 'fairy', 12, 281, 9, '/pokemon/786_front.png', '[{"type":"psychic","count":2},{"type":"fairy","count":1},{"type":"base","count":2}]'::jsonb, 5, 6, '[]'::jsonb, '[]'::jsonb, 'BST 570', null),
-  (787, 'Tapu Bulu', 'grass', 'fairy', 12, 281, 7, '/pokemon/787_front.png', '[{"type":"grass","count":2},{"type":"fairy","count":1},{"type":"base","count":2}]'::jsonb, 5, 6, '[]'::jsonb, '[]'::jsonb, 'BST 570', null),
-  (788, 'Tapu Fini', 'water', 'fairy', 12, 281, 8, '/pokemon/788_front.png', '[{"type":"water","count":2},{"type":"fairy","count":1},{"type":"base","count":2}]'::jsonb, 5, 6, '[]'::jsonb, '[]'::jsonb, 'BST 570', null),
-  (789, 'Cosmog', 'psychic', null, 12, 227, 3, '/pokemon/789_front.png', '[{"type":"psychic","count":1}]'::jsonb, 1, 6, '[{"level":43,"toDex":790}]'::jsonb, '[{"level":8,"effect":"ADD_DIE","dieType":"base"},{"level":8,"amount":1,"effect":"ADD_REROLL"},{"level":28,"effect":"ADD_DIE","dieType":"psychic"},{"level":28,"amount":1,"effect":"ADD_REROLL"},{"level":43,"effect":"EVOLVE"}]'::jsonb, 'BST 200', null),
-  (790, 'Cosmoem', 'psychic', null, 12, 227, 3, '/pokemon/790_front.png', '[{"type":"psychic","count":2},{"type":"base","count":1}]'::jsonb, 3, 6, '[{"level":53,"toDex":791},{"level":53,"toDex":792}]'::jsonb, '[{"level":45,"effect":"ADD_DIE","dieType":"psychic"},{"level":45,"amount":1,"effect":"ADD_REROLL"},{"level":53,"effect":"EVOLVE"}]'::jsonb, 'BST 400', null),
-  (791, 'Solgaleo', 'psychic', 'steel', 14, 415, 9, '/pokemon/791_front.png', '[{"type":"psychic","count":3},{"type":"steel","count":2}]'::jsonb, 5, 7, '[]'::jsonb, '[]'::jsonb, 'BST 680', null),
-  (792, 'Lunala', 'psychic', 'ghost', 14, 415, 9, '/pokemon/792_front.png', '[{"type":"psychic","count":3},{"type":"ghost","count":2}]'::jsonb, 5, 7, '[]'::jsonb, '[]'::jsonb, 'BST 680', null),
-  (793, 'Nihilego', 'rock', 'poison', 13, 359, 10, '/pokemon/793_front.png', '[{"type":"rock","count":2},{"type":"poison","count":1},{"type":"base","count":2}]'::jsonb, 5, 6, '[]'::jsonb, '[]'::jsonb, 'BST 570', null),
-  (794, 'Buzzwole', 'bug', 'fighting', 13, 355, 7, '/pokemon/794_front.png', '[{"type":"bug","count":2},{"type":"fighting","count":1},{"type":"base","count":2}]'::jsonb, 5, 6, '[]'::jsonb, '[]'::jsonb, 'BST 570', null),
-  (795, 'Pheromosa', 'bug', 'fighting', 12, 283, 15, '/pokemon/795_front.png', '[{"type":"bug","count":2},{"type":"fighting","count":1},{"type":"base","count":2}]'::jsonb, 5, 6, '[]'::jsonb, '[]'::jsonb, 'BST 570', null),
-  (796, 'Xurkitree', 'electric', null, 12, 307, 8, '/pokemon/796_front.png', '[{"type":"electric","count":3},{"type":"base","count":2}]'::jsonb, 5, 6, '[]'::jsonb, '[]'::jsonb, 'BST 570', null),
-  (797, 'Celesteela', 'steel', 'flying', 13, 335, 6, '/pokemon/797_front.png', '[{"type":"steel","count":2},{"type":"flying","count":1},{"type":"base","count":2}]'::jsonb, 5, 6, '[]'::jsonb, '[]'::jsonb, 'BST 570', null),
-  (798, 'Kartana', 'grass', 'steel', 12, 259, 10, '/pokemon/798_front.png', '[{"type":"grass","count":2},{"type":"steel","count":1},{"type":"base","count":2}]'::jsonb, 5, 6, '[]'::jsonb, '[]'::jsonb, 'BST 570', null),
-  (799, 'Guzzlord', 'dark', 'dragon', 15, 587, 4, '/pokemon/799_front.png', '[{"type":"dark","count":2},{"type":"dragon","count":1},{"type":"base","count":2}]'::jsonb, 5, 6, '[]'::jsonb, '[]'::jsonb, 'BST 570', null),
-  (800, 'Necrozma', 'psychic', null, 13, 335, 7, '/pokemon/800_front.png', '[{"type":"psychic","count":5}]'::jsonb, 5, 7, '[]'::jsonb, '[]'::jsonb, 'BST 600', null),
-  (801, 'Magearna', 'steel', 'fairy', 12, 301, 6, '/pokemon/801_front.png', '[{"type":"steel","count":3},{"type":"fairy","count":2}]'::jsonb, 5, 5, '[]'::jsonb, '[]'::jsonb, 'BST 600', null),
-  (802, 'Marshadow', 'fighting', 'ghost', 13, 321, 12, '/pokemon/802_front.png', '[{"type":"fighting","count":3},{"type":"ghost","count":2}]'::jsonb, 5, 5, '[]'::jsonb, '[]'::jsonb, 'BST 600', null)
-on conflict (dex) do update set name = excluded.name, type1 = excluded.type1, type2 = excluded.type2, base_hp = excluded.base_hp, max_hp = excluded.max_hp, speed = excluded.speed, sprite_url = excluded.sprite_url, dice = excluded.dice, rerolls = excluded.rerolls, catch_value = excluded.catch_value, evolutions = excluded.evolutions, milestones = excluded.milestones, notes = excluded.notes, form = excluded.form;
 commit;

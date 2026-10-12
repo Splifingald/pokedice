@@ -844,7 +844,7 @@ const RETIRED_CONFIG_KEYS = ['regenPercentPerHour']
  * player cards and the per-region `leaderboard()` that reads them (0033), and the cards' one Day Care (0034, which
  * redefines 0033's card writer, so it comes after it), the events (0035), Extreme mode's realms (0039: it redefines the
  * cards', the friends' and the events' functions) and the lighter save writes (0040, last: it redefines 0039's card
- * writer, so a re-run never leaves an older one behind). Folded into seed.sql so there is one file to
+ * writer, so a re-run never leaves an older one behind), then Trades (0044: it redefines 0039's delete_my_data). Folded into seed.sql so there is one file to
  * run rather than several in a particular order. The migrations stay the single source of that SQL — they are written
  * to be idempotent, so re-running them costs little.
  */
@@ -857,6 +857,7 @@ export async function regionsPrelude(): Promise<string> {
       '0035_events.sql',
       '0039_extreme_realm.sql',
       '0040_lighter_save_writes.sql',
+      '0044_trades.sql',
     ].map(async (name) => {
       const sql = await readFile(path.join(ROOT, 'supabase', 'migrations', name), 'utf8')
       return `-- ↓ supabase/migrations/${name}, inlined so this file stands alone.\n${sql}`
