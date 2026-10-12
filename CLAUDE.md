@@ -10,6 +10,8 @@
 - Text lives only in `src/i18n/strings.csv`, all ten languages filled; run `pnpm i18n:fonts` after editing a CJK column.
 - pnpm; Prettier style for new code (no semicolons, single quotes, width 110); `@/` imports; comments say why. Don't
   reformat whole files that aren't Prettier-clean yet.
-- Before a commit: `pnpm lint && pnpm build && pnpm test`, all green, plus the e2e specs of what changed
+- Small fixes: run only the tests related to the change (`pnpm exec vitest run <its test files>`, plus
+  `pnpm e2e <spec>` only when a spec covers the changed screen). Never the full suite for a small fix.
+- Features, before a commit: `pnpm lint && pnpm build && pnpm test`, all green, plus the e2e specs of what changed
   (`pnpm e2e <spec>`). The full `pnpm e2e` runs only before pushing to `main`.
 - Never push to `main`.
