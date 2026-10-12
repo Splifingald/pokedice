@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import {
   enabledRegions,
   getRegion,
@@ -37,6 +37,8 @@ import {
 } from './areas'
 import { AreaStrip } from '@/components/AreaStrip'
 import { ShinyParadeChip, useParadeLabel } from '@/screens/events/live'
+import { useInWorld } from '@/screens/events/world'
+import { worldName } from '@/store/worlds'
 
 export type AreasFilter = 'all' | 'catch' | 'secret' | 'cleared'
 type Sort = 'route' | 'level' | 'catch'
@@ -176,8 +178,8 @@ function AreaCard({
 }
 
 /**
- * A region the player has reached: its picture, areas, catches and badges, and GO. Tapping it moves there and closes
- * the sheet (the region you're in just closes it).
+ * A region the player has reached: its picture, areas, catches and badges, and GO. Tapping it moves there and shows
+ * its areas, in the same sheet (the region you're in just goes back to its areas).
  */
 function RegionCard({ region, onDone }: { region: Region; onDone: () => void }) {
   const { t } = useT()
@@ -344,9 +346,13 @@ export function AreasSheet({
   const [filter, setFilter] = useState<AreasFilter>(initialFilter)
   const [sort, setSort] = useState<Sort>('route')
   const [view, setView] = useState(initialView)
+  const regionsRef = useRef<HTMLButtonElement>(null)
+  const regionsBody = useRef<HTMLDivElement>(null)
   const region = regionOf(save)
-  const regionName = getRegion(data, region)?.name ?? ''
-  const offer = regionOnOffer()
+  // Inside a small world the sheet is the world's alone: its name, no Regions view, nothing on offer (docs/21).
+  const { inside, world } = useInWorld()
+  const regionName = inside ? worldName(world, data) : (getRegion(data, region)?.name ?? '')
+  const offer = inside ? null : regionOnOffer()
 
   const all = useMemo(
     () => regionAreaList(data, region).map((a) => ({ a, st: areaStatus(save, data, a) })),
@@ -392,8 +398,18 @@ export function AreasSheet({
     { id: 'catch', label: t('ui.home.sCatch') },
   ]
 
+  // A region card lands on that region's areas from the top, a stale search cleared, and focus stays in the sheet
+  // (on the Regions switch) rather than falling to the page with the card that held it.
+  const showAreas = () => {
+    regionsBody.current?.closest('[role="region"]')?.scrollTo({ top: 0 })
+    setQ('')
+    setView('areas')
+    regionsRef.current?.focus()
+  }
+
   const regionsBtn = (
     <button
+      ref={regionsRef}
       type="button"
       aria-pressed={view === 'regions'}
       onClick={() => setView((v) => (v === 'regions' ? 'areas' : 'regions'))}
@@ -418,7 +434,7 @@ export function AreasSheet({
       open={open}
       onClose={onClose}
       title={view === 'regions' ? t('ui.home.regions') : regionName}
-      titleExtra={regionsBtn}
+      titleExtra={inside ? undefined : regionsBtn}
       sub={
         view === 'regions'
           ? offer
@@ -464,16 +480,9 @@ export function AreasSheet({
           <p className="py-4 text-[18px] text-muted">{t('ui.home.noMatch', { q })}</p>
         )
       ) : (
-        <div className="flex flex-col gap-3 pt-1">
+        <div ref={regionsBody} className="flex flex-col gap-3 pt-1">
           {regions.map((r) => (
-            <RegionCard
-              key={r.id}
-              region={r}
-              onDone={() => {
-                setView('areas')
-                onClose()
-              }}
-            />
+            <RegionCard key={r.id} region={r} onDone={showAreas} />
           ))}
           {offer ? (
             <OfferCard region={offer} onStarted={onClose} />

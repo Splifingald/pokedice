@@ -1,5 +1,6 @@
 import { comboBonus } from './combos'
 import type { Area, ComboKey, GameData, ItemDef, PokeType } from './types'
+import { worldOfArea } from './worldList'
 
 /** Cost to go from `currentLevel` to the next one, or null at max. */
 export function nextComboCost(key: ComboKey, currentLevel: number, data: GameData): number | null {
@@ -37,9 +38,13 @@ export function trainerGoldFor(enemyLevel: number, area: Area, cleared: boolean,
   return Math.round(enemyLevel * data.config.goldMultiplier * bonus * rewardMultiplier(area, cleared))
 }
 
-/** XP from a K.O. — to the Pokémon and to the area's exploration alike: the foe's level × `xpMultiplier` (× backtrack). */
+/**
+ * XP from a K.O. — to the Pokémon and to the area's exploration alike: the foe's level × `xpMultiplier` (× backtrack),
+ * × a small world's own multiplier in its areas (docs/21).
+ */
 export function pokemonXp(enemyLevel: number, area: Area, cleared: boolean, data: GameData): number {
-  return Math.max(1, Math.round(enemyLevel * data.config.xpMultiplier * rewardMultiplier(area, cleared)))
+  const world = worldOfArea(data, area)?.xpMultiplier ?? 1
+  return Math.max(1, Math.round(enemyLevel * data.config.xpMultiplier * rewardMultiplier(area, cleared) * world))
 }
 
 /**

@@ -169,6 +169,24 @@ export const saveSchema = z.object({
       raidsWon: z.number().int().min(0).optional(),
       liveSeen: z.array(z.string().max(80)).max(50).optional(),
       liveBought: z.record(z.record(z.number().int().min(0))).optional(),
+      // Small worlds (docs/21): the one held, the pop-ups shown, the mythicals waiting for their home region.
+      world: z
+        .object({
+          id: z.string().min(1).max(80),
+          regionId: z.string().min(1).max(80),
+          from: z.string().min(1).max(80),
+          partner: z.number().int().min(1),
+          caught: z.boolean().optional(),
+          bought: z.record(z.number().int().min(0)).optional(),
+          closed: z.boolean().optional(),
+        })
+        .optional(),
+      worldSeen: z.array(z.string().max(80)).max(20).optional(),
+      worldBye: z.array(z.string().max(80)).max(20).optional(),
+      worldPending: z
+        .array(z.object({ dex: z.number().int().min(1), level: z.number().int().min(1), shiny: z.boolean(), worldId: z.string().max(80) }))
+        .max(50)
+        .optional(),
       rebattle: z
         .record(
           z.object({

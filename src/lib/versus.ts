@@ -122,7 +122,45 @@ export async function fetchVersusBoard(): Promise<VersusEntry[] | null> {
   if (error) throw error
   const rows = parseVersusBoard((data ?? []) as RawEntry[])
   lastBoard = { at: Date.now(), rows }
+  rememberMine(rows)
   return rows
+}
+
+/** Your own row, as much of it as Home's Versus widget shows. */
+export type MyVersus = Pick<VersusEntry, 'team' | 'attackWins' | 'defenseWins'>
+
+const mineKey = (userId: string) => `pokedice.versusMine.${userId}.${realmArgs().p_realm ?? 'main'}`
+
+function rememberMine(rows: VersusEntry[]) {
+  const me = rows.find((r) => r.isMe)
+  if (!me) return
+  const mine: MyVersus = { team: me.team, attackWins: me.attackWins, defenseWins: me.defenseWins }
+  try {
+    localStorage.setItem(mineKey(me.userId), JSON.stringify(mine))
+  } catch {
+    /* kept next time the board answers */
+  }
+}
+
+/**
+ * Your row as the board last gave it, kept on this device (per account and realm): until the board answers, or when
+ * it can't be reached, Home's widget shows your Versus team from it rather than falling back to the party.
+ */
+export function rememberedVersus(userId: string | null): MyVersus | null {
+  if (!userId) return null
+  try {
+    const raw = JSON.parse(localStorage.getItem(mineKey(userId)) ?? 'null') as Partial<
+      RawEntry & MyVersus
+    > | null
+    if (!raw || !Array.isArray(raw.team) || !raw.team.length) return null
+    return {
+      team: raw.team.map((m) => ({ dex: Number(m.dex), level: Number(m.level), shiny: !!m.shiny })),
+      attackWins: Number(raw.attackWins) || 0,
+      defenseWins: Number(raw.defenseWins) || 0,
+    }
+  } catch {
+    return null
+  }
 }
 
 /** The board, fetched at most once every `maxAgeMs` (the Versus screen always fetches it fresh). */

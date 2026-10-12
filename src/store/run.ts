@@ -1,6 +1,8 @@
 // Run flow: map → area → encounter preview → battle → rewards → next. Thin glue over the pure engine.
 import {
   applyCatch,
+  areaOpenAt,
+  catchWorldMythical,
   emptyProgress,
   applyHp,
   applyRebattleKO,
@@ -54,6 +56,7 @@ import {
   teamAverageLevel,
   teamOf,
   uniformLevels,
+  worldBattleLevels,
   type BattleEvent,
   type BattleKind,
   type ForceKind,
@@ -66,6 +69,7 @@ import { activeSlot } from '@/save/storage'
 import { commitSave, initialRun, mutateSave, pushToast, useGame, type RunState } from './game'
 import { currentLive } from './live'
 import { useRebattleMedal } from './rebattle'
+import { serverNow } from './serverTime'
 import { t } from '@/i18n'
 import { money } from '@/lib/format'
 
@@ -102,6 +106,8 @@ export function deleteSave() {
 export function enterArea(areaId: string): boolean {
   const { save, data } = useGame.getState()
   if (!save || !isAreaUnlocked(save, areaId, data) || isAreaClosed(save, areaId, data)) return false
+  // A small world's area may also wait for its date (docs/21), on the server's clock.
+  if (!areaOpenAt(data, areaId, serverNow())) return false
   // Entering is visiting: an area entered once is no longer "new" (a secret area stops being featured on Home).
   const visited = !!save.areaProgress[areaId]
   if (save.currentAreaId !== areaId || !visited)
@@ -282,14 +288,16 @@ function startBattle(kind: BattleKind, enemy: { dex: number; level: number; shin
         })()
       : null
   battleRng = createRng(randomSeed() ^ battleRng.getState())
+  // A small world (docs/21): no upgrades, both sides fight at their own level's dice, with the world's boosters.
+  const world = worldBattleLevels(data, area)
   const { state, log } = createBattle(
     {
       kind,
       team,
       leadUid,
       enemy,
-      playerLevels: { comboLevels: save.comboLevels, dieLevels: save.dieLevels },
-      enemyLevels: uniformLevels(upgradeLevel),
+      playerLevels: world ?? { comboLevels: save.comboLevels, dieLevels: save.dieLevels },
+      enemyLevels: world ?? uniformLevels(upgradeLevel),
       megaAllowed: megaUnlocked(save, data),
       gmaxAllowed: gmaxUnlocked(save, data),
       noHealItems: !healItemsOn(save, data),
@@ -476,10 +484,17 @@ export function throwBall(ballKey: string | null) {
   let events: RunEvent[] = [{ kind: 'fled', dex: c.dex }]
   let pendingCatchId: string | null = null
   if (roll.caught) {
-    const res = applyCatch(next, { dex: c.dex, level: c.level, shiny: c.shiny }, c.target, data, Date.now(), newId)
-    next = res.save
-    events = res.events
-    if (res.needsTeamChoice) pendingCatchId = res.caughtId
+    // A small world's shiny mythical leaves the world at once, for its home region's Box (docs/21).
+    const mythical = run.areaId ? catchWorldMythical(next, data, run.areaId, { dex: c.dex, level: c.level }, Date.now(), newId) : null
+    if (mythical) {
+      next = mythical.save
+      events = mythical.events
+    } else {
+      const res = applyCatch(next, { dex: c.dex, level: c.level, shiny: c.shiny }, c.target, data, Date.now(), newId)
+      next = res.save
+      events = res.events
+      if (res.needsTeamChoice) pendingCatchId = res.caughtId
+    }
   }
   commitSave(next)
   setRun({ catch: { ...c, result: { ...roll, ballKey, events, pendingCatchId } } })

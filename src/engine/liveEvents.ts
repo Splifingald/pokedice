@@ -8,7 +8,7 @@
 import { eventOpenTo } from './events'
 import { addFossil } from './fossils'
 import { sellPrice } from './items'
-import { regionCases, regionOf, regionOfArea } from './regions'
+import { inWorldRegion, regionCases, regionOf, regionOfArea } from './regions'
 import type { Area, GameData, ItemDef, LiveEvent, LiveShopItem, SaveData, WheelReward } from './types'
 
 const at = (iso: string): number => Date.parse(iso)
@@ -52,8 +52,12 @@ export function liveEventAt(data: GameData, now: number | null): LiveEvent | nul
 /** Badges held in every region: a live event shows from its own count of them. */
 export const badgesHeld = (save: SaveData, data: GameData): number => regionCases(save, data).reduce((n, r) => n + r.earned, 0)
 
-/** The event running for this player: running, and they have its badges. Its effects follow the same rule. */
+/**
+ * The event running for this player: running, and they have its badges. Its effects follow the same rule. It stays
+ * outside a small world (docs/21): while one is played, there's none.
+ */
 export function liveFor(save: SaveData, data: GameData, now: number | null): LiveEvent | null {
+  if (inWorldRegion(save, data)) return null
   const e = liveEventAt(data, now)
   return e && badgesHeld(save, data) >= e.minBadges ? e : null
 }

@@ -6,6 +6,7 @@ import {
   cashReward,
   createRng,
   drawPrize,
+  inWorldRegion,
   liveFor,
   payWheelPrize,
   randomSeed,
@@ -46,8 +47,9 @@ async function serverSpin(): Promise<ServerSpin> {
 export async function spinWheel(): Promise<Spin> {
   const { save, data, auth } = useGame.getState()
   const now = serverNow()
-  // Signed in or not isn't known yet: a guest's draw now could be a signed-in player's second spin.
-  if (!save || now == null || auth.status === 'unknown') return { ok: false, reason: 'time' }
+  // Signed in or not isn't known yet: a guest's draw now could be a signed-in player's second spin. Inside a small
+  // world no event reaches (docs/21): its page says to leave first.
+  if (!save || now == null || auth.status === 'unknown' || inWorldRegion(save, data)) return { ok: false, reason: 'time' }
   const day = utcDay(now)
   if (!canSpin(save, day)) return { ok: false, reason: 'spent' }
   // Cash Flow, if it runs: the wheel stops on its slice, the ₽ paid are boosted.

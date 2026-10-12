@@ -2,7 +2,7 @@
 import type { AuthError, RealtimeChannel, Session, SupabaseClient, User } from '@supabase/supabase-js'
 import { create } from 'zustand'
 import { startAnalytics } from '@/analytics/ping'
-import { fetchContentUpdate } from '@/config/remote'
+import { checkContentVersion } from '@/config/remote'
 import { AUTH_PROVIDERS, loadAuthProviders } from '@/lib/authProviders'
 import { loadFriendStatus } from '@/lib/friends'
 import { getSupabase } from '@/lib/supabase'
@@ -37,6 +37,7 @@ import {
 import { commitSave, initialRun, onSaveCommitted, pushToast, setContent, tickFossils, useGame, type AuthProvider } from './game'
 import { t } from '@/i18n'
 import { rescueIfRegionDisabled } from './regions'
+import { startWorldClock } from './worlds'
 import { armDayCareTimer, tickDayCare } from './daycare'
 import { comeBack, markAway, settleExtreme, startExtremeClocks } from './extreme'
 
@@ -522,10 +523,14 @@ export async function signOut() {
 
 export async function checkContent() {
   const { data } = useGame.getState()
-  const remote = await fetchContentUpdate(data.config.configVersion)
-  if (!remote) return
-  setContent(remote, 'remote')
-  pushToast(t('ui.toast.contentUpdated'), 'info')
+  const res = await checkContentVersion(data.config.configVersion)
+  if (!res) return
+  if (res.bundle) {
+    setContent(res.bundle, 'remote')
+    pushToast(t('ui.toast.contentUpdated'), 'info')
+  }
+  // The content in play is the latest: what it doesn't hold is really gone (a small world the admin deleted).
+  useGame.setState({ contentChecked: true })
 }
 
 // ---------------------------------------------------------------- staying on the latest build
@@ -712,6 +717,8 @@ export function startBackgroundServices() {
   started = true
   // A region may have been switched off in admin while this player was standing in it.
   rescueIfRegionDisabled()
+  // A small world ends on the server's clock (docs/21): it closes, or sends the player out when switched off.
+  startWorldClock()
   startAnalytics()
   void initAuth()
   void checkContent()

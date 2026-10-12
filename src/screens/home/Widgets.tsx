@@ -18,7 +18,7 @@ import { EggSprite } from '@/components/EggSprite'
 import { PixelIcon } from '@/components/icons'
 import { MINI_SCALE, MiniSprite } from '@/components/SpriteImg'
 import { isSupabaseConfigured } from '@/lib/supabase'
-import { versusBoardCached, type VersusEntry } from '@/lib/versus'
+import { rememberedVersus, versusBoardCached, type VersusEntry } from '@/lib/versus'
 import { pushToast, useGame } from '@/store/game'
 import { useNow } from '@/store/hooks'
 import { cx } from '@/theme/util'
@@ -27,6 +27,7 @@ import { AreaStrip } from '@/components/AreaStrip'
 import { dayCarePicture } from '@/fx/areaArt'
 import { travelTo } from '@/store/travel'
 import { EventWidgets } from '@/screens/events/EventWidgets'
+import { useInWorld, WorldWidgets } from '@/screens/events/world'
 import { HeadTag, Meter, Widget, WidgetBanner, WIDGET_BANNER_H, WidgetRows as DayCareRows } from './Widget'
 
 /** The newest secret area (one tap to travel), or the next one to open with how close it is. */
@@ -355,6 +356,7 @@ function VersusWidget() {
   const save = useGame((s) => s.save)!
   const data = useGame((s) => s.data)
   const signedIn = useGame((s) => s.auth.status === 'signed_in')
+  const userId = useGame((s) => s.auth.userId)
   const open = versusUnlocked(save, data)
   const [board, setBoard] = useState<VersusEntry[] | null>(null)
   useEffect(() => {
@@ -405,7 +407,9 @@ function VersusWidget() {
       </Widget>
     )
   }
-  const me = board?.find((r) => r.isMe)
+  // The board decides once it has answered; until then (or when it can't be reached) your row as it last gave it, so
+  // the widget never shows the party in place of a Versus team that is set.
+  const me = board ? board.find((r) => r.isMe) : rememberedVersus(userId)
   const set = !!me?.team.length
   // The team on the board (the three chosen for Versus), or the party until one is set.
   const shown = set ? me!.team : teamOf(save).map((p) => ({ dex: p.dex, level: p.level, shiny: p.shiny }))
@@ -459,8 +463,18 @@ function VersusWidget() {
   )
 }
 
-/** Home's widgets, two by two: the secret area and the Day Care, then Versus and one square per special event. */
+/**
+ * Home's widgets, two by two: the secret area and the Day Care, then Versus and one square per special event. Inside a
+ * small world, only the world's: its mythical and its Mart (the main game's wait outside, docs/21).
+ */
 export function Widgets({ onSecrets }: { onSecrets: () => void }) {
+  const inside = useInWorld().inside
+  if (inside)
+    return (
+      <div className="grid grid-cols-2 content-start gap-2.5">
+        <WorldWidgets />
+      </div>
+    )
   return (
     <div className="grid grid-cols-2 content-start gap-2.5">
       <SecretWidget onSecrets={onSecrets} />

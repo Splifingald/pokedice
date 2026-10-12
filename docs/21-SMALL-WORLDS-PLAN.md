@@ -1,7 +1,9 @@
 # Small worlds: plan (for validation)
 
-Status: **validated** (2026-10-11): questions → plan → Visual Lab mockups (`design/visual-lab/worlds.js`, Home tab,
-"Small world" preview bar) → validation (§5, answered) → integration next. Branch `feature/events`.
+Status: **integrated** (2026-10-11): questions → plan → Visual Lab mockups (`design/visual-lab/worlds.js`, Home tab,
+"Small world" preview bar) → validation (§5, answered) → integration (§8). Branch `feature/small-worlds` (from
+`feature/version_2`). Phase 1 (engine, store, save, admin, tests) and phase 2 (what players see) are built; the UI's
+rules are in docs/15 §22.
 
 Event type 5 in the special events framework (docs/18): **Small worlds**, priority 1 (first on Home). A small world is a
 time-limited, themed region you build in the admin, where the **shiny mythicals** are won: a fresh start on one of its
@@ -146,3 +148,98 @@ interface SmallWorld {
    the world's Mart, enter / leave / close, the mythical out at catch; save; admin editor; unit and SQL tests.
 2. What players see: the square and pop-up, the partner pick, the themed Home, battle chips, the end; strings in 10
    languages; e2e and phone layout.
+
+## 8. Integration (2026-10-11)
+
+### 8a. Asked before building (answers)
+| Question | Answer |
+|---|---|
+| Extreme mode (docs/22) | **Main save only**: the Extreme save never sees a world. |
+| Authoring | **A small helper** in the Small worlds tab (make the world's region, add or copy areas into it, links to Areas). |
+| Switching Off | **Off hides, keeps**: Off (or "On for admin" for a player) sends anyone inside back with their place kept; switched on again, they go back in. Only the end date (or End now) closes a world. |
+| The mockups | **Kept** as they are, with start/end and area openings as UTC date-times (like Live events), the Home square on the Live square's frame, the booster as its own line in the damage recap. |
+
+### 8b. Phase 1, built
+- **Engine**
+  - `engine/worldList.ts`: the admin's list (`smallWorlds`, normalised), `worldById`, `worldOfRegion`, `worldOfArea`,
+    `isWorldMythical`; `newSmallWorld` (×5 XP, 3 badges).
+  - `engine/worlds.ts`: `worldAt` / `worldFor` (running, switched on, main save, badges), `heldWorld` / `inWorld` /
+    `currentWorld`, `enterWorld` (first time: `newRegionBlock` + `startRegion` on a partner; later `switchRegion`),
+    `leaveWorld`, `worldOver` + `closeWorld`, the pop-ups (`worldPopupDue` / `markWorldSeen`, `worldByeDue` /
+    `markWorldBye`), `areaOpensAt` / `areaOpenAt`, `worldBattleLevels`, `worldShopRows` / `buyWorldItem`,
+    `catchWorldMythical`, `releaseWorldPending`, `mythicalHome`, the admin's `worldOverlap` / `worldProblems`.
+  - Regions: `isWorldRegion`, `realRegions`, `worldRegionOf` (the save's own record, for what has no game data),
+    `inWorldRegion`. Worlds are out of `enabledRegions` (so `unlockedRegions`, `regionCases`, the league chain),
+    `offeredRegion`, `sendTargets` (empty inside a world), `regionOfSpecies`, `reached()` (Mega / Gigantamax),
+    `speciesAllowedIn` (inside a world every generation may evolve), `rescueFromDisabledRegion` (skips worlds),
+    `speciesCaughtEverywhere`, `progressTotals`, `everyBox` (Versus) and `everyInstance` (raid teams).
+  - Dice by level: `UpgradeLevels.byLevel` + `attackerLevels(levels, level)` (`diceLevelOf` = level ÷ 10, capped at 10),
+    used by the reducer for each attack, the foes' reroll AI, the potion check and the battle's damage preview.
+  - Boosters: `UpgradeLevels.typeBoost`; `computeDamage` multiplies after the type's multiplier, keeps it out of
+    `effectiveness`, and says so in `DamageResult.boost`.
+  - XP: `pokemonXp` × the world's `xpMultiplier` in its areas.
+  - The mythical: compiled into its area's bosses (`compileGameData`, always shiny); `legendShiny` lets that one boss be
+    shiny. A catch goes to its home region's Box through raid.ts's now exported `addToRegion`, or waits in
+    `events.worldPending` (joins at `settle` once the region is started, with a toast); the world's Pokédex notes it, so
+    its lair closes and it stops coming back. New run event `world_mythical`.
+  - No events inside: `eventUnlocked`, `eventsTeaser`, `liveFor` give nothing while a world is played; the Day Care
+    (deposit, pick-up, hatching), the usual Mart and upgrades refuse; a pending wheel prize and friends' raid gifts wait
+    until the player is out.
+- **Store**: `store/worlds.ts` (`enterSmallWorld`, `leaveSmallWorld`, `buyWorld`, the pop-ups' marks, `worldName`,
+  `useWorld`) and the world's clock (`startWorldClock`, from `startBackgroundServices`): an ended world closes, a hidden
+  one sends the player out; never mid-fight, only on the server's time and with content known to be the latest
+  (`contentChecked`, set by the version check). `store/run.ts`: the world's levels in `startBattle`, the area's date in
+  `enterArea`, the mythical in `throwBall`.
+- **Save**: `events.world` (`id`, `regionId`, `from`, `partner`, `caught`, `bought`, `closed`), `events.worldSeen`,
+  `events.worldBye`, `events.worldPending` (zod schema).
+- **Admin → Events → Small worlds** (`admin/sections/events/SmallWorldsTab.tsx`): the switch (also on General), the list
+  (scheduled / live / ended, Edit, End now, Delete) and the editor as a draft: title (10 languages), picture, UTC dates,
+  badges, XP ×, the three colours with a preview of the Home square, the region and its areas (each area's opening
+  date, "Edit in Areas"), the three partners, the mythical (Pokémon, level, area), boosters, the Mart's rows. Applied
+  only without problems (dates, overlap, region, three partners, the mythical's area in the world…).
+- **Admin → Areas**: a Region field per area, a region filter, `?area=` links.
+- **Tests**: `tests/engine/small-worlds.test.ts` (30), `e2e/admin-events.spec.ts` (the Small worlds tab).
+
+### 8b'. Phase 2, built
+- **Outside** (`screens/events/world.tsx`, the lab in `worldPick.tsx`, `styles/world.css`): Home's square
+  (`WorldSquare`, first of the event squares, on the Live square's frame), the pop-up (`WorldPopup`, once, after the
+  tutorials and other pop-ups, before the live event's; the live event's waits for it), the partner pick (`WorldPick`:
+  `PartnerMoment` with the world's `theme`), the closing pop-up (`WorldByePopup`). All three mounted once in
+  `GameLayout`.
+- **Inside**: the world's colours (`worldVars`, `.in-world` on the layout), the strip on Home (`WorldStrip`: name, time
+  left, Back to Kanto), Home's two squares (`WorldWidgets`: the mythical, the World Mart) in place of every other, no
+  region offer or switcher, "Opens {date}" on an area waiting for its date (`home/areas.ts`; CONTINUE's GO TO waits
+  for it too), the World Mart (`Shop.tsx`, `WorldShop`), Upgrades' explanation (`Upgrades.tsx`, `WorldUpgrades`), and
+  the main game's pages (the events, the Day Care, Versus) saying why they wait (`WorldAwayPage`). The upgrades dot
+  stays dark inside.
+- **Battle**: the dice level on each plate (`DiceLevelTag`), the booster chip (`BoosterChip`) in the readout and as its
+  own factor in the damage recap, the mythical's line on the result card (`WorldMythicalCard`, run event
+  `world_mythical`).
+- **Strings**: 48 more `ui.world.*` keys (55 in all) in the ten languages. **Kitchen sink**: `WorldBits` (every state of each piece).
+- **Tests**: `tests/world-clock.test.ts` (the store's clock: closing, Off, mid-fight), `e2e/worlds.spec.ts` (the
+  pop-up, the pick, Home inside, its Mart, Upgrades and an event's page, Back; a battle with the dice levels and a
+  booster, an area waiting for its date; the final fight and the catch going to the Kanto Box; the closing; a
+  360×640 phone outside and inside).
+
+### 8c. Where it differs from the plan
+- **No Config → Regions editor exists** in the admin: the Small worlds tab makes the world's region row itself (id
+  `world-<name>`, `dexRange` `[99999, 99999]` — the admin's checks want numbers ≥ 1 and it's past every species and
+  form —, partners at Lv.5, `enabled: false`). The world opens it whatever `enabled` says (and the rescue skips
+  worlds), so `enabled: false` only keeps a region whose world was deleted out of sight.
+- **No `kind: 'world'` column**: being named by a world of the list is what makes a region a world (no migration).
+- **Area dates** live in the world (`SmallWorld.opens`), not on the areas table.
+- **The mythical is set in the world**, not in Areas → Bosses: one place for it, compiled into its area.
+- **Dice level 0 and 1 are both the base track** (the upgrades' own scale: 1 is the start, 10 the last).
+- **Closing pop-up**: for whoever played the world, or saw its opening pop-up and never went in.
+- **One world per region in the list**: a new edition gets its own region (copy the areas in), or the old world is
+  deleted first.
+- **Its Mart's prices** are never below the usual buy-back (as the Special Shop's), so buying to sell can't pay.
+- **No SQL**: the `smallWorlds` game_config row is written by Publish. The server's leaderboard keeps only rows with
+  badges: don't give a world's gym trainers a badge.
+- **The strip is Home's**, not under the top bar on every page: the other pages inside are the world's own (the World
+  Mart, Upgrades) or say to leave it first, each with the way back. The CTA stays red and the money gold: the world's
+  colours tint its own pieces and the page's ground only.
+- **Booted inside a world before the content is in** (the game starts on its own bundle, which never holds the admin's
+  worlds), Home shows the strip and "The world is on its way" until the content arrives (`WorldWaiting`).
+- **A world's partners against its wild Pokémon**: a type that can't touch them (Gastly against Normal types) is a
+  stalemate in the world as anywhere; the admin's pools and partners decide it.

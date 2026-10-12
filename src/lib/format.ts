@@ -140,3 +140,7 @@ export function statusEffects(r: StatusRules): { status: StatusKind; icon: IconN
 
 /** A status by name, title case: "Burn", "Brûlure". */
 export const statusName = (status: StatusKind) => t(`ui.status.${status}.name`)
+
+/** A moment in the player's language and time: "Sat 18 Oct, 18:00" (a small world's end, an area's opening). */
+export const dayTime = (ms: number) =>
+  new Date(ms).toLocaleString(getLang(), { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })

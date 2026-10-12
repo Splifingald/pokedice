@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react'
-import { badgeCase, isAreaUnlocked, liveLeft, liveShopRows, regionOf, sellPrice, shopStock, type ItemDef } from '@/engine'
+import { badgeCase, isAreaUnlocked, liveLeft, liveShopRows, regionOf, sellPrice, shopStock, worldLeft, worldShopRows, type ItemDef } from '@/engine'
 import { effectText } from '@/i18n/text'
 import { useT } from '@/i18n/react'
 import { sfx } from '@/audio/sfx'
@@ -14,6 +14,10 @@ import { buy, sell } from '@/store/actions'
 import { buyLive, useLive } from '@/store/live'
 import { Chip } from '@/components/Chip'
 import { LiveBadge, LiveGauge, LivePicture, liveName, liveTime } from '@/screens/events/live'
+import { bannerUrl } from '@/screens/events/shared'
+import { useInWorld, worldVars, WorldTag } from '@/screens/events/world'
+import { useServerNow } from '@/store/serverTime'
+import { buyWorld, worldName } from '@/store/worlds'
 import { pushToast, useGame } from '@/store/game'
 import { cx } from '@/theme/util'
 
@@ -242,6 +246,119 @@ function LiveShopSection() {
         })}
       </ul>
       <p className="m-0 px-3 font-pixel-sm text-[14px] leading-tight text-muted">{t('ui.live.shop.note')}</p>
+    </section>
+  )
+}
+
+/**
+ * A small world's Mart (docs/21): the admin's list and nothing else, for the world's own ₽ — each item's limit and
+ * what's left of it, the world's picture and time left over it. Nothing bought here leaves the world.
+ */
+function WorldShop() {
+  const { t } = useT()
+  const save = useGame((s) => s.save)
+  const data = useGame((s) => s.data)
+  const { world } = useInWorld()
+  const now = useServerNow(1000)
+  const [open, setOpen] = useState<string | null>(null)
+  const [qty, setQty] = useState<'1' | '5' | '10'>('1')
+  if (!save) return null
+  const rows = worldShopRows(save, data)
+  const left = world && now != null ? worldLeft(world, now) : null
+  return (
+    <section aria-labelledby="world-shop" className="lv-shop flex flex-col gap-2 pb-2.5" style={worldVars(world)}>
+      <header className="lv-shop-head relative isolate grid min-h-[92px] content-end gap-1.5 overflow-hidden px-3 pb-3 pt-2.5">
+        <span className="lv-pic absolute inset-0 -z-10 block overflow-hidden bg-night" aria-hidden>
+          {world?.banner && <img src={bannerUrl(world.banner)} alt="" className="pixelated absolute inset-0 h-full w-full object-cover" />}
+        </span>
+        <span className="flex min-w-0 items-center gap-2">
+          <WorldTag />
+          <h2 id="world-shop" className="lv-ink m-0 min-w-0 truncate text-[28px] leading-none">
+            {worldName(world, data)}
+          </h2>
+        </span>
+        {left && (
+          <span className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-2.5 font-pixel-sm text-[16px] leading-none">
+            <span className="lv-ink text-gold-light">{t('ui.live.endsIn', { time: liveTime(left.ms) })}</span>
+            <LiveGauge share={left.share} hot={left.ms < 24 * 3_600_000} />
+          </span>
+        )}
+      </header>
+      <ul className="grid grid-cols-2 gap-1.5 px-2 md:grid-cols-3">
+        {rows.map((r) => {
+          const out = r.left === 0
+          const steps = (['1', '5', '10'] as const).filter((q) => r.left == null || Number(q) <= r.left)
+          const n = Math.min(Number(qty), r.left ?? Infinity)
+          const total = r.price * n
+          const can = total <= save.gold
+          return (
+            <Row
+              key={r.item.key}
+              it={r.item}
+              side="live"
+              open={open === r.item.key && !out}
+              onToggle={
+                out
+                  ? undefined
+                  : () => {
+                      setOpen(open === r.item.key ? null : r.item.key)
+                      setQty('1')
+                    }
+              }
+              sub={
+                <span className={cx(r.left != null && r.left <= 2 && 'text-danger')}>
+                  {r.limit == null
+                    ? t('ui.live.shop.noLimit')
+                    : out
+                      ? t('ui.live.shop.soldOut')
+                      : t('ui.live.shop.left', { left: r.left!, limit: r.limit })}
+                </span>
+              }
+              pill={
+                <span
+                  className={cx(
+                    'grid min-w-[62px] justify-items-center gap-0.5 px-2 pb-2 pt-1.5 text-center text-[18px] leading-none',
+                    out || r.price > save.gold ? 'bg-well-deep text-ink' : 'light-scope bg-night text-gold-light',
+                  )}
+                >
+                  {out ? t('ui.live.shop.soldOut') : money(r.price)}
+                </span>
+              }
+              owned={save.inventory[r.item.key] ?? 0}
+            >
+              {r.item.description && (
+                <p className="copy font-pixel-sm text-[15px] leading-tight text-muted">{r.item.description}</p>
+              )}
+              <div className="flex items-center gap-2">
+                {steps.length > 1 ? (
+                  <Seg
+                    label={t('ui.shop.howMany', { item: r.item.name })}
+                    value={steps.includes(qty) ? qty : '1'}
+                    onChange={setQty}
+                    options={steps.map((q) => ({ id: q, label: `×${q}` }))}
+                  />
+                ) : (
+                  <span className="font-pixel-sm text-[15px] text-muted">{t('ui.live.shop.onePer')}</span>
+                )}
+                <PixelButton
+                  variant={can ? 'primary' : 'secondary'}
+                  className="min-h-[50px] flex-1"
+                  disabled={!can}
+                  onClick={() => {
+                    if (!buyWorld(r.item.key, n)) return
+                    sfx('gold')
+                    if (r.left != null && r.left - n <= 0) setOpen(null)
+                    pushToast(t('ui.shop.bought', { n, item: r.item.name, left: money(useGame.getState().save?.gold ?? 0) }), 'good')
+                  }}
+                >
+                  {can ? t('ui.shop.buyFor', { price: money(total) }) : t('ui.shop.needMore', { price: money(total - save.gold) })}
+                </PixelButton>
+              </div>
+            </Row>
+          )
+        })}
+      </ul>
+      <p className="m-0 px-3 font-pixel-sm text-[14px] leading-tight text-muted">{t('ui.world.mart.note')}</p>
     </section>
   )
 }
@@ -502,8 +619,19 @@ export function ShopScreen() {
   const save = useGame((s) => s.save)
   const data = useGame((s) => s.data)
   const [tab, setTab] = useState<'buy' | 'sell'>('buy')
+  const inside = useInWorld().inside
   if (!save) return null
   const badges = badgeCase(save, data).filter((b) => b.earned).length
+  // Inside a small world the Mart is the world's (docs/21): its list only, nothing sold back.
+  if (inside)
+    return (
+      <div className="mx-auto flex w-full max-w-3xl flex-col gap-3">
+        <PageHead icon="navShop" title={t('ui.world.mart.title')}>
+          <Wallet />
+        </PageHead>
+        <WorldShop />
+      </div>
+    )
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-3">

@@ -12,6 +12,7 @@ import { TypeBadge } from '@/components/TypeBadge'
 import { useT } from '@/i18n/react'
 import { comboName, statusName } from '@/lib/format'
 import { useGame } from '@/store/game'
+import { BoosterChip } from '@/screens/events/world'
 import { PALETTE } from '@/theme/colors'
 import { cx } from '@/theme/util'
 
@@ -130,6 +131,7 @@ export function Readout({
           {r.final}
         </b>
       </button>
+      {r.boost && <BoosterChip type={r.boost.type} n={r.boost.multiplier} />}
       {eff && (
         <span
           className={cx(

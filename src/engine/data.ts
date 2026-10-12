@@ -1,4 +1,5 @@
 import { DEFAULT_CONFIG } from './defaults'
+import { smallWorlds } from './worldList'
 import {
   COMBO_KEYS,
   POKE_TYPES,
@@ -91,6 +92,7 @@ export function compileGameData(raw: BundleRaw): GameData {
     }))
     .sort((a, b) => a.orderIndex - b.orderIndex)
 
+  const config = mergeConfig(raw.config)
   return {
     species,
     speciesList: Object.values(species).sort((a, b) => a.dex - b.dex),
@@ -99,12 +101,30 @@ export function compileGameData(raw: BundleRaw): GameData {
     comboUpgrades,
     dieUpgrades,
     items,
-    areas,
+    areas: withWorldMythicals(areas, config, species),
     trainers,
-    config: mergeConfig(raw.config),
+    config,
     regions: compileRegions(raw.regions, areas),
     eggGroups: raw.eggGroups ?? {},
   }
+}
+
+/**
+ * A small world's shiny mythical (docs/21) is set in its world, not in Admin → Areas: it becomes the last boss of its
+ * area here, always shiny, so the lair's usual flow (due once every round is done, back in the deck after a missed
+ * throw until it's caught) is the final fight's.
+ */
+function withWorldMythicals(areas: Area[], config: GameConfig, species: Record<number, Species>): Area[] {
+  const mythicals = smallWorlds({ config })
+    .map((w) => w.mythical)
+    .filter((m) => m.areaId && species[m.dex])
+  if (!mythicals.length) return areas
+  return areas.map((a) => {
+    const mine = mythicals.filter((m) => m.areaId === a.id)
+    if (!mine.length) return a
+    const others = (a.legendaryBoss ?? []).filter((b) => !mine.some((m) => m.dex === b.dex))
+    return { ...a, legendaryBoss: [...others, ...mine.map((m): BossDef => ({ dex: m.dex, level: Math.max(1, Math.round(m.level)), shiny: true }))] }
+  })
 }
 
 /** The default region list, for bundles and databases from before the second region: Kanto alone, always on. */

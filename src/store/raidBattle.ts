@@ -9,6 +9,7 @@ import {
   countRaidTry,
   createRaid,
   createRng,
+  inWorldRegion,
   npcTeam,
   raidDispatch,
   raidHomeRegion,
@@ -151,7 +152,8 @@ function friendSide(f: RaidFriend, k: number): RaidSideSeed {
 export function startRaid(friends: RaidFriend[] = useRaidGroup.getState().friends): boolean {
   const { save, data } = useGame.getState()
   const raid = liveRaid()
-  if (!save || !raid) return false
+  // Inside a small world no event reaches (docs/21).
+  if (!save || !raid || inWorldRegion(save, data)) return false
   const team = raidTeam(save, data)
   if (!team.length) return false
   rng = createRng(randomSeed())

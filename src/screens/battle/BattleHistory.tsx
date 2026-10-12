@@ -17,6 +17,7 @@ import { PixelIcon, STATUS_ICON } from '@/components/icons'
 import { MiniSprite } from '@/components/SpriteImg'
 import type { BattleSlice } from '@/store/game'
 import { useGame } from '@/store/game'
+import { BoosterChip } from '@/screens/events/world'
 import { joinList, t } from '@/i18n'
 import { useT } from '@/i18n/react'
 import { comboName, statusName, typeName } from '@/lib/format'
@@ -65,6 +66,13 @@ export function DamageRecap({ result, dice, className }: { result: DamageResult;
         )}
         <span aria-hidden>×</span>
         <span>{multiplier}</span>
+        {/* A small world's booster (docs/21): its own factor, never hidden in the type's. */}
+        {result.boost && (
+          <>
+            <span aria-hidden>×</span>
+            <BoosterChip type={result.boost.type} n={result.boost.multiplier} />
+          </>
+        )}
         <span aria-hidden>=</span>
         <span className="text-base">{result.final}</span>
         {result.immune && <span className="text-muted">{t('ui.hist.noEffect')}</span>}

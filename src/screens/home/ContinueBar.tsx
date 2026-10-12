@@ -20,6 +20,7 @@ import { PixelButton } from '@/components/PixelButton'
 import { countdown, trainerTitle } from '@/lib/format'
 import { useGame } from '@/store/game'
 import { useEnergy } from '@/store/hooks'
+import { serverNow } from '@/store/serverTime'
 import { challenge, enterArea, outOfEnergy, rollNext } from '@/store/run'
 import { travelTo } from '@/store/travel'
 import { cx } from '@/theme/util'
@@ -99,7 +100,7 @@ export function useContinue(area: Area) {
   const off = !busy && (resting || (!gym && !boss && (closed || empty)))
   // Under CONTINUE: the green GO TO when behind in the region's main chain (not mid-encounter), and "keep exploring"
   // when a gym or a legendary waits. Home sizes its scene around them.
-  const latest = useGame((s) => (busy || !s.save ? null : latestOpenArea(s.save, s.data)))
+  const latest = useGame((s) => (busy || !s.save ? null : latestOpenArea(s.save, s.data, serverNow())))
   const keepExploring = !!(gym || boss) && !closed && !busy && !resting
   const label = gym
     ? t('ui.area.challenge', { name: gym.name.toUpperCase() })

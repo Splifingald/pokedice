@@ -2,7 +2,7 @@
 // computed before a single frame plays, so its result can be recorded first and leaving halfway changes nothing.
 import { battleOutcome, createBattle, reduce, type BattleEvent, type BattleState, type LogEntry } from './battle'
 import { uniformLevels } from './damage'
-import { regionOf } from './regions'
+import { regionOf, worldRegionOf } from './regions'
 import { autoEvents } from './sim'
 import { createRng } from './rng'
 import { typeMultiplier } from './typechart'
@@ -53,13 +53,14 @@ export function versusChoices(save: SaveData, data: GameData, keep: readonly str
   return out
 }
 
-/** Every region's Box the player has played, the one being played first. */
+/** Every region's Box the player has played, the one being played first. A small world's stays in it. */
 function everyBox(save: SaveData): [RegionId, PokemonInstance[]][] {
   const live = regionOf(save)
+  const world = worldRegionOf(save)
   return [
-    [live, save.box],
+    ...(live === world ? [] : [[live, save.box] as [RegionId, PokemonInstance[]]]),
     ...Object.entries(save.parked ?? {})
-      .filter(([region, b]) => region !== live && !!b)
+      .filter(([region, b]) => region !== live && region !== world && !!b)
       .map(([region, b]): [RegionId, PokemonInstance[]] => [region as RegionId, b!.box]),
   ]
 }

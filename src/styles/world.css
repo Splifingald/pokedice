@@ -1,0 +1,114 @@
+/*
+ * Small worlds (docs/21): the world's colours come as variables (--w-main, --w-accent, --w-ground, and the ink that
+ * reads on the first two: --w-on-main, --w-on-accent), set by worldVars(). Home's square, the strip under the top bar,
+ * its squares inside, the booster chips, the mythical's glow and the page's ground inside a world wear them.
+ */
+
+/* WORLD: a tag in the world's main colour. */
+.w-tag {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  padding: 2px 5px 3px;
+  line-height: 1;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  background: var(--w-main, #5b3a9e);
+  color: var(--w-on-main, #fbfdff);
+  box-shadow: inset 0 0 0 2px #24304f;
+}
+
+/* A booster's multiplier, glued to its type badge. */
+.w-boost-x {
+  display: inline-flex;
+  align-items: center;
+  height: 16px;
+  margin-left: -2px;
+  padding: 0 4px;
+  font-size: 13px;
+  line-height: 1;
+  background: #24304f;
+  color: #ffe7a8;
+}
+
+/* The mythical: a silhouette glowing in the accent until it's caught, its shiny colours with a gold glow after. */
+.w-sil {
+  filter: drop-shadow(0 0 5px var(--w-accent, #ff6f9c));
+  animation: w-bob 2.4s steps(6) infinite;
+}
+.w-got {
+  filter: drop-shadow(0 0 6px #ffe7a8);
+  animation: w-bob 2.4s steps(6) infinite;
+}
+@keyframes w-bob {
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+/* Home's square: the accent's ring inside the panel's outline (over the live square's gold one). */
+.w-square::after {
+  box-shadow:
+    inset 0 0 0 2px var(--w-accent, #ff6f9c),
+    inset 0 0 0 4px rgb(36 48 79 / 0.5);
+}
+
+/* Under the top bar inside a world: its picture under its main colour, fading to the right. */
+.w-strip {
+  box-shadow: 0 3px 0 rgb(var(--c-edge));
+}
+.w-strip::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--w-main) 90%, transparent),
+    color-mix(in srgb, var(--w-main) 35%, transparent)
+  );
+}
+
+/* Its squares inside: the ground's tint on the panel, a glow where the mythical (or the shelf) stands. */
+.w-widget {
+  background-color: color-mix(in oklab, var(--w-ground, #efe6fb) 45%, rgb(var(--c-panel)));
+}
+[data-theme='dark'] .w-widget {
+  background-color: color-mix(in oklab, var(--w-ground, #efe6fb) 8%, rgb(var(--c-panel)));
+}
+.w-myth-ground {
+  background: radial-gradient(
+    circle at 50% 70%,
+    color-mix(in srgb, var(--w-accent, #ff6f9c) 35%, transparent) 0 30%,
+    transparent 62%
+  );
+}
+
+/* The page inside a world: its ground's tint over the morning sky (a little only, at dusk). */
+.in-world {
+  background-color: color-mix(in oklab, var(--w-ground, #efe6fb) 55%, rgb(var(--c-parchment)));
+}
+[data-theme='dark'] .in-world {
+  background-color: color-mix(in oklab, var(--w-ground, #efe6fb) 8%, rgb(var(--c-parchment)));
+}
+
+/* The result card's line for the mythical caught: gold, its rays turning behind. */
+.w-won {
+  background: color-mix(in oklab, var(--w-accent, #ffbe2e) 25%, #fffbea);
+  color: #24304f;
+  box-shadow:
+    inset 0 0 0 3px #24304f,
+    inset 0 0 0 5px #ffbe2e;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .w-sil,
+  .w-got {
+    animation: none;
+  }
+}
+html.reduce-motion .w-sil,
+html.reduce-motion .w-got {
+  animation: none;
+}

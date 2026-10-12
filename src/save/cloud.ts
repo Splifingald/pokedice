@@ -2,7 +2,7 @@
 // than the other save, and then the player chooses (see decideSync). Progress is measured across every region a save
 // holds, not just the one it was last played in.
 import type { SupabaseClient } from '@supabase/supabase-js'
-import { liveBlock } from '@/engine/regions'
+import { liveBlock, regionOf, worldRegionOf } from '@/engine/regions'
 import type { RegionSave, SaveData, SaveMode } from '@/engine/types'
 import { parseSave } from './schema'
 import type { CloudMark } from './storage'
@@ -128,9 +128,16 @@ export function cancelPush() {
 /**
  * Every region the save holds: the live one, lifted out of the top level, and each parked block. Regions are
  * separate runs, so anything that measures a whole save has to walk all of them — reading `save.areaProgress` alone
- * sees only wherever the player happens to be standing.
+ * sees only wherever the player happens to be standing. A small world's block isn't progress (it closes with the
+ * world), so it's left out.
  */
-const regionBlocks = (s: SaveData): RegionSave[] => [liveBlock(s), ...Object.values(s.parked ?? {}).filter((b): b is RegionSave => !!b)]
+const regionBlocks = (s: SaveData): RegionSave[] => {
+  const world = worldRegionOf(s)
+  return [
+    ...(regionOf(s) === world ? [] : [liveBlock(s)]),
+    ...Object.entries(s.parked ?? {}).flatMap(([id, b]) => (b && id !== world ? [b] : [])),
+  ]
+}
 
 /**
  * How far a save got across every region it holds, compared in order: areas cleared, gym battles won, species
