@@ -2,7 +2,6 @@
 // the level cap and never evolve from it; friends' Pokémon visit; Eggs hatch on the spot into the first form of an
 // evolving line, favouring species the player doesn't have yet. The Egg-group checks that lay the Eggs are in
 // breeding.ts.
-import { isExtreme } from './extreme'
 import { earnedGold } from './liveEvents'
 import { createInstance, gainXp, instanceMaxHp, xpToNext } from './progression'
 import { regionCases, regionOf, regionOfSpecies, unlockedRegions } from './regions'
@@ -204,15 +203,16 @@ function keepHpPercent(before: PokemonInstance, after: PokemonInstance, data: Ga
 }
 
 /**
- * A resident goes home, its XP turned into levels and fully healed (Extreme mode: with its HP %): to its own region's Box, the live one through the
+ * A resident goes home, its XP turned into levels, with its HP %: to its own region's Box, the live one through the
  * top level, a parked one through `save.parked`. It joins the team only when its region is live, the team has room,
  * and `team` allows it. A region that no longer exists falls back to the live one.
  */
 function sendHome(save: SaveData, res: DayCareResident, data: GameData, now: number, team: boolean): Pickup {
   const dc = dayCareOf(save)
   const grown = residentNow(res, now, data)
-  // Extreme mode: the Day Care is no Pokémon Center. It comes home with its HP % (still resting if it was K.O.).
-  const inst = isExtreme(save) ? keepHpPercent(res.inst, grown, data) : { ...grown, currentHp: instanceMaxHp(grown, data) }
+  // The Day Care is no Pokémon Center: it comes home with its HP %, still K.O. (and resting, in Extreme mode) if it
+  // was. A Pokémon Center heals it while it stays (centerHeal).
+  const inst = keepHpPercent(res.inst, grown, data)
   const rest: DayCareState = { ...dc, residents: dc.residents.filter((r) => r.inst.id !== res.inst.id) }
   const base = { inst, xpGained: dayCareXp(res, now, data), levelsGained: inst.level - res.inst.level }
   const here = regionOf(save)

@@ -231,9 +231,9 @@ describe('K.O. lasts 12 hours', () => {
     const save: SaveData = { ...base, dayCare: { residents: [{ inst: resting, since: 0, region: 'kanto' }], guests: [], eggClaimed: true } }
     const home = withdrawPokemon(save, 'care-1', data, 10 * MIN)!
     expect(home.inst).toMatchObject({ currentHp: 0, koAt: 7 })
-    // In the main game it comes home healed, as before.
+    // Nor in the main game: it comes home K.O.
     const mainSave: SaveData = { ...save, mode: undefined }
-    expect(withdrawPokemon(mainSave, 'care-1', data, 10 * MIN)!.inst.currentHp).toBe(maxHp(home.inst))
+    expect(withdrawPokemon(mainSave, 'care-1', data, 10 * MIN)!.inst.currentHp).toBe(0)
   })
 })
 

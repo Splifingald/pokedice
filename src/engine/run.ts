@@ -540,10 +540,17 @@ export function applyWipe(save: SaveData, areaId: string, data: GameData): SaveD
   }
 }
 
-/** Pokémon Center: full heal for team and box. None in Extreme mode (unless the admin turns them back on). */
+/**
+ * Pokémon Center: full heal for team and box, and for the Day Care's residents (it heals no one itself). None in
+ * Extreme mode (unless the admin turns them back on).
+ */
 export function centerHeal(save: SaveData, data: GameData): SaveData {
   if (!centersOn(save, data)) return save
-  return { ...save, box: save.box.map((inst) => ({ ...inst, currentHp: instanceMaxHp(inst, data) })) }
+  const heal = (inst: PokemonInstance): PokemonInstance => ({ ...inst, currentHp: instanceMaxHp(inst, data) })
+  const healed = { ...save, box: save.box.map(heal) }
+  const dc = save.dayCare
+  if (!dc?.residents.length) return healed
+  return { ...healed, dayCare: { ...dc, residents: dc.residents.map((r) => ({ ...r, inst: heal(r.inst) })) } }
 }
 
 export function setTeam(save: SaveData, ids: readonly string[], data: GameData): SaveData {

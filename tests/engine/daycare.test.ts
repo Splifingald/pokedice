@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  centerHeal,
   createInstance,
   createRng,
   dayCareLevelProgress,
@@ -16,6 +17,7 @@ import {
   getRegion,
   hatchEgg,
   hatchLevel,
+  instanceMaxHp,
   inviteGuest,
   leaderboardTutorialDue,
   leaderboardUnlocked,
@@ -155,6 +157,21 @@ describe('Day Care', () => {
     expect(dayCareOf(back.save).residents).toHaveLength(0)
     expect(back.save.box.some((p) => p.id === 'x')).toBe(true)
     expect(back).toMatchObject({ region: 'kanto', live: true })
+  })
+
+  it('heals no one: a resident comes home with its HP %; a Pokémon Center heals it while it stays', () => {
+    const res = resident(4, 14, 'x')
+    const hurt = { ...res, inst: { ...res.inst, currentHp: Math.floor(instanceMaxHp(res.inst, data) / 2) } }
+    const s = { ...withMons([14, 20]), dayCare: care({ residents: [hurt] }) }
+    const later = 2000 * cfg.tickMinutes * MIN
+    const back = withdrawPokemon(s, 'x', data, later)!
+    const max = instanceMaxHp(back.inst, data)
+    expect(back.levelsGained).toBeGreaterThan(0)
+    expect(back.inst.currentHp / max).toBeCloseTo(0.5, 1)
+
+    const healed = centerHeal(s, data)
+    expect(dayCareOf(healed).residents[0]!.inst.currentHp).toBe(instanceMaxHp(res.inst, data))
+    expect(withdrawPokemon(healed, 'x', data, later)!.inst.currentHp).toBe(max)
   })
 })
 

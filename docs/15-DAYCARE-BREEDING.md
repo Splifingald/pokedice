@@ -278,9 +278,9 @@ What changes:
    - `guests` starts as `[]`;
    - `breedAt` and `dittoAt` stay unset, so the first `processDayCare` sets them.
 4. **More than `slots` residents** (two regions each had two): keep the `slots` that have stayed longest (oldest
-   `since`). Send the others home to their region's Box, with their Day Care XP applied (`residentNow`) and fully
-   healed. Set `dayCareNotice`, and the next screen shows one toast: "The Day Care now has room for 2: Pidgey and
-   Rattata went back to your Box with their levels".
+   `since`). Send the others home to their region's Box, with their Day Care XP applied (`residentNow`) and their
+   HP % (the Day Care heals no one). Set `dayCareNotice`, and the next screen shows one toast: "The Day Care now has
+   room for 2: Pidgey and Rattata went back to your Box with their levels".
 5. Delete `parked[r].dayCare`.
 6. Repair: an instance is in a Box or at the Day Care, never both. Check each resident against its own region's Box.
 

@@ -359,8 +359,8 @@ Each item has `in_shop` and `shop_badges` (admin-editable, with its effect and p
 ## 6. HP, healing and failure
 
 1. **HP persists** across encounters and across areas.
-2. **Pokémon Center** encounter: full heal for team and box, team-swap UI, then continue. Forced as the first encounter of an area when anyone is hurt, and — in easy areas — whenever a team member is K.O. (§1.1).
-3. **No passive regen** (removed in v1.9): HP never comes back by itself. Healing = Pokémon Centers, potions, Revives (§5.3), Grass Heal faces in battle, and the full heal after a wipe.
+2. **Pokémon Center** encounter: full heal for team and box (and the Day Care's residents), team-swap UI, then continue. Forced as the first encounter of an area when anyone is hurt, and — in easy areas — whenever a team member is K.O. (§1.1).
+3. **No passive regen** (removed in v1.9): HP never comes back by itself. Healing = Pokémon Centers, potions, Revives (§5.3), Grass Heal faces in battle, and the full heal after a wipe. The Day Care heals no one: a Pokémon comes home from it with its HP %.
 4. **Wipe** (all 3 active at 0 HP): **the round is lost**. Return to the **start of the current area**, **team fully healed**; the round in progress doesn't count, and rounds already done stay done (v1.10). The deck is dropped, so the next encounter starts a **new, freshly shuffled round**. Pokémon levels and XP, items and Pokédollars are all kept.
 
 ---
