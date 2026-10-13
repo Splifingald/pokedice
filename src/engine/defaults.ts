@@ -295,7 +295,7 @@ export const DEFAULT_CONFIG: GameConfig = {
   itemSwitches: { 'link-cable': 'off', bait: 'off' },
   // The General upgrades (docs/25): off until the admin switches them on. A whole region's combos and dice cost about
   // ₽37,000, so these are long goals: Capture Luck from 10 % to 100 % (₽74,000 in all), offline earnings from ₽2 to
-  // ₽11 an hour for up to 24 h away (₽53,300), and the golden name at ₽99,999.
+  // ₽20 an hour for up to 24 h away (₽53,300), and the golden name at ₽99,999.
   general: {
     access: 'off',
     luck: [
@@ -312,15 +312,15 @@ export const DEFAULT_CONFIG: GameConfig = {
     ],
     offline: [
       { perHour: 2, cost: 800 },
-      { perHour: 3, cost: 1400 },
-      { perHour: 4, cost: 2100 },
-      { perHour: 5, cost: 3000 },
-      { perHour: 6, cost: 4000 },
-      { perHour: 7, cost: 5200 },
-      { perHour: 8, cost: 6600 },
-      { perHour: 9, cost: 8200 },
-      { perHour: 10, cost: 10000 },
-      { perHour: 11, cost: 12000 },
+      { perHour: 4, cost: 1400 },
+      { perHour: 6, cost: 2100 },
+      { perHour: 8, cost: 3000 },
+      { perHour: 10, cost: 4000 },
+      { perHour: 12, cost: 5200 },
+      { perHour: 14, cost: 6600 },
+      { perHour: 16, cost: 8200 },
+      { perHour: 18, cost: 10000 },
+      { perHour: 20, cost: 12000 },
     ],
     offlineMaxHours: 24,
     richCost: 99999,

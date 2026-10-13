@@ -1002,8 +1002,8 @@ export interface GeneralSave {
   rich?: boolean
   /** The page went hidden or closed here (server time, ms): offline earnings run from then until the return. */
   awayFrom?: number
-  /** The part of a ₽ the last absence earned (under 1): it adds to the next one. */
-  carry?: number
+  /** Time (ms) the last absence spent towards a ₽ it didn't reach: it counts in the next one. */
+  carryMs?: number
   /** The General tab's rules pop-up has been shown (once; INFO shows it again). */
   rulesSeen?: boolean
 }

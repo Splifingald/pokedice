@@ -51,7 +51,7 @@ export function GeneralBits() {
     [
       'Half way, too dear',
       {
-        ...card('Offline earnings', 5, 10, '₽6 / h', '₽7 / h', 1_000_000),
+        ...card('Offline earnings', 5, 10, '₽10/h', '₽12/h', 1_000_000),
         name: t('ui.general.offline.name'),
       },
     ],
@@ -84,7 +84,7 @@ export function GeneralBits() {
           size="sm"
           onClick={() =>
             useOfflineReport.setState({
-              report: { gold: 132, ms: 12 * 3_600_000 + 25 * 60_000, perHour: 11 },
+              report: { gold: 248, ms: 12 * 3_600_000 + 25 * 60_000, perHour: 20 },
             })
           }
         >

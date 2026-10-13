@@ -123,20 +123,22 @@ export interface OfflinePay {
 
 /**
  * Back at `now` (the server's time): the absence pays `offlineRate` × its hours, up to `offlineMaxHours`, into the live
- * region's wallet; the part of a ₽ left over waits for the next one. Inside a small world nothing is paid (its ₽ is
- * the world's): the absence stays open until the player is back in a region. Null when no absence is open.
+ * region's wallet, in whole ₽ (₽ never have cents); the time towards a ₽ not reached yet counts in the next absence,
+ * so short ones add up. Inside a small world nothing is paid (its ₽ is the world's): the absence stays open until the
+ * player is back in a region. Null when no absence is open.
  */
 export function collectOffline(save: SaveData, data: GameData, now: number): OfflinePay | null {
   const g = generalOf(save)
   if (g.awayFrom == null || inWorldRegion(save, data)) return null
   const perHour = offlineRate(save, data)
   const ms = Math.max(0, Math.min(now - g.awayFrom, Math.max(0, generalCfg(data).offlineMaxHours) * HOUR))
-  const earned = perHour > 0 ? (perHour * ms) / HOUR + (g.carry ?? 0) : 0
-  const gold = Math.floor(earned + 1e-9)
-  // Rounded so a save doesn't carry floating-point noise.
-  const carry = Math.round((earned - gold) * 10_000) / 10_000
-  const { awayFrom: _from, carry: _carry, ...rest } = g
-  const general: GeneralSave = carry > 0 && carry < 1 ? { ...rest, carry } : rest
+  const { awayFrom: _from, carryMs: _carry, ...rest } = g
+  if (perHour <= 0) return { save: { ...save, general: rest }, gold: 0, ms, perHour }
+  // Whole milliseconds and whole ₽: nothing is lost to rounding, and the time left over is a whole number too.
+  const total = Math.floor(ms) + Math.max(0, Math.floor(g.carryMs ?? 0))
+  const gold = Math.floor((total * perHour) / HOUR)
+  const left = Math.floor((total * perHour - gold * HOUR) / perHour)
+  const general: GeneralSave = left > 0 ? { ...rest, carryMs: left } : rest
   return { save: { ...save, gold: save.gold + gold, general }, gold, ms, perHour }
 }
 

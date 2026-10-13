@@ -193,18 +193,18 @@ describe('the General upgrades', () => {
     expect(captureLuck(s, on, 'wild', true)).toBe(0)
   })
 
-  it('offline earnings: none at level 0; ₽2 an hour at level 1, +₽1 a level', () => {
+  it('offline earnings: none at level 0; ₽2 an hour at level 1, +₽2 a level, ₽20 at the top', () => {
     let s = fresh(1_000_000)
     expect(offlineRate(s, on)).toBe(0)
     expect(markOfflineFrom(s, on, 0)).toBe(s)
     for (let i = 1; i <= 10; i++) {
       s = buyGeneral(s, on, 'offline')!
-      expect(offlineRate(s, on)).toBe(i + 1)
+      expect(offlineRate(s, on)).toBe(2 * i)
     }
     expect(offlineRate(s, off)).toBe(0)
   })
 
-  it('an absence pays its hours, up to 24, on the server’s clock; the part of a ₽ waits for the next one', () => {
+  it('an absence pays its hours, up to 24, on the server’s clock, in whole ₽; the time towards the next ₽ waits', () => {
     const s = buyGeneral(fresh(800), on, 'offline')!
     const t0 = 1_000_000
     const away = markOfflineFrom(s, on, t0)
@@ -217,12 +217,19 @@ describe('the General upgrades', () => {
     expect(back.save.general?.awayFrom).toBeUndefined()
     // 2 days away: 24 h count.
     expect(collectOffline(away, on, t0 + 48 * HOUR)!.gold).toBe(48)
-    // 20 minutes at ₽2/h is ₽0.67: nothing now, carried to the next absence.
-    const short = collectOffline(away, on, t0 + 20 * 60_000)!
+    // 20 minutes at ₽2/h is short of a ₽: nothing now, the 20 minutes count in the next absence.
+    const MIN = 60_000
+    const short = collectOffline(away, on, t0 + 20 * MIN)!
     expect(short.gold).toBe(0)
-    expect(short.save.general?.carry).toBeCloseTo(2 / 3, 3)
-    const next = collectOffline(markOfflineFrom(short.save, on, t0 + HOUR), on, t0 + HOUR + 20 * 60_000)!
+    expect(short.save.general?.carryMs).toBe(20 * MIN)
+    // 20 more: 40 minutes is ₽1 (one every 30), and 10 minutes wait again.
+    const next = collectOffline(markOfflineFrom(short.save, on, t0 + HOUR), on, t0 + HOUR + 20 * MIN)!
     expect(next.gold).toBe(1)
+    expect(next.save.general?.carryMs).toBe(10 * MIN)
+    // At the top, ₽20 an hour: a full day is ₽480, to the ₽.
+    let top = fresh(1_000_000)
+    for (let i = 0; i < 10; i++) top = buyGeneral(top, on, 'offline')!
+    expect(collectOffline(markOfflineFrom(top, on, t0), on, t0 + 30 * HOUR)!.gold).toBe(480)
     // A clock that went backwards pays nothing.
     expect(collectOffline(away, on, t0 - HOUR)!.gold).toBe(0)
     // Nothing open, nothing paid.

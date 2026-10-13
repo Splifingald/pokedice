@@ -699,8 +699,8 @@ on `/kitchen-sink` (`WorldBits`). Every rule and number comes from `engine/world
 The Upgrades screen's third tab (docs/25), after Combos and Dice Types, there only while the admin has it on (§20).
 
 - **The tab**: one card each, the combos' and dice' `UpCard`: Capture Luck (10 % a level), Offline earnings (₽2 to
-  ₽11 an hour), I am just rich (one level). The card says what it does now → at the next level ("None → 10% chance",
-  "₽6/h → ₽7/h", "Plain name → Golden name"), the pips, the price button or MAX; "I am just rich" shows the player's
+  ₽20 an hour, in whole ₽), I am just rich (one level). The card says what it does now → at the next level ("None →
+  10% chance", "₽10/h → ₽12/h", "Plain name → Golden name"), the pips, the price button or MAX; "I am just rich" shows the player's
   own name, golden, as its picture. The note under the tabs says they're for every region. INFO at the bottom.
 - **Its rules pop-up** (`GeneralUnlockPopup`, the Battle Frontier's plaza as its banner): once, from the first badge,
   queued behind the other one-time pop-ups (the world's and the live event's wait for it); opening the tab counts as

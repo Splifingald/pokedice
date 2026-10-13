@@ -3454,10 +3454,10 @@ insert into game_config (key, value) values
              {"chance": 40, "cost": 4000}, {"chance": 50, "cost": 5500}, {"chance": 60, "cost": 7200},
              {"chance": 70, "cost": 9200}, {"chance": 80, "cost": 11500}, {"chance": 90, "cost": 14000},
              {"chance": 100, "cost": 17000}],
-    "offline": [{"perHour": 2, "cost": 800}, {"perHour": 3, "cost": 1400}, {"perHour": 4, "cost": 2100},
-                {"perHour": 5, "cost": 3000}, {"perHour": 6, "cost": 4000}, {"perHour": 7, "cost": 5200},
-                {"perHour": 8, "cost": 6600}, {"perHour": 9, "cost": 8200}, {"perHour": 10, "cost": 10000},
-                {"perHour": 11, "cost": 12000}],
+    "offline": [{"perHour": 2, "cost": 800}, {"perHour": 4, "cost": 1400}, {"perHour": 6, "cost": 2100},
+                {"perHour": 8, "cost": 3000}, {"perHour": 10, "cost": 4000}, {"perHour": 12, "cost": 5200},
+                {"perHour": 14, "cost": 6600}, {"perHour": 16, "cost": 8200}, {"perHour": 18, "cost": 10000},
+                {"perHour": 20, "cost": 12000}],
     "offlineMaxHours": 24, "richCost": 99999
   }'::jsonb)
 on conflict (key) do nothing;

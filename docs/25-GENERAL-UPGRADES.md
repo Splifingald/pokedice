@@ -10,7 +10,7 @@ Five things, from one request:
 | **Link Cable** (item) | Used on a Pokémon that only evolves by trade: it evolves, no trade needed. ₽1,000, **not in the Mart** by default. |
 | **Bait** (item) | When a ball's throw falls short, the catch asks whether to throw one: its own die (1, 1, 1, 2, 2, 3) adds to the total. ₽150, in every region's Mart from the **7th badge**. |
 | **Capture Luck** (General upgrade) | A wild Pokémon that broke free may stay for **one** more throw: 10 levels, 10 % to 100 %. Never a legendary, never a raid. |
-| **Offline earnings** (General upgrade) | ₽ for each hour the game is closed, up to 24 h an absence, on the server's clock: 10 levels, ₽2 to ₽11 an hour (level 0: none). |
+| **Offline earnings** (General upgrade) | ₽ for each hour the game is closed, up to 24 h an absence, on the server's clock: 10 levels, ₽2 to ₽20 an hour (level 0: none). |
 | **I am just rich** (General upgrade) | ₽99,999, one level, for fun: the trainer's name shines gold wherever other players see it. |
 
 ## 1. The rules (all in `src/engine`)
@@ -54,7 +54,9 @@ Five things, from one request:
   device's clock). An absence already open keeps its start.
 - Coming back (or loading): the real time is read again first (a phone that slept may have stopped the page's own
   clock), then `collectOffline` pays `₽/hour × hours`, the hours capped at `offlineMaxHours` (24), into the live
-  region's wallet. The part of a ₽ left over (`general.carry`) adds to the next absence, so short absences add up.
+  region's wallet, in whole ₽: a ₽ never has cents, not even in the save. The time spent towards a ₽ not reached yet
+  (`general.carryMs`) counts in the next absence, so short absences add up (20 minutes at ₽2/h pay nothing now; 20
+  more pay ₽1 and leave 10 minutes waiting).
 - **Inside a small world** nothing is paid (its ₽ is the world's): the absence stays open until the player is back.
 - The level is read when the player comes back: buying a level while away pays the new rate for that absence (it
   can only be bought while playing, so this never happens in practice).
@@ -76,7 +78,7 @@ Five things, from one request:
   | Level | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | All |
   |---|---|---|---|---|---|---|---|---|---|---|---|
   | Capture Luck | 10 % · ₽1,000 | 20 % · ₽1,800 | 30 % · ₽2,800 | 40 % · ₽4,000 | 50 % · ₽5,500 | 60 % · ₽7,200 | 70 % · ₽9,200 | 80 % · ₽11,500 | 90 % · ₽14,000 | 100 % · ₽17,000 | ₽74,000 |
-  | Offline | ₽2/h · ₽800 | ₽3/h · ₽1,400 | ₽4/h · ₽2,100 | ₽5/h · ₽3,000 | ₽6/h · ₽4,000 | ₽7/h · ₽5,200 | ₽8/h · ₽6,600 | ₽9/h · ₽8,200 | ₽10/h · ₽10,000 | ₽11/h · ₽12,000 | ₽53,300 |
+  | Offline | ₽2/h · ₽800 | ₽4/h · ₽1,400 | ₽6/h · ₽2,100 | ₽8/h · ₽3,000 | ₽10/h · ₽4,000 | ₽12/h · ₽5,200 | ₽14/h · ₽6,600 | ₽16/h · ₽8,200 | ₽18/h · ₽10,000 | ₽20/h · ₽12,000 | ₽53,300 |
   | I am just rich | ₽99,999 | | | | | | | | | | |
 
 ## 2. The switches (docs/15 §20)

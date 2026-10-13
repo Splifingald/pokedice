@@ -233,7 +233,7 @@ export const saveSchema = z.object({
       offline: z.number().int().min(0).max(100).optional(),
       rich: z.boolean().optional(),
       awayFrom: z.number().optional(),
-      carry: z.number().min(0).max(1).optional(),
+      carryMs: z.number().int().min(0).optional(),
       rulesSeen: z.boolean().optional(),
     })
     .optional(),
