@@ -138,6 +138,16 @@ export const DEFAULT_CONFIG: GameConfig = {
   },
   // Gifts with the developer's messages (docs/15 §23): off until the admin switches them on.
   gifts: { access: 'off' },
+  // Friend invite rewards (docs/15 §24): off until the admin switches them on. Migration 0049 inserts the same row.
+  inviteRewards: {
+    access: 'off',
+    tiers: [
+      { friends: 1, gifts: [{ kind: 'item', key: 'rare-candy', qty: 1, region: 'latest' }] },
+      { friends: 2, gifts: [{ kind: 'gold', amount: 1000, region: 'latest' }] },
+      { friends: 3, gifts: [{ kind: 'pokemon', dex: 132, level: 10, shiny: true, region: 'latest' }] },
+      { friends: 4, gifts: [{ kind: 'item', key: 'master-ball', qty: 1, region: 'latest' }] },
+    ],
+  },
   extreme: {
     access: 'off',
     unlockRegion: 'johto',

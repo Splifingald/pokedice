@@ -4,14 +4,26 @@
 // (desktop). Remembered in localStorage. The donation pop-up and a special event's unlock pop-up go first when they're
 // waiting too.
 import { useEffect, useState, useSyncExternalStore } from 'react'
-import { badgeCase, dayCareTutorialDue, donationDue, eventUnlockDue, leaderboardTutorialDue, regionOf, versusRulesDue } from '@/engine'
+import {
+  badgeCase,
+  dayCareTutorialDue,
+  donationDue,
+  eventUnlockDue,
+  invitesWait,
+  leaderboardTutorialDue,
+  regionOf,
+  versusRulesDue,
+} from '@/engine'
 import { useT } from '@/i18n/react'
-import { formatCode, inviteUrl, loadMyCode, useFriends } from '@/lib/friends'
+import { formatCode, inviteUrl, loadInviteStatus, loadMyCode, useFriends } from '@/lib/friends'
 import { shareOrCopy } from '@/lib/share'
+import { isSupabaseConfigured } from '@/lib/supabase'
 import { useGame } from '@/store/game'
+import { PixelIcon } from './icons'
 import { Modal } from './Modal'
 import { PixelButton } from './PixelButton'
 import { TrainerSprite } from '@/components/TrainerArt'
+import { InviteGaugeCompact, useInviteGauge } from './friends/InviteRewards'
 
 const seenKey = (region: string) => `pokedice.sharePrompt.${region}`
 const seen = (region: string) => {
@@ -61,9 +73,16 @@ export function ShareTutorial() {
   const open = !!region && due && idle && !closed.includes(region) && !seen(region)
   const signedIn = useGame((s) => s.auth.status === 'signed_in')
   const code = useFriends((s) => s.code)
+  // Invite rewards (docs/15 §24): the gauge, signed in; signed out, a line saying an account earns them.
+  const gauge = useInviteGauge()
+  const rewardsOn = useGame((s) => !!s.save && invitesWait(s.save, s.data) === null)
+  const signedOut = useGame((s) => isSupabaseConfigured && s.auth.status === 'signed_out')
   // Fetched as the pop-up opens, not on the tap: a share sheet must open straight from the tap that asked for it.
   useEffect(() => {
-    if (open && signedIn) void loadMyCode().catch(() => null)
+    if (open && signedIn) {
+      void loadMyCode().catch(() => null)
+      void loadInviteStatus()
+    }
   }, [open, signedIn])
 
   const close = () => {
@@ -98,6 +117,17 @@ export function ShareTutorial() {
             <b>{t('ui.oak.prefix')}</b> {t('ui.share.body')}
           </p>
         </div>
+        {gauge ? (
+          <InviteGaugeCompact gauge={gauge} />
+        ) : (
+          rewardsOn &&
+          signedOut && (
+            <p className="m-0 flex items-center gap-2 bg-gold-pale px-2.5 py-2 font-pixel-sm text-[16px] leading-tight text-ink shadow-card-gold">
+              <PixelIcon name="gift" size={22} className="shrink-0" />
+              {t('ui.invite.connectHint')}
+            </p>
+          )
+        )}
         <div className="flex items-center justify-end gap-2">
           <PixelButton onClick={close}>{t('ui.share.later')}</PixelButton>
           <PixelButton variant="primary" size="lg" onClick={() => void share()}>

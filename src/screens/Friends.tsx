@@ -7,10 +7,12 @@ import { NewTag } from '@/components/Chip'
 import { AddFriendModal, useAddText } from '@/components/friends/AddFriendModal'
 import { FriendProfileSheet } from '@/components/friends/FriendProfileSheet'
 import { useFriendLine } from '@/components/friends/FriendBits'
+import { InviteRewardsCard, InviteRulesModal, useInviteGauge } from '@/components/friends/InviteRewards'
 import { PixelIcon } from '@/components/icons'
 import { Modal } from '@/components/Modal'
 import { PageHead } from '@/components/PageHead'
 import { PixelButton } from '@/components/PixelButton'
+import { InfoButton } from '@/components/RulesModal'
 import { MiniSprite } from '@/components/SpriteImg'
 import { TrainerLook } from '@/components/TrainerLook'
 import { useT } from '@/i18n/react'
@@ -20,6 +22,7 @@ import {
   friendError,
   inviteUrl,
   loadFriendList,
+  loadInviteStatus,
   loadMyCode,
   markFriendsSeen,
   resetMyCode,
@@ -29,6 +32,7 @@ import {
 import { copyText, shareOrCopy } from '@/lib/share'
 import { isSupabaseConfigured } from '@/lib/supabase'
 import { pushToast, useGame } from '@/store/game'
+import { openInviteRewards, seeInviteRules, useInviteRewards } from '@/store/invites'
 import { cx } from '@/theme/util'
 
 /** Off the boards after 72 hours without playing: shown, but quieter. */
@@ -77,12 +81,22 @@ function FriendsBody() {
   const [adding, setAdding] = useState(false)
   const [resetting, setResetting] = useState(false)
   const [open, setOpen] = useState<FriendRow | null>(null)
+  const [rules, setRules] = useState(false)
+  // Invite rewards (docs/15 §24): the gauge on top, while they're on for this player.
+  const gauge = useInviteGauge()
+  const rewardsBusy = useInviteRewards((s) => s.busy)
+  const shown = !!gauge
 
   useEffect(() => {
     void loadMyCode().catch((err) => console.warn('[friends] no friend ID:', err instanceof Error ? err.message : err))
     // The list, then nobody is new any more (their NEW tags stay until the page closes).
     void loadFriendList(true).then(() => markFriendsSeen())
+    void loadInviteStatus()
   }, [])
+  // The gauge is here: its rules pop-up has nothing left to announce (INFO below shows them).
+  useEffect(() => {
+    if (shown) seeInviteRules()
+  }, [shown])
 
   const share = () => {
     if (!code) return
@@ -105,6 +119,8 @@ function FriendsBody() {
 
   return (
     <>
+      {gauge && <InviteRewardsCard gauge={gauge} busy={rewardsBusy} onOpen={() => void openInviteRewards()} />}
+
       <section
         aria-label={t('ui.friends.yourId')}
         className="grid gap-2.5 bg-[linear-gradient(rgb(var(--c-sky)),rgb(var(--c-paper))_70%)] px-3 pb-3 pt-2 shadow-[inset_0_0_0_2px_rgb(var(--c-edge)),inset_0_0_0_5px_#5b8def,inset_0_0_0_7px_rgb(var(--c-edge)),inset_0_-10px_0_rgb(var(--c-sky-line))]"
@@ -164,6 +180,9 @@ function FriendsBody() {
           {t('ui.friends.reset')}
         </PixelButton>
       </div>
+
+      {gauge && <InfoButton name={t('ui.invite.infoName')} onClick={() => setRules(true)} />}
+      <InviteRulesModal open={rules} onClose={() => setRules(false)} />
 
       <AddFriendModal open={adding} onClose={() => setAdding(false)} />
       <FriendProfileSheet userId={open?.userId ?? null} name={open?.name} onClose={() => setOpen(null)} />

@@ -150,12 +150,18 @@ export function GiftEditor({
   gifts,
   onChange,
   save,
+  hint = 'the player opens them when they close the message',
+  messages = true,
 }: {
   data: GameData
   gifts: Gift[]
   onChange: (g: Gift[]) => void
   /** The player's save when known (their profile): the regions say which ones they've started. */
   save?: SaveData | null
+  /** When the player opens them, after the count. */
+  hint?: string
+  /** A message's gifts, under the Gifts switch (its warning shows here). Invite rewards have a switch of their own. */
+  messages?: boolean
 }) {
   const items = Object.values(data.items).sort((a, b) => a.name.localeCompare(b.name))
   const [item, setItem] = useState<ItemDef | null>(data.items['rare-candy'] ?? items[0] ?? null)
@@ -177,10 +183,10 @@ export function GiftEditor({
       <p className="flex flex-wrap items-baseline justify-between gap-2 text-lg leading-none">
         <b className="font-normal">Gifts</b>
         <span className="text-base text-muted">
-          {gifts.length}/{GIFT_MAX} · the player opens them when they close the message
+          {gifts.length}/{GIFT_MAX} · {hint}
         </span>
       </p>
-      {access !== 'all' && (
+      {messages && access !== 'all' && (
         <p className="text-base text-danger">
           {access === 'admin'
             ? "Gifts are on for you only (the Gifts switch in Messages): players will see the words, and the gifts wait until they're on for everyone."

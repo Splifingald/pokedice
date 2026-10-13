@@ -50,6 +50,7 @@ import { PartnerBits } from './kitchen/PartnerBits'
 import { RaidBits } from './kitchen/RaidBits'
 import { WorldBits } from './kitchen/WorldBits'
 import { GiftBits } from './kitchen/GiftBits'
+import { InviteBits } from './kitchen/InviteBits'
 import { BadgeIcon, CrownIcon } from '@/components/BadgeIcon'
 import { BoardRow } from '@/components/BoardRow'
 
@@ -581,6 +582,10 @@ export function KitchenSink() {
 
       <Section title="Gifts: under a message (ready, open it, asking, waiting), opened, what arrived, rules, the opening">
         <GiftBits />
+      </Section>
+
+      <Section title="Invite rewards: the gauge in every state, the Friends page’s card, Prof. Oak’s invite, ready, rules, the opening">
+        <InviteBits />
       </Section>
 
       <Section title="Extreme mode: rules, band, title card, K.O. rest, resting team, while you were away, switch">

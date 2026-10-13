@@ -89,17 +89,33 @@ export function GiftPresent({
 }
 
 /** One gift's picture: the item's, the coin for Pokédollars, or the Pokémon's menu icon. */
-function GiftIcon({ g }: { g: Gift }) {
+export function GiftIcon({ g, size = 32 }: { g: Gift; size?: number }) {
   const data = useGame((s) => s.data)
   return g.kind === 'item' ? (
-    <ItemSprite item={data.items[g.key]} size={32} />
+    <ItemSprite item={data.items[g.key]} size={size} />
   ) : g.kind === 'gold' ? (
-    <span className="grid h-8 w-8 shrink-0 place-items-center" aria-hidden>
-      <PixelIcon name="coin" size={22} />
+    <span className="grid shrink-0 place-items-center" style={{ width: size, height: size }} aria-hidden>
+      <PixelIcon name="coin" size={Math.round(size * 0.7)} />
     </span>
   ) : (
-    <MiniSprite dex={g.dex} size={32} className="-my-1" />
+    <MiniSprite dex={g.dex} size={size} className="-my-1" />
   )
+}
+
+/** A gift in words, for a line or a screen reader: "Rare Candy ×5", "₽1,000", "Ditto Lv.10 ✦ Shiny". */
+export function useGiftText() {
+  const { t } = useT()
+  const data = useGame((s) => s.data)
+  return (g: Gift) =>
+    g.kind === 'item'
+      ? `${data.items[g.key]?.name ?? g.key} ${t('ui.gift.qty', { n: g.qty })}`
+      : g.kind === 'gold'
+        ? money(g.amount)
+        : [
+            data.species[g.dex]?.name ?? t('ui.common.aPokemon'),
+            t('ui.common.level.short', { n: g.level }),
+            ...(g.shiny ? [t('ui.dayCare.shinyTag')] : []),
+          ].join(' ')
 }
 
 /** "Rare Candy" and "×5", "Pokédollars" and "₽5,000", or "Pikachu" and "Lv.20", with its ✦ Shiny. */
@@ -284,7 +300,16 @@ function contentsOf(
  * The opening, full screen over the game: the stage with SKIP, the lines in the message box, then what arrived and
  * DONE. Escape skips to the end, then closes.
  */
-export function GiftMoment({ landed, onDone }: { landed: GiftLanded[]; onDone: () => void }) {
+export function GiftMoment({
+  landed,
+  onDone,
+  source = 'message',
+}: {
+  landed: GiftLanded[]
+  onDone: () => void
+  /** The developer's gift (a message), or invite rewards (docs/15 §24): only the first line and the title differ. */
+  source?: 'message' | 'invite'
+}) {
   const { t } = useT()
   useHoldFullscreen()
   const data = useGame((s) => s.data)
@@ -313,12 +338,12 @@ export function GiftMoment({ landed, onDone }: { landed: GiftLanded[]; onDone: (
         ? t('ui.gift.untie')
         : beat === 'wobble'
           ? t('ui.gift.wobble')
-          : t('ui.gift.arrive')
+          : t(source === 'invite' ? 'ui.invite.arrive' : 'ui.gift.arrive')
   return createPortal(
     <motion.div
       role="dialog"
       aria-modal="true"
-      aria-label={t('ui.gift.title')}
+      aria-label={t(source === 'invite' ? 'ui.invite.momentTitle' : 'ui.gift.title')}
       className="fixed inset-0 z-[100] overflow-y-auto bg-paper"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
@@ -368,6 +393,7 @@ export function GiftMoment({ landed, onDone }: { landed: GiftLanded[]; onDone: (
 /** The gifts' pop-ups, wherever the game is: the rules the first time, and the opening. */
 export function GiftService() {
   const opening = useGiftMoment((s) => s.opening)
+  const source = useGiftMoment((s) => s.source)
   const rulesFor = useGiftMoment((s) => s.rulesFor)
   const live = useGame((s) => (s.save ? regionOf(s.save) : null))
   const done = () => {
@@ -378,7 +404,7 @@ export function GiftService() {
   return (
     <>
       <GiftRulesModal open={!!rulesFor} onClose={giftRulesLater} onGo={giftRulesGo} />
-      {opening && <GiftMoment landed={opening} onDone={done} />}
+      {opening && <GiftMoment landed={opening} onDone={done} source={source} />}
     </>
   )
 }

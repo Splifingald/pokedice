@@ -20,12 +20,17 @@ import {
   type SlotOutcomeKey,
   type StatusRules,
   type TradeConfig,
+  INVITE_FRIENDS_MAX,
+  INVITE_TIERS_MAX,
+  inviteTiers,
+  type InviteRewardsConfig,
 } from '@/engine'
 import { PixelIcon, type IconName } from '@/components/icons'
 import { PixelButton } from '@/components/PixelButton'
 import { SpriteImg } from '@/components/SpriteImg'
 import { cx } from '@/theme/util'
 import { DataTable } from '../DataTable'
+import { GiftEditor, giftName } from '../GiftEditor'
 import { addRows, rowKey, updateRow, useAdmin, useAdminData } from '../store'
 import { AccessSwitch, Box, Field, NumInput, PokemonPicker, inputCls } from '../widgets'
 
@@ -458,6 +463,91 @@ function TradesBox() {
           </div>
         )}
       </div>
+    </Box>
+  )
+}
+
+/**
+ * Friend invite rewards (docs/15 §24): the three-way switch and the gauge's tiers — each a number of invited new players
+ * who have won their first badge, and the gifts it gives (the same editor as a message's gifts). The server reads the
+ * same row (0049): it counts the invites only while the switch isn't off, and hands each tier over once.
+ */
+function InviteRewardsBox() {
+  const data = useAdminData()
+  const [raw, setRaw] = useConfigRow('inviteRewards')
+  const cfg: InviteRewardsConfig = { ...DEFAULT_CONFIG.inviteRewards, ...(raw ?? {}) }
+  const set = (patch: Partial<InviteRewardsConfig>) => setRaw({ ...cfg, ...patch })
+  const tiers = Array.isArray(cfg.tiers) ? cfg.tiers : []
+  const setTier = (i: number, patch: Partial<InviteRewardsConfig['tiers'][number]>) =>
+    set({ tiers: tiers.map((t, j) => (j === i ? { ...t, ...patch } : t)) })
+  // What players will see, as the game reads it: in order, each count once, only tiers with a gift.
+  const seen = data ? inviteTiers({ ...data, config: { ...data.config, inviteRewards: cfg } }) : []
+  const nextCount = Math.min(INVITE_FRIENDS_MAX, Math.max(0, ...tiers.map((t) => Number(t.friends) || 0)) + 1)
+  return (
+    <Box
+      title="Friend invite rewards" icon="gift"
+      hint="Each new player a player invites with their invite link, once they win their first badge, fills that player's gauge (Friends page, Prof. Oak's invite). Each tier gives its gifts once, opened like a message's gifts. The server checks the switch too."
+    >
+      <div className="flex flex-wrap items-center gap-3">
+        <span className="text-lg">Who gets them</span>
+        <AccessSwitch value={cfg.access ?? 'off'} onChange={(access) => set({ access })} label="Invite rewards: who gets them" />
+        <span className="text-base text-muted">
+          {cfg.access === 'all'
+            ? 'Every signed-in player: invites count, the gauge shows, rewards open.'
+            : cfg.access === 'admin'
+              ? 'Only you see the gauge and open rewards (to try it first). Players you invite count; other players see nothing.'
+              : 'Off: no gauge, no pop-up, no invite counted. What was counted and opened stays.'}
+        </span>
+      </div>
+      <ol className="m-0 flex list-none flex-col gap-2 p-0">
+        {tiers.map((t, i) => (
+          <li key={i} className="flex flex-col gap-2 border-2 border-shadow p-2">
+            <div className="flex flex-wrap items-end gap-3">
+              <Field label="Invited players with their first badge" hint={`1–${INVITE_FRIENDS_MAX}`}>
+                <NumInput
+                  className="w-24"
+                  value={t.friends}
+                  min={1}
+                  max={INVITE_FRIENDS_MAX}
+                  onChange={(v) => setTier(i, { friends: Math.max(1, Math.min(INVITE_FRIENDS_MAX, Math.round(v ?? 1))) })}
+                />
+              </Field>
+              <PixelButton size="sm" variant="ghost" onClick={() => set({ tiers: tiers.filter((_, j) => j !== i) })}>
+                Remove tier
+              </PixelButton>
+            </div>
+            {data && (
+              <GiftEditor
+                data={data}
+                gifts={t.gifts ?? []}
+                onChange={(gifts) => setTier(i, { gifts })}
+                hint="the player opens them from the gauge once the tier is reached"
+                messages={false}
+              />
+            )}
+          </li>
+        ))}
+      </ol>
+      <div className="flex flex-wrap items-center gap-3">
+        <PixelButton
+          size="sm"
+          disabled={tiers.length >= INVITE_TIERS_MAX}
+          onClick={() => set({ tiers: [...tiers, { friends: nextCount, gifts: [] }] })}
+        >
+          Add a tier
+        </PixelButton>
+        <span className="text-base text-muted">
+          {INVITE_TIERS_MAX} tiers at most. A tier without a gift, or a count already used, is left out.
+        </span>
+      </div>
+      {data && (
+        <p className="text-lg">
+          Players see:{' '}
+          {seen.length
+            ? seen.map((t) => `${t.friends} → ${t.gifts.map((g) => giftName(data, g)).join(' + ')}`).join(' · ')
+            : 'no tier yet (no gauge).'}
+        </p>
+      )}
     </Box>
   )
 }
@@ -896,6 +986,8 @@ export function ConfigSection() {
       <ExtremeBox />
 
       <TradesBox />
+
+      <InviteRewardsBox />
 
       <StatusRulesBox />
 

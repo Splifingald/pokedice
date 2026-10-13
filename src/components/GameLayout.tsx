@@ -14,6 +14,7 @@ import { WorldPick } from '@/screens/events/worldPick'
 import { VersusUnlockPopup } from './FeatureRules'
 import { RaidGiftPopup } from './RaidGiftPopup'
 import { FriendsService } from './friends/FriendsService'
+import { InviteRewardPopup, InviteRulesPopup } from './friends/InviteRewards'
 import { TradesService } from './trades/TradesService'
 import { BottomNav, Header, SideNav } from './Hud'
 import { LeaderboardTutorial } from './LeaderboardTutorial'
@@ -71,6 +72,8 @@ export function GameLayout() {
       <WorldByePopup />
       <LivePopup />
       <FriendsService />
+      <InviteRulesPopup />
+      <InviteRewardPopup />
       <TradesService />
     </div>
   )

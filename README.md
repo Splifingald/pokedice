@@ -171,6 +171,13 @@ supabase/    migrations/0001_init.sql, seed.sql (generated)
   too). Needs `supabase/migrations/0048_message_gifts.sql` run once on the live database, after 0025 (run it again if
   it ran before Pokédollar gifts were added: it is safe to re-run and brings their check). See
   docs/15-UI-GUIDELINES.md §23.
+- **Friend invite rewards** — each new player someone invites with their invite link (`/f/<code>`) who goes on to win
+  their first badge fills that player's gauge, at the top of the Friends page and in Prof. Oak's invite pop-up. Each
+  tier gives its gifts once, opened with the gifts' animation: by default 1 friend a Rare Candy, 2 ₽1,000, 3 a shiny
+  Ditto, 4 a Master Ball. Admin → Config → Friend invite rewards has the switch (Off by default; Off / On for admin /
+  On for everyone; the database checks it too) and the tiers (up to six, each a number of friends and its gifts, with
+  the gifts' editor). Needs `supabase/migrations/0049_invite_rewards.sql` run once on the live database, after 0048.
+  See docs/15-UI-GUIDELINES.md §24.
 - **Admin → Analytics** sums up the all-time figures (retention, each player's top level and furthest area) in the
   database, from running totals kept up to date as events come in, so the page stays quick however many events pile
   up. Needs `supabase/migrations/0020_analytics_summaries.sql` then `0021_analytics_rollups.sql` run once on the live

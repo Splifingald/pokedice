@@ -153,6 +153,7 @@ All live in `src/components/`. Every component, in every state, is on `/kitchen-
 | `PixelIcon` | Every icon | Pixel maps drawn as SVG rects: the Pokémon ones hand-drawn in `icons.tsx` (balls, Pokédex, badges, status symbols), the generic UI ones (coin, heart, shop, trophy, settings…) from the "1-bit Pixel Icons" pack, recoloured into `packIcons.ts` by `scripts/import-icons.ts` (11–16 px squares; the tab bar's on 16×16). Draw them at 12 px or more. One shared palette (`ICON_PALETTE`); a map may have its own (`OWN_PALETTE`) |
 | `RulesModal` / `InfoButton` | A feature's rules: once when it unlocks, then from the blue INFO button at the bottom of its page | The special events' pop-up: its picture as a banner, or a banner drawn in code (the gifts'), a NOW OPEN tag on the unlock, 2–4 `RuleList` rows (an icon, a short title, a line with the config's numbers); Later and Let's go! on the unlock, OK from INFO. The Day Care and Versus use it (`FeatureRules.tsx`); the events have their own copies (`EventUnlockPopup`, `EventInfo`), with the same words |
 | `GiftPresent` / `GiftOpened` / `GiftResult` / `GiftMoment` | A gift from the developer (§23) | Under a message: the wrapped gift (wobbling, still when the OS asks for reduced motion), "3 things inside" and what happens next (close the message, OPEN IT in My messages, or why it waits); opened: what it held; the opening, full screen; what arrived and where |
+| `InviteGaugeBar` / `InviteRewardsCard` / `InviteGaugeCompact` / `InviteReadyModal` | Friend invite rewards (§24) | The gauge: a tile per tier (its reward; gold with the gift wobbling when ready; green with a check once opened), the gold track, the friends each needs; six tiers fit a phone. The Friends page's card (ready with OPEN IT, asking the server, every reward won); the compact one in Prof. Oak's invite; the reward's pop-up (who won their first badge, or a friend) |
 
 Dialog behaviour (`src/lib/useDialog.ts`, used by `Modal`, `Sheet`, `SidePanel`): focus moves in, **Tab stays inside**,
 **Esc closes the top dialog only**, focus returns to what opened it.
@@ -513,7 +514,8 @@ One Day Care for every region (docs/15-DAYCARE-BREEDING.md). The page (`src/scre
 - **A friend's card** is drawn the same way, with their badges as the same one count across every region (no badge
   cases).
 - **Invite a friend**: Prof. Oak's pop-up once per region at its 2nd badge; INVITE shares the friend invite link
-  (`/f/<code>`, opening it makes you friends), or the game's own link while signed out (no friend ID then).
+  (`/f/<code>`, opening it makes you friends), or the game's own link while signed out (no friend ID then). With the
+  invite rewards on (§24) it shows the gauge, signed in, or a line saying an account earns them, signed out.
 - **Look**: "How other trainers see you…" with Change opening a radio grid of every look, in one block (no region headings); picking one closes it. The same
   crop (`TrainerLook`) is used wherever a trainer appears.
 - **The menu** under the card: rows with an icon tile, a label and a one-line description (Leaderboard, Versus with
@@ -579,7 +581,7 @@ Two rules for every feature that adds something players can do (an event, a mode
 - **Its rules, once and on demand**: a rules pop-up (`RulesModal`: its picture as a banner, 2–4 `RuleList` rows with
   the config's numbers, Later / Let's go!) the first time the feature opens for the player (a "seen" flag in the save,
   queued behind the other one-time pop-ups), and an **INFO** button at the bottom of its page that shows the same rules
-  again. The Day Care, Versus, the events, Extreme mode, Trades and the gifts (§23) follow it.
+  again. The Day Care, Versus, the events, Extreme mode, Trades, the gifts (§23) and the invite rewards (§24) follow it.
 
 ## 21. Trades
 
@@ -720,3 +722,41 @@ pieces are in `src/components/Gifts.tsx`, every state on `/kitchen-sink` (`GiftB
   and Shiny, or an amount of ₽, each with its region (their latest, or one by name; on a profile, the regions they haven't started say
   where it would go). A message's card says whether its gifts were opened, and when; an opened gift can't be changed.
 
+## 24. Friend invite rewards
+
+Each **new player** someone invites with their invite link (`/f/<code>`, docs/16) who goes on to win their **first
+badge** fills that player's gauge; each tier the gauge reaches gives its gifts once. The tiers are the admin's (Admin →
+Config → Friend invite rewards: up to six, each a number of friends and its gifts, with the gifts' editor); by default
+1 friend a Rare Candy, 2 ₽1,000, 3 a shiny Ditto (Lv.10), 4 a Master Ball. The engine (`engine/invites.ts`) reads the
+tiers, places the gauge and puts the gifts away (as `engine/gifts.ts` does a message's); the pieces are in
+`src/components/friends/InviteRewards.tsx`, every state on `/kitchen-sink` (`InviteBits`).
+
+- **Who counts** (migration 0049, the server decides): a signed-in player the invite link has just made friends with
+  its owner, with no badge in the game that opened it nor on their main card, invited by nobody before (a player is
+  invited once, ever), and not someone they invited themselves. They count once their main card first shows a badge
+  (their next cloud upload): Extreme mode's badges don't. The friend added that way is told: "Win your first badge and
+  Misty gets a reward for inviting you!" Adding by friend ID counts nobody.
+- **The switch and the rules** follow §20: Off, no gauge, pop-up or dot, and no invite is counted (what was counted
+  and opened stays); On for admin, only the admin sees the gauge and opens rewards, and the players they invite count.
+  The rules pop-up (`InviteRulesModal`, friends, a badge and the gift drawn in code as its banner; the tiers listed
+  from the config, "1 → Rare Candy · 2 → ₽1,000 …") opens once for a signed-in player in the main game, queued behind
+  Prof. Oak's invite and the other one-time pop-ups; Let's go! goes to the Friends page, and opening that page counts as
+  seen. INFO sits at the bottom of the Friends page.
+- **The gauge**: the tiers evenly spaced (the fill moves evenly between two of them, `inviteFill`), each tile right
+  over the end of its stretch of track, the number of friends under it. Gold only for a tier ready to open; a check
+  for one opened (it stays opened even if the count drops). The track is a `meter` ("3 of 4 friends with their first
+  badge") and the tiles a list with their state in words. The line under it: "2 rewards are ready to open!", "1 more
+  friend for Master Ball" or "Every reward is yours"; then the invited friends still on their way, and how a friend
+  counts.
+- **Where it shows**: at the top of the Friends page, above the friend ID (`InviteRewardsCard`, gold with OPEN IT
+  while a reward is ready); in Prof. Oak's invite pop-up (`InviteGaugeCompact`); in the reward's pop-up. Nowhere for a
+  player signed out, in Extreme mode or inside a small world. A ready reward adds to the Friends row's dot and the
+  avatar's.
+- **A reward ready**: between fights, after the rules and the other one-time pop-ups, never over the Friends page,
+  once the sign-in's sync has settled: "Invite reward!", who won their first badge (their look and name), the gauge,
+  Later (back on the next page load; the Friends page keeps it) and OPEN THE GIFT.
+- **Opening** claims every tier reached at once from the server (each handed over once, with the gifts it holds then),
+  puts them in the save and plays **the gifts' own opening** (`GiftMoment` with `source="invite"`: "A reward for
+  inviting your friends!", then what arrived and where). The status rides with the friend status (game load, return
+  to the tab at most every 5 minutes) and is asked again when the Friends page or Prof. Oak's invite opens (at most
+  once a minute), only while the switch is on for the player.

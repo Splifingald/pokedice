@@ -105,20 +105,18 @@ export const giftsOpened = (save: SaveData, messageId: number): boolean =>
   giftsOf(save).done.includes(messageId)
 
 /**
- * A message's gifts go into the save, once: each item into its region's Bag, Pokédollars to its ₽, each Pokémon (a new
- * one, at full HP, at its level within the game's cap, whatever copies the player has) into its region's Box — and the
- * team, when that region is the one being played and has room. Gifts the game doesn't know (an item or species since removed) are left
- * out. Null when this message's gifts are in the save already.
+ * Gifts go into the save: each item into its region's Bag, Pokédollars to its ₽, each Pokémon (a new one, at full HP,
+ * at its level within the game's cap, whatever copies the player has) into its region's Box — and the team, when that
+ * region is the one being played and has room. Gifts the game doesn't know (an item or species since removed) are left
+ * out. The developer's gifts (below) and the invite rewards (engine/invites.ts) both put theirs away here.
  */
-export function applyGifts(
+export function placeGifts(
   save: SaveData,
   data: GameData,
-  messageId: number,
   gifts: readonly Gift[],
   now: number,
   newId: () => string,
-): { save: SaveData; landed: GiftLanded[] } | null {
-  if (giftsOpened(save, messageId)) return null
+): { save: SaveData; landed: GiftLanded[] } {
   let next = save
   const landed: GiftLanded[] = []
   for (const gift of gifts) {
@@ -151,6 +149,20 @@ export function applyGifts(
       joinedTeam: teamBefore != null && next.team.length > teamBefore,
     })
   }
+  return { save: next, landed }
+}
+
+/** A message's gifts go into the save, once (placeGifts). Null when this message's gifts are in the save already. */
+export function applyGifts(
+  save: SaveData,
+  data: GameData,
+  messageId: number,
+  gifts: readonly Gift[],
+  now: number,
+  newId: () => string,
+): { save: SaveData; landed: GiftLanded[] } | null {
+  if (giftsOpened(save, messageId)) return null
+  const { save: next, landed } = placeGifts(save, data, gifts, now, newId)
   const g = giftsOf(next)
   return { save: { ...next, gifts: { ...g, done: [messageId, ...g.done].slice(0, DONE_KEPT) } }, landed }
 }

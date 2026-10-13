@@ -12,13 +12,15 @@ import { pushSaveNow, syncSettled } from './sync'
 interface GiftsState {
   /** The opening on screen: everything that arrived, in order; null when none plays. */
   opening: GiftLanded[] | null
+  /** Whose gift it is: the developer's (a message), or invite rewards (docs/15 §24), which reuse the same opening. */
+  source: 'message' | 'invite'
   /** Asking the server: the button waits. */
   busy: boolean
   /** The first gift's rules are showing (docs/15 §20): these messages' gifts open on Let's go!. */
   rulesFor: number[] | null
 }
 
-export const useGiftMoment = create<GiftsState>(() => ({ opening: null, busy: false, rulesFor: null }))
+export const useGiftMoment = create<GiftsState>(() => ({ opening: null, source: 'message', busy: false, rulesFor: null }))
 
 /**
  * Gifts can be opened here and now: the save is in the main game outside a small world, the switch is on, and a
@@ -47,7 +49,7 @@ export async function openGifts(ids: number[]): Promise<void> {
     // Opened here or elsewhere (another tab got there first): nothing waits on these now.
     useInbox.getState().markOpened(ids)
     if (landed.length) {
-      useGiftMoment.setState({ opening: landed })
+      useGiftMoment.setState({ opening: landed, source: 'message' })
       void pushSaveNow().catch(() => {})
     }
   } catch (err) {

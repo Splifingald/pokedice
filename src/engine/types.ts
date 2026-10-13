@@ -708,6 +708,33 @@ export interface GameConfig {
   smallWorlds: { access: EventAccess; list: SmallWorld[] }
   /** Gifts with the developer's messages (docs/15 §23): their switch. The server reads the same row. */
   gifts: GiftsConfig
+  /** Friend invite rewards (docs/15 §24): their switch and the gauge's tiers. The server reads the same row. */
+  inviteRewards: InviteRewardsConfig
+}
+
+/**
+ * Friend invite rewards (docs/15 §24): each new player a player invites (their invite link) who wins their first badge
+ * fills a gauge; each tier reached gives its gifts once, opened like the developer's gifts.
+ */
+export interface InviteRewardsConfig {
+  /** The switch (docs/15 §20): off (nowhere in the game, no invite counted), on for the admin only, on for everyone. */
+  access: EventAccess
+  /** The gauge's stops, fewest friends first (engine/invites.ts cleans them): `friends` invited with a badge → `gifts`. */
+  tiers: InviteTier[]
+}
+
+/** One stop on the invite gauge: this many invited players with their first badge, and what it gives. */
+export interface InviteTier {
+  friends: number
+  gifts: Gift[]
+}
+
+/** The invite rewards a save has opened (docs/15 §24). */
+export interface InvitesSave {
+  /** Tiers (by their number of friends) whose gifts are in this save already: a tier is put in once. */
+  done: number[]
+  /** The rules pop-up has been shown (once, when the rewards open; INFO on the Friends page shows it again). */
+  rulesSeen?: boolean
 }
 
 /** Gifts with the developer's messages (docs/15 §23). */
@@ -987,6 +1014,8 @@ export interface SaveData {
   trades?: TradesSave
   /** Gifts from the developer (docs/15 §23): the ones opened, and the rules seen. Absent = none yet. */
   gifts?: GiftsSave
+  /** Friend invite rewards (docs/15 §24): the tiers opened, and the rules seen. Absent = none yet. */
+  invites?: InvitesSave
 }
 
 /** What a listing asks for (docs/23 §1.1): one species, any the poster doesn't own, or anything. */
