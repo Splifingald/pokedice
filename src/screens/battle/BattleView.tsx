@@ -8,7 +8,6 @@ import {
   autoEvents,
   catchTarget,
   comboDice,
-  attackerLevels,
   computeDamage,
   confusionRecoil,
   createRng,
@@ -318,7 +317,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
     if (!rolling || !st.dice.length) return null
     const a = activeBattler(st)
     const recoil = a.status.confused ? confusionRecoil(a.maxHp, data) : 0
-    const r = computeDamage(st.dice, a.types, st.enemy.types, attackerLevels(st.playerLevels, a.level), data)
+    const r = computeDamage(st.dice, a.types, st.enemy.types, st.playerLevels, data)
     const statuses = statusesFromRoll(st.dice, data)
     // Every status the Pokémon's dice can land, short of its threshold (0 included): the faces only count as a number
     // this roll, and the counter shows how close it is.
@@ -716,7 +715,6 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
             b={st.enemy}
             hp={fx.hp[st.enemy.uid] ?? st.enemy.hp}
             party={party}
-            byLevel={!!st.enemyLevels.byLevel}
             onClick={tapMatchups && (() => tapMatchups('enemy'))}
             open={matchups === 'enemy'}
           />
@@ -725,7 +723,6 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
           <OwnPlate
             b={active}
             hp={fx.hp[active.uid] ?? active.hp}
-            byLevel={!!st.playerLevels.byLevel}
             onClick={tapMatchups && (() => tapMatchups('player'))}
             open={matchups === 'player'}
           />

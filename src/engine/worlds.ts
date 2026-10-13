@@ -27,7 +27,6 @@ import {
   realRegions,
   regionAreas,
   regionOf,
-  regionSpecies,
   startRegion,
   switchRegion,
 } from './regions'
@@ -263,14 +262,14 @@ export function markWorldBye(save: SaveData, id: string): SaveData {
 // ------------------------------------------------------------------ its rules
 
 /**
- * A fight in a small world's area: no upgrades on either side — each Pokémon's dice and combos at its own level ÷ 10
- * (`attackerLevels`) — and the world's boosters, both sides'. Null outside a world.
+ * A side's tracks in a small world's area: as anywhere (the world's own upgrades for the player, the area's level for
+ * its foes), with the world's boosters on both sides. Unchanged outside a world, or in a world without boosters.
  */
-export function worldBattleLevels(data: GameData, area: { regionId?: RegionId } | undefined): UpgradeLevels | null {
+export function withWorldBoost(levels: UpgradeLevels, data: GameData, area: { regionId?: RegionId } | undefined): UpgradeLevels {
   const w = worldOfArea(data, area)
-  if (!w) return null
+  if (!w) return levels
   const typeBoost = Object.fromEntries(w.boosters.filter((b) => b.multiplier > 0 && b.multiplier !== 1).map((b) => [b.type, b.multiplier]))
-  return { comboLevels: {}, dieLevels: {}, byLevel: true, ...(Object.keys(typeBoost).length > 0 && { typeBoost }) }
+  return Object.keys(typeBoost).length ? { ...levels, typeBoost } : levels
 }
 
 // ------------------------------------------------------------------ its Mart
@@ -376,13 +375,6 @@ export function worldPrizeCaught(save: SaveData, world: SmallWorld, prize: World
 
 /** Home inside a world shows at most this many secret areas, one full-width row each (docs/26 §2.6). */
 export const WORLD_SECRETS_MAX = 6
-
-/** The world's Pokédex as its page counts it: what its areas can give and what they evolve into, and how many caught. */
-export function worldDex(save: SaveData, data: GameData, world: SmallWorld): { caught: number; total: number } {
-  const all = regionSpecies(data, world.regionId)
-  const dex = regionOf(save) === world.regionId ? save.pokedex : (save.parked?.[world.regionId]?.pokedex ?? [])
-  return { caught: [...new Set(dex)].filter((d) => all.has(d)).length, total: all.size }
-}
 
 /** One of a world's secret areas, as Home shows it: its boss or raid (its prize first), and whether it's caught. */
 export interface WorldSecret {

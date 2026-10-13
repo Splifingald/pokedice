@@ -26,7 +26,6 @@ import {
   raidTeamCap,
   worldPrize,
   worldPrizeCaught,
-  worldDex,
   worldPrizes,
   worldProblems,
   worldSecrets,
@@ -231,26 +230,7 @@ describe('inside a small world, its items are its own', () => {
   })
 })
 
-describe('Home inside a world: its Pokédex and its secret areas', () => {
-  it('counts the world’s Pokédex as its page does', () => {
-    const s = inside()
-    const dex = worldDex(s, data, WORLD)
-    expect(dex.caught).toBe(1) // the partner
-    expect(dex.total).toBeGreaterThan(5)
-    // Read from the parked block when the player is out.
-    expect(
-      worldDex(
-        {
-          ...s,
-          region: 'kanto',
-          parked: { ...s.parked, [REGION.id]: { ...s.parked!.kanto!, pokedex: [425, 93] } },
-        },
-        data,
-        WORLD,
-      ).caught,
-    ).toBe(2)
-  })
-
+describe('Home inside a world: its secret areas', () => {
   it('lists its secret areas in order with their prize, and says when it is caught', () => {
     const s = inside()
     const rows = worldSecrets(s, data, WORLD)

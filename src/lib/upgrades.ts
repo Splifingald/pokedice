@@ -29,11 +29,10 @@ export const maxDiceOwned = (save: SaveData, data: GameData) =>
   Math.max(0, ...save.box.map((p) => instanceStats(p, data).dice.length))
 
 /**
- * Upgrades open, not maxed and within your gold, the General tab's included. None inside a small world: dice follow
- * the level there.
+ * Upgrades open, not maxed and within your gold, the General tab's included (not inside a small world, whose ₽ buy its
+ * own combos and dice only).
  */
 export function affordableUpgrades(save: SaveData, data: GameData): number {
-  if (inWorldRegion(save, data)) return 0
   const maxDice = maxDiceOwned(save, data)
   const carriers = dieCarriers(save, data)
   let n = 0
@@ -46,7 +45,7 @@ export function affordableUpgrades(save: SaveData, data: GameData): number {
     if (cost != null && cost <= save.gold && carriers[t] > 0) n++
   }
   // The General tab's (docs/25), while the admin has it on.
-  if (generalOn(data))
+  if (generalOn(data) && !inWorldRegion(save, data))
     for (const id of GENERAL_IDS) {
       const cost = nextGeneralCost(save, data, id)
       if (cost != null && cost <= save.gold) n++

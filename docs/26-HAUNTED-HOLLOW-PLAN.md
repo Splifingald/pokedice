@@ -115,17 +115,19 @@ Secret areas, **short** (a small deck with a few species found only there) **the
 - **A new unlock condition, an area cleared** (`{ kind: 'cleared', areaId }`), for Newmoon Island.
 - **The world's Mart ignores the global item switch.**
 
-### 2.6 Home inside a world
+### 2.6 Home inside a world, and its upgrades
 
-**Status: built** (`worldDex`, `worldSecrets` in `engine/worlds.ts`; `DexSquare`, `SecretRowView` in
-`screens/events/world.tsx`; docs/15 §22; `e2e/worlds.spec.ts`).
+The user's calls of 2026-10-13, after the first build:
+- **The nav bar stays** inside a world: its Mart, Team, Pokédex and Upgrades are reached there.
+- **Real dice upgrades in every world**: its own tracks from level 1, bought with its ₽ (dice by level is gone); its
+  foes use the area's enemy upgrade level; the boosters stay on both sides (`withWorldBoost`). No General tab inside.
+- **Home inside shows its secret areas only** (and the mythical's square for a world that has one): **one row per
+  secret area** (up to 6), two squares wide, **the picture across the whole row** with the name, the gauge and the
+  line over its darkened foot, readable on any picture; locked (greyed, the boss a silhouette, the condition), new,
+  open, done (CAUGHT).
+- The way back is unchanged: the strip's Back to Kanto.
 
-- First row: **the world's Pokédex** ("Caught 37/120", a meter, a tap opens it), in place of the mythical's square when
-  the world has no mythical, and **the World Mart**.
-- Under it, **one full-width row per secret area** (two squares wide; up to 6), in order: locked (the area's name, its
-  picture greyed, the boss as a silhouette, a lock and the progress, "Caught 12/20"); open (full colour, NEW until
-  played, the boss, GO); done (a check once the boss is caught).
-- The Shadow Elite stays in the areas list, with no row of its own.
+**Status: built** (`worldSecrets` in `engine/worlds.ts`, `SecretRowView`, docs/15 §22, `e2e/worlds.spec.ts`).
 
 ### 2.7 Delivery
 

@@ -1,7 +1,7 @@
 // The two plates on the battle stage: the foe's (name, level, types, HP as a bar only, statuses, a trainer's party)
 // at the top left, yours (level, HP with numbers, statuses) at the bottom right. MEGA / G-MAX once a form changes.
 import type { ReactNode } from 'react'
-import { diceLevelOf, type Battler } from '@/engine'
+import { type Battler } from '@/engine'
 import { Chip } from '@/components/Chip'
 import { HpBar } from '@/components/HpBar'
 import { PixelIcon } from '@/components/icons'
@@ -49,7 +49,6 @@ export function FoePlate({
   party,
   onClick,
   open,
-  byLevel,
 }: {
   b: Battler
   hp: number
@@ -57,8 +56,6 @@ export function FoePlate({
   party?: { count: number; index: number } | null
   onClick?: () => void
   open?: boolean
-  /** A small world: its dice follow its level (docs/21), said on the plate. */
-  byLevel?: boolean
 }) {
   const { t } = useT()
   return (
@@ -79,7 +76,6 @@ export function FoePlate({
           {t('ui.common.level.short', { n: b.level })}
         </span>
         <span className="ml-auto flex shrink-0 items-center gap-1">
-          {byLevel && <DiceLevelTag level={b.level} />}
           <FormTag b={b} />
           {party && party.count > 1 && (
             <span
@@ -121,14 +117,11 @@ export function OwnPlate({
   hp,
   onClick,
   open,
-  byLevel,
 }: {
   b: Battler
   hp: number
   onClick?: () => void
   open?: boolean
-  /** A small world: its dice follow its level (docs/21), said on the plate. */
-  byLevel?: boolean
 }) {
   const { t } = useT()
   return (
@@ -148,7 +141,6 @@ export function OwnPlate({
           {t('ui.common.level.short', { n: b.level })}
         </span>
         <span className="ml-auto flex shrink-0 items-center gap-1">
-          {byLevel && <DiceLevelTag level={b.level} />}
           <FormTag b={b} />
         </span>
       </span>
@@ -160,15 +152,3 @@ export function OwnPlate({
   )
 }
 
-/** In a small world, a Pokémon's dice level: its level ÷ 10 (docs/21), with the sum in its label. */
-export function DiceLevelTag({ level }: { level: number }) {
-  const { t } = useT()
-  const n = diceLevelOf(level)
-  const label = t('ui.world.diceLevelLabel', { n, level })
-  return (
-    <span role="img" aria-label={label} title={label} className="inline-flex shrink-0 items-center gap-0.5 bg-ink px-1 font-pixel-sm text-[13px] leading-[16px] text-panel">
-      <PixelIcon name="dice" size={12} />
-      {n}
-    </span>
-  )
-}

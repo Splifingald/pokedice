@@ -62,7 +62,7 @@ import {
   teamAverageLevel,
   teamOf,
   uniformLevels,
-  worldBattleLevels,
+  withWorldBoost,
   type BattleEvent,
   type BattleKind,
   type ForceKind,
@@ -301,16 +301,15 @@ function startBattle(kind: BattleKind, enemy: { dex: number; level: number; shin
         })()
       : null
   battleRng = createRng(randomSeed() ^ battleRng.getState())
-  // A small world (docs/21): no upgrades, both sides fight at their own level's dice, with the world's boosters.
-  const world = worldBattleLevels(data, area)
   const { state, log } = createBattle(
     {
       kind,
       team,
       leadUid,
       enemy,
-      playerLevels: world ?? { comboLevels: save.comboLevels, dieLevels: save.dieLevels },
-      enemyLevels: world ?? uniformLevels(upgradeLevel),
+      // A small world's boosters on both sides (docs/21); its tracks are its own, like a region's.
+      playerLevels: withWorldBoost({ comboLevels: save.comboLevels, dieLevels: save.dieLevels }, data, area),
+      enemyLevels: withWorldBoost(uniformLevels(upgradeLevel), data, area),
       megaAllowed: megaUnlocked(save, data),
       gmaxAllowed: gmaxUnlocked(save, data),
       noHealItems: !healItemsOn(save, data),

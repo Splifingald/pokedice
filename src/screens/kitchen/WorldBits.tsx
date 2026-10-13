@@ -9,12 +9,9 @@ import { newSmallWorld, type SmallWorld, type WorldBye } from '@/engine'
 import { HomerLockView } from '@/components/HomerLock'
 import { PartnerMoment } from '@/components/PartnerMoment'
 import { PixelButton } from '@/components/PixelButton'
-import { DiceLevelTag } from '@/screens/battle/Plates'
 import { useGame } from '@/store/game'
 import {
   BoosterChip,
-  DexSquare,
-  MartSquare,
   MythicalSquare,
   SecretRowView,
   WorldAwayView,
@@ -108,10 +105,6 @@ export function WorldBits() {
         <MythicalSquare world={mid} caught={false} state="Waiting: fight it!" onClick={noop} />
         <MythicalSquare world={mid} caught state="In your Kanto Box" onClick={noop} />
         <MythicalSquare world={mid} caught state="Waits for Johto" onClick={noop} />
-        <MartSquare world={mid} gold={1240} onClick={noop} />
-        <MartSquare world={mid} gold={0} onClick={noop} />
-        <DexSquare world={mid} caught={37} total={120} onClick={noop} />
-        <DexSquare world={mid} caught={120} total={120} onClick={noop} />
       </div>
       {/* A world's secret areas on Home inside it (docs/26 §2.6): every state, two squares wide. */}
       <div className="grid max-w-xl grid-cols-2 gap-2.5">
@@ -126,9 +119,6 @@ export function WorldBits() {
         <BoosterChip type="psychic" n={1.5} />
         <BoosterChip type="ghost" n={2} />
         <BoosterChip type="fire" n={1.25} />
-        <DiceLevelTag level={5} />
-        <DiceLevelTag level={55} />
-        <DiceLevelTag level={100} />
       </div>
       <div className="grid max-w-md gap-2">
         <WorldMythicalCard dex={151} region="kanto" waiting={false} />

@@ -747,9 +747,8 @@ export function applyLevelEvolution(
   return { save: next, events: [{ kind: 'evolve', uid: inst.id, fromDex: inst.dex, toDex: target.toDex, level: inst.level }] }
 }
 
-/** No upgrades in a small world: dice and combos follow each Pokémon's level there (docs/21). */
+/** A small world has tracks of its own, bought with its own ₽ (docs/26: the user's call, 2026-10-13). */
 export function buyComboUpgrade(save: SaveData, key: ComboKey, data: GameData): SaveData | null {
-  if (inWorldRegion(save, data)) return null
   const lv = save.comboLevels[key] ?? 1
   const cost = nextComboCost(key, lv, data)
   if (cost == null || save.gold < cost) return null
@@ -757,7 +756,6 @@ export function buyComboUpgrade(save: SaveData, key: ComboKey, data: GameData): 
 }
 
 export function buyDieUpgrade(save: SaveData, type: PokeType, data: GameData): SaveData | null {
-  if (inWorldRegion(save, data)) return null
   const lv = save.dieLevels[type] ?? 1
   const cost = nextDieCost(type, lv, data)
   if (cost == null || save.gold < cost) return null

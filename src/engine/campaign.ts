@@ -34,6 +34,7 @@ import {
   teamOf,
 } from './run'
 import { autoStep } from './sim'
+import { buyWorldItem, currentWorld, withWorldBoost, worldShopRows } from './worlds'
 import { COMBO_KEYS, POKE_TYPES, type Area, type ComboKey, type GameData, type ItemDef, type PokeType, type RegionId, type SaveData } from './types'
 
 export interface CampaignOptions {
@@ -166,9 +167,30 @@ function bestTeam(save: SaveData, data: GameData): SaveData {
   return { ...save, team: ids }
 }
 
+/**
+ * Inside a small world, its Mart first, as a player would: ten of the best ball it sells that costs a quarter of the
+ * purse or less, and a Revive or two once there's room for them. The rest goes to upgrades.
+ */
+function stockWorldBag(save: SaveData, data: GameData): SaveData {
+  let s = save
+  const rows = worldShopRows(s, data)
+  const balls = rows
+    .filter((r) => r.item.effect.kind === 'ball' && r.limit == null)
+    .sort((a, b) => ballBonus(b.item) - ballBonus(a.item))
+  const ball = balls.find((r) => r.price * 4 <= s.gold) ?? balls.at(-1)
+  const have = (k: string) => s.inventory[k] ?? 0
+  if (ball && have(ball.item.key) < 10) {
+    const qty = Math.min(10 - have(ball.item.key), Math.floor(s.gold / ball.price))
+    if (qty > 0) s = buyWorldItem(s, data, ball.item.key, qty, 0) ?? s
+  }
+  const revive = rows.find((r) => r.item.effect.kind === 'revive' && r.limit == null)
+  if (revive && have(revive.item.key) < 2 && s.gold >= revive.price * 3) s = buyWorldItem(s, data, revive.item.key, 1, 0) ?? s
+  return s
+}
+
 /** Cheapest useful upgrade first (dice the team carries, the common combos), until the cheapest one is unaffordable. */
 function spend(save: SaveData, data: GameData): SaveData {
-  let s = save
+  let s = currentWorld(save, data) ? stockWorldBag(save, data) : save
   for (let guard = 0; guard < 50; guard++) {
     const types = new Set<PokeType>()
     for (const p of teamOf(s)) for (const t of instanceStats(p, data).dice) if (t !== 'base') types.add(t)
@@ -271,8 +293,9 @@ export function* runCampaign(data: GameData, opts: CampaignOptions): Generator<n
         kind,
         team: teamOf(save).map((p) => ({ uid: p.id, dex: p.dex, level: p.level, hp: p.currentHp })),
         enemy,
-        playerLevels: { comboLevels: save.comboLevels, dieLevels: save.dieLevels },
-        enemyLevels: uniformLevels(upgradeLevel),
+        // A small world's boosters on both sides, as in the game.
+        playerLevels: withWorldBoost({ comboLevels: save.comboLevels, dieLevels: save.dieLevels }, data, area),
+        enemyLevels: withWorldBoost(uniformLevels(upgradeLevel), data, area),
       },
       data,
     )

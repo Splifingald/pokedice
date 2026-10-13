@@ -14,11 +14,6 @@ import {
 export interface UpgradeLevels {
   comboLevels: Partial<Record<ComboKey, number>>
   dieLevels: Partial<Record<PokeType, number>>
-  /**
-   * A small world (docs/21): no upgrades — each Pokémon's dice and combos are at its own level ÷ 10 (`diceLevelOf`), so
-   * the tracks above are ignored and `attackerLevels` works them out from the attacker's level.
-   */
-  byLevel?: true
   /** A small world's boosters: × the damage of every hit of these types (shown in the damage recap). */
   typeBoost?: Partial<Record<PokeType, number>>
   /** A raid's type matchups for this side's attacks, instead of ×2, ×½ and ×0 (`scaleMatchup`). */
@@ -36,23 +31,6 @@ export function uniformLevels(level: number): UpgradeLevels {
   return {
     comboLevels: Object.fromEntries(COMBO_KEYS.map((k) => [k, level])),
     dieLevels: Object.fromEntries(POKE_TYPES.map((t) => [t, level])),
-  }
-}
-
-/**
- * A Pokémon's dice and combo level in a small world: its level ÷ 10, rounded down (Lv.1–9 = 0, Lv.55 = 5, Lv.100 =
- * 10), on the upgrades' own scale — 0 and 1 are both the base track, 10 the last.
- */
-export const diceLevelOf = (level: number): number => Math.max(0, Math.min(10, Math.floor(level / 10)))
-
-/** The tracks an attacker hits with: its side's, or in a small world its own level's (the boosters kept). */
-export function attackerLevels(levels: UpgradeLevels, attackerLevel: number): UpgradeLevels {
-  if (!levels.byLevel) return levels
-  return {
-    ...uniformLevels(diceLevelOf(attackerLevel)),
-    byLevel: true,
-    ...(levels.typeBoost && { typeBoost: levels.typeBoost }),
-    ...(levels.typeScale && { typeScale: levels.typeScale }),
   }
 }
 

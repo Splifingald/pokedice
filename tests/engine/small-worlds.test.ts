@@ -1,5 +1,5 @@
 // Small worlds (docs/21): a time-limited, themed region of its own, built in the admin, where a shiny mythical is won.
-// Its region is part of nothing a real region is; its rules (area dates, dice by level, XP ×, boosters, its Mart) hold
+// Its region is part of nothing a real region is; its rules (area dates, its own upgrades, XP ×, boosters, its Mart) hold
 // inside it only; its mythical leaves for its home region's Box; when it ends, its Pokémon go home locked by level
 // (tests/engine/world-homecoming.test.ts) and the rest of it is gone.
 import { describe, expect, it } from 'vitest'
@@ -8,7 +8,6 @@ import {
   applyVictory,
   areaOpenAt,
   areaOpensAt,
-  attackerLevels,
   badgesHeld,
   buyComboUpgrade,
   buyItem,
@@ -18,12 +17,10 @@ import {
   challengeEncounter,
   closeWorld,
   computeDamage,
-  createBattle,
   createInstance,
   createRng,
   currentWorld,
   depositPokemon,
-  diceLevelOf,
   emptyProgress,
   enabledRegions,
   enterWorld,
@@ -53,7 +50,6 @@ import {
   progressRaidOf,
   progressRaidReachable,
   progressRaidTeam,
-  reduce,
   regionCases,
   regionOf,
   regionOfSpecies,
@@ -67,7 +63,7 @@ import {
   unlockedRegions,
   versusClosest,
   worldAt,
-  worldBattleLevels,
+  withWorldBoost,
   worldByeDue,
   worldFor,
   worldOver,
@@ -277,43 +273,36 @@ describe('its rules', () => {
     expect(isAreaUnlocked(cleared, PATH.id, data)).toBe(true)
   })
 
-  it('gives dice and combos at the level ÷ 10, rounded down', () => {
-    expect([1, 9, 10, 19, 55, 99, 100].map(diceLevelOf)).toEqual([0, 0, 1, 1, 5, 9, 10])
-    const lv = worldBattleLevels(data, MARSH)!
-    expect(lv.byLevel).toBe(true)
-    expect(attackerLevels(lv, 55)).toMatchObject(uniformLevels(5))
-    expect(attackerLevels(uniformLevels(3), 55)).toEqual(uniformLevels(3))
-    expect(worldBattleLevels(data, route1)).toBeNull()
+  it('has upgrade tracks of its own, from the start, bought with its ₽ (docs/26)', () => {
+    const s = inside()
+    expect(s.comboLevels.pair).toBe(1)
+    expect(s.dieLevels.fire).toBe(1)
+    const bought = buyComboUpgrade({ ...s, gold: 1e6 }, 'pair', data)!
+    expect(bought.comboLevels.pair).toBe(2)
+    // Kanto's tracks, parked, are untouched.
+    expect(bought.parked?.kanto?.comboLevels.pair).toBe(s.parked?.kanto?.comboLevels.pair)
   })
 
-  it('hits with each attacker’s own level in a fight, on both sides', () => {
-    const d = worldData({ boosters: [] })
-    const lv = worldBattleLevels(d, MARSH)!
-    const { state } = createBattle(
-      { kind: 'wild', team: [{ uid: 'me', dex: 4, level: 55, hp: 999 }], enemy: { dex: 16, level: 12 }, playerLevels: lv, enemyLevels: lv },
-      d,
-    )
-    const rng = createRng(7)
-    let s = state
-    for (let i = 0; i < 6 && s.phase !== 'player_reroll'; i++) s = reduce(s, s.phase === 'enemy_turn' ? { t: 'AI_TURN' } : { t: 'ROLL' }, d, rng).state
-    const dice = s.dice
-    const r = reduce(s, { t: 'ATTACK' }, d, rng)
-    const hit = r.log.find((l) => l.kind === 'damage' && l.side === 'player')
-    expect(hit?.kind === 'damage' && hit.result.final).toBe(computeDamage(dice, ['fire'], s.enemy.types, uniformLevels(5), d).final)
+  it('keeps each side’s tracks in a fight and adds its boosters to both', () => {
+    const own = { comboLevels: { pair: 3 }, dieLevels: { fire: 4 } }
+    expect(withWorldBoost(own, data, MARSH)).toEqual({ ...own, typeBoost: { fire: 1.5 } })
+    expect(withWorldBoost(uniformLevels(5), data, MARSH)).toMatchObject({ ...uniformLevels(5), typeBoost: { fire: 1.5 } })
+    expect(withWorldBoost(own, data, route1)).toBe(own)
+    expect(withWorldBoost(own, worldData({ boosters: [] }), MARSH)).toBe(own)
   })
 
   it('multiplies a booster type’s hits, shown on its own and kept out of the effectiveness', () => {
-    const lv = worldBattleLevels(data, MARSH)!
+    const lv = withWorldBoost(uniformLevels(1), data, MARSH)
     const dice = [die('fire', 3), die('fire', 4), die('fire', 5)]
     const plain = computeDamage(dice, ['fire'], ['normal'], uniformLevels(1), data)
-    const boosted = computeDamage(dice, ['fire'], ['normal'], attackerLevels(lv, 5), data)
+    const boosted = computeDamage(dice, ['fire'], ['normal'], lv, data)
     expect(boosted.boost).toEqual({ type: 'fire', multiplier: 1.5 })
     expect(boosted.final).toBe(Math.round(plain.raw * 1.5))
     expect(boosted.effectiveness).toBe(plain.effectiveness)
     expect(plain.boost).toBeUndefined()
     // Another type, or base dice only: no booster.
-    expect(computeDamage([die('water', 3)], ['water'], ['normal'], attackerLevels(lv, 5), data).boost).toBeUndefined()
-    expect(computeDamage([die('base', 3)], ['fire'], ['normal'], attackerLevels(lv, 5), data).boost).toBeUndefined()
+    expect(computeDamage([die('water', 3)], ['water'], ['normal'], lv, data).boost).toBeUndefined()
+    expect(computeDamage([die('base', 3)], ['fire'], ['normal'], lv, data).boost).toBeUndefined()
   })
 
   it('multiplies XP in its areas only', () => {
@@ -339,9 +328,8 @@ describe('its rules', () => {
     expect(buyWorldItem(s, data, 'master-ball', 1, NOW)).toBeNull()
     expect(buyWorldItem({ ...s, gold: 10 }, data, 'ultra-ball', 1, NOW)).toBeNull()
     expect(worldShopRows(kanto(), data)).toEqual([])
-    // The usual Mart and upgrades are shut inside.
+    // The usual Mart is shut inside.
     expect(buyItem(s, 'poke-ball', 1, data)).toBeNull()
-    expect(buyComboUpgrade({ ...s, gold: 1e6 }, 'pair', data)).toBeNull()
   })
 })
 

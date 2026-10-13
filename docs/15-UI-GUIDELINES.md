@@ -677,33 +677,34 @@ on `/kitchen-sink` (`WorldBits`). Every rule and number comes from `engine/world
   the last day). The second line says the partner once the player has been in. A tap goes in (the lab first).
 - **The pop-up** (`WorldPopup`): once, between fights, after Prof. Oak's tutorials and the other one-time pop-ups and
   before the live event's (never on the Poké Mart). The banner with the silhouette, the time left and until when, the
-  rules (`WorldRules`: XP ×, dice by level, each booster, the shiny mythical at the end), Later and Enter.
+  rules (`WorldRules`: XP ×, each booster, the shiny mythical at the end or its shiny prizes, its Pokémon going home),
+  Later and Enter.
 - **The partner pick** is the lab (§18) in the world's colours (`PartnerMoment` `theme`): the drawn lab in them, the
   picture under a veil of the main colour, the world's name on the ribbon.
 - **Inside**, the page wears the world's ground (`.in-world`, faint in dark mode) and a **strip** sits under the top bar
   (`WorldStrip`): its picture, WORLD, its name, the time left (red in the last day) and **Back to Kanto** (the region the
   player came from). It is Home's only way out, and the one way back while the world's content is still on its way
   (`WorldWaiting`). Home shows no region offer and no region switcher; the Areas sheet has no Regions view.
-- **Home's squares inside** (`WorldWidgets`), and nothing else: the mythical (its silhouette on the world's ground,
-  Lv. · name, where it is: "In Dream Peak", "Waiting: fight it!", "In your Kanto Box", "Waits for Johto"; a tap travels
-  to its area once open) and the world's Mart (three of its items, the world's own ₽). A world without a mythical shows
-  **its Pokédex** in the mythical's place (`DexSquare`: "Caught 37/120", the meter, "83 left to catch"; a tap opens it).
-- **A row per secret area** under them (`SecretRowView`, docs/26 §2.6), up to six, each two squares wide (`col-span-2`)
-  and as tall as a square: on the left its picture with its boss on it, on the right its name and what's next.
-  **Locked**: the picture greyed, the boss a silhouette glowing in the accent, a lock in the header, the meter and the
-  condition still to meet ("12/20 in Pokédex", "Best Lv. 41/60", "Clear Shadow Elite"); a tap says it in a toast.
-  **New** (opened, never played): NEW, the boss in its colours, "Boss: Haunter, Lv.30" (or "Raid: Darkrai, Lv.60").
-  **Open**: the same with its SHINY chip. **Done**: CAUGHT (green), "Spiritomb caught". Open, new or done, a tap travels
-  there. The line keeps to the name so a phone shows it whole; "(Shiny)" is in the label for screen readers.
+- **Home inside** (`WorldWidgets`) keeps to what the nav bar doesn't reach (the user's call, 2026-10-13): the mythical,
+  when the world has one (its silhouette on the world's ground, Lv. · name, where it is: "In Dream Peak", "Waiting:
+  fight it!", "In your Kanto Box", "Waits for Johto"; a tap travels to its area once open), then **a row per secret
+  area** (`SecretRowView`, docs/26 §2.6), up to six, each two squares wide (`col-span-2`). The nav bar stays as
+  everywhere: the World Mart, the world's own Upgrades, its Team and Pokédex.
+- **A secret area's row** is its picture, the whole width (`lv-pic`: darker at the top and the foot), with everything on
+  it in `lv-ink` (white, an ink shadow): "Secret area" and a tag at the top, its boss on the right (a silhouette glowing
+  in the accent while locked, its shiny colours with the gold glow once open), and on the foot its name, the gauge and
+  one gold-light line. **Locked**: the picture greyed, a lock, the gauge and the condition still to meet ("12/20 in
+  Pokédex", "Best Lv. 41/60", "Clear Shadow Elite"); a tap says it in a toast. **New** (opened, never played): NEW,
+  "Boss: Haunter, Lv.30" (or "Raid: Darkrai, Lv.60"). **Open**: the same with its SHINY chip. **Done**: CAUGHT,
+  "Spiritomb caught". Open, new or done, a tap travels there. The line keeps to the name so a phone shows it whole;
+  "(Shiny)" is in the label for screen readers.
 - **An area waiting for its date** is locked like any other, with "Opens {date}" (the local date and time, `dayTime`).
 - **The Poké Mart inside is the World Mart** (`WorldShop`): the world's picture and time left over the admin's list,
   each row with its limit ("8 of 10 left", Sold out); buying only, no Sell tab.
-- **Upgrades inside** explain the dice instead of selling them (`WorldUpgrades`): "Dice follow the level here", the
-  table of levels to dice levels, the team's own lines ("Lv.24 → dice level 2").
-- **In battle**, each plate carries its Pokémon's **dice level** (`DiceLevelTag`, "Dice level 2: Lv.24 ÷ 10" for screen
-  readers), and a **booster** shows as its own chip, the type's badge and "×1.5" (`BoosterChip`), beside the damage in
-  the readout and as its own factor in the damage recap: never hidden in the type's multiplier, never in
-  "super effective".
+- **Upgrades inside** are the world's own tracks (Combos, Dice Types), from level 1, bought with its ₽, like a new
+  region's; no General tab inside (its levels hold everywhere, and the world's ₽ are its own). **In battle**, a
+  **booster** shows as its own chip, the type's badge and "×1.5" (`BoosterChip`), beside the damage in the readout and
+  as its own factor in the damage recap: never hidden in the type's multiplier, never in "super effective".
 - **The mythical caught**: its own line on the result card (`WorldMythicalCard`, gold with rays): "The shiny Mew is
   yours!" and where it went ("in your Kanto Box now, to keep", or that it waits for its region).
 - **The main game's pages inside** (the events, the Day Care, Versus, by a link or a reload) keep their title and show

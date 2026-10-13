@@ -1,7 +1,7 @@
 // Small worlds (docs/21): the admin's world reaches the game as content (a newer configVersion, served from the content
 // cache the way a player gets it the second time), with its region and areas, on the server's clock. Its pop-up and
-// square, the partner pick, Home inside (the strip, its squares, its Mart, Upgrades, an event's page), a battle there
-// (dice by level, the booster), Home's secret area rows and its Pokédex square (docs/26 §2.6), the final fight and the
+// square, the partner pick, Home inside (the strip, its squares, its Mart, its own Upgrades, an event's page), a battle
+// there (the booster), Home's secret area rows (docs/26 §2.6), the final fight and the
 // catch that goes home, the closing with its Pokémon gone home (docs/26 §1), and a phone.
 import { expect, test, type Page } from '@playwright/test'
 import { readFileSync } from 'node:fs'
@@ -169,7 +169,6 @@ test('the world opens: its pop-up, the partner pick, Home inside, its Mart and U
   const pop = page.getByRole('dialog', { name: 'Mirage Island' })
   await expect(pop).toBeVisible({ timeout: 15_000 })
   await expect(pop.getByText('XP ×5')).toBeVisible()
-  await expect(pop.getByText('Dice follow the level')).toBeVisible()
   await expect(pop.getByText('Psychic ×1.5')).toBeVisible()
   await expect(pop.getByText('A shiny Mew at the end')).toBeVisible()
   await expect(pop.getByText(/^6d \d+h left · until /)).toBeVisible()
@@ -187,7 +186,6 @@ test('the world opens: its pop-up, the partner pick, Home inside, its Mart and U
   await expect(page.getByRole('button', { name: 'Back to Kanto' })).toBeVisible()
   await expect(page.getByRole('heading', { name: 'Exploring Mirage Marsh' })).toBeAttached()
   await expect(page.getByRole('button', { name: /^The shiny Mew, Lv\.5: In Dream Peak$/ })).toBeVisible()
-  await expect(page.getByRole('button', { name: /^World Mart: ₽0 of the world's own ₽\. Open$/ })).toBeVisible()
   await expect(page.getByRole('button', { name: /Day Care/ })).toHaveCount(0)
   await expect.poll(async () => (await stored(page)).region).toBe(REGION.id)
   let s = await stored(page)
@@ -195,14 +193,14 @@ test('the world opens: its pop-up, the partner pick, Home inside, its Mart and U
   expect(s.gold).toBe(0)
   expect(s.events?.world).toMatchObject({ id: 'mirage', from: 'kanto', partner: 92 })
 
-  // Its Mart sells its list only; Upgrades explains the dice.
+  // Its Mart sells its list only; its Upgrades are its own tracks (no General tab: its ₽ are the world's).
   await page.goto('/shop')
   await expect(page.getByRole('heading', { name: 'World Mart', level: 1 })).toBeVisible()
   await expect(page.getByText('10 of 10 left')).toBeVisible()
   await expect(page.getByRole('tab', { name: 'Sell' })).toHaveCount(0)
   await page.goto('/upgrades')
-  await expect(page.getByRole('heading', { name: 'Dice follow the level here' })).toBeVisible()
-  await expect(page.getByText('Lv.5 → dice level 0')).toBeVisible()
+  await expect(page.getByRole('tab', { name: /^Combos/ })).toBeVisible()
+  await expect(page.getByRole('tab', { name: /^General/ })).toHaveCount(0)
   // No event reaches inside.
   await page.goto('/events/wheel')
   await expect(page.getByRole('heading', { name: "You're in Mirage Island" })).toBeVisible()
@@ -215,17 +213,14 @@ test('the world opens: its pop-up, the partner pick, Home inside, its Mart and U
   await expect(page.getByRole('button', { name: /^Mirage Island, small world: Areas 0\/3, with Gastly\. Ends in 6d \d+h\. Enter$/ })).toBeVisible()
 })
 
-test('Home inside: its Pokédex in place of a mythical, and a locked secret area that says what opens it', async ({ page }) => {
-  // A world without a mythical: its first square is its Pokédex.
+test('Home inside a world without a mythical: its secret areas only, a locked one saying what opens it', async ({ page }) => {
   await boot(page, inside(), NOW, FAST, NO_MYTH)
   await page.goto('/home')
-  await expect(page.getByRole('button', { name: /^The world's Pokédex: 1 of \d+ caught\. Open it$/ })).toBeVisible({ timeout: 15_000 })
-  await expect(page.getByRole('button', { name: /^The shiny Mew/ })).toHaveCount(0)
   const locked = page.getByRole('button', { name: 'Secret area Haunted Cellar: Catch 3 Pokémon, 1/3 in Pokédex' })
-  await expect(locked).toBeVisible()
+  await expect(locked).toBeVisible({ timeout: 15_000 })
+  await expect(page.getByRole('button', { name: /^The shiny Mew/ })).toHaveCount(0)
   await locked.click()
   await expect(page.getByText('Catch 3 Pokémon · 1/3')).toBeVisible()
-  await expect(page.getByRole('button', { name: /^World Mart/ })).toBeVisible()
 })
 
 test('Home inside: a secret area opened shows its shiny boss, new, and travels there', async ({ page }) => {
@@ -238,7 +233,7 @@ test('Home inside: a secret area opened shows its shiny boss, new, and travels t
   await expect(page.getByRole('heading', { name: 'Exploring Haunted Cellar' })).toBeAttached()
 })
 
-test('a battle inside: dice follow the level on the plates, the booster on a psychic hit; an area waits for its date', async ({ page }) => {
+test('a battle inside: the booster on a psychic hit; an area waits for its date', async ({ page }) => {
   test.setTimeout(90_000)
   // On Abra: a psychic hit lands on the marsh's Normal types (Gastly and a Rattata can't touch each other).
   const save = inside((s) => ({ ...s, areaProgress: { 'e2e-marsh': { ...emptyProgress(), cleared: true, roundsDone: 1 } } }), 63)
@@ -253,11 +248,12 @@ test('a battle inside: dice follow the level on the plates, the booster on a psy
 
   await page.getByRole('button', { name: /^CONTINUE/ }).first().click()
   await expect(page).toHaveURL(/\/area$/)
-  for (let i = 0; i < 20 && !(await page.getByRole('img', { name: /^Dice level 0: Lv\.5 ÷ 10$/ }).first().isVisible()); i++) {
+  // Into the fight: past the encounter's preview and the battle's first tips.
+  const attack = page.getByRole('button', { name: 'ATTACK', exact: true })
+  for (let i = 0; i < 40 && !(await attack.isVisible()); i++) {
     await clickAny(page, ['FIGHT', 'GOT IT'])
     await page.waitForTimeout(150)
   }
-  await expect(page.getByRole('img', { name: /^Dice level 0: Lv\.5 ÷ 10$/ }).first()).toBeVisible()
   // Abra's first psychic attack: the booster beside its damage.
   const boost = page.getByRole('img', { name: 'Psychic booster: its hits ×1.5' }).first()
   for (const until = Date.now() + 40_000; Date.now() < until && !(await boost.isVisible()); ) {
