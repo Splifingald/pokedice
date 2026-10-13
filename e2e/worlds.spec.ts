@@ -1,7 +1,8 @@
 // Small worlds (docs/21): the admin's world reaches the game as content (a newer configVersion, served from the content
 // cache the way a player gets it the second time), with its region and areas, on the server's clock. Its pop-up and
-// square, the partner pick, Home inside (the strip, its squares, its Mart, Upgrades, an event's page), a battle there
-// (dice by level, the booster), the final fight and the catch that goes home, the closing, and a phone.
+// square, the partner pick, Home inside (the strip, its squares, its Mart, its own Upgrades, an event's page), a battle
+// there (the booster), Home's secret area rows (docs/26 §2.6), the final fight and the
+// catch that goes home, the closing with its Pokémon gone home (docs/26 §1), and a phone.
 import { expect, test, type Page } from '@playwright/test'
 import { readFileSync } from 'node:fs'
 import {
@@ -63,7 +64,14 @@ const area = (id: string, name: string, order: number): Area => ({
   hidden: false,
   unlockConditions: null,
 })
-const AREAS = [area('e2e-marsh', 'Mirage Marsh', 1), area('e2e-path', 'Twilight Path', 2), area('e2e-lair', 'Dream Peak', 3)]
+// A secret area with a shiny boss (docs/26 §2.6): Home inside shows it as a row of its own.
+const SECRET: Area = {
+  ...area('e2e-secret', 'Haunted Cellar', 4),
+  hidden: true,
+  unlockConditions: [{ kind: 'pokedex', count: 3 }],
+  legendaryBoss: [{ dex: 93, level: 8, shiny: true }],
+}
+const AREAS = [area('e2e-marsh', 'Mirage Marsh', 1), area('e2e-path', 'Twilight Path', 2), area('e2e-lair', 'Dream Peak', 3), SECRET]
 
 const WORLD: SmallWorld = {
   ...newSmallWorld('mirage', REGION.id, START, END),
@@ -82,8 +90,11 @@ const WORLD: SmallWorld = {
   opens: { 'e2e-path': '2027-05-30T18:00:00.000Z' },
 }
 
+/** The same world without a mythical: its prizes are its shiny bosses (docs/26 §2.5). */
+const NO_MYTH: SmallWorld = { ...WORLD, mythical: { dex: 0, level: 5, areaId: '' } }
+
 /** The game's own content with the world in it, switched on for everyone (the wheel too, to see its page inside). */
-function bundle(): BundleRaw {
+function bundle(world: SmallWorld = WORLD): BundleRaw {
   const b = Object.fromEntries(Object.entries(FILES).map(([k, f]) => [k, load(f)])) as unknown as BundleRaw
   const events = (b.config as { events?: Record<string, Record<string, unknown>> }).events ?? {}
   return {
@@ -93,7 +104,7 @@ function bundle(): BundleRaw {
     config: {
       ...b.config,
       configVersion: VERSION,
-      smallWorlds: { access: 'all', list: [WORLD] },
+      smallWorlds: { access: 'all', list: [world] },
       events: { ...events, wheel: { ...events.wheel, access: 'all' } },
     },
   }
@@ -104,7 +115,7 @@ const DATA = compileGameData(bundle())
  * The game boots on its bundle, asks for the content version, finds a newer one and plays it from the content cache.
  * The server's clock says `now`.
  */
-async function boot(page: Page, save: SaveData, now = NOW, settings = FAST) {
+async function boot(page: Page, save: SaveData, now = NOW, settings = FAST, world: SmallWorld = WORLD) {
   await mockSupabase(page, { rpc: { event_time: () => ({ now, day: now.slice(0, 10) }) } })
   await page.route(`${SUPABASE}/rest/v1/game_config*`, async (route) => {
     if (!route.request().url().includes('configVersion')) return route.fallback()
@@ -125,7 +136,7 @@ async function boot(page: Page, save: SaveData, now = NOW, settings = FAST) {
         db.transaction('content', 'readwrite').objectStore('content').put({ version: Number(v), bundle: JSON.parse(b!) }, 'remote')
       }
     },
-    [JSON.stringify(save), settings, JSON.stringify(bundle()), String(VERSION), STORAGE_KEY],
+    [JSON.stringify(save), settings, JSON.stringify(bundle(world)), String(VERSION), STORAGE_KEY],
   )
 }
 
@@ -158,7 +169,6 @@ test('the world opens: its pop-up, the partner pick, Home inside, its Mart and U
   const pop = page.getByRole('dialog', { name: 'Mirage Island' })
   await expect(pop).toBeVisible({ timeout: 15_000 })
   await expect(pop.getByText('XP ×5')).toBeVisible()
-  await expect(pop.getByText('Dice follow the level')).toBeVisible()
   await expect(pop.getByText('Psychic ×1.5')).toBeVisible()
   await expect(pop.getByText('A shiny Mew at the end')).toBeVisible()
   await expect(pop.getByText(/^6d \d+h left · until /)).toBeVisible()
@@ -176,7 +186,6 @@ test('the world opens: its pop-up, the partner pick, Home inside, its Mart and U
   await expect(page.getByRole('button', { name: 'Back to Kanto' })).toBeVisible()
   await expect(page.getByRole('heading', { name: 'Exploring Mirage Marsh' })).toBeAttached()
   await expect(page.getByRole('button', { name: /^The shiny Mew, Lv\.5: In Dream Peak$/ })).toBeVisible()
-  await expect(page.getByRole('button', { name: /^World Mart: ₽0 of the world's own ₽\. Open$/ })).toBeVisible()
   await expect(page.getByRole('button', { name: /Day Care/ })).toHaveCount(0)
   await expect.poll(async () => (await stored(page)).region).toBe(REGION.id)
   let s = await stored(page)
@@ -184,14 +193,14 @@ test('the world opens: its pop-up, the partner pick, Home inside, its Mart and U
   expect(s.gold).toBe(0)
   expect(s.events?.world).toMatchObject({ id: 'mirage', from: 'kanto', partner: 92 })
 
-  // Its Mart sells its list only; Upgrades explains the dice.
+  // Its Mart sells its list only; its Upgrades are its own tracks (no General tab: its ₽ are the world's).
   await page.goto('/shop')
   await expect(page.getByRole('heading', { name: 'World Mart', level: 1 })).toBeVisible()
   await expect(page.getByText('10 of 10 left')).toBeVisible()
   await expect(page.getByRole('tab', { name: 'Sell' })).toHaveCount(0)
   await page.goto('/upgrades')
-  await expect(page.getByRole('heading', { name: 'Dice follow the level here' })).toBeVisible()
-  await expect(page.getByText('Lv.5 → dice level 0')).toBeVisible()
+  await expect(page.getByRole('tab', { name: /^Combos/ })).toBeVisible()
+  await expect(page.getByRole('tab', { name: /^General/ })).toHaveCount(0)
   // No event reaches inside.
   await page.goto('/events/wheel')
   await expect(page.getByRole('heading', { name: "You're in Mirage Island" })).toBeVisible()
@@ -204,7 +213,27 @@ test('the world opens: its pop-up, the partner pick, Home inside, its Mart and U
   await expect(page.getByRole('button', { name: /^Mirage Island, small world: Areas 0\/3, with Gastly\. Ends in 6d \d+h\. Enter$/ })).toBeVisible()
 })
 
-test('a battle inside: dice follow the level on the plates, the booster on a psychic hit; an area waits for its date', async ({ page }) => {
+test('Home inside a world without a mythical: its secret areas only, a locked one saying what opens it', async ({ page }) => {
+  await boot(page, inside(), NOW, FAST, NO_MYTH)
+  await page.goto('/home')
+  const locked = page.getByRole('button', { name: 'Secret area Haunted Cellar: Catch 3 Pokémon, 1/3 in Pokédex' })
+  await expect(locked).toBeVisible({ timeout: 15_000 })
+  await expect(page.getByRole('button', { name: /^The shiny Mew/ })).toHaveCount(0)
+  await locked.click()
+  await expect(page.getByText('Catch 3 Pokémon · 1/3')).toBeVisible()
+})
+
+test('Home inside: a secret area opened shows its shiny boss, new, and travels there', async ({ page }) => {
+  await boot(page, inside((s) => ({ ...s, pokedex: [92, 19, 16] })), NOW, FAST, NO_MYTH)
+  await page.goto('/home')
+  const row = page.getByRole('button', { name: 'Secret area Haunted Cellar: Boss: Haunter, Lv.8 (Shiny)' })
+  await expect(row).toBeVisible({ timeout: 15_000 })
+  await expect(row.getByText('NEW')).toBeVisible()
+  await row.click()
+  await expect(page.getByRole('heading', { name: 'Exploring Haunted Cellar' })).toBeAttached()
+})
+
+test('a battle inside: the booster on a psychic hit; an area waits for its date', async ({ page }) => {
   test.setTimeout(90_000)
   // On Abra: a psychic hit lands on the marsh's Normal types (Gastly and a Rattata can't touch each other).
   const save = inside((s) => ({ ...s, areaProgress: { 'e2e-marsh': { ...emptyProgress(), cleared: true, roundsDone: 1 } } }), 63)
@@ -219,11 +248,12 @@ test('a battle inside: dice follow the level on the plates, the booster on a psy
 
   await page.getByRole('button', { name: /^CONTINUE/ }).first().click()
   await expect(page).toHaveURL(/\/area$/)
-  for (let i = 0; i < 20 && !(await page.getByRole('img', { name: /^Dice level 0: Lv\.5 ÷ 10$/ }).first().isVisible()); i++) {
+  // Into the fight: past the encounter's preview and the battle's first tips.
+  const attack = page.getByRole('button', { name: 'ATTACK', exact: true })
+  for (let i = 0; i < 40 && !(await attack.isVisible()); i++) {
     await clickAny(page, ['FIGHT', 'GOT IT'])
     await page.waitForTimeout(150)
   }
-  await expect(page.getByRole('img', { name: /^Dice level 0: Lv\.5 ÷ 10$/ }).first()).toBeVisible()
   // Abra's first psychic attack: the booster beside its damage.
   const boost = page.getByRole('img', { name: 'Psychic booster: its hits ×1.5' }).first()
   for (const until = Date.now() + 40_000; Date.now() < until && !(await boost.isVisible()); ) {
@@ -265,14 +295,19 @@ test('the final fight: the shiny Mew, beaten and caught, goes to the Kanto Box',
   expect(s.events?.world?.caught).toBe(true)
 })
 
-test('the world closes: back in Kanto, everything of it gone but the mythical, and a pop-up once', async ({ page }) => {
-  const caught = catchWorldMythical(inside(), DATA, 'e2e-lair', { dex: 151, level: 5 }, Date.parse(NOW), id)!.save
+test('the world closes: back in Kanto, its Pokémon gone home (one locked), the rest gone, and a pop-up once', async ({ page }) => {
+  // Haunter Lv.40 goes home to Kanto, where the best is Lv.5: it waits there, locked (docs/26 §1).
+  const haunter = { id: 'w-haunter', dex: 93, level: 40, xp: 0, currentHp: 1, caughtAt: 0 }
+  const withHaunter = inside((s) => ({ ...s, box: [...s.box, haunter] }))
+  const caught = catchWorldMythical(withHaunter, DATA, 'e2e-lair', { dex: 151, level: 5 }, Date.parse(NOW), id)!.save
   await boot(page, caught, AFTER)
   await page.goto('/home')
   const bye = page.getByRole('dialog', { name: 'Mirage Island has closed' })
   await expect(bye).toBeVisible({ timeout: 15_000 })
   await expect(bye.getByText('You kept a shiny Mew')).toBeVisible()
-  await expect(bye.getByText("Gastly, the world's Pokémon, items and ₽ closed with it.")).toBeVisible()
+  await expect(bye.getByText('Your Pokémon went home')).toBeVisible()
+  await expect(bye.getByText('Kanto 2. Each one waits there until your best reaches its level.')).toBeVisible()
+  await expect(bye.getByText("The world's items and ₽ closed with it.")).toBeVisible()
   await bye.getByRole('button', { name: 'OK' }).click()
   await expect(bye).toHaveCount(0)
   // The save is written a moment later.
@@ -283,7 +318,24 @@ test('the world closes: back in Kanto, everything of it gone but the mythical, a
   expect(s.events?.world).toBeUndefined()
   expect(s.events?.worldBye).toEqual(['mirage'])
   expect(s.box.find((p) => p.dex === 151)).toMatchObject({ shiny: true })
+  // The partner, Gastly Lv.5, arrived at once (Charmander is Lv.5); Haunter waits.
+  expect(s.box.find((p) => p.dex === 92)).toMatchObject({ level: 5 })
+  expect(s.events?.worldHome?.map((h) => [h.inst.dex, h.region])).toEqual([[93, 'kanto']])
   await expect(page.getByRole('button', { name: /small world/ })).toHaveCount(0)
+
+  // In the Box, apart and locked; its sheet says why, and it can only be named or let go.
+  await page.goto('/team')
+  await expect(page.getByRole('heading', { name: 'Waiting to unlock' })).toBeVisible()
+  await page.getByRole('button', { name: 'Haunter, Locked until Lv.40' }).click()
+  const sheet = page.getByRole('dialog', { name: 'Haunter' })
+  await expect(sheet.getByText('Locked until Lv.40')).toBeVisible()
+  await expect(sheet.getByText('Home from Mirage Island')).toBeVisible()
+  await expect(sheet.getByText(/joins your Kanto Box once one of your Pokémon here reaches Lv\.40 \(your best: Lv\.5\)/)).toBeVisible()
+  await sheet.getByRole('button', { name: 'Let it go' }).click()
+  await sheet.getByRole('button', { name: 'Sure? Tap again' }).click()
+  await expect(page.getByText('Haunter was let go.')).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Waiting to unlock' })).toHaveCount(0)
+  await expect.poll(async () => (await stored(page)).events?.worldHome).toBeUndefined()
 })
 
 /** Nothing scrolls sideways, every word in Jersey; on the page itself (`controls`), no control under 44px. */

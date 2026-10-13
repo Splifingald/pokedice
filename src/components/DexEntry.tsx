@@ -86,7 +86,7 @@ export function whereToFind(dex: number, data: GameData, region: RegionId): Spot
     const boss = area.legendaryBoss?.find((b) => b.dex === dex)
     const raid = boss && isRaidBoss(data, boss) ? progressRaidOf(data, progressRaidKey(area.id, dex)) : null
     if (raid) {
-      const level = raidRules(data, dex, 'progress').level
+      const level = raidRules(data, dex, 'progress', area.id).level
       out.push({ area, minLevel: level, maxLevel: level, share: 0, legendary: true, raid })
     } else if (boss) out.push({ area, minLevel: boss.level, maxLevel: boss.level, share: 0, legendary: true })
 
@@ -325,7 +325,7 @@ function ItemSources({ itemKey, onTravel }: { itemKey: string; onTravel?: () => 
   const spots = useMemo(() => (region ? whereToFindItem(itemKey, data, region) : []), [itemKey, data, region])
   const item = data.items[itemKey]
   if (!save || !region || !item) return null
-  const inShop = shopSells(item, save, region)
+  const inShop = shopSells(item, save, region, data)
   const badges = inShop ? badgeCase(save, data).filter((b) => b.earned).length : 0
   // What the Mart still waits for, the way the Shop words it: badges first, then reaching its area.
   const shopNeeds = !inShop

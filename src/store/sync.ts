@@ -41,6 +41,7 @@ import { rescueIfRegionDisabled } from './regions'
 import { startWorldClock } from './worlds'
 import { armDayCareTimer, tickDayCare } from './daycare'
 import { comeBack, markAway, settleExtreme, startExtremeClocks } from './extreme'
+import { collectOfflineGold, markOfflineAway, startOfflineClock } from './general'
 
 let syncedUser: string | null = null
 /** Nothing is pushed until the first sync for the signed-in user is settled — no overwrite while we compare. */
@@ -447,7 +448,7 @@ export async function deleteAllData(): Promise<boolean> {
     }
     cloudKey = null
   }
-  // Push notifications stop too (docs/25): this browser's subscription and, for a guest, the server's copy of it.
+  // Push notifications stop too (docs/27): this browser's subscription and, for a guest, the server's copy of it.
   if (usePush.getState().on) await disablePush()
   // Out of the store too, so nothing commits the old save again before the reload.
   useGame.setState({ save: null })
@@ -464,6 +465,7 @@ export async function deleteAllData(): Promise<boolean> {
 export async function switchSave(to: SaveMode): Promise<boolean> {
   if (activeSlot() === to) return false
   markAway()
+  markOfflineAway()
   flushWrite()
   try {
     // A slow network doesn't hold the switch: closing the page sends what's still waiting anyway.
@@ -732,6 +734,8 @@ export function startBackgroundServices() {
   tickDayCare()
   // Extreme mode (docs/22): K.O. rests end on the clock, and time out of the game heals.
   startExtremeClocks()
+  // Offline earnings (docs/25): an absence left open by the last visit pays now.
+  startOfflineClock()
   setInterval(() => {
     if (document.visibilityState === 'visible') checkFreshness(false)
     tickFossils()
@@ -745,6 +749,7 @@ export function startBackgroundServices() {
   // last upload — a page reloaded over and over would upload on every reload: it goes up at the next load instead.
   window.addEventListener('pagehide', () => {
     markAway()
+    markOfflineAway()
     flushWrite()
     if (pushDue()) flushPush()
   })
@@ -752,6 +757,7 @@ export function startBackgroundServices() {
     clearTimeout(leaveTimer)
     if (document.visibilityState === 'hidden') {
       markAway()
+      markOfflineAway()
       flushWrite()
       leaveTimer = setTimeout(leaveChannel, HIDDEN_LEAVE_MS)
     } else {
@@ -759,6 +765,7 @@ export function startBackgroundServices() {
       tickFossils()
       tickDayCare()
       void comeBack()
+      void collectOfflineGold(true)
     }
   })
 }

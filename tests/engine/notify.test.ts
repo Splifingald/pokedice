@@ -1,4 +1,4 @@
-// Push notifications' plan (docs/25): what the game asks the server to announce, and when. The day's raid at the
+// Push notifications' plan (docs/27): what the game asks the server to announce, and when. The day's raid at the
 // player's morning whatever their time zone, an Egg named after its likely pair and kept out of the night, live events
 // at their start for players who'll see them, and nothing at all while the switch is off for them.
 import { describe, expect, it } from 'vitest'

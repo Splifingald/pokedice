@@ -6,6 +6,7 @@ import areas from '@/data/areas.json'
 import { ART_PX, battleTop, BATTLE_H, horizonOf, pictureOf, SCENE_H, SCENE_W, stripTop } from '@/fx/areaArt'
 import { AREA_ART, ART_GEOMETRY } from '@/fx/areaArtMap'
 import { LEAGUE_II } from '@/engine'
+import { haunted } from '../scripts/content-haunted-hollow'
 
 const DIR = 'public/area-art'
 /** Pictures planned in the Visual Lab and not made yet: their areas keep their drawn scene until they arrive. */
@@ -18,7 +19,8 @@ const size = (id: string) => {
 
 describe('area pictures (public/area-art)', () => {
   it('gives every area a picture, and names no area the game lacks', () => {
-    const ids = new Set((areas as { id: string }[]).map((a) => a.id))
+    // A small world's areas come from the admin's bundle, not src/data (Haunted Hollow: docs/26).
+    const ids = new Set([...(areas as { id: string }[]).map((a) => a.id), ...haunted().areas.map((a) => a.id)])
     for (const a of areas as { id: string; name: string }[]) expect(AREA_ART[a.id], a.name).toBeTruthy()
     // Victory Road II and League II left the game (the Elite Rebattle replaced them): their lines may stay in the map.
     for (const id of Object.keys(AREA_ART)) if (!(id in LEAGUE_II)) expect(ids.has(id), id).toBe(true)

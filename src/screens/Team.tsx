@@ -1,5 +1,14 @@
 import { useState } from 'react'
-import { monName, POKE_TYPES, teamOf, type PokemonInstance, type PokeType } from '@/engine'
+import {
+  homersIn,
+  monName,
+  POKE_TYPES,
+  regionBestLevel,
+  regionOf,
+  teamOf,
+  type PokemonInstance,
+  type PokeType,
+} from '@/engine'
 import { searchFold } from '@/i18n'
 import { useT } from '@/i18n/react'
 import { sortBox, type BoxSort } from '@/components/BoxSort'
@@ -49,6 +58,9 @@ export function TeamScreen() {
     data,
   )
   const open = (p: PokemonInstance) => setView({ kind: 'inst', id: p.id })
+  // A closed small world's Pokémon waiting here until this region's best reaches their level (docs/26 §1).
+  const waiting = homersIn(save, regionOf(save))
+  const best = regionBestLevel(save, data, regionOf(save))
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-3">
@@ -147,6 +159,42 @@ export function TeamScreen() {
           })}
         </ul>
       </section>
+
+      {waiting.length > 0 && (
+        <section className="flex flex-col gap-2" aria-labelledby="waiting-title">
+          <div className="mt-1 flex items-baseline gap-2">
+            <h2 id="waiting-title" className="text-[24px] leading-none">
+              {t('ui.team.waitingHeading')}
+            </h2>
+            <span className="font-pixel-sm text-[17px] text-muted">{waiting.length}</span>
+          </div>
+          <p className="copy text-muted">{t('ui.team.waitingHint', { best })}</p>
+          <ul className={TILE_GRID}>
+            {waiting.map(({ inst: p }) => (
+              <li key={p.id}>
+                <MonTile
+                  dex={p.dex}
+                  name={name(p)}
+                  sub={t('ui.common.level.short', { n: p.level })}
+                  locked
+                  label={[
+                    name(p),
+                    p.nickname ? speciesName(p) : null,
+                    p.shiny ? t('ui.mon.shiny') : null,
+                    t('ui.mon.lockedUntil', { n: p.level }),
+                  ]
+                    .filter(Boolean)
+                    .join(', ')}
+                  onClick={() => setView({ kind: 'homer', id: p.id })}
+                  tags={
+                    p.shiny && <PixelIcon name="star" size={12} className="absolute left-[5px] top-[5px]" />
+                  }
+                />
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <SheetModal view={view} onClose={() => setView(null)} manage />
     </div>

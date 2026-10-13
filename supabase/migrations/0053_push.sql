@@ -1,4 +1,4 @@
--- Push notifications (docs/25-PUSH-NOTIFICATIONS.md): a Day Care Egg, the day's raid, a live event starting, sent to a
+-- Push notifications (docs/27-PUSH-NOTIFICATIONS.md): a Day Care Egg, the day's raid, a live event starting, sent to a
 -- player's phone or computer while the game is closed. The game works out its own player's next notices from the save
 -- (src/engine/notify.ts) and hands them here with their words and picture; a scheduled sender (netlify/functions/
 -- push-send.mts) asks for the ones that are due and delivers them through each browser's push service.
@@ -13,7 +13,7 @@
 --    returns one row per subscription that wants it; push_report drops the subscriptions the push service says are gone.
 -- 5. push_stats: the admin's counts. delete_my_data: a player's subscriptions and notices go with the rest.
 --
--- Players reach the tables only through the functions below. Run after 0047; safe to run again.
+-- Players reach the tables only through the functions below. Run after 0052; safe to run again.
 
 -- ---------------------------------------------------------------- 1. the switch
 

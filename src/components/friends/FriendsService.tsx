@@ -4,7 +4,7 @@
 // - an invite link that was opened (/f/<code>): signed in, the two players become friends at once and a pop-up says
 //   so; signed out, a pop-up asks to connect first, and the add happens on the way back.
 import { useEffect, useRef, useState } from 'react'
-import { dayCareTutorialDue, leaderboardTutorialDue } from '@/engine'
+import { dayCareTutorialDue, inviteRewardsOn, leaderboardTutorialDue } from '@/engine'
 import { useT } from '@/i18n/react'
 import { clearInvite, readInvite } from '@/lib/friendInvite'
 import {
@@ -12,6 +12,7 @@ import {
   clearFriends,
   friendError,
   loadFriendStatus,
+  loadInviteStatus,
   lookupCode,
   takeUntold,
   useFriends,
@@ -20,7 +21,9 @@ import {
 import { useFullscreen } from '@/lib/fullscreen'
 import { isSupabaseConfigured } from '@/lib/supabase'
 import { pushToast, useGame } from '@/store/game'
+import { countInvite } from '@/store/invites'
 import { useConnect } from '../AccountButton'
+import { PixelIcon } from '../icons'
 import { Modal } from '../Modal'
 import { PixelButton } from '../PixelButton'
 import { useAddText } from './AddFriendModal'
@@ -41,6 +44,11 @@ export function FriendsService() {
     if (isSupabaseConfigured && status === 'signed_in') void loadFriendStatus(true)
     else if (status === 'signed_out' || status === 'unavailable') clearFriends()
   }, [status, userId])
+  // Invite rewards switched on after that (the admin's config arrived late): their gauge now.
+  const invitesOn = useGame((s) => inviteRewardsOn(s.data))
+  useEffect(() => {
+    if (isSupabaseConfigured && status === 'signed_in' && invitesOn) void loadInviteStatus()
+  }, [status, userId, invitesOn])
 
   // New friends, said once on this device, between fights.
   useEffect(() => {
@@ -68,6 +76,8 @@ function InviteHandler() {
   const [code, setCode] = useState(() => readInvite())
   const [who, setWho] = useState<Who | null>(null)
   const [added, setAdded] = useState<FriendNotice | null>(null)
+  // The new friend's invite counted for them (docs/15 §25): the pop-up says the first badge is worth something to them.
+  const [counted, setCounted] = useState(false)
   const [profile, setProfile] = useState<FriendNotice | null>(null)
   const busy = useRef(false)
   const { connect, chooser } = useConnect()
@@ -106,9 +116,11 @@ function InviteHandler() {
     clearInvite()
     setCode(null)
     addFriend(code)
-      .then(({ status: result, friend }) => {
-        if (result === 'added' && friend) setAdded(friend)
-        else pushToast(addText(result, friend?.name), result === 'already' ? 'info' : 'bad')
+      .then(async ({ status: result, friend }) => {
+        if (result === 'added' && friend) {
+          setCounted(await countInvite(code))
+          setAdded(friend)
+        } else pushToast(addText(result, friend?.name), result === 'already' ? 'info' : 'bad')
       })
       .catch((err) => pushToast(addText(friendError(err)), 'bad'))
       .finally(() => {
@@ -140,8 +152,14 @@ function InviteHandler() {
       <Modal open={!!added} onClose={() => setAdded(null)} title={t('ui.friends.newFriendTitle')}>
         {added && (
           <div className="flex flex-col gap-3">
-            <FriendPreview name={added.name} avatar={added.avatar} />
+            <FriendPreview name={added.name} avatar={added.avatar} rich={added.rich} />
             <p className="copy m-0">{t('ui.friends.added', { name: added.name })}</p>
+            {counted && (
+              <p className="m-0 flex items-center gap-2 bg-gold-pale px-2.5 py-2 font-pixel-sm text-[16px] leading-tight text-ink shadow-card-gold">
+                <PixelIcon name="badge" size={22} className="shrink-0" />
+                {t('ui.invite.credited', { name: added.name })}
+              </p>
+            )}
             <div className="flex justify-end gap-2">
               <PixelButton
                 onClick={() => {

@@ -40,7 +40,7 @@ const CARD: Record<EncounterKind, { label: string; color: string }> = {
 /** A fresh condition of each kind, for the kind picker. */
 function newCondition(kind: string, areas: Row[], self: string): UnlockCondition {
   if (kind === 'pokedex') return { kind: 'pokedex', count: 50 }
-  if (kind === 'area') return { kind: 'area', areaId: s(areas.find((a) => s(a.id) !== self)?.id) }
+  if (kind === 'area' || kind === 'cleared') return { kind, areaId: s(areas.find((a) => s(a.id) !== self)?.id) }
   return { kind: 'maxLevel', level: 50 }
 }
 
@@ -208,8 +208,8 @@ function AreaEditor({ area }: { area: Row }) {
                 ))}
               </select>
             </Field>
-            <Field label="Rounds to clear" hint="full decks; empty = never clears">
-              <NumInput nullable min={1} max={20} value={area.rounds_to_clear as number | null} onChange={(v) => patch({ rounds_to_clear: v })} />
+            <Field label="Rounds to clear" hint="full decks; 0 = its gyms at once (a league); empty = never clears">
+              <NumInput nullable min={0} max={20} value={area.rounds_to_clear as number | null} onChange={(v) => patch({ rounds_to_clear: v })} />
             </Field>
             <Field label="Backtrack ×" hint="rewards once cleared">
               <NumInput step={0.05} value={n(area.backtrack_multiplier)} onChange={(v) => patch({ backtrack_multiplier: v ?? 0 })} />
@@ -419,9 +419,10 @@ function AreaEditor({ area }: { area: Row }) {
                 <option value="pokedex">Pokédex count ≥</option>
                 <option value="maxLevel">Highest Pokémon level ≥</option>
                 <option value="area">Area reached</option>
+                <option value="cleared">Area cleared</option>
               </select>
-              {c.kind === 'area' ? (
-                <select className={cx(inputCls, 'w-auto')} value={c.areaId} onChange={(e) => setAt({ kind: 'area', areaId: e.target.value })} aria-label="Area">
+              {c.kind === 'area' || c.kind === 'cleared' ? (
+                <select className={cx(inputCls, 'w-auto')} value={c.areaId} onChange={(e) => setAt({ kind: c.kind, areaId: e.target.value })} aria-label="Area">
                   {[...allAreas]
                     .filter((a) => s(a.id) !== id)
                     .sort((a, b) => n(a.order_index) - n(b.order_index))

@@ -66,6 +66,8 @@
     "https://raw.githubusercontent.com/msikma/pokesprite/master/items/fossil/fish.png": 60,
     "https://raw.githubusercontent.com/msikma/pokesprite/master/items/evo-item/chipped-pot.png": 61,
     "https://raw.githubusercontent.com/msikma/pokesprite/master/items/evo-item/galarica-cuff.png": 62,
-    "https://raw.githubusercontent.com/msikma/pokesprite/master/items/evo-item/galarica-wreath.png": 63
+    "https://raw.githubusercontent.com/msikma/pokesprite/master/items/evo-item/galarica-wreath.png": 63,
+    "/items/link-cable.png": 64,
+    "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/razz-berry.png": 65
   }
 }

@@ -19,7 +19,8 @@ export function RoundsCounter({
 }) {
   const { t } = useT()
   const need = area.roundsToClear
-  if (need == null) return null
+  // No rounds, or none to play (a league of fights only, docs/26): nothing to count.
+  if (!need) return null
   const done = Math.min(progress.roundsDone ?? 0, need)
   const complete = done >= need
   return (

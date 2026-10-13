@@ -13,19 +13,26 @@ import {
   type DayCareConfig,
   type DonationConfig,
   type EnergyConfig,
+  type EventAccess,
   type ExtremeConfig,
   type GameConfig,
+  type GeneralConfig,
   type PityConfig,
   type SlotMachineConfig,
   type SlotOutcomeKey,
   type StatusRules,
   type TradeConfig,
+  INVITE_FRIENDS_MAX,
+  INVITE_TIERS_MAX,
+  inviteTiers,
+  type InviteRewardsConfig,
 } from '@/engine'
 import { PixelIcon, type IconName } from '@/components/icons'
 import { PixelButton } from '@/components/PixelButton'
 import { SpriteImg } from '@/components/SpriteImg'
 import { cx } from '@/theme/util'
 import { DataTable } from '../DataTable'
+import { GiftEditor, giftName } from '../GiftEditor'
 import { addRows, rowKey, updateRow, useAdmin, useAdminData } from '../store'
 import { AccessSwitch, Box, Field, NumInput, PokemonPicker, inputCls } from '../widgets'
 import { PushBox } from './PushBox'
@@ -459,6 +466,180 @@ function TradesBox() {
           </div>
         )}
       </div>
+    </Box>
+  )
+}
+
+/** What each state of a switch means, for the line beside it. */
+const accessNote = (access: EventAccess, all: string, off: string) =>
+  access === 'all' ? all : access === 'admin' ? 'Only you see it (to try it first). Players see nothing yet.' : off
+
+/**
+ * The General upgrades and the two items that came with them (docs/25): each its own three-way switch, Off by default
+ * (the server reads the General one too, for the golden names), then the levels' numbers.
+ */
+function GeneralBox() {
+  const [raw, setRaw] = useConfigRow('general')
+  const [items, setItems] = useConfigRow('itemSwitches')
+  const cfg: GeneralConfig = { ...DEFAULT_CONFIG.general, ...(raw ?? {}) }
+  const switches = { ...DEFAULT_CONFIG.itemSwitches, ...(items ?? {}) }
+  const set = (patch: Partial<GeneralConfig>) => setRaw({ ...cfg, ...patch })
+  const row = <K extends 'luck' | 'offline'>(k: K, i: number, patch: Partial<GeneralConfig[K][number]>) =>
+    set({ [k]: cfg[k].map((r, j) => (j === i ? { ...r, ...patch } : r)) })
+  const ITEMS: [string, string, string][] = [
+    ['link-cable', 'Link Cable', 'Used from the Team screen on a trade evolution. Not sold unless the item says so.'],
+    ['bait', 'Bait', 'Offered at the catch when a ball falls short and its die could still make it.'],
+  ]
+  return (
+    <Box
+      title="General upgrades & catch items" icon="navUpgrades"
+      hint="The Upgrades screen's third tab (Capture Luck, offline earnings, I am just rich) and the Link Cable and Bait items. Each switch is Off by default; the server checks the General one for the golden names."
+    >
+      <div className="flex flex-wrap items-center gap-3">
+        <span className="text-lg">General tab</span>
+        <AccessSwitch value={cfg.access ?? 'off'} onChange={(access) => set({ access })} label="General upgrades: who sees them" />
+        <span className="text-base text-muted">
+          {accessNote(cfg.access ?? 'off', 'Open to every player.', 'Off: no tab, no pop-up, no effect. Levels already bought are kept.')}
+        </span>
+      </div>
+      {ITEMS.map(([key, label, hint]) => (
+        <div key={key} className="flex flex-wrap items-center gap-3">
+          <span className="text-lg">{label}</span>
+          <AccessSwitch
+            value={switches[key] ?? 'off'}
+            onChange={(access) => setItems({ ...switches, [key]: access })}
+            label={`${label}: who can use it`}
+          />
+          <span className="text-base text-muted">
+            {accessNote(switches[key] ?? 'off', hint, 'Off: not sold, not found, not usable. Bags keep theirs.')}
+          </span>
+        </div>
+      ))}
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Field label="Offline earnings count up to (hours)" hint="per absence, on the server's clock">
+          <NumInput min={1} max={168} value={cfg.offlineMaxHours} onChange={(v) => set({ offlineMaxHours: Math.max(1, v ?? 24) })} />
+        </Field>
+        <Field label="I am just rich (₽)" hint="one level: a golden name">
+          <NumInput min={0} value={cfg.richCost} onChange={(v) => set({ richCost: Math.max(0, v ?? 0) })} />
+        </Field>
+      </div>
+      <table className="w-full text-lg">
+        <thead>
+          <tr className="text-left">
+            <th className="font-normal">Level</th>
+            <th className="font-normal">Capture Luck (%)</th>
+            <th className="font-normal">its price (₽)</th>
+            <th className="font-normal">Offline (₽ / hour)</th>
+            <th className="font-normal">its price (₽)</th>
+          </tr>
+        </thead>
+        <tbody>
+          {Array.from({ length: Math.max(cfg.luck.length, cfg.offline.length) }, (_, i) => (
+            <tr key={i}>
+              <td>{i + 1}</td>
+              <td>
+                {cfg.luck[i] && (
+                  <NumInput min={0} max={100} value={cfg.luck[i]!.chance} onChange={(v) => row('luck', i, { chance: Math.max(0, Math.min(100, v ?? 0)) })} />
+                )}
+              </td>
+              <td>{cfg.luck[i] && <NumInput min={0} value={cfg.luck[i]!.cost} onChange={(v) => row('luck', i, { cost: Math.max(0, v ?? 0) })} />}</td>
+              <td>
+                {cfg.offline[i] && (
+                  <NumInput min={0} value={cfg.offline[i]!.perHour} onChange={(v) => row('offline', i, { perHour: Math.max(0, v ?? 0) })} />
+                )}
+              </td>
+              <td>
+                {cfg.offline[i] && <NumInput min={0} value={cfg.offline[i]!.cost} onChange={(v) => row('offline', i, { cost: Math.max(0, v ?? 0) })} />}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </Box>
+  )
+}
+
+/**
+ * Friend invite rewards (docs/15 §25): the three-way switch and the gauge's tiers — each a number of invited new players
+ * who have won their first badge, and the gifts it gives (the same editor as a message's gifts). The server reads the
+ * same row (0051): it counts the invites only while the switch isn't off, and hands each tier over once.
+ */
+function InviteRewardsBox() {
+  const data = useAdminData()
+  const [raw, setRaw] = useConfigRow('inviteRewards')
+  const cfg: InviteRewardsConfig = { ...DEFAULT_CONFIG.inviteRewards, ...(raw ?? {}) }
+  const set = (patch: Partial<InviteRewardsConfig>) => setRaw({ ...cfg, ...patch })
+  const tiers = Array.isArray(cfg.tiers) ? cfg.tiers : []
+  const setTier = (i: number, patch: Partial<InviteRewardsConfig['tiers'][number]>) =>
+    set({ tiers: tiers.map((t, j) => (j === i ? { ...t, ...patch } : t)) })
+  // What players will see, as the game reads it: in order, each count once, only tiers with a gift.
+  const seen = data ? inviteTiers({ ...data, config: { ...data.config, inviteRewards: cfg } }) : []
+  const nextCount = Math.min(INVITE_FRIENDS_MAX, Math.max(0, ...tiers.map((t) => Number(t.friends) || 0)) + 1)
+  return (
+    <Box
+      title="Friend invite rewards" icon="gift"
+      hint="Each new player a player invites with their invite link, once they win their first badge, fills that player's gauge (Friends page, Prof. Oak's invite). Each tier gives its gifts once, opened like a message's gifts. The server checks the switch too."
+    >
+      <div className="flex flex-wrap items-center gap-3">
+        <span className="text-lg">Who gets them</span>
+        <AccessSwitch value={cfg.access ?? 'off'} onChange={(access) => set({ access })} label="Invite rewards: who gets them" />
+        <span className="text-base text-muted">
+          {cfg.access === 'all'
+            ? 'Every signed-in player: invites count, the gauge shows, rewards open.'
+            : cfg.access === 'admin'
+              ? 'Only you see the gauge and open rewards (to try it first). Players you invite count; other players see nothing.'
+              : 'Off: no gauge, no pop-up, no invite counted. What was counted and opened stays.'}
+        </span>
+      </div>
+      <ol className="m-0 flex list-none flex-col gap-2 p-0">
+        {tiers.map((t, i) => (
+          <li key={i} className="flex flex-col gap-2 border-2 border-shadow p-2">
+            <div className="flex flex-wrap items-end gap-3">
+              <Field label="Invited players with their first badge" hint={`1–${INVITE_FRIENDS_MAX}`}>
+                <NumInput
+                  className="w-24"
+                  value={t.friends}
+                  min={1}
+                  max={INVITE_FRIENDS_MAX}
+                  onChange={(v) => setTier(i, { friends: Math.max(1, Math.min(INVITE_FRIENDS_MAX, Math.round(v ?? 1))) })}
+                />
+              </Field>
+              <PixelButton size="sm" variant="ghost" onClick={() => set({ tiers: tiers.filter((_, j) => j !== i) })}>
+                Remove tier
+              </PixelButton>
+            </div>
+            {data && (
+              <GiftEditor
+                data={data}
+                gifts={t.gifts ?? []}
+                onChange={(gifts) => setTier(i, { gifts })}
+                hint="the player opens them from the gauge once the tier is reached"
+                messages={false}
+              />
+            )}
+          </li>
+        ))}
+      </ol>
+      <div className="flex flex-wrap items-center gap-3">
+        <PixelButton
+          size="sm"
+          disabled={tiers.length >= INVITE_TIERS_MAX}
+          onClick={() => set({ tiers: [...tiers, { friends: nextCount, gifts: [] }] })}
+        >
+          Add a tier
+        </PixelButton>
+        <span className="text-base text-muted">
+          {INVITE_TIERS_MAX} tiers at most. A tier without a gift, or a count already used, is left out.
+        </span>
+      </div>
+      {data && (
+        <p className="text-lg">
+          Players see:{' '}
+          {seen.length
+            ? seen.map((t) => `${t.friends} → ${t.gifts.map((g) => giftName(data, g)).join(' + ')}`).join(' · ')
+            : 'no tier yet (no gauge).'}
+        </p>
+      )}
     </Box>
   )
 }
@@ -899,6 +1080,9 @@ export function ConfigSection() {
       <TradesBox />
 
       <PushBox />
+      <GeneralBox />
+
+      <InviteRewardsBox />
 
       <StatusRulesBox />
 

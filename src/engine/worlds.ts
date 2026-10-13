@@ -9,12 +9,15 @@
 // shown); its own Mart; a shiny mythical at the end. No event reaches inside, and the Day Care, Versus and the region
 // chain are the main game's.
 import type { UpgradeLevels } from './damage'
+import { bossCaught, isRaidBoss } from './encounters'
 import { eventOpenTo } from './events'
 import { isExtreme } from './extreme'
 import { addFossil } from './fossils'
 import { sellPrice } from './items'
 import { badgesHeld, liveLeft, liveState } from './liveEvents'
+import { sendWorldHome, speciesHome } from './homecoming'
 import { createInstance } from './progression'
+import { progressRaidKey } from './progressRaid'
 import { addToRegion } from './raid'
 import {
   getRegion,
@@ -24,12 +27,11 @@ import {
   realRegions,
   regionAreas,
   regionOf,
-  regionOfSpecies,
   startRegion,
   switchRegion,
 } from './regions'
-import type { RunEvent } from './run'
-import type { GameData, ItemDef, RegionId, SaveData, SmallWorld, WorldCatch, WorldSave } from './types'
+import { noteBossCaught, progressOf, type RunEvent } from './run'
+import type { Area, BossDef, GameData, ItemDef, RegionId, SaveData, SmallWorld, WorldCatch, WorldSave } from './types'
 import { smallWorlds, worldById, worldOfArea, worldOfRegion } from './worldList'
 
 export {
@@ -180,9 +182,10 @@ export function worldOver(save: SaveData, data: GameData, now: number | null, tr
 }
 
 /**
- * The world closes for this player: anyone inside goes back where they came from, and its block — Box, bag, ₽, areas,
- * Pokédex — is deleted. `events.world` stays, closed, until the closing pop-up has been shown. Unchanged when the save
- * holds no world, or there is nowhere to go back to.
+ * The world closes for this player: anyone inside goes back where they came from, its Pokémon go home (each to its
+ * species' region, waiting there until that region's best reaches its level: engine/homecoming.ts), and the rest of its
+ * block — bag, ₽, areas, Pokédex — is deleted. `events.world` stays, closed, with how many went where, until the closing
+ * pop-up has been shown. Unchanged when the save holds no world, or there is nowhere to go back to.
  */
 export function closeWorld(save: SaveData, data: GameData): SaveData {
   const held = heldWorld(save)
@@ -194,9 +197,11 @@ export function closeWorld(save: SaveData, data: GameData): SaveData {
     next = switchRegion(next, to)
     if (next === save) return save
   }
+  const box = next.parked?.[held.regionId]?.box ?? []
   const parked = { ...next.parked }
   delete parked[held.regionId]
-  return { ...next, parked, events: { ...next.events, world: { ...held, closed: true } } }
+  const home = sendWorldHome({ ...next, parked }, data, box, held.id)
+  return { ...home.save, events: { ...home.save.events, world: { ...held, closed: true, home: home.counts } } }
 }
 
 // ------------------------------------------------------------------ pop-ups
@@ -219,6 +224,8 @@ export interface WorldBye {
   entered: boolean
   caught: boolean
   partner: number | null
+  /** How many of its Pokémon went home to each region (empty for a player who never went in). */
+  home: Record<RegionId, number>
 }
 
 /**
@@ -229,14 +236,14 @@ export function worldByeDue(save: SaveData, data: GameData, now: number | null):
   const bye = new Set(save.events?.worldBye ?? [])
   const w = save.events?.world
   if (w?.closed && !bye.has(w.id))
-    return { id: w.id, world: worldById(data, w.id), entered: true, caught: !!w.caught, partner: w.partner }
+    return { id: w.id, world: worldById(data, w.id), entered: true, caught: !!w.caught, partner: w.partner, home: w.home ?? {} }
   if (now == null || heldWorld(save)) return null
   const seen = new Set(save.events?.worldSeen ?? [])
   const last = smallWorlds(data)
     .filter((x) => worldState(x, now) === 'ended' && at(x.end) <= now)
     .sort((a, b) => at(b.end) - at(a.end))[0]
   if (!last || !seen.has(last.id) || bye.has(last.id)) return null
-  return { id: last.id, world: last, entered: false, caught: false, partner: null }
+  return { id: last.id, world: last, entered: false, caught: false, partner: null, home: {} }
 }
 
 /** The closing pop-up was shown: the closed world's record goes (the last 20 ids are kept). */
@@ -255,14 +262,14 @@ export function markWorldBye(save: SaveData, id: string): SaveData {
 // ------------------------------------------------------------------ its rules
 
 /**
- * A fight in a small world's area: no upgrades on either side — each Pokémon's dice and combos at its own level ÷ 10
- * (`attackerLevels`) — and the world's boosters, both sides'. Null outside a world.
+ * A side's tracks in a small world's area: as anywhere (the world's own upgrades for the player, the area's level for
+ * its foes), with the world's boosters on both sides. Unchanged outside a world, or in a world without boosters.
  */
-export function worldBattleLevels(data: GameData, area: { regionId?: RegionId } | undefined): UpgradeLevels | null {
+export function withWorldBoost(levels: UpgradeLevels, data: GameData, area: { regionId?: RegionId } | undefined): UpgradeLevels {
   const w = worldOfArea(data, area)
-  if (!w) return null
+  if (!w) return levels
   const typeBoost = Object.fromEntries(w.boosters.filter((b) => b.multiplier > 0 && b.multiplier !== 1).map((b) => [b.type, b.multiplier]))
-  return { comboLevels: {}, dieLevels: {}, byLevel: true, ...(Object.keys(typeBoost).length > 0 && { typeBoost }) }
+  return Object.keys(typeBoost).length ? { ...levels, typeBoost } : levels
 }
 
 // ------------------------------------------------------------------ its Mart
@@ -318,10 +325,88 @@ export function buyWorldItem(
   return { ...next, inventory: { ...next.inventory, [key]: (next.inventory[key] ?? 0) + qty } }
 }
 
+// ------------------------------------------------------------------ its prizes
+
+/** A world's shiny prize: its mythical, or one of its areas' bosses or raids marked shiny (docs/26 §2.5). */
+export interface WorldPrize {
+  dex: number
+  areaId: string
+  kind: 'mythical' | 'boss' | 'raid'
+}
+
+/** The world has a mythical of its own (set in the world, a real species, in one of its areas). */
+export const hasWorldMythical = (data: GameData, world: SmallWorld): boolean =>
+  !!world.mythical.dex && !!data.species[world.mythical.dex] && !!world.mythical.areaId
+
+/**
+ * Its shiny prizes: the mythical (when it has one), then every boss and raid marked shiny in its areas, secret ones
+ * included, in area order.
+ */
+export function worldPrizes(data: GameData, world: SmallWorld): WorldPrize[] {
+  // The mythical from the world's own settings: a draft in the admin isn't compiled into its area yet.
+  const myth = hasWorldMythical(data, world) ? world.mythical : null
+  const out: WorldPrize[] = myth ? [{ dex: myth.dex, areaId: myth.areaId, kind: 'mythical' }] : []
+  const areas = data.areas.filter((a) => (a.regionId ?? KANTO) === world.regionId).sort((a, b) => a.orderIndex - b.orderIndex)
+  for (const a of areas)
+    for (const b of a.legendaryBoss ?? []) {
+      if (!b.shiny || !data.species[b.dex] || (myth?.areaId === a.id && myth.dex === b.dex)) continue
+      out.push({ dex: b.dex, areaId: a.id, kind: isRaidBoss(data, b) ? 'raid' : 'boss' })
+    }
+  return out
+}
+
+/** The prize the world is known by (its square, its pop-up): its mythical, else its last shiny raid, else its last. */
+export function worldPrize(data: GameData, world: SmallWorld): WorldPrize | null {
+  const all = worldPrizes(data, world)
+  return all.find((p) => p.kind === 'mythical') ?? all.filter((p) => p.kind === 'raid').at(-1) ?? all.at(-1) ?? null
+}
+
+/** This prize has been caught in the world this save holds (its raid closed, its boss noted, the mythical gone home). */
+export function worldPrizeCaught(save: SaveData, world: SmallWorld, prize: WorldPrize): boolean {
+  const held = heldWorld(save)
+  if (held?.id !== world.id) return false
+  if (prize.kind === 'mythical') return !!held.caught
+  if (prize.kind === 'raid' && save.events?.raidsDone?.includes(progressRaidKey(prize.areaId, prize.dex))) return true
+  const progress = regionOf(save) === world.regionId ? save.areaProgress : save.parked?.[world.regionId]?.areaProgress
+  return !!progress?.[prize.areaId]?.bossesCaught?.includes(prize.dex)
+}
+
+// ------------------------------------------------------------------ Home inside a world
+
+/** Home inside a world shows at most this many secret areas, one full-width row each (docs/26 §2.6). */
+export const WORLD_SECRETS_MAX = 6
+
+/** One of a world's secret areas, as Home shows it: its boss or raid (its prize first), and whether it's caught. */
+export interface WorldSecret {
+  area: Area
+  boss: BossDef | null
+  raid: boolean
+  caught: boolean
+}
+
+/** The world's secret areas in order (at most `WORLD_SECRETS_MAX`), for the player standing in it. */
+export function worldSecrets(save: SaveData, data: GameData, world: SmallWorld): WorldSecret[] {
+  return data.areas
+    .filter((a) => a.hidden && (a.regionId ?? KANTO) === world.regionId)
+    .sort((a, b) => a.orderIndex - b.orderIndex)
+    .slice(0, WORLD_SECRETS_MAX)
+    .map((area) => {
+      const bosses = area.legendaryBoss ?? []
+      const boss = bosses.find((b) => b.shiny) ?? bosses[0] ?? null
+      const raid = !!boss && isRaidBoss(data, boss)
+      const caught =
+        !!boss &&
+        (raid
+          ? !!save.events?.raidsDone?.includes(progressRaidKey(area.id, boss.dex))
+          : bossCaught(area, progressOf(save, area.id), save.pokedex, boss.dex, data))
+      return { area, boss, raid, caught }
+    })
+}
+
 // ------------------------------------------------------------------ the shiny mythical
 
 /** The region a world's mythical goes home to: its generation's (Mew → Kanto, Celebi → Johto, Victini → Unova…). */
-export const mythicalHome = (data: GameData, dex: number): RegionId => regionOfSpecies(data, dex) ?? KANTO
+export const mythicalHome = (data: GameData, dex: number): RegionId => speciesHome(data, dex)
 
 /**
  * A catch in a small world: when it's the world's shiny mythical, it leaves the world at once for its home region's
@@ -340,8 +425,9 @@ export function catchWorldMythical(
   const held = heldWorld(save)
   if (!world || !held || held.id !== world.id || world.mythical.areaId !== areaId || world.mythical.dex !== caught.dex) return null
   const dex = caught.dex
+  const inArea = noteBossCaught(save, areaId, dex)
   const noted: SaveData = {
-    ...save,
+    ...inArea,
     pokedex: save.pokedex.includes(dex) ? save.pokedex : [...save.pokedex, dex],
     events: { ...save.events, world: { ...held, caught: true } },
   }
@@ -420,11 +506,15 @@ export function worldProblems(list: readonly SmallWorld[], w: SmallWorld, data: 
   }
   if (w.starters.length !== 3 || new Set(w.starters).size !== 3) out.push('Pick three different starters.')
   for (const d of w.starters) if (!data.species[d]) out.push(`Unknown starter: #${d}.`)
-  if (!data.species[w.mythical.dex]) out.push('Pick the shiny mythical.')
-  if (!(w.mythical.level >= 1 && w.mythical.level <= data.config.maxLevel)) out.push(`The mythical’s level must be 1–${data.config.maxLevel}.`)
-  const area = data.areas.find((a) => a.id === w.mythical.areaId)
-  if (!area) out.push('Pick the area the mythical waits in.')
-  else if ((area.regionId ?? KANTO) !== w.regionId) out.push('The mythical’s area isn’t one of the world’s.')
+  // The mythical is optional (docs/26 §2.5): a world may have shiny raids and bosses as its prizes instead.
+  if (w.mythical.dex) {
+    if (!data.species[w.mythical.dex]) out.push(`Unknown mythical: #${w.mythical.dex}.`)
+    if (!(w.mythical.level >= 1 && w.mythical.level <= data.config.maxLevel)) out.push(`The mythical’s level must be 1–${data.config.maxLevel}.`)
+    const area = data.areas.find((a) => a.id === w.mythical.areaId)
+    if (!area) out.push('Pick the area the mythical waits in.')
+    else if ((area.regionId ?? KANTO) !== w.regionId) out.push('The mythical’s area isn’t one of the world’s.')
+  }
+  if (!worldPrizes(data, w).length) out.push('Give the world a prize: a shiny mythical, or a boss or raid marked shiny in its areas.')
   if (!(w.xpMultiplier > 0)) out.push('The XP multiplier must be above 0.')
   if (new Set(w.boosters.map((b) => b.type)).size !== w.boosters.length) out.push('A booster type is listed twice.')
   for (const b of w.boosters) if (!(b.multiplier > 0)) out.push(`The ${b.type} booster’s multiplier must be above 0.`)

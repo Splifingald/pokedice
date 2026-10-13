@@ -1,4 +1,4 @@
-// The push sender's work (docs/25), apart from Netlify and Supabase so the tests can drive it: ask the database for the
+// The push sender's work (docs/27), apart from Netlify and Supabase so the tests can drive it: ask the database for the
 // notices due now (each already claimed, so no other run sends it), deliver each through its browser's push service,
 // then report which subscriptions the push services say are gone (404, 410: the player turned notifications off or
 // cleared the browser), so they're dropped.

@@ -496,15 +496,22 @@
     "raid.catch"
    ],
    "bars": 3,
-   "barHp": 2,
+   "barHp": 2.2,
    "barColors": [
     "#34c97a",
     "#ffbe2e",
     "#f2553f"
    ],
-   "startAllies": 2,
-   "summonPerBreak": 2,
-   "maxField": 2,
+   "sideTypes": {
+    "super": 1.3,
+    "resisted": 0.5,
+    "immune": 0
+   },
+   "bossTypes": {
+    "super": 2,
+    "resisted": 0.7,
+    "immune": 0.5
+   },
    "level": 50,
    "upgradeLevel": 8,
    "teamCap": 50,

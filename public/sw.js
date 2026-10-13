@@ -1,4 +1,4 @@
-// Pokédice's service worker: push notifications only (docs/25-PUSH-NOTIFICATIONS.md). It caches nothing and never
+// Pokédice's service worker: push notifications only (docs/27-PUSH-NOTIFICATIONS.md). It caches nothing and never
 // touches the game's requests. A push carries what to show (src/lib/push.ts builds it): the title and line, where a tap
 // leads, and its picture, described rather than sent: a window of an area picture and the Pokémon to stand on it. The
 // picture is drawn here, at whole-pixel scales so the pixel art stays crisp, into the shapes notifications use: a

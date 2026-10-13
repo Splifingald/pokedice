@@ -30,6 +30,8 @@ const itemEffect = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('stone') }),
   z.object({ kind: z.literal('fossil'), dex: int(1, 1025), level: int(1, 100), hours: z.number().min(0) }),
   z.object({ kind: z.literal('ball'), bonus: int(0, 12) }),
+  z.object({ kind: z.literal('link') }),
+  z.object({ kind: z.literal('bait'), faces: z.array(int(0, 12)).length(6, 'exactly 6 faces') }),
 ])
 
 export const ROW_SCHEMAS: Record<TableName, z.ZodTypeAny> = {
@@ -118,7 +120,8 @@ export const ROW_SCHEMAS: Record<TableName, z.ZodTypeAny> = {
     name: z.string().min(1),
     banner_url: z.string().nullable(),
     // Optional so a database created before migration 0014 still loads.
-    rounds_to_clear: int(1, 20).nullable().optional(),
+    // 0: no round to play, the area's gyms come at once (a league of fights only, docs/26).
+    rounds_to_clear: int(0, 20).nullable().optional(),
     min_level: int(1, 100),
     max_level: int(1, 100),
     encounter_weights: z.object({
@@ -160,6 +163,8 @@ export const ROW_SCHEMAS: Record<TableName, z.ZodTypeAny> = {
           z.object({ kind: z.literal('maxLevel'), level: int(1, 100) }),
           // "Another area is reached" — the kind the Rocket Hideout and the Johto/Hoenn secrets use.
           z.object({ kind: z.literal('area'), areaId: uuid }),
+          // "Another area is cleared": a small world's league beaten (docs/26 §2.5).
+          z.object({ kind: z.literal('cleared'), areaId: uuid }),
         ]),
       )
       .nullable(),

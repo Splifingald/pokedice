@@ -1,4 +1,4 @@
-// Which device the game runs on (docs/25): a phone or a computer, and its system. Push notifications depend on it: an
+// Which device the game runs on (docs/27): a phone or a computer, and its system. Push notifications depend on it: an
 // iPhone only gets them once the game is added to its Home Screen (iOS 16.4+), and the words that say how differ by
 // system. Read from the browser's own hints; `detectPlatform` takes them as arguments so the tests can feed any device.
 

@@ -1,4 +1,4 @@
-// Keeps push notifications in step with the game (docs/25): a few seconds after the save, the content, the language,
+// Keeps push notifications in step with the game (docs/27): a few seconds after the save, the content, the language,
 // the account or the player's topics change, the schedule the server sends from is worked out again, and sent only if
 // it differs from the last one. Also takes a notification's tap while the game is open, and holds the question.
 import { useEffect } from 'react'

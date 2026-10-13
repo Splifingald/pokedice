@@ -8,11 +8,13 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { create } from 'zustand'
 import {
   areaOpenAt,
+  conditionStatus,
   currentWorld,
   dayCareTutorialDue,
   donationDue,
   eventUnlockDue,
   getRegion,
+  hasWorldMythical,
   heldWorld,
   inWorld,
   isAreaClosed,
@@ -20,36 +22,45 @@ import {
   leaderboardTutorialDue,
   mythicalHome,
   regionOfferDue,
+  generalRulesDue,
   versusRulesDue,
   worldByeDue,
   worldLeft,
   worldPopupDue,
+  worldPrize,
+  worldPrizeCaught,
+  worldPrizes,
   worldProgress,
+  worldSecrets,
   worldStarted,
+  type Area,
+  type BossDef,
   type GameData,
   type PokeType,
   type SaveData,
   type SmallWorld,
+  type UnlockCondition,
   type WorldBye,
 } from '@/engine'
 import { joinList } from '@/i18n'
 import { useT } from '@/i18n/react'
-import { Chip } from '@/components/Chip'
+import { AreaStrip } from '@/components/AreaStrip'
+import { Chip, NewTag } from '@/components/Chip'
 import { PixelIcon } from '@/components/icons'
-import { ItemSprite } from '@/components/ItemSprite'
 import { Modal } from '@/components/Modal'
 import { PageHead } from '@/components/PageHead'
 import { PixelButton } from '@/components/PixelButton'
 import { SpriteImg } from '@/components/SpriteImg'
 import { TypeBadge } from '@/components/TypeBadge'
-import { dayTime, money, typeName } from '@/lib/format'
+import { dayTime, typeName } from '@/lib/format'
 import { pushToast, useGame } from '@/store/game'
 import { useRaidGifts } from '@/store/raidGifts'
 import { serverNow, useServerNow } from '@/store/serverTime'
 import { travelTo } from '@/store/travel'
 import { enterSmallWorld, leaveSmallWorld, markWorldByeSeen, markWorldPopupSeen, useWorld, worldName } from '@/store/worlds'
-import { HeadTag, Widget, WidgetBanner, WidgetRows, WIDGET_BANNER_H } from '@/screens/home/Widget'
-import { lockReason } from '@/screens/home/areas'
+import { HeadTag, Meter, Widget, WidgetBanner, WidgetRows, WIDGET_BANNER_H } from '@/screens/home/Widget'
+import { areaStatus, lockReason } from '@/screens/home/areas'
+import { conditionLabel } from '@/i18n/text'
 import { cx, textOn } from '@/theme/util'
 import { LiveGauge, liveTime } from './live'
 import { bannerUrl } from './shared'
@@ -175,6 +186,8 @@ export function WorldSquareView({
 }) {
   const { t } = useT()
   const data = useGame((s) => s.data)
+  // What it's for: its mythical, or the prize it is known by (docs/26 §2.5).
+  const prize = worldPrize(data, world)
   const left = worldLeft(world, now)
   const name = worldName(world, data)
   const areas = t('ui.world.areas', { cleared, total })
@@ -195,11 +208,11 @@ export function WorldSquareView({
       <span className="flex w-full min-w-0 items-center gap-1.5 text-[19px] leading-none">
         <WorldTag />
         <HeadTag>
-          <ShinyTag dex={world.mythical.dex} data={data} className="max-w-full truncate" />
+          <ShinyTag dex={prize?.dex ?? 0} data={data} className="max-w-full truncate" />
         </HeadTag>
       </span>
       <span className="relative grid w-full place-items-center" style={{ aspectRatio: `288 / ${WIDGET_BANNER_H}` }}>
-        <MythicalArt dex={world.mythical.dex} caught={caught} size={56} sparkles={3} />
+        {prize && <MythicalArt dex={prize.dex} caught={caught} size={56} sparkles={3} />}
       </span>
       <WidgetRows
         top={<span className="lv-ink truncate text-[20px] leading-none">{name}</span>}
@@ -224,6 +237,7 @@ export function WorldSquare() {
   const prog = worldProgress(save, data, world)
   const held = heldWorld(save)
   const mine = held?.id === world.id
+  const prize = worldPrize(data, world)
   return (
     <WorldSquareView
       world={world}
@@ -231,7 +245,7 @@ export function WorldSquare() {
       cleared={prog.cleared}
       total={prog.total}
       partner={mine ? (data.species[held.partner]?.name ?? null) : null}
-      caught={mine && !!held.caught}
+      caught={!!prize && worldPrizeCaught(save, world, prize)}
       onClick={() => {
         if (goIntoWorld(world)) navigate('/home')
       }}
@@ -239,7 +253,7 @@ export function WorldSquare() {
   )
 }
 
-/** Its rules in short, with its numbers: XP ×, dice by level, the boosters, the shiny mythical at the end. */
+/** Its rules in short, with its numbers: XP ×, the boosters, the shiny mythical or its prizes, its Pokémon going home. */
 export function WorldRules({ world }: { world: SmallWorld }) {
   const { t } = useT()
   const data = useGame((s) => s.data)
@@ -251,12 +265,6 @@ export function WorldRules({ world }: { world: SmallWorld }) {
       title: t('ui.world.rules.xp.title', { n: world.xpMultiplier }),
       text: t('ui.world.rules.xp.text', { n: world.xpMultiplier }),
     },
-    {
-      key: 'dice',
-      icon: <PixelIcon name="dice" size={24} />,
-      title: t('ui.world.rules.dice.title'),
-      text: t('ui.world.rules.dice.text'),
-    },
   ]
   if (world.boosters.length)
     rows.push({
@@ -265,13 +273,29 @@ export function WorldRules({ world }: { world: SmallWorld }) {
       title: joinList(world.boosters.map((b) => t('ui.world.boost', { type: typeName(b.type), n: b.multiplier }))),
       text: t('ui.world.rules.boost.text'),
     })
-  if (myth)
+  if (myth && hasWorldMythical(data, world))
     rows.push({
       key: 'myth',
       icon: <SpriteImg dex={world.mythical.dex} shiny size={36} />,
       title: t('ui.world.rules.myth.title', { name: myth }),
       text: t('ui.world.rules.myth.text'),
     })
+  // Its other shiny prizes: the bosses and raids of its areas marked shiny (docs/26 §2.5).
+  const prizes = worldPrizes(data, world).filter((p) => p.kind !== 'mythical')
+  if (prizes.length)
+    rows.push({
+      key: 'prizes',
+      icon: <SpriteImg dex={prizes.at(-1)!.dex} shiny size={36} />,
+      title: t('ui.world.rules.prizes.title', { names: joinList(prizes.map((p) => data.species[p.dex]?.name ?? `#${p.dex}`)) }),
+      text: t('ui.world.rules.prizes.text'),
+    })
+  // Every world (docs/26 §1): its Pokémon go home when it ends, each locked by level in its own region.
+  rows.push({
+    key: 'home',
+    icon: <PixelIcon name="box" size={22} />,
+    title: t('ui.world.rules.home.title'),
+    text: t('ui.world.rules.home.text'),
+  })
   return (
     <ul className="m-0 grid list-none gap-2.5 p-0">
       {rows.map((r) => (
@@ -289,16 +313,18 @@ export function WorldRules({ world }: { world: SmallWorld }) {
   )
 }
 
-/** The banner of the pop-ups: the world's picture, its tag, the mythical. */
+/** The banner of the pop-ups: the world's picture, its tag, the mythical (or the prize it is known by). */
 function WorldBanner({ world, tag, closed }: { world: SmallWorld | null; tag: string; closed?: boolean }) {
+  const data = useGame((s) => s.data)
+  const prize = world ? worldPrize(data, world) : null
   return (
     <span className={cx('relative -mx-4 block h-[128px] shadow-[0_3px_0_rgb(var(--c-edge)),0_-2px_0_rgb(var(--c-edge))]', closed && 'grayscale-[0.7]')}>
       <span className="lv-pic absolute inset-0 block overflow-hidden bg-night" aria-hidden>
         {world?.banner && <img src={bannerUrl(world.banner)} alt="" className="pixelated absolute inset-0 h-full w-full object-cover" />}
       </span>
-      {world && !closed && (
+      {prize && !closed && (
         <span className="absolute inset-0 z-[1] grid place-items-center">
-          <MythicalArt dex={world.mythical.dex} caught={false} size={96} sparkles={6} />
+          <MythicalArt dex={prize.dex} caught={false} size={96} sparkles={6} />
         </span>
       )}
       <span className="w-tag absolute left-2.5 top-2.5 z-[2] font-pixel-sm text-[15px]">{tag}</span>
@@ -317,7 +343,8 @@ function useOthersDue(): boolean {
       donationDue(s.save, s.data) ||
       !!regionOfferDue(s.save, s.data) ||
       !!eventUnlockDue(s.save, s.data) ||
-      versusRulesDue(s.save, s.data),
+      versusRulesDue(s.save, s.data) ||
+      generalRulesDue(s.save, s.data),
   )
   return others || gifts > 0
 }
@@ -402,6 +429,12 @@ export function WorldByeView({ bye, open, onOk }: { bye: WorldBye; open: boolean
   const myth = w ? data.species[w.mythical.dex]?.name : null
   const home = w ? (getRegion(data, mythicalHome(data, w.mythical.dex))?.name ?? '') : ''
   const partner = bye.partner ? data.species[bye.partner]?.name : null
+  // "Kanto 8 · Johto 5 · Sinnoh 3", in the regions' order (docs/26 §1).
+  const homeList = data.regions
+    .filter((r) => (bye.home[r.id] ?? 0) > 0)
+    .sort((a, b) => a.orderIndex - b.orderIndex)
+    .map((r) => t('ui.world.bye.homeCount', { region: r.name, n: bye.home[r.id]! }))
+    .join(' · ')
   return (
     <Modal open={open} onClose={onOk} title={t('ui.world.bye.title', { world: name })} className="max-w-md">
       <div className="flex flex-col gap-3" style={worldVars(w)}>
@@ -422,6 +455,17 @@ export function WorldByeView({ bye, open, onOk }: { bye: WorldBye; open: boolean
               </span>
             </li>
           )}
+          {homeList && (
+            <li className="flex items-center gap-2.5">
+              <span className="grid h-[42px] w-[42px] shrink-0 place-items-center bg-line shadow-ring-line" aria-hidden>
+                {partner ? <SpriteImg dex={bye.partner!} size={36} /> : <PixelIcon name="box" size={22} />}
+              </span>
+              <span className="grid gap-0.5 leading-tight">
+                <b className="text-[19px] font-normal leading-none">{t('ui.world.bye.home')}</b>
+                <small className="font-pixel-sm text-[15px] text-muted">{t('ui.world.bye.homeText', { list: homeList })}</small>
+              </span>
+            </li>
+          )}
           <li className="flex items-center gap-2.5">
             <span className="grid h-[42px] w-[42px] shrink-0 place-items-center bg-line shadow-ring-line" aria-hidden>
               <PixelIcon name="close" size={20} />
@@ -429,7 +473,7 @@ export function WorldByeView({ bye, open, onOk }: { bye: WorldBye; open: boolean
             <span className="grid gap-0.5 leading-tight">
               <b className="text-[19px] font-normal leading-none">{t('ui.world.bye.rest')}</b>
               <small className="font-pixel-sm text-[15px] text-muted">
-                {bye.entered && partner ? t('ui.world.bye.restText', { partner }) : t('ui.world.bye.notEntered')}
+                {bye.entered ? t('ui.world.bye.restText') : t('ui.world.bye.notEntered')}
               </small>
             </span>
           </li>
@@ -544,32 +588,116 @@ export function MythicalSquare({ world, caught, state, onClick }: { world: Small
   )
 }
 
-/** Inside a world, Home's square for its Mart: a few of its items, the world's own ₽. */
-export function MartSquare({ world, gold, onClick }: { world: SmallWorld; gold: number; onClick: () => void }) {
+/** A secret area's row as Home inside a world shows it: locked (what opens it), new, open, or its prize caught. */
+export type SecretRowState = 'locked' | 'new' | 'open' | 'done'
+
+/**
+ * One of a world's secret areas on Home, two squares wide (docs/26 §2.6): its picture fills the row (greyed while
+ * locked), its boss on the right (a silhouette until it opens), and over the picture's dark foot its name and what's
+ * next: the condition with its gauge, the boss or raid and its level, or that it's caught.
+ */
+export function SecretRowView({
+  area,
+  state,
+  boss,
+  raid,
+  cond,
+  onClick,
+}: {
+  area: Area
+  state: SecretRowState
+  boss: BossDef | null
+  raid: boolean
+  /** The condition still to meet, while locked. */
+  cond: { kind: UnlockCondition['kind']; label: string; current: number; target: number } | null
+  onClick: () => void
+}) {
   const { t } = useT()
   const data = useGame((s) => s.data)
-  const shop = world.shop.map((r) => data.items[r.key]).filter((it) => !!it)
+  const locked = state === 'locked'
+  const bossName = boss ? (data.species[boss.dex]?.name ?? `#${boss.dex}`) : ''
+  // Its colours are on the sprite and the header's chip; the line keeps to the name, so a phone shows it whole.
+  const shown = bossName
+  const bottom = locked
+    ? !cond
+      ? ''
+      : cond.kind === 'pokedex'
+        ? t('ui.home.secretDex', { current: Math.min(cond.current, cond.target), target: cond.target })
+        : cond.kind === 'maxLevel'
+          ? t('ui.home.secretLevel', { current: Math.min(cond.current, cond.target), target: cond.target })
+          : cond.label
+    : !boss
+      ? ''
+      : state === 'done'
+        ? t('ui.world.secret.done', { name: shown })
+        : t(raid ? 'ui.world.secret.raid' : 'ui.world.secret.boss', { name: shown, level: boss.level })
+  const tag = locked ? (
+    <PixelIcon name="lock" size={14} />
+  ) : state === 'new' ? (
+    <NewTag />
+  ) : state === 'done' ? (
+    <Chip tone="done">{t('ui.events.raid.caught')}</Chip>
+  ) : boss?.shiny ? (
+    <ShinyTag dex={boss.dex} data={data} className="max-w-full truncate" />
+  ) : null
   return (
-    <Widget title={t('ui.world.mart.title')} label={t('ui.world.mart.label', { gold: money(gold) })} onClick={onClick} className="w-widget">
-      <WidgetBanner>
-        <span className="w-myth-ground absolute inset-0 flex items-center justify-center gap-1.5" style={worldVars(world)}>
-          {shop.slice(0, 3).map((it) => (
-            <ItemSprite key={it.key} item={it} size={36} />
-          ))}
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={t('ui.world.secret.label', {
+        area: area.name,
+        state: locked && cond ? `${cond.label}, ${bottom}` : boss?.shiny ? `${bottom} (${t('ui.mon.shiny')})` : bottom,
+      })}
+      className="pixel-panel lv-square w-square relative isolate col-span-2 flex min-h-[132px] min-w-0 flex-col gap-[5px] overflow-hidden px-2.5 pb-2.5 pt-2 text-left"
+    >
+      {/* The whole row is its picture, darker at the top and foot where the words sit (docs/26 §2.6). */}
+      <span className="lv-pic absolute inset-0 -z-10 block overflow-hidden bg-night" aria-hidden>
+        <AreaStrip area={area} h={132} className={cx('absolute inset-0 h-full w-full', locked && 'grayscale-[0.7]')} />
+      </span>
+      <span className="flex w-full min-w-0 items-center gap-1.5 text-[19px] leading-none">
+        <span className="lv-ink min-w-0 flex-1 truncate">{t('ui.home.secretArea')}</span>
+        <HeadTag>{tag}</HeadTag>
+      </span>
+      {boss && (
+        <span className="absolute right-3 top-1/2 z-[1] -translate-y-1/2" aria-hidden>
+          <SpriteImg dex={boss.dex} shiny={boss.shiny && !locked} silhouette={locked} size={64} className={locked ? 'w-sil' : 'w-got'} />
         </span>
-      </WidgetBanner>
-      <WidgetRows top={<span className="truncate text-[20px] leading-none">{money(gold)}</span>} bottom={t('ui.world.mart.sub')} />
-    </Widget>
+      )}
+      <span className="mt-auto grid w-full max-w-[calc(100%-76px)] grid-rows-[22px_6px_15px] gap-[5px]">
+        <span className="lv-ink truncate text-[22px] leading-none">{area.name}</span>
+        <span>{locked && cond && cond.target > 1 && <Meter value={cond.current} max={cond.target} />}</span>
+        <span className="lv-ink truncate font-pixel-sm text-[15px] leading-none text-gold-light">{bottom}</span>
+      </span>
+    </button>
   )
 }
 
-/** Inside a world, Home's squares: the shiny mythical (where it waits, or where it went) and the world's Mart. */
+/** Inside a world, Home's squares: the mythical (or its Pokédex), its Mart, then a row per secret area. */
 export function WorldWidgets() {
   const { t } = useT()
-  const navigate = useNavigate()
   const data = useGame((s) => s.data)
   const { world, save } = useInWorld()
   if (!world || !save) return null
+  const secrets = worldSecrets(save, data, world).map((x) => {
+    const status = areaStatus(save, data, x.area)
+    const state: SecretRowState = status === 'locked' ? 'locked' : x.caught ? 'done' : status === 'new' ? 'new' : 'open'
+    const unmet = (x.area.unlockConditions ?? []).map((c) => conditionStatus(c, save, data)).find((c) => !c.met)
+    const cond = unmet ? { kind: unmet.cond.kind, label: conditionLabel(unmet.cond, data), current: unmet.current, target: unmet.target } : null
+    return { ...x, state, cond }
+  })
+  const rows = secrets.map((x) => (
+    <SecretRowView
+      key={x.area.id}
+      area={x.area}
+      state={x.state}
+      boss={x.boss}
+      raid={x.raid}
+      cond={x.state === 'locked' ? x.cond : null}
+      onClick={() => (x.state === 'locked' ? pushToast(lockReason(save, data, x.area), 'info') : travelTo(x.area))}
+    />
+  ))
+  // The nav bar reaches its Mart, Pokédex and Upgrades: Home keeps to what has no other place (docs/26 §2.6).
+  if (!hasWorldMythical(data, world)) return <>{rows}</>
   const caught = !!heldWorld(save)?.caught
   const m = world.mythical
   const area = data.areas.find((a) => a.id === m.areaId)
@@ -595,7 +723,7 @@ export function WorldWidgets() {
           if (area) pushToast(lockReason(save, data, area), 'info')
         }}
       />
-      <MartSquare world={world} gold={save.gold} onClick={() => navigate('/shop')} />
+      {rows}
     </>
   )
 }

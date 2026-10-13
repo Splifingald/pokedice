@@ -16,6 +16,7 @@ import {
 import { otherSave } from '@/store/extreme'
 import { useT } from '@/i18n/react'
 import { useFriends } from '@/lib/friends'
+import { useInviteGauge } from './friends/InviteRewards'
 import { isSupabaseConfigured } from '@/lib/supabase'
 import { useGame } from '@/store/game'
 import { useInFight, useIsAdmin } from '@/store/hooks'
@@ -117,6 +118,8 @@ export function PlayerMenu() {
   const [switching, setSwitching] = useState(false)
   const { connect, chooser } = useConnect()
   const newFriends = useFriends((s) => (s.userId && s.userId === auth.userId ? s.unseen.length : 0))
+  // Invite rewards ready to open (docs/15 §25) wait on the Friends page: its dot counts them too.
+  const rewardsReady = useInviteGauge()?.ready.length ?? 0
   const friendCount = useFriends((s) => s.ids.size)
   // Trades (docs/23): a trade of yours went through while you were away, and you haven't looked yet.
   const tradesUnseen = save && !isExtreme(save) ? (tradesOf(save).unseen?.length ?? 0) : 0
@@ -125,7 +128,7 @@ export function PlayerMenu() {
   // Not inside a small world: no trade reaches one (docs/21).
   const tradesRow =
     isSupabaseConfigured && !!save && !isExtreme(save) && !inWorldRegion(save, data) && (tradesOn(data) || tradesOut > 0)
-  const news = newFriends + tradesUnseen
+  const news = newFriends + rewardsReady + tradesUnseen
 
   const name = playerOf(save).name
   const badges = save ? badgeCase(save, data) : []
@@ -214,8 +217,8 @@ export function PlayerMenu() {
               icon="friends"
               label={t('ui.friends.title')}
               desc={t('ui.menu.friends')}
-              dot={newFriends}
-              hint={!newFriends && friendCount ? String(friendCount) : undefined}
+              dot={newFriends + rewardsReady}
+              hint={!newFriends && !rewardsReady && friendCount ? String(friendCount) : undefined}
               onClick={go('/friends')}
             />
           )}

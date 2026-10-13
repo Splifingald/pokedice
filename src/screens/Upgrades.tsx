@@ -1,17 +1,24 @@
-import { useState, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import {
   COMBO_KEYS,
   COMBO_MIN_DICE,
   comboBonusAt,
-  diceLevelOf,
   dieBonusAt,
+  generalCfg,
+  generalLevel,
+  generalMax,
+  generalOn,
+  luckAt,
   maxComboLevel,
   maxDieLevel,
   nextComboCost,
   nextDieCost,
+  nextGeneralCost,
+  offlineAt,
   POKE_TYPES,
-  teamOf,
   type ComboKey,
+  type GeneralId,
   type PokeType,
 } from '@/engine'
 import { sfx } from '@/audio/sfx'
@@ -23,22 +30,26 @@ import { Seg } from '@/components/Segmented'
 import { COMBO_EXAMPLES, comboExampleText, comboName, money, typeName } from '@/lib/format'
 import { dieCarriers, maxDiceOwned } from '@/lib/upgrades'
 import { useT } from '@/i18n/react'
-import { upgradeCombo, upgradeDie } from '@/store/actions'
+import { GeneralRulesModal } from '@/components/GeneralRules'
+import { InfoButton } from '@/components/RulesModal'
+import { TrainerName } from '@/components/TrainerName'
+import { markGeneralRulesSeen, upgradeCombo, upgradeDie, upgradeGeneral } from '@/store/actions'
 import { pushToast, useGame } from '@/store/game'
-import { MiniSprite } from '@/components/SpriteImg'
-import { useInWorld, worldVars, WorldTag } from '@/screens/events/world'
-import { worldName } from '@/store/worlds'
+import { useInWorld } from '@/screens/events/world'
 import { cx } from '@/theme/util'
 
 /** One upgrade, whatever its kind: the card reads only this. */
-interface Up {
+export interface Up {
   id: string
-  kind: 'combo' | 'die'
+  kind: 'combo' | 'die' | 'general'
   name: string
   level: number
   max: number
   bonus: number
   next: number | null
+  /** A General upgrade's own words for what it does now and at the next level (null at the top). */
+  now?: string
+  then?: string | null
   cost: number | null
   /** Why nobody you own would benefit yet. */
   locked: string | null
@@ -88,18 +99,20 @@ function Pips({ level, max }: { level: number; max: number }) {
   )
 }
 
-function UpCard({ u, gold }: { u: Up; gold: number }) {
+export function UpCard({ u, gold }: { u: Up; gold: number }) {
   const { t } = useT()
   const can = !u.locked && u.cost != null && u.cost <= gold
   const bonus = (n: number) =>
     t(u.kind === 'combo' ? 'ui.upgrades.comboBonus' : 'ui.upgrades.dieBonus', { n })
+  const now = u.now ?? bonus(u.bonus)
+  const then = u.then !== undefined ? u.then : u.next != null ? `+${u.next}` : null
   const buy = () => {
     if (u.cost == null || u.locked) return
     if (!can) return pushToast(t('ui.upgrades.short', { amount: money(u.cost - gold) }), 'info')
     if (!u.buy()) return
     sfx('levelup')
     pushToast(
-      t('ui.upgrades.bought', { name: u.name, level: u.level + 1, bonus: bonus(u.next ?? u.bonus) }),
+      t('ui.upgrades.bought', { name: u.name, level: u.level + 1, bonus: u.then ?? bonus(u.next ?? u.bonus) }),
       'good',
     )
   }
@@ -130,15 +143,15 @@ function UpCard({ u, gold }: { u: Up; gold: number }) {
       </div>
       <div className="flex items-center justify-between gap-2">
         <span className="text-[18px]">
-          {bonus(u.bonus)}
-          {u.next != null && (
+          {now}
+          {then != null && (
             <>
               {' '}
               <span className="text-muted" aria-hidden>
                 →
               </span>
               <span className="sr-only">{t('ui.upgrades.then')}</span>{' '}
-              <em className="not-italic text-good">+{u.next}</em>
+              <em className="not-italic text-good">{then}</em>
             </>
           )}
         </span>
@@ -173,83 +186,26 @@ function UpCard({ u, gold }: { u: Up; gold: number }) {
   )
 }
 
-/** The levels the world's table shows, and the dice level each gives (the engine's diceLevelOf). */
-const LEVEL_STEPS = [1, 10, 20, 30, 50, 70, 100]
-
-/**
- * Inside a small world (docs/21): no upgrades to buy. Dice and combos follow each Pokémon's level, yours and the foes';
- * the table says how, and each team member's line says where it stands.
- */
-function WorldUpgrades() {
-  const { t } = useT()
-  const save = useGame((s) => s.save)
-  const data = useGame((s) => s.data)
-  const { world } = useInWorld()
-  if (!save) return null
-  return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col gap-3">
-      <PageHead icon="navUpgrades" title={t('ui.upgrades.title')}>
-        <Wallet />
-      </PageHead>
-      <section className="pixel-panel flex flex-col gap-3 p-3" style={worldVars(world)} aria-labelledby="world-up">
-        <span className="flex items-center gap-2">
-          <WorldTag />
-          <h2 id="world-up" className="m-0 text-[24px] leading-none">
-            {t('ui.world.up.title')}
-          </h2>
-        </span>
-        <p className="copy m-0 text-muted">{t('ui.world.up.text', { world: worldName(world, data) })}</p>
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse text-center font-pixel-sm text-[16px] tabular-nums">
-            <tbody>
-              <tr>
-                <th scope="row" className="bg-ink px-2 py-1 text-left font-normal text-panel">
-                  {t('ui.world.up.level')}
-                </th>
-                {LEVEL_STEPS.map((l) => (
-                  <td key={l} className="px-1.5 py-1 shadow-ring-line">
-                    {l}
-                  </td>
-                ))}
-              </tr>
-              <tr>
-                <th scope="row" className="bg-ink px-2 py-1 text-left font-normal text-panel">
-                  {t('ui.world.up.dice')}
-                </th>
-                {LEVEL_STEPS.map((l) => (
-                  <td key={l} className="px-1.5 py-1 shadow-ring-line">
-                    {diceLevelOf(l)}
-                  </td>
-                ))}
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <ul className="m-0 grid list-none gap-1.5 p-0">
-          {teamOf(save).map((p) => (
-            <li key={p.id} className="flex items-center gap-2 bg-paper px-2 py-1 shadow-card">
-              <MiniSprite dex={p.dex} size={32} />
-              <b className="min-w-0 flex-1 truncate text-[20px] font-normal leading-none">{data.species[p.dex]?.name}</b>
-              <span className="font-pixel-sm text-[16px] leading-none text-muted">
-                {t('ui.world.up.yours', { level: p.level, n: diceLevelOf(p.level) })}
-              </span>
-            </li>
-          ))}
-        </ul>
-      </section>
-    </div>
-  )
-}
+type Tab = 'combos' | 'dice' | 'general'
 
 export function UpgradesScreen() {
   const { t } = useT()
   const save = useGame((s) => s.save)
   const data = useGame((s) => s.data)
-  const [tab, setTab] = useState<'combos' | 'dice'>('combos')
-  const [affordOnly, setAffordOnly] = useState(false)
+  const [params] = useSearchParams()
   const inside = useInWorld().inside
+  // The General tab is the admin's to switch on (docs/15 §20); its pop-up's Let's go! opens it (`?tab=general`). Its
+  // levels hold in every region, so a small world, whose ₽ are its own, has its combos and dice only (docs/26).
+  const generalOpen = generalOn(data) && !inside
+  const [picked, setTab] = useState<Tab>(params.get('tab') === 'general' ? 'general' : 'combos')
+  const tab: Tab = picked === 'general' && !generalOpen ? 'combos' : picked
+  const [affordOnly, setAffordOnly] = useState(false)
+  const [rules, setRules] = useState(false)
+  // Opening the tab counts as having seen its rules.
+  useEffect(() => {
+    if (tab === 'general' && !inside) markGeneralRulesSeen()
+  }, [tab, inside])
   if (!save) return null
-  if (inside) return <WorldUpgrades />
 
   const maxDice = maxDiceOwned(save, data)
   const carriers = dieCarriers(save, data)
@@ -305,12 +261,59 @@ export function UpgradesScreen() {
         buy: () => upgradeDie(type),
       }
     })
+  // The General upgrades (docs/25): every region's, bought with this region's ₽.
+  const cfg = generalCfg(data)
+  const pct = (n: number) => t('ui.general.luck.pct', { n: Math.round(n * 100) })
+  const rate = (n: number) => t('ui.general.offline.rate', { amount: money(n) })
+  const general: Up[] = generalOpen
+    ? (['luck', 'offline', 'rich'] as GeneralId[]).map((id) => {
+        const lv = generalLevel(save, id, data)
+        const max = generalMax(data, id)
+        const top = lv >= max
+        const value = (l: number) =>
+          id === 'luck'
+            ? l > 0
+              ? pct(luckAt(data, l))
+              : t('ui.general.none')
+            : id === 'offline'
+              ? l > 0
+                ? rate(offlineAt(data, l))
+                : t('ui.general.none')
+              : t(l > 0 ? 'ui.general.rich.on' : 'ui.general.rich.off')
+        return {
+          id,
+          kind: 'general' as const,
+          name: t(`ui.general.${id}.name`),
+          desc: t(`ui.general.${id}.desc`, { hours: cfg.offlineMaxHours }),
+          level: lv,
+          max,
+          bonus: 0,
+          next: null,
+          now: value(lv),
+          then: top ? null : value(lv + 1),
+          cost: nextGeneralCost(save, data, id),
+          locked: null,
+          // "I am just rich" shows what it does: your own name, golden.
+          visual:
+            id === 'rich' ? (
+              <TrainerName
+                name={save.player?.name || t('ui.settings.noName')}
+                rich
+                className="max-w-[45%] truncate text-[20px] leading-none"
+              />
+            ) : (
+              <PixelIcon name={id === 'luck' ? 'ball' : 'moon'} size={24} />
+            ),
+          buy: () => upgradeGeneral(id),
+        }
+      })
+    : []
   const affordable = (u: Up) => !u.locked && u.cost != null && u.cost <= save.gold
-  const lists = { combos, dice }
+  const lists = { combos, dice, general }
   const shown = lists[tab].filter((u) => !affordOnly || affordable(u))
   const open = shown.filter((u) => !u.locked)
   const locked = shown.filter((u) => u.locked)
-  const canCount = [...combos, ...dice].filter(affordable).length
+  const canCount = [...combos, ...dice, ...general].filter(affordable).length
   const tabCount = (l: Up[]) => l.filter(affordable).length || undefined
 
   return (
@@ -328,12 +331,13 @@ export function UpgradesScreen() {
         options={[
           { id: 'combos', label: t('ui.upgrades.tabCombos'), count: tabCount(combos) },
           { id: 'dice', label: t('ui.upgrades.tabDice'), count: tabCount(dice) },
+          ...(generalOpen ? [{ id: 'general' as const, label: t('ui.upgrades.tabGeneral'), count: tabCount(general) }] : []),
         ]}
       />
       <div role="tabpanel" aria-labelledby={`up-${tab}`} className="flex flex-col gap-2">
         <div className="flex flex-wrap items-center gap-2">
           <p className="min-w-0 flex-[1_1_180px] font-pixel-sm text-[15px] leading-tight text-muted">
-            {t(tab === 'combos' ? 'ui.upgrades.noteCombos' : 'ui.upgrades.noteDice')}
+            {t(tab === 'combos' ? 'ui.upgrades.noteCombos' : tab === 'dice' ? 'ui.upgrades.noteDice' : 'ui.upgrades.noteGeneral')}
           </p>
           <button
             type="button"
@@ -375,6 +379,12 @@ export function UpgradesScreen() {
               ))}
             </ul>
           </details>
+        )}
+        {tab === 'general' && (
+          <>
+            <InfoButton name={t('ui.upgrades.tabGeneral')} onClick={() => setRules(true)} className="mt-1" />
+            <GeneralRulesModal open={rules} onClose={() => setRules(false)} />
+          </>
         )}
       </div>
     </div>

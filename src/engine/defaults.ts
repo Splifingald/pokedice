@@ -136,6 +136,18 @@ export const DEFAULT_CONFIG: GameConfig = {
     ],
     exclude: [793, 794, 795, 796, 797, 798, 799, 803, 804, 805, 806],
   },
+  // Gifts with the developer's messages (docs/15 §23): off until the admin switches them on.
+  gifts: { access: 'off' },
+  // Friend invite rewards (docs/15 §25): off until the admin switches them on. Migration 0051 inserts the same row.
+  inviteRewards: {
+    access: 'off',
+    tiers: [
+      { friends: 1, gifts: [{ kind: 'item', key: 'rare-candy', qty: 1, region: 'latest' }] },
+      { friends: 2, gifts: [{ kind: 'gold', amount: 1000, region: 'latest' }] },
+      { friends: 3, gifts: [{ kind: 'pokemon', dex: 132, level: 10, shiny: true, region: 'latest' }] },
+      { friends: 4, gifts: [{ kind: 'item', key: 'master-ball', qty: 1, region: 'latest' }] },
+    ],
+  },
   extreme: {
     access: 'off',
     unlockRegion: 'johto',
@@ -176,15 +188,16 @@ export const DEFAULT_CONFIG: GameConfig = {
       unlockAreaId: '2238f26a-2629-5f28-af07-e74cb41d5f7a',
       banner: 'lair-shrine',
       rules: ['raid.daily', 'raid.sides', 'raid.bars', 'raid.catch'],
-      // Three bars of twice its HP at Lv.50, two summons to start and two points a break, two beside it at most;
-      // upgrades 8 for the raid's side, 5 for yours (Versus's level); you and up to two friends, three Pokémon each,
-      // Lv.50 at most. `pnpm raid-balance`: about 60 % wins for three random fully evolved teams (target 50–70 %).
+      // Three bars of 2.2 times its HP at Lv.50, alone (no summons since 2026-10-13: its bars grew instead); upgrades 8
+      // for the raid Pokémon, 5 for the sides (Versus's level); you and up to two friends, three Pokémon each, Lv.50 at
+      // most. `pnpm raid-balance`: about 56 % wins for three random fully evolved teams (target 50–70 %), as before.
       bars: 3,
-      barHp: 2,
+      barHp: 2.2,
       barColors: ['#34c97a', '#ffbe2e', '#f2553f'],
-      startAllies: 2,
-      summonPerBreak: 2,
-      maxField: 2,
+      // Super effective is only ×1.3 on the raid Pokémon; its own resisted hits land at ×0.7, and nobody is immune
+      // to it (×0.5).
+      sideTypes: { super: 1.3, resisted: 0.5, immune: 0 },
+      bossTypes: { super: 2, resisted: 0.7, immune: 0.5 },
       level: 50,
       upgradeLevel: 8,
       teamCap: 50,
@@ -291,7 +304,41 @@ export const DEFAULT_CONFIG: GameConfig = {
   liveEvents: { access: 'off', list: [] },
   // Off until the admin switches it on (for the admin alone, or everyone).
   smallWorlds: { access: 'off', list: [] },
-  // Push notifications (docs/25): off until the admin switches them on. The day's raid is announced at 9:00 the
+  // Push notifications (docs/27): off until the admin switches them on. The day's raid is announced at 9:00 the
   // player's time, and no Egg wakes anyone between 22:00 and 8:00.
   push: { access: 'off', raidHour: 9, quietHours: [22, 8] },
+  // The Link Cable and the Bait (docs/25): off until the admin switches each on.
+  itemSwitches: { 'link-cable': 'off', bait: 'off' },
+  // The General upgrades (docs/25): off until the admin switches them on. A whole region's combos and dice cost about
+  // ₽37,000: Capture Luck from 10 % to 100 % (₽74,000 in all) and the golden name (₽99,999) are long goals; offline
+  // earnings, from ₽2 to ₽20 an hour for up to 24 h away, cost ₽6,663 in all and pay themselves back in days.
+  general: {
+    access: 'off',
+    luck: [
+      { chance: 10, cost: 1000 },
+      { chance: 20, cost: 1800 },
+      { chance: 30, cost: 2800 },
+      { chance: 40, cost: 4000 },
+      { chance: 50, cost: 5500 },
+      { chance: 60, cost: 7200 },
+      { chance: 70, cost: 9200 },
+      { chance: 80, cost: 11500 },
+      { chance: 90, cost: 14000 },
+      { chance: 100, cost: 17000 },
+    ],
+    offline: [
+      { perHour: 2, cost: 100 },
+      { perHour: 4, cost: 175 },
+      { perHour: 6, cost: 263 },
+      { perHour: 8, cost: 375 },
+      { perHour: 10, cost: 500 },
+      { perHour: 12, cost: 650 },
+      { perHour: 14, cost: 825 },
+      { perHour: 16, cost: 1025 },
+      { perHour: 18, cost: 1250 },
+      { perHour: 20, cost: 1500 },
+    ],
+    offlineMaxHours: 24,
+    richCost: 99999,
+  },
 }

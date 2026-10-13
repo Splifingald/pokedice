@@ -62,7 +62,7 @@ export function RaidCard({ raid, msLeft, kind = 'daily' }: { raid: TodayRaid; ms
   const data = useGame((s) => s.data)
   const cfg = data.config.events.raid
   // This raid Pokémon's own numbers (Admin → Raids), over the defaults.
-  const rules = raidRules(data, raid.dex, kind)
+  const rules = raidRules(data, raid.dex, kind, raid.areaId)
   const area = data.areas.find((a) => a.id === raid.areaId)
   const name = data.species[raid.dex]?.name ?? `#${raid.dex}`
   return (
@@ -276,7 +276,7 @@ export function RaidPage() {
   // START with empty slots: the four NPC trainers on offer (kept in the save, the same after a reload).
   const [offer, setOffer] = useState<RaidNpcOption[] | null>(null)
   const friends = groupOf('daily', useRaidGroup())
-  // Push notifications' question, once (docs/25): each day's raid can be announced.
+  // Push notifications' question, once (docs/27): each day's raid can be announced.
   usePushAsk('raid', !!raid)
   if (!raid || !save) return <p className="m-0 text-center font-pixel-sm text-[16px] text-muted">{t('ui.events.raid.loading')}</p>
   const need = emptySlots(friends)

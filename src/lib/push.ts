@@ -1,4 +1,4 @@
-// Push notifications in the game (docs/25-PUSH-NOTIFICATIONS.md). This browser's side of them: whether the player said
+// Push notifications in the game (docs/27-PUSH-NOTIFICATIONS.md). This browser's side of them: whether the player said
 // yes, the topics they want, the one-time question each feature asks, the browser's permission and subscription, and
 // the schedule the server sends from. The engine decides what to announce and when (engine/notify.ts); this file puts
 // it in the player's words, with its picture (lib/pushArt.ts), and hands it over only when it changed.

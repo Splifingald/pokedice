@@ -1,4 +1,4 @@
-// Push notifications (docs/25-PUSH-NOTIFICATIONS.md): what the game tells a player while it's closed, and when. A Day
+// Push notifications (docs/27-PUSH-NOTIFICATIONS.md): what the game tells a player while it's closed, and when. A Day
 // Care Egg, the day's raid, a live event starting. The game works out its own player's next few notices from the save
 // and hands them to the server, which sends each one at its time; this file decides which notices and their times. The
 // words and pictures are the UI's (src/lib/push.ts), so the engine never needs the strings.

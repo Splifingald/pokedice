@@ -38,7 +38,7 @@ a phone or tablet, and whether it was opened from the Home Screen (an installed 
 ## How it works
 
 ```
- the game (src/engine/notify.ts → src/lib/push.ts)            Supabase (0048_push.sql)            Netlify (every 5 min)
+ the game (src/engine/notify.ts → src/lib/push.ts)            Supabase (0053_push.sql)            Netlify (every 5 min)
  ─────────────────────────────────────────────────           ───────────────────────────         ─────────────────────
  subscribe: browser's endpoint + keys, topics, language ──▶   push_subscriptions
  plan: the next Egg, 7 days of raids, live events in   ──▶   push_notices (per player)   ◀──     push_due(): claims the
@@ -89,7 +89,7 @@ notices waiting and the last delivery.
 
 ## Setting it up
 
-1. **Database**: run `supabase/migrations/0048_push.sql` (also inlined in `supabase/seed.sql`).
+1. **Database**: run `supabase/migrations/0053_push.sql` (also inlined in `supabase/seed.sql`).
 2. **VAPID keys**: `npx web-push generate-vapid-keys`. Keep the pair together.
 3. **Netlify → Site configuration → Environment variables** (they reach both the build and the sender):
    - `VITE_VAPID_PUBLIC_KEY`: the public key (the game subscribes with it).
@@ -118,6 +118,6 @@ they turn push back on, so avoid it.
 | `src/components/PushService.tsx` | Keeps the server's schedule in step |
 | `src/admin/sections/PushBox.tsx` | The admin's switch and counts |
 | `public/sw.js` | The service worker: shows the notification, draws its picture, opens the page on a tap |
-| `supabase/migrations/0048_push.sql` | Tables, the switch, the player's calls, the sender's calls |
+| `supabase/migrations/0053_push.sql` | Tables, the switch, the player's calls, the sender's calls |
 | `netlify/functions/push-send.mts`, `netlify/push/send.ts` | The sender |
 | `tests/engine/notify.test.ts`, `tests/push-client.test.ts`, `tests/push-sql.test.ts` | Tests |

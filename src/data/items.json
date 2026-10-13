@@ -938,5 +938,37 @@
   "inShop": false,
   "shopBadges": 0,
   "region": "galar"
+ },
+ {
+  "key": "link-cable",
+  "name": "Link Cable",
+  "description": "Evolves a Pokémon that only evolves by trade, with no trade needed. Use it from the Team screen.",
+  "spriteUrl": "/items/link-cable.png",
+  "price": 1000,
+  "effect": {
+   "kind": "link"
+  },
+  "inShop": false,
+  "shopBadges": 0
+ },
+ {
+  "key": "bait",
+  "name": "Bait",
+  "description": "When a ball falls just short, throw it: its die (1, 1, 1, 2, 2 or 3) adds to the catch.",
+  "spriteUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/razz-berry.png",
+  "price": 150,
+  "effect": {
+   "kind": "bait",
+   "faces": [
+    1,
+    1,
+    1,
+    2,
+    2,
+    3
+   ]
+  },
+  "inShop": true,
+  "shopBadges": 7
  }
 ]

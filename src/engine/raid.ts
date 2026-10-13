@@ -123,7 +123,7 @@ export function addRaidMon(
   kind: RaidKindOf = 'daily',
 ) {
   // At the level it was fought at (its own, Admin → Raids, or the default: the day's raid's or a progression raid's).
-  const inst = createInstance(lock.dex, raidRules(data, lock.dex, kind).level, data, newId(), now)
+  const inst = createInstance(lock.dex, raidRules(data, lock.dex, kind, lock.areaId).level, data, newId(), now)
   if (lock.shiny) inst.shiny = true
   const home = raidRegion(data, lock.areaId)
   const res = addToRegion(save, data, home, inst) ?? addToRegion(save, data, regionOf(save), inst)!

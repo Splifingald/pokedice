@@ -1,9 +1,13 @@
 // Catching: after a K.O. the player throws the catch die (a d6), plus one ball's bonus. Reach the species' catch value
-// (1 = always, 9 = legendary) and the Pokémon is caught; miss and it flees.
+// (1 = always, 9 = legendary) and the Pokémon is caught; miss and it flees. A throw that falls short can be helped by
+// a Bait (docs/25): its own die adds to the total. Capture Luck (engine/general) may keep a wild one for a second throw.
+import { bossCaught, fightBosses } from './encounters'
+import { itemOn } from './items'
 import { createInstance, instanceMaxHp } from './progression'
 import type { Rng } from './rng'
-import { getInstance, unlockedHiddenAreas, type RunEvent } from './run'
-import type { GameData, PokemonInstance, SaveData } from './types'
+import { getInstance, progressOf, unlockedHiddenAreas, type RunEvent } from './run'
+import type { GameData, ItemDef, PokemonInstance, SaveData } from './types'
+import { worldOfArea } from './worldList'
 
 export const CATCH_DIE = 6
 
@@ -26,9 +30,12 @@ export function catchTarget(
   kind: 'wild' | 'boss',
   data: GameData,
   shiny = false,
+  areaId: string = save.currentAreaId,
 ): CatchTarget | null {
   if (!data.species[dex]) return null
   if (!save.pokedex.includes(dex)) return { mode: 'new' }
+  // A small world's boss is its own catch (docs/26 §2.5): until it's caught there, it joins as a Pokémon of its own.
+  if (kind === 'boss') return worldBossOpen(save, data, areaId, dex) ? { mode: 'new' } : null
   if (kind !== 'wild') return null
   // A shiny never overwrites a copy you own, whatever its level: it always joins as its own Pokémon.
   if (shiny) return { mode: 'new' }
@@ -38,6 +45,13 @@ export function catchTarget(
   const weakest = plain.sort((a, b) => a.level - b.level)[0]!
   if (weakest.level < level) return { mode: 'replace', uid: weakest.id, level: weakest.level }
   return null
+}
+
+/** This area is a small world's and this boss of it hasn't been caught there yet. */
+function worldBossOpen(save: SaveData, data: GameData, areaId: string, dex: number): boolean {
+  const area = data.areas.find((a) => a.id === areaId)
+  if (!area || !worldOfArea(data, area) || !fightBosses(area, data).some((b) => b.dex === dex)) return false
+  return !bossCaught(area, progressOf(save, areaId), save.pokedex, dex, data)
 }
 
 export const catchValueOf = (data: GameData, dex: number): number =>
@@ -52,6 +66,8 @@ export function catchChance(value: number, bonus: number): number {
 export interface CatchRoll {
   die: number
   bonus: number
+  /** The Bait's die, once one was thrown after the ball fell short. */
+  bait?: number
   total: number
   need: number
   caught: boolean
@@ -61,6 +77,44 @@ export function rollCatch(value: number, bonus: number, rng: Rng): CatchRoll {
   const die = rng.int(1, CATCH_DIE)
   const total = die + bonus
   return { die, bonus, total, need: value, caught: total >= value }
+}
+
+// ---------------------------------------------------------------- the Bait (docs/25)
+
+/** The Bait's die unless its item says otherwise: three 1s, two 2s and a 3. */
+export const BAIT_FACES: readonly number[] = [1, 1, 1, 2, 2, 3]
+
+/** A Bait's six faces (whole numbers, 0 and up). */
+export function baitFaces(item: ItemDef | undefined): readonly number[] {
+  const faces = item?.effect.kind === 'bait' ? item.effect.faces.filter((f) => Number.isFinite(f) && f >= 0) : []
+  return faces.length ? faces.map((f) => Math.floor(f)) : BAIT_FACES
+}
+
+/** The chance (0–1) that this Bait turns a throw that fell short into a catch. */
+export function baitChance(roll: Pick<CatchRoll, 'total' | 'need'>, faces: readonly number[]): number {
+  if (!faces.length) return 0
+  return faces.filter((f) => roll.total + f >= roll.need).length / faces.length
+}
+
+/**
+ * The Bait the catch offers after this throw, or null: the throw fell short, no Bait has been thrown yet, and the bag
+ * holds one (switched on) that could still make it — a hopeless one isn't offered. The likeliest first.
+ */
+export function baitFor(roll: CatchRoll, save: Pick<SaveData, 'inventory'>, data: GameData): string | null {
+  if (roll.caught || roll.bait != null) return null
+  const offers = Object.entries(save.inventory)
+    .filter(([k, n]) => n > 0 && data.items[k]?.effect.kind === 'bait' && itemOn(data, k))
+    .map(([k]) => ({ k, odds: baitChance(roll, baitFaces(data.items[k])) }))
+    .filter((o) => o.odds > 0)
+    .sort((a, b) => b.odds - a.odds || a.k.localeCompare(b.k))
+  return offers[0]?.k ?? null
+}
+
+/** Throw the Bait: one of its faces adds to the throw's total. */
+export function rollBait(roll: CatchRoll, faces: readonly number[], rng: Rng): CatchRoll {
+  const bait = faces.length ? rng.pick(faces) : 0
+  const total = roll.total + bait
+  return { ...roll, bait, total, caught: total >= roll.need }
 }
 
 export interface CatchResult {

@@ -1,4 +1,4 @@
-// A notification's picture, described for the service worker to draw (public/sw.js, docs/25): a 2:1 window of an area
+// A notification's picture, described for the service worker to draw (public/sw.js, docs/27): a 2:1 window of an area
 // picture, cut where the land is, with Pokémon standing on it, and a square icon of one Pokémon. Notifications show
 // pictures at their own sizes (a 2:1 image under the text, a small square or round icon), so nothing here is a
 // stretched area picture: the worker draws them at whole-pixel scales, the way the game draws its pixel art.

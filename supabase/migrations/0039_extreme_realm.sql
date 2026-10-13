@@ -274,6 +274,8 @@ $$;
 
 -- The Friends page, in a realm. `in_realm`: the friend has a save there (else only their name and look, from main).
 drop function if exists friend_list();
+-- 0049 gives it a last column, which `create or replace` can't take back: a re-run (seed.sql) drops that one first.
+drop function if exists friend_list(text);
 create or replace function friend_list(p_realm text default 'main')
 returns table (
   user_id uuid,
@@ -299,6 +301,7 @@ language sql stable security definer set search_path = public as $$
 $$;
 
 drop function if exists friend_profile(uuid);
+drop function if exists friend_profile(uuid, text); -- 0049's, as friend_list's above
 create or replace function friend_profile(p_friend uuid, p_realm text default 'main')
 returns table (
   user_id uuid,
@@ -355,6 +358,7 @@ end
 $$;
 
 drop function if exists friend_day_cares();
+drop function if exists friend_day_cares(text); -- 0049's, as friend_list's above
 create or replace function friend_day_cares(p_realm text default 'main')
 returns table (owner uuid, name text, avatar text, day_care jsonb)
 language sql stable security definer set search_path = public as $$
@@ -367,6 +371,7 @@ $$;
 -- ---------------------------------------------------------------- the leaderboard
 
 drop function if exists leaderboard();
+drop function if exists leaderboard(text); -- 0049's, as friend_list's above
 create or replace function leaderboard(p_realm text default 'main')
 returns table (
   region text,
@@ -454,6 +459,7 @@ $$;
 -- Versus (0018) is optional on a database that only ran seed.sql: like 0033, this one is made only when its tables are
 -- there (a SQL function's tables are checked when it is created).
 drop function if exists versus_board();
+drop function if exists versus_board(text); -- 0049's, as friend_list's above
 do $do$
 begin
   if to_regclass('public.versus_teams') is null then
@@ -641,6 +647,7 @@ begin
 end $$;
 
 drop function if exists raid_friend_teams();
+drop function if exists raid_friend_teams(text); -- 0049's, as friend_list's above
 create or replace function raid_friend_teams(p_realm text default 'main')
 returns table (user_id uuid, name text, avatar text, team jsonb, helped int)
 language sql stable security definer set search_path = public as $$

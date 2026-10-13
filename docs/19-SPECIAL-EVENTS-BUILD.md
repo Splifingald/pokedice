@@ -184,6 +184,7 @@ Guests: no row; their state lives in `SaveData.events`, and they only need `even
 - **Exclusion set** (NPCs and summons), `raidExcluded(data, cfg)`: `isLegendary` (egg-groups `l: 1`) + `cfg.exclude.extra` (Ultra Beasts, paradox, Rotom…) + `cfg.exclude.pseudo` + every species in a starter line (regions' `starters` expanded through evolutions, as in `daycare.ts`) + not fully evolved (`evolutions.length > 0`).
 
 ### 6.3 The raid battle engine (phase 5)
+(The summons, the speed order and the targets below were dropped on 2026-10-13: see "Simpler raids" at the end.)
 The battle reducer is strictly one side against one enemy (`BattleState.player[]` vs `enemy`). Rather than rewriting it, **the raid is an orchestrator over one-on-one duel steps**:
 - **`RaidState`**: `sides[3]` (owner, look, mons with HP/status, active index, out), `foes` (the boss with `bars`, `bar`, plus `summons[maxField]`), `points`, `round` (speed-ordered queue), `front {foe, own}`, `lastTarget`, `log`, `seed`.
 - **Each turn is a real battle step**:
@@ -364,7 +365,7 @@ The day's raid is no longer picked per player: **one raid a UTC day, the same fo
   - **Today never changes**: any change to the plan (seed, fixed dates, mythicals, exclusions, days set by hand) pins
     today's raid as a day set by hand first.
   - **Raid Pokémon**: every Pokémon of the calendar with its icon, kind and next dates, and **its own numbers** (HP
-    bars, HP per bar, summons at the start, summon points per bar, summons beside it, level, dice level) over the
+    bars, HP per bar, level, dice level) over the
     defaults (`raid.perMon`; empty = default, shown greyed). The fight, the raid card and the catch level use them.
   - Fixed dates and mythicals with their icons and a Pokémon picker; exclusions as icon chips; helpers' gifts; the
     win-rate simulator over the next two weeks, each raid with its own numbers.
@@ -393,3 +394,36 @@ The day's raid is no longer picked per player: **one raid a UTC day, the same fo
 - Server: `supabase/migrations/0045_progress_raids.sql` (`pnpm progress-raids-sql`) and `0046_progress_raids_worlds.sql`
   (a raid's team from its area's region), tested in `tests/progress-raids-sql.test.ts`; engine in
   `tests/engine/progress-raid.test.ts` and `tests/engine/small-worlds.test.ts`.
+
+### Simpler raids (2026-10-13, the user's redesign: "raids are not well understood")
+- **No summons at all.** The raid Pokémon fights alone; the summon numbers (`startAllies`, `summonPerBreak`,
+  `maxField`) left the config, the admin, the raid Pokémon's own numbers and the screen (the foes' queue, the target
+  picker, the summon points). `RaidEvent` is a plain battle event: there is no target to pick.
+- **A fixed turn order**, speed plays no part: each round the sides still in play in order (you first), and **the raid
+  Pokémon strikes back right after each one**, at the side that just played — or, when that side has just gone out, at
+  the next one still in (`bossTarget`). So it hits them one by one, and the ally in front stays there for the strike
+  back. The speed button speeds up the ally sides' turns only.
+- **Its own type matchups** (raids only, all admin: Events → Raids → Raid numbers), carried by the raid's upgrade
+  levels (`UpgradeLevels.typeScale`, read by `computeDamage`, the AI and `canHurt`, so the readout and the banners
+  agree):
+
+  | | Super effective | Resisted | Immune |
+  |---|---:|---:|---:|
+  | The sides on the raid Pokémon (`raid.sideTypes`) | ×1.3 | ×0.5 | ×0 |
+  | The raid Pokémon on the sides (`raid.bossTypes`) | ×2 | ×0.7 | ×0.5 |
+
+  Nobody is immune to the raid Pokémon: a blocked hit lands at ×0.5, statuses and all. The rules pop-up reads these
+  numbers (`ruleParams('raid')`).
+- **Stronger by its HP**: each bar holds **2.2 ×** its HP (was 2 ×). `pnpm raid-balance 40 2` (three random fully
+  evolved Lv.50 sides, every raid of the calendar but the fillers; target 50–70 %):
+
+  | HP per bar | 2 | 2.1 | **2.2 (chosen)** | 2.3 | 2.5 | 3 |
+  |---|---:|---:|---:|---:|---:|---:|
+  | Win % | 65 | 60 | **56** | 50 | 40 | 21 |
+
+  The old rules (summons, ×2 / ×½ / ×0 both ways, 2 × HP) gave 57 %, so a raid is as hard as before.
+- **Hand-over**: run `supabase/migrations/0050_simpler_raids.sql` (drops the summon numbers from game_config, 2 → 2.2
+  HP per bar unless the admin set another value; safe to run again) with the deploy. The rules pop-up's texts changed
+  (`raid.sides`, `raid.bars`), so its INFO button tells the new rules; the pop-up itself shows once, as before.
+- Tests: `tests/engine/raid-battle.test.ts` (turn order, the strike back, nobody immune to it), `tests/engine/damage.test.ts`
+  (the matchups), `tests/engine/raid-admin.test.ts`, `tests/raid-speed.test.ts`, `tests/simpler-raids-sql.test.ts`.

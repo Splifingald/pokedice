@@ -12,13 +12,16 @@ import { LivePopup } from '@/screens/events/live'
 import { useInWorld, worldVars, WorldByePopup, WorldPopup } from '@/screens/events/world'
 import { WorldPick } from '@/screens/events/worldPick'
 import { VersusUnlockPopup } from './FeatureRules'
+import { GeneralUnlockPopup, OfflineReportModal } from './GeneralRules'
 import { RaidGiftPopup } from './RaidGiftPopup'
 import { FriendsService } from './friends/FriendsService'
+import { InviteRewardPopup, InviteRulesPopup } from './friends/InviteRewards'
 import { TradesService } from './trades/TradesService'
 import { PushService } from './PushService'
 import { BottomNav, Header, SideNav } from './Hud'
 import { LeaderboardTutorial } from './LeaderboardTutorial'
 import { ReplyPopup } from './ReplyPopup'
+import { GiftService } from './Gifts'
 import { ShareTutorial } from './ShareTutorial'
 
 /** In-game shell: top bar, side bar (desktop) or bottom bar (phones), and the screen. No save → back to the title. */
@@ -59,17 +62,22 @@ export function GameLayout() {
       <LeaderboardTutorial />
       <ShareTutorial />
       <ReplyPopup />
+      <GiftService />
       <DonationPopup />
       <EventUnlockPopup />
       <VersusUnlockPopup />
       <ExtremeUnlockPopup />
+      <GeneralUnlockPopup />
       <AwayReportModal />
+      <OfflineReportModal />
       <RaidGiftPopup />
       <WorldPopup />
       <WorldPick />
       <WorldByePopup />
       <LivePopup />
       <FriendsService />
+      <InviteRulesPopup />
+      <InviteRewardPopup />
       <TradesService />
       <PushService />
     </div>

@@ -1,14 +1,16 @@
-// Admin → Analytics → a player's profile: where their game stands, the leaderboard ban and the cheats. A Google player's
-// game is read from their cloud save (as fresh as their last sync); a guest's from the snapshot their daily ping sent.
+// Admin → Analytics → a player's profile: where their game stands, messages (gifts included), the leaderboard ban and
+// the cheats. A Google player's game is read from their cloud save (as fresh as their last sync); a guest's from the
+// snapshot their daily ping sent.
 import { useEffect, useState } from 'react'
 import { snapshotOf, type PlayerSnapshot } from '@/analytics/events'
 import { AreaBanner } from '@/components/AreaBanner'
 import { PixelIcon } from '@/components/icons'
 import { SpriteImg } from '@/components/SpriteImg'
-import type { GameData } from '@/engine/types'
+import type { GameData, SaveData } from '@/engine/types'
 import { getSupabase } from '@/lib/supabase'
 import { useGame } from '@/store/game'
 import { cx } from '@/theme/util'
+import { PlayerMessages } from '../PlayerMessages'
 import { fetchPlayerSave } from '../playerSave'
 import { LeaderboardBan } from './LeaderboardBan'
 import { PlayerCheats } from './PlayerCheats'
@@ -25,6 +27,8 @@ interface GameState {
   at: string
   snap: PlayerSnapshot
   from: 'cloud save' | 'daily snapshot'
+  /** The cloud save itself, for a Google player: the gift editor says where each gift would land in it. */
+  save?: SaveData
 }
 
 /** A Google player's cloud save if there is one, else the snapshot in their `players` row. Null: nothing recorded. */
@@ -34,7 +38,7 @@ async function fetchGameState(player: string, data: GameData): Promise<GameState
   if (!player.startsWith('device:')) {
     const save = await fetchPlayerSave(client, player)
     if (save)
-      return { at: new Date(save.updatedAt).toISOString(), snap: snapshotOf(save, data), from: 'cloud save' }
+      return { at: new Date(save.updatedAt).toISOString(), snap: snapshotOf(save, data), from: 'cloud save', save }
   }
   const { data: row, error } = await client
     .from('players')
@@ -63,7 +67,7 @@ function Block({
   )
 }
 
-/** The selected player: their game as it stands, then the leaderboard ban and the cheats. */
+/** The selected player: their game as it stands, then messages, the leaderboard ban and the cheats. */
 export function PlayerPanel({ player, name }: { player: string; name: string }) {
   const data = useGame((s) => s.data)
   const [state, setState] = useState<GameState | null | undefined>(undefined)
@@ -182,6 +186,10 @@ export function PlayerPanel({ player, name }: { player: string; name: string }) 
           </Block>
         </div>
       )}
+
+      <Block title="Messages">
+        <PlayerMessages player={player} name={name} save={state?.save} />
+      </Block>
 
       <Block title="Leaderboard">
         <LeaderboardBan player={player} name={name} />

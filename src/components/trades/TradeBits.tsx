@@ -23,6 +23,7 @@ import { FriendTag } from '../friends/FriendBits'
 import { PixelIcon } from '../icons'
 import type { RulesPicture } from '../RulesModal'
 import { MiniSprite } from '../SpriteImg'
+import { TrainerName } from '../TrainerName'
 
 /** The rules pop-up's banner: trades happen at the Pokémon Center, as in the games' Cable Club. */
 export const TRADES_PICTURE: RulesPicture = { src: '/backgrounds/pokemon-center.png', focus: '50% 40%' }
@@ -273,7 +274,7 @@ export function ListingRow({
                   {t('ui.trades.yoursTag')}
                 </span>
               ) : (
-                <span className="truncate">{owner}</span>
+                <TrainerName name={owner} rich={l.rich} className="truncate" />
               )}
               {l.isFriend && !l.isMe && <FriendTag />}
             </small>

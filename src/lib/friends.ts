@@ -3,6 +3,7 @@
 // (`friend_status()`, at game load and when the player comes back to the tab, at most every 5 minutes) and the list
 // itself (`friend_list()`, only while the Friends page is open, at most once a minute). No polling, no Realtime.
 import { create } from 'zustand'
+import { inviteRewardsOn, parseGifts, type Gift, type InviteStatus } from '@/engine'
 import { useGame } from '@/store/game'
 import { avatarOf } from './avatars'
 import { deviceId } from './device'
@@ -53,6 +54,8 @@ export interface FriendRow {
   isNew: boolean
   /** They have a save in the world being played (Extreme mode, docs/22): else only their name and look. */
   inRealm: boolean
+  /** Their name shines gold ("I am just rich", docs/25). */
+  rich: boolean
 }
 
 /** A friend in a toast or a preview: who they are and nothing more. */
@@ -60,6 +63,8 @@ export interface FriendNotice {
   id: string
   name: string
   avatar: string
+  /** A golden name ("I am just rich", docs/25), where the server says. */
+  rich?: boolean
 }
 
 export interface CardRegion {
@@ -85,6 +90,8 @@ export interface FriendProfile {
   since: number | null
   regions: CardRegion[]
   versus: { team: TeamMon[]; attackWins: number; defenseWins: number } | null
+  /** Their name shines gold ("I am just rich", docs/25). */
+  rich: boolean
 }
 
 export type AddStatus = 'added' | 'already' | 'self' | 'not_found' | 'full' | 'friend_full'
@@ -130,6 +137,8 @@ export function parseFriendList(raw: unknown): FriendRow[] {
     isNew: !!r.is_new,
     // A database before 0039 doesn't say: everyone is in the one world there is.
     inRealm: r.in_realm !== false,
+    // Before 0049, nobody's is.
+    rich: r.rich === true,
   }))
 }
 
@@ -138,6 +147,7 @@ export function parseNotices(raw: unknown): FriendNotice[] {
     id: String(n?.id),
     name: text(n?.name, 'Trainer'),
     avatar: avatarOf(n?.avatar).id,
+    ...(n?.rich === true && { rich: true }),
   }))
 }
 
@@ -179,6 +189,20 @@ export function parseProfile(raw: unknown): FriendProfile | null {
     versus: vs
       ? { team: team(vs.team), attackWins: Number(vs.attackWins) || 0, defenseWins: Number(vs.defenseWins) || 0 }
       : null,
+    rich: r.rich === true,
+  }
+}
+
+/** invite_status() (migration 0051): the invite gauge, or null while the rewards are off for this player. */
+export function parseInviteStatus(raw: unknown): InviteStatus | null {
+  const r = (Array.isArray(raw) ? raw[0] : raw) as Record<string, unknown> | null | undefined
+  if (!r || typeof r !== 'object') return null
+  const latest = r.latest as { name?: unknown; avatar?: unknown } | null | undefined
+  return {
+    count: Math.max(0, Number(r.count) || 0),
+    pending: Math.max(0, Number(r.pending) || 0),
+    claimed: Array.isArray(r.claimed) ? r.claimed.map(Number).filter((n) => Number.isInteger(n) && n > 0) : [],
+    latest: latest && typeof latest === 'object' ? { name: text(latest.name, 'Trainer'), avatar: avatarOf(latest.avatar as string).id } : null,
   }
 }
 
@@ -227,6 +251,9 @@ interface FriendsState {
   listError: FriendError | null
   statusAt: number
   listAt: number
+  /** The invite gauge (docs/15 §25): null until read, or while the rewards are off for this player. */
+  invites: InviteStatus | null
+  invitesAt: number
 }
 
 const EMPTY: FriendsState = {
@@ -239,6 +266,8 @@ const EMPTY: FriendsState = {
   listError: null,
   statusAt: 0,
   listAt: 0,
+  invites: null,
+  invitesAt: 0,
 }
 
 export const useFriends = create<FriendsState>(() => ({ ...EMPTY }))
@@ -271,6 +300,51 @@ export async function loadFriendStatus(force = false, now = Date.now()): Promise
   } catch (err) {
     console.warn('[friends] status not loaded:', err instanceof Error ? err.message : err)
   }
+  // The invite gauge rides along, while the rewards are on for this player (not twice within a minute).
+  await loadInviteStatus(false, now)
+}
+
+/**
+ * invite_status() (docs/15 §25): the invite gauge, with the friend status, and when the Friends page or Prof. Oak's
+ * invite opens (at most once a minute then). Nothing is asked while the rewards are off for this player.
+ */
+export async function loadInviteStatus(force = false, now = Date.now()): Promise<void> {
+  if (!signedInUser()) return
+  if (!inviteRewardsOn(useGame.getState().data)) {
+    if (useFriends.getState().invites) useFriends.setState({ invites: null })
+    return
+  }
+  if (!force && now - useFriends.getState().invitesAt < LIST_EVERY_MS) return
+  useFriends.setState({ invitesAt: now })
+  try {
+    useFriends.setState({ invites: parseInviteStatus(await rpc('invite_status')) })
+  } catch (err) {
+    // A database without 0051: no gauge.
+    console.warn('[friends] invites not loaded:', err instanceof Error ? err.message : err)
+  }
+}
+
+/**
+ * The invite link made the player friends with its owner: the owner invited them, if they're a new player (no badge
+ * in this game, nor on their card). The server decides; its answer says whether it counted.
+ */
+export async function recordInvite(code: string, badges: number): Promise<string> {
+  return String(await rpc<string>('invite_record', { p_code: code, p_badges: badges }))
+}
+
+/** invite_rewards_claim(): every tier reached and not claimed yet, each once, with its gifts. */
+export async function claimInviteRewards(): Promise<{ friends: number; gifts: Gift[] }[]> {
+  const rows = await rpc<{ friends: number; gifts: unknown }[]>('invite_rewards_claim')
+  const got = (Array.isArray(rows) ? rows : [])
+    .map((r) => ({ friends: Number(r?.friends) || 0, gifts: parseGifts(r?.gifts) }))
+    .filter((r) => r.friends > 0)
+  // Handed over now: the gauge says so at once.
+  const st = useFriends.getState()
+  if (st.invites && got.length)
+    useFriends.setState({
+      invites: { ...st.invites, claimed: [...new Set([...st.invites.claimed, ...got.map((r) => r.friends)])].sort((a, b) => a - b) },
+    })
+  return got
 }
 
 /** friend_list(), for the Friends page. */
@@ -423,6 +497,8 @@ export interface FriendDayCareRow {
   name: string
   avatar: string
   mons: FriendCareMonRow[]
+  /** Their name shines gold ("I am just rich", docs/25). */
+  rich: boolean
 }
 
 export function parseFriendDayCares(raw: unknown): FriendDayCareRow[] {
@@ -431,6 +507,7 @@ export function parseFriendDayCares(raw: unknown): FriendDayCareRow[] {
       owner: String(r?.owner ?? ''),
       name: text(r?.name, 'Trainer'),
       avatar: avatarOf(r?.avatar).id,
+      rich: r?.rich === true,
       mons: (Array.isArray(r?.day_care) ? r.day_care : [])
         .map((m: Record<string, unknown> | null) => ({
           inst: String(m?.inst ?? ''),

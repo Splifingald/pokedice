@@ -1,7 +1,7 @@
 // Nicknames: a Pokémon's name on its sheet is a button that opens this dialog. The nickname is kept on the Pokémon,
 // so it goes with it in a trade, and whoever has it can change it (engine/nickname.ts).
 import { useEffect, useId, useRef, useState } from 'react'
-import { getInstance, monName, NICKNAME_MAX, tradeClosed, type PokemonInstance } from '@/engine'
+import { getInstance, monName, NICKNAME_MAX, tradeClosed, worldHomers, type PokemonInstance } from '@/engine'
 import { useT } from '@/i18n/react'
 import { nicknamePokemon } from '@/store/actions'
 import { pushToast, useGame } from '@/store/game'
@@ -62,7 +62,8 @@ function NicknameForm({ inst, onDone }: { inst: PokemonInstance; onDone: () => v
   const submit = () => {
     if (nicknamePokemon(inst.id, value)) {
       const now = useGame.getState().save
-      const next = now ? getInstance(now, inst.id) : undefined
+      // A small world's Pokémon waiting to unlock (docs/26 §1) is named where it waits.
+      const next = now ? (getInstance(now, inst.id) ?? worldHomers(now).find((h) => h.inst.id === inst.id)?.inst) : undefined
       pushToast(
         next?.nickname
           ? t('ui.nickname.named', { species, name: next.nickname })

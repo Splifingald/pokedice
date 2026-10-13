@@ -47,6 +47,7 @@ light). The pixel frames and the ground texture are redrawn in the theme's colou
 | `rose` | `#fff2ef` | `#3a1e24` | The red tint behind a warning |
 | `danger` / `danger-light` | `#c4382a` / `#ff8a7a` | `#ff8676` / `#b3352a` | Red **as text**; red text on `bg-ink` |
 | `good` / `good-pale` | `#1d6b43` / `#d8f5e4` | `#72dca0` / `#173628` | Positive text and its chip |
+| `rich` | `#8a5a00` | `#ffbe2e` | A golden name ("I am just rich", §23): 4.5:1 on every surface in both themes |
 
 The same in both themes: `gold` `#ffbe2e`, `accent` `#f2553f` (white on it 3.4:1), `night` `#24304f` (navy that stays
 navy), `crimson` `#c4382a` and `forest` `#1d6b43` (red and green **fills** under white text), `hp-*`, `type-*`
@@ -151,7 +152,10 @@ All live in `src/components/`. Every component, in every state, is on `/kitchen-
 | `FaceDice` / `StatusLines` | What a die does | Its six faces as real dice, value under each; a status face keeps its ring and badge and gets its short name in a chip. One tinted line per status: when it triggers and what it does, with the live numbers (`statusEffects`) |
 | `ItemSprite` | An item's picture | From the item atlas (one request); falls back to the item's own URL for items added since the atlas was built |
 | `PixelIcon` | Every icon | Pixel maps drawn as SVG rects: the Pokémon ones hand-drawn in `icons.tsx` (balls, Pokédex, badges, status symbols), the generic UI ones (coin, heart, shop, trophy, settings…) from the "1-bit Pixel Icons" pack, recoloured into `packIcons.ts` by `scripts/import-icons.ts` (11–16 px squares; the tab bar's on 16×16). Draw them at 12 px or more. One shared palette (`ICON_PALETTE`); a map may have its own (`OWN_PALETTE`) |
-| `RulesModal` / `InfoButton` | A feature's rules: once when it unlocks, then from the blue INFO button at the bottom of its page | The special events' pop-up: its picture as a banner (a NOW OPEN tag on the unlock), 2–4 `RuleList` rows (an icon, a short title, a line with the config's numbers); Later and Let's go! on the unlock, OK from INFO. The Day Care and Versus use it (`FeatureRules.tsx`); the events have their own copies (`EventUnlockPopup`, `EventInfo`), with the same words |
+| `TrainerName` / `NameIn` | Another trainer's name anywhere social (§24) | Plain; golden (`rich`: the `rich` token, a sparkle that twinkles, a stepped glint, still under reduced motion). Inline, so `truncate` around it still ends in "…". `NameIn` puts it in a translated sentence ("Misty's"), only the name golden |
+| `RulesModal` / `InfoButton` | A feature's rules: once when it unlocks, then from the blue INFO button at the bottom of its page | The special events' pop-up: its picture as a banner, or a banner drawn in code (the gifts'), a NOW OPEN tag on the unlock, 2–4 `RuleList` rows (an icon, a short title, a line with the config's numbers); Later and Let's go! on the unlock, OK from INFO. The Day Care and Versus use it (`FeatureRules.tsx`); the events have their own copies (`EventUnlockPopup`, `EventInfo`), with the same words |
+| `GiftPresent` / `GiftOpened` / `GiftResult` / `GiftMoment` | A gift from the developer (§23) | Under a message: the wrapped gift (wobbling, still when the OS asks for reduced motion), "3 things inside" and what happens next (close the message, OPEN IT in My messages, or why it waits); opened: what it held; the opening, full screen; what arrived and where |
+| `InviteGaugeBar` / `InviteRewardsCard` / `InviteGaugeCompact` / `InviteReadyModal` | Friend invite rewards (§25) | The gauge: a tile per tier (its reward; gold with the gift wobbling when ready; green with a check once opened), the gold track, the friends each needs; six tiers fit a phone. The Friends page's card (ready with OPEN IT, asking the server, every reward won); the compact one in Prof. Oak's invite; the reward's pop-up (who won their first badge, or a friend) |
 
 Dialog behaviour (`src/lib/useDialog.ts`, used by `Modal`, `Sheet`, `SidePanel`): focus moves in, **Tab stays inside**,
 **Esc closes the top dialog only**, focus returns to what opened it.
@@ -226,7 +230,7 @@ motion `off` the stage jumps to the end and still fires every cue, so the screen
 | Timeline | full | short |
 |---|---|---|
 | Attacks: one move per type (Flamethrower, Hydro Pump, Razor Leaf, Thunderbolt, Psychic in `attacks.ts`; Tackle, jabs and a fist, gusts and a wing slash, Sludge Bomb, earth spikes, Rock Slide, a swarm and X-Scissor, Shadow Ball, Metal Claw, Ice Beam, Dragon Breath, Dark Pulse and Crunch, Moonblast in `attacks-types.ts`); a generic impact for typeless dice | the typed move | one generic hit |
-| Catch | throw, beam, drop, wobbles, result | throw and drop, result at once |
+| Catch | throw, beam, drop, wobbles, result; with a Bait to offer it holds on the ball lying still (`hold`) and the answer plays on from that frame (`from: 'ground'`: the Bait tossed beside the ball, a heart, a last wobble; or straight to the break-free); Capture Luck's stay (`stays`): out of the ball, a "!" and two hops, no flight | throw and drop, result at once (the Bait still lands) |
 | Pokémon Center | in its picture (`public/backgrounds/pokemon-center.png`): a ball per team member into the machine's slots, the heal jingle (B G♯ ×3, E) | one flash, healed |
 | Mega Evolution, Gigantamax | the full change | a white flash and the new sprite |
 | Legendary intro, Evolution, Egg hatching, the lab (a partner), a trade | in full | in full |
@@ -338,7 +342,8 @@ Players shouldn't have to make many requests:
   lock): its usual spacing when there is room, tighter on a phone's half-width widget, and only past 60 % of an icon do
   the icons get smaller (`TeamFan`). It never runs under the VS.
 - Home's widgets show what's next (the next secret, the Day Care, Versus, events) and are buttons when they lead
-  somewhere; a locked one says what opens it and how far you are.
+  somewhere; a locked one says what opens it and how far you are. The secret one counts the condition still to meet
+  (the first left, as the areas list says), and goes once every secret area of the region is found and played.
 - **Stages** (a canvas scene: Home, the battle, a hatching) are a background canvas, the Pokémon as DOM `<img>`s
   (Showdown's animated sprites, no extra request) and an effects canvas on top. A stage root is its own stacking
   context (`isolate`), so its internal z-indexes never rise above sheets and dialogs. The canvas has `role="img"` and a
@@ -352,6 +357,8 @@ Players shouldn't have to make many requests:
   Back. The body leads with what matters now: HP and XP, Speed / Rerolls / Catch value, every die as real dice, then
   **What's next** (milestones still ahead, the next one tagged NEXT, each with how close it is); milestones already
   reached fold away under a summary.
+- **A small world's Pokémon waiting to unlock** (§22, docs/26 §1) opens the same sheet, its line saying "Waiting to
+  unlock", the lock first in its body, and **Let it go** as the only footer action; no Make lead, no item, no Send on.
 - **Nicknames**: on one of your own Pokémon's sheets (not a Pokédex entry, not a fossil still reviving) the title is a
   button, the name and a pencil (`NicknameButton`; "Give it a nickname" is its description, so the sheet keeps the
   name as its label). It opens a small `Modal` over the sheet (`NicknameModal`): the field, focused, with the species
@@ -370,7 +377,9 @@ Players shouldn't have to make many requests:
   still opens the card). Every drag has a button twin for keyboards and screen readers (Make lead).
 - **Shelves** (the Poké Mart): one row open at a time; an open row shows the description, a ×1 / ×5 / ×10 segmented
   picker and one button that names the total ("Buy ₽500") or what's missing ("Need ₽40 more"). Category chips put the
-  most-used group first (Balls). What isn't sold yet waits under "Coming later" with what it waits for.
+  most-used group first (Balls). What isn't sold yet waits under "Coming later" with what it waits for. The Bait sits
+  with the balls ("Poké Balls & Bait"), the Link Cable with the stones ("Evolution items"); an item switched off in the
+  admin (§20) is not on the shelf at all.
 - **Search resets filters**: typing in a search shows everything that matches (the Pokédex's filter goes back to All).
   A Pokédex number finds any entry; a name only finds what has been caught.
 - **Grey plates** (`#e3e8f0`, `#f1f4f9`) take ink text: muted grey on them is under 4.5:1.
@@ -412,14 +421,23 @@ in view) and the battle history sits beside it from 1024 px.
 - **Raids** (`src/screens/events/RaidView.tsx`) keep the battle's layout and its 360×640 fit. Their bottom row: the
   Bag, **your raid team** as compact pips (`TeamPips compact`, 44 px) — tap one on your turn to switch, which costs the
   turn as in a battle (the dialog lists who can go in) — then the **speed button** and **Give up** (a flag, its name in
-  its label). The speed button plays the ally sides' and the summons' turns at ×1.5 (`RAID_FAST_SPEED`): their
-  delays, scenes (`Scene.speed`), HP bars and dice; the raid Pokémon's turns and yours never change. It shows the
+  its label). The speed button plays the ally sides' turns at ×1.5 (`RAID_FAST_SPEED`): their delays, scenes
+  (`Scene.speed`), HP bars and dice; the raid Pokémon's turns (even striking back at an ally) and yours never change. It shows the
   speed those turns play at (×1 / ×1.5), so its state is a word too, and the setting is kept (`settings.raidFast`).
 - **The catch happens on the stage**: the worn-out foe stays on its platform, greyed; the panel shows a radio group
   of balls (each with its chance from `catchChance`, how many you have, "not needed" when a weaker one is already
   certain), the catch math (`d6 + bonus ≥ need`), and one throw. The catch timeline plays; the die and the
   result show together on `catchResult`, never before (the die would spoil the wobbles). A throw that can't miss has
   no die.
+- **The Bait** (docs/25): a throw that fell short, with a Bait in the bag that could still make it, stops with the ball
+  lying still after its wobbles; the die shows with the math (`4 + 1 = 5 < 7`), the message asks "So close! Throw a
+  Bait to tempt Snorlax?", and a line gives the Bait's die and the odds ("The Bait's die (1, 1, 1, 2, 2, 3) adds to
+  your throw: 50% to catch it"). Two buttons: Keep it, and the red THROW BAIT ×2. Thrown, its die (berry pink, smaller)
+  sits beside the catch die and joins the math (`4 + 1 + 2 = 7 ≥ 7`). A hopeless Bait is never offered. Raids and
+  legendaries too.
+- **Capture Luck** (docs/25): a wild Pokémon that broke free may stay: the message says it broke free but didn't run
+  away, the stage shows it back on its platform, and the panel's button is THROW AGAIN (back to the ball picker, "Snorlax
+  is still here! Pick a ball and throw again."). Once per encounter; never a legendary or a raid.
 - **Result cards** rise from the bottom over the panel on every screen size, wild and trainer fights alike, the stage
   still in view: XP per Pokémon, the catch (NEW when
   the species is new to the Pokédex), "Wild battles pay no ₽" when that is why no money came; **Home** and **Next
@@ -512,7 +530,8 @@ One Day Care for every region (docs/15-DAYCARE-BREEDING.md). The page (`src/scre
 - **A friend's card** is drawn the same way, with their badges as the same one count across every region (no badge
   cases).
 - **Invite a friend**: Prof. Oak's pop-up once per region at its 2nd badge; INVITE shares the friend invite link
-  (`/f/<code>`, opening it makes you friends), or the game's own link while signed out (no friend ID then).
+  (`/f/<code>`, opening it makes you friends), or the game's own link while signed out (no friend ID then). With the
+  invite rewards on (§25) it shows the gauge, signed in, or a line saying an account earns them, signed out.
 - **Look**: "How other trainers see you…" with Change opening a radio grid of every look, in one block (no region headings); picking one closes it. The same
   crop (`TrainerLook`) is used wherever a trainer appears.
 - **The menu** under the card: rows with an icon tile, a label and a one-line description (Leaderboard, Versus with
@@ -578,8 +597,12 @@ Two rules for every feature that adds something players can do (an event, a mode
 - **Its rules, once and on demand**: a rules pop-up (`RulesModal`: its picture as a banner, 2–4 `RuleList` rows with
   the config's numbers, Later / Let's go!) the first time the feature opens for the player (a "seen" flag in the save,
   queued behind the other one-time pop-ups), and an **INFO** button at the bottom of its page that shows the same rules
-  again. The Day Care, Versus, the events, Extreme mode, Trades and push notifications follow it (push's "rules
-  pop-up" is its question, asked once per feature; its INFO is in Settings → Notifications).
+  again. The Day Care, Versus, the events, Extreme mode, Trades, the gifts (§23), the General upgrades (§24), the invite rewards (§25)
+  and push notifications (§26: its rules pop-up is its question, asked once per feature; its INFO is in Settings →
+  Notifications) follow it.
+- **Items with a switch** (`game_config.itemSwitches`, `itemOn`): the Link Cable and the Bait (docs/25). Off: not sold,
+  not found, not usable, never offered; bags keep theirs. An item is explained where it's met (its description in the
+  Mart and the bag; the Bait's die and odds on the catch prompt), so items have no rules pop-up of their own.
 
 ## 21. Trades
 
@@ -648,40 +671,162 @@ on `/kitchen-sink` (`WorldBits`). Every rule and number comes from `engine/world
   Island's purple, pink and lilac. They tint the world's pieces only: the CTA stays red, the money gold, the HP green.
 - **WORLD** (`WorldTag`, in the main colour) marks everything of a world; **SHINY MEW** (gold, with the sparkle) is what
   it's for. The mythical is a silhouette glowing in the accent until it's caught, then its shiny colours (`MythicalArt`).
+  A world without a mythical is known by its prize (`worldPrize`, docs/26 §2.5: its last shiny raid, SHINY GIRATINA),
+  the same way; its rules list its shiny bosses and raids in one row ("Shiny Haunter, Mimikyu, Spiritomb, Darkrai and
+  Giratina").
 - **Outside, Home's square** (`WorldSquare`) is first among the event squares, on the Live square's frame: the world's
   picture, WORLD and SHINY MEW, the silhouette, the name, the gauge draining and "Areas 3/8 · Ends in 2d 4h" (red in
   the last day). The second line says the partner once the player has been in. A tap goes in (the lab first).
 - **The pop-up** (`WorldPopup`): once, between fights, after Prof. Oak's tutorials and the other one-time pop-ups and
   before the live event's (never on the Poké Mart). The banner with the silhouette, the time left and until when, the
-  rules (`WorldRules`: XP ×, dice by level, each booster, the shiny mythical at the end), Later and Enter.
+  rules (`WorldRules`: XP ×, each booster, the shiny mythical at the end or its shiny prizes, its Pokémon going home),
+  Later and Enter.
 - **The partner pick** is the lab (§18) in the world's colours (`PartnerMoment` `theme`): the drawn lab in them, the
   picture under a veil of the main colour, the world's name on the ribbon.
 - **Inside**, the page wears the world's ground (`.in-world`, faint in dark mode) and a **strip** sits under the top bar
   (`WorldStrip`): its picture, WORLD, its name, the time left (red in the last day) and **Back to Kanto** (the region the
   player came from). It is Home's only way out, and the one way back while the world's content is still on its way
   (`WorldWaiting`). Home shows no region offer and no region switcher; the Areas sheet has no Regions view.
-- **Home's squares inside** (`WorldWidgets`), and nothing else: the mythical (its silhouette on the world's ground,
-  Lv. · name, where it is: "In Dream Peak", "Waiting: fight it!", "In your Kanto Box", "Waits for Johto"; a tap travels
-  to its area once open) and the world's Mart (three of its items, the world's own ₽).
+- **Home inside** (`WorldWidgets`) keeps to what the nav bar doesn't reach (the user's call, 2026-10-13): the mythical,
+  when the world has one (its silhouette on the world's ground, Lv. · name, where it is: "In Dream Peak", "Waiting:
+  fight it!", "In your Kanto Box", "Waits for Johto"; a tap travels to its area once open), then **a row per secret
+  area** (`SecretRowView`, docs/26 §2.6), up to six, each two squares wide (`col-span-2`). The nav bar stays as
+  everywhere: the World Mart, the world's own Upgrades, its Team and Pokédex.
+- **A secret area's row** is its picture, the whole width (`lv-pic`: darker at the top and the foot), with everything on
+  it in `lv-ink` (white, an ink shadow): "Secret area" and a tag at the top, its boss on the right (a silhouette glowing
+  in the accent while locked, its shiny colours with the gold glow once open), and on the foot its name, the gauge and
+  one gold-light line. **Locked**: the picture greyed, a lock, the gauge and the condition still to meet ("12/20 in
+  Pokédex", "Best Lv. 41/60", "Clear Shadow Elite"); a tap says it in a toast. **New** (opened, never played): NEW,
+  "Boss: Haunter, Lv.30" (or "Raid: Darkrai, Lv.60"). **Open**: the same with its SHINY chip. **Done**: CAUGHT,
+  "Spiritomb caught". Open, new or done, a tap travels there. The line keeps to the name so a phone shows it whole;
+  "(Shiny)" is in the label for screen readers.
 - **An area waiting for its date** is locked like any other, with "Opens {date}" (the local date and time, `dayTime`).
 - **The Poké Mart inside is the World Mart** (`WorldShop`): the world's picture and time left over the admin's list,
   each row with its limit ("8 of 10 left", Sold out); buying only, no Sell tab.
-- **Upgrades inside** explain the dice instead of selling them (`WorldUpgrades`): "Dice follow the level here", the
-  table of levels to dice levels, the team's own lines ("Lv.24 → dice level 2").
-- **In battle**, each plate carries its Pokémon's **dice level** (`DiceLevelTag`, "Dice level 2: Lv.24 ÷ 10" for screen
-  readers), and a **booster** shows as its own chip, the type's badge and "×1.5" (`BoosterChip`), beside the damage in
-  the readout and as its own factor in the damage recap: never hidden in the type's multiplier, never in
-  "super effective".
+- **Upgrades inside** are the world's own tracks (Combos, Dice Types), from level 1, bought with its ₽, like a new
+  region's; no General tab inside (its levels hold everywhere, and the world's ₽ are its own). **In battle**, a
+  **booster** shows as its own chip, the type's badge and "×1.5" (`BoosterChip`), beside the damage in the readout and
+  as its own factor in the damage recap: never hidden in the type's multiplier, never in "super effective".
 - **The mythical caught**: its own line on the result card (`WorldMythicalCard`, gold with rays): "The shiny Mew is
   yours!" and where it went ("in your Kanto Box now, to keep", or that it waits for its region).
 - **The main game's pages inside** (the events, the Day Care, Versus, by a link or a reload) keep their title and show
   why they wait (`WorldAwayPage`), with Back to Kanto.
 - **Closing**: the world gone grey (`WorldByePopup`), once, to whoever played it or saw it open: the mythical kept (or
+  "got away"), **where its Pokémon went** ("Your Pokémon went home": "Kanto 8 · Johto 5 · Sinnoh 3", in the regions'
+  order, the partner's sprite beside it), and that the world's items and ₽ closed with it.
+- **Its Pokémon go home** (docs/26 §1): the rules (`WorldRules`) say so in every world ("Your Pokémon go home": each to
+  its own region, locked until your best there reaches its level). In that region's Team screen, under the Box, a
+  **Waiting to unlock** section (its count, a line with the region's best now, "Your best: Lv.31") holds them as
+  `MonTile`s with `locked` (the tile and its icon greyed, a lock in the corner; "Gengar, Locked until Lv.42" for screen
+  readers). Its sheet is the Pokémon's sheet with the lock first (`HomerLock`: "Locked until Lv.42", "Home from
+  Haunted Hollow" while the admin still lists the world, what it waits for and what it can't do) and only two actions:
+  its nickname (the title, as always) and **Let it go** (danger, "Sure? Tap again", a toast). The day it unlocks, a toast
+  says so ("Gengar (Lv.42) is unlocked: it joined your Kanto Box!", or one per region for several at once).
+
+## 23. Messages and gifts
+
+The developer answers a player's message (Admin → Messages) or writes to them first (Admin → Analytics → their profile
+→ Messages), and either can carry **gifts**: items, each with a quantity (1–999), Pokémon, each with a level and shiny
+or not, and Pokédollars (₽1–999,999), at most 20 (migration 0048). Each goes to a region the admin picks or to **the player's latest region**
+(the newest one they've started). The engine (`engine/gifts.ts`) decides where each lands and what it becomes; the
+pieces are in `src/components/Gifts.tsx`, every state on `/kitchen-sink` (`GiftBits`), the opening on `/kitchen-sink/fx`.
+
+- **The switch and the rules** follow §20: the Gifts switch sits at the top of Admin → Messages (Off by default; the
+  server hides gifts and won't open them while it's off, and they wait on their messages). The rules pop-up
+  (`GiftRulesModal`, three gifts drawn in code as its banner) opens before the first gift does: Let's go! opens it,
+  Later leaves it waiting in My messages. INFO sits at the bottom of My messages.
+- **Under the message**: the pop-up of answers (or "A message from the developer!", when the developer wrote first)
+  shows the words, then the wrapped gift (`GiftPresent`: gold, the gift wobbling, "3 things inside" — not what: that's
+  the opening). Its one button says **OPEN THE GIFT**; closing the message any way opens it. A message with a gift not
+  opened yet pops up again until it is (once a page load if it was put off or the server couldn't be reached).
+- **Where gifts open**: the main game, outside a small world (docs/21), and for a signed-in player once the sign-in's
+  sync has settled. Elsewhere the gift under the message says why it waits ("It opens in your main game", "…once
+  you're back in Kanto") and the message closes as usual.
+- **Where each one goes**: an item into that region's Bag; ₽ into that region's own ₽ (the money pill bumps when the
+  top bar comes back, for the region being played); a Pokémon into its Box as a Pokémon of its own (never merged
+  into a copy), at its level within the game's cap and full HP, and into the team when that region is the one being
+  played and the team has room. A region the player hasn't started yet sends it to their latest one, and the result
+  says so.
+- **The opening** (`GiftMoment`, `giftTimeline` in `src/fx/timelines/gift.ts`): full screen, held with
+  `useHoldFullscreen` so pop-ups wait. The wrapped box falls onto a warm stage and lands with a squash, wobbles three
+  times, each bigger (the anticipation), the bow springs loose, the box crouches and holds four frames, and the lid
+  flies off in a burst of light and confetti; then what was inside rises out one by one — items as their pictures, the
+  Pokémon as their sprites, a shiny with its two rings of stars — in an arc over the box (six at most; past that the
+  last says "+n"; Pokédollars rise as a stack of coins drawn in code), and a short fanfare. The lines (beats `wobble`, `untie`, `opened`) are in the message box below,
+  in a polite live region. SKIP and Esc jump to what arrived (`GiftResult`: each thing's picture, name, ×quantity or
+  level or ₽, ✦ Shiny, NEW, and where it went: "In your Johto Bag", "Added to your Pokédollars", "Joined your team"),
+  then DONE. Motion off jumps there
+  at once.
+- **My messages** keeps every message with its answer, the developer's own messages, and their gifts: opened ("Opened
+  — it held:" and what), or the wrapped gift with OPEN IT (gold), or why it waits. The tab's count adds the gifts not
+  opened yet.
+- **In the admin**, the same gift editor in both places (`GiftEditor`): an item and a quantity, a Pokémon, its level
+  and Shiny, or an amount of ₽, each with its region (their latest, or one by name; on a profile, the regions they haven't started say
+  where it would go). A message's card says whether its gifts were opened, and when; an opened gift can't be changed.
+
+## 24. The General upgrades and golden names
+
+The Upgrades screen's third tab (docs/25), after Combos and Dice Types, there only while the admin has it on (§20).
+
+- **The tab**: one card each, the combos' and dice' `UpCard`: Capture Luck (10 % a level), Offline earnings (₽2 to
+  ₽20 an hour, in whole ₽), I am just rich (one level). The card says what it does now → at the next level ("None →
+  10% chance", "₽10/h → ₽12/h", "Plain name → Golden name"), the pips, the price button or MAX; "I am just rich" shows the player's
+  own name, golden, as its picture. The note under the tabs says they're for every region. INFO at the bottom.
+- **Its rules pop-up** (`GeneralUnlockPopup`, the Battle Frontier's plaza as its banner): once, from the first badge,
+  queued behind the other one-time pop-ups (the world's and the live event's wait for it); opening the tab counts as
+  seen. Four rows: Capture Luck, Offline earnings, I am just rich, For every region.
+- **While you were away** (`OfflineReportModal`): an absence of an hour or more, between fights: the time away, +₽ on a
+  warm card with the coin, the rate and the cap. Less than an hour: a toast. Inside a small world it waits.
+- **Golden names** (`TrainerName`): the leaderboard (and its Hall of Fame), Versus, friends (list, card, preview), raid
+  friends (setup, the ally plate's owner chip, kept light at dusk with `light-scope`), trades (rows, sheet, scene, Done
+  list), the Day Care's visitors and its friend picker, and the player's own trainer card. The server says who is
+  golden, and only while the switch is on for the one looking. It is decoration: the name is the same words, and a
+  screen reader reads just the name.
+
+## 25. Friend invite rewards
+
+Each **new player** someone invites with their invite link (`/f/<code>`, docs/16) who goes on to win their **first
+badge** fills that player's gauge; each tier the gauge reaches gives its gifts once. The tiers are the admin's (Admin →
+Config → Friend invite rewards: up to six, each a number of friends and its gifts, with the gifts' editor); by default
+1 friend a Rare Candy, 2 ₽1,000, 3 a shiny Ditto (Lv.10), 4 a Master Ball. The engine (`engine/invites.ts`) reads the
+tiers, places the gauge and puts the gifts away (as `engine/gifts.ts` does a message's); the pieces are in
+`src/components/friends/InviteRewards.tsx`, every state on `/kitchen-sink` (`InviteBits`).
+
+- **Who counts** (migration 0051, the server decides): a signed-in player the invite link has just made friends with
+  its owner, with no badge in the game that opened it nor on their main card, invited by nobody before (a player is
+  invited once, ever), and not someone they invited themselves. They count once their main card first shows a badge
+  (their next cloud upload): Extreme mode's badges don't. The friend added that way is told: "Win your first badge and
+  Misty gets a reward for inviting you!" Adding by friend ID counts nobody.
+- **The switch and the rules** follow §20: Off, no gauge, pop-up or dot, and no invite is counted (what was counted
+  and opened stays); On for admin, only the admin sees the gauge and opens rewards, and the players they invite count.
+  The rules pop-up (`InviteRulesModal`, friends, a badge and the gift drawn in code as its banner; the tiers listed
+  from the config, "1 → Rare Candy · 2 → ₽1,000 …") opens once for a signed-in player in the main game, queued behind
+  Prof. Oak's invite and the other one-time pop-ups; Let's go! goes to the Friends page, and opening that page counts as
+  seen. INFO sits at the bottom of the Friends page.
+- **The gauge**: the tiers evenly spaced (the fill moves evenly between two of them, `inviteFill`), each tile right
+  over the end of its stretch of track, the number of friends under it. Gold only for a tier ready to open; a check
+  for one opened (it stays opened even if the count drops). The track is a `meter` ("3 of 4 friends with their first
+  badge") and the tiles a list with their state in words. The line under it: "2 rewards are ready to open!", "1 more
+  friend for Master Ball" or "Every reward is yours"; then the invited friends still on their way, and how a friend
+  counts.
+- **Where it shows**: at the top of the Friends page, above the friend ID (`InviteRewardsCard`, gold with OPEN IT
+  while a reward is ready); in Prof. Oak's invite pop-up (`InviteGaugeCompact`); in the reward's pop-up. Nowhere for a
+  player signed out, in Extreme mode or inside a small world. A ready reward adds to the Friends row's dot and the
+  avatar's.
+- **A reward ready**: between fights, after the rules and the other one-time pop-ups, never over the Friends page,
+  once the sign-in's sync has settled: "Invite reward!", who won their first badge (their look and name), the gauge,
+  Later (back on the next page load; the Friends page keeps it) and OPEN THE GIFT.
+- **Opening** claims every tier reached at once from the server (each handed over once, with the gifts it holds then),
+  puts them in the save and plays **the gifts' own opening** (`GiftMoment` with `source="invite"`: "A reward for
+  inviting your friends!", then what arrived and where). The status rides with the friend status (game load, return
+  to the tab at most every 5 minutes) and is asked again when the Friends page or Prof. Oak's invite opens (at most
+  once a minute), only while the switch is on for the player.
+
   "got away"), and that the partner, the world's Pokémon, items and ₽ closed with it.
 
-## 23. Push notifications
+## 26. Push notifications
 
-What they say and when, and how they're set up: docs/25-PUSH-NOTIFICATIONS.md. The screens' side:
+What they say and when, and how they're set up: docs/27-PUSH-NOTIFICATIONS.md. The screens' side:
 
 - **The question comes from the feature, once**: the Day Care page, the raid page and a live event's pop-up (as it
   closes) each ask the first time they open while push is off on this device (`usePushAsk`, `askPush`). It waits

@@ -1,4 +1,4 @@
-// Migration 0048 against a real Postgres (PGlite, in process): push notifications (docs/25). The switch gates every
+// Migration 0053 against a real Postgres (PGlite, in process): push notifications (docs/27). The switch gates every
 // call; a schedule replaces the owner's unsent notices and never resends a sent one; the sender gets each due notice
 // once, for the subscriptions that want its topic; gone endpoints are dropped; deleting your data takes them too.
 import { readFileSync } from 'node:fs'
@@ -97,11 +97,11 @@ beforeAll(async () => {
     '0039_extreme_realm.sql',
     '0040_lighter_save_writes.sql',
     '0044_trades.sql',
-    '0048_push.sql',
+    '0053_push.sql',
   ])
     await db.exec(sql(f))
   // Safe to run again.
-  await db.exec(sql('0048_push.sql'))
+  await db.exec(sql('0053_push.sql'))
   await db.exec(`insert into auth.users (id) values ('${ASH}'), ('${MISTY}'), ('${ADMIN}')`)
 })
 

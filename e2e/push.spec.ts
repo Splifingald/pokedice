@@ -1,4 +1,4 @@
-// Push notifications (docs/25): each feature asks once, a No on one leaves the others to ask, Enable subscribes and
+// Push notifications (docs/27): each feature asks once, a No on one leaves the others to ask, Enable subscribes and
 // hands the server a schedule, Settings shows what's on. A headless browser can't reach a real push service, so the
 // browser's subscription is stood in for (PushManager); the permission is granted as a player's tap would.
 import AxeBuilder from '@axe-core/playwright'

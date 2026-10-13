@@ -148,3 +148,31 @@ describe('status fallback values', () => {
     expect(r.combo?.key).toBe('pair')
   })
 })
+
+describe('a raid’s type matchups (typeScale)', () => {
+  const sides = { ...L1, typeScale: { super: 1.3, resisted: 0.5, immune: 0 } }
+  const boss = { ...L1, typeScale: { super: 2, resisted: 0.7, immune: 0.5 } }
+
+  it('super effective lands at ×1.3 on the raid Pokémon, and still reads as super effective', () => {
+    const r = computeDamage([die('fire', 6), die('base', 4)], ['fire'], ['grass'], sides, data)
+    expect(r.perDie.map((p) => p.multiplier)).toEqual([1.3, 1.3])
+    expect(r.final).toBe(13)
+    expect(r.effectiveness).toBeGreaterThan(1)
+  })
+
+  it('a resisted hit: ×½ from the sides, ×0.7 from the raid Pokémon; neutral stays ×1', () => {
+    expect(computeDamage([die('fire', 6), die('fire', 4)], ['fire'], ['water'], sides, data).final).toBe(5)
+    expect(computeDamage([die('fire', 6), die('fire', 4)], ['fire'], ['water'], boss, data).final).toBe(7)
+    expect(computeDamage([die('fire', 6), die('fire', 4)], ['fire'], ['normal'], boss, data).final).toBe(10)
+  })
+
+  it('nobody is immune to the raid Pokémon: ×0.5, statuses and all; the sides’ immunities stay', () => {
+    const r = computeDamage([die('normal', 6), die('normal', 4)], ['normal'], ['ghost'], boss, data)
+    expect(r.immune).toBe(false)
+    expect(r.final).toBe(5)
+    expect(r.effectiveness).toBe(0.5)
+    const own = computeDamage([die('normal', 6), die('normal', 4)], ['normal'], ['ghost'], sides, data)
+    expect(own.immune).toBe(true)
+    expect(own.final).toBe(0)
+  })
+})

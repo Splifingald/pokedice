@@ -1,6 +1,11 @@
 // The catch, in the battle scene: the worn-out foe on its platform, the throw, contact, the capture beam, the drop
 // with two bounces, then the wobbles and "Gotcha!" or the break-free. Short motion (Settings → Animations: short):
 // the throw and the drop, then the result at once — no wobbles to wait through.
+//
+// A throw that fell short with a Bait in the bag (docs/25) plays in two parts: `hold` stops with the ball lying still
+// after its wobbles while the player is asked; then `from: 'ground'` takes over from that very frame — the Bait tossed
+// beside the ball and a last wobble or two, or straight to the break-free when it's kept. `stays` (Capture Luck): it
+// breaks free but stays on its platform, for one more throw.
 import { fxSound } from '@/audio/sfx'
 import { cached, canvas, clamp, ease, lerp, line, rect, ring, rng, softEllipse, span, type G } from '../pixel'
 import { ball, type BallKind } from '../scenes'
@@ -23,6 +28,37 @@ export interface CatchParams extends Fighters {
   ball: BallKind
   caught: boolean
   short?: boolean
+  /** Where it starts: the throw, or the ball already lying in front of the Pokémon (after a `hold`). */
+  from?: 'throw' | 'ground'
+  /** Stop with the ball lying still after its wobbles, the result still open (a Bait may follow). */
+  hold?: boolean
+  /** From the ground: a Bait tossed beside the ball first. */
+  bait?: boolean
+  /** It breaks free but stays on its platform instead of fleeing. */
+  stays?: boolean
+}
+
+/** The Bait on the ground: a little berry with its leaf, outlined like the balls. */
+function drawBait(g: G, x: number, y: number) {
+  const X = Math.round(x)
+  const Y = Math.round(y)
+  rect(g, X - 3, Y - 4, 7, 5, '#24304f')
+  rect(g, X - 2, Y - 5, 5, 7, '#24304f')
+  rect(g, X - 2, Y - 4, 5, 5, '#e8506a')
+  rect(g, X - 1, Y - 3, 1, 1, '#ffd0d8')
+  rect(g, X, Y - 7, 1, 2, '#3f8f3a')
+  rect(g, X + 1, Y - 7, 2, 1, '#6fcf5a')
+}
+
+/** A heart over the Bait as the Pokémon notices it. */
+function drawHeart(g: G, x: number, y: number) {
+  const X = Math.round(x)
+  const Y = Math.round(y)
+  rect(g, X - 2, Y, 2, 1, '#ff6b8a')
+  rect(g, X + 1, Y, 2, 1, '#ff6b8a')
+  rect(g, X - 2, Y + 1, 5, 1, '#ff6b8a')
+  rect(g, X - 1, Y + 2, 3, 1, '#ff6b8a')
+  rect(g, X, Y + 3, 1, 1, '#ff6b8a')
 }
 
 /** Darken toward the edges in four stepped bands: the vignette keeps the pixel grid. */
@@ -58,12 +94,33 @@ export function catchTimeline(p: CatchParams): Timeline<S> {
   const T_ABS = 1.55
   const T_CLOSE = 1.98
   const T_DROP = 2.05
+  // The ball lies still after its two bounces.
+  const T_SETTLE = T_DROP + 0.6
+  // Everything below runs on the whole catch's clock; a part that starts on the ground starts it at T_SETTLE.
+  const ground = p.from === 'ground'
+  const O = ground ? T_SETTLE : 0
+  // The Bait: tossed, landing beside the ball, the heart over it.
+  const B0 = O + 0.25
+  const B1 = B0 + 0.55
+  const BAIT = ground && !!p.bait
+  // After a hold, the ball has already wobbled twice (none in short motion): the vignette carries on from there.
+  const PRIOR = ground && !p.short ? 2 : 0
   // Short: the result as soon as the ball has settled.
   const T_ROLL = p.short ? T_DROP + 0.6 : 2.75
-  const WOB = p.short ? [] : caught ? [4.1, 4.95, 5.8] : [4.1, 4.95]
-  const T_END = p.short ? T_DROP + 0.7 : caught ? 6.45 : 5.7
+  let WOB: number[]
+  let T_END: number
+  if (!ground) {
+    WOB = p.short ? [] : caught && !p.hold ? [4.1, 4.95, 5.8] : [4.1, 4.95]
+    T_END = p.hold ? Infinity : p.short ? T_DROP + 0.7 : caught ? 6.45 : 5.7
+  } else {
+    const start = BAIT ? B1 + 0.45 : O + 0.25
+    WOB = p.short || !BAIT ? [] : caught ? [start, start + 0.85] : [start]
+    T_END = WOB.length ? WOB[WOB.length - 1]! + 0.65 : start + 0.1
+  }
   const T_FLEE = T_END + 0.7
-  const dur = T_END + (caught ? 1.55 : 2.2)
+  // A hold ends once the last wobble has settled (in short motion, once the ball has).
+  const T_HOLD = WOB.length ? WOB[WOB.length - 1]! + 0.6 : T_SETTLE + 0.1
+  const dur = (p.hold ? T_HOLD : T_END + (caught ? 1.55 : p.stays ? 1.4 : 2.2)) - O
 
   const ballPos = (s: S, t: number): { x: number; y: number; a: number } | null => {
     if (t < T_THROW) return null
@@ -96,7 +153,21 @@ export function catchTimeline(p: CatchParams): Timeline<S> {
     }
     return 0
   }
-  const fleeX = (t: number) => 70 * ease.inQ(span(t, T_FLEE + 0.05, T_FLEE + 0.7))
+  const fleeX = (t: number) => (p.stays ? 0 : 70 * ease.inQ(span(t, T_FLEE + 0.05, T_FLEE + 0.7)))
+  // Where the Bait is: thrown in an arc from your side, a bounce, then lying beside the ball. Eaten once the Pokémon is out.
+  const baitPos = (s: S, t: number): Point | null => {
+    if (!BAIT || t < B0 || (!caught && t >= T_END + 0.15)) return null
+    const land = { x: s.CP.x - 15, y: s.ground + 6 }
+    if (t < B1)
+      return quad({ x: -8, y: H + 4 }, { x: W * 0.3, y: s.ground - 40 }, land, ease.outQ(span(t, B0, B1)))
+    const hop = t < B1 + 0.18 ? Math.round(3 * Math.sin(Math.PI * span(t, B1, B1 + 0.18))) : 0
+    return { x: land.x, y: land.y - hop }
+  }
+  // The foe's little hops once it has stayed (Capture Luck).
+  const stayHop = (t: number) =>
+    p.stays && within(t, T_END + 0.55, T_END + 1.05)
+      ? -Math.round(Math.abs(Math.sin((t - T_END - 0.55) * 2 * Math.PI)) * 3)
+      : 0
 
   return {
     id: 'catch',
@@ -112,7 +183,8 @@ export function catchTimeline(p: CatchParams): Timeline<S> {
         ctrl: { x: W * 0.36, y: 6 },
       })
     },
-    step(s, t, dt) {
+    step(s, t0, dt) {
+      const t = t0 + O
       if (!s.step(t, dt)) return
       const r = s.r
       const bp = ballPos(s, t)
@@ -180,7 +252,7 @@ export function catchTimeline(p: CatchParams): Timeline<S> {
             colors: ['#ffffff', '#ff9aa8', '#ff3b5c'],
           })
         }
-      if (!caught && within(t, T_FLEE, T_FLEE + 0.7) && Math.floor(t * 60) % 3 === 0)
+      if (!caught && !p.stays && within(t, T_FLEE, T_FLEE + 0.7) && Math.floor(t * 60) % 3 === 0)
         s.under.add({
           x: s.L.foe.x + fleeX(t) - 8,
           y: s.L.foe.y,
@@ -194,7 +266,8 @@ export function catchTimeline(p: CatchParams): Timeline<S> {
           colors: ['#d9cdb4', '#b8ab92'],
         })
     },
-    draw(g, s, t) {
+    draw(g, s, t0) {
+      const t = t0 + O
       s.begin(g, t)
       const bp = ballPos(s, t)
       // Foe: worn out, absorbed, or back out and fleeing.
@@ -221,8 +294,12 @@ export function catchTimeline(p: CatchParams): Timeline<S> {
         }
       } else if (back) {
         const k = ease.outBack(span(t, T_END + 0.15, T_END + 0.4), 2)
-        const hop = t > T_FLEE ? -Math.round(Math.abs(Math.sin((t - T_FLEE) * 10)) * 4) : 0
-        const alpha = 1 - span(t, T_FLEE + 0.4, T_FLEE + 0.75)
+        const hop = p.stays
+          ? stayHop(t)
+          : t > T_FLEE
+            ? -Math.round(Math.abs(Math.sin((t - T_FLEE) * 10)) * 4)
+            : 0
+        const alpha = p.stays ? 1 : 1 - span(t, T_FLEE + 0.4, T_FLEE + 0.75)
         if (alpha > 0)
           drawSprite(g, s.foe, s.L.foe.x + fleeX(t), s.L.foe.y + hop, {
             sx: k,
@@ -232,6 +309,20 @@ export function catchTimeline(p: CatchParams): Timeline<S> {
           })
       }
       s.under.draw(g)
+      // The Bait, and the heart that says the Pokémon has seen it.
+      const bt = baitPos(s, t)
+      if (bt) {
+        drawBait(g, bt.x, bt.y)
+        const q = span(t, B1, B1 + 0.7)
+        if (q > 0 && q < 1 && !(q > 0.7 && Math.floor(t * 20) % 2))
+          drawHeart(g, bt.x, bt.y - 12 - Math.round(q * 6))
+      }
+      // Stayed: a "!" over its head.
+      if (p.stays && back && within(t, T_END + 0.45, T_END + 1.3)) {
+        const top = s.L.foe.y - fs.h - 6 + stayHop(t)
+        rect(g, Math.round(s.L.foe.x) - 1, top - 6, 2, 5, '#ffe066')
+        rect(g, Math.round(s.L.foe.x) - 1, top, 2, 2, '#ffe066')
+      }
       s.drawAttacker(g)
       // Dizzy stars while worn out.
       if (t < T_HIT) {
@@ -338,29 +429,39 @@ export function catchTimeline(p: CatchParams): Timeline<S> {
       s.end(g)
       // Wobble tension: the edges darken a little more with each wobble.
       const v =
-        WOB.filter((w) => t > w).length * 0.09 * (t < T_END + 0.2 ? 1 : 1 - span(t, T_END + 0.2, T_END + 0.6))
+        (PRIOR + WOB.filter((w) => t > w).length) *
+        0.09 *
+        (t < T_END + 0.2 ? 1 : 1 - span(t, T_END + 0.2, T_END + 0.6))
       if (v > 0) vignette(g, v)
       if (!caught && within(t, T_END + 0.15, T_END + 0.15 + 2 / 60)) screenFlash(g, '#ffffff', 0.55)
     },
     cues: () => {
-      const c: Cue<S>[] = [
-        [T_THROW, () => fxSound('catch.throw')],
-        [T_OPEN, () => fxSound('catch.open')],
-        [T_ABS, (hud) => hud.show?.('foe', false)],
-        [T_CLOSE, () => fxSound('catch.close')],
-        // The host rolls the catch die under the ball now; the wobbles keep the suspense.
-        [T_ROLL, (hud) => hud.beat?.('roll')],
-      ]
+      const c: Cue<S>[] = ground
+        ? []
+        : [
+            [T_THROW, () => fxSound('catch.throw')],
+            [T_OPEN, () => fxSound('catch.open')],
+            [T_ABS, (hud) => hud.show?.('foe', false)],
+            [T_CLOSE, () => fxSound('catch.close')],
+            // The host rolls the catch die under the ball now; the wobbles keep the suspense.
+            [T_ROLL, (hud) => hud.beat?.('roll')],
+          ]
+      if (BAIT)
+        c.push([B0, () => fxSound('catch.throw')], [B1, (hud) => (fxSound('catch.bait'), hud.beat?.('bait'))])
       for (const w of WOB)
         c.push([w, () => fxSound('catch.wobble')], [w + 0.4, () => fxSound('catch.settle')])
-      if (caught) c.push([T_END, (hud) => (fxSound('catch.gotcha'), hud.catchResult?.(true))])
-      else
+      if (p.hold) c.push([T_HOLD - 0.05, (hud) => hud.beat?.('hold')])
+      else if (caught) c.push([T_END, (hud) => (fxSound('catch.gotcha'), hud.catchResult?.(true))])
+      else {
         c.push(
           [T_END + 0.15, () => fxSound('catch.break')],
           [T_END + 0.2, (hud) => (hud.show?.('foe', true), hud.catchResult?.(false))],
-          [T_FLEE + 0.45, (hud) => hud.show?.('foe', false)],
         )
-      return c.sort((a, b) => a[0] - b[0])
+        if (p.stays) c.push([T_END + 0.55, (hud) => (fxSound('catch.stay'), hud.beat?.('stays'))])
+        else c.push([T_FLEE + 0.45, (hud) => hud.show?.('foe', false)])
+      }
+      // On the part's own clock.
+      return c.map(([at, fn]) => [at - O, fn] as Cue<S>).sort((a, b) => a[0] - b[0])
     },
   }
 }

@@ -162,7 +162,7 @@ function ProgressRaidPage({ raidKey }: { raidKey: string }) {
           offer={offer}
           need={need}
           group={group}
-          level={raidTeamCap(data, raid.dex, 'progress')}
+          level={raidTeamCap(data, raid.dex, 'progress', raid.areaId)}
           onBack={() => setOffer(null)}
           onStart={go}
         />

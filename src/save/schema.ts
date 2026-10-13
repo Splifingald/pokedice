@@ -52,6 +52,7 @@ const progressSchema = z.object({
   cleared: z.boolean(),
   bossDefeated: z.boolean(),
   bossesDefeated: z.array(z.number().int()).default([]),
+  bossesCaught: z.array(z.number().int()).optional(),
   gymsDefeated: z.array(z.string()).default([]),
   deck: z.array(z.enum(['wild', 'trainer', 'center', 'item', 'casino', 'legend'])).optional(),
   lootDeck: z.array(z.string()).optional(),
@@ -190,6 +191,7 @@ export const saveSchema = z.object({
           caught: z.boolean().optional(),
           bought: z.record(z.number().int().min(0)).optional(),
           closed: z.boolean().optional(),
+          home: z.record(z.number().int().min(0)).optional(),
         })
         .optional(),
       worldSeen: z.array(z.string().max(80)).max(20).optional(),
@@ -197,6 +199,11 @@ export const saveSchema = z.object({
       worldPending: z
         .array(z.object({ dex: z.number().int().min(1), level: z.number().int().min(1), shiny: z.boolean(), worldId: z.string().max(80) }))
         .max(50)
+        .optional(),
+      // A closed world's Pokémon waiting in their home region until its best reaches their level (docs/26 §1).
+      worldHome: z
+        .array(z.object({ inst: instanceSchema, region: z.string().min(1).max(80), worldId: z.string().max(80) }))
+        .max(2000)
         .optional(),
       rebattle: z
         .record(
@@ -226,6 +233,17 @@ export const saveSchema = z.object({
     .optional(),
   extremeUnlockedAt: z.number().optional(),
   extremeRulesSeen: z.boolean().optional(),
+  // The General upgrades (docs/25): their levels and the offline earnings' clock.
+  general: z
+    .object({
+      luck: z.number().int().min(0).max(100).optional(),
+      offline: z.number().int().min(0).max(100).optional(),
+      rich: z.boolean().optional(),
+      awayFrom: z.number().optional(),
+      carryMs: z.number().int().min(0).optional(),
+      rulesSeen: z.boolean().optional(),
+    })
+    .optional(),
   trades: z
     .object({
       out: z
@@ -251,6 +269,7 @@ export const saveSchema = z.object({
             at: z.number(),
             role: z.enum(['poster', 'taker']),
             with: z.string().max(40),
+            withRich: z.boolean().optional(),
             gave: tradeMonSchema,
             got: tradeMonSchema,
             evolvedTo: z.number().int().min(1).optional(),
@@ -260,6 +279,18 @@ export const saveSchema = z.object({
         .max(40)
         .optional(),
       unseen: z.array(z.string().max(80)).max(40).optional(),
+      rulesSeen: z.boolean().optional(),
+    })
+    .optional(),
+  gifts: z
+    .object({
+      done: z.array(z.number().int()).max(200).default([]),
+      rulesSeen: z.boolean().optional(),
+    })
+    .optional(),
+  invites: z
+    .object({
+      done: z.array(z.number().int()).max(200).default([]),
       rulesSeen: z.boolean().optional(),
     })
     .optional(),

@@ -1,13 +1,12 @@
-// The raid fight, full screen (docs/18 §3 "The battle", docs/19 §6.4): the classic battle layout — the foe in front at
-// the top right, the ally in front at the bottom left, with their plates — and whoever acts steps to the front. The
-// foes still on the field wait at the top right (tap one on your turn to aim at it), the other sides' Pokémon at the
-// bottom left with their trainer's name. Under the stage: the message, the dice, your target, your actions, then the
-// Bag, your raid team (tap one on your turn to switch), the speed button and Give up; then the catch, and the result.
+// The raid fight, full screen (docs/18 §3 "The battle", docs/19 §6.4): the classic battle layout — the raid Pokémon at
+// the top right, the ally in front at the bottom left, with their plates — and whichever side plays steps to the front
+// (the raid Pokémon strikes back at it right after). The other sides' Pokémon wait at the bottom left with their
+// trainer's name. Under the stage: the message, the dice, your actions, then the Bag, your raid team (tap one on your
+// turn to switch), the speed button and Give up; then the catch, and the result.
 // The fight is the engine's (engine/raidBattle.ts); this screen only plays its log.
 import { AnimatePresence, motion } from 'framer-motion'
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import {
-  BOSS_UID,
   comboDice,
   computeDamage,
   confusionRecoil,
@@ -43,6 +42,7 @@ import { PaceContext, RAID_FAST_SPEED } from '@/lib/pace'
 import { avatarOf, playerAvatarId } from '@/lib/avatars'
 import { setSettings, useGame } from '@/store/game'
 import {
+  answerRaidBait,
   emptySlots,
   ensureNpcOffer,
   leaveRaid,
@@ -53,6 +53,7 @@ import {
   raidIntroDone,
   throwRaidBall,
   useRaidRun,
+  type RaidCatch,
   type RaidRun,
 } from '@/store/raidBattle'
 import { holdReload } from '@/store/sync'
@@ -68,10 +69,10 @@ import {
 } from '../battle/BattlePanel'
 import { BattleStage, type StageOverlay } from '../battle/BattleStage'
 import { CatchPanel, catchMessage } from '../battle/CatchPanel'
-import { FoePlate } from '../battle/Plates'
 import { RaidIntro } from './RaidIntro'
 import { RaidNpcPicker } from './RaidNpcPicker'
 import { battlerOf, sideOfUid, useRaidAnimator, type RaidFx } from './raidAnimator'
+import { TrainerName } from '@/components/TrainerName'
 
 const BANNER_TONE = {
   super: 'bg-gold text-ink',
@@ -80,7 +81,7 @@ const BANNER_TONE = {
   info: 'bg-paper text-ink',
 }
 
-/** The raid Pokémon's plate: its bar, the colour of the next one under it, how many are left, its summon points. */
+/** The raid Pokémon's plate: its bar, the colour of the next one under it, how many are left. */
 function BossPlate({ b, hp, fx, bars, colors, aimed }: { b: Battler; hp: number; fx: RaidFx; bars: number; colors: string[]; aimed: boolean }) {
   const { t } = useT()
   // The last bar doesn't "break" in the log: the raid Pokémon is worn out instead.
@@ -101,14 +102,6 @@ function BossPlate({ b, hp, fx, bars, colors, aimed }: { b: Battler; hp: number;
         <b className="min-w-0 truncate text-[20px] font-normal leading-none">{b.name}</b>
         {b.shiny && <PixelIcon name="star" size={12} title={t('ui.mon.shiny')} className="shrink-0" />}
         <span className="shrink-0 font-pixel-sm text-[15px] leading-none">{t('ui.common.level.short', { n: b.level })}</span>
-        {fx.points > 0 && (
-          <span
-            className="ml-auto shrink-0 bg-[#efe2ff] px-[5px] pb-px font-pixel-sm text-[13px] leading-tight text-[#5a2a8a] shadow-[inset_0_0_0_2px_#c58aff]"
-            title={t('ui.raid.pointsTitle')}
-          >
-            {t('ui.raid.points', { n: fx.points })}
-          </span>
-        )}
       </span>
       <span className="flex flex-wrap items-center gap-1">
         {b.types.map((ty) => (
@@ -133,7 +126,24 @@ function BossPlate({ b, hp, fx, bars, colors, aimed }: { b: Battler; hp: number;
 }
 
 /** The ally in front: its trainer, level, HP with numbers, statuses, and the side's three Poké Balls. */
-function AllyPlate({ b, hp, owner, mine, team, fx }: { b: Battler; hp: number; owner: string; mine: boolean; team: Battler[]; fx: RaidFx }) {
+function AllyPlate({
+  b,
+  hp,
+  owner,
+  rich,
+  mine,
+  team,
+  fx,
+}: {
+  b: Battler
+  hp: number
+  owner: string
+  /** The friend's golden name ("I am just rich", docs/25). */
+  rich?: boolean
+  mine: boolean
+  team: Battler[]
+  fx: RaidFx
+}) {
   const { t } = useT()
   return (
     <div
@@ -146,9 +156,11 @@ function AllyPlate({ b, hp, owner, mine, team, fx }: { b: Battler; hp: number; o
           className={cx(
             'shrink-0 px-[5px] pb-px font-pixel-sm text-[12px] leading-tight',
             mine ? 'bg-crimson text-paper' : 'bg-[#dde5f0] text-ink',
+            // The light chip keeps a golden name's daylight gold at dusk too.
+            !mine && rich && 'light-scope',
           )}
         >
-          {mine ? t('ui.raid.you') : owner}
+          {mine ? t('ui.raid.you') : <TrainerName name={owner} rich={rich} />}
         </span>
         <b className="min-w-0 truncate text-[18px] font-normal leading-none">{b.name}</b>
         <span className="ml-auto shrink-0 font-pixel-sm text-[15px] leading-none">{t('ui.common.level.short', { n: b.level })}</span>
@@ -172,50 +184,28 @@ function AllyPlate({ b, hp, owner, mine, team, fx }: { b: Battler; hp: number; o
   )
 }
 
-/** A Pokémon waiting at the side of the stage: its mini sprite and HP (a button when you can aim at it). */
-function QueueMon({
-  b,
-  hp,
-  label,
-  onPick,
-  fled,
-  boss,
-  arrived,
-}: {
-  b: Battler
-  hp: number
-  label: string
-  onPick?: () => void
-  fled?: boolean
-  boss?: boolean
-  /** Just summoned: it pops in. */
-  arrived?: boolean
-}) {
+/** Another side's Pokémon waiting at the side of the stage: its mini sprite and HP. */
+function QueueMon({ b, hp, label }: { b: Battler; hp: number; label: string }) {
   const pct = Math.max(0, Math.min(1, hp / b.maxHp))
-  const Tag = onPick ? 'button' : 'span'
   return (
-    <li className={cx('transition-[transform,opacity] duration-500', fled && 'translate-x-10 opacity-0', arrived && 'rd-arrive')}>
-      <Tag
-        {...(onPick ? { type: 'button' as const, onClick: onPick } : { role: 'img' })}
+    <li>
+      <span
+        role="img"
         aria-label={label}
         title={label}
-        className={cx(
-          'relative grid w-[44px] justify-items-center gap-px px-0.5 pb-[3px] pt-px shadow-[inset_0_0_0_2px_#24304f]',
-          boss ? 'bg-[#fff3c4e0]' : 'bg-[#fbfdffe0]',
-          onPick && 'min-h-[44px]',
-        )}
+        className="relative grid w-[44px] justify-items-center gap-px bg-[#fbfdffe0] px-0.5 pb-[3px] pt-px shadow-[inset_0_0_0_2px_#24304f]"
       >
         <MiniSprite dex={b.dex} size={30} className="-my-1" />
         <span className="block h-[5px] w-[28px] bg-ink" aria-hidden>
           <span className="block h-full" style={{ width: `${pct * 100}%`, background: pct > 0.5 ? '#34c97a' : pct > 0.2 ? '#ffbe2e' : '#f2553f' }} />
         </span>
-      </Tag>
+      </span>
     </li>
   )
 }
 
 /**
- * The speed button: the ally sides' and the summons' turns at ×1 or ×1.5 (the raid Pokémon's and yours never change).
+ * The speed button: the ally sides' turns at ×1 or ×1.5 (the raid Pokémon's and yours never change).
  * It shows the speed they play at, so the state is a word as well as a colour.
  */
 export function RaidSpeedButton({ on, onChange }: { on: boolean; onChange: (on: boolean) => void }) {
@@ -304,8 +294,8 @@ export function RaidView({ run }: { run: RaidRun }) {
     if (!intro) playCry(st.boss.dex)
   }, [intro]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const own = battlerOf(run, fx, fx.activeUid) ?? st.sides[0]!.mons[0]!
-  const foe = battlerOf(run, fx, fx.foeUid) ?? st.boss
+  const own = battlerOf(run, fx.activeUid) ?? st.sides[0]!.mons[0]!
+  const foe = st.boss
   const ownSide = Math.max(0, sideOfUid(st.sides, own.uid))
   const art = useMemo(() => pictureOf(run.raid.areaId), [run.raid.areaId])
 
@@ -380,7 +370,8 @@ export function RaidView({ run }: { run: RaidRun }) {
   // ---- The catch.
   const catching = run.stage === 'catch' && !!run.catch
   const [thrown, setThrown] = useState<StageOverlay | null>(null)
-  const [revealed, setRevealed] = useState(false)
+  // Back on a throw already made (the Bait's question): its result shows at once, with its buttons.
+  const [revealed, setRevealed] = useState(() => !!useRaidRun.getState().run?.catch?.result)
   const catchState = run.catch
     ? {
         dex: run.raid.dex,
@@ -391,32 +382,46 @@ export function RaidView({ run }: { run: RaidRun }) {
         result: run.catch!.result ? { ...run.catch!.result, events: [], pendingCatchId: null } : null,
       }
     : null
+  // A throw a Bait could still save stops with the ball on the ground while the panel asks (docs/25); the answer
+  // plays on from that frame. Raids have no Capture Luck.
+  const catchScene = (r: NonNullable<RaidCatch['result']>, from?: 'ground'): StageOverlay => ({
+    timeline: catchTimeline({
+      own: spriteKey(own.dex, true, own.shiny),
+      foe: spriteKey(st.boss.dex, false, st.boss.shiny),
+      ball: ballOfItem(r.ballKey),
+      caught: r.caught,
+      short: level === 'short',
+      hold: !!r.baitOffer,
+      from,
+      bait: r.baited === 'used',
+    }),
+    ready: Promise.all([loadSprite(own.dex, true, own.shiny), loadSprite(st.boss.dex, false, st.boss.shiny)]),
+    label:
+      r.baited === 'used'
+        ? t('ui.catch.baitThrown', { name: st.boss.name })
+        : t('ui.catch.throwing', { ball: data.items[r.ballKey ?? 'poke-ball']?.name ?? t('ui.catch.aBall') }),
+    hud: { catchResult: () => setRevealed(true) },
+    onEnd: () => setRevealed(true),
+  })
   const onThrow = (ballKey: string | null) => {
     throwRaidBall(ballKey)
     const r = useRaidRun.getState().run?.catch?.result
     if (!r) return
-    setThrown({
-      timeline: catchTimeline({
-        own: spriteKey(own.dex, true, own.shiny),
-        foe: spriteKey(st.boss.dex, false, st.boss.shiny),
-        ball: ballOfItem(r.ballKey),
-        caught: r.caught,
-        short: level === 'short',
-      }),
-      ready: Promise.all([loadSprite(own.dex, true, own.shiny), loadSprite(st.boss.dex, false, st.boss.shiny)]),
-      label: t('ui.catch.throwing', { ball: data.items[r.ballKey ?? 'poke-ball']?.name ?? t('ui.catch.aBall') }),
-      hud: { catchResult: () => setRevealed(true) },
-      onEnd: () => setRevealed(true),
-    })
+    setRevealed(false)
+    setThrown(catchScene(r))
+  }
+  const onBait = (use: boolean) => {
+    answerRaidBait(use)
+    const r = useRaidRun.getState().run?.catch?.result
+    if (!r || r.baitOffer) return
+    setRevealed(false)
+    setThrown(catchScene(r, 'ground'))
   }
 
-  // ---- What's around the pair in front.
-  const foesWaiting = [BOSS_UID, ...fx.field].filter((uid) => uid !== fx.foeUid && !fx.fainted[uid])
+  // ---- The other sides, waiting beside the ally in front.
   const alliesWaiting = fx.sideActive
     .map((uid, i) => ({ uid, i }))
     .filter(({ uid, i }) => uid !== fx.activeUid && !fx.out[i])
-  const aim = (uid: string) => (canAct || stunned ? () => act({ t: 'TARGET', uid }) : undefined)
-  const targets = myTurn ? [st.boss, ...st.summons] : []
 
   const message = catchState ? catchMessage(catchState, st.boss.name, { revealed: revealed || run.stage === 'result' }) : fx.message
   const heading = t('ui.raid.heading', { name: st.boss.name })
@@ -440,43 +445,20 @@ export function RaidView({ run }: { run: RaidRun }) {
       >
         {!intro && !thrown && (
           <>
-            {foe.uid === BOSS_UID ? (
-              <BossPlate b={foe} hp={fx.hp[foe.uid] ?? foe.hp} fx={fx} bars={st.bars} colors={cfg.barColors} aimed={myTurn && duel?.enemy.uid === foe.uid} />
-            ) : (
-              <FoePlate b={foe} hp={fx.hp[foe.uid] ?? foe.hp} />
-            )}
+            <BossPlate b={foe} hp={fx.hp[foe.uid] ?? foe.hp} fx={fx} bars={st.bars} colors={cfg.barColors} aimed={myTurn} />
             <AllyPlate
               b={own}
               hp={fx.hp[own.uid] ?? own.hp}
               owner={st.sides[ownSide]?.owner ?? ''}
+              rich={run.friends.some((f) => f.rich && f.userId === st.sides[ownSide]?.userId)}
               mine={ownSide === 0}
               team={st.sides[ownSide]?.mons ?? []}
               fx={fx}
             />
-            {foesWaiting.length > 0 && (
-              <ol aria-label={t('ui.raid.foesQueue')} className="absolute right-[2%] top-[3%] z-[2] m-0 flex list-none gap-[3px] p-0">
-                {foesWaiting.map((uid) => {
-                  const b = battlerOf(run, fx, uid)
-                  if (!b) return null
-                  return (
-                    <QueueMon
-                      key={uid}
-                      b={b}
-                      arrived={fx.arrived?.uid === uid && !calm}
-                      hp={fx.hp[uid] ?? b.hp}
-                      boss={uid === BOSS_UID}
-                      fled={!!fx.fled?.uids.includes(uid)}
-                      label={canAct || stunned ? t('ui.raid.aimAt', { name: b.name }) : b.name}
-                      onPick={aim(uid)}
-                    />
-                  )
-                })}
-              </ol>
-            )}
             {alliesWaiting.length > 0 && (
               <ol aria-label={t('ui.raid.alliesQueue')} className="absolute bottom-[4%] left-[2%] z-[2] m-0 flex list-none gap-[3px] p-0">
                 {alliesWaiting.map(({ uid, i }) => {
-                  const b = battlerOf(run, fx, uid)
+                  const b = battlerOf(run, uid)
                   if (!b) return null
                   return <QueueMon key={uid} b={b} hp={fx.hp[uid] ?? b.hp} label={t('ui.raid.allyOf', { owner: st.sides[i]!.owner, name: b.name })} />
                 })}
@@ -539,39 +521,9 @@ export function RaidView({ run }: { run: RaidRun }) {
           {run.stage === 'result' ? (
             <RaidResult run={run} />
           ) : catching && catchState ? (
-            <CatchPanel c={catchState} onThrow={onThrow} revealed={revealed} onContinue={raidCatchShown} />
+            <CatchPanel c={catchState} onThrow={onThrow} revealed={revealed} onContinue={raidCatchShown} onBait={onBait} />
           ) : (
             <>
-              {targets.length > 1 && (
-                // One even row, whatever the names: the foe you aim at is the dark one.
-                <div
-                  role="radiogroup"
-                  aria-label={t('ui.raid.target')}
-                  className="grid gap-1"
-                  style={{ gridTemplateColumns: `repeat(${targets.length}, minmax(0, 1fr))` }}
-                >
-                  {targets.map((b) => {
-                    const on = duel?.enemy.uid === b.uid
-                    return (
-                      <button
-                        key={b.uid}
-                        type="button"
-                        role="radio"
-                        aria-checked={on}
-                        disabled={!(canAct || stunned)}
-                        onClick={() => act({ t: 'TARGET', uid: b.uid })}
-                        className={cx(
-                          'flex min-h-[44px] min-w-0 items-center pr-1.5 text-[16px] leading-none',
-                          on ? 'bg-ink text-paper' : 'bg-paper shadow-[inset_0_0_0_2px_#b6c3d9]',
-                        )}
-                      >
-                        <MiniSprite dex={b.dex} size={34} className="-my-1 shrink-0" />
-                        <span className="min-w-0 truncate">{b.name}</span>
-                      </button>
-                    )
-                  })}
-                </div>
-              )}
               <DiceTray
                 tray={tray}
                 live={rolling}
@@ -764,7 +716,7 @@ function RaidResult({ run }: { run: RaidRun }) {
   const [offer, setOffer] = useState<RaidNpcOption[] | null>(null)
   const need = emptySlots(run.friends)
   const cap =
-    run.source.kind === 'progress' ? raidTeamCap(data, progressRaidOf(data, run.source.key)?.dex ?? run.raid.dex, 'progress') : data.config.events.raid.teamCap
+    run.source.kind === 'progress' ? raidTeamCap(data, progressRaidOf(data, run.source.key)?.dex ?? run.raid.dex, 'progress', run.raid.areaId) : data.config.events.raid.teamCap
   const again = (npcs: RaidNpcOption[] = []) => {
     setOffer(null)
     if (!raidAgain(npcs)) leaveRaid()

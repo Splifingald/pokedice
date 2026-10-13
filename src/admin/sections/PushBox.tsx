@@ -1,4 +1,4 @@
-// Admin → Config → Push notifications (docs/25): the three-way switch, the raid's hour and the quiet hours, then what
+// Admin → Config → Push notifications (docs/27): the three-way switch, the raid's hour and the quiet hours, then what
 // the server knows: how many devices said yes, on which systems, what's waiting, and the last delivery (notices
 // waiting past their time mean the sender is missing its settings on Netlify).
 import { useCallback, useEffect, useState } from 'react'
@@ -32,7 +32,7 @@ function usePushStats() {
     if (err)
       setError(
         /push_stats|function/.test(err.message)
-          ? 'Run supabase/migrations/0048_push.sql first.'
+          ? 'Run supabase/migrations/0053_push.sql first.'
           : err.message,
       )
     else {
@@ -102,7 +102,7 @@ export function PushBox() {
       <div className="grid gap-1 text-lg">
         {!VAPID_PUBLIC_KEY && (
           <p className="m-0 text-danger">
-            This build has no VITE_VAPID_PUBLIC_KEY: players can't subscribe (docs/25 → Setting it up).
+            This build has no VITE_VAPID_PUBLIC_KEY: players can't subscribe (docs/27 → Setting it up).
           </p>
         )}
         {error ? (
@@ -117,7 +117,7 @@ export function PushBox() {
             <p className={stats.lastRun ? 'm-0 text-muted' : 'm-0 text-danger'}>
               {stats.lastRun
                 ? `Last delivery ${agoText(Date.parse(stats.lastRun), Date.now())}: ${stats.lastSent ?? 0} sent.`
-                : "Nothing delivered yet. Notices waiting past their time? Check the sender's Netlify settings (docs/25)."}
+                : "Nothing delivered yet. Notices waiting past their time? Check the sender's Netlify settings (docs/27)."}
             </p>
           </>
         ) : (

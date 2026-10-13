@@ -1,4 +1,4 @@
-// Push notifications' question and rules (docs/25, docs/15 §20). The first time a player opens a feature that can send
+// Push notifications' question and rules (docs/27, docs/15 §20). The first time a player opens a feature that can send
 // them (the Day Care, the raids, a live event) while push is off on this device, one pop-up asks: "Enable push
 // notifications to be notified about upcoming raids". Yes asks the browser; No thanks means that feature never asks
 // again, while the others still ask once. On an iPhone in a Safari tab it says how to add the game to the Home Screen
@@ -9,6 +9,8 @@ import {
   dayCareTutorialDue,
   donationDue,
   eventUnlockDue,
+  generalRulesDue,
+  inviteRulesDue,
   leaderboardTutorialDue,
   liveEventAt,
   regionOfferDue,
@@ -169,7 +171,9 @@ function useOthersDue(): boolean {
       !!regionOfferDue(s.save, s.data) ||
       !!eventUnlockDue(s.save, s.data) ||
       versusRulesDue(s.save, s.data) ||
-      tradeRulesDue(s.save, s.data),
+      tradeRulesDue(s.save, s.data) ||
+      generalRulesDue(s.save, s.data) ||
+      (s.auth.status === 'signed_in' && inviteRulesDue(s.save, s.data)),
   )
 }
 

@@ -36,7 +36,10 @@ export function autoEvents(state: BattleState, data: GameData, rng: Rng): Battle
       if (form) return [{ t: 'CHANGE_FORM', toDex: form.dex }]
       // Like a player would: a Pokémon that can't touch the foe (Normal vs Ghost) makes way for one that can.
       const a = activeBattler(state)
-      const better = !canHurt(a, state.enemy, data) && state.player.find((b) => b.hp > 0 && canHurt(b, state.enemy, data))
+      const scale = state.playerLevels.typeScale
+      const better =
+        !canHurt(a, state.enemy, data, scale) &&
+        state.player.find((b) => b.hp > 0 && canHurt(b, state.enemy, data, scale))
       if (better && data.config.allowVoluntarySwitch) return [{ t: 'SWITCH', instanceId: better.uid }]
       return [{ t: 'ROLL' }]
     }
@@ -44,7 +47,7 @@ export function autoEvents(state: BattleState, data: GameData, rng: Rng): Battle
       return [{ t: 'PASS' }]
     case 'player_switch': {
       const alive = state.player.filter((b, i) => b.hp > 0 && i !== state.activeIndex)
-      const next = alive.find((b) => canHurt(b, state.enemy, data)) ?? alive[0]
+      const next = alive.find((b) => canHurt(b, state.enemy, data, state.playerLevels.typeScale)) ?? alive[0]
       return next ? [{ t: 'SWITCH', instanceId: next.uid }] : []
     }
     case 'player_reroll': {

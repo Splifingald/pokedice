@@ -29,7 +29,8 @@ function AreaHeader({ area, progress, teamAvg }: { area: Area; progress: AreaPro
     progress.cleared && t('ui.area.clearedNote', { multiplier: area.backtrackMultiplier }),
   ].filter(Boolean)
   // "Round 2/3" while rounds are still needed; a checkmark once they're all done (secret areas: nothing).
-  const need = area.roundsToClear
+  // 0 rounds: a league of fights only (docs/26), nothing to count.
+  const need = area.roundsToClear || null
   const done = progress.roundsDone ?? 0
   const [details, setDetails] = useState(false)
   return (

@@ -73,6 +73,7 @@ import {
 } from './daycare/parts'
 import { YardStage, type YardMember } from './daycare/YardStage'
 import { useInWorld, WorldAwayPage } from '@/screens/events/world'
+import { NameIn, TrainerName } from '@/components/TrainerName'
 
 /** Re-render every 20 s so levels and countdowns stay current. */
 function useNow(ms = 20_000) {
@@ -151,6 +152,8 @@ function GuestCard({ g, onSend }: { g: DayCareGuest; onSend: () => void }) {
   const { t } = useT()
   const save = useGame((s) => s.save)!
   const data = useGame((s) => s.data)
+  // Their golden name ("I am just rich", docs/25), as their Day Care was last read.
+  const rich = useFriendCares((s) => s.rows.some((r) => r.rich && r.owner === g.owner))
   const nameOf = useNameOf()
   const name = nameOf(g)
   const mates = matesOf(save, data, guestKey(g)).filter((m) => m.mine != null)
@@ -160,7 +163,9 @@ function GuestCard({ g, onSend }: { g: DayCareGuest; onSend: () => void }) {
       head={
         <>
           <TrainerLook src={avatarOf(g.ownerAvatar).src} w={26} h={26} className="-my-1 -ml-0.5" />
-          <span className="truncate">{t('ui.dayCare.ownerTag', { name: g.ownerName })}</span>
+          <span className="truncate">
+            <NameIn name={g.ownerName} rich={rich} text={(name) => t('ui.dayCare.ownerTag', { name })} />
+          </span>
         </>
       }
       dex={g.dex}
@@ -478,7 +483,7 @@ function FriendSheet({ open, onClose }: { open: boolean; onClose: () => void }) 
             <section key={f.owner} className="grid gap-1.5" aria-label={f.name}>
               <h3 className="m-0 flex items-center gap-1.5 text-[19px] font-normal leading-none">
                 <TrainerLook src={avatarOf(f.avatar).src} w={26} h={26} />
-                <span className="min-w-0 truncate">{f.name}</span>
+                <TrainerName name={f.name} rich={f.rich} className="min-w-0 truncate" />
                 <small className="ml-auto font-pixel-sm text-[13px] text-muted">
                   {tPlural('ui.dayCare.atDayCare', f.mons.length, { n: f.mons.length })}
                 </small>
@@ -665,7 +670,7 @@ function DayCareScreenMain() {
   const [hatchId, setHatchId] = useState(0)
   const open = !!save && isDayCareOpen(save, data)
   const { calm } = useMotion()
-  // Push notifications' question, once (docs/25): an Egg can be announced while the game is closed.
+  // Push notifications' question, once (docs/27): an Egg can be announced while the game is closed.
   usePushAsk('egg', open)
   const auth = useGame((s) => s.auth.status)
   const caresError = useFriendCares((s) => s.error)

@@ -41,9 +41,12 @@ export function progressRaids(data: GameData, region?: RegionId): ProgressRaid[]
     .flatMap((a) => progressRaidsIn(data, a))
 }
 
-/** Its colours: an always-shiny boss (the red Gyarados) stays shiny as a raid; legendaries never are (shinyLocked). */
+/**
+ * Its colours: an always-shiny boss (the red Gyarados) stays shiny as a raid; legendaries never are (shinyLocked), but
+ * in a small world, whose shiny raids are its prizes (docs/26 §2.5: Darkrai, Giratina).
+ */
 export const progressRaidShiny = (data: GameData, raid: ProgressRaid): boolean =>
-  !!raid.boss.shiny && !shinyLocked(data, raid.dex)
+  !!raid.boss.shiny && (!shinyLocked(data, raid.dex) || isWorldRegion(data, raid.region))
 
 /** The progression raid a key names, if it is one (a stale link or a boss that isn't a raid any more: null). */
 export function progressRaidOf(data: GameData, key: string): ProgressRaid | null {
@@ -98,7 +101,7 @@ export function regionBox(save: SaveData, region: RegionId): PokemonInstance[] {
  * highest levels. Only that region's Box, each fighting as a copy at the raid's team cap at most.
  */
 export function progressRaidTeam(save: SaveData, data: GameData, raid: ProgressRaid): RaidMon[] {
-  const cap = raidTeamCap(data, raid.dex, 'progress')
+  const cap = raidTeamCap(data, raid.dex, 'progress', raid.areaId)
   const box = regionBox(save, raid.region).filter((p) => !!data.species[p.dex])
   const chosen = (save.events?.raidTeams?.[raid.key] ?? []).flatMap((id) =>
     box.filter((p) => p.id === id).slice(0, 1),
@@ -145,4 +148,4 @@ export function applyProgressRaidCatch(
 }
 
 /** A progression raid's numbers (its own, then the progression default, then the raid's). */
-export const progressRaidRules = (data: GameData, raid: ProgressRaid) => raidRules(data, raid.dex, 'progress')
+export const progressRaidRules = (data: GameData, raid: ProgressRaid) => raidRules(data, raid.dex, 'progress', raid.areaId)

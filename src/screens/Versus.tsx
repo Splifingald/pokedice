@@ -371,6 +371,7 @@ function Opponents({
                   key={r.userId}
                   look={avatarOf(r.avatar).src}
                   name={r.name}
+                  rich={r.rich}
                   isFriend={friends.has(r.userId)}
                   team={r.team}
                   dim={r.beaten}
@@ -662,6 +663,7 @@ function Board({ rows }: { rows: VersusEntry[] }) {
             rank={r.rank}
             look={avatarOf(r.avatar).src}
             name={r.name}
+            rich={r.rich}
             isMe={r.isMe}
             isFriend={!!r.friendId}
             onOpen={r.friendId ? () => setCard({ id: r.userId, name: r.name }) : undefined}

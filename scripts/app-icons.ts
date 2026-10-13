@@ -1,5 +1,5 @@
 /**
- * pnpm app-icons — the installed app's icons and the notifications' own pictures (docs/25), drawn from the game's
+ * pnpm app-icons — the installed app's icons and the notifications' own pictures (docs/27), drawn from the game's
  * pixel maps at whole-pixel scales so they stay crisp: the favicon's ball for the app (Android, the iPhone's Home
  * Screen) and the Day Care's Egg for its notices. Writes public/icons/*.png; run again after changing a map.
  *

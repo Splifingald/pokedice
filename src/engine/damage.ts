@@ -1,18 +1,29 @@
 import { detectCombos, selectCombo, type ComboResult } from './combos'
 import { dieValue, type RolledDie } from './dice'
 import { typeMultiplier } from './typechart'
-import { COMBO_KEYS, POKE_TYPES, type ComboKey, type DieType, type GameData, type PokeType } from './types'
+import {
+  COMBO_KEYS,
+  POKE_TYPES,
+  type ComboKey,
+  type DieType,
+  type GameData,
+  type PokeType,
+  type RaidTypeScale,
+} from './types'
 
 export interface UpgradeLevels {
   comboLevels: Partial<Record<ComboKey, number>>
   dieLevels: Partial<Record<PokeType, number>>
-  /**
-   * A small world (docs/21): no upgrades — each Pokémon's dice and combos are at its own level ÷ 10 (`diceLevelOf`), so
-   * the tracks above are ignored and `attackerLevels` works them out from the attacker's level.
-   */
-  byLevel?: true
   /** A small world's boosters: × the damage of every hit of these types (shown in the damage recap). */
   typeBoost?: Partial<Record<PokeType, number>>
+  /** A raid's type matchups for this side's attacks, instead of ×2, ×½ and ×0 (`scaleMatchup`). */
+  typeScale?: RaidTypeScale
+}
+
+/** The type chart's multiplier read through a raid's matchups: neutral stays ×1, an untyped hit too. */
+export function scaleMatchup(m: number, scale: RaidTypeScale | undefined): number {
+  if (!scale) return m
+  return m === 0 ? scale.immune : m > 1 ? scale.super : m < 1 ? scale.resisted : m
 }
 
 /** Every combo and die track at the same level — used for wild/trainer Pokémon and the simulator. */
@@ -21,18 +32,6 @@ export function uniformLevels(level: number): UpgradeLevels {
     comboLevels: Object.fromEntries(COMBO_KEYS.map((k) => [k, level])),
     dieLevels: Object.fromEntries(POKE_TYPES.map((t) => [t, level])),
   }
-}
-
-/**
- * A Pokémon's dice and combo level in a small world: its level ÷ 10, rounded down (Lv.1–9 = 0, Lv.55 = 5, Lv.100 =
- * 10), on the upgrades' own scale — 0 and 1 are both the base track, 10 the last.
- */
-export const diceLevelOf = (level: number): number => Math.max(0, Math.min(10, Math.floor(level / 10)))
-
-/** The tracks an attacker hits with: its side's, or in a small world its own level's (the boosters kept). */
-export function attackerLevels(levels: UpgradeLevels, attackerLevel: number): UpgradeLevels {
-  if (!levels.byLevel) return levels
-  return { ...uniformLevels(diceLevelOf(attackerLevel)), byLevel: true, ...(levels.typeBoost && { typeBoost: levels.typeBoost }) }
 }
 
 /** × an attack of this type gets from a small world's boosters (1 without one). */
@@ -79,9 +78,14 @@ export function attackType(
   return [...counts.keys()].reduce((a, b) => (better(score(b), score(a)) ? b : a))
 }
 
-/** The multiplier the whole attack gets: its attack type vs the defender (×1 when untyped). */
-export function attackMultiplier(type: PokeType | null, defenderTypes: readonly PokeType[], data: GameData): number {
-  return type ? typeMultiplier(data.typeChart, type, defenderTypes) : 1
+/** The multiplier the whole attack gets: its attack type vs the defender (×1 when untyped), through a raid's matchups. */
+export function attackMultiplier(
+  type: PokeType | null,
+  defenderTypes: readonly PokeType[],
+  data: GameData,
+  scale?: RaidTypeScale,
+): number {
+  return type ? scaleMatchup(typeMultiplier(data.typeChart, type, defenderTypes), scale) : 1
 }
 
 export interface DieBreakdown {
@@ -120,7 +124,7 @@ export function computeDamage(
   data: GameData,
 ): DamageResult {
   const type = attackType(dice, attackerTypes, defenderTypes, data)
-  const multiplier = attackMultiplier(type, defenderTypes, data)
+  const multiplier = attackMultiplier(type, defenderTypes, data, levels.typeScale)
   const perDie: DieBreakdown[] = dice.map((d) => {
     const value = dieValue(d, data)
     const bonus = dieUpgradeBonus(d.type, levels, data)

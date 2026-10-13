@@ -1,30 +1,39 @@
 // Side menu → Contact the developer: a title and a message, sent to Admin → Messages; and My messages, every message
-// the player sent with the developer's answer.
+// the player sent with the developer's answer, what the developer wrote first, and the gifts they carry (docs/15 §23).
 import { useEffect, useState, type FormEvent } from 'react'
 import { getLang } from '@/i18n'
 import { useT } from '@/i18n/react'
+import { giftsWait, parseGifts } from '@/engine'
 import {
   FEEDBACK_MESSAGE_MAX,
   FEEDBACK_TITLE_MAX,
   sendFeedback,
+  unopenedGifts,
   unseenReplies,
   useInbox,
 } from '@/lib/feedback'
-import { pushToast } from '@/store/game'
+import { requestGifts, useGiftMoment } from '@/store/gifts'
+import { pushToast, useGame } from '@/store/game'
+import { useCloudSync } from '@/store/sync'
 import { cx } from '@/theme/util'
+import { GiftOpened, GiftPresent, GiftRulesModal } from './Gifts'
 import { Modal } from './Modal'
 import { PixelButton } from './PixelButton'
+import { InfoButton } from './RulesModal'
 
 const when = (iso: string) =>
   new Date(iso).toLocaleString(getLang(), { dateStyle: 'medium', timeStyle: 'short' })
 
-/** The developer's answer to a message, framed so it reads apart from what the player wrote. */
-export function ReplyBox({ reply, at }: { reply: string; at: string | null }) {
+/**
+ * The developer's answer to a message, framed so it reads apart from what the player wrote; or, `fromDev`, the message
+ * the developer wrote first.
+ */
+export function ReplyBox({ reply, at, fromDev }: { reply: string; at: string | null; fromDev?: boolean }) {
   const { t } = useT()
   return (
     <div className="bg-gold-pale p-2 shadow-ring">
       <p className="flex flex-wrap items-baseline justify-between gap-x-2 text-lg leading-none">
-        <b>{t('ui.contact.answer')}</b>
+        <b>{t(fromDev ? 'ui.contact.fromDev' : 'ui.contact.answer')}</b>
         {at && <span className="text-base text-muted">{when(at)}</span>}
       </p>
       <p className="copy mt-1 whitespace-pre-wrap break-words text-lg leading-snug">{reply}</p>
@@ -32,13 +41,24 @@ export function ReplyBox({ reply, at }: { reply: string; at: string | null }) {
   )
 }
 
-/** Everything the player sent, newest first, each with its answer. Opening it marks the answers seen. */
-function History() {
+/**
+ * Everything the player sent, newest first, each with its answer, and what the developer wrote first; the gifts any of
+ * them carries (opened: what it held; not yet: OPEN IT, or why it waits), and the gifts' INFO. Opening it marks the
+ * answers seen.
+ */
+function History({ onClose }: { onClose: () => void }) {
   const { t } = useT()
   const messages = useInbox((s) => s.messages)
   const loading = useInbox((s) => s.loading)
   const load = useInbox((s) => s.load)
   const markSeen = useInbox((s) => s.markSeen)
+  const wait = useGame((s) => (s.save ? giftsWait(s.save, s.data) : 'off'))
+  // Asking the server, or a signed-in player's sync not settled yet: OPEN IT waits.
+  const busy = useGiftMoment((s) => s.busy)
+  const signedIn = useGame((s) => s.auth.status === 'signed_in')
+  const synced = useCloudSync((s) => s.settled)
+  const syncWait = signedIn && !synced
+  const [rules, setRules] = useState(false)
 
   useEffect(() => {
     void load()
@@ -51,27 +71,60 @@ function History() {
     return (
       <p className="text-xl text-muted">{t(loading ? 'ui.common.loading' : 'ui.contact.historyFailed')}</p>
     )
-  if (!messages.length) return <p className="text-xl text-muted">{t('ui.contact.historyEmpty')}</p>
+  const info = wait !== 'off' && (
+    <>
+      <InfoButton name={t('ui.gift.infoName')} onClick={() => setRules(true)} />
+      <GiftRulesModal open={rules} onClose={() => setRules(false)} />
+    </>
+  )
+  if (!messages.length)
+    return (
+      <div className="flex flex-col gap-3">
+        <p className="text-xl text-muted">{t('ui.contact.historyEmpty')}</p>
+        {info}
+      </div>
+    )
   return (
-    <ul className="flex flex-col gap-3">
-      {messages.map((m) => (
-        <li
-          key={m.id}
-          className="flex flex-col gap-1 border-b-2 border-edge/20 pb-3 last:border-b-0 last:pb-0"
-        >
-          <div className="flex flex-wrap items-baseline justify-between gap-x-2">
-            <p className="min-w-0 break-words text-xl leading-tight">{m.title}</p>
-            <span className="text-base text-muted">{when(m.created_at)}</span>
-          </div>
-          <p className="copy whitespace-pre-wrap break-words text-lg leading-snug">{m.message}</p>
-          {m.reply ? (
-            <ReplyBox reply={m.reply} at={m.replied_at} />
-          ) : (
-            <p className="text-base text-muted">{t('ui.contact.noAnswer')}</p>
-          )}
-        </li>
-      ))}
-    </ul>
+    <div className="flex flex-col gap-3">
+      <ul className="flex flex-col gap-3">
+        {messages.map((m) => {
+          const gifts = wait === 'off' ? [] : parseGifts(m.gifts)
+          return (
+            <li
+              key={m.id}
+              className="flex flex-col gap-1 border-b-2 border-edge/20 pb-3 last:border-b-0 last:pb-0"
+            >
+              <div className="flex flex-wrap items-baseline justify-between gap-x-2">
+                <p className="min-w-0 break-words text-xl leading-tight">{m.title}</p>
+                <span className="text-base text-muted">{when(m.created_at)}</span>
+              </div>
+              {!m.from_admin && <p className="copy whitespace-pre-wrap break-words text-lg leading-snug">{m.message}</p>}
+              {m.reply ? (
+                <ReplyBox reply={m.reply} at={m.replied_at} fromDev={m.from_admin} />
+              ) : (
+                <p className="text-base text-muted">{t('ui.contact.noAnswer')}</p>
+              )}
+              {gifts.length > 0 &&
+                (m.gifts_claimed ? (
+                  <GiftOpened gifts={gifts} />
+                ) : (
+                  <GiftPresent
+                    count={gifts.length}
+                    wait={wait}
+                    busy={busy || syncWait}
+                    onOpen={() => {
+                      // The opening takes the whole screen: the form goes first.
+                      onClose()
+                      requestGifts([m.id])
+                    }}
+                  />
+                ))}
+            </li>
+          )
+        })}
+      </ul>
+      {info}
+    </div>
   )
 }
 
@@ -79,7 +132,8 @@ function History() {
 export function ContactModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { t } = useT()
   const [tab, setTab] = useState<'write' | 'history'>('write')
-  const unseen = useInbox((s) => (s.messages ? unseenReplies(s.messages).length : 0))
+  // New answers, and gifts waiting to be opened.
+  const unseen = useInbox((s) => (s.messages ? unseenReplies(s.messages).length + unopenedGifts(s.messages).length : 0))
   const [title, setTitle] = useState('')
   const [message, setMessage] = useState('')
   const [sending, setSending] = useState(false)
@@ -131,7 +185,7 @@ export function ContactModal({ open, onClose }: { open: boolean; onClose: () => 
         ))}
       </div>
       {tab === 'history' ? (
-        <History />
+        <History onClose={onClose} />
       ) : (
         <form onSubmit={(e) => void submit(e)} className="flex flex-col gap-3">
           <p className="copy bg-gold-pale p-2 text-lg leading-snug shadow-ring">

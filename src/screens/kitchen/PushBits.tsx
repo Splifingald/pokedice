@@ -1,4 +1,4 @@
-// Kitchen sink: push notifications (docs/25) — each feature's question (Day Care, raids, live events), as it asks on a
+// Kitchen sink: push notifications (docs/27) — each feature's question (Day Care, raids, live events), as it asks on a
 // computer or Android and on an iPhone in a Safari tab (the Home Screen steps), then Settings' panel in each state:
 // off, on with its topics, blocked by the browser, an iPhone tab, a browser that can't.
 import { useState } from 'react'

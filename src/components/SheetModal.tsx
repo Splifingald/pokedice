@@ -8,12 +8,13 @@ import {
   regionSpecies,
   sendOnBlocked,
   sendTargets,
+  worldHomers,
   type PokemonInstance,
   type RegionId,
 } from '@/engine'
 import { dexNo } from '@/lib/format'
 import { useT } from '@/i18n/react'
-import { evolveAtLevelCap, reorderTeam } from '@/store/actions'
+import { evolveAtLevelCap, letHomerGo, reorderTeam } from '@/store/actions'
 import { pushToast, useGame } from '@/store/game'
 import { sendPokemonOn } from '@/store/regions'
 import { AreaDex } from './AreaDex'
@@ -21,18 +22,27 @@ import { DexEntry } from './DexEntry'
 import { EvolutionQueue, type EvolutionShow } from './Evolution'
 import { PixelIcon } from './icons'
 import { ItemPanel, useHasFieldItems } from './ItemPanel'
+import { HomerLock } from './HomerLock'
 import { NicknameButton, NicknameModal } from './Nickname'
 import { PixelButton } from './PixelButton'
 import { PokemonSheet } from './PokemonSheet'
 import { Sheet } from './Sheet'
 import { useTradeThis } from './trades/TradeThis'
 
-/** What the details sheet opens on: one of your Pokémon, a Pokédex entry, or an area's Pokémon. */
-export type SheetView = { kind: 'inst'; id: string } | { kind: 'dex'; dex: number } | { kind: 'area'; areaId: string }
+/**
+ * What the details sheet opens on: one of your Pokémon, a Pokédex entry, an area's Pokémon, or a small world's Pokémon
+ * waiting to unlock in this region (docs/26 §1).
+ */
+export type SheetView =
+  | { kind: 'inst'; id: string }
+  | { kind: 'dex'; dex: number }
+  | { kind: 'area'; areaId: string }
+  | { kind: 'homer'; id: string }
 /** Views reached from inside the sheet: also the "Use an item" list for one of your Pokémon. */
 type StackView = SheetView | { kind: 'items'; id: string }
 
-const viewKey = (v: SheetView) => (v.kind === 'inst' ? `i-${v.id}` : v.kind === 'dex' ? `d-${v.dex}` : `a-${v.areaId}`)
+const viewKey = (v: SheetView) =>
+  v.kind === 'inst' ? `i-${v.id}` : v.kind === 'dex' ? `d-${v.dex}` : v.kind === 'homer' ? `h-${v.id}` : `a-${v.areaId}`
 
 /**
  * Pokémon details in a sheet (from the bottom on phones). Tapping an evolution opens its Pokédex entry on top, with
@@ -92,6 +102,7 @@ function SheetStack({
   const back = () => setStack((s) => s.slice(0, -1))
   const openDex = (dex: number) => push({ kind: 'dex', dex })
   const inst = top.kind === 'inst' || top.kind === 'items' ? save?.box.find((p) => p.id === top.id) : undefined
+  const homer = top.kind === 'homer' && save ? worldHomers(save).find((h) => h.inst.id === top.id) : undefined
   const species = (dex: number) => data.species[dex]?.name ?? t('ui.common.unknown')
   const no = (dex: number) => dexNo(nationalDex(data, dex))
 
@@ -105,6 +116,14 @@ function SheetStack({
   } else if (inst && top.kind === 'items') {
     title = t('ui.itemPanel.title')
     sub = t('ui.sheet.itemsOn', { name: monName(inst, data), hp: inst.currentHp, max: instanceMaxHp(inst, data) })
+  } else if (homer) {
+    title = <NicknameButton name={monName(homer.inst, data)} onClick={() => setNaming(true)} />
+    sub = [
+      ...(homer.inst.nickname ? [species(homer.inst.dex)] : []),
+      no(homer.inst.dex),
+      t('ui.common.level.short', { n: homer.inst.level }),
+      t('ui.sheet.subWaiting'),
+    ].join(' · ')
   } else if (inst) {
     const at = save?.team.indexOf(inst.id) ?? -1
     // Its name is the button that gives it a nickname; a fossil still reviving isn't a Pokémon yet.
@@ -124,7 +143,9 @@ function SheetStack({
   }
 
   let footer: ReactNode = null
-  if (top.kind === 'items') {
+  if (homer) {
+    footer = <LetGoButton id={homer.inst.id} name={monName(homer.inst, data)} onGone={onClose} />
+  } else if (top.kind === 'items') {
     footer = (
       <PixelButton className="w-full" onClick={back}>
         {t('ui.common.back')}
@@ -183,6 +204,10 @@ function SheetStack({
             <DexEntry key={top.dex} dex={top.dex} onOpenDex={openDex} onTravel={onClose} />
           ) : top.kind === 'items' && inst ? (
             <ItemPanel inst={inst} onUsed={back} />
+          ) : homer ? (
+            <PokemonSheet dex={homer.inst.dex} inst={homer.inst} onOpenDex={openDex}>
+              <HomerLock homer={homer} />
+            </PokemonSheet>
           ) : inst ? (
             <PokemonSheet dex={inst.dex} inst={inst} onOpenDex={openDex}>
               <SendOnPanel inst={inst} onSent={onClose} />
@@ -193,10 +218,32 @@ function SheetStack({
         </div>
       </Sheet>
       <NicknameModal
-        inst={open && naming && top.kind === 'inst' && inst ? inst : null}
+        inst={open && naming ? (top.kind === 'inst' && inst ? inst : (homer?.inst ?? null)) : null}
         onClose={() => setNaming(false)}
       />
     </>
+  )
+}
+
+/** "Let it go", then "Sure? Tap again": a waiting Pokémon's only action besides its nickname. */
+function LetGoButton({ id, name, onGone }: { id: string; name: string; onGone: () => void }) {
+  const { t } = useT()
+  const [asked, setAsked] = useState(false)
+  return (
+    <PixelButton
+      variant="danger"
+      size="lg"
+      className="w-full"
+      onClick={() => {
+        if (!asked) return setAsked(true)
+        if (letHomerGo(id)) {
+          pushToast(t('ui.sheet.letGone', { name }), 'info')
+          onGone()
+        }
+      }}
+    >
+      {asked ? t('ui.sheet.sendOnConfirm') : t('ui.sheet.letGo')}
+    </PixelButton>
   )
 }
 

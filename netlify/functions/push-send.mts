@@ -1,4 +1,4 @@
-// The push sender (docs/25-PUSH-NOTIFICATIONS.md): a Netlify scheduled function, every 5 minutes. It signs in to
+// The push sender (docs/27-PUSH-NOTIFICATIONS.md): a Netlify scheduled function, every 5 minutes. It signs in to
 // Supabase with the service role (push_due and push_report are the sender's alone) and signs each push with the VAPID
 // keys. Its settings, in Netlify → Site configuration → Environment variables:
 //   VITE_SUPABASE_URL            the project's URL (the game's build reads the same one)

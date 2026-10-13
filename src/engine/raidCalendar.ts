@@ -9,6 +9,7 @@ import { raidAllyAllowed } from './raidBattle'
 import { regionOf, regionOfArea, regionOfSpecies } from './regions'
 import { createRng } from './rng'
 import type { Area, GameData, RaidMonRules, SaveData } from './types'
+import { worldOfArea } from './worldList'
 
 /** What kind of raid a day holds: a fixed date's, a mythical, a shiny legendary, a pseudo-legendary or a shiny filler. */
 export type RaidKind = 'special' | 'mythical' | 'legendary' | 'pseudo' | 'filler'
@@ -24,7 +25,7 @@ export interface RaidDay {
 }
 
 /** The numbers a raid Pokémon's own rules can change. */
-export const RAID_MON_KEYS = ['bars', 'barHp', 'startAllies', 'summonPerBreak', 'maxField', 'level', 'upgradeLevel'] as const
+export const RAID_MON_KEYS = ['bars', 'barHp', 'level', 'upgradeLevel'] as const
 export type RaidRules = Required<RaidMonRules>
 
 /** Which raid: the day's (the calendar) or a progression raid in an area (docs/24). */
@@ -34,28 +35,39 @@ export type RaidKindOf = 'daily' | 'progress'
  * A raid Pokémon's numbers: its own (Admin → Raids → Raid Pokémon) over the defaults. A progression raid reads its own
  * list (`raid.progress.perMon`), never the day's raid's.
  */
-export function raidRules(data: GameData, dex: number, kind: RaidKindOf = 'daily'): RaidRules {
+export function raidRules(data: GameData, dex: number, kind: RaidKindOf = 'daily', areaId?: string): RaidRules {
   const cfg = data.config.events.raid
   const own = (kind === 'progress' ? cfg.progress?.perMon?.[dex] : cfg.perMon?.[dex]) ?? {}
   const pick = (k: keyof RaidMonRules) => {
     const v = Number(own[k])
     return own[k] != null && Number.isFinite(v) ? v : (cfg[k] as number)
   }
+  const level = (kind === 'progress' && worldRaidLevel(data, dex, areaId)) || pick('level')
   return {
     bars: Math.max(1, Math.round(pick('bars'))),
     barHp: Math.max(0.1, pick('barHp') ?? 1),
-    startAllies: Math.max(0, Math.round(pick('startAllies'))),
-    summonPerBreak: Math.max(0, Math.round(pick('summonPerBreak'))),
-    maxField: Math.max(0, Math.round(pick('maxField'))),
-    level: Math.max(1, Math.min(100, Math.round(pick('level')))),
+    level: Math.max(1, Math.min(100, Math.round(level))),
     upgradeLevel: Math.max(1, Math.min(10, Math.round(pick('upgradeLevel')))),
   }
 }
 
-/** The sides' level cap: the day's raid's, or a progression raid's (its own, then the progression default). */
-export function raidTeamCap(data: GameData, dex: number, kind: RaidKindOf = 'daily'): number {
+/**
+ * A small world's progression raid fights at its boss's own level, and the teams are capped there (docs/26 §2.5): its
+ * Giratina is Lv.70 without moving Sinnoh's. Null for any other raid (the admin's numbers decide).
+ */
+export function worldRaidLevel(data: GameData, dex: number, areaId: string | undefined): number | null {
+  const area = areaId ? data.areas.find((a) => a.id === areaId) : undefined
+  if (!area || !worldOfArea(data, area)) return null
+  const boss = area.legendaryBoss?.find((b) => b.dex === dex)
+  return boss && boss.level > 0 ? boss.level : null
+}
+
+/** The sides' level cap: the day's raid's, or a progression raid's (a world's at its level, its own, the default). */
+export function raidTeamCap(data: GameData, dex: number, kind: RaidKindOf = 'daily', areaId?: string): number {
   const cfg = data.config.events.raid
   if (kind === 'daily') return cfg.teamCap
+  const world = worldRaidLevel(data, dex, areaId)
+  if (world) return Math.max(1, Math.min(100, Math.round(world)))
   const own = Number(cfg.progress?.perMon?.[dex]?.teamCap)
   const cap = Number.isFinite(own) && own > 0 ? own : (cfg.progress?.teamCap ?? cfg.teamCap)
   return Math.max(1, Math.min(100, Math.round(cap)))

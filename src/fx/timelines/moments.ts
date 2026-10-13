@@ -34,7 +34,7 @@ import { drawRays } from './legend'
 const C = { x: 120, y: 112 }
 
 /** A quiet stage for moments outside battle: a vertical gradient, a floor, a pool of light where the Pokémon stands. */
-function momentBg(top: string, bottom: string, floor: string, spot: string, seed: number): Canvas {
+export function momentBg(top: string, bottom: string, floor: string, spot: string, seed: number): Canvas {
   return cached(`moment|${top}|${bottom}|${floor}|${spot}`, () => {
     const r = rng(seed)
     const c = shade(W, H, (x, y) => {

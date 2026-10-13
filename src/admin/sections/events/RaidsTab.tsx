@@ -2,7 +2,7 @@
 // seed, one raid a UTC day; a month view shows it with each day's Pokémon, and any day from tomorrow on can be set by
 // hand (another Pokémon, or swapped with another day). A new seed re-plans only the days after it takes effect, and any
 // change pins today's raid, so the raid players are fighting never changes under them. Each raid Pokémon can have its
-// own numbers (HP bars, summons, level…) over the defaults.
+// own numbers (HP bars, level…) over the defaults; the type matchups are every raid's.
 import { useMemo, useState, type ReactNode } from 'react'
 import {
   createRng,
@@ -25,6 +25,7 @@ import {
   type RaidDay,
   type RaidKind,
   type RaidMonRules,
+  type RaidTypeScale,
 } from '@/engine'
 import { PixelButton } from '@/components/PixelButton'
 import { SpriteImg } from '@/components/SpriteImg'
@@ -40,9 +41,6 @@ const KIND_COLOR: Record<RaidKind, string> = { special: '#ffbe2e', mythical: '#c
 const RULE_LABEL: Record<keyof RaidMonRules, string> = {
   bars: 'HP bars',
   barHp: 'HP per bar',
-  startAllies: 'Summons at the start',
-  summonPerBreak: 'Summon points per bar',
-  maxField: 'Summons beside it',
   level: 'Level',
   upgradeLevel: 'Dice level',
 }
@@ -115,16 +113,23 @@ function NumbersBox({ raid, set }: { raid: RaidConfig; set: (patch: Partial<Raid
       <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-4">
         {num('HP bars', 'bars', { min: 1, max: 6 })}
         {num('HP per bar', 'barHp', { min: 0.5, max: 5, step: 0.1, hint: 'In the raid Pokémon’s own max HP.' })}
-        {num('Summons at the start', 'startAllies', { max: 6 })}
-        {num('Summon points per bar', 'summonPerBreak', { max: 6 })}
-        {num('Summons beside it at most', 'maxField', { min: 1, max: 4 })}
         {num('Raid level', 'level', { min: 1, max: 100 })}
-        {num('Raid dice level', 'upgradeLevel', { min: 1, max: 10, hint: 'Dice and combos of the raid Pokémon and its summons.' })}
+        {num('Raid dice level', 'upgradeLevel', { min: 1, max: 10, hint: 'Dice and combos of the raid Pokémon.' })}
         {num('Team level cap', 'teamCap', { min: 1, max: 100 })}
         {num('Sides’ dice level', 'sideUpgradeLevel', { min: 1, max: 10 })}
         {num('Friends per raid', 'maxFriends', { max: 2 })}
         {num('Gifts per helper a day', 'helperDailyCap', { max: 20 })}
       </div>
+      <TypesRow
+        label="The sides’ attacks on the raid Pokémon"
+        value={raid.sideTypes}
+        onChange={(sideTypes) => set({ sideTypes })}
+      />
+      <TypesRow
+        label="The raid Pokémon’s attacks on the sides"
+        value={raid.bossTypes}
+        onChange={(bossTypes) => set({ bossTypes })}
+      />
       <Field label="Bar colours, first to last">
         <span className="flex flex-wrap gap-2">
           {raid.barColors.map((c, i) => (
@@ -140,6 +145,37 @@ function NumbersBox({ raid, set }: { raid: RaidConfig; set: (patch: Partial<Raid
         </span>
       </Field>
     </Box>
+  )
+}
+
+/** One side's type matchups in every raid: what each kind of hit lands at instead of ×2, ×½ and ×0. */
+function TypesRow({
+  label,
+  value,
+  onChange,
+}: {
+  label: string
+  value: RaidTypeScale
+  onChange: (v: RaidTypeScale) => void
+}) {
+  const field = (name: string, key: keyof RaidTypeScale, usual: string) => (
+    <Field label={name} hint={`Usually ${usual}.`}>
+      <NumInput
+        min={0}
+        max={4}
+        step={0.1}
+        value={value[key]}
+        onChange={(v) => onChange({ ...value, [key]: Math.max(0, v ?? 0) })}
+      />
+    </Field>
+  )
+  return (
+    <fieldset className="grid gap-3 border-t-2 border-line pt-2 sm:grid-cols-3 lg:grid-cols-4">
+      <legend className="pr-2 text-lg">{label}</legend>
+      {field('× Super effective', 'super', '×2')}
+      {field('× Resisted', 'resisted', '×0.5')}
+      {field('× Immune', 'immune', '×0: no damage')}
+    </fieldset>
   )
 }
 
@@ -378,7 +414,7 @@ function MonRulesEditor({ data, raid, dex, set, compact }: { data: GameData; rai
     set({ perMon })
   }
   return (
-    <div className={cx('grid gap-2', compact ? 'grid-cols-7' : 'grid-cols-2')}>
+    <div className={cx('grid gap-2', compact ? 'grid-cols-4' : 'grid-cols-2')}>
       {!compact && <span className="col-span-2 text-lg">{data.species[dex]?.name}’s own numbers</span>}
       {RAID_MON_KEYS.map((k) => (
         <label key={k} className="grid gap-0.5">
@@ -612,7 +648,7 @@ function ProgressBox({ data, raid, set }: { data: GameData; raid: RaidConfig; se
           <tbody>
             {shown.map((r) => {
               const own = progress.perMon?.[r.dex] ?? {}
-              const eff = { ...raidRules(data, r.dex, 'progress'), teamCap: raidTeamCap(data, r.dex, 'progress') }
+              const eff = { ...raidRules(data, r.dex, 'progress', r.areaId), teamCap: raidTeamCap(data, r.dex, 'progress', r.areaId) }
               return (
                 <tr key={r.key} className="border-t border-shadow/40 align-middle">
                   <td className="py-1 pr-2">
@@ -682,14 +718,14 @@ function LairsBox({ data, raid, setPlan }: { data: GameData; raid: RaidConfig; s
   )
 }
 
-/** Who may help or be summoned, the helpers' gifts, and the simulator. */
+/** Who may fight beside you as an NPC, the helpers' gifts, and the simulator. */
 function MoreBox({ data, raid, set, setPlan }: { data: GameData; raid: RaidConfig; set: (p: Partial<RaidConfig>) => void; setPlan: (p: Partial<RaidConfig>) => void }) {
   const total = raid.gifts.reduce((n, g) => n + Math.max(0, g.weight), 0)
   const items = Object.values(data.items).sort((a, b) => a.name.localeCompare(b.name))
   return (
     <Box title="Allies, gifts, balance" icon="friends">
       <div className="grid gap-3 sm:grid-cols-2">
-        <DexChips data={data} label="Never an ally or a summon (and pseudo-legendaries of the calendar)" value={raid.exclude.pseudo} onChange={(pseudo) => setPlan({ exclude: { ...raid.exclude, pseudo } })} />
+        <DexChips data={data} label="Never an NPC ally (and pseudo-legendaries of the calendar)" value={raid.exclude.pseudo} onChange={(pseudo) => setPlan({ exclude: { ...raid.exclude, pseudo } })} />
         <DexChips data={data} label="… and these (Ultra Beasts, Paradox Pokémon…)" value={raid.exclude.extra} onChange={(extra) => set({ exclude: { ...raid.exclude, extra } })} />
       </div>
       <Field label="Helpers’ gifts (a friend who fought beside you, once the raid Pokémon is caught)">
@@ -763,10 +799,9 @@ function RaidSim({ data, raid }: { data: GameData; raid: RaidConfig }) {
           .map((r) => {
             let wins = 0
             let steps = 0
-            const area = data.areas.find((a) => a.id === r.areaId)
             for (let i = 0; i < n; i++) {
               const sides = [0, 1, 2].map((k) => ({ owner: `Side ${k + 1}`, look: null, kind: 'npc' as const, team: npcTeam(data, regions, rng, `s${k}`) }))
-              const res = simulateRaid({ boss: { dex: r.dex, shiny: r.shiny }, sides, regionId: area ? regionOfArea(area) : regions[0]! }, data, rng)
+              const res = simulateRaid({ boss: { dex: r.dex, shiny: r.shiny }, sides }, data, rng)
               if (res.won) wins++
               steps += res.steps
             }

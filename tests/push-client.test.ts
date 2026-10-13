@@ -1,4 +1,4 @@
-// Push notifications, the game's side (docs/25): which device it is, when a feature asks its question (once, unless
+// Push notifications, the game's side (docs/27): which device it is, when a feature asks its question (once, unless
 // it was an iPhone that had to install first), what a notice says and shows, and the sender's handling of the push
 // services' answers.
 import { describe, expect, it, vi } from 'vitest'

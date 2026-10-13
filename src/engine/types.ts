@@ -269,6 +269,8 @@ export type UnlockCondition =
   | { kind: 'maxLevel'; level: number }
   /** Another area is open (reached) — e.g. the Rocket Hideout once Celadon's area is. */
   | { kind: 'area'; areaId: string }
+  /** Another area is cleared — e.g. a small world's league beaten, every main area done (docs/26 §2.5). */
+  | { kind: 'cleared'; areaId: string }
 
 /**
  * The roaming legendaries. They have no area of their own: once every Pokémon in `requires` has been **caught**, each
@@ -393,6 +395,13 @@ export type ItemEffect =
   | { kind: 'level'; amount: number }
   /** Poké Balls: added to the catch die. */
   | { kind: 'ball'; bonus: number }
+  /** The Link Cable: evolves a Pokémon that only evolves by trade (`trade.evolveOnTrade`), from the Team screen. */
+  | { kind: 'link' }
+  /**
+   * The Bait: after a ball's throw falls short, its own die (these faces) is thrown and added to the total
+   * (engine/catching). Never chosen from the bag: the catch offers it.
+   */
+  | { kind: 'bait'; faces: number[] }
 
 export interface ItemDef {
   key: string
@@ -512,11 +521,15 @@ export interface RaidAnchor {
 export interface RaidMonRules {
   bars?: number
   barHp?: number
-  startAllies?: number
-  summonPerBreak?: number
-  maxField?: number
   level?: number
   upgradeLevel?: number
+}
+
+/** What a super-effective, a resisted and a blocked hit land at in a raid, instead of ×2, ×½ and ×0. */
+export interface RaidTypeScale {
+  super: number
+  resisted: number
+  immune: number
 }
 
 /** A day of the raid calendar set by hand ('YYYY-MM-DD' → its raid). */
@@ -532,11 +545,13 @@ export interface RaidConfig {
   /** Each bar's HP, in the raid Pokémon's own max HP at `level` (1 = one full HP bar each). */
   barHp: number
   barColors: string[]
-  /** Summons beside the boss at the start, points gained per bar broken, and the most beside it at once. */
-  startAllies: number
-  summonPerBreak: number
-  maxField: number
-  /** The boss's (and its summons') level and dice / combo upgrade level. */
+  /**
+   * The raid's type matchups (the user's design, 2026-10-13): the sides' attacks on the raid Pokémon (super effective
+   * only ×1.3), and its own on the sides (resisted ×0.7, and nobody is immune: ×0.5).
+   */
+  sideTypes: RaidTypeScale
+  bossTypes: RaidTypeScale
+  /** The raid Pokémon's level and dice / combo upgrade level. */
   level: number
   upgradeLevel: number
   /** The sides' Pokémon fight at this level at most, at this upgrade level. */
@@ -566,7 +581,7 @@ export interface RaidConfig {
   }
   /** Each raid Pokémon's own numbers, by dex. */
   perMon?: Record<string, RaidMonRules>
-  /** Never an NPC ally or a summon, on top of legendaries, mythicals and starter lines. */
+  /** Never an NPC ally, on top of legendaries, mythicals and starter lines. */
   exclude: { pseudo: number[]; extra: number[] }
 }
 
@@ -706,12 +721,23 @@ export interface GameConfig {
   trade: TradeConfig
   /** Small worlds (docs/21): their switch, and the admin's list, past, running and to come; one runs at a time. */
   smallWorlds: { access: EventAccess; list: SmallWorld[] }
-  /** Push notifications (docs/25): their switch, a game_config row of its own that seeding never writes. */
+  /** Gifts with the developer's messages (docs/15 §23): their switch. The server reads the same row. */
+  gifts: GiftsConfig
+  /**
+   * Items with a switch of their own (docs/15 §20), by item key: the Link Cable and the Bait (docs/25). An item
+   * switched off is nowhere: not sold, not found, not usable. Items without an entry are always on.
+   */
+  itemSwitches: Record<string, EventAccess>
+  /** The General upgrades (docs/25): their switch and numbers, a game_config row of its own that seeding never writes. */
+  general: GeneralConfig
+  /** Friend invite rewards (docs/15 §25): their switch and the gauge's tiers. The server reads the same row. */
+  inviteRewards: InviteRewardsConfig
+  /** Push notifications (docs/27): their switch, a game_config row of its own that seeding never writes. */
   push: PushConfig
 }
 
 /**
- * Push notifications (docs/25-PUSH-NOTIFICATIONS.md): a Day Care Egg, the day's raid, a live event starting. The server
+ * Push notifications (docs/27-PUSH-NOTIFICATIONS.md): a Day Care Egg, the day's raid, a live event starting. The server
  * reads the same row: it takes no subscription and sends nothing while the switch is off.
  */
 export interface PushConfig {
@@ -721,6 +747,74 @@ export interface PushConfig {
   raidHour: number
   /** No Egg is announced between these local hours (from, to): it waits until `to`. Equal hours = no quiet time. */
   quietHours: [number, number]
+}
+
+/**
+ * Friend invite rewards (docs/15 §25): each new player a player invites (their invite link) who wins their first badge
+ * fills a gauge; each tier reached gives its gifts once, opened like the developer's gifts.
+ */
+export interface InviteRewardsConfig {
+  /** The switch (docs/15 §20): off (nowhere in the game, no invite counted), on for the admin only, on for everyone. */
+  access: EventAccess
+  /** The gauge's stops, fewest friends first (engine/invites.ts cleans them): `friends` invited with a badge → `gifts`. */
+  tiers: InviteTier[]
+}
+
+/** One stop on the invite gauge: this many invited players with their first badge, and what it gives. */
+export interface InviteTier {
+  friends: number
+  gifts: Gift[]
+}
+
+/** The invite rewards a save has opened (docs/15 §25). */
+export interface InvitesSave {
+  /** Tiers (by their number of friends) whose gifts are in this save already: a tier is put in once. */
+  done: number[]
+  /** The rules pop-up has been shown (once, when the rewards open; INFO on the Friends page shows it again). */
+  rulesSeen?: boolean
+}
+
+/** Gifts with the developer's messages (docs/15 §23). */
+export interface GiftsConfig {
+  /** The switch (docs/15 §20): off (no gift shows or opens; they wait), on for the admin only, on for everyone. */
+  access: EventAccess
+}
+
+/** A gift's region: a region's id, or `'latest'`, the newest region the player has started (engine/gifts.ts). */
+export type GiftRegion = string
+
+/**
+ * One gift on a message, as the admin set it (Admin → Messages, or a player's profile): an item and how many, a
+ * Pokémon at a level, shiny or not, or Pokédollars. Each goes to its region's Bag, Box or ₽.
+ */
+export type Gift =
+  | { kind: 'item'; key: string; qty: number; region: GiftRegion }
+  | { kind: 'pokemon'; dex: number; level: number; shiny?: boolean; region: GiftRegion }
+  | { kind: 'gold'; amount: number; region: GiftRegion }
+
+/** The gifts a save has opened (docs/15 §23). */
+export interface GiftsSave {
+  /** Messages whose gifts are in this save already (the last 100): a gift is put in once. */
+  done: number[]
+  /** The rules pop-up has been shown (once, before the first gift opens; INFO shows it again). */
+  rulesSeen?: boolean
+}
+
+/**
+ * The Upgrades screen's General tab (docs/25): slow, very expensive upgrades bought with any region's ₽ and kept for
+ * every region. The server reads `access` too (the golden name).
+ */
+export interface GeneralConfig {
+  /** The switch (docs/15 §20): off (nowhere in the game), on for the admin only, on for everyone. Off by default. */
+  access: EventAccess
+  /** Capture Luck, one row per level: % chance a wild Pokémon that broke free stays for one more throw, and its price. */
+  luck: { chance: number; cost: number }[]
+  /** Offline earnings, one row per level: ₽ per hour spent out of the game, and its price. */
+  offline: { perHour: number; cost: number }[]
+  /** An absence earns for this many hours at most. */
+  offlineMaxHours: number
+  /** "I am just rich": its price. A golden name in every social feature, nothing else. */
+  richCost: number
 }
 
 /** Trades (docs/23-TRADING-PLAN.md): listings, like the games' GTS. The server reads the same row. */
@@ -888,6 +982,11 @@ export interface AreaProgress {
   bossDefeated: boolean
   /** Dex numbers of this area's legendary bosses already beaten. */
   bossesDefeated: number[]
+  /**
+   * Dex numbers of this area's bosses caught here. In a small world each boss is its own catch (docs/26 §2.5), so it
+   * stays catchable until this says so, whatever the Pokédex holds; elsewhere the Pokédex decides.
+   */
+  bossesCaught?: number[]
   /** Trainer ids of this area's gym / Elite battles already won. */
   gymsDefeated: string[]
   /** Encounter cards left in this area's current deck (drawn from the end). Dealt afresh when empty. */
@@ -924,7 +1023,7 @@ export interface SaveData {
     animations?: 'full' | 'short'
     multiExp: boolean
     autoMode?: boolean
-    /** Raids: the ally sides' and the summons' turns at 1.5× speed. */
+    /** Raids: the ally sides' turns at 1.5× speed. */
     raidFast?: boolean
     lang?: Lang
     theme?: 'light' | 'dark' | 'auto'
@@ -972,6 +1071,28 @@ export interface SaveData {
   extremeRulesSeen?: boolean
   /** Trades (docs/23): listed Pokémon, the trades already applied, the last ones done. Absent = never traded. */
   trades?: TradesSave
+  /** Gifts from the developer (docs/15 §23): the ones opened, and the rules seen. Absent = none yet. */
+  gifts?: GiftsSave
+  /** Friend invite rewards (docs/15 §25): the tiers opened, and the rules seen. Absent = none yet. */
+  invites?: InvitesSave
+  /** The General upgrades (docs/25), for every region of this save. Absent = none bought. */
+  general?: GeneralSave
+}
+
+/** The General upgrades bought (docs/25), and the offline earnings' clock. */
+export interface GeneralSave {
+  /** Capture Luck's level (0 = none). */
+  luck?: number
+  /** Offline earnings' level (0 = none). */
+  offline?: number
+  /** "I am just rich": a golden name in the social features. */
+  rich?: boolean
+  /** The page went hidden or closed here (server time, ms): offline earnings run from then until the return. */
+  awayFrom?: number
+  /** Time (ms) the last absence spent towards a ₽ it didn't reach: it counts in the next one. */
+  carryMs?: number
+  /** The General tab's rules pop-up has been shown (once; INFO shows it again). */
+  rulesSeen?: boolean
 }
 
 /** What a listing asks for (docs/23 §1.1): one species, any the poster doesn't own, or anything. */
@@ -1005,8 +1126,10 @@ export interface TradeLogEntry {
   at: number
   /** 'poster': your listing was taken; 'taker': you took theirs. */
   role: 'poster' | 'taker'
-  /** The other trainer's name as it was then. */
+  /** The other trainer's name as it was then… */
   with: string
+  /** …and whether it shone gold ("I am just rich", docs/25). */
+  withRich?: boolean
   gave: { dex: number; level: number; shiny?: boolean; nickname?: string }
   /** The species that arrived, at the level it arrived at (before a trade evolution), and the name it came with. */
   got: { dex: number; level: number; shiny?: boolean; nickname?: string }
@@ -1078,6 +1201,11 @@ export interface EventsSave {
   worldBye?: string[]
   /** Shiny mythicals won in a small world, waiting for their home region to be started. */
   worldPending?: WorldCatch[]
+  /**
+   * A closed small world's Pokémon gone home (docs/26 §1), each waiting in its region, locked, until that region has a
+   * Pokémon at its level (`engine/homecoming.ts`). Not in any Box or Pokédex until then.
+   */
+  worldHome?: WorldHomer[]
 }
 
 /** The small world a save holds: which, where it was entered from, and what happened there. */
@@ -1096,6 +1224,18 @@ export interface WorldSave {
   bought?: Record<string, number>
   /** The world has closed: its block is gone; this stays until its closing pop-up has been shown. */
   closed?: boolean
+  /** How many of its Pokémon went home to each region when it closed (its closing pop-up says so). */
+  home?: Record<RegionId, number>
+}
+
+/** A closed small world's Pokémon, waiting in its home region until that region's best reaches its level. */
+export interface WorldHomer {
+  /** The Pokémon as it left the world (healed); its level is the level it waits for. */
+  inst: PokemonInstance
+  /** The region of its species, where it waits and arrives. */
+  region: RegionId
+  /** The world it came from. */
+  worldId: string
 }
 
 /** A shiny mythical won in a small world, waiting for its home region to be started. */

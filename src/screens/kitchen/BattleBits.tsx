@@ -11,13 +11,32 @@ import {
   type RolledDie,
 } from '@/engine'
 import { Toggle } from '@/components/Toggle'
-import { useGame } from '@/store/game'
+import { useGame, type CatchState, type CatchThrow } from '@/store/game'
 import { BagButton, DiceTray, Readout, TeamColumn, TeamPips, type Preview } from '../battle/BattlePanel'
 import { BattleStage } from '../battle/BattleStage'
-import { CatchPanel } from '../battle/CatchPanel'
+import { CatchPanel, catchMessage } from '../battle/CatchPanel'
 import { FoePlate, OwnPlate } from '../battle/Plates'
 import type { Fx } from '../battle/useBattleAnimator'
 import { RaidSpeedButton } from '../events/RaidView'
+
+// A wild Gyarados worn out, and a Poké Ball throw that fell 2 short (4 + 1 < 7): what the Bait and Capture Luck do next.
+const CATCH_WILD: CatchState = { dex: 130, level: 30, kind: 'wild', target: { mode: 'new' }, result: null }
+const SHORT: CatchThrow = {
+  die: 4,
+  bonus: 1,
+  total: 5,
+  need: 7,
+  caught: false,
+  ballKey: 'poke-ball',
+  events: [],
+  pendingCatchId: null,
+}
+const CATCH_AFTER: [string, CatchThrow][] = [
+  ['Short by 2, a Bait in the bag: asked', { ...SHORT, baitOffer: 'bait' }],
+  ['The Bait thrown: +2, caught', { ...SHORT, bait: 2, total: 7, caught: true, baited: 'used' }],
+  ['The Bait thrown: +1, still short', { ...SHORT, bait: 1, total: 6, baited: 'used' }],
+  ['Missed, but Capture Luck kept it on the spot', { ...SHORT, stays: true }],
+]
 
 export function BattleBits() {
   const data = useGame((s) => s.data)
@@ -166,6 +185,22 @@ export function BattleBits() {
           revealed={false}
         />
       </div>
+      {/* The Bait and Capture Luck (docs/25): asked after a short throw, the bait die added, kept on the spot. */}
+      {CATCH_AFTER.map(([label, result]) => (
+        <div key={label} className="flex w-full max-w-[400px] flex-col gap-2">
+          <p className="pixel-dialogue m-0 flex min-h-[64px] items-center px-3 py-1.5 text-[20px] leading-[1.15]">
+            {catchMessage({ ...CATCH_WILD, result }, 'Gyarados', { revealed: true })}
+          </p>
+          <CatchPanel
+            c={{ ...CATCH_WILD, result }}
+            onThrow={() => {}}
+            revealed
+            onBait={() => {}}
+            onRetry={() => {}}
+          />
+          <small className="font-pixel-sm text-[14px] text-muted">{label}</small>
+        </div>
+      ))}
     </>
   )
 }

@@ -1,4 +1,4 @@
-// Settings → Notifications (docs/25): push on or off on this device, each topic's switch, what this device is, and
+// Settings → Notifications (docs/27): push on or off on this device, each topic's switch, what this device is, and
 // the INFO button with the rules. Nowhere while the admin's switch is off for this player.
 import { useState } from 'react'
 import { PUSH_TOPICS, pushOn, type PushTopic } from '@/engine'
