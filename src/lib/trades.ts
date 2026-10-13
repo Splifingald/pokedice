@@ -20,6 +20,8 @@ export interface TradeListing {
   owner: string | null
   name: string
   avatar: string
+  /** The poster's golden name ("I am just rich", docs/25). */
+  rich?: boolean
   isMe: boolean
   isFriend: boolean
   dex: number
@@ -54,6 +56,8 @@ export interface MineRow {
   endsAt: number
   takerMon: PokemonInstance | null
   with: string
+  /** The other trainer's golden name (docs/25). */
+  withRich?: boolean
 }
 
 /** What a trade taken just now brought: the listed Pokémon and the one given, as the server saw them. */
@@ -62,6 +66,8 @@ export interface TakeResult {
   listed: PokemonInstance
   given: PokemonInstance
   with: string
+  /** The poster's golden name (docs/25). */
+  withRich?: boolean
 }
 
 /** What went wrong, for a sentence (strings.csv `ui.trades.error.*`). */
@@ -170,6 +176,8 @@ export function parseListing(raw: unknown): TradeListing | null {
     owner: typeof r.owner === 'string' ? r.owner : null,
     name: typeof r.name === 'string' && r.name.trim() ? r.name : '',
     avatar: avatarOf(typeof r.avatar === 'string' ? r.avatar : null).id,
+    // A database before 0049 doesn't say: nobody's is.
+    rich: r.rich === true,
     isMe: r.is_me === true,
     isFriend: r.is_friend === true,
     dex: num(r.dex),
@@ -209,6 +217,7 @@ export function parseMine(raw: unknown): MineRow[] {
         endsAt: time(r.ends_at),
         takerMon: parseInstance(r.taker_mon),
         with: typeof r.with === 'string' ? r.with : '',
+        withRich: r.withRich === true,
       }
     })
     .filter((r): r is MineRow => !!r)
@@ -246,7 +255,13 @@ export async function takeListing(code: string, inst: string): Promise<TakeResul
   const listed = parseInstance(r?.listed)
   const given = parseInstance(r?.given)
   if (!listed || !given) throw new Error('trades_failed')
-  return { id: String(r.id), listed, given, with: typeof r.with === 'string' ? r.with : '' }
+  return {
+    id: String(r.id),
+    listed,
+    given,
+    with: typeof r.with === 'string' ? r.with : '',
+    withRich: r.withRich === true,
+  }
 }
 
 export async function cancelListing(id: string): Promise<'cancelled' | 'taken' | 'gone' | string> {

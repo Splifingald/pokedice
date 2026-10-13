@@ -16,6 +16,7 @@ import { gmaxEndTimeline, gmaxFor, megaFor } from '@/fx/timelines/forms'
 import { legendLook, legendTimeline } from '@/fx/timelines/legend'
 import { evolveTimeline, hatchTimeline } from '@/fx/timelines/moments'
 import { tradeTimeline } from '@/fx/timelines/trade'
+import { giftTimeline } from '@/fx/timelines/gift'
 import { labColors, starterTimeline } from '@/fx/timelines/starter'
 
 interface Preset {
@@ -36,6 +37,7 @@ interface Opts {
 const own = (dex: number) => spriteKey(dex, true)
 const foe = (dex: number) => spriteKey(dex, false)
 const STONE = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/thunder-stone.png'
+const CANDY = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/rare-candy.png'
 
 const attack = (
   name: string,
@@ -92,6 +94,73 @@ const PRESETS: Preset[] = [
     ],
     make: (o) =>
       catchTimeline({ own: own(25), foe: foe(133), ball: 'great', caught: o.caught, short: o.short }),
+  },
+  // The Bait (docs/25): the throw stops on the ground while the player is asked, then plays on from there.
+  {
+    name: 'Catch: short, held for the Bait',
+    sprites: [
+      [25, true],
+      [133, false],
+    ],
+    make: (o) =>
+      catchTimeline({
+        own: own(25),
+        foe: foe(133),
+        ball: 'great',
+        caught: false,
+        short: o.short,
+        hold: true,
+      }),
+  },
+  {
+    name: 'Catch: the Bait thrown, from the ground',
+    sprites: [
+      [25, true],
+      [133, false],
+    ],
+    make: (o) =>
+      catchTimeline({
+        own: own(25),
+        foe: foe(133),
+        ball: 'great',
+        caught: o.caught,
+        short: o.short,
+        from: 'ground',
+        bait: true,
+      }),
+  },
+  {
+    name: 'Catch: the Bait kept, from the ground',
+    sprites: [
+      [25, true],
+      [133, false],
+    ],
+    make: (o) =>
+      catchTimeline({
+        own: own(25),
+        foe: foe(133),
+        ball: 'great',
+        caught: false,
+        short: o.short,
+        from: 'ground',
+      }),
+  },
+  // Capture Luck (docs/25): it breaks free but stays put for one more throw.
+  {
+    name: 'Catch: broke free but stayed (Capture Luck)',
+    sprites: [
+      [25, true],
+      [133, false],
+    ],
+    make: (o) =>
+      catchTimeline({
+        own: own(25),
+        foe: foe(133),
+        ball: 'great',
+        caught: false,
+        short: o.short,
+        stays: true,
+      }),
   },
   attack('Flamethrower', 6, 123, 'fire', 'burn'),
   attack('Hydro Pump', 9, 59, 'water', null),
@@ -161,6 +230,46 @@ const PRESETS: Preset[] = [
         giveBall: 'ultra',
         getBall: 'poke',
         shiny: true,
+      }),
+  },
+  {
+    name: 'Gift opening (one item)',
+    sprites: [],
+    item: CANDY,
+    make: () => giftTimeline({ contents: [{ kind: 'item', key: `item|${CANDY}` }] }),
+  },
+  {
+    name: 'Gift opening, shiny (Pikachu)',
+    sprites: [[25, false, true]],
+    make: () => giftTimeline({ contents: [{ kind: 'mon', key: spriteKey(25, false, true), shiny: true }] }),
+  },
+  {
+    name: 'Gift opening (five things, ₽ among them)',
+    sprites: [
+      [147, false],
+      [133, false, true],
+    ],
+    item: CANDY,
+    make: () =>
+      giftTimeline({
+        contents: [
+          { kind: 'item', key: `item|${CANDY}` },
+          { kind: 'mon', key: foe(147) },
+          { kind: 'mon', key: spriteKey(133, false, true), shiny: true },
+          { kind: 'gold', key: 'gold' },
+          { kind: 'item', key: `item|${CANDY}` },
+        ],
+      }),
+  },
+  {
+    name: 'Gift opening (nine things: "+4")',
+    sprites: [[1, false]],
+    item: CANDY,
+    make: () =>
+      giftTimeline({
+        contents: Array.from({ length: 9 }, (_, i) =>
+          i % 2 ? { kind: 'mon' as const, key: foe(1) } : { kind: 'item' as const, key: `item|${CANDY}` },
+        ),
       }),
   },
   {

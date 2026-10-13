@@ -23,6 +23,7 @@ import { PixelButton } from '../PixelButton'
 import { MiniSprite, SpriteImg } from '../SpriteImg'
 import { StageCanvas } from '../StageCanvas'
 import { useMinWhy } from './TradeBits'
+import { NameIn } from '../TrainerName'
 
 const BALLS: BallKind[] = ['poke', 'great', 'ultra']
 
@@ -102,12 +103,20 @@ function SceneBody({ show, onDone }: { show: TradeShow; onDone: () => void }) {
         >
           <PixelIcon name="trade" size={28} className="shrink-0" />
           <span className="min-w-0">
-            {show.away ? t('ui.trades.pop.title') : t('ui.trades.scene.label', { name: who })}
+            {show.away ? (
+              t('ui.trades.pop.title')
+            ) : (
+              <NameIn name={who} rich={e.withRich} text={(name) => t('ui.trades.scene.label', { name })} />
+            )}
           </span>
         </h2>
         {show.away && (
           <p className="copy m-0 text-[19px] leading-tight">
-            {t('ui.trades.pop.body', { name: who, mon: give })}
+            <NameIn
+              name={who}
+              rich={e.withRich}
+              text={(name) => t('ui.trades.pop.body', { name, mon: give })}
+            />
           </p>
         )}
         {step === 'trade' && (
@@ -131,7 +140,7 @@ function SceneBody({ show, onDone }: { show: TradeShow; onDone: () => void }) {
                 <span className="grid min-w-0 leading-none">
                   <b className="truncate text-[18px] font-normal">{get}</b>
                   <small className="truncate font-pixel-sm text-[13px] text-muted">
-                    {t('ui.trades.whose', { name: who })}
+                    <NameIn name={who} rich={e.withRich} text={(name) => t('ui.trades.whose', { name })} />
                   </small>
                 </span>
               </span>

@@ -248,6 +248,7 @@ function Board() {
                 rank={r.rank}
                 look={avatarOf(r.avatar).src}
                 name={r.name}
+                rich={r.rich}
                 isMe={r.isMe}
                 isFriend={!!r.friendId}
                 onOpen={open(r)}
@@ -282,6 +283,7 @@ function Board() {
               lead={<Crown />}
               look={avatarOf(r.avatar).src}
               name={r.name}
+              rich={r.rich}
               isMe={r.isMe}
               isFriend={!!r.friendId}
               onOpen={open(r)}

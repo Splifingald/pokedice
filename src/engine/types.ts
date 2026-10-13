@@ -393,6 +393,13 @@ export type ItemEffect =
   | { kind: 'level'; amount: number }
   /** Poké Balls: added to the catch die. */
   | { kind: 'ball'; bonus: number }
+  /** The Link Cable: evolves a Pokémon that only evolves by trade (`trade.evolveOnTrade`), from the Team screen. */
+  | { kind: 'link' }
+  /**
+   * The Bait: after a ball's throw falls short, its own die (these faces) is thrown and added to the total
+   * (engine/catching). Never chosen from the bag: the catch offers it.
+   */
+  | { kind: 'bait'; faces: number[] }
 
 export interface ItemDef {
   key: string
@@ -712,6 +719,58 @@ export interface GameConfig {
   trade: TradeConfig
   /** Small worlds (docs/21): their switch, and the admin's list, past, running and to come; one runs at a time. */
   smallWorlds: { access: EventAccess; list: SmallWorld[] }
+  /** Gifts with the developer's messages (docs/15 §23): their switch. The server reads the same row. */
+  gifts: GiftsConfig
+  /**
+   * Items with a switch of their own (docs/15 §20), by item key: the Link Cable and the Bait (docs/25). An item
+   * switched off is nowhere: not sold, not found, not usable. Items without an entry are always on.
+   */
+  itemSwitches: Record<string, EventAccess>
+  /** The General upgrades (docs/25): their switch and numbers, a game_config row of its own that seeding never writes. */
+  general: GeneralConfig
+}
+
+/** Gifts with the developer's messages (docs/15 §23). */
+export interface GiftsConfig {
+  /** The switch (docs/15 §20): off (no gift shows or opens; they wait), on for the admin only, on for everyone. */
+  access: EventAccess
+}
+
+/** A gift's region: a region's id, or `'latest'`, the newest region the player has started (engine/gifts.ts). */
+export type GiftRegion = string
+
+/**
+ * One gift on a message, as the admin set it (Admin → Messages, or a player's profile): an item and how many, a
+ * Pokémon at a level, shiny or not, or Pokédollars. Each goes to its region's Bag, Box or ₽.
+ */
+export type Gift =
+  | { kind: 'item'; key: string; qty: number; region: GiftRegion }
+  | { kind: 'pokemon'; dex: number; level: number; shiny?: boolean; region: GiftRegion }
+  | { kind: 'gold'; amount: number; region: GiftRegion }
+
+/** The gifts a save has opened (docs/15 §23). */
+export interface GiftsSave {
+  /** Messages whose gifts are in this save already (the last 100): a gift is put in once. */
+  done: number[]
+  /** The rules pop-up has been shown (once, before the first gift opens; INFO shows it again). */
+  rulesSeen?: boolean
+}
+
+/**
+ * The Upgrades screen's General tab (docs/25): slow, very expensive upgrades bought with any region's ₽ and kept for
+ * every region. The server reads `access` too (the golden name).
+ */
+export interface GeneralConfig {
+  /** The switch (docs/15 §20): off (nowhere in the game), on for the admin only, on for everyone. Off by default. */
+  access: EventAccess
+  /** Capture Luck, one row per level: % chance a wild Pokémon that broke free stays for one more throw, and its price. */
+  luck: { chance: number; cost: number }[]
+  /** Offline earnings, one row per level: ₽ per hour spent out of the game, and its price. */
+  offline: { perHour: number; cost: number }[]
+  /** An absence earns for this many hours at most. */
+  offlineMaxHours: number
+  /** "I am just rich": its price. A golden name in every social feature, nothing else. */
+  richCost: number
 }
 
 /** Trades (docs/23-TRADING-PLAN.md): listings, like the games' GTS. The server reads the same row. */
@@ -963,6 +1022,26 @@ export interface SaveData {
   extremeRulesSeen?: boolean
   /** Trades (docs/23): listed Pokémon, the trades already applied, the last ones done. Absent = never traded. */
   trades?: TradesSave
+  /** Gifts from the developer (docs/15 §23): the ones opened, and the rules seen. Absent = none yet. */
+  gifts?: GiftsSave
+  /** The General upgrades (docs/25), for every region of this save. Absent = none bought. */
+  general?: GeneralSave
+}
+
+/** The General upgrades bought (docs/25), and the offline earnings' clock. */
+export interface GeneralSave {
+  /** Capture Luck's level (0 = none). */
+  luck?: number
+  /** Offline earnings' level (0 = none). */
+  offline?: number
+  /** "I am just rich": a golden name in the social features. */
+  rich?: boolean
+  /** The page went hidden or closed here (server time, ms): offline earnings run from then until the return. */
+  awayFrom?: number
+  /** Time (ms) the last absence spent towards a ₽ it didn't reach: it counts in the next one. */
+  carryMs?: number
+  /** The General tab's rules pop-up has been shown (once; INFO shows it again). */
+  rulesSeen?: boolean
 }
 
 /** What a listing asks for (docs/23 §1.1): one species, any the poster doesn't own, or anything. */
@@ -996,8 +1075,10 @@ export interface TradeLogEntry {
   at: number
   /** 'poster': your listing was taken; 'taker': you took theirs. */
   role: 'poster' | 'taker'
-  /** The other trainer's name as it was then. */
+  /** The other trainer's name as it was then… */
   with: string
+  /** …and whether it shone gold ("I am just rich", docs/25). */
+  withRich?: boolean
   gave: { dex: number; level: number; shiny?: boolean; nickname?: string }
   /** The species that arrived, at the level it arrived at (before a trade evolution), and the name it came with. */
   got: { dex: number; level: number; shiny?: boolean; nickname?: string }

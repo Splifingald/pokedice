@@ -422,7 +422,7 @@ The day's raid is no longer picked per player: **one raid a UTC day, the same fo
   | Win % | 65 | 60 | **56** | 50 | 40 | 21 |
 
   The old rules (summons, ×2 / ×½ / ×0 both ways, 2 × HP) gave 57 %, so a raid is as hard as before.
-- **Hand-over**: run `supabase/migrations/0048_simpler_raids.sql` (drops the summon numbers from game_config, 2 → 2.2
+- **Hand-over**: run `supabase/migrations/0050_simpler_raids.sql` (drops the summon numbers from game_config, 2 → 2.2
   HP per bar unless the admin set another value; safe to run again) with the deploy. The rules pop-up's texts changed
   (`raid.sides`, `raid.bars`), so its INFO button tells the new rules; the pop-up itself shows once, as before.
 - Tests: `tests/engine/raid-battle.test.ts` (turn order, the strike back, nobody immune to it), `tests/engine/damage.test.ts`

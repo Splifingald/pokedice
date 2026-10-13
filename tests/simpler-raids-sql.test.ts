@@ -1,4 +1,4 @@
-// Migration 0048 against a real Postgres (PGlite, in process): simpler raids (2026-10-13). The summon numbers leave the
+// Migration 0050 against a real Postgres (PGlite, in process): simpler raids (2026-10-13). The summon numbers leave the
 // events row, the raid Pokémon's own and the progression raids' included; the HP per bar goes from 2 to 2.2 unless the
 // admin set another; everything else stays; a second run changes nothing.
 import { readFileSync } from 'node:fs'
@@ -7,7 +7,7 @@ import { PGlite } from '@electric-sql/pglite'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 const MIGRATION = readFileSync(
-  path.join(__dirname, '..', 'supabase', 'migrations', '0048_simpler_raids.sql'),
+  path.join(__dirname, '..', 'supabase', 'migrations', '0050_simpler_raids.sql'),
   'utf8',
 )
 
@@ -47,7 +47,7 @@ beforeEach(async () => {
   await db.exec(`create table game_config (key text primary key, value jsonb not null)`)
 })
 
-describe('0048: simpler raids', () => {
+describe('0050: simpler raids', () => {
   it('drops the summon numbers everywhere and gives each bar 2.2 times its HP', async () => {
     await setEvents(BEFORE)
     await db.exec(MIGRATION)

@@ -9,6 +9,7 @@ import { cx } from '@/theme/util'
 import { FriendTag } from './friends/FriendBits'
 import { MiniSprite } from './SpriteImg'
 import { TrainerLook } from './TrainerLook'
+import { TrainerName } from './TrainerName'
 
 // Bright squares in both themes: their numbers stay navy (light-scope).
 const MEDAL = ['bg-gold', 'light-scope bg-[#d8dfeb]', 'light-scope bg-[#e8a070]']
@@ -98,6 +99,7 @@ export function BoardRow({
   lead,
   look,
   name,
+  rich,
   isMe,
   isFriend,
   onOpen,
@@ -114,6 +116,8 @@ export function BoardRow({
   /** The trainer sprite to crop. */
   look: string | null
   name: string
+  /** A golden name ("I am just rich", docs/25). */
+  rich?: boolean
   isMe?: boolean
   /** One of your friends: the blue row and tag. */
   isFriend?: boolean
@@ -161,7 +165,7 @@ export function BoardRow({
       <TrainerLook src={look} w={44} h={48} className={cx(dim && 'opacity-75 grayscale-[0.7]')} />
       <span className="grid min-w-0 flex-1 gap-px">
         <b className="flex min-w-0 items-center gap-1 text-[20px] font-normal leading-none">
-          <span className="truncate">{name}</span>
+          <TrainerName name={name} rich={rich} className="truncate" />
           {isMe && (
             <span className="shrink-0 bg-gold px-[5px] pb-px font-pixel-sm text-[13px] leading-tight text-ink">
               {t('ui.board.youTag')}

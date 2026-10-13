@@ -44,7 +44,32 @@ const TRADE_PAL: Record<string, string> = {
   d: '#3a5fc0',
 }
 
+/** A wrapped gift (docs/15 §23): a red box, a gold ribbon and its bow. */
+const GIFT_PAL: Record<string, string> = {
+  k: '#24304f',
+  w: '#ffffff',
+  r: '#f2553f',
+  R: '#c4382a',
+  y: '#ffbe2e',
+  Y: '#ffe7a8',
+  o: '#e08e00',
+}
+
 export const ICONS = {
+  gift: [
+    '..kkk..kkk..',
+    '.kyYykkyYyk.',
+    '.kyokyykoyk.',
+    '..kkkyykkk..',
+    'kkkkkyokkkkk',
+    'krwrryyrrrrk',
+    'kRRRRyoRRRRk',
+    'kkkkkyokkkkk',
+    '.krrryyrrrk.',
+    '.krrryyrrrk.',
+    '.kRRRyoRRRk.',
+    '.kkkkkkkkkk.',
+  ],
   burn: ['....k...', '...kok..', '..koYok.', '.kooYyok', '.koyYyok', '.kooyyok', '..koook.', '...kkk..'],
   frozen: ['...kk...', '..kCck..', '.kCccck.', 'kCcCccck', 'kcccCcck', '.kcccck.', '..kcck..', '...kk...'],
   paralyze: ['....kkk.', '...keek.', '..keek..', '.keeeek.', '.kkeek..', '..kek...', '..kk....', '.k......'],
@@ -282,6 +307,7 @@ const OWN_PALETTE: Partial<Record<IconName, Record<string, string>>> = {
   navRanks: NAV_PAL,
   navFriends: NAV_PAL,
   trade: TRADE_PAL,
+  gift: GIFT_PAL,
 }
 
 export function PixelIcon({

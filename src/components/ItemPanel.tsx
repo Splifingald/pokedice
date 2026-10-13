@@ -3,10 +3,14 @@ import {
   evolutionGate,
   healItemsOn,
   instanceMaxHp,
+  itemOn,
+  linkEvolution,
   monName,
   stoneEvolution,
   usableIn,
+  type GameData,
   type PokemonInstance,
+  type SaveData,
 } from '@/engine'
 import { effectText } from '@/i18n/text'
 import { useT } from '@/i18n/react'
@@ -16,8 +20,20 @@ import { cx } from '@/theme/util'
 import { EvolutionQueue, type EvolutionShow } from './Evolution'
 import { ItemSprite } from './ItemSprite'
 
+/** What a stone or the Link Cable (docs/25) would evolve this Pokémon into, or null. */
+function evolvesInto(inst: PokemonInstance, key: string, save: SaveData | null, data: GameData): number | null {
+  const fx = data.items[key]?.effect
+  if (!save || (fx?.kind !== 'stone' && fx?.kind !== 'link')) return null
+  const gate = evolutionGate(save, data)
+  return fx.kind === 'link' ? linkEvolution(inst, data, gate) : stoneEvolution(inst, key, data, gate)
+}
+
+/** Bag items usable outside battle, a switched-off one (docs/15 §20) left out. */
+const fieldItem = (data: GameData, key: string) => usableIn(data.items[key], 'field') && itemOn(data, key)
+
 /**
- * "Use an item" in a Pokémon's sheet: the bag items that work outside battle (potions, revives, stones, Rare Candy).
+ * "Use an item" in a Pokémon's sheet: the bag items that work outside battle (potions, revives, stones, the Link Cable,
+ * Rare Candy).
  * Those that would do nothing stay listed, greyed, with the reason ("Already full", "No effect on it"), so the
  * player learns what each one is for. `onUsed` runs after an item took effect (the sheet goes back to the Pokémon).
  */
@@ -37,7 +53,7 @@ export function ItemPanel({ inst, onUsed }: { inst: PokemonInstance; onUsed?: ()
       }}
     />
   )
-  const bag = Object.entries(inventory ?? {}).filter(([k, n]) => n > 0 && usableIn(data.items[k], 'field'))
+  const bag = Object.entries(inventory ?? {}).filter(([k, n]) => n > 0 && fieldItem(data, k))
   const name = monName(inst, data)
   const max = instanceMaxHp(inst, data)
 
@@ -46,10 +62,9 @@ export function ItemPanel({ inst, onUsed }: { inst: PokemonInstance; onUsed?: ()
     const fx = data.items[key]?.effect
     if (inst.revivesAt != null) return t('ui.sheet.itemReviving')
     if ((fx?.kind === 'heal' || fx?.kind === 'revive') && save && !healItemsOn(save, data)) return t('ui.extreme.noItems')
-    if (fx?.kind === 'stone') {
+    if (fx?.kind === 'stone' || fx?.kind === 'link') {
       // A stone whose only branch is a later generation's does nothing yet, so it must not offer to be used.
-      const to = save ? stoneEvolution(inst, key, data, evolutionGate(save, data)) : null
-      return to == null ? t('ui.sheet.itemNoEffect') : null
+      return evolvesInto(inst, key, save, data) == null ? t('ui.sheet.itemNoEffect') : null
     }
     if (fx?.kind === 'revive') return inst.currentHp <= 0 ? null : t('ui.sheet.itemNotFainted')
     if (fx?.kind === 'heal')
@@ -64,10 +79,8 @@ export function ItemPanel({ inst, onUsed }: { inst: PokemonInstance; onUsed?: ()
   /** What it would do to this Pokémon: a stone names what it evolves into. */
   const what = (key: string) => {
     const item = data.items[key]!
-    if (item.effect.kind === 'stone' && save) {
-      const to = stoneEvolution(inst, key, data, evolutionGate(save, data))
-      if (to != null) return t('ui.sheet.itemEvolves', { name: data.species[to]?.name ?? '' })
-    }
+    const to = evolvesInto(inst, key, save, data)
+    if (to != null) return t('ui.sheet.itemEvolves', { name: data.species[to]?.name ?? '' })
     return effectText(item)
   }
 
@@ -86,12 +99,11 @@ export function ItemPanel({ inst, onUsed }: { inst: PokemonInstance; onUsed?: ()
                 onClick={() => {
                   const r = applyBagItem(k, inst.id)
                   if (!r) return
-                  // A stone floats down first in the evolution scene.
-                  if (r.evolved)
-                    return setEvolving({
-                      ...r.evolved,
-                      item: data.items[k]?.effect.kind === 'stone' ? k : null,
-                    })
+                  // A stone (or the Link Cable) floats down first in the evolution scene.
+                  if (r.evolved) {
+                    const kind = data.items[k]?.effect.kind
+                    return setEvolving({ ...r.evolved, item: kind === 'stone' || kind === 'link' ? k : null })
+                  }
                   const after = useGame.getState().save?.box.find((p) => p.id === inst.id)
                   if (after && data.items[k]?.effect.kind !== 'level')
                     pushToast(
@@ -127,7 +139,5 @@ export function ItemPanel({ inst, onUsed }: { inst: PokemonInstance; onUsed?: ()
 
 /** Whether the bag holds anything usable outside battle at all (the sheet hides "Use an item" otherwise). */
 export function useHasFieldItems(): boolean {
-  return useGame((s) =>
-    Object.entries(s.save?.inventory ?? {}).some(([k, n]) => n > 0 && usableIn(s.data.items[k], 'field')),
-  )
+  return useGame((s) => Object.entries(s.save?.inventory ?? {}).some(([k, n]) => n > 0 && fieldItem(s.data, k)))
 }

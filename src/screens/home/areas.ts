@@ -12,9 +12,11 @@ import {
   regionOfArea,
   regionSpecies,
   type Area,
+  type ConditionStatus,
   type GameData,
   type RegionId,
   type SaveData,
+  type UnlockCondition,
 } from '@/engine'
 import { t } from '@/i18n'
 import { conditionLabel } from '@/i18n/text'
@@ -88,25 +90,40 @@ export function regionSummary(save: SaveData, data: GameData, region: RegionId =
 
 /**
  * The secret area Home shows off: a new one (opened, never played) to travel to; else the locked one closest to
- * opening, with its progress; else none.
+ * opening (fewest conditions left, then furthest along the first of them), with that condition's progress; else none,
+ * every secret area of the region found and played.
  */
 export function featuredSecret(
   save: SaveData,
   data: GameData,
-): { area: Area; fresh: true } | { area: Area; fresh: false; current: number; target: number } | null {
+):
+  | { area: Area; fresh: true }
+  | { area: Area; fresh: false; cond: UnlockCondition; current: number; target: number }
+  | null {
   const secrets = data.areas.filter((a) => a.hidden && regionOfArea(a) === regionOf(save))
   const fresh = secrets.find((a) => areaStatus(save, data, a) === 'new')
   if (fresh) return { area: fresh, fresh: true }
-  let best: { area: Area; current: number; target: number; k: number } | null = null
+  let best: { area: Area; s: ConditionStatus; left: number; k: number } | null = null
   for (const a of secrets) {
     if (isAreaUnlocked(save, a.id, data)) continue
+    // Most secrets want several things (an area reached, a Pokédex, a level), so several can be left: the first one
+    // left is what's shown, as in the areas list.
     const unmet = (a.unlockConditions ?? []).map((c) => conditionStatus(c, save, data)).filter((s) => !s.met)
     const s = unmet[0]
-    if (!s || unmet.length > 1 || s.target <= 0) continue
-    const k = s.current / s.target
-    if (!best || k > best.k) best = { area: a, current: s.current, target: s.target, k }
+    if (!s) continue
+    const k = s.target > 0 ? s.current / s.target : 0
+    if (!best || unmet.length < best.left || (unmet.length === best.left && k > best.k))
+      best = { area: a, s, left: unmet.length, k }
   }
-  return best ? { area: best.area, fresh: false, current: best.current, target: best.target } : null
+  return (
+    best && {
+      area: best.area,
+      fresh: false,
+      cond: best.s.cond,
+      current: best.s.current,
+      target: best.s.target,
+    }
+  )
 }
 
 /** Something new in the Areas list: a secret area opened and never played. */

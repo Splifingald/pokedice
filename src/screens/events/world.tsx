@@ -20,6 +20,7 @@ import {
   leaderboardTutorialDue,
   mythicalHome,
   regionOfferDue,
+  generalRulesDue,
   versusRulesDue,
   worldByeDue,
   worldLeft,
@@ -317,7 +318,8 @@ function useOthersDue(): boolean {
       donationDue(s.save, s.data) ||
       !!regionOfferDue(s.save, s.data) ||
       !!eventUnlockDue(s.save, s.data) ||
-      versusRulesDue(s.save, s.data),
+      versusRulesDue(s.save, s.data) ||
+      generalRulesDue(s.save, s.data),
   )
   return others || gifts > 0
 }

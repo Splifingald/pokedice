@@ -388,3 +388,57 @@
     animation: none;
   }
 }
+
+/*
+ * A golden name ("I am just rich", docs/25, TrainerName): the deep gold of the `rich` token, a sparkle that twinkles
+ * and a glint that passes over the letters now and then, stepped like the CTA's sheen. Inline, so a truncated name
+ * still ends in "…". The global reduced-motion rule (index.css) stills both.
+ */
+@keyframes rich-glint {
+  0% {
+    background-position: 140% 0;
+  }
+  40%,
+  100% {
+    background-position: -40% 0;
+  }
+}
+@keyframes rich-twinkle {
+  0%,
+  70%,
+  100% {
+    transform: scale(1);
+  }
+  80% {
+    transform: scale(0.5);
+  }
+  90% {
+    transform: scale(1.25);
+  }
+}
+.rich-name {
+  position: relative;
+  color: rgb(var(--c-rich));
+}
+.rich-name::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+      105deg,
+      transparent 0 40%,
+      #fff3c480 40% 46%,
+      transparent 46% 50%,
+      #fff3c440 50% 52%,
+      transparent 52%
+    )
+    no-repeat;
+  background-size: 300% 100%;
+  animation: rich-glint 4.2s steps(28) infinite;
+  pointer-events: none;
+}
+.rich-twinkle {
+  margin-right: 2px;
+  vertical-align: -1px;
+  animation: rich-twinkle 2.4s steps(1) infinite;
+}

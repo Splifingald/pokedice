@@ -17,6 +17,7 @@ import {
   liveShopRows,
   regionOfferDue,
   shinyBoost,
+  generalRulesDue,
   versusRulesDue,
   worldFor,
   worldPopupDue,
@@ -292,6 +293,7 @@ export function LivePopup() {
       regionOfferDue(s.save, s.data) ||
       !!eventUnlockDue(s.save, s.data) ||
       versusRulesDue(s.save, s.data) ||
+      generalRulesDue(s.save, s.data) ||
       // A small world's pop-up (priority 1) goes first.
       (!inWorld(s.save, s.data) && worldPopupDue(s.save, worldFor(s.save, s.data, serverNow()))),
   )

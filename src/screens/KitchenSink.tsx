@@ -44,11 +44,13 @@ import { BattleBits } from './kitchen/BattleBits'
 import { DayCareBits } from './kitchen/DayCareBits'
 import { NicknameBits } from './kitchen/NicknameBits'
 import { TradeKitBits } from './kitchen/TradeBits'
+import { GeneralBits } from './kitchen/GeneralBits'
 import { RulesBits } from './kitchen/RulesBits'
 import { ExtremeBits } from './kitchen/ExtremeBits'
 import { PartnerBits } from './kitchen/PartnerBits'
 import { RaidBits } from './kitchen/RaidBits'
 import { WorldBits } from './kitchen/WorldBits'
+import { GiftBits } from './kitchen/GiftBits'
 import { BadgeIcon, CrownIcon } from '@/components/BadgeIcon'
 import { BoardRow } from '@/components/BoardRow'
 
@@ -574,8 +576,16 @@ export function KitchenSink() {
         <RulesBits />
       </Section>
 
+      <Section title="General upgrades: the tab's cards, rules and INFO, while you were away, golden names (docs/25)">
+        <GeneralBits />
+      </Section>
+
       <Section title="Trades: visibility, wants, time left, board rows (every state), listing sheet, share, rules, the trade scene, results">
         <TradeKitBits />
+      </Section>
+
+      <Section title="Gifts: under a message (ready, open it, asking, waiting), opened, what arrived, rules, the opening">
+        <GiftBits />
       </Section>
 
       <Section title="Extreme mode: rules, band, title card, K.O. rest, resting team, while you were away, switch">
