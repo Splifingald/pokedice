@@ -193,7 +193,7 @@ export function parseProfile(raw: unknown): FriendProfile | null {
   }
 }
 
-/** invite_status() (migration 0050): the invite gauge, or null while the rewards are off for this player. */
+/** invite_status() (migration 0051): the invite gauge, or null while the rewards are off for this player. */
 export function parseInviteStatus(raw: unknown): InviteStatus | null {
   const r = (Array.isArray(raw) ? raw[0] : raw) as Record<string, unknown> | null | undefined
   if (!r || typeof r !== 'object') return null
@@ -319,7 +319,7 @@ export async function loadInviteStatus(force = false, now = Date.now()): Promise
   try {
     useFriends.setState({ invites: parseInviteStatus(await rpc('invite_status')) })
   } catch (err) {
-    // A database without 0050: no gauge.
+    // A database without 0051: no gauge.
     console.warn('[friends] invites not loaded:', err instanceof Error ? err.message : err)
   }
 }

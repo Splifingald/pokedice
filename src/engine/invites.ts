@@ -1,7 +1,7 @@
 // Friend invite rewards (docs/15 §25): every new player someone invites with their invite link who goes on to win their
 // first badge fills that player's gauge, and each tier the gauge reaches gives its gifts once — by default a Rare Candy,
 // then ₽1,000, a shiny Ditto and a Master Ball. The server counts the invites and hands each tier over once (migration
-// 0050); these functions read the admin's tiers, place the gauge, and put the gifts away (engine/gifts.ts decides where
+// 0051); these functions read the admin's tiers, place the gauge, and put the gifts away (engine/gifts.ts decides where
 // each one lands). The screens only say it.
 import { eventOpenTo } from './events'
 import { isExtreme } from './extreme'
@@ -42,7 +42,7 @@ export function inviteTiers(data: GameData): InviteTier[] {
   return out.sort((a, b) => a.friends - b.friends).slice(0, INVITE_TIERS_MAX)
 }
 
-/** What the server says about the player's invites (invite_status(), migration 0050). */
+/** What the server says about the player's invites (invite_status(), migration 0051). */
 export interface InviteStatus {
   /** Players they invited who have won their first badge: the gauge. */
   count: number

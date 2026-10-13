@@ -176,7 +176,7 @@ supabase/    migrations/0001_init.sql, seed.sql (generated)
   tier gives its gifts once, opened with the gifts' animation: by default 1 friend a Rare Candy, 2 ₽1,000, 3 a shiny
   Ditto, 4 a Master Ball. Admin → Config → Friend invite rewards has the switch (Off by default; Off / On for admin /
   On for everyone; the database checks it too) and the tiers (up to six, each a number of friends and its gifts, with
-  the gifts' editor). Needs `supabase/migrations/0050_invite_rewards.sql` run once on the live database, after 0048.
+  the gifts' editor). Needs `supabase/migrations/0051_invite_rewards.sql` run once on the live database, after 0048.
   See docs/15-UI-GUIDELINES.md §25.
 - **Admin → Analytics** sums up the all-time figures (retention, each player's top level and furthest area) in the
   database, from running totals kept up to date as events come in, so the page stays quick however many events pile

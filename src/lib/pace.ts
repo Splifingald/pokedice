@@ -11,5 +11,5 @@ export const usePace = () => useContext(PaceContext)
 /** Versus fights play on auto at 1.75× speed. */
 export const VERSUS_PACE = 1 / 1.75
 
-/** A raid's speed button: the ally sides' and the summons' turns play 1.5× faster (the raid Pokémon's and yours never). */
+/** A raid's speed button: the ally sides' turns play 1.5× faster (the raid Pokémon's and yours never). */
 export const RAID_FAST_SPEED = 1.5

@@ -1,4 +1,4 @@
-// Migration 0050 against a real Postgres (PGlite, in process): friend invite rewards (docs/15 §25). A new player who
+// Migration 0051 against a real Postgres (PGlite, in process): friend invite rewards (docs/15 §25). A new player who
 // opened an invite link counts for its owner once they win their first badge (in the main game); a player with a badge,
 // one invited before, a stranger or a cycle doesn't; the switch gates everything; each tier is claimed once; deleting
 // your data takes your gauge. Supabase's own pieces (the auth schema, the anon / authenticated roles) are stood in for
@@ -121,11 +121,11 @@ beforeAll(async () => {
     '0048_message_gifts.sql',
     // The General upgrades' card writer (0049) runs before this one's trigger, as on the live database.
     '0049_general_upgrades.sql',
-    '0050_invite_rewards.sql',
+    '0051_invite_rewards.sql',
   ])
     await db.exec(sql(f))
   // Safe to run again.
-  await db.exec(sql('0050_invite_rewards.sql'))
+  await db.exec(sql('0051_invite_rewards.sql'))
   await db.exec(`
     insert into auth.users (id) values ${Object.values(U)
       .map((u) => `('${u}')`)

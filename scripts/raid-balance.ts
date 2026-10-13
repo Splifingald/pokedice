@@ -4,11 +4,20 @@
  * legendary, starter line or pseudo-legendary, Lv. teamCap), every side on the battle AI, against every species of the
  * raid calendar (mythicals, legendaries, pseudo-legendaries; fillers with FILLERS=1), with today's raid config. The
  * target is about 50–70 % for such a group.
- * Try changes without editing the config:
- *   BARS=3  BAR_HP=1  UPG=7  SIDE_UPG=5  START=2  PER_BREAK=2  FIELD=2  LEVEL=50  CAP=50
+ * Try changes without editing the config (the type matchups: the sides' super-effective, the raid Pokémon's resisted
+ * and immune multipliers):
+ *   BARS=3  BAR_HP=1  UPG=7  SIDE_UPG=5  LEVEL=50  CAP=50  SIDE_SUPER=1.3  BOSS_RESISTED=0.7  BOSS_IMMUNE=0.5
  */
 import { BUNDLE } from '../src/config/bundle'
-import { compileGameData, createRng, DEFAULT_CONFIG, npcTeam, raidEntries, raidRegion, simulateRaid, type RaidConfig } from '../src/engine'
+import {
+  compileGameData,
+  createRng,
+  DEFAULT_CONFIG,
+  npcTeam,
+  raidEntries,
+  simulateRaid,
+  type RaidConfig,
+} from '../src/engine'
 
 const N = Number(process.argv[2] ?? 60)
 const seed = Number(process.argv[3] ?? 1)
@@ -21,11 +30,15 @@ const raid = {
   ...(env('BAR_HP') != null && { barHp: env('BAR_HP') }),
   ...(env('UPG') != null && { upgradeLevel: env('UPG') }),
   ...(env('SIDE_UPG') != null && { sideUpgradeLevel: env('SIDE_UPG') }),
-  ...(env('START') != null && { startAllies: env('START') }),
-  ...(env('PER_BREAK') != null && { summonPerBreak: env('PER_BREAK') }),
-  ...(env('FIELD') != null && { maxField: env('FIELD') }),
   ...(env('LEVEL') != null && { level: env('LEVEL') }),
   ...(env('CAP') != null && { teamCap: env('CAP') }),
+}
+const types = (k: 'sideTypes' | 'bossTypes') => ({ ...DEFAULT_CONFIG.events.raid[k], ...base[k] })
+raid.sideTypes = { ...types('sideTypes'), ...(env('SIDE_SUPER') != null && { super: env('SIDE_SUPER')! }) }
+raid.bossTypes = {
+  ...types('bossTypes'),
+  ...(env('BOSS_RESISTED') != null && { resisted: env('BOSS_RESISTED')! }),
+  ...(env('BOSS_IMMUNE') != null && { immune: env('BOSS_IMMUNE')! }),
 }
 const data = compileGameData({
   ...BUNDLE,
@@ -41,7 +54,7 @@ const seen = new Set<number>()
 const raids = kinds.flat().flatMap((e) => {
   if (seen.has(e.dex)) return []
   seen.add(e.dex)
-  return [{ dex: e.dex, regionId: raidRegion(data, e.areaId), kind: e.kind }]
+  return [{ dex: e.dex, kind: e.kind }]
 })
 for (const r of raids) {
   let wins = 0
@@ -54,7 +67,7 @@ for (const r of raids) {
       kind: (k === 0 ? 'me' : 'npc') as 'me' | 'npc',
       team: npcTeam(data, regions, rng, `s${k}`),
     }))
-    const res = simulateRaid({ boss: { dex: r.dex, shiny: false }, sides, regionId: r.regionId }, data, rng)
+    const res = simulateRaid({ boss: { dex: r.dex, shiny: false }, sides }, data, rng)
     if (res.won) wins++
     steps += res.steps
     bars += res.barsBroken
@@ -63,7 +76,8 @@ for (const r of raids) {
 }
 
 console.log(
-  `raid: bars ${raid.bars} × ${raid.barHp} HP · Lv.${raid.level} upgrades ${raid.upgradeLevel} · sides Lv.${raid.teamCap} upgrades ${raid.sideUpgradeLevel} · summons ${raid.startAllies} at start, +${raid.summonPerBreak}/bar, ${raid.maxField} max · ${N} raids each`,
+  `raid: bars ${raid.bars} × ${raid.barHp} HP · Lv.${raid.level} upgrades ${raid.upgradeLevel} · sides Lv.${raid.teamCap} upgrades ${raid.sideUpgradeLevel} · ` +
+    `sides hit ×${raid.sideTypes.super}/×${raid.sideTypes.resisted}/×${raid.sideTypes.immune}, it hits ×${raid.bossTypes.super}/×${raid.bossTypes.resisted}/×${raid.bossTypes.immune} · ${N} raids each`,
 )
 console.log('| Raid | Win % | Actions | Bars broken |')
 console.log('|---|---:|---:|---:|')

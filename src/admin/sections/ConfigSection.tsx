@@ -561,7 +561,7 @@ function GeneralBox() {
 /**
  * Friend invite rewards (docs/15 §25): the three-way switch and the gauge's tiers — each a number of invited new players
  * who have won their first badge, and the gifts it gives (the same editor as a message's gifts). The server reads the
- * same row (0050): it counts the invites only while the switch isn't off, and hands each tier over once.
+ * same row (0051): it counts the invites only while the switch isn't off, and hands each tier over once.
  */
 function InviteRewardsBox() {
   const data = useAdminData()

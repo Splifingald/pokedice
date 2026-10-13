@@ -255,6 +255,9 @@ test('a raid: the day’s raid, its lock, NPC trainers in the group, the fight t
   await page.getByRole('button', { name: 'Info: how Raid Battles works' }).click()
   const rules = page.getByRole('dialog', { name: 'Raid Battles' })
   await expect(rules.getByText(/^One raid a day, the same for everyone/)).toBeVisible()
+  // The raid's own type matchups, with the admin's numbers.
+  const matchups = /super-effective hits only do ×1\.3 to it; .* ×0\.7, and no type is immune to it \(×0\.5\)\.$/
+  await expect(rules.getByText(matchups)).toBeVisible()
   await rules.getByRole('button', { name: 'OK', exact: true }).click()
   await page.getByRole('button', { name: 'Start the raid' }).click()
   // No friend in the group: four NPC trainers to pick two from, the same four after a reload.
@@ -280,7 +283,7 @@ test('a raid: the day’s raid, its lock, NPC trainers in the group, the fight t
   // The try started: the next one brings four new trainers.
   await expect.poll(async () => (await stored(page)).events?.raidNpc?.seed).not.toBe(seed)
 
-  // The fight (animations off): the target is yours to pick, the attack too, until the raid is won or lost.
+  // The fight (animations off): you play first, the attack is yours, until the raid is won or lost.
   await expect(page.getByRole('heading', { name: 'Raid battle: Celebi' })).toBeAttached()
   const caught = page.getByRole('button', { name: /ROLL TO CATCH|CATCH/ })
   const lost = page.getByRole('heading', { name: 'The raid is lost' })
@@ -359,8 +362,8 @@ test('the raid team fights, not the party: a switch on your turn, the speed butt
   await expect(pick).toHaveCount(0)
   await expect(team.getByRole('button', { name: /^Snorlax,.*in battle$/ })).toBeAttached()
 
-  // The speed button: the allies' and the summons' turns at ×1.5, kept in the settings.
-  const speed = page.getByRole('button', { name: "Speed up your allies' and the summons' turns" })
+  // The speed button: the allies' turns at ×1.5, kept in the settings.
+  const speed = page.getByRole('button', { name: "Speed up your allies' turns" })
   await expect(speed).toHaveAttribute('aria-pressed', 'false')
   await expect(speed).toHaveText('×1')
   await speed.click()

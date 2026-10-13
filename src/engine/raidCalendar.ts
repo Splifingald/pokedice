@@ -24,7 +24,7 @@ export interface RaidDay {
 }
 
 /** The numbers a raid Pokémon's own rules can change. */
-export const RAID_MON_KEYS = ['bars', 'barHp', 'startAllies', 'summonPerBreak', 'maxField', 'level', 'upgradeLevel'] as const
+export const RAID_MON_KEYS = ['bars', 'barHp', 'level', 'upgradeLevel'] as const
 export type RaidRules = Required<RaidMonRules>
 
 /** Which raid: the day's (the calendar) or a progression raid in an area (docs/24). */
@@ -44,9 +44,6 @@ export function raidRules(data: GameData, dex: number, kind: RaidKindOf = 'daily
   return {
     bars: Math.max(1, Math.round(pick('bars'))),
     barHp: Math.max(0.1, pick('barHp') ?? 1),
-    startAllies: Math.max(0, Math.round(pick('startAllies'))),
-    summonPerBreak: Math.max(0, Math.round(pick('summonPerBreak'))),
-    maxField: Math.max(0, Math.round(pick('maxField'))),
     level: Math.max(1, Math.min(100, Math.round(pick('level')))),
     upgradeLevel: Math.max(1, Math.min(10, Math.round(pick('upgradeLevel')))),
   }

@@ -73,7 +73,7 @@ export const seeInviteRules = () => mutateSave(rulesSeen)
 
 /**
  * The invite link just made the player friends with its owner: tell the server, which counts them for the owner if
- * they're a new player. True when it counted. Asked only while the switch is on for anyone; a database without 0050
+ * they're a new player. True when it counted. Asked only while the switch is on for anyone; a database without 0051
  * (or any failure) just doesn't count.
  */
 export async function countInvite(code: string): Promise<boolean> {

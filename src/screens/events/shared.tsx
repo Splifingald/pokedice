@@ -67,6 +67,12 @@ export function ruleParams(id: EventId, data: GameData): Params {
       chance: rarest ? +((rarest.count * rarest.odds * 100) / total).toFixed(1) : 0,
     }
   }
+  if (id === 'raid') {
+    // The raid's type matchups, as the admin set them: your super-effective hits, its resisted and blocked ones.
+    const { sideTypes, bossTypes } = data.config.events.raid
+    const n = (x: number) => x.toLocaleString(getLang())
+    return { super: n(sideTypes.super), resisted: n(bossTypes.resisted), immune: n(bossTypes.immune) }
+  }
   return {}
 }
 

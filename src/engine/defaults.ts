@@ -138,7 +138,7 @@ export const DEFAULT_CONFIG: GameConfig = {
   },
   // Gifts with the developer's messages (docs/15 §23): off until the admin switches them on.
   gifts: { access: 'off' },
-  // Friend invite rewards (docs/15 §25): off until the admin switches them on. Migration 0050 inserts the same row.
+  // Friend invite rewards (docs/15 §25): off until the admin switches them on. Migration 0051 inserts the same row.
   inviteRewards: {
     access: 'off',
     tiers: [
@@ -188,15 +188,16 @@ export const DEFAULT_CONFIG: GameConfig = {
       unlockAreaId: '2238f26a-2629-5f28-af07-e74cb41d5f7a',
       banner: 'lair-shrine',
       rules: ['raid.daily', 'raid.sides', 'raid.bars', 'raid.catch'],
-      // Three bars of twice its HP at Lv.50, two summons to start and two points a break, two beside it at most;
-      // upgrades 8 for the raid's side, 5 for yours (Versus's level); you and up to two friends, three Pokémon each,
-      // Lv.50 at most. `pnpm raid-balance`: about 60 % wins for three random fully evolved teams (target 50–70 %).
+      // Three bars of 2.2 times its HP at Lv.50, alone (no summons since 2026-10-13: its bars grew instead); upgrades 8
+      // for the raid Pokémon, 5 for the sides (Versus's level); you and up to two friends, three Pokémon each, Lv.50 at
+      // most. `pnpm raid-balance`: about 56 % wins for three random fully evolved teams (target 50–70 %), as before.
       bars: 3,
-      barHp: 2,
+      barHp: 2.2,
       barColors: ['#34c97a', '#ffbe2e', '#f2553f'],
-      startAllies: 2,
-      summonPerBreak: 2,
-      maxField: 2,
+      // Super effective is only ×1.3 on the raid Pokémon; its own resisted hits land at ×0.7, and nobody is immune
+      // to it (×0.5).
+      sideTypes: { super: 1.3, resisted: 0.5, immune: 0 },
+      bossTypes: { super: 2, resisted: 0.7, immune: 0.5 },
       level: 50,
       upgradeLevel: 8,
       teamCap: 50,
