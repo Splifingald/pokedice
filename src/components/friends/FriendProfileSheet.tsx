@@ -16,6 +16,7 @@ import { CardFrame, CardTeam, Stat } from '../TrainerCard'
 import { TrainerLook } from '../TrainerLook'
 import { TheirTrades } from '../trades/TheirTrades'
 import { useAddText } from './AddFriendModal'
+import { TrainerName } from '../TrainerName'
 
 type Load = { state: 'loading' } | { state: 'ready'; profile: FriendProfile } | { state: 'gone' } | { state: 'error'; why: string }
 
@@ -109,7 +110,9 @@ export function FriendProfileSheet({
               <div className="grid grid-cols-[96px_minmax(0,1fr)] items-start gap-2.5 px-1">
                 <TrainerLook src={avatarOf(profile.avatar).src} w={96} h={124} zoom={2} className="bg-paper shadow-ring" />
                 <div className="grid min-w-0 gap-1.5">
-                  <b className="min-w-0 truncate text-[26px] font-normal leading-none">{profile.name}</b>
+                  <b className="min-w-0 truncate text-[26px] font-normal leading-none">
+                    <TrainerName name={profile.name} rich={profile.rich} />
+                  </b>
                   {!profile.region ? (
                     <p className="m-0 font-pixel-sm text-[15px] text-muted">{t('ui.friends.noGame')}</p>
                   ) : (

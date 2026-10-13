@@ -198,7 +198,9 @@ begin
   return new_team;
 end $$;
 
--- Your friends who left a team on this raid, and how many times each has helped you.
+-- Your friends who left a team on this raid, and how many times each has helped you. 0049 gives it a last column,
+-- which a create or replace can't take back: a re-run (seed.sql) drops that one first.
+drop function if exists raid_progress_friend_teams(text, text);
 create or replace function raid_progress_friend_teams(p_key text, p_realm text default 'main')
 returns table (user_id uuid, name text, avatar text, team jsonb, helped int)
 language sql stable security definer set search_path = public as $$

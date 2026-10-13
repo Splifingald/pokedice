@@ -89,6 +89,8 @@ export const THEMES = {
     dot: '#dde7f3',
     /** The dialogue box's inner ring. */
     'dialog-ring': '#cfe0f4',
+    /** A golden name ("I am just rich", docs/25): a deep gold that still reads 4.8:1 on every light surface. */
+    rich: '#8a5a00',
   },
   dark: {
     parchment: '#10172a',
@@ -117,6 +119,7 @@ export const THEMES = {
     'sand-lip': '#4a3d2a',
     dot: '#1a2238',
     'dialog-ring': '#35507e',
+    rich: PALETTE.gold,
   },
 } as const satisfies Record<'light' | 'dark', Record<string, string>>
 

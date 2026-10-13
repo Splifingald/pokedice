@@ -293,4 +293,38 @@ export const DEFAULT_CONFIG: GameConfig = {
   liveEvents: { access: 'off', list: [] },
   // Off until the admin switches it on (for the admin alone, or everyone).
   smallWorlds: { access: 'off', list: [] },
+  // The Link Cable and the Bait (docs/25): off until the admin switches each on.
+  itemSwitches: { 'link-cable': 'off', bait: 'off' },
+  // The General upgrades (docs/25): off until the admin switches them on. A whole region's combos and dice cost about
+  // ₽37,000: Capture Luck from 10 % to 100 % (₽74,000 in all) and the golden name (₽99,999) are long goals; offline
+  // earnings, from ₽2 to ₽20 an hour for up to 24 h away, cost ₽6,663 in all and pay themselves back in days.
+  general: {
+    access: 'off',
+    luck: [
+      { chance: 10, cost: 1000 },
+      { chance: 20, cost: 1800 },
+      { chance: 30, cost: 2800 },
+      { chance: 40, cost: 4000 },
+      { chance: 50, cost: 5500 },
+      { chance: 60, cost: 7200 },
+      { chance: 70, cost: 9200 },
+      { chance: 80, cost: 11500 },
+      { chance: 90, cost: 14000 },
+      { chance: 100, cost: 17000 },
+    ],
+    offline: [
+      { perHour: 2, cost: 100 },
+      { perHour: 4, cost: 175 },
+      { perHour: 6, cost: 263 },
+      { perHour: 8, cost: 375 },
+      { perHour: 10, cost: 500 },
+      { perHour: 12, cost: 650 },
+      { perHour: 14, cost: 825 },
+      { perHour: 16, cost: 1025 },
+      { perHour: 18, cost: 1250 },
+      { perHour: 20, cost: 1500 },
+    ],
+    offlineMaxHours: 24,
+    richCost: 99999,
+  },
 }

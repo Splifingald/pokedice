@@ -155,6 +155,15 @@ export function tradeEvolutionOf(data: GameData, dex: number): number | null {
 }
 
 /**
+ * The Link Cable (docs/25): the trade evolution this Pokémon would have in a trade, without one — gated like
+ * `stoneEvolution` on the region being played. Null when it has none.
+ */
+export function linkEvolution(inst: Pick<PokemonInstance, 'dex'>, data: GameData, allowDex?: EvolutionGateLike): number | null {
+  const to = tradeEvolutionOf(data, inst.dex)
+  return to != null && (allowDex?.(to) ?? true) ? to : null
+}
+
+/**
  * The evolutions by level this Pokémon has reached (several for a branching one), gated like `stoneEvolution`. Trade
  * evolutions never come this way (see isTradeEvolution).
  */

@@ -5,7 +5,7 @@ import { groupOf } from '@/screens/Shop'
 import { data } from './fixtures'
 
 /** Every kind `ItemEffect` can take. Adding one to the union without a group is what this file exists to catch. */
-const ALL_KINDS: ItemDef['effect']['kind'][] = ['heal', 'cure', 'rerolls', 'revive', 'stone', 'fossil', 'level', 'ball']
+const ALL_KINDS: ItemDef['effect']['kind'][] = ['heal', 'cure', 'rerolls', 'revive', 'stone', 'fossil', 'level', 'ball', 'link', 'bait']
 
 describe('the Mart lists everything it stocks', () => {
   it('gives every item effect kind a group', () => {

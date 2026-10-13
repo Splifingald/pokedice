@@ -30,6 +30,7 @@ import { copyText, shareOrCopy } from '@/lib/share'
 import { isSupabaseConfigured } from '@/lib/supabase'
 import { pushToast, useGame } from '@/store/game'
 import { cx } from '@/theme/util'
+import { TrainerName } from '@/components/TrainerName'
 
 /** Off the boards after 72 hours without playing: shown, but quieter. */
 const AWAY_MS = 72 * 3_600_000
@@ -204,7 +205,7 @@ function FriendListRow({ friend: f, onOpen }: { friend: FriendRow; onOpen: () =>
         <TrainerLook src={avatarOf(f.avatar).src} w={44} h={48} className={cx(away && 'opacity-75 grayscale-[0.7]')} />
         <span className="grid min-w-0 flex-1 gap-px">
           <b className="flex min-w-0 items-center gap-1.5 text-[20px] font-normal leading-none">
-            <span className="truncate">{f.name}</span>
+            <TrainerName name={f.name} rich={f.rich} className="truncate" />
             {f.isNew && <NewTag className="shrink-0" />}
           </b>
           {f.team.length > 0 && (

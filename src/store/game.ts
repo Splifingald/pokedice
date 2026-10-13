@@ -50,7 +50,22 @@ export interface CatchState {
   shiny?: boolean
   kind: 'wild' | 'boss'
   target: CatchTarget
-  result: (CatchRoll & { ballKey: string | null; events: RunEvent[]; pendingCatchId: string | null }) | null
+  /** Capture Luck kept it after a miss and this is the second throw: it won't stay again (docs/25). */
+  retried?: boolean
+  result: CatchThrow | null
+}
+
+/** One throw's outcome, as the catch panel and the stage play it. */
+export type CatchThrow = CatchRoll & {
+  ballKey: string | null
+  events: RunEvent[]
+  pendingCatchId: string | null
+  /** The ball fell short and this Bait (its key) could still make it: the player is asked first (docs/25). */
+  baitOffer?: string | null
+  /** The player's answer to the Bait offered: thrown (its die is `bait`) or kept. */
+  baited?: 'used' | 'kept'
+  /** It broke free but stayed on the spot (Capture Luck): one more throw (docs/25). */
+  stays?: boolean
 }
 
 export interface RunState {

@@ -1,7 +1,8 @@
 /**
- * `pnpm item-sprites`: packs every item picture (src/data/items.json's `spriteUrl`, PokeAPI's 30×30 item sprites)
- * into one sheet, src/assets/item-icons.png, with its index in src/data/item-atlas.json. The Poké Mart then costs one
- * request for its whole shelf instead of one per item, and the sheet is cached for a year by its hashed name.
+ * `pnpm item-sprites`: packs every item picture (src/data/items.json's `spriteUrl`: PokeAPI's 30×30 item sprites, or a
+ * path under public/ for one the game draws itself) into one sheet, src/assets/item-icons.png, with its index in
+ * src/data/item-atlas.json. The Poké Mart then costs one request for its whole shelf instead of one per item, and the
+ * sheet is cached for a year by its hashed name.
  *
  * The index is keyed by the picture's URL, not the item: an item the admin adds or edits later keeps working through
  * its own URL (ItemSprite falls back to it) until this script is run again. Downloads are cached under
@@ -22,6 +23,8 @@ const INDEX = path.join(ROOT, 'src/data/item-atlas.json')
 const COLS = 10
 
 async function fetchCached(url: string): Promise<Buffer> {
+  // A picture of the game's own (public/items: the Link Cable, which PokeAPI doesn't have) is read from disk.
+  if (url.startsWith('/')) return readFile(path.join(ROOT, 'public', url))
   const file = path.join(CACHE, path.basename(new URL(url).pathname))
   if (existsSync(file)) return readFile(file)
   await mkdir(CACHE, { recursive: true })

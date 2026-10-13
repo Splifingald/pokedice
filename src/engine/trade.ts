@@ -587,6 +587,8 @@ export interface TakenTrade {
   given: PokemonInstance
   /** The other trainer's name. */
   with: string
+  /** …shining gold ("I am just rich", docs/25), as the server said then. */
+  withRich?: boolean
 }
 
 export interface TradeResult {
@@ -612,6 +614,7 @@ export function applyTake(
     at: now,
     role: 'taker',
     with: t.with,
+    ...(t.withRich && { withRich: true }),
     gave: { dex: t.given.dex, level: t.given.level, ...extras(t.given) },
     got: { dex: received.dex, level: received.arrival.level, ...extras(t.listed) },
     ...(received.evolvedTo != null && { evolvedTo: received.evolvedTo }),
@@ -642,6 +645,7 @@ export function applyTaken(
     at: now,
     role: 'poster',
     with: t.with,
+    ...(t.withRich && { withRich: true }),
     gave: { dex: t.listed.dex, level: t.listed.level, ...extras(t.listed) },
     got: { dex: received.dex, level: received.arrival.level, ...extras(t.given) },
     ...(received.evolvedTo != null && { evolvedTo: received.evolvedTo }),

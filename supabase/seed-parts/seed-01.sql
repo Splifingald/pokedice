@@ -1491,6 +1491,8 @@ $$;
 
 -- The Friends page, in a realm. `in_realm`: the friend has a save there (else only their name and look, from main).
 drop function if exists friend_list();
+-- 0049 gives it a last column, which `create or replace` can't take back: a re-run (seed.sql) drops that one first.
+drop function if exists friend_list(text);
 create or replace function friend_list(p_realm text default 'main')
 returns table (
   user_id uuid,
@@ -1516,6 +1518,7 @@ language sql stable security definer set search_path = public as $$
 $$;
 
 drop function if exists friend_profile(uuid);
+drop function if exists friend_profile(uuid, text); -- 0049's, as friend_list's above
 create or replace function friend_profile(p_friend uuid, p_realm text default 'main')
 returns table (
   user_id uuid,
@@ -1572,6 +1575,7 @@ end
 $$;
 
 drop function if exists friend_day_cares();
+drop function if exists friend_day_cares(text); -- 0049's, as friend_list's above
 create or replace function friend_day_cares(p_realm text default 'main')
 returns table (owner uuid, name text, avatar text, day_care jsonb)
 language sql stable security definer set search_path = public as $$
@@ -1584,6 +1588,7 @@ $$;
 -- ---------------------------------------------------------------- the leaderboard
 
 drop function if exists leaderboard();
+drop function if exists leaderboard(text); -- 0049's, as friend_list's above
 create or replace function leaderboard(p_realm text default 'main')
 returns table (
   region text,
@@ -1671,6 +1676,7 @@ $$;
 -- Versus (0018) is optional on a database that only ran seed.sql: like 0033, this one is made only when its tables are
 -- there (a SQL function's tables are checked when it is created).
 drop function if exists versus_board();
+drop function if exists versus_board(text); -- 0049's, as friend_list's above
 do $do$
 begin
   if to_regclass('public.versus_teams') is null then
@@ -1858,6 +1864,7 @@ begin
 end $$;
 
 drop function if exists raid_friend_teams();
+drop function if exists raid_friend_teams(text); -- 0049's, as friend_list's above
 create or replace function raid_friend_teams(p_realm text default 'main')
 returns table (user_id uuid, name text, avatar text, team jsonb, helped int)
 language sql stable security definer set search_path = public as $$
@@ -3152,7 +3159,9 @@ begin
   return new_team;
 end $$;
 
--- Your friends who left a team on this raid, and how many times each has helped you.
+-- Your friends who left a team on this raid, and how many times each has helped you. 0049 gives it a last column,
+-- which a create or replace can't take back: a re-run (seed.sql) drops that one first.
+drop function if exists raid_progress_friend_teams(text, text);
 create or replace function raid_progress_friend_teams(p_key text, p_realm text default 'main')
 returns table (user_id uuid, name text, avatar text, team jsonb, helped int)
 language sql stable security definer set search_path = public as $$
@@ -3409,148 +3418,49 @@ grant execute on function delete_my_data(text) to authenticated;
 
 grant select on trade_listings to authenticated;
 
-insert into type_chart (attacking, defending, multiplier) values
-  ('bug', 'dark', 2),
-  ('bug', 'fairy', 0.5),
-  ('bug', 'fighting', 0.5),
-  ('bug', 'fire', 0.5),
-  ('bug', 'flying', 0.5),
-  ('bug', 'ghost', 0.5),
-  ('bug', 'grass', 2),
-  ('bug', 'poison', 0.5),
-  ('bug', 'psychic', 2),
-  ('bug', 'steel', 0.5),
-  ('dark', 'dark', 0.5),
-  ('dark', 'fairy', 0.5),
-  ('dark', 'fighting', 0.5),
-  ('dark', 'ghost', 2),
-  ('dark', 'psychic', 2),
-  ('dragon', 'dragon', 2),
-  ('dragon', 'fairy', 0),
-  ('dragon', 'steel', 0.5),
-  ('electric', 'dragon', 0.5),
-  ('electric', 'electric', 0.5),
-  ('electric', 'flying', 2),
-  ('electric', 'grass', 0.5),
-  ('electric', 'ground', 0),
-  ('electric', 'water', 2),
-  ('fairy', 'dark', 2),
-  ('fairy', 'dragon', 2),
-  ('fairy', 'fighting', 2),
-  ('fairy', 'fire', 0.5),
-  ('fairy', 'poison', 0.5),
-  ('fairy', 'steel', 0.5),
-  ('fighting', 'bug', 0.5),
-  ('fighting', 'dark', 2),
-  ('fighting', 'fairy', 0.5),
-  ('fighting', 'flying', 0.5),
-  ('fighting', 'ghost', 0),
-  ('fighting', 'ice', 2),
-  ('fighting', 'normal', 2),
-  ('fighting', 'poison', 0.5),
-  ('fighting', 'psychic', 0.5),
-  ('fighting', 'rock', 2),
-  ('fighting', 'steel', 2),
-  ('fire', 'bug', 2),
-  ('fire', 'dragon', 0.5),
-  ('fire', 'fire', 0.5),
-  ('fire', 'grass', 2),
-  ('fire', 'ice', 2),
-  ('fire', 'rock', 0.5),
-  ('fire', 'steel', 2),
-  ('fire', 'water', 0.5),
-  ('flying', 'bug', 2),
-  ('flying', 'electric', 0.5),
-  ('flying', 'fighting', 2),
-  ('flying', 'grass', 2),
-  ('flying', 'rock', 0.5),
-  ('flying', 'steel', 0.5),
-  ('ghost', 'dark', 0.5),
-  ('ghost', 'ghost', 2),
-  ('ghost', 'normal', 0),
-  ('ghost', 'psychic', 2),
-  ('grass', 'bug', 0.5),
-  ('grass', 'dragon', 0.5),
-  ('grass', 'fire', 0.5),
-  ('grass', 'flying', 0.5),
-  ('grass', 'grass', 0.5),
-  ('grass', 'ground', 2),
-  ('grass', 'poison', 0.5),
-  ('grass', 'rock', 2),
-  ('grass', 'steel', 0.5),
-  ('grass', 'water', 2),
-  ('ground', 'bug', 0.5),
-  ('ground', 'electric', 2),
-  ('ground', 'fire', 2),
-  ('ground', 'flying', 0),
-  ('ground', 'grass', 0.5),
-  ('ground', 'poison', 2),
-  ('ground', 'rock', 2),
-  ('ground', 'steel', 2),
-  ('ice', 'dragon', 2),
-  ('ice', 'fire', 0.5),
-  ('ice', 'flying', 2),
-  ('ice', 'grass', 2),
-  ('ice', 'ground', 2),
-  ('ice', 'ice', 0.5),
-  ('ice', 'steel', 0.5),
-  ('ice', 'water', 0.5),
-  ('normal', 'ghost', 0),
-  ('normal', 'rock', 0.5),
-  ('normal', 'steel', 0.5),
-  ('poison', 'fairy', 2),
-  ('poison', 'ghost', 0.5),
-  ('poison', 'grass', 2),
-  ('poison', 'ground', 0.5),
-  ('poison', 'poison', 0.5),
-  ('poison', 'rock', 0.5),
-  ('poison', 'steel', 0),
-  ('psychic', 'dark', 0),
-  ('psychic', 'fighting', 2),
-  ('psychic', 'poison', 2),
-  ('psychic', 'psychic', 0.5),
-  ('psychic', 'steel', 0.5),
-  ('rock', 'bug', 2),
-  ('rock', 'fighting', 0.5),
-  ('rock', 'fire', 2),
-  ('rock', 'flying', 2),
-  ('rock', 'ground', 0.5),
-  ('rock', 'ice', 2),
-  ('rock', 'steel', 0.5),
-  ('steel', 'electric', 0.5),
-  ('steel', 'fairy', 2),
-  ('steel', 'fire', 0.5),
-  ('steel', 'ice', 2),
-  ('steel', 'rock', 2),
-  ('steel', 'steel', 0.5),
-  ('steel', 'water', 0.5),
-  ('water', 'dragon', 0.5),
-  ('water', 'fire', 2),
-  ('water', 'grass', 0.5),
-  ('water', 'ground', 2),
-  ('water', 'rock', 2),
-  ('water', 'water', 0.5)
-on conflict (attacking, defending) do update set multiplier = excluded.multiplier;
+-- ↓ supabase/migrations/0049_general_upgrades.sql, inlined so this file stands alone.
+-- General upgrades (docs/25): the Upgrades screen's third tab (Capture Luck, offline earnings, "I am just rich"), and
+-- two new items, the Link Cable and the Bait. The game decides all of it and keeps it in the save
+-- (src/engine/general.ts); the server holds the admin's switches and shows other players one thing: a trainer who
+-- bought "I am just rich" (`save.general.rich`) has a golden name wherever others see it.
+--
+-- 1. game_config `itemSwitches` (each item Off / On for admin / On for everyone) and `general` (the switch and the
+--    numbers), off by default (docs/15 §20) and inserted only if missing, so seeding never clobbers the admin's. The two
+--    items, for a database that hasn't run seed.sql since they were added.
+-- 2. general_cfg() and general_open(): the switch as the server reads it, like trade_open (0044).
+-- 3. player_cards.rich: the card writer (0040's) also keeps the flag, from the save. A card takes it on the player's
+--    next upload: nobody holds it before this runs (the switch is off).
+-- 4. player_rich(user): a trainer's golden name as the caller may see it. While the switch is off for the caller, every
+--    name is plain.
+-- 5. Every list of other trainers says so: a last `rich` column on leaderboard, versus_board, friend_list,
+--    friend_profile, friend_day_cares, raid_friend_teams and raid_progress_friend_teams (last, so a client reading by
+--    position keeps working; the game reads it by name). A new return type can't be `create or replace`d: each is
+--    dropped and made again, with the grants it had.
+-- 6. The jsonb ones: `rich` in friend_status's new friends and in trade_row, `withRich` next to trade_mine's and
+--    trade_take's `with`.
+--
+-- Run after 0047; safe to run again. seed.sql inlines it last (scripts/seed.ts), after the files whose functions it
+-- redefines (0039, 0040, 0044, 0045); those drop the seven functions above before making them, so a seed re-run over
+-- this file's versions works.
 
-insert into dice_types (type, label, color, faces, description, upgradeable, counts_for_majority, sort_order) values
-  ('base', 'Base', '#f7f2e0', '[{"kind":"number","value":1},{"kind":"number","value":2},{"kind":"number","value":3},{"kind":"number","value":4},{"kind":"number","value":5},{"kind":"number","value":6}]'::jsonb, 'Plain 1 to 6', false, false, 0),
-  ('normal', 'Normal', '#c8b88a', '[{"kind":"number","value":1},{"kind":"number","value":2},{"kind":"number","value":3},{"kind":"number","value":4},{"kind":"number","value":5},{"kind":"number","value":6}]'::jsonb, 'Steady 1 to 6', true, true, 1),
-  ('fire', 'Fire', '#ca6e29', '[{"kind":"status","value":1,"status":"burn"},{"kind":"number","value":2},{"kind":"number","value":3},{"kind":"number","value":4},{"kind":"number","value":5},{"kind":"number","value":6}]'::jsonb, 'Stacking burn', true, true, 2),
-  ('water', 'Water', '#547acc', '[{"kind":"number","value":2},{"kind":"number","value":3},{"kind":"number","value":3},{"kind":"number","value":4},{"kind":"number","value":4},{"kind":"number","value":5}]'::jsonb, 'Reliable, no 1s or 6s', true, true, 3),
-  ('electric', 'Electric', '#d2b125', '[{"kind":"number","value":1},{"kind":"number","value":2},{"kind":"number","value":3},{"kind":"status","value":4,"status":"paralyze"},{"kind":"number","value":5},{"kind":"number","value":6}]'::jsonb, 'Chance to paralyze', true, true, 4),
-  ('grass', 'Grass', '#68a941', '[{"kind":"number","value":1},{"kind":"number","value":2},{"kind":"status","value":3,"status":"heal"},{"kind":"number","value":4},{"kind":"number","value":5},{"kind":"number","value":6}]'::jsonb, 'Chance to heal', true, true, 5),
-  ('ice', 'Ice', '#80b8b6', '[{"kind":"status","value":1,"status":"frozen"},{"kind":"number","value":2},{"kind":"number","value":3},{"kind":"number","value":4},{"kind":"number","value":5},{"kind":"number","value":6}]'::jsonb, 'Chance to freeze', true, true, 6),
-  ('fighting', 'Fighting', '#a52722', '[{"kind":"number","value":2},{"kind":"number","value":3},{"kind":"number","value":4},{"kind":"number","value":5},{"kind":"number","value":6},{"kind":"number","value":7}]'::jsonb, 'Hard hitter, 2 to 7', true, true, 7),
-  ('poison', 'Poison', '#8b3589', '[{"kind":"status","value":1,"status":"poison"},{"kind":"number","value":2},{"kind":"number","value":3},{"kind":"number","value":4},{"kind":"number","value":5},{"kind":"number","value":6}]'::jsonb, 'Chance to poison', true, true, 8),
-  ('ground', 'Ground', '#c0a256', '[{"kind":"number","value":0},{"kind":"number","value":1},{"kind":"number","value":1},{"kind":"number","value":4},{"kind":"number","value":4},{"kind":"number","value":8}]'::jsonb, 'All or nothing', true, true, 9),
-  ('flying', 'Flying', '#907acf', '[{"kind":"number","value":1},{"kind":"number","value":2},{"kind":"number","value":3},{"kind":"number","value":4},{"kind":"number","value":4},{"kind":"number","value":7}]'::jsonb, 'Chance of a big 7', true, true, 10),
-  ('psychic', 'Psychic', '#d44873', '[{"kind":"number","value":1},{"kind":"number","value":2},{"kind":"number","value":3},{"kind":"number","value":4},{"kind":"number","value":5},{"kind":"status","value":2,"status":"confuse"}]'::jsonb, 'Chance to confuse', true, true, 11),
-  ('bug', 'Bug', '#8d9d16', '[{"kind":"number","value":1},{"kind":"number","value":1},{"kind":"number","value":1},{"kind":"number","value":4},{"kind":"number","value":4},{"kind":"number","value":4}]'::jsonb, 'Only 1s and 4s', true, true, 12),
-  ('rock', 'Rock', '#9b892e', '[{"kind":"number","value":2},{"kind":"number","value":2},{"kind":"number","value":2},{"kind":"number","value":4},{"kind":"number","value":5},{"kind":"number","value":6}]'::jsonb, 'Low but sturdy', true, true, 13),
-  ('ghost', 'Ghost', '#624a80', '[{"kind":"number","value":0},{"kind":"number","value":0},{"kind":"number","value":3},{"kind":"number","value":5},{"kind":"number","value":6},{"kind":"number","value":7}]'::jsonb, 'Blanks or big hits', true, true, 14),
-  ('dragon', 'Dragon', '#5e2dd6', '[{"kind":"number","value":2},{"kind":"number","value":3},{"kind":"number","value":4},{"kind":"number","value":5},{"kind":"number","value":6},{"kind":"number","value":8}]'::jsonb, 'Strong, up to 8', true, true, 15),
-  ('dark', 'Dark', '#5f4a3c', '[{"kind":"number","value":1},{"kind":"number","value":1},{"kind":"number","value":3},{"kind":"number","value":4},{"kind":"number","value":5},{"kind":"number","value":7}]'::jsonb, 'Risky, up to 7', true, true, 16),
-  ('steel', 'Steel', '#9c9caf', '[{"kind":"number","value":3},{"kind":"number","value":3},{"kind":"number","value":3},{"kind":"number","value":4},{"kind":"number","value":4},{"kind":"number","value":4}]'::jsonb, 'Always 3 or 4', true, true, 17),
-  ('fairy', 'Fairy', '#b67193', '[{"kind":"number","value":0},{"kind":"number","value":2},{"kind":"number","value":2},{"kind":"number","value":4},{"kind":"number","value":4},{"kind":"number","value":6}]'::jsonb, 'Even numbers only', true, true, 18)
-on conflict (type) do update set label = excluded.label, color = excluded.color, faces = excluded.faces, description = excluded.description, upgradeable = excluded.upgradeable, counts_for_majority = excluded.counts_for_majority, sort_order = excluded.sort_order;
+-- ---------------------------------------------------------------- 1. the switches and the items
+
+-- The game's defaults (engine/defaults.ts; tests/general-sql.test.ts keeps the two the same).
+insert into game_config (key, value) values
+  ('itemSwitches', '{"link-cable": "off", "bait": "off"}'::jsonb),
+  ('general', '{
+    "access": "off",
+    "luck": [{"chance": 10, "cost": 1000}, {"chance": 20, "cost": 1800}, {"chance": 30, "cost": 2800},
+             {"chance": 40, "cost": 4000}, {"chance": 50, "cost": 5500}, {"chance": 60, "cost": 7200},
+             {"chance": 70, "cost": 9200}, {"chance": 80, "cost": 11500}, {"chance": 90, "cost": 14000},
+             {"chance": 100, "cost": 17000}],
+    "offline": [{"perHour": 2, "cost": 100}, {"perHour": 4, "cost": 175}, {"perHour": 6, "cost": 263},
+                {"perHour": 8, "cost": 375}, {"perHour": 10, "cost": 500}, {"perHour": 12, "cost": 650},
+                {"perHour": 14, "cost": 825}, {"perHour": 16, "cost": 1025}, {"perHour": 18, "cost": 1250},
+                {"perHour": 20, "cost": 1500}],
+    "offlineMaxHours": 24, "richCost": 99999
+  }'::jsonb)
+on conflict (key) do nothing;
+
+-- As src/data/items.json has them (the test keeps the two the same). Left alone if there: seed.sql writes them too.
 commit;

@@ -6,6 +6,8 @@ import { create } from 'zustand'
 import {
   applyProgressRaidCatch,
   applyRaidCatch,
+  baitFaces,
+  baitFor,
   ballBonus,
   catchValueOf,
   consumeItem,
@@ -27,6 +29,7 @@ import {
   raidTeamCap,
   randomSeed,
   regionOf,
+  rollBait,
   rollCatch,
   todayRaid,
   utcDay,
@@ -39,6 +42,7 @@ import {
   type RaidSideSeed,
   type RaidState,
   type RegionId,
+  type SaveData,
   type TodayRaid,
 } from '@/engine'
 import { t } from '@/i18n'
@@ -53,8 +57,8 @@ import { pushSaveNow } from './sync'
 export type RaidStage = 'intro' | 'fight' | 'catch' | 'result'
 
 export interface RaidCatch {
-  /** The throw, once made. */
-  result: (CatchRoll & { ballKey: string | null }) | null
+  /** The throw, once made; `baitOffer` while the player is asked whether to throw a Bait (docs/25). */
+  result: (CatchRoll & { ballKey: string | null; baitOffer?: string | null; baited?: 'used' | 'kept' }) | null
   /** Where a caught raid Pokémon went: its home region, whether that's the region being played, or that it waits
    *  locked for its area. */
   region?: string
@@ -352,8 +356,36 @@ export function throwRaidBall(ballKey: string | null) {
   if (!run || run.stage !== 'catch' || run.catch?.result || !save) return
   const ball = ballKey ? data.items[ballKey] : undefined
   if (ballKey && (!ball || ball.effect.kind !== 'ball' || (save.inventory[ballKey] ?? 0) <= 0)) return
-  let next = ballKey ? (consumeItem(save, ballKey) ?? save) : save
+  const next = ballKey ? (consumeItem(save, ballKey) ?? save) : save
   const roll = rollCatch(catchValueOf(data, run.raid.dex), ballBonus(ball), rng)
+  // Short, with a Bait that could still make it: the player is asked first (docs/25).
+  const bait = baitFor(roll, next, data)
+  if (bait) {
+    commitSave(next)
+    useRaidRun.setState({ run: { ...run, catch: { result: { ...roll, ballKey, baitOffer: bait } } } })
+    return
+  }
+  settleRaidThrow(next, roll, ballKey)
+}
+
+/** The Bait thrown (its die adds to the throw) or kept (the throw stands). Raids have no Capture Luck. */
+export function answerRaidBait(use: boolean) {
+  const run = useRaidRun.getState().run
+  const { save, data } = useGame.getState()
+  const r = run?.catch?.result
+  if (!save || !r?.baitOffer) return
+  const spent = use ? consumeItem(save, r.baitOffer) : null
+  const { ballKey, baitOffer, baited: _b, ...roll } = r
+  const thrown = spent ? rollBait(roll, baitFaces(data.items[baitOffer]), rng) : roll
+  settleRaidThrow(spent ?? save, thrown, ballKey, spent ? 'used' : 'kept')
+}
+
+/** Caught: it goes to its home region's Box. Missed: it flees, the raid stays open. */
+function settleRaidThrow(save: SaveData, roll: CatchRoll, ballKey: string | null, baited?: 'used' | 'kept') {
+  const run = useRaidRun.getState().run
+  const { data } = useGame.getState()
+  if (!run) return
+  let next = save
   let landing: Pick<RaidCatch, 'region' | 'live' | 'locked'> = {}
   if (roll.caught) {
     const source = run.source
@@ -371,13 +403,14 @@ export function throwRaidBall(ballKey: string | null) {
     void closeOnServer(source, run.friends.map((f) => f.userId))
   }
   commitSave(next)
-  useRaidRun.setState({ run: { ...run, catch: { result: { ...roll, ballKey }, ...landing } } })
+  useRaidRun.setState({ run: { ...run, catch: { result: { ...roll, ballKey, ...(baited && { baited }) }, ...landing } } })
 }
 
 /** The throw has played: the result card. */
 export function raidCatchShown() {
   const run = useRaidRun.getState().run
-  if (run?.stage === 'catch' && run.catch?.result) useRaidRun.setState({ run: { ...run, stage: 'result' } })
+  if (run?.stage === 'catch' && run.catch?.result && !run.catch.result.baitOffer)
+    useRaidRun.setState({ run: { ...run, stage: 'result' } })
 }
 
 /** Leaves the raid for the Raids page. */

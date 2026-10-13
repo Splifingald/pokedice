@@ -12,6 +12,7 @@ import { LivePopup } from '@/screens/events/live'
 import { useInWorld, worldVars, WorldByePopup, WorldPopup } from '@/screens/events/world'
 import { WorldPick } from '@/screens/events/worldPick'
 import { VersusUnlockPopup } from './FeatureRules'
+import { GeneralUnlockPopup, OfflineReportModal } from './GeneralRules'
 import { RaidGiftPopup } from './RaidGiftPopup'
 import { FriendsService } from './friends/FriendsService'
 import { TradesService } from './trades/TradesService'
@@ -64,7 +65,9 @@ export function GameLayout() {
       <EventUnlockPopup />
       <VersusUnlockPopup />
       <ExtremeUnlockPopup />
+      <GeneralUnlockPopup />
       <AwayReportModal />
+      <OfflineReportModal />
       <RaidGiftPopup />
       <WorldPopup />
       <WorldPick />
