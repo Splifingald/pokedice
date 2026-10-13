@@ -40,7 +40,7 @@ const CARD: Record<EncounterKind, { label: string; color: string }> = {
 /** A fresh condition of each kind, for the kind picker. */
 function newCondition(kind: string, areas: Row[], self: string): UnlockCondition {
   if (kind === 'pokedex') return { kind: 'pokedex', count: 50 }
-  if (kind === 'area') return { kind: 'area', areaId: s(areas.find((a) => s(a.id) !== self)?.id) }
+  if (kind === 'area' || kind === 'cleared') return { kind, areaId: s(areas.find((a) => s(a.id) !== self)?.id) }
   return { kind: 'maxLevel', level: 50 }
 }
 
@@ -419,9 +419,10 @@ function AreaEditor({ area }: { area: Row }) {
                 <option value="pokedex">Pokédex count ≥</option>
                 <option value="maxLevel">Highest Pokémon level ≥</option>
                 <option value="area">Area reached</option>
+                <option value="cleared">Area cleared</option>
               </select>
-              {c.kind === 'area' ? (
-                <select className={cx(inputCls, 'w-auto')} value={c.areaId} onChange={(e) => setAt({ kind: 'area', areaId: e.target.value })} aria-label="Area">
+              {c.kind === 'area' || c.kind === 'cleared' ? (
+                <select className={cx(inputCls, 'w-auto')} value={c.areaId} onChange={(e) => setAt({ kind: c.kind, areaId: e.target.value })} aria-label="Area">
                   {[...allAreas]
                     .filter((a) => s(a.id) !== id)
                     .sort((a, b) => n(a.order_index) - n(b.order_index))

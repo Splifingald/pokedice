@@ -4,6 +4,7 @@ import { eventOpenTo } from './events'
 import { pityChance } from './pity'
 import type { Rng } from './rng'
 import type { Area, AreaProgress, GameData, ItemDef, LootEntry, RegionId, SaveData } from './types'
+import { worldOfArea, worldOfRegion } from './worldList'
 
 /** Loot key for Pokédollars lying on the ground (not an inventory item). */
 export const MONEY = 'money'
@@ -42,6 +43,13 @@ export function itemOn(data: GameData, key: string): boolean {
   const access = data.config.itemSwitches?.[key]
   return access == null || eventOpenTo(access, data)
 }
+
+/**
+ * On where this save stands: switched on, or anywhere inside a small world, whose Mart and loot are the admin's own
+ * choice for it (docs/26 §2.2: its Link Cable is sold and used there while the switch keeps it off elsewhere).
+ */
+export const itemOnFor = (save: Pick<SaveData, 'region'>, data: GameData, key: string): boolean =>
+  itemOn(data, key) || !!worldOfRegion(data, save.region ?? 'kanto')
 
 export const usableIn = (item: ItemDef | undefined, use: ItemUse): boolean => !!item && itemUses(item).includes(use)
 
@@ -93,7 +101,7 @@ export function lootPoolFor(area: Area, progress: AreaProgress, data: GameData):
   return area.lootPool.filter(
     (e) =>
       e.weight > 0 &&
-      (e.itemKey === MONEY || (!!data.items[e.itemKey] && itemOn(data, e.itemKey))) &&
+      (e.itemKey === MONEY || (!!data.items[e.itemKey] && (itemOn(data, e.itemKey) || !!worldOfArea(data, area)))) &&
       !(e.unique && found.has(e.id)),
   )
 }

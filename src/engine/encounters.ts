@@ -7,7 +7,7 @@ import { pityChance } from './pity'
 import { asSeenBy, gymsFor, type PlayerSide } from './rival'
 import type { Rng } from './rng'
 import { dealTrainerItems } from './trainerItems'
-import { isWorldMythical } from './worldList'
+import { isWorldMythical, worldOfArea } from './worldList'
 import type {
   Area,
   AreaProgress,
@@ -162,11 +162,19 @@ const legendShiny = (b: BossDef, area: Area, data: GameData, rng?: Rng): boolean
   shinyLocked(data, b.dex) ? !!b.shiny && isWorldMythical(data, area.id, b.dex) : !!b.shiny || (!!rng && rollShiny(data, rng))
 
 /**
+ * This boss of this area has been caught. In a small world each boss is its own catch (docs/26 §2.5), noted in the
+ * area's progress, so its shiny Haunter can be caught there with Haunters in the Box already; elsewhere a boss is one of
+ * a kind and the Pokédex says it.
+ */
+export const bossCaught = (area: Area, progress: AreaProgress, pokedex: readonly number[], dex: number, data: GameData): boolean =>
+  worldOfArea(data, area) ? !!progress.bossesCaught?.includes(dex) : pokedex.includes(dex)
+
+/**
  * A legendary beaten earlier that fled the catch. It keeps coming back — one card per encounter deck — until caught. A
  * boss that is now a raid doesn't: its raid is where it's caught.
  */
 export function fledLegendary(area: Area, progress: AreaProgress, pokedex: readonly number[], data: GameData): BossDef | null {
-  return fightBosses(area, data).find((b) => progress.bossesDefeated.includes(b.dex) && !pokedex.includes(b.dex)) ?? null
+  return fightBosses(area, data).find((b) => progress.bossesDefeated.includes(b.dex) && !bossCaught(area, progress, pokedex, b.dex, data)) ?? null
 }
 
 const clampLevel = (lv: number, data: GameData) => Math.max(1, Math.min(data.config.maxLevel, Math.round(lv)))

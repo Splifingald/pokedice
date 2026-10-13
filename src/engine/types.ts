@@ -269,6 +269,8 @@ export type UnlockCondition =
   | { kind: 'maxLevel'; level: number }
   /** Another area is open (reached) — e.g. the Rocket Hideout once Celadon's area is. */
   | { kind: 'area'; areaId: string }
+  /** Another area is cleared — e.g. a small world's league beaten, every main area done (docs/26 §2.5). */
+  | { kind: 'cleared'; areaId: string }
 
 /**
  * The roaming legendaries. They have no area of their own: once every Pokémon in `requires` has been **caught**, each
@@ -965,6 +967,11 @@ export interface AreaProgress {
   bossDefeated: boolean
   /** Dex numbers of this area's legendary bosses already beaten. */
   bossesDefeated: number[]
+  /**
+   * Dex numbers of this area's bosses caught here. In a small world each boss is its own catch (docs/26 §2.5), so it
+   * stays catchable until this says so, whatever the Pokédex holds; elsewhere the Pokédex decides.
+   */
+  bossesCaught?: number[]
   /** Trainer ids of this area's gym / Elite battles already won. */
   gymsDefeated: string[]
   /** Encounter cards left in this area's current deck (drawn from the end). Dealt afresh when empty. */

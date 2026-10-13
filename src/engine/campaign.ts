@@ -26,6 +26,7 @@ import {
   isAreaUnlocked,
   isTeamHurt,
   newSave,
+  noteBossCaught,
   pickUpItem,
   progressOf,
   recordDraws,
@@ -252,7 +253,8 @@ export function* runCampaign(data: GameData, opts: CampaignOptions): Generator<n
       return
     }
     const res = applyCatch(save, enemy, target, data, 0, newId)
-    save = res.needsTeamChoice ? bestTeam(res.save, data) : res.save
+    const noted = kind === 'boss' ? noteBossCaught(res.save, r.areaId, enemy.dex) : res.save
+    save = res.needsTeamChoice ? bestTeam(noted, data) : noted
     r.catches++
   }
 

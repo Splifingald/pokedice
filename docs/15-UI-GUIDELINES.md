@@ -669,6 +669,9 @@ on `/kitchen-sink` (`WorldBits`). Every rule and number comes from `engine/world
   Island's purple, pink and lilac. They tint the world's pieces only: the CTA stays red, the money gold, the HP green.
 - **WORLD** (`WorldTag`, in the main colour) marks everything of a world; **SHINY MEW** (gold, with the sparkle) is what
   it's for. The mythical is a silhouette glowing in the accent until it's caught, then its shiny colours (`MythicalArt`).
+  A world without a mythical is known by its prize (`worldPrize`, docs/26 §2.5: its last shiny raid, SHINY GIRATINA),
+  the same way; its rules list its shiny bosses and raids in one row ("Shiny Haunter, Mimikyu, Spiritomb, Darkrai and
+  Giratina").
 - **Outside, Home's square** (`WorldSquare`) is first among the event squares, on the Live square's frame: the world's
   picture, WORLD and SHINY MEW, the silhouette, the name, the gauge draining and "Areas 3/8 · Ends in 2d 4h" (red in
   the last day). The second line says the partner once the player has been in. A tap goes in (the lab first).

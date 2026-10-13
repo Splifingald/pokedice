@@ -52,6 +52,7 @@ const progressSchema = z.object({
   cleared: z.boolean(),
   bossDefeated: z.boolean(),
   bossesDefeated: z.array(z.number().int()).default([]),
+  bossesCaught: z.array(z.number().int()).optional(),
   gymsDefeated: z.array(z.string()).default([]),
   deck: z.array(z.enum(['wild', 'trainer', 'center', 'item', 'casino', 'legend'])).optional(),
   lootDeck: z.array(z.string()).optional(),

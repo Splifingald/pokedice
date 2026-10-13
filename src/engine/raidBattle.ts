@@ -183,6 +183,8 @@ export interface CreateRaidOptions {
   sides: RaidSideSeed[]
   /** The day's raid's numbers, or a progression raid's (docs/24). */
   kind?: RaidKindOf
+  /** The progression raid's area: a small world's fights at its boss's level (docs/26 §2.5). */
+  areaId?: string
   auto?: boolean
 }
 
@@ -192,7 +194,7 @@ const activeOf = (side: RaidSide) => side.mons[side.active]!
 export function createRaid(opts: CreateRaidOptions, data: GameData, rng: Rng): { state: RaidState; log: RaidLogEntry[] } {
   const cfg = data.config.events.raid
   // This raid Pokémon's own numbers (Admin → Raids), over the defaults.
-  const rules = raidRules(data, opts.boss.dex, opts.kind)
+  const rules = raidRules(data, opts.boss.dex, opts.kind, opts.areaId)
   const boss = makeBattler({ uid: BOSS_UID, dex: opts.boss.dex, level: rules.level, hp: Number.MAX_SAFE_INTEGER, shiny: opts.boss.shiny }, data)
   // A bar holds `barHp` times its own HP.
   boss.maxHp = Math.max(1, Math.round(boss.maxHp * rules.barHp))

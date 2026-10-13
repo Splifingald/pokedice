@@ -43,8 +43,10 @@ export function multiExpText(data: GameData): string {
 
 /** What a secret area is still waiting for. */
 export function conditionLabel(cond: UnlockCondition, data: GameData): string {
-  if (cond.kind === 'area')
-    return t('ui.unlock.area', { area: data.areas.find((a) => a.id === cond.areaId)?.name ?? t('ui.unlock.unknownArea') })
+  if (cond.kind === 'area' || cond.kind === 'cleared')
+    return t(cond.kind === 'area' ? 'ui.unlock.area' : 'ui.unlock.cleared', {
+      area: data.areas.find((a) => a.id === cond.areaId)?.name ?? t('ui.unlock.unknownArea'),
+    })
   if (cond.kind === 'pokedex') return t('ui.unlock.pokedex', { count: cond.count })
   return t('ui.unlock.maxLevel', { level: cond.level })
 }

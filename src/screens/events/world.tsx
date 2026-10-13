@@ -13,6 +13,7 @@ import {
   donationDue,
   eventUnlockDue,
   getRegion,
+  hasWorldMythical,
   heldWorld,
   inWorld,
   isAreaClosed,
@@ -25,6 +26,9 @@ import {
   worldByeDue,
   worldLeft,
   worldPopupDue,
+  worldPrize,
+  worldPrizeCaught,
+  worldPrizes,
   worldProgress,
   worldStarted,
   type GameData,
@@ -176,6 +180,8 @@ export function WorldSquareView({
 }) {
   const { t } = useT()
   const data = useGame((s) => s.data)
+  // What it's for: its mythical, or the prize it is known by (docs/26 §2.5).
+  const prize = worldPrize(data, world)
   const left = worldLeft(world, now)
   const name = worldName(world, data)
   const areas = t('ui.world.areas', { cleared, total })
@@ -196,11 +202,11 @@ export function WorldSquareView({
       <span className="flex w-full min-w-0 items-center gap-1.5 text-[19px] leading-none">
         <WorldTag />
         <HeadTag>
-          <ShinyTag dex={world.mythical.dex} data={data} className="max-w-full truncate" />
+          <ShinyTag dex={prize?.dex ?? 0} data={data} className="max-w-full truncate" />
         </HeadTag>
       </span>
       <span className="relative grid w-full place-items-center" style={{ aspectRatio: `288 / ${WIDGET_BANNER_H}` }}>
-        <MythicalArt dex={world.mythical.dex} caught={caught} size={56} sparkles={3} />
+        {prize && <MythicalArt dex={prize.dex} caught={caught} size={56} sparkles={3} />}
       </span>
       <WidgetRows
         top={<span className="lv-ink truncate text-[20px] leading-none">{name}</span>}
@@ -225,6 +231,7 @@ export function WorldSquare() {
   const prog = worldProgress(save, data, world)
   const held = heldWorld(save)
   const mine = held?.id === world.id
+  const prize = worldPrize(data, world)
   return (
     <WorldSquareView
       world={world}
@@ -232,7 +239,7 @@ export function WorldSquare() {
       cleared={prog.cleared}
       total={prog.total}
       partner={mine ? (data.species[held.partner]?.name ?? null) : null}
-      caught={mine && !!held.caught}
+      caught={!!prize && worldPrizeCaught(save, world, prize)}
       onClick={() => {
         if (goIntoWorld(world)) navigate('/home')
       }}
@@ -266,12 +273,21 @@ export function WorldRules({ world }: { world: SmallWorld }) {
       title: joinList(world.boosters.map((b) => t('ui.world.boost', { type: typeName(b.type), n: b.multiplier }))),
       text: t('ui.world.rules.boost.text'),
     })
-  if (myth)
+  if (myth && hasWorldMythical(data, world))
     rows.push({
       key: 'myth',
       icon: <SpriteImg dex={world.mythical.dex} shiny size={36} />,
       title: t('ui.world.rules.myth.title', { name: myth }),
       text: t('ui.world.rules.myth.text'),
+    })
+  // Its other shiny prizes: the bosses and raids of its areas marked shiny (docs/26 §2.5).
+  const prizes = worldPrizes(data, world).filter((p) => p.kind !== 'mythical')
+  if (prizes.length)
+    rows.push({
+      key: 'prizes',
+      icon: <SpriteImg dex={prizes.at(-1)!.dex} shiny size={36} />,
+      title: t('ui.world.rules.prizes.title', { names: joinList(prizes.map((p) => data.species[p.dex]?.name ?? `#${p.dex}`)) }),
+      text: t('ui.world.rules.prizes.text'),
     })
   // Every world (docs/26 §1): its Pokémon go home when it ends, each locked by level in its own region.
   rows.push({
@@ -297,16 +313,18 @@ export function WorldRules({ world }: { world: SmallWorld }) {
   )
 }
 
-/** The banner of the pop-ups: the world's picture, its tag, the mythical. */
+/** The banner of the pop-ups: the world's picture, its tag, the mythical (or the prize it is known by). */
 function WorldBanner({ world, tag, closed }: { world: SmallWorld | null; tag: string; closed?: boolean }) {
+  const data = useGame((s) => s.data)
+  const prize = world ? worldPrize(data, world) : null
   return (
     <span className={cx('relative -mx-4 block h-[128px] shadow-[0_3px_0_rgb(var(--c-edge)),0_-2px_0_rgb(var(--c-edge))]', closed && 'grayscale-[0.7]')}>
       <span className="lv-pic absolute inset-0 block overflow-hidden bg-night" aria-hidden>
         {world?.banner && <img src={bannerUrl(world.banner)} alt="" className="pixelated absolute inset-0 h-full w-full object-cover" />}
       </span>
-      {world && !closed && (
+      {prize && !closed && (
         <span className="absolute inset-0 z-[1] grid place-items-center">
-          <MythicalArt dex={world.mythical.dex} caught={false} size={96} sparkles={6} />
+          <MythicalArt dex={prize.dex} caught={false} size={96} sparkles={6} />
         </span>
       )}
       <span className="w-tag absolute left-2.5 top-2.5 z-[2] font-pixel-sm text-[15px]">{tag}</span>

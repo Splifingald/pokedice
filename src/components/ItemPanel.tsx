@@ -4,6 +4,7 @@ import {
   healItemsOn,
   instanceMaxHp,
   itemOn,
+  itemOnFor,
   linkEvolution,
   monName,
   stoneEvolution,
@@ -28,8 +29,9 @@ function evolvesInto(inst: PokemonInstance, key: string, save: SaveData | null, 
   return fx.kind === 'link' ? linkEvolution(inst, data, gate) : stoneEvolution(inst, key, data, gate)
 }
 
-/** Bag items usable outside battle, a switched-off one (docs/15 §20) left out. */
-const fieldItem = (data: GameData, key: string) => usableIn(data.items[key], 'field') && itemOn(data, key)
+/** Bag items usable outside battle, a switched-off one (docs/15 §20) left out but inside a small world (docs/26 §2.2). */
+const fieldItem = (save: SaveData | null, data: GameData, key: string) =>
+  usableIn(data.items[key], 'field') && (save ? itemOnFor(save, data, key) : itemOn(data, key))
 
 /**
  * "Use an item" in a Pokémon's sheet: the bag items that work outside battle (potions, revives, stones, the Link Cable,
@@ -53,7 +55,7 @@ export function ItemPanel({ inst, onUsed }: { inst: PokemonInstance; onUsed?: ()
       }}
     />
   )
-  const bag = Object.entries(inventory ?? {}).filter(([k, n]) => n > 0 && fieldItem(data, k))
+  const bag = Object.entries(inventory ?? {}).filter(([k, n]) => n > 0 && fieldItem(save, data, k))
   const name = monName(inst, data)
   const max = instanceMaxHp(inst, data)
 
@@ -139,5 +141,5 @@ export function ItemPanel({ inst, onUsed }: { inst: PokemonInstance; onUsed?: ()
 
 /** Whether the bag holds anything usable outside battle at all (the sheet hides "Use an item" otherwise). */
 export function useHasFieldItems(): boolean {
-  return useGame((s) => Object.entries(s.save?.inventory ?? {}).some(([k, n]) => n > 0 && fieldItem(s.data, k)))
+  return useGame((s) => Object.entries(s.save?.inventory ?? {}).some(([k, n]) => n > 0 && fieldItem(s.save, s.data, k)))
 }

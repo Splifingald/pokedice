@@ -1,5 +1,6 @@
 // Run flow: map → area → encounter preview → battle → rewards → next. Thin glue over the pure engine.
 import {
+  noteBossCaught,
   applyCatch,
   areaOpenAt,
   baitFaces,
@@ -539,7 +540,8 @@ function settleThrow(save: SaveData, roll: CatchRoll, ballKey: string | null, ba
       events = mythical.events
     } else {
       const res = applyCatch(next, { dex: c.dex, level: c.level, shiny: c.shiny }, c.target, data, Date.now(), newId)
-      next = res.save
+      // A boss is noted as caught in its area: a small world's goes by that, not the Pokédex (docs/26 §2.5).
+      next = c.kind === 'boss' && run.areaId ? noteBossCaught(res.save, run.areaId, c.dex) : res.save
       events = res.events
       if (res.needsTeamChoice) pendingCatchId = res.caughtId
     }

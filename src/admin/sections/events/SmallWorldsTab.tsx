@@ -13,6 +13,7 @@ import {
   realRegions,
   regionAreas,
   sellPrice,
+  worldPrize,
   worldProblems,
   worldState,
   type GameData,
@@ -160,7 +161,7 @@ export function SmallWorldsTab() {
       <Box
         title="Small worlds"
         icon="map"
-        hint="A region of its own for a while, where a shiny mythical is won: a fresh start on one of three partners, its own areas, Mart and rules, and the mythical at the end. One at a time, between its start and end (UTC, the server's clock). When it ends, everything in it is gone but the mythical, which went to its home region's Box when caught. Off hides it (players inside are sent out with their place kept); only its end, or End now, closes it. Save & Publish to send a change."
+        hint="A region of its own for a while, where a shiny mythical is won: a fresh start on one of three partners, its own areas, Mart and rules, and the mythical at the end. One at a time, between its start and end (UTC, the server's clock). When it ends, its Pokémon go home, each to its species' region, locked there until the player's best reaches its level; its items and ₽ are gone (the mythical went home when caught). Off hides it (players inside are sent out with their place kept); only its end, or End now, closes it. Save & Publish to send a change."
         actions={
           <PixelButton size="sm" variant="primary" onClick={start} disabled={!!draft}>
             New small world
@@ -199,7 +200,7 @@ export function SmallWorldsTab() {
                       <td className="px-2 py-1">
                         <div className="leading-none">{titleOf(w, data)}</div>
                         <div className="text-base text-muted">
-                          shiny {data?.species[w.mythical.dex]?.name ?? '?'} · {areas} area{areas === 1 ? '' : 's'} · from {w.minBadges} badges
+                          shiny {(data && data.species[worldPrize(data, w)?.dex ?? 0]?.name) ?? '?'} · {areas} area{areas === 1 ? '' : 's'} · from {w.minBadges} badges
                         </div>
                       </td>
                       <td className="px-2 py-1 font-mono text-base">{utc(w.start)}</td>
@@ -216,7 +217,7 @@ export function SmallWorldsTab() {
                             <PixelButton
                               size="sm"
                               onClick={() => {
-                                if (window.confirm(`End “${titleOf(w, data)}” now, for everyone? It closes: everything in it is gone but the mythicals caught. (Then Save & Publish.)`))
+                                if (window.confirm(`End “${titleOf(w, data)}” now, for everyone? It closes: its Pokémon go home locked by level, the rest is gone. (Then Save & Publish.)`))
                                   write(list.map((x) => (x.id === w.id ? { ...x, end: new Date(Math.floor(Date.now() / 60_000) * 60_000).toISOString() } : x)))
                               }}
                             >
@@ -551,12 +552,20 @@ function MythicalPanel({ draft, patch, data }: { draft: SmallWorld; patch: (p: P
   const areas = draft.regionId ? regionAreas(data, draft.regionId) : []
   return (
     <div className="grid content-start gap-2">
-      <h4 className="m-0 text-xl">The shiny mythical</h4>
+      <h4 className="m-0 text-xl">The shiny mythical (optional)</h4>
       <p className="m-0 text-base text-muted">
         The last fight: the boss of its area, always shiny. Win, then catch it; a miss and it waits there, until the world
-        closes. Caught, it goes to its home region's Box ({m.dex ? 'by its generation' : 'Mew → Kanto, Celebi → Johto…'}).
+        closes. Caught, it goes to its home region's Box at once ({m.dex ? 'by its generation' : 'Mew → Kanto, Celebi → Johto…'}).
+        Leave it empty when the world's prizes are its own bosses and raids marked Shiny in Areas (docs/26).
       </p>
-      <PokemonPicker data={data} value={m.dex || null} onChange={(dex) => patch({ mythical: { ...m, dex } })} />
+      <div className="flex flex-wrap items-center gap-2">
+        <PokemonPicker data={data} value={m.dex || null} onChange={(dex) => patch({ mythical: { ...m, dex } })} />
+        {!!m.dex && (
+          <PixelButton size="sm" onClick={() => patch({ mythical: { ...m, dex: 0, areaId: '' } })}>
+            No mythical
+          </PixelButton>
+        )}
+      </div>
       <div className="grid gap-2 sm:grid-cols-2">
         <Field label="Its level">
           <NumInput value={m.level} min={1} max={data.config.maxLevel} onChange={(v) => patch({ mythical: { ...m, level: Math.max(1, v ?? 1) } })} />

@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
+  bossCaught,
   asSeenBy,
   dueBoss,
   gymsFor,
@@ -100,7 +101,7 @@ function RaidFact({ area, boss }: { area: Area; boss: BossDef }) {
       gold
       icon={<MiniSprite dex={boss.dex} size={40} silhouette={!known} />}
       small={t('ui.raid.progress.kicker')}
-      title={`${name} · ${t('ui.common.level.short', { n: raidRules(data, boss.dex, 'progress').level })}`}
+      title={`${name} · ${t('ui.common.level.short', { n: raidRules(data, boss.dex, 'progress', area.id).level })}`}
       note={t(state === 'locked' ? 'ui.raid.progress.factLocked' : state === 'done' ? 'ui.raid.progress.factDone' : 'ui.raid.progress.factOpen')}
       tag={
         state === 'done' ? (
@@ -314,7 +315,7 @@ function DetailsBody({ area }: { area: Area }) {
             ))}
           {(area.legendaryBoss ?? []).map((b) => {
             if (isRaidBoss(data, b)) return <RaidFact key={b.dex} area={area} boss={b} />
-            const caught = save.pokedex.includes(b.dex)
+            const caught = bossCaught(area, p, save.pokedex, b.dex, data)
             const beaten = p.bossesDefeated.includes(b.dex)
             const ready = due?.dex === b.dex
             const when =

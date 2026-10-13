@@ -9,6 +9,7 @@
 // shown); its own Mart; a shiny mythical at the end. No event reaches inside, and the Day Care, Versus and the region
 // chain are the main game's.
 import type { UpgradeLevels } from './damage'
+import { isRaidBoss } from './encounters'
 import { eventOpenTo } from './events'
 import { isExtreme } from './extreme'
 import { addFossil } from './fossils'
@@ -16,6 +17,7 @@ import { sellPrice } from './items'
 import { badgesHeld, liveLeft, liveState } from './liveEvents'
 import { sendWorldHome, speciesHome } from './homecoming'
 import { createInstance } from './progression'
+import { progressRaidKey } from './progressRaid'
 import { addToRegion } from './raid'
 import {
   getRegion,
@@ -28,7 +30,7 @@ import {
   startRegion,
   switchRegion,
 } from './regions'
-import type { RunEvent } from './run'
+import { noteBossCaught, type RunEvent } from './run'
 import type { GameData, ItemDef, RegionId, SaveData, SmallWorld, WorldCatch, WorldSave } from './types'
 import { smallWorlds, worldById, worldOfArea, worldOfRegion } from './worldList'
 
@@ -323,6 +325,52 @@ export function buyWorldItem(
   return { ...next, inventory: { ...next.inventory, [key]: (next.inventory[key] ?? 0) + qty } }
 }
 
+// ------------------------------------------------------------------ its prizes
+
+/** A world's shiny prize: its mythical, or one of its areas' bosses or raids marked shiny (docs/26 §2.5). */
+export interface WorldPrize {
+  dex: number
+  areaId: string
+  kind: 'mythical' | 'boss' | 'raid'
+}
+
+/** The world has a mythical of its own (set in the world, a real species, in one of its areas). */
+export const hasWorldMythical = (data: GameData, world: SmallWorld): boolean =>
+  !!world.mythical.dex && !!data.species[world.mythical.dex] && !!world.mythical.areaId
+
+/**
+ * Its shiny prizes: the mythical (when it has one), then every boss and raid marked shiny in its areas, secret ones
+ * included, in area order.
+ */
+export function worldPrizes(data: GameData, world: SmallWorld): WorldPrize[] {
+  // The mythical from the world's own settings: a draft in the admin isn't compiled into its area yet.
+  const myth = hasWorldMythical(data, world) ? world.mythical : null
+  const out: WorldPrize[] = myth ? [{ dex: myth.dex, areaId: myth.areaId, kind: 'mythical' }] : []
+  const areas = data.areas.filter((a) => (a.regionId ?? KANTO) === world.regionId).sort((a, b) => a.orderIndex - b.orderIndex)
+  for (const a of areas)
+    for (const b of a.legendaryBoss ?? []) {
+      if (!b.shiny || !data.species[b.dex] || (myth?.areaId === a.id && myth.dex === b.dex)) continue
+      out.push({ dex: b.dex, areaId: a.id, kind: isRaidBoss(data, b) ? 'raid' : 'boss' })
+    }
+  return out
+}
+
+/** The prize the world is known by (its square, its pop-up): its mythical, else its last shiny raid, else its last. */
+export function worldPrize(data: GameData, world: SmallWorld): WorldPrize | null {
+  const all = worldPrizes(data, world)
+  return all.find((p) => p.kind === 'mythical') ?? all.filter((p) => p.kind === 'raid').at(-1) ?? all.at(-1) ?? null
+}
+
+/** This prize has been caught in the world this save holds (its raid closed, its boss noted, the mythical gone home). */
+export function worldPrizeCaught(save: SaveData, world: SmallWorld, prize: WorldPrize): boolean {
+  const held = heldWorld(save)
+  if (held?.id !== world.id) return false
+  if (prize.kind === 'mythical') return !!held.caught
+  if (prize.kind === 'raid' && save.events?.raidsDone?.includes(progressRaidKey(prize.areaId, prize.dex))) return true
+  const progress = regionOf(save) === world.regionId ? save.areaProgress : save.parked?.[world.regionId]?.areaProgress
+  return !!progress?.[prize.areaId]?.bossesCaught?.includes(prize.dex)
+}
+
 // ------------------------------------------------------------------ the shiny mythical
 
 /** The region a world's mythical goes home to: its generation's (Mew → Kanto, Celebi → Johto, Victini → Unova…). */
@@ -345,8 +393,9 @@ export function catchWorldMythical(
   const held = heldWorld(save)
   if (!world || !held || held.id !== world.id || world.mythical.areaId !== areaId || world.mythical.dex !== caught.dex) return null
   const dex = caught.dex
+  const inArea = noteBossCaught(save, areaId, dex)
   const noted: SaveData = {
-    ...save,
+    ...inArea,
     pokedex: save.pokedex.includes(dex) ? save.pokedex : [...save.pokedex, dex],
     events: { ...save.events, world: { ...held, caught: true } },
   }
@@ -425,11 +474,15 @@ export function worldProblems(list: readonly SmallWorld[], w: SmallWorld, data: 
   }
   if (w.starters.length !== 3 || new Set(w.starters).size !== 3) out.push('Pick three different starters.')
   for (const d of w.starters) if (!data.species[d]) out.push(`Unknown starter: #${d}.`)
-  if (!data.species[w.mythical.dex]) out.push('Pick the shiny mythical.')
-  if (!(w.mythical.level >= 1 && w.mythical.level <= data.config.maxLevel)) out.push(`The mythical’s level must be 1–${data.config.maxLevel}.`)
-  const area = data.areas.find((a) => a.id === w.mythical.areaId)
-  if (!area) out.push('Pick the area the mythical waits in.')
-  else if ((area.regionId ?? KANTO) !== w.regionId) out.push('The mythical’s area isn’t one of the world’s.')
+  // The mythical is optional (docs/26 §2.5): a world may have shiny raids and bosses as its prizes instead.
+  if (w.mythical.dex) {
+    if (!data.species[w.mythical.dex]) out.push(`Unknown mythical: #${w.mythical.dex}.`)
+    if (!(w.mythical.level >= 1 && w.mythical.level <= data.config.maxLevel)) out.push(`The mythical’s level must be 1–${data.config.maxLevel}.`)
+    const area = data.areas.find((a) => a.id === w.mythical.areaId)
+    if (!area) out.push('Pick the area the mythical waits in.')
+    else if ((area.regionId ?? KANTO) !== w.regionId) out.push('The mythical’s area isn’t one of the world’s.')
+  }
+  if (!worldPrizes(data, w).length) out.push('Give the world a prize: a shiny mythical, or a boss or raid marked shiny in its areas.')
   if (!(w.xpMultiplier > 0)) out.push('The XP multiplier must be above 0.')
   if (new Set(w.boosters.map((b) => b.type)).size !== w.boosters.length) out.push('A booster type is listed twice.')
   for (const b of w.boosters) if (!(b.multiplier > 0)) out.push(`The ${b.type} booster’s multiplier must be above 0.`)

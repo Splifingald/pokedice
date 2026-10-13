@@ -86,7 +86,7 @@ export function whereToFind(dex: number, data: GameData, region: RegionId): Spot
     const boss = area.legendaryBoss?.find((b) => b.dex === dex)
     const raid = boss && isRaidBoss(data, boss) ? progressRaidOf(data, progressRaidKey(area.id, dex)) : null
     if (raid) {
-      const level = raidRules(data, dex, 'progress').level
+      const level = raidRules(data, dex, 'progress', area.id).level
       out.push({ area, minLevel: level, maxLevel: level, share: 0, legendary: true, raid })
     } else if (boss) out.push({ area, minLevel: boss.level, maxLevel: boss.level, share: 0, legendary: true })
 

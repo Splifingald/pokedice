@@ -85,7 +85,7 @@ function teamSetup(source: RaidSource, save: SaveData, data: GameData, t: (key: 
   }
   const raid = progressRaidOf(data, source.key)
   if (!raid) return null
-  const cap = raidTeamCap(data, raid.dex, 'progress')
+  const cap = raidTeamCap(data, raid.dex, 'progress', raid.areaId)
   const region = getRegion(data, raid.region)?.name ?? raid.region
   return {
     team: progressRaidTeam(save, data, raid),

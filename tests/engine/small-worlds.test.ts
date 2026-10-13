@@ -370,7 +370,10 @@ describe('its shiny mythical', () => {
     expect(heldWorld(res.save)?.caught).toBe(true)
     const beaten = { ...emptyProgress(), bossesDefeated: [151] }
     expect(fledLegendary(lair(), beaten, s.pokedex, data)).not.toBeNull()
-    expect(fledLegendary(lair(), beaten, res.save.pokedex, data)).toBeNull()
+    // The catch is noted in its lair (a world's bosses go by that, docs/26 §2.5).
+    const after = { ...beaten, ...res.save.areaProgress[LAIR.id], bossesDefeated: [151] }
+    expect(after.bossesCaught).toEqual([151])
+    expect(fledLegendary(lair(), after, res.save.pokedex, data)).toBeNull()
   })
 
   it('is any other catch’s business when it isn’t the mythical in its area', () => {

@@ -162,6 +162,8 @@ export const ROW_SCHEMAS: Record<TableName, z.ZodTypeAny> = {
           z.object({ kind: z.literal('maxLevel'), level: int(1, 100) }),
           // "Another area is reached" — the kind the Rocket Hideout and the Johto/Hoenn secrets use.
           z.object({ kind: z.literal('area'), areaId: uuid }),
+          // "Another area is cleared": a small world's league beaten (docs/26 §2.5).
+          z.object({ kind: z.literal('cleared'), areaId: uuid }),
         ]),
       )
       .nullable(),

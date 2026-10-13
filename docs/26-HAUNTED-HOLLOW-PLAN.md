@@ -97,6 +97,17 @@ Secret areas, **short** (a small deck with a few species found only there) **the
 
 ### 2.5 Engine pieces the event needs
 
+**Status: built** (`tests/engine/world-event-pieces.test.ts`). Where it says more than the list below:
+- A boss caught is noted in its area's progress (`AreaProgress.bossesCaught`, `noteBossCaught`); in a small world
+  `bossCaught` reads that, elsewhere the Pokédex. A missed throw brings it back until it's caught there.
+- A world's raid fights at its boss's own level and caps the teams there (`worldRaidLevel` in `raidRules` /
+  `raidTeamCap`, given the raid's area), so its Giratina is Lv.70 while Sinnoh's keeps the admin's numbers.
+- The world's prizes (`worldPrizes`, `worldPrize`, `worldPrizeCaught`): its mythical, then its bosses and raids marked
+  shiny, in area order. The square outside and the pop-up show the one it's known by (its mythical, else its last
+  shiny raid: Giratina); its rules list the others. The admin can't save a world with no prize at all.
+- Inside a small world the item switches don't apply (`itemOnFor`): its Mart's list, its loot and its bag are the
+  admin's own choice for it.
+
 - **A world boss can be caught until that boss is caught**, whatever the Pokédex says (today a boss is catchable only
   when its species is missing, and Gastly becomes Haunter at Lv.25).
 - **Shiny raid prizes**: a world's raid boss marked shiny stays shiny (today a legendary's raid never is). The single

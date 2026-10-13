@@ -266,6 +266,7 @@ function startFight(
       boss: { dex: raid.dex, shiny: raid.shiny },
       sides,
       kind: source.kind === 'progress' ? 'progress' : 'daily',
+      areaId: raid.areaId,
     },
     data,
     rng,
@@ -303,7 +304,7 @@ export function startProgressRaid(key: string, npcs: RaidNpcOption[] = [], frien
   const team = progressRaidTeam(save, data, raid)
   if (!team.length) return false
   const ref: TodayRaid = { day: '', dex: raid.dex, shiny: progressRaidShiny(data, raid), areaId: raid.areaId, caught: false, tries: 0 }
-  startFight({ kind: 'progress', key }, ref, team, friends, npcs, raidTeamCap(data, raid.dex, 'progress'))
+  startFight({ kind: 'progress', key }, ref, team, friends, npcs, raidTeamCap(data, raid.dex, 'progress', raid.areaId))
   void syncProgressRaidTeam(raid)
   return true
 }

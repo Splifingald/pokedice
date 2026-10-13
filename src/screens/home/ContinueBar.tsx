@@ -78,7 +78,7 @@ export function useContinue(area: Area) {
       : boss
         ? t('ui.home.legendReady')
         : raid
-          ? t('ui.raid.progress.continueSub', { level: raidRules(data, raid.dex, 'progress').level })
+          ? t('ui.raid.progress.continueSub', { level: raidRules(data, raid.dex, 'progress', raid.areaId).level })
         : closed
           ? t('ui.home.closed')
           : empty && energy?.nextAt != null

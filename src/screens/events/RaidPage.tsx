@@ -61,7 +61,7 @@ export function RaidCard({ raid, msLeft, kind = 'daily' }: { raid: TodayRaid; ms
   const data = useGame((s) => s.data)
   const cfg = data.config.events.raid
   // This raid Pokémon's own numbers (Admin → Raids), over the defaults.
-  const rules = raidRules(data, raid.dex, kind)
+  const rules = raidRules(data, raid.dex, kind, raid.areaId)
   const area = data.areas.find((a) => a.id === raid.areaId)
   const name = data.species[raid.dex]?.name ?? `#${raid.dex}`
   return (

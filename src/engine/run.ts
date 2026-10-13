@@ -3,11 +3,11 @@ import { getSpecies, linearAreas } from './data'
 import { KANTO, evolutionGate, inWorldRegion, regionOf, regionOfArea } from './regions'
 import { asSeenBy, gymsFor, playerSideOf } from './rival'
 import { nextComboCost, nextDieCost, pokemonXp, trainerGoldFor, healAmount, multiExpShareFor } from './economy'
-import { deckAbilities, deckCounts, fightBosses, roundsComplete } from './encounters'
+import { bossCaught, deckAbilities, deckCounts, fightBosses, roundsComplete } from './encounters'
 import { centersOn, healItemsOn, wipeHeals } from './extreme'
 import { addFossil, isReviving } from './fossils'
 import { LEGACY_GAUGE } from './legacyGauge'
-import { itemOn, MONEY, sellPrice, shopSells, usableIn } from './items'
+import { itemOnFor, MONEY, sellPrice, shopSells, usableIn } from './items'
 import { earnedGold } from './liveEvents'
 import { areaOpenAt } from './worldList'
 import {
@@ -225,6 +225,11 @@ export function conditionStatus(cond: UnlockCondition, save: SaveData, data: Gam
     const met = !!area && depth < 8 && isAreaUnlocked(save, area.id, data, depth + 1)
     return { cond, current: met ? 1 : 0, target: 1, met, label: `Reach ${area?.name ?? 'an unknown area'}` }
   }
+  if (cond.kind === 'cleared') {
+    const area = data.areas.find((a) => a.id === cond.areaId)
+    const met = !!area && progressOf(save, area.id).cleared
+    return { cond, current: met ? 1 : 0, target: 1, met, label: `Clear ${area?.name ?? 'an unknown area'}` }
+  }
   if (cond.kind === 'pokedex') {
     const current = new Set(save.pokedex).size
     return { cond, current, target: cond.count, met: current >= cond.count, label: `Catch ${cond.count} Pokémon` }
@@ -278,8 +283,15 @@ export function isAreaClosed(save: SaveData, areaId: string, data: GameData): bo
   const p = progressOf(save, areaId)
   return (
     gyms.every((id) => p.gymsDefeated.includes(id)) &&
-    bosses.every((b) => p.bossesDefeated.includes(b.dex) && save.pokedex.includes(b.dex))
+    bosses.every((b) => p.bossesDefeated.includes(b.dex) && bossCaught(area, p, save.pokedex, b.dex, data))
   )
+}
+
+/** A boss of this area was caught here: noted in its progress (what a small world's bosses go by, docs/26 §2.5). */
+export function noteBossCaught(save: SaveData, areaId: string, dex: number): SaveData {
+  const p = progressOf(save, areaId)
+  const caught = p.bossesCaught ?? []
+  return caught.includes(dex) ? save : withProgress(save, areaId, { ...p, bossesCaught: [...caught, dex] })
 }
 
 /**
@@ -690,8 +702,8 @@ export function applyFieldItem(
     const healed = applyItemToInstance(save, key, instId, data)
     return healed ? { save: healed, events: [] } : null
   }
-  // A switched-off item (docs/25: the Link Cable) waits in the bag.
-  if (!itemOn(data, key)) return null
+  // A switched-off item (docs/25: the Link Cable) waits in the bag, but inside a small world, whose items are its own.
+  if (!itemOnFor(save, data, key)) return null
   if (item.effect.kind === 'stone' || item.effect.kind === 'link') {
     const gate = evolutionGate(save, data)
     const toDex = item.effect.kind === 'link' ? linkEvolution(inst, data, gate) : stoneEvolution(inst, key, data, gate)

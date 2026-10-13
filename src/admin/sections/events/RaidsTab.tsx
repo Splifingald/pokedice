@@ -648,7 +648,7 @@ function ProgressBox({ data, raid, set }: { data: GameData; raid: RaidConfig; se
           <tbody>
             {shown.map((r) => {
               const own = progress.perMon?.[r.dex] ?? {}
-              const eff = { ...raidRules(data, r.dex, 'progress'), teamCap: raidTeamCap(data, r.dex, 'progress') }
+              const eff = { ...raidRules(data, r.dex, 'progress', r.areaId), teamCap: raidTeamCap(data, r.dex, 'progress', r.areaId) }
               return (
                 <tr key={r.key} className="border-t border-shadow/40 align-middle">
                   <td className="py-1 pr-2">
