@@ -515,8 +515,9 @@ One Day Care for every region (docs/15-DAYCARE-BREEDING.md). The page (`src/scre
   list holds each species once, its shiny apart (`versusChoices`: they fight alike at Lv.50, from whichever region), a
   row its name, ✦ and types (no level: everyone is Lv.50 here); a search, No. / A–Z and a `TypeSelect` order and narrow
   it, and picks they hide stay picked.
-- **The leaderboard**: the region's name as the head's count; four tabs that are icons, only the open one spelling
-  out its name (four names don't fit a phone in every language); a gold card with your look, the board's one-line
+- **The leaderboard**: the region's name as the head's count, or "All regions" on Shiny and Raids (one board over
+  every region, each trainer on it once: 0053); five tabs that are icons, only the open one spelling out its name
+  (five names don't fit a phone in every language); a gold card with your look, the board's one-line
   note and "You're #N of M" (tap: your row scrolls into view and blinks) or "You're in the Hall of Fame"; a navy
   **Hall of Fame** button with the crown, how many maxed the board out and their faces, opening a sheet with the
   board's `ui.board.hallBody.*` text and their rows (a crown in place of the rank). Locked until the first badge.

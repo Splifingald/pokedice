@@ -40,3 +40,50 @@ test('five tabs, named only when open; the Shiny board ranks shinies caught, the
   await expect(page.getByRole('tab', { name: 'Raids' })).toHaveAttribute('aria-selected', 'true')
   await expect(rows.first()).toContainText('raids won')
 })
+
+test('Shiny and Raids rank every region together, each trainer once; Max level stays the region’s', async ({ page }) => {
+  const mon = { dex: 25, level: 30, shiny: false }
+  const at = (region: string, name: string, lead: boolean, p: object) => ({
+    region,
+    is_me: name === 'Sam',
+    name,
+    character: 'red',
+    team: [mon],
+    pokedex: 10,
+    max_level: 30,
+    progress: {},
+    lead,
+    ...p,
+  })
+  await mockSupabase(page, {
+    rpc: {
+      leaderboard: [
+        at('kanto', 'Sam', true, { shinies: 1, shinies_all: 1, raids_won: 2 }),
+        // Gold plays Johto only: on no Kanto board, but on the cross-region ones.
+        at('johto', 'Gold', true, { shinies: 5, shinies_all: 5, raids_won: 7 }),
+        // Blue has played both: one row each, Johto the one standing for him.
+        at('kanto', 'Blue', false, { shinies: 1, shinies_all: 3, raids_won: 0 }),
+        at('johto', 'Blue', true, { shinies: 2, shinies_all: 3, raids_won: 0 }),
+      ],
+    },
+  })
+  await signedIn(page, withBadge(makeSave(4, { player: { name: 'Sam', character: 'red' } })))
+  await page.goto('/leaderboard')
+  const rows = page.getByRole('tabpanel').getByRole('listitem').filter({ has: page.locator('[aria-label^="Rank"]') })
+  await expect(rows).toHaveCount(2)
+  await expect(page.getByRole('tabpanel')).not.toContainText('Gold')
+
+  await page.getByRole('tab', { name: 'Shiny' }).click()
+  await expect(page.getByText('All regions')).toBeVisible()
+  await expect(rows).toHaveCount(3)
+  await expect(rows.nth(0)).toContainText('Gold')
+  await expect(rows.nth(0)).toContainText('5 shinies')
+  await expect(rows.nth(1)).toContainText('Blue')
+  await expect(rows.nth(1)).toContainText('3 shinies')
+  await expect(rows.nth(2)).toContainText('Sam')
+
+  await page.getByRole('tab', { name: 'Raids' }).click()
+  await expect(rows).toHaveCount(3)
+  await expect(rows.nth(0)).toContainText('Gold')
+  await expect(page.getByText('Raids won, in every region.')).toBeVisible()
+})

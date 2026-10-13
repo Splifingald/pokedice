@@ -1,7 +1,7 @@
 // The leaderboard: every cloud save (signed-in players only, Google or Discord) played in the last 72 hours, ranked by best level,
 // campaign progress, Pokédex, shinies caught or raids won. The rows come from the `leaderboard()` SQL function, which leaves inactive players out
 // (migration 0023), and a region's row out until the player holds a badge there (0024); ranking happens here, against
-// the game data.
+// the game data. Level, Progression and Pokédex are one board per region; Shiny and Raids span every region (0053).
 import { linearAreas } from '@/engine/data'
 import { regionSpecies } from '@/engine/regions'
 import type { GameData, RegionId } from '@/engine/types'
@@ -22,10 +22,15 @@ export interface LeaderboardRow {
   team: { dex: number; level: number; shiny: boolean }[]
   pokedex: number
   maxLevel: number
-  /** Shiny Pokémon caught in this region (all still owned: a shiny is never released). */
+  /** Shiny Pokémon owned over every region the player has played (a shiny is never released). */
   shinies: number
-  /** Raids won — their raid Pokémon caught — over every region (D4: the same on each region's board). */
+  /** Raids won — their raid Pokémon caught — over every region (D4). */
   raidsWon: number
+  /**
+   * The one row of this player that stands for them on the cross-region boards (their live region, 0053); undefined
+   * from a database without 0053, whose boards stay per region.
+   */
+  lead?: boolean
   progress: Record<string, { cleared: boolean; gyms: number }>
   /** One of the caller's friends (docs/16), with their id so the row can open their card; null for anyone else. */
   friendId: string | null
@@ -67,6 +72,15 @@ export function clearedRegion(row: LeaderboardRow, data: GameData): boolean {
   return chain.length > 0 && chain.every((a) => row.progress[a.id]?.cleared)
 }
 
+/** Shiny and Raids rank a trainer once, over every region, not once per region played. */
+export const crossRegion = (tab: LeaderboardTab) => tab === 'shiny' || tab === 'raids'
+
+/** The rows this tab's board ranks: the region's own, or one per trainer on a cross-region board. */
+function boardRows(rows: LeaderboardRow[], tab: LeaderboardTab, region: RegionId): LeaderboardRow[] {
+  if (crossRegion(tab) && rows.every((r) => r.lead !== undefined)) return rows.filter((r) => r.lead)
+  return rows.filter((r) => r.region === region)
+}
+
 /**
  * Done with what this board measures: the level cap, the whole region cleared, or its Pokédex filled.
  * Such a player can't be passed and can't climb, so the board is no longer a race they're in — they
@@ -104,10 +118,11 @@ const compare = (a: number[], b: number[]) => {
 
 /**
  * One board per region: the rows are filtered to `region` before they are ranked, so a Johto board ranks Johto Boxes,
- * Johto Pokédex completion and Johto progress only. A player who has played several regions appears on each.
+ * Johto Pokédex completion and Johto progress only. A player who has played several regions appears on each. Shiny and
+ * Raids are the exception: one board for every region, a player on it once.
  */
 export function rankLeaderboard(rows: LeaderboardRow[], tab: LeaderboardTab, data: GameData, region: RegionId): RankedRow[] {
-  const keyed = rows.filter((r) => r.region === region).map((row) => ({ row, key: sortKey(row, tab, data) }))
+  const keyed = boardRows(rows, tab, region).map((row) => ({ row, key: sortKey(row, tab, data) }))
   keyed.sort((a, b) => compare(a.key, b.key) || a.row.name.localeCompare(b.row.name))
   // The dex score is out of what this region actually holds, not the National Dex.
   const total = dexTotal(data, region)
@@ -129,7 +144,7 @@ export function splitLeaderboard(
   data: GameData,
   region: RegionId,
 ): { board: RankedRow[]; hall: RankedRow[] } {
-  const here = rows.filter((r) => r.region === region)
+  const here = boardRows(rows, tab, region)
   const done = (r: LeaderboardRow) => atMax(r, tab, data, region)
   return {
     board: rankLeaderboard(here.filter((r) => !done(r)), tab, data, region),
@@ -155,6 +170,9 @@ interface RawRow {
   friend_id?: string | null
   /** Missing on a database that hasn't run 0049_general_upgrades.sql. */
   rich?: boolean | null
+  /** Missing on a database that hasn't run 0053_leaderboard_cross_region.sql. */
+  lead?: boolean | null
+  shinies_all?: number | null
 }
 
 export function parseLeaderboard(raw: RawRow[]): LeaderboardRow[] {
@@ -168,13 +186,15 @@ export function parseLeaderboard(raw: RawRow[]): LeaderboardRow[] {
     team: (r.team ?? []).map((m) => ({ dex: Number(m.dex), level: Number(m.level), shiny: !!m.shiny })),
     pokedex: Number(r.pokedex) || 0,
     maxLevel: Number(r.max_level) || 0,
-    shinies: Number(r.shinies) || 0,
+    // Without 0053 there is only the region's own count.
+    shinies: Number(r.shinies_all ?? r.shinies) || 0,
     raidsWon: Number(r.raids_won) || 0,
     progress: Object.fromEntries(
       Object.entries(r.progress ?? {}).map(([id, p]) => [id, { cleared: !!p.cleared, gyms: Number(p.gyms) || 0 }]),
     ),
     friendId: r.is_friend && r.friend_id ? String(r.friend_id) : null,
     rich: !!r.rich,
+    ...(r.lead != null && { lead: !!r.lead }),
   }))
 }
 

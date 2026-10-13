@@ -180,3 +180,46 @@ describe('the Raids tab', () => {
     expect(parsed.map((r) => r.raidsWon)).toEqual([3, 0])
   })
 })
+
+describe('Shiny and Raids span every region (0053)', () => {
+  // Ash plays Johto and has a Kanto row too; Misty is on the Johto board only.
+  const rows = [
+    row('Ash', { region: 'johto', lead: true, shinies: 5, raidsWon: 1 }),
+    row('Ash', { region: 'kanto', lead: false, shinies: 5, raidsWon: 1 }),
+    row('Misty', { region: 'johto', lead: true, shinies: 2, raidsWon: 3 }),
+    row('Brock', { region: 'kanto', lead: true, shinies: 3, raidsWon: 0 }),
+  ]
+
+  it('ranks each trainer once, the same board from any region', () => {
+    for (const region of ['kanto', 'johto']) {
+      expect(rankLeaderboard(rows, 'shiny', data, region).map((r) => [r.name, r.rank])).toEqual([
+        ['Ash', 1],
+        ['Brock', 2],
+        ['Misty', 3],
+      ])
+      expect(splitLeaderboard(rows, 'raids', data, region).board.map((r) => r.name)).toEqual(['Misty', 'Ash', 'Brock'])
+    }
+  })
+
+  it('leaves the other boards per region', () => {
+    expect(rankLeaderboard(rows, 'level', data, 'kanto').map((r) => r.name)).toEqual(['Ash', 'Brock'])
+    expect(rankLeaderboard(rows, 'dex', data, 'johto').map((r) => r.name)).toEqual(['Ash', 'Misty'])
+  })
+
+  it('stays per region on a database without 0053', () => {
+    const old = rows.map(({ lead: _, ...r }) => r)
+    expect(rankLeaderboard(old, 'shiny', data, 'kanto').map((r) => r.name)).toEqual(['Ash', 'Brock'])
+  })
+
+  it('parses the lead row and the shinies of every region', () => {
+    const base = { region: 'kanto', is_me: false, name: 'A', character: 'red', team: [], pokedex: 1, max_level: 5, progress: {} }
+    const [lead, other, old] = parseLeaderboard([
+      { ...base, shinies: 1, shinies_all: 4, lead: true },
+      { ...base, shinies: 3, shinies_all: 4, lead: false },
+      { ...base, shinies: 2 },
+    ])
+    expect([lead!.lead, lead!.shinies, other!.lead, other!.shinies]).toEqual([true, 4, false, 4])
+    expect(old!.shinies).toBe(2)
+    expect('lead' in old!).toBe(false)
+  })
+})

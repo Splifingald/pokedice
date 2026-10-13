@@ -1,5 +1,5 @@
-// The leaderboard (the cup in the top bar): four boards for the region being played — Max level, Progression,
-// Pokédex, Shiny — your place on top, and the Hall of Fame for whoever has maxed a board out.
+// The leaderboard (the cup in the top bar): Max level, Progression and Pokédex for the region being played, Shiny and
+// Raids over every region — your place on top, and the Hall of Fame for whoever has maxed a board out.
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getRegion, leaderboardUnlocked, regionOf } from '@/engine'
@@ -16,6 +16,7 @@ import { avatarOf } from '@/lib/avatars'
 import { useFriends } from '@/lib/friends'
 import { useFriendsFilter } from '@/lib/useFriendsFilter'
 import {
+  crossRegion,
   fetchLeaderboard,
   friendsOnly,
   leaderboardError,
@@ -91,9 +92,11 @@ function Board() {
     }
   }, [auth.userId])
 
-  // The board on screen is always the region the player is in: switching region switches the board.
+  // The board on screen is the region the player is in (switching region switches the board), but for Shiny and
+  // Raids, which rank every region together.
   const region = regionOf(save)
   const regionName = getRegion(data, region)?.name ?? region
+  const scope = crossRegion(tab) ? t('ui.board.allRegions') : regionName
   // Whoever has maxed this tab out leaves the ranking for the Hall of Fame behind the button below.
   const { board, hall } = useMemo(
     () => (load.state === 'ready' ? splitLeaderboard(load.rows, tab, data, region) : { board: [], hall: [] }),
@@ -118,7 +121,7 @@ function Board() {
       <PageHead
         icon="navRanks"
         title={t('ui.board.title')}
-        count={regionName}
+        count={scope}
         onBack={() => navigate('/home')}
       />
 
