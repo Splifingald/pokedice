@@ -30,20 +30,18 @@ import { EventWidgets } from '@/screens/events/EventWidgets'
 import { useInWorld, WorldWidgets } from '@/screens/events/world'
 import { HeadTag, Meter, Widget, WidgetBanner, WIDGET_BANNER_H, WidgetRows as DayCareRows } from './Widget'
 
-/** The newest secret area (one tap to travel), or the next one to open with how close it is. */
+/**
+ * The newest secret area (one tap to travel), or the next one to open with how close it is. Gone once every secret area
+ * of the region is found and played: nothing left to show off.
+ */
 function SecretWidget({ onSecrets }: { onSecrets: () => void }) {
   const { t } = useT()
   const save = useGame((s) => s.save)!
   const data = useGame((s) => s.data)
   const f = featuredSecret(save, data)
-  if (!f)
-    return (
-      <Widget title={t('ui.map.secretAreas')} label={t('ui.home.secretsAllLabel')} onClick={onSecrets}>
-        <span className="text-[20px] leading-none">{t('ui.home.secretsAll')}</span>
-      </Widget>
-    )
-  const cond = f.area.unlockConditions?.[0]
-  if (f.fresh)
+  if (!f) return null
+  if (f.fresh) {
+    const cond = f.area.unlockConditions?.[0]
     return (
       <Widget
         title={t('ui.home.secretArea')}
@@ -60,7 +58,10 @@ function SecretWidget({ onSecrets }: { onSecrets: () => void }) {
         />
       </Widget>
     )
-  const label = cond ? conditionLabel(cond, data) : ''
+  }
+  // The condition still to meet, which the numbers count (not the area's first one, which may be met already).
+  const cond = f.cond
+  const label = conditionLabel(cond, data)
   return (
     <Widget
       title={t('ui.home.nextSecret')}
@@ -86,15 +87,15 @@ function SecretWidget({ onSecrets }: { onSecrets: () => void }) {
         bottom={
       // What the numbers count, said: "22/133 in Pokédex" with its icon, not a bare fraction.
       <span className="flex min-w-0 items-center gap-1">
-        {cond?.kind === 'pokedex' ? (
+        {cond.kind === 'pokedex' ? (
           <PixelIcon name="navDex" size={16} />
-        ) : cond?.kind === 'maxLevel' ? (
+        ) : cond.kind === 'maxLevel' ? (
           <PixelIcon name="up" size={14} />
         ) : null}
         <span className="truncate">
-          {cond?.kind === 'pokedex'
+          {cond.kind === 'pokedex'
             ? t('ui.home.secretDex', { current: Math.min(f.current, f.target), target: f.target })
-            : cond?.kind === 'maxLevel'
+            : cond.kind === 'maxLevel'
               ? t('ui.home.secretLevel', { current: Math.min(f.current, f.target), target: f.target })
               : label || `${Math.min(f.current, f.target)}/${f.target}`}
         </span>
@@ -464,8 +465,9 @@ function VersusWidget() {
 }
 
 /**
- * Home's widgets, two by two: the secret area and the Day Care, then Versus and one square per special event. Inside a
- * small world, only the world's: its mythical and its Mart (the main game's wait outside, docs/21).
+ * Home's widgets, two by two: the secret area (while one is left to find or play) and the Day Care, then Versus and one
+ * square per special event. Inside a small world, only the world's: its mythical and its Mart (the main game's wait
+ * outside, docs/21).
  */
 export function Widgets({ onSecrets }: { onSecrets: () => void }) {
   const inside = useInWorld().inside

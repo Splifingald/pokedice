@@ -339,7 +339,8 @@ Players shouldn't have to make many requests:
   lock): its usual spacing when there is room, tighter on a phone's half-width widget, and only past 60 % of an icon do
   the icons get smaller (`TeamFan`). It never runs under the VS.
 - Home's widgets show what's next (the next secret, the Day Care, Versus, events) and are buttons when they lead
-  somewhere; a locked one says what opens it and how far you are.
+  somewhere; a locked one says what opens it and how far you are. The secret one counts the condition still to meet
+  (the first left, as the areas list says), and goes once every secret area of the region is found and played.
 - **Stages** (a canvas scene: Home, the battle, a hatching) are a background canvas, the Pokémon as DOM `<img>`s
   (Showdown's animated sprites, no extra request) and an effects canvas on top. A stage root is its own stacking
   context (`isolate`), so its internal z-indexes never rise above sheets and dialogs. The canvas has `role="img"` and a
