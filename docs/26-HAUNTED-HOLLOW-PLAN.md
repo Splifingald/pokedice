@@ -145,5 +145,9 @@ The user's calls of 2026-10-13, after the first build:
 
 ### 2.7 Delivery
 
-The content comes as **a bundle file** (the user's export with the world added), for `pnpm import-bundle`. The code
-(rule, engine pieces, Home) comes in a PR to `feature/version_2`.
+The user's call (2026-10-13): pushed straight to `feature/version_2`, no PR. The content comes two ways, from the one
+script (`scripts/content-haunted-hollow.ts`):
+- **The migration** `supabase/migrations/0052_haunted_hollow.sql` (`pnpm haunted-hollow --sql <out.sql>`): its region,
+  areas, pools and trainers upserted, the world added to `smallWorlds` (the switch and other worlds kept),
+  `configVersion` + 1. Safe to run again; tested on PGlite (`tests/haunted-hollow-sql.test.ts`).
+- **The bundle** (`pnpm haunted-hollow <in.json> <out.json>` over an admin export), for `pnpm import-bundle`.
