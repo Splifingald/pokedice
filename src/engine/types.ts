@@ -706,6 +706,21 @@ export interface GameConfig {
   trade: TradeConfig
   /** Small worlds (docs/21): their switch, and the admin's list, past, running and to come; one runs at a time. */
   smallWorlds: { access: EventAccess; list: SmallWorld[] }
+  /** Push notifications (docs/25): their switch, a game_config row of its own that seeding never writes. */
+  push: PushConfig
+}
+
+/**
+ * Push notifications (docs/25-PUSH-NOTIFICATIONS.md): a Day Care Egg, the day's raid, a live event starting. The server
+ * reads the same row: it takes no subscription and sends nothing while the switch is off.
+ */
+export interface PushConfig {
+  /** The switch (docs/15 §20): off (nowhere in the game), on for the admin only, on for everyone. Off by default. */
+  access: EventAccess
+  /** The local hour the day's raid is announced at (it opens at midnight UTC, the middle of the night for many). */
+  raidHour: number
+  /** No Egg is announced between these local hours (from, to): it waits until `to`. Equal hours = no quiet time. */
+  quietHours: [number, number]
 }
 
 /** Trades (docs/23-TRADING-PLAN.md): listings, like the games' GTS. The server reads the same row. */

@@ -28,6 +28,7 @@ import { cx } from '@/theme/util'
 import { DataTable } from '../DataTable'
 import { addRows, rowKey, updateRow, useAdmin, useAdminData } from '../store'
 import { AccessSwitch, Box, Field, NumInput, PokemonPicker, inputCls } from '../widgets'
+import { PushBox } from './PushBox'
 
 export function useConfigRow<K extends keyof GameConfig>(key: K): [GameConfig[K], (v: GameConfig[K]) => void] {
   const rows = useAdmin((st) => st.rows.game_config)
@@ -896,6 +897,8 @@ export function ConfigSection() {
       <ExtremeBox />
 
       <TradesBox />
+
+      <PushBox />
 
       <StatusRulesBox />
 

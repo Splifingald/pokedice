@@ -16,6 +16,13 @@
   [headers.values]
     Cache-Control = "no-store"
 
+# The service worker (push notifications, docs/25): the browser checks it for updates, so it's never cached.
+[[headers]]
+  for = "/sw.js"
+  [headers.values]
+    Cache-Control = "no-cache"
+    Service-Worker-Allowed = "/"
+
 [[headers]]
   for = "/fonts/*"
   [headers.values]

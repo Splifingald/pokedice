@@ -33,6 +33,7 @@ import { Modal } from '@/components/Modal'
 import { PixelButton } from '@/components/PixelButton'
 import { countdown, money } from '@/lib/format'
 import { useGame } from '@/store/game'
+import { askPush, pushReady } from '@/lib/push'
 import { markLivePopupSeen, useLive } from '@/store/live'
 import { serverNow } from '@/store/serverTime'
 import { useRaidGifts } from '@/store/raidGifts'
@@ -303,6 +304,8 @@ export function LivePopup() {
   const close = () => {
     usePopupAsked.setState({ asked: false })
     if (livePopupDue(save, live)) markLivePopupSeen(live)
+    // Push notifications' question, once (docs/25): the next live event can be announced as it starts.
+    if (pushReady(data)) askPush('live')
   }
   const left = liveLeft(live, now)
   const big = live.type === 'shiny' ? `×${live.shiny.multiplier}` : live.type === 'cash' ? t('ui.live.pct', { pct: pct(cashMultiplier(live)) }) : null

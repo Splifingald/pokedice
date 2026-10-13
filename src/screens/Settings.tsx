@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { DonationModal } from '@/components/DonationPopup'
 import { Modal } from '@/components/Modal'
 import { Panel } from '@/components/Panel'
+import { PushSettingsPanel } from '@/components/PushSettings'
 import { PixelButton } from '@/components/PixelButton'
 import { Seg } from '@/components/Segmented'
 import { Toggle } from '@/components/Toggle'
@@ -130,6 +131,8 @@ export function SettingsScreen() {
           />
         )}
       </Panel>
+
+      <PushSettingsPanel />
 
       <LanguagePanel />
 

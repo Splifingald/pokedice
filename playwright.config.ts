@@ -25,6 +25,9 @@ export default defineConfig({
       VITE_SUPABASE_URL: 'http://127.0.0.1:54399',
       VITE_SUPABASE_ANON_KEY: 'e2e-anon-key',
       VITE_ADMIN_EMAIL: 'admin@example.com',
+      // A key pair made for the tests (e2e/push.spec.ts stands in for the browser's push service): not the game's.
+      VITE_VAPID_PUBLIC_KEY:
+        'BNkOfvIQb6AYckRe9-ikRZjs1jlMpje3tdRRB089qH6JYz4p7Bava3j91y3Cn4lS1P5cN8tOAGjlMiJUHjf6xxs',
     },
   },
 })

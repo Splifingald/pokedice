@@ -44,6 +44,7 @@ import { BattleBits } from './kitchen/BattleBits'
 import { DayCareBits } from './kitchen/DayCareBits'
 import { NicknameBits } from './kitchen/NicknameBits'
 import { TradeKitBits } from './kitchen/TradeBits'
+import { PushBits } from './kitchen/PushBits'
 import { RulesBits } from './kitchen/RulesBits'
 import { ExtremeBits } from './kitchen/ExtremeBits'
 import { PartnerBits } from './kitchen/PartnerBits'
@@ -576,6 +577,10 @@ export function KitchenSink() {
 
       <Section title="Trades: visibility, wants, time left, board rows (every state), listing sheet, share, rules, the trade scene, results">
         <TradeKitBits />
+      </Section>
+
+      <Section title="Push notifications: each feature's question (and an iPhone tab's), Settings' panel in every state">
+        <PushBits />
       </Section>
 
       <Section title="Extreme mode: rules, band, title card, K.O. rest, resting team, while you were away, switch">

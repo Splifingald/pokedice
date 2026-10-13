@@ -578,7 +578,8 @@ Two rules for every feature that adds something players can do (an event, a mode
 - **Its rules, once and on demand**: a rules pop-up (`RulesModal`: its picture as a banner, 2–4 `RuleList` rows with
   the config's numbers, Later / Let's go!) the first time the feature opens for the player (a "seen" flag in the save,
   queued behind the other one-time pop-ups), and an **INFO** button at the bottom of its page that shows the same rules
-  again. The Day Care, Versus, the events, Extreme mode and Trades follow it.
+  again. The Day Care, Versus, the events, Extreme mode, Trades and push notifications follow it (push's "rules
+  pop-up" is its question, asked once per feature; its INFO is in Settings → Notifications).
 
 ## 21. Trades
 
@@ -677,3 +678,24 @@ on `/kitchen-sink` (`WorldBits`). Every rule and number comes from `engine/world
   why they wait (`WorldAwayPage`), with Back to Kanto.
 - **Closing**: the world gone grey (`WorldByePopup`), once, to whoever played it or saw it open: the mythical kept (or
   "got away"), and that the partner, the world's Pokémon, items and ₽ closed with it.
+
+## 23. Push notifications
+
+What they say and when, and how they're set up: docs/25-PUSH-NOTIFICATIONS.md. The screens' side:
+
+- **The question comes from the feature, once**: the Day Care page, the raid page and a live event's pop-up (as it
+  closes) each ask the first time they open while push is off on this device (`usePushAsk`, `askPush`). It waits
+  between fights, never over a full-screen moment, and after the other one-time pop-ups. One pop-up
+  (`PushAskModal`): the feature's picture with a gold "Never miss one" tag and the bell, the feature's sentence in
+  large type ("Enable push notifications to be notified about upcoming raids"), the rule rows for all three topics
+  and "Your choice", then **No thanks** / **Enable** (red). No thanks is final for that feature only.
+- **The browser's own prompt only ever follows a tap** on Enable (or Settings' switch): never on load.
+- **An iPhone in a Safari tab** sees the Home Screen steps in a blue box (a warning icon, never colour alone) and **OK**
+  instead of Enable; it's asked once more from the Home Screen.
+- **Settings → Notifications** (`PushSettingsPanel`, under Game): the bell, "This device: Android", the main switch,
+  each topic's switch indented under a dashed rule while push is on, and INFO. Blocked by the browser, unsupported or an
+  iPhone tab: one line saying so, in words, instead of the switches.
+- **Notification pictures** are drawn by the service worker at whole-pixel scales (never a stretched area picture):
+  2:1 image, a square icon kept inside the round mask, the white ball badge.
+- **A tap while the game is open** moves it to the page between fights; it never reloads the tab.
+

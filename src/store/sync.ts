@@ -6,6 +6,7 @@ import { checkContentVersion } from '@/config/remote'
 import { AUTH_PROVIDERS, loadAuthProviders } from '@/lib/authProviders'
 import { loadFriendStatus } from '@/lib/friends'
 import { getSupabase } from '@/lib/supabase'
+import { disablePush, usePush } from '@/lib/push'
 import {
   cancelPush,
   cloudSaveAt,
@@ -446,6 +447,8 @@ export async function deleteAllData(): Promise<boolean> {
     }
     cloudKey = null
   }
+  // Push notifications stop too (docs/25): this browser's subscription and, for a guest, the server's copy of it.
+  if (usePush.getState().on) await disablePush()
   // Out of the store too, so nothing commits the old save again before the reload.
   useGame.setState({ save: null })
   resetRun()
