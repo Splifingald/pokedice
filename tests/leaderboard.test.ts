@@ -115,7 +115,7 @@ describe('parseLeaderboard', () => {
     ])
     // A row from a database that predates regions reads as Kanto.
     // …and one from a database without 0032 has no shinies, without 0033 no friends, without 0035 no raids, without
-    // 0048 no golden name.
+    // 0049 no golden name.
     expect(r).toEqual({ region: 'kanto', isMe: false, name: 'Trainer', avatar: 'red', team: [], pokedex: 0, maxLevel: 12, shinies: 0, raidsWon: 0, progress: { x: { cleared: true, gyms: 0 } }, friendId: null, rich: false })
   })
 

@@ -1,6 +1,6 @@
 # The Link Cable, the Bait and the General upgrades
 
-Status: **built** (2026-10-12) on `claude/pokemon-capture-upgrades-2wsdu4`; the migration is **0048**. Everything ships
+Status: **built** (2026-10-12) on `claude/pokemon-capture-upgrades-2wsdu4`; the migration is **0049** (0048 is the message gifts'). Everything ships
 **Off**: three switches in Admin → Config → "General upgrades & catch items" (docs/15 §20).
 
 Five things, from one request:
@@ -93,7 +93,7 @@ Five things, from one request:
   pop-ups; opening the tab counts as seen) and INFO at the bottom of the tab. The two items explain themselves where
   they're met: their descriptions in the Mart and the bag, the Bait's die and odds on the catch prompt.
 
-## 3. The server — `supabase/migrations/0048_general_upgrades.sql`
+## 3. The server — `supabase/migrations/0049_general_upgrades.sql`
 
 - The two config rows (insert-if-missing: seeding never writes them) and the two item rows.
 - `general_open()`: the switch for the caller (the admin's JWT for "On for admin").
@@ -102,7 +102,7 @@ Five things, from one request:
   caller). A last `rich` column on `leaderboard`, `versus_board`, `friend_list`, `friend_profile`, `friend_day_cares`,
   `raid_friend_teams`, `raid_progress_friend_teams`; `rich` in `trade_row` and `friend_status`'s new friends;
   `withRich` in `trade_mine` and `trade_take`.
-- 0039 and 0045 drop those seven functions before making them, so a full `seed.sql` re-run over 0048 works
+- 0039 and 0045 drop those seven functions before making them, so a full `seed.sql` re-run over 0049 works
   (`tests/general-sql.test.ts`, `tests/extreme-realm-sql.test.ts`).
 - A card takes `rich` on the player's next upload; PostgREST may need `notify pgrst, 'reload schema'` after the
   return types change.

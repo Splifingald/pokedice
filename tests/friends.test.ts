@@ -75,7 +75,7 @@ describe('parsing', () => {
     })
   })
 
-  it('carries a golden name (0048), and only a real true', () => {
+  it('carries a golden name (0049), and only a real true', () => {
     expect(parseFriendList([{ user_id: 'u1', rich: true }])[0]!.rich).toBe(true)
     expect(parseFriendList([{ user_id: 'u1', rich: 'yes' }])[0]!.rich).toBe(false)
     expect(parseStatus([{ ids: ['b'], unseen: [{ id: 'b', name: 'MISTY', avatar: 'green', rich: true }] }]).unseen[0]!.rich).toBe(true)

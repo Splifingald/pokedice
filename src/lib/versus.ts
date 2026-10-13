@@ -45,7 +45,7 @@ interface RawEntry {
   attack_wins: number | null
   defense_wins: number | null
   beaten: boolean | null
-  /** Missing on a database that hasn't run 0048_general_upgrades.sql. */
+  /** Missing on a database that hasn't run 0049_general_upgrades.sql. */
   rich?: boolean | null
 }
 

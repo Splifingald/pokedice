@@ -1,4 +1,4 @@
-// Migration 0048 against a real Postgres (PGlite, in process): the General upgrades (docs/25). The two config rows and
+// Migration 0049 against a real Postgres (PGlite, in process): the General upgrades (docs/25). The two config rows and
 // the two items as the game has them, inserted once; the card keeps "I am just rich" from the save; and every list of
 // other trainers says who is golden only while the admin's switch is on for the caller. Then seed.sql's schema part,
 // run again over it, still ends on these versions. Supabase's own pieces (the auth schema, the anon / authenticated
@@ -162,11 +162,11 @@ beforeAll(async () => {
     '0045_progress_raids.sql',
     '0046_progress_raids_worlds.sql',
     '0047_trades_admin_read.sql',
-    '0048_general_upgrades.sql',
+    '0049_general_upgrades.sql',
   ])
     await db.exec(sql(f))
   // Safe to run again.
-  await db.exec(sql('0048_general_upgrades.sql'))
+  await db.exec(sql('0049_general_upgrades.sql'))
 
   await db.exec(`
     insert into auth.users (id) values ${Object.values(U)
@@ -219,7 +219,7 @@ afterAll(async () => {
   await db?.close()
 })
 
-describe('0048: the switches and the items', () => {
+describe('0049: the switches and the items', () => {
   it('keeps the game’s defaults, off', async () => {
     const rows = await as<{ key: string; value: unknown }>(
       null,
@@ -262,7 +262,7 @@ describe('0048: the switches and the items', () => {
       `update game_config set value = '{"link-cable": "all", "bait": "admin"}' where key = 'itemSwitches'`,
     )
     await db.query(`update items set price = 1 where key = 'bait'`)
-    await db.exec(sql('0048_general_upgrades.sql'))
+    await db.exec(sql('0049_general_upgrades.sql'))
     const cfg = await as<{ key: string; value: Record<string, unknown> }>(
       null,
       `select key, value from game_config where key in ('general', 'itemSwitches') order by key`,
@@ -281,7 +281,7 @@ describe('0048: the switches and the items', () => {
   })
 })
 
-describe('0048: the card keeps the flag', () => {
+describe('0049: the card keeps the flag', () => {
   it('from the save, a JSON true only', async () => {
     expect(await card(U.misty)).toEqual({ name: 'MISTY', rich: true })
     expect(await card(U.brock)).toEqual({ name: 'BROCK', rich: false })
@@ -310,7 +310,7 @@ describe('0048: the card keeps the flag', () => {
   })
 })
 
-describe('0048: golden names, as the switch shows them to the caller', () => {
+describe('0049: golden names, as the switch shows them to the caller', () => {
   // Misty bought it; Erika in her Extreme save (any save counts); Brock never did; Ash is the one looking.
   const golden = (open: boolean) => ({ [U.misty]: open, [U.erika]: open, [U.brock]: false })
   const check = async (name: string, email: string, open: boolean) => {
@@ -379,7 +379,7 @@ describe('0048: golden names, as the switch shows them to the caller', () => {
   })
 })
 
-describe('0048 and seed.sql', () => {
+describe('0049 and seed.sql', () => {
   const FNS = [
     'friend_day_cares',
     'friend_list',
@@ -397,7 +397,7 @@ describe('0048 and seed.sql', () => {
     'trade_take',
     'versus_board',
   ]
-  // The grants each of the seven had before 0048 made it again (0039, 0045).
+  // The grants each of the seven had before 0049 made it again (0039, 0045).
   const GRANTS: [string, boolean, boolean][] = [
     ['leaderboard(text)', true, true],
     ['versus_board(text)', true, true],
@@ -424,7 +424,7 @@ describe('0048 and seed.sql', () => {
     expect(await grants()).toEqual(GRANTS)
   })
 
-  it("re-running seed.sql's schema part (0016 … 0048, as it inlines them) ends on these versions, one of each", async () => {
+  it("re-running seed.sql's schema part (0016 … 0049, as it inlines them) ends on these versions, one of each", async () => {
     // As seed.sql runs it: one transaction (scripts/seed.ts buildSql). Twice, as the admin re-runs it.
     for (let run = 0; run < 2; run++) {
       await db.exec(`begin;\n${await regionsPrelude()}\ncommit;`)
@@ -435,7 +435,7 @@ describe('0048 and seed.sql', () => {
       expect(overloads.rows).toEqual(FNS.map((proname) => ({ proname, n: 1 })))
       expect(await grants()).toEqual(GRANTS)
     }
-    // The card writer is 0048's (0040's would leave the flag as it was), and the lists say who is golden.
+    // The card writer is 0049's (0040's would leave the flag as it was), and the lists say who is golden.
     await putSave(U.misty, save('MISTY2'))
     expect(await card(U.misty)).toEqual({ name: 'MISTY2', rich: false })
     await putSave(U.misty, save('MISTY2', { rich: true }))

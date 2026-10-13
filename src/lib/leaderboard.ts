@@ -153,7 +153,7 @@ interface RawRow {
   /** Missing on a database that hasn't run 0033_friends.sql. */
   is_friend?: boolean | null
   friend_id?: string | null
-  /** Missing on a database that hasn't run 0048_general_upgrades.sql. */
+  /** Missing on a database that hasn't run 0049_general_upgrades.sql. */
   rich?: boolean | null
 }
 

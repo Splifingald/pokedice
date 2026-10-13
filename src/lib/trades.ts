@@ -176,7 +176,7 @@ export function parseListing(raw: unknown): TradeListing | null {
     owner: typeof r.owner === 'string' ? r.owner : null,
     name: typeof r.name === 'string' && r.name.trim() ? r.name : '',
     avatar: avatarOf(typeof r.avatar === 'string' ? r.avatar : null).id,
-    // A database before 0048 doesn't say: nobody's is.
+    // A database before 0049 doesn't say: nobody's is.
     rich: r.rich === true,
     isMe: r.is_me === true,
     isFriend: r.is_friend === true,

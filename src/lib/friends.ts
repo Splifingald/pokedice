@@ -136,7 +136,7 @@ export function parseFriendList(raw: unknown): FriendRow[] {
     isNew: !!r.is_new,
     // A database before 0039 doesn't say: everyone is in the one world there is.
     inRealm: r.in_realm !== false,
-    // Before 0048, nobody's is.
+    // Before 0049, nobody's is.
     rich: r.rich === true,
   }))
 }

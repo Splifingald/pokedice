@@ -24,7 +24,7 @@ const parseFriend = (r: RawFriend): RaidFriend => ({
   avatar: avatarOf(r.avatar).id,
   team: (r.team ?? []).map((m) => ({ dex: Number(m.dex), level: Number(m.level), shiny: !!m.shiny })),
   helped: Number(r.helped) || 0,
-  // A database before 0048 doesn't say: nobody's is.
+  // A database before 0049 doesn't say: nobody's is.
   rich: r.rich === true,
 })
 
