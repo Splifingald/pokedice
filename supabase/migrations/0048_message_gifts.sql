@@ -1,6 +1,6 @@
 -- Gifts with the developer's messages (docs/15 §23): Admin → Messages (an answer) and Admin → Analytics → a player's
--- profile (a message the admin starts) can carry items, each with its quantity, and Pokémon, each with its level and
--- shininess, each sent to a region the admin picks or to the player's latest one. The player sees the gift under the
+-- profile (a message the admin starts) can carry items, each with its quantity, Pokémon, each with its level and
+-- shininess, and Pokédollars, each sent to a region the admin picks or to the player's latest one. The player sees the gift under the
 -- message when it pops up; closing the message opens it.
 --
 -- A save is written only by its owner, so a gift is a server inbox, like raid gifts: the row holds the gifts until the
@@ -10,12 +10,12 @@
 -- 1. game_config `gifts`: the switch (Off / On for admin / On for everyone, off by default: docs/15 §20), inserted
 --    only if missing so seeding never clobbers the admin's. Off, my_feedback() shows no gift and none can be claimed;
 --    the gifts wait on their rows.
--- 2. feedback: `gifts` (checked: at most 20, items 1–999, Pokémon Lv.1–100), `gifts_claimed_at`, and `from_admin`
---    for a message the admin wrote to a player (their account, or a guest's device) rather than an answer. Only the
---    admin can set either: anything a player sends has them cleared.
+-- 2. feedback: `gifts` (checked: at most 20, items 1–999, Pokémon Lv.1–100, ₽1–999,999), `gifts_claimed_at`, and
+--    `from_admin` for a message the admin wrote to a player (their account, or a guest's device) rather than an
+--    answer. Only the admin can set either: anything a player sends has them cleared.
 -- 3. my_feedback() also returns the gifts and whether they've been opened; feedback_claim_gifts() opens them.
 --
--- Run after 0025; safe to run again.
+-- Run after 0025; safe to run again (run it again if it ran before Pokédollar gifts: it brings their check).
 
 -- ---------------------------------------------------------------- 1. the switch
 
@@ -36,8 +36,8 @@ alter table feedback add column if not exists from_admin boolean not null defaul
 alter table feedback add column if not exists gifts jsonb;                               -- null = no gift
 alter table feedback add column if not exists gifts_claimed_at timestamptz;              -- when the player opened it
 
--- What a gift list may hold: 1–20 entries, each an item (its key, a quantity 1–999) or a Pokémon (its number, a level
--- 1–100, shiny or not), each with a region (a region id, or 'latest'). Numbers must be whole and written plainly; the
+-- What a gift list may hold: 1–20 entries, each an item (its key, a quantity 1–999), a Pokémon (its number, a level
+-- 1–100, shiny or not) or Pokédollars (1–999,999), each with a region (a region id, or 'latest'). Numbers must be whole and written plainly; the
 -- CASE keeps every cast behind its pattern check.
 create or replace function feedback_gift_int(v jsonb, lo int, hi int)
 returns boolean
@@ -63,6 +63,7 @@ language sql immutable as $$
           feedback_gift_int(g -> 'dex', 1, 999999)
           and feedback_gift_int(g -> 'level', 1, 100)
           and coalesce(jsonb_typeof(g -> 'shiny'), 'boolean') = 'boolean'
+        when g ->> 'kind' = 'gold' then feedback_gift_int(g -> 'amount', 1, 999999)
         else false
       end
     )

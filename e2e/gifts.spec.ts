@@ -16,6 +16,7 @@ import {
 const GIFTS = [
   { kind: 'item', key: 'rare-candy', qty: 5, region: 'latest' },
   { kind: 'pokemon', dex: 25, level: 20, shiny: true, region: 'kanto' },
+  { kind: 'gold', amount: 1500, region: 'latest' },
 ]
 
 /** The gifts switched on for everyone (they ship off), over the events the mock switches on. */
@@ -73,7 +74,7 @@ test('an answer with a gift: shown under it, opened on closing, into the save', 
   const popup = page.getByRole('dialog', { name: 'The developer answered!' })
   await expect(popup.getByText('Sorry about that — here it is, and a little extra.')).toBeVisible()
   await expect(popup.getByText('A gift is attached!')).toBeVisible()
-  await expect(popup.getByText(/2 things inside · Close the message to open it\./)).toBeVisible()
+  await expect(popup.getByText(/3 things inside · Close the message to open it\./)).toBeVisible()
   await popup.getByRole('button', { name: 'Open the gift' }).click()
 
   // The first gift: its rules, then Let's go! opens it.
@@ -94,12 +95,16 @@ test('an answer with a gift: shown under it, opened on closing, into the save', 
   await expect(moment.getByText('✦ Shiny')).toBeVisible()
   await expect(moment.getByText('In your Bag')).toBeVisible()
   await expect(moment.getByText('Joined your team')).toBeVisible()
+  await expect(moment.getByText('Pokédollars', { exact: true })).toBeVisible()
+  await expect(moment.getByText('₽1,500')).toBeVisible()
+  await expect(moment.getByText('Added to your Pokédollars')).toBeVisible()
   await moment.getByRole('button', { name: 'Done' }).click()
   await expect(moment).toHaveCount(0)
   await expect(page.getByRole('dialog')).toHaveCount(0)
 
   const stored = await page.evaluate(() => JSON.parse(localStorage.getItem('pokedice.save') ?? '{}'))
   expect(stored.inventory['rare-candy']).toBe((save.inventory['rare-candy'] ?? 0) + 5)
+  expect(stored.gold).toBe(save.gold + 1500)
   const pika = stored.box.find((p: { dex: number }) => p.dex === 25)
   expect(pika).toMatchObject({ level: 20, shiny: true })
   expect(stored.team).toContain(pika.id)
@@ -219,12 +224,22 @@ test('admin → Messages: an answer carries a gift, and says when it was opened'
   await page.getByLabel('Quantity').fill('3')
   await page.getByRole('button', { name: 'Add item' }).click()
   await expect(page.getByText('Rare Candy ×3')).toBeVisible()
+  await page.getByLabel('Pokédollars (₽)').fill('2500')
+  await page.getByLabel('To the ₽ of').selectOption('johto')
+  await page.getByRole('button', { name: 'Add ₽' }).click()
+  await expect(page.getByText('₽2,500')).toBeVisible()
   await page.getByRole('button', { name: 'Send answer' }).click()
 
   await expect(page.getByText('Your answer')).toBeVisible()
   await expect(page.getByText('Not opened yet')).toBeVisible()
   expect(patches).toEqual([
-    { reply: 'Here are a few back.', gifts: [{ kind: 'item', key: 'rare-candy', qty: 3, region: 'latest' }] },
+    {
+      reply: 'Here are a few back.',
+      gifts: [
+        { kind: 'item', key: 'rare-candy', qty: 3, region: 'latest' },
+        { kind: 'gold', amount: 2500, region: 'johto' },
+      ],
+    },
   ])
 })
 

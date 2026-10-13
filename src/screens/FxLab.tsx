@@ -177,7 +177,7 @@ const PRESETS: Preset[] = [
     make: () => giftTimeline({ contents: [{ kind: 'mon', key: spriteKey(25, false, true), shiny: true }] }),
   },
   {
-    name: 'Gift opening (four things)',
+    name: 'Gift opening (five things, ₽ among them)',
     sprites: [
       [147, false],
       [133, false, true],
@@ -189,6 +189,7 @@ const PRESETS: Preset[] = [
           { kind: 'item', key: `item|${CANDY}` },
           { kind: 'mon', key: foe(147) },
           { kind: 'mon', key: spriteKey(133, false, true), shiny: true },
+          { kind: 'gold', key: 'gold' },
           { kind: 'item', key: `item|${CANDY}` },
         ],
       }),

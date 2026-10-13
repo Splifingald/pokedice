@@ -682,8 +682,8 @@ on `/kitchen-sink` (`WorldBits`). Every rule and number comes from `engine/world
 ## 23. Messages and gifts
 
 The developer answers a player's message (Admin → Messages) or writes to them first (Admin → Analytics → their profile
-→ Messages), and either can carry **gifts**: items, each with a quantity (1–999), and Pokémon, each with a level and
-shiny or not, at most 20 (migration 0048). Each goes to a region the admin picks or to **the player's latest region**
+→ Messages), and either can carry **gifts**: items, each with a quantity (1–999), Pokémon, each with a level and shiny
+or not, and Pokédollars (₽1–999,999), at most 20 (migration 0048). Each goes to a region the admin picks or to **the player's latest region**
 (the newest one they've started). The engine (`engine/gifts.ts`) decides where each lands and what it becomes; the
 pieces are in `src/components/Gifts.tsx`, every state on `/kitchen-sink` (`GiftBits`), the opening on `/kitchen-sink/fx`.
 
@@ -698,7 +698,8 @@ pieces are in `src/components/Gifts.tsx`, every state on `/kitchen-sink` (`GiftB
 - **Where gifts open**: the main game, outside a small world (docs/21), and for a signed-in player once the sign-in's
   sync has settled. Elsewhere the gift under the message says why it waits ("It opens in your main game", "…once
   you're back in Kanto") and the message closes as usual.
-- **Where each one goes**: an item into that region's Bag; a Pokémon into its Box as a Pokémon of its own (never merged
+- **Where each one goes**: an item into that region's Bag; ₽ into that region's own ₽ (the money pill bumps when the
+  top bar comes back, for the region being played); a Pokémon into its Box as a Pokémon of its own (never merged
   into a copy), at its level within the game's cap and full HP, and into the team when that region is the one being
   played and the team has room. A region the player hasn't started yet sends it to their latest one, and the result
   says so.
@@ -707,14 +708,15 @@ pieces are in `src/components/Gifts.tsx`, every state on `/kitchen-sink` (`GiftB
   times, each bigger (the anticipation), the bow springs loose, the box crouches and holds four frames, and the lid
   flies off in a burst of light and confetti; then what was inside rises out one by one — items as their pictures, the
   Pokémon as their sprites, a shiny with its two rings of stars — in an arc over the box (six at most; past that the
-  last says "+n"), and a short fanfare. The lines (beats `wobble`, `untie`, `opened`) are in the message box below,
+  last says "+n"; Pokédollars rise as a stack of coins drawn in code), and a short fanfare. The lines (beats `wobble`, `untie`, `opened`) are in the message box below,
   in a polite live region. SKIP and Esc jump to what arrived (`GiftResult`: each thing's picture, name, ×quantity or
-  level, ✦ Shiny, NEW, and where it went: "In your Johto Bag", "Joined your team"), then DONE. Motion off jumps there
+  level or ₽, ✦ Shiny, NEW, and where it went: "In your Johto Bag", "Added to your Pokédollars", "Joined your team"),
+  then DONE. Motion off jumps there
   at once.
 - **My messages** keeps every message with its answer, the developer's own messages, and their gifts: opened ("Opened
   — it held:" and what), or the wrapped gift with OPEN IT (gold), or why it waits. The tab's count adds the gifts not
   opened yet.
-- **In the admin**, the same gift editor in both places (`GiftEditor`): an item and a quantity, or a Pokémon, its level
-  and Shiny, each with its region (their latest, or one by name; on a profile, the regions they haven't started say
+- **In the admin**, the same gift editor in both places (`GiftEditor`): an item and a quantity, a Pokémon, its level
+  and Shiny, or an amount of ₽, each with its region (their latest, or one by name; on a profile, the regions they haven't started say
   where it would go). A message's card says whether its gifts were opened, and when; an opened gift can't be changed.
 

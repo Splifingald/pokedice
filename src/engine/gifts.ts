@@ -1,5 +1,5 @@
-// Gifts with the developer's messages (docs/15 §23): items (a quantity each) and Pokémon (a level each, shiny or not),
-// each sent to a region the admin picked or to the player's latest one. The server holds them on the message until the
+// Gifts with the developer's messages (docs/15 §23): items (a quantity each), Pokémon (a level each, shiny or not) and
+// Pokédollars, each sent to a region the admin picked or to the player's latest one. The server holds them on the message until the
 // player's game claims them (migration 0048); these functions decide where each one lands, and the screens only say it.
 import { eventOpenTo } from './events'
 import { isExtreme } from './extreme'
@@ -10,9 +10,10 @@ import type { GameData, Gift, GiftRegion, GiftsSave, RegionId, SaveData } from '
 
 /** The admin's "the player's latest region" (the newest region they've started), as stored on a gift. */
 export const GIFT_LATEST: GiftRegion = 'latest'
-/** At most this many gifts on one message, and this many of one item (the server checks the same: 0048). */
+/** At most this many gifts on one message, this many of one item, this many ₽ at once (the server checks the same: 0048). */
 export const GIFT_MAX = 20
 export const GIFT_QTY_MAX = 999
+export const GIFT_GOLD_MAX = 999_999
 /** Messages remembered as opened in the save. */
 const DONE_KEPT = 100
 
@@ -54,6 +55,9 @@ export function parseGifts(raw: unknown): Gift[] {
       const level = int(o.level)
       if (dex != null && dex >= 1 && level != null && level >= 1 && level <= 100)
         out.push({ kind: 'pokemon', dex, level, ...(o.shiny === true && { shiny: true }), region })
+    } else if (o.kind === 'gold') {
+      const amount = int(o.amount)
+      if (amount != null && amount >= 1 && amount <= GIFT_GOLD_MAX) out.push({ kind: 'gold', amount, region })
     }
   }
   return out
@@ -101,9 +105,9 @@ export const giftsOpened = (save: SaveData, messageId: number): boolean =>
   giftsOf(save).done.includes(messageId)
 
 /**
- * A message's gifts go into the save, once: each item into its region's Bag, each Pokémon (a new one, at full HP, at
- * its level within the game's cap, whatever copies the player has) into its region's Box — and the team, when that
- * region is the one being played and has room. Gifts the game doesn't know (an item or species since removed) are left
+ * A message's gifts go into the save, once: each item into its region's Bag, Pokédollars to its ₽, each Pokémon (a new
+ * one, at full HP, at its level within the game's cap, whatever copies the player has) into its region's Box — and the
+ * team, when that region is the one being played and has room. Gifts the game doesn't know (an item or species since removed) are left
  * out. Null when this message's gifts are in the save already.
  */
 export function applyGifts(
@@ -123,6 +127,11 @@ export function applyGifts(
     if (gift.kind === 'item') {
       if (!data.items[gift.key]) continue
       next = addToBag(next, region, gift.key, Math.min(GIFT_QTY_MAX, gift.qty))
+      landed.push({ gift, region, moved })
+      continue
+    }
+    if (gift.kind === 'gold') {
+      next = addGold(next, region, Math.min(GIFT_GOLD_MAX, gift.amount))
       landed.push({ gift, region, moved })
       continue
     }
@@ -159,6 +168,14 @@ function addToBag(save: SaveData, region: RegionId, key: string, qty: number): S
       [region]: { ...block, inventory: { ...block.inventory, [key]: (block.inventory[key] ?? 0) + qty } },
     },
   }
+}
+
+/** Pokédollars to a region's ₽: each region has its own (engine/regions.ts). */
+function addGold(save: SaveData, region: RegionId, amount: number): SaveData {
+  if (region === regionOf(save)) return { ...save, gold: save.gold + amount }
+  const block = save.parked?.[region]
+  if (!block) return save
+  return { ...save, parked: { ...save.parked, [region]: { ...block, gold: block.gold + amount } } }
 }
 
 /** The rules pop-up opens once, before the first gift does (docs/15 §20). */

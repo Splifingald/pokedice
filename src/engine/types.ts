@@ -720,12 +720,13 @@ export interface GiftsConfig {
 export type GiftRegion = string
 
 /**
- * One gift on a message, as the admin set it (Admin → Messages, or a player's profile): an item and how many, or a
- * Pokémon at a level, shiny or not. Each goes to its region's Bag or Box.
+ * One gift on a message, as the admin set it (Admin → Messages, or a player's profile): an item and how many, a
+ * Pokémon at a level, shiny or not, or Pokédollars. Each goes to its region's Bag, Box or ₽.
  */
 export type Gift =
   | { kind: 'item'; key: string; qty: number; region: GiftRegion }
   | { kind: 'pokemon'; dex: number; level: number; shiny?: boolean; region: GiftRegion }
+  | { kind: 'gold'; amount: number; region: GiftRegion }
 
 /** The gifts a save has opened (docs/15 §23). */
 export interface GiftsSave {

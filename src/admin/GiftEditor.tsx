@@ -1,12 +1,15 @@
 // Admin: the gifts a message carries (docs/15 §23), in Messages (an answer) and on a player's profile (a message you
-// start). Items with a quantity, Pokémon with a level and shininess; each to a region, or to the player's latest one.
+// start). Items with a quantity, Pokémon with a level and shininess, Pokédollars; each to a region, or to the player's
+// latest one.
 // The same editor in both places, and the same line to read them back.
 import { useState } from 'react'
+import { PixelIcon } from '@/components/icons'
 import { ItemSprite } from '@/components/ItemSprite'
 import { PixelButton } from '@/components/PixelButton'
 import { SearchSelect } from '@/components/SearchSelect'
 import { SpriteImg } from '@/components/SpriteImg'
 import {
+  GIFT_GOLD_MAX,
   GIFT_LATEST,
   GIFT_MAX,
   GIFT_QTY_MAX,
@@ -25,15 +28,19 @@ import { AccessSwitch, inputCls, NumInput, PokemonPicker } from './widgets'
 export const regionLabel = (data: GameData, r: GiftRegion) =>
   r === GIFT_LATEST ? 'their latest region' : (data.regions.find((x) => x.id === r)?.name ?? r)
 
-/** "Rare Candy ×5" / "Pikachu Lv.20 ✦". */
+/** "Rare Candy ×5" / "Pikachu Lv.20 ✦ shiny" / "₽5,000". */
 export const giftName = (data: GameData, g: Gift) =>
   g.kind === 'item'
     ? `${data.items[g.key]?.name ?? g.key} ×${g.qty}`
-    : `${data.species[g.dex]?.name ?? `#${g.dex}`} Lv.${g.level}${g.shiny ? ' ✦ shiny' : ''}`
+    : g.kind === 'gold'
+      ? `₽${g.amount.toLocaleString()}`
+      : `${data.species[g.dex]?.name ?? `#${g.dex}`} Lv.${g.level}${g.shiny ? ' ✦ shiny' : ''}`
 
 function GiftIcon({ data, g }: { data: GameData; g: Gift }) {
   return g.kind === 'item' ? (
     <ItemSprite item={data.items[g.key]} size={28} />
+  ) : g.kind === 'gold' ? (
+    <PixelIcon name="coin" size={24} className="mx-0.5" />
   ) : (
     <SpriteImg dex={g.dex} size={32} shiny={g.shiny} />
   )
@@ -102,7 +109,7 @@ function RegionSelect({
 }) {
   const started = (id: string) => !save || id === (save.region ?? 'kanto') || !!save.parked?.[id]
   return (
-    <select className={inputCls} value={value} onChange={(e) => onChange(e.target.value)} aria-label="Region">
+    <select className={inputCls} value={value} onChange={(e) => onChange(e.target.value)}>
       <option value={GIFT_LATEST}>Their latest region</option>
       {realRegions(data).map((r) => (
         <option key={r.id} value={r.id}>
@@ -158,6 +165,8 @@ export function GiftEditor({
   const [level, setLevel] = useState(5)
   const [shiny, setShiny] = useState(false)
   const [monRegion, setMonRegion] = useState<GiftRegion>(GIFT_LATEST)
+  const [gold, setGold] = useState(1000)
+  const [goldRegion, setGoldRegion] = useState<GiftRegion>(GIFT_LATEST)
   const full = gifts.length >= GIFT_MAX
   // The switch as it stands in the admin, saved or not.
   const access = useConfigRow('gifts')[0]?.access ?? 'off'
@@ -261,6 +270,28 @@ export function GiftEditor({
           }
         >
           Add Pokémon
+        </PixelButton>
+      </div>
+      <div className="flex flex-wrap items-end gap-2">
+        <label className="flex w-40 flex-col text-base">
+          Pokédollars (₽)
+          <NumInput
+            value={gold}
+            min={1}
+            max={GIFT_GOLD_MAX}
+            onChange={(v) => setGold(clamp(v ?? 1, 1, GIFT_GOLD_MAX))}
+          />
+        </label>
+        <label className="flex w-56 flex-col text-base">
+          To the ₽ of
+          <RegionSelect data={data} value={goldRegion} onChange={setGoldRegion} save={save} />
+        </label>
+        <PixelButton
+          size="sm"
+          disabled={full}
+          onClick={() => onChange([...gifts, { kind: 'gold', amount: gold, region: goldRegion }])}
+        >
+          Add ₽
         </PixelButton>
       </div>
       {full && <p className="text-base text-muted">{GIFT_MAX} gifts at most on one message.</p>}

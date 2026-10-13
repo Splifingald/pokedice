@@ -9,6 +9,7 @@ import {
   getRegion,
   GIFT_LATEST,
   parseGifts,
+  regionOf,
   unlockedRegions,
   type GameData,
   type Gift,
@@ -18,11 +19,13 @@ import {
 import { loadItemSprite, loadSprite, spriteKey } from '@/fx/sprites'
 import { giftTimeline, type GiftContent } from '@/fx/timelines/gift'
 import { useT } from '@/i18n/react'
+import { money } from '@/lib/format'
 import { useHoldFullscreen } from '@/lib/fullscreen'
 import { closeGiftMoment, giftRulesGo, giftRulesLater, useGiftMoment } from '@/store/gifts'
 import { useGame } from '@/store/game'
 import { cx } from '@/theme/util'
 import { Chip, NewTag } from './Chip'
+import { bumpGold } from './GoldPill'
 import { PixelIcon } from './icons'
 import { ItemSprite } from './ItemSprite'
 import { PixelButton } from './PixelButton'
@@ -85,29 +88,39 @@ export function GiftPresent({
   )
 }
 
-/** One gift's picture: the item's, or the Pokémon's menu icon. */
+/** One gift's picture: the item's, the coin for Pokédollars, or the Pokémon's menu icon. */
 function GiftIcon({ g }: { g: Gift }) {
   const data = useGame((s) => s.data)
   return g.kind === 'item' ? (
     <ItemSprite item={data.items[g.key]} size={32} />
+  ) : g.kind === 'gold' ? (
+    <span className="grid h-8 w-8 shrink-0 place-items-center" aria-hidden>
+      <PixelIcon name="coin" size={22} />
+    </span>
   ) : (
     <MiniSprite dex={g.dex} size={32} className="-my-1" />
   )
 }
 
-/** "Rare Candy" and "×5", or "Pikachu" and "Lv.20", with its ✦ Shiny. */
+/** "Rare Candy" and "×5", "Pokédollars" and "₽5,000", or "Pikachu" and "Lv.20", with its ✦ Shiny. */
 function GiftName({ g }: { g: Gift }) {
   const { t } = useT()
   const data = useGame((s) => s.data)
   const name =
     g.kind === 'item'
       ? (data.items[g.key]?.name ?? g.key)
-      : (data.species[g.dex]?.name ?? t('ui.common.aPokemon'))
+      : g.kind === 'gold'
+        ? t('ui.home.pokedollars')
+        : (data.species[g.dex]?.name ?? t('ui.common.aPokemon'))
   return (
     <>
       <b className="font-normal">{name}</b>
       <span className="font-pixel-sm text-[17px] text-muted">
-        {g.kind === 'item' ? t('ui.gift.qty', { n: g.qty }) : t('ui.common.level.short', { n: g.level })}
+        {g.kind === 'item'
+          ? t('ui.gift.qty', { n: g.qty })
+          : g.kind === 'gold'
+            ? money(g.amount)
+            : t('ui.common.level.short', { n: g.level })}
       </span>
       {g.kind === 'pokemon' && g.shiny && <Chip tone="gold">{t('ui.dayCare.shinyTag')}</Chip>}
     </>
@@ -137,7 +150,7 @@ export function GiftOpened({ gifts }: { gifts: unknown }) {
   )
 }
 
-/** Where each one went, in words: the Bag or the Box (with its region once there are several), or the team. */
+/** Where each one went, in words: the Bag, the ₽ or the Box (with its region once there are several), or the team. */
 function useWhere() {
   const { t } = useT()
   const data = useGame((s) => s.data)
@@ -149,11 +162,15 @@ function useWhere() {
         ? many
           ? t('ui.gift.inBagOf', { region })
           : t('ui.gift.inBag')
-        : l.joinedTeam
-          ? t('ui.gift.joinedTeam')
-          : many
-            ? t('ui.gift.inBoxOf', { region })
-            : t('ui.gift.inBox')
+        : l.gift.kind === 'gold'
+          ? many
+            ? t('ui.gift.inMoneyOf', { region })
+            : t('ui.gift.inMoney')
+          : l.joinedTeam
+            ? t('ui.gift.joinedTeam')
+            : many
+              ? t('ui.gift.inBoxOf', { region })
+              : t('ui.gift.inBox')
     return l.moved && l.gift.region !== GIFT_LATEST
       ? `${where} ${t('ui.gift.moved', { region: regionName(data, l.gift.region) })}`
       : where
@@ -244,7 +261,7 @@ export function GiftRulesModal({
   )
 }
 
-/** What the stage draws for each gift: the Pokémon's front sprite (its shiny one), the item's picture. */
+/** What the stage draws for each gift: the Pokémon's front sprite (its shiny one), the item's picture, coins. */
 function contentsOf(
   landed: GiftLanded[],
   data: GameData,
@@ -255,6 +272,7 @@ function contentsOf(
       loads.push(loadSprite(l.gift.dex, false, !!l.gift.shiny))
       return { kind: 'mon', key: spriteKey(l.gift.dex, false, !!l.gift.shiny), shiny: !!l.gift.shiny }
     }
+    if (l.gift.kind === 'gold') return { kind: 'gold', key: 'gold' }
     const url = data.items[l.gift.key]?.spriteUrl
     if (url) loads.push(loadItemSprite(url))
     return { kind: 'item', key: `item|${url ?? ''}` }
@@ -351,10 +369,16 @@ export function GiftMoment({ landed, onDone }: { landed: GiftLanded[]; onDone: (
 export function GiftService() {
   const opening = useGiftMoment((s) => s.opening)
   const rulesFor = useGiftMoment((s) => s.rulesFor)
+  const live = useGame((s) => (s.save ? regionOf(s.save) : null))
+  const done = () => {
+    // ₽ for the region being played came in while the top bar was hidden: its pill bumps when it's back.
+    if (opening?.some((l) => l.gift.kind === 'gold' && l.region === live)) bumpGold()
+    closeGiftMoment()
+  }
   return (
     <>
       <GiftRulesModal open={!!rulesFor} onClose={giftRulesLater} onGo={giftRulesGo} />
-      {opening && <GiftMoment landed={opening} onDone={closeGiftMoment} />}
+      {opening && <GiftMoment landed={opening} onDone={done} />}
     </>
   )
 }

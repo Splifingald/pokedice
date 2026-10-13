@@ -1,7 +1,8 @@
 // The gift opening (docs/15 §23), after the player closes a message that carries one: a wrapped box drops onto a warm
 // stage, wobbles three times (bigger each time: the anticipation), the bow springs loose, the box crouches, holds for a
 // few frames, and the lid flies off in a burst of light; then what was inside rises out one by one — items as their
-// pictures, Pokémon as their sprites (a shiny with its two rings of stars) — and a short fanfare. It plays in full
+// pictures, Pokédollars as a stack of coins, Pokémon as their sprites (a shiny with its two rings of stars) — and a
+// short fanfare. It plays in full
 // whatever the motion setting short; only "off" skips it. Words are the host's: the beats say when.
 import { fxSound } from '@/audio/sfx'
 import {
@@ -28,7 +29,8 @@ import { momentBg } from './moments'
 export interface GiftContent {
   /** What to draw: a Pokémon's front sprite key (`spriteKey`) or an item's (`item|<url>`). Not loaded: a sparkle. */
   key: string
-  kind: 'mon' | 'item'
+  /** `gold`: Pokédollars, drawn here as coins (no sprite to load). */
+  kind: 'mon' | 'item' | 'gold'
   shiny?: boolean
 }
 
@@ -103,6 +105,25 @@ function lidArt(bow: boolean): Canvas {
       rect(g, cx - 3, 4, 6, 7, GOLD_D)
       rect(g, cx - 3, 4, 3, 3, GOLD)
     }
+    return c
+  })
+}
+
+/** Pokédollars: three gold coins stacked a little askew, drawn once. */
+function coinsArt(): Canvas {
+  return cached('gift|coins', () => {
+    const c = canvas(22, 18)
+    const g = c.g
+    const coin = (x: number, y: number) => {
+      ellipse(g, x, y + 1, 9, 4, INK)
+      ellipse(g, x, y + 1, 8, 3, GOLD_D)
+      ellipse(g, x, y - 1, 9, 4, INK)
+      ellipse(g, x, y - 1, 8, 3, GOLD)
+      ellipse(g, x - 2, y - 2, 3, 1, GOLD_L)
+    }
+    coin(11, 13)
+    coin(10, 9)
+    coin(12, 5)
     return c
   })
 }
@@ -384,9 +405,14 @@ export function giftTimeline(p: GiftParams): Timeline<GiftState> {
             return
           }
           const c = p.contents[i]!
-          // Items stay on whole pixels: twice their size alone, as they are among others.
-          const k = c.kind === 'item' ? (pl.k >= 0.9 ? 2 : 1) : pl.k
-          if (spriteFrame(c.key)) drawSprite(g, c.key, x, y + bob, { sx: k, sy: k, flash })
+          // Items and coins stay on whole pixels: twice their size alone, as they are among others.
+          const k = c.kind === 'mon' ? pl.k : pl.k >= 0.9 ? 2 : 1
+          if (c.kind === 'gold') {
+            const coins = coinsArt()
+            const w = coins.width * k
+            const h = coins.height * k
+            g.drawImage(coins, Math.round(x - w / 2), y + bob - h, w, h)
+          } else if (spriteFrame(c.key)) drawSprite(g, c.key, x, y + bob, { sx: k, sy: k, flash })
           else g.drawImage(glow(10, GOLD_L, 1.4, 0.9), x - 10, y - 20 + bob)
         })
       }

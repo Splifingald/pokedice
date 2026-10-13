@@ -20,6 +20,7 @@ const U = {
 const GIFTS = [
   { kind: 'item', key: 'rare-candy', qty: 5, region: 'latest' },
   { kind: 'pokemon', dex: 25, level: 20, shiny: true, region: 'kanto' },
+  { kind: 'gold', amount: 999999, region: 'johto' },
 ]
 
 let db: PGlite
@@ -168,7 +169,10 @@ describe('who can write a gift', () => {
       [{ kind: 'pokemon', dex: '25', level: 5, region: 'kanto' }],
       [{ kind: 'pokemon', dex: 25, level: 5, shiny: 'yes', region: 'kanto' }],
       [{ kind: 'pokemon', dex: 25, level: 5 }],
-      [{ kind: 'gold', amount: 100, region: 'kanto' }],
+      [{ kind: 'gold', amount: 0, region: 'kanto' }],
+      [{ kind: 'gold', amount: 1000000, region: 'kanto' }],
+      [{ kind: 'gold', amount: 100 }],
+      [{ kind: 'egg', region: 'kanto' }],
       Array.from({ length: 21 }, () => GIFTS[0]),
     ]
     for (const g of bad)

@@ -77,11 +77,18 @@ describe('reading the server’s gifts', () => {
         { kind: 'item', key: 'potion', qty: 2.5, region: 'latest' },
         { kind: 'pokemon', dex: 25, level: 101, region: 'kanto' },
         { kind: 'pokemon', dex: 25, level: 5 },
-        { kind: 'gold', amount: 100, region: 'kanto' },
+        { kind: 'gold', amount: 2500, region: 'kanto' },
+        { kind: 'gold', amount: 0, region: 'kanto' },
+        { kind: 'gold', amount: 1_000_000, region: 'kanto' },
+        { kind: 'egg', region: 'kanto' },
         null,
         'x',
       ]),
-    ).toEqual([candy(5), pika({ shiny: true, region: 'kanto' })])
+    ).toEqual([
+      candy(5),
+      pika({ shiny: true, region: 'kanto' }),
+      { kind: 'gold', amount: 2500, region: 'kanto' },
+    ])
     expect(parseGifts(null)).toEqual([])
     expect(parseGifts({ kind: 'item' })).toEqual([])
   })
@@ -121,6 +128,24 @@ describe('opening a message’s gifts', () => {
       ['kanto', false],
       ['johto', false],
     ])
+  })
+
+  it('adds Pokédollars to their region’s ₽, live or parked', () => {
+    const back = switchRegion(johto(), 'kanto')
+    const res = applyGifts(
+      back,
+      data,
+      14,
+      [
+        { kind: 'gold', amount: 5000, region: 'kanto' },
+        { kind: 'gold', amount: 750, region: GIFT_LATEST },
+      ],
+      NOW,
+      newId,
+    )!
+    expect(res.save.gold).toBe(back.gold + 5000)
+    expect(res.save.parked!.johto!.gold).toBe(back.parked!.johto!.gold + 750)
+    expect(res.landed.map((l) => l.region)).toEqual(['kanto', 'johto'])
   })
 
   it('gives a new Pokémon at its level and full HP, shiny when asked, into the Box (and a team with room)', () => {
