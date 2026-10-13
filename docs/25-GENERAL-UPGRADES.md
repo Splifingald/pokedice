@@ -72,13 +72,14 @@ Five things, from one request:
 - With the ₽ of the region being played; the levels are the save's (`SaveData.general`), so they hold in every region.
   Each save buys its own: an Extreme save's are its own.
 - Not inside a small world: its Upgrades page explains the dice instead (docs/21).
-- Prices (game_config `general`, Admin → Config): a whole region's combos and dice cost about ₽37,000, so these are
-  long goals.
+- Prices (game_config `general`, Admin → Config): a whole region's combos and dice cost about ₽37,000, so Capture
+  Luck and the golden name are long goals; offline earnings are cheap enough to pay themselves back in days (the
+  user's call, 2026-10-13: an eighth of the first prices).
 
   | Level | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | All |
   |---|---|---|---|---|---|---|---|---|---|---|---|
   | Capture Luck | 10 % · ₽1,000 | 20 % · ₽1,800 | 30 % · ₽2,800 | 40 % · ₽4,000 | 50 % · ₽5,500 | 60 % · ₽7,200 | 70 % · ₽9,200 | 80 % · ₽11,500 | 90 % · ₽14,000 | 100 % · ₽17,000 | ₽74,000 |
-  | Offline | ₽2/h · ₽800 | ₽4/h · ₽1,400 | ₽6/h · ₽2,100 | ₽8/h · ₽3,000 | ₽10/h · ₽4,000 | ₽12/h · ₽5,200 | ₽14/h · ₽6,600 | ₽16/h · ₽8,200 | ₽18/h · ₽10,000 | ₽20/h · ₽12,000 | ₽53,300 |
+  | Offline | ₽2/h · ₽100 | ₽4/h · ₽175 | ₽6/h · ₽263 | ₽8/h · ₽375 | ₽10/h · ₽500 | ₽12/h · ₽650 | ₽14/h · ₽825 | ₽16/h · ₽1,025 | ₽18/h · ₽1,250 | ₽20/h · ₽1,500 | ₽6,663 |
   | I am just rich | ₽99,999 | | | | | | | | | | |
 
 ## 2. The switches (docs/15 §20)

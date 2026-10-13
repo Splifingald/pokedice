@@ -157,7 +157,7 @@ describe('the Bait', () => {
 describe('the General upgrades', () => {
   it('cost what the config says, with the live region’s ₽, and apply to the whole save', () => {
     expect(nextGeneralCost(fresh(), on, 'luck')).toBe(1000)
-    expect(nextGeneralCost(fresh(), on, 'offline')).toBe(800)
+    expect(nextGeneralCost(fresh(), on, 'offline')).toBe(100)
     expect(nextGeneralCost(fresh(), on, 'rich')).toBe(99999)
     expect(buyGeneral(fresh(999), on, 'luck')).toBeNull()
     const s = buyGeneral(fresh(1500), on, 'luck')!
@@ -205,7 +205,7 @@ describe('the General upgrades', () => {
   })
 
   it('an absence pays its hours, up to 24, on the server’s clock, in whole ₽; the time towards the next ₽ waits', () => {
-    const s = buyGeneral(fresh(800), on, 'offline')!
+    const s = buyGeneral(fresh(100), on, 'offline')!
     const t0 = 1_000_000
     const away = markOfflineFrom(s, on, t0)
     expect(away.general?.awayFrom).toBe(t0)
