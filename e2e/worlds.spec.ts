@@ -193,11 +193,17 @@ test('the world opens: its pop-up, the partner pick, Home inside, its Mart and U
   expect(s.gold).toBe(0)
   expect(s.events?.world).toMatchObject({ id: 'mirage', from: 'kanto', partner: 92 })
 
-  // Its Mart sells its list only; its Upgrades are its own tracks (no General tab: its ₽ are the world's).
+  // Its Mart sells its list only and buys back the world's bag; its Upgrades are its own tracks (no General tab: its
+  // ₽ are the world's).
   await page.goto('/shop')
   await expect(page.getByRole('heading', { name: 'World Mart', level: 1 })).toBeVisible()
   await expect(page.getByText('10 of 10 left')).toBeVisible()
-  await expect(page.getByRole('tab', { name: 'Sell' })).toHaveCount(0)
+  await page.getByRole('tab', { name: 'Sell' }).click()
+  const kantoGold = s.parked?.kanto?.gold
+  await page.getByRole('button', { name: /^Potion/ }).click()
+  await page.getByRole('button', { name: 'Sell 1 Potion for ₽7' }).click()
+  await expect.poll(async () => (await stored(page)).gold).toBe(7)
+  expect((await stored(page)).parked?.kanto?.gold).toBe(kantoGold)
   await page.goto('/upgrades')
   await expect(page.getByRole('tab', { name: /^Combos/ })).toBeVisible()
   await expect(page.getByRole('tab', { name: /^General/ })).toHaveCount(0)

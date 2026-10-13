@@ -55,6 +55,8 @@ import {
   regionOfSpecies,
   releaseWorldPending,
   rescueFromDisabledRegion,
+  sellItem,
+  sellPrice,
   raidTeam,
   sendTargets,
   speciesCaughtEverywhere,
@@ -330,6 +332,18 @@ describe('its rules', () => {
     expect(worldShopRows(kanto(), data)).toEqual([])
     // The usual Mart is shut inside.
     expect(buyItem(s, 'poke-ball', 1, data)).toBeNull()
+  })
+
+  it('buys back the world’s bag for the world’s ₽, never above its price', () => {
+    const s = buyWorldItem({ ...inside(), gold: 1000 }, data, 'ultra-ball', 2, NOW)!
+    const unit = sellPrice(data.items['ultra-ball'])
+    expect(unit).toBeGreaterThan(0)
+    expect(unit).toBeLessThan(150)
+    const sold = sellItem(s, 'ultra-ball', 2, data)!
+    expect(sold.gold).toBe(s.gold + unit * 2)
+    expect(sold.inventory['ultra-ball']).toBe(s.inventory['ultra-ball']! - 2)
+    // The world's ₽ stay the world's: the region outside is untouched.
+    expect(sold.parked).toEqual(s.parked)
   })
 })
 

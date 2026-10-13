@@ -700,7 +700,8 @@ on `/kitchen-sink` (`WorldBits`). Every rule and number comes from `engine/world
   "(Shiny)" is in the label for screen readers.
 - **An area waiting for its date** is locked like any other, with "Opens {date}" (the local date and time, `dayTime`).
 - **The Poké Mart inside is the World Mart** (`WorldShop`): the world's picture and time left over the admin's list,
-  each row with its limit ("8 of 10 left", Sold out); buying only, no Sell tab.
+  each row with its limit ("8 of 10 left", Sold out), under the usual Buy / Sell tabs: Sell is the world's bag,
+  bought back for the world's ₽ (its prices are never below the buy-back, so that can't pay).
 - **Upgrades inside** are the world's own tracks (Combos, Dice Types), from level 1, bought with its ₽, like a new
   region's; no General tab inside (its levels hold everywhere, and the world's ₽ are its own). **In battle**, a
   **booster** shows as its own chip, the type's badge and "×1.5" (`BoosterChip`), beside the damage in the readout and
