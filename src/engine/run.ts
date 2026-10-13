@@ -7,7 +7,7 @@ import { deckAbilities, deckCounts, fightBosses, roundsComplete } from './encoun
 import { centersOn, healItemsOn, wipeHeals } from './extreme'
 import { addFossil, isReviving } from './fossils'
 import { LEGACY_GAUGE } from './legacyGauge'
-import { MONEY, sellPrice, shopSells, usableIn } from './items'
+import { itemOn, MONEY, sellPrice, shopSells, usableIn } from './items'
 import { earnedGold } from './liveEvents'
 import { areaOpenAt } from './worldList'
 import {
@@ -19,6 +19,7 @@ import {
   levelEvolutions,
   preferUnowned,
   stoneEvolution,
+  linkEvolution,
   xpToNext,
   type ProgressEvent,
 } from './progression'
@@ -628,7 +629,7 @@ export function buyItem(
   const item = data.items[key]
   // A small world's Mart sells its own list only (engine/worlds.ts buyWorldItem).
   if (!item || qty <= 0 || inWorldRegion(save, data)) return null
-  if (!shopSells(item, save, regionOf(save))) return null
+  if (!shopSells(item, save, regionOf(save), data)) return null
   // One is all there is: asking for more is a mistake, not a smaller order.
   if (item.unique && qty !== 1) return null
   const cost = item.price * qty
@@ -689,8 +690,11 @@ export function applyFieldItem(
     const healed = applyItemToInstance(save, key, instId, data)
     return healed ? { save: healed, events: [] } : null
   }
-  if (item.effect.kind === 'stone') {
-    const toDex = stoneEvolution(inst, key, data, evolutionGate(save, data))
+  // A switched-off item (docs/25: the Link Cable) waits in the bag.
+  if (!itemOn(data, key)) return null
+  if (item.effect.kind === 'stone' || item.effect.kind === 'link') {
+    const gate = evolutionGate(save, data)
+    const toDex = item.effect.kind === 'link' ? linkEvolution(inst, data, gate) : stoneEvolution(inst, key, data, gate)
     if (toDex == null) return null
     const evolved = evolve(inst, toDex, data)
     let next = replaceInstance(consumeItem(save, key)!, evolved)

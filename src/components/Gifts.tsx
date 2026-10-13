@@ -307,7 +307,7 @@ export function GiftMoment({
 }: {
   landed: GiftLanded[]
   onDone: () => void
-  /** The developer's gift (a message), or invite rewards (docs/15 §24): only the first line and the title differ. */
+  /** The developer's gift (a message), or invite rewards (docs/15 §25): only the first line and the title differ. */
   source?: 'message' | 'invite'
 }) {
   const { t } = useT()

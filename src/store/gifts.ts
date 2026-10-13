@@ -12,7 +12,7 @@ import { pushSaveNow, syncSettled } from './sync'
 interface GiftsState {
   /** The opening on screen: everything that arrived, in order; null when none plays. */
   opening: GiftLanded[] | null
-  /** Whose gift it is: the developer's (a message), or invite rewards (docs/15 §24), which reuse the same opening. */
+  /** Whose gift it is: the developer's (a message), or invite rewards (docs/15 §25), which reuse the same opening. */
   source: 'message' | 'invite'
   /** Asking the server: the button waits. */
   busy: boolean

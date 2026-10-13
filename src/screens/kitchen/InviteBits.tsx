@@ -1,4 +1,4 @@
-// Kitchen sink: friend invite rewards (docs/15 §24) — the gauge in every state (nothing yet, on the way, a reward
+// Kitchen sink: friend invite rewards (docs/15 §25) — the gauge in every state (nothing yet, on the way, a reward
 // ready, one opened and the next ahead, every reward won, a tier holding several gifts), the Friends page's card (ready
 // with OPEN IT, asking the server, every reward won), the compact gauge of Prof. Oak's invite, the reward's pop-up
 // (with who did it, and without), the rules (the first time and INFO), and the opening, the gifts' own.

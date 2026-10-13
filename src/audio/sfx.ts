@@ -239,6 +239,14 @@ const FX_SOUNDS = {
     tone(1320, 0.3, { vol: 0.05, at: 0.12 })
   },
   'catch.break': () => hiss(0.25, { freq: 900, vol: 0.1 }),
+  // The Bait lands beside the ball (docs/25): a soft plop, then a little two-note "ooh".
+  'catch.bait': () => {
+    tone(260, 0.06, { type: 'square', vol: 0.05, slide: -80 })
+    tone(660, 0.08, { vol: 0.03, at: 0.12 })
+    tone(880, 0.12, { vol: 0.03, at: 0.2 })
+  },
+  // Broke free but stays put (Capture Luck): a short, cheeky hop.
+  'catch.stay': () => tone(520, 0.08, { type: 'square', vol: 0.04, slide: 260 }),
   'legend.pulse': () => tone(55, 0.3, { type: 'sine', vol: 0.12 }),
   'legend.shatter': () => hiss(0.6, { freq: 4000, slide: -3500, vol: 0.05 }),
   'legend.heart': () => tone(48, 0.25, { type: 'sine', vol: 0.14 }),

@@ -34,6 +34,7 @@ import { isSupabaseConfigured } from '@/lib/supabase'
 import { pushToast, useGame } from '@/store/game'
 import { openInviteRewards, seeInviteRules, useInviteRewards } from '@/store/invites'
 import { cx } from '@/theme/util'
+import { TrainerName } from '@/components/TrainerName'
 
 /** Off the boards after 72 hours without playing: shown, but quieter. */
 const AWAY_MS = 72 * 3_600_000
@@ -82,7 +83,7 @@ function FriendsBody() {
   const [resetting, setResetting] = useState(false)
   const [open, setOpen] = useState<FriendRow | null>(null)
   const [rules, setRules] = useState(false)
-  // Invite rewards (docs/15 §24): the gauge on top, while they're on for this player.
+  // Invite rewards (docs/15 §25): the gauge on top, while they're on for this player.
   const gauge = useInviteGauge()
   const rewardsBusy = useInviteRewards((s) => s.busy)
   const shown = !!gauge
@@ -223,7 +224,7 @@ function FriendListRow({ friend: f, onOpen }: { friend: FriendRow; onOpen: () =>
         <TrainerLook src={avatarOf(f.avatar).src} w={44} h={48} className={cx(away && 'opacity-75 grayscale-[0.7]')} />
         <span className="grid min-w-0 flex-1 gap-px">
           <b className="flex min-w-0 items-center gap-1.5 text-[20px] font-normal leading-none">
-            <span className="truncate">{f.name}</span>
+            <TrainerName name={f.name} rich={f.rich} className="truncate" />
             {f.isNew && <NewTag className="shrink-0" />}
           </b>
           {f.team.length > 0 && (

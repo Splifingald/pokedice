@@ -49,6 +49,7 @@ import type { TradeListing } from '@/lib/trades'
 import { pushToast, useGame } from '@/store/game'
 import { cancel, checkListings, loadBoard, playTrade, seeTradeRules, useTrades } from '@/store/trades'
 import { cx } from '@/theme/util'
+import { NameIn } from '@/components/TrainerName'
 
 type Tab = 'board' | 'mine'
 type Show = 'all' | 'friends' | 'new' | 'can'
@@ -441,15 +442,15 @@ function Mine({
               </span>
               <span className="grid min-w-0 flex-1 gap-0.5">
                 <b className="text-[18px] font-normal leading-tight">
-                  {e.role === 'taker'
-                    ? t('ui.trades.log.took', {
-                        name: e.with || t('ui.friends.someone'),
-                        mon: called(e.got),
-                      })
-                    : t('ui.trades.log.taken', {
-                        name: e.with || t('ui.friends.someone'),
-                        mon: called(e.gave),
-                      })}
+                  <NameIn
+                    name={e.with || t('ui.friends.someone')}
+                    rich={!!e.with && e.withRich}
+                    text={(name) =>
+                      e.role === 'taker'
+                        ? t('ui.trades.log.took', { name, mon: called(e.got) })
+                        : t('ui.trades.log.taken', { name, mon: called(e.gave) })
+                    }
+                  />
                 </b>
                 <small className="font-pixel-sm text-[13px] leading-tight text-muted">
                   {[

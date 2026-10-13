@@ -19,6 +19,7 @@ import {
   tradeRulesDue,
   tradesOf,
   tradesToWatch,
+  generalRulesDue,
   versusRulesDue,
 } from '@/engine'
 import { useT } from '@/i18n/react'
@@ -94,7 +95,8 @@ function useNothingElseDue() {
         donationDue(s.save, s.data) ||
         regionOfferDue(s.save, s.data) ||
         eventUnlockDue(s.save, s.data) ||
-        versusRulesDue(s.save, s.data)),
+        versusRulesDue(s.save, s.data) ||
+        generalRulesDue(s.save, s.data)),
   )
   const invite = useSharePromptWaiting()
   return !due && !invite

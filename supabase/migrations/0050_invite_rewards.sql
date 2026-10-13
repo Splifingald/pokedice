@@ -1,4 +1,4 @@
--- Friend invite rewards (docs/15 §24): each NEW player someone invites with their invite link (/f/<code>, docs/16) who
+-- Friend invite rewards (docs/15 §25): each NEW player someone invites with their invite link (/f/<code>, docs/16) who
 -- goes on to win their first badge fills that player's gauge; each tier the gauge reaches gives its gifts once — by
 -- default 1 friend a Rare Candy, 2 ₽1,000, 3 a shiny Ditto, 4 a Master Ball — opened in the game like the developer's
 -- gifts (0048; src/engine/invites.ts puts them away).

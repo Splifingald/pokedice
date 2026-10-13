@@ -73,7 +73,7 @@ export function ShareTutorial() {
   const open = !!region && due && idle && !closed.includes(region) && !seen(region)
   const signedIn = useGame((s) => s.auth.status === 'signed_in')
   const code = useFriends((s) => s.code)
-  // Invite rewards (docs/15 §24): the gauge, signed in; signed out, a line saying an account earns them.
+  // Invite rewards (docs/15 §25): the gauge, signed in; signed out, a line saying an account earns them.
   const gauge = useInviteGauge()
   const rewardsOn = useGame((s) => !!s.save && invitesWait(s.save, s.data) === null)
   const signedOut = useGame((s) => isSupabaseConfigured && s.auth.status === 'signed_out')

@@ -76,7 +76,7 @@ function InviteHandler() {
   const [code, setCode] = useState(() => readInvite())
   const [who, setWho] = useState<Who | null>(null)
   const [added, setAdded] = useState<FriendNotice | null>(null)
-  // The new friend's invite counted for them (docs/15 §24): the pop-up says the first badge is worth something to them.
+  // The new friend's invite counted for them (docs/15 §25): the pop-up says the first badge is worth something to them.
   const [counted, setCounted] = useState(false)
   const [profile, setProfile] = useState<FriendNotice | null>(null)
   const busy = useRef(false)
@@ -152,7 +152,7 @@ function InviteHandler() {
       <Modal open={!!added} onClose={() => setAdded(null)} title={t('ui.friends.newFriendTitle')}>
         {added && (
           <div className="flex flex-col gap-3">
-            <FriendPreview name={added.name} avatar={added.avatar} />
+            <FriendPreview name={added.name} avatar={added.avatar} rich={added.rich} />
             <p className="copy m-0">{t('ui.friends.added', { name: added.name })}</p>
             {counted && (
               <p className="m-0 flex items-center gap-2 bg-gold-pale px-2.5 py-2 font-pixel-sm text-[16px] leading-tight text-ink shadow-card-gold">

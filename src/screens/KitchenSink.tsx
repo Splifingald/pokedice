@@ -44,6 +44,7 @@ import { BattleBits } from './kitchen/BattleBits'
 import { DayCareBits } from './kitchen/DayCareBits'
 import { NicknameBits } from './kitchen/NicknameBits'
 import { TradeKitBits } from './kitchen/TradeBits'
+import { GeneralBits } from './kitchen/GeneralBits'
 import { RulesBits } from './kitchen/RulesBits'
 import { ExtremeBits } from './kitchen/ExtremeBits'
 import { PartnerBits } from './kitchen/PartnerBits'
@@ -574,6 +575,10 @@ export function KitchenSink() {
 
       <Section title="RulesModal · InfoButton: a feature's rules (the unlock pop-up, the INFO copy)">
         <RulesBits />
+      </Section>
+
+      <Section title="General upgrades: the tab's cards, rules and INFO, while you were away, golden names (docs/25)">
+        <GeneralBits />
       </Section>
 
       <Section title="Trades: visibility, wants, time left, board rows (every state), listing sheet, share, rules, the trade scene, results">

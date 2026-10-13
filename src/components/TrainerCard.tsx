@@ -3,7 +3,7 @@
 // team, and the look other trainers see on the leaderboard and in Versus. A friend's card (docs/16) is drawn with the
 // same pieces: CardFrame, Stat and CardTeam.
 import { useEffect, useState, type ReactNode } from 'react'
-import { badgesHeld, linearAreas, regionOf, regionSpecies, teamOf, versusUnlocked } from '@/engine'
+import { badgesHeld, isRich, linearAreas, regionOf, regionSpecies, teamOf, versusUnlocked } from '@/engine'
 import { useT } from '@/i18n/react'
 import { AVATAR_GROUPS, avatarOf, playerAvatarId } from '@/lib/avatars'
 import { money } from '@/lib/format'
@@ -16,6 +16,7 @@ import { PixelButton } from './PixelButton'
 import { MiniSprite } from './SpriteImg'
 import { playerOf } from './TrainerArt'
 import { TrainerLook } from './TrainerLook'
+import { TrainerName } from './TrainerName'
 
 /** A five-digit ID number, the same every time for the same trainer. */
 function idNumber(seed: string): string {
@@ -132,7 +133,7 @@ export function TrainerCard() {
           <div className="grid min-w-0 gap-1.5">
             <p className="m-0 flex min-w-0 items-center gap-2">
               <b className="min-w-0 truncate text-[26px] font-normal leading-none">
-                {me.name || t('ui.settings.noName')}
+                <TrainerName name={me.name || t('ui.settings.noName')} rich={!!save && isRich(save, data)} />
               </b>
               <PixelButton
                 size="sm"

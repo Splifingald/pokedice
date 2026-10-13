@@ -39,6 +39,7 @@ import {
   type RaidSource,
 } from '@/store/raidBattle'
 import { cx } from '@/theme/util'
+import { TrainerName } from '@/components/TrainerName'
 
 const TEAM_SIZE = 3
 
@@ -297,7 +298,9 @@ export function RaidGroupSection({ source = { kind: 'daily' } }: { source?: Raid
               <li key={f.userId} className="flex min-h-[52px] items-center gap-2 bg-paper py-1 pl-1 pr-1 shadow-ring">
                 <TrainerSprite src={avatarOf(f.avatar).src} size={44} />
                 <span className="grid min-w-0 flex-1 leading-[1.05]">
-                  <b className="truncate text-[18px] font-normal">{f.name}</b>
+                  <b className="truncate text-[18px] font-normal">
+                    <TrainerName name={f.name} rich={f.rich} />
+                  </b>
                   <small className="font-pixel-sm text-[13px] text-muted">{tPlural('ui.raid.helped', f.helped)}</small>
                 </span>
                 <Minis team={f.team} />
@@ -357,7 +360,9 @@ export function RaidGroupSection({ source = { kind: 'daily' } }: { source?: Raid
                     >
                       <TrainerSprite src={avatarOf(f.avatar).src} size={44} />
                       <span className="grid min-w-0 flex-1 leading-[1.05]">
-                        <b className="truncate text-[18px] font-normal">{f.name}</b>
+                        <b className="truncate text-[18px] font-normal">
+                    <TrainerName name={f.name} rich={f.rich} />
+                  </b>
                         <small className="font-pixel-sm text-[13px] text-muted">{tPlural('ui.raid.helped', f.helped)}</small>
                       </span>
                       <Minis team={f.team} />

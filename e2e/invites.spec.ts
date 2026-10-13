@@ -1,4 +1,4 @@
-// Friend invite rewards (docs/15 §24), against the mocked Supabase: the gauge at the top of the Friends page and in Prof.
+// Friend invite rewards (docs/15 §25), against the mocked Supabase: the gauge at the top of the Friends page and in Prof.
 // Oak's invite, a reward opened with the gifts' own opening (into the save), the rules once and from INFO, the reward's
 // pop-up between fights, an invite link counting for its owner, and the switch off.
 import AxeBuilder from '@axe-core/playwright'

@@ -325,7 +325,7 @@ function ItemSources({ itemKey, onTravel }: { itemKey: string; onTravel?: () => 
   const spots = useMemo(() => (region ? whereToFindItem(itemKey, data, region) : []), [itemKey, data, region])
   const item = data.items[itemKey]
   if (!save || !region || !item) return null
-  const inShop = shopSells(item, save, region)
+  const inShop = shopSells(item, save, region, data)
   const badges = inShop ? badgeCase(save, data).filter((b) => b.earned).length : 0
   // What the Mart still waits for, the way the Shop words it: badges first, then reaching its area.
   const shopNeeds = !inShop

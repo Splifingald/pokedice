@@ -13,8 +13,10 @@ import {
   type DayCareConfig,
   type DonationConfig,
   type EnergyConfig,
+  type EventAccess,
   type ExtremeConfig,
   type GameConfig,
+  type GeneralConfig,
   type PityConfig,
   type SlotMachineConfig,
   type SlotOutcomeKey,
@@ -467,10 +469,99 @@ function TradesBox() {
   )
 }
 
+/** What each state of a switch means, for the line beside it. */
+const accessNote = (access: EventAccess, all: string, off: string) =>
+  access === 'all' ? all : access === 'admin' ? 'Only you see it (to try it first). Players see nothing yet.' : off
+
 /**
- * Friend invite rewards (docs/15 §24): the three-way switch and the gauge's tiers — each a number of invited new players
+ * The General upgrades and the two items that came with them (docs/25): each its own three-way switch, Off by default
+ * (the server reads the General one too, for the golden names), then the levels' numbers.
+ */
+function GeneralBox() {
+  const [raw, setRaw] = useConfigRow('general')
+  const [items, setItems] = useConfigRow('itemSwitches')
+  const cfg: GeneralConfig = { ...DEFAULT_CONFIG.general, ...(raw ?? {}) }
+  const switches = { ...DEFAULT_CONFIG.itemSwitches, ...(items ?? {}) }
+  const set = (patch: Partial<GeneralConfig>) => setRaw({ ...cfg, ...patch })
+  const row = <K extends 'luck' | 'offline'>(k: K, i: number, patch: Partial<GeneralConfig[K][number]>) =>
+    set({ [k]: cfg[k].map((r, j) => (j === i ? { ...r, ...patch } : r)) })
+  const ITEMS: [string, string, string][] = [
+    ['link-cable', 'Link Cable', 'Used from the Team screen on a trade evolution. Not sold unless the item says so.'],
+    ['bait', 'Bait', 'Offered at the catch when a ball falls short and its die could still make it.'],
+  ]
+  return (
+    <Box
+      title="General upgrades & catch items" icon="navUpgrades"
+      hint="The Upgrades screen's third tab (Capture Luck, offline earnings, I am just rich) and the Link Cable and Bait items. Each switch is Off by default; the server checks the General one for the golden names."
+    >
+      <div className="flex flex-wrap items-center gap-3">
+        <span className="text-lg">General tab</span>
+        <AccessSwitch value={cfg.access ?? 'off'} onChange={(access) => set({ access })} label="General upgrades: who sees them" />
+        <span className="text-base text-muted">
+          {accessNote(cfg.access ?? 'off', 'Open to every player.', 'Off: no tab, no pop-up, no effect. Levels already bought are kept.')}
+        </span>
+      </div>
+      {ITEMS.map(([key, label, hint]) => (
+        <div key={key} className="flex flex-wrap items-center gap-3">
+          <span className="text-lg">{label}</span>
+          <AccessSwitch
+            value={switches[key] ?? 'off'}
+            onChange={(access) => setItems({ ...switches, [key]: access })}
+            label={`${label}: who can use it`}
+          />
+          <span className="text-base text-muted">
+            {accessNote(switches[key] ?? 'off', hint, 'Off: not sold, not found, not usable. Bags keep theirs.')}
+          </span>
+        </div>
+      ))}
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Field label="Offline earnings count up to (hours)" hint="per absence, on the server's clock">
+          <NumInput min={1} max={168} value={cfg.offlineMaxHours} onChange={(v) => set({ offlineMaxHours: Math.max(1, v ?? 24) })} />
+        </Field>
+        <Field label="I am just rich (₽)" hint="one level: a golden name">
+          <NumInput min={0} value={cfg.richCost} onChange={(v) => set({ richCost: Math.max(0, v ?? 0) })} />
+        </Field>
+      </div>
+      <table className="w-full text-lg">
+        <thead>
+          <tr className="text-left">
+            <th className="font-normal">Level</th>
+            <th className="font-normal">Capture Luck (%)</th>
+            <th className="font-normal">its price (₽)</th>
+            <th className="font-normal">Offline (₽ / hour)</th>
+            <th className="font-normal">its price (₽)</th>
+          </tr>
+        </thead>
+        <tbody>
+          {Array.from({ length: Math.max(cfg.luck.length, cfg.offline.length) }, (_, i) => (
+            <tr key={i}>
+              <td>{i + 1}</td>
+              <td>
+                {cfg.luck[i] && (
+                  <NumInput min={0} max={100} value={cfg.luck[i]!.chance} onChange={(v) => row('luck', i, { chance: Math.max(0, Math.min(100, v ?? 0)) })} />
+                )}
+              </td>
+              <td>{cfg.luck[i] && <NumInput min={0} value={cfg.luck[i]!.cost} onChange={(v) => row('luck', i, { cost: Math.max(0, v ?? 0) })} />}</td>
+              <td>
+                {cfg.offline[i] && (
+                  <NumInput min={0} value={cfg.offline[i]!.perHour} onChange={(v) => row('offline', i, { perHour: Math.max(0, v ?? 0) })} />
+                )}
+              </td>
+              <td>
+                {cfg.offline[i] && <NumInput min={0} value={cfg.offline[i]!.cost} onChange={(v) => row('offline', i, { cost: Math.max(0, v ?? 0) })} />}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </Box>
+  )
+}
+
+/**
+ * Friend invite rewards (docs/15 §25): the three-way switch and the gauge's tiers — each a number of invited new players
  * who have won their first badge, and the gifts it gives (the same editor as a message's gifts). The server reads the
- * same row (0049): it counts the invites only while the switch isn't off, and hands each tier over once.
+ * same row (0050): it counts the invites only while the switch isn't off, and hands each tier over once.
  */
 function InviteRewardsBox() {
   const data = useAdminData()
@@ -986,6 +1077,8 @@ export function ConfigSection() {
       <ExtremeBox />
 
       <TradesBox />
+
+      <GeneralBox />
 
       <InviteRewardsBox />
 

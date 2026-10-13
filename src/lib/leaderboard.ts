@@ -29,6 +29,8 @@ export interface LeaderboardRow {
   progress: Record<string, { cleared: boolean; gyms: number }>
   /** One of the caller's friends (docs/16), with their id so the row can open their card; null for anyone else. */
   friendId: string | null
+  /** Their name shines gold ("I am just rich", docs/25); the server says so only while the switch is on for you. */
+  rich: boolean
 }
 
 export interface RankedRow extends LeaderboardRow {
@@ -151,6 +153,8 @@ interface RawRow {
   /** Missing on a database that hasn't run 0033_friends.sql. */
   is_friend?: boolean | null
   friend_id?: string | null
+  /** Missing on a database that hasn't run 0049_general_upgrades.sql. */
+  rich?: boolean | null
 }
 
 export function parseLeaderboard(raw: RawRow[]): LeaderboardRow[] {
@@ -170,6 +174,7 @@ export function parseLeaderboard(raw: RawRow[]): LeaderboardRow[] {
       Object.entries(r.progress ?? {}).map(([id, p]) => [id, { cleared: !!p.cleared, gyms: Number(p.gyms) || 0 }]),
     ),
     friendId: r.is_friend && r.friend_id ? String(r.friend_id) : null,
+    rich: !!r.rich,
   }))
 }
 

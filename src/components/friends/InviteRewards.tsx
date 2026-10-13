@@ -1,4 +1,4 @@
-// Friend invite rewards (docs/15 §24): the gauge (at the top of the Friends page, in Prof. Oak's invite pop-up and in the
+// Friend invite rewards (docs/15 §25): the gauge (at the top of the Friends page, in Prof. Oak's invite pop-up and in the
 // reward's own pop-up), its rules (once when the rewards open, then INFO at the bottom of the Friends page), and the
 // pop-up that says a reward is ready. Every number — the tiers, the fill, what each one holds — is the engine's
 // (engine/invites.ts); the opening is the developer's gifts' own (GiftMoment).

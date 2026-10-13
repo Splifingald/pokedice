@@ -54,8 +54,8 @@ import { useHoldFullscreen } from '@/lib/fullscreen'
 import { capMotion, MotionCap, useMotion, type MotionLevel } from '@/lib/motion'
 import { AUTO_PACE, PaceContext, VERSUS_PACE } from '@/lib/pace'
 import { useMediaQuery } from '@/lib/useMediaQuery'
-import { setSettings, useGame, type BattleSlice } from '@/store/game'
-import { dispatchBattle, throwBall } from '@/store/run'
+import { setSettings, useGame, type BattleSlice, type CatchThrow } from '@/store/game'
+import { answerBait, dispatchBattle, retryCatch, throwBall } from '@/store/run'
 import { cx } from '@/theme/util'
 import { BattleHistory, BattleHistoryList, DamageRecap } from './BattleHistory'
 import { BagButton, DiceTray, Readout, SwitchRow, TeamColumn, TeamPips, type Preview, type TrayDice } from './BattlePanel'
@@ -445,27 +445,54 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
   // ---- The catch, in the scene: the worn-out foe waits on its platform; one throw plays the catch timeline.
   const catching = !versus && ready && run.phase === 'catch' && !!run.catch
   const [thrown, setThrown] = useState<StageOverlay | null>(null)
-  const [revealed, setRevealed] = useState(false)
-  const onThrow = (ballKey: string | null) => {
-    throwBall(ballKey)
-    const r = useGame.getState().run.catch?.result
-    if (!r) return
+  // Back on a throw already made (the Bait's question, a stay): its result shows at once, with its buttons.
+  const [revealed, setRevealed] = useState(() => !!useGame.getState().run.catch?.result)
+  /**
+   * The throw on the stage. A throw a Bait could still save stops with the ball on the ground (`hold`) while the panel
+   * asks; the answer plays on from that frame (docs/25). Capture Luck's stay ends with the Pokémon back on its platform.
+   */
+  const catchScene = (r: CatchThrow, from?: 'ground'): StageOverlay => {
     const foe = st.enemy
-    setThrown({
+    return {
       timeline: catchTimeline({
         own: spriteKey(active.dex, true, active.shiny),
         foe: spriteKey(foe.dex, false, foe.shiny),
         ball: ballOfItem(r.ballKey),
         caught: r.caught,
         short: level === 'short',
+        hold: !!r.baitOffer,
+        from,
+        bait: r.baited === 'used',
+        stays: !!r.stays,
       }),
       ready: Promise.all([loadSprite(active.dex, true, active.shiny), loadSprite(foe.dex, false, foe.shiny)]),
-      label: t('ui.catch.throwing', {
-        ball: data.items[r.ballKey ?? 'poke-ball']?.name ?? t('ui.catch.aBall'),
-      }),
+      label:
+        r.baited === 'used'
+          ? t('ui.catch.baitThrown', { name: foe.name })
+          : t('ui.catch.throwing', { ball: data.items[r.ballKey ?? 'poke-ball']?.name ?? t('ui.catch.aBall') }),
       hud: { catchResult: () => setRevealed(true) },
       onEnd: () => setRevealed(true),
-    })
+    }
+  }
+  const onThrow = (ballKey: string | null) => {
+    throwBall(ballKey)
+    const r = useGame.getState().run.catch?.result
+    if (!r) return
+    setRevealed(false)
+    setThrown(catchScene(r))
+  }
+  const onBait = (use: boolean) => {
+    answerBait(use)
+    const r = useGame.getState().run.catch?.result
+    if (!r || r.baitOffer) return
+    setRevealed(false)
+    setThrown(catchScene(r, 'ground'))
+  }
+  // Back to the ball picker: the Pokémon stands worn out on its platform again.
+  const onRetry = () => {
+    retryCatch()
+    setThrown(null)
+    setRevealed(false)
   }
 
   // A legendary's entrance: the boss intro is its timeline (the foe and yours appear on its cues).
@@ -761,6 +788,8 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
                 c={run.catch!}
                 onThrow={onThrow}
                 revealed={revealed}
+                onBait={onBait}
+                onRetry={onRetry}
               />
             ) : over ? (
               <div className="mt-auto">{actions}</div>

@@ -6,6 +6,7 @@ import { avatarOf } from '@/lib/avatars'
 import { useGame } from '@/store/game'
 import { cx } from '@/theme/util'
 import { TrainerLook } from '../TrainerLook'
+import { TrainerName } from '../TrainerName'
 
 /** "Friend": the blue tag on a friend's row, as "you" is the gold one. A word, never colour alone. */
 export function FriendTag({ className }: { className?: string }) {
@@ -41,11 +42,14 @@ export function useFriendLine() {
 export function FriendPreview({
   name,
   avatar,
+  rich,
   region,
   maxLevel = 0,
 }: {
   name: string
   avatar: string
+  /** A golden name ("I am just rich", docs/25). */
+  rich?: boolean
   region?: string | null
   maxLevel?: number
 }) {
@@ -54,7 +58,9 @@ export function FriendPreview({
     <div className="flex items-center gap-2.5 bg-paper py-1 pl-1.5 pr-3 shadow-ring-line">
       <TrainerLook src={avatarOf(avatar).src} w={44} h={48} />
       <span className="grid min-w-0 gap-0.5">
-        <b className="truncate text-[21px] font-normal leading-none">{name}</b>
+        <b className="truncate text-[21px] font-normal leading-none">
+          <TrainerName name={name} rich={rich} />
+        </b>
         {region !== undefined && (
           <small className="truncate font-pixel-sm text-[14px] leading-none text-muted">
             {line({ region, maxLevel }, Date.now())}

@@ -1,4 +1,4 @@
-// Friend invite rewards (docs/15 §24): the switch, the admin's tiers as the game reads them, the gauge (its stops, its
+// Friend invite rewards (docs/15 §25): the switch, the admin's tiers as the game reads them, the gauge (its stops, its
 // fill, what's ready), where the rewards open, each tier's gifts put in once, and the rules seen once.
 import { describe, expect, it } from 'vitest'
 import {

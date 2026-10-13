@@ -1,4 +1,4 @@
-// Friend invite rewards (docs/15 §24): the tiers the invite gauge has reached are claimed from the server (each comes
+// Friend invite rewards (docs/15 §25): the tiers the invite gauge has reached are claimed from the server (each comes
 // once), put in the save by the engine's rules (engine/invites.ts, which places them as the developer's gifts are),
 // pushed to the cloud, and their opening plays full screen with the gifts' own moment (GiftMoment).
 import { create } from 'zustand'
@@ -73,7 +73,7 @@ export const seeInviteRules = () => mutateSave(rulesSeen)
 
 /**
  * The invite link just made the player friends with its owner: tell the server, which counts them for the owner if
- * they're a new player. True when it counted. Asked only while the switch is on for anyone; a database without 0049
+ * they're a new player. True when it counted. Asked only while the switch is on for anyone; a database without 0050
  * (or any failure) just doesn't count.
  */
 export async function countInvite(code: string): Promise<boolean> {

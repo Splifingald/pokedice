@@ -54,6 +54,8 @@ export interface FriendRow {
   isNew: boolean
   /** They have a save in the world being played (Extreme mode, docs/22): else only their name and look. */
   inRealm: boolean
+  /** Their name shines gold ("I am just rich", docs/25). */
+  rich: boolean
 }
 
 /** A friend in a toast or a preview: who they are and nothing more. */
@@ -61,6 +63,8 @@ export interface FriendNotice {
   id: string
   name: string
   avatar: string
+  /** A golden name ("I am just rich", docs/25), where the server says. */
+  rich?: boolean
 }
 
 export interface CardRegion {
@@ -86,6 +90,8 @@ export interface FriendProfile {
   since: number | null
   regions: CardRegion[]
   versus: { team: TeamMon[]; attackWins: number; defenseWins: number } | null
+  /** Their name shines gold ("I am just rich", docs/25). */
+  rich: boolean
 }
 
 export type AddStatus = 'added' | 'already' | 'self' | 'not_found' | 'full' | 'friend_full'
@@ -131,6 +137,8 @@ export function parseFriendList(raw: unknown): FriendRow[] {
     isNew: !!r.is_new,
     // A database before 0039 doesn't say: everyone is in the one world there is.
     inRealm: r.in_realm !== false,
+    // Before 0049, nobody's is.
+    rich: r.rich === true,
   }))
 }
 
@@ -139,6 +147,7 @@ export function parseNotices(raw: unknown): FriendNotice[] {
     id: String(n?.id),
     name: text(n?.name, 'Trainer'),
     avatar: avatarOf(n?.avatar).id,
+    ...(n?.rich === true && { rich: true }),
   }))
 }
 
@@ -180,10 +189,11 @@ export function parseProfile(raw: unknown): FriendProfile | null {
     versus: vs
       ? { team: team(vs.team), attackWins: Number(vs.attackWins) || 0, defenseWins: Number(vs.defenseWins) || 0 }
       : null,
+    rich: r.rich === true,
   }
 }
 
-/** invite_status() (migration 0049): the invite gauge, or null while the rewards are off for this player. */
+/** invite_status() (migration 0050): the invite gauge, or null while the rewards are off for this player. */
 export function parseInviteStatus(raw: unknown): InviteStatus | null {
   const r = (Array.isArray(raw) ? raw[0] : raw) as Record<string, unknown> | null | undefined
   if (!r || typeof r !== 'object') return null
@@ -241,7 +251,7 @@ interface FriendsState {
   listError: FriendError | null
   statusAt: number
   listAt: number
-  /** The invite gauge (docs/15 §24): null until read, or while the rewards are off for this player. */
+  /** The invite gauge (docs/15 §25): null until read, or while the rewards are off for this player. */
   invites: InviteStatus | null
   invitesAt: number
 }
@@ -295,7 +305,7 @@ export async function loadFriendStatus(force = false, now = Date.now()): Promise
 }
 
 /**
- * invite_status() (docs/15 §24): the invite gauge, with the friend status, and when the Friends page or Prof. Oak's
+ * invite_status() (docs/15 §25): the invite gauge, with the friend status, and when the Friends page or Prof. Oak's
  * invite opens (at most once a minute then). Nothing is asked while the rewards are off for this player.
  */
 export async function loadInviteStatus(force = false, now = Date.now()): Promise<void> {
@@ -309,7 +319,7 @@ export async function loadInviteStatus(force = false, now = Date.now()): Promise
   try {
     useFriends.setState({ invites: parseInviteStatus(await rpc('invite_status')) })
   } catch (err) {
-    // A database without 0049: no gauge.
+    // A database without 0050: no gauge.
     console.warn('[friends] invites not loaded:', err instanceof Error ? err.message : err)
   }
 }
@@ -487,6 +497,8 @@ export interface FriendDayCareRow {
   name: string
   avatar: string
   mons: FriendCareMonRow[]
+  /** Their name shines gold ("I am just rich", docs/25). */
+  rich: boolean
 }
 
 export function parseFriendDayCares(raw: unknown): FriendDayCareRow[] {
@@ -495,6 +507,7 @@ export function parseFriendDayCares(raw: unknown): FriendDayCareRow[] {
       owner: String(r?.owner ?? ''),
       name: text(r?.name, 'Trainer'),
       avatar: avatarOf(r?.avatar).id,
+      rich: r?.rich === true,
       mons: (Array.isArray(r?.day_care) ? r.day_care : [])
         .map((m: Record<string, unknown> | null) => ({
           inst: String(m?.inst ?? ''),

@@ -118,7 +118,7 @@ export function PlayerMenu() {
   const [switching, setSwitching] = useState(false)
   const { connect, chooser } = useConnect()
   const newFriends = useFriends((s) => (s.userId && s.userId === auth.userId ? s.unseen.length : 0))
-  // Invite rewards ready to open (docs/15 §24) wait on the Friends page: its dot counts them too.
+  // Invite rewards ready to open (docs/15 §25) wait on the Friends page: its dot counts them too.
   const rewardsReady = useInviteGauge()?.ready.length ?? 0
   const friendCount = useFriends((s) => s.ids.size)
   // Trades (docs/23): a trade of yours went through while you were away, and you haven't looked yet.
