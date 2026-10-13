@@ -1,14 +1,13 @@
-// Raid Battles, the fight (docs/18 §3, docs/19 §6.3): three sides against the raid Pokémon and its summons, every
-// action a real one-on-one duel step. Turn order, foe targeting, bars and their overflow, summon points, the player's
-// turn and its target, who may stand beside the boss, and determinism.
+// Raid Battles, the fight (docs/18 §3, docs/19 §6.3): three sides against the raid Pokémon alone, every action a real
+// one-on-one duel step. Turn order (the sides in order, the raid Pokémon striking back after each), bars and their
+// overflow, the raid's type matchups, the player's turn, who may fight beside you, and determinism.
 import { describe, expect, it } from 'vitest'
 import {
-  allyTarget,
   BOSS_UID,
+  bossTarget,
   createBattle,
   createRaid,
   createRng,
-  isLegendary,
   npcTeam,
   raidAllyAllowed,
   raidDispatch,
@@ -16,7 +15,6 @@ import {
   reduce,
   simulateRaid,
   startDuelStep,
-  summonPool,
   uniformLevels,
   type GameData,
   type RaidLogEntry,
@@ -40,9 +38,11 @@ function sides(seed: number, me: RaidSideSeed['kind'] = 'me'): RaidSideSeed[] {
   }))
 }
 const auto = (seed: number, dex = 151, d: GameData = data) =>
-  createRaid({ boss: { dex, shiny: false }, sides: sides(seed), regionId: 'kanto', auto: true }, d, createRng(seed * 7))
+  createRaid({ boss: { dex, shiny: false }, sides: sides(seed), auto: true }, d, createRng(seed * 7))
+const fronts = (log: RaidLogEntry[]) =>
+  log.filter((e): e is Extract<RaidLogEntry, { kind: 'raid_front' }> => e.kind === 'raid_front')
 
-describe('who stands beside the raid', () => {
+describe('who fights beside you', () => {
   const allowed = raidAllyAllowed(data)
   it('fully evolved, never legendary, mythical, starter line, pseudo-legendary or Ultra Beast', () => {
     expect(allowed(149)).toBe(false) // Dragonite: pseudo
@@ -52,12 +52,6 @@ describe('who stands beside the raid', () => {
     expect(allowed(132)).toBe(false) // Ditto copies its foe
     expect(allowed(143)).toBe(true) // Snorlax
     for (const dex of cfg.exclude.extra) expect(allowed(dex), `#${dex}`).toBe(false)
-    const pool = summonPool(data, 151, 'kanto')
-    expect(pool.length).toBeGreaterThan(10)
-    for (const dex of pool) {
-      expect(isLegendary(data, dex), `#${dex}`).toBe(false)
-      expect([data.species[dex]!.type1, data.species[dex]!.type2]).not.toContain('psychic') // Mew is Psychic
-    }
   })
 
   it('an NPC team is three different allowed Pokémon at the raid team cap', () => {
@@ -72,89 +66,101 @@ describe('who stands beside the raid', () => {
 })
 
 describe('the raid on auto', () => {
-  it('starts with the boss, its free summons, full bars, and plays to an end', () => {
+  it('starts with the raid Pokémon alone, full bars, and plays to an end', () => {
     const { state, log } = auto(1)
-    expect(log[0]).toMatchObject({ kind: 'raid_start', boss: BOSS_UID, summons: [{ uid: 'raid-summon-1' }, { uid: 'raid-summon-2' }] })
+    expect(log[0]).toEqual({ kind: 'raid_start', boss: BOSS_UID })
     expect(['won', 'lost']).toContain(state.phase)
     expect(log.at(-1)?.kind).toBe('raid_end')
     expect(state.steps).toBeLessThanOrEqual(RAID_MAX_STEPS)
-    if (state.phase === 'won') {
-      expect(state.broken).toBe(state.bars)
-      expect(state.summons).toHaveLength(0)
-    } else expect(state.sides.every((s) => s.out)).toBe(true)
+    if (state.phase === 'won') expect(state.broken).toBe(state.bars)
+    else expect(state.sides.every((s) => s.out)).toBe(true)
   })
 
   it('is the same raid for the same seed', () => {
     expect(auto(5).log).toEqual(auto(5).log)
   })
 
-  it('a foe never hits the same side twice in a row while another side is in', () => {
+  it('the sides play in order, you first, and the raid Pokémon strikes back at each right after its turn', () => {
     for (let seed = 1; seed <= 12; seed++) {
       const { log } = auto(seed)
-      let last: number | null = null
       const outs = new Set<number>()
+      // The next side still in from `k` on, round after round.
+      const nextIn = (k: number) => [0, 1, 2].map((j) => (k + j) % 3).find((i) => !outs.has(i))
+      let last = -1
+      let bossDue = false
       for (const e of log) {
         if (e.kind === 'raid_out') outs.add(e.side)
-        if (e.kind !== 'raid_front' || e.actor !== 'foe') continue
+        if (e.kind !== 'raid_front') continue
         const side = sideOf(e.ally)
-        if (last != null && 3 - outs.size > 1 && !outs.has(last)) expect(side, `seed ${seed}`).not.toBe(last)
-        last = side
+        if (e.actor === 'ally') {
+          expect(bossDue, `seed ${seed}`).toBe(false)
+          expect(side, `seed ${seed}`).toBe(nextIn(last + 1))
+          last = side
+          bossDue = true
+        } else {
+          expect(bossDue, `seed ${seed}`).toBe(true)
+          // The side that just played, or when it's just gone out, the next one still in.
+          expect(side, `seed ${seed}`).toBe(outs.has(last) ? nextIn(last + 1) : last)
+          bossDue = false
+        }
       }
+      expect(fronts(log)[0]).toMatchObject({ actor: 'ally' })
+      expect(sideOf(fronts(log)[0]!.ally)).toBe(0)
     }
   })
 
-  it('acts in speed order each round, the sides first on a tie', () => {
-    const { state, log } = createRaid(
-      { boss: { dex: 151, shiny: false }, sides: sides(2, 'npc'), regionId: 'kanto', auto: true },
-      data,
-      createRng(9),
-    )
-    const speedOf = (uid: string) =>
-      uid === BOSS_UID
-        ? state.boss.speed
-        : (state.sides.flatMap((s) => s.mons).find((m) => m.uid === uid)?.speed ?? data.species[summonDex(log, uid)]!.speed)
-    // The first round: everyone on the field once, fastest first.
-    const fronts = log.filter((e): e is Extract<RaidLogEntry, { kind: 'raid_front' }> => e.kind === 'raid_front').slice(0, 6)
-    const actors = fronts.map((f) => (f.actor === 'ally' ? f.ally : f.foe))
-    const speeds = actors.map(speedOf)
-    expect([...speeds].sort((a, b) => b - a)).toEqual(speeds)
+  it('the raid Pokémon is the only foe: every hit lands on it or on the side in front', () => {
+    const { log } = auto(3)
+    let front = ''
+    for (const e of log) {
+      if (e.kind === 'raid_front') front = e.ally
+      if (e.kind !== 'damage') continue
+      if (e.side === 'player') expect(e.targetUid).toBe(BOSS_UID)
+      else expect(sideOf(e.targetUid)).toBe(sideOf(front))
+    }
   })
 
-  it('a broken bar refills with what the hit took past it, and gives summon points', () => {
+  it('a broken bar refills with what the hit took past it', () => {
     let checked = 0
     for (let seed = 1; seed <= 10 && checked < 3; seed++) {
-      const { log } = auto(seed)
-      for (let i = 0; i < log.length; i++) {
-        const e = log[i]!
+      const { log, state } = auto(seed)
+      for (const e of log) {
         if (e.kind !== 'raid_bar') continue
-        expect(e.points).toBeGreaterThanOrEqual(cfg.summonPerBreak - 0)
-        const boss = auto(seed).state.boss
         expect(e.hpAfter).toBeGreaterThan(0)
-        expect(e.hpAfter).toBeLessThanOrEqual(boss.maxHp)
+        expect(e.hpAfter).toBeLessThanOrEqual(state.boss.maxHp)
+        expect(e.barsLeft).toBe(state.bars - e.broken)
         checked++
       }
     }
     expect(checked).toBeGreaterThan(0)
   })
 
-  it('never has more summons on the field than allowed', () => {
-    for (let seed = 1; seed <= 8; seed++) {
-      const { log } = auto(seed)
-      let field = 0
-      for (const e of log) {
-        if (e.kind === 'raid_start') field = e.summons.length
-        if (e.kind === 'raid_summon') field++
-        if (e.kind === 'faint' && e.side === 'enemy' && e.uid !== BOSS_UID) field--
-        expect(field).toBeLessThanOrEqual(cfg.maxField)
-      }
-    }
+  it('nobody is immune to the raid Pokémon: a Ghost one still hurts Normal-types', () => {
+    // Snorlax only, against Dusknoir: Ghost dice can't touch Normal-types anywhere else.
+    const snorlax = (k: number): RaidSideSeed => ({
+      owner: `Side ${k}`,
+      look: null,
+      kind: 'npc',
+      team: [{ uid: `s${k}-0`, dex: 143, level: 50, hp: 999 }],
+    })
+    const { state, log } = createRaid(
+      { boss: { dex: 477, shiny: false }, sides: [0, 1, 2].map(snorlax), auto: true },
+      data,
+      createRng(2),
+    )
+    expect(state.boss.types).toEqual(['ghost'])
+    const ghost = log.filter(
+      (e) => e.kind === 'damage' && e.side === 'enemy' && e.result.attackType === 'ghost',
+    )
+    expect(ghost.length).toBeGreaterThan(0)
+    for (const h of ghost) expect(h).toMatchObject({ result: { immune: false, effectiveness: 0.5 } })
+    for (const h of ghost) expect(h.kind === 'damage' && h.amount).toBeGreaterThan(0)
   })
 
   it('ends as a loss when it drags on past the step cap', () => {
-    // Nobody hurts anybody: a Normal-only side against a Ghost boss, foes that can't touch them.
     const slow = makeData({ events: { ...data.config.events, raid: { ...cfg, bars: 1000 } } })
     const { state, log } = createRaid(
-      { boss: { dex: 151, shiny: false }, sides: sides(3, 'npc'), regionId: 'kanto', auto: true },
+      { boss: { dex: 151, shiny: false }, sides: sides(3, 'npc'), auto: true },
       slow,
       createRng(1),
     )
@@ -163,76 +169,70 @@ describe('the raid on auto', () => {
   })
 
   it('a whole raid sims to a result', () => {
-    const r = simulateRaid({ boss: { dex: 151, shiny: false }, sides: sides(6), regionId: 'kanto' }, data, createRng(3))
+    const r = simulateRaid({ boss: { dex: 151, shiny: false }, sides: sides(6) }, data, createRng(3))
     expect(r.steps).toBeGreaterThan(0)
     expect(r.barsBroken).toBeLessThanOrEqual(cfg.bars)
   })
 })
 
-function summonDex(log: RaidLogEntry[], uid: string): number {
-  for (const e of log) {
-    if (e.kind === 'raid_summon' && e.b.uid === uid) return e.b.dex
-    if (e.kind === 'raid_start') for (const m of e.summons) if (m.uid === uid) return m.dex
-  }
-  return 0
-}
+describe('the side the raid Pokémon strikes back at', () => {
+  const state = (out: boolean[]) => ({ sides: out.map((o) => ({ out: o })) }) as unknown as RaidState
+  it('the one that just played; when it’s just gone out, the next one still in', () => {
+    expect(bossTarget(state([false, false, false]), 1)).toBe(1)
+    expect(bossTarget(state([false, true, false]), 1)).toBe(2)
+    expect(bossTarget(state([false, false, true]), 2)).toBe(0)
+    expect(bossTarget(state([true, true, true]), 0)).toBeNull()
+  })
+})
 
 describe('your turn', () => {
-  /** A raid whose first action is yours: you're far faster than anything else. */
-  function mine(): { state: RaidState; log: RaidLogEntry[] } {
+  /** A raid with you in it: you always play first. */
+  function mine(team: RaidSideSeed['team'] = [{ uid: 's0-0', dex: 145, level: 50, hp: 999 }]): {
+    state: RaidState
+    log: RaidLogEntry[]
+  } {
     const seeds = sides(11)
-    seeds[0]!.team = [{ uid: 's0-0', dex: 145, level: 50, hp: 999 }] // Zapdos: quick enough
-    const fast = makeData({ events: { ...data.config.events, raid: { ...cfg, startAllies: 2 } } })
-    return createRaid({ boss: { dex: 143, shiny: false }, sides: seeds, regionId: 'kanto' }, fast, createRng(2))
+    seeds[0]!.team = team
+    return createRaid({ boss: { dex: 143, shiny: false }, sides: seeds }, data, createRng(2))
   }
 
-  it('stops on your turn with a duel against the default target', () => {
-    const { state } = mine()
+  it('stops on your turn, first of the raid, with a duel against the raid Pokémon', () => {
+    const { state, log } = mine()
     expect(state.phase).toBe('player')
+    expect(state.steps).toBe(1)
     expect(state.duel?.player[state.duel.activeIndex]?.uid).toBe('s0-0')
-    expect(state.duel?.enemy.uid).toBe(allyTarget(state, 0, data).uid)
+    expect(state.duel?.enemy.uid).toBe(BOSS_UID)
     expect(state.duel?.single).toBe(true)
+    expect(fronts(log)).toEqual([{ kind: 'raid_front', ally: 's0-0', actor: 'ally' }])
   })
 
-  it('TARGET aims at another foe; ROLL then ATTACK hits it and the raid moves on', () => {
+  it('ROLL then ATTACK hits the raid Pokémon, and it strikes back at you before the next side plays', () => {
     const { state } = mine()
-    const summon = state.summons[0]!
     const rng = createRng(4)
-    let r = raidDispatch(state, { t: 'TARGET', uid: summon.uid }, data, rng)
-    expect(r.state.duel?.enemy.uid).toBe(summon.uid)
-    expect(r.log).toEqual([{ kind: 'raid_front', ally: 's0-0', foe: summon.uid, actor: 'ally' }])
-    // Nothing happens out of place: a target that isn't on the field.
-    expect(raidDispatch(r.state, { t: 'TARGET', uid: 'nobody' }, data, rng).state).toBe(r.state)
-    if (r.state.duel?.phase === 'player_roll') r = raidDispatch(r.state, { t: 'ROLL' }, data, rng)
+    let r =
+      state.duel?.phase === 'player_roll' ? raidDispatch(state, { t: 'ROLL' }, data, rng) : { state, log: [] }
     r = raidDispatch(r.state, { t: 'ATTACK' }, data, rng)
-    const hit = r.log.find((e) => e.kind === 'damage')
-    expect(hit).toMatchObject({ side: 'player', targetUid: summon.uid })
-    // The first hit of the step is yours, on the summon; then the raid has moved on to your next turn or its end.
-    expect(r.log.filter((e) => e.kind === 'damage')[0]).toBe(hit)
+    const hits = r.log.filter((e) => e.kind === 'damage')
+    expect(hits[0]).toMatchObject({ side: 'player', targetUid: BOSS_UID })
+    expect(fronts(r.log)[0]).toEqual({ kind: 'raid_front', ally: 's0-0', actor: 'boss' })
+    expect(fronts(r.log)[1]).toMatchObject({ actor: 'ally' })
+    expect(sideOf(fronts(r.log)[1]!.ally)).toBe(1)
     expect(['player', 'won', 'lost']).toContain(r.state.phase)
   })
 
   it('SWITCH sends in another of your raid team: it is your action, and your side fights on with it', () => {
-    const seeds = sides(11)
-    seeds[0]!.team = [
+    const { state } = mine([
       { uid: 's0-0', dex: 145, level: 50, hp: 999 },
       { uid: 's0-1', dex: 143, level: 50, hp: 999 },
-    ]
-    const fast = makeData({ events: { ...data.config.events, raid: { ...cfg, startAllies: 2 } } })
-    const { state } = createRaid(
-      { boss: { dex: 143, shiny: false }, sides: seeds, regionId: 'kanto' },
-      fast,
-      createRng(2),
-    )
+    ])
     expect(state.phase).toBe('player')
-    const r = raidDispatch(state, { t: 'SWITCH', instanceId: 's0-1' }, fast, createRng(3))
+    const r = raidDispatch(state, { t: 'SWITCH', instanceId: 's0-1' }, data, createRng(3))
     expect(r.log[0]).toEqual({ kind: 'switch', uid: 's0-1', free: false })
-    // The switch was the action: no hit of yours before the next one steps up.
+    // The switch was the action: no hit of yours before the raid Pokémon strikes back, at the one you sent in.
     const next = r.log.findIndex((e) => e.kind === 'raid_front')
     expect(next).toBeGreaterThan(0)
     expect(r.log.slice(0, next).some((e) => e.kind === 'damage')).toBe(false)
-    // The next time your side is in front, it's with the Pokémon you sent in.
-    expect(r.log.find((e) => e.kind === 'raid_front' && sideOf(e.ally) === 0)).toMatchObject({ ally: 's0-1' })
+    expect(r.log[next]).toEqual({ kind: 'raid_front', ally: 's0-1', actor: 'boss' })
   })
 
   it('a forfeit ends the raid as a loss', () => {

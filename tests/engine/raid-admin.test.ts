@@ -29,23 +29,40 @@ const yearDays = (y: number) => Array.from({ length: 365 }, (_, i) => new Date(D
 
 describe('a raid Pokémon’s own numbers', () => {
   it('override the defaults, field by field', () => {
-    const d = withRaid({ perMon: { 151: { bars: 5, level: 70, summonPerBreak: 0 } } })
+    const d = withRaid({ perMon: { 151: { bars: 5, level: 70 } } })
     const mew = raidRules(d, 151)
-    expect(mew).toMatchObject({ bars: 5, level: 70, summonPerBreak: 0, barHp: EVENTS_ON.raid.barHp, maxField: EVENTS_ON.raid.maxField })
+    expect(mew).toMatchObject({
+      bars: 5,
+      level: 70,
+      barHp: EVENTS_ON.raid.barHp,
+      upgradeLevel: EVENTS_ON.raid.upgradeLevel,
+    })
     expect(raidRules(d, 251)).toMatchObject({ bars: EVENTS_ON.raid.bars, level: EVENTS_ON.raid.level })
   })
 
-  it('shape the fight: its bars, its level, its summons', () => {
-    const d = withRaid({ perMon: { 151: { bars: 5, level: 70, startAllies: 0, maxField: 0 } } })
-    // The summons it starts with are in the first log line (the NPC sides may fight on at once).
-    const first = (log: { kind: string }[]) => (log[0] as { kind: 'raid_start'; summons: unknown[] }).summons.length
-    const own = createRaid({ boss: { dex: 151, shiny: false }, sides: sides(d), regionId: 'kanto' }, d, createRng(1))
+  it('ignore the summon numbers an older config still holds', () => {
+    const d = withRaid({ perMon: { 151: { bars: 4, startAllies: 2, maxField: 2 } as never } })
+    expect(Object.keys(raidRules(d, 151)).sort()).toEqual(['barHp', 'bars', 'level', 'upgradeLevel'])
+  })
+
+  it('shape the fight: its bars, its level', () => {
+    const d = withRaid({ perMon: { 151: { bars: 5, level: 70 } } })
+    const own = createRaid({ boss: { dex: 151, shiny: false }, sides: sides(d) }, d, createRng(1))
     expect(own.state.bars).toBe(5)
     expect(own.state.boss.level).toBe(70)
-    expect(first(own.log)).toBe(0)
-    const plain = createRaid({ boss: { dex: 151, shiny: false }, sides: sides(data), regionId: 'kanto' }, data, createRng(1))
+    const plain = createRaid({ boss: { dex: 151, shiny: false }, sides: sides(data) }, data, createRng(1))
     expect(plain.state.bars).toBe(EVENTS_ON.raid.bars)
-    expect(first(plain.log)).toBe(Math.min(EVENTS_ON.raid.startAllies, EVENTS_ON.raid.maxField))
+    expect(plain.state.boss.level).toBe(EVENTS_ON.raid.level)
+  })
+
+  it('the type matchups are the admin’s, the sides’ and the raid Pokémon’s', () => {
+    const d = withRaid({
+      sideTypes: { super: 1.5, resisted: 0.4, immune: 0 },
+      bossTypes: { super: 1.8, resisted: 0.6, immune: 0.3 },
+    })
+    const { state } = createRaid({ boss: { dex: 151, shiny: false }, sides: sides(d) }, d, createRng(1))
+    expect(state.sideLevels.typeScale).toEqual({ super: 1.5, resisted: 0.4, immune: 0 })
+    expect(state.foeLevels.typeScale).toEqual({ super: 1.8, resisted: 0.6, immune: 0.3 })
   })
 })
 

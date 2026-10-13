@@ -412,8 +412,8 @@ in view) and the battle history sits beside it from 1024 px.
 - **Raids** (`src/screens/events/RaidView.tsx`) keep the battle's layout and its 360×640 fit. Their bottom row: the
   Bag, **your raid team** as compact pips (`TeamPips compact`, 44 px) — tap one on your turn to switch, which costs the
   turn as in a battle (the dialog lists who can go in) — then the **speed button** and **Give up** (a flag, its name in
-  its label). The speed button plays the ally sides' and the summons' turns at ×1.5 (`RAID_FAST_SPEED`): their
-  delays, scenes (`Scene.speed`), HP bars and dice; the raid Pokémon's turns and yours never change. It shows the
+  its label). The speed button plays the ally sides' turns at ×1.5 (`RAID_FAST_SPEED`): their delays, scenes
+  (`Scene.speed`), HP bars and dice; the raid Pokémon's turns (even striking back at an ally) and yours never change. It shows the
   speed those turns play at (×1 / ×1.5), so its state is a word too, and the setting is kept (`settings.raidFast`).
 - **The catch happens on the stage**: the worn-out foe stays on its platform, greyed; the panel shows a radio group
   of balls (each with its chance from `catchChance`, how many you have, "not needed" when a weaker one is already

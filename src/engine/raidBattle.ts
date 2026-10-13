@@ -1,10 +1,10 @@
 // Raid Battles, the fight (docs/18 §3, docs/19 §6.3): three sides of up to three Pokémon, one out each, against the
-// raid Pokémon (its HP in bars) and the summons beside it. The battle reducer stays one-on-one: every action here is a
-// real duel step (battle.ts `startDuelStep`), so damage, combos, type matchups, statuses and items are exactly the
-// game's. This file only decides who acts, against whom, and what a broken bar or a K.O. does to the raid.
+// raid Pokémon alone (its HP in bars). Each round the sides play in order, you first, and the raid Pokémon strikes
+// back at each one right after its turn (the user's design, 2026-10-13: no summons, simpler to follow). The battle
+// reducer stays one-on-one: every action here is a real duel step (battle.ts `startDuelStep`), so damage, combos,
+// statuses and items are exactly the game's; only the type matchups are the raid's own (`sideTypes`, `bossTypes`).
+// This file only decides who acts, against whom, and what a broken bar or a K.O. does to the raid.
 import {
-  canHurt,
-  copyFoeDice,
   makeBattler,
   reduce,
   startDuelStep,
@@ -43,8 +43,8 @@ export interface RaidSide extends Omit<RaidSideSeed, 'team'> {
   out: boolean
 }
 
-/** Who acts: a side (with whichever of its Pokémon is out) or one foe. */
-export type RaidActor = { side: number } | { foe: string }
+/** Who acts: a side (with whichever of its Pokémon is out), or the raid Pokémon striking back after side `boss`. */
+export type RaidActor = { side: number } | { boss: number }
 
 export type RaidPhase = 'running' | 'player' | 'won' | 'lost'
 
@@ -55,26 +55,17 @@ export interface RaidState {
   /** Bars in all, and broken so far: the boss is beaten when its last bar empties. */
   bars: number
   broken: number
-  /** On the field beside the boss, in summoning order. */
-  summons: Battler[]
-  /** Summon points: one per summon, gained when a bar breaks. */
-  points: number
-  /** Summons so far (their uids). */
-  summoned: number
-  /** The species the boss summons from. */
-  summonPool: number[]
   round: number
-  /** Still to act this round, in speed order. */
+  /** Still to act this round, in order. */
   queue: RaidActor[]
   actor: RaidActor | null
-  /** The side the last foe attack hit: never the same twice in a row while another is left. */
-  lastHit: number | null
-  /** The player's turn: their Pokémon's duel against the foe they aim at, waiting on their input. */
+  /** The player's turn: their Pokémon's duel against the raid Pokémon, waiting on their input. */
   duel: BattleState | null
   /** Actions so far (the raid ends as a loss at `RAID_MAX_STEPS`). */
   steps: number
   /** This raid Pokémon's numbers (its own over the defaults), fixed when the raid starts. */
   rules?: RaidRules
+  /** The sides' tracks and the raid Pokémon's, each with its type matchups (`typeScale`). */
   sideLevels: UpgradeLevels
   foeLevels: UpgradeLevels
   /** Every side plays itself (the sims). */
@@ -83,23 +74,19 @@ export interface RaidState {
 
 export type RaidLogEntry =
   | LogEntry
-  /** The raid Pokémon appears, with its first summons. */
-  | { kind: 'raid_start'; boss: string; summons: Battler[] }
-  /** The pair that steps to the front for the next action. */
-  | { kind: 'raid_front'; ally: string; foe: string; actor: 'ally' | 'foe' }
-  /** A bar broke: the next one fills, and the boss gains summon points. */
-  | { kind: 'raid_bar'; broken: number; barsLeft: number; points: number; hpAfter: number }
-  /** A summon arrives (`b` as it comes out), the boss's points left. */
-  | { kind: 'raid_summon'; b: Battler; points: number }
+  /** The raid Pokémon appears, alone. */
+  | { kind: 'raid_start'; boss: string }
+  /** The ally that steps to the front against the raid Pokémon, and who of the two acts. */
+  | { kind: 'raid_front'; ally: string; actor: 'ally' | 'boss' }
+  /** A bar broke: the next one fills. */
+  | { kind: 'raid_bar'; broken: number; barsLeft: number; hpAfter: number }
   /** A side sends its next Pokémon after a K.O. */
   | { kind: 'raid_next'; side: number; uid: string }
   | { kind: 'raid_out'; side: number }
-  /** The boss is down: its summons run. */
-  | { kind: 'raid_flee'; uids: string[] }
   | { kind: 'raid_end'; result: 'won' | 'lost'; reason?: 'stalemate' | 'forfeit' }
 
-/** The player's input on their turn: a battle event in their duel, or a new target. */
-export type RaidEvent = BattleEvent | { t: 'TARGET'; uid: string }
+/** The player's input on their turn: a battle event in their duel. */
+export type RaidEvent = BattleEvent
 
 /** A raid that drags on this long (actions, every side's and every foe's) is lost. */
 export const RAID_MAX_STEPS = 400
@@ -107,7 +94,7 @@ export const RAID_MAX_STEPS = 400
 export const BOSS_UID = 'raid-boss'
 
 // ---------------------------------------------------------------------------------------------------------------------
-// Who can stand beside the sides and the boss.
+// Who can fight beside you.
 
 /** Every species of a starter line: each region's starters and everything they evolve into. */
 function starterLines(data: GameData): Set<number> {
@@ -117,8 +104,9 @@ function starterLines(data: GameData): Set<number> {
 }
 
 /**
- * NPC allies and summons: fully evolved, never legendary or mythical, never a starter line, never on the config's
- * pseudo-legendary and extra lists (Ultra Beasts, Paradox Pokémon…), never a form row, never a copier (Ditto).
+ * NPC allies (and the calendar's shiny fillers): fully evolved, never legendary or mythical, never a starter line, never
+ * on the config's pseudo-legendary and extra lists (Ultra Beasts, Paradox Pokémon…), never a form row, never a copier
+ * (Ditto).
  */
 export function raidAllyAllowed(data: GameData, cfg: RaidConfig = data.config.events.raid): (dex: number) => boolean {
   const starters = starterLines(data)
@@ -127,18 +115,6 @@ export function raidAllyAllowed(data: GameData, cfg: RaidConfig = data.config.ev
     const s = data.species[dex]
     return !!s && !s.form && s.evolutions.length === 0 && !isLegendary(data, dex) && !starters.has(dex) && !banned.has(dex)
   }
-}
-
-/** The species a raid Pokémon summons: allowed, of its region, sharing no type with it. */
-export function summonPool(data: GameData, bossDex: number, regionId: RegionId): number[] {
-  const allowed = raidAllyAllowed(data)
-  const boss = data.species[bossDex]
-  const bossTypes = new Set([boss?.type1, boss?.type2].filter(Boolean))
-  const pool = [...regionSpecies(data, regionId)].filter((dex) => {
-    const s = data.species[dex]!
-    return allowed(dex) && !bossTypes.has(s.type1) && !(s.type2 && bossTypes.has(s.type2))
-  })
-  return pool.sort((a, b) => a - b)
 }
 
 /** Three different allowed species of the given regions (fewer only when the regions have fewer). */
@@ -205,8 +181,6 @@ export function npcSideSeed(o: RaidNpcOption, k: number, level: number, name: st
 export interface CreateRaidOptions {
   boss: { dex: number; shiny: boolean }
   sides: RaidSideSeed[]
-  /** The region whose Pokémon the boss summons (its lair's, or a fallback raid's). */
-  regionId: RegionId
   /** The day's raid's numbers, or a progression raid's (docs/24). */
   kind?: RaidKindOf
   auto?: boolean
@@ -214,16 +188,6 @@ export interface CreateRaidOptions {
 
 const live = (b: Battler) => b.hp > 0
 const activeOf = (side: RaidSide) => side.mons[side.active]!
-const foes = (s: RaidState) => [s.boss, ...s.summons]
-const foeOf = (s: RaidState, uid: string) => foes(s).find((f) => f.uid === uid) ?? null
-
-/** The raid's numbers: fixed at its start (an older state without them reads them again). */
-const rulesOf = (s: RaidState, data: GameData): RaidRules => s.rules ?? raidRules(data, s.boss.dex)
-
-function putFoe(s: RaidState, b: Battler) {
-  if (b.uid === s.boss.uid) s.boss = b
-  else s.summons = s.summons.map((m) => (m.uid === b.uid ? b : m))
-}
 
 export function createRaid(opts: CreateRaidOptions, data: GameData, rng: Rng): { state: RaidState; log: RaidLogEntry[] } {
   const cfg = data.config.events.raid
@@ -246,58 +210,38 @@ export function createRaid(opts: CreateRaidOptions, data: GameData, rng: Rng): {
     bars: rules.bars,
     rules,
     broken: 0,
-    summons: [],
-    points: 0,
-    summoned: 0,
-    summonPool: summonPool(data, opts.boss.dex, opts.regionId),
     round: 0,
     queue: [],
     actor: null,
-    lastHit: null,
     duel: null,
     steps: 0,
-    sideLevels: uniformLevels(cfg.sideUpgradeLevel),
-    foeLevels: uniformLevels(rules.upgradeLevel),
+    // Each side's attacks land through its own matchups: the sides' on the raid Pokémon, the raid Pokémon's on them.
+    sideLevels: { ...uniformLevels(cfg.sideUpgradeLevel), typeScale: cfg.sideTypes },
+    foeLevels: { ...uniformLevels(rules.upgradeLevel), typeScale: cfg.bossTypes },
     ...(opts.auto && { auto: true }),
   }
-  const log: RaidLogEntry[] = []
-  // The first summons come free.
-  const first: Battler[] = []
-  for (let i = 0; i < Math.min(rules.startAllies, rules.maxField); i++) {
-    const m = summonOne(s, data, rng)
-    if (m) first.push(structuredClone(m))
-  }
-  log.push({ kind: 'raid_start', boss: boss.uid, summons: first })
+  const log: RaidLogEntry[] = [{ kind: 'raid_start', boss: boss.uid }]
   advance(s, data, rng, log)
   return { state: s, log }
 }
 
-function summonOne(s: RaidState, data: GameData, rng: Rng): Battler | null {
-  const onField = new Set(s.summons.map((m) => m.dex))
-  const left = s.summonPool.filter((d) => !onField.has(d))
-  const pool = left.length ? left : s.summonPool
-  if (!pool.length) return null
-  s.summoned += 1
-  const m = makeBattler(
-    { uid: `raid-summon-${s.summoned}`, dex: rng.pick(pool), level: rulesOf(s, data).level, hp: Number.MAX_SAFE_INTEGER },
-    data,
-  )
-  s.summons.push(m)
-  return m
-}
-
-/** Every active Pokémon, fastest first; ties go to the sides (in order), then the boss, then its summons. */
+/** A round: the sides still in, in order (you first), the raid Pokémon striking back after each one's turn. */
 function roundOrder(s: RaidState): RaidActor[] {
-  const all: { a: RaidActor; speed: number; rank: number }[] = []
-  s.sides.forEach((side, i) => {
-    if (!side.out) all.push({ a: { side: i }, speed: activeOf(side).speed, rank: i })
-  })
-  all.push({ a: { foe: s.boss.uid }, speed: s.boss.speed, rank: 10 })
-  s.summons.forEach((m, j) => all.push({ a: { foe: m.uid }, speed: m.speed, rank: 11 + j }))
-  return all.sort((x, y) => y.speed - x.speed || x.rank - y.rank).map((x) => x.a)
+  return s.sides.flatMap((side, i): RaidActor[] => (side.out ? [] : [{ side: i }, { boss: i }]))
 }
 
-const canAct = (s: RaidState, a: RaidActor) => ('side' in a ? !s.sides[a.side]!.out : !!foeOf(s, a.foe))
+/**
+ * The side the raid Pokémon strikes back at after side `after`'s turn: that side, or when it's just gone out, the next
+ * one still in. So it hits them one by one.
+ */
+export function bossTarget(s: RaidState, after: number): number | null {
+  const n = s.sides.length
+  for (let k = 0; k < n; k++) {
+    const i = (after + k) % n
+    if (!s.sides[i]!.out) return i
+  }
+  return null
+}
 
 /** Runs the raid until the player must act or it's over. */
 function advance(s: RaidState, data: GameData, rng: Rng, log: RaidLogEntry[]) {
@@ -308,16 +252,16 @@ function advance(s: RaidState, data: GameData, rng: Rng, log: RaidLogEntry[]) {
       s.queue = roundOrder(s)
     }
     const actor = s.queue.shift()!
-    if (!canAct(s, actor)) continue
+    if ('side' in actor && s.sides[actor.side]!.out) continue
     s.actor = actor
     s.steps += 1
-    if ('foe' in actor) foeTurn(s, actor.foe, data, rng, log)
+    if ('boss' in actor) bossTurn(s, actor.boss, data, rng, log)
     else sideTurn(s, actor.side, data, rng, log)
   }
 }
 
-/** The duel for one action: the side's team (its active Pokémon out) against one foe. */
-function duelOf(s: RaidState, sideIdx: number, foe: Battler): BattleState {
+/** The duel for one action: the side's team (its active Pokémon out) against the raid Pokémon. */
+function duelOf(s: RaidState, sideIdx: number): BattleState {
   const side = s.sides[sideIdx]!
   return {
     kind: 'boss',
@@ -327,7 +271,7 @@ function duelOf(s: RaidState, sideIdx: number, foe: Battler): BattleState {
     nextActor: 'player',
     player: structuredClone(side.mons),
     activeIndex: side.active,
-    enemy: structuredClone(foe),
+    enemy: structuredClone(s.boss),
     dice: [],
     selected: [],
     playerLevels: s.sideLevels,
@@ -342,31 +286,11 @@ function duelOf(s: RaidState, sideIdx: number, foe: Battler): BattleState {
   }
 }
 
-/**
- * The foe an ally aims at: a summon on its last third of HP first (finishing it frees a slot), else the boss; any foe
- * it can hurt when it can't touch the boss.
- */
-export function allyTarget(s: RaidState, sideIdx: number, data: GameData): Battler {
-  const me = activeOf(s.sides[sideIdx]!)
-  const weak = s.summons.filter((m) => m.hp * 3 <= m.maxHp && canHurt(me, m, data)).sort((a, b) => a.hp - b.hp)[0]
-  if (weak) return weak
-  if (canHurt(me, s.boss, data)) return s.boss
-  return s.summons.find((m) => canHurt(me, m, data)) ?? s.boss
-}
-
-/** The side a foe attacks: any side still in, never the one hit last while another is left. */
-export function foeTarget(s: RaidState, rng: Rng): number | null {
-  const inRaid = s.sides.flatMap((side, i) => (side.out ? [] : [i]))
-  const fresh = inRaid.filter((i) => i !== s.lastHit)
-  const pool = fresh.length ? fresh : inRaid
-  return pool.length ? rng.pick(pool) : null
-}
-
 function sideTurn(s: RaidState, sideIdx: number, data: GameData, rng: Rng, log: RaidLogEntry[]) {
   const side = s.sides[sideIdx]!
-  const target = allyTarget(s, sideIdx, data)
-  let duel = duelOf(s, sideIdx, target)
-  log.push({ kind: 'raid_front', ally: activeOf(side).uid, foe: target.uid, actor: 'ally' })
+  const bossHp = s.boss.hp
+  let duel = duelOf(s, sideIdx)
+  log.push({ kind: 'raid_front', ally: activeOf(side).uid, actor: 'ally' })
   const step: LogEntry[] = []
   startDuelStep(duel, 'player', data, step)
   log.push(...step)
@@ -385,25 +309,15 @@ function sideTurn(s: RaidState, sideIdx: number, data: GameData, rng: Rng, log: 
       log.push(...r.log)
     }
   }
-  settle(s, sideIdx, duel, target.hp, step, data, log)
+  settle(s, sideIdx, duel, bossHp, step, log)
 }
 
-function foeTurn(s: RaidState, uid: string, data: GameData, rng: Rng, log: RaidLogEntry[]) {
-  // The boss fills its free slots first, a point each.
-  if (uid === s.boss.uid) {
-    while (s.summons.length < rulesOf(s, data).maxField && s.points > 0) {
-      const m = summonOne(s, data, rng)
-      if (!m) break
-      s.points -= 1
-      log.push({ kind: 'raid_summon', b: structuredClone(m), points: s.points })
-    }
-  }
-  const foe = foeOf(s, uid)!
-  const sideIdx = foeTarget(s, rng)
+function bossTurn(s: RaidState, after: number, data: GameData, rng: Rng, log: RaidLogEntry[]) {
+  const sideIdx = bossTarget(s, after)
   if (sideIdx == null) return
-  s.lastHit = sideIdx
-  let duel = duelOf(s, sideIdx, foe)
-  log.push({ kind: 'raid_front', ally: activeOf(s.sides[sideIdx]!).uid, foe: uid, actor: 'foe' })
+  const bossHp = s.boss.hp
+  let duel = duelOf(s, sideIdx)
+  log.push({ kind: 'raid_front', ally: activeOf(s.sides[sideIdx]!).uid, actor: 'boss' })
   const step: LogEntry[] = []
   startDuelStep(duel, 'enemy', data, step)
   if (duel.phase === 'enemy_turn') {
@@ -412,47 +326,48 @@ function foeTurn(s: RaidState, uid: string, data: GameData, rng: Rng, log: RaidL
     step.push(...r.log)
   }
   log.push(...step)
-  settle(s, sideIdx, duel, foe.hp, step, data, log)
+  settle(s, sideIdx, duel, bossHp, step, log)
 }
 
 /**
- * Takes a finished duel step back into the raid: HP, statuses, the side's switch; then bars and K.O.s. `foeHpBefore` is
- * the foe's HP when the step started, `step` its log.
+ * Takes a finished duel step back into the raid: HP, statuses, the side's switch; then bars and K.O.s. `bossHpBefore`
+ * is the raid Pokémon's HP when the step started, `step` its log.
  */
-function settle(s: RaidState, sideIdx: number, duel: BattleState, foeHpBefore: number, step: LogEntry[], data: GameData, log: RaidLogEntry[]) {
+function settle(
+  s: RaidState,
+  sideIdx: number,
+  duel: BattleState,
+  bossHpBefore: number,
+  step: LogEntry[],
+  log: RaidLogEntry[],
+) {
   const side = s.sides[sideIdx]!
   side.mons = duel.player
   side.active = duel.activeIndex
-  putFoe(s, duel.enemy)
-  if (duel.enemy.uid === s.boss.uid && s.boss.hp <= 0) {
+  s.boss = duel.enemy
+  if (s.boss.hp <= 0) {
     // What the step took past the bar carries into the next one.
     const harm = step.reduce(
-      (n, e) => n + ((e.kind === 'damage' || e.kind === 'status_tick') && e.targetUid === s.boss.uid ? e.amount : 0),
+      (n, e) =>
+        n + ((e.kind === 'damage' || e.kind === 'status_tick') && e.targetUid === s.boss.uid ? e.amount : 0),
       0,
     )
-    breakBar(s, Math.max(0, harm - foeHpBefore), data, log)
+    breakBar(s, Math.max(0, harm - bossHpBefore), log)
     if (s.phase !== 'running') return
   }
   knockouts(s, log)
 }
 
-function breakBar(s: RaidState, overflow: number, data: GameData, log: RaidLogEntry[]) {
+function breakBar(s: RaidState, overflow: number, log: RaidLogEntry[]) {
   s.broken += 1
   if (s.broken >= s.bars) return finish(s, 'won', log)
   // A new bar never empties on the hit that broke the last one.
   s.boss.hp = Math.max(1, s.boss.maxHp - overflow)
-  s.points += rulesOf(s, data).summonPerBreak
-  log.push({ kind: 'raid_bar', broken: s.broken, barsLeft: s.bars - s.broken, points: s.points, hpAfter: s.boss.hp })
+  log.push({ kind: 'raid_bar', broken: s.broken, barsLeft: s.bars - s.broken, hpAfter: s.boss.hp })
 }
 
-/** Down summons leave the field; a side whose Pokémon is down sends its next, or is out. */
+/** A side whose Pokémon is down sends its next, or is out. */
 function knockouts(s: RaidState, log: RaidLogEntry[]) {
-  for (const m of s.summons.filter((x) => !live(x))) log.push({ kind: 'faint', side: 'enemy', uid: m.uid, dex: m.dex })
-  const gone = new Set(s.summons.filter((x) => !live(x)).map((x) => x.uid))
-  if (gone.size) {
-    s.summons = s.summons.filter((x) => !gone.has(x.uid))
-    s.queue = s.queue.filter((a) => !('foe' in a) || !gone.has(a.foe))
-  }
   s.sides.forEach((side, i) => {
     if (side.out) return
     const a = activeOf(side)
@@ -478,8 +393,6 @@ function finish(s: RaidState, result: 'won' | 'lost', log: RaidLogEntry[], reaso
   if (result === 'won') {
     s.boss.hp = 0
     log.push({ kind: 'faint', side: 'enemy', uid: s.boss.uid, dex: s.boss.dex })
-    if (s.summons.length) log.push({ kind: 'raid_flee', uids: s.summons.map((m) => m.uid) })
-    s.summons = []
   }
   // Statuses end with the fight, as in any battle.
   for (const side of s.sides) for (const m of side.mons) m.status = emptyStatus()
@@ -496,20 +409,11 @@ export function raidDispatch(state: RaidState, e: RaidEvent, data: GameData, rng
   const duel = s.duel!
   const sideIdx = (s.actor as { side: number }).side
   const log: RaidLogEntry[] = []
-  if (e.t === 'TARGET') {
-    const target = foeOf(s, e.uid)
-    const aiming = duel.phase === 'player_roll' || duel.phase === 'player_reroll' || duel.phase === 'player_stunned'
-    if (!target || target.uid === duel.enemy.uid || !aiming) return NOOP(state)
-    duel.enemy = structuredClone(target)
-    log.push({ kind: 'raid_front', ally: duel.player[duel.activeIndex]!.uid, foe: target.uid, actor: 'ally' })
-    copyFoeDice(duel, log as LogEntry[])
-    return { state: s, log }
-  }
   if (e.t === 'FORFEIT') {
     finish(s, 'lost', log, 'forfeit')
     return { state: s, log }
   }
-  const before = foeOf(s, duel.enemy.uid)?.hp ?? duel.enemy.hp
+  const before = s.boss.hp
   const r = reduce(duel, e, data, rng)
   log.push(...r.log)
   if (r.state.phase !== 'done') {
@@ -518,7 +422,7 @@ export function raidDispatch(state: RaidState, e: RaidEvent, data: GameData, rng
   }
   s.duel = null
   s.phase = 'running'
-  settle(s, sideIdx, r.state, before, r.log, data, log)
+  settle(s, sideIdx, r.state, before, r.log, log)
   advance(s, data, rng, log)
   return { state: s, log }
 }

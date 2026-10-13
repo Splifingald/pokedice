@@ -182,7 +182,7 @@ checkbox per boss.
 - Areas → bosses: the **Raid** checkbox.
 - Events → Raids → **Progression raids**:
   - the team cap;
-  - each raid Pokémon's own numbers (level, bars, HP per bar, summons, upgrade level, team cap);
+  - each raid Pokémon's own numbers (level, bars, HP per bar, upgrade level, team cap; no summons since 2026-10-13);
   - the list of the 85 raids by region with their areas.
 - The Mythicals box's hint: "a shiny raid of the calendar; its lair's boss, never shiny there".
 

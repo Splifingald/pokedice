@@ -19,7 +19,7 @@ import {
   tickDot,
   type StatusState,
 } from './status'
-import type { CurableStatus, DieType, GameData, PokeType, Species, StatusKind } from './types'
+import type { CurableStatus, DieType, GameData, PokeType, RaidTypeScale, Species, StatusKind } from './types'
 
 export type Side = 'player' | 'enemy'
 export type BattleKind = 'wild' | 'trainer' | 'boss'
@@ -521,10 +521,13 @@ function checkKnockouts(s: BattleState, log: LogEntry[]): boolean {
   return false
 }
 
-/** Whether `atk`'s attacks can hurt `def` at all (v1.8: the whole attack takes its best dice type's effectiveness). */
-export function canHurt(atk: Battler, def: Battler, data: GameData): boolean {
+/**
+ * Whether `atk`'s attacks can hurt `def` at all (v1.8: the whole attack takes its best dice type's effectiveness),
+ * through a raid's matchups when it has them.
+ */
+export function canHurt(atk: Battler, def: Battler, data: GameData, scale?: RaidTypeScale): boolean {
   const dice = atk.dice.map((type) => ({ type, faceIndex: 0 }))
-  return attackMultiplier(attackType(dice, atk.types, def.types, data), def.types, data) > 0
+  return attackMultiplier(attackType(dice, atk.types, def.types, data), def.types, data, scale) > 0
 }
 
 /**

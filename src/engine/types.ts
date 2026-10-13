@@ -512,11 +512,15 @@ export interface RaidAnchor {
 export interface RaidMonRules {
   bars?: number
   barHp?: number
-  startAllies?: number
-  summonPerBreak?: number
-  maxField?: number
   level?: number
   upgradeLevel?: number
+}
+
+/** What a super-effective, a resisted and a blocked hit land at in a raid, instead of ×2, ×½ and ×0. */
+export interface RaidTypeScale {
+  super: number
+  resisted: number
+  immune: number
 }
 
 /** A day of the raid calendar set by hand ('YYYY-MM-DD' → its raid). */
@@ -532,11 +536,13 @@ export interface RaidConfig {
   /** Each bar's HP, in the raid Pokémon's own max HP at `level` (1 = one full HP bar each). */
   barHp: number
   barColors: string[]
-  /** Summons beside the boss at the start, points gained per bar broken, and the most beside it at once. */
-  startAllies: number
-  summonPerBreak: number
-  maxField: number
-  /** The boss's (and its summons') level and dice / combo upgrade level. */
+  /**
+   * The raid's type matchups (the user's design, 2026-10-13): the sides' attacks on the raid Pokémon (super effective
+   * only ×1.3), and its own on the sides (resisted ×0.7, and nobody is immune: ×0.5).
+   */
+  sideTypes: RaidTypeScale
+  bossTypes: RaidTypeScale
+  /** The raid Pokémon's level and dice / combo upgrade level. */
   level: number
   upgradeLevel: number
   /** The sides' Pokémon fight at this level at most, at this upgrade level. */
@@ -566,7 +572,7 @@ export interface RaidConfig {
   }
   /** Each raid Pokémon's own numbers, by dex. */
   perMon?: Record<string, RaidMonRules>
-  /** Never an NPC ally or a summon, on top of legendaries, mythicals and starter lines. */
+  /** Never an NPC ally, on top of legendaries, mythicals and starter lines. */
   exclude: { pseudo: number[]; extra: number[] }
 }
 
@@ -909,7 +915,7 @@ export interface SaveData {
     animations?: 'full' | 'short'
     multiExp: boolean
     autoMode?: boolean
-    /** Raids: the ally sides' and the summons' turns at 1.5× speed. */
+    /** Raids: the ally sides' turns at 1.5× speed. */
     raidFast?: boolean
     lang?: Lang
     theme?: 'light' | 'dark' | 'auto'

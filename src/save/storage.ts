@@ -74,7 +74,7 @@ export interface Settings {
   autoMode?: boolean
   /** Type hints: matchups on a Pokémon's sheet, and on tapping one in battle — off by default. */
   typeHints?: boolean
-  /** Raids: the ally sides' and the summons' turns at 1.5× speed (the speed button) — off by default. */
+  /** Raids: the ally sides' turns at 1.5× speed (the speed button) — off by default. */
   raidFast?: boolean
   /** UI language. Unset on an older save: the browser's language decides, English if we don't speak it. */
   lang?: Lang

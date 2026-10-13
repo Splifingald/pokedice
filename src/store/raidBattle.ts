@@ -21,7 +21,6 @@ import {
   progressRaidState,
   progressRaidTeam,
   raidDispatch,
-  raidHomeRegion,
   raidNpcOffer,
   raidTeam,
   raidTeamCap,
@@ -231,7 +230,14 @@ function friendSide(f: RaidFriend, k: number, cap: number): RaidSideSeed {
  * The fight starts: you, the friends picked (their teams), the NPC trainers picked from the offer, and (when fewer were
  * picked than slots are empty) game trainers in the sides left. Every try draws a new NPC offer for the next one.
  */
-function startFight(source: RaidSource, raid: TodayRaid, team: RaidMon[], friends: RaidFriend[], npcs: RaidNpcOption[], cap: number, regionId: RegionId) {
+function startFight(
+  source: RaidSource,
+  raid: TodayRaid,
+  team: RaidMon[],
+  friends: RaidFriend[],
+  npcs: RaidNpcOption[],
+  cap: number,
+) {
   const { save, data } = useGame.getState()
   if (!save) return
   rng = createRng(randomSeed())
@@ -252,7 +258,11 @@ function startFight(source: RaidSource, raid: TodayRaid, team: RaidMon[], friend
   const chosen = npcs.slice(0, 2 - picked.length).map((o, i) => npcSideSeed(o, picked.length + i + 1, cap, t('ui.raid.npcName', { n: picked.length + i + 1 })))
   const sides = [me, ...picked.map((f, i) => friendSide(f, i + 1, cap)), ...chosen, ...npcSides(2 - picked.length - chosen.length, source, cap)]
   const { state, log } = createRaid(
-    { boss: { dex: raid.dex, shiny: raid.shiny }, sides, regionId, kind: source.kind === 'progress' ? 'progress' : 'daily' },
+    {
+      boss: { dex: raid.dex, shiny: raid.shiny },
+      sides,
+      kind: source.kind === 'progress' ? 'progress' : 'daily',
+    },
     data,
     rng,
   )
@@ -273,7 +283,7 @@ export function startRaid(npcs: RaidNpcOption[] = [], friends: RaidFriend[] = gr
   const team = raidTeam(save, data)
   if (!team.length) return false
   mutateSave((s) => countRaidTry(s, raid.day))
-  startFight({ kind: 'daily' }, raid, team, friends, npcs, data.config.events.raid.teamCap, raidHomeRegion(data, raid))
+  startFight({ kind: 'daily' }, raid, team, friends, npcs, data.config.events.raid.teamCap)
   void syncRaidTeam()
   return true
 }
@@ -289,7 +299,7 @@ export function startProgressRaid(key: string, npcs: RaidNpcOption[] = [], frien
   const team = progressRaidTeam(save, data, raid)
   if (!team.length) return false
   const ref: TodayRaid = { day: '', dex: raid.dex, shiny: progressRaidShiny(data, raid), areaId: raid.areaId, caught: false, tries: 0 }
-  startFight({ kind: 'progress', key }, ref, team, friends, npcs, raidTeamCap(data, raid.dex, 'progress'), raid.region)
+  startFight({ kind: 'progress', key }, ref, team, friends, npcs, raidTeamCap(data, raid.dex, 'progress'))
   void syncProgressRaidTeam(raid)
   return true
 }

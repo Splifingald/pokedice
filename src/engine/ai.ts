@@ -77,7 +77,12 @@ export function candidateKeepSets(dice: readonly RolledDie[], data: GameData): b
 export function expectedDamage(input: AiInput, keep: readonly boolean[], samples: number): number {
   const { dice, data, levels, rng } = input
   // The attack type depends on which types the dice have, not on the faces, so a reroll never changes it.
-  const comboMult = attackMultiplier(attackType(dice, input.attackerTypes, input.defenderTypes, data), input.defenderTypes, data)
+  const comboMult = attackMultiplier(
+    attackType(dice, input.attackerTypes, input.defenderTypes, data),
+    input.defenderTypes,
+    data,
+    levels.typeScale,
+  )
   const slots = dice.map((d) => {
     const bonus = dieUpgradeBonus(d.type, levels, data)
     const mult = comboMult
