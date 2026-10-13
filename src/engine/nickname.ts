@@ -36,7 +36,8 @@ const named = (inst: PokemonInstance, nickname: string | undefined): PokemonInst
  */
 export function renamePokemon(save: SaveData, data: GameData, instId: string, raw: string): SaveData | null {
   const holds = (box: PokemonInstance[]) => box.some((p) => p.id === instId)
-  const inst = [save.box, ...Object.values(save.parked ?? {}).map((b) => b?.box ?? [])]
+  const waiting = save.events?.worldHome ?? []
+  const inst = [save.box, ...Object.values(save.parked ?? {}).map((b) => b?.box ?? []), waiting.map((h) => h.inst)]
     .flat()
     .find((p) => p.id === instId)
   if (!inst) return null
@@ -47,6 +48,11 @@ export function renamePokemon(save: SaveData, data: GameData, instId: string, ra
   if (nickname === inst.nickname) return null
   const rename = (box: PokemonInstance[]) => box.map((p) => (p.id === instId ? named(p, nickname) : p))
   if (holds(save.box)) return { ...save, box: rename(save.box) }
+  // A small world's Pokémon waiting to unlock in its region (docs/26 §1) can be named while it waits.
+  if (waiting.some((h) => h.inst.id === instId)) {
+    const worldHome = waiting.map((h) => (h.inst.id === instId ? { ...h, inst: named(h.inst, nickname) } : h))
+    return { ...save, events: { ...save.events, worldHome } }
+  }
   const parked = { ...save.parked }
   for (const [id, b] of Object.entries(parked))
     if (b && holds(b.box)) parked[id] = { ...b, box: rename(b.box) }

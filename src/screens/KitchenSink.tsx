@@ -396,6 +396,9 @@ export function KitchenSink() {
             <li>
               <MonTile dex={6} name="Charizard" sub="Lv.36" label="Charizard" onClick={() => {}} />
             </li>
+            <li>
+              <MonTile dex={94} name="Gengar" sub="Lv.42" locked label="Gengar, Locked until Lv.42" onClick={() => {}} />
+            </li>
           </ul>
           <div className="flex flex-wrap gap-2">
             {['poke-ball', 'great-ball', 'potion', 'thunder-stone', 'old-amber'].map((k) => (

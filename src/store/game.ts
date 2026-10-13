@@ -6,11 +6,13 @@ import {
   fitDayCare,
   migrateLeagueII,
   migrateRounds,
+  monName,
   settleClears,
   payWheelPrize,
   reviveFossils,
   releaseDuplicates,
   releaseRaidLocks,
+  releaseWorldHome,
   releaseWorldPending,
   settleKo,
   stampExtremeUnlock,
@@ -24,6 +26,7 @@ import {
   type Encounter,
   type ForceKind,
   type GameData,
+  type HomerArrival,
   type LogEntry,
   type RunEvent,
   type SaveData,
@@ -176,11 +179,22 @@ function settle(save: SaveData, data: GameData) {
   const raids = releaseRaidLocks(fitted, data, Date.now(), raidId)
   // A small world's shiny mythical waiting for its home region (docs/21): that region started since, it joins its Box.
   const worlds = releaseWorldPending(raids.save, data, Date.now(), raidId)
-  const dup = releaseDuplicates(syncXpCurve(syncHpScale(worlds.save, data), data))
+  // A closed world's Pokémon waiting in their home region (docs/26 §1): those whose region now has one at their level
+  // arrive in its Box.
+  const home = releaseWorldHome(worlds.save, data)
+  const dup = releaseDuplicates(syncXpCurve(syncHpScale(home.save, data), data))
   // Extreme mode (docs/22): the main save beat the league that opens it (noted once, so it stays open); an Extreme
   // save's K.O. clocks, on the real time.
   const ko = settleKo(stampExtremeUnlock(dup.save, data, Date.now()), data, trustedNow())
-  return { ...dup, save: ko.save, revived: fossils.revived, raidsReleased: raids.released, worldsReleased: worlds.released, back: ko.back }
+  return {
+    ...dup,
+    save: ko.save,
+    revived: fossils.revived,
+    raidsReleased: raids.released,
+    worldsReleased: worlds.released,
+    homeArrived: home.arrived,
+    back: ko.back,
+  }
 }
 
 /**
@@ -281,6 +295,20 @@ export function commitSave(next: SaveData | null, opts: { silent?: boolean; keep
       'good',
       5000,
     )
+  // A closed world's Pokémon unlocked in their region: one toast each, or one per region when several came at once.
+  const arrivedIn = new Map<string, HomerArrival[]>()
+  for (const a of settled?.homeArrived ?? []) arrivedIn.set(a.region, [...(arrivedIn.get(a.region) ?? []), a])
+  for (const [region, list] of arrivedIn) {
+    const regionName = data.regions.find((r) => r.id === region)?.name ?? region
+    const one = list[0]!
+    pushToast(
+      list.length === 1
+        ? t('ui.world.homeArrived', { name: monName(one.inst, data), level: one.inst.level, region: regionName })
+        : t('ui.world.homeArrivedMany', { count: list.length, region: regionName }),
+      'good',
+      5000,
+    )
+  }
   for (const p of settled?.raidsReleased ?? [])
     pushToast(
       t('ui.raid.toastUnlocked', {

@@ -15,7 +15,7 @@ three starters, its own areas, trainers, shop and rules, and at its end a legend
 |---|---|
 | Switch | **Off / On for admin / On for everyone**, Off by default (like every event type). |
 | Start | **Fresh start**: pick one of the world's **3 starters** (set in admin) at Lv.5, the partner pick scene in the world's colours. |
-| Keep | **Only the shiny mythical.** When the world closes, everything else in it is gone. |
+| Keep | **Only the shiny mythical.** When the world closes, everything else in it is gone. *Changed 2026-10-13 (docs/26 §1): its Pokémon now go home too, each to its species' region, locked until that region's best reaches its level; items and ₽ still close with it.* |
 | Money | **The world's own ₽**: from ₽0, earned and spent there only. |
 | Boosters | Each booster type hits **× its multiplier on both sides** (yours and the foes'). Shown on the world's banner and in battle. |
 | Dice | **No upgrades: dice and combos = the Pokémon's level ÷ 10**, rounded down (Lv.1–9 = 0, Lv.10–19 = 1, Lv.55 = 5, Lv.100 = 10). |

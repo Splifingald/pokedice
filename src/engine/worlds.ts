@@ -14,6 +14,7 @@ import { isExtreme } from './extreme'
 import { addFossil } from './fossils'
 import { sellPrice } from './items'
 import { badgesHeld, liveLeft, liveState } from './liveEvents'
+import { sendWorldHome, speciesHome } from './homecoming'
 import { createInstance } from './progression'
 import { addToRegion } from './raid'
 import {
@@ -24,7 +25,6 @@ import {
   realRegions,
   regionAreas,
   regionOf,
-  regionOfSpecies,
   startRegion,
   switchRegion,
 } from './regions'
@@ -180,9 +180,10 @@ export function worldOver(save: SaveData, data: GameData, now: number | null, tr
 }
 
 /**
- * The world closes for this player: anyone inside goes back where they came from, and its block — Box, bag, ₽, areas,
- * Pokédex — is deleted. `events.world` stays, closed, until the closing pop-up has been shown. Unchanged when the save
- * holds no world, or there is nowhere to go back to.
+ * The world closes for this player: anyone inside goes back where they came from, its Pokémon go home (each to its
+ * species' region, waiting there until that region's best reaches its level: engine/homecoming.ts), and the rest of its
+ * block — bag, ₽, areas, Pokédex — is deleted. `events.world` stays, closed, with how many went where, until the closing
+ * pop-up has been shown. Unchanged when the save holds no world, or there is nowhere to go back to.
  */
 export function closeWorld(save: SaveData, data: GameData): SaveData {
   const held = heldWorld(save)
@@ -194,9 +195,11 @@ export function closeWorld(save: SaveData, data: GameData): SaveData {
     next = switchRegion(next, to)
     if (next === save) return save
   }
+  const box = next.parked?.[held.regionId]?.box ?? []
   const parked = { ...next.parked }
   delete parked[held.regionId]
-  return { ...next, parked, events: { ...next.events, world: { ...held, closed: true } } }
+  const home = sendWorldHome({ ...next, parked }, data, box, held.id)
+  return { ...home.save, events: { ...home.save.events, world: { ...held, closed: true, home: home.counts } } }
 }
 
 // ------------------------------------------------------------------ pop-ups
@@ -219,6 +222,8 @@ export interface WorldBye {
   entered: boolean
   caught: boolean
   partner: number | null
+  /** How many of its Pokémon went home to each region (empty for a player who never went in). */
+  home: Record<RegionId, number>
 }
 
 /**
@@ -229,14 +234,14 @@ export function worldByeDue(save: SaveData, data: GameData, now: number | null):
   const bye = new Set(save.events?.worldBye ?? [])
   const w = save.events?.world
   if (w?.closed && !bye.has(w.id))
-    return { id: w.id, world: worldById(data, w.id), entered: true, caught: !!w.caught, partner: w.partner }
+    return { id: w.id, world: worldById(data, w.id), entered: true, caught: !!w.caught, partner: w.partner, home: w.home ?? {} }
   if (now == null || heldWorld(save)) return null
   const seen = new Set(save.events?.worldSeen ?? [])
   const last = smallWorlds(data)
     .filter((x) => worldState(x, now) === 'ended' && at(x.end) <= now)
     .sort((a, b) => at(b.end) - at(a.end))[0]
   if (!last || !seen.has(last.id) || bye.has(last.id)) return null
-  return { id: last.id, world: last, entered: false, caught: false, partner: null }
+  return { id: last.id, world: last, entered: false, caught: false, partner: null, home: {} }
 }
 
 /** The closing pop-up was shown: the closed world's record goes (the last 20 ids are kept). */
@@ -321,7 +326,7 @@ export function buyWorldItem(
 // ------------------------------------------------------------------ the shiny mythical
 
 /** The region a world's mythical goes home to: its generation's (Mew → Kanto, Celebi → Johto, Victini → Unova…). */
-export const mythicalHome = (data: GameData, dex: number): RegionId => regionOfSpecies(data, dex) ?? KANTO
+export const mythicalHome = (data: GameData, dex: number): RegionId => speciesHome(data, dex)
 
 /**
  * A catch in a small world: when it's the world's shiny mythical, it leaves the world at once for its home region's

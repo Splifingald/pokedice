@@ -1,6 +1,7 @@
 // Small worlds (docs/21): a time-limited, themed region of its own, built in the admin, where a shiny mythical is won.
 // Its region is part of nothing a real region is; its rules (area dates, dice by level, XP ×, boosters, its Mart) hold
-// inside it only; its mythical leaves for its home region's Box; when it ends, everything else in it is gone.
+// inside it only; its mythical leaves for its home region's Box; when it ends, its Pokémon go home locked by level
+// (tests/engine/world-homecoming.test.ts) and the rest of it is gone.
 import { describe, expect, it } from 'vitest'
 import {
   activeEvents,
@@ -406,12 +407,15 @@ describe('when it closes', () => {
     expect(worldOver(s, gone, NOW, true)).toBe(true)
   })
 
-  it('sends the player back and deletes everything in it; only the mythical, already home, is left', () => {
+  it('sends the player back and deletes its block; the mythical, already home, and its Pokémon going home are left', () => {
     const caught = catchWorldMythical({ ...inside(), gold: 999 }, data, LAIR.id, { dex: 151, level: 60 }, NOW, newId)!.save
     const closed = closeWorld(caught, data)
     expect(regionOf(closed)).toBe('kanto')
     expect(closed.parked?.[REGION.id]).toBeUndefined()
     expect(closed.box.find((p) => p.dex === 151)).toMatchObject({ shiny: true })
+    // The partner (Abra, Lv.5) went home to Kanto, where Charmander is Lv.5 already: it arrived at once.
+    expect(closed.box.find((p) => p.dex === 63)).toMatchObject({ level: 5 })
+    expect(closed.gold).not.toBe(999)
     expect(heldWorld(closed)).toBeNull()
     expect(closed.events?.world).toMatchObject({ id: WORLD.id, closed: true, caught: true, partner: 63 })
     // Closed from outside: the parked block goes all the same.

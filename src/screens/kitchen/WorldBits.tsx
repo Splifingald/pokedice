@@ -1,10 +1,12 @@
 // Kitchen sink: Small worlds' pieces (docs/21) in every state — Home's square (a fresh start, played, the last day,
 // the mythical caught), the pop-up, the partner pick in the world's colours, the strip (running, the last day, content
 // not in yet), the squares inside (the mythical waiting, ready, gone home, waiting for its region; the Mart), the
-// booster chips and the dice level tag, the mythical's result card, the closing pop-up (kept, got away, never entered)
-// and the page the main game's screens show inside a world.
+// booster chips and the dice level tag, the mythical's result card, the closing pop-up (kept, got away, never entered,
+// with its Pokémon gone home), the lock of a Pokémon waiting in its region (docs/26 §1) and the page the main game's
+// screens show inside a world.
 import { useMemo, useState } from 'react'
 import { newSmallWorld, type SmallWorld, type WorldBye } from '@/engine'
+import { HomerLockView } from '@/components/HomerLock'
 import { PartnerMoment } from '@/components/PartnerMoment'
 import { PixelButton } from '@/components/PixelButton'
 import { DiceLevelTag } from '@/screens/battle/Plates'
@@ -59,9 +61,9 @@ export function WorldBits() {
   const [pick, setPick] = useState(false)
   const [bye, setBye] = useState<WorldBye | null>(null)
   const byes: Record<string, WorldBye> = {
-    kept: { id: mid.id, world: mid, entered: true, caught: true, partner: 63 },
-    gone: { id: mid.id, world: mid, entered: true, caught: false, partner: 92 },
-    never: { id: mid.id, world: mid, entered: false, caught: false, partner: null },
+    kept: { id: mid.id, world: mid, entered: true, caught: true, partner: 63, home: { kanto: 8, johto: 5, sinnoh: 3 } },
+    gone: { id: mid.id, world: mid, entered: true, caught: false, partner: 92, home: { kanto: 1 } },
+    never: { id: mid.id, world: mid, entered: false, caught: false, partner: null, home: {} },
   }
   return (
     <div className="grid w-full gap-3">
@@ -115,6 +117,10 @@ export function WorldBits() {
       </div>
       <div className="max-w-md">
         <WorldRules world={mid} />
+      </div>
+      <div className="grid max-w-md gap-2">
+        <HomerLockView name="Gengar" level={42} best={31} region="Kanto" world="Mirage Island" />
+        <HomerLockView name="Boo" level={60} best={0} region="Sinnoh" world={null} />
       </div>
       <div className="grid max-w-md gap-2">
         <WorldAwayView world={mid} kind="events" back="Kanto" onBack={noop} />

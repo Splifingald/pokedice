@@ -1179,6 +1179,11 @@ export interface EventsSave {
   worldBye?: string[]
   /** Shiny mythicals won in a small world, waiting for their home region to be started. */
   worldPending?: WorldCatch[]
+  /**
+   * A closed small world's Pokémon gone home (docs/26 §1), each waiting in its region, locked, until that region has a
+   * Pokémon at its level (`engine/homecoming.ts`). Not in any Box or Pokédex until then.
+   */
+  worldHome?: WorldHomer[]
 }
 
 /** The small world a save holds: which, where it was entered from, and what happened there. */
@@ -1197,6 +1202,18 @@ export interface WorldSave {
   bought?: Record<string, number>
   /** The world has closed: its block is gone; this stays until its closing pop-up has been shown. */
   closed?: boolean
+  /** How many of its Pokémon went home to each region when it closed (its closing pop-up says so). */
+  home?: Record<RegionId, number>
+}
+
+/** A closed small world's Pokémon, waiting in its home region until that region's best reaches its level. */
+export interface WorldHomer {
+  /** The Pokémon as it left the world (healed); its level is the level it waits for. */
+  inst: PokemonInstance
+  /** The region of its species, where it waits and arrives. */
+  region: RegionId
+  /** The world it came from. */
+  worldId: string
 }
 
 /** A shiny mythical won in a small world, waiting for its home region to be started. */

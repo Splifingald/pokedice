@@ -265,14 +265,19 @@ test('the final fight: the shiny Mew, beaten and caught, goes to the Kanto Box',
   expect(s.events?.world?.caught).toBe(true)
 })
 
-test('the world closes: back in Kanto, everything of it gone but the mythical, and a pop-up once', async ({ page }) => {
-  const caught = catchWorldMythical(inside(), DATA, 'e2e-lair', { dex: 151, level: 5 }, Date.parse(NOW), id)!.save
+test('the world closes: back in Kanto, its Pokémon gone home (one locked), the rest gone, and a pop-up once', async ({ page }) => {
+  // Haunter Lv.40 goes home to Kanto, where the best is Lv.5: it waits there, locked (docs/26 §1).
+  const haunter = { id: 'w-haunter', dex: 93, level: 40, xp: 0, currentHp: 1, caughtAt: 0 }
+  const withHaunter = inside((s) => ({ ...s, box: [...s.box, haunter] }))
+  const caught = catchWorldMythical(withHaunter, DATA, 'e2e-lair', { dex: 151, level: 5 }, Date.parse(NOW), id)!.save
   await boot(page, caught, AFTER)
   await page.goto('/home')
   const bye = page.getByRole('dialog', { name: 'Mirage Island has closed' })
   await expect(bye).toBeVisible({ timeout: 15_000 })
   await expect(bye.getByText('You kept a shiny Mew')).toBeVisible()
-  await expect(bye.getByText("Gastly, the world's Pokémon, items and ₽ closed with it.")).toBeVisible()
+  await expect(bye.getByText('Your Pokémon went home')).toBeVisible()
+  await expect(bye.getByText('Kanto 2. Each one waits there until your best reaches its level.')).toBeVisible()
+  await expect(bye.getByText("The world's items and ₽ closed with it.")).toBeVisible()
   await bye.getByRole('button', { name: 'OK' }).click()
   await expect(bye).toHaveCount(0)
   // The save is written a moment later.
@@ -283,7 +288,24 @@ test('the world closes: back in Kanto, everything of it gone but the mythical, a
   expect(s.events?.world).toBeUndefined()
   expect(s.events?.worldBye).toEqual(['mirage'])
   expect(s.box.find((p) => p.dex === 151)).toMatchObject({ shiny: true })
+  // The partner, Gastly Lv.5, arrived at once (Charmander is Lv.5); Haunter waits.
+  expect(s.box.find((p) => p.dex === 92)).toMatchObject({ level: 5 })
+  expect(s.events?.worldHome?.map((h) => [h.inst.dex, h.region])).toEqual([[93, 'kanto']])
   await expect(page.getByRole('button', { name: /small world/ })).toHaveCount(0)
+
+  // In the Box, apart and locked; its sheet says why, and it can only be named or let go.
+  await page.goto('/team')
+  await expect(page.getByRole('heading', { name: 'Waiting to unlock' })).toBeVisible()
+  await page.getByRole('button', { name: 'Haunter, Locked until Lv.40' }).click()
+  const sheet = page.getByRole('dialog', { name: 'Haunter' })
+  await expect(sheet.getByText('Locked until Lv.40')).toBeVisible()
+  await expect(sheet.getByText('Home from Mirage Island')).toBeVisible()
+  await expect(sheet.getByText(/joins your Kanto Box once one of your Pokémon here reaches Lv\.40 \(your best: Lv\.5\)/)).toBeVisible()
+  await sheet.getByRole('button', { name: 'Let it go' }).click()
+  await sheet.getByRole('button', { name: 'Sure? Tap again' }).click()
+  await expect(page.getByText('Haunter was let go.')).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Waiting to unlock' })).toHaveCount(0)
+  await expect.poll(async () => (await stored(page)).events?.worldHome).toBeUndefined()
 })
 
 /** Nothing scrolls sideways, every word in Jersey; on the page itself (`controls`), no control under 44px. */

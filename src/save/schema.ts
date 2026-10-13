@@ -190,6 +190,7 @@ export const saveSchema = z.object({
           caught: z.boolean().optional(),
           bought: z.record(z.number().int().min(0)).optional(),
           closed: z.boolean().optional(),
+          home: z.record(z.number().int().min(0)).optional(),
         })
         .optional(),
       worldSeen: z.array(z.string().max(80)).max(20).optional(),
@@ -197,6 +198,11 @@ export const saveSchema = z.object({
       worldPending: z
         .array(z.object({ dex: z.number().int().min(1), level: z.number().int().min(1), shiny: z.boolean(), worldId: z.string().max(80) }))
         .max(50)
+        .optional(),
+      // A closed world's Pokémon waiting in their home region until its best reaches their level (docs/26 §1).
+      worldHome: z
+        .array(z.object({ inst: instanceSchema, region: z.string().min(1).max(80), worldId: z.string().max(80) }))
+        .max(2000)
         .optional(),
       rebattle: z
         .record(

@@ -357,6 +357,8 @@ Players shouldn't have to make many requests:
   Back. The body leads with what matters now: HP and XP, Speed / Rerolls / Catch value, every die as real dice, then
   **What's next** (milestones still ahead, the next one tagged NEXT, each with how close it is); milestones already
   reached fold away under a summary.
+- **A small world's Pokémon waiting to unlock** (§22, docs/26 §1) opens the same sheet, its line saying "Waiting to
+  unlock", the lock first in its body, and **Let it go** as the only footer action; no Make lead, no item, no Send on.
 - **Nicknames**: on one of your own Pokémon's sheets (not a Pokédex entry, not a fossil still reviving) the title is a
   button, the name and a pencil (`NicknameButton`; "Give it a nickname" is its description, so the sheet keeps the
   name as its label). It opens a small `Modal` over the sheet (`NicknameModal`): the field, focused, with the species
@@ -696,7 +698,16 @@ on `/kitchen-sink` (`WorldBits`). Every rule and number comes from `engine/world
 - **The main game's pages inside** (the events, the Day Care, Versus, by a link or a reload) keep their title and show
   why they wait (`WorldAwayPage`), with Back to Kanto.
 - **Closing**: the world gone grey (`WorldByePopup`), once, to whoever played it or saw it open: the mythical kept (or
-  "got away"), and that the partner, the world's Pokémon, items and ₽ closed with it.
+  "got away"), **where its Pokémon went** ("Your Pokémon went home": "Kanto 8 · Johto 5 · Sinnoh 3", in the regions'
+  order, the partner's sprite beside it), and that the world's items and ₽ closed with it.
+- **Its Pokémon go home** (docs/26 §1): the rules (`WorldRules`) say so in every world ("Your Pokémon go home": each to
+  its own region, locked until your best there reaches its level). In that region's Team screen, under the Box, a
+  **Waiting to unlock** section (its count, a line with the region's best now, "Your best: Lv.31") holds them as
+  `MonTile`s with `locked` (the tile and its icon greyed, a lock in the corner; "Gengar, Locked until Lv.42" for screen
+  readers). Its sheet is the Pokémon's sheet with the lock first (`HomerLock`: "Locked until Lv.42", "Home from
+  Haunted Hollow" while the admin still lists the world, what it waits for and what it can't do) and only two actions:
+  its nickname (the title, as always) and **Let it go** (danger, "Sure? Tap again", a toast). The day it unlocks, a toast
+  says so ("Gengar (Lv.42) is unlocked: it joined your Kanto Box!", or one per region for several at once).
 
 ## 23. Messages and gifts
 

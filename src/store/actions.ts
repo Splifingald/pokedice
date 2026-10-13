@@ -10,6 +10,7 @@ import {
   sellItem,
   createRng,
   randomSeed,
+  releaseHomer,
   renamePokemon,
   setTeam,
   swapIntoTeam,
@@ -105,6 +106,11 @@ export function removeFromTeam(id: string) {
 /** Gives one of your Pokémon a nickname; an empty one (or its species' name) takes it away. */
 export function nicknamePokemon(id: string, name: string): boolean {
   return mutateSave((s) => renamePokemon(s, useGame.getState().data, id, name))
+}
+
+/** Lets a small world's Pokémon waiting to unlock in its region go (docs/26 §1): the only thing it can do but wait. */
+export function letHomerGo(id: string): boolean {
+  return mutateSave((s) => releaseHomer(s, id))
 }
 
 // ---------------------------------------------------------------- Day Care

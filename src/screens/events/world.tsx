@@ -273,6 +273,13 @@ export function WorldRules({ world }: { world: SmallWorld }) {
       title: t('ui.world.rules.myth.title', { name: myth }),
       text: t('ui.world.rules.myth.text'),
     })
+  // Every world (docs/26 §1): its Pokémon go home when it ends, each locked by level in its own region.
+  rows.push({
+    key: 'home',
+    icon: <PixelIcon name="box" size={22} />,
+    title: t('ui.world.rules.home.title'),
+    text: t('ui.world.rules.home.text'),
+  })
   return (
     <ul className="m-0 grid list-none gap-2.5 p-0">
       {rows.map((r) => (
@@ -404,6 +411,12 @@ export function WorldByeView({ bye, open, onOk }: { bye: WorldBye; open: boolean
   const myth = w ? data.species[w.mythical.dex]?.name : null
   const home = w ? (getRegion(data, mythicalHome(data, w.mythical.dex))?.name ?? '') : ''
   const partner = bye.partner ? data.species[bye.partner]?.name : null
+  // "Kanto 8 · Johto 5 · Sinnoh 3", in the regions' order (docs/26 §1).
+  const homeList = data.regions
+    .filter((r) => (bye.home[r.id] ?? 0) > 0)
+    .sort((a, b) => a.orderIndex - b.orderIndex)
+    .map((r) => t('ui.world.bye.homeCount', { region: r.name, n: bye.home[r.id]! }))
+    .join(' · ')
   return (
     <Modal open={open} onClose={onOk} title={t('ui.world.bye.title', { world: name })} className="max-w-md">
       <div className="flex flex-col gap-3" style={worldVars(w)}>
@@ -424,6 +437,17 @@ export function WorldByeView({ bye, open, onOk }: { bye: WorldBye; open: boolean
               </span>
             </li>
           )}
+          {homeList && (
+            <li className="flex items-center gap-2.5">
+              <span className="grid h-[42px] w-[42px] shrink-0 place-items-center bg-line shadow-ring-line" aria-hidden>
+                {partner ? <SpriteImg dex={bye.partner!} size={36} /> : <PixelIcon name="box" size={22} />}
+              </span>
+              <span className="grid gap-0.5 leading-tight">
+                <b className="text-[19px] font-normal leading-none">{t('ui.world.bye.home')}</b>
+                <small className="font-pixel-sm text-[15px] text-muted">{t('ui.world.bye.homeText', { list: homeList })}</small>
+              </span>
+            </li>
+          )}
           <li className="flex items-center gap-2.5">
             <span className="grid h-[42px] w-[42px] shrink-0 place-items-center bg-line shadow-ring-line" aria-hidden>
               <PixelIcon name="close" size={20} />
@@ -431,7 +455,7 @@ export function WorldByeView({ bye, open, onOk }: { bye: WorldBye; open: boolean
             <span className="grid gap-0.5 leading-tight">
               <b className="text-[19px] font-normal leading-none">{t('ui.world.bye.rest')}</b>
               <small className="font-pixel-sm text-[15px] text-muted">
-                {bye.entered && partner ? t('ui.world.bye.restText', { partner }) : t('ui.world.bye.notEntered')}
+                {bye.entered ? t('ui.world.bye.restText') : t('ui.world.bye.notEntered')}
               </small>
             </span>
           </li>
