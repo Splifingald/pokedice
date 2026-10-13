@@ -704,6 +704,21 @@ area.stark-mountain,Stark Mountain,Mont Abrupt,Montaña Dura,Kahlberg,Monte Osti
 area.snowpoint-temple,Snowpoint Temple,Temple de Frimapic,Templo Puntaneva,Blizzach-Tempel,Tempio di Nevepoli,Templo de Snowpoint,Templo de Snowpoint,キッサキしんでん,선단신전,雪峰神殿
 area.fullmoon-island,Fullmoon Island,Île Pleine Lune,Isla Plenilunio,Vollmondinsel,Isola Lunapiena,Ilha da Lua Cheia,Ilha da Lua Cheia,まんげつじま,보름달섬,满月岛
 area.newmoon-island,Newmoon Island,Île Nouvellune,Isla Lunanueva,Neumondinsel,Isola Lunanuova,Ilha da Lua Nova,Ilha da Lua Nova,しんげつじま,초승달섬,新月岛
+area.dusk-road,Dusk Road,Route du Crépuscule,Camino del Ocaso,Dämmerweg,Strada del Crepuscolo,Estrada do Crepúsculo,Estrada do Crepúsculo,たそがれのみち,황혼의 길,黄昏之路
+area.foggy-marsh,Foggy Marsh,Marais Brumeux,Pantano Brumoso,Nebelsumpf,Palude Nebbiosa,Pântano Nebuloso,Pântano Nebuloso,きりのしっち,안개 습지,迷雾沼泽
+area.whispering-woods,Whispering Woods,Bois Murmurant,Bosque Susurrante,Flüsterwald,Bosco Sussurrante,Bosque Sussurrante,Bosque Sussurrante,ささやきのもり,속삭이는 숲,低语森林
+area.lantern-town,Lantern Town,Ville des Lanternes,Pueblo Farol,Laternenstadt,Città delle Lanterne,Vila das Lanternas,Vila das Lanternas,ちょうちんタウン,등불 마을,灯笼镇
+area.old-quarry,Old Quarry,Vieille Carrière,Cantera Vieja,Alter Steinbruch,Vecchia Cava,Pedreira Velha,Pedreira Velha,ふるいさいせきじょう,오래된 채석장,旧采石场
+area.frozen-lake,Frozen Lake,Lac Gelé,Lago Helado,Gefrorener See,Lago Ghiacciato,Lago Gelado,Lago Congelado,こおったみずうみ,얼어붙은 호수,冰冻湖
+area.sunken-shore,Sunken Shore,Rivage Englouti,Costa Hundida,Versunkene Küste,Riva Sommersa,Costa Submersa,Costa Submersa,しずんだはまべ,가라앉은 해안,沉没海岸
+area.rusted-armory,Rusted Armory,Armurerie Rouillée,Arsenal Oxidado,Rostige Waffenkammer,Armeria Arrugginita,Arsenal Enferrujado,Arsenal Enferrujado,さびたぶきこ,녹슨 무기고,生锈的武器库
+area.windy-cliffs,Windy Cliffs,Falaises Venteuses,Acantilados Ventosos,Windige Klippen,Scogliere Ventose,Falésias Ventosas,Falésias Ventosas,かぜのがけ,바람의 절벽,疾风悬崖
+area.spirit-mountain,Spirit Mountain,Mont des Esprits,Monte Espíritu,Geisterberg,Monte degli Spiriti,Monte dos Espíritos,Monte dos Espíritos,たましいのやま,영혼의 산,灵魂山
+area.shadow-elite,Shadow Elite,Élite de l'Ombre,Élite Sombría,Schatten-Elite,Élite dell'Ombra,Elite das Sombras,Elite das Sombras,シャドーしてんのう,섀도 사천왕,暗影四天王
+area.cemetery,Cemetery,Cimetière,Cementerio,Friedhof,Cimitero,Cemitério,Cemitério,ぼち,묘지,墓地
+area.haunted-house,Haunted House,Maison Hantée,Casa Encantada,Spukhaus,Casa Infestata,Casa Assombrada,Casa Assombrada,おばけやしき,유령의 집,鬼屋
+area.cavern,Cavern,Caverne,Caverna,Kaverne,Caverna,Caverna,Caverna,どうくつ,동굴,洞窟
+area.distortion-world,Distortion World,Monde Distorsion,Mundo Distorsión,Zerrwelt,Mondo Distorto,Mundo Distorção,Mundo Distorção,やぶれたせかい,깨어진 세계,毁坏的世界
 area.the-seabreak-path,The Seabreak Path,Le Passage Marin,La Vía Costera,Der Buhnenpfad,Il Sentiero Frangiflutti,O Caminho do Quebra-Mar,O Caminho do Quebra-Mar,うみのとおりみち,바다의 길,海之通道
 area.flower-paradise,Flower Paradise,Paradis Fleuri,Paraíso Floral,Blumenparadies,Paradiso Fiorito,Paraíso das Flores,Paraíso das Flores,はなのらくえん,꽃의 낙원,花之乐园
 area.the-hall-of-origin,The Hall of Origin,La Salle Originelle,La Sala del Origen,Die Halle des Beginns,La Sala d'Origine,O Salão da Origem,O Salão da Origem,はじまりのま,시작의 방,起始之间
@@ -3428,6 +3443,7 @@ area.the-paradox-sightings,The Paradox Sightings,Les Apparitions Paradoxe,Los Av
 area.the-area-zero-underdepths,The Area Zero Underdepths,Les Profondeurs de la Zone Zéro,Las Profundidades de la Zona Cero,Die Tiefen der Zone Null,Le Profondità dell'Area Zero,As Profundezas da Área Zero,As Profundezas da Área Zero,エリアゼロの最深部,The Area Zero Underdepths,The Area Zero Underdepths
 area.kitakami-hall,Kitakami Hall,Septemplion,Kitakami Hall,Das Kitakami-Kulturzentrum,Kitakami Hall,Kitakami Hall,Kitakami Hall,キタカミの公民館,Kitakami Hall,Kitakami Hall
 region.paldea,Paldea,Paldea,Paldea,Paldea,Paldea,Paldea,Paldea,パルデア,팔데아,帕底亚
+region.world-haunted-hollow,Haunted Hollow,Vallon Hanté,Hondonada Encantada,Spukmulde,Valle Infestata,Vale Assombrado,Vale Assombrado,おばけの谷,유령의 골짜기,幽灵谷
 badge.electric-badge,Electric Badge,Badge Électrik,Medalla Eléctrica,Elektro-Orden,Medaglia Elettro,Insígnia Elétrica,Insígnia Elétrica,でんきバッジ,전기배지,电徽章
 badge.normal-badge,Normal Badge,Badge Normal,Medalla Normal,Normal-Orden,Medaglia Normale,Insígnia Normal,Insígnia Normal,ノーマルバッジ,노말배지,一般徽章
 badge.ghost-badge,Ghost Badge,Badge Spectre,Medalla Fantasma,Geist-Orden,Medaglia Spettro,Insígnia Fantasma,Insígnia Fantasma,ゴーストバッジ,고스트배지,幽灵徽章

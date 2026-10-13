@@ -58,7 +58,7 @@ export function useContinue(area: Area) {
   const raidName = raid ? (data.species[raid.dex]?.name ?? '') : ''
   // Re-checked every second (useEnergy ticks): a Center the game sends next is free even at 0.
   const empty = !!energy && energy.value < 1 && run.areaId === area.id && outOfEnergy()
-  const need = area.roundsToClear
+  const need = area.roundsToClear || null
   const done = progress.roundsDone ?? 0
   // Extreme mode (docs/22): nobody can fight and no Center will come — the team rests.
   const resting = !busy && !hasAbleTeam(save) && !centersOn(save, data)

@@ -174,9 +174,12 @@ function DetailsSub({ area }: { area: Area }) {
     <>
       {[
         levelText(span),
-        rounds != null
+        rounds
           ? t(`ui.home.rounds.${rounds === 1 ? 'one' : 'other'}`, { n: `${done}/${rounds}` })
-          : t('ui.home.secretArea'),
+          : // 0 rounds: a league of fights only (docs/26).
+            rounds === 0
+            ? t('ui.home.league')
+            : t('ui.home.secretArea'),
         t(`ui.home.stTitle.${st}`),
       ].join(' · ')}
     </>

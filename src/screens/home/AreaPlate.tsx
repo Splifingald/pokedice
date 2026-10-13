@@ -28,7 +28,7 @@ export function AreaPlate({ area, onOpen }: { area: Area; onOpen: () => void }) 
   const save = useGame((s) => s.save)!
   const p = progressOf(save, area.id)
   const span = useLevelSpan(area)
-  const need = area.roundsToClear
+  const need = area.roundsToClear || null
   const done = p.cleared && need != null ? need : Math.min(p.roundsDone ?? 0, need ?? 0)
   const species = areaSpecies(area)
   const caught = species.filter((d) => save.pokedex.includes(d)).length

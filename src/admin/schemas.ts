@@ -120,7 +120,8 @@ export const ROW_SCHEMAS: Record<TableName, z.ZodTypeAny> = {
     name: z.string().min(1),
     banner_url: z.string().nullable(),
     // Optional so a database created before migration 0014 still loads.
-    rounds_to_clear: int(1, 20).nullable().optional(),
+    // 0: no round to play, the area's gyms come at once (a league of fights only, docs/26).
+    rounds_to_clear: int(0, 20).nullable().optional(),
     min_level: int(1, 100),
     max_level: int(1, 100),
     encounter_weights: z.object({

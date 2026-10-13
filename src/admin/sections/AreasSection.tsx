@@ -208,8 +208,8 @@ function AreaEditor({ area }: { area: Row }) {
                 ))}
               </select>
             </Field>
-            <Field label="Rounds to clear" hint="full decks; empty = never clears">
-              <NumInput nullable min={1} max={20} value={area.rounds_to_clear as number | null} onChange={(v) => patch({ rounds_to_clear: v })} />
+            <Field label="Rounds to clear" hint="full decks; 0 = its gyms at once (a league); empty = never clears">
+              <NumInput nullable min={0} max={20} value={area.rounds_to_clear as number | null} onChange={(v) => patch({ rounds_to_clear: v })} />
             </Field>
             <Field label="Backtrack ×" hint="rewards once cleared">
               <NumInput step={0.05} value={n(area.backtrack_multiplier)} onChange={(v) => patch({ backtrack_multiplier: v ?? 0 })} />

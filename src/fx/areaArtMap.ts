@@ -300,6 +300,23 @@ export const AREA_ART: Readonly<Record<string, string>> = {
   'a9d3ca76-7fd7-5428-9cd4-78123a2c0e5b': 'lair-crystal', // 955 The Paradox Sightings (Paldea)
   '679952cf-16ca-5cf8-82f9-e57b382d4c71': 'lair-crystal', // 956 The Area Zero Underdepths (Paldea)
   '168b74c9-3359-5581-a214-1f5be8da9b3e': 'a957', // 957 Kitakami Hall (Paldea)
+  // Haunted Hollow, the ghost small world (docs/26): existing pictures only.
+  'c3da0041-6de3-5997-8243-ab9b3559f166': 'evening', // 1 Dusk Road (Haunted Hollow)
+  'be8feb03-b0a9-57e8-b720-8efb8158be5f': 'a857', // 2 Foggy Marsh (Haunted Hollow)
+  '6bf5cdc8-d9a0-5222-867a-a9b955f0d3d2': 'a852', // 3 Whispering Woods (Haunted Hollow)
+  '45c379ef-71bc-58cc-a268-a59aaf818f6f': 'oldtown', // 4 Lantern Town (Haunted Hollow)
+  '8a531ee2-3eae-5340-89e5-489e482f0728': 'a652', // 5 Old Quarry (Haunted Hollow)
+  'baf5ef53-0f38-53ca-841b-38f81e77cc54': 'snow', // 6 Frozen Lake (Haunted Hollow)
+  '4b5f0177-dcfe-5760-99c1-57b26089f2be': 'beach', // 7 Sunken Shore (Haunted Hollow)
+  'a83d3d74-c03b-5d9c-9e72-0be42242b332': 'industrial', // 8 Rusted Armory (Haunted Hollow)
+  '974c4771-faf0-5c54-a203-14cac004d652': 'mountain', // 9 Windy Cliffs (Haunted Hollow)
+  '19d09269-ac38-5bd3-bad9-cafbb9a9d9c4': 'lair-summit', // 10 Spirit Mountain (Haunted Hollow)
+  '6037973d-df37-5a17-8291-4de31e40eeae': 'league', // 11 Shadow Elite (Haunted Hollow)
+  '3d16dc98-c33c-5471-9557-8143cb62fe4a': 'haunted', // 12 Cemetery (Haunted Hollow)
+  'a48e0cac-599a-5366-b418-6e616fc3cf38': 'a121', // 13 Haunted House (Haunted Hollow)
+  '11a60b7e-5463-5955-8c58-14be0ad97b89': 'deepcave', // 14 Cavern (Haunted Hollow)
+  '2361c7fc-b267-5637-a81d-c622b95003b9': 'a127', // 15 Newmoon Island (Haunted Hollow)
+  'cfff57e0-5175-545c-9e68-a2e2e64d7d45': 'a123', // 16 Distortion World (Haunted Hollow)
 }
 
 /**

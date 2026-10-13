@@ -71,29 +71,43 @@ Every area's deck is **10 cards** (wild and trainers in varied amounts, **1 item
 extra Centers still happen. **The rounds per area come from the campaign simulator.** Easy at first and harder later.
 Each area has a clear identity. Existing pictures only.
 
-| # | Area | Identity |
-|---|---|---|
-| 1 | Dusk Road | the simple road |
-| 2 | Foggy Marsh | |
-| 3 | Whispering Woods | |
-| 4 | Lantern Town | |
-| 5 | Old Quarry | |
-| 6 | Frozen Lake | |
-| 7 | Sunken Shore | |
-| 8 | Rusted Armory | |
-| 9 | Windy Cliffs | |
-| 10 | Spirit Mountain | |
-| 11 | **Shadow Elite** | the league: **only the five fights** (no round), Lv.52 → 60, three Pokémon each, no badges. Poison, Ice, Psychic, Ghost, then **Dark** (Tyranitar, Weavile, Zoroark; counted as the champion). New names on existing Elite pictures. |
+**Status: built** in `scripts/content-haunted-hollow.ts` (`pnpm haunted-hollow <in.json> <out.json>` adds it to an
+admin export), checked by `tests/content/haunted-hollow.test.ts`: 120 to catch (the world's Pokédex counts them), all
+but Giratina catchable before the Distortion World opens, no Normal or Fighting type, no Dark type before area 5, 10
+cards in every main deck and 6 in a secret one, each with one item and one Center. Pictures: existing ones only
+(`src/fx/areaArtMap.ts`). Names in the ten languages (`area.*`, `region.world-haunted-hollow`).
 
-Secret areas, **short** (a small deck with a few species found only there) **then the boss or raid**:
+| # | Area | Picture | Lv. | Deck (wild · trainers · item · Center) | Rounds | Foes’ upgrades | Wild | Trainers | Boss / raid | Finds |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | Dusk Road | evening | 3–7 | 7 · 1 · 1 · 1 | 1 | 1 | Caterpie, Weedle, Hoppip, Metapod (rare), Kakuna (rare), Drifloon (rare), Gastly (rare) | Bug Catcher Toby (Caterpie 5, Weedle 5); Youngster Wes (Hoppip 6); Lass Ivy (Weedle 4, Hoppip 5) | — | — |
+| 2 | Foggy Marsh | a857 | 7–12 | 6 · 2 · 1 · 1 | 1 | 1 | Wooper, Grimer, Surskit, Gastly, Golett, Skiploom (rare) | Fisherman Moss (Wooper 10, Surskit 9); Channeler Nell (Gastly 10, Gastly 10); Camper Reed (Grimer 11); Picnicker Fen (Hoppip 10, Wooper 11) | — | — |
+| 3 | Whispering Woods | a852 | 11–16 | 6 · 2 · 1 · 1 | 1 | 2 | Phantump, Pumpkaboo, Bramblin, Venonat, Spinarak, Pineco, Butterfree (rare), Beedrill (rare) | Bug Catcher Ash (Venonat 14, Spinarak 14); Hex Maniac Wren (Phantump 15, Pumpkaboo 15); Aroma Lady Fern (Pineco 15, Bramblin 15) | — | — |
+| 4 | Lantern Town | oldtown | 15–21 | 5 · 3 · 1 · 1 | 1 | 2 | Litwick, Ponyta, Mareep, Spoink, Shuppet, Flaaffy (rare), Misdreavus (rare) | Kindler Blaze (Ponyta 18, Litwick 18); Psychic Iris (Spoink 18, Shuppet 19); Channeler Hilda (Shuppet 18, Litwick 19, Gastly 18); Gentleman Orson (Mareep 19, Flaaffy 20) | — | Dusk Stone (once) |
+| 5 | Old Quarry | a652 | 20–26 | 5 · 3 · 1 · 1 | 1 | 3 | Golett, Geodude, Aron, Cubone, Poochyena, Graveler (rare), Lairon (rare) | Hiker Rocco (Geodude 23, Golett 24); Ruin Maniac Pell (Cubone 24, Aron 24); Worker Gus (Geodude 24, Aron 25, Golett 24); Punk Guy Vex (Poochyena 25, Cubone 25) | — | — |
+| 6 | Frozen Lake | snow | 25–32 | 5 · 3 · 1 · 1 | 1 | 3 | Snorunt, Swinub, Spheal, Smoochum, Jynx (rare) | Skier Holly (Snorunt 29, Swinub 29); Ace Trainer Neve (Spheal 29, Smoochum 29, Snorunt 30); Psychic Ilse (Jynx 30, Smoochum 28); Hex Maniac Rime (Snorunt 30, Haunter 30) | — | Dawn Stone (once) |
+| 7 | Sunken Shore | beach | 31–38 | 4 · 4 · 1 · 1 | 1 | 4 | Sandygast, Wingull, Krabby, Chinchou, Corphish, Kingler (rare), Crawdaunt (rare) | Swimmer Coral (Chinchou 34, Krabby 34); Fisherman Pike (Corphish 35, Krabby 35); Sailor Brine (Wingull 35, Corphish 36, Krabby 35); Beauty Pearl (Sandygast 36, Chinchou 35); Picnicker Sandy (Sandygast 34, Wingull 34) | — | — |
+| 8 | Rusted Armory | industrial | 37–44 | 4 · 4 · 1 · 1 | 1 | 5 | Honedge, Voltorb, Koffing, Beldum, Skarmory, Doublade (rare), Metang (rare) | Scientist Volt (Voltorb 41, Koffing 41, Electrode 42); Engineer Rust (Skarmory 41, Honedge 41); Ninja Boy Kage (Honedge 41, Doublade 42); Super Nerd Ohm (Beldum 41, Voltorb 41, Weezing 42); Punk Girl Smog (Koffing 42, Weezing 42) | — | Link Cable (once) |
+| 9 | Windy Cliffs | mountain | 42–50 | 4 · 4 · 1 · 1 | 1 | 4 | Drifloon, Zubat, Numel, Bagon, Golbat, Drifblim (rare), Brambleghast (rare), Shelgon (rare) | Bird Keeper Gale (Drifblim 47, Golbat 47); Hiker Crag (Numel 46, Camerupt 47); Dragon Tamer Ryu (Bagon 46, Shelgon 48); Backpacker Sky (Drifloon 46, Golbat 46, Numel 46); Ace Trainer Kite (Drifblim 48, Shelgon 48, Camerupt 47) | — | Revive, Rare Candy (once) |
+| 10 | Spirit Mountain | lair-summit | 48–56 | 3 · 5 · 1 · 1 | 1 | 5 | Duskull, Misdreavus, Houndour, Wynaut, Banette, Absol, Wobbuffet (rare), Dusclops (rare), Houndoom (rare) | Sage Kaito (Wobbuffet 52, Banette 52); Channeler Yumi (Dusclops 52, Misdreavus 51, Banette 51); Hex Maniac Morgana (Mismagius 53, Dusclops 52); Psychic Orin (Wobbuffet 52, Jynx 52); Cooltrainer Raven (Houndoom 53, Absol 53, Drifblim 52); Punk Guy Ash (Houndoom 52, Mightyena 52) | — | Revive, Rare Candy |
+| 11 | Shadow Elite | league | 52–60 | — | 0 | 7 | — | Elite Four Vesper (Crobat 53, Muk 53, Gengar 54); Elite Four Rime (Froslass 55, Walrein 55, Mamoswine 56); Elite Four Orin (Metagross 57, Wobbuffet 56, Jynx 56); Elite Four Morwen (Chandelure 58, Dusknoir 57, Aegislash 58); Champion Nyx (Tyranitar 60, Weavile 59, Zoroark 60) | — | — |
+| S1 | Cemetery | haunted | 24–30 | 3 · 1 · 1 · 1 | 1 | 3 | Greavard, Duskull, Gastly, Cubone, Haunter, Houndstone (rare) | Channeler Agnes (Gastly 27, Duskull 27, Haunter 28) | shiny Haunter Lv.30 | Reaper Cloth (once) |
+| S2 | Haunted House | a121 | 34–40 | 2 · 2 · 1 · 1 | 1 | 5 | Sinistea, Shuppet, Haunter, Misdreavus, Lampent, Banette, Gourgeist (rare) | Maid Lenore (Sinistea 38, Banette 38); Butler Grimsby (Lampent 39, Haunter 38) | shiny Mimikyu Lv.40 | Cracked Pot (once) |
+| S3 | Cavern | deepcave | 48–55 | 3 · 1 · 1 · 1 | 1 | 6 | Sableye, Golbat, Lairon, Graveler, Golurk, Aggron (rare), Dreepy (very rare) | Ruin Maniac Dirk (Sableye 52, Golurk 53, Aggron 54) | shiny Spiritomb Lv.50 | Revive, Rare Candy |
+| S4 | Newmoon Island | a127 | 58–64 | 3 · 1 · 1 · 1 | 1 | 7 | Cacnea, Mightyena, Houndoom, Crawdaunt, Cacturne, Absol | Punk Girl Noctis (Houndoom 62, Cacturne 62, Absol 63) | shiny Darkrai Lv.60 (raid) | Revive |
+| S5 | Distortion World | a123 | 65–70 | 3 · 1 · 1 · 1 | 1 | 8 | Gengar, Chandelure, Aegislash, Dusknoir, Trevenant, Mismagius, Dragapult (rare) | Hex Maniac Umbra (Gengar 68, Chandelure 68, Dusknoir 69) | shiny Giratina Lv.70 (raid) | Revive, Rare Candy |
 
-| # | Secret area | Boss | Opens when |
-|---|---|---|---|
-| S1 | Cemetery | shiny **Haunter** Lv.30 | 20 different Pokémon caught |
-| S2 | Haunted House | shiny **Mimikyu** Lv.40 | 50 different Pokémon caught |
-| S3 | Cavern | shiny **Spiritomb** Lv.50 | a Pokémon reaches Lv.60 |
-| S4 | Newmoon Island | shiny **Darkrai** raid Lv.60 | the Shadow Elite beaten (every main area done) |
-| S5 | Distortion World | shiny **Giratina** raid Lv.70 | every Pokémon of the world caught but Giratina (119) |
+
+The secret areas open with: **Cemetery** 20 different Pokémon caught · **Haunted House** 50 · **Cavern** a Pokémon at
+Lv.60 · **Newmoon Island** the Shadow Elite beaten (`cleared`) · **Distortion World** 119 caught (all but Giratina).
+The Shadow Elite: Vesper (Poison), Rime (Ice), Orin (Psychic), Morwen (Ghost), then Champion Nyx (Dark), on Koga's,
+Glacia's, Will's, Phoebe's and Karen's pictures; no badges.
+
+**Balance** (the campaign simulator, 3 starters × 3 seeds, 400 encounters each): every run clears the chain. One round
+per area (two made the team outgrow the areas: Lv.33 arriving in Lantern Town). The team arrives a few levels above
+each area early on, the fights get harder from Windy Cliffs (about 6 to 10 wipes per run there and on Spirit Mountain,
+the Dark and Ghost types the theme brings), and the Shadow Elite falls in about 13 tries. About 300 encounters clear
+the chain; the foes' upgrade levels climb from 1 to 7 (the world's own tracks keep pace with its ₽: dice 6 to 8 by
+Windy Cliffs).
 
 ### 2.5 Engine pieces the event needs
 
