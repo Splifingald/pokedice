@@ -60,7 +60,8 @@ export function lockReason(save: SaveData, data: GameData, area: Area): string {
     .find((x) => !x.s.met)
   if (!unmet) return ''
   const label = conditionLabel(unmet.c, data)
-  return unmet.c.kind === 'area'
+  // An area to reach or to clear is said in words: it has no count.
+  return unmet.c.kind === 'area' || unmet.c.kind === 'cleared'
     ? label
     : `${label} · ${Math.min(unmet.s.current, unmet.s.target)}/${unmet.s.target}`
 }

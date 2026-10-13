@@ -2,18 +2,21 @@
 // the mythical caught), the pop-up, the partner pick in the world's colours, the strip (running, the last day, content
 // not in yet), the squares inside (the mythical waiting, ready, gone home, waiting for its region; the Mart), the
 // booster chips and the dice level tag, the mythical's result card, the closing pop-up (kept, got away, never entered,
-// with its Pokémon gone home), the lock of a Pokémon waiting in its region (docs/26 §1) and the page the main game's
-// screens show inside a world.
+// with its Pokémon gone home), the lock of a Pokémon waiting in its region (docs/26 §1), Home's Pokédex square and secret
+// area rows inside a world without a mythical (docs/26 §2.6) and the page the main game's screens show inside a world.
 import { useMemo, useState } from 'react'
 import { newSmallWorld, type SmallWorld, type WorldBye } from '@/engine'
 import { HomerLockView } from '@/components/HomerLock'
 import { PartnerMoment } from '@/components/PartnerMoment'
 import { PixelButton } from '@/components/PixelButton'
 import { DiceLevelTag } from '@/screens/battle/Plates'
+import { useGame } from '@/store/game'
 import {
   BoosterChip,
+  DexSquare,
   MartSquare,
   MythicalSquare,
+  SecretRowView,
   WorldAwayView,
   WorldByeView,
   WorldMythicalCard,
@@ -60,6 +63,11 @@ export function WorldBits() {
   const [popup, setPopup] = useState(false)
   const [pick, setPick] = useState(false)
   const [bye, setBye] = useState<WorldBye | null>(null)
+  const areas = useGame((s) => s.data.areas)
+  const areaNamed = (name: string) => areas.find((a) => a.name === name) ?? areas[0]!
+  const haunted = areaNamed('Pokémon Tower')
+  const cave = areaNamed('Rock Tunnel')
+  const island = areaNamed('Newmoon Island')
   const byes: Record<string, WorldBye> = {
     kept: { id: mid.id, world: mid, entered: true, caught: true, partner: 63, home: { kanto: 8, johto: 5, sinnoh: 3 } },
     gone: { id: mid.id, world: mid, entered: true, caught: false, partner: 92, home: { kanto: 1 } },
@@ -102,6 +110,17 @@ export function WorldBits() {
         <MythicalSquare world={mid} caught state="Waits for Johto" onClick={noop} />
         <MartSquare world={mid} gold={1240} onClick={noop} />
         <MartSquare world={mid} gold={0} onClick={noop} />
+        <DexSquare world={mid} caught={37} total={120} onClick={noop} />
+        <DexSquare world={mid} caught={120} total={120} onClick={noop} />
+      </div>
+      {/* A world's secret areas on Home inside it (docs/26 §2.6): every state, two squares wide. */}
+      <div className="grid max-w-xl grid-cols-2 gap-2.5">
+        <SecretRowView area={haunted} state="locked" boss={{ dex: 93, level: 30, shiny: true }} raid={false} cond={{ kind: 'pokedex', label: 'Catch 20 Pokémon', current: 12, target: 20 }} onClick={noop} />
+        <SecretRowView area={cave} state="locked" boss={{ dex: 442, level: 50, shiny: true }} raid={false} cond={{ kind: 'maxLevel', label: 'Raise a Pokémon to Lv.60', current: 41, target: 60 }} onClick={noop} />
+        <SecretRowView area={island} state="locked" boss={{ dex: 491, level: 60, shiny: true, raid: true }} raid cond={{ kind: 'cleared', label: 'Clear Shadow Elite', current: 0, target: 1 }} onClick={noop} />
+        <SecretRowView area={haunted} state="new" boss={{ dex: 93, level: 30, shiny: true }} raid={false} cond={null} onClick={noop} />
+        <SecretRowView area={island} state="open" boss={{ dex: 491, level: 60, shiny: true, raid: true }} raid cond={null} onClick={noop} />
+        <SecretRowView area={cave} state="done" boss={{ dex: 442, level: 50, shiny: true }} raid={false} cond={null} onClick={noop} />
       </div>
       <div className="flex flex-wrap items-center gap-2">
         <BoosterChip type="psychic" n={1.5} />

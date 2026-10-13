@@ -117,6 +117,9 @@ Secret areas, **short** (a small deck with a few species found only there) **the
 
 ### 2.6 Home inside a world
 
+**Status: built** (`worldDex`, `worldSecrets` in `engine/worlds.ts`; `DexSquare`, `SecretRowView` in
+`screens/events/world.tsx`; docs/15 §22; `e2e/worlds.spec.ts`).
+
 - First row: **the world's Pokédex** ("Caught 37/120", a meter, a tap opens it), in place of the mythical's square when
   the world has no mythical, and **the World Mart**.
 - Under it, **one full-width row per secret area** (two squares wide; up to 6), in order: locked (the area's name, its

@@ -26,8 +26,10 @@ import {
   raidTeamCap,
   worldPrize,
   worldPrizeCaught,
+  worldDex,
   worldPrizes,
   worldProblems,
+  worldSecrets,
   type Area,
   type Region,
   type SaveData,
@@ -226,5 +228,40 @@ describe('inside a small world, its items are its own', () => {
     expect(used?.save.box.find((p) => p.id === haunter.id)?.dex).toBe(94)
     const outside: SaveData = { ...kanto(), box: [...kanto().box, haunter], inventory: { 'link-cable': 1 } }
     expect(applyFieldItem(outside, 'link-cable', haunter.id, data, createRng(1))).toBeNull()
+  })
+})
+
+describe('Home inside a world: its Pokédex and its secret areas', () => {
+  it('counts the world’s Pokédex as its page does', () => {
+    const s = inside()
+    const dex = worldDex(s, data, WORLD)
+    expect(dex.caught).toBe(1) // the partner
+    expect(dex.total).toBeGreaterThan(5)
+    // Read from the parked block when the player is out.
+    expect(
+      worldDex(
+        {
+          ...s,
+          region: 'kanto',
+          parked: { ...s.parked, [REGION.id]: { ...s.parked!.kanto!, pokedex: [425, 93] } },
+        },
+        data,
+        WORLD,
+      ).caught,
+    ).toBe(2)
+  })
+
+  it('lists its secret areas in order with their prize, and says when it is caught', () => {
+    const s = inside()
+    const rows = worldSecrets(s, data, WORLD)
+    expect(rows.map((r) => [r.area.id, r.boss?.dex, r.raid, r.caught])).toEqual([
+      [CEMETERY.id, 93, false, false],
+      [NEWMOON.id, 491, true, false],
+      [DISTORTION.id, 487, true, false],
+    ])
+    const caught = worldSecrets(noteBossCaught(s, CEMETERY.id, 93), data, WORLD)[0]!
+    expect(caught.caught).toBe(true)
+    const raided = { ...s, events: { ...s.events, raidsDone: [progressRaidKey(NEWMOON.id, 491)] } }
+    expect(worldSecrets(raided, data, WORLD)[1]!.caught).toBe(true)
   })
 })

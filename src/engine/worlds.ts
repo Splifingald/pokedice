@@ -9,7 +9,7 @@
 // shown); its own Mart; a shiny mythical at the end. No event reaches inside, and the Day Care, Versus and the region
 // chain are the main game's.
 import type { UpgradeLevels } from './damage'
-import { isRaidBoss } from './encounters'
+import { bossCaught, isRaidBoss } from './encounters'
 import { eventOpenTo } from './events'
 import { isExtreme } from './extreme'
 import { addFossil } from './fossils'
@@ -27,11 +27,12 @@ import {
   realRegions,
   regionAreas,
   regionOf,
+  regionSpecies,
   startRegion,
   switchRegion,
 } from './regions'
-import { noteBossCaught, type RunEvent } from './run'
-import type { GameData, ItemDef, RegionId, SaveData, SmallWorld, WorldCatch, WorldSave } from './types'
+import { noteBossCaught, progressOf, type RunEvent } from './run'
+import type { Area, BossDef, GameData, ItemDef, RegionId, SaveData, SmallWorld, WorldCatch, WorldSave } from './types'
 import { smallWorlds, worldById, worldOfArea, worldOfRegion } from './worldList'
 
 export {
@@ -369,6 +370,45 @@ export function worldPrizeCaught(save: SaveData, world: SmallWorld, prize: World
   if (prize.kind === 'raid' && save.events?.raidsDone?.includes(progressRaidKey(prize.areaId, prize.dex))) return true
   const progress = regionOf(save) === world.regionId ? save.areaProgress : save.parked?.[world.regionId]?.areaProgress
   return !!progress?.[prize.areaId]?.bossesCaught?.includes(prize.dex)
+}
+
+// ------------------------------------------------------------------ Home inside a world
+
+/** Home inside a world shows at most this many secret areas, one full-width row each (docs/26 §2.6). */
+export const WORLD_SECRETS_MAX = 6
+
+/** The world's Pokédex as its page counts it: what its areas can give and what they evolve into, and how many caught. */
+export function worldDex(save: SaveData, data: GameData, world: SmallWorld): { caught: number; total: number } {
+  const all = regionSpecies(data, world.regionId)
+  const dex = regionOf(save) === world.regionId ? save.pokedex : (save.parked?.[world.regionId]?.pokedex ?? [])
+  return { caught: [...new Set(dex)].filter((d) => all.has(d)).length, total: all.size }
+}
+
+/** One of a world's secret areas, as Home shows it: its boss or raid (its prize first), and whether it's caught. */
+export interface WorldSecret {
+  area: Area
+  boss: BossDef | null
+  raid: boolean
+  caught: boolean
+}
+
+/** The world's secret areas in order (at most `WORLD_SECRETS_MAX`), for the player standing in it. */
+export function worldSecrets(save: SaveData, data: GameData, world: SmallWorld): WorldSecret[] {
+  return data.areas
+    .filter((a) => a.hidden && (a.regionId ?? KANTO) === world.regionId)
+    .sort((a, b) => a.orderIndex - b.orderIndex)
+    .slice(0, WORLD_SECRETS_MAX)
+    .map((area) => {
+      const bosses = area.legendaryBoss ?? []
+      const boss = bosses.find((b) => b.shiny) ?? bosses[0] ?? null
+      const raid = !!boss && isRaidBoss(data, boss)
+      const caught =
+        !!boss &&
+        (raid
+          ? !!save.events?.raidsDone?.includes(progressRaidKey(area.id, boss.dex))
+          : bossCaught(area, progressOf(save, area.id), save.pokedex, boss.dex, data))
+      return { area, boss, raid, caught }
+    })
 }
 
 // ------------------------------------------------------------------ the shiny mythical

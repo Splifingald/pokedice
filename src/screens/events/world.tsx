@@ -8,6 +8,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { create } from 'zustand'
 import {
   areaOpenAt,
+  conditionStatus,
   currentWorld,
   dayCareTutorialDue,
   donationDue,
@@ -30,16 +31,22 @@ import {
   worldPrizeCaught,
   worldPrizes,
   worldProgress,
+  worldDex,
+  worldSecrets,
   worldStarted,
+  type Area,
+  type BossDef,
   type GameData,
   type PokeType,
   type SaveData,
   type SmallWorld,
+  type UnlockCondition,
   type WorldBye,
 } from '@/engine'
 import { joinList } from '@/i18n'
 import { useT } from '@/i18n/react'
-import { Chip } from '@/components/Chip'
+import { AreaStrip } from '@/components/AreaStrip'
+import { Chip, NewTag } from '@/components/Chip'
 import { PixelIcon } from '@/components/icons'
 import { ItemSprite } from '@/components/ItemSprite'
 import { Modal } from '@/components/Modal'
@@ -53,8 +60,9 @@ import { useRaidGifts } from '@/store/raidGifts'
 import { serverNow, useServerNow } from '@/store/serverTime'
 import { travelTo } from '@/store/travel'
 import { enterSmallWorld, leaveSmallWorld, markWorldByeSeen, markWorldPopupSeen, useWorld, worldName } from '@/store/worlds'
-import { HeadTag, Widget, WidgetBanner, WidgetRows, WIDGET_BANNER_H } from '@/screens/home/Widget'
-import { lockReason } from '@/screens/home/areas'
+import { HeadTag, Meter, Widget, WidgetBanner, WidgetRows, WIDGET_BANNER_H } from '@/screens/home/Widget'
+import { areaStatus, lockReason } from '@/screens/home/areas'
+import { conditionLabel } from '@/i18n/text'
 import { cx, textOn } from '@/theme/util'
 import { LiveGauge, liveTime } from './live'
 import { bannerUrl } from './shared'
@@ -607,13 +615,144 @@ export function MartSquare({ world, gold, onClick }: { world: SmallWorld; gold: 
   )
 }
 
-/** Inside a world, Home's squares: the shiny mythical (where it waits, or where it went) and the world's Mart. */
+/** Inside a world without a mythical, Home's first square: its Pokédex, how many caught of how many (docs/26 §2.6). */
+export function DexSquare({ world, caught, total, onClick }: { world: SmallWorld; caught: number; total: number; onClick: () => void }) {
+  const { t } = useT()
+  const left = Math.max(0, total - caught)
+  return (
+    <Widget title={t('ui.nav.pokedex')} label={t('ui.world.dex.label', { n: caught, total })} onClick={onClick} className="w-widget">
+      <WidgetBanner>
+        <span className="w-myth-ground absolute inset-0 grid place-items-center" style={worldVars(world)}>
+          <PixelIcon name="navDex" size={40} />
+        </span>
+      </WidgetBanner>
+      <WidgetRows
+        top={<span className="truncate text-[20px] leading-none">{t('ui.world.dex.caught', { n: caught, total })}</span>}
+        meter={<Meter value={caught} max={total} />}
+        bottom={left ? t('ui.world.dex.left', { n: left }) : t('ui.world.dex.all')}
+      />
+    </Widget>
+  )
+}
+
+/** A secret area's row as Home inside a world shows it: locked (what opens it), new, open, or its prize caught. */
+export type SecretRowState = 'locked' | 'new' | 'open' | 'done'
+
+/**
+ * One of a world's secret areas on Home, two squares wide (docs/26 §2.6): its picture (greyed while locked) with its
+ * boss on it (a silhouette until it opens), its name, and what's next: the condition with its progress, the boss or
+ * raid and its level, or that it's caught.
+ */
+export function SecretRowView({
+  area,
+  state,
+  boss,
+  raid,
+  cond,
+  onClick,
+}: {
+  area: Area
+  state: SecretRowState
+  boss: BossDef | null
+  raid: boolean
+  /** The condition still to meet, while locked. */
+  cond: { kind: UnlockCondition['kind']; label: string; current: number; target: number } | null
+  onClick: () => void
+}) {
+  const { t } = useT()
+  const data = useGame((s) => s.data)
+  const locked = state === 'locked'
+  const bossName = boss ? (data.species[boss.dex]?.name ?? `#${boss.dex}`) : ''
+  // Its colours are on the sprite and the header's chip; the line keeps to the name, so a phone shows it whole.
+  const shown = bossName
+  const bottom = locked
+    ? !cond
+      ? ''
+      : cond.kind === 'pokedex'
+        ? t('ui.home.secretDex', { current: Math.min(cond.current, cond.target), target: cond.target })
+        : cond.kind === 'maxLevel'
+          ? t('ui.home.secretLevel', { current: Math.min(cond.current, cond.target), target: cond.target })
+          : cond.label
+    : !boss
+      ? ''
+      : state === 'done'
+        ? t('ui.world.secret.done', { name: shown })
+        : t(raid ? 'ui.world.secret.raid' : 'ui.world.secret.boss', { name: shown, level: boss.level })
+  const tag = locked ? (
+    <PixelIcon name="lock" size={14} />
+  ) : state === 'new' ? (
+    <NewTag />
+  ) : state === 'done' ? (
+    <Chip tone="done">{t('ui.events.raid.caught')}</Chip>
+  ) : boss?.shiny ? (
+    <ShinyTag dex={boss.dex} data={data} className="max-w-full truncate" />
+  ) : null
+  return (
+    <Widget
+      title={t('ui.home.secretArea')}
+      tag={<HeadTag>{tag}</HeadTag>}
+      label={t('ui.world.secret.label', {
+        area: area.name,
+        state: locked && cond ? `${cond.label}, ${bottom}` : boss?.shiny ? `${bottom} (${t('ui.mon.shiny')})` : bottom,
+      })}
+      onClick={onClick}
+      className="w-widget col-span-2"
+    >
+      <span className="grid w-full grid-cols-2 items-center gap-2.5">
+        <WidgetBanner>
+          <AreaStrip area={area} h={WIDGET_BANNER_H} className={cx('absolute inset-0 h-full w-full', locked && 'grayscale-[0.7]')} />
+          {boss && (
+            <span className="absolute inset-0 grid place-items-center">
+              <SpriteImg dex={boss.dex} shiny={boss.shiny && !locked} silhouette={locked} size={44} className={locked ? 'w-sil' : 'w-got'} />
+            </span>
+          )}
+        </WidgetBanner>
+        <WidgetRows
+          top={<span className="truncate text-[20px] leading-none">{area.name}</span>}
+          meter={locked && cond && cond.target > 1 ? <Meter value={cond.current} max={cond.target} /> : undefined}
+          bottom={bottom}
+        />
+      </span>
+    </Widget>
+  )
+}
+
+/** Inside a world, Home's squares: the mythical (or its Pokédex), its Mart, then a row per secret area. */
 export function WorldWidgets() {
   const { t } = useT()
   const navigate = useNavigate()
   const data = useGame((s) => s.data)
   const { world, save } = useInWorld()
   if (!world || !save) return null
+  const secrets = worldSecrets(save, data, world).map((x) => {
+    const status = areaStatus(save, data, x.area)
+    const state: SecretRowState = status === 'locked' ? 'locked' : x.caught ? 'done' : status === 'new' ? 'new' : 'open'
+    const unmet = (x.area.unlockConditions ?? []).map((c) => conditionStatus(c, save, data)).find((c) => !c.met)
+    const cond = unmet ? { kind: unmet.cond.kind, label: conditionLabel(unmet.cond, data), current: unmet.current, target: unmet.target } : null
+    return { ...x, state, cond }
+  })
+  const rows = secrets.map((x) => (
+    <SecretRowView
+      key={x.area.id}
+      area={x.area}
+      state={x.state}
+      boss={x.boss}
+      raid={x.raid}
+      cond={x.state === 'locked' ? x.cond : null}
+      onClick={() => (x.state === 'locked' ? pushToast(lockReason(save, data, x.area), 'info') : travelTo(x.area))}
+    />
+  ))
+  const mart = <MartSquare world={world} gold={save.gold} onClick={() => navigate('/shop')} />
+  if (!hasWorldMythical(data, world)) {
+    const dex = worldDex(save, data, world)
+    return (
+      <>
+        <DexSquare world={world} caught={dex.caught} total={dex.total} onClick={() => navigate('/pokedex')} />
+        {mart}
+        {rows}
+      </>
+    )
+  }
   const caught = !!heldWorld(save)?.caught
   const m = world.mythical
   const area = data.areas.find((a) => a.id === m.areaId)
@@ -639,7 +778,8 @@ export function WorldWidgets() {
           if (area) pushToast(lockReason(save, data, area), 'info')
         }}
       />
-      <MartSquare world={world} gold={save.gold} onClick={() => navigate('/shop')} />
+      {mart}
+      {rows}
     </>
   )
 }

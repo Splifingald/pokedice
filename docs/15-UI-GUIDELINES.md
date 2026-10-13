@@ -686,7 +686,15 @@ on `/kitchen-sink` (`WorldBits`). Every rule and number comes from `engine/world
   (`WorldWaiting`). Home shows no region offer and no region switcher; the Areas sheet has no Regions view.
 - **Home's squares inside** (`WorldWidgets`), and nothing else: the mythical (its silhouette on the world's ground,
   Lv. · name, where it is: "In Dream Peak", "Waiting: fight it!", "In your Kanto Box", "Waits for Johto"; a tap travels
-  to its area once open) and the world's Mart (three of its items, the world's own ₽).
+  to its area once open) and the world's Mart (three of its items, the world's own ₽). A world without a mythical shows
+  **its Pokédex** in the mythical's place (`DexSquare`: "Caught 37/120", the meter, "83 left to catch"; a tap opens it).
+- **A row per secret area** under them (`SecretRowView`, docs/26 §2.6), up to six, each two squares wide (`col-span-2`)
+  and as tall as a square: on the left its picture with its boss on it, on the right its name and what's next.
+  **Locked**: the picture greyed, the boss a silhouette glowing in the accent, a lock in the header, the meter and the
+  condition still to meet ("12/20 in Pokédex", "Best Lv. 41/60", "Clear Shadow Elite"); a tap says it in a toast.
+  **New** (opened, never played): NEW, the boss in its colours, "Boss: Haunter, Lv.30" (or "Raid: Darkrai, Lv.60").
+  **Open**: the same with its SHINY chip. **Done**: CAUGHT (green), "Spiritomb caught". Open, new or done, a tap travels
+  there. The line keeps to the name so a phone shows it whole; "(Shiny)" is in the label for screen readers.
 - **An area waiting for its date** is locked like any other, with "Opens {date}" (the local date and time, `dayTime`).
 - **The Poké Mart inside is the World Mart** (`WorldShop`): the world's picture and time left over the admin's list,
   each row with its limit ("8 of 10 left", Sold out); buying only, no Sell tab.
