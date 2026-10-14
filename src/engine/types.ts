@@ -1217,10 +1217,12 @@ export interface WorldSave {
 export interface WorldHomer {
   /** The Pokémon as it left the world (healed); its level is the level it waits for. */
   inst: PokemonInstance
-  /** The region of its species, where it waits and arrives. */
+  /** Where it waits and arrives: its species' region (from a world), or the region it was sent to. */
   region: RegionId
   /** The world it came from. */
-  worldId: string
+  worldId?: string
+  /** The region it was sent on from (docs/05), when it didn't come from a world. */
+  from?: RegionId
 }
 
 /** A shiny mythical won in a small world, waiting for its home region to be started. */

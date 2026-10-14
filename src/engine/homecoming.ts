@@ -4,9 +4,10 @@
 // Versus, trades, gifts or items, and no Pokédex entry; it can only be nicknamed or let go. The day it unlocks it
 // arrives the way any Pokémon does (`placeInBox`): it joins, replaces a weaker plain copy in place or merges into a
 // stronger one; a shiny is always its own. A region not started yet keeps its Pokémon waiting until it is.
+// A Pokémon sent on from another region (docs/05) waits on the same list, under the same lock.
 import { isReviving } from './fossils'
 import { instanceMaxHp } from './progression'
-import { KANTO, isWorldRegion, regionOf, regionOfSpecies } from './regions'
+import { KANTO, isWorldRegion, regionOf, regionOfSpecies, sendOnBlocked, sendTargets } from './regions'
 import { placeInBox } from './trade'
 import type { GameData, PokemonInstance, RegionId, SaveData, TradeOutcome, WorldHomer } from './types'
 
@@ -126,6 +127,49 @@ export function releaseWorldHome(
   const kept = waiting.filter((h) => still.includes(h))
   const { worldHome: _all, ...events } = next.events ?? {}
   return { save: { ...next, events: kept.length ? { ...events, worldHome: kept } : events }, arrived }
+}
+
+/** Whether a Pokémon sent to this region now would wait there, locked: nothing there is at its level yet. */
+export const sendArrivesLocked = (
+  save: SaveData,
+  data: GameData,
+  inst: PokemonInstance,
+  targetId: RegionId,
+): boolean => regionBestLevel(save, data, targetId) < inst.level
+
+/**
+ * Moves one Pokémon out of the live region and onto another started region's waiting list, then lets it in at once
+ * if a Pokémon there is already at its level (`releaseWorldHome`, the usual arrival). Otherwise it waits, locked, like
+ * a small world's Pokémon: a Lv.100 Charizard can't be sent to flatten a region still being played. It leaves the team
+ * behind it — and if it was the whole team, the Box promotes a replacement, because a region with nobody in its team
+ * cannot be played. The region it leaves keeps it in its own Pokédex: it was caught there, and that count never drops.
+ */
+export function sendPokemonOn(
+  save: SaveData,
+  data: GameData,
+  instId: string,
+  targetId: RegionId,
+): SaveData | null {
+  const target = sendTargets(save, data).find((r) => r.id === targetId)
+  if (!target) return null
+  const inst = save.box.find((p) => p.id === instId)
+  if (!inst || sendOnBlocked(save, data, inst, target)) return null
+
+  const box = save.box.filter((p) => p.id !== instId)
+  let team = save.team.filter((id) => id !== instId)
+  if (!team.length) {
+    const heir = box.find((p) => !isReviving(p))
+    if (!heir) return null
+    team = [heir.id]
+  }
+  const homer: WorldHomer = { inst, region: target.id, from: regionOf(save) }
+  const sent: SaveData = {
+    ...save,
+    box,
+    team,
+    events: { ...save.events, worldHome: [...worldHomers(save), homer] },
+  }
+  return releaseWorldHome(sent, data).save
 }
 
 /** Lets a waiting Pokémon go (its sheet's Release). Null when it isn't waiting. */

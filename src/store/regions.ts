@@ -12,6 +12,7 @@ import {
   startRegion as startRegionSave,
   switchRegion as switchRegionSave,
   unlockedRegions,
+  worldHomers,
   type Region,
   type RegionId,
 } from '@/engine'
@@ -83,15 +84,31 @@ export function startRegion(regionId: RegionId, starterDex: number): boolean {
   return ok
 }
 
-/** Sends one Pokémon to another region's Box (one whose league is done), where it waits for the player to travel. */
+/**
+ * Sends one Pokémon to another region started: it joins that region's Box at once if a Pokémon there is already at its
+ * level, or waits there, locked, until one is.
+ */
 export function sendPokemonOn(instId: string, targetId: RegionId): boolean {
   const { save, data, battle } = useGame.getState()
   if (!save || battle) return false
   const target = sendTargets(save, data).find((r) => r.id === targetId)
-  const name = data.species[save.box.find((p) => p.id === instId)?.dex ?? -1]?.name
-  if (!target || !name) return false
-  const ok = mutateSave((s) => sendPokemonOnSave(s, data, instId, target.id))
-  if (ok) pushToast(t('ui.sheet.sentOn', { name, region: target.name }), 'good', 4500)
+  const inst = save.box.find((p) => p.id === instId)
+  const name = data.species[inst?.dex ?? -1]?.name
+  if (!target || !inst || !name) return false
+  let waits = false
+  const ok = mutateSave((s) => {
+    const next = sendPokemonOnSave(s, data, instId, target.id)
+    waits = !!next && worldHomers(next).some((h) => h.inst.id === instId)
+    return next
+  })
+  if (ok)
+    pushToast(
+      waits
+        ? t('ui.sheet.sentOnLocked', { name, region: target.name, n: inst.level })
+        : t('ui.sheet.sentOn', { name, region: target.name }),
+      'good',
+      4500,
+    )
   return ok
 }
 

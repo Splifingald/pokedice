@@ -5,8 +5,9 @@ import { worldName } from '@/store/worlds'
 import { PixelIcon } from './icons'
 
 /**
- * A small world's Pokémon waiting to unlock in its region (docs/26 §1), on its sheet: the level it waits for, the world
- * it came home from (when the admin still lists it), and the region's best now, with what it can't do until then.
+ * A Pokémon waiting to unlock in a region (docs/26 §1), on its sheet: the level it waits for, where it came from (the
+ * small world it came home from, when the admin still lists it, or the region it was sent from), and the region's best
+ * now, with what it can't do until then.
  */
 export function HomerLockView({
   name,
@@ -14,12 +15,15 @@ export function HomerLockView({
   best,
   region,
   world,
+  from = null,
 }: {
   name: string
   level: number
   best: number
   region: string
   world: string | null
+  /** The region it was sent from, for one that didn't come from a world. */
+  from?: string | null
 }) {
   const { t } = useT()
   return (
@@ -28,10 +32,16 @@ export function HomerLockView({
         <PixelIcon name="lock" size={16} className="shrink-0" />
         {t('ui.sheet.lockTitle', { n: level })}
       </h3>
-      {world && (
+      {world ? (
         <p className="font-pixel-sm text-[15px] leading-tight text-muted">
           {t('ui.sheet.lockFrom', { world })}
         </p>
+      ) : (
+        from && (
+          <p className="font-pixel-sm text-[15px] leading-tight text-muted">
+            {t('ui.sheet.lockSentFrom', { region: from })}
+          </p>
+        )
       )}
       <p className="copy text-base">{t('ui.sheet.lockText', { name, region, n: level, best })}</p>
     </section>
@@ -43,14 +53,16 @@ export function HomerLock({ homer }: { homer: WorldHomer }) {
   const save = useGame((s) => s.save)
   const data = useGame((s) => s.data)
   if (!save) return null
-  const world = worldById(data, homer.worldId)
+  const world = homer.worldId ? worldById(data, homer.worldId) : undefined
+  const regionName = (id: string) => data.regions.find((r) => r.id === id)?.name ?? id
   return (
     <HomerLockView
       name={monName(homer.inst, data)}
       level={homer.inst.level}
       best={regionBestLevel(save, data, homer.region)}
-      region={data.regions.find((r) => r.id === homer.region)?.name ?? homer.region}
+      region={regionName(homer.region)}
       world={world ? worldName(world, data) : null}
+      from={homer.from ? regionName(homer.from) : null}
     />
   )
 }

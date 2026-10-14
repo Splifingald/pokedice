@@ -130,6 +130,7 @@ export function WorldBits() {
       <div className="grid max-w-md gap-2">
         <HomerLockView name="Gengar" level={42} best={31} region="Kanto" world="Mirage Island" />
         <HomerLockView name="Boo" level={60} best={0} region="Sinnoh" world={null} />
+        <HomerLockView name="Charizard" level={100} best={24} region="Johto" world={null} from="Kanto" />
       </div>
       <div className="grid max-w-md gap-2">
         <WorldAwayView world={mid} kind="events" back="Kanto" onBack={noop} />
