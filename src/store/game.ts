@@ -134,13 +134,6 @@ export interface GameStore {
   battle: BattleSlice | null
   auth: AuthState
   toasts: Toast[]
-  /** The first cloud sync found two saves and the newer one has less progress: the player picks one. */
-  syncConflict: SyncConflict | null
-}
-
-export interface SyncConflict {
-  local: SaveData
-  cloud: SaveData
 }
 
 export const initialRun = (): RunState => ({
@@ -230,7 +223,6 @@ export const useGame = create<GameStore>()(() => ({
   battle: null,
   auth: { status: 'unknown', userId: null, email: null },
   toasts: [],
-  syncConflict: null,
 }))
 
 /**

@@ -121,8 +121,8 @@ async function pushOrWait(client: SupabaseClient, userId: string, save: SaveData
 }
 
 /**
- * Compares this device's save with the cloud copy and settles them: the newest wins, unless it has less progress —
- * then the player chooses (SyncConflictModal → resolveSyncConflict). Run at sign-in and by SYNC ONLINE (`manual`).
+ * Compares this device's save with the cloud copy and settles them, with no question asked: the one with more progress
+ * wins (`decideSync`), and the other is kept as a backup on this device. Run at sign-in and by SYNC ONLINE (`manual`).
  * Throws when the cloud can't be reached.
  *
  * The copy's stamp is read first, and the save is downloaded only when something else wrote it (another device, the
@@ -130,7 +130,7 @@ async function pushOrWait(client: SupabaseClient, userId: string, save: SaveData
  * playing on, and what changed since goes up — automatically at most once per PUSH_GAP_MS, reloads included. A page
  * reloaded every few seconds used to download the whole save and upload it again on every load.
  */
-export async function reconcile(client: SupabaseClient, id: string, manual = false): Promise<'loaded' | 'pushed' | 'same' | 'ask'> {
+export async function reconcile(client: SupabaseClient, id: string, manual = false): Promise<'loaded' | 'pushed' | 'same'> {
   settleSync(false)
   cloudKey = null
   cancelPush() // whatever was waiting goes out below, if this device wins
@@ -152,23 +152,26 @@ export async function reconcile(client: SupabaseClient, id: string, manual = fal
   }
   const { save: cloud, at } = await pullCloudSave(client, id, realm)
   const decision = decideSync(local, cloud)
-  if (decision === 'ask' && local && cloud) {
-    useGame.setState({ syncConflict: { local, cloud } })
-    return 'ask'
-  }
   let outcome: 'loaded' | 'pushed' | 'same' = 'same'
   if (decision === 'cloud' && cloud && !(local && sameSave(local, cloud))) {
     if (local) backupSave(local, t('ui.sync.replacedByCloud'))
     commitSave(cloud, { silent: true, keepTimestamp: true })
     resetRun()
-    pushToast(t('ui.toast.cloudNewer'), 'good')
+    pushToast(t('ui.toast.cloudLoaded'), 'good')
     outcome = 'loaded'
     cloudKey = pushKey(cloud)
     rememberCloud(id, realm, at, cloudKey)
   } else if (decision === 'local' && local && !(cloud && sameSave(local, cloud))) {
     if (cloud) backupSave(cloud, t('ui.sync.replacedByLocal'))
-    await pushOrWait(client, id, local)
-    pushToast(t(cloud ? 'ui.toast.localNewer' : 'ui.toast.backedUp'), 'good')
+    // Kept over a copy stamped later: stamped past it, so the cloud row's stamp never goes back (an older page still
+    // lets the newest stamp win; another device's clock may be ahead of this one).
+    const kept =
+      cloud && cloud.updatedAt >= local.updatedAt
+        ? { ...local, updatedAt: Math.max(Date.now(), cloud.updatedAt + 1) }
+        : local
+    if (kept !== local) commitSave(kept, { silent: true, keepTimestamp: true })
+    await pushOrWait(client, id, kept)
+    pushToast(t(cloud ? 'ui.toast.localKept' : 'ui.toast.backedUp'), 'good')
     outcome = 'pushed'
   } else if (cloud) {
     cloudKey = pushKey(cloud)
@@ -215,12 +218,11 @@ async function handleSession(client: SupabaseClient, session: Session | null) {
 /** Why SYNC ONLINE can't be pressed right now, or null when it can. */
 export function syncBlockedBy(
   now = Date.now(),
-): 'signedOut' | 'busy' | 'fight' | 'conflict' | 'cooldown' | null {
-  const { auth, syncConflict } = useGame.getState()
+): 'signedOut' | 'busy' | 'fight' | 'cooldown' | null {
+  const { auth } = useGame.getState()
   const { busy, lastAt } = useCloudSync.getState()
   if (auth.status !== 'signed_in' || !auth.userId) return 'signedOut'
   if (busy) return 'busy'
-  if (syncConflict) return 'conflict'
   // Loading the cloud save would end the fight.
   if (inFight()) return 'fight'
   if (lastAt != null && now - lastAt < SYNC_COOLDOWN_MS) return 'cooldown'
@@ -248,38 +250,6 @@ export async function syncNow() {
   } finally {
     useCloudSync.setState({ busy: false })
   }
-}
-
-/** The player's answer to "Two saves found". The other save is kept as a backup on this device. */
-export async function resolveSyncConflict(keep: 'local' | 'cloud') {
-  const { syncConflict, auth, save } = useGame.getState()
-  if (!syncConflict) return
-  const local = save ?? syncConflict.local
-  const { cloud } = syncConflict
-  if (keep === 'cloud') {
-    backupSave(local, t('ui.sync.localPicked'))
-    commitSave(cloud, { silent: true, keepTimestamp: true })
-    resetRun()
-    cloudKey = pushKey(cloud)
-    // The row is stamped with the save's updatedAt; were it not, the next load just reads the cloud again.
-    if (auth.userId) rememberCloud(auth.userId, realmOf(cloud), cloud.updatedAt, cloudKey)
-    markSynced()
-  } else {
-    backupSave(cloud, t('ui.sync.cloudPicked'))
-    const kept = { ...local, updatedAt: Date.now() }
-    commitSave(kept, { silent: true, keepTimestamp: true })
-    const client = await getSupabase()
-    if (client && auth.userId) {
-      try {
-        await push(client, auth.userId, kept)
-      } catch (err) {
-        console.warn('[cloud] push failed', err)
-      }
-    }
-  }
-  useGame.setState({ syncConflict: null })
-  settleSync(true)
-  pushToast(t(keep === 'cloud' ? 'ui.toast.cloudLoaded' : 'ui.toast.localKept'), 'good')
 }
 
 export async function initAuth() {
@@ -574,17 +544,11 @@ function onToolPage(): boolean {
   return path.startsWith('/admin') || path.startsWith('/setup')
 }
 
-/** Nothing would be lost by reloading now: no fight, encounter, pending catch or save conflict on screen. */
+/** Nothing would be lost by reloading now: no fight, encounter or pending catch on screen. */
 export function safeToReload(): boolean {
   if (onToolPage()) return false
-  const { run, syncConflict } = useGame.getState()
-  return (
-    useReloadHolds.getState().count === 0 &&
-    run.phase === 'idle' &&
-    !run.encounter &&
-    !run.pendingCatchId &&
-    !syncConflict
-  )
+  const { run } = useGame.getState()
+  return useReloadHolds.getState().count === 0 && run.phase === 'idle' && !run.encounter && !run.pendingCatchId
 }
 
 /** The reload asked for, if now is a safe moment. The save is written first. */

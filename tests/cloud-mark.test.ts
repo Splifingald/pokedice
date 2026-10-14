@@ -93,7 +93,7 @@ beforeEach(() => {
 afterEach(() => {
   cancelPush()
   vi.useRealTimers()
-  useGame.setState({ save: null, syncConflict: null })
+  useGame.setState({ save: null })
   delete (globalThis as { localStorage?: Storage }).localStorage
 })
 
@@ -213,15 +213,29 @@ describe('a cloud copy written elsewhere', () => {
     expect(cloud.downloads()).toBe(2)
   })
 
-  it('a stale device opened after the cloud moved on still asks the player', async () => {
+  it('a stale device opened after the cloud moved on takes the cloud copy, newer stamp or not', async () => {
     const cloud = fakeCloud([row(base)])
     useGame.setState({ save: base })
     await reconcile(cloud.client, USER)
-    cloud.rows[0] = row(played(played(base, 1), 2))
+    const further = played(played(base, 1), 2)
+    cloud.rows[0] = row(further)
     // This device fiddles (newer stamp, less progress than the cloud).
     useGame.setState({ save: { ...base, updatedAt: base.updatedAt + 60_000 } })
-    expect(await reconcile(cloud.client, USER)).toBe('ask')
+    expect(await reconcile(cloud.client, USER)).toBe('loaded')
     expect(cloud.uploads).toHaveLength(0)
+    expect(useGame.getState().save!.pokedex).toEqual(further.pokedex)
+  })
+
+  it('this device got further than a copy stamped later: it goes up, stamped now', async () => {
+    const cloud = fakeCloud([row(base)])
+    useGame.setState({ save: base })
+    await reconcile(cloud.client, USER)
+    // Another device only touched it (a later stamp, nothing more); this one caught something meanwhile.
+    cloud.rows[0] = row({ ...base, updatedAt: T0 + 30_000 })
+    useGame.setState({ save: { ...played(base), updatedAt: T0 - 1000 } })
+    expect(await reconcile(cloud.client, USER)).toBe('pushed')
+    expect(cloud.uploads.at(-1)!.pokedex).toEqual(played(base).pokedex)
+    expect(cloud.uploads.at(-1)!.updatedAt).toBeGreaterThan(T0 + 30_000)
   })
 
   it('another player signs in on the device: their save is read in full', async () => {

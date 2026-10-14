@@ -18,7 +18,7 @@ import { checkContent, deleteAllData, deleteExtremeSave, providerName } from '@/
 import { otherSave } from '@/store/extreme'
 import { ExtremeRulesModal } from '@/components/Extreme'
 import { AccountButton, ConnectedAccounts, DisconnectButton } from '@/components/AccountButton'
-import { SaveFacts } from '@/components/SyncConflictModal'
+import { SaveFacts } from '@/components/SaveFacts'
 import { backupSave, readBackups, soundOn } from '@/save/storage'
 
 export function SettingsScreen() {

@@ -411,3 +411,6 @@ What differs from the sections above, or wasn't in them:
   Tools). A backup there can't be restored once a trade was done since it was set aside (`missesTrades`): each half
   of a trade is handed to a save once, so going back would return the Pokémon given away, a duplicate. Backups that
   already know every trade, or that only miss a listing that ended, still restore.
+- **The cloud sync is automatic** (after the above): no "Two saves found" pop-up, whose older save could be picked
+  to undo a trade. The save further along in its areas wins, then the one with the bigger Pokédex; on a tie, this
+  device's own, unless it misses a trade the cloud copy did (`missesTrades` again), then the cloud's (`decideSync`).

@@ -1,8 +1,8 @@
-// Cloud backup of the same save blob. Never blocks the UI. The newest `updatedAt` wins — unless it has less progress
-// than the other save, and then the player chooses (see decideSync). Progress is measured across every region a save
-// holds, not just the one it was last played in.
+// Cloud backup of the same save blob. Never blocks the UI. The save with more progress wins, automatically (see
+// decideSync). Progress is measured across every region a save holds, not just the one it was last played in.
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { liveBlock, regionOf, worldRegionOf } from '@/engine/regions'
+import { missesTrades } from '@/engine/trade'
 import type { RegionSave, SaveData, SaveMode } from '@/engine/types'
 import { parseSave } from './schema'
 import type { CloudMark } from './storage'
@@ -140,12 +140,11 @@ const regionBlocks = (s: SaveData): RegionSave[] => {
 }
 
 /**
- * How far a save got across every region it holds, compared in order: areas cleared, gym battles won, species
- * caught, total levels.
+ * How far a save got across every region it holds: its areas (cleared, then gym battles won), then its Pokédex.
  *
- * Areas, gyms and levels add up, because clearing Johto is work done on top of Kanto, not instead of it. Species are
- * the union: the regions' Pokédexes overlap — Johto's routes are full of Gen 1 — and catching the same Pikachu twice
- * is not twice the progress. The other three axes already carry the extra region's weight.
+ * Areas and gyms add up, because clearing Johto is work done on top of Kanto, not instead of it. Species are the
+ * union: the regions' Pokédexes overlap — Johto's routes are full of Gen 1 — and catching the same Pikachu twice is
+ * not twice the progress. The area axes already carry the extra region's weight.
  *
  * Before this walked the parked blocks, a save deep into Johto compared as if Kanto had never happened: a freshly
  * started Johto, with one starter and no areas, lost to a stale device sitting in a finished Kanto.
@@ -154,23 +153,19 @@ export function progressTotals(s: SaveData) {
   const species = new Set<number>()
   let cleared = 0
   let gyms = 0
-  let levels = 0
   for (const block of regionBlocks(s)) {
     for (const p of Object.values(block.areaProgress)) {
       if (p.cleared) cleared++
       gyms += p.gymsDefeated?.length ?? 0
     }
     for (const dex of block.pokedex) species.add(dex)
-    for (const p of block.box) levels += p.level
   }
-  // One Day Care for every region: its residents count once, whichever region they came from.
-  for (const r of s.dayCare?.residents ?? []) levels += r.inst.level
-  return { regions: regionBlocks(s).length, cleared, gyms, species: species.size, levels }
+  return { regions: regionBlocks(s).length, cleared, gyms, species: species.size }
 }
 
 function progressTuple(s: SaveData): number[] {
   const t = progressTotals(s)
-  return [t.cleared, t.gyms, t.species, t.levels]
+  return [t.cleared, t.gyms, t.species]
 }
 
 /** > 0 when `a` got further than `b`, < 0 when it's behind, 0 when they're level. */
@@ -181,23 +176,24 @@ export function compareProgress(a: SaveData, b: SaveData): number {
   return 0
 }
 
-export type SyncDecision = 'none' | 'local' | 'cloud' | 'ask'
+export type SyncDecision = 'none' | 'local' | 'cloud'
 
 /**
- * The first sync after signing in. The newest save wins — unless it has less progress than the other one (a stale
- * device was opened and touched): then the player is asked, instead of silently overwriting real progress.
+ * The sync, with no question asked: the save further along in its areas wins, then the one with the bigger Pokédex
+ * (`compareProgress`); level on both, this device's own. Which one was played last doesn't count: a stamp is easy to
+ * move, progress isn't.
  */
 export function decideSync(local: SaveData | null, cloud: SaveData | null): SyncDecision {
   if (!local && !cloud) return 'none'
   if (!cloud) return 'local'
   if (!local) return 'cloud'
-  const cloudNewer = cloud.updatedAt > local.updatedAt
-  // An admin edit (e.g. a Pokémon taken away) is applied as is, without asking.
-  if (cloudNewer && (cloud.adminEditAt ?? 0) > local.updatedAt) return 'cloud'
-  const newer = cloudNewer ? cloud : local
-  const older = cloudNewer ? local : cloud
-  if (compareProgress(older, newer) > 0) return 'ask'
-  return cloudNewer ? 'cloud' : 'local'
+  // An admin edit (e.g. a Pokémon taken away) is applied as is, whatever the progress.
+  if (cloud.updatedAt > local.updatedAt && (cloud.adminEditAt ?? 0) > local.updatedAt) return 'cloud'
+  const ahead = compareProgress(local, cloud)
+  if (ahead !== 0) return ahead > 0 ? 'local' : 'cloud'
+  // Level, but this device never saw a trade the cloud copy did: keeping it would bring back the Pokémon traded away
+  // while the other trainer keeps it too (docs/23).
+  return missesTrades(local, cloud) ? 'cloud' : 'local'
 }
 
 /**
