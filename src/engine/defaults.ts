@@ -304,6 +304,9 @@ export const DEFAULT_CONFIG: GameConfig = {
   liveEvents: { access: 'off', list: [] },
   // Off until the admin switches it on (for the admin alone, or everyone).
   smallWorlds: { access: 'off', list: [] },
+  // Push notifications (docs/27): off until the admin switches them on. The day's raid is announced at 9:00 the
+  // player's time, and no Egg wakes anyone between 22:00 and 8:00.
+  push: { access: 'off', raidHour: 9, quietHours: [22, 8] },
   // The Link Cable and the Bait (docs/25): off until the admin switches each on.
   itemSwitches: { 'link-cable': 'off', bait: 'off' },
   // The General upgrades (docs/25): off until the admin switches them on. A whole region's combos and dice cost about

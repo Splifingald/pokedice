@@ -17,6 +17,7 @@ import { RaidGiftPopup } from './RaidGiftPopup'
 import { FriendsService } from './friends/FriendsService'
 import { InviteRewardPopup, InviteRulesPopup } from './friends/InviteRewards'
 import { TradesService } from './trades/TradesService'
+import { PushService } from './PushService'
 import { BottomNav, Header, SideNav } from './Hud'
 import { LeaderboardTutorial } from './LeaderboardTutorial'
 import { ReplyPopup } from './ReplyPopup'
@@ -78,6 +79,7 @@ export function GameLayout() {
       <InviteRulesPopup />
       <InviteRewardPopup />
       <TradesService />
+      <PushService />
     </div>
   )
 }

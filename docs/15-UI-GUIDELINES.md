@@ -230,7 +230,7 @@ motion `off` the stage jumps to the end and still fires every cue, so the screen
 | Timeline | full | short |
 |---|---|---|
 | Attacks: one move per type (Flamethrower, Hydro Pump, Razor Leaf, Thunderbolt, Psychic in `attacks.ts`; Tackle, jabs and a fist, gusts and a wing slash, Sludge Bomb, earth spikes, Rock Slide, a swarm and X-Scissor, Shadow Ball, Metal Claw, Ice Beam, Dragon Breath, Dark Pulse and Crunch, Moonblast in `attacks-types.ts`); a generic impact for typeless dice | the typed move | one generic hit |
-| Catch | throw, beam, drop, wobbles, result; with a Bait to offer it holds on the ball lying still (`hold`) and the answer plays on from that frame (`from: 'ground'`: the Bait tossed beside the ball, a heart, a last wobble; or straight to the break-free); Capture Luck's stay (`stays`): out of the ball, a "!" and two hops, no flight | throw and drop, result at once (the Bait still lands) |
+| Catch | throw, beam, drop, wobbles, result; with a Bait to offer it holds on the ball lying still (`hold`) and the answer plays on from that frame (`from: 'ground'`: the Bait tossed beside the ball, a heart, a last wobble; or straight to the break-free); Capture Luck's stay (`stays`): out of the ball, a "!" and two hops, no flight | throw and drop, result at once (the Bait still lands); a throw that can't miss jumps to its end at every level |
 | Pokémon Center | in its picture (`public/backgrounds/pokemon-center.png`): a ball per team member into the machine's slots, the heal jingle (B G♯ ×3, E) | one flash, healed |
 | Mega Evolution, Gigantamax | the full change | a white flash and the new sprite |
 | Legendary intro, Evolution, Egg hatching, the lab (a partner), a trade | in full | in full |
@@ -427,8 +427,9 @@ in view) and the battle history sits beside it from 1024 px.
 - **The catch happens on the stage**: the worn-out foe stays on its platform, greyed; the panel shows a radio group
   of balls (each with its chance from `catchChance`, how many you have, "not needed" when a weaker one is already
   certain), the catch math (`d6 + bonus ≥ need`), and one throw. The catch timeline plays; the die and the
-  result show together on `catchResult`, never before (the die would spoil the wobbles). A throw that can't miss has
-  no die.
+  result show together on `catchResult`, never before (the die would spoil the wobbles). A throw that can't miss
+  (`sureThrow`: its bonus alone reaches the need) has no die and no animation: the stage jumps to the catch's end
+  (`StageOverlay.instant`), only the "Gotcha!" sounds, and the result shows at once.
 - **The Bait** (docs/25): a throw that fell short, with a Bait in the bag that could still make it, stops with the ball
   lying still after its wobbles; the die shows with the math (`4 + 1 = 5 < 7`), the message asks "So close! Throw a
   Bait to tempt Snorlax?", and a line gives the Bait's die and the odds ("The Bait's die (1, 1, 1, 2, 2, 3) adds to
@@ -597,7 +598,9 @@ Two rules for every feature that adds something players can do (an event, a mode
 - **Its rules, once and on demand**: a rules pop-up (`RulesModal`: its picture as a banner, 2–4 `RuleList` rows with
   the config's numbers, Later / Let's go!) the first time the feature opens for the player (a "seen" flag in the save,
   queued behind the other one-time pop-ups), and an **INFO** button at the bottom of its page that shows the same rules
-  again. The Day Care, Versus, the events, Extreme mode, Trades, the gifts (§23), the General upgrades (§24) and the invite rewards (§25) follow it.
+  again. The Day Care, Versus, the events, Extreme mode, Trades, the gifts (§23), the General upgrades (§24), the invite rewards (§25)
+  and push notifications (§26: its rules pop-up is its question, asked once per feature; its INFO is in Settings →
+  Notifications) follow it.
 - **Items with a switch** (`game_config.itemSwitches`, `itemOn`): the Link Cable and the Bait (docs/25). Off: not sold,
   not found, not usable, never offered; bags keep theirs. An item is explained where it's met (its description in the
   Mart and the bag; the Bait's die and odds on the catch prompt), so items have no rules pop-up of their own.
@@ -820,3 +823,26 @@ tiers, places the gauge and puts the gifts away (as `engine/gifts.ts` does a mes
   inviting your friends!", then what arrived and where). The status rides with the friend status (game load, return
   to the tab at most every 5 minutes) and is asked again when the Friends page or Prof. Oak's invite opens (at most
   once a minute), only while the switch is on for the player.
+
+  "got away"), and that the partner, the world's Pokémon, items and ₽ closed with it.
+
+## 26. Push notifications
+
+What they say and when, and how they're set up: docs/27-PUSH-NOTIFICATIONS.md. The screens' side:
+
+- **The question comes from the feature, once**: the Day Care page, the raid page and a live event's pop-up (as it
+  closes) each ask the first time they open while push is off on this device (`usePushAsk`, `askPush`). It waits
+  between fights, never over a full-screen moment, and after the other one-time pop-ups. One pop-up
+  (`PushAskModal`): the feature's picture with a gold "Never miss one" tag and the bell, the feature's sentence in
+  large type ("Enable push notifications to be notified about upcoming raids"), the rule rows for all three topics
+  and "Your choice", then **No thanks** / **Enable** (red). No thanks is final for that feature only.
+- **The browser's own prompt only ever follows a tap** on Enable (or Settings' switch): never on load.
+- **An iPhone in a Safari tab** sees the Home Screen steps in a blue box (a warning icon, never colour alone) and **OK**
+  instead of Enable; it's asked once more from the Home Screen.
+- **Settings → Notifications** (`PushSettingsPanel`, under Game): the bell, "This device: Android", the main switch,
+  each topic's switch indented under a dashed rule while push is on, and INFO. Blocked by the browser, unsupported or an
+  iPhone tab: one line saying so, in words, instead of the switches.
+- **Notification pictures** are drawn by the service worker at whole-pixel scales (never a stretched area picture):
+  2:1 image, a square icon kept inside the round mask, the white ball badge.
+- **A tap while the game is open** moves it to the page between fights; it never reloads the tab.
+
