@@ -25,6 +25,7 @@ import {
   recordDraws,
   reduce,
   rollCatch,
+  sureThrow,
   shopStock,
   teamAverageLevel,
   teamOf,
@@ -205,6 +206,13 @@ describe('catching', () => {
     const hits = Array.from({ length: 1200 }, () => rollCatch(4, 0, rng)).filter((r) => r.caught).length
     expect(hits / 1200).toBeGreaterThan(0.44)
     expect(hits / 1200).toBeLessThan(0.56)
+  })
+
+  it('a sure throw: the bonus alone reaches the need, whatever the die', () => {
+    expect(sureThrow({ bonus: 0, need: 1 })).toBe(true)
+    expect(sureThrow({ bonus: 3, need: 4 })).toBe(true)
+    expect(sureThrow({ bonus: 3, need: 5 })).toBe(false)
+    expect(sureThrow(rollCatch(9, 9, createRng(1)))).toBe(true)
   })
 
   it('catch values come from the originals: Pidgey is easy, legendaries need the best balls', () => {

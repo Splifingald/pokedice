@@ -4,7 +4,7 @@
 // short with a Bait in the bag asks first (docs/25): its die, its odds, Keep it / Throw the Bait. Capture Luck's second
 // chance ends on Throw again instead of Continue.
 import { useState } from 'react'
-import { baitChance, baitFaces, ballBonus, catchChance, catchValueOf } from '@/engine'
+import { baitChance, baitFaces, ballBonus, catchChance, catchValueOf, sureThrow } from '@/engine'
 import { Die } from '@/components/Die'
 import { ItemSprite } from '@/components/ItemSprite'
 import { OakTip, useOneTimeTip } from '@/components/OakTip'
@@ -96,7 +96,7 @@ export function CatchPanel({
 
   if (result) {
     // A throw that couldn't miss has no die: only the ball is thrown.
-    const certain = catchChance(value, result.bonus) >= 1
+    const certain = sureThrow(result)
     const total = result.die + result.bonus + (result.bait ?? 0)
     const bait = result.baitOffer ? data.items[result.baitOffer] : undefined
     const faces = baitFaces(bait)

@@ -336,6 +336,8 @@ export interface StageOverlay {
   label: string
   onEnd: () => void
   hud?: Hud
+  /** Straight to its end state, every cue fired (a catch that can't miss: nothing to wait for). */
+  instant?: boolean
 }
 
 export function BattleStage({
@@ -483,6 +485,7 @@ export function BattleStage({
           hud={overlay.hud}
           onEnd={overlay.onEnd}
           label={overlay.label}
+          instant={overlay.instant}
           className="absolute inset-0"
         />
       ) : (
