@@ -14,4 +14,8 @@
   `pnpm e2e <spec>` only when a spec covers the changed screen). Never the full suite for a small fix.
 - Features, before a commit: `pnpm lint && pnpm build && pnpm test`, all green, plus the e2e specs of what changed
   (`pnpm e2e <spec>`). The full `pnpm e2e` runs only before pushing to `main`.
+- **SQL to run**: whenever a change adds or edits a migration (`supabase/migrations/`), give the user the GitHub link
+  of each file to run, on the branch it was pushed to
+  (`https://github.com/Splifingald/pokedice/blob/<branch>/supabase/migrations/<file>.sql`), in the reply and in the
+  feature's doc (its "Setting it up" steps). Say also that `supabase/seed.sql` carries it when the migration is inlined.
 - Never push to `main`.

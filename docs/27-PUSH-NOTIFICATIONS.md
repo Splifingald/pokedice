@@ -89,7 +89,9 @@ notices waiting and the last delivery.
 
 ## Setting it up
 
-1. **Database**: run `supabase/migrations/0053_push.sql` (also inlined in `supabase/seed.sql`).
+1. **Database**: run `supabase/migrations/0053_push.sql` in Supabase → SQL Editor (also inlined in
+   `supabase/seed.sql`):
+   https://github.com/Splifingald/pokedice/blob/feature/version_2/supabase/migrations/0053_push.sql
 2. **VAPID keys**: `npx web-push generate-vapid-keys`. Keep the pair together.
 3. **Netlify → Site configuration → Environment variables** (they reach both the build and the sender):
    - `VITE_VAPID_PUBLIC_KEY`: the public key (the game subscribes with it).
