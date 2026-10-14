@@ -30,6 +30,7 @@ Until now only the shiny mythical left a world; everything else closed with it. 
 | The closing pop-up | **A count per region**: "Your Pokémon went home: Kanto 8 · Johto 5 · Sinnoh 3. Each waits until your best there reaches its level." |
 | Raid prizes in a world | Like every other Pokémon: **home at the end, level-locked** (shiny Darkrai Lv.60 waits for a Sinnoh Pokémon at Lv.60). |
 | The world's mythical (when a world has one) | Unchanged: it leaves at once, unlocked. |
+| Sent from another region | The **same list and lock** (`sendPokemonOn`, docs/05 decision 9): a Pokémon sent from its sheet to another started region waits there, "Sent from Kanto", until a Pokémon there reaches its level; at once if one already has. |
 
 ## 2. Haunted Hollow
 

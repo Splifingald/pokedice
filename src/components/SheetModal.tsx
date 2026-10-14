@@ -5,7 +5,9 @@ import {
   levelEvolutions,
   monName,
   nationalDex,
+  regionBestLevel,
   regionSpecies,
+  sendArrivesLocked,
   sendOnBlocked,
   sendTargets,
   worldHomers,
@@ -248,9 +250,9 @@ function LetGoButton({ id, name, onGone }: { id: string; name: string; onGone: (
 }
 
 /**
- * "Send to Kanto", "Send to Johto"…: one button per region whose league is done and whose Pokédex lists this
- * Pokémon — the regions it could follow the player to. It is the only thing that ever crosses between regions, so
- * the reason it can't is always spelled out rather than the buttons just vanishing.
+ * "Send to Kanto", "Send to Johto"…: one button per region started whose Pokédex lists this Pokémon — the regions it
+ * could follow the player to. It is the only thing that ever crosses between regions, so the reason it can't is always
+ * spelled out rather than the buttons just vanishing, and so is the lock it would wait behind there.
  */
 function SendOnPanel({ inst, onSent }: { inst: PokemonInstance; onSent: () => void }) {
   const { t } = useT()
@@ -289,8 +291,15 @@ function SendOnPanel({ inst, onSent }: { inst: PokemonInstance; onSent: () => vo
             : why === 'reviving'
               ? t('ui.sheet.sendOnReviving')
               : hinted
-                ? t('ui.sheet.sendOnHint', { name, region: hinted.name })
-                : t('ui.sheet.sendOnPick', { name })}
+                ? sendArrivesLocked(save, data, inst, hinted.id)
+                  ? t('ui.sheet.sendOnHintLocked', {
+                      name,
+                      region: hinted.name,
+                      n: inst.level,
+                      best: regionBestLevel(save, data, hinted.id),
+                    })
+                  : t('ui.sheet.sendOnHint', { name, region: hinted.name })
+                : t('ui.sheet.sendOnPick', { name, n: inst.level })}
         </p>
       )}
       {trade && <p className="copy text-base text-muted">{trade.note}</p>}

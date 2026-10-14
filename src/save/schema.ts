@@ -200,9 +200,17 @@ export const saveSchema = z.object({
         .array(z.object({ dex: z.number().int().min(1), level: z.number().int().min(1), shiny: z.boolean(), worldId: z.string().max(80) }))
         .max(50)
         .optional(),
-      // A closed world's Pokémon waiting in their home region until its best reaches their level (docs/26 §1).
+      // A closed world's Pokémon (or one sent on from another region) waiting in a region until its best reaches
+      // their level (docs/26 §1).
       worldHome: z
-        .array(z.object({ inst: instanceSchema, region: z.string().min(1).max(80), worldId: z.string().max(80) }))
+        .array(
+          z.object({
+            inst: instanceSchema,
+            region: z.string().min(1).max(80),
+            worldId: z.string().max(80).optional(),
+            from: z.string().min(1).max(80).optional(),
+          }),
+        )
         .max(2000)
         .optional(),
       rebattle: z

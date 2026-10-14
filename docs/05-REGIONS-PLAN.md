@@ -482,3 +482,8 @@ encounters-per-area inside Kanto's envelope, and the report is committed under `
    replacing any Johto wild encounter, and can be caught once (§3, Johto).
 8. **Regions can be switched off** from Admin → Config, and the cheats cover unlocking, switching, completing a league
    and merging, so a region is testable without playing to it (§4).
+9. **Sending a Pokémon to another region** — from its sheet, to any other region already started (its league won or
+   not) whose Pokédex lists it. It arrives the way a small world's Pokémon goes home (docs/26 §1,
+   `sendPokemonOn` in `engine/homecoming.ts`): at once if an unlocked Pokémon there (team, Box or Day Care) is at its
+   level or above, otherwise locked on `events.worldHome` until one is, so a Lv.100 can't be sent to sweep a region
+   still being played. It used to need the target's league won; that gate is gone.
