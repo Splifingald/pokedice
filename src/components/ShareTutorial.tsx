@@ -54,6 +54,27 @@ export function useSharePromptWaiting(): boolean {
   return twoBadges && !done
 }
 
+/**
+ * INVITE's share: the friend invite link signed in, the game's own link signed out (no friend ID then). True once
+ * shared or copied. The friend ID is fetched while `open`, not on the tap: a share sheet must open straight from the
+ * tap that asked for it. Prof. Oak's invite and the Support me pop-up use it.
+ */
+export function useInviteShare(open: boolean): () => Promise<boolean> {
+  const { t } = useT()
+  const signedIn = useGame((s) => s.auth.status === 'signed_in')
+  const code = useFriends((s) => s.code)
+  useEffect(() => {
+    if (open && signedIn) void loadMyCode().catch(() => null)
+  }, [open, signedIn])
+  return () =>
+    signedIn && code
+      ? shareOrCopy(
+          { title: 'Pokédice', text: t('ui.friends.shareText', { code: formatCode(code) }), url: inviteUrl(code) },
+          t('ui.friends.linkCopied'),
+        )
+      : shareOrCopy({ title: 'Pokédice', text: t('ui.share.text'), url: window.location.origin }, t('ui.share.copied'))
+}
+
 export function ShareTutorial() {
   const { t } = useT()
   const region = useGame((s) => (s.save ? regionOf(s.save) : null))
@@ -72,17 +93,13 @@ export function ShareTutorial() {
   const [closed, setClosed] = useState<string[]>([])
   const open = !!region && due && idle && !closed.includes(region) && !seen(region)
   const signedIn = useGame((s) => s.auth.status === 'signed_in')
-  const code = useFriends((s) => s.code)
   // Invite rewards (docs/15 §25): the gauge, signed in; signed out, a line saying an account earns them.
   const gauge = useInviteGauge()
   const rewardsOn = useGame((s) => !!s.save && invitesWait(s.save, s.data) === null)
   const signedOut = useGame((s) => isSupabaseConfigured && s.auth.status === 'signed_out')
-  // Fetched as the pop-up opens, not on the tap: a share sheet must open straight from the tap that asked for it.
+  const shareInvite = useInviteShare(open)
   useEffect(() => {
-    if (open && signedIn) {
-      void loadMyCode().catch(() => null)
-      void loadInviteStatus()
-    }
+    if (open && signedIn) void loadInviteStatus()
   }, [open, signedIn])
 
   const close = () => {
@@ -97,15 +114,8 @@ export function ShareTutorial() {
   }
 
   const share = async () => {
-    const invite = signedIn && code
-    const shared = invite
-      ? await shareOrCopy(
-          { title: 'Pokédice', text: t('ui.friends.shareText', { code: formatCode(code) }), url: inviteUrl(code) },
-          t('ui.friends.linkCopied'),
-        )
-      : await shareOrCopy({ title: 'Pokédice', text: t('ui.share.text'), url: window.location.origin }, t('ui.share.copied'))
     // A cancelled share sheet keeps the pop-up.
-    if (shared) close()
+    if (await shareInvite()) close()
   }
 
   return (
