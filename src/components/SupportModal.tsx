@@ -19,7 +19,11 @@ import { useInviteShare } from './ShareTutorial'
 export const SUPPORT_PICTURE: RulesPicture = { src: artUrl('village'), focus: '50% 58%' }
 
 export function DonationPopup() {
-  const due = useGame((s) => !!s.save && donationDue(s.save, s.data) && !tutorialPending(s.save, s.data))
+  // Not before the live content is in: the bundled config can carry an older reset round, which makes every region
+  // look unseen for the first seconds of each page load.
+  const due = useGame(
+    (s) => s.contentChecked && !!s.save && donationDue(s.save, s.data) && !tutorialPending(s.save, s.data),
+  )
   const idle = useGame((s) => s.run.phase === 'idle')
   const replies = useInbox((s) => (s.messages ? unseenReplies(s.messages).length : 0))
   return <SupportModal open={due && idle && !replies} onClose={() => undefined} />

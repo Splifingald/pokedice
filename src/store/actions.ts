@@ -130,6 +130,9 @@ export function visitLeaderboard(): void {
 
 /** The donation pop-up was closed: it waits for the next region's 5th badge, or the admin's next reset. */
 export function closeDonation(): void {
+  // Under the bundled content, the round may be an old one: recording it would bring the pop-up back once the live one
+  // is in.
+  if (!useGame.getState().contentChecked) return
   mutateSave((s) => {
     const next = markDonationSeen(s, useGame.getState().data)
     return next === s ? null : next
