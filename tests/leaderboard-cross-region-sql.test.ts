@@ -1,4 +1,4 @@
-// Migration 0053 against a real Postgres (PGlite, in process): leaderboard() keeps one row per boarded region, marks
+// Migration 0054 against a real Postgres (PGlite, in process): leaderboard() keeps one row per boarded region, marks
 // one per trainer as their lead (the region they play now, else the first boarded one), and sends the shinies they own
 // over every region. Supabase's own pieces are stood in for at the top, as in general-sql.test.ts.
 import { readFileSync } from 'node:fs'
@@ -74,11 +74,11 @@ beforeAll(async () => {
     '0046_progress_raids_worlds.sql',
     '0047_trades_admin_read.sql',
     '0049_general_upgrades.sql',
-    '0053_leaderboard_cross_region.sql',
+    '0054_leaderboard_cross_region.sql',
   ])
     await db.exec(sql(f))
   // Safe to run again.
-  await db.exec(sql('0053_leaderboard_cross_region.sql'))
+  await db.exec(sql('0054_leaderboard_cross_region.sql'))
   await db.exec(`
     insert into auth.users (id) values ${Object.values(U)
       .map((u) => `('${u}')`)
@@ -103,7 +103,7 @@ afterAll(async () => {
   await db?.close()
 })
 
-describe('0053: the cross-region boards', () => {
+describe('0054: the cross-region boards', () => {
   it('keeps one row per boarded region, one of them the lead, with the shinies of every region', async () => {
     const rows = (await board(null)).map((r) => [
       r.name,

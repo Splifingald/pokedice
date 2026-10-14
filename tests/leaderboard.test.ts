@@ -181,7 +181,7 @@ describe('the Raids tab', () => {
   })
 })
 
-describe('Shiny and Raids span every region (0053)', () => {
+describe('Shiny and Raids span every region (0054)', () => {
   // Ash plays Johto and has a Kanto row too; Misty is on the Johto board only.
   const rows = [
     row('Ash', { region: 'johto', lead: true, shinies: 5, raidsWon: 1 }),
@@ -206,7 +206,7 @@ describe('Shiny and Raids span every region (0053)', () => {
     expect(rankLeaderboard(rows, 'dex', data, 'johto').map((r) => r.name)).toEqual(['Ash', 'Misty'])
   })
 
-  it('stays per region on a database without 0053', () => {
+  it('stays per region on a database without 0054', () => {
     const old = rows.map(({ lead: _, ...r }) => r)
     expect(rankLeaderboard(old, 'shiny', data, 'kanto').map((r) => r.name)).toEqual(['Ash', 'Brock'])
   })

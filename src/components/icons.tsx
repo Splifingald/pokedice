@@ -261,6 +261,22 @@ export const ICONS = {
     'kk....kk...',
     'k.....k....',
   ],
+  // Push notifications (docs/27): a gold bell with its clapper, a ring of sound on each side.
+  bell: [
+    '.......k.......',
+    '......kYk......',
+    '.....kYyyk.....',
+    '.k..kYyyyyk..k.',
+    'k...kYyyyyk...k',
+    'k..kYyyyyyyk..k',
+    'k..kYyyyyyyk..k',
+    '.k.kYyyyyyyk.k.',
+    '..kYyyyyyyyyk..',
+    '.kYyyyyyyyyyyk.',
+    '.kkkkkkkkkkkkk.',
+    '......kok......',
+    '.......k.......',
+  ],
   // Trades (docs/23): two arrows crossing, gold over blue, drawn like the tab bar's.
   trade: [
     '.........k......',

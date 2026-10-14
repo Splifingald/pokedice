@@ -516,7 +516,7 @@ One Day Care for every region (docs/15-DAYCARE-BREEDING.md). The page (`src/scre
   row its name, ✦ and types (no level: everyone is Lv.50 here); a search, No. / A–Z and a `TypeSelect` order and narrow
   it, and picks they hide stay picked.
 - **The leaderboard**: the region's name as the head's count, or "All regions" on Shiny and Raids (one board over
-  every region, each trainer on it once: 0053); five tabs that are icons, only the open one spelling out its name
+  every region, each trainer on it once: 0054); five tabs that are icons, only the open one spelling out its name
   (five names don't fit a phone in every language); a gold card with your look, the board's one-line
   note and "You're #N of M" (tap: your row scrolls into view and blinks) or "You're in the Hall of Fame"; a navy
   **Hall of Fame** button with the crown, how many maxed the board out and their faces, opening a sheet with the
@@ -598,7 +598,9 @@ Two rules for every feature that adds something players can do (an event, a mode
 - **Its rules, once and on demand**: a rules pop-up (`RulesModal`: its picture as a banner, 2–4 `RuleList` rows with
   the config's numbers, Later / Let's go!) the first time the feature opens for the player (a "seen" flag in the save,
   queued behind the other one-time pop-ups), and an **INFO** button at the bottom of its page that shows the same rules
-  again. The Day Care, Versus, the events, Extreme mode, Trades, the gifts (§23), the General upgrades (§24) and the invite rewards (§25) follow it.
+  again. The Day Care, Versus, the events, Extreme mode, Trades, the gifts (§23), the General upgrades (§24), the invite rewards (§25)
+  and push notifications (§26: its rules pop-up is its question, asked once per feature; its INFO is in Settings →
+  Notifications) follow it.
 - **Items with a switch** (`game_config.itemSwitches`, `itemOn`): the Link Cable and the Bait (docs/25). Off: not sold,
   not found, not usable, never offered; bags keep theirs. An item is explained where it's met (its description in the
   Mart and the bag; the Bait's die and odds on the catch prompt), so items have no rules pop-up of their own.
@@ -820,3 +822,26 @@ tiers, places the gauge and puts the gifts away (as `engine/gifts.ts` does a mes
   inviting your friends!", then what arrived and where). The status rides with the friend status (game load, return
   to the tab at most every 5 minutes) and is asked again when the Friends page or Prof. Oak's invite opens (at most
   once a minute), only while the switch is on for the player.
+
+  "got away"), and that the partner, the world's Pokémon, items and ₽ closed with it.
+
+## 26. Push notifications
+
+What they say and when, and how they're set up: docs/27-PUSH-NOTIFICATIONS.md. The screens' side:
+
+- **The question comes from the feature, once**: the Day Care page, the raid page and a live event's pop-up (as it
+  closes) each ask the first time they open while push is off on this device (`usePushAsk`, `askPush`). It waits
+  between fights, never over a full-screen moment, and after the other one-time pop-ups. One pop-up
+  (`PushAskModal`): the feature's picture with a gold "Never miss one" tag and the bell, the feature's sentence in
+  large type ("Enable push notifications to be notified about upcoming raids"), the rule rows for all three topics
+  and "Your choice", then **No thanks** / **Enable** (red). No thanks is final for that feature only.
+- **The browser's own prompt only ever follows a tap** on Enable (or Settings' switch): never on load.
+- **An iPhone in a Safari tab** sees the Home Screen steps in a blue box (a warning icon, never colour alone) and **OK**
+  instead of Enable; it's asked once more from the Home Screen.
+- **Settings → Notifications** (`PushSettingsPanel`, under Game): the bell, "This device: Android", the main switch,
+  each topic's switch indented under a dashed rule while push is on, and INFO. Blocked by the browser, unsupported or an
+  iPhone tab: one line saying so, in words, instead of the switches.
+- **Notification pictures** are drawn by the service worker at whole-pixel scales (never a stretched area picture):
+  2:1 image, a square icon kept inside the round mask, the white ball badge.
+- **A tap while the game is open** moves it to the page between fights; it never reloads the tab.
+

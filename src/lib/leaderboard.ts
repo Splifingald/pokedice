@@ -1,7 +1,7 @@
 // The leaderboard: every cloud save (signed-in players only, Google or Discord) played in the last 72 hours, ranked by best level,
 // campaign progress, Pokédex, shinies caught or raids won. The rows come from the `leaderboard()` SQL function, which leaves inactive players out
 // (migration 0023), and a region's row out until the player holds a badge there (0024); ranking happens here, against
-// the game data. Level, Progression and Pokédex are one board per region; Shiny and Raids span every region (0053).
+// the game data. Level, Progression and Pokédex are one board per region; Shiny and Raids span every region (0054).
 import { linearAreas } from '@/engine/data'
 import { regionSpecies } from '@/engine/regions'
 import type { GameData, RegionId } from '@/engine/types'
@@ -27,8 +27,8 @@ export interface LeaderboardRow {
   /** Raids won — their raid Pokémon caught — over every region (D4). */
   raidsWon: number
   /**
-   * The one row of this player that stands for them on the cross-region boards (their live region, 0053); undefined
-   * from a database without 0053, whose boards stay per region.
+   * The one row of this player that stands for them on the cross-region boards (their live region, 0054); undefined
+   * from a database without 0054, whose boards stay per region.
    */
   lead?: boolean
   progress: Record<string, { cleared: boolean; gyms: number }>
@@ -170,7 +170,7 @@ interface RawRow {
   friend_id?: string | null
   /** Missing on a database that hasn't run 0049_general_upgrades.sql. */
   rich?: boolean | null
-  /** Missing on a database that hasn't run 0053_leaderboard_cross_region.sql. */
+  /** Missing on a database that hasn't run 0054_leaderboard_cross_region.sql. */
   lead?: boolean | null
   shinies_all?: number | null
 }
@@ -186,7 +186,7 @@ export function parseLeaderboard(raw: RawRow[]): LeaderboardRow[] {
     team: (r.team ?? []).map((m) => ({ dex: Number(m.dex), level: Number(m.level), shiny: !!m.shiny })),
     pokedex: Number(r.pokedex) || 0,
     maxLevel: Number(r.max_level) || 0,
-    // Without 0053 there is only the region's own count.
+    // Without 0054 there is only the region's own count.
     shinies: Number(r.shinies_all ?? r.shinies) || 0,
     raidsWon: Number(r.raids_won) || 0,
     progress: Object.fromEntries(

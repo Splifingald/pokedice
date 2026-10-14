@@ -275,7 +275,8 @@ Each phase ends green (lint, build, test, e2e) and is one commit (or a few) on `
 - **D1 · Legendary-only areas:** 1 round each, with a small wild pool from the region's late-game species (proposed by `scripts/raid-areas.ts`, tuned in admin). Clearing the round unlocks the raid.
 - **D2 · Rebattle and regions:** only the **live region's** rebattle can be fought; the others show their progress and "Travel to … to fight".
 - **D3 · A caught raid Pokémon** goes to its **home region's Box** (the region of its unlocking area), with a message telling the player where it went.
-- **D4 · Raids leaderboard:** one global count. Since 0053 the Raids tab is one board over every region (each trainer once), like Shiny.
+- **D4 · Raids leaderboard:** one global count. Since 0054 the Raids tab is one board over every region (each trainer once), like Shiny.
+  - Setting it up: run `supabase/migrations/0054_leaderboard_cross_region.sql` in Supabase → SQL Editor (also inlined in `supabase/seed.sql`): https://github.com/Splifingald/pokedice/blob/feature/version_2/supabase/migrations/0054_leaderboard_cross_region.sql
 - **D5 · Losing a rebattle:** the gauntlet restarts at the first trainer, the team is healed (like a wipe), the ₽ won is kept, nothing else changes.
 - **D6 · Exclusions:** two admin lists in the Events config: `exclude.pseudo` (the pseudo-legendaries) and `exclude.extra` (Ultra Beasts, paradox Pokémon, Rotom), on top of `isLegendary` and the regions' starter lines.
 

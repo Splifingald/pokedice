@@ -848,8 +848,9 @@ const RETIRED_CONFIG_KEYS = ['regenPercentPerHour']
  * progression raids' tables and functions (0045: its own transaction lines dropped, as this file is one; its content
  * steps are no-ops before the data below), 0046 (a raid's team from its area's region; delete_my_data for trades and
  * raids both), 0047 (the admin reads the trade listings), 0049 (the General upgrades: it redefines the card writer and
- * the friends', boards' and trades' functions) and 0053 (the cross-region Shiny and Raids boards, last: it redefines
- * 0049's leaderboard). Folded into seed.sql so there is one file to run rather than several in a particular order. The
+ * the friends', boards' and trades' functions), then 0053 (push notifications: it redefines delete_my_data once more)
+ * and 0054 (the cross-region Shiny and Raids boards: it redefines 0049's leaderboard). Folded into seed.sql so there is
+ * one file to run rather than several in a particular order. The
  * migrations stay the single source of that SQL — they are written to be idempotent, so re-running them costs little.
  */
 export async function regionsPrelude(): Promise<string> {
@@ -866,7 +867,8 @@ export async function regionsPrelude(): Promise<string> {
       '0046_progress_raids_worlds.sql',
       '0047_trades_admin_read.sql',
       '0049_general_upgrades.sql',
-      '0053_leaderboard_cross_region.sql',
+      '0053_push.sql',
+      '0054_leaderboard_cross_region.sql',
     ].map(async (name) => {
       const sql = (await readFile(path.join(ROOT, 'supabase', 'migrations', name), 'utf8')).replace(/^(begin|commit);\n/gm, '')
       return `-- ↓ supabase/migrations/${name}, inlined so this file stands alone.\n${sql}`

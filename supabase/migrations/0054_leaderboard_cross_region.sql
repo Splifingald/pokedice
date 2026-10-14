@@ -10,7 +10,7 @@
 --                whether they are on the boards, not what they own.
 -- The rows are ordered with each trainer's together, so the 3,000-row cap never keeps a trainer without their lead row.
 -- A new return type can't be `create or replace`d: dropped and made again, with the grants it had (0049). seed.sql
--- inlines this file after 0049. Safe to run again.
+-- inlines this file after 0053 (push notifications). Safe to run again.
 
 drop function if exists leaderboard(text);
 create or replace function leaderboard(p_realm text default 'main')

@@ -36,6 +36,7 @@ import { Chip, NewTag } from '@/components/Chip'
 import { bumpGold } from '@/components/GoldPill'
 import { BackButton } from '@/components/PageHead'
 import { PixelButton } from '@/components/PixelButton'
+import { usePushAsk } from '@/components/PushPrompt'
 import { SearchField, Seg } from '@/components/Segmented'
 import { Sheet } from '@/components/Sheet'
 import { MiniSprite } from '@/components/SpriteImg'
@@ -669,6 +670,8 @@ function DayCareScreenMain() {
   const [hatchId, setHatchId] = useState(0)
   const open = !!save && isDayCareOpen(save, data)
   const { calm } = useMotion()
+  // Push notifications' question, once (docs/27): an Egg can be announced while the game is closed.
+  usePushAsk('egg', open)
   const auth = useGame((s) => s.auth.status)
   const caresError = useFriendCares((s) => s.error)
   const location = useLocation()

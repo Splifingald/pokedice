@@ -732,6 +732,21 @@ export interface GameConfig {
   general: GeneralConfig
   /** Friend invite rewards (docs/15 §25): their switch and the gauge's tiers. The server reads the same row. */
   inviteRewards: InviteRewardsConfig
+  /** Push notifications (docs/27): their switch, a game_config row of its own that seeding never writes. */
+  push: PushConfig
+}
+
+/**
+ * Push notifications (docs/27-PUSH-NOTIFICATIONS.md): a Day Care Egg, the day's raid, a live event starting. The server
+ * reads the same row: it takes no subscription and sends nothing while the switch is off.
+ */
+export interface PushConfig {
+  /** The switch (docs/15 §20): off (nowhere in the game), on for the admin only, on for everyone. Off by default. */
+  access: EventAccess
+  /** The local hour the day's raid is announced at (it opens at midnight UTC, the middle of the night for many). */
+  raidHour: number
+  /** No Egg is announced between these local hours (from, to): it waits until `to`. Equal hours = no quiet time. */
+  quietHours: [number, number]
 }
 
 /**
