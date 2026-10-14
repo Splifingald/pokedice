@@ -15,6 +15,7 @@ import {
   listBack,
   listOut,
   markTradesSeen,
+  missesTrades,
   newRegionBlock,
   newSave,
   receiveTrade,
@@ -382,6 +383,35 @@ describe('a trade, applied once on each side', () => {
     const r = applyEnded(s, data, 'T3')
     expect(r.save.box.some((x) => x.id === p.id)).toBe(true)
     expect(applyEnded(r.save, data, 'T3').already).toBe(true)
+  })
+})
+
+describe('going back to an older copy of the save (a backup)', () => {
+  it('is refused once a trade was done since: the Pokémon given away would come back', () => {
+    const given = mon(16, 22)
+    const before = kanto(given)
+    const after = applyTake(
+      before,
+      data,
+      { id: 'T1', listed: mon(4, 12), given, with: 'Misty' },
+      NOW,
+      newId,
+    ).save
+    expect(missesTrades(before, after)).toBe(true)
+    // Going forward (the backup knows the trade) or nothing traded since: fine.
+    expect(missesTrades(after, before)).toBe(false)
+    expect(missesTrades(after, after)).toBe(false)
+  })
+  it('is allowed after a listing that only ended: its Pokémon comes back to the Box either way', () => {
+    const p = mon(25, 12)
+    const listed = listOut(
+      kanto(p),
+      data,
+      p.id,
+      { id: 'T3', code: 'C', endsAt: NOW, want: { kind: 'any' }, visibility: 'private' },
+      NOW,
+    )!
+    expect(missesTrades(listed, applyEnded(listed, data, 'T3').save)).toBe(false)
   })
 })
 

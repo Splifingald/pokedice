@@ -6,12 +6,11 @@ import { Panel } from '@/components/Panel'
 import { PixelButton } from '@/components/PixelButton'
 import { Seg } from '@/components/Segmented'
 import { Toggle } from '@/components/Toggle'
-import { donationEnabled, extremeOpen, isExtreme } from '@/engine'
+import { donationEnabled, extremeOpen, isExtreme, missesTrades } from '@/engine'
 import { LANG_LABELS, LANGS, type Lang } from '@/i18n'
 import { multiExpText } from '@/i18n/text'
 import { useT } from '@/i18n/react'
 import { isSupabaseConfigured } from '@/lib/supabase'
-import { parseSave } from '@/save/schema'
 import { pushToast, setSettings, useGame } from '@/store/game'
 import { deleteSave, replaceSave } from '@/store/run'
 import { useIsAdmin } from '@/store/hooks'
@@ -31,7 +30,6 @@ export function SettingsScreen() {
   const data = useGame((s) => s.data)
   const source = useGame((s) => s.contentSource)
   const navigate = useNavigate()
-  const [importText, setImportText] = useState('')
   const [confirmDelete, setConfirmDelete] = useState(false)
   // Only when the admin has it switched on, with a PayPal link.
   const canDonate = donationEnabled(data)
@@ -44,18 +42,6 @@ export function SettingsScreen() {
       pushToast(t('ui.settings.copied'), 'good')
     } catch {
       pushToast(t('ui.settings.clipboardOff'), 'bad')
-    }
-  }
-
-  const doImport = () => {
-    try {
-      const res = parseSave(JSON.parse(importText))
-      if (!res.ok) return pushToast(t('ui.settings.invalidSave', { error: res.error.slice(0, 80) }), 'bad')
-      replaceSave(res.save)
-      setImportText('')
-      pushToast(t('ui.settings.imported'), 'good')
-    } catch {
-      pushToast(t('ui.settings.notJson'), 'bad')
     }
   }
 
@@ -172,15 +158,8 @@ export function SettingsScreen() {
             {t('ui.settings.deleteSave')}
           </PixelButton>
         </div>
-        <textarea
-          value={importText}
-          onChange={(e) => setImportText(e.target.value)}
-          placeholder={t('ui.settings.importPlaceholder')}
-          className="mt-3 h-24 w-full bg-paper shadow-field p-2 font-mono text-xs"
-        />
-        <PixelButton size="sm" className="mt-1" disabled={!importText.trim()} onClick={doImport}>
-          {t('ui.settings.importSave')}
-        </PixelButton>
+        {/* No import here: the cloud save is what the trade server reads, so a pasted save would be a cheat that
+            reaches other players (docs/23). Admins keep theirs in Dev Tools. */}
         </details>
       </Panel>
 
@@ -327,6 +306,7 @@ function ExtremePanel() {
 /** Saves replaced by a cloud sync (or a restore) on this device — a wrong choice can be undone here. */
 function BackupsPanel() {
   const { t } = useT()
+  const current = useGame((s) => s.save)
   const [list, setList] = useState(() => readBackups())
   const [confirm, setConfirm] = useState<number | null>(null)
   if (!list.length) return null
@@ -334,30 +314,35 @@ function BackupsPanel() {
     <Panel title={t('ui.settings.backups')}>
       <p className="copy mb-2 text-muted">{t('ui.settings.backupsHint')}</p>
       <ul className="flex flex-col gap-2">
-        {list.map((b) => (
-          <li key={b.at} className="flex flex-wrap items-center gap-3 bg-paper p-2 shadow-ring">
-            <div className="min-w-0 flex-1">
-              <div className="text-lg leading-tight">{b.reason}</div>
-              <div className="text-base text-muted">{t('ui.settings.setAside', { when: new Date(b.at).toLocaleString() })}</div>
-              <SaveFacts save={b.save} />
-            </div>
-            <PixelButton
-              size="sm"
-              variant={confirm === b.at ? 'danger' : 'secondary'}
-              onClick={() => {
-                if (confirm !== b.at) return setConfirm(b.at)
-                const current = useGame.getState().save
-                if (current) backupSave(current, t('ui.settings.beforeRestore'))
-                replaceSave({ ...b.save, updatedAt: Date.now() })
-                setConfirm(null)
-                setList(readBackups())
-                pushToast(t('ui.settings.restored'), 'good')
-              }}
-            >
-              {t(confirm === b.at ? 'ui.settings.replaceMine' : 'ui.settings.restore')}
-            </PixelButton>
-          </li>
-        ))}
+        {list.map((b) => {
+          // Going back to before a trade would give back the Pokémon traded away: a duplicate (docs/23).
+          const traded = !!current && missesTrades(b.save, current)
+          return (
+            <li key={b.at} className="flex flex-wrap items-center gap-3 bg-paper p-2 shadow-ring">
+              <div className="min-w-0 flex-1">
+                <div className="text-lg leading-tight">{b.reason}</div>
+                <div className="text-base text-muted">{t('ui.settings.setAside', { when: new Date(b.at).toLocaleString() })}</div>
+                <SaveFacts save={b.save} />
+                {traded && <div className="copy text-muted">{t('ui.settings.restoreTraded')}</div>}
+              </div>
+              <PixelButton
+                size="sm"
+                variant={confirm === b.at ? 'danger' : 'secondary'}
+                disabled={traded}
+                onClick={() => {
+                  if (confirm !== b.at) return setConfirm(b.at)
+                  if (current) backupSave(current, t('ui.settings.beforeRestore'))
+                  replaceSave({ ...b.save, updatedAt: Date.now() })
+                  setConfirm(null)
+                  setList(readBackups())
+                  pushToast(t('ui.settings.restored'), 'good')
+                }}
+              >
+                {t(confirm === b.at ? 'ui.settings.replaceMine' : 'ui.settings.restore')}
+              </PixelButton>
+            </li>
+          )
+        })}
       </ul>
     </Panel>
   )
