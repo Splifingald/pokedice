@@ -1,4 +1,5 @@
-// "Keep the game alive": Prof. Oak asks for help with the hosting costs once per region, when its 5th badge is won.
+// "Support me": the developer's pop-up (Discord, invite, PayPal) behind the SUPPORT ME button, also shown once per
+// region, when its 5th badge is won.
 // The admin switches it on, sets the PayPal link and can reset it (bumping `round`), which shows it once more to
 // everyone who has already seen it.
 import { regionCases } from './regions'

@@ -13,6 +13,8 @@ export interface RuleRow {
   icon: IconName | ReactNode
   title: string
   text: string
+  /** A button under the text (the Support me pop-up's Discord, invite and PayPal). */
+  action?: ReactNode
 }
 
 /** The rule rows, as the events' unlock pop-up lists them. */
@@ -20,13 +22,14 @@ export function RuleList({ rules }: { rules: RuleRow[] }) {
   return (
     <ul className="m-0 grid list-none gap-2.5 p-0">
       {rules.map((r) => (
-        <li key={r.title} className="flex items-center gap-2.5">
+        <li key={r.title} className={cx('flex gap-2.5', r.action ? 'items-start' : 'items-center')}>
           <span className="grid h-[42px] w-[42px] shrink-0 place-items-center bg-line shadow-ring-line" aria-hidden>
             {typeof r.icon === 'string' ? <PixelIcon name={r.icon as IconName} size={24} /> : r.icon}
           </span>
           <span className="grid gap-0.5 leading-tight">
             <b className="text-[19px] font-normal leading-none">{r.title}</b>
             <small className="font-pixel-sm text-[15px] text-muted">{r.text}</small>
+            {r.action && <span className="mt-1.5 flex">{r.action}</span>}
           </span>
         </li>
       ))}
@@ -38,6 +41,25 @@ export function RuleList({ rules }: { rules: RuleRow[] }) {
 export interface RulesPicture {
   src: string
   focus?: string
+}
+
+/** The strip across the pop-up's top: a picture cropped at its focus, or a banner drawn in code; `children` on top. */
+export function RulesBanner({ picture, children }: { picture: RulesPicture | ReactElement; children?: ReactNode }) {
+  return (
+    <div className="relative -mx-4 h-[124px] overflow-hidden bg-night shadow-[0_3px_0_rgb(var(--c-edge)),0_-2px_0_rgb(var(--c-edge))]">
+      {isValidElement(picture) ? (
+        picture
+      ) : (
+        <img
+          src={(picture as RulesPicture).src}
+          alt=""
+          className="pixelated absolute inset-0 h-full w-full object-cover"
+          style={{ objectPosition: (picture as RulesPicture).focus ?? '50% 50%' }}
+        />
+      )}
+      {children}
+    </div>
+  )
 }
 
 export function RulesModal({
@@ -64,24 +86,14 @@ export function RulesModal({
   return (
     <Modal open={open} onClose={onClose} title={title} className="max-w-md">
       <div className="flex flex-col gap-3">
-        <div className="relative -mx-4 h-[124px] overflow-hidden bg-night shadow-[0_3px_0_rgb(var(--c-edge)),0_-2px_0_rgb(var(--c-edge))]">
-          {isValidElement(picture) ? (
-            picture
-          ) : (
-            <img
-              src={(picture as RulesPicture).src}
-              alt=""
-              className="pixelated absolute inset-0 h-full w-full object-cover"
-              style={{ objectPosition: (picture as RulesPicture).focus ?? '50% 50%' }}
-            />
-          )}
+        <RulesBanner picture={picture}>
           {onGo && (
             <span className="absolute left-2.5 top-2.5 inline-flex items-center gap-1 bg-gold px-1.5 pb-0.5 pt-px font-pixel-sm text-[14px] tracking-[0.08em] text-ink shadow-ring-line">
               <PixelIcon name={icon} size={16} />
               {t('ui.rules.nowOpen')}
             </span>
           )}
-        </div>
+        </RulesBanner>
         <RuleList rules={rules} />
         {onGo ? (
           <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)] gap-2.5 pt-1">

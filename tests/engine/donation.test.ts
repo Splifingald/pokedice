@@ -1,4 +1,4 @@
-// "Keep the game alive": the donation pop-up's trigger (5th badge, once per region) and the admin's reset.
+// "Support me": the donation pop-up's trigger (5th badge, once per region) and the admin's reset.
 import { describe, expect, it } from 'vitest'
 import {
   badgeCase,

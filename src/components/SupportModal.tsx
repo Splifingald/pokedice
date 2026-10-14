@@ -1,0 +1,115 @@
+// "Support me": the developer's three asks, as a rules pop-up (docs/15 §17): join the Discord (the one that matters
+// most), invite friends, and support the developer with PayPal, under a line saying why the game itself can never be
+// paid for (Pokémon is a licence). The side menu's and Settings' SUPPORT ME open it whenever the admin has it switched
+// on with a PayPal link (engine/donation). It also shows once per region when its 5th badge is won, between fights,
+// after Prof. Oak's tutorials and the developer's answers; the share prompt waits for it.
+import { discordUrl, donationDue, donationEnabled, donationUrl, tutorialPending } from '@/engine'
+import { artUrl } from '@/fx/areaArt'
+import { useT } from '@/i18n/react'
+import { unseenReplies, useInbox } from '@/lib/feedback'
+import { closeDonation } from '@/store/actions'
+import { useGame } from '@/store/game'
+import { PixelIcon } from './icons'
+import { Modal } from './Modal'
+import { PixelButton } from './PixelButton'
+import { RuleList, RulesBanner, type RuleRow, type RulesPicture } from './RulesModal'
+import { useInviteShare } from './ShareTutorial'
+
+/** A village under the morning sun: the players' community. */
+export const SUPPORT_PICTURE: RulesPicture = { src: artUrl('village'), focus: '50% 58%' }
+
+export function DonationPopup() {
+  const due = useGame((s) => !!s.save && donationDue(s.save, s.data) && !tutorialPending(s.save, s.data))
+  const idle = useGame((s) => s.run.phase === 'idle')
+  const replies = useInbox((s) => (s.messages ? unseenReplies(s.messages).length : 0))
+  return <SupportModal open={due && idle && !replies} onClose={() => undefined} />
+}
+
+const openTab = (url: string) => window.open(url, '_blank', 'noopener,noreferrer')
+
+/** The pop-up itself. Closing it, either way, also counts as this region's showing. */
+export function SupportModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const paypal = useGame((s) => donationUrl(s.data))
+  const discord = useGame((s) => discordUrl(s.data))
+  const enabled = useGame((s) => donationEnabled(s.data))
+  return (
+    <SupportView
+      open={open && enabled && !!paypal}
+      paypal={paypal ?? ''}
+      discord={discord}
+      onClose={() => {
+        closeDonation()
+        onClose()
+      }}
+    />
+  )
+}
+
+/** What it shows, from the links it's given (the kitchen sink shows it without the admin's config). */
+export function SupportView({
+  open,
+  onClose,
+  paypal,
+  discord,
+}: {
+  open: boolean
+  onClose: () => void
+  paypal: string
+  /** The community Discord's invite; null (none set in the admin) leaves its row out. */
+  discord: string | null
+}) {
+  const { t } = useT()
+  const shareInvite = useInviteShare(open)
+
+  const rows: RuleRow[] = [
+    ...(discord
+      ? [
+          {
+            icon: 'discord',
+            title: t('ui.support.discord.title'),
+            text: t('ui.support.discord.text'),
+            action: (
+              <PixelButton size="sm" onClick={() => openTab(discord)}>
+                <PixelIcon name="discord" size={18} />
+                {t('ui.nav.discord')}
+              </PixelButton>
+            ),
+          },
+        ]
+      : []),
+    {
+      icon: 'friends',
+      title: t('ui.support.invite.title'),
+      text: t('ui.support.invite.text'),
+      action: (
+        <PixelButton size="sm" onClick={() => void shareInvite()}>
+          <PixelIcon name="friends" size={18} />
+          {t('ui.friends.share')}
+        </PixelButton>
+      ),
+    },
+    {
+      icon: 'heart',
+      title: t('ui.support.me.title'),
+      text: t('ui.support.me.text'),
+      action: (
+        <PixelButton size="sm" onClick={() => openTab(paypal)}>
+          <PixelIcon name="heart" size={18} />
+          {t('ui.support.me.button')}
+        </PixelButton>
+      ),
+    },
+  ]
+
+  return (
+    <Modal open={open} onClose={onClose} title={t('ui.support.title')} className="max-w-md">
+      <div className="flex flex-col gap-3">
+        <RulesBanner picture={SUPPORT_PICTURE} />
+        <RuleList rules={rows} />
+        <PixelButton variant="primary" size="lg" className="mt-1 w-full" onClick={onClose}>
+          {t('ui.common.ok')}
+        </PixelButton>
+      </div>
+    </Modal>
+  )
+}

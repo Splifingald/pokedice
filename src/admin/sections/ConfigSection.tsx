@@ -195,7 +195,8 @@ function PityBox({
 }
 
 /**
- * "Keep the game alive": Prof. Oak's donation pop-up. Each player sees it once per region, when its 5th badge is won.
+ * "Support me": the developer's pop-up (Discord, invite, PayPal), behind the SUPPORT ME button. Each player also sees
+ * it once per region, when its 5th badge is won.
  * Ticking the reset bumps the round, so on the next Save + Publish everyone who has seen it gets it once more; the
  * box then reads unticked again, ready for the next time.
  */
@@ -209,8 +210,8 @@ function DonationBox() {
   const urlOk = isDonationUrl(url)
   return (
     <Box
-      title="Keep the game alive (donations)" icon="heart"
-      hint="Prof. Oak asks players to help with the hosting costs, with a PayPal button. Once per region, when its 5th badge is won, between fights. Save, then Publish, for players to get the change."
+      title="Support me (donations)" icon="heart"
+      hint="The SUPPORT ME button (side menu, Settings) and its pop-up: join the Discord, invite friends, and a PayPal button to support the developer, saying the game itself can never be paid for. It also shows once per region, when its 5th badge is won, between fights. Save, then Publish, for players to get the change."
     >
       <div className="grid gap-3 sm:grid-cols-3">
         <label className="flex items-center gap-2 text-lg">

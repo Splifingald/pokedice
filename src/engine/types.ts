@@ -445,7 +445,7 @@ export interface EnergyConfig {
   minutesPerEnergy: number
 }
 
-/** "Keep the game alive": Prof. Oak's donation pop-up (Admin → Config). */
+/** "Support me": the developer's pop-up and its PayPal button (Admin → Config). */
 export interface DonationConfig {
   /** Off = the pop-up never shows. It also stays hidden while `paypalUrl` is empty. */
   enabled: boolean

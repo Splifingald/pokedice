@@ -53,6 +53,7 @@ import { RaidBits } from './kitchen/RaidBits'
 import { WorldBits } from './kitchen/WorldBits'
 import { GiftBits } from './kitchen/GiftBits'
 import { InviteBits } from './kitchen/InviteBits'
+import { SupportBits } from './kitchen/SupportBits'
 import { BadgeIcon, CrownIcon } from '@/components/BadgeIcon'
 import { BoardRow } from '@/components/BoardRow'
 
@@ -599,6 +600,10 @@ export function KitchenSink() {
 
       <Section title="Invite rewards: the gauge in every state, the Friends page’s card, Prof. Oak’s invite, ready, rules, the opening">
         <InviteBits />
+      </Section>
+
+      <Section title="Support me: the developer's asks (Discord, invite, PayPal), with and without a Discord link">
+        <SupportBits />
       </Section>
 
       <Section title="Extreme mode: rules, band, title card, K.O. rest, resting team, while you were away, switch">

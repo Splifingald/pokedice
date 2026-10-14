@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { DonationModal } from '@/components/DonationPopup'
+import { SupportModal } from '@/components/SupportModal'
 import { Modal } from '@/components/Modal'
 import { Panel } from '@/components/Panel'
 import { PushSettingsPanel } from '@/components/PushSettings'
@@ -52,7 +52,7 @@ export function SettingsScreen() {
         <h1 className="text-[32px] leading-none">{t('ui.settings.title')}</h1>
         {canDonate && (
           <PixelButton variant="primary" size="sm" onClick={() => setDonating(true)}>
-            {t('ui.settings.helpPokedice')}
+            {t('ui.support.button')}
           </PixelButton>
         )}
       </div>
@@ -198,7 +198,7 @@ export function SettingsScreen() {
 
       <DeleteData />
 
-      <DonationModal open={donating} onClose={() => setDonating(false)} />
+      <SupportModal open={donating} onClose={() => setDonating(false)} />
 
       <Modal open={confirmDelete} onClose={() => setConfirmDelete(false)} title={t('ui.settings.deleteTitle')}>
         <p className="copy mb-4 text-lg">

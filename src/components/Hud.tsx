@@ -8,7 +8,7 @@ import { affordableUpgrades } from '@/lib/upgrades'
 import { pushToast, useGame } from '@/store/game'
 import { useInFight } from '@/store/hooks'
 import { CloudSyncButton } from './CloudSyncButton'
-import { DonationModal } from './DonationPopup'
+import { SupportModal } from './SupportModal'
 import { ExtremeBand } from './Extreme'
 import { PlayerMenu } from './PlayerMenu'
 import { cx } from '@/theme/util'
@@ -199,7 +199,7 @@ export function Header() {
   )
 }
 
-/** Desktop: the game menus down the left; at the bottom HELP POKÉDICE (when donations are on), then SYNC ONLINE. */
+/** Desktop: the game menus down the left; at the bottom SUPPORT ME (when donations are on), then SYNC ONLINE. */
 export function SideNav() {
   const { t } = useT()
   const canDonate = useGame((s) => donationEnabled(s.data))
@@ -226,12 +226,12 @@ export function SideNav() {
             className="pixel-btn flex min-h-[48px] items-center justify-center gap-2 bg-rose px-3 py-2 text-[20px] leading-none text-danger"
           >
             <PixelIcon name="heart" size={22} />
-            {t('ui.settings.helpPokedice')}
+            {t('ui.support.button')}
           </button>
         )}
         <CloudSyncButton />
       </div>
-      <DonationModal open={donating} onClose={() => setDonating(false)} />
+      <SupportModal open={donating} onClose={() => setDonating(false)} />
     </aside>
   )
 }
