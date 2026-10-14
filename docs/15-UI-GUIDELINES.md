@@ -230,7 +230,7 @@ motion `off` the stage jumps to the end and still fires every cue, so the screen
 | Timeline | full | short |
 |---|---|---|
 | Attacks: one move per type (Flamethrower, Hydro Pump, Razor Leaf, Thunderbolt, Psychic in `attacks.ts`; Tackle, jabs and a fist, gusts and a wing slash, Sludge Bomb, earth spikes, Rock Slide, a swarm and X-Scissor, Shadow Ball, Metal Claw, Ice Beam, Dragon Breath, Dark Pulse and Crunch, Moonblast in `attacks-types.ts`); a generic impact for typeless dice | the typed move | one generic hit |
-| Catch | throw, beam, drop, wobbles, result; with a Bait to offer it holds on the ball lying still (`hold`) and the answer plays on from that frame (`from: 'ground'`: the Bait tossed beside the ball, a heart, a last wobble; or straight to the break-free); Capture Luck's stay (`stays`): out of the ball, a "!" and two hops, no flight | throw and drop, result at once (the Bait still lands) |
+| Catch | throw, beam, drop, wobbles, result; with a Bait to offer it holds on the ball lying still (`hold`) and the answer plays on from that frame (`from: 'ground'`: the Bait tossed beside the ball, a heart, a last wobble; or straight to the break-free); Capture Luck's stay (`stays`): out of the ball, a "!" and two hops, no flight | throw and drop, result at once (the Bait still lands); a throw that can't miss jumps to its end at every level |
 | Pokémon Center | in its picture (`public/backgrounds/pokemon-center.png`): a ball per team member into the machine's slots, the heal jingle (B G♯ ×3, E) | one flash, healed |
 | Mega Evolution, Gigantamax | the full change | a white flash and the new sprite |
 | Legendary intro, Evolution, Egg hatching, the lab (a partner), a trade | in full | in full |
@@ -427,8 +427,9 @@ in view) and the battle history sits beside it from 1024 px.
 - **The catch happens on the stage**: the worn-out foe stays on its platform, greyed; the panel shows a radio group
   of balls (each with its chance from `catchChance`, how many you have, "not needed" when a weaker one is already
   certain), the catch math (`d6 + bonus ≥ need`), and one throw. The catch timeline plays; the die and the
-  result show together on `catchResult`, never before (the die would spoil the wobbles). A throw that can't miss has
-  no die.
+  result show together on `catchResult`, never before (the die would spoil the wobbles). A throw that can't miss
+  (`sureThrow`: its bonus alone reaches the need) has no die and no animation: the stage jumps to the catch's end
+  (`StageOverlay.instant`), only the "Gotcha!" sounds, and the result shows at once.
 - **The Bait** (docs/25): a throw that fell short, with a Bait in the bag that could still make it, stops with the ball
   lying still after its wobbles; the die shows with the math (`4 + 1 = 5 < 7`), the message asks "So close! Throw a
   Bait to tempt Snorlax?", and a line gives the Bait's die and the odds ("The Bait's die (1, 1, 1, 2, 2, 3) adds to
@@ -703,7 +704,8 @@ on `/kitchen-sink` (`WorldBits`). Every rule and number comes from `engine/world
   "(Shiny)" is in the label for screen readers.
 - **An area waiting for its date** is locked like any other, with "Opens {date}" (the local date and time, `dayTime`).
 - **The Poké Mart inside is the World Mart** (`WorldShop`): the world's picture and time left over the admin's list,
-  each row with its limit ("8 of 10 left", Sold out); buying only, no Sell tab.
+  each row with its limit ("8 of 10 left", Sold out), under the usual Buy / Sell tabs: Sell is the world's bag,
+  bought back for the world's ₽ (its prices are never below the buy-back, so that can't pay).
 - **Upgrades inside** are the world's own tracks (Combos, Dice Types), from level 1, bought with its ₽, like a new
   region's; no General tab inside (its levels hold everywhere, and the world's ₽ are its own). **In battle**, a
   **booster** shows as its own chip, the type's badge and "×1.5" (`BoosterChip`), beside the damage in the readout and

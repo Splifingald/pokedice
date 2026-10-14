@@ -23,6 +23,7 @@ import {
   statusCounts,
   statusesFromRoll,
   STATUS_KINDS,
+  sureThrow,
   usableIn,
   type BattleEvent,
   type Battler,
@@ -452,7 +453,10 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
    */
   const catchScene = (r: CatchThrow, from?: 'ground'): StageOverlay => {
     const foe = st.enemy
+    // A throw that couldn't miss has no suspense to build: its result at once.
+    const instant = sureThrow(r)
     return {
+      instant,
       timeline: catchTimeline({
         own: spriteKey(active.dex, true, active.shiny),
         foe: spriteKey(foe.dex, false, foe.shiny),
@@ -463,6 +467,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
         from,
         bait: r.baited === 'used',
         stays: !!r.stays,
+        instant,
       }),
       ready: Promise.all([loadSprite(active.dex, true, active.shiny), loadSprite(foe.dex, false, foe.shiny)]),
       label:

@@ -49,6 +49,7 @@ The game already keeps each region apart: its own Box, team, bag, ₽, Pokédex 
 - **Booster types**: a list of types and multipliers (e.g. Fire ×1.5, Grass ×1.5). Every hit of those types is
   multiplied, for both sides; the battle readout shows the booster as a chip next to the damage (no hidden numbers).
 - **Special shop**: the world's Mart sells only the admin's list (item, price in the world's ₽, limit per player or none).
+  Its Sell tab buys back the world's bag at the usual price, for the world's ₽.
 - **Special trainers**: the world's own trainers (Trainers section), in its areas' trainer pools and as gyms if you want.
 - **The final fight**: the last area holds the **shiny mythical** as its boss (its level set in admin). Win, then throw
   balls with the catch dice; a miss leaves it there to fight again. Caught, it leaves the world at once (see §5, Q2).

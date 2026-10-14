@@ -27,13 +27,18 @@ export const StageCanvas = forwardRef<
     hud?: Hud
     ready?: Promise<unknown>
     autoPlay?: boolean
+    /** Jump straight to the end, as with animations off, whatever the motion level. */
+    instant?: boolean
     onEnd?: () => void
     onTick?: (t: number) => void
     /** What the stage shows, for screen readers (the canvas is an image). */
     label: string
     className?: string
   }
->(function StageCanvas({ timeline, hud, ready, autoPlay = true, onEnd, onTick, label, className }, ref) {
+>(function StageCanvas(
+  { timeline, hud, ready, autoPlay = true, instant, onEnd, onTick, label, className },
+  ref,
+) {
   const cv = useRef<HTMLCanvasElement>(null)
   const player = useRef<Player<unknown> | null>(null)
   const hudRef = useRef<Hud>({})
@@ -73,7 +78,7 @@ export const StageCanvas = forwardRef<
       if (gone) return
       p.load(timeline)
       loaded.current = true
-      if (level === 'off' || skipEarly.current) p.skip()
+      if (level === 'off' || instant || skipEarly.current) p.skip()
       else if (autoPlay) p.play()
     }
     if (ready) void Promise.race([ready, new Promise((r) => setTimeout(r, READY_WAIT))]).then(start)
@@ -82,7 +87,7 @@ export const StageCanvas = forwardRef<
       gone = true
       p.stop()
     }
-    // A new timeline object is a new animation; the level is read when it starts.
+    // A new timeline object is a new animation; the level (and `instant`) is read when it starts.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [timeline, ready])
 

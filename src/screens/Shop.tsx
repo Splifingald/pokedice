@@ -622,20 +622,11 @@ export function ShopScreen() {
   const inside = useInWorld().inside
   if (!save) return null
   const badges = badgeCase(save, data).filter((b) => b.earned).length
-  // Inside a small world the Mart is the world's (docs/21): its list only, nothing sold back.
-  if (inside)
-    return (
-      <div className="mx-auto flex w-full max-w-3xl flex-col gap-3">
-        <PageHead icon="navShop" title={t('ui.world.mart.title')}>
-          <Wallet />
-        </PageHead>
-        <WorldShop />
-      </div>
-    )
-
+  // Inside a small world the Mart is the world's (docs/21): its list to buy from, and the world's bag sold back for
+  // the world's ₽ (its prices are never below the buy-back, so that can't pay).
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-3">
-      <PageHead icon="navShop" title={t('ui.shop.title')}>
+      <PageHead icon="navShop" title={t(inside ? 'ui.world.mart.title' : 'ui.shop.title')}>
         <Wallet />
       </PageHead>
       <Seg
@@ -651,7 +642,7 @@ export function ShopScreen() {
         ]}
       />
       <div role="tabpanel" aria-labelledby={`mart-${tab}`} className="flex flex-col gap-3">
-        {tab === 'buy' ? <BuyTab badges={badges} /> : <SellTab />}
+        {tab === 'sell' ? <SellTab /> : inside ? <WorldShop /> : <BuyTab badges={badges} />}
       </div>
     </div>
   )

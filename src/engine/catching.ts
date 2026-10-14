@@ -63,6 +63,9 @@ export function catchChance(value: number, bonus: number): number {
   return Math.max(0, Math.min(1, (CATCH_DIE + 1 - faceNeeded) / CATCH_DIE))
 }
 
+/** The throw can't miss: its bonus alone reaches the need, whatever the die. No die, no suspense. */
+export const sureThrow = (r: { bonus: number; need: number }): boolean => catchChance(r.need, r.bonus) >= 1
+
 export interface CatchRoll {
   die: number
   bonus: number
