@@ -104,6 +104,12 @@ test('Small worlds: the switch, a world made with its region and areas, its part
   await page.getByRole('button', { name: '+ New area in this world' }).click()
   await page.getByRole('button', { name: '+ New area in this world' }).click()
   await expect(page.getByRole('cell', { name: '3. Mirage Island 3' })).toBeVisible()
+  // A secret area is listed too, with its conditions, a date and its way to Areas.
+  await page.getByRole('button', { name: '+ New secret area' }).click()
+  const secret = page.getByRole('row', { name: /secret Mirage Island secret 1/ })
+  await expect(secret).toContainText('10 caught')
+  await expect(secret.getByRole('textbox', { name: 'Mirage Island secret 1 opens (UTC)' })).toBeVisible()
+  await expect(secret.getByRole('link', { name: 'Edit in Areas' })).toBeVisible()
   await expect(page.getByText(/^Unsaved: .*regions/)).toBeVisible()
   // Three partners and the shiny mythical in the last area.
   for (const name of ['Abra', 'Gastly', 'Slowpoke']) {
@@ -114,10 +120,10 @@ test('Small worlds: the switch, a world made with its region and areas, its part
   await page.getByRole('button', { name: 'Pick a Pokémon…' }).click()
   await page.getByRole('combobox', { name: 'Pick a Pokémon…' }).fill('151')
   await page.getByRole('combobox', { name: 'Pick a Pokémon…' }).press('Enter')
-  await page.getByRole('combobox', { name: /^Its area/ }).selectOption({ label: 'Mirage Island 3' })
+  await page.getByRole('combobox', { name: /^Its area/ }).selectOption({ label: 'Mirage Island secret 1' })
   await expect(page.getByRole('alert')).toHaveCount(0)
   await add.click()
-  const row = page.getByRole('row', { name: /Mirage Island.*shiny Mew · 3 areas/ })
+  const row = page.getByRole('row', { name: /Mirage Island.*shiny Mew · 4 areas/ })
   await expect(row).toBeVisible()
   await expect(row.getByText('scheduled')).toBeVisible()
 })

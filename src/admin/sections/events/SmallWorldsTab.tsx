@@ -13,12 +13,15 @@ import {
   realRegions,
   regionAreas,
   sellPrice,
+  WORLD_SECRETS_MAX,
   worldPrize,
   worldProblems,
   worldState,
   type GameData,
+  type Area,
   type PokeType,
   type SmallWorld,
+  type UnlockCondition,
   type WorldBooster,
   type WorldShopItem,
 } from '@/engine'
@@ -63,8 +66,29 @@ const newId = () => (typeof crypto !== 'undefined' && 'randomUUID' in crypto ? c
 const titleOf = (w: SmallWorld, data: GameData | null) =>
   w.title.en?.trim() || data?.regions.find((r) => r.id === w.regionId)?.name || 'Small world'
 
-/** A new area row (the Areas section's "+ Add area", in a region). */
-function blankArea(id: string, regionId: string, name: string, order: number): Row {
+/** A world's areas as the admin lists them: its chain in order, then its secret areas (Home inside shows those). */
+const worldAreas = (data: GameData, regionId: string): Area[] => [
+  ...regionAreas(data, regionId),
+  ...data.areas.filter((a) => a.hidden && (a.regionId ?? 'kanto') === regionId).sort((a, b) => a.orderIndex - b.orderIndex),
+]
+
+/** A secret area's unlock condition, in a few words for the admin. */
+function conditionText(c: UnlockCondition, data: GameData): string {
+  const areaName = (id: string) => data.areas.find((a) => a.id === id)?.name ?? '?'
+  switch (c.kind) {
+    case 'pokedex':
+      return `${c.count} caught`
+    case 'maxLevel':
+      return `a Pokémon Lv.${c.level}`
+    case 'area':
+      return `reach ${areaName(c.areaId)}`
+    case 'cleared':
+      return `clear ${areaName(c.areaId)}`
+  }
+}
+
+/** A new area row (the Areas section's "+ Add area", in a region); a secret one opens with 10 caught until edited. */
+function blankArea(id: string, regionId: string, name: string, order: number, secret = false): Row {
   return {
     id,
     order_index: order,
@@ -79,8 +103,8 @@ function blankArea(id: string, regionId: string, name: string, order: number): R
     legendary_boss: null,
     scales_to_team: false,
     easy_mode: false,
-    hidden: false,
-    unlock_conditions: null,
+    hidden: secret,
+    unlock_conditions: secret ? [{ kind: 'pokedex', count: 10 }] : null,
     gyms: [],
   }
 }
@@ -194,7 +218,7 @@ export function SmallWorldsTab() {
               <tbody>
                 {sorted.map((w) => {
                   const st = worldState(w, now)
-                  const areas = data ? regionAreas(data, w.regionId).length : 0
+                  const areas = data ? worldAreas(data, w.regionId).length : 0
                   return (
                     <tr key={w.id} className={cx('border-t-2 border-line', draft?.id === w.id && 'bg-gold-pale')}>
                       <td className="px-2 py-1">
@@ -411,7 +435,7 @@ function RegionPanel({ draft, set, data }: { draft: SmallWorld; set: (w: SmallWo
   // Regions that can be a world's: never a real one of the journey (Kanto, Johto…), unless it's already this world's.
   const real = new Set(realRegions(data).map((r) => r.id))
   const choices = data.regions.filter((r) => r.id === draft.regionId || isWorldRegion(data, r.id) || !real.has(r.id) || !r.enabled)
-  const areas = draft.regionId ? regionAreas(data, draft.regionId) : []
+  const areas = draft.regionId ? worldAreas(data, draft.regionId) : []
   const allAreas = [...data.areas].sort((a, b) => (a.regionId ?? '').localeCompare(b.regionId ?? '') || a.orderIndex - b.orderIndex)
   const setOpens = (areaId: string, iso: string | null) => {
     const opens = { ...draft.opens }
@@ -470,7 +494,7 @@ function RegionPanel({ draft, set, data }: { draft: SmallWorld; set: (w: SmallWo
                   <tr className="text-left text-muted">
                     <th className="px-1 font-normal">Area (in order)</th>
                     <th className="px-1 font-normal">Levels</th>
-                    <th className="px-1 font-normal">Opens (UTC), as well as after the one before</th>
+                    <th className="px-1 font-normal">Opens (UTC), as well as after the one before (a secret: its conditions)</th>
                     <th />
                   </tr>
                 </thead>
@@ -478,7 +502,18 @@ function RegionPanel({ draft, set, data }: { draft: SmallWorld; set: (w: SmallWo
                   {areas.map((a, i) => (
                     <tr key={a.id} className="border-t-2 border-line">
                       <td className="px-1 py-1">
-                        {i + 1}. {a.name}
+                        {a.hidden ? (
+                          <>
+                            <span className="bg-[#2f4f8f] px-1 text-base text-white">secret</span> {a.name}
+                            <div className="text-base text-muted">
+                              {(a.unlockConditions ?? []).map((c) => conditionText(c, data)).join(' · ') || 'no condition: open at once'}
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            {i + 1}. {a.name}
+                          </>
+                        )}
                         {a.id === draft.mythical.areaId && <span className="ml-1 bg-gold px-1 text-base">the mythical</span>}
                       </td>
                       <td className="px-1 py-1 text-base">
@@ -517,6 +552,12 @@ function RegionPanel({ draft, set, data }: { draft: SmallWorld; set: (w: SmallWo
             <PixelButton size="sm" onClick={() => addRows('areas', [blankArea(newUuid(), draft.regionId, `${titleOf(draft, data)} ${areas.length + 1}`, nextAreaOrder())])}>
               + New area in this world
             </PixelButton>
+            <PixelButton
+              size="sm"
+              onClick={() => addRows('areas', [blankArea(newUuid(), draft.regionId, `${titleOf(draft, data)} secret ${areas.filter((a) => a.hidden).length + 1}`, nextAreaOrder(), true)])}
+            >
+              + New secret area
+            </PixelButton>
             <select className={cx(inputCls, 'w-auto max-w-[320px]')} value={copyFrom} onChange={(e) => setCopyFrom(e.target.value)} aria-label="An area to copy into this world">
               <option value="">Copy an area into this world…</option>
               {allAreas.map((a) => (
@@ -537,9 +578,10 @@ function RegionPanel({ draft, set, data }: { draft: SmallWorld; set: (w: SmallWo
             </PixelButton>
           </div>
           <p className="m-0 text-base text-muted">
-            A copy brings its wild, trainer and loot pools (no legendary, gym or secret rule). Pools, trainers, pictures and
-            rounds are edited in Areas and Trainers; the order is the Areas order. The world's own trainers go in its areas'
-            trainer pools, or as gyms.
+            A copy brings its wild, trainer and loot pools (no legendary, gym or secret rule). Pools, trainers, pictures,
+            rounds and a secret area's conditions are edited in Areas and Trainers (Secret there makes any area one); the
+            order is the Areas order. Home inside shows the first {WORLD_SECRETS_MAX} secret areas. The world's own trainers
+            go in its areas' trainer pools, or as gyms.
           </p>
         </>
       )}
@@ -549,7 +591,7 @@ function RegionPanel({ draft, set, data }: { draft: SmallWorld; set: (w: SmallWo
 
 function MythicalPanel({ draft, patch, data }: { draft: SmallWorld; patch: (p: Partial<SmallWorld>) => void; data: GameData }) {
   const m = draft.mythical
-  const areas = draft.regionId ? regionAreas(data, draft.regionId) : []
+  const areas = draft.regionId ? worldAreas(data, draft.regionId) : []
   return (
     <div className="grid content-start gap-2">
       <h4 className="m-0 text-xl">The shiny mythical (optional)</h4>
