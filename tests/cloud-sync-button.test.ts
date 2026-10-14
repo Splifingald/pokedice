@@ -10,7 +10,6 @@ describe('SYNC ONLINE', () => {
     useGame.setState({
       auth: { status: 'unknown', userId: null, email: null },
       run: initialRun(),
-      syncConflict: null,
     })
     useCloudSync.setState({ lastAt: null, busy: false })
   })
@@ -42,7 +41,7 @@ describe('SYNC ONLINE', () => {
 })
 
 describe('reloading for a newer build', () => {
-  afterEach(() => useGame.setState({ run: initialRun(), syncConflict: null }))
+  afterEach(() => useGame.setState({ run: initialRun() }))
 
   it('waits for a moment with nothing to lose: no fight, encounter or catch decision on screen', async () => {
     const { safeToReload } = await import('@/store/sync')

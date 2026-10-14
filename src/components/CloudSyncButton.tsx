@@ -22,7 +22,6 @@ export function CloudSyncButton() {
   const signedIn = useGame((s) => s.auth.status === 'signed_in')
   // Re-render on everything the block depends on, and every second for the countdown.
   useGame((s) => s.run.phase)
-  useGame((s) => s.syncConflict)
   const { lastAt, busy } = useCloudSync()
   const now = useNow(1000)
   if (!signedIn) return null

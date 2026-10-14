@@ -6,7 +6,6 @@ import { setSfxEnabled } from '@/audio/sfx'
 import { t } from '@/i18n'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { GameLayout } from '@/components/GameLayout'
-import { SyncConflictModal } from '@/components/SyncConflictModal'
 import { ToastStack } from '@/components/Toast'
 import { AreaScreen } from '@/screens/Area'
 import { DayCareScreen } from '@/screens/DayCareScreen'
@@ -90,7 +89,6 @@ export function App() {
           </Routes>
         </BrowserRouter>
         <ToastStack />
-        <SyncConflictModal />
       </ErrorBoundary>
     </MotionConfig>
   )

@@ -1,6 +1,6 @@
-// Cloud sync safety: a stale device must never silently overwrite a save with more progress.
+// Cloud sync: settled with no question asked — areas, then the Pokédex, then this device's own save.
 import { describe, expect, it } from 'vitest'
-import { liveBlock, newSave, syncXpCurve, xpToNext, type SaveData } from '@/engine'
+import { applyTake, createInstance, liveBlock, newSave, syncXpCurve, xpToNext, type SaveData } from '@/engine'
 import { compareProgress, decideSync, progressTotals, pushKey, sameSave } from '@/save/cloud'
 import { parseSave } from '@/save/schema'
 import { data, newId } from './fixtures'
@@ -16,18 +16,36 @@ describe('decideSync', () => {
     expect(decideSync(null, base)).toBe('cloud')
   })
 
-  it('lets the newest win when it has at least as much progress', () => {
+  it('lets the save with more progress win, whichever was played last', () => {
     expect(decideSync(at(base, 1), at(further, 2))).toBe('cloud')
+    expect(decideSync(at(base, 5), at(further, 2))).toBe('cloud')
     expect(decideSync(at(further, 3), at(base, 2))).toBe('local')
+    expect(decideSync(at(further, 2), at(base, 5))).toBe('local')
+  })
+
+  it('keeps this device’s save when both got as far', () => {
     expect(decideSync(at(base, 3), at(base, 2))).toBe('local')
+    expect(decideSync(at(base, 2), at(base, 3))).toBe('local')
+    // Levels, gold and the rest don't count: areas and the Pokédex only.
+    const richer: SaveData = { ...base, gold: base.gold + 500, box: base.box.map((p) => ({ ...p, level: p.level + 10 })) }
+    expect(decideSync(at(base, 2), at(richer, 3))).toBe('local')
   })
 
-  it('asks when the newer save has less progress (a stale device was opened)', () => {
-    expect(decideSync(at(base, 5), at(further, 2))).toBe('ask')
-    expect(decideSync(at(further, 2), at(base, 5))).toBe('ask')
+  it('…unless this device never saw a trade the cloud copy did: the Pokémon traded away would come back', () => {
+    const given = base.box[0]!
+    const traded = applyTake(
+      base,
+      data,
+      { id: 'T1', listed: createInstance(given.dex, given.level, data, 'got', 1000), given, with: 'Misty' },
+      2000,
+      newId,
+    ).save
+    expect(compareProgress(base, traded)).toBe(0)
+    expect(decideSync(at(base, 9), at(traded, 2))).toBe('cloud')
+    expect(decideSync(at(traded, 2), at(base, 9))).toBe('local')
   })
 
-  it('ranks progress by areas cleared first, then gyms, species and levels', () => {
+  it('ranks progress by areas cleared first, then gyms, then species', () => {
     const areaId = Object.keys(base.areaProgress)[0] ?? data.areas[0]!.id
     const cleared: SaveData = {
       ...base,
@@ -50,9 +68,12 @@ describe('decideSync', () => {
       parked: { kanto: { ...liveBlock(kanto) } },
     }
 
-    // Read region by region, Johto looks like a brand new game and Kanto wins. It must not.
-    expect(compareProgress(intoJohto, kanto)).toBeGreaterThan(0)
-    expect(decideSync(at(kanto, 9), at(intoJohto, 2))).toBe('ask')
+    // Read region by region, Johto looks like a brand new game and Kanto wins. It must not: the two got as far.
+    expect(compareProgress(intoJohto, kanto)).toBe(0)
+    // One Johto catch more, and Johto is ahead.
+    const caught: SaveData = { ...intoJohto, pokedex: [...intoJohto.pokedex, 152] }
+    expect(compareProgress(caught, kanto)).toBeGreaterThan(0)
+    expect(decideSync(at(kanto, 9), at(caught, 2))).toBe('cloud')
 
     const totals = progressTotals(intoJohto)
     expect(totals.regions).toBe(2)

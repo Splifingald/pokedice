@@ -572,6 +572,19 @@ function markDone(save: SaveData, id: string, log?: TradeLogEntry, unseen = fals
 
 export const tradeApplied = (save: SaveData, id: string): boolean => tradesOf(save).done.includes(id)
 
+/**
+ * A trade done in `current` that `older` never saw. The server hands each half of a trade to a save once, so going
+ * back to `older` (a backup, Settings) would bring back the Pokémon given away while the other trainer keeps it: a
+ * duplicate. Listings need no check: reconcileListings already moves a listed Pokémon out of an older copy's Box.
+ */
+export function missesTrades(older: SaveData, current: SaveData): boolean {
+  const o = tradesOf(older)
+  const c = tradesOf(current)
+  const known = new Set([...o.done, ...(o.log ?? []).map((l) => l.id)])
+  // The log, not `done`: `done` also holds listings that ended with no trade, and every trade is logged.
+  return (c.log ?? []).some((l) => !known.has(l.id))
+}
+
 /** What the Done list and the scene keep of a Pokémon beyond its species and level: shiny, and its nickname. */
 function extras(m: PokemonInstance): { shiny?: true; nickname?: string } {
   const nickname = cleanNickname(m.nickname)
