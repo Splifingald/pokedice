@@ -404,7 +404,10 @@ export class Player<S = unknown> {
   }
   render() {
     if (!this.def || this.s == null) return
-    this.g.clearRect(0, 0, W, H)
+    // The canvas's own size: a full-screen scene (the portal's breach) is bigger than the 240×160 stage.
+    this.g.clearRect(0, 0, this.g.canvas.width, this.g.canvas.height)
+    // A canvas resized since (a full-screen scene on a turned phone) has lost this setting.
+    this.g.imageSmoothingEnabled = false
     this.def.draw(this.g, this.s, Math.min(this.t, this.def.dur))
     this.onTick?.(this.t)
   }

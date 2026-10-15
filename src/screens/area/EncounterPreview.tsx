@@ -1,5 +1,4 @@
-import { PortalFilters, shaderClass } from '@/components/Portal'
-import { useMotion } from '@/lib/motion'
+import { GlitchSprite } from '@/components/Portal'
 import { motion } from 'framer-motion'
 import { useId, useState } from 'react'
 import { createPortal } from 'react-dom'
@@ -36,16 +35,18 @@ function WildCard({ enc }: { enc: Extract<Encounter, { kind: 'wild' | 'boss' }> 
   const area = useGame((s) => s.data.areas.find((a) => a.id === s.run.areaId))
   // A portal run's wild Pokémon (docs/28): distorted, and never caught.
   const distorted = useGame((s) => !boss && !!s.save && portalNoCatch(s.save, s.data, s.run.areaId))
-  const { level, calm } = useMotion()
   return (
     <div className="flex items-center gap-3 sm:gap-4">
-      {distorted && <PortalFilters />}
       <motion.div
         initial={{ scale: 0.6, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         className={cx('shrink-0', boss ? 'bg-night shadow-[inset_0_0_0_3px_#ffbe2e]' : 'bg-paper shadow-ring')}
       >
-        <SpriteImg dex={enc.dex} size={desktop ? 144 : 104} shiny={enc.shiny} className={distorted ? shaderClass(level, calm) : undefined} />
+        {distorted ? (
+          <GlitchSprite dex={enc.dex} size={desktop ? 144 : 104} shiny={enc.shiny} />
+        ) : (
+          <SpriteImg dex={enc.dex} size={desktop ? 144 : 104} shiny={enc.shiny} />
+        )}
       </motion.div>
       <div className="flex min-w-0 flex-col gap-1">
         {boss && <div className="text-lg leading-none tracking-[0.35em] text-gold">{t('ui.enc.legendaryTag')}</div>}

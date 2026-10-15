@@ -1,8 +1,9 @@
-// Distortion World's portal run (docs/28, docs/15 §27): the portal drawn in code, the breach that plays on the way in
-// and the pop-up behind it (the rules, NOT NOW / READY!), the gauge of portals closed, a distortion's boons to pick
-// from, the run's bonuses, the victory (shiny Giratina coming through, its cry) and the screen's recurring distortion.
+// Distortion World's portal run (docs/28, docs/15 §27): the breach that plays on the way in and the pop-up behind it
+// (the rules, NOT NOW / READY!), the gauge of portals closed, a distortion's boons to pick from, the run's bonuses and
+// the victory (shiny Giratina coming through, its cry). The scenes are the pixel engine's (src/fx/timelines/portal.ts);
+// the portal, the distortions and the glitches are hosted in PortalFx.tsx.
 // Every number comes from the engine (the area's mode, the run's state); these pieces only show them.
-import { useEffect, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import {
   monName,
   type DistortionOffer,
@@ -12,12 +13,13 @@ import {
   type PortalRunMode,
 } from '@/engine'
 import { playCry } from '@/audio/cries'
-import { fxSound, sfx } from '@/audio/sfx'
+import { loadItemSprite, loadSprite, spriteKey } from '@/fx/sprites'
+import { breachTimeline, victoryTimeline } from '@/fx/timelines/portal'
 import { joinList } from '@/i18n'
 import { useT } from '@/i18n/react'
 import { useHoldFullscreen } from '@/lib/fullscreen'
 import { typeName } from '@/lib/format'
-import { useMotion, type MotionLevel } from '@/lib/motion'
+import { useMotion } from '@/lib/motion'
 import { cx } from '@/theme/util'
 import { Die } from './Die'
 import { PixelIcon } from './icons'
@@ -25,7 +27,9 @@ import { ItemSprite } from './ItemSprite'
 import { Modal } from './Modal'
 import { PixelButton } from './PixelButton'
 import { RuleList, RulesModal, type RuleRow } from './RulesModal'
-import { MiniSprite, SpriteImg } from './SpriteImg'
+import { PortalArt, PortalScene, useFullStage } from './PortalFx'
+import { MiniSprite } from './SpriteImg'
+import { StageCanvas, type StageHandle } from './StageCanvas'
 import { TypeBadge } from './TypeBadge'
 
 /** Giratina: the run's foe, and its prize. */
@@ -33,105 +37,22 @@ export const GIRATINA = 487
 
 // ------------------------------------------------------------------ the portal
 
-/**
- * The distortion portal, drawn in code: rings from the void outwards, Giratina's red and black streaks turning in it,
- * the glow as hard stepped rings (never a blur). `still` holds it (motion off, or the OS asking for less).
- */
-export function PortalArt({
-  size = 160,
-  still,
-  className,
-}: {
-  size?: number
-  still?: boolean
-  className?: string
-}) {
-  const arms = Array.from({ length: 8 }, (_, i) => i * 45)
-  return (
-    <svg
-      viewBox="-50 -50 100 100"
-      width={size}
-      height={size}
-      aria-hidden
-      shapeRendering="crispEdges"
-      className={cx('portal-art', still && 'portal-still', className)}
-    >
-      <circle r="49" fill="#2fd3c4" opacity="0.18" />
-      <circle r="45" fill="#b05cff" opacity="0.3" />
-      <circle r="40" fill="#6b2fc4" />
-      <circle r="35" fill="#3b1466" />
-      <g className="portal-swirl">
-        {arms.map((a) => (
-          <path
-            key={a}
-            d="M 0 -6 Q 14 -18 6 -33 L 10 -33 Q 20 -16 3 -6 Z"
-            fill={a % 90 === 0 ? '#e8384a' : '#12051f'}
-            transform={`rotate(${a})`}
-          />
-        ))}
-      </g>
-      <circle r="17" fill="#12051f" />
-      <circle r="11" fill="#05010a" />
-      <circle
-        r="40"
-        fill="none"
-        stroke="#2fd3c4"
-        strokeWidth="1.5"
-        strokeDasharray="4 3"
-        className="portal-rim"
-      />
-    </svg>
-  )
-}
+// The portal, the wild Pokémon's distortion, the screen's and the UI's glitches are drawn on the pixel engine
+// (src/fx/timelines/portal.ts, src/fx/glitch.ts) and hosted in PortalFx.tsx.
+export {
+  DistortionFx,
+  GlitchSprite,
+  PortalArt,
+  PortalCloseFx,
+  PortalFilters,
+  PortalScene,
+  playPortalClose,
+  useUiGlitch,
+} from './PortalFx'
 
-/** The rules pop-up's banner: the portal on the night, the void on both sides. */
+/** The rules pop-up's banner: the Distortion World, its rocks drifting, the portal turning in the middle. */
 export function PortalBanner() {
-  const { calm } = useMotion()
-  return (
-    <div className="portal-banner absolute inset-0 grid place-items-center">
-      <PortalArt size={150} still={calm} />
-    </div>
-  )
-}
-
-/** The SVG filters the sprites' and the screen's distortion use (once in the page). */
-export function PortalFilters() {
-  return (
-    <svg width="0" height="0" aria-hidden className="absolute">
-      <filter id="portal-warp-a" x="-10%" y="-10%" width="120%" height="120%">
-        <feTurbulence type="turbulence" baseFrequency="0.01 0.22" numOctaves="1" seed="3" result="n" />
-        <feDisplacementMap in="SourceGraphic" in2="n" scale="9" xChannelSelector="R" yChannelSelector="G" />
-      </filter>
-      <filter id="portal-warp-b" x="-10%" y="-10%" width="120%" height="120%">
-        <feTurbulence type="turbulence" baseFrequency="0.02 0.35" numOctaves="1" seed="11" result="n" />
-        <feDisplacementMap in="SourceGraphic" in2="n" scale="14" xChannelSelector="G" yChannelSelector="R" />
-      </filter>
-    </svg>
-  )
-}
-
-/** The class a distorted sprite wears at this motion level: the warp now and then, a slower tint, or a still rim. */
-export const shaderClass = (level: MotionLevel, calm: boolean): string =>
-  level === 'off' || calm
-    ? 'portal-shader-still'
-    : level === 'short'
-      ? 'portal-shader-short'
-      : 'portal-shader'
-
-/**
- * The screen's recurring distortion while a run is under way: a dithered edge in the void's colours, and now and then a
- * band of torn lines crossing the screen. `short` keeps the edge flickering slowly; motion off or a calm OS, the edge
- * alone. It catches no tap.
- */
-export function DistortionFx() {
-  const { level, calm } = useMotion()
-  const moving = level === 'full' && !calm
-  return (
-    <div aria-hidden className={cx('portal-fx', level === 'short' && !calm && 'portal-fx-short')}>
-      <PortalFilters />
-      {moving && <div className="portal-tear" />}
-    </div>
-  )
+  return <PortalScene />
 }
 
 // ------------------------------------------------------------------ the gauge
@@ -236,47 +157,74 @@ export function PortalRulesModal({
 
 // ------------------------------------------------------------------ the way in
 
+/** The line under a full-screen scene: a card in the name card's colours (the void, Giratina's red and gold rims). */
+const LINE_CARD =
+  'm-0 max-w-md bg-[#12051f] px-4 py-3 text-center leading-tight text-[#f4ecff] shadow-[inset_0_3px_0_#e8384a,inset_0_-3px_0_#ffc94a,0_0_0_3px_#07020d]'
+
 /**
- * The breach, full screen: the distortion opens up over the page and the line says what is happening. A tap (or SKIP,
- * or Esc) jumps to its end; with motion off it is over at once. Then `onDone`.
+ * The breach, full screen (breachTimeline): the area cracks and falls in pixel shards into a tear of the Distortion
+ * World, a quake, the name card; the line says what is happening. A tap (or SKIP, or Esc) jumps to its end; `short`
+ * plays it in half the time; with motion off it is over at once. Then `onDone`. `picture`: the area's picture.
  */
-export function PortalBreach({ onDone }: { onDone: () => void }) {
+export function PortalBreach({ onDone, picture }: { onDone: () => void; picture?: string | null }) {
   const { t } = useT()
-  const { level, calm } = useMotion()
+  const { level } = useMotion()
+  const size = useFullStage(200)
+  const [line, setLine] = useState(false)
   useHoldFullscreen()
+  const scene = useMemo(
+    () => ({
+      ready: picture ? loadItemSprite(picture) : Promise.resolve(),
+      timeline: breachTimeline({
+        ...size,
+        title: t('ui.portal.title'),
+        picture: picture ? `item|${picture}` : null,
+        short: level === 'short',
+      }),
+    }),
+    // One scene per breach; the level is read when it opens.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  )
   useEffect(() => {
     if (level === 'off') return onDone()
-    fxSound('portal.breach')
-    const id = setTimeout(onDone, level === 'short' ? 1800 : 3600)
     const esc = (e: KeyboardEvent) => e.key === 'Escape' && onDone()
     window.addEventListener('keydown', esc)
-    return () => {
-      clearTimeout(id)
-      window.removeEventListener('keydown', esc)
-    }
+    return () => window.removeEventListener('keydown', esc)
   }, [level, onDone])
+  // Its end state holds a moment (the whole way in stays near the old 3.6 s).
+  const end = () => window.setTimeout(onDone, 300)
+  if (level === 'off') return null
   return (
     <div
-      className="portal-breach fixed inset-0 z-[95] flex flex-col items-center justify-center gap-6 bg-[#12051f] p-4"
+      className="portal-breach fixed inset-0 z-[95] overflow-hidden bg-[#07020d]"
       role="dialog"
       aria-modal="true"
       aria-label={t('ui.portal.title')}
       onClick={onDone}
     >
-      <div className={cx('portal-grow', calm && 'portal-still')}>
-        <PortalArt size={260} still={calm} />
+      <StageCanvas
+        timeline={scene.timeline}
+        ready={scene.ready}
+        size={{ w: size.w, h: size.h }}
+        hud={{ beat: (b) => b === 'line' && setLine(true) }}
+        onEnd={end}
+        label={t('ui.portal.breach')}
+        className="absolute inset-0 h-full w-full"
+      />
+      <div className="absolute inset-x-0 bottom-0 flex flex-col items-center gap-3 p-4 pb-6">
+        <p className={cx(LINE_CARD, 'text-[24px]', !line && 'invisible')} aria-live="polite">
+          {t('ui.portal.breach')}
+        </p>
+        <PixelButton size="sm" onClick={onDone}>
+          {t('ui.victory.skip')}
+        </PixelButton>
       </div>
-      <p className="m-0 max-w-md text-center text-[26px] leading-tight text-[#f4ecff]" aria-live="polite">
-        {t('ui.portal.breach')}
-      </p>
-      <PixelButton size="sm" variant="ghost" className="text-[#f4ecff]" onClick={onDone}>
-        {t('ui.victory.skip')}
-      </PixelButton>
     </div>
   )
 }
 
-/** The pop-up behind the breach: the glowing portal behind it, the rules, the warning, NOT NOW / READY!. */
+/** The pop-up behind the breach: the Distortion World and its portal turning behind it, the rules, the warning. */
 export function PortalEntryDialog({
   open,
   mode,
@@ -291,7 +239,6 @@ export function PortalEntryDialog({
   onNotNow: () => void
 }) {
   const { t } = useT()
-  const { calm } = useMotion()
   const rules = usePortalRules(mode, data)
   return (
     <Modal
@@ -301,13 +248,8 @@ export function PortalEntryDialog({
       className="portal-dialog max-w-md"
     >
       <div className="flex flex-col gap-3">
-        <div
-          className="relative -mx-4 grid h-[150px] place-items-center overflow-hidden bg-[#12051f]"
-          aria-hidden
-        >
-          <div className="portal-glow">
-            <PortalArt size={170} still={calm} />
-          </div>
+        <div className="relative -mx-4 h-[150px] overflow-hidden bg-[#07020d]" aria-hidden>
+          <PortalScene />
         </div>
         <RuleList rules={rules} />
         <p
@@ -328,21 +270,24 @@ export function PortalEntryDialog({
   )
 }
 
-/** Opening the area: the breach, then its pop-up. */
+/** Opening the area: the breach (over the area's picture), then its pop-up. */
 export function PortalEntry({
   mode,
   data,
+  picture,
   onReady,
   onNotNow,
 }: {
   mode: PortalRunMode
   data: GameData
+  picture?: string | null
   onReady: () => void
   onNotNow: () => void
 }) {
   const [breach, setBreach] = useState(true)
+  const done = useCallback(() => setBreach(false), [])
   return breach ? (
-    <PortalBreach onDone={() => setBreach(false)} />
+    <PortalBreach onDone={done} picture={picture} />
   ) : (
     <PortalEntryDialog open mode={mode} data={data} onReady={onReady} onNotNow={onNotNow} />
   )
@@ -445,12 +390,11 @@ export function DistortionChoiceView({
   onPick: (i: number) => void
 }) {
   const { t } = useT()
-  const { calm } = useMotion()
   return (
     <section className="pixel-panel portal-panel flex flex-col gap-3 p-3" aria-labelledby="portal-choice">
       <div className="flex items-center gap-3">
-        <div className="shrink-0 bg-[#12051f] p-1 shadow-ring">
-          <PortalArt size={72} still={calm} />
+        <div className="shrink-0 bg-[#07020d] p-1 shadow-ring">
+          <PortalArt size={72} />
         </div>
         <div className="grid min-w-0 gap-1">
           <h2 id="portal-choice" className="m-0 text-[28px] font-normal leading-none">
@@ -539,39 +483,81 @@ export function RunBonuses({
 // ------------------------------------------------------------------ the victory
 
 /**
- * Every portal closed: full screen, the portal again and shiny Giratina coming out of it (its cry), the line saying the
- * portals are closed and that it is now in the raids, then back to the world. Motion off: it is out already.
+ * Every portal closed, full screen (victoryTimeline, legend.ts's entrance for shiny Giratina): shadow tendrils out of
+ * the last portal, its silhouette rising in its aura, the reveal with its cry and a quake, the shiny sparkle, the portal
+ * sealed, the name card; then "Every portal is closed!", the line that it is in the raids now, and BACK TO THE WORLD.
+ * A tap jumps to the end; with motion off it is there at once.
  */
-export function PortalVictoryView({ name, onDone }: { name: string; onDone: () => void }) {
+export function PortalVictoryView({
+  name,
+  level: lv,
+  onDone,
+}: {
+  name: string
+  level?: number
+  onDone: () => void
+}) {
   const { t } = useT()
-  const { level, calm } = useMotion()
+  const { level } = useMotion()
+  const size = useFullStage(240)
+  const stage = useRef<StageHandle>(null)
+  const [card, setCard] = useState(level === 'off')
   useHoldFullscreen()
-  useEffect(() => {
-    playCry(GIRATINA)
-    sfx('catch')
-  }, [])
+  const scene = useMemo(
+    () => ({
+      ready: loadSprite(GIRATINA, false, true),
+      timeline: victoryTimeline({
+        ...size,
+        mon: spriteKey(GIRATINA, false, true),
+        name,
+        subs: [t('ui.mon.shinyTag'), ...(lv ? [t('ui.common.level.short', { n: lv })] : [])],
+        short: level === 'short',
+      }),
+    }),
+    // One scene per victory; the level is read when it opens.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  )
   return (
     <div
-      className="portal-breach fixed inset-0 z-[95] flex flex-col items-center justify-center gap-4 bg-[#12051f] p-4"
+      className="portal-breach fixed inset-0 z-[95] overflow-hidden bg-[#07020d]"
       role="dialog"
       aria-modal="true"
       aria-labelledby="portal-won"
+      onClick={() => !card && stage.current?.skip()}
     >
-      <div className="relative grid place-items-center" style={{ width: 280, height: 280 }}>
-        <PortalArt size={260} still={calm} className="absolute" />
-        <div className={cx('relative', level !== 'off' && !calm && 'portal-emerge')}>
-          <SpriteImg dex={GIRATINA} shiny size={200} alt={t('ui.portal.shinyName', { name })} />
+      <StageCanvas
+        ref={stage}
+        timeline={scene.timeline}
+        ready={scene.ready}
+        size={{ w: size.w, h: size.h }}
+        hud={{
+          beat: (b) => {
+            if (b === 'roar') playCry(GIRATINA)
+            if (b === 'card') setCard(true)
+          },
+        }}
+        label={t('ui.portal.shinyName', { name })}
+        className="absolute inset-0 h-full w-full"
+      />
+      <div
+        className={cx(
+          'absolute inset-x-0 bottom-0 flex flex-col items-center gap-3 p-4 pb-6',
+          !card && 'invisible',
+        )}
+      >
+        <div className={cx(LINE_CARD, 'grid gap-2')}>
+          <h2 id="portal-won" className="m-0 text-[30px] font-normal leading-none text-gold-light">
+            {t('ui.portal.victoryTitle')}
+          </h2>
+          <p className="m-0 text-[20px] leading-tight" aria-live="polite">
+            {t('ui.portal.victoryBody', { name })}
+          </p>
         </div>
+        <PixelButton variant="primary" size="lg" onClick={onDone} autoFocus={card}>
+          {t('ui.portal.victoryOk')}
+        </PixelButton>
       </div>
-      <h2 id="portal-won" className="m-0 text-center text-[32px] font-normal leading-none text-gold-light">
-        {t('ui.portal.victoryTitle')}
-      </h2>
-      <p className="m-0 max-w-md text-center text-[21px] leading-tight text-[#f4ecff]" aria-live="polite">
-        {t('ui.portal.victoryBody', { name })}
-      </p>
-      <PixelButton variant="primary" size="lg" onClick={onDone} autoFocus>
-        {t('ui.portal.victoryOk')}
-      </PixelButton>
     </div>
   )
 }

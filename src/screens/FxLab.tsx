@@ -16,6 +16,8 @@ import { loadTrickBall } from '@/fx/scenes'
 import { centerTimeline } from '@/fx/timelines/center'
 import { gmaxEndTimeline, gmaxFor, megaFor } from '@/fx/timelines/forms'
 import { legendLook, legendTimeline } from '@/fx/timelines/legend'
+import { breachTimeline, closeTimeline, victoryTimeline, wildGlitchTimeline } from '@/fx/timelines/portal'
+import { artUrl } from '@/fx/areaArt'
 import { evolveTimeline, hatchTimeline } from '@/fx/timelines/moments'
 import { tradeTimeline } from '@/fx/timelines/trade'
 import { giftTimeline } from '@/fx/timelines/gift'
@@ -42,6 +44,8 @@ const own = (dex: number) => spriteKey(dex, true)
 const foe = (dex: number) => spriteKey(dex, false)
 const STONE = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/thunder-stone.png'
 const CANDY = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/rare-candy.png'
+/** Distortion World's picture (Haunted Hollow), cracked open by the breach. */
+const RIFT = artUrl('a123')
 
 const attack = (
   name: string,
@@ -233,6 +237,42 @@ const PRESETS: Preset[] = [
   legend(145, 'Zapdos', 'electric'),
   legend(146, 'Moltres', 'fire'),
   legend(249, 'Lugia', 'psychic'),
+  // Distortion World's portal run (docs/28): the breach, a portal closing, a wild Pokémon distorted, the victory.
+  {
+    name: 'Portal run: the breach (drawn field)',
+    sprites: [],
+    make: (o) => breachTimeline({ title: 'Distortion portals', short: o.short }),
+  },
+  {
+    name: "Portal run: the breach (Distortion World's picture)",
+    sprites: [],
+    item: RIFT,
+    make: (o) => breachTimeline({ title: 'Distortion portals', picture: `item|${RIFT}`, short: o.short }),
+  },
+  {
+    name: 'Portal run: a portal closing (a boon picked)',
+    sprites: [],
+    make: (o) => closeTimeline({ short: o.short }),
+  },
+  {
+    name: 'Portal run: a wild Pokémon distorted (Gengar)',
+    sprites: [
+      [609, true],
+      [94, false],
+    ],
+    make: (o) => wildGlitchTimeline({ own: own(609), foe: foe(94), short: o.short }),
+  },
+  {
+    name: 'Portal run: the victory (shiny Giratina)',
+    sprites: [[487, false, true]],
+    make: (o) =>
+      victoryTimeline({
+        mon: spriteKey(487, false, true),
+        name: 'Giratina',
+        subs: ['SHINY', 'Lv.100'],
+        short: o.short,
+      }),
+  },
   {
     name: 'Evolution (Charmeleon)',
     sprites: [

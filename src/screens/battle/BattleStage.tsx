@@ -1,12 +1,12 @@
 // The battle stage (240×160 art pixels, scaled up): the Daybreak background drawn in code, both Pokémon as the
 // animated sprites the browser plays, their plates, and — while a move, a form change or an intro plays — the
 // timeline's canvas on top (src/fx). docs/13-SHOWDOWN-SPRITES.md has why the sprites are page images.
-import { PortalFilters, shaderClass } from '@/components/Portal'
 import { AnimatePresence, motion } from 'framer-motion'
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react'
 import type { Battler, Side } from '@/engine'
 import { AreaArt } from '@/components/AreaArt'
 import { PixelIcon, STATUS_ICON } from '@/components/icons'
+import { useStageDistortion } from '@/components/PortalFx'
 import { StageCanvas } from '@/components/StageCanvas'
 import { TrainerSprite } from '@/components/TrainerArt'
 import { artPlacement, battleWindow, type AreaPicture } from '@/fx/areaArt'
@@ -135,13 +135,13 @@ function Mon({
   fx,
   onTap,
   tapLabel,
-  shader,
+  host,
 }: {
   b: Battler
   side: Side
   scale: number
-  /** A portal run's wild Pokémon (docs/28): the distortion shader's class for this motion level. */
-  shader?: string
+  /** A portal run's wild Pokémon (docs/28): its box, which hides the page's sprite while a distortion burst draws it. */
+  host?: RefObject<HTMLDivElement>
   /** Out on the field (the foe has slid in, yours has popped out of its ball). */
   shown: boolean
   fainted: boolean
@@ -177,7 +177,8 @@ function Mon({
   }, [worn])
   return (
     <div
-      className="absolute"
+      ref={host}
+      className={cx('absolute', host && 'portal-glitch-host')}
       style={{
         left: box.left * scale,
         top: box.top * scale,
@@ -224,7 +225,7 @@ function Mon({
             if (s.fallback && e.currentTarget.src !== new URL(s.fallback, location.href).href)
               e.currentTarget.src = s.fallback
           }}
-          className={cx('pixelated absolute inset-0 h-full w-full max-w-none', !flash && shader)}
+          className="pixelated absolute inset-0 h-full w-full max-w-none"
           // A flash (a faint, a form change with no timeline) turns the sprite into a white silhouette for a moment.
           style={{
             imageRendering: 'pixelated',
@@ -396,6 +397,15 @@ export function BattleStage({
   const { level, calm } = useMotion()
   const scene = useSceneTimeline(fx.scene, own, foe, level === 'short')
   const playing = !!scene || !!overlay
+  // A portal run's wild Pokémon (docs/28): its aura under it, its bursts over it, on the pixel engine.
+  const foeBox = useRef<HTMLDivElement>(null)
+  const foeOut = !!fx.fainted[foe.uid] || !!fx.wornOut[foe.uid]
+  const distortion = useStageDistortion(
+    foeBox,
+    key(foe, false),
+    LAYOUT.foe,
+    !!distorted && scale > 0 && foeShown && !foeOut && !playing && !worn,
+  )
   const artId = art?.id ?? null
   // Which picture has loaded and shows (the drawn background stands in until then).
   const [shownArt, setShownArt] = useState<string | null>(null)
@@ -427,7 +437,6 @@ export function BattleStage({
   return (
     <div ref={box} className="relative isolate z-0 aspect-[3/2] w-full select-none overflow-hidden">
       <Backdrop calm={calm || artShown} />
-      {distorted && <PortalFilters />}
       {art && (
         <AreaArt
           key={art.id}
@@ -437,6 +446,15 @@ export function BattleStage({
         />
       )}
       {artShown && <Zones />}
+      {distorted && (
+        <canvas
+          ref={distortion.under}
+          width={W}
+          height={H}
+          aria-hidden
+          className="pixelated pointer-events-none absolute inset-0 h-full w-full"
+        />
+      )}
       {scale > 0 && (
         <>
           <Mon
@@ -450,8 +468,17 @@ export function BattleStage({
             fx={fx}
             onTap={onTap && (() => onTap('enemy'))}
             tapLabel={tapLabel(foe)}
-            shader={distorted ? shaderClass(level, calm) : undefined}
+            host={distorted ? foeBox : undefined}
           />
+          {distorted && (
+            <canvas
+              ref={distortion.over}
+              width={W}
+              height={H}
+              aria-hidden
+              className="pixelated pointer-events-none absolute inset-0 h-full w-full"
+            />
+          )}
           <AnimatePresence>
             {trainer && (
               <motion.div

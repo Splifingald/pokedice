@@ -33,10 +33,12 @@ export const StageCanvas = forwardRef<
     onTick?: (t: number) => void
     /** What the stage shows, for screen readers (the canvas is an image). */
     label: string
+    /** Art pixels, when the timeline draws on a stage of its own size (a full-screen scene); else 240×160 at 3:2. */
+    size?: { w: number; h: number }
     className?: string
   }
 >(function StageCanvas(
-  { timeline, hud, ready, autoPlay = true, instant, onEnd, onTick, label, className },
+  { timeline, hud, ready, autoPlay = true, instant, onEnd, onTick, label, className, size },
   ref,
 ) {
   const cv = useRef<HTMLCanvasElement>(null)
@@ -111,11 +113,11 @@ export const StageCanvas = forwardRef<
   return (
     <canvas
       ref={cv}
-      width={W}
-      height={H}
+      width={size?.w ?? W}
+      height={size?.h ?? H}
       role="img"
       aria-label={label}
-      className={cx('pixelated block aspect-[3/2] w-full', className)}
+      className={cx('pixelated block', !size && 'aspect-[3/2] w-full', className)}
       style={{ imageRendering: 'pixelated' }}
     />
   )
