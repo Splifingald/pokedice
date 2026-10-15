@@ -230,9 +230,9 @@ function SheetStack({
               <HomerLock homer={homer} />
             </PokemonSheet>
           ) : inst ? (
-            <PokemonSheet dex={inst.dex} inst={inst} onOpenDex={openDex}>
+            // The team's moves (instExtra) above Strengths and weaknesses, always (the user's call, 2026-10-15).
+            <PokemonSheet dex={inst.dex} inst={inst} onOpenDex={openDex} beforeMatchups={instExtra?.(inst)}>
               <SendOnPanel inst={inst} onSent={onClose} />
-              {instExtra?.(inst)}
               <LevelCapEvolvePanel inst={inst} />
             </PokemonSheet>
           ) : null}

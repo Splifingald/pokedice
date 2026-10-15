@@ -372,11 +372,14 @@ export function PokemonSheet({
   dex,
   inst,
   children,
+  beforeMatchups,
   onOpenDex,
 }: {
   dex: number
   inst?: PokemonInstance
   children?: ReactNode
+  /** Shown above Strengths and weaknesses, whether type hints are on or not: the team's moves at a Center. */
+  beforeMatchups?: ReactNode
   onOpenDex?: (dex: number) => void
 }) {
   const { t } = useT()
@@ -483,6 +486,8 @@ export function PokemonSheet({
       </SheetSection>
 
       <MilestoneTrack species={species} level={inst ? inst.level : null} onOpenDex={onOpenDex} />
+
+      {beforeMatchups}
 
       {hints && (
         <SheetSection title={t('ui.types.title')}>

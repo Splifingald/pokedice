@@ -5,7 +5,9 @@ import { monName, teamOf, type PokemonInstance } from '@/engine'
 import { useT } from '@/i18n/react'
 import { putInTeam, removeFromTeam, reorderTeam } from '@/store/actions'
 import { useGame } from '@/store/game'
+import { PixelIcon } from './icons'
 import { PixelButton } from './PixelButton'
+import { MiniSprite } from './SpriteImg'
 
 export function TeamSwapActions({ inst, onDone }: { inst: PokemonInstance; onDone: () => void }) {
   const { t } = useT()
@@ -56,16 +58,24 @@ export function TeamSwapActions({ inst, onDone }: { inst: PokemonInstance; onDon
           {team.map((p) => (
             <PixelButton
               key={p.id}
-              className="justify-between"
+              // The label spans the button: who leaves on the left, the swap arrow at the far right.
+              className="[&>span]:w-full [&>span]:justify-between"
               onClick={() => {
                 putInTeam(inst.id, p.id)
                 onDone()
               }}
             >
-              <span>
-                {monName(p, data)} {t('ui.common.level.short', { n: p.level })}
+              {/* Who leaves: its icon (still, the mini), name and level; the swap arrow at the far end. */}
+              <span className="flex min-w-0 items-center gap-2">
+                <MiniSprite dex={p.dex} size={24} className="shrink-0" />
+                <span className="truncate">
+                  {monName(p, data)} {t('ui.common.level.short', { n: p.level })}
+                </span>
               </span>
-              <span className="text-base">{t('ui.center.goesToBox')}</span>
+              <span className="flex shrink-0 items-center gap-2">
+                <span className="text-base">{t('ui.center.goesToBox')}</span>
+                <PixelIcon name="reroll" size={20} />
+              </span>
             </PixelButton>
           ))}
         </>

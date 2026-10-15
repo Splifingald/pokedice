@@ -166,7 +166,7 @@ const LINE_CARD =
  * The breach, full screen (breachTimeline): the area cracks and falls in pixel shards into a tear of the Distortion
  * World, a quake, the name card; the line says what is happening. Then it holds its end, the open portal turning, and
  * waits for the player (the user, 2026-10-15): "Tap to continue ▼" blinks, and a tap, a click, Enter or Space calls
- * `onContinue`. A tap, SKIP or Esc while it plays jumps to that end. `short` plays it in half the time; motion off
+ * `onContinue`. It can't be skipped (the user, 2026-10-15): it plays out. `short` plays it in half the time; motion off
  * shows the end at once, still. `instant`: it starts at its end (back from the Team screen). `under`: the pop-up is up
  * over it, the end its backdrop (no prompt, no taps). `picture`: the area's picture.
  */
@@ -203,13 +203,6 @@ export function PortalBreach({
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [],
   )
-  const skip = useCallback(() => stage.current?.skip(), [])
-  useEffect(() => {
-    if (under || end) return
-    const esc = (e: KeyboardEvent) => e.key === 'Escape' && skip()
-    window.addEventListener('keydown', esc)
-    return () => window.removeEventListener('keydown', esc)
-  }, [under, end, skip])
   // At its end the prompt holds the focus: Enter and Space go on.
   useEffect(() => {
     if (end && !under) prompt.current?.focus()
@@ -225,7 +218,7 @@ export function PortalBreach({
       aria-modal={under ? undefined : true}
       aria-hidden={under || undefined}
       aria-label={under ? undefined : t('ui.portal.title')}
-      onClick={under ? undefined : end ? onContinue : skip}
+      onClick={under || !end ? undefined : onContinue}
     >
       <StageCanvas
         ref={stage}
@@ -242,7 +235,7 @@ export function PortalBreach({
         <p className={cx(LINE_CARD, 'text-[24px]', !line && 'invisible')} aria-live="polite">
           {t('ui.portal.breach')}
         </p>
-        {under ? null : end ? (
+        {!under && end && (
           <button
             ref={prompt}
             type="button"
@@ -257,16 +250,6 @@ export function PortalBreach({
               ▼
             </span>
           </button>
-        ) : (
-          <PixelButton
-            size="sm"
-            onClick={(e) => {
-              e.stopPropagation()
-              skip()
-            }}
-          >
-            {t('ui.victory.skip')}
-          </PixelButton>
         )}
       </div>
     </div>
@@ -705,7 +688,7 @@ export function RunBonuses({
  * Every portal closed, full screen (victoryTimeline, legend.ts's entrance for shiny Giratina): shadow tendrils out of
  * the last portal, its silhouette rising in its aura, the reveal with its cry and a quake, the shiny sparkle, the portal
  * sealed, the name card; then "Every portal is closed!", the line that it is in the raids now, and BACK TO THE WORLD.
- * A tap jumps to the end; with motion off it is there at once.
+ * It can't be skipped (the user, 2026-10-15); with motion off it is there at once.
  */
 export function PortalVictoryView({
   name,
@@ -743,7 +726,6 @@ export function PortalVictoryView({
       role="dialog"
       aria-modal="true"
       aria-labelledby="portal-won"
-      onClick={() => !card && stage.current?.skip()}
     >
       <StageCanvas
         ref={stage}
