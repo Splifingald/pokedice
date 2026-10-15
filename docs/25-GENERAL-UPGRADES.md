@@ -46,6 +46,7 @@ Five things, from one request:
 - **Once per encounter** (`CatchState.retried`): the second throw's miss is a miss. At 100 % every wild catch has
   exactly two throws.
 - Wild Pokémon only: `kind === 'wild'` (a legendary is `boss`; raids have their own catch, without it).
+- **Never inside a small world**: the General upgrades are the main game's; a world plays by its own rules (docs/21).
 
 ### 1.4 Offline earnings — `engine/general.ts`, `store/general.ts`
 
@@ -57,7 +58,8 @@ Five things, from one request:
   region's wallet, in whole ₽: a ₽ never has cents, not even in the save. The time spent towards a ₽ not reached yet
   (`general.carryMs`) counts in the next absence, so short absences add up (20 minutes at ₽2/h pay nothing now; 20
   more pay ₽1 and leave 10 minutes waiting).
-- **Inside a small world** nothing is paid (its ₽ is the world's): the absence stays open until the player is back.
+- **Inside a small world** nothing is paid (its ₽ is the world's): no absence starts there, and one found open there (a
+  save from before 2026-10-15) closes unpaid, so the time spent in a world never pays later in a region.
 - The level is read when the player comes back: buying a level while away pays the new rate for that absence (it
   can only be bought while playing, so this never happens in practice).
 - An hour or more away: "While you were away" (the coin and +₽, the rate and the cap), between fights. Less: a toast.

@@ -6,6 +6,7 @@ import { setSfxEnabled } from '@/audio/sfx'
 import { t } from '@/i18n'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { GameLayout } from '@/components/GameLayout'
+import { RotateCover } from '@/components/RotateCover'
 import { ToastStack } from '@/components/Toast'
 import { AreaScreen } from '@/screens/Area'
 import { DayCareScreen } from '@/screens/DayCareScreen'
@@ -89,6 +90,8 @@ export function App() {
           </Routes>
         </BrowserRouter>
         <ToastStack />
+        {/* Phones and tablets play upright: turned sideways, the game waits behind it (docs/15 §6). */}
+        <RotateCover />
       </ErrorBoundary>
     </MotionConfig>
   )

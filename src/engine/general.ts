@@ -82,15 +82,11 @@ export function buyGeneral(save: SaveData, data: GameData, id: GeneralId): SaveD
 
 /**
  * The chance (0–1) that a wild Pokémon that broke free stays for one more throw. Wild Pokémon only — never a
- * legendary or a raid — and once per encounter: a second miss is a miss.
+ * legendary or a raid — once per encounter (a second miss is a miss), and never inside a small world: the General
+ * upgrades are the main game's, and a world plays by its own rules (docs/21).
  */
-export function captureLuck(
-  save: Pick<SaveData, 'general'>,
-  data: GameData,
-  kind: 'wild' | 'boss',
-  retried: boolean,
-): number {
-  if (kind !== 'wild' || retried || !generalOn(data)) return 0
+export function captureLuck(save: SaveData, data: GameData, kind: 'wild' | 'boss', retried: boolean): number {
+  if (kind !== 'wild' || retried || !generalOn(data) || inWorldRegion(save, data)) return 0
   return luckAt(data, generalLevel(save, 'luck', data))
 }
 
@@ -103,11 +99,12 @@ export function offlineRate(save: Pick<SaveData, 'general'>, data: GameData): nu
 
 /**
  * The page went hidden or closed at `now` (the server's time: the device's clock is never trusted). Only when the save
- * earns, and the first time: an absence already open keeps its start.
+ * earns, and the first time: an absence already open keeps its start. Never from inside a small world: time spent
+ * there, played or not, earns the regions nothing.
  */
 export function markOfflineFrom(save: SaveData, data: GameData, now: number): SaveData {
   const g = generalOf(save)
-  if (g.awayFrom != null || offlineRate(save, data) <= 0) return save
+  if (g.awayFrom != null || offlineRate(save, data) <= 0 || inWorldRegion(save, data)) return save
   return { ...save, general: { ...g, awayFrom: now } }
 }
 
@@ -124,15 +121,20 @@ export interface OfflinePay {
 /**
  * Back at `now` (the server's time): the absence pays `offlineRate` × its hours, up to `offlineMaxHours`, into the live
  * region's wallet, in whole ₽ (₽ never have cents); the time towards a ₽ not reached yet counts in the next absence,
- * so short ones add up. Inside a small world nothing is paid (its ₽ is the world's): the absence stays open until the
- * player is back in a region. Null when no absence is open.
+ * so short ones add up. Inside a small world nothing is paid: an absence found open there (a save from before worlds
+ * stopped them starting) closes unpaid, so the time spent in the world never pays later. Null when none is open.
  */
 export function collectOffline(save: SaveData, data: GameData, now: number): OfflinePay | null {
   const g = generalOf(save)
-  if (g.awayFrom == null || inWorldRegion(save, data)) return null
+  if (g.awayFrom == null) return null
+  const { awayFrom: _from, carryMs: _carry, ...rest } = g
+  if (inWorldRegion(save, data)) {
+    // The time towards the next ₽ was earned in a region: it waits for the next absence.
+    const general: GeneralSave = g.carryMs ? { ...rest, carryMs: g.carryMs } : rest
+    return { save: { ...save, general }, gold: 0, ms: 0, perHour: 0 }
+  }
   const perHour = offlineRate(save, data)
   const ms = Math.max(0, Math.min(now - g.awayFrom, Math.max(0, generalCfg(data).offlineMaxHours) * HOUR))
-  const { awayFrom: _from, carryMs: _carry, ...rest } = g
   if (perHour <= 0) return { save: { ...save, general: rest }, gold: 0, ms, perHour }
   // Whole milliseconds and whole ₽: nothing is lost to rounding, and the time left over is a whole number too.
   const total = Math.floor(ms) + Math.max(0, Math.floor(g.carryMs ?? 0))

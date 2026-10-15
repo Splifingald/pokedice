@@ -12,10 +12,12 @@ import {
   buyComboUpgrade,
   buyItem,
   buyWorldItem,
+  captureLuck,
   catchWorldMythical,
   centerHeal,
   challengeEncounter,
   closeWorld,
+  collectOffline,
   computeDamage,
   createInstance,
   createRng,
@@ -38,6 +40,7 @@ import {
   liveFor,
   markWorldBye,
   markWorldSeen,
+  markOfflineFrom,
   megaUnlocked,
   newLiveEvent,
   newRegionBlock,
@@ -465,6 +468,32 @@ describe('no event reaches inside', () => {
     const healed = centerHeal({ ...s, box: s.box.map((p) => ({ ...p, currentHp: 1 })) }, data)
     expect(healed.box.every((p) => p.currentHp === instanceMaxHp(p, data))).toBe(true)
     expect(healed.dayCare!.residents[0]!.inst.currentHp).toBe(1)
+  })
+})
+
+describe('the General upgrades stay outside (docs/25)', () => {
+  const on = worldData()
+  const general = { ...on.config.general, access: 'all' as const }
+  const gd: GameData = { ...on, config: { ...on.config, general } }
+  const maxed = (s: SaveData): SaveData => ({ ...s, general: { luck: 10, offline: 10 } })
+  const inWorld = (): SaveData => maxed(enterWorld(kanto(), gd, WORLD, 63, NOW, newId)!)
+
+  it('Capture Luck keeps no wild Pokémon in a world', () => {
+    expect(captureLuck(maxed(kanto()), gd, 'wild', false)).toBe(1)
+    expect(captureLuck(inWorld(), gd, 'wild', false)).toBe(0)
+  })
+
+  it('offline earnings: no absence starts in a world, and one found open there closes unpaid', () => {
+    const s = inWorld()
+    expect(markOfflineFrom(s, gd, NOW)).toBe(s)
+    const open: SaveData = { ...s, general: { ...s.general, awayFrom: NOW, carryMs: 1000 } }
+    const res = collectOffline(open, gd, NOW + 10 * H)!
+    expect(res.gold).toBe(0)
+    expect(res.save.gold).toBe(open.gold)
+    expect(res.save.general?.awayFrom).toBeUndefined()
+    expect(res.save.general?.carryMs).toBe(1000)
+    // Back in Kanto, the world's hours pay nothing.
+    expect(collectOffline(leaveWorld(res.save, gd)!, gd, NOW + 20 * H)).toBeNull()
   })
 })
 

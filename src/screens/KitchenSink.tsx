@@ -54,6 +54,7 @@ import { WorldBits } from './kitchen/WorldBits'
 import { GiftBits } from './kitchen/GiftBits'
 import { InviteBits } from './kitchen/InviteBits'
 import { SupportBits } from './kitchen/SupportBits'
+import { RotateView } from '@/components/RotateCover'
 import { BadgeIcon, CrownIcon } from '@/components/BadgeIcon'
 import { BoardRow } from '@/components/BoardRow'
 
@@ -604,6 +605,12 @@ export function KitchenSink() {
 
       <Section title="Support me: the developer's asks (Discord, invite, PayPal), with and without a Discord link">
         <SupportBits />
+      </Section>
+
+      <Section title="RotateCover: a phone or a tablet held sideways (over the whole game, nothing to dismiss)">
+        <div className="flex w-full justify-center bg-parchment p-3 shadow-ring">
+          <RotateView />
+        </div>
       </Section>
 
       <Section title="Extreme mode: rules, band, title card, K.O. rest, resting team, while you were away, switch">
