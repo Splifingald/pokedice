@@ -74,17 +74,19 @@ export function hhDistortionPoolSql(): string {
     '-- Gourgeist, Palossand, Mimikyu, Polteageist), every one as likely (Dragapult aside), the strong ones Lv.60–64 so',
     '-- the run stays as hard as before them; the area shows Lv.52–70. Then `configVersion` + 1. Safe to run again.',
     'begin;',
-    `create temp table dw_pool (id text, area_id text, dex int, weight int, min_level int, max_level int) on commit drop;
-insert into dw_pool values
-${values};`,
+    // No temporary table: the SQL Editor would ask for Row Level Security on it (it holds nothing a player reads).
     `insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level)
 select v.id::uuid, v.area_id::uuid, v.dex, v.weight, v.min_level, v.max_level
-from dw_pool v
+from (values
+${values}
+) v (id, area_id, dex, weight, min_level, max_level)
 where exists (select 1 from areas a where a.id = v.area_id::uuid)
   and not exists (select 1 from area_wild_pool p where p.area_id = v.area_id::uuid and p.dex = v.dex)
 on conflict (id) do nothing;`,
     `update area_wild_pool p set weight = v.weight, min_level = v.min_level, max_level = v.max_level
-from dw_pool v
+from (values
+${values}
+) v (id, area_id, dex, weight, min_level, max_level)
 where p.area_id = v.area_id::uuid and p.dex = v.dex;`,
     `update areas set min_level = ${minLevel}, max_level = ${maxLevel} where id = ${q(areaId)};`,
     "insert into game_config (key, value) values ('configVersion', '1'::jsonb) on conflict (key) do update set value = to_jsonb(coalesce((game_config.value #>> '{}')::int, 0) + 1);",

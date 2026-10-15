@@ -3,8 +3,9 @@
 -- Gourgeist, Palossand, Mimikyu, Polteageist), every one as likely (Dragapult aside), the strong ones Lv.60–64 so
 -- the run stays as hard as before them; the area shows Lv.52–70. Then `configVersion` + 1. Safe to run again.
 begin;
-create temp table dw_pool (id text, area_id text, dex int, weight int, min_level int, max_level int) on commit drop;
-insert into dw_pool values
+insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level)
+select v.id::uuid, v.area_id::uuid, v.dex, v.weight, v.min_level, v.max_level
+from (values
   ('19662e0d-4750-50b4-bae2-de4d77a8b5c7', 'cfff57e0-5175-545c-9e68-a2e2e64d7d45', 94, 15, 60, 64),
   ('0c8799e6-9d34-5ac9-bc7b-7092870de841', 'cfff57e0-5175-545c-9e68-a2e2e64d7d45', 609, 15, 60, 64),
   ('b4be7bae-aa6a-58da-af40-79d75727e0f5', 'cfff57e0-5175-545c-9e68-a2e2e64d7d45', 681, 15, 60, 64),
@@ -20,15 +21,30 @@ insert into dw_pool values
   ('5f2437b7-5863-538f-a5be-05f34e1aa393', 'cfff57e0-5175-545c-9e68-a2e2e64d7d45', 711, 15, 60, 64),
   ('6f2b764b-57f2-5172-b220-a824936752f3', 'cfff57e0-5175-545c-9e68-a2e2e64d7d45', 770, 15, 60, 64),
   ('bf476957-8ef2-5b26-9135-46e9d1badc27', 'cfff57e0-5175-545c-9e68-a2e2e64d7d45', 778, 15, 60, 64),
-  ('510bb241-269d-52da-a3e0-d4146e5434d9', 'cfff57e0-5175-545c-9e68-a2e2e64d7d45', 855, 15, 60, 64);
-insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level)
-select v.id::uuid, v.area_id::uuid, v.dex, v.weight, v.min_level, v.max_level
-from dw_pool v
+  ('510bb241-269d-52da-a3e0-d4146e5434d9', 'cfff57e0-5175-545c-9e68-a2e2e64d7d45', 855, 15, 60, 64)
+) v (id, area_id, dex, weight, min_level, max_level)
 where exists (select 1 from areas a where a.id = v.area_id::uuid)
   and not exists (select 1 from area_wild_pool p where p.area_id = v.area_id::uuid and p.dex = v.dex)
 on conflict (id) do nothing;
 update area_wild_pool p set weight = v.weight, min_level = v.min_level, max_level = v.max_level
-from dw_pool v
+from (values
+  ('19662e0d-4750-50b4-bae2-de4d77a8b5c7', 'cfff57e0-5175-545c-9e68-a2e2e64d7d45', 94, 15, 60, 64),
+  ('0c8799e6-9d34-5ac9-bc7b-7092870de841', 'cfff57e0-5175-545c-9e68-a2e2e64d7d45', 609, 15, 60, 64),
+  ('b4be7bae-aa6a-58da-af40-79d75727e0f5', 'cfff57e0-5175-545c-9e68-a2e2e64d7d45', 681, 15, 60, 64),
+  ('21e919a0-5dd6-52f5-bde0-9b023ef973a7', 'cfff57e0-5175-545c-9e68-a2e2e64d7d45', 477, 15, 60, 64),
+  ('475541f5-33aa-5fc2-9997-5d7ebe8ea651', 'cfff57e0-5175-545c-9e68-a2e2e64d7d45', 709, 15, 60, 64),
+  ('a54573b8-ec52-50e2-8ece-187aa045e0f4', 'cfff57e0-5175-545c-9e68-a2e2e64d7d45', 429, 15, 60, 64),
+  ('d1c67cfe-4558-5c13-b82b-b69f10bf454b', 'cfff57e0-5175-545c-9e68-a2e2e64d7d45', 887, 2, 68, 70),
+  ('6ce4772b-4a17-5f67-8b63-b144b1caa5d1', 'cfff57e0-5175-545c-9e68-a2e2e64d7d45', 93, 15, 52, 55),
+  ('a44372ce-4c22-5b5f-9268-96ce1c43ceec', 'cfff57e0-5175-545c-9e68-a2e2e64d7d45', 356, 15, 52, 55),
+  ('fa4df77a-680a-570e-9d97-747065344b34', 'cfff57e0-5175-545c-9e68-a2e2e64d7d45', 229, 15, 60, 64),
+  ('54d8502e-4fff-5937-bf3d-93c159ea49d8', 'cfff57e0-5175-545c-9e68-a2e2e64d7d45', 302, 15, 60, 64),
+  ('89ebe56d-623d-5c05-b2c1-95e5a491be63', 'cfff57e0-5175-545c-9e68-a2e2e64d7d45', 478, 15, 60, 64),
+  ('5f2437b7-5863-538f-a5be-05f34e1aa393', 'cfff57e0-5175-545c-9e68-a2e2e64d7d45', 711, 15, 60, 64),
+  ('6f2b764b-57f2-5172-b220-a824936752f3', 'cfff57e0-5175-545c-9e68-a2e2e64d7d45', 770, 15, 60, 64),
+  ('bf476957-8ef2-5b26-9135-46e9d1badc27', 'cfff57e0-5175-545c-9e68-a2e2e64d7d45', 778, 15, 60, 64),
+  ('510bb241-269d-52da-a3e0-d4146e5434d9', 'cfff57e0-5175-545c-9e68-a2e2e64d7d45', 855, 15, 60, 64)
+) v (id, area_id, dex, weight, min_level, max_level)
 where p.area_id = v.area_id::uuid and p.dex = v.dex;
 update areas set min_level = 52, max_level = 70 where id = 'cfff57e0-5175-545c-9e68-a2e2e64d7d45';
 insert into game_config (key, value) values ('configVersion', '1'::jsonb) on conflict (key) do update set value = to_jsonb(coalesce((game_config.value #>> '{}')::int, 0) + 1);
