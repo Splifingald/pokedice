@@ -106,6 +106,10 @@ Lv.60 · **Newmoon Island** the Shadow Elite beaten (`cleared`) · **Distortion 
 The Shadow Elite: Vesper (Poison), Rime (Ice), Orin (Psychic), Morwen (Ghost), then Champion Nyx (Dark), on Koga's,
 Glacia's, Will's, Phoebe's and Karen's pictures; no badges.
 
+*Changed 2026-10-15 (docs/28): Distortion World opens at **100** caught and is a **portal run** (no rounds, no Center;
+close 10 distortion portals in one go). Its shiny Giratina raid opens once the run is won, at Lv.100, dice level 10 and 4
+bars, teams up to Lv.100 (0057).*
+
 **Balance** (the campaign simulator, 3 starters × 3 seeds, 400 encounters each): every run clears the chain. One round
 per area (two made the team outgrow the areas: Lv.33 arriving in Lantern Town). The team arrives a few levels above
 each area early on, the fights get harder from Windy Cliffs (about 6 to 10 wipes per run there and on Spirit Mountain,

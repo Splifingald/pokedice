@@ -43,6 +43,7 @@ import {
   type RegionId,
   type SaveData,
   type TodayRaid,
+  portalRaidRules,
 } from '@/engine'
 import { t } from '@/i18n'
 import { avatarOf, playerAvatarId } from '@/lib/avatars'
@@ -349,7 +350,12 @@ export function raidFightOver() {
 async function closeOnServer(source: RaidSource, helpers: string[]) {
   if (useGame.getState().auth.status !== 'signed_in') return
   try {
-    if (source.kind === 'progress') return await closeProgressRaid(source.key, helpers)
+    if (source.kind === 'progress') {
+      // A portal area's raid (docs/28): the server reads the run's win from the cloud save, so it goes first.
+      const { data } = useGame.getState()
+      if (portalRaidRules(data, progressRaidOf(data, source.key)?.areaId)) await pushSaveNow()
+      return await closeProgressRaid(source.key, helpers)
+    }
     // The server must know today's raid first (a player who signed in after it was set).
     const raid = useRaidRun.getState().run?.raid
     if (raid) await recordOnServer(raid)

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { energyNow, type EnergyView } from '@/engine'
+import { energyNow, portalLock, type EnergyView } from '@/engine'
 import { isAdminEmail } from '@/lib/supabase'
 import { useGame } from './game'
 
@@ -10,6 +10,16 @@ export function useIsAdmin(): boolean {
 
 export function useInFight(): boolean {
   return useGame((s) => s.run.phase === 'battle' || s.run.phase === 'catch' || s.run.phase === 'victory')
+}
+
+/**
+ * Why the menus are shut right now: a fight under way, or a portal run (docs/28: no way out of the area until it's won
+ * or the party is K.O.). Null when they're open.
+ */
+export function useNavLock(): 'fight' | 'portal' | null {
+  const fight = useInFight()
+  const portal = useGame((s) => !!portalLock(s.save, s.data))
+  return fight ? 'fight' : portal ? 'portal' : null
 }
 
 /** The clock, refreshed every `ms`. */

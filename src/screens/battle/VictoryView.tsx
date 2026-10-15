@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   getInstance,
+  portalLock,
   instanceStats,
   progressOf,
   rebattleEncounter,
@@ -526,6 +527,8 @@ export function VictoryView() {
   const clearedTo = run.events.flatMap((e) => (e.kind === 'area_cleared' && e.nextAreaId ? [e.nextAreaId] : []))[0]
   const nextArea = clearedTo ? data.areas.find((a) => a.id === clearedTo) : undefined
 
+  // Inside a portal run (docs/28) there is no way Home: CONTINUE alone.
+  const locked = useGame((s) => !!portalLock(s.save, s.data))
   if (then) return <EvolutionQueue items={evolutions} onDone={then} />
 
   const footer = !allShown ? (
@@ -558,18 +561,20 @@ export function VictoryView() {
           {t('ui.victory.goToNewArea')}
         </PixelButton>
       )}
-      <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] gap-2.5">
-        <PixelButton
-          size="lg"
-          className="whitespace-nowrap px-2"
-          onClick={go(() => {
-            // Closing the card keeps the player in the area; HOME is the one way out of it.
-            continueAfterVictory()
-            navigate('/home')
-          })}
-        >
-          {t('ui.nav.home')}
-        </PixelButton>
+      <div className={locked ? 'grid' : 'grid grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] gap-2.5'}>
+        {!locked && (
+          <PixelButton
+            size="lg"
+            className="whitespace-nowrap px-2"
+            onClick={go(() => {
+              // Closing the card keeps the player in the area; HOME is the one way out of it.
+              continueAfterVictory()
+              navigate('/home')
+            })}
+          >
+            {t('ui.nav.home')}
+          </PixelButton>
+        )}
         <PixelButton
           variant="primary"
           size="lg"
@@ -734,6 +739,8 @@ function AreaWipe() {
   const area = data.areas.find((a) => a.id === areaId)
   const p = save && areaId ? progressOf(save, areaId) : null
   const done = p?.roundsDone ?? 0
+  // A wipe that ended a portal run (docs/28): its portals opened again and its boons are gone.
+  const portalLost = useGame((s) => s.run.portalLost)
   return (
     <Overlay
       label={t('ui.wipe.title')}
@@ -746,7 +753,9 @@ function AreaWipe() {
       <h2 className="mb-2 text-center text-[32px] font-normal leading-none">{t('ui.wipe.title')}</h2>
       <p className="copy mb-3 text-lg">
         {/* Extreme mode heals nobody after a lost round: the fainted ones rest (docs/22). */}
-        {save && !wipeHeals(save, data)
+        {portalLost != null
+          ? t('ui.portal.wipeBody', { n: portalLost })
+          : save && !wipeHeals(save, data)
           ? t('ui.wipe.bodyExtreme', {
               area: area?.name ?? '',
               h: data.config.extreme.koHours,
@@ -754,7 +763,7 @@ function AreaWipe() {
             })
           : t('ui.wipe.body', { area: area?.name ?? '', kept: done > 0 ? t('ui.wipe.keptRounds') : '' })}
       </p>
-      {area && p && <RoundsCounter area={area} progress={p} />}
+      {area && p && portalLost == null && <RoundsCounter area={area} progress={p} />}
     </Overlay>
   )
 }

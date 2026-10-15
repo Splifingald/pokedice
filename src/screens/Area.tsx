@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Navigate } from 'react-router-dom'
-import { progressOf, scaledLevelSpan, teamAverageLevel, type Area, type AreaProgress } from '@/engine'
+import { portalModeOf, portalStateOf, progressOf, scaledLevelSpan, teamAverageLevel, type Area, type AreaProgress } from '@/engine'
 import { AreaTypes } from '@/components/AreaTypes'
 import { AutoModeToggle } from '@/components/AutoModeToggle'
 import { preloadSprites } from '@/components/SpriteImg'
@@ -15,6 +15,8 @@ import { RoundGauge } from './area/RoundGauge'
 import { AreaDetails } from './home/AreaDetails'
 import { RebattleHeader } from './events/RebattlePage'
 import { AreaStrip } from '@/components/AreaStrip'
+import { WipeView } from './battle/VictoryView'
+import { PortalBonuses, PortalInfo, PortalStep } from './area/PortalRun'
 
 /**
  * Encounter types, a slim banner, then the name with its round (or a checkmark) and levels, the round gauge and, in a
@@ -30,7 +32,9 @@ function AreaHeader({ area, progress, teamAvg }: { area: Area; progress: AreaPro
   ].filter(Boolean)
   // "Round 2/3" while rounds are still needed; a checkmark once they're all done (secret areas: nothing).
   // 0 rounds: a league of fights only (docs/26), nothing to count.
-  const need = area.roundsToClear || null
+  // A portal run (docs/28) has no rounds: its gauge counts the portals closed.
+  const portal = !!portalModeOf(area, data)
+  const need = portal ? null : area.roundsToClear || null
   const done = progress.roundsDone ?? 0
   const [details, setDetails] = useState(false)
   return (
@@ -113,13 +117,27 @@ export function AreaScreen() {
     return <Navigate to={run.rebattle ? '/events/rebattle' : '/home'} replace />
 
   const progress = progressOf(save, area.id)
+  // A portal area (docs/28): its way in, a distortion's boons or its victory, in place of the page between encounters.
+  const mode = run.rebattle ? null : portalModeOf(area, data)
+  const step = mode && run.phase === 'idle' ? <PortalStep area={area} /> : null
+  const p = portalStateOf(save, area.id)
+  const own = !!mode && ((p.won && !p.wonSeen) || (!p.active && !p.won) || (p.active && !!p.offers?.length))
   return (
     <div className="flex flex-col gap-4">
       {run.rebattle ? <RebattleHeader /> : <AreaHeader area={area} progress={progress} teamAvg={teamAverageLevel(save)} />}
       {run.phase === 'preview' && run.encounter && <EncounterPreview enc={run.encounter} />}
       {run.phase === 'center' && <CenterView />}
       {run.phase === 'casino' && <CasinoView />}
-      {run.phase === 'idle' && <AreaIdle area={area} />}
+      {/* A run that ended outside a fight (nobody left standing): its wipe card. */}
+      {run.phase === 'wipe' && <WipeView />}
+      {run.phase === 'idle' && own && step}
+      {run.phase === 'idle' && !own && (
+        <>
+          {mode && <PortalBonuses area={area} />}
+          <AreaIdle area={area} />
+        </>
+      )}
+      {mode && run.phase === 'idle' && <PortalInfo mode={mode} />}
     </div>
   )
 }

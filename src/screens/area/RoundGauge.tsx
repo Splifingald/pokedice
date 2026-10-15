@@ -4,6 +4,7 @@ import {
   fightBosses,
   gymsFor,
   playerSideOf,
+  portalModeOf,
   progressOf,
   type Area,
   type AreaProgress,
@@ -15,6 +16,7 @@ import { joinList, t } from '@/i18n'
 import { useT } from '@/i18n/react'
 import { useGame } from '@/store/game'
 import { cx } from '@/theme/util'
+import { DistortionGauge } from '@/components/Portal'
 
 const CARD_ICON: Record<DeckCard, IconName> = {
   wild: 'ball',
@@ -48,6 +50,9 @@ export function RoundGauge({
   const data = useGame((s) => s.data)
   const save = useGame((s) => s.save)
   const cfg = data.config
+  // A portal run (docs/28) counts the portals closed instead of a round's cards.
+  const portal = portalModeOf(area, data)
+  if (portal) return <DistortionGauge closed={progress.portal?.closed ?? 0} total={portal.portals} className={className} />
   if (!cfg.showRoundGauge || cfg.encounterMode !== 'deck') return null
   const remaining = progress.deck?.length ?? 0
   const met = progress.drawn ?? []

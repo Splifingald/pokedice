@@ -6,7 +6,7 @@ import { donationEnabled, leaderboardUnlocked } from '@/engine'
 import { useDexNew } from '@/lib/dexSeen'
 import { affordableUpgrades } from '@/lib/upgrades'
 import { pushToast, useGame } from '@/store/game'
-import { useInFight } from '@/store/hooks'
+import { useInFight, useNavLock } from '@/store/hooks'
 import { CloudSyncButton } from './CloudSyncButton'
 import { SupportModal } from './SupportModal'
 import { ExtremeBand } from './Extreme'
@@ -68,7 +68,8 @@ function Dot({ dot, className }: { dot: { text: string; gold?: boolean }; classN
 
 function NavEntry({ n, variant }: { n: NavItem; variant: 'side' | 'bottom' }) {
   const { t } = useT()
-  const inFight = useInFight()
+  const lock = useNavLock()
+  const inFight = !!lock
   const { pathname } = useLocation()
   const active = isActive(n, pathname)
   const dot = useNavDot(n)
@@ -79,7 +80,7 @@ function NavEntry({ n, variant }: { n: NavItem; variant: 'side' | 'bottom' }) {
     'aria-disabled': inFight || undefined,
     'aria-label': dot ? `${label} · ${dot.label}` : label,
     onClick: (e: React.MouseEvent) => inFight && e.preventDefault(),
-    title: inFight ? t('ui.nav.finishFight') : undefined,
+    title: lock ? t(lock === 'portal' ? 'ui.portal.locked' : 'ui.nav.finishFight') : undefined,
   }
   if (variant === 'side')
     return (
@@ -116,7 +117,7 @@ function NavEntry({ n, variant }: { n: NavItem; variant: 'side' | 'bottom' }) {
 function GoldButton() {
   const { t } = useT()
   const gold = useGame((s) => s.save?.gold ?? 0)
-  const inFight = useInFight()
+  const inFight = !!useNavLock()
   const shown = useCountUp(gold)
   const bump = useGoldBump()
   const text = shown.toLocaleString(getLang())
@@ -170,7 +171,8 @@ function RoundLink({ to, label, children, blocked, current, onBlocked }: { to: s
 export function Header() {
   const { t } = useT()
   const save = useGame((s) => s.save)
-  const inFight = useInFight()
+  const lock = useNavLock()
+  const inFight = !!lock
   const { pathname } = useLocation()
   const boardOpen = useGame((s) => !!s.save && leaderboardUnlocked(s.save, s.data))
   if (!save) return null
@@ -185,7 +187,7 @@ export function Header() {
         <GoldButton />
         <RoundLink
           to="/leaderboard"
-          label={t(inFight ? 'ui.nav.finishFight' : boardOpen ? 'ui.nav.leaderboard' : 'ui.nav.boardLocked')}
+          label={t(lock === 'portal' ? 'ui.portal.locked' : inFight ? 'ui.nav.finishFight' : boardOpen ? 'ui.nav.leaderboard' : 'ui.nav.boardLocked')}
           blocked={blocked}
           current={pathname === '/leaderboard'}
           onBlocked={() => !inFight && pushToast(t('ui.nav.boardLocked'), 'info')}

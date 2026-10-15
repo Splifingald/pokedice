@@ -158,6 +158,7 @@ All live in `src/components/`. Every component, in every state, is on `/kitchen-
 | `SupportModal` / `SupportView` | SUPPORT ME (side menu, Settings), and once per region at its 5th badge | A rules pop-up (the village banner) with a button per row: Join the Discord (left out with no link set), Share invite link, Support me on PayPal under the line saying Pokémon is a licence so the game is never for sale; a big OK |
 | `GiftPresent` / `GiftOpened` / `GiftResult` / `GiftMoment` | A gift from the developer (§23) | Under a message: the wrapped gift (wobbling, still when the OS asks for reduced motion), "3 things inside" and what happens next (close the message, OPEN IT in My messages, or why it waits); opened: what it held; the opening, full screen; what arrived and where |
 | `InviteGaugeBar` / `InviteRewardsCard` / `InviteGaugeCompact` / `InviteReadyModal` | Friend invite rewards (§25) | The gauge: a tile per tier (its reward; gold with the gift wobbling when ready; green with a check once opened), the gold track, the friends each needs; six tiers fit a phone. The Friends page's card (ready with OPEN IT, asking the server, every reward won); the compact one in Prof. Oak's invite; the reward's pop-up (who won their first badge, or a friend) |
+| `PortalArt` / `PortalEntry` / `DistortionGauge` / `DistortionChoiceView` / `RunBonuses` / `PortalVictoryView` / `DistortionFx` | Distortion World's portal run (§27) | The portal drawn in code (turning in steps; still); the breach and its pop-up (NOT NOW / READY!); the gauge of portals closed (fresh, under way, won); a distortion's boons (three, fewer); the run's bonuses (none, some); the victory; the screen's distortion; the sprite shader at each motion level |
 
 Dialog behaviour (`src/lib/useDialog.ts`, used by `Modal`, `Sheet`, `SidePanel`): focus moves in, **Tab stays inside**,
 **Esc closes the top dialog only**, focus returns to what opened it.
@@ -612,8 +613,8 @@ Two rules for every feature that adds something players can do (an event, a mode
 - **Its rules, once and on demand**: a rules pop-up (`RulesModal`: its picture as a banner, 2–4 `RuleList` rows with
   the config's numbers, Later / Let's go!) the first time the feature opens for the player (a "seen" flag in the save,
   queued behind the other one-time pop-ups), and an **INFO** button at the bottom of its page that shows the same rules
-  again. The Day Care, Versus, the events, Extreme mode, Trades, the gifts (§23), the General upgrades (§24), the invite rewards (§25)
-  and push notifications (§26: its rules pop-up is its question, asked once per feature; its INFO is in Settings →
+  again. The Day Care, Versus, the events, Extreme mode, Trades, the gifts (§23), the General upgrades (§24), the invite rewards (§25),
+  the portal run (§27) and push notifications (§26: its rules pop-up is its question, asked once per feature; its INFO is in Settings →
   Notifications) follow it.
 - **Items with a switch** (`game_config.itemSwitches`, `itemOn`): the Link Cable and the Bait (docs/25). Off: not sold,
   not found, not usable, never offered; bags keep theirs. An item is explained where it's met (its description in the
@@ -869,3 +870,47 @@ What they say and when, and how they're set up: docs/27-PUSH-NOTIFICATIONS.md. T
   2:1 image, a square icon kept inside the round mask, the white ball badge.
 - **A tap while the game is open** moves it to the page between fights; it never reloads the tab.
 
+
+## 27. The portal run (Distortion World)
+
+An area's special mode (docs/28-DISTORTION-WORLD.md): close Giratina's distortion portals from the inside, in one go.
+The pieces are in `src/components/Portal.tsx` and `src/screens/area/PortalRun.tsx`, every state on `/kitchen-sink`
+(`PortalBits`); the engine (`engine/portal.ts`) decides every card, boon and number.
+
+- **The switch and the rules** follow §20: `portalRun` (Admin → Areas → Special mode), Off by default and checked by the
+  server for the area's raid; Off, the area plays as before. The rules pop-up (`PortalRulesModal`, the portal drawn in
+  code as its banner, four rows from the area's numbers) once, when the area opens for the player, between fights after
+  the other one-time pop-ups; Let's go! travels there. INFO sits at the bottom of the area's page.
+- **The way in**: CONTINUE there says ENTER THE DISTORTION ("Close 10 portals in a row"). The area's page plays the
+  breach full screen (`PortalBreach`: the portal grows out of a point in 8 steps over the night, the line in large type,
+  the `portal.breach` cue; a tap, SKIP or Esc ends it; motion off skips it), then its pop-up (`PortalEntryDialog`): the
+  portal glowing behind the rules, the warning in a red-ringed note with its icon, **NOT NOW** (Home) and **READY!**.
+- **Inside, there is no way out**: the menus, the gold pill, the cup and the avatar are disabled and say "You can't leave
+  the distortion until you win or your party is K.O." (`useNavLock`); any other page sends back to the area
+  (`PortalGuard`), so does a reload. The area's action bar and the result card have CONTINUE alone, no HOME, the line
+  over it. Nothing else changes: the team's sheets, items between fights.
+- **The gauge**: the round gauge's place, the same tiles (`DistortionGauge`): a tile per portal, the closed ones lilac
+  with a check, the next with the gold edge, "3/10"; an image with "Portals closed: 3/10" for screen readers. On the
+  header, over every action bar, on the result card.
+- **A distortion** (`DistortionChoiceView`): a panel with the void's purple along its top, the small portal, "Distortion
+  4/10" and "Pick one boon to close this portal", then the boons as big buttons (one column on a phone, three from 768
+  px): an icon (a heart; the Pokémon to revive; the type's badge; a die of its type; the first item), a title that names
+  what it does ("Heal 30%", "Revive Dusknoir", "Ghost +10", "Extra die: Gengar", "Rare item"), a line with its numbers
+  ("6/8 dice", the item odds). Its button's name is "Pick: …". Picking plays `portal.close` and a toast counts the
+  portals sealed. It waits in the save: a reload shows it again.
+- **The run's bonuses** (`RunBonuses`) over the team between encounters: each boost as its type badge and "+20 damage",
+  each extra die with whose it is; "None yet" before the first.
+- **The wild Pokémon** wear the shader (`shaderClass` by motion level): `full`, still most of the time, then for half a
+  second torn sideways (SVG displacement) with its colours split into hard offset copies; `short`, a slower colour shift
+  without the tear; off or a calm OS, a still two-colour rim. Never a blur, never faster than 3 a second. The preview
+  shows it too, and "Distorted: it can't be caught." in place of the catch hint; no NEW / caught tag.
+- **The screen's distortion** (`DistortionFx`, over the page under the dialogs, no taps): a dithered frame in the void's
+  purple; `full` adds a band of torn lines crossing every 7 s; `short` lets the frame flicker slowly; off or calm, the
+  frame alone.
+- **The victory** (`PortalVictoryView`): full screen on the night, the portal and shiny Giratina coming out of it (in 12
+  steps, from its middle; already out with motion off), its cry, "Every portal is closed!", the line that it is in the
+  raids now, and **BACK TO THE WORLD** (Home, where CONTINUE is RAID: GIRATINA). It waits in the save until seen.
+- **A wipe** keeps the wipe card (§14), its line saying the portals closed opened again and the run's bonuses are gone,
+  that XP, ₽ and items stay and the team is healed.
+- **The raid's page** before the victory: the lock says to close every portal of the area; the area's details say
+  "Opens when every distortion portal is closed".

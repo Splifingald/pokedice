@@ -395,6 +395,18 @@ const FX_SOUNDS = {
   'starter.land': () => hiss(0.08, { freq: 500, vol: 0.06 }),
   'starter.open': () => tone(880, 0.12, { type: 'square', vol: 0.04 }),
   'starter.fanfare': (n = 0) => tone([523, 659, 784, 1047][n]!, 0.12, { type: 'square', vol: 0.04 }),
+  // Distortion World's portal run (docs/28): the breach tearing open (a falling rumble under a rising hiss), and a
+  // portal closing (a short downward chime).
+  'portal.breach': () => {
+    hiss(1.4, { freq: 300, slide: 2400, vol: 0.07 })
+    tone(110, 1.2, { type: 'sawtooth', vol: 0.04, slide: -60 })
+    tone(220, 0.5, { type: 'square', vol: 0.03, at: 0.6, slide: -140 })
+  },
+  'portal.close': () => {
+    tone(988, 0.1, { type: 'triangle', vol: 0.05 })
+    tone(659, 0.1, { type: 'triangle', vol: 0.05, at: 0.1 })
+    tone(330, 0.22, { type: 'triangle', vol: 0.05, at: 0.2 })
+  },
   'impact.windup': () => hiss(0.2, { freq: 700, slide: 900, vol: 0.04 }),
   'impact.hit': () => {
     hiss(0.18, { freq: 420, vol: 0.12 })

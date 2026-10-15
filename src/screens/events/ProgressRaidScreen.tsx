@@ -11,6 +11,7 @@ import {
   progressRaidReachable,
   progressRaidShiny,
   progressRaidState,
+  portalModeOf,
   progressRaidTeam,
   raidTeamCap,
   type RaidNpcOption,
@@ -60,6 +61,8 @@ function ProgressRaidPage({ raidKey }: { raidKey: string }) {
   const friends = groupOf(raidKey, useRaidGroup())
   const [offer, setOffer] = useState<RaidNpcOption[] | null>(null)
   const state = progressRaidState(save, data, raid)
+  // A portal area's raid (docs/28) opens with its run won, not its rounds.
+  const portal = !!portalModeOf(data.areas.find((a) => a.id === raid.areaId), data)
   const area = data.areas.find((a) => a.id === raid.areaId)!
   const region = getRegion(data, raid.region)?.name ?? raid.region
   const name = data.species[raid.dex]?.name ?? ''
@@ -125,10 +128,10 @@ function ProgressRaidPage({ raidKey }: { raidKey: string }) {
           </span>
           <span className="grid gap-0.5 leading-tight">
             <b className="text-[19px] font-normal leading-none">
-              {t('ui.raid.progress.lockTitle', { area: area.name })}
+              {t(portal ? 'ui.portal.raidLockTitle' : 'ui.raid.progress.lockTitle', { area: area.name })}
             </b>
             <small className="font-pixel-sm text-[15px] text-ink">
-              {t('ui.raid.progress.lockText', { name })}
+              {t(portal ? 'ui.portal.raidLockText' : 'ui.raid.progress.lockText', { name })}
             </small>
           </span>
         </div>
