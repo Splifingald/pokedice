@@ -57,7 +57,7 @@ export interface CampaignOptions {
   regionId?: RegionId
 }
 
-export type EncounterTally = Record<'wild' | 'trainer' | 'center' | 'item' | 'casino' | 'gym' | 'boss', number>
+export type EncounterTally = Record<'wild' | 'trainer' | 'center' | 'item' | 'casino' | 'trick' | 'gym' | 'boss', number>
 
 export interface AreaReport {
   areaId: string
@@ -244,7 +244,7 @@ export function* runCampaign(data: GameData, opts: CampaignOptions): Generator<n
         name: area.name,
         visits: 1,
         encounters: 0,
-        kinds: { wild: 0, trainer: 0, center: 0, item: 0, casino: 0, gym: 0, boss: 0 },
+        kinds: { wild: 0, trainer: 0, center: 0, item: 0, casino: 0, trick: 0, gym: 0, boss: 0 },
         fights: 0,
         wins: 0,
         wipes: 0,
@@ -392,8 +392,8 @@ export function* runCampaign(data: GameData, opts: CampaignOptions): Generator<n
       save = centerHeal(save, data)
       stalled = false
     }
-    else if (enc.kind === 'casino') {
-      // The simulated player walks past the Game Corner.
+    else if (enc.kind === 'casino' || enc.kind === 'trick') {
+      // The simulated player walks past the Game Corner and Trick or Treat.
     } else if (enc.kind === 'item') {
       save = pickUpItem(save, area.id, enc, data, 0, newId)
       r.itemsFound++

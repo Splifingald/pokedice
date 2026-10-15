@@ -22,8 +22,12 @@ import type {
   Region,
   SmallWorld,
   Trainer,
+  TrickGhost,
+  TrickOrTreatConfig,
+  TrickTier,
   WildPoolEntry,
 } from '../src/engine/types'
+import { DEFAULT_CONFIG } from '../src/engine/defaults'
 import { stableUuid, upsert } from './seed'
 
 export const REGION_ID = 'world-haunted-hollow'
@@ -978,6 +982,70 @@ export const TITLE: SmallWorld['title'] = {
   'zh-Hans': '幽灵谷',
 }
 
+/**
+ * Trick or Treat's ghosts per main area (docs/28): each area's ghost-type wild Pokémon, the tier from its wild weight
+ * (`ghostsFromWildPool`, which the admin's Prefill uses too). Frozen Lake has no ghost in the wild: Shuppet and Duskull,
+ * common, and Froslass, very rare (the user's call).
+ */
+export const TRICK_GHOSTS: Record<string, [dex: number, tier: TrickTier][]> = {
+  'dusk-road': [
+    [425, 'rare'],
+    [92, 'veryRare'],
+  ],
+  'foggy-marsh': [
+    [92, 'common'],
+    [622, 'rare'],
+  ],
+  'whispering-woods': [
+    [708, 'common'],
+    [710, 'common'],
+    [946, 'common'],
+  ],
+  'lantern-town': [
+    [607, 'common'],
+    [353, 'common'],
+    [200, 'veryRare'],
+  ],
+  'old-quarry': [[622, 'common']],
+  'frozen-lake': [
+    [353, 'common'],
+    [355, 'common'],
+    [478, 'veryRare'],
+  ],
+  'sunken-shore': [[769, 'common']],
+  'rusted-armory': [
+    [679, 'common'],
+    [680, 'veryRare'],
+  ],
+  'windy-cliffs': [
+    [425, 'common'],
+    [426, 'rare'],
+    [947, 'rare'],
+  ],
+  'spirit-mountain': [
+    [355, 'common'],
+    [200, 'common'],
+    [354, 'common'],
+    [356, 'rare'],
+  ],
+}
+
+/** The ghost lists by area id, as game_config `trickOrTreat.areas` holds them. */
+export function trickAreas(): Record<string, TrickGhost[]> {
+  return Object.fromEntries(
+    Object.entries(TRICK_GHOSTS).map(([key, list]) => [id('area', key), list.map(([dex, tier]) => ({ dex, tier }))]),
+  )
+}
+
+/**
+ * Trick or Treat's row with the world's ghost lists in it (docs/28): the admin's switch, numbers and own lists kept
+ * (an area's list the admin has already set wins), Off by default.
+ */
+export function withTrickLists(cur: Partial<TrickOrTreatConfig> | undefined): TrickOrTreatConfig {
+  const own = cur && typeof cur === 'object' ? cur : {}
+  return { ...DEFAULT_CONFIG.trickOrTreat, ...own, areas: { ...trickAreas(), ...(own.areas ?? {}) } }
+}
+
 const SHOP: SmallWorld['shop'] = [
   { key: 'poke-ball', price: 20, limit: null },
   { key: 'great-ball', price: 50, limit: null },
@@ -1020,8 +1088,10 @@ export function haunted(): { region: Region; areas: Area[]; trainers: Trainer[];
     const gyms = (a.gyms ?? []).map((t) => trainerOf(a.key, t))
     trainers.push(...pool, ...gyms)
     const deck = { wild: 0, trainer: 0, center: 0, item: 0, casino: 0, ...a.deck }
-    // Every area's deck holds one item and one Pokémon Center (the user's rule); the Shadow Elite has no deck.
+    // Every area's deck holds one item and one Pokémon Center (the user's rule); the Shadow Elite has no deck. The ten
+    // main areas add a Trick or Treat card (docs/28, 2026-10-15): 11 cards, dealt only while its switch is on.
     if (a.wild.length || a.trainers.length) Object.assign(deck, { item: 1, center: 1 })
+    if (TRICK_GHOSTS[a.key]) Object.assign(deck, { trick: 1 })
     return {
       id: id('area', a.key),
       orderIndex: ORDER0 + i,
@@ -1098,6 +1168,7 @@ export function withHaunted(b: BundleRaw): BundleRaw {
   const trainerIds = new Set(h.trainers.map((t) => t.id))
   const config = b.config as Record<string, unknown> & {
     smallWorlds?: { access?: string; list?: SmallWorld[] }
+    trickOrTreat?: Partial<TrickOrTreatConfig>
   }
   const worlds = config.smallWorlds ?? {}
   return {
@@ -1113,6 +1184,7 @@ export function withHaunted(b: BundleRaw): BundleRaw {
         access: worlds.access ?? 'admin',
         list: [...(worlds.list ?? []).filter((w) => w.id !== WORLD_ID), h.world],
       },
+      trickOrTreat: withTrickLists(config.trickOrTreat),
     },
   }
 }

@@ -14,6 +14,7 @@ import {
   progressRaidState,
   raidRules,
   teamAverageLevel,
+  trickDealable,
   type Area,
   type BossDef,
   type EncounterKind,
@@ -47,6 +48,7 @@ const MIX: Record<EncounterKind, string> = {
   center: '#ff7aa0',
   trainer: '#5b8def',
   casino: '#9b5de5',
+  trick: '#ff8a3d',
 }
 
 function Fact({
@@ -263,7 +265,8 @@ function DetailsBody({ area }: { area: Area }) {
   const found = new Set(p.uniqueFound ?? [])
   const common = area.lootPool.filter((e) => !e.unique && e.weight > 0)
   const kinds = (Object.entries(area.encounterWeights) as [EncounterKind, number][]).filter(
-    ([k, v]) => v > 0 && MIX[k],
+    // Trick or Treat only where it is dealt (its switch on, the area's ghosts listed: docs/28).
+    ([k, v]) => v > 0 && MIX[k] && (k !== 'trick' || trickDealable(data, area)),
   )
   const sum = kinds.reduce((n, [, v]) => n + v, 0)
   const pct = kinds.map(([k, v]) => [k, Math.round((v / sum) * 100)] as const).sort((x, y) => y[1] - x[1])

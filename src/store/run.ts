@@ -70,18 +70,26 @@ import {
   type RunEvent,
   type SaveData,
   type SpinResult,
+  applyTrickCatch,
+  feedTreat,
+  startTrick,
+  throwTrickBall as throwTrickBallIn,
+  trickCfg,
+  type TrickStep,
 } from '@/engine'
 import { activeSlot } from '@/save/storage'
 import { commitSave, initialRun, mutateSave, pushToast, useGame, type RunState } from './game'
 import { currentLive } from './live'
 import { useRebattleMedal } from './rebattle'
 import { serverNow } from './serverTime'
+import { trickAllowed } from './trick'
 import { t } from '@/i18n'
 import { money } from '@/lib/format'
 
 let runRng = createRng(randomSeed())
 let battleRng = createRng(randomSeed())
 let battleSeq = 0
+let trickSeq = 0
 
 export const newId = (): string =>
   typeof crypto !== 'undefined' && 'randomUUID' in crypto
@@ -339,6 +347,9 @@ export function engage(leadUid?: string) {
       return
     case 'casino':
       setRun({ phase: 'casino' })
+      return
+    case 'trick':
+      void beginTrick(enc)
       return
     case 'wild':
       return startBattle('wild', { dex: enc.dex, level: enc.level, shiny: enc.shiny }, leadUid)
@@ -664,6 +675,64 @@ export function spinSlotMachine(): SpinResult | null {
 }
 
 export function leaveCasino() {
+  backToArea()
+}
+
+// ---------------------------------------------------------------- Trick or Treat (docs/28)
+
+/**
+ * The ghost comes out once the server agrees (a signed-in player: trick_or_treat_open). Switched off meanwhile, the
+ * card is spent and the player is back on the trail. Either way the card was used when it was turned over.
+ */
+async function beginTrick(enc: Extract<NonNullable<RunState['encounter']>, { kind: 'trick' }>) {
+  const ok = await trickAllowed()
+  const run = useGame.getState().run
+  if (run.phase !== 'preview' || run.encounter !== enc) return
+  if (!ok) {
+    pushToast(t('ui.trick.closed'), 'bad')
+    backToArea()
+    return
+  }
+  setRun({ phase: 'trick', trick: { id: ++trickSeq, state: startTrick(enc), last: null, caught: null } })
+}
+
+/** One step of Trick or Treat, decided by the engine; a catch goes into the save at once. */
+function trickStep(step: (cfg: ReturnType<typeof trickCfg>) => TrickStep | null): TrickStep | null {
+  const { run, save, data } = useGame.getState()
+  const tr = run.trick
+  if (run.phase !== 'trick' || !tr || tr.state.end || !save) return null
+  const res = step(trickCfg(data))
+  if (!res) return null
+  let caught = tr.caught
+  if (res.caught) {
+    const c = applyTrickCatch(save, data, res.state, Date.now(), newId)
+    commitSave(c.save)
+    caught = {
+      placed: c.placed,
+      isNew: c.isNew,
+      ...(c.replacedLevel != null && { replacedLevel: c.replacedLevel }),
+      secrets: c.events.flatMap((e) => (e.kind === 'secret_unlocked' ? [e.areaId] : [])),
+    }
+  }
+  setRun({ trick: { ...tr, state: res.state, last: res, caught } })
+  return res
+}
+
+/** TREAT: the gauge fills by the Treat's random amount. */
+export function giveTreat(): TrickStep | null {
+  return trickStep((cfg) => feedTreat(useGame.getState().run.trick!.state, cfg, runRng))
+}
+
+/** TRICK BALL: the d6 against the gauge's section. */
+export function throwTrickBall(): TrickStep | null {
+  return trickStep((cfg) => throwTrickBallIn(useGame.getState().run.trick!.state, cfg, runRng))
+}
+
+/** Caught or fled: back on the trail (the round may be complete). */
+export function leaveTrick() {
+  const tr = useGame.getState().run.trick
+  if (tr && !tr.state.end) return
+  setRun({ trick: null })
   backToArea()
 }
 

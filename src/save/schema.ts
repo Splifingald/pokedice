@@ -54,11 +54,11 @@ const progressSchema = z.object({
   bossesDefeated: z.array(z.number().int()).default([]),
   bossesCaught: z.array(z.number().int()).optional(),
   gymsDefeated: z.array(z.string()).default([]),
-  deck: z.array(z.enum(['wild', 'trainer', 'center', 'item', 'casino', 'legend'])).optional(),
+  deck: z.array(z.enum(['wild', 'trainer', 'center', 'item', 'casino', 'trick', 'legend'])).optional(),
   lootDeck: z.array(z.string()).optional(),
   uniqueFound: z.array(z.string()).optional(),
   round: z.number().int().min(0).optional(),
-  drawn: z.array(z.enum(['wild', 'trainer', 'center', 'item', 'casino', 'legend'])).optional(),
+  drawn: z.array(z.enum(['wild', 'trainer', 'center', 'item', 'casino', 'trick', 'legend'])).optional(),
   lastCenter: z.boolean().optional(),
 })
 
@@ -308,6 +308,8 @@ export const saveSchema = z.object({
       rulesSeen: z.boolean().optional(),
     })
     .optional(),
+  // Trick or Treat (docs/28): its rules pop-up seen.
+  trickOrTreat: z.object({ rulesSeen: z.boolean().optional() }).optional(),
 })
 
 /**

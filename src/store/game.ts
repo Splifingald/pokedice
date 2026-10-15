@@ -30,6 +30,9 @@ import {
   type LogEntry,
   type RunEvent,
   type SaveData,
+  type TrickPlaced,
+  type TrickState,
+  type TrickStep,
 } from '@/engine'
 import { activeSlot, DEFAULT_SETTINGS, readSave, readSettings, scheduleWrite, writeSettings, type Settings } from '@/save/storage'
 import { trustedNow } from './clock'
@@ -44,7 +47,18 @@ export interface Toast {
   tone: ToastTone
 }
 
-export type RunPhase = 'idle' | 'preview' | 'battle' | 'catch' | 'victory' | 'center' | 'casino' | 'wipe' | 'stalemate'
+export type RunPhase = 'idle' | 'preview' | 'battle' | 'catch' | 'victory' | 'center' | 'casino' | 'trick' | 'wipe' | 'stalemate'
+
+/** Trick or Treat under way (docs/28): the ghost and its gauge, the last Treat or Trick Ball to play, and the catch. */
+export interface TrickRun {
+  /** One per encounter: the screen starts afresh for each. */
+  id: number
+  state: TrickState
+  /** The last Treat or Trick Ball, for the screen to play (null before the first). */
+  last: TrickStep | null
+  /** Caught: where it went (the save has it already). */
+  caught: { placed: TrickPlaced; isNew: boolean; replacedLevel?: number; secrets: string[] } | null
+}
 
 /** The catch throw after a wild / legendary K.O. `result` is set once the die is thrown. */
 export interface CatchState {
@@ -92,6 +106,8 @@ export interface RunState {
   rebattle?: { regionId: string; tier: number } | null
   /** The Pokémon Center's healing has played: back from Home, the Center opens on the team, not on the jingle again. */
   healShown?: boolean
+  /** Trick or Treat under way (docs/28). */
+  trick?: TrickRun | null
 }
 
 export interface BattleSlice {

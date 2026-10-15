@@ -341,4 +341,46 @@ export const DEFAULT_CONFIG: GameConfig = {
     offlineMaxHours: 24,
     richCost: 99999,
   },
+  // Trick or Treat (docs/28): off until the admin switches it on; the areas' ghost lists come with their content
+  // (Haunted Hollow's from migration 0056). The numbers were set by the exact best play and a Monte Carlo of simpler
+  // plays (tests/engine/trick-or-treat.test.ts, docs/28 §3): best play catches about 3 common ghosts in 4, a rare one
+  // about 3 in 5 and a very rare one about 1 in 3, and no fixed recipe (Trick Balls only, one or two Treats first,
+  // Treats up to the best section) comes within 4 points. A miss pushing the gauge by 35 is what keeps Balls only from
+  // winning: at the first idea's +10 they caught 98 % of common ghosts, and the Treats were never worth giving.
+  trickOrTreat: {
+    access: 'off',
+    treatMin: 10,
+    treatMax: 30,
+    failPush: 35,
+    tiers: {
+      common: {
+        weight: 6,
+        flee: 90,
+        sections: [
+          { from: 0, need: 6 },
+          { from: 40, need: 5 },
+          { from: 75, need: 4 },
+          { from: 80, need: 3 },
+        ],
+      },
+      rare: {
+        weight: 3,
+        flee: 85,
+        sections: [
+          { from: 0, need: 6 },
+          { from: 40, need: 5 },
+          { from: 75, need: 4 },
+        ],
+      },
+      veryRare: {
+        weight: 1,
+        flee: 55,
+        sections: [
+          { from: 0, need: 6 },
+          { from: 40, need: 5 },
+        ],
+      },
+    },
+    areas: {},
+  },
 }

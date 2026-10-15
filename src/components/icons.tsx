@@ -55,6 +55,15 @@ const GIFT_PAL: Record<string, string> = {
   o: '#e08e00',
 }
 
+/** Trick or Treat (docs/28): a jack-o'-lantern, its glow and its stem. */
+const PUMPKIN_PAL: Record<string, string> = {
+  k: '#24304f',
+  o: '#ff8a3d',
+  O: '#d8641a',
+  y: '#ffe066',
+  g: '#34c97a',
+}
+
 export const ICONS = {
   gift: [
     '..kkk..kkk..',
@@ -309,6 +318,32 @@ export const ICONS = {
     'kYYk........',
     'kk..........',
   ],
+  // Trick or Treat (docs/28): its card (a jack-o'-lantern), and the flee zone's ghost.
+  pumpkin: [
+    '....kkk....',
+    '....kgk....',
+    '.kkkkkkkkk.',
+    'kooOoooOook',
+    'koyyoOoyyok',
+    'kooOoyoOook',
+    'koyyyyyyyok',
+    'kooyOyOyook',
+    '.kooOoooOk.',
+    '..kkkkkkk..',
+  ],
+  ghost: [
+    '...kkkk...',
+    '.kkwwwwkk.',
+    '.kwwwwwwk.',
+    'kwwkwwkwwk',
+    'kwwkwwkwwk',
+    'kwwwwwwwwk',
+    'kwwwkkwwwk',
+    'kwwwwwwwwk',
+    'kwwwwwwwwk',
+    'kwkwwkkwkk',
+    'kk.kk..kk.',
+  ],
   ...PACK_ICONS,
 } as const
 
@@ -324,6 +359,7 @@ const OWN_PALETTE: Partial<Record<IconName, Record<string, string>>> = {
   navFriends: NAV_PAL,
   trade: TRADE_PAL,
   gift: GIFT_PAL,
+  pumpkin: PUMPKIN_PAL,
 }
 
 export function PixelIcon({

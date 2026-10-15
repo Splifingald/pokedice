@@ -162,8 +162,11 @@ export interface DieUpgradeRow {
   cost: number
 }
 
-/** 'casino': the Game Corner — a slot machine the player can play as long as they like (Rocket Hideout). */
-export const ENCOUNTER_KINDS = ['wild', 'trainer', 'center', 'item', 'casino'] as const
+/**
+ * 'casino': the Game Corner — a slot machine the player can play as long as they like (Rocket Hideout). 'trick': Trick
+ * or Treat (docs/28) — a ghost tempted with treats and caught with a Trick Ball, dealt only while its switch is on.
+ */
+export const ENCOUNTER_KINDS = ['wild', 'trainer', 'center', 'item', 'casino', 'trick'] as const
 export type EncounterKind = (typeof ENCOUNTER_KINDS)[number]
 /** Cards in an area's encounter deck; 'legend' is a fled legendary coming back (one per deck until it's caught). */
 export type DeckCard = EncounterKind | 'legend'
@@ -242,7 +245,8 @@ export interface Area {
   roundsToClear: number | null
   minLevel: number
   maxLevel: number
-  encounterWeights: Record<EncounterKind, number>
+  /** Copies of each card in a deck; Trick or Treat's (docs/28) is optional, as content from before it has none. */
+  encounterWeights: Record<Exclude<EncounterKind, 'trick'>, number> & { trick?: number }
   backtrackMultiplier: number
   legendaryBoss: BossDef[] | null
   scalesToTeam: boolean
@@ -734,6 +738,57 @@ export interface GameConfig {
   inviteRewards: InviteRewardsConfig
   /** Push notifications (docs/27): their switch, a game_config row of its own that seeding never writes. */
   push: PushConfig
+  /** Trick or Treat (docs/28): its switch, numbers and each area's ghosts. The server reads the switch too. */
+  trickOrTreat: TrickOrTreatConfig
+}
+
+/** A Trick or Treat ghost's rarity (docs/28): it picks the ghost and sets its gauge. */
+export const TRICK_TIERS = ['common', 'rare', 'veryRare'] as const
+export type TrickTier = (typeof TRICK_TIERS)[number]
+
+/** Where a section of the Trick or Treat gauge starts (0–100) and the d6 a Trick Ball needs there. */
+export interface TrickSection {
+  from: number
+  need: number
+}
+
+/** One rarity tier's gauge: how often it's picked, its sections, and where the flee zone starts. */
+export interface TrickTierConfig {
+  /** Its weight when the card picks a ghost from the area's list. */
+  weight: number
+  /** The gauge's sections, each from its `from` to the next one's (or the flee zone): higher ones are easier. */
+  sections: TrickSection[]
+  /** The gauge reaching this (0–100) makes it flee. */
+  flee: number
+}
+
+/** One ghost on an area's Trick or Treat list. */
+export interface TrickGhost {
+  dex: number
+  tier: TrickTier
+}
+
+/**
+ * Trick or Treat (docs/28): a card in the area's deck. A ghost floats in; Treats fill its gauge by a random amount, a
+ * Trick Ball rolls a d6 against the section the gauge is in, a miss makes it restless (the gauge goes up), and the flee
+ * zone ends it. Treats and Trick Balls are endless and not items.
+ */
+export interface TrickOrTreatConfig {
+  /** The switch (docs/15 §20): off (the card is never dealt), on for the admin only, on for everyone. Off by default. */
+  access: EventAccess
+  /** A Treat fills the gauge by a whole number between these. */
+  treatMin: number
+  treatMax: number
+  /** A Trick Ball that misses fills the gauge by this. */
+  failPush: number
+  tiers: Record<TrickTier, TrickTierConfig>
+  /** Each area's ghosts, by area id. An area without a list deals no Trick or Treat card. */
+  areas: Record<string, TrickGhost[]>
+}
+
+/** Trick or Treat in a save (docs/28): its rules pop-up shown. */
+export interface TrickSave {
+  rulesSeen?: boolean
 }
 
 /**
@@ -1077,6 +1132,8 @@ export interface SaveData {
   invites?: InvitesSave
   /** The General upgrades (docs/25), for every region of this save. Absent = none bought. */
   general?: GeneralSave
+  /** Trick or Treat (docs/28): its rules seen. Absent = never met. */
+  trickOrTreat?: TrickSave
 }
 
 /** The General upgrades bought (docs/25), and the offline earnings' clock. */

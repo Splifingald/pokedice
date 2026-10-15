@@ -849,7 +849,9 @@ const RETIRED_CONFIG_KEYS = ['regenPercentPerHour']
  * steps are no-ops before the data below), 0046 (a raid's team from its area's region; delete_my_data for trades and
  * raids both), 0047 (the admin reads the trade listings), 0049 (the General upgrades: it redefines the card writer and
  * the friends', boards' and trades' functions), then 0053 (push notifications: it redefines delete_my_data once more)
- * and 0054 (the cross-region Shiny and Raids boards: it redefines 0049's leaderboard). Folded into seed.sql so there is
+ * and 0054 (the cross-region Shiny and Raids boards: it redefines 0049's leaderboard), then 0056 (Trick or Treat: its
+ * row, Off, inserted if missing, and the switch's server check; its decks' step is a no-op before Haunted Hollow's
+ * content, 0052). Folded into seed.sql so there is
  * one file to run rather than several in a particular order. The
  * migrations stay the single source of that SQL — they are written to be idempotent, so re-running them costs little.
  */
@@ -869,6 +871,7 @@ export async function regionsPrelude(): Promise<string> {
       '0049_general_upgrades.sql',
       '0053_push.sql',
       '0054_leaderboard_cross_region.sql',
+      '0056_trick_or_treat.sql',
     ].map(async (name) => {
       const sql = (await readFile(path.join(ROOT, 'supabase', 'migrations', name), 'utf8')).replace(/^(begin|commit);\n/gm, '')
       return `-- ↓ supabase/migrations/${name}, inlined so this file stands alone.\n${sql}`

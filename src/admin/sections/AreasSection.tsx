@@ -4,6 +4,7 @@ import { useSearchParams } from 'react-router-dom'
 import type { Row } from '@/config/mapping'
 import {
   deckCounts,
+  trickGhosts,
   isWorldRegion,
   lootCopies,
   pityChance,
@@ -28,13 +29,14 @@ import { addRows, newUuid, removeRows, rowKey, setTable, updateRow, useAdmin, us
 import { BackgroundPicker, Box, Field, NumInput, PokemonPicker, Stepper, TextInput, inputCls, n, s } from '../widgets'
 import { AreaBanner } from '@/components/AreaBanner'
 
-const KINDS: EncounterKind[] = ['wild', 'trainer', 'center', 'item', 'casino']
+const KINDS: EncounterKind[] = ['wild', 'trainer', 'center', 'item', 'casino', 'trick']
 const CARD: Record<EncounterKind, { label: string; color: string }> = {
   wild: { label: 'Wild', color: '#34c97a' },
   trainer: { label: 'Trainer', color: '#f2553f' },
   center: { label: 'Center', color: '#d44873' },
   item: { label: 'Item', color: '#ffbe2e' },
   casino: { label: 'Game Corner', color: '#6b3fa0' },
+  trick: { label: 'Trick or Treat', color: '#ff8a2a' },
 }
 
 /** A fresh condition of each kind, for the kind picker. */
@@ -160,13 +162,15 @@ function AreaEditor({ area }: { area: Row }) {
   const copiesOf = (l: Row) => lootCopies({ weight: n(l.weight), unique: !!l.unique_find })
   const lootTotal = lootHere.reduce((sum, l) => sum + copiesOf(l), 0) || 1
   if (!data) return null
-  const can = { wild: wildHere.length > 0, trainer: tHere.length > 0, item: lootHere.length > 0 }
+  // Trick or Treat (docs/28) is dealt where the area has a ghost list, and only while its switch is on for the player.
+  const can = { wild: wildHere.length > 0, trainer: tHere.length > 0, item: lootHere.length > 0, trick: trickGhosts(data, id).length > 0 }
   const deck = deckCounts(weights, can)
-  const deckTotal = deck.wild + deck.trainer + deck.center + deck.item + deck.casino
+  const deckTotal = KINDS.reduce((sum, k) => sum + deck[k], 0)
   const missing: Partial<Record<EncounterKind, string>> = {
     wild: can.wild ? undefined : 'the wild pool is empty',
     trainer: can.trainer ? undefined : 'the trainer pool is empty',
     item: can.item ? undefined : 'there is no loot',
+    trick: can.trick ? undefined : 'no ghost list (Events → Trick or Treat)',
   }
   const setBosses = (next: BossDef[]) => patch({ legendary_boss: next.length ? next : null })
   const lootLabel = (k: string) => (k === 'money' ? '₽ Pokédollars' : (data.items[k]?.name ?? `${k} (unknown item)`))
@@ -287,7 +291,7 @@ function AreaEditor({ area }: { area: Row }) {
           title="Encounter deck" icon="dice"
           hint="Each number is how many copies of that card go in the area's deck. Going through the deck is a round; a new round deals it again, shuffled, and opens with a Pokémon Center when one would help (on top of the Center cards here). Gym battles and legendaries are challenges the player picks, on top of the deck."
         >
-          <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-6">
             {KINDS.map((k) => (
               <div key={k} className="flex flex-col gap-1">
                 <span className="flex items-center gap-1.5 text-lg leading-none">
@@ -296,6 +300,9 @@ function AreaEditor({ area }: { area: Row }) {
                 </span>
                 <Stepper label={`${CARD[k].label} copies`} value={n(weights[k])} max={50} onChange={(v) => patch({ encounter_weights: { ...weights, [k]: v } })} />
                 {missing[k] && n(weights[k]) > 0 && <span className="text-sm leading-tight text-danger">not dealt: {missing[k]}</span>}
+                {k === 'trick' && !missing.trick && n(weights[k]) > 0 && (
+                  <span className="text-sm leading-tight text-muted">only while its switch is on (Events → Trick or Treat)</span>
+                )}
               </div>
             ))}
           </div>

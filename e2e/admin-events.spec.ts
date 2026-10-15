@@ -56,6 +56,24 @@ test('Events: a tab per event, each Off / On for admin / On for everyone', async
   await expect(page.getByRole('button', { name: 'New live event' })).toBeVisible()
 })
 
+test('Trick or Treat: its switch, the tiers’ exact rates, an area’s ghosts prefilled from its wild pool', async ({ page }) => {
+  test.setTimeout(120_000)
+  await page.setViewportSize({ width: 1440, height: 1000 })
+  await admin(page)
+  await page.goto('/admin/events?tab=trick')
+  const tabs = page.getByRole('navigation', { name: 'Events' })
+  await expect(tabs.getByRole('button', { name: 'Trick or Treat Off' })).toBeVisible({ timeout: 30_000 })
+  await expect(page.getByTestId('trick-rates-common')).toContainText('Best play 74.7 %')
+  await page.getByRole('radiogroup', { name: 'Trick or Treat: who sees it' }).getByRole('radio', { name: 'On for admin' }).click()
+  await expect(tabs.getByRole('button', { name: 'Trick or Treat Admin' })).toBeVisible()
+  // Pokémon Tower's ghosts, from its wild pool.
+  await page.getByRole('combobox', { name: 'Area', exact: true }).selectOption({ label: 'KANTO · Pokémon Tower · no card' })
+  await page.getByRole('button', { name: 'Prefill from the wild pool' }).click()
+  await expect(page.getByLabel('Tier').first()).toBeVisible()
+  await expect(page.getByText("This area's deck has no Trick or Treat card")).toBeVisible()
+  await expect(page.getByText(/^Unsaved: game_config/)).toBeVisible()
+})
+
 test('Raids: the calendar, a day swapped by hand (today pinned with it), a raid Pokémon’s own numbers', async ({ page }) => {
   test.setTimeout(180_000)
   await page.setViewportSize({ width: 1440, height: 1000 })

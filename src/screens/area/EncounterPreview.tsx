@@ -19,6 +19,7 @@ import { TrainerSprite } from '@/components/TrainerArt'
 import { TypeBadge } from '@/components/TypeBadge'
 import { foeTypes } from '@/components/TypeMatchups'
 import { ShinyParadeChip } from '@/screens/events/live'
+import { TrickCard } from '@/components/TrickOrTreat'
 import { useGame } from '@/store/game'
 import { canSkipCurrent, declineChallenge, engage, skipEncounter } from '@/store/run'
 import { cx } from '@/theme/util'
@@ -264,6 +265,7 @@ const TITLES: Record<Encounter['kind'], string> = {
   item: 'ui.enc.titleItem',
   center: 'ui.enc.titleCenter',
   casino: 'ui.enc.titleCasino',
+  trick: 'ui.enc.titleTrick',
 }
 
 /** The encounter, in a pop-up (a bottom sheet on phones): the opponent, who to send out, FIGHT or FLEE (AVOID a trainer). */
@@ -274,7 +276,7 @@ export function EncounterPreview({ enc }: { enc: Encounter }) {
   const save = useGame((s) => s.save)
   const titleId = useId()
   const skippable = canSkipCurrent()
-  const fight = enc.kind !== 'center' && enc.kind !== 'item' && enc.kind !== 'casino'
+  const fight = enc.kind !== 'center' && enc.kind !== 'item' && enc.kind !== 'casino' && enc.kind !== 'trick'
   const dark = enc.kind === 'boss' || enc.kind === 'gym'
   if (typeof document === 'undefined') return null
 
@@ -316,6 +318,7 @@ export function EncounterPreview({ enc }: { enc: Encounter }) {
           {enc.kind === 'item' && <ItemCard enc={enc} />}
           {enc.kind === 'center' && <CenterCard enc={enc} />}
           {enc.kind === 'casino' && <CasinoCard />}
+          {enc.kind === 'trick' && <TrickCard dex={enc.dex} level={enc.level} tier={enc.tier} isNew={enc.isNew} shiny={enc.shiny} />}
 
           {fight && save && (
             <div className={dark ? 'bg-panel p-2 text-ink' : undefined}>
@@ -336,8 +339,15 @@ export function EncounterPreview({ enc }: { enc: Encounter }) {
             onClick={() => engage(fight ? (lead ?? defaultLead()) : undefined)}
           >
             {fight && <PixelIcon name="sword" size={22} />}
+            {enc.kind === 'trick' && <PixelIcon name="pumpkin" size={22} />}
             {t(
-              enc.kind === 'center' || enc.kind === 'casino' ? 'ui.enc.enter' : enc.kind === 'item' ? 'ui.enc.pickUp' : 'ui.enc.fight',
+              enc.kind === 'center' || enc.kind === 'casino'
+                ? 'ui.enc.enter'
+                : enc.kind === 'item'
+                  ? 'ui.enc.pickUp'
+                  : enc.kind === 'trick'
+                    ? 'ui.trick.start'
+                    : 'ui.enc.fight',
             )}
           </PixelButton>
           {skippable && (

@@ -54,6 +54,7 @@ import { WorldBits } from './kitchen/WorldBits'
 import { GiftBits } from './kitchen/GiftBits'
 import { InviteBits } from './kitchen/InviteBits'
 import { SupportBits } from './kitchen/SupportBits'
+import { TrickBits } from './kitchen/TrickBits'
 import { RotateView } from '@/components/RotateCover'
 import { BadgeIcon, CrownIcon } from '@/components/BadgeIcon'
 import { BoardRow } from '@/components/BoardRow'
@@ -623,6 +624,10 @@ export function KitchenSink() {
 
       <Section title="Small worlds: square, pop-up, partner pick, strip, squares inside, boosters, dice level, mythical card, closing, away page">
         <WorldBits />
+      </Section>
+
+      <Section title="Trick or Treat: the gauge of each tier, Treat and Trick Ball, rarity chips, the stage's looks, preview card, results, rules">
+        <TrickBits />
       </Section>
 
       <Section title="StatusIcons · PixelIcon">

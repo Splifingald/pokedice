@@ -8,6 +8,7 @@ import { useT } from '@/i18n/react'
 import { useGame } from '@/store/game'
 import { BattleView } from './battle/BattleView'
 import { CasinoView } from './area/CasinoView'
+import { TrickView } from './area/TrickView'
 import { AreaIdle } from './area/AreaIdle'
 import { CenterView } from './area/CenterView'
 import { EncounterPreview } from './area/EncounterPreview'
@@ -119,6 +120,7 @@ export function AreaScreen() {
       {run.phase === 'preview' && run.encounter && <EncounterPreview enc={run.encounter} />}
       {run.phase === 'center' && <CenterView />}
       {run.phase === 'casino' && <CasinoView />}
+      {run.phase === 'trick' && run.trick && <TrickView key={run.trick.id} />}
       {run.phase === 'idle' && <AreaIdle area={area} />}
     </div>
   )

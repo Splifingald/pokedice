@@ -1,6 +1,6 @@
 // Haunted Hollow's content (docs/26 §2): the rules the user set hold in the data itself.
 import { describe, expect, it } from 'vitest'
-import { compileGameData, regionSpecies, worldProblems, smallWorlds, type GameData } from '@/engine'
+import { compileGameData, ghostsFromWildPool, regionSpecies, trickCfg as trickOrTreatCfg, worldProblems, smallWorlds, type GameData } from '@/engine'
 import { BUNDLE } from '@/config/bundle'
 import { AREAS, REGION_ID, WORLD_ID, haunted, withHaunted } from '../../scripts/content-haunted-hollow'
 
@@ -49,19 +49,38 @@ describe('Haunted Hollow', () => {
     expect(early.flatMap(areaMons).filter((d) => typesOf(d).includes('dark'))).toEqual([])
   })
 
-  it('deals 10 cards in every main area, a short deck in the secret ones, each with one item and one Center', () => {
+  it('deals 11 cards in every main area (one Trick or Treat), a short deck in the secret ones, each with one item and one Center', () => {
     for (const a of h.areas) {
       const w = a.encounterWeights
-      const total = w.wild + w.trainer + w.item + w.center + (w.casino ?? 0)
+      const total = w.wild + w.trainer + w.item + w.center + (w.casino ?? 0) + (w.trick ?? 0)
       if (a.name === 'Shadow Elite') {
         expect(total).toBe(0)
         expect(a.gyms).toHaveLength(5)
         continue
       }
-      expect([a.name, total]).toEqual([a.name, a.hidden ? 6 : 10])
-      expect([w.item, w.center]).toEqual([1, 1])
+      expect([a.name, total]).toEqual([a.name, a.hidden ? 6 : 11])
+      expect([w.item, w.center, w.trick ?? 0]).toEqual([1, 1, a.hidden ? 0 : 1])
     }
     expect(AREAS).toHaveLength(16)
+  })
+
+  it('lists Trick or Treat ghosts for each main area: ghost types only, the wild ones with their tiers, Frozen Lake’s own', () => {
+    const lists = trickOrTreatCfg(data).areas
+    const main = h.areas.filter((a) => !a.hidden && a.wildPool.length)
+    expect(main).toHaveLength(10)
+    for (const a of main) {
+      const list = lists[a.id]!
+      expect(list.length, a.name).toBeGreaterThan(0)
+      for (const g of list) expect(typesOf(g.dex), `${a.name} #${g.dex}`).toContain('ghost')
+      if (a.name === 'Frozen Lake')
+        expect(list).toEqual([
+          { dex: 353, tier: 'common' },
+          { dex: 355, tier: 'common' },
+          { dex: 478, tier: 'veryRare' },
+        ])
+      else expect(list, a.name).toEqual(ghostsFromWildPool(a, data))
+    }
+    expect(trickOrTreatCfg(data).access).toBe('off')
   })
 
   it('opens its secret areas as the user set: 20 and 50 caught, a Pokémon at Lv.60, the Elite beaten, all but Giratina', () => {

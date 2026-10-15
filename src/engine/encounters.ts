@@ -7,6 +7,7 @@ import { pityChance } from './pity'
 import { asSeenBy, gymsFor, type PlayerSide } from './rival'
 import type { Rng } from './rng'
 import { dealTrainerItems } from './trainerItems'
+import { pickTrickGhost, trickDealable } from './trickOrTreat'
 import { isWorldMythical, worldOfArea } from './worldList'
 import type {
   Area,
@@ -21,6 +22,7 @@ import type {
   Trainer,
   TrainerMon,
   TrainerRole,
+  TrickTier,
   WildPoolEntry,
 } from './types'
 
@@ -51,6 +53,8 @@ export type Encounter =
   | { kind: 'item'; entryId: string; itemKey: string; qty: number }
   /** The Game Corner: play the slot machine as long as you like. */
   | { kind: 'casino' }
+  /** Trick or Treat (docs/28): a ghost from the area's list, tempted with Treats and caught with a Trick Ball. */
+  | { kind: 'trick'; dex: number; level: number; tier: TrickTier; isNew: boolean; shiny?: boolean }
 
 export type ForceKind = EncounterKind | 'boss' | 'gym'
 
@@ -278,6 +282,20 @@ export function rollWild(ctx: EncounterContext, rng: Rng): Encounter | null {
   return { kind: 'wild', dex: entry.dex, level, isNew: !ctx.pokedex.includes(entry.dex), ...(shiny && { shiny }) }
 }
 
+/**
+ * A Trick or Treat card (docs/28): a ghost from the area's list (by its tier's weight), at a level of the area's range
+ * (around the team for an area that scales), with the wild shiny odds. Null while the switch is off for the player or
+ * the area has no ghosts: the card is then discarded like any card the area can't produce.
+ */
+export function rollTrick(ctx: EncounterContext, rng: Rng): Encounter | null {
+  if (!trickDealable(ctx.data, ctx.area)) return null
+  const ghost = pickTrickGhost(ctx.data, ctx.area.id, rng)
+  if (!ghost) return null
+  const level = enemyLevel(rng.int(ctx.area.minLevel, Math.max(ctx.area.minLevel, ctx.area.maxLevel)), ctx, rng)
+  const shiny = !shinyLocked(ctx.data, ghost.dex) && rollShiny(ctx.data, rng, ctx.shinyBoost)
+  return { kind: 'trick', dex: ghost.dex, level, tier: ghost.tier, isNew: !ctx.pokedex.includes(ghost.dex), ...(shiny && { shiny }) }
+}
+
 export function rollTrainer(ctx: EncounterContext, rng: Rng): Encounter | null {
   const entry = rng.weighted(ctx.area.trainerPool, (t) => (ctx.data.trainers[t.trainerId] ? t.weight : 0))
   const trainer = entry && ctx.data.trainers[entry.trainerId]
@@ -295,33 +313,35 @@ export function rollTrainer(ctx: EncounterContext, rng: Rng): Encounter | null {
   }
 }
 
-const DECK_KINDS = ['wild', 'trainer', 'center', 'item', 'casino'] as const
+const DECK_KINDS = ['wild', 'trainer', 'center', 'item', 'casino', 'trick'] as const
 export type DeckCounts = Record<(typeof DECK_KINDS)[number], number>
 
 /**
  * Cards of each kind in one encounter deck. An area's encounter weight *is* its number of copies (v1.6): wild 8,
- * Center 1, item 1 → a 10-card deck. Kinds the area can't produce (no wild pool / no trainers / no loot) get none; an
- * area with nothing at all gets a single Center.
+ * Center 1, item 1 → a 10-card deck. Kinds the area can't produce (no wild pool / no trainers / no loot / Trick or Treat
+ * switched off or no ghosts) get none; an area with nothing at all gets a single Center.
  */
 export function deckCounts(
   weights: Partial<Record<EncounterKind, number>>,
-  can: { wild: boolean; trainer: boolean; item?: boolean },
+  can: { wild: boolean; trainer: boolean; item?: boolean; trick?: boolean },
 ): DeckCounts {
   const copies = (k: (typeof DECK_KINDS)[number]) =>
-    (k === 'wild' && !can.wild) || (k === 'trainer' && !can.trainer) || (k === 'item' && !can.item)
+    (k === 'wild' && !can.wild) || (k === 'trainer' && !can.trainer) || (k === 'item' && !can.item) || (k === 'trick' && !can.trick)
       ? 0
       : Math.max(0, Math.round(Number(weights[k]) || 0))
-  const c = { wild: copies('wild'), trainer: copies('trainer'), center: copies('center'), item: copies('item'), casino: copies('casino') }
-  return c.wild + c.trainer + c.center + c.item + c.casino > 0 ? c : { wild: 0, trainer: 0, center: 1, item: 0, casino: 0 }
+  const c = Object.fromEntries(DECK_KINDS.map((k) => [k, copies(k)])) as DeckCounts
+  return DECK_KINDS.some((k) => c[k] > 0) ? c : { wild: 0, trainer: 0, center: 1, item: 0, casino: 0, trick: 0 }
 }
 
-/** Cards in one freshly dealt encounter deck of the area. */
-export const deckSize = (area: Area) => Object.values(deckCounts(area.encounterWeights, deckAbilities(area))).reduce((a, b) => a + b, 0)
+/** Cards in one freshly dealt encounter deck of the area (Trick or Treat counted only with the game data to say so). */
+export const deckSize = (area: Area, data?: GameData) =>
+  Object.values(deckCounts(area.encounterWeights, deckAbilities(area, data))).reduce((a, b) => a + b, 0)
 
-export const deckAbilities = (area: Area) => ({
+export const deckAbilities = (area: Area, data?: GameData) => ({
   wild: area.wildPool.length > 0,
   trainer: area.trainerPool.length > 0,
   item: area.lootPool.length > 0,
+  trick: !!data && trickDealable(data, area),
 })
 
 /**
@@ -336,8 +356,7 @@ export function buildDeck(
   extra: readonly DeckCard[] = [],
   opts: { noCenterFirst?: boolean; noCenters?: boolean } = {},
 ): DeckCard[] {
-  void data
-  const counts = deckCounts(area.encounterWeights, deckAbilities(area))
+  const counts = deckCounts(area.encounterWeights, deckAbilities(area, data))
   const c = opts.noCenters ? { ...counts, center: 0 } : counts
   const others = shuffle([...DECK_KINDS.filter((k) => k !== 'center').flatMap((k) => Array.from({ length: c[k] }, (): DeckCard => k)), ...extra], rng)
   // Centers go into distinct gaps between the other cards (gap i = just before the i-th card drawn).
@@ -451,14 +470,16 @@ function returningLegend(ctx: EncounterContext, rng: Rng): Encounter | null {
   return b ? { kind: 'boss', dex: b.dex, level: b.level, returning: true, ...(legendShiny(b, ctx.area, ctx.data, rng) && { shiny: true }) } : null
 }
 
-const cardEncounter = (card: 'wild' | 'trainer' | 'center' | 'casino', ctx: EncounterContext, rng: Rng): Encounter | null =>
+const cardEncounter = (card: 'wild' | 'trainer' | 'center' | 'casino' | 'trick', ctx: EncounterContext, rng: Rng): Encounter | null =>
   card === 'wild'
     ? rollWild(ctx, rng)
     : card === 'trainer'
       ? rollTrainer(ctx, rng)
       : card === 'casino'
         ? { kind: 'casino' }
-        : { kind: 'center', forced: false }
+        : card === 'trick'
+          ? rollTrick(ctx, rng)
+          : { kind: 'center', forced: false }
 
 /** The extra card a fled legendary adds to every deck dealt until it's caught. */
 const legendCards = (ctx: EncounterContext): DeckCard[] => (fledLegendary(ctx.area, ctx.progress, ctx.pokedex, ctx.data) ? ['legend'] : [])
@@ -470,7 +491,7 @@ function drawFromDeck(ctx: EncounterContext, rng: Rng): EncounterRoll {
   let deck = newRound ? deal() : [...ctx.progress.deck!]
   let drawn: DeckCard[] = []
   // A card the area can no longer produce (content edited since the deal, a legendary caught) is discarded.
-  const tries = 2 * (deck.length + deckSize(ctx.area) + 1)
+  const tries = 2 * (deck.length + deckSize(ctx.area, ctx.data) + 1)
   for (let i = 0; i < tries; i++) {
     if (!deck.length) {
       deck = deal()
@@ -510,13 +531,14 @@ function drawFromDeck(ctx: EncounterContext, rng: Rng): EncounterRoll {
 
 function rollWeighted(ctx: EncounterContext, rng: Rng): EncounterRoll {
   const w = ctx.area.encounterWeights
-  const can = deckAbilities(ctx.area)
-  const kinds: { kind: 'wild' | 'trainer' | 'center' | 'item' | 'casino'; weight: number }[] = [
+  const can = deckAbilities(ctx.area, ctx.data)
+  const kinds: { kind: 'wild' | 'trainer' | 'center' | 'item' | 'casino' | 'trick'; weight: number }[] = [
     { kind: 'wild', weight: can.wild ? w.wild : 0 },
     { kind: 'trainer', weight: can.trainer ? w.trainer : 0 },
     { kind: 'center', weight: ctx.noCenters ? 0 : w.center },
     { kind: 'item', weight: can.item ? (w.item ?? 0) : 0 },
     { kind: 'casino', weight: w.casino ?? 0 },
+    { kind: 'trick', weight: can.trick ? (w.trick ?? 0) : 0 },
   ]
   for (let attempt = 0; attempt < 10; attempt++) {
     const pick = rng.weighted(kinds, (k) => k.weight)?.kind ?? 'wild'
@@ -547,6 +569,8 @@ function forcedEncounter(ctx: EncounterContext, kind: ForceKind, rng: Rng): Enco
       return { kind: 'center', forced: false }
     case 'casino':
       return { kind: 'casino' }
+    case 'trick':
+      return rollTrick(ctx, rng)
     case 'boss': {
       const b = fightBosses(ctx.area, ctx.data).find((x) => !ctx.progress.bossesDefeated.includes(x.dex))
       return b ? { kind: 'boss', dex: b.dex, level: b.level, ...(legendShiny(b, ctx.area, ctx.data, rng) && { shiny: true }) } : returningLegend(ctx, rng)
