@@ -952,6 +952,16 @@ export const AREAS: AreaSpec[] = [
       [709, 15, 65, 69],
       [429, 15, 65, 69],
       [887, 2, 68, 70],
+      // Added 2026-10-15 (the user, docs/28): Haunter and Dusclops as reliefs, weaker; the others as strong as the rest.
+      [93, 12, 55, 58],
+      [356, 12, 56, 59],
+      [229, 15, 65, 69],
+      [302, 15, 65, 69],
+      [478, 15, 65, 69],
+      [711, 15, 65, 69],
+      [770, 15, 65, 69],
+      [778, 15, 65, 69],
+      [855, 15, 65, 69],
     ],
     trainers: [
       {
