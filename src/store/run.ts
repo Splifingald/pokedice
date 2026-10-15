@@ -74,6 +74,7 @@ import {
   portalLevels,
   portalLock,
   portalNoCatch,
+  portalNextCard,
   portalStateOf,
   startPortalRun,
   type BattleEvent,
@@ -191,6 +192,11 @@ function settleRound(quiet = false): Extract<RunEvent, { kind: 'area_cleared' }>
 function backToArea() {
   setRun({ phase: 'idle', encounter: null })
   settleRound()
+  // In a portal run, a distortion next is turned over at once: its boons, with no stop on the area's page first (the
+  // user, 2026-10-15).
+  const { save, data, run } = useGame.getState()
+  if (save && run.areaId && inPortalRun(save, data, run.areaId) && portalNextCard(save, run.areaId) === 'distortion')
+    rollNext()
 }
 
 /** Everything `nextEncounter` needs about the save and the area, as things stand. */
@@ -726,6 +732,9 @@ export function continueAfterVictory(leadUid?: string) {
  * the trip Home. Call it once the battle is closed (continueAfterVictory).
  */
 export function continueExploring() {
+  // A portal run just won (its last distortion turned over on the way back): its victory shows first, nothing else.
+  const { save, run } = useGame.getState()
+  if (save && run.areaId && portalStateOf(save, run.areaId).won && !portalStateOf(save, run.areaId).wonSeen) return
   challenge()
   if (useGame.getState().run.phase === 'idle') rollNext()
 }

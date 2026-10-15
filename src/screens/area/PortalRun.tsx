@@ -46,6 +46,7 @@ import {
   pickDistortionOffer,
 } from '@/store/run'
 import { travelTo } from '@/store/travel'
+import { AreaTeam } from './AreaIdle'
 
 const markSeen = () => mutateSave((s) => (s.portalRulesSeen ? null : { ...s, portalRulesSeen: true }))
 
@@ -160,6 +161,8 @@ export function PortalStep({ area }: { area: Area }) {
             pickDistortionOffer(i)
           }}
         />
+        {/* The team under the boons, over the run's bonuses: who is K.O., how much HP is left (the user, 2026-10-15). */}
+        <AreaTeam />
         <PortalBonuses area={area} />
       </div>
     )

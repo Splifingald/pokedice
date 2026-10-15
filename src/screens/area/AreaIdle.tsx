@@ -19,13 +19,10 @@ export function AreaIdle({ area }: { area: Area }) {
   const { t } = useT()
   const navigate = useNavigate()
   const save = useGame((s) => s.save)
-  const max = useGame((s) => s.data.config.maxTeamSize)
   const { label, sub, go, explore, off, gym, boss, raid, closed, empty, resting } = useContinue(area)
-  const [view, setView] = useState<SheetView | null>(null)
   // Inside a portal run (docs/28) there is no way Home: CONTINUE alone.
   const locked = useGame((s) => !!portalLock(s.save, s.data))
   if (!save) return null
-  const team = teamOf(save)
 
   return (
     // Phones: room at the bottom for the action bar, which is pinned over the tab bar.
@@ -45,20 +42,7 @@ export function AreaIdle({ area }: { area: Area }) {
         </div>
       )}
 
-      <section className="flex flex-col gap-2">
-        <h2 className="text-3xl">{t('ui.center.teamCount', { count: team.length, max })}</h2>
-        <ol className="grid gap-2 md:grid-cols-3">
-          {team.map((p, i) => (
-            <li key={p.id}>
-              <MonCard
-                inst={p}
-                onClick={() => setView({ kind: 'inst', id: p.id })}
-                badge={i === 0 ? <PixelIcon name="crown" size={20} title={t('ui.team.lead')} /> : null}
-              />
-            </li>
-          ))}
-        </ol>
-      </section>
+      <AreaTeam />
 
       {/* Always on screen: phones pin it right above the tab bar; from 768px it sticks to the content column. */}
       <div
@@ -84,8 +68,36 @@ export function AreaIdle({ area }: { area: Area }) {
           </div>
         </div>
       </div>
-
-      <SheetModal view={view} onClose={() => setView(null)} manage />
     </div>
+  )
+}
+
+/**
+ * The team between encounters: each Pokémon's card (HP, K.O.), the lead crowned, a tap opens its sheet. On the area's
+ * page, and under a distortion's boons (docs/28), so who is K.O. and how much HP is left show where the boon is picked.
+ */
+export function AreaTeam() {
+  const { t } = useT()
+  const save = useGame((s) => s.save)
+  const max = useGame((s) => s.data.config.maxTeamSize)
+  const [view, setView] = useState<SheetView | null>(null)
+  if (!save) return null
+  const team = teamOf(save)
+  return (
+    <section className="flex flex-col gap-2">
+      <h2 className="text-3xl">{t('ui.center.teamCount', { count: team.length, max })}</h2>
+      <ol className="grid gap-2 md:grid-cols-3">
+        {team.map((p, i) => (
+          <li key={p.id}>
+            <MonCard
+              inst={p}
+              onClick={() => setView({ kind: 'inst', id: p.id })}
+              badge={i === 0 ? <PixelIcon name="crown" size={20} title={t('ui.team.lead')} /> : null}
+            />
+          </li>
+        ))}
+      </ol>
+      <SheetModal view={view} onClose={() => setView(null)} manage />
+    </section>
   )
 }

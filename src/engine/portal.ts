@@ -147,6 +147,12 @@ export function drawPortalCard(
   return { save: withPortal(save, areaId, { ...p, deck }), card }
 }
 
+/** The card the run turns over next (the deck is drawn from its end), or null between cycles, outside a run or with a choice waiting. */
+export function portalNextCard(save: SaveData, areaId: string): PortalCard | null {
+  const p = portalStateOf(save, areaId)
+  return p.active && !p.offers?.length ? (p.deck[p.deck.length - 1] ?? null) : null
+}
+
 /** What a wild card or a find card turns into: a wild Pokémon from the area's pool, or a find from its loot. */
 export function portalEncounter(
   ctx: EncounterContext,

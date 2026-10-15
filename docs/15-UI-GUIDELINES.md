@@ -933,7 +933,7 @@ full-screen flash).
 - **The gauge**: the round gauge's place, the same tiles (`DistortionGauge`): a tile per portal, the closed ones lilac
   with a check, the next with the gold edge, "3/10"; an image with "Portals closed: 3/10" for screen readers. On the
   header, over every action bar, on the result card.
-- **A distortion** (`DistortionChoiceView`): a panel with the void's purple along its top, the small portal turning
+- **A distortion** (`DistortionChoiceView`): turned over as soon as the player is back from the card before it (no stop on the area's page first; the user, 2026-10-15), then the team under the boons (`AreaTeam`: who is K.O., how much HP is left), over the run's bonuses. A panel with the void's purple along its top, the small portal turning
   (`PortalArt`, a canvas), "Distortion
   4/10" and "Pick one boon to close this portal", then the boons as big buttons (one column on a phone, three from 768
   px): an icon (a heart; the Pokémon to revive; the type's badge; a die of its type; the first item), a title that names

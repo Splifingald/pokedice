@@ -15,6 +15,7 @@ import {
   drawOffers,
   emptyProgress,
   drawPortalCard,
+  portalNextCard,
   eligibleOffers,
   enterWorld,
   inPortalRun,
@@ -149,6 +150,17 @@ describe('the deck', () => {
     expect(cards[6]).toBe('distortion')
     expect(cards.slice(0, 6)).not.toContain('distortion')
     expect(cards[7]).not.toBe('distortion')
+  })
+
+  it('tells which card comes next: the distortion after the sixth draw, nothing while a choice waits', () => {
+    let s = inRun()
+    const r = rng()
+    for (let i = 0; i < 6; i++) {
+      expect(portalNextCard(s, DW.id)).not.toBe('distortion')
+      s = drawPortalCard(s, data, DW.id, r)!.save
+    }
+    expect(portalNextCard(s, DW.id)).toBe('distortion')
+    expect(portalNextCard(withPortal(s, { offers: [{ kind: 'item' }] }), DW.id)).toBeNull()
   })
 
   it('waits while a distortion is open', () => {
