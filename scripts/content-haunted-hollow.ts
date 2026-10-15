@@ -2,11 +2,13 @@
  * Haunted Hollow (docs/26): the ghost small world, as content. `haunted()` builds its region, areas, trainers and the
  * world's settings; `pnpm haunted-hollow <in-bundle.json> <out-bundle.json>` adds them to an admin export (replacing an
  * earlier copy of them) for `pnpm import-bundle`, and `pnpm haunted-hollow --sql <out.sql>` writes the same as a migration
- * (supabase/migrations/0052_haunted_hollow.sql). Ids are stable (`stableUuid`), so a re-run updates in place.
+ * (supabase/migrations/0052_haunted_hollow.sql). Ids are stable (`stableUuid`), so a re-run updates in place. Later
+ * changes reach a live database as patches of their own (0055: scripts/patch-hh-new-species.ts), as 0052 has run there.
  *
  * The rules it keeps (the user's, 2026-10-13): 10 areas easy to hard, the first a simple road; each deck 10 cards with
  * one item and one Pokémon Center; the Shadow Elite's five fights; five short secret areas, each with its boss or raid;
- * 120 Pokémon to catch; no Normal or Fighting type anywhere, no item-evolving filler, no Dark type before area 5.
+ * 124 Pokémon to catch; no Normal or Fighting type anywhere (but Riolu and Lucario, the user's call of 2026-10-15), no
+ * item-evolving filler, no Dark type before area 5.
  */
 import { readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
@@ -172,6 +174,8 @@ export const AREAS: AreaSpec[] = [
       [204, 15, 12, 15],
       [12, 4, 14, 16],
       [15, 4, 14, 16],
+      // Added 2026-10-15 (docs/26 §2.8), last so a patched export lists its pool as this does.
+      [595, 20, 11, 14],
     ],
     trainers: [
       {
@@ -280,6 +284,8 @@ export const AREAS: AreaSpec[] = [
       [261, 15, 21, 25],
       [75, 5, 24, 26],
       [305, 3, 25, 26],
+      // Added 2026-10-15 (docs/26 §2.8): Fighting, the one exception to the filler rule.
+      [447, 15, 21, 25],
     ],
     trainers: [
       {
@@ -464,6 +470,8 @@ export const AREAS: AreaSpec[] = [
       [227, 10, 39, 42],
       [680, 4, 41, 43],
       [375, 3, 42, 43],
+      // Added 2026-10-15 (docs/26 §2.8).
+      [596, 4, 41, 43],
     ],
     trainers: [
       {
@@ -609,6 +617,8 @@ export const AREAS: AreaSpec[] = [
       [202, 6, 51, 54],
       [356, 6, 51, 54],
       [229, 5, 52, 54],
+      // Added 2026-10-15 (docs/26 §2.8): Fighting, the one exception to the filler rule.
+      [448, 5, 52, 54],
     ],
     trainers: [
       {
@@ -972,12 +982,13 @@ const SHOP: SmallWorld['shop'] = [
   { key: 'poke-ball', price: 20, limit: null },
   { key: 'great-ball', price: 50, limit: null },
   { key: 'ultra-ball', price: 100, limit: null },
-  { key: 'master-ball', price: 5000, limit: 1 },
+  // ₽999 and the Link Cable ₽300 since 2026-10-15 (docs/26 §2.8: 0055 patches the live Mart).
+  { key: 'master-ball', price: 999, limit: 1 },
   { key: 'potion', price: 15, limit: null },
   { key: 'super-potion', price: 35, limit: null },
   { key: 'hyper-potion', price: 80, limit: null },
   { key: 'revive', price: 300, limit: null },
-  { key: 'link-cable', price: 1000, limit: null },
+  { key: 'link-cable', price: 300, limit: null },
   { key: 'dusk-stone', price: 200, limit: null },
   { key: 'dawn-stone', price: 200, limit: null },
   { key: 'reaper-cloth', price: 200, limit: null },
