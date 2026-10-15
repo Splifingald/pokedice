@@ -920,8 +920,8 @@ full-screen flash).
   prompt a real button with the focus); a tap anywhere, a click, Enter or Space raises the pop-up over that end. It has no
   SKIP (the user, 2026-10-15): a tap or Esc while it plays does nothing, it plays out; `short` plays it
   in half the time; motion off shows the end at once, still, waiting too. Then its pop-up (`PortalEntryDialog`) **rises
-  over the breach's end** (the scene stays under it as its backdrop): at the bottom of the screen and at most 64 % of
-  its height, so the portal turns above it; the rules scroll inside; then a row with a heart, "Healed as at a Pokémon
+  over the breach's end** (the scene stays under it as its backdrop): at the bottom of the screen and up to 92 % of
+  its height (room to read first, the portal above it when there is room; the user, 2026-10-15); the rules scroll inside; then a row with a heart, "Healed as at a Pokémon
   Center: you can still swap Pokémon with your Box before going in." and **TEAM**; the warning in a red-ringed note
   with its icon; **NOT NOW** (Home) and **READY!**. On its own (the kitchen sink) it keeps the Distortion World as its
   banner (`PortalScene`).

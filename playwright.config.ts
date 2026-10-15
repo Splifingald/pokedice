@@ -23,6 +23,8 @@ export default defineConfig({
     timeout: 120_000,
     env: {
       VITE_SUPABASE_URL: 'http://127.0.0.1:54399',
+      // The build id the specs' cached content carries (e2e/helpers.ts E2E_BUILD, src/config/contentCache.ts).
+      E2E_BUILD_ID: 'e2e',
       VITE_SUPABASE_ANON_KEY: 'e2e-anon-key',
       VITE_ADMIN_EMAIL: 'admin@example.com',
       // A key pair made for the tests (e2e/push.spec.ts stands in for the browser's push service): not the game's.

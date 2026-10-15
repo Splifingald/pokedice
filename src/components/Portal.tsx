@@ -290,8 +290,9 @@ export function PortalEntryDialog({
       onClose={onNotNow}
       title={t('ui.portal.enterTitle')}
       bottom={!banner}
-      // Over the breach: short enough for its portal to show above, the rules scrolling inside.
-      className={cx('portal-dialog max-w-md', !banner && 'flex !max-h-[64dvh] flex-col')}
+      // Over the breach, at the bottom: as tall as the rules need, up to nearly the whole screen (the user, 2026-10-15:
+      // room to read beats seeing the portal), the rules scrolling inside past that.
+      className={cx('portal-dialog max-w-md', !banner && 'flex !max-h-[92dvh] flex-col')}
     >
       <div className={cx('flex flex-col gap-3', !banner && 'min-h-0 flex-1')}>
         {banner && (

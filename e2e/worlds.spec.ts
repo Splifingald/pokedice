@@ -133,7 +133,7 @@ async function boot(page: Page, save: SaveData, now = NOW, settings = FAST, worl
       req.onupgradeneeded = () => req.result.createObjectStore('content')
       req.onsuccess = () => {
         const db = req.result
-        db.transaction('content', 'readwrite').objectStore('content').put({ version: Number(v), bundle: JSON.parse(b!) }, 'remote')
+        db.transaction('content', 'readwrite').objectStore('content').put({ version: Number(v), build: 'e2e', bundle: JSON.parse(b!) }, 'remote')
       }
     },
     [JSON.stringify(save), settings, JSON.stringify(bundle(world)), String(VERSION), STORAGE_KEY],

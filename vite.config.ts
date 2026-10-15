@@ -37,9 +37,10 @@ function devBundleWriter(): Plugin {
 
 /**
  * Each build's id: the commit (Netlify sets COMMIT_REF) and the build time. Baked into the code as __BUILD_ID__ and
- * written to /version.json, which open tabs check to know a newer build is out (src/store/sync.ts).
+ * written to /version.json, which open tabs check to know a newer build is out (src/store/sync.ts). The e2e server fixes
+ * it (E2E_BUILD_ID): its specs put content in the cache, which only the build that saved it reuses (contentCache.ts).
  */
-const BUILD_ID = `${(process.env.COMMIT_REF ?? 'local').slice(0, 7)}-${Date.now().toString(36)}`
+const BUILD_ID = process.env.E2E_BUILD_ID ?? `${(process.env.COMMIT_REF ?? 'local').slice(0, 7)}-${Date.now().toString(36)}`
 
 function buildVersion(): Plugin {
   return {

@@ -128,7 +128,7 @@ async function boot(page: Page, save: SaveData, wild: [number, number] = EASY, s
         req.result
           .transaction('content', 'readwrite')
           .objectStore('content')
-          .put({ version: Number(v), bundle: JSON.parse(b!) }, 'remote')
+          .put({ version: Number(v), build: 'e2e', bundle: JSON.parse(b!) }, 'remote')
       }
     },
     [JSON.stringify(save), settings, JSON.stringify(bundle(wild)), String(VERSION), STORAGE_KEY],
