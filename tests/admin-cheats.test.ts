@@ -3,13 +3,14 @@ import { describe, expect, it } from 'vitest'
 import {
   adminAddPokemon,
   adminAddRegionPokemon,
+  adminCatchRandomMissing,
   adminCompleteLeague,
   adminGiveItem,
   adminRemovePokemon,
   adminStartRegion,
   adminStartRoamers,
 } from '@/admin/playerSave'
-import { leagueDone, newSave, offeredRegion, regionOf, type SaveData } from '@/engine'
+import { leagueDone, newSave, offeredRegion, regionOf, regionSpecies, type SaveData } from '@/engine'
 import { decideSync } from '@/save/cloud'
 import { parseSave } from '@/save/schema'
 import { data, newId } from './fixtures'
@@ -110,5 +111,34 @@ describe('admin region cheats', () => {
     const roaming = adminStartRoamers(base, data, 2000)
     for (const dex of data.config.roamers.requires) expect(roaming.pokedex).toContain(dex)
     expect(parseSave(roaming).ok).toBe(true)
+  })
+})
+
+describe('admin cheat: random species not caught yet', () => {
+  const base = newSave(4, data, 1000, newId)
+  const inKanto = regionSpecies(data, 'kanto')
+
+  it('adds that many, all new to the Pokédex and of the region, at the chosen level', () => {
+    const { save: s, added } = adminCatchRandomMissing(base, data, 2000, 'kanto', 5, 30, newId)
+    expect(added).toHaveLength(5)
+    expect(new Set(added).size).toBe(5)
+    for (const dex of added) {
+      expect(inKanto.has(dex)).toBe(true)
+      expect(base.pokedex).not.toContain(dex)
+      expect(s.pokedex).toContain(dex)
+    }
+    expect(s.box.slice(base.box.length).every((p) => p.level === 30)).toBe(true)
+    expect(s.adminEditAt).toBe(2000)
+    expect(parseSave(s).ok).toBe(true)
+  })
+
+  it('gives what is left when fewer are missing, then nothing (the same save)', () => {
+    const missing = [...inKanto].filter((d) => data.species[d] && !base.pokedex.includes(d)).length
+    const all = adminCatchRandomMissing(base, data, 2000, 'kanto', missing + 20, 10, newId)
+    expect(all.added).toHaveLength(missing)
+    const none = adminCatchRandomMissing(all.save, data, 3000, 'kanto', 5, 10, newId)
+    expect(none.added).toEqual([])
+    expect(none.save).toBe(all.save)
+    expect(() => adminCatchRandomMissing(base, data, 2000, 'nowhere', 1, 10, newId)).toThrow()
   })
 })

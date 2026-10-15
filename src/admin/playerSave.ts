@@ -2,7 +2,7 @@
 // time the player opens the game the cloud save wins the sync even if it has less progress (see decideSync).
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { createInstance } from '@/engine/progression'
-import { getRegion, newRegionBlock, regionOf, startRegion, switchRegion } from '@/engine/regions'
+import { getRegion, newRegionBlock, regionOf, regionSpecies, startRegion, switchRegion } from '@/engine/regions'
 import { progressOf } from '@/engine/run'
 import type { GameData, SaveData, SaveMode } from '@/engine/types'
 import { parseSave } from '@/save/schema'
@@ -87,6 +87,46 @@ export function adminAddRegionPokemon(
     },
     now,
   )
+}
+
+/**
+ * `count` species of the region's Pokédex not caught yet, picked at random, at `level` and full HP, placed like
+ * adminAddRegionPokemon. Fewer when fewer are missing; the same save when none is. A shortcut to a secret area's "catch
+ * N" condition (a small world's: play this from inside the world, whose Pokédex is the save's).
+ */
+export function adminCatchRandomMissing(
+  save: SaveData,
+  data: GameData,
+  now: number,
+  regionId: string,
+  count: number,
+  level: number,
+  newId: () => string,
+  random: () => number = Math.random,
+): { save: SaveData; added: number[] } {
+  if (!getRegion(data, regionId)) throw new Error(`Unknown region ${regionId}`)
+  const missing = [...regionSpecies(data, regionId)].filter((dex) => data.species[dex] && !save.pokedex.includes(dex))
+  // Fisher–Yates, then the first `count`.
+  for (let i = missing.length - 1; i > 0; i--) {
+    const j = Math.floor(random() * (i + 1))
+    ;[missing[i], missing[j]] = [missing[j]!, missing[i]!]
+  }
+  const added = missing.slice(0, Math.max(0, count))
+  if (!added.length) return { save, added }
+  const mons = added.map((dex) => createInstance(dex, level, data, newId(), now))
+  const room = Math.max(0, data.config.maxTeamSize - save.team.length)
+  return {
+    save: stamp(
+      {
+        ...save,
+        box: [...save.box, ...mons],
+        team: [...save.team, ...mons.slice(0, room).map((p) => p.id)],
+        pokedex: [...new Set([...save.pokedex, ...added])],
+      },
+      now,
+    ),
+    added,
+  }
 }
 
 // ---------------------------------------------------------------- regions

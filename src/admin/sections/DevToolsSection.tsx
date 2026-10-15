@@ -20,7 +20,13 @@ import {
   type PokeType,
   type SaveData,
 } from '@/engine'
-import { adminAddRegionPokemon, adminCompleteLeague, adminStartRegion, adminStartRoamers } from '../playerSave'
+import {
+  adminAddRegionPokemon,
+  adminCatchRandomMissing,
+  adminCompleteLeague,
+  adminStartRegion,
+  adminStartRoamers,
+} from '../playerSave'
 import { Panel } from '@/components/Panel'
 import { PixelButton } from '@/components/PixelButton'
 import { parseSave } from '@/save/schema'
@@ -147,6 +153,24 @@ export function DevToolsSection() {
     }
   }
 
+  // N random species of the picked region not caught yet (the toast says how many there were left to give).
+  const catchMissing = (n: number) => {
+    let added: number[] = []
+    try {
+      mutateSave((s) => {
+        const res = adminCatchRandomMissing(s, data, Date.now(), regionPick, n, regionLevel, newId)
+        added = res.added
+        return res.save
+      })
+    } catch (e) {
+      pushToast(e instanceof Error ? e.message : String(e), 'bad')
+      return
+    }
+    const name = data.regions.find((r) => r.id === regionPick)?.name ?? regionPick
+    if (added.length) pushToast(`${added.length} new ${name} Pokémon caught (Lv.${regionLevel})`, 'good')
+    else pushToast(`Every ${name} Pokémon is caught already`, 'bad')
+  }
+
   const hurtAll = () => {
     mutateSave((s) => ({
       ...s,
@@ -242,6 +266,11 @@ export function DevToolsSection() {
             >
               Catch all its Pokémon
             </PixelButton>
+            {[1, 5, 10, 20].map((n) => (
+              <PixelButton key={n} size="sm" onClick={() => catchMissing(n)}>
+                +{n} not owned
+              </PixelButton>
+            ))}
           </div>
         </Panel>
 
