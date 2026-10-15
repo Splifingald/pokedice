@@ -523,11 +523,11 @@ export function describeOffer(
   }
 }
 
-/** A boon's icon in its tile. */
+/** A boon's icon in its tile: 44 px square, wider for a long type's badge (PSYCHIC) so it never covers the title. */
 function OfferIcon({ icon }: { icon: ReactNode }) {
   return (
     <span
-      className="relative grid h-11 w-11 shrink-0 place-items-center bg-line shadow-ring-line"
+      className="relative grid h-11 min-w-11 shrink-0 place-items-center bg-line px-1 shadow-ring-line"
       aria-hidden
     >
       {icon}
