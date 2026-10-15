@@ -20,19 +20,21 @@ import {
   type Area,
   type PortalRunMode,
 } from '@/engine'
-import { fxSound } from '@/audio/sfx'
 import { useT } from '@/i18n/react'
 import {
   describeOffer,
   DistortionChoiceView,
   DistortionFx,
   GIRATINA,
+  playPortalClose,
+  PortalCloseFx,
   PortalEntry,
   PortalRulesModal,
   PortalVictoryView,
   RunBonuses,
 } from '@/components/Portal'
 import { InfoButton } from '@/components/RulesModal'
+import { pictureOf } from '@/fx/areaArt'
 import { mutateSave, useGame } from '@/store/game'
 import { enterArea, enterPortal, finishPortalVictory, leaveArea, pickDistortionOffer } from '@/store/run'
 import { travelTo } from '@/store/travel'
@@ -55,6 +57,7 @@ export function PortalGuard() {
     <>
       {pathname !== '/area' && <Navigate to="/area" replace />}
       <DistortionFx />
+      <PortalCloseFx />
     </>
   )
 }
@@ -125,6 +128,7 @@ export function PortalStep({ area }: { area: Area }) {
     return (
       <PortalVictoryView
         name={data.species[GIRATINA]?.name ?? 'Giratina'}
+        level={mode.raid.level}
         onDone={() => {
           finishPortalVictory()
           navigate('/home')
@@ -136,6 +140,7 @@ export function PortalStep({ area }: { area: Area }) {
       <PortalEntry
         mode={mode}
         data={data}
+        picture={pictureOf(area.id)?.url ?? null}
         onReady={() => {
           markSeen()
           enterPortal(area.id)
@@ -159,7 +164,7 @@ export function PortalStep({ area }: { area: Area }) {
           index={p.closed + 1}
           total={mode.portals}
           onPick={(i) => {
-            fxSound('portal.close')
+            playPortalClose()
             pickDistortionOffer(i)
           }}
         />

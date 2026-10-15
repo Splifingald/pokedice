@@ -5,7 +5,8 @@ world; the player closes its distortion portals from the inside, in one go. Winn
 Giratina at Lv.100.
 
 **Status: built** on `feat/hh-distortion-world` (from `feature/version_2`). Engine `src/engine/portal.ts` (and
-`portalMode.ts`, the area's settings); UI `src/components/Portal.tsx` and `src/screens/area/PortalRun.tsx`; admin
+`portalMode.ts`, the area's settings); UI `src/components/Portal.tsx` and `src/screens/area/PortalRun.tsx`, its effects
+on the pixel engine (`src/fx/timelines/portal.ts`, `src/fx/glitch.ts`, hosted by `src/components/PortalFx.tsx`: §6); admin
 `src/admin/sections/PortalModeBox.tsx`; migration `supabase/migrations/0057_hh_distortion_world.sql` (written by
 `scripts/patch-hh-distortion.ts`). Rules for the screens: docs/15 §27.
 
@@ -28,7 +29,7 @@ Giratina at Lv.100.
 | A wipe | XP, ₽ and items **kept**; portals closed **back to 0**; run bonuses **lost**; team **healed**; back to the world, to try again (no limit). |
 | The raid | Shiny Giratina, the world's prize: **only after the run is won**, at **Lv.100, foes' dice level 10, 4 HP bars**, teams **from the world's Box, up to Lv.100** (all on the area's mode). Before, its page is locked ("Close every portal of Distortion World to open this raid"). This replaces the raid at the end of S5's rounds. |
 | Giratina's cry | The game's cries (`src/audio/cries.ts`, Showdown's, one request, none while sound is off). The breach and a portal closing have 8-bit cues of their own (`portal.breach`, `portal.close` in `src/audio/sfx.ts`). |
-| Art | Existing art only, plus code: the portal is an SVG (rings, Giratina's red streaks turning in steps), the shader is SVG displacement + hard offset copies, the screen's distortion is CSS. |
+| Art | Existing art only (the area's picture), plus code: **pixel art on the game's FX engine**, like the legend's entrance (the user's ask of 2026-10-15: the first SVG/CSS effects were underwhelming next to the rest). §6. |
 
 ## 2. Engine (pure)
 
@@ -96,3 +97,30 @@ bundle hasn't got Haunted Hollow), and seed.sql adds the column but never writes
    - Or, for an export: `tsx scripts/patch-hh-distortion.ts <in.json> <out.json>`, then `pnpm import-bundle`.
 3. Admin → Areas → Distortion World → **Special mode: portal run**: check the numbers, then the switch **On for admin**
    to try it, **On for everyone** to open it. Publish.
+
+## 6. Its effects (pixel art, 2026-10-15)
+
+The user's words: "The visual effects and animations used for the trick or treats and distortion world are really
+underwhelming compared to the rest of the game animations. It should be pixel art Pokémon style and use the other
+animations as references." Then: "The distorted animation on Pokémon is pretty good, you should reuse it from time to
+time on the UI too in this world." So every effect is now drawn on the game's FX engine (`src/fx`: one canvas pixel to
+one art pixel, ordered dithering, stepped colour ramps, 60 fixed steps a second, cues at exact times), legend.ts the
+reference, and the wild Pokémon's look (torn sideways, split into hard colour copies) comes back on the page's pieces.
+The rules for the screens are in docs/15 §27; every scene is on `/kitchen-sink/fx`, every piece on `/kitchen-sink`.
+Then: "Don't switch the effect off with calm animations, it is part of the world's identity." So the lasting effects
+(the portal, the Pokémon's, the screen's and the UI's glitches) play as in full under a calm OS; the player's short
+setting lightens them; only motion off (the admins' no-animations switch) stills them (`distortionLevel`).
+
+| Effect | What it is | Motion `short` / off (a calm OS: as full) |
+|---|---|---|
+| The breach (`breachTimeline`) | The area's picture darkens in two pulses, a red point tears, cracks race out, the area breaks into uneven pixel shards tumbling into the tear, the Distortion World opens (dithered rings, Giratina's red-and-gold arms turning, rocks drifting upside-down, far islands), a flash and a quake, the name card. Full screen, 3.9 s. | Half the time / skipped |
+| The portal (`portalLoop`: `PortalScene`, `PortalArt`) | Behind the way-in pop-up and the rules (the void, its rocks, the portal turning, motes pulled in, sparks on its rim), small by a distortion's boons. | Moving / one still frame |
+| A portal closing (`closeTimeline`, `PortalCloseFx`) | After a boon pick, over the page: it collapses with its rim in shards, a flash, a gold seal ring turning and fading. 1.6 s. | 0.9 s / the sound alone |
+| The wild Pokémon (`glitch.ts`: `useStageDistortion`, `GlitchSprite`) | A dark aura and rim under the sprite, motes rising; every 3.4 s for 0.48 s the sprite is drawn torn in bands of rows, tinted violet, with hard violet, teal and red copies behind. | Copies only / aura and rim, still |
+| The screen (`DistortionFx`) | A dithered frame of the void; every 6–10 s a 0.45 s tear: broken scanlines, displaced blocks of the void, the page's colours shifted to violet. | Rarer, thinner, no shift / the frame, still |
+| The UI (`useUiGlitch`) | Every 5–9 s one piece of the page (gauge, boons, team cards, action bar, header title, a toast) plays the wild Pokémon's look for 0.42 s; one at a time, never inside a pop-up, never on what holds the focus. | Copies only / none |
+| The victory (`victoryTimeline`) | Legend.ts's entrance for shiny Giratina: dark pulses, shadow tendrils, heartbeats, its silhouette rising out of the portal in a red-and-gold outline, rays and a gleam, the reveal (flash, rings, roar and its cry, quake), the shiny sparkle, the portal sealed behind it, the name card (SHINY, its raid level); then the screen's words and BACK TO THE WORLD. 6.2 s. | 3.1 s / at its end at once |
+
+Sounds: the breach and a closing keep `portal.breach` and `portal.close`; the scenes add the legend's cues
+(`legend.pulse`, `legend.shatter`, `legend.heart`, `legend.roar`) and the shiny chime. Nothing changes in the engine, the
+flows, the buttons or the words; no migration.

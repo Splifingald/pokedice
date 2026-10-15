@@ -159,7 +159,7 @@ All live in `src/components/`. Every component, in every state, is on `/kitchen-
 | `GiftPresent` / `GiftOpened` / `GiftResult` / `GiftMoment` | A gift from the developer (§23) | Under a message: the wrapped gift (wobbling, still when the OS asks for reduced motion), "3 things inside" and what happens next (close the message, OPEN IT in My messages, or why it waits); opened: what it held; the opening, full screen; what arrived and where |
 | `TrickGauge` / `TrickStage` / `TrickCard` / `TrickResult` / `TierChip` / `TrickSprite` / `TrickRulesModal` | Trick or Treat (§27) | The gauge: its sections in their colours (deep purple, the hardest, to pumpkin and gold), the flee zone striped night with a ghost, bright up to its value and dim past it, the section it is in ringed in gold, the white post where it stands, and under each section what a Trick Ball needs ("6", "5+", Flees); a `meter`. The stage: the area's picture, the ghost floating (still under reduced motion), the Treat's and the ball's arcs, the ball on the ground wobbling, the stars, the flee. The preview card, the result (caught: where it went, NEW, ✦ Shiny, a secret area opened; fled), the rarity chip (a word, never colour alone), the two pictures, the rules |
 | `InviteGaugeBar` / `InviteRewardsCard` / `InviteGaugeCompact` / `InviteReadyModal` | Friend invite rewards (§25) | The gauge: a tile per tier (its reward; gold with the gift wobbling when ready; green with a check once opened), the gold track, the friends each needs; six tiers fit a phone. The Friends page's card (ready with OPEN IT, asking the server, every reward won); the compact one in Prof. Oak's invite; the reward's pop-up (who won their first badge, or a friend) |
-| `PortalArt` / `PortalEntry` / `DistortionGauge` / `DistortionChoiceView` / `RunBonuses` / `PortalVictoryView` / `DistortionFx` | Distortion World's portal run (§27) | The portal drawn in code (turning in steps; still); the breach and its pop-up (NOT NOW / READY!); the gauge of portals closed (fresh, under way, won); a distortion's boons (three, fewer); the run's bonuses (none, some); the victory; the screen's distortion; the sprite shader at each motion level |
+| `PortalArt` / `PortalScene` / `PortalEntry` / `DistortionGauge` / `DistortionChoiceView` / `PortalCloseFx` / `RunBonuses` / `PortalVictoryView` / `GlitchSprite` / `DistortionFx` / `useUiGlitch` | Distortion World's portal run (§27) | The portal and the Distortion World on the pixel engine (turning; still); the breach and its pop-up (NOT NOW / READY!); the gauge of portals closed (fresh, under way, won); a distortion's boons (three, fewer); a portal closing; the run's bonuses (none, some); the victory; the screen's distortion; a distorted sprite at each motion level (full, short, off); the UI's glitch on a few pieces |
 
 Dialog behaviour (`src/lib/useDialog.ts`, used by `Modal`, `Sheet`, `SidePanel`): focus moves in, **Tab stays inside**,
 **Esc closes the top dialog only**, focus returns to what opened it.
@@ -219,7 +219,9 @@ How much the game animates comes from one place, `src/lib/motion.ts`:
 | `short` | The player (Settings → Animations), or the OS "reduce motion" | A hit is one generic impact (no typed attack); Mega Evolution and Gigantamax are a white flash and the new sprite; a catch is the throw with its result at once; a quick Pokémon Center. Evolutions, Eggs hatching and encounters (legendary and trainer intros) still play in full |
 | `off` | Admins only (Settings → No animations) | Nothing animates: every timeline jumps to its end state, its messages kept |
 
-`calm` (the OS setting, or `off`): no screen shake, no flashing, the Home team stands still.
+`calm` (the OS setting, or `off`): no screen shake, no flashing, the Home team stands still. One exception, the user's
+call: Distortion World's lasting distortion (§27) is the world's identity and keeps playing under a calm OS (never faster
+than 3 a second); only `off` stills it.
 
 House rules for every effect and timeline:
 
@@ -244,6 +246,7 @@ motion `off` the stage jumps to the end and still fires every cue, so the screen
 | Pokémon Center | in its picture (`public/backgrounds/pokemon-center.png`): a ball per team member into the machine's slots, the heal jingle (B G♯ ×3, E) | one flash, healed |
 | Mega Evolution, Gigantamax | the full change | a white flash and the new sprite |
 | Legendary intro, Evolution, Egg hatching, the lab (a partner), a trade | in full | in full |
+| The portal run (§27): the breach, a portal closing, the victory | in full | in half the time (a portal closing: 0.9 s) |
 
 `calm` (OS reduce motion, or animations off) also removes screen shakes and full-screen flashes; a hit keeps its two
 white sprite frames. Every timeline is on `/kitchen-sink/fx` (dev): replay, ¼ speed, one-frame steps, the end state,
@@ -876,16 +879,34 @@ What they say and when, and how they're set up: docs/27-PUSH-NOTIFICATIONS.md. T
 
 An area's special mode (docs/28-DISTORTION-WORLD.md): close Giratina's distortion portals from the inside, in one go.
 The pieces are in `src/components/Portal.tsx` and `src/screens/area/PortalRun.tsx`, every state on `/kitchen-sink`
-(`PortalBits`); the engine (`engine/portal.ts`) decides every card, boon and number.
+(`PortalBits`); the engine (`engine/portal.ts`) decides every card, boon and number. **Every effect is pixel art on the
+game's FX engine**, built like the legend's entrance (§8): the scenes are timelines in `src/fx/timelines/portal.ts`
+(on `/kitchen-sink/fx`: the breach over the drawn field and over Distortion World's picture, a portal closing, a wild
+Pokémon distorted, the victory), the sprite's distortion is `src/fx/glitch.ts`, and `src/components/PortalFx.tsx` hosts
+them on the page. Its palette (`DW`): the void's purples (`#07020d` to `#b05cff`), Giratina's red and gold
+(`#e8384a`, `#8a1426`, `#ffc94a`), the rift's teal (`#2fd3c4`), the floating rocks' violet stone and dark moss.
+**The world's lasting effects are its identity** (the user, 2026-10-15: "Don't switch the effect off with calm
+animations"): the portal turning, the wild Pokémon's distortion, the screen's and the UI's glitches play as in `full`
+when the OS asks for calm; the player's Animations → short gives their lighter version; only motion `off` stills them
+(`distortionLevel`). The scenes (the breach, a closing, the victory) follow §8 as every timeline does (calm: no quake, no
+full-screen flash).
 
 - **The switch and the rules** follow §20: `portalRun` (Admin → Areas → Special mode), Off by default and checked by the
-  server for the area's raid; Off, the area plays as before. The rules pop-up (`PortalRulesModal`, the portal drawn in
-  code as its banner, four rows from the area's numbers) once, when the area opens for the player, between fights after
+  server for the area's raid; Off, the area plays as before. The rules pop-up (`PortalRulesModal`, the Distortion World as
+  its banner: `PortalScene`, four rows from the area's numbers) once, when the area opens for the player, between fights after
   the other one-time pop-ups; Let's go! travels there. INFO sits at the bottom of the area's page.
 - **The way in**: CONTINUE there says ENTER THE DISTORTION ("Close 10 portals in a row"). The area's page plays the
-  breach full screen (`PortalBreach`: the portal grows out of a point in 8 steps over the night, the line in large type,
-  the `portal.breach` cue; a tap, SKIP or Esc ends it; motion off skips it), then its pop-up (`PortalEntryDialog`): the
-  portal glowing behind the rules, the warning in a red-ringed note with its icon, **NOT NOW** (Home) and **READY!**.
+  breach full screen (`PortalBreach`, `breachTimeline`, 3.9 s; on a stage of the screen's shape, 2 CSS pixels per art
+  pixel on a phone up to 4 on a big screen, the bottom kept for the words): the area's picture (or the drawn field) darkens
+  in two pulses, a red point tears, black cracks with a lit lip race out from it (`portal.breach`), the area breaks into
+  uneven pixel shards that tumble into the tear (`legend.shatter`), the Distortion World opens behind with rings, a flash
+  and a quake: the void's dithered night, far islands floating every which way, rocks drifting upside-down (moss under
+  them), the portal turning (dithered rings, Giratina's red-and-gold arms, a dashed gold ring the other way, motes pulled
+  in); then the name card (legend.ts's slanted band in the void's purples with red and gold rims, "Distortion portals"
+  at 2× when it fits). The line shows from the shards on, in a card of the same colours; it holds 0.3 s at the end. A
+  tap, SKIP or Esc ends it; `short` plays it in half the time; motion off skips it. Then its pop-up
+  (`PortalEntryDialog`): the Distortion World turning behind the rules (`PortalScene`), the warning in a red-ringed note
+  with its icon, **NOT NOW** (Home) and **READY!**.
 - **Inside, there is no way out**: the menus, the gold pill, the cup and the avatar are disabled and say "You can't leave
   the distortion until you win or your party is K.O." (`useNavLock`); any other page sends back to the area
   (`PortalGuard`), so does a reload. The area's action bar and the result card have CONTINUE alone, no HOME, the line
@@ -893,24 +914,49 @@ The pieces are in `src/components/Portal.tsx` and `src/screens/area/PortalRun.ts
 - **The gauge**: the round gauge's place, the same tiles (`DistortionGauge`): a tile per portal, the closed ones lilac
   with a check, the next with the gold edge, "3/10"; an image with "Portals closed: 3/10" for screen readers. On the
   header, over every action bar, on the result card.
-- **A distortion** (`DistortionChoiceView`): a panel with the void's purple along its top, the small portal, "Distortion
+- **A distortion** (`DistortionChoiceView`): a panel with the void's purple along its top, the small portal turning
+  (`PortalArt`, a canvas), "Distortion
   4/10" and "Pick one boon to close this portal", then the boons as big buttons (one column on a phone, three from 768
   px): an icon (a heart; the Pokémon to revive; the type's badge; a die of its type; the first item), a title that names
   what it does ("Heal 30%", "Revive Dusknoir", "Ghost +10", "Extra die: Gengar", "Rare item"), a line with its numbers
-  ("6/8 dice", the item odds). Its button's name is "Pick: …". Picking plays `portal.close` and a toast counts the
-  portals sealed. It waits in the save: a reload shows it again.
+  ("6/8 dice", the item odds). Its button's name is "Pick: …". Picking closes the portal over the page
+  (`PortalCloseFx`, `closeTimeline`, 1.6 s, `short` 0.9 s, catching no tap): it throbs once, spins faster and collapses
+  into its middle while its rim breaks into shards pulled in after it (`portal.close`), a white flash where it was, then
+  a gold seal ring with eight marks turning round it fades out through the dither; a toast counts the portals sealed.
+  Motion off: the sound alone. It waits in the save: a reload shows it again.
 - **The run's bonuses** (`RunBonuses`) over the team between encounters: each boost as its type badge and "+20 damage",
   each extra die with whose it is; "None yet" before the first.
-- **The wild Pokémon** wear the shader (`shaderClass` by motion level): `full`, still most of the time, then for half a
-  second torn sideways (SVG displacement) with its colours split into hard offset copies; `short`, a slower colour shift
-  without the tear; off or a calm OS, a still two-colour rim. Never a blur, never faster than 3 a second. The preview
-  shows it too, and "Distorted: it can't be caught." in place of the catch hint; no NEW / caught tag.
-- **The screen's distortion** (`DistortionFx`, over the page under the dialogs, no taps): a dithered frame in the void's
-  purple; `full` adds a band of torn lines crossing every 7 s; `short` lets the frame flicker slowly; off or calm, the
-  frame alone.
-- **The victory** (`PortalVictoryView`): full screen on the night, the portal and shiny Giratina coming out of it (in 12
-  steps, from its middle; already out with motion off), its cry, "Every portal is closed!", the line that it is in the
-  raids now, and **BACK TO THE WORLD** (Home, where CONTINUE is RAID: GIRATINA). It waits in the save until seen.
+- **The wild Pokémon are distorted** on the pixel engine (`glitch.ts`, on the battle stage by `useStageDistortion`,
+  on the preview by `GlitchSprite`): a dark aura under the sprite (a dithered glow of the void breathing in two steps, its
+  shape in violet and teal a pixel each side as a rim) and the void's motes rising off it; every 3.4 s, for 0.48 s in
+  four frames, the page's sprite steps aside and the canvas draws it torn: bands of rows shifted 2–6 pixels sideways,
+  tinted violet on two frames, split into hard colour copies behind (violet, violet and teal, Giratina's red, teal): the
+  look of the first shader the player liked, pixel for pixel. `short`: the copies and the tint only, no tear; a calm OS: as
+  in full; motion off: the aura and rim, still. Never a blur, never faster than 3 a second. The preview shows it too, and "Distorted:
+  it can't be caught." in place of the catch hint; no NEW / caught tag.
+- **The screen's distortion** (`DistortionFx`, over the page under the dialogs, no taps; a canvas at 3 CSS pixels per
+  art pixel): a dithered frame of the void along the edges, a few specks of its light; every 6–10 s a tear of 0.45 s in
+  four frames: two or three bands of broken scanlines (lilac, teal), blocks of the void displaced along them with lilac
+  and red edges, a few stray pixel blocks, and the page's colours shifted to the void's violet for three of the frames (a
+  `mix-blend-mode: color` layer at 35 %). `short`: one thin band every 12–18 s, no shift; a calm OS: as in full; motion
+  off: the frame alone, still.
+- **The UI glitches** now and then (`useUiGlitch`, from `DistortionFx`, the player's ask of 2026-10-15): every 5–9 s
+  one piece of the page, picked at random (anything tagged `data-glitch`, the page's panels, buttons and pictures such as
+  the gauge, the boons, the team's cards and the action bar, the header's title, a toast), plays the wild Pokémon's look
+  for 0.42 s (`.ui-glitch`: torn sideways by the SVG warp, split into hard violet, teal and red copies, in four steps).
+  One at a time; never inside a pop-up (what the player is reading there stays put; the page behind it may glitch),
+  never on what holds the focus, nothing big (over 30 % of the screen) or off screen. Classes only: the words and the
+  accessible names don't change. `short`: the copies only, 0.3 s; a calm OS: as in full; motion off: none. Tune it in one place (`every`,
+  `dur`, `selector`); the kitchen sink's demo runs it every second on a few pieces.
+- **The victory** (`PortalVictoryView`, `victoryTimeline`, 6.2 s; `short` 3.1 s): legend.ts's entrance for shiny
+  Giratina on the Distortion World: the last portal throbs in two dark pulses, shadow tendrils whip out of it (black, red
+  at the tips), two heartbeats, its silhouette rises out of the portal in a flickering red-and-gold outline (what is below
+  the portal's middle shows only inside it), red rays turn behind, a gleam; the reveal: a flash, rings, the roar
+  (`legend.roar` and its cry, `playCry`), a quake, a burst in Giratina's colours, the shiny sparkle (two rings of stars,
+  the shiny chime); the portal behind it collapses and seals (`portal.close`, the gold seal ring); the name card (its
+  name at 2×, SHINY and its raid level). Then "Every portal is closed!", the line that it is in the raids now, and
+  **BACK TO THE WORLD** (Home, where CONTINUE is RAID: GIRATINA), in a card under the scene. A tap jumps to the end;
+  motion off, it is there at once. It waits in the save until seen.
 - **A wipe** keeps the wipe card (§14), its line saying the portals closed opened again and the run's bonuses are gone,
   that XP, ₽ and items stay and the team is healed.
 - **The raid's page** before the victory: the lock says to close every portal of the area; the area's details say

@@ -126,14 +126,17 @@ function emitElement(P: Particles, L: LegendLook, r: Rng) {
 /** Light wedges turning behind the legend, dithered. */
 export function drawRays(cv: Canvas, c: Point, t: number, color: string, k: number) {
   const g = cv.g
-  g.clearRect(0, 0, W, H)
+  // The canvas's own size: the stage's, or a full-screen scene's (the portal run's victory).
+  const w = cv.width
+  const h = cv.height
+  g.clearRect(0, 0, w, h)
   if (k <= 0) return
-  const img = g.createImageData(W, H)
+  const img = g.createImageData(w, h)
   const d = img.data
   const [r0, g0, b0] = rgba(color)
   const n = 9
-  for (let y = 0; y < H; y++)
-    for (let x = 0; x < W; x++) {
+  for (let y = 0; y < h; y++)
+    for (let x = 0; x < w; x++) {
       const dx = x - c.x
       const dy = y - c.y
       const a = Math.atan2(dy, dx) + t * 0.35
@@ -142,7 +145,7 @@ export function drawRays(cv: Canvas, c: Point, t: number, color: string, k: numb
       const dd = Math.hypot(dx, dy)
       const v = k * clamp(1 - dd / 150) * (0.55 + 0.45 * Math.sin((wedge * Math.PI) / 0.42))
       if (v * 0.85 <= bayer(x, y)) continue
-      const i = (y * W + x) * 4
+      const i = (y * w + x) * 4
       d[i] = r0
       d[i + 1] = g0
       d[i + 2] = b0
