@@ -157,7 +157,7 @@ All live in `src/components/`. Every component, in every state, is on `/kitchen-
 | `RotateCover` / `RotateView` | A phone or a tablet held sideways (§6) | Over everything, not dismissable: the pixel phone tipping upright in steps (upright and still under reduced motion), the title and a line |
 | `SupportModal` / `SupportView` | SUPPORT ME (side menu, Settings), and once per region at its 5th badge | A rules pop-up (the village banner) with a button per row: Join the Discord (left out with no link set), Share invite link, Support me on PayPal under the line saying Pokémon is a licence so the game is never for sale; a big OK |
 | `GiftPresent` / `GiftOpened` / `GiftResult` / `GiftMoment` | A gift from the developer (§23) | Under a message: the wrapped gift (wobbling, still when the OS asks for reduced motion), "3 things inside" and what happens next (close the message, OPEN IT in My messages, or why it waits); opened: what it held; the opening, full screen; what arrived and where |
-| `TrickGauge` / `TrickStage` / `TrickCard` / `TrickResult` / `TierChip` / `TrickSprite` / `TrickRulesModal` | Trick or Treat (§27) | The gauge: its sections in their colours (deep purple, the hardest, to pumpkin and gold), the flee zone striped night with a ghost, bright up to its value and dim past it, the section it is in ringed in gold, the white post where it stands, and under each section what a Trick Ball needs ("6", "5+", Flees); a `meter`. The stage: the area's picture, the ghost floating (still under reduced motion), the Treat's and the ball's arcs, the ball on the ground wobbling, the stars, the flee. The preview card, the result (caught: where it went, NEW, ✦ Shiny, a secret area opened; fled), the rarity chip (a word, never colour alone), the two pictures, the rules |
+| `TrickGauge` / `TrickStage` / `NeedDie` / `TrickScreen` / `TrickPlate` / `TrickRecap` / `TrickCard` / `TierChip` / `TrickSprite` / `TrickRulesModal` | Trick or Treat (§28) | The gauge: its value in numbers ("62/100") with what the last Treat or miss added (a gold "+18" that pops in; the added stretch flashes white twice once filled), its sections in their colours (deep purple, the hardest, to pumpkin and gold), the flee zone striped night with a ghost, bright up to its value and dim past it, the section it is in ringed in gold, the white post where it stands, and under each section the die a Trick Ball needs (`NeedDie`: the `Die` face with its "+", the face alone where a section is narrow), then Flees; a `meter`. The stage: the battle's (the area's picture as the battle cuts it, a night sky where there's none), the ghost at its centre floating in pixel steps (still when calm), its shadow, the timelines on top; at rest the ball on the ground (caught) or nobody (fled). The screen in every state (idle, after a Treat, a Treat and a throw playing, a miss, a flee, caught), the plate, the result card (caught: the battle's `CatchCard` with the Trick Ball, NEW, ✦ Shiny, where it went, a secret area; fled), the preview card, the rarity chip (a word, never colour alone), the two pictures, the rules |
 | `InviteGaugeBar` / `InviteRewardsCard` / `InviteGaugeCompact` / `InviteReadyModal` | Friend invite rewards (§25) | The gauge: a tile per tier (its reward; gold with the gift wobbling when ready; green with a check once opened), the gold track, the friends each needs; six tiers fit a phone. The Friends page's card (ready with OPEN IT, asking the server, every reward won); the compact one in Prof. Oak's invite; the reward's pop-up (who won their first badge, or a friend) |
 | `PortalArt` / `PortalEntry` / `DistortionGauge` / `DistortionChoiceView` / `RunBonuses` / `PortalVictoryView` / `DistortionFx` | Distortion World's portal run (§27) | The portal drawn in code (turning in steps; still); the breach and its pop-up (NOT NOW / READY!); the gauge of portals closed (fresh, under way, won); a distortion's boons (three, fewer); the run's bonuses (none, some); the victory; the screen's distortion; the sprite shader at each motion level |
 
@@ -243,6 +243,7 @@ motion `off` the stage jumps to the end and still fires every cue, so the screen
 | Catch | throw, beam, drop, wobbles, result; with a Bait to offer it holds on the ball lying still (`hold`) and the answer plays on from that frame (`from: 'ground'`: the Bait tossed beside the ball, a heart, a last wobble; or straight to the break-free); Capture Luck's stay (`stays`): out of the ball, a "!" and two hops, no flight | throw and drop, result at once (the Bait still lands); a throw that can't miss jumps to its end at every level |
 | Pokémon Center | in its picture (`public/backgrounds/pokemon-center.png`): a ball per team member into the machine's slots, the heal jingle (B G♯ ×3, E) | one flash, healed |
 | Mega Evolution, Gigantamax | the full change | a white flash and the new sprite |
+| Trick or Treat's Treat (`trick.ts`) and Trick Ball (the catch, `ball: 'trick'`) | the perk-up, the Treat's arc with twinkles, the catch (hit-stop, warm frames), three chomps with crumbs and hearts, the gauge's glow, ring and sparks; the Trick Ball as the catch; a flee rises and dithers into wisps, the area dimming | the toss or the throw, then the result at once; a flee is a short dither out |
 | Legendary intro, Evolution, Egg hatching, the lab (a partner), a trade | in full | in full |
 
 `calm` (OS reduce motion, or animations off) also removes screen shakes and full-screen flashes; a hit keeps its two
@@ -920,27 +921,46 @@ The pieces are in `src/components/Portal.tsx` and `src/screens/area/PortalRun.ts
 
 An encounter card (docs/29-TRICK-OR-TREAT.md): a ghost from the area's list floats in; Treats fill its gauge, a Trick
 Ball rolls a d6 against the gauge's section, a miss pushes the gauge up, the flee zone ends it. The engine
-(`engine/trickOrTreat.ts`) decides every number and outcome; the pieces are in `src/components/TrickOrTreat.tsx`, every
-state on `/kitchen-sink` (`TrickBits`), and the area screen plays them (`src/screens/area/TrickView.tsx`).
+(`engine/trickOrTreat.ts`) decides every number and outcome; the pieces are in `src/components/TrickOrTreat.tsx`, the
+screen in `src/screens/area/TrickView.tsx` (`TrickScreen`, `TrickRecap`), the animations in `src/fx/timelines/trick.ts`
+and the battle's `catch.ts`; every state on `/kitchen-sink` (`TrickBits`), every timeline on `/kitchen-sink/fx`.
 
 - **The switch and the rules** follow §20: Off, the card is never dealt (no tile on the round gauge, no share in the
   area's round mix). The rules pop-up opens the first time a ghost floats in, over the screen (Later / Let's go! both
-  carry on); INFO sits under the panel.
+  carry on); INFO sits at the foot of the panel.
 - **The card**: a pumpkin on the round gauge and its preview row; its preview is the ghost on a night tile, its name,
   rarity chip, level, NEW, "Treats and Trick Balls are free and endless", and one red button, TRICK OR TREAT!. It can't
   be skipped (a card the player meets, like the Game Corner).
-- **The screen**, phone first: the panel with the title, the ghost's name, level and rarity; the stage (3:2, the area's
-  picture as the battle cuts it, a night sky where there's none) with the ghost floating at its centre; the gauge right
-  under it; one message line (polite live region) saying what happened in numbers ("Rolled 4, needed 5+: … The gauge
-  rises by 35!"); then the result once it's over. The pinned action bar (§6) carries the round gauge and **TREAT**
-  (white, the Treat's picture, "+10 to 30" under it) beside **TRICK BALL** (red, the one main action, "Roll 5+: 33% ·
-  miss +35" under it, from the engine); once caught or fled, **CONTINUE**.
-- **Motion** (§8): `full`: the Treat tossed in an arc from the left (stepped, two steps a stretch), a squash and hop as
-  it's eaten, then the gauge fills in 8 steps and its section lights; the Trick Ball's arc from the right, the ghost
-  drawn in (two white silhouette frames), the ball on the ground, the die tumbling (the catch's d6, `Die`), one to three
-  wobbles (three for a catch, fewer the further the die fell short), then stars and Gotcha!, or the ball breaking open,
-  the ghost back out and the gauge's push; a flee is the ghost rising and fading in five steps. The buttons wait while
-  a step plays. `short`: the flight, then the result at once. `off`: every step lands at once, its message kept. `calm`
-  stops the idle float. Pixel steps everywhere; no screen flash.
-- **Sound** (§9): `trick.toss`, `trick.munch`, `trick.fill`, `trick.flee`, with the catch's throw, open, wobble, Gotcha!
-  and break-free.
+- **The screen is the battle's** (§14), the user's request of 2026-10-15: full screen (`useHoldFullscreen`: no top bar,
+  side nav or tab bar), the battle's column (phones: the whole width; wide screens: up to 700 px, as big as the height
+  allows with the panel in view), and it fits a 360×640 phone with nothing to scroll (`e2e/trick-or-treat.spec.ts`).
+  - **The stage** on top, the battle's own size and framing (240×160 art pixels scaled, the area's picture cut as the
+    battle cuts it), the ghost at its centre as the page's animated sprite, floating a pixel a step, its shadow under
+    it; its plate top left as a foe's (`PlateBox`: name, ✦, level, types, the rarity chip; no HP).
+  - **The panel**, top to bottom: the message box (the battle's `pixel-dialogue`, a polite live region, the numbers in
+    words: "Rolled 4, needed 5+: … The gauge rises by 35!"); the gauge's row: on the left what the last step did (the
+    Treat's picture, or the Trick Ball's die, `≥` or `<`, and the die it needed), on the right "+35" and the value
+    "62/100"; the gauge; **TREAT** (white, the Treat's picture, "+10 to 30" under it) beside **TRICK BALL** (red, the
+    one main action, the die it needs here with its "+" and "33% · miss +35" under it, from the engine), in the
+    battle's `1fr / 1.4fr` grid; INFO at the foot.
+  - **The result card** rises over the panel as a battle's (`Overlay`): the title ("Gastly caught!" / "Gastly fled"),
+    the catch as the battle's `CatchCard` (the Trick Ball rocking in, the ghost, Gotcha! and NEW, "was caught", where it
+    went: the team, the Box, in place of a weaker copy, or into yours) or the ghost greyed with "It vanished into the
+    night", a secret area it opened (`SecretAreaCard`), then the round gauge and **CONTINUE** (back on the trail).
+- **Motion** (§8), on the battle's stage with the game's pixel FX, never CSS tweens: a step plays as a timeline over the
+  stage (`StageCanvas`), the page's sprite hidden meanwhile, as the battle's catch. **The Treat** (`treatTimeline`): the
+  ghost perks up, the Treat flies from your side in an arc, a quarter turn at a time, trailing gold twinkles; the ghost
+  opens wide, catches it (a 4-frame hit-stop, two warm silhouette frames, a pop of gold), munches (three
+  squash-and-stretch chomps, crumbs on the pumpkin ramp, hearts rising), then the gauge fills (`fill` beat: a dithered
+  glow behind it, a gold ring bursting out, "+" sparks, a soft warm flash unless calm). **The Trick Ball** is the
+  battle's catch timeline with the Trick Ball's picture (`ball: 'trick'`, drawn pixel for pixel from
+  `public/items/trick-ball.png`: it turns, opens on its hinge, its button flashes, it darkens once caught), the ghost
+  awake at the centre (`at`, `awake`): the same throw arc, beam, drop and bounces, wobbles and vignette, then Gotcha!
+  and its stars, or the break-free. The die and the result show together on `catchResult`, never before. A miss that
+  leaves it there is Capture Luck's stay ("!" and two hops: restless); one into the flee zone, and too many Treats, end
+  in **the ghost's flee** (`ghost`): it shivers, then rises in pixel steps while it dithers away into purple wisps, and
+  the area dims under it. The buttons wait while a step plays. `short`: the toss or the throw, then the result at
+  once. `off`: the stage jumps to the end, every cue fired, every message kept. `calm`: no idle float, no flash.
+- **Sound** (§9): `trick.toss`, `trick.munch`, `trick.fill`, `trick.flee` on the Treat's cues, the catch's own throw,
+  open, close, wobble, settle, Gotcha!, break-free and stay on the Trick Ball's, `trick.fill` as a miss pushes the
+  gauge and `trick.flee` as the ghost leaves.

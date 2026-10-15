@@ -11,6 +11,8 @@ import { loadItemSprite, loadSprite, spriteKey } from '@/fx/sprites'
 import type { Hud, Timeline } from '@/fx/timeline'
 import { attackTimeline } from '@/fx/timelines/attacks'
 import { catchTimeline } from '@/fx/timelines/catch'
+import { TREAT_URL, treatTimeline } from '@/fx/timelines/trick'
+import { loadTrickBall } from '@/fx/scenes'
 import { centerTimeline } from '@/fx/timelines/center'
 import { gmaxEndTimeline, gmaxFor, megaFor } from '@/fx/timelines/forms'
 import { legendLook, legendTimeline } from '@/fx/timelines/legend'
@@ -25,6 +27,8 @@ interface Preset {
   /** Dex, back view, and shiny. */
   sprites: [number, boolean, boolean?][]
   item?: string
+  /** Anything else to load first (Trick or Treat's ball picture). */
+  load?: () => Promise<unknown>
   make: (o: Opts) => Timeline<unknown>
 }
 interface Opts {
@@ -160,6 +164,49 @@ const PRESETS: Preset[] = [
         caught: false,
         short: o.short,
         stays: true,
+      }),
+  },
+  // Trick or Treat (docs/29): the ghost at the stage's centre, nobody of yours on it.
+  {
+    name: 'Trick or Treat: a Treat (flees with "status")',
+    sprites: [[92, false]],
+    item: TREAT_URL,
+    make: (o) =>
+      treatTimeline({ own: '', foe: foe(92), at: { x: 120, y: 108 }, fled: o.status, short: o.short }),
+  },
+  {
+    name: 'Trick or Treat: a Trick Ball (missed: restless, stays)',
+    sprites: [[92, false]],
+    load: loadTrickBall,
+    make: (o) =>
+      catchTimeline({
+        own: '',
+        foe: foe(92),
+        ball: 'trick',
+        caught: o.caught,
+        stays: !o.caught,
+        short: o.short,
+        awake: true,
+        ghost: true,
+        at: { x: 120, y: 108 },
+        ground: 126,
+      }),
+  },
+  {
+    name: 'Trick or Treat: a Trick Ball missed, and it flees',
+    sprites: [[92, false]],
+    load: loadTrickBall,
+    make: (o) =>
+      catchTimeline({
+        own: '',
+        foe: foe(92),
+        ball: 'trick',
+        caught: false,
+        short: o.short,
+        awake: true,
+        ghost: true,
+        at: { x: 120, y: 108 },
+        ground: 126,
       }),
   },
   attack('Flamethrower', 6, 123, 'fire', 'burn'),
@@ -374,6 +421,7 @@ export function FxLab() {
       Promise.all([
         ...preset.sprites.map(([dex, back, shiny]) => loadSprite(dex, back, shiny)),
         ...(preset.item ? [loadItemSprite(preset.item)] : []),
+        ...(preset.load ? [preset.load()] : []),
       ]),
     [preset],
   )
