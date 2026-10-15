@@ -3,6 +3,7 @@
 begin;
 alter table areas add column if not exists scale_offsets jsonb;
 alter table areas add column if not exists rounds_to_clear int;
+alter table areas add column if not exists mode jsonb;
 alter table items add column if not exists shop_area uuid;
 alter table items add column if not exists region text;
 alter table items add column if not exists once_only boolean not null default false;

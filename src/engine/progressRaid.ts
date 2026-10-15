@@ -4,6 +4,7 @@
 // on it: friends bring it to their own raid of that Pokémon. The fight itself is the day's raid's (engine/raidBattle.ts).
 import { raidBosses, shinyLocked } from './encounters'
 import { areaProgressAnywhere } from './events'
+import { portalModeOf } from './portalMode'
 import { addRaidMon, type RaidMon } from './raid'
 import { raidRules, raidTeamCap } from './raidCalendar'
 import { inWorldRegion, isWorldRegion, regionOf, regionOfArea } from './regions'
@@ -80,6 +81,8 @@ export type ProgressRaidState = 'locked' | 'open' | 'done'
 export function progressRaidState(save: SaveData, data: GameData, raid: ProgressRaid): ProgressRaidState {
   const progress = areaProgressAnywhere(save, data, raid.areaId)
   if (save.events?.raidsDone?.includes(raid.key)) return 'done'
+  // A portal area's raid (docs/28) opens once its run is won, never with the area's rounds.
+  if (portalModeOf(data.areas.find((a) => a.id === raid.areaId), data)) return progress?.portal?.won ? 'open' : 'locked'
   if (progress?.bossesDefeated.includes(raid.dex) && regionPokedex(save, raid.region).includes(raid.dex))
     return 'done'
   return progress?.cleared ? 'open' : 'locked'

@@ -28,6 +28,7 @@ import {
   type BattleEvent,
   type Battler,
   type Side,
+  inPortalRun,
 } from '@/engine'
 import { playCry } from '@/audio/cries'
 import { Chip } from '@/components/Chip'
@@ -197,6 +198,8 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
   const { level: chosenLevel, calm } = useMotion()
   const wide = useMediaQuery('(min-width: 1024px)')
   const st = battle.state
+  // A portal run's wild Pokémon wear the distortion (docs/28).
+  const distorted = !versus && st.kind === 'wild' && !!save && inPortalRun(save, data, run.areaId)
   const stageBox = useRef<HTMLDivElement>(null)
   const panel = useRef<HTMLDivElement>(null)
   const [menu, setMenu] = useState<null | 'item' | 'switch' | 'history' | 'mega' | 'form'>(null)
@@ -708,6 +711,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
         foeShown={foeOut}
         trainer={trainerIntro && isTrainerFight ? (trainerSprite ?? '') : null}
         overlay={legend ?? thrown}
+        distorted={distorted}
         worn={(catching || !!fx.wornOut[st.enemy.uid]) && !thrown}
         onContact={sceneContact}
         onSceneDone={sceneDone}

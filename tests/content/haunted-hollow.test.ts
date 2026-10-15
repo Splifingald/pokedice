@@ -64,7 +64,7 @@ describe('Haunted Hollow', () => {
     expect(AREAS).toHaveLength(16)
   })
 
-  it('opens its secret areas as the user set: 20 and 50 caught, a Pokémon at Lv.60, the Elite beaten, all but Giratina', () => {
+  it('opens its secret areas as the user set: 20 and 50 caught, a Pokémon at Lv.60, the Elite beaten, 100 caught (docs/28)', () => {
     const secrets = h.areas.filter((a) => a.hidden)
     expect(secrets.map((a) => [a.name, a.unlockConditions, a.legendaryBoss])).toEqual([
       ['Cemetery', [{ kind: 'pokedex', count: 20 }], [{ dex: 93, level: 30, shiny: true }]],
@@ -77,7 +77,7 @@ describe('Haunted Hollow', () => {
       ],
       [
         'Distortion World',
-        [{ kind: 'pokedex', count: 119 }],
+        [{ kind: 'pokedex', count: 100 }],
         [{ dex: 487, level: 70, shiny: true, raid: true }],
       ],
     ])

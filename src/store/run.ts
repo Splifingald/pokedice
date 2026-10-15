@@ -63,6 +63,18 @@ import {
   teamOf,
   uniformLevels,
   withWorldBoost,
+  drawPortalCard,
+  inPortalRun,
+  markPortalWonSeen,
+  openDistortion,
+  pickDistortion,
+  portalDiceFor,
+  portalEncounter,
+  portalLevels,
+  portalLock,
+  portalNoCatch,
+  portalStateOf,
+  startPortalRun,
   type BattleEvent,
   type BattleKind,
   type ForceKind,
@@ -112,6 +124,9 @@ export function deleteSave() {
 export function enterArea(areaId: string): boolean {
   const { save, data } = useGame.getState()
   if (!save || !isAreaUnlocked(save, areaId, data) || isAreaClosed(save, areaId, data)) return false
+  // Inside a portal run (docs/28) there is no other area to go to.
+  const locked = portalLock(save, data)
+  if (locked && locked.id !== areaId) return false
   // A small world's area may also wait for its date (docs/21), on the server's clock.
   if (!areaOpenAt(data, areaId, serverNow())) return false
   // Entering is visiting: an area entered once is no longer "new" (a secret area stops being featured on Home).
@@ -200,8 +215,74 @@ export function outOfEnergy(): boolean {
   const { save, data, run } = useGame.getState()
   if (!save || !data.config.energy.enabled || energyNow(save, data.config.energy, Date.now()).value >= 1) return false
   if (!hasAbleTeam(save) || !run.areaId) return false
+  // A portal run deals no Center: only a distortion waiting to be picked is free.
+  if (inPortalRun(save, data, run.areaId)) return !portalStateOf(save, run.areaId).offers?.length
   const ctx = encounterContext(save, run.areaId, null)
   return !ctx || !centerIsNext(ctx)
+}
+
+/**
+ * The next card of a portal run (docs/28): a wild Pokémon or a find (its preview, as anywhere), or the distortion that
+ * ends the cycle — its boons wait in the save for the pick (the area shows them), or, the last one, the run is won.
+ */
+function rollPortal(save: SaveData, areaId: string) {
+  const { data } = useGame.getState()
+  if (portalStateOf(save, areaId).offers?.length) return setRun({ phase: 'idle', encounter: null })
+  if (!hasAbleTeam(save)) {
+    commitSave(applyWipe(save, areaId, data))
+    setRun({ phase: 'wipe', trainer: null, events: [], portalLost: portalStateOf(save, areaId).closed })
+    return
+  }
+  const drawn = drawPortalCard(save, data, areaId, runRng)
+  if (!drawn) return
+  if (drawn.card === 'distortion') {
+    const opened = openDistortion(drawn.save, data, areaId, runRng)
+    if (opened) commitSave(opened.save)
+    if (opened?.closedAtOnce) pushToast(t('ui.portal.closedToast', { n: portalStateOf(opened.save, areaId).closed }), 'good')
+    setRun({ phase: 'idle', encounter: null, firstInArea: false })
+    return
+  }
+  const ctx = encounterContext(drawn.save, areaId, null)
+  const roll = ctx ? portalEncounter(ctx, drawn.card, runRng) : null
+  if (!roll) return commitSave(drawn.save)
+  let recorded = recordDraws(drawn.save, areaId, { encounter: roll.encounter, deck: null, lootDeck: roll.lootDeck })
+  const cost = data.config.energy.enabled ? encounterEnergyCost(roll.encounter) : 0
+  if (cost > 0) recorded = spendEnergy(recorded, data.config.energy, Date.now(), cost) ?? recorded
+  commitSave(recorded)
+  setRun({ phase: 'preview', encounter: roll.encounter, firstInArea: false })
+}
+
+/** READY!: into the portal run (docs/28), the team healed, the first card dealt. False when it can't start. */
+export function enterPortal(areaId: string): boolean {
+  const { save, data, run } = useGame.getState()
+  if (!save || run.phase !== 'idle') return false
+  if (run.areaId !== areaId && !enterArea(areaId)) return false
+  const started = startPortalRun(useGame.getState().save!, data, areaId, runRng)
+  if (!started) return false
+  commitSave(started)
+  setRun({ portalLost: null })
+  rollNext()
+  return true
+}
+
+/** The player picks a distortion's boon: it applies, the portal closes, and the run goes on. */
+export function pickDistortionOffer(index: number) {
+  const { save, data, run } = useGame.getState()
+  if (!save || !run.areaId) return
+  const res = pickDistortion(save, data, run.areaId, index, runRng)
+  if (!res) return
+  commitSave(res.save)
+  const n = portalStateOf(res.save, run.areaId).closed
+  if (res.itemKey) pushToast(t('ui.portal.gotItem', { item: data.items[res.itemKey]?.name ?? res.itemKey }), 'good')
+  pushToast(t('ui.portal.closedToast', { n }), 'good')
+}
+
+/** The victory's moment is over: back to the world's Home, where the area is its raid now. */
+export function finishPortalVictory() {
+  const { save, run } = useGame.getState()
+  const areaId = run.areaId ?? save?.currentAreaId
+  if (save && areaId) commitSave(markPortalWonSeen(save, areaId))
+  useGame.setState((s) => ({ run: { ...initialRun(), forceNext: s.run.forceNext }, battle: null }))
 }
 
 /** Roll the next encounter and show its preview card. */
@@ -209,6 +290,14 @@ export function rollNext() {
   settleRound()
   const { save, data, run } = useGame.getState()
   if (!save || !run.areaId) return
+  if (inPortalRun(save, data, run.areaId)) {
+    if (outOfEnergy()) {
+      setRun({ phase: 'idle', encounter: null })
+      pushToast(t('ui.toast.outOfEnergy'), 'bad')
+      return
+    }
+    return rollPortal(save, run.areaId)
+  }
   if (outOfEnergy()) {
     setRun({ phase: 'idle', encounter: null })
     pushToast(t('ui.toast.outOfEnergy'), 'bad')
@@ -243,6 +332,8 @@ export function rollNext() {
 export function challenge() {
   const { save, data, run } = useGame.getState()
   if (!save || !run.areaId || run.phase !== 'idle') return
+  // A portal run has no challenge: its cards come one after the other (docs/28).
+  if (inPortalRun(save, data, run.areaId)) return
   const area = data.areas.find((a) => a.id === run.areaId)
   const encounter = area ? challengeEncounter(area, progressOf(save, area.id), data, teamAverageLevel(save), playerSideOf(save), runRng) : null
   if (encounter) setRun({ phase: 'preview', encounter, firstInArea: false, skipsUsed: 0 })
@@ -283,6 +374,8 @@ function startBattle(kind: BattleKind, enemy: { dex: number; level: number; shin
     hp: p.currentHp,
     shiny: p.shiny,
     nickname: p.nickname,
+    // A portal run's extra dice (docs/28).
+    ...portalDiceFor(save, data, run.areaId, p.id),
   }))
   // Auto-mode (a cleared area) fights without Mega Evolution or Gigantamax, on both sides; type changers (Arceus…) on
   // both sides take a better type by themselves.
@@ -308,7 +401,13 @@ function startBattle(kind: BattleKind, enemy: { dex: number; level: number; shin
       leadUid,
       enemy,
       // A small world's boosters on both sides (docs/21); its tracks are its own, like a region's.
-      playerLevels: withWorldBoost({ comboLevels: save.comboLevels, dieLevels: save.dieLevels }, data, area),
+      // …and a portal run's damage boosts on yours (docs/28).
+      playerLevels: portalLevels(
+        withWorldBoost({ comboLevels: save.comboLevels, dieLevels: save.dieLevels }, data, area),
+        save,
+        data,
+        run.areaId,
+      ),
       enemyLevels: withWorldBoost(uniformLevels(upgradeLevel), data, area),
       megaAllowed: megaUnlocked(save, data),
       gmaxAllowed: gmaxUnlocked(save, data),
@@ -457,7 +556,9 @@ function settleBattle(stalemate: boolean) {
     // A wild or legendary K.O. that can be caught goes to the catch throw first; the rewards screen follows it.
     const kind = s.kind === 'wild' || s.kind === 'boss' ? s.kind : null
     const foeDex = s.enemy.baseDex ?? s.enemy.dex
-    const target = kind ? catchTarget(res.save, foeDex, s.enemy.level, kind, data, s.enemy.shiny) : null
+    // A portal run's wild Pokémon can't be caught (docs/28).
+    const target =
+      kind && !portalNoCatch(save, data, run.areaId) ? catchTarget(res.save, foeDex, s.enemy.level, kind, data, s.enemy.shiny) : null
     setRun({
       phase: target ? 'catch' : 'victory',
       events,
@@ -468,8 +569,9 @@ function settleBattle(stalemate: boolean) {
     return
   }
   if (out.result === 'lost') {
+    const lost = inPortalRun(withHp, data, run.areaId) ? portalStateOf(withHp, run.areaId).closed : null
     commitSave(applyWipe(withHp, run.areaId, data))
-    setRun({ phase: 'wipe', trainer: null, events: [] })
+    setRun({ phase: 'wipe', trainer: null, events: [], portalLost: lost })
     return
   }
   // fled / stalemate: damage is kept, no rewards
@@ -623,8 +725,9 @@ export function forfeit() {
     return
   }
   if (run.phase !== 'victory' || !trainerHasNext()) return
+  const lost = inPortalRun(save, data, run.areaId) ? portalStateOf(save, run.areaId).closed : null
   commitSave(run.rebattle ? applyRebattleLoss(save, data, run.rebattle.regionId) : applyWipe(save, run.areaId, data))
-  setRun({ phase: 'wipe', trainer: null, events: [] })
+  setRun({ phase: 'wipe', trainer: null, events: [], portalLost: lost })
 }
 
 /** After a full K.O. the run is over: Home (where CONTINUE starts the area afresh), or the rebattle page. */

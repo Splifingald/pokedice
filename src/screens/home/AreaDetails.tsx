@@ -12,6 +12,7 @@ import {
   progressRaidOf,
   progressRaidKey,
   progressRaidState,
+  portalModeOf,
   raidRules,
   teamAverageLevel,
   type Area,
@@ -102,7 +103,15 @@ function RaidFact({ area, boss }: { area: Area; boss: BossDef }) {
       icon={<MiniSprite dex={boss.dex} size={40} silhouette={!known} />}
       small={t('ui.raid.progress.kicker')}
       title={`${name} · ${t('ui.common.level.short', { n: raidRules(data, boss.dex, 'progress', area.id).level })}`}
-      note={t(state === 'locked' ? 'ui.raid.progress.factLocked' : state === 'done' ? 'ui.raid.progress.factDone' : 'ui.raid.progress.factOpen')}
+      note={t(
+        state === 'locked'
+          ? portalModeOf(area, data)
+            ? 'ui.portal.factLocked'
+            : 'ui.raid.progress.factLocked'
+          : state === 'done'
+            ? 'ui.raid.progress.factDone'
+            : 'ui.raid.progress.factOpen',
+      )}
       tag={
         state === 'done' ? (
           <Chip tone="done">{t('ui.raid.progress.stDone')}</Chip>

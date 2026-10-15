@@ -22,6 +22,7 @@
     "rebattle-sql": "tsx scripts/rebattle-sql.ts",
     "remove-league-ii": "tsx scripts/remove-league-ii.ts",
     "raid-balance": "tsx scripts/raid-balance.ts",
+    "portal-balance": "tsx scripts/portal-balance.ts",
     "raid-areas": "tsx scripts/raid-areas.ts",
     "progress-raids-sql": "tsx scripts/progress-raids-sql.ts",
     "art": "tsx scripts/art.ts",

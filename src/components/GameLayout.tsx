@@ -23,6 +23,7 @@ import { LeaderboardTutorial } from './LeaderboardTutorial'
 import { ReplyPopup } from './ReplyPopup'
 import { GiftService } from './Gifts'
 import { ShareTutorial } from './ShareTutorial'
+import { PortalGuard, PortalUnlockPopup } from '@/screens/area/PortalRun'
 
 /** In-game shell: top bar, side bar (desktop) or bottom bar (phones), and the screen. No save → back to the title. */
 export function GameLayout() {
@@ -80,6 +81,9 @@ export function GameLayout() {
       <InviteRewardPopup />
       <TradesService />
       <PushService />
+      <PortalUnlockPopup />
+      {/* A portal run under way (docs/28): the area is the only page, and the screen wears the distortion. */}
+      <PortalGuard />
     </div>
   )
 }

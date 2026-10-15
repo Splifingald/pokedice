@@ -24,6 +24,7 @@ import type {
   Trainer,
   WildPoolEntry,
 } from '../src/engine/types'
+import { DEFAULT_PORTAL_RUN } from '../src/engine/portalMode'
 import { stableUuid, upsert } from './seed'
 
 export const REGION_ID = 'world-haunted-hollow'
@@ -59,6 +60,7 @@ interface AreaSpec {
   boss?: BossDef[]
   gyms?: TrainerSpec[]
   background?: Area['battleBackground']
+  mode?: Area['mode']
 }
 
 const balls = (lo: [number, number], hi?: [number, number]): AreaSpec['loot'] => [
@@ -931,8 +933,11 @@ export const AREAS: AreaSpec[] = [
     deck: { wild: 3, trainer: 1 },
     upgrade: 8,
     hidden: true,
-    // Every one of the world's Pokémon but Giratina, which can't be caught before (docs/26 §2.4): 120 − 1.
-    unlock: [{ kind: 'pokedex', count: 119 }],
+    // 100 of the world's Pokémon (docs/28, the user's call of 2026-10-15; it was all but Giratina, 119, before). Its
+    // portal run (docs/28) with Distortion World's numbers: 0057 patches the live area
+    // (scripts/patch-hh-distortion.ts).
+    unlock: [{ kind: 'pokedex', count: 100 }],
+    mode: DEFAULT_PORTAL_RUN,
     boss: [{ dex: 487, level: 70, shiny: true, raid: true }],
     // Only Pokémon met elsewhere too: everything must be caught before it opens.
     wild: [
@@ -1040,6 +1045,7 @@ export function haunted(): { region: Region; areas: Area[]; trainers: Trainer[];
       battleBackground: a.background ?? 'default',
       hidden: !!a.hidden,
       unlockConditions: a.unlock ?? null,
+      ...(a.mode && { mode: a.mode }),
       gyms: gyms.map((g) => g.id),
       wildPool: a.wild.map(([dex, weight, minLevel, maxLevel]): WildPoolEntry => ({
         id: id('wild', a.key, dex),

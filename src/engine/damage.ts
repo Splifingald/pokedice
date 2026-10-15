@@ -18,6 +18,17 @@ export interface UpgradeLevels {
   typeBoost?: Partial<Record<PokeType, number>>
   /** A raid's type matchups for this side's attacks, instead of ×2, ×½ and ×0 (`scaleMatchup`). */
   typeScale?: RaidTypeScale
+  /**
+   * A portal run's boosts (docs/28): + this much on every attack of the type, added like the combo bonus (before the
+   * type's multiplier and a booster). Shown in the damage recap.
+   */
+  typeFlat?: Partial<Record<PokeType, number>>
+}
+
+/** + damage an attack of this type gets from a portal run's boosts (0 without one, or untyped). */
+export const typeFlatOf = (levels: UpgradeLevels, type: PokeType | null): number => {
+  const n = type ? Number(levels.typeFlat?.[type]) : NaN
+  return Number.isFinite(n) && n > 0 ? n : 0
 }
 
 /** The type chart's multiplier read through a raid's matchups: neutral stays ×1, an untyped hit too. */
@@ -109,6 +120,8 @@ export interface DamageResult {
   effectiveness: number
   /** A small world's booster on this attack's type: × `multiplier` after the type's, on top of everything. */
   boost?: { type: PokeType; multiplier: number } | null
+  /** A portal run's boost on this attack's type (docs/28): + `amount`, like the combo's bonus, before the multipliers. */
+  flat?: { type: PokeType; amount: number } | null
 }
 
 /**
@@ -133,8 +146,10 @@ export function computeDamage(
   const values = perDie.map((p) => p.value)
   const combo = selectCombo(detectCombos(values), levels.comboLevels, multiplier, data)
 
-  const typed = perDie.reduce((s, p) => s + p.damage, 0) + (combo?.damage ?? 0)
-  const neutral = perDie.reduce((s, p) => s + p.value + p.bonus, 0) + (combo?.bonus ?? 0)
+  // A portal run's boost is a flat bonus of its type, added to the dice and the combo and multiplied with them.
+  const flat = typeFlatOf(levels, type)
+  const typed = perDie.reduce((s, p) => s + p.damage, 0) + (combo?.damage ?? 0) + flat * multiplier
+  const neutral = perDie.reduce((s, p) => s + p.value + p.bonus, 0) + (combo?.bonus ?? 0) + flat
   const immune = perDie.length > 0 && multiplier === 0
   // The booster comes after the type's multiplier, and stays out of the effectiveness ("super effective" is the type's).
   const boost = typeBoostOf(levels, type)
@@ -149,5 +164,6 @@ export function computeDamage(
     immune,
     effectiveness: immune ? 0 : neutral > 0 ? typed / neutral : 1,
     ...(boost !== 1 && type && { boost: { type, multiplier: boost } }),
+    ...(flat > 0 && type && { flat: { type, amount: flat } }),
   }
 }

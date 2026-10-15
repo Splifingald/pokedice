@@ -51,6 +51,7 @@ import { ExtremeBits } from './kitchen/ExtremeBits'
 import { PartnerBits } from './kitchen/PartnerBits'
 import { RaidBits } from './kitchen/RaidBits'
 import { WorldBits } from './kitchen/WorldBits'
+import { PortalBits } from './kitchen/PortalBits'
 import { GiftBits } from './kitchen/GiftBits'
 import { InviteBits } from './kitchen/InviteBits'
 import { SupportBits } from './kitchen/SupportBits'
@@ -623,6 +624,10 @@ export function KitchenSink() {
 
       <Section title="Small worlds: square, pop-up, partner pick, strip, squares inside, boosters, dice level, mythical card, closing, away page">
         <WorldBits />
+      </Section>
+
+      <Section title="Portal run (Distortion World): the portal, gauge, breach and its pop-up, rules, boons, bonuses, shader, screen distortion, victory">
+        <PortalBits />
       </Section>
 
       <Section title="StatusIcons · PixelIcon">

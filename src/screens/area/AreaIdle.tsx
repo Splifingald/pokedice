@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { teamOf, type Area } from '@/engine'
+import { portalLock, teamOf, type Area } from '@/engine'
 import { useT } from '@/i18n/react'
 import { RestingPanel } from '@/components/Extreme'
 import { PixelIcon } from '@/components/icons'
@@ -22,6 +22,8 @@ export function AreaIdle({ area }: { area: Area }) {
   const max = useGame((s) => s.data.config.maxTeamSize)
   const { label, sub, go, explore, off, gym, boss, raid, closed, empty, resting } = useContinue(area)
   const [view, setView] = useState<SheetView | null>(null)
+  // Inside a portal run (docs/28) there is no way Home: CONTINUE alone.
+  const locked = useGame((s) => !!portalLock(s.save, s.data))
   if (!save) return null
   const team = teamOf(save)
 
@@ -68,10 +70,13 @@ export function AreaIdle({ area }: { area: Area }) {
           <RunRoundGauge />
           {/* Why the next encounter can't start (no energy, the area closed, everyone resting): said next to it. */}
           {off && <p className="m-0 truncate text-center font-pixel-sm text-[15px] leading-none text-muted">{sub}</p>}
-          <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] gap-2.5">
-            <PixelButton size="lg" className="px-2" onClick={() => navigate('/home')}>
-              {t('ui.nav.home')}
-            </PixelButton>
+          {locked && <p className="m-0 text-center font-pixel-sm text-[15px] leading-tight text-muted">{t('ui.portal.locked')}</p>}
+          <div className={locked ? 'grid' : 'grid grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] gap-2.5'}>
+            {!locked && (
+              <PixelButton size="lg" className="px-2" onClick={() => navigate('/home')}>
+                {t('ui.nav.home')}
+              </PixelButton>
+            )}
             <PixelButton variant="primary" size="lg" className="px-2" disabled={off} onClick={go}>
               {(gym || boss || raid) && <PixelIcon name="sword" size={22} />}
               {gym || boss || raid ? label : t('ui.common.continue')}

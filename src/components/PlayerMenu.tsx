@@ -20,7 +20,7 @@ import { useFriends } from '@/lib/friends'
 import { useInviteGauge } from './friends/InviteRewards'
 import { isSupabaseConfigured } from '@/lib/supabase'
 import { useGame } from '@/store/game'
-import { useInFight, useIsAdmin } from '@/store/hooks'
+import { useIsAdmin, useNavLock } from '@/store/hooks'
 import { cx } from '@/theme/util'
 import { CloudSyncButton } from './CloudSyncButton'
 import { ExtremeMark, SwitchSaveModal } from './Extreme'
@@ -106,7 +106,8 @@ function MenuRow({
 export function PlayerMenu() {
   const { t } = useT()
   const navigate = useNavigate()
-  const inFight = useInFight()
+  const lock = useNavLock()
+  const inFight = !!lock
   const isAdmin = useIsAdmin()
   const save = useGame((s) => s.save)
   const data = useGame((s) => s.data)
@@ -156,7 +157,7 @@ export function PlayerMenu() {
         aria-haspopup="dialog"
         aria-expanded={open}
         aria-label={news ? t('ui.profile.menuLabelNew', { n: news }) : t('ui.profile.menuLabel')}
-        title={t(inFight ? 'ui.nav.finishFight' : 'ui.profile.menuLabel')}
+        title={t(lock === 'portal' ? 'ui.portal.locked' : inFight ? 'ui.nav.finishFight' : 'ui.profile.menuLabel')}
         className={cx('flex min-h-[44px] min-w-0 shrink flex-row-reverse items-center gap-2 text-right', inFight && 'pointer-events-none opacity-60')}
       >
         <span className="relative shrink-0">

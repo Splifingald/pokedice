@@ -1,7 +1,9 @@
+import { PortalFilters, shaderClass } from '@/components/Portal'
+import { useMotion } from '@/lib/motion'
 import { motion } from 'framer-motion'
 import { useId, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { catchTarget, catchValueOf, effectiveStats, getSpecies, MONEY, paidKey, rebattleProgress, rebattleTiers, type Encounter } from '@/engine'
+import { catchTarget, catchValueOf, effectiveStats, getSpecies, MONEY, paidKey, rebattleProgress, rebattleTiers, type Encounter, portalNoCatch } from '@/engine'
 import { joinList } from '@/i18n'
 import { effectText } from '@/i18n/text'
 import { money } from '@/lib/format'
@@ -31,14 +33,18 @@ function WildCard({ enc }: { enc: Extract<Encounter, { kind: 'wild' | 'boss' }> 
   const stats = effectiveStats(sp, enc.level, data)
   const boss = enc.kind === 'boss'
   const area = useGame((s) => s.data.areas.find((a) => a.id === s.run.areaId))
+  // A portal run's wild Pokémon (docs/28): distorted, and never caught.
+  const distorted = useGame((s) => !boss && !!s.save && portalNoCatch(s.save, s.data, s.run.areaId))
+  const { level, calm } = useMotion()
   return (
     <div className="flex items-center gap-3 sm:gap-4">
+      {distorted && <PortalFilters />}
       <motion.div
         initial={{ scale: 0.6, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         className={cx('shrink-0', boss ? 'bg-night shadow-[inset_0_0_0_3px_#ffbe2e]' : 'bg-paper shadow-ring')}
       >
-        <SpriteImg dex={enc.dex} size={desktop ? 144 : 104} shiny={enc.shiny} />
+        <SpriteImg dex={enc.dex} size={desktop ? 144 : 104} shiny={enc.shiny} className={distorted ? shaderClass(level, calm) : undefined} />
       </motion.div>
       <div className="flex min-w-0 flex-col gap-1">
         {boss && <div className="text-lg leading-none tracking-[0.35em] text-gold">{t('ui.enc.legendaryTag')}</div>}
@@ -51,6 +57,7 @@ function WildCard({ enc }: { enc: Extract<Encounter, { kind: 'wild' | 'boss' }> 
           )}
           {enc.kind === 'wild' && <ShinyParadeChip area={area} />}
           {enc.kind === 'wild' &&
+            !distorted &&
             (enc.isNew ? (
               <span className="bg-gold px-1.5 text-lg leading-tight text-ink shadow-ring">{t('ui.enc.new')}</span>
             ) : (
@@ -68,7 +75,14 @@ function WildCard({ enc }: { enc: Extract<Encounter, { kind: 'wild' | 'boss' }> 
           <DiceSet dice={stats.dice} size={22} />
           <StatChip stat="rerolls" value={stats.rerolls} size={18} className="text-lg" />
         </div>
-        <CatchHint dex={enc.dex} level={enc.level} kind={boss ? 'boss' : 'wild'} shiny={enc.shiny} />
+        {distorted ? (
+          <p className="m-0 flex items-center gap-1.5 font-pixel-sm text-[15px] leading-tight text-muted">
+            <PixelIcon name="sparkle" size={14} />
+            {t('ui.portal.noCatch')}
+          </p>
+        ) : (
+          <CatchHint dex={enc.dex} level={enc.level} kind={boss ? 'boss' : 'wild'} shiny={enc.shiny} />
+        )}
       </div>
     </div>
   )

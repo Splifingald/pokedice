@@ -262,6 +262,72 @@ export interface Area {
   wildPool: WildPoolEntry[]
   trainerPool: TrainerPoolEntry[]
   lootPool: LootEntry[]
+  /** How the area plays instead of rounds (docs/28): Distortion World's portal run. Absent or null = a plain area. */
+  mode?: AreaMode | null
+}
+
+/** An area's special mode (docs/28). One kind for now: the portal run. */
+export type AreaMode = PortalRunMode
+
+/**
+ * The portal run (docs/28, Distortion World): an endless deck of `wild` wild Pokémon and `items` finds, shuffled, then
+ * a distortion card; close `portals` of them in one go, with no Pokémon Center and no way out but a full K.O. Each
+ * distortion offers `offers` boons of distinct kinds drawn by weight; the last one wins the run and opens the area's
+ * raid at `raid`'s numbers. Every number is the admin's (Admin → Areas).
+ */
+export interface PortalRunMode {
+  kind: 'portal'
+  portals: number
+  wild: number
+  items: number
+  offers: number
+  /** Heal every Pokémon still standing by `percent` % of its max HP. */
+  heal: { weight: number; percent: number }
+  /** Bring one K.O. Pokémon back, with a Revive's HP. */
+  revive: { weight: number }
+  /** + `amount` damage on every attack of one of the team's dice types (stacks). */
+  boost: { weight: number; amount: number }
+  /** One more die for one Pokémon, of one of its types, up to `maxDice` dice. */
+  die: { weight: number; maxDice: number }
+  /** A rare item into the bag, drawn from `items` by weight. */
+  item: { weight: number; items: { key: string; weight: number }[] }
+  /** The area's raid once the run is won: its level, the foe's dice level, its HP bars and the teams' level cap. */
+  raid: { level: number; upgradeLevel: number; bars: number; teamCap: number }
+}
+
+/** One boon a distortion offers (docs/28), as drawn: who and what it names is fixed when it's offered. */
+export type DistortionOffer =
+  | { kind: 'heal'; percent: number }
+  | { kind: 'revive'; uid: string }
+  | { kind: 'boost'; type: PokeType; amount: number }
+  | { kind: 'die'; uid: string; type: PokeType }
+  | { kind: 'item' }
+
+export type DistortionKind = DistortionOffer['kind']
+
+/** A portal run's card: a wild Pokémon, a find, or the distortion that ends each cycle. */
+export type PortalCard = 'wild' | 'item' | 'distortion'
+
+/** Where a portal run stands, in its area's progress (so it's saved and parked with the region). */
+export interface PortalState {
+  /** Inside a run: the team can't leave the area until it wins or is K.O. */
+  active: boolean
+  /** Distortions closed this run. */
+  closed: number
+  /** Cards left in this cycle, drawn from the end (the distortion is the first one, so it comes last). */
+  deck: PortalCard[]
+  /** A distortion is open: the boons to pick one from. */
+  offers?: DistortionOffer[] | null
+  /** Run bonuses: + damage on attacks of each type. */
+  boosts?: Partial<Record<PokeType, number>>
+  /** Run bonuses: extra dice, by Pokémon (instance id). */
+  dice?: Record<string, PokeType[]>
+  /** Every portal closed: the run is over for good, the raid is open. */
+  won?: boolean
+  /** The victory's moment has played. */
+  wonSeen?: boolean
+  /** Runs started here (a wipe ends one). */
+  tries?: number
 }
 
 export type UnlockCondition =
@@ -734,6 +800,8 @@ export interface GameConfig {
   inviteRewards: InviteRewardsConfig
   /** Push notifications (docs/27): their switch, a game_config row of its own that seeding never writes. */
   push: PushConfig
+  /** The areas' portal run (docs/28): its switch. The server reads the same row (0057). */
+  portalRun: { access: EventAccess }
 }
 
 /**
@@ -1001,6 +1069,8 @@ export interface AreaProgress {
   drawn?: DeckCard[]
   /** The last encounter here was a Pokémon Center: the next one can't be (no two Centers in a row). */
   lastCenter?: boolean
+  /** A portal run here (docs/28): where it stands, its bonuses, whether it's won. */
+  portal?: PortalState
 }
 
 export interface SaveData {
@@ -1047,6 +1117,8 @@ export interface SaveData {
   leaderboardVisited?: boolean
   /** Versus's rules pop-up has been shown (once, when Versus opens; its INFO button shows them again). */
   versusRulesSeen?: boolean
+  /** The portal run's rules pop-up (docs/28) has been shown (once; INFO shows them again). */
+  portalRulesSeen?: boolean
   /** The region being played. Absent on saves from before the second region = 'kanto'. */
   region?: RegionId
   /** The regions not being played, each holding everything that region owns. */

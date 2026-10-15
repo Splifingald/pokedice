@@ -205,11 +205,24 @@ export interface BattlerSeed {
   shiny?: boolean
   item?: string
   nickname?: string
+  /** A portal run's extra dice (docs/28), after its typed dice; the whole set kept to `diceCap` dice. */
+  extraDice?: DieType[]
+  diceCap?: number
+}
+
+/** A set of dice with extra ones joining the typed dice (ahead of any base die), the extras cut to stay within `cap`. */
+export function withExtraDice(dice: readonly DieType[], extra: readonly DieType[] | undefined, cap = Infinity): DieType[] {
+  if (!extra?.length) return [...dice]
+  const room = Math.max(0, cap - dice.length)
+  const add = extra.slice(0, room)
+  const typed = dice.filter((d) => d !== 'base')
+  return [...typed, ...add, ...dice.filter((d) => d === 'base')]
 }
 
 export function makeBattler(seed: BattlerSeed, data: GameData): Battler {
   const species = getSpecies(data, seed.dex)
-  const stats = effectiveStats(species, seed.level, data)
+  const base = effectiveStats(species, seed.level, data)
+  const stats = seed.extraDice?.length ? { ...base, dice: withExtraDice(base.dice, seed.extraDice, seed.diceCap) } : base
   return {
     uid: seed.uid,
     dex: seed.dex,

@@ -92,6 +92,8 @@ export interface RunState {
   rebattle?: { regionId: string; tier: number } | null
   /** The Pokémon Center's healing has played: back from Home, the Center opens on the team, not on the jingle again. */
   healShown?: boolean
+  /** A wipe just ended a portal run (docs/28): how many portals it had closed, lost now (the wipe card says so). */
+  portalLost?: number | null
 }
 
 export interface BattleSlice {

@@ -1,6 +1,7 @@
 // The battle stage (240×160 art pixels, scaled up): the Daybreak background drawn in code, both Pokémon as the
 // animated sprites the browser plays, their plates, and — while a move, a form change or an intro plays — the
 // timeline's canvas on top (src/fx). docs/13-SHOWDOWN-SPRITES.md has why the sprites are page images.
+import { PortalFilters, shaderClass } from '@/components/Portal'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import type { Battler, Side } from '@/engine'
@@ -134,10 +135,13 @@ function Mon({
   fx,
   onTap,
   tapLabel,
+  shader,
 }: {
   b: Battler
   side: Side
   scale: number
+  /** A portal run's wild Pokémon (docs/28): the distortion shader's class for this motion level. */
+  shader?: string
   /** Out on the field (the foe has slid in, yours has popped out of its ball). */
   shown: boolean
   fainted: boolean
@@ -220,7 +224,7 @@ function Mon({
             if (s.fallback && e.currentTarget.src !== new URL(s.fallback, location.href).href)
               e.currentTarget.src = s.fallback
           }}
-          className="pixelated absolute inset-0 h-full w-full max-w-none"
+          className={cx('pixelated absolute inset-0 h-full w-full max-w-none', !flash && shader)}
           // A flash (a faint, a form change with no timeline) turns the sprite into a white silhouette for a moment.
           style={{
             imageRendering: 'pixelated',
@@ -356,7 +360,10 @@ export function BattleStage({
   tapLabel,
   label,
   children,
+  distorted,
 }: {
+  /** The foe is one of a portal run's wild Pokémon (docs/28): it wears the distortion shader. */
+  distorted?: boolean
   own: Battler
   foe: Battler
   fx: Fx
@@ -420,6 +427,7 @@ export function BattleStage({
   return (
     <div ref={box} className="relative isolate z-0 aspect-[3/2] w-full select-none overflow-hidden">
       <Backdrop calm={calm || artShown} />
+      {distorted && <PortalFilters />}
       {art && (
         <AreaArt
           key={art.id}
@@ -442,6 +450,7 @@ export function BattleStage({
             fx={fx}
             onTap={onTap && (() => onTap('enemy'))}
             tapLabel={tapLabel(foe)}
+            shader={distorted ? shaderClass(level, calm) : undefined}
           />
           <AnimatePresence>
             {trainer && (
