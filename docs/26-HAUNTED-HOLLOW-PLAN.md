@@ -135,7 +135,8 @@ Windy Cliffs).
 The user's calls of 2026-10-13, after the first build:
 - **The nav bar stays** inside a world: its Mart, Team, Pokédex and Upgrades are reached there.
 - **Real dice upgrades in every world**: its own tracks from level 1, bought with its ₽ (dice by level is gone); its
-  foes use the area's enemy upgrade level; the boosters stay on both sides (`withWorldBoost`). No General tab inside.
+  foes use the area's enemy upgrade level; the boosters stay on both sides (`withWorldBoost`). No General tab inside,
+  and none of the General upgrades works there (no Capture Luck, no offline earnings: docs/25).
 - **Home inside shows its secret areas only** (and the mythical's square for a world that has one): **one row per
   secret area** (up to 6), two squares wide, **the picture across the whole row** with the name, the gauge and the
   line over its darkened foot, readable on any picture; locked (greyed, the boss a silhouette, the condition), new,

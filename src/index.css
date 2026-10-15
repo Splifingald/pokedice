@@ -184,6 +184,31 @@ canvas.pixelated,
   image-rendering: pixelated;
 }
 
+/* The "turn your device" phone (RotateCover): sideways, then tipped upright in four steps, then a rest. Reduced
+   motion leaves it on its last frame, upright. */
+@keyframes rotate-hint {
+  0%,
+  35% {
+    transform: rotate(-90deg);
+  }
+  42% {
+    transform: rotate(-67.5deg);
+  }
+  49% {
+    transform: rotate(-45deg);
+  }
+  56% {
+    transform: rotate(-22.5deg);
+  }
+  63%,
+  100% {
+    transform: rotate(0deg);
+  }
+}
+.rotate-hint {
+  animation: rotate-hint 2.4s steps(1, end) infinite;
+}
+
 /* Reduced motion: the OS setting or the in-game setting (html.reduce-motion) collapses everything. */
 @media (prefers-reduced-motion: reduce) {
   *,

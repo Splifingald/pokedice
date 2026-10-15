@@ -46,8 +46,13 @@ const RETRY_MS = 60_000
 export async function collectOfflineGold(force = false) {
   away = false
   const { save: first, data: firstData } = useGame.getState()
-  // Inside a small world the absence waits (engine: nothing is paid there), so there's nothing to ask the time for.
-  if (returning || first?.general?.awayFrom == null || inWorldRegion(first, firstData)) return
+  if (returning || first?.general?.awayFrom == null) return
+  // Inside a small world an open absence closes unpaid (engine), so there's no time to ask for.
+  if (inWorldRegion(first, firstData)) {
+    const res = collectOffline(first, firstData, 0)
+    if (res) commitSave(res.save)
+    return
+  }
   if (!force && performance.now() - failedAt < RETRY_MS) return
   returning = true
   try {
