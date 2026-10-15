@@ -1,8 +1,9 @@
 /**
- * Distortion World's new wild Pokémon (docs/28, the user's call of 2026-10-15), as a patch over content that has the
- * world already: Haunter and Dusclops as reliefs (weaker, a breather between the strong ones), then Houndoom, Sableye,
- * Froslass, Gourgeist, Palossand, Mimikyu and Polteageist as strong as the rest. Nothing else is touched, so the
- * admin's own edits stay.
+ * Distortion World's wild Pokémon (docs/28 §3, the user's calls of 2026-10-15), as a patch over content that has the
+ * world already: nine newcomers (Haunter and Dusclops as reliefs, then Houndoom, Sableye, Froslass, Gourgeist,
+ * Palossand, Mimikyu and Polteageist), every Pokémon as likely (Dragapult aside, rare as everywhere in the world), and
+ * levels set for the run's difficulty as it was before them: the strong ones Lv.60–64, the reliefs Lv.52–55. The area
+ * shows Lv.52–70. Nothing else is touched, so the admin's own edits elsewhere stay.
  *
  * `tsx scripts/patch-hh-distortion-pool.ts <in-bundle.json> <out-bundle.json>` patches an admin export for
  * `pnpm import-bundle`; `tsx scripts/patch-hh-distortion-pool.ts --sql <out.sql>` writes the same as a migration
@@ -11,27 +12,33 @@
 import { readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import type { BundleRaw, WildPoolEntry } from '../src/engine/types'
+import type { Area, BundleRaw, WildPoolEntry } from '../src/engine/types'
 import { AREAS, REGION_ID, haunted } from './content-haunted-hollow'
 
 /** The new species, in the order the content script lists them. */
 export const DISTORTION_NEW = [93, 356, 229, 302, 478, 711, 770, 778, 855]
 
-/** The Distortion World's id and its new pool rows, exactly as the content script builds them. */
-export function distortionRows(): { areaId: string; entries: WildPoolEntry[] } {
-  const area = haunted().areas[AREAS.findIndex((a) => a.key === 'distortion-world')]
+/** The Distortion World as the content script builds it: its id, its level range and its whole wild pool. */
+export function distortionRows(): {
+  areaId: string
+  minLevel: number
+  maxLevel: number
+  entries: WildPoolEntry[]
+} {
+  const area: Area | undefined = haunted().areas[AREAS.findIndex((a) => a.key === 'distortion-world')]
   if (!area) throw new Error('content-haunted-hollow.ts has no distortion-world')
-  const entries = DISTORTION_NEW.map((dex) => {
-    const e = area.wildPool.find((w) => w.dex === dex)
-    if (!e) throw new Error(`content-haunted-hollow.ts has no #${dex} in distortion-world`)
-    return e
-  })
-  return { areaId: area.id, entries }
+  for (const dex of DISTORTION_NEW)
+    if (!area.wildPool.some((w) => w.dex === dex))
+      throw new Error(`content-haunted-hollow.ts has no #${dex} there`)
+  return { areaId: area.id, minLevel: area.minLevel, maxLevel: area.maxLevel, entries: area.wildPool }
 }
 
-/** The export with this change in it. A species the area holds already is left as it is. */
+/**
+ * The export with this change in it: each species of the pool takes the content's weight and levels (an existing row
+ * keeps its id), the missing ones are added, and the area's level range is the content's.
+ */
 export function patchHhDistortionPool(b: BundleRaw): BundleRaw {
-  const { areaId, entries } = distortionRows()
+  const { areaId, minLevel, maxLevel, entries } = distortionRows()
   if (!b.areas.some((a) => a.regionId === REGION_ID))
     throw new Error('This export has no Haunted Hollow: add it first (pnpm haunted-hollow)')
   const config = b.config as Record<string, unknown>
@@ -39,8 +46,12 @@ export function patchHhDistortionPool(b: BundleRaw): BundleRaw {
     ...b,
     areas: b.areas.map((a) => {
       if (a.id !== areaId) return a
+      const set = (w: WildPoolEntry): WildPoolEntry => {
+        const e = entries.find((x) => x.dex === w.dex)
+        return e ? { ...w, weight: e.weight, minLevel: e.minLevel, maxLevel: e.maxLevel } : w
+      }
       const add = entries.filter((e) => !a.wildPool.some((w) => w.dex === e.dex))
-      return add.length ? { ...a, wildPool: [...a.wildPool, ...add] } : a
+      return { ...a, minLevel, maxLevel, wildPool: [...a.wildPool.map(set), ...add] }
     }),
     config: { ...config, configVersion: Number(config.configVersion ?? 0) + 1 },
   }
@@ -49,28 +60,33 @@ export function patchHhDistortionPool(b: BundleRaw): BundleRaw {
 const q = (v: string) => `'${v.replace(/'/g, "''")}'`
 
 /**
- * The same as SQL for a live database that ran 0052. Each row goes in once, only where the area exists and does not
- * hold that species yet (an admin's own row for it wins); `configVersion` + 1. Safe to run again.
+ * The same as SQL for a live database that ran 0052: the missing species go in (once, only where the area exists),
+ * every species of the pool takes its weight and levels, the area its range; `configVersion` + 1. Safe to run again.
  */
 export function hhDistortionPoolSql(): string {
-  const { areaId, entries } = distortionRows()
+  const { areaId, minLevel, maxLevel, entries } = distortionRows()
   const values = entries
     .map((w) => `  (${q(w.id)}, ${q(areaId)}, ${w.dex}, ${w.weight}, ${w.minLevel}, ${w.maxLevel})`)
     .join(',\n')
   return [
-    "-- Distortion World's new wild Pokémon (docs/28). Generated by `tsx scripts/patch-hh-distortion-pool.ts --sql`: do",
-    "-- not edit by hand. Patches only its pool, over the admin's later edits: Haunter and Dusclops as reliefs (Lv.55–59),",
-    '-- Houndoom, Sableye, Froslass, Gourgeist, Palossand, Mimikyu and Polteageist (Lv.65–69); then `configVersion` + 1.',
-    '-- Safe to run again.',
+    "-- Distortion World's wild Pokémon (docs/28 §3). Generated by `tsx scripts/patch-hh-distortion-pool.ts --sql`: do",
+    '-- not edit by hand. Nine newcomers (Haunter and Dusclops as reliefs, Lv.52–55; Houndoom, Sableye, Froslass,',
+    '-- Gourgeist, Palossand, Mimikyu, Polteageist), every one as likely (Dragapult aside), the strong ones Lv.60–64 so',
+    '-- the run stays as hard as before them; the area shows Lv.52–70. Then `configVersion` + 1. Safe to run again.',
     'begin;',
+    `create temp table dw_pool (id text, area_id text, dex int, weight int, min_level int, max_level int) on commit drop;
+insert into dw_pool values
+${values};`,
     `insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level)
 select v.id::uuid, v.area_id::uuid, v.dex, v.weight, v.min_level, v.max_level
-from (values
-${values}
-) v (id, area_id, dex, weight, min_level, max_level)
+from dw_pool v
 where exists (select 1 from areas a where a.id = v.area_id::uuid)
   and not exists (select 1 from area_wild_pool p where p.area_id = v.area_id::uuid and p.dex = v.dex)
 on conflict (id) do nothing;`,
+    `update area_wild_pool p set weight = v.weight, min_level = v.min_level, max_level = v.max_level
+from dw_pool v
+where p.area_id = v.area_id::uuid and p.dex = v.dex;`,
+    `update areas set min_level = ${minLevel}, max_level = ${maxLevel} where id = ${q(areaId)};`,
     "insert into game_config (key, value) values ('configVersion', '1'::jsonb) on conflict (key) do update set value = to_jsonb(coalesce((game_config.value #>> '{}')::int, 0) + 1);",
     'commit;',
     '',
@@ -92,7 +108,9 @@ async function main() {
     )
   const b = JSON.parse(await readFile(path.resolve(input), 'utf8')) as BundleRaw
   await writeFile(path.resolve(output), JSON.stringify(patchHhDistortionPool(b)))
-  console.log(`✓ Distortion World: ${DISTORTION_NEW.length} wild Pokémon added → ${output}`)
+  console.log(
+    `✓ Distortion World: ${DISTORTION_NEW.length} wild Pokémon added, its pool rebalanced → ${output}`,
+  )
 }
 
 const isMain = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)

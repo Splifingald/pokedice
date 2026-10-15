@@ -22,39 +22,47 @@ describe('Distortion World’s new wild Pokémon', () => {
     expect(readFileSync(path.join(MIG, '0058_hh_distortion_pool.sql'), 'utf8')).toBe(hhDistortionPoolSql())
   })
 
-  it('has Haunter and Dusclops as reliefs, below the strong ones', () => {
-    expect(entries.map((e) => e.dex)).toEqual(DISTORTION_NEW)
+  it('has Haunter and Dusclops as reliefs below the strong ones, every one as likely but Dragapult', () => {
     const relief = entries.filter((e) => e.dex === 93 || e.dex === 356)
-    const strong = entries.filter((e) => e.dex !== 93 && e.dex !== 356)
+    const strong = entries.filter((e) => e.dex !== 93 && e.dex !== 356 && e.dex !== 887)
+    expect(relief).toHaveLength(2)
+    expect(strong).toHaveLength(13)
+    for (const e of [...relief, ...strong]) expect(e.weight).toBe(15)
+    expect(entries.find((e) => e.dex === 887)!.weight).toBeLessThan(15)
     for (const r of relief) for (const s of strong) expect(r.maxLevel).toBeLessThan(s.minLevel)
+    for (const dex of DISTORTION_NEW) expect(entries.some((e) => e.dex === dex)).toBe(true)
   })
 
-  it('patches an export once: the pool grows by the new ones, an existing row for one of them kept', () => {
+  it('patches an export: the newcomers added, every row set to its numbers (its id kept), the range set', () => {
     const b = withHaunted(BUNDLE as BundleRaw)
-    const before = b.areas.find((a) => a.id === areaId)!
-    // An export from before the change: the area without its new rows, Sableye already added by the admin.
+    // An export from before: the area at Lv.65–70 without the newcomers, Gengar at its old numbers, Sableye added
+    // by hand.
     const old: BundleRaw = {
       ...b,
       areas: b.areas.map((a) =>
         a.id === areaId
           ? {
               ...a,
+              minLevel: 65,
               wildPool: [
-                ...a.wildPool.filter((w) => !DISTORTION_NEW.includes(w.dex)),
-                { id: 'admin-sableye', dex: 302, weight: 3, minLevel: 60, maxLevel: 61 },
+                ...a.wildPool
+                  .filter((w) => !DISTORTION_NEW.includes(w.dex))
+                  .map((w) => (w.dex === 94 ? { ...w, minLevel: 65, maxLevel: 69 } : w)),
+                { id: 'admin-sableye', dex: 302, weight: 3, minLevel: 70, maxLevel: 71 },
               ],
             }
           : a,
       ),
     }
     const patched = patchHhDistortionPool(old)
-    const pool = patched.areas.find((a) => a.id === areaId)!.wildPool
-    expect(pool.filter((w) => w.dex === 302)).toEqual([
-      { id: 'admin-sableye', dex: 302, weight: 3, minLevel: 60, maxLevel: 61 },
-    ])
-    expect(new Set(pool.map((w) => w.dex))).toEqual(new Set(before.wildPool.map((w) => w.dex)))
+    const area = patched.areas.find((a) => a.id === areaId)!
+    expect([area.minLevel, area.maxLevel]).toEqual([52, 70])
+    const by = (dex: number) => area.wildPool.filter((w) => w.dex === dex)
+    expect(by(302)).toEqual([{ id: 'admin-sableye', dex: 302, weight: 15, minLevel: 60, maxLevel: 64 }])
+    expect(by(94).map((w) => [w.minLevel, w.maxLevel])).toEqual([[60, 64]])
+    expect(new Set(area.wildPool.map((w) => w.dex))).toEqual(new Set(entries.map((w) => w.dex)))
     expect(Number(patched.config.configVersion)).toBe(Number(old.config.configVersion ?? 0) + 1)
     const again = patchHhDistortionPool(patched)
-    expect(again.areas.find((a) => a.id === areaId)!.wildPool).toEqual(pool)
+    expect(again.areas.find((a) => a.id === areaId)!.wildPool).toEqual(area.wildPool)
   })
 })

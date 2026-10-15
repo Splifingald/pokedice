@@ -21,7 +21,7 @@ on the pixel engine (`src/fx/timelines/portal.ts`, `src/fx/glitch.ts`, hosted by
 | Arriving | **Like a Pokémon Center** (the user, 2026-10-15): arriving at the way in **heals the team and the Box** (the Center's heal and its rules: `arriveAtPortal`), and **until READY! the team can change** in the Team screen as at a Center (`teamSwapsOpen`); TEAM goes there, BACK TO THE DISTORTION (or Home's CONTINUE) comes back to the pop-up at once. The menus are open until READY!. |
 | Inside | The team is **fully healed on entry** (READY! heals it again, harmlessly). **No Pokémon Center at all**, so **no team changes** once READY! is pressed. **No way out**: the menus, the top bar, Home and every other page send back to the area, and a reload comes back into the run (its state is in the save). The screen wears a **recurring distortion** (motion levels below). |
 | The deck | Endless: **5 wild, 1 find (shuffled), then 1 distortion, always last**; repeat. The round gauge becomes a **gauge of portals closed, 0/10**. |
-| Wild Pokémon | The area's wild pool (Gengar, Chandelure, Aegislash, Dusknoir, Trevenant, Mismagius, Dragapult rare), **Lv.65–70, foes' dice level 8**. **They can't be caught** (no throw; the preview says so). They wear the **distortion shader**. Normal XP and ₽ (wild Pokémon pay no ₽, as anywhere; the finds do). |
+| Wild Pokémon | The area's wild pool, **foes' dice level 8**: Gengar, Chandelure, Aegislash, Dusknoir, Trevenant, Mismagius, Houndoom, Sableye, Froslass, Gourgeist, Palossand, Mimikyu and Polteageist at **Lv.60–64**, Haunter and Dusclops as **reliefs at Lv.52–55**, every one as likely, Dragapult rare (Lv.68–70); the area shows Lv.52–70 (§3, 2026-10-15). **They can't be caught** (no throw; the preview says so). They wear the **distortion shader**. Normal XP and ₽ (wild Pokémon pay no ₽, as anywhere; the finds do). |
 | A distortion | **Pick 1 of 3 boons**, **confirmed** in a small pop-up (BACK spends nothing, CONFIRM takes it: the user, 2026-10-15), drawn by weight as **distinct kinds, only those that can help now**: heal everyone standing by **30 %** of max HP · revive **one K.O. Pokémon** (named; a Revive's HP) · **+10 damage on attacks of one type** (a type of the team's dice, named: "Ghost +10") · **an extra die** for a named Pokémon (one of its types; **8 dice at most**, a Pokémon at 8 is never chosen) · **a rare item**: Hyper Potion 40 %, Revive 40 %, Max Revive 20 %. With nothing that can help, it closes at once. |
 | The +10 | A **flat bonus added like the combo's**: (Σ dice + combo + 10) × the attack type's multiplier × a booster. Only when the attack takes that type; nothing on an untyped attack; an immune hit stays 0. It **stacks** (Ghost +20). Shown in the damage recap. |
 | The extra die | Joins the Pokémon's typed dice in battle (ahead of a base die). A Mega's own die comes on top, as always. |
@@ -77,6 +77,22 @@ almost every time. Foes' dice at 7 instead of 8 only lifts the best team (69 %).
 8)**: a strong Lv.60–70 team clears it in one to four tries, a weaker one has the world's last days to level up and buy
 tracks. Each try is about 35–50 fights for a winner (10 cycles of 5), so XP and finds carry over to the next try.
 
+**The newcomers (2026-10-15).** The user added Haunter and Dusclops (reliefs, weak) and Houndoom, Sableye, Froslass,
+Gourgeist, Palossand, Mimikyu and Polteageist, every one as likely, with lower levels allowed to keep the balance, and
+chose **today's difficulty**. At the old Lv.65–69 the newcomers made it far harder (the best team 12 % of tries, 67 %
+clear; the second 3 %, 23 %): Houndoom and Sableye's Dark hits the Ghost teams hard. Measured on the same three teams
+(200 players each), every species at weight 15 (Dragapult 2), the reliefs 8 levels under the rest:
+
+| The strong ones / the reliefs | Dragapult · Chandelure · Aegislash | Gengar · Dusknoir · Mismagius | Golurk · Froslass · Trevenant |
+|---|---|---|---|
+| **Lv.60–64 / 52–55 (kept)** | **42 % of tries · 100 % clear** | **12 % · 71 %** | 0 % · 3 % |
+| Lv.58–62 / 50–53 | 65 % · 100 % | 21 % · 89 % | 0 % · 2 % |
+| Lv.56–60 / 48–51 | 72 % · 100 % | 31 % · 96 % | 1 % · 9 % |
+
+With a Lv.80 team (the user's question), at Lv.65–69 the best trios win 81–89 % of tries (Darkrai, Houndoom, Dragapult
+and Gengar lead them; Dark types do best against the pool, a team of Ghosts worst). The simulator's player always leads
+with its first Pokémon and uses items only between fights, so these numbers lean low.
+
 ## 4. Server (migration 0057)
 
 `supabase/migrations/0057_hh_distortion_world.sql`, from `tsx scripts/patch-hh-distortion.ts --sql`. A patch over
@@ -97,6 +113,14 @@ tracks. Each try is about 35–50 fights for a winner (10 cycles of 5), so XP an
 bundle hasn't got Haunted Hollow), and seed.sql adds the column but never writes `mode` (no bundled area has one).
 
 ## 5. Setting it up
+
+The pool of §3 (2026-10-15): run `supabase/migrations/0058_hh_distortion_pool.sql` after 0057 (safe to run again):
+https://github.com/Splifingald/pokedice/blob/feature/version_2/supabase/migrations/0058_hh_distortion_pool.sql — it adds
+the nine newcomers, sets every species of the area's pool to its weight and levels, and the area to Lv.52–70. Or, for
+an export: `tsx scripts/patch-hh-distortion-pool.ts <in.json> <out.json>`, then `pnpm import-bundle`. `supabase/seed.sql`
+doesn't carry it (it has no Haunted Hollow).
+
+The portal run itself:
 
 1. Deploy the client (the switch is Off: nothing changes for anyone).
 2. Run `supabase/migrations/0057_hh_distortion_world.sql` (after 0052 and 0055; safe to run again):

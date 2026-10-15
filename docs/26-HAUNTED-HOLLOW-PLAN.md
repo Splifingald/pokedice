@@ -98,7 +98,7 @@ cards in every main deck and 6 in a secret one, each with one item and one Cente
 | S2 | Haunted House | a121 | 34–40 | 2 · 2 · 1 · 1 | 1 | 5 | Sinistea, Shuppet, Haunter, Misdreavus, Lampent, Banette, Gourgeist (rare) | Maid Lenore (Sinistea 38, Banette 38); Butler Grimsby (Lampent 39, Haunter 38) | shiny Mimikyu Lv.40 | Cracked Pot (once) |
 | S3 | Cavern | deepcave | 48–55 | 3 · 1 · 1 · 1 | 1 | 6 | Sableye, Golbat, Lairon, Graveler, Golurk, Aggron (rare), Dreepy (very rare) | Ruin Maniac Dirk (Sableye 52, Golurk 53, Aggron 54) | shiny Spiritomb Lv.50 | Revive, Rare Candy |
 | S4 | Newmoon Island | a127 | 58–64 | 3 · 1 · 1 · 1 | 1 | 7 | Cacnea, Mightyena, Houndoom, Crawdaunt, Cacturne, Absol | Punk Girl Noctis (Houndoom 62, Cacturne 62, Absol 63) | shiny Darkrai Lv.60 (raid) | Revive |
-| S5 | Distortion World | a123 | 65–70 | 3 · 1 · 1 · 1 | 1 | 8 | Gengar, Chandelure, Aegislash, Dusknoir, Trevenant, Mismagius, Dragapult (rare) | Hex Maniac Umbra (Gengar 68, Chandelure 68, Dusknoir 69) | shiny Giratina Lv.70 (raid) | Revive, Rare Candy |
+| S5 | Distortion World | a123 | 52–70 | 3 · 1 · 1 · 1 | 1 | 8 | Gengar, Chandelure, Aegislash, Dusknoir, Trevenant, Mismagius, Houndoom, Sableye, Froslass, Gourgeist, Palossand, Mimikyu, Polteageist (Lv.60–64), Haunter and Dusclops (reliefs, Lv.52–55), Dragapult (rare); docs/28 §3, 0058 | Hex Maniac Umbra (Gengar 68, Chandelure 68, Dusknoir 69) | shiny Giratina Lv.70 (raid) | Revive, Rare Candy |
 
 
 The secret areas open with: **Cemetery** 20 different Pokémon caught · **Haunted House** 50 · **Cavern** a Pokémon at
