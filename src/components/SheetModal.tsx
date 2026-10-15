@@ -156,7 +156,12 @@ function SheetStack({
   } else if (manage && top.kind === 'inst' && inst && save) {
     const at = save.team.indexOf(inst.id)
     const useItem = hasItems && inst.revivesAt == null && (
-      <PixelButton variant="primary" size="lg" className="flex-1" onClick={() => push({ kind: 'items', id: inst.id })}>
+      <PixelButton
+        variant="primary"
+        size="lg"
+        className="min-w-0 flex-1"
+        onClick={() => push({ kind: 'items', id: inst.id })}
+      >
         {t('ui.itemPanel.title')}
       </PixelButton>
     )
@@ -164,19 +169,24 @@ function SheetStack({
       at >= 0 ? (
         <div className="flex items-center gap-2">
           {at > 0 ? (
+            // A square crown: its label ran the row off the screen in French, so the name lives in aria-label.
             <PixelButton
               size="lg"
-              className="flex-1"
+              className="w-[56px] shrink-0 !px-0"
+              aria-label={t('ui.team.makeLead')}
+              title={t('ui.team.makeLead')}
               onClick={() => {
                 reorderTeam([inst.id, ...save.team.filter((x) => x !== inst.id)])
                 pushToast(t('ui.team.leadsNow', { name: monName(inst, data) }), 'good')
                 onClose()
               }}
             >
-              {t('ui.team.makeLead')}
+              <PixelIcon name="crown" size={28} />
             </PixelButton>
           ) : (
-            <span className="grid flex-1 place-items-center font-pixel-sm text-[16px] text-muted">{t('ui.sheet.leadsTeam')}</span>
+            <span className="grid min-w-0 flex-1 place-items-center text-center font-pixel-sm text-[16px] text-muted">
+              {t('ui.sheet.leadsTeam')}
+            </span>
           )}
           {useItem}
         </div>
