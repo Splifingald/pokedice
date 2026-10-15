@@ -108,6 +108,11 @@ export interface RunState {
   healShown?: boolean
   /** A wipe just ended a portal run (docs/28): how many portals it had closed, lost now (the wipe card says so). */
   portalLost?: number | null
+  /**
+   * The way in's pop-up has been opened (docs/28): back from the Team screen, it shows again at once over the breach's
+   * end, with no breach and no tap to wait for.
+   */
+  portalPopup?: boolean
   /** Trick or Treat under way (docs/29). */
   trick?: TrickRun | null
 }

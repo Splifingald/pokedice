@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
-import { monName, teamOf, type PokemonInstance } from '@/engine'
+import { teamOf, type PokemonInstance } from '@/engine'
 import { useT } from '@/i18n/react'
 import { BoxSortPicker, sortBox, type BoxSort } from '@/components/BoxSort'
 import { PixelIcon } from '@/components/icons'
@@ -14,7 +14,7 @@ import { loadCenterArt } from '@/fx/scenes'
 import { centerTimeline } from '@/fx/timelines/center'
 import { useMotion } from '@/lib/motion'
 import { RunRoundGauge } from '@/screens/area/RoundGauge'
-import { putInTeam, removeFromTeam, reorderTeam } from '@/store/actions'
+import { TeamSwapActions } from '@/components/TeamSwapActions'
 import { useGame } from '@/store/game'
 import { continueExploring, finishCenter, markHealShown } from '@/store/run'
 
@@ -49,68 +49,8 @@ export function CenterView() {
   if (!save) return null
   const team = teamOf(save)
   const box = sortBox(save.box.filter((p) => !save.team.includes(p.id)), sort, data)
-  const full = team.length >= data.config.maxTeamSize
-  const name = (p: PokemonInstance) => monName(p, data)
   const open = (p: PokemonInstance) => setView({ kind: 'inst', id: p.id })
   const done = () => setView(null)
-
-  const teamActions = (inst: PokemonInstance) => {
-    const inTeam = save.team.includes(inst.id)
-    return (
-      <section className="flex flex-col gap-2 border-t-[3px] border-dashed border-shadow pt-3">
-        <h3 className="text-xl">{t('ui.center.team')}</h3>
-        {inTeam ? (
-          <div className="flex flex-wrap gap-2">
-            {save.team[0] !== inst.id && (
-              <PixelButton variant="primary" onClick={() => reorderTeam([inst.id, ...save.team.filter((x) => x !== inst.id)])}>
-                {t('ui.team.makeLead')}
-              </PixelButton>
-            )}
-            <PixelButton
-              disabled={team.length <= 1}
-              onClick={() => {
-                removeFromTeam(inst.id)
-                done()
-              }}
-            >
-              {t('ui.center.sendToBox')}
-            </PixelButton>
-          </div>
-        ) : inst.revivesAt != null ? (
-          <p className="copy text-muted">{t('ui.center.stillReviving')}</p>
-        ) : !full ? (
-          <PixelButton
-            variant="primary"
-            onClick={() => {
-              putInTeam(inst.id, null)
-              done()
-            }}
-          >
-            {t('ui.center.addToTeam')}
-          </PixelButton>
-        ) : (
-          <>
-            <p className="copy text-muted">{t('ui.center.swapFor', { name: name(inst) })}</p>
-            {team.map((p) => (
-              <PixelButton
-                key={p.id}
-                className="justify-between"
-                onClick={() => {
-                  putInTeam(inst.id, p.id)
-                  done()
-                }}
-              >
-                <span>
-                  {name(p)} {t('ui.common.level.short', { n: p.level })}
-                </span>
-                <span className="text-base">{t('ui.center.goesToBox')}</span>
-              </PixelButton>
-            ))}
-          </>
-        )}
-      </section>
-    )
-  }
 
   return (
     // Phones: room at the bottom for the action bar, which is pinned over the tab bar.
@@ -222,7 +162,7 @@ export function CenterView() {
         </div>
       </div>
 
-      <SheetModal view={view} onClose={done} instExtra={teamActions} />
+      <SheetModal view={view} onClose={done} instExtra={(inst) => <TeamSwapActions inst={inst} onDone={done} />} />
     </div>
   )
 }

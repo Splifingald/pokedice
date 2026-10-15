@@ -56,11 +56,14 @@ export function SheetModal({
   onClose,
   instExtra,
   manage,
+  swaps,
 }: {
   view: SheetView | null
   onClose: () => void
   instExtra?: (inst: PokemonInstance) => ReactNode
   manage?: boolean
+  /** The team can change here (a Center, a portal's way in): no Center rule under one in the Box. */
+  swaps?: boolean
 }) {
   // The last view stays while the sheet slides away.
   const last = useRef(view)
@@ -74,6 +77,7 @@ export function SheetModal({
       initial={shown}
       instExtra={instExtra}
       manage={manage}
+      swaps={swaps}
       onClose={onClose}
     />
   )
@@ -84,12 +88,14 @@ function SheetStack({
   initial,
   instExtra,
   manage,
+  swaps,
   onClose,
 }: {
   open: boolean
   initial: SheetView
   instExtra?: (inst: PokemonInstance) => ReactNode
   manage?: boolean
+  swaps?: boolean
   onClose: () => void
 }) {
   const { t } = useT()
@@ -190,6 +196,9 @@ function SheetStack({
           )}
           {useItem}
         </div>
+      ) : swaps ? (
+        // The team can change here: the sheet's body has the moves (instExtra), so no rule to point at.
+        useItem && <div className="flex">{useItem}</div>
       ) : (
         <div className="flex flex-col gap-2">
           <p className="flex items-center gap-1.5 font-pixel-sm text-[15px] leading-tight text-muted">

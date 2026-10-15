@@ -50,6 +50,11 @@ export interface Timeline<S = unknown> {
   draw(g: G, s: S, t: number): void
   /** Sorted by time; built once the state exists (some times depend on it, like when a projectile arrives). */
   cues(s: S): Cue<S>[]
+  /**
+   * Its end state lives on: once `dur` is reached (onEnd fires once) it keeps stepping and drawing past it, a loop of
+   * its last frame (the breach's open portal turning), until the page takes it away. A skip lands there too.
+   */
+  hold?: boolean
 }
 
 // ---------------------------------------------------------------- shared helpers
@@ -311,6 +316,13 @@ export type MotionLevel = 'full' | 'short' | 'off'
  * Plays one timeline on a canvas: fixed 60 Hz steps, cues fired in order at their times, a speed (¼ for the dev
  * page), single-frame steps, and `skip` — straight to the end state with every cue fired (motion off).
  */
+let skipping = false
+/**
+ * A skip is walking a timeline to its end right now: a cue whose sound would only pile up with the others (the
+ * breach's, skipped by the player) can stay quiet.
+ */
+export const skippingNow = () => skipping
+
 export class Player<S = unknown> {
   g: G
   def: Timeline<S> | null = null
@@ -324,6 +336,8 @@ export class Player<S = unknown> {
   private cueList: Cue<S>[] = []
   private raf = 0
   private last = 0
+  /** onEnd has fired for this take (a held timeline goes on past it). */
+  private ended = false
   onTick: ((t: number) => void) | null = null
   onEnd: (() => void) | null = null
   constructor(cv: HTMLCanvasElement, hud: Hud = {}) {
@@ -340,13 +354,14 @@ export class Player<S = unknown> {
     this.t = 0
     this.acc = 0
     this.cueI = 0
+    this.ended = false
     this.s = this.def.setup()
     this.cueList = this.def.cues(this.s)
     this.render()
   }
   play() {
     if (!this.def) return
-    if (this.t >= this.def.dur) this.reset()
+    if (this.t >= this.def.dur && !this.def.hold) this.reset()
     this.playing = true
     this.last = performance.now()
     cancelAnimationFrame(this.raf)
@@ -360,18 +375,33 @@ export class Player<S = unknown> {
   stepFrame() {
     if (!this.def) return
     this.pause()
-    if (this.t >= this.def.dur) this.reset()
+    if (this.t >= this.def.dur && !this.def.hold) this.reset()
     this.advance(STEP)
     this.render()
   }
-  /** Jump to the end: every remaining cue fires, in order, and the last frame is drawn. */
-  skip() {
+  /**
+   * Jump to the end: every remaining cue fires, in order, and the last frame is drawn. A held timeline already past
+   * its end stays where it is; `loop` keeps a held one running there (else it holds still, as with motion off).
+   */
+  skip(loop = false) {
     if (!this.def) return
+    const hold = !!this.def.hold
+    if (hold && this.ended) {
+      if (loop && !this.playing) this.play()
+      return
+    }
     this.pause()
     // Steps are cheap; walking them keeps the end state exactly what playing would have left.
-    this.advance(this.def.dur - this.t + STEP)
+    skipping = true
+    try {
+      this.advance(this.def.dur - this.t + STEP)
+    } finally {
+      skipping = false
+    }
     this.render()
+    this.ended = true
     this.onEnd?.()
+    if (hold && loop) this.play()
   }
   stop() {
     this.playing = false
@@ -386,7 +416,7 @@ export class Player<S = unknown> {
       def.step(this.s!, this.t, STEP)
       while (this.cueI < this.cueList.length && this.cueList[this.cueI]![0] <= this.t)
         this.cueList[this.cueI++]![1](this.hud, this.s!)
-      if (this.t >= def.dur) break
+      if (this.t >= def.dur && !def.hold) break
     }
   }
   private frame(now: number) {
@@ -395,10 +425,14 @@ export class Player<S = unknown> {
     this.last = now
     this.advance(dt)
     this.render()
-    if (this.t >= this.def.dur) {
-      this.playing = false
+    if (this.t >= this.def.dur && !this.ended) {
+      this.ended = true
+      if (!this.def.hold) {
+        this.playing = false
+        this.onEnd?.()
+        return
+      }
       this.onEnd?.()
-      return
     }
     this.raf = requestAnimationFrame((n) => this.frame(n))
   }
@@ -408,7 +442,7 @@ export class Player<S = unknown> {
     this.g.clearRect(0, 0, this.g.canvas.width, this.g.canvas.height)
     // A canvas resized since (a full-screen scene on a turned phone) has lost this setting.
     this.g.imageSmoothingEnabled = false
-    this.def.draw(this.g, this.s, Math.min(this.t, this.def.dur))
+    this.def.draw(this.g, this.s, this.def.hold ? this.t : Math.min(this.t, this.def.dur))
     this.onTick?.(this.t)
   }
 }

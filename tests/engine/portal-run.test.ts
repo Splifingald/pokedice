@@ -1,10 +1,12 @@
 // Distortion World's portal run (docs/28): the deck (wild and finds shuffled, the distortion last, for ever), the way in
-// (healed), the boons offered (distinct kinds, only those that can help, the 8-dice cap), what each does (the +10 boost
-// added like a combo, the extra die in battle), the last portal (won for good, the raid open at Lv.100), the wipe (back
-// to 0, boons lost, XP, ₽ and items kept), and the switch (off: the area plays as before).
+// (healed on arrival as at a Center, the team free to change until READY!), the boons offered (distinct kinds, only
+// those that can help, the 8-dice cap), what each does (the +10 boost added like a combo, the extra die in battle), the
+// last portal (won for good, the raid open at Lv.100), the wipe (back to 0, boons lost, XP, ₽ and items kept), and the
+// switch (off: the area plays as before).
 import { describe, expect, it } from 'vitest'
 import {
   applyWipe,
+  arriveAtPortal,
   canStartPortal,
   computeDamage,
   createInstance,
@@ -38,6 +40,7 @@ import {
   raidRules,
   raidTeamCap,
   startPortalRun,
+  teamSwapsOpen,
   uniformLevels,
   withExtraDice,
   type DistortionOffer,
@@ -172,6 +175,44 @@ describe('the way in', () => {
   it('its wild Pokémon can’t be caught', () => {
     expect(portalNoCatch(inRun(), data, DW.id)).toBe(true)
     expect(portalNoCatch(atDistortion(), data, DW.id)).toBe(false)
+  })
+
+  it('arriving there heals the team and the Box as a Pokémon Center does; nothing to heal, the same save', () => {
+    const before = atDistortion()
+    const boxed = { ...createInstance(92, 40, data, newId(), NOW), currentHp: 1 }
+    const s = { ...before, box: [...before.box, boxed] }
+    const healed = arriveAtPortal(s, data, DW.id)
+    for (const p of healed.box) expect(p.currentHp).toBe(instanceMaxHp(p, data))
+    expect(healed.team).toEqual(s.team)
+    // Back from the Team screen: nothing changes, nothing to write.
+    expect(arriveAtPortal(healed, data, DW.id)).toBe(healed)
+    // READY! heals again, harmlessly.
+    const started = startPortalRun(healed, data, DW.id, rng())!
+    for (const p of started.box) expect(p.currentHp).toBe(instanceMaxHp(p, data))
+  })
+
+  it('no heal outside a way in: inside a run, once won, switched off', () => {
+    const hurt = (s: SaveData) => ({ ...s, box: s.box.map((p) => ({ ...p, currentHp: 1 })) })
+    const running = hurt(inRun())
+    expect(arriveAtPortal(running, data, DW.id)).toBe(running)
+    const won = hurt(withPortal(atDistortion(), { won: true }))
+    expect(arriveAtPortal(won, data, DW.id)).toBe(won)
+    const plain = hurt(atDistortion(off))
+    expect(arriveAtPortal(plain, off, DW.id)).toBe(plain)
+  })
+
+  it('the team can change at the way in (as at a Center) until READY!, and never inside the run', () => {
+    const idle = { phase: 'idle', areaId: DW.id }
+    expect(teamSwapsOpen(atDistortion(), data, idle)).toBe(true)
+    expect(teamSwapsOpen(atDistortion(), data, { phase: 'center', areaId: 'anywhere' })).toBe(true)
+    // READY! pressed: the run is under way.
+    expect(teamSwapsOpen(inRun(), data, idle)).toBe(false)
+    // Not standing at it (NOT NOW, another area), a fight, the run won, the switch off.
+    expect(teamSwapsOpen(atDistortion(), data, { phase: 'idle', areaId: null })).toBe(false)
+    expect(teamSwapsOpen({ ...atDistortion(), currentAreaId: 'elsewhere' }, data, idle)).toBe(false)
+    expect(teamSwapsOpen(atDistortion(), data, { phase: 'battle', areaId: DW.id })).toBe(false)
+    expect(teamSwapsOpen(withPortal(atDistortion(), { won: true }), data, idle)).toBe(false)
+    expect(teamSwapsOpen(atDistortion(off), off, idle)).toBe(false)
   })
 })
 

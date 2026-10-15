@@ -1,6 +1,8 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   homersIn,
+  teamSwapsOpen,
   monName,
   POKE_TYPES,
   regionBestLevel,
@@ -17,6 +19,8 @@ import { PixelIcon } from '@/components/icons'
 import { ItemSprite } from '@/components/ItemSprite'
 import { MonTile, TILE_GRID } from '@/components/MonTile'
 import { PageHead } from '@/components/PageHead'
+import { PixelButton } from '@/components/PixelButton'
+import { TeamSwapActions } from '@/components/TeamSwapActions'
 import { SearchField, Seg } from '@/components/Segmented'
 import { SheetModal, type SheetView } from '@/components/SheetModal'
 import { countdown } from '@/lib/format'
@@ -30,8 +34,11 @@ export function TeamScreen() {
   const { t } = useT()
   const save = useGame((s) => s.save)
   const data = useGame((s) => s.data)
-  // Inside a Pokémon Center the team can change, so the rule has nothing to warn about.
-  const atCenter = useGame((s) => s.run.phase === 'center')
+  // Inside a Pokémon Center, or at a portal's way in (docs/28), the team can change (the engine says where): the rule
+  // has nothing to warn about, and a Pokémon's sheet has the Center's moves.
+  const swaps = useGame((s) => !!s.save && teamSwapsOpen(s.save, s.data, s.run))
+  const atPortal = useGame((s) => swaps && s.run.phase === 'idle')
+  const navigate = useNavigate()
   const now = useNow(30_000)
   const [view, setView] = useState<SheetView | null>(null)
   const [sort, setSort] = useState<Sort>('dex')
@@ -65,7 +72,7 @@ export function TeamScreen() {
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-3">
       <PageHead icon="navTeam" title={t('ui.team.title')} count={`${team.length}/${data.config.maxTeamSize}`}>
-        {!atCenter && (
+        {!swaps && (
           <button
             type="button"
             onClick={() => pushToast(t('ui.team.swapsRule'), 'info')}
@@ -76,6 +83,19 @@ export function TeamScreen() {
           </button>
         )}
       </PageHead>
+
+      {/* At a portal's way in: healed, the Box open, and the way back to its pop-up. */}
+      {atPortal && (
+        <div className="pixel-dialogue flex flex-col gap-2.5 px-3 py-2.5 sm:flex-row sm:items-center">
+          <p className="m-0 flex flex-1 items-center gap-3 text-[20px] leading-[1.15]">
+            <PixelIcon name="heart" size={24} className="shrink-0" />
+            <span>{t('ui.portal.teamHint')}</span>
+          </p>
+          <PixelButton variant="primary" className="shrink-0" onClick={() => navigate('/area')}>
+            {t('ui.portal.backToPortal')}
+          </PixelButton>
+        </div>
+      )}
 
       <TeamCards team={team} onOpen={open} />
       {team.length > 1 && (
@@ -196,7 +216,13 @@ export function TeamScreen() {
         </section>
       )}
 
-      <SheetModal view={view} onClose={() => setView(null)} manage />
+      <SheetModal
+        view={view}
+        onClose={() => setView(null)}
+        manage
+        swaps={swaps}
+        instExtra={swaps ? (inst) => <TeamSwapActions inst={inst} onDone={() => setView(null)} /> : undefined}
+      />
     </div>
   )
 }

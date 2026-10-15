@@ -17,11 +17,12 @@ on the pixel engine (`src/fx/timelines/portal.ts`, `src/fx/glitch.ts`, hosted by
 | Distortion World opens | **100 Pokémon in the world's Pokédex** (was 119: all but Giratina). |
 | Where its rules live | **On the area** (`Area.mode`, the `areas.mode` jsonb column): a per-area special mode, every number the admin's (Admin → Areas → Special mode). Only Distortion World has one. |
 | Switch | **Off / On for admin / On for everyone**, Off by default (`game_config.portalRun`, docs/15 §20). The server reads it too. **Off: the area plays as before** (rounds, Centers, its raid once cleared), and a run in a save is kept. |
-| The way in | Opening the area (Home's CONTINUE there: **ENTER THE DISTORTION**) plays the breach: a big distortion and "Giratina is breaking into this world, you have to close the distortion portals from the inside!" Then a pop-up with the glowing portal behind it, the rules and "Are you sure you want to enter? You cannot leave the area unless all your party is K.O." — **NOT NOW** (back Home) / **READY!** |
-| Inside | The team is **fully healed on entry**. **No Pokémon Center at all**. **No way out**: the menus, the top bar, Home and every other page send back to the area, and a reload comes back into the run (its state is in the save). The screen wears a **recurring distortion** (motion levels below). |
+| The way in | Opening the area (Home's CONTINUE there: **ENTER THE DISTORTION**) plays the breach: a big distortion and "Giratina is breaking into this world, you have to close the distortion portals from the inside!" It **holds its end** (the open portal turning) and **waits for a tap** ("Tap to continue ▼"; SKIP lands there too); then the pop-up **rises over that end**: the rules and "Are you sure you want to enter? You cannot leave the area unless all your party is K.O." — **TEAM** / **NOT NOW** (back Home) / **READY!** (the user, 2026-10-15). |
+| Arriving | **Like a Pokémon Center** (the user, 2026-10-15): arriving at the way in **heals the team and the Box** (the Center's heal and its rules: `arriveAtPortal`), and **until READY! the team can change** in the Team screen as at a Center (`teamSwapsOpen`); TEAM goes there, BACK TO THE DISTORTION (or Home's CONTINUE) comes back to the pop-up at once. The menus are open until READY!. |
+| Inside | The team is **fully healed on entry** (READY! heals it again, harmlessly). **No Pokémon Center at all**, so **no team changes** once READY! is pressed. **No way out**: the menus, the top bar, Home and every other page send back to the area, and a reload comes back into the run (its state is in the save). The screen wears a **recurring distortion** (motion levels below). |
 | The deck | Endless: **5 wild, 1 find (shuffled), then 1 distortion, always last**; repeat. The round gauge becomes a **gauge of portals closed, 0/10**. |
 | Wild Pokémon | The area's wild pool (Gengar, Chandelure, Aegislash, Dusknoir, Trevenant, Mismagius, Dragapult rare), **Lv.65–70, foes' dice level 8**. **They can't be caught** (no throw; the preview says so). They wear the **distortion shader**. Normal XP and ₽ (wild Pokémon pay no ₽, as anywhere; the finds do). |
-| A distortion | **Pick 1 of 3 boons**, drawn by weight as **distinct kinds, only those that can help now**: heal everyone standing by **30 %** of max HP · revive **one K.O. Pokémon** (named; a Revive's HP) · **+10 damage on attacks of one type** (a type of the team's dice, named: "Ghost +10") · **an extra die** for a named Pokémon (one of its types; **8 dice at most**, a Pokémon at 8 is never chosen) · **a rare item**: Hyper Potion 40 %, Revive 40 %, Max Revive 20 %. With nothing that can help, it closes at once. |
+| A distortion | **Pick 1 of 3 boons**, **confirmed** in a small pop-up (BACK spends nothing, CONFIRM takes it: the user, 2026-10-15), drawn by weight as **distinct kinds, only those that can help now**: heal everyone standing by **30 %** of max HP · revive **one K.O. Pokémon** (named; a Revive's HP) · **+10 damage on attacks of one type** (a type of the team's dice, named: "Ghost +10") · **an extra die** for a named Pokémon (one of its types; **8 dice at most**, a Pokémon at 8 is never chosen) · **a rare item**: Hyper Potion 40 %, Revive 40 %, Max Revive 20 %. With nothing that can help, it closes at once. |
 | The +10 | A **flat bonus added like the combo's**: (Σ dice + combo + 10) × the attack type's multiplier × a booster. Only when the attack takes that type; nothing on an untyped attack; an immune hit stays 0. It **stacks** (Ghost +20). Shown in the damage recap. |
 | The extra die | Joins the Pokémon's typed dice in battle (ahead of a base die). A Mega's own die comes on top, as always. |
 | Run bonuses | The boosts and dice are **for the run only**: gone on the victory or a wipe. The heals, revives and items stay as they are. |
@@ -47,8 +48,15 @@ on the pixel engine (`src/fx/timelines/portal.ts`, `src/fx/glitch.ts`, hosted by
   - The raid: `progressRaidState` opens a portal area's raid on `portal.won` (never on its rounds); `raidRules` and
     `raidTeamCap` read the area's `raid` numbers.
   - `portalRulesDue` (run.ts): the rules pop-up, once.
-- Tests: `tests/engine/portal-run.test.ts` (the deck's order, the way in, the boons' eligibility and the 8-dice cap,
-  each boon, the +10 in damage, the extra die in battle, the victory and the raid, the wipe, the switch off).
+  - The way in, as at a Pokémon Center (run.ts, 2026-10-15): `arriveAtPortal` (the team and the Box healed with
+    `centerHeal`'s rules when the way in shows; the same save when there is nothing to heal or no way in) and
+    `teamSwapsOpen` (the team can change: inside a Center, or at a portal area's way in before READY!; the Team
+    screen and the store's `putInTeam` / `removeFromTeam` read it).
+- Tests: `tests/engine/portal-run.test.ts` (the deck's order, the way in, its heal on arrival and the team changes
+  until READY!, the boons' eligibility and the 8-dice cap, each boon, the +10 in damage, the extra die in battle, the
+  victory and the raid, the wipe, the switch off); `tests/portal-fx.test.ts` (the distortion's rhythm and frames, the
+  breach's held end); `e2e/portal.spec.ts` (the way in held for a tap, the pop-up over it, the heal, a team change
+  through TEAM, READY! shutting it; a boon confirmed, BACK and Esc spending nothing).
 
 ## 3. Balance
 
@@ -113,14 +121,19 @@ setting lightens them; only motion off (the admins' no-animations switch) stills
 
 | Effect | What it is | Motion `short` / off (a calm OS: as full) |
 |---|---|---|
-| The breach (`breachTimeline`) | The area's picture darkens in two pulses, a red point tears, cracks race out, the area breaks into uneven pixel shards tumbling into the tear, the Distortion World opens (dithered rings, Giratina's red-and-gold arms turning, rocks drifting upside-down, far islands), a flash and a quake, the name card. Full screen, 3.9 s. | Half the time / skipped |
-| The portal (`portalLoop`: `PortalScene`, `PortalArt`) | Behind the way-in pop-up and the rules (the void, its rocks, the portal turning, motes pulled in, sparks on its rim), small by a distortion's boons. | Moving / one still frame |
+| The breach (`breachTimeline`) | The area's picture darkens in two pulses, a red point tears, cracks race out, the area breaks into uneven pixel shards tumbling into the tear, the Distortion World opens (dithered rings, Giratina's red-and-gold arms turning, rocks drifting upside-down, far islands), a flash and a quake, the name card. Full screen, 3.9 s; then it holds its end (the portal turning) until a tap, and the way in's pop-up rises over it. | Half the time / its end at once, still, waiting for the tap |
+| The portal (`portalLoop`: `PortalScene`, `PortalArt`) | On the rules' banner (and the way-in pop-up on its own, the kitchen sink's; in the game it rises over the breach's end) (the void, its rocks, the portal turning, motes pulled in, sparks on its rim), small by a distortion's boons. | Moving / one still frame |
 | A portal closing (`closeTimeline`, `PortalCloseFx`) | After a boon pick, over the page: it collapses with its rim in shards, a flash, a gold seal ring turning and fading. 1.6 s. | 0.9 s / the sound alone |
-| The wild Pokémon (`glitch.ts`: `useStageDistortion`, `GlitchSprite`) | A dark aura and rim under the sprite, motes rising; every 3.4 s for 0.48 s the sprite is drawn torn in bands of rows, tinted violet, with hard violet, teal and red copies behind. | Copies only / aura and rim, still |
-| The screen (`DistortionFx`) | A dithered frame of the void; every 6–10 s a 0.45 s tear: broken scanlines, displaced blocks of the void, the page's colours shifted to violet. | Rarer, thinner, no shift / the frame, still |
-| The UI (`useUiGlitch`) | Every 5–9 s one piece of the page (gauge, boons, team cards, action bar, header title, a toast) plays the wild Pokémon's look for 0.42 s; one at a time, never inside a pop-up, never on what holds the focus. | Copies only / none |
+| The wild Pokémon (`glitch.ts`: `useStageDistortion`, `GlitchSprite`) | On the page's own animated sprite (CSS filters, so nothing lags behind it): a faint violet and teal rim of its shape, motes rising; every 5 s for 0.35 s it is torn in 2–3 bands of rows (2–4 px), tinted violet, with see-through violet, teal and red copies 1–2 px behind. Softened 2026-10-15 (was every 3.4 s for 0.48 s, 2–6 px, a dark aura and a rim on a canvas behind it that didn't follow the animated sprite). | Copies only / the rim, still |
+| The screen (`DistortionFx`) | Every 6–10 s a 0.45 s tear: broken scanlines, displaced blocks of the void, the page's colours shifted to violet. Nothing in between (its dithered frame round the screen is gone, 2026-10-15). | Rarer, thinner, no shift / nothing |
+| The UI (`useUiGlitch`) | Every 5–9 s one piece of the page (gauge, boons, team cards, action bar, header title, a toast) plays the wild Pokémon's look, as soft, for 0.35 s; one at a time, never inside a pop-up, never on what holds the focus. | Copies only / none |
 | The victory (`victoryTimeline`) | Legend.ts's entrance for shiny Giratina: dark pulses, shadow tendrils, heartbeats, its silhouette rising out of the portal in a red-and-gold outline, rays and a gleam, the reveal (flash, rings, roar and its cry, quake), the shiny sparkle, the portal sealed behind it, the name card (SHINY, its raid level); then the screen's words and BACK TO THE WORLD. 6.2 s. | 3.1 s / at its end at once |
 
 Sounds: the breach and a closing keep `portal.breach` and `portal.close`; the scenes add the legend's cues
 (`legend.pulse`, `legend.shatter`, `legend.heart`, `legend.roar`) and the shiny chime. Nothing changes in the engine, the
 flows, the buttons or the words; no migration.
+
+Then, the same day: the way in waits for a tap at the breach's end and its pop-up rises over it; arriving heals and the
+team can change until READY! (§1, the engine's `arriveAtPortal` and `teamSwapsOpen`); a boon is confirmed before it is
+taken; its icons are an extra die of its type with a "+" and a rare item turning through its items every 2 s. Still no
+migration: nothing on the server changes.

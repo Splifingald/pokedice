@@ -9,7 +9,7 @@ import { addFossil, isReviving } from './fossils'
 import { LEGACY_GAUGE } from './legacyGauge'
 import { itemOnFor, MONEY, sellPrice, shopSells, usableIn } from './items'
 import { earnedGold } from './liveEvents'
-import { inPortalRun, portalModeOf, portalStateOf, portalWipe } from './portal'
+import { canStartPortal, inPortalRun, portalModeOf, portalStateOf, portalWipe } from './portal'
 import { areaOpenAt } from './worldList'
 import {
   averageLevel,
@@ -603,6 +603,36 @@ export function centerHeal(save: SaveData, data: GameData): SaveData {
   const dc = save.dayCare
   if (!dc?.residents.length || inWorldRegion(save, data)) return healed
   return { ...healed, dayCare: { ...dc, residents: dc.residents.map((r) => ({ ...r, inst: heal(r.inst) })) } }
+}
+
+/**
+ * Arriving at a portal area's way in (docs/28: the breach and its pop-up, before READY!) heals as a Pokémon Center
+ * does, with its rules (the user, 2026-10-15). The same save when there is nothing to heal, so coming back to the
+ * pop-up writes nothing; the same save outside a way in.
+ */
+export function arriveAtPortal(save: SaveData, data: GameData, areaId: string): SaveData {
+  if (!canStartPortal(save, data, areaId)) return save
+  const healed = centerHeal(save, data)
+  const same =
+    healed.box.every((p, i) => p.currentHp === save.box[i]?.currentHp) &&
+    (healed.dayCare?.residents ?? []).every((r, i) => r.inst.currentHp === save.dayCare?.residents[i]?.inst.currentHp)
+  return same ? save : healed
+}
+
+/** Where the run stands, as far as team changes go. */
+export interface SwapPlace {
+  phase: string
+  areaId: string | null
+}
+
+/**
+ * The team can change (a Pokémon from the Box in, one sent to it) here and now: inside a Pokémon Center, or at a portal
+ * area's way in while the run hasn't started (docs/28, as at a Center). Never once READY! is pressed: there is no
+ * Center inside the run. The order of the team can change anywhere (setTeam).
+ */
+export function teamSwapsOpen(save: SaveData, data: GameData, at: SwapPlace): boolean {
+  if (at.phase === 'center') return true
+  return at.phase === 'idle' && !!at.areaId && save.currentAreaId === at.areaId && canStartPortal(save, data, at.areaId)
 }
 
 export function setTeam(save: SaveData, ids: readonly string[], data: GameData): SaveData {

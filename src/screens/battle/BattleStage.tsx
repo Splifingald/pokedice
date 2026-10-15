@@ -140,7 +140,7 @@ function Mon({
   b: Battler
   side: Side
   scale: number
-  /** A portal run's wild Pokémon (docs/28): its box, which hides the page's sprite while a distortion burst draws it. */
+  /** A portal run's wild Pokémon (docs/28): its box, whose sprite wears the distortion (CSS filters set on it). */
   host?: RefObject<HTMLDivElement>
   /** Out on the field (the foe has slid in, yours has popped out of its ball). */
   shown: boolean
@@ -397,13 +397,14 @@ export function BattleStage({
   const { level, calm } = useMotion()
   const scene = useSceneTimeline(fx.scene, own, foe, level === 'short')
   const playing = !!scene || !!overlay
-  // A portal run's wild Pokémon (docs/28): its aura under it, its bursts over it, on the pixel engine.
+  // A portal run's wild Pokémon (docs/28): its distortion on its own sprite, the void's motes over it.
   const foeBox = useRef<HTMLDivElement>(null)
   const foeOut = !!fx.fainted[foe.uid] || !!fx.wornOut[foe.uid]
   const distortion = useStageDistortion(
     foeBox,
     key(foe, false),
     LAYOUT.foe,
+    scale,
     !!distorted && scale > 0 && foeShown && !foeOut && !playing && !worn,
   )
   const artId = art?.id ?? null
@@ -446,15 +447,6 @@ export function BattleStage({
         />
       )}
       {artShown && <Zones />}
-      {distorted && (
-        <canvas
-          ref={distortion.under}
-          width={W}
-          height={H}
-          aria-hidden
-          className="pixelated pointer-events-none absolute inset-0 h-full w-full"
-        />
-      )}
       {scale > 0 && (
         <>
           <Mon

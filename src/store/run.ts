@@ -1,6 +1,7 @@
 // Run flow: map → area → encounter preview → battle → rewards → next. Thin glue over the pure engine.
 import {
   noteBossCaught,
+  arriveAtPortal,
   applyCatch,
   areaOpenAt,
   baitFaces,
@@ -271,6 +272,19 @@ export function enterPortal(areaId: string): boolean {
   setRun({ portalLost: null })
   rollNext()
   return true
+}
+
+/** The way in shows (the breach, its pop-up): the team and the Box are healed as at a Pokémon Center (the engine's). */
+export function arriveAtPortalIntro(areaId: string) {
+  const { save, data } = useGame.getState()
+  if (!save) return
+  const next = arriveAtPortal(save, data, areaId)
+  if (next !== save) commitSave(next)
+}
+
+/** The way in's pop-up is up: back from the Team screen, it shows again at once. */
+export function markPortalPopup() {
+  if (!useGame.getState().run.portalPopup) setRun({ portalPopup: true })
 }
 
 /** The player picks a distortion's boon: it applies, the portal closes, and the run goes on. */
