@@ -1,4 +1,5 @@
-// Out-of-battle save actions: shop, upgrades, bag items from the team screen, Center team management.
+// Out-of-battle save actions: shop, upgrades, bag items from the team screen, team changes (at a Center, at a portal's
+// way in).
 import {
   applyFieldItem,
   applyLevelEvolution,
@@ -14,6 +15,7 @@ import {
   renamePokemon,
   setTeam,
   swapIntoTeam,
+  teamSwapsOpen,
   dayCareOf,
   depositError,
   depositPokemon,
@@ -95,11 +97,19 @@ export function reorderTeam(ids: string[]) {
   mutateSave((s) => setTeam(s, ids, useGame.getState().data))
 }
 
+/** Whether the team may change right now (a Pokémon Center, a portal's way in): the engine's rule. */
+export function swapsOpenNow(): boolean {
+  const { save, data, run } = useGame.getState()
+  return !!save && teamSwapsOpen(save, data, run)
+}
+
 export function putInTeam(inId: string, outId: string | null) {
+  if (!swapsOpenNow()) return
   mutateSave((s) => swapIntoTeam(s, inId, outId, useGame.getState().data))
 }
 
 export function removeFromTeam(id: string) {
+  if (!swapsOpenNow()) return
   mutateSave((s) => (s.team.length > 1 ? setTeam(s, s.team.filter((x) => x !== id), useGame.getState().data) : null))
 }
 

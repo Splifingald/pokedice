@@ -36,7 +36,15 @@ import {
 import { InfoButton } from '@/components/RulesModal'
 import { pictureOf } from '@/fx/areaArt'
 import { mutateSave, useGame } from '@/store/game'
-import { enterArea, enterPortal, finishPortalVictory, leaveArea, pickDistortionOffer } from '@/store/run'
+import {
+  arriveAtPortalIntro,
+  enterArea,
+  enterPortal,
+  finishPortalVictory,
+  leaveArea,
+  markPortalPopup,
+  pickDistortionOffer,
+} from '@/store/run'
 import { travelTo } from '@/store/travel'
 
 const markSeen = () => mutateSave((s) => (s.portalRulesSeen ? null : { ...s, portalRulesSeen: true }))
@@ -135,23 +143,7 @@ export function PortalStep({ area }: { area: Area }) {
         }}
       />
     )
-  if (!p.active && !p.won)
-    return (
-      <PortalEntry
-        mode={mode}
-        data={data}
-        picture={pictureOf(area.id)?.url ?? null}
-        onReady={() => {
-          markSeen()
-          enterPortal(area.id)
-        }}
-        onNotNow={() => {
-          markSeen()
-          leaveArea()
-          navigate('/home')
-        }}
-      />
-    )
+  if (!p.active && !p.won) return <PortalWayIn area={area} mode={mode} />
   if (p.active && p.offers?.length) {
     const team = teamOf(save)
     const views = p.offers.map((o) =>
@@ -173,6 +165,37 @@ export function PortalStep({ area }: { area: Area }) {
     )
   }
   return null
+}
+
+/**
+ * The way in (docs/28): arriving heals the team and the Box as a Pokémon Center does (the engine's arriveAtPortal);
+ * the breach waits for a tap, then its pop-up: TEAM goes to the Team screen, where the team can change until READY!
+ * (teamSwapsOpen), and coming back shows the pop-up at once; NOT NOW goes Home; READY! starts the run.
+ */
+function PortalWayIn({ area, mode }: { area: Area; mode: PortalRunMode }) {
+  const navigate = useNavigate()
+  const data = useGame((s) => s.data)
+  const popup = useGame((s) => !!s.run.portalPopup)
+  useEffect(() => arriveAtPortalIntro(area.id), [area.id])
+  return (
+    <PortalEntry
+      mode={mode}
+      data={data}
+      picture={pictureOf(area.id)?.url ?? null}
+      popup={popup}
+      onPopup={markPortalPopup}
+      onTeam={() => navigate('/team')}
+      onReady={() => {
+        markSeen()
+        enterPortal(area.id)
+      }}
+      onNotNow={() => {
+        markSeen()
+        leaveArea()
+        navigate('/home')
+      }}
+    />
+  )
 }
 
 /** The run's bonuses so far, for the area's page while it's under way. */

@@ -1,7 +1,9 @@
 // Distortion World's portal run (docs/28) in a small world served as content (as e2e/worlds.spec.ts does): CONTINUE
-// goes in (the breach, its pop-up: NOT NOW goes back Home, READY! starts the run), the menus are shut and a reload
-// comes back into the run, a wild Pokémon that can't be caught, a distortion's boon picked, the last portal won (the
-// victory, then the raid on CONTINUE); a wipe (the portals back to 0, healed, Home again); and a 360×640 phone.
+// goes in (the breach held at its end until a tap, its pop-up over it; arriving heals as a Center does; TEAM changes the
+// team and comes back to the pop-up; NOT NOW goes back Home, READY! starts the run and shuts the team), the menus are
+// shut and a reload comes back into the run, a wild Pokémon that can't be caught, a boon picked and confirmed (BACK, Esc
+// spend nothing), the last portal won (the victory, then the raid on CONTINUE); a wipe (the portals back to 0, healed,
+// Home again); and a 360×640 phone.
 import { expect, test, type Page } from '@playwright/test'
 import { readFileSync } from 'node:fs'
 import {
@@ -187,18 +189,31 @@ async function playUntil(page: Page, until: ReturnType<Page['getByRole']>, ms = 
   await expect(until).toBeVisible()
 }
 
-test('the way in: NOT NOW goes back Home; READY! heals and locks the area, its Pokémon can’t be caught, a boon closes a portal, the last one wins and opens the raid', async ({
+test('the way in: the breach waits for a tap, its pop-up over its end; arriving heals; TEAM changes the team until READY!, which locks the area; its Pokémon can’t be caught, a confirmed boon closes a portal, the last one wins and opens the raid', async ({
   page,
 }) => {
   test.setTimeout(150_000)
   const save = atPortal([[150, 100]])
-  await boot(page, { ...save, box: save.box.map((p) => ({ ...p, currentHp: 10 })) })
+  // Mewtwo in the team and Pikachu in the Box, both hurt.
+  const pika = { id: 'mon-box', dex: 25, level: 40, xp: 0, currentHp: 5, caughtAt: 0 }
+  await boot(page, { ...save, box: [...save.box.map((p) => ({ ...p, currentHp: 10 })), pika] })
   await page.goto('/home')
   const enter = page.getByRole('button', { name: /^Enter the distortion/ })
   await enter.first().click({ timeout: 15_000 })
   await expect(page).toHaveURL(/\/area$/)
+  // The breach holds its end (motion off: at once) and waits for a tap; the pop-up isn't up yet.
   const dialog = page.getByRole('dialog', { name: 'Into the distortion' })
+  const tap = page.getByRole('button', { name: 'Tap to continue' })
+  await expect(tap).toBeVisible()
+  await expect(tap).toBeFocused()
+  await expect(dialog).toBeHidden()
+  // Arriving healed the team and the Box, as a Pokémon Center does, before READY!.
+  await expect.poll(async () => (await stored(page)).box.map((p) => p.currentHp > 10)).toEqual([true, true])
+  expect(portalOf(await stored(page))?.active ?? false).toBe(false)
+  // Enter goes on, as a tap does: the pop-up rises over the breach's end.
+  await page.keyboard.press('Enter')
   await expect(dialog).toBeVisible()
+  await expect(page.locator('.portal-breach canvas')).toBeVisible()
   await expect(
     dialog.getByText(
       'Are you sure you want to enter? You cannot leave the area unless all your party is K.O.',
@@ -209,19 +224,35 @@ test('the way in: NOT NOW goes back Home; READY! heals and locks the area, its P
   await expect(page).toHaveURL(/\/home$/)
   expect(portalOf(await stored(page))?.active ?? false).toBe(false)
 
+  // In again: TEAM, where the team can change as at a Center (no run yet, the menus open).
   await enter.first().click()
+  await tap.click()
+  await dialog.getByRole('button', { name: 'Team' }).click()
+  await expect(page).toHaveURL(/\/team$/)
+  await expect(page.getByText('Swaps at a Center')).toHaveCount(0)
   await page
-    .getByRole('dialog', { name: 'Into the distortion' })
-    .getByRole('button', { name: 'Ready!' })
+    .getByRole('button', { name: /^Pikachu/ })
+    .first()
     .click()
-  // Healed on the way in, the run under way.
+  await page.getByRole('button', { name: 'Add to team' }).click()
+  await expect.poll(async () => (await stored(page)).team).toEqual(['mon-0', 'mon-box'])
+  // Back: the pop-up again at once, no breach to wait for.
+  await page.getByRole('button', { name: 'Back to the distortion' }).click()
+  await expect(page).toHaveURL(/\/area$/)
+  await expect(dialog).toBeVisible()
+  await dialog.getByRole('button', { name: 'Ready!' }).click()
+  // The run under way, with the team as it was changed; healed.
   await expect.poll(async () => portalOf(await stored(page))?.active).toBe(true)
   const s = await stored(page)
+  expect(s.team).toEqual(['mon-0', 'mon-box'])
   expect(s.box[0]!.currentHp).toBeGreaterThan(10)
   // The wild Pokémon's preview: it can't be caught.
   await expect(page.getByText('Distorted: it can’t be caught.')).toBeVisible()
 
-  // The menus are shut, and a page elsewhere sends back to the area.
+  // The menus are shut, and a page elsewhere sends back to the area: no more team changes.
+  await expect(page.getByRole('link', { name: /^Team/ }).first()).toHaveAttribute('aria-disabled', 'true')
+  await page.goto('/team')
+  await expect(page).toHaveURL(/\/area$/)
   await page.goto('/shop')
   await expect(page).toHaveURL(/\/area$/)
 
@@ -231,7 +262,16 @@ test('the way in: NOT NOW goes back Home; READY! heals and locks the area, its P
   await expect(page.getByRole('button', { name: /^Catch|ROLL TO CATCH/ })).toHaveCount(0)
   const picks = page.getByRole('button', { name: /^Pick: / })
   expect(await picks.count()).toBeGreaterThan(0)
+  // A pick asks first: BACK spends nothing; another one, CONFIRM takes it.
+  const confirm = page.getByRole('dialog', { name: 'Take this boon?' })
   await picks.first().click()
+  await expect(confirm).toBeVisible()
+  await confirm.getByRole('button', { name: 'Back' }).click()
+  await expect(confirm).toBeHidden()
+  expect(portalOf(await stored(page))?.closed).toBe(0)
+  await picks.last().click()
+  await expect(confirm).toBeVisible()
+  await confirm.getByRole('button', { name: 'Confirm' }).click()
   await expect.poll(async () => portalOf(await stored(page))?.closed).toBe(1)
   await expect(page.getByRole('img', { name: 'Portals closed: 1/2' }).first()).toBeVisible()
 
@@ -307,7 +347,17 @@ test('a 360×640 phone: a distortion’s boons fit, nothing scrolls sideways, an
   await expect(page.getByRole('button', { name: 'Pick: Psychic +10' })).toBeVisible()
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
   await expect(page.getByRole('link', { name: /^Team/ }).first()).toHaveAttribute('aria-disabled', 'true')
+  // The confirm pop-up: Esc goes back with nothing spent; CONFIRM holds the focus and takes it.
+  const confirm = page.getByRole('dialog', { name: 'Take this boon?' })
   await page.getByRole('button', { name: 'Pick: Psychic +10' }).click()
+  await expect(confirm.getByText('+10 damage on every Psychic attack, for this run.')).toBeVisible()
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
+  await page.keyboard.press('Escape')
+  await expect(confirm).toBeHidden()
+  expect(portalOf(await stored(page))?.boosts).toBeUndefined()
+  await page.getByRole('button', { name: 'Pick: Psychic +10' }).click()
+  await expect(confirm.getByRole('button', { name: 'Confirm' })).toBeFocused()
+  await page.keyboard.press('Enter')
   await expect.poll(async () => portalOf(await stored(page))?.boosts).toEqual({ psychic: 10 })
   await expect(page.getByText('+10 damage')).toBeVisible()
 })

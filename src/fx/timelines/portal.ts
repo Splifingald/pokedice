@@ -31,11 +31,12 @@ import {
 } from '../pixel'
 import { background, type Point } from '../scenes'
 import { drawSprite, spriteFrame } from '../sprites'
-import { DW, burstAt, drawAura, drawDistorted, emitMote } from '../glitch'
+import { DW, burstAt, drawAura, drawDistorted, emitMote, GLITCH_DUR, GLITCH_PERIOD } from '../glitch'
 import {
   H,
   screenFlash,
   screenShake,
+  skippingNow,
   Stage,
   W,
   within,
@@ -466,7 +467,8 @@ function worldOf(w: number, h: number, picture: string | null | undefined): Canv
 /**
  * The way in: the area darkens in two pulses, a red point tears, cracks race out from it, the area breaks into pixel
  * shards that tumble into the tear, the Distortion World opens behind with a flash and a quake, its rocks drifting,
- * then the name card. `beat('line')` is when the screen shows its line; `short`, the same in half the time.
+ * then the name card. `beat('line')` is when the screen shows its line; `short`, the same in half the time. It then
+ * holds its end (`hold`): the portal turning, the rocks drifting, until the page takes it away.
  */
 export function breachTimeline(p: BreachParams): Timeline<BreachState> {
   const w = p.w ?? W
@@ -481,6 +483,8 @@ export function breachTimeline(p: BreachParams): Timeline<BreachState> {
   const { c, R } = portalSpot(w, hv)
   return {
     id: 'portal-breach',
+    // Its end (the open portal turning, the name card) stays on as the backdrop of the way in's pop-up.
+    hold: true,
     dur: p.short ? 2.2 : 3.9,
     setup() {
       const r = rng(487)
@@ -690,16 +694,20 @@ export function breachTimeline(p: BreachParams): Timeline<BreachState> {
           span(t, T_CARD + 0.45, T_CARD + 0.8),
         )
     },
+    // Skipped (SKIP, motion off, back from the Team screen), it lands on its end without its sounds piling up.
     cues: () =>
       [
-        [0.02, () => fxSound('legend.pulse')],
-        [T_CRACK, () => fxSound('portal.breach')],
-        [T_SHARD, (hud) => (fxSound('legend.shatter'), hud.beat?.('line'))],
-        [T_BOOM, () => fxSound('legend.pulse')],
+        [0.02, () => quiet('legend.pulse')],
+        [T_CRACK, () => quiet('portal.breach')],
+        [T_SHARD, (hud) => (quiet('legend.shatter'), hud.beat?.('line'))],
+        [T_BOOM, () => quiet('legend.pulse')],
         [T_CARD, (hud) => hud.beat?.('card')],
       ] satisfies Cue<BreachState>[],
   }
 }
+
+/** A cue's sound, unless the timeline is being skipped to its end. */
+const quiet = (name: Parameters<typeof fxSound>[0]) => !skippingNow() && fxSound(name)
 
 function crackPath(r: Rng, ax: number, ay: number, bx: number, by: number): [number, number][] {
   return bolt(r, ax, ay, bx, by, 0.22, 5).map(([x, y]) => [Math.round(x), Math.round(y)] as [number, number])
@@ -863,21 +871,24 @@ export interface WildGlitchParams extends Fighters {
 
 type GlitchState = Stage & { amb: Particles }
 
-/** The battle stage with the foe distorted as in a portal run: its aura, its motes, a burst every couple of seconds. */
+/**
+ * The battle stage with the foe distorted as in a portal run, at the game's rhythm (two bursts in 10 s): its faint
+ * rim, its motes, the bursts.
+ */
 export function wildGlitchTimeline(p: WildGlitchParams): Timeline<GlitchState> {
   return {
     id: 'portal-glitch',
-    dur: 7,
+    dur: 10,
     setup: () => Object.assign(new Stage({ ...p, by: 'own' }, 5), { amb: new Particles() }),
     step(s, t, dt) {
       s.step(t, dt)
       s.amb.update(dt)
-      if (s.r() < 0.12) emitMote(s.amb, s.r, s.L.foe.x, s.L.foe.y, s.fs.w)
+      if (s.r() < 0.07) emitMote(s.amb, s.r, s.L.foe.x, s.L.foe.y, s.fs.w)
     },
     draw(g, s, t) {
       s.begin(g, t)
-      drawAura(g, s.foe, s.L.foe.x, s.L.foe.y, t)
-      const b = burstAt(t, 2.2, 0.48, 3)
+      drawAura(g, s.foe, s.L.foe.x, s.L.foe.y)
+      const b = burstAt(t, GLITCH_PERIOD, GLITCH_DUR, 3)
       if (b) drawDistorted(g, s.foe, s.L.foe.x, s.L.foe.y, b, p.short)
       else drawSprite(g, s.foe, s.L.foe.x, s.L.foe.y)
       s.amb.draw(g)

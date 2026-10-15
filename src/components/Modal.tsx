@@ -14,6 +14,7 @@ export function Modal({
   className,
   dismissable = true,
   label,
+  bottom = false,
 }: {
   open: boolean
   onClose?: () => void
@@ -24,6 +25,8 @@ export function Modal({
   dismissable?: boolean
   /** Accessible name when the modal has no visible title. */
   label?: string
+  /** At the bottom of the screen, so a scene behind it shows above (the portal's way in). */
+  bottom?: boolean
 }) {
   const ref = useRef<HTMLDivElement>(null)
   const titleId = useId()
@@ -34,7 +37,10 @@ export function Modal({
     <AnimatePresence>
       {open && (
         <motion.div
-          className="fixed inset-0 z-[90] flex items-center justify-center bg-night/55 p-3"
+          className={cx(
+            'fixed inset-0 z-[90] flex justify-center bg-night/55 p-3',
+            bottom ? 'items-end pb-4' : 'items-center',
+          )}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}

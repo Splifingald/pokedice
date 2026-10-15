@@ -159,7 +159,8 @@ All live in `src/components/`. Every component, in every state, is on `/kitchen-
 | `GiftPresent` / `GiftOpened` / `GiftResult` / `GiftMoment` | A gift from the developer (§23) | Under a message: the wrapped gift (wobbling, still when the OS asks for reduced motion), "3 things inside" and what happens next (close the message, OPEN IT in My messages, or why it waits); opened: what it held; the opening, full screen; what arrived and where |
 | `TrickGauge` / `TrickStage` / `NeedDie` / `TrickScreen` / `TrickPlate` / `TrickRecap` / `TrickCard` / `TierChip` / `TrickSprite` / `TrickRulesModal` | Trick or Treat (§28) | The gauge: its value in numbers ("62/100") with what the last Treat or miss added (a gold "+18" that pops in; the added stretch flashes white twice once filled), its sections each in a colour of its own (red for a 6, the hardest, then orange, yellow, green and teal as it gets easier; lilac where no roll can) with a dark line between two, the flee zone striped night with a ghost, bright up to its value and as a pastel past it, the section it is in ringed in gold, the white post where it stands, and under each section the die a Trick Ball needs on a chip of the section's colour (`NeedDie`: the `Die` face with its "+", the face alone where a section is narrow; the current one ringed in gold), then Flees; a `meter`. The stage: the battle's (the area's picture as the battle cuts it, a night sky where there's none), the ghost at its centre floating in pixel steps (still when calm), its shadow, the timelines on top; at rest the ball on the ground (caught) or nobody (fled). The screen in every state (idle, after a Treat, a Treat and a throw playing, a miss, a flee, caught), the plate, the result card (caught: the battle's `CatchCard` with the Trick Ball, NEW, ✦ Shiny, where it went, a secret area; fled), the preview card, the rarity chip (a word, never colour alone), the two pictures, the rules |
 | `InviteGaugeBar` / `InviteRewardsCard` / `InviteGaugeCompact` / `InviteReadyModal` | Friend invite rewards (§25) | The gauge: a tile per tier (its reward; gold with the gift wobbling when ready; green with a check once opened), the gold track, the friends each needs; six tiers fit a phone. The Friends page's card (ready with OPEN IT, asking the server, every reward won); the compact one in Prof. Oak's invite; the reward's pop-up (who won their first badge, or a friend) |
-| `PortalArt` / `PortalScene` / `PortalEntry` / `DistortionGauge` / `DistortionChoiceView` / `PortalCloseFx` / `RunBonuses` / `PortalVictoryView` / `GlitchSprite` / `DistortionFx` / `useUiGlitch` | Distortion World's portal run (§27) | The portal and the Distortion World on the pixel engine (turning; still); the breach and its pop-up (NOT NOW / READY!); the gauge of portals closed (fresh, under way, won); a distortion's boons (three, fewer); a portal closing; the run's bonuses (none, some); the victory; the screen's distortion; a distorted sprite at each motion level (full, short, off); the UI's glitch on a few pieces |
+| `PortalArt` / `PortalScene` / `PortalEntry` / `DistortionGauge` / `DistortionChoiceView` / `ExtraDie` / `ItemCycle` / `BoonConfirm` / `PortalCloseFx` / `RunBonuses` / `PortalVictoryView` / `GlitchSprite` / `DistortionFx` / `useUiGlitch` | Distortion World's portal run (§27) | The portal and the Distortion World on the pixel engine (turning; still); the breach (playing; held at its end, "Tap to continue ▼") and its pop-up over that end (TEAM / NOT NOW / READY!), back from TEAM (the pop-up at once), the pop-up on its own; the gauge of portals closed (fresh, under way, won); a distortion's boons (three, fewer), their icons (an extra die with its "+", a rare item turning through its items, still), a boon's confirm pop-up (BACK / CONFIRM); a portal closing; the run's bonuses (none, some); the victory; the screen's distortion; a distorted sprite at each motion level (full, short, off); the UI's glitch on a few pieces |
+| `TeamSwapActions` | A Pokémon's sheet where the team can change (`teamSwapsOpen`: inside a Pokémon Center, at a portal's way in before READY!) | In the team: Make lead (not the lead), Send to the Box (not the last one); in the Box: Add to team, or, the team full, "swap it in for" each member; still reviving from its fossil: a line saying so |
 
 Dialog behaviour (`src/lib/useDialog.ts`, used by `Modal`, `Sheet`, `SidePanel`): focus moves in, **Tab stays inside**,
 **Esc closes the top dialog only**, focus returns to what opened it.
@@ -370,7 +371,9 @@ Players shouldn't have to make many requests:
   the Center rule (with a lock) and Use an item for one in the Box. Use an item opens a list in the same sheet, with
   Back. The body leads with what matters now: HP and XP, Speed / Rerolls / Catch value, every die as real dice, then
   **What's next** (milestones still ahead, the next one tagged NEXT, each with how close it is); milestones already
-  reached fold away under a summary.
+  reached fold away under a summary. Where the team can change (`teamSwapsOpen`: inside a Pokémon Center, at a portal's
+  way in before READY!), the Team screen's sheet has the Center's Team section in its body (`TeamSwapActions`) and no
+  Center rule in its footer.
 - **A small world's Pokémon waiting to unlock** (§22, docs/26 §1) opens the same sheet, its line saying "Waiting to
   unlock", the lock first in its body, and **Let it go** as the only footer action; no Make lead, no item, no Send on.
 - **Nicknames**: on one of your own Pokémon's sheets (not a Pokédex entry, not a fossil still reviving) the title is a
@@ -904,10 +907,25 @@ full-screen flash).
   and a quake: the void's dithered night, far islands floating every which way, rocks drifting upside-down (moss under
   them), the portal turning (dithered rings, Giratina's red-and-gold arms, a dashed gold ring the other way, motes pulled
   in); then the name card (legend.ts's slanted band in the void's purples with red and gold rims, "Distortion portals"
-  at 2× when it fits). The line shows from the shards on, in a card of the same colours; it holds 0.3 s at the end. A
-  tap, SKIP or Esc ends it; `short` plays it in half the time; motion off skips it. Then its pop-up
-  (`PortalEntryDialog`): the Distortion World turning behind the rules (`PortalScene`), the warning in a red-ringed note
-  with its icon, **NOT NOW** (Home) and **READY!**.
+  at 2× when it fits). The line shows from the shards on, in a card of the same colours. **Then it holds its end and
+  waits for the player** (the user, 2026-10-15): the open portal keeps turning, its motes and rocks drifting (the
+  timeline's `hold`: it goes on drawing past its end), and under the line **"Tap to continue ▼"** (the ▼ blinking, the
+  prompt a real button with the focus); a tap anywhere, a click, Enter or Space raises the pop-up over that end. A tap,
+  SKIP or Esc while it plays jumps to that held end (still waiting, its sounds not piled up at once); `short` plays it
+  in half the time; motion off shows the end at once, still, waiting too. Then its pop-up (`PortalEntryDialog`) **rises
+  over the breach's end** (the scene stays under it as its backdrop): at the bottom of the screen and at most 64 % of
+  its height, so the portal turns above it; the rules scroll inside; then a row with a heart, "Healed as at a Pokémon
+  Center: you can still swap Pokémon with your Box before going in." and **TEAM**; the warning in a red-ringed note
+  with its icon; **NOT NOW** (Home) and **READY!**. On its own (the kitchen sink) it keeps the Distortion World as its
+  banner (`PortalScene`).
+- **Arriving there heals, and the team can change until READY!** (the user, 2026-10-15: "like a Pokémon Center"): the
+  breach showing heals the team and the Box as a Center does (`arriveAtPortal`, the Center's heal and rules; READY!
+  heals the team again, harmlessly). Until READY! the menus stay open, and the Team screen allows the Center's moves
+  (`teamSwapsOpen`: at a Center or at a portal's way in, the engine's): no "Swaps at a Center" lock, a Pokémon's sheet
+  has the Center's Team section (`TeamSwapActions`: Make lead, Send to the Box, Add to team or swap in for one), and on
+  top a dialogue line saying so with **BACK TO THE DISTORTION**. Back on the area (that button, Home's ENTER THE
+  DISTORTION), the pop-up is up at once over the breach's end, with no breach or tap to wait for (`run.portalPopup`).
+  READY! shuts it all: the run's lock below, and no team changes inside.
 - **Inside, there is no way out**: the menus, the gold pill, the cup and the avatar are disabled and say "You can't leave
   the distortion until you win or your party is K.O." (`useNavLock`); any other page sends back to the area
   (`PortalGuard`), so does a reload. The area's action bar and the result card have CONTINUE alone, no HOME, the line
@@ -920,35 +938,46 @@ full-screen flash).
   4/10" and "Pick one boon to close this portal", then the boons as big buttons (one column on a phone, three from 768
   px): an icon (a heart; the Pokémon to revive; the type's badge; a die of its type; the first item), a title that names
   what it does ("Heal 30%", "Revive Dusknoir", "Ghost +10", "Extra die: Gengar", "Rare item"), a line with its numbers
-  ("6/8 dice", the item odds). Its button's name is "Pick: …". Picking closes the portal over the page
+  ("6/8 dice", the item odds). Icons: the type bonus is its type's badge; **an extra die** is a die of its type as the
+  battle's tray draws one (its 6 face) with a pixel "+" on a gold corner badge (`ExtraDie`); **a rare item** turns
+  through the items it can give (the area's odds, so the admin's list), the next every 2 s with a pop in three pixel
+  steps (`ItemCycle`, `.portal-pop`; a calm OS keeps it; motion off: the first item, still). Its button's name is
+  "Pick: …". **A pick asks first** (`BoonConfirm`, the user's ask of 2026-10-15): a small pop-up "Take this boon?" with
+  the boon's icon, title and line, **BACK** (Esc too; back to the boons, nothing spent) and **CONFIRM** (red, with the
+  focus, so Enter takes it). CONFIRM closes the portal over the page
   (`PortalCloseFx`, `closeTimeline`, 1.6 s, `short` 0.9 s, catching no tap): it throbs once, spins faster and collapses
   into its middle while its rim breaks into shards pulled in after it (`portal.close`), a white flash where it was, then
   a gold seal ring with eight marks turning round it fades out through the dither; a toast counts the portals sealed.
   Motion off: the sound alone. It waits in the save: a reload shows it again.
 - **The run's bonuses** (`RunBonuses`) over the team between encounters: each boost as its type badge and "+20 damage",
   each extra die with whose it is; "None yet" before the first.
-- **The wild Pokémon are distorted** on the pixel engine (`glitch.ts`, on the battle stage by `useStageDistortion`,
-  on the preview by `GlitchSprite`): a dark aura under the sprite (a dithered glow of the void breathing in two steps, its
-  shape in violet and teal a pixel each side as a rim) and the void's motes rising off it; every 3.4 s, for 0.48 s in
-  four frames, the page's sprite steps aside and the canvas draws it torn: bands of rows shifted 2–6 pixels sideways,
-  tinted violet on two frames, split into hard colour copies behind (violet, violet and teal, Giratina's red, teal): the
-  look of the first shader the player liked, pixel for pixel. `short`: the copies and the tint only, no tear; a calm OS: as
-  in full; motion off: the aura and rim, still. Never a blur, never faster than 3 a second. The preview shows it too, and "Distorted:
-  it can't be caught." in place of the catch hint; no NEW / caught tag.
+- **The wild Pokémon are distorted** (`glitch.ts`, on the battle stage by `useStageDistortion`, on the preview by
+  `GlitchSprite`), **on the page's own animated sprite**, so nothing lags behind it (the user, 2026-10-15: the layer
+  behind the sprite didn't move with the animated Pokémon, and it was a little too much). Between bursts: a faint rim of
+  its own shape, violet and teal a pixel each side (CSS `drop-shadow`s on the sprite, `restCss`), and the void's motes
+  rising off it on a canvas over it; no glow or copy behind it. Every 5 s, for 0.35 s in four frames, the sprite itself
+  is torn and split (`burstFrame` → `burstCss`): 2–3 bands of rows shifted 2–4 art pixels sideways (1 on the last
+  frame; an SVG filter of its own per sprite, `tearPrimitives`: a flood per band whose red says how far its rows move,
+  `feDisplacementMap`, hard edges), hard see-through colour copies 1–2 pixels behind (violet, lilac and teal, Giratina's
+  red, teal), a violet tint on two frames: the first shader's look, a third softer, still clearly there. `short`: the
+  copies only, no tear, no tint; a calm OS: as in full; motion off: the rim alone, still. Never a blur, never faster than
+  3 a second. The FX lab draws the same frames on its canvas (`drawDistorted`). The preview shows it too, and
+  "Distorted: it can't be caught." in place of the catch hint; no NEW / caught tag.
 - **The screen's distortion** (`DistortionFx`, over the page under the dialogs, no taps; a canvas at 3 CSS pixels per
-  art pixel): a dithered frame of the void along the edges, a few specks of its light; every 6–10 s a tear of 0.45 s in
-  four frames: two or three bands of broken scanlines (lilac, teal), blocks of the void displaced along them with lilac
-  and red edges, a few stray pixel blocks, and the page's colours shifted to the void's violet for three of the frames (a
-  `mix-blend-mode: color` layer at 35 %). `short`: one thin band every 12–18 s, no shift; a calm OS: as in full; motion
-  off: the frame alone, still.
+  art pixel): nothing between tears (no frame round the screen: the user, 2026-10-15, "the purple contour on screen is
+  too much"); every 6–10 s a tear of 0.45 s in four frames: two or three bands of broken scanlines (lilac, teal), blocks
+  of the void displaced along them with lilac and red edges, a few stray pixel blocks, and the page's colours shifted to
+  the void's violet for three of the frames (a `mix-blend-mode: color` layer at 35 %). `short`: one thin band every
+  12–18 s, no shift; a calm OS: as in full; motion off: nothing.
 - **The UI glitches** now and then (`useUiGlitch`, from `DistortionFx`, the player's ask of 2026-10-15): every 5–9 s
   one piece of the page, picked at random (anything tagged `data-glitch`, the page's panels, buttons and pictures such as
   the gauge, the boons, the team's cards and the action bar, the header's title, a toast), plays the wild Pokémon's look
-  for 0.42 s (`.ui-glitch`: torn sideways by the SVG warp, split into hard violet, teal and red copies, in four steps).
-  One at a time; never inside a pop-up (what the player is reading there stays put; the page behind it may glitch),
-  never on what holds the focus, nothing big (over 30 % of the screen) or off screen. Classes only: the words and the
-  accessible names don't change. `short`: the copies only, 0.3 s; a calm OS: as in full; motion off: none. Tune it in one place (`every`,
-  `dur`, `selector`); the kitchen sink's demo runs it every second on a few pieces.
+  for 0.35 s, as soft as theirs (`.ui-glitch`: torn sideways by the SVG warp, split into hard see-through violet, teal
+  and red copies 1–2 px off, in four steps). One at a time; never inside a pop-up (what the player is reading there
+  stays put; the page behind it may glitch), never on what holds the focus, nothing big (over 30 % of the screen) or off
+  screen. Classes only: the words and the accessible names don't change. `short`: the copies only, 0.25 s; a calm OS:
+  as in full; motion off: none. Tune it in one place (`every`, `dur`, `selector`); the kitchen sink's demo runs it every
+  second on a few pieces.
 - **The victory** (`PortalVictoryView`, `victoryTimeline`, 6.2 s; `short` 3.1 s): legend.ts's entrance for shiny
   Giratina on the Distortion World: the last portal throbs in two dark pulses, shadow tendrils whip out of it (black, red
   at the tips), two heartbeats, its silhouette rises out of the portal in a flickering red-and-gold outline (what is below

@@ -80,7 +80,8 @@ export const StageCanvas = forwardRef<
       if (gone) return
       p.load(timeline)
       loaded.current = true
-      if (level === 'off' || instant || skipEarly.current) p.skip()
+      // A held timeline (its end state looping) keeps running there, unless nothing may move.
+      if (level === 'off' || instant || skipEarly.current) p.skip(level !== 'off')
       else if (autoPlay) p.play()
     }
     if (ready) void Promise.race([ready, new Promise((r) => setTimeout(r, READY_WAIT))]).then(start)
@@ -102,7 +103,7 @@ export const StageCanvas = forwardRef<
     pause: () => player.current?.pause(),
     step: () => player.current?.stepFrame(),
     skip: () => {
-      if (loaded.current) player.current?.skip()
+      if (loaded.current) player.current?.skip(level !== 'off')
       else skipEarly.current = true
     },
     setSpeed: (k) => {

@@ -8,13 +8,14 @@ import {
   monName,
   type DistortionOffer,
   type GameData,
+  type ItemDef,
   type PokemonInstance,
   type PokeType,
   type PortalRunMode,
 } from '@/engine'
 import { playCry } from '@/audio/cries'
 import { loadItemSprite, loadSprite, spriteKey } from '@/fx/sprites'
-import { breachTimeline, victoryTimeline } from '@/fx/timelines/portal'
+import { breachTimeline, distortionLevel, victoryTimeline } from '@/fx/timelines/portal'
 import { joinList } from '@/i18n'
 import { useT } from '@/i18n/react'
 import { useHoldFullscreen } from '@/lib/fullscreen'
@@ -163,14 +164,30 @@ const LINE_CARD =
 
 /**
  * The breach, full screen (breachTimeline): the area cracks and falls in pixel shards into a tear of the Distortion
- * World, a quake, the name card; the line says what is happening. A tap (or SKIP, or Esc) jumps to its end; `short`
- * plays it in half the time; with motion off it is over at once. Then `onDone`. `picture`: the area's picture.
+ * World, a quake, the name card; the line says what is happening. Then it holds its end, the open portal turning, and
+ * waits for the player (the user, 2026-10-15): "Tap to continue ▼" blinks, and a tap, a click, Enter or Space calls
+ * `onContinue`. A tap, SKIP or Esc while it plays jumps to that end. `short` plays it in half the time; motion off
+ * shows the end at once, still. `instant`: it starts at its end (back from the Team screen). `under`: the pop-up is up
+ * over it, the end its backdrop (no prompt, no taps). `picture`: the area's picture.
  */
-export function PortalBreach({ onDone, picture }: { onDone: () => void; picture?: string | null }) {
+export function PortalBreach({
+  onContinue,
+  picture,
+  instant = false,
+  under = false,
+}: {
+  onContinue: () => void
+  picture?: string | null
+  instant?: boolean
+  under?: boolean
+}) {
   const { t } = useT()
   const { level } = useMotion()
   const size = useFullStage(200)
+  const stage = useRef<StageHandle>(null)
+  const prompt = useRef<HTMLButtonElement>(null)
   const [line, setLine] = useState(false)
+  const [end, setEnd] = useState(false)
   useHoldFullscreen()
   const scene = useMemo(
     () => ({
@@ -186,29 +203,38 @@ export function PortalBreach({ onDone, picture }: { onDone: () => void; picture?
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [],
   )
+  const skip = useCallback(() => stage.current?.skip(), [])
   useEffect(() => {
-    if (level === 'off') return onDone()
-    const esc = (e: KeyboardEvent) => e.key === 'Escape' && onDone()
+    if (under || end) return
+    const esc = (e: KeyboardEvent) => e.key === 'Escape' && skip()
     window.addEventListener('keydown', esc)
     return () => window.removeEventListener('keydown', esc)
-  }, [level, onDone])
-  // Its end state holds a moment (the whole way in stays near the old 3.6 s).
-  const end = () => window.setTimeout(onDone, 300)
-  if (level === 'off') return null
+  }, [under, end, skip])
+  // At its end the prompt holds the focus: Enter and Space go on.
+  useEffect(() => {
+    if (end && !under) prompt.current?.focus()
+  }, [end, under])
   return (
     <div
-      className="portal-breach fixed inset-0 z-[95] overflow-hidden bg-[#07020d]"
-      role="dialog"
-      aria-modal="true"
-      aria-label={t('ui.portal.title')}
-      onClick={onDone}
+      className={cx(
+        'portal-breach fixed inset-0 overflow-hidden bg-[#07020d]',
+        // Under the pop-up (Modal's z-90), still over the page.
+        under ? 'z-[89]' : 'z-[95]',
+      )}
+      role={under ? undefined : 'dialog'}
+      aria-modal={under ? undefined : true}
+      aria-hidden={under || undefined}
+      aria-label={under ? undefined : t('ui.portal.title')}
+      onClick={under ? undefined : end ? onContinue : skip}
     >
       <StageCanvas
+        ref={stage}
         timeline={scene.timeline}
         ready={scene.ready}
+        instant={instant}
         size={{ w: size.w, h: size.h }}
         hud={{ beat: (b) => b === 'line' && setLine(true) }}
-        onEnd={end}
+        onEnd={() => setEnd(true)}
         label={t('ui.portal.breach')}
         className="absolute inset-0 h-full w-full"
       />
@@ -216,27 +242,59 @@ export function PortalBreach({ onDone, picture }: { onDone: () => void; picture?
         <p className={cx(LINE_CARD, 'text-[24px]', !line && 'invisible')} aria-live="polite">
           {t('ui.portal.breach')}
         </p>
-        <PixelButton size="sm" onClick={onDone}>
-          {t('ui.victory.skip')}
-        </PixelButton>
+        {under ? null : end ? (
+          <button
+            ref={prompt}
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation()
+              onContinue()
+            }}
+            className="flex min-h-[44px] items-center gap-2 px-3 font-pixel-sm text-[20px] uppercase tracking-[0.04em] text-[#f4ecff] outline-offset-4"
+          >
+            {t('ui.portal.tapContinue')}
+            <span aria-hidden className="blink text-[#ffc94a]">
+              ▼
+            </span>
+          </button>
+        ) : (
+          <PixelButton
+            size="sm"
+            onClick={(e) => {
+              e.stopPropagation()
+              skip()
+            }}
+          >
+            {t('ui.victory.skip')}
+          </PixelButton>
+        )}
       </div>
     </div>
   )
 }
 
-/** The pop-up behind the breach: the Distortion World and its portal turning behind it, the rules, the warning. */
+/**
+ * The way in's pop-up: the rules, the warning, TEAM (the team can still change here, as at a Pokémon Center), NOT NOW
+ * and READY!. Over the breach's end, its portal turning behind; on its own (`banner`), the Distortion World as its
+ * picture.
+ */
 export function PortalEntryDialog({
   open,
   mode,
   data,
   onReady,
   onNotNow,
+  onTeam,
+  banner = true,
 }: {
   open: boolean
   mode: PortalRunMode
   data: GameData
   onReady: () => void
   onNotNow: () => void
+  /** To the Team screen, and back here after. */
+  onTeam?: () => void
+  banner?: boolean
 }) {
   const { t } = useT()
   const rules = usePortalRules(mode, data)
@@ -245,13 +303,28 @@ export function PortalEntryDialog({
       open={open}
       onClose={onNotNow}
       title={t('ui.portal.enterTitle')}
-      className="portal-dialog max-w-md"
+      bottom={!banner}
+      // Over the breach: short enough for its portal to show above, the rules scrolling inside.
+      className={cx('portal-dialog max-w-md', !banner && 'flex !max-h-[64dvh] flex-col')}
     >
-      <div className="flex flex-col gap-3">
-        <div className="relative -mx-4 h-[150px] overflow-hidden bg-[#07020d]" aria-hidden>
-          <PortalScene />
+      <div className={cx('flex flex-col gap-3', !banner && 'min-h-0 flex-1')}>
+        {banner && (
+          <div className="relative -mx-4 h-[150px] overflow-hidden bg-[#07020d]" aria-hidden>
+            <PortalScene />
+          </div>
+        )}
+        <div className={cx(!banner && 'pixel-scroll -mr-2 min-h-0 flex-1 overflow-y-auto pr-2')}>
+          <RuleList rules={rules} />
         </div>
-        <RuleList rules={rules} />
+        {onTeam && (
+          <div className="flex items-center gap-2.5 bg-well p-2.5 shadow-ring-line">
+            <PixelIcon name="heart" size={20} className="shrink-0" />
+            <p className="m-0 min-w-0 flex-1 text-[18px] leading-tight">{t('ui.portal.teamHint')}</p>
+            <PixelButton className="shrink-0" onClick={onTeam}>
+              {t('ui.portal.team')}
+            </PixelButton>
+          </div>
+        )}
         <p
           role="note"
           className="m-0 flex items-start gap-2 bg-rose p-2.5 text-[18px] leading-tight text-ink shadow-[inset_0_0_0_2px_rgb(var(--c-danger))]"
@@ -270,26 +343,47 @@ export function PortalEntryDialog({
   )
 }
 
-/** Opening the area: the breach (over the area's picture), then its pop-up. */
+/**
+ * Opening the area: the breach (over the area's picture), held at its end until the player taps, then its pop-up over
+ * that end. `popup`: the pop-up was already up (back from the Team screen): the end and the pop-up at once.
+ */
 export function PortalEntry({
   mode,
   data,
   picture,
+  popup = false,
+  onPopup,
   onReady,
   onNotNow,
+  onTeam,
 }: {
   mode: PortalRunMode
   data: GameData
   picture?: string | null
+  popup?: boolean
+  onPopup?: () => void
   onReady: () => void
   onNotNow: () => void
+  onTeam?: () => void
 }) {
-  const [breach, setBreach] = useState(true)
-  const done = useCallback(() => setBreach(false), [])
-  return breach ? (
-    <PortalBreach onDone={done} picture={picture} />
-  ) : (
-    <PortalEntryDialog open mode={mode} data={data} onReady={onReady} onNotNow={onNotNow} />
+  const [open, setOpen] = useState(popup)
+  const show = useCallback(() => {
+    setOpen(true)
+    onPopup?.()
+  }, [onPopup])
+  return (
+    <>
+      <PortalBreach onContinue={show} picture={picture} instant={popup} under={open} />
+      <PortalEntryDialog
+        open={open}
+        banner={false}
+        mode={mode}
+        data={data}
+        onReady={onReady}
+        onNotNow={onNotNow}
+        onTeam={onTeam}
+      />
+    </>
   )
 }
 
@@ -301,6 +395,61 @@ export interface OfferView {
   icon: ReactNode
   title: string
   text: string
+}
+
+/** A pixel "+" in a corner: ink on gold, an ink ring. */
+function PlusBadge() {
+  return (
+    <span
+      aria-hidden
+      className="absolute -right-2 -top-2 grid h-[18px] w-[18px] place-items-center bg-gold text-ink shadow-ring"
+    >
+      <svg width="10" height="10" viewBox="0 0 5 5" shapeRendering="crispEdges">
+        <path d="M2 0h1v5H2zM0 2h5v1H0z" fill="currentColor" />
+      </svg>
+    </span>
+  )
+}
+
+/** An extra die's icon: a die of its type, as the battle's tray draws one, with a "+" on its corner. */
+export function ExtraDie({ type, size = 30 }: { type: PokeType; size?: number }) {
+  return (
+    <span className="relative inline-block" style={{ width: size, height: size }}>
+      <Die type={type} face={{ kind: 'number', value: 6 }} size={size} label={typeName(type)} />
+      <PlusBadge />
+    </span>
+  )
+}
+
+/**
+ * A rare item's icon: its possible items in turn, the next every 2 s with a little pop in pixel steps (a squash, a
+ * stretch, settled, `.portal-pop`). The world's identity, so a calm OS keeps it; motion off shows the first, still.
+ */
+export function ItemCycle({
+  items,
+  size = 30,
+  still,
+}: {
+  items: readonly ItemDef[]
+  size?: number
+  /** Held on the first, as with motion off (the kitchen sink shows both). */
+  still?: boolean
+}) {
+  const { level, calm } = useMotion()
+  const moving = !still && distortionLevel(level, calm) !== 'off' && items.length > 1
+  // How many changes so far: the item is n mod their count; every change after the first pops.
+  const [n, setN] = useState(0)
+  useEffect(() => {
+    if (!moving) return
+    const id = window.setInterval(() => setN((x) => x + 1), 2000)
+    return () => window.clearInterval(id)
+  }, [moving])
+  const shown = moving ? n % items.length : 0
+  return (
+    <span key={n} className={cx('inline-block', moving && n > 0 && 'portal-pop')}>
+      <ItemSprite item={items[shown]} size={size} />
+    </span>
+  )
 }
 
 /** What a boon says: who and what it names, its numbers from the area's mode. */
@@ -344,7 +493,7 @@ export function describeOffer(
       const name = p ? monName(p, data) : '?'
       return {
         offer,
-        icon: <Die type={offer.type} face={null} size={30} label={typeName(offer.type)} />,
+        icon: <ExtraDie type={offer.type} />,
         title: t('ui.portal.offer.die.title', { name }),
         text: t('ui.portal.offer.die.text', {
           name,
@@ -361,14 +510,12 @@ export function describeOffer(
           .filter((i) => i.weight > 0 && data.items[i.key])
           .map((i) => `${data.items[i.key]!.name} ${Math.round((100 * i.weight) / total)}%`),
       )
-      const first = mode.item.items.find((i) => data.items[i.key])
+      const items = mode.item.items
+        .filter((i) => i.weight > 0 && data.items[i.key])
+        .map((i) => data.items[i.key]!)
       return {
         offer,
-        icon: first ? (
-          <ItemSprite item={data.items[first.key]} size={30} />
-        ) : (
-          <PixelIcon name="box" size={28} />
-        ),
+        icon: items.length ? <ItemCycle items={items} /> : <PixelIcon name="box" size={28} />,
         title: t('ui.portal.offer.item.title'),
         text: t('ui.portal.offer.item.text', { odds }),
       }
@@ -376,7 +523,73 @@ export function describeOffer(
   }
 }
 
-/** A distortion is open: its boons as big buttons, one to pick; the portal over them, its number. */
+/** A boon's icon in its tile. */
+function OfferIcon({ icon }: { icon: ReactNode }) {
+  return (
+    <span
+      className="relative grid h-11 w-11 shrink-0 place-items-center bg-line shadow-ring-line"
+      aria-hidden
+    >
+      {icon}
+    </span>
+  )
+}
+
+/**
+ * Taking a boon, asked once more (the user, 2026-10-15): its icon, title and line; BACK (or Esc) goes back to the
+ * boons with nothing spent, CONFIRM (the focus) takes it.
+ */
+export function BoonConfirm({
+  view,
+  onBack,
+  onConfirm,
+}: {
+  view: OfferView | null
+  onBack: () => void
+  onConfirm: () => void
+}) {
+  const { t } = useT()
+  const ok = useRef<HTMLButtonElement>(null)
+  // The last boon stays while the pop-up closes.
+  const last = useRef(view)
+  if (view) last.current = view
+  const shown = view ?? last.current
+  // After the dialog's own focus (its effects run first): CONFIRM holds it, so Enter takes the boon.
+  useEffect(() => {
+    if (view) ok.current?.focus()
+  }, [view])
+  return (
+    <Modal
+      open={!!view}
+      onClose={onBack}
+      title={t('ui.portal.confirmTitle')}
+      className="portal-dialog max-w-sm"
+    >
+      {shown && (
+        <div className="flex flex-col gap-3">
+          <div className="flex items-center gap-3 bg-paper p-3 shadow-ring-line">
+            <OfferIcon icon={shown.icon} />
+            <span className="grid min-w-0 gap-0.5">
+              <b className="text-[21px] font-normal leading-none">{shown.title}</b>
+              <small className="font-pixel-sm text-[15px] leading-tight text-muted">{shown.text}</small>
+            </span>
+          </div>
+          <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] gap-2.5">
+            <PixelButton onClick={onBack}>{t('ui.common.back')}</PixelButton>
+            <PixelButton ref={ok} variant="primary" onClick={onConfirm}>
+              {t('ui.portal.confirm')}
+            </PixelButton>
+          </div>
+        </div>
+      )}
+    </Modal>
+  )
+}
+
+/**
+ * A distortion is open: its boons as big buttons; the portal over them, its number. A tap asks to confirm
+ * (BoonConfirm); only CONFIRM calls `onPick`.
+ */
 export function DistortionChoiceView({
   views,
   index,
@@ -390,6 +603,7 @@ export function DistortionChoiceView({
   onPick: (i: number) => void
 }) {
   const { t } = useT()
+  const [asked, setAsked] = useState<number | null>(null)
   return (
     <section className="pixel-panel portal-panel flex flex-col gap-3 p-3" aria-labelledby="portal-choice">
       <div className="flex items-center gap-3">
@@ -410,16 +624,12 @@ export function DistortionChoiceView({
           <li key={`${v.offer.kind}-${i}`}>
             <button
               type="button"
-              onClick={() => onPick(i)}
+              onClick={() => setAsked(i)}
               aria-label={t('ui.portal.pickLabel', { title: v.title })}
+              aria-haspopup="dialog"
               className="pixel-btn flex h-full min-h-[64px] w-full items-center gap-3 bg-paper px-3 py-2 text-left md:flex-col md:items-start"
             >
-              <span
-                className="grid h-11 w-11 shrink-0 place-items-center bg-line shadow-ring-line"
-                aria-hidden
-              >
-                {v.icon}
-              </span>
+              <OfferIcon icon={v.icon} />
               <span className="grid min-w-0 gap-0.5">
                 <b className="text-[21px] font-normal leading-none">{v.title}</b>
                 <small className="font-pixel-sm text-[15px] leading-tight text-muted">{v.text}</small>
@@ -428,6 +638,15 @@ export function DistortionChoiceView({
           </li>
         ))}
       </ul>
+      <BoonConfirm
+        view={asked == null ? null : (views[asked] ?? null)}
+        onBack={() => setAsked(null)}
+        onConfirm={() => {
+          const i = asked
+          setAsked(null)
+          if (i != null) onPick(i)
+        }}
+      />
     </section>
   )
 }

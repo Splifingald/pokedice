@@ -1,8 +1,10 @@
-// The distortion on a Pokémon of Distortion World (docs/28, docs/15 §27), drawn in the pixel engine. Still most of the
-// time, wrapped in a dark aura; then for half a second it tears sideways in bands of rows, its colours shift and it
-// splits into hard offset copies (violet, teal, Giratina's red): the look of the first CSS shader, which the player
-// liked, now drawn pixel for pixel on the sprite. No React here: the battle stage, the preview and the FX lab use it.
-import { canvas, glow, rng, type Canvas, type G, type Particles, type Rng } from './pixel'
+// The distortion on a Pokémon of Distortion World (docs/28, docs/15 §27). Still most of the time, a faint violet and
+// teal rim on its own shape; then for about a third of a second it tears sideways in bands of rows, its colours shift
+// and it splits into hard offset copies (violet, teal, Giratina's red): the look of the first CSS shader, which the
+// player liked. The page draws it on its own animated sprite (CSS filters from burstCss, restCss and tearPrimitives),
+// so every copy moves with the frame it shows; the FX lab draws the same frames on its canvas (drawDistorted). No React
+// here: the battle stage, the preview and the FX lab use it.
+import { canvas, rng, type Canvas, type G, type Particles, type Rng } from './pixel'
 import { silhouette, spriteFrame } from './sprites'
 
 /** Distortion World's palette: the void's purples, Giratina's red and gold, the rift's teal, its floating rocks. */
@@ -27,9 +29,12 @@ export const DW = {
   mossLit: '#2f8a76',
 } as const
 
-/** A burst every 3.4 s (the first shader's rhythm), lasting about half a second: never faster than 3 a second. */
-export const GLITCH_PERIOD = 3.4
-export const GLITCH_DUR = 0.48
+/**
+ * A burst every 5 s, lasting about a third of a second (the user's ask of 2026-10-15: a third softer than the first
+ * shader's 3.4 s and 0.48 s): never faster than 3 a second.
+ */
+export const GLITCH_PERIOD = 5
+export const GLITCH_DUR = 0.35
 
 export interface Burst {
   /** Which burst (its seed). */
@@ -57,24 +62,108 @@ export function burstAt(t: number, period = GLITCH_PERIOD, dur = GLITCH_DUR, see
   return t >= start && t < start + dur ? { n, p: (t - start) / dur } : null
 }
 
-/** The copies behind the sprite in each of a burst's four frames: [dx, colour]. */
-const GHOSTS: readonly (readonly (readonly [number, string])[])[] = [
-  [[2, DW.violet]],
+/** A hard colour copy behind the sprite: its sideways offset in art pixels, its colour, how opaque. */
+export type Ghost = readonly [dx: number, color: string, alpha: number]
+
+/** The copies in each of a burst's four frames: close to the sprite and see-through (softened 2026-10-15). */
+const GHOSTS: readonly (readonly Ghost[])[] = [
+  [[1, DW.violet, 0.6]],
   [
-    [3, DW.lilac],
-    [-3, DW.teal],
+    [2, DW.lilac, 0.5],
+    [-2, DW.teal, 0.5],
   ],
-  [[-2, DW.red]],
-  [[-1, DW.teal]],
+  [[-1, DW.red, 0.5]],
+  [[-1, DW.teal, 0.4]],
 ]
+/** Short animations: these two copies the whole burst, no tear. */
+const SHORT_GHOSTS: readonly Ghost[] = [
+  [1, DW.violet, 0.5],
+  [-1, DW.teal, 0.45],
+]
+
+/** A band of rows torn sideways: where it starts (0..1 down the sprite), its height and offset in art pixels. */
+export interface Band {
+  at: number
+  h: number
+  dx: number
+}
+
+/** One frame of a burst, as both the page's sprite (CSS filters) and the FX lab's canvas draw it. */
+export interface BurstFrame {
+  /** 0..3. */
+  f: number
+  ghosts: readonly Ghost[]
+  /** Torn bands (none with short animations). */
+  bands: Band[]
+  /** The void's violet over it, this frame. */
+  tint: boolean
+}
+
+/**
+ * Frame f (each ~0.09 s) of a burst: 2–3 bands of rows torn 2–4 art pixels sideways (1 on the last frame), the colour
+ * copies behind, the violet tint on the even frames. `short`: the copies only.
+ */
+export function burstFrame(b: Burst, short = false): BurstFrame {
+  const f = Math.min(3, Math.floor(b.p * 4))
+  if (short) return { f, ghosts: SHORT_GHOSTS, bands: [], tint: false }
+  const r = seeded(b.n * 131 + f * 17 + 3)
+  const bands = Array.from({ length: r.int(2, 3) }, () => ({
+    at: r(),
+    h: r.int(2, 4),
+    dx: (r() < 0.5 ? -1 : 1) * (f === 3 ? 1 : r.int(2, 4)),
+  }))
+  return { f, ghosts: GHOSTS[f]!, bands, tint: f % 2 === 0 }
+}
+
+/** A colour with its alpha, for a CSS filter. */
+const rgba = (hex: string, a: number) =>
+  `rgb(${[1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16)).join(' ')} / ${a})`
+
+/**
+ * The frame as a CSS filter on the page's own (animated) sprite, so every copy and tear is drawn from the frame and the
+ * place it shows right now, and moves with it. `px`: CSS pixels per art pixel; `tear`: the url() of the SVG filter that
+ * shifts the bands (tearPrimitives), or null.
+ */
+export function burstCss(frame: BurstFrame, px: number, tear: string | null): string {
+  return [
+    tear,
+    ...frame.ghosts.map(([dx, col, a]) => `drop-shadow(${dx * px}px 0 0 ${rgba(col, a)})`),
+    frame.tint ? 'hue-rotate(-25deg) saturate(1.2)' : null,
+  ]
+    .filter(Boolean)
+    .join(' ')
+}
+
+/** Between bursts: the sprite's own shape a pixel each side, violet and teal, faint; it is a filter on the sprite. */
+export const restCss = (px: number) =>
+  `drop-shadow(${px}px 0 0 ${rgba(DW.violet, 0.35)}) drop-shadow(${-px}px 0 0 ${rgba(DW.teal, 0.3)})`
+
+/**
+ * The SVG filter primitives that tear a sprite `w`×`h` CSS pixels (`px` per art pixel): a flat map, a flood per band
+ * whose red says how far its rows move, and the displacement. Hard edges, whole art pixels.
+ */
+export function tearPrimitives(bands: readonly Band[], w: number, h: number, px: number): string {
+  const scale = 10 * px
+  const rows = Math.max(1, Math.round(h / px))
+  const floods = bands.map((b, i) => {
+    const y = Math.min(rows - 1, Math.floor(b.at * rows)) * px
+    const red = Math.round(255 * (0.5 + (b.dx * px) / scale))
+    return `<feFlood x="${-w}" y="${y}" width="${w * 3}" height="${b.h * px}" flood-color="rgb(${red},128,0)" result="b${i}"/>`
+  })
+  return [
+    '<feFlood flood-color="rgb(128,128,0)" result="base"/>',
+    ...floods,
+    `<feMerge result="map"><feMergeNode in="base"/>${bands.map((_, i) => `<feMergeNode in="b${i}"/>`).join('')}</feMerge>`,
+    `<feDisplacementMap in="SourceGraphic" in2="map" scale="${scale}" xChannelSelector="R" yChannelSelector="G"/>`,
+  ].join('')
+}
 
 const PAD = 6
 let comp: Canvas | null = null
 
 /**
- * The Pokémon mid-burst, feet at (x, y): the four frames (each ~0.12 s) tear bands of rows sideways by 2–6 pixels,
- * tint it the void's violet on the even ones, and put its hard colour copies behind. `short`: the copies and the tint
- * only, no tear.
+ * The Pokémon mid-burst on a canvas (the FX lab's stage), feet at (x, y): burstFrame's copies behind, its bands torn,
+ * the tint. The page draws the same frames on its own sprite (burstCss).
  */
 export function drawDistorted(g: G, key: string, x: number, y: number, b: Burst, short = false) {
   const frame = spriteFrame(key)
@@ -87,31 +176,23 @@ export function drawDistorted(g: G, key: string, x: number, y: number, b: Burst,
   }
   const c = comp.g
   c.clearRect(0, 0, comp.width, comp.height)
-  const f = Math.min(3, Math.floor(b.p * 4))
-  const ghosts = short
-    ? ([
-        [2, DW.violet],
-        [-2, DW.teal],
-      ] as const)
-    : GHOSTS[f]!
-  for (const [dx, col] of ghosts) c.drawImage(silhouette(key, col)!, PAD + dx, 0)
+  const bf = burstFrame(b, short)
+  for (const [dx, col, a] of bf.ghosts) {
+    c.globalAlpha = a
+    c.drawImage(silhouette(key, col)!, PAD + dx, 0)
+  }
+  c.globalAlpha = 1
   c.drawImage(frame, PAD, 0)
-  if (f % 2 === 0) {
-    c.globalAlpha = 0.38
+  if (bf.tint) {
+    c.globalAlpha = 0.22
     c.drawImage(silhouette(key, DW.violet)!, PAD, 0)
     c.globalAlpha = 1
   }
-  // Bands of rows torn sideways (the old SVG displacement, as whole-pixel offsets).
+  // Bands of rows torn sideways, as whole-pixel offsets.
   const off = new Int8Array(fh)
-  if (!short) {
-    const r = seeded(b.n * 131 + f * 17 + 3)
-    const bands = r.int(3, 5)
-    for (let i = 0; i < bands; i++) {
-      const y0 = r.int(0, Math.max(0, fh - 2))
-      const h = r.int(2, 6)
-      const dx = (r() < 0.5 ? -1 : 1) * (f === 3 ? 1 : r.int(2, 6))
-      for (let yy = y0; yy < Math.min(fh, y0 + h); yy++) off[yy] = dx
-    }
+  for (const band of bf.bands) {
+    const y0 = Math.min(fh - 1, Math.floor(band.at * fh))
+    for (let yy = y0; yy < Math.min(fh, y0 + band.h); yy++) off[yy] = band.dx
   }
   const left = Math.round(x - fw / 2) - PAD
   const top = Math.round(y - fh)
@@ -124,26 +205,19 @@ export function drawDistorted(g: G, key: string, x: number, y: number, b: Burst,
 }
 
 /**
- * The dark aura behind a distorted Pokémon (drawn under it), feet at (x, y): a dithered glow of the void that breathes
- * in two steps, and its shape in violet and teal a pixel each side, peeking out as a rim. `still`: one frame, held.
+ * Between bursts on a canvas (the FX lab), under the sprite at its feet (x, y): restCss's faint rim. Nothing else
+ * stays behind it (the user, 2026-10-15: a layer that didn't move with the animated sprite was too much).
  */
-export function drawAura(g: G, key: string, x: number, y: number, t: number, still = false) {
+export function drawAura(g: G, key: string, x: number, y: number) {
   const frame = spriteFrame(key)
   if (!frame) return
-  const fw = frame.width
-  const fh = frame.height
-  const cx = Math.round(x)
-  const cy = Math.round(y - fh / 2)
-  const big = still ? 0 : Math.floor(t * 1.5) % 2
-  const R = Math.round(Math.max(fw, fh) * 0.5) + big * 2
-  g.drawImage(glow(R, DW.mid, 1.6, 0.6), cx - R, cy - R)
-  const r2 = Math.round(R * 0.62)
-  g.drawImage(glow(r2, DW.dark, 1.1, 0.85), cx - r2, cy - r2)
-  const left = Math.round(x - fw / 2)
-  const top = Math.round(y - fh)
-  const swap = !still && Math.floor(t * 4) % 6 === 0
-  g.drawImage(silhouette(key, swap ? DW.teal : DW.violet)!, left + 1, top)
-  g.drawImage(silhouette(key, swap ? DW.violet : DW.teal)!, left - 1, top)
+  const left = Math.round(x - frame.width / 2)
+  const top = Math.round(y - frame.height)
+  g.globalAlpha = 0.35
+  g.drawImage(silhouette(key, DW.violet)!, left + 1, top)
+  g.globalAlpha = 0.3
+  g.drawImage(silhouette(key, DW.teal)!, left - 1, top)
+  g.globalAlpha = 1
 }
 
 /** A mote of the void rising off a distorted Pokémon (w: its width; feet at x, y). */
@@ -152,10 +226,10 @@ export function emitMote(P: Particles, r: Rng, x: number, y: number, w: number) 
     x: x + r.range(-w / 2, w / 2),
     y: y - r.range(0, 8),
     vx: r.range(-3, 3),
-    vy: -r.range(8, 16),
-    life: r.range(0.8, 1.5),
-    size: r() < 0.7 ? 1 : 2,
+    vy: -r.range(8, 14),
+    life: r.range(0.6, 1.1),
+    size: r() < 0.85 ? 1 : 2,
     shape: 'sq',
-    colors: [DW.lilac, DW.violet, DW.mid, DW.dark],
+    colors: [DW.violet, DW.mid, DW.dark],
   })
 }

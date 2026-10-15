@@ -1,21 +1,23 @@
 // Distortion World's effects on the page (docs/28, docs/15 §27), hosting the pixel engine's portal scenes
 // (src/fx/timelines/portal.ts, src/fx/glitch.ts): the portal looping on a canvas, the full-screen scenes' stage, the
-// wild Pokémon's distortion (its aura under the sprite, its bursts over it), the screen's distortion, the UI's glitches
+// wild Pokémon's distortion (on its own animated sprite, the motes over it), the screen's tears, the UI's glitches
 // (one element at a time, now and then), and a portal closing over the page. Every piece honours the motion level:
 // They are the world's identity: a calm OS keeps them as in full, the player's short setting gives a lighter version,
 // only motion `off` shows a still frame (or nothing) (distortionLevel).
 import { useEffect, useMemo, useRef, useState, type RefObject } from 'react'
 import { fxSound } from '@/audio/sfx'
-import { bayer, canvas, Particles, rect, rng, type Canvas, type G } from '@/fx/pixel'
+import { Particles, rect, rng, type G } from '@/fx/pixel'
 import {
   DW,
   burstAt,
-  drawAura,
-  drawDistorted,
+  burstCss,
+  burstFrame,
   emitMote,
   GLITCH_DUR,
   GLITCH_PERIOD,
+  restCss,
   seeded,
+  tearPrimitives,
 } from '@/fx/glitch'
 import { loadSprite, spriteFrame, spriteKey, stageSprite } from '@/fx/sprites'
 import type { Timeline } from '@/fx/timeline'
@@ -170,57 +172,87 @@ export function useFullStage(words = 0) {
 
 // ------------------------------------------------------------------ the wild Pokémon's distortion
 
-/** One clock for a distorted sprite's aura and bursts. */
+/** One clock for a distorted sprite's motes and bursts. */
 const clock = () => performance.now() / 1000
 
+/** A canvas sprite key back to what loadSprite takes. */
+function parseKey(key: string): [number, boolean, boolean] {
+  const m = /^(\d+)([bf])(s?)$/.exec(key)
+  return m ? [Number(m[1]), m[2] === 'b', m[3] === 's'] : [0, false, false]
+}
+
+const SVG_NS = 'http://www.w3.org/2000/svg'
+let tearIds = 0
+
 /**
- * Draws a distorted Pokémon's layers on two canvases sharing one clock: `aura` (under the sprite: the dark glow and
- * its two-colour rim) and `over` (above it: the void's motes, and every 3.4 s a half-second burst during which the
- * page's sprite is hidden, `host` gets `data-glitching`, and the canvas draws it torn). The feet at `at`, in the
- * canvases' art pixels.
+ * A distorted Pokémon (docs/15 §27), drawn on the page's own animated sprite (the `img` inside `host`) so that nothing
+ * lags behind it (the user, 2026-10-15: the layer behind the sprite didn't move with it): a faint rim of its shape
+ * (restCss) between bursts, and every 5 s a burst of about a third of a second whose torn bands (an SVG filter of its
+ * own, tearPrimitives), colour copies and tint are CSS filters on that same image (burstCss); `host` gets
+ * `data-glitching` meanwhile. Only the void's motes rising off it are drawn on `over`, feet at `at` in its art pixels.
+ * `px`: CSS pixels per art pixel.
  */
 function useDistortion({
-  aura,
   over,
   host,
   sprite,
   at,
+  px,
   active,
   level,
 }: {
-  aura: RefObject<HTMLCanvasElement | null>
   over: RefObject<HTMLCanvasElement | null>
   host: RefObject<HTMLElement | null>
   sprite: string
   at: { x: number; y: number } | null
+  px: number
   active: boolean
-  /** distortionLevel's: off is still, short has no tear. */
+  /** distortionLevel's: off is still (the rim alone), short has no tear. */
   level: MotionLevel
 }) {
   const ax = at?.x ?? 0
   const ay = at?.y ?? 0
   useEffect(() => {
-    const a = aura.current?.getContext('2d')
     const o = over.current?.getContext('2d')
     const el = host.current
-    if (!a || !o || !at) return
-    a.imageSmoothingEnabled = false
+    if (!o || !el || !at) return
     o.imageSmoothingEnabled = false
     const still = level === 'off'
     const short = level === 'short'
-    const setGlitching = (on: boolean) => el?.toggleAttribute('data-glitching', on)
-    const clear = (g: G) => g.clearRect(0, 0, g.canvas.width, g.canvas.height)
-    if (!active) {
-      clear(a)
-      clear(o)
-      setGlitching(false)
-      return
+    const clear = () => o.clearRect(0, 0, o.canvas.width, o.canvas.height)
+    const setGlitch = (css: string | null) => {
+      el.toggleAttribute('data-glitching', !!css)
+      if (css) el.style.setProperty('--glitch', css)
+      else el.style.removeProperty('--glitch')
     }
+    const reset = () => {
+      setGlitch(null)
+      el.style.removeProperty('--glitch-rest')
+      clear()
+    }
+    if (!active) return reset()
+    el.style.setProperty('--glitch-rest', restCss(px))
+    if (still) return reset
+    // Its canvas frame tells the motes how wide it is.
+    void loadSprite(...parseKey(sprite))
+    // The tear's own filter, rewritten for each frame of a burst.
+    const svg = document.createElementNS(SVG_NS, 'svg')
+    svg.setAttribute('width', '0')
+    svg.setAttribute('height', '0')
+    svg.setAttribute('aria-hidden', 'true')
+    svg.style.position = 'absolute'
+    const filter = document.createElementNS(SVG_NS, 'filter')
+    const id = `portal-tear-${++tearIds}`
+    filter.id = id
+    filter.setAttribute('color-interpolation-filters', 'sRGB')
+    svg.appendChild(filter)
+    document.body.appendChild(svg)
     const motes = new Particles()
     const r = rng(7)
     let raf = 0
     let last = clock()
     let shown = 0
+    let drawn = ''
     const t0 = clock()
     const frame = () => {
       const now = clock()
@@ -229,69 +261,58 @@ function useDistortion({
       last = now
       motes.update(dt)
       const fw = spriteFrame(sprite)?.width ?? 0
-      if (!still && fw && r() < dt * 7) emitMote(motes, r, ax, ay, fw)
-      // Ambient: about 20 frames a second is plenty, a burst's frames step every 0.12 s anyway.
+      if (fw && r() < dt * 4) emitMote(motes, r, ax, ay, fw)
+      // Ambient: about 20 frames a second is plenty, a burst's frames step every ~0.09 s anyway.
       if (now - shown >= 0.045) {
         shown = now
-        clear(a)
-        drawAura(a, sprite, ax, ay, t, still)
-        clear(o)
+        clear()
         motes.draw(o)
-        const b = still ? null : burstAt(t, GLITCH_PERIOD, GLITCH_DUR, 7)
-        const on = !!b && !!spriteFrame(sprite)
-        setGlitching(on)
-        if (b && on) drawDistorted(o, sprite, ax, ay, b, short)
+        const b = burstAt(t, GLITCH_PERIOD, GLITCH_DUR, 7)
+        const f = b ? burstFrame(b, short) : null
+        const tag = b && f ? `${b.n}:${f.f}` : ''
+        if (tag !== drawn) {
+          drawn = tag
+          const img = el.querySelector('img')
+          if (f && img) {
+            const tear = f.bands.length > 0
+            if (tear) filter.innerHTML = tearPrimitives(f.bands, img.offsetWidth, img.offsetHeight, px)
+            setGlitch(burstCss(f, px, tear ? `url(#${id})` : null))
+          } else setGlitch(null)
+        }
       }
       raf = requestAnimationFrame(frame)
     }
-    // The sprite on the canvas first (the page's own image is already there).
-    let gone = false
-    void loadSprite(...parseKey(sprite)).then(() => {
-      if (gone) return
-      if (still) {
-        drawAura(a, sprite, ax, ay, 0, true)
-        return
-      }
-      raf = requestAnimationFrame(frame)
-    })
+    raf = requestAnimationFrame(frame)
     return () => {
-      gone = true
       cancelAnimationFrame(raf)
-      setGlitching(false)
-      clear(a)
-      clear(o)
+      svg.remove()
+      reset()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sprite, ax, ay, active, level])
-}
-
-/** A canvas sprite key back to what loadSprite takes. */
-function parseKey(key: string): [number, boolean, boolean] {
-  const m = /^(\d+)([bf])(s?)$/.exec(key)
-  return m ? [Number(m[1]), m[2] === 'b', m[3] === 's'] : [0, false, false]
+  }, [sprite, ax, ay, px, active, level])
 }
 
 /**
- * The battle stage's distortion for a portal run's wild Pokémon: two stage-sized canvases (240 × 160 art pixels, like
- * the timelines'), `under` before the foe's sprite and `over` after it, so the aura sits behind it and the bursts on
- * top. `host` is the foe's sprite box (its image hides while a burst draws it).
+ * The battle stage's distortion for a portal run's wild Pokémon: its look on the foe's own sprite (`host`, its box),
+ * and a stage-sized canvas (240 × 160 art pixels, like the timelines') over it for the motes. `scale`: CSS pixels per
+ * stage pixel.
  */
 export function useStageDistortion(
   host: RefObject<HTMLElement | null>,
   sprite: string,
   at: { x: number; y: number },
+  scale: number,
   active: boolean,
 ) {
   const level = useDistortionLevel()
-  const under = useRef<HTMLCanvasElement>(null)
   const over = useRef<HTMLCanvasElement>(null)
-  useDistortion({ aura: under, over, host, sprite, at, active, level })
-  return { under, over }
+  useDistortion({ over, host, sprite, at, px: scale, active, level })
+  return { over }
 }
 
 /**
- * A distorted Pokémon in a box (the encounter's preview, the kitchen sink): the page's animated sprite with the aura
- * under it and the bursts over it. `level` overrides the motion level (the kitchen sink shows each).
+ * A distorted Pokémon in a box (the encounter's preview, the kitchen sink): the page's animated sprite wearing the
+ * look, the motes on a canvas over it. `level` overrides the motion level (the kitchen sink shows each).
  */
 export function GlitchSprite({
   dex,
@@ -309,7 +330,6 @@ export function GlitchSprite({
   const shown = useDistortionLevel()
   const level = forced ?? shown
   const host = useRef<HTMLDivElement>(null)
-  const aura = useRef<HTMLCanvasElement>(null)
   const over = useRef<HTMLCanvasElement>(null)
   // The art's scale in the box, as SpriteImg places it: CSS pixels per canvas-sprite pixel.
   const s = stageSprite(dex, false, shiny)
@@ -323,11 +343,11 @@ export function GlitchSprite({
   const fh = Math.round(s.artH * s.k)
   const key = spriteKey(dex, false, shiny)
   useDistortion({
-    aura,
     over,
     host,
     sprite: key,
     at: { x: n / 2, y: Math.round(n / 2 + fh / 2) },
+    px: per,
     active: true,
     level,
   })
@@ -337,14 +357,6 @@ export function GlitchSprite({
       className={cx('portal-glitch-host relative inline-block shrink-0', className)}
       style={{ width: size, height: size }}
     >
-      <canvas
-        ref={aura}
-        width={n}
-        height={n}
-        aria-hidden
-        className="pixelated pointer-events-none absolute inset-0 h-full w-full"
-        style={{ imageRendering: 'pixelated' }}
-      />
       <SpriteImg dex={dex} size={size} shiny={shiny} className="relative" />
       <canvas
         ref={over}
@@ -376,7 +388,7 @@ export function useUiGlitch({
   root,
   selector = GLITCH_TARGETS,
   every = [5, 9],
-  dur = 420,
+  dur = 350,
 }: {
   enabled: boolean
   short?: boolean
@@ -438,11 +450,11 @@ export function PortalFilters() {
     <svg width="0" height="0" aria-hidden className="absolute">
       <filter id="portal-warp-a" x="-10%" y="-10%" width="120%" height="120%">
         <feTurbulence type="turbulence" baseFrequency="0.01 0.22" numOctaves="1" seed="3" result="n" />
-        <feDisplacementMap in="SourceGraphic" in2="n" scale="9" xChannelSelector="R" yChannelSelector="G" />
+        <feDisplacementMap in="SourceGraphic" in2="n" scale="6" xChannelSelector="R" yChannelSelector="G" />
       </filter>
       <filter id="portal-warp-b" x="-10%" y="-10%" width="120%" height="120%">
         <feTurbulence type="turbulence" baseFrequency="0.02 0.35" numOctaves="1" seed="11" result="n" />
-        <feDisplacementMap in="SourceGraphic" in2="n" scale="14" xChannelSelector="G" yChannelSelector="R" />
+        <feDisplacementMap in="SourceGraphic" in2="n" scale="9" xChannelSelector="G" yChannelSelector="R" />
       </filter>
     </svg>
   )
@@ -452,40 +464,6 @@ export function PortalFilters() {
 
 /** CSS pixels per art pixel of the screen's distortion. */
 const FX_PX = 3
-
-/** The still frame: a dithered edge of the void, thickest at the corners, a few specks of its light. */
-function edgeFrame(w: number, h: number): Canvas {
-  const c = canvas(w, h)
-  const img = c.g.createImageData(w, h)
-  const d = img.data
-  const deep = 9
-  const cols = [
-    [59, 20, 102],
-    [107, 47, 196],
-  ]
-  for (let y = 0; y < h; y++)
-    for (let x = 0; x < w; x++) {
-      const e = Math.min(x, y, w - 1 - x, h - 1 - y)
-      if (e >= deep) continue
-      const q = Math.pow(1 - e / deep, 1.6) * 0.62
-      if (q <= bayer(x, y)) continue
-      const [r, g, b] = cols[e < 2 ? 1 : 0]!
-      const i = (y * w + x) * 4
-      d[i] = r!
-      d[i + 1] = g!
-      d[i + 2] = b!
-      d[i + 3] = 255
-    }
-  c.g.putImageData(img, 0, 0)
-  const r = seeded(w * 5 + h)
-  for (let i = 0; i < (w + h) / 6; i++) {
-    const side = r.int(0, 3)
-    const x = side === 0 ? r.int(0, 3) : side === 1 ? w - 1 - r.int(0, 3) : r.int(0, w)
-    const y = side === 2 ? r.int(0, 3) : side === 3 ? h - 1 - r.int(0, 3) : r.int(0, h)
-    rect(c.g, x, y, 1, 1, r() < 0.3 ? DW.pale : DW.lilac)
-  }
-  return c
-}
 
 /**
  * One frame (f of 4) of a tear across the screen: bands of broken scanlines in the void's lilac and teal, blocks of the
@@ -528,10 +506,11 @@ function drawTear(g: G, w: number, h: number, n: number, f: number, short: boole
 }
 
 /**
- * The screen's recurring distortion while a run is under way (over the page, under the pop-ups, catching no tap): a
- * dithered edge of the void; every 6–10 s (`short`: 12–18 s) a tear of half a second, four frames of scanlines and
- * displaced blocks, the page's colours shifted to the void's violet for three of them (`short`: no shift); and now and
- * then one piece of the page glitches (useUiGlitch). Motion off: the edge alone, still (a calm OS keeps it all).
+ * The screen's recurring distortion while a run is under way (over the page, under the pop-ups, catching no tap): every
+ * 6–10 s (`short`: 12–18 s) a tear of half a second, four frames of scanlines and displaced blocks, the page's colours
+ * shifted to the void's violet for three of them (`short`: no shift); and now and then one piece of the page glitches
+ * (useUiGlitch). Nothing in between (no frame round the screen since 2026-10-15). Motion off: nothing (a calm OS keeps
+ * it all).
  */
 export function DistortionFx() {
   const level = useDistortionLevel()
@@ -544,13 +523,10 @@ export function DistortionFx() {
     const cv = ref.current
     const g = cv?.getContext('2d')
     if (!cv || !g) return
-    let edge: Canvas | null = null
     let w = 0
     let h = 0
-    const still = () => {
-      g.clearRect(0, 0, w, h)
-      if (edge) g.drawImage(edge, 0, 0)
-    }
+    // Between tears the screen is left as it is: no frame round it (the user, 2026-10-15: "too much").
+    const still = () => g.clearRect(0, 0, w, h)
     const size = () => {
       w = Math.ceil(window.innerWidth / FX_PX)
       h = Math.ceil(window.innerHeight / FX_PX)
@@ -559,7 +535,6 @@ export function DistortionFx() {
       cv.style.width = `${w * FX_PX}px`
       cv.style.height = `${h * FX_PX}px`
       g.imageSmoothingEnabled = false
-      edge = edgeFrame(w, h)
       still()
     }
     size()
