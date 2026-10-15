@@ -11,7 +11,7 @@ Treats and throw Trick Balls, and too many of either make it flee.
 | Question | Answer |
 |---|---|
 | Where | **One card in the deck of each of Haunted Hollow's ten main areas** (Dusk Road … Spirit Mountain): decks go from 10 to 11 cards. The Shadow Elite has no deck; the secret areas have none. Any area can deal it: its copies are its encounter weight `trick` (Admin → Areas → Encounter deck), and it needs a ghost list. |
-| The switch | **Off / On for admin / On for everyone**, Off by default (`game_config.trickOrTreat.access`). Off: the card is never dealt (`deckCounts` gives it no copy) and a card left in a deck dealt before is discarded like any card the area can't produce. On: a deck dealt while it wasn't dealt for the player (switched on mid-round, the admin not signed in yet) gets its card added to what's left when the round has neither met nor holds one (`topUpDeck`, 2026-10-15: decks dealt before 0056 kept it out until their round ended). |
+| The switch | **Off / On for admin / On for everyone**, Off by default (`game_config.trickOrTreat.access`). Off: the card is never dealt (`deckCounts` gives it no copy) and a card left in a deck dealt before is discarded like any card the area can't produce. |
 | Who comes | **Ghost types only**, from the area's own list (`trickOrTreat.areas[areaId]`), each with a tier: common, rare, very rare. The card picks one by its tier's weight (6 · 3 · 1). |
 | Its level | Within the area's level range (around the team in an area that scales). Shiny at the wild odds there (a Shiny Parade counts); a legendary never. |
 | The gauge | 0 to 100, starts at 0, cut into **sections**: each says the d6 a Trick Ball needs there, higher sections easier; **the last stretch is the flee zone**. |

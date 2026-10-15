@@ -484,27 +484,11 @@ const cardEncounter = (card: 'wild' | 'trainer' | 'center' | 'casino' | 'trick',
 /** The extra card a fled legendary adds to every deck dealt until it's caught. */
 const legendCards = (ctx: EncounterContext): DeckCard[] => (fledLegendary(ctx.area, ctx.progress, ctx.pokedex, ctx.data) ? ['legend'] : [])
 
-/**
- * A deck dealt while Trick or Treat wasn't dealt for the player (its switch off then, the content without it, the
- * admin not signed in yet) would keep it out until the round ends. When the area deals it now and this round has
- * neither met nor holds one, its copies go into what's left, at random places: the mirror of discarding a card the
- * area can no longer produce. Only Trick or Treat, the one kind a switch deals; a save that doesn't know what was met
- * isn't touched.
- */
-function topUpDeck(deck: DeckCard[], ctx: EncounterContext, rng: Rng): DeckCard[] {
-  const met = ctx.progress.drawn
-  if (!met) return deck
-  const counts = deckCounts(ctx.area.encounterWeights, deckAbilities(ctx.area, ctx.data))
-  if (counts.trick <= 0 || deck.includes('trick') || met.includes('trick')) return deck
-  for (let n = 0; n < counts.trick; n++) deck.splice(rng.int(0, deck.length), 0, 'trick')
-  return deck
-}
-
 function drawFromDeck(ctx: EncounterContext, rng: Rng): EncounterRoll {
   const afterCenter = !!ctx.progress.lastCenter
   const deal = () => buildDeck(ctx.area, ctx.data, rng, legendCards(ctx), { noCenterFirst: afterCenter, noCenters: ctx.noCenters })
   let newRound = !ctx.progress.deck?.length
-  let deck = newRound ? deal() : topUpDeck([...ctx.progress.deck!], ctx, rng)
+  let deck = newRound ? deal() : [...ctx.progress.deck!]
   let drawn: DeckCard[] = []
   // A card the area can no longer produce (content edited since the deal, a legendary caught) is discarded.
   const tries = 2 * (deck.length + deckSize(ctx.area, ctx.data) + 1)

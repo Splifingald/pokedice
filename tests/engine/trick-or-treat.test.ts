@@ -187,34 +187,6 @@ describe('the card', () => {
     expect(roll.drawn).toEqual(['trick', 'wild'])
   })
 
-  it('a deck dealt before the switch was on gets its Trick or Treat card added, once, in what is left', () => {
-    const { data, area } = world('all')
-    const ctx = (deck: string[], drawn?: string[]) => ({
-      area,
-      progress: { ...emptyProgress(), deck: deck as never, ...(drawn && { drawn: drawn as never }) },
-      data,
-      teamAvgLevel: 5,
-      teamHurt: false,
-      isFirstInArea: false,
-      pokedex: [],
-    })
-    // Six cards left and four met, none of them a Trick or Treat: the card joins the six.
-    const old = ['wild', 'wild', 'item', 'wild', 'wild', 'wild']
-    const roll = nextEncounter(ctx(old, ['wild', 'center', 'wild', 'wild']), createRng(5))
-    const held = [...(roll.deck ?? []), ...(roll.drawn ?? [])]
-    expect(held.filter((k) => k === 'trick')).toHaveLength(1)
-    expect(held).toHaveLength(old.length + 1)
-    // Already met this round, or already in the deck: nothing added.
-    const met = nextEncounter(ctx(['wild', 'wild'], ['trick']), createRng(5))
-    expect([...(met.deck ?? []), ...(met.drawn ?? [])]).not.toContain('trick')
-    const inDeck = nextEncounter(ctx(['trick', 'wild', 'wild'], []), createRng(5))
-    expect([...(inDeck.deck ?? []), ...(inDeck.drawn ?? [])].filter((k) => k === 'trick')).toHaveLength(1)
-    // Switched off: never added.
-    const off = world('off')
-    const none = nextEncounter({ ...ctx(old, []), area: off.area, data: off.data }, createRng(5))
-    expect([...(none.deck ?? []), ...(none.drawn ?? [])]).not.toContain('trick')
-  })
-
   it('prefills an area’s list from its ghost-type wild Pokémon, the tier from its weight', () => {
     const pool = (rows: [number, number][]) => ({
       wildPool: rows.map(([dex, weight], i) => ({ id: `${i}`, dex, weight, minLevel: 3, maxLevel: 5 })),
