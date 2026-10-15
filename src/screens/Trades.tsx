@@ -12,13 +12,14 @@ import {
   tradeCfg,
   tradeClosed,
   tradesOf,
+  tradesToWatch,
   tradesOn,
   tradesTakenToday,
   tradeSnapshot,
   type TradeOut,
 } from '@/engine'
 import { AccountButton } from '@/components/AccountButton'
-import { LevelTag, NewTag } from '@/components/Chip'
+import { Chip, LevelTag, NewTag } from '@/components/Chip'
 import { PixelIcon } from '@/components/icons'
 import { PageHead } from '@/components/PageHead'
 import { PixelButton } from '@/components/PixelButton'
@@ -127,7 +128,7 @@ function Open() {
   const [tab, setTab] = useState<Tab>(asked ? 'mine' : 'board')
   const [drafting, setDrafting] = useState<string | null | false>(asked ?? false)
   const [sharing, setSharing] = useState<Shared | null>(null)
-  const unseen = tradesOf(save).unseen?.length ?? 0
+  const unseen = tradesToWatch(save).length
   const board = useTrades((s) => s.board)
   const cfg = tradeCfg(data)
 
@@ -316,6 +317,8 @@ function Mine({
   const [busy, setBusy] = useState<string | null>(null)
   // A listing taken while away is NEW (and keeps the gold dot) until its scene has played, here or back Home.
   const fresh = new Set(tr.unseen ?? [])
+  // A traded Pokémon whose Box is still to pick: its scene ends on the pick.
+  const picking = new Set((tr.landing ?? []).map((l) => l.id))
   const name = (dex: number) => data.species[dex]?.name ?? t('ui.common.pokemon')
   // A Pokémon traded with its nickname goes by it; the line under keeps the species.
   const called = (m: { dex: number; nickname?: string }) => m.nickname || name(m.dex)
@@ -463,7 +466,13 @@ function Mine({
                     .join(' · ')}
                 </small>
               </span>
-              {fresh.has(e.id) && <NewTag className="shrink-0" />}
+              {picking.has(e.id) ? (
+                <Chip tone="gold" className="shrink-0">
+                  {t('ui.trades.log.pick')}
+                </Chip>
+              ) : (
+                fresh.has(e.id) && <NewTag className="shrink-0" />
+              )}
               <PixelIcon name="play" size={16} className="shrink-0 text-muted" />
               <span className="sr-only">{t('ui.trades.log.watch')}</span>
             </button>

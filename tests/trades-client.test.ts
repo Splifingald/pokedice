@@ -5,7 +5,10 @@ import {
   createInstance,
   DEFAULT_CONFIG,
   listOut,
+  newRegionBlock,
   newSave,
+  startRegion,
+  switchRegion,
   tradesOf,
   tradesToWatch,
   type SaveData,
@@ -24,7 +27,7 @@ import {
 } from '@/lib/trades'
 import { initialRun, useGame } from '@/store/game'
 import { pushSaveNow, syncSettled } from '@/store/sync'
-import { checkListings, checkTrades, HOME_EVERY_MS, useTrades } from '@/store/trades'
+import { checkListings, checkTrades, HOME_EVERY_MS, land, useTrades } from '@/store/trades'
 import { makeData, newId } from './fixtures'
 
 vi.mock('@/lib/trades', async (actual) => ({
@@ -139,8 +142,10 @@ describe('the check', () => {
   function setUp(): SaveData {
     const s = newSave(4, data, NOW, newId)
     const listed = createInstance(16, 12, data, 'listed', NOW)
+    // A Lv.30 in the Box: what arrives (Lv.12) joins it at once rather than waiting, locked (docs/23 §1.4).
+    const ace = createInstance(9, 30, data, 'ace', NOW)
     const save = listOut(
-      { ...s, box: [...s.box, listed] },
+      { ...s, box: [...s.box, listed, ace] },
       data,
       'listed',
       {
@@ -207,6 +212,30 @@ describe('the check', () => {
     expect(useGame.getState().save!.box.filter((p) => p.dex === 7)).toHaveLength(1)
     expect(tradesToWatch(useGame.getState().save!).map((e) => e.id)).toEqual(['T1'])
     expect(applied).toHaveBeenCalledTimes(2)
+  })
+
+  it('keeps one several regions list waiting for its Box, then lands it where the player picks', async () => {
+    const s = setUp()
+    const johto = data.regions.find((r) => r.id === 'johto')!
+    const block = newRegionBlock(johto, 158, data, NOW, newId, createInstance)
+    useGame.setState({ save: switchRegion(startRegion(s, johto, block), 'kanto') })
+    // Pikachu: Kanto's and Johto's Pokédex both list it.
+    mine.mockResolvedValue([{ ...takenRow, takerMon: createInstance(25, 30, data, 'given', NOW) }])
+    await checkTrades(true, NOW)
+    const waiting = useGame.getState().save!
+    expect(tradesOf(waiting).landing?.map((l) => l.id)).toEqual(['T1'])
+    expect(waiting.box.some((p) => p.dex === 25)).toBe(false)
+    expect(tradesToWatch(waiting).map((e) => e.id)).toEqual(['T1'])
+
+    expect(land('T1', 'hoenn')).toBeNull()
+    vi.mocked(pushSaveNow).mockClear()
+    expect(land('T1', 'kanto')?.option).toMatchObject({ region: 'kanto', outcome: 'new' })
+    const landed = useGame.getState().save!
+    expect(landed.box.some((p) => p.dex === 25)).toBe(true)
+    expect(tradesOf(landed).landing).toBeUndefined()
+    expect(tradesOf(landed).log![0]).toMatchObject({ id: 'T1', outcome: 'new', region: 'kanto' })
+    expect(pushSaveNow).toHaveBeenCalled()
+    expect(land('T1', 'kanto')).toBeNull()
   })
 
   it('asks again back Home while a listing is out, at most once a minute; never without one', async () => {

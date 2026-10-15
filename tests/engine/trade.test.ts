@@ -1,16 +1,19 @@
-// Trades (docs/23): the level a Pokémon arrives at, the species' minimum, where it lands and how it's kept, trade
-// evolutions, what can be listed or asked for, a listing's snapshot of its poster, and each side applied once.
+// Trades (docs/23): the level a Pokémon arrives at, the species' minimum, where it lands and how it's kept (the Box
+// picked when several may take it, the level lock), trade evolutions, what can be listed or asked for, a listing's
+// snapshot of its poster, and each side applied once.
 import { describe, expect, it } from 'vitest'
 import {
   applyEnded,
   applyTake,
   applyTaken,
   arrivalLevel,
+  chooseLanding,
   createInstance,
   DEFAULT_CONFIG,
   everyRegionBox,
   gainXp,
   homeRegionOf,
+  landingOptions,
   levelEvolutions,
   listBack,
   listOut,
@@ -37,10 +40,14 @@ import {
   createRng,
   encodeDexSet,
   newForTrade,
+  previewLandings,
   previewTake,
+  releaseWorldHome,
   takeBlock,
   takeChoices,
+  tradeLandings,
   tradesTakenToday,
+  worldHomers,
   type PokemonInstance,
   type SaveData,
   type TradeConfig,
@@ -63,6 +70,9 @@ function kanto(...mons: PokemonInstance[]): SaveData {
   const s = newSave(4, data, NOW, newId)
   return { ...s, box: [...s.box, ...mons], pokedex: [...new Set([...s.pokedex, ...mons.map((m) => m.dex)])] }
 }
+
+/** A Pokémon strong enough that no trade arrives above a region's best level (the lock, §1.4). */
+const ace = () => mon(9, 60)
 
 /** The same, with Johto started on Totodile (and parked back, Kanto live). */
 function withJohto(save: SaveData): SaveData {
@@ -145,7 +155,7 @@ describe('trade evolutions (§1.5)', () => {
     expect(levelEvolutions(createInstance(64, 40, d, 'k', NOW), d).map((e) => e.toDex)).toEqual([65])
   })
   it('evolve the moment they arrive, at the level they arrive at', () => {
-    const r = receiveTrade(kanto(), data, { dex: 64 }, 22, NOW, newId)
+    const r = receiveTrade(kanto(ace()), data, { dex: 64 }, 22, NOW, newId)
     expect(r.evolvedTo).toBe(65)
     expect(r.arrival.level).toBe(22)
     const got = r.save.box.find((p) => p.dex === 65)!
@@ -160,14 +170,14 @@ describe('trade evolutions (§1.5)', () => {
 
 describe('where it lands, and the one-copy rule (§1.4)', () => {
   it('a new species joins the Box (and the team, with room)', () => {
-    const r = receiveTrade(kanto(), data, { dex: 25 }, 12, NOW, newId)
+    const r = receiveTrade(kanto(ace()), data, { dex: 25 }, 12, NOW, newId)
     expect(r.outcome).toBe('new')
     expect(r.save.box.some((p) => p.dex === 25 && p.level === 12)).toBe(true)
     expect(r.save.pokedex).toContain(25)
   })
   it('a stronger one replaces your plain copy in place', () => {
     const old = mon(25, 8)
-    const s = { ...kanto(old), team: [old.id] }
+    const s = { ...kanto(old, ace()), team: [old.id] }
     const r = receiveTrade(s, data, { dex: 25 }, 20, NOW, newId)
     expect(r.outcome).toBe('replaced')
     expect(r.save.box.filter((p) => p.dex === 25)).toHaveLength(1)
@@ -189,11 +199,149 @@ describe('where it lands, and the one-copy rule (§1.4)', () => {
   it('lands in its home region’s Box, parked or not', () => {
     const s = withJohto(kanto())
     expect(regionOf(s)).toBe('kanto')
-    const r = receiveTrade(s, data, { dex: 161 }, 9, NOW, newId) // Sentret, Johto
+    const r = receiveTrade(s, data, { dex: 161 }, 5, NOW, newId) // Sentret, Johto (at Totodile's level)
     expect(r.region).toBe('johto')
     expect(r.save.parked!.johto!.box.some((p) => p.dex === 161)).toBe(true)
     expect(r.save.box.some((p) => p.dex === 161)).toBe(false)
     expect(homeRegionOf(data, 10091)).toBe('alola') // Alolan Rattata
+  })
+})
+
+describe('several Boxes it may go to, and the level lock (§1.4)', () => {
+  it('lists its home region first, then every other region started whose Pokédex has it', () => {
+    expect(tradeLandings(kanto(), data, 25)).toEqual(['kanto'])
+    const both = withJohto(kanto())
+    expect(tradeLandings(both, data, 25)).toEqual(['kanto', 'johto']) // Pikachu: Johto's Pokédex has it too
+    expect(tradeLandings(both, data, 4)).toEqual(['kanto']) // Charmander: Kanto's only
+    expect(tradeLandings(both, data, 161)).toEqual(['johto']) // Sentret: not in Kanto's
+  })
+
+  it('waits, out of every Box, for the player to pick when there’s more than one', () => {
+    const s = withJohto(kanto(ace()))
+    const r = receiveTrade(s, data, { dex: 25 }, 12, NOW, newId)
+    expect(r.outcome).toBe('pending')
+    expect(r.landings).toEqual(['kanto', 'johto'])
+    expect(r.save).toBe(s)
+    // Picked: it goes there.
+    const k = receiveTrade(s, data, { dex: 25 }, 12, NOW, newId, { region: 'kanto' })
+    expect(k).toMatchObject({ outcome: 'new', region: 'kanto' })
+    expect(k.save.box.some((p) => p.dex === 25)).toBe(true)
+  })
+
+  it('waits locked in that region above its best level, until one of its Pokémon reaches it', () => {
+    const s = kanto()
+    const best = Math.max(...s.box.map((p) => p.level))
+    const r = receiveTrade(s, data, { dex: 16, nickname: 'Pidge' }, 22, NOW, newId, { tradedBy: 'Misty' })
+    expect(best).toBeLessThan(22)
+    expect(r).toMatchObject({ outcome: 'locked', region: 'kanto', isNew: true })
+    expect(r.save.box.some((p) => p.dex === 16)).toBe(false)
+    expect(r.save.pokedex).not.toContain(16) // its entry comes when it arrives
+    expect(worldHomers(r.save)).toEqual([
+      {
+        inst: expect.objectContaining({ dex: 16, level: 22, nickname: 'Pidge' }),
+        region: 'kanto',
+        tradedBy: 'Misty',
+      },
+    ])
+    // Still under: it waits.
+    expect(releaseWorldHome(r.save, data).arrived).toEqual([])
+    // The starter reaches Lv.22: it arrives by the catch rule.
+    const up = { ...r.save, box: r.save.box.map((p, i) => (i === 0 ? { ...p, level: 22 } : p)) }
+    const out = releaseWorldHome(up, data)
+    expect(out.arrived).toMatchObject([{ region: 'kanto', outcome: 'new' }])
+    expect(out.save.box.some((p) => p.dex === 16 && p.nickname === 'Pidge')).toBe(true)
+    expect(out.save.pokedex).toContain(16)
+  })
+
+  it('a listing taken while away waits for the pick, its scene still due once seen', () => {
+    const listed = mon(4, 12)
+    const s = listOut(
+      withJohto(kanto(listed, ace())),
+      data,
+      listed.id,
+      { id: 'P1', code: 'C', endsAt: NOW + 1, want: { kind: 'any' }, visibility: 'public' },
+      NOW,
+    )!
+    const r = applyTaken(s, data, { id: 'P1', listed, given: mon(25, 30), with: 'Misty' }, NOW, newId)
+    const t = tradesOf(r.save)
+    expect(t.log![0]).toMatchObject({ id: 'P1', outcome: 'pending' })
+    expect(t.log![0]!.region).toBeUndefined()
+    expect(t.landing).toEqual([{ id: 'P1', inst: expect.objectContaining({ dex: 25, level: 12 }), dex: 25 }])
+    expect(everyRegionBox(r.save, data).some((m) => m.inst.dex === 25)).toBe(false)
+    const seen = markTradesSeen(r.save)
+    expect(tradesToWatch(seen).map((e) => e.id)).toEqual(['P1'])
+
+    // Kanto has a Lv.60 (it arrives now), Johto only its Lv.5 starter (it would wait, locked).
+    expect(landingOptions(seen, data, 'P1')).toEqual([
+      { region: 'kanto', outcome: 'new', isNew: true, mine: null, best: 60 },
+      { region: 'johto', outcome: 'locked', isNew: true, mine: null, best: 5 },
+    ])
+    expect(chooseLanding(seen, data, 'P1', 'hoenn')).toBeNull()
+    const picked = chooseLanding(seen, data, 'P1', 'johto')!
+    expect(picked.option).toMatchObject({ region: 'johto', outcome: 'locked' })
+    expect(worldHomers(picked.save)).toMatchObject([{ region: 'johto', tradedBy: 'Misty' }])
+    const after = tradesOf(picked.save)
+    expect(after.landing).toBeUndefined()
+    expect(after.log![0]).toMatchObject({ id: 'P1', outcome: 'locked', region: 'johto' })
+    expect(tradesToWatch(picked.save)).toEqual([])
+    expect(chooseLanding(picked.save, data, 'P1', 'kanto')).toBeNull()
+
+    const kantoPick = chooseLanding(seen, data, 'P1', 'kanto')!
+    expect(kantoPick.save.box.some((p) => p.dex === 25 && p.level === 12)).toBe(true)
+    expect(tradesOf(kantoPick.save).log![0]).toMatchObject({ outcome: 'new', region: 'kanto' })
+  })
+
+  it('a taker picks on the confirm: the trade goes there, and the preview shows each Box', () => {
+    const given = mon(16, 12)
+    const s = withJohto(kanto(given, ace()))
+    const previews = previewLandings(s, data, { dex: 25 }, given)
+    expect(previews.map((p) => [p.received.region, p.received.outcome, p.best])).toEqual([
+      ['kanto', 'new', 60],
+      ['johto', 'locked', 5],
+    ])
+    expect(previewTake(s, data, { dex: 25 }, given).received.region).toBe('kanto')
+    // Locked at home but not in Johto: the confirm's pick starts where it can play now.
+    const weakHome = withJohto(kanto(given))
+    const strongJohto = {
+      ...weakHome,
+      parked: { johto: { ...weakHome.parked!.johto!, box: [...weakHome.parked!.johto!.box, mon(158, 40)] } },
+    }
+    expect(previewTake(strongJohto, data, { dex: 25 }, given).received).toMatchObject({
+      region: 'johto',
+      outcome: 'new',
+    })
+    const r = applyTake(s, data, { id: 'T9', listed: mon(25, 9), given, with: 'Sora' }, NOW, newId, 'johto')
+    expect(r.received).toMatchObject({ outcome: 'locked', region: 'johto' })
+    expect(tradesOf(r.save).log![0]).toMatchObject({ outcome: 'locked', region: 'johto' })
+    expect(tradesOf(r.save).landing).toBeUndefined()
+  })
+
+  it('a waiting trade and a locked one survive the save’s schema', () => {
+    const listed = mon(4, 12)
+    const s = listOut(
+      withJohto(kanto(listed, ace())),
+      data,
+      listed.id,
+      { id: 'P2', code: 'C', endsAt: NOW + 1, want: { kind: 'any' }, visibility: 'public' },
+      NOW,
+    )!
+    const pending = applyTaken(
+      s,
+      data,
+      { id: 'P2', listed, given: mon(25, 30), with: 'Misty' },
+      NOW,
+      newId,
+    ).save
+    const locked = chooseLanding(pending, data, 'P2', 'johto')!.save
+    for (const save of [pending, locked]) {
+      const parsed = parseSave(JSON.parse(JSON.stringify(save)))
+      expect(parsed.ok).toBe(true)
+      if (parsed.ok) {
+        expect(tradesOf(parsed.save).landing).toEqual(tradesOf(save).landing)
+        expect(tradesOf(parsed.save).log).toEqual(tradesOf(save).log)
+        expect(worldHomers(parsed.save)).toEqual(worldHomers(save))
+      }
+    }
   })
 })
 
@@ -280,7 +428,7 @@ describe('listing out and back', () => {
 describe('a trade, applied once on each side', () => {
   it('the taker gives theirs for good and gets the listed one at that level', () => {
     const given = mon(16, 22)
-    const s = kanto(given)
+    const s = kanto(given, ace())
     const listed = mon(4, 12)
     const t = { id: 'T1', listed, given, with: 'Misty' }
     const r = applyTake(s, data, t, NOW, newId)

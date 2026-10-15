@@ -96,6 +96,16 @@ Examples (the poster put up the first Pokémon):
 - **Its home region**: a traded Pokémon lands in the Box (live or parked) and Pokédex of the region of its generation:
   Pikachu in Kanto's, Totodile in Johto's, an Alolan Rattata in Alola's. That region always lists the species and lets
   it evolve (the generation gate), wherever it came from.
+- **Or another region you've started, your pick** (added 2026-10-15, the user's ask): when other regions you've
+  started (small worlds never) list the species in their Pokédex too (Pikachu: Kanto's and Johto's), you pick its Box
+  (`tradeLandings`: its home region first, then the others in the regions' order). A taker picks on the confirm (it
+  starts on the first Box where it can play now); a poster picks on the last step of "Trade done!", before the result.
+  Until then it waits out of every Box (`trades.landing`), and the scene keeps coming back on Home (the gold dot stays)
+  until the pick is made. Being able to take a listing still asks for its home region (the server checks it, 0044).
+- **The level lock** (added 2026-10-15, the same rule as a small world's Pokémon going home, docs/26 §1): a traded
+  Pokémon above the best level of the region it goes to (its team, Box and Day Care) waits there, locked ("Traded by
+  Misty"), on the same waiting list, until one of that region's Pokémon reaches its level; then it arrives by the catch
+  rule below, Pokédex entry and all. The outcome says so: `locked`.
 - So a trade can cross regions: a Kanto player's Pikachu for a Johto player's Totodile. Each side must have started the
   home region of what they get: the poster only asks for species of regions they've started (§1.1), and a taker who
   hasn't started the listed Pokémon's region sees it greyed on the board ("Start Johto first").
@@ -386,7 +396,13 @@ What differs from the sections above, or wasn't in them:
   still runs for a player who has traded, so nothing listed is stranded.
 - **A friend's card** reads `trade_board(p_owner => …)`: the board function has an owner filter, so the card shows
   every open listing of theirs you may see, not just those among the board's first 50.
-- **"New for me"** and NEW mean the Pokédex of the region it would land in (`newForTrade`).
+- **"New for me"** and NEW mean the Pokédex of the region it would land in (`newForTrade`): its home region's.
+- **The Box picked, and the lock** (2026-10-15, §1.4): `receiveTrade` takes the region; without one and with several
+  (`tradeLandings`, a region's Pokédex being `regionSpecies`), the outcome is `pending` and the Pokémon waits in
+  `trades.landing` until `chooseLanding` (the store's `land`) places it. Above that region's best it goes on
+  `events.worldHome` with `tradedBy` (outcome `locked`); `releaseWorldHome` lets it in later, as any waiting Pokémon.
+  The log keeps `region` (where it went). The confirm's pick and the scene's last step share `LandingPick`
+  (`landingOptions`, `previewLandings`). No server change: the home region still gates who can take a listing.
 - **The day's cap** is shown from the save's log (the trades taken since midnight UTC); the server counts too and
   has the last word.
 - **The picker and the confirm** come from `previewTake` (the trade worked out on a copy of the save), so what they

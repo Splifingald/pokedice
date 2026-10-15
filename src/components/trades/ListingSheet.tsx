@@ -1,18 +1,21 @@
 // A listing, in a sheet (docs/23 §1.2, §2): the Pokémon large, whose, what they want, the time left, the level you'd
 // get it at, then TRADE, or why you can't. TRADE opens the picker of your Pokémon that answer the want (what each
-// brings: NEW, STRONGER, a trade evolution, nothing gained), then a plain confirm, then the scene. Your own listing
-// offers CANCEL and SHARE instead.
+// brings: NEW, STRONGER, a trade evolution, nothing gained, locked), then a plain confirm (with the pick of its Box
+// when several of your regions list it), then the scene. Your own listing offers CANCEL and SHARE instead.
 import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   arrivalLevel,
   homeRegionOf,
+  previewLandings,
   previewTake,
   regionName,
   takeChoices,
   tradeCfg,
   tradeEvolutionOf,
+  tradeLandings,
   tradeRegions,
+  type RegionId,
   type TakeChoice,
 } from '@/engine'
 import { useT } from '@/i18n/react'
@@ -33,6 +36,7 @@ import { speciesTypes } from '../TypeMatchups'
 import { ShareListingModal, type Shared } from './ShareListing'
 import { NameIn } from '../TrainerName'
 import {
+  LandingPick,
   RegionTag,
   ShinyStar,
   TimeLeft,
@@ -44,7 +48,7 @@ import {
   WantTile,
 } from './TradeBits'
 
-type Step = { kind: 'view' } | { kind: 'pick' } | { kind: 'confirm'; give: TakeChoice }
+type Step = { kind: 'view' } | { kind: 'pick' } | { kind: 'confirm'; give: TakeChoice; region?: RegionId }
 
 export function ListingSheet({
   listing,
@@ -127,10 +131,10 @@ function ListingFlow({
     }
   }
 
-  const doTake = async (give: TakeChoice) => {
+  const doTake = async (give: TakeChoice, region: RegionId) => {
     setBusy(true)
     try {
-      const show = await take(l, give.at.inst.id)
+      const show = await take(l, give.at.inst.id, region)
       onChanged?.()
       onClose()
       playTrade(show)
@@ -214,6 +218,7 @@ function ListingFlow({
                     </span>
                     {r && (
                       <span className="flex shrink-0 flex-col items-end gap-1">
+                        {r.outcome === 'locked' && <Chip tone="lock">{t('ui.map.locked')}</Chip>}
                         {r.isNew && <NewTag />}
                         {r.outcome === 'replaced' && <Chip tone="green">{t('ui.trades.stronger')}</Chip>}
                         {r.outcome === 'shiny' && <Chip tone="gold">{t('ui.trades.shinyTag')}</Chip>}
@@ -233,7 +238,10 @@ function ListingFlow({
   // ---------------------------------------------------------------- the confirm
   if (step.kind === 'confirm' && save) {
     const g = step.give.at.inst
-    const { received: r, mine } = previewTake(save, data, l, g)
+    // Each Box it may go to; the pick starts where it can play now (previewTake's choice).
+    const previews = previewLandings(save, data, l, g)
+    const region = step.region ?? previewTake(save, data, l, g).received.region
+    const { received: r, mine, best } = previews.find((p) => p.received.region === region) ?? previews[0]!
     const final = r.evolvedTo ?? l.dex
     const facts = [
       r.arrival.raised
@@ -251,6 +259,13 @@ function ListingFlow({
       r.outcome === 'replaced' && mine != null
         ? t('ui.trades.confirm.replaced', { name: name(final), level: lv(mine) })
         : '',
+      r.outcome === 'locked'
+        ? t('ui.trades.confirm.locked', {
+            region: regionName(data, r.region),
+            level: lv(r.arrival.level),
+            best: lv(best),
+          })
+        : '',
     ].filter(Boolean)
     return (
       <Sheet
@@ -263,7 +278,7 @@ function ListingFlow({
             <PixelButton disabled={busy} onClick={() => setStep({ kind: 'pick' })}>
               {t('ui.common.back')}
             </PixelButton>
-            <PixelButton variant="primary" disabled={busy} onClick={() => void doTake(step.give)}>
+            <PixelButton variant="primary" disabled={busy} onClick={() => void doTake(step.give, r.region)}>
               {busy ? t('ui.common.loading') : t('ui.trades.trade')}
             </PixelButton>
           </div>
@@ -294,6 +309,28 @@ function ListingFlow({
               get: `${mon} ${lv(r.arrival.level)}`,
             })}
           </p>
+          {previews.length > 1 && (
+            <div className="grid gap-1.5">
+              <b className="text-[19px] font-normal leading-none">{t('ui.trades.land.title')}</b>
+              <p className="copy m-0 text-[17px] leading-tight text-muted">
+                {t('ui.trades.land.note', { name: name(final) })}
+              </p>
+              <LandingPick
+                name={name(final)}
+                level={r.arrival.level}
+                value={r.region}
+                disabled={busy}
+                onChange={(to) => setStep({ ...step, region: to })}
+                options={previews.map((p) => ({
+                  region: p.received.region,
+                  outcome: p.received.outcome,
+                  isNew: p.received.isNew,
+                  mine: p.mine,
+                  best: p.best,
+                }))}
+              />
+            </div>
+          )}
           {facts.length > 0 && (
             <ul className="m-0 grid list-disc gap-1 pl-5 font-pixel-sm text-[15px] leading-tight text-muted">
               {facts.map((f) => (
@@ -313,6 +350,8 @@ function ListingFlow({
   const min = arrivalLevel(data, l.dex, 1).min
   const evo = tradeEvolutionOf(data, l.dex)
   const home = homeRegionOf(data, l.dex)
+  // The Boxes it may go to here: more than one, and you pick on the confirm.
+  const lands = save ? tradeLandings(save, data, evo ?? l.dex) : []
   const haveCount =
     save && l.want.kind === 'species'
       ? takeChoices(save, data, l.want, l.poster).filter(
@@ -464,13 +503,35 @@ function ListingFlow({
                 </small>
               </li>
             )}
-            {!l.isMe && home && (
+            {!l.isMe && lands.length > 1 ? (
               <li className="grid gap-0.5">
                 <b className="text-[18px] font-normal leading-tight">
-                  {t('ui.trades.fact.lands', { region: regionName(data, home) })}
+                  {t('ui.trades.fact.landsPick', {
+                    regions: lands.map((id) => regionName(data, id)).join(t('ui.common.listSep')),
+                  })}
                 </b>
                 <small className="font-pixel-sm text-[14px] leading-tight text-muted">
-                  {t(l.shiny ? 'ui.trades.fact.landsShiny' : 'ui.trades.fact.landsNote')}
+                  {t('ui.trades.fact.landsPickNote')}
+                </small>
+              </li>
+            ) : (
+              !l.isMe &&
+              home && (
+                <li className="grid gap-0.5">
+                  <b className="text-[18px] font-normal leading-tight">
+                    {t('ui.trades.fact.lands', { region: regionName(data, home) })}
+                  </b>
+                  <small className="font-pixel-sm text-[14px] leading-tight text-muted">
+                    {t(l.shiny ? 'ui.trades.fact.landsShiny' : 'ui.trades.fact.landsNote')}
+                  </small>
+                </li>
+              )
+            )}
+            {!l.isMe && (
+              <li className="grid gap-0.5">
+                <b className="text-[18px] font-normal leading-tight">{t('ui.trades.fact.lock')}</b>
+                <small className="font-pixel-sm text-[14px] leading-tight text-muted">
+                  {t('ui.trades.fact.lockNote')}
                 </small>
               </li>
             )}

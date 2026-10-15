@@ -115,6 +115,8 @@ describe('renaming one of your Pokémon', () => {
 })
 
 describe('a nickname in a trade', () => {
+  // A Lv.60 in the Box: a traded Pokémon above a region's best would wait, locked (docs/23 §1.4).
+  const trainer = (...mons: PokemonInstance[]) => kanto(...mons, mon(9, 60))
   it('comes from the other trainer’s save, cleaned', () => {
     const raw = { id: 'x', dex: 25, level: 9, xp: 0, currentHp: 20, caughtAt: 0, nickname: '  Spar\u0000ky  ' }
     expect(parseInstance(raw)?.nickname).toBe('Sparky')
@@ -122,35 +124,35 @@ describe('a nickname in a trade', () => {
     expect(parseInstance({ ...raw, nickname: '' })).not.toHaveProperty('nickname')
   })
   it('arrives with the Pokémon, and its new trainer can change it', () => {
-    const r = receiveTrade(kanto(), data, { dex: 7, nickname: 'Bubbles' }, 20, NOW, newId)
+    const r = receiveTrade(trainer(), data, { dex: 7, nickname: 'Bubbles' }, 20, NOW, newId)
     expect(r.outcome).toBe('new')
     const got = find(r.save, r.instId!)!
     expect(got.nickname).toBe('Bubbles')
     expect(find(renamePokemon(r.save, data, got.id, 'Squirt')!, got.id)!.nickname).toBe('Squirt')
   })
   it('stays on through a trade evolution', () => {
-    const r = receiveTrade(kanto(), data, { dex: 64, nickname: 'Spoons' }, 22, NOW, newId)
+    const r = receiveTrade(trainer(), data, { dex: 64, nickname: 'Spoons' }, 22, NOW, newId)
     expect(r.evolvedTo).toBe(65)
     expect(find(r.save, r.instId!)).toMatchObject({ dex: 65, nickname: 'Spoons' })
   })
   it('replaces yours with the stronger one’s, or keeps yours when it has none', () => {
     const mine = mon(7, 10, { nickname: 'Mine' })
-    const named = receiveTrade(kanto(mine), data, { dex: 7, nickname: 'Bubbles' }, 30, NOW, newId)
+    const named = receiveTrade(trainer(mine), data, { dex: 7, nickname: 'Bubbles' }, 30, NOW, newId)
     expect(named.outcome).toBe('replaced')
     expect(find(named.save, mine.id)).toMatchObject({ level: 30, nickname: 'Bubbles' })
-    const plain = receiveTrade(kanto(mine), data, { dex: 7 }, 30, NOW, newId)
+    const plain = receiveTrade(trainer(mine), data, { dex: 7 }, 30, NOW, newId)
     expect(find(plain.save, mine.id)).toMatchObject({ level: 30, nickname: 'Mine' })
   })
   it('goes nowhere when it merges into a stronger one of yours', () => {
     const mine = mon(7, 40, { nickname: 'Mine' })
-    const r = receiveTrade(kanto(mine), data, { dex: 7, nickname: 'Bubbles' }, 20, NOW, newId)
+    const r = receiveTrade(trainer(mine), data, { dex: 7, nickname: 'Bubbles' }, 20, NOW, newId)
     expect(r.outcome).toBe('merged')
     expect(find(r.save, mine.id)!.nickname).toBe('Mine')
   })
   it('both sides: the taker gets the listed one’s, the poster the given one’s, and the log keeps them', () => {
     const given = mon(16, 22, { nickname: 'Birdy' })
     const listed = mon(4, 12, { nickname: 'Embers' })
-    const take = applyTake(kanto(given), data, { id: 'T1', listed, given, with: 'Misty' }, NOW, newId)
+    const take = applyTake(trainer(given), data, { id: 'T1', listed, given, with: 'Misty' }, NOW, newId)
     expect(take.save.box.find((p) => p.dex === 4 && p.id !== given.id && p.nickname)?.nickname).toBe('Embers')
     expect(tradesOf(take.save).log![0]).toMatchObject({
       gave: { dex: 16, nickname: 'Birdy' },
@@ -158,7 +160,7 @@ describe('a nickname in a trade', () => {
     })
 
     const posted = listOut(
-      kanto(listed),
+      trainer(listed),
       data,
       listed.id,
       { id: 'T1', code: 'C', endsAt: NOW + 1, want: { kind: 'any' }, visibility: 'public' },

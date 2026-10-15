@@ -31,6 +31,7 @@ Until now only the shiny mythical left a world; everything else closed with it. 
 | Raid prizes in a world | Like every other Pokémon: **home at the end, level-locked** (shiny Darkrai Lv.60 waits for a Sinnoh Pokémon at Lv.60). |
 | The world's mythical (when a world has one) | Unchanged: it leaves at once, unlocked. |
 | Sent from another region | The **same list and lock** (`sendPokemonOn`, docs/05 decision 9): a Pokémon sent from its sheet to another started region waits there, "Sent from Kanto", until a Pokémon there reaches its level; at once if one already has. |
+| Received in a trade | The **same list and lock** (docs/23 §1.4): a traded Pokémon above the best level of the region it goes to waits there, "Traded by Misty", until a Pokémon there reaches its level. |
 
 ## 2. Haunted Hollow
 

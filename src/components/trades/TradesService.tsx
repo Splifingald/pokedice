@@ -116,7 +116,8 @@ function Comebacks() {
   const calm = useCalm()
   const free = useNothingElseDue()
   const home = useLocation().pathname === '/home'
-  // The oldest taken listing whose scene hasn't played: kept in the save, so a reload or another device can't lose it.
+  // The oldest taken listing whose scene hasn't played (or traded Pokémon whose Box is still to pick): kept in the
+  // save, so a reload or another device can't lose it.
   const next = useGame((s) => (s.save && !isExtreme(s.save) ? (tradesToWatch(s.save)[0] ?? null) : null))
   const name = (dex: number) => data.species[dex]?.name ?? t('ui.common.pokemon')
 
@@ -139,7 +140,8 @@ function Comebacks() {
 
   useEffect(() => {
     if (!next || !home || !calm || !free || playing) return
-    const id = setTimeout(() => playTrade({ entry: next, away: true }), HOME_PAUSE_MS)
+    // A trade you took comes back here only for its Box still to pick: it isn't "Trade done!".
+    const id = setTimeout(() => playTrade({ entry: next, away: next.role === 'poster' }), HOME_PAUSE_MS)
     return () => clearTimeout(id)
   }, [next, home, calm, free, playing])
 

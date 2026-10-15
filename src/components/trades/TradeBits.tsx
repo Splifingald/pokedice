@@ -1,14 +1,16 @@
 // Trades' small parts (docs/23 §2), shared by the page, the sheets, a friend's card and the kitchen sink: what a
-// listing wants as a tile, who can see it, the time it has left, one row of the board, and why a listing can't be
-// taken, in words. The engine decides every rule; these only say it.
+// listing wants as a tile, who can see it, the time it has left, one row of the board, why a listing can't be taken,
+// in words, and the pick of the Box a traded Pokémon goes to. The engine decides every rule; these only say it.
 import type { ReactNode } from 'react'
 import {
   homeRegionOf,
   newForTrade,
   regionName,
   takeBlock,
+  type LandingOption,
   type ListBlock,
   type MinReason,
+  type RegionId,
   type TradeVisibility,
   type TradeWant,
 } from '@/engine'
@@ -309,6 +311,87 @@ export function ListHead({ id, children, count }: { id?: string; children: React
         {children}
       </h2>
       {count != null && <span className="font-pixel-sm text-[16px] text-muted">{count}</span>}
+    </div>
+  )
+}
+
+/**
+ * The pick of the Box a traded Pokémon goes to, when more than one region you've started lists it in its Pokédex
+ * (docs/23 §1.4): a radio row per region, its name and what happens there (it joins, NEW, STRONGER, nothing gained),
+ * or, above your best there, that it waits locked until one of yours reaches its level. On the confirm (a taker) and
+ * on the scene's last step (a listing of yours taken while you were away).
+ */
+export function LandingPick({
+  name,
+  level,
+  options,
+  value,
+  onChange,
+  disabled,
+}: {
+  /** The Pokémon arriving (its nickname, or what it evolved into). */
+  name: string
+  /** The level it arrives at: the one it waits for where it's locked. */
+  level: number
+  options: LandingOption[]
+  value: RegionId | null
+  onChange: (region: RegionId) => void
+  disabled?: boolean
+}) {
+  const { t } = useT()
+  const data = useGame((s) => s.data)
+  const lv = (n: number) => t('ui.common.level.short', { n })
+  const line = (o: LandingOption) =>
+    o.outcome === 'locked'
+      ? t('ui.trades.land.locked', { level: lv(level), best: lv(o.best) })
+      : o.outcome === 'merged' && o.mine != null
+        ? t('ui.trades.pick.nothingGained', { level: lv(o.mine) })
+        : o.outcome === 'replaced' && o.mine != null
+          ? t('ui.trades.land.replaces', { level: lv(o.mine) })
+          : t('ui.trades.land.joins')
+  return (
+    <div role="radiogroup" aria-label={t('ui.trades.land.label', { name })} className="grid gap-1.5">
+      {options.map((o) => {
+        const on = o.region === value
+        return (
+          <button
+            key={o.region}
+            type="button"
+            role="radio"
+            aria-checked={on}
+            disabled={disabled}
+            onClick={() => onChange(o.region)}
+            data-testid={`landing-${o.region}`}
+            className={cx(
+              'flex min-h-[52px] w-full items-center gap-2 py-1.5 pl-2 pr-2.5 text-left',
+              on ? 'bg-gold-pale shadow-card-gold' : 'bg-paper shadow-ring-line hover:shadow-ring',
+            )}
+          >
+            {/* The radio's dot: filled when it's the one picked. */}
+            <span className="grid size-4 shrink-0 place-items-center bg-paper shadow-ring" aria-hidden>
+              {on && <i className="block size-2 bg-ink" />}
+            </span>
+            <span className="grid min-w-0 flex-1 gap-0.5">
+              <b className="truncate text-[19px] font-normal leading-none">{regionName(data, o.region)}</b>
+              <small className="font-pixel-sm text-[14px] leading-tight text-muted">{line(o)}</small>
+            </span>
+            <span className="flex shrink-0 flex-col items-end gap-1">
+              {o.outcome === 'locked' ? (
+                <Chip tone="lock">
+                  <PixelIcon name="lock" size={12} />
+                  {t('ui.map.locked')}
+                </Chip>
+              ) : (
+                <>
+                  {o.isNew && <NewTag />}
+                  {o.outcome === 'replaced' && <Chip tone="green">{t('ui.trades.stronger')}</Chip>}
+                  {o.outcome === 'shiny' && <Chip tone="gold">{t('ui.trades.shinyTag')}</Chip>}
+                </>
+              )}
+            </span>
+          </button>
+        )
+      })}
     </div>
   )
 }

@@ -642,8 +642,16 @@ decides every level, landing Box and outcome, and the screens only say them.
   the species' lowest, a trade evolution, the Box it lands in) and one footer: TRADE (or the reason, as a button that
   says it), Connect for a guest, CANCEL / SHARE for yours. TRADE turns the sheet into the **picker** (your Pokémon that
   answer the want, from every region's Box: "You get Charmander Lv.22 (its lowest level)", NEW, STRONGER, ✦ SHINY,
-  → Alakazam; blocked ones greyed with why; one that would merge is dimmed with "nothing gained"), then the
-  **confirm** (the two Pokémon facing each other ⇄, one plain sentence, the facts as bullets), then the scene.
+  LOCKED, → Alakazam; blocked ones greyed with why; one that would merge is dimmed with "nothing gained"), then the
+  **confirm** (the two Pokémon facing each other ⇄, one plain sentence, **Where it goes** when several of your regions
+  list it, the facts as bullets), then the scene. The facts say "Lands in the Box you pick: Kanto, Johto" when there's
+  a choice, and that above your best there it waits, locked.
+- **The Box pick** (`LandingPick`, docs/23 §1.4): a radio group, a row per region (its name, then what happens there:
+  "Joins that Box now" with NEW, STRONGER and "Replaces your Lv.12 there", "nothing gained", ✦ SHINY, or the grey
+  LOCKED chip with "Locked until one of yours there reaches Lv.22 (your best: Lv.9)"); the one picked gold, with its
+  dot filled. It starts on the first Box where it can play now. On a listing of yours taken while you were away, it is
+  the scene's last step (`LandingStepView`: the sprite, "Where does Pikachu go?", SEND IT THERE) before the result;
+  Esc doesn't put it off, and until it's made the scene comes back on Home and Mine's Done row says "Pick its Box".
 - **New listing** (`NewListingSheet`): three numbered steps on one sheet. A step folds into its pick (gold, with
   Change) once chosen. The species grid shows 3 tiles a row on a phone (112 px tiles on wider screens), a Not owned /
   Owned / All switch with counts and region chips past one region, and 90 tiles at first with "Show more". The
@@ -656,13 +664,13 @@ decides every level, landing Box and outcome, and the screens only say them.
   white frames, a ring, the shiny's stars). Over the stage, both Pokémon facing each other (Yours ⇄ Misty's); under it,
   the lines in a `Dialogue` text box (beats `sending`, `incoming`, `care`; `bye` and `out` are the cries), each
   Pokémon called by the nickname it carries ("Misty sent Bubbles over!"), each line also in a polite live region. A trade evolution follows with the evolution scene; then what arrived (`TradeResult`:
-  sprite, its nickname with the species beside it unless it merged into yours, level, SHINY / NEW / STRONGER, where it went, the level note, "its Pokédex entry stays") and DONE. SKIP and
+  sprite, its nickname with the species beside it unless it merged into yours, level, SHINY / NEW / STRONGER / LOCKED, where it went (the Box picked; locked: "It waits in your Johto Box, locked until one of your Pokémon there reaches Lv.22"), the level note, "its Pokédex entry stays") and DONE. SKIP and
   Esc jump to the result. Motion off jumps there at once.
 - **Coming back**: a listing taken while you were away waits in the save (`trades.unseen`, `tradesToWatch`) until its
   scene has played: back on Home, once the run is idle and no other one-time pop-up is due, the scene opens by itself
   as **"Trade done!"** with "Misty took your Pidgey." under the title (and stays up to the result). Going back Home with
   a listing out asks the server again (at most once a minute), so a trade made while you play shows up there too. The
-  gold dot and the NEW tag in Mine stay until the scene has played; every trade in Mine's Done list is a button that
+  gold dot and the NEW tag in Mine stay until the scene has played (and its Box is picked, `tradesToWatch`); every trade in Mine's Done list is a button that
   plays its scene again. A toast for a listing that came back and for a trade a closed tab left half done.
 - **Sharing** (`ShareListingModal`): the link `<site>/t/<code>` with COPY, a line on who can use it, and SHARE (the
   share sheet on phones). A private listing opens it right after POST. A link opens the listing in its sheet when the
@@ -728,7 +736,8 @@ on `/kitchen-sink` (`WorldBits`). Every rule and number comes from `engine/world
   **Waiting to unlock** section (its count, a line with the region's best now, "Your best: Lv.31") holds them as
   `MonTile`s with `locked` (the tile and its icon greyed, a lock in the corner; "Gengar, Locked until Lv.42" for screen
   readers). Its sheet is the Pokémon's sheet with the lock first (`HomerLock`: "Locked until Lv.42", "Home from
-  Haunted Hollow" while the admin still lists the world, what it waits for and what it can't do) and only two actions:
+  Haunted Hollow" while the admin still lists the world, "Sent from Kanto" or "Traded by Misty" for one sent on or
+  received in a trade (docs/23 §1.4), what it waits for and what it can't do) and only two actions:
   its nickname (the title, as always) and **Let it go** (danger, "Sure? Tap again", a toast). The day it unlocks, a toast
   says so ("Gengar (Lv.42) is unlocked: it joined your Kanto Box!", or one per region for several at once).
 

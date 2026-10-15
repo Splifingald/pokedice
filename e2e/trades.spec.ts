@@ -2,14 +2,22 @@
 // finds it taken while away (back Home, "Trade done!" plays by itself, then what arrived; the Done list plays it
 // again); a listing taken while you play shows up when you come back Home; a taker trades for a listing from the
 // board; a guest sees the connect prompt and the newest listings; a shared link opens the listing, signed out too.
+// With Johto started too, a Pokémon both Pokédexes list asks where it goes (on the confirm for a taker, at the end of
+// "Trade done!" for a poster), and one above that region's best waits there, locked (docs/23 §1.4).
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test, type Page } from '@playwright/test'
+import { readFileSync } from 'node:fs'
 import {
   badgeCase,
+  compileGameData,
   createInstance,
   DEFAULT_CONFIG,
   listOut,
+  newRegionBlock,
   progressOf,
+  startRegion,
+  switchRegion,
+  type BundleRaw,
   type PokemonInstance,
   type SaveData,
 } from '../src/engine'
@@ -44,6 +52,27 @@ function trader(starter: number, pidgeyLevel: number, patch: Partial<SaveData> =
     pokedex: [...new Set([...s.pokedex, 16, 19])],
     ...patch,
   })
+}
+
+/** The same save with Johto started on its Lv.5 starter (parked, Kanto live). The helpers' data is Kanto alone. */
+function withJohto(save: SaveData): SaveData {
+  const load = (f: string) => JSON.parse(readFileSync(new URL(`../src/data/${f}`, import.meta.url), 'utf8'))
+  const full = compileGameData({
+    pokemon: load('pokemon.json'),
+    typeChart: load('type-chart.json'),
+    diceTypes: load('dice-types.json'),
+    areas: load('areas.json'),
+    trainers: load('trainers.json'),
+    upgrades: load('upgrades.json'),
+    items: load('items.json'),
+    config: load('config.json'),
+    regions: load('regions.json'),
+    eggGroups: load('egg-groups.json'),
+  } as BundleRaw)
+  const johto = full.regions.find((r) => r.id === 'johto')!
+  let c = 0
+  const block = newRegionBlock(johto, johto.starters[0]!, full, NOW, () => `e2e-j-${++c}`, createInstance)
+  return switchRegion(startRegion(save, johto, block), 'kanto')
 }
 
 /** A listing row as trade_board / trade_view return it. */
@@ -244,7 +273,9 @@ test('a listing taken while you play: back Home, the scene', async ({ page }) =>
 })
 
 test('a taker: from the board to the picker, the confirm, the scene', async ({ page }) => {
-  const save = trader(1, 22)
+  // A Lv.30 in the Box: Charmander Lv.22 arrives at once (above the region's best, it would wait, locked).
+  const kanto = trader(1, 22)
+  const save = { ...kanto, box: [...kanto.box, mon('e2e-ace', 9, 30)] }
   const applied: unknown[] = []
   await boot(page, { ...save, trades: { out: [], done: [], rulesSeen: true } }, {
     rpc: {
@@ -329,4 +360,117 @@ test('switched off, Trades are nowhere: no menu row, and the page goes Home', as
   await page.getByRole('button', { name: /trainer menu/i }).click()
   await expect(page.getByRole('button', { name: 'Friends' })).toBeVisible()
   await expect(page.getByRole('button', { name: /^Trades/ })).toHaveCount(0)
+})
+
+test('a taker with Johto started picks the Box on the confirm; above Johto’s best it waits there, locked', async ({
+  page,
+}) => {
+  // A Lv.40 in Kanto: Pikachu Lv.22 could play there at once. Johto has only its Lv.5 starter.
+  const kanto = trader(1, 22)
+  const save = withJohto({ ...kanto, box: [...kanto.box, mon('e2e-ace', 9, 40)] })
+  await boot(page, { ...save, trades: { out: [], done: [], rulesSeen: true } }, {
+    rpc: {
+      trade_board: [row({ dex: 25 })],
+      trade_mine: [],
+      trade_take: { id: 'L-sora', listed: mon('sora-pikachu', 25, 9), given: mon('e2e-pidgey', 16, 22), with: 'Sora' },
+      trade_applied: null,
+    },
+  })
+  await page.goto('/trades')
+  await page.getByTestId('trade-board').getByRole('button', { name: /Pikachu/ }).click()
+  await expect(page.getByText('Lands in the Box you pick: Kanto, Johto')).toBeVisible()
+  await page.getByRole('button', { name: 'Trade', exact: true }).click()
+  await page.getByTestId('trade-picker').getByRole('button', { name: /Pidgey/ }).click()
+
+  // The pick starts on Kanto, where it plays now; Johto says it would wait, locked.
+  const pick = page.getByRole('radiogroup', { name: 'Where Pikachu goes' })
+  await expect(pick.getByRole('radio', { name: /Kanto/ })).toHaveAttribute('aria-checked', 'true')
+  await expect(pick.getByRole('radio', { name: /Johto/ })).toContainText('Locked until one of yours there reaches Lv.22')
+  await fitsThePhone(page)
+  expect(await seriousAxe(page)).toEqual([])
+  await pick.getByRole('radio', { name: /Johto/ }).click()
+  await expect(pick.getByRole('radio', { name: /Johto/ })).toHaveAttribute('aria-checked', 'true')
+  await expect(page.getByText(/Your best in Johto is Lv\.5/)).toBeVisible()
+  await page.getByRole('button', { name: 'Trade', exact: true }).click()
+
+  const scene = page.getByRole('dialog', { name: 'Trade with Sora' })
+  await scene.getByRole('button', { name: /Skip/i }).click()
+  await expect(scene.getByText(/It waits in your Johto Box, locked until one of your Pokémon there reaches Lv\.22/)).toBeVisible()
+  await scene.getByRole('button', { name: 'Done' }).click()
+  const waiting = () =>
+    page.evaluate(
+      () =>
+        (JSON.parse(localStorage.getItem('pokedice.save') ?? '{}').events?.worldHome ?? []) as {
+          region: string
+          tradedBy?: string
+          inst: { dex: number; level: number }
+        }[],
+    )
+  await expect.poll(waiting).toEqual([
+    expect.objectContaining({ region: 'johto', tradedBy: 'Sora', inst: expect.objectContaining({ dex: 25, level: 22 }) }),
+  ])
+})
+
+test('a poster with Johto started picks the Box at the end of "Trade done!"', async ({ page }) => {
+  const listed = mon('e2e-pidgey', 16, 12)
+  const kanto = trader(4, 12)
+  const base = withJohto({ ...kanto, box: [...kanto.box, mon('e2e-ace', 9, 40)] })
+  const save = listOut(
+    { ...base, trades: { out: [], done: [], rulesSeen: true } },
+    data,
+    'e2e-pidgey',
+    { id: 'L3', code: 'JK12LM34', endsAt: NOW + 3 * 86_400_000, want: { kind: 'any' }, visibility: 'public' },
+    NOW,
+  )!
+  await boot(page, save, {
+    rpc: {
+      trade_board: [],
+      trade_mine: [
+        {
+          id: 'L3',
+          code: 'JK12LM34',
+          role: 'owner',
+          status: 'taken',
+          mon: listed,
+          from_region: 'kanto',
+          want: { kind: 'any' },
+          visibility: 'public',
+          created_at: iso(NOW),
+          ends_at: iso(NOW + 3 * 86_400_000),
+          taker_mon: mon('misty-pikachu', 25, 30),
+          with: 'Misty',
+        },
+      ],
+      trade_applied: null,
+    },
+  })
+  await page.goto('/home')
+  const scene = page.getByRole('dialog', { name: 'Trade done!' })
+  await expect(scene).toBeVisible()
+  await scene.getByRole('button', { name: /Skip/i }).click()
+
+  // The pick, before the result: Kanto first (it plays there now), Johto locked. Esc doesn't put it off.
+  await expect(scene.getByText('Where does Pikachu go?')).toBeVisible()
+  await page.keyboard.press('Escape')
+  await expect(scene).toBeVisible()
+  const pick = scene.getByRole('radiogroup', { name: 'Where Pikachu goes' })
+  await expect(pick.getByRole('radio', { name: /Kanto/ })).toHaveAttribute('aria-checked', 'true')
+  await expect(pick.getByRole('radio', { name: /Johto/ })).toContainText('LOCKED')
+  await fitsThePhone(page)
+  expect(await seriousAxe(page)).toEqual([])
+  await scene.getByRole('button', { name: 'Send it there' }).click()
+  await expect(scene.getByText(/It joined your Kanto Box, and your Pokédex/)).toBeVisible()
+  await scene.getByRole('button', { name: 'Done' }).click()
+  await expect(scene).toBeHidden()
+  const stored = () =>
+    page.evaluate(() => {
+      const s = JSON.parse(localStorage.getItem('pokedice.save') ?? '{}')
+      return { landing: s.trades?.landing ?? null, pikachu: (s.box as { dex: number }[]).some((p) => p.dex === 25) }
+    })
+  await expect.poll(stored).toEqual({ landing: null, pikachu: true })
+
+  // Picked: it doesn't ask again.
+  await page.reload()
+  await page.waitForTimeout(1500)
+  await expect(page.getByRole('dialog', { name: 'Trade done!' })).toBeHidden()
 })
