@@ -27,6 +27,7 @@ import { DataTable } from '../DataTable'
 import { addRows, newUuid, removeRows, rowKey, setTable, updateRow, useAdmin, useAdminData } from '../store'
 import { BackgroundPicker, Box, Field, NumInput, PokemonPicker, Stepper, TextInput, inputCls, n, s } from '../widgets'
 import { AreaBanner } from '@/components/AreaBanner'
+import { PortalModeBox } from './PortalModeBox'
 
 const KINDS: EncounterKind[] = ['wild', 'trainer', 'center', 'item', 'casino']
 const CARD: Record<EncounterKind, { label: string; color: string }> = {
@@ -282,6 +283,9 @@ function AreaEditor({ area }: { area: Row }) {
             <AreaBanner url={s(area.banner_url)} className="h-20 border-2 border-edge" />
           )}
         </Box>
+
+        {/* A special mode (docs/28): shown on an area that has one, or a small world's secret area that could. */}
+        {(!!area.mode || (!!area.hidden && isWorldRegion(data, s(area.region_id)))) && <PortalModeBox area={area} />}
 
         <Box
           title="Encounter deck" icon="dice"

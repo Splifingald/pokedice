@@ -13,7 +13,7 @@ const MIG = path.join(__dirname, '..', 'supabase', 'migrations')
 const sql = (file: string) => readFileSync(path.join(MIG, file), 'utf8')
 const h = haunted()
 /** 0052 ran on live as it was then: later changes come as patches, never by regenerating it. */
-const HH = ['0052_haunted_hollow.sql', '0055_hh_new_species.sql']
+const HH = ['0052_haunted_hollow.sql', '0055_hh_new_species.sql', '0057_hh_distortion_world.sql']
 const runAll = async () => {
   for (const f of HH) await db.exec(sql(f))
 }
@@ -62,6 +62,12 @@ describe('0052 and its patches: Haunted Hollow', () => {
       await db.query<{ r: number }>(`select rounds_to_clear r from areas where name = 'Shadow Elite'`)
     ).rows[0]!
     expect(elite.r).toBe(0)
+    // Distortion World as the script has it now (0057, docs/28): opens at 100, its portal run set.
+    const dw = h.areas.find((a) => a.name === 'Distortion World')!
+    const got = (
+      await db.query<{ u: unknown; m: unknown }>('select unlock_conditions u, mode m from areas where id = $1', [dw.id])
+    ).rows[0]!
+    expect(got).toEqual({ u: dw.unlockConditions, m: dw.mode })
     const rows = await db.query<{ id: string; area: string; dex: number; w: number; lo: number; hi: number }>(
       'select id, area_id area, dex, weight w, min_level lo, max_level hi from area_wild_pool order by id',
     )

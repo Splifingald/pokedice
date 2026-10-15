@@ -152,6 +152,8 @@ export function rowsToBundle(r: TableRows): BundleRaw {
       wildPool: wildBy.get(String(x.id)) ?? [],
       trainerPool: trainerBy.get(String(x.id)) ?? [],
       lootPool: lootBy.get(String(x.id)) ?? [],
+      // A special mode (docs/28, migration 0057): only when set, so areas without one round-trip unchanged.
+      ...(x.mode != null && { mode: x.mode as NonNullable<Area['mode']> }),
     })),
     trainers: r.trainers.map((x): Trainer => ({
       id: String(x.id),
@@ -262,6 +264,8 @@ export function bundleToRows(b: BundleRaw): TableRows {
       hidden: x.hidden,
       unlock_conditions: x.unlockConditions,
       gyms: x.gyms,
+      // Only when set: a database before migration 0057 has no `mode` column.
+      ...(x.mode != null && { mode: x.mode }),
     })),
     area_wild_pool: b.areas.flatMap((a) =>
       a.wildPool.map((w) => ({

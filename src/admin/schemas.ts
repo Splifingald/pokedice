@@ -169,6 +169,26 @@ export const ROW_SCHEMAS: Record<TableName, z.ZodTypeAny> = {
       )
       .nullable(),
     gyms: z.array(uuid),
+    // A special mode (docs/28): Distortion World's portal run. Optional so a database before migration 0057 still loads.
+    mode: z
+      .object({
+        kind: z.literal('portal'),
+        portals: int(1, 99),
+        wild: int(0, 30),
+        items: int(0, 30),
+        offers: int(1, 5),
+        heal: z.object({ weight: z.number().min(0), percent: z.number().min(0).max(100) }),
+        revive: z.object({ weight: z.number().min(0) }),
+        boost: z.object({ weight: z.number().min(0), amount: int(0, 999) }),
+        die: z.object({ weight: z.number().min(0), maxDice: int(1, 12) }),
+        item: z.object({
+          weight: z.number().min(0),
+          items: z.array(z.object({ key: z.string().min(1), weight: z.number().min(0) })),
+        }),
+        raid: z.object({ level: int(1, 100), upgradeLevel: int(1, 10), bars: int(1, 10), teamCap: int(1, 100) }),
+      })
+      .nullable()
+      .optional(),
   }),
   area_wild_pool: z
     .object({
