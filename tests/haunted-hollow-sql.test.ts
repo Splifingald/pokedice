@@ -18,6 +18,7 @@ const HH = [
   '0055_hh_new_species.sql',
   '0056_trick_or_treat.sql',
   '0057_hh_distortion_world.sql',
+  '0058_hh_distortion_pool.sql',
 ]
 const runAll = async () => {
   for (const f of HH) await db.exec(sql(f))
@@ -70,7 +71,10 @@ describe('0052 and its patches: Haunted Hollow', () => {
     // Distortion World as the script has it now (0057, docs/28): opens at 100, its portal run set.
     const dw = h.areas.find((a) => a.name === 'Distortion World')!
     const got = (
-      await db.query<{ u: unknown; m: unknown }>('select unlock_conditions u, mode m from areas where id = $1', [dw.id])
+      await db.query<{ u: unknown; m: unknown }>(
+        'select unlock_conditions u, mode m from areas where id = $1',
+        [dw.id],
+      )
     ).rows[0]!
     expect(got).toEqual({ u: dw.unlockConditions, m: dw.mode })
     const rows = await db.query<{ id: string; area: string; dex: number; w: number; lo: number; hi: number }>(
@@ -90,7 +94,9 @@ describe('0052 and its patches: Haunted Hollow', () => {
       .sort((x, y) => (x.id < y.id ? -1 : 1))
     expect(rows.rows).toEqual(want)
     // Every deck as the script deals it, Trick or Treat's card (0056) included.
-    const decks = await db.query<{ id: string; w: unknown }>(`select id, encounter_weights w from areas where region_id = 'world-haunted-hollow' order by id`)
+    const decks = await db.query<{ id: string; w: unknown }>(
+      `select id, encounter_weights w from areas where region_id = 'world-haunted-hollow' order by id`,
+    )
     expect(decks.rows).toEqual(
       [...h.areas].sort((x, y) => (x.id < y.id ? -1 : 1)).map((a) => ({ id: a.id, w: a.encounterWeights })),
     )
