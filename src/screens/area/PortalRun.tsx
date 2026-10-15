@@ -41,11 +41,13 @@ import {
   enterArea,
   enterPortal,
   finishPortalVictory,
+  healAndStartPortalRaid,
   leaveArea,
   markPortalPopup,
   pickDistortionOffer,
 } from '@/store/run'
 import { travelTo } from '@/store/travel'
+import { progressRaidPath } from '@/screens/events/progressRaids'
 import { AreaTeam } from './AreaIdle'
 
 const markSeen = () => mutateSave((s) => (s.portalRulesSeen ? null : { ...s, portalRulesSeen: true }))
@@ -141,6 +143,10 @@ export function PortalStep({ area }: { area: Area }) {
         onDone={() => {
           finishPortalVictory()
           navigate('/home')
+        }}
+        onRaid={() => {
+          const raid = healAndStartPortalRaid()
+          navigate(raid ? progressRaidPath(raid) : '/home')
         }}
       />
     )

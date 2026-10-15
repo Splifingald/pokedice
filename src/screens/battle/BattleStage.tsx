@@ -6,7 +6,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode, 
 import type { Battler, Side } from '@/engine'
 import { AreaArt } from '@/components/AreaArt'
 import { PixelIcon, STATUS_ICON } from '@/components/icons'
-import { useStageDistortion } from '@/components/PortalFx'
+import { RaidStageArt, useStageDistortion } from '@/components/PortalFx'
 import { StageCanvas } from '@/components/StageCanvas'
 import { TrainerSprite } from '@/components/TrainerArt'
 import { artPlacement, battleWindow, type AreaPicture } from '@/fx/areaArt'
@@ -362,9 +362,15 @@ export function BattleStage({
   label,
   children,
   distorted,
+  world,
 }: {
   /** The foe is one of a portal run's wild Pokémon (docs/28): it wears the distortion shader. */
   distorted?: boolean
+  /**
+   * The stage stands in the Distortion World (Giratina's area raid, docs/15 §27): its void, rocks and far portal on
+   * the pixel engine, islands to stand on, in place of the area's picture.
+   */
+  world?: 'distortion'
   own: Battler
   foe: Battler
   fx: Fx
@@ -411,12 +417,13 @@ export function BattleStage({
   // Which picture has loaded and shows (the drawn background stands in until then).
   const [shownArt, setShownArt] = useState<string | null>(null)
   const artShown = !!artId && shownArt === artId
-  // Over a picture the timelines draw no background of their own (before it loads, the drawn one shows through).
+  // Over a picture (or the Distortion World) the timelines draw no background of their own (before a picture loads,
+  // the drawn one shows through).
   useLayoutEffect(() => {
-    if (!artId) return
+    if (!artId && !world) return
     setArtUnderStage(true)
     return () => setArtUnderStage(false)
-  }, [artId])
+  }, [artId, world])
 
   // Keep both Pokémon ready on the canvas: a move can start any moment.
   useEffect(() => {
@@ -437,8 +444,8 @@ export function BattleStage({
 
   return (
     <div ref={box} className="relative isolate z-0 aspect-[3/2] w-full select-none overflow-hidden">
-      <Backdrop calm={calm || artShown} />
-      {art && (
+      {world === 'distortion' ? <RaidStageArt kind="battle" /> : <Backdrop calm={calm || artShown} />}
+      {art && !world && (
         <AreaArt
           key={art.id}
           src={art.url}
@@ -446,7 +453,7 @@ export function BattleStage({
           onShown={() => setShownArt(art.id)}
         />
       )}
-      {artShown && <Zones />}
+      {artShown && !world && <Zones />}
       {scale > 0 && (
         <>
           <Mon

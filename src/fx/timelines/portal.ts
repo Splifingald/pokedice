@@ -376,7 +376,7 @@ export function nameCard(
 }
 
 /** Rings bursting out of a point: [delay, colour] each, over `dur`. */
-function burstRings(
+export function burstRings(
   g: G,
   c: Point,
   t: number,
@@ -707,9 +707,9 @@ export function breachTimeline(p: BreachParams): Timeline<BreachState> {
 }
 
 /** A cue's sound, unless the timeline is being skipped to its end. */
-const quiet = (name: Parameters<typeof fxSound>[0]) => !skippingNow() && fxSound(name)
+export const quiet = (name: Parameters<typeof fxSound>[0]) => !skippingNow() && fxSound(name)
 
-function crackPath(r: Rng, ax: number, ay: number, bx: number, by: number): [number, number][] {
+export function crackPath(r: Rng, ax: number, ay: number, bx: number, by: number): [number, number][] {
   return bolt(r, ax, ay, bx, by, 0.22, 5).map(([x, y]) => [Math.round(x), Math.round(y)] as [number, number])
 }
 
@@ -1126,7 +1126,7 @@ export function victoryTimeline(p: VictoryParams): Timeline<VictoryState> {
 }
 
 /** Six shadow tendrils out of the portal: black, wavering, red at the tips, reaching out to `k` of their length. */
-function tendrils(g: G, c: Point, R: number, t: number, k: number) {
+export function tendrils(g: G, c: Point, R: number, t: number, k: number) {
   if (k <= 0) return
   for (let i = 0; i < 6; i++) {
     const a0 = (i / 6) * Math.PI * 2 + 0.3

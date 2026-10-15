@@ -29,6 +29,7 @@ import { pushToast, useGame } from '@/store/game'
 import { useTodayRaid } from '@/store/raid'
 import { avatarOf, playerAvatarId } from '@/lib/avatars'
 import { emptySlots, ensureNpcOffer, groupOf, startRaid, useRaidGroup } from '@/store/raidBattle'
+import { PortalRaidCard } from './PortalRaid'
 import { ProgressRaidList } from './ProgressRaidList'
 import { RaidNpcPicker } from './RaidNpcPicker'
 import { RaidGroupSection, RaidTeamSection } from './RaidSetup'
@@ -57,7 +58,18 @@ export function RaidPicture({ areaId, className, children }: { areaId: string; c
  * The raid card: the raid Pokémon on its area, its name, level and bars, the time left (the day's raid); stamped once
  * caught. A progression raid's (docs/24) has its own numbers and no time limit.
  */
-export function RaidCard({ raid, msLeft, kind = 'daily' }: { raid: TodayRaid; msLeft: number | null; kind?: RaidKindOf }) {
+export function RaidCard({
+  raid,
+  msLeft,
+  kind = 'daily',
+  portal = false,
+}: {
+  raid: TodayRaid
+  msLeft: number | null
+  kind?: RaidKindOf
+  /** Giratina's raid in an area in portal mode (docs/15 §27): on the Distortion World, distorted. */
+  portal?: boolean
+}) {
   const { t } = useT()
   const data = useGame((s) => s.data)
   const cfg = data.config.events.raid
@@ -65,6 +77,7 @@ export function RaidCard({ raid, msLeft, kind = 'daily' }: { raid: TodayRaid; ms
   const rules = raidRules(data, raid.dex, kind, raid.areaId)
   const area = data.areas.find((a) => a.id === raid.areaId)
   const name = data.species[raid.dex]?.name ?? `#${raid.dex}`
+  if (portal) return <PortalRaidCard raid={raid} rules={rules} name={name} areaName={area?.name ?? ''} />
   return (
     <RaidPicture areaId={raid.areaId} className="aspect-[3/2] w-full shadow-ring">
       <span

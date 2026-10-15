@@ -1,7 +1,8 @@
 // A progression raid's page (docs/24), /raid/:areaId/:dex: reached from its area (RAID on CONTINUE, the area's
 // details), the Raids page's list or the Pokédex. The card on its area's picture; START once the area is completed (the
 // lock and what to complete before); your team for it, from its region's Box, left on it for your friends; your group
-// (the friends who left a team on it); the ball odds. A caught one says so and still takes a team.
+// (the friends who left a team on it); the ball odds. A caught one says so and still takes a team. Giratina's, its area
+// in portal mode (docs/15 §27), wears the Distortion World.
 import { useState } from 'react'
 import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
 import {
@@ -35,6 +36,9 @@ import { BallOdds, RaidCard } from './RaidPage'
 import { RaidNpcPicker } from './RaidNpcPicker'
 import { RaidGroupSection, RaidTeamSection } from './RaidSetup'
 import { RaidView } from './RaidView'
+import { DistortionFx, DistortionGround } from '@/components/Portal'
+import { cx } from '@/theme/util'
+import { PortalRaidBanner } from './PortalRaid'
 
 export function ProgressRaidScreen() {
   const { areaId = '', dex = '' } = useParams()
@@ -91,36 +95,55 @@ function ProgressRaidPage({ raidKey }: { raidKey: string }) {
     ...friends.filter((f) => f.team.length > 0).map((f) => ({ name: f.name, look: avatarOf(f.avatar).src })),
   ]
 
-  return (
-    <div className="mx-auto flex w-full max-w-[560px] flex-col gap-3">
-      <div className="relative -mx-3 -mt-4 overflow-hidden bg-night leading-[0] shadow-[0_2px_0_rgb(var(--c-edge))]">
-        <AreaStrip area={area} h={132} className="h-[132px] w-full" />
-        <div className="pixel-plate absolute left-2 top-2 z-[1] flex max-w-[calc(100%-16px)] items-center gap-0.5 pb-1.5 pl-1 pr-2.5 pt-0.5 leading-normal">
-          <button
-            type="button"
-            onClick={() => navigate(from ?? '/home')}
-            aria-label={t('ui.common.back')}
-            className="-mx-1.5 grid h-11 w-11 shrink-0 place-items-center"
-          >
-            <span
-              aria-hidden
-              className="block h-[18px] w-[14px] bg-ink [clip-path:polygon(0_50%,100%_0,100%_34%,50%_50%,100%_66%,100%_100%)]"
-            />
-          </button>
-          <span className="grid min-w-0 gap-0.5">
-            <h1 className="m-0 text-[24px] font-normal leading-none">{t('ui.raid.progress.kicker')}</h1>
-            <small className="truncate font-pixel-sm text-[14px] leading-none text-muted">
-              {t('ui.raid.progress.where', { area: area.name, region })}
-            </small>
-          </span>
-        </div>
-      </div>
+  const plate = (
+    <div className="pixel-plate absolute left-2 top-2 z-[1] flex max-w-[calc(100%-16px)] items-center gap-0.5 pb-1.5 pl-1 pr-2.5 pt-0.5 leading-normal">
+      <button
+        type="button"
+        onClick={() => navigate(from ?? '/home')}
+        aria-label={t('ui.common.back')}
+        className="-mx-1.5 grid h-11 w-11 shrink-0 place-items-center"
+      >
+        <span
+          aria-hidden
+          className="block h-[18px] w-[14px] bg-ink [clip-path:polygon(0_50%,100%_0,100%_34%,50%_50%,100%_66%,100%_100%)]"
+        />
+      </button>
+      <span className="grid min-w-0 gap-0.5">
+        <h1 className="m-0 text-[24px] font-normal leading-none">{t('ui.raid.progress.kicker')}</h1>
+        <small className="truncate font-pixel-sm text-[14px] leading-none text-muted">
+          {t('ui.raid.progress.where', { area: area.name, region })}
+        </small>
+      </span>
+    </div>
+  )
 
-      <RaidCard raid={card} msLeft={null} kind="progress" />
+  return (
+    // Giratina's raid, its area in portal mode (docs/15 §27): the Distortion World's violet night on the page and its
+    // pop-ups, the portal turning as its banner, the void as its ground, the screen's tears and the UI's glitches.
+    // Everything else is any progression raid's.
+    <div
+      className={cx('mx-auto flex w-full max-w-[560px] flex-col gap-3', portal && 'dw-scope')}
+      data-portal-raid={portal || undefined}
+    >
+      {portal ? (
+        <>
+          <DistortionGround />
+          <DistortionFx />
+          <PortalRaidBanner className="-mx-3 -mt-4 h-[132px]">{plate}</PortalRaidBanner>
+        </>
+      ) : (
+        <div className="relative -mx-3 -mt-4 overflow-hidden bg-night leading-[0] shadow-[0_2px_0_rgb(var(--c-edge))]">
+          <AreaStrip area={area} h={132} className="h-[132px] w-full" />
+          {plate}
+        </div>
+      )}
+
+      <RaidCard raid={card} msLeft={null} kind="progress" portal={portal} />
 
       {state === 'locked' && (
         <div
           role="note"
+          data-glitch={portal || undefined}
           className="flex items-start gap-2.5 bg-gold-pale p-2.5 shadow-[inset_0_0_0_2px_#d99a1e]"
         >
           <span className="grid h-9 w-9 shrink-0 place-items-center bg-paper shadow-ring-line" aria-hidden>
@@ -146,7 +169,7 @@ function ProgressRaidPage({ raidKey }: { raidKey: string }) {
       )}
       {state === 'open' && (
         <>
-          <PixelButton variant="primary" size="lg" className="w-full" onClick={start}>
+          <PixelButton variant="primary" size="lg" className={cx('w-full', portal && 'sheen')} onClick={start}>
             {t('ui.events.raid.start')}
           </PixelButton>
           <p className="m-0 text-center font-pixel-sm text-[15px] text-muted">
@@ -155,8 +178,8 @@ function ProgressRaidPage({ raidKey }: { raidKey: string }) {
         </>
       )}
 
-      <RaidTeamSection source={source} />
-      {state === 'open' && <RaidGroupSection source={source} />}
+      <RaidTeamSection source={source} portal={portal} />
+      {state === 'open' && <RaidGroupSection source={source} portal={portal} />}
       {state === 'open' && <BallOdds dex={raid.dex} />}
 
       {offer && (
@@ -168,6 +191,7 @@ function ProgressRaidPage({ raidKey }: { raidKey: string }) {
           level={raidTeamCap(data, raid.dex, 'progress', raid.areaId)}
           onBack={() => setOffer(null)}
           onStart={go}
+          portal={portal ? raid.dex : undefined}
         />
       )}
     </div>

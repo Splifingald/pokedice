@@ -2,9 +2,14 @@
 // tapes, a storm with lightning, the raid Pokémon's silhouette rising with a glowing outline, a pillar of light, the
 // white-out reveal with shockwaves, debris and embers, its name slamming down as the HP bars fill one by one, the
 // three trainers cutting in with their lead Pokémon, then GO! About six seconds; Skip at any time; none of it with
-// animations off.
-import { useEffect, useRef, useState } from 'react'
+// animations off. Giratina's raid, its area in portal mode (docs/15 §27), opens in the Distortion World instead: the
+// pixel engine's scene (raidEntranceTimeline: shiny Giratina coming out of the portal) under the same words and timing,
+// its tapes in Giratina's red and the void's night. That one has no Skip (the user, 2026-10-15, as the portal's breach
+// and victory): a tap or Esc does nothing, it plays out; motion off still goes straight to the fight.
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { hiss, tone } from '@/audio/sfx'
+import { StageCanvas } from '@/components/StageCanvas'
+import { raidEntranceStage, raidEntranceTimeline } from '@/fx/timelines/portalRaid'
 import { MiniSprite } from '@/components/SpriteImg'
 import { TrainerSprite } from '@/components/TrainerArt'
 import { bolt, disc, ease, polyline, rng as pixelRng } from '@/fx/pixel'
@@ -34,16 +39,48 @@ interface Particle {
   star?: boolean
 }
 
-export function RaidIntro({ run, onDone }: { run: RaidRun; onDone: () => void }) {
+export function RaidIntro({
+  run,
+  onDone,
+  world,
+}: {
+  run: RaidRun
+  onDone: () => void
+  /** Giratina's raid in the Distortion World (docs/15 §27): its own scene under the intro's words. */
+  world?: 'distortion'
+}) {
   const { t } = useT()
   const { level } = useMotion()
+  const dw = world === 'distortion'
+  // Measured once when it opens.
+  const [size] = useState(() =>
+    typeof window === 'undefined' ? { w: 130, h: 280 } : raidEntranceStage(window.innerWidth, window.innerHeight),
+  )
   const cfg = useGame((s) => s.data.config.events.raid)
   const boss = run.state.boss
+  // The Distortion World's scene, made once when the intro opens.
+  const scene = useMemo(
+    () =>
+      dw
+        ? {
+            ready: loadSprite(boss.dex, false, boss.shiny),
+            timeline: raidEntranceTimeline({
+              w: size.w,
+              h: size.h,
+              mon: spriteKey(boss.dex, false, boss.shiny),
+              short: level === 'short',
+            }),
+          }
+        : null,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  )
   const [stage, setStage] = useState<string[]>([])
   const [leaving, setLeaving] = useState(false)
   const cv = useRef<HTMLCanvasElement>(null)
   const done = useRef(false)
   const skip = useRef<HTMLButtonElement>(null)
+  const root = useRef<HTMLDivElement>(null)
 
   const finish = (quick: boolean) => {
     if (done.current) return
@@ -62,12 +99,15 @@ export function RaidIntro({ run, onDone }: { run: RaidRun; onDone: () => void })
 
   useEffect(() => {
     if (level === 'off') return
-    skip.current?.focus({ preventScroll: true })
+    // Unskippable in the Distortion World: the focus rests on the intro itself.
+    ;(skip.current ?? root.current)?.focus({ preventScroll: true })
     const key = spriteKey(boss.dex, false, boss.shiny)
     void loadSprite(boss.dex, false, boss.shiny)
-    const g = cv.current?.getContext('2d')
-    if (!g) return
-    g.imageSmoothingEnabled = false
+    // In the Distortion World the scene is the pixel engine's (its StageCanvas): only the words and their sounds are
+    // timed here.
+    const g = dw ? null : (cv.current?.getContext('2d') ?? null)
+    if (!dw && !g) return
+    if (g) g.imageSmoothingEnabled = false
     const rnd = pixelRng(boss.dex * 7 + 3)
     const bolts = [1.15, 1.5, 1.85, 2.2].map((at) => {
       const x0 = 20 + rnd() * 200
@@ -84,6 +124,7 @@ export function RaidIntro({ run, onDone }: { run: RaidRun; onDone: () => void })
     const parts: Particle[] = []
     let burst = false
     const draw = (T: number) => {
+      if (!g) return
       const full = spriteFrame(key)
       const sil = silhouette(key, '#0b0e1e')
       const glow = silhouette(key, '#ffbe2e')
@@ -225,15 +266,19 @@ export function RaidIntro({ run, onDone }: { run: RaidRun; onDone: () => void })
       tone(880, 0.18, { type: 'square', vol: 0.05, at: 0.62 })
     })
     at(950, add('alert-out'))
-    at(1050, () => hiss(1.6, { vol: 0.06, freq: 120, type: 'lowpass' }))
-    for (const b of bolts) at(b.at * 1000, () => hiss(0.35, { vol: 0.09, freq: 2600, slide: -2300 }))
-    at(2350, () => hiss(0.45, { vol: 0.07, freq: 400, slide: 3000 }))
+    // The storm's sounds; the Distortion World's scene has its own (the pulses, the tear, the heartbeats, the roar).
+    if (!dw) {
+      at(1050, () => hiss(1.6, { vol: 0.06, freq: 120, type: 'lowpass' }))
+      for (const b of bolts) at(b.at * 1000, () => hiss(0.35, { vol: 0.09, freq: 2600, slide: -2300 }))
+      at(2350, () => hiss(0.45, { vol: 0.07, freq: 400, slide: 3000 }))
+    }
     at(2750, () => {
       setStage((s) => [...s, 'boom'])
+      if (dw) return
       tone(55, 0.7, { type: 'sawtooth', vol: 0.08, slide: -20 })
       hiss(0.6, { vol: 0.1, freq: 300 })
     })
-    at(2900, () => tone(240, 0.6, { type: 'sawtooth', vol: 0.06, slide: -160 }))
+    if (!dw) at(2900, () => tone(240, 0.6, { type: 'sawtooth', vol: 0.06, slide: -160 }))
     at(3250, () => {
       setStage((s) => [...s, 'name'])
       hiss(0.18, { vol: 0.09, freq: 160 })
@@ -253,7 +298,7 @@ export function RaidIntro({ run, onDone }: { run: RaidRun; onDone: () => void })
       draw((now - t0) / 1000)
       raf = requestAnimationFrame(loop)
     }
-    raf = requestAnimationFrame(loop)
+    if (g) raf = requestAnimationFrame(loop)
     return () => {
       timers.forEach(clearTimeout)
       cancelAnimationFrame(raf)
@@ -265,16 +310,28 @@ export function RaidIntro({ run, onDone }: { run: RaidRun; onDone: () => void })
   const bars = run.state.bars
   return (
     <div
+      ref={root}
       role="dialog"
+      tabIndex={-1}
       aria-label={t('ui.raid.intro.label', { name: boss.name })}
-      className={cx('rd-intro', ...stage, leaving && 'out')}
+      className={cx('rd-intro', dw && 'dw', ...stage, leaving && 'out')}
     >
-      <canvas ref={cv} className="rd-i-cv" width={W} height={H} aria-hidden />
+      {scene ? (
+        <StageCanvas
+          timeline={scene.timeline}
+          ready={scene.ready}
+          size={{ w: size.w, h: size.h }}
+          label=""
+          className="pointer-events-none absolute inset-0 h-full w-full"
+        />
+      ) : (
+        <canvas ref={cv} className="rd-i-cv" width={W} height={H} aria-hidden />
+      )}
       <div className="rd-i-tape top" aria-hidden>
-        <b>{t('ui.raid.intro.warning')}</b>
+        <b>{t(dw ? 'ui.portal.raidIntroTop' : 'ui.raid.intro.warning')}</b>
       </div>
       <div className="rd-i-tape bottom" aria-hidden>
-        <b>{t('ui.raid.intro.appears')}</b>
+        <b>{dw ? t('ui.portal.raidIntroBottom', { name: boss.name }) : t('ui.raid.intro.appears')}</b>
       </div>
       <div className="rd-i-name">
         <small>{t('ui.raid.intro.kicker')}</small>
@@ -309,9 +366,11 @@ export function RaidIntro({ run, onDone }: { run: RaidRun; onDone: () => void })
       <div className="rd-i-go" aria-hidden>
         {t('ui.raid.intro.go')}
       </div>
-      <button ref={skip} type="button" className="rd-i-skip" onClick={() => finish(true)}>
-        {t('ui.raid.intro.skip')}
-      </button>
+      {!dw && (
+        <button ref={skip} type="button" className="rd-i-skip" onClick={() => finish(true)}>
+          {t('ui.raid.intro.skip')}
+        </button>
+      )}
     </div>
   )
 }

@@ -17,6 +17,7 @@ import { centerTimeline } from '@/fx/timelines/center'
 import { gmaxEndTimeline, gmaxFor, megaFor } from '@/fx/timelines/forms'
 import { legendLook, legendTimeline } from '@/fx/timelines/legend'
 import { breachTimeline, closeTimeline, victoryTimeline, wildGlitchTimeline } from '@/fx/timelines/portal'
+import { raidEntranceTimeline } from '@/fx/timelines/portalRaid'
 import { artUrl } from '@/fx/areaArt'
 import { evolveTimeline, hatchTimeline } from '@/fx/timelines/moments'
 import { tradeTimeline } from '@/fx/timelines/trade'
@@ -272,6 +273,12 @@ const PRESETS: Preset[] = [
         subs: ['SHINY', 'Lv.100'],
         short: o.short,
       }),
+  },
+  {
+    // Giratina's area raid (docs/28 §6): the raid intro's scene in portal mode; its words are the page's.
+    name: "Portal run: Giratina's raid entrance (shiny Giratina out of the portal)",
+    sprites: [[487, false, true]],
+    make: (o) => raidEntranceTimeline({ mon: spriteKey(487, false, true), short: o.short }),
   },
   {
     name: 'Evolution (Charmeleon)',

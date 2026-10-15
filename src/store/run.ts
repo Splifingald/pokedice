@@ -67,6 +67,8 @@ import {
   drawPortalCard,
   inPortalRun,
   markPortalWonSeen,
+  openRaidIn,
+  portalVictoryToRaid,
   openDistortion,
   pickDistortion,
   portalDiceFor,
@@ -90,6 +92,7 @@ import {
   throwTrickBall as throwTrickBallIn,
   trickCfg,
   type TrickStep,
+  type ProgressRaid,
 } from '@/engine'
 import { activeSlot } from '@/save/storage'
 import { commitSave, initialRun, mutateSave, pushToast, useGame, type RunState } from './game'
@@ -311,6 +314,22 @@ export function finishPortalVictory() {
   const areaId = run.areaId ?? save?.currentAreaId
   if (save && areaId) commitSave(markPortalWonSeen(save, areaId))
   useGame.setState((s) => ({ run: { ...initialRun(), forceNext: s.run.forceNext }, battle: null }))
+}
+
+/**
+ * HEAL & START RAID on the victory (the user, 2026-10-15): the team and the Box healed as at a Pokémon Center, the
+ * victory seen (the engine's portalVictoryToRaid), and the area's raid to open, its page next. Null when there is none
+ * (the screen goes Home then).
+ */
+export function healAndStartPortalRaid(): ProgressRaid | null {
+  const { save, data, run } = useGame.getState()
+  const areaId = run.areaId ?? save?.currentAreaId
+  const area = data.areas.find((a) => a.id === areaId)
+  if (!save || !area) return null
+  const next = portalVictoryToRaid(save, data, area.id)
+  if (next !== save) commitSave(next)
+  useGame.setState((s) => ({ run: { ...initialRun(), forceNext: s.run.forceNext }, battle: null }))
+  return openRaidIn(next, data, area)
 }
 
 /** Roll the next encounter and show its preview card. */
