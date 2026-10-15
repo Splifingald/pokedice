@@ -21,6 +21,7 @@ import {
   trickBestPlay,
   trickDealable,
   trickRulesDue,
+  trickStartRange,
   markTrickRulesSeen,
   trickZoneAt,
   type Area,
@@ -82,9 +83,22 @@ describe('the gauge', () => {
       ],
     })
     const band = trickBand(CFG, 'veryRare')
-    expect(trickZoneAt(band, 39)?.zone.need).toBe(6)
-    expect(trickZoneAt(band, 40)?.zone.need).toBe(5)
-    expect(trickZoneAt(band, 55)).toBeNull()
+    expect(trickZoneAt(band, 44)?.zone.need).toBe(6)
+    expect(trickZoneAt(band, 45)?.zone.need).toBe(5)
+    expect(trickZoneAt(band, 64)?.zone.need).toBe(5)
+    expect(trickZoneAt(band, 65)).toBeNull()
+  })
+
+  it('starts the gauge anywhere in the first section, at random', () => {
+    const rng = createRng(11)
+    const starts = new Set<number>()
+    for (let i = 0; i < 2000; i++) starts.add(startTrick({ dex: 92, level: 5, tier: 'common' }, CFG, rng).gauge)
+    expect(Math.min(...starts)).toBe(0)
+    expect(Math.max(...starts)).toBe(39)
+    expect(starts.size).toBe(40)
+    expect(trickStartRange(CFG, 'veryRare')).toEqual({ min: 0, max: 44 })
+    // Without the config and a draw (a test, the kitchen sink): an empty gauge.
+    expect(startTrick({ dex: 92, level: 5, tier: 'common' }).gauge).toBe(0)
   })
 
   it('cleans an odd admin value: unsorted, not from 0, past the flee zone', () => {
@@ -266,7 +280,7 @@ function monteCarlo(tier: TrickTier, play: Play, runs: number, seed: number): nu
   const { ballAt } = trickBestPlay(CFG, tier)
   let caught = 0
   for (let r = 0; r < runs; r++) {
-    let s = startTrick({ dex: 92, level: 5, tier })
+    let s = startTrick({ dex: 92, level: 5, tier }, CFG, rng)
     while (!s.end)
       s = (play(s, ballAt, rng) === 'ball' ? throwTrickBall(s, CFG, rng) : feedTreat(s, CFG, rng))!.state
     if (s.end === 'caught') caught++

@@ -376,10 +376,10 @@ export const DEFAULT_CONFIG: GameConfig = {
       },
       veryRare: {
         weight: 1,
-        flee: 55,
+        flee: 65,
         sections: [
           { from: 0, need: 6 },
-          { from: 40, need: 5 },
+          { from: 45, need: 5 },
         ],
       },
     },

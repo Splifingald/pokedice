@@ -87,7 +87,10 @@ test('a Trick or Treat card: the preview, the rules once, a Treat, Trick Balls, 
   // The ghost over its area, and its gauge.
   await expect(page.getByRole('img', { name: /Gastly \(Lv\.\d+\) floats over the area/ })).toBeVisible()
   const gauge = page.getByRole('meter', { name: 'Trick or Treat gauge' })
-  await expect(gauge).toHaveAttribute('aria-valuenow', '0')
+  // It starts anywhere in the first section (0–39 for a common ghost), at random.
+  const start = Number(await gauge.getAttribute('aria-valuenow'))
+  expect(start).toBeGreaterThanOrEqual(0)
+  expect(start).toBeLessThan(40)
   await expect(gauge).toHaveAttribute('aria-valuetext', /a Trick Ball needs 6/)
 
   // Laid out as the battle: full screen (no tab bar), the plate on the stage, the gauge's value in numbers.
@@ -99,11 +102,11 @@ test('a Trick or Treat card: the preview, the rules once, a Treat, Trick Balls, 
   await page.getByRole('button', { name: 'Treat', exact: true }).click()
   await expect(page.getByText(/gobbled the Treat|Too many Treats/)).toBeVisible()
   await settled(page)
-  const after = Number(await gauge.getAttribute('aria-valuenow'))
-  expect(after).toBeGreaterThanOrEqual(DEFAULT_CONFIG.trickOrTreat.treatMin)
-  expect(after).toBeLessThanOrEqual(DEFAULT_CONFIG.trickOrTreat.treatMax)
+  const added = Number(await gauge.getAttribute('aria-valuenow')) - start
+  expect(added).toBeGreaterThanOrEqual(DEFAULT_CONFIG.trickOrTreat.treatMin)
+  expect(added).toBeLessThanOrEqual(DEFAULT_CONFIG.trickOrTreat.treatMax)
   // What it added, beside the value.
-  await expect(page.getByText(`+${after}`, { exact: true })).toBeVisible()
+  await expect(page.getByText(`+${added}`, { exact: true })).toBeVisible()
 
   const next = await playOut(page)
   // The result card, as a battle's.

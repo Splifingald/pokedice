@@ -796,7 +796,7 @@ async function beginTrick(enc: Extract<NonNullable<RunState['encounter']>, { kin
     backToArea()
     return
   }
-  setRun({ phase: 'trick', trick: { id: ++trickSeq, state: startTrick(enc), last: null, caught: null } })
+  setRun({ phase: 'trick', trick: { id: ++trickSeq, state: startTrick(enc, trickCfg(useGame.getState().data), runRng), last: null, caught: null } })
 }
 
 /** One step of Trick or Treat, decided by the engine; a catch goes into the save at once. */

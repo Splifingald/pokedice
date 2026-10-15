@@ -167,18 +167,35 @@ export interface TrickState {
   end: null | 'caught' | 'fled'
 }
 
-export function startTrick(enc: {
-  dex: number
-  level: number
-  tier: TrickTier
-  shiny?: boolean
-}): TrickState {
+/** The first section's span: where a ghost's gauge may start (its first value to its last). */
+export function trickStartRange(cfg: TrickOrTreatConfig, tier: TrickTier): { min: number; max: number } {
+  const z = trickBand(cfg, tier).zones[0]!
+  return { min: z.from, max: Math.max(z.from, z.to - 1) }
+}
+
+/** A gauge's start, drawn evenly over the first section. */
+export const trickStartAt = (cfg: TrickOrTreatConfig, tier: TrickTier, rng: Rng): number => {
+  const { min, max } = trickStartRange(cfg, tier)
+  return rng.int(min, max)
+}
+
+export function startTrick(
+  enc: {
+    dex: number
+    level: number
+    tier: TrickTier
+    shiny?: boolean
+  },
+  cfg?: TrickOrTreatConfig,
+  rng?: Rng,
+): TrickState {
   return {
     dex: enc.dex,
     level: enc.level,
     tier: enc.tier,
     ...(enc.shiny && { shiny: true }),
-    gauge: 0,
+    // Somewhere in the first section, at random (the user's call, 2026-10-15): each ghost starts a little different.
+    gauge: cfg && rng ? trickStartAt(cfg, enc.tier, rng) : 0,
     treats: 0,
     balls: 0,
     end: null,
@@ -247,7 +264,7 @@ export function throwTrickBall(state: TrickState, cfg: TrickOrTreatConfig, rng: 
 // ---------------------------------------------------------------- balance
 
 export interface TrickPlay {
-  /** The best play's catch rate from an empty gauge (0–1): every choice the right one, exactly. */
+  /** The best play's catch rate (0–1), the start drawn over the first section: every choice the right one, exactly. */
   best: number
   /** Trick Balls only, from the first throw. */
   ballsOnly: number
@@ -287,7 +304,14 @@ export function trickBestPlay(cfg: TrickOrTreatConfig, tier: TrickTier): TrickPl
     balls[g] = ball(balls)
     mixed[g] = g < top ? treat(mixed, g) : ball(mixed)
   }
-  return { best: best[0]!, ballsOnly: balls[0]!, treatsThenBalls: mixed[0]!, ballAt }
+  // The gauge starts anywhere in the first section, evenly: each rate is the average over those starts.
+  const { min: s0, max: s1 } = trickStartRange(cfg, tier)
+  const avg = (v: number[]) => {
+    let sum = 0
+    for (let g = s0; g <= s1; g++) sum += v[g]!
+    return sum / (s1 - s0 + 1)
+  }
+  return { best: avg(best), ballsOnly: avg(balls), treatsThenBalls: avg(mixed), ballAt }
 }
 
 // ---------------------------------------------------------------- the catch

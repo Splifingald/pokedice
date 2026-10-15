@@ -26,7 +26,7 @@ Treats and throw Trick Balls, and too many of either make it flee.
 |---|---|---|---|
 | Common | 6 | 0 → 6 · 40 → 5+ · 75 → 4+ · 80 → 3+ | 90 |
 | Rare | 3 | 0 → 6 · 40 → 5+ · 75 → 4+ | 85 |
-| Very rare | 1 | 0 → 6 · 40 → 5+ | 55 |
+| Very rare | 1 | 0 → 6 · 45 → 5+ | 65 |
 
 ### Where it differs from the first idea, and why
 
@@ -40,6 +40,11 @@ gap between the best play and every fixed recipe. The rare tier's flee zone move
 from 75 to 55: with only one or two throws before the flee zone, that is what puts a very rare ghost at about one in
 three. Every number stays the admin's.
 
+**A random start** (the user's call, 2026-10-15): the gauge starts anywhere in the first section, evenly
+(`trickStartAt`, the engine's draw), so no two ghosts begin alike. Starting high made Trick Balls alone almost as good
+as the best play for a very rare ghost (1.5 points apart), so its tier moved to **0 → 6 · 45 → 5+, flees from 65**:
+the "5+ at best" of the first idea, its flee zone closer to the first 75. The rates below average over the starts.
+
 ## 2. Balance (measured)
 
 `tests/engine/trick-or-treat.test.ts`: the exact catch rate of each play (`trickBestPlay`, the gauge only goes up so
@@ -49,17 +54,17 @@ through the engine's own `feedTreat` / `throwTrickBall`. The test keeps best pla
 
 | Play | Common | Rare | Very rare |
 |---|---|---|---|
-| **Best play** (exact) | **74.7 %** | **58.4 %** | **35.1 %** |
-| Best play (Monte Carlo) | 74.7 % | 58.7 % | 35.2 % |
-| Trick Balls only | 53.5 % | 53.5 % | 30.6 % |
-| One Treat, then Balls | 61.5 % | 50.6 % | 29.4 % |
-| Two Treats, then Balls | 57.5 % | 51.3 % | 23.5 % |
-| Treats up to the best section, then Balls | 32.9 % | 24.7 % | 24.9 % |
-| A coin flip each time | 44.7 % | 39.3 % | 22.8 % |
+| **Best play** (exact) | **71.3 %** | **57.0 %** | **37.8 %** |
+| Best play (Monte Carlo) | 71.1 % | 56.8 % | 37.7 % |
+| Trick Balls only | 58.3 % | 52.5 % | 32.1 % |
+| One Treat, then Balls | 55.8 % | 47.5 % | 28.1 % |
+| Two Treats, then Balls | 49.9 % | 41.0 % | 16.2 % |
+| Treats up to the best section, then Balls | 33.4 % | 25.2 % | 28.3 % |
+| A coin flip each time | 41.7 % | 35.9 % | 21.5 % |
 
 What the best play does (gauge → action): common 0–4 Treat, 5–19 Ball, 20–39 Treat, 40–54 Ball, 55–69 Treat, 70–89
-Ball; rare 0–3 Treat, 4–14 Ball, 15–34 Treat, 35–49 Ball, 50–58 Treat, 59–84 Ball; very rare 0–3 Treat, 4–19 Ball,
-20–34 Treat, 35–54 Ball. In words: throw when a miss would still land in a better section, short of the flee zone;
+Ball; rare 0–3 Treat, 4–14 Ball, 15–34 Treat, 35–49 Ball, 50–58 Treat, 59–84 Ball; very rare 0–9 Treat, 10–29 Ball,
+30–44 Treat, 45–64 Ball. In words: throw when a miss would still land in a better section, short of the flee zone;
 feed a Treat otherwise. The admin shows the three exact rates beside each tier's numbers as they're edited.
 
 ## 3. Haunted Hollow's ghosts
