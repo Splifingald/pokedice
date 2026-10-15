@@ -4,7 +4,7 @@
 //
 // The drawings leave their middle transparent: the element's own background-color fills it. That keeps a `bg-gold`
 // (a selected tab) working on any frame, and gives contrast checkers a real background to measure text against.
-import { PALETTE, THEMES, type ThemeName } from './colors'
+import { PALETTE, SCOPES, THEMES, type ScopeName, type ThemeName } from './colors'
 
 /** Half a frame drawing, in art pixels: the 9-slice cut. The drawing is 2S + 2 wide. */
 export const FRAME_SLICE = 6
@@ -28,10 +28,14 @@ export interface FrameSpec {
   dots?: boolean
 }
 
+/** A theme's colours, or a scope's (`.dw-scope`: Distortion World's violet night, drawn like Dusk). */
+const paletteOf = (theme: ThemeName | ScopeName) =>
+  theme in SCOPES ? SCOPES[theme as ScopeName] : THEMES[theme as ThemeName]
+
 /** Every frame, drawn in a theme's colours. Light is Daybreak; dark keeps the shapes with a softer outline and lip. */
-export function frameSpecs(theme: ThemeName = 'light') {
-  const T = THEMES[theme]
-  const dark = theme === 'dark'
+export function frameSpecs(theme: ThemeName | ScopeName = 'light') {
+  const T = paletteOf(theme)
+  const dark = theme !== 'light'
   const SHADOW = { dx: 0, dy: 2, color: dark ? '#00000080' : '#24304f66', dither: true }
   /** Translucent highlight and lip: they suit whatever background-color the element has. */
   const HI = dark ? 'rgba(255,255,255,0.10)' : 'rgba(255,255,255,0.75)'
@@ -107,8 +111,8 @@ export function frameArt(sp: FrameSpec, press = false): (string | null)[][] {
 }
 
 /** Daybreak's ground: a pale sky with a dot every few pixels, as an 8×8 tile (Dusk's: the night sky). */
-export function textureArt(theme: ThemeName = 'light'): string[][] {
-  const T = THEMES[theme]
+export function textureArt(theme: ThemeName | ScopeName = 'light'): string[][] {
+  const T = paletteOf(theme)
   return Array.from({ length: 8 }, (_, y) =>
     Array.from({ length: 8 }, (_, x) => ((x + y) % 8 === 0 && x % 4 === 0 ? T.dot : T.parchment)),
   )
@@ -132,12 +136,16 @@ function toDataUrl(grid: (string | null)[][], k: number): string {
 
 /** The CSS that hands every frame to the stylesheet, drawn `k` device pixels to an art pixel. */
 export function frameCss(k: number, theme: ThemeName = 'light'): string {
-  const vars = [`--fr-s:${FRAME_SLICE * k}`, `--tex:url(${toDataUrl(textureArt(theme), k)})`]
-  for (const [name, spec] of Object.entries(frameSpecs(theme)) as [FrameName, FrameSpec][]) {
-    vars.push(`--fr-${name}:url(${toDataUrl(frameArt(spec), k)})`)
-    if (spec.shadow) vars.push(`--fr-${name}-down:url(${toDataUrl(frameArt(spec, true), k)})`)
+  const varsOf = (t: ThemeName | ScopeName) => {
+    const vars = [`--fr-s:${FRAME_SLICE * k}`, `--tex:url(${toDataUrl(textureArt(t), k)})`]
+    for (const [name, spec] of Object.entries(frameSpecs(t)) as [FrameName, FrameSpec][]) {
+      vars.push(`--fr-${name}:url(${toDataUrl(frameArt(spec), k)})`)
+      if (spec.shadow) vars.push(`--fr-${name}-down:url(${toDataUrl(frameArt(spec, true), k)})`)
+    }
+    return vars.join(';')
   }
-  return `:root{${vars.join(';')}}`
+  // A scope's frames ride along whatever the theme: Distortion World's violet night (`.dw-scope`, docs/15 §27).
+  return `:root{${varsOf(theme)}}.dw-scope{${varsOf('distortion')}}`
 }
 
 let redraw: (() => void) | null = null

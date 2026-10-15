@@ -15,6 +15,7 @@ export function Modal({
   dismissable = true,
   label,
   bottom = false,
+  banner,
 }: {
   open: boolean
   onClose?: () => void
@@ -27,6 +28,8 @@ export function Modal({
   label?: string
   /** At the bottom of the screen, so a scene behind it shows above (the portal's way in). */
   bottom?: boolean
+  /** A picture over the title, the panel's full width (Giratina's raid pop-up: the Distortion World). */
+  banner?: ReactNode
 }) {
   const ref = useRef<HTMLDivElement>(null)
   const titleId = useId()
@@ -60,6 +63,7 @@ export function Modal({
             animate={{ scale: 1, y: 0 }}
             exit={{ scale: 0.95, y: 8 }}
           >
+            {banner && <div className="-mx-4 -mt-4 mb-3">{banner}</div>}
             {(title || (dismissable && onClose)) && (
               <div className="mb-3 flex items-start justify-between gap-3">
                 <h2 id={titleId} className="text-title leading-none">

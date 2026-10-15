@@ -26,7 +26,7 @@ on the pixel engine (`src/fx/timelines/portal.ts`, `src/fx/glitch.ts`, hosted by
 | The +10 | A **flat bonus added like the combo's**: (Σ dice + combo + 10) × the attack type's multiplier × a booster. Only when the attack takes that type; nothing on an untyped attack; an immune hit stays 0. It **stacks** (Ghost +20). Shown in the damage recap. |
 | The extra die | Joins the Pokémon's typed dice in battle (ahead of a base die). A Mega's own die comes on top, as always. |
 | Run bonuses | The boosts and dice are **for the run only**: gone on the victory or a wipe. The heals, revives and items stay as they are. |
-| The last portal | **No choice: victory.** The portal again, **shiny Giratina coming out of it, its cry**, "Every portal is closed! Shiny Giratina came through the last one: it is now available in raids." Back to the world's Home. The run is **won for good**: the area is **only its raid** from then on (CONTINUE: RAID: GIRATINA, then sealed once caught). The team is healed. |
+| The last portal | **No choice: victory.** The portal again, **shiny Giratina coming out of it, its cry**, "Every portal is closed! Shiny Giratina came through the last one: it is now available in raids." **HEAL & START RAID** (healed as at a Center, then the raid's page) or the green **BACK TO THE WORLD** (the world's Home). The run is **won for good**: the area is **only its raid** from then on (CONTINUE: RAID: GIRATINA, then sealed once caught). The team is healed. |
 | A wipe | XP, ₽ and items **kept**; portals closed **back to 0**; run bonuses **lost**; team **healed**; back to the world, to try again (no limit). |
 | The raid | Shiny Giratina, the world's prize: **only after the run is won**, at **Lv.100, foes' dice level 10, 4 HP bars**, teams **from the world's Box, up to Lv.100** (all on the area's mode). Before, its page is locked ("Close every portal of Distortion World to open this raid"). This replaces the raid at the end of S5's rounds. |
 | Giratina's cry | The game's cries (`src/audio/cries.ts`, Showdown's, one request, none while sound is off). The breach and a portal closing have 8-bit cues of their own (`portal.breach`, `portal.close` in `src/audio/sfx.ts`). |
@@ -151,11 +151,25 @@ setting lightens them; only motion off (the admins' no-animations switch) stills
 | The wild Pokémon (`glitch.ts`: `useStageDistortion`, `GlitchSprite`) | On the page's own animated sprite (CSS filters, so nothing lags behind it): a faint violet and teal rim of its shape, motes rising; every 5 s for 0.35 s it is torn in 2–3 bands of rows (2–4 px), tinted violet, with see-through violet, teal and red copies 1–2 px behind. Softened 2026-10-15 (was every 3.4 s for 0.48 s, 2–6 px, a dark aura and a rim on a canvas behind it that didn't follow the animated sprite). | Copies only / the rim, still |
 | The screen (`DistortionFx`) | Every 6–10 s a 0.45 s tear: broken scanlines, displaced blocks of the void, the page's colours shifted to violet. Nothing in between (its dithered frame round the screen is gone, 2026-10-15). | Rarer, thinner, no shift / nothing |
 | The UI (`useUiGlitch`) | Every 5–9 s one piece of the page (gauge, boons, team cards, action bar, header title, a toast) plays the wild Pokémon's look, as soft, for 0.35 s; one at a time, never inside a pop-up, never on what holds the focus. | Copies only / none |
-| The victory (`victoryTimeline`) | Legend.ts's entrance for shiny Giratina: dark pulses, shadow tendrils, heartbeats, its silhouette rising out of the portal in a red-and-gold outline, rays and a gleam, the reveal (flash, rings, roar and its cry, quake), the shiny sparkle, the portal sealed behind it, the name card (SHINY, its raid level); then the screen's words and BACK TO THE WORLD. 6.2 s. | 3.1 s / at its end at once |
+| The victory (`victoryTimeline`) | Legend.ts's entrance for shiny Giratina: dark pulses, shadow tendrils, heartbeats, its silhouette rising out of the portal in a red-and-gold outline, rays and a gleam, the reveal (flash, rings, roar and its cry, quake), the shiny sparkle, the portal sealed behind it, the name card (SHINY, its raid level); then the screen's words, HEAL & START RAID and the green BACK TO THE WORLD. 6.2 s. | 3.1 s / at its end at once |
+| The raid's page and pop-ups (`PortalRaid.tsx`, `.dw-scope`) | The violet night, the void as the page's ground, the portal as its banner, Giratina distorted on its island on the card, the screen's tears and the UI's glitches; its pop-ups with the portal and Giratina as a banner, tearing in as they open. | Lighter tears and glitches / still |
+| The raid's stage (`raidBattleStage`, `RaidStageArt`) and a bar breaking (`StageTear`) | The void, rocks drifting upside-down, the portal turning far behind Giratina, floating islands to stand on; Giratina distorted; a tear across the stage when a bar breaks. | One thin band / still, no tear |
+| The raid's entrance (`raidEntranceTimeline`, under the raid intro's words) | Pulses, a tear and its cracks, the portal opening, tendrils, heartbeats, shiny Giratina rising out of the portal, rays and a gleam, the reveal (flash, rings, roar, quake), the sparkle, then hovering and tearing in front of the portal. 6.2 s, **no Skip** (the user, 2026-10-15). | In full (an encounter) / straight to the fight |
 
 Sounds: the breach and a closing keep `portal.breach` and `portal.close`; the scenes add the legend's cues
 (`legend.pulse`, `legend.shatter`, `legend.heart`, `legend.roar`) and the shiny chime. Nothing changes in the engine, the
 flows, the buttons or the words; no migration.
+
+Then, the same day (2026-10-15), the victory and the raid: "On the last page of the distortion animation (the victory)
+… make BACK TO THE WORLD a green one, and above it put a button HEAL & START RAID that goes back to the world and opens
+the raid page", and "make this raid page themed so it's still in the event theme … Use the distortion effect on this
+specific raid pop-up and inside the raid, full-on cool animations too". HEAL & START RAID heals the team and the Box as
+a Pokémon Center does and marks the victory seen (the engine's `portalVictoryToRaid`; `tests/engine/portal-run.test.ts`),
+then opens the area's raid page (`openRaidIn`); the raid of an area in portal mode wears the Distortion World on its
+page, its pop-ups, its stage and its entrance (docs/15 §27, the table above). Its entrance can't be skipped (the user's
+answer, the same day). Nothing about raids changes otherwise (rules, numbers, server checks, other raids' look); no
+migration. `e2e/portal.spec.ts` covers the two buttons, the heal, the themed page, pop-up and fight, and the entrance
+playing out with no Skip.
 
 Then, the same day: the way in waits for a tap at the breach's end and its pop-up rises over it; arriving heals and the
 team can change until READY! (§1, the engine's `arriveAtPortal` and `teamSwapsOpen`); a boon is confirmed before it is

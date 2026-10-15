@@ -1,6 +1,6 @@
 import type { Config } from 'tailwindcss'
 import plugin from 'tailwindcss/plugin'
-import { DAYBREAK_TYPES, PALETTE, STATUS_COLORS, THEMES } from './src/theme/colors'
+import { DAYBREAK_TYPES, PALETTE, SCOPES, STATUS_COLORS, THEMES } from './src/theme/colors'
 
 const typeTokens = Object.fromEntries(Object.entries(DAYBREAK_TYPES).map(([k, v]) => [`type-${k}`, v]))
 const statusTokens = Object.fromEntries(Object.entries(STATUS_COLORS).map(([k, v]) => [`st-${k}`, v]))
@@ -99,6 +99,19 @@ export default {
           'color-scheme': 'dark',
         },
         ':where([data-theme="dark"]) :where(.light-scope, .bg-gold, .bg-hp-green, .bg-hp-yellow)': {
+          ...vars(THEMES.light),
+          '--silhouette': SILHOUETTE.light,
+          color: `rgb(var(--c-ink))`,
+        },
+        // Distortion World's violet night on one part of the page, whatever the theme (docs/15 §27: its area raid's
+        // page and pop-ups); its frames come from frames.ts. Bright fills inside it keep Daybreak's navy, as at dusk.
+        ':where(.dw-scope)': {
+          ...vars(SCOPES.distortion),
+          '--silhouette': SILHOUETTE.dark,
+          'color-scheme': 'dark',
+          color: `rgb(var(--c-ink))`,
+        },
+        ':where(.dw-scope) :where(.light-scope, .bg-gold, .bg-hp-green, .bg-hp-yellow)': {
           ...vars(THEMES.light),
           '--silhouette': SILHOUETTE.light,
           color: `rgb(var(--c-ink))`,

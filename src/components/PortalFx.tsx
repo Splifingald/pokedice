@@ -20,8 +20,19 @@ import {
   tearPrimitives,
 } from '@/fx/glitch'
 import { loadSprite, spriteFrame, spriteKey, stageSprite } from '@/fx/sprites'
-import type { Timeline } from '@/fx/timeline'
-import { closeTimeline, distortionLevel, fullStage, portalLoop, type PortalLoop } from '@/fx/timelines/portal'
+import { H, W, type Timeline } from '@/fx/timeline'
+import {
+  closeTimeline,
+  distortionLevel,
+  drawRocks,
+  fullStage,
+  makeRocks,
+  portalLoop,
+  voidBackdrop,
+  type PortalLoop,
+} from '@/fx/timelines/portal'
+import { raidBattleStage, raidCardStage } from '@/fx/timelines/portalRaid'
+import { createPortal } from 'react-dom'
 import { useMotion, type MotionLevel } from '@/lib/motion'
 import { cx } from '@/theme/util'
 import { showdownView, SpriteImg } from './SpriteImg'
@@ -586,6 +597,139 @@ export function DistortionFx() {
         />
       </div>
     </>
+  )
+}
+
+// ------------------------------------------------------------------ Giratina's area raid
+
+/**
+ * Giratina's raid stage (docs/15 §27): the Distortion World behind the raid's own sprites, 240 × 160 art pixels filling
+ * its box (the battle's 3:2): the void, the portal turning far behind, rocks drifting, the islands they stand on.
+ * `battle`: the fight's layout; `card`: the raid page's card (the portal right behind the raid Pokémon). Motion off:
+ * one still frame.
+ */
+export function RaidStageArt({ kind, className }: { kind: 'battle' | 'card'; className?: string }) {
+  const level = useDistortionLevel()
+  const still = level === 'off'
+  const ref = useRef<HTMLCanvasElement>(null)
+  useLoop(ref, () => (kind === 'battle' ? raidBattleStage(still) : raidCardStage(still)), still, [kind])
+  return (
+    <canvas
+      ref={ref}
+      width={W}
+      height={H}
+      aria-hidden
+      className={cx('pixelated absolute inset-0 h-full w-full', className)}
+      style={{ imageRendering: 'pixelated' }}
+    />
+  )
+}
+
+/** CSS pixels per art pixel of the page's void. */
+const GROUND_PX = 3
+
+/**
+ * The page's ground while Giratina's raid page or fight shows (docs/15 §27): the void's dithered violet night and its
+ * far islands, rocks drifting upside-down (still with short animations or motion off), fixed behind the page; the
+ * page's own ground (the world's colour) steps aside meanwhile (`html[data-dw-page]`, portal.css).
+ */
+export function DistortionGround() {
+  const level = useDistortionLevel()
+  const still = level !== 'full'
+  const ref = useRef<HTMLCanvasElement>(null)
+  const [size, setSize] = useState(() =>
+    typeof window === 'undefined'
+      ? { w: 130, h: 280 }
+      : { w: Math.ceil(window.innerWidth / GROUND_PX), h: Math.ceil(window.innerHeight / GROUND_PX) },
+  )
+  useEffect(() => {
+    const root = document.documentElement
+    root.setAttribute('data-dw-page', '')
+    const resize = () =>
+      setSize({ w: Math.ceil(window.innerWidth / GROUND_PX), h: Math.ceil(window.innerHeight / GROUND_PX) })
+    window.addEventListener('resize', resize)
+    return () => {
+      root.removeAttribute('data-dw-page')
+      window.removeEventListener('resize', resize)
+    }
+  }, [])
+  useLoop(
+    ref,
+    () => {
+      const rocks = makeRocks(rng(size.w * 7 + size.h), size.w, size.h, Math.max(4, Math.round((size.w * size.h) / 4000)))
+      return {
+        step() {},
+        draw(g, t) {
+          g.drawImage(voidBackdrop(size.w, size.h), 0, 0)
+          drawRocks(g, rocks, t * 0.6, size.w, still)
+        },
+      }
+    },
+    still,
+    [size.w, size.h],
+  )
+  if (typeof document === 'undefined') return null
+  return createPortal(
+    <canvas
+      ref={ref}
+      width={size.w}
+      height={size.h}
+      aria-hidden
+      className="dw-ground pixelated"
+      style={{ width: size.w * GROUND_PX, height: size.h * GROUND_PX, imageRendering: 'pixelated' }}
+    />,
+    document.body,
+  )
+}
+
+/**
+ * A tear across the raid's stage when one of the raid Pokémon's bars breaks (`id` changes): four frames over 0.45 s of
+ * broken scanlines and displaced blocks of the void, the stage shifted violet for three of them (not when calm: no
+ * flashing). Short animations: one thin band; motion off: nothing.
+ */
+export function StageTear({ id }: { id: number | null }) {
+  const level = useDistortionLevel()
+  const { calm } = useMotion()
+  const ref = useRef<HTMLCanvasElement>(null)
+  useEffect(() => {
+    const g = ref.current?.getContext('2d')
+    if (!g || id == null || level === 'off') return
+    g.imageSmoothingEnabled = false
+    const short = level === 'short'
+    // Timed from its first frame, so a busy page still shows all four.
+    let t0 = -1
+    let raf = 0
+    const frame = (now: number) => {
+      if (t0 < 0) t0 = now
+      g.clearRect(0, 0, W, H)
+      const p = (now - t0) / 450
+      if (p >= 1) return
+      const f = Math.floor(p * 4)
+      // One violet shift over its first three frames, as the screen's tears: never a flicker.
+      if (!short && !calm && f < 3) {
+        g.globalAlpha = 0.25
+        g.fillStyle = DW.violet
+        g.fillRect(0, 0, W, H)
+        g.globalAlpha = 1
+      }
+      drawTear(g, W, H, id * 31 + 5, f, short)
+      raf = requestAnimationFrame(frame)
+    }
+    raf = requestAnimationFrame(frame)
+    return () => {
+      cancelAnimationFrame(raf)
+      g.clearRect(0, 0, W, H)
+    }
+  }, [id, level, calm])
+  return (
+    <canvas
+      ref={ref}
+      width={W}
+      height={H}
+      aria-hidden
+      className="pixelated pointer-events-none absolute inset-0 z-[3] h-full w-full"
+      style={{ imageRendering: 'pixelated' }}
+    />
   )
 }
 

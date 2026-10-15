@@ -35,6 +35,8 @@ import {
   portalStateOf,
   portalVictoryDue,
   markPortalWonSeen,
+  openRaidIn,
+  portalVictoryToRaid,
   progressRaidKey,
   progressRaidOf,
   progressRaidState,
@@ -374,6 +376,23 @@ describe('how a run ends', () => {
     expect(progressRaidState(r.save, data, giratina())).toBe('open')
     expect(raidRules(data, 487, 'progress', DW.id)).toMatchObject({ level: 100, upgradeLevel: 10, bars: 4 })
     expect(raidTeamCap(data, 487, 'progress', DW.id)).toBe(100)
+  })
+
+  it('HEAL & START RAID: the team and the Box healed as at a Center, the victory seen, the raid open to start', () => {
+    let s = withPortal(inRun(), { closed: 9 })
+    const boxed = { ...createInstance(92, 40, data, newId(), NOW), currentHp: 1 }
+    s = { ...s, box: [...s.box.map((p) => ({ ...p, currentHp: 1 })), boxed] }
+    const won = openDistortion(s, data, DW.id, rng())!.save
+    // winPortal heals the team only: the Box waits for a Center.
+    expect(won.box.at(-1)!.currentHp).toBe(1)
+    const r = portalVictoryToRaid(won, data, DW.id)
+    for (const p of r.box) expect(p.currentHp).toBe(instanceMaxHp(p, data))
+    expect(portalVictoryDue(r, data, DW.id)).toBe(false)
+    expect(portalStateOf(r, DW.id)).toMatchObject({ won: true, wonSeen: true })
+    expect(openRaidIn(r, data, DW)?.key).toBe(giratina().key)
+    // No victory here: nothing changes.
+    const plain = atDistortion()
+    expect(portalVictoryToRaid(plain, data, DW.id)).toBe(plain)
   })
 
   it('any other distortion opens its boons instead', () => {

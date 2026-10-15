@@ -42,12 +42,15 @@ export const GIRATINA = 487
 // (src/fx/timelines/portal.ts, src/fx/glitch.ts) and hosted in PortalFx.tsx.
 export {
   DistortionFx,
+  DistortionGround,
   GlitchSprite,
   PortalArt,
   PortalCloseFx,
   PortalFilters,
   PortalScene,
   playPortalClose,
+  RaidStageArt,
+  StageTear,
   useUiGlitch,
 } from './PortalFx'
 
@@ -694,14 +697,18 @@ export function PortalVictoryView({
   name,
   level: lv,
   onDone,
+  onRaid,
 }: {
   name: string
   level?: number
+  /** BACK TO THE WORLD: Home. */
   onDone: () => void
+  /** HEAL & START RAID: healed as at a Center, then the raid's page (the user, 2026-10-15). */
+  onRaid?: () => void
 }) {
   const { t } = useT()
   const { level } = useMotion()
-  const size = useFullStage(240)
+  const size = useFullStage(300)
   const stage = useRef<StageHandle>(null)
   const [card, setCard] = useState(level === 'off')
   useHoldFullscreen()
@@ -755,9 +762,23 @@ export function PortalVictoryView({
             {t('ui.portal.victoryBody', { name })}
           </p>
         </div>
-        <PixelButton variant="primary" size="lg" onClick={onDone} autoFocus={card}>
-          {t('ui.portal.victoryOk')}
-        </PixelButton>
+        {/* The main action, the raid, over the green way back (the user, 2026-10-15). */}
+        <div className="grid w-full max-w-sm gap-2.5">
+          {onRaid && (
+            <PixelButton variant="primary" size="lg" className="w-full" onClick={onRaid} autoFocus={card}>
+              {t('ui.portal.victoryRaid')}
+            </PixelButton>
+          )}
+          <PixelButton
+            variant="success"
+            size="lg"
+            className="w-full"
+            onClick={onDone}
+            autoFocus={card && !onRaid}
+          >
+            {t('ui.portal.victoryOk')}
+          </PixelButton>
+        </div>
       </div>
     </div>
   )

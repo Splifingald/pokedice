@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { pipLayout } from '@/components/Die'
 import { motionLevel } from '@/lib/motion'
-import { DAYBREAK_TYPES, PALETTE, THEMES } from '@/theme/colors'
+import { DAYBREAK_TYPES, PALETTE, SCOPES, THEMES } from '@/theme/colors'
 import { FRAME_SLICE, FRAME_SPECS, frameArt, frameSpecs, textureArt } from '@/theme/frames'
 import { badgeColors, contrast } from '@/theme/util'
 
@@ -121,6 +121,24 @@ describe('themes', () => {
     for (const fg of [T.panel, T['gold-light'], T['danger-light']])
       expect(contrast(fg, T.ink)).toBeGreaterThanOrEqual(4.5)
     expect(contrast(T.good, T['good-pale'])).toBeGreaterThanOrEqual(4.5)
+  })
+
+  it('keeps Distortion World’s violet night (.dw-scope) as readable as dusk, with the same tokens', () => {
+    const T = SCOPES.distortion
+    expect(Object.keys(T).sort()).toEqual(Object.keys(THEMES.light).sort())
+    const surfaces = [T.parchment, T.panel, T.paper, T.well, T['well-deep'], T.sky, T.cream, T.sand, T['gold-pale'], T.rose]
+    for (const bg of surfaces)
+      for (const fg of [T.ink, T.muted, T.rich])
+        expect(contrast(fg, bg), `${fg} on ${bg}`).toBeGreaterThanOrEqual(4.5)
+    for (const bg of [T.parchment, T.panel, T.paper]) {
+      for (const fg of [T.danger, T.good])
+        expect(contrast(fg, bg), `${fg} on ${bg}`).toBeGreaterThanOrEqual(4.5)
+      expect(contrast(T.edge, bg), `edge on ${bg}`).toBeGreaterThanOrEqual(3)
+    }
+    for (const fg of [T.panel, T['gold-light'], T['danger-light']])
+      expect(contrast(fg, T.ink), `${fg} on ink`).toBeGreaterThanOrEqual(4.5)
+    expect(contrast(T.good, T['good-pale'])).toBeGreaterThanOrEqual(4.5)
+    expect(frameSpecs('distortion').panel.out).toBe(T.edge)
   })
 
   it('keeps a golden name readable on every surface, in both themes (docs/25)', () => {

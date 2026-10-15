@@ -78,6 +78,82 @@
   }
 }
 
+/* Giratina's area raid (docs/15 §27): its page and its fight stand on the void (DistortionGround's canvas, fixed
+   behind the page); the page's own ground, the world's colour, steps aside meanwhile. */
+html[data-dw-page] body {
+  background-color: #07020d;
+  background-image: none;
+}
+html[data-dw-page] .in-world {
+  background-color: transparent;
+}
+.dw-ground {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: -1;
+  pointer-events: none;
+}
+/* Its pop-ups: Giratina's red and gold along the panel's top and bottom, inside the violet night's frame. */
+.dw-modal {
+  box-shadow:
+    inset 0 3px 0 #e8384a,
+    inset 0 -3px 0 #ffc94a;
+}
+/* Its page's plate on the banner and its section titles: gold, the void's night under them. */
+.dw-title {
+  color: #ffc94a;
+  text-shadow: 0 2px 0 #07020d;
+}
+
+/* The raid's opening in portal mode (RaidIntro): its tapes in Giratina's red and the void's night, the name in gold
+   on a red and violet edge. */
+.rd-intro.dw {
+  background: #07020d;
+}
+.rd-intro.dw .rd-i-tape {
+  background: repeating-linear-gradient(-45deg, #e8384a 0 16px, #12051f 16px 32px);
+  background-size: 45px 45px;
+  box-shadow:
+    0 0 0 3px #07020d,
+    0 6px 0 #00000080;
+}
+.rd-intro.dw .rd-i-tape b {
+  background: #12051f;
+  color: #ffc94a;
+  box-shadow: inset 0 0 0 2px #e8384a;
+  text-transform: uppercase;
+}
+.rd-intro.dw .rd-i-name small {
+  color: #ffc94a;
+  text-shadow: 0 2px 0 #07020d;
+}
+.rd-intro.dw .rd-i-name b {
+  text-shadow:
+    0 4px 0 #8a1426,
+    4px 0 0 #12051f,
+    -4px 0 0 #12051f,
+    0 -4px 0 #12051f,
+    0 8px 0 #12051f,
+    0 0 24px #b05cff;
+}
+.rd-intro.dw .rd-i-sub {
+  color: #e4c8ff;
+  text-shadow: 0 2px 0 #07020d;
+}
+.rd-intro.dw .rd-i-go {
+  color: #ffc94a;
+  text-shadow:
+    0 6px 0 #8a1426,
+    6px 0 0 #12051f,
+    -6px 0 0 #12051f,
+    0 -6px 0 #12051f,
+    0 12px 0 #12051f;
+}
+.rd-intro.dw::after {
+  background: radial-gradient(circle, transparent 45%, rgba(107, 47, 196, 0.6));
+}
+
 /* A rare item's icon changing (ItemCycle): a pop in three pixel steps, squashed, stretched, settled. */
 .portal-pop {
   animation: portal-pop 0.27s steps(1, end) both;

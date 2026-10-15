@@ -155,6 +155,24 @@ describe('the world’s lasting effects and the motion level', () => {
   })
 })
 
+describe('Giratina’s raid entrance (raidEntranceTimeline)', () => {
+  it('lands its reveal on the raid intro’s white-out and lasts as long as the intro, with no held end', async () => {
+    const { raidEntranceTimeline, RAID_ENTRANCE_DUR, RAID_ENTRANCE_REVEAL } = await import('@/fx/timelines/portalRaid')
+    const tl = raidEntranceTimeline({ ...fullStage(390, 844), mon: '487fs' })
+    expect(tl.dur).toBe(RAID_ENTRANCE_DUR)
+    // RaidIntro's own clock: the reveal at 2.75 s, the end at 6.15 s.
+    expect(RAID_ENTRANCE_REVEAL).toBe(2.75)
+    expect(tl.dur).toBeGreaterThanOrEqual(6.15)
+    expect(tl.hold).toBeFalsy()
+    const cues = tl.cues(tl.setup())
+    const times = cues.map(([t]) => t)
+    expect([...times].sort((a, b) => a - b)).toEqual(times)
+    const beats: string[] = []
+    for (const [t, fire] of cues) if (t === RAID_ENTRANCE_REVEAL) fire({ beat: (b) => beats.push(b) }, tl.setup())
+    expect(beats).toEqual(['roar'])
+  })
+})
+
 describe('a full-screen scene’s stage', () => {
   it('2 CSS pixels per art pixel on a phone, up to 4 on a big screen, the bottom kept for the words', () => {
     expect(fullStage(390, 844, 200)).toEqual({ w: 195, h: 422, inset: 100 })

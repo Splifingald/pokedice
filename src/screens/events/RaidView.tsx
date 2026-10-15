@@ -3,7 +3,9 @@
 // (the raid Pokémon strikes back at it right after). The other sides' Pokémon wait at the bottom left with their
 // trainer's name. Under the stage: the message, the dice, your actions, then the Bag, your raid team (tap one on your
 // turn to switch), the speed button and Give up; then the catch, and the result.
-// The fight is the engine's (engine/raidBattle.ts); this screen only plays its log.
+// The fight is the engine's (engine/raidBattle.ts); this screen only plays its log. Giratina's raid, its area in portal
+// mode (docs/15 §27), plays in the Distortion World: its stage, Giratina distorted, the screen's tears and the UI's
+// glitches, a tear when a bar breaks, its own opening; the rest is any raid's.
 import { AnimatePresence, motion } from 'framer-motion'
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import {
@@ -74,6 +76,8 @@ import { RaidIntro } from './RaidIntro'
 import { RaidNpcPicker } from './RaidNpcPicker'
 import { battlerOf, sideOfUid, useRaidAnimator, type RaidFx } from './raidAnimator'
 import { TrainerName } from '@/components/TrainerName'
+import { DistortionFx, DistortionGround, StageTear } from '@/components/Portal'
+import { usePortalRaid } from './PortalRaid'
 
 const BANNER_TONE = {
   super: 'bg-gold text-ink',
@@ -299,6 +303,7 @@ export function RaidView({ run }: { run: RaidRun }) {
   const foe = st.boss
   const ownSide = Math.max(0, sideOfUid(st.sides, own.uid))
   const art = useMemo(() => pictureOf(run.raid.areaId), [run.raid.areaId])
+  const portal = usePortalRaid(run.raid.areaId)
 
   // ---- Your turn.
   const duel = st.duel
@@ -446,6 +451,8 @@ export function RaidView({ run }: { run: RaidRun }) {
         onSceneDone={sceneDone}
         tapLabel={(b) => t('ui.types.tap', { name: b.name })}
         label={heading}
+        world={portal ? 'distortion' : undefined}
+        distorted={portal}
       >
         {!intro && !thrown && (
           <>
@@ -483,6 +490,7 @@ export function RaidView({ run }: { run: RaidRun }) {
             </motion.div>
           )}
         </AnimatePresence>
+        {portal && <StageTear id={fx.barBreak?.id ?? null} />}
         {fx.barBreak && !calm && <Shards key={fx.barBreak.id} color={cfg.barColors[(fx.broken - 1 + cfg.barColors.length) % cfg.barColors.length] ?? '#34c97a'} />}
       </BattleStage>
     </div>
@@ -515,7 +523,20 @@ export function RaidView({ run }: { run: RaidRun }) {
 
   return (
     <PaceContext.Provider value={pace}>
-      <section aria-label={heading} className="mx-auto flex min-h-[100dvh] w-full max-w-[max(300px,min(560px,calc((100dvh_-_330px)_*_1.5)))] flex-col">
+      {portal && (
+        <>
+          <DistortionGround />
+          <DistortionFx />
+        </>
+      )}
+      <section
+        aria-label={heading}
+        className={cx(
+          'mx-auto flex min-h-[100dvh] w-full max-w-[max(300px,min(560px,calc((100dvh_-_330px)_*_1.5)))] flex-col',
+          portal && 'dw-scope',
+        )}
+        data-portal-raid={portal || undefined}
+      >
         <h1 className="sr-only">{heading}</h1>
         {stage}
         <div className="flex flex-1 flex-col gap-2 px-3 pt-3" style={{ paddingBottom: 'calc(12px + env(safe-area-inset-bottom))' }}>
@@ -578,7 +599,7 @@ export function RaidView({ run }: { run: RaidRun }) {
         </div>
       </section>
 
-      {intro && <RaidIntro run={run} onDone={raidIntroDone} />}
+      {intro && <RaidIntro run={run} onDone={raidIntroDone} world={portal ? 'distortion' : undefined} />}
 
       <Modal open={menu === 'giveUp'} onClose={() => setMenu(null)} title={t('ui.raid.giveUpTitle')}>
         <div className="grid gap-3">

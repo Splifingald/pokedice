@@ -9,7 +9,7 @@ import { addFossil, isReviving } from './fossils'
 import { LEGACY_GAUGE } from './legacyGauge'
 import { itemOnFor, MONEY, sellPrice, shopSells, usableIn } from './items'
 import { earnedGold } from './liveEvents'
-import { canStartPortal, inPortalRun, portalModeOf, portalStateOf, portalWipe } from './portal'
+import { canStartPortal, inPortalRun, markPortalWonSeen, portalModeOf, portalStateOf, portalWipe } from './portal'
 import { areaOpenAt } from './worldList'
 import {
   averageLevel,
@@ -617,6 +617,16 @@ export function arriveAtPortal(save: SaveData, data: GameData, areaId: string): 
     healed.box.every((p, i) => p.currentHp === save.box[i]?.currentHp) &&
     (healed.dayCare?.residents ?? []).every((r, i) => r.inst.currentHp === save.dayCare?.residents[i]?.inst.currentHp)
   return same ? save : healed
+}
+
+/**
+ * The portal run's victory, HEAL & START RAID (docs/28, the user's ask of 2026-10-15): the team and the Box healed as a
+ * Pokémon Center would (its rules: centerHeal), and the victory marked seen, as BACK TO THE WORLD does. The same save
+ * when no victory is waiting here.
+ */
+export function portalVictoryToRaid(save: SaveData, data: GameData, areaId: string): SaveData {
+  if (!portalStateOf(save, areaId).won) return save
+  return markPortalWonSeen(centerHeal(save, data), areaId)
 }
 
 /** Where the run stands, as far as team changes go. */

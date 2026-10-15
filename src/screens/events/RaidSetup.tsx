@@ -40,6 +40,7 @@ import {
 } from '@/store/raidBattle'
 import { cx } from '@/theme/util'
 import { TrainerName } from '@/components/TrainerName'
+import { useTearIn } from './PortalRaid'
 
 const TEAM_SIZE = 3
 
@@ -105,7 +106,14 @@ function teamSetup(source: RaidSource, save: SaveData, data: GameData, t: (key: 
 }
 
 /** A raid's team, and the editor behind its button. */
-export function RaidTeamSection({ source = { kind: 'daily' } }: { source?: RaidSource }) {
+export function RaidTeamSection({
+  source = { kind: 'daily' },
+  portal = false,
+}: {
+  source?: RaidSource
+  /** Giratina's raid (docs/15 §27): its editor in the Distortion World's violet night, its cards glitching now and then. */
+  portal?: boolean
+}) {
   const { t } = useT()
   const save = useGame((s) => s.save)
   const data = useGame((s) => s.data)
@@ -126,7 +134,11 @@ export function RaidTeamSection({ source = { kind: 'daily' } }: { source?: RaidS
       </div>
       <ul className="m-0 grid list-none grid-cols-3 gap-1.5 p-0">
         {team.map((m) => (
-          <li key={m.id} className="grid justify-items-center gap-0.5 bg-paper px-1 pb-1.5 pt-1 shadow-ring">
+          <li
+            key={m.id}
+            data-glitch={portal || undefined}
+            className="grid justify-items-center gap-0.5 bg-paper px-1 pb-1.5 pt-1 shadow-ring"
+          >
             <MiniSprite dex={m.dex} size={48} />
             <span className="max-w-full truncate text-[17px] leading-none">{data.species[m.dex]?.name}</span>
             <small className="font-pixel-sm text-[14px] leading-none text-muted">{t('ui.common.level.short', { n: m.level })}</small>
@@ -134,7 +146,9 @@ export function RaidTeamSection({ source = { kind: 'daily' } }: { source?: RaidS
         ))}
       </ul>
       <p className="m-0 font-pixel-sm text-[14px] leading-tight text-muted">{setup.hint}</p>
-      {editing && <TeamEditor setup={setup} initial={team.map((m) => m.id)} onClose={() => setEditing(false)} />}
+      {editing && (
+        <TeamEditor setup={setup} initial={team.map((m) => m.id)} onClose={() => setEditing(false)} portal={portal} />
+      )}
     </section>
   )
 }
@@ -143,8 +157,19 @@ export function RaidTeamSection({ source = { kind: 'daily' } }: { source?: RaidS
  * Pick up to three, strongest first (the day's raid: every region's Box; a progression raid: its region's); Save keeps
  * them (and tells the server, signed in).
  */
-function TeamEditor({ setup, initial, onClose }: { setup: TeamSetup; initial: string[]; onClose: () => void }) {
+function TeamEditor({
+  setup,
+  initial,
+  onClose,
+  portal = false,
+}: {
+  setup: TeamSetup
+  initial: string[]
+  onClose: () => void
+  portal?: boolean
+}) {
   const { t } = useT()
+  const tear = useTearIn(portal)
   const data = useGame((s) => s.data)
   const cap = setup.cap
   const [picks, setPicks] = useState(initial)
@@ -170,6 +195,7 @@ function TeamEditor({ setup, initial, onClose }: { setup: TeamSetup; initial: st
       open
       onClose={onClose}
       title={setup.title}
+      className={portal ? cx('dw-scope dw-modal', tear) : undefined}
       footer={
         <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.6fr)] gap-2.5">
           <PixelButton disabled={!valid.length || saving} onClick={() => setPicks([])}>
@@ -256,7 +282,14 @@ type FriendsLoad = { state: 'loading' } | { state: 'ready'; rows: RaidFriend[] }
  * Your group: you, then a slot per friend (an empty one waits for an NPC trainer, picked at the start). A progression
  * raid's friends are the ones who left a team on it.
  */
-export function RaidGroupSection({ source = { kind: 'daily' } }: { source?: RaidSource }) {
+export function RaidGroupSection({
+  source = { kind: 'daily' },
+  portal = false,
+}: {
+  source?: RaidSource
+  /** Giratina's raid (docs/15 §27): its friends' sheet in the Distortion World's violet night. */
+  portal?: boolean
+}) {
   const { t, tPlural } = useT()
   const save = useGame((s) => s.save)
   const data = useGame((s) => s.data)
@@ -333,7 +366,12 @@ export function RaidGroupSection({ source = { kind: 'daily' } }: { source?: Raid
           )
         })}
       </ul>
-      <Sheet open={picking} onClose={() => setPicking(false)} title={t('ui.raid.friendsTitle')}>
+      <Sheet
+        open={picking}
+        onClose={() => setPicking(false)}
+        title={t('ui.raid.friendsTitle')}
+        className={portal ? 'dw-scope dw-modal' : undefined}
+      >
         <div className="grid gap-2">
           <p className="m-0 font-pixel-sm text-[15px] leading-[1.15] text-muted">{t(progress ? 'ui.raid.progress.friendsHint' : 'ui.raid.friendsHint')}</p>
           {load.state === 'loading' && <p className="m-0 text-center font-pixel-sm text-[16px] text-muted">{t('ui.common.loading')}</p>}

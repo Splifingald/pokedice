@@ -2,8 +2,10 @@
 // goes in (the breach held at its end until a tap, its pop-up over it; arriving heals as a Center does; TEAM changes the
 // team and comes back to the pop-up; NOT NOW goes back Home, READY! starts the run and shuts the team), the menus are
 // shut and a reload comes back into the run, a wild Pokémon that can't be caught, a boon picked and confirmed (BACK, Esc
-// spend nothing), the last portal won (the victory, then the raid on CONTINUE); a wipe (the portals back to 0, healed,
-// Home again); and a 360×640 phone.
+// spend nothing), the last portal won (the victory: HEAL & START RAID over a green BACK TO THE WORLD, which goes Home,
+// then the raid on CONTINUE); HEAL & START RAID (healed, on Giratina's raid page in the Distortion World's look, its
+// pop-up too, its fight on the Distortion World's stage); the raid's entrance there can't be skipped; a wipe (the
+// portals back to 0, healed, Home again); and a 360×640 phone.
 import { expect, test, type Page } from '@playwright/test'
 import { readFileSync } from 'node:fs'
 import {
@@ -107,7 +109,7 @@ const EASY: [number, number] = [19, 3]
 const HARD: [number, number] = [94, 90]
 const PORTAL = 'e2e-rift-portal'
 
-async function boot(page: Page, save: SaveData, wild: [number, number] = EASY) {
+async function boot(page: Page, save: SaveData, wild: [number, number] = EASY, settings = FAST) {
   await mockSupabase(page, { rpc: { event_time: () => ({ now: NOW, day: NOW.slice(0, 10) }) } })
   await page.route(`${SUPABASE}/rest/v1/game_config*`, async (route) => {
     if (!route.request().url().includes('configVersion')) return route.fallback()
@@ -129,7 +131,7 @@ async function boot(page: Page, save: SaveData, wild: [number, number] = EASY) {
           .put({ version: Number(v), bundle: JSON.parse(b!) }, 'remote')
       }
     },
-    [JSON.stringify(save), FAST, JSON.stringify(bundle(wild)), String(VERSION), STORAGE_KEY],
+    [JSON.stringify(save), settings, JSON.stringify(bundle(wild)), String(VERSION), STORAGE_KEY],
   )
 }
 
@@ -289,10 +291,98 @@ test('the way in: the breach waits for a tap, its pop-up over its end; arriving 
   await expect
     .poll(async () => portalOf(await stored(page)))
     .toMatchObject({ won: true, active: false, closed: 2 })
-  await page.getByRole('button', { name: 'Back to the world' }).click()
+  // HEAL & START RAID, the main action, over the green BACK TO THE WORLD (the user, 2026-10-15).
+  const raidBtn = page.getByRole('button', { name: 'Heal & start raid' })
+  const backBtn = page.getByRole('button', { name: 'Back to the world' })
+  await expect(raidBtn).toBeVisible()
+  await expect(raidBtn).toHaveClass(/frame-primary/)
+  await expect(backBtn).toHaveClass(/frame-green/)
+  expect((await raidBtn.boundingBox())!.y).toBeLessThan((await backBtn.boundingBox())!.y)
+  await backBtn.click()
   await expect(page).toHaveURL(/\/home$/)
   await expect(page.getByRole('button', { name: /^RAID: GIRATINA/i }).first()).toBeVisible()
   await expect.poll(async () => portalOf(await stored(page))?.wonSeen).toBe(true)
+})
+
+/** The last portal's cycle under way: CONTINUE turns over the last distortion, and the run is won. */
+const lastPortal: PortalState = { active: true, closed: 1, deck: ['distortion'], tries: 1 }
+
+/** Through the victory to Giratina's raid page with HEAL & START RAID. */
+async function healAndStart(page: Page) {
+  await page.goto('/home')
+  await expect(page).toHaveURL(/\/area$/, { timeout: 15_000 })
+  await page
+    .getByRole('button', { name: /^CONTINUE/ })
+    .last()
+    .click()
+  await expect(page.getByRole('heading', { name: 'Every portal is closed!' })).toBeVisible()
+  await page.getByRole('button', { name: 'Heal & start raid' }).click()
+  await expect(page).toHaveURL(new RegExp(`/raid/${PORTAL}/487$`))
+}
+
+test('HEAL & START RAID: the team and the Box healed, the victory seen, Giratina’s raid page in the Distortion World’s look, its pop-up and its fight too', async ({
+  page,
+}) => {
+  test.setTimeout(90_000)
+  const save = atPortal([[150, 100]], lastPortal)
+  // Mewtwo hurt in the team, Pikachu hurt in the Box: the victory heals the team only, the button the Box too.
+  const pika = { id: 'mon-box', dex: 25, level: 40, xp: 0, currentHp: 5, caughtAt: 0 }
+  await boot(page, { ...save, box: [...save.box.map((p) => ({ ...p, currentHp: 10 })), pika] })
+  await healAndStart(page)
+  await expect.poll(async () => portalOf(await stored(page))).toMatchObject({ won: true, wonSeen: true })
+  const s = await stored(page)
+  expect(s.box.find((p) => p.id === 'mon-box')!.currentHp).toBeGreaterThan(5)
+  expect(s.box.find((p) => p.id === 'mon-0')!.currentHp).toBeGreaterThan(10)
+  // The page wears the Distortion World: its violet night, the void behind, the raid open to start.
+  const raidPage = page.locator('[data-portal-raid].dw-scope')
+  await expect(raidPage).toBeVisible()
+  await expect(page.getByRole('heading', { level: 1, name: 'Legendary raid' })).toBeVisible()
+  await expect(page.locator('canvas.dw-ground')).toBeAttached()
+  expect(await page.evaluate(() => document.documentElement.hasAttribute('data-dw-page'))).toBe(true)
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
+  // Its pop-up too: the NPC partners in the violet night, the portal as its banner.
+  await page.getByRole('button', { name: 'Start the raid' }).click()
+  const pop = page.getByRole('dialog', { name: 'Pick 2 trainers' })
+  await expect(pop).toHaveClass(/dw-scope/)
+  const cards = pop.getByRole('button', { name: /, Lv\.100$/ })
+  await expect(cards).toHaveCount(4)
+  await cards.nth(0).click()
+  await cards.nth(2).click()
+  await pop.getByRole('button', { name: 'Start', exact: true }).click()
+  // The fight on the Distortion World's stage (motion off: no entrance), Giratina distorted.
+  await expect(page.getByRole('heading', { name: 'Raid battle: Giratina' })).toBeAttached()
+  await expect(page.locator('section[data-portal-raid].dw-scope')).toBeVisible()
+  await expect(page.locator('section[data-portal-raid] .portal-glitch-host')).toBeAttached()
+  // Leaving the raid's page puts the page's own ground back.
+  await page.getByRole('button', { name: 'Give up' }).click()
+  await page.getByRole('dialog').getByRole('button', { name: 'Give up' }).click()
+})
+
+test('Giratina’s raid entrance plays out: no Skip, a tap or Esc does nothing (the user, 2026-10-15)', async ({
+  page,
+}) => {
+  test.setTimeout(90_000)
+  const save = atPortal([[150, 100]], lastPortal)
+  // Animations on (the entrance plays); the victory before it plays out too.
+  await boot(page, save, EASY, JSON.stringify({ sfx: false, sound: false, reducedMotion: false }))
+  await healAndStart(page)
+  await page.getByRole('button', { name: 'Start the raid' }).click()
+  const pop = page.getByRole('dialog', { name: 'Pick 2 trainers' })
+  const cards = pop.getByRole('button', { name: /, Lv\.100$/ })
+  await cards.nth(0).click()
+  await cards.nth(1).click()
+  await pop.getByRole('button', { name: 'Start', exact: true }).click()
+  const intro = page.getByRole('dialog', { name: 'Raid battle: Giratina' })
+  await expect(intro).toBeVisible()
+  await expect(intro).toHaveClass(/dw/)
+  await expect(intro.getByRole('button', { name: 'Skip' })).toHaveCount(0)
+  await page.keyboard.press('Escape')
+  await intro.click({ position: { x: 20, y: 200 } })
+  await page.waitForTimeout(1500)
+  await expect(intro).toBeVisible()
+  // It ends on its own (6.2 s), into the fight.
+  await expect(intro).toBeHidden({ timeout: 12_000 })
+  await expect(page.locator('section[data-portal-raid].dw-scope')).toBeVisible()
 })
 
 test('a wipe: the portals closed go back to 0, the boons are lost, XP and items kept, the team healed, back Home', async ({

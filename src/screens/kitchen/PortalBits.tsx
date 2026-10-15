@@ -91,7 +91,7 @@ export function PortalBits() {
           A portal closing
         </PixelButton>
         <PixelButton size="sm" onClick={() => setOpen('won')}>
-          The victory
+          The victory (HEAL &amp; START RAID over a green BACK TO THE WORLD)
         </PixelButton>
         <PixelButton size="sm" onClick={() => setOpen(open === 'fx' ? null : 'fx')}>
           Screen distortion {open === 'fx' ? 'off' : 'on'}
@@ -208,6 +208,7 @@ export function PortalBits() {
           name={data.species[487]?.name ?? 'Giratina'}
           level={mode.raid.level}
           onDone={close}
+          onRaid={close}
         />
       )}
       {open === 'fx' && <DistortionFx />}

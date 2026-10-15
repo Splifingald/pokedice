@@ -123,6 +123,45 @@ export const THEMES = {
   },
 } as const satisfies Record<'light' | 'dark', Record<string, string>>
 
+/**
+ * A theme for one part of a page, whatever the player's theme (`.dw-scope`, tailwind.config.ts and frames.ts): the
+ * same tokens, redrawn. `distortion` is Distortion World's violet night (docs/28, docs/15 §27): its area raid's page,
+ * its pop-ups. Text keeps 4.5:1 on every surface, outlines 3:1 (tests/daybreak.test.ts).
+ */
+export const SCOPES = {
+  distortion: {
+    parchment: '#0d0517',
+    ink: '#f1e8ff',
+    edge: '#8f72c8',
+    panel: '#170a28',
+    paper: '#211036',
+    shadow: '#4a2c72',
+    line: '#2c1648',
+    lip: '#0f061b',
+    muted: '#c5b2e8',
+    faint: '#76609e',
+    'gold-light': '#7a5212',
+    'gold-pale': '#2c1a1c',
+    danger: '#ff8a93',
+    'danger-light': '#b3263a',
+    good: '#72dca0',
+    'good-pale': '#173628',
+    well: '#12071f',
+    'well-deep': '#2a1546',
+    sky: '#24123e',
+    'sky-line': '#4a2c72',
+    rose: '#3a1424',
+    cream: '#2a1d1a',
+    sand: '#2a1d24',
+    'sand-lip': '#4a2d3a',
+    dot: '#1a0c2c',
+    'dialog-ring': '#6b2fc4',
+    rich: PALETTE.gold,
+  },
+} as const satisfies Record<string, Record<keyof (typeof THEMES)['light'], string>>
+
+export type ScopeName = keyof typeof SCOPES
+
 export type ThemeName = keyof typeof THEMES
 export type ThemeColor = keyof (typeof THEMES)['light']
 
