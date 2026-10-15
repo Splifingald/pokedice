@@ -4,7 +4,7 @@
 import { expect, test, type Page } from '@playwright/test'
 import { readFileSync } from 'node:fs'
 import { bundleToRows } from '../src/config/mapping'
-import type { BundleRaw } from '../src/engine'
+import { DEFAULT_CONFIG, trickBestPlay, type BundleRaw } from '../src/engine'
 import { fakeSession, makeSave, mockSupabase, STORAGE_KEY, SUPABASE } from './helpers'
 
 const load = (f: string) => JSON.parse(readFileSync(new URL(`../src/data/${f}`, import.meta.url), 'utf8'))
@@ -63,7 +63,9 @@ test('Trick or Treat: its switch, the tiers’ exact rates, an area’s ghosts p
   await page.goto('/admin/events?tab=trick')
   const tabs = page.getByRole('navigation', { name: 'Events' })
   await expect(tabs.getByRole('button', { name: 'Trick or Treat Off' })).toBeVisible({ timeout: 30_000 })
-  await expect(page.getByTestId('trick-rates-common')).toContainText('Best play 74.7 %')
+  // The exact rate the engine works out for the defaults (it moves when the tiers are retuned).
+  const best = (100 * trickBestPlay(DEFAULT_CONFIG.trickOrTreat, 'common').best).toFixed(1)
+  await expect(page.getByTestId('trick-rates-common')).toContainText(`Best play ${best} %`)
   await page.getByRole('radiogroup', { name: 'Trick or Treat: who sees it' }).getByRole('radio', { name: 'On for admin' }).click()
   await expect(tabs.getByRole('button', { name: 'Trick or Treat Admin' })).toBeVisible()
   // Pokémon Tower's ghosts, from its wild pool.
