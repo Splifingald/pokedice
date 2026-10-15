@@ -113,6 +113,8 @@ export function AreaScreen() {
 
   if (!save) return <Navigate to="/" replace />
   if (battle) return <BattleView key={battle.id} battle={battle} />
+  // Trick or Treat takes the whole screen as a battle does (docs/15 §28).
+  if (run.phase === 'trick' && run.trick && run.areaId) return <TrickView key={run.trick.id} />
   // An Elite Rebattle run ends on its own page.
   if (!area || !run.areaId || (run.phase === 'idle' && run.rebattle))
     return <Navigate to={run.rebattle ? '/events/rebattle' : '/home'} replace />
@@ -139,7 +141,6 @@ export function AreaScreen() {
         </>
       )}
       {mode && run.phase === 'idle' && <PortalInfo mode={mode} />}
-      {run.phase === 'trick' && run.trick && <TrickView key={run.trick.id} />}
     </div>
   )
 }

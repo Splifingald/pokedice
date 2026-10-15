@@ -17,7 +17,8 @@ function FormTag({ b }: { b: Battler }) {
   return null
 }
 
-function PlateBox({
+/** A plate on the battle stage (Trick or Treat's ghost wears one too). */
+export function PlateBox({
   onClick,
   open,
   label,

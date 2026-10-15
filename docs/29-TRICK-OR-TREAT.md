@@ -93,18 +93,32 @@ All of them are already the world's (its pools, or Froslass by the Dawn Stone), 
 - **Store** (`store/run.ts`): the phase `trick`, `run.trick` (the state, the last step for the screen to play, the catch);
   `giveTreat`, `throwTrickBall`, `leaveTrick`. `store/trick.ts`: the server's check.
 - **Save**: `trickOrTreat.rulesSeen`; `trick` in an area's deck and drawn cards.
-- **Screens**: the preview card (`TrickCard`), the area screen's `TrickView` (docs/15 §28), the round gauge's pumpkin,
-  the area details' round mix (only where it's dealt). Every piece on `/kitchen-sink` (`TrickBits`).
+- **Screens**: the preview card (`TrickCard`), the round gauge's pumpkin, the area details' round mix (only where it's
+  dealt), and **the encounter's screen, laid out as the battle** (the user's request of 2026-10-15; docs/15 §28):
+  `TrickView` takes the whole screen in place of the area page (`screens/Area.tsx`, as a battle does), the battle's
+  stage on top with the ghost at its centre and its plate, then the message box, the gauge with its value ("62/100")
+  and what the last Treat or miss added ("+18"), the last step's die against the die it needed, TREAT and TRICK BALL
+  (the die the section needs, its "+", the odds and a miss's push under it), INFO at the foot; once it's over, the
+  battle's result card (`Overlay`, `CatchCard` with the Trick Ball, `SecretAreaCard`) with the round gauge and
+  CONTINUE. Every state on `/kitchen-sink` (`TrickBits`: idle, after a Treat, a Treat and a throw playing, a miss, a
+  flee, caught, each tier's gauge, the recaps and the risen result card).
+- **Animations** (the game's pixel FX, not CSS): `fx/timelines/trick.ts` (`treatTimeline`: the Treat's arc with
+  twinkles, the catch with a hit-stop, the munch with crumbs and hearts, the gauge's glow and ring; the ghost's flee,
+  rising and dithering into wisps as the area dims) and the battle's `fx/timelines/catch.ts` with the Trick Ball
+  (`ball: 'trick'`: `fx/scenes.ts` draws it from its picture, pixel for pixel), the ghost awake at the stage's centre
+  (`at`, `ground`, `awake`) and fleeing as a ghost (`ghost`). Motion levels and sounds as the battle's. On
+  `/kitchen-sink/fx` with the other timelines.
 - **Pictures**: `public/items/treat.png` (the Rare Candy in pumpkin orange) and `public/items/trick-ball.png` (the Poké
   Ball in purple, its button orange), made from the item atlas by `tsx scripts/trick-or-treat-sprites.ts` (pngjs, no new
   dependency). The pumpkin and ghost icons are drawn in `components/icons.tsx`.
-- **Sounds** (`audio/sfx.ts`): `trick.toss`, `trick.munch`, `trick.fill`, `trick.flee`, with the catch's own throw,
-  wobble, Gotcha and break-free.
+- **Sounds** (`audio/sfx.ts`): `trick.toss`, `trick.munch`, `trick.fill`, `trick.flee` on the Treat's cues, with the
+  catch's own throw, open, close, wobble, settle, Gotcha, break-free and stay on the Trick Ball's.
 - **Admin**: Events → Trick or Treat (`TrickOrTreatTab`): the switch, the Treat's range and a miss's push, each tier's
   weight, sections and flee zone with its exact rates and its gauge, and each area's ghosts (Pokémon, tier, Prefill
   from the wild pool, Clear). Areas → Encounter deck has the Trick or Treat copies. `admin/schemas.ts` checks the row
   (`TRICK_SCHEMA`: sections from 0, rising, inside the flee zone; Treat max ≥ min; tiers known) and the deck's `trick`.
-- **Strings**: `ui.trick.*`, `ui.card.trick`, `ui.home.kind.trick`, `ui.enc.titleTrick`, in the ten languages.
+- **Strings**: `ui.trick.*` (the screen's `ui.trick.ballOdds`, `ui.trick.needs` and `ui.trick.delta` since the battle
+  layout), `ui.card.trick`, `ui.home.kind.trick`, `ui.enc.titleTrick`, in the ten languages.
 
 ## 5. The switch and the server
 
@@ -113,7 +127,7 @@ All of them are already the world's (its pools, or Froslass by the Dawn Stone), 
   or for the admin only by their JWT). A signed-in player's game asks it before the ghost comes out (kept 5 minutes);
   said no, or not reachable, the card is spent and a toast says it isn't open. A guest only ever has "On for everyone".
 - **Rules**: the rules pop-up (`TrickRulesModal`: the haunted picture with a Treat and a Trick Ball, four rows with the
-  config's numbers) the first time a ghost floats in, Later / Let's go! (both carry on), and INFO under the stage.
+  config's numbers) the first time a ghost floats in, Later / Let's go! (both carry on), and INFO at the foot of the screen's panel.
 
 ## 6. Setting it up
 

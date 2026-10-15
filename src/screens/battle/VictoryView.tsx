@@ -102,32 +102,51 @@ function GoldCard({ amount, bonus = 0 }: { amount: number; bonus?: number }) {
   )
 }
 
-function CatchCard({
+/**
+ * A catch on the result card: the ball rocking in, the Pokémon, Gotcha! with NEW, and where it went. Trick or Treat's
+ * recap uses it too (docs/29), with its own ball, its shininess and its own line for where the ghost went.
+ */
+export function CatchCard({
   uid,
   dex,
   level,
   joined,
   replacedLevel,
   isNew,
+  shiny: shinyIs,
+  ball,
+  where,
 }: {
-  uid: string
+  uid?: string
   dex: number
   level: number
-  joined: boolean
+  joined?: boolean
   replacedLevel?: number
   isNew?: boolean
+  /** Known already (else read from the caught Pokémon in the save). */
+  shiny?: boolean
+  /** In place of the Poké Ball. */
+  ball?: ReactNode
+  /** In place of the joined / team full / replaces line. */
+  where?: string
 }) {
   const { t } = useT()
   const name = useGame((s) => s.data.species[dex]?.name) ?? t('ui.common.unknown')
-  const shiny = useGame((s) => !!s.save?.box.find((p) => p.id === uid)?.shiny)
+  const saved = useGame((s) => !!uid && !!s.save?.box.find((p) => p.id === uid)?.shiny)
+  const shiny = shinyIs ?? saved
   return (
     <div className="flex items-center gap-3 bg-gold-pale p-2 shadow-ring">
-      <motion.div initial={{ rotate: -30, y: -20 }} animate={{ rotate: [0, -15, 15, -8, 0], y: 0 }} transition={{ duration: 0.9 }}>
-        <PixelIcon name="ball" size={36} />
+      <motion.div
+        className="shrink-0"
+        initial={{ rotate: -30, y: -20 }}
+        animate={{ rotate: [0, -15, 15, -8, 0], y: 0 }}
+        transition={{ duration: 0.9 }}
+      >
+        {ball ?? <PixelIcon name="ball" size={36} />}
       </motion.div>
-      <SpriteImg dex={dex} size={72} shiny={shiny} />
-      <div>
-        <div className="flex items-center gap-2 text-3xl leading-none">
+      <SpriteImg dex={dex} size={72} shiny={shiny} className="shrink-0" />
+      <div className="min-w-0">
+        <div className="flex flex-wrap items-center gap-2 text-3xl leading-none">
           {t('ui.victory.gotcha')}
           {isNew && <NewTag />}
         </div>
@@ -135,13 +154,25 @@ function CatchCard({
           {t('ui.victory.wasCaught', { shiny: shiny ? t('ui.victory.shinyPrefix') : '', name, level })}
         </div>
         <div className="text-lg">
-          {replacedLevel != null
-            ? t('ui.victory.replacesYours', { level: replacedLevel, name })
-            : joined
-              ? t('ui.victory.joinedTeam', { name })
-              : t('ui.victory.teamFull')}
+          {where ??
+            (replacedLevel != null
+              ? t('ui.victory.replacesYours', { level: replacedLevel, name })
+              : joined
+                ? t('ui.victory.joinedTeam', { name })
+                : t('ui.victory.teamFull'))}
         </div>
       </div>
+    </div>
+  )
+}
+
+/** A secret area a catch or a win opened: on the Map now. */
+export function SecretAreaCard({ name }: { name: string }) {
+  const { t } = useT()
+  return (
+    <div className="pixel-panel-dark p-2 text-center">
+      <div className="text-xl text-gold">{t('ui.victory.secretArea')}</div>
+      <div className="text-lg">{t('ui.victory.secretOnMap', { name })}</div>
     </div>
   )
 }
@@ -312,12 +343,7 @@ function useRecap(events: RunEvent[]): { mons: MonRecap[]; extras: Extra[]; evol
           extras.push({
             key: k,
             sound: 'catch',
-            node: (
-              <div className="pixel-panel-dark p-2 text-center">
-                <div className="text-xl text-gold">{t('ui.victory.secretArea')}</div>
-                <div className="text-lg">{t('ui.victory.secretOnMap', { name: a?.name ?? t('ui.common.unknown') })}</div>
-              </div>
-            ),
+            node: <SecretAreaCard name={a?.name ?? t('ui.common.unknown')} />,
           })
           return
         }

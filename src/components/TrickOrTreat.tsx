@@ -1,8 +1,16 @@
-// Trick or Treat's pieces (docs/29, docs/15 §28): the ghost over its area, the gauge with its sections, the Treat and
-// the Trick Ball, the result, the encounter's preview card and the rules. They only draw what the engine decided
-// (engine/trickOrTreat.ts); the area screen (TrickView) plays the steps. Every state is on /kitchen-sink (TrickBits).
-import { motion } from 'framer-motion'
-import type { CSSProperties, ReactNode } from 'react'
+// Trick or Treat's pieces (docs/29, docs/15 §28): the ghost on the battle's stage (the area's picture, the ghost at its
+// centre, the Treat's and the Trick Ball's timelines over it), the gauge with its sections and their dice, the
+// encounter's preview card and the rules. They only draw what the engine decided (engine/trickOrTreat.ts); the area
+// screen (TrickView) plays the steps. Every state is on /kitchen-sink (TrickBits).
+import {
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+} from 'react'
 import {
   TRICK_GAUGE_MAX,
   failPush,
@@ -12,23 +20,33 @@ import {
   trickChance,
   trickZoneAt,
   type TrickBand,
-  type TrickPlaced,
   type TrickTier,
 } from '@/engine'
 import { artPlacement, artUrl, battleWindow, pictureOf } from '@/fx/areaArt'
+import { softEllipse, canvas } from '@/fx/pixel'
+import { setArtUnderStage, TRICK_BALL_URL } from '@/fx/scenes'
+import { placeSprite, stageSprite } from '@/fx/sprites'
+import { H, W, type Hud, type Timeline } from '@/fx/timeline'
+import { TREAT_URL } from '@/fx/timelines/trick'
 import { useT } from '@/i18n/react'
-import { useIsDesktop } from '@/lib/useMediaQuery'
 import { useGame } from '@/store/game'
 import { cx } from '@/theme/util'
 import { AreaArt } from './AreaArt'
+import { Die } from './Die'
 import { PixelIcon } from './icons'
 import { RulesModal, type RuleRow } from './RulesModal'
 import { SpriteImg } from './SpriteImg'
+import { StageCanvas } from './StageCanvas'
 
-export const TREAT_SRC = '/items/treat.png'
-export const TRICK_BALL_SRC = '/items/trick-ball.png'
+export const TREAT_SRC = TREAT_URL
+export const TRICK_BALL_SRC = TRICK_BALL_URL
 
-/** What a section asks of the die, as the gauge writes it: "6", "5+", or "—" where no roll can catch. */
+/** Where the ghost floats on the 240 × 160 stage (its feet: centred, a little low so a tall ghost clears the plate). */
+export const TRICK_AT = { x: W / 2, y: 108 }
+/** The line the Trick Ball lands on, under the ghost. */
+export const TRICK_GROUND = 126
+
+/** What a section asks of the die, as words for screen readers and messages: "6", "5+", or "—" where none can. */
 export const targetLabel = (need: number): string =>
   need > 6 ? '—' : need >= 6 ? '6' : `${Math.max(1, need)}+`
 
@@ -73,18 +91,82 @@ export function TrickSprite({
 }
 
 /**
- * The gauge: its sections end to end (each in its colour, the flee zone striped night with a ghost), the part filled so
- * far bright and the rest dim, the section the gauge is in ringed in gold, and under each section what a Trick Ball
- * needs there. A meter for screen readers, its value in words.
+ * What a section needs, as the game's own die: its face, and a "+" when a higher roll catches too (a 6 is a 6; "—"
+ * where no roll can). `plus={false}` drops the "+" where there's no room for it (a narrow section on the gauge).
+ */
+export function NeedDie({
+  need,
+  size = 20,
+  plus = true,
+  className,
+}: {
+  need: number
+  size?: number
+  plus?: boolean
+  className?: string
+}) {
+  const { t } = useT()
+  const target = targetLabel(need)
+  if (need > 6)
+    return (
+      <span className={className} aria-label={t('ui.trick.needs', { target })} role="img">
+        —
+      </span>
+    )
+  const v = Math.max(1, need)
+  return (
+    <span className={cx('inline-flex items-center gap-px leading-none', className)}>
+      <Die
+        type="base"
+        face={{ kind: 'number', value: v }}
+        size={size}
+        label={t('ui.trick.needs', { target })}
+      />
+      {plus && v < 6 && <span aria-hidden>+</span>}
+    </span>
+  )
+}
+
+/** A box's width in CSS pixels, kept up to date. */
+function useBoxWidth<T extends HTMLElement>() {
+  const ref = useRef<T>(null)
+  const [w, setW] = useState(0)
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const measure = () => setW(el.clientWidth)
+    measure()
+    if (typeof ResizeObserver === 'undefined') return
+    const ro = new ResizeObserver(measure)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
+  return [ref, w] as const
+}
+
+/**
+ * The gauge: its value in numbers ("62/100") with what the last Treat or miss added ("+18"), then its sections end to
+ * end (each in its colour, the flee zone striped night with a ghost), the part filled so far bright and the rest dim,
+ * the section it is in ringed in gold, the white post where it stands, and under each section the die a Trick Ball
+ * needs there (with its "+"; only the face where a section is narrow), then Flees. A meter for screen readers.
  */
 export function TrickGauge({
   band,
   value,
+  delta,
+  lead,
+  numbers = true,
   instant,
   className,
 }: {
   band: TrickBand
   value: number
+  /** What the last Treat or miss added: shown beside the value, popping in each time `key` changes. */
+  delta?: { n: number; key: number } | null
+  /** Left of the value: what the last step did (the screen's readout); the gauge's name when there's none. */
+  lead?: ReactNode
+  /** The value row (the admin's preview has none). */
+  numbers?: boolean
   instant?: boolean
   className?: string
 }) {
@@ -92,6 +174,8 @@ export function TrickGauge({
   const v = Math.max(0, Math.min(TRICK_GAUGE_MAX, value))
   const here = trickZoneAt(band, v)
   const pct = (x: number) => `${(x / TRICK_GAUGE_MAX) * 100}%`
+  const [box, width] = useBoxWidth<HTMLDivElement>()
+  const px = (from: number, to: number) => (width * (to - from)) / TRICK_GAUGE_MAX
   const zones = (dim: boolean) => (
     <>
       {band.zones.map((z) => (
@@ -113,7 +197,30 @@ export function TrickGauge({
     </>
   )
   return (
-    <div className={cx('flex flex-col gap-1', className)}>
+    <div ref={box} className={cx('flex flex-col gap-1', className)}>
+      {numbers && (
+        <div className="flex min-h-[38px] items-center justify-between gap-2">
+          {lead ?? (
+            <span className="flex min-w-0 items-center gap-1.5 font-pixel-sm text-[16px] leading-none text-muted">
+              <PixelIcon name="pumpkin" size={16} />
+              <span className="truncate">{t('ui.trick.gauge')}</span>
+            </span>
+          )}
+          <span className="flex shrink-0 items-center gap-1.5">
+            {delta && delta.n > 0 && (
+              <span key={delta.key} className="tt-pop" aria-hidden>
+                <span className="pixel-corners inline-flex bg-gold px-1.5 pb-[3px] pt-[2px] font-pixel-sm text-[16px] leading-none text-ink shadow-ring">
+                  {t('ui.trick.delta', { n: delta.n })}
+                </span>
+              </span>
+            )}
+            <b className="font-pixel text-[24px] font-normal leading-none tabular-nums" aria-hidden>
+              {v}
+              <span className="text-[18px] text-muted">/{TRICK_GAUGE_MAX}</span>
+            </b>
+          </span>
+        </div>
+      )}
       <div className="relative">
         <div
           role="meter"
@@ -137,6 +244,15 @@ export function TrickGauge({
           >
             {zones(false)}
           </div>
+          {/* What was just added lights up white for two frames, as a hit's silhouette does. */}
+          {delta && delta.n > 0 && !instant && (
+            <i
+              key={delta.key}
+              className="tt-gain absolute inset-y-0 block bg-white"
+              style={{ left: pct(Math.max(0, v - delta.n)), width: pct(Math.min(v, delta.n)) }}
+              aria-hidden
+            />
+          )}
           {here && (
             <i
               className="absolute inset-y-0 block shadow-[inset_0_0_0_3px_#ffbe2e]"
@@ -162,9 +278,12 @@ export function TrickGauge({
           aria-hidden
         />
       </div>
-      <div className="relative h-5 font-pixel-sm text-[15px] leading-none tabular-nums" aria-hidden>
+      <div className="relative h-[22px] font-pixel-sm text-[15px] leading-none" aria-hidden>
         {band.zones.map((z) => {
           const lit = here?.zone.from === z.from
+          const room = px(z.from, z.to)
+          // The die and its "+" where there's room; the face alone in a narrow section; nothing in a sliver.
+          if (width && room < 16) return null
           return (
             <span
               key={z.from}
@@ -173,18 +292,22 @@ export function TrickGauge({
             >
               <span
                 className={cx(
-                  'px-1 pb-0.5 pt-px',
+                  'flex items-center px-0.5 py-px',
                   lit ? 'light-scope bg-gold text-ink shadow-ring-line' : 'text-muted',
                 )}
               >
-                {targetLabel(z.need)}
+                <NeedDie need={z.need} size={room >= 34 || !width ? 16 : 14} plus={room >= 34 || !width} />
               </span>
             </span>
           )
         })}
         <span className="absolute top-0 flex justify-center" style={{ left: pct(band.flee), right: 0 }}>
-          <span className={cx('px-1 pb-0.5 pt-px', !here ? 'bg-crimson text-white' : 'text-danger')}>
-            {t('ui.trick.flees')}
+          <span className={cx('px-1 pb-0.5 pt-[3px]', !here ? 'bg-crimson text-white' : 'text-danger')}>
+            {!width || px(band.flee, TRICK_GAUGE_MAX) >= 30 ? (
+              t('ui.trick.flees')
+            ) : (
+              <PixelIcon name="ghost" size={12} />
+            )}
           </span>
         </span>
       </div>
@@ -192,222 +315,136 @@ export function TrickGauge({
   )
 }
 
-/** How the stage looks right now: the screen moves it from step to step. */
-export interface TrickLook {
-  /** The gauge as shown (it fills after the Treat is eaten, or the ball breaks open). */
-  gauge: number
-  ghost: 'float' | 'munch' | 'absorb' | 'hidden' | 'out' | 'flee'
-  /** A Treat in the air; the number replays the toss. */
-  treat: number | null
-  /** The Trick Ball: flying to the ghost, on the ground (each `wobble` a new wobble), caught (the stars), or none. */
-  ball: { at: 'fly' | 'ground' | 'caught'; wobble: number; key: number } | null
+/** A full-stage timeline over the ghost (the Treat, the Trick Ball), as the battle's StageOverlay. */
+export interface TrickOverlay {
+  timeline: Timeline<unknown>
+  ready: Promise<unknown>
+  label: string
+  hud?: Hud
+  onEnd: () => void
 }
 
-export const restLook = (gauge: number, end: 'caught' | 'fled' | null = null): TrickLook => ({
-  gauge,
-  ghost: end === 'caught' ? 'hidden' : end === 'fled' ? 'flee' : 'float',
-  treat: null,
-  ball: end === 'caught' ? { at: 'caught', wobble: 0, key: 0 } : null,
-})
-
-/** A pixel-art arc: `n` points of a parabola from (x0, y0) to (x1, y1), its top `lift` above the straight line. */
-function arc(x0: number, y0: number, x1: number, y1: number, lift: number, n = 9) {
-  const xs: string[] = []
-  const ys: string[] = []
-  for (let i = 0; i < n; i++) {
-    const k = i / (n - 1)
-    xs.push(`${x0 + (x1 - x0) * k}%`)
-    ys.push(`${y0 + (y1 - y0) * k - lift * 4 * k * (1 - k)}%`)
-  }
-  return { left: xs, top: ys }
+/** The ghost's shadow on the ground under it, dithered like the ball's. */
+function Shadow() {
+  const ref = useRef<HTMLCanvasElement>(null)
+  useEffect(() => {
+    const g = ref.current?.getContext('2d')
+    if (!g) return
+    g.imageSmoothingEnabled = false
+    const c = canvas(W, H)
+    softEllipse(c.g, TRICK_AT.x, TRICK_AT.y + 10, 16, 4, '#00000066', 0.6)
+    g.drawImage(c, 0, 0)
+  }, [])
+  return (
+    <canvas ref={ref} width={W} height={H} aria-hidden className="pixelated absolute inset-0 h-full w-full" />
+  )
 }
-/** Each stretch of an arc in two steps: it moves like pixel art, not a glide. */
-const stepEase = (k: number) => Math.floor(k * 2) / 2
-
-const GHOST_TOP = 44
-const GROUND_TOP = 74
-const STARS = [
-  [-34, -26],
-  [34, -26],
-  [-44, 4],
-  [44, 4],
-  [-20, -40],
-  [20, -40],
-]
 
 /**
- * The ghost at the centre of its area's picture (the battle's window of it; a night sky stands in where there's
- * none), floating; the Treat tossed in an arc from the left, the Trick Ball from the right, which then lies on the
- * ground and wobbles; stars for a catch. `still`: no idle float (the OS asks for less motion, or animations are off).
+ * The ghost on the battle's stage: 240 × 160 art pixels scaled up, the area's picture as the battle cuts it (a night
+ * sky where there's none), the ghost at the centre as the page's animated sprite, floating in pixel steps (still when
+ * `still`), its shadow under it. While a Treat or a Trick Ball plays, its timeline's canvas takes over, as the battle's
+ * catch does. At rest after the end: the Trick Ball on the ground (caught), or nobody (fled).
  */
 export function TrickStage({
   areaId,
   dex,
   shiny,
-  look,
+  overlay,
+  rest = 'float',
   still,
-  speed = 1,
   label,
   children,
 }: {
   areaId: string | null
   dex: number
   shiny?: boolean
-  look: TrickLook
+  overlay?: TrickOverlay | null
+  /** What shows with no timeline playing. */
+  rest?: 'float' | 'caught' | 'fled'
   still?: boolean
-  /** × the flights' durations (the short motion level plays them faster). */
-  speed?: number
   label: string
+  /** The plate over the stage. */
   children?: ReactNode
 }) {
-  const desktop = useIsDesktop()
+  const box = useRef<HTMLDivElement>(null)
+  const [scale, setScale] = useState(0)
   const pic = pictureOf(areaId)
-  const size = desktop ? 160 : 120
-  const ghostClass =
-    look.ghost === 'munch'
-      ? 'tt-munch'
-      : look.ghost === 'absorb'
-        ? 'tt-absorb'
-        : look.ghost === 'out'
-          ? 'tt-out'
-          : look.ghost === 'flee'
-            ? 'tt-flee'
-            : undefined
+  const s = useMemo(() => stageSprite(dex, false, !!shiny), [dex, shiny])
+  const at = placeSprite(s, TRICK_AT.x, TRICK_AT.y)
+  // The timelines draw no background of their own: the picture (or the night) shows through the canvas.
+  useLayoutEffect(() => {
+    setArtUnderStage(true)
+    return () => setArtUnderStage(false)
+  }, [])
+  useEffect(() => {
+    const el = box.current
+    if (!el) return
+    const measure = () => setScale(el.clientWidth / W)
+    measure()
+    if (typeof ResizeObserver === 'undefined') return
+    const ro = new ResizeObserver(measure)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
+  const ghost = !overlay && rest === 'float'
   return (
     <div
-      role="img"
-      aria-label={label}
-      className={cx('relative isolate aspect-[3/2] w-full overflow-hidden shadow-ring', still && 'tt-still')}
+      ref={box}
+      className="relative isolate z-0 aspect-[3/2] w-full select-none overflow-hidden"
       style={{ background: 'linear-gradient(#1c1236, #3b2560 70%, #2a1a44)' }}
     >
+      {/* The scene is one picture for screen readers; the plate on top is read on its own. */}
+      <div role="img" aria-label={label} className="absolute inset-0" />
       {pic && <AreaArt key={pic.id} src={pic.url} place={artPlacement(battleWindow(pic))} />}
-      {/* The ghost, its feet on nothing. */}
-      <div className="absolute left-1/2 -translate-x-1/2 -translate-y-1/2" style={{ top: `${GHOST_TOP}%` }}>
-        <div className={look.ghost === 'float' || look.ghost === 'munch' ? 'tt-float' : undefined}>
-          <div
-            key={`${look.ghost}-${look.ball?.key ?? 0}-${look.treat ?? 0}`}
-            className={ghostClass}
-            style={look.ghost === 'hidden' ? { opacity: 0 } : undefined}
-          >
-            <SpriteImg dex={dex} size={size} shiny={shiny} />
-          </div>
+      {ghost && <Shadow />}
+      {scale > 0 && ghost && (
+        <div
+          className={cx('absolute', !still && 'tt-float')}
+          style={{
+            left: at.left * scale,
+            top: at.top * scale,
+            width: at.w * scale,
+            height: at.h * scale,
+            ['--tt-float' as string]: `${-3 * scale}px`,
+          }}
+        >
+          <img
+            src={s.url}
+            alt=""
+            draggable={false}
+            onError={(e) => {
+              if (s.fallback && e.currentTarget.src !== new URL(s.fallback, location.href).href)
+                e.currentTarget.src = s.fallback
+            }}
+            className="pixelated absolute inset-0 h-full w-full max-w-none"
+          />
         </div>
-      </div>
-      {look.treat != null && (
-        <motion.span
-          key={`treat-${look.treat}`}
-          className="absolute -translate-x-1/2 -translate-y-1/2"
-          initial={false}
-          animate={arc(14, 96, 50, GHOST_TOP + 4, 34)}
-          transition={{ duration: 0.52 * speed, ease: stepEase }}
-          aria-hidden
-        >
-          <TrickSprite kind="treat" size={36} />
-        </motion.span>
       )}
-      {look.ball?.at === 'fly' && (
-        <motion.span
-          key={`ball-${look.ball.key}`}
-          className="absolute -translate-x-1/2 -translate-y-1/2"
-          initial={false}
-          animate={arc(86, 96, 50, GHOST_TOP + 2, 34)}
-          transition={{ duration: 0.52 * speed, ease: stepEase }}
-          aria-hidden
-        >
-          <TrickSprite kind="ball" size={36} />
-        </motion.span>
+      {scale > 0 && !overlay && rest === 'caught' && (
+        <TrickSprite
+          kind="ball"
+          size={Math.round(30 * scale)}
+          className="absolute"
+          style={{
+            left: (TRICK_AT.x - 15) * scale,
+            top: (TRICK_GROUND - 15) * scale,
+            filter: 'brightness(0.8)',
+          }}
+        />
       )}
-      {look.ball && look.ball.at !== 'fly' && (
-        <span
-          className="absolute -translate-x-1/2 -translate-y-1/2"
-          style={{ left: '50%', top: `${GROUND_TOP}%` }}
-          aria-hidden
-        >
-          <span
-            key={look.ball.wobble}
-            className={cx('block', look.ball.wobble > 0 && look.ball.at === 'ground' && 'tt-wobble')}
-          >
-            <TrickSprite kind="ball" size={40} />
-          </span>
-          {look.ball.at === 'caught' &&
-            STARS.map(([dx, dy], i) => (
-              <span
-                key={i}
-                className="tt-star absolute left-1/2 top-1/2 -ml-2 -mt-2"
-                style={{ ['--dx' as string]: `${dx}px`, ['--dy' as string]: `${dy}px` }}
-              >
-                <PixelIcon name="sparkle" size={16} />
-              </span>
-            ))}
-        </span>
+      {overlay && (
+        <StageCanvas
+          key="overlay"
+          timeline={overlay.timeline}
+          ready={overlay.ready}
+          hud={overlay.hud}
+          onEnd={overlay.onEnd}
+          label={overlay.label}
+          className="absolute inset-0"
+        />
       )}
-      {children}
-    </div>
-  )
-}
-
-/** The end: caught (where it went, NEW, a secret area it opened) or fled into the night. */
-export function TrickResult({
-  name,
-  dex,
-  shiny,
-  level,
-  end,
-  placed,
-  isNew,
-  replacedLevel,
-  secrets = [],
-}: {
-  name: string
-  dex: number
-  shiny?: boolean
-  level: number
-  end: 'caught' | 'fled'
-  placed?: TrickPlaced
-  isNew?: boolean
-  replacedLevel?: number
-  /** Names of the secret areas this catch opened. */
-  secrets?: string[]
-}) {
-  const { t } = useT()
-  const caught = end === 'caught'
-  return (
-    <div
-      className={cx(
-        'flex items-center gap-3 p-3',
-        caught ? 'bg-cream shadow-card-warm' : 'bg-paper shadow-card',
-      )}
-    >
-      <span className={cx('shrink-0', !caught && 'opacity-50 grayscale')}>
-        <SpriteImg dex={dex} size={64} shiny={shiny} />
-      </span>
-      <div className="flex min-w-0 flex-col gap-1">
-        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-          <b className="text-[24px] font-normal leading-none">
-            {caught ? t('ui.trick.caughtTitle', { name }) : t('ui.trick.fledTitle', { name })}
-          </b>
-          {caught && isNew && (
-            <span className="light-scope bg-gold px-1.5 text-lg leading-tight text-ink shadow-ring">
-              {t('ui.enc.new')}
-            </span>
-          )}
-          {caught && shiny && (
-            <span className="inline-flex items-center gap-1 bg-paper px-1.5 text-lg leading-tight text-ink shadow-ring">
-              <PixelIcon name="star" size={14} /> {t('ui.mon.shinyTag')}
-            </span>
-          )}
-        </div>
-        <p className="copy m-0 text-[17px] text-muted">
-          {caught
-            ? `${t('ui.common.level.short', { n: level })} · ${t(`ui.trick.placed.${placed ?? 'box'}`, { level: replacedLevel ?? 0 })}`
-            : t('ui.trick.fledText')}
-        </p>
-        {secrets.map((s) => (
-          <p key={s} className="m-0 text-lg leading-tight text-good">
-            {t('ui.victory.secretOnMap', { name: s })}
-          </p>
-        ))}
-      </div>
+      <div className="pointer-events-none absolute inset-0 z-10 [&>*]:pointer-events-auto">{children}</div>
     </div>
   )
 }

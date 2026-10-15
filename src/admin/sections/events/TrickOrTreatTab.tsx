@@ -122,7 +122,7 @@ function TierBox({
           </PixelButton>
         </div>
       </div>
-      <TrickGauge band={trickBand(cfg, tier)} value={0} instant />
+      <TrickGauge band={trickBand(cfg, tier)} value={0} numbers={false} instant />
     </div>
   )
 }

@@ -10,6 +10,7 @@ import { fxSound, type FxSound } from '@/audio/sfx'
 import { cached, canvas, clamp, ease, lerp, line, rect, ring, rng, softEllipse, span, type G } from '../pixel'
 import { ball, type BallKind } from '../scenes'
 import { drawSprite } from '../sprites'
+import { drawFlee, fleeDim, fleeStep } from './trick'
 import {
   H,
   quad,
@@ -41,6 +42,16 @@ export interface CatchParams extends Fighters {
    * wobble sounds stay quiet instead of all firing in the same frame; only the "Gotcha!" plays.
    */
   instant?: boolean
+  /**
+   * Where the Pokémon floats or stands (its feet), in place of the foe's platform, and the line the ball lands on:
+   * Trick or Treat's ghost at the stage's centre (docs/29). With `own` left empty no Pokémon of yours is drawn.
+   */
+  at?: Point
+  ground?: number
+  /** Not worn out (Trick or Treat): no grey, no sag, no dizzy stars before the ball hits. */
+  awake?: boolean
+  /** A ghost (Trick or Treat): broken free and fleeing, it rises and dithers away into wisps (trick.ts). */
+  ghost?: boolean
 }
 
 /** The Bait on the ground: a little berry with its leaf, outlined like the balls. */
@@ -55,8 +66,8 @@ function drawBait(g: G, x: number, y: number) {
   rect(g, X + 1, Y - 7, 2, 1, '#6fcf5a')
 }
 
-/** A heart over the Bait as the Pokémon notices it. */
-function drawHeart(g: G, x: number, y: number) {
+/** A heart over the Bait as the Pokémon notices it (and over a Treat being eaten). */
+export function drawHeart(g: G, x: number, y: number) {
   const X = Math.round(x)
   const Y = Math.round(y)
   rect(g, X - 2, Y, 2, 1, '#ff6b8a')
@@ -126,6 +137,7 @@ export function catchTimeline(p: CatchParams): Timeline<S> {
     T_END = WOB.length ? WOB[WOB.length - 1]! + 0.65 : start + 0.1
   }
   const T_FLEE = T_END + 0.7
+  const ghostFlees = !!p.ghost && !caught && !p.stays
   // A hold ends once the last wobble has settled (in short motion, once the ball has).
   const T_HOLD = WOB.length ? WOB[WOB.length - 1]! + 0.6 : T_SETTLE + 0.1
   const dur = (p.hold ? T_HOLD : T_END + (caught ? 1.55 : p.stays ? 1.4 : 2.2)) - O
@@ -183,10 +195,11 @@ export function catchTimeline(p: CatchParams): Timeline<S> {
     setup() {
       // The catch is always yours: you throw at the foe.
       const st = new Stage({ ...p, by: 'own' }, 71)
+      if (p.at) st.L = { ...st.L, foe: p.at }
       st.stops.push([T_HIT, T_HIT + 0.08])
       return Object.assign(st, {
         CP: st.tgtAt(0.5, 0.45),
-        ground: st.L.foe.y - 6,
+        ground: p.ground ?? st.L.foe.y - 6,
         start: { x: -10, y: H + 6 },
         ctrl: { x: W * 0.36, y: 6 },
       })
@@ -260,7 +273,8 @@ export function catchTimeline(p: CatchParams): Timeline<S> {
             colors: ['#ffffff', '#ff9aa8', '#ff3b5c'],
           })
         }
-      if (!caught && !p.stays && within(t, T_FLEE, T_FLEE + 0.7) && Math.floor(t * 60) % 3 === 0)
+      if (ghostFlees) fleeStep(s, t, T_FLEE, p.short)
+      else if (!caught && !p.stays && within(t, T_FLEE, T_FLEE + 0.7) && Math.floor(t * 60) % 3 === 0)
         s.under.add({
           x: s.L.foe.x + fleeX(t) - 8,
           y: s.L.foe.y,
@@ -283,10 +297,12 @@ export function catchTimeline(p: CatchParams): Timeline<S> {
       const fs = s.fs
       if (t < T_ABS) {
         s.drawTarget(g, t, {
-          dy: 3,
+          dy: p.awake ? 0 : 3,
           tint:
             t < T_OPEN
-              ? { color: '#6b6480', a: 0.22 }
+              ? p.awake
+                ? null
+                : { color: '#6b6480', a: 0.22 }
               : { color: '#ff3b5c', a: span(t, T_OPEN, T_OPEN + 0.08) },
           flash: within(t, T_HIT, T_HIT + 0.07) ? 1 : 0,
         })
@@ -300,6 +316,8 @@ export function catchTimeline(p: CatchParams): Timeline<S> {
             sil: Math.floor(t * 30) % 2 ? '#ff3b5c' : '#ffffff',
           })
         }
+      } else if (back && ghostFlees && t >= T_FLEE) {
+        drawFlee(g, s, t, T_FLEE, p.short)
       } else if (back) {
         const k = ease.outBack(span(t, T_END + 0.15, T_END + 0.4), 2)
         const hop = p.stays
@@ -331,9 +349,9 @@ export function catchTimeline(p: CatchParams): Timeline<S> {
         rect(g, Math.round(s.L.foe.x) - 1, top - 6, 2, 5, '#ffe066')
         rect(g, Math.round(s.L.foe.x) - 1, top, 2, 2, '#ffe066')
       }
-      s.drawAttacker(g)
+      if (p.own) s.drawAttacker(g)
       // Dizzy stars while worn out.
-      if (t < T_HIT) {
+      if (t < T_HIT && !p.awake) {
         const top = s.L.foe.y - fs.h + 2
         for (let k = 0; k < 3; k++) {
           const a = t * 3.2 + (k * Math.PI * 2) / 3
@@ -441,6 +459,7 @@ export function catchTimeline(p: CatchParams): Timeline<S> {
         0.09 *
         (t < T_END + 0.2 ? 1 : 1 - span(t, T_END + 0.2, T_END + 0.6))
       if (v > 0) vignette(g, v)
+      if (ghostFlees) fleeDim(g, t, T_FLEE)
       if (!caught && within(t, T_END + 0.15, T_END + 0.15 + 2 / 60)) screenFlash(g, '#ffffff', 0.55)
     },
     cues: () => {

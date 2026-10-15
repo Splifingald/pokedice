@@ -225,12 +225,133 @@ export function background(W: number, H: number): Background {
 }
 
 // ------------------------------------------------------------------ Poké Balls
-export type BallKind = 'poke' | 'great' | 'ultra' | 'master'
+export type BallKind = 'poke' | 'great' | 'ultra' | 'master' | 'trick'
 export const BALLS: Record<BallKind, { top: readonly string[]; mark?: readonly string[] }> = {
   poke: { top: ['#ff8a78', '#ec3b33', '#a8231f'] },
   great: { top: ['#7fb3ff', '#3474e0', '#1f4aa0'], mark: ['#ff6b5e', '#d8312a'] },
   ultra: { top: ['#5b5b6e', '#2d2d3a', '#18181f'], mark: ['#ffe066', '#e8b425'] },
   master: { top: ['#b88af0', '#7d3fc4', '#4f2388'], mark: ['#ff8fc8', '#e0438f'] },
+  // Trick or Treat's ball (docs/29): drawn from its picture once loaded (loadTrickBall); these stand in until then.
+  trick: { top: ['#a15fda', '#8e40d2', '#6726a0'] },
+}
+
+/** Trick or Treat's ball picture (30 × 30, the ball in its middle 18 × 18): the file its buttons show. */
+export const TRICK_BALL_URL = '/items/trick-ball.png'
+
+/** A ball picture's pixels, cropped to the ball, and the row its two halves part at. */
+interface BallArt {
+  w: number
+  h: number
+  px: Uint8ClampedArray
+  /** The first row of the bottom half (the band and the button go with it). */
+  split: number
+}
+const ballArts = new Map<BallKind, BallArt>()
+const artLoads = new Map<BallKind, Promise<void>>()
+
+/**
+ * Load a ball's picture so `ball()` draws it, pixel for pixel, in place of the coded one: it still turns, opens on its
+ * hinge, flashes its button and darkens once caught. Resolves once loaded, or when it can't be (the coded one stays).
+ */
+export function loadBallArt(kind: BallKind, url: string, split: number): Promise<void> {
+  let p = artLoads.get(kind)
+  if (p) return p
+  p = new Promise<void>((res) => {
+    const img = new Image()
+    img.onload = () => {
+      try {
+        const c = canvas(img.naturalWidth, img.naturalHeight)
+        c.g.drawImage(img, 0, 0)
+        const all = c.g.getImageData(0, 0, c.width, c.height).data
+        // Cropped to its opaque pixels.
+        let x0 = c.width
+        let y0 = c.height
+        let x1 = -1
+        let y1 = -1
+        for (let y = 0; y < c.height; y++)
+          for (let x = 0; x < c.width; x++)
+            if (all[(y * c.width + x) * 4 + 3]! > 0) {
+              x0 = Math.min(x0, x)
+              y0 = Math.min(y0, y)
+              x1 = Math.max(x1, x)
+              y1 = Math.max(y1, y)
+            }
+        if (x1 >= x0) {
+          const w = x1 - x0 + 1
+          const h = y1 - y0 + 1
+          const px = new Uint8ClampedArray(w * h * 4)
+          for (let y = 0; y < h; y++)
+            px.set(all.subarray(((y + y0) * c.width + x0) * 4, ((y + y0) * c.width + x1 + 1) * 4), y * w * 4)
+          ballArts.set(kind, { w, h, px, split })
+        }
+      } catch {
+        // No canvas to read: the coded ball stays.
+      }
+      res()
+    }
+    img.onerror = () => res()
+    img.src = url
+  })
+  artLoads.set(kind, p)
+  return p
+}
+
+/** The Trick Ball's picture for the catch timeline (its halves part under the purple top, at the ball's row 11). */
+export const loadTrickBall = () => loadBallArt('trick', TRICK_BALL_URL, 11)
+
+/** The picture's button (its two oranges), which `button` recolours while the ball wobbles. */
+const isButton = (r: number, g: number, b: number) => r > 220 && g > 110 && g < 190 && b < 110
+
+/**
+ * A ball drawn from its picture: the coded ball's turns, hinge and looks, each pixel sampled from the picture (nearest,
+ * so it stays pixel art at any angle). The default button (white) keeps the picture's own colour.
+ */
+function artBall(kind: BallKind, art: BallArt, deg: number, open: number, btn: string, dim: number): Canvas {
+  const key = `ballart|${kind}|${deg}|${Math.round(open * 8)}|${btn}|${Math.round(dim * 4)}`
+  return cached(key, () => {
+    const R = art.w / 2
+    const S = Math.max(art.w, art.h) + 4 + Math.round(open * R * 1.4)
+    const c0 = (S - 1) / 2
+    const cx = (art.w - 1) / 2
+    const cy = (art.h - 1) / 2
+    const a = (deg * Math.PI) / 180
+    const ca = Math.cos(a)
+    const sa = Math.sin(a)
+    const oa = -open * 1.25
+    // The halves part at the picture's split row; the hinge is on the left, as on the coded ball.
+    const vs = art.split - 0.5 - cy
+    const recolour = btn !== '#ffffff'
+    const col = (u: number, v: number, top: boolean | null): string | null => {
+      const x = Math.round(u + cx)
+      const y = Math.round(v + cy)
+      if (x < 0 || y < 0 || x >= art.w || y >= art.h) return null
+      if (top === false && y < art.split) return null
+      if (top === true && y >= art.split) return null
+      const i = (y * art.w + x) * 4
+      if (art.px[i + 3]! < 128) return null
+      const r = art.px[i]!
+      const g = art.px[i + 1]!
+      const b = art.px[i + 2]!
+      let c = '#' + [r, g, b].map((n) => n.toString(16).padStart(2, '0')).join('')
+      if (recolour && isButton(r, g, b)) c = g > 150 ? mix(btn, '#ffffff', 0.35) : btn
+      return dim ? mix(c, '#3a3450', dim * 0.45) : c
+    }
+    return shade(S, S, (x, y) => {
+      const dx = x - c0
+      const dy = y - c0 + Math.round(open * R * 0.5)
+      const u = dx * ca + dy * sa
+      const v = -dx * sa + dy * ca
+      if (open <= 0) return col(u, v, null)
+      const bottom = v >= vs ? col(u, v, false) : null
+      if (bottom) return bottom
+      // The lid: the point turned back around the hinge before sampling the top half.
+      const hu = u + R
+      const hv = v - vs
+      const tu = hu * Math.cos(-oa) - hv * Math.sin(-oa) - R
+      const tv = hu * Math.sin(-oa) + hv * Math.cos(-oa) + vs
+      return col(tu, tv, true)
+    })
+  })
 }
 /** The game's ball item keys → how the ball is drawn. */
 export const ballOfItem = (key: string | null | undefined): BallKind =>
@@ -252,6 +373,8 @@ export function ball(
   const btn = o.button || '#ffffff'
   const dim = o.dim || 0
   const deg = Math.round((angle * 180) / Math.PI / 5) * 5
+  const art = ballArts.get(kind)
+  if (art) return artBall(kind, art, deg, open, btn, dim)
   const key = `ball|${kind}|${deg}|${Math.round(open * 8)}|${btn}|${Math.round(dim * 4)}|${R}`
   return cached(key, () => {
     const B = BALLS[kind]

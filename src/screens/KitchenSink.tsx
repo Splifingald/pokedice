@@ -630,7 +630,7 @@ export function KitchenSink() {
       <Section title="Portal run (Distortion World): the portal, gauge, breach and its pop-up, rules, boons, bonuses, shader, screen distortion, victory">
         <PortalBits />
       </Section>
-      <Section title="Trick or Treat: the gauge of each tier, Treat and Trick Ball, rarity chips, the stage's looks, preview card, results, rules">
+      <Section title="Trick or Treat: the gauge of each tier, the screen in each state (idle, after a Treat, a Treat and a throw playing, a miss, caught, fled), the recaps, the pieces, preview cards, rules">
         <TrickBits />
       </Section>
 
