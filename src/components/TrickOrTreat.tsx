@@ -50,15 +50,19 @@ export const TRICK_GROUND = 126
 export const targetLabel = (need: number): string =>
   need > 6 ? '—' : need >= 6 ? '6' : `${Math.max(1, need)}+`
 
-/** A section's colour, from the hardest (deep purple) to the easiest (pumpkin, then gold). Art: the same in Dusk. */
+/**
+ * A section's colour, one per die so no two sections look alike (the user's call, 2026-10-15): red for the hardest
+ * (a 6), then orange, yellow, green and teal as it gets easier; lilac where no roll can. Each takes ink text at 4.5:1
+ * or more (the chips under the gauge). Art: the same in Dusk.
+ */
 const ZONE_COLOR: Record<number, string> = {
-  7: '#3b2a5c',
-  6: '#5b3a9e',
-  5: '#8a4fc0',
-  4: '#c45fa0',
-  3: '#ff8a3d',
-  2: '#ffbe2e',
-  1: '#ffe066',
+  7: '#b7a6dd',
+  6: '#ff6b5a',
+  5: '#ff8a3d',
+  4: '#ffd23f',
+  3: '#7ccf4f',
+  2: '#36c2b4',
+  1: '#36c2b4',
 }
 const zoneColor = (need: number) => ZONE_COLOR[Math.max(1, Math.min(7, need))]!
 /** The flee zone: the night, striped. */
@@ -146,7 +150,8 @@ function useBoxWidth<T extends HTMLElement>() {
 
 /**
  * The gauge: its value in numbers ("62/100") with what the last Treat or miss added ("+18"), then its sections end to
- * end (each in its colour, the flee zone striped night with a ghost), the part filled so far bright and the rest dim,
+ * end (each in its own colour, a dark line between two, the flee zone striped night with a ghost), the part filled so
+ * far bright and the rest a pastel,
  * the section it is in ringed in gold, the white post where it stands, and under each section the die a Trick Ball
  * needs there (with its "+"; only the face where a section is narrow), then Flees. A meter for screen readers.
  */
@@ -178,6 +183,7 @@ export function TrickGauge({
   const px = (from: number, to: number) => (width * (to - from)) / TRICK_GAUGE_MAX
   const zones = (dim: boolean) => (
     <>
+      {dim && <i className="absolute inset-0 block bg-[#f4f1fa]" />}
       {band.zones.map((z) => (
         <i
           key={z.from}
@@ -186,7 +192,10 @@ export function TrickGauge({
             left: pct(z.from),
             width: pct(z.to - z.from),
             background: zoneColor(z.need),
-            opacity: dim ? 0.28 : 1,
+            // The part not reached yet stays readable: a pastel of its colour (over the light base below), never mud.
+            opacity: dim ? 0.42 : 1,
+            // A dark line between sections, so two neighbours never blur into one.
+            boxShadow: z.from > 0 ? 'inset 2px 0 0 #1a0f2b' : undefined,
           }}
         />
       ))}
@@ -278,7 +287,7 @@ export function TrickGauge({
           aria-hidden
         />
       </div>
-      <div className="relative h-[22px] font-pixel-sm text-[15px] leading-none" aria-hidden>
+      <div className="relative h-[28px] font-pixel-sm text-[15px] leading-none" aria-hidden>
         {band.zones.map((z) => {
           const lit = here?.zone.from === z.from
           const room = px(z.from, z.to)
@@ -292,9 +301,10 @@ export function TrickGauge({
             >
               <span
                 className={cx(
-                  'flex items-center px-0.5 py-px',
-                  lit ? 'light-scope bg-gold text-ink shadow-ring-line' : 'text-muted',
+                  'light-scope flex items-center px-1.5 py-[3px] text-ink',
+                  lit ? 'shadow-[0_0_0_2px_#24304f,0_0_0_4px_#ffbe2e]' : 'shadow-ring-line',
                 )}
+                style={{ background: zoneColor(z.need) }}
               >
                 <NeedDie need={z.need} size={room >= 34 || !width ? 16 : 14} plus={room >= 34 || !width} />
               </span>
