@@ -1,16 +1,22 @@
-// Migration 0052 against a real Postgres (PGlite, in process): Haunted Hollow's content (docs/26) lands as its bundle
-// says, the world joins `smallWorlds` with the admin's switch and other worlds kept, and running it again changes
-// nothing but the content version.
+// Haunted Hollow's migrations against a real Postgres (PGlite, in process): 0052 wrote the world whole and the ones
+// after it patch it (0055, docs/26 §2.8), so together they land the content (docs/26) as its script now builds it, the
+// world joins `smallWorlds` with the admin's switch and other worlds kept, and running them again changes nothing but
+// the content version.
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { PGlite } from '@electric-sql/pglite'
 import { beforeAll, describe, expect, it } from 'vitest'
 import { BUNDLE } from '@/config/bundle'
-import { haunted, hauntedSql, WORLD_ID } from '../scripts/content-haunted-hollow'
+import { haunted, WORLD_ID } from '../scripts/content-haunted-hollow'
 
 const MIG = path.join(__dirname, '..', 'supabase', 'migrations')
 const sql = (file: string) => readFileSync(path.join(MIG, file), 'utf8')
 const h = haunted()
+/** 0052 ran on live as it was then: later changes come as patches, never by regenerating it. */
+const HH = ['0052_haunted_hollow.sql', '0055_hh_new_species.sql']
+const runAll = async () => {
+  for (const f of HH) await db.exec(sql(f))
+}
 let db: PGlite
 
 beforeAll(async () => {
@@ -32,13 +38,9 @@ beforeAll(async () => {
     ('configVersion', '98')`)
 })
 
-describe('0052: Haunted Hollow', () => {
-  it('is what the script generates', () => {
-    expect(sql('0052_haunted_hollow.sql')).toBe(hauntedSql())
-  })
-
+describe('0052 and its patches: Haunted Hollow', () => {
   it('writes its region, areas, pools and trainers', async () => {
-    await db.exec(sql('0052_haunted_hollow.sql'))
+    await runAll()
     const count = async (q: string) => Number((await db.query<{ n: number }>(q)).rows[0]!.n)
     expect(
       await count(
@@ -60,6 +62,22 @@ describe('0052: Haunted Hollow', () => {
       await db.query<{ r: number }>(`select rounds_to_clear r from areas where name = 'Shadow Elite'`)
     ).rows[0]!
     expect(elite.r).toBe(0)
+    const rows = await db.query<{ id: string; area: string; dex: number; w: number; lo: number; hi: number }>(
+      'select id, area_id area, dex, weight w, min_level lo, max_level hi from area_wild_pool order by id',
+    )
+    const want = h.areas
+      .flatMap((a) =>
+        a.wildPool.map((p) => ({
+          id: p.id,
+          area: a.id,
+          dex: p.dex,
+          w: p.weight,
+          lo: p.minLevel,
+          hi: p.maxLevel,
+        })),
+      )
+      .sort((x, y) => (x.id < y.id ? -1 : 1))
+    expect(rows.rows).toEqual(want)
   })
 
   it('adds the world, keeps the switch and the other worlds, and bumps the content version', async () => {
@@ -69,11 +87,11 @@ describe('0052: Haunted Hollow', () => {
     expect(worlds.access).toBe('admin')
     expect(worlds.list.map((w) => w.id)).toEqual(['older-world', WORLD_ID])
     expect(worlds.list[1]).toEqual(JSON.parse(JSON.stringify(h.world)))
-    expect(await cfg('configVersion')).toBe(99)
+    expect(await cfg('configVersion')).toBe(98 + HH.length)
   })
 
   it('runs again without duplicating anything', async () => {
-    await db.exec(sql('0052_haunted_hollow.sql'))
+    await runAll()
     const worlds = (
       await db.query<{ v: { list: { id: string }[] } }>(
         `select value v from game_config where key = 'smallWorlds'`,
@@ -83,5 +101,8 @@ describe('0052: Haunted Hollow', () => {
     expect(Number((await db.query<{ n: number }>('select count(*)::int n from areas')).rows[0]!.n)).toBe(
       h.areas.length,
     )
+    expect(
+      Number((await db.query<{ n: number }>('select count(*)::int n from area_wild_pool')).rows[0]!.n),
+    ).toBe(h.areas.reduce((n, a) => n + a.wildPool.length, 0))
   })
 })

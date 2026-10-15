@@ -47,12 +47,13 @@ Until now only the shiny mythical left a world; everything else closed with it. 
 | Booster | **Ghost ×1.2**, both sides (as boosters work) |
 | Colours | main `#4a2f7a` (deep purple), accent `#ff8a2a` (pumpkin), ground `#ece4f6` (lavender) |
 | Banner | the existing **haunted** picture (no new art: existing pictures only) |
-| Pokémon | **120** species to catch (the ghost lines, their evolutions and pre-evolutions, the bosses, Gen 1–3 fillers) |
+| Pokémon | **124** species to catch (the ghost lines, their evolutions and pre-evolutions, the bosses, Gen 1–3 fillers; 120 until Joltik, Riolu and their evolutions joined on 2026-10-15, §2.8) |
 
 ### 2.2 The Mart (the world's own ₽)
 
-Poké Ball ₽20 · Great Ball ₽50 · Ultra Ball ₽100 · **Master Ball ₽5,000, 1 per player** · Potion ₽15 · Super Potion ₽35 ·
-Hyper Potion ₽80 · **Revive ₽300** · Link Cable ₽1,000 · Dusk Stone, Dawn Stone, Reaper Cloth, Cracked Pot ₽200 each.
+Poké Ball ₽20 · Great Ball ₽50 · Ultra Ball ₽100 · **Master Ball ₽999, 1 per player** · Potion ₽15 · Super Potion ₽35 ·
+Hyper Potion ₽80 · **Revive ₽300** · Link Cable ₽300 · Dusk Stone, Dawn Stone, Reaper Cloth, Cracked Pot ₽200 each.
+(Master Ball ₽5,000 and Link Cable ₽1,000 until 2026-10-15, §2.8.)
 No Bait anywhere. No limit except the Master Ball. **A world's Mart sells what its list says, whatever the global item
 switch** (the Link Cable is Off in Admin → Config).
 
@@ -64,8 +65,8 @@ switch** (the Link Cable is Off in Admin → Config).
   the Link Cable.
 - **Dreepy** is a very rare find in the Cavern only (Drakloak and Dragapult by level, 50 and 60).
 - **Bosses and raids**: shiny Haunter, Mimikyu, Spiritomb (bosses); shiny Darkrai and Giratina (raids).
-- **Fillers**, Gen 1–3 of varied types: **no Normal and no Fighting type** (pure or dual), **no Pokémon that evolves
-  with an item**, no legendaries or mythicals, no fossils, no Gen 1–3 starters, **no Dark type before area 5**.
+- **Fillers**, Gen 1–3 of varied types: **no Normal and no Fighting type** (pure or dual; **Riolu and Lucario are the
+  one exception**, the user's call of 2026-10-15, §2.8), **no Pokémon that evolves with an item**, no legendaries or mythicals, no fossils, no Gen 1–3 starters, **no Dark type before area 5**.
 
 ### 2.4 Its areas
 
@@ -74,8 +75,9 @@ extra Centers still happen. **The rounds per area come from the campaign simulat
 Each area has a clear identity. Existing pictures only.
 
 **Status: built** in `scripts/content-haunted-hollow.ts` (`pnpm haunted-hollow <in.json> <out.json>` adds it to an
-admin export), checked by `tests/content/haunted-hollow.test.ts`: 120 to catch (the world's Pokédex counts them), all
-but Giratina catchable before the Distortion World opens, no Normal or Fighting type, no Dark type before area 5, 10
+admin export), checked by `tests/content/haunted-hollow.test.ts`: 124 to catch (the world's Pokédex counts them), all
+but Giratina catchable before the Distortion World opens, no Normal or Fighting type (but Riolu and Lucario), no Dark
+type before area 5, 10
 cards in every main deck and 6 in a secret one, each with one item and one Center. Pictures: existing ones only
 (`src/fx/areaArtMap.ts`). Names in the ten languages (`area.*`, `region.world-haunted-hollow`).
 
@@ -83,14 +85,14 @@ cards in every main deck and 6 in a secret one, each with one item and one Cente
 |---|---|---|---|---|---|---|---|---|---|---|
 | 1 | Dusk Road | evening | 3–7 | 7 · 1 · 1 · 1 | 1 | 1 | Caterpie, Weedle, Hoppip, Metapod (rare), Kakuna (rare), Drifloon (rare), Gastly (rare) | Bug Catcher Toby (Caterpie 5, Weedle 5); Youngster Wes (Hoppip 6); Lass Ivy (Weedle 4, Hoppip 5) | — | — |
 | 2 | Foggy Marsh | a857 | 7–12 | 6 · 2 · 1 · 1 | 1 | 1 | Wooper, Grimer, Surskit, Gastly, Golett, Skiploom (rare) | Fisherman Moss (Wooper 10, Surskit 9); Channeler Nell (Gastly 10, Gastly 10); Camper Reed (Grimer 11); Picnicker Fen (Hoppip 10, Wooper 11) | — | — |
-| 3 | Whispering Woods | a852 | 11–16 | 6 · 2 · 1 · 1 | 1 | 2 | Phantump, Pumpkaboo, Bramblin, Venonat, Spinarak, Pineco, Butterfree (rare), Beedrill (rare) | Bug Catcher Ash (Venonat 14, Spinarak 14); Hex Maniac Wren (Phantump 15, Pumpkaboo 15); Aroma Lady Fern (Pineco 15, Bramblin 15) | — | — |
+| 3 | Whispering Woods | a852 | 11–16 | 6 · 2 · 1 · 1 | 1 | 2 | Phantump, Pumpkaboo, Bramblin, Venonat, Spinarak, Pineco, Joltik, Butterfree (rare), Beedrill (rare) | Bug Catcher Ash (Venonat 14, Spinarak 14); Hex Maniac Wren (Phantump 15, Pumpkaboo 15); Aroma Lady Fern (Pineco 15, Bramblin 15) | — | — |
 | 4 | Lantern Town | oldtown | 15–21 | 5 · 3 · 1 · 1 | 1 | 2 | Litwick, Ponyta, Mareep, Spoink, Shuppet, Flaaffy (rare), Misdreavus (rare) | Kindler Blaze (Ponyta 18, Litwick 18); Psychic Iris (Spoink 18, Shuppet 19); Channeler Hilda (Shuppet 18, Litwick 19, Gastly 18); Gentleman Orson (Mareep 19, Flaaffy 20) | — | Dusk Stone (once) |
-| 5 | Old Quarry | a652 | 20–26 | 5 · 3 · 1 · 1 | 1 | 3 | Golett, Geodude, Aron, Cubone, Poochyena, Graveler (rare), Lairon (rare) | Hiker Rocco (Geodude 23, Golett 24); Ruin Maniac Pell (Cubone 24, Aron 24); Worker Gus (Geodude 24, Aron 25, Golett 24); Punk Guy Vex (Poochyena 25, Cubone 25) | — | — |
+| 5 | Old Quarry | a652 | 20–26 | 5 · 3 · 1 · 1 | 1 | 3 | Golett, Geodude, Aron, Cubone, Poochyena, Riolu, Graveler (rare), Lairon (rare) | Hiker Rocco (Geodude 23, Golett 24); Ruin Maniac Pell (Cubone 24, Aron 24); Worker Gus (Geodude 24, Aron 25, Golett 24); Punk Guy Vex (Poochyena 25, Cubone 25) | — | — |
 | 6 | Frozen Lake | snow | 25–32 | 5 · 3 · 1 · 1 | 1 | 3 | Snorunt, Swinub, Spheal, Smoochum, Jynx (rare) | Skier Holly (Snorunt 29, Swinub 29); Ace Trainer Neve (Spheal 29, Smoochum 29, Snorunt 30); Psychic Ilse (Jynx 30, Smoochum 28); Hex Maniac Rime (Snorunt 30, Haunter 30) | — | Dawn Stone (once) |
 | 7 | Sunken Shore | beach | 31–38 | 4 · 4 · 1 · 1 | 1 | 4 | Sandygast, Wingull, Krabby, Chinchou, Corphish, Kingler (rare), Crawdaunt (rare) | Swimmer Coral (Chinchou 34, Krabby 34); Fisherman Pike (Corphish 35, Krabby 35); Sailor Brine (Wingull 35, Corphish 36, Krabby 35); Beauty Pearl (Sandygast 36, Chinchou 35); Picnicker Sandy (Sandygast 34, Wingull 34) | — | — |
-| 8 | Rusted Armory | industrial | 37–44 | 4 · 4 · 1 · 1 | 1 | 5 | Honedge, Voltorb, Koffing, Beldum, Skarmory, Doublade (rare), Metang (rare) | Scientist Volt (Voltorb 41, Koffing 41, Electrode 42); Engineer Rust (Skarmory 41, Honedge 41); Ninja Boy Kage (Honedge 41, Doublade 42); Super Nerd Ohm (Beldum 41, Voltorb 41, Weezing 42); Punk Girl Smog (Koffing 42, Weezing 42) | — | Link Cable (once) |
+| 8 | Rusted Armory | industrial | 37–44 | 4 · 4 · 1 · 1 | 1 | 5 | Honedge, Voltorb, Koffing, Beldum, Skarmory, Doublade (rare), Metang (rare), Galvantula (rare) | Scientist Volt (Voltorb 41, Koffing 41, Electrode 42); Engineer Rust (Skarmory 41, Honedge 41); Ninja Boy Kage (Honedge 41, Doublade 42); Super Nerd Ohm (Beldum 41, Voltorb 41, Weezing 42); Punk Girl Smog (Koffing 42, Weezing 42) | — | Link Cable (once) |
 | 9 | Windy Cliffs | mountain | 42–50 | 4 · 4 · 1 · 1 | 1 | 4 | Drifloon, Zubat, Numel, Bagon, Golbat, Drifblim (rare), Brambleghast (rare), Shelgon (rare) | Bird Keeper Gale (Drifblim 47, Golbat 47); Hiker Crag (Numel 46, Camerupt 47); Dragon Tamer Ryu (Bagon 46, Shelgon 48); Backpacker Sky (Drifloon 46, Golbat 46, Numel 46); Ace Trainer Kite (Drifblim 48, Shelgon 48, Camerupt 47) | — | Revive, Rare Candy (once) |
-| 10 | Spirit Mountain | lair-summit | 48–56 | 3 · 5 · 1 · 1 | 1 | 5 | Duskull, Misdreavus, Houndour, Wynaut, Banette, Absol, Wobbuffet (rare), Dusclops (rare), Houndoom (rare) | Sage Kaito (Wobbuffet 52, Banette 52); Channeler Yumi (Dusclops 52, Misdreavus 51, Banette 51); Hex Maniac Morgana (Mismagius 53, Dusclops 52); Psychic Orin (Wobbuffet 52, Jynx 52); Cooltrainer Raven (Houndoom 53, Absol 53, Drifblim 52); Punk Guy Ash (Houndoom 52, Mightyena 52) | — | Revive, Rare Candy |
+| 10 | Spirit Mountain | lair-summit | 48–56 | 3 · 5 · 1 · 1 | 1 | 5 | Duskull, Misdreavus, Houndour, Wynaut, Banette, Absol, Wobbuffet (rare), Dusclops (rare), Houndoom (rare), Lucario (rare) | Sage Kaito (Wobbuffet 52, Banette 52); Channeler Yumi (Dusclops 52, Misdreavus 51, Banette 51); Hex Maniac Morgana (Mismagius 53, Dusclops 52); Psychic Orin (Wobbuffet 52, Jynx 52); Cooltrainer Raven (Houndoom 53, Absol 53, Drifblim 52); Punk Guy Ash (Houndoom 52, Mightyena 52) | — | Revive, Rare Candy |
 | 11 | Shadow Elite | league | 52–60 | — | 0 | 7 | — | Elite Four Vesper (Crobat 53, Muk 53, Gengar 54); Elite Four Rime (Froslass 55, Walrein 55, Mamoswine 56); Elite Four Orin (Metagross 57, Wobbuffet 56, Jynx 56); Elite Four Morwen (Chandelure 58, Dusknoir 57, Aegislash 58); Champion Nyx (Tyranitar 60, Weavile 59, Zoroark 60) | — | — |
 | S1 | Cemetery | haunted | 24–30 | 3 · 1 · 1 · 1 | 1 | 3 | Greavard, Duskull, Gastly, Cubone, Haunter, Houndstone (rare) | Channeler Agnes (Gastly 27, Duskull 27, Haunter 28) | shiny Haunter Lv.30 | Reaper Cloth (once) |
 | S2 | Haunted House | a121 | 34–40 | 2 · 2 · 1 · 1 | 1 | 5 | Sinistea, Shuppet, Haunter, Misdreavus, Lampent, Banette, Gourgeist (rare) | Maid Lenore (Sinistea 38, Banette 38); Butler Grimsby (Lampent 39, Haunter 38) | shiny Mimikyu Lv.40 | Cracked Pot (once) |
@@ -154,3 +156,39 @@ script (`scripts/content-haunted-hollow.ts`):
   areas, pools and trainers upserted, the world added to `smallWorlds` (the switch and other worlds kept),
   `configVersion` + 1. Safe to run again; tested on PGlite (`tests/haunted-hollow-sql.test.ts`).
 - **The bundle** (`pnpm haunted-hollow <in.json> <out.json>` over an admin export), for `pnpm import-bundle`.
+
+Later changes come as **patches** over the live content, never by regenerating 0052 (it has run there, and the admin
+has edited since): a migration and a bundle patch script each, touching only what changed (§2.8: 0055). 0052 run again
+alone would undo them (it deletes the pool rows it does not know), so it is always followed by its patches, in order.
+
+### 2.8 New species and a cheaper Mart (2026-10-15)
+
+The user's calls of 2026-10-15:
+
+| Species | Area | Area Lv. | In its pool | Evolves |
+|---|---|---|---|---|
+| **Joltik** | Whispering Woods | 11–16 | weight 20 (common), Lv.11–14 | into Galvantula at **Lv.36** |
+| **Riolu** | Old Quarry | 20–26 | weight 15 (uncommon), Lv.21–25 | into Lucario at **Lv.30** |
+| **Galvantula** | Rusted Armory | 37–44 | weight 4 (rare), Lv.41–43 | — |
+| **Lucario** | Spirit Mountain | 48–56 | weight 5 (rare), Lv.52–54 | — |
+
+- The weights follow each pool's own: as common as its commons, as rare as its rares (Doublade's 4, Houndoom's 5).
+- **Riolu and Lucario are the one exception** to the fillers' no-Fighting-type rule (§2.3), the user's call.
+- The world's Pokédex goes from **120 to 124**: `regionSpecies` counts the wild pools and what they evolve into, and a
+  small world lets every generation evolve (`speciesAllowedIn`), so Riolu and Joltik evolve there by level (their
+  species rows already said Lv.30 and Lv.36), by battle XP or a Rare Candy alike.
+- **The Mart**: Link Cable ₽1,000 → **₽300**; Master Ball ₽5,000 → **₽999**, still **1 per player**.
+- Built in `scripts/content-haunted-hollow.ts` (fresh content), `scripts/patch-hh-new-species.ts` (the patch) and
+  `supabase/migrations/0055_hh_new_species.sql` (generated by it). Tests: `tests/content/haunted-hollow.test.ts`,
+  `tests/engine/haunted-hollow-species.test.ts` (placement, Pokédex, evolution in the world, prices),
+  `tests/hh-new-species.test.ts` (0055 on PGlite over 0052 and an admin's edits, twice; the bundle patch),
+  `tests/haunted-hollow-sql.test.ts` (0052 then 0055 give the script's content).
+
+**Setting it up** (only this change; the admin's own edits stay):
+1. Run in the Supabase SQL editor
+   [`supabase/migrations/0055_hh_new_species.sql`](https://github.com/Splifingald/pokedice/blob/feature/version_2/supabase/migrations/0055_hh_new_species.sql).
+   It adds the four pool rows (each once, only where its area exists and does not hold that species yet), sets the two
+   prices in Haunted Hollow's Mart by item key (its other lines, limits, dates and switch kept) and bumps
+   `configVersion`. Safe to run again. `supabase/seed.sql` does not carry it (it holds no Haunted Hollow; content
+   migrations are not inlined there).
+2. Or, over an admin export: `tsx scripts/patch-hh-new-species.ts <in.json> <out.json>`, then `pnpm import-bundle`.

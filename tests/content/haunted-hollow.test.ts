@@ -22,9 +22,10 @@ describe('Haunted Hollow', () => {
     expect(worldProblems(list, w, data)).toEqual([])
   })
 
-  it('has 120 Pokémon to catch, and every one but Giratina can be caught before the Distortion World opens', () => {
+  it('has 124 Pokémon to catch, and every one but Giratina can be caught before the Distortion World opens', () => {
     const all = regionSpecies(data, REGION_ID)
-    expect(all.size).toBe(120)
+    // 120, then Joltik, Riolu, Galvantula and Lucario (docs/26 §2.8, 2026-10-15).
+    expect(all.size).toBe(124)
     const without = compileGameData({
       ...withHaunted(BUNDLE),
       areas: withHaunted(BUNDLE).areas.filter((a) => !a.name.startsWith('Distortion')),
@@ -33,9 +34,14 @@ describe('Haunted Hollow', () => {
     expect([...all].filter((d) => !before.has(d))).toEqual([487])
   })
 
-  it('has no Normal or Fighting type, wild or on a trainer', () => {
+  it('has no Normal or Fighting type, wild or on a trainer, but Riolu and Lucario', () => {
+    // The user's exception of 2026-10-15 (docs/26 §2.8): Riolu and Lucario are welcome.
+    const allowed = new Set([447, 448])
     const bad = h.areas.flatMap(areaMons).concat(h.trainers.flatMap((t) => t.team.map((m) => m.dex)))
-    expect(bad.filter((d) => typesOf(d).some((t) => t === 'normal' || t === 'fighting'))).toEqual([])
+    expect(
+      bad.filter((d) => !allowed.has(d) && typesOf(d).some((t) => t === 'normal' || t === 'fighting')),
+    ).toEqual([])
+    expect([...allowed].every((d) => bad.includes(d))).toBe(true)
   })
 
   it('has no Dark type before area 5', () => {
